@@ -171,6 +171,7 @@ static int		WinLink(const WCHAR *LinkSource,
 			    const WCHAR *LinkTarget, int linkAction);
 static int		WinSymLinkDirectory(const WCHAR *LinkDirectory,
 			    const WCHAR *LinkTarget);
+static void		TclWinUpdateDriveCwd(TclWinPath *winPathPtr);
 MODULE_SCOPE void	tclWinDebugPanic(const char *format, ...);
 
 /*
@@ -868,6 +869,13 @@ TclpFindExecutable(
     WCHAR *wNamePtr;
     char *utf8Ptr;
     Tcl_DString ds;
+
+    /* 
+     * Unlike in CMD.EXE, under MSYS and other shells including Explorer,
+     * the drive for the current directory is not maintained in the
+     * environment. So remember it ourselves. Related to Bug [bca391ab51].
+     */
+    TclWinUpdateDriveCwd(NULL);
 
     /* Do not use Tcl encoding functions as Tcl may not be initialized yet */
 
@@ -1937,6 +1945,62 @@ NativeIsExec(
 }
 
 /*
+ * TclWinUpdateDriveCwd --
+ *
+ *      This function emulates CMD shell behavior of tracking the current
+ *	directory for each drive by storing it an environment variable named
+ *	"=<drive>:" (e.g., "=C:"). This allows Tcl's cd command to correctly
+ *	switch back to the correct current directory using the volume-relative
+ *	path syntax (e.g., "C:") or to normalize volume-relative paths.
+ *	See https://core.tcl-lang.org/tcl/info/bca391ab51cd48e7.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Process environment is updated.
+ */
+static void
+TclWinUpdateDriveCwd(
+    TclWinPath *winPathPtr)	/* Caller should ensure native format absolute
+				 * path. The CWD of the corresponding drive is
+				 * tracked. If NULL, defaults to current working
+				 * directory. */
+{
+    TclWinPath cwdPath;
+    const WCHAR *nativePath;
+    if (winPathPtr == NULL) {
+	nativePath = TclWinGetCurrentDirectory(&cwdPath);
+    } else {
+	nativePath = TclWinPathGet(winPathPtr);
+    }
+
+    if (nativePath) {
+	WCHAR envVar[4];
+	TclWinPath envValue;
+	WCHAR *envValuePtr;
+
+	/* Check it is a drive path, not UNC */
+	if (nativePath[0] && nativePath[1] == ':') {
+	    envVar[0] = L'=';
+	    envVar[1] = nativePath[0];
+	    envVar[2] = L':';
+	    envVar[3] = L'\0';
+	    /* To avoid unnecessary reallocations, only update on change */
+	    envValuePtr = TclWinGetEnvironmentVariable(envVar, &envValue);
+	    if (envValuePtr != NULL && wcscmp(envValuePtr, nativePath) != 0) {
+		SetEnvironmentVariableW(envVar, nativePath);
+		TclWinPathFree(&envValue);
+	    }
+	}
+    }
+
+    if (winPathPtr == NULL) {
+	TclWinPathFree(&cwdPath);
+    }
+}
+
+/*
  *----------------------------------------------------------------------
  *
  * TclpObjChdir --
@@ -1970,6 +2034,10 @@ TclpObjChdir(
 	Tcl_WinConvertError(GetLastError());
 	return -1;
     }
+
+    /* Track the working directory for the new drive */
+    TclWinUpdateDriveCwd(NULL);
+
     return 0;
 }
 
@@ -2962,12 +3030,27 @@ TclWinVolumeRelativeNormalize(
 	if (cwdPath[0] != driveRoot[0]) {
 	    /* On a different drive, attempt to get the cwd on that drive */
 	    wchar_t *dcwdPtr;
-	    Tcl_DString ds;
-	    Tcl_Size capacity;
 
 	    Tcl_DecrRefCount(cwdPtr);
 	    cwdPtr = NULL;
 	    cwdPath = NULL;
+
+	    /*
+	     * The current directory on a drive can be obtained via the
+	     * GetFullPathNameW() API, by passing in "X:" as the path or via
+	     * a hidden environment variable of the form "=X:". The latter
+	     * is less reliable in that it will only be present if the drive
+	     * has ever been switched to by the process or one of its
+	     * ancestors. We use it as a fallback. IMPORTANT: Historically,
+	     * _getdcwd() and _wgetdcwd() were also options. However they
+	     * are problematic because with UCRT (unlike with MSVCRT) they
+	     * will raise an exception terminating the program instead of
+	     * returning an error if the drive doesn't exist. To avoid that,
+	     * we would have to set up (a) an invalid parameter handler, or
+	     * (b) a SEH handler. (a) impacts the entire process which is
+	     * not desirable. (b) has incompatibilities with C++ exceptions.
+	     * Both being problematic, those calls are to be avoided.
+	     */
 
 	    WCHAR driveEnvVar[4] = {L'=', (WCHAR)driveRoot[0], L':', L'\0'};
 	    TclWinPath winPath;
@@ -2978,23 +3061,6 @@ TclWinVolumeRelativeNormalize(
 	    if (dcwdPtr != NULL) {
 		cwdPtr = TclpNativeToNormalized(dcwdPtr);
 		TclWinPathFree(&winPath);
-	    } else {
-		Tcl_DStringInit(&ds);
-		capacity = (TCL_DSTRING_STATIC_SIZE / sizeof(wchar_t)) - 1;
-		while (1) {
-		    Tcl_DStringSetLength(&ds, capacity * sizeof(wchar_t));
-		    dcwdPtr = _wgetdcwd(driveRoot[0] - 'A' + 1,
-			(wchar_t *)Tcl_DStringValue(&ds), capacity);
-		    if (dcwdPtr != NULL || (errno != ERANGE)) {
-			break;
-		    }
-		    capacity *= 2;
-		}
-
-		if (dcwdPtr != NULL) {
-		    cwdPtr = TclpNativeToNormalized(Tcl_DStringValue(&ds));
-		}
-		Tcl_DStringFree(&ds);
 	    }
 	}
 	if (cwdPtr != NULL) {
