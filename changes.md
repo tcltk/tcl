@@ -22,6 +22,7 @@ to the userbase.
  - [Crash when defining const if namespace does not exist](https://core.tcl-lang.org/tcl/info/4b22d8)
 
 # Updated bundled packages, libraries, standards, data
+ - autoconf 2.73
  - Itcl 4.3.7
  - sqlite3 3.51.3
  - Thread 3.0.5
