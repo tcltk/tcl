@@ -181,8 +181,8 @@ static inline int
 IsNoSuchFileError(DWORD winError)
 {
     return (winError == ERROR_FILE_NOT_FOUND ||
-            winError == ERROR_PATH_NOT_FOUND ||
-            winError == ERROR_INVALID_NAME);
+	    winError == ERROR_PATH_NOT_FOUND ||
+	    winError == ERROR_INVALID_NAME);
 }
 
 /*

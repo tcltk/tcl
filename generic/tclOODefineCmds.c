@@ -120,13 +120,13 @@ static Tcl_MethodCallProc2 Configurable_ObjectWritableProps_Set;
  */
 
 static const DeclaredSlot slots[] = {
-    SLOT("define::filter",      ClassFilter_Get, ClassFilter_Set, NULL, NULL),
-    SLOT("define::mixin",       ClassMixin_Get,  ClassMixin_Set, Slot_ResolveClass, "-set"),
-    SLOT("define::superclass",  ClassSuper_Get,  ClassSuper_Set, Slot_ResolveClass, "-set"),
-    SLOT("define::variable",    ClassVars_Get,   ClassVars_Set, NULL, NULL),
-    SLOT("objdefine::filter",   ObjFilter_Get,   ObjFilter_Set, NULL, NULL),
-    SLOT("objdefine::mixin",    ObjMixin_Get,    ObjMixin_Set, Slot_ResolveClass, "-set"),
-    SLOT("objdefine::variable", ObjVars_Get,     ObjVars_Set, NULL, NULL),
+    SLOT("define::filter",	ClassFilter_Get, ClassFilter_Set, NULL, NULL),
+    SLOT("define::mixin",	ClassMixin_Get,  ClassMixin_Set, Slot_ResolveClass, "-set"),
+    SLOT("define::superclass",	ClassSuper_Get,  ClassSuper_Set, Slot_ResolveClass, "-set"),
+    SLOT("define::variable",	ClassVars_Get,   ClassVars_Set, NULL, NULL),
+    SLOT("objdefine::filter",	ObjFilter_Get,   ObjFilter_Set, NULL, NULL),
+    SLOT("objdefine::mixin",	ObjMixin_Get,    ObjMixin_Set, Slot_ResolveClass, "-set"),
+    SLOT("objdefine::variable",	ObjVars_Get,     ObjVars_Set, NULL, NULL),
     SLOT("configuresupport::readableproperties",
 	    Configurable_ClassReadableProps_Get,
 	    Configurable_ClassReadableProps_Set, NULL, NULL),

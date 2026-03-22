@@ -1200,7 +1200,7 @@ Tcl_InitSubsystems(void)
 	    TclInitIOSubsystem();	/* Inits a tsd key (noop). */
 	    TclInitEncodingSubsystem();	/* Process wide encoding init. */
 	    TclInitNamespaceSubsystem();/* Register ns obj type (mutexed). */
-	    TclZipfsInit();            /* Initialize zipfs subsystem */
+	    TclZipfsInit();		/* Initialize zipfs subsystem. */
 	    subsystemsInitialized = true;
 	}
 	TclpInitUnlock();

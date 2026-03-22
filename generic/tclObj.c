@@ -577,7 +577,7 @@ TclContinuationsEnter(
 
     clLocPtr->num = num;
     memcpy(&clLocPtr->loc, loc, num*sizeof(Tcl_Size));
-    clLocPtr->loc[num] = CLL_END;       /* Sentinel */
+    clLocPtr->loc[num] = CLL_END;	/* Sentinel */
     Tcl_SetHashValue(hPtr, clLocPtr);
 
     return clLocPtr;
@@ -637,7 +637,7 @@ TclContinuationsEnterDerived(
      */
 
     (void)TclGetStringFromObj(objPtr, &length);
-    end = start + length;       /* First char after the word */
+    end = start + length;	/* First char after the word */
 
     /*
      * Then compute the table slice covering the range of the word.
