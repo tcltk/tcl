@@ -620,7 +620,7 @@ TclpDeleteFileHandler(
 
 int
 TclpWaitForEvent(
-    long long time)	/* Maximum block time, or -1. */
+    long long time)		/* Maximum block time, or -1. */
 {
     FileHandler *filePtr;
     struct timeval timeout, *timeoutPtr;

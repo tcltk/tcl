@@ -1954,7 +1954,7 @@ NativeIsExec(
 
 int
 TclpObjChdir(
-    Tcl_Obj *pathPtr)	/* Path to new working directory. */
+    Tcl_Obj *pathPtr)		/* Path to new working directory. */
 {
     int result;
     const WCHAR *nativePath;

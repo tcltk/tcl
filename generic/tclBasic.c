@@ -2716,9 +2716,9 @@ Tcl_CreateCommand(
 #ifndef TCL_NO_DEPRECATED
 typedef struct {
     Tcl_ObjCmdProc *proc;
-    void *clientData;	/* Arbitrary value to pass to proc function. */
+    void *clientData;		/* Arbitrary value to pass to proc function. */
     Tcl_CmdDeleteProc *deleteProc;
-    void *deleteData;	/* Arbitrary value to pass to deleteProc function. */
+    void *deleteData;		/* Arbitrary value to pass to deleteProc function. */
     Tcl_ObjCmdProc *nreProc;
 } CmdWrapperInfo;
 
@@ -4042,7 +4042,7 @@ CancelEvalProc(
 
 void
 TclCleanupCommand(
-    Command *cmdPtr)	/* Points to the Command structure to
+    Command *cmdPtr)		/* Points to the Command structure to
 				 * be freed. */
 {
     if (cmdPtr->refCount-- <= 1) {
@@ -5174,7 +5174,7 @@ TclEvalEx(
     int flags,			/* Collection of OR-ed bits that control the
 				 * evaluation of the script. Only
 				 * TCL_EVAL_GLOBAL is currently supported. */
-    int line,		/* The line the script starts on. */
+    int line,			/* The line the script starts on. */
     Tcl_Size *clNextOuter,	/* Information about an outer context for */
     const char *outerScript)	/* continuation line data. This is set only in
 				 * TclSubstTokens(), to properly handle

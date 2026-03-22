@@ -1267,7 +1267,7 @@ TraversalDelete(
 static int
 CopyFileAtts(
 #ifdef MAC_OSX_TCL
-    const char *src,	/* Path name of source file (native). */
+    const char *src,		/* Path name of source file (native). */
 #else
     TCL_UNUSED(const char *) /*src*/,
 #endif

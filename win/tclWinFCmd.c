@@ -1902,7 +1902,8 @@ TclpCreateTemporaryDirectory(
  */
 static int
 ResetFileACL(
-    const WCHAR *path)	/* Path whose ACL should reset to allow all access */
+    const WCHAR *path)		/* Path whose ACL should reset to allow all
+				 * access. */
 {
     /* Get the user information from token to extract the SID. */
     DWORD winError;

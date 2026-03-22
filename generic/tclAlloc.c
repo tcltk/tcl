@@ -695,7 +695,7 @@ mstats(
 #undef TclpAlloc
 void *
 TclpAlloc(
-    size_t numBytes)	/* Number of bytes to allocate. */
+    size_t numBytes)		/* Number of bytes to allocate. */
 {
     return malloc(numBytes);
 }

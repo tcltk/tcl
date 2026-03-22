@@ -2757,8 +2757,7 @@ TclFSGetAncestorPaths(
     Tcl_Interp *interp,		/* interp for errors. May be NULL */
     Tcl_Obj *pathPtr,		/* Path whose ancestor dirs are sought */
     Tcl_Size numPaths,		/* Size of pathPtrs[] */
-    Tcl_Obj *pathsPtr[]	/* Output array holding ancestor paths */
-)
+    Tcl_Obj *pathsPtr[])	/* Output array holding ancestor paths */
 {
     Tcl_Obj **components;
     Tcl_Size numComponents;

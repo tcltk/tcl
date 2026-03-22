@@ -1009,7 +1009,7 @@ Tcl_StaticLibrary(
 				 * already been loaded into the given
 				 * interpreter by calling the appropriate init
 				 * proc. */
-    const char *prefix,	/* Prefix. */
+    const char *prefix,		/* Prefix. */
     Tcl_LibraryInitProc *initProc,
 				/* Function to call to incorporate this
 				 * library into a trusted interpreter. */

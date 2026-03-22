@@ -5165,7 +5165,7 @@ TestsetplatformCmd(
 
 static int
 TestSizeCmd(
-    TCL_UNUSED(void *),	/* Unused */
+    TCL_UNUSED(void *),
     Tcl_Interp* interp,		/* Tcl interpreter */
     Tcl_Size objc,		/* Parameter count */
     Tcl_Obj *const * objv)	/* Parameter vector */
@@ -9307,7 +9307,7 @@ TestChanSourceClose2(
 
 static int
 TestChanSinkOutput(
-    TCL_UNUSED(void *),	/* Instance data */
+    TCL_UNUSED(void *),		/* Instance data */
     TCL_UNUSED(const char *),	/* Bytes to write */
     int nbytes,
     TCL_UNUSED(int *))		/* errorCodePtr */
@@ -9317,7 +9317,7 @@ TestChanSinkOutput(
 
 static int
 TestChanSinkClose2(
-    TCL_UNUSED(void *),	/* Instance data */
+    TCL_UNUSED(void *),		/* Instance data */
     TCL_UNUSED(Tcl_Interp *),	/* interp */
     TCL_UNUSED(int))		/* flags */
 {

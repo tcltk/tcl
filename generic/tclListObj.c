@@ -2002,7 +2002,7 @@ TclListObjAppendIfAbsent(
     }
     result = TclListObjAppendElements(interp, toObj, 1, &elemObj);
 
-vamoose: /* Return result after freeing elemObj if unreferenced */
+  vamoose: /* Return result after freeing elemObj if unreferenced */
     Tcl_BounceRefCount(elemObj);
     return result;
 }
