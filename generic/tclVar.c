@@ -656,7 +656,7 @@ TclObjLookupVarEx(
 {
     Interp *iPtr = (Interp *) interp;
     CallFrame *varFramePtr = iPtr->varFramePtr;
-    Var *varPtr;	/* Points to the variable's in-frame Var
+    Var *varPtr;		/* Points to the variable's in-frame Var
 				 * structure. */
     const char *errMsg = NULL;
     Tcl_Size index;
@@ -4369,7 +4369,7 @@ ArrayUnsetCmd(
     Tcl_Obj *varNameObj, *patternObj, *nameObj;
     Tcl_HashSearch search;
     const char *pattern;
-    int unsetFlags = 0;	/* Should this be TCL_LEAVE_ERR_MSG? */
+    int unsetFlags = 0;		/* Should this be TCL_LEAVE_ERR_MSG? */
     int isArray;
 
     switch (objc) {

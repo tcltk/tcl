@@ -880,7 +880,7 @@ Tcl_SetMaxBlockTime(
 
 void
 TclSetMaxBlockTime(
-    long long time)	/* Specifies a maximum elapsed time for the
+    long long time)		/* Specifies a maximum elapsed time for the
 				 * next blocking operation in the event
 				 * tsdPtr-> */
 {
@@ -1404,7 +1404,7 @@ Tcl_WaitForEvent(
 
 int
 TclWaitForEvent(
-    long long time)	/* Maximum block time, or -1. */
+    long long time)		/* Maximum block time, or -1. */
 {
     if (tclNotifierHooks.waitForEventProc) {
 	if (time >= 0) {

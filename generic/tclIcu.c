@@ -198,13 +198,13 @@ static struct {
     FIELD(unorm2_normalize);
 } icu_fns = {
     0,    {NULL, NULL}, /* Reference count, library handles */
-    NULL, NULL, NULL, NULL, NULL, NULL,                     /* u_* */
-    NULL, NULL, NULL, NULL, NULL, NULL, NULL,               /* ubrk* */
+    NULL, NULL, NULL, NULL, NULL, NULL,			    /* u_* */
+    NULL, NULL, NULL, NULL, NULL, NULL, NULL,		    /* ubrk* */
     NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,   /* ucnv_* .. */
-    NULL, NULL, NULL,                                       /* .. ucnv_ */
-    NULL, NULL, NULL, NULL, NULL, NULL, NULL,               /* ucsdet* */
-    NULL, NULL, NULL,                                       /* uenum_* */
-    NULL, NULL, NULL, NULL, NULL,                           /* unorm2_* */
+    NULL, NULL, NULL,					    /* .. ucnv_ */
+    NULL, NULL, NULL, NULL, NULL, NULL, NULL,		    /* ucsdet* */
+    NULL, NULL, NULL,					    /* uenum_* */
+    NULL, NULL, NULL, NULL, NULL,			    /* unorm2_* */
 };
 
 #define u_cleanup        icu_fns._u_cleanup

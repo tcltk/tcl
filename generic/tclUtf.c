@@ -173,7 +173,7 @@ static const unsigned char bounds[28] = {
 
 static int
 Invalid(
-    const char *src)	/* Points to lead byte of a UTF-8 byte sequence */
+    const char *src)		/* Points to lead byte of a UTF-8 byte sequence */
 {
     unsigned char byte = UCHAR(*src);
     int index;
@@ -533,9 +533,10 @@ Tcl_UtfToUniChar(
 
 Tcl_Size
 Tcl_UtfToChar16(
-    const char *src,	/* The UTF-8 string. */
-    unsigned short *chPtr)/* Filled with the Tcl_UniChar represented by
-				 * the UTF-8 string. This could be a surrogate too. */
+    const char *src,		/* The UTF-8 string. */
+    unsigned short *chPtr)	/* Filled with the Tcl_UniChar represented by
+				 * the UTF-8 string. This could be a surrogate
+				 * too. */
 {
     unsigned short byte;
 
@@ -1500,7 +1501,7 @@ int
 TclpUtfNcmp2(
     const void *csPtr,		/* UTF string to compare to ct. */
     const void *ctPtr,		/* UTF string cs is compared to. */
-    size_t numBytes)	/* Number of *bytes* to compare. */
+    size_t numBytes)		/* Number of *bytes* to compare. */
 {
     const char *cs = (const char *)csPtr;
     const char *ct = (const char *)ctPtr;
@@ -1549,7 +1550,7 @@ int
 TclUtfNcmp(
     const char *cs,		/* UTF string to compare to ct. */
     const char *ct,		/* UTF string cs is compared to. */
-    size_t numChars)	/* Number of UTF-16 chars to compare. */
+    size_t numChars)		/* Number of UTF-16 chars to compare. */
 {
     unsigned short ch1 = 0, ch2 = 0;
 
@@ -1587,7 +1588,7 @@ int
 Tcl_UtfNcmp(
     const char *cs,		/* UTF string to compare to ct. */
     const char *ct,		/* UTF string cs is compared to. */
-    size_t numChars)	/* Number of chars to compare. */
+    size_t numChars)		/* Number of chars to compare. */
 {
     Tcl_UniChar ch1 = 0, ch2 = 0;
 
@@ -1635,7 +1636,7 @@ int
 TclUtfNcasecmp(
     const char *cs,		/* UTF string to compare to ct. */
     const char *ct,		/* UTF string cs is compared to. */
-    size_t numChars)	/* Number of UTF-16 chars to compare. */
+    size_t numChars)		/* Number of UTF-16 chars to compare. */
 {
     unsigned short ch1 = 0, ch2 = 0;
 
@@ -1670,7 +1671,7 @@ int
 Tcl_UtfNcasecmp(
     const char *cs,		/* UTF string to compare to ct. */
     const char *ct,		/* UTF string cs is compared to. */
-    size_t numChars)	/* Number of chars to compare. */
+    size_t numChars)		/* Number of chars to compare. */
 {
     Tcl_UniChar ch1 = 0, ch2 = 0;
 
@@ -1897,7 +1898,7 @@ Tcl_Char16Len(
 
 Tcl_Size
 Tcl_UniCharLen(
-    const int *uniStr)	/* Unicode string to find length of. */
+    const int *uniStr)		/* Unicode string to find length of. */
 {
     Tcl_Size len = 0;
 
@@ -1929,7 +1930,7 @@ int
 TclUniCharNcmp(
     const Tcl_UniChar *ucs,	/* Unicode string to compare to uct. */
     const Tcl_UniChar *uct,	/* Unicode string ucs is compared to. */
-    size_t numChars)	/* Number of chars to compare. */
+    size_t numChars)		/* Number of chars to compare. */
 {
 #if defined(WORDS_BIGENDIAN)
     /*
@@ -1974,7 +1975,7 @@ int
 TclUniCharNcasecmp(
     const Tcl_UniChar *ucs,	/* Unicode string to compare to uct. */
     const Tcl_UniChar *uct,	/* Unicode string ucs is compared to. */
-    size_t numChars)	/* Number of chars to compare. */
+    size_t numChars)		/* Number of chars to compare. */
 {
     for ( ; numChars != 0; numChars--, ucs++, uct++) {
 	if (*ucs != *uct) {

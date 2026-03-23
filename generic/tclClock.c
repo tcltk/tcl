@@ -1410,7 +1410,7 @@ ClockConvertlocaltoutcObjCmd(
     Tcl_Obj *dict;
     int changeover;
     TclDateFields fields;
-    int created = 0;
+    bool created = false;
 
     fields.tzName = NULL;
     /*
@@ -1444,7 +1444,7 @@ ClockConvertlocaltoutcObjCmd(
 
     if (Tcl_IsShared(dict)) {
 	dict = Tcl_DuplicateObj(dict);
-	created = 1;
+	created = true;
 	Tcl_IncrRefCount(dict);
     }
     int result = Tcl_DictObjPut(interp, dict, dataPtr->literals[LIT_SECONDS],

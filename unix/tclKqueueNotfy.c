@@ -618,7 +618,7 @@ TclpDeleteFileHandler(
 
 int
 TclpWaitForEvent(
-    long long time)	/* Maximum block time, or NULL. */
+    long long time)		/* Maximum block time, or NULL. */
 {
     FileHandler *filePtr;
     int mask;

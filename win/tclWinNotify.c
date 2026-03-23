@@ -267,7 +267,7 @@ TclpAlertNotifier(
 
 void
 TclpSetTimer(
-    long long time)	/* Maximum block time, or -1. */
+    long long time)		/* Maximum block time, or -1. */
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
@@ -466,7 +466,7 @@ TclpNotifierData(void)
 
 int
 TclpWaitForEvent(
-    long long time)	/* Maximum block time, or -1. */
+    long long time)		/* Maximum block time, or -1. */
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     MSG msg;

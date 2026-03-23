@@ -3448,7 +3448,7 @@ MODULE_SCOPE double	TclFloor(const void *a);
 MODULE_SCOPE void	TclFormatNaN(double value, char *buffer);
 MODULE_SCOPE int	TclFSFileAttrIndex(Tcl_Obj *pathPtr,
 			    const char *attributeName, int *indexPtr);
-MODULE_SCOPE int TclFSGetAncestorPaths(Tcl_Interp *interp, Tcl_Obj *pathPtr,
+MODULE_SCOPE Tcl_Size TclFSGetAncestorPaths(Tcl_Interp *interp, Tcl_Obj *pathPtr,
 			    Tcl_Size numPaths, Tcl_Obj *pathsPtrs[]);
 
 MODULE_SCOPE Tcl_Command TclNRCreateCommandInNs(Tcl_Interp *interp,
@@ -3506,12 +3506,11 @@ MODULE_SCOPE void	TclInitObjSubsystem(void);
 MODULE_SCOPE int	TclInterpReady(Tcl_Interp *interp);
 MODULE_SCOPE bool	TclIsBareword(int byte);
 MODULE_SCOPE Tcl_Obj *	TclJoinPath(Tcl_Size elements, Tcl_Obj * const objv[],
-			    int forceRelative);
+			    bool forceRelative);
 MODULE_SCOPE Tcl_Obj *	TclGetHomeDirObj(Tcl_Interp *interp, const char *user);
 MODULE_SCOPE Tcl_Obj *	TclResolveTildePath(Tcl_Interp *interp,
 			    Tcl_Obj *pathObj);
 MODULE_SCOPE Tcl_Obj *	TclResolveTildePathList(Tcl_Obj *pathsObj);
-MODULE_SCOPE int	TclJoinThread(Tcl_ThreadId id, int *result);
 MODULE_SCOPE void	TclLimitRemoveAllHandlers(Tcl_Interp *interp);
 MODULE_SCOPE Tcl_Obj *	TclLindexList(Tcl_Interp *interp,
 			    Tcl_Obj *listPtr, Tcl_Obj *argPtr);
@@ -3542,9 +3541,9 @@ MODULE_SCOPE int	TclMergeReturnOptions(Tcl_Interp *interp, Tcl_Size objc,
 			    Tcl_Obj *const objv[], Tcl_Obj **optionsPtrPtr,
 			    int *codePtr, int *levelPtr);
 MODULE_SCOPE Tcl_Obj *	TclNoErrorStack(Tcl_Interp *interp, Tcl_Obj *options);
-MODULE_SCOPE int	TclNokia770Doubles(void);
+MODULE_SCOPE bool	TclNokia770Doubles(void);
 MODULE_SCOPE void	TclNsDecrRefCount(Namespace *nsPtr);
-MODULE_SCOPE int	TclNamespaceDeleted(Namespace *nsPtr);
+MODULE_SCOPE bool	TclNamespaceDeleted(Namespace *nsPtr);
 MODULE_SCOPE void	TclObjVarErrMsg(Tcl_Interp *interp, Tcl_Obj *part1Ptr,
 			    Tcl_Obj *part2Ptr, const char *operation,
 			    const char *reason, Tcl_Size index);

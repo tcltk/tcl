@@ -2457,7 +2457,7 @@ TclCheckArrayTraces(
 int
 TclObjCallVarTraces(
     Interp *iPtr,		/* Interpreter containing variable. */
-    Var *arrayPtr,	/* Pointer to array variable that contains the
+    Var *arrayPtr,		/* Pointer to array variable that contains the
 				 * variable, or NULL if the variable isn't an
 				 * element of an array. */
     Var *varPtr,		/* Variable whose traces are to be invoked. */
@@ -2491,7 +2491,7 @@ TclObjCallVarTraces(
 int
 TclCallVarTraces(
     Interp *iPtr,		/* Interpreter containing variable. */
-    Var *arrayPtr,	/* Pointer to array variable that contains the
+    Var *arrayPtr,		/* Pointer to array variable that contains the
 				 * variable, or NULL if the variable isn't an
 				 * element of an array. */
     Var *varPtr,		/* Variable whose traces are to be invoked. */

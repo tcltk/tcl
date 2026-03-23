@@ -27,8 +27,7 @@ TclPlatformType tclPlatform = TCL_PLATFORM_UNIX;
  */
 
 static const char *	ExtractWinRoot(const char *path,
-			    Tcl_DString *resultPtr, int offset,
-			    Tcl_PathType *typePtr);
+			    Tcl_DString *resultPtr, Tcl_PathType *typePtr);
 static int		SkipToChar(char **stringPtr, int match);
 static Tcl_Obj *	SplitWinPath(const char *path);
 static Tcl_Obj *	SplitUnixPath(const char *path);
@@ -74,10 +73,9 @@ enum GlobModeFlags {
 static void
 SetResultLength(
     Tcl_DString *resultPtr,
-    int offset,
     int extended)
 {
-    Tcl_DStringSetLength(resultPtr, offset);
+    Tcl_DStringSetLength(resultPtr, 0);
     if (extended == 2) {
 	TclDStringAppendLiteral(resultPtr, "//?/UNC/");
     } else if (extended == 1) {
@@ -108,8 +106,6 @@ static const char *
 ExtractWinRoot(
     const char *path,		/* Path to parse. */
     Tcl_DString *resultPtr,	/* Buffer to hold result. */
-    int offset,			/* Offset in buffer where result should be
-				 * stored. */
     Tcl_PathType *typePtr)	/* Where to store pathType result */
 {
     int extended = 0;
@@ -136,7 +132,7 @@ ExtractWinRoot(
 	int hlen, slen;
 
 	if (path[1] != '/' && path[1] != '\\') {
-	    SetResultLength(resultPtr, offset, extended);
+	    SetResultLength(resultPtr, extended);
 	    *typePtr = TCL_PATH_VOLUME_RELATIVE;
 	    TclDStringAppendLiteral(resultPtr, "/");
 	    return &path[1];
@@ -171,7 +167,7 @@ ExtractWinRoot(
 	    TclDStringAppendLiteral(resultPtr, "/");
 	    return &path[2];
 	}
-	SetResultLength(resultPtr, offset, extended);
+	SetResultLength(resultPtr, extended);
 	share = &host[hlen];
 
 	/*
@@ -209,7 +205,7 @@ ExtractWinRoot(
 	 * Might be a drive separator.
 	 */
 
-	SetResultLength(resultPtr, offset, extended);
+	SetResultLength(resultPtr, extended);
 
 	if (path[2] != '/' && path[2] != '\\') {
 	    *typePtr = TCL_PATH_VOLUME_RELATIVE;
@@ -308,7 +304,7 @@ ExtractWinRoot(
 
 	if (abs != 0) {
 	    *typePtr = TCL_PATH_ABSOLUTE;
-	    SetResultLength(resultPtr, offset, extended);
+	    SetResultLength(resultPtr, extended);
 	    Tcl_DStringAppend(resultPtr, path, abs);
 	    return path + abs;
 	}
@@ -425,7 +421,7 @@ TclpGetNativePathType(
 	const char *rootEnd;
 
 	Tcl_DStringInit(&ds);
-	rootEnd = ExtractWinRoot(path, &ds, 0, &type);
+	rootEnd = ExtractWinRoot(path, &ds, &type);
 	if ((rootEnd != path) && (driveNameLengthPtr != NULL)) {
 	    *driveNameLengthPtr = rootEnd - path;
 	    if (driveNameRef != NULL) {
@@ -697,7 +693,7 @@ SplitWinPath(
     Tcl_DStringInit(&buf);
 
     TclNewObj(result);
-    p = ExtractWinRoot(path, &buf, 0, &type);
+    p = ExtractWinRoot(path, &buf, &type);
 
     /*
      * Terminate the root portion, if we matched something.
@@ -765,24 +761,24 @@ Tcl_FSJoinToPath(
     Tcl_Obj *const objv[])	/* Path elements to join. */
 {
     if (pathPtr == NULL) {
-	return TclJoinPath(objc, objv, 0);
+	return TclJoinPath(objc, objv, false);
     }
     if (objc == 0) {
-	return TclJoinPath(1, &pathPtr, 0);
+	return TclJoinPath(1, &pathPtr, false);
     }
     if (objc == 1) {
 	Tcl_Obj *pair[2];
 
 	pair[0] = pathPtr;
 	pair[1] = objv[0];
-	return TclJoinPath(2, pair, 0);
+	return TclJoinPath(2, pair, false);
     } else {
 	Tcl_Size elemc = objc + 1;
 	Tcl_Obj *ret, **elemv = (Tcl_Obj**)Tcl_Alloc(elemc*sizeof(Tcl_Obj *));
 
 	elemv[0] = pathPtr;
 	memcpy(elemv+1, objv, objc*sizeof(Tcl_Obj *));
-	ret = TclJoinPath(elemc, elemv, 0);
+	ret = TclJoinPath(elemc, elemv, false);
 	Tcl_Free(elemv);
 	return ret;
     }

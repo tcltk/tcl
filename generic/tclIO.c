@@ -2409,7 +2409,7 @@ int
 Tcl_GetChannelHandle(
     Tcl_Channel chan,		/* The channel to get file from. */
     int direction,		/* TCL_WRITABLE or TCL_READABLE. */
-    void **handlePtr)	/* Where to store handle */
+    void **handlePtr)		/* Where to store handle */
 {
     Channel *chanPtr;		/* The actual channel. */
     void *handle;
@@ -7618,7 +7618,7 @@ Tcl_Eof(
     if (GotFlag(statePtr, CHANNEL_ENCODING_ERROR)) {
 	return 0;
     }
-    return GotFlag(statePtr, CHANNEL_EOF) ? 1 : 0;
+    return GotFlag(statePtr, CHANNEL_EOF) != 0;
 }
 
 /*
@@ -7670,7 +7670,7 @@ Tcl_InputBlocked(
     ChannelState *statePtr = ((Channel *) chan)->state;
 				/* State of real channel structure. */
 
-    return GotFlag(statePtr, CHANNEL_BLOCKED) ? 1 : 0;
+    return GotFlag(statePtr, CHANNEL_BLOCKED) != 0;
 }
 
 /*
@@ -10747,7 +10747,7 @@ Tcl_IsChannelShared(
     ChannelState *statePtr = ((Channel *) chan)->state;
 				/* State of real channel structure. */
 
-    return ((statePtr->refCount > 1) ? 1 : 0);
+    return (statePtr->refCount > 1);
 }
 
 /*
@@ -11472,9 +11472,9 @@ Tcl_ChannelTruncateProc(
 
 static void
 DupChannelInternalRep(
-    Tcl_Obj *srcPtr,	/* Object with internal rep to copy. Must have
+    Tcl_Obj *srcPtr,		/* Object with internal rep to copy. Must have
 				 * an internal rep of type "Channel". */
-    Tcl_Obj *copyPtr)	/* Object with internal rep to set. Must not
+    Tcl_Obj *copyPtr)		/* Object with internal rep to set. Must not
 				 * currently have an internal rep.*/
 {
     ResolvedChanName *resPtr;

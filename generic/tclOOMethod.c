@@ -1768,16 +1768,16 @@ TclOOGetFwdFromMethod(
  *	doing ensemble-like command forwarding. Here is a picture of memory
  *	management plan:
  *
- *                    <-----------------objc---------------------->
- *      objv:        |=============|===============================|
- *                    <-toRewrite->           |
- *                                             \
- *                    <-rewriteLength->         \
- *      rewriteObjs: |=================|         \
- *                           |                    |
- *                           V                    V
- *      argObjs:     |=================|===============================|
- *                    <------------------*lengthPtr------------------->
+ *	              <-----------------objc---------------------->
+ *	objv:        |=============|===============================|
+ *	              <-toRewrite->           |
+ *	                                       \
+ *	              <-rewriteLength->         \
+ *	rewriteObjs: |=================|         \
+ *	                     |                    |
+ *	                     V                    V
+ *	argObjs:     |=================|===============================|
+ *	              <------------------*lengthPtr------------------->
  *
  * ----------------------------------------------------------------------
  */
@@ -1911,14 +1911,14 @@ int
 Tcl_MethodIsPublic(
     Tcl_Method method)
 {
-    return (((Method *) method)->flags & PUBLIC_METHOD) ? 1 : 0;
+    return (((Method *) method)->flags & PUBLIC_METHOD) != 0;
 }
 
 int
 Tcl_MethodIsPrivate(
     Tcl_Method method)
 {
-    return (((Method *) method)->flags & TRUE_PRIVATE_METHOD) ? 1 : 0;
+    return (((Method *) method)->flags & TRUE_PRIVATE_METHOD) != 0;
 }
 
 /*

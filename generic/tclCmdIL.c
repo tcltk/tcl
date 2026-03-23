@@ -4865,12 +4865,12 @@ Tcl_LeditObjCmd(
 {
     Tcl_Obj *listPtr;		/* Pointer to the list being altered. */
     Tcl_Obj *finalValuePtr;	/* Value finally assigned to the variable. */
-    int createdNewObj;
-    int result;
     Tcl_Size first;
     Tcl_Size last;
     Tcl_Size listLen;
     Tcl_Size numToDelete;
+    int result;
+    bool createdNewObj;
 
     if (objc < 4) {
 	Tcl_WrongNumArgs(interp, 1, objv,
@@ -4920,9 +4920,9 @@ Tcl_LeditObjCmd(
 
     if (Tcl_IsShared(listPtr)) {
 	listPtr = TclListObjCopy(NULL, listPtr);
-	createdNewObj = 1;
+	createdNewObj = true;
     } else {
-	createdNewObj = 0;
+	createdNewObj = false;
     }
 
     result =

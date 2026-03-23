@@ -357,7 +357,7 @@ TclpCreatePipe(
 
 int
 TclpCloseFile(
-    TclFile file)	/* The file to close. */
+    TclFile file)		/* The file to close. */
 {
     int fd = GetFd(file);
 

@@ -4246,13 +4246,13 @@ Tcl_TimeRateObjCmd(
 	return TCL_ERROR;
     }
     objPtr = objv[i++];
-    if (i < objc) {	/* max-time */
+    if (i < objc) {		/* max-time */
 	result = TclGetWideIntFromObj(interp, objv[i], &maxms);
 	i++; // Keep this separate from TclGetWideIntFromObj macro above!
 	if (result != TCL_OK) {
 	    return result;
 	}
-	if (i < objc) {	/* max-count*/
+	if (i < objc) {		/* max-count*/
 	    Tcl_WideInt v;
 
 	    result = TclGetWideIntFromObj(interp, objv[i], &v);

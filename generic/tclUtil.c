@@ -982,9 +982,9 @@ Tcl_SplitList(
 
 Tcl_Size
 Tcl_ScanElement(
-    const char *src,	/* String to convert to list element. */
-    int *flagPtr)	/* Where to store information to guide
-			 * Tcl_ConvertCountedElement. */
+    const char *src,		/* String to convert to list element. */
+    int *flagPtr)		/* Where to store information to guide
+				 * Tcl_ConvertCountedElement. */
 {
     return Tcl_ScanCountedElement(src, TCL_INDEX_NONE, flagPtr);
 }
@@ -4355,7 +4355,7 @@ TclGetObjExecutableAncestors(
 	    Tcl_SetResult(interp, "Could not retrieve path of executable.",
 		TCL_STATIC);
 	}
-	return TCL_ERROR;
+	return -1;
     }
 
     return TclFSGetAncestorPaths(interp, exePtr, numPaths, pathsPtr);

@@ -818,7 +818,7 @@ TclpAlertNotifier(
 
 void
 TclpSetTimer(
-    long long time)	/* Maximum block time, or -1. */
+    long long time)		/* Maximum block time, or -1. */
 {
     ThreadSpecificData *tsdPtr;
     CFRunLoopTimerRef runLoopTimer;
@@ -1175,7 +1175,7 @@ TclpNotifierData(void)
 
 int
 TclpWaitForEvent(
-    long long time)	/* Maximum block time, or -1. */
+    long long time)		/* Maximum block time, or -1. */
 {
     int result;
     bool polling, runLoopRunning;
@@ -1706,7 +1706,7 @@ bool
 TclAsyncNotifier(
     int sigNumber,		/* Signal number. */
     TCL_UNUSED(Tcl_ThreadId),	/* Target thread. */
-    TCL_UNUSED(void *),	/* Notifier data. */
+    TCL_UNUSED(void *),		/* Notifier data. */
     signed char *flagPtr,	/* Flag to mark. */
     signed char value)		/* Value of mark. */
 {

@@ -912,7 +912,7 @@ static void
 UpdateStringOfInstName(
     Tcl_Obj *objPtr)
 {
-    size_t inst;	/* NOTE: We know this is really an unsigned char */
+    size_t inst;		/* NOTE: We know this is really an unsigned char */
     char *dst;
 
     InstNameGetInternalRep(objPtr, inst);

@@ -7081,7 +7081,8 @@ TEBCresume(
      */
 
     {
-	int allocateDict, done;
+	bool allocateDict;
+	int done;
 	Tcl_Size i;
 	Tcl_Obj *dictPtr, *statePtr, *keyPtr, *listPtr, *varNamePtr, *keysPtr;
 	Tcl_Obj *emptyPtr, **keyPtrPtr;
@@ -7137,7 +7138,7 @@ TEBCresume(
 	dictPtr = OBJ_AT_DEPTH(2);
 	TRACE("\"%.30s\" \"%.30s\" \"%.30s\" => ",
 		O2S(dictPtr), O2S(OBJ_UNDER_TOS), O2S(OBJ_AT_TOS));
-	allocateDict = Tcl_IsShared(dictPtr);
+	allocateDict = Tcl_IsShared(dictPtr) != 0;
 	if (allocateDict) {
 	    dictPtr = Tcl_DuplicateObj(dictPtr);
 	}
@@ -7156,7 +7157,7 @@ TEBCresume(
     case INST_DICT_REMOVE:
 	dictPtr = OBJ_UNDER_TOS;
 	TRACE("\"%.30s\" \"%.30s\" => ", O2S(dictPtr), O2S(OBJ_AT_TOS));
-	allocateDict = Tcl_IsShared(dictPtr);
+	allocateDict = Tcl_IsShared(dictPtr) != 0;
 	if (allocateDict) {
 	    dictPtr = Tcl_DuplicateObj(dictPtr);
 	}
@@ -7254,9 +7255,9 @@ TEBCresume(
 	}
 	if (dictPtr == NULL) {
 	    TclNewObj(dictPtr);
-	    allocateDict = 1;
+	    allocateDict = true;
 	} else {
-	    allocateDict = Tcl_IsShared(dictPtr);
+	    allocateDict = Tcl_IsShared(dictPtr) != 0;
 	    if (allocateDict) {
 		dictPtr = Tcl_DuplicateObj(dictPtr);
 	    }
@@ -7354,9 +7355,9 @@ TEBCresume(
 	}
 	if (dictPtr == NULL) {
 	    TclNewObj(dictPtr);
-	    allocateDict = 1;
+	    allocateDict = true;
 	} else {
-	    allocateDict = Tcl_IsShared(dictPtr);
+	    allocateDict = Tcl_IsShared(dictPtr) != 0;
 	    if (allocateDict) {
 		dictPtr = Tcl_DuplicateObj(dictPtr);
 	    }

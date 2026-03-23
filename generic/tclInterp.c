@@ -158,7 +158,7 @@ typedef struct {
 
 /*
  * Limit callbacks handled by scripts are modelled as structures which are
- * stored in hashes indexed by a two-word key. 
+ * stored in hashes indexed by a two-word key.
  */
 
 typedef struct {
@@ -344,7 +344,7 @@ CheckForFileInDir(
     Tcl_Obj *path[2];
     path[0] = dirPathPtr;
     path[1] = fileNamePtr;
-    Tcl_Obj *fullPathPtr = TclJoinPath(2, path, 0);
+    Tcl_Obj *fullPathPtr = TclJoinPath(2, path, false);
     Tcl_IncrRefCount(fullPathPtr);
     if (Tcl_FSAccess(fullPathPtr, R_OK) == 0) {
 	return fullPathPtr;
@@ -505,7 +505,7 @@ LocatePreInitScript(
     pathParts[2] = Tcl_NewStringObj("tcl" TCL_VERSION, -1);
     Tcl_IncrRefCount(pathParts[2]);
 
-    TRY_PATH(TclJoinPath(3, pathParts, 0));
+    TRY_PATH(TclJoinPath(3, pathParts, false));
 
   done:		/* initScriptPtr != NULL => dirPtr holds dir of init.tcl */
     if (initScriptPathPtr == NULL) {
@@ -708,7 +708,7 @@ InitAutoPathObjCmd(
 	assert(dirs[1]);
 	dirs[2] = Tcl_NewStringObj("lib", 3);
 	Tcl_IncrRefCount(dirs[2]);
-	objPtr = TclJoinPath(2, &dirs[1], 0);
+	objPtr = TclJoinPath(2, &dirs[1], false);
 	if (objPtr != NULL) {
 	    /* Note: TclListObjAppendIfAbsent handles 0 and non-0 ref counts */
 	    (void) TclListObjAppendIfAbsent(NULL, autoPathPtr, objPtr);
@@ -3597,7 +3597,7 @@ Tcl_IsSafe(
     if (iPtr == NULL) {
 	return 0;
     }
-    return (iPtr->flags & SAFE_INTERP) ? 1 : 0;
+    return (iPtr->flags & SAFE_INTERP) != 0;
 }
 
 /*

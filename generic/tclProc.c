@@ -1651,7 +1651,7 @@ TclNRInterpProc(
 #ifndef TCL_NO_DEPRECATED
 static int
 NRInterpProc(
-    void *clientData,	/* Record describing procedure to be
+    void *clientData,		/* Record describing procedure to be
 				 * interpreted. */
     Tcl_Interp *interp,		/* Interpreter in which procedure was
 				 * invoked. */
@@ -1673,7 +1673,7 @@ int
 TclObjInterpProc(
     void *clientData,		/* Record describing procedure to be
 				 * interpreted. */
-    Tcl_Interp *interp,	/* Interpreter in which procedure was
+    Tcl_Interp *interp,		/* Interpreter in which procedure was
 				 * invoked. */
     int objc,			/* Count of number of arguments to this
 				 * procedure. */
@@ -1752,7 +1752,7 @@ TclNRInterpProcCore(
 
 #ifdef USE_DTRACE
     if (TCL_DTRACE_PROC_ARGS_ENABLED()) {
-	Tcl_Size l = iPtr->varFramePtr->isProcCallFrame & FRAME_IS_LAMBDA ? 1 : 0;
+	Tcl_Size l = (iPtr->varFramePtr->isProcCallFrame & FRAME_IS_LAMBDA) ? 1 : 0;
 	const char *a[10];
 	Tcl_Size i;
 
@@ -1774,7 +1774,7 @@ TclNRInterpProcCore(
 	TclDecrRefCount(info);
     }
     if (TCL_DTRACE_PROC_ENTRY_ENABLED()) {
-	Tcl_Size l = iPtr->varFramePtr->isProcCallFrame & FRAME_IS_LAMBDA ? 1 : 0;
+	Tcl_Size l = (iPtr->varFramePtr->isProcCallFrame & FRAME_IS_LAMBDA) ? 1 : 0;
 
 	TCL_DTRACE_PROC_ENTRY(l < iPtr->varFramePtr->objc ?
 		TclGetString(iPtr->varFramePtr->objv[l]) : NULL,
@@ -1782,7 +1782,7 @@ TclNRInterpProcCore(
 		(Tcl_Obj **)(iPtr->varFramePtr->objv + l + 1));
     }
     if (TCL_DTRACE_PROC_ENTRY_ENABLED()) {
-	Tcl_Size l = iPtr->varFramePtr->isProcCallFrame & FRAME_IS_LAMBDA ? 1 : 0;
+	Tcl_Size l = (iPtr->varFramePtr->isProcCallFrame & FRAME_IS_LAMBDA) ? 1 : 0;
 
 	TCL_DTRACE_PROC_ENTRY(l < iPtr->varFramePtr->objc ?
 		TclGetString(iPtr->varFramePtr->objv[l]) : NULL,
@@ -1816,7 +1816,7 @@ InterpProcNR2(
     ProcErrorProc *errorProc = (ProcErrorProc *)data[1];
 
     if (TCL_DTRACE_PROC_RETURN_ENABLED()) {
-	Tcl_Size l = iPtr->varFramePtr->isProcCallFrame & FRAME_IS_LAMBDA ? 1 : 0;
+	Tcl_Size l = (iPtr->varFramePtr->isProcCallFrame & FRAME_IS_LAMBDA) ? 1 : 0;
 
 	TCL_DTRACE_PROC_RETURN(l < iPtr->varFramePtr->objc ?
 		TclGetString(iPtr->varFramePtr->objv[l]) : NULL, result);
@@ -1839,7 +1839,7 @@ InterpProcNR2(
 
     done:
     if (TCL_DTRACE_PROC_RESULT_ENABLED()) {
-	Tcl_Size l = iPtr->varFramePtr->isProcCallFrame & FRAME_IS_LAMBDA ? 1 : 0;
+	Tcl_Size l = (iPtr->varFramePtr->isProcCallFrame & FRAME_IS_LAMBDA) ? 1 : 0;
 	Tcl_Obj *r = Tcl_GetObjResult(interp);
 
 	TCL_DTRACE_PROC_RESULT(l < iPtr->varFramePtr->objc ?

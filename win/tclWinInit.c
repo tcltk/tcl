@@ -103,6 +103,20 @@ TclGetWinInfoOnce(
 	}
     }
 
+    if (tclWinInfo.osVersion.dwMajorVersion < 10) {
+	/*
+	 * Do not use Tcl_Panic because we want a graceful exit. Not Panic.
+	 * Do not return FALSE for same reason.
+	 */
+	MessageBeep(MB_ICONEXCLAMATION);
+	MessageBoxA(NULL,
+		    "Tcl " TCL_PATCH_LEVEL
+		    " does not support Windows versions prior to Windows 10.",
+		    "Fatal Error",
+		    MB_ICONSTOP | MB_OK | MB_TASKMODAL | MB_SETFOREGROUND);
+	exit(1);
+    }
+
     tclWinInfo.longPathsSupported = 0;
     if (tclWinInfo.osVersion.dwMajorVersion == 10 &&
 	tclWinInfo.osVersion.dwBuildNumber >= 22000) {
@@ -462,7 +476,7 @@ InitializeDefaultLibraryDir(
 {
     *encodingPtr = NULL;
     (void) AllocateGrandparentSiblingPath("lib/tcl" TCL_VERSION,
-	       valuePtr, lengthPtr);
+		valuePtr, lengthPtr);
 }
 
 /*

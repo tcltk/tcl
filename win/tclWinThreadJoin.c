@@ -1,5 +1,5 @@
 /*
- * tclThreadJoin.c --
+ * tclWinThreadJoin.c --
  *
  *	This file implements a platform independent emulation layer for the
  *	handling of joinable threads. The Windows platform uses this code to
@@ -14,8 +14,6 @@
 
 #include "tclInt.h"
 
-#ifdef _WIN32
-
 /*
  * The information about each joinable thread is remembered in a structure as
  * defined below.
@@ -25,11 +23,11 @@ typedef struct JoinableThread {
     Tcl_ThreadId  id;		/* The id of the joinable thread. */
     int result;			/* A place for the result after the demise of
 				 * the thread. */
-    int done;			/* Boolean flag. Initialized to 0 and set to 1
+    bool done;			/* Initialized to false and set to true
 				 * after the exit of the thread. This allows a
 				 * thread requesting a join to detect when
 				 * waiting is not necessary. */
-    int waitedUpon;		/* Boolean flag. Initialized to 0 and set to 1
+    bool waitedUpon;		/* Initialized to false and set to true
 				 * by the thread waiting for this one via
 				 * Tcl_JoinThread.  Used to lock any other
 				 * thread trying to wait on this one. */
@@ -57,7 +55,7 @@ static JoinableThread *firstThreadPtr;
 /*
  *----------------------------------------------------------------------
  *
- * TclJoinThread --
+ * Tcl_JoinThread --
  *
  *	This procedure waits for the exit of the thread with the specified id
  *	and returns its result.
@@ -76,7 +74,7 @@ static JoinableThread *firstThreadPtr;
  */
 
 int
-TclJoinThread(
+Tcl_JoinThread(
     Tcl_ThreadId id,		/* The id of the thread to wait upon. */
     int *result)		/* Reference to a location for the result of
 				 * the thread we are waiting upon. */
@@ -142,7 +140,7 @@ TclJoinThread(
      * We are waiting now, let other threads recognize this.
      */
 
-    threadPtr->waitedUpon = 1;
+    threadPtr->waitedUpon = true;
 
     while (!threadPtr->done) {
 	Tcl_ConditionWait(&threadPtr->cond, &threadPtr->threadMutex, NULL);
@@ -152,10 +150,10 @@ TclJoinThread(
      * We have to release the structure before trying to access the list again
      * or we can run into deadlock with a thread at [1] (see above) because of
      * us holding the structure and the other holding the list.  There is no
-     * problem with dangling pointers here as 'waitedUpon == 1' is still valid
-     * and any other thread will error out and not come to this place. IOW,
-     * the fact that we are here also means that no other thread came here
-     * before us and is able to delete the structure.
+     * problem with dangling pointers here as 'waitedUpon == true' is still
+     * valid and any other thread will error out and not come to this place.
+     * IOW, the fact that we are here also means that no other thread came
+     * here before us and is able to delete the structure.
      */
 
     Tcl_MutexUnlock(&threadPtr->threadMutex);
@@ -212,7 +210,7 @@ TclJoinThread(
  * TclRememberJoinableThread --
  *
  *	This procedure remembers a thread as joinable. Only a call to
- *	TclJoinThread will remove the structure created (and initialized) here.
+ *	Tcl_JoinThread will remove the structure created (and initialized) here.
  *	IOW, not waiting upon a joinable thread will cause memory leaks.
  *
  * Results:
@@ -232,8 +230,8 @@ TclRememberJoinableThread(
 
     threadPtr = (JoinableThread *)Tcl_Alloc(sizeof(JoinableThread));
     threadPtr->id = id;
-    threadPtr->done = 0;
-    threadPtr->waitedUpon = 0;
+    threadPtr->done = false;
+    threadPtr->waitedUpon = false;
     threadPtr->threadMutex = (Tcl_Mutex) NULL;
     threadPtr->cond = (Tcl_Condition) NULL;
 
@@ -290,13 +288,13 @@ TclSignalExitThread(
      * Switch over the exclusive access from the list to the structure, then
      * store the result, set the flag and notify the waiting thread, provided
      * that it exists. The order of lock/unlock ensures that a thread entering
-     * 'TclJoinThread' will not interfere with us.
+     * 'Tcl_JoinThread' will not interfere with us.
      */
 
     Tcl_MutexLock(&threadPtr->threadMutex);
     Tcl_MutexUnlock(&joinMutex);
 
-    threadPtr->done = 1;
+    threadPtr->done = true;
     threadPtr->result = result;
 
     if (threadPtr->waitedUpon) {
@@ -305,9 +303,6 @@ TclSignalExitThread(
 
     Tcl_MutexUnlock(&threadPtr->threadMutex);
 }
-#else
-TCL_MAC_EMPTY_FILE(generic_tclThreadJoin_c)
-#endif /* _WIN32 */
 
 /*
  * Local Variables:

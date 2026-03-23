@@ -1200,7 +1200,7 @@ Tcl_InitSubsystems(void)
 	    TclInitIOSubsystem();	/* Inits a tsd key (noop). */
 	    TclInitEncodingSubsystem();	/* Process wide encoding init. */
 	    TclInitNamespaceSubsystem();/* Register ns obj type (mutexed). */
-	    TclZipfsInit();            /* Initialize zipfs subsystem */
+	    TclZipfsInit();		/* Initialize zipfs subsystem. */
 	    subsystemsInitialized = true;
 	}
 	TclpInitUnlock();
@@ -2097,7 +2097,7 @@ Tcl_CreateThread(
     Tcl_ThreadId *idPtr,	/* Return, the ID of the thread */
     Tcl_ThreadCreateProc *proc,	/* Main() function of the thread */
     void *clientData,		/* The one argument to Main() */
-    size_t stackSize,	/* Size of stack for the new thread */
+    size_t stackSize,		/* Size of stack for the new thread */
     int flags)			/* Flags controlling behaviour of the new
 				 * thread. */
 {

@@ -395,9 +395,9 @@ MODULE_SCOPE const TclTomMathStubs tclTomMathStubs;
 /* If Tcl is linked with an external libtommath 1.2.x, then mp_expt_n doesn't
  * exist (since that was introduced in libtommath 1.3.0. Provide it here.) */
 mp_err MP_WUR TclBN_mp_expt_n(const mp_int *a, int b, mp_int *c) {
-   if ((unsigned)b > MP_MIN(MP_DIGIT_MAX, INT_MAX)) {
-      return MP_VAL;
-   }
+    if ((unsigned)b > MP_MIN(MP_DIGIT_MAX, INT_MAX)) {
+	return MP_VAL;
+    }
     return mp_expt_u32(a, (uint32_t)b, c);;
 }
 #endif /* TCL_WITH_EXTERNAL_TOMMATH */
