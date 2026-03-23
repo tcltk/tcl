@@ -2247,7 +2247,7 @@ DoGlob(
 	    joinedPtr = Tcl_DStringToObj(&append);
 	} else if (flags) {
 	    joinedPtr = TclNewFSPathObj(pathPtr, Tcl_DStringValue(&append),
-		    Tcl_DStringLength(&append));
+		    Tcl_DStringLength(&append), 0);
 	} else {
 	    joinedPtr = Tcl_DuplicateObj(pathPtr);
 	    if (strchr(separators, Tcl_DStringValue(&append)[0]) == NULL) {
@@ -2280,7 +2280,7 @@ DoGlob(
     if (pathPtr == NULL) {
 	joinedPtr = Tcl_NewStringObj(pattern, p-pattern);
     } else if (flags) {
-	joinedPtr = TclNewFSPathObj(pathPtr, pattern, p-pattern);
+	joinedPtr = TclNewFSPathObj(pathPtr, pattern, p-pattern, 0);
     } else {
 	joinedPtr = Tcl_DuplicateObj(pathPtr);
 	if (strchr(separators, pattern[0]) == NULL) {

@@ -673,7 +673,7 @@ TclPathPart(
 
 		    Tcl_Obj *resultPtr =
 			    TclNewFSPathObj(fsPathPtr->cwdPtr, fileName,
-			    length - strlen(extension));
+			    length - strlen(extension), 0);
 
 		    Tcl_IncrRefCount(resultPtr);
 		    return resultPtr;
@@ -913,14 +913,14 @@ TclJoinPath(
 			    || (strchr(TclGetString(elt), '\\') == NULL)) {
 
 			if (PATHFLAGS(elt)) {
-			    return TclNewFSPathObj(elt, str, len);
+			    return TclNewFSPathObj(elt, str, len, 0);
 			}
 			if (TCL_PATH_ABSOLUTE != Tcl_FSGetPathType(elt)) {
-			    return TclNewFSPathObj(elt, str, len);
+			    return TclNewFSPathObj(elt, str, len, 0);
 			}
 			(void) Tcl_FSGetNormalizedPath(NULL, elt);
 			if (elt == PATHOBJ(elt)->normPathPtr) {
-			    return TclNewFSPathObj(elt, str, len);
+			    return TclNewFSPathObj(elt, str, len, 0);
 			}
 		    }
 		}
@@ -1227,9 +1227,6 @@ FindSplitPos(
  *	efficient creation and caching of normalized paths, and more efficient
  *	'file dirname', 'file tail', etc.
  *
- * Assumptions:
- *	'dirPtr' must be an absolute path. 'len' may not be zero.
- *
  * Results:
  *	The new Tcl object, with refCount zero.
  *
@@ -1241,9 +1238,10 @@ FindSplitPos(
 
 Tcl_Obj *
 TclNewFSPathObj(
-    Tcl_Obj *dirPtr,
-    const char *addStrRep,
-    Tcl_Size len)
+    Tcl_Obj *dirPtr,		/* Absolute path of parent directory */
+    const char *addStrRep,	/* Path under dirPtr */
+    Tcl_Size len,		/* Length of addStrRep[]. Must be > 0 */
+    int flags)			/* See TCL_PATHNAME_* */
 {
     FsPath *fsPathPtr;
     Tcl_Obj *pathPtr;
@@ -1294,12 +1292,25 @@ TclNewFSPathObj(
 #ifdef _WIN32
     /*
      * On Windows, paths are case insensitive but normalization means the
-     * path should match the exact case of the on-disk file entry. Since we
-     * do not know whether that is the case at this point, mark the path
-     * as needing normalization. Bug [108904173c]
+     * path should match the exact case of the on-disk file entry. If
+     * path is not known to match the on-disk entry, be conservative and mark
+     * as needing normalization. Bug [108904173c]. On Unix paths are always
+     * case sensitive, so we don't need to do this check.
      */
-    PATHFLAGS(pathPtr) |= TCLPATH_NEEDNORM;
-#else
+    if ((flags & TCL_PATHNAME_FROM_FILE_SYSTEM) == 0) {
+	PATHFLAGS(pathPtr) |= TCLPATH_NEEDNORM;
+	return pathPtr;
+    }
+#endif
+
+    /*
+     * If caller has indicated this is a single component, there is no need
+     * to check for "." or ".." components.
+     */
+    if (flags & TCL_PATHNAME_SINGLE_PART) {
+	return pathPtr;
+    }
+
     /*
      * Look for path components made up of only "."
      * This is overly conservative analysis to keep simple. It may mark some
@@ -1339,7 +1350,6 @@ TclNewFSPathObj(
     if (len == 0 && count) {
 	PATHFLAGS(pathPtr) |= TCLPATH_NEEDNORM;
     }
-#endif
 
     return pathPtr;
 }
