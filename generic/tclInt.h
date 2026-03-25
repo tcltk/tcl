@@ -2861,6 +2861,14 @@ typedef int (Tcl_FSLoadFileProc2) (Tcl_Interp *interp, Tcl_Obj *pathPtr,
 	int flags);
 
 /*
+ * Flags passed when creating the internal representation of a file path.
+ */
+#define TCL_PATHNAME_FROM_FILE_SYSTEM	1 /* Name is exactly as retrieved from
+					   * the file system. */
+#define TCL_PATHNAME_SINGLE_PART	2 /* Name is a single component with
+					   * no path separators. */
+
+/*
  * The following types are used for getting and storing platform-specific file
  * attributes in tclFCmd.c and the various platform-versions of that file.
  * This is done to have as much common code as possible in the file attributes
@@ -3579,7 +3587,7 @@ MODULE_SCOPE Tcl_Obj *	TclNewArithSeriesObj(Tcl_Interp *interp,
 			    bool useDoubles, Tcl_Obj *startObj, Tcl_Obj *endObj,
 			    Tcl_Obj *stepObj, Tcl_Obj *lenObj);
 MODULE_SCOPE Tcl_Obj *	TclNewFSPathObj(Tcl_Obj *dirPtr, const char *addStrRep,
-			    Tcl_Size len);
+			    Tcl_Size len, int flags);
 MODULE_SCOPE Tcl_Obj *	TclNewNamespaceObj(Tcl_Namespace *namespacePtr);
 MODULE_SCOPE void	TclpAlertNotifier(void *clientData);
 MODULE_SCOPE void *	TclpNotifierData(void);

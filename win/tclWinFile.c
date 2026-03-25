@@ -1182,8 +1182,10 @@ TclpMatchInDirectory(
 		}
 		if (NativeMatchType(isDrive, attr, native, types)) {
 		    Tcl_ListObjAppendElement(interp, resultPtr,
-			    TclNewFSPathObj(pathPtr, utfname,
-				    Tcl_DStringLength(&ds)));
+			TclNewFSPathObj(pathPtr, utfname,
+					Tcl_DStringLength(&ds),
+					(TCL_PATHNAME_FROM_FILE_SYSTEM
+					    | TCL_PATHNAME_SINGLE_PART)));
 		}
 	    }
 

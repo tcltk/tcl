@@ -415,7 +415,9 @@ TclpMatchInDirectory(
 		if (typeOk) {
 		    Tcl_ListObjAppendElement(interp, resultPtr,
 			    TclNewFSPathObj(pathPtr, utfname,
-			    Tcl_DStringLength(&utfDs)));
+			    Tcl_DStringLength(&utfDs),
+			    (TCL_PATHNAME_FROM_FILE_SYSTEM
+				| TCL_PATHNAME_SINGLE_PART)));
 		}
 	    }
 	    Tcl_DStringFree(&utfDs);

@@ -1174,7 +1174,7 @@ FsAddMountsToGlobResult(
 		}
 		len++;		/* account for '/' in the mElt [Bug 1602539] */
 
-		mElt = TclNewFSPathObj(pathPtr, mount + len, mlen - len);
+		mElt = TclNewFSPathObj(pathPtr, mount + len, mlen - len, 0);
 		Tcl_ListObjAppendElement(NULL, resultPtr, mElt);
 	    }
 	    /*
