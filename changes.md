@@ -20,6 +20,7 @@ to the userbase.
  - [Performance regression in expr in/ni operators](https://core.tcl-lang.org/tcl/info/8994c9)
  - [Uninitialized memory access in setting script limits](https://core.tcl-lang.org/tcl/info/f7495f)
  - [Crash when defining const if namespace does not exist](https://core.tcl-lang.org/tcl/info/4b22d8)
+ - [Glob errors with -directory option and patterns containing absolute paths on Windows](https://core.tcl-lang.org/tcl/info/b0682c)
 
 # Updated bundled packages, libraries, standards, data
  - autoconf 2.73
