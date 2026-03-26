@@ -1419,7 +1419,7 @@ if {$::tcl_platform(platform) eq "windows"} {
 test winFCmd-20.1 {
     Bug b0682c3c24 - relative paths in pattern
 } -constraints haveTwoDrives -body {
-    glob $pathInOther$pathInOther
+    glob $pathInOther/$pathInOther
 } -result {}
 
 test winFCmd-20.2 {
