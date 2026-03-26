@@ -21,6 +21,7 @@ to the userbase.
  - [Uninitialized memory access in setting script limits](https://core.tcl-lang.org/tcl/info/f7495f)
  - [Crash when defining const if namespace does not exist](https://core.tcl-lang.org/tcl/info/4b22d8)
  - [Glob errors with -directory option and patterns containing absolute paths on Windows](https://core.tcl-lang.org/tcl/info/b0682c)
+ - [File normalization inconsistency for glob result on Windows](https://core.tcl-lang.org/tcl/info/108904)
 
 # Updated bundled packages, libraries, standards, data
  - autoconf 2.73

@@ -1397,6 +1397,41 @@ test winFCmd-19.9 {Windows devices path names} -constraints win -body {
     file normalize //./com1
 } -result //./com1
 
+# To reliably exercise bug b0682c3c24, we need a second drive.
+# Can't do this in -setup because have to initialize constraint
+testConstraint haveTwoDrives 0
+if {$::tcl_platform(platform) eq "windows"} {
+    set drive [string toupper [lindex [file split [pwd]] 0]]
+    foreach otherDrive [file volumes] {
+        if {$otherDrive ne $drive
+            && [lindex [file system $otherDrive] 0] eq "native"} {
+            testConstraint haveTwoDrives 1
+            # Do not use file join here. We need a string literal
+            # for the bug, not one with an internal file system rep
+            set pathInOther [string cat \
+                                    ${otherDrive} \
+                                    [lindex [glob -directory $otherDrive -tails *] 0]]
+            break
+        }
+    }
+}
+
+test winFCmd-20.1 {
+    Bug b0682c3c24 - relative paths in pattern
+} -constraints haveTwoDrives -body {
+    glob $pathInOther$pathInOther
+} -result {}
+
+test winFCmd-20.2 {
+    Bug b0682c3c24 - absolute paths in pattern (-directory)
+} -constraints haveTwoDrives -body {
+    puts $pathInOther
+    glob -directory $pathInOther $pathInOther
+} -result {}
+
+
+unset -nocomplain drive otherDrive pathInOther
+
 
 # This block of code used to occur after the "return" call, so I'm
 # commenting it out and assuming that this code is still under construction.

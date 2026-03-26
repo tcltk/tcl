@@ -22,6 +22,14 @@ namespace eval ::tcl::test::fileSystem {
 	file delete -force [file join dir.dir linkinside.file]
     }
 
+    # notWSL constraint is true when running under native Windows or
+    # native Unix.
+    testConstraint notWsl \
+        [expr {
+            $::tcl_platform(platform) eq "windows"
+            || [llength [array names ::env *WSL*]] == 0
+        }]
+
 testConstraint loaddll 0
 catch {
     ::tcltest::loadTestedCommands
@@ -1010,6 +1018,73 @@ test filesystem-9.9 {path objects and glob and file tail and tilde} -setup {
 test filesystem-10.1 {Bug 3414754} {
     string match */ [file join [pwd] foo/]
 } 0
+
+test filesystem-11.1 {
+    Bug 10890417 - case of tail is correct after normalization
+} -constraints notWsl -body {
+    tcltest::makeFile "" mIxEdCaSe.TxT
+    lmap file1 [glob [tcltest::temporaryDirectory]/mixedcase.txt \
+                    [tcltest::temporaryDirectory]/MIXEDCASE.TXT \
+                    [tcltest::temporaryDirectory]/mIxEdCaSe.TxT \
+                   ] {
+                        file normalize $file1
+                    }
+} -result [expr {
+                 $::tcl_platform(platform) eq "windows" ?
+                 [lrepeat 3 [tcltest::temporaryDirectory]/mIxEdCaSe.TxT]
+                 :
+                 [list [tcltest::temporaryDirectory]/mIxEdCaSe.TxT]}]
+
+test filesystem-11.2 {
+    Bug 10890417 - case of tail is correct after normalization (-directory)
+} -constraints notWsl -body {
+    tcltest::makeFile "" mIxEdCaSe.TxT
+    lmap file1 [glob -directory [tcltest::temporaryDirectory] \
+                    mixedcase.txt MIXEDCASE.TXT mIxEdCaSe.TxT ] {
+                        file normalize $file1
+                    }
+} -result [expr {
+                 $::tcl_platform(platform) eq "windows" ?
+                 [lrepeat 3 [file join [tcltest::temporaryDirectory] mIxEdCaSe.TxT]]
+                 :
+                 [list [file join [tcltest::temporaryDirectory] mIxEdCaSe.TxT]]}]
+
+test filesystem-11.3 {
+    Bug 10890417 - case of dir is correct after normalization
+} -constraints notWsl -setup {
+    set dir [tcltest::makeDirectory MiXeDcAsE]
+    set parent [file dirname $dir]
+    tcltest::makeFile "" foo.txt $dir
+} -body {
+    lmap file1 [glob $parent/mixedcase/foo.txt \
+                    $parent/MIXEDCASE/foo.txt \
+                    $parent/MiXeDcAsE/foo.txt] {
+                        file tail [file dirname [file normalize $file1]]
+                    }
+} -result [expr {
+                 $::tcl_platform(platform) eq "windows" ?
+                 [lrepeat 3 MiXeDcAsE]
+                 :
+                 [list MiXeDcAsE]}]
+
+test filesystem-11.4 {
+    Bug 10890417 - case of dir is correct after normalization (-directory)
+} -constraints notWsl -setup {
+    set dir [tcltest::makeDirectory MiXeDcAsE]
+    set parent [file dirname $dir]
+    tcltest::makeFile "" foo.txt $dir
+} -body {
+    lmap file1 [concat [glob -dir $parent/mixedcase foo.txt] \
+                    [glob -dir $parent/MIXEDCASE foo.txt] \
+                    [glob -dir $parent/MiXeDcAsE foo.txt]] {
+                        file tail [file dirname [file normalize $file1]]
+                    }
+} -result [expr {
+                 $::tcl_platform(platform) eq "windows" ?
+                 [lrepeat 3 MiXeDcAsE]
+                 :
+                 [list MiXeDcAsE]}]
+
 
 cleanupTests
 unset -nocomplain drive drives
