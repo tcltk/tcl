@@ -1245,7 +1245,9 @@ TclNewFSPathObj(
 {
     FsPath *fsPathPtr;
     Tcl_Obj *pathPtr;
+#ifndef _WIN32
     int state = 0, count = 0;
+#endif
 
     /*
      * This comment is kept from the days of tilde expansion because
