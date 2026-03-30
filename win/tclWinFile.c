@@ -171,6 +171,7 @@ static int		WinLink(const WCHAR *LinkSource,
 			    const WCHAR *LinkTarget, int linkAction);
 static int		WinSymLinkDirectory(const WCHAR *LinkDirectory,
 			    const WCHAR *LinkTarget);
+static void		TclWinUpdateDriveCwd(TclWinPath *winPathPtr);
 MODULE_SCOPE void	tclWinDebugPanic(const char *format, ...);
 
 /*
@@ -869,6 +870,13 @@ TclpFindExecutable(
     char *utf8Ptr;
     Tcl_DString ds;
 
+    /* 
+     * Unlike in CMD.EXE, under MSYS and other shells including Explorer,
+     * the drive for the current directory is not maintained in the
+     * environment. So remember it ourselves. Related to Bug [bca391ab51].
+     */
+    TclWinUpdateDriveCwd(NULL);
+
     /* Do not use Tcl encoding functions as Tcl may not be initialized yet */
 
     wNamePtr = TclWinGetModuleFileName(NULL, &winPath);
@@ -1182,8 +1190,10 @@ TclpMatchInDirectory(
 		}
 		if (NativeMatchType(isDrive, attr, native, types)) {
 		    Tcl_ListObjAppendElement(interp, resultPtr,
-			    TclNewFSPathObj(pathPtr, utfname,
-				    Tcl_DStringLength(&ds)));
+			TclNewFSPathObj(pathPtr, utfname,
+					Tcl_DStringLength(&ds),
+					(TCL_PATHNAME_FROM_FILE_SYSTEM
+					    | TCL_PATHNAME_SINGLE_PART)));
 		}
 	    }
 
@@ -1937,6 +1947,62 @@ NativeIsExec(
 }
 
 /*
+ * TclWinUpdateDriveCwd --
+ *
+ *      This function emulates CMD shell behavior of tracking the current
+ *	directory for each drive by storing it an environment variable named
+ *	"=<drive>:" (e.g., "=C:"). This allows Tcl's cd command to correctly
+ *	switch back to the correct current directory using the volume-relative
+ *	path syntax (e.g., "C:") or to normalize volume-relative paths.
+ *	See https://core.tcl-lang.org/tcl/info/bca391ab51cd48e7.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Process environment is updated.
+ */
+static void
+TclWinUpdateDriveCwd(
+    TclWinPath *winPathPtr)	/* Caller should ensure native format absolute
+				 * path. The CWD of the corresponding drive is
+				 * tracked. If NULL, defaults to current working
+				 * directory. */
+{
+    TclWinPath cwdPath;
+    const WCHAR *nativePath;
+    if (winPathPtr == NULL) {
+	nativePath = TclWinGetCurrentDirectory(&cwdPath);
+    } else {
+	nativePath = TclWinPathGet(winPathPtr);
+    }
+
+    if (nativePath) {
+	WCHAR envVar[4];
+	TclWinPath envValue;
+	WCHAR *envValuePtr;
+
+	/* Check it is a drive path, not UNC */
+	if (nativePath[0] && nativePath[1] == ':') {
+	    envVar[0] = L'=';
+	    envVar[1] = nativePath[0];
+	    envVar[2] = L':';
+	    envVar[3] = L'\0';
+	    /* To avoid unnecessary reallocations, only update on change */
+	    envValuePtr = TclWinGetEnvironmentVariable(envVar, &envValue);
+	    if (envValuePtr != NULL && wcscmp(envValuePtr, nativePath) != 0) {
+		SetEnvironmentVariableW(envVar, nativePath);
+		TclWinPathFree(&envValue);
+	    }
+	}
+    }
+
+    if (winPathPtr == NULL) {
+	TclWinPathFree(&cwdPath);
+    }
+}
+
+/*
  *----------------------------------------------------------------------
  *
  * TclpObjChdir --
@@ -1970,6 +2036,10 @@ TclpObjChdir(
 	Tcl_WinConvertError(GetLastError());
 	return -1;
     }
+
+    /* Track the working directory for the new drive */
+    TclWinUpdateDriveCwd(NULL);
+
     return 0;
 }
 
@@ -2923,7 +2993,11 @@ TclpObjNormalizePath(
  *	A valid normalized path.
  *
  * Side effects:
- *	None.
+ *	The working directory used to resolve is returned in *useThisCwdPtr.
+ *	This may be returned as NULL if the drive did not exist in which
+ *	case the returned path is still valid, but is relative to the root of
+ *	the drive. When returned as non-NULL, its reference count would have
+ *	been incremented, and the caller is responsible for decrementing it.
  *
  *---------------------------------------------------------------------------
  */
@@ -2934,78 +3008,88 @@ TclWinVolumeRelativeNormalize(
     const char *path,
     Tcl_Obj **useThisCwdPtr)
 {
-    Tcl_Obj *absolutePath, *useThisCwd;
+    Tcl_Obj *absolutePath, *cwdPtr;
 
-    useThisCwd = Tcl_FSGetCwd(interp);
-    if (useThisCwd == NULL) {
+    cwdPtr = Tcl_FSGetCwd(interp);
+    /* Note cwdPtr already has ref count incremented */
+    if (cwdPtr == NULL) {
 	return NULL;
     }
 
+    Tcl_Size cwdLen;
+    const char *cwdPath = TclGetStringFromObj(cwdPtr, &cwdLen);
     if (path[0] == '/') {
-	/*
-	 * Path of form /foo/bar which is a path in the root directory of the
-	 * current volume.
-	 */
-
-	const char *drive = TclGetString(useThisCwd);
-
-	absolutePath = Tcl_NewStringObj(drive, 2);
-	Tcl_AppendToObj(absolutePath, path, TCL_INDEX_NONE);
-	Tcl_IncrRefCount(absolutePath);
-
-	/*
-	 * We have a refCount on the cwd.
-	 */
+	/* Path of form /foo/bar -> root directory of the current drive. */
+	absolutePath = Tcl_NewStringObj(cwdPath, 2);
     } else {
-	/*
-	 * Path of form C:foo/bar, but this only makes sense if the cwd is
-	 * also on drive C.
-	 */
+	/* Path of form X:foo/bar. */
 
-	Tcl_Size cwdLen;
-	const char *drive = TclGetStringFromObj(useThisCwd, &cwdLen);
-	char drive_cur = path[0];
+	char driveRoot[4] = { path[0], ':', '\\', '\0' };
 
-	if (drive_cur >= 'a') {
-	    drive_cur -= ('a' - 'A');
+	if (driveRoot[0] >= 'a') {
+	    driveRoot[0] -= ('a' - 'A');
 	}
-	if (drive[0] == drive_cur) {
-	    absolutePath = Tcl_DuplicateObj(useThisCwd);
+	if (cwdPath[0] != driveRoot[0]) {
+	    /* On a different drive, attempt to get the cwd on that drive */
+	    wchar_t *dcwdPtr;
+
+	    Tcl_DecrRefCount(cwdPtr);
+	    cwdPtr = NULL;
+	    cwdPath = NULL;
 
 	    /*
-	     * We have a refCount on the cwd, which we will release later.
+	     * The current directory on a drive can be obtained via the
+	     * GetFullPathNameW() API, by passing in "X:" as the path or via
+	     * a hidden environment variable of the form "=X:". The latter
+	     * is less reliable in that it will only be present if the drive
+	     * has ever been switched to by the process or one of its
+	     * ancestors. We use it as a fallback. IMPORTANT: Historically,
+	     * _getdcwd() and _wgetdcwd() were also options. However they
+	     * are problematic because with UCRT (unlike with MSVCRT) they
+	     * will raise an exception terminating the program instead of
+	     * returning an error if the drive doesn't exist. To avoid that,
+	     * we would have to set up (a) an invalid parameter handler, or
+	     * (b) a SEH handler. (a) impacts the entire process which is
+	     * not desirable. (b) has incompatibilities with C++ exceptions.
+	     * Both being problematic, those calls are to be avoided.
 	     */
 
-	    if (drive[cwdLen-1] != '/' && (path[2] != '\0')) {
-		/*
-		 * Only add a trailing '/' if needed, which is if there isn't
-		 * one already, and if we are going to be adding some more
-		 * characters.
-		 */
+	    WCHAR driveEnvVar[4] = {L'=', (WCHAR)driveRoot[0], L':', L'\0'};
+	    TclWinPath winPath;
+	    dcwdPtr = TclWinGetFullPathName(&driveEnvVar[1], &winPath, NULL);
+	    if (dcwdPtr == NULL) {
+		dcwdPtr = TclWinGetEnvironmentVariable(driveEnvVar, &winPath);
+	    }
+	    if (dcwdPtr != NULL) {
+		cwdPtr = TclpNativeToNormalized(dcwdPtr);
+		TclWinPathFree(&winPath);
+	    }
+	}
+	if (cwdPtr != NULL) {
+	    /* Were able to locate cwd on the appropriate drive */
+	    Tcl_IncrRefCount(cwdPtr);
+	    cwdPath = TclGetStringFromObj(cwdPtr, &cwdLen);
+	    absolutePath = Tcl_DuplicateObj(cwdPtr);
+
+	    /*
+	     * Only add a trailing '/' if absent, which is if there isn't
+	     * one already, and if we are going to be adding some more
+	     * characters.
+	     */
+	    if (cwdPath[cwdLen-1] != '/' && (path[2] != '\0')) {
 
 		Tcl_AppendToObj(absolutePath, "/", 1);
 	    }
 	} else {
-	    Tcl_DecrRefCount(useThisCwd);
-	    useThisCwd = NULL;
-
-	    /*
-	     * The path is not in the current drive, but is volume-relative.
-	     * The way Tcl 8.3 handles this is that it treats such a path as
-	     * relative to the root of the drive. We therefore behave the same
-	     * here. This behaviour is, however, different to that of the
-	     * windows command-line. If we want to fix this at some point in
-	     * the future (at the expense of a behaviour change to Tcl), we
-	     * could use the '_dgetdcwd' Win32 API to get the drive's cwd.
-	     */
-
-	    absolutePath = Tcl_NewStringObj(path, 2);
-	    Tcl_AppendToObj(absolutePath, "/", 1);
+		/* Non-existent drive? Assume root */
+		absolutePath = Tcl_NewStringObj(path, 2);
+		Tcl_AppendToObj(absolutePath, "/", 1);
 	}
-	Tcl_IncrRefCount(absolutePath);
-	Tcl_AppendToObj(absolutePath, path+2, TCL_INDEX_NONE);
+	path += 2; /* Skip X: before appending below */
     }
-    *useThisCwdPtr = useThisCwd;
+    Tcl_AppendToObj(absolutePath, path, TCL_AUTO_LENGTH);
+    Tcl_IncrRefCount(absolutePath);
+    *useThisCwdPtr = cwdPtr;
     return absolutePath;
 }
 
