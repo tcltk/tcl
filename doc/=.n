@@ -39,7 +39,7 @@ A literal \fBnumeric value\fR
 .
 Any of the forms accepted by \fBstring is integer\fR or \fBstring is double\fR
 \fIunless\fR it starts with a letter.
-So exceptional values like "inf" or "nan" are not accepted.
+Note that non-numeric literal values like "yes", "false", "inf" or "nan" are not accepted.
 .TP
 A \fBvariable\fR
 .
@@ -104,7 +104,11 @@ set x [= 2*$foo(bar)-1]
 otherwise it will be treated as a variable name or other subexpression
 by \fB=\fR, which could change the whole meaning of the expression.
 .PP
-Similarly, the \fB=\fR command will not do \fB[]\fR command substitutions
+Similarly, variable names which start with numbers or are wholly numeric
+can only be used by being prefixed with \fB$\fR as they will otherwise
+be treated as numbers.
+.PP
+The \fB=\fR command will not do \fB[]\fR command substitutions
 internally as \fBexpr\fR does, but these can be done before \fB=\fR runs, e.g.
 .CS
 set x [= 2*[foobar]-1]
