@@ -542,13 +542,79 @@ test equals-16.1 {GetToken: checks whether integer token starting with "0x" (e.g
     set i
 } {}
 
-# Check "=" and computed command names.
+# Check "=" and computed command names, which forces interpretation not compilation.
 
 test equals-17.1 {= and computed command names} {
     set i 0
     set z =
     $z 1+2
 } 3
+
+test equals-17.2 {interpreted addition of variable and literal} {
+    set i 1
+    set z =
+    $z i+2
+} 3
+
+test equals-17.3 {interpreted multiplication of variable and literal} {
+    set i 4
+    set z =
+    $z i*2
+} 8
+
+test equals-17.4 {interpreted integer calculation without spaces} {
+    set i 4
+    set z =
+    $z i*3+2**3**2/i
+} 140
+
+test equals-17.5 {interpreted integer calculation with spaces} {
+    set i 4
+    set z =
+    $z i * 3+2 ** 3 ** 2/i
+} 140
+
+test equals-17.6 {interpreted float calculation with function} {
+    set j 3.3
+    set z =
+    $z 5/j + sin(j)
+} 1.357405821008267
+
+test equals-17.7 {interpreted with presubstituted variable, spaces} {
+    set i 3
+    set z =
+    $z i - $i
+} 0
+
+test equals-17.8 {interpreted with presubstituted variable, no spaces} {
+    set i 3
+    set z =
+    $z i-$i
+} 0
+
+test equals-17.9 {interpreted with non-numeric variable} -body {
+    set i x
+    set z =
+    $z i+2
+} -returnCodes error -match glob -result {cannot use non-numeric*}
+
+test equals-17.10 {interpreted with presubstituted command} {
+    set i 5
+    set z =
+    $z i-[string length abcd]
+} 1
+
+test equals-17.11 {aliased = command} {
+    interp alias {} eq {} =
+    set i 5
+    eq i * 3
+} 15
+
+test equals-17.12 {aliased = command, presubstitution forces interpretation} {
+    interp alias {} eq {} =
+    set i {4+2}
+    eq $i * 3
+} 10
 
 # Check correct conversion of operands to numbers: If the string looks like
 # an integer, convert to integer. Otherwise, if the string looks like a
