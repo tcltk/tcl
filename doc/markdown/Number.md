@@ -51,7 +51,7 @@ Both routines examine the Tcl value and determine whether Tcl recognizes it as a
 
 If Tcl does recognize the examined value as a number, both routines return **TCL\_OK**, and use the pointer arguments *clientDataPtr* and *typePtr* (which may not be NULL) to report information the caller can use to retrieve the numeric representation.  Both routines write to \**clientDataPtr* a pointer to the internal storage location where Tcl holds the converted numeric value.
 
-When the converted numeric value is stored as a **double**, a call to math library routine **isnan** determines whether that value is not a number (NaN).  If so, both **Tcl\_GetNumber** and **Tcl\_GetNumberFromObj** write the value **TCL\_NUMBER\_NAN** to \**typePtr*. If not, both routines write the value **TCL\_NUMBER\_DOUBLE** to \**typePtr*.  These routines report different type values in these cases because **Tcl\_GetDoubleFromObj** raises an error on NaN values.  For both reported type values, the storage pointer may be cast to type **const double \*** and the **double** numeric value may be read through it.
+When the converted numeric value is stored as a **double**, a call to math library routine **isnan** determines whether that value is not a number (NaN).  If so, both **Tcl\_GetNumber** and **Tcl\_GetNumberFromObj** write the value **TCL\_NUMBER\_NAN** to \**typePtr*. If not, both routines write the value **TCL\_NUMBER\_DOUBLE** to \**typePtr*.  These routines report different type values in these cases because **Tcl\_GetDoubleFromObj** raises an error on NaN values.  For both reported type values, the storage pointer may be cast to type [const double \][const]* and the **double** numeric value may be read through it.
 
 When the converted numeric value is stored as a **Tcl\_WideInt**, both **Tcl\_GetNumber** and **Tcl\_GetNumberFromObj** write the value **TCL\_NUMBER\_INT** to \**typePtr*. The storage pointer may be cast to type **const Tcl\_WideInt \*** and the **Tcl\_WideInt** numeric value may be read through it.
 
@@ -60,4 +60,7 @@ When the converted numeric value is stored as an **mp\_int**, both **Tcl\_GetNum
 Future releases of Tcl might expand or revise the recognition of values as numbers.  If additional storage representations are adopted, these routines will add new values to be written to \**typePtr* to identify them.  Callers should consider how they should react to unknown values written to \**typePtr*.
 
 When callers of these routines read numeric values through the reported storage pointer, they are accessing memory that belongs to the Tcl library.  The Tcl library has the power to overwrite or free this memory.  The storage pointer reported by a call to **Tcl\_GetNumber** or **Tcl\_GetNumberFromObj** should not be used after the same thread has possibly returned control to the Tcl library.  If longer term access to the numeric value is needed, it should be copied into memory controlled by the caller.  Callers must not attempt to write through or free the storage pointer.
+
+
+[const]: const.md
 

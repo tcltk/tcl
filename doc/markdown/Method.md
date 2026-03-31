@@ -86,7 +86,7 @@ When a method is called, a method-call context reference is passed in as one of 
 
 The method that is being called can be retrieved from the context by using **Tcl\_ObjectContextMethod**, and the object that caused the method to be invoked can be retrieved with **Tcl\_ObjectContextObject**. The number of arguments that are to be skipped (e.g. the object name and method name in a normal method call) is read with **Tcl\_ObjectContextSkippedArgs**, and the context can also report whether it is working as a filter for another method through **Tcl\_ObjectContextIsFiltering**.
 
-During the execution of a method, the method implementation may choose to invoke the stages of the method call chain that come after the current method implementation. This (the core of the **next** command) is done using **Tcl\_ObjectContextInvokeNext**. Note that this function does not manipulate the call-frame stack, unlike the **next** command; if the method implementation has pushed one or more extra frames on the stack as part of its implementation, it is also responsible for temporarily popping those frames from the stack while the **Tcl\_ObjectContextInvokeNext** function is executing. Note also that the method-call context is *never* deleted during the execution of this function.
+During the execution of a method, the method implementation may choose to invoke the stages of the method call chain that come after the current method implementation. This (the core of the [next] command) is done using **Tcl\_ObjectContextInvokeNext**. Note that this function does not manipulate the call-frame stack, unlike the [next] command; if the method implementation has pushed one or more extra frames on the stack as part of its implementation, it is also responsible for temporarily popping those frames from the stack while the **Tcl\_ObjectContextInvokeNext** function is executing. Note also that the method-call context is *never* deleted during the execution of this function.
 
 # Method types
 
@@ -170,11 +170,12 @@ The *nameObj* argument to **Tcl\_NewMethod** and **Tcl\_NewInstanceMethod** (whe
 
 The result of **Tcl\_MethodName** is a value with a reference count of at least one. It should not be modified without first duplicating it (with **Tcl\_DuplicateObj**).
 
-The values in the first *objc* values of the *objv* argument to **Tcl\_ObjectContextInvokeNext** are assumed to have a reference count of at least 1; the containing array is assumed to endure until the next method implementation (see **next**) returns. Be aware that methods may [yield]; if any post-call actions are desired (e.g., decrementing the reference count of values passed in here), they must be scheduled with **Tcl\_NRAddCallback**.
+The values in the first *objc* values of the *objv* argument to **Tcl\_ObjectContextInvokeNext** are assumed to have a reference count of at least 1; the containing array is assumed to endure until the next method implementation (see [next]) returns. Be aware that methods may [yield]; if any post-call actions are desired (e.g., decrementing the reference count of values passed in here), they must be scheduled with **Tcl\_NRAddCallback**.
 
 The *callProc* of the **Tcl\_MethodType** structure takes values of at least reference count 1 in its *objv* argument. It may add its own references, but must not decrement the reference count below that level; the caller of the method will decrement the reference count once the method returns properly (and the reference will be held if the method [yield]s).
 
 
 [info]: info.md
+[next]: next.md
 [yield]: yield.md
 

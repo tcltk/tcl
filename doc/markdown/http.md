@@ -103,7 +103,7 @@ When the HTTP server has replied to the request, call the command **::http::resp
 
     The default value of **-proxyfilter** is **http::ProxyRequired**, and this command returns the values of the **-proxyhost** and **-proxyport** settings if they are non-empty.  The options **-proxyhost**, **-proxyport**, and **-proxynot** are used only by **http::ProxyRequired**, and nowhere else in **::http::geturl**. A user-supplied **-proxyfilter** command may use these options, or alternatively it may obtain values from elsewhere in the calling script. In the latter case, any values provided for **-proxyhost**, **-proxyport**, and **-proxynot** are unused.
 
-    The **::http::geturl** command runs the **-proxyfilter** callback inside a [catch] command.  Therefore an error in the callback command does not call the **bgerror** handler.  See the [Errors] section for details.
+    The **::http::geturl** command runs the **-proxyfilter** callback inside a [catch] command.  Therefore an error in the callback command does not call the [bgerror] handler.  See the [Errors] section for details.
 
 **-proxyhost** *hostname*
 : The host name or IP address of the proxy server, if any.  If this value is the empty string, the URL host is contacted directly.  See **-proxyfilter** for how the value is used.
@@ -166,7 +166,7 @@ When the HTTP server has replied to the request, call the command **::http::resp
     }
     ```
 
-    The **::http::geturl** command runs the **-command** callback inside a [catch] command.  Therefore an error in the callback command does not call the **bgerror** handler.  See the [Errors] section for details.
+    The **::http::geturl** command runs the **-command** callback inside a [catch] command.  Therefore an error in the callback command does not call the [bgerror] handler.  See the [Errors] section for details.
 
 **-guesstype** *boolean*
 : Attempt to guess the **Content-Type** and character set when a misconfigured server provides no information.  The default value is *false* (do nothing).  If boolean *true* then, if the server does not send a **Content-Type** header, or if it sends the value "application/octet-stream", **http::geturl** will attempt to guess appropriate values.  This is not intended to become a general-purpose tool, and currently it is limited to detecting XML documents that begin with an XML declaration.  In this case the **Content-Type** is changed to "application/xml", the binary flag state(binary) is changed to 0, and the character set is changed to the one specified by the "encoding" tag of the XML line, or to utf-8 if no encoding is specified.  Not used if a **-channel** is specified.
@@ -191,7 +191,7 @@ When the HTTP server has replied to the request, call the command **::http::resp
 
     If options **-handler** and **-channel** are used together, the handler is responsible for copying the data from the HTTP socket to the specified channel.  The name of the channel is available to the handler as element **-channel** of the token array.
 
-    The **::http::geturl** command runs the **-handler** callback inside a [catch] command.  Therefore an error in the callback command does not call the **bgerror** handler.  See the [Errors] section for details.
+    The **::http::geturl** command runs the **-handler** callback inside a [catch] command.  Therefore an error in the callback command does not call the [bgerror] handler.  See the [Errors] section for details.
 
 **-headers** *keyvaluelist*
 : This option is used to add headers not already specified by **::http::config** to the HTTP request.  The *keyvaluelist* argument must be a list with an even number of elements that alternate between keys and values.  The keys become header field names.  Newlines are stripped from the values so the header cannot be corrupted.  For example, if *keyvaluelist* is **Pragma no-cache** then the following header is included in the HTTP request:
@@ -382,7 +382,7 @@ For asynchronous **::http::geturl** calls, all of the above error situations app
 
 Alternatively, if the main program flow reaches a point where it needs to know the result of the asynchronous HTTP request, it can call **::http::wait** and then check status and error, just as the synchronous call does.
 
-The **::http::geturl** command runs the **-command**, **-handler**, and **-proxyfilter** callbacks inside a [catch] command.  Therefore an error in the callback command does not call the **bgerror** handler. When debugging one of these callbacks, it may be convenient to report errors by using a [catch] command within the callback command itself, e.g. to write an error message to stdout.
+The **::http::geturl** command runs the **-command**, **-handler**, and **-proxyfilter** callbacks inside a [catch] command.  Therefore an error in the callback command does not call the [bgerror] handler. When debugging one of these callbacks, it may be convenient to report errors by using a [catch] command within the callback command itself, e.g. to write an error message to stdout.
 
 In any case, you must still call **::http::cleanup** to delete the state array when you are done.
 
@@ -792,6 +792,7 @@ proc httpCopyProgress {args} {
 ```
 
 
+[bgerror]: bgerror.md
 [binary]: binary.md
 [catch]: catch.md
 [clock]: clock.md

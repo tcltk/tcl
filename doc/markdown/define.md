@@ -48,13 +48,13 @@ oo::object
 
 # Description
 
-The **oo::define** command is used to control the configuration of classes, and the **oo::objdefine** command is used to control the configuration of objects (including classes as instance objects), with the configuration being applied to the entity named in the *class* or the *object* argument. Configuring a class also updates the configuration of all subclasses of the class and all objects that are instances of that class or which mix it in (as modified by any per-instance configuration). The way in which the configuration is done is controlled by either the *defScript* argument or by the *subcommand* and following *arg* arguments; when the second is present, it is exactly as if all the arguments from *subcommand* onwards are made into a list and that list is used as the *defScript* argument.
+The [oo::define][define] command is used to control the configuration of classes, and the [oo::objdefine][objdefine] command is used to control the configuration of objects (including classes as instance objects), with the configuration being applied to the entity named in the *class* or the *object* argument. Configuring a class also updates the configuration of all subclasses of the class and all objects that are instances of that class or which mix it in (as modified by any per-instance configuration). The way in which the configuration is done is controlled by either the *defScript* argument or by the *subcommand* and following *arg* arguments; when the second is present, it is exactly as if all the arguments from *subcommand* onwards are made into a list and that list is used as the *defScript* argument.
 
-Note that the constructor for **oo::class** will call **oo::define** on the script argument that it is provided. This is a convenient way to create and define a class in one step.
+Note that the constructor for [oo::class][class] will call [oo::define][define] on the script argument that it is provided. This is a convenient way to create and define a class in one step.
 
 # Configuring classes
 
-The following commands are supported in the *defScript* for **oo::define**, each of which may also be used in the *subcommand* form:
+The following commands are supported in the *defScript* for [oo::define][define], each of which may also be used in the *subcommand* form:
 
 [classmethod]{.cmd} [name]{.arg} [argList bodyScrip]{.optarg}
 : This creates a class method, or (if *argList* and *bodyScript* are omitted) promotes an existing method on the class object to be a class method. The *name*, *argList* and *bodyScript* arguments are as in the **method** definition, below.
@@ -64,12 +64,12 @@ The following commands are supported in the *defScript* for **oo::define**, each
     In a private definition context, the methods as invoked on classes are *not* private, but the methods as invoked on instances of classes are private.
 
 [constructor]{.cmd} [argList]{.arg} [bodyScript]{.arg}
-: This creates or updates the constructor for a class. The formal arguments to the constructor (defined using the same format as for the Tcl [proc] command) will be *argList*, and the body of the constructor will be *bodyScript*. When the body of the constructor is evaluated, the current namespace of the constructor will be a namespace that is unique to the object being constructed. Within the constructor, the **next** command should be used to call the superclasses' constructors. If *bodyScript* is the empty string, the constructor will be deleted.
+: This creates or updates the constructor for a class. The formal arguments to the constructor (defined using the same format as for the Tcl [proc] command) will be *argList*, and the body of the constructor will be *bodyScript*. When the body of the constructor is evaluated, the current namespace of the constructor will be a namespace that is unique to the object being constructed. Within the constructor, the [next] command should be used to call the superclasses' constructors. If *bodyScript* is the empty string, the constructor will be deleted.
 
     Classes do not need to have a constructor defined. If none is specified, the superclass's constructor will be used instead.
 
 [destructor]{.cmd} [bodyScript]{.arg}
-: This creates or updates the destructor for a class. Destructors take no arguments, and the body of the destructor will be *bodyScript*. The destructor is called when objects of the class are deleted, and when called will have the object's unique namespace as the current namespace. Destructors should use the **next** command to call the superclasses' destructors. Note that destructors are not called in all situations (e.g. if the interpreter is destroyed). If *bodyScript* is the empty string, the destructor will be deleted. Note that errors during the evaluation of a destructor *are not returned* to the code that causes the destruction of an object. Instead, they are passed to the currently-defined **bgerror** handler.
+: This creates or updates the destructor for a class. Destructors take no arguments, and the body of the destructor will be *bodyScript*. The destructor is called when objects of the class are deleted, and when called will have the object's unique namespace as the current namespace. Destructors should use the [next] command to call the superclasses' destructors. Note that destructors are not called in all situations (e.g. if the interpreter is destroyed). If *bodyScript* is the empty string, the destructor will be deleted. Note that errors during the evaluation of a destructor *are not returned* to the code that causes the destruction of an object. Instead, they are passed to the currently-defined [bgerror] handler.
 
 [export]{.cmd} [name]{.arg} [name]{.optdot}
 : This arranges for each of the named methods, *name*, to be exported (i.e. usable outside an instance through the instance object's command) by the class being defined. Note that the methods themselves may be actually defined by a superclass; subclass exports override superclass visibility, and may in turn be overridden by instances.
@@ -96,7 +96,7 @@ The following commands are supported in the *defScript* for **oo::define**, each
 [private]{.cmd} [script]{.arg}
 : This evaluates the *script* (or the list of command and arguments given by *cmd* and *arg*s) in a context where the definitions made on the current class will be private definitions.
 
-    The following class definition commands are affected by **private**: **forward**, **method**, **self**, and [variable]. Nesting **private** inside **private** has no cumulative effect; the innermost definition context is just a private definition context. All other definition commands have no difference in behavior when used in a private definition context.
+    The following class definition commands are affected by **private**: **forward**, **method**, **self**, and **variable**. Nesting **private** inside **private** has no cumulative effect; the innermost definition context is just a private definition context. All other definition commands have no difference in behavior when used in a private definition context.
 
 [self]{.cmd} [subcommand]{.arg} [arg]{.arg} [...]{.arg}
 : see below ...
@@ -105,12 +105,12 @@ The following commands are supported in the *defScript* for **oo::define**, each
 : see below ...
 
 [self]{.cmd}
-: This command is equivalent to calling **oo::objdefine** on the class being defined (see [Configuring objects] below for a description of the supported values of *subcommand*). It follows the same general pattern of argument handling as the **oo::define** and **oo::objdefine** commands, and "**oo::define** *cls* **self** *subcommand ...*" operates identically to "**oo::objdefine** *cls subcommand ...*".
+: This command is equivalent to calling [oo::objdefine][objdefine] on the class being defined (see [Configuring objects] below for a description of the supported values of *subcommand*). It follows the same general pattern of argument handling as the [oo::define][define] and [oo::objdefine][objdefine] commands, and "[oo::define][define] *class* **self** *subcommand ...*" operates identically to "[oo::objdefine][objdefine] *class subcommand ...*".
 
     If no arguments at all are used, this gives the name of the class currently being configured. If in a private definition context (see the **private** definition command, below), the definitions on the class object will also be made in a private definition context.
 
 [superclass]{.cmd} [-slotOperation]{.optarg} [className]{.optdot}
-: This slot (see [Slotted definitions] below) allows the alteration of the superclasses of the class being defined. Each *className* argument names one class that is to be a superclass of the defined class. Note that objects must not be changed from being classes to being non-classes or vice-versa, that an empty parent class is equivalent to **oo::object**, and that the parent classes of **oo::object** and **oo::class** may not be modified. By default, this slot works by replacement.
+: This slot (see [Slotted definitions] below) allows the alteration of the superclasses of the class being defined. Each *className* argument names one class that is to be a superclass of the defined class. Note that objects must not be changed from being classes to being non-classes or vice-versa, that an empty parent class is equivalent to [oo::object][object], and that the parent classes of [oo::object][object] and [oo::class][class] may not be modified. By default, this slot works by replacement.
 
 [unexport]{.cmd} [name]{.arg} [name]{.optdot}
 : This arranges for each of the named methods, *name*, to be not exported (i.e. not usable outside the instance through the instance object's command, but instead just through the [my] command visible in each object's context) by the class being defined. Note that the methods themselves may be actually defined by a superclass; subclass unexports override superclass visibility, and may be overridden by instance unexports.
@@ -126,11 +126,11 @@ The following commands are supported in the *defScript* for **oo::define**, each
 The following definitions are also supported, but are not required in simple programs:
 
 [definitionnamespace]{.cmd} [kind]{.optarg} [namespaceName]{.arg}
-: This allows control over what namespace will be used by the **oo::define** and **oo::objdefine** commands to look up the definition commands they use. When any object has a definition operation applied to it, *the class that it is an instance of* (and its superclasses and mixins) is consulted for what definition namespace to use. **oo::define** gets the class definition namespace, and **::oo::objdefine** gets the instance definition namespace, but both otherwise use the identical lookup operation.
+: This allows control over what namespace will be used by the [oo::define][define] and [oo::objdefine][objdefine] commands to look up the definition commands they use. When any object has a definition operation applied to it, *the class that it is an instance of* (and its superclasses and mixins) is consulted for what definition namespace to use. [oo::define][define] gets the class definition namespace, and [oo::objdefine][objdefine] gets the instance definition namespace, but both otherwise use the identical lookup operation.
 
-    This sets the definition namespace of kind *kind* provided by the current class to *namespaceName*. The *namespaceName* must refer to a currently existing namespace, or must be the empty string (to stop the current class from having such a namespace connected). The *kind*, if supplied, must be either **-class** (the default) or **-instance** to specify the whether the namespace for use with **oo::define** or **oo::objdefine** respectively is being set.
+    This sets the definition namespace of kind *kind* provided by the current class to *namespaceName*. The *namespaceName* must refer to a currently existing namespace, or must be the empty string (to stop the current class from having such a namespace connected). The *kind*, if supplied, must be either **-class** (the default) or **-instance** to specify the whether the namespace for use with [oo::define][define] or [oo::objdefine][objdefine] respectively is being set.
 
-    The class **oo::object** has its instance namespace locked to **::oo::objdefine**, and the class **oo::class** has its class namespace locked to **::oo::define**. A consequence of this is that effective use of this feature for classes requires the definition of a metaclass.
+    The class [oo::object][object] has its instance namespace locked to [oo::objdefine][objdefine], and the class [oo::class][class] has its class namespace locked to [oo::define][define]. A consequence of this is that effective use of this feature for classes requires the definition of a metaclass.
 
 [deletemethod]{.cmd} [name]{.arg} [name]{.optdot}
 : This deletes each of the methods called *name* from a class. The methods must have previously existed in that class. Does not affect the superclasses of the class, nor does it affect the subclasses or instances of the class (except when they have a call chain through the class being modified) or the class object itself.
@@ -147,7 +147,7 @@ The following definitions are also supported, but are not required in simple pro
 
 # Configuring objects
 
-The following commands are supported in the *defScript* for **oo::objdefine**, each of which may also be used in the *subcommand* form:
+The following commands are supported in the *defScript* for [oo::objdefine][objdefine], each of which may also be used in the *subcommand* form:
 
 [export]{.cmd} [name]{.arg} [name]{.optdot}
 : This arranges for each of the named methods, *name*, to be exported (i.e. usable outside the object through the object's command) by the object being defined. Note that the methods themselves may be actually defined by a class or superclass; object exports override class visibility.
@@ -171,7 +171,7 @@ The following commands are supported in the *defScript* for **oo::objdefine**, e
 [private]{.cmd} [script]{.arg}
 : This evaluates the *script* (or the list of command and arguments given by *cmd* and *arg*s) in a context where the definitions made on the current object will be private definitions.
 
-    The following class definition commands are affected by **private**: **forward**, **method**, and [variable]. Nesting **private** inside **private** has no cumulative effect; the innermost definition context is just a private definition context. All other definition commands have no difference in behavior when used in a private definition context.
+    The following class definition commands are affected by **private**: **forward**, **method**, and **variable**. Nesting **private** inside **private** has no cumulative effect; the innermost definition context is just a private definition context. All other definition commands have no difference in behavior when used in a private definition context.
 
 [unexport]{.cmd} [name]{.arg} [name]{.optdot}
 : This arranges for each of the named methods, *name*, to be not exported (i.e. not usable outside the object through the object's command, but instead just through the [my] command visible in the object's context) by the object being defined. Note that the methods themselves may be actually defined by a class; instance unexports override class visibility.
@@ -190,13 +190,13 @@ The following definitions are also supported, but are not required in simple pro
 : This allows the class of an object to be changed after creation. Note that the class's constructors are not called when this is done, and so the object may well be in an inconsistent state unless additional configuration work is done.
 
 [deletemethod]{.cmd} [name]{.arg} [name]{.optdot}
-: This deletes each of the methods called *name* from an object. The methods must have previously existed in that object (e.g., because it was created through **oo::objdefine method**). Does not affect the classes that the object is an instance of, or remove the exposure of those class-provided methods in the instance of that class.
+: This deletes each of the methods called *name* from an object. The methods must have previously existed in that object (e.g., because it was created through [oo::objdefine method][objdefine]). Does not affect the classes that the object is an instance of, or remove the exposure of those class-provided methods in the instance of that class.
 
 [filter]{.cmd} [-slotOperation]{.optarg} [methodName]{.optdot}
 : This slot (see [Slotted definitions] below) sets or updates the list of method names that are used to guard whether a method call to the object may be called and what the method's results are. Each *methodName* names a single filtering method (which may be exposed or not exposed); it is not an error for a non-existent method to be named. Note that the actual list of filters also depends on the filters set upon any classes that the object is an instance of. By default, this slot works by appending.
 
 [renamemethod]{.cmd} [fromName]{.arg} [toName]{.arg}
-: This renames the method called *fromName* in an object to *toName*. The method must have previously existed in the object, and *toName* must not previously refer to a method in that object. Does not affect the classes that the object is an instance of and cannot rename in an instance object the methods provided by those classes (though a **oo::objdefine forward**ed method may provide an equivalent capability). Does not change the export status of the method; if it was exported before, it will be afterwards.
+: This renames the method called *fromName* in an object to *toName*. The method must have previously existed in the object, and *toName* must not previously refer to a method in that object. Does not affect the classes that the object is an instance of and cannot rename in an instance object the methods provided by those classes (though a [oo::objdefine forward][objdefine]ed method may provide an equivalent capability). Does not change the export status of the method; if it was exported before, it will be afterwards.
 
 [self]{.cmd}
 : This gives the name of the object currently being configured.
@@ -210,9 +210,9 @@ When a class or instance has a private method, that private method can only be i
 
 # Slotted definitions
 
-Some of the configurable definitions of a class or object are *slotted definitions*. This means that the configuration is implemented by a slot object, that is an instance of the class **oo::Slot**, which manages a list of values (class names, variable names, etc.) that comprises the contents of the slot.
+Some of the configurable definitions of a class or object are *slotted definitions*. This means that the configuration is implemented by a slot object, that is an instance of the class [oo::Slot][Slot], which manages a list of values (class names, variable names, etc.) that comprises the contents of the slot.
 
-The **oo::Slot** class defines six operations (as methods) that may be done on the slot:
+The [oo::Slot][Slot] class defines six operations (as methods) that may be done on the slot:
 
 [slot]{.ins} [-append]{.sub} [member]{.optdot}
 : This appends the given *member* elements to the slot definition.
@@ -235,24 +235,24 @@ The **oo::Slot** class defines six operations (as methods) that may be done on t
 
 A consequence of this is that any use of a slot's default operation where the first member argument begins with a hyphen will be an error. One of the above operations should be used explicitly in those circumstances.
 
-You only need to make an instance of **oo::Slot** if you are definining your own slot that behaves like a standard slot.
+You only need to make an instance of [oo::Slot][Slot] if you are definining your own slot that behaves like a standard slot.
 
 ## Slot implementation
 
-Internally, slot objects also define a method **--default-operation** which is forwarded to the default operation of the slot (thus, for the class "[variable]" slot, this is forwarded to "[my -append][my]"), and these methods which provide the implementation interface:
+Internally, slot objects also define a method **--default-operation** which is forwarded to the default operation of the slot (thus, for the class "**variable**" slot, this is forwarded to "[my -append][my]"), and these methods which provide the implementation interface:
 
 [slot]{.ins} [Get]{.sub}
-: Returns a list that is the current contents of the slot, but does not modify the slot. This method must always be called from a stack frame created by a call to **oo::define** or **oo::objdefine**. This method *should not* return an error unless it is called from outside a definition context or with the wrong number of arguments.
+: Returns a list that is the current contents of the slot, but does not modify the slot. This method must always be called from a stack frame created by a call to [oo::define][define] or [oo::objdefine][objdefine]. This method *should not* return an error unless it is called from outside a definition context or with the wrong number of arguments.
 
     The elements of the list should be fully resolved, if that is a meaningful concept to the slot.
 
 [slot]{.ins} [Resolve]{.sub} [slotElement]{.arg}
-: Returns *slotElement* with a resolution operation applied to it, but does not modify the slot. For slots of simple strings, this is an operation that does nothing, whereas for slots of classes, this maps a class name to its fully-qualified class name.  This method must always be called from a stack frame created by a call to **oo::define** or **oo::objdefine**.  This method *should not* return an error unless it is called from outside a definition context or with the wrong number of arguments; unresolvable arguments should be returned as is (as not all slot operations strictly require that values are resolvable to work).
+: Returns *slotElement* with a resolution operation applied to it, but does not modify the slot. For slots of simple strings, this is an operation that does nothing, whereas for slots of classes, this maps a class name to its fully-qualified class name.  This method must always be called from a stack frame created by a call to [oo::define][define] or [oo::objdefine][objdefine].  This method *should not* return an error unless it is called from outside a definition context or with the wrong number of arguments; unresolvable arguments should be returned as is (as not all slot operations strictly require that values are resolvable to work).
 
-    Implementations *should not* enforce uniqueness and ordering constraints in this method; that is the responsibility of the **Set** method. A default implementation of this method (that just returns its *slotElement* argument) is provided in the **oo::Slot** class.
+    Implementations *should not* enforce uniqueness and ordering constraints in this method; that is the responsibility of the **Set** method. A default implementation of this method (that just returns its *slotElement* argument) is provided in the [oo::Slot][Slot] class.
 
 [slot]{.ins} [Set]{.sub} [elementList]{.arg}
-: Sets the contents of the slot to the list *elementList* and returns the empty string. This method must always be called from a stack frame created by a call to **oo::define** or **oo::objdefine**. This method may return an error if it rejects the change to the slot contents (e.g., because of invalid values) as well as if it is called from outside a definition context or with the wrong number of arguments.
+: Sets the contents of the slot to the list *elementList* and returns the empty string. This method must always be called from a stack frame created by a call to [oo::define][define] or [oo::objdefine][objdefine]. This method may return an error if it rejects the change to the slot contents (e.g., because of invalid values) as well as if it is called from outside a definition context or with the wrong number of arguments.
 
     This method *may* reorder and filter the elements if this is necessary in order to satisfy the underlying constraints of the slot. (For example, slots of classes enforce a uniqueness constraint that places each element in the earliest location in the slot that it can.)
 
@@ -267,7 +267,7 @@ Most slot operations will initially **Resolve** their argument list, combine it 
 
 # Examples
 
-This example demonstrates how to use both forms of the **oo::define** and **oo::objdefine** commands (they work in the same way), as well as illustrating four of their subcommands.
+This example demonstrates how to use both forms of the [oo::define][define] and [oo::objdefine][objdefine] commands (they work in the same way), as well as illustrating four of their subcommands.
 
 ```
 oo::class create c
@@ -354,7 +354,7 @@ $c report
         → This is instance 3 of 3
 ```
 
-This example demonstrates how to use class methods. (Note that the constructor for **oo::class** calls **oo::define** on the class.)
+This example demonstrates how to use class methods. (Note that the constructor for [oo::class][class] calls [oo::define][define] on the class.)
 
 ```
 oo::class create DBTable {
@@ -449,9 +449,15 @@ for {set x 0} {$x <= 4} {incr x} {
 ```
 
 
+[bgerror]: bgerror.md
+[class]: class.md
+[define]: define.md
 [info]: info.md
 [my]: my.md
 [namespace]: namespace.md
+[next]: next.md
+[objdefine]: objdefine.md
+[object]: object.md
 [proc]: proc.md
-[variable]: variable.md
+[Slot]: Slot.md
 

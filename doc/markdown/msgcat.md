@@ -440,7 +440,7 @@ Callbacks are invoked, if:
 
 3. the registering namespace exists.
 
-If a called routine fails with an error, the **bgerror** routine for the interpreter is invoked after command completion. Only exception is the callback **unknowncmd**, where an error causes the invoking **mc**-command to fail with that error.
+If a called routine fails with an error, the [bgerror] routine for the interpreter is invoked after command completion. Only exception is the callback **unknowncmd**, where an error causes the invoking **mc**-command to fail with that error.
 
 # Object oriented programming
 
@@ -562,6 +562,7 @@ proc ::tcl::clock::LocalizeFormat { locale format } {
 The message catalog code was developed by Mark Harrison.
 
 
+[bgerror]: bgerror.md
 [clock]: clock.md
 [format]: format.md
 [namespace]: namespace.md

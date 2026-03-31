@@ -60,7 +60,7 @@ typedef int Tcl_ObjCmdProc(
 
 When *proc* is invoked, the *clientData* and *interp* parameters will be copies of the *clientData* and *interp* arguments given to **Tcl\_CreateObjCommand**.  Typically, *clientData* points to an application-specific data structure that describes what to do when the command procedure is invoked. *Objc* and *objv* describe the arguments to the command, *objc* giving the number of argument values (including the command name) and *objv* giving the values of the arguments.  The *objv* array will contain *objc* values, pointing to the argument values.  Unlike *argv*[*argv*] used in a string-based command procedure, *objv*[*objc*] will not contain NULL.
 
-Additionally, when *proc* is invoked, it must not modify the contents of the *objv* array by assigning new pointer values to any element of the array (for example, *objv*[**2**] = **NULL**) because this will cause memory to be lost and the runtime stack to be corrupted.  The **const** in the declaration of *objv* will cause ANSI-compliant compilers to report any such attempted assignment as an error.  However, it is acceptable to modify the internal representation of any individual value argument.  For instance, the user may call **Tcl\_GetIntFromObj** on *objv*[**2**] to obtain the integer representation of that value; that call may change the type of the value that *objv*[**2**] points at, but will not change where *objv*[**2**] points.
+Additionally, when *proc* is invoked, it must not modify the contents of the *objv* array by assigning new pointer values to any element of the array (for example, *objv*[**2**] = **NULL**) because this will cause memory to be lost and the runtime stack to be corrupted.  The [const] in the declaration of *objv* will cause ANSI-compliant compilers to report any such attempted assignment as an error.  However, it is acceptable to modify the internal representation of any individual value argument.  For instance, the user may call **Tcl\_GetIntFromObj** on *objv*[**2**] to obtain the integer representation of that value; that call may change the type of the value that *objv*[**2**] points at, but will not change where *objv*[**2**] points.
 
 *proc* must return an integer code that is either **TCL\_OK**, **TCL\_ERROR**, **TCL\_RETURN**, **TCL\_BREAK**, or **TCL\_CONTINUE**. See the [return] man page for details on what these codes mean and the use of extended values for an extension's private use. Most normal commands will only return **TCL\_OK** or **TCL\_ERROR**.
 
@@ -135,6 +135,7 @@ When the *proc* passed to **Tcl\_CreateObjCommand** is called, the values in its
 **Tcl\_GetCommandFromObj** does not modify the reference count of its *objPtr* argument; it only reads.
 
 
+[const]: const.md
 [rename]: rename.md
 [return]: return.md
 

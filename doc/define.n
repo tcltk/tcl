@@ -201,9 +201,9 @@ defined (see \fBCONFIGURING OBJECTS\fR below for a description of the
 supported values of \fIsubcommand\fR). It follows the same general pattern of
 argument handling as the \fBoo::define\fR and \fBoo::objdefine\fR commands,
 and
-.QW "\fBoo::define \fIcls \fBself \fIsubcommand ...\fR"
+.QW "\fBoo::define \fIclass \fBself \fIsubcommand ...\fR"
 operates identically to
-.QW "\fBoo::objdefine \fIcls subcommand ...\fR" .
+.QW "\fBoo::objdefine \fIclass subcommand ...\fR" .
 .RS
 .PP
 .VS TIP470
@@ -279,7 +279,7 @@ and \fBoo::objdefine\fR commands to look up the definition commands they
 use. When any object has a definition operation applied to it, \fIthe class that
 it is an instance of\fR (and its superclasses and mixins) is consulted for
 what definition namespace to use. \fBoo::define\fR gets the class definition
-namespace, and \fB::oo::objdefine\fR gets the instance definition namespace,
+namespace, and \fBoo::objdefine\fR gets the instance definition namespace,
 but both otherwise use the identical lookup operation.
 .RS
 .PP
@@ -292,8 +292,8 @@ whether the namespace for use with \fBoo::define\fR or \fBoo::objdefine\fR
 respectively is being set.
 .PP
 The class \fBoo::object\fR has its instance namespace locked to
-\fB::oo::objdefine\fR, and the class \fBoo::class\fR has its class namespace
-locked to \fB::oo::define\fR. A consequence of this is that effective use of
+\fBoo::objdefine\fR, and the class \fBoo::class\fR has its class namespace
+locked to \fBoo::define\fR. A consequence of this is that effective use of
 this feature for classes requires the definition of a metaclass.
 .RE
 .VE TIP524

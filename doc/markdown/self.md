@@ -38,7 +38,7 @@ The **self** command, which should only be used from within the context of a cal
 : When the method was invoked from inside another object method, this subcommand returns a three element list describing the containing object and method. The first element describes the declaring object or class of the method, the second element is the name of the object on which the containing method was invoked, and the third element is the name of the method (with the strings **<constructor>** and **<destructor>** indicating constructors and destructors respectively).
 
 [self]{.cmd} [class]{.sub}
-: This returns the name of the class that the current method was defined within. Note that this will change as the chain of method implementations is traversed with **next**, and that if the method was defined on an object then this will fail.
+: This returns the name of the class that the current method was defined within. Note that this will change as the chain of method implementations is traversed with [next], and that if the method was defined on an object then this will fail.
 
     If you want the class of the current object, you need to use this other construct:
 
@@ -56,7 +56,7 @@ The **self** command, which should only be used from within the context of a cal
 : This returns the name of the unique namespace of the object that the method was invoked upon.
 
 [self]{.cmd} [next]{.sub}
-: When invoked from a method that is not at the end of a call chain (i.e. where the **next** command will invoke an actual method implementation), this subcommand returns a two element list describing the next element in the method call chain; the first element is the name of the class or object that declares the next part of the call chain, and the second element is the name of the method (with the strings **<constructor>** and **<destructor>** indicating constructors and destructors respectively). If invoked from a method that is at the end of a call chain, this subcommand returns the empty string.
+: When invoked from a method that is not at the end of a call chain (i.e. where the [next] command will invoke an actual method implementation), this subcommand returns a two element list describing the next element in the method call chain; the first element is the name of the class or object that declares the next part of the call chain, and the second element is the name of the method (with the strings **<constructor>** and **<destructor>** indicating constructors and destructors respectively). If invoked from a method that is at the end of a call chain, this subcommand returns the empty string.
 
 [self]{.cmd} [object]{.sub}
 : This returns the name of the object that the method was invoked upon.
@@ -104,4 +104,5 @@ a x     → Obj: {{method x object method} {method x ::c method}} 0
 
 
 [info]: info.md
+[next]: next.md
 

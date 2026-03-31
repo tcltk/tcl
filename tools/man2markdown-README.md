@@ -36,7 +36,7 @@ section | number of documents | initial conversion | final conversion
 --------|---------------------|--------------------|-----------------
 1       | 1                   | 1                  | 0
 3       | 108                 | 108                | 0
-n       | 139                 | 139                | 24
+n       | 139                 | 139                | 21
 
 Final conversion of these files is currently done:
 1. after
@@ -63,6 +63,7 @@ Final conversion of these files is currently done:
 22. copy
 23. coroutine
 24. dde
+25. define
 
 The tk/doc directory comes next, after finishing Tcl.
 

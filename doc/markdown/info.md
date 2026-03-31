@@ -99,10 +99,10 @@ Available commands:
 : Returns 1 if *command* is a complete command, and **0** otherwise. Typically used in line-oriented input environments to allow users to type in commands that span multiple lines.
 
 [info]{.cmd} [constant]{.sub} [varName]{.arg}
-: Returns 1 if *varName* is a constant variable (see **const**) and 0 otherwise.
+: Returns 1 if *varName* is a constant variable (see [const]) and 0 otherwise.
 
 [info]{.cmd} [consts]{.sub} [pattern]{.optarg}
-: Returns the list of constant variables (see **const**) in the current scope, or the list of constant variables matching *pattern* (if that is provided) in a manner similar to **info vars**.
+: Returns the list of constant variables (see [const]) in the current scope, or the list of constant variables matching *pattern* (if that is provided) in a manner similar to **info vars**.
 
 [info]{.cmd} [coroutine]{.sub}
 : Returns the name of the current [coroutine], or the empty string if there is no current coroutine or the current coroutine has been deleted.
@@ -229,7 +229,7 @@ The following *subcommand* values are supported by **info class**:
 [info]{.cmd} [class]{.sub} [call]{.lit} [class]{.arg} [method]{.arg}
 : Returns a description of the method implementations that are used to provide a stereotypical instance of *class*'s implementation of *method* (stereotypical instances being objects instantiated by a class without having any object-specific definitions added). This consists of a list of lists of four elements, where each sublist consists of a word that describes the general type of method implementation (being one of **method** for an ordinary method, **filter** for an applied filter, **private** for a private method, and [unknown] for a method that is invoked as part of unknown method handling), a word giving the name of the particular method invoked (which is always the same as *method* for the **method** type, and "[unknown]" for the [unknown] type), a word giving the fully qualified name of the class that defined the method, and a word describing the type of method implementation (see **info class methodtype**).
 
-    Note that there is no inspection of whether the method implementations actually use **next** to transfer control along the call chain, and the call chains that this command files do not actually contain private methods.
+    Note that there is no inspection of whether the method implementations actually use [next] to transfer control along the call chain, and the call chains that this command files do not actually contain private methods.
 
 [info]{.cmd} [class]{.sub} [constructor]{.lit} [class]{.arg}
 : This subcommand returns a description of the definition of the constructor of class *class*. The definition is described as a two element list; the first element is the list of arguments to the constructor in a form suitable for passing to another call to [proc] or a method definition, and the second element is the body of the constructor. If no constructor is present, this returns the empty list.
@@ -312,7 +312,7 @@ The following *subcommand* values are supported by **info object**:
 [info]{.cmd} [object]{.sub} [call]{.lit} [object]{.arg} [method]{.arg}
 : Returns a description of the method implementations that are used to provide *object*'s implementation of *method*.  This consists of a list of lists of four elements, where each sublist consists of a word that describes the general type of method implementation (being one of **method** for an ordinary method, **filter** for an applied filter, **private** for a private method, and [unknown] for a method that is invoked as part of unknown method handling), a word giving the name of the particular method invoked (which is always the same as *method* for the **method** type, and "[unknown]" for the [unknown] type), a word giving what defined the method (the fully qualified name of the class, or the literal string **object** if the method implementation is on an instance), and a word describing the type of method implementation (see **info object methodtype**).
 
-    Note that there is no inspection of whether the method implementations actually use **next** to transfer control along the call chain, and the call chains that this command files do not actually contain private methods.
+    Note that there is no inspection of whether the method implementations actually use [next] to transfer control along the call chain, and the call chains that this command files do not actually contain private methods.
 
 [info]{.cmd} [object]{.sub} [class]{.lit} [object]{.arg} [className]{.optarg}
 : If *className* is not given, this subcommand returns class of the *object* object. If *className* is present, this subcommand returns a boolean value indicating whether the *object* is of that class.
@@ -482,6 +482,7 @@ proc getDef {obj method} {
 
 [apply]: apply.md
 [catch]: catch.md
+[const]: const.md
 [coroutine]: coroutine.md
 [eval]: eval.md
 [file]: file.md
@@ -490,6 +491,7 @@ proc getDef {obj method} {
 [load]: load.md
 [my]: my.md
 [namespace]: namespace.md
+[next]: next.md
 [proc]: proc.md
 [source]: source.md
 [string]: string.md

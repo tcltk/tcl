@@ -229,7 +229,7 @@ namespace eval ::ndoc {
 	
 	# list of Tcl commands to recognize for links between manual pages:
 	set tclCmdList [lsort [info commands]]
-	lappend tclCmdList my
+	lappend tclCmdList my next bgerror
 	
 	# dictionary of links on pages that should link to a page
 	# not identical to the link text.
@@ -243,6 +243,7 @@ namespace eval ::ndoc {
 		classvariable {oo::objdefine objdefine}
 		configurable  {oo::define define oo::objdefine objdefine}
 		copy          {oo::class class oo::object object}
+		define        {oo::class class oo::objdefine objdefine oo::define define oo::object object oo::Slot Slot}
 	}]
 	
 	# dictionary of pages in which specific cmd words should *not* be linked
@@ -258,6 +259,7 @@ namespace eval ::ndoc {
 		cookiejar	{destroy configure info error set}
 		console		{eval}
 		clipboard	{string}
+		define          {variable}
 		entry		{string}
 		event		{return}
 		font		{menu}
@@ -1699,12 +1701,6 @@ proc ::ndoc::mdExceptions {md} {
 				{<https://tip.tcl-lang.org/173>} \
 			] $md]
 		}
-		configurable {
-			set md [string map {
-				{**CONFIGURE METHOD**} {[Configure method]}
-				{**PROPERTY DEFINITIONS**} {[Property definitions]}
-			} $md]
-		}
 		dde {
 			set md [string map {{Dde and tcl} {DDE and Tcl} Dde DDE} $md]
 		}
@@ -1746,24 +1742,24 @@ proc ::ndoc::mdLinks {md} {
 		} {
 			## exclude some corner cases
 			set isValidLink 0	
-		} elseif {$linkCmd ne $cmdName && $linkCmd in $tclCmdList && $linkCmd ni [dict getwithdefault $tclCmdListExclude $cmdName {}]} {
+		}
+		if {! $isValidLink && $linkCmd ne $cmdName && $linkCmd in $tclCmdList && $linkCmd ni [dict getwithdefault $tclCmdListExclude $cmdName {}]} {
 			## the file to link to is the same as the command name)
 			set linkTarget $linkCmd
 			set isValidLink 1
-		} elseif {$linkCmd ne $cmdName && [dict exists $tclCmdListRemap $cmdName]} {
+		}
+		if {! $isValidLink && $linkCmd ne $cmdName && [dict exists $tclCmdListRemap $cmdName]} {
 			## it's a valid link if there is a remapping entry here
 			## (note that we need to 'subst' the linkCmd word here as it may contain a literal backslash
 			##  used to escape an underscore in a command name in markdown such as in 'tcl\_platform'):
 			set linkTarget [dict getwithdefault $tclCmdListRemap $cmdName [subst $linkCmd] {}]
-			if {$linkTarget ne ""} {set isValidLink 1} else {set isValidLink 0}
-		} elseif {! [string is lower [string index $linkText 0]] && [string totitle $linkText] in $sectionTitles} {
+			if {$linkTarget ne ""} {set isValidLink 1}
+		}
+		if {! $isValidLink && ! [string is lower [string index $linkText 0]] && [string totitle $linkText] in $sectionTitles} {
 			# it's a valid cross reference to another section/subseczion in this text:
 			set linkText [string totitle $linkText]
 			set isValidLink 2
 			set linkTarget $linkText
-		} else {
-			## exclude links to self and the ones on the exclusion list:
-			set isValidLink 0
 		}
 		if $isValidLink {		
 			set replaceString \[$linkText\]

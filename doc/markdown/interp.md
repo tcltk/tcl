@@ -289,7 +289,7 @@ Where an interpreter with a resource limit set on it creates a child interpreter
 
 # Background exception handling
 
-When an exception happens in a situation where it cannot be reported directly up the stack (e.g. when processing events in an [update] or [vwait] call) the exception is instead reported through the background exception handling mechanism. Every interpreter has a background exception handler registered; the default exception handler arranges for the **bgerror** command in the interpreter's global namespace to be called, but other exception handlers may be installed and process background exceptions in substantially different ways.
+When an exception happens in a situation where it cannot be reported directly up the stack (e.g. when processing events in an [update] or [vwait] call) the exception is instead reported through the background exception handling mechanism. Every interpreter has a background exception handler registered; the default exception handler arranges for the [bgerror] command in the interpreter's global namespace to be called, but other exception handlers may be installed and process background exceptions in substantially different ways.
 
 A background exception handler consists of a non-empty list of words to which will be appended two further words at invocation time. The first word will be the interpreter result at time of the exception, typically an error message, and the second will be the dictionary of return options at the time of the exception.  These are the same values that [catch] can capture when it controls script evaluation in a non-background situation. The resulting list will then be executed in the interpreter's global namespace without further substitutions being performed.
 
@@ -337,6 +337,7 @@ interp eval $i {
 [append]: append.md
 [apply]: apply.md
 [array]: array.md
+[bgerror]: bgerror.md
 [binary]: binary.md
 [break]: break.md
 [catch]: catch.md
