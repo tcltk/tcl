@@ -1019,9 +1019,11 @@ test filesystem-10.1 {Bug 3414754} {
     string match */ [file join [pwd] foo/]
 } 0
 
+# The filesystem-11.* tests are currently disabled on MacOS.
+# See Bug [e6ca0b1b67]
 test filesystem-11.1 {
     Bug 10890417 - case of tail is correct after normalization
-} -constraints notWsl -body {
+} -constraints {notWsl tempNotMac} -body {
     tcltest::makeFile "" mIxEdCaSe.TxT
     lmap file1 [glob [tcltest::temporaryDirectory]/mixedcase.txt \
                     [tcltest::temporaryDirectory]/MIXEDCASE.TXT \
@@ -1037,7 +1039,7 @@ test filesystem-11.1 {
 
 test filesystem-11.2 {
     Bug 10890417 - case of tail is correct after normalization (-directory)
-} -constraints notWsl -body {
+} -constraints {notWsl tempNotMac} -body {
     tcltest::makeFile "" mIxEdCaSe.TxT
     lmap file1 [glob -directory [tcltest::temporaryDirectory] \
                     mixedcase.txt MIXEDCASE.TXT mIxEdCaSe.TxT ] {
@@ -1051,7 +1053,7 @@ test filesystem-11.2 {
 
 test filesystem-11.3 {
     Bug 10890417 - case of dir is correct after normalization
-} -constraints notWsl -setup {
+} -constraints {notWsl tempNotMac} -setup {
     set dir [tcltest::makeDirectory MiXeDcAsE]
     set parent [file dirname $dir]
     tcltest::makeFile "" foo.txt $dir
@@ -1069,7 +1071,7 @@ test filesystem-11.3 {
 
 test filesystem-11.4 {
     Bug 10890417 - case of dir is correct after normalization (-directory)
-} -constraints notWsl -setup {
+} -constraints {notWsl tempNotMac} -setup {
     set dir [tcltest::makeDirectory MiXeDcAsE]
     set parent [file dirname $dir]
     tcltest::makeFile "" foo.txt $dir
