@@ -1894,14 +1894,14 @@ TclOOClassVariableObjCmd(
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "bad variable name \"%s\": can't create a %s",
 		    varName, "scalar variable that looks like an array element"));
-	    Tcl_SetErrorCode(interp, "TCL", "UPVAR", "LOCAL_ELEMENT", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "UPVAR", "LOCAL_ELEMENT", (char *)NULL);
 	    return TCL_ERROR;
 	}
 	if (Tcl_StringMatch(varName, "*::*")) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "bad variable name \"%s\": can't create a %s",
 		    varName, "local variable with a namespace separator in it"));
-	    Tcl_SetErrorCode(interp, "TCL", "UPVAR", "LOCAL_ELEMENT", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "UPVAR", "LOCAL_ELEMENT", (char *)NULL);
 	    return TCL_ERROR;
 	}
     }
