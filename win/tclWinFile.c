@@ -1068,17 +1068,10 @@ TclpMatchInDirectory(
 
 	Tcl_DStringInit(&ds);
 	native = Tcl_UtfToWCharDString(dirName, TCL_INDEX_NONE, &ds);
-	if ((types == NULL) || (types->type != TCL_GLOB_TYPE_DIR)) {
-	    handle = FindFirstFileW(native, &data);
-	} else {
-	    /*
-	     * We can be more efficient, for pure directory requests.
-	     */
-
-	    handle = FindFirstFileExW(native,
-		    FindExInfoStandard, &data,
-		    FindExSearchLimitToDirectories, NULL, 0);
-	}
+	handle = FindFirstFileExW(native, FindExInfoBasic, &data,
+	    (types == NULL || types->type != TCL_GLOB_TYPE_DIR
+		    ? FindExSearchNameMatch : FindExSearchLimitToDirectories),
+	    NULL, FIND_FIRST_EX_LARGE_FETCH);
 
 	if (handle == INVALID_HANDLE_VALUE) {
 	    DWORD err = GetLastError();
