@@ -2898,6 +2898,8 @@ typedef struct EqInput {
     const char *errorFound;	/* If set, describes error encountered. */
 } EqInput;
 
+void EqParseSetError(EqInput *in, const char *expected);
+
 // Get the next lexeme of the input, setting in->lex and in->lit.
 // Also advances in->argpos and/or in->charpos
 // and sets in->lastStart and in->lastLen.
@@ -2907,6 +2909,10 @@ void EqNextLex(
     const char *start;
     Tcl_Size numBytes;
     Tcl_Size scanned;
+    if (in->lit) {
+        Tcl_BounceRefCount(in->lit);
+        in->lit = NULL;
+    }
     if (in->errorFound) return;
 
     while (1) {
@@ -2993,8 +2999,7 @@ void EqNextLex(
 	    if (isalpha(*in->lastStart)) break;
 	    TCL_FALLTHROUGH();
 	case SCRIPT:
-	    in->lex = INVALID;
-	    in->lit = Tcl_NewStringObj(in->lastStart, scanned);
+	    EqParseSetError(in, "expression");
     }
     // Collect the whole of a namespaced name.
     if (in->lex == BAREWORD) {
@@ -3047,6 +3052,10 @@ void EqParseSetError(
     if (in->errorFound) return;
     in->errorFound = expected;
     in->lex = 0;
+    if (in->lit) {
+        Tcl_BounceRefCount(in->lit);
+        in->lit = NULL;
+    }
 }
 
 // Report a parsing error
@@ -3156,12 +3165,14 @@ void EqParsePrefix(
 
 	// Some kind of name?
 	case BAREWORD:
+	    Tcl_IncrRefCount(inLit);
 	    EqNextLex(in);
 	    // Function call?
 	    if (in->lex == OPEN_PAREN) {
 		Tcl_Obj *funcName = Tcl_NewStringObj("tcl::mathfunc::", -1);
 		Tcl_AppendObjToObj(funcName, inLit);
 		PUSH_OBJ(funcName);
+		Tcl_DecrRefCount(inLit);
 		EqNextLex(in);
 		EqParseFuncArgs(in, envPtr);
 		return;
@@ -3173,12 +3184,14 @@ void EqParsePrefix(
 		localIndex = TclFindCompiledLocal(name, nameLen, 0, envPtr);
 		if (localIndex != TCL_INDEX_NONE) {
 		    OP4(LOAD_SCALAR, localIndex);
+		    Tcl_DecrRefCount(inLit);
 		    return;
 		}
 	    }
 	    // Other variable reference.
 	    PUSH_OBJ(inLit);
 	    OP(LOAD_STK);
+	    Tcl_DecrRefCount(inLit);
 	    return;
 
 	// Numeric value substituted at runtime?

@@ -1382,6 +1382,7 @@ test calc-7.4 {abs function} -body {
 # ---------- Arrays ----------
 
 test calc-8.1 {array access: data(idx)} -setup {
+    unset -nocomplain data
     array set data {ten 10 twenty 20}
     set idx ten
 } -body {
