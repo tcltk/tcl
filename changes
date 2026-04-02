@@ -9427,6 +9427,8 @@ Many code fixes to avoid overflow or undefined behavior.  Thanks chrstphrchvz.
 
 2025-09-15 (new) Unicode version 17 (nijtmans)
 
+2025-09-18 (bug) re-generate tclDate.c with bison 3.8.2, fixes clang-15 compiler warnings (nijtmans)
+
 2025-09-19 (bug) [77059c] TclPushVarName(): pointer overflow (chavez)
 
 2025-09-30 (new) dde => 1.4.6
