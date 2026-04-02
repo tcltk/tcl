@@ -1289,7 +1289,7 @@ TclNewFSPathObj(
     PATHFLAGS(pathPtr) = TCLPATH_APPENDED;
     TclInvalidateStringRep(pathPtr);
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(MAC_OSX_TCL)
     /*
      * On Windows, paths are case insensitive but normalization means the
      * path should match the exact case of the on-disk file entry. If

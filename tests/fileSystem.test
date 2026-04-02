@@ -48,7 +48,11 @@ testConstraint testsimplefilesystem [llength [info commands ::testsimplefilesyst
 # Some things fail under all Continuous Integration systems for subtle reasons
 # such as CI often running with elevated privileges in a container.
 testConstraint notInCIenv           [expr {![info exists ::env(CI)]}]
-testConstraint notOSX [expr {$::tcl_platform(os) ne "Darwin"}]
+if {[expr {$::tcl_platform(os) eq "Darwin" || $::tcl_platform(platform) eq "windows"}]} {
+    testConstraint caseSensitiveFS 1
+} else {
+    testConstraint caseSensitiveFS 0
+}
 
 cd [tcltest::temporaryDirectory]
 makeFile "test file" gorp.file
@@ -1026,11 +1030,11 @@ test filesystem-10.1 {Bug 3414754} {
     string match */ [file join [pwd] foo/]
 } 0
 
-# The filesystem-11.* tests are currently disabled on MacOS.
-# See Bug [e6ca0b1b67]
+# The filesystem-11.* tests are currently disabled on WSL because it is
+# case-sensitivity depends on whether running on a Windows FS or Unix FS.
 test filesystem-11.1 {
     Bug 10890417 - case of tail is correct after normalization
-} -constraints {notWsl notOSX} -body {
+} -constraints notWsl -body {
     tcltest::makeFile "" mIxEdCaSe.TxT
     lmap file1 [glob [tcltest::temporaryDirectory]/mixedcase.txt \
                     [tcltest::temporaryDirectory]/MIXEDCASE.TXT \
@@ -1039,28 +1043,28 @@ test filesystem-11.1 {
                         file normalize $file1
                     }
 } -result [expr {
-                 $::tcl_platform(platform) eq "windows" ?
+                 [testConstraint caseSensitivefS] ?
                  [lrepeat 3 [tcltest::temporaryDirectory]/mIxEdCaSe.TxT]
                  :
                  [list [tcltest::temporaryDirectory]/mIxEdCaSe.TxT]}]
 
 test filesystem-11.2 {
     Bug 10890417 - case of tail is correct after normalization (-directory)
-} -constraints {notWsl notOSX} -body {
+} -constraints notWsl -body {
     tcltest::makeFile "" mIxEdCaSe.TxT
     lmap file1 [glob -directory [tcltest::temporaryDirectory] \
                     mixedcase.txt MIXEDCASE.TXT mIxEdCaSe.TxT ] {
                         file normalize $file1
                     }
 } -result [expr {
-                 $::tcl_platform(platform) eq "windows" ?
+                 [testConstraint caseSensitivefS] ?
                  [lrepeat 3 [file join [tcltest::temporaryDirectory] mIxEdCaSe.TxT]]
                  :
                  [list [file join [tcltest::temporaryDirectory] mIxEdCaSe.TxT]]}]
 
 test filesystem-11.3 {
     Bug 10890417 - case of dir is correct after normalization
-} -constraints {notWsl notOSX} -setup {
+} -constraints notWsl -setup {
     set dir [tcltest::makeDirectory MiXeDcAsE]
     set parent [file dirname $dir]
     tcltest::makeFile "" foo.txt $dir
@@ -1071,14 +1075,14 @@ test filesystem-11.3 {
                         file tail [file dirname [file normalize $file1]]
                     }
 } -result [expr {
-                 $::tcl_platform(platform) eq "windows" ?
+                 [testConstraint caseSensitivefS] ?
                  [lrepeat 3 MiXeDcAsE]
                  :
                  [list MiXeDcAsE]}]
 
 test filesystem-11.4 {
     Bug 10890417 - case of dir is correct after normalization (-directory)
-} -constraints {notWsl notOSX} -setup {
+} -constraints notWsl -setup {
     set dir [tcltest::makeDirectory MiXeDcAsE]
     set parent [file dirname $dir]
     tcltest::makeFile "" foo.txt $dir
@@ -1089,11 +1093,28 @@ test filesystem-11.4 {
                         file tail [file dirname [file normalize $file1]]
                     }
 } -result [expr {
-                 $::tcl_platform(platform) eq "windows" ?
+                 [testConstraint caseSensitivefS] ?
                  [lrepeat 3 MiXeDcAsE]
                  :
                  [list MiXeDcAsE]}]
 
+test filesystem-12.1 {
+	Bug e6ca0b1b67 - glob inconsistency with wildcards
+} -setup {
+	set dir [file dirname [makeFile "" qxyz]]
+} -cleanup {
+	unset -nocomplain dir
+} -constraints notWsl -body {
+	# Note this does not test correctness of glob. Rather it ensures use of
+	# wildcards returns the entry or not, same as specifying the full name
+	# (i.e. f* and foo) irrespective of character case. Note the actual
+	# string value need not be the same as glob does not guarantee case
+	# on case-insensitive file systems.
+	# Assumes no other files that start with qx
+	list \
+		[expr {[llength [glob $dir/qx*]] == [llength [glob $dir/qxyz]]}] \
+		[expr {[llength [glob $dir/QX*]] == [llength [glob $dir/QXYZ]]}] \
+} -result {1 1}
 
 cleanupTests
 unset -nocomplain drive drives
