@@ -44,55 +44,55 @@ If the initial arguments to **exec** start with **-** then they are treated as c
 [-keepnewline]{.lit}
 : Retains a trailing newline in the pipeline's output. Normally a trailing newline will be deleted.
 
-[-|-]{.lit}
+[--]{.lit}
 : Marks the end of switches.  The argument following this one will be treated as the first *arg* even if it starts with a **-**.
 
 
 If an *arg* (or pair of *arg*s) has one of the forms described below then it is used by **exec** to control the flow of input and output among the subprocess(es). Such arguments will not be passed to the subprocess(es).  In forms such as "**<** *fileName*", *fileName* may either be in a separate argument from "**<**" or in the same argument with no intervening space (i.e. "**<***fileName*").
 
-[|]{.cmd}
+[|]{.lit}
 : Separates distinct commands in the pipeline.  The standard output of the preceding command will be piped into the standard input of the next command.
 
-[|&]{.cmd}
+[|&]{.lit}
 : Separates distinct commands in the pipeline.  Both standard output and standard error of the preceding command will be piped into the standard input of the next command. This form of redirection overrides forms such as 2> and >&.
 
-[<0=+fileName]{.cmd}
+[<]{.lit} [fileName]{.arg}
 : The file named by *fileName* is opened and used as the standard input for the first command in the pipeline.
 
-[<@0=+fileId]{.cmd}
+[<@]{.lit} [fileId]{.arg}
 : *FileId* must be the identifier for an open file, such as the return value from a previous call to [open]. It is used as the standard input for the first command in the pipeline. *FileId* must have been opened for reading.
 
-[<<0=+value]{.cmd}
+[<<]{.lit} [value]{.arg}
 : *Value* is encoded using the system encoding, newlines replaced by platform-specific line ending sequences, and then passed to the first command as its standard input.
 
-[>0=+fileName]{.cmd}
+[>]{.lit} [fileName]{.arg}
 : Standard output from the last command is redirected to the file named *fileName*, overwriting its previous contents.
 
-[2>0=+fileName]{.cmd}
+[2>]{.lit} [fileName]{.arg}
 : Standard error from all commands in the pipeline is redirected to the file named *fileName*, overwriting its previous contents.
 
-[>&0=+fileName]{.cmd}
+[>&]{.lit} [fileName]{.arg}
 : Both standard output from the last command and standard error from all commands are redirected to the file named *fileName*, overwriting its previous contents.
 
-[>>0=+fileName]{.cmd}
+[>>]{.lit} [fileName]{.arg}
 : Standard output from the last command is redirected to the file named *fileName*, appending to it rather than overwriting it.
 
-[2>>0=+fileName]{.cmd}
+[2>>]{.lit} [fileName]{.arg}
 : Standard error from all commands in the pipeline is redirected to the file named *fileName*, appending to it rather than overwriting it.
 
-[>>&0=+fileName]{.cmd}
+[>>&]{.lit} [fileName]{.arg}
 : Both standard output from the last command and standard error from all commands are redirected to the file named *fileName*, appending to it rather than overwriting it.
 
-[>@0=+fileId]{.cmd}
+[>@]{.lit} [fileId]{.arg}
 : *FileId* must be the identifier for an open file, such as the return value from a previous call to [open]. Standard output from the last command is redirected to *fileId*'s file, which must have been opened for writing.
 
-[2>@0=+fileId]{.cmd}
+[2>@]{.lit} [fileId]{.arg}
 : *FileId* must be the identifier for an open file, such as the return value from a previous call to [open]. Standard error from all commands in the pipeline is redirected to *fileId*'s file. The file must have been opened for writing.
 
-[2>@10]{.cmd}
+[2>@1]{.lit}
 : Standard error from all commands in the pipeline is redirected to the command result.  This operator is only valid at the end of the command pipeline.
 
-[>&@0=+fileId]{.cmd}
+[>&@]{.lit} [fileId]{.arg}
 : *FileId* must be the identifier for an open file, such as the return value from a previous call to [open]. Both standard output from the last command and standard error from all commands are redirected to *fileId*'s file. The file must have been opened for writing.
 
 
@@ -109,7 +109,7 @@ The first word in each command is taken as the command name; if the result conta
 # Portability issues
 
 **Windows** (all versions)
-: Reading from or writing to a socket, using the "**@\\0***fileId*" notation, does not work.  When reading from a socket, a 16-bit DOS application will hang and a 32-bit application will return immediately with end-of-file.  When either type of application writes to a socket, the information is instead sent to the console, if one is present, or is discarded.
+: Reading from or writing to a socket, using the "**@** *fileId*" notation, does not work.  When reading from a socket, a 16-bit DOS application will hang and a 32-bit application will return immediately with end-of-file.  When either type of application writes to a socket, the information is instead sent to the console, if one is present, or is discarded.
 
     Note that the current escape resp. quoting of arguments for windows works only with executables using CommandLineToArgv, CRT-library or similar, as well as with the windows batch files (excepting the newline, see below). Although it is the common escape algorithm, but, in fact, the way how the executable parses the command-line (resp. splits it into single arguments) is decisive.
 
@@ -140,9 +140,9 @@ Two or more forward or backward slashes in a row in a path refer to a network pa
 
 Note that there are two general types of Win32 console applications:
 
-1. CLI \\(em CommandLine Interface, simple stdio exchange. **netstat.exe** for example.
+1. CLI — CommandLine Interface, simple stdio exchange. **netstat.exe** for example.
 
-2. TUI \\(em Textmode User Interface, any application that accesses the console API for doing such things as cursor movement, setting text color, detecting key presses and mouse movement, etc.  An example would be **telnet.exe** from Windows 2000.  These types of applications are not common in a windows environment, but do exist.
+2. TUI — Textmode User Interface, any application that accesses the console API for doing such things as cursor movement, setting text color, detecting key presses and mouse movement, etc.  An example would be **telnet.exe** from Windows 2000.  These types of applications are not common in a windows environment, but do exist.
 
 
 **exec** will not work well with TUI applications when a console is not present, as is done when launching applications under wish.  It is desirable to have console applications hidden and detached.  This is a designed-in limitation as **exec** wants to communicate over pipes.  The Expect extension addresses this issue when communicating with a TUI application.
@@ -160,7 +160,7 @@ When attempting to execute an application, **exec** first searches for the name 
 - The directories listed in the path.
 
 
-In order to execute shell built-in commands like **dir** and **copy**, the caller must prepend the desired command with "**cmd.exe /c\\0**" because built-in commands are not implemented using executables.
+In order to execute shell built-in commands like **dir** and **copy**, the caller must prepend the desired command with "**cmd.exe /c **" because built-in commands are not implemented using executables.
 
 **Unix** (including macOS)
 : The **exec** command is fully functional and works as described.

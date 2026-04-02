@@ -453,7 +453,7 @@ The **configure** command is used to set and query the configurable options of *
 : Sets the core preservation level to *level*.  This level determines how stringent checks for core files are.  Default value is 0.  Levels are defined as:
 
     0
-    : No checking \\(em do not check for core files at the end of each test command, but do check for them in **runAllTests** after all test files have been evaluated.
+    : No checking — do not check for core files at the end of each test command, but do check for them in **runAllTests** after all test files have been evaluated.
 
     1
     : Also check for core files at the end of each **test** command.

@@ -63,7 +63,7 @@ If the initial arguments to **glob** start with **-** then they are treated as s
 
     except that the first case doesn't return the trailing "/" and is more platform independent.
 
-[-|-]{.lit}
+[--]{.lit}
 : Marks the end of switches. The argument following this one will be treated as a *pattern* even if it starts with a **-**.
 
 
@@ -87,7 +87,7 @@ The *pattern* arguments may contain any of the following special characters, whi
 : Matches any of the sub-patterns *a*, *b*, etc.
 
 
-On Unix, as with csh, a "."\\| at the beginning of a file's name or just after a "/" must be matched explicitly or with a {} construct, unless the **-types hidden** flag is given (since "."\\| at the beginning of a file's name indicates that it is hidden). On other platforms, files beginning with a "."\\| are handled no differently to any others, except the special directories "."\\| and ".."\\| which must be matched explicitly (this is to avoid a recursive pattern like "glob -join \* \* \* \*" from recursing up the directory hierarchy as well as down). In addition, all "/" characters must be matched explicitly.
+On Unix, as with csh, a "." at the beginning of a file's name or just after a "/" must be matched explicitly or with a {} construct, unless the **-types hidden** flag is given (since "." at the beginning of a file's name indicates that it is hidden). On other platforms, files beginning with a "." are handled no differently to any others, except the special directories "." and ".." which must be matched explicitly (this is to avoid a recursive pattern like "glob -join \* \* \* \*" from recursing up the directory hierarchy as well as down). In addition, all "/" characters must be matched explicitly.
 
 The **glob** command differs from csh globbing in two ways. First, it does not sort its result list (use the [lsort] command if you want the list sorted). Second, **glob** only returns the names of files that actually exist; in csh no check for existence is made unless a pattern contains a ?, \*, or [] construct.
 

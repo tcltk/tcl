@@ -84,7 +84,7 @@ These options may be given with all matching styles.
 [-not]{.lit}
 : This negates the sense of the match, returning the index of the first non-matching value in the list.
 
-[-start=0+index]{.lit}
+[-start]{.lit} [index]{.arg}
 : The list is searched starting at position *index*. The interpretation of the *index* value is the same as for the command [string index][string], supporting simple index arithmetic and indices relative to the end of the list.
 
 
@@ -126,13 +126,13 @@ These options (only meaningful with the **-sorted** option) specify how the list
 
 These options are used to search lists of lists.  They may be used with any other options.
 
-[-stride0=+strideLength]{.lit}
+[-stride]{.lit} [strideLength]{.arg}
 : If this option is specified, the list is treated as consisting of groups of *strideLength* elements and the groups are searched by either their first element or, if the **-index** option is used, by the element within each group given by the first index passed to **-index** (which is then ignored by **-index**). The resulting index always points to the first element in a group.
 
 
 The list length must be an integer multiple of *strideLength*, which in turn must be at least 1. A *strideLength* of 1 is the default and indicates no grouping.
 
-[-index=0+indexList]{.lit}
+[-index]{.lit} [indexList]{.arg}
 : This option is designed for use when searching within nested lists. The *indexList* argument gives a path of indices (much as might be used with the [lindex] or [lset] commands) within each element to allow the location of the term being matched against.
 
 [-subindices]{.lit}

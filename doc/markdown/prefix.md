@@ -44,10 +44,10 @@ This document describes commands looking up a prefix in a list of strings. The f
     [-exact]{.lit}
     : Accept only exact matches.
 
-    [-message0=+string]{.lit}
+    [-message]{.lit} [string]{.arg}
     : Use *string* in the error message at a mismatch. Default is "option".
 
-    [-error0=+options]{.lit}
+    [-error]{.lit} [options]{.arg}
     : The *options* are used when no match is found. If *options* is empty, no error is generated and an empty string is returned. Otherwise the *options* are used as [return] options when generating the error message. The default corresponds to setting "-level 0". Example: If "**-error** {-errorcode MyError -level 1}" is used, an error would be generated as:
 
 

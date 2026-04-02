@@ -64,7 +64,7 @@ This command provides a way to manage subprocesses created by the [open] and [ex
     [-wait]{.lit}
     : By default the command returns immediately (the underlying **Tcl\_WaitPid** is called with the **WNOHANG** flag set) unless this switch is set. If *pids* is specified as a list of PIDs then the command waits until the status of the matching subprocesses are available. If *pids* was not specified, this command will wait for all known subprocesses.
 
-    [-|-]{.lit}
+    [--]{.lit}
     : Marks the end of switches.  The argument following this one will be treated as the first *arg* even if it starts with a **-**.
 
 

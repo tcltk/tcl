@@ -132,7 +132,7 @@ An RE may not end with "**\\**".
 
 # Bracket expressions
 
-A *bracket expression* is a list of characters enclosed in "**[\\|]**". It normally matches any single character from the list (but see below). If the list begins with "**^**", it matches any single character (but see below) *not* from the rest of the list.
+A *bracket expression* is a list of characters enclosed in "**[]**". It normally matches any single character from the list (but see below). If the list begins with "**^**", it matches any single character (but see below) *not* from the rest of the list.
 
 If two characters in the list are separated by "**-**", this is shorthand for the full *range* of characters between those two (inclusive) in the collating sequence, e.g. "**[0-9]**" in Unicode matches any conventional decimal digit. Two ranges may not share an endpoint, so e.g. "**a-c-e**" is illegal. Ranges in Tcl always use the Unicode collating sequence, but other programs may use other collating sequences and this can be a source of incompatibility between programs.
 
@@ -248,7 +248,7 @@ Character-entry escapes (AREs only) exist to make it easier to specify non-print
 **\\x***hh*
 : (where *hh* is one or two hexadecimal digits) the character whose hexadecimal value is **0x***hh*.
 
-**\\0**
+** **
 : the character whose value is **0**
 
 **\\***xyz*
@@ -432,7 +432,7 @@ Henry Spencer's original 1986 *regexp* package, still in widespread use (e.g., i
 
 - **{** followed by a digit in an ARE is the beginning of a bound, while in RREs, **{** was always an ordinary character. Such sequences should be rare, and will often result in an error because following characters will not look like a valid bound.
 
-- In AREs, **\\** remains a special character within "**[\\|]**", so a literal **\\** within **[\\|]** must be written "**\\\\**". **\\\\** also gives a literal **\\** within **[\\|]** in RREs, but only truly paranoid programmers routinely doubled the backslash.
+- In AREs, **\\** remains a special character within "**[]**", so a literal **\\** within **[]** must be written "**\\\\**". **\\\\** also gives a literal **\\** within **[]** in RREs, but only truly paranoid programmers routinely doubled the backslash.
 
 - AREs report the longest/shortest match for the RE, rather than the first found in a specified search order. This may affect some RREs which were written in the expectation that the first match would be reported. (The careful crafting of RREs to optimize the search order for fast matching is obsolete (AREs examine all possible matches in parallel, and their performance is largely insensitive to their complexity) but cases where the search order was exploited to deliberately find a match which was *not* the longest/shortest will need rewriting.)
 

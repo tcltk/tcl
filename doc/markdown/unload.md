@@ -41,7 +41,7 @@ If the initial arguments to **unload** start with **-** then they are treated as
 [-keeplibrary]{.lit}
 : This switch will prevent **unload** from issuing the operating system call that will unload the library from the process.
 
-[-|-]{.lit}
+[--]{.lit}
 : Marks the end of switches.  The argument following this one will be treated as a *fileName* even if it starts with a **-**.
 
 

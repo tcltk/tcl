@@ -276,8 +276,8 @@ Message files can be located in any directory, subject to the following conditio
 
 
 ```
-es.msg    \(em spanish
-en_gb.msg \(em United Kingdom English
+es.msg    — spanish
+en_gb.msg — United Kingdom English
 ```
 
 *Exception:* The message file for the root locale .MT is called "**ROOT.msg**". This exception is made so as not to cause peculiar behavior, such as marking the message file as "hidden" on Unix file systems.

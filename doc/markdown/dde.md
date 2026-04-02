@@ -43,7 +43,7 @@ This command allows an application to send Dynamic Data Exchange (DDE) command w
 
 The following commands are a subset of the full Dynamic Data Exchange set of commands.
 
-[dde]{.cmd} [servername]{.sub} [-force]{.optlit} [[-handler]{.lit} [proc]{.arg}]{.optarg} [-|-]{.optlit} [topic]{.optarg}
+[dde]{.cmd} [servername]{.sub} [-force]{.optlit} [[-handler]{.lit} [proc]{.arg}]{.optarg} [--]{.optlit} [topic]{.optarg}
 : **dde servername** registers the interpreter as a DDE server with the service name **TclEval** and the topic name specified by *topic*. If no *topic* is given, **dde servername** returns the name of the current topic or the empty string if it is not registered as a service. If the given *topic* name is already in use, then a suffix of the form " #2" or " #3" is appended to the name to make it unique. The command's result will be the name actually used. The **-force** option is used to force registration of precisely the given *topic* name.
 
     The **-handler** option specifies a Tcl procedure that will be called to process calls to the dde server. If the package has been loaded into a safe interpreter then a **-handler** procedure must be defined. The procedure is called with all the arguments provided by the remote call.

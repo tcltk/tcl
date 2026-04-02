@@ -55,7 +55,7 @@ If the initial arguments to **switch** start with **-** then they are treated as
 [-indexvar]{.lit} [varName]{.arg}
 : This option (only legal when **-regexp** is also specified) specifies the name of a variable into which the list of indices referring to matching substrings found by the regular expression engine will be written.  The first element of the list written will be a two-element list specifying the index of the start and index of the first character after the end of the overall substring of the input string (i.e. the *value* argument to **switch**) matched, in a similar way to the **-indices** option to the [regexp] can obtain.  Similarly, the second element of the list refers to the first capturing parenthesis in the regular expression that matched, and so on.  When a **default** branch is taken, the variable will have the empty list written to it.  This option may be specified at the same time as the **-matchvar** option.
 
-[-|-]{.lit}
+[--]{.lit}
 : Marks the end of options.  The argument following this one will be treated as *value* even if it starts with a **-**. This is not required when the matching patterns and bodies are grouped together in a single argument.
 
 

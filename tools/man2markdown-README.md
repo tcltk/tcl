@@ -36,7 +36,7 @@ section | number of documents | initial conversion | final conversion
 --------|---------------------|--------------------|-----------------
 1       | 1                   | 1                  | 0
 3       | 108                 | 108                | 0
-n       | 139                 | 139                | 21
+n       | 139                 | 139                | 32
 
 Final conversion of these files is currently done:
 1. after
@@ -64,6 +64,14 @@ Final conversion of these files is currently done:
 23. coroutine
 24. dde
 25. define
+26. dict
+27. encoding
+28. eof
+29. error
+30. eval
+31. exec (the section PORTABILITY ISSUES need manual conversion into markdown subsections)
+32. exit
+
 
 The tk/doc directory comes next, after finishing Tcl.
 

@@ -681,7 +681,7 @@ Option **-repost**, if **true**, permits automatic retry of a POST request that 
 
 Cookies are short key-value pairs used to implement sessions within the otherwise-stateless HTTP protocol. (See RFC 6265 for details; Tcl does not implement the Cookie2 protocol as that is rarely seen in the wild.)
 
-Cookie storage management commands \\(em "cookie jars" \\(em must support these subcommands which form the HTTP cookie storage management protocol. Note that *cookieJar* below does not have to be a command name; it is properly a command prefix (a Tcl list of words that will be expanded in place) and admits many possible implementations.
+Cookie storage management commands — "cookie jars" — must support these subcommands which form the HTTP cookie storage management protocol. Note that *cookieJar* below does not have to be a command name; it is properly a command prefix (a Tcl list of words that will be expanded in place) and admits many possible implementations.
 
 Though not formally part of the protocol, it is expected that particular values of *cookieJar* will correspond to sessions; it is up to the caller of **::http::config** to decide what session applies and to manage the deletion of said sessions when they are no longer desired (which should be when they not configured as the current cookie jar).
 

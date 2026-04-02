@@ -577,6 +577,8 @@ proc ::ndoc::parseBackslash {text} {
 	# \\(en –        = \(en    ->   – (em-dash)
 	# \\(-> \u2192   = \(->    ->   -> (arrow)
 	# \\\\           = \\      ->   undo backslash escaping during parsing, it will be added by the markdown writer if needed
+	# \\|            = {}      ->   zero-width narrow space (1/6 em)
+	# \\0            = { }     ->   digit-width space (a space that is exactly the same width as a digit (0–9) in the current font)
 	#
 	# Note: this procedure does not handle the \f... sequences
 	# (\fB, \fI and \fR are handled by BIRPclean, BIRPstrip and parseInline)
@@ -588,8 +590,11 @@ proc ::ndoc::parseBackslash {text} {
 		\u005c- -
 		\N'34' \"
 		\\(en –
+		\\(em \u2014
 		\\(-> \u2192
 		\\\\ \\
+		\\| {}
+		\\0 { }
 	} $text]
 	return $text
 }
@@ -1155,6 +1160,11 @@ proc ::ndoc::parseCommand {mode line} {
 					# should on occur in sections where OPTIONs are described, not whole commands:
 					lappend spanList [list Span .lit [string range $word 1 end-1]]
 					if $DEBUG {puts "single .lit describing a command options: $spanList"}
+				}
+				{^§[|<>2].*=} {
+					# special case for arg components in the exec command which are literals
+					lappend spanList [list Span .lit [string range $word 1 end-1]]
+					if $DEBUG {puts "single .lit describing an exec option: $spanList"}
 				}
 				{^§.+=$} {
 					# only one cmd without subcommand:

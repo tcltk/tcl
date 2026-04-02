@@ -62,7 +62,7 @@ By default ASCII sorting is used with the result returned in increasing order.  
 [-real]{.lit}
 : Convert list elements to floating-point values and use floating comparison.
 
-[-command0=+command]{.lit}
+[-command]{.lit} [command]{.arg}
 : Use *command* as a comparison command. To compare two elements, evaluate a Tcl script consisting of *command* with the two elements appended as additional arguments.  The script should return an integer less than, equal to, or greater than zero if the first element is to be considered less than, equal to, or greater than the second, respectively.
 
 [-increasing]{.lit}
@@ -74,7 +74,7 @@ By default ASCII sorting is used with the result returned in increasing order.  
 [-indices]{.lit}
 : Return a list of indices into *list* in sorted order instead of the values themselves.
 
-[-index0=+indexList]{.lit}
+[-index]{.lit} [indexList]{.arg}
 : If this option is specified, each of the elements of *list* must itself be a proper Tcl sublist (unless **-stride** is used). Instead of sorting based on whole sublists, **lsort** will extract the *indexList*'th element from each sublist (as if the overall element and the *indexList* were passed to [lindex]) and sort based on the given element. For example,
 
     ```
@@ -101,7 +101,7 @@ By default ASCII sorting is used with the result returned in increasing order.  
 
     returns **{{d e m o} 34512} {{b i g} 12345} {{c o d e} 54321}** (because **e** sorts before **i** which sorts before **o**.) This option is much more efficient than using **-command** to achieve the same effect.
 
-**-stride\\0***strideLength*
+**-stride** *strideLength*
 : If this option is specified, the list is treated as consisting of groups of *strideLength* elements and the groups are sorted by either their first element or, if the **-index** option is used, by the element within each group given by the first index passed to **-index** (which is then ignored by **-index**). Elements always remain in the same position within their group.
 
     The list length must be an integer multiple of *strideLength*, which in turn must be at least 2.

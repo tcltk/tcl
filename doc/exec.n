@@ -224,7 +224,7 @@ are performed on the arguments to commands.
 \fBWindows\fR (all versions)
 .
 Reading from or writing to a socket, using the
-.QW \fB@\0\fIfileId\fR
+.QW \fB@\fR\0\fIfileId\fR
 notation, does not work.  When reading from a socket, a 16-bit DOS
 application will hang and a 32-bit application will return immediately with
 end-of-file.  When either type of application writes to a socket, the

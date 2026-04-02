@@ -74,7 +74,7 @@ If the initial arguments to **regexp** start with **-** then they are treated as
 [-start]{.lit} [index]{.arg}
 : Specifies a character index offset into the string to start matching the regular expression at. The *index* value is interpreted in the same manner as the *index* argument to [string index][string]. When using this switch, "^" will not match the beginning of the line, and \\A will still match the start of the string at *index*.  If **-indices** is specified, the indices will be indexed starting from the absolute beginning of the input string. *index* will be constrained to the bounds of the input string.
 
-[-|-]{.lit}
+[--]{.lit}
 : Marks the end of switches.  The argument following this one will be treated as *exp* even if it starts with a **-**.
 
 

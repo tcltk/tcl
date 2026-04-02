@@ -113,36 +113,36 @@ For operators having both a numeric mode and a string mode, the numeric mode is 
 
 Unless otherwise specified, operators accept non-numeric operands.  The value of a boolean operation is 1 if true, 0 otherwise.  See also [string is][string] **boolean**.  The valid operators, most of which are also available as commands in the **tcl::mathop** namespace (see **mathop**(n)), are listed below, grouped in decreasing order of precedence:
 
-**-\\0\\0+\\0\\0~\\0\\0!**
+**-  +  ~  !**
 : Unary minus, unary plus, bit-wise NOT, logical NOT.  These operators may only be applied to numeric operands, and bit-wise NOT may only be applied to integers.
 
 **\*\***
 : Exponentiation.  Valid for numeric operands.  The maximum exponent value that Tcl can handle if the first number is an integer > 1 is 268435455.
 
-**\*\\0\\0/\\0\\0%**
+**\*  /  %**
 : Multiply and divide, which are valid for numeric operands, and remainder, which is valid for integers.  The remainder, an absolute value smaller than the absolute value of the divisor, has the same sign as the divisor.
 
     When applied to integers, division and remainder can be considered to partition the number line into a sequence of adjacent non-overlapping pieces, where each piece is the size of the divisor; the quotient identifies which piece the dividend lies within, and the remainder identifies where within that piece the dividend lies. A consequence of this is that the result of "-57 **/** 10" is always -6, and the result of "-57 **%** 10" is always 3.
 
-**+\\0\\0-**
+**+  -**
 : Add and subtract.  Valid for numeric operands.
 
-**<<\\0\\0>>**
+**<<  >>**
 : Left and right shift.  Valid for integers. A right shift always propagates the sign bit.
 
-**<\\0\\0>\\0\\0<=\\0\\0>=**
+**<  >  <=  >=**
 : Boolean numeric-preferring comparisons: less than, greater than, less than or equal, and greater than or equal. If either argument is not numeric, the comparison is done using UNICODE string comparison, as with the string comparison operators below, which have the same precedence.
 
-**lt\\0\\0gt\\0\\0le\\0\\0ge**
+**lt  gt  le  ge**
 : Boolean string comparisons: less than, greater than, less than or equal, and greater than or equal. These always compare values using their UNICODE strings (also see [string compare][string]), unlike with the numeric-preferring comparisons above, which have the same precedence.
 
-**==\\0\\0!=**
+**==  !=**
 : Boolean equal and not equal.
 
-**eq\\0\\0ne**
+**eq  ne**
 : Boolean string equal and string not equal.
 
-**in\\0\\0ni**
+**in  ni**
 : List containment and negated list containment.  The first argument is interpreted as a string, the second as a list.  **in** tests for membership in the list, and **ni** is the inverse.
 
 **&**
