@@ -1043,7 +1043,7 @@ test filesystem-11.1 {
                         file normalize $file1
                     }
 } -result [expr {
-                 [testConstraint caseSensitivefS] ?
+                 [testConstraint caseSensitiveFS] ?
                  [lrepeat 3 [tcltest::temporaryDirectory]/mIxEdCaSe.TxT]
                  :
                  [list [tcltest::temporaryDirectory]/mIxEdCaSe.TxT]}]
@@ -1057,7 +1057,7 @@ test filesystem-11.2 {
                         file normalize $file1
                     }
 } -result [expr {
-                 [testConstraint caseSensitivefS] ?
+                 [testConstraint caseSensitiveFS] ?
                  [lrepeat 3 [file join [tcltest::temporaryDirectory] mIxEdCaSe.TxT]]
                  :
                  [list [file join [tcltest::temporaryDirectory] mIxEdCaSe.TxT]]}]
@@ -1075,7 +1075,7 @@ test filesystem-11.3 {
                         file tail [file dirname [file normalize $file1]]
                     }
 } -result [expr {
-                 [testConstraint caseSensitivefS] ?
+                 [testConstraint caseSensitiveFS] ?
                  [lrepeat 3 MiXeDcAsE]
                  :
                  [list MiXeDcAsE]}]
@@ -1093,7 +1093,7 @@ test filesystem-11.4 {
                         file tail [file dirname [file normalize $file1]]
                     }
 } -result [expr {
-                 [testConstraint caseSensitivefS] ?
+                 [testConstraint caseSensitiveFS] ?
                  [lrepeat 3 MiXeDcAsE]
                  :
                  [list MiXeDcAsE]}]
