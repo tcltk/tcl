@@ -184,10 +184,10 @@ TclpGetClicks(void)
 	return (Tcl_WideUInt) usecSincePosixEpoch;
     } else {
 	/*
-	* Use the TclpGetMicroseconds abstraction to get the time in microseconds, as
+	* Use the Tcl_GetDayTime abstraction to get the time in microseconds, as
 	* nearly as we can, and return it.
 	*/
-	return TclpGetMicroseconds();
+	return Tcl_GetDayTime();
     }
 }
 
@@ -242,9 +242,9 @@ TclpGetWideClicks(void)
 	/* fallback using microseconds */
 	wideClick.perfCounter = 0;
 	wideClick.microsecsScale = 1;
-	return TclpGetMicroseconds();
+	return Tcl_GetDayTime();
     } else {
-	return TclpGetMicroseconds();
+	return Tcl_GetDayTime();
     }
 }
 
@@ -278,7 +278,7 @@ TclpWideClickInMicrosec(void)
 /*
  *----------------------------------------------------------------------
  *
- * TclpGetMicroseconds --
+ * Tcl_GetDayTime --
  *
  *	This procedure returns a WideInt value that represents the highest
  *	resolution clock in microseconds available on the system.
@@ -293,7 +293,7 @@ TclpWideClickInMicrosec(void)
  */
 
 long long
-TclpGetMicroseconds(void)
+Tcl_GetDayTime(void)
 {
     long long usecSincePosixEpoch;
 

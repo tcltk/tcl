@@ -3830,7 +3830,7 @@ Tcl_LimitCheck(
 		(ticker % iPtr->limit.timeGranularity == 0))) {
 	long long now;
 
-	now = TclpGetMicroseconds();
+	now = Tcl_GetDayTime();
 	if (iPtr->limit.time <= now) {
 	    iPtr->limit.exceeded |= TCL_LIMIT_TIME;
 	    Tcl_Preserve(interp);
@@ -4373,6 +4373,26 @@ Tcl_LimitGetCommands(
  */
 
 void
+Tcl_LimitSetTime2(
+    Tcl_Interp *interp,
+    long long timeLimit)
+{
+    Interp *iPtr = (Interp *) interp;
+    long long nextMoment;
+
+    if (iPtr->limit.timeEvent != NULL) {
+	Tcl_DeleteTimerHandler(iPtr->limit.timeEvent);
+    }
+    nextMoment = timeLimit;
+    iPtr->limit.time = nextMoment;
+    nextMoment += 10;
+
+    iPtr->limit.timeEvent = TclCreateAbsoluteTimerHandler(nextMoment,
+	    TimeLimitCallback, interp);
+    iPtr->limit.exceeded &= ~TCL_LIMIT_TIME;
+}
+
+void
 Tcl_LimitSetTime(
     Tcl_Interp *interp,
     Tcl_Time *timeLimitPtr)
@@ -4459,6 +4479,14 @@ TimeLimitCallback(
  *
  *----------------------------------------------------------------------
  */
+
+long long
+Tcl_LimitGetTime2(
+    Tcl_Interp *interp)
+{
+    Interp *iPtr = (Interp *) interp;
+	return iPtr->limit.time;
+}
 
 void
 Tcl_LimitGetTime(
