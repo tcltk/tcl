@@ -3123,7 +3123,6 @@ MODULE_SCOPE void	TclGetEncodingProfiles(Tcl_Interp *interp);
  */
 
 MODULE_SCOPE Tcl_GetMonotonicTimeProc *tclGetMonotonicTimeProcPtr;
-MODULE_SCOPE void TclSetMaxBlockTime(long long);
 
 /*
  * Variables denoting the Tcl object types defined in the core.
