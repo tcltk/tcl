@@ -119,7 +119,7 @@ To set the **-errorcode** return option, applications should use library procedu
     : If this variable exists, then the interpreter was compiled with and linked to a debug-enabled C run-time.  This variable will only exist on Windows, so extension writers can specify which package to load depending on the C run-time library that is in use.  This is not an indication that this core contains symbols.
 
     **engine**
-    : The name of the Tcl language implementation.  When the interpreter is first created, this is always set to the string **Tcl**.
+    : The name of the Tcl language implementation.  When the interpreter is first created, this is always set to the string [Tcl].
 
     **machine**
     : The instruction set executed by this machine, such as **intel**, **PPC**, **68k**, or **sun4m**.  On UNIX machines, this is the value returned by **uname -m**.
@@ -224,4 +224,5 @@ if {$::argv0 eq [info script]} {
 [set]: set.md
 [source]: source.md
 [split]: split.md
+[Tcl]: Tcl.md
 

@@ -229,7 +229,7 @@ namespace eval ::ndoc {
 	
 	# list of Tcl commands to recognize for links between manual pages:
 	set tclCmdList [lsort [info commands]]
-	lappend tclCmdList my next bgerror
+	lappend tclCmdList my next bgerror Tcl mathop mathfunc
 	
 	# dictionary of links on pages that should link to a page
 	# not identical to the link text.
@@ -262,6 +262,7 @@ namespace eval ::ndoc {
 		define          {variable}
 		entry		{string}
 		event		{return}
+		expr            {variable}
 		font		{menu}
 		getOpenFile	{file open text}
 		grab		{global}

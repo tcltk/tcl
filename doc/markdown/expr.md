@@ -80,23 +80,23 @@ expr 3_141_592_653_589e-1_2		3.141592653589
 A **boolean value**
 : Using any form understood by [string is][string] **boolean**.
 
-A [variable]
+A **variable**
 : Using standard **$** notation. The value of the variable is the value of the operand.
 
 A string enclosed in **double-quotes**
-: Backslash, variable, and command substitution are performed according to the rules for **Tcl**.
+: Backslash, variable, and command substitution are performed according to the rules for [Tcl].
 
 A string enclosed in **braces**.
-: The operand is treated as a braced value according to the rule for braces in **Tcl**.
+: The operand is treated as a braced value according to the rule for braces in [Tcl].
 
 A Tcl command enclosed in **brackets**
-: Command substitution is performed as according to the command substitution rule for **Tcl**.
+: Command substitution is performed as according to the command substitution rule for [Tcl].
 
 A function call.
 : This is mathematical function such as **sin($x)**, whose arguments have any of the above forms for operands.  See [Math functions] below for a discussion of how mathematical functions are handled.
 
 
-Because **expr** parses and performs substitutions on values that have already been parsed and substituted by **Tcl**, it is usually best to enclose expressions in braces to avoid the first round of substitutions by **Tcl**.
+Because **expr** parses and performs substitutions on values that have already been parsed and substituted by [Tcl], it is usually best to enclose expressions in braces to avoid the first round of substitutions by [Tcl].
 
 Below are some examples of simple expressions where the value of **a** is 3 and the value of **b** is 6.  The command on the left side of each line produces the value on the right side.
 
@@ -111,7 +111,7 @@ expr {{word one} < "word $a"}	0
 
 For operators having both a numeric mode and a string mode, the numeric mode is chosen when all operands have a numeric interpretation.  The integer interpretation of an operand is preferred over the floating-point interpretation.  To ensure string operations on arbitrary values it is generally a good idea to use **eq**, **ne**, or the [string] command instead of more versatile operators such as **==**.
 
-Unless otherwise specified, operators accept non-numeric operands.  The value of a boolean operation is 1 if true, 0 otherwise.  See also [string is][string] **boolean**.  The valid operators, most of which are also available as commands in the **tcl::mathop** namespace (see **mathop**(n)), are listed below, grouped in decreasing order of precedence:
+Unless otherwise specified, operators accept non-numeric operands.  The value of a boolean operation is 1 if true, 0 otherwise.  See also [string is][string] **boolean**.  The valid operators, most of which are also available as commands in the **::tcl::mathop** namespace (see [mathop] (n)), are listed below, grouped in decreasing order of precedence:
 
 **-  +  ~  !**
 : Unary minus, unary plus, bit-wise NOT, logical NOT.  These operators may only be applied to numeric operands, and bit-wise NOT may only be applied to integers.
@@ -190,7 +190,7 @@ For more details on the results produced by each operator, see the documentation
 
 ## Math functions
 
-A mathematical function such as **sin($x)** is replaced with a call to an ordinary Tcl command in the **tcl::mathfunc** namespace.  The evaluation of an expression such as
+A mathematical function such as **sin($x)** is replaced with a call to an ordinary Tcl command in the **::tcl::mathfunc** namespace.  The evaluation of an expression such as
 
 ```
 expr {sin($x+$y)}
@@ -199,16 +199,16 @@ expr {sin($x+$y)}
 is the same in every way as the evaluation of
 
 ```
-expr {[tcl::mathfunc::sin [expr {$x+$y}]]}
+expr {[::tcl::mathfunc::sin [expr {$x+$y}]]}
 ```
 
 which in turn is the same as the evaluation of
 
 ```
-tcl::mathfunc::sin [expr {$x+$y}]
+::tcl::mathfunc::sin [expr {$x+$y}]
 ```
 
-**tcl::mathfunc::sin** is resolved as described in **NAMESPACE RESOLUTION** in the [namespace](n) documentation.  Given the default value of [namespace path][namespace], **[namespace current]::tcl::mathfunc::sin** or **::tcl::mathfunc::sin** are the typical resolutions.
+**::tcl::mathfunc::sin** is resolved as described in **NAMESPACE RESOLUTION** in the [namespace] (n) documentation.  Given the default value of [namespace path][namespace], **[namespace current]::tcl::mathfunc::sin** or **::tcl::mathfunc::sin** are the typical resolutions.
 
 As in C, a mathematical function may accept multiple arguments separated by commas. Thus,
 
@@ -219,10 +219,10 @@ expr {hypot($x,$y)}
 becomes
 
 ```
-tcl::mathfunc::hypot $x $y
+::tcl::mathfunc::hypot $x $y
 ```
 
-See the **mathfunc**(n) documentation for the math functions that are available by default.
+See the [mathfunc] (n) documentation for the math functions that are available by default.
 
 ## Types, overflow, and precision
 
@@ -263,7 +263,7 @@ set b {$a + 2}
 expr $b*4
 ```
 
-When an expression is generated at runtime, like the one above is, the bytecode compiler must ensure that new code is generated each time the expression is evaluated.  This is the most costly kind of expression from a performance perspective.  In such cases, consider directly using the commands described in the **mathfunc**(n) or **mathop**(n) documentation instead of **expr**.
+When an expression is generated at runtime, like the one above is, the bytecode compiler must ensure that new code is generated each time the expression is evaluated.  This is the most costly kind of expression from a performance perspective.  In such cases, consider directly using the commands described in the [mathfunc] (n) or [mathop] (n) documentation instead of **expr**.
 
 Most expressions are not formed at runtime, but are literal strings or contain substitutions that don't introduce other substitutions.  To allow the bytecode compiler to work with an expression as a string literal at compilation time, ensure that it contains no substitutions or that it is enclosed in braces or otherwise quoted to prevent Tcl from performing substitutions, allowing **expr** to perform them instead.
 
@@ -275,7 +275,7 @@ set b {$a + 2}
 expr {[expr $b] * 4}
 ```
 
-In general, you should enclose your expression in braces wherever possible, and where not possible, the argument to **expr** should be an expression defined elsewhere as simply as possible. It is usually more efficient and safer to use other techniques (e.g., the commands in the **tcl::mathop** namespace) than it is to do complex expression generation.
+In general, you should enclose your expression in braces wherever possible, and where not possible, the argument to **expr** should be an expression defined elsewhere as simply as possible. It is usually more efficient and safer to use other techniques (e.g., the commands in the **::tcl::mathop** namespace) than it is to do complex expression generation.
 
 # Examples
 
@@ -302,7 +302,7 @@ expr {"0x03" gt "2"}
 Define a procedure that computes an "interesting" mathematical function:
 
 ```
-proc tcl::mathfunc::calc {x y} {
+proc ::tcl::mathfunc::calc {x y} {
     expr { ($x**2 - $y**2) / exp($x**2 + $y**2) }
 }
 ```
@@ -346,13 +346,11 @@ Generate a random integer in the range 0..99 inclusive:
 set randNum [expr { int(100 * rand()) }]
 ```
 
-# Copyright
-
-Copyright \\(co 1993 The Regents of the University of California. Copyright \\(co 1994-2000 Sun Microsystems Incorporated. Copyright \\(co 2005 Kevin B. Kenny <kennykb@acm.org>. All rights reserved. 
-
 
 [format]: format.md
+[mathfunc]: mathfunc.md
+[mathop]: mathop.md
 [namespace]: namespace.md
 [string]: string.md
-[variable]: variable.md
+[Tcl]: Tcl.md
 

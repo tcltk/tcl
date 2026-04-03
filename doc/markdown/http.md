@@ -136,7 +136,7 @@ When the HTTP server has replied to the request, call the command **::http::resp
 : The *encoding* used for creating the x-url-encoded URLs with **::http::formatQuery** and **::http::quoteString**. The default is **utf-8**, as specified by RFC 2718.
 
 **-useragent** *string*
-: The value of the User-Agent header in the HTTP request.  In an unsafe interpreter, the default value depends upon the operating system, and the version numbers of **http** and **Tcl**, and is (for example) "**Mozilla/5.0 (Windows; U; Windows NT 10.0) http/2.10.1 Tcl/9.0.0**". A safe interpreter cannot determine its operating system, and so the default in a safe interpreter is to use a Windows 10 value with the current version numbers of **http** and **Tcl**.
+: The value of the User-Agent header in the HTTP request.  In an unsafe interpreter, the default value depends upon the operating system, and the version numbers of **http** and [Tcl], and is (for example) "**Mozilla/5.0 (Windows; U; Windows NT 10.0) http/2.10.1 Tcl/9.0.0**". A safe interpreter cannot determine its operating system, and so the default in a safe interpreter is to use a Windows 10 value with the current version numbers of **http** and [Tcl].
 
 **-zip** *boolean*
 : If the value is boolean **true**, then by default requests will send a header "**Accept-Encoding: gzip,deflate**". If the value is boolean **false**, then by default requests will send a header "**Accept-Encoding: identity**". In either case the default can be overridden for an individual request by supplying a custom **Accept-Encoding** header in the **-headers** option of **http::geturl**. The default value is 1.
@@ -800,5 +800,6 @@ proc httpCopyProgress {args} {
 [eof]: eof.md
 [socket]: socket.md
 [string]: string.md
+[Tcl]: Tcl.md
 [vwait]: vwait.md
 

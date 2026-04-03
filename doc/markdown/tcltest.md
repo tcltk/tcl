@@ -199,7 +199,7 @@ See [Creating test suites with tcltest] below for an extended example of how to 
 
 ## Other commands
 
-The remaining commands provided by **tcltest** have better alternatives provided by **tcltest** or **Tcl** itself.  They are retained to support existing test suites, but should be avoided in new code.
+The remaining commands provided by **tcltest** have better alternatives provided by **tcltest** or [Tcl] itself.  They are retained to support existing test suites, but should be avoided in new code.
 
 **test** *name description optionList*
 : This form of **test** was provided to enable passing many options spanning several lines to **test** as a single argument quoted by braces, rather than needing to backslash quote the newlines between arguments to **test**.  The *optionList* argument is expected to be a list with an even number of elements representing *option* and *value* arguments to pass to **test**.  However, these values are not passed directly, as in the alternate forms of [switch].  Instead, this form makes an unfortunate attempt to overthrow Tcl's substitution rules by performing substitutions on some of the list elements as an attempt to implement a "do what I mean" interpretation of a brace-enclosed "block". The result is nearly impossible to document clearly, and for that reason this form is not recommended.  See the examples in [Creating test suites with tcltest] below to see that this form is really not necessary to avoid backslash-quoted newlines. If you insist on using this form, examine the source code of **tcltest** if you want to know the substitution details, or just enclose the third through last argument to **test** in braces and hope for the best.
@@ -676,5 +676,6 @@ Implementation of output and error comparison in the test command depends on usa
 [return]: return.md
 [source]: source.md
 [switch]: switch.md
+[Tcl]: Tcl.md
 [time]: time.md
 

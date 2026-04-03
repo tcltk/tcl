@@ -105,5 +105,8 @@ When the conditions of completeness and well-formedness may not be satisfied, a 
 
 **Tcl\_UtfAtIndex** returns a pointer to the specified character (not byte) *index* in the TUTF-8 byte sequence *src*.  The source must contain at least *index* characters.  This is equivalent to calling **Tcl\_UtfToUniChar** *index* times.  If *index* is negative, the return pointer points to the first character in the source.
 
-**Tcl\_UtfBackslash** is a utility procedure used by several of the Tcl commands.  It parses a backslash sequence and stores the properly formed TUTF-8 encoding of the character represented by the backslash sequence in the output buffer *dst*.  At most **TCL\_UTF\_MAX** bytes are stored in the buffer. **Tcl\_UtfBackslash** modifies *\*readPtr* to contain the number of bytes in the backslash sequence, including the backslash character. The return value is the number of bytes stored in the output buffer. See the **Tcl** manual entry for information on the valid backslash sequences.  All of the sequences described in the Tcl manual entry are supported by **Tcl\_UtfBackslash**. 
+**Tcl\_UtfBackslash** is a utility procedure used by several of the Tcl commands.  It parses a backslash sequence and stores the properly formed TUTF-8 encoding of the character represented by the backslash sequence in the output buffer *dst*.  At most **TCL\_UTF\_MAX** bytes are stored in the buffer. **Tcl\_UtfBackslash** modifies *\*readPtr* to contain the number of bytes in the backslash sequence, including the backslash character. The return value is the number of bytes stored in the output buffer. See the [Tcl] manual entry for information on the valid backslash sequences.  All of the sequences described in the Tcl manual entry are supported by **Tcl\_UtfBackslash**. 
+
+
+[Tcl]: Tcl.md
 

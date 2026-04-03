@@ -148,7 +148,7 @@ more versatile operators such as \fB==\fR.
 Unless otherwise specified, operators accept non-numeric operands.  The value
 of a boolean operation is 1 if true, 0 otherwise.  See also \fBstring is\fR
 \fBboolean\fR.  The valid operators, most of which are also available as
-commands in the \fBtcl::mathop\fR namespace (see \fBmathop\fR(n)), are listed
+commands in the \fB::tcl::mathop\fR namespace (see \fBmathop\fR (n)), are listed
 below, grouped in decreasing order of precedence:
 .TP 20
 \fB\-\0\0+\0\0~\0\0!\fR
@@ -291,7 +291,7 @@ produced by each operator, see the documentation for C.
 .SS "MATH FUNCTIONS"
 .PP
 A mathematical function such as \fBsin($x)\fR is replaced with a call to an
-ordinary Tcl command in the \fBtcl::mathfunc\fR namespace.  The evaluation
+ordinary Tcl command in the \fB::tcl::mathfunc\fR namespace.  The evaluation
 of an expression such as
 .PP
 .CS
@@ -301,17 +301,17 @@ of an expression such as
 is the same in every way as the evaluation of
 .PP
 .CS
-\fBexpr\fR {[tcl::mathfunc::sin [\fBexpr\fR {$x+$y}]]}
+\fBexpr\fR {[::tcl::mathfunc::sin [\fBexpr\fR {$x+$y}]]}
 .CE
 .PP
 which in turn is the same as the evaluation of
 .PP
 .CS
-tcl::mathfunc::sin [\fBexpr\fR {$x+$y}]
+::tcl::mathfunc::sin [\fBexpr\fR {$x+$y}]
 .CE
 .PP
-\fBtcl::mathfunc::sin\fR is resolved as described in
-\fBNAMESPACE RESOLUTION\fR in the \fBnamespace\fR(n) documentation.  Given the
+\fB::tcl::mathfunc::sin\fR is resolved as described in
+\fBNAMESPACE RESOLUTION\fR in the \fBnamespace\fR (n) documentation.  Given the
 default value of \fBnamespace path\fR, \fB[namespace
 current]::tcl::mathfunc::sin\fR or \fB::tcl::mathfunc::sin\fR are the typical
 resolutions.
@@ -326,10 +326,10 @@ commas. Thus,
 becomes
 .PP
 .CS
-tcl::mathfunc::hypot $x $y
+::tcl::mathfunc::hypot $x $y
 .CE
 .PP
-See the \fBmathfunc\fR(n) documentation for the math functions that are
+See the \fBmathfunc\fR (n) documentation for the math functions that are
 available by default.
 .SS "TYPES, OVERFLOW, AND PRECISION"
 .PP
@@ -397,7 +397,7 @@ When an expression is generated at runtime, like the one above is, the bytecode
 compiler must ensure that new code is generated each time the expression
 is evaluated.  This is the most costly kind of expression from a performance
 perspective.  In such cases, consider directly using the commands described in
-the \fBmathfunc\fR(n) or \fBmathop\fR(n) documentation instead of \fBexpr\fR.
+the \fBmathfunc\fR (n) or \fBmathop\fR (n) documentation instead of \fBexpr\fR.
 .PP
 Most expressions are not formed at runtime, but are literal strings or contain
 substitutions that don't introduce other substitutions.  To allow the bytecode
@@ -423,7 +423,7 @@ set b {$a + 2}
 In general, you should enclose your expression in braces wherever possible,
 and where not possible, the argument to \fBexpr\fR should be an expression
 defined elsewhere as simply as possible. It is usually more efficient and
-safer to use other techniques (e.g., the commands in the \fBtcl::mathop\fR
+safer to use other techniques (e.g., the commands in the \fB::tcl::mathop\fR
 namespace) than it is to do complex expression generation.
 .SH EXAMPLES
 .PP
@@ -452,7 +452,7 @@ Define a procedure that computes an
 mathematical function:
 .PP
 .CS
-proc tcl::mathfunc::calc {x y} {
+proc ::tcl::mathfunc::calc {x y} {
     \fBexpr\fR { ($x**2 - $y**2) / exp($x**2 + $y**2) }
 }
 .CE
@@ -502,12 +502,6 @@ array(n), for(n), if(n), mathfunc(n), mathop(n), namespace(n), proc(n),
 string(n), Tcl(n), while(n)
 .SH KEYWORDS
 arithmetic, boolean, compare, expression, fuzzy comparison, integer value
-.SH COPYRIGHT
-.nf
-Copyright \(co 1993 The Regents of the University of California.
-Copyright \(co 1994-2000 Sun Microsystems Incorporated.
-Copyright \(co 2005 Kevin B. Kenny <kennykb@acm.org>. All rights reserved.
-.fi
 '\" Local Variables:
 '\" mode: nroff
 '\" fill-column: 78
