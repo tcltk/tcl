@@ -1715,6 +1715,9 @@ proc ::ndoc::mdExceptions {md} {
 		dde {
 			set md [string map {{Dde and tcl} {DDE and Tcl} Dde DDE} $md]
 		}
+		fcopy {
+			set md [string map {{two [open "|hal 9000" r+]} {two `open "|hal 9000" r+`}} $md]
+		}
 	}
 	return $md
 }

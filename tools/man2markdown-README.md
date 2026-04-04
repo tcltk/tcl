@@ -36,7 +36,7 @@ section | number of documents | initial conversion | final conversion
 --------|---------------------|--------------------|-----------------
 1       | 1                   | 1                  | 0
 3       | 108                 | 108                | 0
-n       | 139                 | 139                | 33
+n       | 139                 | 139                | 36
 
 Final conversion of these files is currently done:
 1. after
@@ -72,6 +72,10 @@ Final conversion of these files is currently done:
 31. exec (the section PORTABILITY ISSUES need manual conversion into markdown subsections)
 32. exit
 33. expr (the section OPERANDS needs manual adaptation after conversion to markdown)
+34. fblocked
+35. fconfigure
+36. fcopy
+
 
 
 The tk/doc directory comes next, after finishing Tcl.

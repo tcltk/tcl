@@ -58,13 +58,13 @@ Note that *inchan* can become readable during a background copy. You should turn
 
 ## Channel translation options
 
-**Fcopy** translates end-of-line sequences in *inchan* and *outchan* according to the **-translation** option for these channels. See the manual entry for [fconfigure] for details on the **-translation** option. The translations mean that the number of bytes read from *inchan* can be different than the number of bytes written to *outchan*. Only the number of bytes written to *outchan* is reported, either as the return value of a synchronous **fcopy** or as the argument to the callback for an asynchronous **fcopy**.
+**fcopy** translates end-of-line sequences in *inchan* and *outchan* according to the **-translation** option for these channels. See the manual entry for [fconfigure] for details on the **-translation** option. The translations mean that the number of bytes read from *inchan* can be different than the number of bytes written to *outchan*. Only the number of bytes written to *outchan* is reported, either as the return value of a synchronous **fcopy** or as the argument to the callback for an asynchronous **fcopy**.
 
 ## Channel encoding options
 
-**Fcopy** obeys the encodings, profiles and character translations configured for the channels. This means that the incoming characters are converted from the encoding configured for the input channel and then encoded as per the encoding of the output channel. See the manual entry for [fconfigure] for details on the **-encoding** and **-profile** options. No conversion is done if both channels are set to encoding "binary" and have matching translations.
+**fcopy** obeys the encodings, profiles and character translations configured for the channels. This means that the incoming characters are converted from the encoding configured for the input channel and then encoded as per the encoding of the output channel. See the manual entry for [fconfigure] for details on the **-encoding** and **-profile** options. No conversion is done if both channels are set to encoding "binary" and have matching translations.
 
-**Fcopy** may throw encoding errors (error code **EILSEQ**), if input or output channel is configured to the "strict" encoding profile.
+**fcopy** may throw encoding errors (error code **EILSEQ**), if input or output channel is configured to the "strict" encoding profile.
 
 If an encoding error arises on the input channel, any data before the error byte is written to the output channel. The input file pointer is located just before the values causing the encoding error. Error inspection or recovery is possible by changing the encoding parameters and invoking a file command ([read], **fcopy**).
 
@@ -122,7 +122,7 @@ fcopy $in $out -size $chunk \
 vwait done
 ```
 
-The fourth example starts an asynchronous, bidirectional fcopy between two sockets. Those could also be pipes from two [open "|hal 9000" r+] (though their conversation would remain secret to the script, since all four fileevent slots are busy).
+The fourth example starts an asynchronous, bidirectional fcopy between two sockets. Those could also be pipes from two `open "|hal 9000" r+` (though their conversation would remain secret to the script, since all four fileevent slots are busy).
 
 ```
 set flows 2

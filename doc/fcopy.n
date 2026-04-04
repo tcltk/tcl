@@ -75,7 +75,7 @@ get a
 error.
 .
 .SS "CHANNEL TRANSLATION OPTIONS"
-\fBFcopy\fR translates end-of-line sequences in \fIinchan\fR and \fIoutchan\fR
+\fBfcopy\fR translates end-of-line sequences in \fIinchan\fR and \fIoutchan\fR
 according to the \fB\-translation\fR option
 for these channels.
 See the manual entry for \fBfconfigure\fR for details on the
@@ -86,7 +86,7 @@ Only the number of bytes written to \fIoutchan\fR is reported,
 either as the return value of a synchronous \fBfcopy\fR or
 as the argument to the callback for an asynchronous \fBfcopy\fR.
 .SS "CHANNEL ENCODING OPTIONS"
-\fBFcopy\fR obeys the encodings, profiles and character translations configured
+\fBfcopy\fR obeys the encodings, profiles and character translations configured
 for the channels. This
 means that the incoming characters are converted from the encoding configured
 for the input channel and then encoded as per the encoding of the output channel.
@@ -97,7 +97,7 @@ set to encoding
 .QW binary
 and have matching translations.
 .PP
-\fBFcopy\fR may throw encoding errors (error code \fBEILSEQ\fR), if input or output
+\fBfcopy\fR may throw encoding errors (error code \fBEILSEQ\fR), if input or output
 channel is configured to the
 .QW strict
 encoding profile.
