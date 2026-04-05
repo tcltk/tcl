@@ -62,5 +62,5 @@ All of the routines described examine Unicode characters and return a boolean va
 
 **Tcl\_UniCharIsUpper** tests if the character is an uppercase Unicode character.
 
-**Tcl\_UniCharIsWordChar** tests if the character is alphanumeric or a connector punctuation mark. 
+**Tcl\_UniCharIsWordChar** tests if the character is alphanumeric or a connector punctuation mark.
 

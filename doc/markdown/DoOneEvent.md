@@ -59,5 +59,5 @@ If any of the flags **TCL\_WINDOW\_EVENTS**, **TCL\_FILE\_EVENTS**, **TCL\_TIMER
 
 The **TCL\_DONT\_WAIT** flag causes **Tcl\_DoOneEvent** not to put the process to sleep:  it will check for events but if none are found then it returns immediately with a return value of 0 to indicate that no work was done. **Tcl\_DoOneEvent** will also return 0 without doing anything if the only alternative is to block forever (this can happen, for example, if *flags* is **TCL\_IDLE\_EVENTS** and there are no **Tcl\_DoWhenIdle** callbacks pending, or if no event handlers or timer handlers exist).
 
-**Tcl\_DoOneEvent** may be invoked recursively.  For example, it is possible to invoke **Tcl\_DoOneEvent** recursively from a handler called by **Tcl\_DoOneEvent**.  This sort of operation is useful in some modal situations, such as when a notification dialog has been popped up and an application wishes to wait for the user to click a button in the dialog before doing anything else. 
+**Tcl\_DoOneEvent** may be invoked recursively.  For example, it is possible to invoke **Tcl\_DoOneEvent** recursively from a handler called by **Tcl\_DoOneEvent**.  This sort of operation is useful in some modal situations, such as when a notification dialog has been popped up and an application wishes to wait for the user to click a button in the dialog before doing anything else.
 

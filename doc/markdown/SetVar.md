@@ -95,5 +95,5 @@ The *newValuePtr* argument to **Tcl\_SetVar2Ex** and **Tcl\_ObjSetVar2** may be 
 
 The *part1Ptr* argument to **Tcl\_ObjSetVar2** and **Tcl\_ObjGetVar2** can have any reference count.  These functions never modify it.
 
-The *part2Ptr* argument to **Tcl\_ObjSetVar2** and **Tcl\_ObjGetVar2**, if non-NULL, should not have a zero reference count as these functions may retain a reference to it, particularly when it is used to create an array element that did not previously exist, and decrementing the reference count later would leave them pointing to a freed Tcl\_Obj. 
+The *part2Ptr* argument to **Tcl\_ObjSetVar2** and **Tcl\_ObjGetVar2**, if non-NULL, should not have a zero reference count as these functions may retain a reference to it, particularly when it is used to create an array element that did not previously exist, and decrementing the reference count later would leave them pointing to a freed Tcl\_Obj.
 

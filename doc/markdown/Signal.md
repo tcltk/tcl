@@ -29,5 +29,5 @@ Tcl\_SignalId, Tcl\_SignalMsg - Convert signal codes
 
 # Description
 
-**Tcl\_SignalId** and **Tcl\_SignalMsg** return a string representation of the provided signal number (*sig*). **Tcl\_SignalId** returns a machine-readable textual identifier such as "SIGPIPE". **Tcl\_SignalMsg** returns a human-readable string such as "bus error". The strings returned by these functions are statically allocated and the caller must not free or modify them. 
+**Tcl\_SignalId** and **Tcl\_SignalMsg** return a string representation of the provided signal number (*sig*). **Tcl\_SignalId** returns a machine-readable textual identifier such as "SIGPIPE". **Tcl\_SignalMsg** returns a human-readable string such as "bus error". The strings returned by these functions are statically allocated and the caller must not free or modify them.
 

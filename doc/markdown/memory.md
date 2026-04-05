@@ -68,4 +68,3 @@ The **memory** command gives the Tcl developer control of Tcl's memory debugging
 [memory]{.cmd} [validate]{.sub} [on=|§off]{.lit}
 : Turns memory validation on or off. When memory validation is enabled, on every call to **Tcl\_Alloc** or **Tcl\_Free**, the guard zones are checked for every piece of memory currently in existence that was allocated by **Tcl\_Alloc**.  This has a large performance impact and should only be used when overwrite problems are strongly suspected. The advantage of enabling memory validation is that a guard zone overwrite can be detected on the first call to **Tcl\_Alloc** or **Tcl\_Free** after the overwrite occurred, rather than when the specific memory with the overwritten guard zone(s) is freed, which may occur long after the overwrite occurred.
 
-

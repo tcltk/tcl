@@ -56,7 +56,7 @@ This command provides several operations on a file's name or attributes.  The *n
 [file]{.cmd} [attributes]{.sub} [name]{.arg} [option value option value...]{.optarg}
 : This subcommand returns or sets platform-specific values associated with a file. The first form returns a list of the platform-specific options and their values. The second form returns the value for the given option. The third form sets one or more of the values. The values are as follows:
 
-    On Unix, **-group** gets or sets the group name for the file. A group id can be given to the command, but it returns a group name. **-owner** gets or sets the user name of the owner of the file. The command returns the owner name, but the numerical id can be passed when setting the owner. **-permissions** retrieves or sets a file's access permissions, using octal notation by default. This option also provides limited support for setting permissions using the symbolic notation accepted by the **chmod** command, following the form [**ugo**]?[[**+-=**][**rwxst**]**,**[...]]. Multiple permission specifications may be given, separated by commas. E.g., **u+s,go-rw** would set the setuid bit for a file's owner as well as remove read and write permission for the file's group and other users. An **ls**-style string of the form **rwxrwxrwx** is also accepted but must always be 9 characters long. E.g., **rwxr-xr-t** is equivalent to **01755**. On versions of Unix supporting file flags, **-readonly** returns the value of, or sets, or clears the readonly attribute of a file, i.e., the user immutable flag (**uchg**) to the **chflags** command.
+    On Unix, **-group** gets or sets the group name for the file. A group id can be given to the command, but it returns a group name. **-owner** gets or sets the user name of the owner of the file. The command returns the owner name, but the numerical id can be passed when setting the owner. **-permissions** retrieves or sets a file's access permissions, using octal notation by default. This option also provides limited support for setting permissions using the symbolic notation accepted by the **chmod** command, following the form `[**ugo**]?[[**+-=**][**rwxst**]**,**[...]]`. Multiple permission specifications may be given, separated by commas. E.g., **u+s,go-rw** would set the setuid bit for a file's owner as well as remove read and write permission for the file's group and other users. An **ls**-style string of the form **rwxrwxrwx** is also accepted but must always be 9 characters long. E.g., **rwxr-xr-t** is equivalent to **01755**. On versions of Unix supporting file flags, **-readonly** returns the value of, or sets, or clears the readonly attribute of a file, i.e., the user immutable flag (**uchg**) to the **chflags** command.
 
     On Windows, **-archive** gives the value or sets or clears the archive attribute of the file. **-hidden** gives the value or sets or clears the hidden attribute of the file. **-longname** will expand each path element to its long version. This attribute cannot be set. **-readonly** gives the value or sets or clears the readonly attribute of the file. **-shortname** gives a string where every path element is replaced with its short (8.3) version of the name if possible. For path elements that cannot be mapped to short names, the long name is retained. This attribute cannot be set. **-system** gives or sets or clears the value of the system attribute of the file.
 
@@ -84,7 +84,7 @@ This command provides several operations on a file's name or attributes.  The *n
 
 
 
-Other attributes may be present in the returned list. These should be ignored.
+    Other attributes may be present in the returned list. These should be ignored.
 
 [file]{.cmd} [channels]{.sub} [pattern]{.optarg}
 : If *pattern* is not specified, returns a list of names of all registered open channels in this interpreter.  If *pattern* is specified, only those names matching *pattern* are returned.  Matching is determined using the same rules as for [string match][string].
@@ -228,7 +228,7 @@ Other attributes may be present in the returned list. These should be ignored.
     If the file name does not begin with a tilde, it is returned unmodified.
 
 [file]{.cmd} [type]{.sub} [name]{.arg}
-: Returns a string giving the type of file *name*, which will be one of **file**, **directory**, **characterSpecial**, **blockSpecial**, **fifo**, **link**, or [socket].
+: Returns a string giving the type of file *name*, which will be one of **file**, **directory**, **characterSpecial**, **blockSpecial**, **fifo**, **link**, or **socket**.
 
 [file]{.cmd} [volumes]{.sub}
 : Returns the absolute paths to the volumes mounted on the system, as a proper Tcl list.  Without any virtual filesystems mounted as root volumes, on UNIX, the command will always return "/", since all filesystems are locally mounted. On Windows, it will return a list of the available local drives (e.g. "a:/ c:/"). If any virtual filesystem has mounted additional volumes, they will be in the returned list.
@@ -292,7 +292,6 @@ exec {*}[auto_execok start] {} [file nativename C:/Users/fred/example.txt]
 
 
 [exec]: exec.md
-[socket]: socket.md
 [string]: string.md
 [zipfs]: zipfs.md
 

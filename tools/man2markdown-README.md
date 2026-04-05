@@ -36,7 +36,7 @@ section | number of documents | initial conversion | final conversion
 --------|---------------------|--------------------|-----------------
 1       | 1                   | 1                  | 0
 3       | 108                 | 108                | 0
-n       | 139                 | 139                | 36
+n       | 139                 | 139                | 42
 
 Final conversion of these files is currently done:
 1. after
@@ -75,6 +75,12 @@ Final conversion of these files is currently done:
 34. fblocked
 35. fconfigure
 36. fcopy
+37. file
+38. fileevent
+39. filename
+40. flush
+41. for
+42. foreach
 
 
 

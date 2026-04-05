@@ -43,5 +43,5 @@ These procedures convert from strings to integers or double-precision floating-p
 
 **Tcl\_GetBoolean** expects *src* to specify a boolean value.  If *src* is any of **0**, **false**, **no**, or **off**, then **Tcl\_GetBoolean** stores a zero value at *\*intPtr*. If *src* is any of **1**, **true**, **yes**, or **on**, then 1 is stored at *\*intPtr*. Any of these values may be abbreviated, and upper-case spellings are also acceptable.
 
-**Tcl\_GetBool** functions almost the same as **Tcl\_GetBoolean**, but it has an additional parameter **flags**, which can be used to specify whether the empty string or NULL is accepted as valid. 
+**Tcl\_GetBool** functions almost the same as **Tcl\_GetBoolean**, but it has an additional parameter **flags**, which can be used to specify whether the empty string or NULL is accepted as valid.
 

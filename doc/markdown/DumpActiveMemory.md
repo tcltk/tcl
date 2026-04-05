@@ -40,5 +40,5 @@ These functions provide access to Tcl memory debugging information. They are onl
 
 **Tcl\_InitMemory** adds the Tcl **memory** command to the interpreter given by *interp*.  **Tcl\_InitMemory** is called by **Tcl\_Main**.
 
-**Tcl\_ValidateAllMemory** forces a validation of the guard zones of all currently allocated blocks of memory.  Normally validation of a block occurs when its freed, unless full validation is enabled, in which case validation of all blocks occurs when **Tcl\_Alloc** and **Tcl\_Free** are called.  This function forces the validation to occur at any point. 
+**Tcl\_ValidateAllMemory** forces a validation of the guard zones of all currently allocated blocks of memory.  Normally validation of a block occurs when its freed, unless full validation is enabled, in which case validation of all blocks occurs when **Tcl\_Alloc** and **Tcl\_Free** are called.  This function forces the validation to occur at any point.
 

@@ -176,5 +176,5 @@ The
 
 # Copyright
 
-Copyright \\(co 2008 Kevin B. Kenny. Copyright \\(co 2018 Nathan Coulter. 
+Copyright \\(co 2008 Kevin B. Kenny. Copyright \\(co 2018 Nathan Coulter.
 

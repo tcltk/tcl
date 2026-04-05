@@ -29,5 +29,5 @@ Tcl\_SourceRCFile - source the Tcl rc file
 
 # Description
 
-**Tcl\_SourceRCFile** is used to source the Tcl rc file at startup. It is typically invoked by Tcl\_Main or Tk\_Main.  The name of the file sourced is obtained from the global variable **tcl\_rcFileName** in the interpreter given by *interp*.  If this variable is not defined, or if the file it indicates cannot be found, no action is taken. 
+**Tcl\_SourceRCFile** is used to source the Tcl rc file at startup. It is typically invoked by Tcl\_Main or Tk\_Main.  The name of the file sourced is obtained from the global variable **tcl\_rcFileName** in the interpreter given by *interp*.  If this variable is not defined, or if the file it indicates cannot be found, no action is taken.
 

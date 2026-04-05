@@ -29,5 +29,5 @@ Tcl\_CommandComplete - Check for unmatched braces in a Tcl command
 
 # Description
 
-**Tcl\_CommandComplete** takes a Tcl command string as argument and determines whether it contains one or more complete commands (i.e. there are no unclosed quotes, braces, brackets, or variable references). If the command string is complete then it returns 1; otherwise it returns 0. 
+**Tcl\_CommandComplete** takes a Tcl command string as argument and determines whether it contains one or more complete commands (i.e. there are no unclosed quotes, braces, brackets, or variable references). If the command string is complete then it returns 1; otherwise it returns 0.
 

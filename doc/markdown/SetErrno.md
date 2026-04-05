@@ -41,5 +41,5 @@ Tcl\_SetErrno, Tcl\_GetErrno, Tcl\_ErrnoId, Tcl\_ErrnoMsg, Tcl\_WinConvertError 
 
 **Tcl\_ErrnoId** and **Tcl\_ErrnoMsg** return string representations of **errno** values.  **Tcl\_ErrnoId** returns a machine-readable textual identifier such as "EACCES" that corresponds to the current value of **errno**. **Tcl\_ErrnoMsg** returns a human-readable string such as "permission denied" that corresponds to the value of its *errorCode* argument.  The *errorCode* argument is typically the value returned by **Tcl\_GetErrno**. The strings returned by these functions are statically allocated and the caller must not free or modify them.
 
-**Tcl\_WinConvertError** (Windows only) maps the passed Windows or Winsock error code to a POSIX error and stores it in **errno**. 
+**Tcl\_WinConvertError** (Windows only) maps the passed Windows or Winsock error code to a POSIX error and stores it in **errno**.
 

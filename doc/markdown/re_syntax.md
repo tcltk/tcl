@@ -197,7 +197,7 @@ For example, assume the collating sequence includes a **ch** multi-character col
 
 ## Equivalence classes
 
-Within a bracket expression, a collating element enclosed in **[=** and **=]** is an equivalence class, standing for the sequences of characters of all collating elements equivalent to that one, including itself. (If there are no other equivalent collating elements, the treatment is as if the enclosing delimiters were "**[.**"\\& and "**.]**".) For example, if **o** and **\\(^o** are the members of an equivalence class, then "**[[=o=]]**", "**[[=\\(^o=]]**", and "**[o\\(^o]**"\\& are all synonymous. An equivalence class may not be an endpoint of a range.
+Within a bracket expression, a collating element enclosed in **[=** and **=]** is an equivalence class, standing for the sequences of characters of all collating elements equivalent to that one, including itself. (If there are no other equivalent collating elements, the treatment is as if the enclosing delimiters were "**[.**" and "**.]**".) For example, if **o** and **\\(^o** are the members of an equivalence class, then "**[[=o=]]**", "**[[=\\(^o=]]**", and "**[o\\(^o]**" are all synonymous. An equivalence class may not be an endpoint of a range.
 
 (*Note:* Tcl implements only the Unicode locale. It does not define any equivalence classes. The examples above are just illustrations.)
 
@@ -285,7 +285,7 @@ Class-shorthand escapes (AREs only) provide shorthands for certain commonly-used
 : **[^[:alnum:]\_\\u203F\\u2040\\u2054\\uFE33\\uFE34\\uFE4D\\uFE4E\\uFE4F\\uFF3F]** (including punctuation connector characters)
 
 
-Within bracket expressions, "**\\d**", "**\\s**", and "**\\w**"\\& lose their outer brackets, and "**\\D**", "**\\S**", and "**\\W**"\\& are illegal. (So, for example, "**[a-c\\d]**" is equivalent to "**[a-c[:digit:]]**". Also, "**[a-c\\D]**", which is equivalent to "**[a-c^[:digit:]]**", is illegal.)
+Within bracket expressions, "**\\d**", "**\\s**", and "**\\w**" lose their outer brackets, and "**\\D**", "**\\S**", and "**\\W**" are illegal. (So, for example, "**[a-c\\d]**" is equivalent to "**[a-c[:digit:]]**". Also, "**[a-c\\D]**", which is equivalent to "**[a-c^[:digit:]]**", is illegal.)
 
 ## Constraint escapes
 

@@ -62,5 +62,5 @@ If multiple handlers become active at the same time, the handlers are invoked in
 
 # Warning
 
-It is almost always a bad idea for an asynchronous event handler to modify the interpreter's result or return a code different from its *code* argument. This sort of behavior can disrupt the execution of scripts in subtle ways and result in bugs that are extremely difficult to track down. If an asynchronous event handler needs to evaluate Tcl scripts then it should first save the interpreter's state by calling **Tcl\_SaveInterpState**, passing in the *code* argument. When the asynchronous handler is finished it should restore the interpreter's state by calling **Tcl\_RestoreInterpState**, and then returning the *code* argument. 
+It is almost always a bad idea for an asynchronous event handler to modify the interpreter's result or return a code different from its *code* argument. This sort of behavior can disrupt the execution of scripts in subtle ways and result in bugs that are extremely difficult to track down. If an asynchronous event handler needs to evaluate Tcl scripts then it should first save the interpreter's state by calling **Tcl\_SaveInterpState**, passing in the *code* argument. When the asynchronous handler is finished it should restore the interpreter's state by calling **Tcl\_RestoreInterpState**, and then returning the *code* argument.
 

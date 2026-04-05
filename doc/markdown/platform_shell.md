@@ -48,4 +48,3 @@ For applications like a code repository it is important to identify the architec
 **platform::shell::platform** *shell*
 : This command returns the contents of **tcl\_platform(platform)** for the specified Tcl shell.
 
-

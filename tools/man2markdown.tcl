@@ -229,7 +229,7 @@ namespace eval ::ndoc {
 	
 	# list of Tcl commands to recognize for links between manual pages:
 	set tclCmdList [lsort [info commands]]
-	lappend tclCmdList my next bgerror Tcl mathop mathfunc
+	lappend tclCmdList my next bgerror Tcl mathop mathfunc tclvars tm
 	
 	# dictionary of links on pages that should link to a page
 	# not identical to the link text.
@@ -244,6 +244,7 @@ namespace eval ::ndoc {
 		configurable  {oo::define define oo::objdefine objdefine}
 		copy          {oo::class class oo::object object}
 		define        {oo::class class oo::objdefine objdefine oo::define define oo::object object oo::Slot Slot}
+		filename      {auto_path tclvars platform tclvars tcl_platform tclvars}
 	}]
 	
 	# dictionary of pages in which specific cmd words should *not* be linked
@@ -263,6 +264,7 @@ namespace eval ::ndoc {
 		entry		{string}
 		event		{return}
 		expr            {variable}
+		file            {socket}
 		font		{menu}
 		getOpenFile	{file open text}
 		grab		{global}
@@ -580,6 +582,7 @@ proc ::ndoc::parseBackslash {text} {
 	# \\\\           = \\      ->   undo backslash escaping during parsing, it will be added by the markdown writer if needed
 	# \\|            = {}      ->   zero-width narrow space (1/6 em)
 	# \\0            = { }     ->   digit-width space (a space that is exactly the same width as a digit (0–9) in the current font)
+	# \\&            = {}       ->   zero-width non-printing character (often followed by a literal dot to prevent interpretations as a macro command when located at the beginning of a line)
 	#
 	# Note: this procedure does not handle the \f... sequences
 	# (\fB, \fI and \fR are handled by BIRPclean, BIRPstrip and parseInline)
@@ -596,6 +599,7 @@ proc ::ndoc::parseBackslash {text} {
 		\\\\ \\
 		\\| {}
 		\\0 { }
+		\\& {}
 	} $text]
 	return $text
 }
@@ -1665,8 +1669,8 @@ proc ::ndoc::man2markdown {manContent} {
 	#
 	man2AST $manContent
 	set md [AST2Markdown]
-	set md [mdExceptions $md]
 	set md [mdLinks $md]
+	set md [mdExceptions $md]
 	return $md
 }
 
@@ -1681,7 +1685,11 @@ proc ::ndoc::mdExceptions {md} {
 	set myFile [dict get $manual meta CommandName]
 	switch $myFile {
 		append {
-			set md [string map {{"**append a $b**"} {`append a $b`} {"**set a $a$b**" if **$a**} {`set a $a$b` if `$a`}} $md]
+			 set md [string map {
+				{"**append a $b**"} {`append a $b`}
+				{"[set a $a$b][set]" if **$a** is long} {`set a $a$b` if `$a` is long}
+				{[set]: set.md} {}
+			} $md]
 		}
 		binary {
 			# add two cross references:
@@ -1718,7 +1726,19 @@ proc ::ndoc::mdExceptions {md} {
 		fcopy {
 			set md [string map {{two [open "|hal 9000" r+]} {two `open "|hal 9000" r+`}} $md]
 		}
+		file {
+			set md [string map {
+				{the form [**ugo**]?[[**+-=**][**rwxst**]**,**[...]]} {the form `[**ugo**]?[[**+-=**][**rwxst**]**,**[...]]`}
+				{Other attributes may be present in the returned list. These should be ignored.} {    Other attributes may be present in the returned list. These should be ignored.}
+			} $md]
+		}
+		filename {
+			set md [string map {
+				{file called [file]} {file called **file**}
+			} $md]
+		}
 	}
+	regsub {\s+$} $md \n md
 	return $md
 }
 
@@ -1766,7 +1786,7 @@ proc ::ndoc::mdLinks {md} {
 			## it's a valid link if there is a remapping entry here
 			## (note that we need to 'subst' the linkCmd word here as it may contain a literal backslash
 			##  used to escape an underscore in a command name in markdown such as in 'tcl\_platform'):
-			set linkTarget [dict getwithdefault $tclCmdListRemap $cmdName [subst $linkCmd] {}]
+			set linkTarget [dict getwithdefault $tclCmdListRemap $cmdName [subst -novariables $linkCmd] {}]
 			if {$linkTarget ne ""} {set isValidLink 1}
 		}
 		if {! $isValidLink && ! [string is lower [string index $linkText 0]] && [string totitle $linkText] in $sectionTitles} {

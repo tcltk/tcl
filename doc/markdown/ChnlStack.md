@@ -52,5 +52,5 @@ Closing a channel closes the channels stacked below it.  The close of stacked ch
 
 **Tcl\_GetTopChannel** returns the top channel in the stack of channels the supplied channel is part of.
 
-**Tcl\_GetStackedChannel** returns the channel in the stack of channels which is just below the supplied channel. 
+**Tcl\_GetStackedChannel** returns the channel in the stack of channels which is just below the supplied channel.
 
