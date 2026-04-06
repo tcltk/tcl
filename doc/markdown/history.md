@@ -20,7 +20,7 @@ history - Manipulate the history list
 # Synopsis
 
 ::: {.synopsis} :::
-[history]{.cmd} [option]{.optarg} [arg arg]{.optdot}
+[history]{.cmd} [option]{.optarg} [arg]{.optdot}
 :::
 
 # Description

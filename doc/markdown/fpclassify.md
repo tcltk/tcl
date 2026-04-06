@@ -73,7 +73,3 @@ switch [fpclassify $value] {
 
 This command depends on the **fpclassify**() C macro conforming to "ISO C99" (i.e., to ISO/IEC 9899:1999).
 
-# Copyright
-
-Copyright \\(co 2018 Kevin B. Kenny <kennykb@acm.org>. All rights reserved
-

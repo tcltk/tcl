@@ -229,7 +229,7 @@ namespace eval ::ndoc {
 	
 	# list of Tcl commands to recognize for links between manual pages:
 	set tclCmdList [lsort [info commands]]
-	lappend tclCmdList my next bgerror Tcl mathop mathfunc tclvars tm
+	lappend tclCmdList my next bgerror Tcl mathop mathfunc tclvars tm msgcat
 	
 	# dictionary of links on pages that should link to a page
 	# not identical to the link text.
@@ -1735,6 +1735,18 @@ proc ::ndoc::mdExceptions {md} {
 		filename {
 			set md [string map {
 				{file called [file]} {file called **file**}
+			} $md]
+		}
+		format {
+			set md [string map {{Differences from ansi sprintf} {Differences from ANSI sprintf}} $md]
+		}
+		glob {
+			set md [string map {
+				{"**glob -tails -directory $dir \***" is equivalent to "[set pwd [pwd]; cd $dir; glob \*; cd $pwd][set]"} {`glob -tails -directory $dir *` is equivalent to `set pwd [pwd]; cd $dir; glob *; cd $pwd`}
+				{"**glob -tails -path [file rootname /home/fred/foo.tex] .\***"} {`glob -tails -path [file rootname /home/fred/foo.tex] .*`}
+				{"glob -join \* \* \* \*"} {`glob -join * * * *`}
+				{[] construct} {\[\] construct}
+				{[set]: set.md} {}
 			} $md]
 		}
 	}

@@ -36,7 +36,7 @@ The **foreach** command implements a loop where the loop variable(s) take on val
 
 In the general case there can be more than one value list (e.g., *list1* and *list2*), and each value list can be associated with a list of loop variables (e.g., *varlist1* and *varlist2*). During each iteration of the loop the variables of each *varlist* are assigned consecutive values from the corresponding *list*. Values in each *list* are used in order from first to last, and each value is used exactly once. The total number of loop iterations is large enough to use up all the values from all the value lists. If a value list does not contain enough elements for each of its loop variables in each iteration, empty values are used for the missing elements.
 
-The [break] and [continue] statements may be invoked inside *body*, with the same effect as in the [for] command.  **Foreach** returns an empty string.
+The [break] and [continue] statements may be invoked inside *body*, with the same effect as in the [for] command.  **foreach** returns an empty string.
 
 # Examples
 

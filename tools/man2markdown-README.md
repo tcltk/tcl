@@ -36,7 +36,7 @@ section | number of documents | initial conversion | final conversion
 --------|---------------------|--------------------|-----------------
 1       | 1                   | 1                  | 0
 3       | 108                 | 108                | 0
-n       | 139                 | 139                | 42
+n       | 139                 | 139                | 48
 
 Final conversion of these files is currently done:
 1. after
@@ -56,7 +56,7 @@ Final conversion of these files is currently done:
 15. clock -> we may need to use '(1)' instead of '[1]' for referencing list items as this might be misinterpreted during conversion to HTML
 16. close
 17. concat
-18. configurable ...
+18. configurable
 19. const
 20. continue
 21. cookiejar
@@ -81,6 +81,12 @@ Final conversion of these files is currently done:
 40. flush
 41. for
 42. foreach
+43. format
+44. fpclassify
+45. gets
+46. glob
+47. global
+48. history
 
 
 

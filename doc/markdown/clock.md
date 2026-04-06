@@ -102,7 +102,7 @@ The **clock** command performs several operations that obtain and manipulate val
 : If *boolean* is true, specifies that a time specified to **clock add**, **clock format** or **clock scan** should be processed in UTC.  If *boolean* is false, the processing defaults to the local time zone.  This usage is obsolete; the correct current usage is to specify the UTC time zone with "**-timezone** *:UTC*" or any of the equivalent ways to specify it.
 
 [-locale]{.lit} [localeName]{.arg}
-: Specifies that locale-dependent scanning and formatting (and date arithmetic for dates preceding the adoption of the Gregorian calendar) is to be done in the locale identified by *localeName*.  The locale name may be any of the locales acceptable to the **msgcat** package, or it may be the special name *system*, which represents the current locale of the process, or the null string, which represents Tcl's default locale.
+: Specifies that locale-dependent scanning and formatting (and date arithmetic for dates preceding the adoption of the Gregorian calendar) is to be done in the locale identified by *localeName*.  The locale name may be any of the locales acceptable to the [msgcat] package, or it may be the special name *system*, which represents the current locale of the process, or the null string, which represents Tcl's default locale.
 
     The effect of locale on scanning and formatting is discussed in the descriptions of the individual format groups under [Format groups]. The effect of locale on clock arithmetic is discussed under [Clock arithmetic].
 
@@ -192,7 +192,7 @@ If a **-format** option is present, the following argument is a string that spec
 
 If a **-timezone** option is present, the following argument is a string that specifies the time zone in which the date and time are to be formatted.  As an alternative to "**-timezone** *:UTC*", the obsolete usage "**-gmt** *true*" may be used.  See [Time zones] for the permissible variants for the time zone.
 
-If a **-locale** option is present, the following argument is a string that specifies the locale in which the time is to be formatted, in the same format that is used for the **msgcat** package.  Note that the default, if **-locale** is not specified, is the root locale **{}** rather than the current locale.  The current locale may be obtained by using **-locale current**. In addition, some platforms support a **system** locale that reflects the user's current choices.  For instance, on Windows, the format that the user has selected from dates and times in the Control Panel can be obtained by using the **system** locale.  On platforms that do not define a user selection of date and time formats separate from **LC\_TIME**, **-locale system** is synonymous with **-locale current**.
+If a **-locale** option is present, the following argument is a string that specifies the locale in which the time is to be formatted, in the same format that is used for the [msgcat] package.  Note that the default, if **-locale** is not specified, is the root locale **{}** rather than the current locale.  The current locale may be obtained by using **-locale current**. In addition, some platforms support a **system** locale that reflects the user's current choices.  For instance, on Windows, the format that the user has selected from dates and times in the Control Panel can be obtained by using the **system** locale.  On platforms that do not define a user selection of date and time formats separate from **LC\_TIME**, **-locale system** is synonymous with **-locale current**.
 
 # Scanning times
 
@@ -200,7 +200,7 @@ The **clock scan** command accepts times that are formatted as strings and conve
 
 If a **-timezone** option is present, the following argument is a string that specifies the time zone in which the date and time are to be interpreted.  As an alternative to **-timezone** *:UTC*, the obsolete usage **-gmt** *true* may be used.  See [Time zones] for the permissible variants for the time zone.
 
-If a **-locale** option is present, the following argument is a string that specifies the locale in which the time is to be interpreted, in the same format that is used for the **msgcat** package.  Note that the default, if **-locale** is not specified, is the root locale **{}** rather than the current locale.  The current locale may be obtained by using **-locale current**. In addition, some platforms support a **system** locale that reflects the user's current choices.  For instance, on Windows, the format that the user has selected from dates and times in the Control Panel can be obtained by using the **system** locale.  On platforms that do not define a user selection of date and time formats separate from **LC\_TIME**, **-locale system** is synonymous with **-locale current**.
+If a **-locale** option is present, the following argument is a string that specifies the locale in which the time is to be interpreted, in the same format that is used for the [msgcat] package.  Note that the default, if **-locale** is not specified, is the root locale **{}** rather than the current locale.  The current locale may be obtained by using **-locale current**. In addition, some platforms support a **system** locale that reflects the user's current choices.  For instance, on Windows, the format that the user has selected from dates and times in the Control Panel can be obtained by using the **system** locale.  On platforms that do not define a user selection of date and time formats separate from **LC\_TIME**, **-locale system** is synonymous with **-locale current**.
 
 If a **-base** option is present, the following argument is a time (expressed in seconds from the epoch time) that is used as a *base time* for interpreting relative times.  If no **-base** option is present, the base time is the current time.
 
@@ -500,4 +500,5 @@ Fri Jan 27 00:00:00 GMT 1978
 
 
 [file]: file.md
+[msgcat]: msgcat.md
 

@@ -62,7 +62,7 @@ The following global variables are created and managed automatically by the Tcl 
 : These specify the default timezone used for parsing and formatting times and dates in the [clock] command. On many platforms, the TZ environment variable is set up by the operating system.
 
 **env(LC\_ALL)**, **env(LC\_MESSAGES)**, **env(LANG)**
-: These environment variables are used by the **msgcat** package to determine what locale to format messages using.
+: These environment variables are used by the [msgcat] package to determine what locale to format messages using.
 
 **env(TCL\_INTERP\_DEBUG\_FRAME)**
 : If existing, it has the same effect as running [interp debug][interp] **{} -frame 1** as the very first command of each new Tcl interpreter.
@@ -219,6 +219,7 @@ if {$::argv0 eq [info script]} {
 [info]: info.md
 [interp]: interp.md
 [lappend]: lappend.md
+[msgcat]: msgcat.md
 [package]: package.md
 [return]: return.md
 [set]: set.md

@@ -26,7 +26,7 @@ format - Format a string in the style of sprintf
 # Synopsis
 
 ::: {.synopsis} :::
-[format]{.cmd} [formatString]{.arg} [arg arg]{.optdot}
+[format]{.cmd} [formatString]{.arg} [arg]{.optdot}
 :::
 
 # Introduction
@@ -122,7 +122,7 @@ The last thing in a conversion specifier is an alphabetic character that determi
 : Shorthand form for **0x%zx**, so it outputs the integer in hexadecimal form with **0x** prefix.
 
 
-# Differences from ansi sprintf
+# Differences from ANSI sprintf
 
 The behavior of the format command is the same as the ANSI C **sprintf** procedure except for the following differences:
 
@@ -158,7 +158,7 @@ Create a packed X11 literal color specification:
 set color [format "#%02x%02x%02x" $r $g $b]
 ```
 
-Use XPG3 format codes to allow reordering of fields (a technique that is often used in localized message catalogs; see **msgcat**) without reordering the data values passed to **format**:
+Use XPG3 format codes to allow reordering of fields (a technique that is often used in localized message catalogs; see [msgcat]) without reordering the data values passed to **format**:
 
 ```
 set fmt1 "Today, %d shares in %s were bought at $%.2f each"
@@ -194,5 +194,6 @@ puts $sep
 
 
 [expr]: expr.md
+[msgcat]: msgcat.md
 [time]: time.md
 
