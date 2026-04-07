@@ -241,7 +241,7 @@ Tcl_SetNotifier(
      */
 
 
-	if (tclNotifierHooks.setTimerProc == Tcl_SetTimer) {
+    if (tclNotifierHooks.setTimerProc == Tcl_SetTimer) {
 	tclNotifierHooks.setTimerProc = NULL;
     }
     if (tclNotifierHooks.waitForEventProc == Tcl_WaitForEvent) {
