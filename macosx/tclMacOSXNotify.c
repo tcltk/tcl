@@ -1559,7 +1559,7 @@ TclUnixWaitForFile(
 				 * at all, and a value of -1 means wait
 				 * forever. */
 {
-    Tcl_Time abortTime = {0, 0}, now; /* silence gcc 4 warning */
+    long long abortTime = 0, now; /* silence gcc 4 warning */
     struct timeval blockTime, *timeoutPtr;
     int numFound, result = 0;
     fd_set readableMask;
@@ -1586,13 +1586,8 @@ TclUnixWaitForFile(
      */
 
     if (timeout > 0) {
-	Tcl_GetTime(&now);
-	abortTime.sec = now.sec + timeout/1000;
-	abortTime.usec = now.usec + (timeout%1000)*1000;
-	if (abortTime.usec >= 1000000) {
-	    abortTime.usec -= 1000000;
-	    abortTime.sec += 1;
-	}
+	now = Tcl_GetDayTime();
+	abortTime = now + timeout * 1000;
 	timeoutPtr = &blockTime;
     } else if (timeout == 0) {
 	timeoutPtr = &blockTime;
@@ -1617,13 +1612,10 @@ TclUnixWaitForFile(
 
     while (1) {
 	if (timeout > 0) {
-	    blockTime.tv_sec = abortTime.sec - now.sec;
-	    blockTime.tv_usec = abortTime.usec - now.usec;
-	    if (blockTime.tv_usec < 0) {
-		blockTime.tv_sec -= 1;
-		blockTime.tv_usec += 1000000;
-	    }
-	    if (blockTime.tv_sec < 0) {
+	    if (abortTime > now) {
+		blockTime.tv_sec = (abortTime - now) / 1000000;
+		blockTime.tv_usec = (abortTime - now) % 1000000;
+	    } else {
 		blockTime.tv_sec = 0;
 		blockTime.tv_usec = 0;
 	    }
@@ -1675,9 +1667,8 @@ TclUnixWaitForFile(
 	 * The select returned early, so we need to recompute the timeout.
 	 */
 
-	Tcl_GetTime(&now);
-	if ((abortTime.sec < now.sec)
-		|| (abortTime.sec==now.sec && abortTime.usec<=now.usec)) {
+	now = Tcl_GetDayTime();
+	if (abortTime <= now) {
 	    break;
 	}
     }

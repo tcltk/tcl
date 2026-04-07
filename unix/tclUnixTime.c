@@ -283,6 +283,7 @@ Tcl_GetMonotonicTime(void)	/* Location to store time information. */
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_DEPRECATED
 void
 Tcl_GetTime(
     Tcl_Time *timePtr)
@@ -293,6 +294,7 @@ Tcl_GetTime(
     timePtr->sec = tv.tv_sec;
     timePtr->usec = tv.tv_usec;
 }
+#endif /* TCL_NO_DEPRECATED */
 
 /*
  * Local Variables:

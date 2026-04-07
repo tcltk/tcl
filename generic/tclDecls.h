@@ -41,6 +41,8 @@
 #   define Tcl_CmdObjTraceProc void
 #   define Tcl_GetTimeProc void
 #   define Tcl_ScaleTimeProc void
+#   define Tcl_Time void
+#   define Tcl_NotifierProcs void
 #endif /* TCL_NO_DEPRECATED */
 
 /*
@@ -4406,6 +4408,16 @@ extern const TclStubs *tclStubsPtr;
 #   undef Tcl_ScaleTimeProc
 #   undef Tcl_SetTimeProc
 #   undef Tcl_GetTimeProc
+#   undef Tcl_GetTime
+#   undef Tcl_LimitGetTime
+#   undef Tcl_LimitSetTime
+#   undef Tcl_ConditionWait
+#   undef Tcl_SetMaxBlockTime
+#   undef Tcl_WaitForEvent
+#   undef Tcl_SetTimer
+#   undef Tcl_SetNotifier
+#   undef Tcl_Time
+#   undef Tcl_NotifierProcs
 #endif /* TCL_NO_DEPRECATED */
 
 #endif /* _TCLDECLS */

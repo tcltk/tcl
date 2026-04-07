@@ -23,9 +23,11 @@
  * notifier functions (for overriding via Tcl_SetNotifier).
  */
 
+#ifndef TCL_NO_DEPRECATED
 static Tcl_NotifierProcs tclNotifierHooks = {
     NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 };
+#endif /* TCL_NO_DEPRECATED */
 
 /*
  * For each event source (created with Tcl_CreateEventSource) there is a
@@ -226,6 +228,7 @@ TclFinalizeNotifier(void)
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_DEPRECATED
 void
 Tcl_SetNotifier(
     const Tcl_NotifierProcs *notifierProcPtr)
@@ -237,7 +240,8 @@ Tcl_SetNotifier(
      * loop.
      */
 
-    if (tclNotifierHooks.setTimerProc == Tcl_SetTimer) {
+
+	if (tclNotifierHooks.setTimerProc == Tcl_SetTimer) {
 	tclNotifierHooks.setTimerProc = NULL;
     }
     if (tclNotifierHooks.waitForEventProc == Tcl_WaitForEvent) {
@@ -264,6 +268,7 @@ Tcl_SetNotifier(
     }
 #endif /* !_WIN32 */
 }
+#endif /* TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------
@@ -853,6 +858,7 @@ Tcl_SetServiceMode(
 // Microseconds per second.
 #define US_PER_S	1000000
 
+#ifndef TCL_NO_DEPRECATED
 void
 Tcl_SetMaxBlockTime(
     const Tcl_Time *timePtr)	/* Specifies a maximum elapsed time for the
@@ -877,6 +883,7 @@ Tcl_SetMaxBlockTime(
 	TclpSetTimer(tsdPtr->blockTime);
     }
 }
+#endif /* TCL_NO_DEPRECATED */
 
 void
 Tcl_SetMaxBlockTime2(
@@ -901,6 +908,7 @@ Tcl_SetMaxBlockTime2(
     }
 }
 
+#ifndef TCL_NO_DEPRECATED
 void
 Tcl_ConditionWait(
     Tcl_Condition *condPtr,
@@ -915,6 +923,7 @@ Tcl_ConditionWait(
 	Tcl_ConditionWait2(condPtr, mutexPtr, timePtr->sec * US_PER_S + timePtr->usec);
     }
 }
+#endif /* TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------
@@ -1250,11 +1259,12 @@ Tcl_ThreadAlert(
 void *
 Tcl_InitNotifier(void)
 {
+#ifndef TCL_NO_DEPRECATED
     if (tclNotifierHooks.initNotifierProc) {
 	return tclNotifierHooks.initNotifierProc();
-    } else {
-	return TclpInitNotifier();
-    }
+    } else
+#endif /* TCL_NO_DEPRECATED */
+    return TclpInitNotifier();
 }
 
 /*
@@ -1280,11 +1290,12 @@ void
 Tcl_FinalizeNotifier(
     void *clientData)
 {
+#ifndef TCL_NO_DEPRECATED
     if (tclNotifierHooks.finalizeNotifierProc) {
 	tclNotifierHooks.finalizeNotifierProc(clientData);
-    } else {
-	TclpFinalizeNotifier(clientData);
-    }
+    } else
+#endif /* TCL_NO_DEPRECATED */
+    TclpFinalizeNotifier(clientData);
 }
 
 /*
@@ -1313,11 +1324,12 @@ void
 Tcl_AlertNotifier(
     void *clientData)		/* Pointer to thread data. */
 {
+#ifndef TCL_NO_DEPRECATED
     if (tclNotifierHooks.alertNotifierProc) {
 	tclNotifierHooks.alertNotifierProc(clientData);
-    } else {
-	TclpAlertNotifier(clientData);
-    }
+    } else
+#endif /* TCL_NO_DEPRECATED */
+    TclpAlertNotifier(clientData);
 }
 
 /*
@@ -1342,11 +1354,12 @@ Tcl_ServiceModeHook(
     int mode)			/* Either TCL_SERVICE_ALL, or
 				 * TCL_SERVICE_NONE. */
 {
+#ifndef TCL_NO_DEPRECATED
     if (tclNotifierHooks.serviceModeHookProc) {
 	tclNotifierHooks.serviceModeHookProc(mode);
-    } else {
-	TclpServiceModeHook(mode);
-    }
+    } else
+#endif /* TCL_NO_DEPRECATED */
+    TclpServiceModeHook(mode);
 }
 
 /*
@@ -1366,6 +1379,7 @@ Tcl_ServiceModeHook(
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_DEPRECATED
 void
 Tcl_SetTimer(
     const Tcl_Time *timePtr)	/* Timeout value, may be NULL. */
@@ -1380,11 +1394,13 @@ Tcl_SetTimer(
 	TclpSetTimer(timePtr->sec * US_PER_S + timePtr->usec);
     }
 }
+#endif /* TCL_NO_DEPRECATED */
 
 void
 Tcl_SetTimer2(
     long long time)	/* Timeout value, may be -1. */
 {
+#ifndef TCL_NO_DEPRECATED
     if (tclNotifierHooks.setTimerProc) {
 	if (time >= 0) {
 	    Tcl_Time tm;
@@ -1394,9 +1410,9 @@ Tcl_SetTimer2(
 	} else {
 	    tclNotifierHooks.setTimerProc(NULL);
 	}
-    } else {
-	TclpSetTimer(time);
-    }
+    } else
+#endif /* TCL_NO_DEPRECATED */
+    TclpSetTimer(time);
 }
 
 /*
@@ -1419,13 +1435,17 @@ Tcl_SetTimer2(
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_DEPRECATED
 int
 Tcl_WaitForEvent(
     const Tcl_Time *timePtr)	/* Maximum block time, or NULL. */
 {
+#ifndef TCL_NO_DEPRECATED
     if (tclNotifierHooks.waitForEventProc) {
 	return tclNotifierHooks.waitForEventProc(timePtr);
-    } else if (!timePtr) {
+    } else
+#endif /* TCL_NO_DEPRECATED */
+    if (!timePtr) {
 	return TclpWaitForEvent(-1);
     } else if (timePtr->sec >= (LLONG_MAX - timePtr->usec) / US_PER_S) {
 	return TclpWaitForEvent(LLONG_MAX);
@@ -1434,11 +1454,13 @@ Tcl_WaitForEvent(
     }
 
 }
+#endif /* TCL_NO_DEPRECATED */
 
 int
 Tcl_WaitForEvent2(
     long long time)		/* Maximum block time, or -1. */
 {
+#ifndef TCL_NO_DEPRECATED
     if (tclNotifierHooks.waitForEventProc) {
 	if (time >= 0) {
 	    Tcl_Time tm;
@@ -1448,6 +1470,7 @@ Tcl_WaitForEvent2(
 	}
 	return tclNotifierHooks.waitForEventProc(NULL);
     }
+#endif /* TCL_NO_DEPRECATED */
     return TclpWaitForEvent(time);
 }
 
@@ -1483,11 +1506,12 @@ Tcl_CreateFileHandler(
 				 * event. */
     void *clientData)		/* Arbitrary data to pass to proc. */
 {
+#ifndef TCL_NO_DEPRECATED
     if (tclNotifierHooks.createFileHandlerProc) {
 	tclNotifierHooks.createFileHandlerProc(fd, mask, proc, clientData);
-    } else {
-	TclpCreateFileHandler(fd, mask, proc, clientData);
-    }
+    } else
+#endif /* TCL_NO_DEPRECATED */
+    TclpCreateFileHandler(fd, mask, proc, clientData);
 }
 #endif /* !_WIN32 */
 
@@ -1519,11 +1543,12 @@ Tcl_DeleteFileHandler(
     int fd)			/* Stream id for which to remove callback
 				 * function. */
 {
+#ifndef TCL_NO_DEPRECATED
     if (tclNotifierHooks.deleteFileHandlerProc) {
 	tclNotifierHooks.deleteFileHandlerProc(fd);
-    } else {
-	TclpDeleteFileHandler(fd);
-    }
+    } else
+#endif /* TCL_NO_DEPRECATED */
+    TclpDeleteFileHandler(fd);
 }
 #endif /* !_WIN32 */
 

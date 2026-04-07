@@ -77,6 +77,14 @@
 #   define TclGetObjInterpProc 0
 #   define Tcl_QueryTimeProc 0
 #   define Tcl_SetTimeProc 0
+#   define Tcl_GetTime 0
+#   define Tcl_LimitGetTime 0
+#   define Tcl_LimitSetTime 0
+#   define Tcl_ConditionWait 0
+#   define Tcl_SetMaxBlockTime 0
+#   define Tcl_WaitForEvent 0
+#   define Tcl_SetTimer 0
+#   define Tcl_SetNotifier 0
 #endif
 
 #define TclUtfCharComplete Tcl_UtfCharComplete

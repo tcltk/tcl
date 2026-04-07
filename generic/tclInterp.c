@@ -4392,6 +4392,7 @@ Tcl_LimitSetTime2(
     iPtr->limit.exceeded &= ~TCL_LIMIT_TIME;
 }
 
+#ifndef TCL_NO_DEPRECATED
 void
 Tcl_LimitSetTime(
     Tcl_Interp *interp,
@@ -4417,6 +4418,7 @@ Tcl_LimitSetTime(
 	    TimeLimitCallback, interp);
     iPtr->limit.exceeded &= ~TCL_LIMIT_TIME;
 }
+#endif /* TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------
@@ -4488,6 +4490,7 @@ Tcl_LimitGetTime2(
 	return iPtr->limit.time;
 }
 
+#ifndef TCL_NO_DEPRECATED
 void
 Tcl_LimitGetTime(
     Tcl_Interp *interp,
@@ -4498,6 +4501,7 @@ Tcl_LimitGetTime(
 	timeLimitPtr->sec = iPtr->limit.time / 1000000;
     timeLimitPtr->usec = iPtr->limit.time % 1000000;
 }
+#endif /* TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------

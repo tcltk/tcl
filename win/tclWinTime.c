@@ -145,10 +145,13 @@ TclpGetSeconds(void)
     if ( (usecSincePosixEpoch = NativeGetMicroseconds()) ) {
 	return usecSincePosixEpoch / 1000000;
     } else {
-	Tcl_Time t;
+	/*
+	 * High resolution timer is not available. Just use ftime.
+	 */
+	struct _timeb t;
 
-	Tcl_GetTime(&t);
-	return (unsigned long long)t.sec;
+	_ftime(&t);
+	return (unsigned long long)t.time;
     }
 }
 
@@ -305,14 +308,12 @@ Tcl_GetDayTime(void)
 	return usecSincePosixEpoch;
     } else {
 	/*
-	 * Use the Tcl_GetTime abstraction to get the time in microseconds, as
-	 * nearly as we can, and return it.
+	 * High resolution timer is not available. Just use ftime.
 	 */
+	struct _timeb t;
 
-	Tcl_Time now;
-
-	Tcl_GetTime(&now);
-	return now.sec * 1000000 + now.usec;
+	_ftime(&t);
+	return (unsigned long long)(t.time * 1000000 + t.millitm * 1000);
     }
 }
 
@@ -634,6 +635,7 @@ NativeGetMicroseconds(void)
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_DEPRECATED
 void
 Tcl_GetTime(
     Tcl_Time *timePtr)
@@ -660,6 +662,7 @@ Tcl_GetTime(
 	timePtr->usec = t.millitm * 1000;
     }
 }
+#endif /* TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------
