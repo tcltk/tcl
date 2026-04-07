@@ -143,7 +143,7 @@ Tcl_JoinThread(
     threadPtr->waitedUpon = true;
 
     while (!threadPtr->done) {
-	Tcl_ConditionWait(&threadPtr->cond, &threadPtr->threadMutex, NULL);
+	Tcl_ConditionWait2(&threadPtr->cond, &threadPtr->threadMutex, -1);
     }
 
     /*

@@ -775,7 +775,6 @@ ConsoleSetupProc(
     int flags)			/* Event flags as passed to Tcl_DoOneEvent. */
 {
     ConsoleChannelInfo *chanInfoPtr;
-    Tcl_Time blockTime = { 0, 0 };
     int block = 1;
 
     if (!(flags & TCL_FILE_EVENTS)) {
@@ -812,7 +811,7 @@ ConsoleSetupProc(
 
     if (!block) {
 	/* At least one channel is readable/writable. Set block time to 0 */
-	Tcl_SetMaxBlockTime(&blockTime);
+	Tcl_SetMaxBlockTime2(0);
     }
 }
 
@@ -1497,7 +1496,6 @@ ConsoleWatchProc(
 
     chanInfoPtr->watchMask = newMask & chanInfoPtr->permissions;
     if (chanInfoPtr->watchMask) {
-	Tcl_Time blockTime = { 0, 0 };
 
 	if (!oldMask) {
 	    AcquireSRWLockExclusive(&gConsoleLock);
@@ -1519,7 +1517,7 @@ ConsoleWatchProc(
 	    }
 	    ReleaseSRWLockExclusive(&gConsoleLock);
 	}
-	Tcl_SetMaxBlockTime(&blockTime);
+	Tcl_SetMaxBlockTime2(0);
     } else if (oldMask) {
 	/* Remove from list of watched channels */
 

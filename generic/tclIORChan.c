@@ -2950,7 +2950,7 @@ ForwardOpToHandlerThread(
 	 * immediately after.
 	 */
 
-	Tcl_ConditionWait(&resultPtr->done, &rcForwardMutex, NULL);
+	Tcl_ConditionWait2(&resultPtr->done, &rcForwardMutex, -1);
     }
 
     /*

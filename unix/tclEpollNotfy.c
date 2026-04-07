@@ -216,7 +216,7 @@ PlatformEventsControl(
     newEvent.data.ptr = filePtr->pedPtr;
 
     /*
-     * N.B. As discussed in Tcl_WaitForEvent(), epoll(7) does not support
+     * N.B. As discussed in Tcl_WaitForEvent2(), epoll(7) does not support
      * regular files (S_IFREG). Therefore, filePtr is in these cases simply
      * added or deleted from the list of FileHandlers associated with regular
      * files belonging to tsdPtr.

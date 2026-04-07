@@ -566,7 +566,7 @@ TclpInitNotifier(void)
 	triggerPipe = fds[1];
 
 	/*
-	 * Create notifier thread lazily in Tcl_WaitForEvent() to avoid
+	 * Create notifier thread lazily in Tcl_WaitForEvent2() to avoid
 	 * interfering with fork() followed immediately by execve() (we cannot
 	 * execve() when more than one thread is present).
 	 */

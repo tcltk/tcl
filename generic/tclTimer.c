@@ -592,7 +592,7 @@ TimerSetupProc(
     TCL_UNUSED(void *),
     int flags)			/* Event flags as passed to Tcl_DoOneEvent. */
 {
-    Tcl_Time blockTime;
+    long long blockTime;
     ThreadSpecificData *tsdPtr = InitTimer();
 
     if (((flags & TCL_IDLE_EVENTS) && tsdPtr->idleList)
@@ -603,8 +603,7 @@ TimerSetupProc(
 	 * There is an idle handler or a pending timer event, so just poll.
 	 */
 
-	blockTime.sec = 0;
-	blockTime.usec = 0;
+	blockTime = 0;
     } else if ((flags & TCL_TIMER_EVENTS) &&
 	    (tsdPtr->firstTimerHandlerPtr[timerHandlerMonotonic]
 	    || tsdPtr->firstTimerHandlerPtr[timerHandlerWallclock])) {
@@ -642,13 +641,12 @@ TimerSetupProc(
 		}
 	    }
 	}
-	blockTime.sec = blockTimeUS / US_PER_S;
-	blockTime.usec = blockTimeUS % US_PER_S;
+	blockTime = blockTimeUS;
     } else {
 	return;
     }
 
-    Tcl_SetMaxBlockTime(&blockTime);
+    Tcl_SetMaxBlockTime2(blockTime);
 }
 
 /*
@@ -867,7 +865,7 @@ Tcl_DoWhenIdle(
     void *clientData)		/* Arbitrary value to pass to proc. */
 {
     IdleHandler *idlePtr;
-    Tcl_Time blockTime;
+    long long blockTime;
     ThreadSpecificData *tsdPtr = InitTimer();
 
     idlePtr = (IdleHandler *)Tcl_Alloc(sizeof(IdleHandler));
@@ -882,9 +880,8 @@ Tcl_DoWhenIdle(
     }
     tsdPtr->lastIdlePtr = idlePtr;
 
-    blockTime.sec = 0;
-    blockTime.usec = 0;
-    Tcl_SetMaxBlockTime(&blockTime);
+    blockTime = 0;
+    Tcl_SetMaxBlockTime2(blockTime);
 }
 
 /*
@@ -957,7 +954,6 @@ TclServiceIdle(void)
 {
     IdleHandler *idlePtr;
     int oldGeneration;
-    Tcl_Time blockTime;
     ThreadSpecificData *tsdPtr = InitTimer();
 
     if (tsdPtr->idleList == NULL) {
@@ -996,9 +992,7 @@ TclServiceIdle(void)
 	Tcl_Free(idlePtr);
     }
     if (tsdPtr->idleList) {
-	blockTime.sec = 0;
-	blockTime.usec = 0;
-	Tcl_SetMaxBlockTime(&blockTime);
+	Tcl_SetMaxBlockTime2(0);
     }
     return 1;
 }
