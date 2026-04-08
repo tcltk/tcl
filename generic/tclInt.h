@@ -3123,8 +3123,6 @@ MODULE_SCOPE void	TclGetEncodingProfiles(Tcl_Interp *interp);
  */
 
 MODULE_SCOPE Tcl_GetMonotonicTimeProc *tclGetMonotonicTimeProcPtr;
-MODULE_SCOPE void TclSetMaxBlockTime(long long);
-MODULE_SCOPE int TclWaitForEvent(long long);
 
 /*
  * Variables denoting the Tcl object types defined in the core.
@@ -3744,7 +3742,6 @@ MODULE_SCOPE double	TclpWideClickInMicrosec(void);
 		((double)(clicks) * TclpWideClickInMicrosec() * 1000)
 #   endif
 #endif
-MODULE_SCOPE long long	TclpGetMicroseconds(void);
 
 MODULE_SCOPE int	TclZlibInit(Tcl_Interp *interp);
 MODULE_SCOPE void *	TclpThreadCreateKey(void);

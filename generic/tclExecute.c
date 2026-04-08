@@ -7758,15 +7758,15 @@ TEBCresume(
 #endif
 	    break;
 	case CLOCK_READ_MICROS:
-	    now = TclpGetMicroseconds();
+	    now = Tcl_GetDayTime();
 	    wval = now;
 	    break;
 	case CLOCK_READ_MILLIS:
-	    now = TclpGetMicroseconds();
+	    now = Tcl_GetDayTime();
 	    wval = now / 1000;
 	    break;
 	case CLOCK_READ_SECS:
-	    now = TclpGetMicroseconds();
+	    now = Tcl_GetDayTime();
 	    wval = now / 1000000;
 	    break;
 	case CLOCK_READ_MONOTONIC:
