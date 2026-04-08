@@ -2044,9 +2044,7 @@ ZipFSCatalogFilesystem(
 	    if (!strcmp(z->name, ZIPFS_VOLUME)) {
 		z->flags |= ZE_F_VOLUME; /* Mark as root volume */
 	    }
-	    long long t;
-	    t = Tcl_GetDayTime();
-	    z->timestamp = t / 1000000;
+	    z->timestamp = Tcl_GetDayTime() / 1000000;
 	    z->next = zf->entries;
 	    zf->entries = z;
 	}
@@ -5507,9 +5505,7 @@ ZipEntryStat(
     } else if (ContainsMountPoint(path, -1)) {
 	/* An intermediate dir under which a mount exists */
 	memset(buf, 0, sizeof(Tcl_StatBuf));
-	long long t;
-	t = Tcl_GetDayTime();
-	buf->st_atime = buf->st_mtime = buf->st_ctime = t / 1000000;
+	buf->st_atime = buf->st_mtime = buf->st_ctime = Tcl_GetDayTime() / 1000000;
 	buf->st_mode = S_IFDIR | 0555;
 	ret = 0;
     } else {

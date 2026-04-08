@@ -237,7 +237,6 @@ Tcl_SetNotifier(
      * loop.
      */
 
-
     if (tclNotifierHooks.setTimerProc == Tcl_SetTimer) {
 	tclNotifierHooks.setTimerProc = NULL;
     }
@@ -1395,8 +1394,9 @@ Tcl_SetTimer2(
 	} else {
 	    tclNotifierHooks.setTimerProc(NULL);
 	}
-    } else
-    TclpSetTimer(time);
+    } else {
+	TclpSetTimer(time);
+    }
 }
 
 /*

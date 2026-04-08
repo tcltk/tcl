@@ -484,7 +484,6 @@ Tcl_ExitThread(
  *----------------------------------------------------------------------
  */
 
-#ifndef TCL_NO_DEPRECATED
 #undef Tcl_ConditionWait
 void
 Tcl_ConditionWait(
@@ -493,7 +492,6 @@ Tcl_ConditionWait(
     TCL_UNUSED(const Tcl_Time *)) /* Timeout on waiting period */
 {
 }
-#endif /* TCL_NO_DEPRECATED */
 
 #undef Tcl_ConditionNotify
 void

@@ -637,7 +637,7 @@ void
 Tcl_ConditionWait2(
     Tcl_Condition *condPtr,	/* Really (WinCondition **) */
     Tcl_Mutex *mutexPtr,	/* Really (CRITICAL_SECTION **) */
-    long long time)	/* Timeout on waiting period */
+    long long time)		/* Timeout on waiting period */
 {
     CONDITION_VARIABLE *cvPtr;	/* Per-condition queue head */
     WMutex *wmPtr;		/* Caller's Mutex, after casting */

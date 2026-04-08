@@ -665,7 +665,7 @@ void
 Tcl_ConditionWait2(
     Tcl_Condition *condPtr,	/* Really (pthread_cond_t **) */
     Tcl_Mutex *mutexPtr,	/* Really (PMutex **) */
-    long long time)	/* Timeout on waiting period */
+    long long time)		/* Timeout on waiting period */
 {
     pthread_cond_t *pcondPtr;
     PMutex *pmutexPtr;
