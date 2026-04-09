@@ -1032,6 +1032,7 @@ test filesystem-10.1 {Bug 3414754} {
 
 # The filesystem-11.* tests are currently disabled on WSL because it is
 # case-sensitivity depends on whether running on a Windows FS or Unix FS.
+
 test filesystem-11.1 {
     Bug 10890417 - case of tail is correct after normalization
 } -constraints notWsl -body {
@@ -1103,6 +1104,7 @@ test filesystem-12.1 {
 } -setup {
 	set dir [file dirname [makeFile "" qxyz]]
 } -cleanup {
+	removeFile qxyz
 	unset -nocomplain dir
 } -constraints notWsl -body {
 	# Note this does not test correctness of glob. Rather it ensures use of
@@ -1112,8 +1114,10 @@ test filesystem-12.1 {
 	# on case-insensitive file systems.
 	# Assumes no other files that start with qx
 	list \
-		[expr {[llength [glob $dir/qx*]] == [llength [glob $dir/qxyz]]}] \
-		[expr {[llength [glob $dir/QX*]] == [llength [glob $dir/QXYZ]]}] \
+	    [string equal [string tolower [glob $dir/qx*]] \
+		 [string tolower [glob $dir/qxyz]]] \
+	    [string equal [string tolower [glob $dir/QX*]] \
+		 [string tolower [glob $dir/QXYZ]]]
 } -result {1 1}
 
 cleanupTests

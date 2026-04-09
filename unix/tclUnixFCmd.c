@@ -49,6 +49,13 @@
 #ifdef HAVE_FTS
 #include <fts.h>
 #endif
+#include <limits.h>
+#include <stdlib.h>
+
+#ifdef MAC_OSX_TCL
+#include <sys/attr.h>
+#include <unistd.h>
+#endif
 
 /*
  * The following constants specify the type of callback when
@@ -1908,13 +1915,142 @@ GetModeFromPermString(
     return TCL_OK;
 }
 
+#if TCL_FILESYSTEM_NOCASE
+/*
+ *---------------------------------------------------------------------------
+ *
+ * TclpMapLeafName --
+ *
+ *      On macOS case-insensitive, case-preserving filesystems (HFS+, APFS),
+ *      check the true on-disk name of the final component of a file path
+ *      and replace it in pathPtr if it differs from the supplied name.
+ *
+ * Results:
+ *      TCL_OK on success irrespective of any changes made.
+ *      Returns TCL_ERROR if an encoding conversion fails, in which case
+ *      an error message is left in interp if interp is non-NULL.
+ *
+ * Side effects:
+ *      The bytes field of pathPtr may be updated and internal
+ *      representation invalidated.
+ *
+ *---------------------------------------------------------------------------
+ */
+
+int
+TclpMapLeafName(Tcl_Interp *interp, /* Interpreter for error reporting and
+				     * encoding conversion; may be NULL. */
+    Tcl_Obj *pathPtr,               /* Unshared path object to correct. Its
+				     * bytes field may be modified in place. */
+    int leafOffset)                 /* Byte offset of the first character of
+				     * the final component within pathPtr's
+				     * string representation. Must be 0 if
+				     * the path contains no separator, or the
+				     * offset of the first byte after the last
+				     * '/' separator otherwise. */
+{
+    Tcl_Size pathLen;
+    const char *path = TclGetStringFromObj(pathPtr, &pathLen);
+    const char *leafName = path + leafOffset;
+    Tcl_Size leafLen = pathLen - leafOffset;
+
+    assert(!Tcl_IsShared(pathPtr));
+
+    if (*leafName == '\0') {
+	return TCL_OK;
+    }
+
+    Tcl_DString ds;
+#ifdef HAVE_GETATTRLIST
+    /*
+     * Retrieve the on-disk name. On failure, we will leave it unchanged
+     * without treating as error as file may not exist or be inaccessible.
+     */
+
+    struct {
+	u_int32_t length;
+	attrreference_t nameref;
+	char buf[TCL_UTF_MAX * NAME_MAX + 1];
+    } attrBuf;
+    struct attrlist al;
+    if (Tcl_UtfToExternalDStringEx(interp, NULL, path, pathLen, 0, &ds,
+	    NULL) != TCL_OK) {
+	Tcl_DStringFree(&ds);
+	return TCL_ERROR;
+    }
+    memset(&al, 0, sizeof(al));
+    al.bitmapcount = ATTR_BIT_MAP_COUNT;
+    al.commonattr = ATTR_CMN_NAME;
+
+    int attrResult = getattrlist(Tcl_DStringValue(&ds), &al, &attrBuf,
+	sizeof(attrBuf), FSOPT_NOFOLLOW);
+    Tcl_DStringFree(&ds);
+
+    if (attrResult != 0) {
+	/* 
+	 * Path does not exist or is inaccessible. Not an error, the caller
+	 * may be normalizing a path to a non-existent file.
+	 */
+	return TCL_OK;
+    }
+
+    const char *onDiskName =
+	(const char *)&attrBuf.nameref + attrBuf.nameref.attr_dataoffset;
+#else
+# error Missing implementation of TclpMapLeafName in the absence of getattrlist
+    /* Mock to allow debugging on WSL */
+    const char *onDiskName;
+    if (!strcmp(leafName, "foo")) {
+	onDiskName = "FOO";
+    } else if (!strcmp(leafName, "bar")) {
+	onDiskName = "BAR";
+    } else if (!strcmp(leafName, "link_foo")) {
+	onDiskName = "LINK_FOO";
+    } else if (!strcmp(leafName, "link_bar")) {
+	onDiskName = "LINK_BAR";
+    } else {
+	onDiskName = leafName;
+    }
+#endif /* HAVE_GETATTRLIST */
+
+    /*
+     * The on-disk name differs in case from the supplied name. Convert it
+     * to UTF-8 so it can be written back into pathPtr.
+     */
+
+    if (Tcl_ExternalToUtfDStringEx(interp, NULL, onDiskName, -1, 0, &ds,
+	    NULL) != TCL_OK) {
+	Tcl_DStringFree(&ds);
+	return TCL_ERROR;
+    }
+
+    const char *onDiskUtf = Tcl_DStringValue(&ds);
+    Tcl_Size onDiskUtfLen = Tcl_DStringLength(&ds);
+    if (onDiskUtfLen == leafLen && strcmp(onDiskUtf, leafName) == 0) {
+	/* On-disk name same */
+	Tcl_DStringFree(&ds);
+	return TCL_OK;
+    }
+
+    /* pathPtr is unshared so can be modified */
+    TclFreeInternalRep(pathPtr);
+    Tcl_SetObjLength(pathPtr, leafOffset);
+    Tcl_AppendToObj(pathPtr, onDiskUtf, onDiskUtfLen);
+    Tcl_DStringFree(&ds);
+
+    return TCL_OK;
+}
+#endif /* TCL_FILESYSTEM_NOCASE */
+
+
 /*
  *---------------------------------------------------------------------------
  *
  * TclpObjNormalizePath --
  *
  *	Replaces each component except that last one in a pathname that is a
- *	symbolic link with the fully resolved target of that link.
+ *	symbolic link with the fully resolved target of that link and its.
+ *	on-disk canonical name (in case of case-insensitive filesystems).
  *
  * Results:
  *	Stores the resulting path in pathPtr and returns the offset of the last
@@ -1945,21 +2081,71 @@ TclpObjNormalizePath(
 #ifndef NO_REALPATH
     char normPath[MAXPATHLEN];
 #endif
+#if TCL_FILESYSTEM_NOCASE
+    int mapLeaf = 0;
+#endif
+
+    assert(nextCheckpoint <= pathLen);
+    if (pathLen == 0) {
+	/*
+	 * "" is valid and normalizes to itself. Don't ask me why but that
+	 * is historical behavior and tests like filesystem-6.20 check for it.
+	 * Doing this early check simplifies some code below.
+	 */
+	return 0;
+    }
 
     currentPathEndPosition = path + nextCheckpoint;
     if (*currentPathEndPosition == '/') {
 	currentPathEndPosition++;
     }
 
+    /*
+     * This function has two purposes:
+     *  - resolve symbolics links EXCEPT in the last part of the path
+     *  - replace all parts of the path with the canonical on-disk name,
+     *    INCLUDING the last part. This is relevant to case-insensitive
+     *    platforms.
+     *
+     * Parts that do not exist are preserved without change.
+     *
+     * The code assumes realpath is available and does both the above.
+     * Systems on which realpath is not available will do neither.
+     *
+     * The function does NOT guarantee normalization of . and .. parts.
+     * While realpath() does that, it is not available on all platforms and
+     * even when available, it is not usable for non-existent paths that
+     * may contain . or .. components. It is expected that the caller would
+     * have removed such components.
+     */
+
+    /*
+     * realpath() only works with paths that actually exist. Further, it
+     * will also resolve symbolic links in the last part of the path, which
+     * we don't want. Accordingly, we need to break up the passed path into
+     *   1. a prefix component that includes all parts except the leaf AND
+     *      exists on disk, and
+     *   2. a middle component that includes remaining non-existent parts
+     *      except the leaf.
+     *   3. leaf which must be mapped to the on-disk name, but must not have
+     *      symbolic links resolved. This is only relevant when 2. is empty
+     *      since otherwise the leaf would not exist and there would be no
+     *      question of mapping its name.
+     */
+
 #ifndef NO_REALPATH
     if (nextCheckpoint == 0 && haveRealpath) {
 	/*
-	 * Try to get the entire path in one go
+	 * We were passed the entire path. Use realpath() to normalize it
+	 * except for the last part. In case of paths of the form /foo,
+	 * there are no intermediate parts to resolve, so we can skip
+	 * the call to realpath() in that case.
 	 */
 
 	const char *lastDir = strrchr(currentPathEndPosition, '/');
 
 	if (lastDir != NULL) {
+	    /* Not a path of form /xxx so intermediate parts need resolution */
 	    if (Tcl_UtfToExternalDStringEx(interp, NULL, path,
 		    lastDir-path, 0, &ds, NULL) != TCL_OK) {
 		Tcl_DStringFree(&ds);
@@ -1979,6 +2165,9 @@ TclpObjNormalizePath(
 		     */
 		} else {
 		    nextCheckpoint = (int)(lastDir - path);
+#if TCL_FILESYSTEM_NOCASE
+		    mapLeaf = 1;
+#endif
 		    goto wholeStringOk;
 		}
 	    }
@@ -1986,11 +2175,14 @@ TclpObjNormalizePath(
 	}
     }
 
-    /*
-     * Else do it the slow way.
-     */
 #endif
 
+    /*
+     * Else do it the slow way. Step through each part of the path, checking
+     * that it exists and stopping at the first part that does not exist.
+     * At loop exit, nextCheckpoint is the offset of the separator before
+     * the first path part that does not exist.
+     */
     while (1) {
 	cur = *currentPathEndPosition;
 	if ((cur == '/') && (path != currentPathEndPosition)) {
@@ -2024,16 +2216,19 @@ TclpObjNormalizePath(
 	    nextCheckpoint = (int)(currentPathEndPosition - path);
 	} else if (cur == 0) {
 	    /*
-	     * The end of the string.
+	     * The end of the string. The entire path exists so leaf name
+	     * needs to be mapped.
 	     */
-
+#if TCL_FILESYSTEM_NOCASE
+	    mapLeaf = 1;
+#endif
 	    break;
 	}
 	currentPathEndPosition++;
     }
 
     /*
-     * Call 'realpath' to obtain a canonical path.
+     * Call 'realpath' to obtain a canonical path for the prefix that exists.
      */
 
 #ifndef NO_REALPATH
@@ -2045,7 +2240,11 @@ TclpObjNormalizePath(
 	     * 'Realpath' transforms an empty string into the normalized pwd,
 	     * which is the wrong answer.
 	     */
-
+#if TCL_FILESYSTEM_NOCASE
+	    if (mapLeaf && path[nextCheckpoint] == '/') {
+		TclpMapLeafName(interp, pathPtr, nextCheckpoint + 1);
+	    }
+#endif
 	    return 0;
 	}
 
@@ -2066,6 +2265,12 @@ TclpObjNormalizePath(
 		 */
 
 		Tcl_DStringFree(&ds);
+
+#if TCL_FILESYSTEM_NOCASE
+		if (mapLeaf && path[nextCheckpoint] == '/') {
+		    TclpMapLeafName(interp, pathPtr, nextCheckpoint + 1);
+		}
+#endif
 
 		/*
 		 * Uncommenting this would mean that this native filesystem
@@ -2101,12 +2306,7 @@ TclpObjNormalizePath(
 		Tcl_DStringAppend(&ds, path + nextCheckpoint,
 			pathLen - nextCheckpoint);
 
-		/*
-		 * characters up to and including the directory separator have
-		 * been processed
-		 */
-
-		nextCheckpoint = (int)normLen + 1;
+		nextCheckpoint = (int)normLen;
 	    } else {
 		/*
 		 * We recognise the whole string.
@@ -2115,8 +2315,14 @@ TclpObjNormalizePath(
 		nextCheckpoint = (int)Tcl_DStringLength(&ds);
 	    }
 
-	    Tcl_SetStringObj(pathPtr, Tcl_DStringValue(&ds),
-		    Tcl_DStringLength(&ds));
+	    path = Tcl_DStringValue(&ds);
+	    Tcl_SetStringObj(pathPtr, path, Tcl_DStringLength(&ds));
+
+#if TCL_FILESYSTEM_NOCASE
+	    if (mapLeaf && path[nextCheckpoint] == '/') {
+		TclpMapLeafName(interp, pathPtr, nextCheckpoint + 1);
+	    }
+#endif
 	}
 	Tcl_DStringFree(&ds);
     }

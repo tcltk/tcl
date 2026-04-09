@@ -402,13 +402,7 @@ TclpMatchInDirectory(
 		break;
 	    }
 	    utfname = Tcl_DStringValue(&utfDs);
-	    if (Tcl_StringCaseMatch(utfname, pattern,
-#ifdef MAC_OSX_TCL
-		    1
-#else
-		    0
-#endif
-		)) {
+	    if (Tcl_StringCaseMatch(utfname, pattern, TCL_FILESYSTEM_NOCASE)) {
 		int typeOk = 1;
 
 		if (types != NULL) {
