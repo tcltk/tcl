@@ -999,8 +999,8 @@ TclWinCPUID(
 	    : "a"(index));
     status = TCL_OK;
 #else
-    (void)index;
-    (void)regsPtr;
+    TCL_USED(index);
+    TCL_USED(regsPtr);
 #endif
     return status;
 }

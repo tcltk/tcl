@@ -2114,7 +2114,7 @@ DeleteReflectedTransformMap(
     ForwardingEvent *evPtr;
     ForwardParam *paramPtr;
 #else
-    (void)interp;
+    TCL_USED(interp);
 #endif /* TCL_THREADS */
 
     /*

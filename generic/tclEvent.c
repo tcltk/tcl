@@ -2113,11 +2113,11 @@ Tcl_CreateThread(
     }
     return result;
 #else
-    (void)idPtr;
-    (void)proc;
-    (void)clientData;
-    (void)stackSize;
-    (void)flags;
+    TCL_USED(idPtr);
+    TCL_USED(proc);
+    TCL_USED(clientData);
+    TCL_USED(stackSize);
+    TCL_USED(flags);
 
     return TCL_ERROR;
 #endif /* TCL_THREADS */

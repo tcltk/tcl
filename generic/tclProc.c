@@ -1991,8 +1991,8 @@ TclProcCompileProc(
 	    Tcl_DecrRefCount(message);
 	}
 #else
-    (void)description;
-    (void)procName;
+	TCL_USED(description);
+	TCL_USED(procName);
 #endif
 
 	/*

@@ -814,11 +814,11 @@ TclAsyncNotifier(
 
     pthread_kill((pthread_t) threadId, sigNumber);
 #else
-    (void)sigNumber;
-    (void)threadId;
-    (void)clientData;
-    (void)flagPtr;
-    (void)value;
+    TCL_USED(sigNumber);
+    TCL_USED(threadId);
+    TCL_USED(clientData);
+    TCL_USED(flagPtr);
+    TCL_USED(value);
 #endif
     return false;
 }

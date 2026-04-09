@@ -2699,7 +2699,7 @@ DeleteReflectedChannelMap(
 	Tcl_DeleteHashEntry(hPtr);
     }
 #else
-    (void)interp;
+    TCL_USED(interp);
 #endif
 }
 

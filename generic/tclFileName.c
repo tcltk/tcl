@@ -2481,25 +2481,21 @@ Tcl_GetBlocksFromStat(
 #endif
 }
 
-#ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
 unsigned
 Tcl_GetBlockSizeFromStat(
     const Tcl_StatBuf *statPtr)
 {
+#ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
     return statPtr->st_blksize;
-}
 #else
-unsigned
-Tcl_GetBlockSizeFromStat(
-    TCL_UNUSED(const Tcl_StatBuf *))
-{
     /*
      * Not a great guess, but will do...
      */
 
+    TCL_USED(statPtr);
     return GUESSED_BLOCK_SIZE;
-}
 #endif
+}
 
 /*
  * Local Variables:

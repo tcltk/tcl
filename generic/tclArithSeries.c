@@ -940,7 +940,7 @@ TclArithSeriesObjRange(
     ArithSeries *arithSeriesRepPtr;
     Tcl_WideInt len;
 
-    (void)interp; /* silence compiler */
+    TCL_USED(interp); /* silence compiler */
 
     arithSeriesRepPtr = ArithSeriesGetInternalRep(arithSeriesObj);
 
@@ -1128,7 +1128,7 @@ TclArithSeriesObjReverse(
     ArithSeries *arithSeriesRepPtr;
     Tcl_Obj *resultObj;
 
-    (void)interp;
+    TCL_USED(interp);
 
     assert(newObjPtr != NULL);
 

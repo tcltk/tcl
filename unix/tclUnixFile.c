@@ -594,7 +594,7 @@ NativeMatchType(
 	}
     }
 #else
-    (void)interp;
+    TCL_USED(interp);
 #endif /* MAC_OSX_TCL */
 
     return 1;

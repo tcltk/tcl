@@ -285,7 +285,7 @@ TclAbstractListUpdateString(
 
     ret = Tcl_ListObjLength(NULL, objPtr, &numElems);
     assert(ret == TCL_OK); // Should only be called for lists
-    (void) ret; // Avoid compiler warning
+    TCL_USED(ret);	// Avoid compiler warning
 
     /* Handle empty list case first, so rest of the routine is simpler. */
 
@@ -445,7 +445,7 @@ LreverseTypeReverse(
     Tcl_Obj *objPtr,		/* Operand */
     Tcl_Obj **reversedPtrPtr)	/* Result */
 {
-    (void)interp; /* Unused */
+    TCL_USED(interp);
     /* Simple return the original */
     *reversedPtrPtr = (Tcl_Obj *) objPtr->internalRep.ptrAndSize.ptr;
     return TCL_OK;
@@ -636,7 +636,7 @@ LrepeatTypeIndex(
     Tcl_Size index,		/* Element index */
     Tcl_Obj **elemPtrPtr)	/* Returned element */
 {
-    (void) interp; /* Unused */
+    TCL_USED(interp);
     Tcl_Size len = objPtr->internalRep.ptrAndSize.size;
     if (index < 0 || index >= len) {
 	*elemPtrPtr = NULL;

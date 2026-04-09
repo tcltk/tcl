@@ -256,7 +256,7 @@ my_LStringObjIndex(
 {
     LString *lstringRepPtr = (LString*)lstringObj->internalRep.twoPtrValue.ptr1;
 
-    (void)interp;
+    TCL_USED(interp);
 
     if (index < lstringRepPtr->strlen) {
 	char cchar[2];
@@ -495,7 +495,7 @@ my_LStringObjReverse(
     Tcl_ObjInternalRep itr;
     Tcl_Size len;
     char *srcp, *dstp, *endp;
-    (void)interp;
+    TCL_USED(interp);
     len = srcRep->strlen;
     revRep->strlen = len;
     revRep->allocated = len+1;
@@ -553,7 +553,7 @@ my_LStringReplace(
     Tcl_Size x, ix, kx;
     char *newStr;
     char *oldStr = lstringRep->string;
-    (void)interp;
+    TCL_USED(interp);
 
     newLen = lstringRep->strlen - numToDelete + numToInsert;
 
@@ -801,7 +801,7 @@ my_LStringGetElements(
     LString *lstringRepPtr = (LString*)lstringObj->internalRep.twoPtrValue.ptr1;
     Tcl_Obj **objPtr;
     char *cptr = lstringRepPtr->string;
-    (void)interp;
+    TCL_USED(interp);
     if (lstringRepPtr->strlen == 0) {
 	*objcptr = 0;
 	*objvptr = NULL;
@@ -925,7 +925,7 @@ lLStringObjCmd(
 {
     Tcl_Obj *lstringObj;
 
-    (void)clientData;
+    TCL_USED(clientData);
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "string");
 	return TCL_ERROR;

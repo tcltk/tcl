@@ -147,7 +147,7 @@ TclInitDbCkalloc(void)
 	ckallocMutexPtr = Tcl_GetAllocMutex();
 #if !TCL_THREADS
 	/* Silence compiler warning */
-	(void)ckallocMutexPtr;
+	TCL_USED(ckallocMutexPtr);
 #endif
     }
 }

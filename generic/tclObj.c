@@ -972,11 +972,11 @@ Tcl_ConvertToType(
  *--------------------------------------------------------------
  */
 
-#if TCL_THREADS && defined(TCL_MEM_DEBUG)
 void
 TclDbDumpActiveObjects(
     FILE *outFile)
 {
+#if TCL_THREADS && defined(TCL_MEM_DEBUG)
     Tcl_HashSearch hSearch;
     Tcl_HashEntry *hPtr;
     Tcl_HashTable *tablePtr;
@@ -1001,14 +1001,10 @@ TclDbDumpActiveObjects(
 	    }
 	}
     }
-}
 #else
-void
-TclDbDumpActiveObjects(
-    TCL_UNUSED(FILE *))
-{
-}
+    TCL_USED(outFile);
 #endif
+}
 
 /*
  *----------------------------------------------------------------------
@@ -1108,20 +1104,16 @@ TclDbInitNewObj(
  *----------------------------------------------------------------------
  */
 
-#ifdef TCL_MEM_DEBUG
+#ifdef Tcl_NewObj
 #undef Tcl_NewObj
+#endif
 
 Tcl_Obj *
 Tcl_NewObj(void)
 {
+#ifdef TCL_MEM_DEBUG
     return Tcl_DbNewObj("unknown", 0);
-}
-
 #else /* if not TCL_MEM_DEBUG */
-
-Tcl_Obj *
-Tcl_NewObj(void)
-{
     Tcl_Obj *objPtr;
 
     /*
@@ -1130,8 +1122,8 @@ Tcl_NewObj(void)
 
     TclNewObj(objPtr);
     return objPtr;
-}
 #endif /* TCL_MEM_DEBUG */
+}
 
 /*
  *----------------------------------------------------------------------
@@ -1160,8 +1152,6 @@ Tcl_NewObj(void)
  *----------------------------------------------------------------------
  */
 
-#ifdef TCL_MEM_DEBUG
-
 Tcl_Obj *
 Tcl_DbNewObj(
     const char *file,		/* The name of the source file calling this
@@ -1169,6 +1159,7 @@ Tcl_DbNewObj(
     int line)			/* Line number in the source file; used for
 				 * debugging. */
 {
+#ifdef TCL_MEM_DEBUG
     Tcl_Obj *objPtr;
 
     /*
@@ -1177,19 +1168,14 @@ Tcl_DbNewObj(
 
     TclDbNewObj(objPtr, file, line);
     return objPtr;
-}
 #else /* if not TCL_MEM_DEBUG */
-
-Tcl_Obj *
-Tcl_DbNewObj(
-    TCL_UNUSED(const char *) /*file*/,
-    TCL_UNUSED(int) /*line*/)
-{
     Tcl_Obj *objPtr;
+    TCL_USED(file);
+    TCL_USED(line);
     TclNewObj(objPtr);
     return objPtr;
-}
 #endif /* TCL_MEM_DEBUG */
+}
 
 /*
  *----------------------------------------------------------------------
@@ -1268,11 +1254,11 @@ TclAllocateFreeObjects(void)
  *----------------------------------------------------------------------
  */
 
-#ifdef TCL_MEM_DEBUG
 void
 TclFreeObj(
     Tcl_Obj *objPtr)		/* The object to be freed. */
 {
+#ifdef TCL_MEM_DEBUG
     const Tcl_ObjType *typePtr = objPtr->typePtr;
 
     /*
@@ -1391,13 +1377,7 @@ TclFreeObj(
 	    }
 	}
     }
-}
 #else /* TCL_MEM_DEBUG */
-
-void
-TclFreeObj(
-    Tcl_Obj *objPtr)		/* The object to be freed. */
-{
     /*
      * Invalidate the string rep first so we can use the bytes value for our
      * pointer chain, and signal an obj deletion (as opposed to shimmering)
@@ -1482,8 +1462,8 @@ TclFreeObj(
 	    }
 	}
     }
-}
 #endif /* TCL_MEM_DEBUG */
+}
 
 /*
  *----------------------------------------------------------------------
@@ -2254,28 +2234,23 @@ ParseBoolean(
  *----------------------------------------------------------------------
  */
 
-#ifdef TCL_MEM_DEBUG
+#ifdef Tcl_NewDoubleObj
 #undef Tcl_NewDoubleObj
+#endif
 
 Tcl_Obj *
 Tcl_NewDoubleObj(
     double dblValue)		/* Double used to initialize the object. */
 {
+#ifdef TCL_MEM_DEBUG
     return Tcl_DbNewDoubleObj(dblValue, "unknown", 0);
-}
-
 #else /* if not TCL_MEM_DEBUG */
-
-Tcl_Obj *
-Tcl_NewDoubleObj(
-    double dblValue)		/* Double used to initialize the object. */
-{
     Tcl_Obj *objPtr;
 
     TclNewDoubleObj(objPtr, dblValue);
     return objPtr;
-}
 #endif /* if TCL_MEM_DEBUG */
+}
 
 /*
  *----------------------------------------------------------------------
@@ -2303,8 +2278,6 @@ Tcl_NewDoubleObj(
  *----------------------------------------------------------------------
  */
 
-#ifdef TCL_MEM_DEBUG
-
 Tcl_Obj *
 Tcl_DbNewDoubleObj(
     double dblValue,		/* Double used to initialize the object. */
@@ -2313,6 +2286,7 @@ Tcl_DbNewDoubleObj(
     int line)			/* Line number in the source file; used for
 				 * debugging. */
 {
+#ifdef TCL_MEM_DEBUG
     Tcl_Obj *objPtr;
 
     TclDbNewObj(objPtr, file, line);
@@ -2322,19 +2296,12 @@ Tcl_DbNewDoubleObj(
     objPtr->internalRep.doubleValue = dblValue;
     objPtr->typePtr = &tclDoubleType;
     return objPtr;
-}
-
 #else /* if not TCL_MEM_DEBUG */
-
-Tcl_Obj *
-Tcl_DbNewDoubleObj(
-    double dblValue,		/* Double used to initialize the object. */
-    TCL_UNUSED(const char *) /*file*/,
-    TCL_UNUSED(int) /*line*/)
-{
+    TCL_USED(file);
+    TCL_USED(line);
     return Tcl_NewDoubleObj(dblValue);
-}
 #endif /* TCL_MEM_DEBUG */
+}
 
 /*
  *----------------------------------------------------------------------
@@ -2730,31 +2697,25 @@ Tcl_GetLongFromObj(
  *----------------------------------------------------------------------
  */
 
-#ifdef TCL_MEM_DEBUG
+#ifdef Tcl_NewWideIntObj
 #undef Tcl_NewWideIntObj
+#endif
 
 Tcl_Obj *
 Tcl_NewWideIntObj(
     Tcl_WideInt wideValue)	/* Wide integer used to initialize the new
 				 * object. */
 {
+#ifdef TCL_MEM_DEBUG
     return Tcl_DbNewWideIntObj(wideValue, "unknown", 0);
-}
-
 #else /* if not TCL_MEM_DEBUG */
-
-Tcl_Obj *
-Tcl_NewWideIntObj(
-    Tcl_WideInt wideValue)	/* Wide integer used to initialize the new
-				 * object. */
-{
     Tcl_Obj *objPtr;
 
     TclNewObj(objPtr);
     TclSetIntObj(objPtr, wideValue);
     return objPtr;
-}
 #endif /* if TCL_MEM_DEBUG */
+}
 
 /*
  *----------------------------------------------------------------------
@@ -2814,8 +2775,6 @@ Tcl_NewWideUIntObj(
  *----------------------------------------------------------------------
  */
 
-#ifdef TCL_MEM_DEBUG
-
 Tcl_Obj *
 Tcl_DbNewWideIntObj(
     Tcl_WideInt wideValue,	/* Wide integer used to initialize the new
@@ -2825,6 +2784,7 @@ Tcl_DbNewWideIntObj(
     int line)			/* Line number in the source file; used for
 				 * debugging. */
 {
+#ifdef TCL_MEM_DEBUG
     Tcl_Obj *objPtr;
 
     TclDbNewObj(objPtr, file, line);
@@ -2832,20 +2792,12 @@ Tcl_DbNewWideIntObj(
 	TclSetIntObj(objPtr, wideValue);
     }
     return objPtr;
-}
-
 #else /* if not TCL_MEM_DEBUG */
-
-Tcl_Obj *
-Tcl_DbNewWideIntObj(
-    Tcl_WideInt wideValue,	/* Long integer used to initialize the new
-				 * object. */
-    TCL_UNUSED(const char *) /*file*/,
-    TCL_UNUSED(int) /*line*/)
-{
+    TCL_USED(file);
+    TCL_USED(line);
     return Tcl_NewWideIntObj(wideValue);
-}
 #endif /* TCL_MEM_DEBUG */
+}
 
 /*
  *----------------------------------------------------------------------
@@ -3316,27 +3268,24 @@ UpdateStringOfBignum(
  *----------------------------------------------------------------------
  */
 
-#ifdef TCL_MEM_DEBUG
+#ifdef Tcl_NewBignumObj
 #undef Tcl_NewBignumObj
+#endif
 
 Tcl_Obj *
 Tcl_NewBignumObj(
     void *bignumValue)
 {
+#ifdef TCL_MEM_DEBUG
     return Tcl_DbNewBignumObj(bignumValue, "unknown", 0);
-}
 #else
-Tcl_Obj *
-Tcl_NewBignumObj(
-    void *bignumValue)
-{
     Tcl_Obj *objPtr;
 
     TclNewObj(objPtr);
     Tcl_SetBignumObj(objPtr, bignumValue);
     return objPtr;
-}
 #endif
+}
 
 /*
  *----------------------------------------------------------------------
@@ -3356,29 +3305,24 @@ Tcl_NewBignumObj(
  *----------------------------------------------------------------------
  */
 
-#ifdef TCL_MEM_DEBUG
 Tcl_Obj *
 Tcl_DbNewBignumObj(
     void *bignumValue,
     const char *file,
     int line)
 {
+#ifdef TCL_MEM_DEBUG
     Tcl_Obj *objPtr;
 
     TclDbNewObj(objPtr, file, line);
     Tcl_SetBignumObj(objPtr, bignumValue);
     return objPtr;
-}
 #else
-Tcl_Obj *
-Tcl_DbNewBignumObj(
-    void *bignumValue,
-    TCL_UNUSED(const char *) /*file*/,
-    TCL_UNUSED(int) /*line*/)
-{
+    TCL_USED(file);
+    TCL_USED(line);
     return Tcl_NewBignumObj(bignumValue);
-}
 #endif
+}
 
 /*
  *----------------------------------------------------------------------
@@ -3809,7 +3753,6 @@ Tcl_IsShared(
  *----------------------------------------------------------------------
  */
 
-#ifdef TCL_MEM_DEBUG
 void
 Tcl_DbIncrRefCount(
     Tcl_Obj *objPtr,		/* The object we are registering a reference
@@ -3819,6 +3762,7 @@ Tcl_DbIncrRefCount(
     int line)			/* Line number in the source file; used for
 				 * debugging. */
 {
+#ifdef TCL_MEM_DEBUG
     if (objPtr->refCount == FREEDREFCOUNTFILLER) {
 	fprintf(stderr, "file = %s, line = %d\n", file, line);
 	fflush(stderr);
@@ -3847,19 +3791,12 @@ Tcl_DbIncrRefCount(
 	}
     }
 # endif /* TCL_THREADS */
-    ++(objPtr)->refCount;
-}
 #else /* !TCL_MEM_DEBUG */
-void
-Tcl_DbIncrRefCount(
-    Tcl_Obj *objPtr,		/* The object we are registering a reference
-				 * to. */
-    TCL_UNUSED(const char *) /*file*/,
-    TCL_UNUSED(int) /*line*/)
-{
-    ++(objPtr)->refCount;
-}
+    TCL_USED(file);
+    TCL_USED(line);
 #endif /* TCL_MEM_DEBUG */
+    ++objPtr->refCount;
+}
 
 /*
  *----------------------------------------------------------------------
@@ -3882,7 +3819,6 @@ Tcl_DbIncrRefCount(
  *----------------------------------------------------------------------
  */
 
-#ifdef TCL_MEM_DEBUG
 void
 Tcl_DbDecrRefCount(
     Tcl_Obj *objPtr,		/* The object we are releasing a reference
@@ -3892,6 +3828,7 @@ Tcl_DbDecrRefCount(
     int line)			/* Line number in the source file; used for
 				 * debugging. */
 {
+#ifdef TCL_MEM_DEBUG
     if (objPtr->refCount == FREEDREFCOUNTFILLER) {
 	fprintf(stderr, "file = %s, line = %d\n", file, line);
 	fflush(stderr);
@@ -3920,24 +3857,15 @@ Tcl_DbDecrRefCount(
 	}
     }
 # endif /* TCL_THREADS */
+#else /* !TCL_MEM_DEBUG */
+    TCL_USED(file);
+    TCL_USED(line);
+#endif /* TCL_MEM_DEBUG */
 
     if (objPtr->refCount-- <= 1) {
 	TclFreeObj(objPtr);
     }
 }
-#else /* !TCL_MEM_DEBUG */
-void
-Tcl_DbDecrRefCount(
-    Tcl_Obj *objPtr,		/* The object we are releasing a reference
-				 * to. */
-    TCL_UNUSED(const char *) /*file*/,
-    TCL_UNUSED(int) /*line*/)
-{
-    if (objPtr->refCount-- <= 1) {
-	TclFreeObj(objPtr);
-    }
-}
-#endif /* TCL_MEM_DEBUG */
 
 /*
  *----------------------------------------------------------------------
@@ -3963,16 +3891,10 @@ Tcl_DbDecrRefCount(
 int
 Tcl_DbIsShared(
     Tcl_Obj *objPtr,		/* The object to test for being shared. */
-#ifdef TCL_MEM_DEBUG
     const char *file,		/* The name of the source file calling this
 				 * function; used for debugging. */
-    int line			/* Line number in the source file; used for
+    int line)			/* Line number in the source file; used for
 				 * debugging. */
-#else
-    TCL_UNUSED(const char *) /*file*/,
-    TCL_UNUSED(int) /*line*/
-#endif
-    )
 {
 #ifdef TCL_MEM_DEBUG
     if (objPtr->refCount == FREEDREFCOUNTFILLER) {
@@ -3980,8 +3902,12 @@ Tcl_DbIsShared(
 	fflush(stderr);
 	Tcl_Panic("checking whether previously disposed object is shared");
     }
+#else
+    TCL_USED(file);
+    TCL_USED(line);
+#endif /* TCL_MEM_DEBUG */
 
-#if TCL_THREADS
+#if defined(TCL_MEM_DEBUG) && TCL_THREADS
     /*
      * Check to make sure that the Tcl_Obj was allocated by the current
      * thread. Don't do this check when shutting down since thread local
@@ -4002,22 +3928,21 @@ Tcl_DbIsShared(
 		    "Tcl_DbIsShared");
 	}
     }
-# endif /* TCL_THREADS */
-#endif /* TCL_MEM_DEBUG */
+#endif /* TCL_MEM_DEBUG && TCL_THREADS */
 
 #ifdef TCL_COMPILE_STATS
     Tcl_MutexLock(&tclObjMutex);
-    if ((objPtr)->refCount <= 1) {
+    if (objPtr->refCount <= 1) {
 	tclObjsShared[1]++;
-    } else if ((objPtr)->refCount < TCL_MAX_SHARED_OBJ_STATS) {
-	tclObjsShared[(objPtr)->refCount]++;
+    } else if (objPtr->refCount < TCL_MAX_SHARED_OBJ_STATS) {
+	tclObjsShared[objPtr->refCount]++;
     } else {
 	tclObjsShared[0]++;
     }
     Tcl_MutexUnlock(&tclObjMutex);
 #endif /* TCL_COMPILE_STATS */
 
-    return ((objPtr)->refCount > 1);
+    return objPtr->refCount > 1;
 }
 
 /*

@@ -350,7 +350,7 @@ TclFinalizeThreadData(
 	TclFinalizeThreadAllocThread();
     }
 #else
-    (void)quick;
+    TCL_USED(quick);
 #endif
 }
 

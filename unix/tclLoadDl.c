@@ -108,7 +108,8 @@ TclpDlopen(
 	Tcl_DString ds;
 	const char *fileName = TclGetString(pathPtr);
 
-	if (Tcl_UtfToExternalDStringEx(interp, NULL, fileName, TCL_INDEX_NONE, 0, &ds, NULL) != TCL_OK) {
+	if (Tcl_UtfToExternalDStringEx(interp, NULL, fileName, TCL_INDEX_NONE,
+		0, &ds, NULL) != TCL_OK) {
 	    Tcl_DStringFree(&ds);
 	    return TCL_ERROR;
 	}
@@ -183,7 +184,8 @@ FindSymbol(
      * the underscore.
      */
 
-    if (Tcl_UtfToExternalDStringEx(interp, NULL, symbol, TCL_INDEX_NONE, 0, &ds, NULL) != TCL_OK) {
+    if (Tcl_UtfToExternalDStringEx(interp, NULL, symbol, TCL_INDEX_NONE,
+	    0, &ds, NULL) != TCL_OK) {
 	Tcl_DStringFree(&ds);
 	return NULL;
     }
@@ -198,7 +200,16 @@ FindSymbol(
     }
 #ifdef __cplusplus
     if (proc == NULL) {
+	/*
+	 * Try looking for the C++-mangled version of the symbol, using a
+	 * common mangling scheme (that of GCC). Properly, this is handling
+	 * a user error as init functions should be extern "C", but...
+	 *
+	 * This won't work with other name mangling schemes or if the caller
+	 * isn't looking for an init function, but it's "good enough".
+	 */
 	char buf[32];
+
 	snprintf(buf, sizeof(buf), "%d", (int)Tcl_DStringLength(&ds));
 	Tcl_DStringInit(&newName);
 	TclDStringAppendLiteral(&newName, "__Z");

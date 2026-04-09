@@ -5769,7 +5769,7 @@ FreeLocalVarName(
 
     LocalGetInternalRep(objPtr, index, namePtr);
 
-    (void)index;	/* Compiler warning bait. */
+    TCL_USED(index);		/* Compiler warning bait. */
     if (namePtr) {
 	Tcl_DecrRefCount(namePtr);
     }
@@ -5808,7 +5808,7 @@ FreeParsedVarName(
 
     ParsedGetInternalRep(objPtr, parsed, arrayPtr, elem);
 
-    (void)parsed;				/* Silence compiler. */
+    TCL_USED(parsed);
     if (arrayPtr != NULL) {
 	TclDecrRefCount(arrayPtr);
 	TclDecrRefCount(elem);
@@ -5825,7 +5825,7 @@ DupParsedVarName(
 
     ParsedGetInternalRep(srcPtr, parsed, arrayPtr, elem);
 
-    (void)parsed;				/* Silence compiler. */
+    TCL_USED(parsed);
     ParsedSetInternalRep(dupPtr, arrayPtr, elem);
 }
 

@@ -427,6 +427,7 @@ TclpLoadMemory(
 }
 
 #endif /* TCL_LOAD_FROM_MEMORY */
+
 /*
  * Local Variables:
  * mode: c

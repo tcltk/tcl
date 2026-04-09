@@ -232,7 +232,7 @@ Tcl_AsyncMarkFromSignal(
     return TclAsyncNotifier(sigNumber, token->originThrdId,
 	    token->notifierData, &token->ready, -1) ? 1 : 0;
 #else
-    (void)sigNumber;
+    TCL_USED(sigNumber);
 
     Tcl_AsyncMark(async);
     return 1;

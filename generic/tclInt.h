@@ -53,6 +53,12 @@
 #endif
 
 /*
+ * Mark a variable as used, even when the compiler thinks otherwise. Useful
+ * when the using code is, for example, in a different branch of an ifdef.
+ */
+#define TCL_USED(var)	((void) var)
+
+/*
  * Common include files needed by most of the Tcl source files are included
  * here, so that system-dependent personalizations for the include files only
  * have to be made in once place. This results in a few extra includes, but

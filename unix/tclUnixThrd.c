@@ -264,11 +264,11 @@ TclpThreadCreate(
     pthread_attr_destroy(&attr);
     return result;
 #else
-    (void)idPtr;
-    (void)proc;
-    (void)clientData;
-    (void)stackSize;
-    (void)flags;
+    TCL_USED(idPtr);
+    TCL_USED(proc);
+    TCL_USED(clientData);
+    TCL_USED(stackSize);
+    TCL_USED(flags);
     return TCL_ERROR;
 #endif /* TCL_THREADS */
 }
@@ -306,8 +306,8 @@ Tcl_JoinThread(
     }
     return (result == 0) ? TCL_OK : TCL_ERROR;
 #else
-    (void)threadId;
-    (void)state;
+    TCL_USED(threadId);
+    TCL_USED(state);
 
     return TCL_ERROR;
 #endif

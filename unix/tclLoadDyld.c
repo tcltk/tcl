@@ -25,7 +25,7 @@
 
 #include <dlfcn.h>
 
-#if defined(TCL_LOAD_FROM_MEMORY)
+#ifdef TCL_LOAD_FROM_MEMORY
 #if defined (__clang__) || ((__GNUC__)  && ((__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ > 5))))
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
@@ -44,7 +44,7 @@ typedef struct Tcl_DyldModuleHandle {
 
 typedef struct {
     void *dlHandle;
-#if defined(TCL_LOAD_FROM_MEMORY)
+#ifdef TCL_LOAD_FROM_MEMORY
     const struct mach_header *dyldLibHeader;
     Tcl_DyldModuleHandle *modulePtr;
 #endif
@@ -93,7 +93,7 @@ TclpDlopen(
     Tcl_DyldLoadHandle *dyldLoadHandle;
     Tcl_LoadHandle newHandle;
     void *dlHandle = NULL;
-#if defined(TCL_LOAD_FROM_MEMORY)
+#ifdef TCL_LOAD_FROM_MEMORY
     const struct mach_header *dyldLibHeader = NULL;
     Tcl_DyldModuleHandle *modulePtr = NULL;
 #endif
@@ -146,9 +146,10 @@ TclpDlopen(
     }
 
     if (dlHandle) {
-	dyldLoadHandle = (Tcl_DyldLoadHandle *)Tcl_Alloc(sizeof(Tcl_DyldLoadHandle));
+	dyldLoadHandle = (Tcl_DyldLoadHandle *)
+		Tcl_Alloc(sizeof(Tcl_DyldLoadHandle));
 	dyldLoadHandle->dlHandle = dlHandle;
-#if defined(TCL_LOAD_FROM_MEMORY)
+#ifdef TCL_LOAD_FROM_MEMORY
 	dyldLoadHandle->dyldLibHeader = dyldLibHeader;
 	dyldLoadHandle->modulePtr = modulePtr;
 #endif /* TCL_LOAD_FROM_MEMORY */
@@ -196,13 +197,15 @@ FindSymbol(
     Tcl_LoadHandle loadHandle,	/* Handle from TclpDlopen. */
     const char *symbol)		/* Symbol name to look up. */
 {
-    Tcl_DyldLoadHandle *dyldLoadHandle = (Tcl_DyldLoadHandle *)loadHandle->clientData;
+    Tcl_DyldLoadHandle *dyldLoadHandle = (Tcl_DyldLoadHandle *)
+	    loadHandle->clientData;
     Tcl_LibraryInitProc *proc = NULL;
     const char *errMsg = NULL;
     Tcl_DString ds;
     const char *native;
 
-    if (Tcl_UtfToExternalDStringEx(interp, NULL, symbol, TCL_INDEX_NONE, 0, &ds, NULL) != TCL_OK) {
+    if (Tcl_UtfToExternalDStringEx(interp, NULL, symbol, TCL_INDEX_NONE,
+	    0, &ds, NULL) != TCL_OK) {
 	Tcl_DStringFree(&ds);
 	return NULL;
     }
@@ -213,7 +216,7 @@ FindSymbol(
 	    errMsg = dlerror();
 	}
     } else {
-#if defined(TCL_LOAD_FROM_MEMORY)
+#ifdef TCL_LOAD_FROM_MEMORY
 	NSSymbol nsSymbol = NULL;
 	Tcl_DString newName;
 
@@ -245,7 +248,8 @@ FindSymbol(
 		    modulePtr = modulePtr->nextPtr;
 		}
 		if (modulePtr == NULL) {
-		    modulePtr = (Tcl_DyldModuleHandle *)Tcl_Alloc(sizeof(Tcl_DyldModuleHandle));
+		    modulePtr = (Tcl_DyldModuleHandle *)
+			    Tcl_Alloc(sizeof(Tcl_DyldModuleHandle));
 		    modulePtr->module = module;
 		    modulePtr->nextPtr = dyldLoadHandle->modulePtr;
 		    dyldLoadHandle->modulePtr = modulePtr;
@@ -304,12 +308,13 @@ UnloadFile(
 				 * TclpDlopen(). The loadHandle is a token
 				 * that represents the loaded file. */
 {
-    Tcl_DyldLoadHandle *dyldLoadHandle = (Tcl_DyldLoadHandle *)loadHandle->clientData;
+    Tcl_DyldLoadHandle *dyldLoadHandle = (Tcl_DyldLoadHandle *)
+	    loadHandle->clientData;
 
     if (dyldLoadHandle->dlHandle) {
 	(void) dlclose(dyldLoadHandle->dlHandle);
     } else {
-#if defined(TCL_LOAD_FROM_MEMORY)
+#ifdef TCL_LOAD_FROM_MEMORY
 	Tcl_DyldModuleHandle *modulePtr = dyldLoadHandle->modulePtr;
 
 	while (modulePtr != NULL) {
@@ -441,7 +446,8 @@ TclpLoadMemory(
 		struct fat_arch *fa;
 
 		if (fh->magic != FAT_MAGIC) {
-		    swap_fat_arch((struct fat_arch *)fatarchs, fh_nfat_arch, arch->byteorder);
+		    swap_fat_arch((struct fat_arch *)fatarchs, fh_nfat_arch,
+			    arch->byteorder);
 		}
 		fa = NXFindBestFatArch(arch->cputype | arch_abi,
 			arch->cpusubtype, (struct fat_arch *)fatarchs, fh_nfat_arch);
@@ -452,7 +458,8 @@ TclpLoadMemory(
 		    err = NSObjectFileImageInappropriateFile;
 		}
 		if (fh->magic != FAT_MAGIC) {
-		    swap_fat_arch((struct fat_arch *)fatarchs, fh_nfat_arch, arch->byteorder);
+		    swap_fat_arch((struct fat_arch *)fatarchs, fh_nfat_arch,
+			    arch->byteorder);
 		}
 	    } else {
 		err = NSObjectFileImageInappropriateFile;
@@ -495,7 +502,8 @@ TclpLoadMemory(
     if (!(flags & 2)) {
 	nsflags |= NSLINKMODULE_OPTION_BINDNOW;
     }
-    module = NSLinkModule(dyldObjFileImage, (path ? path : "[Memory Based Bundle]"), nsflags);
+    module = NSLinkModule(dyldObjFileImage, (path ? path : "[Memory Based Bundle]"),
+	    nsflags);
     NSDestroyObjectFileImage(dyldObjFileImage);
     if (!module) {
 	NSLinkEditErrors editError;
@@ -510,10 +518,12 @@ TclpLoadMemory(
      * Stash the module reference within the load handle we create and return.
      */
 
-    modulePtr = (Tcl_DyldModuleHandle *)Tcl_Alloc(sizeof(Tcl_DyldModuleHandle));
+    modulePtr = (Tcl_DyldModuleHandle *)
+	    Tcl_Alloc(sizeof(Tcl_DyldModuleHandle));
     modulePtr->module = module;
     modulePtr->nextPtr = NULL;
-    dyldLoadHandle = (Tcl_DyldLoadHandle *)Tcl_Alloc(sizeof(Tcl_DyldLoadHandle));
+    dyldLoadHandle = (Tcl_DyldLoadHandle *)
+	    Tcl_Alloc(sizeof(Tcl_DyldLoadHandle));
     dyldLoadHandle->dlHandle = NULL;
     dyldLoadHandle->dyldLibHeader = NULL;
     dyldLoadHandle->modulePtr = modulePtr;

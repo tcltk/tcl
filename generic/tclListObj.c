@@ -643,7 +643,7 @@ ListRepValidate(
     ListStore *storePtr = repPtr->storePtr;
     const char *condition;
 
-    (void)storePtr; /* To stop gcc from whining about unused vars */
+    TCL_USED(storePtr);	/* To stop gcc from whining about unused vars */
 
 #define INVARIANT(cond_) \
     do {								\
@@ -1078,24 +1078,18 @@ ListRepUnsharedFreeUnreferenced(
  *----------------------------------------------------------------------
  */
 
-#ifdef TCL_MEM_DEBUG
+#ifdef Tcl_NewListObj
 #undef Tcl_NewListObj
+#endif
 
 Tcl_Obj *
 Tcl_NewListObj(
     Tcl_Size objc,		/* Count of objects referenced by objv. */
     Tcl_Obj *const objv[])	/* An array of pointers to Tcl objects. */
 {
+#ifdef TCL_MEM_DEBUG
     return Tcl_DbNewListObj(objc, objv, "unknown", 0);
-}
-
 #else /* if not TCL_MEM_DEBUG */
-
-Tcl_Obj *
-Tcl_NewListObj(
-    Tcl_Size objc,		/* Count of objects referenced by objv. */
-    Tcl_Obj *const objv[])	/* An array of pointers to Tcl objects. */
-{
     ListRep listRep;
     Tcl_Obj *listObj;
 
@@ -1109,8 +1103,8 @@ Tcl_NewListObj(
     ListObjReplaceRepAndInvalidate(listObj, &listRep);
 
     return listObj;
-}
 #endif /* if TCL_MEM_DEBUG */
+}
 
 /*
  *----------------------------------------------------------------------
@@ -1141,8 +1135,6 @@ Tcl_NewListObj(
  *----------------------------------------------------------------------
  */
 
-#ifdef TCL_MEM_DEBUG
-
 Tcl_Obj *
 Tcl_DbNewListObj(
     Tcl_Size objc,		/* Count of objects referenced by objv. */
@@ -1152,6 +1144,7 @@ Tcl_DbNewListObj(
     int line)			/* Line number in the source file; used for
 				 * debugging. */
 {
+#ifdef TCL_MEM_DEBUG
     Tcl_Obj *listObj;
     ListRep listRep;
 
@@ -1165,20 +1158,12 @@ Tcl_DbNewListObj(
     ListObjReplaceRepAndInvalidate(listObj, &listRep);
 
     return listObj;
-}
-
 #else /* if not TCL_MEM_DEBUG */
-
-Tcl_Obj *
-Tcl_DbNewListObj(
-    Tcl_Size objc,		/* Count of objects referenced by objv. */
-    Tcl_Obj *const objv[],	/* An array of pointers to Tcl objects. */
-    TCL_UNUSED(const char *) /*file*/,
-    TCL_UNUSED(int) /*line*/)
-{
+    TCL_USED(file);
+    TCL_USED(line);
     return Tcl_NewListObj(objc, objv);
-}
 #endif /* TCL_MEM_DEBUG */
+}
 
 /*
  *------------------------------------------------------------------------

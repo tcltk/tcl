@@ -3113,7 +3113,7 @@ SkipUnlink(
      */
 
 #ifdef hpux
-    (void)shlibFile;
+    TCL_USED(shlibFile);
     return 1;
 #else
     WCHAR *skipstr = getenv("TCL_TEMPLOAD_NO_UNLINK");
@@ -3123,7 +3123,7 @@ SkipUnlink(
     }
 
 #ifndef TCL_TEMPLOAD_NO_UNLINK
-    (void)shlibFile;
+    TCL_USED(shlibFile);
 #else
 /* At built time TCL_TEMPLOAD_NO_UNLINK can be set manually to control whether
  * this automatic overriding of unlink is included.

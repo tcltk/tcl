@@ -1460,12 +1460,12 @@ Tcl_NewDictObj(void)
  *----------------------------------------------------------------------
  */
 
-#ifdef TCL_MEM_DEBUG
 Tcl_Obj *
 Tcl_DbNewDictObj(
     const char *file,
     int line)
 {
+#ifdef TCL_MEM_DEBUG
     Tcl_Obj *dictPtr;
     Dict *dict;
 
@@ -1478,16 +1478,12 @@ Tcl_DbNewDictObj(
     dict->refCount = 1;
     DictSetInternalRep(dictPtr, dict);
     return dictPtr;
-}
 #else /* !TCL_MEM_DEBUG */
-Tcl_Obj *
-Tcl_DbNewDictObj(
-    TCL_UNUSED(const char *) /*file*/,
-    TCL_UNUSED(int) /*line*/)
-{
+    TCL_USED(file);
+    TCL_USED(line);
     return Tcl_NewDictObj();
-}
 #endif
+}
 
 /***** START OF FUNCTIONS ACTING AS HELPERS *****/
 

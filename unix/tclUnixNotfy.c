@@ -121,7 +121,7 @@ TclpAlertNotifier(
 #   endif /* __CYGWIN__ */
     pthread_mutex_unlock(&notifierMutex);
 #else
-    (void)clientData;
+    TCL_USED(clientData);
 #endif /* TCL_THREADS */
 #else /* !NOTIFIER_SELECT */
     ThreadSpecificData *tsdPtr = (ThreadSpecificData *) clientData;

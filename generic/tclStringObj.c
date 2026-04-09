@@ -222,8 +222,10 @@ GrowUnicodeBuffer(
  *----------------------------------------------------------------------
  */
 
-#ifdef TCL_MEM_DEBUG
+#ifdef Tcl_NewStringObj
 #undef Tcl_NewStringObj
+#endif
+
 Tcl_Obj *
 Tcl_NewStringObj(
     const char *bytes,		/* Points to the first of the length bytes
@@ -233,21 +235,11 @@ Tcl_NewStringObj(
 				 * < 0, use bytes up to the first NUL
 				 * byte. */
 {
+#ifdef TCL_MEM_DEBUG
     return Tcl_DbNewStringObj(bytes, length, "unknown", 0);
-}
-
-// Redefine the macro
-#define Tcl_NewStringObj(bytes, len) \
-    Tcl_DbNewStringObj(bytes, len, __FILE__, __LINE__)
+#define Tcl_NewStringObj(bytes, length) \
+    Tcl_DbNewStringObj((bytes), (length), __FILE__, __LINE__)
 #else /* if not TCL_MEM_DEBUG */
-Tcl_Obj *
-Tcl_NewStringObj(
-    const char *bytes,		/* Points to the first of the length bytes
-				 * used to initialize the new object. */
-    Tcl_Size length)		/* The number of bytes to copy from "bytes"
-				 * when initializing the new object. If -1,
-				 * use bytes up to the first NUL byte. */
-{
     Tcl_Obj *objPtr;
 
     if (length < 0) {
@@ -255,8 +247,8 @@ Tcl_NewStringObj(
     }
     TclNewStringObj(objPtr, bytes, length);
     return objPtr;
+#endif
 }
-#endif /* TCL_MEM_DEBUG */
 
 /*
  *----------------------------------------------------------------------
@@ -287,7 +279,6 @@ Tcl_NewStringObj(
  *----------------------------------------------------------------------
  */
 
-#ifdef TCL_MEM_DEBUG
 Tcl_Obj *
 Tcl_DbNewStringObj(
     const char *bytes,		/* Points to the first of the length bytes
@@ -300,6 +291,7 @@ Tcl_DbNewStringObj(
     int line)			/* Line number in the source file; used for
 				 * debugging. */
 {
+#ifdef TCL_MEM_DEBUG
     Tcl_Obj *objPtr;
 
     if (length < 0) {
@@ -311,21 +303,12 @@ Tcl_DbNewStringObj(
 		"d bytes. %s:%d", length, file, line);
     }
     return objPtr;
-}
 #else /* if not TCL_MEM_DEBUG */
-Tcl_Obj *
-Tcl_DbNewStringObj(
-    const char *bytes,		/* Points to the first of the length bytes
-				 * used to initialize the new object. */
-    Tcl_Size length,		/* The number of bytes to copy from "bytes"
-				 * when initializing the new object. If -1,
-				 * use bytes up to the first NUL byte. */
-    TCL_UNUSED(const char *) /*file*/,
-    TCL_UNUSED(int) /*line*/)
-{
+    TCL_USED(file);
+    TCL_USED(line);
     return Tcl_NewStringObj(bytes, length);
-}
 #endif /* TCL_MEM_DEBUG */
+}
 
 /*
  *---------------------------------------------------------------------------

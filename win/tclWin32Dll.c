@@ -513,8 +513,8 @@ TclWinCPUID(
     }
 
 #else
-    (void)index;
-    (void)regsPtr;
+    TCL_USED(index);
+    TCL_USED(regsPtr);
     /*
      * Don't know how to do assembly code for this compiler and/or
      * architecture.

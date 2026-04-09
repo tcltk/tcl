@@ -218,7 +218,9 @@ TclIsPureByteArray(
  *----------------------------------------------------------------------
  */
 
+#ifdef Tcl_NewByteArrayObj
 #undef Tcl_NewByteArrayObj
+#endif
 
 Tcl_Obj *
 Tcl_NewByteArrayObj(
@@ -229,6 +231,8 @@ Tcl_NewByteArrayObj(
 {
 #ifdef TCL_MEM_DEBUG
     return Tcl_DbNewByteArrayObj(bytes, numBytes, "unknown", 0);
+#define Tcl_NewByteArrayObj(bytes, numBytes) \
+    Tcl_DbNewByteArrayObj((bytes), (numBytes), __FILE__, __LINE__)
 #else /* if not TCL_MEM_DEBUG */
     Tcl_Obj *objPtr;
 
@@ -263,7 +267,6 @@ Tcl_NewByteArrayObj(
  *----------------------------------------------------------------------
  */
 
-#ifdef TCL_MEM_DEBUG
 Tcl_Obj *
 Tcl_DbNewByteArrayObj(
     const unsigned char *bytes,	/* The array of bytes used to initialize the
@@ -275,25 +278,18 @@ Tcl_DbNewByteArrayObj(
     int line)			/* Line number in the source file; used for
 				 * debugging. */
 {
+#ifdef TCL_MEM_DEBUG
     Tcl_Obj *objPtr;
 
     TclDbNewObj(objPtr, file, line);
     Tcl_SetByteArrayObj(objPtr, bytes, numBytes);
     return objPtr;
-}
 #else /* if not TCL_MEM_DEBUG */
-Tcl_Obj *
-Tcl_DbNewByteArrayObj(
-    const unsigned char *bytes,	/* The array of bytes used to initialize the
-				 * new object. */
-    Tcl_Size numBytes,		/* Number of bytes in the array,
-				 * must be >= 0. */
-    TCL_UNUSED(const char *) /*file*/,
-    TCL_UNUSED(int) /*line*/)
-{
+    TCL_USED(file);
+    TCL_USED(line);
     return Tcl_NewByteArrayObj(bytes, numBytes);
-}
 #endif /* TCL_MEM_DEBUG */
+}
 
 /*
  *---------------------------------------------------------------------------
@@ -1411,12 +1407,7 @@ BinaryScanCmd(
 	     * should be changed back to the simpler version.
 	     */
 
-#ifdef TCL_MEM_DEBUG
-	    valuePtr = Tcl_DbNewByteArrayObj(src, size, __FILE__, __LINE__);
-#else
 	    valuePtr = Tcl_NewByteArrayObj(src, size);
-#endif /* TCL_MEM_DEBUG */
-
 	    resultPtr = Tcl_ObjSetVar2(interp, objv[arg], NULL, valuePtr,
 		    TCL_LEAVE_ERR_MSG);
 	    arg++;

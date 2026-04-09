@@ -114,7 +114,7 @@ TclDeleteLiteralTable(
 #ifdef TCL_COMPILE_DEBUG
     TclVerifyGlobalLiteralTable((Interp *) interp);
 #else
-    (void)interp;
+    TCL_USED(interp);
 #endif /*TCL_COMPILE_DEBUG*/
 
     /*
@@ -527,8 +527,8 @@ LookupLiteralEntry(
     }
     return NULL;
 }
-
 #endif
+
 /*
  *----------------------------------------------------------------------
  *

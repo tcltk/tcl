@@ -803,13 +803,13 @@ ReleaseDictIterator(
  *----------------------------------------------------------------------
  */
 
-#if defined(TCL_COMPILE_STATS) || defined(TCL_COMPILE_DEBUG)
 static void
 InitByteCodeExecution(
     Tcl_Interp *interp)		/* Interpreter for which the Tcl variable
 				 * "tcl_traceExec" is linked to control
 				 * instruction tracing. */
 {
+#if defined(TCL_COMPILE_STATS) || defined(TCL_COMPILE_DEBUG)
 #ifdef TCL_COMPILE_DEBUG
     if (Tcl_LinkVar(interp, "tcl_traceExec", &tclTraceExec,
 	    TCL_LINK_INT) != TCL_OK) {
@@ -819,16 +819,10 @@ InitByteCodeExecution(
 #ifdef TCL_COMPILE_STATS
     Tcl_CreateObjCommand2(interp, "evalstats", EvalStatsCmd, NULL, NULL);
 #endif /* TCL_COMPILE_STATS */
-}
-
 #else
-
-static void
-InitByteCodeExecution(
-    TCL_UNUSED(Tcl_Interp *))
-{
-}
+    TCL_USED(interp);
 #endif
+}
 
 /*
  *----------------------------------------------------------------------
