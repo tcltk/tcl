@@ -15,11 +15,9 @@
 # of this file.
 #
 
-
 if {![namespace exists ::tclTestPerf]} {
   source [file join [file dirname [info script]] test-performance.tcl]
 }
-
 
 namespace eval ::tclTestPerf-List {
 

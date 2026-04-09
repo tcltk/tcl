@@ -25,6 +25,7 @@ to the userbase.
 
 # Updated bundled packages, libraries, standards, data
  - autoconf 2.73
+ - http 2.10.2
  - Itcl 4.3.7
  - sqlite3 3.51.3
  - Thread 3.0.5

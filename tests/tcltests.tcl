@@ -25,9 +25,7 @@ testConstraint fileevent     [llength [info commands fileevent]]
 testConstraint thread        [expr {![catch {package require Thread 2.7-}]}]
 testConstraint notValgrind   [expr {![testConstraint valgrind]}]
 
-
 namespace eval ::tcltests {
-
 
     proc init {} {
 	if {[namespace which ::tcl::file::tempdir] eq {}} {
@@ -37,7 +35,6 @@ namespace eval ::tcltests {
 	    interp alias {} [namespace current]::tempdir {} ::tcl::file::tempdir
 	}
     }
-
 
     # Stolen from dict.test
     proc scriptmemcheck script {
@@ -49,7 +46,6 @@ namespace eval ::tcltests {
 	}
 	expr {$end - $tmp}
     }
-
 
     proc tempdir_alternate {} {
 	close [file tempfile tempfile]
