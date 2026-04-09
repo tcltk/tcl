@@ -39,7 +39,7 @@ info - Information about the state of the Tcl interpreter
 # Synopsis
 
 ::: {.synopsis} :::
-[info]{.cmd} [option]{.arg} [arg arg]{.optdot}
+[info]{.cmd} [option]{.arg} [arg]{.optdot}
 :::
 
 # Description
@@ -64,7 +64,7 @@ Available commands:
     **alias**
     : *commandName* was created by [interp alias][interp]. In a safe interpreter an alias is only visible if both the alias and the target are visible.
 
-    [coroutine]
+    **coroutine**
     : *commandName* was created by [coroutine].
 
     **ensemble**
@@ -74,7 +74,7 @@ Available commands:
     : *commandName* was created by [namespace import][namespace].
 
     **native**
-    : *commandName* was created by the **Tcl\_CreateObjCommand** interface directly without further registration of the type of command.
+    : *commandName* was created by the [Tcl\_CreateObjCommand][CrtObjCmd] interface directly without further registration of the type of command.
 
     **object**
     : *commandName* is the public command that represents an instance of **oo::object** or one of its subclasses.
@@ -82,10 +82,10 @@ Available commands:
     **privateObject**
     : *commandName* is the private command, [my] by default, that represents an instance of **oo::object** or one of its subclasses.
 
-    [proc]
+    **proc**
     : *commandName* was created by [proc].
 
-    [interp]
+    **interp**
     : *commandName* was created by [interp create][interp].
 
     **zlibStream**
@@ -93,7 +93,7 @@ Available commands:
 
 
 [info]{.cmd} [commands]{.sub} [pattern]{.optarg}
-: Returns the names of all commands visible in the current namespace.  If *pattern* is given, returns only those names that match according to [string match][string].  Only the last component of *pattern* is a pattern. Other components identify a namespace.  See **NAMESPACE RESOLUTION** in the [namespace](n) documentation.
+: Returns the names of all commands visible in the current namespace.  If *pattern* is given, returns only those names that match according to [string match][string].  Only the last component of *pattern* is a pattern. Other components identify a namespace.  See **NAMESPACE RESOLUTION** in the manual page for the [namespace] command.
 
 [info]{.cmd} [complete]{.sub} [command]{.arg}
 : Returns 1 if *command* is a complete command, and **0** otherwise. Typically used in line-oriented input environments to allow users to type in commands that span multiple lines.
@@ -105,7 +105,7 @@ Available commands:
 : Returns the list of constant variables (see [const]) in the current scope, or the list of constant variables matching *pattern* (if that is provided) in a manner similar to **info vars**.
 
 [info]{.cmd} [coroutine]{.sub}
-: Returns the name of the current [coroutine], or the empty string if there is no current coroutine or the current coroutine has been deleted.
+: Returns the name of the current **coroutine**, or the empty string if there is no current coroutine or the current coroutine has been deleted.
 
 [info]{.cmd} [default]{.sub} [procname]{.arg} [parameter]{.arg} [varname]{.arg}
 : If the parameter *parameter* for the procedure named *procname* has a default value, stores that value in *varname* and returns **1**. Otherwise, returns **0**.
@@ -121,21 +121,21 @@ Available commands:
 : Returns **1** if a variable named *varName* is visible and has been defined, and **0** otherwise.
 
 [info]{.cmd} [frame]{.sub} [depth]{.optarg}
-: Returns the depth of the call to **info frame** itself.  Otherwise, returns a dictionary describing the active command at the *depth*, which counts all commands visible to **info level**, plus commands that don't create a new level, such as [eval], [source], or *uplevel*. The frame depth is always greater than the current level.
+: Returns the depth of the call to **info frame** itself.  Otherwise, returns a dictionary describing the active command at the *depth*, which counts all commands visible to **info level**, plus commands that don't create a new level, such as [eval], [source], or [uplevel]. The frame depth is always greater than the current level.
 
     If *depth* is greater than **0** it is the frame at that depth.  Otherwise it is the number of frames up from the current frame.
 
-    As with **info level** and error traces, for nested commands like "foo [bar [x]]", only "x" is seen by **info frame** invoked within "x".
+    As with **info level** and error traces, for nested commands like `foo [bar [x]]`, only "x" is seen by **info frame** invoked within "x".
 
     The dictionary may contain the following keys:
 
     **type**
-    : Always present.  Possible values are [source], [proc], [eval], and **precompiled**.
+    : Always present.  Possible values are [source], **proc**, [eval], and **precompiled**.
 
     [source]
     : A script loaded via the [source] command.
 
-    [proc]
+    **proc**
     : The body of a procedure that could not be traced back to a line in a particular script.
 
     [eval]
@@ -154,8 +154,8 @@ Available commands:
 **cmd**
 : The command before substitutions were performed.
 
-[proc]
-: For type [proc], the name of the procedure containing the command.
+**proc**
+: For type **proc**, the name of the procedure containing the command.
 
 **lambda**
 : For a command in a script evaluated as the body of an unnamed routine via the [apply] command, the definition of that routine.
@@ -164,7 +164,7 @@ Available commands:
 : For a frame that corresponds to a level, (to be determined).
 
 
-When a command can be traced to its literal definition in some script, e.g. procedures nested in statically defined procedures, and literal eval scripts in files or statically defined procedures, its type is [source] and its location is the absolute line number in the script.  Otherwise, its type is [proc] and its location is its line number within the body of the procedure.
+When a command can be traced to its literal definition in some script, e.g. procedures nested in statically defined procedures, and literal eval scripts in files or statically defined procedures, its type is [source] and its location is the absolute line number in the script.  Otherwise, its type is **proc** and its location is its line number within the body of the procedure.
 
 In contrast, procedure definitions and [eval] within a dynamically [eval]uated environment count line numbers relative to the start of their script, even if they would be able to count relative to the start of the outer dynamic script. That type of number usually makes more sense.
 
@@ -232,10 +232,10 @@ The following *subcommand* values are supported by **info class**:
     Note that there is no inspection of whether the method implementations actually use [next] to transfer control along the call chain, and the call chains that this command files do not actually contain private methods.
 
 [info]{.cmd} [class]{.sub} [constructor]{.lit} [class]{.arg}
-: This subcommand returns a description of the definition of the constructor of class *class*. The definition is described as a two element list; the first element is the list of arguments to the constructor in a form suitable for passing to another call to [proc] or a method definition, and the second element is the body of the constructor. If no constructor is present, this returns the empty list.
+: This subcommand returns a description of the definition of the constructor of class *class*. The definition is described as a two element list; the first element is the list of arguments to the constructor in a form suitable for passing to another call to **proc** or a method definition, and the second element is the body of the constructor. If no constructor is present, this returns the empty list.
 
 [info]{.cmd} [class]{.sub} [definition]{.lit} [class]{.arg} [method]{.arg}
-: This subcommand returns a description of the definition of the method named *method* of class *class*. The definition is described as a two element list; the first element is the list of arguments to the method in a form suitable for passing to another call to [proc] or a method definition, and the second element is the body of the method.
+: This subcommand returns a description of the definition of the method named *method* of class *class*. The definition is described as a two element list; the first element is the list of arguments to the method in a form suitable for passing to another call to **proc** or a method definition, and the second element is the body of the method.
 
 [info]{.cmd} [class]{.sub} [definitionnamespace]{.lit} [class]{.arg} [kind]{.optarg}
 : This subcommand returns the definition namespace for *kind* definitions of the class *class*; the definition namespace only affects the instances of *class*, not *class* itself. The *kind* can be either **-class** to return the definition namespace used for **oo::define**, or **-instance** to return the definition namespace used for **oo::objdefine**; the **-class** kind is default (though this is only actually useful on classes that are subclasses of **oo::class**).
@@ -323,7 +323,7 @@ The following *subcommand* values are supported by **info object**:
     *Implementation note:* the creation identifier is used to generate unique identifiers associated with the object, especially for private variables.
 
 [info]{.cmd} [object]{.sub} [definition]{.lit} [object]{.arg} [method]{.arg}
-: This subcommand returns a description of the definition of the method named *method* of object *object*. The definition is described as a two element list; the first element is the list of arguments to the method in a form suitable for passing to another call to [proc] or a method definition, and the second element is the body of the method.
+: This subcommand returns a description of the definition of the method named *method* of object *object*. The definition is described as a two element list; the first element is the list of arguments to the method in a form suitable for passing to another call to **proc** or a method definition, and the second element is the body of the method.
 
 [info]{.cmd} [object]{.sub} [filters]{.lit} [object]{.arg}
 : This subcommand returns the list of filter methods set on the object.
@@ -483,7 +483,7 @@ proc getDef {obj method} {
 [apply]: apply.md
 [catch]: catch.md
 [const]: const.md
-[coroutine]: coroutine.md
+[CrtObjCmd]: CrtObjCmd.md
 [eval]: eval.md
 [file]: file.md
 [global]: global.md
@@ -492,7 +492,6 @@ proc getDef {obj method} {
 [my]: my.md
 [namespace]: namespace.md
 [next]: next.md
-[proc]: proc.md
 [source]: source.md
 [string]: string.md
 [unknown]: unknown.md

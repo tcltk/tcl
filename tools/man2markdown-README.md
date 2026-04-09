@@ -36,7 +36,7 @@ section | number of documents | initial conversion | final conversion
 --------|---------------------|--------------------|-----------------
 1       | 1                   | 1                  | 0
 3       | 108                 | 108                | 0
-n       | 139                 | 139                | 48
+n       | 139                 | 139                | 53
 
 Final conversion of these files is currently done:
 1. after
@@ -87,7 +87,11 @@ Final conversion of these files is currently done:
 46. glob
 47. global
 48. history
-49. http (manual edit needed: the options of some subcommands need more indentation which the script didn't catch)
+49. http (manual postprocessing needed: the options of some subcommands need more indentation which the script didn't catch)
+50. idna
+51. if
+52. incr
+53. info (manual postprocessing needed: some cmd names are links, others are option names etc.)
 
 
 

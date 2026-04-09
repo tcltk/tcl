@@ -15,7 +15,7 @@
 .SH NAME
 info \- Information about the state of the Tcl interpreter
 .SH SYNOPSIS
-\fBinfo \fIoption \fR?\fIarg arg ...\fR?
+\fBinfo \fIoption \fR?\fIarg ...\fR?
 .BE
 .SH DESCRIPTION
 .PP
@@ -83,7 +83,7 @@ Returns the names of all commands visible in the current namespace.  If
 \fIpattern\fR is given, returns only those names that match according to
 \fBstring match\fR.  Only the last component of \fIpattern\fR is a pattern.
 Other components identify a namespace.  See \fBNAMESPACE RESOLUTION\fR in the
-\fBnamespace\fR(n) documentation.
+manual page for the \fBnamespace\fR command.
 .\" METHOD: complete
 .TP
 \fBinfo complete \fIcommand\fR
@@ -161,7 +161,7 @@ defined, and \fB0\fR otherwise.
 Returns the depth of the call to \fBinfo frame\fR itself.  Otherwise, returns a
 dictionary describing the active command at the \fIdepth\fR, which counts all
 commands visible to \fBinfo level\fR, plus commands that don't create a new
-level, such as \fBeval\fR, \fBsource\fR, or \fIuplevel\fR. The frame depth is
+level, such as \fBeval\fR, \fBsource\fR, or \fBuplevel\fR. The frame depth is
 always greater than the current level.
 .RS
 .PP
@@ -323,7 +323,7 @@ Returns the names of all visible procedures. If \fIpattern\fR is given, returns
 only those names that match according to \fBstring match\fR.  Only the final
 component in \fIpattern\fR is actually considered a pattern.  Any qualifying
 components simply select a namespace.  See \fBNAMESPACE RESOLUTION\fR in the
-\fBnamespace\fR(n) documentation.
+manual page of the \fBnamespace\fR command.
 .\" METHOD: script
 .TP
 \fBinfo script\fR ?\fIfilename\fR?
@@ -354,7 +354,7 @@ If \fIpattern\fR is not given, returns the names of all visible variables.  If
 \fIpattern\fR is given, returns only those names that match according to
 \fBstring match\fR.  Only the last component of \fIpattern\fR is a pattern.
 Other components identify a namespace.  See \fBNAMESPACE RESOLUTION\fR in the
-\fBnamespace\fR(n) documentation.  When \fIpattern\fR is a qualified name,
+manual page for the \fBnamespace\fR command.  When \fIpattern\fR is a qualified name,
 results are fully qualified.
 .RS
 .PP

@@ -245,6 +245,7 @@ namespace eval ::ndoc {
 		copy          {oo::class class oo::object object}
 		define        {oo::class class oo::objdefine objdefine oo::define define oo::object object oo::Slot Slot}
 		filename      {auto_path tclvars platform tclvars tcl_platform tclvars}
+		info          {Tcl_CreateObjCommand CrtObjCmd tcl_library tclvars tcl_patchLevel tclvars oo::define define oo::objdefine objdefine oo::class class}
 	}]
 	
 	# dictionary of pages in which specific cmd words should *not* be linked
@@ -270,6 +271,7 @@ namespace eval ::ndoc {
 		grab		{global}
 		history		{exec}
 		http 		{error Tcl binary}
+		info            {coroutine proc}
 		interp		{time}
 		menu		{checkbutton radiobutton}
 		messageBox	{error info}
@@ -1753,6 +1755,14 @@ proc ::ndoc::mdExceptions {md} {
 			set md [string map {
 				{GET / HTTP/1.1 GET} {    GET / HTTP/1.1 GET}
 				{https://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml} {<https://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml>}
+			} $md]
+		}
+		info {
+			set md [string map {
+				{by **coroutine**} {by [coroutine]}
+				{by **proc**} {by [proc]}
+				{    [interp]} {    **interp**}
+				{like "foo [bar [x]]"} {like `foo [bar [x]]`}
 			} $md]
 		}
 	}
