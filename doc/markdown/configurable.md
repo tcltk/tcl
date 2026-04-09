@@ -101,13 +101,13 @@ Note that the property implementation methods that **property** defines should n
 
 The configurable class system is comprised of several pieces. The **oo::configurable** metaclass works by mixing in a class and setting definition namespaces during object creation that provide the other bits and pieces of machinery. The key pieces of the implementation are enumerated here so that they can be used by other code:
 
-**oo::configuresupport::configurable**
+[oo::configuresupport::configurable]{.cmd}
 : This is a class that provides the implementation of the **configure** method (described above in [Configure method]).
 
-**oo::configuresupport::configurableclass**
+[oo::configuresupport::configurableclass]{.cmd}
 : This is a namespace that contains the definition dialect that provides the **property** declaration for use in classes (i.e., via [oo::define][define], and class constructors under normal circumstances), as described above in [Property definitions]. It [namespace export][namespace]s its **property** command so that it may be used easily in user definition dialects.
 
-**oo::configuresupport::configurableobject**
+[oo::configuresupport::configurableobject]{.cmd}
 : This is a namespace that contains the definition dialect that provides the **property** declaration for use in instance objects (i.e., via [oo::objdefine][objdefine], and the **self** declaration in [oo::define][define]), as described above in [Property definitions]. It [namespace export][namespace]s its **property** command so that it may be used easily in user definition dialects.
 
 

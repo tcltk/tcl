@@ -87,6 +87,7 @@ Final conversion of these files is currently done:
 46. glob
 47. global
 48. history
+49. http (manual edit needed: the options of some subcommands need more indentation which the script didn't catch)
 
 
 

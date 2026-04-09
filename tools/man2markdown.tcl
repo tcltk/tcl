@@ -269,7 +269,7 @@ namespace eval ::ndoc {
 		getOpenFile	{file open text}
 		grab		{global}
 		history		{exec}
-		http 		{error}
+		http 		{error Tcl binary}
 		interp		{time}
 		menu		{checkbutton radiobutton}
 		messageBox	{error info}
@@ -787,7 +787,7 @@ proc ::ndoc::parseBlock {parent manContent} {
 				#
 				# Todo: StdChannels.3 uses
 				#     ../nroff/tcl9.0/doc/StdChannels.3:.IP 1)
-				#  	../nroff/tcl9.0/doc/StdChannels.3:.IP 2)
+				#     ../nroff/tcl9.0/doc/StdChannels.3:.IP 2)
 				#     ../nroff/tcl9.0/doc/StdChannels.3:.IP (a)
 				#     ../nroff/tcl9.0/doc/StdChannels.3:.IP (b)
 				#     ../nroff/tcl9.0/doc/StdChannels.3:.IP 3)
@@ -876,7 +876,7 @@ proc ::ndoc::parseBlock {parent manContent} {
 									# as determined by the comment line above the .TP line,
 									# then mark it as such so that expandBlock can handle it nicely:
 									# (skip RegConfig.3 as it has non-standard syntax for generated Tcl-level commands)
-									if {[dict get $manual lastComment] in {OPTION: METHOD: OPTION METHOD COMMAND} && [dict get $manual name] ne "RegConfig"} {
+									if {[dict get $manual lastComment] in {OPTION: METHOD: COMMAND: OPTION METHOD COMMAND} && [dict get $manual name] ne "RegConfig"} {
 										set itemTitle [dict get $manual lastComment]_$itemTitle
 									}
 								}
@@ -1747,6 +1747,12 @@ proc ::ndoc::mdExceptions {md} {
 				{"glob -join \* \* \* \*"} {`glob -join * * * *`}
 				{[] construct} {\[\] construct}
 				{[set]: set.md} {}
+			} $md]
+		}
+		http {
+			set md [string map {
+				{GET / HTTP/1.1 GET} {    GET / HTTP/1.1 GET}
+				{https://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml} {<https://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml>}
 			} $md]
 		}
 	}

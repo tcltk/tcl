@@ -140,7 +140,7 @@ must obey the \fBCOOKIE JAR PROTOCOL\fR described below.
 \fB\-pipeline\fI boolean\fR
 .
 Specifies whether HTTP/1.1 transactions on a persistent socket will be
-pipelined.  See the \fBPERSISTENT SOCKETS\fR section for details. The default
+pipelined.  See the \fBPERSISTENT CONNECTIONS\fR section for details. The default
 is 1.
 .\" OPTION: -postfresh
 .TP
@@ -148,7 +148,7 @@ is 1.
 .
 Specifies whether requests that use the \fBPOST\fR method will always use a
 fresh socket, overriding the \fB\-keepalive\fR option of
-command \fBhttp::geturl\fR.  See the \fBPERSISTENT SOCKETS\fR section for
+command \fBhttp::geturl\fR.  See the \fBPERSISTENT CONNECTIONS\fR section for
 details. The default is 0.
 .\" OPTION: -proxyauth
 .TP
@@ -223,7 +223,7 @@ will be automatically retried; if boolean \fBfalse\fR it will not, and the
 application
 that uses \fBhttp::geturl\fR is expected to seek user confirmation before
 retrying the POST.  The value \fBtrue\fR should be used only under certain
-conditions. See the \fBPERSISTENT SOCKETS\fR section for details. The
+conditions. See the \fBPERSISTENT CONNECTIONS\fR section for details. The
 default is 0.
 .\" OPTION: -threadlevel
 .TP
@@ -839,13 +839,13 @@ facilities available.  These facilities are enabled by the optional
 arguments \fIuseSockThread\fR, \fIendToEndProxy\fR, which take boolean
 values with default value \fIfalse\fR.
 .PP
-Iff argument \fIuseSockThread\fR is supplied and is boolean \fItrue\fR,
-then iff permitted by the value [\fBhttp::config\fI \-threadlevel\fR]
+If argument \fIuseSockThread\fR is supplied and is boolean \fItrue\fR,
+then if permitted by the value [\fBhttp::config\fI \-threadlevel\fR]
 and by the availability of package \fBThread\fR, sockets created for
 the transport will be opened in a different thread so that a slow DNS
 lookup will not cause the script to block.
 .PP
-Iff argument \fIendToEndProxy\fR is supplied and is boolean \fItrue\fR,
+If argument \fIendToEndProxy\fR is supplied and is boolean \fItrue\fR,
 then when \fBhttp::geturl\fR accesses a server via a proxy, it will
 open a channel by sending a CONNECT request to the proxy, and it will
 then make its request over this channel.  This allows end-to-end
@@ -1191,14 +1191,14 @@ Dictionary key \fIupgrade\fR.
 .RE
 .PP
 .SS "EVEN MORE METADATA"
-.IP 1.
-Details of the HTTP request.  The request is determined by the options
+.PP
+1. Details of the HTTP request.  The request is determined by the options
 supplied to \fB::http::geturl\fR and \fB::http::config\fR.  However, it is
 sometimes helpful to examine what \fB::http::geturl\fR actually sent to the
 server, and this information is available through
 commands \fB::http::requestHeaders\fR and \fB::http::requestLine\fR.
-.IP 2.
-The state array: the internal variables of \fB::http::geturl\fR.
+.PP
+2. The state array: the internal variables of \fB::http::geturl\fR.
 It may sometimes be helpful to examine this array.
 Details are given in the next section.
 .SH "STATE ARRAY"

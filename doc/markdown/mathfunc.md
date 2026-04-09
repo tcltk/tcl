@@ -73,115 +73,115 @@ In addition to these predefined functions, applications may define additional fu
 
 ## Detailed definitions
 
-**abs** *arg*
+[abs]{.cmd} [arg]{.arg}
 : Returns the absolute value of *arg*.  *Arg* may be either integer or floating-point, and the result is returned in the same form.
 
-**acos** *arg*
+[acos]{.cmd} [arg]{.arg}
 : Returns the arc cosine of *arg*, in the range [*0*,*pi*] radians. *Arg* should be in the range [*-1*,*1*].
 
-**asin** *arg*
+[asin]{.cmd} [arg]{.arg}
 : Returns the arc sine of *arg*, in the range [*-pi/2*,*pi/2*] radians.  *Arg* should be in the range [*-1*,*1*].
 
-**atan** *arg*
+[atan]{.cmd} [arg]{.arg}
 : Returns the arc tangent of *arg*, in the range [*-pi/2*,*pi/2*] radians.
 
-**atan2** *y x*
+[atan2]{.cmd} [y]{.arg} [x]{.arg}
 : Returns the arc tangent of *y*/*x*, in the range [*-pi*,*pi*] radians.  *x* and *y* cannot both be 0.  If *x* is greater than *0*, this is equivalent to "**atan** [[expr] {*y***/***x*}]".
 
-**bool** *arg*
+[bool]{.cmd} [arg]{.arg}
 : Accepts any numeric value, or any string acceptable to [string is boolean][string], and returns the corresponding boolean value **0** or **1**.  Non-zero numbers are true. Other numbers are false.  Non-numeric strings produce boolean value in agreement with [string is true][string] and [string is false][string].
 
-**ceil** *arg*
+[ceil]{.cmd} [arg]{.arg}
 : Returns the smallest integral floating-point value (i.e. with a zero fractional part) not less than *arg*.  The argument may be any numeric value.
 
-**cos** *arg*
+[cos]{.cmd} [arg]{.arg}
 : Returns the cosine of *arg*, measured in radians.
 
-**cosh** *arg*
+[cosh]{.cmd} [arg]{.arg}
 : Returns the hyperbolic cosine of *arg*.  If the result would cause an overflow, an error is returned.
 
-**double** *arg*
+[double]{.cmd} [arg]{.arg}
 : The argument may be any numeric value, If *arg* is a floating-point value, returns *arg*, otherwise converts *arg* to floating-point and returns the converted value.  May return **Inf** or **-Inf** when the argument is a numeric value that exceeds the floating-point range.
 
-**entier** *arg*
+[entier]{.cmd} [arg]{.arg}
 : The argument may be any numeric value.  The integer part of *arg* is determined and returned.  The integer range returned by this function is unlimited, unlike **int** and **wide** which truncate their range to fit in particular storage widths.
 
-**exp** *arg*
+[exp]{.cmd} [arg]{.arg}
 : Returns the exponential of *arg*, defined as *e*\*\**arg*. If the result would cause an overflow, an error is returned.
 
-**floor** *arg*
+[floor]{.cmd} [arg]{.arg}
 : Returns the largest integral floating-point value (i.e. with a zero fractional part) not greater than *arg*.  The argument may be any numeric value.
 
-**fmod** *x y*
+[fmod]{.cmd} [x]{.arg} [y]{.arg}
 : Returns the floating-point remainder of the division of *x* by *y*.  If *y* is 0, an error is returned.
 
-**hypot** *x y*
+[hypot]{.cmd} [x]{.arg} [y]{.arg}
 : Computes the length of the hypotenuse of a right-angled triangle, approximately "**sqrt** [[expr] {*x***\****x***+***y***\****y*}]" except for being more numerically stable when the two arguments have substantially different magnitudes.
 
-**int** *arg*
+[int]{.cmd} [arg]{.arg}
 : The argument may be any numeric value.  The integer part of *arg* is determined, and then the low order bits of that integer value up to the machine word size are returned as an integer value.  For reference, the number of bytes in the machine word are stored in the **wordSize** element of the **tcl\_platform** array.
 
-**isfinite** *arg*
+[isfinite]{.cmd} [arg]{.arg}
 : Returns 1 if the floating-point number *arg* is finite. That is, if it is zero, subnormal, or normal. Returns 0 if the number is infinite or NaN. Throws an error if *arg* cannot be promoted to a floating-point value.
 
-**isinf** *arg*
+[isinf]{.cmd} [arg]{.arg}
 : Returns 1 if the floating-point number *arg* is infinite. Returns 0 if the number is finite or NaN. Throws an error if *arg* cannot be promoted to a floating-point value.
 
-**isnan** *arg*
+[isnan]{.cmd} [arg]{.arg}
 : Returns 1 if the floating-point number *arg* is Not-a-Number. Returns 0 if the number is finite or infinite. Throws an error if *arg* cannot be promoted to a floating-point value.
 
-**isnormal** *arg*
+[isnormal]{.cmd} [arg]{.arg}
 : Returns 1 if the floating-point number *arg* is normal. Returns 0 if the number is zero, subnormal, infinite or NaN. Throws an error if *arg* cannot be promoted to a floating-point value.
 
-**isqrt** *arg*
+[isqrt]{.cmd} [arg]{.arg}
 : Computes the integer part of the square root of *arg*.  *Arg* must be a positive value, either an integer or a floating point number. Unlike **sqrt**, which is limited to the precision of a floating point number, *isqrt* will return a result of arbitrary precision.
 
-**issubnormal** *arg*
+[issubnormal]{.cmd} [arg]{.arg}
 : Returns 1 if the floating-point number *arg* is subnormal, i.e., the result of gradual underflow. Returns 0 if the number is zero, normal, infinite or NaN. Throws an error if *arg* cannot be promoted to a floating-point value.
 
-**isunordered** *x y*
+[isunordered]{.cmd} [x]{.arg} [y]{.arg}
 : Returns 1 if *x* and *y* cannot be compared for ordering, that is, if either one is NaN. Returns 0 if both values can be ordered, that is, if they are both chosen from among the set of zero, subnormal, normal and infinite values. Throws an error if either *x* or *y* cannot be promoted to a floating-point value.
 
-**log** *arg*
+[log]{.cmd} [arg]{.arg}
 : Returns the natural logarithm of *arg*.  *Arg* must be a positive value.
 
-**log10** *arg*
+[log10]{.cmd} [arg]{.arg}
 : Returns the base 10 logarithm of *arg*.  *Arg* must be a positive value.
 
-**max** *arg* ?*arg ...*?
+[max]{.cmd} [arg]{.arg} [arg]{.optdot}
 : Accepts one or more numeric arguments.  Returns the one argument with the greatest value.
 
-**min** *arg* ?*arg ...*?
+[min]{.cmd} [arg]{.arg} [arg]{.optdot}
 : Accepts one or more numeric arguments.  Returns the one argument with the least value.
 
-**pow** *x y*
+[pow]{.cmd} [x]{.arg} [y]{.arg}
 : Computes the value of *x* raised to the power *y*.  If *x* is negative, *y* must be an integer value.
 
-**rand**
+[rand]{.cmd}
 : Returns a pseudo-random floating-point value in the range (*0*,*1*). The generator algorithm is a simple linear congruential generator that is not cryptographically secure.  Each result from **rand** completely determines all future results from subsequent calls to **rand**, so **rand** should not be used to generate a sequence of secrets, such as one-time passwords.  The seed of the generator is initialized from the internal clock of the machine or may be set with the **srand** function.
 
-**round** *arg*
+[round]{.cmd} [arg]{.arg}
 : If *arg* is an integer value, returns *arg*, otherwise converts *arg* to integer by rounding and returns the converted value.
 
-**sin** *arg*
+[sin]{.cmd} [arg]{.arg}
 : Returns the sine of *arg*, measured in radians.
 
-**sinh** *arg*
+[sinh]{.cmd} [arg]{.arg}
 : Returns the hyperbolic sine of *arg*.  If the result would cause an overflow, an error is returned.
 
-**sqrt** *arg*
+[sqrt]{.cmd} [arg]{.arg}
 : The argument may be any non-negative numeric value.  Returns a floating-point value that is the square root of *arg*.  May return **Inf** when the argument is a numeric value that exceeds the square of the maximum value of the floating-point range.
 
-**srand** *arg*
+[srand]{.cmd} [arg]{.arg}
 : The *arg*, which must be an integer, is used to reset the seed for the random number generator of **rand**.  Returns the first random number (see **rand**) from that seed.  Each interpreter has its own seed.
 
-**tan** *arg*
+[tan]{.cmd} [arg]{.arg}
 : Returns the tangent of *arg*, measured in radians.
 
-**tanh** *arg*
+[tanh]{.cmd} [arg]{.arg}
 : Returns the hyperbolic tangent of *arg*.
 
-**wide** *arg*
+[wide]{.cmd} [arg]{.arg}
 : The argument may be any numeric value.  The integer part of *arg* is determined, and then the low order 64 bits of that integer value are returned as an integer value.
 
 
