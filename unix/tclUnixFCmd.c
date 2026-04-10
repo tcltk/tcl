@@ -1921,14 +1921,15 @@ GetModeFromPermString(
  *
  * TclpMapLeafName --
  *
- *      On macOS case-insensitive, case-preserving filesystems (HFS+, APFS),
+ *      On case-insensitive, case-preserving filesystems (e.g. macos HFS+, APFS),
  *      check the true on-disk name of the final component of a file path
  *      and replace it in pathPtr if it differs from the supplied name.
  *
  * Results:
  *      TCL_OK on success irrespective of any changes made.
  *      Returns TCL_ERROR if an encoding conversion fails, in which case
- *      an error message is left in interp if interp is non-NULL.
+ *      an error message is left in interp if interp is non-NULL and pathPtr
+ *      is left unchanged.
  *
  * Side effects:
  *      The bytes field of pathPtr may be updated and internal
@@ -1938,16 +1939,11 @@ GetModeFromPermString(
  */
 
 int
-TclpMapLeafName(Tcl_Interp *interp, /* Interpreter for error reporting and
-				     * encoding conversion; may be NULL. */
-    Tcl_Obj *pathPtr,               /* Unshared path object to correct. Its
-				     * bytes field may be modified in place. */
-    int leafOffset)                 /* Byte offset of the first character of
-				     * the final component within pathPtr's
-				     * string representation. Must be 0 if
-				     * the path contains no separator, or the
-				     * offset of the first byte after the last
-				     * '/' separator otherwise. */
+TclpMapLeafName(
+    Tcl_Interp *interp,		/* For error reporting, may be NULL */
+    Tcl_Obj *pathPtr,		/* Unshared path object, modified in place */
+    int leafOffset)		/* Byte offset to the first character of
+				 * final path component */
 {
     Tcl_Size pathLen;
     const char *path = TclGetStringFromObj(pathPtr, &pathLen);
@@ -2013,11 +2009,6 @@ TclpMapLeafName(Tcl_Interp *interp, /* Interpreter for error reporting and
     }
 #endif /* HAVE_GETATTRLIST */
 
-    /*
-     * The on-disk name differs in case from the supplied name. Convert it
-     * to UTF-8 so it can be written back into pathPtr.
-     */
-
     if (Tcl_ExternalToUtfDStringEx(interp, NULL, onDiskName, -1, 0, &ds,
 	    NULL) != TCL_OK) {
 	Tcl_DStringFree(&ds);
@@ -2032,7 +2023,7 @@ TclpMapLeafName(Tcl_Interp *interp, /* Interpreter for error reporting and
 	return TCL_OK;
     }
 
-    /* pathPtr is unshared so can be modified */
+    /* Replace the leaf name. pathPtr is unshared so can be modified */
     TclFreeInternalRep(pathPtr);
     Tcl_SetObjLength(pathPtr, leafOffset);
     Tcl_AppendToObj(pathPtr, onDiskUtf, onDiskUtfLen);
@@ -2048,16 +2039,34 @@ TclpMapLeafName(Tcl_Interp *interp, /* Interpreter for error reporting and
  *
  * TclpObjNormalizePath --
  *
- *	Replaces each component except that last one in a pathname that is a
- *	symbolic link with the fully resolved target of that link and its.
- *	on-disk canonical name (in case of case-insensitive filesystems).
+ *	Implements the Tcl_FSNormalizePathProc interface of the Tcl file
+ *	system API (Tcl_FileSystem.normalizePath). See the manpage for details.
+ *
+ *	This function has two purposes:
+ *	 - resolve symbolics links EXCEPT in the last part of the path
+ *	   ("link-normalization"), and
+ *	 - replace all parts of the path with the canonical on-disk name,
+ *	   INCLUDING the last part. This is relevant to case-insensitive
+ *	   platforms.
+ *
+ *	Parts that do not exist are preserved without change.
+ *
+ *	The code assumes realpath is available and does both the above.
+ *	Systems on which realpath is not available will do neither.
+ *
+ *	The function does NOT guarantee normalization of . and .. parts.
+ *	While realpath() does that, it is not available on all platforms and
+ *	even when available, it is not usable for non-existent paths that
+ *	may contain . or .. components. It is expected that the caller would
+ *	have removed such components.
  *
  * Results:
- *	Stores the resulting path in pathPtr and returns the offset of the last
- *	byte processed to obtain the resulting path.
+ *	The offset of the last byte link-normalized to obtain the resulting path.
+ *	Returns -1 on encoding errors with pathPtr unchanged.
  *
  * Side effects:
- *
+ *	pathPtr is updated with the resulting path. The returned offset
+ *	is an offset into this.
  *---------------------------------------------------------------------------
  */
 
@@ -2069,8 +2078,7 @@ TclpObjNormalizePath(
     int nextCheckpoint)		/* offset to start at in pathPtr.  Must either
 				 * be 0 or the offset of a directory separator
 				 * at the end of a path part that is already
-				 * normalized.  I.e. this is not the index of
-				 * the byte just after the separator. */
+				 * link-normalized. */
 {
     const char *currentPathEndPosition;
     char cur;
@@ -2099,25 +2107,6 @@ TclpObjNormalizePath(
     if (*currentPathEndPosition == '/') {
 	currentPathEndPosition++;
     }
-
-    /*
-     * This function has two purposes:
-     *  - resolve symbolics links EXCEPT in the last part of the path
-     *  - replace all parts of the path with the canonical on-disk name,
-     *    INCLUDING the last part. This is relevant to case-insensitive
-     *    platforms.
-     *
-     * Parts that do not exist are preserved without change.
-     *
-     * The code assumes realpath is available and does both the above.
-     * Systems on which realpath is not available will do neither.
-     *
-     * The function does NOT guarantee normalization of . and .. parts.
-     * While realpath() does that, it is not available on all platforms and
-     * even when available, it is not usable for non-existent paths that
-     * may contain . or .. components. It is expected that the caller would
-     * have removed such components.
-     */
 
     /*
      * realpath() only works with paths that actually exist. Further, it
@@ -2186,10 +2175,7 @@ TclpObjNormalizePath(
     while (1) {
 	cur = *currentPathEndPosition;
 	if ((cur == '/') && (path != currentPathEndPosition)) {
-	    /*
-	     * Reached directory separator.
-	     */
-
+	    /* Reached directory separator. */
 	    int accessOk;
 
 	    if (Tcl_UtfToExternalDStringEx(interp, NULL, path,
@@ -2202,16 +2188,11 @@ TclpObjNormalizePath(
 	    Tcl_DStringFree(&ds);
 
 	    if (accessOk != 0) {
-		/*
-		 * File doesn't exist.
-		 */
-
+		/* File doesn't exist. */
 		break;
 	    }
 
-	    /*
-	     * Assign the end of the current component to nextCheckpoint
-	     */
+	    /* Update nextCheckpoint to offset to the normalized portion. */
 
 	    nextCheckpoint = (int)(currentPathEndPosition - path);
 	} else if (cur == 0) {
@@ -2248,7 +2229,8 @@ TclpObjNormalizePath(
 	    return 0;
 	}
 
-	if (Tcl_UtfToExternalDStringEx(interp, NULL, path,nextCheckpoint, 0, &ds, NULL)) {
+	if (Tcl_UtfToExternalDStringEx(interp, NULL, path,
+		nextCheckpoint, 0, &ds, NULL)) {
 	    Tcl_DStringFree(&ds);
 	    return -1;
 	}
@@ -2294,25 +2276,22 @@ TclpObjNormalizePath(
 	     */
 
 	    Tcl_DStringFree(&ds);
-	    Tcl_ExternalToUtfDStringEx(NULL, NULL, normPath, newNormLen, 0, &ds, NULL);
+	    if (Tcl_ExternalToUtfDStringEx(interp, NULL, normPath,
+		    newNormLen, 0, &ds, NULL) != TCL_OK) {
+		Tcl_DStringFree(&ds); /* Even on error */
+		return -1;
+	    }
 
-	    if (path[nextCheckpoint] != '\0') {
-		/*
-		 * Append the remaining path components.
-		 */
+	    if (path[nextCheckpoint] == '\0') {
+		/* We recognise the whole string. */
+		nextCheckpoint = (int)Tcl_DStringLength(&ds);
+	    } else {
+		/* Append the remaining path components to normalized bits. */
 
 		Tcl_Size normLen = Tcl_DStringLength(&ds);
-
 		Tcl_DStringAppend(&ds, path + nextCheckpoint,
 			pathLen - nextCheckpoint);
-
 		nextCheckpoint = (int)normLen;
-	    } else {
-		/*
-		 * We recognise the whole string.
-		 */
-
-		nextCheckpoint = (int)Tcl_DStringLength(&ds);
 	    }
 
 	    path = Tcl_DStringValue(&ds);
