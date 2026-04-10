@@ -30,7 +30,7 @@ auto\_execok, auto\_import, auto\_load, auto\_mkindex, auto\_qualify, auto\_rese
 [auto\_execok]{.cmd} [cmd]{.arg}
 [auto\_import]{.cmd} [pattern]{.arg}
 [auto\_load]{.cmd} [cmd]{.arg}
-[auto\_mkindex]{.cmd} [dir]{.arg} [pattern]{.arg} [pattern]{.arg} [...]{.arg}
+[auto\_mkindex]{.cmd} [dir]{.arg} [pattern]{.optdot}
 [auto\_qualify]{.cmd} [command]{.arg} [namespace]{.arg}
 [auto\_reset]{.cmd}
 [tcl\_findLibrary]{.cmd} [basename]{.arg} [version]{.arg} [patch]{.arg} [initScript]{.arg} [enVarName]{.arg} [varName]{.arg}
@@ -41,8 +41,8 @@ auto\_execok, auto\_import, auto\_load, auto\_mkindex, auto\_qualify, auto\_rese
 [tcl\_wordBreakAfter]{.cmd} [str]{.arg} [start]{.arg}
 [tcl\_wordBreakBefore]{.cmd} [str]{.arg} [start]{.arg}
 [foreachLine]{.cmd} [filename]{.arg} [varName]{.arg} [body]{.arg}
-[readFile]{.cmd} [filename]{.arg} [text=|§binary]{.optlit}
-[writeFile]{.cmd} [filename]{.arg} [text=|§binary]{.optlit} [contents]{.arg}
+[readFile]{.cmd} [filename]{.arg} [text|binary]{.optlit}
+[writeFile]{.cmd} [filename]{.arg} [text|binary]{.optlit} [contents]{.arg}
 :::
 
 # Introduction
@@ -55,14 +55,14 @@ To access the procedures in the Tcl library, an application should source the fi
 source [file join [info library] init.tcl]
 ```
 
-If the library procedure **Tcl\_Init** is invoked from an application's **Tcl\_AppInit** procedure, this happens automatically. The code in **init.tcl** will define the [unknown] procedure and arrange for the other procedures to be loaded on-demand using the auto-load mechanism defined below.
+If the library procedure **Tcl\_Init** is invoked from an application's [Tcl\_AppInit][AppInit] procedure, this happens automatically. The code in **init.tcl** will define the [unknown] procedure and arrange for the other procedures to be loaded on-demand using the auto-load mechanism defined below.
 
 # Command procedures
 
 The following procedures are provided in the Tcl library:
 
 [auto\_execok]{.cmd} [cmd]{.arg}
-: Determines whether there is an executable file or shell builtin by the name *cmd*.  If so, it returns a list of arguments to be passed to [exec] to execute the executable file or shell builtin named by *cmd*.  If not, it returns an empty string.  This command examines the directories in the current search path (given by the PATH environment variable) in its search for an executable file named *cmd*.  On Windows platforms, the search is expanded with the same directories and file extensions as used by [exec]. **Auto\_execok** remembers information about previous searches in an array named **auto\_execs**;  this avoids the path search in future calls for the same *cmd*.  The command **auto\_reset** may be used to force **auto\_execok** to forget its cached information.
+: Determines whether there is an executable file or shell builtin by the name *cmd*.  If so, it returns a list of arguments to be passed to [exec] to execute the executable file or shell builtin named by *cmd*.  If not, it returns an empty string.  This command examines the directories in the current search path (given by the PATH environment variable) in its search for an executable file named *cmd*.  On Windows platforms, the search is expanded with the same directories and file extensions as used by [exec]. **auto\_execok** remembers information about previous searches in an array named **auto\_execs**;  this avoids the path search in future calls for the same *cmd*.  The command **auto\_reset** may be used to force **auto\_execok** to forget its cached information.
 
     For example, to run the *umask* shell builtin on Linux, you would do:
 
@@ -83,16 +83,16 @@ The following procedures are provided in the Tcl library:
     ```
 
 [auto\_import]{.cmd} [pattern]{.arg}
-: **Auto\_import** is invoked during [namespace import][namespace] to see if the imported commands specified by *pattern* reside in an autoloaded library.  If so, the commands are loaded so that they will be available to the interpreter for creating the import links.  If the commands do not reside in an autoloaded library, **auto\_import** does nothing.  The pattern matching is performed according to the matching rules of [namespace import][namespace].
+: **auto\_import** is invoked during [namespace import][namespace] to see if the imported commands specified by *pattern* reside in an autoloaded library.  If so, the commands are loaded so that they will be available to the interpreter for creating the import links.  If the commands do not reside in an autoloaded library, **auto\_import** does nothing.  The pattern matching is performed according to the matching rules of [namespace import][namespace].
 
     It is not normally necessary to call this command directly.
 
 [auto\_load]{.cmd} [cmd]{.arg}
-: This command attempts to load the definition for a Tcl command named *cmd*.  To do this, it searches an *auto-load path*, which is a list of one or more directories.  The auto-load path is given by the global variable **auto\_path** if it exists.  If there is no **auto\_path** variable, then the **TCLLIBPATH** environment variable is used, if it exists.  Otherwise the auto-load path consists of just the Tcl library directory.  Within each directory in the auto-load path there must be a file **tclIndex** that describes one or more commands defined in that directory and a script to evaluate to load each of the commands.  The **tclIndex** file should be generated with the **auto\_mkindex** command.  If *cmd* is found in an index file, then the appropriate script is evaluated to create the command.  The **auto\_load** command returns 1 if *cmd* was successfully created.  The command returns 0 if there was no index entry for *cmd* or if the script did not actually define *cmd* (e.g. because index information is out of date).  If an error occurs while processing the script, then that error is returned. **Auto\_load** only reads the index information once and saves it in the array **auto\_index**;  future calls to **auto\_load** check for *cmd* in the array rather than re-reading the index files.  The cached index information may be deleted with the command **auto\_reset**.  This will force the next **auto\_load** command to reload the index database from disk.
+: This command attempts to load the definition for a Tcl command named *cmd*.  To do this, it searches an *auto-load path*, which is a list of one or more directories.  The auto-load path is given by the global variable **auto\_path** if it exists.  If there is no **auto\_path** variable, then the **TCLLIBPATH** environment variable is used, if it exists.  Otherwise the auto-load path consists of just the Tcl library directory.  Within each directory in the auto-load path there must be a file **tclIndex** that describes one or more commands defined in that directory and a script to evaluate to load each of the commands.  The **tclIndex** file should be generated with the **auto\_mkindex** command.  If *cmd* is found in an index file, then the appropriate script is evaluated to create the command.  The **auto\_load** command returns 1 if *cmd* was successfully created.  The command returns 0 if there was no index entry for *cmd* or if the script did not actually define *cmd* (e.g. because index information is out of date).  If an error occurs while processing the script, then that error is returned. **auto\_load** only reads the index information once and saves it in the array **auto\_index**;  future calls to **auto\_load** check for *cmd* in the array rather than re-reading the index files.  The cached index information may be deleted with the command **auto\_reset**.  This will force the next **auto\_load** command to reload the index database from disk.
 
     It is not normally necessary to call this command directly; the default [unknown] handler will do so.
 
-[auto\_mkindex]{.cmd} [dir]{.arg} [pattern]{.arg} [pattern]{.arg} [...]{.arg}
+[auto\_mkindex]{.cmd} [dir]{.arg} [pattern]{.optdot}
 : Generates an index suitable for use by **auto\_load**.  The command searches *dir* for all files whose names match any of the *pattern* arguments (matching is done with the [glob] command), generates an index of all the Tcl command procedures defined in all the matching files, and stores the index information in a file named **tclIndex** in *dir*. If no pattern is given a pattern of **\*.tcl** will be assumed.  For example, the command
 
     ```
@@ -101,17 +101,17 @@ The following procedures are provided in the Tcl library:
 
     will read all the **.tcl** files in subdirectory **foo** and generate a new index file **foo/tclIndex**.
 
-    **Auto\_mkindex** parses the Tcl scripts by sourcing them into a child interpreter and monitoring the proc and namespace commands that are executed.  Extensions can use the (undocumented) auto\_mkindex\_parser package to register other commands that can contribute to the auto\_load index. You will have to read through auto.tcl to see how this works.
+    **auto\_mkindex** parses the Tcl scripts by sourcing them into a child interpreter and monitoring the proc and namespace commands that are executed.  Extensions can use the (undocumented) auto\_mkindex\_parser package to register other commands that can contribute to the auto\_load index. You will have to read through auto.tcl to see how this works.
 
-    **Auto\_mkindex\_old** (which has the same syntax as **auto\_mkindex**) parses the Tcl scripts in a relatively unsophisticated way:  if any line contains the word "[proc]" as its first characters then it is assumed to be a procedure definition and the next word of the line is taken as the procedure's name. Procedure definitions that do not appear in this way (e.g.\\ they have spaces before the [proc]) will not be indexed.  If your script contains "dangerous" code, such as global initialization code or procedure names with special characters like **$**, **\***, **[** or **]**, you are safer using **auto\_mkindex\_old**.
+    **auto\_mkindex\_old** (which has the same syntax as **auto\_mkindex**) parses the Tcl scripts in a relatively unsophisticated way:  if any line contains the word "[proc]" as its first characters then it is assumed to be a procedure definition and the next word of the line is taken as the procedure's name. Procedure definitions that do not appear in this way (e.g.\\ they have spaces before the [proc]) will not be indexed.  If your script contains "dangerous" code, such as global initialization code or procedure names with special characters like **$**, **\***, **[** or **]**, you are safer using **auto\_mkindex\_old**.
 
 [auto\_reset]{.cmd}
-: Destroys all the information cached by **auto\_execok** and **auto\_load**.  This information will be re-read from disk the next time it is needed.  **Auto\_reset** also deletes any procedures listed in the auto-load index, so that fresh copies of them will be loaded the next time that they are used.
+: Destroys all the information cached by **auto\_execok** and **auto\_load**.  This information will be re-read from disk the next time it is needed.  **auto\_reset** also deletes any procedures listed in the auto-load index, so that fresh copies of them will be loaded the next time that they are used.
 
 [auto\_qualify]{.cmd} [command]{.arg} [namespace]{.arg}
 : Computes a list of fully qualified names for *command*.  This list mirrors the path a standard Tcl interpreter follows for command lookups:  first it looks for the command in the current namespace, and then in the global namespace.  Accordingly, if *command* is relative and *namespace* is not **::**, the list returned has two elements:  *command* scoped by *namespace*, as if it were a command in the *namespace* namespace; and *command* as if it were a command in the global namespace.  Otherwise, if either *command* is absolute (it begins with **::**), or *namespace* is **::**, the list contains only *command* as if it were a command in the global namespace.
 
-    **Auto\_qualify** is used by the auto-loading facilities in Tcl, both for producing auto-loading indexes such as *pkgIndex.tcl*, and for performing the actual auto-loading of functions at runtime.
+    **auto\_qualify** is used by the auto-loading facilities in Tcl, both for producing auto-loading indexes such as *pkgIndex.tcl*, and for performing the actual auto-loading of functions at runtime.
 
 [tcl\_findLibrary]{.cmd} [basename]{.arg} [version]{.arg} [patch]{.arg} [initScript]{.arg} [enVarName]{.arg} [varName]{.arg}
 : This is a standard search procedure for use by extensions during their initialization.  They call this procedure to look for their script library in several standard directories. The last component of the name of the library directory is normally *basenameversion* (e.g., tk8.0), but it might be "library" when in the build hierarchies. The *patch* argument is not used. The *initScript* file will be sourced into the interpreter once it is found.  The directory in which this file is found is stored into the global variable *varName*. If this variable is already defined (e.g., by C code during application initialization) then no searching is done. Otherwise the search looks in these directories: the directory named by the environment variable *enVarName*; relative to the Tcl library directory; relative to the executable file in the standard installation bin or bin/*arch* directory; relative to the executable file in the current build tree; relative to the executable file in a parallel build tree.
@@ -161,10 +161,10 @@ These procedures are mainly used internally by Tk.
 [foreachLine]{.cmd} [varName]{.arg} [filename]{.arg} [body]{.arg}
 : This reads in the text file named *filename* one line at a time (using system defaults for reading text files). It writes that line to the variable named by *varName* and then executes *body* for that line. The result value of *body* is ignored, but [error], [return], [break] and [continue] may be used within it to produce an error, return from the calling context, stop the loop, or go to the next line respectively. The overall result of **foreachLine** is the empty string (assuming no errors from I/O or from evaluating the body of the loop); the file will be closed prior to the procedure returning.
 
-[readFile]{.cmd} [filename]{.arg} [text=|§binary]{.optlit}
+[readFile]{.cmd} [filename]{.arg} [text|binary]{.optlit}
 : Reads in the file named in *filename* and returns its contents. The second argument says how to read in the file, either as **text** (using the system defaults for reading text files) or as [binary] (as uninterpreted bytes). The default is **text**. When read as text, this will include any trailing newline. The file will be closed prior to the procedure returning.
 
-[writeFile]{.cmd} [filename]{.arg} [text=|§binary]{.optlit} [contents]{.arg}
+[writeFile]{.cmd} [filename]{.arg} [text|binary]{.optlit} [contents]{.arg}
 : Writes the *contents* to the file named in *filename*. The optional second argument says how to write to the file, either as **text** (using the system defaults for writing text files) or as [binary] (as uninterpreted bytes). The default is **text**. If a trailing newline is required, it will need to be provided in *contents*. The result of this command is the empty string; the file will be closed prior to the procedure returning.
 
 
@@ -224,6 +224,7 @@ These variables are only used in the **tcl\_endOfWord**, **tcl\_startOfNextWord*
 
 
 
+[AppInit]: AppInit.md
 [binary]: binary.md
 [break]: break.md
 [cd]: cd.md

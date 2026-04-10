@@ -38,7 +38,7 @@ ledit - Replace elements of a list stored in variable
 # Synopsis
 
 ::: {.synopsis} :::
-[ledit]{.cmd} [listVar]{.arg} [first]{.arg} [last]{.arg} [value value]{.optdot}
+[ledit]{.cmd} [listVar]{.arg} [first]{.arg} [last]{.arg} [value]{.optdot}
 :::
 
 # Description

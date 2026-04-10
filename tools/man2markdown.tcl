@@ -246,6 +246,8 @@ namespace eval ::ndoc {
 		define        {oo::class class oo::objdefine objdefine oo::define define oo::object object oo::Slot Slot}
 		filename      {auto_path tclvars platform tclvars tcl_platform tclvars}
 		info          {Tcl_CreateObjCommand CrtObjCmd tcl_library tclvars tcl_patchLevel tclvars oo::define define oo::objdefine objdefine oo::class class}
+		interp        {env tclvars Tcl_Eval Eval}
+		library       {Tcl_AppInit AppInit}
 	}]
 	
 	# dictionary of pages in which specific cmd words should *not* be linked
@@ -1765,6 +1767,17 @@ proc ::ndoc::mdExceptions {md} {
 				{like "foo [bar [x]]"} {like `foo [bar [x]]`}
 			} $md]
 		}
+		lappend {
+			set md [string map {
+				{"**lappend a $b**" is} {`lappend a $b` is}
+				{"[set a [concat $a [list $b]]][set]"} {`[set a [concat $a [list $b]]][set]`}
+			} $md]
+		}
+		library {
+			set md [string map {
+				{[text=|§binary]} {[text|binary]}
+			} $md]
+		}
 	}
 	regsub {\s+$} $md \n md
 	return $md
@@ -1814,7 +1827,7 @@ proc ::ndoc::mdLinks {md} {
 			## it's a valid link if there is a remapping entry here
 			## (note that we need to 'subst' the linkCmd word here as it may contain a literal backslash
 			##  used to escape an underscore in a command name in markdown such as in 'tcl\_platform'):
-			set linkTarget [dict getwithdefault $tclCmdListRemap $cmdName [subst -novariables $linkCmd] {}]
+			set linkTarget [dict getwithdefault $tclCmdListRemap $cmdName [subst -novariables -nocommands $linkCmd] {}]
 			if {$linkTarget ne ""} {set isValidLink 1}
 		}
 		if {! $isValidLink && ! [string is lower [string index $linkText 0]] && [string totitle $linkText] in $sectionTitles} {

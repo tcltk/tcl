@@ -15,7 +15,7 @@ auto_execok, auto_import, auto_load, auto_mkindex, auto_qualify, auto_reset, for
 \fBauto_execok \fIcmd\fR
 \fBauto_import \fIpattern\fR
 \fBauto_load \fIcmd\fR
-\fBauto_mkindex \fIdir pattern pattern ...\fR
+\fBauto_mkindex\fR \fIdir\fR ?\fIpattern ...\fR?
 \fBauto_qualify \fIcommand namespace\fR
 \fBauto_reset\fR
 \fBtcl_findLibrary \fIbasename version patch initScript enVarName varName\fR
@@ -73,7 +73,7 @@ named by \fIcmd\fR.  If not, it returns an empty string.  This command
 examines the directories in the current search path (given by the PATH
 environment variable) in its search for an executable file named
 \fIcmd\fR.  On Windows platforms, the search is expanded with the same
-directories and file extensions as used by \fBexec\fR. \fBAuto_execok\fR
+directories and file extensions as used by \fBexec\fR. \fBauto_execok\fR
 remembers information about previous searches in an array named
 \fBauto_execs\fR;  this avoids the path search in future calls for the
 same \fIcmd\fR.  The command \fBauto_reset\fR may be used to force
@@ -103,7 +103,7 @@ set mayFrob [expr {[llength [\fBauto_execok\fR frobnicate]] > 0}]
 .TP
 \fBauto_import \fIpattern\fR
 .
-\fBAuto_import\fR is invoked during \fBnamespace import\fR to see if
+\fBauto_import\fR is invoked during \fBnamespace import\fR to see if
 the imported commands specified by \fIpattern\fR reside in an
 autoloaded library.  If so, the commands are loaded so that they will
 be available to the interpreter for creating the import links.  If the
@@ -135,7 +135,7 @@ successfully created.  The command returns 0 if there was no index
 entry for \fIcmd\fR or if the script did not actually define \fIcmd\fR
 (e.g. because index information is out of date).  If an error occurs
 while processing the script, then that error is returned.
-\fBAuto_load\fR only reads the index information once and saves it in
+\fBauto_load\fR only reads the index information once and saves it in
 the array \fBauto_index\fR;  future calls to \fBauto_load\fR check for
 \fIcmd\fR in the array rather than re-reading the index files.  The
 cached index information may be deleted with the command
@@ -148,7 +148,7 @@ default \fBunknown\fR handler will do so.
 .RE
 .\" COMMAND: auto_mkindex
 .TP
-\fBauto_mkindex \fIdir pattern pattern ...\fR
+\fBauto_mkindex \fIdir\fR ?\fIpattern ...\fR?
 .
 Generates an index suitable for use by \fBauto_load\fR.  The command
 searches \fIdir\fR for all files whose names match any of the
@@ -166,14 +166,14 @@ named \fBtclIndex\fR in \fIdir\fR. If no pattern is given a pattern of
 will read all the \fB.tcl\fR files in subdirectory \fBfoo\fR and
 generate a new index file \fBfoo/tclIndex\fR.
 .PP
-\fBAuto_mkindex\fR parses the Tcl scripts by sourcing them into a
+\fBauto_mkindex\fR parses the Tcl scripts by sourcing them into a
 child interpreter and monitoring the proc and namespace commands that
 are executed.  Extensions can use the (undocumented)
 auto_mkindex_parser package to register other commands that can
 contribute to the auto_load index. You will have to read through
 auto.tcl to see how this works.
 .PP
-\fBAuto_mkindex_old\fR
+\fBauto_mkindex_old\fR
 (which has the same syntax as \fBauto_mkindex\fR)
 parses the Tcl scripts in a relatively
 unsophisticated way:  if any line contains the word
@@ -195,7 +195,7 @@ code or procedure names with special characters like \fB$\fR,
 .
 Destroys all the information cached by \fBauto_execok\fR and
 \fBauto_load\fR.  This information will be re-read from disk the next
-time it is needed.  \fBAuto_reset\fR also deletes any procedures
+time it is needed.  \fBauto_reset\fR also deletes any procedures
 listed in the auto-load index, so that fresh copies of them will be
 loaded the next time that they are used.
 .\" COMMAND: auto_qualify
@@ -215,7 +215,7 @@ were a command in the global namespace.  Otherwise, if either
 if it were a command in the global namespace.
 .RS
 .PP
-\fBAuto_qualify\fR is used by the auto-loading facilities in Tcl, both
+\fBauto_qualify\fR is used by the auto-loading facilities in Tcl, both
 for producing auto-loading indexes such as \fIpkgIndex.tcl\fR, and for
 performing the actual auto-loading of functions at runtime.
 .RE

@@ -187,7 +187,7 @@ The syntactic form **{\*}** is handled like [eval]. I.e. if it is given a litera
 : If *number* is not given, the level this routine was called from. Otherwise returns the complete command active at the given level.  If *number* is greater than **0**, it is the desired level.  Otherwise, it is *number* levels up from the current level.  A complete command is the words in the command, with all substitutions performed, meaning that it is a list.  See [uplevel] for more information on levels.
 
 [info]{.cmd} [library]{.sub}
-: Returns the value of **tcl\_library**, which is the name of the library directory in which the scripts distributed with Tcl scripts are stored.
+: Returns the value of [tcl\_library][tclvars], which is the name of the library directory in which the scripts distributed with Tcl scripts are stored.
 
 [info]{.cmd} [loaded]{.sub} [interp]{.optarg} [prefix]{.optarg}
 : Returns the name of each file loaded in *interp* by the [load] command with prefix *prefix* .  If *prefix* is not given, returns a list where each item is the name of the loaded file and the prefix for which the file was loaded.  For a statically-loaded package the name of the file is the empty string.  For *interp*, the empty string is the current interpreter.
@@ -202,10 +202,10 @@ The syntactic form **{\*}** is handled like [eval]. I.e. if it is given a litera
 : Returns information about the object named *object*. *subcommand* is described [Object introspection] below.
 
 [info]{.cmd} [patchlevel]{.sub}
-: Returns the value of the global variable **tcl\_patchLevel**, in which the exact version of the Tcl library initially stored.
+: Returns the value of the global variable [tcl\_patchLevel][tclvars], in which the exact version of the Tcl library initially stored.
 
 [info]{.cmd} [procs]{.sub} [pattern]{.optarg}
-: Returns the names of all visible procedures. If *pattern* is given, returns only those names that match according to [string match][string].  Only the final component in *pattern* is actually considered a pattern.  Any qualifying components simply select a namespace.  See **NAMESPACE RESOLUTION** in the [namespace](n) documentation.
+: Returns the names of all visible procedures. If *pattern* is given, returns only those names that match according to [string match][string].  Only the final component in *pattern* is actually considered a pattern.  Any qualifying components simply select a namespace.  See **NAMESPACE RESOLUTION** in the manual page of the [namespace] command.
 
 [info]{.cmd} [script]{.sub} [filename]{.optarg}
 : Returns the pathname of the innermost script currently being evaluated, or the empty string if no pathname can be determined.  If *filename* is given, sets the return value of any future calls to **info script** for the duration of the innermost active script.  This is useful in virtual file system applications.
@@ -217,7 +217,7 @@ The syntactic form **{\*}** is handled like [eval]. I.e. if it is given a litera
 : Returns the value of the global variable **tcl\_version**, in which the major and minor version of the Tcl library are stored.
 
 [info]{.cmd} [vars]{.sub} [pattern]{.optarg}
-: If *pattern* is not given, returns the names of all visible variables.  If *pattern* is given, returns only those names that match according to [string match][string].  Only the last component of *pattern* is a pattern. Other components identify a namespace.  See **NAMESPACE RESOLUTION** in the [namespace](n) documentation.  When *pattern* is a qualified name, results are fully qualified.
+: If *pattern* is not given, returns the names of all visible variables.  If *pattern* is given, returns only those names that match according to [string match][string].  Only the last component of *pattern* is a pattern. Other components identify a namespace.  See **NAMESPACE RESOLUTION** in the manual page for the [namespace] command.  When *pattern* is a qualified name, results are fully qualified.
 
     A variable that has been declared but not yet given a value will be included in the results.
 
@@ -238,9 +238,9 @@ The following *subcommand* values are supported by **info class**:
 : This subcommand returns a description of the definition of the method named *method* of class *class*. The definition is described as a two element list; the first element is the list of arguments to the method in a form suitable for passing to another call to **proc** or a method definition, and the second element is the body of the method.
 
 [info]{.cmd} [class]{.sub} [definitionnamespace]{.lit} [class]{.arg} [kind]{.optarg}
-: This subcommand returns the definition namespace for *kind* definitions of the class *class*; the definition namespace only affects the instances of *class*, not *class* itself. The *kind* can be either **-class** to return the definition namespace used for **oo::define**, or **-instance** to return the definition namespace used for **oo::objdefine**; the **-class** kind is default (though this is only actually useful on classes that are subclasses of **oo::class**).
+: This subcommand returns the definition namespace for *kind* definitions of the class *class*; the definition namespace only affects the instances of *class*, not *class* itself. The *kind* can be either **-class** to return the definition namespace used for [oo::define][define], or **-instance** to return the definition namespace used for [oo::objdefine][objdefine]; the **-class** kind is default (though this is only actually useful on classes that are subclasses of [oo::class][class]).
 
-    If *class* does not provide a definition namespace of the given kind, this command returns the empty string. In those circumstances, the **oo::define** and **oo::objdefine** commands look up which definition namespace to use using the class inheritance hierarchy.
+    If *class* does not provide a definition namespace of the given kind, this command returns the empty string. In those circumstances, the [oo::define][define] and [oo::objdefine][objdefine] commands look up which definition namespace to use using the class inheritance hierarchy.
 
 [info]{.cmd} [class]{.sub} [destructor]{.lit} [class]{.arg}
 : This subcommand returns the body of the destructor of class *class*. If no destructor is present, this returns the empty string.
@@ -335,10 +335,10 @@ The following *subcommand* values are supported by **info object**:
 : This subcommand tests whether an object belongs to a particular category, returning a boolean value that indicates whether the *object* argument meets the criteria for the category. The supported categories are:
 
     [info]{.cmd} [object]{.sub} [isa]{.lit} [class]{.lit} [object]{.arg}
-    : This returns whether *object* is a class (i.e. an instance of **oo::class** or one of its subclasses).
+    : This returns whether *object* is a class (i.e. an instance of [oo::class][class] or one of its subclasses).
 
     [info]{.cmd} [object]{.sub} [isa]{.lit} [metaclass]{.lit} [object]{.arg}
-    : This returns whether *object* is a class that can manufacture classes (i.e. is **oo::class** or a subclass of it).
+    : This returns whether *object* is a class that can manufacture classes (i.e. is [oo::class][class] or a subclass of it).
 
     [info]{.cmd} [object]{.sub} [isa]{.lit} [mixin]{.lit} [object]{.arg} [class]{.arg}
     : This returns whether *class* is directly mixed into *object*.
@@ -482,8 +482,10 @@ proc getDef {obj method} {
 
 [apply]: apply.md
 [catch]: catch.md
+[class]: class.md
 [const]: const.md
 [CrtObjCmd]: CrtObjCmd.md
+[define]: define.md
 [eval]: eval.md
 [file]: file.md
 [global]: global.md
@@ -492,8 +494,10 @@ proc getDef {obj method} {
 [my]: my.md
 [namespace]: namespace.md
 [next]: next.md
+[objdefine]: objdefine.md
 [source]: source.md
 [string]: string.md
+[tclvars]: tclvars.md
 [unknown]: unknown.md
 [uplevel]: uplevel.md
 [upvar]: upvar.md

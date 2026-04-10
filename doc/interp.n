@@ -13,7 +13,7 @@
 .SH NAME
 interp \- Create and manipulate Tcl interpreters
 .SH SYNOPSIS
-\fBinterp \fIsubcommand \fR?\fIarg arg ...\fR?
+\fBinterp \fIsubcommand \fR?\fIarg ...\fR?
 .BE
 .SH DESCRIPTION
 .PP
@@ -105,7 +105,7 @@ Deletes the alias for \fIsrcToken\fR in the child interpreter identified by
 was created;  if the source command has been renamed, the renamed
 command will be deleted.
 .TP
-\fBinterp alias\fI srcPath srcCmd targetPath targetCmd \fR?\fIarg arg ...\fR?
+\fBinterp alias\fI srcPath srcCmd targetPath targetCmd \fR?\fIarg ...\fR?
 .
 This command creates an alias between one child and another (see the
 \fBalias\fR child command below for creating aliases between a child
@@ -472,7 +472,7 @@ Deletes the alias for \fIsrcToken\fR in the child interpreter.
 was created;  if the source command has been renamed, the renamed
 command will be deleted.
 .TP
-\fIchild \fBalias \fIsrcCmd targetCmd \fR?\fIarg ..\fR?
+\fIchild \fBalias \fIsrcCmd targetCmd \fR?\fIarg ...\fR?
 .
 Creates an alias such that whenever \fIsrcCmd\fR is invoked
 in \fIchild\fR, \fItargetCmd\fR is invoked in the parent.
@@ -495,7 +495,7 @@ what to set the interpreter's background exception handler to. See the
 \fBBACKGROUND EXCEPTION HANDLING\fR section for more details.
 .\" METHOD: eval
 .TP
-\fIchild \fBeval \fIarg \fR?\fIarg ..\fR?
+\fIchild \fBeval \fIarg \fR?\fIarg ...\fR?
 .
 This command concatenates all of the \fIarg\fR arguments in
 the same fashion as the \fBconcat\fR command, then evaluates
@@ -545,7 +545,7 @@ For more details on hidden commands, see \fBHIDDEN COMMANDS\fR, below.
 Returns a list of the names of all hidden commands in \fIchild\fR.
 .\" METHOD: invokehidden
 .TP
-\fIchild \fBinvokehidden\fR ?\fI\-option ...\fR? \fIhiddenName \fR?\fIarg ..\fR?
+\fIchild \fBinvokehidden\fR ?\fI\-option ...\fR? \fIhiddenName \fR?\fIarg ...\fR?
 .
 This command invokes the hidden command \fIhiddenName\fR with the
 supplied arguments, in \fIchild\fR. No substitutions or evaluations are
@@ -599,7 +599,7 @@ is already trusted.
 .
 Returns the maximum allowable nesting depth for the \fIchild\fR interpreter.
 If \fInewlimit\fR is specified, the recursion limit in \fIchild\fR will be
-set so that nesting of more than \fInewlimit\fR calls to \fBTcl_Eval()\fR
+set so that nesting of more than \fInewlimit\fR calls to \fBTcl_Eval\fR
 and related procedures in \fIchild\fR will return an error.
 The \fInewlimit\fR value is also returned.
 The \fInewlimit\fR value must be a positive integer between 1 and the

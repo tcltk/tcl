@@ -29,14 +29,14 @@ interp - Create and manipulate Tcl interpreters
 # Synopsis
 
 ::: {.synopsis} :::
-[interp]{.cmd} [subcommand]{.arg} [arg arg]{.optdot}
+[interp]{.cmd} [subcommand]{.arg} [arg]{.optdot}
 :::
 
 # Description
 
 This command makes it possible to create one or more new Tcl interpreters that co-exist with the creating interpreter in the same application.  The creating interpreter is called the *parent* and the new interpreter is called a *child*. A parent can create any number of children, and each child can itself create additional children for which it is parent, resulting in a hierarchy of interpreters.
 
-Each interpreter is independent from the others: it has its own name space for commands, procedures, and global variables. A parent interpreter may create connections between its children and itself using a mechanism called an *alias*.  An *alias* is a command in a child interpreter which, when invoked, causes a command to be invoked in its parent interpreter or in another child interpreter.  The only other connections between interpreters are through environment variables (the **env** variable), which are normally shared among all interpreters in the application, and by resource limit exceeded callbacks. Note that the name space for files (such as the names returned by the [open] command) is no longer shared between interpreters. Explicit commands are provided to share files and to transfer references to open files from one interpreter to another.
+Each interpreter is independent from the others: it has its own name space for commands, procedures, and global variables. A parent interpreter may create connections between its children and itself using a mechanism called an *alias*.  An *alias* is a command in a child interpreter which, when invoked, causes a command to be invoked in its parent interpreter or in another child interpreter.  The only other connections between interpreters are through environment variables (the [env][tclvars] variable), which are normally shared among all interpreters in the application, and by resource limit exceeded callbacks. Note that the name space for files (such as the names returned by the [open] command) is no longer shared between interpreters. Explicit commands are provided to share files and to transfer references to open files from one interpreter to another.
 
 The **interp** command also provides support for *safe* interpreters.  A safe interpreter is a child whose functions have been greatly restricted, so that it is safe to execute untrusted scripts without fear of them damaging other interpreters or the application's environment. For example, all IO channel creation commands and subprocess creation commands are made inaccessible to safe interpreters. See [Safe interpreters] below for more information on what features are present in a safe interpreter. The dangerous functionality is not removed from the safe interpreter; instead, it is *hidden*, so that only trusted interpreters can obtain access to it. For a detailed explanation of hidden commands, see [Hidden commands], below. The alias mechanism can be used for protected communication (analogous to a kernel call) between a child interpreter and its parent. See [Alias invocation], below, for more details on how the alias mechanism works.
 
@@ -54,7 +54,7 @@ The **interp** command is used to create, delete, and manipulate child interpret
 [interp]{.cmd} [alias]{.sub} [srcPath]{.arg} [srcToken]{.arg} [{}]{.lit}
 : Deletes the alias for *srcToken* in the child interpreter identified by *srcPath*. *srcToken* refers to the value returned when the alias was created;  if the source command has been renamed, the renamed command will be deleted.
 
-[interp]{.cmd} [alias]{.sub} [srcPath]{.arg} [srcCmd]{.arg} [targetPath]{.arg} [targetCmd]{.arg} [arg arg]{.optdot}
+[interp]{.cmd} [alias]{.sub} [srcPath]{.arg} [srcCmd]{.arg} [targetPath]{.arg} [targetCmd]{.arg} [arg]{.optdot}
 : This command creates an alias between one child and another (see the **alias** child command below for creating aliases between a child and its parent).  In this command, either of the child interpreters may be anywhere in the hierarchy of interpreters under the interpreter invoking the command. *SrcPath* and *srcCmd* identify the source of the alias. *SrcPath* is a Tcl list whose elements select a particular interpreter.  For example, "**a b**" identifies an interpreter "**b**", which is a child of interpreter "**a**", which is a child of the invoking interpreter.  An empty list specifies the interpreter invoking the command.  *srcCmd* gives the name of a new command, which will be created in the source interpreter. *TargetPath* and *targetCmd* specify a target interpreter and command, and the *arg* arguments, if any, specify additional arguments to *targetCmd* which are prepended to any arguments specified in the invocation of *srcCmd*. *TargetCmd* may be undefined at the time of this call, or it may already exist; it is not created by this command. The alias arranges for the given target command to be invoked in the target interpreter whenever the given source command is invoked in the source interpreter.  See [Alias invocation] below for more details. The command returns a token that uniquely identifies the command created *srcCmd*, even if the command is renamed afterwards. The token may but does not have to be equal to *srcCmd*.
 
 [interp]{.cmd} [aliases]{.sub} [path]{.optarg}
@@ -136,7 +136,7 @@ The **interp** command is used to create, delete, and manipulate child interpret
 : Marks the interpreter identified by *path* as trusted. Does not expose the hidden commands. This command can only be invoked from a trusted interpreter. The command has no effect if the interpreter identified by *path* is already trusted.
 
 [interp]{.cmd} [recursionlimit]{.sub} [path]{.arg} [newlimit]{.optarg}
-: Returns the maximum allowable nesting depth for the interpreter specified by *path*.  If *newlimit* is specified, the interpreter recursion limit will be set so that nesting of more than *newlimit* calls to **Tcl\_Eval** and related procedures in that interpreter will return an error. The *newlimit* value is also returned. The *newlimit* value must be a positive integer between 1 and the maximum value of a non-long integer on the platform.
+: Returns the maximum allowable nesting depth for the interpreter specified by *path*.  If *newlimit* is specified, the interpreter recursion limit will be set so that nesting of more than *newlimit* calls to [Tcl\_Eval][Eval] and related procedures in that interpreter will return an error. The *newlimit* value is also returned. The *newlimit* value must be a positive integer between 1 and the maximum value of a non-long integer on the platform.
 
     The command sets the maximum size of the Tcl call stack only. It cannot by itself prevent stack overflows on the C stack being used by the application. If your machine has a limit on the size of the C stack, you may get stack overflows before reaching the limit set by the command. If this happens, see if there is a mechanism in your system for increasing the maximum size of the C stack.
 
@@ -172,13 +172,13 @@ child command ?arg arg ...?
 [child]{.ins} [alias]{.sub} [srcToken]{.arg} [{}]{.lit}
 : Deletes the alias for *srcToken* in the child interpreter. *srcToken* refers to the value returned when the alias was created;  if the source command has been renamed, the renamed command will be deleted.
 
-[child]{.ins} [alias]{.sub} [srcCmd]{.arg} [targetCmd]{.arg} [arg ..]{.optarg}
+[child]{.ins} [alias]{.sub} [srcCmd]{.arg} [targetCmd]{.arg} [arg]{.optdot}
 : Creates an alias such that whenever *srcCmd* is invoked in *child*, *targetCmd* is invoked in the parent. The *arg* arguments will be passed to *targetCmd* as additional arguments, prepended before any arguments passed in the invocation of *srcCmd*. See [Alias invocation] below for details. The command returns a token that uniquely identifies the command created *srcCmd*, even if the command is renamed afterwards. The token may but does not have to be equal to *srcCmd*.
 
 [child]{.ins} [bgerror]{.sub} [cmdPrefix]{.optarg}
 : This command either gets or sets the current background exception handler for the *child* interpreter. If *cmdPrefix* is absent, the current background exception handler is returned, and if it is present, it is a list of words (of minimum length one) that describes what to set the interpreter's background exception handler to. See the [Background exception handling] section for more details.
 
-[child]{.ins} [eval]{.sub} [arg]{.arg} [arg ..]{.optarg}
+[child]{.ins} [eval]{.sub} [arg]{.arg} [arg]{.optdot}
 : This command concatenates all of the *arg* arguments in the same fashion as the [concat] command, then evaluates the resulting string as a Tcl script in *child*. The result of this evaluation (including all [return] options, such as **-errorinfo** and **-errorcode** information, if an error occurs) is returned to the invoking interpreter.
 
     Note that the script will be executed in the current context stack frame of *child*; this is so that the implementations (in a parent interpreter) of aliases in a child interpreter can execute scripts in the child that find out information about the child's current state and stack frame.
@@ -192,7 +192,7 @@ child command ?arg arg ...?
 [child]{.ins} [hidden]{.sub}
 : Returns a list of the names of all hidden commands in *child*.
 
-[child]{.ins} [invokehidden]{.sub} [-option]{.optdot} [hiddenName]{.arg} [arg ..]{.optarg}
+[child]{.ins} [invokehidden]{.sub} [-option]{.optdot} [hiddenName]{.arg} [arg]{.optdot}
 : This command invokes the hidden command *hiddenName* with the supplied arguments, in *child*. No substitutions or evaluations are applied to the arguments. Three *-option*s are supported, all of which start with **-**: **-namespace** (which takes a single argument afterwards, *nsName*), **-global**, and **--**. If the **-namespace** flag is given, the hidden command is invoked in the specified namespace in the child. If the **-global** flag is given, the command is invoked at the global level in the child; otherwise it is invoked at the current call frame and can access local variables in that or outer call frames. The **--** flag allows the *hiddenCmdName* argument to start with a "-" character, and is otherwise unnecessary. If both the **-namespace** and **-global** flags are given, the **-namespace** flag is ignored.
 
     Note that the hidden command will be executed (by default) in the current context stack frame of *child*.
@@ -209,7 +209,7 @@ child command ?arg arg ...?
 : Marks the child interpreter as trusted. Can only be invoked by a trusted interpreter. This command does not expose any hidden commands in the child interpreter. The command has no effect if the child is already trusted.
 
 [child]{.ins} [recursionlimit]{.sub} [newlimit]{.optarg}
-: Returns the maximum allowable nesting depth for the *child* interpreter. If *newlimit* is specified, the recursion limit in *child* will be set so that nesting of more than *newlimit* calls to **Tcl\_Eval()** and related procedures in *child* will return an error. The *newlimit* value is also returned. The *newlimit* value must be a positive integer between 1 and the maximum value of a non-long integer on the platform.
+: Returns the maximum allowable nesting depth for the *child* interpreter. If *newlimit* is specified, the recursion limit in *child* will be set so that nesting of more than *newlimit* calls to [Tcl\_Eval][Eval] and related procedures in *child* will return an error. The *newlimit* value is also returned. The *newlimit* value must be a positive integer between 1 and the maximum value of a non-long integer on the platform.
 
     The command sets the maximum size of the Tcl call stack only. It cannot by itself prevent stack overflows on the C stack being used by the application. If your machine has a limit on the size of the C stack, you may get stack overflows before reaching the limit set by the command. If this happens, see if there is a mechanism in your system for increasing the maximum size of the C stack.
 
@@ -227,7 +227,7 @@ A safe interpreter is created with exactly the following set of built-in command
 
 The following commands from Tcl's library of support procedures are not present in a safe interpreter: .DS **auto\_exec\_ok**	**auto\_import**	**auto\_load** **auto\_load\_index**	**auto\_qualify**	[unknown] .DE Note in particular that safe interpreters have no default [unknown] command, so Tcl's default autoloading facilities are not available. Autoload access to Tcl's commands that are normally autoloaded: .DS **auto\_mkindex**	**auto\_mkindex\_old** **auto\_reset**	**history** **parray**	**pkg\_mkIndex** **::pkg::create**	**::safe::interpAddToAccessPath** **::safe::interpCreate**	**::safe::interpConfigure** **::safe::interpDelete**	**::safe::interpFindInAccessPath** **::safe::interpInit**	**::safe::setLogCmd** **tcl\_endOfWord**	**tcl\_findLibrary** **tcl\_startOfNextWord**	**tcl\_startOfPreviousWord** **tcl\_wordBreakAfter**	**tcl\_wordBreakBefore** .DE can only be provided by explicit definition of an [unknown] command in the safe interpreter.  This will involve exposing the [source] command.  This is most easily accomplished by creating the safe interpreter with Tcl's **Safe-Tcl** mechanism.  **Safe-Tcl** provides safe versions of [source], [load], and other Tcl commands needed to support autoloading of commands and the loading of packages.
 
-In addition, the **env** variable is not present in a safe interpreter, so it cannot share environment variables with other interpreters. The **env** variable poses a security risk, because users can store sensitive information in an environment variable. For example, the PGP manual recommends storing the PGP private key protection password in the environment variable *PGPPASS*. Making this variable available to untrusted code executing in a safe interpreter would incur a security risk.
+In addition, the [env][tclvars] variable is not present in a safe interpreter, so it cannot share environment variables with other interpreters. The [env][tclvars] variable poses a security risk, because users can store sensitive information in an environment variable. For example, the PGP manual recommends storing the PGP private key protection password in the environment variable *PGPPASS*. Making this variable available to untrusted code executing in a safe interpreter would incur a security risk.
 
 If extensions are loaded into a safe interpreter, they may also restrict their own functionality to eliminate unsafe commands. For a discussion of management of extensions for safety see the manual entries for **Safe-Tcl** and the [load] Tcl command.
 
@@ -351,6 +351,7 @@ interp eval $i {
 [encoding]: encoding.md
 [eof]: eof.md
 [error]: error.md
+[Eval]: Eval.md
 [eval]: eval.md
 [exec]: exec.md
 [exit]: exit.md
@@ -407,6 +408,7 @@ interp eval $i {
 [string]: string.md
 [subst]: subst.md
 [switch]: switch.md
+[tclvars]: tclvars.md
 [tell]: tell.md
 [trace]: trace.md
 [unknown]: unknown.md

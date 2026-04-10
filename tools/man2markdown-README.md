@@ -36,7 +36,7 @@ section | number of documents | initial conversion | final conversion
 --------|---------------------|--------------------|-----------------
 1       | 1                   | 1                  | 0
 3       | 108                 | 108                | 0
-n       | 139                 | 139                | 53
+n       | 139                 | 139                | 60
 
 Final conversion of these files is currently done:
 1. after
@@ -92,6 +92,13 @@ Final conversion of these files is currently done:
 51. if
 52. incr
 53. info (manual postprocessing needed: some cmd names are links, others are option names etc.)
+54. interp (the list of safe commands need manual formatting)
+55. join
+56. lappend
+57. lassign
+58. ledit
+59. library (might need manual postprocessing ...)
+60. lindex
 
 
 
