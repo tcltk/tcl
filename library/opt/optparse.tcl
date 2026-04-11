@@ -22,7 +22,6 @@ namespace eval ::tcl {
 	    Lassign Lvarpop Lvarpop1 Lvarset Lvarincr \
 	    SetMax SetMin
 
-
 #################  Example of use / 'user documentation'  ###################
 
     proc OptCreateTestProc {} {
@@ -362,10 +361,6 @@ proc ::tcl::OptProcArgGiven {argname} {
     }
     #######
 
-
-
-
-
     # Loop over all descriptions, calling OptDoOne which will
     # eventually eat all the arguments.
     proc OptDoAll {descriptionsName argumentsName} {
@@ -565,7 +560,6 @@ proc ::tcl::OptKeyParse {descKey arglist} {
 	return $vnamesLst
     }
 
-
 # Check the type of a value
 # and emit an error if arg is not of the correct type
 # otherwise returns the canonical value of that arg (ie 0/1 for booleans)
@@ -720,7 +714,6 @@ proc ::tcl::OptCheckType {arg type {typeArgs ""}} {
 		should be a list of {varname|-flagname ?-type? ?defaultvalue?\
 		?helpstring?}"
     }
-
 
     # Generate a canonical form single instruction
     proc OptNewInst {state varname type typeArgs help} {
@@ -920,7 +913,6 @@ proc ::tcl::OptError {prefix desc {header 0}} {
     return "$prefix[OptTree $desc $nl $tl $dl]"
 }
 
-
 ################     General Utility functions   #######################
 
 #
@@ -1060,7 +1052,6 @@ proc ::tcl::SetMin {varname value} {
 	set var $value
     }
 }
-
 
     # everything loaded fine, lets create the test proc:
  #    OptCreateTestProc

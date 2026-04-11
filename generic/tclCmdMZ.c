@@ -3934,14 +3934,14 @@ TclNRSwitchObjCmd(
      * TIP #280: Make invoking context available to switch branch.
      */
 
-    Tcl_NRAddCallback(interp, SwitchPostProc, INT2PTR(splitObjs), ctxPtr,
-	    INT2PTR(pc), (void *)pattern);
+    TclNRAddCallback(interp, SwitchPostProc, INT2PTR(splitObjs), ctxPtr,
+	    INT2PTR(pc), pattern);
     return TclNREvalObjEx(interp, objv[j], 0, ctxPtr, splitObjs ? j : bidx+j);
 }
 
 static int
 SwitchPostProc(
-    void *data[],		/* Data passed from Tcl_NRAddCallback above */
+    void *data[],		/* Data passed from TclNRAddCallback above */
     Tcl_Interp *interp,		/* Tcl interpreter */
     int result)			/* Result to return*/
 {
@@ -4073,19 +4073,15 @@ Tcl_TimeObjCmd(
 {
     Tcl_Obj *objPtr;
     Tcl_Obj *objs[4];
-    int i, result;
-    int count;
+    int result;
+    long long i, count;
     double totalMicroSec;
-#ifndef TCL_WIDE_CLICKS
-    Tcl_Time start, stop;
-#else
-    Tcl_WideInt start, stop;
-#endif
+    long long start, stop;
 
     if (objc == 2) {
 	count = 1;
     } else if (objc == 3) {
-	result = TclGetIntFromObj(interp, objv[2], &count);
+	result = TclGetWideIntFromObj(interp, objv[2], &count);
 	if (result != TCL_OK) {
 	    return result;
 	}
@@ -4097,7 +4093,7 @@ Tcl_TimeObjCmd(
     objPtr = objv[1];
     i = count;
 #ifndef TCL_WIDE_CLICKS
-    Tcl_GetTime(&start);
+    start = Tcl_GetMonotonicTime();
 #else
     start = TclpGetWideClicks();
 #endif
@@ -4108,9 +4104,8 @@ Tcl_TimeObjCmd(
 	}
     }
 #ifndef TCL_WIDE_CLICKS
-    Tcl_GetTime(&stop);
-    totalMicroSec = ((double) (stop.sec - start.sec)) * 1.0e6
-	    + (stop.usec - start.usec);
+    stop = Tcl_GetMonotonicTime();
+    totalMicroSec = (double) (stop - start);
 #else
     stop = TclpGetWideClicks();
     totalMicroSec = ((double) TclpWideClicksToNanoseconds(stop - start))/1.0e3;
@@ -4200,10 +4195,7 @@ Tcl_TimeRateObjCmd(
 				 * execution time by quadratic O() complexity. */
     unsigned short factor = 16;	/* Factor (2..50) limiting threshold to avoid
 				 * growth of execution time. */
-    Tcl_WideInt start, last, middle, stop;
-#ifndef TCL_WIDE_CLICKS
-    Tcl_Time now;
-#endif /* !TCL_WIDE_CLICKS */
+    long long start, last, middle, stop;
     static const char *const options[] = {
 	"-direct",	"-overhead",	"-calibrate",	"--",	NULL
     };
@@ -4254,13 +4246,13 @@ Tcl_TimeRateObjCmd(
 	return TCL_ERROR;
     }
     objPtr = objv[i++];
-    if (i < objc) {	/* max-time */
+    if (i < objc) {		/* max-time */
 	result = TclGetWideIntFromObj(interp, objv[i], &maxms);
 	i++; // Keep this separate from TclGetWideIntFromObj macro above!
 	if (result != TCL_OK) {
 	    return result;
 	}
-	if (i < objc) {	/* max-count*/
+	if (i < objc) {		/* max-count*/
 	    Tcl_WideInt v;
 
 	    result = TclGetWideIntFromObj(interp, objv[i], &v);
@@ -4282,7 +4274,7 @@ Tcl_TimeRateObjCmd(
 
 	if (maxms == WIDE_MIN) {
 	    Tcl_Obj *clobjv[6];
-	    Tcl_WideInt maxCalTime = 5000;
+	    long long maxCalTime = 5000;
 	    double lastMeasureOverhead = measureOverhead;
 
 	    clobjv[0] = objv[0];
@@ -4414,13 +4406,9 @@ Tcl_TimeRateObjCmd(
      * Time to stop execution (in wide clicks).
      */
 
-    stop = start + (Tcl_WideInt)((double)maxms * 1000.0 / TclpWideClickInMicrosec());
+    stop = start + (long long)((double)maxms * 1000.0 / TclpWideClickInMicrosec());
 #else
-    Tcl_GetTime(&now);
-    start = now.sec;
-    start *= 1000000;
-    start += now.usec;
-    last = middle = start;
+    start = last = middle = Tcl_GetMonotonicTime();
 
     /*
      * Time to stop execution (in microsecs).
@@ -4490,10 +4478,7 @@ Tcl_TimeRateObjCmd(
 #ifdef TCL_WIDE_CLICKS
 	    middle = TclpGetWideClicks();
 #else
-	    Tcl_GetTime(&now);
-	    middle = now.sec;
-	    middle *= 1000000;
-	    middle += now.usec;
+	    middle = Tcl_GetMonotonicTime();
 #endif /* TCL_WIDE_CLICKS */
 
 	    if (middle >= stop || count >= maxcnt) {
@@ -4915,8 +4900,8 @@ TclNRTryObjCmd(
      * Execute the body.
      */
 
-    Tcl_NRAddCallback(interp, TryPostBody, handlersObj, finallyObj,
-	    (void *)objv, INT2PTR(objc));
+    TclNRAddCallback(interp, TryPostBody,
+	    handlersObj, finallyObj, objv, INT2PTR(objc));
     return TclNREvalObjEx(interp, bodyObj, 0,
 	    ((Interp *) interp)->cmdFramePtr, 1);
 }
@@ -5126,7 +5111,7 @@ TryPostBody(
 	     */
 
 	    handlerBodyObj = info[4];
-	    Tcl_NRAddCallback(interp, TryPostHandler, objv, options, info[0],
+	    TclNRAddCallback(interp, TryPostHandler, objv, options, info[0],
 		    INT2PTR((finallyObj == NULL) ? 0 : objc - 1));
 	    Tcl_DecrRefCount(handlersObj);
 	    return TclNREvalObjEx(interp, handlerBodyObj, 0,
@@ -5154,7 +5139,7 @@ TryPostBody(
      */
 
     if (finallyObj != NULL) {
-	Tcl_NRAddCallback(interp, TryPostFinal, resultObj, options, cmdObj,
+	TclNRAddCallback(interp, TryPostFinal, resultObj, options, cmdObj,
 		NULL);
 	return TclNREvalObjEx(interp, finallyObj, 0,
 		((Interp *) interp)->cmdFramePtr, objc - 1);
@@ -5238,7 +5223,7 @@ TryPostHandler(
     if (finallyObj != NULL) {
 	Interp *iPtr = (Interp *) interp;
 
-	Tcl_NRAddCallback(interp, TryPostFinal, resultObj, options, cmdObj,
+	TclNRAddCallback(interp, TryPostFinal, resultObj, options, cmdObj,
 		NULL);
 
 	/* The 'finally' script is always the last argument word. */
@@ -5371,8 +5356,8 @@ TclNRWhileObjCmd(
     iterPtr->msg  = "\n    (\"while\" body line %d)";
     iterPtr->word = 2;
 
-    TclNRAddCallback(interp, TclNRForIterCallback, iterPtr, NULL,
-	    NULL, NULL);
+    TclNRAddCallback(interp, TclNRForIterCallback, iterPtr,
+	    NULL, NULL, NULL);
     return TCL_OK;
 }
 

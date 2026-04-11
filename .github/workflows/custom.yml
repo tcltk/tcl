@@ -1,0 +1,250 @@
+# This workflow is meant for development use and run only on demand.
+# It is customizable to select
+#   - Platforms
+#   - Toolchains
+#   - Branches (no need for core-* prefixes)
+#   - Tests
+# To run the workflow, select "Custom" on the left side in the GH Actions
+# page. Then click the Run workflow button on the right. This will display
+# a dropdown that allows customization as above.
+#
+# To run the workflow, you need to have permissions to the repository.
+# The simplest way is to clone the Tcl mirror on Github. However, that means
+# if you work in fossil, you have a potential 24-hour wait before the mirror
+# updates, which apart from nostalgia about the punched card batch processing
+# era, is not so convenient. My preference instead is to mirror the fossil
+# repository to Github via a local checkout on my system, do the work there
+# pushing to github and running this workflow to verify across platforms
+# and then committing back to the master fossil repository.
+#
+# Improvements to the workflow welcome.
+
+name: Custom
+
+on:
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: 'Target platform(s)")'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - windows
+          - linux
+          - macos
+
+      windows_toolchains:
+        description: 'Windows toolchain'
+        required: true
+        type: choice
+        options:
+          - '["nmake", "msys"]'
+          - '["nmake"]'
+          - '["msys"]'
+        default: '["nmake"]'
+
+      windows_architectures:
+        description: 'Architecture (Windows Nmake only)'
+        required: true
+        type: choice
+        options:
+          - '["x64"]'
+          - '["x86"]'
+          - '["x64", "x86"]'
+        default: '["x64"]'
+
+      linux_compiler:
+        description: 'Linux compiler'
+        required: true
+        default: 'gcc'
+        type: choice
+        options:
+          - gcc
+          - clang
+      run_tests:
+        description: 'Run tests'
+        required: false
+        default: true
+        type: boolean
+      test_flags:
+        description: 'TESTFLAGS'
+        required: false
+        default: ''
+
+jobs:
+  windows:
+    if: ${{ github.event.inputs.platform == 'windows' || github.event.inputs.platform == 'all' }}
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        arch: ${{ fromJSON(github.event.inputs.windows_architectures) }}
+        toolchain: ${{ fromJSON(github.event.inputs.windows_toolchains) }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: ${{ github.ref }}
+
+      # Nmake builds
+      - name: Setup MSVC (for nmake)
+        if: ${{ matrix.toolchain == 'nmake' }}
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{ matrix.arch }}
+
+      - name: Build with nmake (Visual C++)
+        if: ${{ matrix.toolchain == 'nmake' }}
+        shell: cmd
+        env:
+          ERROR_ON_FAILURES: 1
+        working-directory: win
+        run: |
+          nmake /s /f makefile.vc
+
+      - name: Tests with nmake (Visual C++)
+        if: ${{ matrix.toolchain == 'nmake' && inputs.run_tests != 'false' }}
+        shell: cmd
+        env:
+          ERROR_ON_FAILURES: 1
+          TESTFLAGS: ${{ github.event.inputs.test_flags }}
+        working-directory: win
+        run: |
+          echo TESTFLAGS=%TESTFLAGS%
+          nmake /s /f makefile.vc test
+
+      # Msys builds
+
+      - name: Set up msys2 (x64)
+        if: ${{ matrix.toolchain == 'msys' && matrix.arch == 'x64'}}
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          pacboy: "git: make: gcc:p"
+          path-type: minimal
+          release: true
+          update: false
+          cache: true
+
+      - name: Set up msys2 (x86)
+        if: ${{ matrix.toolchain == 'msys' && matrix.arch == 'x86'}}
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW32
+          pacboy: "git: make: gcc:p"
+          path-type: minimal
+          release: true
+          update: false
+          cache: true
+
+      - name: Verify toolchain
+        if: ${{ matrix.toolchain == 'msys' }}
+        shell: bash -l {0}
+        run: |
+          gcc -v
+          make -v
+
+      - name: Configure with MSYS
+        if: ${{ matrix.toolchain == 'msys' }}
+        env:
+          ERROR_ON_FAILURES: 1
+        working-directory: win
+        shell: msys2 {0}
+        run: |
+          mkdir build
+          cd build
+          ../configure
+
+      - name: Compile with MSYS
+        if: ${{ matrix.toolchain == 'msys' }}
+        env:
+          ERROR_ON_FAILURES: 1
+        shell: msys2 {0}
+        working-directory: win\build
+        run: |
+          file ../../libtommath/win32/tommath.lib
+          make -s
+
+      - name: Tests with MSYS
+        if: ${{ matrix.toolchain == 'msys' && inputs.run_tests != 'false' }}
+        env:
+          ERROR_ON_FAILURES: 1
+          TESTFLAGS: ${{ github.event.inputs.test_flags }}
+        working-directory: win\build
+        shell: msys2 {0}
+        run: |
+          echo TESTFLAGS=$TESTFLAGS
+          make -s test
+
+  linux:
+    if: ${{ github.event.inputs.platform == 'linux' || github.event.inputs.platform == 'all' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: ${{ github.ref }}
+
+      - name: Configure with ${{ github.event.inputs.linux_compiler }} 
+        env:
+          ERROR_ON_FAILURES: 1
+          CC: ${{ github.event.inputs.linux_compiler }}
+        working-directory: unix
+        run: |
+          mkdir build
+          cd build
+          echo CC=$CC
+          ../configure || (cat config.log && exit 1)
+
+      - name: Compile
+        working-directory: unix/build
+        run: |
+          make -s
+
+      - name: Run tests
+        if: ${{ inputs.run_tests != 'false' }}
+        env:
+          ERROR_ON_FAILURES: 1
+          TESTFLAGS: ${{ github.event.inputs.test_flags }}
+        working-directory: unix/build
+        run: |
+          echo TESTFLAGS=$TESTFLAGS
+          make -s test
+
+  macos:
+    if: ${{ github.event.inputs.platform == 'macos' || github.event.inputs.platform == 'all' }}
+    runs-on: macos-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: ${{ github.ref }}
+
+      - name: Configure
+        env:
+          ERROR_ON_FAILURES: 1
+        working-directory: unix
+        run: |
+          mkdir build
+          cd build
+          ../configure --enable-framework || (cat config.log && exit 1)
+          make -s
+
+      - name: Compile
+        working-directory: unix/build
+        run: |
+          make -s
+
+      - name: Run tests
+        if: ${{ inputs.run_tests != 'false' }}
+        env:
+          ERROR_ON_FAILURES: 1
+          TESTFLAGS: ${{ github.event.inputs.test_flags }}
+        working-directory: unix/build
+        run: |
+          echo TESTFLAGS=$TESTFLAGS
+          make -s test

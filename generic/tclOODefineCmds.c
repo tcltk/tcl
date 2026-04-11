@@ -120,13 +120,13 @@ static Tcl_MethodCallProc2 Configurable_ObjectWritableProps_Set;
  */
 
 static const DeclaredSlot slots[] = {
-    SLOT("define::filter",      ClassFilter_Get, ClassFilter_Set, NULL, NULL),
-    SLOT("define::mixin",       ClassMixin_Get,  ClassMixin_Set, Slot_ResolveClass, "-set"),
-    SLOT("define::superclass",  ClassSuper_Get,  ClassSuper_Set, Slot_ResolveClass, "-set"),
-    SLOT("define::variable",    ClassVars_Get,   ClassVars_Set, NULL, NULL),
-    SLOT("objdefine::filter",   ObjFilter_Get,   ObjFilter_Set, NULL, NULL),
-    SLOT("objdefine::mixin",    ObjMixin_Get,    ObjMixin_Set, Slot_ResolveClass, "-set"),
-    SLOT("objdefine::variable", ObjVars_Get,     ObjVars_Set, NULL, NULL),
+    SLOT("define::filter",	ClassFilter_Get, ClassFilter_Set, NULL, NULL),
+    SLOT("define::mixin",	ClassMixin_Get,  ClassMixin_Set, Slot_ResolveClass, "-set"),
+    SLOT("define::superclass",	ClassSuper_Get,  ClassSuper_Set, Slot_ResolveClass, "-set"),
+    SLOT("define::variable",	ClassVars_Get,   ClassVars_Set, NULL, NULL),
+    SLOT("objdefine::filter",	ObjFilter_Get,   ObjFilter_Set, NULL, NULL),
+    SLOT("objdefine::mixin",	ObjMixin_Get,    ObjMixin_Set, Slot_ResolveClass, "-set"),
+    SLOT("objdefine::variable",	ObjVars_Get,     ObjVars_Set, NULL, NULL),
     SLOT("configuresupport::readableproperties",
 	    Configurable_ClassReadableProps_Get,
 	    Configurable_ClassReadableProps_Set, NULL, NULL),
@@ -606,7 +606,7 @@ InstallStandardVariableMapping(
 {
     Tcl_Obj *variableObj;
     Tcl_Size i, n;
-    int created;
+    int isNew;
     Tcl_HashTable uniqueTable;
 
     for (i=0 ; i<varc ; i++) {
@@ -629,8 +629,8 @@ InstallStandardVariableMapping(
     if (varc > 0) {
 	Tcl_InitObjHashTable(&uniqueTable);
 	for (i=n=0 ; i<varc ; i++) {
-	    Tcl_CreateHashEntry(&uniqueTable, varv[i], &created);
-	    if (created) {
+	    Tcl_CreateHashEntry(&uniqueTable, varv[i], &isNew);
+	    if (isNew) {
 		vnlPtr->list[n++] = varv[i];
 	    } else {
 		Tcl_DecrRefCount(varv[i]);
@@ -659,7 +659,7 @@ InstallPrivateVariableMapping(
 {
     PrivateVariableMapping *privatePtr;
     Tcl_Size i, n;
-    int created;
+    int isNew;
     Tcl_HashTable uniqueTable;
 
     for (i=0 ; i<varc ; i++) {
@@ -686,8 +686,8 @@ InstallPrivateVariableMapping(
     if (varc > 0) {
 	Tcl_InitObjHashTable(&uniqueTable);
 	for (i=n=0 ; i<varc ; i++) {
-	    Tcl_CreateHashEntry(&uniqueTable, varv[i], &created);
-	    if (created) {
+	    Tcl_CreateHashEntry(&uniqueTable, varv[i], &isNew);
+	    if (isNew) {
 		privatePtr = &(pvlPtr->list[n++]);
 		privatePtr->variableObj = varv[i];
 		privatePtr->fullNameObj = Tcl_ObjPrintf(
@@ -1133,7 +1133,7 @@ GenerateErrorInfo(
 	    ? savedNameObj : TclOOObjectName(interp, oPtr);
     const char *objName = TclGetStringFromObj(realNameObj, &length);
     int limit = OBJNAME_LENGTH_IN_ERRORINFO_LIMIT;
-    int overflow = (length > limit);
+    bool overflow = (length > limit);
 
     Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 	    "\n    (in definition script for %s \"%.*s%s\" line %d)",
@@ -1410,7 +1410,7 @@ TclOODefineObjCmd(
      * command(s).
      */
 
-    nsPtr = TclOOGetDefineContextNamespace(interp, oPtr, 1);
+    nsPtr = TclOOGetDefineContextNamespace(interp, oPtr, true);
     if (InitDefineContext(interp, nsPtr, oPtr, objc, objv) != TCL_OK) {
 	return TCL_ERROR;
     }
@@ -1479,7 +1479,7 @@ TclOOObjDefObjCmd(
      * command(s).
      */
 
-    nsPtr = TclOOGetDefineContextNamespace(interp, oPtr, 0);
+    nsPtr = TclOOGetDefineContextNamespace(interp, oPtr, false);
     if (InitDefineContext(interp, nsPtr, oPtr, objc, objv) != TCL_OK) {
 	return TCL_ERROR;
     }
@@ -1550,7 +1550,7 @@ TclOODefineSelfObjCmd(
      * command(s).
      */
 
-    nsPtr = TclOOGetDefineContextNamespace(interp, oPtr, 0);
+    nsPtr = TclOOGetDefineContextNamespace(interp, oPtr, false);
     if (InitDefineContext(interp, nsPtr, oPtr, objc, objv) != TCL_OK) {
 	return TCL_ERROR;
     }
@@ -2017,7 +2017,6 @@ TclOODefineDestructorObjCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "body");
 	return TCL_ERROR;
     }
-
 
     (void) TclGetStringFromObj(objv[1], &bodyLength);
     if (bodyLength > 0) {

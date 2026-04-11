@@ -638,7 +638,7 @@ MarkAsMetaclass(
     AddRef(supers[0]->thisPtr);
     TclOOSetSuperclasses(classPtr, 1, supers);
 }
-
+
 /*
  * ----------------------------------------------------------------------
  *
@@ -1620,7 +1620,7 @@ TclOODecrRefCount(
  *
  * ----------------------------------------------------------------------
  */
-int
+bool
 TclOOObjectDestroyed(
     Object *oPtr)
 {
@@ -1638,25 +1638,22 @@ TclOOObjectDestroyed(
  * ----------------------------------------------------------------------
  */
 
-int
+void
 TclOORemoveFromInstances(
     Object *oPtr,		/* The instance to remove. */
     Class *clsPtr)		/* The class (possibly) containing the
 				 * reference to the instance. */
 {
     Tcl_Size i;
-    int res = 0;
     Object *instPtr;
 
     FOREACH(instPtr, clsPtr->instances) {
 	if (oPtr == instPtr) {
 	    RemoveItem(Object, clsPtr->instances, i);
 	    TclOODecrRefCount(oPtr);
-	    res++;
 	    break;
 	}
     }
-    return res;
 }
 
 /*
@@ -1703,21 +1700,19 @@ TclOOAddToInstances(
  * ----------------------------------------------------------------------
  */
 
-int
+void
 TclOORemoveFromMixins(
     Class *mixinPtr,		/* The mixin to remove. */
     Object *oPtr)		/* The object (possibly) containing the
 				 * reference to the mixin. */
 {
     Tcl_Size i;
-    int res = 0;
     Class *mixPtr;
 
     FOREACH(mixPtr, oPtr->mixins) {
 	if (mixinPtr == mixPtr) {
 	    RemoveItem(Class, oPtr->mixins, i);
 	    TclOODecrRefCount(mixPtr->thisPtr);
-	    res++;
 	    break;
 	}
     }
@@ -1725,7 +1720,6 @@ TclOORemoveFromMixins(
 	Tcl_Free(oPtr->mixins.list);
 	oPtr->mixins.list = NULL;
     }
-    return res;
 }
 
 /*
@@ -1739,24 +1733,21 @@ TclOORemoveFromMixins(
  * ----------------------------------------------------------------------
  */
 
-int
+void
 TclOORemoveFromSubclasses(
     Class *subPtr,		/* The subclass to remove. */
     Class *superPtr)		/* The superclass to possibly remove the
 				 * subclass reference from. */
 {
     Tcl_Size i;
-    int res = 0;
     Class *subclsPtr;
 
     FOREACH(subclsPtr, superPtr->subclasses) {
 	if (subPtr == subclsPtr) {
 	    RemoveItem(Class, superPtr->subclasses, i);
 	    TclOODecrRefCount(subPtr->thisPtr);
-	    res++;
 	}
     }
-    return res;
 }
 
 /*
@@ -1806,25 +1797,22 @@ TclOOAddToSubclasses(
  * ----------------------------------------------------------------------
  */
 
-int
+void
 TclOORemoveFromMixinSubs(
     Class *subPtr,		/* The subclass to remove. */
     Class *superPtr)		/* The superclass to possibly remove the
 				 * subclass reference from. */
 {
     Tcl_Size i;
-    int res = 0;
     Class *subclsPtr;
 
     FOREACH(subclsPtr, superPtr->mixinSubs) {
 	if (subPtr == subclsPtr) {
 	    RemoveItem(Class, superPtr->mixinSubs, i);
 	    TclOODecrRefCount(subPtr->thisPtr);
-	    res++;
 	    break;
 	}
     }
-    return res;
 }
 
 /*
@@ -2072,8 +2060,8 @@ TclNRNewObjectInstance(
      * Fire off the constructors non-recursively.
      */
 
-    TclNRAddCallback(interp, FinalizeAlloc, contextPtr, oPtr, state,
-	    objectPtr);
+    TclNRAddCallback(interp, FinalizeAlloc,
+	    contextPtr, oPtr, state, objectPtr);
     TclPushTailcallPoint(interp);
     return TclOOInvokeContext(contextPtr, interp, objc, objv);
 }
@@ -3075,7 +3063,7 @@ TclOOObjectCmdCore(
      * for the duration.
      */
 
-    TclNRAddCallback(interp, FinalizeObjectCall, contextPtr, NULL,NULL,NULL);
+    TclNRAddCallback(interp, FinalizeObjectCall, contextPtr, NULL, NULL, NULL);
     return TclOOInvokeContext(contextPtr, interp, objc, objv);
 }
 

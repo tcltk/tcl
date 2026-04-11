@@ -173,7 +173,7 @@ static const unsigned char bounds[28] = {
 
 static int
 Invalid(
-    const char *src)	/* Points to lead byte of a UTF-8 byte sequence */
+    const char *src)		/* Points to lead byte of a UTF-8 byte sequence */
 {
     unsigned char byte = UCHAR(*src);
     int index;
@@ -533,9 +533,10 @@ Tcl_UtfToUniChar(
 
 Tcl_Size
 Tcl_UtfToChar16(
-    const char *src,	/* The UTF-8 string. */
-    unsigned short *chPtr)/* Filled with the Tcl_UniChar represented by
-				 * the UTF-8 string. This could be a surrogate too. */
+    const char *src,		/* The UTF-8 string. */
+    unsigned short *chPtr)	/* Filled with the Tcl_UniChar represented by
+				 * the UTF-8 string. This could be a surrogate
+				 * too. */
 {
     unsigned short byte;
 
@@ -912,7 +913,7 @@ TclNumUtfChars(
     }
     return i;
 }
-
+
 /*
  *---------------------------------------------------------------------------
  *
@@ -1253,7 +1254,7 @@ TclUtfAtIndex(
     }
     return src;
 }
-
+
 /*
  *---------------------------------------------------------------------------
  *
@@ -1500,7 +1501,7 @@ int
 TclpUtfNcmp2(
     const void *csPtr,		/* UTF string to compare to ct. */
     const void *ctPtr,		/* UTF string cs is compared to. */
-    size_t numBytes)	/* Number of *bytes* to compare. */
+    size_t numBytes)		/* Number of *bytes* to compare. */
 {
     const char *cs = (const char *)csPtr;
     const char *ct = (const char *)ctPtr;
@@ -1549,7 +1550,7 @@ int
 TclUtfNcmp(
     const char *cs,		/* UTF string to compare to ct. */
     const char *ct,		/* UTF string cs is compared to. */
-    size_t numChars)	/* Number of UTF-16 chars to compare. */
+    size_t numChars)		/* Number of UTF-16 chars to compare. */
 {
     unsigned short ch1 = 0, ch2 = 0;
 
@@ -1587,7 +1588,7 @@ int
 Tcl_UtfNcmp(
     const char *cs,		/* UTF string to compare to ct. */
     const char *ct,		/* UTF string cs is compared to. */
-    size_t numChars)	/* Number of chars to compare. */
+    size_t numChars)		/* Number of chars to compare. */
 {
     Tcl_UniChar ch1 = 0, ch2 = 0;
 
@@ -1635,7 +1636,7 @@ int
 TclUtfNcasecmp(
     const char *cs,		/* UTF string to compare to ct. */
     const char *ct,		/* UTF string cs is compared to. */
-    size_t numChars)	/* Number of UTF-16 chars to compare. */
+    size_t numChars)		/* Number of UTF-16 chars to compare. */
 {
     unsigned short ch1 = 0, ch2 = 0;
 
@@ -1670,7 +1671,7 @@ int
 Tcl_UtfNcasecmp(
     const char *cs,		/* UTF string to compare to ct. */
     const char *ct,		/* UTF string cs is compared to. */
-    size_t numChars)	/* Number of chars to compare. */
+    size_t numChars)		/* Number of chars to compare. */
 {
     Tcl_UniChar ch1 = 0, ch2 = 0;
 
@@ -1692,7 +1693,7 @@ Tcl_UtfNcasecmp(
     }
     return 0;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -1820,7 +1821,7 @@ Tcl_UniCharToLower(
     /* Clear away extension bits, if any */
     return ch & 0x1FFFFF;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -1877,7 +1878,7 @@ Tcl_Char16Len(
     }
     return len;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -1897,7 +1898,7 @@ Tcl_Char16Len(
 
 Tcl_Size
 Tcl_UniCharLen(
-    const int *uniStr)	/* Unicode string to find length of. */
+    const int *uniStr)		/* Unicode string to find length of. */
 {
     Tcl_Size len = 0;
 
@@ -1929,7 +1930,7 @@ int
 TclUniCharNcmp(
     const Tcl_UniChar *ucs,	/* Unicode string to compare to uct. */
     const Tcl_UniChar *uct,	/* Unicode string ucs is compared to. */
-    size_t numChars)	/* Number of chars to compare. */
+    size_t numChars)		/* Number of chars to compare. */
 {
 #if defined(WORDS_BIGENDIAN)
     /*
@@ -1974,7 +1975,7 @@ int
 TclUniCharNcasecmp(
     const Tcl_UniChar *ucs,	/* Unicode string to compare to uct. */
     const Tcl_UniChar *uct,	/* Unicode string ucs is compared to. */
-    size_t numChars)	/* Number of chars to compare. */
+    size_t numChars)		/* Number of chars to compare. */
 {
     for ( ; numChars != 0; numChars--, ucs++, uct++) {
 	if (*ucs != *uct) {
@@ -2270,7 +2271,7 @@ Tcl_UniCharIsWordChar(
  *	TclUniCharMatch where possible.
  *
  * Results:
- *	The return value is 1 if string matches pattern, and 0 otherwise. The
+ *	The return value is true if string matches pattern, and false otherwise. The
  *	matching operation permits the following special characters in the
  *	pattern: *?\[] (see the manual entry for details on what these mean).
  *
@@ -2280,7 +2281,7 @@ Tcl_UniCharIsWordChar(
  *----------------------------------------------------------------------
  */
 
-int
+bool
 TclUniCharCaseMatch(
     const Tcl_UniChar *uniStr,	/* Unicode String. */
     const Tcl_UniChar *uniPattern,
@@ -2303,7 +2304,7 @@ TclUniCharCaseMatch(
 	    return (*uniStr == 0);
 	}
 	if ((*uniStr == 0) && (p != '*')) {
-	    return 0;
+	    return false;
 	}
 
 	/*
@@ -2324,7 +2325,7 @@ TclUniCharCaseMatch(
 	    }
 	    p = *uniPattern;
 	    if (p == 0) {
-		return 1;
+		return true;
 	    }
 	    if (nocase) {
 		p = Tcl_UniCharToLower(p);
@@ -2349,10 +2350,10 @@ TclUniCharCaseMatch(
 		    }
 		}
 		if (TclUniCharCaseMatch(uniStr, uniPattern, nocase)) {
-		    return 1;
+		    return true;
 		}
 		if (*uniStr == 0) {
-		    return 0;
+		    return false;
 		}
 		uniStr++;
 	    }
@@ -2383,7 +2384,7 @@ TclUniCharCaseMatch(
 	    uniStr++;
 	    while (1) {
 		if ((*uniPattern == ']') || (*uniPattern == 0)) {
-		    return 0;
+		    return false;
 		}
 		startChar = (nocase ? Tcl_UniCharToLower(*uniPattern)
 			: *uniPattern);
@@ -2391,7 +2392,7 @@ TclUniCharCaseMatch(
 		if (*uniPattern == '-') {
 		    uniPattern++;
 		    if (*uniPattern == 0) {
-			return 0;
+			return false;
 		    }
 		    endChar = (nocase ? Tcl_UniCharToLower(*uniPattern)
 			    : *uniPattern);
@@ -2425,7 +2426,7 @@ TclUniCharCaseMatch(
 
 	if (p == '\\') {
 	    if (*(++uniPattern) == '\0') {
-		return 0;
+		return false;
 	    }
 	}
 
@@ -2437,10 +2438,10 @@ TclUniCharCaseMatch(
 	if (nocase) {
 	    if (Tcl_UniCharToLower(*uniStr) !=
 		    Tcl_UniCharToLower(*uniPattern)) {
-		return 0;
+		return false;
 	    }
 	} else if (*uniStr != *uniPattern) {
-	    return 0;
+	    return false;
 	}
 	uniStr++;
 	uniPattern++;
@@ -2458,7 +2459,7 @@ TclUniCharCaseMatch(
  *	Strings, so embedded NULLs are allowed.
  *
  * Results:
- *	The return value is 1 if string matches pattern, and 0 otherwise. The
+ *	The return value is true if string matches pattern, and false otherwise. The
  *	matching operation permits the following special characters in the
  *	pattern: *?\[] (see the manual entry for details on what these mean).
  *
@@ -2468,7 +2469,7 @@ TclUniCharCaseMatch(
  *----------------------------------------------------------------------
  */
 
-int
+bool
 TclUniCharMatch(
     const Tcl_UniChar *string,	/* Unicode String. */
     Tcl_Size strLen,		/* Length of String */
@@ -2495,7 +2496,7 @@ TclUniCharMatch(
 	}
 	p = *pattern;
 	if ((string == stringEnd) && (p != '*')) {
-	    return 0;
+	    return false;
 	}
 
 	/*
@@ -2515,7 +2516,7 @@ TclUniCharMatch(
 		/* empty body */
 	    }
 	    if (pattern == patternEnd) {
-		return 1;
+		return true;
 	    }
 	    p = *pattern;
 	    if (nocase) {
@@ -2542,10 +2543,10 @@ TclUniCharMatch(
 		}
 		if (TclUniCharMatch(string, stringEnd - string,
 			pattern, patternEnd - pattern, nocase)) {
-		    return 1;
+		    return true;
 		}
 		if (string == stringEnd) {
-		    return 0;
+		    return false;
 		}
 		string++;
 	    }
@@ -2576,14 +2577,14 @@ TclUniCharMatch(
 	    string++;
 	    while (1) {
 		if ((*pattern == ']') || (pattern == patternEnd)) {
-		    return 0;
+		    return false;
 		}
 		startChar = (nocase ? Tcl_UniCharToLower(*pattern) : *pattern);
 		pattern++;
 		if (*pattern == '-') {
 		    pattern++;
 		    if (pattern == patternEnd) {
-			return 0;
+			return false;
 		    }
 		    endChar = (nocase ? Tcl_UniCharToLower(*pattern)
 			    : *pattern);
@@ -2617,7 +2618,7 @@ TclUniCharMatch(
 
 	if (p == '\\') {
 	    if (++pattern == patternEnd) {
-		return 0;
+		return false;
 	    }
 	}
 
@@ -2628,10 +2629,10 @@ TclUniCharMatch(
 
 	if (nocase) {
 	    if (Tcl_UniCharToLower(*string) != Tcl_UniCharToLower(*pattern)) {
-		return 0;
+		return false;
 	    }
 	} else if (*string != *pattern) {
-	    return 0;
+	    return false;
 	}
 	string++;
 	pattern++;

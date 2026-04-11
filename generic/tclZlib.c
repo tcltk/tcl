@@ -3093,8 +3093,9 @@ HaveFlag(
 {
     return (chanDataPtr->flags & flag) != 0;
 }
-
+
 /*
+ *----------------------------------------------------------------------
  *
  * ZlibTransformClose --
  *

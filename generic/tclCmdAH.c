@@ -103,11 +103,11 @@ static Tcl_ObjCmdProc2 PathTypeCmd;
 const EnsembleImplMap tclEncodingImplMap[] = {
     {"convertfrom",	EncodingConvertfromObjCmd, TclCompileBasic1To3ArgCmd, NULL, NULL, 0},
     {"convertto",	EncodingConverttoObjCmd,   TclCompileBasic1To3ArgCmd, NULL, NULL, 0},
-    {"dirs",		EncodingDirsObjCmd,        TclCompileBasic0Or1ArgCmd, NULL, NULL, 1},
-    {"names",		EncodingNamesObjCmd,       TclCompileBasic0ArgCmd,    NULL, NULL, 0},
-    {"profiles",	EncodingProfilesObjCmd,    TclCompileBasic0ArgCmd,    NULL, NULL, 0},
-    {"system",		EncodingSystemObjCmd,      TclCompileBasic0Or1ArgCmd, NULL, NULL, 1},
-    {"user",		EncodingUserObjCmd,        TclCompileBasic0ArgCmd,    NULL, NULL, 0},
+    {"dirs",		EncodingDirsObjCmd,	   TclCompileBasic0Or1ArgCmd, NULL, NULL, 1},
+    {"names",		EncodingNamesObjCmd,	   TclCompileBasic0ArgCmd,    NULL, NULL, 0},
+    {"profiles",	EncodingProfilesObjCmd,	   TclCompileBasic0ArgCmd,    NULL, NULL, 0},
+    {"system",		EncodingSystemObjCmd,	   TclCompileBasic0Or1ArgCmd, NULL, NULL, 1},
+    {"user",		EncodingUserObjCmd,	   TclCompileBasic0ArgCmd,    NULL, NULL, 0},
     {NULL, NULL, NULL, NULL, NULL, 0}
 };
 
@@ -238,8 +238,8 @@ TclNRCatchObjCmd(
 	optionVarNamePtr = objv[3];
     }
 
-    TclNRAddCallback(interp, CatchObjCmdCallback, INT2PTR(objc),
-	    varNamePtr, optionVarNamePtr, NULL);
+    TclNRAddCallback(interp, CatchObjCmdCallback,
+	    INT2PTR(objc), varNamePtr, optionVarNamePtr, NULL);
 
     /*
      * TIP #280. Make invoking context available to caught script.
@@ -521,7 +521,7 @@ EncodingConvertParseOptions(
 
     return TCL_OK;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -882,7 +882,7 @@ EncodingUserObjCmd(
     Tcl_DStringResult(interp, &ds);
     return TCL_OK;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -1938,7 +1938,7 @@ PathJoinCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "name ?name ...?");
 	return TCL_ERROR;
     }
-    Tcl_SetObjResult(interp, TclJoinPath(objc - 1, objv + 1, 0));
+    Tcl_SetObjResult(interp, TclJoinPath(objc - 1, objv + 1, false));
     return TCL_OK;
 }
 
@@ -2564,8 +2564,8 @@ TclNRForIterCallback(
 
 	Tcl_ResetResult(interp);
 	TclNewObj(boolObj);
-	TclNRAddCallback(interp, ForCondCallback, iterPtr, boolObj, NULL,
-		NULL);
+	TclNRAddCallback(interp, ForCondCallback, iterPtr, boolObj,
+		NULL, NULL);
 	return Tcl_NRExprObj(interp, iterPtr->cond, boolObj);
     case TCL_BREAK:
 	result = TCL_OK;
@@ -2604,11 +2604,11 @@ ForCondCallback(
     if (value) {
 	/* TIP #280. */
 	if (iterPtr->next) {
-	    TclNRAddCallback(interp, ForNextCallback, iterPtr, NULL, NULL,
-		    NULL);
+	    TclNRAddCallback(interp, ForNextCallback, iterPtr,
+		    NULL, NULL, NULL);
 	} else {
-	    TclNRAddCallback(interp, TclNRForIterCallback, iterPtr, NULL,
-		    NULL, NULL);
+	    TclNRAddCallback(interp, TclNRForIterCallback, iterPtr,
+		    NULL, NULL, NULL);
 	}
 	return TclNREvalObjEx(interp, iterPtr->body, 0, iPtr->cmdFramePtr,
 		iterPtr->word);
@@ -2628,8 +2628,8 @@ ForNextCallback(
     Tcl_Obj *next = iterPtr->next;
 
     if ((result == TCL_OK) || (result == TCL_CONTINUE)) {
-	TclNRAddCallback(interp, ForPostNextCallback, iterPtr, NULL, NULL,
-		NULL);
+	TclNRAddCallback(interp, ForPostNextCallback, iterPtr,
+		NULL, NULL, NULL);
 
 	/*
 	 * TIP #280. Make invoking context available to next script.

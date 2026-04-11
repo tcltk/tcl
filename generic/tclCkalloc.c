@@ -126,7 +126,7 @@ static char dumpFile[100];	/* Records where to dump memory allocation
 
 static Tcl_Mutex *ckallocMutexPtr;
 static int ckallocInit = 0;
-
+
 /*
  *----------------------------------------------------------------------
  *

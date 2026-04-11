@@ -1038,6 +1038,16 @@ declare 338 {
 declare 339 {
     Tcl_Size Tcl_WriteObj(Tcl_Channel chan, Tcl_Obj *objPtr)
 }
+declare 340 {
+    long long Tcl_GetMonotonicTime(void)
+}
+declare 341 {
+    Tcl_TimerToken  Tcl_CreateTimerHandlerMicroSeconds(long long microSeconds,
+	    Tcl_TimerProc *proc, void *clientData)
+}
+declare 342 {
+    void Tcl_SleepMicroSeconds(long long microSeconds)
+}
 declare 343 {
     void Tcl_AlertNotifier(void *clientData)
 }
@@ -1771,12 +1781,12 @@ declare 551 {
 }
 
 # TIP#233 (virtualized time) akupries
-declare 552 {
+declare 552 {deprecated {No longer supported}} {
     void Tcl_SetTimeProc(Tcl_GetTimeProc *getProc,
 	    Tcl_ScaleTimeProc *scaleProc,
 	    void *clientData)
 }
-declare 553 {
+declare 553 {deprecated {No longer supported}} {
     void Tcl_QueryTimeProc(Tcl_GetTimeProc **getProc,
 	    Tcl_ScaleTimeProc **scaleProc,
 	    void **clientData)

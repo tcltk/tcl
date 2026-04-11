@@ -27,8 +27,7 @@ TclPlatformType tclPlatform = TCL_PLATFORM_UNIX;
  */
 
 static const char *	ExtractWinRoot(const char *path,
-			    Tcl_DString *resultPtr, int offset,
-			    Tcl_PathType *typePtr);
+			    Tcl_DString *resultPtr, Tcl_PathType *typePtr);
 static int		SkipToChar(char **stringPtr, int match);
 static Tcl_Obj *	SplitWinPath(const char *path);
 static Tcl_Obj *	SplitUnixPath(const char *path);
@@ -74,10 +73,9 @@ enum GlobModeFlags {
 static void
 SetResultLength(
     Tcl_DString *resultPtr,
-    int offset,
     int extended)
 {
-    Tcl_DStringSetLength(resultPtr, offset);
+    Tcl_DStringSetLength(resultPtr, 0);
     if (extended == 2) {
 	TclDStringAppendLiteral(resultPtr, "//?/UNC/");
     } else if (extended == 1) {
@@ -108,8 +106,6 @@ static const char *
 ExtractWinRoot(
     const char *path,		/* Path to parse. */
     Tcl_DString *resultPtr,	/* Buffer to hold result. */
-    int offset,			/* Offset in buffer where result should be
-				 * stored. */
     Tcl_PathType *typePtr)	/* Where to store pathType result */
 {
     int extended = 0;
@@ -136,7 +132,7 @@ ExtractWinRoot(
 	int hlen, slen;
 
 	if (path[1] != '/' && path[1] != '\\') {
-	    SetResultLength(resultPtr, offset, extended);
+	    SetResultLength(resultPtr, extended);
 	    *typePtr = TCL_PATH_VOLUME_RELATIVE;
 	    TclDStringAppendLiteral(resultPtr, "/");
 	    return &path[1];
@@ -171,7 +167,7 @@ ExtractWinRoot(
 	    TclDStringAppendLiteral(resultPtr, "/");
 	    return &path[2];
 	}
-	SetResultLength(resultPtr, offset, extended);
+	SetResultLength(resultPtr, extended);
 	share = &host[hlen];
 
 	/*
@@ -209,7 +205,7 @@ ExtractWinRoot(
 	 * Might be a drive separator.
 	 */
 
-	SetResultLength(resultPtr, offset, extended);
+	SetResultLength(resultPtr, extended);
 
 	if (path[2] != '/' && path[2] != '\\') {
 	    *typePtr = TCL_PATH_VOLUME_RELATIVE;
@@ -308,7 +304,7 @@ ExtractWinRoot(
 
 	if (abs != 0) {
 	    *typePtr = TCL_PATH_ABSOLUTE;
-	    SetResultLength(resultPtr, offset, extended);
+	    SetResultLength(resultPtr, extended);
 	    Tcl_DStringAppend(resultPtr, path, abs);
 	    return path + abs;
 	}
@@ -425,7 +421,7 @@ TclpGetNativePathType(
 	const char *rootEnd;
 
 	Tcl_DStringInit(&ds);
-	rootEnd = ExtractWinRoot(path, &ds, 0, &type);
+	rootEnd = ExtractWinRoot(path, &ds, &type);
 	if ((rootEnd != path) && (driveNameLengthPtr != NULL)) {
 	    *driveNameLengthPtr = rootEnd - path;
 	    if (driveNameRef != NULL) {
@@ -697,7 +693,7 @@ SplitWinPath(
     Tcl_DStringInit(&buf);
 
     TclNewObj(result);
-    p = ExtractWinRoot(path, &buf, 0, &type);
+    p = ExtractWinRoot(path, &buf, &type);
 
     /*
      * Terminate the root portion, if we matched something.
@@ -738,10 +734,68 @@ SplitWinPath(
 /*
  *---------------------------------------------------------------------------
  *
+ * TclFSJoinPathHelper --
+ *
+ *	This function takes the given object, which should usually be a valid
+ *	path or NULL, and joins onto it the array of paths segments given.
+ *
+ *	The objects in the array given will temporarily have their refCount
+ *	increased by one, and then decreased by one when this function exits
+ *	(which means if they had zero refCount when we were called, they will
+ *	be freed).
+ *
+ * Results:
+ *	Returns object owned by the caller (which should increment its
+ *	refCount) - typically an object with refCount of zero.
+ *
+ * Side effects:
+ *	None.
+ *
+ *---------------------------------------------------------------------------
+ */
+
+Tcl_Obj *
+TclFSJoinPathHelper(
+    Tcl_Obj *pathPtr,		/* Valid path or NULL. */
+    Tcl_Size objc,		/* Number of array elements to join */
+    Tcl_Obj *const objv[],	/* Path elements to join. */
+    bool forceRelative)		/* If true, assume all paths except first are
+				 * relative. If false, discards paths before
+				 * any absolute/volume-relative paths */
+{
+    if (pathPtr == NULL) {
+	return TclJoinPath(objc, objv, forceRelative);
+    }
+    if (objc == 0) {
+	return TclJoinPath(1, &pathPtr, forceRelative);
+    }
+    if (objc == 1) {
+	Tcl_Obj *pair[2];
+
+	pair[0] = pathPtr;
+	pair[1] = objv[0];
+	return TclJoinPath(2, pair, forceRelative);
+    } else {
+	Tcl_Size elemc = objc + 1;
+	Tcl_Obj *ret, **elemv = (Tcl_Obj**)Tcl_Alloc(elemc*sizeof(Tcl_Obj *));
+
+	elemv[0] = pathPtr;
+	memcpy(elemv+1, objv, objc*sizeof(Tcl_Obj *));
+	ret = TclJoinPath(elemc, elemv, forceRelative);
+	Tcl_Free(elemv);
+	return ret;
+    }
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
  * Tcl_FSJoinToPath --
  *
  *	This function takes the given object, which should usually be a valid
  *	path or NULL, and joins onto it the array of paths segments given.
+ *	This function behaves as the join command in that any non-relative paths
+ *	will cause all previous segments to be ignored.
  *
  *	The objects in the array given will temporarily have their refCount
  *	increased by one, and then decreased by one when this function exits
@@ -764,28 +818,7 @@ Tcl_FSJoinToPath(
     Tcl_Size objc,		/* Number of array elements to join */
     Tcl_Obj *const objv[])	/* Path elements to join. */
 {
-    if (pathPtr == NULL) {
-	return TclJoinPath(objc, objv, 0);
-    }
-    if (objc == 0) {
-	return TclJoinPath(1, &pathPtr, 0);
-    }
-    if (objc == 1) {
-	Tcl_Obj *pair[2];
-
-	pair[0] = pathPtr;
-	pair[1] = objv[0];
-	return TclJoinPath(2, pair, 0);
-    } else {
-	Tcl_Size elemc = objc + 1;
-	Tcl_Obj *ret, **elemv = (Tcl_Obj**)Tcl_Alloc(elemc*sizeof(Tcl_Obj *));
-
-	elemv[0] = pathPtr;
-	memcpy(elemv+1, objv, objc*sizeof(Tcl_Obj *));
-	ret = TclJoinPath(elemc, elemv, 0);
-	Tcl_Free(elemv);
-	return ret;
-    }
+    return TclFSJoinPathHelper(pathPtr, objc, objv, false);
 }
 
 /*
@@ -2251,7 +2284,7 @@ DoGlob(
 	    joinedPtr = Tcl_DStringToObj(&append);
 	} else if (flags) {
 	    joinedPtr = TclNewFSPathObj(pathPtr, Tcl_DStringValue(&append),
-		    Tcl_DStringLength(&append));
+		    Tcl_DStringLength(&append), 0);
 	} else {
 	    joinedPtr = Tcl_DuplicateObj(pathPtr);
 	    if (strchr(separators, Tcl_DStringValue(&append)[0]) == NULL) {
@@ -2284,7 +2317,7 @@ DoGlob(
     if (pathPtr == NULL) {
 	joinedPtr = Tcl_NewStringObj(pattern, p-pattern);
     } else if (flags) {
-	joinedPtr = TclNewFSPathObj(pathPtr, pattern, p-pattern);
+	joinedPtr = TclNewFSPathObj(pathPtr, pattern, p-pattern, 0);
     } else {
 	joinedPtr = Tcl_DuplicateObj(pathPtr);
 	if (strchr(separators, pattern[0]) == NULL) {

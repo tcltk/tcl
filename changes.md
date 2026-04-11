@@ -4,7 +4,7 @@ changes to the Tcl source code at
 
 > [Tcl Source Code](https://core.tcl-lang.org/tcl/timeline)
 
-Release Tcl 9.1a1 arises from the check-in with tag `core-9-1-a1`.
+Release Tcl 9.1a2 arises from the check-in with tag `core-9-1-a2`.
 
 Highlighted differences between Tcl 9.1 and Tcl 9.0 are summarized below,
 with focus on changes important to programmers using the Tcl library and
@@ -14,6 +14,8 @@ writing Tcl scripts.
 
 - [New options -backslashes, -commands and -variables for subst command](https://core.tcl-lang.org/tips/doc/trunk/tip/712.md)
 - [New command unicode for Unicode normalization](https://core.tcl-lang.org/tips/doc/trunk/tip/726.md)
+- [New timer command, switch to monotonic clock and microsecond resolution](https://core.tcl-lang.org/tips/doc/trunk/tip/723.md)
+- [Remove "expr" behavior from lseq](https://core.tcl-lang.org/tips/doc/trunk/tip/746.md) *Incompatibility*
 
 # New public C API
 
@@ -23,13 +25,17 @@ writing Tcl scripts.
 - [Tcl\_ListObjRange, Tcl\_ListObjRepeat, Tcl\_TclListObjReverse - C API for new list operations](https://core.tcl-lang.org/tips/doc/trunk/tip/649.md)
 - [Tcl\_UtfToNormalized, Tcl\_UtfToNormalizedDString - C API for Unicode normalization](https://core.tcl-lang.org/tips/doc/trunk/tip/726.md)
 - [Tcl\_UtfToExternalEx and Tcl\_ExternalToUtfEx - C encoding API supporting output buffers larger than INT_MAX](https://core.tcl-lang.org/tips/doc/trunk/tip/737.md)
+- [New API for monotonic clock and microseconds resolution](https://core.tcl-lang.org/tips/doc/trunk/tip/723.md)
+
+# Changes in interpreter initialization
+
+- [Custom applications must call Tcl\_FindExecutable or TclZipfs_AppHook to initialize Tcl](https://core.tcl-lang.org/tips/doc/trunk/tip/732.md) *Potential incompatibility*
+- [Search path for locating Tcl core script and encodings is changed](https://core.tcl-lang.org/tips/doc/trunk/tip/732.md) *Potential incompatibility*
 
 # Performance
 
 - [Memory efficient internal representations](https://core.tcl-lang.org/tcl/wiki?name=New+abstract+list+representations)
 for list operations on large lists.
 - [Continued 64-bit capacity: Command line arguments larger than 2Gb](https://core.tcl-lang.org/tips/doc/trunk/tip/626.md)
-
-# Bug fixes
- - [tclEpollNotfy PlatformEventsControl panics if websocket disconnected](https://core.tcl-lang.org/tcl/tktview/010d8f38)
-
+- Speedup in interpreter creation
+- [Support for long paths on Windows](https://core.tcl-lang.org/tips/doc/trunk/tip/744.md)

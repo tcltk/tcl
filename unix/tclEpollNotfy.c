@@ -620,10 +620,9 @@ TclpDeleteFileHandler(
 
 int
 TclpWaitForEvent(
-    const Tcl_Time *timePtr)	/* Maximum block time, or NULL. */
+    long long time)		/* Maximum block time, or -1. */
 {
     FileHandler *filePtr;
-    Tcl_Time vTime;
     struct timeval timeout, *timeoutPtr;
 				/* Impl. notes: timeout & timeoutPtr are used
 				 * if, and only if threads are not enabled.
@@ -641,20 +640,9 @@ TclpWaitForEvent(
      * for, we return with a negative result rather than blocking forever.
      */
 
-    if (timePtr != NULL) {
-	/*
-	 * TIP #233 (Virtualized Time). Is virtual time in effect? And do we
-	 * actually have something to scale? If yes to both then we call the
-	 * handler to do this scaling.
-	 */
-
-	if (timePtr->sec != 0 || timePtr->usec != 0) {
-	    vTime = *timePtr;
-	    TclScaleTime(&vTime);
-	    timePtr = &vTime;
-	}
-	timeout.tv_sec = timePtr->sec;
-	timeout.tv_usec = timePtr->usec;
+    if (time >= 0) {
+	timeout.tv_sec = time / 1000000;
+	timeout.tv_usec = time % 1000000;
 	timeoutPtr = &timeout;
     } else {
 	timeoutPtr = NULL;

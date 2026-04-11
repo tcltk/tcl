@@ -583,7 +583,7 @@ MODULE_SCOPE Object *	TclNewObjectInstanceCommon(Tcl_Interp *interp,
 			    const char *nameStr,
 			    const char *nsNameStr);
 MODULE_SCOPE int	TclOODecrRefCount(Object *oPtr);
-MODULE_SCOPE int	TclOOObjectDestroyed(Object *oPtr);
+MODULE_SCOPE bool	TclOOObjectDestroyed(Object *oPtr);
 MODULE_SCOPE const char *TclOOContextTypeName(CallContext *contextPtr);
 MODULE_SCOPE int	TclOODefineSlots(Foundation *fPtr);
 MODULE_SCOPE void	TclOODeleteChain(CallChain *callPtr);
@@ -601,7 +601,7 @@ MODULE_SCOPE Class *	TclOOGetClassDefineCmdContext(Tcl_Interp *interp);
 MODULE_SCOPE Class *	TclOOGetClassFromObj(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr);
 MODULE_SCOPE Tcl_Namespace *TclOOGetDefineContextNamespace(
-			    Tcl_Interp *interp, Object *oPtr, int forClass);
+			    Tcl_Interp *interp, Object *oPtr, bool forClass);
 MODULE_SCOPE CallChain *TclOOGetStereotypeCallChain(Class *clsPtr,
 			    Tcl_Obj *methodNameObj, int flags);
 MODULE_SCOPE Foundation	*TclOOGetFoundation(Tcl_Interp *interp);
@@ -630,11 +630,11 @@ MODULE_SCOPE Tcl_Obj *	TclOOObjectName(Tcl_Interp *interp, Object *oPtr);
 MODULE_SCOPE Tcl_Obj *	TclOOObjectMyName(Tcl_Interp *interp, Object *oPtr);
 MODULE_SCOPE void	TclOOReleaseClassContents(Tcl_Interp *interp,
 			    Object *oPtr);
-MODULE_SCOPE int	TclOORemoveFromInstances(Object *oPtr, Class *clsPtr);
-MODULE_SCOPE int	TclOORemoveFromMixins(Class *mixinPtr, Object *oPtr);
-MODULE_SCOPE int	TclOORemoveFromMixinSubs(Class *subPtr,
+MODULE_SCOPE void	TclOORemoveFromInstances(Object *oPtr, Class *clsPtr);
+MODULE_SCOPE void	TclOORemoveFromMixins(Class *mixinPtr, Object *oPtr);
+MODULE_SCOPE void	TclOORemoveFromMixinSubs(Class *subPtr,
 			    Class *mixinPtr);
-MODULE_SCOPE int	TclOORemoveFromSubclasses(Class *subPtr,
+MODULE_SCOPE void	TclOORemoveFromSubclasses(Class *subPtr,
 			    Class *superPtr);
 MODULE_SCOPE Tcl_Obj *	TclOORenderCallChain(Tcl_Interp *interp,
 			    CallChain *callPtr);
@@ -644,17 +644,12 @@ MODULE_SCOPE void	TclOOStashContext(Tcl_Obj *objPtr,
 			    CallContext *contextPtr);
 MODULE_SCOPE void	TclOOSetupVariableResolver(Tcl_Namespace *nsPtr);
 MODULE_SCOPE bool	TclOOUnexportMethods(Class *clsPtr, ...);
-MODULE_SCOPE Tcl_Obj *	TclOOGetAllObjectProperties(Object *oPtr,
-			    bool writable);
 MODULE_SCOPE Tcl_Obj *	TclOOGetPropertyList(PropertyList *propList);
 MODULE_SCOPE void	TclOOReleasePropertyStorage(PropertyStorage *propsPtr);
 MODULE_SCOPE void	TclOOInstallReadableProperties(PropertyStorage *props,
 			    Tcl_Size objc, Tcl_Obj *const objv[]);
 MODULE_SCOPE void	TclOOInstallWritableProperties(PropertyStorage *props,
 			    Tcl_Size objc, Tcl_Obj *const objv[]);
-MODULE_SCOPE int	TclOOInstallStdPropertyImpls(void *useInstance,
-			    Tcl_Interp *interp, Tcl_Obj *propName,
-			    bool readable, bool writable);
 MODULE_SCOPE void	TclOORegisterProperty(Class *clsPtr,
 			    Tcl_Obj *propName, bool mayRead, bool mayWrite);
 MODULE_SCOPE void	TclOORegisterInstanceProperty(Object *oPtr,

@@ -103,9 +103,9 @@ TCL_DECLARE_MUTEX(exitMutex)
  * in closing of files and pipes.
  */
 
-static int inExit = 0;
+static bool inExit = false;
 
-static int subsystemsInitialized = 0;
+static bool subsystemsInitialized = false;
 
 static const char ENCODING_ERROR[] = "\n\t(encoding error in stderr)";
 
@@ -120,7 +120,7 @@ static Tcl_ExitProc *appExitPtr = NULL;
 typedef struct ThreadSpecificData {
     ExitHandler *firstExitPtr;	/* First in list of all exit handlers for this
 				 * thread. */
-    int inExit;			/* True when this thread is exiting. This is
+    bool inExit;			/* True when this thread is exiting. This is
 				 * used as a hack to decide to close the
 				 * standard channels. */
 } ThreadSpecificData;
@@ -910,7 +910,7 @@ InvokeExitHandlers(void)
     ExitHandler *exitPtr;
 
     Tcl_MutexLock(&exitMutex);
-    inExit = 1;
+    inExit = true;
 
     for (exitPtr = firstExitPtr; exitPtr != NULL; exitPtr = firstExitPtr) {
 	/*
@@ -1128,21 +1128,30 @@ static const struct {
 #endif // TCL_WITH_INTERNAL_ZLIB
 }};
 
+/*
+ * Wrapper to retrieve version+build to other modules.
+ */
+const char *
+TclGetBuildInfo()
+{
+    return stubInfo.version;
+}
+
 const char *
 Tcl_InitSubsystems(void)
 {
-    if (inExit != 0) {
+    if (inExit) {
 	Tcl_Panic("Tcl_InitSubsystems called while exiting");
     }
 
-    if (subsystemsInitialized == 0) {
+    if (!subsystemsInitialized) {
 	/*
 	 * Double check inside the mutex. There are definitely calls back into
 	 * this routine from some of the functions below.
 	 */
 
 	TclpInitLock();
-	if (subsystemsInitialized == 0) {
+	if (!subsystemsInitialized) {
 
 		/*
 	     * Initialize locks used by the memory allocators before anything
@@ -1191,12 +1200,13 @@ Tcl_InitSubsystems(void)
 	    TclInitIOSubsystem();	/* Inits a tsd key (noop). */
 	    TclInitEncodingSubsystem();	/* Process wide encoding init. */
 	    TclInitNamespaceSubsystem();/* Register ns obj type (mutexed). */
-	    subsystemsInitialized = 1;
+	    TclZipfsInit();		/* Initialize zipfs subsystem. */
+	    subsystemsInitialized = true;
 	}
 	TclpInitUnlock();
     }
     TclInitNotifier();
-    return stubInfo.version;
+    return TclGetBuildInfo();
 }
 
 /*
@@ -1229,10 +1239,10 @@ Tcl_Finalize(void)
     InvokeExitHandlers();
 
     TclpInitLock();
-    if (subsystemsInitialized == 0) {
+    if (!subsystemsInitialized) {
 	goto alreadyFinalized;
     }
-    subsystemsInitialized = 0;
+    subsystemsInitialized = false;
 
     /*
      * Ensure the thread-specific data is initialised as it is used in
@@ -1409,7 +1419,7 @@ Tcl_FinalizeThread(void)
     FinalizeThread(/* quick */ 0);
 }
 
-void
+static void
 FinalizeThread(
     int quick)
 {
@@ -1424,7 +1434,7 @@ FinalizeThread(
 
     tsdPtr = (ThreadSpecificData*)TclThreadDataKeyGet(&dataKey);
     if (tsdPtr != NULL) {
-	tsdPtr->inExit = 1;
+	tsdPtr->inExit = true;
 
 	for (exitPtr = tsdPtr->firstExitPtr; exitPtr != NULL;
 		exitPtr = tsdPtr->firstExitPtr) {
@@ -1472,7 +1482,7 @@ FinalizeThread(
  *----------------------------------------------------------------------
  */
 
-int
+bool
 TclInExit(void)
 {
     return inExit;
@@ -1494,13 +1504,13 @@ TclInExit(void)
  *----------------------------------------------------------------------
  */
 
-int
+bool
 TclInThreadExit(void)
 {
     ThreadSpecificData *tsdPtr = (ThreadSpecificData *)TclThreadDataKeyGet(&dataKey);
 
     if (tsdPtr == NULL) {
-	return 0;
+	return false;
     }
     return tsdPtr->inExit;
 }
@@ -1534,7 +1544,7 @@ Tcl_VwaitObjCmd(
     int extended = 0, result, mode, mask = TCL_ALL_EVENTS;
     Tcl_InterpState saved = NULL;
     Tcl_TimerToken timer = NULL;
-    Tcl_Time before, after;
+    long long before = -1, after;
     Tcl_Channel chan;
     Tcl_WideInt diff = -1;
     VwaitItem localItems[32], *vwaitItems = localItems;
@@ -1742,7 +1752,7 @@ Tcl_VwaitObjCmd(
 	vwaitItems[numItems].sourceObj = NULL;
 	timer = Tcl_CreateTimerHandler(timeout, VwaitTimeoutProc,
 		&vwaitItems[numItems]);
-	Tcl_GetTime(&before);
+	before = TclpGetMicroseconds();
     } else {
 	timeout = 0;
     }
@@ -1817,9 +1827,9 @@ Tcl_VwaitObjCmd(
     if (timedOut) {
 	diff = -1;
     } else {
-	Tcl_GetTime(&after);
-	diff = after.sec * 1000 + after.usec / 1000;
-	diff -= before.sec * 1000 + before.usec / 1000;
+	after = TclpGetMicroseconds();
+	diff = after / 1000;
+	diff -= before / 1000;
 	diff = timeout - diff;
 	if (diff < 0) {
 	    diff = 0;
@@ -2087,7 +2097,7 @@ Tcl_CreateThread(
     Tcl_ThreadId *idPtr,	/* Return, the ID of the thread */
     Tcl_ThreadCreateProc *proc,	/* Main() function of the thread */
     void *clientData,		/* The one argument to Main() */
-    size_t stackSize,	/* Size of stack for the new thread */
+    size_t stackSize,		/* Size of stack for the new thread */
     int flags)			/* Flags controlling behaviour of the new
 				 * thread. */
 {

@@ -31,7 +31,7 @@
  * Forward declarations for functions defined later in this file:
  */
 
-static int		CheckIfVarUnset(Tcl_Interp *interp, Tcl_Obj **varPtr,
+static bool		CheckIfVarUnset(Tcl_Interp *interp, Tcl_Obj **varPtr,
 			    Tcl_Size varIndex);
 static int		GetVariableIndex(Tcl_Interp *interp,
 			    Tcl_Obj *obj, Tcl_Size *indexPtr);
@@ -583,7 +583,8 @@ TestindexobjCmd(
     Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int allowAbbrev, index, setError, result;
+    bool allowAbbrev, setError;
+    int index, result;
     Tcl_Size i;
     Tcl_Size index2;
     const char **argv;
@@ -1654,9 +1655,9 @@ TeststringobjCmd(
 static int
 TestbigdataCmd(
     TCL_UNUSED(void *),
-    Tcl_Interp *interp,    /* Current interpreter. */
-    Tcl_Size objc,         /* Number of arguments. */
-    Tcl_Obj *const objv[]) /* Argument objects. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    Tcl_Size objc,		/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
 {
     static const char *const subcmds[] = {
 	"string", "bytearray", "list", "dict", NULL
@@ -1855,7 +1856,7 @@ GetVariableIndex(
  *----------------------------------------------------------------------
  */
 
-static int
+static bool
 CheckIfVarUnset(
     Tcl_Interp *interp,		/* Interpreter for error reporting. */
     Tcl_Obj ** varPtr,
@@ -1875,16 +1876,16 @@ CheckIfVarUnset(
 static int
 TestisemptyCmd(
     TCL_UNUSED(void *),
-    Tcl_Interp *interp,    /* Current interpreter. */
-    Tcl_Size objc,         /* Number of arguments. */
-    Tcl_Obj *const objv[]) /* Argument objects. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    Tcl_Size objc,		/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Obj *result;
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "value");
 	return TCL_ERROR;
     }
-    result = Tcl_NewIntObj(Tcl_IsEmpty(objv[1]));
+    result = Tcl_NewBooleanObj(Tcl_IsEmpty(objv[1]));
     if (!objv[1]->bytes) {
 	Tcl_AppendToObj(result, " pure", TCL_INDEX_NONE);
     }

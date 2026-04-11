@@ -278,7 +278,7 @@ extern unsigned char	TranslateMessage(const MSG *);
  */
 
 #if TCL_THREADS && defined(__CYGWIN__)
-static const WCHAR className[] = L"TclNotifier";
+static const WCHAR className[] = {'T', 'c', 'l', 'N', 'o', 't', 'i', 'f', 'i', 'e', 'r', '\0'};
 static unsigned int	NotifierProc(void *hwnd, unsigned int message,
 			    void *wParam, void *lParam);
 #endif /* TCL_THREADS && defined(__CYGWIN__) */
@@ -639,11 +639,10 @@ NotifierProc(
 
 int
 TclpWaitForEvent(
-    const Tcl_Time *timePtr)	/* Maximum block time, or NULL. */
+    long long time)		/* Maximum block time, or -1. */
 {
     FileHandler *filePtr;
     int mask;
-    Tcl_Time vTime;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 #if TCL_THREADS
     int waitForFiles;
@@ -666,21 +665,11 @@ TclpWaitForEvent(
      * for, we return with a negative result rather than blocking forever.
      */
 
-    if (timePtr != NULL) {
-	/*
-	 * TIP #233 (Virtualized Time). Is virtual time in effect? And do we
-	 * actually have something to scale? If yes to both then we call the
-	 * handler to do this scaling.
-	 */
+    if (time >= 0) {
 
-	if (timePtr->sec != 0 || timePtr->usec != 0) {
-	    vTime = *timePtr;
-	    TclScaleTime(&vTime);
-	    timePtr = &vTime;
-	}
 #if !TCL_THREADS
-	timeout.tv_sec = timePtr->sec;
-	timeout.tv_usec = timePtr->usec;
+	timeout.tv_sec = time / 1000000;
+	timeout.tv_usec = time % 1000000;
 	timeoutPtr = &timeout;
     } else if (tsdPtr->numFdBits == 0) {
 	/*
@@ -708,7 +697,7 @@ TclpWaitForEvent(
 
     pthread_mutex_lock(&notifierMutex);
 
-    if (timePtr != NULL && timePtr->sec == 0 && (timePtr->usec == 0
+    if (time == 0
 #if defined(__APPLE__) && defined(__LP64__)
 	    /*
 	     * On 64-bit Darwin, pthread_cond_timedwait() appears to have a
@@ -717,9 +706,9 @@ TclpWaitForEvent(
 	     * workaround, when given a very brief timeout, just do a poll.
 	     * [Bug 1457797]
 	     */
-	    || timePtr->usec < 10
+	    || (unsigned long long )time < 10
 #endif /* __APPLE__ && __LP64__ */
-	    )) {
+	    ) {
 	/*
 	 * Cannot emulate a polling select with a polling condition variable.
 	 * Instead, pretend to wait for files and tell the notifier thread
@@ -730,7 +719,7 @@ TclpWaitForEvent(
 
 	waitForFiles = 1;
 	tsdPtr->pollState = POLL_WANT;
-	timePtr = NULL;
+	time = -1;
     } else {
 	waitForFiles = (tsdPtr->numFdBits > 0);
 	tsdPtr->pollState = 0;
@@ -766,8 +755,8 @@ TclpWaitForEvent(
 	if (!PeekMessageW(&msg, NULL, 0, 0, 0)) {
 	    long long timeout;
 
-	    if (timePtr) {
-		timeout = timePtr->sec * 1000 + timePtr->usec / 1000;
+	    if (time >= 0) {
+		timeout = time / 1000;
 		if (timeout > UINT_MAX) {
 		    timeout = UINT_MAX;
 		}
@@ -779,14 +768,13 @@ TclpWaitForEvent(
 	    pthread_mutex_lock(&notifierMutex);
 	}
 #else /* !__CYGWIN__ */
-	if (timePtr != NULL) {
-	    Tcl_Time now;
+	if (time >= 0) {
+	    long long now;
 	    struct timespec ptime;
 
-	    Tcl_GetTime(&now);
-	    ptime.tv_sec = timePtr->sec + now.sec +
-		    (timePtr->usec + now.usec) / 1000000;
-	    ptime.tv_nsec = 1000 * ((timePtr->usec + now.usec) % 1000000);
+	    now = TclpGetMicroseconds();
+	    ptime.tv_sec = (time + now) / 1000000;
+	    ptime.tv_nsec = 1000 * ((time + now) % 1000000);
 
 	    pthread_cond_timedwait(&tsdPtr->waitCV, &notifierMutex, &ptime);
 	} else {
