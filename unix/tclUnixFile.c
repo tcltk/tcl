@@ -46,9 +46,10 @@ TclpFindExecutable(
     TCL_UNUSED(const char *) /*argv0*/)
 {
     size_t length;
-    WCHAR buf[PATH_MAX] = L"";
+    WCHAR buf[PATH_MAX];
     char name[PATH_MAX * TCL_UTF_MAX + 1];
 
+    buf[0] = '\0';
     GetModuleFileNameW(NULL, buf, PATH_MAX);
     cygwin_conv_path(3, buf, name, sizeof(name));
     length = strlen(name);
@@ -414,7 +415,9 @@ TclpMatchInDirectory(
 		if (typeOk) {
 		    Tcl_ListObjAppendElement(interp, resultPtr,
 			    TclNewFSPathObj(pathPtr, utfname,
-			    Tcl_DStringLength(&utfDs)));
+			    Tcl_DStringLength(&utfDs),
+			    (TCL_PATHNAME_FROM_FILE_SYSTEM
+				| TCL_PATHNAME_SINGLE_PART)));
 		}
 	    }
 	    Tcl_DStringFree(&utfDs);

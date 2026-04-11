@@ -875,7 +875,7 @@ Tcl_EofObjCmd(
     Tcl_SetObjResult(interp, Tcl_NewBooleanObj(Tcl_Eof(chan)));
     return TCL_OK;
 }
-
+
 /*
  *---------------------------------------------------------------------------
  *

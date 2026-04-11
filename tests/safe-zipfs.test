@@ -1,7 +1,7 @@
 # safe-zipfs.test --
 #
 # This file contains tests for safe Tcl that test its compatibility with the
-# zipfs facilities introduced in Tcl 8.7.  Test numbering is for comparison
+# zipfs facilities introduced in Tcl 9.0.  Test numbering is for comparison
 # with similar tests in safe.test that do not use the zipfs file system.
 #
 # Sourcing this file into tcl runs the tests and generates output for errors.

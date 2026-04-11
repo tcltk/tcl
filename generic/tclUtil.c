@@ -982,9 +982,9 @@ Tcl_SplitList(
 
 Tcl_Size
 Tcl_ScanElement(
-    const char *src,	/* String to convert to list element. */
-    int *flagPtr)	/* Where to store information to guide
-			 * Tcl_ConvertCountedElement. */
+    const char *src,		/* String to convert to list element. */
+    int *flagPtr)		/* Where to store information to guide
+				 * Tcl_ConvertCountedElement. */
 {
     return Tcl_ScanCountedElement(src, TCL_INDEX_NONE, flagPtr);
 }
@@ -2367,7 +2367,7 @@ Tcl_StringCaseMatch(
  *	Parallels tclUtf.c:TclUniCharMatch, adjusted for char* and sans nocase.
  *
  * Results:
- *	The return value is 1 if string matches pattern, and 0 otherwise. The
+ *	The return value is true if string matches pattern, and false otherwise. The
  *	matching operation permits the following special characters in the
  *	pattern: *?\[] (see the manual entry for details on what these mean).
  *
@@ -2377,7 +2377,7 @@ Tcl_StringCaseMatch(
  *----------------------------------------------------------------------
  */
 
-int
+bool
 TclByteArrayMatch(
     const unsigned char *string,/* String. */
     Tcl_Size strLen,		/* Length of String */
@@ -2405,7 +2405,7 @@ TclByteArrayMatch(
 	}
 	p = *pattern;
 	if ((string == stringEnd) && (p != '*')) {
-	    return 0;
+	    return false;
 	}
 
 	/*
@@ -2425,7 +2425,7 @@ TclByteArrayMatch(
 		/* empty body */
 	    }
 	    if (pattern == patternEnd) {
-		return 1;
+		return true;
 	    }
 	    p = *pattern;
 	    while (1) {
@@ -2442,10 +2442,10 @@ TclByteArrayMatch(
 		}
 		if (TclByteArrayMatch(string, stringEnd - string,
 			pattern, patternEnd - pattern, 0)) {
-		    return 1;
+		    return true;
 		}
 		if (string == stringEnd) {
-		    return 0;
+		    return false;
 		}
 		string++;
 	    }
@@ -2476,14 +2476,14 @@ TclByteArrayMatch(
 	    string++;
 	    while (1) {
 		if ((*pattern == ']') || (pattern == patternEnd)) {
-		    return 0;
+		    return false;
 		}
 		startChar = *pattern;
 		pattern++;
 		if (*pattern == '-') {
 		    pattern++;
 		    if (pattern == patternEnd) {
-			return 0;
+			return false;
 		    }
 		    endChar = *pattern;
 		    pattern++;
@@ -2517,7 +2517,7 @@ TclByteArrayMatch(
 
 	if (p == '\\') {
 	    if (++pattern == patternEnd) {
-		return 0;
+		return false;
 	    }
 	}
 
@@ -2527,7 +2527,7 @@ TclByteArrayMatch(
 	 */
 
 	if (*string != *pattern) {
-	    return 0;
+	    return false;
 	}
 	string++;
 	pattern++;
@@ -2544,7 +2544,7 @@ TclByteArrayMatch(
  *	matching algorithms.
  *
  * Results:
- *	The return value is 1 if string matches pattern, and 0 otherwise. The
+ *	The return value is true if string matches pattern, and false otherwise. The
  *	matching operation permits the following special characters in the
  *	pattern: *?\[] (see the manual entry for details on what these mean).
  *
@@ -2554,14 +2554,14 @@ TclByteArrayMatch(
  *----------------------------------------------------------------------
  */
 
-int
+bool
 TclStringMatchObj(
     Tcl_Obj *strObj,		/* string object. */
     Tcl_Obj *ptnObj,		/* pattern object. */
     int flags)			/* Only TCL_MATCH_NOCASE should be passed, or
 				 * 0. */
 {
-    int match;
+    bool match;
     Tcl_Size length = 0, plen = 0;
 
     /*
@@ -4322,6 +4322,48 @@ TclGetObjNameOfExecutable(void)
 /*
  *----------------------------------------------------------------------
  *
+ * TclGetObjExecutableAncestors --
+ *
+ *	This function retrieves the paths to the directory ancestor(s) of
+ *	the application. The first element of the returned pathPtrs array is
+ *	the directory of the application, the second is the parent of that
+ *	directory and so on. If the number of elements requested is greater
+ *	that the directory depth, the additional elements will contain NULL.
+ *
+ *	IMPORTANT: The objects returned in pathPtrs[] will have had their
+ *	reference counts incremented so caller owns them.
+ *
+ * Results:
+ *	Returns the number of elements filled with paths. On error, returns
+ *	-1 with an error message in interp if not NULL.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_Size
+TclGetObjExecutableAncestors(
+    Tcl_Interp *interp,		/* interp for errors. May be NULL */
+    Tcl_Size numPaths,		/* Size of pathPtrs[] */
+    Tcl_Obj *pathsPtr[])	/* Output array holding ancestor paths */
+{
+    Tcl_Obj *exePtr = TclGetObjNameOfExecutable();
+    if (exePtr == NULL) {
+	if (interp) {
+	    Tcl_SetResult(interp, "Could not retrieve path of executable.",
+		TCL_STATIC);
+	}
+	return -1;
+    }
+
+    return TclFSGetAncestorPaths(interp, exePtr, numPaths, pathsPtr);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Tcl_GetNameOfExecutable --
  *
  *	This function retrieves the absolute pathname of the application in
@@ -4372,7 +4414,7 @@ TclSetObjNameOfShlib(
 {
     TclSetProcessGlobalValue(&shlibName, name);
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -4814,7 +4856,7 @@ TclMSB(
 #undef LEAD
 #endif
 }
-
+
 /*
  * Local Variables:
  * mode: c

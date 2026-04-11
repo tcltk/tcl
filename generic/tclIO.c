@@ -389,7 +389,7 @@ ChanClose(
 {
     return chanPtr->typePtr->close2Proc(chanPtr->instanceData, interp, 0);
 }
-
+
 /*
  *---------------------------------------------------------------------------
  *
@@ -2409,7 +2409,7 @@ int
 Tcl_GetChannelHandle(
     Tcl_Channel chan,		/* The channel to get file from. */
     int direction,		/* TCL_WRITABLE or TCL_READABLE. */
-    void **handlePtr)	/* Where to store handle */
+    void **handlePtr)		/* Where to store handle */
 {
     Channel *chanPtr;		/* The actual channel. */
     void *handle;
@@ -6405,19 +6405,17 @@ ReadChars(
 		    return -1;
 		}
 
-		{
-		    /*
-		     * There are chars leading the buffer before the eof char.
-		     * Adjust the dstLimit so we go back and read only those
-		     * and do not encounter the eof char this time.
-		     */
+		/*
+		 * There are chars leading the buffer before the eof char.
+		 * Adjust the dstLimit so we go back and read only those
+		 * and do not encounter the eof char this time.
+		 */
 
-		    dstLimit = dstRead + (TCL_UTF_MAX - 1);
-		    statePtr->flags = savedFlags;
-		    statePtr->inputEncodingFlags = savedIEFlags;
-		    statePtr->inputEncodingState = savedState;
-		    continue;
-		}
+		dstLimit = dstRead + (TCL_UTF_MAX - 1);
+		statePtr->flags = savedFlags;
+		statePtr->inputEncodingFlags = savedIEFlags;
+		statePtr->inputEncodingState = savedState;
+		continue;
 	    }
 
 	    /*
@@ -6453,7 +6451,7 @@ ReadChars(
 	     * we only have the one decoded char?
 	     */
 
-	    if (1 || code != TCL_OK) {
+	    {
 		int read, decoded, count;
 		char buffer[TCL_UTF_MAX + 1];
 
@@ -6509,16 +6507,6 @@ ReadChars(
 		    Tcl_SetObjLength(objPtr, numBytes + 1);
 		    return 1;
 		}
-	    } else if (GotFlag(statePtr, CHANNEL_EOF)) {
-		/*
-		 * The bare \r is the only char and we will never read a
-		 * subsequent char to make the determination.
-		 */
-
-		dst[0] = '\r';
-		bufPtr->nextRemoved = bufPtr->nextAdded;
-		Tcl_SetObjLength(objPtr, numBytes + 1);
-		return 1;
 	    }
 
 	    /*
@@ -7603,7 +7591,7 @@ TclChanIsBinary(
 	    && (!GotFlag(statePtr, TCL_READABLE) || (statePtr->inputTranslation == TCL_TRANSLATE_LF))
 	    && (!GotFlag(statePtr, TCL_WRITABLE) || (statePtr->outputTranslation == TCL_TRANSLATE_LF)));
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -7630,7 +7618,7 @@ Tcl_Eof(
     if (GotFlag(statePtr, CHANNEL_ENCODING_ERROR)) {
 	return 0;
     }
-    return GotFlag(statePtr, CHANNEL_EOF) ? 1 : 0;
+    return GotFlag(statePtr, CHANNEL_EOF) != 0;
 }
 
 /*
@@ -7682,7 +7670,7 @@ Tcl_InputBlocked(
     ChannelState *statePtr = ((Channel *) chan)->state;
 				/* State of real channel structure. */
 
-    return GotFlag(statePtr, CHANNEL_BLOCKED) ? 1 : 0;
+    return GotFlag(statePtr, CHANNEL_BLOCKED) != 0;
 }
 
 /*
@@ -10350,7 +10338,7 @@ CopyEventProc(
  *
  *----------------------------------------------------------------------
  */
-int
+static int
 Lossless(
     ChannelState *inStatePtr,
     ChannelState *outStatePtr,
@@ -10759,7 +10747,7 @@ Tcl_IsChannelShared(
     ChannelState *statePtr = ((Channel *) chan)->state;
 				/* State of real channel structure. */
 
-    return ((statePtr->refCount > 1) ? 1 : 0);
+    return (statePtr->refCount > 1);
 }
 
 /*
@@ -11484,9 +11472,9 @@ Tcl_ChannelTruncateProc(
 
 static void
 DupChannelInternalRep(
-    Tcl_Obj *srcPtr,	/* Object with internal rep to copy. Must have
+    Tcl_Obj *srcPtr,		/* Object with internal rep to copy. Must have
 				 * an internal rep of type "Channel". */
-    Tcl_Obj *copyPtr)	/* Object with internal rep to set. Must not
+    Tcl_Obj *copyPtr)		/* Object with internal rep to set. Must not
 				 * currently have an internal rep.*/
 {
     ResolvedChanName *resPtr;

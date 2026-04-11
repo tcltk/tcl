@@ -11,7 +11,6 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
-
 #include "tclWinInt.h"
 #include "tclFileSystem.h"
 #include <winioctl.h>
@@ -30,8 +29,7 @@
  * on the proleptic Gregorian calendar) and the Posix epoch (1970-01-01).
  */
 
-#define POSIX_EPOCH_AS_FILETIME	\
-	((long long) 116444736 * (long long) 1000000000)
+#define POSIX_EPOCH_AS_FILETIME 116444736000000000LL
 
 /*
  * Declarations for 'link' related information. This information should come
@@ -95,12 +93,9 @@
 #define INVALID_FILE_ATTRIBUTES		((DWORD)-1)
 #endif
 
-/*
- * Maximum reparse buffer info size. The max user defined reparse data is
- * 16KB, plus there's a header.
- */
-
-#define MAX_REPARSE_SIZE		17000
+#ifndef MAXIMUM_REPARSE_DATA_BUFFER_SIZE
+#define MAXIMUM_REPARSE_DATA_BUFFER_SIZE 16384
+#endif
 
 /*
  * Undocumented REPARSE_MOUNTPOINT_HEADER_SIZE structure definition. This is
@@ -109,8 +104,9 @@
  * IMPORTANT: caution when using this structure, since the actual structures
  * used will want to store a full path in the 'PathBuffer' field, but there
  * isn't room (there's only a single WCHAR!). Therefore one must artificially
- * create a larger space of memory and then cast it to this type. We use the
- * 'DUMMY_REPARSE_BUFFER' struct just below to deal with this problem.
+ * create a larger space of memory and then cast it to this type. When
+ * reading from kernel, we just allocate a max size buffer since it is not
+ * a frequent operation and is a temporary allocation.
  */
 
 #define REPARSE_MOUNTPOINT_HEADER_SIZE	 8
@@ -142,11 +138,6 @@ typedef struct _REPARSE_DATA_BUFFER {
 } REPARSE_DATA_BUFFER;
 #endif
 
-typedef struct {
-    REPARSE_DATA_BUFFER dummy;
-    WCHAR dummyBuf[MAX_PATH * 3];
-} DUMMY_REPARSE_BUFFER;
-
 /*
  * Other typedefs required by this code.
  */
@@ -166,7 +157,8 @@ static unsigned short	NativeStatMode(DWORD attr, int checkLinks,
 			    int isExec);
 static int		NativeIsExec(const WCHAR *path);
 static int		NativeReadReparse(const WCHAR *LinkDirectory,
-			    REPARSE_DATA_BUFFER *buffer, DWORD desiredAccess);
+			    REPARSE_DATA_BUFFER *buffer, DWORD bufferSize,
+			    DWORD desiredAccess);
 static int		NativeWriteReparse(const WCHAR *LinkDirectory,
 			    REPARSE_DATA_BUFFER *buffer);
 static int		NativeMatchType(int isDrive, DWORD attr,
@@ -179,7 +171,20 @@ static int		WinLink(const WCHAR *LinkSource,
 			    const WCHAR *LinkTarget, int linkAction);
 static int		WinSymLinkDirectory(const WCHAR *LinkDirectory,
 			    const WCHAR *LinkTarget);
+static void		TclWinUpdateDriveCwd(TclWinPath *winPathPtr);
 MODULE_SCOPE void	tclWinDebugPanic(const char *format, ...);
+
+/*
+ * Check if a Windows error code is one that might be returned for
+ * non-existent files
+ */
+static inline int
+IsNoSuchFileError(DWORD winError)
+{
+    return (winError == ERROR_FILE_NOT_FOUND ||
+	    winError == ERROR_PATH_NOT_FOUND ||
+	    winError == ERROR_INVALID_NAME);
+}
 
 /*
  *--------------------------------------------------------------------
@@ -197,81 +202,54 @@ WinLink(
     const WCHAR *linkTargetPath,
     int linkAction)
 {
-    WCHAR tempFileName[MAX_PATH];
+    WCHAR *tempFileName;
     WCHAR *tempFilePart;
-    DWORD attr;
+    TclWinPath winPath;
 
-    /*
-     * Get the full path referenced by the target.
-     */
-
-    if (!GetFullPathNameW(linkTargetPath, MAX_PATH, tempFileName,
-	    &tempFilePart)) {
-	/*
-	 * Invalid file.
-	 */
-
+    /* Q for original author - why retrieve full path if not used? */
+    tempFileName = TclWinGetFullPathName(linkTargetPath,
+	    &winPath, &tempFilePart);
+    if (tempFileName == NULL) {
+	/* Invalid file */
 	Tcl_WinConvertError(GetLastError());
 	return -1;
     }
+    TclWinPathFree(&winPath);
 
-    /*
-     * Make sure source file doesn't exist.
-     */
+    /* Make sure source file doesn't exist. */
 
-    attr = GetFileAttributesW(linkSourcePath);
+    DWORD attr = GetFileAttributesW(linkSourcePath);
     if (attr != INVALID_FILE_ATTRIBUTES) {
+	TclWinPathFree(&winPath);
 	Tcl_SetErrno(EEXIST);
 	return -1;
     }
 
-    /*
-     * Get the full path referenced by the source file/directory.
-     */
-
-    if (!GetFullPathNameW(linkSourcePath, MAX_PATH, tempFileName,
-	    &tempFilePart)) {
-	/*
-	 * Invalid file.
-	 */
-
+    /* Get the full path referenced by the source file/directory. */
+    /* Q for original author - why retrieve full path if not used? */
+    tempFileName = TclWinGetFullPathName(linkSourcePath,
+	    &winPath, &tempFilePart);
+    if (tempFileName == NULL) {
+	/* Invalid file */
 	Tcl_WinConvertError(GetLastError());
 	return -1;
     }
+    TclWinPathFree(&winPath);
 
-    /*
-     * Check the target.
-     */
-
+    /* Make sure target exists. */
     attr = GetFileAttributesW(linkTargetPath);
     if (attr == INVALID_FILE_ATTRIBUTES) {
-	/*
-	 * The target doesn't exist.
-	 */
-
 	Tcl_WinConvertError(GetLastError());
     } else if ((attr & FILE_ATTRIBUTE_DIRECTORY) == 0) {
-	/*
-	 * It is a file.
-	 */
-
+	/* It is a file. */
 	if (linkAction & TCL_CREATE_HARD_LINK) {
 	    if (CreateHardLinkW(linkSourcePath, linkTargetPath, NULL)) {
-		/*
-		 * Success!
-		 */
-
 		return 0;
 	    }
-
 	    Tcl_WinConvertError(GetLastError());
 	} else if (linkAction & TCL_CREATE_SYMBOLIC_LINK) {
 	    if (CreateSymbolicLinkW(linkSourcePath, linkTargetPath,
 		    0x2 /* SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE */)) {
-		/*
-		 * Success!
-		 */
-
 		return 0;
 	    } else {
 		Tcl_WinConvertError(GetLastError());
@@ -287,12 +265,8 @@ WinLink(
 
 	if (linkAction & TCL_CREATE_SYMBOLIC_LINK) {
 	    return WinSymLinkDirectory(linkSourcePath, linkTargetPath);
-
 	} else if (linkAction & TCL_CREATE_HARD_LINK) {
-	    /*
-	     * Can't hard link directories.
-	     */
-
+	    /* Can't hard link directories. */
 	    Tcl_SetErrno(EISDIR);
 	} else {
 	    Tcl_SetErrno(ENODEV);
@@ -315,42 +289,30 @@ static Tcl_Obj *
 WinReadLink(
     const WCHAR *linkSourcePath)
 {
-    WCHAR tempFileName[MAX_PATH];
+    WCHAR *tempFileName;
     WCHAR *tempFilePart;
-    DWORD attr;
+    TclWinPath winPath;
 
-    /*
-     * Get the full path referenced by the target.
-     */
-
-    if (!GetFullPathNameW(linkSourcePath, MAX_PATH, tempFileName,
-	    &tempFilePart)) {
-	/*
-	 * Invalid file.
-	 */
-
+    /* Get the full path referenced by the source file/directory. */
+    /* Q for original author - why retrieve full path if not used? */
+    tempFileName = TclWinGetFullPathName(linkSourcePath,
+	    &winPath, &tempFilePart);
+    if (tempFileName == NULL) {
+	/* Invalid file */
 	Tcl_WinConvertError(GetLastError());
 	return NULL;
     }
+    TclWinPathFree(&winPath);
 
-    /*
-     * Make sure source file does exist.
-     */
+    /* Make sure source file does exist. */
 
-    attr = GetFileAttributesW(linkSourcePath);
+    DWORD attr = GetFileAttributesW(linkSourcePath);
     if (attr == INVALID_FILE_ATTRIBUTES) {
-	/*
-	 * The source doesn't exist.
-	 */
-
+	/* The source doesn't exist. */
 	Tcl_WinConvertError(GetLastError());
 	return NULL;
-
     } else if ((attr & FILE_ATTRIBUTE_DIRECTORY) == 0) {
-	/*
-	 * It is a file - this is not yet supported.
-	 */
-
+	/* It is a file - this is not yet supported. */
 	Tcl_SetErrno(ENOTDIR);
 	return NULL;
     }
@@ -375,61 +337,80 @@ WinReadLink(
  *--------------------------------------------------------------------
  */
 
+// Make access to the MountPointReparseBuffer shorter.
+// Note that one type involved is unnamed, so a helper func is awkward...
+#define mp	(&reparseBuffer->MountPointReparseBuffer)
+
 static int
 WinSymLinkDirectory(
     const WCHAR *linkDirPath,
     const WCHAR *linkTargetPath)
 {
-    DUMMY_REPARSE_BUFFER dummy;
-    REPARSE_DATA_BUFFER *reparseBuffer = (REPARSE_DATA_BUFFER *) &dummy;
-    size_t len;
-    WCHAR nativeTarget[MAX_PATH];
-    WCHAR *loop;
+    REPARSE_DATA_BUFFER *reparseBuffer;
+    size_t bufferSize;
+    size_t targetNumBytes;
+#define PREFIX_BYTES L"\\??\\"
 
     /*
-     * Make the native target name.
+     * The required buffer size is sum of
+     * - REPARSE_MOUNTPOINT_HEADER_SIZE (first three REPARSE_DATA_BUFFER fields)
+     * - REPARSE_DATA_BUFFER.{Substitute,Print}{NameLength,NameOffset} fields
+     * - space for the SubstituteName string including the leading \??\ prefix
+     *   and trailing nul
+     * We currently leave out the PrintName except for nul as that is
+     * what has been done historically in Tcl.
+     *
+     * Note terminating nuls are not necessary but help debugging display.
      */
+    targetNumBytes = sizeof(WCHAR) * wcslen(linkTargetPath)
+	    + sizeof(PREFIX_BYTES);	/* Including terminating nul */
 
-    memcpy(nativeTarget, L"\\??\\", 4 * sizeof(WCHAR));
-    memcpy(nativeTarget + 4, linkTargetPath,
-	    sizeof(WCHAR) * (1+wcslen((WCHAR *) linkTargetPath)));
-    len = wcslen(nativeTarget);
+    bufferSize = REPARSE_MOUNTPOINT_HEADER_SIZE
+	    + 4 * sizeof(WORD)
+	    + targetNumBytes
+	    + sizeof(WCHAR);		/* For PrintName terminating nul */
+    reparseBuffer = (REPARSE_DATA_BUFFER *) Tcl_Alloc(bufferSize);
+    reparseBuffer->ReparseDataLength = bufferSize - REPARSE_MOUNTPOINT_HEADER_SIZE;
+    reparseBuffer->ReparseTag = IO_REPARSE_TAG_MOUNT_POINT;
+    reparseBuffer->Reserved = 0;
 
+    mp->SubstituteNameOffset = 0;
+    mp->SubstituteNameLength = targetNumBytes - sizeof(WCHAR); // Excluding nul
+    mp->PrintNameLength = 0;
+    mp->PrintNameOffset = targetNumBytes;
+
+    WCHAR *to = mp->PathBuffer;
+    memcpy(to, PREFIX_BYTES, sizeof(PREFIX_BYTES)-sizeof(WCHAR));
+    to += (sizeof(PREFIX_BYTES)/sizeof(WCHAR)) - 1;
+    WCHAR *from = (WCHAR *)linkTargetPath;
     /*
      * We must have backslashes only. This is VERY IMPORTANT. If we have any
      * forward slashes everything appears to work, but the resulting symlink
      * is useless!
      */
-
-    for (loop = nativeTarget; *loop != 0; loop++) {
-	if (*loop == '/') {
-	    *loop = '\\';
+    while (*from) {
+	WCHAR ch = *from++;
+	if (ch == L'/') {
+	    ch = L'\\';
 	}
+	*to++ = ch;
     }
-    if ((nativeTarget[len-1] == '\\') && (nativeTarget[len-2] != ':')) {
-	nativeTarget[len-1] = 0;
+    assert((char *)to == (char *)mp->PathBuffer + mp->SubstituteNameLength);
+    *to++ = L'\0';
+    assert((char *)to == (char *)mp->PathBuffer + mp->PrintNameOffset);
+    /* PrintName unused but store terminator anyways */
+    assert((char *)to == (char *)mp->PathBuffer + targetNumBytes);
+    if (to[-1] == '\\' && to[-2] != ':') {
+	to[-1] = L'\0';
+	mp->SubstituteNameLength -= sizeof(WCHAR);
     }
+    *to++ = L'\0'; /* Where PrintName begins */
+    assert((char *)to == (bufferSize + (char *)reparseBuffer));
 
-    /*
-     * Build the reparse info.
-     */
-
-    memset(reparseBuffer, 0, sizeof(DUMMY_REPARSE_BUFFER));
-    reparseBuffer->ReparseTag = IO_REPARSE_TAG_MOUNT_POINT;
-    reparseBuffer->MountPointReparseBuffer.SubstituteNameLength =
-	    (WORD)(wcslen(nativeTarget) * sizeof(WCHAR));
-    reparseBuffer->Reserved = 0;
-    reparseBuffer->MountPointReparseBuffer.PrintNameLength = 0;
-    reparseBuffer->MountPointReparseBuffer.PrintNameOffset =
-	    reparseBuffer->MountPointReparseBuffer.SubstituteNameLength
-	    + sizeof(WCHAR);
-    memcpy(reparseBuffer->MountPointReparseBuffer.PathBuffer, nativeTarget,
-	    sizeof(WCHAR)
-	    + reparseBuffer->MountPointReparseBuffer.SubstituteNameLength);
-    reparseBuffer->ReparseDataLength =
-	    reparseBuffer->MountPointReparseBuffer.SubstituteNameLength+12;
-
-    return NativeWriteReparse(linkDirPath, reparseBuffer);
+    int result = NativeWriteReparse(linkDirPath, reparseBuffer);
+    Tcl_Free(reparseBuffer);
+    return result;
+#undef PREFIX_BYTES
 }
 
 /*
@@ -452,13 +433,21 @@ TclWinSymLinkCopyDirectory(
     const WCHAR *linkOrigPath,	/* Existing junction - reparse point */
     const WCHAR *linkCopyPath)	/* Will become a duplicate junction */
 {
-    DUMMY_REPARSE_BUFFER dummy;
-    REPARSE_DATA_BUFFER *reparseBuffer = (REPARSE_DATA_BUFFER *) &dummy;
+    REPARSE_DATA_BUFFER *reparseBuffer;
+    int result = -1;
+    /*
+     * No reliable means of getting required size. Since this is an infrequent
+     * operation, just allocate max possible reparse buffer.
+     */
+    reparseBuffer = (REPARSE_DATA_BUFFER *)
+	    Tcl_Alloc(MAXIMUM_REPARSE_DATA_BUFFER_SIZE);
 
-    if (NativeReadReparse(linkOrigPath, reparseBuffer, GENERIC_READ)) {
-	return -1;
+    if (NativeReadReparse(linkOrigPath, reparseBuffer,
+	    MAXIMUM_REPARSE_DATA_BUFFER_SIZE, GENERIC_READ) == 0) {
+	result = NativeWriteReparse(linkCopyPath, reparseBuffer);
     }
-    return NativeWriteReparse(linkCopyPath, reparseBuffer);
+    Tcl_Free(reparseBuffer);
+    return result;
 }
 
 /*
@@ -487,19 +476,20 @@ TclWinSymLinkDelete(
      * It is a symbolic link - remove it.
      */
 
-    DUMMY_REPARSE_BUFFER dummy;
-    REPARSE_DATA_BUFFER *reparseBuffer = (REPARSE_DATA_BUFFER *) &dummy;
+    /* Only reparse header matters, data immaterial so just use GUID version */
+    REPARSE_GUID_DATA_BUFFER reparse;
     HANDLE hFile;
     DWORD returnedLength;
 
-    memset(reparseBuffer, 0, sizeof(DUMMY_REPARSE_BUFFER));
-    reparseBuffer->ReparseTag = IO_REPARSE_TAG_MOUNT_POINT;
+    memset(&reparse, 0, sizeof(reparse));
+    reparse.ReparseTag = IO_REPARSE_TAG_MOUNT_POINT;
     hFile = CreateFileW(linkOrigPath, GENERIC_WRITE, 0, NULL, OPEN_EXISTING,
 	    FILE_FLAG_OPEN_REPARSE_POINT | FILE_FLAG_BACKUP_SEMANTICS, NULL);
 
     if (hFile != INVALID_HANDLE_VALUE) {
-	if (!DeviceIoControl(hFile, FSCTL_DELETE_REPARSE_POINT, reparseBuffer,
-		REPARSE_MOUNTPOINT_HEADER_SIZE,NULL,0,&returnedLength,NULL)) {
+	if (!DeviceIoControl(hFile, FSCTL_DELETE_REPARSE_POINT, &reparse,
+		REPARSE_MOUNTPOINT_HEADER_SIZE, NULL, 0, &returnedLength,
+		NULL)) {
 	    /*
 	     * Error setting junction.
 	     */
@@ -549,8 +539,7 @@ WinReadLinkDirectory(
 {
     int attr, offset;
     Tcl_Size len;
-    DUMMY_REPARSE_BUFFER dummy;
-    REPARSE_DATA_BUFFER *reparseBuffer = (REPARSE_DATA_BUFFER *) &dummy;
+    REPARSE_DATA_BUFFER *reparseBuffer = NULL;
     Tcl_Obj *retVal;
     Tcl_DString ds;
     const char *copy;
@@ -559,7 +548,17 @@ WinReadLinkDirectory(
     if (!(attr & FILE_ATTRIBUTE_REPARSE_POINT)) {
 	goto invalidError;
     }
-    if (NativeReadReparse(linkDirPath, reparseBuffer, 0)) {
+
+    /*
+     * No reliable means of getting required size. Since this is an infrequent
+     * operation, just allocate max possible reparse buffer.
+     */
+    reparseBuffer = (REPARSE_DATA_BUFFER *)
+	    Tcl_Alloc(MAXIMUM_REPARSE_DATA_BUFFER_SIZE);
+
+    if (NativeReadReparse(linkDirPath, reparseBuffer,
+	    MAXIMUM_REPARSE_DATA_BUFFER_SIZE, 0)) {
+	Tcl_Free(reparseBuffer);
 	return NULL;
     }
 
@@ -580,13 +579,12 @@ WinReadLinkDirectory(
 	 */
 
 	offset = 0;
-	if (reparseBuffer->MountPointReparseBuffer.PathBuffer[0] == '\\') {
+	if (mp->PathBuffer[0] == '\\') {
 	    /*
 	     * Check whether this is a mounted volume.
 	     */
 
-	    if (wcsncmp(reparseBuffer->MountPointReparseBuffer.PathBuffer,
-		    L"\\??\\Volume{",11) == 0) {
+	    if (wcsncmp(mp->PathBuffer, L"\\??\\Volume{", 11) == 0) {
 		char drive;
 
 		/*
@@ -594,23 +592,23 @@ WinReadLinkDirectory(
 		 * to fix here. It doesn't seem very well documented.
 		 */
 
-		reparseBuffer->MountPointReparseBuffer.PathBuffer[1] = '\\';
+		mp->PathBuffer[1] = '\\';
 
 		/*
 		 * Check if a corresponding drive letter exists, and use that
 		 * if it is found
 		 */
 
-		drive = TclWinDriveLetterForVolMountPoint(
-			reparseBuffer->MountPointReparseBuffer.PathBuffer);
+		drive = TclWinDriveLetterForVolMountPoint(mp->PathBuffer);
 		if (drive != -1) {
 		    char driveSpec[3] = {
 			'\0', ':', '\0'
 		    };
 
 		    driveSpec[0] = drive;
-		    retVal = Tcl_NewStringObj(driveSpec,2);
+		    retVal = Tcl_NewStringObj(driveSpec, 2);
 		    Tcl_IncrRefCount(retVal);
+		    Tcl_Free(reparseBuffer);
 		    return retVal;
 		}
 
@@ -625,15 +623,13 @@ WinReadLinkDirectory(
 		 */
 
 		goto invalidError;
-	    } else if (wcsncmp(reparseBuffer->MountPointReparseBuffer
-		    .PathBuffer, L"\\\\?\\",4) == 0) {
+	    } else if (wcsncmp(mp->PathBuffer, L"\\\\?\\", 4) == 0) {
 		/*
 		 * Strip off the prefix.
 		 */
 
 		offset = 4;
-	    } else if (wcsncmp(reparseBuffer->MountPointReparseBuffer
-		    .PathBuffer, L"\\??\\",4) == 0) {
+	    } else if (wcsncmp(mp->PathBuffer, L"\\??\\", 4) == 0) {
 		/*
 		 * Strip off the prefix.
 		 */
@@ -643,23 +639,27 @@ WinReadLinkDirectory(
 	}
 
 	Tcl_DStringInit(&ds);
-	Tcl_WCharToUtfDString(
-		reparseBuffer->MountPointReparseBuffer.PathBuffer,
-		reparseBuffer->MountPointReparseBuffer
-		.SubstituteNameLength>>1, &ds);
+	Tcl_WCharToUtfDString(mp->PathBuffer, mp->SubstituteNameLength >> 1,
+		&ds);
 
-	copy = Tcl_DStringValue(&ds)+offset;
-	len = Tcl_DStringLength(&ds)-offset;
-	retVal = Tcl_NewStringObj(copy,len);
+	copy = Tcl_DStringValue(&ds) + offset;
+	len = Tcl_DStringLength(&ds) - offset;
+	retVal = Tcl_NewStringObj(copy, len);
 	Tcl_IncrRefCount(retVal);
 	Tcl_DStringFree(&ds);
+	Tcl_Free(reparseBuffer);
 	return retVal;
     }
 
   invalidError:
+    if (reparseBuffer) {
+	Tcl_Free(reparseBuffer);
+    }
     Tcl_SetErrno(EINVAL);
     return NULL;
 }
+
+#undef mp
 
 #if defined (__clang__) || ((__GNUC__)  && ((__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ > 5))))
 #pragma GCC diagnostic pop
@@ -683,7 +683,8 @@ WinReadLinkDirectory(
 static int
 NativeReadReparse(
     const WCHAR *linkDirPath,	/* The junction to read */
-    REPARSE_DATA_BUFFER *buffer,/* Pointer to buffer. Cannot be NULL */
+    REPARSE_DATA_BUFFER *buffer,/* Pointer to buffer. Cannot be NULL. */
+    DWORD bufferSize,		/* Size of buffer[] */
     DWORD desiredAccess)
 {
     HANDLE hFile;
@@ -707,7 +708,7 @@ NativeReadReparse(
      */
 
     if (!DeviceIoControl(hFile, FSCTL_GET_REPARSE_POINT, NULL, 0, buffer,
-	    sizeof(DUMMY_REPARSE_BUFFER), &returnedLength, NULL)) {
+	    bufferSize, &returnedLength, NULL)) {
 	/*
 	 * Error setting junction.
 	 */
@@ -864,21 +865,42 @@ void
 TclpFindExecutable(
     TCL_UNUSED(const char *))
 {
-    WCHAR wName[MAX_PATH];
-    char name[MAX_PATH * TCL_UTF_MAX];
+    TclWinPath winPath;
+    WCHAR *wNamePtr;
+    char *utf8Ptr;
+    Tcl_DString ds;
 
-    GetModuleFileNameW(NULL, wName, sizeof(wName)/sizeof(wName[0]));
-    WideCharToMultiByte(CP_UTF8, 0, wName, -1, name, sizeof(name), NULL, NULL);
-    TclWinNoBackslash(name);
-    TclSetObjNameOfExecutable(Tcl_NewStringObj(name, TCL_INDEX_NONE), NULL);
+    /* 
+     * Unlike in CMD.EXE, under MSYS and other shells including Explorer,
+     * the drive for the current directory is not maintained in the
+     * environment. So remember it ourselves. Related to Bug [bca391ab51].
+     */
+    TclWinUpdateDriveCwd(NULL);
+
+    /* Do not use Tcl encoding functions as Tcl may not be initialized yet */
+
+    wNamePtr = TclWinGetModuleFileName(NULL, &winPath);
+    if (wNamePtr == NULL ||
+	(utf8Ptr = TclWinWCharToUtfDString(wNamePtr, -1, &ds)) == NULL) {
+	Tcl_Panic("Could not retrieve executable module name.");
+    }
+
+    TclWinNoBackslash(utf8Ptr);
+    TclSetObjNameOfExecutable(Tcl_NewStringObj(utf8Ptr, TCL_AUTO_LENGTH), NULL);
+    TclWinPathFree(&winPath);
+    Tcl_DStringFree(&ds);
 
 #if !defined(STATIC_BUILD)
     HMODULE hModule = (HMODULE)TclWinGetTclInstance();
     if (hModule) {
-	GetModuleFileNameW(hModule, wName, sizeof(wName) / sizeof(wName[0]));
-	WideCharToMultiByte(CP_UTF8, 0, wName, -1,
-				name, sizeof(name), NULL, NULL);
-	TclSetObjNameOfShlib(Tcl_NewStringObj(name, TCL_AUTO_LENGTH), NULL);
+	wNamePtr = TclWinGetModuleFileName(hModule, &winPath);
+	if (wNamePtr == NULL ||
+	    (utf8Ptr = TclWinWCharToUtfDString(wNamePtr, -1, &ds)) == NULL) {
+	    Tcl_Panic("Could not retrieve library module name.");
+	}
+	TclSetObjNameOfShlib(Tcl_NewStringObj(utf8Ptr, TCL_AUTO_LENGTH), NULL);
+	TclWinPathFree(&winPath);
+	Tcl_DStringFree(&ds);
     }
 #endif
 }
@@ -1046,23 +1068,16 @@ TclpMatchInDirectory(
 
 	Tcl_DStringInit(&ds);
 	native = Tcl_UtfToWCharDString(dirName, TCL_INDEX_NONE, &ds);
-	if ((types == NULL) || (types->type != TCL_GLOB_TYPE_DIR)) {
-	    handle = FindFirstFileW(native, &data);
-	} else {
-	    /*
-	     * We can be more efficient, for pure directory requests.
-	     */
-
-	    handle = FindFirstFileExW(native,
-		    FindExInfoStandard, &data,
-		    FindExSearchLimitToDirectories, NULL, 0);
-	}
+	handle = FindFirstFileExW(native, FindExInfoBasic, &data,
+	    (types == NULL || types->type != TCL_GLOB_TYPE_DIR
+		    ? FindExSearchNameMatch : FindExSearchLimitToDirectories),
+	    NULL, FIND_FIRST_EX_LARGE_FETCH);
 
 	if (handle == INVALID_HANDLE_VALUE) {
 	    DWORD err = GetLastError();
 
 	    Tcl_DStringFree(&ds);
-	    if (err == ERROR_FILE_NOT_FOUND) {
+	    if (IsNoSuchFileError(err)) {
 		/*
 		 * We used our 'pattern' above, and matched nothing. This
 		 * means we just return TCL_OK, indicating no results found.
@@ -1168,8 +1183,10 @@ TclpMatchInDirectory(
 		}
 		if (NativeMatchType(isDrive, attr, native, types)) {
 		    Tcl_ListObjAppendElement(interp, resultPtr,
-			    TclNewFSPathObj(pathPtr, utfname,
-				    Tcl_DStringLength(&ds)));
+			TclNewFSPathObj(pathPtr, utfname,
+					Tcl_DStringLength(&ds),
+					(TCL_PATHNAME_FROM_FILE_SYSTEM
+					    | TCL_PATHNAME_SINGLE_PART)));
 		}
 	    }
 
@@ -1464,8 +1481,12 @@ TclpGetUserHome(
     int rc = 0;
     const char *domain;
     WCHAR *wName, *wHomeDir, *wDomain;
+    TclWinPath winPath;
+    DWORD winPathSize;
+    WCHAR *winPathBuf;
 
     Tcl_DStringInit(bufferPtr);
+    winPathBuf = TclWinPathInit(&winPath, &winPathSize);
 
     wDomain = NULL;
     domain = Tcl_UtfFindFirst(name, '@');
@@ -1491,11 +1512,23 @@ TclpGetUserHome(
 	 */
 	ptr = TclpGetUserName(&ds);
 	if (ptr != NULL && strcasecmp(name, ptr) == 0) {
-	    WCHAR buf[MAX_PATH];
-	    DWORD nChars = sizeof(buf) / sizeof(buf[0]);
-	    if (GetUserProfileDirectoryW(GetCurrentProcessToken(), buf,
-		    &nChars)) {
-		result = Tcl_WCharToUtfDString(buf, nChars - 1, (bufferPtr));
+	    HANDLE hToken;
+	    hToken = GetCurrentProcessToken();
+	    if (GetUserProfileDirectoryW(hToken, winPathBuf, &winPathSize) !=
+		TRUE) {
+		if (GetLastError() != ERROR_INSUFFICIENT_BUFFER) {
+		    winPathBuf = NULL;
+		} else {
+		    winPathBuf = TclWinPathResize(&winPath, winPathSize);
+		    if (GetUserProfileDirectoryW(hToken, winPathBuf,
+			    &winPathSize) != TRUE) {
+			winPathBuf = NULL; /* Still failed */
+		    }
+		}
+	    }
+	    if (winPathBuf) {
+		result = Tcl_WCharToUtfDString(winPathBuf, winPathSize - 1,
+		    bufferPtr);
 		rc = 1;
 	    }
 	}
@@ -1532,34 +1565,38 @@ TclpGetUserHome(
 	    domain = (const char *)INT2PTR(-1); /* repeat once */
 	}
 	if (rc == 0) {
-	    DWORD i, size = MAX_PATH;
-
 	    wHomeDir = uiPtr->usri1_home_dir;
 	    if ((wHomeDir != NULL) && (wHomeDir[0] != '\0')) {
-		size = lstrlenW(wHomeDir);
-		Tcl_WCharToUtfDString(wHomeDir, size, bufferPtr);
+		Tcl_WCharToUtfDString(wHomeDir, lstrlenW(wHomeDir), bufferPtr);
 	    } else {
-		WCHAR buf[MAX_PATH];
 		/*
 		 * User exists but has no home dir. Return
 		 * "{GetProfilesDirectory}/<user>".
 		 */
 
-		GetProfilesDirectoryW(buf, &size);
-		Tcl_WCharToUtfDString(buf, size-1, bufferPtr);
-		Tcl_DStringAppend(bufferPtr, "/", 1);
-		Tcl_DStringAppend(bufferPtr, name, nameLen);
+		if (GetProfilesDirectoryW(winPathBuf, &winPathSize) != TRUE) {
+		    if (GetLastError() != ERROR_INSUFFICIENT_BUFFER) {
+			winPathBuf = NULL;
+		    } else {
+			winPathBuf = TclWinPathResize(&winPath, winPathSize);
+			if (GetProfilesDirectoryW(winPathBuf, &winPathSize) != TRUE) {
+			    winPathBuf = NULL; /* Still failed :-( */
+			}
+		    }
+		}
+		if (winPathBuf) {
+		    /* Unlike some Win APIs, winPathSize includes null terminator */
+		    Tcl_WCharToUtfDString(winPathBuf, winPathSize - 1, bufferPtr);
+		    Tcl_DStringAppend(bufferPtr, "/", 1);
+		    Tcl_DStringAppend(bufferPtr, name, nameLen);
+		}
 	    }
 	    result = Tcl_DStringValue(bufferPtr);
-
-	    /*
-	     * Be sure we return normalized path
-	     */
-
-	    for (i = 0; i < size; ++i) {
-		if (result[i] == '\\') {
-		    result[i] = '/';
-		}
+	    if (*result == '\0') {
+		result = NULL;
+	    } else {
+		/* Be sure we return normalized path using /, not \ */
+		TclWinNoBackslash(result);
 	    }
 	    NetApiBufferFree((void *)uiPtr);
 	}
@@ -1568,6 +1605,7 @@ TclpGetUserHome(
     if (wDomain != NULL) {
 	NetApiBufferFree((void *)wDomain);
     }
+    TclWinPathFree(&winPath);
 
     return result;
 }
@@ -1775,9 +1813,9 @@ NativeAccess(
 	 * go).
 	 */
 
-	if (!GetSecurityDescriptorOwner(sdPtr,&pSid,&SidDefaulted) ||
-	    memcmp(GetSidIdentifierAuthority(pSid),&samba_unmapped,
-		    sizeof(SID_IDENTIFIER_AUTHORITY))==0) {
+	if (!GetSecurityDescriptorOwner(sdPtr, &pSid, &SidDefaulted) ||
+		memcmp(GetSidIdentifierAuthority(pSid), &samba_unmapped,
+			sizeof(SID_IDENTIFIER_AUTHORITY)) == 0) {
 	    HeapFree(GetProcessHeap(), 0, sdPtr);
 	    return 0; /* Attrib tests say access allowed. */
 	}
@@ -1902,6 +1940,62 @@ NativeIsExec(
 }
 
 /*
+ * TclWinUpdateDriveCwd --
+ *
+ *      This function emulates CMD shell behavior of tracking the current
+ *	directory for each drive by storing it an environment variable named
+ *	"=<drive>:" (e.g., "=C:"). This allows Tcl's cd command to correctly
+ *	switch back to the correct current directory using the volume-relative
+ *	path syntax (e.g., "C:") or to normalize volume-relative paths.
+ *	See https://core.tcl-lang.org/tcl/info/bca391ab51cd48e7.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Process environment is updated.
+ */
+static void
+TclWinUpdateDriveCwd(
+    TclWinPath *winPathPtr)	/* Caller should ensure native format absolute
+				 * path. The CWD of the corresponding drive is
+				 * tracked. If NULL, defaults to current working
+				 * directory. */
+{
+    TclWinPath cwdPath;
+    const WCHAR *nativePath;
+    if (winPathPtr == NULL) {
+	nativePath = TclWinGetCurrentDirectory(&cwdPath);
+    } else {
+	nativePath = TclWinPathGet(winPathPtr);
+    }
+
+    if (nativePath) {
+	WCHAR envVar[4];
+	TclWinPath envValue;
+	WCHAR *envValuePtr;
+
+	/* Check it is a drive path, not UNC */
+	if (nativePath[0] && nativePath[1] == ':') {
+	    envVar[0] = L'=';
+	    envVar[1] = nativePath[0];
+	    envVar[2] = L':';
+	    envVar[3] = L'\0';
+	    /* To avoid unnecessary reallocations, only update on change */
+	    envValuePtr = TclWinGetEnvironmentVariable(envVar, &envValue);
+	    if (envValuePtr != NULL && wcscmp(envValuePtr, nativePath) != 0) {
+		SetEnvironmentVariableW(envVar, nativePath);
+		TclWinPathFree(&envValue);
+	    }
+	}
+    }
+
+    if (winPathPtr == NULL) {
+	TclWinPathFree(&cwdPath);
+    }
+}
+
+/*
  *----------------------------------------------------------------------
  *
  * TclpObjChdir --
@@ -1919,7 +2013,7 @@ NativeIsExec(
 
 int
 TclpObjChdir(
-    Tcl_Obj *pathPtr)	/* Path to new working directory. */
+    Tcl_Obj *pathPtr)		/* Path to new working directory. */
 {
     int result;
     const WCHAR *nativePath;
@@ -1935,6 +2029,10 @@ TclpObjChdir(
 	Tcl_WinConvertError(GetLastError());
 	return -1;
     }
+
+    /* Track the working directory for the new drive */
+    TclWinUpdateDriveCwd(NULL);
+
     return 0;
 }
 
@@ -1966,11 +2064,12 @@ TclpGetCwd(
     Tcl_DString *bufferPtr)	/* Uninitialized or free DString filled with
 				 * name of current directory. */
 {
-    WCHAR buffer[MAX_PATH];
     char *p;
     WCHAR *native;
+    TclWinPath winPath;
 
-    if (GetCurrentDirectoryW(MAX_PATH, buffer) == 0) {
+    native = TclWinGetCurrentDirectory(&winPath);
+    if (native == NULL) {
 	Tcl_WinConvertError(GetLastError());
 	if (interp != NULL) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -1980,21 +2079,17 @@ TclpGetCwd(
 	return NULL;
     }
 
-    /*
-     * Watch for the weird Windows c:\\UNC syntax.
-     */
+    /* Watch for the weird Windows c:\\UNC syntax. */
 
-    native = (WCHAR *) buffer;
     if ((native[0] != '\0') && (native[1] == ':')
 	    && (native[2] == '\\') && (native[3] == '\\')) {
 	native += 2;
     }
     Tcl_DStringInit(bufferPtr);
     Tcl_WCharToUtfDString(native, TCL_INDEX_NONE, bufferPtr);
+    TclWinPathFree(&winPath);
 
-    /*
-     * Convert to forward slashes for easier use in scripts.
-     */
+    /* Convert to forward slashes for easier use in scripts. */
 
     for (p = Tcl_DStringValue(bufferPtr); *p != '\0'; p++) {
 	if (*p == '\\') {
@@ -2079,7 +2174,7 @@ NativeStat(
     if (fileHandle != INVALID_HANDLE_VALUE) {
 	BY_HANDLE_FILE_INFORMATION data;
 
-	if (GetFileInformationByHandle(fileHandle,&data) != TRUE) {
+	if (GetFileInformationByHandle(fileHandle, &data) != TRUE) {
 	    fileType = GetFileType(fileHandle);
 	    CloseHandle(fileHandle);
 	    if (fileType != FILE_TYPE_CHAR && fileType != FILE_TYPE_DISK) {
@@ -2193,13 +2288,19 @@ NativeDev(
 {
     int dev;
     Tcl_DString ds;
-    WCHAR nativeFullPath[MAX_PATH];
+    WCHAR *nativeFullPath;
     WCHAR *nativePart;
     const char *fullPath;
+    TclWinPath winPath;
 
-    GetFullPathNameW(nativePath, MAX_PATH, nativeFullPath, &nativePart);
+    nativeFullPath = TclWinGetFullPathName(nativePath,
+	    &winPath, &nativePart);
+    if (nativeFullPath == NULL) {
+	return -1;
+    }
     Tcl_DStringInit(&ds);
     fullPath = Tcl_WCharToUtfDString(nativeFullPath, TCL_INDEX_NONE, &ds);
+    TclWinPathFree(&winPath);
 
     if ((fullPath[0] == '\\') && (fullPath[1] == '\\')) {
 	const char *p;
@@ -2313,7 +2414,7 @@ ToCTime(
     convertedTime.HighPart = (LONG) fileTime.dwHighDateTime;
 
     return (__time64_t) ((convertedTime.QuadPart -
-	    (long long) POSIX_EPOCH_AS_FILETIME) / (long long) 10000000);
+	    POSIX_EPOCH_AS_FILETIME) / 10000000);
 }
 
 /*
@@ -2367,22 +2468,27 @@ void *
 TclpGetNativeCwd(
     void *clientData)
 {
-    WCHAR buffer[MAX_PATH];
+    WCHAR *native;
+    TclWinPath winPath;
 
-    if (GetCurrentDirectoryW(MAX_PATH, buffer) == 0) {
+    native = TclWinGetCurrentDirectory(&winPath);
+    if (native == NULL) {
 	Tcl_WinConvertError(GetLastError());
 	return NULL;
     }
 
     if (clientData != NULL) {
-	if (wcscmp((const WCHAR *) clientData, buffer) == 0) {
+	if (wcscmp((const WCHAR *) clientData, native) == 0) {
+	    TclWinPathFree(&winPath);
 	    return clientData;
 	}
     }
 
-    return TclNativeDupInternalRep(buffer);
+    void *pv = TclNativeDupInternalRep(native);
+    TclWinPathFree(&winPath);
+    return pv;
 }
-
+
 int
 TclpObjAccess(
     Tcl_Obj *pathPtr,
@@ -2880,7 +2986,11 @@ TclpObjNormalizePath(
  *	A valid normalized path.
  *
  * Side effects:
- *	None.
+ *	The working directory used to resolve is returned in *useThisCwdPtr.
+ *	This may be returned as NULL if the drive did not exist in which
+ *	case the returned path is still valid, but is relative to the root of
+ *	the drive. When returned as non-NULL, its reference count would have
+ *	been incremented, and the caller is responsible for decrementing it.
  *
  *---------------------------------------------------------------------------
  */
@@ -2891,78 +3001,88 @@ TclWinVolumeRelativeNormalize(
     const char *path,
     Tcl_Obj **useThisCwdPtr)
 {
-    Tcl_Obj *absolutePath, *useThisCwd;
+    Tcl_Obj *absolutePath, *cwdPtr;
 
-    useThisCwd = Tcl_FSGetCwd(interp);
-    if (useThisCwd == NULL) {
+    cwdPtr = Tcl_FSGetCwd(interp);
+    /* Note cwdPtr already has ref count incremented */
+    if (cwdPtr == NULL) {
 	return NULL;
     }
 
+    Tcl_Size cwdLen;
+    const char *cwdPath = TclGetStringFromObj(cwdPtr, &cwdLen);
     if (path[0] == '/') {
-	/*
-	 * Path of form /foo/bar which is a path in the root directory of the
-	 * current volume.
-	 */
-
-	const char *drive = TclGetString(useThisCwd);
-
-	absolutePath = Tcl_NewStringObj(drive,2);
-	Tcl_AppendToObj(absolutePath, path, TCL_INDEX_NONE);
-	Tcl_IncrRefCount(absolutePath);
-
-	/*
-	 * We have a refCount on the cwd.
-	 */
+	/* Path of form /foo/bar -> root directory of the current drive. */
+	absolutePath = Tcl_NewStringObj(cwdPath, 2);
     } else {
-	/*
-	 * Path of form C:foo/bar, but this only makes sense if the cwd is
-	 * also on drive C.
-	 */
+	/* Path of form X:foo/bar. */
 
-	Tcl_Size cwdLen;
-	const char *drive = TclGetStringFromObj(useThisCwd, &cwdLen);
-	char drive_cur = path[0];
+	char driveRoot[4] = { path[0], ':', '\\', '\0' };
 
-	if (drive_cur >= 'a') {
-	    drive_cur -= ('a' - 'A');
+	if (driveRoot[0] >= 'a') {
+	    driveRoot[0] -= ('a' - 'A');
 	}
-	if (drive[0] == drive_cur) {
-	    absolutePath = Tcl_DuplicateObj(useThisCwd);
+	if (cwdPath[0] != driveRoot[0]) {
+	    /* On a different drive, attempt to get the cwd on that drive */
+	    wchar_t *dcwdPtr;
+
+	    Tcl_DecrRefCount(cwdPtr);
+	    cwdPtr = NULL;
+	    cwdPath = NULL;
 
 	    /*
-	     * We have a refCount on the cwd, which we will release later.
+	     * The current directory on a drive can be obtained via the
+	     * GetFullPathNameW() API, by passing in "X:" as the path or via
+	     * a hidden environment variable of the form "=X:". The latter
+	     * is less reliable in that it will only be present if the drive
+	     * has ever been switched to by the process or one of its
+	     * ancestors. We use it as a fallback. IMPORTANT: Historically,
+	     * _getdcwd() and _wgetdcwd() were also options. However they
+	     * are problematic because with UCRT (unlike with MSVCRT) they
+	     * will raise an exception terminating the program instead of
+	     * returning an error if the drive doesn't exist. To avoid that,
+	     * we would have to set up (a) an invalid parameter handler, or
+	     * (b) a SEH handler. (a) impacts the entire process which is
+	     * not desirable. (b) has incompatibilities with C++ exceptions.
+	     * Both being problematic, those calls are to be avoided.
 	     */
 
-	    if (drive[cwdLen-1] != '/' && (path[2] != '\0')) {
-		/*
-		 * Only add a trailing '/' if needed, which is if there isn't
-		 * one already, and if we are going to be adding some more
-		 * characters.
-		 */
+	    WCHAR driveEnvVar[4] = {L'=', (WCHAR)driveRoot[0], L':', L'\0'};
+	    TclWinPath winPath;
+	    dcwdPtr = TclWinGetFullPathName(&driveEnvVar[1], &winPath, NULL);
+	    if (dcwdPtr == NULL) {
+		dcwdPtr = TclWinGetEnvironmentVariable(driveEnvVar, &winPath);
+	    }
+	    if (dcwdPtr != NULL) {
+		cwdPtr = TclpNativeToNormalized(dcwdPtr);
+		TclWinPathFree(&winPath);
+	    }
+	}
+	if (cwdPtr != NULL) {
+	    /* Were able to locate cwd on the appropriate drive */
+	    Tcl_IncrRefCount(cwdPtr);
+	    cwdPath = TclGetStringFromObj(cwdPtr, &cwdLen);
+	    absolutePath = Tcl_DuplicateObj(cwdPtr);
+
+	    /*
+	     * Only add a trailing '/' if absent, which is if there isn't
+	     * one already, and if we are going to be adding some more
+	     * characters.
+	     */
+	    if (cwdPath[cwdLen-1] != '/' && (path[2] != '\0')) {
 
 		Tcl_AppendToObj(absolutePath, "/", 1);
 	    }
 	} else {
-	    Tcl_DecrRefCount(useThisCwd);
-	    useThisCwd = NULL;
-
-	    /*
-	     * The path is not in the current drive, but is volume-relative.
-	     * The way Tcl 8.3 handles this is that it treats such a path as
-	     * relative to the root of the drive. We therefore behave the same
-	     * here. This behaviour is, however, different to that of the
-	     * windows command-line. If we want to fix this at some point in
-	     * the future (at the expense of a behaviour change to Tcl), we
-	     * could use the '_dgetdcwd' Win32 API to get the drive's cwd.
-	     */
-
-	    absolutePath = Tcl_NewStringObj(path, 2);
-	    Tcl_AppendToObj(absolutePath, "/", 1);
+		/* Non-existent drive? Assume root */
+		absolutePath = Tcl_NewStringObj(path, 2);
+		Tcl_AppendToObj(absolutePath, "/", 1);
 	}
-	Tcl_IncrRefCount(absolutePath);
-	Tcl_AppendToObj(absolutePath, path+2, TCL_INDEX_NONE);
+	path += 2; /* Skip X: before appending below */
     }
-    *useThisCwdPtr = useThisCwd;
+    Tcl_AppendToObj(absolutePath, path, TCL_AUTO_LENGTH);
+    Tcl_IncrRefCount(absolutePath);
+    *useThisCwdPtr = cwdPtr;
     return absolutePath;
 }
 
@@ -3008,10 +3128,10 @@ TclpNativeToNormalized(
      */
 
     if (*copy == '\\') {
-	if (0 == strncmp(copy,"\\??\\",4)) {
+	if (0 == strncmp(copy, "\\??\\", 4)) {
 	    copy += 4;
 	    len -= 4;
-	} else if (0 == strncmp(copy,"\\\\?\\",4)) {
+	} else if (0 == strncmp(copy, "\\\\?\\", 4)) {
 	    copy += 4;
 	    len -= 4;
 	}
@@ -3027,7 +3147,7 @@ TclpNativeToNormalized(
 	}
     }
 
-    objPtr = Tcl_NewStringObj(copy,len);
+    objPtr = Tcl_NewStringObj(copy, len);
     Tcl_DStringFree(&ds);
 
     return objPtr;
@@ -3149,12 +3269,14 @@ TclNativeCreateNativeRep(
      * and the path is larger than MAX_PATH chars, no Win32 API function can
      * handle that unless it is prefixed with the extended path prefix. See:
      * <https://docs.microsoft.com/en-us/windows/win32/fileio/naming-a-file#maxpath>
+     * This is not required on systems where long paths are enabled by policy.
      */
 
     if (((str[0] >= 'A' && str[0] <= 'Z') || (str[0] >= 'a' && str[0] <= 'z'))
 	    && str[1] == ':') {
 	if (wp == nativePathPtr && len > MAX_PATH
-		&& (str[2] == '\\' || str[2] == '/')) {
+		&& (str[2] == '\\' || str[2] == '/')
+		&& !TclpLongPathSupported()) {
 	    memmove(wp + 4, wp, len * sizeof(WCHAR));
 	    memcpy(wp, L"\\\\?\\", 4 * sizeof(WCHAR));
 	    wp += 4;
@@ -3293,8 +3415,8 @@ TclpUtime(
  * TclWinFileOwned --
  *
  *	Returns 1 if the specified file exists and is owned by the current
- *      user and 0 otherwise. Like the Unix case, the check is made using
- *      the real process SID, not the effective (impersonation) one.
+ *	user and 0 otherwise. Like the Unix case, the check is made using
+ *	the real process SID, not the effective (impersonation) one.
  *
  *---------------------------------------------------------------------------
  */
@@ -3333,7 +3455,7 @@ TclWinFileOwned(
 
     token = GetCurrentProcessToken(); /* Need not be closed */
     bufsz = 0;
-    /* Find out how big the buffer needs to be.  */
+    /* Find out how big the buffer needs to be. */
     GetTokenInformation(token, TokenUser, NULL, 0, &bufsz);
     if (bufsz) {
 	buf = (LPBYTE)Tcl_Alloc(bufsz);
@@ -3354,6 +3476,254 @@ TclWinFileOwned(
     }
 
     return (owned != 0);	/* Convert non-0 to 1 */
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclWinPathResize --
+ *
+ *	Resize the path buffer to accommodate a path of the specified size.
+ *	If the required size fits in the static buffer, uses that.
+ *	Otherwise, allocates dynamic memory.
+ *
+ * Results:
+ *	Returns non-NULL pointer to buffer big enough for 'capacity' WCHARs.
+ *	Will panic on failure to allocate memory.
+ *
+ * Side effects:
+ *	May allocate memory that must be freed with TclWinPathFree.
+ *	Any previously allocated dynamic buffer is freed before allocating
+ *	a new one.
+ *
+ *----------------------------------------------------------------------
+ */
+
+WCHAR *
+TclWinPathResize(
+    TclWinPath *pathBufPtr,	/* Path buffer. Must have been initialized */
+    DWORD capacity)		/* Required capacity in WCHARS. */
+{
+    assert(capacity > 0);
+
+    if (pathBufPtr->bufferPtr != pathBufPtr->buffer) {
+	Tcl_Free(pathBufPtr->bufferPtr);
+	pathBufPtr->bufferPtr = pathBufPtr->buffer;
+    }
+
+    if (capacity > (sizeof(pathBufPtr->buffer) / sizeof(WCHAR))) {
+	pathBufPtr->bufferPtr = (WCHAR *)Tcl_Alloc(capacity * sizeof(WCHAR));
+    }
+
+    return pathBufPtr->bufferPtr;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclWinGetFullPathName --
+ *
+ *	Wrapper for GetFullPathNameW that automatically grows the buffer
+ *	as needed to accommodate the full path.
+ *
+ * Results:
+ *	Returns a pointer to the full path name on success, The returned
+ *	pointer is valid until TclWinPathFree or TclWinPathResize is called
+ *	on winPathPtr. Returns NULL on failure. An error code may be
+ *	retrieved via GetLastError() as for GetFullPathNameW.
+ *
+ * Side effects:
+ *	May allocate memory that must be freed with TclWinPathFree
+ *	on a non-NULL return. Sets *filePartPtr to point to the
+ *	filename portion of the path if filePartPtr is not NULL.
+ *
+ *----------------------------------------------------------------------
+ */
+
+WCHAR *
+TclWinGetFullPathName(
+    const WCHAR *pathPtr,	/* Input path (relative or absolute) */
+    TclWinPath *winPathPtr,	/* Buffer to receive full path. Should be
+				 * uninitialized or previously reset with
+				 * TclWinPathFree. */
+    WCHAR **filePartPtrPtr)	/* Receives pointer to filename if non-NULL */
+{
+    DWORD numChars;
+    DWORD capacity;
+    WCHAR *fullPathPtr;
+    WCHAR *filePartPtr = NULL;
+    DWORD err;
+
+    fullPathPtr = TclWinPathInit(winPathPtr, &capacity);
+    numChars = GetFullPathNameW(pathPtr, capacity, fullPathPtr, &filePartPtr);
+
+    if (numChars == 0) {
+	goto errorReturn;
+    }
+
+    /*
+     * numChars does not include the null terminator so even if numChars
+     * equal to capacity, the buffer was too small.
+     */
+    if (numChars < capacity) {
+	if (filePartPtrPtr != NULL) {
+	    *filePartPtrPtr = filePartPtr;
+	}
+	return fullPathPtr;
+    }
+
+    /*
+     * Buffer too small. In this case, numChars is required space INCLUDING
+     * the null terminator. Allocate a larger buffer and try again.
+     */
+    capacity = numChars;
+    fullPathPtr = TclWinPathResize(winPathPtr, capacity);
+    numChars = GetFullPathNameW(pathPtr, capacity, fullPathPtr, &filePartPtr);
+    if (numChars == 0 || numChars >= capacity) {
+	/* Failed or still too small (shouldn't happen). */
+	goto errorReturn;
+    }
+
+    if (filePartPtrPtr != NULL) {
+	*filePartPtrPtr = filePartPtr;
+    }
+    return fullPathPtr;
+
+  errorReturn:
+    err = GetLastError();
+    TclWinPathFree(winPathPtr);
+    SetLastError(err);
+    return NULL;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclWinGetCurrentDirectory --
+ *
+ *	Wrapper for GetCurrentDirectoryW that automatically grows the buffer
+ *	as needed to accommodate the full path.
+ *
+ * Results:
+ *	Returns a pointer to the full path name on success, The returned
+ *	pointer is valid until TclWinPathFree or TclWinPathResize is called
+ *	on winPathPtr. Returns NULL on failure. An error code may be
+ *	retrieved via GetLastError() as for GetCurrentDirectoryW.
+ *
+ * Side effects:
+ *	May allocate memory that must be freed with TclWinPathFree
+ *	on a non-NULL return.
+ *
+ *----------------------------------------------------------------------
+ */
+
+WCHAR *
+TclWinGetCurrentDirectory(
+    TclWinPath *winPathPtr)	/* Buffer to receive full path. Should be
+				 * uninitialized or previously reset with
+				 * TclWinPathFree. */
+{
+    DWORD numChars;
+    DWORD capacity;
+    WCHAR *fullPathPtr;
+    DWORD err;
+
+    fullPathPtr = TclWinPathInit(winPathPtr, &capacity);
+    numChars = GetCurrentDirectoryW(capacity, fullPathPtr);
+
+    if (numChars == 0) {
+	goto errorReturn;
+    }
+
+    /*
+     * numChars does not include the null terminator so even if numChars
+     * equal to capacity, the buffer was too small.
+     */
+    if (numChars < capacity) {
+	return fullPathPtr;
+    }
+
+    /*
+     * Buffer too small. In this case, numChars is required space INCLUDING
+     * the null terminator. Allocate a larger buffer and try again.
+     */
+    capacity = numChars;
+    fullPathPtr = TclWinPathResize(winPathPtr, capacity);
+    numChars = GetCurrentDirectoryW(capacity, fullPathPtr);
+    if (numChars == 0 || numChars >= capacity) {
+	/* Failed or still too small (shouldn't happen). */
+	goto errorReturn;
+    }
+
+    return fullPathPtr;
+
+  errorReturn:
+    err = GetLastError();
+    TclWinPathFree(winPathPtr);
+    SetLastError(err);
+    return NULL;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclWinGetModuleFileName --
+ *
+ *	Wrapper for GetModuleFileNameW that automatically grows the buffer
+ *	as needed to accommodate the full path.
+ *
+ * Results:
+ *	Returns a pointer to the full path name on success, The returned
+ *	pointer is valid until TclWinPathFree or TclWinPathResize is called
+ *	on winPathPtr. Returns NULL on failure. An error code may be
+ *	retrieved via GetLastError() as for GetModuleFileNameW.
+ *
+ * Side effects:
+ *	May allocate memory that must be freed with TclWinPathFree
+ *	on a non-NULL return.
+ *
+ *----------------------------------------------------------------------
+ */
+
+WCHAR *
+TclWinGetModuleFileName(
+    HMODULE hModule,
+    TclWinPath *winPathPtr)	/* Buffer to receive full path. Should be
+				 * uninitialized or previously reset with
+				 * TclWinPathFree. */
+{
+    DWORD capacity;
+    DWORD err = ERROR_SUCCESS;
+
+    WCHAR *pathPtr = TclWinPathInit(winPathPtr, &capacity);
+    while (capacity < USHRT_MAX) {
+	DWORD numChars = GetModuleFileNameW(hModule, pathPtr, capacity);
+	if (numChars == 0) {
+	    err = GetLastError();
+	    break;
+	}
+	/*
+	 * numChars does not include the null terminator so even if numChars
+	 * equal to capacity, the buffer was too small.
+	 */
+	if (numChars < capacity) {
+	    return pathPtr;
+	}
+	err = GetLastError();
+	if (err != ERROR_INSUFFICIENT_BUFFER) {
+	    break;
+	}
+	/*
+	 * Unlike in the case of some other Win32 functions, numChars is NOT
+	 * required size so just double the capacity we just tried.
+	 */
+	pathPtr = TclWinPathResize(winPathPtr, 2 * capacity);
+    }
+
+    /* Failure */
+    TclWinPathFree(winPathPtr);
+    SetLastError(err); /* In case TclWinPathFree overwrote GetLastError */
+    return NULL;
 }
 
 /*

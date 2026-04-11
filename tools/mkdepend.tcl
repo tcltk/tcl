@@ -40,7 +40,6 @@ if [info exists env(INCLUDE)] {
     }
 }
 
-
 # openOutput --
 #
 #	Opens the output file.
@@ -264,7 +263,6 @@ proc addSearchPath {newPathInfo} {
     lappend srcPathList [file normalize [lindex $infoList 0]]
     lappend srcPathReplaceList [lindex $infoList 1]
 }
-
 
 # displayUsage --
 #

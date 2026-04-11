@@ -44,21 +44,21 @@ static const char *const processors[NUMPROCESSORS] = {
 
 typedef struct {
     union {
-	unsigned int  dwOemId;
+	unsigned int dwOemId;
 	struct {
 	    int wProcessorArchitecture;
 	    int wReserved;
 	};
     };
-    unsigned int     dwPageSize;
+    unsigned int dwPageSize;
     void *lpMinimumApplicationAddress;
     void *lpMaximumApplicationAddress;
     void *dwActiveProcessorMask;
-    unsigned int     dwNumberOfProcessors;
-    unsigned int     dwProcessorType;
-    unsigned int     dwAllocationGranularity;
-    int      wProcessorLevel;
-    int      wProcessorRevision;
+    unsigned int dwNumberOfProcessors;
+    unsigned int dwProcessorType;
+    unsigned int dwAllocationGranularity;
+    int wProcessorLevel;
+    int wProcessorRevision;
 } SYSTEM_INFO;
 
 typedef struct {

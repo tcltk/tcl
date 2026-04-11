@@ -329,7 +329,6 @@ COREOBJS = \
 	$(TMP_DIR)\tclStubInit.obj \
 	$(TMP_DIR)\tclThread.obj \
 	$(TMP_DIR)\tclThreadAlloc.obj \
-	$(TMP_DIR)\tclThreadJoin.obj \
 	$(TMP_DIR)\tclThreadStorage.obj \
 	$(TMP_DIR)\tclTimer.obj \
 	$(TMP_DIR)\tclTomMathInterface.obj \
@@ -447,6 +446,7 @@ PLATFORMOBJS = \
 	$(TMP_DIR)\tclWinSerial.obj \
 	$(TMP_DIR)\tclWinSock.obj \
 	$(TMP_DIR)\tclWinThrd.obj \
+	$(TMP_DIR)\tclWinThreadJoin.obj \
 	$(TMP_DIR)\tclWinTime.obj \
 !if $(STATIC_BUILD)
 	$(TMP_DIR)\tclWinPanic.obj \
@@ -558,8 +558,8 @@ test: test-core test-pkgs
 test-core: tcltest
 	set TCL_LIBRARY=$(TCL_TEST_LIBRARY)
 	$(DEBUGGER) $(TCLTEST) "$(ROOT:\=/)/tests/all.tcl" $(TESTFLAGS) -loadfile <<
-		package ifneeded dde 1.5a1 [list load "$(TCLDDELIB:\=/)"]
-		package ifneeded registry 1.4a1 [list load "$(TCLREGLIB:\=/)"]
+		package ifneeded dde 1.5a2 [list load "$(TCLDDELIB:\=/)"]
+		package ifneeded registry 1.4a2 [list load "$(TCLREGLIB:\=/)"]
 <<
 
 runtest: setup $(TCLTEST) dlls

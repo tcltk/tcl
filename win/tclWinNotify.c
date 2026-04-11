@@ -36,10 +36,10 @@ typedef struct {
 				 * notifier. */
     HANDLE event;		/* Event object used to wake up the notifier
 				 * thread. */
-    int pending;		/* Alert message pending, this field is locked
-				 * by the notifierMutex. */
     HWND hwnd;			/* Messaging window. */
-    int timerActive;		/* 1 if interval timer is running. */
+    bool pending;		/* Alert message pending, this field is locked
+				 * by the notifierMutex. */
+    bool timerActive;		/* true if interval timer is running. */
 } ThreadSpecificData;
 
 static Tcl_ThreadDataKey dataKey;
@@ -53,7 +53,7 @@ static Tcl_ThreadDataKey dataKey;
 
 static int notifierCount = 0;
 static const WCHAR className[] = L"TclNotifier";
-static int initialized = 0;
+static bool initialized = false;
 static CRITICAL_SECTION notifierMutex;
 
 /*
@@ -86,7 +86,7 @@ TclpInitNotifier(void)
 
     TclpGlobalLock();
     if (!initialized) {
-	initialized = 1;
+	initialized = true;
 	InitializeCriticalSection(&notifierMutex);
     }
     TclpGlobalUnlock();
@@ -119,8 +119,8 @@ TclpInitNotifier(void)
     notifierCount++;
     LeaveCriticalSection(&notifierMutex);
 
-    tsdPtr->pending = 0;
-    tsdPtr->timerActive = 0;
+    tsdPtr->pending = false;
+    tsdPtr->timerActive = false;
 
     InitializeCriticalSection(&tsdPtr->crit);
 
@@ -240,7 +240,7 @@ TclpAlertNotifier(
 	if (!tsdPtr->pending) {
 	    PostMessageW(tsdPtr->hwnd, WM_WAKEUP, 0, 0);
 	}
-	tsdPtr->pending = 1;
+	tsdPtr->pending = true;
 	LeaveCriticalSection(&tsdPtr->crit);
     } else {
 	SetEvent(tsdPtr->event);
@@ -267,10 +267,9 @@ TclpAlertNotifier(
 
 void
 TclpSetTimer(
-    const Tcl_Time *timePtr)	/* Maximum block time, or NULL. */
+    long long time)		/* Maximum block time, or -1. */
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-    UINT timeout;
 
     /*
      * We only need to set up an interval timer if we're being called from an
@@ -282,25 +281,25 @@ TclpSetTimer(
 	return;
     }
 
-    if (!timePtr) {
-	timeout = 0;
-    } else {
+    if (time >= 0) {
+	UINT timeout;
 	/*
 	 * Make sure we pass a non-zero value into the timeout argument.
 	 * Windows seems to get confused by zero length timers.
 	 */
 
-	timeout = (UINT)timePtr->sec * 1000 + (unsigned long)timePtr->usec / 1000;
+	if (time >= UINT_MAX * 1000LL) {
+	    timeout = UINT_MAX;
+	} else {
+	    timeout = (UINT)(time / 1000);
+	}
 	if (timeout == 0) {
 	    timeout = 1;
 	}
-    }
-
-    if (timeout != 0) {
-	tsdPtr->timerActive = 1;
+	tsdPtr->timerActive = true;
 	SetTimer(tsdPtr->hwnd, INTERVAL_TIMER, timeout, NULL);
     } else {
-	tsdPtr->timerActive = 0;
+	tsdPtr->timerActive = false;
 	KillTimer(tsdPtr->hwnd, INTERVAL_TIMER);
     }
 }
@@ -338,7 +337,7 @@ TclpServiceModeHook(
      * if we leave the modal loop, but for now we'll leave it around.
      */
 
-    if (mode == TCL_SERVICE_ALL && !tsdPtr->hwnd) {
+    if (((mode & TCL_SERVICE_ALL) != 0) && !tsdPtr->hwnd) {
 	tsdPtr->hwnd = CreateWindowW(className, className, WS_TILED,
 		0, 0, 0, 0, NULL, NULL, (HINSTANCE) TclWinGetTclInstance(),
 		NULL);
@@ -409,7 +408,7 @@ NotifierProc(
 
     if (message == WM_WAKEUP) {
 	EnterCriticalSection(&tsdPtr->crit);
-	tsdPtr->pending = 0;
+	tsdPtr->pending = false;
 	LeaveCriticalSection(&tsdPtr->crit);
     } else if (message != WM_TIMER) {
 	return DefWindowProcW(hwnd, message, wParam, lParam);
@@ -467,7 +466,7 @@ TclpNotifierData(void)
 
 int
 TclpWaitForEvent(
-    const Tcl_Time *timePtr)	/* Maximum block time, or NULL. */
+    long long time)		/* Maximum block time, or -1. */
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     MSG msg;
@@ -478,22 +477,12 @@ TclpWaitForEvent(
      * Compute the timeout in milliseconds.
      */
 
-    if (timePtr) {
-	/*
-	 * TIP #233 (Virtualized Time). Convert virtual domain delay to
-	 * real-time.
-	 */
+    if (time >= 0) {
 
-	Tcl_Time myTime;
-
-	myTime.sec  = timePtr->sec;
-	myTime.usec = timePtr->usec;
-
-	if (myTime.sec != 0 || myTime.usec != 0) {
-	    TclScaleTime(&myTime);
+	timeout = (DWORD)(time / 1000);
+	if (timeout == INFINITE) {
+	    timeout--;
 	}
-
-	timeout = (DWORD)myTime.sec * 1000 + (unsigned long)myTime.usec / 1000;
     } else {
 	timeout = INFINITE;
     }
@@ -564,9 +553,70 @@ TclpWaitForEvent(
 /*
  *----------------------------------------------------------------------
  *
+ * Tcl_SleepMicroSeconds --
+ *
+ *	Delay execution for the specified number of monotonic
+ *	micro-seconds.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Time passes.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Tcl_SleepMicroSeconds(
+    long long microSeconds)	/* Number of micro-seconds to sleep. */
+{
+    /*
+     * HaO 2025-11-19: this comment is probably solved by the use of monotonic
+     * time. So, the loop may eventually be removed.
+     *
+     * Simply calling 'Sleep' for the requisite number of milliseconds can
+     * make the process appear to wake up early because it isn't synchronized
+     * with the CPU performance counter that is used in tclWinTime.c. This
+     * behavior is probably benign, but messes up some of the corner cases in
+     * the test suite. We get around this problem by repeating the 'Sleep'
+     * call as many times as necessary to make the clock advance by the
+     * requisite amount.
+     */
+
+    long long nowUS;		/* Current wall clock time. */
+    long long desiredUS;	/* Desired wakeup time. */
+    long long vdelayUS;		/* Time to sleep, for scaling virtual ->
+				 * real. */
+    DWORD sleepTime;		/* Time to sleep, real-time */
+
+    vdelayUS = microSeconds;
+
+    nowUS = Tcl_GetMonotonicTime();
+    desiredUS = nowUS + vdelayUS;
+
+    sleepTime = (DWORD) (unsigned long long)vdelayUS / 1000;
+
+    for (;;) {
+	SleepEx(sleepTime, TRUE);
+	nowUS = Tcl_GetMonotonicTime();
+	if (nowUS >= desiredUS) {
+	    break;
+	}
+
+	vdelayUS = desiredUS - nowUS;
+
+	sleepTime = (DWORD) (unsigned long long)vdelayUS / 1000;
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Tcl_Sleep --
  *
- *	Delay execution for the specified number of milliseconds.
+ *	Delay execution for the specified number of monotonic
+ *	milliseconds.
  *
  * Results:
  *	None.
@@ -581,55 +631,7 @@ void
 Tcl_Sleep(
     int ms)			/* Number of milliseconds to sleep. */
 {
-    /*
-     * Simply calling 'Sleep' for the requisite number of milliseconds can
-     * make the process appear to wake up early because it isn't synchronized
-     * with the CPU performance counter that is used in tclWinTime.c. This
-     * behavior is probably benign, but messes up some of the corner cases in
-     * the test suite. We get around this problem by repeating the 'Sleep'
-     * call as many times as necessary to make the clock advance by the
-     * requisite amount.
-     */
-
-    Tcl_Time now;		/* Current wall clock time. */
-    Tcl_Time desired;		/* Desired wakeup time. */
-    Tcl_Time vdelay;		/* Time to sleep, for scaling virtual ->
-				 * real. */
-    DWORD sleepTime;		/* Time to sleep, real-time */
-
-    vdelay.sec  = ms / 1000;
-    vdelay.usec = (ms % 1000) * 1000;
-
-    Tcl_GetTime(&now);
-    desired.sec  = now.sec  + vdelay.sec;
-    desired.usec = now.usec + vdelay.usec;
-    if (desired.usec > 1000000) {
-	++desired.sec;
-	desired.usec -= 1000000;
-    }
-
-    /*
-     * TIP #233: Scale delay from virtual to real-time.
-     */
-
-    TclScaleTime(&vdelay);
-    sleepTime = (DWORD)vdelay.sec * 1000 + (unsigned long)vdelay.usec / 1000;
-
-    for (;;) {
-	SleepEx(sleepTime, TRUE);
-	Tcl_GetTime(&now);
-	if (now.sec > desired.sec) {
-	    break;
-	} else if ((now.sec == desired.sec) && (now.usec >= desired.usec)) {
-	    break;
-	}
-
-	vdelay.sec  = desired.sec  - now.sec;
-	vdelay.usec = desired.usec - now.usec;
-
-	TclScaleTime(&vdelay);
-	sleepTime = (DWORD)vdelay.sec * 1000 + (unsigned long)vdelay.usec / 1000;
-    }
+    Tcl_SleepMicroSeconds(ms*1000);
 }
 
 /*

@@ -232,7 +232,7 @@ static int		TraverseUnixTree(TraversalProc *traversalProc,
 
 static char *		Realpath(const char *path, char *resolved);
 
-char *
+static char *
 Realpath(
     const char *path,
     char *resolved)
@@ -1267,7 +1267,7 @@ TraversalDelete(
 static int
 CopyFileAtts(
 #ifdef MAC_OSX_TCL
-    const char *src,	/* Path name of source file (native). */
+    const char *src,		/* Path name of source file (native). */
 #else
     TCL_UNUSED(const char *) /*src*/,
 #endif
@@ -2250,7 +2250,7 @@ TclUnixOpenTemporaryFile(
 
     return fd;
 }
-
+
 /*
  * Helper that does *part* of what tempnam() does.
  */
@@ -2403,7 +2403,7 @@ winPathFromObj(
 static const int attributeArray[] = {
     0x20, 0, 2, 0, 0, 1, 4
 };
-
+
 /*
  *----------------------------------------------------------------------
  *

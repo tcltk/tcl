@@ -553,7 +553,7 @@ IsSpecial(
 #endif /* ACCEPT_NAN */
 	;
 }
-
+
 /*
  * Mark an object as holding a weird double.
  */
@@ -598,7 +598,7 @@ SetInvalidRealFromAny(
     }
     return TCL_ERROR;
 }
-
+
 /*
  * This function checks for integer representations, which are valid
  * when linking with C variables, but which are invalid in other

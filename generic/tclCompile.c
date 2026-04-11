@@ -1378,8 +1378,6 @@ CleanupByteCode(
 
     if (interp != NULL) {
 	ByteCodeStats *statsPtr;
-	Tcl_Time destroyTime;
-	long long lifetimeSec, lifetimeMicroSec;
 
 	statsPtr = &iPtr->stats;
 
@@ -1396,11 +1394,7 @@ CleanupByteCode(
 		codePtr->numAuxDataItems * sizeof(AuxData);
 	statsPtr->currentCmdMapBytes -= (double) codePtr->numCmdLocBytes;
 
-	Tcl_GetTime(&destroyTime);
-	lifetimeSec = destroyTime.sec - codePtr->createTime.sec;
-	lifetimeMicroSec = 1000000 * lifetimeSec +
-		(destroyTime.usec - codePtr->createTime.usec);
-	statsPtr->lifetimeCount[TclLog2(lifetimeMicroSec)]++;
+	statsPtr->lifetimeCount[TclLog2(Tcl_GetMonotonicTime() - codePtr->createTime)]++;
     }
 #endif /* TCL_COMPILE_STATS */
 
@@ -3269,7 +3263,7 @@ TclInitByteCode(
 #ifdef TCL_COMPILE_STATS
     codePtr->structureSize = structureSize
 	    - (sizeof(size_t) + sizeof(Tcl_Time));
-    Tcl_GetTime(&codePtr->createTime);
+    codePtr->createTime = Tcl_GetMonotonicTime();
 
     RecordByteCodeStats(codePtr);
 #endif /* TCL_COMPILE_STATS */
@@ -5143,7 +5137,7 @@ TclPushVarName(
  *----------------------------------------------------------------------
  */
 
-void
+static void
 RecordByteCodeStats(
     ByteCode *codePtr)		/* Points to ByteCode structure with info
 				 * to add to accumulated statistics. */

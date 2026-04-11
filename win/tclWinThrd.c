@@ -50,7 +50,7 @@ static CRITICAL_SECTION initLock;
 
 typedef struct WMutex {
     CRITICAL_SECTION crit;
-    volatile LONG thread;
+    volatile DWORD thread;
     int counter;
 } WMutex;
 
@@ -207,32 +207,6 @@ TclpThreadCreate(
 	LeaveCriticalSection(&joinLock);
 	return TCL_OK;
     }
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Tcl_JoinThread --
- *
- *	This procedure waits upon the exit of the specified thread.
- *
- * Results:
- *	TCL_OK if the wait was successful, TCL_ERROR else.
- *
- * Side effects:
- *	The result area is set to the exit code of the thread we
- *	waited upon.
- *
- *----------------------------------------------------------------------
- */
-
-int
-Tcl_JoinThread(
-    Tcl_ThreadId threadId,	/* Id of the thread to wait upon */
-    int *result)		/* Reference to the storage the result of the
-				 * thread we wait upon will be written into. */
-{
-    return TclJoinThread(threadId, result);
 }
 
 /*
@@ -514,7 +488,7 @@ static void
 WMutexLock(
     WMutex *wmPtr)
 {
-    LONG mythread = GetCurrentThreadId();
+    DWORD mythread = GetCurrentThreadId();
 
     if (wmPtr->thread == mythread) {
 	// We owned the lock already, so it's recursive.
@@ -690,7 +664,7 @@ Tcl_ConditionWait(
 
     int counter = wmPtr->counter;
     wmPtr->counter = 0;
-    LONG mythread = GetCurrentThreadId();
+    DWORD mythread = GetCurrentThreadId();
     assert(wmPtr->thread == mythread);
     wmPtr->thread = 0;
     if (SleepConditionVariableCS(cvPtr,
@@ -772,7 +746,7 @@ TclpFinalizeCondition(
 	*condPtr = NULL;
     }
 }
-
+
 /*
  * Additions by AOL for specialized thread memory allocator.
  */

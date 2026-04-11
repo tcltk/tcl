@@ -132,9 +132,10 @@ MODULE_SCOPE int	yyparse(DateInfo*);
 %token	tID
 %token	tMERIDIAN
 %token	tMONTH
-%token	tMONTH_UNIT
+%token	tRMONTH_UNIT
 %token	tSTARDATE
 %token	tSEC_UNIT
+%token	tRSEC_UNIT
 %token	tUNUMBER
 %token	tZONE
 %token	tZONEwO4
@@ -145,15 +146,17 @@ MODULE_SCOPE int	yyparse(DateInfo*);
 %token	tISOBAS6
 %token	tISOBASL
 %token	tDAY_UNIT
+%token	tRDAY_UNIT
 %token	tNEXT
 %token	SP
 
 %type	<Number>	tDAY
 %type	<Number>	tDAYZONE
 %type	<Number>	tMONTH
-%type	<Number>	tMONTH_UNIT
+%type	<Number>	tRMONTH_UNIT
 %type	<Number>	tDST
 %type	<Number>	tSEC_UNIT
+%type	<Number>	tRSEC_UNIT
 %type	<Number>	tUNUMBER
 %type	<Number>	INTNUM
 %type	<Number>	tZONE
@@ -163,6 +166,8 @@ MODULE_SCOPE int	yyparse(DateInfo*);
 %type	<Number>	tISOBAS6
 %type	<Number>	tISOBASL
 %type	<Number>	tDAY_UNIT
+%type	<Number>	tRDAY_UNIT
+%type	<Number>	runit
 %type	<Number>	unit
 %type	<Number>	sign
 %type	<Number>	tNEXT
@@ -196,6 +201,9 @@ item	: time {
 	}
 	| relspec {
 	    info->flags |= CLF_RELCONV;
+	}
+	| nmzone {
+	    yyIncrFlags(CLF_ZONE);
 	}
 	| iso {
 	    yyIncrFlags(CLF_TIME|CLF_HAVEDATE);
@@ -249,8 +257,13 @@ zone	: tZONE tDST {
 	    yyTimezone = $1 - $2*($3 * 60);
 	    yyDSTmode = DSToff;
 	}
-	| sign INTNUM { /* +0100, -0100 */
-	    yyTimezone = -$1*($2 % 100 + ($2 / 100) * 60);
+	;
+nmzone	: sign tUNUMBER %?{ yyDigitCount == 4 || yyDigitCount <= 2 } {
+	    if (yyDigitCount == 4) { /* +0100, -0100 */
+		yyTimezone = -$1*($2 % 100 + ($2 / 100) * 60);
+	    } else { /* +01, -01, +1, -1 */
+		yyTimezone = -$1*($2 * 60);
+	    }
 	    yyDSTmode = DSToff;
 	}
 	;
@@ -405,19 +418,19 @@ relspec : relunits tAGO {
 	| relunits
 	;
 
-relunits : sign SP INTNUM unit {
+relunits : sign SP INTNUM runit {
 	    *yyRelPointer += $1 * $3 * $4;
 	}
-	| sign INTNUM unit {
+	| sign INTNUM runit {
 	    *yyRelPointer += $1 * $2 * $3;
 	}
-	| INTNUM unit {
+	| INTNUM runit {
 	    *yyRelPointer += $1 * $2;
 	}
-	| tNEXT unit {
+	| tNEXT runit {
 	    *yyRelPointer += $2;
 	}
-	| tNEXT INTNUM unit {
+	| tNEXT INTNUM runit {
 	    *yyRelPointer += $2 * $3;
 	}
 	| unit {
@@ -433,6 +446,23 @@ sign	: '-' {
 	}
 	;
 
+runit	: tRSEC_UNIT {
+	    $$ = $1;
+	    yyRelPointer = &yyRelSeconds;
+	    /* no flag CLF_RELCONV needed by seconds */
+	}
+	| tRDAY_UNIT {
+	    $$ = $1;
+	    yyRelPointer = &yyRelDay;
+	    info->flags |= CLF_RELCONV;
+	}
+	| tRMONTH_UNIT {
+	    $$ = $1;
+	    yyRelPointer = &yyRelMonth;
+	    info->flags |= CLF_RELCONV;
+	}
+	;
+
 unit	: tSEC_UNIT {
 	    $$ = $1;
 	    yyRelPointer = &yyRelSeconds;
@@ -441,11 +471,6 @@ unit	: tSEC_UNIT {
 	| tDAY_UNIT {
 	    $$ = $1;
 	    yyRelPointer = &yyRelDay;
-	    info->flags |= CLF_RELCONV;
-	}
-	| tMONTH_UNIT {
-	    $$ = $1;
-	    yyRelPointer = &yyRelMonth;
 	    info->flags |= CLF_RELCONV;
 	}
 	;
@@ -525,16 +550,16 @@ static const TABLE MonthDayTable[] = {
  */
 
 static const TABLE UnitsTable[] = {
-    { "year",		tMONTH_UNIT,	12 },
-    { "month",		tMONTH_UNIT,	 1 },
-    { "fortnight",	tDAY_UNIT,	14 },
-    { "week",		tDAY_UNIT,	 7 },
-    { "day",		tDAY_UNIT,	 1 },
-    { "hour",		tSEC_UNIT, 60 * 60 },
-    { "minute",		tSEC_UNIT,	60 },
-    { "min",		tSEC_UNIT,	60 },
-    { "second",		tSEC_UNIT,	 1 },
-    { "sec",		tSEC_UNIT,	 1 },
+    { "year",		tRMONTH_UNIT,	12 },
+    { "month",		tRMONTH_UNIT,	 1 },
+    { "fortnight",	tRDAY_UNIT,	14 },
+    { "week",		tRDAY_UNIT,	 7 },
+    { "day",		tRDAY_UNIT,	 1 },
+    { "hour",		tRSEC_UNIT, 60 * 60 },
+    { "minute",		tRSEC_UNIT,	60 },
+    { "min",		tRSEC_UNIT,	60 },
+    { "second",		tRSEC_UNIT,	 1 },
+    { "sec",		tRSEC_UNIT,	 1 },
     { NULL, 0, 0 }
 };
 

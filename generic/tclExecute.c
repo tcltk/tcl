@@ -494,7 +494,7 @@ VarHashFindVar(
 	    }								\
 	} else if (TCL_DTRACE_INST_START_ENABLED()) {			\
 	    TCL_DTRACE_INST_START(tclInstructionTable[*pc].name,	\
-			CURR_DEPTH, tosPtr);				\
+		    CURR_DEPTH, tosPtr);				\
 	}								\
     } while (0)
 #define TCL_DTRACE_INST_LAST() \
@@ -695,8 +695,7 @@ static Tcl_Obj *	ExecuteExtendedUnaryMathOp(int opcode,
 			    Tcl_Obj *valuePtr);
 static void		FreeExprCodeInternalRep(Tcl_Obj *objPtr);
 static Tcl_Obj *	GenerateArithSeries(Tcl_Interp *interp, Tcl_Obj *from,
-			    Tcl_Obj *to, Tcl_Obj *step, Tcl_Obj *count,
-			    unsigned evalMask);
+			    Tcl_Obj *to, Tcl_Obj *step, Tcl_Obj *count);
 static ExceptionRange *	GetExceptRangeForPc(const unsigned char *pc,
 			    int searchMode, ByteCode *codePtr);
 static const char *	GetSrcInfoForPc(const unsigned char *pc,
@@ -1014,7 +1013,7 @@ WordSkip(
 
 #define MEMSTART(markerPtr) \
     ((markerPtr) + WordSkip(markerPtr))
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -1410,8 +1409,7 @@ Tcl_NRExprObj(
 
     Tcl_ResetResult(interp);
     ByteCode *codePtr = CompileExprObj(interp, objPtr);
-    Tcl_NRAddCallback(interp, ExprObjCallback, state, resultPtr,
-	    NULL, NULL);
+    TclNRAddCallback(interp, ExprObjCallback, state, resultPtr, NULL, NULL);
     return TclNRExecuteByteCode(interp, codePtr);
 }
 
@@ -4213,9 +4211,16 @@ TEBCresume(
 	part1Ptr = OBJ_UNDER_TOS;
 	objPtr = OBJ_AT_TOS;
 	TRACE("\"%.30s\" \"%.30s\" => ", O2S(part1Ptr), O2S(objPtr));
-	varPtr = TclObjLookupVarEx(interp, part1Ptr, NULL, 0, NULL,
+	varPtr = TclObjLookupVarEx(interp, part1Ptr, NULL, TCL_LEAVE_ERR_MSG, "const",
 		/*createPart1*/1, /*createPart2*/0, &arrayPtr);
     doConst:
+	if (varPtr == NULL) {
+	    if (Tcl_IsEmpty(Tcl_GetObjResult(interp))) {
+		Tcl_SetResult(interp, "variable not found", TCL_STATIC);
+	    }
+	    TRACE_ERROR(interp);
+	    goto gotError;
+	}
 	if (TclIsVarConstant(varPtr)) {
 	    TRACE_APPEND("already constant\n");
 	    NEXT_INST_V(pcAdjustment, cleanup, 0);
@@ -5363,16 +5368,11 @@ TEBCresume(
 	    }
 	    match = 0;
 	    if (length > 0) {
-		Tcl_Size i = 0;
 		int isAbstractList = TclObjTypeHasProc(value2Ptr, indexProc) != NULL;
-
-		/*
-		 * An empty list doesn't match anything.
-		 */
-
-		do {
-		    Tcl_Obj *o;
-		    if (isAbstractList) {
+		if (isAbstractList) {
+		    Tcl_Size i = 0;
+		    do {
+			Tcl_Obj *o;
 			DECACHE_STACK_INFO();
 			int status = TclObjTypeIndex(interp, value2Ptr, i, &o);
 			CACHE_STACK_INFO();
@@ -5380,24 +5380,37 @@ TEBCresume(
 			    TRACE_ERROR(interp);
 			    goto gotError;
 			}
-		    } else {
-			Tcl_ListObjIndex(NULL, value2Ptr, i, &o);
-		    }
-		    if (o != NULL) {
-			s2 = TclGetStringFromObj(o, &s2len);
-		    } else {
-			s2 = "";
-			s2len = 0;
-		    }
-		    if (s1len == s2len) {
-			match = (memcmp(s1, s2, s1len) == 0);
-		    }
+			if (o != NULL) {
+			    s2 = TclGetStringFromObj(o, &s2len);
+			} else {
+			    s2 = "";
+			    s2len = 0;
+			}
+			if (s1len == s2len) {
+			    match = (memcmp(s1, s2, s1len) == 0);
+			}
 
-		    /* Could be an ephemeral abstract obj */
-		    Tcl_BounceRefCount(o);
+			/* Could be an ephemeral abstract obj */
+			Tcl_BounceRefCount(o);
 
-		    i++;
-		} while (i < length && match == 0);
+			i++;
+		    } while (i < length && match == 0);
+		} else {
+		    Tcl_Size i = 0;
+		    Tcl_Obj **elemPtrs;
+		    if (TclListObjGetElements(interp, value2Ptr, &length,
+			    &elemPtrs) != TCL_OK) {
+			TRACE_ERROR(interp);
+			goto gotError;
+		    }
+		    do {
+			s2 = TclGetStringFromObj(elemPtrs[i], &s2len);
+			if (s1len == s2len) {
+			    match = (memcmp(s1, s2, s1len) == 0);
+			}
+			i++;
+		    } while (i < length && match == 0);
+		}
 	    }
 	}
 
@@ -5536,8 +5549,7 @@ TEBCresume(
 	DECACHE_STACK_INFO();
 	// Decode arguments and construct the series.
 	// Note that arguments may be expressions and reenter TEBC.
-	objResultPtr = GenerateArithSeries(interp, from, to, step, count,
-		mask & TCL_ARITHSERIES_EVAL_MASK);
+	objResultPtr = GenerateArithSeries(interp, from, to, step, count);
 	CACHE_STACK_INFO();
 	if (objResultPtr == NULL) {
 	    TRACE_ERROR(interp);
@@ -7084,7 +7096,8 @@ TEBCresume(
      */
 
     {
-	int allocateDict, done;
+	bool allocateDict;
+	int done;
 	Tcl_Size i;
 	Tcl_Obj *dictPtr, *statePtr, *keyPtr, *listPtr, *varNamePtr, *keysPtr;
 	Tcl_Obj *emptyPtr, **keyPtrPtr;
@@ -7140,7 +7153,7 @@ TEBCresume(
 	dictPtr = OBJ_AT_DEPTH(2);
 	TRACE("\"%.30s\" \"%.30s\" \"%.30s\" => ",
 		O2S(dictPtr), O2S(OBJ_UNDER_TOS), O2S(OBJ_AT_TOS));
-	allocateDict = Tcl_IsShared(dictPtr);
+	allocateDict = Tcl_IsShared(dictPtr) != 0;
 	if (allocateDict) {
 	    dictPtr = Tcl_DuplicateObj(dictPtr);
 	}
@@ -7159,7 +7172,7 @@ TEBCresume(
     case INST_DICT_REMOVE:
 	dictPtr = OBJ_UNDER_TOS;
 	TRACE("\"%.30s\" \"%.30s\" => ", O2S(dictPtr), O2S(OBJ_AT_TOS));
-	allocateDict = Tcl_IsShared(dictPtr);
+	allocateDict = Tcl_IsShared(dictPtr) != 0;
 	if (allocateDict) {
 	    dictPtr = Tcl_DuplicateObj(dictPtr);
 	}
@@ -7257,9 +7270,9 @@ TEBCresume(
 	}
 	if (dictPtr == NULL) {
 	    TclNewObj(dictPtr);
-	    allocateDict = 1;
+	    allocateDict = true;
 	} else {
-	    allocateDict = Tcl_IsShared(dictPtr);
+	    allocateDict = Tcl_IsShared(dictPtr) != 0;
 	    if (allocateDict) {
 		dictPtr = Tcl_DuplicateObj(dictPtr);
 	    }
@@ -7357,9 +7370,9 @@ TEBCresume(
 	}
 	if (dictPtr == NULL) {
 	    TclNewObj(dictPtr);
-	    allocateDict = 1;
+	    allocateDict = true;
 	} else {
-	    allocateDict = Tcl_IsShared(dictPtr);
+	    allocateDict = Tcl_IsShared(dictPtr) != 0;
 	    if (allocateDict) {
 		dictPtr = Tcl_DuplicateObj(dictPtr);
 	    }
@@ -7748,7 +7761,7 @@ TEBCresume(
 
     case INST_CLOCK_READ: {	/* Read the wall clock */
 	Tcl_WideInt wval;
-	Tcl_Time now;
+	long long now;
 	unsigned param = TclGetUInt1AtPtr(pc + 1);
 	TRACE("%u => ", param);
 	switch (param) {
@@ -7760,16 +7773,19 @@ TEBCresume(
 #endif
 	    break;
 	case CLOCK_READ_MICROS:
-	    Tcl_GetTime(&now);
-	    wval = (Tcl_WideInt)now.sec * 1000000 + now.usec;
+	    now = TclpGetMicroseconds();
+	    wval = now;
 	    break;
 	case CLOCK_READ_MILLIS:
-	    Tcl_GetTime(&now);
-	    wval = (Tcl_WideInt)now.sec * 1000 + now.usec / 1000;
+	    now = TclpGetMicroseconds();
+	    wval = now / 1000;
 	    break;
 	case CLOCK_READ_SECS:
-	    Tcl_GetTime(&now);
-	    wval = (Tcl_WideInt)now.sec;
+	    now = TclpGetMicroseconds();
+	    wval = now / 1000000;
+	    break;
+	case CLOCK_READ_MONOTONIC:
+	    wval = Tcl_GetMonotonicTime();
 	    break;
 	default:
 	    Tcl_Panic("clockRead instruction with unknown clock#");
@@ -9080,7 +9096,7 @@ ExecuteExtendedUnaryMathOp(
 /*
  *----------------------------------------------------------------------
  *
- * CompareTwoNumbers --
+ * TclCompareTwoNumbers --
  *
  *	This function compares a pair of numbers in Tcl_Objs. Each argument
  *	must already be known to be numeric and not NaN.
@@ -9102,7 +9118,8 @@ TclCompareTwoNumbers(
 {
     int type1 = TCL_NUMBER_NAN, type2 = TCL_NUMBER_NAN, compare;
     void *ptr1, *ptr2;
-    mp_int big1, big2;
+    mp_int blx;
+    const mp_int *bp1, *bp2;
     double d1, d2, tmp;
     Tcl_WideInt w1, w2;
 
@@ -9153,13 +9170,12 @@ TclCompareTwoNumbers(
 	    w2 = (Tcl_WideInt)d2;
 	    goto wideCompare;
 	case TCL_NUMBER_BIG:
-	    Tcl_GetBignumFromObj(NULL, value2Ptr, &big2);
-	    if (mp_isneg(&big2)) {
+	    bp2 = (const mp_int *)ptr2;
+	    if (mp_isneg(bp2)) {
 		compare = MP_GT;
 	    } else {
 		compare = MP_LT;
 	    }
-	    mp_clear(&big2);
 	    return compare;
 	default:
 	    TCL_UNREACHABLE();
@@ -9191,65 +9207,69 @@ TclCompareTwoNumbers(
 	    if (isinf(d1)) {
 		return (d1 > 0.0) ? MP_GT : MP_LT;
 	    }
-	    Tcl_GetBignumFromObj(NULL, value2Ptr, &big2);
+	    bp2 = (const mp_int *)ptr2;
 	    if ((d1 < (double)WIDE_MAX) && (d1 > (double)WIDE_MIN)) {
-		if (mp_isneg(&big2)) {
+		if (mp_isneg(bp2)) {
 		    compare = MP_GT;
 		} else {
 		    compare = MP_LT;
 		}
-		mp_clear(&big2);
 		return compare;
 	    }
 	    if (DBL_MANT_DIG > CHAR_BIT*sizeof(Tcl_WideInt)
 		    && modf(d1, &tmp) != 0.0) {
-		d2 = TclBignumToDouble(&big2);
-		mp_clear(&big2);
+		d2 = TclBignumToDouble(bp2);
 		goto doubleCompare;
 	    }
-	    Tcl_InitBignumFromDouble(NULL, d1, &big1);
+	    Tcl_InitBignumFromDouble(NULL, d1, &blx);
+	    bp1 = &blx;
 	    goto bigCompare;
 	default:
 	    TCL_UNREACHABLE();
 	}
 
-    case TCL_NUMBER_BIG:
-	Tcl_GetBignumFromObj(NULL, valuePtr, &big1);
+    case TCL_NUMBER_BIG: {
+	mp_int bl;
+	if (ptr1 != ptr2) { /* 2nd call of GetNumberFromObj got not a bignum */
+	    bp1 = (const mp_int *)ptr1;
+	} else { /* both pointers points to same place, so TSD is overwritten */
+	    TclUnpackBignum(valuePtr, bl);
+	    bp1 = &bl;
+	}
 	switch (type2) {
 	case TCL_NUMBER_INT:
-	    compare = mp_cmp_d(&big1, 0);
-	    mp_clear(&big1);
+	    compare = mp_cmp_d(bp1, 0);
 	    return compare;
 	case TCL_NUMBER_DOUBLE:
 	    d2 = *((const double *)ptr2);
 	    if (isinf(d2)) {
 		compare = (d2 > 0.0) ? MP_LT : MP_GT;
-		mp_clear(&big1);
 		return compare;
 	    }
 	    if ((d2 < (double)WIDE_MAX) && (d2 > (double)WIDE_MIN)) {
-		compare = mp_cmp_d(&big1, 0);
-		mp_clear(&big1);
+		compare = mp_cmp_d(bp1, 0);
 		return compare;
 	    }
 	    if (DBL_MANT_DIG > CHAR_BIT*sizeof(Tcl_WideInt)
 		    && modf(d2, &tmp) != 0.0) {
-		d1 = TclBignumToDouble(&big1);
-		mp_clear(&big1);
+		d1 = TclBignumToDouble(bp1);
 		goto doubleCompare;
 	    }
-	    Tcl_InitBignumFromDouble(NULL, d2, &big2);
+	    Tcl_InitBignumFromDouble(NULL, d2, &blx);
+	    bp2 = &blx;
 	    goto bigCompare;
 	case TCL_NUMBER_BIG:
-	    Tcl_GetBignumFromObj(NULL, value2Ptr, &big2);
+	    bp2 = (const mp_int *)ptr2;
 	bigCompare:
-	    compare = mp_cmp(&big1, &big2);
-	    mp_clear(&big1);
-	    mp_clear(&big2);
+	    compare = mp_cmp(bp1, bp2);
+	    if (bp1 == &blx || bp2 == &blx) {
+		mp_clear(&blx);
+	    }
 	    return compare;
 	default:
 	    TCL_UNREACHABLE();
 	}
+    }
     default:
 	Tcl_Panic("unexpected number type");
 	TCL_UNREACHABLE();
@@ -9260,69 +9280,18 @@ TclCompareTwoNumbers(
 /*
  *----------------------------------------------------------------------
  *
- * ParseArithSeriesArgument --
- *
- *	Helper for GenerateArithSeries() that encapsulates the weird calling of
- *	Tcl_ExprObj() if the value isn't numeric. Never calls Tcl_ExprObj()
- *	when alreadyPostExpr is set (which indicates that the analysis was done
- *	by the compiler).
- *
- * Results:
- *	TCL_OK if the value was numeric or a numeric-yielding expression, or
- *	TCL_ERROR if not. The variables pointed at by ptrPtr and typePtr will
- *	be updated on OK, the interpreter result on ERROR.
- *
- * Side effects:
- *	Can call Tcl_ExprObj() which can call commands, so arbitrary side
- *	effects are possible. May update the variable pointed at by valuePtr
- *	to contain the expression result.
- *
- *----------------------------------------------------------------------
- */
-static inline int
-ParseArithSeriesArgument(
-    Tcl_Interp *interp,		// The interpreter.
-    Tcl_Obj **valuePtr,		// Var holding object reference to parse/update [IN/OUT]
-    bool alreadyPostExpr,	// Whether the value has already been parsed as an expression [IN]
-    void **ptrPtr,		// Var to receive ref to number contents [OUT]
-    int *typePtr)		// Var to receive number type [OUT]
-{
-    Tcl_Obj *value = *valuePtr, *tmp;
-    if (alreadyPostExpr) {
-	return GetNumberFromObj(interp, value, ptrPtr, typePtr);
-    }
-    if (TclHasInternalRep(value, &tclExprCodeType)
-	    || GetNumberFromObj(NULL, value, ptrPtr, typePtr) != TCL_OK) {
-	if (Tcl_ExprObj(interp, value, &tmp) != TCL_OK) {
-	    return TCL_ERROR;
-	}
-	// Switch to the object out of the expression.
-	Tcl_DecrRefCount(value);
-	*valuePtr = value = tmp;
-	if (GetNumberFromObj(interp, value, ptrPtr, typePtr) != TCL_OK) {
-	    return TCL_ERROR;
-	}
-    }
-    return TCL_OK;
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * GenerateArithSeries --
  *
  *	This is the core of the implementation of the INST_ARITH_SERIES opcode,
- *	handling the decoding of the arguments (applying Tcl_ExprObj() if
- *	necessary) before handing off to TclNewArithSeriesObj() to build the
- *	series.
+ *	handling the decoding of the arguments before handing off to
+ *	TclNewArithSeriesObj() to build the series.
  *
  * Results:
  *	The arithmetic series object (zero refcount) or NULL on error, when a
  *	message will be left in the interpreter result.
  *
  * Side effects:
- *	Can call Tcl_ExprObj() which can call commands, so arbitrary side
- *	effects are possible.
+ *	Parses arguments as numbers so type conversions may occur.
  *
  *----------------------------------------------------------------------
  */
@@ -9332,8 +9301,7 @@ GenerateArithSeries(
     Tcl_Obj *from,		// The from value, or NULL if not supplied.
     Tcl_Obj *to,		// The to value, or NULL if not supplied.
     Tcl_Obj *step,		// The step value, or NULL if not supplied.
-    Tcl_Obj *count,		// The count value, or NULL if not supplied.
-    unsigned evalMask)		// Which values are already expr results.
+    Tcl_Obj *count)		// The count value, or NULL if not supplied.
 {
     Tcl_Obj *result = NULL;
     int type, useDoubles = 0;
@@ -9359,8 +9327,7 @@ GenerateArithSeries(
      */
 
     if (from) {
-	if (ParseArithSeriesArgument(interp, &from,
-		evalMask & TCL_ARITHSERIES_FROM_EVAL, &ptr, &type) != TCL_OK) {
+	if (GetNumberFromObj(interp, from, &ptr, &type) != TCL_OK) {
 	    goto cleanupOnError;
 	}
 	switch (type) {
@@ -9377,8 +9344,7 @@ GenerateArithSeries(
     }
 
     if (to) {
-	if (ParseArithSeriesArgument(interp, &to,
-		evalMask & TCL_ARITHSERIES_TO_EVAL, &ptr, &type) != TCL_OK) {
+	if (GetNumberFromObj(interp, to, &ptr, &type) != TCL_OK) {
 	    goto cleanupOnError;
 	}
 	switch (type) {
@@ -9397,8 +9363,7 @@ GenerateArithSeries(
     }
 
     if (step) {
-	if (ParseArithSeriesArgument(interp, &step,
-		evalMask & TCL_ARITHSERIES_STEP_EVAL, &ptr, &type) != TCL_OK) {
+	if (GetNumberFromObj(interp, step, &ptr, &type) != TCL_OK) {
 	    goto cleanupOnError;
 	}
 	switch (type) {
@@ -9417,8 +9382,7 @@ GenerateArithSeries(
     // Convert count to integer if not already
     // Almost the same as above cases except how floats are really handled.
     if (count) {
-	if (ParseArithSeriesArgument(interp, &count,
-		evalMask & TCL_ARITHSERIES_COUNT_EVAL, &ptr, &type) != TCL_OK) {
+	if (GetNumberFromObj(interp, count, &ptr, &type) != TCL_OK) {
 	    goto cleanupOnError;
 	}
 	switch (type) {

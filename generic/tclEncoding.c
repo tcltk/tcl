@@ -258,6 +258,8 @@ static Tcl_EncodingConvertProc	Utf16ToUtfProc;
 static Tcl_EncodingConvertProc	UtfToUtf16Proc;
 static Tcl_EncodingConvertProc	UtfToUcs2Proc;
 static Tcl_EncodingConvertProc	UtfToUtfProc;
+static Tcl_EncodingConvertProc	UtfToCesu8Proc;
+static Tcl_EncodingConvertProc	Cesu8ToUtfProc;
 static Tcl_EncodingConvertProc	Iso88591FromUtfProc;
 static Tcl_EncodingConvertProc	Iso88591ToUtfProc;
 
@@ -515,10 +517,10 @@ FillEncodingFileMap(void)
  */
 enum InternalEncodingFlags {
     TCL_ENCODING_LE = 0x100,	/* Used to distinguish LE/BE variants */
-    ENCODING_UTF = 0x200,	/* For UTF-8 encoding, allow 4-byte output
-				 * sequences */
-    ENCODING_INPUT = 0x400	/* For UTF-8/CESU-8 encoding, means
-				 * external -> internal */
+    ENCODING_INPUT = 0x400	/* Only affects UTF-8 encoder. If set,
+				 * external (standard UTF-8) ->
+				 * internal (Tcl TUTF-8). If unset, the
+				 * reverse */
 };
 
 void
@@ -565,10 +567,15 @@ TclInitEncodingSubsystem(void)
     type.fromUtfProc	= UtfToUtfProc;
     type.freeProc	= NULL;
     type.nullSize	= 1;
-    type.clientData	= INT2PTR(ENCODING_UTF);
-    tclUtf8Encoding = Tcl_CreateEncoding(&type);
     type.clientData	= NULL;
+    tclUtf8Encoding = Tcl_CreateEncoding(&type);
+
     type.encodingName	= "cesu-8";
+    type.toUtfProc	= Cesu8ToUtfProc;
+    type.fromUtfProc	= UtfToCesu8Proc;
+    type.freeProc	= NULL;
+    type.nullSize	= 1;
+    type.clientData	= NULL;
     Tcl_CreateEncoding(&type);
 
     type.toUtfProc	= Utf16ToUtfProc;
@@ -986,7 +993,6 @@ Tcl_SetSystemEncoding(
 {
     Tcl_Encoding encoding = NULL;
 
-
     if (name && *name) {
 	encoding = Tcl_GetEncoding(interp, name); /* this increases refCount */
 	if (encoding == NULL) {
@@ -999,11 +1005,7 @@ Tcl_SetSystemEncoding(
     if ((encoding ? encoding : defaultEncoding) == systemEncoding) {
 	if (encoding) {
 	    Tcl_FreeEncoding(encoding); /* paired to Tcl_GetEncoding */
-
-
 	}
-
-
 	return TCL_OK;
     }
 
@@ -1206,6 +1208,7 @@ Tcl_ExternalToUtfDStringEx(
 
     if (src == NULL) {
 	srcLen = 0;
+	src = "";	/* Avoid ABSAN warnings about ops on NULL pointers */
     } else if (srcLen < 0) {
 	srcLen = encodingPtr->lengthProc(src);
     }
@@ -1342,6 +1345,7 @@ Tcl_ExternalToUtf(
 
     if (src == NULL) {
 	srcLen = 0;
+	src = "";	/* Avoid ABSAN warnings about ops on NULL pointers */
     } else if (srcLen < 0) {
 	Encoding *encodingPtr = (Encoding *)encoding;
 	if (encodingPtr == NULL) {
@@ -1382,7 +1386,6 @@ Tcl_ExternalToUtf(
 	 */
 	result = TCL_ERROR;
     }
-
 
     if (srcReadPtr) {
 	*srcReadPtr = (int)srcRead;
@@ -1462,6 +1465,7 @@ Tcl_ExternalToUtfEx(
 
     if (src == NULL) {
 	srcLen = 0;
+	src = "";	/* Avoid ABSAN warnings about ops on NULL pointers */
     } else if (srcLen < 0) {
 	srcLen = encodingPtr->lengthProc(src);
     }
@@ -1475,6 +1479,8 @@ Tcl_ExternalToUtfEx(
 	flags |= TCL_ENCODING_START | TCL_ENCODING_END;
 	statePtr = &localState;
     }
+
+    bool charLimited = ((flags & TCL_ENCODING_CHAR_LIMIT) != 0) && (dstCharsPtr != NULL);
 
     /* Note two separate checks to handle intermediate underflow */
     if (terminatorLength > dstLen) {
@@ -1494,8 +1500,6 @@ Tcl_ExternalToUtfEx(
 	/* UTF-8 -> TUTF-8 */
 	flags |= ENCODING_INPUT;
     }
-
-    int charLimited = (flags & TCL_ENCODING_CHAR_LIMIT) && (dstCharsPtr != NULL);
 
     /*
      * The low level encoding routines only take int arguments. Since they
@@ -1542,9 +1546,8 @@ Tcl_ExternalToUtfEx(
 	}
 
 	result = encodingPtr->toUtfProc(encodingPtr->clientData, src,
-	    chunkSrcLen, chunkFlags, statePtr, dst, chunkDstLen, &chunkSrcRead,
-	    &chunkDstWritten, &chunkDstChars);
-
+		chunkSrcLen, chunkFlags, statePtr, dst, chunkDstLen,
+		&chunkSrcRead, &chunkDstWritten, &chunkDstChars);
 
 	assert(chunkSrcRead <= srcBytesLeft);
 	srcBytesLeft -= chunkSrcRead;
@@ -1773,6 +1776,7 @@ Tcl_UtfToExternalDStringEx(
 
     if (src == NULL) {
 	srcLen = 0;
+	src = "";	/* Avoid ABSAN warnings about ops on NULL pointers */
     } else if (srcLen < 0) {
 	srcLen = strlen(src);
     }
@@ -1911,6 +1915,7 @@ Tcl_UtfToExternal(
 
     if (src == NULL) {
 	srcLen = 0;
+	src = "";	/* Avoid ABSAN warnings about ops on NULL pointers */
     } else if (srcLen < 0) {
 	srcLen = strlen(src);
     }
@@ -2033,6 +2038,7 @@ Tcl_UtfToExternalEx(
 
     if (src == NULL) {
 	srcLen = 0;
+	src = "";	/* Avoid ABSAN warnings about ops on NULL pointers */
     } else if (srcLen < 0) {
 	srcLen = strlen(src); /* strlen works for TUTF-8 */
     }
@@ -2046,6 +2052,14 @@ Tcl_UtfToExternalEx(
 	flags |= TCL_ENCODING_START | TCL_ENCODING_END;
 	statePtr = &localState;
     }
+
+    /*
+     * TODO - The fromUtf routines do not support the
+     * TCL_ENCODING_CHAR_LIMIT flag. Ignore if present. However, for future
+     * support, the looping code is prepared to handle it.
+     */
+    flags &= ~TCL_ENCODING_CHAR_LIMIT;
+    bool charLimited = ((flags & TCL_ENCODING_CHAR_LIMIT) != 0) && (dstCharsPtr != NULL);
 
     /* Note two separate checks to handle intermediate underflow */
     if (terminatorLength > dstLen) {
@@ -2065,14 +2079,6 @@ Tcl_UtfToExternalEx(
 	/* TUTF-8 -> UTF-8 */
 	flags &= ~ENCODING_INPUT; /* Ensure bit not set */
     }
-
-    /*
-     * TODO - The fromUtf routines do not support the
-     * TCL_ENCODING_CHAR_LIMIT flag. Ignore if present. However, for future
-     * support, the looping code is prepared to handle it.
-     */
-    flags &= ~TCL_ENCODING_CHAR_LIMIT;
-    int charLimited = (flags & TCL_ENCODING_CHAR_LIMIT) && (dstCharsPtr != NULL);
 
     /*
      * The low level encoding routines only take int arguments. Since they
@@ -2243,7 +2249,7 @@ storeResult:
 
     return result;
 }
-
+
 /*
  *---------------------------------------------------------------------------
  *
@@ -2951,30 +2957,217 @@ BinaryProc(
     return result;
 }
 
+static int
+UtfToUtfProc(
+    void *clientData,
+    const char *src,
+    int srcLen,
+    int flags,
+    Tcl_EncodingState *statePtr,
+    char *dst,
+    int dstLen,
+    int *srcReadPtr,
+    int *dstWrotePtr,
+    int *dstCharsPtr)
+{
+    const char *srcStart, *srcEnd, *srcClose;
+    const char *dstStart, *dstEnd;
+    int result, numChars = 0, charLimit = INT_MAX;
+    int ch;
+    int profile;
+
+    *statePtr = 0;
+    result = TCL_OK;
+
+    srcStart = src;
+    srcEnd = src + srcLen;
+    srcClose = srcEnd;
+    if ((flags & TCL_ENCODING_END) == 0) {
+	srcClose -= TCL_UTF_MAX;
+    }
+    if (flags & TCL_ENCODING_CHAR_LIMIT) {
+	charLimit = *dstCharsPtr;
+    }
+
+    dstStart = dst;
+    flags |= PTR2INT(clientData);
+
+    dstEnd = dst + dstLen - TCL_UTF_MAX;
+
+    /* Checks if a source byte can be copied directly to destination */
+#define BYTE_COPYABLE(byte_) \
+    (UCHAR(byte_) < 0x80 && ((UCHAR(byte_) != 0)))
+
+    profile = ENCODING_PROFILE_GET(flags);
+
+    for (numChars = 0; src < srcEnd && numChars < charLimit; numChars++) {
+	if ((src > srcClose) && (!Tcl_UtfCharComplete(src, srcEnd - src))) {
+	    result = TCL_CONVERT_MULTIBYTE;
+	    break;
+	}
+	if (dst > dstEnd) {
+	    result = TCL_CONVERT_NOSPACE;
+	    break;
+	}
+
+	if (BYTE_COPYABLE(*src)) {
+    	    /*
+    	     * Common case fast path for non-nul ASCII bytes.
+    	     *
+    	     * Because we resolved any pending surrogate above (before the
+    	     * loop), *statePtr is guaranteed to be 0 here, so no
+    	     * CHECK_ISOLATEDSURROGATE() call is needed.
+    	     */
+	    const char *p = src;
+	    ptrdiff_t copyCount = srcEnd - src;
+	    if (charLimit != INT_MAX) {
+		if (copyCount > (charLimit - numChars)) {
+		    copyCount = charLimit - numChars;
+		}
+	    }
+	    if (copyCount > (dstEnd - dst + 1)) {
+		copyCount = dstEnd - dst + 1;
+	    }
+	    const char *srcStop = src + copyCount;
+	    while (p < srcStop && BYTE_COPYABLE(*p)) {
+		*dst++ = *p++;
+	    }
+	    numChars += (int)(p - src) - 1;
+	    src = p;
+	} else if ((UCHAR(*src) == 0xC0) && (src + 1 < srcEnd) &&
+		(UCHAR(src[1]) == 0x80) &&
+		(!(flags & ENCODING_INPUT) || !PROFILE_TCL8(profile))) {
+	    /* Special sequence \xC0\x80 */
+	    if (!PROFILE_TCL8(profile) && (flags & ENCODING_INPUT)) {
+		if (PROFILE_REPLACE(profile)) {
+		    dst += Tcl_UniCharToUtf(UNICODE_REPLACE_CHAR, dst);
+		    src += 2;
+		} else {
+		    /* PROFILE_STRICT */
+		    result = TCL_CONVERT_SYNTAX;
+		    break;
+		}
+	    } else {
+		*dst++ = 0;
+		src += 2;
+	    }
+	} else if (!Tcl_UtfCharComplete(src, srcEnd - src)) {
+	    /*
+	     * Incomplete byte sequence (truncated UTF-8, not just end of
+	     * source buffer — that is caught by the srcClose check above).
+	     */
+	    if (flags & ENCODING_INPUT) {
+		if (PROFILE_STRICT(profile)) {
+		    result = (flags & TCL_ENCODING_CHAR_LIMIT)
+			    ? TCL_CONVERT_MULTIBYTE
+			    : TCL_CONVERT_SYNTAX;
+		    break;
+		}
+	    }
+	    if (PROFILE_REPLACE(profile)) {
+		ch = UNICODE_REPLACE_CHAR;
+		++src;
+	    } else {
+		/* TCL_ENCODING_PROFILE_TCL8 */
+		char chbuf[2];
+		chbuf[0] = UCHAR(*src++);
+		chbuf[1] = 0;
+		TclUtfToUniChar(chbuf, &ch);
+	    }
+	    dst += Tcl_UniCharToUtf(ch, dst);
+	} else {
+	    /* Have a complete character */
+	    size_t len = TclUtfToUniChar(src, &ch);
+
+	    /*
+	     * For invalid inputs, Tcl_UtfToUniChar will return the byte
+	     * itself and len == 1. We know this is invalid because valid
+	     * single byte ASCII is already handled above except for 0.
+	     * For the output case, Tcl should not have invalid byte sequences
+	     * internally but if it does, garbage in, garbage out. This is
+	     * historical behavior that should be changed imho. See
+	     * ticket [b69e00ecf6]. TODO.
+	     */
+	    if (flags & ENCODING_INPUT) {
+		if ((len < 2) && (ch != 0)) {
+		    if (PROFILE_STRICT(profile)) {
+			result = TCL_CONVERT_SYNTAX;
+			break;
+		    } else if (PROFILE_REPLACE(profile)) {
+			ch = UNICODE_REPLACE_CHAR;
+		    }
+		}
+	    }
+
+	    const char *saveSrc = src;
+	    src += len;
+
+	    if (SURROGATE(ch)) {
+		if (PROFILE_STRICT(profile)) {
+		    result = (flags & ENCODING_INPUT) ? TCL_CONVERT_SYNTAX
+						      : TCL_CONVERT_UNKNOWN;
+		    src = saveSrc;
+		    break;
+		} else if (PROFILE_REPLACE(profile)) {
+		    ch = UNICODE_REPLACE_CHAR;
+		}
+		/* PROFILE_TCL8: fall through and output as-is */
+	    }
+	    /* Normal character (or surrogate resolved to replacement/as-is) */
+	    assert(ch >= 0 && ch <= 0x10FFFF);
+	    if (ch == 0) {
+		if (flags & ENCODING_INPUT) {
+		    *dst++ = (char)0xC0;
+		    *dst++ = (char)0x80;
+		} else {
+		    *dst++ = 0;
+		}
+	    } else if ((unsigned)ch < 0x800) {
+		assert(ch >= 0x80);
+		*dst++ = (char)(0xC0 | (ch >> 6));
+		*dst++ = (char)(0x80 | (ch & 0x3F));
+	    } else if ((unsigned)ch < 0x10000) {
+		*dst++ = (char)(0xE0 | (ch >> 12));
+		*dst++ = (char)(0x80 | ((ch >> 6) & 0x3F));
+		*dst++ = (char)(0x80 | (ch & 0x3F));
+	    } else {
+		*dst++ = (char)(0xF0 | (ch >> 18));
+		*dst++ = (char)(0x80 | ((ch >> 12) & 0x3F));
+		*dst++ = (char)(0x80 | ((ch >> 6)  & 0x3F));
+		*dst++ = (char)(0x80 | (ch & 0x3F));
+	    }
+	}
+    }
+
+    *srcReadPtr  = src - srcStart;
+    *dstWrotePtr = dst - dstStart;
+    *dstCharsPtr = numChars;
+    return result;
+
+#undef BYTE_COPYABLE
+}
+
 /*
- *-------------------------------------------------------------------------
+ * UtfToCesu8Proc --
  *
- * UtfToUtfProc --
- *
- *	Converts from UTF-8 to UTF-8. Note that the UTF-8 to UTF-8 translation
- *	is not a no-op, because it turns a stream of improperly formed
- *	UTF-8 into a properly-formed stream.
+ *	Converts TUTF-8 to CESU-8 unless ENCODING_INPUT is set in flags
+ *	in which case it converts TUTF-8 to TUTF-8.
  *
  * Results:
  *	Returns TCL_OK if conversion was successful.
  *
  * Side effects:
  *	None.
- *
- *-------------------------------------------------------------------------
  */
 
 static int
-UtfToUtfProc(
+UtfToCesu8Proc(
     void *clientData,		/* additional flags */
-    const char *src,		/* Source string in UTF-8. */
+    const char *src,		/* Source string in CESU-8 if ENCODING_INPUT
+				 * is set in flags, and TUTF-8 otherwise. */
     int srcLen,			/* Source string length in bytes. */
-    int flags,			/* TCL_ENCODING_* conversion control flags. */
+    int flags,			/* TCL_ENCODING_* conversion control flags
+				 * and ENCODING_INPUT as described above. */
     Tcl_EncodingState *statePtr,/* Place for conversion routine to store state
 				 * information used during a piecewise
 				 * conversion. Contents of statePtr are
@@ -3022,10 +3215,9 @@ UtfToUtfProc(
     flags |= PTR2INT(clientData);
 
     /*
-     * If output is UTF-8 or encoding for Tcl's internal encoding,
-     * max space needed is TCL_UTF_MAX. Otherwise, need 6 bytes (CESU-8)
+     * Max space for one char is TCL_UTF_MAX for TUTF-8 output, 6 for CESU-8.
      */
-    dstEnd = dst + dstLen - ((flags & (ENCODING_INPUT|ENCODING_UTF)) ? TCL_UTF_MAX : 6);
+    dstEnd = dst + dstLen - ((flags & ENCODING_INPUT) ? TCL_UTF_MAX : 6);
 
     /*
      * Macro to output an isolated high surrogate when it is not followed
@@ -3040,12 +3232,15 @@ UtfToUtfProc(
 	} else {							\
 	    high = (Tcl_UniChar)(ptrdiff_t) *statePtr;			\
 	}								\
-	assert(!(flags & ENCODING_UTF)); /* Must be CESU-8 */		\
 	assert(HIGH_SURROGATE(high));					\
 	assert(!PROFILE_STRICT(profile));				\
 	dst += Tcl_UniCharToUtf(high, dst);				\
 	*statePtr = 0; /* Reset state */				\
     } while (0)
+
+    /* Checks if a source byte can be copied directly to destination */
+#define BYTE_COPYABLE(byte_) \
+    (UCHAR(byte_) < 0x80 && ((UCHAR(byte_) != 0)))
 
     /*
      * Macro to check for isolated surrogate and either break with
@@ -3078,13 +3273,36 @@ UtfToUtfProc(
 	    result = TCL_CONVERT_NOSPACE;
 	    break;
 	}
-	if (UCHAR(*src) < 0x80 && !((UCHAR(*src) == 0) && (flags & ENCODING_INPUT))) {
+	if (BYTE_COPYABLE(*src)) {
 	    CHECK_ISOLATEDSURROGATE();
+    	    /*
+    	     * Common case fast path for non-0 ASCII. Condition to be met
+    	     *  - ASCII byte
+    	     *  - not nul byte when in ENCODING_INPUT (nul must be converted)
+    	     *  - charLimit not reached
+    	     *  - destination not full
+    	     */
+	    const char *p = src;
+	    ptrdiff_t copyCount = srcEnd - src;
+	    /* Limit to caller-specified character count */
+	    if (charLimit != INT_MAX) {
+		if (copyCount > (charLimit - numChars)) {
+		    copyCount = charLimit - numChars;
+		}
+	    }
 	    /*
-	     * Copy 7bit characters, but skip null-bytes when we are in input
-	     * mode, so that they get converted to \xC0\x80.
+	     * Limit to remaining destination space. dstEnd is the last
+	     * location we can write to, not the upper bound.
 	     */
-	    *dst++ = *src++;
+	    if (copyCount > (dstEnd - dst + 1)) {
+		copyCount = dstEnd - dst + 1;
+	    }
+	    const char *srcStop = src + copyCount;
+	    while (p < srcStop && BYTE_COPYABLE(*p)) {
+		*dst++ = *p++;
+	    }
+	    numChars += (int)(p - src) - 1; /* -1 to adjust loop increment */
+	    src = p;
 	} else if ((UCHAR(*src) == 0xC0) && (src + 1 < srcEnd) &&
 		(UCHAR(src[1]) == 0x80) &&
 		(!(flags & ENCODING_INPUT) || !PROFILE_TCL8(profile))) {
@@ -3108,7 +3326,6 @@ UtfToUtfProc(
 		*dst++ = 0;
 		src += 2;
 	    }
-
 	} else if (!Tcl_UtfCharComplete(src, srcEnd - src)) {
 	    /*
 	     * Incomplete byte sequence not because there are insufficient
@@ -3146,7 +3363,7 @@ UtfToUtfProc(
 	    *statePtr = 0; /* Reset surrogate */
 
 	    if (flags & ENCODING_INPUT) {
-		if (((len < 2) && (ch != 0)) || ((ch > 0xFFFF) && !(flags & ENCODING_UTF))) {
+		if (((len < 2) && (ch != 0)) || (ch > 0xFFFF)) {
 		    if (PROFILE_STRICT(profile)) {
 			result = TCL_CONVERT_SYNTAX;
 			break;
@@ -3158,8 +3375,7 @@ UtfToUtfProc(
 
 	    const char *saveSrc = src;
 	    src += len;
-	    if (!(flags & ENCODING_UTF) && !(flags & ENCODING_INPUT)
-		    && (ch > 0x7FF)) {
+	    if (!(flags & ENCODING_INPUT) && (ch > 0x7FF)) {
 		assert(savedSurrogate == 0);	/* Since this flag combo
 						 * will never set *statePtr */
 		if (ch > 0xFFFF) {
@@ -3175,59 +3391,49 @@ UtfToUtfProc(
 		*dst++ = (char)((ch | 0x80) & 0xBF);
 		continue;
 	    } else if (SURROGATE(ch)) {
-		if ((flags & ENCODING_UTF)) {
-		    /* UTF-8, not CESU-8, so surrogates should not appear */
-		    if (PROFILE_STRICT(profile)) {
-			result = (flags & ENCODING_INPUT)
-				? TCL_CONVERT_SYNTAX : TCL_CONVERT_UNKNOWN;
-			src = saveSrc;
-			break;
-		    } else if (PROFILE_REPLACE(profile)) {
-			ch = UNICODE_REPLACE_CHAR;
+		/* CESU-8 */
+		if (LOW_SURROGATE(ch)) {
+		    if (savedSurrogate) {
+			assert(HIGH_SURROGATE(savedSurrogate));
+			ch = 0x10000 + ((savedSurrogate - 0xd800) << 10) +
+			     (ch - 0xdc00);
 		    } else {
-			/* PROFILE_TCL8 - output as is */
+			/* Isolated low surrogate */
+			if (PROFILE_STRICT(profile)) {
+			    result = (flags & ENCODING_INPUT)
+				       ? TCL_CONVERT_SYNTAX
+				       : TCL_CONVERT_UNKNOWN;
+			    src = saveSrc;
+			    break;
+			} else if (PROFILE_REPLACE(profile)) {
+			    ch = UNICODE_REPLACE_CHAR;
+			} else {
+			    /* Tcl8 profile. Output low surrogate as is */
+			}
 		    }
 		} else {
-		    /* CESU-8 */
-		    if (LOW_SURROGATE(ch)) {
-			if (savedSurrogate) {
-			    assert(HIGH_SURROGATE(savedSurrogate));
-			    ch = 0x10000 + ((savedSurrogate - 0xd800) << 10) + (ch - 0xdc00);
+		    assert(HIGH_SURROGATE(ch));
+		    /* Save the high surrogate */
+		    *statePtr = (Tcl_EncodingState)(ptrdiff_t)ch;
+		    if (savedSurrogate) {
+			assert(HIGH_SURROGATE(savedSurrogate));
+			if (PROFILE_STRICT(profile)) {
+			    result = (flags & ENCODING_INPUT)
+				       ? TCL_CONVERT_SYNTAX
+				       : TCL_CONVERT_UNKNOWN;
+			    src = saveSrc;
+			    break;
+			} else if (PROFILE_REPLACE(profile)) {
+			    ch = UNICODE_REPLACE_CHAR;
 			} else {
-			    /* Isolated low surrogate */
-			    if (PROFILE_STRICT(profile)) {
-				result = (flags & ENCODING_INPUT)
-					? TCL_CONVERT_SYNTAX : TCL_CONVERT_UNKNOWN;
-				src = saveSrc;
-				break;
-			    } else if (PROFILE_REPLACE(profile)) {
-				ch = UNICODE_REPLACE_CHAR;
-			    } else {
-				/* Tcl8 profile. Output low surrogate as is */
-			    }
+			    /* Output the isolated high surrogate */
+			    ch = savedSurrogate;
 			}
 		    } else {
-			assert(HIGH_SURROGATE(ch));
-			/* Save the high surrogate */
-			*statePtr = (Tcl_EncodingState) (ptrdiff_t) ch;
-			if (savedSurrogate) {
-			    assert(HIGH_SURROGATE(savedSurrogate));
-			    if (PROFILE_STRICT(profile)) {
-				result = (flags & ENCODING_INPUT)
-					? TCL_CONVERT_SYNTAX : TCL_CONVERT_UNKNOWN;
-				src = saveSrc;
-				break;
-			    } else if (PROFILE_REPLACE(profile)) {
-				ch = UNICODE_REPLACE_CHAR;
-			    } else {
-				/* Output the isolated high surrogate */
-				ch = savedSurrogate;
-			    }
-			} else {
-			    /* High surrogate saved in *statePtr. Do not output anything just yet. */
-			    --numChars; /* Cancel the increment at end of loop */
-			    continue;
-			}
+			/* High surrogate saved in *statePtr. Do not output
+			 * anything just yet. */
+			--numChars; /* Cancel the increment at end of loop */
+			continue;
 		    }
 		}
 	    } else {
@@ -3235,13 +3441,40 @@ UtfToUtfProc(
 		CHECK_ISOLATEDSURROGATE();
 	    }
 
-	    dst += Tcl_UniCharToUtf(ch, dst);
+	    assert(ch >= 0 && ch <= 0x10FFFF);
+	    if (ch == 0) {
+		/* Nul character must be encoded as \xC0\x80 in Tcl's UTF-8 */
+		if (flags & ENCODING_INPUT) {
+		    *dst++ = (char)0xC0;
+		    *dst++ = (char)0x80;
+		} else {
+		    /*
+		     * Can only happen if Tcl's internal string rep contains a
+		     * nul byte (which is an invalid case but protect anyways)
+		     */
+		    *dst++ = 0;
+		}
+	    } else if ((unsigned)ch < 0x800) {
+		/* 0 < ch < 0x80 case already handled in ASCII path earlier */
+		assert(ch >= 0x80);
+		*dst++ = (char)(0xC0 | (ch >> 6));
+		*dst++ = (char)(0x80 | (ch & 0x3F));
+	    } else if ((unsigned)ch < 0x10000) {
+		*dst++ = (char)(0xE0 | (ch >> 12));
+		*dst++ = (char)(0x80 | ((ch >> 6) & 0x3F));
+		*dst++ = (char)(0x80 | (ch & 0x3F));
+	    } else {
+		/* Here, always ch < 0x110000 */
+		*dst++ = (char)(0xF0 | (ch >> 18));
+		*dst++ = (char)(0x80 | ((ch >> 12) & 0x3F));
+		*dst++ = (char)(0x80 | ((ch >> 6) & 0x3F));
+		*dst++ = (char)(0x80 | (ch & 0x3F));
+	    }
 	}
     }
 
     /* Check if an high surrogate left over */
     if (*statePtr) {
-	assert(!(flags & ENCODING_UTF)); /* CESU-8, Not UTF-8 */
 	if (!(flags & TCL_ENCODING_END)) {
 	    /* More data coming */
 	} else {
@@ -3270,6 +3503,30 @@ UtfToUtfProc(
     *dstWrotePtr = dst - dstStart;
     *dstCharsPtr = numChars;
     return result;
+
+#undef BYTE_COPYABLE
+}
+
+/*
+ * Cesu8ToUtfProc --
+ *
+ *	Converts CESU-8 to TUTF-8.
+ *	See UtfToCesu8Proc for all parameter details.
+ *
+ * Results:
+ *	Returns TCL_OK if conversion was successful.
+ *
+ * Side effects:
+ *	None.
+ */
+static int
+Cesu8ToUtfProc(void *clientData, const char *src, int srcLen, int flags,
+    Tcl_EncodingState *statePtr, char *dst, int dstLen,
+    int *srcReadPtr, int *dstWrotePtr, int *dstCharsPtr)
+{
+    return UtfToCesu8Proc(clientData,
+	    src, srcLen, flags | ENCODING_INPUT, statePtr,
+	    dst, dstLen, srcReadPtr, dstWrotePtr, dstCharsPtr);
 }
 
 /*

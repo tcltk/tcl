@@ -526,11 +526,9 @@ TclCreateProc(
 	    goto procError;
 	}
 	if (fieldCount > 2) {
-	    Tcl_Obj *errorObj = Tcl_NewStringObj(
-		"too many fields in argument specifier \"", -1);
-	    Tcl_AppendObjToObj(errorObj, argArray[i]);
-	    Tcl_AppendToObj(errorObj, "\"", -1);
-	    Tcl_SetObjResult(interp, errorObj);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "too many fields in argument specifier \"%s\"",
+		    TclGetString(argArray[i])));
 	    errorCode = "FORMALARGUMENTFORMAT";
 	    goto procError;
 	}
@@ -559,11 +557,9 @@ TclCreateProc(
 		    goto procError;
 		}
 	    } else if (argnamei[0] == ':' && argnamei[1] == ':') {
-		Tcl_Obj *errorObj = Tcl_NewStringObj(
-			"formal parameter \"", -1);
-		Tcl_AppendObjToObj(errorObj, fieldValues[0]);
-		Tcl_AppendToObj(errorObj, "\" is not a simple name", -1);
-		Tcl_SetObjResult(interp, errorObj);
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"formal parameter \"%s\" is not a simple name",
+			TclGetString(fieldValues[0])));
 		errorCode = "FORMALARGUMENTFORMAT";
 		goto procError;
 	    }
@@ -606,12 +602,10 @@ TclCreateProc(
 
 		if ((valueLength != tmpLength)
 			|| memcmp(value, tmpPtr, tmpLength) != 0) {
-		    Tcl_Obj *errorObj = Tcl_ObjPrintf(
-			    "procedure \"%s\": formal parameter \"", procName);
-		    Tcl_AppendObjToObj(errorObj, fieldValues[0]);
-		    Tcl_AppendToObj(errorObj, "\" has "
-			"default value inconsistent with precompiled body", -1);
-		    Tcl_SetObjResult(interp, errorObj);
+		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			    "procedure \"%s\": formal parameter \"%s\" has "
+			    "default value inconsistent with precompiled body",
+			    procName, TclGetString(fieldValues[0])));
 		    errorCode = "BYTECODELIES";
 		    goto procError;
 		}
@@ -1001,8 +995,8 @@ TclNRUplevelObjCmd(
 	objPtr = Tcl_ConcatObj(objc, objv);
     }
 
-    TclNRAddCallback(interp, TclUplevelCallback, savedVarFramePtr, NULL, NULL,
-	    NULL);
+    TclNRAddCallback(interp, TclUplevelCallback, savedVarFramePtr,
+	    NULL, NULL, NULL);
     return TclNREvalObjEx(interp, objPtr, 0, invoker, word);
   uplevelSyntax:
     Tcl_WrongNumArgs(interp, 1, objv, "?level? command ?arg ...?");
@@ -1657,7 +1651,7 @@ TclNRInterpProc(
 #ifndef TCL_NO_DEPRECATED
 static int
 NRInterpProc(
-    void *clientData,	/* Record describing procedure to be
+    void *clientData,		/* Record describing procedure to be
 				 * interpreted. */
     Tcl_Interp *interp,		/* Interpreter in which procedure was
 				 * invoked. */
@@ -1679,7 +1673,7 @@ int
 TclObjInterpProc(
     void *clientData,		/* Record describing procedure to be
 				 * interpreted. */
-    Tcl_Interp *interp,	/* Interpreter in which procedure was
+    Tcl_Interp *interp,		/* Interpreter in which procedure was
 				 * invoked. */
     int objc,			/* Count of number of arguments to this
 				 * procedure. */
@@ -1692,8 +1686,7 @@ TclObjInterpProc(
     return Tcl_NRCallObjProc(interp, NRInterpProc, clientData, objc, objv);
 }
 #endif /* TCL_NO_DEPRECATED */
-
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -1759,7 +1752,7 @@ TclNRInterpProcCore(
 
 #ifdef USE_DTRACE
     if (TCL_DTRACE_PROC_ARGS_ENABLED()) {
-	Tcl_Size l = iPtr->varFramePtr->isProcCallFrame & FRAME_IS_LAMBDA ? 1 : 0;
+	Tcl_Size l = (iPtr->varFramePtr->isProcCallFrame & FRAME_IS_LAMBDA) ? 1 : 0;
 	const char *a[10];
 	Tcl_Size i;
 
@@ -1781,7 +1774,7 @@ TclNRInterpProcCore(
 	TclDecrRefCount(info);
     }
     if (TCL_DTRACE_PROC_ENTRY_ENABLED()) {
-	Tcl_Size l = iPtr->varFramePtr->isProcCallFrame & FRAME_IS_LAMBDA ? 1 : 0;
+	Tcl_Size l = (iPtr->varFramePtr->isProcCallFrame & FRAME_IS_LAMBDA) ? 1 : 0;
 
 	TCL_DTRACE_PROC_ENTRY(l < iPtr->varFramePtr->objc ?
 		TclGetString(iPtr->varFramePtr->objv[l]) : NULL,
@@ -1789,7 +1782,7 @@ TclNRInterpProcCore(
 		(Tcl_Obj **)(iPtr->varFramePtr->objv + l + 1));
     }
     if (TCL_DTRACE_PROC_ENTRY_ENABLED()) {
-	Tcl_Size l = iPtr->varFramePtr->isProcCallFrame & FRAME_IS_LAMBDA ? 1 : 0;
+	Tcl_Size l = (iPtr->varFramePtr->isProcCallFrame & FRAME_IS_LAMBDA) ? 1 : 0;
 
 	TCL_DTRACE_PROC_ENTRY(l < iPtr->varFramePtr->objc ?
 		TclGetString(iPtr->varFramePtr->objv[l]) : NULL,
@@ -1823,7 +1816,7 @@ InterpProcNR2(
     ProcErrorProc *errorProc = (ProcErrorProc *)data[1];
 
     if (TCL_DTRACE_PROC_RETURN_ENABLED()) {
-	Tcl_Size l = iPtr->varFramePtr->isProcCallFrame & FRAME_IS_LAMBDA ? 1 : 0;
+	Tcl_Size l = (iPtr->varFramePtr->isProcCallFrame & FRAME_IS_LAMBDA) ? 1 : 0;
 
 	TCL_DTRACE_PROC_RETURN(l < iPtr->varFramePtr->objc ?
 		TclGetString(iPtr->varFramePtr->objv[l]) : NULL, result);
@@ -1846,7 +1839,7 @@ InterpProcNR2(
 
     done:
     if (TCL_DTRACE_PROC_RESULT_ENABLED()) {
-	Tcl_Size l = iPtr->varFramePtr->isProcCallFrame & FRAME_IS_LAMBDA ? 1 : 0;
+	Tcl_Size l = (iPtr->varFramePtr->isProcCallFrame & FRAME_IS_LAMBDA) ? 1 : 0;
 	Tcl_Obj *r = Tcl_GetObjResult(interp);
 
 	TCL_DTRACE_PROC_RESULT(l < iPtr->varFramePtr->objc ?
