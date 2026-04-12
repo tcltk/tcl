@@ -165,7 +165,7 @@ VERSION         = $(TCL_MAJOR_VERSION)$(TCL_MINOR_VERSION)
 !endif
 !endif
 
-!if [nmakehlp -f $(OPTS) "noembed"]
+!if [$(NMAKEHLP_NATIVE) -f $(OPTS) "noembed"]
 !message *** Option noembed specified. Tcl script library will not be appended to the binary.
 TCL_EMBED_SCRIPTS = 0
 TCL_TEST_LIBRARY=$(ROOT:\=/)/library
@@ -180,31 +180,31 @@ TCL_TEST_LIBRARY=
 !if [echo REM = This file is generated from makefile.vc > versions.vc]
 !endif
 !if [echo PKG_HTTP_VER = \>> versions.vc] \
-   && [nmakehlp -V ..\library\http\pkgIndex.tcl http >> versions.vc]
+   && [$(NMAKEHLP_NATIVE) -V ..\library\http\pkgIndex.tcl http >> versions.vc]
 !endif
 !if [echo PKG_OPT_VER = \>> versions.vc] \
-   && [nmakehlp -V ..\library\opt\pkgIndex.tcl opt >> versions.vc]
+   && [$(NMAKEHLP_NATIVE) -V ..\library\opt\pkgIndex.tcl opt >> versions.vc]
 !endif
 !if [echo PKG_COOKIEJAR_VER = \>> versions.vc] \
-   && [nmakehlp -V ..\library\cookiejar\pkgIndex.tcl cookiejar >> versions.vc]
+   && [$(NMAKEHLP_NATIVE) -V ..\library\cookiejar\pkgIndex.tcl cookiejar >> versions.vc]
 !endif
 !if [echo PKG_TCLTEST_VER = \>> versions.vc] \
-   && [nmakehlp -V ..\library\tcltest\pkgIndex.tcl tcltest >> versions.vc]
+   && [$(NMAKEHLP_NATIVE) -V ..\library\tcltest\pkgIndex.tcl tcltest >> versions.vc]
 !endif
 !if [echo PKG_MSGCAT_VER = \>> versions.vc] \
-   && [nmakehlp -V ..\library\msgcat\pkgIndex.tcl msgcat >> versions.vc]
+   && [$(NMAKEHLP_NATIVE) -V ..\library\msgcat\pkgIndex.tcl msgcat >> versions.vc]
 !endif
 !if [echo PKG_PLATFORM_VER = \>> versions.vc] \
-   && [nmakehlp -V ..\library\platform\pkgIndex.tcl "platform " >> versions.vc]
+   && [$(NMAKEHLP_NATIVE) -V ..\library\platform\pkgIndex.tcl "platform " >> versions.vc]
 !endif
 !if [echo PKG_SHELL_VER = \>> versions.vc] \
-   && [nmakehlp -V ..\library\platform\pkgIndex.tcl "platform::shell" >> versions.vc]
+   && [$(NMAKEHLP_NATIVE) -V ..\library\platform\pkgIndex.tcl "platform::shell" >> versions.vc]
 !endif
 !if [echo PKG_DDE_VER = \>> versions.vc] \
-   && [nmakehlp -V ..\library\dde\pkgIndex.tcl "dde " >> versions.vc]
+   && [$(NMAKEHLP_NATIVE) -V ..\library\dde\pkgIndex.tcl "dde " >> versions.vc]
 !endif
 !if [echo PKG_REG_VER =\>> versions.vc] \
-   && [nmakehlp -V ..\library\registry\pkgIndex.tcl "registry " >> versions.vc]
+   && [$(NMAKEHLP_NATIVE) -V ..\library\registry\pkgIndex.tcl "registry " >> versions.vc]
 !endif
 
 !include versions.vc
@@ -806,7 +806,7 @@ tclConfig: $(OUT_DIR)\tclConfig.sh
 # TBD - is this tclConfig.sh file ever used? The values are incorrect!
 $(OUT_DIR)\tclConfig.sh: $(WIN_DIR)\tclConfig.sh.in
 	@echo Creating tclConfig.sh
-	@nmakehlp -s << $** >$@
+	@$(NMAKEHLP_NATIVE) -s << $** >$@
 @TCL_DLL_FILE@       $(TCLLIBNAME)
 @TCL_VERSION@        $(DOTVERSION)
 @TCL_MAJOR_VERSION@  $(TCL_MAJOR_VERSION)
@@ -982,7 +982,7 @@ $(TMP_DIR)\tclWinPanic.obj: $(WIN_DIR)\tclWinPanic.c
 	$(cc32) $(stubscflags) -Fo$@ $?
 
 $(TMP_DIR)\tclsh.exe.manifest: $(WIN_DIR)\tclsh.exe.manifest.in
-	@nmakehlp -s << $** >$@
+	@$(NMAKEHLP_NATIVE) -s << $** >$@
 @MACHINE@	  $(MACHINE:IX86=X86)
 @TCL_WIN_VERSION@  $(DOTVERSION).0.0
 <<
@@ -1096,7 +1096,7 @@ install-libraries: tclConfig tcl-nmake install-msgs install-tzdata
 	@$(CPY) "$(WIN_DIR)\rules.vc"              "$(LIB_INSTALL_DIR)\nmake\"
 	@$(CPY) "$(WIN_DIR)\targets.vc"              "$(LIB_INSTALL_DIR)\nmake\"
 	@$(CPY) "$(WIN_DIR)\nmakehlp.c"            "$(LIB_INSTALL_DIR)\nmake\"
-	@$(CPY) "$(WIN_DIR)\x86_64-w64-mingw32-nmakehlp.exe" "$(LIB_INSTALL_DIR)\nmake\"
+	@$(CPY) "$(WIN_DIR)\nmakehlp.exe"         "$(LIB_INSTALL_DIR)\nmake\"
 	@$(CPY) "$(OUT_DIR)\tcl.nmake"            "$(LIB_INSTALL_DIR)\nmake\"
 !if !$(TCL_EMBED_SCRIPTS)
 	@echo Installing package cookiejar $(PKG_COOKIEJAR_VER)
