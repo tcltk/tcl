@@ -27,7 +27,7 @@ to the userbase.
  - autoconf 2.73
  - http 2.10.2
  - Itcl 4.3.7
- - sqlite3 3.51.3
+ - sqlite3 3.53.0
  - Thread 3.0.5
  - tzdata 2026a
  - zlib 1.3.2
