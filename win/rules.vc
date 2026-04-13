@@ -38,7 +38,6 @@ _RULES_VC = 1
 !ifndef NMAKEHLP_NATIVE
 NMAKEHLP_NATIVE	= nmakehlp
 !endif
-!message NMAKEHLP_NATIVE=$(NMAKEHLP_NATIVE)
 
 # The following macros define the version of the rules.vc nmake build system
 # For modifications that are not backward-compatible, you *must* change
