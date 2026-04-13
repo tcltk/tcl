@@ -33,7 +33,7 @@ regsub - Perform substitutions based on regular expression pattern matching
 
 # Description
 
-This command matches the regular expression *exp* against *string*, and either copies *string* to the variable whose name is given by *varName* or returns *string* if *varName* is not present. (Regular expression matching is described in the **re\_syntax** reference page.) If there is a match, then while copying *string* to *varName* (or to the result of this command if *varName* is not present) the portion of *string* that matched *exp* is replaced with *subSpec*. If *subSpec* contains a "&" or "\\0", then it is replaced in the substitution with the portion of *string* that matched *exp*. If *subSpec* contains a "\\*n*", where *n* is a digit between 1 and 9, then it is replaced in the substitution with the portion of *string* that matched the *n*'th parenthesized subexpression of *exp*. Additional backslashes may be used in *subSpec* to prevent special interpretation of "&", "\\0", "\\*n*" and backslashes. The use of backslashes in *subSpec* tends to interact badly with the Tcl parser's use of backslashes, so it is generally safest to enclose *subSpec* in braces if it includes backslashes.
+This command matches the regular expression *exp* against *string*, and either copies *string* to the variable whose name is given by *varName* or returns *string* if *varName* is not present. (Regular expression matching is described in the [re\_syntax][re_syntax] reference page.) If there is a match, then while copying *string* to *varName* (or to the result of this command if *varName* is not present) the portion of *string* that matched *exp* is replaced with *subSpec*. If *subSpec* contains a "&" or "\\0", then it is replaced in the substitution with the portion of *string* that matched *exp*. If *subSpec* contains a "\\*n*", where *n* is a digit between 1 and 9, then it is replaced in the substitution with the portion of *string* that matched the *n*'th parenthesized subexpression of *exp*. Additional backslashes may be used in *subSpec* to prevent special interpretation of "&", "\\0", "\\*n*" and backslashes. The use of backslashes in *subSpec* tends to interact badly with the Tcl parser's use of backslashes, so it is generally safest to enclose *subSpec* in braces if it includes backslashes.
 
 If the initial arguments to **regsub** start with **-** then they are treated as switches.  The following switches are currently supported:
 
@@ -48,16 +48,16 @@ If the initial arguments to **regsub** start with **-** then they are treated as
     See [Examples] below for illustrative cases.
 
 [-expanded]{.lit}
-: Enables use of the expanded regular expression syntax where whitespace and comments are ignored.  This is the same as specifying the **(?x)** embedded option (see the **re\_syntax** manual page).
+: Enables use of the expanded regular expression syntax where whitespace and comments are ignored.  This is the same as specifying the **(?x)** embedded option (see the [re\_syntax][re_syntax] manual page).
 
 [-line]{.lit}
-: Enables newline-sensitive matching.  By default, newline is a completely ordinary character with no special meaning.  With this flag, "[^" bracket expressions and "." never match newline, "^" matches an empty string after any newline in addition to its normal function, and "$" matches an empty string before any newline in addition to its normal function.  This flag is equivalent to specifying both **-linestop** and **-lineanchor**, or the **(?n)** embedded option (see the **re\_syntax** manual page).
+: Enables newline-sensitive matching.  By default, newline is a completely ordinary character with no special meaning.  With this flag, "[^" bracket expressions and "." never match newline, "^" matches an empty string after any newline in addition to its normal function, and "$" matches an empty string before any newline in addition to its normal function.  This flag is equivalent to specifying both **-linestop** and **-lineanchor**, or the **(?n)** embedded option (see the [re\_syntax][re_syntax] manual page).
 
 [-linestop]{.lit}
-: Changes the behavior of "[^" bracket expressions and "." so that they stop at newlines.  This is the same as specifying the **(?p)** embedded option (see the **re\_syntax** manual page).
+: Changes the behavior of "[^" bracket expressions and "." so that they stop at newlines.  This is the same as specifying the **(?p)** embedded option (see the [re\_syntax][re_syntax] manual page).
 
 [-lineanchor]{.lit}
-: Changes the behavior of "^" and "$" (the "anchors") so they match the beginning and end of a line respectively.  This is the same as specifying the **(?w)** embedded option (see the **re\_syntax** manual page).
+: Changes the behavior of "^" and "$" (the "anchors") so they match the beginning and end of a line respectively.  This is the same as specifying the **(?w)** embedded option (see the [re\_syntax][re_syntax] manual page).
 
 [-nocase]{.lit}
 : Upper-case characters in *string* will be converted to lower-case before matching against *exp*;  however, substitutions specified by *subSpec* use the original unconverted form of *string*.
@@ -161,6 +161,7 @@ puts [regsub -all -command {\w+} $message {string totitle}]
 
 
 [apply]: apply.md
+[re_syntax]: re_syntax.md
 [regexp]: regexp.md
 [string]: string.md
 [subst]: subst.md

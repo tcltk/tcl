@@ -13,7 +13,7 @@
 .SH NAME
 lreplace \- Replace elements in a list with new elements
 .SH SYNOPSIS
-\fBlreplace \fIlist first last \fR?\fIelement element ...\fR?
+\fBlreplace \fIlist first last \fR?\fIelement ...\fR?
 .BE
 .SH DESCRIPTION
 .PP

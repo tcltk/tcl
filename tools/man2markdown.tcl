@@ -248,6 +248,13 @@ namespace eval ::ndoc {
 		info          {Tcl_CreateObjCommand CrtObjCmd tcl_library tclvars tcl_patchLevel tclvars oo::define define oo::objdefine objdefine oo::class class}
 		interp        {env tclvars Tcl_Eval Eval}
 		library       {Tcl_AppInit AppInit}
+		load          {Tcl_StaticLibrary StaticLibrary}
+		lsearch       {re\_syntax re_syntax}
+		
+		
+		regexp        {re\_syntax re_syntax}
+		regsub        {re\_syntax re_syntax}
+		switch        {re\_syntax re_syntax}
 	}]
 	
 	# dictionary of pages in which specific cmd words should *not* be linked
@@ -1831,7 +1838,7 @@ proc ::ndoc::mdLinks {md} {
 			if {$linkTarget ne ""} {set isValidLink 1}
 		}
 		if {! $isValidLink && ! [string is lower [string index $linkText 0]] && [string totitle $linkText] in $sectionTitles} {
-			# it's a valid cross reference to another section/subseczion in this text:
+			# it's a valid cross reference to another section/subsection in this text:
 			set linkText [string totitle $linkText]
 			set isValidLink 2
 			set linkTarget $linkText

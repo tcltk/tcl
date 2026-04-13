@@ -40,7 +40,7 @@ lset - Change an element in a list
 # Synopsis
 
 ::: {.synopsis} :::
-[lset]{.cmd} [varName]{.arg} [?index]{.arg} [...?]{.arg} [newValue]{.arg}
+[lset]{.cmd} [varName]{.arg} [index]{.optdot} [newValue]{.arg}
 :::
 
 # Description

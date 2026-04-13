@@ -59,13 +59,13 @@ This command searches the elements of *list* to see if one of them matches *patt
 If all matching style options are omitted, the default matching style is **-glob**.  If more than one matching style is specified, the last matching style given takes precedence.
 
 [-exact]{.lit}
-: *Pattern* is a literal string that is compared for exact equality against each list element.
+: *pattern* is a literal string that is compared for exact equality against each list element.
 
 [-glob]{.lit}
-: *Pattern* is a glob-style pattern which is matched against each list element using the same rules as the [string match][string] command.
+: *pattern* is a glob-style pattern which is matched against each list element using the same rules as the [string match][string] command.
 
 [-regexp]{.lit}
-: *Pattern* is treated as a regular expression and matched against each list element using the rules described in the **re\_syntax** reference page.
+: *pattern* is treated as a regular expression and matched against each list element using the rules described in the [re\_syntax][re_syntax] reference page.
 
 [-sorted]{.lit}
 : The list elements are in sorted order.  If this option is specified, **lsearch** will use a more efficient searching algorithm to search *list*.  If no other options are specified, *list* is assumed to be sorted in increasing order, and to contain ASCII strings.  This option is mutually exclusive with **-glob** and **-regexp**, and is treated exactly like **-exact** when either **-all** or **-not** are specified.
@@ -195,5 +195,6 @@ lsearch -stride 2 -index 1 -all -inline {abc abc abc bcd abc cde} *bc*
 [lindex]: lindex.md
 [lset]: lset.md
 [lsort]: lsort.md
+[re_syntax]: re_syntax.md
 [string]: string.md
 

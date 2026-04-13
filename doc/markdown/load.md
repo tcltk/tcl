@@ -50,11 +50,11 @@ The *interp* argument identifies the interpreter in which the library is to be l
 
 The actual loading of a file will only be done once for each *fileName* in an application.  If a given *fileName* is loaded into multiple interpreters, then the first **load** will load the code and call the initialization procedure;  subsequent **load**s will call the initialization procedure without loading the code again. For Tcl versions lower than 8.5, it is not possible to unload or reload a library. From version 8.5 however, the [unload] command allows the unloading of libraries loaded with **load**, for libraries that are aware of the Tcl's unloading mechanism.
 
-The **load** command also supports libraries that are statically linked with the application, if those libraries have been registered by calling the **Tcl\_StaticLibrary** procedure. If *fileName* is an empty string, then *prefix* must be specified.
+The **load** command also supports libraries that are statically linked with the application, if those libraries have been registered by calling the [Tcl\_StaticLibrary][StaticLibrary] procedure. If *fileName* is an empty string, then *prefix* must be specified.
 
 If *prefix* is omitted or specified as an empty string, Tcl tries to guess the prefix by taking the last element of *fileName*, strip off the first three characters if they are **lib**, then strip off the next four characters if they are **tcl9**, and use any following wordchars but not digits, converted to titlecase as the prefix. For example, the command **load libxyz4.2.so** uses the prefix **Xyz** and the command **load bin/last.so {}** uses the prefix **Last**.
 
-If *fileName* is an empty string, then *prefix* must be specified. The **load** command first searches for a statically loaded library (one that has been registered by calling the **Tcl\_StaticLibrary** procedure) by that name; if one is found, it is used. Otherwise, the **load** command searches for a dynamically loaded library by that name, and uses it if it is found.  If several different files have been **load**ed with different versions of the library, Tcl picks the file that was loaded first.
+If *fileName* is an empty string, then *prefix* must be specified. The **load** command first searches for a statically loaded library (one that has been registered by calling the [Tcl\_StaticLibrary][StaticLibrary] procedure) by that name; if one is found, it is used. Otherwise, the **load** command searches for a dynamically loaded library by that name, and uses it if it is found.  If several different files have been **load**ed with different versions of the library, Tcl picks the file that was loaded first.
 
 If **-global** is specified preceding the filename, all symbols found in the shared library are exported for global use by other libraries. The option **-lazy** delays the actual loading of symbols until their first actual use. The options may be abbreviated. The option **--** indicates the end of the options, and should be used if you wish to use a filename which starts with **-** and you provide a prefix to the **load** command.
 
@@ -115,5 +115,6 @@ foo
 
 
 [interp]: interp.md
+[StaticLibrary]: StaticLibrary.md
 [unload]: unload.md
 

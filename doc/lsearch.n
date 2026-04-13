@@ -35,19 +35,19 @@ last matching style given takes precedence.
 .TP
 \fB\-exact\fR
 .
-\fIPattern\fR is a literal string that is compared for exact equality
+\fIpattern\fR is a literal string that is compared for exact equality
 against each list element.
 .\" OPTION: -glob
 .TP
 \fB\-glob\fR
 .
-\fIPattern\fR is a glob-style pattern which is matched against each list
+\fIpattern\fR is a glob-style pattern which is matched against each list
 element using the same rules as the \fBstring match\fR command.
 .\" OPTION: -regexp
 .TP
 \fB\-regexp\fR
 .
-\fIPattern\fR is treated as a regular expression and matched against
+\fIpattern\fR is treated as a regular expression and matched against
 each list element using the rules described in the \fBre_syntax\fR
 reference page.
 .\" OPTION: -sorted

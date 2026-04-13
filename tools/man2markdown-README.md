@@ -36,7 +36,7 @@ section | number of documents | initial conversion | final conversion
 --------|---------------------|--------------------|-----------------
 1       | 1                   | 1                  | 0
 3       | 108                 | 108                | 0
-n       | 139                 | 139                | 60
+n       | 139                 | 139                | 76
 
 Final conversion of these files is currently done:
 1. after
@@ -99,7 +99,22 @@ Final conversion of these files is currently done:
 58. ledit
 59. library (might need manual postprocessing ...)
 60. lindex
-
+61. link
+62. linsert
+63. list
+64. llength
+65. lmap
+66. load
+67. lpop
+68. lrange
+69. lremove
+70. lrepeat
+71. lreplace
+72. lreverse
+73. lsearch
+74. lseq
+75. lset
+76. lsort
 
 
 The tk/doc directory comes next, after finishing Tcl.

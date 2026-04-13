@@ -40,7 +40,7 @@ lreplace - Replace elements in a list with new elements
 # Synopsis
 
 ::: {.synopsis} :::
-[lreplace]{.cmd} [list]{.arg} [first]{.arg} [last]{.arg} [element element]{.optdot}
+[lreplace]{.cmd} [list]{.arg} [first]{.arg} [last]{.arg} [element]{.optdot}
 :::
 
 # Description

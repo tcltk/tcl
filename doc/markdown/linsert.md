@@ -40,7 +40,7 @@ linsert - Insert elements into a list
 # Synopsis
 
 ::: {.synopsis} :::
-[linsert]{.cmd} [list]{.arg} [index]{.arg} [element element]{.optdot}
+[linsert]{.cmd} [list]{.arg} [index]{.arg} [element]{.optdot}
 :::
 
 # Description

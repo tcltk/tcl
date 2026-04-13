@@ -39,7 +39,7 @@ list - Create a list
 # Synopsis
 
 ::: {.synopsis} :::
-[list]{.cmd} [arg arg]{.optdot}
+[list]{.cmd} [arg]{.optdot}
 :::
 
 # Description
