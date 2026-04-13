@@ -21,17 +21,24 @@
 _RULES_VC = 1
 
 # We need a nmakehlp that will run on the host machine as part of the build.
-# IX86 runs on all architectures.
+# if TCLSH_NATIVE is set for cross compilation, we'll try to find an associated 
+# nmakehlp.exe that runs on the build architecture.
+!ifdef TCLSH_NATIVE
+!message TCLSH_NATIVE=$(TCLSH_NATIVE)
 !ifndef NMAKEHLP_NATIVE
-!if "$(MACHINE)" == "IX86" || "$(MACHINE)" == "$(NATIVE_ARCH)"
-!message "NMAKEHLP_NATIVE set to nmakehlp"
-NMAKEHLP_NATIVE	= nmakehlp
+!if [$(TCLSH_NATIVE) find_nmakehlp.tcl $(TCLSH_NATIVE) > find_nmakehlp.out]
+!error TCLSH_NATIVE is set, but unable to find associated nmakehlp.exe nearby.
 !else
-!error You must explicitly set NMAKEHLP_NATIVE for cross-compilation
+!message including find_nmakehlp.out:
+!include find_nmakehlp.out
 !endif
 !endif
-!message "NMAKEHLP_NATIVE set to $(NMAKEHLP_NATIVE)"
+!endif
 
+!ifndef NMAKEHLP_NATIVE
+NMAKEHLP_NATIVE	= nmakehlp
+!endif
+!message NMAKEHLP_NATIVE=$(NMAKEHLP_NATIVE)
 
 # The following macros define the version of the rules.vc nmake build system
 # For modifications that are not backward-compatible, you *must* change
@@ -569,7 +576,6 @@ NMAKEHLPC = $(_TCLDIR)\win\nmakehlp.c
 # We always build nmakehlp even if it exists since we do not know
 # what source it was built from.
 !if [$(cc32) -nologo "$(NMAKEHLPC)" -link -subsystem:console > nul]
-!message "Built nmakehlp.exe"
 !endif
 
 ################################################################
