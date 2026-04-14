@@ -1005,12 +1005,26 @@ DecodeZipEntryText(
 {
     Tcl_Encoding encoding;
 
+    /*
+     * Bug [275db3d985] - free up any existing dynamically storage as
+     * Tcl_ETUDE will initialize it resulting in a memory leak otherwise.
+     * This does have a potential impact on performance, in cases where the
+     * paths do not fit in the static storage field of the Tcl_DString, and
+     * dynamic storage needs to be allocated. However, those cases are
+     * likely to be rare. Alternative would have been to revert back to the
+     * more complex Tcl_ExternalToUtf loop present in Tcl 9.0 that preserves
+     * dynamically allocated storage by not using Tcl_ETUDE. This is
+     * simpler. (And don't replace with Tcl_DStringInit as caller calls this
+     * in a loop reusing the same Tcl_DString.)
+     */
+    Tcl_DStringFree(dstPtr);
+
     if (inputLength < 1) {
 	return Tcl_DStringValue(dstPtr);
     }
 
     /*
-     * We Tcl_ExternalToUtfDStringEx because that can report if it failed,
+     * We use Tcl_ExternalToUtfDStringEx because that can report if it failed,
      * allowing us to try a different encoding.
      *
      * The UTF-8 encoding is implemented internally, and so is guaranteed to
@@ -2064,7 +2078,6 @@ ZipFSCatalogFilesystem(
 	pathlen = ZipReadShort(start, end, q + ZIP_CENTRAL_PATHLEN_OFFS);
 	comlen = ZipReadShort(start, end, q + ZIP_CENTRAL_FCOMMENTLEN_OFFS);
 	extra = ZipReadShort(start, end, q + ZIP_CENTRAL_EXTRALEN_OFFS);
-	Tcl_DStringSetLength(&ds, 0);
 	path = DecodeZipEntryText(q + ZIP_CENTRAL_HEADER_LEN, pathlen, &ds);
 	if ((pathlen > 0) && (path[pathlen - 1] == '/')) {
 	    Tcl_DStringSetLength(&ds, pathlen - 1);
