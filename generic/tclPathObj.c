@@ -1289,13 +1289,13 @@ TclNewFSPathObj(
     PATHFLAGS(pathPtr) = TCLPATH_APPENDED;
     TclInvalidateStringRep(pathPtr);
 
-#if defined(_WIN32) || defined(MAC_OSX_TCL)
+#ifdef TCL_FILESYSTEM_NOCASE
     /*
-     * On Windows, paths are case insensitive but normalization means the
-     * path should match the exact case of the on-disk file entry. If
-     * path is not known to match the on-disk entry, be conservative and mark
-     * as needing normalization. Bug [108904173c]. On Unix paths are always
-     * case sensitive, so we don't need to do this check.
+     * If paths are case insensitive, normalization means the path should
+     * match the exact case of the on-disk file entry. If path is not known
+     * to match the on-disk entry, be conservative and mark as needing
+     * normalization. Bug [108904173c]. We do not need this check on
+     * case-sensitive platforms.
      */
     if ((flags & TCL_PATHNAME_FROM_FILE_SYSTEM) == 0) {
 	PATHFLAGS(pathPtr) |= TCLPATH_NEEDNORM;
