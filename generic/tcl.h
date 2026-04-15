@@ -323,7 +323,8 @@ typedef unsigned TCL_WIDE_INT_TYPE	Tcl_WideUInt;
 
 #if TCL_MAJOR_VERSION < 9
 # ifndef Tcl_Size
-    typedef int Tcl_Size;
+#   define Tcl_Size int
+#   define _TCLSIZEHANDLED
 # endif
 # ifndef TCL_SIZE_MAX
 #   define TCL_SIZE_MAX ((int)(((unsigned int)-1)>>1))
@@ -627,6 +628,7 @@ typedef void (Tcl_FinalizeNotifierProc) (void *clientData);
 typedef void (Tcl_MainLoopProc) (void);
 
 /* Abstract List functions */
+#if TCL_MAJOR_VERSION > 8
 typedef Tcl_Size (Tcl_ObjTypeLengthProc) (struct Tcl_Obj *listPtr);
 typedef int (Tcl_ObjTypeIndexProc) (Tcl_Interp *interp, struct Tcl_Obj *listPtr,
 	Tcl_Size index, struct Tcl_Obj** elemObj);
@@ -644,6 +646,7 @@ typedef int (Tcl_ObjTypeReplaceProc) (Tcl_Interp *interp,
 	Tcl_Size numToInsert, struct Tcl_Obj *const insertObjs[]);
 typedef int (Tcl_ObjTypeInOperatorProc) (Tcl_Interp *interp,
 	struct Tcl_Obj *valueObj, struct Tcl_Obj *listObj, int *boolResult);
+#endif
 
 #ifndef TCL_NO_DEPRECATED
 #   define Tcl_PackageInitProc Tcl_LibraryInitProc
@@ -2611,6 +2614,11 @@ TclBounceRefCount(
 	(*((tablePtr)->createProc))(tablePtr, (const char *)(key), newPtr)
 
 #endif /* RC_INVOKED */
+
+#ifdef _TCLSIZEHANDLED
+#   undef _TCLSIZEHANDLED
+#   undef Tcl_Size
+#endif
 
 /*
  * end block for C++

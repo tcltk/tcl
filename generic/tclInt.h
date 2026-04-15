@@ -169,6 +169,11 @@
 #endif
 #endif // TCL_FALLTHROUGH
 
+#if (TCL_MAJOR_VERSION < 9) && !defined(Tcl_Size)
+#   define Tcl_Size int
+#   define _TCLSIZEHANDLED
+# endif
+
 /*
  * The following procedures allow namespaces to be customized to support
  * special name resolution rules for commands/variables.
@@ -5175,6 +5180,11 @@ typedef struct NRE_callback {
 #else
 #define TCL_MAC_EMPTY_FILE(name)
 #endif /* MAC_OSX_TCL */
+
+#ifdef _TCLSIZEHANDLED
+#   undef _TCLSIZEHANDLED
+#   undef Tcl_Size
+#endif
 
 /*
  * Other externals.
