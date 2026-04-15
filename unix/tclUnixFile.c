@@ -402,7 +402,7 @@ TclpMatchInDirectory(
 		break;
 	    }
 	    utfname = Tcl_DStringValue(&utfDs);
-	    if (Tcl_StringCaseMatch(utfname, pattern, 0)) {
+	    if (Tcl_StringCaseMatch(utfname, pattern, TCL_FILESYSTEM_NOCASE)) {
 		int typeOk = 1;
 
 		if (types != NULL) {

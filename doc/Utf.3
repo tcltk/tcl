@@ -8,7 +8,7 @@
 .so man.macros
 .BS
 .SH NAME
-Tcl_UniChar, Tcl_UniCharToUtf, Tcl_UtfToUniChar, Tcl_UtfToChar16, Tcl_UtfToWChar, Tcl_UniCharToUtfDString, Tcl_UtfToUniCharDString, Tcl_Char16ToUtfDString, Tcl_UtfToWCharDString, Tcl_UtfToChar16DString, Tcl_WCharToUtfDString, Tcl_WCharLen, Tcl_Char16Len, Tcl_UniCharLen, Tcl_UniCharNcmp, Tcl_UniCharNcasecmp, Tcl_UniCharCaseMatch, Tcl_UtfNcmp, Tcl_UtfNcasecmp, Tcl_UtfCharComplete, Tcl_NumUtfChars, Tcl_UtfFindFirst, Tcl_UtfFindLast, Tcl_UtfNext, Tcl_UtfPrev, Tcl_UniCharAtIndex, Tcl_UtfAtIndex, Tcl_UtfBackslash \- routines for manipulating TUTF-8 encoded byte sequences
+Tcl_UniChar, Tcl_UniCharToUtf, Tcl_UtfToUniChar, Tcl_UtfToChar16, Tcl_UtfToWChar, Tcl_UniCharToUtfDString, Tcl_UtfToUniCharDString, Tcl_Char16ToUtfDString, Tcl_UtfToWCharDString, Tcl_UtfToChar16DString, Tcl_WCharToUtfDString, Tcl_WCharLen, Tcl_Char16Len, Tcl_UniCharLen, Tcl_UtfNcmp, Tcl_UtfNcasecmp, Tcl_UtfCharComplete, Tcl_NumUtfChars, Tcl_UtfFindFirst, Tcl_UtfFindLast, Tcl_UtfNext, Tcl_UtfPrev, Tcl_UniCharAtIndex, Tcl_UtfAtIndex, Tcl_UtfBackslash \- routines for manipulating TUTF-8 encoded byte sequences
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -53,15 +53,6 @@ Tcl_Size
 .sp
 Tcl_Size
 \fBTcl_UniCharLen\fR(\fIuniStr\fR)
-.sp
-int
-\fBTcl_UniCharNcmp\fR(\fIucs, uct, uniLength\fR)
-.sp
-int
-\fBTcl_UniCharNcasecmp\fR(\fIucs, uct, uniLength\fR)
-.sp
-int
-\fBTcl_UniCharCaseMatch\fR(\fIuniStr, uniPattern, nocase\fR)
 .sp
 int
 \fBTcl_UtfNcmp\fR(\fIcs, ct, length\fR)
@@ -232,21 +223,6 @@ the number of \fBwchar_t\fR units until the null.
 \fBTcl_UniCharLen\fR corresponds to \fBstrlen\fR for Tcl_UniChar
 characters.  It accepts a null-terminated Tcl_UniChar string and returns
 the number of Tcl_UniChar's (not bytes) in that string.
-.PP
-\fBTcl_UniCharNcmp\fR and \fBTcl_UniCharNcasecmp\fR correspond to \fBstrncmp\fR
-and \fBstrncasecmp\fR, respectively, for Tcl_UniChar code points. They accept
-two null-terminated Tcl_UniChar strings and the number of Tcl_UniChar code
-points to compare. Both strings are assumed to be at least \fIuniLength\fR
-characters long. \fBTcl_UniCharNcmp\fR compares the code points in two strings
-in order according to the Unicode character ordering. It returns an integer
-greater than, equal to, or less than 0 if the first string is greater than,
-equal to, or less than the second string respectively. \fBTcl_UniCharNcasecmp\fR
-is the case insensitive variant of \fBTcl_UniCharNcmp\fR.
-.PP
-\fBTcl_UniCharCaseMatch\fR is the Unicode equivalent to
-\fBTcl_StringCaseMatch\fR.  It accepts a null-terminated Tcl_UniChar string,
-a Tcl_UniChar pattern, a boolean value specifying whether the match should
-be case sensitive and returns whether the string matches the pattern.
 .PP
 \fBTcl_UtfNcmp\fR corresponds to \fBstrncmp\fR and accepts two null-terminated
 TUTF-8 encoded strings each of which should represent a sequence of at least
