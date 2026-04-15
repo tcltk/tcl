@@ -5188,7 +5188,7 @@ else case e in #(
 			else
 			    ac_cv_path_tclsh=$j
 			    break
-                        fi
+			fi
 		    fi
 		fi
 	    done
