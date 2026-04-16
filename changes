@@ -9455,4 +9455,7 @@ Many code fixes to avoid overflow or undefined behavior.  Thanks chrstphrchvz.
 
 2026-03-09 Valgrind reported error in SetScriptLimitCallback (nadkarni,nijtmans)
 
+2026-04-16 (feature) Adapt tcltest to support up to Tcl 9.1.
+=> tcltest 2.5.11
+
 - (to be) Released 8.6.18, Apr ??, 2026 - details at https://core.tcl-lang.org/tcl/ -
