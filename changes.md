@@ -30,6 +30,7 @@ to the userbase.
  - http 2.10.2
  - Itcl 4.3.7
  - sqlite3 3.53.0
+ - tcltest 2.5.11
  - Thread 3.0.5
  - tzdata 2026a
  - zlib 1.3.2
