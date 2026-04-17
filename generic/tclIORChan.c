@@ -381,7 +381,7 @@ TCL_DECLARE_MUTEX(rcForwardMutex)
  */
 
 static void		ForwardOpToHandlerThread(ReflectedChannel *rcPtr,
-			    ForwardedOperation op, const void *param);
+			    ForwardedOperation op, void *param);
 static int		ForwardProc(Tcl_Event *evPtr, int mask);
 static void		SrcExitProc(void *clientData);
 
@@ -2799,7 +2799,7 @@ static void
 ForwardOpToHandlerThread(
     ReflectedChannel *rcPtr,	/* Channel instance */
     ForwardedOperation op,	/* Forwarded driver operation */
-    const void *param)		/* Arguments */
+    void *param)		/* Arguments */
 {
     /*
      * Core of the communication from OWNER to HANDLER thread. The receiver is
