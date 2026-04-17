@@ -1148,7 +1148,7 @@ Here is a sketch of a sample test file illustrating those points:
 .PP
 .CS
 \fBpackage require tcltest 2.5\fR
-eval \fB::tcltest::configure\fR $argv
+\fB::tcltest::configure\fR {*}$::argv
 \fBpackage require example\fR
 namespace eval ::example::test {
     namespace import ::tcltest::*
@@ -1185,7 +1185,7 @@ Here is a sketch of a sample test suite main script:
 \fBpackage require example\fR
 \fB::tcltest::configure\fR -testdir \e
         [file dirname [file normalize [info script]]]
-eval \fB::tcltest::configure\fR $argv
+\fB::tcltest::configure\fR {*}$::argv
 \fB::tcltest::runAllTests\fR
 .CE
 .RE
@@ -1204,12 +1204,6 @@ from the variable \fB::argv\fR.  This is to support test suites
 that depend on the old behavior that \fBtcltest\fR was automatically
 configured from command line arguments.  New test files should not
 depend on this, but should explicitly include
-.PP
-.CS
-eval \fB::tcltest::configure\fR $::argv
-.CE
-.PP
-or
 .PP
 .CS
 \fB::tcltest::configure\fR {*}$::argv
