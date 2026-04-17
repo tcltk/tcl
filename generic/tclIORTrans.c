@@ -356,36 +356,36 @@ static int		ForwardProc(Tcl_Event *evPtr, int mask);
 static void		SrcExitProc(void *clientData);
 
 #define FreeReceivedError(p) \
-	do {								\
-	    if ((p)->base.mustFree) {					\
+    do {							\
+	if ((p)->base.mustFree) {				\
 		Tcl_Free((p)->base.msgStr);				\
-	    }								\
+	}							\
 	} while (0)
-#define PassReceivedErrorInterp(i,p) \
-	do {								\
-	    if ((i) != NULL) {						\
-		Tcl_SetChannelErrorInterp((i),				\
+#define PassReceivedErrorInterp(interp, p) \
+    do {							\
+	if ((interp) != NULL) {					\
+	    Tcl_SetChannelErrorInterp((interp),			\
 			Tcl_NewStringObj((p)->base.msgStr, -1));	\
-	    }								\
+	}							\
 	    FreeReceivedError(p);					\
 	} while (0)
-#define PassReceivedError(c,p) \
-	do {								\
-	    Tcl_SetChannelError((c),					\
-		    Tcl_NewStringObj((p)->base.msgStr, -1));		\
+#define PassReceivedError(chan, p) \
+    do {							\
+	Tcl_SetChannelError((chan),				\
+		Tcl_NewStringObj((p)->base.msgStr, -1));	\
 	    FreeReceivedError(p);					\
 	} while (0)
-#define ForwardSetStaticError(p,emsg) \
-	do {								\
-	    (p)->base.code = TCL_ERROR;					\
+#define ForwardSetStaticError(p, emsg) \
+    do {							\
+	(p)->base.code = TCL_ERROR;				\
 	    (p)->base.mustFree = 0;					\
-	    (p)->base.msgStr = (char *) (emsg);				\
+	(p)->base.msgStr = (char *) (emsg);			\
 	} while (0)
-#define ForwardSetDynamicError(p,emsg) \
-	do {								\
-	    (p)->base.code = TCL_ERROR;					\
+#define ForwardSetDynamicError(p, emsg) \
+    do {							\
+	(p)->base.code = TCL_ERROR;				\
 	    (p)->base.mustFree = 1;					\
-	    (p)->base.msgStr = (char *) (emsg);				\
+	(p)->base.msgStr = (char *) (emsg);			\
 	} while (0)
 
 static void		ForwardSetObjError(ForwardParam *p,
@@ -465,9 +465,10 @@ static int		TransformLimit(ReflectedTransform *rtPtr,
 /*
  * Operation codes for TransformFlush().
  */
-
-#define FLUSH_WRITE	1
-#define FLUSH_DISCARD	0
+enum TransformFlushOperations {
+    FLUSH_WRITE = 1,
+    FLUSH_DISCARD = 0
+};
 
 /*
  * Main methods to plug into the 'chan' ensemble'. ==================
@@ -1087,7 +1088,7 @@ ReflectInput(
 	 * below, possibly EOF).
 	 */
 
-	copied = ResultCopy(&rtPtr->result, UCHARP(buf), toRead);
+	copied = (int)ResultCopy(&rtPtr->result, UCHARP(buf), toRead);
 	toRead -= copied;
 	buf += copied;
 	gotBytes += copied;
@@ -1135,7 +1136,7 @@ ReflectInput(
 	    goto stop;
 	}
 
-	readBytes = Tcl_ReadRaw(rtPtr->parent,
+	readBytes = (int)Tcl_ReadRaw(rtPtr->parent,
 		(char *) Tcl_SetByteArrayLength(bufObj, toRead), toRead);
 	if (readBytes < 0) {
 	    if (Tcl_InputBlocked(rtPtr->parent) && (gotBytes > 0)) {
@@ -2105,8 +2106,8 @@ DeleteReflectedTransformMap(
     Tcl_Interp *interp)		/* The interpreter being deleted. */
 {
     ReflectedTransformMap *rtmPtr; /* The map */
-    Tcl_HashSearch hSearch;	 /* Search variable. */
-    Tcl_HashEntry *hPtr;	 /* Search variable. */
+    Tcl_HashSearch hSearch;	/* Search variable. */
+    Tcl_HashEntry *hPtr;	/* Search variable. */
     ReflectedTransform *rtPtr;
 #if TCL_THREADS
     ForwardingResult *resultPtr;
@@ -2267,8 +2268,8 @@ static void
 DeleteThreadReflectedTransformMap(
     TCL_UNUSED(void *))
 {
-    Tcl_HashSearch hSearch;	 /* Search variable. */
-    Tcl_HashEntry *hPtr;	 /* Search variable. */
+    Tcl_HashSearch hSearch;	   /* Search variable. */
+    Tcl_HashEntry *hPtr;	   /* Search variable. */
     Tcl_ThreadId self = Tcl_GetCurrentThread();
     ReflectedTransformMap *rtmPtr; /* The map */
     ForwardingResult *resultPtr;
@@ -3004,7 +3005,7 @@ ResultCopy(
 
 	memcpy(buf, rPtr->buf, toRead);
 	rPtr->used = 0;
-	copied = toRead;
+	copied = (int)toRead;
     } else if (rPtr->used > (size_t)toRead) {
 	/*
 	 * The internal buffer contains more than requested. Copy the
@@ -3015,7 +3016,7 @@ ResultCopy(
 	memmove(rPtr->buf, rPtr->buf + toRead, rPtr->used - toRead);
 
 	rPtr->used -= toRead;
-	copied = toRead;
+	copied = (int)toRead;
     } else {
 	/*
 	 * There is not enough in the buffer to satisfy the caller, so take
@@ -3025,7 +3026,7 @@ ResultCopy(
 	memcpy(buf, rPtr->buf, rPtr->used);
 	toRead = rPtr->used;
 	rPtr->used = 0;
-	copied = toRead;
+	copied = (int)toRead;
     }
 
     /* -- common postwork code ------- */
@@ -3097,7 +3098,7 @@ TransformWrite(
     Tcl_Obj *resObj;
     Tcl_Size bytec = 0;		/* Number of returned bytes */
     unsigned char *bytev;	/* Array of returned bytes */
-    int res;
+    Tcl_Size res;
 
     /*
      * Are we in the correct thread?
@@ -3107,7 +3108,7 @@ TransformWrite(
     if (rtPtr->thread != Tcl_GetCurrentThread()) {
 	ForwardParam p;
 
-	p.transform.buf = (char *) buf;
+	p.transform.buf = (char *)buf;
 	p.transform.size = toWrite;
 
 	ForwardOpToOwnerThread(rtPtr, ForwardedOutput, &p);
@@ -3213,7 +3214,7 @@ TransformFlush(
     Tcl_Obj *resObj;
     Tcl_Size bytec = 0;		/* Number of returned bytes */
     unsigned char *bytev;	/* Array of returned bytes */
-    int res;
+    Tcl_Size res;
 
     /*
      * Are we in the correct thread?

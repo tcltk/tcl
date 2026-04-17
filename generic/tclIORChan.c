@@ -161,7 +161,7 @@ typedef enum {
 static const char *const methodNames[] = {
     "blocking",		/* OPT */
     "cget",		/* OPT \/ Together or none */
-    "cgetall",		/* OPT /\ of these two     */
+    "cgetall",		/* OPT /\ of these two. */
     "configure",	/* OPT */
     "finalize",		/*     */
     "initialize",	/*     */
@@ -390,26 +390,37 @@ static int		ForwardProc(Tcl_Event *evPtr, int mask);
 static void		SrcExitProc(void *clientData);
 
 #define FreeReceivedError(p) \
-	if ((p)->base.mustFree) {                               \
-	    Tcl_Free((p)->base.msgStr);                           \
-	}
-#define PassReceivedErrorInterp(i,p) \
-	if ((i) != NULL) {                                      \
-	    Tcl_SetChannelErrorInterp((i),                      \
-		    Tcl_NewStringObj((p)->base.msgStr, -1));    \
-	}                                                       \
-	FreeReceivedError(p)
-#define PassReceivedError(c,p) \
-	Tcl_SetChannelError((c), Tcl_NewStringObj((p)->base.msgStr, -1)); \
-	FreeReceivedError(p)
-#define ForwardSetStaticError(p,emsg) \
-	(p)->base.code = TCL_ERROR;                             \
-	(p)->base.mustFree = 0;                                 \
-	(p)->base.msgStr = (char *) (emsg)
-#define ForwardSetDynamicError(p,emsg) \
-	(p)->base.code = TCL_ERROR;                             \
-	(p)->base.mustFree = 1;                                 \
-	(p)->base.msgStr = (char *) (emsg)
+    do {							\
+	if ((p)->base.mustFree) {				\
+	    Tcl_Free((p)->base.msgStr);				\
+	}							\
+    } while (0)
+#define PassReceivedErrorInterp(interp, p) \
+    do {							\
+	if ((interp) != NULL) {					\
+	    Tcl_SetChannelErrorInterp((interp),			\
+		    Tcl_NewStringObj((p)->base.msgStr, -1));	\
+	}							\
+	FreeReceivedError(p);					\
+    } while (0)
+#define PassReceivedError(chan, p) \
+    do {							\
+	Tcl_SetChannelError((chan),				\
+		Tcl_NewStringObj((p)->base.msgStr, -1));	\
+	FreeReceivedError(p);					\
+    } while (0)
+#define ForwardSetStaticError(p, emsg) \
+    do {							\
+	(p)->base.code = TCL_ERROR;				\
+	(p)->base.mustFree = 0;					\
+	(p)->base.msgStr = (char *) (emsg);			\
+    } while (0)
+#define ForwardSetDynamicError(p, emsg) \
+    do {							\
+	(p)->base.code = TCL_ERROR;				\
+	(p)->base.mustFree = 1;					\
+	(p)->base.msgStr = (char *) (emsg);			\
+    } while (0)
 
 static void		ForwardSetObjError(ForwardParam *p, Tcl_Obj *objPtr);
 
@@ -460,8 +471,9 @@ static const char *msg_seek_beforestart = "{Tried to seek before origin}";
 #if TCL_THREADS
 static const char *msg_send_originlost = "{Channel thread lost}";
 #endif /* TCL_THREADS */
-static const char *msg_send_dstlost    = "{Owner lost}";
-static const char *msg_dstlost    = "-code 1 -level 0 -errorcode NONE -errorinfo {} -errorline 1 {Owner lost}";
+static const char *msg_send_dstlost = "{Owner lost}";
+static const char *msg_dstlost =
+	"-code 1 -level 0 -errorcode NONE -errorinfo {} -errorline 1 {Owner lost}";
 
 /*
  * Main methods to plug into the 'chan' ensemble'. ==================
@@ -912,8 +924,8 @@ TclChanPostEventObjCmd(
 	return TCL_ERROR;
     }
     if (events == 0) {
-	Tcl_SetObjResult(interp,
-		Tcl_NewStringObj("bad event list: is empty", -1));
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"bad event list: is empty", -1));
 	return TCL_ERROR;
     }
 
@@ -1309,7 +1321,7 @@ ReflectInput(
 	    *errorCodePtr = EOK;
 	}
 
-	return p.input.toRead;
+	return (int)p.input.toRead;
     }
 #endif
 
@@ -1353,7 +1365,7 @@ ReflectInput(
     Tcl_DecrRefCount(toReadObj);
     Tcl_DecrRefCount(resObj);		/* Remove reference held from invoke */
     Tcl_Release(rcPtr);
-    return bytec;
+    return (int)bytec;
  invalid:
     *errorCodePtr = EINVAL;
  error:
@@ -1418,7 +1430,7 @@ ReflectOutput(
 	    *errorCodePtr = EOK;
 	}
 
-	return p.output.toWrite;
+	return (int)p.output.toWrite;
     }
 #endif
 
@@ -1777,7 +1789,7 @@ ReflectThread(
 
 static int
 ReflectSetOption(
-    void *clientData,	/* Channel to query */
+    void *clientData,		/* Channel to query */
     Tcl_Interp *interp,		/* Interpreter to leave error messages in */
     const char *optionName,	/* Name of requested option */
     const char *newValue)	/* The new value */
@@ -1849,7 +1861,7 @@ ReflectSetOption(
 
 static int
 ReflectGetOption(
-    void *clientData,	/* Channel to query */
+    void *clientData,		/* Channel to query */
     Tcl_Interp *interp,		/* Interpreter to leave error messages in */
     const char *optionName,	/* Name of reuqested option */
     Tcl_DString *dsPtr)		/* String to place the result into */
@@ -2002,7 +2014,7 @@ ReflectGetOption(
 
 static int
 ReflectTruncate(
-    void *clientData,	/* Channel to query */
+    void *clientData,		/* Channel to query */
     long long length)		/* Length to truncate to. */
 {
     ReflectedChannel *rcPtr = (ReflectedChannel *)clientData;
@@ -2085,7 +2097,7 @@ EncodeEventMask(
     int *mask)
 {
     int events;			/* Mask of events to post */
-    Tcl_Size listc;			/* #elements in eventspec list */
+    Tcl_Size listc;		/* #elements in eventspec list */
     Tcl_Obj **listv;		/* Elements of eventspec list */
     int evIndex;		/* Id of event for an element of the eventspec
 				 * list. */
@@ -2564,13 +2576,13 @@ MarkDead(
 
 static void
 DeleteReflectedChannelMap(
-    void *clientData,	/* The per-interpreter data structure. */
+    void *clientData,		/* The per-interpreter data structure. */
     Tcl_Interp *interp)		/* The interpreter being deleted. */
 {
     ReflectedChannelMap *rcmPtr = (ReflectedChannelMap *)clientData;
 				/* The map */
-    Tcl_HashSearch hSearch;	 /* Search variable. */
-    Tcl_HashEntry *hPtr;	 /* Search variable. */
+    Tcl_HashSearch hSearch;	/* Search variable. */
+    Tcl_HashEntry *hPtr;	/* Search variable. */
     ReflectedChannel *rcPtr;
     Tcl_Channel chan;
 #if TCL_THREADS
