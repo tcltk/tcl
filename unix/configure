@@ -10695,6 +10695,12 @@ then :
   printf '%s\n' "#define HAVE_CHFLAGS 1" >>confdefs.h
 
 fi
+ac_fn_c_check_func "$LINENO" "getattrlist" "ac_cv_func_getattrlist"
+if test "x$ac_cv_func_getattrlist" = xyes
+then :
+  printf '%s\n' "#define HAVE_GETATTRLIST 1" >>confdefs.h
+
+fi
 ac_fn_c_check_func "$LINENO" "mkstemps" "ac_cv_func_mkstemps"
 if test "x$ac_cv_func_mkstemps" = xyes
 then :
@@ -10708,13 +10714,6 @@ fi
 #--------------------------------------------------------------------
 
 if test "`uname -s`" = "Darwin" ; then
-    ac_fn_c_check_func "$LINENO" "getattrlist" "ac_cv_func_getattrlist"
-if test "x$ac_cv_func_getattrlist" = xyes
-then :
-  printf '%s\n' "#define HAVE_GETATTRLIST 1" >>confdefs.h
-
-fi
-
     ac_fn_c_check_header_compile "$LINENO" "copyfile.h" "ac_cv_header_copyfile_h" "$ac_includes_default"
 if test "x$ac_cv_header_copyfile_h" = xyes
 then :

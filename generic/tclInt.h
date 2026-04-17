@@ -2864,7 +2864,7 @@ typedef int (Tcl_FSLoadFileProc2) (Tcl_Interp *interp, Tcl_Obj *pathPtr,
  * Indicates whether the platform (NOT the file system!) generally treats
  * paths as case-insensitive. Passed to Tcl_StringMatch so keep as 0/1.
  */
-#if defined(_WIN32) || defined(MAC_OSX_TCL)
+#if defined(_WIN32) || defined(MAC_OSX_TCL) || defined(__CYGWIN__)
 #define TCL_FILESYSTEM_NOCASE 1
 #else
 #define TCL_FILESYSTEM_NOCASE 0

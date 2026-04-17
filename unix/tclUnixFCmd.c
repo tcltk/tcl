@@ -1992,6 +1992,8 @@ TclpMapLeafName(
 
     const char *onDiskName =
 	(const char *)&attrBuf.nameref + attrBuf.nameref.attr_dataoffset;
+#elif defined(__CYGWIN__)
+    const char *onDiskName = leafName;
 #else
 # error Missing implementation of TclpMapLeafName in the absence of getattrlist
     /* Mock to allow debugging on WSL */

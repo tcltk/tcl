@@ -518,14 +518,13 @@ SC_ENABLE_LANGINFO
 # Check for support of cfmakeraw, chflags and mkstemps functions
 #--------------------------------------------------------------------
 
-AC_CHECK_FUNCS(cfmakeraw chflags mkstemps)
+AC_CHECK_FUNCS(cfmakeraw chflags getattrlist mkstemps)
 
 #--------------------------------------------------------------------
 # Darwin specific API checks and defines
 #--------------------------------------------------------------------
 
 if test "`uname -s`" = "Darwin" ; then
-    AC_CHECK_FUNCS(getattrlist)
     AC_CHECK_HEADERS(copyfile.h)
     AC_CHECK_FUNCS(copyfile)
     if test $tcl_corefoundation = yes; then
