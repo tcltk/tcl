@@ -43,6 +43,11 @@ typedef struct PrivateVariableMapping PrivateVariableMapping;
 typedef struct ProcedureMethod ProcedureMethod;
 typedef struct PropertyStorage PropertyStorage;
 
+#if (TCL_MAJOR_VERSION < 9) && !defined(Tcl_Size)
+#   define Tcl_Size int
+#   define _TCLSIZEHANDLED
+# endif
+
 /*
  * The data that needs to be stored per method. This record is used to collect
  * information about all sorts of methods, including forwards, constructors
@@ -732,6 +737,11 @@ MODULE_SCOPE void	TclOORegisterInstanceProperty(Object *oPtr,
  */
 #define OO_ERROR(interp, code) \
     Tcl_SetErrorCode((interp), "TCL", "OO", #code, (char *)NULL)
+
+#ifdef _TCLSIZEHANDLED
+#   undef _TCLSIZEHANDLED
+#   undef Tcl_Size
+#endif
 
 #endif /* TCL_OO_INTERNAL_H */
 

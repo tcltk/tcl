@@ -20,6 +20,10 @@
 
 #if TCL_MAJOR_VERSION < 9
 #   define Tcl_MethodType2 void
+#if !defined(Tcl_Size)
+#   define Tcl_Size int
+#   define _TCLSIZEHANDLED
+# endif
 #endif
 
 /* !BEGIN!: Do not edit below this line. */
@@ -280,6 +284,10 @@ extern const TclOOStubs *tclOOStubsPtr;
 #   undef Tcl_MethodIsType2
 #   undef Tcl_NewInstanceMethod2
 #   undef Tcl_NewMethod2
+#endif
+#ifdef _TCLSIZEHANDLED
+#   undef _TCLSIZEHANDLED
+#   undef Tcl_Size
 #endif
 
 #endif /* _TCLOODECLS */
