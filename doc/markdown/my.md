@@ -55,7 +55,7 @@ Each object has its own **my** and **myclass** commands, contained in its instan
 
 # Examples
 
-This example shows basic use of **my** to use the **variables** method of the **oo::object** class, which is not publicly visible by default:
+This example shows basic use of **my** to use the **variables** method of the [oo::object][object] class, which is not publicly visible by default:
 
 ```
 oo::class create c {
@@ -92,7 +92,7 @@ set xyz "called"     → prints "callback: xyz {} write"
 ```
 
 ::: {.info version="TIP478"}
-This example shows how to access a private method of a class from an instance of that class. (See the **classmethod** declaration in **oo::define** for a higher level interface for doing this.)
+This example shows how to access a private method of a class from an instance of that class. (See the **classmethod** declaration in [oo::define][objdefine] for a higher level interface for doing this.)
 :::
 
 ```
@@ -123,5 +123,7 @@ y advanceTwice       → prints "in ::y step A: 7"
 
 
 [namespace]: namespace.md
+[objdefine]: objdefine.md
+[object]: object.md
 [trace]: trace.md
 

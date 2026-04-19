@@ -80,8 +80,7 @@ Object oriented programming is supported by the use of a package namespace.
 [::msgcat::mcn]{.cmd} [namespace]{.arg} [src-string]{.arg} [arg arg]{.optdot}
 : Like **::msgcat::mc**, but with the message namespace specified as first argument.
 
-
-**mcn** may be used for cases where the package namespace is not the namespace of the caller. An example is shown within the description of the command **::msgcat::mcpackagenamespaceget** below.
+    **mcn** may be used for cases where the package namespace is not the namespace of the caller. An example is shown within the description of the command **::msgcat::mcpackagenamespaceget** below.
 
 [::msgcat::mcmax]{.cmd} [src-string]{.optdot}
 : Given several source strings, **::msgcat::mcmax** returns the length of the longest translated string.  This is useful when designing localized GUIs, which may require that all buttons, for example, be a fixed width (which will be the width of the widest button).
@@ -89,73 +88,67 @@ Object oriented programming is supported by the use of a package namespace.
 [::msgcat::mcexists]{.cmd} [-exactnamespace]{.optlit} [-exactlocale]{.optlit} [[-namespace]{.lit} [namespace]{.arg}]{.optarg} [src-string]{.arg}
 : Return true, if there is a translation for the given *src-string*.
 
+    The search may be limited by the option **-exactnamespace** to only check the current namespace and not any parent namespaces.
 
-The search may be limited by the option **-exactnamespace** to only check the current namespace and not any parent namespaces.
+    It may also be limited by the option **-exactlocale** to only check the first prefered locale (e.g. first element returned by **::msgcat::mcpreferences** if global locale is used).
 
-It may also be limited by the option **-exactlocale** to only check the first prefered locale (e.g. first element returned by **::msgcat::mcpreferences** if global locale is used).
+    An explicit package namespace may be specified by the option **-namespace**. The namespace of the caller is used if not explicitly specified.
 
-::: {.info version="TIP490"}
-An explicit package namespace may be specified by the option **-namespace**. The namespace of the caller is used if not explicitly specified.
-:::
 
 [::msgcat::mcpackagenamespaceget]{.cmd}
 : Return the package namespace of the caller. This command handles all cases described in section [Object oriented programming].
 
+    Example usage is a tooltip package, which saves the caller package namespace to update the translation each time the tooltip is shown:
 
-Example usage is a tooltip package, which saves the caller package namespace to update the translation each time the tooltip is shown:
+    ```
+    proc ::tooltip::tooltip {widget message} {
+        ...
+        set messagenamespace [uplevel 1 {::msgcat::mcpackagenamespaceget}]
+        ...
+        bind $widget  [list ::tooltip::show $widget $messagenamespace $message]
+    }
+    
+    proc ::tooltip::show {widget messagenamespace message} {
+        ...
+        set message [::msgcat::mcn $messagenamespace $message]
+        ...
+    }
+    ```
 
-```
-proc ::tooltip::tooltip {widget message} {
-    ...
-    set messagenamespace [uplevel 1 {::msgcat::mcpackagenamespaceget}]
-    ...
-    bind $widget  [list ::tooltip::show $widget $messagenamespace $message]
-}
-
-proc ::tooltip::show {widget messagenamespace message} {
-    ...
-    set message [::msgcat::mcn $messagenamespace $message]
-    ...
-}
-```
 
 [::msgcat::mclocale]{.cmd} [newLocale]{.optarg}
 : If *newLocale* is omitted, the current locale is returned, otherwise the current locale is set to *newLocale*.
 
+    If the new locale is set to *newLocale*, the corresponding preferences are calculated and set. For example, if the current locale is en\_US\_funky, then **::msgcat::mcpreferences** returns **{en\_us\_funky en\_us en {}}**.
 
-If the new locale is set to *newLocale*, the corresponding preferences are calculated and set. For example, if the current locale is en\_US\_funky, then **::msgcat::mcpreferences** returns **{en\_us\_funky en\_us en {}}**.
+    The same result may be achieved by `::msgcat::mcpreferences** {*}[::msgcat::mcutil getpreferences newLocale]`.
 
-The same result may be achieved by **::msgcat::mcpreferences** {\*}[**::msgcat::mcutil getpreferences** *newLocale*].
+    The current locale is always the first element of the list returned by **mcpreferences**.
 
-The current locale is always the first element of the list returned by **mcpreferences**.
+    msgcat stores and compares the locale in a case-insensitive manner, and returns locales in lowercase. The initial locale is determined by the locale specified in the user's environment.  See [Locale specification] below for a description of the locale string format.
 
-msgcat stores and compares the locale in a case-insensitive manner, and returns locales in lowercase. The initial locale is determined by the locale specified in the user's environment.  See [Locale specification] below for a description of the locale string format.
-
-If the locale is set, the preference list of locales is evaluated. Locales in this list are loaded now, if not jet loaded.
+    If the locale is set, the preference list of locales is evaluated. Locales in this list are loaded now, if not jet loaded.
 
 [::msgcat::mcpreferences]{.cmd} [locale preference]{.optdot}
 : Without arguments, returns an ordered list of the locales preferred by the user. The list is ordered from most specific to least preference.
 
+    A set of locale preferences may be given to set the list of locale preferences. The current locale is also set, which is the first element of the locale preferences list.
 
-::: {.info version="TIP499"}
-A set of locale preferences may be given to set the list of locale preferences. The current locale is also set, which is the first element of the locale preferences list.
-:::
+    Locale preferences are loaded now, if not jet loaded.
 
-Locale preferences are loaded now, if not jet loaded.
+    As an example, the user may prefer French or English text. This may be configured by:
 
-As an example, the user may prefer French or English text. This may be configured by:
+    ```
+    ::msgcat::mcpreferences fr en {}
+    ```
 
-```
-::msgcat::mcpreferences fr en {}
-```
 
 [::msgcat::mcloadedlocales]{.cmd} [subcommand]{.sub}
 : This group of commands manage the list of loaded locales for packages not setting a package locale.
 
+    The subcommand **loaded** returns the list of currently loaded locales.
 
-The subcommand **loaded** returns the list of currently loaded locales.
-
-The subcommand **clear** removes all locales and their data, which are not in the current preference list.
+    The subcommand **clear** removes all locales and their data, which are not in the current preference list.
 
 [::msgcat::mcload]{.cmd} [dirname]{.arg}
 : Searches the specified directory for files that match the language specifications returned by **::msgcat::mcloadedlocales loaded** (or **msgcat::mcpackagelocale preferences** if a package locale is set) (note that these are all lowercase), extended by the file extension ".msg". Each matching file is read in order, assuming a UTF-8 encoding.  The file contents are then evaluated as a Tcl script.  This means that Unicode characters may be present in the message file either directly in their UTF-8 encoded form, or by use of the backslash-u quoting recognized by Tcl evaluation.  The number of message files which matched the specification and were loaded is returned.
@@ -293,7 +286,7 @@ namespace eval ::mypackage {
 
 # Recommended message setup for packages
 
-If a package is installed into a subdirectory of the **tcl\_pkgPath** and loaded via [package require][package], the following procedure is recommended.
+If a package is installed into a subdirectory of the [tcl\_pkgPath][tclvars] and loaded via [package require][package], the following procedure is recommended.
 
 1. During package installation, create a subdirectory **msgs** under your package directory.
 
@@ -405,28 +398,26 @@ The following package options are available for each package:
 **loadcmd**
 : This callback is invoked before a set of message catalog files are loaded for the package which has this property set.
 
+    This callback may be used to do any preparation work for message file load or to get the message data from another source like a data base. In this case, no message files are used (mcfolder is unset).
 
-This callback may be used to do any preparation work for message file load or to get the message data from another source like a data base. In this case, no message files are used (mcfolder is unset).
+    See section **callback invocation** below. The parameter list appended to this callback is the list of locales to load.
 
-See section **callback invocation** below. The parameter list appended to this callback is the list of locales to load.
-
-If this callback is changed, it is called with the preferences valid for the package.
+    If this callback is changed, it is called with the preferences valid for the package.
 
 **changecmd**
 : This callback is invoked when a default local change was performed. Its purpose is to allow a package to update any dependency on the default locale like showing the GUI in another language.
 
-
-See the callback invocation section below. The parameter list appended to this callback is **mcpreferences**. The registered callbacks are invoked in no particular order.
+    See the callback invocation section below. The parameter list appended to this callback is **mcpreferences**. The registered callbacks are invoked in no particular order.
 
 **unknowncmd**
 : Use a package locale mcunknown procedure instead of the standard version supplied by the msgcat package (**msgcat::mcunknown**).
 
+    The called procedure must return the formatted message which will finally be returned by **msgcat::mc**.
 
-The called procedure must return the formatted message which will finally be returned by **msgcat::mc**.
+    A generic unknown handler is used if set to the empty string. This consists of returning the key if no arguments are given. With given arguments, the [format] command is used to process the arguments.
 
-A generic unknown handler is used if set to the empty string. This consists of returning the key if no arguments are given. With given arguments, the [format] command is used to process the arguments.
+    See section **callback invocation** below. The appended arguments are identical to **msgcat::mcunknown**.
 
-See section **callback invocation** below. The appended arguments are identical to **msgcat::mcunknown**.
 
 # Callback invocation
 
@@ -448,8 +439,8 @@ If a called routine fails with an error, the [bgerror] routine for the interpret
 
 There are 3 supported cases where package namespace sensitive commands of msgcat (**mc**, **mcexists**, **mcpackagelocale**, **mcforgetpackage**, **mcpackagenamespaceget**, **mcpackageconfig**, **mcset** and **mcmset**) may be called:
 
-**1) In class definition script**
-: **msgcat** command is called within a class definition script.
+ 1. In class definition script
+    **msgcat** command is called within a class definition script.
 
     ```
     namespace eval ::N2 {
@@ -459,8 +450,8 @@ There are 3 supported cases where package namespace sensitive commands of msgcat
     ```
 
 
-**2) method defined in a class**
-: **msgcat** command is called from a method in an object and the method is defined in a class.
+ 2. method definedin a class
+    **msgcat** command is called from a method in an object and the method is defined in a class.
 
     ```
     namespace eval ::N3Class {
@@ -473,8 +464,8 @@ There are 3 supported cases where package namespace sensitive commands of msgcat
     ```
 
 
-**3) method defined in a classless object**
-: **msgcat** command is called from a method of a classless object.
+ 3. method defined in a classless object
+    **msgcat** command is called from a method of a classless object.
 
     ```
     namespace eval ::N4 {
@@ -568,4 +559,5 @@ The message catalog code was developed by Mark Harrison.
 [namespace]: namespace.md
 [package]: package.md
 [scan]: scan.md
+[tclvars]: tclvars.md
 

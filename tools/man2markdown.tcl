@@ -252,6 +252,8 @@ namespace eval ::ndoc {
 		lsearch       {re\_syntax re_syntax}
 		mathfunc      {Tcl_CreateObjCommand CrtObjCmd tcl_platform tclvars}
 		memory        {Tcl_InitMemory DumpActiveMemory Tcl_Alloc Alloc Tcl_Free Alloc}
+		msgcat        {tcl_pkgPath tclvars}
+		my            {oo::object object oo::define objdefine}
 		
 		
 		regexp        {re\_syntax re_syntax}
@@ -1809,6 +1811,15 @@ proc ::ndoc::mdExceptions {md} {
 		mathop {
 			set md [string map {
 				{as "**\*\* 2 [\*\* 3 4]**"} {as "**\*\* 2 \[\*\* 3 4\]**"}
+			} $md]
+		}
+		msgcat {
+			set md [string map {
+				{by **::msgcat::mcpreferences** {\*}[**::msgcat::mcutil getpreferences** *newLocale*].} {by `::msgcat::mcpreferences** {*}[::msgcat::mcutil getpreferences newLocale]`.}
+				{**1) In class definition script**} { 1. In class definition script}
+				{**2) method defined in a class**} { 2. method definedin a class}
+				{**3) method defined in a classless object**} { 3. method defined in a classless object}
+				{: **msgcat** command is called } {    **msgcat** command is called }
 			} $md]
 		}
 	}

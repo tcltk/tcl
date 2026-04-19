@@ -36,7 +36,7 @@ section | number of documents | initial conversion | final conversion
 --------|---------------------|--------------------|-----------------
 1       | 1                   | 1                  | 0
 3       | 108                 | 108                | 0
-n       | 139                 | 139                | 79
+n       | 139                 | 139                | 81
 
 Final conversion of these files is currently done:
 1. after
@@ -118,6 +118,8 @@ Final conversion of these files is currently done:
 77. mathfunc (list of functions needs other formatting, the math function syntax should perhaps not use {.cmd})
 78. mathop (list of operators needs other formatting, the math operator syntax should perhaps not use {.cmd
 79. memory
+80. msgcat
+81. my
 
 
 The tk/doc directory comes next, after finishing Tcl.
@@ -140,6 +142,7 @@ This section lists the shortcoming which are still present in the pages that alr
 - use camelCase consistently for Tcl syntax arguments
 - handling of the "|" character for alternatives (see `memory init on|off`) is not yet good, leaves it as `on=|§off`
 - handling of links does not yet use all the exceptions defined in tools/tcltk-man2html.tcl and tools/tclsk-man2html-utils.tcl (for now only exclude_refs_map is used)
+- not all instances of "TIP" infos are preserved (especially when inside a combined .RE/.PP context as in msgcat.n, so grep all uses and check manually after automatic conversion)
 
 ## Specific pages
 - RegConfig.3: besides the C API, this page describes Tcl-level commands that are created. These use a non-standard format in the form of ::, followed by an .arg, followed by ::, followed by a .lit – all in one word!

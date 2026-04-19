@@ -98,8 +98,8 @@ later simply by defining new message catalog entries.
 .VS TIP490
 Like \fB::msgcat::mc\fR, but with the message namespace specified as first
 argument.
-.PP
 .RS
+.PP
 \fBmcn\fR may be used for cases where the package namespace is not the
 namespace of the caller. An example is shown within the description of the
 command \fB::msgcat::mcpackagenamespaceget\fR below.
@@ -117,8 +117,8 @@ fixed width (which will be the width of the widest button).
 .TP
 \fB::msgcat::mcexists\fR ?\fB\-exactnamespace\fR? ?\fB\-exactlocale\fR? ?\fB\-namespace\fI namespace\fR? \fIsrc-string\fR
 Return true, if there is a translation for the given \fIsrc-string\fR.
-.PP
 .RS
+.PP
 The search may be limited by the option \fB\-exactnamespace\fR to only check
 the current namespace and not any parent namespaces.
 .PP
@@ -138,8 +138,8 @@ The namespace of the caller is used if not explicitly specified.
 .VS TIP490
 Return the package namespace of the caller. This command handles all cases
 described in section \fBOBJECT ORIENTED PROGRAMMING\fR.
-.PP
 .RS
+.PP
 Example usage is a tooltip package, which saves the caller package namespace
 to update the translation each time the tooltip is shown:
 .CS
@@ -165,8 +165,8 @@ proc ::tooltip::show {widget messagenamespace message} {
 .
 If \fInewLocale\fR is omitted, the current locale is returned, otherwise the
 current locale is set to \fInewLocale\fR.
-.PP
 .RS
+.PP
 If the new locale is set to \fInewLocale\fR, the corresponding preferences
 are calculated and set.
 For example, if the current locale is en_US_funky, then
@@ -194,9 +194,9 @@ Locales in this list are loaded now, if not jet loaded.
 Without arguments, returns an ordered list of the locales preferred by
 the user.
 The list is ordered from most specific to least preference.
-.PP
 .VS TIP499
 .RS
+.PP
 A set of locale preferences may be given to set the list of locale preferences.
 The current locale is also set, which is the first element of the locale
 preferences list.
@@ -216,8 +216,8 @@ configured by:
 .VS TIP499
 This group of commands manage the list of loaded locales for packages not
 setting a package locale.
-.PP
 .RS
+.PP
 The subcommand \fBloaded\fR returns the list of currently loaded locales.
 .PP
 The subcommand \fBclear\fR removes all locales and their data, which are not in
@@ -669,8 +669,8 @@ Unsetting this value will disable message file load for the package.
 .
 This callback is invoked before a set of message catalog files are loaded for
 the package which has this property set.
-.PP
 .RS
+.PP
 This callback may be used to do any preparation work for message file load or
 to get the message data from another source like a data base. In this case, no
 message files are used (mcfolder is unset).
@@ -687,8 +687,8 @@ package.
 This callback is invoked when a default local change was performed. Its
 purpose is to allow a package to update any dependency on the default locale
 like showing the GUI in another language.
-.PP
 .RS
+.PP
 See the callback invocation section below.
 The parameter list appended to this callback is \fBmcpreferences\fR.
 The registered callbacks are invoked in no particular order.
@@ -698,8 +698,8 @@ The registered callbacks are invoked in no particular order.
 .
 Use a package locale mcunknown procedure instead of the standard version
 supplied by the msgcat package (\fBmsgcat::mcunknown\fR).
-.PP
 .RS
+.PP
 The called procedure must return the formatted message which will finally be
 returned by \fBmsgcat::mc\fR.
 .PP
