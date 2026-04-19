@@ -250,6 +250,8 @@ namespace eval ::ndoc {
 		library       {Tcl_AppInit AppInit}
 		load          {Tcl_StaticLibrary StaticLibrary}
 		lsearch       {re\_syntax re_syntax}
+		mathfunc      {Tcl_CreateObjCommand CrtObjCmd tcl_platform tclvars}
+		memory        {Tcl_InitMemory DumpActiveMemory Tcl_Alloc Alloc Tcl_Free Alloc}
 		
 		
 		regexp        {re\_syntax re_syntax}
@@ -760,7 +762,7 @@ proc ::ndoc::parseBlock {parent manContent} {
 				dict set manual lastComment [lindex $line 1]
 				set manContent [lrange $manContent 1 end]
 			}
-			.so - .BS - .BE - .AS - .ta - .RS - .RE - .nf - .fi {
+			.so - .BS - .BE - .AS - .ta - .RS - .RE - .nf - .fi - .ta {
 				# can be ignored
 				# .so = include files
 				# .BS .BE = start and end of box enclosure
@@ -768,6 +770,7 @@ proc ::ndoc::parseBlock {parent manContent} {
 				# .ta = set tab stops
 				# .RS .RE = relative inset, i.e. indentation
 				# .nf .fi = turn off/on filling of lines
+				# .ta = tabulator settings
 				if $verbose {puts "IGNORED ($markup)"}
 				set manContent [lrange $manContent 1 end]
 			}
@@ -1059,9 +1062,10 @@ proc ::ndoc::parseBlock {parent manContent} {
 				set blockType Code
 				set manContent [lrange $manContent 1 end]
 			} 
-			.CE - .VE {
+			.CE - .VE - .DE {
 				# .CE = code end
 				# .VE = end of sidebar
+				# .DE = end of display section
 				set doCloseBlock 1
 				set manContent [lrange $manContent 1 end]
 				continue
@@ -1078,13 +1082,21 @@ proc ::ndoc::parseBlock {parent manContent} {
 				if {$blockContent eq ""} {append blockContent $myText} else {append blockContent { } $myText}
 				set manContent [lrange $manContent 1 end]
 			}
-			.VS {
-				# sidebar for marking newly-changed parts of manual pages.
-				# We interpret this as a new paragraph (for now):
+			.VS - .DS {
+				# .VS = sidebar; for marking newly-changed parts of manual pages
+				# .DS = display section
+				# We just interpret these as a new paragraphs:
 				if {$blockType ne ""} {set doCloseBlock 1; continue}
 				set blockType Paragraph
-				lassign $line - info
-				set blockAttributes [list version $info]
+				switch $markup {
+					.VS {
+						lassign $line - info
+						set blockAttributes [list version $info]
+					}
+					.DS {
+						set blockAttributes [list DISPLAY yes]
+					}
+				}
 				set manContent [lrange $manContent 1 end]
 			}
 			default {
@@ -1783,6 +1795,20 @@ proc ::ndoc::mdExceptions {md} {
 		library {
 			set md [string map {
 				{[text=|§binary]} {[text|binary]}
+			} $md]
+		}
+		mathfunc {
+			set md [string map {
+				{form **[tcl::mathfunc::sin [expr {$x}]]**} {form `[tcl::mathfunc::sin [expr {$x}]]`}
+				{or **[tcl::mathfunc::atan2 [expr {$y}] [expr {$x}]]**.} {or `[tcl::mathfunc::atan2 [expr {$y}] [expr {$x}]]`.}
+				{"**atan** [[expr] {*y***/***x*}]"} {`atan [expr {y/x}]`}
+				{"**sqrt** [[expr] {*x***\****x***+***y***\****y*}]"} {`sqrt [expr {x*x+y*y}]`}
+			} $md]
+			regsub -all {range \[([^\]]*)\]} $md {range \\[\1\\]} md
+		}
+		mathop {
+			set md [string map {
+				{as "**\*\* 2 [\*\* 3 4]**"} {as "**\*\* 2 \[\*\* 3 4\]**"}
 			} $md]
 		}
 	}

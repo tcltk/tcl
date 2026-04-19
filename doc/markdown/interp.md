@@ -223,9 +223,33 @@ A safe interpreter is one with restricted functionality, so that is safe to exec
 
 A safe interpreter is created by specifying the **-safe** switch to the **interp create** command.  Furthermore, any child created by a safe interpreter will also be safe.
 
-A safe interpreter is created with exactly the following set of built-in commands: .DS [after]	[append]	[apply]	[array] [binary]	[break]	[catch]	[chan] [clock]	[close]	[concat]	[continue] [dict]	[eof]	[error]	[eval] [expr]	[fblocked]	[fcopy]	[fileevent] [flush]	[for]	[foreach]	[format] [gets]	[global]	[if]	[incr] [info]	**interp**	[join]	[lappend] [lassign]	[ledit]	[lindex]	[linsert] [list]	[llength]	[lrange]	[lrepeat] [lreplace]	[lsearch]	[lseq]      [lset] [lsort]     [namespace]	[package]	[pid] [proc]      [puts]	[read]	[regexp] [regsub]	[rename]	[return]	[scan] [seek]	[set]	[split]	[string] [subst]	[switch]	[tell]	**time** [trace]	[unset]	[update]	[uplevel] [upvar]	[variable]	[vwait]	[while] [zlib] .DE The following commands are hidden by **interp create** when it creates a safe interpreter: .DS [cd]	[encoding]	[exec]	[exit] [fconfigure]	[file]	[glob]	[load] [open]	[pwd]	[socket]	[source] [unload]	[zipfs] .DE These commands can be recreated later as Tcl procedures or aliases, or re-exposed by **interp expose**.
+A safe interpreter is created with exactly the following set of built-in commands:
 
-The following commands from Tcl's library of support procedures are not present in a safe interpreter: .DS **auto\_exec\_ok**	**auto\_import**	**auto\_load** **auto\_load\_index**	**auto\_qualify**	[unknown] .DE Note in particular that safe interpreters have no default [unknown] command, so Tcl's default autoloading facilities are not available. Autoload access to Tcl's commands that are normally autoloaded: .DS **auto\_mkindex**	**auto\_mkindex\_old** **auto\_reset**	**history** **parray**	**pkg\_mkIndex** **::pkg::create**	**::safe::interpAddToAccessPath** **::safe::interpCreate**	**::safe::interpConfigure** **::safe::interpDelete**	**::safe::interpFindInAccessPath** **::safe::interpInit**	**::safe::setLogCmd** **tcl\_endOfWord**	**tcl\_findLibrary** **tcl\_startOfNextWord**	**tcl\_startOfPreviousWord** **tcl\_wordBreakAfter**	**tcl\_wordBreakBefore** .DE can only be provided by explicit definition of an [unknown] command in the safe interpreter.  This will involve exposing the [source] command.  This is most easily accomplished by creating the safe interpreter with Tcl's **Safe-Tcl** mechanism.  **Safe-Tcl** provides safe versions of [source], [load], and other Tcl commands needed to support autoloading of commands and the loading of packages.
+::: {.info DISPLAY="yes"}
+[after]	[append]	[apply]	[array] [binary]	[break]	[catch]	[chan] [clock]	[close]	[concat]	[continue] [dict]	[eof]	[error]	[eval] [expr]	[fblocked]	[fcopy]	[fileevent] [flush]	[for]	[foreach]	[format] [gets]	[global]	[if]	[incr] [info]	**interp**	[join]	[lappend] [lassign]	[ledit]	[lindex]	[linsert] [list]	[llength]	[lrange]	[lrepeat] [lreplace]	[lsearch]	[lseq]      [lset] [lsort]     [namespace]	[package]	[pid] [proc]      [puts]	[read]	[regexp] [regsub]	[rename]	[return]	[scan] [seek]	[set]	[split]	[string] [subst]	[switch]	[tell]	**time** [trace]	[unset]	[update]	[uplevel] [upvar]	[variable]	[vwait]	[while] [zlib]
+:::
+
+The following commands are hidden by **interp create** when it creates a safe interpreter:
+
+::: {.info DISPLAY="yes"}
+[cd]	[encoding]	[exec]	[exit] [fconfigure]	[file]	[glob]	[load] [open]	[pwd]	[socket]	[source] [unload]	[zipfs]
+:::
+
+These commands can be recreated later as Tcl procedures or aliases, or re-exposed by **interp expose**.
+
+The following commands from Tcl's library of support procedures are not present in a safe interpreter:
+
+::: {.info DISPLAY="yes"}
+**auto\_exec\_ok**	**auto\_import**	**auto\_load** **auto\_load\_index**	**auto\_qualify**	[unknown]
+:::
+
+Note in particular that safe interpreters have no default [unknown] command, so Tcl's default autoloading facilities are not available. Autoload access to Tcl's commands that are normally autoloaded:
+
+::: {.info DISPLAY="yes"}
+**auto\_mkindex**	**auto\_mkindex\_old** **auto\_reset**	**history** **parray**	**pkg\_mkIndex** **::pkg::create**	**::safe::interpAddToAccessPath** **::safe::interpCreate**	**::safe::interpConfigure** **::safe::interpDelete**	**::safe::interpFindInAccessPath** **::safe::interpInit**	**::safe::setLogCmd** **tcl\_endOfWord**	**tcl\_findLibrary** **tcl\_startOfNextWord**	**tcl\_startOfPreviousWord** **tcl\_wordBreakAfter**	**tcl\_wordBreakBefore**
+:::
+
+can only be provided by explicit definition of an [unknown] command in the safe interpreter.  This will involve exposing the [source] command.  This is most easily accomplished by creating the safe interpreter with Tcl's **Safe-Tcl** mechanism.  **Safe-Tcl** provides safe versions of [source], [load], and other Tcl commands needed to support autoloading of commands and the loading of packages.
 
 In addition, the [env][tclvars] variable is not present in a safe interpreter, so it cannot share environment variables with other interpreters. The [env][tclvars] variable poses a security risk, because users can store sensitive information in an environment variable. For example, the PGP manual recommends storing the PGP private key protection password in the environment variable *PGPPASS*. Making this variable available to untrusted code executing in a safe interpreter would incur a security risk.
 

@@ -36,7 +36,7 @@ section | number of documents | initial conversion | final conversion
 --------|---------------------|--------------------|-----------------
 1       | 1                   | 1                  | 0
 3       | 108                 | 108                | 0
-n       | 139                 | 139                | 76
+n       | 139                 | 139                | 79
 
 Final conversion of these files is currently done:
 1. after
@@ -92,7 +92,7 @@ Final conversion of these files is currently done:
 51. if
 52. incr
 53. info (manual postprocessing needed: some cmd names are links, others are option names etc.)
-54. interp (the list of safe commands need manual formatting)
+54. interp (the list of safe commands needs manual formatting)
 55. join
 56. lappend
 57. lassign
@@ -115,6 +115,9 @@ Final conversion of these files is currently done:
 74. lseq
 75. lset
 76. lsort
+77. mathfunc (list of functions needs other formatting, the math function syntax should perhaps not use {.cmd})
+78. mathop (list of operators needs other formatting, the math operator syntax should perhaps not use {.cmd
+79. memory
 
 
 The tk/doc directory comes next, after finishing Tcl.
@@ -174,6 +177,8 @@ List of nroff commands/macros currently implemented (partly not a complete imple
 - .VS .VE (start and end of vertical line)
 - .CS .CE (start and end of code block)
 - .sp (inserts vertical space) > this is treated individually (currently by mdExceptions)
+- .ta (tabulator)
+- .DS DE (display section)
 
 
 

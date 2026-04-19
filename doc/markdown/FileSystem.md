@@ -249,7 +249,11 @@ It returns one of **TCL\_PATH\_ABSOLUTE**, **TCL\_PATH\_RELATIVE**, or **TCL\_PA
 
 **Tcl\_AllocStatBuf** allocates a *Tcl\_StatBuf* on the system heap (which may be deallocated by being passed to **Tcl\_Free**). This allows extensions to invoke **Tcl\_FSStat** and **Tcl\_FSLstat** without being dependent on the size of the buffer. That in turn depends on the flags used to build Tcl.
 
-The portable fields of a *Tcl\_StatBuf* may be read using the following functions, each of which returns the value of the corresponding field listed in the table below. Note that on some platforms there may be other fields in the *Tcl\_StatBuf* as it is an alias for a suitable system structure, but only the portable ones are made available here. See your system documentation for a full description of these fields. .DS *Access Function*	*Field*  **Tcl\_GetFSDeviceFromStat**	 st\_dev  **Tcl\_GetFSInodeFromStat**	 st\_ino  **Tcl\_GetModeFromStat**	 st\_mode  **Tcl\_GetLinkCountFromStat**	 st\_nlink  **Tcl\_GetUserIdFromStat**	 st\_uid  **Tcl\_GetGroupIdFromStat**	 st\_gid  **Tcl\_GetDeviceTypeFromStat**	 st\_rdev  **Tcl\_GetAccessTimeFromStat**	 st\_atime  **Tcl\_GetModificationTimeFromStat**	 st\_mtime  **Tcl\_GetChangeTimeFromStat**	 st\_ctime  **Tcl\_GetSizeFromStat**	 st\_size  **Tcl\_GetBlocksFromStat**	 st\_blocks  **Tcl\_GetBlockSizeFromStat**	 st\_blksize .DE
+The portable fields of a *Tcl\_StatBuf* may be read using the following functions, each of which returns the value of the corresponding field listed in the table below. Note that on some platforms there may be other fields in the *Tcl\_StatBuf* as it is an alias for a suitable system structure, but only the portable ones are made available here. See your system documentation for a full description of these fields.
+
+::: {.info DISPLAY="yes"}
+*Access Function*	*Field*  **Tcl\_GetFSDeviceFromStat**	 st\_dev  **Tcl\_GetFSInodeFromStat**	 st\_ino  **Tcl\_GetModeFromStat**	 st\_mode  **Tcl\_GetLinkCountFromStat**	 st\_nlink  **Tcl\_GetUserIdFromStat**	 st\_uid  **Tcl\_GetGroupIdFromStat**	 st\_gid  **Tcl\_GetDeviceTypeFromStat**	 st\_rdev  **Tcl\_GetAccessTimeFromStat**	 st\_atime  **Tcl\_GetModificationTimeFromStat**	 st\_mtime  **Tcl\_GetChangeTimeFromStat**	 st\_ctime  **Tcl\_GetSizeFromStat**	 st\_size  **Tcl\_GetBlocksFromStat**	 st\_blocks  **Tcl\_GetBlockSizeFromStat**	 st\_blksize
+:::
 
 # The virtual filesystem api
 

@@ -9,7 +9,7 @@
 .SH NAME
 memory \- Control Tcl memory debugging capabilities
 .SH SYNOPSIS
-\fBmemory \fIoption \fR?\fIarg arg ...\fR?
+\fBmemory \fIoption \fR?\fIarg ...\fR?
 .BE
 .SH DESCRIPTION
 .PP

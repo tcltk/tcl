@@ -78,9 +78,17 @@ Which functions of a channel driver are allowed to use which bypass function is 
 : Must *not* use any of the new functions. Is internally called and has no ability to return any type of error whatsoever.
 
 
-Given the information above the following public functions of the Tcl C API are affected by these changes; when these functions are called, the channel may now contain a stored arbitrary error message requiring processing by the caller. .DS **Tcl\_Flush**	**Tcl\_GetsObj**	**Tcl\_Gets** **Tcl\_ReadChars**	**Tcl\_ReadRaw**	**Tcl\_Read** **Tcl\_Seek**	**Tcl\_StackChannel**	**Tcl\_Tell** **Tcl\_WriteChars**	**Tcl\_WriteObj**	**Tcl\_WriteRaw** **Tcl\_Write** .DE
+Given the information above the following public functions of the Tcl C API are affected by these changes; when these functions are called, the channel may now contain a stored arbitrary error message requiring processing by the caller.
 
-All other API functions are unchanged. In particular, the functions below leave all their error information in the interpreter result. .DS **Tcl\_Close**	**Tcl\_UnstackChannel**	**Tcl\_UnregisterChannel** .DE
+::: {.info DISPLAY="yes"}
+**Tcl\_Flush**	**Tcl\_GetsObj**	**Tcl\_Gets** **Tcl\_ReadChars**	**Tcl\_ReadRaw**	**Tcl\_Read** **Tcl\_Seek**	**Tcl\_StackChannel**	**Tcl\_Tell** **Tcl\_WriteChars**	**Tcl\_WriteObj**	**Tcl\_WriteRaw** **Tcl\_Write**
+:::
+
+All other API functions are unchanged. In particular, the functions below leave all their error information in the interpreter result.
+
+::: {.info DISPLAY="yes"}
+**Tcl\_Close**	**Tcl\_UnstackChannel**	**Tcl\_UnregisterChannel**
+:::
 
 # Reference count management
 
