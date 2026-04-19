@@ -46,11 +46,6 @@
 # to start a command shell using one of the short cuts installed by
 # Visual Studio/Windows SDK for the appropriate target architecture.
 #
-# NOTE: For older (Visual C++ 6 or the 2003 SDK), to use the Platform
-# SDK (not expressly needed), run setenv.bat after vcvars32.bat
-# according to the instructions for it.  This can also turn on the
-# 64-bit compiler, if your SDK has it.
-#
 # Basic macros and options usable on the commandline (see rules.vc for more info):
 #	OPTS=nomsvcrt,noembed,nothreads,pdbs,profile,static,symbols,thrdalloc,unchecked,none
 #		Sets special options for the core.  The default is for none.
