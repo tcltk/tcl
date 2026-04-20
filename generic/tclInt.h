@@ -171,6 +171,8 @@
 
 #if (TCL_MAJOR_VERSION < 9) && !defined(Tcl_Size)
 #   define Tcl_Size int
+#   define Tcl_ObjCmdProc2 Tcl_ObjCmdProc
+#   define Tcl_CmdObjTraceProc2 Tcl_CmdObjTraceProc
 #   define _TCLSIZEHANDLED
 # endif
 
@@ -1082,11 +1084,7 @@ typedef void (ProcErrorProc)(Tcl_Interp *interp, Tcl_Obj *procNameObj);
 typedef struct Trace {
     Tcl_Size level;		/* Only trace commands at nesting level less
 				 * than or equal to this. */
-#if TCL_MAJOR_VERSION > 8
     Tcl_CmdObjTraceProc2 *proc;	/* Procedure to call to trace command. */
-#else
-    Tcl_CmdObjTraceProc *proc;	/* Procedure to call to trace command. */
-#endif
     void *clientData;		/* Arbitrary value to pass to proc. */
     struct Trace *nextPtr;	/* Next in list of traces for this interp. */
     int flags;			/* Flags governing the trace - see
@@ -5184,6 +5182,8 @@ typedef struct NRE_callback {
 #ifdef _TCLSIZEHANDLED
 #   undef _TCLSIZEHANDLED
 #   undef Tcl_Size
+#   undef Tcl_ObjCmdProc2
+#   undef Tcl_CmdObjTraceProc2
 #endif
 
 /*

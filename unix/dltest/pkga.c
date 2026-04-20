@@ -13,6 +13,10 @@
 #undef STATIC_BUILD
 #include "tcl.h"
 
+#if TCL_MAJOR_VERSION < 9
+#   define Tcl_Size int
+#endif
+
 /*
  *----------------------------------------------------------------------
  *

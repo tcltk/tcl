@@ -55,16 +55,16 @@ pkgt.o: $(SRC_DIR)/pkgt.c
 	$(CC) -c $(CC_SWITCHES) $(SRC_DIR)/pkgt.c
 
 tcl8pkga.o: $(SRC_DIR)/pkga.c
-	$(CC) -o $@ -c $(CC_SWITCHES) -DTCL_MAJOR_VERSION=8 -DTcl_Size=int $(SRC_DIR)/pkga.c
+	$(CC) -o $@ -c $(CC_SWITCHES) -DTCL_MAJOR_VERSION=8 $(SRC_DIR)/pkga.c
 
 tcl8pkgb.o: $(SRC_DIR)/pkgb.c
-	$(CC) -o $@ -c $(CC_SWITCHES) -DTCL_MAJOR_VERSION=8 -DTcl_Size=int $(SRC_DIR)/pkgb.c
+	$(CC) -o $@ -c $(CC_SWITCHES) -DTCL_MAJOR_VERSION=8 $(SRC_DIR)/pkgb.c
 
 tcl8pkgc.o: $(SRC_DIR)/pkgc.c
-	$(CC) -o $@ -c $(CC_SWITCHES) -DTCL_MAJOR_VERSION=8 -DTcl_Size=int $(SRC_DIR)/pkgc.c
+	$(CC) -o $@ -c $(CC_SWITCHES) -DTCL_MAJOR_VERSION=8 $(SRC_DIR)/pkgc.c
 
 tcl8pkgt.o: $(SRC_DIR)/pkgt.c
-	$(CC) -o $@ -c $(CC_SWITCHES) -DTCL_MAJOR_VERSION=8 -DTcl_Size=int $(SRC_DIR)/pkgt.c
+	$(CC) -o $@ -c $(CC_SWITCHES) -DTCL_MAJOR_VERSION=8 $(SRC_DIR)/pkgt.c
 
 pkgd.o: $(SRC_DIR)/pkgd.c
 	$(CC) -c $(CC_SWITCHES) $(SRC_DIR)/pkgd.c

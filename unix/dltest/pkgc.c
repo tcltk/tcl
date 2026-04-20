@@ -14,6 +14,10 @@
 #undef STATIC_BUILD
 #include "tcl.h"
 
+#if TCL_MAJOR_VERSION < 9
+#   define Tcl_Size int
+#endif
+
 /*
  *----------------------------------------------------------------------
  *
@@ -81,7 +85,7 @@ Pkgc_UnsafeObjCmd(
     (void)objc;
     (void)objv;
 
-    Tcl_SetObjResult(interp, Tcl_NewStringObj("unsafe command invoked", TCL_INDEX_NONE));
+    Tcl_SetObjResult(interp, Tcl_NewStringObj("unsafe command invoked", -1));
     return TCL_OK;
 }
 
