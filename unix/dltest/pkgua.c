@@ -11,7 +11,12 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
+#undef STATIC_BUILD
 #include "tcl.h"
+
+#if TCL_MAJOR_VERSION < 9
+#   define Tcl_Size int
+#endif
 
 /*
  * In the following hash table we are going to store a struct that holds all
@@ -92,7 +97,7 @@ PkguaDeleteTokens(
 {
     ThreadSpecificData *tsdPtr = (ThreadSpecificData *)Tcl_GetThreadData((&dataKey), sizeof(ThreadSpecificData));
     Tcl_HashEntry *entryPtr =
-	    Tcl_FindHashEntry(&tsdPtr->interpTokenMap, interp);
+	    Tcl_FindHashEntry(&tsdPtr->interpTokenMap, (char *) interp);
 
     if (entryPtr) {
 	Tcl_Free((char *) Tcl_GetHashValue(entryPtr));
