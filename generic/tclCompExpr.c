@@ -2928,7 +2928,6 @@ void EqNextLex(
 	if (in->charpos==0 && (
 	    TclHasInternalRep(thisArg, &tclIntType) ||
 	    TclHasInternalRep(thisArg, &tclBignumType) ||
-	    TclHasInternalRep(thisArg, &tclBooleanType) ||
 	    TclHasInternalRep(thisArg, &tclDoubleType)
 	) ) {
 	    in->lex = NUMBER;
