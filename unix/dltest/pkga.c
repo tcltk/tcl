@@ -13,6 +13,10 @@
 #undef STATIC_BUILD
 #include "tcl.h"
 
+#if TCL_MAJOR_VERSION < 9
+#   define Tcl_Size int
+#endif
+
 /*
  *----------------------------------------------------------------------
  *
@@ -33,14 +37,14 @@
 
 static int
 Pkga_EqObjCmd(
-    ClientData dummy,		/* Not used. */
+    void *dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int result;
     const char *str1, *str2;
-    int len1, len2;
+    Tcl_Size len1, len2;
     (void)dummy;
 
     if (objc != 3) {
@@ -80,7 +84,7 @@ Pkga_EqObjCmd(
 
 static int
 Pkga_QuoteObjCmd(
-    ClientData dummy,		/* Not used. */
+    void *dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument strings. */
