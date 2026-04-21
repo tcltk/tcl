@@ -4322,7 +4322,7 @@ TclScaleTime(
 		    && ((objPtr)->bytes != &tclEmptyString)) {		\
 		Tcl_Free((objPtr)->bytes);				\
 	    }								\
-	    (objPtr)->length = TCL_INDEX_NONE;				\
+	    (objPtr)->length = -1;				\
 	    TclFreeObjStorage(objPtr);					\
 	    TclIncrObjsFreed();						\
 	} else {							\

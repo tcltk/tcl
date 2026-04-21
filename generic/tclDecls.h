@@ -3964,9 +3964,9 @@ extern const TclStubs *tclStubsPtr;
 #define Tcl_AddObjErrorInfo(interp, message, length) \
 	Tcl_AppendObjToErrorInfo(interp, Tcl_NewStringObj(message, length))
 #define Tcl_Eval(interp, objPtr) \
-	Tcl_EvalEx(interp, objPtr, TCL_INDEX_NONE, 0)
+	Tcl_EvalEx(interp, objPtr, -1, 0)
 #define Tcl_GlobalEval(interp, objPtr) \
-	Tcl_EvalEx(interp, objPtr, TCL_INDEX_NONE, TCL_EVAL_GLOBAL)
+	Tcl_EvalEx(interp, objPtr, -1, TCL_EVAL_GLOBAL)
 #define Tcl_GetStringResult(interp) Tcl_GetString(Tcl_GetObjResult(interp))
 #define Tcl_SetResult(interp, result, freeProc) \
 	do { \
