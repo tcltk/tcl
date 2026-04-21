@@ -24,7 +24,7 @@ _RULES_VC = 1
 # For modifications that are not backward-compatible, you *must* change
 # the major version.
 RULES_VERSION_MAJOR = 1
-RULES_VERSION_MINOR = 16
+RULES_VERSION_MINOR = 17
 
 # The PROJECT macro must be defined by parent makefile.
 !if "$(PROJECT)" == ""
@@ -555,12 +555,7 @@ NMAKEHLPC = $(_TCLDIR)\win\nmakehlp.c
 
 # We always build nmakehlp even if it exists since we do not know
 # what source it was built from.
-!if "$(MACHINE)" == "IX86" || "$(MACHINE)" == "$(NATIVE_ARCH)"
-!if [$(cc32) -nologo "$(NMAKEHLPC)" -link -subsystem:console > nul]
-!endif
-!else
-!if [copy $(NMAKEHLPC:nmakehlp.c=x86_64-w64-mingw32-nmakehlp.exe) nmakehlp.exe >NUL]
-!endif
+!if [$(VCToolsInstallDir)bin\HostX64\x64\cl.exe -nologo "$(NMAKEHLPC)" -link -subsystem:console > nul]
 !endif
 
 ################################################################
