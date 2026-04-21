@@ -555,7 +555,8 @@ NMAKEHLPC = $(_TCLDIR)\win\nmakehlp.c
 
 # We always build nmakehlp even if it exists since we do not know
 # what source it was built from.
-!if [$(VCToolsInstallDir)bin\HostX64\x64\cl.exe -nologo "$(NMAKEHLPC)" -link -subsystem:console > nul]
+# TODO: this should cross-compile for x86_64
+!if [$(cc32) -nologo -DNDEBUG "nmakehlp.c" -link -subsystem:console > nul]
 !endif
 
 ################################################################
