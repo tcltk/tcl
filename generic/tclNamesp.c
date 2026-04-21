@@ -2545,6 +2545,14 @@ TclEnsureNamespace(
     if (!(nsPtr->flags & NS_DYING)) {
 	    return namespacePtr;
     }
+    /*
+     * If a new namespace with the same name has been created already,
+     * return that. Otherwise, create a new one. Bug 24d7f1a695.
+     */
+    Tcl_Namespace *nsPtr2 = Tcl_FindNamespace(interp, nsPtr->fullName, NULL, 0);
+    if (nsPtr2 != NULL) {
+	return nsPtr2;
+    }
     return Tcl_CreateNamespace(interp, nsPtr->fullName, NULL, NULL);
 }
 
