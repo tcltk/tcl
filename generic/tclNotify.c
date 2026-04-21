@@ -879,7 +879,7 @@ Tcl_SetMaxBlockTime(
 }
 
 void
-TclSetMaxBlockTime(
+Tcl_SetMaxBlockTime2(
     long long time)		/* Specifies a maximum elapsed time for the
 				 * next blocking operation in the event
 				 * tsdPtr-> */
@@ -898,6 +898,21 @@ TclSetMaxBlockTime(
 
     if (!tsdPtr->inTraversal) {
 	TclpSetTimer(tsdPtr->blockTime);
+    }
+}
+
+void
+Tcl_ConditionWait(
+    Tcl_Condition *condPtr,
+    Tcl_Mutex *mutexPtr,
+    const Tcl_Time *timePtr)
+{
+    if (timePtr == NULL) {
+	Tcl_ConditionWait2(condPtr, mutexPtr, -1);
+    } else if (timePtr->sec >= (LLONG_MAX - timePtr->usec) / US_PER_S) {
+	Tcl_ConditionWait2(condPtr, mutexPtr, LLONG_MAX);
+    } else {
+	Tcl_ConditionWait2(condPtr, mutexPtr, timePtr->sec * US_PER_S + timePtr->usec);
     }
 }
 
@@ -1026,7 +1041,7 @@ Tcl_DoOneEvent(
 	 * we should abort Tcl_DoOneEvent.
 	 */
 
-	result = TclWaitForEvent(time);
+	result = Tcl_WaitForEvent2(time);
 	if (result < 0) {
 	    result = 0;
 	    break;
@@ -1365,6 +1380,24 @@ Tcl_SetTimer(
 	TclpSetTimer(timePtr->sec * US_PER_S + timePtr->usec);
     }
 }
+
+void
+Tcl_SetTimer2(
+    long long time)	/* Timeout value, may be -1. */
+{
+    if (tclNotifierHooks.setTimerProc) {
+	if (time >= 0) {
+	    Tcl_Time tm;
+	    tm.sec = time / US_PER_S;
+	    tm.usec = time % US_PER_S;
+	    tclNotifierHooks.setTimerProc(&tm);
+	} else {
+	    tclNotifierHooks.setTimerProc(NULL);
+	}
+    } else {
+	TclpSetTimer(time);
+    }
+}
 
 /*
  *----------------------------------------------------------------------
@@ -1403,7 +1436,7 @@ Tcl_WaitForEvent(
 }
 
 int
-TclWaitForEvent(
+Tcl_WaitForEvent2(
     long long time)		/* Maximum block time, or -1. */
 {
     if (tclNotifierHooks.waitForEventProc) {

@@ -716,7 +716,7 @@ ReadLock(void)
     Tcl_MutexLock(&ZipFSMutex);
     while (ZipFS.lock < 0) {
 	ZipFS.waiters++;
-	Tcl_ConditionWait(&ZipFSCond, &ZipFSMutex, NULL);
+	Tcl_ConditionWait2(&ZipFSCond, &ZipFSMutex, -1);
 	ZipFS.waiters--;
     }
     ZipFS.lock++;
@@ -729,7 +729,7 @@ WriteLock(void)
     Tcl_MutexLock(&ZipFSMutex);
     while (ZipFS.lock != 0) {
 	ZipFS.waiters++;
-	Tcl_ConditionWait(&ZipFSCond, &ZipFSMutex, NULL);
+	Tcl_ConditionWait2(&ZipFSCond, &ZipFSMutex, -1);
 	ZipFS.waiters--;
     }
     ZipFS.lock = -1;
@@ -2058,9 +2058,7 @@ ZipFSCatalogFilesystem(
 	    if (!strcmp(z->name, ZIPFS_VOLUME)) {
 		z->flags |= ZE_F_VOLUME; /* Mark as root volume */
 	    }
-	    Tcl_Time t;
-	    Tcl_GetTime(&t);
-	    z->timestamp = t.sec;
+	    z->timestamp = Tcl_GetDayTime() / 1000000;
 	    z->next = zf->entries;
 	    zf->entries = z;
 	}
@@ -2254,14 +2252,12 @@ static void
 ZipfsSetup(void)
 {
 #if TCL_THREADS
-    static const Tcl_Time t = { 0, 0 };
-
     /*
      * Inflate condition variable.
      */
 
     Tcl_MutexLock(&ZipFSMutex);
-    Tcl_ConditionWait(&ZipFSCond, &ZipFSMutex, &t);
+    Tcl_ConditionWait2(&ZipFSCond, &ZipFSMutex, 0);
     Tcl_MutexUnlock(&ZipFSMutex);
 #endif /* TCL_THREADS */
 
@@ -5522,9 +5518,7 @@ ZipEntryStat(
     } else if (ContainsMountPoint(path, -1)) {
 	/* An intermediate dir under which a mount exists */
 	memset(buf, 0, sizeof(Tcl_StatBuf));
-	Tcl_Time t;
-	Tcl_GetTime(&t);
-	buf->st_atime = buf->st_mtime = buf->st_ctime = t.sec;
+	buf->st_atime = buf->st_mtime = buf->st_ctime = Tcl_GetDayTime() / 1000000;
 	buf->st_mode = S_IFDIR | 0555;
 	ret = 0;
     } else {

@@ -614,7 +614,7 @@ TclpFinalizeMutex(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_ConditionWait --
+ * Tcl_ConditionWait2 --
  *
  *	This procedure is invoked to wait on a condition variable. The mutex
  *	is atomically released as part of the wait, and automatically grabbed
@@ -634,19 +634,19 @@ TclpFinalizeMutex(
  */
 
 void
-Tcl_ConditionWait(
+Tcl_ConditionWait2(
     Tcl_Condition *condPtr,	/* Really (WinCondition **) */
     Tcl_Mutex *mutexPtr,	/* Really (CRITICAL_SECTION **) */
-    const Tcl_Time *timePtr)	/* Timeout on waiting period */
+    long long time)		/* Timeout on waiting period */
 {
     CONDITION_VARIABLE *cvPtr;	/* Per-condition queue head */
     WMutex *wmPtr;		/* Caller's Mutex, after casting */
     DWORD wtime;		/* Windows time value */
 
-    if (timePtr == NULL) {
+    if (time < 0) {
 	wtime = INFINITE;
     } else {
-	wtime = (DWORD)timePtr->sec * 1000 + (DWORD)timePtr->usec / 1000;
+	wtime = (DWORD)time / 1000;
     }
 
     if (*condPtr == NULL) {
