@@ -16,6 +16,7 @@ writing Tcl scripts.
 - [New command unicode for Unicode normalization](https://core.tcl-lang.org/tips/doc/trunk/tip/726.md)
 - [New timer command, switch to monotonic clock and microsecond resolution](https://core.tcl-lang.org/tips/doc/trunk/tip/723.md)
 - [Remove "expr" behavior from lseq](https://core.tcl-lang.org/tips/doc/trunk/tip/746.md) *Incompatibility*
+- [File paths are now treated as case-insensitive on MacOS](https://core.tcl-lang.org/tcl/tktview/e6ca0b1b) *Incompatibility*
 
 # New public C API
 
@@ -39,3 +40,7 @@ for list operations on large lists.
 - [Continued 64-bit capacity: Command line arguments larger than 2Gb](https://core.tcl-lang.org/tips/doc/trunk/tip/626.md)
 - Speedup in interpreter creation
 - [Support for long paths on Windows](https://core.tcl-lang.org/tips/doc/trunk/tip/744.md)
+
+# Bug fixes
+- [Inconsistent glob matching on MacOS](https://core.tcl-lang.org/tcl/tktview/e6ca0b1b)
+- [File normalize does not uniquely identify a file on MacOS](https://core.tcl-lang.org/tcl/tktview/108904173c)

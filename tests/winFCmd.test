@@ -1887,11 +1887,13 @@ namespace delete testlongpaths
 # Tests for C error interfaces
 testConstraint testwinerror [llength [info commands testwinerror]]
 namespace eval testwinerror {
-    catch {
-	variable regOut [exec {*}[auto_execok reg] query {HKCU\Control Panel\International} /v LocaleName]
-	if {[regexp -nocase {en-US} $regOut]} {
-	    testConstraint englishLocale 1
-	}
+    if {[testConstraint testwinerror]} {
+        catch {
+            variable regOut [exec {*}[auto_execok reg] query {HKCU\Control Panel\International} /v LocaleName]
+            if {[regexp -nocase {en-US} $regOut]} {
+                testConstraint englishLocale 1
+            }
+        }
     }
     variable pdhErrorCode 0x800007D0
     proc test args {
