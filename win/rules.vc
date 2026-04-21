@@ -36,14 +36,14 @@ _RULES_VC = 1
 !endif
 
 !ifndef NMAKEHLP_NATIVE
-NMAKEHLP_NATIVE	= nmakehlp
+NMAKEHLP_NATIVE=nmakehlp
 !endif
 
 # The following macros define the version of the rules.vc nmake build system
 # For modifications that are not backward-compatible, you *must* change
 # the major version.
 RULES_VERSION_MAJOR = 1
-RULES_VERSION_MINOR = 16
+RULES_VERSION_MINOR = 17
 
 # The PROJECT macro must be defined by parent makefile.
 !if "$(PROJECT)" == ""

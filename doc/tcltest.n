@@ -35,8 +35,8 @@ tcltest \- Test harness support code and utilities
 \fBtcltest::configure \fI\-option value\fR ?\fI\-option value ...\fR?
 \fBtcltest::customMatch \fImode command\fR
 \fBtcltest::testConstraint \fIconstraint\fR ?\fIvalue\fR?
-\fBtcltest::outputChannel \fR?\fIchannelID\fR?
-\fBtcltest::errorChannel \fR?\fIchannelID\fR?
+\fBtcltest::outputChannel \fR?\fIchannel\fR?
+\fBtcltest::errorChannel \fR?\fIchannel\fR?
 \fBtcltest::interpreter \fR?\fIinterp\fR?
 
 \fBtcltest::debug \fR?\fIlevel\fR?
@@ -279,17 +279,17 @@ The default value for \fBinterpreter\fR is the name of the
 currently running program as returned by \fBinfo nameofexecutable\fR.
 .\" COMMAND: outputChannel
 .TP
-\fBoutputChannel\fR ?\fIchannelID\fR?
+\fBoutputChannel\fR ?\fIchannel\fR?
 .
-Sets or returns the output channel ID.  This defaults to \fBstdout\fR.
+Sets or returns the output channel.  This defaults to \fBstdout\fR.
 Any test that prints test related output should send
 that output to \fBoutputChannel\fR rather than letting
 that output default to \fBstdout\fR.
 .\" COMMAND: errorChannel
 .TP
-\fBerrorChannel\fR ?\fIchannelID\fR?
+\fBerrorChannel\fR ?\fIchannel\fR?
 .
-Sets or returns the error channel ID.  This defaults to \fBstderr\fR.
+Sets or returns the error channel.  This defaults to \fBstderr\fR.
 Any test that prints error messages should send
 that output to \fBerrorChannel\fR rather than printing
 directly to \fBstderr\fR.
@@ -1148,7 +1148,7 @@ Here is a sketch of a sample test file illustrating those points:
 .PP
 .CS
 \fBpackage require tcltest 2.5\fR
-eval \fB::tcltest::configure\fR $argv
+\fB::tcltest::configure\fR {*}$::argv
 \fBpackage require example\fR
 namespace eval ::example::test {
     namespace import ::tcltest::*
@@ -1185,7 +1185,7 @@ Here is a sketch of a sample test suite main script:
 \fBpackage require example\fR
 \fB::tcltest::configure\fR -testdir \e
         [file dirname [file normalize [info script]]]
-eval \fB::tcltest::configure\fR $argv
+\fB::tcltest::configure\fR {*}$::argv
 \fB::tcltest::runAllTests\fR
 .CE
 .RE
@@ -1204,12 +1204,6 @@ from the variable \fB::argv\fR.  This is to support test suites
 that depend on the old behavior that \fBtcltest\fR was automatically
 configured from command line arguments.  New test files should not
 depend on this, but should explicitly include
-.PP
-.CS
-eval \fB::tcltest::configure\fR $::argv
-.CE
-.PP
-or
 .PP
 .CS
 \fB::tcltest::configure\fR {*}$::argv

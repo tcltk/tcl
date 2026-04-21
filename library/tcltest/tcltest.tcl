@@ -21,7 +21,7 @@ namespace eval tcltest {
     # When the version number changes, be sure to update the pkgIndex.tcl file,
     # and the install directory in the Makefiles.  When the minor version
     # changes (new feature) be sure to update the man page as well.
-    variable Version 2.5.10
+    variable Version 2.5.11
 
     # Compatibility support for dumb variables defined in tcltest 1
     # Do not use these.  Call [package require] and [info patchlevel]
@@ -30,7 +30,7 @@ namespace eval tcltest {
     variable patchLevel [info patchlevel]
 
     # Detect if we can use code points >= \U10000
-    variable fullutf [package vsatisfies $version 8.7-]
+    variable fullutf [package vsatisfies $version 9.0-]
 
 ##### Export the public tcltest procs; several categories
     #
@@ -2923,7 +2923,7 @@ proc tcltest::runAllTests { {shell ""} } {
 		"Only running test files that match:  [matchFiles]"
     }
 
-    set timeCmd {clock format now -format "%Y-%m-%d %H:%M:%S %Z" -locale en}
+    set timeCmd {clock format [clock seconds] -format "%Y-%m-%d %H:%M:%S %Z" -locale en}
     puts [outputChannel] "Tests began at [eval $timeCmd]"
 
     # Run each of the specified tests
@@ -3342,7 +3342,7 @@ proc tcltest::viewFile {name {directory ""}} {
 # construct improperly formed strings in this manner, because it involves
 # exposing that Tcl uses UTF-8 internally.
 #
-# This function doesn't work any more in Tcl 8.7, since the 'identity'
+# This function doesn't work any more in Tcl 9.0, since the 'identity'
 # is gone (TIP #345)
 #
 # Arguments:

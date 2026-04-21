@@ -183,7 +183,11 @@ ifeq (${BUILD_STYLE}_${EMBEDDED_BUILD},Development_)
 # the debug library
 	@if [ -d "${INSTALL_ROOT}${LIBDIR}/${PRODUCT_NAME}.framework/Versions/${VERSION}" ]; then \
 	    cd "${INSTALL_ROOT}${LIBDIR}/${PRODUCT_NAME}.framework/Versions/${VERSION}"; \
-	    ln -f "${PRODUCT_NAME}" "${PRODUCT_NAME}_debug"; \
+	    if \
+		ln -f "${PRODUCT_NAME}" "${PRODUCT_NAME}_debug"; \
+	    then : ; else \
+		cp "${PRODUCT_NAME}" "${PRODUCT_NAME}_debug"; \
+	    fi; \
 	fi
 endif
 

@@ -5182,8 +5182,13 @@ else case e in #(
 		    `ls -r $dir/tclsh* 2> /dev/null` ; do
 		if test x"$ac_cv_path_tclsh" = x ; then
 		    if test -f "$j" ; then
-			ac_cv_path_tclsh=$j
-			break
+			if ! echo 'if {![package vsatisfies [info tclversion] 8.6-]} { exit 1 }' | $j; then
+			    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: rejected $j - insufficient version, 8.6 or later is required." >&5
+			      printf %s "rejected $j - insufficient version, 8.6 or later is required. " >&6; }
+			else
+			    ac_cv_path_tclsh=$j
+			    break
+			fi
 		    fi
 		fi
 	    done
@@ -10690,6 +10695,12 @@ then :
   printf '%s\n' "#define HAVE_CHFLAGS 1" >>confdefs.h
 
 fi
+ac_fn_c_check_func "$LINENO" "getattrlist" "ac_cv_func_getattrlist"
+if test "x$ac_cv_func_getattrlist" = xyes
+then :
+  printf '%s\n' "#define HAVE_GETATTRLIST 1" >>confdefs.h
+
+fi
 ac_fn_c_check_func "$LINENO" "mkstemps" "ac_cv_func_mkstemps"
 if test "x$ac_cv_func_mkstemps" = xyes
 then :
@@ -10703,13 +10714,6 @@ fi
 #--------------------------------------------------------------------
 
 if test "`uname -s`" = "Darwin" ; then
-    ac_fn_c_check_func "$LINENO" "getattrlist" "ac_cv_func_getattrlist"
-if test "x$ac_cv_func_getattrlist" = xyes
-then :
-  printf '%s\n' "#define HAVE_GETATTRLIST 1" >>confdefs.h
-
-fi
-
     ac_fn_c_check_header_compile "$LINENO" "copyfile.h" "ac_cv_header_copyfile_h" "$ac_includes_default"
 if test "x$ac_cv_header_copyfile_h" = xyes
 then :
