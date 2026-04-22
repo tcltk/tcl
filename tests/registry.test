@@ -18,7 +18,7 @@ if {"::tcltest" ni [namespace children]} {
 testConstraint reg 0
 catch {
     if {[testConstraint win]} {
-	set ::regver [package require registry 1.4a2]
+	set ::regver [package require registry]
 	testConstraint reg 1
     }
 }
@@ -32,7 +32,7 @@ testConstraint english [expr {
 
 test registry-1.0 {check if we are testing the right dll} {win reg} {
     set ::regver
-} {1.4a2}
+} [info patchlevel]
 test registry-1.1 {argument parsing for registry command} -constraints {win reg} -returnCodes error -body {
     registry
 } -result {wrong # args: should be "registry ?-32bit|-64bit? option ?arg ...?"}
@@ -758,6 +758,19 @@ test registry-12.4 {BroadcastValue} -constraints {win reg notWine} -body {
 test registry-12.5 {BroadcastValue} -constraints {win reg notWine} -body {
     registry b {}
 } -result {1 0}
+
+# Basic test to verify tcl::registry also works as registry.
+test registry-13.1 {tcl::registry} -constraints {win reg} -setup {
+    tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
+} -body {
+    tcl::registry set HKEY_CURRENT_USER\\TclFoobar val1 foobar none
+    tcl::registry get HKEY_CURRENT_USER\\TclFoobar val1
+} -cleanup {
+    tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
+} -result foobar
+
+
+
 
 # cleanup
 ::tcltest::cleanupTests
