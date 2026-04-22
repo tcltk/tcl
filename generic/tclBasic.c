@@ -2987,6 +2987,7 @@ TclCreateObjCommandInNs(
 	Tcl_DeleteCommandFromToken(interp, (Tcl_Command) cmdPtr);
 	nsPtr = (Namespace *) TclEnsureNamespace(interp,
 		(Tcl_Namespace *) cmdPtr->nsPtr);
+	/* Note nsPtr may or may not be same as cmdPtr->nsPtr */
 	TclNsDecrRefCount(cmdPtr->nsPtr);
 
 	if (cmdPtr->flags & CMD_REDEF_IN_PROGRESS) {
