@@ -88,7 +88,7 @@ static DWORD lastType = REG_RESOURCE_LIST;
  * Declarations for functions defined in this file.
  */
 
-static void		AppendSystemError(Tcl_Interp *interp, DWORD error);
+static void		TclWinAppendSystemError(Tcl_Interp *interp, DWORD error);
 static int		BroadcastValue(Tcl_Interp *interp, Tcl_Size objc,
 			    Tcl_Obj *const objv[]);
 static DWORD		ConvertDWORD(DWORD type, DWORD value);
@@ -360,7 +360,7 @@ DeleteKey(
 	}
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"unable to delete key: ", -1));
-	AppendSystemError(interp, result);
+	TclWinAppendSystemError(interp, result);
 	return TCL_ERROR;
     }
 
@@ -376,7 +376,7 @@ DeleteKey(
     if (result != ERROR_SUCCESS && result != ERROR_FILE_NOT_FOUND) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"unable to delete key: ", -1));
-	AppendSystemError(interp, result);
+	TclWinAppendSystemError(interp, result);
 	result = TCL_ERROR;
     } else {
 	result = TCL_OK;
@@ -434,7 +434,7 @@ DeleteValue(
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"unable to delete value \"%s\" from key \"%s\": ",
 		Tcl_GetString(valueNameObj), Tcl_GetString(keyNameObj)));
-	AppendSystemError(interp, result);
+	TclWinAppendSystemError(interp, result);
 	result = TCL_ERROR;
     } else {
 	result = TCL_OK;
@@ -511,7 +511,7 @@ GetKeyNames(
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"unable to enumerate subkeys of \"%s\": ",
 			Tcl_GetString(keyNameObj)));
-		AppendSystemError(interp, result);
+		TclWinAppendSystemError(interp, result);
 		result = TCL_ERROR;
 	    }
 	    break;
@@ -595,7 +595,7 @@ GetType(
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"unable to get type of value \"%s\" from key \"%s\": ",
 		Tcl_GetString(valueNameObj), Tcl_GetString(keyNameObj)));
-	AppendSystemError(interp, result);
+	TclWinAppendSystemError(interp, result);
 	return TCL_ERROR;
     }
 
@@ -690,7 +690,7 @@ GetValue(
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"unable to get value \"%s\" from key \"%s\": ",
 		Tcl_GetString(valueNameObj), Tcl_GetString(keyNameObj)));
-	AppendSystemError(interp, result);
+	TclWinAppendSystemError(interp, result);
 	Tcl_DStringFree(&data);
 	return TCL_ERROR;
     }
@@ -873,7 +873,7 @@ OpenKey(
 	if (result != ERROR_SUCCESS) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "unable to open key: ", -1));
-	    AppendSystemError(interp, result);
+	    TclWinAppendSystemError(interp, result);
 	    result = TCL_ERROR;
 	} else {
 	    result = TCL_OK;
@@ -1261,7 +1261,7 @@ SetValue(
     if (result != ERROR_SUCCESS) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"unable to set value: ", -1));
-	AppendSystemError(interp, result);
+	TclWinAppendSystemError(interp, result);
 	return TCL_ERROR;
     }
     return TCL_OK;
@@ -1335,7 +1335,7 @@ BroadcastValue(
 /*
  *----------------------------------------------------------------------
  *
- * AppendSystemError --
+ * TclWinAppendSystemError --
  *
  *	Formats a Windows system error message and places it into
  *	the interpreter result.
@@ -1344,13 +1344,13 @@ BroadcastValue(
  *	None.
  *
  * Side effects:
- *	None.
+ *	Modifies the interpreter result and sets the error code.
  *
  *----------------------------------------------------------------------
  */
 
-static void
-AppendSystemError(
+void
+TclWinAppendSystemError(
     Tcl_Interp *interp,		/* Current interpreter. */
     DWORD error)		/* Result code from error. */
 {
