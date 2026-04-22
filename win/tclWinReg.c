@@ -12,10 +12,6 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
-#undef STATIC_BUILD
-#ifndef USE_TCL_STUBS
-#   define USE_TCL_STUBS
-#endif
 #include "tclInt.h"
 #ifdef _MSC_VER
 #   pragma comment (lib, "advapi32.lib")
@@ -75,8 +71,6 @@ static const HKEY rootKeys[] = {
     HKEY_CURRENT_CONFIG, HKEY_PERFORMANCE_DATA, HKEY_DYN_DATA
 };
 
-static const char REGISTRY_ASSOC_KEY[] = "registry::command";
-
 /*
  * The following table maps from registry types to strings. Note that the
  * indices for this array are the same as the constants for the known registry
@@ -98,7 +92,6 @@ static void		AppendSystemError(Tcl_Interp *interp, DWORD error);
 static int		BroadcastValue(Tcl_Interp *interp, Tcl_Size objc,
 			    Tcl_Obj *const objv[]);
 static DWORD		ConvertDWORD(DWORD type, DWORD value);
-static void		DeleteCmd(void *clientData);
 static int		DeleteKey(Tcl_Interp *interp, Tcl_Obj *keyNameObj,
 			    REGSAM mode);
 static int		DeleteValue(Tcl_Interp *interp, Tcl_Obj *keyNameObj,
@@ -128,14 +121,6 @@ static int		SetValue(Tcl_Interp *interp, Tcl_Obj *keyNameObj,
 			    Tcl_Obj *valueNameObj, Tcl_Obj *dataObj,
 			    Tcl_Obj *typeObj, REGSAM mode);
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-DLLEXPORT int		Registry_Init(Tcl_Interp *interp);
-DLLEXPORT int		Registry_Unload(Tcl_Interp *interp, int flags);
-#ifdef __cplusplus
-}
-#endif
 
 /*
  *----------------------------------------------------------------------
@@ -157,88 +142,9 @@ int
 Registry_Init(
     Tcl_Interp *interp)
 {
-    Tcl_Command cmd;
-
-    if (Tcl_InitStubs(interp, "9.0-", 0) == NULL) {
-	return TCL_ERROR;
-    }
-
-    cmd = Tcl_CreateObjCommand2(interp, "registry", RegistryObjCmd,
-	    interp, DeleteCmd);
-    Tcl_SetAssocData(interp, REGISTRY_ASSOC_KEY, NULL, cmd);
-    return Tcl_PkgProvideEx(interp, "registry", "1.4a2", NULL);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Registry_Unload --
- *
- *	This function removes the registry command.
- *
- * Results:
- *	A standard Tcl result.
- *
- * Side effects:
- *	The registry command is deleted and the dll may be unloaded.
- *
- *----------------------------------------------------------------------
- */
-
-int
-Registry_Unload(
-    Tcl_Interp *interp,		/* Interpreter for unloading */
-    int flags)			/* Flags passed by the unload system */
-{
-    Tcl_Command cmd;
-    Tcl_Obj *objv[3];
-    (void)flags;
-
-    /*
-     * Unregister the registry package. There is no Tcl_PkgForget()
-     */
-
-    objv[0] = Tcl_NewStringObj("package", -1);
-    objv[1] = Tcl_NewStringObj("forget", -1);
-    objv[2] = Tcl_NewStringObj("registry", -1);
-    Tcl_EvalObjv(interp, 3, objv, TCL_EVAL_GLOBAL);
-
-    /*
-     * Delete the originally registered command.
-     */
-
-    cmd = (Tcl_Command)Tcl_GetAssocData(interp, REGISTRY_ASSOC_KEY, NULL);
-    if (cmd != NULL) {
-	Tcl_DeleteCommandFromToken(interp, cmd);
-    }
-
+    (void) Tcl_CreateObjCommand2(interp, "::tcl::registry", RegistryObjCmd,
+		interp, NULL);
     return TCL_OK;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * DeleteCmd --
- *
- *	Cleanup the interp command token so that unloading doesn't try to
- *	re-delete the command (which will crash).
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	The unload command will not attempt to delete this command.
- *
- *----------------------------------------------------------------------
- */
-
-static void
-DeleteCmd(
-    void *clientData)
-{
-    Tcl_Interp *interp = (Tcl_Interp *)clientData;
-
-    Tcl_SetAssocData(interp, REGISTRY_ASSOC_KEY, NULL, NULL);
 }
 
 /*
