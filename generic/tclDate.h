@@ -290,19 +290,6 @@ enum ClockFmtScnCmdArgsFlags {
     CLF_LOCALE_USED = (1 << 15)
 };
 
-typedef struct ClockClientData ClockClientData;
-
-typedef struct ClockFmtScnCmdArgs {
-    ClockClientData *dataPtr;	/* Pointer to literal pool, etc. */
-    Tcl_Interp *interp;		/* Tcl interpreter */
-    Tcl_Obj *formatObj;		/* Format */
-    Tcl_Obj *localeObj;		/* Name of the locale where the time will be expressed. */
-    Tcl_Obj *timezoneObj;	/* Default time zone in which the time will be expressed */
-    Tcl_Obj *baseObj;		/* Base (scan and add) or clockValue (format) */
-    int flags;			/* Flags control scanning */
-    Tcl_Obj *mcDictObj;		/* Current dictionary of tcl::clock package for given localeObj*/
-} ClockFmtScnCmdArgs;
-
 /* Last-period cache for fast UTC to local and backwards conversion */
 typedef struct ClockLastTZOffs {
     /* keys */
@@ -372,6 +359,17 @@ typedef struct ClockClientData {
     int defFlags;		    /* Default flags (from configure), ATM
 				     * only CLF_VALIDATE supported */
 } ClockClientData;
+
+typedef struct ClockFmtScnCmdArgs {
+    ClockClientData *dataPtr;	/* Pointer to literal pool, etc. */
+    Tcl_Interp *interp;		/* Tcl interpreter */
+    Tcl_Obj *formatObj;		/* Format */
+    Tcl_Obj *localeObj;		/* Name of the locale where the time will be expressed. */
+    Tcl_Obj *timezoneObj;	/* Default time zone in which the time will be expressed */
+    Tcl_Obj *baseObj;		/* Base (scan and add) or clockValue (format) */
+    int flags;			/* Flags control scanning */
+    Tcl_Obj *mcDictObj;		/* Current dictionary of tcl::clock package for given localeObj*/
+} ClockFmtScnCmdArgs;
 
 #define ClockDefaultYearCentury 2000
 #define ClockDefaultCenturySwitch 38

@@ -31,12 +31,7 @@ macro to the name of the project makefile.
 # We extract version numbers using the nmakehlp program. For now use
 # the local copy of nmakehlp. Once we locate Tcl, we will use that
 # one if it is newer.
-!if "$(MACHINE)" == "IX86" || "$(MACHINE)" == "$(NATIVE_ARCH)"
-!if [$(CC) -nologo -DNDEBUG "nmakehlp.c" -link -subsystem:console > nul]
-!endif
-!else
-!if [copy x86_64-w64-mingw32-nmakehlp.exe nmakehlp.exe >NUL]
-!endif
+!if [$(CC) -nologo -DNDEBUG "$(NMAKEHLPC)" -link -subsystem:console > nul]
 !endif
 
 # First locate the Tcl directory that we are working with.
@@ -53,7 +48,7 @@ _RULESDIR=$(INSTALLDIR:/=\)
 !else
 # Locate Tcl sources
 !if [echo _RULESDIR = \> nmakehlp.out] \
-   || [nmakehlp -L generic\tcl.h >> nmakehlp.out]
+   || [$(NMAKEHLP_NATIVE) -L generic\tcl.h >> nmakehlp.out]
 _RULESDIR = ..\..\tcl
 !else
 !include nmakehlp.out
@@ -82,17 +77,17 @@ _RULESDIR = .
 !if exist("rules.vc") # The extension has its own copy
 
 !if [echo TCL_RULES_MAJOR = \> versions.vc] \
-   && [nmakehlp -V "$(_RULESDIR)\rules.vc" RULES_VERSION_MAJOR >> versions.vc]
+   && [$(NMAKEHLP_NATIVE) -V "$(_RULESDIR)\rules.vc" RULES_VERSION_MAJOR >> versions.vc]
 !endif
 !if [echo TCL_RULES_MINOR = \>> versions.vc] \
-   && [nmakehlp -V "$(_RULESDIR)\rules.vc" RULES_VERSION_MINOR >> versions.vc]
+   && [$(NMAKEHLP_NATIVE) -V "$(_RULESDIR)\rules.vc" RULES_VERSION_MINOR >> versions.vc]
 !endif
 
 !if [echo OUR_RULES_MAJOR = \>> versions.vc] \
-   && [nmakehlp -V "rules.vc" RULES_VERSION_MAJOR >> versions.vc]
+   && [$(NMAKEHLP_NATIVE) -V "rules.vc" RULES_VERSION_MAJOR >> versions.vc]
 !endif
 !if [echo OUR_RULES_MINOR = \>> versions.vc] \
-   && [nmakehlp -V "rules.vc" RULES_VERSION_MINOR >> versions.vc]
+   && [$(NMAKEHLP_NATIVE) -V "rules.vc" RULES_VERSION_MINOR >> versions.vc]
 !endif
 !include versions.vc
 # We have a newer version of the support files, use them
