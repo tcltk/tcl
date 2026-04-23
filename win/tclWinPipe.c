@@ -1270,163 +1270,228 @@ ApplicationType(
     Tcl_DString *dsFullNamePtr)	/* Filled with complete path to application.
 				 * Must always be Tcl_DStringFree'd */
 {
-    int applType, i;
-    Tcl_Size nameLen;
+    int applType;
+    size_t i;
     HANDLE hFile;
     WCHAR *rest;
     char *ext;
     char buf[2];
     DWORD attr, read;
     IMAGE_DOS_HEADER header;
-    Tcl_DString nameBuf, ds;
+    Tcl_DString nameBuf;
     TclWinPath winPath;
     DWORD numChars, winPathCapacity = 0;
     const WCHAR *nativeName;
     WCHAR *fullNativePath;
-    static const char extensions[][5] = {"", ".com", ".exe", ".bat", ".cmd"};
+    DWORD winError = 0;
+    static const WCHAR extensions[][5] = {
+		L"", L".com", L".exe", L".bat", L".cmd"
+    };
+    Tcl_Size numBytesInName;
 
     Tcl_DStringInit(dsFullNamePtr);
     fullNativePath = TclWinPathInit(&winPath, &winPathCapacity);
 
     /*
      * Look for the program as an external program. First try the name as it
-     * is, then try adding .com, .exe, .bat and .cmd, in that order, to the name,
-     * looking for an executable.
+     * is, then try adding .com, .exe, .bat and .cmd, in that order, to the
+     * name, looking for an executable. Using the raw SearchPathW() function
+     * by itself doesn't suffice:
      *
-     * Using the raw SearchPathW() function doesn't do quite what is necessary.
-     * If the name of the executable already contains a '.' character, it will
-     * not try appending the specified extension when searching (in other
-     * words, SearchPath will not find the program "a.b.exe" if the arguments
-     * specified "a.b" and ".exe"). So, first look for the file as it is
-     * named. Then manually append the extensions, looking for a match.
+     * - First, if the name of the executable already contains a '.' character,
+     * it will not try appending the specified extension when searching (in
+     * other words, SearchPath will not find the program "a.b.exe" if the
+     * arguments specified "a.b" and ".exe"). So, first look for the file as it
+     * is named. Then manually append the extensions, looking for a match.
+     *
+     * - Second, using it to search the entire PATH at once for each extension
+     * will result in a .com being found even when it occurs later in the
+     * path than an exe (for example). Bug [596936dd2d]
+     *
+     * We have to therefore do the work manually by explicitly iterating
+     * through each directory in the PATH and looking for each extension in
+     * that directory.
      */
 
     applType = APPL_NONE;
     Tcl_DStringInit(&nameBuf);
-    Tcl_DStringAppend(&nameBuf, originalName, TCL_INDEX_NONE);
-    nameLen = Tcl_DStringLength(&nameBuf);
+    Tcl_UtfToWCharDString(originalName, TCL_INDEX_NONE, &nameBuf);
+    numBytesInName = Tcl_DStringLength(&nameBuf);
 
-    for (i = 0; i < (int) (sizeof(extensions) / sizeof(extensions[0])); i++) {
-	Tcl_DStringFree(dsFullNamePtr); /* From previous iteration, if any */
-	Tcl_DStringSetLength(&nameBuf, nameLen);
-	Tcl_DStringAppend(&nameBuf, extensions[i], TCL_INDEX_NONE);
-	Tcl_DStringInit(&ds);
-	nativeName = Tcl_UtfToWCharDString(Tcl_DStringValue(&nameBuf),
-		Tcl_DStringLength(&nameBuf), &ds);
-	numChars = SearchPathW(NULL, nativeName, NULL, winPathCapacity,
-		fullNativePath, &rest);
-	Tcl_DStringFree(&ds);
-	if (numChars == 0) {
-	    continue;
-	}
-	if (numChars > winPathCapacity) {
-	    /* Buffer too small; try again. */
-	    winPathCapacity = numChars;
-	    fullNativePath = TclWinPathResize(&winPath, winPathCapacity);
-	    numChars = SearchPathW(NULL, nativeName, NULL, winPathCapacity,
-		    fullNativePath, &rest);
-	    if (numChars == 0 || numChars >= winPathCapacity) {
-		continue; /* Give up */
-	    }
-	}
+    {
+	TclWinPath envPath;
+	Tcl_DString dsSearchDirs;
+	WCHAR *dirStart, *dirEnd;
 
+	Tcl_DStringInit(&dsSearchDirs);
+	/* Start with current directory . */
+	Tcl_DStringAppend(&dsSearchDirs, (char *) L".;", 2 * sizeof(WCHAR));
+
+	/* Convert the wide PATH to UTF-8 for easy tokenisation. */
+	WCHAR *envPathPtr = TclWinGetEnvironmentVariable(L"PATH", &envPath);
+	if (envPathPtr != NULL && envPathPtr[0] != L'\0') {
+	    Tcl_DStringAppend(&dsSearchDirs, (char *)envPathPtr,
+		wcslen(envPathPtr) * sizeof(WCHAR));
+	}
+	TclWinPathFree(&envPath);
 	/*
-	 * Ignore matches on directories or data files, return if identified a
-	 * known type.
+	 * Tcl_DStringAppend only appends a single \0 byte, make sure we have
+	 * two. Note Tcl_DStringLength now will include the terminating L'\0'
 	 */
+	Tcl_DStringAppend(&dsSearchDirs, (char *) L"", sizeof(WCHAR));
 
-	attr = GetFileAttributesW(fullNativePath);
-	if ((attr == 0xFFFFFFFF) || (attr & FILE_ATTRIBUTE_DIRECTORY)) {
-	    continue;
-	}
-	Tcl_WCharToUtfDString(fullNativePath, TCL_INDEX_NONE, dsFullNamePtr);
+	/* 
+	 * Iterate through search directories.
+	 */
+	dirStart = (WCHAR *)Tcl_DStringValue(&dsSearchDirs);
+	dirStart--;
+	do {
+	    dirStart++;          /* Skip the preceding ';' */
+	    dirEnd = wcschr(dirStart, L';');
+	    if (dirEnd != NULL) {
+		*dirEnd = L'\0';
+	    }
 
-	ext = strrchr(Tcl_DStringValue(dsFullNamePtr), '.');
-	if ((ext != NULL) &&
-		(strcasecmp(ext, ".cmd") == 0 || strcasecmp(ext, ".bat") == 0)) {
-	    applType = APPL_DOS;
-	    break;
-	}
+	    /* Try each extension within this one directory. */
+	    for (i = 0; i < (sizeof(extensions) / sizeof(extensions[0])); i++) {
+		Tcl_DStringFree(dsFullNamePtr); /* From previous iteration, if any */
+		/* Overwrite previous extension including trailing L'\0' */
+		Tcl_DStringSetLength(&nameBuf, numBytesInName);
+		Tcl_DStringAppend(&nameBuf, (char *)extensions[i],
+		    sizeof(WCHAR) * (wcslen(extensions[i]) + 1));
 
-	hFile = CreateFileW(fullNativePath,
-		GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING,
-		FILE_ATTRIBUTE_NORMAL|FILE_FLAG_OPEN_REPARSE_POINT, NULL);
-	if (hFile == INVALID_HANDLE_VALUE) {
-	    continue;
-	}
+		nativeName = (WCHAR *)Tcl_DStringValue(&nameBuf);
+		numChars = SearchPathW(dirStart, (WCHAR *)nativeName, NULL,
+			winPathCapacity, fullNativePath, &rest);
+		if (numChars == 0) {
+		    winError = GetLastError(); /* Save error for later  */
+		    continue;
+		}
 
-	if (attr & FILE_ATTRIBUTE_REPARSE_POINT) {
-	    /*
-	     * But [4f0b5767ac]. Likely a App Execution Alias. This can only
-	     * be a Win32 APP. Attempt to ReadFile below will fail. We assume
-	     * that if it is on the PATH, and it is a reparse point, it is an
-	     * App Execution Alias.
-	     */
-	    CloseHandle(hFile);
-	    applType = APPL_WIN32;
-	    break;
-	}
+		if (numChars > winPathCapacity) {
+		    /* Buffer too small; try again. */
+		    winPathCapacity = numChars;
+		    fullNativePath = TclWinPathResize(&winPath, winPathCapacity);
+		    numChars = SearchPathW(dirStart, (WCHAR *)nativeName, NULL,
+			winPathCapacity, fullNativePath, &rest);
+		    if (numChars == 0 || numChars >= winPathCapacity) {
+			continue; /* Give up on this dir+ext combination. */
+		    }
+		}
 
-	header.e_magic = 0;
-	ReadFile(hFile, (void *)&header, sizeof(header), &read, NULL);
-	if (header.e_magic != IMAGE_DOS_SIGNATURE) {
-	    /*
-	     * Doesn't have the magic number for relocatable executables. If
-	     * filename ends with .com, assume it's a DOS application anyhow.
-	     * Note that we didn't make this assumption at first, because some
-	     * supposed .com files are really 32-bit executables with all the
-	     * magic numbers and everything.
-	     */
+		/*
+		 * Ignore matches on directories or data files, return if
+		 * identified a known type.
+		 */
 
-	    CloseHandle(hFile);
-	    if ((ext != NULL) && (strcasecmp(ext, ".com") == 0)) {
-		applType = APPL_DOS;
+		attr = GetFileAttributesW(fullNativePath);
+		if ((attr == 0xFFFFFFFF) || (attr & FILE_ATTRIBUTE_DIRECTORY)) {
+		    continue;
+		}
+		Tcl_WCharToUtfDString(fullNativePath, TCL_INDEX_NONE, dsFullNamePtr);
+
+		ext = strrchr(Tcl_DStringValue(dsFullNamePtr), '.');
+		if ((ext != NULL) &&
+			(strcasecmp(ext, ".cmd") == 0 || strcasecmp(ext, ".bat") == 0)) {
+		    applType = APPL_DOS;
+		    break;
+		}
+
+		hFile = CreateFileW(fullNativePath,
+			GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING,
+			FILE_ATTRIBUTE_NORMAL|FILE_FLAG_OPEN_REPARSE_POINT, NULL);
+		if (hFile == INVALID_HANDLE_VALUE) {
+		    continue;
+		}
+
+		if (attr & FILE_ATTRIBUTE_REPARSE_POINT) {
+		    /*
+		     * But [4f0b5767ac]. Likely a App Execution Alias. This can
+		     * only be a Win32 APP. Attempt to ReadFile below will fail.
+		     * We assume that if it is on the PATH, and it is a reparse
+		     * point, it is an App Execution Alias.
+		     */
+		    CloseHandle(hFile);
+		    applType = APPL_WIN32;
+		    break;
+		}
+
+		header.e_magic = 0;
+		ReadFile(hFile, (void *)&header, sizeof(header), &read, NULL);
+		if (header.e_magic != IMAGE_DOS_SIGNATURE) {
+		    /*
+		     * Doesn't have the magic number for relocatable executables.
+		     * If filename ends with .com, assume it's a DOS application
+		     * anyhow.  Note that we didn't make this assumption at first,
+		     * because some supposed .com files are really 32-bit
+		     * executables with all the magic numbers and everything.
+		     */
+
+		    CloseHandle(hFile);
+		    if ((ext != NULL) && (strcasecmp(ext, ".com") == 0)) {
+			applType = APPL_DOS;
+			break;
+		    }
+		    continue;
+		}
+		if (header.e_lfarlc != sizeof(header)) {
+		    /*
+		     * All Windows 3.X and Win32 and some DOS programs have this
+		     * value set here.  If it doesn't, assume that since it
+		     * already had the other magic number it was a DOS application.
+		     */
+
+		    CloseHandle(hFile);
+		    applType = APPL_DOS;
+		    break;
+		}
+
+		/*
+		 * The DWORD at header.e_lfanew points to yet another magic
+		 * number.
+		 */
+
+		buf[0] = '\0';
+		SetFilePointer(hFile, header.e_lfanew, NULL, FILE_BEGIN);
+		ReadFile(hFile, (void *)buf, 2, &read, NULL);
+		CloseHandle(hFile);
+
+		if ((buf[0] == 'N') && (buf[1] == 'E')) {
+		    applType = APPL_WIN3X;
+		} else if ((buf[0] == 'P') && (buf[1] == 'E')) {
+		    applType = APPL_WIN32;
+		} else {
+		    /*
+		     * Strictly speaking, there should be a test that there is
+		     * an 'L' and 'E' at buf[0..1], to identify the type as DOS,
+		     * but of course we ran into a DOS executable that _doesn't_
+		     * have the magic number - specifically, one compiled using
+		     * the Lahey Fortran90 compiler.
+		     */
+
+		    applType = APPL_DOS;
+		}
 		break;
+	    } /* end inner for (extensions) */
+
+	    if (applType != APPL_NONE) {
+		break; /* Found a match; stop scanning PATH directories. */
 	    }
-	    continue;
-	}
-	if (header.e_lfarlc != sizeof(header)) {
-	    /*
-	     * All Windows 3.X and Win32 and some DOS programs have this value
-	     * set here. If it doesn't, assume that since it already had the
-	     * other magic number it was a DOS application.
-	     */
 
-	    CloseHandle(hFile);
-	    applType = APPL_DOS;
-	    break;
-	}
+	    /* Restore the ';' we temporarily overwrote, then advance. */
+	    if (dirEnd != NULL) {
+		*dirEnd = L';'; /* TODO - really needed? */
+	    }
+	    dirStart = dirEnd;
+	} while (dirStart != NULL); /* end outer do-while (PATH dirs) */
 
-	/*
-	 * The DWORD at header.e_lfanew points to yet another magic number.
-	 */
+	Tcl_DStringFree(&dsSearchDirs);
+    } /* end PATH-enumeration block */
 
-	buf[0] = '\0';
-	SetFilePointer(hFile, header.e_lfanew, NULL, FILE_BEGIN);
-	ReadFile(hFile, (void *)buf, 2, &read, NULL);
-	CloseHandle(hFile);
-
-	if ((buf[0] == 'N') && (buf[1] == 'E')) {
-	    applType = APPL_WIN3X;
-	} else if ((buf[0] == 'P') && (buf[1] == 'E')) {
-	    applType = APPL_WIN32;
-	} else {
-	    /*
-	     * Strictly speaking, there should be a test that there is an 'L'
-	     * and 'E' at buf[0..1], to identify the type as DOS, but of
-	     * course we ran into a DOS executable that _doesn't_ have the
-	     * magic number - specifically, one compiled using the Lahey
-	     * Fortran90 compiler.
-	     */
-
-	    applType = APPL_DOS;
-	}
-	break;
-    }
     Tcl_DStringFree(&nameBuf);
 
     if (applType == APPL_NONE) {
-	Tcl_WinConvertError(GetLastError());
+	Tcl_WinConvertError(winError);
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf("couldn't execute \"%s\": %s",
 		originalName, Tcl_PosixError(interp)));
 	Tcl_DStringFree(dsFullNamePtr);
