@@ -13,8 +13,8 @@
 registry \- Manipulate the Windows registry
 .SH SYNOPSIS
 .nf
+\fBtcl::registry \fR?\fI\-mode\fR? \fIoption keyName\fR ?\fIarg arg ...\fR?
 \fBpackage require registry 1.4\fR
-
 \fBregistry \fR?\fI\-mode\fR? \fIoption keyName\fR ?\fIarg arg ...\fR?
 .fi
 .BE
@@ -25,6 +25,9 @@ manipulating the Windows registry.  The package implements the
 \fBregistry\fR Tcl command.  This command is only supported on the
 Windows platform.  Warning: this command should be used with caution
 as a corrupted registry can leave your system in an unusable state.
+.PP
+Starting with Tcl 9.1, the command is also available as \fBtcl::registry\fR
+without requiring the \fBregistry\fR package to be loaded.
 .PP
 \fIKeyName\fR is the name of a registry key.  Registry keys must be
 one of the following forms:

@@ -17,6 +17,9 @@ writing Tcl scripts.
 - [New timer command, switch to monotonic clock and microsecond resolution](https://core.tcl-lang.org/tips/doc/trunk/tip/723.md)
 - [Remove "expr" behavior from lseq](https://core.tcl-lang.org/tips/doc/trunk/tip/746.md) *Incompatibility*
 - [File paths are now treated as case-insensitive on MacOS](https://core.tcl-lang.org/tcl/tktview/e6ca0b1b) *Incompatibility*
+- New command tcl::registry as a synonym for the registry command without needing
+the registry package to be loaded. The registry module is now part of the core
+Tcl DLL in all build configurations.
 
 # New public C API
 
