@@ -3502,7 +3502,8 @@ TclWinFileOwned(
 WCHAR *
 TclWinPathResize(
     TclWinPath *pathBufPtr,	/* Path buffer. Must have been initialized */
-    DWORD capacity)		/* Required capacity in WCHARS. */
+    DWORD capacity)		/* Required capacity in WCHARS 
+				   including nul terminator. */
 {
     assert(capacity > 0);
 
