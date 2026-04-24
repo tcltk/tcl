@@ -33,7 +33,7 @@ Append all of the *value* arguments to the current value of variable *varName*. 
 If *varName* indicate an element that does not exist of an array that has a default value set, the concatenation of the default value and all the *value* arguments will be stored in the array element.
 :::
 
-The result of this command is the new value stored in variable *varName*. This command provides an efficient way to build up long variables incrementally. For example, `append a $b` is much more efficient than `set a $a$b` if `$a` is long.
+The result of this command is the new value stored in variable *varName*. This command provides an efficient way to build up long variables incrementally. For example, `append a $b` is much more efficient than `set a $a$b` if **$a** is long.
 
 # Example
 

@@ -34,7 +34,7 @@ binary - Insert and extract fields from binary strings
 
 # Description
 
-This command provides facilities for manipulating binary data.  The subcommand [binary format] creates a binary string from normal Tcl values.  For example, given the values 16 and 22, on a 32-bit architecture, it might produce an 8-byte binary string consisting of two 4-byte integers, one for each of the numbers.  The subcommand [binary scan], does the opposite: it extracts data from a binary string and returns it as ordinary Tcl string values. The **binary encode** and **binary decode** subcommands convert binary data to or from string encodings such as base64 (used in MIME messages for example).
+This command provides facilities for manipulating binary data.  The subcommand [binary format](Binary format) creates a binary string from normal Tcl values.  For example, given the values 16 and 22, on a 32-bit architecture, it might produce an 8-byte binary string consisting of two 4-byte integers, one for each of the numbers.  The subcommand [binary scan](Binary scan), does the opposite: it extracts data from a binary string and returns it as ordinary Tcl string values. The **binary encode** and **binary decode** subcommands convert binary data to or from string encodings such as base64 (used in MIME messages for example).
 
 Note that other operations on binary data, such as taking a subsequence of it, getting its length, or reinterpreting it as a string in some encoding, are done by other Tcl commands (respectively [string range][string], [string length][string] and [encoding convertfrom][encoding] in the example cases).  A binary string in Tcl is merely one where all the characters it contains are in the range \\u0000-\\u00FF.
 

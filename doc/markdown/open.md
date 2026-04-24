@@ -129,7 +129,7 @@ If *fileName* refers to a serial port, then the specified serial port is opened 
 
 The [chan configure][chan] and [fconfigure] commands can be used to query and set additional configuration options specific to serial ports (where supported):
 
-[-mode]{.lit} [baud=§,=+parity=§,=+data=§,=+stop]{.arg}
+[-mode]{.lit} [baud,parity,data,stop]{.arg}
 : This option is a set of 4 comma-separated values: the baud rate, parity, number of data bits, and number of stop bits for this serial port.  The *baud* rate is a simple integer that specifies the connection speed. *Parity* is one of the following letters: **n**, **o**, **e**, **m**, **s**; respectively signifying the parity options of "none", "odd", "even", "mark", or "space". *Data* is the number of data bits and should be an integer from 5 to 8, while *stop* is the number of stop bits and should be the integer 1 or 2.
 
 [-handshake]{.lit} [type]{.arg}
@@ -143,7 +143,7 @@ The [chan configure][chan] and [fconfigure] commands can be used to query and se
 [-timeout]{.lit} [msec]{.arg}
 : (Windows and Unix). This option is used to set the timeout for blocking read operations. It specifies the maximum interval between the reception of two bytes in milliseconds. For Unix systems the granularity is 100 milliseconds. The **-timeout** option does not affect write operations or nonblocking reads. This option cannot be queried.
 
-[-ttycontrol]{.lit} [{signal]{.arg} [boolean]{.arg} [signal]{.arg} [boolean]{.arg} [...}]{.arg}
+[-ttycontrol]{.lit} [{signal]{.arg} [boolean]{.arg} [...}]{.arg}
 : (Windows and Unix). This option is used to setup the handshake output lines (see below) permanently or to send a BREAK over the serial line. The *signal* names are case-independent. **{RTS 1 DTR 0}** sets the RTS output to high and the DTR output to low. The BREAK condition (see below) is enabled and disabled with **{BREAK 1}** and **{BREAK 0}** respectively. It is not a good idea to change the **RTS** (or **DTR**) signal with active hardware handshake **rtscts** (or **dtrdsr**). The result is unpredictable. The **-ttycontrol** option cannot be queried.
 
 [-ttystatus]{.lit}

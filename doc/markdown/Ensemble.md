@@ -68,7 +68,7 @@ Every ensemble has four read-write properties and a read-only property. The prop
 **subcommand list** (read-write)
 : A list of all the subcommand names for the ensemble, or NULL if this is to be derived from either the keys of the mapping dictionary (see above) or (if that is also NULL) from the set of commands exported by the bound namespace. May be read and written using **Tcl\_GetEnsembleSubcommandList** and **Tcl\_SetEnsembleSubcommandList** respectively. The result of both of those functions is a Tcl result code (**TCL\_OK**, or **TCL\_ERROR** if the token does not refer to an ensemble) and the list obtained from **Tcl\_GetEnsembleSubcommandList** should always be treated as immutable even if it is unshared.
 
-[unknown subcommand handler command prefix][unknown] (read-write)
+**unknown subcommand handler command prefix** (read-write)
 : A list of words to prepend on the front of any subcommand when the subcommand is unknown to the ensemble (according to the current prefix handling rule); see the [namespace ensemble][namespace] command for more details. If NULL, the default behavior - generate a suitable error message - will be used when an unknown subcommand is encountered. May be read and written using **Tcl\_GetEnsembleUnknownHandler** and **Tcl\_SetEnsembleUnknownHandler** respectively. The result of both functions is a Tcl result code (**TCL\_OK**, or **TCL\_ERROR** if the token does not refer to an ensemble) and the list obtained from **Tcl\_GetEnsembleUnknownHandler** should always be treated as immutable even if it is unshared.
 
 **bound namespace** (read-only)
@@ -85,5 +85,4 @@ The ensemble property setters (**Tcl\_SetEnsembleMappingDict**, **Tcl\_SetEnsemb
 
 
 [namespace]: namespace.md
-[unknown]: unknown.md
 

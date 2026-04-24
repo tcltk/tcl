@@ -36,7 +36,7 @@ section | number of documents | initial conversion | final conversion
 --------|---------------------|--------------------|-----------------
 1       | 1                   | 1                  | 0
 3       | 108                 | 108                | 0
-n       | 139                 | 139                | 81
+n       | 139                 | 139                | 84
 
 Final conversion of these files is currently done:
 1. after
@@ -120,6 +120,9 @@ Final conversion of these files is currently done:
 79. memory
 80. msgcat
 81. my
+82. namespace
+83. next
+84. object
 
 
 The tk/doc directory comes next, after finishing Tcl.
@@ -182,6 +185,7 @@ List of nroff commands/macros currently implemented (partly not a complete imple
 - .sp (inserts vertical space) > this is treated individually (currently by mdExceptions)
 - .ta (tabulator)
 - .DS DE (display section)
+- .MT (here used for "" display)
 
 
 

@@ -110,7 +110,7 @@ typedef struct {
 } Tcl_MethodType2;
 ```
 
-The *version* field should always be declared equal to TCL\_OO\_METHOD\_VERSION\_CURRENT, TCL\_OO\_METHOD\_VERSION\_1 or TCL\_OO\_METHOD\_VERSION\_2. The *name* field provides a human-readable name for the type, and is the value that is exposed via the [info class methodtype][info] and [info object methodtype][info] Tcl commands.
+The *version* field should always be declared equal to TCL\_OO\_METHOD\_VERSION\_CURRENT, TCL\_OO\_METHOD\_VERSION\_1 or TCL\_OO\_METHOD\_VERSION\_2. The *name* field provides a human-readable name for the type, and is the value that is exposed via the **info class methodtype** and **info object methodtype** Tcl commands.
 
 The *callProc* field gives a function that is called when the method is invoked; it must never be NULL.
 
@@ -175,7 +175,6 @@ The values in the first *objc* values of the *objv* argument to **Tcl\_ObjectCon
 The *callProc* of the **Tcl\_MethodType** structure takes values of at least reference count 1 in its *objv* argument. It may add its own references, but must not decrement the reference count below that level; the caller of the method will decrement the reference count once the method returns properly (and the reference will be held if the method [yield]s).
 
 
-[info]: info.md
 [next]: next.md
 [yield]: yield.md
 

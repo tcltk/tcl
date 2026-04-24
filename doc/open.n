@@ -216,7 +216,7 @@ nonblocking reads.
 This option cannot be queried.
 .\" OPTION: -ttycontrol
 .TP
-\fB\-ttycontrol\fI {signal boolean signal boolean ...}\fR
+\fB\-ttycontrol\fI {signal boolean ...}\fR
 .
 (Windows and Unix). This option is used to setup the handshake
 output lines (see below) permanently or to send a BREAK over the serial line.

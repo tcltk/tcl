@@ -194,6 +194,5 @@ In addition to these predefined functions, applications may define additional fu
 [expr]: expr.md
 [interp]: interp.md
 [proc]: proc.md
-[string]: string.md
 [tclvars]: tclvars.md
-
+m[string]: string.md

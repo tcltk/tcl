@@ -126,6 +126,5 @@ glob -type f *{a,b,cde}*
 
 [file]: file.md
 [lsort]: lsort.md
-
 [string]: string.md
 

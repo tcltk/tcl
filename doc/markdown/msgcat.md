@@ -206,7 +206,7 @@ language[_country][_modifier]
 
 On Windows and Cygwin, if none of those environment variables is set, msgcat will attempt to extract locale information from the registry. The RFC4747 locale name "lang-script-country-options" is transformed to the locale as "lang\_country\_script" (Example: sr-Latn-CS -> sr\_cs\_latin). If all these attempts to discover an initial locale from the user's environment fail, msgcat defaults to an initial locale of "C".
 
-When a locale is specified by the user, a "best match" search is performed during string translation.  For example, if a user specifies en\_GB\_Funky, the locales "en\_gb\_funky", "en\_gb", "en" and .MT (the empty string) are searched in order until a matching translation string is found.  If no translation string is available, then the unknown handler is called.
+When a locale is specified by the user, a "best match" search is performed during string translation.  For example, if a user specifies en\_GB\_Funky, the locales "en\_gb\_funky", "en\_gb", "en" and "" (the empty string) are searched in order until a matching translation string is found.  If no translation string is available, then the unknown handler is called.
 
 # Namespaces and message catalogs
 
@@ -273,7 +273,7 @@ es.msg    — spanish
 en_gb.msg — United Kingdom English
 ```
 
-*Exception:* The message file for the root locale .MT is called "**ROOT.msg**". This exception is made so as not to cause peculiar behavior, such as marking the message file as "hidden" on Unix file systems.
+*Exception:* The message file for the root locale "" is called "**ROOT.msg**". This exception is made so as not to cause peculiar behavior, such as marking the message file as "hidden" on Unix file systems.
 
 1. The file contains a series of calls to **mcflset** and **mcflmset**, setting the necessary translation strings for the language, likely enclosed in a [namespace eval][namespace] so that all source strings are tied to the namespace of the package. For example, a short **es.msg** might contain:
 

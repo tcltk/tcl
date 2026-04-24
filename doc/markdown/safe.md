@@ -135,7 +135,7 @@ The following options are common to **::safe::interpCreate**, **::safe::interpIn
 : This option sets the list of directories in the safe interpreter's ::auto\_path.  The option is undefined if the Safe Base has "Sync Mode" on - in that case the safe interpreter's ::auto\_path is managed by the Safe Base and is a tokenized form of its access path. See the section [Sync mode] below for details.
 
 [-statics]{.lit} [boolean]{.arg}
-: This option specifies if the safe interpreter will be allowed to load statically linked packages (like [load {} Tk][load]). The default value is **true** : safe interpreters are allowed to load statically linked packages.
+: This option specifies if the safe interpreter will be allowed to load statically linked packages (like **load {} Tk**). The default value is **true** : safe interpreters are allowed to load statically linked packages.
 
 [-noStatics]{.lit}
 : This option is a convenience shortcut for **-statics false** and thus specifies that the safe interpreter will not be allowed to load statically linked packages.

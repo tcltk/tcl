@@ -116,16 +116,16 @@ The underlying property discovery mechanism relies on four slots (see [oo::defin
 These slots, and their intended semantics, are:
 
 [oo::configuresupport::readableproperties]{.cmd}
-: The set of properties of a class (not including those from its superclasses) that may be read from when configuring an instance of the class. This slot can also be read with the [info class properties][info] command.
+: The set of properties of a class (not including those from its superclasses) that may be read from when configuring an instance of the class. This slot can also be read with the **info class properties** command.
 
 [oo::configuresupport::writableproperties]{.cmd}
-: The set of properties of a class (not including those from its superclasses) that may be written to when configuring an instance of the class. This slot can also be read with the [info class properties][info] command.
+: The set of properties of a class (not including those from its superclasses) that may be written to when configuring an instance of the class. This slot can also be read with the **info class properties** command.
 
 [oo::configuresupport::objreadableproperties]{.cmd}
-: The set of properties of an object instance (not including those from its classes) that may be read from when configuring the object. This slot can also be read with the [info object properties][info] command.
+: The set of properties of an object instance (not including those from its classes) that may be read from when configuring the object. This slot can also be read with the **info object properties** command.
 
 [oo::configuresupport::objwritableproperties]{.cmd}
-: The set of properties of an object instance (not including those from its classes) that may be written to when configuring the object. This slot can also be read with the [info object properties][info] command.
+: The set of properties of an object instance (not including those from its classes) that may be written to when configuring the object. This slot can also be read with the **info object properties** command.
 
 
 Note that though these are slots, they are *not* in the standard [oo::define][define] or [oo::objdefine][objdefine] namespaces; in order to use them inside a definition script, they need to be referred to by full name. This is because they are intended to be building bricks of configurable property system, and not directly used by normal user code.
@@ -245,7 +245,7 @@ $pt4 configure -x "obviously not a number"
 [chan]: chan.md
 [define]: define.md
 [fconfigure]: fconfigure.md
-[info]: info.md
 [namespace]: namespace.md
 [objdefine]: objdefine.md
 
+[info]: info.md

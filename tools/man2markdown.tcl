@@ -254,6 +254,7 @@ namespace eval ::ndoc {
 		memory        {Tcl_InitMemory DumpActiveMemory Tcl_Alloc Alloc Tcl_Free Alloc}
 		msgcat        {tcl_pkgPath tclvars}
 		my            {oo::object object oo::define objdefine}
+		namespace     {Tcl_EvalObjv Eval Tcl\_GetIndexFromObj GetIndex}
 		
 		
 		regexp        {re\_syntax re_syntax}
@@ -1101,6 +1102,15 @@ proc ::ndoc::parseBlock {parent manContent} {
 				}
 				set manContent [lrange $manContent 1 end]
 			}
+			.MT {
+				# empty string as two double quotes:
+				# this is not a block element of the AST but it is a single line in nroff so we must handle it here.
+				# We convert this to Inline quotes
+				if {$blockType eq ""} {set blockType Paragraph}
+				if {$verbose} {puts "Double quote pair"}
+				if {$blockContent eq ""} {append blockContent \"\"} else {append blockContent { } \"\"}
+				set manContent [lrange $manContent 1 end]
+			}
 			default {
 				# if nothing else, just collect content:
 				if {$blockType eq ""} {set blockType Paragraph}
@@ -1712,17 +1722,14 @@ proc ::ndoc::mdExceptions {md} {
 		append {
 			 set md [string map {
 				{"**append a $b**"} {`append a $b`}
-				{"[set a $a$b][set]" if **$a** is long} {`set a $a$b` if `$a` is long}
+				{"**set a $a$b**" if **$a** is long} {`set a $a$b` if **$a** is long}
 				{[set]: set.md} {}
 			} $md]
 		}
 		binary {
 			# add two cross references:
-			set md [string map {{subcommand **binary format**} {subcommand [binary format]}} $md]
-			set md [string map {{subcommand **binary scan**} {subcommand [binary scan]}} $md]
-		}
-		re_syntax {
-			set md [string map {{Different flavors of res} {Different flavours of REs}} $md] 
+			set md [string map {{subcommand **binary format**} {subcommand [binary format](Binary format)}} $md]
+			set md [string map {{subcommand **binary scan**} {subcommand [binary scan](Binary scan)}} $md]
 		}
 		clock {
 			set md [string map [list \
@@ -1744,6 +1751,12 @@ proc ::ndoc::mdExceptions {md} {
 				{*https://tip.tcl-lang.org/173*} \
 				{<https://tip.tcl-lang.org/173>} \
 			] $md]
+		}
+		configurable {
+			set md [string map {
+				{uses **info object properties** with} {uses [info object properties][info] with}
+			} $md]
+			append md \n {[info]: info.md}
 		}
 		dde {
 			set md [string map {{Dde and tcl} {DDE and Tcl} Dde DDE} $md]
@@ -1767,7 +1780,7 @@ proc ::ndoc::mdExceptions {md} {
 		}
 		glob {
 			set md [string map {
-				{"**glob -tails -directory $dir \***" is equivalent to "[set pwd [pwd]; cd $dir; glob \*; cd $pwd][set]"} {`glob -tails -directory $dir *` is equivalent to `set pwd [pwd]; cd $dir; glob *; cd $pwd`}
+				{"**glob -tails -directory $dir \***" is equivalent to "**set pwd [pwd]; cd $dir; glob \*; cd $pwd**"} {`glob -tails -directory $dir *` is equivalent to `set pwd [pwd]; cd $dir; glob *; cd $pwd`}
 				{"**glob -tails -path [file rootname /home/fred/foo.tex] .\***"} {`glob -tails -path [file rootname /home/fred/foo.tex] .*`}
 				{"glob -join \* \* \* \*"} {`glob -join * * * *`}
 				{[] construct} {\[\] construct}
@@ -1791,12 +1804,17 @@ proc ::ndoc::mdExceptions {md} {
 		lappend {
 			set md [string map {
 				{"**lappend a $b**" is} {`lappend a $b` is}
-				{"[set a [concat $a [list $b]]][set]"} {`[set a [concat $a [list $b]]][set]`}
+				{"**set a [concat $a [list $b]]**"} {`set a [concat $a [list $b]]`}
 			} $md]
 		}
 		library {
 			set md [string map {
 				{[text=|§binary]} {[text|binary]}
+			} $md]
+		}
+		lrepeat {
+			set md [string map {
+				{Note that **lrepeat 1 element ...** is identical to **list element ...**} {Note that `lrepeat 1 element ...` is identical to `list element ...`}
 			} $md]
 		}
 		mathfunc {
@@ -1805,7 +1823,10 @@ proc ::ndoc::mdExceptions {md} {
 				{or **[tcl::mathfunc::atan2 [expr {$y}] [expr {$x}]]**.} {or `[tcl::mathfunc::atan2 [expr {$y}] [expr {$x}]]`.}
 				{"**atan** [[expr] {*y***/***x*}]"} {`atan [expr {y/x}]`}
 				{"**sqrt** [[expr] {*x***\****x***+***y***\****y*}]"} {`sqrt [expr {x*x+y*y}]`}
+				{to **string is boolean**} {to [string is boolean][string]}
+				{with **string is true** and **string is false**} {with [string is true][string] and [string is false][string]}
 			} $md]
+			append md \m {[string]: string.md}
 			regsub -all {range \[([^\]]*)\]} $md {range \\[\1\\]} md
 		}
 		mathop {
@@ -1821,6 +1842,26 @@ proc ::ndoc::mdExceptions {md} {
 				{**3) method defined in a classless object**} { 3. method defined in a classless object}
 				{: **msgcat** command is called } {    **msgcat** command is called }
 			} $md]
+		}
+		namespace {
+			set md [string map {
+				{the command **set script [namespace code {foo bar}]** is invoked} {the command `set script [namespace code {foo bar}]` is invoked}
+				{Then **eval $script [list x y]** can be} {Then `eval $script [list x y]` can be}
+				{as the command **::namespace eval ::a::b {foo bar x y}**} {as the command `::namespace eval ::a::b {foo bar x y}`}
+				{The command **namespace upvar $ns a b** has the same behaviour as **upvar 0 ${ns}::a b**} {The command `namespace upvar $ns a b` has the same behaviour as `upvar 0 ${ns}::a b`}
+				{same behaviour as **upvar 0 ${ns}::a b**} {same behaviour as `upvar 0 ${ns}::a b`}
+			} $md]
+		}
+		open {
+			set md [string map {
+				{[baud=§,=+parity=§,=+data=§,=+stop]{.arg}} {[baud,parity,data,stop]{.arg}}
+			} $md]
+		}
+		
+		
+		
+		re_syntax {
+			set md [string map {{Different flavors of res} {Different flavours of REs}} $md] 
 		}
 	}
 	regsub {\s+$} $md \n md
@@ -1854,11 +1895,13 @@ proc ::ndoc::mdLinks {md} {
 		## extract the command name:
 		set linkList [split $linkText { }]
 		set linkCmd [lindex $linkList 0]
-		# isValidLink: 0 = no link, 1 = external link, 2 = internal link:
+		# isValidLink: 0 = no link, 1 = external link, 2 = internal link, 9 = looks like a link but is none:
 		set isValidLink 0
-		if {
-			[lindex $linkList 0] eq "const" && [llength $linkList] >= 1
-		} {
+		# if the text has more than two words and the first word is not starting with an uppercase char (indicating an internal link),
+		# it is typically nothing to link to but just example code in the text,
+		# so exclude this (exceptions are handled in ndoc::mdExceptions):
+		if {[llength $linkList] > 2 && ! [string is upper [string index $linkCmd 0]]} {set isValidLink 9}
+		if {! $isValidLink && [lindex $linkList 0] eq "const" && [llength $linkList] >= 1} {
 			## exclude some corner cases
 			set isValidLink 0	
 		}
@@ -1880,7 +1923,7 @@ proc ::ndoc::mdLinks {md} {
 			set isValidLink 2
 			set linkTarget $linkText
 		}
-		if $isValidLink {		
+		if {$isValidLink > 0 && $isValidLink != 9} {
 			set replaceString \[$linkText\]
 			if {$linkTarget ne $linkText} {append replaceString \[$linkTarget\]}
 			set md [string replace $md {*}$fullRange $replaceString]
