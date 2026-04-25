@@ -2915,6 +2915,7 @@ ForeachLoopStep(
     int result)
 {
     ForeachState *statePtr = (ForeachState *)data[0];
+    int filterAccepts;
 
     /*
      * Process the result code from this run of the [foreach] body. Note that
@@ -2928,7 +2929,6 @@ ForeachLoopStep(
     case TCL_OK:
 	switch (statePtr->mode) {
 	case TCL_EACH_FILTER:
-	    int filterAccepts;
 	    result = Tcl_GetBooleanFromObj(interp, Tcl_GetObjResult(interp),
 		    &filterAccepts);
 	    if (result == TCL_OK && filterAccepts) {

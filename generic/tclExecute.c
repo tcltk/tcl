@@ -414,7 +414,7 @@ VarHashFindVar(
 
 #define POP_OBJECT()	*(tosPtr--)
 
-#define OBJ_AT_TOS	*tosPtr
+#define OBJ_AT_TOS	tosPtr[0]
 
 #define OBJ_UNDER_TOS	tosPtr[-1]
 
@@ -6945,16 +6945,20 @@ TEBCresume(
 	NEXT_INST_V(1, numLists + 2, 0);
 
     case INST_FOREACH_INDEX: {
-	Tcl_Size idx1 = TclGetInt4AtPtr(pc + 1), idx2 = TclGetInt4AtPtr(pc + 5);
-	TRACE("%u %u => ", (unsigned)idx1, (unsigned)idx2);
+	Tcl_Size listIdx = TclGetInt4AtPtr(pc + 1), varIdx = TclGetInt4AtPtr(pc + 5);
+	TRACE("%u %u => ", (unsigned)listIdx, (unsigned)varIdx);
 
-	tmpPtr = OBJ_AT_TOS;
-	infoPtr = (ForeachInfo *)tmpPtr->internalRep.twoPtrValue.ptr1;
-	tmpPtr = OBJ_AT_DEPTH(1);
+	// Get number of variables from ForeachInfo at TOS
+	infoPtr = (ForeachInfo *)OBJ_AT_TOS->internalRep.twoPtrValue.ptr1;
+	numVars = infoPtr->varLists[listIdx]->numVars;
+
+	// Get the iteration index from the iteration tracker under TOS
 	// Called when the step's already been advanced to the next one...
-	iterNum = (size_t)tmpPtr->internalRep.twoPtrValue.ptr1 - 1;
+	iterNum = (size_t)OBJ_UNDER_TOS->internalRep.twoPtrValue.ptr1 - 1;
+	assert(varIdx >= 0 && varIdx < numVars);
 
-	objResultPtr = Tcl_NewIntObj(infoPtr->varLists[idx1]->numVars * iterNum + idx2);
+	// Assume no overflow; we did previously read from this index...
+	objResultPtr = Tcl_NewWideIntObj(numVars * iterNum + varIdx);
 	TRACE_APPEND_NUM_OBJ(objResultPtr);
 	NEXT_INST_F(9, 0, 1);
     }
