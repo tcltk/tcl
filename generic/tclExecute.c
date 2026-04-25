@@ -6945,8 +6945,8 @@ TEBCresume(
 	NEXT_INST_V(1, numLists + 2, 0);
 
     case INST_FOREACH_INDEX: {
-	Tcl_Size listIdx = TclGetInt4AtPtr(pc + 1), varIdx = TclGetInt4AtPtr(pc + 5);
-	TRACE("%u %u => ", (unsigned)listIdx, (unsigned)varIdx);
+	Tcl_Size listIdx = TclGetInt4AtPtr(pc + 1), iterVarIdx = TclGetInt4AtPtr(pc + 5);
+	TRACE("%u %u => ", (unsigned)listIdx, (unsigned)iterVarIdx);
 
 	// Get number of variables from ForeachInfo at TOS
 	infoPtr = (ForeachInfo *)OBJ_AT_TOS->internalRep.twoPtrValue.ptr1;
@@ -6955,10 +6955,10 @@ TEBCresume(
 	// Get the iteration index from the iteration tracker under TOS
 	// Called when the step's already been advanced to the next one...
 	iterNum = (size_t)OBJ_UNDER_TOS->internalRep.twoPtrValue.ptr1 - 1;
-	assert(varIdx >= 0 && varIdx < numVars);
+	assert(iterVarIdx >= 0 && iterVarIdx < numVars);
 
 	// Assume no overflow; we did previously read from this index...
-	objResultPtr = Tcl_NewWideIntObj(numVars * iterNum + varIdx);
+	objResultPtr = Tcl_NewWideIntObj(numVars * iterNum + iterVarIdx);
 	TRACE_APPEND_NUM_OBJ(objResultPtr);
 	NEXT_INST_F(9, 0, 1);
     }
