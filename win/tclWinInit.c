@@ -898,9 +898,71 @@ errorReturn:
     err = GetLastError();
     TclWinPathFree(winPathPtr);
     SetLastError(err);
-    return NULL;}
-
+    return NULL;
+}
 
+/*
+ * TclWinGetDirPath --
+ *
+ *      Wrapper for functions that match the signature of the GetPathFunc
+ *      typedef.
+ *
+ * Results:
+ *      Returns a pointer to the environment variable value. The returned
+ *      pointer is valid until TclWinPathFree or TclWinPathResize is called
+ *      on winPathPtr. Returns NULL on failure. An error code may be
+ *      retrieved via GetLastError() as for GetEnvironmentVariableW.
+ *
+ * Side effects:
+ *      May allocate memory that must be freed with TclWinPathFree
+ *      on a non-NULL return.
+ */
+WCHAR *
+TclWinGetPath(
+    GetPathFunc getPathFunc,	/* Function to call for path of interest. */
+    TclWinPath *winPathPtr)	/* Buffer to receive full path. Should be
+				 * uninitialized or previously reset with
+				 * TclWinPathFree. */
+{
+    DWORD numChars;
+    DWORD capacity;
+    WCHAR *fullPathPtr;
+    DWORD err;
+
+    fullPathPtr = TclWinPathInit(winPathPtr, &capacity);
+    numChars = getPathFunc(fullPathPtr, capacity);
+
+    if (numChars == 0) {
+	goto errorReturn;
+    }
+
+    /*
+     * numChars does not include the null terminator so even if numChars
+     * equal to capacity, the buffer was too small.
+     */
+    if (numChars < capacity) {
+	return fullPathPtr;
+    }
+
+    /*
+     * Buffer too small. In this case, numChars is required space INCLUDING
+     * the null terminator. Allocate a larger buffer and try again.
+     */
+    capacity = numChars;
+    fullPathPtr = TclWinPathResize(winPathPtr, capacity);
+    numChars = getPathFunc(fullPathPtr, capacity);
+    if (numChars > 0 && numChars < capacity) {
+	return fullPathPtr;
+    }
+
+errorReturn:
+    err = GetLastError();
+    TclWinPathFree(winPathPtr);
+    SetLastError(err);
+    return NULL;
+}
+
+
 /*
  * Local Variables:
  * mode: c

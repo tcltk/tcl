@@ -984,9 +984,62 @@ namespace eval tcl::test::exec::win {
             removeDirectory $dir2
         } -body {
             exec testApp -path
-        } -result [nativeTestPath exec-win-5.1-2 testApp.bat]
+        } -result [nativeTestPath exec-win-5.1-1 testApp.bat]
 
-    # Verify content prioritized over extension
+    test exec-win-6.1 "exec - verify execution irrespective of random extension" \
+        -constraints haveTestApp \
+        -setup {
+            set fooFile [file join [temporaryDirectory] testApp.foo]
+            file copy $testApp $fooFile
+        } -cleanup {
+            file delete $fooFile
+            unset fooFile
+        } -body {
+            exec $fooFile -path
+        } -result [nativeTestPath testApp.foo]
+
+    test exec-win-6.2 "exec - verify execution of exe masquerading as .bat" \
+        -constraints haveTestApp \
+        -setup {
+            set batFile [file join [temporaryDirectory] testApp.bat]
+            file copy $testApp $batFile
+        } -cleanup {
+            file delete $batFile
+            unset batFile
+        } -body {
+            exec $batFile -path
+        } -result [nativeTestPath testApp.bat]
+
+    test exec-win-6.3 "exec - verify execution of exe in path masquerading as .com" \
+        -constraints win \
+        -body {
+            exec chcp
+        } -result "Active code*" -match glob
+
+    test exec-win-7.1 "exec - verify Windows directory checked before PATH" \
+        -constraints haveTestApp \
+        -setup {
+            set dir [makeDirectory exec-win-7.1]
+            # copy to a name that is present in the Windows dir
+            set dummyAttribExe [file join $dir attrib.exe]
+            file copy $testApp [file join $dir testApp.exe]
+            file copy $testApp $dummyAttribExe
+            set savedPath $::env(PATH)
+            set ::env(PATH) [file nativename $dir]
+        } -cleanup {
+            removeDirectory $dir
+            set ::env(PATH) $savedPath
+        } -body {
+            # Verify path is correct by calling testApp and then
+            # the real attrib is picked up though not on path
+            list [exec testApp.exe -path] XX [exec attrib.exe /?]
+        } -result {*testApp.exe*Displays or changes*} -match glob
+
+
+    # Verify Windows comes before path
+    # Verify cwd comes before path
+    # Duplicate semicolons in path
+    # Verify relative paths not checked in PATH
     # Ensure both / and \ paths work
 }
 namespace delete tcl::test::exec::win

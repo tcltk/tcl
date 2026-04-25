@@ -3624,6 +3624,10 @@ TclWinGetCurrentDirectory(
 				 * uninitialized or previously reset with
 				 * TclWinPathFree. */
 {
+    /*
+     * Note: Unfortunately cannot use TclWinGetPath to implement because order
+     * of parameters of wrapped function is different.
+     */
     DWORD numChars;
     DWORD capacity;
     WCHAR *fullPathPtr;

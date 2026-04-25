@@ -1433,15 +1433,43 @@ ApplicationType(
     numBytesInName = Tcl_DStringLength(&nameBuf);
     fullNativePath = TclWinPathInit(&winPath, &winPathCapacity);
 
-    /* Search path should start with current directory followed by PATH */
+    /*
+     * Search path should start with current directory, Windows system
+     * directory, Windows directory, and finally directories in the PATH.
+     */
     Tcl_DStringInit(&dsSearchDirs);
-    Tcl_DStringAppend(&dsSearchDirs, (char *)L".;", 2 * sizeof(WCHAR));
-    envPathPtr = TclWinGetEnvironmentVariable(L"PATH", &envPath);
-    if (envPathPtr != NULL && envPathPtr[0] != L'\0') {
-	Tcl_DStringAppend(&dsSearchDirs, (char *)envPathPtr,
-	    wcslen(envPathPtr) * sizeof(WCHAR));
+    Tcl_DStringAppend(&dsSearchDirs, (char *)L".", sizeof(WCHAR));
+
+    fullNativePath = TclWinGetSystemDirectory(&winPath);
+    if (fullNativePath != NULL) {
+	if (fullNativePath[0] != L'\0') {
+	    Tcl_DStringAppend(&dsSearchDirs, (char *)L";", sizeof(WCHAR));
+	    Tcl_DStringAppend(&dsSearchDirs, (char *)fullNativePath,
+		wcslen(fullNativePath) * sizeof(WCHAR));
+	}
+	TclWinPathFree(&winPath);
+	fullNativePath = TclWinPathInit(&winPath, &winPathCapacity);
     }
-    TclWinPathFree(&envPath);
+    fullNativePath = TclWinGetWindowsDirectory(&winPath);
+    if (fullNativePath != NULL) {
+	if (fullNativePath[0] != L'\0') {
+	    Tcl_DStringAppend(&dsSearchDirs, (char *)L";", sizeof(WCHAR));
+	    Tcl_DStringAppend(&dsSearchDirs, (char *)fullNativePath,
+		wcslen(fullNativePath) * sizeof(WCHAR));
+	}
+	TclWinPathFree(&winPath);
+	fullNativePath = TclWinPathInit(&winPath, &winPathCapacity);
+    }
+
+    envPathPtr = TclWinGetEnvironmentVariable(L"PATH", &envPath);
+    if (envPathPtr != NULL) {
+	if (envPathPtr[0] != L'\0') {
+	    Tcl_DStringAppend(&dsSearchDirs, (char *)L";", sizeof(WCHAR));
+	    Tcl_DStringAppend(&dsSearchDirs, (char *)envPathPtr,
+		wcslen(envPathPtr) * sizeof(WCHAR));
+	}
+	TclWinPathFree(&envPath);
+    }
 
     /*
      * Tcl_DStringAppend's above only append one \0 byte, make sure we have

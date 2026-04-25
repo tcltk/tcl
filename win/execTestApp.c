@@ -32,7 +32,7 @@ int wmain(int argc, wchar_t **argv)
 
     for (int i = 1; i < argc; i++) {
 	if (_wcsicmp(argv[i], L"-cwd") == 0) {
-	    GetCurrentDirectoryW(_countof(buf), buf);
+	    GetCurrentDirectoryW(sizeof(buf)/sizeof(buf[0]), buf);
 	    print(buf);
 	} else if (_wcsicmp(argv[i], L"-argv0") == 0) {
 	    print(argv[0]);
@@ -42,14 +42,15 @@ int wmain(int argc, wchar_t **argv)
 		print(L"Missing environment variable name");
 		return 1;
 	    }
-	    DWORD len = GetEnvironmentVariableW(argv[i], buf, _countof(buf));
-	    if (len == 0 || len >= _countof(buf)) {
+	    DWORD len = GetEnvironmentVariableW(argv[i], buf,
+		sizeof(buf) / sizeof(buf[0]));
+	    if (len == 0 || len >= (sizeof(buf) / sizeof(buf[0]))) {
 		print(L"Failed to retrieve environment variable");
 		return 1;
 	    }
 	    print(buf);
 	} else if (_wcsicmp(argv[i], L"-path") == 0) {
-	    GetModuleFileNameW(NULL, buf, _countof(buf));
+	    GetModuleFileNameW(NULL, buf, sizeof(buf) / sizeof(buf[0]));
 	    print(buf);
 	} else {
 	    print(L"Unknown option");
