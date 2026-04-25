@@ -159,6 +159,8 @@ TEST_LOAD_PRMS		= lappend ::auto_path {$(ROOT_DIR_WIN_NATIVE)/tests};\
 			  package ifneeded dde 1.5a2 [list load ${DDE_DLL_FILE}]
 TEST_LOAD_FACILITIES	= package ifneeded tcl::test ${VERSION}@TCL_PATCH_LEVEL@ [list load ${TEST_DLL_FILE} Tcltest];\
 			  $(TEST_LOAD_PRMS)
+EXECTESTAPP		= execTestApp$(EXEEXT)
+
 ZLIB_DLL_FILE		= zlib1.dll
 TOMMATH_DLL_FILE	= libtommath.dll
 
@@ -533,6 +535,14 @@ tcltest.cmd: Makefile
 tcltest.sh: tcltest.cmd
 
 tcltest: binaries $(TEST_EXE_FILE) $(TEST_DLL_FILE) $(CAT32) tcltest.cmd
+
+exectestapp: $(EXECTESTAPP)
+
+execTestApp.$(OBJEXT): execTestApp.c
+	$(CC) -c $(CC_SWITCHES) -DUNICODE -D_UNICODE @DEPARG@ $(CC_OBJNAME)
+
+$(EXECTESTAPP): execTestApp.$(OBJEXT)
+	$(CC) $(CFLAGS) execTestApp.$(OBJEXT) $(CC_EXENAME) $(LIBS) $(LDFLAGS_CONSOLE)
 
 binaries: $(TCL_STUB_LIB_FILE) @LIBRARIES@ winextensions ${TCL_ZIP_FILE} $(TCLSH)
 

@@ -755,12 +755,12 @@ test exec-19.1 {exec >> uses O_APPEND} -constraints {exec unix notValgrind noosx
 
 # Tests to ensure batch files and .CMD (Bug 9ece99d58b)
 # can be executed on Windows
-test exec-20.0 {exec .bat file} -constraints {win} -body {
+test exec-20.1 {exec .bat file} -constraints {win} -body {
     set log [makeFile {} exec20.log]
     exec [makeFile "echo %1> \"$log\"" exec20.bat] "Testing exec-20.0"
     viewFile $log
 } -result "\"Testing exec-20.0\""
-test exec-20.1 {exec .CMD file} -constraints {win} -body {
+test exec-20.2 {exec .CMD file} -constraints {win} -body {
     set log [makeFile {} exec201.log]
     exec [makeFile "echo %1> \"$log\"" exec201.CMD] "Testing exec-20.1"
     viewFile $log
@@ -802,6 +802,194 @@ test exec-22.0 {exec -encoding} -body {
 test exec-22.1 {exec -encoding invalid encoding} -body {
     exec -encoding nosuchencoding -- [interpreter] $path(echobin) abc
 } -result {unknown encoding "nosuchencoding"} -returnCodes error
+
+# ----------------------------------------------------------------------
+# Tests specific to Windows which has more varied application types and
+# search mechanism.
+
+namespace eval tcl::test::exec::win {
+    # Extensions directly understood by exec
+    variable execExts {com bat cmd exe}
+    variable ext
+
+    variable testApp [file join [file dirname [interpreter]] execTestApp.exe]
+    if {$::tcl_platform(platform) eq "windows" && [file exists $testApp]} {
+        testConstraint haveTestApp 1
+    } else {
+        testConstraint haveTestApp 0
+    }
+
+    proc nativeTestPath {args} {
+        return [file nativename [file join [temporaryDirectory] {*}$args]]
+    }
+
+    # Content of batch files
+    variable batContent {
+       @echo off
+        setlocal enabledelayedexpansion
+
+        :parse
+        if "%~1"=="" goto :eof
+
+        if /i "%~1"=="-path" (
+             rem fullname of this script
+             echo %~dpnx0
+             shift
+             goto parse
+        )
+
+        if /i "%~1"=="-cwd" (
+             rem Current working directory
+             echo %CD%
+             shift
+             goto parse
+        )
+
+        if /i "%~1"=="-argv0" (
+             rem Script name as passed
+             echo %0
+             shift
+             goto parse
+         )
+
+        if /i "%~1"=="-env" (
+             rem Next argument is environment variable name
+             if "%~2"=="" (
+                  echo Error: -env requires a variable name
+                  goto :eof
+             )
+             call echo %%%~2%%
+             shift
+             shift
+             goto parse
+        )
+
+        rem Unknown option
+        echo Unknown option: %~1
+        shift
+        goto parse
+    }
+
+    foreach ext $execExts {
+        set path nosuchfile.$ext
+        test exec-win-1.1-$ext "Exec missing $ext file" -constraints win -body {
+            exec $path
+        } -result "couldn't execute \"$path\": no such file or directory" \
+            -returnCodes error
+
+        set path [makeDirectory exec-win-2.0.$ext]
+        test exec-win-2.1-$ext "Exec directories with extension $ext" -setup {
+            set dir $path
+        } -body {
+            exec $path
+        } -cleanup {
+            removeDirectory $path
+        } -result "couldn't execute \"[file nativename $path]\": no such file or directory" \
+            -returnCodes error
+    }
+
+    # Junk content - only test for .exe as bat,cmd may have any content
+    test exec-win-3.1-exe "exec - junk .exe files" \
+        -constraints win -setup {
+            set prog [makeFile [string repeat x 1000] exec-win-3.1.exe]
+        } -body {
+            exec $prog
+        } -cleanup {
+            removeFile $prog
+        } -result "couldn't execute \"[nativeTestPath exec-win-3.1.exe]\": no such file or directory" \
+        -returnCodes error
+
+    test exec-win-3.2 "exec - ignore invalid exe files along path without aborting"  \
+        -constraints haveTestApp \
+        -setup {
+            set dir1 [makeDirectory exec-win-3.2-1]
+            set dir2 [makeDirectory exec-win-3.2-2]
+            writeFile [file join $dir1 testApp.exe] [string repeat x 200]
+            file copy $testApp [file join $dir2 testApp.exe]
+            set savedPATH $::env(PATH)
+            append ::env(PATH) ";" [file nativename $dir1] ";" [file nativename $dir2]
+        } -cleanup {
+            set ::env(PATH) $savedPATH
+            removeDirectory $dir1
+            removeDirectory $dir2
+        } -body {
+            exec testApp -path
+        } -result [nativeTestPath exec-win-3.2-2 testApp.exe]
+
+    test exec-win-4.1 "exec - verify exe priority over bat, cmd" \
+        -constraints haveTestApp \
+        -setup {
+            set dir [makeDirectory exec-win-4.1]
+            writeFile [file join $dir testApp.bat] $batContent
+            writeFile [file join $dir testApp.cmd] $batContent
+            file copy $testApp [file join $dir testApp.exe]
+            set oldcwd [pwd]
+            cd $dir
+        } -cleanup {
+            cd $oldcwd
+            removeDirectory $dir
+        } -body {
+            exec testApp -path
+        } -result [nativeTestPath exec-win-4.1 testApp.exe]
+
+    test exec-win-4.2 "Verify bat priority over cmd" \
+        -constraints haveTestApp \
+        -setup {
+            set dir [makeDirectory exec-win-4.2]
+            writeFile [file join $dir testApp.cmd] $batContent
+            writeFile [file join $dir testApp.bat] $batContent
+            set oldcwd [pwd]
+            cd $dir
+        } -cleanup {
+            cd $oldcwd
+            removeDirectory $dir
+        } -body {
+            exec testApp -path
+        } -result [nativeTestPath exec-win-4.2 testApp.bat]
+
+    test exec-win-4.3 "Exec explicit extensions" \
+        -constraints haveTestApp \
+        -setup {
+            set dir [makeDirectory exec-win-4.1]
+            writeFile [file join $dir testApp.bat] $batContent
+            writeFile [file join $dir testApp.cmd] $batContent
+            file copy $testApp [file join $dir testApp.exe]
+            set oldcwd [pwd]
+            cd $dir
+        } -cleanup {
+            cd $oldcwd
+            removeDirectory $dir
+        } -body {
+            list \
+                [exec testApp.cmd -path] \
+                [exec testApp.bat -path] \
+                [exec testApp.exe -path]
+        } -result [list \
+                       [nativeTestPath exec-win-4.1 testApp.cmd] \
+                       [nativeTestPath exec-win-4.1 testApp.bat] \
+                       [nativeTestPath exec-win-4.1 testApp.exe]]
+
+    test exec-win-5.1 "exec - verify path order prioritized over extension"  \
+        -constraints haveTestApp \
+        -setup {
+            set dir1 [makeDirectory exec-win-5.1-1]
+            set dir2 [makeDirectory exec-win-5.1-2]
+            writeFile [file join $dir1 testApp.bat] $batContent
+            file copy $testApp [file join $dir2 testApp.exe]
+            set savedPATH $::env(PATH)
+            append ::env(PATH) ";" [file nativename $dir1] ";" [file nativename $dir2]
+        } -cleanup {
+            set ::env(PATH) $savedPATH
+            removeDirectory $dir1
+            removeDirectory $dir2
+        } -body {
+            exec testApp -path
+        } -result [nativeTestPath exec-win-5.1-2 testApp.bat]
+
+    # Verify content prioritized over extension
+    # Ensure both / and \ paths work
+}
+namespace delete tcl::test::exec::win
 
 test exec-bug-4f0b5767ac {exec App Execution Alias} -constraints haveWinget -body {
     exec winget --info

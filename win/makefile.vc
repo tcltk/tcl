@@ -210,6 +210,8 @@ TCLDDELIB	= $(OUT_DIR)\$(TCLDDELIBNAME)
 TCLTEST		= $(OUT_DIR)\$(PROJECT)test$(VERSION)$(SUFX:t=).exe
 TCLTESTRAW	= $(TCLTEST:.exe=-raw.exe)
 
+EXECTESTAPP	= $(OUT_DIR)\execTestApp.exe
+
 UTF8PROCDIR	= $(ROOT)\utf8proc
 
 TCLSHOBJS = \
@@ -528,7 +530,7 @@ shell:      libtclzip
 dlls:	    setup $(TCLDDELIB) $(OUT_DIR)\zlib1.dll $(OUT_DIR)\libtommath.dll
 libtclzip:  $(TCLSCRIPTZIP)
 
-tcltest:    setup core $(TCLTEST) dlls
+tcltest:    setup core $(TCLTEST) dlls $(EXECTESTAPP)
 !if $(TCL_EMBED_SCRIPTS) && $(STATIC_BUILD)
 tcltest:      libtclzip
 	@$(COPY) /b "$(TCLTESTRAW)"+"$(TCLSCRIPTZIP)" "$(TCLTEST)"
@@ -605,6 +607,10 @@ $(TCLDDELIB): $(TMP_DIR)\tclWinDde.obj $(TCLSTUBLIB)
 	$(DLLCMD) $**
 	$(_VC_MANIFEST_EMBED_DLL)
 !endif
+
+exectestapp: $(EXECTESTAPP)
+$(EXECTESTAPP): execTestApp.c
+	cl /Fe: $@ $**
 
 !if "$(MACHINE)" == "ARM64"
 $(OUT_DIR)\zlib1.dll:	$(COMPATDIR)\zlib\win64-arm\zlib1.dll

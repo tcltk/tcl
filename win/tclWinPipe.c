@@ -1256,14 +1256,10 @@ GetExecutableType(WCHAR *nativePath)
     }
 
     /*
-     * Not clear why .cmd and .bat which are actually run by cmd.exe are
-     * marked as APPL_DOS but preserve for historical reasons.
+     * Cannot assume type purely on extension since even exe's may have
+     * .bat or .cmd extension (in theory). So first try to decipher file
+     * content.
      */
-    WCHAR *ext = wcsrchr(nativePath, L'.');
-    if ((ext != NULL) &&
-	(_wcsicmp(ext, L".cmd") == 0 || _wcsicmp(ext, L".bat") == 0)) {
-	return APPL_DOS;
-    }
 
     HANDLE hFile;
     hFile = CreateFileW(nativePath, GENERIC_READ, FILE_SHARE_READ, NULL,
@@ -1275,7 +1271,7 @@ GetExecutableType(WCHAR *nativePath)
 
     if (attr & FILE_ATTRIBUTE_REPARSE_POINT) {
 	/*
-	 * But [4f0b5767ac].  * Attempt to ReadFile below will fail.
+	 * But [4f0b5767ac]. Attempt to ReadFile below will fail.
 	 * We assume that if it is an executable, and it is a reparse
 	 * point, it is an App Execution Alias.
 	 */
@@ -1292,27 +1288,11 @@ GetExecutableType(WCHAR *nativePath)
     DWORD numRead;
     header.e_magic = 0;
     if (!ReadFile(hFile, (void *)&header, sizeof(header), &numRead, NULL) ||
-	numRead < sizeof(header)) {
-	CloseHandle(hFile);
-	return APPL_NONE;
+	numRead < sizeof(header) ||
+	header.e_magic != IMAGE_DOS_SIGNATURE) {
+	goto checkExtension;
     }
 
-    if (header.e_magic != IMAGE_DOS_SIGNATURE) {
-	/*
-	 * Doesn't have the magic number for relocatable executables.
-	 * If filename ends with .com, assume it's a DOS application
-	 * anyhow.  Note that we didn't make this assumption at first,
-	 * because some supposed .com files are really 32-bit
-	 * executables with all the magic numbers and everything.
-	 */
-
-	CloseHandle(hFile);
-	if ((ext != NULL) && (_wcsicmp(ext, L".com") == 0)) {
-	    return APPL_DOS;
-	} else {
-	    return APPL_NONE;
-	}
-    }
     if (header.e_lfarlc != sizeof(header)) {
 	/*
 	 * All Windows 3.X and Win32 and some DOS programs have this
@@ -1329,32 +1309,44 @@ GetExecutableType(WCHAR *nativePath)
     char buf[2];
     buf[0] = '\0';
     SetFilePointer(hFile, header.e_lfanew, NULL, FILE_BEGIN);
-    if (!ReadFile(hFile, (void *)buf, 2, &numRead, NULL) || numRead < 2) {
+    if (ReadFile(hFile, (void *)buf, 2, &numRead, NULL) && numRead == 2) {
 	CloseHandle(hFile);
-	return APPL_NONE;
+	if ((buf[0] == 'P') && (buf[1] == 'E')) {
+	    return APPL_WIN32;
+	} else if ((buf[0] == 'N') && (buf[1] == 'E')) {
+	    /*
+	     * TODO - if running on 64-bit Windows (even as a 32-bit process)
+	     * should return APPL_NONE here as Windows 64 does not have NTVDM
+	     * and cannot run 16-bit processes.
+	     */
+	    return APPL_WIN3X;
+	} else {
+	    /*
+	     * Strictly speaking, there should be a test that there is
+	     * an 'L' and 'E' at buf[0..1], to identify the type as DOS,
+	     * but of course we ran into a DOS executable that _doesn't_
+	     * have the magic number - specifically, one compiled using
+	     * the Lahey Fortran90 compiler.
+	     */
+
+	    return APPL_DOS;
+	}
     }
+
+checkExtension: /* hFile should be open handle at this point */
+    /*
+     * Could not identify based on content. Check the extension.
+     * Not clear why .cmd and .bat which are actually run by cmd.exe are
+     * marked as APPL_DOS but preserve for historical reasons.
+     */
     CloseHandle(hFile);
-
-    if ((buf[0] == 'P') && (buf[1] == 'E')) {
-	return APPL_WIN32;
-    } else if ((buf[0] == 'N') && (buf[1] == 'E')) {
-	/*
-	 * TODO - if running on 64-bit Windows (even as a 32-bit process)
-	 * should return APPL_NONE here as Windows 64 does not have NTVDM
-	 * and cannot run 16-bit processes.
-	 */
-	return APPL_WIN3X;
-    } else {
-	/*
-	 * Strictly speaking, there should be a test that there is
-	 * an 'L' and 'E' at buf[0..1], to identify the type as DOS,
-	 * but of course we ran into a DOS executable that _doesn't_
-	 * have the magic number - specifically, one compiled using
-	 * the Lahey Fortran90 compiler.
-	 */
-
+    WCHAR *ext = wcsrchr(nativePath, L'.');
+    if ((ext != NULL) &&
+	(_wcsicmp(ext, L".cmd") == 0 || _wcsicmp(ext, L".bat") == 0 ||
+	    _wcsicmp(ext, L".com") == 0)) {
 	return APPL_DOS;
     }
+    return APPL_NONE;
 }
 
 /*
