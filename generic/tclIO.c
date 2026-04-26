@@ -1055,7 +1055,6 @@ DeleteChannelTable(
 		(void) Tcl_CloseEx(interp, (Tcl_Channel) chanPtr, 0);
 	    }
 	}
-
     }
     Tcl_DeleteHashTable(hTblPtr);
     Tcl_Free(hTblPtr);
@@ -1563,7 +1562,6 @@ TclGetChannelFromObj(
     if (resPtr && resPtr->refCount == 1) {
 	/* Re-use the ResolvedCmdName struct */
 	Tcl_Release(resPtr->statePtr);
-
     } else {
 	resPtr = (ResolvedChanName *) Tcl_Alloc(sizeof(ResolvedChanName));
 	resPtr->refCount = 0;
@@ -2949,7 +2947,6 @@ FlushChannel(
 		RecycleBuffer(statePtr, bufPtr, 0);
 	    }
 	}
-
     }	/* Closes "while". */
 
     /*

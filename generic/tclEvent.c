@@ -966,21 +966,15 @@ Tcl_Exit(
      */
 
     if (currentAppExitPtr) {
-
 	currentAppExitPtr(INT2PTR(status));
-
     } else if (subsystemsInitialized) {
-
 	if (TclFullFinalizationRequested()) {
-
 	    /*
 	     * Thorough finalization for Valgrind et al.
 	     */
 
 	    Tcl_Finalize();
-
 	} else {
-
 	    /*
 	     * Fast and deterministic exit (default behavior)
 	     */

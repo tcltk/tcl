@@ -598,7 +598,6 @@ TcpCloseProc(
 	if (close(fds->fd) < 0) {
 	    errorCode = errno;
 	}
-
     }
     fds = statePtr->fds.next;
     while (fds != NULL) {

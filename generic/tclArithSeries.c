@@ -703,7 +703,6 @@ TclNewArithSeriesObj(
     const char *description;
     char tmp[TCL_DOUBLE_SPACE + 2] = {0};
 
-
     if (lenObj) {
 	if (Tcl_GetWideIntFromObj(interp, lenObj, &len) != TCL_OK) {
 	    return NULL;

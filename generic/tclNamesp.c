@@ -2698,7 +2698,6 @@ Tcl_FindCommand(
 	if (result == TCL_OK) {
 	    ((Command *) cmd)->flags |= CMD_VIA_RESOLVER;
 	    return cmd;
-
 	} else if (result != TCL_CONTINUE) {
 	    return NULL;
 	}

@@ -2892,7 +2892,6 @@ TclLsetList(
 	    /* T:listrep-1.{2.1,12.1,15.1,19.1},2.{2.3,9.3,10.1,13.1,16.1}, 3.{4,5,6}.3 */
 	    retValueObj = TclLsetFlat(interp, listObj, 1, &indexArgObj, valueObj);
 	}
-
     } else {
 
 	indexListCopy = TclListObjCopy(NULL,indexArgObj);

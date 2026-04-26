@@ -66,7 +66,6 @@ static ProcessGlobalValue defaultLibraryDir =
 	{0, 0, NULL, NULL, InitializeDefaultLibraryDir, NULL, NULL};
 static ProcessGlobalValue sourceLibraryDir =
 	{0, 0, NULL, NULL, InitializeSourceLibraryDir, NULL, NULL};
-
 
 /*
  * TclGetWinInfoOnce --
@@ -898,8 +897,8 @@ errorReturn:
     err = GetLastError();
     TclWinPathFree(winPathPtr);
     SetLastError(err);
-    return NULL;}
-
+    return NULL;
+}
 
 /*
  * Local Variables:
