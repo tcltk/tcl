@@ -47,3 +47,4 @@ for list operations on large lists.
 # Bug fixes
 - [Inconsistent glob matching on MacOS](https://core.tcl-lang.org/tcl/tktview/e6ca0b1b)
 - [File normalize does not uniquely identify a file on MacOS](https://core.tcl-lang.org/tcl/tktview/108904173c)
+- [Inconsistencies between cd and file normalize for volume-relative paths on Windows](https://core.tcl-lang.org/tcl/tktview/bca391ab51)
