@@ -24,12 +24,11 @@ _RULES_VC = 1
 # if TCLSH_NATIVE is set for cross compilation, we'll try to find an associated 
 # nmakehlp.exe that runs on the build architecture.
 !ifdef TCLSH_NATIVE
-!message TCLSH_NATIVE=$(TCLSH_NATIVE)
+!message *** Using TCLSH_NATIVE=$(TCLSH_NATIVE)
 !ifndef NMAKEHLP_NATIVE
 !if [$(TCLSH_NATIVE) find_nmakehlp.tcl $(TCLSH_NATIVE) > find_nmakehlp.out]
 !error TCLSH_NATIVE is set, but unable to find associated nmakehlp.exe nearby.
 !else
-!message including find_nmakehlp.out:
 !include find_nmakehlp.out
 !endif
 !endif
