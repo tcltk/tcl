@@ -31,17 +31,6 @@ static int initialized = 0;
 TCL_DECLARE_MUTEX(pipeMutex)
 
 /*
- * The following values identify the various types of applications that run
- * under Windows. There is special case code for the various types.
- */
-enum TclWinApplicationTypes {
-    APPL_NONE = 0,
-    APPL_DOS = 1,
-    APPL_WIN3X = 2,
-    APPL_WIN32 = 3
-};
-
-/*
  * The following constants and structures are used to encapsulate the state of
  * various types of files used in a pipeline. This used to have a 1 && 2 that
  * supported Win32s.
@@ -170,8 +159,8 @@ typedef struct {
  * Declarations for functions used only in this file.
  */
 
-static int		ApplicationType(Tcl_Interp *interp,
-			    const char *fileName, Tcl_DString *);
+static TclWinApplicationType ApplicationType(Tcl_Interp *interp,
+				 const char *fileName, Tcl_DString *);
 static void		BuildCommandLine(const char *executable, size_t argc,
 			    const char **argv, Tcl_DString *linePtr);
 static BOOL		HasConsole(void);
@@ -957,7 +946,7 @@ TclpCreateProcess(
     applType = ApplicationType(interp, argv[0], &execPath);
     /* execPath initialized no matter return value */
 
-    if (applType == APPL_NONE) {
+    if (applType == APPL_NONE || applType == APPL_DLL) {
 	Tcl_DStringFree(&execPath);
 	return TCL_ERROR;
     }
@@ -1230,7 +1219,7 @@ HasConsole(void)
 /*
  *----------------------------------------------------------------------
  *
- * GetExecutableType --
+ * TclWinGetExecutableType --
  *
  *	Determines the type of the specified executable file.
  *
@@ -1245,8 +1234,8 @@ HasConsole(void)
  *
  *----------------------------------------------------------------------
  */
-static int
-GetExecutableType(WCHAR *nativePath)
+TclWinApplicationType
+TclWinGetExecutableType(const WCHAR *nativePath)
 {
 
     /* Ignore matches on directories */
@@ -1304,16 +1293,30 @@ GetExecutableType(WCHAR *nativePath)
 	return APPL_DOS;
     }
 
-    /* header.e_lfanew points to yet another magic number.  */
+    /*
+     * header.e_lfanew points to yet another magic number.
+     *  PE for Win32. IMAGE_FILE_HEADER starts 2 bytes after the PE signature.
+     *  NE for Windows 3.X
+     */
 
-    char buf[2];
+    char buf[4];
     buf[0] = '\0';
     SetFilePointer(hFile, header.e_lfanew, NULL, FILE_BEGIN);
-    if (ReadFile(hFile, (void *)buf, 2, &numRead, NULL) && numRead == 2) {
-	CloseHandle(hFile);
+    if (ReadFile(hFile, (void *)buf, 4, &numRead, NULL) && numRead == 4) {
 	if ((buf[0] == 'P') && (buf[1] == 'E')) {
-	    return APPL_WIN32;
-	} else if ((buf[0] == 'N') && (buf[1] == 'E')) {
+	    IMAGE_FILE_HEADER imageHeader;
+	    if (ReadFile(hFile, (void *)&imageHeader, sizeof(imageHeader),
+		    &numRead, NULL) &&
+		numRead == sizeof(imageHeader)) {
+		CloseHandle(hFile);
+		return imageHeader.Characteristics & IMAGE_FILE_DLL
+			 ? APPL_DLL
+			 : APPL_WIN32;
+	    }
+	    goto checkExtension;
+	}
+	CloseHandle(hFile);
+	if ((buf[0] == 'N') && (buf[1] == 'E')) {
 	    /*
 	     * TODO - if running on 64-bit Windows (even as a 32-bit process)
 	     * should return APPL_NONE here as Windows 64 does not have NTVDM
@@ -1384,7 +1387,7 @@ checkExtension: /* hFile should be open handle at this point */
  *----------------------------------------------------------------------
  */
 
-static int
+static TclWinApplicationType
 ApplicationType(
     Tcl_Interp *interp,		/* Interp, for error message. */
     const char *originalName,	/* Name of the application to find.
@@ -1400,7 +1403,7 @@ ApplicationType(
     Tcl_Size numBytesInName;
     Tcl_DString dsSearchDirs;
     WCHAR *dirStart, *dirEnd;
-    int applType = APPL_NONE;
+    TclWinApplicationType applType = APPL_NONE;
     TclWinPath envPath;
     WCHAR *envPathPtr;
     static const WCHAR extensions[][5] = {L"", L".com", L".exe", L".bat",
@@ -1429,13 +1432,6 @@ ApplicationType(
      */
 
     Tcl_DStringInit(dsFullNamePtr);
-    if (originalName[0] == '\0') {
-	Tcl_WinConvertError(ERROR_FILE_NOT_FOUND);
-	Tcl_SetObjResult(interp, Tcl_NewStringObj("empty program name", -1));
-	return APPL_NONE;
-    }
-
-
     Tcl_DStringInit(&nameBuf);
     Tcl_UtfToWCharDString(originalName, TCL_INDEX_NONE, &nameBuf);
     numBytesInName = Tcl_DStringLength(&nameBuf);
@@ -1536,7 +1532,7 @@ ApplicationType(
 		}
 	    }
 
-	    applType = GetExecutableType(fullNativePath);
+	    applType = TclWinGetExecutableType(fullNativePath);
 	    if (applType != APPL_NONE) {
 		Tcl_WCharToUtfDString(fullNativePath, TCL_AUTO_LENGTH,
 		    dsFullNamePtr);
