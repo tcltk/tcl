@@ -5183,6 +5183,11 @@ typedef struct NRE_callback {
 #define Tcl_Free		TclpFree
 #endif
 
+#ifdef _WIN32
+/* Here, not in tclWinInt.h because that's not included in generic modules */
+MODULE_SCOPE int       Registry_Init(Tcl_Interp *interp);
+#endif
+
 /*
  * Special hack for macOS, where the static linker (technically the 'ar'
  * command) hates empty object files, and accepts no flags to make it shut up.

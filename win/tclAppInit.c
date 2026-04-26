@@ -35,7 +35,6 @@ extern Tcl_LibraryInitProc Tcltest_SafeInit;
 #endif /* TCL_TEST */
 
 #if defined(STATIC_BUILD)
-extern Tcl_LibraryInitProc Registry_Init;
 extern Tcl_LibraryInitProc Dde_Init;
 extern Tcl_LibraryInitProc Dde_SafeInit;
 #endif
@@ -190,11 +189,6 @@ Tcl_AppInit(
     }
 
 #if defined(STATIC_BUILD)
-    if (Registry_Init(interp) == TCL_ERROR) {
-	return TCL_ERROR;
-    }
-    Tcl_StaticLibrary(interp, "Registry", Registry_Init, NULL);
-
     if (Dde_Init(interp) == TCL_ERROR) {
 	return TCL_ERROR;
     }
