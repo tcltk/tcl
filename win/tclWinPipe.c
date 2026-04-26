@@ -1447,8 +1447,7 @@ ApplicationType(
 	    Tcl_DStringAppend(&dsSearchDirs, (char *)fullNativePath,
 		wcslen(fullNativePath) * sizeof(WCHAR));
 	}
-	TclWinPathFree(&winPath);
-	fullNativePath = TclWinPathInit(&winPath, &winPathCapacity);
+	fullNativePath = TclWinPathReset(&winPath, &winPathCapacity);
     }
     fullNativePath = TclWinGetWindowsDirectory(&winPath);
     if (fullNativePath != NULL) {
@@ -1457,8 +1456,7 @@ ApplicationType(
 	    Tcl_DStringAppend(&dsSearchDirs, (char *)fullNativePath,
 		wcslen(fullNativePath) * sizeof(WCHAR));
 	}
-	TclWinPathFree(&winPath);
-	fullNativePath = TclWinPathInit(&winPath, &winPathCapacity);
+	fullNativePath = TclWinPathReset(&winPath, &winPathCapacity);
     }
 
     envPathPtr = TclWinGetEnvironmentVariable(L"PATH", &envPath);

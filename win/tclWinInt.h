@@ -200,7 +200,7 @@ TclWinPathGet(
     return pathBufPtr->bufferPtr;
 }
 
-/* Frees a previously initialized path buffer, reseting its state */
+/* Frees a previously initialized path buffer */
 static inline void
 TclWinPathFree(
     TclWinPath *pathBufPtr)	/* Structure to be freed */
@@ -210,6 +210,20 @@ TclWinPathFree(
     }
     pathBufPtr->bufferPtr = pathBufPtr->buffer;
 }
+
+/* Resets a previously initialized path buffer to its initial state */
+static inline WCHAR *
+TclWinPathReset(
+    TclWinPath *pathBufPtr,	/* Structure to be initialized */
+    DWORD *capacityPtr)		/* On return, capacity in WCHARS
+				   Must NOT be NULL */
+{
+    TclWinPathFree(pathBufPtr);
+    *capacityPtr = (DWORD)(sizeof(pathBufPtr->buffer) / sizeof(WCHAR));
+    return pathBufPtr->bufferPtr;
+}
+
+
 
 /*
  * GetPathFunc should match the signature of functions such as
