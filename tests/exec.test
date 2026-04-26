@@ -414,6 +414,10 @@ test exec-9.8 {commands returning errors} -constraints {exec} -setup {
 } -returnCodes error -result {out
 err}
 
+test exec-9.9 "exec - empty executable path" -body {
+        exec ""
+} -result {couldn't execute "": no such file or directory} -returnCodes error
+
 # Errors in executing the Tcl command, as opposed to errors in the processes
 # that are invoked.
 
@@ -878,18 +882,20 @@ namespace eval tcl::test::exec::win {
             -returnCodes error
 
         set path [makeDirectory exec-win-2.0.$ext]
-        test exec-win-2.1-$ext "Exec directories with extension $ext" -setup {
-            set dir $path
-        } -body {
-            exec $path
-        } -cleanup {
-            removeDirectory $path
-        } -result "couldn't execute \"[file nativename $path]\": no such file or directory" \
+        test exec-win-2.1-$ext "Exec directories with extension $ext" \
+            -constraints win \
+            -setup {
+                set dir $path
+            } -cleanup {
+                removeDirectory $path
+            } -body {
+                exec $path
+            } -result "couldn't execute \"[file nativename $path]\": no such file or directory" \
             -returnCodes error
     }
 
     # Junk content - only test for .exe as bat,cmd may have any content
-    test exec-win-3.1-exe "exec - junk .exe files" \
+    test exec-win-3.1 "exec - junk .exe files" \
         -constraints win -setup {
             set prog [makeFile [string repeat x 1000] exec-win-3.1.exe]
         } -body {
@@ -1032,16 +1038,150 @@ namespace eval tcl::test::exec::win {
         } -body {
             # Verify path is correct by calling testApp and then
             # the real attrib is picked up though not on path
-            list [exec testApp.exe -path] XX [exec attrib.exe /?]
+            list [exec testApp.exe -path] [exec attrib.exe /?]
         } -result {*testApp.exe*Displays or changes*} -match glob
 
+    test exec-win-7.2 "exec - verify cwd checked before Windows and PATH" \
+        -constraints haveTestApp \
+        -setup {
+            set dir [makeDirectory exec-win-7.2]
+            # copy to a name that is present in the Windows dir to cwd and PATH
+            file copy $testApp [file join [pwd] attrib.exe]
+            file copy $testApp [file join $dir attrib.exe]
+            set savedPath $::env(PATH)
+            set ::env(PATH) [file nativename $dir]
+        } -cleanup {
+            file delete [file join [pwd] attrib.exe]
+            removeDirectory $dir
+            set ::env(PATH) $savedPath
+            unset -nocomplain fp
+        } -body {
+            # The dummy attrib.exe in cwd should be executed
+            # file normalize because some commands return lower case drive letters
+            # and some return upper case
+            lmap fp [split [exec attrib.exe -path -env PATH] \n] {
+                file normalize $fp
+            }
+        } -result [list [file normalize [file join [pwd] attrib.exe]] \
+                       [file normalize [file join [temporaryDirectory] exec-win-7.2]]]
 
-    # Verify Windows comes before path
-    # Verify cwd comes before path
-    # Duplicate semicolons in path
-    # Verify relative paths not checked in PATH
-    # Ensure both / and \ paths work
+    test exec-win-7.3 "exec - verify Windows program with empty PATH" \
+        -constraints win \
+        -setup {
+            set savedPath $::env(PATH)
+            set ::env(PATH) [list ]
+        } -cleanup {
+            set ::env(PATH) $savedPath
+        } -body {
+            exec attrib /?
+        } -result {*Displays or changes file attributes*} -match glob
+
+    test exec-win-7.4 "exec - verify cwd works with empty PATH" \
+        -constraints haveTestApp \
+        -setup {
+            file copy $testApp [file join [pwd] testApp.exe]
+            set savedPath $::env(PATH)
+            set ::env(PATH) [list ]
+        } -cleanup {
+            file delete [file join [pwd] testApp.exe]
+            set ::env(PATH) $savedPath
+        } -body {
+            exec testApp -path
+        } -result [file nativename [file join [pwd] testApp.exe]]
+
+    test exec-win-7.5 "exec - ignore empty elements in PATH"  \
+        -constraints haveTestApp \
+        -setup {
+            set dir [makeDirectory exec-win-7.5]
+            file copy $testApp [file join $dir testApp.exe]
+            set savedPATH $::env(PATH)
+            set ::env(PATH) [string cat \
+                                 ";;;" \
+                                 $::env(PATH) \
+                                 ";" [file nativename $dir] \
+                                 ";;;"]
+        } -cleanup {
+            set ::env(PATH) $savedPATH
+            removeDirectory $dir
+        } -body {
+            exec testApp -path
+        } -result [nativeTestPath exec-win-7.5 testApp.exe]
+
+    test exec-win-7.6 "exec - ignore non-existent dirs in PATH"  \
+        -constraints haveTestApp \
+        -setup {
+            set dir [makeDirectory exec-win-7.5]
+            file copy $testApp [file join $dir testApp.exe]
+            set savedPATH $::env(PATH)
+            set ::env(PATH) [string cat \
+                                 $::env(PATH) \
+                                 ";" [file nativename [file join $dir nosuchdir]] \
+                                 ";" [file nativename $dir]]
+        } -cleanup {
+            set ::env(PATH) $savedPATH
+            removeDirectory $dir
+        } -body {
+            exec testApp -path
+        } -result [nativeTestPath exec-win-7.5 testApp.exe]
+
+    test exec-win-8.1 "exec - verify / separator" \
+        -constraints haveTestApp \
+        -setup {
+            set fn [file join [pwd] testApp.exe]
+            file copy $testApp $fn
+        } -cleanup {
+            file delete $fn
+            unset -nocomplain fn
+        } -body {
+            exec $fn -path
+        } -result [file nativename [file join [pwd] testApp.exe]]
+
+    test exec-win-8.2 "exec - verify \ separator" \
+        -constraints haveTestApp \
+        -setup {
+            set fn [file join [pwd] testApp.exe]
+            file copy $testApp $fn
+        } -cleanup {
+            file delete $fn
+        } -body {
+            exec [file nativename $fn] -path
+        } -result [file nativename [file join [pwd] testApp.exe]]
+
+    # Note on POSIX, relative paths are not looked up in PATH. On Windows,
+    # Tcl 8.6/9.0 do look them up as does the Windows SearchPathW.
+    test exec-win-9.0 "exec - verify relative paths work relative to cwd" \
+        -constraints haveTestApp \
+        -setup {
+            set dir [makeDirectory exec-win-9.0]
+            file copy $testApp [file join $dir testApp.exe]
+            set newCwd [file dirname $dir]
+            set savedPath $::env(PATH)
+            set ::env(PATH) [file nativename $newCwd]
+            set savedCwd [pwd]
+            cd $newCwd
+        } -cleanup {
+            removeDirectory $dir
+            cd $savedCwd
+            set ::env(PATH) $savedPath
+        } -body {
+            file normalize [exec exec-win-9.0/testApp.exe -path]
+        } -result [file normalize [nativeTestPath exec-win-9.0 testApp.exe]]
+
+    test exec-win-9.1 "exec - verify relative paths are searched in PATH" \
+        -constraints haveTestApp \
+        -setup {
+            set dir [makeDirectory exec-win-9.1]
+            file copy $testApp [file join $dir testApp.exe]
+            set savedPath $::env(PATH)
+            set ::env(PATH) [file nativename [file dirname $dir]]
+        } -cleanup {
+            removeDirectory $dir
+            set ::env(PATH) $savedPath
+        } -body {
+            file normalize [exec exec-win-9.1/testApp.exe -path]
+        } -result [file normalize [nativeTestPath exec-win-9.1 testApp.exe]]
 }
+
 namespace delete tcl::test::exec::win
 
 test exec-bug-4f0b5767ac {exec App Execution Alias} -constraints haveWinget -body {

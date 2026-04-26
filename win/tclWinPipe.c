@@ -1406,6 +1406,7 @@ ApplicationType(
     static const WCHAR extensions[][5] = {L"", L".com", L".exe", L".bat",
 	L".cmd"};
 
+
     /*
      * Look for the program as an external program along PATH. First try the
      * name as it is, then try adding .com, .exe, .bat and .cmd, in that
@@ -1428,6 +1429,13 @@ ApplicationType(
      */
 
     Tcl_DStringInit(dsFullNamePtr);
+    if (originalName[0] == '\0') {
+	Tcl_WinConvertError(ERROR_FILE_NOT_FOUND);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj("empty program name", -1));
+	return APPL_NONE;
+    }
+
+
     Tcl_DStringInit(&nameBuf);
     Tcl_UtfToWCharDString(originalName, TCL_INDEX_NONE, &nameBuf);
     numBytesInName = Tcl_DStringLength(&nameBuf);
@@ -1479,12 +1487,21 @@ ApplicationType(
      * Iterate through search path directories.
      */
     dirStart = (WCHAR *)Tcl_DStringValue(&dsSearchDirs);
-    dirStart--;
-    do {
+    while (1) {
 	size_t i;
 	WCHAR *rest;
 
-	dirStart++; /* Skip the preceding ';' */
+	/*
+	 * At top of loop dirStart is next PATH component to check.
+	 */
+	while (*dirStart == L';') {
+	    dirStart++; /* Skip empty components */
+	}
+	if (*dirStart == L'\0') {
+	    break; /* End of PATH */
+	}
+
+	/* Terminate the current path component */
 	dirEnd = wcschr(dirStart, L';');
 	if (dirEnd != NULL) {
 	    *dirEnd = L'\0';
@@ -1527,8 +1544,11 @@ ApplicationType(
 	    }
 	} /* end inner loop for extensions within a dir */
 
-	dirStart = dirEnd;
-    } while (dirStart != NULL); /* end outer loop over PATH directories */
+	if (dirEnd == NULL) {
+	    break; /* End of PATH */
+	}
+	dirStart = dirEnd + 1;
+    } /* end outer loop over PATH directories */
 
 resolved:
     switch (applType) {
