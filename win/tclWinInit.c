@@ -355,6 +355,8 @@ AppendEnvironment(
 
     Tcl_DString dsEnvValue;
     char *buf = TclWinWCharToUtfDString(wEnvValue, -1, &dsEnvValue);
+    TclWinPathFree(&winPath);
+    wEnvValue = NULL;
     if (buf == NULL) {
 	return;
     }

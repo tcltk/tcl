@@ -1324,6 +1324,11 @@ Tcl_CreateInterp(void)
 	Tcl_Panic("%s", Tcl_GetStringResult(interp));
     }
 
+#ifdef _WIN32
+    /* Ignore failures, let [package require registry] fail instead */
+    (void) Registry_Init(interp);
+#endif
+
     TOP_CB(iPtr) = NULL;
     return interp;
 }
@@ -2934,6 +2939,7 @@ TclCreateObjCommandInNs(
 	Tcl_DeleteCommandFromToken(interp, (Tcl_Command) cmdPtr);
 	nsPtr = (Namespace *) TclEnsureNamespace(interp,
 		(Tcl_Namespace *) cmdPtr->nsPtr);
+	/* Note nsPtr may or may not be same as cmdPtr->nsPtr */
 	TclNsDecrRefCount(cmdPtr->nsPtr);
 
 	if (cmdPtr->flags & CMD_REDEF_IN_PROGRESS) {
