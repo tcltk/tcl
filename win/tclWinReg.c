@@ -120,7 +120,6 @@ static int		RegistryObjCmd(void *clientData,
 static int		SetValue(Tcl_Interp *interp, Tcl_Obj *keyNameObj,
 			    Tcl_Obj *valueNameObj, Tcl_Obj *dataObj,
 			    Tcl_Obj *typeObj, REGSAM mode);
-
 
 /*
  *----------------------------------------------------------------------

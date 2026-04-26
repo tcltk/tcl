@@ -104,9 +104,7 @@ TclSetRcFilePath(Tcl_Interp *interp, const char *path)
 	return TCL_ERROR;
     }
     return TCL_OK;
-
 }
-
 
 /*
  *----------------------------------------------------------------------

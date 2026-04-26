@@ -859,7 +859,6 @@ LrangeNew(
     resultPtr->typePtr = &lrangeType;
     *resultPtrPtr = resultPtr;
     return TCL_OK;
-
 }
 
 static void

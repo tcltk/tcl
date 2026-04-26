@@ -1557,10 +1557,9 @@ ZipFSFindTOC(
 	ZIPFS_ERROR(interp, "archive directory end signature not found");
 	ZIPFS_ERROR_CODE(interp, "END_SIG");
 
-  error:
+    error:
 	ZipFSCloseArchive(interp, zf);
 	return TCL_ERROR;
-
     }
 
     /*
@@ -6484,7 +6483,6 @@ TclZipfsInitInterp(
 	ZipFSTclLibraryObjCmd, NULL, NULL);
     return TCL_OK;
 }
-
 
 /*
  * TclZipfsInit --

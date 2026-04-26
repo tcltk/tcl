@@ -431,7 +431,6 @@ static const Tcl_Filesystem simpleFilesystem = {
     NULL,
     NULL
 };
-
 
 /*
  *----------------------------------------------------------------------
@@ -8011,7 +8010,6 @@ TestNumUtfCharsCmd(
     }
     return TCL_OK;
 }
-
 
 /*
  * Used to check correct operation of Tcl_GetUniChar

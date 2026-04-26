@@ -1938,7 +1938,6 @@ ResetFileACL(
     Tcl_Free(userInfoPtr);
     return winError;
 }
-
 
 /*
  * Local Variables:

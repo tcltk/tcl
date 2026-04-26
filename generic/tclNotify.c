@@ -849,7 +849,6 @@ Tcl_SetServiceMode(
  *----------------------------------------------------------------------
  */
 
-
 // Microseconds per second.
 #define US_PER_S	1000000
 
@@ -1399,7 +1398,6 @@ Tcl_WaitForEvent(
     } else {
 	return TclpWaitForEvent(timePtr->sec * US_PER_S + timePtr->usec);
     }
-
 }
 
 int

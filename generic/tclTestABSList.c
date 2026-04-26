@@ -269,7 +269,6 @@ my_LStringObjIndex(
 
     return TCL_OK;
 }
-
 
 /*
  *----------------------------------------------------------------------
@@ -295,7 +294,6 @@ my_LStringObjLength(
     LString *lstringRepPtr = (LString *)lstringObjPtr->internalRep.twoPtrValue.ptr1;
     return lstringRepPtr->strlen;
 }
-
 
 /*
  *----------------------------------------------------------------------
@@ -641,7 +639,6 @@ my_SetAbstractProc(
     }
     return typePtr;
 }
-
 
 /*
  *----------------------------------------------------------------------

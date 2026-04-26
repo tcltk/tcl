@@ -2554,7 +2554,6 @@ SetLambdaFromAny(
 	     */
 
 	    Tcl_IncrRefCount(contextPtr->data.eval.path);
-
 	}
 
 	if (contextPtr->type == TCL_LOCATION_SOURCE) {

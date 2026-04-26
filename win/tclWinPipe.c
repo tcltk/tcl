@@ -2211,11 +2211,8 @@ PipeClose2Proc(
 		if (WaitForSingleObject(pipePtr->writable, 20) == WAIT_TIMEOUT) {
 		    return EWOULDBLOCK;
 		}
-
 	    } else {
-
 		WaitForSingleObject(pipePtr->writable, inExit ? 5000 : INFINITE);
-
 	    }
 
 	    TclPipeThreadStop(&pipePtr->writeTI, pipePtr->writeThread);

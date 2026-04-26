@@ -852,7 +852,6 @@ IcuBytesToUCharDString(
     ucnv_close(ucnvPtr);
     return TCL_OK;
 }
-
 
 /*
  *------------------------------------------------------------------------
