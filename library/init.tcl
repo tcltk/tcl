@@ -514,6 +514,129 @@ proc auto_import {pattern} {
 
 if {$tcl_platform(platform) eq "windows"} {
 # Windows version.
+namespace eval tcl::win {}
+
+# Looks up the registry for the template to open a file
+proc tcl::win::LookupFileAssociation {path} {
+    set ext [file extension $path]
+    if {$ext eq ""} {
+        return ""
+    }
+    try {
+        set ftype [tcl::registry get "HKEY_CLASSES_ROOT\\$ext" ""]
+        if {[catch {tcl::registry get "HKEY_CLASSES_ROOT\\${ftype}\\shell\\open\\command" ""} command]} {
+            set command [tcl::registry get "HKEY_CLASSES_ROOT\\${ftype}\\shell\\run\\command" ""]
+        }
+        return $command
+    } on error {} {
+        return ""
+    }
+}
+
+# Parses a file association template as stored in the registry and returns
+# it in list form with any environment variable references of the form
+# %ENVVAR% replaced by their values. Parsing is necessarily heuristic as
+# (a) the format is not well defined and (b) in practice even basic rules
+# such as quoting arguments with spaces are not followed. The target argument
+# is the auto_execok argument that was to be resolved.
+proc tcl::win::ParseFileAssociationTemplate {template target} {
+    set template [string trim $template]
+    # First extract the executable portion. This may or may not be quoted
+    # even if it contains spaces so we use the following heuristic. If the
+    # template begins with a quote, the executable ends at the following
+    # quote. Otherwise, look for .exe that marks the end of the executable
+    # (there may be intervening spaces!). This routine does not worry about
+    # quotes within quotes.
+    if {[string index $template 0] eq "\""} {
+        # Quoted exe path
+        set exeend [string first "\"" $template 1]
+        set exe [string range $template 1 $exeend-1]
+        incr exeend 2
+    } else {
+        # Not quoted, look for .exe marker
+        set exeend [string first ".exe" [string tolower $template]]
+        incr exeend 4
+        set exe [string range $template 0 $exeend-1]
+        incr exeend
+    }
+    if {$exe eq ""} {
+        return ""; # Heuristic did not work.
+    }
+
+    set result [list $exe]
+
+    # Now parse rest of the arguments. Not necessarily accurate because there
+    # is no definition of what that means. Currently, simply look for matching
+    # quotes. Note end of quotes does not mean end of argument unless there is
+    # an immediate following whitespace.
+    set arg ""
+    set inQuotes 0; # 0 -> outside quotes
+    foreach ch [split [string range $template $exeend end] ""] {
+        if {$inQuotes} {
+            if {$ch eq "\""} {
+                set inQuotes 0
+                # Do NOT terminate prior arg, "foob "ar is single arg {foob ar}
+            } else {
+                append arg $ch
+            }
+        } else {
+            if {[string is space $ch]} {
+                if {$arg ne ""} {
+                    lappend result $arg
+                    set arg ""
+                }
+            } elseif {$ch eq "\""} {
+                set inQuotes 1
+                # Do NOT terminate prior arg, foo"b ar" is single arg {foob ar}
+            } else {
+                append arg $ch
+            }
+        }
+    }
+    # Last arg or unterminated quoted empty string
+    if {$arg ne "" || $inQuotes} {
+        lappend result $arg
+    }
+
+    set result [lmap arg $result {
+        if {$arg eq "%1"} {
+            file nativename $target
+        } else {
+            regsub -all -nocase -command {%([^%]+)%} $arg {
+                apply {{match envvar} {
+                    if {[info exists ::env($envvar)]} {
+                        return $::env($envvar)
+                    } else {
+                        return $match; # original string including %
+                    }
+                }}
+            }
+        }
+    }]
+
+    # One final check. The %N and %* placeholders can only be followed
+    # by similar placeholders which stand for arguments. Any other values
+    # are rejected as the auto_execok mechanism only allows for trailing
+    # arguments. TODO - combine with above loop
+    set placeHolderSeen 0
+    set result [lmap arg $result {
+        if {[string match {%[0-9*]*} $arg]} {
+            set placeHolderSeen 1
+            # Don't pass this up as a real argument
+            continue
+        } elseif $placeHolderSeen {
+            # Saw an earlier placeholder. Cannot deal with non-trailing
+            # arguments. Indicate failure.
+            return [list ]
+        } else {
+            set arg
+        }
+    }]
+
+    return $result
+}
+
+
 #
 # Note that file executable doesn't work under Windows, so we have to
 # look for files with .exe, .com, or .bat extensions.  Also, the path
@@ -521,12 +644,7 @@ if {$tcl_platform(platform) eq "windows"} {
 # components are separated with semicolons, not colons as under Unix.
 #
 proc auto_execok name {
-    global auto_execs env tcl_platform
-
-    if {[info exists auto_execs($name)]} {
-	return $auto_execs($name)
-    }
-    set auto_execs($name) ""
+    global env tcl_platform
 
     set shellBuiltins [list assoc call cd cls color copy date del dir echo \
 			   erase exit ftype for if md mkdir mklink move path \
@@ -554,7 +672,9 @@ proc auto_execok name {
 	foreach ext $execExtensions {
 	    set file ${name}${ext}
 	    if {[file exists $file] && ![file isdirectory $file]} {
-		return [set auto_execs($name) [list $file]]
+                return [tcl::win::ParseFileAssociationTemplate \
+                            [tcl::win::LookupFileAssociation $file] \
+                            $file]
 	    }
 	}
 	return ""
@@ -586,7 +706,9 @@ proc auto_execok name {
 	    set checked($dir) {}
 	    set file [file join $dir ${name}${ext}]
 	    if {[file exists $file] && ![file isdirectory $file]} {
-		return [set auto_execs($name) [list $file]]
+                return [tcl::win::ParseFileAssociationTemplate \
+                            [tcl::win::LookupFileAssociation $file] \
+                            $file]
 	    }
 	}
     }

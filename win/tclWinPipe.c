@@ -1467,7 +1467,7 @@ ApplicationType(
 	fullNativePath = TclWinPathReset(&winPath, &winPathCapacity);
     }
 
-    /* Start with current directory */
+    /* Add the current directory */
     Tcl_DStringAppend(&dsSearchDirs, (char *)L".", sizeof(WCHAR));
 
     /* Add system32 directory */
