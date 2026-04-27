@@ -3486,7 +3486,7 @@ Tcl_GetCommandInfoFromToken(
     if (cmdPtr->deleteProc == CmdWrapperDeleteProc) {
 	CmdWrapperInfo *info = (CmdWrapperInfo *)cmdPtr->deleteData;
 	infoPtr->deleteProc = info->deleteProc;
-    infoPtr->deleteData = info->deleteData;
+	infoPtr->deleteData = info->deleteData;
 	infoPtr->objProc = info->proc;
 	infoPtr->objClientData = info->clientData;
 	if (cmdPtr->objProc2 == CmdWrapperProc) {
@@ -9614,8 +9614,8 @@ TclNRCoroutineObjCmd(
     Command *cmdPtr;
     CoroutineData *corPtr;
     const char *procName, *simpleName;
-    Namespace *nsPtr, *altNsPtr, *cxtNsPtr,
-	*inNsPtr = (Namespace *)TclGetCurrentNamespace(interp);
+    Namespace *nsPtr, *altNsPtr, *cxtNsPtr;
+    Namespace *inNsPtr = (Namespace *)TclGetCurrentNamespace(interp);
     Namespace *lookupNsPtr = iPtr->varFramePtr->nsPtr;
 
     if (objc < 3) {
