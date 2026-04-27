@@ -227,13 +227,13 @@ TclWinPathReset(
  * The following values identify the various types of applications that run
  * under Windows. There is special case code for the various types.
  */
-typedef enum TclWinApplicationType {
+typedef enum TclWinExecutableType {
     APPL_NONE = 0,
     APPL_DOS = 1,
     APPL_WIN3X = 2,
     APPL_WIN32 = 3,
     APPL_DLL = 4
-} TclWinApplicationType;
+} TclWinExecutableType;
 
 /*
  * GetPathFunc should match the signature of functions such as
@@ -258,7 +258,7 @@ MODULE_SCOPE WCHAR *	TclWinGetCurrentDirectory(TclWinPath *winPathPtr);
 MODULE_SCOPE WCHAR *	TclWinGetEnvironmentVariable(const WCHAR *envName,
 			    TclWinPath *winPathPtr);
 MODULE_SCOPE WCHAR *	TclWinGetModuleFileName(HMODULE, TclWinPath *);
-MODULE_SCOPE TclWinApplicationType TclWinGetExecutableType(const WCHAR *nativePath);
+MODULE_SCOPE TclWinExecutableType TclWinGetExecutableType(const WCHAR *nativePath);
 
 /*
  * Retrieve Windows system directory. See TclWinGetDirPath for param and

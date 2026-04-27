@@ -1938,7 +1938,7 @@ NativeIsExec(
 	return 1;
     }
 
-    TclWinApplicationType appType = TclWinGetExecutableType(path);
+    TclWinExecutableType appType = TclWinGetExecutableType(path);
     return appType != APPL_NONE  && appType != APPL_DLL;
 }
 

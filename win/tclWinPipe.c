@@ -159,7 +159,7 @@ typedef struct {
  * Declarations for functions used only in this file.
  */
 
-static TclWinApplicationType ApplicationType(Tcl_Interp *interp,
+static TclWinExecutableType ApplicationType(Tcl_Interp *interp,
 				 const char *fileName, Tcl_DString *);
 static void		BuildCommandLine(const char *executable, size_t argc,
 			    const char **argv, Tcl_DString *linePtr);
@@ -1234,7 +1234,7 @@ HasConsole(void)
  *
  *----------------------------------------------------------------------
  */
-TclWinApplicationType
+TclWinExecutableType
 TclWinGetExecutableType(const WCHAR *nativePath)
 {
 
@@ -1387,7 +1387,7 @@ checkExtension: /* hFile should be open handle at this point */
  *----------------------------------------------------------------------
  */
 
-static TclWinApplicationType
+static TclWinExecutableType
 ApplicationType(
     Tcl_Interp *interp,		/* Interp, for error message. */
     const char *originalName,	/* Name of the application to find.
@@ -1403,12 +1403,15 @@ ApplicationType(
     Tcl_Size numBytesInName;
     Tcl_DString dsSearchDirs;
     WCHAR *dirStart, *dirEnd;
-    TclWinApplicationType applType = APPL_NONE;
+    TclWinExecutableType applType = APPL_NONE;
     TclWinPath envPath;
     WCHAR *envPathPtr;
+    /*
+     * TODO - If no extension is present in originalName, should we skip
+     * searching PATH without an extension? Or move it last for efficiency?
+    */
     static const WCHAR extensions[][5] = {L"", L".com", L".exe", L".bat",
 	L".cmd"};
-
 
     /*
      * Look for the program as an external program along PATH. First try the
@@ -1438,12 +1441,36 @@ ApplicationType(
     fullNativePath = TclWinPathInit(&winPath, &winPathCapacity);
 
     /*
-     * Search path should start with current directory, Windows system
-     * directory, Windows directory, and finally directories in the PATH.
+     * Search path should start with directory of current executable,
+     * current directory, Windows system directory, Windows directory, and
+     * finally directories in the PATH.
      */
     Tcl_DStringInit(&dsSearchDirs);
+
+
+    /* Add the directory containing the current executable */
+    fullNativePath = TclWinGetModuleFileName(NULL, &winPath);
+    if (fullNativePath != NULL) {
+	/* This is code is NOT a general "file dirname"! */
+	WCHAR *lastSep = wcsrchr(fullNativePath, L'\\');
+	if (lastSep != NULL) {
+	    if (lastSep == fullNativePath || *(lastSep - 1) == L':') {
+		/* Root or drive root. */
+		*(lastSep + 1) = L'\0';
+	    } else {
+		*lastSep = L'\0';
+	    }
+	    size_t numBytes = (char *)lastSep - (char *)fullNativePath;
+	    Tcl_DStringAppend(&dsSearchDirs, (char *)fullNativePath, numBytes);
+	    Tcl_DStringAppend(&dsSearchDirs, (char *)L";", sizeof(WCHAR));
+	}
+	fullNativePath = TclWinPathReset(&winPath, &winPathCapacity);
+    }
+
+    /* Start with current directory */
     Tcl_DStringAppend(&dsSearchDirs, (char *)L".", sizeof(WCHAR));
 
+    /* Add system32 directory */
     fullNativePath = TclWinGetSystemDirectory(&winPath);
     if (fullNativePath != NULL) {
 	if (fullNativePath[0] != L'\0') {
@@ -1453,6 +1480,8 @@ ApplicationType(
 	}
 	fullNativePath = TclWinPathReset(&winPath, &winPathCapacity);
     }
+
+    /* Add Windows directory */
     fullNativePath = TclWinGetWindowsDirectory(&winPath);
     if (fullNativePath != NULL) {
 	if (fullNativePath[0] != L'\0') {
@@ -1463,6 +1492,7 @@ ApplicationType(
 	fullNativePath = TclWinPathReset(&winPath, &winPathCapacity);
     }
 
+    /* Finally add PATH env */
     envPathPtr = TclWinGetEnvironmentVariable(L"PATH", &envPath);
     if (envPathPtr != NULL) {
 	if (envPathPtr[0] != L'\0') {
@@ -1513,6 +1543,11 @@ ApplicationType(
 	    Tcl_DStringAppend(&nameBuf, (char *)extensions[i],
 		sizeof(WCHAR) * (wcslen(extensions[i]) + 1));
 
+	    /*
+	     * TODO - could we check for existence of dirStart\nativeName here
+	     * instead of SearchPathW? Would it be functionally the same and
+	     * be more efficient?
+	     */
 	    nativeName = (WCHAR *)Tcl_DStringValue(&nameBuf);
 	    numChars = SearchPathW(dirStart, (WCHAR *)nativeName, NULL,
 		winPathCapacity, fullNativePath, &rest);

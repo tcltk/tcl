@@ -1124,6 +1124,35 @@ namespace eval tcl::test::exec::win {
             exec testApp -path
         } -result [nativeTestPath exec-win-7.5 testApp.exe]
 
+    test exec-win-7.7 "exec - verify dir of current executable checked first" \
+        -constraints haveTestApp \
+        -setup {
+            # copy to a name that is present in the Windows dir (attrib) to
+            # directory of current exe, cwd and PATH
+            set dir1 [makeDirectory exec-win-7.7-1]; # Will be cwd
+            set dir2 [makeDirectory exec-win-7.7-2]; # Will be added to PATH
+            file copy $testApp [file join [file dirname [info nameofexecutable]] attrib.exe]
+            file copy $testApp [file join $dir1 attrib.exe]
+            file copy $testApp [file join $dir2 attrib.exe]
+            set savedCwd [pwd]
+            cd $dir1
+            set savedPath $::env(PATH)
+            set ::env(PATH) [file nativename $dir2]
+        } -cleanup {
+            file delete [file join [file dirname [info nameofexecutable]] attrib.exe]
+            removeDirectory $dir1
+            removeDirectory $dir2
+            set ::env(PATH) $savedPath
+            cd $savedCwd
+        } -body {
+            # The dummy attrib.exe in the program's directory should be executed
+            # file normalize because some commands return lower case drive letters
+            # and some return upper case
+            exec attrib -path
+        } -result [file nativename \
+                       [file join [file dirname [info nameofexecutable]] \
+                            attrib.exe]]
+
     test exec-win-8.1 "exec - verify / separator" \
         -constraints haveTestApp \
         -setup {
