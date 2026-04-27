@@ -870,7 +870,7 @@ TclpFindExecutable(
     char *utf8Ptr;
     Tcl_DString ds;
 
-    /* 
+    /*
      * Unlike in CMD.EXE, under MSYS and other shells including Explorer,
      * the drive for the current directory is not maintained in the
      * environment. So remember it ourselves. Related to Bug [bca391ab51].
@@ -1069,9 +1069,9 @@ TclpMatchInDirectory(
 	Tcl_DStringInit(&ds);
 	native = Tcl_UtfToWCharDString(dirName, TCL_INDEX_NONE, &ds);
 	handle = FindFirstFileExW(native, FindExInfoBasic, &data,
-	    (types == NULL || types->type != TCL_GLOB_TYPE_DIR
+		(types == NULL || types->type != TCL_GLOB_TYPE_DIR
 		    ? FindExSearchNameMatch : FindExSearchLimitToDirectories),
-	    NULL, FIND_FIRST_EX_LARGE_FETCH);
+		NULL, FIND_FIRST_EX_LARGE_FETCH);
 
 	if (handle == INVALID_HANDLE_VALUE) {
 	    DWORD err = GetLastError();
@@ -1183,9 +1183,9 @@ TclpMatchInDirectory(
 		}
 		if (NativeMatchType(isDrive, attr, native, types)) {
 		    Tcl_ListObjAppendElement(interp, resultPtr,
-			TclNewFSPathObj(pathPtr, utfname,
-					Tcl_DStringLength(&ds),
-					(TCL_PATHNAME_FROM_FILE_SYSTEM
+			    TclNewFSPathObj(pathPtr, utfname,
+				    Tcl_DStringLength(&ds),
+				    (TCL_PATHNAME_FROM_FILE_SYSTEM
 					    | TCL_PATHNAME_SINGLE_PART)));
 		}
 	    }
@@ -1528,7 +1528,7 @@ TclpGetUserHome(
 	    }
 	    if (winPathBuf) {
 		result = Tcl_WCharToUtfDString(winPathBuf, winPathSize - 1,
-		    bufferPtr);
+			bufferPtr);
 		rc = 1;
 	    }
 	}

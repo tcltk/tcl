@@ -2750,8 +2750,7 @@ Tcl_FSGetCwd(
 	    retCd = proc2(tsdPtr->cwdClientData);
 	    if (retCd == NULL) {
 		if (interp != NULL) {
-		    Tcl_SetObjResult(interp,
-			Tcl_ObjPrintf(
+		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			    "error getting working directory name: %s",
 			    Tcl_PosixError(interp)));
 		}

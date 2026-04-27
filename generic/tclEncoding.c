@@ -1375,9 +1375,9 @@ Tcl_ExternalToUtf(
 	}
 	if (interp) {
 	    Tcl_SetResult(interp,
-		"Tcl_ExternalToUtf does not support lengths greater than "
+		    "Tcl_ExternalToUtf does not support lengths greater than "
 		    "INT_MAX. Use Tcl_ExternalToUtfEx instead.",
-		TCL_STATIC);
+		    TCL_STATIC);
 	}
 	/*
 	 * This is a incompatibility with 9.0 as TCL_ERROR is not documented
@@ -1943,9 +1943,9 @@ Tcl_UtfToExternal(
 	}
 	if (interp) {
 	    Tcl_SetResult(interp,
-		"Tcl_UtfToExternal does not support lengths greater than "
+		    "Tcl_UtfToExternal does not support lengths greater than "
 		    "INT_MAX. Use Tcl_UtfToExternalEx instead.",
-		TCL_STATIC);
+		    TCL_STATIC);
 	}
 	/*
 	 * This is a incompatibility with 9.0 as TCL_ERROR is not documented
@@ -2124,8 +2124,8 @@ Tcl_UtfToExternalEx(
 	}
 
 	result = encodingPtr->fromUtfProc(encodingPtr->clientData, src,
-	    chunkSrcLen, chunkFlags, statePtr, dst, chunkDstLen, &chunkSrcRead,
-	    &chunkDstWritten, &chunkDstChars);
+		chunkSrcLen, chunkFlags, statePtr, dst, chunkDstLen,
+		&chunkSrcRead, &chunkDstWritten, &chunkDstChars);
 
 	assert(chunkSrcRead <= srcBytesLeft);
 	srcBytesLeft -= chunkSrcRead;

@@ -4591,8 +4591,8 @@ Tcl_LsortObjCmd(
     }
 
     if (TclObjTypeHasProc(objv[1], getElementsProc)) {
-	sortInfo.resultCode =
-	    TclObjTypeGetElements(interp, listObj, &length, &listObjPtrs);
+	sortInfo.resultCode = TclObjTypeGetElements(interp, listObj,
+		&length, &listObjPtrs);
     } else {
 	sortInfo.resultCode = TclListObjGetElements(interp, listObj,
 		&length, &listObjPtrs);

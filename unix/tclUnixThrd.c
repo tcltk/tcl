@@ -701,7 +701,7 @@ Tcl_ConditionWait(
 
 	now = TclpGetMicroseconds();
 	ptime.tv_sec = timePtr->sec +
-	    (timePtr->usec + now) / 1000000;
+		(timePtr->usec + now) / 1000000;
 	ptime.tv_nsec = 1000 * ((timePtr->usec + now) % 1000000);
 	PCondTimedWait(pcondPtr, pmutexPtr, &ptime);
     }

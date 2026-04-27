@@ -4582,8 +4582,7 @@ ClockAddObjCmd(
 	 * refresh it now (see test clock-30.34 "clock add jump over DST hole") */
 
 	if ((info->flags & CLF_RELCONV) ||
-	    (yyRelSeconds && unitIndex < CLC_ADD_HOURS)
-	) {
+		(yyRelSeconds && unitIndex < CLC_ADD_HOURS)) {
 	    if (ClockCalcRelTime(info, &opts) != TCL_OK) {
 		goto done;
 	    }

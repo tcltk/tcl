@@ -2112,9 +2112,9 @@ static int UtfExtWrapper(
 
     if (objc < 7) {
 	Tcl_WrongNumArgs(interp, 2, objv,
-	    "encoding srcbytes flags state dstlen ?-prefix prefix? ?-prefixlen "
-	    "prefixLen? ?-srcreadvar srcreadvar? ?-dstwrotevar dstwrotevar? "
-	    "?-dstcharsvar dstcharsvar?");
+		"encoding srcbytes flags state dstlen ?-prefix prefix? ?-prefixlen "
+		"prefixLen? ?-srcreadvar srcreadvar? ?-dstwrotevar dstwrotevar? "
+		"?-dstcharsvar dstcharsvar?");
 	return TCL_ERROR;
     }
     for (i = 0; i < (Tcl_Size) (sizeof(optObjs) / sizeof(optObjs[0])); ++i) {
@@ -2126,8 +2126,8 @@ static int UtfExtWrapper(
 	    return TCL_ERROR;
 	}
 	if (++i == objc) {
-	    Tcl_SetObjResult(interp,
-		Tcl_ObjPrintf("missing value for option \"%s\"",
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "missing value for option \"%s\"",
 		    opts[optIndex]));
 	    return TCL_ERROR;
 	}
@@ -4114,12 +4114,12 @@ TestlistapiCmd(
 	    } else {
 		Tcl_Size start, end;
 		if (Tcl_GetSizeIntFromObj(interp, objv[4], &start) != TCL_OK ||
-		    Tcl_GetSizeIntFromObj(interp, objv[5], &end) != TCL_OK) {
+			Tcl_GetSizeIntFromObj(interp, objv[5], &end) != TCL_OK) {
 		    status = TCL_ERROR;
 		    goto vamoose; /* To free up srcPtr */
 		}
-		status =
-		    Tcl_ListObjRange(interp, srcPtr, start, end, &resultPtr);
+		status = Tcl_ListObjRange(interp,
+			srcPtr, start, end, &resultPtr);
 	    }
 	    break;
 	case LISTAPI_REVERSE:
@@ -7018,7 +7018,7 @@ TestChannelEventCmd(
 		esPtr = esPtr->nextPtr) {
 	    if (esPtr->mask) {
 		Tcl_ListObjAppendElement(interp, resultListPtr, Tcl_NewStringObj(
-		    (esPtr->mask == TCL_READABLE) ? "readable" : "writable", -1));
+			(esPtr->mask == TCL_READABLE) ? "readable" : "writable", -1));
 	    } else {
 		Tcl_ListObjAppendElement(interp, resultListPtr,
 			Tcl_NewStringObj("none", -1));
@@ -9439,9 +9439,8 @@ TestChanCreateCmd(
 	    len = 1;
 	    bytes = (const unsigned char *)"\0";
 	}
-	TestChanSourceState *sourceStatePtr;
-	sourceStatePtr = (TestChanSourceState *)Tcl_Alloc(
-	    offsetof(TestChanSourceState, data) + len);
+	TestChanSourceState *sourceStatePtr = (TestChanSourceState *)Tcl_Alloc(
+		offsetof(TestChanSourceState, data) + len);
 	sourceStatePtr->numSourced = 0;
 	sourceStatePtr->len = len;
 	memmove(sourceStatePtr->data, bytes, len);

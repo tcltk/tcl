@@ -3378,7 +3378,7 @@ TclSubstOptions(
 	if (flags & 0xFFFF) {		/* positive options specified too */
 	    if (interp) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "cannot combine positive and negative options", -1));
+			"cannot combine positive and negative options", -1));
 	    }
 	    return TCL_ERROR;
 	}
@@ -5441,8 +5441,8 @@ TclUnicodeNormalizeCmd(
     int profile = TCL_ENCODING_PROFILE_STRICT;
 
     if (objc == 4) {
-	if (Tcl_GetIndexFromObj(interp, objv[1], optNames, "option", 0, &opt) !=
-	    TCL_OK) {
+	if (Tcl_GetIndexFromObj(interp, objv[1], optNames, "option", 0,
+		&opt) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	const char *s = Tcl_GetString(objv[2]);

@@ -761,7 +761,7 @@ ListStoreNew(
     if (flags & LISTREP_SPACE_FLAGS) {
 	/* Caller requests extra space front, back or both */
 	storePtr = (ListStore *)TclAttemptAllocElemsEx(
-	    objc, sizeof(Tcl_Obj *), offsetof(ListStore, slots), &capacity);
+		objc, sizeof(Tcl_Obj *), offsetof(ListStore, slots), &capacity);
     } else {
 	/* Exact allocation */
 	capacity = objc;
@@ -1042,7 +1042,7 @@ ListRepUnsharedFreeUnreferenced(
     if (count > 0) {
 	/* T:listrep-6.{1:8} */
 	ObjArrayDecrRefs(
-	    storePtr->slots, spanPtr->spanStart + spanPtr->spanLength, count);
+		storePtr->slots, spanPtr->spanStart + spanPtr->spanLength, count);
 	LIST_ASSERT(storePtr->numUsed >= count);
 	storePtr->numUsed -= count;
     }
@@ -2343,15 +2343,14 @@ Tcl_ListObjReplace(
      */
     if (numFreeSlots < lenChange && !ListRepIsShared(&listRep)) {
 	/* T:listrep-1.{1,3,14,18,21},3.{3,10,11,14,27,32,41} */
-	ListStore *newStorePtr =
-	    ListStoreReallocate(listRep.storePtr, origListLen + lenChange);
+	ListStore *newStorePtr = ListStoreReallocate(
+		listRep.storePtr, origListLen + lenChange);
 	if (newStorePtr == NULL) {
 	    return MemoryAllocationError(interp,
 		    LIST_SIZE(origListLen + lenChange));
 	}
 	listRep.storePtr = newStorePtr;
-	numFreeSlots =
-	    listRep.storePtr->numAllocated - listRep.storePtr->numUsed;
+	numFreeSlots = listRep.storePtr->numAllocated - listRep.storePtr->numUsed;
 	/*
 	 * WARNING: at this point the Tcl_Obj internal rep potentially
 	 * points to freed storage if the reallocation returned a
@@ -3016,8 +3015,8 @@ TclLsetFlat(
     /* Allocate if static array for pending invalidations is too small */
     if (indexCount > (Tcl_Size) (sizeof(pendingInvalidates) /
 	    sizeof(pendingInvalidates[0]))) {
-	pendingInvalidatesPtr =
-	    (Tcl_Obj **) Tcl_Alloc(indexCount * sizeof(*pendingInvalidatesPtr));
+	pendingInvalidatesPtr = (Tcl_Obj **)
+		Tcl_Alloc(indexCount * sizeof(*pendingInvalidatesPtr));
     }
 
     /*
@@ -3320,8 +3319,8 @@ FreeListInternalRep(
     ListObjGetRep(listObj, &listRep);
     if (listRep.storePtr->refCount-- <= 1) {
 	ObjArrayDecrRefs(
-	    listRep.storePtr->slots,
-	    listRep.storePtr->firstUsed, listRep.storePtr->numUsed);
+		listRep.storePtr->slots,
+		listRep.storePtr->firstUsed, listRep.storePtr->numUsed);
 	Tcl_Free(listRep.storePtr);
     }
     if (listRep.spanPtr) {
@@ -3513,8 +3512,7 @@ SetListFromAny(
 	    Tcl_IncrRefCount(*elemPtrs++);/* Since list now holds ref to it. */
 	}
 
-	listRep.storePtr->numUsed =
-	    elemPtrs - listRep.storePtr->slots;
+	listRep.storePtr->numUsed = elemPtrs - listRep.storePtr->slots;
     }
 
     LISTREP_CHECK(&listRep);

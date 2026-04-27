@@ -150,7 +150,7 @@ TclGetWinInfoOnce(
 	    &dw) != ERROR_SUCCESS) {
 	/* On failure, fallback to GetACP() */
 	snprintf(tclWinInfo.codePage, sizeof(tclWinInfo.codePage), "cp%u",
-	    GetACP());
+		GetACP());
     }
     if (strcmp(tclWinInfo.codePage, "cp65001") == 0) {
 	strcpy(tclWinInfo.codePage, "utf-8");
@@ -810,8 +810,8 @@ TclWinWCharToUtfDString(
 	return Tcl_DStringValue(dsPtr);
     }
 
-    needed = WideCharToMultiByte(CP_UTF8, WC_NO_BEST_FIT_CHARS, wsPtr, numChars, NULL,
-		0, NULL, NULL);
+    needed = WideCharToMultiByte(CP_UTF8, WC_NO_BEST_FIT_CHARS, wsPtr, numChars,
+	    NULL, 0, NULL, NULL);
     if (needed > 0) {
 	/*
 	 * Allocate needed + 1 so we can ensure a terminating NUL in all cases
@@ -823,8 +823,8 @@ TclWinWCharToUtfDString(
 	Tcl_DStringSetLength(dsPtr, (needed + 1));
 	utf8Ptr = Tcl_DStringValue(dsPtr);
 
-	written = WideCharToMultiByte(CP_UTF8, WC_NO_BEST_FIT_CHARS, wsPtr, numChars, utf8Ptr,
-	    needed + 1, NULL, NULL);
+	written = WideCharToMultiByte(CP_UTF8, WC_NO_BEST_FIT_CHARS, wsPtr,
+		numChars, utf8Ptr, needed + 1, NULL, NULL);
 	if (written > 0) {
 	    Tcl_DStringSetLength(dsPtr, written);
 	    return Tcl_DStringValue(dsPtr);

@@ -1625,9 +1625,9 @@ DdeObjCmd(
 			}
 			Tcl_DStringInit(&dsBuf);
 			Tcl_WCharToUtfDString(dataString, tmp>>1, &dsBuf);
-			returnObjPtr =
-			    Tcl_NewStringObj(Tcl_DStringValue(&dsBuf),
-				    Tcl_DStringLength(&dsBuf));
+			returnObjPtr = Tcl_NewStringObj(
+				Tcl_DStringValue(&dsBuf),
+				Tcl_DStringLength(&dsBuf));
 			Tcl_DStringFree(&dsBuf);
 		    }
 		    DdeUnaccessData(ddeData);

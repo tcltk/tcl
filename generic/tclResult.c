@@ -1196,9 +1196,8 @@ Tcl_TransferResult(
 	 * yet at end of the stack (e. g. proc etc), to avoid double reporting
 	 */
 	if (tiPtr->errorLine > 1 && tiPtr->errorInfo &&
-	    tiPtr->errorInfo->length &&
-	    tiPtr->errorInfo->bytes[tiPtr->errorInfo->length-1] != ')'
-	) {
+		tiPtr->errorInfo->length &&
+		tiPtr->errorInfo->bytes[tiPtr->errorInfo->length-1] != ')') {
 	    Tcl_AppendObjToErrorInfo(targetInterp, Tcl_ObjPrintf(
 		    "\n    (\"interp eval\" body line %d)", tiPtr->errorLine));
 	}
