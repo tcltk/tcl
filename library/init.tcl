@@ -657,17 +657,6 @@ proc auto_execok name {
 	set execExtensions [list {} .com .exe .bat .cmd]
     }
 
-    if {[string tolower $name] in $shellBuiltins} {
-	# When this is command.com for some reason on Win2K, Tcl won't
-	# exec it unless the case is right, which this corrects.  COMSPEC
-	# may not point to a real file, so do the check.
-	set cmd $env(COMSPEC)
-	if {[file exists $cmd]} {
-	    set cmd [file attributes $cmd -shortname]
-	}
-	return [set auto_execs($name) [list $cmd /c $name]]
-    }
-
     if {[llength [file split $name]] != 1} {
 	foreach ext $execExtensions {
 	    set file ${name}${ext}
@@ -679,6 +668,18 @@ proc auto_execok name {
 	}
 	return ""
     }
+
+    if {[string tolower $name] in $shellBuiltins} {
+	# When this is command.com for some reason on Win2K, Tcl won't
+	# exec it unless the case is right, which this corrects.  COMSPEC
+	# may not point to a real file, so do the check.
+	set cmd $env(COMSPEC)
+	if {[file exists $cmd]} {
+	    set cmd [file attributes $cmd -shortname]
+	}
+	return [list $cmd /c $name]
+    }
+
 
     set path "[file dirname [info nameofexecutable]];.;"
     if {[info exists env(SystemRoot)]} {
