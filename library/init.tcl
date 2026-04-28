@@ -690,10 +690,8 @@ proc auto_execok name {
 	append path "$windir/system32;$windir/system;$windir;"
     }
 
-    foreach var {PATH Path path} {
-	if {[info exists env($var)]} {
-	    append path ";$env($var)"
-	}
+    if {[info exists env(PATH)]} {
+        append path ";$env(PATH)"
     }
 
     foreach ext $execExtensions {
