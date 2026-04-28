@@ -643,8 +643,9 @@ proc tcl::win::ParseFileAssociationTemplate {template target} {
 # may be in the Path or PATH environment variables, and path
 # components are separated with semicolons, not colons as under Unix.
 #
-proc auto_execok name {
+proc auto_execok arg {
     global env tcl_platform
+    const name $arg
 
     set shellBuiltins [list assoc call cd cls color copy date del dir echo \
 			   erase exit ftype for if md mkdir mklink move path \
@@ -710,6 +711,20 @@ proc auto_execok name {
                             $file]
 	    }
 	}
+    }
+
+    # Look up App Paths. If no extension or extension is not .exe, append
+    # .exe a la ShellExecuteEx.
+    set key "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\App Paths\\$name"
+    set ext [file extension $name]
+    if {$ext ne ".exe"} {
+        # foo. -> foo.exe, foo.bar -> foo.bar.exe
+        append key [expr {$ext eq "." ? "exe" : ".exe"}]
+    }
+    foreach hive {HKEY_CURRENT_USER HKEY_LOCAL_MACHINE} {
+        if {![catch {tcl::registry get "$hive\\$key" ""} exePath]} {
+            return [list $exePath]
+        }
     }
     return ""
 }
