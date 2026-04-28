@@ -718,17 +718,13 @@ proc auto_execok name {
 # Unix version.
 #
 proc auto_execok name {
-    global auto_execs env
+    global env
 
-    if {[info exists auto_execs($name)]} {
-	return $auto_execs($name)
-    }
-    set auto_execs($name) ""
     if {[llength [file split $name]] != 1} {
 	if {[file executable $name] && ![file isdirectory $name]} {
-	    set auto_execs($name) [list $name]
+	    return [list $name]
 	}
-	return $auto_execs($name)
+	return ""
     }
     foreach dir [split $env(PATH) :] {
 	if {$dir eq ""} {
@@ -736,8 +732,7 @@ proc auto_execok name {
 	}
 	set file [file join $dir $name]
 	if {[file executable $file] && ![file isdirectory $file]} {
-	    set auto_execs($name) [list $file]
-	    return $auto_execs($name)
+	    return [list $file]
 	}
     }
     return ""
