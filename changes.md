@@ -32,7 +32,7 @@ to the userbase.
  - sqlite3 3.53.0
  - tcltest 2.5.11
  - Thread 3.0.5
- - tzdata 2026a
+ - tzdata 2026b
  - zlib 1.3.2
 
 Release Tcl 9.0.3 arises from the check-in with tag `core-9-0-3`.
