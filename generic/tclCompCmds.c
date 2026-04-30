@@ -2075,8 +2075,16 @@ TclCompileDictLappendCmd(
     return TCL_OK;
 }
 
-/* Compile [dict with]. Delegates code issuing to IssueDictWithEmpty() and
- * IssueDictWithBodied(). */
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclCompileDictWithCmd --
+ *
+ * 	Compile [dict with]. Delegates code issuing to IssueDictWithEmpty()
+ * 	and IssueDictWithBodied().
+ *
+ *----------------------------------------------------------------------
+ */
 int
 TclCompileDictWithCmd(
     Tcl_Interp *interp,		/* Used for looking up stuff. */
@@ -2152,11 +2160,17 @@ TclCompileDictWithCmd(
 }
 
 /*
- * Issue code for a special case of [dict with]: an empty body means we
- * definitely have no need to issue try-finally style code or to allocate local
- * variable table entries for storing temporaries. Still need to do both
- * INST_DICT_EXPAND and INST_DICT_RECOMBINE_* though, because we can't
- * determine if we're free of traces.
+ *----------------------------------------------------------------------
+ *
+ * IssueDictWithEmpty --
+ *
+ *	Issue code for a special case of [dict with]: an empty body means we
+ *	definitely have no need to issue try-finally style code or to allocate
+ *	local variable table entries for storing temporaries. Still need to do
+ *	both INST_DICT_EXPAND and INST_DICT_RECOMBINE_* though, because we
+ *	can't determine if we're free of traces.
+ *
+ *----------------------------------------------------------------------
  */
 static inline void
 IssueDictWithEmpty(
@@ -2241,9 +2255,15 @@ IssueDictWithEmpty(
 }
 
 /*
- * Issue code for a [dict with] that has a non-trivial body. The focus is on
- * generating a try-finally structure where the INST_DICT_RECOMBINE_* goes
- * in the 'finally' clause.
+ *----------------------------------------------------------------------
+ *
+ * IssueDictWithBodied --
+ *
+ * 	Issue code for a [dict with] that has a non-trivial body. The focus is
+ * 	on generating a try-finally structure where the INST_DICT_RECOMBINE_*
+ *	goes in the 'finally' clause.
+ *
+ *----------------------------------------------------------------------
  */
 static inline void
 IssueDictWithBodied(
@@ -2773,7 +2793,7 @@ TclCompileLmapCmd(
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
     Command *cmdPtr,		/* Points to the definition of the command
-				 *  being compiled. */
+				 * being compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     return CompileEachloopCmd(interp, parsePtr, cmdPtr, envPtr,

@@ -296,7 +296,14 @@ IcuError(
 }
 
 /*
- * Detect the likely encoding of the string encoded in the given byte array.
+ *----------------------------------------------------------------------
+ *
+ * DetectEncoding --
+ *
+ *	Detect the likely encoding of the string encoded in the given byte
+ *	array.
+ *
+ *----------------------------------------------------------------------
  */
 static int
 DetectEncoding(
@@ -949,7 +956,13 @@ IcuNormalizeUCharDString(
 }
 
 /*
- * Common function for parsing convert options.
+ *----------------------------------------------------------------------
+ *
+ * IcuParseConvertOptions --
+ *
+ *	Common function for parsing convert options.
+ *
+ *----------------------------------------------------------------------
  */
 static int
 IcuParseConvertOptions(

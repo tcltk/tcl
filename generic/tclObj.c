@@ -3162,8 +3162,8 @@ TclGetWideBitsFromObj(
  *	Attempt to return a Tcl_Size from the Tcl object "objPtr".
  *
  * Results:
- *  TCL_OK - the converted Tcl_Size value is stored in *sizePtr
- *  TCL_ERROR - the error message is stored in interp
+ *	TCL_OK - the converted Tcl_Size value is stored in *sizePtr
+ *	TCL_ERROR - the error message is stored in interp
  *
  * Side effects:
  *	The function may free up any existing internal representation.
@@ -3621,17 +3621,17 @@ TclSetBignumInternalRep(
  *
  * Tcl_GetNumberFromObj --
  *
- *      Extracts a number (of any possible numeric type) from an object.
+ *	Extracts a number (of any possible numeric type) from an object.
  *
  * Results:
- *      Whether the extraction worked. The type is stored in the variable
- *      referred to by the typePtr argument, and a pointer to the
- *      representation is stored in the variable referred to by the
- *      clientDataPtr.
+ *	Whether the extraction worked. The type is stored in the variable
+ *	referred to by the typePtr argument, and a pointer to the
+ *	representation is stored in the variable referred to by the
+ *	clientDataPtr.
  *
  * Side effects:
- *      Can allocate thread-specific data for handling the copy-out space for
- *      bignums; this space is shared within a thread.
+ *	Can allocate thread-specific data for handling the copy-out space for
+ *	bignums; this space is shared within a thread.
  *
  *----------------------------------------------------------------------
  */

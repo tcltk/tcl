@@ -1071,8 +1071,9 @@ ResetCounterSamples(
  * relative to the current system time and the NOMINAL performance frequency
  * (not the actual, because the actual has probably run slow in the first
  * case).
+ *
+ *----------------------------------------------------------------------
  */
-
 static long long
 AccumulateSample(
     long long perfCounter,

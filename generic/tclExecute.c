@@ -994,9 +994,15 @@ TclFinalizeExecution(void)
     (TCL_ALLOCALIGN/sizeof(Tcl_Obj *))
 
 /*
- * WordSkip computes how many words have to be skipped until the next aligned
- * word. Note that we are only interested in the low order bits of ptr, so
- * that any possible information loss in PTR2INT is of no consequence.
+ *----------------------------------------------------------------------
+ *
+ * WordSkip --
+ *
+ *	Computes how many words have to be skipped until the next aligned
+ *	word. Note that we are only interested in the low order bits of ptr, so
+ *	that any possible information loss in PTR2INT is of no consequence.
+ *
+ *----------------------------------------------------------------------
  */
 static inline int
 WordSkip(
@@ -8187,9 +8193,13 @@ FinalizeOONextFilter(
 }
 
 /*
+ *----------------------------------------------------------------------
+ *
  * WidePwrSmallExpon --
  *
- * Helper to calculate small powers of integers whose result is wide.
+ *	Helper to calculate small powers of integers whose result is wide.
+ *
+ *----------------------------------------------------------------------
  */
 static inline Tcl_WideInt
 WidePwrSmallExpon(
@@ -8273,6 +8283,7 @@ WidePwrSmallExpon(
     }
     return wResult;
 }
+
 /*
  *----------------------------------------------------------------------
  *

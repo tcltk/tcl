@@ -334,13 +334,13 @@ static const Tcl_ChannelType consoleChannelType = {
  *
  * RingBufferInit --
  *
- *    Initializes the ring buffer to a given size.
+ *	Initializes the ring buffer to a given size.
  *
  * Results:
- *    None.
+ *	None.
  *
  * Side effects:
- *    Panics on allocation failure.
+ *	Panics on allocation failure.
  *
  *------------------------------------------------------------------------
  */
@@ -363,13 +363,13 @@ RingBufferInit(
  *
  * RingBufferClear
  *
- *    Clears the contents of a ring buffer.
+ *	Clears the contents of a ring buffer.
  *
  * Results:
- *    None.
+ *	None.
  *
  * Side effects:
- *    The allocated internal buffer is freed.
+ *	The allocated internal buffer is freed.
  *
  *------------------------------------------------------------------------
  */
@@ -391,13 +391,13 @@ RingBufferClear(
  *
  * RingBufferIn --
  *
- *    Appends data to the ring buffer.
+ *	Appends data to the ring buffer.
  *
  * Results:
- *    Returns number of bytes copied.
+ *	Returns number of bytes copied.
  *
  * Side effects:
- *    Internal buffer is updated.
+ *	Internal buffer is updated.
  *
  *------------------------------------------------------------------------
  */
@@ -452,14 +452,14 @@ RingBufferIn(
  *
  * RingBufferOut --
  *
- *    Moves data out of the ring buffer.  If dstPtr is NULL, the data
- *    is simply removed.
+ *	Moves data out of the ring buffer.  If dstPtr is NULL, the data
+ *	is simply removed.
  *
  * Results:
- *    Returns number of bytes copied or removed.
+ *	Returns number of bytes copied or removed.
  *
  * Side effects:
- *    Internal buffer is updated.
+ *	Internal buffer is updated.
  *
  *------------------------------------------------------------------------
  */
@@ -528,15 +528,15 @@ RingBufferCheck(
  *
  * ReadConsoleChars --
  *
- *    Wrapper for ReadConsoleW.
+ *	Wrapper for ReadConsoleW.
  *
  * Results:
- *    Returns 0 on success, else Windows error code.
+ *	Returns 0 on success, else Windows error code.
  *
  * Side effects:
- *    On success the number of characters (not bytes) read is stored in
- *    *nCharsReadPtr. This will be 0 if the operation was interrupted by
- *    a Ctrl-C or a CancelIo call.
+ *	On success the number of characters (not bytes) read is stored in
+ *	*nCharsReadPtr. This will be 0 if the operation was interrupted by
+ *	a Ctrl-C or a CancelIo call.
  *
  *------------------------------------------------------------------------
  */
@@ -585,15 +585,15 @@ ReadConsoleChars(
  *
  * WriteConsoleChars --
  *
- *    Wrapper for WriteConsoleW.
+ *	Wrapper for WriteConsoleW.
  *
  * Results:
- *    Returns 0 on success, Windows error code on failure.
+ *	Returns 0 on success, Windows error code on failure.
  *
  * Side effects:
- *    On success the number of characters (not bytes) written is stored in
- *    *nCharsWrittenPtr. This will be 0 if the operation was interrupted by
- *    a Ctrl-C or a CancelIo call.
+ *	On success the number of characters (not bytes) written is stored in
+ *	*nCharsWrittenPtr. This will be 0 if the operation was interrupted by
+ *	a Ctrl-C or a CancelIo call.
  *
  *------------------------------------------------------------------------
  */
@@ -716,17 +716,18 @@ ProcExitHandler(
  *
  * NudgeWatchers --
  *
- *    Wakes up all threads which have file event watchers on the passed
- *    console handle.
+ *	Wakes up all threads which have file event watchers on the passed
+ *	console handle.
  *
- *    The function locks and releases gConsoleLock.
- *    Caller must not be holding locks that will violate lock hierarchy.
+ *	The function locks and releases gConsoleLock.
+ *	Caller must not be holding locks that will violate lock hierarchy.
  *
  * Results:
- *    None.
+ *	None.
  *
  * Side effects:
- *    As above.
+ *	As above.
+ *
  *------------------------------------------------------------------------
  */
 static void
@@ -757,8 +758,8 @@ NudgeWatchers(
  *
  *	This procedure is invoked before Tcl_DoOneEvent blocks waiting for an
  *	event. It walks the channel list and if any input channel has data
- *      available or output channel has space for data, sets the event loop
- *      blocking time to 0 so that it will poll immediately.
+ *	available or output channel has space for data, sets the event loop
+ *	blocking time to 0 so that it will poll immediately.
  *
  * Results:
  *	None.
@@ -1574,13 +1575,13 @@ ConsoleGetHandleProc(
  *
  * ConsoleDataAvailable --
  *
- *    Checks if there is data in the console input queue.
+ *	Checks if there is data in the console input queue.
  *
  * Results:
- *    Returns 1 if the input queue has data, -1 on error else 0 if empty.
+ *	Returns 1 if the input queue has data, -1 on error else 0 if empty.
  *
  * Side effects:
- *    None.
+ *	None.
  *
  *------------------------------------------------------------------------
  */
@@ -1978,21 +1979,21 @@ ConsoleWriterThread(
  *
  * AllocateConsoleHandleInfo --
  *
- *    Allocates a ConsoleHandleInfo for the passed console handle. As
- *    a side effect starts a console thread to handle i/o on the handle.
+ *	Allocates a ConsoleHandleInfo for the passed console handle. As
+ *	a side effect starts a console thread to handle i/o on the handle.
  *
- *    Important: Caller must be holding an EXCLUSIVE lock on gConsoleLock
- *    when calling this function. The lock continues to be held on return.
+ *	Important: Caller must be holding an EXCLUSIVE lock on gConsoleLock
+ *	when calling this function. The lock continues to be held on return.
  *
  * Results:
- *    Pointer to an unlocked ConsoleHandleInfo structure. The reference
- *    count on the structure is 1. This corresponds to the common reference
- *    from the console thread and the gConsoleHandleInfoList. Returns NULL
- *    on error.
+ *	Pointer to an unlocked ConsoleHandleInfo structure. The reference
+ *	count on the structure is 1. This corresponds to the common reference
+ *	from the console thread and the gConsoleHandleInfoList. Returns NULL
+ *	on error.
  *
  * Side effects:
- *    A console reader or writer thread is started. The returned structure
- *    is placed on the active console handler list gConsoleHandleInfoList.
+ *	A console reader or writer thread is started. The returned structure
+ *	is placed on the active console handler list gConsoleHandleInfoList.
  *
  *------------------------------------------------------------------------
  */
@@ -2047,21 +2048,21 @@ AllocateConsoleHandleInfo(
  *
  * FindConsoleInfo --
  *
- *    Finds the ConsoleHandleInfo record for a given ConsoleChannelInfo.
- *    The found record must match the console handle. It is the caller's
- *    responsibility to check the permissions (read/write) in the returned
- *    ConsoleHandleInfo match permissions in chanInfoPtr. This function does
- *    not check that.
+ *	Finds the ConsoleHandleInfo record for a given ConsoleChannelInfo.
+ *	The found record must match the console handle. It is the caller's
+ *	responsibility to check the permissions (read/write) in the returned
+ *	ConsoleHandleInfo match permissions in chanInfoPtr. This function does
+ *	not check that.
  *
- *    Important: Caller must be holding an shared or exclusive lock on
- *    gConsoleMutex. That ensures the returned pointer stays valid on
- *    return without risk of deallocation by other threads.
+ *	Important: Caller must be holding an shared or exclusive lock on
+ *	gConsoleMutex. That ensures the returned pointer stays valid on
+ *	return without risk of deallocation by other threads.
  *
  * Results:
- *    Pointer to the found ConsoleHandleInfo or NULL if not found
+ *	Pointer to the found ConsoleHandleInfo or NULL if not found
  *
  * Side effects:
- *    None.
+ *	None.
  *
  *------------------------------------------------------------------------
  */

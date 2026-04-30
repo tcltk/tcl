@@ -3148,6 +3148,8 @@ UtfToUtfProc(
 }
 
 /*
+ *----------------------------------------------------------------------
+ *
  * UtfToCesu8Proc --
  *
  *	Converts TUTF-8 to CESU-8 unless ENCODING_INPUT is set in flags
@@ -3158,6 +3160,8 @@ UtfToUtfProc(
  *
  * Side effects:
  *	None.
+ *
+ *----------------------------------------------------------------------
  */
 
 static int
@@ -3508,6 +3512,8 @@ UtfToCesu8Proc(
 }
 
 /*
+ *----------------------------------------------------------------------
+ *
  * Cesu8ToUtfProc --
  *
  *	Converts CESU-8 to TUTF-8.
@@ -3518,6 +3524,8 @@ UtfToCesu8Proc(
  *
  * Side effects:
  *	None.
+ *
+ *----------------------------------------------------------------------
  */
 static int
 Cesu8ToUtfProc(void *clientData, const char *src, int srcLen, int flags,
@@ -5593,7 +5601,7 @@ TclUtfNormalize(
  *	A standard Tcl error code.
  *
  * Side effects:
- *      The output string is stored in dsPtr, which is initialized.
+ *	The output string is stored in dsPtr, which is initialized.
  *
  *------------------------------------------------------------------------
  */
@@ -5644,7 +5652,7 @@ Tcl_UtfToNormalizedDString(
  *	A standard Tcl error code.
  *
  * Side effects:
- *      The output string is stored in bufPtr.
+ *	The output string is stored in bufPtr.
  *
  *------------------------------------------------------------------------
  */

@@ -1269,7 +1269,7 @@ Tcl_FSMountsChanged(
 void *
 Tcl_FSData(
     const Tcl_Filesystem *fsPtr) /* The filesystem to find in the list of
-				  *  registered filesystems. */
+				  * registered filesystems. */
 {
     void *retVal = NULL;
     FilesystemRecord *fsRecPtr = FsGetFirstFilesystem();
@@ -1830,7 +1830,7 @@ TclNREvalFile(
 				 * evaluate. Tilde-substitution is performed on
 				 * this pathname. */
     const char *encodingName)	/* The name of an encoding to use, or NULL to
-				 *  use the utf-8 encoding. */
+				 * use the utf-8 encoding. */
 {
     Tcl_StatBuf statBuf;
     Tcl_Obj *oldScriptFile, *objPtr;
@@ -2085,9 +2085,9 @@ Tcl_PosixError(
 int
 Tcl_FSStat(
     Tcl_Obj *pathPtr,		/* Pathname of the file to call stat on (in
-				 *  current system encoding). */
+				 * current system encoding). */
     Tcl_StatBuf *buf)		/* A buffer to hold the results of the call to
-				 *  stat. */
+				 * stat. */
 {
     const Tcl_Filesystem *fsPtr = Tcl_FSGetFileSystemForPath(pathPtr);
 
@@ -3172,7 +3172,7 @@ Tcl_LoadFile(
 				 * functions to find in the loaded object. */
     int flags,			/* Flags */
     void *procVPtrs,		/* A place to store pointers to the functions
-				 *  named by symbols[]. */
+				 * named by symbols[]. */
     Tcl_LoadHandle *handlePtr)	/* A place to hold a token for the loaded object.
 				 * Can be used by TclpFindSymbol. */
 {
@@ -4486,7 +4486,7 @@ Tcl_FSGetFileSystemForPath(
  *
  * Tcl_FSGetNativePath --
  *
- *  See Tcl_FSGetInternalRep.
+ *	See Tcl_FSGetInternalRep.
  *
  *---------------------------------------------------------------------------
  */

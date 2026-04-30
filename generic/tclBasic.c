@@ -9734,9 +9734,14 @@ TclNRCoroutineObjCmd(
 }
 
 /*
- * This is used in the [info] ensemble
+ *----------------------------------------------------------------------
+ *
+ * TclInfoCoroutineCmd --
+ *
+ *	Interpreted implementation of [info coroutine].
+ *
+ *----------------------------------------------------------------------
  */
-
 int
 TclInfoCoroutineCmd(
     TCL_UNUSED(void *),

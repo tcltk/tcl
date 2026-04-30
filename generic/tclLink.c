@@ -555,9 +555,14 @@ IsSpecial(
 }
 
 /*
- * Mark an object as holding a weird double.
+ *----------------------------------------------------------------------
+ *
+ * SetInvalidRealFromAny --
+ *
+ * 	Mark an object as holding a weird double.
+ *
+ *----------------------------------------------------------------------
  */
-
 static int
 SetInvalidRealFromAny(
     TCL_UNUSED(Tcl_Interp *),

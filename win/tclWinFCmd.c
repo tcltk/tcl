@@ -1889,16 +1889,20 @@ TclpCreateTemporaryDirectory(
 }
 
 /*
+ *----------------------------------------------------------------------
+ *
  * ResetFileACL --
  *
- *      Resets a file ACL to allow full access as long the process
- *      user id has permissions.
+ *	Resets a file ACL to allow full access as long the process
+ *	user id has permissions.
  *
  * Results:
  *	0 on success, or a Windows error code.
  *
  * Side effects:
  *	Changes the ACL on the file.
+ *
+ *----------------------------------------------------------------------
  */
 static int
 ResetFileACL(

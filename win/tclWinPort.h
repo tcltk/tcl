@@ -59,7 +59,7 @@ typedef DWORD_PTR * PDWORD_PTR;
 #endif
 
 /*
- *  Pull in the typedef of TCHAR for windows.
+ * Pull in the typedef of TCHAR for windows.
  */
 #include <tchar.h>
 #ifndef _TCHAR_DEFINED

@@ -893,14 +893,14 @@ Tcl_SetExitProc(
  *
  * InvokeExitHandlers --
  *
- *      Call the registered exit handlers.
+ *	Call the registered exit handlers.
  *
  * Results:
  *	None.
  *
  * Side effects:
  *	The exit handlers are invoked, and the ExitHandler struct is
- *      freed.
+ *	freed.
  *
  *----------------------------------------------------------------------
  */
@@ -1126,7 +1126,7 @@ static const struct {
  * Wrapper to retrieve version+build to other modules.
  */
 const char *
-TclGetBuildInfo()
+TclGetBuildInfo(void)
 {
     return stubInfo.version;
 }
@@ -1146,8 +1146,7 @@ Tcl_InitSubsystems(void)
 
 	TclpInitLock();
 	if (!subsystemsInitialized) {
-
-		/*
+	    /*
 	     * Initialize locks used by the memory allocators before anything
 	     * interesting happens so we can use the allocators in the
 	     * implementation of self-initializing locks.

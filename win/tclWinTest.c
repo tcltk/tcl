@@ -675,6 +675,8 @@ TestchmodCmd(
 }
 
 /*
+ *----------------------------------------------------------------------
+ *
  * TestlongpathsettingCmd --
  *
  *	Returns whether long path support is enabled on this system.
@@ -682,6 +684,8 @@ TestchmodCmd(
  *
  * Results:
  *	1 if long path support is enabled, 0 if not.
+ *
+ *----------------------------------------------------------------------
  */
 static int
 TestlongpathsettingCmd(

@@ -5418,6 +5418,8 @@ TclListLines(
 }
 
 /*
+ *----------------------------------------------------------------------
+ *
  * TclUnicodeNormalizeCmd --
  *
  *	This procedure implements the "unicode tonfc|tonfd|tonfkc|tonfkd"
@@ -5428,6 +5430,8 @@ TclListLines(
  *
  * Side effects:
  *	Stores the normalized string in the interpreter result.
+ *
+ *----------------------------------------------------------------------
  */
 static int
 TclUnicodeNormalizeCmd(

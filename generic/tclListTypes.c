@@ -22,14 +22,20 @@
 #define LRANGE_LENGTH_THRESHOLD		100
 
 /*
- * We want the caller of the function that is operating on a list to be
- * able to treat the passed in srcPtr and resultPtr independently when
- * it comes to managing reference counts. Otherwise, it is very easy for
- * the caller to mess up the reference counts of the two objects by not
- * checking the result object is the same as the source object before
- * decrementing reference counts for both, or incrementing and
- * decrementing in the wrong order. To avoid this, we always return a
- * new object. Note there is no guarantee the returned object is unshared.
+ *----------------------------------------------------------------------
+ *
+ * TclMakeResultObj --
+ *
+ *	We want the caller of the function that is operating on a list to be
+ *	able to treat the passed in srcPtr and resultPtr independently when
+ *	it comes to managing reference counts. Otherwise, it is very easy for
+ *	the caller to mess up the reference counts of the two objects by not
+ *	checking the result object is the same as the source object before
+ *	decrementing reference counts for both, or incrementing and
+ *	decrementing in the wrong order. To avoid this, we always return a
+ *	new object. Note there is no guarantee the returned object is unshared.
+ *
+ *----------------------------------------------------------------------
  */
 static inline Tcl_Obj *
 TclMakeResultObj(
@@ -40,8 +46,14 @@ TclMakeResultObj(
 }
 
 /*
- * Returns index of first matching entry in an array of Tcl_Obj,
- * TCL_INDEX_NONE if not found.
+ *----------------------------------------------------------------------
+ *
+ * FindInArrayOfObjs --
+ *
+ *	Returns index of first matching entry in an array of Tcl_Obj,
+ *	TCL_INDEX_NONE if not found.
+ *
+ *----------------------------------------------------------------------
  */
 static Tcl_Size
 FindInArrayOfObjs(
@@ -74,9 +86,15 @@ typedef struct TclObjArray {
 } TclObjArray;
 
 /*
- * Allocate a new TclObjArray structure and initialize it with the
- * given Tcl_Obj elements, incrementing their reference counts.
- * The reference count of the array itself is initialized to 0.
+ *----------------------------------------------------------------------
+ *
+ * TclObjArrayNew --
+ *
+ *	Allocate a new TclObjArray structure and initialize it with the
+ *	given Tcl_Obj elements, incrementing their reference counts.
+ *	The reference count of the array itself is initialized to 0.
+ *
+ *----------------------------------------------------------------------
  */
 static TclObjArray *
 TclObjArrayNew(
@@ -94,7 +112,15 @@ TclObjArrayNew(
     return arrayPtr;
 }
 
-/* Add a reference to a TclObjArray */
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclObjArrayRef --
+ *
+ *	Add a reference to a TclObjArray.
+ *
+ *----------------------------------------------------------------------
+ */
 static inline void
 TclObjArrayRef(
     TclObjArray *arrayPtr)
@@ -102,7 +128,15 @@ TclObjArrayRef(
     arrayPtr->refCount++;
 }
 
-/* Frees a TclObjArray structure irrespective of the reference count. */
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclObjArrayFree --
+ *
+ *	Frees a TclObjArray structure irrespective of the reference count.
+ *
+ *----------------------------------------------------------------------
+ */
 static void
 TclObjArrayFree(
     TclObjArray *arrayPtr)
@@ -114,8 +148,15 @@ TclObjArrayFree(
 }
 
 /*
- * Remove a reference from an TclObjArray, freeing it if no more remain.
- * The reference count of the elements is decremented as well in that case.
+ *----------------------------------------------------------------------
+ *
+ * TclObjArrayUnref --
+ *
+ *	Remove a reference from an TclObjArray, freeing it if no more remain.
+ *	The reference count of the elements is decremented as well in that
+ *	case.
+ *
+ *----------------------------------------------------------------------
  */
 static inline void
 TclObjArrayUnref(
@@ -128,7 +169,15 @@ TclObjArrayUnref(
     }
 }
 
-/* Returns count of elements in array and pointer to them in objPtrPtr */
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclObjArrayElems --
+ *
+ *	Returns count of elements in array and pointer to them in objPtrPtr.
+ *
+ *----------------------------------------------------------------------
+ */
 static inline Tcl_Size
 TclObjArrayElems(
     TclObjArray *arrayPtr,
@@ -138,7 +187,15 @@ TclObjArrayElems(
     return arrayPtr->nelems;
 }
 
-/* Returns index of first matching entry, TCL_INDEX_NONE if not found */
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclObjArrayFind --
+ *
+ *	Returns index of first matching entry, TCL_INDEX_NONE if not found.
+ *
+ *----------------------------------------------------------------------
+ */
 static inline Tcl_Size
 TclObjArrayFind(
     TclObjArray *arrayPtr,
@@ -148,13 +205,21 @@ TclObjArrayFind(
 }
 
 /*
- * Compute the length of a range given start and end indices after normalizing
- * the indices as follows:
- * - the start index is bounded to 0 at the low end
- * - the end index is bounded to one less than the length of the list at the
- *   high end and one less than the start index at the low end
- * - the length of the normalized range is returned
- * FUTURES - move to tclInt.h and use in other list implementations as well
+ *----------------------------------------------------------------------
+ *
+ * TclNormalizeRangeLimits --
+ *
+ * 	Compute the length of a range given start and end indices after
+ * 	normalizing the indices as follows:
+ * 	- the start index is bounded to 0 at the low end
+ * 	- the end index is bounded to one less than the length of the list at
+ * 	  the high end and one less than the start index at the low end
+ * 	- the length of the normalized range is returned
+ *
+ * FUTURE:
+ * 	Move to tclInt.h and use in other list implementations as well
+ *
+ *----------------------------------------------------------------------
  */
 static inline Tcl_Size
 TclNormalizeRangeLimits(
@@ -176,18 +241,22 @@ TclNormalizeRangeLimits(
 }
 
 /*
+ *----------------------------------------------------------------------
+ *
  * TclListContainsValue --
  *
- *    Common function to locate a value in a list based on
- *    a string comparison of values. Note there is no guarantee in abstract
- *    lists about the order in which elements are searched so cannot use as
- *    a "find first" kind of function.
+ *	Common function to locate a value in a list based on
+ *	a string comparison of values. Note there is no guarantee in abstract
+ *	lists about the order in which elements are searched so cannot use as
+ *	a "find first" kind of function.
  *
  * Results:
- *    Standard Tcl result code.
+ *	Standard Tcl result code.
  *
  * Side effects:
- *    Stores 1 in *foundPtr if the value is found, 0 otherwise.
+ *	Stores 1 in *foundPtr if the value is found, 0 otherwise.
+ *
+ *----------------------------------------------------------------------
  */
 int
 TclListContainsValue(
@@ -258,15 +327,15 @@ TclListContainsValue(
  *
  * TclAbstractListUpdateString --
  *
- *    Common function to update the string representation of an abstract list
- *    type. Adapted from UpdateStringOfList in tclListObj.c.
- *    Assumes no prior string representation exists.
+ *	Common function to update the string representation of an abstract
+ *	list type. Adapted from UpdateStringOfList in tclListObj.c.
+ *	Assumes no prior string representation exists.
  *
  * Results:
- *    None.
+ *	None.
  *
  * Side effects:
- *    The string representation of the object is updated.
+ *	The string representation of the object is updated.
  *
  *------------------------------------------------------------------------
  */
@@ -468,19 +537,19 @@ LreverseTypeInOper(
  *
  * Tcl_ListObjReverse --
  *
- *    Returns a Tcl_Obj containing a list with the same elements as the
- *    source list with elements in reverse order.
+ *	Returns a Tcl_Obj containing a list with the same elements as the
+ *	source list with elements in reverse order.
  *
  * Results:
- *    Standard Tcl result.
+ *	Standard Tcl result.
  *
  * Side effects:
- *    Stores the result in *resultPtrPtr. This will be different from
- *    objPtr, even if the latter is unshared and may be a new allocation, or
- *    a pointer to an internally stored object. In all cases, the reference
- *    count of the returned object is not incremented to account for the
- *    returned reference to it so caller should not decrement its reference
- *    count without incrementing (alternatively, use Tcl_BounceRefCount).
+ *	Stores the result in *resultPtrPtr. This will be different from
+ *	objPtr, even if the latter is unshared and may be a new allocation, or
+ *	a pointer to an internally stored object. In all cases, the reference
+ *	count of the returned object is not incremented to account for the
+ *	returned reference to it so caller should not decrement its reference
+ *	count without incrementing (alternatively, use Tcl_BounceRefCount).
  *
  *------------------------------------------------------------------------
  */
@@ -669,19 +738,18 @@ LrepeatTypeInOper(
  *
  * Tcl_ListObjRepeat --
  *
- *    Returns a Tcl_Obj containing a list whose elements are the same as the
- *    passed items repeated a given number of times.
+ *	Returns a Tcl_Obj containing a list whose elements are the same as the
+ *	passed items repeated a given number of times.
  *
  * Results:
- *    Standard Tcl result.
+ *	Standard Tcl result.
  *
  * Side effects:
- *    Stores the result in *reversedPtrPtr. This may be a new allocation, or
- *    a pointer to an internally stored object. In all cases, the reference
- *    count of the returned object is not incremented to account for the
- *    returned reference to it so caller should not decrement its reference
- *    count without incrementing (alternatively, use Tcl_BounceRefCount).
-.
+ *	Stores the result in *reversedPtrPtr. This may be a new allocation, or
+ *	a pointer to an internally stored object. In all cases, the reference
+ *	count of the returned object is not incremented to account for the
+ *	returned reference to it so caller should not decrement its reference
+ *	count without incrementing (alternatively, use Tcl_BounceRefCount).
  *
  *------------------------------------------------------------------------
  */
@@ -1003,19 +1071,19 @@ LrangeSlice(
  *
  * Tcl_ListObjRange --
  *
- *    Returns a Tcl_Obj containing a list of elements from a given range
- *    in a source list.
+ *	Returns a Tcl_Obj containing a list of elements from a given range
+ *	in a source list.
  *
  * Results:
- *    Standard Tcl result.
+ *	Standard Tcl result.
  *
  * Side effects:
- *    Stores the result in *resultPtrPtr. This will be different from
- *    objPtr, even if the latter is unshared and may be a new allocation, or
- *    a pointer to an internally stored object. In all cases, the reference
- *    count of the returned object is not incremented to account for the
- *    returned reference to it so caller should not decrement its reference
- *    count without incrementing (alternatively, use Tcl_BounceRefCount).
+ *	Stores the result in *resultPtrPtr. This will be different from
+ *	objPtr, even if the latter is unshared and may be a new allocation, or
+ *	a pointer to an internally stored object. In all cases, the reference
+ *	count of the returned object is not incremented to account for the
+ *	returned reference to it so caller should not decrement its reference
+ *	count without incrementing (alternatively, use Tcl_BounceRefCount).
  *
  *------------------------------------------------------------------------
  */
@@ -1066,8 +1134,7 @@ Tcl_ListObjRange(
 	    assert(elemPtr);
 	    Tcl_ListObjAppendElement(interp, resultPtr, elemPtr);
 	}
-    }
-    else {
+    } else {
 	/* Create a lrangeType referencing the original source list */
 	result = LrangeNew(objPtr, start, rangeLen, &resultPtr);
     }

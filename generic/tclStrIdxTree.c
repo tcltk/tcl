@@ -12,10 +12,9 @@
  *
  * -----------------------------------------------------------------------
  *
- * String index tries are prepaired structures used for fast greedy search of the string
- * (index) by unique string prefix as key.
- *
- * Index tree build for two lists together can be explained in the following datagram
+ * String index tries are prepaired structures used for fast greedy search of
+ * the string (index) by unique string prefix as key. The index tree build for
+ * two lists together can be explained in the following datagram.
  *
  * Lists:
  *
@@ -50,7 +49,6 @@
  * StrIdxTree's are very fast, so:
  *    build of above-mentioned tree takes about 10 microseconds.
  *    search of string index in this tree takes fewer as 0.1 microseconds.
- *
  */
 
 #include "tclInt.h"

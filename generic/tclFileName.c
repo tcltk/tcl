@@ -1016,8 +1016,8 @@ Tcl_JoinPath(
  *
  * Results:
  *	The return value is a pointer to a string containing the name.
- *      This may either be the name pointer passed in or space allocated in
- *      bufferPtr. In all cases, if the return value is not NULL, the caller
+ *	This may either be the name pointer passed in or space allocated in
+ *	bufferPtr. In all cases, if the return value is not NULL, the caller
  *	must call Tcl_DStringFree() to free the space. If there was an
  *	error in processing the name, then an error message is left in the
  *	interp's result (if interp was not NULL) and the return value is NULL.

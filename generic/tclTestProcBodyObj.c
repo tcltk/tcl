@@ -163,14 +163,14 @@ RegisterCommand(
  *
  * ProcBodyTestInitInternal --
  *
- *  This function initializes the Loader package.
- *  The isSafe flag is 1 if the interpreter is safe, 0 otherwise.
+ *	This function initializes the Loader package.
+ *	The isSafe flag is 1 if the interpreter is safe, 0 otherwise.
  *
  * Results:
- *  A standard Tcl result.
+ *	A standard Tcl result.
  *
  * Side effects:
- *  None.
+ *	None.
  *
  *----------------------------------------------------------------------
  */
@@ -198,34 +198,34 @@ ProcBodyTestInitInternal(
  *
  * ProcBodyTestProcObjCmd --
  *
- *  Implements the "procbodytest::proc" command. Here is the command
- *  description:
- *	procbodytest::proc newName argList bodyName
- *  Looks up a procedure called $bodyName and, if the procedure exists,
- *  constructs a Tcl_Obj of type "procbody" and calls Tcl_ProcObjCmd.
- *  Arguments:
- *    newName		the name of the procedure to be created
- *    argList		the argument list for the procedure
- *    bodyName		the name of an existing procedure from which the
+ *	Implements the "procbodytest::proc" command. Here is the command
+ *	description:
+ *	    procbodytest::proc newName argList bodyName
+ *	Looks up a procedure called $bodyName and, if the procedure exists,
+ *	constructs a Tcl_Obj of type "procbody" and calls Tcl_ProcObjCmd.
+ *
+ *	Arguments:
+ *	    newName	the name of the procedure to be created
+ *	    argList	the argument list for the procedure
+ *	    bodyName	the name of an existing procedure from which the
  *			body is to be copied.
- *  This command can be used to trigger the branches in Tcl_ProcObjCmd that
- *  construct a proc from a "procbody", for example:
- *	proc a {x} {return $x}
- *	a 123
- *	procbodytest::proc b {x} a
- *  Note the call to "a 123", which is necessary so that the Proc pointer
- *  for "a" is filled in by the internal compiler; this is a hack.
+ *	This command can be used to trigger the branches in Tcl_ProcObjCmd that
+ *	construct a proc from a "procbody", for example:
+ *	    proc a {x} {return $x}
+ *	    a 123
+ *	    procbodytest::proc b {x} a
+ *	Note the call to "a 123", which is necessary so that the Proc pointer
+ *	for "a" is filled in by the internal compiler; this is a hack.
  *
  * Results:
- *  Returns a standard Tcl code.
+ *	Returns a standard Tcl code.
  *
  * Side effects:
- *  A new procedure is created.
- *  Leaves an error message in the interp's result on error.
+ *	A new procedure is created.
+ *	Leaves an error message in the interp's result on error.
  *
  *----------------------------------------------------------------------
  */
-
 static int
 ProcBodyTestProcObjCmd(
     TCL_UNUSED(void *),
@@ -310,17 +310,17 @@ ProcBodyTestProcObjCmd(
  *
  * ProcBodyTestCheckObjCmd --
  *
- *  Implements the "procbodytest::check" command. Here is the command
- *  description:
- *	procbodytest::check
+ *	Implements the "procbodytest::check" command. Here is the command
+ *	description:
+ *	    procbodytest::check
  *
- *  Performs an internal check that the Tcl_PkgPresent() command returns
- *  the same version number as was registered when the tcl::procbodytest package
- *  was provided.  Places a boolean in the interp result indicating the
- *  test outcome.
+ *	Performs an internal check that the Tcl_PkgPresent() command returns
+ *	the same version number as was registered when the tcl::procbodytest
+ *	package was provided. Places a boolean in the interp result indicating
+ *	the test outcome.
  *
  * Results:
- *  Returns a standard Tcl code.
+ *	Returns a standard Tcl code.
  *
  *----------------------------------------------------------------------
  */

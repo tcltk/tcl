@@ -3331,9 +3331,14 @@ ArrayForLoopCallback(
 }
 
 /*
- * ArrayPopulateSearch
+ *----------------------------------------------------------------------
+ *
+ * ArrayPopulateSearch --
+ *
+ *	Set up an already-allocated array search iterator structure.
+ *
+ *----------------------------------------------------------------------
  */
-
 static void
 ArrayPopulateSearch(
     Tcl_Interp *interp,
@@ -6991,14 +6996,20 @@ ArrayDefaultCmd(
 }
 
 /*
- * Initialize array variable.
+ *----------------------------------------------------------------------
+ *
+ * TclInitArrayVar --
+ *
+ *	Initialize array variable.
+ *
+ *----------------------------------------------------------------------
  */
-
 void
 TclInitArrayVar(
     Var *arrayPtr)
 {
-    ArrayVarHashTable *tablePtr = (ArrayVarHashTable *)Tcl_Alloc(sizeof(ArrayVarHashTable));
+    ArrayVarHashTable *tablePtr = (ArrayVarHashTable *)
+	    Tcl_Alloc(sizeof(ArrayVarHashTable));
 
     /*
      * Mark the variable as an array.
@@ -7022,9 +7033,14 @@ TclInitArrayVar(
 }
 
 /*
- * Cleanup array variable.
+ *----------------------------------------------------------------------
+ *
+ * DeleteArrayVar --
+ *
+ *	Cleanup array variable.
+ *
+ *----------------------------------------------------------------------
  */
-
 static void
 DeleteArrayVar(
     Var *arrayPtr)
@@ -7047,9 +7063,14 @@ DeleteArrayVar(
 }
 
 /*
- * Get array default value if any.
+ *----------------------------------------------------------------------
+ *
+ * TclGetArrayDefault --
+ *
+ *	Get array default value if any.
+ *
+ *----------------------------------------------------------------------
  */
-
 Tcl_Obj *
 TclGetArrayDefault(
     Var *arrayPtr)
@@ -7061,9 +7082,14 @@ TclGetArrayDefault(
 }
 
 /*
- * Set/replace/unset array default value.
+ *----------------------------------------------------------------------
+ *
+ * SetArrayDefault --
+ *
+ *	Set/replace/unset array default value.
+ *
+ *----------------------------------------------------------------------
  */
-
 static void
 SetArrayDefault(
     Var *arrayPtr,

@@ -612,7 +612,7 @@ NewArithSeriesDbl(
  * assignNumber --
  *
  *	Create the appropriate Tcl_Obj value for the given numeric values.
- *      Used locally only for decoding [lseq] numeric arguments.
+ *	Used locally only for decoding [lseq] numeric arguments.
  *	refcount = 0.
  *
  * Results:
@@ -919,7 +919,7 @@ ArithSeriesObjLength(
  *
  * Results:
  *	Returns a pointer to the sliced series.
- *      This may be a new object or the same object if not shared.
+ *	This may be a new object or the same object if not shared.
  *
  * Side effects:
  *	?The possible conversion of the object referenced by listPtr?
@@ -1111,10 +1111,10 @@ TclArithSeriesGetElements(
  *	values appropriately swapped and the Step value sign is changed.
  *
  * Results:
- *      The result will be an ArithSeries in the reverse order.
+ *	The result will be an ArithSeries in the reverse order.
  *
  * Side effects:
- *      The ogiginal obj will be modified and returned if it is not Shared.
+ *	The ogiginal obj will be modified and returned if it is not Shared.
  *
  *----------------------------------------------------------------------
  */
@@ -1277,14 +1277,14 @@ UpdateStringOfArithSeries(
  *
  *	Evaluate the "in" operation for expr
  *
- *      This can be done more efficiently in the Arith Series relative to
- *      doing a linear search as implemented in expr.
+ *	This can be done more efficiently in the Arith Series relative to
+ *	doing a linear search as implemented in expr.
  *
  * Results:
  *	Boolean true or false (1/0)
  *
  * Side effects:
- *      None
+ *	None
  *
  *----------------------------------------------------------------------
  */

@@ -4646,7 +4646,7 @@ TestparsevarnameCmd(
  *
  *	This procedure implements the "testpreferstable" command.  It is
  *	used for being able to test the "package" command even when the
- *  environment variable TCL_PKG_PREFER_LATEST is set in your environment.
+ *	environment variable TCL_PKG_PREFER_LATEST is set in your environment.
  *
  * Results:
  *	A standard Tcl result.
@@ -5618,8 +5618,8 @@ TestpanicCmd(
     Tcl_Obj *const *objv)	/* Arguments. */
 {
     /*
-     *  Put the arguments into a var args structure
-     *  Append all of the arguments together separated by spaces
+     * Put the arguments into a var args structure
+     * Append all of the arguments together separated by spaces
      */
 
     Tcl_Obj *list = Tcl_NewListObj(objc-1, objv+1);
@@ -9473,6 +9473,8 @@ TestChanCreateCmd(
 }
 
 /*
+ *----------------------------------------------------------------------
+ *
  * TestUtfToNormalizedCmd --
  *
  *	This procedure implements the "testutftonormalized" command which
@@ -9553,6 +9555,8 @@ TestUtfToNormalizedCmd(
 }
 
 /*
+ *----------------------------------------------------------------------
+ *
  * TestUtfToNormalizedDStringCmd --
  *
  *	This procedure implements the "testutftonormalizedstring" command which

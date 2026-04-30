@@ -26,6 +26,8 @@ typedef struct {
 MODULE_SCOPE const TclWinInfo *	TclGetWinInfo(void);
 
 /*
+ *----------------------------------------------------------------------
+ *
  * TclpGetWindowsVersion --
  *
  *	Returns a pointer to the OSVERSIONINFOW structure containing the
@@ -34,6 +36,8 @@ MODULE_SCOPE const TclWinInfo *	TclGetWinInfo(void);
  * Results:
  *	Pointer to OSVERSIONINFOW structure that remains valid for lifetime
  *	of the process or NULL on failure.
+ *
+ *----------------------------------------------------------------------
  */
 static inline const OSVERSIONINFOW *
 TclpGetWindowsVersion(void)
@@ -43,13 +47,17 @@ TclpGetWindowsVersion(void)
 }
 
 /*
+ *----------------------------------------------------------------------
+ *
  * TclpGetCodePage --
  *
- *  Returns a pointer to the string identifying the user code page.
+ *	Returns a pointer to the string identifying the user code page.
  *
- *  For consistency with Windows, which caches the code page at program
- *  startup, the code page is not updated even if the value in the registry
- *  changes. (This is similar to environment variables.)
+ *	For consistency with Windows, which caches the code page at program
+ *	startup, the code page is not updated even if the value in the registry
+ *	changes. (This is similar to environment variables.)
+ *
+ *----------------------------------------------------------------------
  */
 static inline const char *
 TclpGetCodePage(void)
@@ -57,13 +65,17 @@ TclpGetCodePage(void)
     const TclWinInfo *winInfoPtr = TclGetWinInfo();
     assert(winInfoPtr);
     assert(winInfoPtr->codePage[0] != '\0');
-	return winInfoPtr->codePage;
+    return winInfoPtr->codePage;
 }
 
 /*
+ *----------------------------------------------------------------------
+ *
  * TclpLongPathSupported --
  *
- *  Returns 1 if OS supports long paths without a \\?\ prefix, 0 otherwise.
+ *	Returns 1 if OS supports long paths without a \\?\ prefix, 0 otherwise.
+ *
+ *----------------------------------------------------------------------
  */
 static inline int
 TclpLongPathSupported(void)

@@ -3865,20 +3865,21 @@ Tcl_LsearchObjCmd(
  *----------------------------------------------------------------------
  *
  * SequenceIdentifyArgument --
- *   (for [lseq] command)
+ *	(for [lseq] command)
  *
- *  Given a Tcl_Obj, identify if it is a keyword or a number
+ *	Given a Tcl_Obj, identify if it is a keyword or a number
  *
- *  Return Value
- *    0 - failure, unexpected value
- *    1 - value is a number
- *    2 - value is an operand keyword
- *    3 - value is a by keyword
+ *	Return Value
+ *	  0 - failure, unexpected value
+ *	  1 - value is a number
+ *	  2 - value is an operand keyword
+ *	  3 - value is a by keyword
  *
- *  The decoded value will be assigned to the appropriate
- *  pointer, numValuePtr reference count is incremented.
+ *	The decoded value will be assigned to the appropriate
+ *	pointer, numValuePtr reference count is incremented.
+ *
+ *----------------------------------------------------------------------
  */
-
 static SequenceDecoded
 SequenceIdentifyArgument(
     Tcl_Interp *interp,		/* for error reporting */

@@ -550,7 +550,7 @@ Tcl_SetObjErrorCode(
  *
  * Tcl_GetErrorLine --
  *
- *      Returns the line number associated with the current error.
+ *	Returns the line number associated with the current error.
  *
  *----------------------------------------------------------------------
  */
@@ -567,7 +567,7 @@ Tcl_GetErrorLine(
  *
  * Tcl_SetErrorLine --
  *
- *      Sets the line number associated with the current error.
+ *	Sets the line number associated with the current error.
  *
  *----------------------------------------------------------------------
  */

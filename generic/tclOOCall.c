@@ -675,7 +675,13 @@ SortMethodNames(
 }
 
 /*
- * Comparator for SortMethodNames()
+ *----------------------------------------------------------------------
+ *
+ * CmpNames --
+ *
+ *	Comparator for SortMethodNames()
+ *
+ *----------------------------------------------------------------------
  */
 static int
 CmpNames(

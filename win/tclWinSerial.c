@@ -688,10 +688,10 @@ SerialBlockingRead(
     LPOVERLAPPED osPtr)		/* OVERLAPPED structure */
 {
     /*
-     *  Perform overlapped blocking read.
-     *  1. Reset the overlapped event
-     *  2. Start overlapped read operation
-     *  3. Wait for completion
+     * Perform overlapped blocking read.
+     * 1. Reset the overlapped event
+     * 2. Start overlapped read operation
+     * 3. Wait for completion
      */
 
     /*
@@ -754,12 +754,12 @@ SerialBlockingWrite(
 
     /*
      * Perform overlapped blocking write.
-     *  1. Reset the overlapped event
-     *  2. Remove these bytes from the output queue counter
-     *  3. Start overlapped write operation
-     *  3. Remove these bytes from the output queue counter
-     *  4. Wait for completion
-     *  5. Adjust the output queue counter
+     * 1. Reset the overlapped event
+     * 2. Remove these bytes from the output queue counter
+     * 3. Start overlapped write operation
+     * 4. Remove these bytes from the output queue counter
+     * 5. Wait for completion
+     * 6. Adjust the output queue counter
      */
 
     ResetEvent(osPtr->hEvent);

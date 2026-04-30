@@ -175,8 +175,14 @@ static void		TclWinUpdateDriveCwd(TclWinPath *winPathPtr);
 MODULE_SCOPE void	tclWinDebugPanic(const char *format, ...);
 
 /*
- * Check if a Windows error code is one that might be returned for
- * non-existent files
+ *----------------------------------------------------------------------
+ *
+ * IsNoSuchFileError --
+ *
+ *	Check if a Windows error code is one that might be returned for
+ *	non-existent files
+ *
+ *----------------------------------------------------------------------
  */
 static inline int
 IsNoSuchFileError(DWORD winError)
@@ -1204,11 +1210,16 @@ TclpMatchInDirectory(
 }
 
 /*
- * Does the given path represent a root volume? We need this special case
- * because for NTFS root volumes, the getFileAttributesProc returns a 'hidden'
- * attribute when it should not.
+ *----------------------------------------------------------------------
+ *
+ * WinIsDrive --
+ *
+ *	Does the given path represent a root volume? We need this special case
+ *	because for NTFS root volumes, the getFileAttributesProc returns a
+ *	'hidden' attribute when it should not.
+ *
+ *----------------------------------------------------------------------
  */
-
 static int
 WinIsDrive(
     const char *name,		/* Name (UTF-8) */
@@ -1272,11 +1283,16 @@ WinIsDrive(
 }
 
 /*
- * Does the given path represent a reserved window path name? If not return 0,
- * if true, return the number of characters of the path that we actually want
- * (not any trailing :).
+ *----------------------------------------------------------------------
+ *
+ * WinIsReserved --
+ *
+ *	Does the given path represent a reserved window path name? If not
+ *	return 0, if true, return the number of characters of the path that
+ *	we actually want (not any trailing :).
+ *
+ *----------------------------------------------------------------------
  */
-
 static size_t
 WinIsReserved(
     const char *path)		/* Path in UTF-8 */
@@ -1940,9 +1956,11 @@ NativeIsExec(
 }
 
 /*
+ *----------------------------------------------------------------------
+ *
  * TclWinUpdateDriveCwd --
  *
- *      This function emulates CMD shell behavior of tracking the current
+ *	This function emulates CMD shell behavior of tracking the current
  *	directory for each drive by storing it an environment variable named
  *	"=<drive>:" (e.g., "=C:"). This allows Tcl's cd command to correctly
  *	switch back to the correct current directory using the volume-relative
@@ -1954,6 +1972,8 @@ NativeIsExec(
  *
  * Side effects:
  *	Process environment is updated.
+ *
+ *----------------------------------------------------------------------
  */
 static void
 TclWinUpdateDriveCwd(
