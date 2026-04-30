@@ -140,7 +140,7 @@ TclCompileAppendCmd(
     Tcl_Size i, numWords = parsePtr->numWords;
 
     /* TODO: Consider support for compiling expanded args. */
-    if (numWords == 1 || numWords > UINT_MAX) {
+    if (numWords == 1 || OutOfUintRange(numWords)) {
 	return TCL_ERROR;
     } else if (numWords == 2) {
 	/*
@@ -268,7 +268,7 @@ TclCompileArrayExistsCmd(
 
     tokenPtr = TokenAfter(parsePtr->tokenPtr);
     PushVarNameWord(tokenPtr, TCL_NO_ELEMENT, &localIndex, &isScalar, 1);
-    if (!isScalar || localIndex > UINT_MAX) {
+    if (!isScalar || OutOfUintRange(localIndex)) {
 	return TCL_ERROR;
     }
 
@@ -345,7 +345,7 @@ TclCompileArraySetCmd(
     }
 
     PushVarNameWord(varTokenPtr, TCL_NO_ELEMENT, &localIndex, &isScalar, 1);
-    if (!isScalar || localIndex > UINT_MAX) {
+    if (!isScalar || OutOfUintRange(localIndex)) {
 	code = TCL_ERROR;
 	goto done;
     }
@@ -864,7 +864,7 @@ TclCompileConcatCmd(
 
 	PUSH(			"");
 	return TCL_OK;
-    } else if (numWords > UINT_MAX) {
+    } else if (OutOfUintRange(numWords)) {
 	return TCL_ERROR;
     }
 
@@ -956,7 +956,7 @@ TclCompileConstCmd(
      * If the user specified an array element, we don't bother handling
      * that.
      */
-    if (!isScalar || localIndex > UINT_MAX) {
+    if (!isScalar || OutOfUintRange(localIndex)) {
 	return TCL_ERROR;
     }
 
@@ -1080,7 +1080,7 @@ TclCompileDictSetCmd(
      * There must be at least one argument after the command.
      */
 
-    if (numWords < 4 || numWords > UINT_MAX) {
+    if (numWords < 4 || OutOfUintRange(numWords)) {
 	return TCL_ERROR;
     }
 
@@ -1199,7 +1199,7 @@ TclCompileDictGetCmd(
      */
 
     /* TODO: Consider support for compiling expanded args. */
-    if (numWords < 3 || numWords > UINT_MAX) {
+    if (numWords < 3 || OutOfUintRange(numWords)) {
 	return TCL_ERROR;
     }
     tokenPtr = TokenAfter(parsePtr->tokenPtr);
@@ -1233,7 +1233,7 @@ TclCompileDictGetWithDefaultCmd(
      */
 
     /* TODO: Consider support for compiling expanded args. */
-    if (numWords < 4 || numWords > UINT_MAX) {
+    if (numWords < 4 || OutOfUintRange(numWords)) {
 	return TCL_ERROR;
     }
     tokenPtr = TokenAfter(parsePtr->tokenPtr);
@@ -1264,7 +1264,7 @@ TclCompileDictExistsCmd(
      */
 
     /* TODO: Consider support for compiling expanded args. */
-    if (numWords < 3 || numWords > UINT_MAX) {
+    if (numWords < 3 || OutOfUintRange(numWords)) {
 	return TCL_ERROR;
     }
     tokenPtr = TokenAfter(parsePtr->tokenPtr);
@@ -1297,7 +1297,7 @@ TclCompileDictReplaceCmd(
     /*
      * Don't compile [dict replace $dict]; it's an edge case.
      */
-    if (numWords <= 3 || numWords > UINT_MAX || (numWords % 1)) {
+    if (numWords <= 3 || OutOfUintRange(numWords) || (numWords % 1)) {
 	return TCL_ERROR;
     }
 
@@ -1335,7 +1335,7 @@ TclCompileDictRemoveCmd(
     /*
      * Don't compile [dict remove $dict]; it's an edge case.
      */
-    if (numWords <= 2 || numWords > UINT_MAX) {
+    if (numWords <= 2 || OutOfUintRange(numWords)) {
 	return TCL_ERROR;
     }
 
@@ -1374,7 +1374,7 @@ TclCompileDictUnsetCmd(
      */
 
     /* TODO: Consider support for compiling expanded args. */
-    if (numWords < 3 || numWords > UINT_MAX) {
+    if (numWords < 3 || OutOfUintRange(numWords)) {
 	return TCL_ERROR;
     }
 
@@ -1421,7 +1421,7 @@ TclCompileDictCreateCmd(
     Tcl_Size i, numWords = parsePtr->numWords;
     /* TODO: Consider support for compiling expanded args. */
 
-    if ((numWords & 1) == 0 || numWords > UINT_MAX) {
+    if ((numWords & 1) == 0 || OutOfUintRange(numWords)) {
 	return TCL_ERROR;
     }
 
@@ -1846,7 +1846,7 @@ TclCompileDictUpdateCmd(
      * There must be at least one argument after the command.
      */
 
-    if (numWords < 5 || numWords > UINT_MAX) {
+    if (numWords < 5 || OutOfUintRange(numWords)) {
 	return TCL_ERROR;
     }
 
@@ -2103,7 +2103,7 @@ TclCompileDictWithCmd(
      */
 
     /* TODO: Consider support for compiling expanded args. */
-    if (numWords < 3 || numWords > UINT_MAX) {
+    if (numWords < 3 || OutOfUintRange(numWords)) {
 	return TCL_ERROR;
     }
 
@@ -2586,7 +2586,7 @@ TclCompileExprCmd(
 {
     Tcl_Token *firstWordPtr;
 
-    if (parsePtr->numWords == 1 || parsePtr->numWords > UINT_MAX) {
+    if (parsePtr->numWords == 1 || OutOfUintRange(parsePtr->numWords)) {
 	return TCL_ERROR;
     }
 
@@ -2850,7 +2850,7 @@ CompileEachloopCmd(
     }
 
     numWords = parsePtr->numWords;
-    if ((numWords < 4) || (numWords > UINT_MAX) || (numWords%2 != 0)) {
+    if ((numWords < 4) || OutOfUintRange(numWords) || (numWords%2 != 0)) {
 	return TCL_ERROR;
     }
 
@@ -3308,7 +3308,7 @@ TclCompileFormatCmd(
      * Don't handle any guaranteed-error cases.
      */
 
-    if (numWords < 2 || numWords > UINT_MAX) {
+    if (numWords < 2 || OutOfUintRange(numWords)) {
 	return TCL_ERROR;
     }
 

@@ -95,7 +95,7 @@ TclCompileGlobalCmd(
     Tcl_LVTIndex localIndex;
     Tcl_Size i, numWords = parsePtr->numWords;
 
-    if (numWords < 2 || numWords > UINT_MAX) {
+    if (numWords < 2 || OutOfUintRange(numWords)) {
 	return TCL_ERROR;
     }
 
@@ -194,7 +194,7 @@ TclCompileIfCmd(
 
     tokenPtr = parsePtr->tokenPtr;
     numWords = parsePtr->numWords;
-    if (numWords > UINT_MAX) {
+    if (OutOfUintRange(numWords)) {
 	return TCL_ERROR;
     }
 
@@ -816,7 +816,7 @@ TclCompileLappendCmd(
     int isScalar;
     Tcl_LVTIndex localIndex;
 
-    if (numWords < 2 || numWords > UINT_MAX) {
+    if (numWords < 2 || OutOfUintRange(numWords)) {
 	return TCL_ERROR;
     }
 
@@ -1002,7 +1002,7 @@ TclCompileLassignCmd(
      * Check for command syntax error, but we'll punt that to runtime.
      */
 
-    if (numWords < 3 || numWords > UINT_MAX) {
+    if (numWords < 3 || OutOfUintRange(numWords)) {
 	return TCL_ERROR;
     }
 
@@ -1102,7 +1102,7 @@ TclCompileLindexCmd(
      */
 
     /* TODO: Consider support for compiling expanded args. */
-    if (numWords <= 1 || numWords > UINT_MAX) {
+    if (numWords <= 1 || OutOfUintRange(numWords)) {
 	return TCL_ERROR;
     }
 
@@ -1190,7 +1190,7 @@ TclCompileListCmd(
     int concat;
     Tcl_Obj *listObj, *objPtr;
 
-    if (numWords > UINT_MAX) {
+    if (OutOfUintRange(numWords)) {
 	return TCL_ERROR;
     }
     if (numWords == 1) {
@@ -1401,7 +1401,7 @@ TclCompileLinsertCmd(
     Tcl_Size i, numWords = parsePtr->numWords;
     /* TODO: Consider support for compiling expanded args. */
 
-    if (numWords < 3 || numWords > UINT_MAX) {
+    if (numWords < 3 || OutOfUintRange(numWords)) {
 	return TCL_ERROR;
     }
 
@@ -1454,7 +1454,7 @@ TclCompileLreplaceCmd(
     Tcl_Size i, numWords = parsePtr->numWords;
     /* TODO: Consider support for compiling expanded args. */
 
-    if (numWords < 4 || numWords > UINT_MAX) {
+    if (numWords < 4 || OutOfUintRange(numWords)) {
 	return TCL_ERROR;
     }
 
@@ -1967,7 +1967,7 @@ TclCompileLsetCmd(
      */
 
     /* TODO: Consider support for compiling expanded args. */
-    if (numWords < 3 || numWords > UINT_MAX) {
+    if (numWords < 3 || OutOfUintRange(numWords)) {
 	/*
 	 * Fail at run time, not in compilation.
 	 */
@@ -2267,7 +2267,7 @@ TclCompileNamespaceUpvarCmd(
      * Only compile [namespace upvar ...]: needs an even number of args, >=4
      */
 
-    if ((numWords % 2) || numWords < 4 || numWords > UINT_MAX) {
+    if ((numWords % 2) || numWords < 4 || OutOfUintRange(numWords)) {
 	return TCL_ERROR;
     }
 
@@ -2387,7 +2387,7 @@ TclCompileRegexpCmd(
      *   regexp ?-nocase? ?--? {^staticString$} $var
      */
 
-    if (numWords < 3 || numWords > UINT_MAX) {
+    if (numWords < 3 || OutOfUintRange(numWords)) {
 	return TCL_ERROR;
     }
 
@@ -2708,7 +2708,7 @@ TclCompileReturnCmd(
     Tcl_Obj *returnOpts, **objv;
     Tcl_Token *wordTokenPtr = TokenAfter(parsePtr->tokenPtr);
 
-    if (numWords > UINT_MAX) {
+    if (OutOfUintRange(numWords)) {
 	return TCL_ERROR;
     }
 
@@ -2959,7 +2959,7 @@ TclCompileUpvarCmd(
 	return TCL_ERROR;
     }
 
-    if (numWords < 3 || numWords > UINT_MAX) {
+    if (numWords < 3 || OutOfUintRange(numWords)) {
 	return TCL_ERROR;
     }
 
@@ -3055,7 +3055,7 @@ TclCompileVariableCmd(
     Tcl_LVTIndex localIndex;
     Tcl_Size numWords = parsePtr->numWords, i;
 
-    if (numWords < 2 || numWords > UINT_MAX) {
+    if (numWords < 2 || OutOfUintRange(numWords)) {
 	return TCL_ERROR;
     }
 
@@ -3228,7 +3228,7 @@ TclCompileObjectNextCmd(
     Tcl_Token *tokenPtr = parsePtr->tokenPtr;
     Tcl_Size i, numWords = parsePtr->numWords;
 
-    if (parsePtr->numWords > UINT_MAX) {
+    if (OutOfUintRange(parsePtr->numWords)) {
 	goto issueExpanded;
     }
 
@@ -3309,7 +3309,7 @@ TclCompileObjectNextToCmd(
 
     if (numWords < 2) {
 	return TCL_ERROR;
-    } else if (numWords > UINT_MAX) {
+    } else if (OutOfUintRange(numWords)) {
 	// Very large number of words anyway
 	goto issueExpanded;
     }

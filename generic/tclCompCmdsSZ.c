@@ -1436,7 +1436,7 @@ TclCompileSubstCmd(
     Tcl_Token *wordTokenPtr = TokenAfter(parsePtr->tokenPtr);
     int code = TCL_ERROR;
 
-    if (numArgs == 0 || numArgs > UINT_MAX) {
+    if (numArgs == 0 || OutOfUintRange(numArgs)) {
 	return TCL_ERROR;
     }
 
@@ -1805,7 +1805,7 @@ TclCompileSwitchCmd(
     tokenPtr = TokenAfter(parsePtr->tokenPtr);
     valueIndex = 1;
     numWords = parsePtr->numWords - 1;
-    if (numWords > UINT_MAX) {
+    if (OutOfUintRange(numWords)) {
 	return TCL_ERROR;
     }
 
@@ -3159,7 +3159,7 @@ TclCompileTryCmd(
     TryHandlerInfo staticHandler, *handlers = &staticHandler;
     Tcl_Size handlerIdx = 0;
 
-    if (numWords < 2 || numWords > UINT_MAX) {
+    if (numWords < 2 || OutOfUintRange(numWords)) {
 	return TCL_ERROR;
     }
 
@@ -4459,7 +4459,7 @@ TclCompileUnsetCmd(
 
     /* TODO: Consider support for compiling expanded args. */
 
-    if (parsePtr->numWords > UINT_MAX) {
+    if (OutOfUintRange(parsePtr->numWords)) {
 	return TCL_ERROR;
     }
 
@@ -5000,7 +5000,7 @@ CompileAssociativeBinaryOpCmd(
     Tcl_Size words;
 
     /* TODO: Consider support for compiling expanded args. */
-    if (parsePtr->numWords > UINT_MAX) {
+    if (OutOfUintRange(parsePtr->numWords)) {
 	return TCL_ERROR;
     }
     for (words=1 ; words<parsePtr->numWords ; words++) {
@@ -5087,7 +5087,7 @@ CompileComparisonOpCmd(
     Tcl_Token *tokenPtr;
 
     /* TODO: Consider support for compiling expanded args. */
-    if (parsePtr->numWords > UINT_MAX) {
+    if (OutOfUintRange(parsePtr->numWords)) {
 	return TCL_ERROR;
     }
     if (parsePtr->numWords < 3) {
@@ -5244,7 +5244,7 @@ TclCompilePowOpCmd(
     Tcl_Token *tokenPtr = parsePtr->tokenPtr;
     Tcl_Size words;
 
-    if (parsePtr->numWords > UINT_MAX) {
+    if (OutOfUintRange(parsePtr->numWords)) {
 	return TCL_ERROR;
     }
 
@@ -5450,7 +5450,7 @@ TclCompileMinusOpCmd(
     Tcl_Size words;
 
     /* TODO: Consider support for compiling expanded args. */
-    if (parsePtr->numWords == 1 || parsePtr->numWords > UINT_MAX) {
+    if (parsePtr->numWords == 1 || OutOfUintRange(parsePtr->numWords)) {
 	/*
 	 * Fallback to direct eval to report syntax error.
 	 */
@@ -5495,7 +5495,7 @@ TclCompileDivOpCmd(
     Tcl_Size words;
 
     /* TODO: Consider support for compiling expanded args. */
-    if (parsePtr->numWords == 1 || parsePtr->numWords > UINT_MAX) {
+    if (parsePtr->numWords == 1 || OutOfUintRange(parsePtr->numWords)) {
 	/*
 	 * Fallback to direct eval to report syntax error.
 	 */
