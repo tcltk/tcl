@@ -33,7 +33,7 @@
 
 static int
 Pkgooa_StubsOKObjCmd(
-    ClientData dummy,		/* Not used. */
+    void *dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -108,18 +108,18 @@ Pkgooa_Init(
     }
     if (tclStubsPtr == NULL) {
 	Tcl_AppendResult(interp, "Tcl stubs are not initialized, "
-		"did you compile using -DUSE_TCL_STUBS? ", (void *)NULL);
+		"did you compile using -DUSE_TCL_STUBS? ", (char *)NULL);
 	return TCL_ERROR;
     }
     if (Tcl_OOInitStubs(interp) == NULL) {
 	return TCL_ERROR;
     }
     if (tclOOStubsPtr == NULL) {
-	Tcl_AppendResult(interp, "TclOO stubs are not initialized", (void *)NULL);
+	Tcl_AppendResult(interp, "TclOO stubs are not initialized", (char *)NULL);
 	return TCL_ERROR;
     }
     if (tclOOIntStubsPtr == NULL) {
-	Tcl_AppendResult(interp, "TclOO internal stubs are not initialized", (void *)NULL);
+	Tcl_AppendResult(interp, "TclOO internal stubs are not initialized", (char *)NULL);
 	return TCL_ERROR;
     }
 

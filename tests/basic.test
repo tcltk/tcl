@@ -240,7 +240,18 @@ test basic-15.2 {Tcl_CreateObjCommand, Bug 0e4d88b650} -setup {
     namespace delete n
     rename deleter {}
 }
-
+test basic-15.3 {Tcl_CreateObjCommand, Bug 24d7f1a695} -body {
+    namespace eval ns {
+        proc p {} {}; proc q {} {};
+        namespace delete [namespace current];
+        proc p {} {}; proc q {} {}
+    }
+    # APN - current behavior is that namespace continues to exist
+    # as it is recreated by the proc calls after the ns delete.
+    # I am not sure this is consistent with proc ns::foo raising
+    # an error if ns does not exist. But whatever ...
+    namespace exists ns
+} -result 1
 
 test basic-16.1 {TclInvokeStringCommand} {emptyTest} {
 } {}
