@@ -4460,8 +4460,8 @@ TclZipfsMountShlib(void)
 
 static void
 TclZipfsLocateTclLibrary(
-	int appZipfsPresent,	/* non-0 if app zipfs is to be checked */
-	int shlibZipfsPresent)  /* non-0 if shared lib is to be checked */
+    int appZipfsPresent,	/* non-0 if app zipfs is to be checked */
+    int shlibZipfsPresent)	/* non-0 if shared lib is to be checked */
 {
     Tcl_Obj *vfsInitScript;
     int found;
