@@ -105,7 +105,7 @@ OutOfUintRange(
     Tcl_Size value)
 {
     // Not sure what to do on 32-bit platforms that don't have PTRDIFF_MAX.
-#if defined(PTRDIFF_MAX) && PTRDIFF_MAX == UINT_MAX
+#if defined(PTRDIFF_MAX) && PTRDIFF_MAX == INT_MAX
     return value < 0;
 #else
     return value < 0 || value > (Tcl_Size) UINT_MAX;
