@@ -121,7 +121,7 @@ TclCompileGlobalCmd(
     for (i=1; i<numWords; varTokenPtr = TokenAfter(varTokenPtr),i++) {
 	localIndex = IndexTailVarIfKnown(interp, varTokenPtr, envPtr);
 
-	if (localIndex < 0 || localIndex > INT_MAX) {
+	if (OutOfUintRange(localIndex)) {
 	    return TCL_ERROR;
 	}
 
@@ -441,6 +441,9 @@ TclCompileIncrCmd(
 
     varTokenPtr = TokenAfter(parsePtr->tokenPtr);
     PushVarNameWord(varTokenPtr, 0, &localIndex, &isScalar, 1);
+    if (OutOfUintRangeUpper(localIndex)) {
+	return TCL_ERROR;
+    }
 
     /*
      * If an increment is given, push it, but see first if it's a small
@@ -637,6 +640,9 @@ TclCompileInfoExistsCmd(
 
     tokenPtr = TokenAfter(parsePtr->tokenPtr);
     PushVarNameWord(tokenPtr, 0, &localIndex, &isScalar, 1);
+    if (OutOfUintRangeUpper(localIndex)) {
+	return TCL_ERROR;
+    }
 
     /*
      * Emit instruction to check the variable for existence.
@@ -834,6 +840,9 @@ TclCompileLappendCmd(
 	return TCL_ERROR;
     }
     PushVarNameWord(varTokenPtr, 0, &localIndex, &isScalar, 1);
+    if (OutOfUintRangeUpper(localIndex)) {
+	return TCL_ERROR;
+    }
 
     if (numWords != 3) {
 	goto lappendMultiple;
@@ -1024,6 +1033,9 @@ TclCompileLassignCmd(
 
 	tokenPtr = TokenAfter(tokenPtr);
 	PushVarNameWord(tokenPtr, 0, &localIndex, &isScalar, idx + 2);
+	if (OutOfUintRangeUpper(localIndex)) {
+	    return TCL_ERROR;
+	}
 
 	/*
 	 * Emit instructions to get the idx'th item out of the list value on
@@ -1516,6 +1528,9 @@ TclCompileLeditCmd(
     Tcl_LVTIndex varIdx;
     int isScalar;
     PushVarNameWord(varTokenPtr, 0, &varIdx, &isScalar, 1);
+    if (OutOfUintRangeUpper(varIdx)) {
+	return TCL_ERROR;
+    }
     // Stack: varWords...
 
     /*
@@ -1633,8 +1648,8 @@ TclCompileLpopCmd(
     }
 
     Tcl_Token *varTokenPtr = TokenAfter(parsePtr->tokenPtr);
-    Tcl_LVTIndex varIdx = LocalScalarFromToken(varTokenPtr, envPtr);
-    if (varIdx < 0) {
+    Tcl_LVTIndex varIdx = TclLocalScalarFromToken(varTokenPtr, envPtr);
+    if (OutOfUintRange(varIdx)) {
 	// Give up if we pushed any words; makes stack computations tractable
 	return TCL_ERROR;
     }
@@ -1985,6 +2000,9 @@ TclCompileLsetCmd(
 
     varTokenPtr = TokenAfter(parsePtr->tokenPtr);
     PushVarNameWord(varTokenPtr, 0, &localIndex, &isScalar, 1);
+    if (OutOfUintRangeUpper(localIndex)) {
+	return TCL_ERROR;
+    }
 
     /*
      * Push the "index" args and the new element value.
@@ -2290,8 +2308,8 @@ TclCompileNamespaceUpvarCmd(
 	localTokenPtr = TokenAfter(otherTokenPtr);
 
 	PUSH_TOKEN(		otherTokenPtr, i);
-	localIndex = LocalScalarFromToken(localTokenPtr, envPtr);
-	if (localIndex < 0) {
+	localIndex = TclLocalScalarFromToken(localTokenPtr, envPtr);
+	if (OutOfUintRange(localIndex)) {
 	    return TCL_ERROR;
 	}
 	OP4(			NSUPVAR, localIndex);
@@ -3008,8 +3026,8 @@ TclCompileUpvarCmd(
 	localTokenPtr = TokenAfter(otherTokenPtr);
 
 	PUSH_TOKEN(		otherTokenPtr, i);
-	localIndex = LocalScalarFromToken(localTokenPtr, envPtr);
-	if (localIndex < 0) {
+	localIndex = TclLocalScalarFromToken(localTokenPtr, envPtr);
+	if (OutOfUintRange(localIndex)) {
 	    return TCL_ERROR;
 	}
 	OP4(			UPVAR, localIndex);

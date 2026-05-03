@@ -3527,7 +3527,7 @@ CompileBasicNArgCommand(
 {
     Tcl_Obj *objPtr;
 
-    if (parsePtr->numWords > INT_MAX) {
+    if (OutOfUintRange(parsePtr->numWords)) {
 	return TCL_ERROR;
     }
 

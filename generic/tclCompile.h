@@ -94,7 +94,7 @@ typedef Tcl_Size Tcl_ExceptionRange;
 /*
  *------------------------------------------------------------------------
  *
- * OutOfUintRange --
+ * OutOfUintRange, OutOfUIntRangeUpper --
  *
  *	Test if the argument is outside of the range of an unsigned int.
  *
@@ -109,6 +109,18 @@ OutOfUintRange(
     return value < 0;
 #else
     return value < 0 || value > (Tcl_Size) UINT_MAX;
+#endif
+}
+
+static inline bool
+OutOfUintRangeUpper(
+    Tcl_Size value)
+{
+    // Not sure what to do on 32-bit platforms that don't have PTRDIFF_MAX.
+#if defined(PTRDIFF_MAX) && PTRDIFF_MAX == INT_MAX
+    return false;
+#else
+    return value > (Tcl_Size) UINT_MAX;
 #endif
 }
 
@@ -2012,10 +2024,6 @@ ExceptionRangeEnds(
 
 #define AnonymousLocal(envPtr) \
     (TclFindCompiledLocal(NULL, /*nameChars*/ 0, /*create*/ true, (envPtr)))
-#define LocalScalar(chars,len,envPtr) \
-    TclLocalScalar(chars, len, envPtr)
-#define LocalScalarFromToken(tokenPtr,envPtr) \
-    TclLocalScalarFromToken(tokenPtr, envPtr)
 
 /*
  * Flags bits used by TclPushVarName.
