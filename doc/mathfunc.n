@@ -318,6 +318,13 @@ Returns the floating-point value that is the sum of the product of \fIx\fR and
 .
 Returns the floating-point remainder of the division of \fIx\fR by
 \fIy\fR.  If \fIy\fR is 0, an error is returned.
+.\" COMMAND: gamma
+.TP
+\fBgamma \fIarg\fR
+.VS TIP745
+Returns the absolute value of the gamma function of \fIarg\fR (a generalized factorial).
+If the result would cause an overflow, an error is returned.
+.VE TIP745
 .\" COMMAND: hypot
 .TP
 \fBhypot \fIx y\fR
@@ -532,13 +539,6 @@ Returns the tangent of \fIarg\fR, measured in radians.
 \fBtanh \fIarg\fR
 .
 Returns the hyperbolic tangent of \fIarg\fR.
-.\" COMMAND: gamma
-.TP
-\fBgamma \fIarg\fR
-.VS TIP745
-Returns the absolute value of the gamma function of \fIarg\fR (a generalized factorial).
-If the result would cause an overflow, an error is returned.
-.VE TIP745
 .\" COMMAND: trunc
 .TP
 \fBtrunc \fIarg\fR
