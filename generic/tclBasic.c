@@ -177,6 +177,7 @@ static int		CheckDoubleResult(Tcl_Interp *interp, double dResult);
 static void		DeleteCoroutine(void *clientData);
 static Tcl_FreeProc	DeleteInterpProc;
 static void		DeleteOpCmdClientData(void *clientData);
+static Tcl_ObjCmdProc2	DivModObjCmd;
 #ifdef USE_DTRACE
 static Tcl_ObjCmdProc2	DTraceObjCmd;
 static Tcl_NRPostProc	DTraceCmdReturn;
@@ -186,10 +187,12 @@ static Tcl_NRPostProc	DTraceCmdReturn;
 static Tcl_ObjCmdProc2	InvokeStringCommand;
 static Tcl_ObjCmdProc2	ExprAbsFunc;
 static Tcl_ObjCmdProc2	ExprBinaryFunc;
+static Tcl_ObjCmdProc2	ExprBinaryDIFunc;
 static Tcl_ObjCmdProc2	ExprBoolFunc;
 static Tcl_ObjCmdProc2	ExprCeilFunc;
 static Tcl_ObjCmdProc2	ExprDoubleFunc;
 static Tcl_ObjCmdProc2	ExprFloorFunc;
+static Tcl_ObjCmdProc2	ExprFmaFunc;
 static Tcl_ObjCmdProc2	ExprIntFunc;
 static Tcl_ObjCmdProc2	ExprIsqrtFunc;
 static Tcl_ObjCmdProc2	ExprIsFiniteFunc;
@@ -198,23 +201,28 @@ static Tcl_ObjCmdProc2	ExprIsNaNFunc;
 static Tcl_ObjCmdProc2	ExprIsNormalFunc;
 static Tcl_ObjCmdProc2	ExprIsSubnormalFunc;
 static Tcl_ObjCmdProc2	ExprIsUnorderedFunc;
+static Tcl_ObjCmdProc2	ExprLgammaFunc;
 static Tcl_ObjCmdProc2	ExprMaxFunc;
 static Tcl_ObjCmdProc2	ExprMinFunc;
 static Tcl_ObjCmdProc2	ExprRandFunc;
 static Tcl_ObjCmdProc2	ExprRoundFunc;
+static Tcl_ObjCmdProc2	ExprSignBitFunc;
 static Tcl_ObjCmdProc2	ExprSqrtFunc;
 static Tcl_ObjCmdProc2	ExprSrandFunc;
 static Tcl_ObjCmdProc2	ExprUnaryFunc;
 static Tcl_ObjCmdProc2	ExprWideFunc;
+static Tcl_ObjCmdProc2	FracExpObjCmd;
 static Tcl_ObjCmdProc2	FloatClassifyObjCmd;
 static void		MathFuncWrongNumArgs(Tcl_Interp *interp, Tcl_Size expected,
 			    Tcl_Size actual, Tcl_Obj *const *objv);
+static Tcl_ObjCmdProc2	ModFObjCmd;
 static Tcl_NRPostProc	NRCoroutineCallerCallback;
 static Tcl_NRPostProc	NRCoroutineExitCallback;
 static Tcl_NRPostProc	NRCommand;
 
 static void		ProcessUnexpectedResult(Tcl_Interp *interp,
 			    int returnCode);
+static Tcl_ObjCmdProc2	RemQuoObjCmd;
 static int		RewindCoroutine(CoroutineData *corPtr, int result);
 static void		TEOV_SwitchVarFrame(Tcl_Interp *interp);
 static void		TEOV_PushExceptionHandlers(Tcl_Interp *interp,
@@ -310,6 +318,7 @@ static const CmdInfo builtInCmds[] = {
     {"coroinject",	NULL,			NULL,			TclNRCoroInjectObjCmd,	CMD_IS_SAFE},
     {"coroprobe",	NULL,			NULL,			TclNRCoroProbeObjCmd,	CMD_IS_SAFE},
     {"coroutine",	NULL,			NULL,			TclNRCoroutineObjCmd,	CMD_IS_SAFE},
+    {"divmod",		DivModObjCmd,		NULL,			NULL,	CMD_IS_SAFE},
     {"error",		Tcl_ErrorObjCmd,	TclCompileErrorCmd,	NULL,	CMD_IS_SAFE},
     {"eval",		Tcl_EvalObjCmd,		NULL,			TclNREvalObjCmd,	CMD_IS_SAFE},
     {"expr",		Tcl_ExprObjCmd,		TclCompileExprCmd,	TclNRExprObjCmd,	CMD_IS_SAFE},
@@ -317,6 +326,7 @@ static const CmdInfo builtInCmds[] = {
     {"foreach",		Tcl_ForeachObjCmd,	TclCompileForeachCmd,	TclNRForeachCmd,	CMD_IS_SAFE},
     {"format",		Tcl_FormatObjCmd,	TclCompileFormatCmd,	NULL,	CMD_IS_SAFE},
     {"fpclassify",	FloatClassifyObjCmd,    NULL,			NULL,	CMD_IS_SAFE},
+    {"frexp",		FracExpObjCmd,		NULL,			NULL,	CMD_IS_SAFE},
     {"global",		Tcl_GlobalObjCmd,	TclCompileGlobalCmd,	NULL,	CMD_IS_SAFE},
     {"if",		Tcl_IfObjCmd,		TclCompileIfCmd,	TclNRIfObjCmd,	CMD_IS_SAFE},
     {"incr",		Tcl_IncrObjCmd,		TclCompileIncrCmd,	NULL,	CMD_IS_SAFE},
@@ -339,10 +349,12 @@ static const CmdInfo builtInCmds[] = {
     {"lseq",		Tcl_LseqObjCmd,		TclCompileLseqCmd,	NULL,	CMD_IS_SAFE},
     {"lset",		Tcl_LsetObjCmd,		TclCompileLsetCmd,	NULL,	CMD_IS_SAFE},
     {"lsort",		Tcl_LsortObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
+    {"modf",		ModFObjCmd,		NULL,			NULL,	CMD_IS_SAFE},
     {"package",		Tcl_PackageObjCmd,	NULL,			TclNRPackageObjCmd,	CMD_IS_SAFE},
     {"proc",		Tcl_ProcObjCmd,		NULL,			NULL,	CMD_IS_SAFE},
     {"regexp",		Tcl_RegexpObjCmd,	TclCompileRegexpCmd,	NULL,	CMD_IS_SAFE},
     {"regsub",		Tcl_RegsubObjCmd,	TclCompileRegsubCmd,	NULL,	CMD_IS_SAFE},
+    {"remquo",		RemQuoObjCmd,		NULL,			NULL,	CMD_IS_SAFE},
     {"rename",		Tcl_RenameObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
     {"return",		Tcl_ReturnObjCmd,	TclCompileReturnCmd,	NULL,	CMD_IS_SAFE},
     {"scan",		Tcl_ScanObjCmd,		NULL,			NULL,	CMD_IS_SAFE},
@@ -437,8 +449,11 @@ static const EnsembleSetup ensembleCommands[] = {
 
 typedef double (BuiltinUnaryFunc)(double x);
 typedef double (BuiltinBinaryFunc)(double x, double y);
+typedef double (BuiltinBinaryDIFunc)(double x, int y);
 #define BINARY_TYPECAST(fn) \
 	(BuiltinUnaryFunc *)(void *)(BuiltinBinaryFunc *) fn
+#define BINARY_DI_TYPECAST(fn) \
+	(BuiltinUnaryFunc *)(void *)(BuiltinBinaryDIFunc *) fn
 typedef struct {
     const char *name;		/* Name of the function. The full name is
 				 * "::tcl::mathfunc::<name>". */
@@ -448,18 +463,30 @@ typedef struct {
 static const BuiltinFuncDef BuiltinFuncTable[] = {
     { "abs",	ExprAbsFunc,	NULL			},
     { "acos",	ExprUnaryFunc,	acos			},
+    { "acosh",	ExprUnaryFunc,	acosh			},
     { "asin",	ExprUnaryFunc,	asin			},
+    { "asinh",	ExprUnaryFunc,	asinh			},
     { "atan",	ExprUnaryFunc,	atan			},
+    { "atanh",	ExprUnaryFunc,	atanh			},
     { "atan2",	ExprBinaryFunc,	BINARY_TYPECAST(atan2)	},
     { "bool",	ExprBoolFunc,	NULL			},
+    { "cbrt",	ExprUnaryFunc,	cbrt			},
     { "ceil",	ExprCeilFunc,	NULL			},
+    { "copysign", ExprBinaryFunc, BINARY_TYPECAST(copysign)	},
     { "cos",	ExprUnaryFunc,	cos			},
     { "cosh",	ExprUnaryFunc,	cosh			},
+    { "dim",	ExprBinaryFunc,	BINARY_TYPECAST(fdim)	},
     { "double",	ExprDoubleFunc,	NULL			},
     { "entier",	ExprIntFunc,	NULL			},
+    { "erf",	ExprUnaryFunc,	erf			},
+    { "erfc",	ExprUnaryFunc,	erfc			},
     { "exp",	ExprUnaryFunc,	exp			},
+    { "exp2",	ExprUnaryFunc,	exp2			},
+    { "expm1",	ExprUnaryFunc,	expm1			},
     { "floor",	ExprFloorFunc,	NULL			},
+    { "fma",	ExprFmaFunc,	NULL			},
     { "fmod",	ExprBinaryFunc,	BINARY_TYPECAST(fmod)	},
+    { "gamma",	ExprUnaryFunc,	tgamma			},
     { "hypot",	ExprBinaryFunc,	BINARY_TYPECAST(hypot)	},
     { "int",	ExprIntFunc,	NULL			},
     { "isfinite", ExprIsFiniteFunc, NULL		},
@@ -469,19 +496,28 @@ static const BuiltinFuncDef BuiltinFuncTable[] = {
     { "isqrt",	ExprIsqrtFunc,	NULL			},
     { "issubnormal", ExprIsSubnormalFunc, NULL,		},
     { "isunordered", ExprIsUnorderedFunc, NULL,		},
+    { "ldexp",	ExprBinaryDIFunc, BINARY_DI_TYPECAST(ldexp)	},
+    { "lgamma",	ExprLgammaFunc,	NULL			},
     { "log",	ExprUnaryFunc,	log			},
     { "log10",	ExprUnaryFunc,	log10			},
+    { "log1p",	ExprUnaryFunc,	log1p			},
+    { "log2",	ExprUnaryFunc,	log2			},
+    { "logb",	ExprUnaryFunc,	logb			},
     { "max",	ExprMaxFunc,	NULL			},
     { "min",	ExprMinFunc,	NULL			},
+    { "nextafter", ExprBinaryFunc, BINARY_TYPECAST(nextafter)	},
     { "pow",	ExprBinaryFunc,	BINARY_TYPECAST(pow)	},
     { "rand",	ExprRandFunc,	NULL			},
+    { "remainder", ExprBinaryFunc, BINARY_TYPECAST(remainder)	},
     { "round",	ExprRoundFunc,	NULL			},
+    { "signbit", ExprSignBitFunc, NULL			},
     { "sin",	ExprUnaryFunc,	sin			},
     { "sinh",	ExprUnaryFunc,	sinh			},
     { "sqrt",	ExprSqrtFunc,	NULL			},
     { "srand",	ExprSrandFunc,	NULL			},
     { "tan",	ExprUnaryFunc,	tan			},
     { "tanh",	ExprUnaryFunc,	tanh			},
+    { "trunc",	ExprUnaryFunc,	trunc			},
     { "wide",	ExprWideFunc,	NULL			},
     { NULL, NULL, NULL }
 };
@@ -7005,6 +7041,28 @@ Tcl_GetVersion(
  *----------------------------------------------------------------------
  */
 
+// Like Tcl_GetDoubleFromObj(), but may accept NaN as compile-time option.
+static inline int
+GetDoubleFuncArg(
+    Tcl_Interp *interp,
+    Tcl_Obj *objPtr,
+    double *d)
+{
+    int code = Tcl_GetDoubleFromObj(interp, objPtr, d);
+#ifdef ACCEPT_NAN
+    if (code != TCL_OK) {
+	const Tcl_ObjInternalRep *irPtr = TclFetchInternalRep(objPtr, &tclDoubleType);
+
+	if (irPtr) {
+	    *d = irPtr->doubleValue;
+	    Tcl_ResetResult(interp);
+	    code = TCL_OK;
+	}
+    }
+#endif
+    return code;
+}
+
 static int
 ExprCeilFunc(
     TCL_UNUSED(void *),
@@ -7021,7 +7079,7 @@ ExprCeilFunc(
 	MathFuncWrongNumArgs(interp, 2, objc, objv);
 	return TCL_ERROR;
     }
-    code = Tcl_GetDoubleFromObj(interp, objv[1], &d);
+    code = GetDoubleFuncArg(interp, objv[1], &d);
 #ifdef ACCEPT_NAN
     if (code != TCL_OK) {
 	const Tcl_ObjInternalRep *irPtr = TclFetchInternalRep(objv[1], &tclDoubleType);
@@ -7261,23 +7319,63 @@ ExprUnaryFunc(
 	MathFuncWrongNumArgs(interp, 2, objc, objv);
 	return TCL_ERROR;
     }
-    code = Tcl_GetDoubleFromObj(interp, objv[1], &d);
-#ifdef ACCEPT_NAN
-    if (code != TCL_OK) {
-	const Tcl_ObjInternalRep *irPtr = TclFetchInternalRep(objv[1], &tclDoubleType);
-
-	if (irPtr) {
-	    d = irPtr->doubleValue;
-	    Tcl_ResetResult(interp);
-	    code = TCL_OK;
-	}
-    }
-#endif
+    code = GetDoubleFuncArg(interp, objv[1], &d);
     if (code != TCL_OK) {
 	return TCL_ERROR;
     }
     errno = 0;
     return CheckDoubleResult(interp, func(d));
+}
+
+static int
+ExprLgammaFunc(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,		/* The interpreter in which to execute the
+				 * function. */
+    Tcl_Size objc,		/* Actual parameter count */
+    Tcl_Obj *const *objv)	/* Actual parameter list */
+{
+    double d, result;
+
+    if (objc != 2) {
+	MathFuncWrongNumArgs(interp, 2, objc, objv);
+	return TCL_ERROR;
+    }
+    int code = GetDoubleFuncArg(interp, objv[1], &d);
+    if (code != TCL_OK) {
+	return TCL_ERROR;
+    }
+    errno = 0;
+
+#ifdef _POSIX_VERSION
+    /*
+     * Stupid misfeatures time! POSIX requires that the sign of the result be
+     * stored in a global variable, signgam (that isn't universally available
+     * anyway, so we're not interested in it). That that is not a per-thread
+     * variable is very stupid indeed, but we're stuck with it. We make sure
+     * we hold a mutex when calling the function, even though we don't care at
+     * all about the global state it manages, since then we'll definitely be
+     * safe, whatever sort of stupidity is going on in the C library.
+     *
+     * We pay a bit of a penalty for this caution, but we'll worry about that
+     * if someone states they're calling the function frequently from multiple
+     * threads...
+     *
+     * Citations:
+     *  https://en.cppreference.com/w/c/numeric/math/lgamma.html
+     *  https://pubs.opengroup.org/onlinepubs/9699919799/functions/lgamma.html
+     */
+
+    TCL_DECLARE_MUTEX(lgammaMutex)
+    Tcl_MutexLock(&lgammaMutex);
+    result = lgamma(d);
+    Tcl_MutexUnlock(&lgammaMutex);
+#else
+    /* No such nonsense elsewhere. Thank goodness! */
+    result = lgamma(d);
+#endif
+
+    return CheckDoubleResult(interp, result);
 }
 
 static int
@@ -7325,38 +7423,47 @@ ExprBinaryFunc(
 	MathFuncWrongNumArgs(interp, 3, objc, objv);
 	return TCL_ERROR;
     }
-    code = Tcl_GetDoubleFromObj(interp, objv[1], &d1);
-#ifdef ACCEPT_NAN
-    if (code != TCL_OK) {
-	const Tcl_ObjInternalRep *irPtr = TclFetchInternalRep(objv[1], &tclDoubleType);
-
-	if (irPtr) {
-	    d1 = irPtr->doubleValue;
-	    Tcl_ResetResult(interp);
-	    code = TCL_OK;
-	}
-    }
-#endif
+    code = GetDoubleFuncArg(interp, objv[1], &d1);
     if (code != TCL_OK) {
 	return TCL_ERROR;
     }
-    code = Tcl_GetDoubleFromObj(interp, objv[2], &d2);
-#ifdef ACCEPT_NAN
-    if (code != TCL_OK) {
-	const Tcl_ObjInternalRep *irPtr = TclFetchInternalRep(objv[1], &tclDoubleType);
-
-	if (irPtr) {
-	    d2 = irPtr->doubleValue;
-	    Tcl_ResetResult(interp);
-	    code = TCL_OK;
-	}
-    }
-#endif
+    code = GetDoubleFuncArg(interp, objv[2], &d2);
     if (code != TCL_OK) {
 	return TCL_ERROR;
     }
     errno = 0;
     return CheckDoubleResult(interp, func(d1, d2));
+}
+
+static int
+ExprBinaryDIFunc(
+    void *clientData,		/* Contains the address of a function that
+				 * takes one double argument and one int
+				 * argument, and returns a double result. */
+    Tcl_Interp *interp,		/* The interpreter in which to execute the
+				 * function. */
+    Tcl_Size objc,		/* Actual parameter count. */
+    Tcl_Obj *const *objv)	/* Parameter vector. */
+{
+    int code;
+    double d1;
+    int i2;
+    BuiltinBinaryDIFunc *func = (BuiltinBinaryDIFunc *)clientData;
+
+    if (objc != 3) {
+	MathFuncWrongNumArgs(interp, 3, objc, objv);
+	return TCL_ERROR;
+    }
+    code = GetDoubleFuncArg(interp, objv[1], &d1);
+    if (code != TCL_OK) {
+	return TCL_ERROR;
+    }
+    code = Tcl_GetIntFromObj(interp, objv[2], &i2);
+    if (code != TCL_OK) {
+	return TCL_ERROR;
+    }
+    errno = 0;
+    return CheckDoubleResult(interp, func(d1, i2));
 }
 
 static int
@@ -7871,6 +7978,83 @@ ExprSrandFunc(
 
     return ExprRandFunc(NULL, interp, 1, objv);
 }
+
+static int
+ExprFmaFunc(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,		/* The interpreter in which to execute the
+				 * function. */
+    Tcl_Size objc,		/* Actual parameter count. */
+    Tcl_Obj *const *objv)	/* Parameter vector. */
+{
+    int code;
+    double d1, d2, d3;
+
+    if (objc != 4) {
+	MathFuncWrongNumArgs(interp, 4, objc, objv);
+	return TCL_ERROR;
+    }
+    code = GetDoubleFuncArg(interp, objv[1], &d1);
+    if (code != TCL_OK) {
+	return TCL_ERROR;
+    }
+    code = GetDoubleFuncArg(interp, objv[2], &d2);
+    if (code != TCL_OK) {
+	return TCL_ERROR;
+    }
+    code = GetDoubleFuncArg(interp, objv[3], &d3);
+    if (code != TCL_OK) {
+	return TCL_ERROR;
+    }
+    errno = 0;
+    return CheckDoubleResult(interp, fma(d1, d2, d3));
+}
+
+static int
+ExprSignBitFunc(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,		/* The interpreter in which to execute the
+				 * function. */
+    Tcl_Size objc,		/* Actual parameter count */
+    Tcl_Obj *const *objv)	/* Actual parameter list */
+{
+    if (objc != 2) {
+	MathFuncWrongNumArgs(interp, 2, objc, objv);
+	return TCL_ERROR;
+    }
+
+    void *data;
+    int type;
+    if (Tcl_GetNumberFromObj(interp, objv[1], &data, &type) != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    bool bit;
+    switch (type) {
+    case TCL_NUMBER_DOUBLE:
+    case TCL_NUMBER_NAN: {
+	// Special case; handle NaN as conventional double
+	double d = *((double *) data);
+	bit = signbit(d);
+	break;
+    }
+    case TCL_NUMBER_INT: {
+	Tcl_WideInt i = *((Tcl_WideInt *) data);
+	bit = i < 0;
+	break;
+    }
+    case TCL_NUMBER_BIG: {
+	mp_int *bigPtr = (mp_int *) data;
+	bit = mp_isneg(bigPtr);
+	break;
+    }
+    default:
+	TCL_UNREACHABLE();
+    }
+
+    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(bit));
+    return TCL_OK;
+}
 
 /*
  *----------------------------------------------------------------------
@@ -8205,6 +8389,235 @@ FloatClassifyObjCmd(
 	return TCL_ERROR;
     }
     Tcl_SetObjResult(interp, objPtr);
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Misc Function-like Commands --
+ *
+ *	This page contains the commands that return multiple values. They'd
+ *	be things callable from [expr], except their results aren't directly
+ *	processable there.
+ *
+ * Results:
+ *	Each command returns TCL_OK if it succeeds and pushes an Tcl object
+ *	holding the result. If it fails it returns TCL_ERROR and leaves an
+ *	error message in the interpreter's result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+DivModObjCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,		/* The interpreter in which to execute the
+				 * function. */
+    Tcl_Size objc,		/* Actual parameter count */
+    Tcl_Obj *const *objv)	/* Actual parameter list */
+{
+    if (objc != 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "dividend divisor");
+	return TCL_ERROR;
+    }
+
+    int typeX, typeY;
+    void *dataX, *dataY;
+
+    if (Tcl_GetNumberFromObj(interp, objv[1], &dataX, &typeX) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    if (typeX != TCL_NUMBER_INT && typeX != TCL_NUMBER_BIG) {
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf("dividend must be an integer"));
+	Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", NULL);
+	return TCL_ERROR;
+    }
+
+    if (Tcl_GetNumberFromObj(interp, objv[2], &dataY, &typeY) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    if (typeY != TCL_NUMBER_INT && typeY != TCL_NUMBER_BIG) {
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf("divisor must be an integer"));
+	Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", NULL);
+	return TCL_ERROR;
+    }
+
+    if (typeX == TCL_NUMBER_BIG || typeY == TCL_NUMBER_BIG) {
+	mp_int x, y, quotientVal, remainderVal;
+
+	Tcl_GetBignumFromObj(NULL, objv[1], &x);
+	Tcl_GetBignumFromObj(NULL, objv[2], &y);
+	if (mp_iszero(&y)) {
+	    mp_clear(&x);
+	    mp_clear(&y);
+	    goto divZero;
+	}
+
+	int err = mp_init_multi(&quotientVal, &remainderVal, (void *)NULL);
+	if (err != MP_OKAY) {
+	    mp_clear(&x);
+	    mp_clear(&y);
+	    goto outOfMemory;
+	}
+	err = mp_div(&x, &y, &quotientVal, &remainderVal);
+	mp_clear(&x);
+	if ((err == MP_OKAY) && !mp_iszero(&remainderVal)
+		&& (remainderVal.sign != y.sign)) {
+	    /*
+	     * Convert to Tcl's integer division rules.
+	     */
+
+	    err = mp_sub_d(&quotientVal, 1, &quotientVal);
+	    if (err == MP_OKAY) {
+		err = mp_add(&remainderVal, &y, &remainderVal);
+	    }
+	}
+	mp_clear(&y);
+	if (err != MP_OKAY) {
+	    mp_clear(&quotientVal);
+	    mp_clear(&remainderVal);
+	    goto outOfMemory;
+	}
+
+	Tcl_Obj *result[] = {
+	    Tcl_NewBignumObj(&quotientVal),
+	    Tcl_NewBignumObj(&remainderVal)
+	};
+	Tcl_SetObjResult(interp, Tcl_NewListObj(2, result));
+	return TCL_OK;
+    } else {
+	Tcl_WideInt x, y, quotientVal, remainderVal;
+
+	(void) Tcl_GetWideIntFromObj(NULL, objv[1], &x);
+	(void) Tcl_GetWideIntFromObj(NULL, objv[2], &y);
+	if (y == 0) {
+	    goto divZero;
+	}
+
+	quotientVal = x / y;
+
+	/*
+	 * Force Tcl's integer division rules.
+	 * TODO: examine for logic simplification
+	 */
+
+	if (((quotientVal < 0) || ((quotientVal == 0) &&
+		((x < 0 && y > 0) || (x > 0 && y < 0)))) &&
+		((quotientVal * y) != y)) {
+	    quotientVal -= 1;
+	}
+
+	remainderVal = (Tcl_WideInt)((Tcl_WideUInt)x -
+		(Tcl_WideUInt)y * (Tcl_WideUInt)quotientVal);
+
+	Tcl_Obj *result[] = {
+	    Tcl_NewWideIntObj(quotientVal),
+	    Tcl_NewWideIntObj(remainderVal)
+	};
+	Tcl_SetObjResult(interp, Tcl_NewListObj(2, result));
+	return TCL_OK;
+    }
+
+  divZero:
+    Tcl_SetObjResult(interp, Tcl_ObjPrintf("divide by zero"));
+    Tcl_SetErrorCode(interp, "ARITH", "DIVZERO", "divide by zero", NULL);
+    return TCL_ERROR;
+  outOfMemory:
+    Tcl_SetObjResult(interp, Tcl_ObjPrintf("cannot allocate"));
+    Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
+    return TCL_ERROR;
+}
+
+static int
+FracExpObjCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,		/* The interpreter in which to execute the
+				 * function. */
+    Tcl_Size objc,		/* Actual parameter count */
+    Tcl_Obj *const *objv)	/* Actual parameter list */
+{
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "floatValue");
+	return TCL_ERROR;
+    }
+
+    double d;
+    if (Tcl_GetDoubleFromObj(interp, objv[1], &d) != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    int expPart;
+    double fracPart = frexp(d, &expPart);
+
+    Tcl_Obj *result[] = {
+	Tcl_NewDoubleObj(fracPart),
+	Tcl_NewIntObj(expPart)
+    };
+    Tcl_SetObjResult(interp, Tcl_NewListObj(2, result));
+    return TCL_OK;
+}
+
+static int
+ModFObjCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,		/* The interpreter in which to execute the
+				 * function. */
+    Tcl_Size objc,		/* Actual parameter count */
+    Tcl_Obj *const *objv)	/* Actual parameter list */
+{
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "floatValue");
+	return TCL_ERROR;
+    }
+
+    double d;
+    if (Tcl_GetDoubleFromObj(interp, objv[1], &d) != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    double integralPart, fracPart = modf(d, &integralPart);
+
+    Tcl_Obj *result[] = {
+	Tcl_NewDoubleObj(integralPart),
+	Tcl_NewDoubleObj(fracPart)
+    };
+    Tcl_SetObjResult(interp, Tcl_NewListObj(2, result));
+    return TCL_OK;
+}
+
+static int
+RemQuoObjCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,		/* The interpreter in which to execute the
+				 * function. */
+    Tcl_Size objc,		/* Actual parameter count */
+    Tcl_Obj *const *objv)	/* Actual parameter list */
+{
+    if (objc != 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "dividend divisor");
+	return TCL_ERROR;
+    }
+
+    double d1, d2;
+    if (Tcl_GetDoubleFromObj(interp, objv[1], &d1) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    if (Tcl_GetDoubleFromObj(interp, objv[2], &d2) != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    int quoVal;
+    double remainderVal = remquo(d1, d2, &quoVal);
+
+    Tcl_Obj *result[] = {
+	Tcl_NewDoubleObj(remainderVal),
+	Tcl_NewIntObj(quoVal)
+    };
+    Tcl_SetObjResult(interp, Tcl_NewListObj(2, result));
     return TCL_OK;
 }
 
