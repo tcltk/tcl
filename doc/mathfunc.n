@@ -103,7 +103,7 @@ mathfunc \- Mathematical functions for Tcl expressions
 \fB::tcl::mathfunc::tan\fI arg\fR
 \fB::tcl::mathfunc::tanh\fI arg\fR
 .VS TIP745
-\fB::tcl::mathfunc::tgamma\fI arg\fR
+\fB::tcl::mathfunc::gamma\fI arg\fR
 \fB::tcl::mathfunc::trunc\fI arg\fR
 .VE TIP745
 \fB::tcl::mathfunc::wide\fI arg\fR
@@ -130,14 +130,14 @@ of which work solely with floating-point numbers unless otherwise noted:
 \fBcos\fR	\fBcosh\fR	\fBdim\fR	\fBdouble\fR
 \fBentier\fR	\fBerf\fR	\fBerfc\fR	\fBexp\fR
 \fBexp2\fR	\fBexpm1\fR	\fBfloor\fR	\fBfma\fR
-\fBfmod\fR	\fBhypot\fR	\fBint\fR	\fBisfinite\fR
-\fBisinf\fR	\fBisnan\fR	\fBisnormal\fR	\fBisqrt\fR
-\fBissubnormal\fR	\fBisunordered\fR	\fBldexp\fR	\fBlgamma\fR
-\fBlog\fR	\fBlog10\fR	\fBlog1p\fR	\fBlog2\fR
-\fBlogb\fR	\fBmax\fR	\fBmin\fR	\fBnextafter\fR
-\fBpow\fR	\fBrand\fR	\fBremainder\fR	\fBround\fR
-\fBsin\fR	\fBsinh\fR	\fBsqrt\fR	\fBsrand\fR
-\fBtan\fR	\fBtanh\fR	\fBtgamma\fR	\fBtrunc\fR
+\fBfmod\fR	\fBgamma\fR	\fBhypot\fR	\fBint\fR
+\fBisfinite\fR	\fBisinf\fR	\fBisnan\fR	\fBisnormal\fR
+\fBisqrt\fR	\fBissubnormal\fR	\fBisunordered\fR	\fBldexp\fR
+\fBlgamma\fR	\fBlog\fR	\fBlog10\fR	\fBlog1p\fR
+\fBlog2\fR	\fBlogb\fR	\fBmax\fR	\fBmin\fR
+\fBnextafter\fR	\fBpow\fR	\fBrand\fR	\fBremainder\fR
+\fBround\fR	\fBsin\fR	\fBsinh\fR	\fBsqrt\fR
+\fBsrand\fR	\fBtan\fR	\fBtanh\fR	\fBtrunc\fR
 \fBwide\fR
 .DE
 .PP
@@ -532,9 +532,9 @@ Returns the tangent of \fIarg\fR, measured in radians.
 \fBtanh \fIarg\fR
 .
 Returns the hyperbolic tangent of \fIarg\fR.
-.\" COMMAND: tgamma
+.\" COMMAND: gamma
 .TP
-\fBtgamma \fIarg\fR
+\fBgamma \fIarg\fR
 .VS TIP745
 Returns the absolute value of the gamma function of \fIarg\fR (a generalized factorial).
 If the result would cause an overflow, an error is returned.
