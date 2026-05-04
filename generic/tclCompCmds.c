@@ -3161,8 +3161,8 @@ TclCompileLfilterCmd(
 
 	    Tcl_ListObjIndex(NULL, varListObj, j, &varNameObj);
 	    bytes = TclGetStringFromObj(varNameObj, &length);
-	    varIndex = LocalScalar(bytes, length, envPtr);
-	    if (varIndex < 0) {
+	    varIndex = TclLocalScalar(bytes, length, envPtr);
+	    if (OutOfUintRange(varIndex)) {
 		code = TCL_ERROR;
 		goto done;
 	    }
