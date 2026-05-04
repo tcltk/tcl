@@ -161,6 +161,9 @@ TclCompileSetCmd(
 
     varTokenPtr = TokenAfter(parsePtr->tokenPtr);
     PushVarNameWord(varTokenPtr, 0, &localIndex, &isScalar, 1);
+    if (OutOfUintRangeUpper(localIndex)) {
+	return TCL_ERROR;
+    }
 
     /*
      * If we are doing an assignment, push the new value.
@@ -1153,7 +1156,7 @@ TclCompileStringReplaceCmd(
 	    PUSH_TOKEN(		tokenPtr, 4);
 	    OP(			SWAP);
 	    if (last == INT_MAX) {
-		OP(		POP);		/* Pop  original */
+		OP(		POP);		/* Pop original */
 	    } else {
 		OP44(		STR_RANGE_IMM, last + 1, (int)TCL_INDEX_END);
 		OP1(		STR_CONCAT1, 2);
@@ -1436,7 +1439,7 @@ TclCompileSubstCmd(
     Tcl_Token *wordTokenPtr = TokenAfter(parsePtr->tokenPtr);
     int code = TCL_ERROR;
 
-    if (numArgs == 0 || numArgs > UINT_MAX) {
+    if (numArgs == 0 || OutOfUintRange(numArgs)) {
 	return TCL_ERROR;
     }
 
@@ -1805,7 +1808,7 @@ TclCompileSwitchCmd(
     tokenPtr = TokenAfter(parsePtr->tokenPtr);
     valueIndex = 1;
     numWords = parsePtr->numWords - 1;
-    if (numWords > UINT_MAX) {
+    if (OutOfUintRange(numWords)) {
 	return TCL_ERROR;
     }
 
@@ -3159,7 +3162,7 @@ TclCompileTryCmd(
     TryHandlerInfo staticHandler, *handlers = &staticHandler;
     Tcl_Size handlerIdx = 0;
 
-    if (numWords < 2 || numWords > UINT_MAX) {
+    if (numWords < 2 || OutOfUintRange(numWords)) {
 	return TCL_ERROR;
     }
 
@@ -3250,24 +3253,24 @@ TclCompileTryCmd(
 	    if (objc > 0) {
 		Tcl_Size len;
 		const char *varname = TclGetStringFromObj(objv[0], &len);
-
-		handlers[handlerIdx].resultVar = LocalScalar(varname, len, envPtr);
-		if (handlers[handlerIdx].resultVar < 0) {
+		Tcl_LVTIndex varIdx = TclLocalScalar(varname, len, envPtr);
+		if (OutOfUintRange(varIdx)) {
 		    Tcl_BounceRefCount(tmpObj);
 		    goto failedToCompile;
 		}
+		handlers[handlerIdx].resultVar = varIdx;
 	    } else {
 		handlers[handlerIdx].resultVar = TCL_INDEX_NONE;
 	    }
 	    if (objc == 2) {
 		Tcl_Size len;
 		const char *varname = TclGetStringFromObj(objv[1], &len);
-
-		handlers[handlerIdx].optionVar = LocalScalar(varname, len, envPtr);
-		if (handlers[handlerIdx].optionVar < 0) {
+		Tcl_LVTIndex varIdx = TclLocalScalar(varname, len, envPtr);
+		if (OutOfUintRange(varIdx)) {
 		    Tcl_BounceRefCount(tmpObj);
 		    goto failedToCompile;
 		}
+		handlers[handlerIdx].optionVar = varIdx;
 	    } else {
 		handlers[handlerIdx].optionVar = TCL_INDEX_NONE;
 	    }
@@ -3400,7 +3403,7 @@ IssueTryClausesInstructions(
 
     resultVar = AnonymousLocal(envPtr);
     optionsVar = AnonymousLocal(envPtr);
-    if (resultVar < 0 || optionsVar < 0) {
+    if (OutOfUintRange(resultVar) || OutOfUintRange(optionsVar)) {
 	return TCL_ERROR;
     }
 
@@ -3613,7 +3616,7 @@ IssueTryTraplessClausesInstructions(
 
     resultVar = AnonymousLocal(envPtr);
     optionsVar = AnonymousLocal(envPtr);
-    if (resultVar < 0 || optionsVar < 0) {
+    if (OutOfUintRange(resultVar) || OutOfUintRange(optionsVar)) {
 	return TCL_ERROR;
     }
     afterReturn0 = (Tcl_BytecodeLabel *)TclStackAlloc(interp,
@@ -3804,7 +3807,7 @@ IssueTryClausesFinallyInstructions(
 
     resultLocal = AnonymousLocal(envPtr);
     optionsLocal = AnonymousLocal(envPtr);
-    if (resultLocal < 0 || optionsLocal < 0) {
+    if (OutOfUintRange(resultLocal) || OutOfUintRange(optionsLocal)) {
 	return TCL_ERROR;
     }
 
@@ -4103,7 +4106,7 @@ IssueTryTraplessClausesFinallyInstructions(
 
     resultLocal = AnonymousLocal(envPtr);
     optionsLocal = AnonymousLocal(envPtr);
-    if (resultLocal < 0 || optionsLocal < 0) {
+    if (OutOfUintRange(resultLocal) || OutOfUintRange(optionsLocal)) {
 	return TCL_ERROR;
     }
     addrsToFix = (Tcl_BytecodeLabel *)TclStackAlloc(interp,
@@ -4459,7 +4462,7 @@ TclCompileUnsetCmd(
 
     /* TODO: Consider support for compiling expanded args. */
 
-    if (parsePtr->numWords > UINT_MAX) {
+    if (OutOfUintRange(parsePtr->numWords)) {
 	return TCL_ERROR;
     }
 
@@ -4543,6 +4546,9 @@ TclCompileUnsetCmd(
 	 */
 
 	PushVarNameWord(varTokenPtr, 0, &localIndex, &isScalar, i);
+	if (OutOfUintRangeUpper(localIndex)) {
+	    return TCL_ERROR;
+	}
 
 	/*
 	 * Emit instructions to unset the variable.
@@ -5000,7 +5006,7 @@ CompileAssociativeBinaryOpCmd(
     Tcl_Size words;
 
     /* TODO: Consider support for compiling expanded args. */
-    if (parsePtr->numWords > UINT_MAX) {
+    if (OutOfUintRange(parsePtr->numWords)) {
 	return TCL_ERROR;
     }
     for (words=1 ; words<parsePtr->numWords ; words++) {
@@ -5087,7 +5093,7 @@ CompileComparisonOpCmd(
     Tcl_Token *tokenPtr;
 
     /* TODO: Consider support for compiling expanded args. */
-    if (parsePtr->numWords > UINT_MAX) {
+    if (OutOfUintRange(parsePtr->numWords)) {
 	return TCL_ERROR;
     }
     if (parsePtr->numWords < 3) {
@@ -5108,6 +5114,9 @@ CompileComparisonOpCmd(
 	Tcl_LVTIndex tmpIndex = AnonymousLocal(envPtr);
 	Tcl_Size words;
 
+	if (OutOfUintRangeUpper(tmpIndex)) {
+	    return TCL_ERROR;
+	}
 	tokenPtr = TokenAfter(parsePtr->tokenPtr);
 	PUSH_TOKEN(		tokenPtr, 1);
 	tokenPtr = TokenAfter(tokenPtr);
@@ -5244,7 +5253,7 @@ TclCompilePowOpCmd(
     Tcl_Token *tokenPtr = parsePtr->tokenPtr;
     Tcl_Size words;
 
-    if (parsePtr->numWords > UINT_MAX) {
+    if (OutOfUintRange(parsePtr->numWords)) {
 	return TCL_ERROR;
     }
 
@@ -5450,7 +5459,7 @@ TclCompileMinusOpCmd(
     Tcl_Size words;
 
     /* TODO: Consider support for compiling expanded args. */
-    if (parsePtr->numWords == 1 || parsePtr->numWords > UINT_MAX) {
+    if (parsePtr->numWords == 1 || OutOfUintRange(parsePtr->numWords)) {
 	/*
 	 * Fallback to direct eval to report syntax error.
 	 */
@@ -5495,7 +5504,7 @@ TclCompileDivOpCmd(
     Tcl_Size words;
 
     /* TODO: Consider support for compiling expanded args. */
-    if (parsePtr->numWords == 1 || parsePtr->numWords > UINT_MAX) {
+    if (parsePtr->numWords == 1 || OutOfUintRange(parsePtr->numWords)) {
 	/*
 	 * Fallback to direct eval to report syntax error.
 	 */

@@ -2112,9 +2112,9 @@ static int UtfExtWrapper(
 
     if (objc < 7) {
 	Tcl_WrongNumArgs(interp, 2, objv,
-	    "encoding srcbytes flags state dstlen ?-prefix prefix? ?-prefixlen "
-	    "prefixLen? ?-srcreadvar srcreadvar? ?-dstwrotevar dstwrotevar? "
-	    "?-dstcharsvar dstcharsvar?");
+		"encoding srcbytes flags state dstlen ?-prefix prefix? ?-prefixlen "
+		"prefixLen? ?-srcreadvar srcreadvar? ?-dstwrotevar dstwrotevar? "
+		"?-dstcharsvar dstcharsvar?");
 	return TCL_ERROR;
     }
     for (i = 0; i < (Tcl_Size) (sizeof(optObjs) / sizeof(optObjs[0])); ++i) {
@@ -2126,8 +2126,8 @@ static int UtfExtWrapper(
 	    return TCL_ERROR;
 	}
 	if (++i == objc) {
-	    Tcl_SetObjResult(interp,
-		Tcl_ObjPrintf("missing value for option \"%s\"",
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "missing value for option \"%s\"",
 		    opts[optIndex]));
 	    return TCL_ERROR;
 	}
@@ -4114,12 +4114,12 @@ TestlistapiCmd(
 	    } else {
 		Tcl_Size start, end;
 		if (Tcl_GetSizeIntFromObj(interp, objv[4], &start) != TCL_OK ||
-		    Tcl_GetSizeIntFromObj(interp, objv[5], &end) != TCL_OK) {
+			Tcl_GetSizeIntFromObj(interp, objv[5], &end) != TCL_OK) {
 		    status = TCL_ERROR;
 		    goto vamoose; /* To free up srcPtr */
 		}
-		status =
-		    Tcl_ListObjRange(interp, srcPtr, start, end, &resultPtr);
+		status = Tcl_ListObjRange(interp,
+			srcPtr, start, end, &resultPtr);
 	    }
 	    break;
 	case LISTAPI_REVERSE:
@@ -4646,7 +4646,7 @@ TestparsevarnameCmd(
  *
  *	This procedure implements the "testpreferstable" command.  It is
  *	used for being able to test the "package" command even when the
- *  environment variable TCL_PKG_PREFER_LATEST is set in your environment.
+ *	environment variable TCL_PKG_PREFER_LATEST is set in your environment.
  *
  * Results:
  *	A standard Tcl result.
@@ -5618,8 +5618,8 @@ TestpanicCmd(
     Tcl_Obj *const *objv)	/* Arguments. */
 {
     /*
-     *  Put the arguments into a var args structure
-     *  Append all of the arguments together separated by spaces
+     * Put the arguments into a var args structure
+     * Append all of the arguments together separated by spaces
      */
 
     Tcl_Obj *list = Tcl_NewListObj(objc-1, objv+1);
@@ -7018,7 +7018,7 @@ TestChannelEventCmd(
 		esPtr = esPtr->nextPtr) {
 	    if (esPtr->mask) {
 		Tcl_ListObjAppendElement(interp, resultListPtr, Tcl_NewStringObj(
-		    (esPtr->mask == TCL_READABLE) ? "readable" : "writable", -1));
+			(esPtr->mask == TCL_READABLE) ? "readable" : "writable", -1));
 	    } else {
 		Tcl_ListObjAppendElement(interp, resultListPtr,
 			Tcl_NewStringObj("none", -1));
@@ -9439,9 +9439,8 @@ TestChanCreateCmd(
 	    len = 1;
 	    bytes = (const unsigned char *)"\0";
 	}
-	TestChanSourceState *sourceStatePtr;
-	sourceStatePtr = (TestChanSourceState *)Tcl_Alloc(
-	    offsetof(TestChanSourceState, data) + len);
+	TestChanSourceState *sourceStatePtr = (TestChanSourceState *)Tcl_Alloc(
+		offsetof(TestChanSourceState, data) + len);
 	sourceStatePtr->numSourced = 0;
 	sourceStatePtr->len = len;
 	memmove(sourceStatePtr->data, bytes, len);
@@ -9474,6 +9473,8 @@ TestChanCreateCmd(
 }
 
 /*
+ *----------------------------------------------------------------------
+ *
  * TestUtfToNormalizedCmd --
  *
  *	This procedure implements the "testutftonormalized" command which
@@ -9554,6 +9555,8 @@ TestUtfToNormalizedCmd(
 }
 
 /*
+ *----------------------------------------------------------------------
+ *
  * TestUtfToNormalizedDStringCmd --
  *
  *	This procedure implements the "testutftonormalizedstring" command which

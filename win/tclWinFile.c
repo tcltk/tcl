@@ -175,8 +175,14 @@ static void		TclWinUpdateDriveCwd(TclWinPath *winPathPtr);
 MODULE_SCOPE void	tclWinDebugPanic(const char *format, ...);
 
 /*
- * Check if a Windows error code is one that might be returned for
- * non-existent files
+ *----------------------------------------------------------------------
+ *
+ * IsNoSuchFileError --
+ *
+ *	Check if a Windows error code is one that might be returned for
+ *	non-existent files
+ *
+ *----------------------------------------------------------------------
  */
 static inline int
 IsNoSuchFileError(DWORD winError)
@@ -870,7 +876,7 @@ TclpFindExecutable(
     char *utf8Ptr;
     Tcl_DString ds;
 
-    /* 
+    /*
      * Unlike in CMD.EXE, under MSYS and other shells including Explorer,
      * the drive for the current directory is not maintained in the
      * environment. So remember it ourselves. Related to Bug [bca391ab51].
@@ -1069,9 +1075,9 @@ TclpMatchInDirectory(
 	Tcl_DStringInit(&ds);
 	native = Tcl_UtfToWCharDString(dirName, TCL_INDEX_NONE, &ds);
 	handle = FindFirstFileExW(native, FindExInfoBasic, &data,
-	    (types == NULL || types->type != TCL_GLOB_TYPE_DIR
+		(types == NULL || types->type != TCL_GLOB_TYPE_DIR
 		    ? FindExSearchNameMatch : FindExSearchLimitToDirectories),
-	    NULL, FIND_FIRST_EX_LARGE_FETCH);
+		NULL, FIND_FIRST_EX_LARGE_FETCH);
 
 	if (handle == INVALID_HANDLE_VALUE) {
 	    DWORD err = GetLastError();
@@ -1183,9 +1189,9 @@ TclpMatchInDirectory(
 		}
 		if (NativeMatchType(isDrive, attr, native, types)) {
 		    Tcl_ListObjAppendElement(interp, resultPtr,
-			TclNewFSPathObj(pathPtr, utfname,
-					Tcl_DStringLength(&ds),
-					(TCL_PATHNAME_FROM_FILE_SYSTEM
+			    TclNewFSPathObj(pathPtr, utfname,
+				    Tcl_DStringLength(&ds),
+				    (TCL_PATHNAME_FROM_FILE_SYSTEM
 					    | TCL_PATHNAME_SINGLE_PART)));
 		}
 	    }
@@ -1204,11 +1210,16 @@ TclpMatchInDirectory(
 }
 
 /*
- * Does the given path represent a root volume? We need this special case
- * because for NTFS root volumes, the getFileAttributesProc returns a 'hidden'
- * attribute when it should not.
+ *----------------------------------------------------------------------
+ *
+ * WinIsDrive --
+ *
+ *	Does the given path represent a root volume? We need this special case
+ *	because for NTFS root volumes, the getFileAttributesProc returns a
+ *	'hidden' attribute when it should not.
+ *
+ *----------------------------------------------------------------------
  */
-
 static int
 WinIsDrive(
     const char *name,		/* Name (UTF-8) */
@@ -1272,11 +1283,16 @@ WinIsDrive(
 }
 
 /*
- * Does the given path represent a reserved window path name? If not return 0,
- * if true, return the number of characters of the path that we actually want
- * (not any trailing :).
+ *----------------------------------------------------------------------
+ *
+ * WinIsReserved --
+ *
+ *	Does the given path represent a reserved window path name? If not
+ *	return 0, if true, return the number of characters of the path that
+ *	we actually want (not any trailing :).
+ *
+ *----------------------------------------------------------------------
  */
-
 static size_t
 WinIsReserved(
     const char *path)		/* Path in UTF-8 */
@@ -1528,7 +1544,7 @@ TclpGetUserHome(
 	    }
 	    if (winPathBuf) {
 		result = Tcl_WCharToUtfDString(winPathBuf, winPathSize - 1,
-		    bufferPtr);
+			bufferPtr);
 		rc = 1;
 	    }
 	}
@@ -1943,9 +1959,11 @@ NativeIsExec(
 }
 
 /*
+ *----------------------------------------------------------------------
+ *
  * TclWinUpdateDriveCwd --
  *
- *      This function emulates CMD shell behavior of tracking the current
+ *	This function emulates CMD shell behavior of tracking the current
  *	directory for each drive by storing it an environment variable named
  *	"=<drive>:" (e.g., "=C:"). This allows Tcl's cd command to correctly
  *	switch back to the correct current directory using the volume-relative
@@ -1957,6 +1975,8 @@ NativeIsExec(
  *
  * Side effects:
  *	Process environment is updated.
+ *
+ *----------------------------------------------------------------------
  */
 static void
 TclWinUpdateDriveCwd(

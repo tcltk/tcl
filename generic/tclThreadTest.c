@@ -1095,11 +1095,11 @@ ThreadFreeProc(
  *
  * ThreadDeleteEvent --
  *
- *    This is called from the ThreadExitProc to delete memory related
- *    to events that we put on the queue.
+ *	This is called from the ThreadExitProc to delete memory related
+ *	to events that we put on the queue.
  *
  * Results:
- *    1 it was our event and we want it removed, 0 otherwise.
+ *	1 it was our event and we want it removed, 0 otherwise.
  *
  * Side effects:
  *	It cleans up our events in the event queue for this thread.
@@ -1130,10 +1130,10 @@ ThreadDeleteEvent(
  *
  * ThreadExitProc --
  *
- *    This is called when the thread exits.
+ *	This is called when the thread exits.
  *
  * Results:
- *    None.
+ *	None.
  *
  * Side effects:
  *	It unblocks anyone that is waiting on a send to this thread. It cleans

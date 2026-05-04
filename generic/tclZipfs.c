@@ -579,14 +579,14 @@ const EnsembleImplMap tclZipfsImplMap[] = {
  *
  * TclIsZipfsPath --
  *
- *    Checks if the passed path has a zipfs volume prefix.
+ *	Checks if the passed path has a zipfs volume prefix.
  *
  * Results:
- *    0 if not a zipfs path
- *    else the length of the zipfs volume prefix
+ *	0 if not a zipfs path
+ *	else the length of the zipfs volume prefix
  *
  * Side effects:
- *    None.
+ *	None.
  *
  *------------------------------------------------------------------------
  */
@@ -877,13 +877,13 @@ CountSlashes(
  *
  * IsCryptHeaderValid --
  *
- *    Computes the validity of the encryption header CRC for a ZipEntry.
+ *	Computes the validity of the encryption header CRC for a ZipEntry.
  *
  * Results:
- *    Returns 1 if the header is valid else 0.
+ *	Returns 1 if the header is valid else 0.
  *
  * Side effects:
- *    None.
+ *	None.
  *
  *------------------------------------------------------------------------
  */
@@ -924,14 +924,14 @@ IsCryptHeaderValid(
  *
  * DecodeCryptHeader --
  *
- *    Decodes the crypt header and validates it.
+ *	Decodes the crypt header and validates it.
  *
  * Results:
- *    TCL_OK on success, TCL_ERROR on failure.
+ *	TCL_OK on success, TCL_ERROR on failure.
  *
  * Side effects:
- *    On success, keys[] are updated. On failure, an error message is
- *    left in interp if not NULL.
+ *	On success, keys[] are updated. On failure, an error message is
+ *	left in interp if not NULL.
  *
  *------------------------------------------------------------------------
  */
@@ -1072,24 +1072,24 @@ DecodeZipEntryText(
  *
  * NormalizeMountPoint --
  *
- *    Converts the passed path into a normalized zipfs mount point
- *    of the form //zipfs:/some/path. On Windows any \ path separators
- *    are converted to /.
+ *	Converts the passed path into a normalized zipfs mount point
+ *	of the form //zipfs:/some/path. On Windows any \ path separators
+ *	are converted to /.
  *
- *    Mount points with a volume will raise an error unless the volume is
- *    zipfs root. Thus D:/foo is not a valid mount point.
+ *	Mount points with a volume will raise an error unless the volume is
+ *	zipfs root. Thus D:/foo is not a valid mount point.
  *
- *    Relative paths and absolute paths without a volume are mapped under
- *    the zipfs root.
+ *	Relative paths and absolute paths without a volume are mapped under
+ *	the zipfs root.
  *
- *    The empty string is mapped to the zipfs root.
+ *	The empty string is mapped to the zipfs root.
  *
- *    dsPtr is initialized by the function and must be cleared by caller
- *    on a successful return.
+ *	dsPtr is initialized by the function and must be cleared by caller
+ *	on a successful return.
  *
  * Results:
- *    TCL_OK on success with normalized mount path in dsPtr
- *    TCL_ERROR on fail with error message in interp if not NULL
+ *	TCL_OK on success with normalized mount path in dsPtr
+ *	TCL_ERROR on fail with error message in interp if not NULL
  *
  *------------------------------------------------------------------------
  */
@@ -1167,17 +1167,17 @@ errorReturn:
  *
  * MapPathToZipfs --
  *
- *    Maps a path as stored in a zip archive to its normalized location
- *    under a given zipfs mount point. Relative paths and Unix style
- *    absolute paths go directly under the mount point. Volume relative
- *    paths and absolute paths that have a volume (drive or UNC) are
- *    stripped of the volume before joining the mount point.
+ *	Maps a path as stored in a zip archive to its normalized location
+ *	under a given zipfs mount point. Relative paths and Unix style
+ *	absolute paths go directly under the mount point. Volume relative
+ *	paths and absolute paths that have a volume (drive or UNC) are
+ *	stripped of the volume before joining the mount point.
  *
  * Results:
- *    Pointer to normalized path.
+ *	Pointer to normalized path.
  *
  * Side effects:
- *    Stores mapped path in dsPtr.
+ *	Stores mapped path in dsPtr.
  *
  *------------------------------------------------------------------------
  */
@@ -1307,19 +1307,19 @@ ZipFSLookupZip(
  *
  * ContainsMountPoint --
  *
- *    Check if there is a mount point anywhere under the specified path.
- *    Although the function will work for any path, for efficiency reasons
- *    it should be called only after checking ZipFSLookup does not find
- *    the path.
+ *	Check if there is a mount point anywhere under the specified path.
+ *	Although the function will work for any path, for efficiency reasons
+ *	it should be called only after checking ZipFSLookup does not find
+ *	the path.
  *
- *    Caller must hold read lock before calling.
+ *	Caller must hold read lock before calling.
  *
  * Results:
- *    1 - there is at least one mount point under the path
- *    0 - otherwise
+ *	1 - there is at least one mount point under the path
+ *	0 - otherwise
  *
  * Side effects:
- *    None.
+ *	None.
  *
  *------------------------------------------------------------------------
  */
@@ -1509,9 +1509,9 @@ ZipFSCloseArchive(
  *	into the given "interp" if it is not NULL.
  *
  * Side effects:
- *      The given ZipFile struct is filled with information about the ZIP
- *      archive file.  On error, ZipFSCloseArchive is called on zf but
- *      it is not freed.
+ *	The given ZipFile struct is filled with information about the ZIP
+ *	archive file.  On error, ZipFSCloseArchive is called on zf but
+ *	it is not freed.
  *
  *-------------------------------------------------------------------------
  */
@@ -1709,7 +1709,7 @@ ZipFSFindTOC(
  * Results:
  *	TCL_OK on success, TCL_ERROR otherwise with an error message placed
  *	into the given "interp" if it is not NULL. On error, ZipFSCloseArchive
- *      is called on zf but it is not freed.
+ *	is called on zf but it is not freed.
  *
  * Side effects:
  *	ZIP archive is memory mapped or read into allocated memory, the given
@@ -2331,16 +2331,17 @@ ListMountPoints(
  *
  * CleanupMount --
  *
- *    Releases all resources associated with a mounted archive. There
- *    must not be any open files in the archive.
+ *	Releases all resources associated with a mounted archive. There
+ *	must not be any open files in the archive.
  *
- *    Caller MUST be holding WriteLock() before calling this function.
+ *	Caller MUST be holding WriteLock() before calling this function.
  *
  * Results:
- *    None.
+ *	None.
  *
  * Side effects:
- *    Memory associated with the mounted archive is deallocated.
+ *	Memory associated with the mounted archive is deallocated.
+ *
  *------------------------------------------------------------------------
  */
 static void
@@ -2381,7 +2382,6 @@ CleanupMount(
  *
  *-------------------------------------------------------------------------
  */
-
 static int
 DescribeMounted(
     Tcl_Interp *interp,
@@ -2415,7 +2415,6 @@ DescribeMounted(
  *
  *-------------------------------------------------------------------------
  */
-
 int
 TclZipfs_Mount(
     Tcl_Interp *interp,		/* Current interpreter. NULLable. */
@@ -4461,8 +4460,8 @@ TclZipfsMountShlib(void)
 
 static void
 TclZipfsLocateTclLibrary(
-	int appZipfsPresent,	/* non-0 if app zipfs is to be checked */
-	int shlibZipfsPresent)  /* non-0 if shared lib is to be checked */
+    int appZipfsPresent,	/* non-0 if app zipfs is to be checked */
+    int shlibZipfsPresent)	/* non-0 if shared lib is to be checked */
 {
     Tcl_Obj *vfsInitScript;
     int found;
@@ -6429,6 +6428,8 @@ ZipFSLoadFile(
 }
 
 /*
+ *----------------------------------------------------------------------
+ *
  * TclZipfsInitInterp --
  *
  *	Perform per interpreter-specific initialization of this module.
@@ -6439,8 +6440,9 @@ ZipFSLoadFile(
  *
  * Side effects:
  *	Adds module related commands to the given interpreter.
+ *
+ *----------------------------------------------------------------------
  */
-
 int
 TclZipfsInitInterp(
     Tcl_Interp *interp)		/* Current interpreter. Must not be NULL */
@@ -6475,16 +6477,18 @@ TclZipfsInitInterp(
     Tcl_EvalEx(interp, findproc, TCL_INDEX_NONE, TCL_EVAL_GLOBAL);
     if (!Tcl_IsSafe(interp)) {
 	Tcl_LinkVar(interp, "::tcl::zipfs::wrmax", (char *)&ZipFS.wrmax,
-	    TCL_LINK_INT);
+		TCL_LINK_INT);
 	Tcl_LinkVar(interp, "::tcl::zipfs::fallbackEntryEncoding",
-	    (char *)&ZipFS.fallbackEntryEncoding, TCL_LINK_STRING);
+		(char *)&ZipFS.fallbackEntryEncoding, TCL_LINK_STRING);
     }
     Tcl_CreateObjCommand2(interp, "::tcl::zipfs::tcl_library_init",
-	ZipFSTclLibraryObjCmd, NULL, NULL);
+	    ZipFSTclLibraryObjCmd, NULL, NULL);
     return TCL_OK;
 }
 
 /*
+ *----------------------------------------------------------------------
+ *
  * TclZipfsInit --
  *
  *	Perform interpreter-independent initialization of this module.
@@ -6494,10 +6498,11 @@ TclZipfsInitInterp(
  *
  * Side effects:
  *	Initializes this module if not already initialized.
+ *
+ *----------------------------------------------------------------------
  */
-
 int
-TclZipfsInit()
+TclZipfsInit(void)
 {
     WriteLock();
     if (!ZipFS.initialized) {
@@ -6512,15 +6517,15 @@ TclZipfsInit()
  *
  * TclZipfsFinalize --
  *
- *    Frees all zipfs resources IRRESPECTIVE of open channels (there should
- *    not be any!) etc. To be called at process exit time (from
- *    Tcl_Finalize->TclFinalizeFilesystem)
+ *	Frees all zipfs resources IRRESPECTIVE of open channels (there should
+ *	not be any!) etc. To be called at process exit time (from
+ *	Tcl_Finalize->TclFinalizeFilesystem)
  *
  * Results:
- *    None.
+ *	None.
  *
  * Side effects:
- *    Frees up archives loaded into memory.
+ *	Frees up archives loaded into memory.
  *
  *------------------------------------------------------------------------
  */
@@ -6557,10 +6562,14 @@ TclZipfsFinalize(void)
 }
 
 /*
+ *----------------------------------------------------------------------
+ *
  * TclZipfsInitEncodingDirs --
  *
  *	Appends the encoding directory under the tcl_library directory
  *	within a ZipFS mount to the encoding directory search path.
+ *
+ *----------------------------------------------------------------------
  */
 static int
 TclZipfsInitEncodingDirs(void)
@@ -6602,7 +6611,6 @@ TclZipfsInitEncodingDirs(void)
  *
  *-------------------------------------------------------------------------
  */
-
 const char *
 TclZipfs_AppHook(
 #ifdef SUPPORT_BUILTIN_ZIP_INSTALL

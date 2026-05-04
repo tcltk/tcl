@@ -2,7 +2,7 @@
  * tclStrIdxTree.h --
  *
  *	Declarations of string index tries and other primitives currently
- *  back-ported from tclSE.
+ *	back-ported from tclSE.
  *
  * Copyright (c) 2016 Serg G. Brester (aka sebres)
  *

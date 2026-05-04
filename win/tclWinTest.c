@@ -572,7 +572,7 @@ TestplatformChmod(
     /* Add in size required for each ACE entry in the ACL */
     for (i = 0; i < nSids; ++i) {
 	newAclSize += (DWORD)
-	    offsetof(ACCESS_ALLOWED_ACE, SidStart) + aceEntry[i].sidLen;
+		offsetof(ACCESS_ALLOWED_ACE, SidStart) + aceEntry[i].sidLen;
     }
     newAcl = (PACL)Tcl_Alloc(newAclSize);
     if (!InitializeAcl(newAcl, newAclSize, ACL_REVISION)) {
@@ -675,6 +675,8 @@ TestchmodCmd(
 }
 
 /*
+ *----------------------------------------------------------------------
+ *
  * TestlongpathsettingCmd --
  *
  *	Returns whether long path support is enabled on this system.
@@ -682,6 +684,8 @@ TestchmodCmd(
  *
  * Results:
  *	1 if long path support is enabled, 0 if not.
+ *
+ *----------------------------------------------------------------------
  */
 static int
 TestlongpathsettingCmd(

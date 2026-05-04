@@ -69,6 +69,8 @@ static ProcessGlobalValue sourceLibraryDir =
 
 
 /*
+ *----------------------------------------------------------------------
+ *
  * TclGetWinInfoOnce --
  *
  *	Callback to retrieve bits of Windows platform information.
@@ -76,6 +78,8 @@ static ProcessGlobalValue sourceLibraryDir =
  *
  * Results:
  *	None.
+ *
+ *----------------------------------------------------------------------
  */
 static BOOL CALLBACK
 TclGetWinInfoOnce(
@@ -93,7 +97,7 @@ TclGetWinInfoOnce(
      */
     HMODULE handle = GetModuleHandleW(L"NTDLL");
     getVersionProc *getVersion =
-	(getVersionProc *)(void *)GetProcAddress(handle, "RtlGetVersion");
+	    (getVersionProc *)(void *)GetProcAddress(handle, "RtlGetVersion");
 
     tclWinInfo.osVersion.dwOSVersionInfoSize = sizeof(tclWinInfo.osVersion);
     if (getVersion == NULL || getVersion(&tclWinInfo.osVersion) != 0) {
@@ -110,10 +114,10 @@ TclGetWinInfoOnce(
 	 */
 	MessageBeep(MB_ICONEXCLAMATION);
 	MessageBoxA(NULL,
-		    "Tcl " TCL_PATCH_LEVEL
-		    " does not support Windows versions prior to Windows 10.",
-		    "Fatal Error",
-		    MB_ICONSTOP | MB_OK | MB_TASKMODAL | MB_SETFOREGROUND);
+		"Tcl " TCL_PATCH_LEVEL
+		" does not support Windows versions prior to Windows 10.",
+		"Fatal Error",
+		MB_ICONSTOP | MB_OK | MB_TASKMODAL | MB_SETFOREGROUND);
 	exit(1);
     }
 
@@ -151,7 +155,7 @@ TclGetWinInfoOnce(
 	    &dw) != ERROR_SUCCESS) {
 	/* On failure, fallback to GetACP() */
 	snprintf(tclWinInfo.codePage, sizeof(tclWinInfo.codePage), "cp%u",
-	    GetACP());
+		GetACP());
     }
     if (strcmp(tclWinInfo.codePage, "cp65001") == 0) {
 	strcpy(tclWinInfo.codePage, "utf-8");
@@ -162,6 +166,8 @@ TclGetWinInfoOnce(
 }
 
 /*
+ *----------------------------------------------------------------------
+ *
  * TclGetWinInfo --
  *
  *	Returns a pointer to the TclWinInfo structure containing various bits
@@ -171,6 +177,8 @@ TclGetWinInfoOnce(
  *	Pointer to TclWinInfo structure and NULL on failure. The structure
  *	is initialized only once and remains valid for the lifetime of the
  *	process.
+ *
+ *----------------------------------------------------------------------
  */
 const TclWinInfo *
 TclGetWinInfo(void)
@@ -178,7 +186,7 @@ TclGetWinInfo(void)
     static INIT_ONCE winInfoOnce = INIT_ONCE_STATIC_INIT;
     TclWinInfo *winInfoPtr = NULL;
     BOOL result = InitOnceExecuteOnce(
-	&winInfoOnce, TclGetWinInfoOnce, NULL, (LPVOID *)&winInfoPtr);
+	    &winInfoOnce, TclGetWinInfoOnce, NULL, (LPVOID *)&winInfoPtr);
     return result ? winInfoPtr : NULL;
 }
 
@@ -246,7 +254,6 @@ TclpInitPlatform(void)
  *
  *-------------------------------------------------------------------------
  */
-
 void
 TclpInitLibraryPath(
     char **valuePtr,
@@ -318,7 +325,6 @@ TclpInitLibraryPath(
  *
  *---------------------------------------------------------------------------
  */
-
 static void
 AppendEnvironment(
     Tcl_Obj *pathPtr,
@@ -395,6 +401,8 @@ AppendEnvironment(
 }
 
 /*
+ *----------------------------------------------------------------------
+ *
  * AllocateGrandparentSiblingPath --
  *
  *	Allocates and initializes a path corresponding to a sibling of
@@ -405,10 +413,12 @@ AppendEnvironment(
  *
  * Side effects:
  *
- *      The new path is allocated with Tcl_Alloc and a pointer to it is
+ *	The new path is allocated with Tcl_Alloc and a pointer to it is
  *	stored in *valuePtr and its length, not including the nul terminator
  *	is stored in *lengthPtr. The memory must be eventually released with
- *      with Tcl_Free.
+ *	with Tcl_Free.
+ *
+ *----------------------------------------------------------------------
  */
 static int
 AllocateGrandparentSiblingPath(
@@ -779,6 +789,8 @@ TclpFindVariable(
 }
 
 /*
+ *----------------------------------------------------------------------
+ *
  * TclWinWCharToUtfDString --
  *
  *	Convert the passed WCHAR (UTF-16) to UTF-8 returning the result
@@ -792,6 +804,8 @@ TclpFindVariable(
  * Side effects:
  *	The dsPtr Tcl_DString may allocate storage and caller should
  *	call Tcl_DStringFree on it on success.
+ *
+ *----------------------------------------------------------------------
  */
 char *
 TclWinWCharToUtfDString(
@@ -811,8 +825,8 @@ TclWinWCharToUtfDString(
 	return Tcl_DStringValue(dsPtr);
     }
 
-    needed = WideCharToMultiByte(CP_UTF8, WC_NO_BEST_FIT_CHARS, wsPtr, numChars, NULL,
-		0, NULL, NULL);
+    needed = WideCharToMultiByte(CP_UTF8, WC_NO_BEST_FIT_CHARS, wsPtr, numChars,
+	    NULL, 0, NULL, NULL);
     if (needed > 0) {
 	/*
 	 * Allocate needed + 1 so we can ensure a terminating NUL in all cases
@@ -824,8 +838,8 @@ TclWinWCharToUtfDString(
 	Tcl_DStringSetLength(dsPtr, (needed + 1));
 	utf8Ptr = Tcl_DStringValue(dsPtr);
 
-	written = WideCharToMultiByte(CP_UTF8, WC_NO_BEST_FIT_CHARS, wsPtr, numChars, utf8Ptr,
-	    needed + 1, NULL, NULL);
+	written = WideCharToMultiByte(CP_UTF8, WC_NO_BEST_FIT_CHARS, wsPtr,
+		numChars, utf8Ptr, needed + 1, NULL, NULL);
 	if (written > 0) {
 	    Tcl_DStringSetLength(dsPtr, written);
 	    return Tcl_DStringValue(dsPtr);
@@ -837,22 +851,25 @@ TclWinWCharToUtfDString(
 }
 
 /*
+ *----------------------------------------------------------------------
+ *
  * TclWinGetEnvironmentVariable --
  *
- *      Wrapper for GetEnvironmentVariableW that automatically grows the
- *      buffer as needed.
+ *	Wrapper for GetEnvironmentVariableW that automatically grows the
+ *	buffer as needed.
  *
  * Results:
- *      Returns a pointer to the environment variable value. The returned
- *      pointer is valid until TclWinPathFree or TclWinPathResize is called
- *      on winPathPtr. Returns NULL on failure. An error code may be
- *      retrieved via GetLastError() as for GetEnvironmentVariableW.
+ *	Returns a pointer to the environment variable value. The returned
+ *	pointer is valid until TclWinPathFree or TclWinPathResize is called
+ *	on winPathPtr. Returns NULL on failure. An error code may be
+ *	retrieved via GetLastError() as for GetEnvironmentVariableW.
  *
  * Side effects:
- *      May allocate memory that must be freed with TclWinPathFree
- *      on a non-NULL return.
+ *	May allocate memory that must be freed with TclWinPathFree
+ *	on a non-NULL return.
+ *
+ *----------------------------------------------------------------------
  */
-
 WCHAR *
 TclWinGetEnvironmentVariable(
     const WCHAR *envName,	/* Environment variable name */

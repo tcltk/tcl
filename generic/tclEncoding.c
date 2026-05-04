@@ -1375,9 +1375,9 @@ Tcl_ExternalToUtf(
 	}
 	if (interp) {
 	    Tcl_SetResult(interp,
-		"Tcl_ExternalToUtf does not support lengths greater than "
+		    "Tcl_ExternalToUtf does not support lengths greater than "
 		    "INT_MAX. Use Tcl_ExternalToUtfEx instead.",
-		TCL_STATIC);
+		    TCL_STATIC);
 	}
 	/*
 	 * This is a incompatibility with 9.0 as TCL_ERROR is not documented
@@ -1943,9 +1943,9 @@ Tcl_UtfToExternal(
 	}
 	if (interp) {
 	    Tcl_SetResult(interp,
-		"Tcl_UtfToExternal does not support lengths greater than "
+		    "Tcl_UtfToExternal does not support lengths greater than "
 		    "INT_MAX. Use Tcl_UtfToExternalEx instead.",
-		TCL_STATIC);
+		    TCL_STATIC);
 	}
 	/*
 	 * This is a incompatibility with 9.0 as TCL_ERROR is not documented
@@ -2124,8 +2124,8 @@ Tcl_UtfToExternalEx(
 	}
 
 	result = encodingPtr->fromUtfProc(encodingPtr->clientData, src,
-	    chunkSrcLen, chunkFlags, statePtr, dst, chunkDstLen, &chunkSrcRead,
-	    &chunkDstWritten, &chunkDstChars);
+		chunkSrcLen, chunkFlags, statePtr, dst, chunkDstLen,
+		&chunkSrcRead, &chunkDstWritten, &chunkDstChars);
 
 	assert(chunkSrcRead <= srcBytesLeft);
 	srcBytesLeft -= chunkSrcRead;
@@ -3148,6 +3148,8 @@ UtfToUtfProc(
 }
 
 /*
+ *----------------------------------------------------------------------
+ *
  * UtfToCesu8Proc --
  *
  *	Converts TUTF-8 to CESU-8 unless ENCODING_INPUT is set in flags
@@ -3158,6 +3160,8 @@ UtfToUtfProc(
  *
  * Side effects:
  *	None.
+ *
+ *----------------------------------------------------------------------
  */
 
 static int
@@ -3508,6 +3512,8 @@ UtfToCesu8Proc(
 }
 
 /*
+ *----------------------------------------------------------------------
+ *
  * Cesu8ToUtfProc --
  *
  *	Converts CESU-8 to TUTF-8.
@@ -3518,6 +3524,8 @@ UtfToCesu8Proc(
  *
  * Side effects:
  *	None.
+ *
+ *----------------------------------------------------------------------
  */
 static int
 Cesu8ToUtfProc(void *clientData, const char *src, int srcLen, int flags,
@@ -5593,7 +5601,7 @@ TclUtfNormalize(
  *	A standard Tcl error code.
  *
  * Side effects:
- *      The output string is stored in dsPtr, which is initialized.
+ *	The output string is stored in dsPtr, which is initialized.
  *
  *------------------------------------------------------------------------
  */
@@ -5644,7 +5652,7 @@ Tcl_UtfToNormalizedDString(
  *	A standard Tcl error code.
  *
  * Side effects:
- *      The output string is stored in bufPtr.
+ *	The output string is stored in bufPtr.
  *
  *------------------------------------------------------------------------
  */

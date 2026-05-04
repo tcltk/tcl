@@ -71,17 +71,14 @@ FinalizeConstruction(
 }
 
 /*
- * ----------------------------------------------------------------------
+ *----------------------------------------------------------------------
  *
- * MixinClassDelegates --
+ * GetClassDelegate --
  *
- *	Internal utility for setting up the class delegate.
- *	Runs after the class has called [oo::define] on its argument.
+ *	Look up the delegate for a class.
  *
- * ----------------------------------------------------------------------
+ *----------------------------------------------------------------------
  */
-
-// Look up the delegate for a class.
 static inline Class *
 GetClassDelegate(
     Tcl_Interp *interp,
@@ -95,8 +92,15 @@ GetClassDelegate(
 }
 
 /*
- * Patches in the appropriate class delegates' superclasses.
- * Somewhat messy because the list of superclasses isn't modified frequently.
+ *----------------------------------------------------------------------
+ *
+ * SetDelegateSuperclasses --
+ *
+ *	Patches in the appropriate class delegates' superclasses.
+ *	Somewhat messy because the list of superclasses isn't modified
+ *	frequently.
+ *
+ *----------------------------------------------------------------------
  */
 static inline void
 SetDelegateSuperclasses(
@@ -140,7 +144,13 @@ SetDelegateSuperclasses(
 }
 
 /*
- * Mixes the delegate into its controlling class.
+ *----------------------------------------------------------------------
+ *
+ * InstallDelegateAsMixin --
+ *
+ * 	Mixes the delegate into its controlling class.
+ *
+ *----------------------------------------------------------------------
  */
 static inline void
 InstallDelegateAsMixin(
@@ -155,8 +165,8 @@ InstallDelegateAsMixin(
     Class **mixins = (Class **) TclStackAlloc(interp,
 	    sizeof(Class *) * (clsPtr->thisPtr->mixins.num + 1));
     for (Tcl_Size i = 0; i < clsPtr->thisPtr->mixins.num; i++) {
-	mixins[i] = clsPtr->thisPtr->mixins.list[i];
-	if (mixins[i] == delegatePtr) {
+	    mixins[i] = clsPtr->thisPtr->mixins.list[i];
+	    if (mixins[i] == delegatePtr) {
 	    TclStackFree(interp, (void *) mixins);
 	    return;
 	}
@@ -166,7 +176,16 @@ InstallDelegateAsMixin(
     TclStackFree(interp, mixins);
 }
 
-// Patches in the appropriate class delegates.
+/*
+ * ----------------------------------------------------------------------
+ *
+ * MixinClassDelegates --
+ *
+ *	Internal utility for patching the class delegate in where it belongs.
+ *	Runs after the class has called [oo::define] on its argument.
+ *
+ * ----------------------------------------------------------------------
+ */
 static void
 MixinClassDelegates(
     Tcl_Interp *interp,
@@ -263,8 +282,14 @@ TclOO_Class_Constructor(
 }
 
 /*
- * Called *after* [oo::define] inside the constructor of a class.
- * Cleans up some temporary storage and sets up the delegate.
+ *----------------------------------------------------------------------
+ *
+ * PostClassConstructor --
+ *
+ *	Called *after* [oo::define] inside the constructor of a class.
+ *	Cleans up some temporary storage and sets up the delegate.
+ *
+ *----------------------------------------------------------------------
  */
 static int
 PostClassConstructor(
@@ -287,6 +312,21 @@ PostClassConstructor(
     return Tcl_RestoreInterpState(interp, saved);
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * ContextClass --
+ *
+ *	Get the context object (see Tcl_ObjectContextObject) as a class.
+ *	Should only be called inside a class method implementation, where
+ *	the context object must exist.
+ *
+ * Returns:
+ *	The context class, if it is a valid class. Otherwise NULL (with an
+ *	error message in the interpreter).
+ *
+ *----------------------------------------------------------------------
+ */
 static inline Tcl_Class
 ContextClass(
     Tcl_Interp *interp,		/* Interpreter used for error reporting. */

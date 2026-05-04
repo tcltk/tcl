@@ -7719,15 +7719,15 @@ Tcl_InputBuffered(
  *
  * Tcl_OutputBuffered --
  *
- *    Returns the number of bytes of output currently buffered in the common
- *    internal buffer of a channel.
+ *	Returns the number of bytes of output currently buffered in the common
+ *	internal buffer of a channel.
  *
  * Results:
- *    The number of output bytes buffered, or zero if the channel is not open
- *    for writing.
+ *	The number of output bytes buffered, or zero if the channel is not open
+ *	for writing.
  *
  * Side effects:
- *    None.
+ *	None.
  *
  *----------------------------------------------------------------------
  */
@@ -9820,7 +9820,7 @@ CopyData(
 		 * - If yes, simulate a successful read to write them out
 		 * - Come back here by the outer loop and read again
 		 * - Do not enter in the if below, as there are no pending
-		 *  writes
+		 *   writes
 		 * - Fail below with a read error
 		 */
 		if (size < 0 && Tcl_GetErrno() == EILSEQ) {

@@ -3451,7 +3451,7 @@ GetWideForIndex(
  *	TCL_SIZE_MAX. Negative values are returned as TCL_INDEX_NONE (-1).
  *
  *	Callers should pass reasonable values for endValue - one in the
- *      valid index range or TCL_INDEX_NONE (-1), for example for an empty
+ *	valid index range or TCL_INDEX_NONE (-1), for example for an empty
  *	list.
  *
  * Results:
@@ -3522,7 +3522,7 @@ Tcl_GetIntForIndex(
  *	-1:         Index "end"
  *	0:          Index "0"
  *	WIDE_MAX-1: Index "end+n", for any n > 1. Distinguish from end+1 for
- *                  commands like lset.
+ *	            commands like lset.
  *	WIDE_MAX:   Index "end+1"
  *
  * Results:
@@ -3779,57 +3779,58 @@ GetEndOffsetFromObj(
  *----------------------------------------------------------------------
  *
  * TclIndexEncode --
- *      IMPORTANT: function only encodes indices in the range that fits within
- *      an "int" type. Do NOT change this as the byte code compiler and engine
- *      which call this function cannot handle wider index types. Indices
- *      outside the range will result in the function returning an error.
  *
- *      Parse objPtr to determine if it is an index value. Two cases
+ *	IMPORTANT: function only encodes indices in the range that fits within
+ *	an "int" type. Do NOT change this as the byte code compiler and engine
+ *	which call this function cannot handle wider index types. Indices
+ *	outside the range will result in the function returning an error.
+ *
+ *	Parse objPtr to determine if it is an index value. Two cases
  *	are possible.  The value objPtr might be parsed as an absolute
  *	index value in the Tcl_Size range.  Note that this includes
  *	index values that are integers as presented and it includes index
- *      arithmetic expressions.
+ *	arithmetic expressions.
  *
- *      The largest string supported in Tcl 8 has byte length TCL_SIZE_MAX.
- *      This means the largest supported character length is also TCL_SIZE_MAX,
- *      and the index of the last character in a string of length TCL_SIZE_MAX
- *      is TCL_SIZE_MAX-1. Thus the absolute index values that can be
+ *	The largest string supported in Tcl 8 has byte length TCL_SIZE_MAX.
+ *	This means the largest supported character length is also TCL_SIZE_MAX,
+ *	and the index of the last character in a string of length TCL_SIZE_MAX
+ *	is TCL_SIZE_MAX-1. Thus the absolute index values that can be
  *	directly meaningful as an index into either a list or a string are
  *	integer values in the range 0 to TCL_SIZE_MAX - 1.
  *
- *      This function however can only handle integer indices in the range
- *      0 : INT_MAX-1.
+ *	This function however can only handle integer indices in the range
+ *	0 : INT_MAX-1.
  *
- *      Any absolute index value parsed outside that range is encoded
- *      using the before and after values passed in by the
- *      caller as the encoding to use for indices that are either
- *      less than or greater than the usable index range. TCL_INDEX_NONE
- *      is available as a good choice for most callers to use for
- *      after. Likewise, the value TCL_INDEX_NONE is good for
- *      most callers to use for before.  Other values are possible
- *      when the caller knows it is helpful in producing its own behavior
- *      for indices before and after the indexed item.
+ *	Any absolute index value parsed outside that range is encoded
+ *	using the before and after values passed in by the
+ *	caller as the encoding to use for indices that are either
+ *	less than or greater than the usable index range. TCL_INDEX_NONE
+ *	is available as a good choice for most callers to use for
+ *	after. Likewise, the value TCL_INDEX_NONE is good for
+ *	most callers to use for before.  Other values are possible
+ *	when the caller knows it is helpful in producing its own behavior
+ *	for indices before and after the indexed item.
  *
- *      A token can also be parsed as an end-relative index expression.
- *      All end-relative expressions that indicate an index larger
- *      than end (end+2, end--5) point beyond the end of the indexed
- *      collection, and can be encoded as after.  The end-relative
- *      expressions that indicate an index less than or equal to end
- *      are encoded relative to the value TCL_INDEX_END (-2).  The
- *      index "end" is encoded as -2, down to the index "end-0x7FFFFFFE"
- *      which is encoded as INT_MIN. Since the largest index into a
- *      string possible in Tcl 8 is 0x7FFFFFFE, the interpretation of
+ *	A token can also be parsed as an end-relative index expression.
+ *	All end-relative expressions that indicate an index larger
+ *	than end (end+2, end--5) point beyond the end of the indexed
+ *	collection, and can be encoded as after.  The end-relative
+ *	expressions that indicate an index less than or equal to end
+ *	are encoded relative to the value TCL_INDEX_END (-2).  The
+ *	index "end" is encoded as -2, down to the index "end-0x7FFFFFFE"
+ *	which is encoded as INT_MIN. Since the largest index into a
+ *	string possible in Tcl 8 is 0x7FFFFFFE, the interpretation of
  *      "end-0x7FFFFFFE" for that largest string would be 0.  Thus,
- *      if the tokens "end-0x7FFFFFFF" or "end+-0x80000000" are parsed,
- *      they can be encoded with the before value.
+ *	if the tokens "end-0x7FFFFFFF" or "end+-0x80000000" are parsed,
+ *	they can be encoded with the before value.
  *
  * Returns:
- *      TCL_OK if parsing succeeded, and TCL_ERROR if it failed or the
- *      index does not fit in an int type.
+ *	TCL_OK if parsing succeeded, and TCL_ERROR if it failed or the
+ *	index does not fit in an int type.
  *
  * Side effects:
- *      When TCL_OK is returned, the encoded index value is written
- *      to *indexPtr.
+ *	When TCL_OK is returned, the encoded index value is written
+ *	to *indexPtr.
  *
  *----------------------------------------------------------------------
  */
@@ -4396,6 +4397,8 @@ Tcl_GetNameOfExecutable(void)
 
 #if !defined(STATIC_BUILD)
 /*
+ *----------------------------------------------------------------------
+ *
  * TclSetObjNameOfShlib --
  *
  *	This function stores the absolute pathname of the Tcl shared library.
@@ -4405,8 +4408,9 @@ Tcl_GetNameOfExecutable(void)
  *
  * Side effects:
  *	Stores the shared library name in the process global database.
+ *
+ *----------------------------------------------------------------------
  */
-
 void
 TclSetObjNameOfShlib(
     Tcl_Obj *name,

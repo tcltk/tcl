@@ -75,6 +75,8 @@ MODULE_SCOPE int TCL_LOCAL_MAIN_HOOK(int *argc, char ***argv);
 #endif
 
 /*
+ *----------------------------------------------------------------------
+ *
  * TclSetRcFilePath --
  *
  *	Sets the path of the Tcl startup file (usually ".tclshrc"). Will
@@ -89,6 +91,8 @@ MODULE_SCOPE int TCL_LOCAL_MAIN_HOOK(int *argc, char ***argv);
  *
  * TODO - this function is duplicated in the Windows version of tclAppInit.c.
  * Consider adding it to Tcl library and callable via the stubs table.
+ *
+ *----------------------------------------------------------------------
  */
 static int
 TclSetRcFilePath(Tcl_Interp *interp, const char *path)

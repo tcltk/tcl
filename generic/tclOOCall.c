@@ -675,7 +675,13 @@ SortMethodNames(
 }
 
 /*
- * Comparator for SortMethodNames()
+ *----------------------------------------------------------------------
+ *
+ * CmpNames --
+ *
+ *	Comparator for SortMethodNames()
+ *
+ *----------------------------------------------------------------------
  */
 static int
 CmpNames(
@@ -1903,14 +1909,14 @@ TclOORenderCallChain(
 	MInvoke *miPtr = &callPtr->chain[i];
 
 	descObjs[0] =
-	    miPtr->isFilter ? filterLiteral :
-	    callPtr->flags & OO_UNKNOWN_METHOD ? fPtr->unknownMethodNameObj :
-	    IS_PRIVATE(miPtr->mPtr) ? privateLiteral :
-		    methodLiteral;
+		miPtr->isFilter ? filterLiteral :
+		callPtr->flags & OO_UNKNOWN_METHOD ? fPtr->unknownMethodNameObj :
+		IS_PRIVATE(miPtr->mPtr) ? privateLiteral :
+			methodLiteral;
 	descObjs[1] =
-	    callPtr->flags & CONSTRUCTOR ? fPtr->constructorName :
-	    callPtr->flags & DESTRUCTOR ? fPtr->destructorName :
-		    miPtr->mPtr->namePtr;
+		callPtr->flags & CONSTRUCTOR ? fPtr->constructorName :
+		callPtr->flags & DESTRUCTOR ? fPtr->destructorName :
+			miPtr->mPtr->namePtr;
 	descObjs[2] = miPtr->mPtr->declaringClassPtr
 		? Tcl_GetObjectName(interp,
 			(Tcl_Object) miPtr->mPtr->declaringClassPtr->thisPtr)

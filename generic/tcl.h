@@ -503,7 +503,7 @@ typedef struct stat *Tcl_OldStat_;
 #define TCL_BREAK		3
 #define TCL_CONTINUE		4
 #define TCL_CODE_USER_MIN	5
-#define TCL_CODE_USER_MAX	0x3fffffff /*  1073741823 */
+#define TCL_CODE_USER_MAX	0x3fffffff /* 1073741823 */
 
 /*
  *----------------------------------------------------------------------------
@@ -1639,11 +1639,11 @@ typedef struct Tcl_Filesystem {
 				 * if the filesystem does not support glob or
 				 * recursive copy. */
     Tcl_FSUtimeProc *utimeProc;	/* Called by 'Tcl_FSUtime()', by 'file
-				 *  mtime' to set (not read) times, 'file
-				 *  atime', and the open-r/open-w/fcopy variant
-				 *  of 'file copy'. */
+				 * mtime' to set (not read) times, 'file
+				 * atime', and the open-r/open-w/fcopy variant
+				 * of 'file copy'. */
     Tcl_FSLinkProc *linkProc;	/* Called by 'Tcl_FSLink()'. NULL if reading or
-				 *  creating links is not supported. */
+				 * creating links is not supported. */
     Tcl_FSListVolumesProc *listVolumesProc;
 				/* Lists filesystem volumes added by this
 				 * filesystem. NULL if the filesystem does not

@@ -425,21 +425,21 @@ Tcl_ContinueObjCmd(
  *
  * EncodingConvertParseOptions --
  *
- *    Common routine for parsing arguments passed to encoding convertfrom
- *    and encoding convertto.
+ *	Common routine for parsing arguments passed to encoding convertfrom
+ *	and encoding convertto.
  *
  * Results:
- *    TCL_OK or TCL_ERROR.
+ *	TCL_OK or TCL_ERROR.
  *
  * Side effects:
- *    On success,
- *    - *encPtr is set to the encoding. Must be freed with Tcl_FreeEncoding
- *      if non-NULL
- *    - *dataObjPtr is set to the Tcl_Obj containing the data to encode or
- *      decode
- *    - *profilePtr is set to encoding error handling profile
- *    - *failVarPtr is set to -failindex option value or NULL
- *    On error, all of the above are uninitialized.
+ *	On success,
+ *	- *encPtr is set to the encoding. Must be freed with Tcl_FreeEncoding
+ *	  if non-NULL
+ *	- *dataObjPtr is set to the Tcl_Obj containing the data to encode or
+ *	  decode
+ *	- *profilePtr is set to encoding error handling profile
+ *	- *failVarPtr is set to -failindex option value or NULL
+ *	On error, all of the above are uninitialized.
  *
  *------------------------------------------------------------------------
  */
@@ -2869,7 +2869,13 @@ EachloopCmd(
 }
 
 /*
- * Post-body processing handler.
+ *----------------------------------------------------------------------
+ *
+ * ForeachLoopStep --
+ *
+ *	Post-body processing handler.
+ *
+ *----------------------------------------------------------------------
  */
 
 static int
@@ -2946,9 +2952,14 @@ ForeachLoopStep(
 }
 
 /*
- * Factored out code to do the assignments in [foreach].
+ *----------------------------------------------------------------------
+ *
+ * ForeachAssignments --
+ *
+ *	Factored out code to do the assignments in [foreach].
+ *
+ *----------------------------------------------------------------------
  */
-
 static inline int
 ForeachAssignments(
     Tcl_Interp *interp,
@@ -2997,9 +3008,14 @@ ForeachAssignments(
 }
 
 /*
- * Factored out code for cleaning up the state of the foreach.
+ *----------------------------------------------------------------------
+ *
+ * ForeachCleanup --
+ *
+ *	Factored out code for cleaning up the state of the foreach.
+ *
+ *----------------------------------------------------------------------
  */
-
 static inline void
 ForeachCleanup(
     Tcl_Interp *interp,

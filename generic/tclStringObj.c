@@ -4386,8 +4386,8 @@ ExtendUnicodeRepWithString(
  *	Check whether the obj is the empty string.
  *
  * Results:
- *	 1 if the obj is ""
- *   0 otherwise
+ *	1 if the obj is ""
+ *	0 otherwise
  *
  * Side effects:
  *	If there is no other way to determine whethere the string
@@ -4396,7 +4396,6 @@ ExtendUnicodeRepWithString(
  *
  *----------------------------------------------------------------------
  */
-
 int
 Tcl_IsEmpty(
     Tcl_Obj *objPtr)

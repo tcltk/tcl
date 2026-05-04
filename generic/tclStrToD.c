@@ -2056,7 +2056,7 @@ RefineApproximation(
      * The approximate result is significand * 2**binExponent
      * If exponent<0, we need to multiply the exact value by 10**-exponent
      * to make it an integer, plus another factor of 2 to decide on rounding.
-     *  Similarly if binExponent<FP_PRECISION, we need
+     * Similarly if binExponent<FP_PRECISION, we need
      * to multiply by 2**FP_PRECISION to make the approximate value an integer.
      *
      * Let M = 2**M2 * 5**M5 be the least common multiple of these two
