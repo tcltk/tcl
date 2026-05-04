@@ -24,7 +24,7 @@
  * freed in a single step.
  */
 
-struct ForeachState {
+typedef struct ForeachState {
     Tcl_Obj *bodyPtr;		/* The script body of the command. */
     Tcl_Size bodyIdx;		/* The argument index of the body. */
     Tcl_Size j, maxj;		/* Number of loop iterations. */
@@ -38,8 +38,12 @@ struct ForeachState {
     Tcl_Obj **aCopyList;	/* Copies of value list arguments. */
     Tcl_Obj *resultList;	/* List of result values from the loop body,
 				 * or NULL if we're not collecting them
-				 * ([lmap] vs [foreach]). */
-};
+				 * ([lmap]/[lfilter] vs [foreach]). */
+    Tcl_Obj *primeValueObj;	/* If not NULL, the value to be appended to
+				 * the resultList if the expression of
+				 * [lfilter] is true. */
+    int mode;			/* Which mode the machinery is operating in. */
+} ForeachState;
 
 /*
  * Prototypes for local procedures defined in this file:
@@ -55,15 +59,15 @@ static Tcl_ObjCmdProc2	EncodingProfilesObjCmd;
 static Tcl_ObjCmdProc2	EncodingSystemObjCmd;
 static Tcl_ObjCmdProc2	EncodingUserObjCmd;
 static inline int	ForeachAssignments(Tcl_Interp *interp,
-			    struct ForeachState *statePtr);
+			    ForeachState *statePtr);
 static inline void	ForeachCleanup(Tcl_Interp *interp,
-			    struct ForeachState *statePtr);
+			    ForeachState *statePtr);
 static int		GetStatBuf(Tcl_Interp *interp, Tcl_Obj *pathPtr,
 			    Tcl_FSStatProc *statProc, Tcl_StatBuf *statPtr);
 static const char *	GetTypeFromMode(int mode);
 static int		StoreStatData(Tcl_Interp *interp, Tcl_Obj *varName,
 			    Tcl_StatBuf *statPtr);
-static int		EachloopCmd(Tcl_Interp *interp, int collect,
+static int		EachloopCmd(Tcl_Interp *interp, int mode,
 			    Tcl_Size objc, Tcl_Obj *const objv[]);
 static Tcl_NRPostProc	CatchObjCmdCallback;
 static Tcl_NRPostProc	ExprCallback;
@@ -2718,17 +2722,48 @@ TclNRLmapCmd(
     return EachloopCmd(interp, TCL_EACH_COLLECT, objc, objv);
 }
 
+int
+Tcl_LfilterObjCmd(
+    void *clientData,
+    Tcl_Interp *interp,		/* Current interpreter. */
+    Tcl_Size objc,		/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    return Tcl_NRCallObjProc2(interp, TclNRLfilterCmd, clientData, objc, objv);
+}
+
+int
+TclNRLfilterCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,
+    Tcl_Size objc,
+    Tcl_Obj *const objv[])
+{
+    return EachloopCmd(interp, TCL_EACH_FILTER, objc, objv);
+}
+
+static const char *const collectModeNames[] = {
+    "foreach",
+    "lmap",
+    "lfilter"
+};
+
 static int
 EachloopCmd(
     Tcl_Interp *interp,		/* Our context for variables and script
 				 * evaluation. */
-    int collect,		/* Select collecting or accumulating mode
-				 * (TCL_EACH_*) */
+    int mode,			/* Select simple iterating, collecting or
+				 * filtering mode (TCL_EACH_*) */
     Tcl_Size objc,		/* The arguments being passed in... */
     Tcl_Obj *const objv[])
 {
+    static const char *const capitalCollectModeNames[] = {
+	"FOREACH",
+	"LMAP",
+	"LFILTER"
+    };
     Tcl_Size i, numLists = (objc-2) / 2;
-    struct ForeachState *statePtr;
+    ForeachState *statePtr;
     int result;
     Tcl_Size j;
 
@@ -2753,11 +2788,11 @@ EachloopCmd(
      * allocation for better performance.
      */
 
-    statePtr = (struct ForeachState *)TclStackAlloc(interp,
-	    sizeof(struct ForeachState) + 3 * numLists * sizeof(Tcl_Size)
+    statePtr = (ForeachState *)TclStackAlloc(interp,
+	    sizeof(ForeachState) + 3 * numLists * sizeof(Tcl_Size)
 	    + 2 * numLists * (sizeof(Tcl_Obj **) + sizeof(Tcl_Obj *)));
     memset(statePtr, 0,
-	    sizeof(struct ForeachState) + 3 * numLists * sizeof(Tcl_Size)
+	    sizeof(ForeachState) + 3 * numLists * sizeof(Tcl_Size)
 	    + 2 * numLists * (sizeof(Tcl_Obj **) + sizeof(Tcl_Obj *)));
     statePtr->varvList = (Tcl_Obj ***) (statePtr + 1);
     statePtr->argvList = statePtr->varvList + numLists;
@@ -2766,12 +2801,14 @@ EachloopCmd(
     statePtr->index = (Tcl_Size *) (statePtr->aCopyList + numLists);
     statePtr->varcList = statePtr->index + numLists;
     statePtr->argcList = statePtr->varcList + numLists;
+    statePtr->primeValueObj = NULL;
+    statePtr->mode = mode;
 
     statePtr->numLists = numLists;
     statePtr->bodyPtr = objv[objc - 1];
     statePtr->bodyIdx = objc - 1;
 
-    if (collect == TCL_EACH_COLLECT) {
+    if (mode != TCL_EACH_KEEP_NONE) {
 	statePtr->resultList = Tcl_NewListObj(0, NULL);
     } else {
 	statePtr->resultList = NULL;
@@ -2797,11 +2834,10 @@ EachloopCmd(
 	}
 	if (statePtr->varcList[i] < 1) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"%s varlist is empty",
-		(statePtr->resultList != NULL ? "lmap" : "foreach")));
+		    "%s varlist is empty", collectModeNames[statePtr->mode]));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION",
-		(statePtr->resultList != NULL ? "LMAP" : "FOREACH"),
-		"NEEDVARS", (char *)NULL);
+		    capitalCollectModeNames[statePtr->mode], "NEEDVARS",
+		    (char *)NULL);
 	    result = TCL_ERROR;
 	    goto done;
 	}
@@ -2884,7 +2920,8 @@ ForeachLoopStep(
     Tcl_Interp *interp,
     int result)
 {
-    struct ForeachState *statePtr = (struct ForeachState *)data[0];
+    ForeachState *statePtr = (ForeachState *)data[0];
+    int filterAccepts;
 
     /*
      * Process the result code from this run of the [foreach] body. Note that
@@ -2896,13 +2933,23 @@ ForeachLoopStep(
 	result = TCL_OK;
 	break;
     case TCL_OK:
-	if (statePtr->resultList != NULL) {
-	    result = Tcl_ListObjAppendElement(
-		interp, statePtr->resultList, Tcl_GetObjResult(interp));
-	    if (result != TCL_OK) {
-		/* e.g. memory alloc failure on big data tests */
-		goto done;
+	switch (statePtr->mode) {
+	case TCL_EACH_FILTER:
+	    result = Tcl_GetBooleanFromObj(interp, Tcl_GetObjResult(interp),
+		    &filterAccepts);
+	    if (result == TCL_OK && filterAccepts) {
+		result = Tcl_ListObjAppendElement(interp,
+			statePtr->resultList, statePtr->primeValueObj);
 	    }
+	    break;
+	case TCL_EACH_COLLECT:
+	    result = Tcl_ListObjAppendElement(
+		    interp, statePtr->resultList, Tcl_GetObjResult(interp));
+	    break;
+	}
+	if (result != TCL_OK) {
+	    /* e.g. memory alloc failure on big data tests */
+	    goto done;
 	}
 	break;
     case TCL_BREAK:
@@ -2911,8 +2958,7 @@ ForeachLoopStep(
     case TCL_ERROR:
 	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 		"\n    (\"%s\" body line %d)",
-		(statePtr->resultList != NULL ? "lmap" : "foreach"),
-		Tcl_GetErrorLine(interp)));
+		collectModeNames[statePtr->mode], Tcl_GetErrorLine(interp)));
 	TCL_FALLTHROUGH();
     default:
 	goto done;
@@ -2939,7 +2985,7 @@ ForeachLoopStep(
      */
 
   finish:
-    if (statePtr->resultList == NULL) {
+    if (statePtr->mode == TCL_EACH_KEEP_NONE) {
 	Tcl_ResetResult(interp);
     } else {
 	Tcl_SetObjResult(interp, statePtr->resultList);
@@ -2963,7 +3009,7 @@ ForeachLoopStep(
 static inline int
 ForeachAssignments(
     Tcl_Interp *interp,
-    struct ForeachState *statePtr)
+    ForeachState *statePtr)
 {
     int i;
     Tcl_Size v, k;
@@ -2977,10 +3023,11 @@ ForeachAssignments(
 	    k = statePtr->index[i]++;
 	    if (k < statePtr->argcList[i]) {
 		if (isAbstractList) {
-		    if (TclObjTypeIndex(interp, statePtr->aCopyList[i], k, &valuePtr) != TCL_OK) {
+		    if (TclObjTypeIndex(interp, statePtr->aCopyList[i], k,
+			    &valuePtr) != TCL_OK) {
 			Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 				"\n    (setting %s loop variable \"%s\")",
-				(statePtr->resultList != NULL ? "lmap" : "foreach"),
+				collectModeNames[statePtr->mode],
 				TclGetString(statePtr->varvList[i][v])));
 			return TCL_ERROR;
 		    }
@@ -2991,13 +3038,22 @@ ForeachAssignments(
 		TclNewObj(valuePtr);	/* Empty string */
 	    }
 
+	    if (statePtr->mode == TCL_EACH_FILTER && i==0 && v==0) {
+		if (statePtr->primeValueObj) {
+		    Tcl_DecrRefCount(statePtr->primeValueObj);
+		}
+		statePtr->primeValueObj = valuePtr;
+		if (valuePtr) {
+		    Tcl_IncrRefCount(valuePtr);
+		}
+	    }
 	    varValuePtr = Tcl_ObjSetVar2(interp, statePtr->varvList[i][v],
 		    NULL, valuePtr, TCL_LEAVE_ERR_MSG);
 
 	    if (varValuePtr == NULL) {
 		Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 			"\n    (setting %s loop variable \"%s\")",
-			(statePtr->resultList != NULL ? "lmap" : "foreach"),
+			collectModeNames[statePtr->mode],
 			TclGetString(statePtr->varvList[i][v])));
 		return TCL_ERROR;
 	    }
@@ -3019,7 +3075,7 @@ ForeachAssignments(
 static inline void
 ForeachCleanup(
     Tcl_Interp *interp,
-    struct ForeachState *statePtr)
+    ForeachState *statePtr)
 {
     int i;
 
@@ -3031,7 +3087,10 @@ ForeachCleanup(
 	    TclDecrRefCount(statePtr->aCopyList[i]);
 	}
     }
-    if (statePtr->resultList != NULL) {
+    if (statePtr->primeValueObj) {
+	TclDecrRefCount(statePtr->primeValueObj);
+    }
+    if (statePtr->resultList) {
 	TclDecrRefCount(statePtr->resultList);
     }
     TclStackFree(interp, statePtr);
