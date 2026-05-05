@@ -1094,6 +1094,32 @@ namespace eval tcl::test::exec::win {
             file normalize [exec testApp.exe -path]
         } -result [file normalize [file join [temporaryDirectory] exec-win-7.2.2 testApp.exe]]
 
+    test exec-win-7.2.3 "exec - verify *explicit* cwd checked even if env NoDefaultCurrentDirectoryInExePath exists " \
+        -constraints haveTestApp \
+        -setup {
+            set dir [makeDirectory exec-win-7.2.3]
+            set newCwd [makeDirectory exec-win-7.2.3-cwd]
+            file copy $testApp [file join $dir testApp.exe]
+            file copy $testApp [file join $newCwd testApp.exe]
+            set savedPath $::env(PATH)
+            set ::env(PATH) [string cat ".;" [file nativename $dir]]
+            set ::env(NoDefaultCurrentDirectoryInExePath) 1
+            set savedCwd [pwd]
+            cd $newCwd
+        } -cleanup {
+            cd $savedCwd
+            removeDirectory $dir
+            removeDirectory $newCwd
+            set ::env(PATH) $savedPath
+            unset ::env(NoDefaultCurrentDirectoryInExePath)
+            unset -nocomplain fp
+        } -body {
+            # The testApp.exe in PATH, not cwd should be executed
+            # file normalize because some commands return lower case drive letters
+            # and some return upper case
+            file normalize [exec testApp.exe -path]
+        } -result [file normalize [file join [temporaryDirectory] exec-win-7.2.3-cwd testApp.exe]]
+
     test exec-win-7.3 "exec - verify Windows program with empty PATH" \
         -constraints win \
         -setup {
