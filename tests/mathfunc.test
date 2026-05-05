@@ -15,6 +15,12 @@ if {"::tcltest" ni [namespace children]} {
 }
 
 ::tcltest::loadTestedCommands
+
+# Define a matching mode that compares only the first 15 significant figures.
+# Allows for 1ULP bugs in C runtimes; we aren't fixing those...
+customMatch approximate {apply {{expected actual} {
+    string equal [format %.15g $expected] [format %.15g $actual]
+}}}
 
 # acosh tests
 test mathfunc-acosh.1 {acosh: no args} -body {
@@ -37,9 +43,9 @@ test mathfunc-asinh.1 {asinh: no args} -body {
 test mathfunc-asinh.2 {asinh: too many args} -body {
     tcl::mathfunc::asinh a b
 } -returnCodes error -result {too many arguments for math function "asinh"}
-test mathfunc-asinh.3 {asinh: valid result} {
-    format %.15f [tcl::mathfunc::asinh 1]
-} 0.881373587019543
+test mathfunc-asinh.3 {asinh: valid result} -body {
+    tcl::mathfunc::asinh 1
+} -match approximate -result 0.881373587019543
 
 # atanh tests
 test mathfunc-atanh.1 {atanh: no args} -body {
@@ -51,9 +57,9 @@ test mathfunc-atanh.2 {atanh: too many args} -body {
 test mathfunc-atanh.3 {atanh: out of bounds} -body {
     tcl::mathfunc::atanh -2
 } -returnCodes error -result {domain error: argument not in valid range}
-test mathfunc-atanh.4 {atanh: valid result} {
-    format %.15f [tcl::mathfunc::atanh 0.5]
-} 0.549306144334055
+test mathfunc-atanh.4 {atanh: valid result} -body {
+    tcl::mathfunc::atanh 0.5
+} -match approximate -result 0.549306144334055
 
 # cbrt tests
 test mathfunc-cbrt.1 {cbrt: no args} -body {
@@ -62,9 +68,9 @@ test mathfunc-cbrt.1 {cbrt: no args} -body {
 test mathfunc-cbrt.2 {cbrt: too many args} -body {
     tcl::mathfunc::cbrt a b
 } -returnCodes error -result {too many arguments for math function "cbrt"}
-test mathfunc-cbrt.3 {cbrt: valid result} {
-    format %.15f [tcl::mathfunc::cbrt -27]
-} -3.000000000000000
+test mathfunc-cbrt.3 {cbrt: valid result} -body {
+    tcl::mathfunc::cbrt -27
+} -match approximate -result -3.000000000000000
 
 # copysign tests
 test mathfunc-copysign.1 {copysign: no args} -body {
@@ -132,9 +138,9 @@ test mathfunc-erf.1 {erf: no args} -body {
 test mathfunc-erf.2 {erf: too many args} -body {
     tcl::mathfunc::erf a b
 } -returnCodes error -result {too many arguments for math function "erf"}
-test mathfunc-erf.3 {erf: valid result} {
-    format %.15f [tcl::mathfunc::erf 1]
-} 0.842700792949715
+test mathfunc-erf.3 {erf: valid result} -body {
+    tcl::mathfunc::erf 1
+} -match approximate -result 0.842700792949715
 
 # erfc tests
 test mathfunc-erfc.1 {erfc: no args} -body {
@@ -143,9 +149,9 @@ test mathfunc-erfc.1 {erfc: no args} -body {
 test mathfunc-erfc.2 {erfc: too many args} -body {
     tcl::mathfunc::erfc a b
 } -returnCodes error -result {too many arguments for math function "erfc"}
-test mathfunc-erfc.3 {erfc: valid result} {
-    format %.15f [tcl::mathfunc::erfc 1]
-} 0.157299207050285
+test mathfunc-erfc.3 {erfc: valid result} -body {
+    tcl::mathfunc::erfc 1
+} -match approximate -result 0.157299207050285
 
 # exp2 tests
 test mathfunc-exp2.1 {exp2: no args} -body {
@@ -165,9 +171,9 @@ test mathfunc-expm1.1 {expm1: no args} -body {
 test mathfunc-expm1.2 {expm1: too many args} -body {
     tcl::mathfunc::expm1 a b
 } -returnCodes error -result {too many arguments for math function "expm1"}
-test mathfunc-expm1.3 {expm1: valid result} {
-    format %.15f [tcl::mathfunc::expm1 1]
-} 1.718281828459045
+test mathfunc-expm1.3 {expm1: valid result} -body {
+    tcl::mathfunc::expm1 1
+} -match approximate -result 1.718281828459045
 
 # fma tests
 test mathfunc-fma.1 {fma: no args} -body {
@@ -198,9 +204,9 @@ test mathfunc-gamma.1 {gamma: no args} -body {
 test mathfunc-gamma.2 {gamma: too many args} -body {
     tcl::mathfunc::gamma a b
 } -returnCodes error -result {too many arguments for math function "gamma"}
-test mathfunc-gamma.3 {gamma: valid result} {
-    format %.15f [tcl::mathfunc::gamma 4.5]
-} 11.631728396567450
+test mathfunc-gamma.3 {gamma: valid result} -body {
+    tcl::mathfunc::gamma 4.5
+} -match approximate -result 11.631728396567450
 
 # ldexp tests
 test mathfunc-ldexp.1 {ldexp: no args} -body {
@@ -220,9 +226,9 @@ test mathfunc-lgamma.1 {lgamma: no args} -body {
 test mathfunc-lgamma.2 {lgamma: too many args} -body {
     tcl::mathfunc::lgamma a b
 } -returnCodes error -result {too many arguments for math function "lgamma"}
-test mathfunc-lgamma.3 {lgamma: valid result} {
-    format %.15f [tcl::mathfunc::lgamma 4.5]
-} 2.453736570842442
+test mathfunc-lgamma.3 {lgamma: valid result} -body {
+    tcl::mathfunc::lgamma 4.5
+} -match approximate -result 2.453736570842442
 
 # log1p tests
 test mathfunc-log1p.1 {log1p: no args} -body {
@@ -234,9 +240,9 @@ test mathfunc-log1p.2 {log1p: too many args} -body {
 test mathfunc-log1p.3 {log1p: invalid arg} -body {
     tcl::mathfunc::log1p -4
 } -returnCodes error -result {domain error: argument not in valid range}
-test mathfunc-log1p.4 {log1p: valid result} {
-    format %.15f [tcl::mathfunc::log1p 4.5]
-} 1.704748092238425
+test mathfunc-log1p.4 {log1p: valid result} -body {
+    tcl::mathfunc::log1p 4.5
+} -match approximate -result 1.704748092238425
 
 # log2 tests
 test mathfunc-log2.1 {log2: no args} -body {
