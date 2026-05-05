@@ -1044,10 +1044,10 @@ namespace eval tcl::test::exec::win {
             list [exec testApp.exe -path] [exec attrib.exe /?]
         } -result {*testApp.exe*Displays or changes*} -match glob
 
-    test exec-win-7.2 "exec - verify cwd checked before Windows and PATH" \
+    test exec-win-7.2.1 "exec - verify cwd checked before Windows and PATH" \
         -constraints haveTestApp \
         -setup {
-            set dir [makeDirectory exec-win-7.2]
+            set dir [makeDirectory exec-win-7.2.1]
             # copy to a name that is present in the Windows dir to cwd and PATH
             file copy $testApp [file join [pwd] attrib.exe]
             file copy $testApp [file join $dir attrib.exe]
@@ -1066,7 +1066,33 @@ namespace eval tcl::test::exec::win {
                 file normalize $fp
             }
         } -result [list [file normalize [file join [pwd] attrib.exe]] \
-                       [file normalize [file join [temporaryDirectory] exec-win-7.2]]]
+                       [file normalize [file join [temporaryDirectory] exec-win-7.2.1]]]
+
+    test exec-win-7.2.2 "exec - verify cwd NOT checked if env NoDefaultCurrentDirectoryInExePath exists " \
+        -constraints haveTestApp \
+        -setup {
+            set dir [makeDirectory exec-win-7.2.2]
+            set newCwd [makeDirectory exec-win-7.2.2-cwd]
+            file copy $testApp [file join $dir testApp.exe]
+            file copy $testApp [file join $newCwd testApp.exe]
+            set savedPath $::env(PATH)
+            set ::env(PATH) [file nativename $dir]
+            set ::env(NoDefaultCurrentDirectoryInExePath) 1
+            set savedCwd [pwd]
+            cd $newCwd
+        } -cleanup {
+            cd $savedCwd
+            removeDirectory $dir
+            removeDirectory $newCwd
+            set ::env(PATH) $savedPath
+            unset ::env(NoDefaultCurrentDirectoryInExePath)
+            unset -nocomplain fp
+        } -body {
+            # The testApp.exe in PATH, not cwd should be executed
+            # file normalize because some commands return lower case drive letters
+            # and some return upper case
+            file normalize [exec testApp.exe -path]
+        } -result [file normalize [file join [temporaryDirectory] exec-win-7.2.2 testApp.exe]]
 
     test exec-win-7.3 "exec - verify Windows program with empty PATH" \
         -constraints win \
@@ -1179,8 +1205,6 @@ namespace eval tcl::test::exec::win {
             exec [file nativename $fn] -path
         } -result [file nativename [file join [pwd] testApp.exe]]
 
-    # Note on POSIX, relative paths are not looked up in PATH. On Windows,
-    # Tcl 8.6/9.0 do look them up as does the Windows SearchPathW.
     test exec-win-9.0 "exec - verify relative paths work relative to cwd" \
         -constraints haveTestApp \
         -setup {
@@ -1199,19 +1223,31 @@ namespace eval tcl::test::exec::win {
             file normalize [exec exec-win-9.0/testApp.exe -path]
         } -result [file normalize [nativeTestPath exec-win-9.0 testApp.exe]]
 
-    test exec-win-9.1 "exec - verify relative paths are searched in PATH" \
+    test exec-win-9.1 "exec - verify relative paths are not searched in PATH" \
         -constraints haveTestApp \
         -setup {
             set dir [makeDirectory exec-win-9.1]
             file copy $testApp [file join $dir testApp.exe]
             set savedPath $::env(PATH)
-            set ::env(PATH) [file nativename [file dirname $dir]]
+            set ::env(PATH) [file nativename $dir]
+            set savedCwd [pwd]
+            set newCwd [makeDirectory exec-win-9.1-cwd]
+            cd $newCwd
+            unset -nocomplain result
         } -cleanup {
+            cd $savedCwd
             removeDirectory $dir
+            removeDirectory $newCwd
             set ::env(PATH) $savedPath
+            unset -nocomplain dir err
         } -body {
-            file normalize [exec exec-win-9.1/testApp.exe -path]
-        } -result [file normalize [nativeTestPath exec-win-9.1 testApp.exe]]
+            # Verify can be executed if no directory separator
+            # but not if directory separator is present
+            lappend result [file normalize [exec testApp.exe -path]]
+            lappend result [catch {file normalize [exec ./testApp.exe -path]} err] $err
+        } -result [list [file normalize [nativeTestPath exec-win-9.1 testApp.exe]] \
+                      1 \
+                       {couldn't execute ".\testApp.exe": no such file or directory}]
 }
 
 namespace delete tcl::test::exec::win
@@ -1248,7 +1284,7 @@ unset cmdBuiltin
 foreach file {gorp.file gorp.file2 echo echo2 echobin cat wc sh sh2 sleep exit err} {
     removeFile $file
 }
-unset -nocomplain path tmp wingetPath
+unset -nocomplain path tmp wingetPath savedPath savedCwd newCwd
 
 ::tcltest::cleanupTests
 return

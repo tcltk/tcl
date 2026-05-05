@@ -1375,11 +1375,12 @@ checkExtension: /* hFile should be open handle at this point */
  *	win95, so I won't feel bad about reimplementing functionality.
  *
  * Results:
- *	The return value is one of APPL_DOS, APPL_WIN3X, or APPL_WIN32 if the
- *	filename referred to the corresponding application type. If the file
- *	name could not be found or did not refer to any known application
- *	type, APPL_NONE is returned and an error message is left in interp.
- *	.bat files are identified as APPL_DOS.
+ *
+ *      One of APPL_DOS, APPL_WIN3X, APPL_DLL or APPL_WIN32 if the
+ *      filename referred to the corresponding application type. If the file
+ *      name could not be found or did not refer to any known application
+ *      type, APPL_NONE is returned and an error message is left in interp.
+ *      .bat files are identified as APPL_DOS.
  *
  * Side effects:
  *	None.
@@ -1390,7 +1391,8 @@ checkExtension: /* hFile should be open handle at this point */
 static TclWinExecutableType
 ApplicationType(
     Tcl_Interp *interp,		/* Interp, for error message. */
-    const char *originalName,	/* Name of the application to find.
+    const char *originalName,	/* Name of the application to find in native
+				   format (must use \ not / separator).
 				   Must not point into dsFullNamePtr */
     Tcl_DString *dsFullNamePtr)	/* Filled with complete path to application.
 				 * Must always be Tcl_DStringFree'd */
@@ -1413,11 +1415,33 @@ ApplicationType(
     static const WCHAR extensions[][5] = {L"", L".com", L".exe", L".bat",
 	L".cmd"};
 
+    Tcl_DStringInit(dsFullNamePtr);
+    Tcl_DStringInit(&nameBuf);
+    Tcl_UtfToWCharDString(originalName, TCL_INDEX_NONE, &nameBuf);
+    numBytesInName = Tcl_DStringLength(&nameBuf);
+    fullNativePath = TclWinPathInit(&winPath, &winPathCapacity);
+
     /*
-     * Look for the program as an external program along PATH. First try the
-     * name as it is, then try adding .com, .exe, .bat and .cmd, in that
-     * order, to the name, looking for an executable. Using the raw
-     * SearchPathW() function by itself doesn't suffice:
+     * Look for the program as an external program along a search path.
+     * First try the name as it is, then try adding .com, .exe, .bat and
+     * .cmd, in that order, to the name, looking for an executable.
+     *
+     * The search path depends on whether the passed name includes directory
+     * separators. If so, the search path is only the current working directory.
+     * Otherwise, the search path includes
+     *    - the directory of the current executable,
+     *    - the current working directory, if permitted (see below)
+     *    - the Windows system directory,
+     *    - the Windows directory, and
+     *    - the directories in the PATH environment variable.
+     *
+     * Microsoft has two independent mechanisms for controlling whether
+     * the current directory should be included in the search path. We
+     * choose the newer one based on the NeedCurrentDirectoryForExePathW()
+     * function. See TIP 753.
+     *
+     * The code below explicitly iterates through the search path.
+     * Using the raw SearchPathW() function by itself doesn't suffice:
      *
      * - First, if the name of the executable already contains a '.' character,
      * it will not try appending the specified extension when searching (in
@@ -1434,73 +1458,87 @@ ApplicationType(
      * that directory.
      */
 
-    Tcl_DStringInit(dsFullNamePtr);
-    Tcl_DStringInit(&nameBuf);
-    Tcl_UtfToWCharDString(originalName, TCL_INDEX_NONE, &nameBuf);
-    numBytesInName = Tcl_DStringLength(&nameBuf);
-    fullNativePath = TclWinPathInit(&winPath, &winPathCapacity);
-
-    /*
-     * Search path should start with directory of current executable,
-     * current directory, Windows system directory, Windows directory, and
-     * finally directories in the PATH.
-     */
     Tcl_DStringInit(&dsSearchDirs);
 
+    if (strchr(originalName, '\\') != NULL) {
+	/*
+	 * Name has directory separators, only search current directory.
+	 * Note: mimicing Win32 NeedCurrentDirectoryForExePathW() behavior
+	 * here, drive relative paths without directory separators (e.g.
+	 * "c:prog.exe") are handled as in the else clause. This does not
+	 * make entire sense to me, but consistent with Need*ExecPathW.
+	 */
 
-    /* Add the directory containing the current executable */
-    fullNativePath = TclWinGetModuleFileName(NULL, &winPath);
-    if (fullNativePath != NULL) {
-	/* This is code is NOT a general "file dirname"! */
-	WCHAR *lastSep = wcsrchr(fullNativePath, L'\\');
-	if (lastSep != NULL) {
-	    if (lastSep == fullNativePath || *(lastSep - 1) == L':') {
-		/* Root or drive root. */
-		*(lastSep + 1) = L'\0';
-	    } else {
-		*lastSep = L'\0';
+	Tcl_DStringAppend(&dsSearchDirs, (char *)L".", sizeof(WCHAR));
+    } else {
+	/*
+	 * No directory separators. Add directories as per above comment.
+	 * First, the directory containing the current executable...
+	 */
+	fullNativePath = TclWinGetModuleFileName(NULL, &winPath);
+	if (fullNativePath != NULL) {
+	    /* This is code is NOT a general "file dirname"! */
+	    WCHAR *lastSep = wcsrchr(fullNativePath, L'\\');
+	    if (lastSep != NULL) {
+		if (lastSep == fullNativePath || *(lastSep - 1) == L':') {
+		    /* Root or drive root. */
+		    *(lastSep + 1) = L'\0';
+		} else {
+		    *lastSep = L'\0';
+		}
+		size_t numBytes = (char *)lastSep - (char *)fullNativePath;
+		Tcl_DStringAppend(&dsSearchDirs, (char *)fullNativePath,
+		    numBytes);
 	    }
-	    size_t numBytes = (char *)lastSep - (char *)fullNativePath;
-	    Tcl_DStringAppend(&dsSearchDirs, (char *)fullNativePath, numBytes);
-	    Tcl_DStringAppend(&dsSearchDirs, (char *)L";", sizeof(WCHAR));
+	    fullNativePath = TclWinPathReset(&winPath, &winPathCapacity);
 	}
-	fullNativePath = TclWinPathReset(&winPath, &winPathCapacity);
-    }
 
-    /* Add the current directory */
-    Tcl_DStringAppend(&dsSearchDirs, (char *)L".", sizeof(WCHAR));
+	/* If above failed, extraneous leading ";" below. No matter, ignored. */
 
-    /* Add system32 directory */
-    fullNativePath = TclWinGetSystemDirectory(&winPath);
-    if (fullNativePath != NULL) {
-	if (fullNativePath[0] != L'\0') {
+	/*
+	 * Microsoft has two independent mechanisms for controlling whether
+	 * the current directory should be included in the search path. We
+	 * choose the newer one below. See TIP 753.
+	 */
+	if (NeedCurrentDirectoryForExePathW(
+		(WCHAR *)Tcl_DStringValue(&nameBuf))) {
+	    /* Add the current directory */
 	    Tcl_DStringAppend(&dsSearchDirs, (char *)L";", sizeof(WCHAR));
-	    Tcl_DStringAppend(&dsSearchDirs, (char *)fullNativePath,
-		wcslen(fullNativePath) * sizeof(WCHAR));
+	    Tcl_DStringAppend(&dsSearchDirs, (char *)L".", sizeof(WCHAR));
 	}
-	fullNativePath = TclWinPathReset(&winPath, &winPathCapacity);
-    }
 
-    /* Add Windows directory */
-    fullNativePath = TclWinGetWindowsDirectory(&winPath);
-    if (fullNativePath != NULL) {
-	if (fullNativePath[0] != L'\0') {
-	    Tcl_DStringAppend(&dsSearchDirs, (char *)L";", sizeof(WCHAR));
-	    Tcl_DStringAppend(&dsSearchDirs, (char *)fullNativePath,
-		wcslen(fullNativePath) * sizeof(WCHAR));
+	/* Add system32 directory */
+	fullNativePath = TclWinGetSystemDirectory(&winPath);
+	if (fullNativePath != NULL) {
+	    if (fullNativePath[0] != L'\0') {
+		Tcl_DStringAppend(&dsSearchDirs, (char *)L";", sizeof(WCHAR));
+		Tcl_DStringAppend(&dsSearchDirs, (char *)fullNativePath,
+		    wcslen(fullNativePath) * sizeof(WCHAR));
+	    }
+	    fullNativePath = TclWinPathReset(&winPath, &winPathCapacity);
 	}
-	fullNativePath = TclWinPathReset(&winPath, &winPathCapacity);
-    }
 
-    /* Finally add PATH env */
-    envPathPtr = TclWinGetEnvironmentVariable(L"PATH", &envPath);
-    if (envPathPtr != NULL) {
-	if (envPathPtr[0] != L'\0') {
-	    Tcl_DStringAppend(&dsSearchDirs, (char *)L";", sizeof(WCHAR));
-	    Tcl_DStringAppend(&dsSearchDirs, (char *)envPathPtr,
-		wcslen(envPathPtr) * sizeof(WCHAR));
+	/* Add Windows directory */
+	fullNativePath = TclWinGetWindowsDirectory(&winPath);
+	if (fullNativePath != NULL) {
+	    if (fullNativePath[0] != L'\0') {
+		Tcl_DStringAppend(&dsSearchDirs, (char *)L";", sizeof(WCHAR));
+		Tcl_DStringAppend(&dsSearchDirs, (char *)fullNativePath,
+		    wcslen(fullNativePath) * sizeof(WCHAR));
+	    }
+	    fullNativePath = TclWinPathReset(&winPath, &winPathCapacity);
 	}
-	TclWinPathFree(&envPath);
+
+	/* Finally add PATH env */
+	envPathPtr = TclWinGetEnvironmentVariable(L"PATH", &envPath);
+	if (envPathPtr != NULL) {
+	    if (envPathPtr[0] != L'\0') {
+		Tcl_DStringAppend(&dsSearchDirs, (char *)L";", sizeof(WCHAR));
+		Tcl_DStringAppend(&dsSearchDirs, (char *)envPathPtr,
+		    wcslen(envPathPtr) * sizeof(WCHAR));
+	    }
+	    TclWinPathFree(&envPath);
+	}
     }
 
     /*
