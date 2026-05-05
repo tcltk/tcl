@@ -38,7 +38,7 @@ test mathfunc-asinh.2 {asinh: too many args} -body {
     tcl::mathfunc::asinh a b
 } -returnCodes error -result {too many arguments for math function "asinh"}
 test mathfunc-asinh.3 {asinh: valid result} {
-    tcl::mathfunc::asinh 1
+    format %.15f [tcl::mathfunc::asinh 1]
 } 0.881373587019543
 
 # atanh tests
@@ -52,8 +52,8 @@ test mathfunc-atanh.3 {atanh: out of bounds} -body {
     tcl::mathfunc::atanh -2
 } -returnCodes error -result {domain error: argument not in valid range}
 test mathfunc-atanh.4 {atanh: valid result} {
-    tcl::mathfunc::atanh 0.5
-} 0.5493061443340549
+    format %.15f [tcl::mathfunc::atanh 0.5]
+} 0.549306144334055
 
 # cbrt tests
 test mathfunc-cbrt.1 {cbrt: no args} -body {
@@ -63,8 +63,8 @@ test mathfunc-cbrt.2 {cbrt: too many args} -body {
     tcl::mathfunc::cbrt a b
 } -returnCodes error -result {too many arguments for math function "cbrt"}
 test mathfunc-cbrt.3 {cbrt: valid result} {
-    tcl::mathfunc::cbrt -27
-} -3.0
+    format %.15f [tcl::mathfunc::cbrt -27]
+} -3.000000000000000
 
 # copysign tests
 test mathfunc-copysign.1 {copysign: no args} -body {
@@ -133,8 +133,8 @@ test mathfunc-erf.2 {erf: too many args} -body {
     tcl::mathfunc::erf a b
 } -returnCodes error -result {too many arguments for math function "erf"}
 test mathfunc-erf.3 {erf: valid result} {
-    tcl::mathfunc::erf 1
-} 0.8427007929497149
+    format %.15f [tcl::mathfunc::erf 1]
+} 0.842700792949715
 
 # erfc tests
 test mathfunc-erfc.1 {erfc: no args} -body {
@@ -144,8 +144,8 @@ test mathfunc-erfc.2 {erfc: too many args} -body {
     tcl::mathfunc::erfc a b
 } -returnCodes error -result {too many arguments for math function "erfc"}
 test mathfunc-erfc.3 {erfc: valid result} {
-    tcl::mathfunc::erfc 1
-} 0.1572992070502851
+    format %.15f [tcl::mathfunc::erfc 1]
+} 0.157299207050285
 
 # exp2 tests
 test mathfunc-exp2.1 {exp2: no args} -body {
@@ -166,7 +166,7 @@ test mathfunc-expm1.2 {expm1: too many args} -body {
     tcl::mathfunc::expm1 a b
 } -returnCodes error -result {too many arguments for math function "expm1"}
 test mathfunc-expm1.3 {expm1: valid result} {
-    tcl::mathfunc::expm1 1
+    format %.15f [tcl::mathfunc::expm1 1]
 } 1.718281828459045
 
 # fma tests
@@ -199,8 +199,8 @@ test mathfunc-gamma.2 {gamma: too many args} -body {
     tcl::mathfunc::gamma a b
 } -returnCodes error -result {too many arguments for math function "gamma"}
 test mathfunc-gamma.3 {gamma: valid result} {
-    tcl::mathfunc::gamma 4.5
-} 11.63172839656745
+    format %.15f [tcl::mathfunc::gamma 4.5]
+} 11.631728396567450
 
 # ldexp tests
 test mathfunc-ldexp.1 {ldexp: no args} -body {
@@ -221,8 +221,8 @@ test mathfunc-lgamma.2 {lgamma: too many args} -body {
     tcl::mathfunc::lgamma a b
 } -returnCodes error -result {too many arguments for math function "lgamma"}
 test mathfunc-lgamma.3 {lgamma: valid result} {
-    tcl::mathfunc::lgamma 4.5
-} 2.4537365708424423
+    format %.15f [tcl::mathfunc::lgamma 4.5]
+} 2.453736570842442
 
 # log1p tests
 test mathfunc-log1p.1 {log1p: no args} -body {
@@ -235,8 +235,8 @@ test mathfunc-log1p.3 {log1p: invalid arg} -body {
     tcl::mathfunc::log1p -4
 } -returnCodes error -result {domain error: argument not in valid range}
 test mathfunc-log1p.4 {log1p: valid result} {
-    tcl::mathfunc::log1p 4.5
-} 1.7047480922384253
+    format %.15f [tcl::mathfunc::log1p 4.5]
+} 1.704748092238425
 
 # log2 tests
 test mathfunc-log2.1 {log2: no args} -body {
@@ -307,11 +307,16 @@ test mathfunc-remquo.2 {remquo: too many args} -body {
     remquo a b c
 } -returnCodes error -result {wrong # args: should be "remquo dividend divisor"}
 test mathfunc-remquo.3 {remquo: valid result} {
-    remquo 12.5 1.5
-} {0.5 8}
-test mathfunc-remquo.3 {remquo: valid result} {
-    remquo 12.5 -1.5
-} {0.5 -8}
+    llength [remquo 12.5 1.5]
+} 2
+test mathfunc-remquo.4 {remquo: valid result} {
+    # Number of valid bits in second value is not defined
+    lindex [remquo 12.5 1.5] 0
+} 0.5
+test mathfunc-remquo.5 {remquo: valid result} {
+    # Number of valid bits in second value is not defined
+    lindex [remquo 12.5 -1.5] 0
+} 0.5
 
 # signbit tests
 test mathfunc-signbit.1 {signbit: no args} -body {
