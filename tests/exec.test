@@ -818,6 +818,8 @@ namespace eval tcl::test::exec::win {
     # Extensions directly understood by exec
     variable execExts {com bat cmd exe}
     variable ext
+    variable envStack {}
+    variable dirStack {}
 
     variable testApp [file join [file dirname [interpreter]] execTestApp.exe]
     if {$::tcl_platform(platform) eq "windows" && [file exists $testApp]} {
@@ -826,8 +828,64 @@ namespace eval tcl::test::exec::win {
         testConstraint haveTestApp 0
     }
 
+    proc rmdirs {args} {
+        foreach arg $args {
+            removeDirectory $arg
+        }
+    }
+
     proc nativeTestPath {args} {
         return [file nativename [file join [temporaryDirectory] {*}$args]]
+    }
+
+    # Save env vars specified by args
+    proc pushEnv {args} {
+        global env
+        variable envStack
+        set saved [dict create]
+        foreach envVar $args {
+            if {[info exists env($envVar)]} {
+                dict set saved $envVar $env($envVar)
+            } else {
+                dict set saved $envVar ""
+            }
+        }
+        lappend envStack $saved
+    }
+
+    # Restore env vars saved by pushEnv
+    proc popEnv {} {
+        global env
+        variable envStack
+        if {[llength $envStack] == 0} {
+            error "Test implementation error: mismatched push/pops for envStack."
+        }
+        dict for {envVar envValue} [lpop envStack] {
+            if {$envValue ne ""} {
+                set env($envVar) $envValue
+            } else {
+                unset -nocomplain env($envVar)
+            }
+        }
+    }
+
+    # Save cwd and env vars specified by args
+    proc pushContext {args} {
+        global env
+        variable dirStack
+        lappend dirStack [pwd]
+        pushEnv {*}$args
+    }
+
+    # Restore last context saved by pushContext
+    proc popContext {} {
+        global env
+        variable dirStack
+        if {[llength $dirStack] == 0} {
+            error "Test implementation error: mismatched push/pops for dirStack."
+        }
+        popEnv
+        cd [lpop dirStack]
     }
 
     # Content of batch files
@@ -919,8 +977,7 @@ namespace eval tcl::test::exec::win {
             append ::env(PATH) ";" [file nativename $dir1] ";" [file nativename $dir2]
         } -cleanup {
             set ::env(PATH) $savedPATH
-            removeDirectory $dir1
-            removeDirectory $dir2
+            rmdirs $dir1 $dir2
         } -body {
             exec testApp -path
         } -result [nativeTestPath exec-win-3.2-2 testApp.exe]
@@ -978,7 +1035,7 @@ namespace eval tcl::test::exec::win {
                        [nativeTestPath exec-win-4.1 testApp.bat] \
                        [nativeTestPath exec-win-4.1 testApp.exe]]
 
-    test exec-win-5.1 "exec - verify path order prioritized over extension"  \
+    test exec-win-5.1 "exec - verify search path prioritized over extension"  \
         -constraints haveTestApp \
         -setup {
             set dir1 [makeDirectory exec-win-5.1-1]
@@ -1274,6 +1331,90 @@ namespace eval tcl::test::exec::win {
         } -result [list [file normalize [nativeTestPath exec-win-9.1 testApp.exe]] \
                       1 \
                        {couldn't execute ".\testApp.exe": no such file or directory}]
+
+    #
+    # auto_execok tests for Windows
+    variable cmdBuiltin
+    foreach cmdBuiltin {
+        assoc call cd cls color copy date del dir echo
+        erase exit ftype for if md mkdir mklink move path
+        pause prompt rd ren rename rmdir set start time
+        title type ver vol
+    } {
+        test auto_execok-win-1.1-$cmdBuiltin "auto_execok cmd built-in $cmdBuiltin" \
+            -constraints win \
+            -cleanup {
+                unset -nocomplain rest cmd
+            } -body {
+                set rest [lassign [auto_execok $cmdBuiltin] cmd]
+                set cmd [file normalize $cmd]
+                list [file normalize $cmd] {*}$rest
+            } -result [list [file normalize [file join $::env(windir) system32 cmd.exe]] /c $cmdBuiltin]
+    }
+
+    unset cmdBuiltin
+
+    test auto_execok-win-2.1 "exec - verify PATHEXT order of priority and explicit extensions" \
+        -constraints win \
+        -setup {
+            # Assumes .bat and .cmd are in configured in the registry
+            pushContext PATHEXT
+            set dir [makeDirectory auto_execok-win-2.1]
+            writeFile [file join $dir testApp.bat] ""
+            writeFile [file join $dir testApp.cmd] ""
+            cd $dir
+        } -cleanup {
+            popContext
+            removeDirectory $dir
+        } -body {
+            set result [list ]
+            set ::env(PATHEXT) ".bat;.cmd"
+            lappend result [auto_execok testApp]
+            set ::env(PATHEXT) ".cmd;.bat"
+            lappend result [auto_execok testApp]
+            lappend result [auto_execok testApp.cmd]
+            lappend result [auto_execok testApp.bat]
+        } -result [list \
+                       [list {.\testApp.bat}] \
+                       [list {.\testApp.cmd}] \
+                       [list {.\testApp.cmd}] \
+                       [list {.\testApp.bat}]]
+
+    test auto_execok-win-2.2 "exec - verify cmd built-ins prioritized" \
+        -constraints haveTestApp \
+        -setup {
+            pushContext
+            set dir [makeDirectory auto_execok-win-2.2]
+            file copy $testApp [file join $dir echo.exe]
+            cd $dir
+        } -cleanup {
+            popContext
+            removeDirectory $dir
+        } -body {
+            list [string tolower [auto_execok echo]] [auto_execok echo.exe]
+        } -result [list \
+                       [list [string tolower $::env(WINDIR)\\system32\\cmd.exe] \
+                            /c echo]  \
+                       [list {.\echo.exe}]]
+
+    test auto_execok-win-2.3 "exec - verify search path prioritized over extension"  \
+        -constraints haveTestApp \
+        -setup {
+            set dir1 [makeDirectory exec-win-2.3-1]
+            set dir2 [makeDirectory exec-win-2.3-2]
+            writeFile [file join $dir1 testApp.bat] $batContent
+            file copy $testApp [file join $dir2 testApp.exe]
+            pushEnv PATH PATHEXT
+            append ::env(PATH) ";" [file nativename $dir1] ";" [file nativename $dir2]
+            set ::env(PATHEXT) ".exe;.bat"
+        } -cleanup {
+            popEnv
+            removeDirectory $dir1
+            removeDirectory $dir2
+        } -body {
+            auto_execok testApp
+        } -result [list [nativeTestPath exec-win-2.3-1 testApp.bat]]
+
 }
 
 namespace delete tcl::test::exec::win
@@ -1289,20 +1430,6 @@ test exec-bug-4f0b5767ac {exec App Execution Alias} -setup {
     exec winget --info
 } -result "*Windows*" -match glob
 
-foreach cmdBuiltin {
-    assoc call cd cls color copy date del dir echo
-    erase exit ftype for if md mkdir mklink move path
-    pause prompt rd ren rename rmdir set start time
-    title type ver vol
-} {
-    test auto_execok-$cmdBuiltin-1.0 "auto_execok $cmdBuiltin" \
-	-constraints win \
-	-body {
-	    string equal [auto_execok $cmdBuiltin] \
-		"[file normalize $::env(COMSPEC)] /c $cmdBuiltin"
-	} -result 1
-}
-unset cmdBuiltin
 
 # ----------------------------------------------------------------------
 # cleanup

@@ -664,7 +664,7 @@ proc auto_execok arg {
 
     if {[llength [file split $name]] != 1} {
 	foreach ext $execExtensions {
-	    set file ${name}${ext}
+	    set file ${name}[string tolower $ext]
 	    if {[file exists $file] && ![file isdirectory $file]} {
                 return [tcl::win::ParseFileAssociationTemplate \
                             [tcl::win::LookupFileAssociation $file] \
@@ -692,7 +692,7 @@ proc auto_execok arg {
         if {![info exists system32dir]} {
             error "Could not locate cmd.exe."
         }
-        return [list [file join $system32dir cmd.exe] /c $name]
+        return [list [file nativename [file join $system32dir cmd.exe]] /c $name]
     }
 
 
@@ -708,15 +708,14 @@ proc auto_execok arg {
         lappend searchDirs {*}[split $env(PATH) ";"]
     }
 
-    foreach ext $execExtensions {
-	unset -nocomplain checked
-	foreach dir $searchDirs {
+    foreach dir $searchDirs {
+        if {[info exists checked($dir)] || ($dir eq "")} {
+            continue
+        }
+        set checked($dir) {}
+        foreach ext $execExtensions {
 	    # Skip already checked directories
-	    if {[info exists checked($dir)] || ($dir eq "")} {
-		continue
-	    }
-	    set checked($dir) {}
-	    set file [file join $dir ${name}${ext}]
+	    set file [file join $dir ${name}[string tolower $ext]]
 	    if {[file exists $file] && ![file isdirectory $file]} {
                 return [tcl::win::ParseFileAssociationTemplate \
                             [tcl::win::LookupFileAssociation $file] \
