@@ -704,9 +704,9 @@ proc auto_execok arg {
     if {[info exists windir]} {
         lappend searchDirs $system32dir $windir
     }
-    if {[info exists env(PATH)]} {
-        lappend searchDirs {*}[split $env(PATH) ";"]
-    }
+    # Do not use [info exists env(PATH)] due to Bug b492c33154. Instead just
+    # catch error.
+    catch {lappend searchDirs {*}[split $env(PATH) ";"]}
 
     foreach dir $searchDirs {
         if {[info exists checked($dir)] || ($dir eq "")} {
