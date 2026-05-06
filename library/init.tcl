@@ -647,6 +647,10 @@ proc auto_execok arg {
     global env tcl_platform
     const name $arg
 
+    # See TIP 753 for search algorithm
+
+    # Not all cmd.exe built-ins are included here. In particular, those intended
+    # for batch files and those considered obsolete (e.g. VERIFY) are excluded.
     set shellBuiltins [list assoc call cd cls color copy date del dir echo \
 			   erase exit ftype for if md mkdir mklink move path \
 			   pause prompt rd ren rename rmdir set start time \
@@ -670,35 +674,43 @@ proc auto_execok arg {
 	return ""
     }
 
-    if {[string tolower $name] in $shellBuiltins} {
-	# When this is command.com for some reason on Win2K, Tcl won't
-	# exec it unless the case is right, which this corrects.  COMSPEC
-	# may not point to a real file, so do the check.
-	set cmd $env(COMSPEC)
-	if {[file exists $cmd]} {
-	    set cmd [file attributes $cmd -shortname]
-	}
-	return [list $cmd /c $name]
-    }
+    # At this point $name is a simple name, no directory components
 
-
-    set path "[file dirname [info nameofexecutable]];.;"
     if {[info exists env(SystemRoot)]} {
 	set windir $env(SystemRoot)
     } elseif {[info exists env(WINDIR)]} {
 	set windir $env(WINDIR)
     }
     if {[info exists windir]} {
-	append path "$windir/system32;$windir/system;$windir;"
+        set system32dir [file join $windir system32]
     }
 
+    if {[string tolower $name] in $shellBuiltins} {
+        # Always use cmd.exe, not env(COMSPEC) as the latter may or may not
+        # interpret commands the same way.
+
+        if {![info exists system32dir]} {
+            error "Could not locate cmd.exe."
+        }
+        return [list [file join $system32dir cmd.exe] /c $name]
+    }
+
+
+    # Only include cwd based on Windows settings - see TIP 753
+    if {![info exists env(NoDefaultCurrentDirectoryInExePath)]} {
+        lappend searchDirs "."
+    }
+    lappend searchDirs [list [file dirname [info nameofexecutable]]]
+    if {[info exists windir]} {
+        lappend searchDirs $system32dir $windir
+    }
     if {[info exists env(PATH)]} {
-        append path ";$env(PATH)"
+        lappend searchDirs {*}[split $env(PATH) ";"]
     }
 
     foreach ext $execExtensions {
 	unset -nocomplain checked
-	foreach dir [split $path {;}] {
+	foreach dir $searchDirs {
 	    # Skip already checked directories
 	    if {[info exists checked($dir)] || ($dir eq "")} {
 		continue
