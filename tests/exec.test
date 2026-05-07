@@ -23,25 +23,6 @@ source [file join [file dirname [info script]] tcltests.tcl]
 # Some skips when running in a macOS CI environment
 testConstraint noosxCI [expr {![info exists ::env(MAC_CI)]}]
 
-# Need a App Exec Alias for testing exec of reparse points, according to MS,
-# winget can only be used on servers with an installed desktop interface, no
-# idea how to check it in GHA programmatically, so simply disable it (todo:
-# rewrite with better check later)
-if {[testConstraint win]} {
-    if {![info exists ::env(CI)] && [info exists ::env(LOCALAPPDATA)]} {
-        set wingetPath [file join $::env(LOCALAPPDATA) "Microsoft" "WindowsApps" "winget.exe"]
-        if {[file exists $wingetPath]} {
-            # Ensure it is on the PATH
-            testConstraint haveWinget 1
-        }
-    }
-    if {[file executable [file join $::env(WINDIR) system32 wscript.exe]] &&
-        [info exists ::env(PATHEXT)] &&
-        [lsearch -nocase -ascii [split $::env(PATHEXT) ";"] ".VBS"] >= 0
-    } {
-        testConstraint haveWScript 1
-    }
-}
 
 testConstraint testhandlecount [expr {[llength [info commands testhandlecount]] != 0}]
 
@@ -829,12 +810,30 @@ namespace eval tcl::test::exec {
     variable ext
     variable envStack {}
     variable dirStack {}
-
+    variable windir [expr {[info exists ::env(WINDIR)] ? $::env(WINDIR) : "C:/Windows"}]
+    variable wingetPath
     variable testApp [file join [file dirname [interpreter]] execTestApp.exe]
-    if {$::tcl_platform(platform) eq "windows" && [file exists $testApp]} {
-        testConstraint haveTestApp 1
-    } else {
-        testConstraint haveTestApp 0
+    # Need a App Exec Alias for testing exec of reparse points, according to MS,
+    # winget can only be used on servers with an installed desktop interface, no
+    # idea how to check it in GHA programmatically, so simply disable it (todo:
+    # rewrite with better check later)
+    if {[testConstraint win]} {
+        if {[file exists $testApp]} {
+            testConstraint haveTestApp 1
+        }
+        if {![info exists ::env(CI)] && [info exists ::env(LOCALAPPDATA)]} {
+            set wingetPath [file join $::env(LOCALAPPDATA) "Microsoft" "WindowsApps" "winget.exe"]
+            if {[file exists $wingetPath]} {
+                # Ensure it is on the PATH
+                testConstraint haveWinget 1
+            }
+        }
+        if {[file executable [file join $::env(WINDIR) system32 wscript.exe]] &&
+            [info exists ::env(PATHEXT)] &&
+            [lsearch -nocase -ascii [split $::env(PATHEXT) ";"] ".VBS"] >= 0
+        } {
+            testConstraint haveWScript 1
+        }
     }
 
     proc rmdirs {args} {
@@ -1344,10 +1343,10 @@ namespace eval tcl::test::exec {
                 set rest [lassign [auto_execok $cmdBuiltin] cmd]
                 set cmd [file normalize $cmd]
                 list [file normalize $cmd] {*}$rest
-            } -result [list [file normalize [file join $::env(windir) system32 cmd.exe]] /c $cmdBuiltin]
+            } -result [list [file normalize [file join $windir system32 cmd.exe]] /c $cmdBuiltin]
     }
-
     unset cmdBuiltin
+
 
     test auto_execok-win-2.1 "auto_execok - verify PATHEXT order of priority and explicit extensions" \
         -constraints win \
@@ -1384,7 +1383,7 @@ namespace eval tcl::test::exec {
         } -body {
             list [string tolower [auto_execok echo]] [auto_execok echo.exe]
         } -result [list \
-                       [list [string tolower $::env(WINDIR)\\system32\\cmd.exe] \
+                       [list [string tolower $windir\\system32\\cmd.exe] \
                             /c echo]  \
                        [list {.\echo.exe}]]
 
@@ -1419,7 +1418,7 @@ namespace eval tcl::test::exec {
             rmdirs $dir
         } -body {
             string tolower [auto_execok attrib]
-        } -result [list [string tolower $::env(WINDIR)\\system32\\attrib.exe]]
+        } -result [list [string tolower $windir\\system32\\attrib.exe]]
 
     test auto_execok-win-3.2.1 {
         auto_execok - verify cwd checked before Windows and PATH
@@ -1487,7 +1486,7 @@ namespace eval tcl::test::exec {
         popEnv
     } -body {
         string tolower [auto_execok attrib]
-    } -result [list [string tolower $::env(WINDIR)\\system32\\attrib.exe]]
+    } -result [list [string tolower $windir\\system32\\attrib.exe]]
 
     test auto_execok-win-3.4 {
         auto_execok - verify cwd with dummy PATH
@@ -1638,6 +1637,25 @@ namespace eval tcl::test::exec {
         lappend result [lindex [auto_execok testApp.exe] 0]
     } -result [list .\\testApp.exe {}]
 
+    test auto_execok-unix-6.1 {
+        auto_execok - verify paths are not cached. Bugs 1244733 and 4dc35e0c0c
+    } -constraints unix -setup {
+        set dir [pushContext auto_execok-win-6.1 PATH]
+        set fn [file join $dir testApp.sh]
+        writeFile $fn ""
+        file attributes $fn -permissions u+x
+        unset -nocomplain result
+        append ::env(PATH) ":."
+    } -cleanup {
+        rmdirs $dir
+        popContext
+        unset -nocomplain fn
+    } -body {
+        lappend result [lindex [auto_execok testApp.sh] 0]
+        cd ..
+        lappend result [lindex [auto_execok testApp.sh] 0]
+    } -result [list ./testApp.sh {}]
+
     test auto_execok-win-7.1 {
         auto_execok - verify execution of PATHEXT extension in current directory
     } -constraints haveWScript -setup {
@@ -1654,7 +1672,7 @@ namespace eval tcl::test::exec {
         list [string tolower $cmd] [exec {*}$cmd]
     }  -result [list \
                     [list \
-                          [string tolower $::env(WINDIR)\\system32\\wscript.exe] \
+                          [string tolower $windir\\system32\\wscript.exe] \
                           .\\testapp.vbs] \
                     {}]
 
@@ -1676,7 +1694,7 @@ namespace eval tcl::test::exec {
         list [string tolower $cmd] [exec {*}$cmd]
     }  -result [list \
                     [list \
-                         [string tolower $::env(WINDIR)\\system32\\wscript.exe] \
+                         [string tolower $windir\\system32\\wscript.exe] \
                          [string tolower \
                               [nativeTestPath auto_execok-win-7.2 testApp.vbs]]] \
                     {}]
