@@ -3089,7 +3089,7 @@ TclCompileLfilterCmd(
     }
 
     numWords = parsePtr->numWords;
-    if ((numWords < 4) || (numWords > UINT_MAX) || (numWords%2 != 0)) {
+    if ((numWords < 4) || OutOfUintRange(numWords) || (numWords%2 != 0)) {
 	return TCL_ERROR;
     }
 
