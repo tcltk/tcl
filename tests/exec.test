@@ -23,15 +23,23 @@ source [file join [file dirname [info script]] tcltests.tcl]
 # Some skips when running in a macOS CI environment
 testConstraint noosxCI [expr {![info exists ::env(MAC_CI)]}]
 
-# Need a App Exec Alias for testing exec of reparse points,
-# according to MS, winget can only be used on servers with an installed desktop interface,
-# no idea how to check it in GHA programmatically, so simply disable it (todo: rewrite with better check later)
-if {[testConstraint win] && ![info exists ::env(CI)] &&
-    [info exists ::env(LOCALAPPDATA)]} {
-    set wingetPath [file join $::env(LOCALAPPDATA) "Microsoft" "WindowsApps" "winget.exe"]
-    if {[file exists $wingetPath]} {
-        # Ensure it is on the PATH
-        testConstraint haveWinget 1
+# Need a App Exec Alias for testing exec of reparse points, according to MS,
+# winget can only be used on servers with an installed desktop interface, no
+# idea how to check it in GHA programmatically, so simply disable it (todo:
+# rewrite with better check later)
+if {[testConstraint win]} {
+    if {![info exists ::env(CI)] && [info exists ::env(LOCALAPPDATA)]} {
+        set wingetPath [file join $::env(LOCALAPPDATA) "Microsoft" "WindowsApps" "winget.exe"]
+        if {[file exists $wingetPath]} {
+            # Ensure it is on the PATH
+            testConstraint haveWinget 1
+        }
+    }
+    if {[file executable [file join $::env(WINDIR) system32 wscript.exe]] &&
+        [info exists ::env(PATHEXT)] &&
+        [lsearch -nocase -ascii [split $::env(PATHEXT) ";"] ".VBS"] >= 0
+    } {
+        testConstraint haveWScript 1
     }
 }
 
@@ -814,8 +822,9 @@ test exec-22.1 {exec -encoding invalid encoding} -body {
 # Tests specific to Windows which has more varied application types and
 # search mechanism.
 
-namespace eval tcl::test::exec::win {
-    # Extensions directly understood by exec
+namespace eval tcl::test::exec {
+
+    # Extensions directly understood by exec on Windows
     variable execExts {com bat cmd exe}
     variable ext
     variable envStack {}
@@ -1308,6 +1317,16 @@ namespace eval tcl::test::exec::win {
                       1 \
                        {couldn't execute ".\testApp.exe": no such file or directory}]
 
+    test exec-win-10.1 {exec App Execution Alias - Bug 4f0b5767ac} -setup {
+        # Ensure winget is on the PATH
+        pushEnv PATH
+        append ::env(PATH) ";" [file nativename [file dirname $wingetPath]]
+    } -cleanup {
+        popEnv
+    } -constraints haveWinget -body {
+        exec winget --info
+    } -result "*Windows*" -match glob
+
     #
     # auto_execok tests for Windows
     variable cmdBuiltin
@@ -1604,10 +1623,10 @@ namespace eval tcl::test::exec::win {
     } -result [list [list [nativeTestPath auto_execok-win-5.2 testApp.exe]] \
                    {}]
 
-    test auto_execok-win-6.0 {
+    test auto_execok-win-6.1 {
         auto_execok - verify paths are not cached. Bugs 1244733 and 4dc35e0c0c
     } -constraints win -setup {
-        set dir [pushContext auto_execok-win-6.0]
+        set dir [pushContext auto_execok-win-6.1]
         writeFile [file join $dir testApp.exe] ""
         unset -nocomplain result
     } -cleanup {
@@ -1619,20 +1638,76 @@ namespace eval tcl::test::exec::win {
         lappend result [lindex [auto_execok testApp.exe] 0]
     } -result [list .\\testApp.exe {}]
 
+    test auto_execok-win-7.1 {
+        auto_execok - verify execution of PATHEXT extension in current directory
+    } -constraints haveWScript -setup {
+        set dir [pushContext auto_execok-win-7.1]
+        writeFile [file join $dir testApp.vbs] ""
+        unset -nocomplain result
+    } -cleanup {
+        rmdirs $dir
+        popContext
+    } -body {
+        set cmd [auto_execok testApp]
+        # The exec passes an empty file to wscript so no output expected
+        # Primarily ensures wscript is found and run
+        list [string tolower $cmd] [exec {*}$cmd]
+    }  -result [list \
+                    [list \
+                          [string tolower $::env(WINDIR)\\system32\\wscript.exe] \
+                          .\\testapp.vbs] \
+                    {}]
+
+    test auto_execok-win-7.2 {
+        auto_execok - verify execution of PATHEXT extension in PATH
+    } -constraints haveWScript -setup {
+        set dir [makeDirectory auto_execok-win-7.2]
+        writeFile [file join $dir testApp.vbs] ""
+        pushEnv PATH
+        append ::env(PATH) ";[file nativename $dir]"
+        unset -nocomplain result
+    } -cleanup {
+        rmdirs $dir
+        popEnv
+    } -body {
+        set cmd [auto_execok testApp]
+        # The exec passes an empty file to wscript so no output expected
+        # Primarily ensures wscript is found and run
+        list [string tolower $cmd] [exec {*}$cmd]
+    }  -result [list \
+                    [list \
+                         [string tolower $::env(WINDIR)\\system32\\wscript.exe] \
+                         [string tolower \
+                              [nativeTestPath auto_execok-win-7.2 testApp.vbs]]] \
+                    {}]
+
+    test auto_execok-win-8.1 {
+        auto_execok - verify execution of App Paths
+    } -constraints win -setup {
+        set dir [makeDirectory auto_execok-win-8.1]
+        set fn [file join $dir testApp.tcl]
+        writeFile $fn {
+            puts [info nameofexecutable]
+            puts [pwd]
+        }
+        set key [string cat  \
+                     {HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths} \
+                     "\\" [file tail [info nameofexecutable]]]
+        tcl::registry set $key "" [file nativename [info nameofexecutable]]
+    } -cleanup {
+        tcl::registry delete $key
+        rmdirs $dir
+        unset -nocomplain fn
+    } -body {
+        set cmd [auto_execok [file tail [info nameofexecutable]]]
+        list [string tolower $cmd] [split [exec {*}$cmd $fn] \n]
+    } -result [list \
+                   [list [string tolower [file nativename [info nameofexecutable]]] ] \
+                   [list [info nameofexecutable] [pwd]]]
+
 }
 
-namespace delete tcl::test::exec::win
-
-test exec-bug-4f0b5767ac {exec App Execution Alias} -setup {
-    # Ensure winget is on the PATH
-    set savedEnv $::env(PATH)
-    append env(PATH) ";" [file nativename [file dirname $wingetPath]]
-} -cleanup {
-    set ::env(PATH) $savedEnv
-    unset -nocomplain savedEnv
-} -constraints haveWinget -body {
-    exec winget --info
-} -result "*Windows*" -match glob
+namespace delete tcl::test::exec
 
 
 # ----------------------------------------------------------------------
