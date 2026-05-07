@@ -27,9 +27,12 @@ testConstraint noosxCI [expr {![info exists ::env(MAC_CI)]}]
 # according to MS, winget can only be used on servers with an installed desktop interface,
 # no idea how to check it in GHA programmatically, so simply disable it (todo: rewrite with better check later)
 if {[testConstraint win] && ![info exists ::env(CI)] &&
-    [info exists ::env(LOCALAPPDATA)] &&
-    [file exists [file join $::env(LOCALAPPDATA) "Microsoft" "WindowsApps" "winget.exe"]]} {
+    [info exists ::env(LOCALAPPDATA)]} {
+    set wingetPath [file join $::env(LOCALAPPDATA) "Microsoft" "WindowsApps" "winget.exe"]
+    if {[file exists $wingetPath]} {
+        # Ensure it is on the PATH
         testConstraint haveWinget 1
+    }
 }
 
 unset -nocomplain path
@@ -716,9 +719,16 @@ test exec-20.1 {exec .CMD file} -constraints {win} -body {
     viewFile $log
 } -result "\"Testing exec-20.1\""
 
-test exec-bug-4f0b5767ac {exec App Execution Alias} -constraints haveWinget -body {
+test exec-bug-4f0b5767ac {exec App Execution Alias} -setup {
+    # Ensure winget is on the PATH
+    set savedEnv $::env(PATH)
+    append env(PATH) ";" [file nativename [file dirname $wingetPath]]
+} -cleanup {
+    set ::env(PATH) $savedEnv
+    unset -nocomplain savedEnv
+} -constraints haveWinget -body {
     exec winget --info
-} -result "Windows Package Manager*" -match glob
+} -result "*Windows*" -match glob
 
 foreach cmdBuiltin {
     assoc call cd cls color copy date del dir echo 
@@ -741,7 +751,7 @@ unset cmdBuiltin
 foreach file {gorp.file gorp.file2 echo echo2 cat wc sh sh2 sleep exit err} {
     removeFile $file
 }
-unset -nocomplain path
+unset -nocomplain path wingetPath
 
 ::tcltest::cleanupTests
 return

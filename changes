@@ -9387,15 +9387,11 @@ Many code fixes to avoid overflow or undefined behavior.  Thanks chrstphrchvz.
 
 2025-01-06 (bug) [fc3509] Better error-message than "interpreter uses an incompatible stubs mechanism" (nijtmans)
 
-2025-01-19 tzdata updated to Olson's tzdata2025a (nijtmans)
-
 2025-01-28 (bug) [4f0b57] Win: [exec] now works on App Execution Aliases. (noble,nadkarni)
 
 2025-01-28 (bug) [4e2c8b] Win: [auto_execok] handles larger set of shell commands. (nadkarni)
 
 2025-03-06 (bug) [ba68d1] errorline from [interp eval], interp-26.9 (sebres)
-
-2025-03-23 tzdata updated to Olson's tzdata2025b (nijtmans)
 
 2025-04-11 (bug) [fd8341] Tcl_InitStubs compatibility for 9.1, better error-handling (nijtmans)
 
