@@ -695,12 +695,12 @@ proc auto_execok arg {
         return [list [file nativename [file join $system32dir cmd.exe]] /c $name]
     }
 
+    lappend searchDirs [list [file dirname [info nameofexecutable]]]
 
     # Only include cwd based on Windows settings - see TIP 753
     if {![info exists env(NoDefaultCurrentDirectoryInExePath)]} {
         lappend searchDirs "."
     }
-    lappend searchDirs [list [file dirname [info nameofexecutable]]]
     if {[info exists windir]} {
         lappend searchDirs $system32dir $windir
     }
