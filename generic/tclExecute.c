@@ -414,7 +414,7 @@ VarHashFindVar(
 
 #define POP_OBJECT()	*(tosPtr--)
 
-#define OBJ_AT_TOS	*tosPtr
+#define OBJ_AT_TOS	tosPtr[0]
 
 #define OBJ_UNDER_TOS	tosPtr[-1]
 
@@ -6949,6 +6949,26 @@ TEBCresume(
 	numLists = infoPtr->numLists;
 	TRACE("=> loop terminated\n");
 	NEXT_INST_V(1, numLists + 2, 0);
+
+    case INST_FOREACH_INDEX: {
+	unsigned listIdx = TclGetUInt4AtPtr(pc + 1),
+		iterVarIdx = TclGetUInt4AtPtr(pc + 5);
+	TRACE("%u %u => ", listIdx, iterVarIdx);
+
+	// Get number of variables from ForeachInfo at TOS
+	infoPtr = (ForeachInfo *)OBJ_AT_TOS->internalRep.twoPtrValue.ptr1;
+	numVars = infoPtr->varLists[listIdx]->numVars;
+
+	// Get the iteration index from the iteration tracker under TOS
+	// Called when the step's already been advanced to the next one...
+	iterNum = (size_t)OBJ_UNDER_TOS->internalRep.twoPtrValue.ptr1 - 1;
+	assert((Tcl_Size) iterVarIdx < numVars);
+
+	// Assume no overflow; we did previously read from this index...
+	objResultPtr = Tcl_NewWideIntObj(numVars * iterNum + iterVarIdx);
+	TRACE_APPEND_NUM_OBJ(objResultPtr);
+	NEXT_INST_F(9, 0, 1);
+    }
 
     case INST_LMAP_COLLECT:
 	/*

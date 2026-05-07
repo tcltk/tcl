@@ -2664,7 +2664,6 @@ Tcl_GetLongFromObj(
 	     * values in the unsigned long range will fit in a long.
 	     */
 
-		{
 	    mp_int big;
 	    unsigned long scratch, value = 0;
 	    unsigned char *bytes = (unsigned char *) &scratch;
@@ -2687,21 +2686,20 @@ Tcl_GetLongFromObj(
 		    }
 		}
 	    }
-	    }
-#ifndef TCL_WIDE_INT_IS_LONG
-	tooLarge:
-#endif
-	    if (interp != NULL) {
-		const char *s = "integer value too large to represent";
-		Tcl_Obj *msg = Tcl_NewStringObj(s, -1);
-
-		Tcl_SetObjResult(interp, msg);
-		Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s, (char *)NULL);
-	    }
-	    return TCL_ERROR;
+	    goto tooLarge;
 	}
     } while (TclParseNumber(interp, objPtr, "integer", NULL, -1, NULL,
 	    TCL_PARSE_INTEGER_ONLY)==TCL_OK);
+    return TCL_ERROR;
+
+  tooLarge:
+    if (interp != NULL) {
+	const char *s = "integer value too large to represent";
+	Tcl_Obj *msg = Tcl_NewStringObj(s, -1);
+
+	Tcl_SetObjResult(interp, msg);
+	Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s, (char *)NULL);
+    }
     return TCL_ERROR;
 }
 

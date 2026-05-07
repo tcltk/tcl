@@ -2762,7 +2762,8 @@ typedef struct ListRep {
  */
 enum TclEachModes {
     TCL_EACH_KEEP_NONE = 0,	// Discard iteration result like [foreach]
-    TCL_EACH_COLLECT = 1	// Collect iteration result like [lmap]
+    TCL_EACH_COLLECT = 1,	// Collect iteration result like [lmap]
+    TCL_EACH_FILTER = 2		// Process body as expression like [lfilter]
 };
 
 /*
@@ -3229,6 +3230,7 @@ MODULE_SCOPE Tcl_ObjCmdProc2 TclNRExprObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc2 TclNRForObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc2 TclNRForeachCmd;
 MODULE_SCOPE Tcl_ObjCmdProc2 TclNRIfObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclNRLfilterCmd;
 MODULE_SCOPE Tcl_ObjCmdProc2 TclNRLmapCmd;
 MODULE_SCOPE Tcl_ObjCmdProc2 TclNRPackageObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc2 TclNRSourceObjCmd;
@@ -3852,6 +3854,7 @@ MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_JoinObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_LappendObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_LassignObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_LeditObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_LfilterObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_LindexObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_LinsertObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc2 Tcl_LlengthObjCmd;
@@ -3959,6 +3962,7 @@ MODULE_SCOPE CompileProc TclCompileIncrCmd;
 MODULE_SCOPE CompileProc TclCompileLappendCmd;
 MODULE_SCOPE CompileProc TclCompileLassignCmd;
 MODULE_SCOPE CompileProc TclCompileLeditCmd;
+MODULE_SCOPE CompileProc TclCompileLfilterCmd;
 MODULE_SCOPE CompileProc TclCompileLindexCmd;
 MODULE_SCOPE CompileProc TclCompileLinsertCmd;
 MODULE_SCOPE CompileProc TclCompileListCmd;
