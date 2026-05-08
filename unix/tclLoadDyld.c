@@ -101,7 +101,7 @@ static void		UnloadFile(Tcl_LoadHandle handle);
  *----------------------------------------------------------------------
  */
 
-#if TCL_DYLD_USE_NSMODULE || defined(TCL_LOAD_FROM_MEMORY)
+#if TCL_DYLD_USE_NSMODULE
 static const char *
 DyldOFIErrorMsg(
     int err)
@@ -123,7 +123,7 @@ DyldOFIErrorMsg(
 	return "unknown error";
     }
 }
-#endif /* TCL_DYLD_USE_NSMODULE || TCL_LOAD_FROM_MEMORY */
+#endif /* TCL_DYLD_USE_NSMODULE */
 
 /*
  *----------------------------------------------------------------------
