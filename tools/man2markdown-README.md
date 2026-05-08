@@ -36,7 +36,7 @@ section | number of documents | initial conversion | final conversion
 --------|---------------------|--------------------|-----------------
 1       | 1                   | 1                  | 0
 3       | 108                 | 108                | 0
-n       | 139                 | 139                | 84
+n       | 139                 | 139                | 85
 
 Final conversion of these files is currently done:
 1. after
@@ -123,6 +123,7 @@ Final conversion of these files is currently done:
 82. namespace
 83. next
 84. object
+85. open
 
 
 The tk/doc directory comes next, after finishing Tcl.

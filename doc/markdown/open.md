@@ -143,14 +143,14 @@ The [chan configure][chan] and [fconfigure] commands can be used to query and se
 [-timeout]{.lit} [msec]{.arg}
 : (Windows and Unix). This option is used to set the timeout for blocking read operations. It specifies the maximum interval between the reception of two bytes in milliseconds. For Unix systems the granularity is 100 milliseconds. The **-timeout** option does not affect write operations or nonblocking reads. This option cannot be queried.
 
-[-ttycontrol]{.lit} [{signal]{.arg} [boolean]{.arg} [...}]{.arg}
-: (Windows and Unix). This option is used to setup the handshake output lines (see below) permanently or to send a BREAK over the serial line. The *signal* names are case-independent. **{RTS 1 DTR 0}** sets the RTS output to high and the DTR output to low. The BREAK condition (see below) is enabled and disabled with **{BREAK 1}** and **{BREAK 0}** respectively. It is not a good idea to change the **RTS** (or **DTR**) signal with active hardware handshake **rtscts** (or **dtrdsr**). The result is unpredictable. The **-ttycontrol** option cannot be queried.
+[-ttycontrol]{.lit} [signalList]{.arg}
+: (Windows and Unix). This option is used to setup the handshake output lines (see below) permanently or to send a BREAK over the serial line. *signalList* consists of one or more pairs of a signal name and a boolean value. The first element of *signalList* is the case-independent signal name. The second element is a boolean value switching the signal on or off. The list can be extended with more pairs. E.g., **{RTS 1 DTR 0}** sets the RTS output to high and the DTR output to low. The BREAK condition (see below) is enabled and disabled with **{BREAK 1}** and **{BREAK 0}** respectively. It is not a good idea to change the **RTS** (or **DTR**) signal with active hardware handshake **rtscts** (or **dtrdsr**). The result is unpredictable. The **-ttycontrol** option cannot be queried.
 
 [-ttystatus]{.lit}
-: (Windows and Unix). The **-ttystatus** option can only be queried.  It returns the current modem status and handshake input signals (see below). The result is a list of signal,value pairs with a fixed order, e.g. **{CTS 1 DSR 0 RING 1 DCD 0}**. The *signal* names are returned upper case.
+: (Windows and Unix). The **-ttystatus** option can only be queried.  It returns the current modem status and handshake input signals (see below). The result is a list of signal/value pairs with a fixed order, e.g. **{CTS 1 DSR 0 RING 1 DCD 0}**. The *signal* names are returned upper case.
 
-[-xchar]{.lit} [{xonChar]{.arg} [xoffChar}]{.arg}
-: (Windows and Unix). This option is used to query or change the software handshake characters. Normally the operating system default should be DC1 (0x11) and DC3 (0x13) representing the ASCII standard XON and XOFF characters.
+[-xchar]{.lit} [charList]{.arg}
+: (Windows and Unix). This option is used to query or change the software handshake characters. *charList* is a list of two elements. The first is the character for XON, the second element the one for XOFF. Normally the operating system default should be DC1 (0x11) and DC3 (0x13) representing the ASCII standard XON and XOFF characters.
 
 [-closemode]{.lit} [closeMode]{.arg}
 : (Windows and Unix). This option is used to query or change the close mode of the serial channel, which defines how pending output in operating system buffers is handled when the channel is closed. The following values for *closeMode* are supported:
@@ -189,11 +189,8 @@ The [chan configure][chan] and [fconfigure] commands can be used to query and se
 [-pollinterval]{.lit} [msec]{.arg}
 : (Windows only). This option is used to set the maximum time between polling for fileevents. This affects the time interval between checking for events throughout the Tcl interpreter (the smallest value always wins).  Use this option only if you want to poll the serial port more or less often than 10 msec (the default).
 
-[-sysbuffer]{.lit} [inSize]{.arg}
-: see below ...
-
-[-sysbuffer]{.lit} [{inSize]{.arg} [outSize}]{.arg}
-: (Windows only). This option is used to change the size of Windows system buffers for a serial channel. Especially at higher communication rates the default input buffer size of 4096 bytes can overrun for latent systems. The first form specifies the input buffer size, in the second form both input and output buffers are defined.
+[-sysbuffer]{.lit} [sizeList]{.arg}
+: (Windows only). This option is used to change the size of Windows system buffers for a serial channel. Especially at higher communication rates the default input buffer size of 4096 bytes can overrun for latent systems. *sizeList* is a list of one or two elements. If only one element is specified, is defines the input buffer size. If two elements are specified, they define the input and output buffers respectively.
 
 [-lasterror]{.lit}
 : (Windows only). This option is query only. In case of a serial communication error, [read] or [puts] returns a general Tcl file I/O error. [fconfigure] **-lasterror** can be called to get a list of error details. See below for an explanation of the various error codes.
@@ -231,7 +228,7 @@ RS-232 is the most commonly used standard electrical interface for serial commun
 : A BREAK condition is not a hardware signal line, but a logical zero on the TXD or RXD lines for a long period of time, usually 250 to 500 milliseconds.  Normally a receive or transmit data signal stays at the mark (on=1) voltage until the next character is transferred. A BREAK is sometimes used to reset the communications line or change the operating mode of communications hardware.
 
 
-## Error codes (windows only)
+## Error codes (Windows only)
 
 A lot of different errors may occur during serial read operations or during event polling in background. The external device may have been switched off, the data lines may be noisy, system buffers may overrun or your mode settings may be wrong.  That is why a reliable software should always [catch] serial read operations.  In cases of an error Tcl returns a general file I/O error.  Then [fconfigure] **-lasterror** may help to locate the problem.  The following error codes may be returned.
 
@@ -257,7 +254,7 @@ A lot of different errors may occur during serial read operations or during even
 ## Portability issues
 
 **Windows** 
-: Valid values for *fileName* to open a serial port are of the form **com***X*****, where *X* is a number, generally from 1 to 9. A legacy form accepted as well is **com***X***:**. This notation only works for serial ports from 1 to 9.  An attempt to open a serial port that does not exist or has a number greater than 9 will fail.  An alternate form of opening serial ports is to use the filename **//./comX**, where X is any number that corresponds to a serial port.
+: Valid values for *fileName* to open a serial port are of the form **com***X*, where *X* is a number, generally from 1 to 9. A legacy form accepted as well is **com***X***:**. This notation only works for serial ports from 1 to 9.  An attempt to open a serial port that does not exist or has a number greater than 9 will fail.  An alternate form of opening serial ports is to use the filename **//./com***X*, where *X* is any number that corresponds to a serial port.
 
 
 When running Tcl interactively, there may be some strange interactions between the real console, if one is present, and a command pipeline that uses standard input or output.  If a command pipeline is opened for reading, some of the lines entered at the console will be sent to the command pipeline and some will be sent to the Tcl evaluator.  If a command pipeline is opened for writing, keystrokes entered into the console are not visible until the pipe is closed.  These problems only occur because both Tcl and the child application are competing for the console at the same time.  If the command pipeline is started from a script, so that Tcl is not accessing the console, or if the command pipeline does not use standard input or output, but is redirected from or to a file, then the above problems do not occur.
@@ -290,7 +287,7 @@ On Windows only, console channels (usually **stdin** or **stdout**) support the 
     **raw**
     : indicates that all keyboard input should be given directly to Tcl with the console doing no processing at all. It does not echo the keys, leaving it up to the Tcl script to interpret what to do.
 
-    [reset]{.cmd}
+    **reset**
     : (set only) indicates that the console should be reset to what state it was in when the console channel was opened.
 
 

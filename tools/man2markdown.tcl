@@ -1855,6 +1855,8 @@ proc ::ndoc::mdExceptions {md} {
 		open {
 			set md [string map {
 				{[baud=§,=+parity=§,=+data=§,=+stop]{.arg}} {[baud,parity,data,stop]{.arg}}
+				{Error codes (windows only)} {Error codes (Windows only)}
+				{[reset]{.cmd}} {**reset**}
 			} $md]
 		}
 		

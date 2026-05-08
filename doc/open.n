@@ -216,14 +216,16 @@ nonblocking reads.
 This option cannot be queried.
 .\" OPTION: -ttycontrol
 .TP
-\fB\-ttycontrol\fI {signal boolean ...}\fR
+\fB\-ttycontrol \fIsignalList\fR
 .
 (Windows and Unix). This option is used to setup the handshake
 output lines (see below) permanently or to send a BREAK over the serial line.
-The \fIsignal\fR names are case-independent.
-\fB{RTS 1 DTR 0}\fR sets the RTS output to high and the DTR output to low.
-The BREAK condition (see below) is enabled and disabled with \fB{BREAK 1}\fR and
-\fB{BREAK 0}\fR respectively.
+\fIsignalList\fR consists of one or more pairs of a signal name and a boolean value.
+The first element of \fIsignalList\fR is the case-independent signal name.
+The second element is a boolean value switching the signal on or off. The list can
+be extended with more pairs. E.g., \fB{RTS 1 DTR 0}\fR sets the RTS output to high
+and the DTR output to low. The BREAK condition (see below) is enabled and disabled
+with \fB{BREAK 1}\fR and \fB{BREAK 0}\fR respectively.
 It is not a good idea to change the \fBRTS\fR (or \fBDTR\fR) signal
 with active hardware handshake \fBrtscts\fR (or \fBdtrdsr\fR).
 The result is unpredictable.
@@ -235,15 +237,17 @@ The \fB\-ttycontrol\fR option cannot be queried.
 (Windows and Unix). The \fB\-ttystatus\fR option can only be
 queried.  It returns the current modem status and handshake input signals
 (see below).
-The result is a list of signal,value pairs with a fixed order,
+The result is a list of signal/value pairs with a fixed order,
 e.g. \fB{CTS 1 DSR 0 RING 1 DCD 0}\fR.
 The \fIsignal\fR names are returned upper case.
 .\" OPTION: -xchar
 .TP
-\fB\-xchar\fI {xonChar xoffChar}\fR
+\fB\-xchar \fIcharList\fR
 .
 (Windows and Unix). This option is used to query or change the software
-handshake characters. Normally the operating system default should be
+handshake characters. \fIcharList\fR is a list of two elements. The first is
+the character for XON, the second element the one for XOFF. Normally
+the operating system default should be
 DC1 (0x11) and DC3 (0x13) representing the ASCII standard
 XON and XOFF characters.
 .\" OPTION: -closemode
@@ -316,15 +320,14 @@ you want to poll the serial port more or less often than 10 msec
 (the default).
 .\" OPTION: -sysbuffer
 .TP
-\fB\-sysbuffer\fI inSize\fR
-.TP
-\fB\-sysbuffer\fI {inSize outSize}\fR
+\fB\-sysbuffer\fI sizeList\fR
 .
 (Windows only). This option is used to change the size of Windows
 system buffers for a serial channel. Especially at higher communication
 rates the default input buffer size of 4096 bytes can overrun
-for latent systems. The first form specifies the input buffer size,
-in the second form both input and output buffers are defined.
+for latent systems. \fIsizeList\fR is a list of one or two elements. If only one
+element is specified, is defines the input buffer size. If two elements are
+specified, they define the input and output buffers respectively.
 .\" OPTION: -lasterror
 .TP
 \fB\-lasterror\fR
@@ -411,12 +414,12 @@ A BREAK condition has been detected by your UART (see above).
 \fBWindows \fR
 .
 Valid values for \fIfileName\fR to open a serial port are of the form
-\fBcom\fIX\fB\fR, where \fIX\fR is a number, generally from 1 to 9.
+\fBcom\fIX\fR, where \fIX\fR is a number, generally from 1 to 9.
 A legacy form accepted as well is \fBcom\fIX\fB:\fR. This notation only
 works for serial ports from 1 to 9.  An attempt to open a serial port that
 does not exist or has a number greater than 9 will fail.  An alternate
-form of opening serial ports is to use the filename \fB//./comX\fR,
-where X is any number that corresponds to a serial port.
+form of opening serial ports is to use the filename \fB//./com\fIX\fR,
+where \fIX\fR is any number that corresponds to a serial port.
 .PP
 .RS
 When running Tcl interactively, there may be some strange interactions
