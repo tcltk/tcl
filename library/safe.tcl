@@ -480,7 +480,6 @@ proc ::safe::InterpSetConfig {child access_path staticsok nestedok deletehook au
     return
 }
 
-
 #
 # DetokPath:
 #    Convert tokens to directories where possible.
@@ -512,7 +511,6 @@ proc ::safe::interpFindInAccessPath {child path} {
 
     return [dict get $state(access_path,remap) $path]
 }
-
 
 #
 # addToAccessPath:

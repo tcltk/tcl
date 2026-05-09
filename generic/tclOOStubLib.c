@@ -63,7 +63,7 @@ TclOOInitializeStubs(
     tclStubsPtr->tcl_ResetResult(interp);
     tclStubsPtr->tcl_AppendResult(interp, "Error loading ", packageName,
 	    " (requested version ", version, ", actual version ",
-	    actualVersion, "): ", errMsg, NULL);
+	    actualVersion, "): ", errMsg, (char *)NULL);
     return NULL;
 }
 

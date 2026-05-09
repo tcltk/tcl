@@ -345,7 +345,7 @@ UnloadFile(
 #ifdef TCL_LOAD_FROM_MEMORY
 MODULE_SCOPE void *
 TclpLoadMemoryGetBuffer(
-    size_t size)			/* Size of desired buffer. */
+    size_t size)		/* Size of desired buffer. */
 {
     void *buffer = NULL;
 

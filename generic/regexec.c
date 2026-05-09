@@ -230,7 +230,6 @@ exec(
     v->start = (chr *)string;
     v->stop = (chr *)string + len;
     v->err = 0;
-    assert(v->g->ntree >= 0);
     n = v->g->ntree;
     if (n <= LOCALDFAS) {
 	v->subdfas = subdfas;
@@ -884,7 +883,6 @@ cbrdissect(
 
     assert(t != NULL);
     assert(t->op == 'b');
-    assert(n >= 0);
     assert((size_t)n < v->nmatch);
 
     MDEBUG(("cbackref n%d %d{%d-%d}\n", t->id, n, min, max));

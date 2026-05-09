@@ -1,0 +1,44 @@
+'\"
+'\" Copyright (c) 2025 Donal Fellows
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH modf n 9.1 Tcl "Tcl Float Decomposition"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+modf \- Split a floating-point number into integer and fraction parts
+.SH SYNOPSIS
+\fBpackage require tcl 9.1\fR
+.sp
+\fBmodf \fIvalue\fR
+.BE
+.SH DESCRIPTION
+The \fBmodf\fR command takes a floating-point number, \fIvalue\fR, and
+returns a list of two values. The first element of the result is the
+whole integer part (as a floating-point number) of \fIvalue\fR, and the
+second element of the result is the fractional part of \fIvalue\fR.
+The signs of the two elements will match the sign of \fIvalue\fR.
+.SH EXAMPLE
+.PP
+It should be noted that the fractional part may have some digits that
+appear to be undetermined by the input. This is due to the nature of
+approximation inherent in floating-point arithmetic; the digits will
+apparently disappear if the two parts are added back together.
+.PP
+.CS
+set value 123.456
+lassign [\fBmodf\fR $value] whole part
+set sum [expr {$whole + $part}]
+puts "$value -> $whole $part -> $sum"
+#       123.456 -> 123.0 0.45600000000000307 -> 123.456
+.CE
+.SH "SEE ALSO"
+expr(n), frexp(n), mathfunc(n)
+.SH KEYWORDS
+floating point
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

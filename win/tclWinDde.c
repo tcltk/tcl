@@ -83,7 +83,7 @@ static DWORD ddeInstance;	/* The application instance handle given to us
 				 * by DdeInitialize. */
 static int ddeIsServer = 0;
 
-#define TCL_DDE_VERSION		"1.5a1"
+#define TCL_DDE_VERSION		"1.5a2"
 #define TCL_DDE_PACKAGE_NAME	"dde"
 #define TCL_DDE_SERVICE_NAME	L"TclEval"
 #define TCL_DDE_EXECUTE_RESULT	L"$TCLEVAL$EXECUTE$RESULT"
@@ -1625,9 +1625,9 @@ DdeObjCmd(
 			}
 			Tcl_DStringInit(&dsBuf);
 			Tcl_WCharToUtfDString(dataString, tmp>>1, &dsBuf);
-			returnObjPtr =
-			    Tcl_NewStringObj(Tcl_DStringValue(&dsBuf),
-				    Tcl_DStringLength(&dsBuf));
+			returnObjPtr = Tcl_NewStringObj(
+				Tcl_DStringValue(&dsBuf),
+				Tcl_DStringLength(&dsBuf));
 			Tcl_DStringFree(&dsBuf);
 		    }
 		    DdeUnaccessData(ddeData);

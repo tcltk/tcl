@@ -50,7 +50,7 @@ typedef struct FilesystemRecord {
  */
 
 typedef struct {
-    int initialized;
+    bool initialized;
     size_t cwdPathEpoch;	/* Compared with the global cwdPathEpoch to
 				 * determine whether cwdPathPtr is stale. */
     size_t filesystemEpoch;
@@ -441,7 +441,7 @@ FsThrExitProc(
 	fsRecPtr = tmpFsRecPtr;
     }
     tsdPtr->filesystemList = NULL;
-    tsdPtr->initialized = 0;
+    tsdPtr->initialized = false;
 }
 
 int
@@ -515,9 +515,9 @@ TclFSCwdPointerEquals(
     }
     Tcl_MutexUnlock(&cwdMutex);
 
-    if (tsdPtr->initialized == 0) {
+    if (!tsdPtr->initialized) {
 	Tcl_CreateThreadExitHandler(FsThrExitProc, tsdPtr);
-	tsdPtr->initialized = 1;
+	tsdPtr->initialized = true;
     }
 
     if (pathPtrPtr == NULL) {
@@ -607,9 +607,9 @@ FsRecacheFilesystemList(void)
      * Make sure the above gets released on thread exit.
      */
 
-    if (tsdPtr->initialized == 0) {
+    if (!tsdPtr->initialized) {
 	Tcl_CreateThreadExitHandler(FsThrExitProc, tsdPtr);
-	tsdPtr->initialized = 1;
+	tsdPtr->initialized = true;
     }
 }
 
@@ -969,12 +969,11 @@ Tcl_FSUnregister(
  *		glob -dir $dir -join * pkgIndex.tcl
  *
  * Results:
- *
- *	TCL_OK, or TCL_ERROR
+ *	A standard Tcl result. If an error occurs, an
+ *	error message is left in the interpreter's result.
  *
  * Side effects:
- *	resultPtr is populated, or in the case of an TCL_ERROR, an error message is
- *	set in the interpreter.
+ *	resultPtr is populated if the result is TCL_OK.
  *
  *----------------------------------------------------------------------
  */
@@ -1175,7 +1174,7 @@ FsAddMountsToGlobResult(
 		}
 		len++;		/* account for '/' in the mElt [Bug 1602539] */
 
-		mElt = TclNewFSPathObj(pathPtr, mount + len, mlen - len);
+		mElt = TclNewFSPathObj(pathPtr, mount + len, mlen - len, 0);
 		Tcl_ListObjAppendElement(NULL, resultPtr, mElt);
 	    }
 	    /*
@@ -1270,7 +1269,7 @@ Tcl_FSMountsChanged(
 void *
 Tcl_FSData(
     const Tcl_Filesystem *fsPtr) /* The filesystem to find in the list of
-				  *  registered filesystems. */
+				  * registered filesystems. */
 {
     void *retVal = NULL;
     FilesystemRecord *fsRecPtr = FsGetFirstFilesystem();
@@ -1316,12 +1315,12 @@ Tcl_FSData(
  *---------------------------------------------------------------------------
  */
 
-int
+Tcl_Size
 TclFSNormalizeToUniquePath(
     Tcl_Interp *interp,		/* Used for error messages. */
     Tcl_Obj *pathPtr,		/* An Pathname to normalize in-place.  Must be
 				 * unshared. */
-    int startAt)		/* Offset the string of pathPtr to start at.
+    Tcl_Size startAt)		/* Offset the string of pathPtr to start at.
 				 * Must either be 0 or offset of a directory
 				 * separator at the end of a pathname part that
 				 * is already normalized, i.e. not the index of
@@ -1384,9 +1383,9 @@ TclFSNormalizeToUniquePath(
 	     * always exist.
 	     */
 
-	    if (fsRecPtr->fsPtr->normalizePathProc != NULL) {
+	    if (fsRecPtr->fsPtr->normalizePathProc != NULL && startAt < INT_MAX) {
 		startAt = fsRecPtr->fsPtr->normalizePathProc(interp, pathPtr,
-			startAt);
+			(int)startAt);
 	    }
 	    break;
 	}
@@ -1400,9 +1399,9 @@ TclFSNormalizeToUniquePath(
 	    continue;
 	}
 
-	if (fsRecPtr->fsPtr->normalizePathProc != NULL) {
+	if (fsRecPtr->fsPtr->normalizePathProc != NULL && startAt < INT_MAX) {
 	    startAt = fsRecPtr->fsPtr->normalizePathProc(interp, pathPtr,
-		    startAt);
+		    (int)startAt);
 	}
 
 	/*
@@ -1424,7 +1423,8 @@ TclFSNormalizeToUniquePath(
  *	Computes a POSIX mode mask for opening a file.
  *
  * Results:
- *	The mode to pass to "open", or -1 if an error occurs.
+ *	The mode to pass to "open", or -1 if an error occurs (in which case an
+ *	error message is set in the interpreter, if that is non-NULL).
  *
  * Side effects:
  *	Sets *modeFlagsPtr to 1 to tell the caller to
@@ -1432,9 +1432,6 @@ TclFSNormalizeToUniquePath(
  *
  *	Adds CHANNEL_RAW_MODE to *modeFlagsPtr to tell the caller
  *	to configure the channel as a binary channel.
- *
- *	If there is an error and interp is not NULL, sets
- *	interpreter result to an error message.
  *
  * Special note:
  *	Based on a prototype implementation contributed by Mark Diekhans.
@@ -1552,8 +1549,8 @@ TclGetOpenMode(
 	    invRW:
 		if (interp != NULL) {
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-				"invalid access mode \"%s\": modes RDONLY, "
-				"RDWR, and WRONLY cannot be combined", flag));
+			    "invalid access mode \"%s\": modes RDONLY, "
+			    "RDWR, and WRONLY cannot be combined", flag));
 		}
 		goto invAccessMode;
 	    }
@@ -1833,7 +1830,7 @@ TclNREvalFile(
 				 * evaluate. Tilde-substitution is performed on
 				 * this pathname. */
     const char *encodingName)	/* The name of an encoding to use, or NULL to
-				 *  use the utf-8 encoding. */
+				 * use the utf-8 encoding. */
 {
     Tcl_StatBuf statBuf;
     Tcl_Obj *oldScriptFile, *objPtr;
@@ -2046,7 +2043,7 @@ Tcl_SetErrno(
  *	interpreter errorCode to machine-parsable information about the error.
  *
  * Results:
- *	A human-readable sring describing the error.
+ *	A human-readable string describing the error.
  *
  * Side effects:
  *	Sets the errorCode value of the interpreter.
@@ -2088,9 +2085,9 @@ Tcl_PosixError(
 int
 Tcl_FSStat(
     Tcl_Obj *pathPtr,		/* Pathname of the file to call stat on (in
-				 *  current system encoding). */
+				 * current system encoding). */
     Tcl_StatBuf *buf)		/* A buffer to hold the results of the call to
-				 *  stat. */
+				 * stat. */
 {
     const Tcl_Filesystem *fsPtr = Tcl_FSGetFileSystemForPath(pathPtr);
 
@@ -2448,7 +2445,7 @@ int
 TclFSFileAttrIndex(
     Tcl_Obj *pathPtr,		/* Pathname of the file. */
     const char *attributeName,	/* The name of the attribute. */
-    Tcl_Size *indexPtr)		/* A place to store the result. */
+    int *indexPtr)		/* A place to store the result. */
 {
     Tcl_Obj *listObj = NULL;
     const char *const *attrTable;
@@ -2492,7 +2489,7 @@ TclFSFileAttrIndex(
 	for (i=0 ; i<objc ; i++) {
 	    if (!strcmp(attributeName, TclGetString(objv[i]))) {
 		TclDecrRefCount(listObj);
-		*indexPtr = i;
+		*indexPtr = (int)i;
 		return TCL_OK;
 	    }
 	}
@@ -2751,22 +2748,25 @@ Tcl_FSGetCwd(
 	    TclFSGetCwdProc2 *proc2 = (TclFSGetCwdProc2 *) fsPtr->getCwdProc;
 
 	    retCd = proc2(tsdPtr->cwdClientData);
-	    if (retCd == NULL && interp != NULL) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"error getting working directory name: %s",
-			Tcl_PosixError(interp)));
+	    if (retCd == NULL) {
+		if (interp != NULL) {
+		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			    "error getting working directory name: %s",
+			    Tcl_PosixError(interp)));
+		}
+		retVal = NULL;
+	    } else {
+		if (retCd == tsdPtr->cwdClientData) {
+		    goto cdDidNotChange;
+		}
+
+		/*
+		 * Looks like a new current directory.
+		 */
+
+		retVal = fsPtr->internalToNormalizedProc(retCd);
+		Tcl_IncrRefCount(retVal);
 	    }
-
-	    if (retCd == tsdPtr->cwdClientData) {
-		goto cdDidNotChange;
-	    }
-
-	    /*
-	     * Looks like a new current directory.
-	     */
-
-	    retVal = fsPtr->internalToNormalizedProc(retCd);
-	    Tcl_IncrRefCount(retVal);
 	}
 
 	if (retVal == NULL) {
@@ -3172,7 +3172,7 @@ Tcl_LoadFile(
 				 * functions to find in the loaded object. */
     int flags,			/* Flags */
     void *procVPtrs,		/* A place to store pointers to the functions
-				 *  named by symbols[]. */
+				 * named by symbols[]. */
     Tcl_LoadHandle *handlePtr)	/* A place to hold a token for the loaded object.
 				 * Can be used by TclpFindSymbol. */
 {
@@ -3317,7 +3317,7 @@ Tcl_LoadFile(
      */
 
     {
-	Tcl_Size index;
+	int index;
 	Tcl_Obj *perm;
 
 	TclNewLiteralStringObj(perm, "0o700");
@@ -3569,6 +3569,9 @@ DivertUnloadFile(
  *	Returns a pointer to the symbol if found.  Otherwise, sets
  *	an error message in the interpreter result and returns NULL.
  *
+ * Side effects:
+ *	None expected.
+ *
  *----------------------------------------------------------------------
  */
 
@@ -3586,7 +3589,7 @@ Tcl_FindSymbol(
  *
  * Tcl_FSUnloadFile --
  *
- *	Unloads a loaded  object if unloading is supported for the object.
+ *	Unloads a loaded object if unloading is supported for the object.
  *
  *----------------------------------------------------------------------
  */
@@ -4483,7 +4486,7 @@ Tcl_FSGetFileSystemForPath(
  *
  * Tcl_FSGetNativePath --
  *
- *  See Tcl_FSGetInternalRep.
+ *	See Tcl_FSGetInternalRep.
  *
  *---------------------------------------------------------------------------
  */

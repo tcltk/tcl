@@ -1,0 +1,153 @@
+'\"
+'\" Copyright (c) 2025 The TCL Association
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH timer n 9.1 Tcl "Tcl Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+timer \- timer events for monotonic and wall clock time
+.SH SYNOPSIS
+.nf
+\fBtimer in\fR \fIdelay\fR \fIunit\fR \fIscript\fR
+\fBtimer at\fR \fItimepoint\fR \fIunit\fR \fIscript\fR
+\fBtimer idle\fR \fIscript\fR
+\fBtimer sleep for\fR \fIdelay\fR ?\fIunit\fR?
+\fBtimer sleep until\fR \fItimepoint\fR ?\fIunit\fR?
+\fBtimer cancel\fR \fIid\fR
+\fBtimer info\fR ?\fIid\fR?
+.fi
+.BE
+.SH DESCRIPTION
+.PP
+This command is used to delay execution of the program or to execute
+a command in background sometime in the future.
+Time may be specified by a monotonic time delay or by wall clock time point.
+It has the following methods:
+.\" METHOD: in
+.TP
+\fBtimer in\fR \fIdelay\fR \fIunit\fR \fIscript\fR
+.
+In this form the command returns immediately, but it arranges
+for a Tcl command to be executed after the given monotonic time \fIdelay\fR elapsed as an
+event handler.
+The \fIdelay\fR value is given in the specified \fIunit\fR.
+See \fBTIME UNITS\fR below for available units.
+The command will be executed exactly once, after the given time delay.
+The delayed command is given by the argument \fIscript\fR.
+The command will be executed at global level (outside the context
+of any Tcl procedure).
+If an error occurs while executing the delayed command then
+the background error will be reported by the command
+registered with \fBinterp bgerror\fR.
+The command returns an identifier that can be used
+to cancel the delayed command using \fBtimer cancel\fR or \fBafter cancel\fR.
+A \fIdelay\fR value of 0 (or negative) queues the event immediately with
+priority over other event types (if not installed with an event proc,
+which will wait for next round of events).
+.TP
+The command \fBafter ms script\fR may also be used to register monotonic clock timer events.
+Theey are handled by the same que as this form of the \fBtimer\fR command.
+.\" METHOD: at
+.TP
+\fBtimer at \fItimepoint\fR \fIunit\fR \fIscript\fR
+.
+Same as \fBtimer in\fR, but specifying a wall clock time point (epoc).
+A typical use-case is to pass result of a \fBclock scan\fR as time point.
+See example below.
+.TP
+Wall clock events have second priority after monotonic clock events.
+If both fire the same instant, the monotonic clock command is always handled first.
+.\" METHOD: idle
+.TP
+\fBtimer idle \fIscript\fR
+.
+Arranges for the \fIscript\fR to be evaluated later as an idle callback.
+The script will be run exactly once, the next time the event
+loop is entered and there are no events to process.
+The command returns an identifier that can be used
+to cancel the delayed command using \fBtimer cancel\fR or \fBafter cancel\fR.
+If an error occurs while executing the script then the
+background error will be reported by the command
+registered with \fBinterp bgerror\fR.
+.\" METHOD: wait for
+.TP
+\fBtimer wait for \fIdelay\fR ?\fIunit\fR?
+\fIdelay\fR must be a wide integer giving a time in the given unit (default: \fBmilliseconds\fR).
+A negative number is treated as 0.
+The command sleeps for the given monotonic delay and then returns.
+While the command is sleeping the application does not respond to
+events.
+.\" METHOD: wait until
+.TP
+\fBtimer wait until \fItimepoint\fR ?\fIunit\fR?
+\fItimepoint\fR must be a wide integer giving a wall clock time point in the given unit (default: \fBseconds\fR).
+A negative number is treated as 0.
+The command sleeps (at least) until the given wall clock time point and then returns.
+While the command is sleeping the application does not respond to
+events.
+.\" METHOD: cancel
+.TP
+\fBafter cancel \fIid\fR
+.
+Cancels the execution of a delayed command that
+was previously scheduled.
+\fIId\fR indicates which command should be canceled;  it must have
+been the return value from a previous \fBtimer\fR or \fBafter\fR command.
+If the command given by \fIid\fR has already been executed then
+the \fBtimer cancel\fR command has no effect.
+.\" METHOD: info
+.TP
+\fBtimer info \fR?\fIid\fR?
+.
+This command returns information about existing event handlers.
+If no \fIid\fR argument is supplied, the command returns
+a list of the identifiers for all existing
+event handlers created by the \fBtimer\fR and \fBafter\fR command for this
+interpreter.
+If \fIid\fR is supplied, it specifies an existing handler;
+\fIid\fR must have been the return value from some previous call
+to \fBtimer\fR or \fBafter\fR and it must not have triggered yet or been canceled.
+In this case the command returns a list with two to three elements.
+The first element of the list is the script associated
+with \fIid\fR, and the second element is either
+\fBidle\fR, \fBmonotonic\fR or \fBwallclock\fR to indicate what kind of event
+handler it is.
+A thierd list element is present for the kinds \fB monotonic\fR or \fBwallclock\fR.
+This element is the scheduled execution time point in microseconds of the given clock type.
+.LP
+The \fBtimer in\fR, \fBtimer at\fR and \fBtimer idle\fR forms of the command
+assume that the application is event driven:  the delayed commands
+will not be executed unless the application enters the event loop.
+In applications that are not normally event-driven, such as
+\fBtclsh\fR, the event loop can be entered with the \fBvwait\fR
+and \fBupdate\fR commands.
+.LP
+Note, that the output differs from \fBafter info\fR.
+.SH "TIME UNITS"
+Some forms of the command take a time unit.
+Available units are: \fBus\fR (for microseconds), \fBmicroseconds\fR,
+\fBms\fR (for milliseconds), \fBmilliseconds\fR,
+\fBs\fR (for seconds), \fBseconds\fR or any unique abbreviation.
+.SH "TIME MAXIMUM VALUE"
+The arguments \fIdelay\fR and \fItimepoint\fR are bound to a resulting 63 bit clock value
+(in unit microseconds).
+Any higher value (which is after year 294441) will result in a \fBtime to far\fR error.
+.SH "EXAMPLES"
+This arranges for the command \fIwake_up\fR to be run in eight hours
+wall clock time (providing the event loop is active at that time):
+.PP
+.CS
+\fBtime at\fR [\fBclock add\fR [\fBclock seconds\fR] 24 hours] seconds wake_up
+.CE
+.PP
+.SH "SEE ALSO"
+concat(n), interp(n), timer(n), update(n), vwait(n)
+.SH KEYWORDS
+cancel, delay, idle callback, sleep, time
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

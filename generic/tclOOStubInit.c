@@ -14,6 +14,19 @@ MODULE_SCOPE const TclOOStubs tclOOStubs;
 #pragma GCC dependency "tclOO.decls"
 #endif
 
+#ifdef TCL_NO_DEPRECATED
+#   undef Tcl_MethodIsType
+#   undef Tcl_NewInstanceMethod
+#   undef Tcl_NewMethod
+#   undef TclOOMakeProcInstanceMethod
+#   undef TclOOMakeProcMethod
+#   define Tcl_MethodIsType 0
+#   define Tcl_NewInstanceMethod 0
+#   define Tcl_NewMethod 0
+#   define TclOOMakeProcInstanceMethod 0
+#   define TclOOMakeProcMethod 0
+#endif
+
 /* !BEGIN!: Do not edit below this line. */
 
 static const TclOOIntStubs tclOOIntStubs = {

@@ -1272,7 +1272,7 @@ SOURCE=..\generic\tclThread.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\generic\tclThreadJoin.c
+SOURCE=..\win\tclWinThreadJoin.c
 # End Source File
 # Begin Source File
 

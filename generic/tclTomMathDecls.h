@@ -29,8 +29,8 @@
 #define TCLTOMMATH_REVISION 0
 
 #define Tcl_TomMath_InitStubs(interp,version) \
-    (TclTomMathInitializeStubs((interp),(version),\
-                               TCLTOMMATH_EPOCH,TCLTOMMATH_REVISION))
+    (TclTomMathInitializeStubs((interp), (version),\
+	    TCLTOMMATH_EPOCH, TCLTOMMATH_REVISION))
 
 /* Define custom memory allocation for libtommath */
 

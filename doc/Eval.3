@@ -62,12 +62,15 @@ The number of bytes in \fIscript\fR, not including any
 null terminating character.  If \-1, then all characters up to the
 first null byte are used.
 .AP "const char" *script in
-Points to first byte of script to execute (null-terminated and UTF-8).
+Points to first byte of script to execute (null-terminated TUTF-8 byte sequence).
 .AP "const char" *part in
 String forming part of a Tcl script.
 .BE
 
 .SH DESCRIPTION
+.PP
+N.B. Refer to the \fBTcl_UniChar\fR documentation page for a description of the
+\fITUTF-8\fR encoding and related terms referenced here.
 .PP
 The procedures described here are invoked to execute Tcl scripts in
 various forms.
@@ -113,7 +116,7 @@ elements of \fIobjv\fR, insuring that the values are valid until
 .PP
 \fBTcl_Eval\fR is similar to \fBTcl_EvalObjEx\fR except that the script to
 be executed is supplied as a string instead of a value and no compilation
-occurs.  The string should be a proper UTF-8 string as converted by
+occurs.  The string should be a proper TUTF-8 byte sequence as converted by
 \fBTcl_ExternalToUtfDString\fR or \fBTcl_ExternalToUtf\fR when it is known
 to possibly contain upper ASCII characters whose possible combinations
 might be a UTF-8 special code.  The string is parsed and executed directly

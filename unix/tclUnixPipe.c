@@ -357,7 +357,7 @@ TclpCreatePipe(
 
 int
 TclpCloseFile(
-    TclFile file)	/* The file to close. */
+    TclFile file)		/* The file to close. */
 {
     int fd = GetFd(file);
 
@@ -1374,7 +1374,7 @@ int
 Tcl_PidObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const *objv)	/* Argument strings. */
 {
     Tcl_Channel chan;

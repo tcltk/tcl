@@ -23,8 +23,8 @@
 #define GOT_BITS(var, bits)     (((var) & (bits)) != 0)
 
 /* "sock" + a pointer in hex + \0 */
-#define SOCK_CHAN_LENGTH        (4 + sizeof(void *) * 2 + 1)
-#define SOCK_TEMPLATE           "sock%" TCL_Z_MODIFIER "x"
+#define SOCK_CHAN_LENGTH	(4 + sizeof(void *) * 2 + 1)
+#define SOCK_TEMPLATE		"sock%" TCL_Z_MODIFIER "x"
 
 #undef SOCKET   /* Possible conflict with win32 SOCKET */
 
@@ -598,7 +598,6 @@ TcpCloseProc(
 	if (close(fds->fd) < 0) {
 	    errorCode = errno;
 	}
-
     }
     fds = statePtr->fds.next;
     while (fds != NULL) {
@@ -1374,7 +1373,7 @@ TcpConnect(
 	     */
 
 	    ret = connect(statePtr->fds.fd, statePtr->addr->ai_addr,
-			statePtr->addr->ai_addrlen);
+		    statePtr->addr->ai_addrlen);
 	    if (ret < 0) {
 		error = errno;
 	    }

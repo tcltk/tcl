@@ -479,8 +479,8 @@ TclRegisterLiteral(
     TclVerifyLocalLiteralTable(envPtr);
 #endif /*TCL_COMPILE_DEBUG*/
     if (objIndex > INT_MAX) {
-	Tcl_Panic(
-	    "Literal table index too large. Cannot be handled by TclEmitPush");
+	Tcl_Panic("Literal table index too large. "
+		"Cannot be handled by TclEmitPush");
     }
     return (int)objIndex;
 }
@@ -633,8 +633,8 @@ TclAddLiteralObj(
     objIndex = envPtr->literalArrayNext;
     envPtr->literalArrayNext++;
     if (objIndex > INT_MAX) {
-	Tcl_Panic(
-	    "Literal table index too large. Cannot be handled by TclEmitPush");
+	Tcl_Panic("Literal table index too large. "
+		"Cannot be handled by TclEmitPush");
     }
 
     lPtr = &envPtr->literalArrayPtr[objIndex];

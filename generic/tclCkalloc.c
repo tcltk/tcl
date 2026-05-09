@@ -126,7 +126,7 @@ static char dumpFile[100];	/* Records where to dump memory allocation
 
 static Tcl_Mutex *ckallocMutexPtr;
 static int ckallocInit = 0;
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -797,7 +797,7 @@ static int
 MemoryCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Obj values of arguments. */
 {
     const char *fileName;
@@ -806,7 +806,7 @@ MemoryCmd(
     Tcl_WideInt value;
     int result, option;
     size_t len;
-    static const char *options[] = {
+    static const char *const options[] = {
 	"active",	"break_on_malloc",	"info",
 	"init",		"objs",			"onexit",
 	"tag",		"trace",		"trace_on_at_malloc",
@@ -967,7 +967,7 @@ static int
 CheckmemCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Interpreter for evaluation. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Obj values of arguments. */
 {
     if (objc != 2) {
@@ -1001,8 +1001,8 @@ Tcl_InitMemory(
 				 * added */
 {
     TclInitDbCkalloc();
-    Tcl_CreateObjCommand(interp, "memory", MemoryCmd, NULL, NULL);
-    Tcl_CreateObjCommand(interp, "checkmem", CheckmemCmd, NULL, NULL);
+    Tcl_CreateObjCommand2(interp, "memory", MemoryCmd, NULL, NULL);
+    Tcl_CreateObjCommand2(interp, "checkmem", CheckmemCmd, NULL, NULL);
 }
 
 #else	/* TCL_MEM_DEBUG */
@@ -1232,15 +1232,15 @@ TclDumpMemoryInfo(
  *
  * TclAllocElemsEx --
  *
- *    See TclAttemptAllocElemsEx. This function differs in that it panics
- *    on failure.
+ *	See TclAttemptAllocElemsEx. This function differs in that it panics
+ *	on failure.
  *
  * Results:
- *    Non-NULL pointer to allocated memory block.
+ *	Non-NULL pointer to allocated memory block.
  *
  * Side effects:
- *    Panics if memory of at least the requested size could not be
- *    allocated.
+ *	Panics if memory of at least the requested size could not be
+ *	allocated.
  *
  *------------------------------------------------------------------------
  */
@@ -1267,14 +1267,13 @@ TclAllocElemsEx(
  *
  * TclAttemptReallocElemsEx --
  *
- *    Attempts to allocate (oldPtr == NULL) or reallocate memory of the
- *    requested size plus some more for future growth. The amount of
- *    reallocation is adjusted depending on failure.
- *
+ *	Attempts to allocate (oldPtr == NULL) or reallocate memory of the
+ *	requested size plus some more for future growth. The amount of
+ *	reallocation is adjusted depending on failure.
  *
  * Results:
- *    Pointer to allocated memory block which is at least as large
- *    as the requested size or NULL if allocation failed.
+ *	Pointer to allocated memory block which is at least as large
+ *	as the requested size or NULL if allocation failed.
  *
  *------------------------------------------------------------------------
  */
@@ -1336,15 +1335,15 @@ TclAttemptReallocElemsEx(
  *
  * TclReallocElemsEx --
  *
- *    See TclAttemptReallocElemsEx. This function differs in that it panics
- *    on failure.
+ *	See TclAttemptReallocElemsEx. This function differs in that it panics
+ *	on failure.
  *
  * Results:
- *    Non-NULL pointer to allocated memory block.
+ *	Non-NULL pointer to allocated memory block.
  *
  * Side effects:
- *    Panics if memory of at least the requested size could not be
- *    allocated.
+ *	Panics if memory of at least the requested size could not be
+ *	allocated.
  *
  *------------------------------------------------------------------------
  */

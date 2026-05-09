@@ -633,8 +633,8 @@ sortins_cmp(
     const void *a,
     const void *b)
 {
-    const struct arc *aa = *((const struct arc * const *) a);
-    const struct arc *bb = *((const struct arc * const *) b);
+    const struct arc *aa = *((const struct arc *const *) a);
+    const struct arc *bb = *((const struct arc *const *) b);
 
     /* we check the fields in the order they are most likely to be different */
     if (aa->from->no < bb->from->no) {
@@ -709,8 +709,8 @@ sortouts_cmp(
     const void *a,
     const void *b)
 {
-    const struct arc *aa = *((const struct arc * const *) a);
-    const struct arc *bb = *((const struct arc * const *) b);
+    const struct arc *aa = *((const struct arc *const *) a);
+    const struct arc *bb = *((const struct arc *const *) b);
 
     /* we check the fields in the order they are most likely to be different */
     if (aa->to->no < bb->to->no) {

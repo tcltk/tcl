@@ -626,7 +626,7 @@ ParseWhiteSpace(
     Tcl_Size numBytes,		/* Max number of bytes to scan. */
     int *incompletePtr,		/* Set this boolean memory to true if parsing
 				 * indicates an incomplete command. */
-    unsigned char *typePtr)		/* Points to location to store character type
+    unsigned char *typePtr)	/* Points to location to store character type
 				 * of character that ends run of whitespace */
 {
     unsigned char type = TYPE_NORMAL;
@@ -723,7 +723,7 @@ TclParseAllWhiteSpace(
  *----------------------------------------------------------------------
  */
 
-Tcl_Size
+static Tcl_Size
 ParseHex(
     const char *src,		/* First character to parse. */
     Tcl_Size numBytes,		/* Max number of byes to scan */
@@ -1000,7 +1000,7 @@ ParseComment(
 		    break;
 		}
 	    }
-	    incomplete = (*p == '\n') ? 1 : 0;
+	    incomplete = (*p == '\n');
 	    p++;
 	    numBytes--;
 	}
@@ -2101,7 +2101,7 @@ TclSubstTokens(
     Tcl_Size *tokensLeftPtr,	/* If not NULL, points to memory where an
 				 * integer representing the number of tokens
 				 * left to be substituted will be written */
-    int line,		/* The line the script starts on. */
+    int line,			/* The line the script starts on. */
     Tcl_Size *clNextOuter,	/* Information about an outer context for */
     const char *outerScript)	/* continuation line data. This is set by
 				 * EvalEx() to properly handle [...]-nested

@@ -217,6 +217,9 @@ New value for the option given by \fIoptionName\fR.
 .BE
 .SH DESCRIPTION
 .PP
+N.B. Refer to the \fBTcl_UniChar\fR documentation page for a description of the
+\fITUTF-8\fR encoding and related terms referenced here.
+.PP
 The Tcl channel mechanism provides a device-independent and
 platform-independent mechanism for performing buffered input
 and output operations on a variety of file, socket, and device
@@ -415,7 +418,7 @@ corresponding calls to \fBTcl_UnregisterChannel\fR.
 .SH "TCL_READCHARS AND TCL_READ"
 .PP
 \fBTcl_ReadChars\fR consumes bytes from \fIchannel\fR, converting the bytes
-to UTF-8 based on the channel's encoding and storing the produced data in
+to TUTF-8 based on the channel's encoding and storing the produced data in
 \fIreadObjPtr\fR's string representation.  The return value of
 \fBTcl_ReadChars\fR is the number of characters, up to \fIcharsToRead\fR,
 that were stored in \fIreadObjPtr\fR.  If an error occurs while reading, the
@@ -448,14 +451,14 @@ platform-specific modes are described in the manual entry for the Tcl
 \fBfconfigure\fR command.
 .PP
 As a performance optimization, when reading from a channel with the encoding
-\fBbinary\fR, the bytes are not converted to UTF-8 as they are read.
+\fBbinary\fR, the bytes are not converted to TUTF-8 as they are read.
 Instead, they are stored in \fIreadObjPtr\fR's internal representation as a
 byte-array value.  The string representation of this value will only be
 constructed if it is needed (e.g., because of a call to
 \fBTcl_GetStringFromObj\fR).  In this way, byte-oriented data can be read
 from a channel, manipulated by calling \fBTcl_GetByteArrayFromObj\fR and
 related functions, and then written to a channel without the expense of ever
-converting to or from UTF-8.
+converting to or from TUTF-8.
 .PP
 \fBTcl_Read\fR is similar to \fBTcl_ReadChars\fR, except that it does not do
 encoding conversions, regardless of the channel's encoding.  It is deprecated
@@ -476,8 +479,8 @@ channel drivers, i.e. drivers used in the middle of a stack of
 channels, to move data from the channel below into the transformation.
 .SH "TCL_GETSOBJ AND TCL_GETS"
 .PP
-\fBTcl_GetsObj\fR consumes bytes from \fIchannel\fR, converting the bytes to
-UTF-8 based on the channel's encoding, until a full line of input has been
+\fBTcl_GetsObj\fR consumes bytes from \fIchannel\fR,
+based on the channel's encoding, until a full line of input has been
 seen.  If the channel's encoding is \fBbinary\fR, each byte read from the
 channel is treated as an individual Unicode character.  All of the
 characters of the line except for the terminating end-of-line character(s)
@@ -497,9 +500,9 @@ end-of-line character.  When -1 is returned, the \fBTcl_InputBlocked\fR
 procedure may be invoked to determine if the channel is blocked because
 of input unavailability.
 .PP
-\fBTcl_Gets\fR is the same as \fBTcl_GetsObj\fR except the resulting
-characters are appended to the dynamic string given by
-\fIlineRead\fR rather than a Tcl value.
+\fBTcl_Gets\fR works similarly to \fBTcl_GetsObj\fR except the read bytes
+are are appended as a TUTF-8 encoded byte sequence to the dynamic string
+given by \fIlineRead\fR rather than a Tcl value.
 .SH "TCL_UNGETS"
 .PP
 \fBTcl_Ungets\fR is used to add data to the input queue of a channel,
@@ -515,7 +518,7 @@ added to the input queue.  \fBTcl_Ungets\fR returns \fIinputLen\fR or
 .SH "TCL_WRITECHARS, TCL_WRITEOBJ, AND TCL_WRITE"
 .PP
 \fBTcl_WriteChars\fR accepts \fIbytesToWrite\fR bytes of character data at
-\fIcharBuf\fR.  The UTF-8 characters in the buffer are converted to the
+\fIcharBuf\fR.  The TUTF-8 encoded bytes in the buffer are converted to the
 channel's encoding and queued for output to \fIchannel\fR.  If
 \fIbytesToWrite\fR is negative, \fBTcl_WriteChars\fR expects \fIcharBuf\fR
 to be null-terminated and it outputs everything up to the null.
@@ -539,16 +542,16 @@ channel.  This is done even if the channel has no encoding.
 .PP
 \fBTcl_WriteObj\fR is similar to \fBTcl_WriteChars\fR except it
 accepts a Tcl value whose contents will be output to the channel.  The
-UTF-8 characters in \fIwriteObjPtr\fR's string representation are converted
+characters in \fIwriteObjPtr\fR's string representation are converted
 to the channel's encoding and queued for output to \fIchannel\fR.
 As a performance optimization, when writing to a channel with the encoding
-\fBbinary\fR, UTF-8 characters are not converted as they are written.
+\fBbinary\fR, characters are not converted as they are written.
 Instead, the bytes in \fIwriteObjPtr\fR's internal representation as a
 byte-array value are written to the channel.  The byte-array representation
 of the value will be constructed if it is needed.  In this way,
 byte-oriented data can be read from a channel, manipulated by calling
 \fBTcl_GetByteArrayFromObj\fR and related functions, and then written to a
-channel without the expense of ever converting to or from UTF-8.
+channel without the expense of encoding conversion.
 .PP
 \fBTcl_Write\fR is similar to \fBTcl_WriteChars\fR except that it does not do
 encoding conversions, regardless of the channel's encoding.  It is

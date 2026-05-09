@@ -1512,6 +1512,17 @@ test var-25.5 {const: four arguments} -body {
 	return $X
     }}
 } -returnCodes error -result {wrong # args: should be "const varName value"}
+test var-25.6 {const: non-existing namespace Bug [4b22d84a62]} -body {
+    apply {{} {
+	const ::nosuchns::x 10
+    }}
+} -returnCodes error -result {can't const "::nosuchns::x": parent namespace doesn't exist}
+test var-25.7 {const: non-existing namespace Bug [4b22d84a62] - non compiled} -body {
+    apply {{} {
+	set const const
+	$const ::nosuchns::x 10
+    }}
+} -returnCodes error -result {can't const "::nosuchns::x": parent namespace doesn't exist}
 
 test var-26.1 {const: unmodifiable by set} -body {
     apply {{} {

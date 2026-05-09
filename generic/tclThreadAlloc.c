@@ -1025,14 +1025,14 @@ GetBlocks(
     }
     return 1;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
  * TclInitThreadAlloc --
  *
  *	Initializes the allocator cache-maintenance structures.
- *      It is done early and protected during the Tcl_InitSubsystems().
+ *	It is done early and protected during the Tcl_InitSubsystems().
  *
  * Results:
  *	None.

@@ -1,7 +1,7 @@
 # safe-stock.test --
 #
 # This file contains tests for safe Tcl that were previously in the file
-# safe.test, and use files and packages of stock Tcl 8.7 to perform the tests.
+# safe.test, and use files and packages of stock Tcl 9.0 to perform the tests.
 # These files may be changed or disappear in future revisions of Tcl, for
 # example package opt will eventually be removed.
 #
@@ -65,7 +65,7 @@ if {[file exists [file join [info library] opt0.4]]} {
 
 # Directory of cookiejar for tests 9.10, 9.12 for "package require tcl::idna".
 if {[file exists [file join [info library] cookiejar0.2]]} {
-    # Installed files in lib8.7/cookiejar0.2
+    # Installed files in [info library]/cookiejar0.2
     set pkgJarDir cookiejar0.2
 } elseif {[file exists [file join [info library] cookiejar]]} {
     # Installed files in zipfs, or source files used by "make test"

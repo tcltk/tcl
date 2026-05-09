@@ -4,7 +4,7 @@ dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 
 AC_INIT([tcl],[9.1])
-AC_PREREQ([2.72])
+AC_PREREQ([2.73])
 
 dnl This is only used when included from macosx/configure.ac
 m4_ifdef([SC_USE_CONFIG_HEADERS], [
@@ -26,7 +26,7 @@ m4_ifdef([SC_USE_CONFIG_HEADERS], [
 TCL_VERSION=9.1
 TCL_MAJOR_VERSION=9
 TCL_MINOR_VERSION=1
-TCL_PATCH_LEVEL="a1"
+TCL_PATCH_LEVEL="a2"
 VERSION=${TCL_VERSION}
 
 EXTRA_INSTALL_BINARIES=${EXTRA_INSTALL_BINARIES:-"@:"}
@@ -518,14 +518,13 @@ SC_ENABLE_LANGINFO
 # Check for support of cfmakeraw, chflags and mkstemps functions
 #--------------------------------------------------------------------
 
-AC_CHECK_FUNCS(cfmakeraw chflags mkstemps)
+AC_CHECK_FUNCS(cfmakeraw chflags getattrlist mkstemps)
 
 #--------------------------------------------------------------------
 # Darwin specific API checks and defines
 #--------------------------------------------------------------------
 
 if test "`uname -s`" = "Darwin" ; then
-    AC_CHECK_FUNCS(getattrlist)
     AC_CHECK_HEADERS(copyfile.h)
     AC_CHECK_FUNCS(copyfile)
     if test $tcl_corefoundation = yes; then

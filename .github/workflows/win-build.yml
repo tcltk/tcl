@@ -67,7 +67,7 @@ jobs:
     # Using powershell means we need to explicitly stop on failure
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         timeout-minutes: 5
       - name: Init MSVC
         uses: ilammy/msvc-dev-cmd@v1
@@ -113,7 +113,7 @@ jobs:
           install: git mingw-w64-x86_64-toolchain make
         timeout-minutes: 10
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         timeout-minutes: 5
       - name: Prepare
         run: |

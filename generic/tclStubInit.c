@@ -51,9 +51,7 @@
 #undef Tcl_ParseArgsObjv
 #undef TclStaticLibrary
 #define TclStaticLibrary Tcl_StaticLibrary
-#undef TclObjInterpProc
 #if !defined(_WIN32) && !defined(__CYGWIN__)
-# undef Tcl_WinConvertError
 # define Tcl_WinConvertError 0
 #endif
 #undef TclGetStringFromObj
@@ -62,11 +60,25 @@
 # define TclGetBytesFromObj 0
 # define TclGetUnicodeFromObj 0
 #endif
-#undef Tcl_Close
-#define Tcl_Close 0
-#undef Tcl_GetByteArrayFromObj
-#define Tcl_GetByteArrayFromObj 0
 #define TclUnusedStubEntry 0
+
+#ifdef TCL_NO_DEPRECATED
+#   undef Tcl_CreateObjCommand
+#   undef Tcl_CreateTrace
+#   undef Tcl_CreateObjTrace
+#   undef Tcl_NRCallObjProc
+#   undef Tcl_NRCreateCommand
+#   undef TclGetObjInterpProc
+#   define Tcl_CreateObjCommand 0
+#   define Tcl_CreateTrace 0
+#   define Tcl_CreateObjTrace 0
+#   define Tcl_NRCallObjProc 0
+#   define Tcl_NRCreateCommand 0
+#   define TclGetObjInterpProc 0
+#   define Tcl_QueryTimeProc 0
+#   define Tcl_SetTimeProc 0
+#endif
+
 #define TclUtfCharComplete Tcl_UtfCharComplete
 #define TclUtfNext Tcl_UtfNext
 #define TclUtfPrev Tcl_UtfPrev
@@ -182,7 +194,7 @@ int TclGetAliasObj(Tcl_Interp *interp, const char *childCmd,
     Tcl_Size n = TCL_INDEX_NONE;
     int result = Tcl_GetAliasObj(interp, childCmd, targetInterpPtr, targetCmdPtr, &n, objv);
     if (objcPtr) {
-	if ((sizeof(int) != sizeof(Tcl_Size)) && (result == TCL_OK) && (n > INT_MAX)) {
+	if ((sizeof(int) != sizeof(size_t)) && (result == TCL_OK) && (n > INT_MAX)) {
 	    if (interp) {
 		Tcl_AppendResult(interp, "List too large to be processed", (char *)NULL);
 	    }
@@ -270,19 +282,16 @@ int TclGetAliasObj(Tcl_Interp *interp, const char *childCmd,
 #   define Tcl_CreateFileHandler 0
 #   define Tcl_DeleteFileHandler 0
 #   define Tcl_GetOpenFile 0
-#else
-#   define TclpIsAtty isatty
-#endif
-
-#ifdef _WIN32
 #   define TclUnixWaitForFile 0
 #   define TclUnixCopyFile 0
 #   define TclUnixOpenTemporaryFile 0
 #   define TclpReaddir 0
-#   undef TclpIsAtty
-#   define TclpIsAtty 0
-#elif defined(__CYGWIN__)
-#   define TclpIsAtty isatty
+#   define TclpIsAtty (bool (*)(int))(void *)_isatty
+#else
+#define TclpIsAtty (bool (*)(int))(void *)isatty
+#endif
+
+#ifdef __CYGWIN__
 static void
 doNothing(void)
 {
@@ -319,11 +328,8 @@ TclpGetPid(Tcl_Pid pid)
     return (Tcl_Size)PTR2INT(pid);
 }
 
-#if defined(TCL_WIDE_INT_IS_LONG)
-/* On Cygwin64, long is 64-bit while on Win64 long is 32-bit. Therefore
- * we have to make sure that all stub entries on Cygwin64 follow the Win64
- * signature. Tcl 9 must find a better solution, but that cannot be done
- * without introducing a binary incompatibility.
+/* On Cygwin, long is 64-bit while on Win64 long is 32-bit. Therefore we have
+ * to make sure that all stub entries on Cygwin follow the Win64 signature.
  */
 #define Tcl_GetLongFromObj (int(*)(Tcl_Interp*,Tcl_Obj*,long*))(void *)Tcl_GetIntFromObj
 static int exprInt(Tcl_Interp *interp, const char *expr, int *ptr){
@@ -358,7 +364,6 @@ static int exprIntObj(Tcl_Interp *interp, Tcl_Obj*expr, int *ptr){
     return result;
 }
 #define Tcl_ExprLongObj (int(*)(Tcl_Interp*,Tcl_Obj*,long*))(void *)exprIntObj
-#endif /* TCL_WIDE_INT_IS_LONG */
 
 #else /* __CYGWIN__ */
 #   define TclWinGetTclInstance 0
@@ -390,9 +395,9 @@ MODULE_SCOPE const TclTomMathStubs tclTomMathStubs;
 /* If Tcl is linked with an external libtommath 1.2.x, then mp_expt_n doesn't
  * exist (since that was introduced in libtommath 1.3.0. Provide it here.) */
 mp_err MP_WUR TclBN_mp_expt_n(const mp_int *a, int b, mp_int *c) {
-   if ((unsigned)b > MP_MIN(MP_DIGIT_MAX, INT_MAX)) {
-      return MP_VAL;
-   }
+    if ((unsigned)b > MP_MIN(MP_DIGIT_MAX, INT_MAX)) {
+	return MP_VAL;
+    }
     return mp_expt_u32(a, (uint32_t)b, c);;
 }
 #endif /* TCL_WITH_EXTERNAL_TOMMATH */
@@ -1146,9 +1151,9 @@ const TclStubs tclStubs = {
     Tcl_UtfToUpper, /* 337 */
     Tcl_WriteChars, /* 338 */
     Tcl_WriteObj, /* 339 */
-    0, /* 340 */
-    0, /* 341 */
-    0, /* 342 */
+    Tcl_GetMonotonicTime, /* 340 */
+    Tcl_CreateTimerHandlerMicroSeconds, /* 341 */
+    Tcl_SleepMicroSeconds, /* 342 */
     Tcl_AlertNotifier, /* 343 */
     Tcl_ServiceModeHook, /* 344 */
     Tcl_UniCharIsAlnum, /* 345 */
@@ -1503,7 +1508,9 @@ const TclStubs tclStubs = {
     Tcl_ListObjRange, /* 694 */
     Tcl_UtfToNormalizedDString, /* 695 */
     Tcl_UtfToNormalized, /* 696 */
-    TclUnusedStubEntry, /* 697 */
+    Tcl_ExternalToUtfEx, /* 697 */
+    Tcl_UtfToExternalEx, /* 698 */
+    TclUnusedStubEntry, /* 699 */
 };
 
 /* !END!: Do not edit above this line. */
