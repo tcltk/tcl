@@ -36,7 +36,7 @@ section | number of documents | initial conversion | final conversion
 --------|---------------------|--------------------|-----------------
 1       | 1                   | 1                  | 0
 3       | 108                 | 108                | 0
-n       | 139                 | 139                | 85
+n       | 139                 | 139                | 93
 
 Final conversion of these files is currently done:
 1. after
@@ -124,6 +124,15 @@ Final conversion of these files is currently done:
 83. next
 84. object
 85. open
+86. package (the deep list in section "Requirement" needs manual adjustment)
+87. packagens
+88. pid
+89. pkg_mkIndex
+90. platform
+91. platform_shell
+92. prefix
+93. proc
+
 
 
 The tk/doc directory comes next, after finishing Tcl.

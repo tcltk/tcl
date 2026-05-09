@@ -31,9 +31,9 @@ platform - System identification support code and utilities
 
 The **platform** package provides several utility commands useful for the identification of the architecture of a machine running Tcl.
 
-Whilst Tcl provides the **tcl\_platform** array for identifying the current architecture (in particular, the platform and machine elements) this is not always sufficient. This is because (on Unix machines) **tcl\_platform** reflects the values returned by the **uname** command and these are not standardized across platforms and architectures. In addition, on at least one platform (AIX) the **tcl\_platform(machine)** contains the CPU serial number.
+Whilst Tcl provides the [tcl\_platform][tclvars] array for identifying the current architecture (in particular, the platform and machine elements) this is not always sufficient. This is because (on Unix machines) [tcl\_platform][tclvars] reflects the values returned by the **uname** command and these are not standardized across platforms and architectures. In addition, on at least one platform (AIX) the **tcl\_platform(machine)** contains the CPU serial number.
 
-Consequently, individual applications need to manipulate the values in **tcl\_platform** (along with the output of system specific utilities) - which is both inconvenient for developers, and introduces the potential for inconsistencies in identifying architectures and in naming conventions.
+Consequently, individual applications need to manipulate the values in [tcl\_platform][tclvars] (along with the output of system specific utilities) - which is both inconvenient for developers, and introduces the potential for inconsistencies in identifying architectures and in naming conventions.
 
 The **platform** package prevents such fragmentation - i.e., it establishes a standard naming convention for architectures running Tcl and makes it more convenient for developers to identify the current architecture a Tcl program is running on.
 
@@ -61,4 +61,7 @@ set libDir [file join $binDir .. lib]
 set platLibDir [file join $libDir [platform::identify]]
 load [file join $platLibDir support[info sharedlibextension]]
 ```
+
+
+[tclvars]: tclvars.md
 

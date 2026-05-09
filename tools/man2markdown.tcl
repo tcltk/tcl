@@ -255,6 +255,12 @@ namespace eval ::ndoc {
 		msgcat        {tcl_pkgPath tclvars}
 		my            {oo::object object oo::define objdefine}
 		namespace     {Tcl_EvalObjv Eval Tcl\_GetIndexFromObj GetIndex}
+		package       {pkg_mkIndex pkgMkIndex}
+		packagens     {pkg_mkIndex pkgMkIndex}
+		pkg_mkIndex   {Tcl_PkgProvide PkgRequire Tcl_PkgRequire PkgRequire}
+		platform      {tcl_platform tclvars tcl_platform(platform) tclvars}
+		platform_shell {tcl_platform(platform) tclvars}
+		process       {Tcl\_ReapDetachedProcs DetachPids}
 		
 		
 		regexp        {re\_syntax re_syntax}
@@ -1857,6 +1863,14 @@ proc ::ndoc::mdExceptions {md} {
 				{[baud=§,=+parity=§,=+data=§,=+stop]{.arg}} {[baud,parity,data,stop]{.arg}}
 				{Error codes (windows only)} {Error codes (Windows only)}
 				{[reset]{.cmd}} {**reset**}
+			} $md]
+		}
+		package {
+			set md [string map {
+				{equivalent to **package require** *package version*-*version*.} {equivalent to `package require package version-version`.}
+				{is **foo bar** and later the command **foo bar test 2.4**} {is `foo bar` and later the command `foo bar test 2.4`}
+				{command **package require test 2.4**} {command `package require test 2.4`}
+				{[latest=|§stable]} {[latest|stable]}
 			} $md]
 		}
 		
