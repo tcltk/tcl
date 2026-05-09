@@ -2663,8 +2663,7 @@ TclSortingOpCmd(
 	OpNode *nodes = (OpNode *)TclStackAlloc(interp,
 		2 * (objc-2) * sizeof(OpNode));
 	unsigned char lexeme;
-	Tcl_Size i;
-	int lastAnd = 1;
+	Tcl_Size i, j, lastAnd = 1;
 	Tcl_Obj *const *litObjPtrPtr = litObjv;
 
 	ParseLexeme(occdPtr->op, strlen(occdPtr->op), &lexeme, NULL);
@@ -2673,7 +2672,7 @@ TclSortingOpCmd(
 	nodes[0].lexeme = START;
 	nodes[0].mark = MARK_RIGHT;
 	for (i=2; i<objc-1; i++) {
-	    Tcl_Size j = 2 * (i - 1);
+	    j = 2 * (i - 1);
 	    litObjv[j - 1] = objv[i];
 	    nodes[j - 1].lexeme = lexeme;
 	    nodes[j - 1].mark = MARK_LEFT;
@@ -2686,17 +2685,18 @@ TclSortingOpCmd(
 	    nodes[j].left = lastAnd;
 	    nodes[lastAnd].parent = j;
 
-	    nodes[2*(i-1)].right = j + 1;
-	    nodes[2*(i-1)+1].parent= j;
+	    nodes[j].right = j + 1;
+	    nodes[j + 1].parent= j;
 
-	    lastAnd = 2*((int)i-1);
+	    lastAnd = j;
 	}
-	litObjv[2 * (objc - 2) - 1] = objv[objc - 1];
+	j = 2 * (objc - 2) - 1;
+	litObjv[j] = objv[objc - 1];
 
-	nodes[2 * (objc - 2) - 1].lexeme = lexeme;
-	nodes[2 * (objc - 2) - 1].mark = MARK_LEFT;
-	nodes[2 * (objc - 2) - 1].left = OT_LITERAL;
-	nodes[2 * (objc - 2) - 1].right = OT_LITERAL;
+	nodes[j].lexeme = lexeme;
+	nodes[j].mark = MARK_LEFT;
+	nodes[j].left = OT_LITERAL;
+	nodes[j].right = OT_LITERAL;
 
 	nodes[0].right = lastAnd;
 	nodes[lastAnd].parent = 0;
