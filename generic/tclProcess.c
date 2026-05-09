@@ -52,11 +52,19 @@ static TclProcessWaitStatus WaitProcessStatus(Tcl_Pid pid, Tcl_Size resolvedPid,
 			    int options, int *codePtr, Tcl_Obj **msgPtr,
 			    Tcl_Obj **errorObjPtr);
 static Tcl_Obj *	BuildProcessStatusObj(ProcessInfo *info);
-static Tcl_ObjCmdProc ProcessListObjCmd;
-static Tcl_ObjCmdProc ProcessStatusObjCmd;
-static Tcl_ObjCmdProc ProcessPurgeObjCmd;
-static Tcl_ObjCmdProc ProcessAutopurgeObjCmd;
+static Tcl_ObjCmdProc2	ProcessListObjCmd;
+static Tcl_ObjCmdProc2	ProcessStatusObjCmd;
+static Tcl_ObjCmdProc2	ProcessPurgeObjCmd;
+static Tcl_ObjCmdProc2	ProcessAutopurgeObjCmd;
 
+const EnsembleImplMap tclProcessImplMap[] = {
+    {"list",		ProcessListObjCmd,	TclCompileBasic0ArgCmd, NULL, NULL, 1},
+    {"status",		ProcessStatusObjCmd,	TclCompileBasicMin0ArgCmd, NULL, NULL, 1},
+    {"purge",		ProcessPurgeObjCmd,	TclCompileBasic0Or1ArgCmd, NULL, NULL, 1},
+    {"autopurge",	ProcessAutopurgeObjCmd,	TclCompileBasic0Or1ArgCmd, NULL, NULL, 1},
+    {NULL, NULL, NULL, NULL, NULL, 0}
+};
+
 /*
  *----------------------------------------------------------------------
  *
@@ -73,7 +81,7 @@ static Tcl_ObjCmdProc ProcessAutopurgeObjCmd;
  *----------------------------------------------------------------------
  */
 
-void
+static void
 InitProcessInfo(
     ProcessInfo *info,		/* Structure to initialize. */
     Tcl_Pid pid,		/* Process id. */
@@ -87,7 +95,7 @@ InitProcessInfo(
     info->msg = NULL;
     info->error = NULL;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -104,7 +112,7 @@ InitProcessInfo(
  *----------------------------------------------------------------------
  */
 
-void
+static void
 FreeProcessInfo(
     ProcessInfo *info)		/* Structure to free. */
 {
@@ -125,7 +133,7 @@ FreeProcessInfo(
 
     Tcl_Free(info);
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -142,7 +150,7 @@ FreeProcessInfo(
  *----------------------------------------------------------------------
  */
 
-int
+static int
 RefreshProcessInfo(
     ProcessInfo *info,		/* Structure to refresh. */
     int options)		/* Options passed to WaitProcessStatus. */
@@ -169,7 +177,7 @@ RefreshProcessInfo(
 	return 0;
     }
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -186,7 +194,7 @@ RefreshProcessInfo(
  *----------------------------------------------------------------------
  */
 
-TclProcessWaitStatus
+static TclProcessWaitStatus
 WaitProcessStatus(
     Tcl_Pid pid,		/* Process id. */
     Tcl_Size resolvedPid,	/* Resolved process id. */
@@ -353,7 +361,7 @@ WaitProcessStatus(
 	return TCL_PROCESS_UNKNOWN_STATUS;
     }
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -373,7 +381,7 @@ WaitProcessStatus(
  *----------------------------------------------------------------------
  */
 
-Tcl_Obj *
+static Tcl_Obj *
 BuildProcessStatusObj(
     ProcessInfo *info)
 {
@@ -423,7 +431,7 @@ static int
 ProcessListObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Obj *list;
@@ -474,7 +482,7 @@ static int
 ProcessStatusObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Obj *dict;
@@ -622,7 +630,7 @@ static int
 ProcessPurgeObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_HashEntry *entry;
@@ -720,7 +728,7 @@ static int
 ProcessAutopurgeObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
 
@@ -750,17 +758,17 @@ ProcessAutopurgeObjCmd(
     Tcl_SetObjResult(interp, Tcl_NewBooleanObj(autopurge));
     return TCL_OK;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
- * TclInitProcessCmd --
+ * TclSetUpProcessCmd --
  *
- *	This procedure creates the "tcl::process" Tcl command. See the user
+ *	This procedure sets up the "tcl::process" Tcl command. See the user
  *	documentation for details on what it does.
  *
  * Results:
- *	A standard Tcl result.
+ *	Tcl result code.
  *
  * Side effects:
  *	See the user documentation.
@@ -768,19 +776,11 @@ ProcessAutopurgeObjCmd(
  *----------------------------------------------------------------------
  */
 
-Tcl_Command
-TclInitProcessCmd(
-    Tcl_Interp *interp)		/* Current interpreter. */
+int
+TclSetUpProcessCmd(
+    Tcl_Interp *interp,		/* Current interpreter. */
+    Tcl_Command ensemble)	/* The ensemble to set up. */
 {
-    static const EnsembleImplMap processImplMap[] = {
-	{"list", ProcessListObjCmd, TclCompileBasic0ArgCmd, NULL, NULL, 1},
-	{"status", ProcessStatusObjCmd, TclCompileBasicMin0ArgCmd, NULL, NULL, 1},
-	{"purge", ProcessPurgeObjCmd, TclCompileBasic0Or1ArgCmd, NULL, NULL, 1},
-	{"autopurge", ProcessAutopurgeObjCmd, TclCompileBasic0Or1ArgCmd, NULL, NULL, 1},
-	{NULL, NULL, NULL, NULL, NULL, 0}
-    };
-    Tcl_Command processCmd;
-
     if (infoTablesInitialized == 0) {
 	Tcl_MutexLock(&infoTablesMutex);
 	if (infoTablesInitialized == 0) {
@@ -791,12 +791,10 @@ TclInitProcessCmd(
 	Tcl_MutexUnlock(&infoTablesMutex);
     }
 
-    processCmd = TclMakeEnsemble(interp, "::tcl::process", processImplMap);
-    Tcl_Export(interp, Tcl_FindNamespace(interp, "::tcl", NULL, 0),
+    return Tcl_Export(interp, (Tcl_Namespace*)((Command *)ensemble)->nsPtr,
 	    "process", 0);
-    return processCmd;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -867,7 +865,7 @@ TclProcessCreated(
 
     Tcl_MutexUnlock(&infoTablesMutex);
 }
-
+
 /*
  *----------------------------------------------------------------------
  *

@@ -2,7 +2,7 @@
  * tclStrIdxTree.h --
  *
  *	Declarations of string index tries and other primitives currently
- *  back-ported from tclSE.
+ *	back-ported from tclSE.
  *
  * Copyright (c) 2016 Serg G. Brester (aka sebres)
  *
@@ -153,7 +153,7 @@ MODULE_SCOPE TclStrIdxTree*TclStrIdxTreeGetFromObj(Tcl_Obj *objPtr);
 
 #ifdef TEST_STR_IDX_TREE
 /* currently unused, debug resp. test purposes only */
-MODULE_SCOPE Tcl_ObjCmdProc TclStrIdxTreeTestObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclStrIdxTreeTestObjCmd;
 #endif
 
 #endif /* _TCLSTRIDXTREE_H */

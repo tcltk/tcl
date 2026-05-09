@@ -1,0 +1,15 @@
+{
+	"problemMatcher": [
+		{
+			"owner": "tcltest",
+			"pattern": [
+				{
+					"regexp": "^==== ([-\\w]+) (.+) (FAILED)$",
+					"severity": 3,
+					"message": 2,
+					"code": 1
+				}
+			]
+		}
+	]
+}

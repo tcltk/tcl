@@ -15,7 +15,7 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
 
-package require -exact tcl 9.1a1
+package require -exact tcl 9.1a2
 
 # Compute the auto path to use in this interpreter.
 # The values on the path come from several locations:
@@ -23,8 +23,6 @@ package require -exact tcl 9.1a1
 # The environment variable TCLLIBPATH
 #
 # tcl_library, which is the directory containing this init.tcl script.
-# [tclInit] (Tcl_Init()) searches around for the directory containing this
-# init.tcl and defines tcl_library to that location before sourcing it.
 #
 # The parent directory of tcl_library. Adding the parent
 # means that packages in peer directories will be found automatically.
@@ -41,59 +39,11 @@ package require -exact tcl 9.1a1
 # ::auto_path (other than to {} if it is undefined). The caller, typically
 # a Safe Base command, is responsible for setting ::auto_path.
 
-if {![info exists auto_path]} {
-    if {[info exists env(TCLLIBPATH)] && (![interp issafe])} {
-	set auto_path [apply {{} {
-	    lmap path $::env(TCLLIBPATH) {
-		# Paths relative to unresolvable home dirs are ignored
-		if {[catch {file tildeexpand $path} expanded_path]} {
-		    continue
-		}
-		set expanded_path
-	    }
-	}}]
-    } else {
-	set auto_path ""
-    }
-}
-
-namespace eval tcl {
-    if {![interp issafe]} {
-	variable Dir
-	foreach Dir [list $::tcl_library [file dirname $::tcl_library]] {
-	    if {$Dir ni $::auto_path} {
-		lappend ::auto_path $Dir
-	    }
-	}
-	set Dir [file join [file dirname [file dirname \
-		[info nameofexecutable]]] lib]
-	if {$Dir ni $::auto_path} {
-	    lappend ::auto_path $Dir
-	}
-	if {[info exists ::tcl_pkgPath]} { catch {
-	    foreach Dir $::tcl_pkgPath {
-		if {$Dir ni $::auto_path} {
-		    lappend ::auto_path $Dir
-		}
-	    }
-	}}
-
-	variable Path [encoding dirs]
-	set Dir [file join $::tcl_library encoding]
-	if {$Dir ni $Path} {
-	    lappend Path $Dir
-	    encoding dirs $Path
-	}
-	unset Dir Path
-    }
-}
+tcl::InitAutoPath
 
 namespace eval tcl::Pkg {}
 
-
 # Setup the unknown package handler
-
-
 if {[interp issafe]} {
     package unknown {::tcl::tm::UnknownHandler ::tclPkgUnknown}
 } else {
@@ -106,18 +56,6 @@ if {[interp issafe]} {
     } else {
 	package unknown {::tcl::tm::UnknownHandler ::tclPkgUnknown}
     }
-
-    # Set up the 'clock' ensemble
-
-    apply {{} {
-	set cmdmap [dict create]
-	foreach cmd {add clicks format microseconds milliseconds scan seconds} {
-	    dict set cmdmap $cmd ::tcl::clock::$cmd
-	}
-	namespace inscope ::tcl::clock [list namespace ensemble create -command \
-	    ::clock -map $cmdmap]
-	::tcl::unsupported::clock::configure -init-complete
-    }}
 }
 
 # Conditionalize for presence of exec.

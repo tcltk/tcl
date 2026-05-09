@@ -65,6 +65,9 @@ dynamic string.
 
 .SH DESCRIPTION
 .PP
+N.B. Refer to the \fBTcl_UniChar\fR documentation page for a description of the
+\fITUTF-8\fR encoding and related terms referenced here.
+.PP
 Dynamic strings provide a mechanism for building up arbitrarily long
 strings by gradually appending information.  If the dynamic string is
 short then there will be no memory allocation overhead;  as the string
@@ -144,7 +147,7 @@ an empty string.
 Since the dynamic string is reinitialized, there is no need to
 further call \fBTcl_DStringFree\fR on it and it can be reused without
 calling \fBTcl_DStringInit\fR. The caller must ensure that the dynamic
-string stored in \fIdsPtr\fR is encoded in Tcl's internal UTF-8 format.
+string stored in \fIdsPtr\fR is encoded in TUTF-8.
 .PP
 \fBTcl_DStringGetResult\fR does the opposite of \fBTcl_DStringResult\fR.
 It sets the value of \fIdsPtr\fR to the result of \fIinterp\fR and
@@ -160,7 +163,7 @@ copying the string. Since the dynamic string is reinitialized, there is no need
 to further call \fBTcl_DStringFree\fR on it and it can be reused without calling
 \fBTcl_DStringInit\fR. The returned \fBTcl_Obj\fR has a reference count of 0.
 The caller must ensure that the dynamic string stored in \fIdsPtr\fR is encoded
-in Tcl's internal UTF-8 format.
+in TUTF-8.
 
 .SH KEYWORDS
 append, dynamic string, free, result

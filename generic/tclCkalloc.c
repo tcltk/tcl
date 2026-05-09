@@ -16,7 +16,6 @@
  */
 
 #include "tclInt.h"
-#include <assert.h>
 
 #define FALSE	0
 #define TRUE	1
@@ -127,7 +126,7 @@ static char dumpFile[100];	/* Records where to dump memory allocation
 
 static Tcl_Mutex *ckallocMutexPtr;
 static int ckallocInit = 0;
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -798,22 +797,38 @@ static int
 MemoryCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Obj values of arguments. */
 {
     const char *fileName;
     FILE *fileP;
     Tcl_DString buffer;
-    int result;
+    Tcl_WideInt value;
+    int result, option;
     size_t len;
+    static const char *const options[] = {
+	"active",	"break_on_malloc",	"info",
+	"init",		"objs",			"onexit",
+	"tag",		"trace",		"trace_on_at_malloc",
+	"validate",	NULL
+    };
+    enum Options {
+	OPT_ACTIVE,	OPT_BREAK,		OPT_INFO,
+	OPT_INIT,	OPT_OBJS,		OPT_ONEXIT,
+	OPT_TAG,	OPT_TRACE,		OPT_TRACEAT,
+	OPT_VALID
+    };
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "option [args..]");
 	return TCL_ERROR;
+    } else if (Tcl_GetIndexFromObj(interp, objv[1], options, "option",
+	    TCL_EXACT, &option) != TCL_OK) {
+	return TCL_ERROR;
     }
 
-    if (strcmp(TclGetString(objv[1]), "active") == 0 ||
-	    strcmp(TclGetString(objv[1]), "display") == 0) {
+    switch (option) {
+    case OPT_ACTIVE:
 	if (objc != 3) {
 	    Tcl_WrongNumArgs(interp, 2, objv, "file");
 	    return TCL_ERROR;
@@ -830,9 +845,7 @@ MemoryCmd(
 	    return TCL_ERROR;
 	}
 	return TCL_OK;
-    }
-    if (strcmp(TclGetString(objv[1]),"break_on_malloc") == 0) {
-	Tcl_WideInt value;
+    case OPT_BREAK:
 	if (objc != 3) {
 	    goto argError;
 	}
@@ -841,8 +854,7 @@ MemoryCmd(
 	}
 	break_on_malloc = value;
 	return TCL_OK;
-    }
-    if (strcmp(TclGetString(objv[1]),"info") == 0) {
+    case OPT_INFO:
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"%-25s %10" TCL_Z_MODIFIER "u\n%-25s %10" TCL_Z_MODIFIER "u\n%-25s %10" TCL_Z_MODIFIER "u\n%-25s %10" TCL_Z_MODIFIER "u\n%-25s %10" TCL_Z_MODIFIER "u\n%-25s %10" TCL_Z_MODIFIER "u\n",
 		"total mallocs", total_mallocs, "total frees", total_frees,
@@ -851,15 +863,12 @@ MemoryCmd(
 		"maximum packets allocated", maximum_malloc_packets,
 		"maximum bytes allocated", maximum_bytes_malloced));
 	return TCL_OK;
-    }
-    if (strcmp(TclGetString(objv[1]), "init") == 0) {
+    case OPT_INIT:
 	if (objc != 3) {
 	    goto bad_suboption;
 	}
-	init_malloced_bodies = (strcmp(TclGetString(objv[2]),"on") == 0);
-	return TCL_OK;
-    }
-    if (strcmp(TclGetString(objv[1]), "objs") == 0) {
+	return Tcl_GetBooleanFromObj(interp, objv[2], &init_malloced_bodies);
+    case OPT_OBJS:
 	if (objc != 3) {
 	    Tcl_WrongNumArgs(interp, 2, objv, "file");
 	    return TCL_ERROR;
@@ -879,8 +888,7 @@ MemoryCmd(
 	fclose(fileP);
 	Tcl_DStringFree(&buffer);
 	return TCL_OK;
-    }
-    if (strcmp(TclGetString(objv[1]),"onexit") == 0) {
+    case OPT_ONEXIT:
 	if (objc != 3) {
 	    Tcl_WrongNumArgs(interp, 2, objv, "file");
 	    return TCL_ERROR;
@@ -893,8 +901,7 @@ MemoryCmd(
 	strcpy(onExitMemDumpFileName,fileName);
 	Tcl_DStringFree(&buffer);
 	return TCL_OK;
-    }
-    if (strcmp(TclGetString(objv[1]),"tag") == 0) {
+    case OPT_TAG:
 	if (objc != 3) {
 	    Tcl_WrongNumArgs(interp, 2, objv, "file");
 	    return TCL_ERROR;
@@ -907,17 +914,12 @@ MemoryCmd(
 	curTagPtr->refCount = 0;
 	memcpy(curTagPtr->string, TclGetString(objv[2]), len + 1);
 	return TCL_OK;
-    }
-    if (strcmp(TclGetString(objv[1]),"trace") == 0) {
+    case OPT_TRACE:
 	if (objc != 3) {
 	    goto bad_suboption;
 	}
-	alloc_tracing = (strcmp(TclGetString(objv[2]),"on") == 0);
-	return TCL_OK;
-    }
-
-    if (strcmp(TclGetString(objv[1]),"trace_on_at_malloc") == 0) {
-	Tcl_WideInt value;
+	return Tcl_GetBooleanFromObj(interp, objv[2], &alloc_tracing);
+    case OPT_TRACEAT:
 	if (objc != 3) {
 	    goto argError;
 	}
@@ -926,20 +928,14 @@ MemoryCmd(
 	}
 	trace_on_at_malloc = value;
 	return TCL_OK;
-    }
-    if (strcmp(TclGetString(objv[1]),"validate") == 0) {
+    case OPT_VALID:
 	if (objc != 3) {
 	    goto bad_suboption;
 	}
-	validate_memory = (strcmp(TclGetString(objv[2]),"on") == 0);
-	return TCL_OK;
+	return Tcl_GetBooleanFromObj(interp, objv[2], &validate_memory);
+    default:
+	TCL_UNREACHABLE();
     }
-
-    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-	    "bad option \"%s\": should be active, break_on_malloc, info, "
-	    "init, objs, onexit, tag, trace, trace_on_at_malloc, or validate",
-	    TclGetString(objv[1])));
-    return TCL_ERROR;
 
   argError:
     Tcl_WrongNumArgs(interp, 2, objv, "count");
@@ -971,7 +967,7 @@ static int
 CheckmemCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Interpreter for evaluation. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Obj values of arguments. */
 {
     if (objc != 2) {
@@ -1005,8 +1001,8 @@ Tcl_InitMemory(
 				 * added */
 {
     TclInitDbCkalloc();
-    Tcl_CreateObjCommand(interp, "memory", MemoryCmd, NULL, NULL);
-    Tcl_CreateObjCommand(interp, "checkmem", CheckmemCmd, NULL, NULL);
+    Tcl_CreateObjCommand2(interp, "memory", MemoryCmd, NULL, NULL);
+    Tcl_CreateObjCommand2(interp, "checkmem", CheckmemCmd, NULL, NULL);
 }
 
 #else	/* TCL_MEM_DEBUG */
@@ -1236,15 +1232,15 @@ TclDumpMemoryInfo(
  *
  * TclAllocElemsEx --
  *
- *    See TclAttemptAllocElemsEx. This function differs in that it panics
- *    on failure.
+ *	See TclAttemptAllocElemsEx. This function differs in that it panics
+ *	on failure.
  *
  * Results:
- *    Non-NULL pointer to allocated memory block.
+ *	Non-NULL pointer to allocated memory block.
  *
  * Side effects:
- *    Panics if memory of at least the requested size could not be
- *    allocated.
+ *	Panics if memory of at least the requested size could not be
+ *	allocated.
  *
  *------------------------------------------------------------------------
  */
@@ -1271,14 +1267,13 @@ TclAllocElemsEx(
  *
  * TclAttemptReallocElemsEx --
  *
- *    Attempts to allocate (oldPtr == NULL) or reallocate memory of the
- *    requested size plus some more for future growth. The amount of
- *    reallocation is adjusted depending on failure.
- *
+ *	Attempts to allocate (oldPtr == NULL) or reallocate memory of the
+ *	requested size plus some more for future growth. The amount of
+ *	reallocation is adjusted depending on failure.
  *
  * Results:
- *    Pointer to allocated memory block which is at least as large
- *    as the requested size or NULL if allocation failed.
+ *	Pointer to allocated memory block which is at least as large
+ *	as the requested size or NULL if allocation failed.
  *
  *------------------------------------------------------------------------
  */
@@ -1340,15 +1335,15 @@ TclAttemptReallocElemsEx(
  *
  * TclReallocElemsEx --
  *
- *    See TclAttemptReallocElemsEx. This function differs in that it panics
- *    on failure.
+ *	See TclAttemptReallocElemsEx. This function differs in that it panics
+ *	on failure.
  *
  * Results:
- *    Non-NULL pointer to allocated memory block.
+ *	Non-NULL pointer to allocated memory block.
  *
  * Side effects:
- *    Panics if memory of at least the requested size could not be
- *    allocated.
+ *	Panics if memory of at least the requested size could not be
+ *	allocated.
  *
  *------------------------------------------------------------------------
  */

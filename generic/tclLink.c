@@ -107,11 +107,11 @@ static int		SetInvalidRealFromAny(Tcl_Interp *interp,
  */
 
 static const Tcl_ObjType invalidRealType = {
-    "invalidReal",			/* name */
-    NULL,				/* freeIntRepProc */
-    NULL,				/* dupIntRepProc */
-    NULL,				/* updateStringProc */
-    NULL,				/* setFromAnyProc */
+    "invalidReal",
+    NULL,			// FreeIntRep
+    NULL,			// DupIntRep
+    NULL,			// UpdateString
+    NULL,			// SetFromAny
     TCL_OBJTYPE_V1(TclLengthOne)
 };
 
@@ -553,11 +553,16 @@ IsSpecial(
 #endif /* ACCEPT_NAN */
 	;
 }
-
+
 /*
- * Mark an object as holding a weird double.
+ *----------------------------------------------------------------------
+ *
+ * SetInvalidRealFromAny --
+ *
+ * 	Mark an object as holding a weird double.
+ *
+ *----------------------------------------------------------------------
  */
-
 static int
 SetInvalidRealFromAny(
     TCL_UNUSED(Tcl_Interp *),
@@ -598,7 +603,7 @@ SetInvalidRealFromAny(
     }
     return TCL_ERROR;
 }
-
+
 /*
  * This function checks for integer representations, which are valid
  * when linking with C variables, but which are invalid in other

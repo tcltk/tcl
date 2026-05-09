@@ -97,16 +97,16 @@ test unixInit-3.1 {TclpSetInitialEncodings} -constraints {
     unset -nocomplain env(LANG)
 } -match regexp -result {^(iso8859-15?|utf-8)$}
 
-# unixInit-3.2 depends on the *spawned* [interpreter] being able to locate
-# tcl_library without setting of TCL_LIBRARY env. This in turn depends on
-# Tcl's "library" directory being under the parent or grandparent of the
-# executable directory (the initScript search path in tclInterp.c).
-# Thus this constraint. On GiuHub CI, the only time this is not true
-# is for the XCode builds.
-if {[string match [zipfs root]* [info library]] ||
-    [file isfile [file normalize [file join [info nameofexecutable] .. .. library init.tcl]]] ||
-    [file isfile [file normalize [file join [info nameofexecutable] .. .. .. library init.tcl]]]
-} {
+# This test is fundamentally flawed as noted in the core mailing list at
+# https://sourceforge.net/p/tcl/mailman/message/59255593/. Basically, it
+# assumes (for non-zipfs) builds to run under the source directory and TIP 732
+# no longer includes ....library in its search path. Therefore only run it on
+# zipfs builds though even there it is superfluous since the test suite does
+# not set TCL_LIBRARY for zipfs builds anyways so unsetting it has no
+# effect. To really test Tcl's search paths, a better test is needed where
+# the shell is spawned after installation and not the one in the build
+# directory.
+if {[string match [zipfs root]* [info library]]} {
     tcltest::testConstraint enableUnixInit32 1
 } else {
     tcltest::testConstraint enableUnixInit32 0

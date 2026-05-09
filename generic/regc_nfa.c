@@ -633,8 +633,8 @@ sortins_cmp(
     const void *a,
     const void *b)
 {
-    const struct arc *aa = *((const struct arc * const *) a);
-    const struct arc *bb = *((const struct arc * const *) b);
+    const struct arc *aa = *((const struct arc *const *) a);
+    const struct arc *bb = *((const struct arc *const *) b);
 
     /* we check the fields in the order they are most likely to be different */
     if (aa->from->no < bb->from->no) {
@@ -709,8 +709,8 @@ sortouts_cmp(
     const void *a,
     const void *b)
 {
-    const struct arc *aa = *((const struct arc * const *) a);
-    const struct arc *bb = *((const struct arc * const *) b);
+    const struct arc *aa = *((const struct arc *const *) a);
+    const struct arc *bb = *((const struct arc *const *) b);
 
     /* we check the fields in the order they are most likely to be different */
     if (aa->to->no < bb->to->no) {
@@ -928,11 +928,11 @@ mergeins(
     struct nfa * nfa,
     struct state * s,
     struct arc ** arcarray,
-    int arccount)
+    size_t arccount)
 {
     struct arc *na;
-    int	i;
-    int	j;
+    size_t i;
+    size_t j;
 
     if (arccount <= 0) {
 	return;
@@ -1875,7 +1875,7 @@ fixempties(
     size_t totalinarcs;
     struct arc **inarcsorig;
     struct arc **arcarray;
-    int arccount;
+    size_t arccount;
     size_t prevnins;
     size_t nskip;
 

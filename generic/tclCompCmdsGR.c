@@ -16,7 +16,7 @@
 
 #include "tclInt.h"
 #include "tclCompile.h"
-#include <assert.h>
+#include <math.h>
 
 /*
  * Prototypes for procedures defined later in this file:
@@ -95,7 +95,7 @@ TclCompileGlobalCmd(
     Tcl_LVTIndex localIndex;
     Tcl_Size i, numWords = parsePtr->numWords;
 
-    if (numWords < 2 || numWords > UINT_MAX) {
+    if (numWords < 2 || OutOfUintRange(numWords)) {
 	return TCL_ERROR;
     }
 
@@ -121,7 +121,7 @@ TclCompileGlobalCmd(
     for (i=1; i<numWords; varTokenPtr = TokenAfter(varTokenPtr),i++) {
 	localIndex = IndexTailVarIfKnown(interp, varTokenPtr, envPtr);
 
-	if (localIndex < 0 || localIndex > INT_MAX) {
+	if (OutOfUintRange(localIndex)) {
 	    return TCL_ERROR;
 	}
 
@@ -182,10 +182,10 @@ TclCompileIfCmd(
     Tcl_Size jumpIndex = 0;	/* Avoid compiler warning. */
     Tcl_Size j, numWords, wordIdx;
     int code;
-    int realCond = 1;		/* Set to 0 for static conditions:
+    bool realCond = true;		/* Set to 0 for static conditions:
 				 * "if 0 {..}" */
-    int boolVal;		/* Value of static condition. */
-    int compileScripts = 1;
+    bool boolVal;		/* Value of static condition. */
+    bool compileScripts = true;
 
     /*
      * Only compile the "if" command if all arguments are simple words, in
@@ -194,7 +194,7 @@ TclCompileIfCmd(
 
     tokenPtr = parsePtr->tokenPtr;
     numWords = parsePtr->numWords;
-    if (numWords > UINT_MAX) {
+    if (OutOfUintRange(numWords)) {
 	return TCL_ERROR;
     }
 
@@ -253,9 +253,9 @@ TclCompileIfCmd(
 		 * A static condition.
 		 */
 
-		realCond = 0;
+		realCond = false;
 		if (!boolVal) {
-		    compileScripts = 0;
+		    compileScripts = false;
 		}
 	    } else {
 		Tcl_ResetResult(interp);
@@ -322,15 +322,15 @@ TclCompileIfCmd(
 	     * We were processing an "if 1 {...}"; stop compiling scripts.
 	     */
 
-	    compileScripts = 0;
+	    compileScripts = false;
 	} else {
 	    /*
 	     * We were processing an "if 0 {...}"; reset so that the rest
 	     * (elseif, else) is compiled correctly.
 	     */
 
-	    realCond = 1;
-	    compileScripts = 1;
+	    realCond = true;
+	    compileScripts = true;
 	}
 
 	tokenPtr = TokenAfter(tokenPtr);
@@ -441,6 +441,9 @@ TclCompileIncrCmd(
 
     varTokenPtr = TokenAfter(parsePtr->tokenPtr);
     PushVarNameWord(varTokenPtr, 0, &localIndex, &isScalar, 1);
+    if (OutOfUintRangeUpper(localIndex)) {
+	return TCL_ERROR;
+    }
 
     /*
      * If an increment is given, push it, but see first if it's a small
@@ -637,6 +640,9 @@ TclCompileInfoExistsCmd(
 
     tokenPtr = TokenAfter(parsePtr->tokenPtr);
     PushVarNameWord(tokenPtr, 0, &localIndex, &isScalar, 1);
+    if (OutOfUintRangeUpper(localIndex)) {
+	return TCL_ERROR;
+    }
 
     /*
      * Emit instruction to check the variable for existence.
@@ -816,7 +822,7 @@ TclCompileLappendCmd(
     int isScalar;
     Tcl_LVTIndex localIndex;
 
-    if (numWords < 2 || numWords > UINT_MAX) {
+    if (numWords < 2 || OutOfUintRange(numWords)) {
 	return TCL_ERROR;
     }
 
@@ -834,6 +840,9 @@ TclCompileLappendCmd(
 	return TCL_ERROR;
     }
     PushVarNameWord(varTokenPtr, 0, &localIndex, &isScalar, 1);
+    if (OutOfUintRangeUpper(localIndex)) {
+	return TCL_ERROR;
+    }
 
     if (numWords != 3) {
 	goto lappendMultiple;
@@ -1002,7 +1011,7 @@ TclCompileLassignCmd(
      * Check for command syntax error, but we'll punt that to runtime.
      */
 
-    if (numWords < 3 || numWords > UINT_MAX) {
+    if (numWords < 3 || OutOfUintRange(numWords)) {
 	return TCL_ERROR;
     }
 
@@ -1024,6 +1033,9 @@ TclCompileLassignCmd(
 
 	tokenPtr = TokenAfter(tokenPtr);
 	PushVarNameWord(tokenPtr, 0, &localIndex, &isScalar, idx + 2);
+	if (OutOfUintRangeUpper(localIndex)) {
+	    return TCL_ERROR;
+	}
 
 	/*
 	 * Emit instructions to get the idx'th item out of the list value on
@@ -1102,7 +1114,7 @@ TclCompileLindexCmd(
      */
 
     /* TODO: Consider support for compiling expanded args. */
-    if (numWords <= 1 || numWords > UINT_MAX) {
+    if (numWords <= 1 || OutOfUintRange(numWords)) {
 	return TCL_ERROR;
     }
 
@@ -1190,7 +1202,7 @@ TclCompileListCmd(
     int concat;
     Tcl_Obj *listObj, *objPtr;
 
-    if (numWords > UINT_MAX) {
+    if (OutOfUintRange(numWords)) {
 	return TCL_ERROR;
     }
     if (numWords == 1) {
@@ -1401,7 +1413,7 @@ TclCompileLinsertCmd(
     Tcl_Size i, numWords = parsePtr->numWords;
     /* TODO: Consider support for compiling expanded args. */
 
-    if (numWords < 3 || numWords > UINT_MAX) {
+    if (numWords < 3 || OutOfUintRange(numWords)) {
 	return TCL_ERROR;
     }
 
@@ -1454,7 +1466,7 @@ TclCompileLreplaceCmd(
     Tcl_Size i, numWords = parsePtr->numWords;
     /* TODO: Consider support for compiling expanded args. */
 
-    if (numWords < 4 || numWords > UINT_MAX) {
+    if (numWords < 4 || OutOfUintRange(numWords)) {
 	return TCL_ERROR;
     }
 
@@ -1516,6 +1528,9 @@ TclCompileLeditCmd(
     Tcl_LVTIndex varIdx;
     int isScalar;
     PushVarNameWord(varTokenPtr, 0, &varIdx, &isScalar, 1);
+    if (OutOfUintRangeUpper(varIdx)) {
+	return TCL_ERROR;
+    }
     // Stack: varWords...
 
     /*
@@ -1633,8 +1648,8 @@ TclCompileLpopCmd(
     }
 
     Tcl_Token *varTokenPtr = TokenAfter(parsePtr->tokenPtr);
-    Tcl_LVTIndex varIdx = LocalScalarFromToken(varTokenPtr, envPtr);
-    if (varIdx < 0) {
+    Tcl_LVTIndex varIdx = TclLocalScalarFromToken(varTokenPtr, envPtr);
+    if (OutOfUintRange(varIdx)) {
 	// Give up if we pushed any words; makes stack computations tractable
 	return TCL_ERROR;
     }
@@ -1855,7 +1870,7 @@ TclCompileLseqCmd(
 	OP(			SWAP);
     } else if (IS_TOKEN_LITERALLY(token3Ptr, "by")) {
 	flags = (TCL_ARITHSERIES_FROM | TCL_ARITHSERIES_TO | TCL_ARITHSERIES_STEP);
-	if (IS_ANY_LSEQ_KEYWORD(token3Ptr)) {
+	if (IS_ANY_LSEQ_KEYWORD(token2Ptr)) {
 	    return TCL_ERROR;
 	}
 	PUSH_TOKEN(		tokenPtr, 1);	// from
@@ -1902,6 +1917,7 @@ TclCompileLseqCmd(
     return TCL_OK;
 
 #undef IS_ANY_LSEQ_KEYWORD
+#undef LseqArg
 }
 
 /*
@@ -1966,7 +1982,7 @@ TclCompileLsetCmd(
      */
 
     /* TODO: Consider support for compiling expanded args. */
-    if (numWords < 3 || numWords > UINT_MAX) {
+    if (numWords < 3 || OutOfUintRange(numWords)) {
 	/*
 	 * Fail at run time, not in compilation.
 	 */
@@ -1984,6 +2000,9 @@ TclCompileLsetCmd(
 
     varTokenPtr = TokenAfter(parsePtr->tokenPtr);
     PushVarNameWord(varTokenPtr, 0, &localIndex, &isScalar, 1);
+    if (OutOfUintRangeUpper(localIndex)) {
+	return TCL_ERROR;
+    }
 
     /*
      * Push the "index" args and the new element value.
@@ -2266,7 +2285,7 @@ TclCompileNamespaceUpvarCmd(
      * Only compile [namespace upvar ...]: needs an even number of args, >=4
      */
 
-    if ((numWords % 2) || numWords < 4 || numWords > UINT_MAX) {
+    if ((numWords % 2) || numWords < 4 || OutOfUintRange(numWords)) {
 	return TCL_ERROR;
     }
 
@@ -2289,8 +2308,8 @@ TclCompileNamespaceUpvarCmd(
 	localTokenPtr = TokenAfter(otherTokenPtr);
 
 	PUSH_TOKEN(		otherTokenPtr, i);
-	localIndex = LocalScalarFromToken(localTokenPtr, envPtr);
-	if (localIndex < 0) {
+	localIndex = TclLocalScalarFromToken(localTokenPtr, envPtr);
+	if (OutOfUintRange(localIndex)) {
 	    return TCL_ERROR;
 	}
 	OP4(			NSUPVAR, localIndex);
@@ -2386,7 +2405,7 @@ TclCompileRegexpCmd(
      *   regexp ?-nocase? ?--? {^staticString$} $var
      */
 
-    if (numWords < 3 || numWords > UINT_MAX) {
+    if (numWords < 3 || OutOfUintRange(numWords)) {
 	return TCL_ERROR;
     }
 
@@ -2448,14 +2467,11 @@ TclCompileRegexpCmd(
 	    return TCL_ERROR;
 	}
 
-	if (len == 0) {
-	    /*
-	     * The semantics of regexp are always match on re == "".
-	     */
-
-	    PUSH(		"1");
-	    return TCL_OK;
-	}
+	/*
+	 * Note: do not optimize for len == 0, as error should be generated
+	 * at runtime if operand is not a resolvable variable.
+	 * Bug https://core.tcl-lang.org/tcl/info/cb03e57a7b24d22c
+	 */
 
 	/*
 	 * Attempt to convert pattern to glob.  If successful, push the
@@ -2710,7 +2726,7 @@ TclCompileReturnCmd(
     Tcl_Obj *returnOpts, **objv;
     Tcl_Token *wordTokenPtr = TokenAfter(parsePtr->tokenPtr);
 
-    if (numWords > UINT_MAX) {
+    if (OutOfUintRange(numWords)) {
 	return TCL_ERROR;
     }
 
@@ -2961,7 +2977,7 @@ TclCompileUpvarCmd(
 	return TCL_ERROR;
     }
 
-    if (numWords < 3 || numWords > UINT_MAX) {
+    if (numWords < 3 || OutOfUintRange(numWords)) {
 	return TCL_ERROR;
     }
 
@@ -3010,8 +3026,8 @@ TclCompileUpvarCmd(
 	localTokenPtr = TokenAfter(otherTokenPtr);
 
 	PUSH_TOKEN(		otherTokenPtr, i);
-	localIndex = LocalScalarFromToken(localTokenPtr, envPtr);
-	if (localIndex < 0) {
+	localIndex = TclLocalScalarFromToken(localTokenPtr, envPtr);
+	if (OutOfUintRange(localIndex)) {
 	    return TCL_ERROR;
 	}
 	OP4(			UPVAR, localIndex);
@@ -3057,7 +3073,7 @@ TclCompileVariableCmd(
     Tcl_LVTIndex localIndex;
     Tcl_Size numWords = parsePtr->numWords, i;
 
-    if (numWords < 2 || numWords > UINT_MAX) {
+    if (numWords < 2 || OutOfUintRange(numWords)) {
 	return TCL_ERROR;
     }
 
@@ -3203,7 +3219,7 @@ IndexTailVarIfKnown(
 	tailName = p;
     }
 
-    localIndex = TclFindCompiledLocal(tailName, len, 1, envPtr);
+    localIndex = TclFindCompiledLocal(tailName, len, true, envPtr);
     Tcl_DecrRefCount(tailPtr);
     return localIndex;
 }
@@ -3230,7 +3246,7 @@ TclCompileObjectNextCmd(
     Tcl_Token *tokenPtr = parsePtr->tokenPtr;
     Tcl_Size i, numWords = parsePtr->numWords;
 
-    if (parsePtr->numWords > UINT_MAX) {
+    if (OutOfUintRange(parsePtr->numWords)) {
 	goto issueExpanded;
     }
 
@@ -3311,7 +3327,7 @@ TclCompileObjectNextToCmd(
 
     if (numWords < 2) {
 	return TCL_ERROR;
-    } else if (numWords > UINT_MAX) {
+    } else if (OutOfUintRange(numWords)) {
 	// Very large number of words anyway
 	goto issueExpanded;
     }

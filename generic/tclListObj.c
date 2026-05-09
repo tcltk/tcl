@@ -9,7 +9,6 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
-#include <assert.h>
 #include "tclInt.h"
 #include "tclTomMath.h"
 
@@ -132,7 +131,7 @@ static int	TclListObjGetRep(Tcl_Interp *, Tcl_Obj *listPtr, ListRep *repPtr);
 static void	ListRepRange(ListRep *srcRepPtr,
 		    Tcl_Size rangeStart,
 		    Tcl_Size rangeEnd,
-		    int preserveSrcRep,
+		    bool preserveSrcRep,
 		    ListRep *rangeRepPtr);
 static ListStore *ListStoreReallocate(ListStore *storePtr, Tcl_Size numSlots);
 static void	ListRepValidate(const ListRep *repPtr, const char *file,
@@ -151,11 +150,11 @@ static Tcl_Size ListLength(Tcl_Obj *listPtr);
  */
 
 const Tcl_ObjType tclListType = {
-    "list",			/* name */
-    FreeListInternalRep,	/* freeIntRepProc */
-    DupListInternalRep,		/* dupIntRepProc */
-    UpdateStringOfList,		/* updateStringProc */
-    SetListFromAny,		/* setFromAnyProc */
+    "list",
+    FreeListInternalRep,
+    DupListInternalRep,
+    UpdateStringOfList,
+    SetListFromAny,
     TCL_OBJTYPE_V1(ListLength)
 };
 
@@ -226,14 +225,14 @@ const Tcl_ObjType tclListType = {
  *
  * ListSpanNew --
  *
- *    Allocates and initializes memory for a new ListSpan. The reference
- *    count on the returned struct is 0.
+ *	Allocates and initializes memory for a new ListSpan. The reference
+ *	count on the returned struct is 0.
  *
  * Results:
- *    Non-NULL pointer to the allocated ListSpan.
+ *	Non-NULL pointer to the allocated ListSpan.
  *
  * Side effects:
- *    The function will panic on memory allocation failure.
+ *	The function will panic on memory allocation failure.
  *
  *------------------------------------------------------------------------
  */
@@ -254,14 +253,14 @@ ListSpanNew(
  *
  * ListSpanDecrRefs --
  *
- *   Decrements the reference count on a span, freeing the memory if
- *   it drops to zero or less.
+ *	Decrements the reference count on a span, freeing the memory if
+ *	it drops to zero or less.
  *
  * Results:
- *   None.
+ *	None.
  *
  * Side effects:
- *   The memory may be freed.
+ *	The memory may be freed.
  *
  *------------------------------------------------------------------------
  */
@@ -281,18 +280,18 @@ ListSpanDecrRefs(
  *
  * ListSpanMerited --
  *
- *    Creation of a new list may sometimes be done as a span on existing
- *    storage instead of allocating new. The tradeoff is that if the
- *    original list is released, the new span-based list may hold on to
- *    more memory than desired. This function implements heuristics for
- *    deciding which option is better.
+ *	Creation of a new list may sometimes be done as a span on existing
+ *	storage instead of allocating new. The tradeoff is that if the
+ *	original list is released, the new span-based list may hold on to
+ *	more memory than desired. This function implements heuristics for
+ *	deciding which option is better.
  *
  * Results:
- *    Returns non-0 if a span-based list is likely to be more optimal
- *    and 0 if not.
+ *	Returns non-0 if a span-based list is likely to be more optimal
+ *	and 0 if not.
  *
  * Side effects:
- *    None.
+ *	None.
  *
  *------------------------------------------------------------------------
  */
@@ -329,17 +328,17 @@ ListSpanMerited(
  *
  * ListRepFreeUnreferenced --
  *
- *    Inline wrapper for ListRepUnsharedFreeUnreferenced that does quick checks
- *    before calling it.
+ *	Inline wrapper for ListRepUnsharedFreeUnreferenced that does quick checks
+ *	before calling it.
  *
- *    IMPORTANT: this function must not be called on an internal
- *    representation of a Tcl_Obj that is itself shared.
+ *	IMPORTANT: this function must not be called on an internal
+ *	representation of a Tcl_Obj that is itself shared.
  *
  * Results:
- *    None.
+ *	None.
  *
  * Side effects:
- *    See comments for ListRepUnsharedFreeUnreferenced.
+ *	See comments for ListRepUnsharedFreeUnreferenced.
  *
  *------------------------------------------------------------------------
  */
@@ -358,19 +357,19 @@ ListRepFreeUnreferenced(
  *
  * ObjArrayIncrRefs --
  *
- *    Increments the reference counts for Tcl_Obj's in a subarray.
+ *	Increments the reference counts for Tcl_Obj's in a subarray.
  *
  * Results:
- *    None.
+ *	None.
  *
  * Side effects:
- *    As above.
+ *	As above.
  *
  *------------------------------------------------------------------------
  */
 static inline void
 ObjArrayIncrRefs(
-    Tcl_Obj * const *objv,	/* Pointer to the array */
+    Tcl_Obj *const *objv,	/* Pointer to the array */
     Tcl_Size startIdx,		/* Starting index of subarray within objv */
     Tcl_Size count)		/* Number of elements in the subarray */
 {
@@ -390,23 +389,23 @@ ObjArrayIncrRefs(
  *
  * ObjArrayDecrRefs --
  *
- *    Decrements the reference counts for Tcl_Obj's in a subarray.
+ *	Decrements the reference counts for Tcl_Obj's in a subarray.
  *
  * Results:
- *    None.
+ *	None.
  *
  * Side effects:
- *    As above.
+ *	As above.
  *
  *------------------------------------------------------------------------
  */
 static inline void
 ObjArrayDecrRefs(
-    Tcl_Obj * const *objv,	/* Pointer to the array */
+    Tcl_Obj *const *objv,	/* Pointer to the array */
     Tcl_Size startIdx,		/* Starting index of subarray within objv */
     Tcl_Size count)		/* Number of elements in the subarray */
 {
-    Tcl_Obj * const *end;
+    Tcl_Obj *const *end;
     LIST_INDEX_ASSERT(startIdx);
     LIST_COUNT_ASSERT(count);
     objv += startIdx;
@@ -422,13 +421,13 @@ ObjArrayDecrRefs(
  *
  * ObjArrayCopy --
  *
- *    Copies an array of Tcl_Obj* pointers.
+ *	Copies an array of Tcl_Obj* pointers.
  *
  * Results:
- *    None.
+ *	None.
  *
  * Side effects:
- *    Reference counts on copied Tcl_Obj's are incremented.
+ *	Reference counts on copied Tcl_Obj's are incremented.
  *
  *------------------------------------------------------------------------
  */
@@ -453,13 +452,13 @@ ObjArrayCopy(
  *
  * MemoryAllocationError --
  *
- *    Generates a memory allocation failure error.
+ *	Generates a memory allocation failure error.
  *
  * Results:
- *    Always TCL_ERROR.
+ *	Always TCL_ERROR.
  *
  * Side effects:
- *    Error message and code are stored in the interpreter if not NULL.
+ *	Error message and code are stored in the interpreter if not NULL.
  *
  *------------------------------------------------------------------------
  */
@@ -483,13 +482,13 @@ MemoryAllocationError(
  *
  * TclListLimitExceededError --
  *
- *    Generates an error for exceeding maximum list size.
+ *	Generates an error for exceeding maximum list size.
  *
  * Results:
- *    Always TCL_ERROR.
+ *	Always TCL_ERROR.
  *
  * Side effects:
- *    Error message and code are stored in the interpreter if not NULL.
+ *	Error message and code are stored in the interpreter if not NULL.
  *
  *------------------------------------------------------------------------
  */
@@ -516,17 +515,17 @@ TclListLimitExceededError(
  *
  * ListRepUnsharedShiftDown --
  *
- *    Shifts the "in-use" contents in the ListStore for a ListRep down
- *    by the given number of slots. The ListStore must be unshared and
- *    the free space at the front of the storage area must be big enough.
- *    It is the caller's responsibility to check.
+ *	Shifts the "in-use" contents in the ListStore for a ListRep down
+ *	by the given number of slots. The ListStore must be unshared and
+ *	the free space at the front of the storage area must be big enough.
+ *	It is the caller's responsibility to check.
  *
  * Results:
- *    None.
+ *	None.
  *
  * Side effects:
- *    The contents of the ListRep's ListStore area are shifted down in the
- *    storage area. The ListRep's ListSpan is updated accordingly.
+ *	The contents of the ListRep's ListStore area are shifted down in the
+ *	storage area. The ListRep's ListSpan is updated accordingly.
  *
  *------------------------------------------------------------------------
  */
@@ -565,24 +564,25 @@ ListRepUnsharedShiftDown(
 
     LISTREP_CHECK(repPtr);
 }
-
+
 /*
  *------------------------------------------------------------------------
  *
  * ListRepUnsharedShiftUp --
  *
- *    Shifts the "in-use" contents in the ListStore for a ListRep up
- *    by the given number of slots. The ListStore must be unshared and
- *    the free space at the back of the storage area must be big enough.
- *    It is the caller's responsibility to check.
- *    TODO - this function is not currently used.
+ *	Shifts the "in-use" contents in the ListStore for a ListRep up
+ *	by the given number of slots. The ListStore must be unshared and
+ *	the free space at the back of the storage area must be big enough.
+ *	It is the caller's responsibility to check.
+ *
+ *	TODO - this function is not currently used.
  *
  * Results:
- *    None.
+ *	None.
  *
  * Side effects:
- *    The contents of the ListRep's ListStore area are shifted up in the
- *    storage area. The ListRep's ListSpan is updated accordingly.
+ *	The contents of the ListRep's ListStore area are shifted up in the
+ *	storage area. The ListRep's ListSpan is updated accordingly.
  *
  *------------------------------------------------------------------------
  */
@@ -628,10 +628,10 @@ ListRepUnsharedShiftUp(
  *	Note this is independent of NDEBUG, assert etc.
  *
  * Results:
- *    None.
+ *	None.
  *
  * Side effects:
- *    Panics if any invariant is not met.
+ *	Panics if any invariant is not met.
  *
  *------------------------------------------------------------------------
  */
@@ -689,14 +689,14 @@ ListRepValidate(
  *
  * TclListObjValidate --
  *
- *    Wrapper around ListRepValidate. Primarily used from test suite.
+ *	Wrapper around ListRepValidate. Primarily used from test suite.
  *
  * Results:
- *    None.
+ *	None.
  *
  * Side effects:
- *    Will panic if internal structure is not consistent or if object
- *    cannot be converted to a list object.
+ *	Will panic if internal structure is not consistent or if object
+ *	cannot be converted to a list object.
  *
  *------------------------------------------------------------------------
  */
@@ -723,14 +723,14 @@ TclListObjValidate(
  *	in that array.  If objv==NULL, initalize 0 elements, with space
  *	to add objc more.
  *
- *      Normally the function allocates the exact space requested unless
- *      the flags arguments has any LISTREP_SPACE_*
- *      bits set. See the comments for those #defines.
+ *	Normally the function allocates the exact space requested unless
+ *	the flags arguments has any LISTREP_SPACE_*
+ *	bits set. See the comments for those #defines.
  *
  * Results:
- *      On success, a pointer to the allocated ListStore is returned.
- *      On allocation failure, panics if LISTREP_PANIC_ON_FAIL is set in
- *      flags; otherwise returns NULL.
+ *	On success, a pointer to the allocated ListStore is returned.
+ *	On allocation failure, panics if LISTREP_PANIC_ON_FAIL is set in
+ *	flags; otherwise returns NULL.
  *
  * Side effects:
  *	The ref counts of the elements in objv are incremented on success
@@ -762,7 +762,7 @@ ListStoreNew(
     if (flags & LISTREP_SPACE_FLAGS) {
 	/* Caller requests extra space front, back or both */
 	storePtr = (ListStore *)TclAttemptAllocElemsEx(
-	    objc, sizeof(Tcl_Obj *), offsetof(ListStore, slots), &capacity);
+		objc, sizeof(Tcl_Obj *), offsetof(ListStore, slots), &capacity);
     } else {
 	/* Exact allocation */
 	capacity = objc;
@@ -815,18 +815,17 @@ ListStoreNew(
  *
  * ListStoreReallocate --
  *
- *    Reallocates the memory for a ListStore allocating extra for
- *    possible future growth.
+ *	Reallocates the memory for a ListStore allocating extra for
+ *	possible future growth.
  *
  * Results:
- *    Pointer to the ListStore which may be the same as storePtr or pointer
- *    to a new block of memory. On reallocation failure, NULL is returned.
+ *	Pointer to the ListStore which may be the same as storePtr or pointer
+ *	to a new block of memory. On reallocation failure, NULL is returned.
  *
  *
  * Side effects:
- *    The memory pointed to by storePtr is freed if it a new block has to
- *    be returned.
- *
+ *	The memory pointed to by storePtr is freed if it a new block has to
+ *	be returned.
  *
  *------------------------------------------------------------------------
  */
@@ -854,24 +853,24 @@ ListStoreReallocate(
  *
  * ListRepInit --
  *
- *      Initializes a ListRep to hold a list internal representation
- *      with space for objc elements.
+ *	Initializes a ListRep to hold a list internal representation
+ *	with space for objc elements.
  *
- *      objc must be > 0. If objv!=NULL, initializes with the first objc
- *      values in that array. If objv==NULL, initalize list internal rep to
- *      have 0 elements, with space to add objc more.
+ *	objc must be > 0. If objv!=NULL, initializes with the first objc
+ *	values in that array. If objv==NULL, initalize list internal rep to
+ *	have 0 elements, with space to add objc more.
  *
  *	Normally the function allocates the exact space requested unless
  *	the flags arguments has one of the LISTREP_SPACE_* bits set.
  *	See the comments for those #defines.
  *
- *      The reference counts of the ListStore and ListSpan (if present)
+ *	The reference counts of the ListStore and ListSpan (if present)
  *	pointed to by the initialized repPtr are set to zero.
  *	Caller has to manage them as necessary.
  *
  * Results:
- *      On success, TCL_OK is returned with *listRepPtr initialized.
- *      On failure, panics if LISTREP_PANIC_ON_FAIL is set in flags; otherwise
+ *	On success, TCL_OK is returned with *listRepPtr initialized.
+ *	On failure, panics if LISTREP_PANIC_ON_FAIL is set in flags; otherwise
  *	returns TCL_ERROR with *listRepPtr fields set to NULL.
  *
  * Side effects:
@@ -919,12 +918,12 @@ ListRepInit(
  *	be > 0). This function only adds error messages to the interpreter if
  *	not NULL.
  *
- *      The reference counts of the ListStore and ListSpan (if present)
+ *	The reference counts of the ListStore and ListSpan (if present)
  *	pointed to by the initialized repPtr are set to zero.
  *	Caller has to manage them as necessary.
  *
  * Results:
- *      On success, TCL_OK is returned with *listRepPtr initialized.
+ *	On success, TCL_OK is returned with *listRepPtr initialized.
  *	On allocation failure, returnes TCL_ERROR with an error message
  *	in the interpreter if non-NULL.
  *
@@ -958,19 +957,19 @@ ListRepInitAttempt(
  *
  * ListRepClone --
  *
- *    Does a deep clone of an existing ListRep.
+ *	Does a deep clone of an existing ListRep.
  *
- *    Normally the function allocates the exact space needed unless
- *    the flags arguments has one of the LISTREP_SPACE_* bits set.
- *    See the comments for those #defines.
+ *	Normally the function allocates the exact space needed unless
+ *	the flags arguments has one of the LISTREP_SPACE_* bits set.
+ *	See the comments for those #defines.
  *
  * Results:
- *    None.
+ *	None.
  *
  * Side effects:
- *    The toRepPtr location is initialized with the ListStore and ListSpan
- *    (if needed) containing a copy of the list elements in fromRepPtr.
- *    The function will panic if memory cannot be allocated.
+ *	The toRepPtr location is initialized with the ListStore and ListSpan
+ *	(if needed) containing a copy of the list elements in fromRepPtr.
+ *	The function will panic if memory cannot be allocated.
  *
  *------------------------------------------------------------------------
  */
@@ -992,18 +991,18 @@ ListRepClone(
  *
  * ListRepUnsharedFreeUnreferenced --
  *
- *    Frees any Tcl_Obj's from the "in-use" area of the ListStore for a
- *    ListRep that are not actually references from any lists.
+ *	Frees any Tcl_Obj's from the "in-use" area of the ListStore for a
+ *	ListRep that are not actually references from any lists.
  *
- *    IMPORTANT: this function must not be called on a shared internal
- *    representation or the internal representation of a shared Tcl_Obj.
+ *	IMPORTANT: this function must not be called on a shared internal
+ *	representation or the internal representation of a shared Tcl_Obj.
  *
  * Results:
- *    None.
+ *	None.
  *
  * Side effects:
- *    The firstUsed and numUsed fields of the ListStore are updated to
- *    reflect the new "in-use" extent.
+ *	The firstUsed and numUsed fields of the ListStore are updated to
+ *	reflect the new "in-use" extent.
  *
  *------------------------------------------------------------------------
  */
@@ -1043,7 +1042,7 @@ ListRepUnsharedFreeUnreferenced(
     if (count > 0) {
 	/* T:listrep-6.{1:8} */
 	ObjArrayDecrRefs(
-	    storePtr->slots, spanPtr->spanStart + spanPtr->spanLength, count);
+		storePtr->slots, spanPtr->spanStart + spanPtr->spanLength, count);
 	LIST_ASSERT(storePtr->numUsed >= count);
 	storePtr->numUsed -= count;
     }
@@ -1186,17 +1185,18 @@ Tcl_DbNewListObj(
  *
  * TclNewListObj2 --
  *
- *    Create a new Tcl_Obj list comprising of the concatenation of two
- *    Tcl_Obj* arrays.
- *    TODO - currently this function is not used within tclListObj but
- *    need to see if it would be useful in other files that preallocate
- *    lists and then append.
+ *	Create a new Tcl_Obj list comprising of the concatenation of two
+ *	Tcl_Obj* arrays.
+ *
+ *	TODO - currently this function is not used within tclListObj but
+ *	need to see if it would be useful in other files that preallocate
+ *	lists and then append.
  *
  * Results:
- *    Non-NULL pointer to the allocate Tcl_Obj.
+ *	Non-NULL pointer to the allocate Tcl_Obj.
  *
  * Side effects:
- *    None.
+ *	None.
  *
  *------------------------------------------------------------------------
  */
@@ -1257,10 +1257,10 @@ TclNewListObj2(
  * Side effects:
  *	The possible conversion of the object referenced by listPtr
  *	to a list object. *repPtr is initialized to the internal rep
- *      if result is TCL_OK, or set to NULL on error.
+ *	if result is TCL_OK, or set to NULL on error.
+ *
  *----------------------------------------------------------------------
  */
-
 static int
 TclListObjGetRep(
     Tcl_Interp *interp,		/* Used to report errors if not NULL. */
@@ -1389,18 +1389,19 @@ TclListObjCopy(
  *	None.
  *
  * Side effects:
- *      The ListStore and ListSpan referenced by in the returned ListRep
- *      may or may not be the same as those passed in. For example, the
- *      ListStore may differ because the range is small enough that a new
- *      ListStore is more memory-optimal. The ListSpan may differ because
- *      it is NULL or shared. Regardless, reference counts on the returned
- *      values are not incremented. Generally, ListObjReplaceRepAndInvalidate
- *      may be used to store the new ListRep back into an object or a
- *      ListRepIncrRefs followed by ListRepDecrRefs to free in case of errors.
+ *	The ListStore and ListSpan referenced by in the returned ListRep
+ *	may or may not be the same as those passed in. For example, the
+ *	ListStore may differ because the range is small enough that a new
+ *	ListStore is more memory-optimal. The ListSpan may differ because
+ *	it is NULL or shared. Regardless, reference counts on the returned
+ *	values are not incremented. Generally, ListObjReplaceRepAndInvalidate
+ *	may be used to store the new ListRep back into an object or a
+ *	ListRepIncrRefs followed by ListRepDecrRefs to free in case of errors.
  *	Any other use should be carefully reconsidered.
- *      TODO WARNING:- this is an awkward interface and easy for caller
- *      to get wrong. Mostly due to refcount combinations. Perhaps passing
- *      in the source listObj instead of source listRep might simplify.
+ *
+ *	TODO WARNING:- this is an awkward interface and easy for caller
+ *	to get wrong. Mostly due to refcount combinations. Perhaps passing
+ *	in the source listObj instead of source listRep might simplify.
  *
  *------------------------------------------------------------------------
  */
@@ -1409,7 +1410,7 @@ ListRepRange(
     ListRep *srcRepPtr,		/* Contains source of the range */
     Tcl_Size rangeStart,	/* Index of first element to include */
     Tcl_Size rangeEnd,		/* Index of last element to include */
-    int preserveSrcRep,		/* If true, srcRepPtr contents must not be
+    bool preserveSrcRep,		/* If true, srcRepPtr contents must not be
 				 * modified (generally because a shared Tcl_Obj
 				 * references it) */
     ListRep *rangeRepPtr)	/* Output. Must NOT be == srcRepPtr */
@@ -1545,7 +1546,7 @@ ListRepRange(
 	}
 	memmove(&srcRepPtr->storePtr->slots[0],
 		&srcRepPtr->storePtr
-		     ->slots[srcRepPtr->storePtr->firstUsed + rangeStart],
+		    ->slots[srcRepPtr->storePtr->firstUsed + rangeStart],
 		rangeLen * sizeof(Tcl_Obj *));
 	srcRepPtr->storePtr->firstUsed = 0;
 	srcRepPtr->storePtr->numUsed = rangeLen;
@@ -1573,11 +1574,11 @@ ListRepRange(
  * TclListObjRange --
  *
  *	Makes a slice of a list value.
- *      *listObj must be known to be a valid list.
+ *	*listObj must be known to be a valid list.
  *
  * Results:
  *	Returns a pointer to the sliced list.
- *      This may be a new object or the same object if not shared.
+ *	This may be a new object or the same object if not shared.
  *	Returns NULL if passed listObj was not a list and could not be
  *	converted to one.
  *
@@ -1598,12 +1599,12 @@ TclListObjRange(
     ListRep listRep;
     ListRep resultRep;
 
-    int isShared;
+    bool isShared;
     if (TclListObjGetRep(interp, listObj, &listRep) != TCL_OK) {
 	return NULL;
     }
 
-    isShared = Tcl_IsShared(listObj);
+    isShared = Tcl_IsShared(listObj) != 0;
 
     ListRepRange(&listRep, rangeStart, rangeEnd, isShared, &resultRep);
 
@@ -1742,9 +1743,9 @@ Tcl_ListObjAppendList(
  *
  * TclListObjAppendElements --
  *
- *      Appends multiple elements to a Tcl_Obj list object. If
- *      the passed Tcl_Obj is not a list object, it will be converted to one
- *      and an error raised if the conversion fails.
+ *	Appends multiple elements to a Tcl_Obj list object. If
+ *	the passed Tcl_Obj is not a list object, it will be converted to one
+ *	and an error raised if the conversion fails.
  *
  *	The Tcl_Obj must not be shared though the internal representation
  *	may be.
@@ -1755,7 +1756,7 @@ Tcl_ListObjAppendList(
  *	interpreter if not NULL.
  *
  * Side effects:
- *    None.
+ *	None.
  *
  *------------------------------------------------------------------------
  */
@@ -1764,7 +1765,7 @@ TclListObjAppendElements(
     Tcl_Interp *interp,		/* Used to report errors if not NULL. */
     Tcl_Obj *toObj,		/* List object to append */
     Tcl_Size elemCount,		/* Number of elements in elemObjs[] */
-    Tcl_Obj * const elemObjv[])	/* Objects to append to toObj's list. */
+    Tcl_Obj *const elemObjv[])	/* Objects to append to toObj's list. */
 {
     ListRep listRep;
     Tcl_Obj **toObjv;
@@ -1856,8 +1857,7 @@ TclListObjAppendElements(
 	listRep.storePtr->numUsed = finalLen;
 	if (listRep.spanPtr) {
 	    /* T:listrep-3.{4,5,6} */
-	    LIST_ASSERT(listRep.spanPtr->spanStart
-			== listRep.storePtr->firstUsed);
+	    LIST_ASSERT(listRep.spanPtr->spanStart == listRep.storePtr->firstUsed);
 	    listRep.spanPtr->spanLength = finalLen;
 	} /* else T:listrep-3.6.3 */
 	LIST_ASSERT(ListRepStart(&listRep) == listRep.storePtr->firstUsed);
@@ -1966,7 +1966,7 @@ Tcl_ListObjAppendElement(
  *	an error.
  *
  * Side effects:
- *    None.
+ *	None.
  *
  *------------------------------------------------------------------------
  */
@@ -2004,7 +2004,7 @@ TclListObjAppendIfAbsent(
     }
     result = TclListObjAppendElements(interp, toObj, 1, &elemObj);
 
-vamoose: /* Return result after freeing elemObj if unreferenced */
+  vamoose: /* Return result after freeing elemObj if unreferenced */
     Tcl_BounceRefCount(elemObj);
     return result;
 }
@@ -2050,7 +2050,7 @@ Tcl_ListObjIndex(
 	return TCL_OK;
     }
 
-    int hasAbstractList = TclObjTypeHasProc(listObj,indexProc) != 0;
+    bool hasAbstractList = TclObjTypeHasProc(listObj,indexProc) != 0;
     if (hasAbstractList) {
 	return TclObjTypeIndex(interp, listObj, index, objPtrPtr);
     }
@@ -2261,14 +2261,14 @@ Tcl_ListObjReplace(
 	    /* Delete from front, so return tail. */
 	    /* T:listrep-1.{4,5},2.{4,5},3.{15,16},4.7 */
 	    ListRep tailRep;
-	    ListRepRange(&listRep, numToDelete, origListLen-1, 0, &tailRep);
+	    ListRepRange(&listRep, numToDelete, origListLen-1, false, &tailRep);
 	    ListObjReplaceRepAndInvalidate(listObj, &tailRep);
 	    return TCL_OK;
 	} else if ((first+numToDelete) >= origListLen) {
 	    /* Delete from tail, so return head */
 	    /* T:listrep-1.{8,9},2.{6,7},3.{17,18},4.8 */
 	    ListRep headRep;
-	    ListRepRange(&listRep, 0, first-1, 0, &headRep);
+	    ListRepRange(&listRep, 0, first-1, false, &headRep);
 	    ListObjReplaceRepAndInvalidate(listObj, &headRep);
 	    return TCL_OK;
 	}
@@ -2345,15 +2345,14 @@ Tcl_ListObjReplace(
      */
     if (numFreeSlots < lenChange && !ListRepIsShared(&listRep)) {
 	/* T:listrep-1.{1,3,14,18,21},3.{3,10,11,14,27,32,41} */
-	ListStore *newStorePtr =
-	    ListStoreReallocate(listRep.storePtr, origListLen + lenChange);
+	ListStore *newStorePtr = ListStoreReallocate(
+		listRep.storePtr, origListLen + lenChange);
 	if (newStorePtr == NULL) {
 	    return MemoryAllocationError(interp,
 		    LIST_SIZE(origListLen + lenChange));
 	}
 	listRep.storePtr = newStorePtr;
-	numFreeSlots =
-	    listRep.storePtr->numAllocated - listRep.storePtr->numUsed;
+	numFreeSlots = listRep.storePtr->numAllocated - listRep.storePtr->numUsed;
 	/*
 	 * WARNING: at this point the Tcl_Obj internal rep potentially
 	 * points to freed storage if the reallocation returned a
@@ -2841,7 +2840,7 @@ TclLindexFlat(
  *
  *	Core of the 'lset' command when objc == 4. Objv[2] may be either a
  *	scalar index or a list of indices.
- *      It also handles 'lpop' when given a NULL value.
+ *	It also handles 'lpop' when given a NULL value.
  *
  * Results:
  *	Returns the new value of the list variable, or NULL if there was an
@@ -2894,7 +2893,6 @@ TclLsetList(
 	    /* T:listrep-1.{2.1,12.1,15.1,19.1},2.{2.3,9.3,10.1,13.1,16.1}, 3.{4,5,6}.3 */
 	    retValueObj = TclLsetFlat(interp, listObj, 1, &indexArgObj, valueObj);
 	}
-
     } else {
 
 	indexListCopy = TclListObjCopy(NULL,indexArgObj);
@@ -2936,7 +2934,7 @@ TclLsetList(
  * TclLsetFlat --
  *
  *	Core engine of the 'lset' command.
- *      It also handles 'lpop' when given a NULL value.
+ *	It also handles 'lpop' when given a NULL value.
  *
  * Results:
  *	Returns the new value of the list variable, or NULL if an error
@@ -3019,8 +3017,8 @@ TclLsetFlat(
     /* Allocate if static array for pending invalidations is too small */
     if (indexCount > (Tcl_Size) (sizeof(pendingInvalidates) /
 	    sizeof(pendingInvalidates[0]))) {
-	pendingInvalidatesPtr =
-	    (Tcl_Obj **) Tcl_Alloc(indexCount * sizeof(*pendingInvalidatesPtr));
+	pendingInvalidatesPtr = (Tcl_Obj **)
+		Tcl_Alloc(indexCount * sizeof(*pendingInvalidatesPtr));
     }
 
     /*
@@ -3323,8 +3321,8 @@ FreeListInternalRep(
     ListObjGetRep(listObj, &listRep);
     if (listRep.storePtr->refCount-- <= 1) {
 	ObjArrayDecrRefs(
-	    listRep.storePtr->slots,
-	    listRep.storePtr->firstUsed, listRep.storePtr->numUsed);
+		listRep.storePtr->slots,
+		listRep.storePtr->firstUsed, listRep.storePtr->numUsed);
 	Tcl_Free(listRep.storePtr);
     }
     if (listRep.spanPtr) {
@@ -3516,8 +3514,7 @@ SetListFromAny(
 	    Tcl_IncrRefCount(*elemPtrs++);/* Since list now holds ref to it. */
 	}
 
-	listRep.storePtr->numUsed =
-	    elemPtrs - listRep.storePtr->slots;
+	listRep.storePtr->numUsed = elemPtrs - listRep.storePtr->slots;
     }
 
     LISTREP_CHECK(&listRep);
@@ -3552,8 +3549,7 @@ SetListFromAny(
  *	Any previously-existing string representation is not invalidated, so
  *	storage is lost if this has not been taken care of.
  *
- * Effect
- *
+ * Side effects:
  *	The string representation of 'listPtr' is set to the resulting string.
  *	This string will be empty if the list has no elements. It is assumed
  *	that the list internal representation is not NULL.
@@ -3655,14 +3651,14 @@ UpdateStringOfList(
  *
  * TclListTestObj --
  *
- *    Returns a list object with a specific internal rep and content.
- *    Used specifically for testing so span can be controlled explicitly.
+ *	Returns a list object with a specific internal rep and content.
+ *	Used specifically for testing so span can be controlled explicitly.
  *
  * Results:
- *    Pointer to the Tcl_Obj containing the list.
+ *	Pointer to the Tcl_Obj containing the list.
  *
  * Side effects:
- *    None.
+ *	None.
  *
  *------------------------------------------------------------------------
  */

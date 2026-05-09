@@ -882,7 +882,7 @@ CopyArray(
 				 * that they are C strings of dynamic
 				 * length. */
     char *buf,			/* Buffer to copy into. */
-    size_t buflen)			/* Size of buffer. */
+    size_t buflen)		/* Size of buffer. */
 {
     size_t i, j, len = 0;
     char *p, **newBuffer;
@@ -943,7 +943,7 @@ static size_t
 CopyString(
     const char *src,		/* String to copy. */
     char *buf,			/* Buffer to copy into. */
-    size_t buflen)			/* Size of buffer. */
+    size_t buflen)		/* Size of buffer. */
 {
     size_t len = 0;
 
@@ -959,14 +959,6 @@ CopyString(
 }
 #endif /* NEED_COPYSTRING */
 
-/*
- * Local Variables:
- * mode: c
- * c-basic-offset: 4
- * fill-column: 78
- * End:
- */
-
 /*
  *------------------------------------------------------------------------
  *
@@ -1012,7 +1004,7 @@ TclWinCPUID(
 #endif
     return status;
 }
-
+
 /*
  * Local Variables:
  * mode: c

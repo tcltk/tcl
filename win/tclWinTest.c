@@ -38,14 +38,14 @@
  * Forward declarations of functions defined later in this file:
  */
 
-static Tcl_ObjCmdProc	TesteventloopCmd;
-static Tcl_ObjCmdProc	TestvolumetypeCmd;
-static Tcl_ObjCmdProc	TestwinclockCmd;
-static Tcl_ObjCmdProc	TestwinsleepCmd;
-static Tcl_ObjCmdProc	TestExceptionCmd;
+static Tcl_ObjCmdProc2	TesteventloopCmd;
+static Tcl_ObjCmdProc2	TestvolumetypeCmd;
+static Tcl_ObjCmdProc2	TestwinclockCmd;
+static Tcl_ObjCmdProc2	TestwinsleepCmd;
+static Tcl_ObjCmdProc2	TestExceptionCmd;
 static int		TestplatformChmod(const char *nativePath, int pmode);
-static Tcl_ObjCmdProc	TestchmodCmd;
-
+static Tcl_ObjCmdProc2	TestchmodCmd;
+static Tcl_ObjCmdProc2	TestlongpathsettingCmd;
 /*
  *----------------------------------------------------------------------
  *
@@ -71,13 +71,16 @@ TclplatformtestInit(
      * Add commands for platform specific tests for Windows here.
      */
 
-    Tcl_CreateObjCommand(interp, "testchmod", TestchmodCmd, NULL, NULL);
-    Tcl_CreateObjCommand(interp, "testeventloop", TesteventloopCmd, NULL, NULL);
-    Tcl_CreateObjCommand(interp, "testvolumetype", TestvolumetypeCmd,
+    Tcl_CreateObjCommand2(interp, "testchmod", TestchmodCmd, NULL, NULL);
+    Tcl_CreateObjCommand2(interp, "testeventloop", TesteventloopCmd, NULL, NULL);
+    Tcl_CreateObjCommand2(interp, "testvolumetype", TestvolumetypeCmd,
 	    NULL, NULL);
-    Tcl_CreateObjCommand(interp, "testwinclock", TestwinclockCmd, NULL, NULL);
-    Tcl_CreateObjCommand(interp, "testwinsleep", TestwinsleepCmd, NULL, NULL);
-    Tcl_CreateObjCommand(interp, "testexcept", TestExceptionCmd, NULL, NULL);
+    Tcl_CreateObjCommand2(interp, "testwinclock", TestwinclockCmd, NULL, NULL);
+    Tcl_CreateObjCommand2(interp, "testwinsleep", TestwinsleepCmd, NULL, NULL);
+    Tcl_CreateObjCommand2(interp, "testexcept", TestExceptionCmd, NULL, NULL);
+    Tcl_CreateObjCommand2(interp, "testlongpathsetting",
+	TestlongpathsettingCmd, NULL, NULL);
+
     return TCL_OK;
 }
 
@@ -103,7 +106,7 @@ static int
 TesteventloopCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     static int *framePtr = NULL;/* Pointer to integer on stack frame of
@@ -179,7 +182,7 @@ static int
 TestvolumetypeCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
 #define VOL_BUF_SIZE 32
@@ -245,7 +248,7 @@ static int
 TestwinclockCmd(
     TCL_UNUSED(void *),
     Tcl_Interp* interp,		/* Tcl interpreter */
-    int objc,			/* Argument count */
+    Tcl_Size objc,		/* Argument count */
     Tcl_Obj *const objv[])	/* Argument vector */
 {
     static const FILETIME posixEpoch = { 0xD53E8000, 0x019DB1DE };
@@ -294,7 +297,7 @@ static int
 TestwinsleepCmd(
     TCL_UNUSED(void *),
     Tcl_Interp* interp,		/* Tcl interpreter */
-    int objc,			/* Parameter count */
+    Tcl_Size objc,		/* Parameter count */
     Tcl_Obj *const * objv)	/* Parameter vector */
 {
     int ms;
@@ -337,7 +340,7 @@ static int
 TestExceptionCmd(
     TCL_UNUSED(void *),
     Tcl_Interp* interp,		/* Tcl interpreter */
-    int objc,			/* Argument count */
+    Tcl_Size objc,		/* Argument count */
     Tcl_Obj *const objv[])	/* Argument vector */
 {
     static const char *const cmds[] = {
@@ -437,7 +440,7 @@ TestplatformChmod(
 	DWORD sidLen;
     } aceEntry[3];
     DWORD dw;
-    int isDir;
+    bool isDir;
     TOKEN_USER *pTokenUser = NULL;
     Tcl_DString ds;
 
@@ -569,7 +572,7 @@ TestplatformChmod(
     /* Add in size required for each ACE entry in the ACL */
     for (i = 0; i < nSids; ++i) {
 	newAclSize += (DWORD)
-	    offsetof(ACCESS_ALLOWED_ACE, SidStart) + aceEntry[i].sidLen;
+		offsetof(ACCESS_ALLOWED_ACE, SidStart) + aceEntry[i].sidLen;
     }
     newAcl = (PACL)Tcl_Alloc(newAclSize);
     if (!InitializeAcl(newAcl, newAclSize, ACL_REVISION)) {
@@ -638,7 +641,7 @@ static int
 TestchmodCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Parameter count */
+    Tcl_Size objc,		/* Parameter count */
     Tcl_Obj *const * objv)	/* Parameter vector */
 {
     Tcl_Size i;
@@ -668,6 +671,44 @@ TestchmodCmd(
 	}
 	Tcl_DStringFree(&buffer);
     }
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TestlongpathsettingCmd --
+ *
+ *	Returns whether long path support is enabled on this system.
+ *	Primary use is during testing.
+ *
+ * Results:
+ *	1 if long path support is enabled, 0 if not.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+TestlongpathsettingCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,
+    TCL_UNUSED(Tcl_Size), /* objc */
+    TCL_UNUSED(Tcl_Obj *const *)) /* objv */
+{
+    static DWORD longPathsEnabled = UINT_MAX;
+    /*
+     * We do not bother with thread synchronization as the initialization
+     * should only happen at init time.
+     */
+    if (longPathsEnabled == UINT_MAX) {
+	DWORD dw = sizeof(longPathsEnabled);
+	if (RegGetValueA(HKEY_LOCAL_MACHINE,
+		"SYSTEM\\CurrentControlSet\\Control\\FileSystem",
+		"LongPathsEnabled", RRF_RT_REG_DWORD, NULL, &longPathsEnabled,
+		&dw) != ERROR_SUCCESS) {
+	    longPathsEnabled = 0;
+	}
+    }
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(longPathsEnabled));
     return TCL_OK;
 }
 

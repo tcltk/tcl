@@ -12,7 +12,6 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
-#include <assert.h>
 #include "tclInt.h"
 #include "tclParse.h"
 #include "tclStringTrim.h"
@@ -149,11 +148,11 @@ static int		FindElement(Tcl_Interp *interp, const char *string,
  */
 
 static const Tcl_ObjType endOffsetType = {
-    "end-offset",			/* name */
-    NULL,				/* freeIntRepProc */
-    NULL,				/* dupIntRepProc */
-    NULL,				/* updateStringProc */
-    NULL,				/* setFromAnyProc */
+    "end-offset",
+    NULL,			// FreeIntRep
+    NULL,			// DupIntRep
+    NULL,			// UpdateString
+    NULL,			// SetFromAny
     TCL_OBJTYPE_V1(TclLengthOne)
 };
 
@@ -402,7 +401,7 @@ TclLengthOne(
  *
  *	Given 'bytes' pointing to 'numBytes' bytes, scan through them and
  *	count the number of whitespace runs that could be list element
- *	separators. If 'numBytes' is TCL_INDEX_NONE, scan to the terminating
+ *	separators. If 'numBytes' is < 0, scan to the terminating
  *	'\0'. Not a full list parser. Typically used to get a quick and dirty
  *	overestimate of length size in order to allocate space for an actual
  *	list parser to operate with.
@@ -426,7 +425,7 @@ TclMaxListLength(
 {
     Tcl_Size count = 0;
 
-    if ((numBytes == 0) || ((numBytes == TCL_INDEX_NONE) && (*bytes == '\0'))) {
+    if ((numBytes == 0) || ((numBytes < 0) && (*bytes == '\0'))) {
 	/* Empty string case - quick exit */
 	goto done;
     }
@@ -983,9 +982,9 @@ Tcl_SplitList(
 
 Tcl_Size
 Tcl_ScanElement(
-    const char *src,	/* String to convert to list element. */
-    int *flagPtr)	/* Where to store information to guide
-			 * Tcl_ConvertCountedElement. */
+    const char *src,		/* String to convert to list element. */
+    int *flagPtr)		/* Where to store information to guide
+				 * Tcl_ConvertCountedElement. */
 {
     return Tcl_ScanCountedElement(src, TCL_INDEX_NONE, flagPtr);
 }
@@ -1035,7 +1034,7 @@ Tcl_ScanCountedElement(
  *	This function is a companion function to TclConvertElement. It scans a
  *	string to see what needs to be done to it (e.g. add backslashes or
  *	enclosing braces) to make the string into a valid Tcl list element. If
- *	length is TCL_INDEX_NONE, then the string is scanned from src up to the first null
+ *	length is < 0, then the string is scanned from src up to the first null
  *	byte. A NULL value for src is treated as an empty string. The incoming
  *	value of *flagPtr is a report from the caller what additional flags it
  *	will pass to TclConvertElement().
@@ -1060,7 +1059,8 @@ Tcl_ScanCountedElement(
 Tcl_Size
 TclScanElement(
     const char *src,		/* String to convert to Tcl list element. */
-    Tcl_Size length,		/* Number of bytes in src, or TCL_INDEX_NONE. */
+    Tcl_Size length,		/* Number of bytes in src,
+				 * < 0 means null terminated */
     char *flagPtr)		/* Where to store information to guide
 				 * Tcl_ConvertElement. */
 {
@@ -1081,7 +1081,7 @@ TclScanElement(
     int braceCount = 0;		/* Count of all braces '{' '}' seen. */
 #endif /* COMPAT */
 
-    if ((p == NULL) || (length == 0) || ((*p == '\0') && (length == TCL_INDEX_NONE))) {
+    if ((p == NULL) || (length == 0) || ((*p == '\0') && (length < 0))) {
 	/*
 	 * Empty string element must be brace quoted.
 	 */
@@ -1164,7 +1164,7 @@ TclScanElement(
 	    case '\\':	/* TYPE_SUBS */
 		extra++;			/* Escape '\' => '\\' */
 		if ((length == 1) ||
-			((length == TCL_INDEX_NONE) && (p[1] == '\0'))) {
+			((length < 0) && (p[1] == '\0'))) {
 		    /*
 		     * Final backslash. Cannot format with brace quoting.
 		     */
@@ -1195,7 +1195,7 @@ TclScanElement(
 #endif /* COMPAT */
 		break;
 	    case '\0':	/* TYPE_SUBS */
-		if (length == TCL_INDEX_NONE) {
+		if (length < 0) {
 		    goto endOfString;
 		}
 		/* TODO: Panic on improper encoding? */
@@ -1425,7 +1425,8 @@ Tcl_ConvertCountedElement(
 Tcl_Size
 TclConvertElement(
     const char *src,		/* Source information for list element. */
-    Tcl_Size length,		/* Number of bytes in src, or TCL_INDEX_NONE. */
+    Tcl_Size length,		/* Number of bytes in src, or
+				 * < 0 if null terminated */
     char *dst,			/* Place to put list-ified element. */
     int flags)			/* Flags produced by Tcl_ScanElement. */
 {
@@ -1444,7 +1445,7 @@ TclConvertElement(
      * No matter what the caller demands, empty string must be braced!
      */
 
-    if ((src == NULL) || (length == 0) || (*src == '\0' && length == TCL_INDEX_NONE)) {
+    if ((src == NULL) || (length == 0) || (*src == '\0' && length < 0)) {
 	p[0] = '{';
 	p[1] = '}';
 	return 2;
@@ -1471,7 +1472,7 @@ TclConvertElement(
      */
 
     if (conversion == CONVERT_NONE) {
-	if (length == TCL_INDEX_NONE) {
+	if (length < 0) {
 	    /* TODO: INT_MAX overflow? */
 	    while (*src) {
 		*p++ = *src++;
@@ -1490,7 +1491,7 @@ TclConvertElement(
     if (conversion == CONVERT_BRACE) {
 	*p = '{';
 	p++;
-	if (length == TCL_INDEX_NONE) {
+	if (length < 0) {
 	    /* TODO: INT_MAX overflow? */
 	    while (*src) {
 		*p++ = *src++;
@@ -1563,7 +1564,7 @@ TclConvertElement(
 	    p++;
 	    continue;
 	case '\0':
-	    if (length == TCL_INDEX_NONE) {
+	    if (length < 0) {
 		return (p - dst);
 	    }
 
@@ -2366,7 +2367,7 @@ Tcl_StringCaseMatch(
  *	Parallels tclUtf.c:TclUniCharMatch, adjusted for char* and sans nocase.
  *
  * Results:
- *	The return value is 1 if string matches pattern, and 0 otherwise. The
+ *	The return value is true if string matches pattern, and false otherwise. The
  *	matching operation permits the following special characters in the
  *	pattern: *?\[] (see the manual entry for details on what these mean).
  *
@@ -2376,7 +2377,7 @@ Tcl_StringCaseMatch(
  *----------------------------------------------------------------------
  */
 
-int
+bool
 TclByteArrayMatch(
     const unsigned char *string,/* String. */
     Tcl_Size strLen,		/* Length of String */
@@ -2404,7 +2405,7 @@ TclByteArrayMatch(
 	}
 	p = *pattern;
 	if ((string == stringEnd) && (p != '*')) {
-	    return 0;
+	    return false;
 	}
 
 	/*
@@ -2424,7 +2425,7 @@ TclByteArrayMatch(
 		/* empty body */
 	    }
 	    if (pattern == patternEnd) {
-		return 1;
+		return true;
 	    }
 	    p = *pattern;
 	    while (1) {
@@ -2441,10 +2442,10 @@ TclByteArrayMatch(
 		}
 		if (TclByteArrayMatch(string, stringEnd - string,
 			pattern, patternEnd - pattern, 0)) {
-		    return 1;
+		    return true;
 		}
 		if (string == stringEnd) {
-		    return 0;
+		    return false;
 		}
 		string++;
 	    }
@@ -2475,14 +2476,14 @@ TclByteArrayMatch(
 	    string++;
 	    while (1) {
 		if ((*pattern == ']') || (pattern == patternEnd)) {
-		    return 0;
+		    return false;
 		}
 		startChar = *pattern;
 		pattern++;
 		if (*pattern == '-') {
 		    pattern++;
 		    if (pattern == patternEnd) {
-			return 0;
+			return false;
 		    }
 		    endChar = *pattern;
 		    pattern++;
@@ -2516,7 +2517,7 @@ TclByteArrayMatch(
 
 	if (p == '\\') {
 	    if (++pattern == patternEnd) {
-		return 0;
+		return false;
 	    }
 	}
 
@@ -2526,7 +2527,7 @@ TclByteArrayMatch(
 	 */
 
 	if (*string != *pattern) {
-	    return 0;
+	    return false;
 	}
 	string++;
 	pattern++;
@@ -2543,7 +2544,7 @@ TclByteArrayMatch(
  *	matching algorithms.
  *
  * Results:
- *	The return value is 1 if string matches pattern, and 0 otherwise. The
+ *	The return value is true if string matches pattern, and false otherwise. The
  *	matching operation permits the following special characters in the
  *	pattern: *?\[] (see the manual entry for details on what these mean).
  *
@@ -2553,14 +2554,14 @@ TclByteArrayMatch(
  *----------------------------------------------------------------------
  */
 
-int
+bool
 TclStringMatchObj(
     Tcl_Obj *strObj,		/* string object. */
     Tcl_Obj *ptnObj,		/* pattern object. */
     int flags)			/* Only TCL_MATCH_NOCASE should be passed, or
 				 * 0. */
 {
-    int match;
+    bool match;
     Tcl_Size length = 0, plen = 0;
 
     /*
@@ -2639,11 +2640,10 @@ Tcl_DStringInit(
 char *
 Tcl_DStringAppend(
     Tcl_DString *dsPtr,		/* Structure describing dynamic string. */
-    const char *bytes,		/* String to append. If length is
-				 * TCL_INDEX_NONE then this must be
-				 * null-terminated. */
+    const char *bytes,		/* String to append. If length is < 0
+				 * then this must be null-terminated. */
     Tcl_Size length)		/* Number of bytes from "bytes" to append. If
-				 * TCL_INDEX_NONE, then append all of bytes, up
+				 * < 0, then append all of bytes, up
 				 * to null at end. */
 {
     Tcl_Size newSize;
@@ -3451,7 +3451,7 @@ GetWideForIndex(
  *	TCL_SIZE_MAX. Negative values are returned as TCL_INDEX_NONE (-1).
  *
  *	Callers should pass reasonable values for endValue - one in the
- *      valid index range or TCL_INDEX_NONE (-1), for example for an empty
+ *	valid index range or TCL_INDEX_NONE (-1), for example for an empty
  *	list.
  *
  * Results:
@@ -3522,7 +3522,7 @@ Tcl_GetIntForIndex(
  *	-1:         Index "end"
  *	0:          Index "0"
  *	WIDE_MAX-1: Index "end+n", for any n > 1. Distinguish from end+1 for
- *                  commands like lset.
+ *	            commands like lset.
  *	WIDE_MAX:   Index "end+1"
  *
  * Results:
@@ -3779,57 +3779,58 @@ GetEndOffsetFromObj(
  *----------------------------------------------------------------------
  *
  * TclIndexEncode --
- *      IMPORTANT: function only encodes indices in the range that fits within
- *      an "int" type. Do NOT change this as the byte code compiler and engine
- *      which call this function cannot handle wider index types. Indices
- *      outside the range will result in the function returning an error.
  *
- *      Parse objPtr to determine if it is an index value. Two cases
+ *	IMPORTANT: function only encodes indices in the range that fits within
+ *	an "int" type. Do NOT change this as the byte code compiler and engine
+ *	which call this function cannot handle wider index types. Indices
+ *	outside the range will result in the function returning an error.
+ *
+ *	Parse objPtr to determine if it is an index value. Two cases
  *	are possible.  The value objPtr might be parsed as an absolute
  *	index value in the Tcl_Size range.  Note that this includes
  *	index values that are integers as presented and it includes index
- *      arithmetic expressions.
+ *	arithmetic expressions.
  *
- *      The largest string supported in Tcl 8 has byte length TCL_SIZE_MAX.
- *      This means the largest supported character length is also TCL_SIZE_MAX,
- *      and the index of the last character in a string of length TCL_SIZE_MAX
- *      is TCL_SIZE_MAX-1. Thus the absolute index values that can be
+ *	The largest string supported in Tcl 8 has byte length TCL_SIZE_MAX.
+ *	This means the largest supported character length is also TCL_SIZE_MAX,
+ *	and the index of the last character in a string of length TCL_SIZE_MAX
+ *	is TCL_SIZE_MAX-1. Thus the absolute index values that can be
  *	directly meaningful as an index into either a list or a string are
  *	integer values in the range 0 to TCL_SIZE_MAX - 1.
  *
- *      This function however can only handle integer indices in the range
- *      0 : INT_MAX-1.
+ *	This function however can only handle integer indices in the range
+ *	0 : INT_MAX-1.
  *
- *      Any absolute index value parsed outside that range is encoded
- *      using the before and after values passed in by the
- *      caller as the encoding to use for indices that are either
- *      less than or greater than the usable index range. TCL_INDEX_NONE
- *      is available as a good choice for most callers to use for
- *      after. Likewise, the value TCL_INDEX_NONE is good for
- *      most callers to use for before.  Other values are possible
- *      when the caller knows it is helpful in producing its own behavior
- *      for indices before and after the indexed item.
+ *	Any absolute index value parsed outside that range is encoded
+ *	using the before and after values passed in by the
+ *	caller as the encoding to use for indices that are either
+ *	less than or greater than the usable index range. TCL_INDEX_NONE
+ *	is available as a good choice for most callers to use for
+ *	after. Likewise, the value TCL_INDEX_NONE is good for
+ *	most callers to use for before.  Other values are possible
+ *	when the caller knows it is helpful in producing its own behavior
+ *	for indices before and after the indexed item.
  *
- *      A token can also be parsed as an end-relative index expression.
- *      All end-relative expressions that indicate an index larger
- *      than end (end+2, end--5) point beyond the end of the indexed
- *      collection, and can be encoded as after.  The end-relative
- *      expressions that indicate an index less than or equal to end
- *      are encoded relative to the value TCL_INDEX_END (-2).  The
- *      index "end" is encoded as -2, down to the index "end-0x7FFFFFFE"
- *      which is encoded as INT_MIN. Since the largest index into a
- *      string possible in Tcl 8 is 0x7FFFFFFE, the interpretation of
+ *	A token can also be parsed as an end-relative index expression.
+ *	All end-relative expressions that indicate an index larger
+ *	than end (end+2, end--5) point beyond the end of the indexed
+ *	collection, and can be encoded as after.  The end-relative
+ *	expressions that indicate an index less than or equal to end
+ *	are encoded relative to the value TCL_INDEX_END (-2).  The
+ *	index "end" is encoded as -2, down to the index "end-0x7FFFFFFE"
+ *	which is encoded as INT_MIN. Since the largest index into a
+ *	string possible in Tcl 8 is 0x7FFFFFFE, the interpretation of
  *      "end-0x7FFFFFFE" for that largest string would be 0.  Thus,
- *      if the tokens "end-0x7FFFFFFF" or "end+-0x80000000" are parsed,
- *      they can be encoded with the before value.
+ *	if the tokens "end-0x7FFFFFFF" or "end+-0x80000000" are parsed,
+ *	they can be encoded with the before value.
  *
  * Returns:
- *      TCL_OK if parsing succeeded, and TCL_ERROR if it failed or the
- *      index does not fit in an int type.
+ *	TCL_OK if parsing succeeded, and TCL_ERROR if it failed or the
+ *	index does not fit in an int type.
  *
  * Side effects:
- *      When TCL_OK is returned, the encoded index value is written
- *      to *indexPtr.
+ *	When TCL_OK is returned, the encoded index value is written
+ *	to *indexPtr.
  *
  *----------------------------------------------------------------------
  */
@@ -3993,42 +3994,6 @@ TclIndexDecode(
 	return endValue;
     }
     return TCL_INDEX_NONE;
-}
-
-/*
- *------------------------------------------------------------------------
- *
- * TclCommandWordLimitErrpr --
- *
- *    Generates an error message limit on number of command words exceeded.
- *
- * Results:
- *    Always return TCL_ERROR.
- *
- * Side effects:
- *    If interp is not-NULL, an error message is stored in it.
- *
- *------------------------------------------------------------------------
- */
-int
-TclCommandWordLimitError(
-    Tcl_Interp *interp,		/* May be NULL */
-    Tcl_Size count)		/* If <= 0, "unknown" */
-{
-    if (interp) {
-	if (count > 0) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "Number of words (%" TCL_SIZE_MODIFIER
-		    "d) in command exceeds limit %" TCL_SIZE_MODIFIER "d.",
-		    count, (Tcl_Size)INT_MAX));
-	} else {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "Number of words in command exceeds limit %"
-		    TCL_SIZE_MODIFIER "d.",
-		    (Tcl_Size)INT_MAX));
-	}
-    }
-    return TCL_ERROR; /* Always */
 }
 
 /*
@@ -4358,6 +4323,48 @@ TclGetObjNameOfExecutable(void)
 /*
  *----------------------------------------------------------------------
  *
+ * TclGetObjExecutableAncestors --
+ *
+ *	This function retrieves the paths to the directory ancestor(s) of
+ *	the application. The first element of the returned pathPtrs array is
+ *	the directory of the application, the second is the parent of that
+ *	directory and so on. If the number of elements requested is greater
+ *	that the directory depth, the additional elements will contain NULL.
+ *
+ *	IMPORTANT: The objects returned in pathPtrs[] will have had their
+ *	reference counts incremented so caller owns them.
+ *
+ * Results:
+ *	Returns the number of elements filled with paths. On error, returns
+ *	-1 with an error message in interp if not NULL.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_Size
+TclGetObjExecutableAncestors(
+    Tcl_Interp *interp,		/* interp for errors. May be NULL */
+    Tcl_Size numPaths,		/* Size of pathPtrs[] */
+    Tcl_Obj *pathsPtr[])	/* Output array holding ancestor paths */
+{
+    Tcl_Obj *exePtr = TclGetObjNameOfExecutable();
+    if (exePtr == NULL) {
+	if (interp) {
+	    Tcl_SetResult(interp, "Could not retrieve path of executable.",
+		TCL_STATIC);
+	}
+	return -1;
+    }
+
+    return TclFSGetAncestorPaths(interp, exePtr, numPaths, pathsPtr);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Tcl_GetNameOfExecutable --
  *
  *	This function retrieves the absolute pathname of the application in
@@ -4390,6 +4397,8 @@ Tcl_GetNameOfExecutable(void)
 
 #if !defined(STATIC_BUILD)
 /*
+ *----------------------------------------------------------------------
+ *
  * TclSetObjNameOfShlib --
  *
  *	This function stores the absolute pathname of the Tcl shared library.
@@ -4399,8 +4408,9 @@ Tcl_GetNameOfExecutable(void)
  *
  * Side effects:
  *	Stores the shared library name in the process global database.
+ *
+ *----------------------------------------------------------------------
  */
-
 void
 TclSetObjNameOfShlib(
     Tcl_Obj *name,
@@ -4408,7 +4418,7 @@ TclSetObjNameOfShlib(
 {
     TclSetProcessGlobalValue(&shlibName, name);
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -4850,7 +4860,7 @@ TclMSB(
 #undef LEAD
 #endif
 }
-
+
 /*
  * Local Variables:
  * mode: c

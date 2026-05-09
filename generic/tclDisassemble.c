@@ -16,7 +16,6 @@
 #define ALLOW_DEPRECATED_OPCODES
 #include "tclCompile.h"
 #include "tclOOInt.h"
-#include <assert.h>
 
 /*
  * Prototypes for procedures defined later in this file:
@@ -38,11 +37,11 @@ static void		UpdateStringOfInstName(Tcl_Obj *objPtr);
  */
 
 static const Tcl_ObjType instNameType = {
-    "instname",			/* name */
-    NULL,			/* freeIntRepProc */
-    NULL,			/* dupIntRepProc */
-    UpdateStringOfInstName,	/* updateStringProc */
-    NULL,			/* setFromAnyProc */
+    "instname",
+    NULL,			// FreeIntRep
+    NULL,			// DupIntRep
+    UpdateStringOfInstName,
+    NULL,			// SetFromAny
     TCL_OBJTYPE_V0
 };
 
@@ -913,7 +912,7 @@ static void
 UpdateStringOfInstName(
     Tcl_Obj *objPtr)
 {
-    size_t inst;	/* NOTE: We know this is really an unsigned char */
+    size_t inst;		/* NOTE: We know this is really an unsigned char */
     char *dst;
 
     InstNameGetInternalRep(objPtr, inst);
@@ -1353,7 +1352,7 @@ int
 Tcl_DisassembleObjCmd(
     void *clientData,		/* What type of operation. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     static const char *const types[] = {

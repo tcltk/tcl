@@ -54,10 +54,10 @@ extern "C" {
 #endif
 #define TCL_MINOR_VERSION   1
 #define TCL_RELEASE_LEVEL   TCL_ALPHA_RELEASE
-#define TCL_RELEASE_SERIAL  1
+#define TCL_RELEASE_SERIAL  2
 
 #define TCL_VERSION	    "9.1"
-#define TCL_PATCH_LEVEL	    "9.1a1"
+#define TCL_PATCH_LEVEL	    "9.1a2"
 
 #if defined(RC_INVOKED)
 /*
@@ -503,7 +503,7 @@ typedef struct stat *Tcl_OldStat_;
 #define TCL_BREAK		3
 #define TCL_CONTINUE		4
 #define TCL_CODE_USER_MIN	5
-#define TCL_CODE_USER_MAX	0x3fffffff /*  1073741823 */
+#define TCL_CODE_USER_MAX	0x3fffffff /* 1073741823 */
 
 /*
  *----------------------------------------------------------------------------
@@ -535,12 +535,14 @@ typedef void (Tcl_CloseProc) (void *data);
 typedef void (Tcl_CmdDeleteProc) (void *clientData);
 typedef int (Tcl_CmdProc) (void *clientData, Tcl_Interp *interp,
 	int argc, const char *argv[]);
+#ifndef TCL_NO_DEPRECATED
 typedef void (Tcl_CmdTraceProc) (void *clientData, Tcl_Interp *interp,
 	int level, char *command, Tcl_CmdProc *proc,
 	void *cmdClientData, int argc, const char *argv[]);
 typedef int (Tcl_CmdObjTraceProc) (void *clientData, Tcl_Interp *interp,
 	int level, const char *command, Tcl_Command commandInfo, int objc,
 	struct Tcl_Obj *const *objv);
+#endif /* TCL_NO_DEPRECATED */
 typedef void (Tcl_CmdObjTraceDeleteProc) (void *clientData);
 typedef void (Tcl_DupInternalRepProc) (struct Tcl_Obj *srcPtr,
 	struct Tcl_Obj *dupPtr);
@@ -560,8 +562,10 @@ typedef void (Tcl_IdleProc) (void *clientData);
 typedef void (Tcl_InterpDeleteProc) (void *clientData,
 	Tcl_Interp *interp);
 typedef void (Tcl_NamespaceDeleteProc) (void *clientData);
+#if !defined(TCL_NO_DEPRECATED) || !defined(BUILD_tcl)
 typedef int (Tcl_ObjCmdProc) (void *clientData, Tcl_Interp *interp,
 	int objc, struct Tcl_Obj *const *objv);
+#endif /* TCL_NO_DEPRECATED */
 typedef int (Tcl_ObjCmdProc2) (void *clientData, Tcl_Interp *interp,
 	Tcl_Size objc, struct Tcl_Obj *const *objv);
 typedef int (Tcl_CmdObjTraceProc2) (void *clientData, Tcl_Interp *interp,
@@ -813,8 +817,13 @@ typedef struct {
 				 * Tcl_CreateObjCommand; 2 if objProc was registered by
 				 * a call to Tcl_CreateObjCommand2; 0 otherwise.
 				 * Tcl_SetCmdInfo does not modify this field. */
+#ifdef TCL_NO_DEPRECATED
+    void *objProcNotUsed;	/* Command's object-based function. */
+    void *objClientDataNotUsed;	/* ClientData for object proc. */
+#else
     Tcl_ObjCmdProc *objProc;	/* Command's object-based function. */
     void *objClientData;	/* ClientData for object proc. */
+#endif
     Tcl_CmdProc *proc;		/* Command's string-based function. */
     void *clientData;		/* ClientData for string proc. */
     Tcl_CmdDeleteProc *deleteProc;
@@ -880,10 +889,10 @@ typedef struct Tcl_DString {
  *	TCL_NUMBER_NAN		Value is NaN.
  */
 
-#define TCL_NUMBER_INT          2
-#define TCL_NUMBER_BIG          3
-#define TCL_NUMBER_DOUBLE       4
-#define TCL_NUMBER_NAN          5
+#define TCL_NUMBER_INT		2
+#define TCL_NUMBER_BIG		3
+#define TCL_NUMBER_DOUBLE	4
+#define TCL_NUMBER_NAN		5
 
 /*
  * Flag values passed to Tcl_ConvertElement.
@@ -944,7 +953,7 @@ typedef struct Tcl_DString {
 #define TCL_EVAL_DIRECT		0x040000
 #define TCL_EVAL_INVOKE		0x080000
 #define TCL_CANCEL_UNWIND	0x100000
-#define TCL_EVAL_NOERR          0x200000
+#define TCL_EVAL_NOERR		0x200000
 
 /*
  * Special freeProc values that may be passed to Tcl_SetResult (see the man
@@ -1215,7 +1224,7 @@ typedef struct Tcl_HashSearch {
 typedef struct {
     void *next;			/* Search position for underlying hash
 				 * table. */
-    size_t epoch;	/* Epoch marker for dictionary being searched,
+    size_t epoch;		/* Epoch marker for dictionary being searched,
 				 * or 0 if search has terminated. */
     Tcl_Dict dictionaryPtr;	/* Reference to dictionary being searched. */
 } Tcl_DictSearch;
@@ -1284,10 +1293,19 @@ typedef int (Tcl_WaitForEventProc) (const Tcl_Time *timePtr);
 
 /*
  * TIP #233 (Virtualized Time)
+ * WARNING: functionality removed, calls Tcl_Panic
  */
 
+#ifndef TCL_NO_DEPRECATED
 typedef void (Tcl_GetTimeProc)   (Tcl_Time *timebuf, void *clientData);
 typedef void (Tcl_ScaleTimeProc) (Tcl_Time *timebuf, void *clientData);
+#endif /* TCL_NO_DEPRECATED */
+
+/*
+ * TIP #723 (Monotonic Time)
+ */
+
+typedef long long (Tcl_GetMonotonicTimeProc)   (void *clientData);
 
 /*
  *----------------------------------------------------------------------------
@@ -1621,11 +1639,11 @@ typedef struct Tcl_Filesystem {
 				 * if the filesystem does not support glob or
 				 * recursive copy. */
     Tcl_FSUtimeProc *utimeProc;	/* Called by 'Tcl_FSUtime()', by 'file
-				 *  mtime' to set (not read) times, 'file
-				 *  atime', and the open-r/open-w/fcopy variant
-				 *  of 'file copy'. */
+				 * mtime' to set (not read) times, 'file
+				 * atime', and the open-r/open-w/fcopy variant
+				 * of 'file copy'. */
     Tcl_FSLinkProc *linkProc;	/* Called by 'Tcl_FSLink()'. NULL if reading or
-				 *  creating links is not supported. */
+				 * creating links is not supported. */
     Tcl_FSListVolumesProc *listVolumesProc;
 				/* Lists filesystem volumes added by this
 				 * filesystem. NULL if the filesystem does not
@@ -2230,8 +2248,7 @@ typedef Tcl_Size (Tcl_ArgvGenFuncProc)(void *clientData, Tcl_Interp *interp,
  * Single public declaration for NRE.
  */
 
-typedef int (Tcl_NRPostProc) (void *data[], Tcl_Interp *interp,
-				int result);
+typedef int (Tcl_NRPostProc) (void *data[], Tcl_Interp *interp, int result);
 
 /*
  *----------------------------------------------------------------------------
@@ -2343,7 +2360,7 @@ EXTERN const char *TclZipfs_AppHook(int *argc, char ***argv);
  * table.
  */
 
-#include "tclDecls.h"
+#include "tclDecls.h"  /* IWYU pragma: export */
 
 /*
  * Include platform specific public function declarations that are accessible
@@ -2356,7 +2373,7 @@ EXTERN const char *TclZipfs_AppHook(int *argc, char ***argv);
 #   define TCLAPI MODULE_SCOPE
 #endif
 
-#include "tclPlatDecls.h"
+#include "tclPlatDecls.h"  /* IWYU pragma: export */
 
 /*
  *----------------------------------------------------------------------------

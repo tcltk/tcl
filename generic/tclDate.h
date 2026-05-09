@@ -159,7 +159,9 @@ typedef enum {
  */
 
 enum TclDateFieldsFlags {
-    CLF_CTZ = (1 << 4)
+    CLF_BCE = (1 << 1),		/* set if BCE */
+    CLF_BGREG = (1 << 2),	/* set if the date is before Gregorian (Julian yet) */
+    CLF_CTZ = (1 << 4)		/* (special) revalidate TZ epoch next time used */
 };
 
 typedef struct {
@@ -172,8 +174,6 @@ typedef struct {
     int tzOffset;		/* Time zone offset in seconds east of
 				 * Greenwich */
     Tcl_WideInt julianDay;	/* Julian Day Number in local time zone */
-    int isBce;			/* 1 if BCE */
-    int gregorian;		/* Flag == 1 if the date is Gregorian */
     int year;			/* Year of the era */
     int dayOfYear;		/* Day of the year (1 January == 1) */
     int month;			/* Month number */
@@ -186,7 +186,7 @@ typedef struct {
     Tcl_WideInt secondOfMin;	/* Seconds of minute (in-between time only calculation) */
     Tcl_WideInt secondOfDay;	/* Seconds of day (in-between time only calculation) */
 
-    int flags;			/* 0 or CLF_CTZ */
+    int flags;			/* 0 or some of TclDateFieldsFlags */
 
     /* Non cacheable fields:	 */
 
@@ -290,19 +290,6 @@ enum ClockFmtScnCmdArgsFlags {
     CLF_LOCALE_USED = (1 << 15)
 };
 
-typedef struct ClockClientData ClockClientData;
-
-typedef struct ClockFmtScnCmdArgs {
-    ClockClientData *dataPtr;	/* Pointer to literal pool, etc. */
-    Tcl_Interp *interp;		/* Tcl interpreter */
-    Tcl_Obj *formatObj;		/* Format */
-    Tcl_Obj *localeObj;		/* Name of the locale where the time will be expressed. */
-    Tcl_Obj *timezoneObj;	/* Default time zone in which the time will be expressed */
-    Tcl_Obj *baseObj;		/* Base (scan and add) or clockValue (format) */
-    int flags;			/* Flags control scanning */
-    Tcl_Obj *mcDictObj;		/* Current dictionary of tcl::clock package for given localeObj*/
-} ClockFmtScnCmdArgs;
-
 /* Last-period cache for fast UTC to local and backwards conversion */
 typedef struct ClockLastTZOffs {
     /* keys */
@@ -373,6 +360,17 @@ typedef struct ClockClientData {
 				     * only CLF_VALIDATE supported */
 } ClockClientData;
 
+typedef struct ClockFmtScnCmdArgs {
+    ClockClientData *dataPtr;	/* Pointer to literal pool, etc. */
+    Tcl_Interp *interp;		/* Tcl interpreter */
+    Tcl_Obj *formatObj;		/* Format */
+    Tcl_Obj *localeObj;		/* Name of the locale where the time will be expressed. */
+    Tcl_Obj *timezoneObj;	/* Default time zone in which the time will be expressed */
+    Tcl_Obj *baseObj;		/* Base (scan and add) or clockValue (format) */
+    int flags;			/* Flags control scanning */
+    Tcl_Obj *mcDictObj;		/* Current dictionary of tcl::clock package for given localeObj*/
+} ClockFmtScnCmdArgs;
+
 #define ClockDefaultYearCentury 2000
 #define ClockDefaultCenturySwitch 38
 
@@ -390,10 +388,8 @@ typedef struct ClockClientData {
 
 typedef struct ClockScanToken ClockScanToken;
 
-typedef int ClockScanTokenProc(
-	ClockFmtScnCmdArgs *opts,
-	DateInfo *info,
-	const ClockScanToken *tok);
+typedef int (ClockScanTokenProc)(ClockFmtScnCmdArgs *opts,
+	DateInfo *info, const ClockScanToken *tok);
 
 typedef enum {
    CTOKT_INT = 1, CTOKT_WIDE, CTOKT_PARSER, CTOKT_SPACE, CTOKT_WORD, CTOKT_CHAR,
@@ -446,11 +442,8 @@ enum ClockFormatTokenMapFlags {
 
 typedef struct ClockFormatToken ClockFormatToken;
 
-typedef int ClockFormatTokenProc(
-	ClockFmtScnCmdArgs *opts,
-	DateFormat *dateFmt,
-	ClockFormatToken *tok,
-	int *val);
+typedef int (ClockFormatTokenProc)(ClockFmtScnCmdArgs *opts,
+	DateFormat *dateFmt, ClockFormatToken *tok, int *val);
 
 typedef struct ClockFormatTokenMap {
     unsigned short type;

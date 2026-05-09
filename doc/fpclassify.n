@@ -12,7 +12,7 @@
 .SH NAME
 fpclassify \- Floating point number classification of Tcl values
 .SH SYNOPSIS
-package require \fBtcl 9.0\fR
+\fBpackage require tcl 9.0\fR
 .sp
 \fBfpclassify \fIvalue\fR
 .BE

@@ -334,7 +334,7 @@ SendSelectMessage(
  *----------------------------------------------------------------------
  */
 
-void
+static void
 InitializeHostName(
     char **valuePtr,
     size_t *lengthPtr,
@@ -2472,7 +2472,7 @@ SocketExitHandler(
  *----------------------------------------------------------------------
  */
 
-void
+static void
 SocketSetupProc(
     TCL_UNUSED(void *),
     int flags)			/* Event flags as passed to Tcl_DoOneEvent. */

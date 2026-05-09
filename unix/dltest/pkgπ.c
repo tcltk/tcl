@@ -10,7 +10,6 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
-#undef STATIC_BUILD
 #include "tcl.h"
 
 /*
@@ -35,7 +34,7 @@ static int
 Pkg\u03C0_\u03A0ObjCmd(
     void *dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     (void)dummy;
@@ -73,13 +72,13 @@ Pkg\u03C0_Init(
 {
     int code;
 
-    if (Tcl_InitStubs(interp, "9.0", 0) == NULL) {
+    if (Tcl_InitStubs(interp, "9.0-", 0) == NULL) {
 	return TCL_ERROR;
     }
     code = Tcl_PkgProvide(interp, "pkgπ", "1.0");
     if (code != TCL_OK) {
 	return code;
     }
-    Tcl_CreateObjCommand(interp, "π", Pkg\u03C0_\u03A0ObjCmd, NULL, NULL);
+    Tcl_CreateObjCommand2(interp, "π", Pkg\u03C0_\u03A0ObjCmd, NULL, NULL);
     return TCL_OK;
 }

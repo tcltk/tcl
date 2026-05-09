@@ -27,26 +27,26 @@
 #endif
 #include "tclStringRep.h"
 
-#include <assert.h>
-
 /*
  * Forward declarations for functions defined later in this file:
  */
 
-static int		CheckIfVarUnset(Tcl_Interp *interp, Tcl_Obj **varPtr, Tcl_Size varIndex);
+static bool		CheckIfVarUnset(Tcl_Interp *interp, Tcl_Obj **varPtr,
+			    Tcl_Size varIndex);
 static int		GetVariableIndex(Tcl_Interp *interp,
 			    Tcl_Obj *obj, Tcl_Size *indexPtr);
-static void		SetVarToObj(Tcl_Obj **varPtr, Tcl_Size varIndex, Tcl_Obj *objPtr);
-static Tcl_ObjCmdProc	TestbignumobjCmd;
-static Tcl_ObjCmdProc	TestbooleanobjCmd;
-static Tcl_ObjCmdProc	TestdoubleobjCmd;
-static Tcl_ObjCmdProc	TestindexobjCmd;
-static Tcl_ObjCmdProc	TestintobjCmd;
-static Tcl_ObjCmdProc	TestlistobjCmd;
-static Tcl_ObjCmdProc	TestobjCmd;
-static Tcl_ObjCmdProc	TeststringobjCmd;
-static Tcl_ObjCmdProc	TestbigdataCmd;
-static Tcl_ObjCmdProc	TestisemptyCmd;
+static void		SetVarToObj(Tcl_Obj **varPtr, Tcl_Size varIndex,
+			    Tcl_Obj *objPtr);
+static Tcl_ObjCmdProc2	TestbignumobjCmd;
+static Tcl_ObjCmdProc2	TestbooleanobjCmd;
+static Tcl_ObjCmdProc2	TestdoubleobjCmd;
+static Tcl_ObjCmdProc2	TestindexobjCmd;
+static Tcl_ObjCmdProc2	TestintobjCmd;
+static Tcl_ObjCmdProc2	TestlistobjCmd;
+static Tcl_ObjCmdProc2	TestobjCmd;
+static Tcl_ObjCmdProc2	TeststringobjCmd;
+static Tcl_ObjCmdProc2	TestbigdataCmd;
+static Tcl_ObjCmdProc2	TestisemptyCmd;
 
 #define VARPTR_KEY "TCLOBJTEST_VARPTR"
 #define NUMBER_OF_OBJECT_VARS 20
@@ -119,25 +119,25 @@ TclObjTest_Init(
 	varPtr[i] = NULL;
     }
 
-    Tcl_CreateObjCommand(interp, "testbignumobj", TestbignumobjCmd,
+    Tcl_CreateObjCommand2(interp, "testbignumobj", TestbignumobjCmd,
 	    NULL, NULL);
-    Tcl_CreateObjCommand(interp, "testbooleanobj", TestbooleanobjCmd,
+    Tcl_CreateObjCommand2(interp, "testbooleanobj", TestbooleanobjCmd,
 	    NULL, NULL);
-    Tcl_CreateObjCommand(interp, "testdoubleobj", TestdoubleobjCmd,
+    Tcl_CreateObjCommand2(interp, "testdoubleobj", TestdoubleobjCmd,
 	    NULL, NULL);
-    Tcl_CreateObjCommand(interp, "testintobj", TestintobjCmd,
+    Tcl_CreateObjCommand2(interp, "testintobj", TestintobjCmd,
 	    NULL, NULL);
-    Tcl_CreateObjCommand(interp, "testindexobj", TestindexobjCmd,
+    Tcl_CreateObjCommand2(interp, "testindexobj", TestindexobjCmd,
 	    NULL, NULL);
-    Tcl_CreateObjCommand(interp, "testlistobj", TestlistobjCmd,
+    Tcl_CreateObjCommand2(interp, "testlistobj", TestlistobjCmd,
 	    NULL, NULL);
-    Tcl_CreateObjCommand(interp, "testobj", TestobjCmd, NULL, NULL);
-    Tcl_CreateObjCommand(interp, "teststringobj", TeststringobjCmd,
+    Tcl_CreateObjCommand2(interp, "testobj", TestobjCmd, NULL, NULL);
+    Tcl_CreateObjCommand2(interp, "teststringobj", TeststringobjCmd,
 	    NULL, NULL);
-    Tcl_CreateObjCommand(interp, "testisempty", TestisemptyCmd,
+    Tcl_CreateObjCommand2(interp, "testisempty", TestisemptyCmd,
 	    NULL, NULL);
     if (sizeof(Tcl_Size) == sizeof(Tcl_WideInt)) {
-	Tcl_CreateObjCommand(interp, "testbigdata", TestbigdataCmd,
+	Tcl_CreateObjCommand2(interp, "testbigdata", TestbigdataCmd,
 		NULL, NULL);
     }
     return TCL_OK;
@@ -165,7 +165,7 @@ static int
 TestbignumobjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Tcl interpreter */
-    int objc,			/* Argument count */
+    Tcl_Size objc,		/* Argument count */
     Tcl_Obj *const objv[])	/* Argument vector */
 {
     static const char *const subcmds[] = {
@@ -364,11 +364,11 @@ static int
 TestbooleanobjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Size varIndex;
-    int boolValue;
+    bool boolValue;
     const char *subCmd;
     Tcl_Obj **varPtr;
 
@@ -464,7 +464,7 @@ static int
 TestdoubleobjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Size varIndex;
@@ -580,10 +580,12 @@ static int
 TestindexobjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int allowAbbrev, index, setError, i, result;
+    bool allowAbbrev, setError;
+    int index, result;
+    Tcl_Size i;
     Tcl_Size index2;
     const char **argv;
     static const char *const tablePtr[] = {"a", "b", "check", NULL};
@@ -670,7 +672,7 @@ static int
 TestintobjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Size varIndex;
@@ -898,11 +900,11 @@ static int
 TestlistobjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Tcl interpreter */
-    int objc,			/* Number of arguments */
+    Tcl_Size objc,		/* Number of arguments */
     Tcl_Obj *const objv[])	/* Argument objects */
 {
     /* Subcommands supported by this command */
-    static const char* const subcommands[] = {
+    static const char *const subcommands[] = {
 	"set",
 	"get",
 	"replace",
@@ -1066,11 +1068,15 @@ TestlistobjCmd(
  *----------------------------------------------------------------------
  */
 
-static Tcl_Size V1TestListObjLength(TCL_UNUSED(Tcl_Obj *)) {
+static Tcl_Size
+V1TestListObjLength(
+    TCL_UNUSED(Tcl_Obj *))
+{
     return 100;
 }
 
-static int V1TestListObjIndex(
+static int
+V1TestListObjIndex(
     TCL_UNUSED(Tcl_Interp *),
     TCL_UNUSED(Tcl_Obj *),
     TCL_UNUSED(Tcl_Size),
@@ -1081,20 +1087,18 @@ static int V1TestListObjIndex(
 }
 
 static const Tcl_ObjType v1TestListType = {
-    "testlist",			/* name */
-    NULL,			/* freeIntRepProc */
-    NULL,			/* dupIntRepProc */
-    NULL,			/* updateStringProc */
-    NULL,			/* setFromAnyProc */
-    offsetof(Tcl_ObjType, indexProc), /* This is a V1 objType, which doesn't have an indexProc */
-    V1TestListObjLength,	/* always return 100, doesn't really matter */
-    V1TestListObjIndex,		/* should never be accessed, because this objType = V1*/
+    "testlist",
+    NULL,			// FreeIntRep
+    NULL,			// DupIntRep
+    NULL,			// UpdateString
+    NULL,			// SetFromAny
+    offsetof(Tcl_ObjType, indexProc), // This is a V1 objType, which doesn't have an indexProc
+    V1TestListObjLength,	// always returns 100, doesn't really matter
+    V1TestListObjIndex,		// should never be accessed, because this objType = V1
     NULL, NULL, NULL, NULL, NULL, NULL
 };
 
-
-static
-void
+static void
 HugeUpdateString(
     TCL_UNUSED(Tcl_Obj *))
 {
@@ -1104,20 +1108,19 @@ HugeUpdateString(
 }
 
 static const Tcl_ObjType hugeType = {
-    "huge",			/* name */
-    NULL,			/* freeIntRepProc */
-    NULL,			/* dupIntRepProc */
-    HugeUpdateString,		/* updateStringProc */
-    NULL,			/* setFromAnyProc */
+    "huge",
+    NULL,			// FreeIntRep
+    NULL,			// DupIntRep
+    HugeUpdateString,
+    NULL,			// SetFromAny
     TCL_OBJTYPE_V0
 };
-
-
+
 static int
 TestobjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Size varIndex, destIndex;
@@ -1356,12 +1359,12 @@ static int
 TeststringobjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_UniChar *unicode;
-    Tcl_Size size, varIndex;
-    int option, i;
+    Tcl_Size size, varIndex, i;
+    int option;
     Tcl_Size length;
 #define MAX_STRINGS 11
     const char *string, *strings[MAX_STRINGS+1];
@@ -1650,10 +1653,10 @@ TeststringobjCmd(
  *------------------------------------------------------------------------
  */
 static int
-TestbigdataCmd (
+TestbigdataCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     static const char *const subcmds[] = {
@@ -1761,7 +1764,7 @@ TestbigdataCmd (
     }
     return TCL_OK;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -1853,7 +1856,7 @@ GetVariableIndex(
  *----------------------------------------------------------------------
  */
 
-static int
+static bool
 CheckIfVarUnset(
     Tcl_Interp *interp,		/* Interpreter for error reporting. */
     Tcl_Obj ** varPtr,
@@ -1871,10 +1874,10 @@ CheckIfVarUnset(
 }
 
 static int
-TestisemptyCmd (
+TestisemptyCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Obj *result;
@@ -1882,18 +1885,18 @@ TestisemptyCmd (
 	Tcl_WrongNumArgs(interp, 1, objv, "value");
 	return TCL_ERROR;
     }
-    result = Tcl_NewIntObj(Tcl_IsEmpty(objv[1]));
+    result = Tcl_NewBooleanObj(Tcl_IsEmpty(objv[1]));
     if (!objv[1]->bytes) {
-    Tcl_AppendToObj(result, " pure", TCL_INDEX_NONE);
+	Tcl_AppendToObj(result, " pure", TCL_INDEX_NONE);
     }
     if (objv[1]->typePtr) {
-    Tcl_AppendToObj(result, " ", TCL_INDEX_NONE);
-    Tcl_AppendToObj(result, objv[1]->typePtr->name, TCL_INDEX_NONE);
+	Tcl_AppendToObj(result, " ", TCL_INDEX_NONE);
+	Tcl_AppendToObj(result, objv[1]->typePtr->name, TCL_INDEX_NONE);
     }
     Tcl_SetObjResult(interp, result);
     return TCL_OK;
 }
-
+
 /*
  * Local Variables:
  * mode: c

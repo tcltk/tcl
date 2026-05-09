@@ -18,7 +18,7 @@
  *- More instructions:
  *-   done - alternate exit point (affects stack and exception range checking)
  *-   break and continue - if exception ranges can be sorted out.
- *-   foreach_start4, foreach_step4
+ *-   foreach_start, foreach_step, foreach_index, foreach_end
  *-   returnImm, returnStk
  *-   expandStart, expandStkTop, invokeExpanded, expandDrop
  *-   dictFirst, dictNext, dictDone
@@ -31,7 +31,6 @@
 #include "tclInt.h"
 #include "tclCompile.h"
 #include "tclOOInt.h"
-#include <assert.h>
 
 /*
  * Structure that represents a range of instructions in the bytecode.
@@ -65,7 +64,7 @@ typedef struct BasicBlock {
 				 * block */
     int startLine;		/* Line number in the input script of the
 				 * instruction at the start of the block */
-    int jumpOffset;		/* Bytecode offset of the 'jump' instruction
+    Tcl_Size jumpOffset;	/* Bytecode offset of the 'jump' instruction
 				 * that ends the block, or -1 if there is no
 				 * jump. */
     int jumpLine;		/* Line number in the input script of the
@@ -316,10 +315,10 @@ static Tcl_DupInternalRepProc	DupAssembleCodeInternalRep;
 
 static const Tcl_ObjType assembleCodeType = {
     "assemblecode",
-    FreeAssembleCodeInternalRep, /* freeIntRepProc */
-    DupAssembleCodeInternalRep,	 /* dupIntRepProc */
-    NULL,			 /* updateStringProc */
-    NULL,			 /* setFromAnyProc */
+    FreeAssembleCodeInternalRep,
+    DupAssembleCodeInternalRep,
+    NULL,			// UpdateString
+    NULL,			// SetFromAny
     TCL_OBJTYPE_V0
 };
 
@@ -735,7 +734,7 @@ int
 Tcl_AssembleObjCmd(
     void *clientData,		/* clientData */
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     /*
@@ -743,7 +742,7 @@ Tcl_AssembleObjCmd(
      * because there needs to be one in place to execute bytecode.
      */
 
-    return Tcl_NRCallObjProc(interp, TclNRAssembleObjCmd, clientData,
+    return Tcl_NRCallObjProc2(interp, TclNRAssembleObjCmd, clientData,
 	    objc, objv);
 }
 
@@ -751,7 +750,7 @@ int
 TclNRAssembleObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     ByteCode *codePtr;		/* Pointer to the bytecode to execute */
@@ -1796,7 +1795,7 @@ CompileEmbeddedScript(
 	TclCompileScript(interp, tokenPtr->start, tokenPtr->size, envPtr);
 	break;
     case INST_EXPR_STK:
-	TclCompileExpr(interp, tokenPtr->start, tokenPtr->size, envPtr, 1);
+	TclCompileExpr(interp, tokenPtr->start, tokenPtr->size, envPtr, true);
 	break;
     default:
 	Tcl_Panic("no ASSEM_EVAL case for %s (%d), can't happen",
@@ -2381,7 +2380,7 @@ FindLocalVar(
 	Tcl_DecrRefCount(varNameObj);
 	return TCL_INDEX_NONE;
     }
-    localVar = TclFindCompiledLocal(varNameStr, varNameLen, 1, envPtr);
+    localVar = TclFindCompiledLocal(varNameStr, varNameLen, true, envPtr);
     Tcl_DecrRefCount(varNameObj);
     if (localVar < 0) {
 	if (assemEnvPtr->flags & TCL_EVAL_DIRECT) {
@@ -3465,7 +3464,7 @@ StackCheckBasicBlock(
     }
 
     /*
-     * Update maximum stgack depth.
+     * Update maximum stack depth.
      */
 
     maxDepth = initialStackDepth + blockPtr->maxStackDepth;

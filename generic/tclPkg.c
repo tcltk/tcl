@@ -105,7 +105,7 @@ static int		PkgRequireCoreCleanup(void *data[], Tcl_Interp *interp, int result);
 static int		PkgRequireCoreStep1(void *data[], Tcl_Interp *interp, int result);
 static int		PkgRequireCoreStep2(void *data[], Tcl_Interp *interp, int result);
 static int		TclNRPkgRequireProc(void *clientData, Tcl_Interp *interp,
-			    int reqc, Tcl_Obj *const reqv[]);
+			    Tcl_Size reqc, Tcl_Obj *const reqv[]);
 static int		SelectPackage(void *data[], Tcl_Interp *interp, int result);
 static int		SelectPackageFinal(void *data[], Tcl_Interp *interp, int result);
 static int		TclNRPackageObjCmdCleanup(void *data[], Tcl_Interp *interp, int result);
@@ -439,7 +439,7 @@ Tcl_PkgRequireProc(
 
     args.name = name;
     args.clientDataPtr = clientDataPtr;
-    return Tcl_NRCallObjProc(interp,
+    return Tcl_NRCallObjProc2(interp,
 	    TclNRPkgRequireProc, (void *) &args, reqc, reqv);
 }
 
@@ -447,14 +447,13 @@ static int
 TclNRPkgRequireProc(
     void *clientData,
     Tcl_Interp *interp,
-    int reqc,
+    Tcl_Size reqc,
     Tcl_Obj *const reqv[])
 {
     RequireProcArgs *args = (RequireProcArgs *)clientData;
 
-    Tcl_NRAddCallback(interp,
-	    PkgRequireCore, (void *) args->name, INT2PTR(reqc), (void *) reqv,
-	    args->clientDataPtr);
+    TclNRAddCallback(interp, PkgRequireCore,
+	    args->name, INT2PTR(reqc), reqv, args->clientDataPtr);
     return TCL_OK;
 }
 
@@ -474,17 +473,16 @@ PkgRequireCore(
 	return code;
     }
     reqPtr = (Require *)Tcl_Alloc(sizeof(Require));
-    Tcl_NRAddCallback(interp, PkgRequireCoreCleanup, reqPtr, NULL, NULL, NULL);
+    TclNRAddCallback(interp, PkgRequireCoreCleanup, reqPtr, NULL, NULL, NULL);
     reqPtr->clientDataPtr = data[3];
     reqPtr->name = name;
     reqPtr->pkgPtr = FindPackage(interp, name);
     if (reqPtr->pkgPtr->version == NULL) {
-	Tcl_NRAddCallback(interp,
-		SelectPackage, reqPtr, INT2PTR(reqc), reqv,
-		(void *)PkgRequireCoreStep1);
+	TclNRAddCallback(interp, SelectPackage,
+		reqPtr, INT2PTR(reqc), reqv, (void *)PkgRequireCoreStep1);
     } else {
-	Tcl_NRAddCallback(interp,
-		PkgRequireCoreFinal, reqPtr, INT2PTR(reqc), reqv, NULL);
+	TclNRAddCallback(interp, PkgRequireCoreFinal,
+		reqPtr, INT2PTR(reqc), reqv, NULL);
     }
     return TCL_OK;
 }
@@ -508,8 +506,8 @@ PkgRequireCoreStep1(
      */
 
     if (reqPtr->pkgPtr->version != NULL) {
-	Tcl_NRAddCallback(interp,
-		PkgRequireCoreFinal, reqPtr, INT2PTR(reqc), (void *)reqv, NULL);
+	TclNRAddCallback(interp, PkgRequireCoreFinal,
+		reqPtr, INT2PTR(reqc), reqv, NULL);
 	return TCL_OK;
     }
 
@@ -524,8 +522,8 @@ PkgRequireCoreStep1(
 	 * No package unknown script. Move on to finalizing.
 	 */
 
-	Tcl_NRAddCallback(interp,
-		PkgRequireCoreFinal, reqPtr, INT2PTR(reqc), (void *)reqv, NULL);
+	TclNRAddCallback(interp, PkgRequireCoreFinal,
+		reqPtr, INT2PTR(reqc), reqv, NULL);
 	return TCL_OK;
     }
 
@@ -538,8 +536,8 @@ PkgRequireCoreStep1(
     Tcl_DStringAppendElement(&command, name);
     AddRequirementsToDString(&command, reqc, reqv);
 
-    Tcl_NRAddCallback(interp,
-	    PkgRequireCoreStep2, reqPtr, INT2PTR(reqc), (void *) reqv, NULL);
+    TclNRAddCallback(interp, PkgRequireCoreStep2,
+	    reqPtr, INT2PTR(reqc), reqv, NULL);
     Tcl_NREvalObj(interp, Tcl_DStringToObj(&command), TCL_EVAL_GLOBAL);
     return TCL_OK;
 }
@@ -573,9 +571,8 @@ PkgRequireCoreStep2(
      */
 
     reqPtr->pkgPtr = FindPackage(interp, name);
-    Tcl_NRAddCallback(interp,
-	    SelectPackage, reqPtr, INT2PTR(reqc), reqv,
-	    (void *)PkgRequireCoreFinal);
+    TclNRAddCallback(interp, SelectPackage,
+	    reqPtr, INT2PTR(reqc), reqv, (void *)PkgRequireCoreFinal);
     return TCL_OK;
 }
 
@@ -804,8 +801,8 @@ SelectPackage(
     }
 
     if (bestPtr == NULL) {
-	Tcl_NRAddCallback(interp,
-		(Tcl_NRPostProc *)data[3], reqPtr, INT2PTR(reqc), (void *)reqv, NULL);
+	Tcl_NRAddCallback(interp, (Tcl_NRPostProc *)data[3],
+		reqPtr, INT2PTR(reqc), (void *)reqv, NULL);
     } else {
 	/*
 	 * We found an ifneeded script for the package. Be careful while
@@ -835,9 +832,8 @@ SelectPackage(
 	    TclPkgFileSeen(interp, bestPtr->pkgIndex);
 	}
 	reqPtr->versionToProvide = versionToProvide;
-	Tcl_NRAddCallback(interp,
-		SelectPackageFinal, reqPtr, INT2PTR(reqc), (void *)reqv,
-		data[3]);
+	TclNRAddCallback(interp, SelectPackageFinal,
+		reqPtr, INT2PTR(reqc), reqv, data[3]);
 	Tcl_NREvalObj(interp, Tcl_NewStringObj(bestPtr->script, -1),
 		TCL_EVAL_GLOBAL);
     }
@@ -942,8 +938,8 @@ SelectPackageFinal(
 	return result;
     }
 
-    Tcl_NRAddCallback(interp,
-	    (Tcl_NRPostProc *)data[3], reqPtr, INT2PTR(reqc), (void *) reqv, NULL);
+    Tcl_NRAddCallback(interp, (Tcl_NRPostProc *)data[3],
+	    reqPtr, INT2PTR(reqc), (void *) reqv, NULL);
     return TCL_OK;
 }
 
@@ -1054,17 +1050,17 @@ int
 Tcl_PackageObjCmd(
     void *clientData,
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    return Tcl_NRCallObjProc(interp, TclNRPackageObjCmd, clientData, objc, objv);
+    return Tcl_NRCallObjProc2(interp, TclNRPackageObjCmd, clientData, objc, objv);
 }
 
 int
 TclNRPackageObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     static const char *const pkgOptions[] = {
@@ -1361,11 +1357,10 @@ TclNRPackageObjCmd(
 	    Tcl_ListObjAppendElement(interp, objvListPtr, ov);
 	    TclListObjGetElements(interp, objvListPtr, &newobjc, &newObjvPtr);
 
-	    Tcl_NRAddCallback(interp,
-		    TclNRPackageObjCmdCleanup, objv[3], objvListPtr, NULL,NULL);
-	    Tcl_NRAddCallback(interp,
-		    PkgRequireCore, (void *) argv3, INT2PTR(newobjc),
-		    newObjvPtr, NULL);
+	    TclNRAddCallback(interp, TclNRPackageObjCmdCleanup,
+		    objv[3], objvListPtr, NULL, NULL);
+	    TclNRAddCallback(interp, PkgRequireCore,
+		    argv3, INT2PTR(newobjc), newObjvPtr, NULL);
 	    return TCL_OK;
 	} else {
 	    Tcl_Obj *const *newobjv = objv + 3;
@@ -1387,11 +1382,10 @@ TclNRPackageObjCmd(
 			Tcl_DuplicateObj(newobjv[i]));
 	    }
 	    TclListObjGetElements(interp, objvListPtr, &newobjc, &newObjvPtr);
-	    Tcl_NRAddCallback(interp,
-		    TclNRPackageObjCmdCleanup, objv[2], objvListPtr, NULL,NULL);
-	    Tcl_NRAddCallback(interp,
-		    PkgRequireCore, (void *) argv2, INT2PTR(newobjc),
-		    newObjvPtr, NULL);
+	    TclNRAddCallback(interp, TclNRPackageObjCmdCleanup,
+		    objv[2], objvListPtr, NULL, NULL);
+	    TclNRAddCallback(interp, PkgRequireCore,
+		    argv2, INT2PTR(newobjc), newObjvPtr, NULL);
 	    return TCL_OK;
 	}
 	break;
@@ -1954,7 +1948,7 @@ CompareVersions(
 static int
 CheckAllRequirements(
     Tcl_Interp *interp,
-    Tcl_Size reqc,			/* Requirements to check. */
+    Tcl_Size reqc,		/* Requirements to check. */
     Tcl_Obj *const reqv[])
 {
     Tcl_Size i;
@@ -2060,7 +2054,7 @@ CheckRequirement(
 static void
 AddRequirementsToResult(
     Tcl_Interp *interp,
-    Tcl_Size reqc,			/* Requirements constraining the desired
+    Tcl_Size reqc,		/* Requirements constraining the desired
 				 * version. */
     Tcl_Obj *const reqv[])	/* 0 means to use the latest version
 				 * available. */
@@ -2140,7 +2134,7 @@ static int
 SomeRequirementSatisfied(
     char *availVersionI,	/* Candidate version to check against the
 				 * requirements. */
-    Tcl_Size reqc,			/* Requirements constraining the desired
+    Tcl_Size reqc,		/* Requirements constraining the desired
 				 * version. */
     Tcl_Obj *const reqv[])	/* 0 means to use the latest version
 				 * available. */

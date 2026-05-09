@@ -13,9 +13,9 @@
 classvariable \- Create link from local variable to variable in class
 .SH SYNOPSIS
 .nf
-package require tcl::oo
+\fBpackage require tcl::oo\fR
 
-\fBclassvariable\fI variableName\fR ?\fI...\fR?
+\fBclassvariable\fI variableName\fR ?...?
 .fi
 .BE
 .SH DESCRIPTION

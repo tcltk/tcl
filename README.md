@@ -1,6 +1,6 @@
 # README:  Tcl
 
-This is the **Tcl 9.1a1** source distribution.
+This is the **Tcl 9.1a2** source distribution.
 
 You can get any source release of Tcl from [our distribution
 site](https://sourceforge.net/projects/tcl/files/Tcl/).
@@ -64,7 +64,7 @@ There have been many Tcl books on the market.  Many are mentioned in
 The complete set of reference manual entries for Tcl 9.1 is [online,
 here](https://www.tcl-lang.org/man/tcl9.1/).
 
-### <a id="doc.unix">2a.</a> Unix Documentation
+### <a id="doc.unix"></a> Unix man pages
 The `doc` subdirectory in this release contains a complete set of
 reference manual entries for Tcl.  Files with extension "`.1`" are for
 programs (for example, `tclsh.1`); files with extension "`.3`" are for C
@@ -82,27 +82,17 @@ normal "man" mechanisms, such as
 
 		man Tcl
 
-### <a id="doc.win">2b.</a> Windows Documentation
-The "doc" subdirectory in this release contains a complete set of Windows
-help files for Tcl.  Once you install this Tcl release, a shortcut to the
-Windows help Tcl documentation will appear in the "Start" menu:
-
-		Start | Programs | Tcl | Tcl Help
-
 ## <a id="build">3.</a> Compiling and installing Tcl
 There are brief notes in the `unix/README`, `win/README`, and `macosx/README`
 about compiling on these different platforms.  There is additional information
 about building Tcl from sources
 [online](https://www.tcl-lang.org/doc/howto/compile.html).
 
-## <a id="devtools">4.</a> Development tools
-ActiveState produces a high-quality set of commercial quality development
-tools that is available to accelerate your Tcl application development.
-Tcl Dev Kit builds on the earlier TclPro toolset and provides a debugger,
-static code checker, single-file wrapping utility, bytecode compiler, and
-more.  More information can be found at
+## <a id="news">4.</a> News feeds
 
-	https://www.activestate.com/products/tcl/
+You can keep up with the latest happenings in the Tcl world via
+[fosstodon](https://fosstodon.org/@tcl_tk) or
+[X](https://twitter.com/TclLang) feeds.
 
 ## <a id="complangtcl">5.</a> Tcl newsgroup
 There is a USENET newsgroup, "`comp.lang.tcl`", intended for the exchange of

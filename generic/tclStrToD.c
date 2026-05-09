@@ -205,7 +205,7 @@ static const double pow_10_2_n[] = {	/* Inexact higher powers of ten. */
     1.0e+256
 };
 
-static int n770_fp;		/* Flag is 1 on Nokia N770 floating point.
+static bool n770_fp;		/* Flag is true on Nokia N770 floating point.
 				 * Nokia's floating point has the words
 				 * reversed: if big-endian is 7654 3210,
 				 * and little-endian is       0123 4567,
@@ -1876,7 +1876,6 @@ MakeHighPrecisionDouble(
      * Very high numbers are returned, if this is not handled
      */
 
-
     if (exponent < -511) {
 	if (mp_init_copy(&bntmp, significand) != MP_OKAY) {
 	    Tcl_Panic("initialization failure in MakeHighPrecisionDouble");
@@ -2057,7 +2056,7 @@ RefineApproximation(
      * The approximate result is significand * 2**binExponent
      * If exponent<0, we need to multiply the exact value by 10**-exponent
      * to make it an integer, plus another factor of 2 to decide on rounding.
-     *  Similarly if binExponent<FP_PRECISION, we need
+     * Similarly if binExponent<FP_PRECISION, we need
      * to multiply by 2**FP_PRECISION to make the approximate value an integer.
      *
      * Let M = 2**M2 * 5**M5 be the least common multiple of these two
@@ -4756,9 +4755,9 @@ TclInitDoubleConversion(void)
     bitwhack.dv = 1.000000238418579;
 				/* 3ff0 0000 4000 0000 */
     if ((bitwhack.iv >> 32) == 0x3FF00000) {
-	n770_fp = 0;
+	n770_fp = false;
     } else if ((bitwhack.iv & 0xFFFFFFFF) == 0x3FF00000) {
-	n770_fp = 1;
+	n770_fp = true;
     } else {
 	Tcl_Panic("unknown floating point word order on this machine");
     }
@@ -5354,7 +5353,7 @@ Nokia770Twiddle(
  *----------------------------------------------------------------------
  */
 
-int
+bool
 TclNokia770Doubles(void)
 {
     return n770_fp;

@@ -56,11 +56,11 @@ For \fBTcl_ConvertToType\fR, this points to a value that
 must have been the result of a previous call to \fBTcl_NewObj\fR.
 .AP "const char*" bytes in
 String representation.
-.AP "unsigned int" numBytes in
+.AP "size_t" numBytes in
 Length of the string representation in bytes.
-.AP "const Tcl_ObjInternalRep*" irPtr in
+.AP "const Tcl_ObjInternalRep *" irPtr in
 Internal object representation.
-.AP "const Tcl_ObjType*" typePtr in
+.AP "const Tcl_ObjType *" typePtr in
 Requested internal representation type.
 .BE
 
