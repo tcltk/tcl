@@ -455,6 +455,10 @@ Tcl_Init(
 "		continue\n"
 "	    }\n"
 "	    unset -nocomplain tclDefaultLibrary\n"
+#if defined(_WIN32) && defined(STATIC_BUILD)
+	    "package ifneeded registry 1.3.7 [list load {} Registry]\n"
+	    "package ifneeded dde 1.4.6 [list load {} Dde]\n"
+#endif
 "	    return\n"
 "	}\n"
 "	lappend dirs $tcl_library\n"
