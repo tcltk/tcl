@@ -1129,11 +1129,10 @@ TclGetLoadedLibraries(
 	Tcl_MutexLock(&libraryMutex);
 	for (libraryPtr = firstLibraryPtr; libraryPtr != NULL;
 		libraryPtr = libraryPtr->nextPtr) {
-	    Tcl_ListObjAppendElement(NULL, resultObj,
-		    Tcl_NewListObj(2, (Tcl_Obj *[]) {
-			Tcl_NewStringObj(libraryPtr->fileName, -1),
-			Tcl_NewStringObj(libraryPtr->prefix, -1)
-		    }));
+	    Tcl_ListObjAppendElement(NULL, resultObj, Tcl_NewListObj(2, (Tcl_Obj *[]) {
+		Tcl_NewStringObj(libraryPtr->fileName, -1),
+		Tcl_NewStringObj(libraryPtr->prefix, -1)
+	    }));
 	}
 	Tcl_MutexUnlock(&libraryMutex);
 	Tcl_SetObjResult(interp, resultObj);

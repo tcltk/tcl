@@ -1740,7 +1740,7 @@ TestbigdataCmd(
 	objPtr = Tcl_NewListObj(len, NULL);
 	for (i = 0; i < len; ++i) {
 	    Tcl_ListObjAppendElement(
-		interp, objPtr, patternObjs[i % PATTERN_LEN]);
+		    interp, objPtr, patternObjs[i % PATTERN_LEN]);
 	}
 	if (split >= 0) {
 	    assert(split < len);

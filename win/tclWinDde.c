@@ -570,12 +570,10 @@ ExecuteRemoteObject(
 	result = Tcl_EvalObjEx(riPtr->interp, ddeObjectPtr, TCL_EVAL_GLOBAL);
     }
 
-    returnPackagePtr = Tcl_NewListObj(0, NULL);
-
-    Tcl_ListObjAppendElement(NULL, returnPackagePtr,
-	    Tcl_NewIntObj(result));
-    Tcl_ListObjAppendElement(NULL, returnPackagePtr,
-	    Tcl_GetObjResult(riPtr->interp));
+    returnPackagePtr = Tcl_NewListObj(2, (Tcl_Obj *[]) {
+	Tcl_NewIntObj(result),
+	Tcl_GetObjResult(riPtr->interp)
+    });
 
     if (result == TCL_ERROR) {
 	Tcl_Obj *errorObjPtr = Tcl_GetVar2Ex(riPtr->interp, "errorCode", NULL,

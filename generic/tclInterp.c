@@ -3112,19 +3112,15 @@ ChildDebugCmd(
     enum DebugTypes {
 	DEBUG_TYPE_FRAME
     };
-    int debugType;
-    Interp *iPtr;
-    Tcl_Obj *resultPtr;
+    Interp *iPtr = (Interp *) childInterp;
 
-    iPtr = (Interp *) childInterp;
     if (objc == 0) {
-	TclNewObj(resultPtr);
-	Tcl_ListObjAppendElement(NULL, resultPtr,
-		Tcl_NewStringObj("-frame", -1));
-	Tcl_ListObjAppendElement(NULL, resultPtr,
-		Tcl_NewBooleanObj(iPtr->flags & INTERP_DEBUG_FRAME));
-	Tcl_SetObjResult(interp, resultPtr);
+	Tcl_SetObjResult(interp, Tcl_NewListObj(2, (Tcl_Obj *[]) {
+	    Tcl_NewStringObj("-frame", -1),
+	    Tcl_NewBooleanObj(iPtr->flags & INTERP_DEBUG_FRAME)
+	}));
     } else {
+	int debugType;
 	if (Tcl_GetIndexFromObj(interp, objv[0], debugTypes, "debug option",
 		0, &debugType) != TCL_OK) {
 	    return TCL_ERROR;

@@ -462,8 +462,7 @@ TraceExecutionObjCmd(
 
 	resultListPtr = Tcl_NewListObj(0, NULL);
 	FOREACH_COMMAND_TRACE(interp, name, clientData) {
-	    Tcl_Size numOps = 0;
-	    Tcl_Obj *opObj, *eachTraceObjPtr, *elemObjPtr;
+	    Tcl_Obj *opObj, *elemObjPtr;
 	    TraceCommandInfo *tcmdPtr = (TraceCommandInfo *)clientData;
 
 	    /*
@@ -472,8 +471,12 @@ TraceExecutionObjCmd(
 	     * list (as an element) to the end of the result object list.
 	     */
 
+	    if (!(tcmdPtr->flags & (TCL_TRACE_ENTER_EXEC | TCL_TRACE_LEAVE_EXEC |
+		    TCL_TRACE_ENTER_DURING_EXEC | TCL_TRACE_LEAVE_DURING_EXEC))) {
+		// Skip if no operation registered.
+		continue;
+	    }
 	    elemObjPtr = Tcl_NewListObj(0, NULL);
-	    Tcl_IncrRefCount(elemObjPtr);
 	    if (tcmdPtr->flags & TCL_TRACE_ENTER_EXEC) {
 		TclNewLiteralStringObj(opObj, "enter");
 		Tcl_ListObjAppendElement(NULL, elemObjPtr, opObj);
@@ -490,19 +493,11 @@ TraceExecutionObjCmd(
 		TclNewLiteralStringObj(opObj, "leavestep");
 		Tcl_ListObjAppendElement(NULL, elemObjPtr, opObj);
 	    }
-	    TclListObjLength(NULL, elemObjPtr, &numOps);
-	    if (0 == numOps) {
-		Tcl_DecrRefCount(elemObjPtr);
-		continue;
-	    }
-	    eachTraceObjPtr = Tcl_NewListObj(0, NULL);
-	    Tcl_ListObjAppendElement(NULL, eachTraceObjPtr, elemObjPtr);
-	    Tcl_DecrRefCount(elemObjPtr);
-	    elemObjPtr = NULL;
-
-	    Tcl_ListObjAppendElement(NULL, eachTraceObjPtr,
-		    Tcl_NewStringObj(tcmdPtr->command, -1));
-	    Tcl_ListObjAppendElement(interp, resultListPtr, eachTraceObjPtr);
+	    Tcl_ListObjAppendElement(interp, resultListPtr,
+		    Tcl_NewListObj(2, (Tcl_Obj *[]) {
+			elemObjPtr,
+			Tcl_NewStringObj(tcmdPtr->command, TCL_AUTO_LENGTH)
+		    }));
 	}
 	Tcl_SetObjResult(interp, resultListPtr);
 	break;
@@ -669,8 +664,7 @@ TraceCommandObjCmd(
 
 	resultListPtr = Tcl_NewListObj(0, NULL);
 	FOREACH_COMMAND_TRACE(interp, name, clientData) {
-	    Tcl_Size numOps = 0;
-	    Tcl_Obj *opObj, *eachTraceObjPtr, *elemObjPtr;
+	    Tcl_Obj *opObj, *elemObjPtr;
 	    TraceCommandInfo *tcmdPtr = (TraceCommandInfo *)clientData;
 
 	    /*
@@ -679,8 +673,11 @@ TraceCommandObjCmd(
 	     * list (as an element) to the end of the result object list.
 	     */
 
+	    if (!(tcmdPtr->flags & (TCL_TRACE_RENAME | TCL_TRACE_DELETE))) {
+		// Skip if no operation registered.
+		continue;
+	    }
 	    elemObjPtr = Tcl_NewListObj(0, NULL);
-	    Tcl_IncrRefCount(elemObjPtr);
 	    if (tcmdPtr->flags & TCL_TRACE_RENAME) {
 		TclNewLiteralStringObj(opObj, "rename");
 		Tcl_ListObjAppendElement(NULL, elemObjPtr, opObj);
@@ -689,18 +686,11 @@ TraceCommandObjCmd(
 		TclNewLiteralStringObj(opObj, "delete");
 		Tcl_ListObjAppendElement(NULL, elemObjPtr, opObj);
 	    }
-	    TclListObjLength(NULL, elemObjPtr, &numOps);
-	    if (0 == numOps) {
-		Tcl_DecrRefCount(elemObjPtr);
-		continue;
-	    }
-	    eachTraceObjPtr = Tcl_NewListObj(0, NULL);
-	    Tcl_ListObjAppendElement(NULL, eachTraceObjPtr, elemObjPtr);
-	    Tcl_DecrRefCount(elemObjPtr);
-
-	    elemObjPtr = Tcl_NewStringObj(tcmdPtr->command, -1);
-	    Tcl_ListObjAppendElement(NULL, eachTraceObjPtr, elemObjPtr);
-	    Tcl_ListObjAppendElement(interp, resultListPtr, eachTraceObjPtr);
+	    Tcl_ListObjAppendElement(interp, resultListPtr,
+		    Tcl_NewListObj(2, (Tcl_Obj *[]) {
+			elemObjPtr,
+			Tcl_NewStringObj(tcmdPtr->command, TCL_AUTO_LENGTH)
+		    }));
 	}
 	Tcl_SetObjResult(interp, resultListPtr);
 	break;
@@ -856,7 +846,7 @@ TraceVariableObjCmd(
 	TclNewObj(resultListPtr);
 	name = TclGetString(objv[3]);
 	FOREACH_VAR_TRACE(interp, name, clientData) {
-	    Tcl_Obj *opObjPtr, *eachTraceObjPtr, *elemObjPtr;
+	    Tcl_Obj *opObjPtr, *elemObjPtr;
 	    TraceVarInfo *tvarPtr = (TraceVarInfo *)clientData;
 
 	    /*
@@ -882,13 +872,12 @@ TraceVariableObjCmd(
 		TclNewLiteralStringObj(opObjPtr, "unset");
 		Tcl_ListObjAppendElement(NULL, elemObjPtr, opObjPtr);
 	    }
-	    eachTraceObjPtr = Tcl_NewListObj(0, NULL);
-	    Tcl_ListObjAppendElement(NULL, eachTraceObjPtr, elemObjPtr);
 
-	    elemObjPtr = Tcl_NewStringObj(tvarPtr->command, -1);
-	    Tcl_ListObjAppendElement(NULL, eachTraceObjPtr, elemObjPtr);
 	    Tcl_ListObjAppendElement(interp, resultListPtr,
-		    eachTraceObjPtr);
+		    Tcl_NewListObj(2, (Tcl_Obj *[]) {
+			elemObjPtr,
+			Tcl_NewStringObj(tvarPtr->command, TCL_AUTO_LENGTH)
+		    }));
 	}
 	Tcl_SetObjResult(interp, resultListPtr);
 	break;

@@ -1524,35 +1524,6 @@ Declarer(
  *
  * ----------------------------------------------------------------------
  */
-
-static inline Object *
-Declarer(
-    Method *mPtr)
-{
-    if (mPtr->declaringClassPtr != NULL) {
-	return mPtr->declaringClassPtr->thisPtr;
-    } else if (mPtr->declaringObjectPtr != NULL) {
-	return mPtr->declaringObjectPtr;
-    } else {
-	TCL_UNREACHABLE();
-    }
-}
-
-static inline Tcl_Obj *
-MethodName(
-    Foundation *fPtr,
-    CallContext *contextPtr,
-    Method *mPtr)
-{
-    if (contextPtr->callPtr->flags & CONSTRUCTOR) {
-	return fPtr->constructorName;
-    } else if (contextPtr->callPtr->flags & DESTRUCTOR) {
-	return fPtr->destructorName;
-    } else {
-	return mPtr->namePtr;
-    }
-}
-
 int
 TclOOSelfObjCmd(
     TCL_UNUSED(void *),

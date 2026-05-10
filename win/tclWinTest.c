@@ -256,7 +256,6 @@ TestwinclockCmd(
 				 * FILETIME */
     Tcl_Time tclTime;		/* Tcl clock */
     FILETIME sysTime;		/* System clock */
-    Tcl_Obj *result;		/* Result of the command */
     LARGE_INTEGER t1, t2;
     LARGE_INTEGER p1, p2;
 
@@ -277,19 +276,14 @@ TestwinclockCmd(
 
     QueryPerformanceCounter(&p2);
 
-    result = Tcl_NewObj();
-    Tcl_ListObjAppendElement(interp, result,
-	    Tcl_NewWideIntObj(t2.QuadPart / 10000000));
-    Tcl_ListObjAppendElement(interp, result,
-	    Tcl_NewWideIntObj((t2.QuadPart / 10) % 1000000));
-    Tcl_ListObjAppendElement(interp, result, Tcl_NewWideIntObj(tclTime.sec));
-    Tcl_ListObjAppendElement(interp, result, Tcl_NewWideIntObj(tclTime.usec));
-
-    Tcl_ListObjAppendElement(interp, result, Tcl_NewWideIntObj(p1.QuadPart));
-    Tcl_ListObjAppendElement(interp, result, Tcl_NewWideIntObj(p2.QuadPart));
-
-    Tcl_SetObjResult(interp, result);
-
+    Tcl_SetObjResult(interp, Tcl_NewListObj(6, (Tcl_Obj *[]) {
+	Tcl_NewWideIntObj(t2.QuadPart / 10000000),
+	Tcl_NewWideIntObj((t2.QuadPart / 10) % 1000000),
+	Tcl_NewWideIntObj(tclTime.sec),
+	Tcl_NewWideIntObj(tclTime.usec),
+	Tcl_NewWideIntObj(p1.QuadPart),
+	Tcl_NewWideIntObj(p2.QuadPart)
+    }));
     return TCL_OK;
 }
 

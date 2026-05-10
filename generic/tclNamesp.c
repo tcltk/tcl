@@ -3232,7 +3232,6 @@ NamespaceCodeCmd(
     Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    Tcl_Obj *listPtr, *objPtr;
     const char *arg;
     Tcl_Size length;
 
@@ -3264,18 +3263,12 @@ NamespaceCodeCmd(
      * "namespace inscope" command.
      */
 
-    TclNewObj(listPtr);
-    TclNewLiteralStringObj(objPtr, "::namespace");
-    Tcl_ListObjAppendElement(NULL, listPtr, objPtr);
-
-    TclNewLiteralStringObj(objPtr, "inscope");
-    Tcl_ListObjAppendElement(NULL, listPtr, objPtr);
-
-    Tcl_ListObjAppendElement(NULL, listPtr,
-	    TclNewNamespaceObj(TclGetCurrentNamespace(interp)));
-    Tcl_ListObjAppendElement(NULL, listPtr, objv[1]);
-
-    Tcl_SetObjResult(interp, listPtr);
+    Tcl_SetObjResult(interp, Tcl_NewListObj(4, (Tcl_Obj *[]) {
+	Tcl_NewStringObj("::namespace", TCL_AUTO_LENGTH),
+	Tcl_NewStringObj("inscope", TCL_AUTO_LENGTH),
+	TclNewNamespaceObj(TclGetCurrentNamespace(interp)),
+	objv[1]
+    }));
     return TCL_OK;
 }
 

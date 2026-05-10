@@ -522,8 +522,7 @@ GetKeyNames(
 	    continue;
 	}
 	result = Tcl_ListObjAppendElement(interp, resultPtr,
-		Tcl_NewStringObj(name, Tcl_DStringLength(&ds)));
-	Tcl_DStringFree(&ds);
+		Tcl_DStringToObj(&ds));
 	if (result != TCL_OK) {
 	    break;
 	}
@@ -721,14 +720,12 @@ GetValue(
 	    Tcl_DStringInit(&buf);
 	    Tcl_WCharToUtfDString(wp, wcslen(wp), &buf);
 	    Tcl_ListObjAppendElement(interp, resultPtr,
-		    Tcl_NewStringObj(Tcl_DStringValue(&buf),
-			    Tcl_DStringLength(&buf)));
+		    Tcl_DStringToObj(&buf));
 
 	    while (*wp++ != 0) {
 		// Empty body
 	    }
 	    p = (char *) wp;
-	    Tcl_DStringFree(&buf);
 	}
 	Tcl_SetObjResult(interp, resultPtr);
     } else if ((type == REG_SZ) || (type == REG_EXPAND_SZ)) {
@@ -815,13 +812,13 @@ GetValueNames(
 	name = Tcl_DStringValue(&ds);
 	if (!pattern || Tcl_StringMatch(name, pattern)) {
 	    result = Tcl_ListObjAppendElement(interp, resultPtr,
-		    Tcl_NewStringObj(name, Tcl_DStringLength(&ds)));
+		    Tcl_DStringToObj(&ds));
 	    if (result != TCL_OK) {
-		Tcl_DStringFree(&ds);
 		break;
 	    }
+	} else {
+	    Tcl_DStringFree(&ds);
 	}
-	Tcl_DStringFree(&ds);
 
 	index++;
 	size = MAX_KEY_LENGTH;
@@ -1294,7 +1291,6 @@ BroadcastValue(
     int timeout = 3000;
     Tcl_Size len;
     const char *str;
-    Tcl_Obj *objPtr;
     WCHAR *wstr;
     Tcl_DString ds;
 
@@ -1323,10 +1319,10 @@ BroadcastValue(
 	    (WPARAM) 0, (LPARAM) wstr, SMTO_ABORTIFHUNG, (UINT) timeout, &sendResult);
     Tcl_DStringFree(&ds);
 
-    objPtr = Tcl_NewObj();
-    Tcl_ListObjAppendElement(NULL, objPtr, Tcl_NewWideIntObj((Tcl_WideInt) result));
-    Tcl_ListObjAppendElement(NULL, objPtr, Tcl_NewWideIntObj((Tcl_WideInt) sendResult));
-    Tcl_SetObjResult(interp, objPtr);
+    Tcl_SetObjResult(interp, Tcl_NewListObj(2, (Tcl_Obj *[]) {
+	Tcl_NewWideIntObj((Tcl_WideInt) result),
+	Tcl_NewWideIntObj((Tcl_WideInt) sendResult)
+    }));
 
     return TCL_OK;
 }

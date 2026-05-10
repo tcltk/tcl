@@ -1844,8 +1844,6 @@ TestdoubledigitsCmd(
     int signum;
     char *str;
     char *endPtr;
-    Tcl_Obj* strObj;
-    Tcl_Obj* retval;
 
     if (objc < 4 || objc > 5) {
 	Tcl_WrongNumArgs(interp, 1, objv, "fpval ndigits type ?shorten?");
@@ -1876,13 +1874,12 @@ TestdoubledigitsCmd(
 	type |= TCL_DD_SHORTEST;
     }
     str = TclDoubleDigits(d, ndigits, type, &decpt, &signum, &endPtr);
-    strObj = Tcl_NewStringObj(str, endPtr-str);
+    Tcl_SetObjResult(interp, Tcl_NewListObj(3, (Tcl_Obj *[]) {
+	Tcl_NewStringObj(str, endPtr-str),
+	Tcl_NewWideIntObj(decpt),
+	Tcl_NewStringObj(signum ? "-" : "+", 1)
+    }));
     Tcl_Free(str);
-    retval = Tcl_NewListObj(1, &strObj);
-    Tcl_ListObjAppendElement(NULL, retval, Tcl_NewWideIntObj(decpt));
-    strObj = Tcl_NewStringObj(signum ? "-" : "+", 1);
-    Tcl_ListObjAppendElement(NULL, retval, strObj);
-    Tcl_SetObjResult(interp, retval);
     return TCL_OK;
 }
 
@@ -3999,11 +3996,10 @@ TestlistrepCmd(
 	    Tcl_WrongNumArgs(interp, 2, objv, "object");
 	    return TCL_ERROR;
 	}
-	resultObj = Tcl_NewListObj(2, NULL);
-	Tcl_ListObjAppendElement(NULL, resultObj,
-		Tcl_NewStringObj("LIST_SPAN_THRESHOLD", -1));
-	Tcl_ListObjAppendElement(NULL, resultObj,
-		Tcl_NewWideIntObj(LIST_SPAN_THRESHOLD));
+	resultObj = Tcl_NewListObj(2, (Tcl_Obj *[]) {
+	    Tcl_NewStringObj("LIST_SPAN_THRESHOLD", -1),
+	    Tcl_NewWideIntObj(LIST_SPAN_THRESHOLD)
+	});
 	break;
 
     case LISTREP_VALIDATE:
@@ -5398,10 +5394,11 @@ TestuniClassCmd(
     if (Tcl_GetIntFromObj(interp, objv[1], &value) != TCL_OK) {
 	return TCL_ERROR;
     }
-    Tcl_Obj *result = Tcl_NewObj();
-    Tcl_ListObjAppendElement(interp, result, Tcl_NewIntObj(Tcl_UniCharToLower(value)));
-    Tcl_ListObjAppendElement(interp, result, Tcl_NewIntObj(Tcl_UniCharToUpper(value)));
-    Tcl_ListObjAppendElement(interp, result, Tcl_NewIntObj(Tcl_UniCharToTitle(value)));
+    Tcl_Obj *result = Tcl_NewListObj(3, (Tcl_Obj *[]) {
+	Tcl_NewIntObj(Tcl_UniCharToLower(value)),
+	Tcl_NewIntObj(Tcl_UniCharToUpper(value)),
+	Tcl_NewIntObj(Tcl_UniCharToTitle(value))
+    });
     if (Tcl_UniCharIsLower(value)) {
 	Tcl_ListObjAppendElement(interp, result, Tcl_NewStringObj("lower", -1));
     }
@@ -7017,13 +7014,10 @@ TestChannelEventCmd(
 	for (esPtr = statePtr->scriptRecordPtr;
 		esPtr != NULL;
 		esPtr = esPtr->nextPtr) {
-	    if (esPtr->mask) {
-		Tcl_ListObjAppendElement(interp, resultListPtr, Tcl_NewStringObj(
-			(esPtr->mask == TCL_READABLE) ? "readable" : "writable", -1));
-	    } else {
-		Tcl_ListObjAppendElement(interp, resultListPtr,
-			Tcl_NewStringObj("none", -1));
-	    }
+	    Tcl_ListObjAppendElement(interp, resultListPtr, Tcl_NewStringObj(
+		    esPtr->mask ? ((esPtr->mask == TCL_READABLE) ?
+			    "readable" : "writable") : "none",
+		    -1));
 	    Tcl_ListObjAppendElement(interp, resultListPtr, esPtr->scriptPtr);
 	}
 	Tcl_SetObjResult(interp, resultListPtr);

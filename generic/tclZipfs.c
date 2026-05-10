@@ -4208,13 +4208,12 @@ ZipFSInfoObjCmd(
     if (z) {
 	Tcl_Obj *result = Tcl_GetObjResult(interp);
 
-	Tcl_ListObjAppendElement(interp, result,
-		Tcl_NewStringObj(z->zipFilePtr->name, -1));
-	Tcl_ListObjAppendElement(interp, result,
-		Tcl_NewWideIntObj(z->numBytes));
-	Tcl_ListObjAppendElement(interp, result,
-		Tcl_NewWideIntObj(z->numCompressedBytes));
-	Tcl_ListObjAppendElement(interp, result, Tcl_NewWideIntObj(z->offset));
+	Tcl_SetObjResult(interp, Tcl_NewListObj(4, (Tcl_Obj *[]) {
+	    Tcl_NewStringObj(z->zipFilePtr->name, -1),
+	    Tcl_NewWideIntObj(z->numBytes),
+	    Tcl_NewWideIntObj(z->numCompressedBytes),
+	    Tcl_NewWideIntObj(z->offset)
+	}));
 	ret = TCL_OK;
     } else {
 	Tcl_SetErrno(ENOENT);

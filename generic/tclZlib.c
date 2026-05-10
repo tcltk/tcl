@@ -3360,7 +3360,6 @@ ZlibTransformOutput(
 	    Tcl_ChannelOutputProc(Tcl_GetChannelType(chanDataPtr->parent));
     int e;
     size_t produced;
-    Tcl_Obj *errObj;
 
     if (chanDataPtr->mode == TCL_ZLIB_STREAM_INFLATE) {
 	return outProc(Tcl_GetChannelInstanceData(chanDataPtr->parent), buf,
@@ -3395,14 +3394,11 @@ ZlibTransformOutput(
 	return toWrite - chanDataPtr->outStream.avail_in;
     }
 
-    errObj = Tcl_NewListObj(0, NULL);
-    Tcl_ListObjAppendElement(NULL, errObj, Tcl_NewStringObj(
-	    "-errorcode", TCL_AUTO_LENGTH));
-    Tcl_ListObjAppendElement(NULL, errObj,
-	    ConvertErrorToList(e, chanDataPtr->outStream.adler));
-    Tcl_ListObjAppendElement(NULL, errObj,
-	    Tcl_NewStringObj(chanDataPtr->outStream.msg, TCL_AUTO_LENGTH));
-    Tcl_SetChannelError(chanDataPtr->parent, errObj);
+    Tcl_SetChannelError(chanDataPtr->parent, Tcl_NewListObj(3, (Tcl_Obj *[]) {
+	Tcl_NewStringObj("-errorcode", TCL_AUTO_LENGTH),
+	ConvertErrorToList(e, chanDataPtr->outStream.adler),
+	Tcl_NewStringObj(chanDataPtr->outStream.msg, TCL_AUTO_LENGTH)
+    }));
     *errorCodePtr = EINVAL;
     return -1;
 }
@@ -4013,7 +4009,6 @@ ResultDecompress(
     int *errorCodePtr)
 {
     int e, written, resBytes = 0;
-    Tcl_Obj *errObj;
 
     chanDataPtr->flags &= ~STREAM_DECOMPRESS;
     chanDataPtr->inStream.next_out = (Bytef *) buf;
@@ -4098,14 +4093,11 @@ ResultDecompress(
     return resBytes;
 
   handleError:
-    errObj = Tcl_NewListObj(0, NULL);
-    Tcl_ListObjAppendElement(NULL, errObj, Tcl_NewStringObj(
-	    "-errorcode", TCL_AUTO_LENGTH));
-    Tcl_ListObjAppendElement(NULL, errObj,
-	    ConvertErrorToList(e, chanDataPtr->inStream.adler));
-    Tcl_ListObjAppendElement(NULL, errObj,
-	    Tcl_NewStringObj(chanDataPtr->inStream.msg, TCL_AUTO_LENGTH));
-    Tcl_SetChannelError(chanDataPtr->parent, errObj);
+    Tcl_SetChannelError(chanDataPtr->parent, Tcl_NewListObj(3, (Tcl_Obj *[]) {
+	Tcl_NewStringObj("-errorcode", TCL_AUTO_LENGTH),
+	ConvertErrorToList(e, chanDataPtr->inStream.adler),
+	Tcl_NewStringObj(chanDataPtr->inStream.msg, TCL_AUTO_LENGTH)
+    }));
     *errorCodePtr = EINVAL;
     return -1;
 }

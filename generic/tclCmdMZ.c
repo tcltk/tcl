@@ -3790,22 +3790,23 @@ TclNRSwitchObjCmd(
 
 	for (j=0 ; j<=info.nsubs ; j++) {
 	    if (indexVarObj != NULL) {
-		Tcl_Obj *rangeObjAry[2];
+		Tcl_Size start, end;
 
 		if (info.matches[j].end > 0) {
-		    TclNewIndexObj(rangeObjAry[0], info.matches[j].start);
-		    TclNewIndexObj(rangeObjAry[1], info.matches[j].end-1);
+		    start = info.matches[j].start;
+		    end = info.matches[j].end - 1;
 		} else {
-		    TclNewIntObj(rangeObjAry[1], -1);
-		    rangeObjAry[0] = rangeObjAry[1];
+		    end = start = -1;
 		}
 
 		/*
 		 * Never fails; the object is always clean at this point.
 		 */
 
-		Tcl_ListObjAppendElement(NULL, indicesObj,
-			Tcl_NewListObj(2, rangeObjAry));
+		Tcl_ListObjAppendElement(NULL, indicesObj, Tcl_NewListObj(2, (Tcl_Obj *[]) {
+		    Tcl_NewWideIntObj(start),
+		    Tcl_NewWideIntObj(end)
+		}));
 	    }
 
 	    if (matchVarObj != NULL) {
@@ -4789,7 +4790,7 @@ TclNRTryObjCmd(
     haveHandlers = 0;
     for (i=2 ; i<objc ; i++) {
 	enum Handlers type;
-	Tcl_Obj *info[5];
+	Tcl_Obj *info[5], *trapTerm;
 
 	if (Tcl_GetIndexFromObj(interp, objv[i], handlerNames, "handler type",
 		0, &type) != TCL_OK) {
@@ -4832,7 +4833,7 @@ TclNRTryObjCmd(
 		Tcl_DecrRefCount(handlersObj);
 		return TCL_ERROR;
 	    }
-	    info[2] = NULL;
+	    trapTerm = NULL;
 	    goto commonHandler;
 
 	case TryTrap:		/* trap pattern variableList script */
@@ -4856,7 +4857,7 @@ TclNRTryObjCmd(
 			"EXNFORMAT", (char *)NULL);
 		return TCL_ERROR;
 	    }
-	    info[2] = objv[i+1];
+	    trapTerm = objv[i+1];
 
 	commonHandler:
 	    if (TclListObjLength(interp, objv[i+2], &dummy) != TCL_OK) {
@@ -4864,17 +4865,14 @@ TclNRTryObjCmd(
 		return TCL_ERROR;
 	    }
 
-	    info[0] = objv[i];			/* type */
-	    TclNewIntObj(info[1], code);	/* returnCode */
-	    if (info[2] == NULL) {		/* errorCodePrefix */
-		TclNewObj(info[2]);
-	    }
-	    info[3] = objv[i+2];		/* bindVariables */
-	    info[4] = objv[i+3];		/* script */
-
 	    bodyShared = !strcmp(TclGetString(objv[i+3]), "-");
-	    Tcl_ListObjAppendElement(NULL, handlersObj,
-		    Tcl_NewListObj(5, info));
+	    Tcl_ListObjAppendElement(NULL, handlersObj, Tcl_NewListObj(5, (Tcl_Obj *[]) {
+		objv[i],			// type
+		Tcl_NewIntObj(code),		// returnCode
+		(trapTerm ? trapTerm : Tcl_NewObj()), // errorCodePrefix
+		objv[i + 2],			// bindVariables
+		objv[i + 3]			// script
+	    }));
 	    haveHandlers = 1;
 	    i += 3;
 	    break;

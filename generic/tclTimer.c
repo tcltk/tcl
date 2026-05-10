@@ -2332,8 +2332,7 @@ TimerInfoDo(
     Tcl_Obj *resultListPtr;
 
     TclNewObj(resultListPtr);
-    Tcl_ListObjAppendElement(interp, resultListPtr,
-	    afterPtr->commandPtr);
+    Tcl_ListObjAppendElement(interp, resultListPtr, afterPtr->commandPtr);
     if (NULL == afterPtr->token) {
 	/*
 	 * Type: idle: the return value is identical for "after info"
