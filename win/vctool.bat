@@ -55,6 +55,7 @@ if "%1" == "test" goto targets
 if "%1" == "install" goto targets
 if "%1" == "runshell" goto targets
 if "%1" == "debug" goto debug
+if "%~x1" == ".test" goto testpat
 goto help
 
 :debug
@@ -92,6 +93,11 @@ goto options
 
 :targets
 set TARGETS=%TARGETS% %1
+shift
+goto options
+
+:testpat
+set TESTPAT=%1
 shift
 goto options
 
