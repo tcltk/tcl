@@ -3069,9 +3069,7 @@ UtfToUtfProc(
 		++src;
 	    } else {
 		/* TCL_ENCODING_PROFILE_TCL8 */
-		char chbuf[2];
-		chbuf[0] = UCHAR(*src++);
-		chbuf[1] = 0;
+		char chbuf[2] = { UCHAR(*src++), 0 };
 		TclUtfToUniChar(chbuf, &ch);
 	    }
 	    dst += Tcl_UniCharToUtf(ch, dst);
@@ -3353,9 +3351,7 @@ UtfToCesu8Proc(
 		++src;
 	    } else {
 		/* TCL_ENCODING_PROFILE_TCL8 */
-		char chbuf[2];
-		chbuf[0] = UCHAR(*src++);
-		chbuf[1] = 0;
+		char chbuf[2] = { UCHAR(*src++), 0 };
 		TclUtfToUniChar(chbuf, &ch);
 	    }
 	    dst += Tcl_UniCharToUtf(ch, dst);
@@ -4324,9 +4320,7 @@ TableToUtfProc(
 	    if (PROFILE_REPLACE(flags)) {
 		ch = UNICODE_REPLACE_CHAR;
 	    } else {
-		char chbuf[2];
-		chbuf[0] = byte;
-		chbuf[1] = 0;
+		char chbuf[2] = { (char) byte, 0 };
 		TclUtfToUniChar(chbuf, &ch);
 	    }
 	}

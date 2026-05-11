@@ -4790,7 +4790,7 @@ TclNRTryObjCmd(
     haveHandlers = 0;
     for (i=2 ; i<objc ; i++) {
 	enum Handlers type;
-	Tcl_Obj *info[5], *trapTerm;
+	Tcl_Obj *trapTerm;
 
 	if (Tcl_GetIndexFromObj(interp, objv[i], handlerNames, "handler type",
 		0, &type) != TCL_OK) {

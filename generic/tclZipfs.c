@@ -4206,8 +4206,6 @@ ZipFSInfoObjCmd(
     ReadLock();
     z = ZipFSLookup(filename);
     if (z) {
-	Tcl_Obj *result = Tcl_GetObjResult(interp);
-
 	Tcl_SetObjResult(interp, Tcl_NewListObj(4, (Tcl_Obj *[]) {
 	    Tcl_NewStringObj(z->zipFilePtr->name, -1),
 	    Tcl_NewWideIntObj(z->numBytes),

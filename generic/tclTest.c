@@ -2279,32 +2279,35 @@ static int UtfExtWrapper(
 			"Tcl_ExternalToUtf" : "Tcl_UtfToExternal"));
 	result = TCL_ERROR;
     } else if (result != TCL_ERROR) {
-	Tcl_Obj *resultObjs[3];
+	Tcl_Obj *resultNameObj;
 	switch (result) {
 	case TCL_OK:
-	    resultObjs[0] = Tcl_NewStringObj("ok", TCL_INDEX_NONE);
+	    resultNameObj = Tcl_NewStringObj("ok", TCL_INDEX_NONE);
 	    break;
 	case TCL_CONVERT_MULTIBYTE:
-	    resultObjs[0] = Tcl_NewStringObj("multibyte", TCL_INDEX_NONE);
+	    resultNameObj = Tcl_NewStringObj("multibyte", TCL_INDEX_NONE);
 	    break;
 	case TCL_CONVERT_SYNTAX:
-	    resultObjs[0] = Tcl_NewStringObj("syntax", TCL_INDEX_NONE);
+	    resultNameObj = Tcl_NewStringObj("syntax", TCL_INDEX_NONE);
 	    break;
 	case TCL_CONVERT_UNKNOWN:
-	    resultObjs[0] = Tcl_NewStringObj("unknown", TCL_INDEX_NONE);
+	    resultNameObj = Tcl_NewStringObj("unknown", TCL_INDEX_NONE);
 	    break;
 	case TCL_CONVERT_NOSPACE:
-	    resultObjs[0] = Tcl_NewStringObj("nospace", TCL_INDEX_NONE);
+	    resultNameObj = Tcl_NewStringObj("nospace", TCL_INDEX_NONE);
 	    break;
 	default:
-	    resultObjs[0] = Tcl_NewIntObj(result);
+	    resultNameObj = Tcl_NewIntObj(result);
 	    break;
 	}
 	result = TCL_OK;
-	resultObjs[1] = encStatePtr
+	Tcl_Obj *resultObjs[] = {
+	    resultNameObj,
+	    encStatePtr
 		? Tcl_NewWideIntObj((Tcl_WideInt)(size_t)encState)
-		: Tcl_NewObj();
-	resultObjs[2] = Tcl_NewByteArrayObj((const unsigned char *)dstBufPtr, dstLen);
+		: Tcl_NewObj(),
+	    Tcl_NewByteArrayObj((const unsigned char *)dstBufPtr, dstLen)
+	};
 	if (optObjs[SRCREADVAR]) {
 	    if (Tcl_ObjSetVar2(interp, optObjs[SRCREADVAR], NULL, Tcl_NewWideIntObj(srcRead),
 		    TCL_LEAVE_ERR_MSG) == NULL) {
@@ -3943,13 +3946,6 @@ TestlistrepCmd(
 	break;
 
     case LISTREP_DESCRIBE:
-#define APPEND_FIELD(targetObj_, structPtr_, fld_) \
-    do {								\
-	Tcl_ListObjAppendElement(interp, (targetObj_),			\
-		Tcl_NewStringObj(#fld_, -1));				\
-	Tcl_ListObjAppendElement(interp, (targetObj_),			\
-		Tcl_NewWideIntObj((structPtr_)->fld_));			\
-    } while (0)
 	if (objc != 3) {
 	    Tcl_WrongNumArgs(interp, 2, objv, "object");
 	    return TCL_ERROR;
@@ -3957,38 +3953,46 @@ TestlistrepCmd(
 	    Tcl_Obj **objs;
 	    Tcl_Size nobjs;
 	    ListRep listRep;
-	    Tcl_Obj *listRepObjs[4];
 
 	    /* Force list representation */
 	    if (Tcl_ListObjGetElements(interp, objv[2], &nobjs, &objs) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    ListObjGetRep(objv[2], &listRep);
-	    listRepObjs[0] = Tcl_NewStringObj("store", -1);
-	    listRepObjs[1] = Tcl_NewListObj(12, NULL);
-	    Tcl_ListObjAppendElement(interp, listRepObjs[1],
-		    Tcl_NewStringObj("memoryAddress", -1));
-	    Tcl_ListObjAppendElement(interp, listRepObjs[1],
-		    Tcl_ObjPrintf("%p", listRep.storePtr));
-	    APPEND_FIELD(listRepObjs[1], listRep.storePtr, firstUsed);
-	    APPEND_FIELD(listRepObjs[1], listRep.storePtr, numUsed);
-	    APPEND_FIELD(listRepObjs[1], listRep.storePtr, numAllocated);
-	    APPEND_FIELD(listRepObjs[1], listRep.storePtr, refCount);
-	    APPEND_FIELD(listRepObjs[1], listRep.storePtr, flags);
+	    Tcl_Obj *listRepObjs[] = {
+		Tcl_NewStringObj("store", -1),
+		Tcl_NewListObj(12, (Tcl_Obj *[]) {
+		    Tcl_NewStringObj("memoryAddress", -1),
+		    Tcl_ObjPrintf("%p", listRep.storePtr),
+		    Tcl_NewStringObj("firstUsed", -1),
+		    Tcl_NewWideIntObj(listRep.storePtr->firstUsed),
+		    Tcl_NewStringObj("numUsed", -1),
+		    Tcl_NewWideIntObj(listRep.storePtr->numUsed),
+		    Tcl_NewStringObj("numAllocated", -1),
+		    Tcl_NewWideIntObj(listRep.storePtr->numAllocated),
+		    Tcl_NewStringObj("refCount", -1),
+		    Tcl_NewWideIntObj(listRep.storePtr->refCount),
+		    Tcl_NewStringObj("flags", -1),
+		    Tcl_NewWideIntObj(listRep.storePtr->flags)
+		}),
+		NULL,
+		NULL
+	    };
 	    if (listRep.spanPtr) {
 		listRepObjs[2] = Tcl_NewStringObj("span", -1);
-		listRepObjs[3] = Tcl_NewListObj(8, NULL);
-		Tcl_ListObjAppendElement(interp, listRepObjs[3],
-			Tcl_NewStringObj("memoryAddress", -1));
-		Tcl_ListObjAppendElement(interp, listRepObjs[3],
-			Tcl_ObjPrintf("%p", listRep.spanPtr));
-		APPEND_FIELD(listRepObjs[3], listRep.spanPtr, spanStart);
-		APPEND_FIELD(listRepObjs[3], listRep.spanPtr, spanLength);
-		APPEND_FIELD(listRepObjs[3], listRep.spanPtr, refCount);
+		listRepObjs[3] = Tcl_NewListObj(8, (Tcl_Obj *[]) {
+		    Tcl_NewStringObj("memoryAddress", -1),
+		    Tcl_ObjPrintf("%p", listRep.spanPtr),
+		    Tcl_NewStringObj("spanStart", -1),
+		    Tcl_NewWideIntObj(listRep.spanPtr->spanStart),
+		    Tcl_NewStringObj("spanLength", -1),
+		    Tcl_NewWideIntObj(listRep.spanPtr->spanLength),
+		    Tcl_NewStringObj("refCount", -1),
+		    Tcl_NewWideIntObj(listRep.spanPtr->refCount),
+		});
 	    }
 	    resultObj = Tcl_NewListObj(listRep.spanPtr ? 4 : 2, listRepObjs);
 	}
-#undef APPEND_FIELD
 	break;
 
     case LISTREP_CONFIG:
@@ -4893,8 +4897,6 @@ TestregexpCmd(
 	varPtr = objv[i];
 	ii = ((cflags&REG_EXPECT) && i == objc-1) ? TCL_INDEX_NONE : (Tcl_Size)i;
 	if (indices) {
-	    Tcl_Obj *objs[2];
-
 	    if (ii == TCL_INDEX_NONE) {
 		TclRegExpRangeUniChar(regExpr, ii, &start, &end);
 	    } else if (ii > info.nsubs) {
@@ -4914,10 +4916,11 @@ TestregexpCmd(
 		end--;
 	    }
 
-	    objs[0] = Tcl_NewWideIntObj(start);
-	    objs[1] = Tcl_NewWideIntObj(end);
 
-	    newPtr = Tcl_NewListObj(2, objs);
+	    newPtr = Tcl_NewListObj(2, (Tcl_Obj *[]) {
+		Tcl_NewWideIntObj(start),
+		Tcl_NewWideIntObj(end)
+	    });
 	} else {
 	    if (ii == TCL_INDEX_NONE) {
 		TclRegExpRangeUniChar(regExpr, ii, &start, &end);
@@ -7315,12 +7318,9 @@ TestGetIndexFromObjStructCmd(
 		(char *)NULL);
 	return TCL_ERROR;
     } else if (idx[1] != target) {
-	char buffer[64];
-	snprintf(buffer, sizeof(buffer), "%d", idx[1]);
-	Tcl_AppendResult(interp, "index value comparison failed: got ",
-		buffer, (char *)NULL);
-	snprintf(buffer, sizeof(buffer), "%d", target);
-	Tcl_AppendResult(interp, " when ", buffer, " expected", (char *)NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"index value comparison failed: got %d when %d expected",
+		idx[1], target));
 	return TCL_ERROR;
     }
     Tcl_WrongNumArgs(interp, objc, objv, NULL);
@@ -7898,7 +7898,7 @@ TestUtfNextCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "?-bytestring? bytes");
 	return TCL_ERROR;
     }
-	bytes = Tcl_GetStringFromObj(objv[1], &numBytes);
+    bytes = Tcl_GetStringFromObj(objv[1], &numBytes);
 
     if ((size_t)numBytes > sizeof(buffer) - 4) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(

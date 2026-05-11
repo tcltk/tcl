@@ -321,8 +321,8 @@ TestConditionVariable(
 	Tcl_SetResult(interp, "Need at least 2 threads.", TCL_STATIC);
 	return TCL_ERROR;
     }
-    int numProducers = contextPtr->numThreads / 2;
-    int numConsumers = contextPtr->numThreads - numProducers;
+    const int numProducers = contextPtr->numThreads / 2;
+    const int numConsumers = contextPtr->numThreads - numProducers;
 
     contextPtr->u.queue.canDequeue = NULL;
     contextPtr->u.queue.canEnqueue = NULL;

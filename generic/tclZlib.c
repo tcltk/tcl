@@ -4115,8 +4115,6 @@ int
 TclZlibInit(
     Tcl_Interp *interp)
 {
-    Tcl_Config cfg[2];
-
     /*
      * This does two things. It creates a counter used in the creation of
      * stream commands, and it creates the namespace that will contain those
@@ -4133,9 +4131,10 @@ TclZlibInit(
      * a compatibility version built into Tcl?
      */
 
-    cfg[0].key = "zlibVersion";
-    cfg[0].value = zlibVersion();
-    cfg[1].key = NULL;
+    Tcl_Config cfg[] = {
+	{"zlibVersion", zlibVersion()},
+	{NULL, NULL}
+    };
     Tcl_RegisterConfig(interp, "zlib", cfg, "utf-8");
 
     /*

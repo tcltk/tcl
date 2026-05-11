@@ -2104,11 +2104,11 @@ ParseBoolean(
 	}
 
 	if (TclHasInternalRep(objPtr, &tclBignumType)) {
-		return TCL_ERROR;
+	    return TCL_ERROR;
 	}
 
 	if (TclHasInternalRep(objPtr, &tclDoubleType)) {
-		return TCL_ERROR;
+	    return TCL_ERROR;
 	}
 	/* Handle dict separately, because it doesn't have a lengthProc */
 	if (TclHasInternalRep(objPtr, &tclDictType)) {

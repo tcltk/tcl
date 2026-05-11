@@ -341,9 +341,10 @@ CheckForFileInDir(
     Tcl_Obj *dirPathPtr,
     Tcl_Obj *fileNamePtr)
 {
-    Tcl_Obj *path[2];
-    path[0] = dirPathPtr;
-    path[1] = fileNamePtr;
+    Tcl_Obj *path[] = {
+	dirPathPtr,
+	fileNamePtr
+    };
     Tcl_Obj *fullPathPtr = TclJoinPath(2, path, false);
     Tcl_IncrRefCount(fullPathPtr);
     if (Tcl_FSAccess(fullPathPtr, R_OK) == 0) {
