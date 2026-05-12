@@ -2432,9 +2432,14 @@ declare 698 {
 	    Tcl_Size *dstCharsPtr)
 }
 
+declare 699 {
+    int Tcl_RegisterPostInitProc(Tcl_PostInitProc *postInitProc,
+	    void * clientData)
+}
+
 # ----- BASELINE -- FOR -- 9.1.0 ----- #
 
-declare 699 {
+declare 700 {
     void TclUnusedStubEntry(void)
 }
 

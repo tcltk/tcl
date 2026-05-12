@@ -21,6 +21,21 @@
  */
 
 static const char *tclPreInitScript = NULL;
+
+/*
+ * TclPostInitRecord holds callbacks to be invoked when an interpreter
+ * is initialized.
+ */
+typedef struct TclPostInitRecord {
+    Tcl_PostInitProc *proc;	/* The callback to invoke. */
+    void *clientData;		/* Opaque argument to the callback. */
+    struct TclPostInitRecord *nextPtr;
+				/* Next callback or NULL if last. */
+    struct TclPostInitRecord *prevPtr;
+				/* Previous callback or NULL if first. */
+} TclPostInitRecord;
+static TclPostInitRecord *postInitList = NULL;
+TCL_DECLARE_MUTEX(postInitListMutex)
 
 /* Forward declaration */
 struct Target;
@@ -321,6 +336,38 @@ Tcl_SetPreInitScript(
     tclPreInitScript = string;
     return prevString;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_RegisterPostInitProc --
+ *
+ *	Registers a callback to be called at the end of every interp
+ *	initialization at which time every callback is invoked in the order
+ *	of registration.
+ *
+ *	The registration key is the pair (proc, clientData). If the same
+ *	key is already registered, it will not be added again but this is not
+ *	treated as an error.
+ *
+ * Results:
+ *	Returns a standard Tcl result code.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+Tcl_RegisterPostInitProc(
+    Tcl_PostInitProc *proc,	/* The callback to register. */
+    void *clientData)		/* Opaque argument to the callback. */
+{
+    postInitList = Tcl_Alloc(sizeof(TclPostInitRecord));
+    postInitList->proc = proc;
+    postInitList->clientData = clientData;
+    postInitList->nextPtr = NULL;
+    postInitList->prevPtr = NULL;
+    return TCL_OK;
+}
+
 
 /*
  *----------------------------------------------------------------------
@@ -782,6 +829,15 @@ Tcl_Init(
 
     result = RunPreInitScript(interp);
     TclpSetInitialEncodings();
+    if (result == TCL_OK && postInitList != NULL) {
+	for (TclPostInitRecord *recPtr = postInitList; recPtr != NULL;
+	    recPtr = recPtr->nextPtr) {
+	    result = recPtr->proc(interp, recPtr->clientData);
+	    if (result != TCL_OK) {
+		break;
+	    }
+	}
+    }
 end:
     *names = (*names)->nextPtr;
     return result;
@@ -5248,6 +5304,45 @@ ChildTimeLimitCmd(
 	}
 	return TCL_OK;
     }
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * TclInitStaticPackages --
+ *
+ *	Registers statically linked Tcl core packages so they are made
+ *	available to all Tcl interpreters created subsequently.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The passed callback is added to the list of callbacks invoked
+ *	on interpreter initialization.
+ *
+ *---------------------------------------------------------------------------
+ */
+int
+TclInitStaticPackages(
+    Tcl_Interp *interp,
+    TCL_UNUSED(void *))
+{
+#if defined(_WIN32) && defined(STATIC_BUILD)
+    /*
+     * Note, we pass NULL, not interp, into Tcl_StaticLibrary. Passing
+     * interp causes Tcl_StaticLibrary to mark the package as already loaded
+     * so a subsequent load command becomes a no-op. Since we actually want
+     * the package init to be called at the point of the load command, we
+     * pass NULL.
+     */
+    Tcl_StaticLibrary(NULL, "Dde", Dde_Init, Dde_SafeInit);
+	   char *script = "package ifneeded dde 1.5a2 [list load {} Dde]";
+    return Tcl_Eval(interp, script);
+#else
+    return TCL_OK;
+#endif
+
 }
 
 /*

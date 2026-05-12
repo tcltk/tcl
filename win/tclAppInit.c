@@ -34,11 +34,6 @@ extern Tcl_LibraryInitProc Tcltest_SafeInit;
 #endif
 #endif /* TCL_TEST */
 
-#if defined(STATIC_BUILD)
-extern Tcl_LibraryInitProc Dde_Init;
-extern Tcl_LibraryInitProc Dde_SafeInit;
-#endif
-
 #define WIN32_LEAN_AND_MEAN
 #define STRICT			/* See MSDN Article Q83456 */
 #include <windows.h>
@@ -189,13 +184,6 @@ Tcl_AppInit(
     if (Tcl_Init(interp) == TCL_ERROR) {
 	return TCL_ERROR;
     }
-
-#if defined(STATIC_BUILD)
-    if (Dde_Init(interp) == TCL_ERROR) {
-	return TCL_ERROR;
-    }
-    Tcl_StaticLibrary(interp, "Dde", Dde_Init, Dde_SafeInit);
-#endif
 
 #ifdef TCL_TEST
     if (Tcltest_Init(interp) == TCL_ERROR) {

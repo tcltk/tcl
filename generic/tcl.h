@@ -579,6 +579,7 @@ typedef void (Tcl_FreeProc) (void *blockPtr);
 typedef int (Tcl_LibraryInitProc) (Tcl_Interp *interp);
 typedef int (Tcl_LibraryUnloadProc) (Tcl_Interp *interp, int flags);
 typedef void (Tcl_PanicProc) (const char *format, ...);
+typedef int (Tcl_PostInitProc) (Tcl_Interp *interp, void *clientData);
 typedef void (Tcl_TcpAcceptProc) (void *callbackData, Tcl_Channel chan,
 	char *address, int port);
 typedef void (Tcl_TimerProc) (void *clientData);
