@@ -5328,7 +5328,7 @@ TclInitStaticPackages(
     Tcl_Interp *interp,
     TCL_UNUSED(void *))
 {
-#if defined(_WIN32) && defined(STATIC_BUILD)
+    int result = TCL_OK;
     /*
      * Note, we pass NULL, not interp, into Tcl_StaticLibrary. Passing
      * interp causes Tcl_StaticLibrary to mark the package as already loaded
@@ -5336,13 +5336,19 @@ TclInitStaticPackages(
      * the package init to be called at the point of the load command, we
      * pass NULL.
      */
+#if defined(_WIN32) && defined(STATIC_BUILD)
     Tcl_StaticLibrary(NULL, "Dde", Dde_Init, Dde_SafeInit);
-	   char *script = "package ifneeded dde 1.5a2 [list load {} Dde]";
-    return Tcl_Eval(interp, script);
-#else
-    return TCL_OK;
+    result = Tcl_Eval(interp, "package ifneeded dde 1.5a2 [list load {} Dde]");
 #endif
 
+#ifdef TCL_TEST
+    if (result == TCL_OK) {
+	Tcl_StaticLibrary(NULL, "Tcltest", Tcltest_Init, Tcltest_SafeInit);
+	result = Tcl_Eval(interp, "load {} Tcltest");
+    }
+#endif /* TCL_TEST */
+
+    return result;
 }
 
 /*
