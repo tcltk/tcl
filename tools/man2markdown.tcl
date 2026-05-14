@@ -260,7 +260,8 @@ namespace eval ::ndoc {
 		pkg_mkIndex   {Tcl_PkgProvide PkgRequire Tcl_PkgRequire PkgRequire}
 		platform      {tcl_platform tclvars tcl_platform(platform) tclvars}
 		platform_shell {tcl_platform(platform) tclvars}
-		process       {Tcl\_ReapDetachedProcs DetachPids}
+		process       {Tcl\_ReapDetachedProcs DetachPids Tcl_WaitPid DetachPids}
+		refchan       {Tcl\_DriverGetHandleProc SetChanErr Tcl_DriverHandlerProc SetChanErr Tcl_DriverFlushProc SetChanErr}
 		
 		
 		regexp        {re\_syntax re_syntax}
@@ -1871,6 +1872,13 @@ proc ::ndoc::mdExceptions {md} {
 				{is **foo bar** and later the command **foo bar test 2.4**} {is `foo bar` and later the command `foo bar test 2.4`}
 				{command **package require test 2.4**} {command `package require test 2.4`}
 				{[latest=|§stable]} {[latest|stable]}
+			} $md]
+		}
+		refchan {
+			set md [string map {
+				{the strings [read] or} {the strings **read** or}
+				{any of [read] and} {any of **read** and}
+				{.,\\ } {e.g., }
 			} $md]
 		}
 		

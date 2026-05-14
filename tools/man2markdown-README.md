@@ -36,7 +36,7 @@ section | number of documents | initial conversion | final conversion
 --------|---------------------|--------------------|-----------------
 1       | 1                   | 1                  | 0
 3       | 108                 | 108                | 0
-n       | 139                 | 139                | 93
+n       | 139                 | 139                | 99
 
 Final conversion of these files is currently done:
 1. after
@@ -132,6 +132,12 @@ Final conversion of these files is currently done:
 91. platform_shell
 92. prefix
 93. proc
+94. process (the command `process status` needs manual reformatting)
+95. puts
+96. pwd
+97. re_syntax (needs extensive manual formatting of brackets and backslashes)
+98. read
+99. refchan
 
 
 
