@@ -45,8 +45,8 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-DLLEXPORT int		Tcltest_Init(Tcl_Interp *interp);
-DLLEXPORT int		Tcltest_SafeInit(Tcl_Interp *interp);
+DLLEXPORT int	Tcltest_Init(Tcl_Interp *interp);
+DLLEXPORT int	Tcltest_SafeInit(Tcl_Interp *interp);
 #ifdef __cplusplus
 }
 #endif
@@ -834,6 +834,51 @@ Tcltest_SafeInit(
 	return TCL_ERROR;
     }
     return Procbodytest_SafeInit(interp);
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * TcltestStaticInit --
+ *
+ *	Registers statically linked Tcltest packages so they are made
+ *	available to all Tcl interpreters created subsequently.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The passed callback is added to the list of callbacks invoked
+ *	on interpreter initialization.
+ *
+ *---------------------------------------------------------------------------
+ */
+int
+TcltestStaticInit(
+    Tcl_Interp *interp,
+    TCL_UNUSED(void *))
+{
+    /*
+     * For some reason not known to me, tclTest.c always defines
+     * USE_TCL_STUBS even for static builds. (As an aside this does not make
+     * sense to me because then test suite goes through the stubs table even
+     * for static builds.) In any case, this means Tcl_StaticLibrary call
+     * below needs stubs to be initialized. The Tcl_InitStubs call in
+     * TestCommoninit happens too late.
+     */
+    if (Tcl_InitStubs(interp, "9.0-", 0) == NULL) {
+	return TCL_ERROR;
+    }
+
+    /*
+     * Note, we pass NULL, not interp, into Tcl_StaticLibrary. Passing
+     * interp causes Tcl_StaticLibrary to mark the package as already loaded
+     * so a subsequent load command becomes a no-op. Since we actually want
+     * the package init to be called at the point of the load command, we
+     * pass NULL.
+     */
+    Tcl_StaticLibrary(NULL, "Tcltest", Tcltest_Init, Tcltest_SafeInit);
+    return Tcl_Eval(interp, "load {} Tcltest");
 }
 
 /*

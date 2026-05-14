@@ -25,6 +25,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+extern Tcl_PostInitProc    TcltestStaticInit;
 extern Tcl_LibraryInitProc Tcltest_Init;
 extern Tcl_LibraryInitProc Tcltest_SafeInit;
 #ifdef __cplusplus
@@ -141,6 +142,10 @@ main(
 #elif TCL_MAJOR_VERSION > 8 && (!defined(_WIN32) || defined(UNICODE))
     /* New in Tcl 9.0. This doesn't work on Windows without UNICODE */
     TclZipfs_AppHook(&argc, &argv);
+#endif
+
+#if defined(TCL_TEST)
+    Tcl_RegisterPostInitProc(TcltestStaticInit, NULL);
 #endif
 
     Tcl_Main(argc, argv, TCL_LOCAL_APPINIT);

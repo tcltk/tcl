@@ -1386,7 +1386,7 @@ test package-15.4 {set stable, rejected} -constraints testpreferstable -setup {
 # (That is a debatable design but not one I'm changing now.)
 test package-bug-4f06d7ca08 {
 	Bug 4f06d7ca08 - package require static package in secondary interp
-} -constraints isStaticBuild -setup {
+} -constraints {win isStaticBuild} -setup {
 	set ip [interp create]
 } -cleanup {
 	interp delete $ip
