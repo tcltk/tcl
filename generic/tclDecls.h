@@ -1932,6 +1932,10 @@ EXTERN int		Tcl_RegisterPostInitProc(
 				Tcl_PostInitProc *postInitProc,
 				void *clientData);
 /* 700 */
+EXTERN int		Tcl_UnregisterPostInitProc(
+				Tcl_PostInitProc *postInitProc,
+				void *clientData);
+/* 701 */
 EXTERN void		TclUnusedStubEntry(void);
 
 typedef struct {
@@ -2644,7 +2648,8 @@ typedef struct TclStubs {
     int (*tcl_ExternalToUtfEx) (Tcl_Interp *interp, Tcl_Encoding encoding, const char *src, Tcl_Size srcLen, int flags, Tcl_EncodingState *statePtr, char *dst, Tcl_Size dstLen, Tcl_Size *srcReadPtr, Tcl_Size *dstWrotePtr, Tcl_Size *dstCharsPtr); /* 697 */
     int (*tcl_UtfToExternalEx) (Tcl_Interp *interp, Tcl_Encoding encoding, const char *src, Tcl_Size srcLen, int flags, Tcl_EncodingState *statePtr, char *dst, Tcl_Size dstLen, Tcl_Size *srcReadPtr, Tcl_Size *dstWrotePtr, Tcl_Size *dstCharsPtr); /* 698 */
     int (*tcl_RegisterPostInitProc) (Tcl_PostInitProc *postInitProc, void *clientData); /* 699 */
-    void (*tclUnusedStubEntry) (void); /* 700 */
+    int (*tcl_UnregisterPostInitProc) (Tcl_PostInitProc *postInitProc, void *clientData); /* 700 */
+    void (*tclUnusedStubEntry) (void); /* 701 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -3997,8 +4002,10 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_UtfToExternalEx) /* 698 */
 #define Tcl_RegisterPostInitProc \
 	(tclStubsPtr->tcl_RegisterPostInitProc) /* 699 */
+#define Tcl_UnregisterPostInitProc \
+	(tclStubsPtr->tcl_UnregisterPostInitProc) /* 700 */
 #define TclUnusedStubEntry \
-	(tclStubsPtr->tclUnusedStubEntry) /* 700 */
+	(tclStubsPtr->tclUnusedStubEntry) /* 701 */
 
 #endif /* defined(USE_TCL_STUBS) */
 

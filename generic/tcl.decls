@@ -2437,9 +2437,14 @@ declare 699 {
 	    void * clientData)
 }
 
+declare 700 {
+    int Tcl_UnregisterPostInitProc(Tcl_PostInitProc *postInitProc,
+	    void * clientData)
+}
+
 # ----- BASELINE -- FOR -- 9.1.0 ----- #
 
-declare 700 {
+declare 701 {
     void TclUnusedStubEntry(void)
 }
 
