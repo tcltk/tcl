@@ -122,7 +122,7 @@ TclGetWinInfoOnce(
 
     tclWinInfo.longPathsSupported = 0;
     if (tclWinInfo.osVersion.dwMajorVersion == 10 &&
-	tclWinInfo.osVersion.dwBuildNumber >= 22000) {
+	    tclWinInfo.osVersion.dwBuildNumber >= 22000) {
 	tclWinInfo.osVersion.dwMajorVersion = 11;
     }
     if (tclWinInfo.osVersion.dwMajorVersion > 10 ||

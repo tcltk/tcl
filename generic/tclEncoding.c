@@ -1364,8 +1364,8 @@ Tcl_ExternalToUtf(
 		dstCharsPtr ? &dstChars : NULL);
 
     if ((srcReadPtr && srcRead > INT_MAX) ||
-	(dstWrotePtr && dstWrote > INT_MAX) ||
-	(dstCharsPtr && dstChars > INT_MAX)) {
+	    (dstWrotePtr && dstWrote > INT_MAX) ||
+	    (dstCharsPtr && dstChars > INT_MAX)) {
 	/* An output count is too large for integer width */
 	srcRead = 0;
 	dstWrote = 0;
@@ -1619,7 +1619,7 @@ Tcl_ExternalToUtfEx(
 	/* Handle the most likely cases first */
 	if (result == TCL_OK) {
 	    if (allInputSeen ||
-		(charLimited && dstCharsWritten >= *dstCharsPtr)) {
+		    (charLimited && dstCharsWritten >= *dstCharsPtr)) {
 		break; /* 1a */
 	    }
 	    /* else 1b continue loop */
@@ -1932,8 +1932,8 @@ Tcl_UtfToExternal(
 		dstCharsPtr ? &dstChars : NULL);
 
     if ((srcReadPtr && srcRead > INT_MAX) ||
-	(dstWrotePtr && dstWrote > INT_MAX) ||
-	(dstCharsPtr && dstChars > INT_MAX)) {
+	    (dstWrotePtr && dstWrote > INT_MAX) ||
+	    (dstCharsPtr && dstChars > INT_MAX)) {
 	/* An output count is too large for integer width */
 	srcRead = 0;
 	dstWrote = 0;
@@ -2197,7 +2197,7 @@ Tcl_UtfToExternalEx(
 	/* Handle the most likely cases first */
 	if (result == TCL_OK) {
 	    if (allInputSeen ||
-		(charLimited && dstCharsWritten >= *dstCharsPtr)) {
+		    (charLimited && dstCharsWritten >= *dstCharsPtr)) {
 		break; /* 1a */
 	    }
 	    /* else 1b continue loop */

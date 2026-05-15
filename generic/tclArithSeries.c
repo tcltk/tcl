@@ -304,7 +304,7 @@ ArithSeriesLenInt(
 
     // Check for opposite sequence directions
     if ((step < 0 && (end-start) > 0)
-	|| (step > 0 && (end-start) < 0)) {
+	    || (step > 0 && (end-start) < 0)) {
 	return 0;
     }
     if (step == 0) {

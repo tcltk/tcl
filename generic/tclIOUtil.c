@@ -1572,16 +1572,16 @@ TclGetOpenMode(
 	    if (mode & O_APPEND) {
 	    accessFlagRepeated:
 		if (interp) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"access mode \"%s\" repeated", flag));
+		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			    "access mode \"%s\" repeated", flag));
 		}
-	    goto invAccessMode;
+		goto invAccessMode;
 	    }
 	    mode |= O_APPEND;
 	    *modeFlagsPtr |= 1;
 	} else if ((c == 'C') && (strcmp(flag, "CREAT") == 0)) {
 	    if (mode & O_CREAT) {
-	    goto accessFlagRepeated;
+		goto accessFlagRepeated;
 	    }
 	    mode |= O_CREAT;
 	} else if ((c == 'E') && (strcmp(flag, "EXCL") == 0)) {

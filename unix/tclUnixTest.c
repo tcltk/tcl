@@ -620,7 +620,7 @@ TestchmodCmd(
     Tcl_DString ds;
 
     if (objc < 2) {
-    Tcl_WrongNumArgs(interp, 1, objv, "mode file ?file ...?");
+	Tcl_WrongNumArgs(interp, 1, objv, "mode file ?file ...?");
 	return TCL_ERROR;
     }
 
