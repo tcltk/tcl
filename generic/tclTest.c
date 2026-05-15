@@ -210,6 +210,8 @@ static Tcl_ObjCmdProc2	NoopCmd;
 static Tcl_ObjCmdProc2	NoopObjCmd;
 static Tcl_CmdObjTraceProc2 TraceProc;
 static void		ObjTraceDeleteProc(void *clientData);
+static Tcl_PostInitProc PostInitAddProc;
+static Tcl_PostInitProc PostInitMultiplyProc;
 static void		PrintParse(Tcl_Interp *interp, Tcl_Parse *parsePtr);
 static Tcl_FreeProc	SpecialFree;
 static int		StaticInitProc(Tcl_Interp *interp);
@@ -266,6 +268,7 @@ static Tcl_ObjCmdProc2	TestparseargsCmd;
 static Tcl_ObjCmdProc2	TestparserCmd;
 static Tcl_ObjCmdProc2	TestparsevarCmd;
 static Tcl_ObjCmdProc2	TestparsevarnameCmd;
+static Tcl_ObjCmdProc2	TestpostinitCmd;
 static Tcl_ObjCmdProc2	TestpreferstableCmd;
 static Tcl_ObjCmdProc2	TestprintCmd;
 static Tcl_ObjCmdProc2	TestregexpCmd;
@@ -667,6 +670,8 @@ Tcltest_Init(
     Tcl_CreateObjCommand2(interp, "testparsevar", TestparsevarCmd,
 	    NULL, NULL);
     Tcl_CreateObjCommand2(interp, "testparsevarname", TestparsevarnameCmd,
+	    NULL, NULL);
+    Tcl_CreateObjCommand2(interp, "testpostinit", TestpostinitCmd,
 	    NULL, NULL);
     Tcl_CreateObjCommand2(interp, "testpreferstable", TestpreferstableCmd,
 	    NULL, NULL);
@@ -9668,6 +9673,167 @@ TestUtfToNormalizedDStringCmd(
 	Tcl_DStringFree(&ds);
     }
     return result;
+}
+
+/* 
+ * TIP 755 test routines.
+ * The following set of functions test various callbacks registered via
+ * Tcl_RegisterPostInitProc. See comment header for TestpostinitCmd below.
+ */
+
+/* Tests eval within postinit callback */
+static int
+PostInitAddProc(
+    Tcl_Interp *interp,
+    void *clientData
+) {
+    int value = (int)(intptr_t)clientData;
+    Tcl_Obj *objPtr;
+    objPtr = Tcl_ObjPrintf("proc add%d arg {incr arg %d}", value, value);
+    Tcl_IncrRefCount(objPtr);
+    int ret = Tcl_EvalObjEx(interp, objPtr, TCL_EVAL_GLOBAL);
+    Tcl_DecrRefCount(objPtr);
+    return ret;
+}
+
+/* Tests static package require within postinit callback */
+static int
+MultiplierCmd(
+    void *clientData,		/* (integer) multiplicand */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    Tcl_Size objc,		/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Arguments. */
+{
+    if (objc != 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "multiplicand multiplier");
+	return TCL_ERROR;
+    }
+    Tcl_WideInt multiplicand, multiplier;
+    if (Tcl_GetWideIntFromObj(interp, objv[1], &multiplicand) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    if (Tcl_GetWideIntFromObj(interp, objv[1], &multiplier) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(multiplier * multiplicand));
+    return TCL_OK;
+}
+
+static int
+Postinitpackage_Init(
+	Tcl_Interp *interp
+)
+{
+    Tcl_CreateObjCommand2(interp, "multiplier", MultiplierCmd, NULL, NULL);
+    Tcl_PkgProvideEx(interp, "postinitpackage", TCL_PATCH_LEVEL, NULL);
+    return TCL_OK;
+}
+
+static int
+PostInitStaticPackageProc(
+    Tcl_Interp *interp,
+    void *clientData
+) {
+    Tcl_StaticLibrary(NULL, "postinitpackage", Postinitpackage_Init, NULL);
+    return Tcl_Eval(interp, "package ifneeded  [info patchlevel] [list load {} postinitpackage]");
+}
+
+/* Tests raising of error from postinit callback */
+static int
+PostInitRaiseErrorProc(
+    Tcl_Interp *interp,
+    void *clientData
+) {
+    Tcl_SetResult(interp, "PostInit test error raised", TCL_STATIC);
+    return TCL_ERROR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TestpostinitCmd --
+ *
+ *	This procedure implements the "testpostinit" command for testing
+ *	Tcl_{Register,Unregister}PostInitProc functions.
+ *	    testpostinit register COMMAND ?N?
+ *	    testpostinit unregister COMMAND ?N?
+ *	COMMAND should be
+ *	   add - creates a "addN" proc adding N to passed operand. Tests
+ *		 evaluation of scripts within a postinit callback
+ *	   package - requires a static package that includes a "multiply"
+ *		 command. Tests package require of static package within
+ *		 a postinit callback
+ *	   raiseerror - raises an error within the postinit callback
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	Registers or unregisters the TestPostInitProc function to be
+ *	called on interpreter creation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TestpostinitCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,		/* Current interpreter. */
+    Tcl_Size objc,		/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Arguments. */
+{
+    static const char *const actions[] = {
+	"register", "unregister", NULL
+    };
+    enum {
+	REGISTER, UNREGISTER
+    } action;
+    static const char *const callbacks[] = {
+	"add", "package", "raiseerror", NULL
+    };
+    enum {
+	ADD, PACKAGE, RAISEERROR
+    } callback;
+
+    if (objc < 3 || objc > 4) {
+	Tcl_WrongNumArgs(interp, 1, objv,
+	    "register|unregister add|package|raiseerror ?integerData?");
+	return TCL_ERROR;
+    }
+    if (Tcl_GetIndexFromObj(interp, objv[1], actions, "action", 0, &action)
+		!= TCL_OK) {
+	return TCL_ERROR;
+    }
+    if (Tcl_GetIndexFromObj(interp, objv[2], callbacks, "callback", 0,
+	    &callback) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    void *clientData = NULL;
+    if (objc == 4) {
+	int i;
+	if (Tcl_GetIntFromObj(interp, objv[3], &i) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	clientData = (void *)i;
+    }
+
+    Tcl_PostInitProc *callbackProc;
+    int ret;
+    switch (callback) {
+	case ADD: callbackProc = PostInitAddProc; break;
+	case PACKAGE: callbackProc = PostInitStaticPackageProc; break;
+	case RAISEERROR: callbackProc = PostInitRaiseErrorProc; break;
+    }
+
+    ret = (action == REGISTER
+	       ? Tcl_RegisterPostInitProc
+	       : Tcl_UnregisterPostInitProc)(callbackProc, clientData);
+
+    if (ret != TCL_OK) {
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf("Could not %s callback %s",
+				     actions[action], callbacks[callback]));
+    }
+    return ret;
 }
 
 #ifdef _WIN32
