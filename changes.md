@@ -51,6 +51,8 @@ to the userbase.
  - [Windows: Install pkgconfig](https://core.tcl-lang.org/tcl/tktview/1cf49a)
  - [Non-existent variables are ignored if re is {}](https://core.tcl-lang.org/tcl/tktview/cb03e5)
  - [bug in single-argument 'max' with bignums](https://core.tcl-lang.org/tcl/tktview/8dd280)
+ - [Windows static builds: package require registry dde fails in child interpreters](https://core.tcl-lang.org/tcl/tktview/4f06d7)
+ - [Windows static builds: registry command is available in main interpreter without package require](https://core.tcl-lang.org/tcl/tktview/6094de)
 
 # Updated bundled packages, libraries, standards, data
  - Itcl 4.3.5
