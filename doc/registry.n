@@ -15,7 +15,7 @@ registry \- Manipulate the Windows registry
 .nf
 \fBpackage require registry 1.4\fR
 
-\fBregistry \fR?\fI\-mode\fR? \fIoption keyName\fR ?\fIarg arg ...\fR?
+\fBregistry \fR?\fI\-mode\fR? \fIoption keyName\fR ?\fIarg ...\fR?
 .fi
 .BE
 .SH DESCRIPTION

@@ -262,10 +262,10 @@ namespace eval ::ndoc {
 		platform_shell {tcl_platform(platform) tclvars}
 		process       {Tcl\_ReapDetachedProcs DetachPids Tcl_WaitPid DetachPids}
 		refchan       {Tcl\_DriverGetHandleProc SetChanErr Tcl_DriverHandlerProc SetChanErr Tcl_DriverFlushProc SetChanErr}
-		
-		
 		regexp        {re\_syntax re_syntax}
 		regsub        {re\_syntax re_syntax}
+		safe          {auto_path tclvars tcl_library tclvars}
+		
 		switch        {re\_syntax re_syntax}
 	}]
 	
@@ -299,6 +299,7 @@ namespace eval ::ndoc {
 		next		{unknown destroy}
 		options		{bitmap image set}
 		radiobutton	{image}
+		regexp          {binary}
 		safe		{join split}
 		scale		{label variable}
 		scrollbar	{set}
@@ -1881,11 +1882,21 @@ proc ::ndoc::mdExceptions {md} {
 				{.,\\ } {e.g., }
 			} $md]
 		}
-		
-		
-		
+		regexp - regsub {
+			set md [string map {
+				{"[^" bracket expressions} {"\[^" bracket expressions}
+			} $md]
+		}
+		registry {set md [string map {{[binary]} {**binary**}} $md]}
 		re_syntax {
 			set md [string map {{Different flavors of res} {Different flavours of REs}} $md] 
+		}
+		return {
+			set md [string map {
+				{[error] (or **1**)} {**error** (or **1**)}
+				{[break] (or **3**)} {**break** (or **3**)}
+				{[continue] (or **4**)} {**continue** (or **4**)}
+			} $md]
 		}
 	}
 	regsub {\s+$} $md \n md
@@ -1929,7 +1940,11 @@ proc ::ndoc::mdLinks {md} {
 			## exclude some corner cases
 			set isValidLink 0	
 		}
-		if {! $isValidLink && $linkCmd ne $cmdName && $linkCmd in $tclCmdList && $linkCmd ni [dict getwithdefault $tclCmdListExclude $cmdName {}]} {
+		if {$linkCmd in [dict getwithdefault $tclCmdListExclude $cmdName {}]} {
+			## link is to be excluded explicitly as it is on the negative list:
+			set isValidLink 9
+		}
+		if {! $isValidLink && $linkCmd ne $cmdName && $linkCmd in $tclCmdList} {
 			## the file to link to is the same as the command name)
 			set linkTarget $linkCmd
 			set isValidLink 1

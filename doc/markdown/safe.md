@@ -60,15 +60,15 @@ All commands provided in the parent interpreter by Safe Tcl reside in the **safe
 
 The following commands are provided in the parent interpreter:
 
-[::safe::interpCreate]{.cmd} [child]{.optarg} [options...]{.optarg}
+[::safe::interpCreate]{.cmd} [child]{.optarg} [options]{.optdot}
 : Creates a safe interpreter, installs the aliases described in the section [Aliases] and initializes the auto-loading and package mechanism as specified by the supplied *options*. See the [Options] section below for a description of the optional arguments. If the *child* argument is omitted, a name will be generated. **::safe::interpCreate** always returns the interpreter name.
 
     The interpreter name *child* may include namespace separators, but may not have leading or trailing namespace separators, or excess colon characters in namespace separators.  The interpreter name is qualified relative to the global namespace ::, not the namespace in which the **::safe::interpCreate** command is evaluated.
 
-[::safe::interpInit]{.cmd} [child]{.arg} [options...]{.optarg}
+[::safe::interpInit]{.cmd} [child]{.arg} [options]{.optdot}
 : This command is similar to **interpCreate** except it that does not create the safe interpreter. *child* must have been created by some other means, like [interp create][interp] **-safe**.  The interpreter name *child* may include namespace separators, subject to the same restrictions as for **interpCreate**.
 
-[::safe::interpConfigure]{.cmd} [child]{.arg} [options...]{.optarg}
+[::safe::interpConfigure]{.cmd} [child]{.arg} [options]{.optdot}
 : If no *options* are given, returns the settings for all options for the named safe interpreter as a list of options and their current values for that *child*. If a single additional argument is provided, it will return a list of 2 elements *name* and *value* where *name* is the full name of that option and *value* the current value for that option and the *child*. If more than two additional arguments are provided, it will reconfigure the safe interpreter and change each and only the provided options. See the section on [Options] below for options description. Example of use:
 
     ```
@@ -105,7 +105,7 @@ The following commands are provided in the parent interpreter:
 [::safe::setSyncMode]{.cmd} [newValue]{.optarg}
 : This command is used to get or set the "Sync Mode" of the Safe Base. When an argument is supplied, the command returns an error if the argument is not a boolean value, or if any Safe Base interpreters exist.  Typically the value will be set as part of initialization - boolean true for "Sync Mode" on (the default), false for "Sync Mode" off.  With "Sync Mode" on, the Safe Base keeps each child interpreter's ::auto\_path synchronized with its access path.  See the section [Sync mode] below for details.
 
-[::safe::setLogCmd]{.cmd} [cmd arg...]{.optarg}
+[::safe::setLogCmd]{.cmd} [cmd arg]{.optdot}
 : This command installs a script that will be called when interesting life cycle events occur for a safe interpreter. When called with no arguments, it returns the currently installed script. When called with one argument, an empty string, the currently installed script is removed and logging is turned off. The script will be invoked with one additional argument, a string describing the event of interest. The main purpose is to help in debugging safe interpreters. Using this facility you can get complete error messages while the safe interpreter gets only generic error messages. This prevents a safe interpreter from seeing messages about failures and other events that might contain sensitive information such as real directory names.
 
     Example of use:

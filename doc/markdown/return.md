@@ -39,7 +39,7 @@ return - Return from a procedure, or set return code of a script
 ::: {.synopsis} :::
 [return]{.cmd} [result]{.optarg}
 [return]{.cmd} [[-code]{.lit} [code]{.arg}]{.optarg} [result]{.optarg}
-[return]{.cmd} [option value= ...? ?+result]{.optarg}
+[return]{.cmd} [option value]{.optdot} [result]{.optarg}
 :::
 
 # Description
@@ -55,16 +55,16 @@ In addition to the result of a procedure, the return code of a procedure may als
 **ok** (or **0**)
 : Normal return:  same as if the option is omitted.  The return code of the procedure is 0 (**TCL\_OK**).
 
-[error] (or **1**)
+**error** (or **1**)
 : Error return: the return code of the procedure is 1 (**TCL\_ERROR**). The procedure command behaves in its calling context as if it were the command [error] *result*.  See below for additional options.
 
 **return** (or **2**)
 : The return code of the procedure is 2 (**TCL\_RETURN**).  The procedure command behaves in its calling context as if it were the command **return** (with no arguments).
 
-[break] (or **3**)
+**break** (or **3**)
 : The return code of the procedure is 3 (**TCL\_BREAK**).  The procedure command behaves in its calling context as if it were the command [break].
 
-[continue] (or **4**)
+**continue** (or **4**)
 : The return code of the procedure is 4 (**TCL\_CONTINUE**).  The procedure command behaves in its calling context as if it were the command [continue].
 
 *value*

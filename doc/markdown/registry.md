@@ -20,7 +20,7 @@ registry - Manipulate the Windows registry
 ::: {.synopsis} :::
 [package]{.cmd} [require]{.sub} [registry]{.lit} [1.4]{.lit}
 
-[registry]{.cmd} [-mode]{.optarg} [option]{.arg} [keyName]{.arg} [arg arg]{.optdot}
+[registry]{.cmd} [-mode]{.optarg} [option]{.arg} [keyName]{.arg} [arg]{.optdot}
 :::
 
 # Description
@@ -84,7 +84,7 @@ The optional *-mode* argument indicates which registry to work with; when it is 
 
 Each value under a key in the registry contains some data of a particular type in a type-specific representation.  The **registry** command converts between this internal representation and one that can be manipulated by Tcl scripts.  In most cases, the data is simply returned as a Tcl string.  The type indicates the intended use for the data, but does not actually change the representation.  For some types, the **registry** command returns the data in a different form to make it easier to manipulate.  The following types are recognized by the registry command:
 
-[binary]
+**binary**
 : The registry value contains arbitrary binary data.  The data is represented exactly in Tcl, including any embedded nulls.
 
 **none**
@@ -137,6 +137,6 @@ puts "$ext opens with $command"
 ```
 
 
-[binary]: binary.md
+**binary**: binary.md
 [string]: string.md
 

@@ -56,7 +56,7 @@ the \fBsafe\fR namespace.
 The following commands are provided in the parent interpreter:
 .\" COMMAND: interpCreate
 .TP
-\fB::safe::interpCreate\fR ?\fIchild\fR? ?\fIoptions...\fR?
+\fB::safe::interpCreate\fR ?\fIchild\fR? ?\fIoptions ...\fR?
 .
 Creates a safe interpreter, installs the aliases described in the section
 \fBALIASES\fR and initializes the auto-loading and package mechanism as
@@ -75,7 +75,7 @@ the \fB::safe::interpCreate\fR command is evaluated.
 .RE
 .\" COMMAND: interpInit
 .TP
-\fB::safe::interpInit\fI child\fR ?\fIoptions...\fR?
+\fB::safe::interpInit\fI child\fR ?\fIoptions ...\fR?
 .
 This command is similar to \fBinterpCreate\fR except it that does not
 create the safe interpreter. \fIchild\fR must have been created by some
@@ -84,7 +84,7 @@ name \fIchild\fR may include namespace separators, subject to the same
 restrictions as for \fBinterpCreate\fR.
 .\" COMMAND: interpConfigure
 .TP
-\fB::safe::interpConfigure\fI child\fR ?\fIoptions...\fR?
+\fB::safe::interpConfigure\fI child\fR ?\fIoptions ...\fR?
 .
 If no \fIoptions\fR are given, returns the settings for all options for the
 named safe interpreter as a list of options and their current values
@@ -165,7 +165,7 @@ on, the Safe Base keeps each child interpreter's ::auto_path synchronized
 with its access path.  See the section \fBSYNC MODE\fR below for details.
 .\" COMMAND: setLogCmd
 .TP
-\fB::safe::setLogCmd\fR ?\fIcmd arg...\fR?
+\fB::safe::setLogCmd\fR ?\fIcmd arg ...\fR?
 .
 This command installs a script that will be called when interesting
 life cycle events occur for a safe interpreter.
