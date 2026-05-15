@@ -9698,7 +9698,7 @@ PostInitAddProc(
 
 /* Tests static package require within postinit callback */
 static int
-MultiplierCmd(
+MultiplyCmd(
     void *clientData,		/* (integer) multiplicand */
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,		/* Number of arguments. */
@@ -9712,7 +9712,7 @@ MultiplierCmd(
     if (Tcl_GetWideIntFromObj(interp, objv[1], &multiplicand) != TCL_OK) {
 	return TCL_ERROR;
     }
-    if (Tcl_GetWideIntFromObj(interp, objv[1], &multiplier) != TCL_OK) {
+    if (Tcl_GetWideIntFromObj(interp, objv[2], &multiplier) != TCL_OK) {
 	return TCL_ERROR;
     }
     Tcl_SetObjResult(interp, Tcl_NewWideIntObj(multiplier * multiplicand));
@@ -9724,7 +9724,7 @@ Postinitpackage_Init(
 	Tcl_Interp *interp
 )
 {
-    Tcl_CreateObjCommand2(interp, "multiplier", MultiplierCmd, NULL, NULL);
+    Tcl_CreateObjCommand2(interp, "multiply", MultiplyCmd, NULL, NULL);
     Tcl_PkgProvideEx(interp, "postinitpackage", TCL_PATCH_LEVEL, NULL);
     return TCL_OK;
 }
@@ -9735,7 +9735,7 @@ PostInitStaticPackageProc(
     void *clientData
 ) {
     Tcl_StaticLibrary(NULL, "postinitpackage", Postinitpackage_Init, NULL);
-    return Tcl_Eval(interp, "package ifneeded  [info patchlevel] [list load {} postinitpackage]");
+    return Tcl_Eval(interp, "package ifneeded postinitpackage [info patchlevel] [list load {} postinitpackage]");
 }
 
 /* Tests raising of error from postinit callback */
@@ -9764,6 +9764,7 @@ PostInitRaiseErrorProc(
  *		 command. Tests package require of static package within
  *		 a postinit callback
  *	   raiseerror - raises an error within the postinit callback
+ *	   clear - deletes all registrations
  *
  * Results:
  *	A standard Tcl result.
@@ -9783,10 +9784,10 @@ TestpostinitCmd(
     Tcl_Obj *const objv[])	/* Arguments. */
 {
     static const char *const actions[] = {
-	"register", "unregister", NULL
+	"register", "unregister", "clear", NULL
     };
     enum {
-	REGISTER, UNREGISTER
+	REGISTER, UNREGISTER, CLEAR
     } action;
     static const char *const callbacks[] = {
 	"add", "package", "raiseerror", NULL
@@ -9795,13 +9796,21 @@ TestpostinitCmd(
 	ADD, PACKAGE, RAISEERROR
     } callback;
 
-    if (objc < 3 || objc > 4) {
+    if (objc < 2 || objc > 4) {
 	Tcl_WrongNumArgs(interp, 1, objv,
-	    "register|unregister add|package|raiseerror ?integerData?");
+	    "register|unregister|clear ?arg ...?");
 	return TCL_ERROR;
     }
     if (Tcl_GetIndexFromObj(interp, objv[1], actions, "action", 0, &action)
 		!= TCL_OK) {
+	return TCL_ERROR;
+    }
+    if (action == CLEAR) {
+	return Tcl_ClearPostInitProcs();
+    }
+    if (objc < 3) {
+	Tcl_WrongNumArgs(interp, 1, objv,
+	    "register|unregister add|package|raiseerror ?integerData?");
 	return TCL_ERROR;
     }
     if (Tcl_GetIndexFromObj(interp, objv[2], callbacks, "callback", 0,

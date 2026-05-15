@@ -2442,9 +2442,13 @@ declare 700 {
 	    void * clientData)
 }
 
+declare 701 {
+    int Tcl_ClearPostInitProcs(void)
+}
+
 # ----- BASELINE -- FOR -- 9.1.0 ----- #
 
-declare 701 {
+declare 702 {
     void TclUnusedStubEntry(void)
 }
 

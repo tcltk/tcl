@@ -3931,6 +3931,102 @@ test interp-40.9 {interp child set} -setup {
     interp delete $i
 }
 
+#####################################################################
+# Tests related to post-init callbacks using Tcl_RegisterPostInitProc
+
+testConstraint testpostinit [llength [info commands testpostinit]]
+
+namespace eval tcl::test::postinit {
+    variable result
+    variable ip
+    variable ip1
+    variable ip2
+
+    test postinit-1.1 {
+        Verify post-initialization registration and unregistration
+    } -constraints testpostinit -body {
+        testpostinit register add 10
+        set ip1 [interp create]
+        set sum [$ip1 eval {add10 1}]
+        testpostinit unregister add 10
+        set ip2 [interp create]
+        catch {$ip2 eval {add10 2}} error
+        list $sum $error
+    } -cleanup {
+        interp delete $ip1 $ip2
+    } -result {11 {invalid command name "add10"}}
+
+    test postinit-1.2 {
+        Verify multiple post-init callbacks
+    } -constraints testpostinit -body {
+        testpostinit register add 1
+        testpostinit register package
+        set ip [interp create]
+        set product [$ip eval {
+            package require postinitpackage; # Contains multiply command
+            multiply 2 3
+        }]
+        list [$ip eval {add1 10}] $product
+    } -cleanup {
+        testpostinit clear
+        interp delete $ip
+    } -result {11 6}
+
+    test postinit-1.3 {
+        Verify clearing of multiple post-init callbacks
+    } -constraints testpostinit -body {
+        testpostinit register add 1
+        testpostinit register package
+        testpostinit clear
+        set ip [interp create]
+        list \
+            [catch {$ip eval {package require postinitpackage}} error] $error \
+            [catch {$ip eval {add1 2}} error] $error
+    } -cleanup {
+        interp delete $ip
+    } -result {1 {can't find package postinitpackage} 1 {invalid command name "add1"}}
+
+    test postinit-1.x {
+        Verify single callback registered multiple times with the same clientData.
+    } -constraints testpostinit -body {
+        
+    } -result {}
+    test postinit-1.x {
+        Verify single callback registered multiple times with different clientData.
+    } -constraints testpostinit -body {
+        
+    } -result {}
+
+
+    test postinit-1.x {
+        Verify reallocation of callback table with multiple registrations.
+    } -constraints testpostinit -body {
+        
+    } -result {}
+    test postinit-1.x {
+        Verify static package loading in callback.
+    } -constraints testpostinit -body {
+    } -result {}
+    test postinit-1.x {
+        Verify error raised in callback
+    } -constraints testpostinit -body {
+        
+    } -result {}
+    test postinit-1.x {
+        Verify wrong clientdata ignored
+    } -constraints testpostinit -body {
+        
+    } -result {}
+
+    test postinit-1.x {
+        Verify wrong callback proc ignored
+    } -constraints testpostinit -body {
+        
+    } -result {}
+}
+namespace delete tcl::test::postinit
+
+
 # cleanup
 unset -nocomplain hidden_cmds
 foreach i [interp children] {

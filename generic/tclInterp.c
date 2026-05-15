@@ -5459,7 +5459,7 @@ done: /* postInitMutex must be held at this point */
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_UnegisterPostInitProc --
+ * Tcl_UnregisterPostInitProc --
  *
  *	Unregisters a callback registered through Tcl_RegisterPostInitProc.
  *	The registration key is the pair (proc, clientData). It is not an
@@ -5495,6 +5495,28 @@ Tcl_UnregisterPostInitProc(
 	    postInitRecords.count--;
 	}
     }
+    Tcl_MutexUnlock(&postInitMutex);
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_ClearPostInitProcs --
+ *
+ *	Unregisters all callbacks registered through Tcl_RegisterPostInitProc.
+ *
+ * Results:
+ *	Returns a standard Tcl result code.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+Tcl_ClearPostInitProcs()
+{
+    Tcl_MutexLock(&postInitMutex);
+    postInitRecords.count = 0;
+    postInitRecords.epoch++;
     Tcl_MutexUnlock(&postInitMutex);
     return TCL_OK;
 }
