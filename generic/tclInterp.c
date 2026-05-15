@@ -5398,7 +5398,7 @@ TclCallPostInitProcs(
     tsdPtr->inUse--;
     return result;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -5432,20 +5432,72 @@ Tcl_RegisterPostInitProc(
 	    sizeof(TclPostInitRecord) * postInitRecords.capacity);
 	postInitRecords.count = 0;
 	postInitRecords.epoch = 0;
-    } else if (postInitRecords.count == postInitRecords.capacity) {
-	postInitRecords.capacity *= 2;
-	postInitRecords.recordsPtr =
-	    (TclPostInitRecord *)Tcl_Realloc(postInitRecords.recordsPtr,
-		sizeof(TclPostInitRecord) * postInitRecords.capacity);
+    } else {
+	for (size_t i = 0; i < postInitRecords.count; ++i) {
+	    if (postInitRecords.recordsPtr[i].postInitProc == proc &&
+		postInitRecords.recordsPtr[i].clientData == clientData) {
+		goto done;	/* Already present, don't add */
+	    }
+	}
+	if (postInitRecords.count == postInitRecords.capacity) {
+	    postInitRecords.capacity *= 2;
+	    postInitRecords.recordsPtr =
+		(TclPostInitRecord *)Tcl_Realloc(postInitRecords.recordsPtr,
+		    sizeof(TclPostInitRecord) * postInitRecords.capacity);
+	}
     }
     postInitRecords.recordsPtr[postInitRecords.count].postInitProc = proc;
     postInitRecords.recordsPtr[postInitRecords.count].clientData = clientData;
     postInitRecords.count++;
     postInitRecords.epoch++;
+
+done: /* postInitMutex must be held at this point */
     Tcl_MutexUnlock(&postInitMutex);
     return TCL_OK;
 }
-
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_UnegisterPostInitProc --
+ *
+ *	Unregisters a callback registered through Tcl_RegisterPostInitProc.
+ *	The registration key is the pair (proc, clientData). It is not an
+ *	an error if the key does not exist.
+ *
+ * Results:
+ *	Returns a standard Tcl result code.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+Tcl_UnregisterPostInitProc(
+    Tcl_PostInitProc *proc,	/* The callback to unregister. */
+    void *clientData)		/* Opaque argument included in matching. */
+{
+    if (proc == NULL) {
+	return TCL_ERROR;
+    }
+    Tcl_MutexLock(&postInitMutex);
+    if (postInitRecords.recordsPtr != NULL && postInitRecords.count > 0) {
+	size_t i;
+	for (i = 0; i < postInitRecords.count; ++i) {
+	    if (postInitRecords.recordsPtr[i].postInitProc == proc &&
+		postInitRecords.recordsPtr[i].clientData == clientData) {
+		break;
+	    }
+	}
+	if (i < postInitRecords.count) {
+	    while (++i < postInitRecords.count) {
+		postInitRecords.recordsPtr[i-1] = postInitRecords.recordsPtr[i];
+	    }
+	    postInitRecords.epoch++;
+	    postInitRecords.count--;
+	}
+    }
+    Tcl_MutexUnlock(&postInitMutex);
+    return TCL_OK;
+}
 
 /*
  * Local Variables:
