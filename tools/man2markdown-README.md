@@ -36,7 +36,7 @@ section | number of documents | initial conversion | final conversion
 --------|---------------------|--------------------|-----------------
 1       | 1                   | 1                  | 0
 3       | 108                 | 108                | 0
-n       | 139                 | 139                | 104
+n       | 139                 | 139                | 113
 
 Final conversion of these files is currently done:
 1. after
@@ -143,6 +143,15 @@ Final conversion of these files is currently done:
 102. regsub
 103. rename
 104. return
+105. safe (the links to other manual pages need manual correction here, there are just too many special cases!)
+106. scan
+107. seek
+108. self
+109. set
+110. singleton
+111. socket
+112. source
+113. split
 
 
 

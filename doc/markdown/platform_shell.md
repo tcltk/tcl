@@ -46,5 +46,9 @@ For applications like a code repository it is important to identify the architec
 : This command does the same identification as **platform::generic**, for the specified Tcl shell, in contrast to the running shell.
 
 [platform::shell::platform]{.cmd} [shell]{.arg}
-: This command returns the contents of **tcl\_platform(platform)** for the specified Tcl shell.
+: This command returns the contents of [tcl\_platform(platform)][tclvars] for the specified Tcl shell.
+
+
+
+[tclvars]: tclvars.md
 

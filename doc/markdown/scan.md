@@ -24,7 +24,7 @@ scan - Parse string using conversion specifiers in the style of sscanf
 # Synopsis
 
 ::: {.synopsis} :::
-[scan]{.cmd} [string]{.arg} [format]{.arg} [varName varName]{.optdot}
+[scan]{.cmd} [string]{.arg} [format]{.arg} [varName]{.optdot}
 :::
 
 # Introduction
@@ -76,11 +76,11 @@ The following conversion characters are supported:
 **e** or **f** or **g** or **E** or **G**
 : The input substring must be a floating-point number consisting of an optional sign, a string of decimal digits possibly containing a decimal point, and an optional exponent consisting of an **e** or **E** followed by an optional sign and a string of decimal digits. It is read in and stored in the variable as a floating-point value.
 
-**[***chars***]**
-: The input substring consists of one or more characters in *chars*. The matching string is stored in the variable. If the first character between the brackets is a **]** then it is treated as part of *chars* rather than the closing bracket for the set. If *chars* contains a sequence of the form *a***-***b* then any character between *a* and *b* (inclusive) will match. If the first or last character between the brackets is a **-**, then it is treated as part of *chars* rather than indicating a range.
+**\[***chars***\]**
+: The input substring consists of one or more characters in *chars*. The matching string is stored in the variable. If the first character between the brackets is a **\]** then it is treated as part of *chars* rather than the closing bracket for the set. If *chars* contains a sequence of the form *a***-***b* then any character between *a* and *b* (inclusive) will match. If the first or last character between the brackets is a **-**, then it is treated as part of *chars* rather than indicating a range.
 
-**[^***chars***]**
-: The input substring consists of one or more characters not in *chars*. The matching string is stored in the variable. If the character immediately following the **^** is a **]** then it is treated as part of the set rather than the closing bracket for the set. If *chars* contains a sequence of the form *a***-***b* then any character between *a* and *b* (inclusive) will be excluded from the set. If the first or last character between the brackets is a **-**, then it is treated as part of *chars* rather than indicating a range value.
+**\[^***chars***\]**
+: The input substring consists of one or more characters not in *chars*. The matching string is stored in the variable. If the character immediately following the **^** is a **\]** then it is treated as part of the set rather than the closing bracket for the set. If *chars* contains a sequence of the form *a***-***b* then any character between *a* and *b* (inclusive) will be excluded from the set. If the first or last character between the brackets is a **-**, then it is treated as part of *chars* rather than indicating a range value.
 
 **n**
 : No input is consumed from the input string.  Instead, the total number of characters scanned from the input string so far is stored in the variable.
@@ -88,7 +88,7 @@ The following conversion characters are supported:
 
 The number of characters read from the input for a conversion is the largest number that makes sense for that particular conversion (e.g. as many decimal digits as possible for **%d**, as many octal digits as possible for **%o**, and so on). The input substring for a given conversion terminates either when a white-space character is encountered or when the maximum substring width has been reached, whichever comes first. If a **\*** is present in the conversion specifier then no variable is assigned and the next scan argument is not consumed.
 
-# Differences from ansi sscanf
+# Differences from ANSI sscanf
 
 The behavior of the **scan** command is the same as the behavior of the ANSI C **sscanf** procedure except for the following differences:
 

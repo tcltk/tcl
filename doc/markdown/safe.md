@@ -161,7 +161,7 @@ The following aliases are provided in a safe interpreter:
 : The requested file, a shared object file, is dynamically loaded into the safe interpreter if it is found. The filename must contain a token name mentioned in the virtual path for the safe interpreter for it to be found successfully. Additionally, the shared object file must contain a safe entry point; see the manual page for the [load] command for more details.
 
 [file] ?*subcommand args...*?
-: The [file] alias provides access to a safe subset of the subcommands of the [file] command; it allows only **dirname**, [join], **extension**, **root**, **tail**, **pathtype** and [split] subcommands. For more details on what these subcommands do see the manual page for the [file] command.
+: The [file] alias provides access to a safe subset of the subcommands of the [file] command; it allows only **dirname**, **join**, **extension**, **root**, **tail**, **pathtype** and **split** subcommands. For more details on what these subcommands do see the manual page for the [file] command.
 
 [encoding] ?*subcommand args...*?
 : The [encoding] alias provides access to a safe subset of the subcommands of the [encoding] command;  it disallows setting of the system encoding, but allows all other subcommands including **system** to check the current encoding.
@@ -182,11 +182,11 @@ When a token is used in a safe interpreter in a request to source or load a file
 
 To further prevent potential information leakage from sensitive files that are accidentally included in the set of files that can be sourced by a safe interpreter, the [source] alias restricts access to files meeting the following constraints: the file name must fourteen characters or shorter, must not contain more than one dot ("**.**"), must end up with the extension ("**.tcl**") or be called ("**tclIndex**".)
 
-Each element of the initial access path list will be assigned a token that will be set in the child **auto\_path** and the first element of that list will be set as the **tcl\_library** for that child.
+Each element of the initial access path list will be assigned a token that will be set in the child [auto\_path][tclvars] and the first element of that list will be set as the [tcl\_library][tclvars] for that child.
 
-If the access path argument is not given to **::safe::interpCreate** or **::safe::interpInit** or is the empty list, the default behavior is to let the child access the same packages as the parent has access to (Or to be more precise: only packages written in Tcl (which by definition cannot be dangerous as they run in the child interpreter) and C extensions that provides a \_SafeInit entry point). For that purpose, the parent's **auto\_path** will be used to construct the child access path. In order that the child successfully loads the Tcl library files (which includes the auto-loading mechanism itself) the **tcl\_library** will be added or moved to the first position if necessary, in the child access path, so the child **tcl\_library** will be the same as the parent's (its real path will still be invisible to the child though). In order that auto-loading works the same for the child and the parent in this by default case, the first-level sub directories of each directory in the parent **auto\_path** will also be added (if not already included) to the child access path. You can always specify a more restrictive path for which sub directories will never be searched by explicitly specifying your directory list with the **-accessPath** flag instead of relying on this default mechanism.
+If the access path argument is not given to **::safe::interpCreate** or **::safe::interpInit** or is the empty list, the default behavior is to let the child access the same packages as the parent has access to (Or to be more precise: only packages written in Tcl (which by definition cannot be dangerous as they run in the child interpreter) and C extensions that provides a \_SafeInit entry point). For that purpose, the parent's [auto\_path][tclvars] will be used to construct the child access path. In order that the child successfully loads the Tcl library files (which includes the auto-loading mechanism itself) the [tcl\_library][tclvars] will be added or moved to the first position if necessary, in the child access path, so the child [tcl\_library][tclvars] will be the same as the parent's (its real path will still be invisible to the child though). In order that auto-loading works the same for the child and the parent in this by default case, the first-level sub directories of each directory in the parent [auto\_path][tclvars] will also be added (if not already included) to the child access path. You can always specify a more restrictive path for which sub directories will never be searched by explicitly specifying your directory list with the **-accessPath** flag instead of relying on this default mechanism.
 
-When the *accessPath* is changed after the first creation or initialization (i.e. through **interpConfigure -accessPath** *list*), an **auto\_reset** is automatically evaluated in the safe interpreter to synchronize its **auto\_index** with the new token list.
+When the *accessPath* is changed after the first creation or initialization (i.e. through **interpConfigure -accessPath** *list*), an [auto\_reset][tclvars] is automatically evaluated in the safe interpreter to synchronize its [auto\_index][tclvars] with the new token list.
 
 # Typical use
 
@@ -200,13 +200,13 @@ If you wish to use Safe Base interpreters with "Sync Mode" off, evaluate the com
 
 Use **::safe::interpCreate** or **::safe::interpInit** to create an interpreter with the properties that you require.  The simplest way is not to specify **-accessPath** or **-autoPath**, which means the safe interpreter will use the same paths as the parent interpreter.  However, if **-accessPath** is specified, then **-autoPath** must also be specified, or else it will be set to {}.
 
-The value of **-autoPath** will be that required to access tclIndex and pkgIndex.tcl files according to the same rules as an unsafe interpreter (see pkg\_mkIndex(n) and library(n)).
+The value of **-autoPath** will be that required to access tclIndex and pkgIndex.tcl files according to the same rules as an unsafe interpreter (see [pkg\_mkIndex][pkgMkIndex] and [library]).
 
 With "Sync Mode" on, the option **-autoPath** is undefined, and the Safe Base sets the child's ::auto\_path to a tokenized form of the access path. In addition to the directories present if "Safe Mode" is off, the ::auto\_path includes the numerous subdirectories and module paths that belong to the access path.
 
 # Sync mode
 
-Before Tcl version 9.0, the Safe Base kept each safe interpreter's ::auto\_path synchronized with a tokenized form of its access path. Limitations of Tcl 8.4 and earlier made this feature necessary.  This definition of ::auto\_path did not conform its specification in library(n) and pkg\_mkIndex(n), but nevertheless worked perfectly well for the discovery and loading of packages.  The introduction of Tcl modules in Tcl 8.5 added a large number of directories to the access path, and it is inconvenient to have these additional directories unnecessarily appended to the ::auto\_path.
+Before Tcl version 9.0, the Safe Base kept each safe interpreter's ::auto\_path synchronized with a tokenized form of its access path. Limitations of Tcl 8.4 and earlier made this feature necessary.  This definition of ::auto\_path did not conform its specification in [library] and [pkg\_mkIndex][pkgMkIndex], but nevertheless worked perfectly well for the discovery and loading of packages.  The introduction of Tcl modules in Tcl 8.5 added a large number of directories to the access path, and it is inconvenient to have these additional directories unnecessarily appended to the ::auto\_path.
 
 In order to preserve compatibility with existing code, this synchronization of the ::auto\_path and access path ("Sync Mode" on) is still the default. However, the Safe Base offers the option of limiting the safe interpreter's ::auto\_path to the much shorter list of directories that is necessary for it to perform its function ("Sync Mode" off).  Use the command **::safe::setSyncMode** to choose the mode before creating any Safe Base interpreters.
 
@@ -277,8 +277,9 @@ safe::interpConfigure foo -autoPath $childAutoPath
 [exit]: exit.md
 [file]: file.md
 [interp]: interp.md
-[join]: join.md
+[library]: library.md
 [load]: load.md
+[pkgMkIndex]: pkgMkIndex.md
 [source]: source.md
-[split]: split.md
+[tclvars]: tclvars.md
 

@@ -425,7 +425,7 @@ specified, or else it will be set to {}.
 .PP
 The value of \fB\-autoPath\fR will be that required to access tclIndex
 and pkgIndex.tcl files according to the same rules as an unsafe
-interpreter (see pkg_mkIndex(n) and library(n)).
+interpreter (see \fBpkg_mkIndex\fR and \fBlibrary\fR).
 .PP
 With "Sync Mode" on, the option \fB\-autoPath\fR is undefined, and
 the Safe Base sets the child's ::auto_path to a tokenized form of the
@@ -436,8 +436,8 @@ that belong to the access path.
 Before Tcl version 9.0, the Safe Base kept each safe interpreter's
 ::auto_path synchronized with a tokenized form of its access path.
 Limitations of Tcl 8.4 and earlier made this feature necessary.  This
-definition of ::auto_path did not conform its specification in library(n)
-and pkg_mkIndex(n), but nevertheless worked perfectly well for the discovery
+definition of ::auto_path did not conform its specification in \fBlibrary\fR
+and \fBpkg_mkIndex\fR, but nevertheless worked perfectly well for the discovery
 and loading of packages.  The introduction of Tcl modules in Tcl 8.5 added a
 large number of directories to the access path, and it is inconvenient to
 have these additional directories unnecessarily appended to the ::auto_path.

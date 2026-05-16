@@ -236,7 +236,8 @@ namespace eval ::ndoc {
 	# The keys of this dict are filenames (nroff files),
 	# the value for each key is a mapping with <cmdText filename ?cmdText filename ...?>
 	# where 'cmdText' is the command name mentioned in the manual and 'filename' is the
-	# name of the manual file in which the command is described:
+	# name of the manual file in which the command is described
+	# (the key to this dictionary refers to the nroff file name):
 	set tclCmdListRemap [dict create {*}{
 		binary        {tcl_platform tclvars}
 		class         {oo::object object oo::define define}
@@ -264,7 +265,8 @@ namespace eval ::ndoc {
 		refchan       {Tcl\_DriverGetHandleProc SetChanErr Tcl_DriverHandlerProc SetChanErr Tcl_DriverFlushProc SetChanErr}
 		regexp        {re\_syntax re_syntax}
 		regsub        {re\_syntax re_syntax}
-		safe          {auto_path tclvars tcl_library tclvars}
+		safe          {auto_path tclvars tcl_library tclvars auto_index tclvars auto_reset tclvars pkg_mkIndex pkgMkIndex library library}
+		socket        {Tcl\_DoOneEvent DoOneEvent}
 		
 		switch        {re\_syntax re_syntax}
 	}]
@@ -272,7 +274,8 @@ namespace eval ::ndoc {
 	# dictionary of pages in which specific cmd words should *not* be linked
 	# as they represent something else in that context
 	# (exclude_refs_map taken from core tools/tcltk-man2html.tcl of version d2328814c619
-	# and supplemented as we go and find more places):
+	# and supplemented as we go and find more places).
+	# The key to this dictionary refers to the nroff file name:
 	set tclCmdListExclude [dict create {*}{
 		bind		{button destroy option}
 		clock		{next}
@@ -901,7 +904,7 @@ proc ::ndoc::parseBlock {parent manContent} {
 									# as determined by the comment line above the .TP line,
 									# then mark it as such so that expandBlock can handle it nicely:
 									# (skip RegConfig.3 as it has non-standard syntax for generated Tcl-level commands)
-									if {[dict get $manual lastComment] in {OPTION: METHOD: COMMAND: OPTION METHOD COMMAND} && [dict get $manual name] ne "RegConfig"} {
+									if {[dict get $manual lastComment] in {OPTION: METHOD: COMMAND: OPTION METHOD COMMAND} && [dict get $manual fileName] ne "RegConfig"} {
 										set itemTitle [dict get $manual lastComment]_$itemTitle
 									}
 								}
@@ -986,7 +989,7 @@ proc ::ndoc::parseBlock {parent manContent} {
 						set manContent [lrange $manContent 1 end]
 						set line [lindex $manContent 0]
 						# the Tcl.n page is special (has no command syntax):
-						if {[dict get $manual name] eq "Tcl"} {
+						if {[dict get $manual fileName] eq "Tcl"} {
 							lappend blockList [list Paragraph {} $line]
 							set manContent [lrange $manContent 1 end]
 							continue
@@ -1898,6 +1901,30 @@ proc ::ndoc::mdExceptions {md} {
 				{[continue] (or **4**)} {**continue** (or **4**)}
 			} $md]
 		}
+		scan {
+			set md [string map {
+				{**[***chars***]**} {**\[***chars***\]**}
+				{**]**} {**\]**}
+				{*[^***chars***]**} {*\[^***chars***\]**}
+				{ansi} {ANSI}
+			} $md]
+		}
+		self {
+			set md [string map {
+				{**<constructor>**} {**\<constructor\>**}
+				{**<destructor>**} {**\<destructor\>**}
+			} $md]
+		}
+		set {
+			set md [string map {
+				{**NAME RESOLUTION**} {[Name resolution](namespace.html#name-resolution)}
+			} $md]
+		}
+		singleton {
+			set md {string map {
+				{**<cloned>**} {**\<cloned\>**}
+			} $md}
+		}
 	}
 	regsub {\s+$} $md \n md
 	return $md
@@ -1919,6 +1946,7 @@ proc ::ndoc::mdLinks {md} {
 	variable sectionTitles
 	set refList [list]
 	set cmdName [dict get $manual meta CommandName]
+	set fileName [dict get $manual fileName]
 	# detect all strings with ** around, using a non-greedy regexp.
 	# we go through the file one by one as ce can't use '-all' here
 	# (it would shift indices into the md after each match is replaced)
@@ -1940,7 +1968,7 @@ proc ::ndoc::mdLinks {md} {
 			## exclude some corner cases
 			set isValidLink 0	
 		}
-		if {$linkCmd in [dict getwithdefault $tclCmdListExclude $cmdName {}]} {
+		if {$linkCmd in [dict getwithdefault $tclCmdListExclude $fileName {}]} {
 			## link is to be excluded explicitly as it is on the negative list:
 			set isValidLink 9
 		}
@@ -1949,11 +1977,11 @@ proc ::ndoc::mdLinks {md} {
 			set linkTarget $linkCmd
 			set isValidLink 1
 		}
-		if {! $isValidLink && $linkCmd ne $cmdName && [dict exists $tclCmdListRemap $cmdName]} {
+		if {! $isValidLink && $linkCmd ne $cmdName && [dict exists $tclCmdListRemap $fileName]} {
 			## it's a valid link if there is a remapping entry here
 			## (note that we need to 'subst' the linkCmd word here as it may contain a literal backslash
 			##  used to escape an underscore in a command name in markdown such as in 'tcl\_platform'):
-			set linkTarget [dict getwithdefault $tclCmdListRemap $cmdName [subst -novariables -nocommands $linkCmd] {}]
+			set linkTarget [dict getwithdefault $tclCmdListRemap $fileName [subst -novariables -nocommands $linkCmd] {}]
 			if {$linkTarget ne ""} {set isValidLink 1}
 		}
 		if {! $isValidLink && ! [string is lower [string index $linkText 0]] && [string totitle $linkText] in $sectionTitles} {
@@ -1999,7 +2027,7 @@ proc ::ndoc::readFile {filename} {
 	# Side effect: sets the 'name' property in the variable 'manual'
 	#
 	variable manual
-	dict set manual name [file root [file tail $filename]]
+	dict set manual fileName [file root [file tail $filename]]
 	if {![file exists $filename]} {
 		return -code error "readFile: File '$filename' does not exist." 
 	}
