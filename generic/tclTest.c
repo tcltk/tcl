@@ -1091,7 +1091,7 @@ AsyncThreadProc(
     Tcl_Sleep(1);
     Tcl_MutexLock(&asyncTestMutex);
     for (asyncPtr = firstHandler; asyncPtr != NULL;
-	asyncPtr = asyncPtr->nextPtr) {
+	    asyncPtr = asyncPtr->nextPtr) {
 	if (asyncPtr->id == id) {
 	    Tcl_AsyncMark(asyncPtr->handler);
 	    break;
@@ -1272,7 +1272,7 @@ CmdDelProc0(
     TestCommandTokenRef *refPtr = (TestCommandTokenRef *) clientData;
     int id = refPtr->id;
     for (thisRefPtr = firstCommandTokenRef; refPtr != NULL;
-	thisRefPtr = thisRefPtr->nextPtr) {
+	    thisRefPtr = thisRefPtr->nextPtr) {
 	if (thisRefPtr->id == id) {
 	    if (prevRefPtr != NULL) {
 		prevRefPtr->nextPtr = thisRefPtr->nextPtr;
@@ -3957,9 +3957,8 @@ TestlistrepCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "command ?arg ...?");
 	return TCL_ERROR;
     }
-    if (Tcl_GetIndexFromObj(
-	    interp, objv[1], subcommands, "command", 0, &cmdIndex)
-	!= TCL_OK) {
+    if (Tcl_GetIndexFromObj(interp, objv[1], subcommands, "command", 0,
+	    &cmdIndex) != TCL_OK) {
 	return TCL_ERROR;
     }
     switch (cmdIndex) {
@@ -9560,7 +9559,7 @@ TestUtfToNormalizedCmd(
     }
     int normForm, profile;
     if (Tcl_GetIntFromObj(interp, objv[2], &normForm) != TCL_OK ||
-	Tcl_GetIntFromObj(interp, objv[3], &profile) != TCL_OK) {
+	    Tcl_GetIntFromObj(interp, objv[3], &profile) != TCL_OK) {
 	return TCL_ERROR;
     }
     if (Tcl_GetSizeIntFromObj(interp, objv[objc-1], &bufLen) != TCL_OK) {
@@ -9642,7 +9641,7 @@ TestUtfToNormalizedDStringCmd(
     }
     int normForm, profile;
     if (Tcl_GetIntFromObj(interp, objv[2], &normForm) != TCL_OK ||
-	Tcl_GetIntFromObj(interp, objv[3], &profile) != TCL_OK) {
+	    Tcl_GetIntFromObj(interp, objv[3], &profile) != TCL_OK) {
 	return TCL_ERROR;
     }
     if (objc == 4) {

@@ -5039,7 +5039,7 @@ TEBCresume(
 		/* Could be list of indices. Let TclLindexList handle it below */
 	    } else {
 		if (TclObjTypeIndex(interp, valuePtr, index, &objResultPtr) !=
-		    TCL_OK) {
+			TCL_OK) {
 		    CACHE_STACK_INFO();
 		    TRACE_ERROR(interp);
 		    goto gotError;

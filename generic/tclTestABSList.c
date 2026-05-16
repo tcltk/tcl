@@ -433,7 +433,7 @@ my_LStringObjRange(
     Tcl_WideInt len = toIdx - fromIdx + 1;
 
     if (lstringRepPtr->strlen < fromIdx ||
-	lstringRepPtr->strlen < toIdx) {
+	    lstringRepPtr->strlen < toIdx) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf("Range out of bounds "));
 	return TCL_ERROR;
     }
@@ -1148,7 +1148,7 @@ newLgenObj(
     }
 
     if (Tcl_GetWideIntFromObj(NULL, objv[0], &length) != TCL_OK
-	|| length < 0) {
+	    || length < 0) {
 	return NULL;
     }
 

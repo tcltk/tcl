@@ -722,7 +722,7 @@ IcuConverttoDString(
     Tcl_DString *dsOutPtr)	/* Output encoded string. */
 {
     if (ucnv_open == NULL || ucnv_close == NULL ||
-	ucnv_fromUChars == NULL || UCNV_FROM_U_CALLBACK_STOP == NULL) {
+	    ucnv_fromUChars == NULL || UCNV_FROM_U_CALLBACK_STOP == NULL) {
 	return FunctionNotAvailableError(interp);
     }
 
@@ -804,7 +804,7 @@ IcuBytesToUCharDString(
     Tcl_DString *dsOutPtr)	/* Output UChar string. */
 {
     if (ucnv_open == NULL || ucnv_close == NULL ||
-	ucnv_toUChars == NULL || UCNV_TO_U_CALLBACK_STOP == NULL) {
+	    ucnv_toUChars == NULL || UCNV_TO_U_CALLBACK_STOP == NULL) {
 	return FunctionNotAvailableError(interp);
     }
 
@@ -1195,7 +1195,7 @@ IcuNormalizeObjCmd(
     Tcl_DString dsIn;
     Tcl_DString dsNorm;
     if (IcuObjToUCharDString(interp, objv[objc - 1], strict, &dsIn) != TCL_OK ||
-	IcuNormalizeUCharDString(interp, &dsIn, mode, &dsNorm) != TCL_OK) {
+	    IcuNormalizeUCharDString(interp, &dsIn, mode, &dsNorm) != TCL_OK) {
 	return TCL_ERROR;
     }
     Tcl_DStringFree(&dsIn);

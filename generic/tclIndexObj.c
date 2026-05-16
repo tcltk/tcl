@@ -292,19 +292,19 @@ Tcl_GetIndexFromObjStruct(
      */
 
     if (objPtr && (index != TCL_INDEX_NONE) && !(flags & TCL_INDEX_TEMP_TABLE)) {
-    irPtr = TclFetchInternalRep(objPtr, &tclIndexType);
-    if (irPtr) {
-	indexRep = (IndexRep *)irPtr->twoPtrValue.ptr1;
-    } else {
-	Tcl_ObjInternalRep ir;
+	irPtr = TclFetchInternalRep(objPtr, &tclIndexType);
+	if (irPtr) {
+	    indexRep = (IndexRep *)irPtr->twoPtrValue.ptr1;
+	} else {
+	    Tcl_ObjInternalRep ir;
 
-	indexRep = (IndexRep*)Tcl_Alloc(sizeof(IndexRep));
-	ir.twoPtrValue.ptr1 = indexRep;
-	Tcl_StoreInternalRep(objPtr, &tclIndexType, &ir);
-    }
-    indexRep->tablePtr = (void *) tablePtr;
-    indexRep->offset = offset;
-    indexRep->index = index;
+	    indexRep = (IndexRep*)Tcl_Alloc(sizeof(IndexRep));
+	    ir.twoPtrValue.ptr1 = indexRep;
+	    Tcl_StoreInternalRep(objPtr, &tclIndexType, &ir);
+	}
+	indexRep->tablePtr = (void *) tablePtr;
+	indexRep->offset = offset;
+	indexRep->index = index;
     }
 
   uncachedDone:
