@@ -553,10 +553,17 @@ setup:      default-setup
 test: test-core test-pkgs
 test-core: tcltest
 	set TCL_LIBRARY=$(TCL_TEST_LIBRARY)
+!if $(STATIC_BUILD)
+	$(DEBUGGER) $(TCLTEST) "$(ROOT:\=/)/tests/all.tcl" $(TESTFLAGS) -loadfile <<
+		package require registry
+		package require dde
+<<
+!else
 	$(DEBUGGER) $(TCLTEST) "$(ROOT:\=/)/tests/all.tcl" $(TESTFLAGS) -loadfile <<
 		package ifneeded dde 1.4.6 [list load "$(TCLDDELIB:\=/)"]
 		package ifneeded registry 1.3.7 [list load "$(TCLREGLIB:\=/)"]
 <<
+!endif
 
 runtest: setup $(TCLTEST) dlls
 	set TCL_LIBRARY=$(TCL_TEST_LIBRARY)
