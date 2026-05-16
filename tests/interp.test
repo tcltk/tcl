@@ -4072,7 +4072,7 @@ namespace eval tcl::test::postinit {
         interp delete $ip
     } -result 20
 
-    test postinit-2.0 {
+    test postinit-2.1 {
         Verify interp not created on callback error
     } -constraints testpostinit -body {
         set children [lsort [interp children]]
@@ -4082,6 +4082,67 @@ namespace eval tcl::test::postinit {
     } -cleanup {
         testpostinit clear
     } -result {1 {PostInit test error raised} 1}
+
+    test postinit-2.2 {
+        Verify new interp initialization forbidden in callback (C API)
+    } -constraints testpostinit -body {
+        testpostinit register interpcreate 0
+        interp create
+    } -cleanup {
+        testpostinit clear
+    } -result {Recursive interp create from post-initialization callback.} -returnCodes error
+
+    test postinit-2.3 {
+        Verify new interp initialization forbidden in callback (interp create)
+    } -constraints testpostinit -body {
+        testpostinit register interpcreate 1
+        interp create
+    } -cleanup {
+        testpostinit clear
+    } -result {Recursive interp create from post-initialization callback.} -returnCodes error
+
+    test postinit-2.4 {
+        Verify safe interps do not run callbacks
+    } -constraints testpostinit -body {
+        testpostinit register safecheck
+        set ip [interp create]
+        set safe [interp create -safe]
+        list [$ip eval {isSafe}] [catch {$safe eval {isSafe}} error] $error
+    } -cleanup {
+        testpostinit clear
+        interp delete $ip $safe
+    } -result {0 1 {invalid command name "isSafe"}}
+
+    test postinit-3.1 {
+        Verify postinit registration within postinit callback
+    } -constraints testpostinit -body {
+        testpostinit register registerincb 99
+        set ip [interp create]
+        catch {$ip eval {add99 1}} error
+        interp delete $ip
+        set ip [interp create]
+        catch {$ip eval {add99 1}} sum
+        list $error $sum
+    } -cleanup {
+        testpostinit clear
+        interp delete $ip
+    } -result {{invalid command name "add99"} 100}
+
+    test postinit-3.2 {
+        Verify postinit unregistration within postinit callback
+    } -constraints testpostinit -body {
+        testpostinit register add 99
+        testpostinit register unregisterincb 99
+        set ip [interp create]
+        catch {$ip eval {add99 1}} sum
+        interp delete $ip
+        set ip [interp create]
+        catch {$ip eval {add99 1}} error
+        list $sum $error
+    } -cleanup {
+        testpostinit clear
+        interp delete $ip
+    } -result {100 {invalid command name "add99"}}
 }
 
 namespace delete tcl::test::postinit

@@ -210,8 +210,6 @@ static Tcl_ObjCmdProc2	NoopCmd;
 static Tcl_ObjCmdProc2	NoopObjCmd;
 static Tcl_CmdObjTraceProc2 TraceProc;
 static void		ObjTraceDeleteProc(void *clientData);
-static Tcl_PostInitProc PostInitAddProc;
-static Tcl_PostInitProc PostInitMultiplyProc;
 static void		PrintParse(Tcl_Interp *interp, Tcl_Parse *parsePtr);
 static Tcl_FreeProc	SpecialFree;
 static int		StaticInitProc(Tcl_Interp *interp);
@@ -9675,8 +9673,9 @@ TestUtfToNormalizedDStringCmd(
     return result;
 }
 
-/* 
+/***************************************************************************
  * TIP 755 test routines.
+ *
  * The following set of functions test various callbacks registered via
  * Tcl_RegisterPostInitProc. See comment header for TestpostinitCmd below.
  */
@@ -9690,6 +9689,20 @@ PostInitAddProc(
     int value = (int)(intptr_t)clientData;
     Tcl_Obj *objPtr;
     objPtr = Tcl_ObjPrintf("proc add%d arg {incr arg %d}", value, value);
+    Tcl_IncrRefCount(objPtr);
+    int ret = Tcl_EvalObjEx(interp, objPtr, TCL_EVAL_GLOBAL);
+    Tcl_DecrRefCount(objPtr);
+    return ret;
+}
+
+/* Tests safe interp callbacks */
+static int
+PostInitSafeCheckProc(
+    Tcl_Interp *interp,
+    void *clientData
+) {
+    Tcl_Obj *objPtr;
+    objPtr = Tcl_ObjPrintf("proc isSafe {} {return %d}", Tcl_IsSafe(interp));
     Tcl_IncrRefCount(objPtr);
     int ret = Tcl_EvalObjEx(interp, objPtr, TCL_EVAL_GLOBAL);
     Tcl_DecrRefCount(objPtr);
@@ -9738,6 +9751,25 @@ PostInitStaticPackageProc(
     return Tcl_Eval(interp, "package ifneeded postinitpackage [info patchlevel] [list load {} postinitpackage]");
 }
 
+/* Test creation of interpreter within a callback - will error out */
+static int
+PostInitInterpCreateProc(
+    Tcl_Interp *interp,
+    void *clientData
+) {
+    if (clientData) {
+	Tcl_Interp *child = Tcl_CreateInterp();
+	int result = Tcl_Init(child);
+	if (result != TCL_OK) {
+	    Tcl_TransferResult(child, result, interp);
+	    Tcl_DeleteInterp(child);
+	}
+	return result;
+    } else {
+	return Tcl_Eval(interp, "interp create");
+    }
+}
+
 /* Tests raising of error from postinit callback */
 static int
 PostInitRaiseErrorProc(
@@ -9748,23 +9780,48 @@ PostInitRaiseErrorProc(
     return TCL_ERROR;
 }
 
+/* Tests recursive registration */
+static int
+PostInitRegisterInCbProc(
+    Tcl_Interp *interp,
+    void *clientData
+)
+{
+    Tcl_RegisterPostInitProc(PostInitAddProc, clientData);
+    return TCL_OK;
+}
+
+/* Tests recursive unregistration */
+static int
+PostInitUnregisterInCbProc(
+    Tcl_Interp *interp,
+    void *clientData
+)
+{
+    Tcl_UnregisterPostInitProc(PostInitAddProc, clientData);
+    return TCL_OK;
+}
 /*
  *----------------------------------------------------------------------
  *
  * TestpostinitCmd --
  *
- *	This procedure implements the "testpostinit" command for testing
- *	Tcl_{Register,Unregister}PostInitProc functions.
- *	    testpostinit register COMMAND ?N?
- *	    testpostinit unregister COMMAND ?N?
- *	COMMAND should be
- *	   add - creates a "addN" proc adding N to passed operand. Tests
- *		 evaluation of scripts within a postinit callback
- *	   package - requires a static package that includes a "multiply"
- *		 command. Tests package require of static package within
- *		 a postinit callback
- *	   raiseerror - raises an error within the postinit callback
- *	   clear - deletes all registrations
+ *      This procedure implements the "testpostinit" command for testing
+ *      Tcl_{Register,Unregister}PostInitProc functions.
+ *          testpostinit register COMMAND ?ARG?
+ *          testpostinit unregister COMMAND ?ARG?
+ *      COMMAND should be
+ *         add - creates a "addARG" proc adding N to passed operand. Tests
+ *               evaluation of scripts within a postinit callback
+ *         clear - deletes all registrations
+ *         interp - Creates a new interpreter from within the callback
+ *         package - does require of a static package with a "multiply"
+ *               command. Tests package require of static package within
+ *               a postinit callback.
+ *         raiseerror - raises an error within the postinit callback
+ *         registerincb - Register add callback from within the callback
+ *	   safecheck - Register isSafe command
+ *         unregisterincb - Unregister add callback from within callback
  *
  * Results:
  *	A standard Tcl result.
@@ -9789,16 +9846,16 @@ TestpostinitCmd(
     enum {
 	REGISTER, UNREGISTER, CLEAR
     } action;
-    static const char *const callbacks[] = {
-	"add", "package", "raiseerror", NULL
+    static const char *const callbacks[] = {"add", "interpcreate", "package",
+	"raiseerror", "registerincb", "safecheck", "unregisterincb", NULL
     };
-    enum {
-	ADD, PACKAGE, RAISEERROR
+    enum {ADD, INTERPCREATE, PACKAGE, RAISEERROR, REGISTERINCB,
+	SAFECHECK, UNREGISTERINCB
     } callback;
 
     if (objc < 2 || objc > 4) {
 	Tcl_WrongNumArgs(interp, 1, objv,
-	    "register|unregister|clear ?arg ...?");
+	    "action ?arg ...?");
 	return TCL_ERROR;
     }
     if (Tcl_GetIndexFromObj(interp, objv[1], actions, "action", 0, &action)
@@ -9810,7 +9867,9 @@ TestpostinitCmd(
     }
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv,
-	    "register|unregister add|package|raiseerror ?integerData?");
+	    "register|unregister "
+	    "add|interpcreate|package|raiseerror|registerincb|safecheck"
+	    "unregisterincb ?integerData?");
 	return TCL_ERROR;
     }
     if (Tcl_GetIndexFromObj(interp, objv[2], callbacks, "callback", 0,
@@ -9829,9 +9888,27 @@ TestpostinitCmd(
     Tcl_PostInitProc *callbackProc;
     int ret;
     switch (callback) {
-	case ADD: callbackProc = PostInitAddProc; break;
-	case PACKAGE: callbackProc = PostInitStaticPackageProc; break;
-	case RAISEERROR: callbackProc = PostInitRaiseErrorProc; break;
+    case ADD:
+	callbackProc = PostInitAddProc;
+	break;
+    case INTERPCREATE:
+	callbackProc = PostInitInterpCreateProc;
+	break;
+    case PACKAGE:
+	callbackProc = PostInitStaticPackageProc;
+	break;
+    case RAISEERROR:
+	callbackProc = PostInitRaiseErrorProc;
+	break;
+    case REGISTERINCB:
+	callbackProc = PostInitRegisterInCbProc;
+	break;
+    case SAFECHECK:
+	callbackProc = PostInitSafeCheckProc;
+	break;
+    case UNREGISTERINCB:
+	callbackProc = PostInitUnregisterInCbProc;
+	break;
     }
 
     ret = (action == REGISTER
@@ -9844,6 +9921,8 @@ TestpostinitCmd(
     }
     return ret;
 }
+
+/******************* End of TIP 755 Test routines *********************/
 
 #ifdef _WIN32
 /*

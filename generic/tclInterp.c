@@ -5357,14 +5357,32 @@ TclCallPostInitProcs(
      * are also outside a lock as in other components.
      */
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&postInitTsdKey);
+
+    /*
+     * If we are already invoking callbacks, it means a callback is
+     * recursively initializing a new interpreter. We do not permit this as
+     * it leads to infinite recursion if care is not taken by the callback.
+     * See TIP 755.
+     * IF YOU REMOVE/MODIFY THIS CHECK, add a check for inUse==0 in the
+     * cache update epoch check below! Else you risk updating cache while in
+     * use.
+     */
+    if (tsdPtr->inUse) {
+	/* T: postinit-2.2 */
+	Tcl_SetResult(interp,
+	    "Recursive interp create from post-initialization callback.",
+	    TCL_STATIC);
+	return TCL_ERROR;
+    }
+
     TclPostInitRecords *cachePtr = &tsdPtr->postInitCache;
 
     /*
      * If the cache is not in use and content has changed, update it. In the
      * code below, the capacity counts guard against NULL pointer access.
      */
-    if (tsdPtr->inUse == 0 &&
-	tsdPtr->postInitCache.epoch != postInitRecords.epoch) {
+    if (tsdPtr->postInitCache.epoch != postInitRecords.epoch) {
+	/* T: postinit-1.* */
 	Tcl_MutexLock(&postInitMutex);
 	if (cachePtr->capacity < postInitRecords.count) {
 	    if (cachePtr->recordsPtr != NULL) {
@@ -5391,6 +5409,7 @@ TclCallPostInitProcs(
 	result = cachePtr->recordsPtr[i].postInitProc(interp,
 	    cachePtr->recordsPtr[i].clientData);
 	if (result != TCL_OK) {
+	    /* T: postinit-2.1 */
 	    break;
 	}
     }
@@ -5427,6 +5446,7 @@ Tcl_RegisterPostInitProc(
     }
     Tcl_MutexLock(&postInitMutex);
     if (postInitRecords.recordsPtr == NULL) {
+	/* T: postinit-1.1 or Tcl initialization itself */
 	postInitRecords.capacity = 8;
 	postInitRecords.recordsPtr = (TclPostInitRecord *)Tcl_Alloc(
 	    sizeof(TclPostInitRecord) * postInitRecords.capacity);
@@ -5436,16 +5456,19 @@ Tcl_RegisterPostInitProc(
 	for (size_t i = 0; i < postInitRecords.count; ++i) {
 	    if (postInitRecords.recordsPtr[i].postInitProc == proc &&
 		postInitRecords.recordsPtr[i].clientData == clientData) {
+		/* T: postinit-1.4 */
 		goto done;	/* Already present, don't add */
 	    }
 	}
 	if (postInitRecords.count == postInitRecords.capacity) {
+		   /* T: postinit-1.6 */
 	    postInitRecords.capacity *= 2;
 	    postInitRecords.recordsPtr =
 		(TclPostInitRecord *)Tcl_Realloc(postInitRecords.recordsPtr,
 		    sizeof(TclPostInitRecord) * postInitRecords.capacity);
 	}
     }
+    /* T: postinit-1.* */
     postInitRecords.recordsPtr[postInitRecords.count].postInitProc = proc;
     postInitRecords.recordsPtr[postInitRecords.count].clientData = clientData;
     postInitRecords.count++;
@@ -5484,6 +5507,7 @@ Tcl_UnregisterPostInitProc(
 	for (i = 0; i < postInitRecords.count; ++i) {
 	    if (postInitRecords.recordsPtr[i].postInitProc == proc &&
 		postInitRecords.recordsPtr[i].clientData == clientData) {
+		/* T: postinit-1.* */
 		break;
 	    }
 	}
@@ -5493,7 +5517,7 @@ Tcl_UnregisterPostInitProc(
 	    }
 	    postInitRecords.epoch++;
 	    postInitRecords.count--;
-	}
+	} /* else T: postinit-1.{8.9} */
     }
     Tcl_MutexUnlock(&postInitMutex);
     return TCL_OK;
@@ -5514,6 +5538,7 @@ Tcl_UnregisterPostInitProc(
 int
 Tcl_ClearPostInitProcs()
 {
+    /* T: postinit-1.3 */
     Tcl_MutexLock(&postInitMutex);
     postInitRecords.count = 0;
     postInitRecords.epoch++;
