@@ -261,12 +261,13 @@ namespace eval ::ndoc {
 		pkg_mkIndex   {Tcl_PkgProvide PkgRequire Tcl_PkgRequire PkgRequire}
 		platform      {tcl_platform tclvars tcl_platform(platform) tclvars}
 		platform_shell {tcl_platform(platform) tclvars}
-		process       {Tcl\_ReapDetachedProcs DetachPids Tcl_WaitPid DetachPids}
-		refchan       {Tcl\_DriverGetHandleProc SetChanErr Tcl_DriverHandlerProc SetChanErr Tcl_DriverFlushProc SetChanErr}
+		process       {Tcl_ReapDetachedProcs DetachPids Tcl_WaitPid DetachPids}
+		refchan       {Tcl_DriverGetHandleProc SetChanErr Tcl_DriverHandlerProc SetChanErr Tcl_DriverFlushProc SetChanErr}
 		regexp        {re\_syntax re_syntax}
 		regsub        {re\_syntax re_syntax}
 		safe          {auto_path tclvars tcl_library tclvars auto_index tclvars auto_reset tclvars pkg_mkIndex pkgMkIndex library library}
-		socket        {Tcl\_DoOneEvent DoOneEvent}
+		socket        {Tcl_DoOneEvent DoOneEvent}
+		string        {Tcl_GetBoolean GetInt Tcl_GetDoubleFromObj DoubleObj Tcl_GetBignumFromObj IntObj}
 		
 		switch        {re\_syntax re_syntax}
 	}]
@@ -1924,6 +1925,21 @@ proc ::ndoc::mdExceptions {md} {
 			set md {string map {
 				{**<cloned>**} {**\<cloned\>**}
 			} $md}
+		}
+		string {
+			set md [string map {
+				{resorting to [return] **-level 0*} {resorting to `return -level 0`}
+				{character ([0-9A-Fa-f]).} {character (\[0-9A-Fa-f\]).}
+				{**[***chars***]**} {**\[***chars***\]**}
+				{[A-z]} {\[A-z\]}
+				{[A-Za-z]} {\[A-Za-z\]}
+				{characters **\*?[]\\** i} {characters **\*?\[\]\\** i}
+			} $md]
+		}
+		subst {
+			set md [string map {
+				{returns "**[b] c**", not "**[b] tricky**".} {returns "**\[b\] c**", not "**\[b\] tricky**".}
+			} $md]
 		}
 	}
 	regsub {\s+$} $md \n md

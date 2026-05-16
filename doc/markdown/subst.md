@@ -84,7 +84,7 @@ array set a {c c [b] tricky}
 subst -nocommands {[b] $a([b])}
 ```
 
-returns "**[b] c**", not "**[b] tricky**".
+returns "**\[b\] c**", not "**\[b\] tricky**".
 
 The continue and break exceptions allow command substitutions to prevent substitution of the rest of the command substitution and the rest of *string* respectively, giving script authors more options when processing text using *subst*.  For example, the script
 

@@ -24,13 +24,15 @@ switch - Evaluate one of several scripts, depending on a given value
 # Synopsis
 
 ::: {.synopsis} :::
-[switch]{.cmd} [options=?+ value pattern body= ?+pattern body]{.optdot}
-[switch]{.cmd} [options=?+ value= +pattern body= ?+pattern body ...]{.optarg}
+[switch]{.cmd} [options]{.optarg} [value]{.arg} [pattern]{.arg} [body]{.arg} [pattern body]{.optdot}
+[switch]{.cmd} [options]{.optarg} [value]{.arg} [patternBodyList]{.arg}
 :::
 
 # Description
 
-The **switch** command matches its *value* argument against each of the *pattern* arguments in order. As soon as it finds a *pattern* that matches *value* it evaluates the following *body* argument by passing it recursively to the Tcl interpreter and returns the result of that evaluation. If the last *pattern* argument is **default** then it matches anything. If no *pattern* argument matches *value* and no default is given, then the **switch** command returns an empty string.
+The **switch** command matches its *value* argument against each of the *pattern* arguments in order. As soon as the command finds a *pattern* that matches *value* it evaluates the following *body* argument by passing it recursively to the Tcl interpreter and returns the result of that evaluation. If the last *pattern* argument is **default** then it matches anything. If no *pattern* argument matches *value* and no default is given, then the **switch** command returns an empty string.
+
+Two syntaxes are provided for the *pattern* and *body* arguments. The first uses a separate argument for each of the patterns and commands; this form is convenient if substitutions are desired on some of the patterns or commands. The second form places all of the patterns and commands together into a single argument *patternBodyList*; the argument must have proper list structure, with the elements of the list being the patterns and commands. The second form makes it easy to construct multi-line switch commands. Putting braces around the whole list makes it unnecessary to include a backslash at the end of each line. When the *pattern* arguments are in braces in the second form, no command or variable substitutions are performed on them;  this makes the behavior of the second form different than the first form in some cases.
 
 If the initial arguments to **switch** start with **-** then they are treated as options unless there are exactly two arguments to **switch** (in which case the first must the *value* and the second must be the *pattern*/*body* list). The following options are currently supported:
 
@@ -58,8 +60,6 @@ If the initial arguments to **switch** start with **-** then they are treated as
 [--]{.lit}
 : Marks the end of options.  The argument following this one will be treated as *value* even if it starts with a **-**. This is not required when the matching patterns and bodies are grouped together in a single argument.
 
-
-Two syntaxes are provided for the *pattern* and *body* arguments. The first uses a separate argument for each of the patterns and commands; this form is convenient if substitutions are desired on some of the patterns or commands. The second form places all of the patterns and commands together into a single argument; the argument must have proper list structure, with the elements of the list being the patterns and commands. The second form makes it easy to construct multi-line switch commands, since the braces around the whole list make it unnecessary to include a backslash at the end of each line. Since the *pattern* arguments are in braces in the second form, no command or variable substitutions are performed on them;  this makes the behavior of the second form different than the first form in some cases.
 
 If a *body* is specified as "**-**" it means that the *body* for the next pattern should also be used as the body for this pattern (if the next pattern also has a body of "**-**" then the body after that is used, and so on). This feature makes it possible to share a single *body* among several patterns.
 

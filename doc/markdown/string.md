@@ -43,10 +43,10 @@ Performs one of several string operations, depending on *option*.
 
 The legal *option*s (which may be abbreviated) are:
 
-[string]{.cmd} [cat]{.sub} [string1]{.optarg} [string2...]{.optarg}
+[string]{.cmd} [cat]{.sub} [string]{.optdot}
 : Concatenate the given *string*s just like placing them directly next to each other and return the resulting compound string.  If no *string*s are present, the result is an empty string.
 
-    This primitive is occasionally handier than juxtaposition of strings when mixed quoting is wanted, or when the aim is to return the result of a concatenation without resorting to [return] **-level 0**, and is more efficient than building a list of arguments and using [join] with an empty join string.
+    This primitive is occasionally handier than juxtaposition of strings when mixed quoting is wanted, or when the aim is to return the result of a concatenation without resorting to `return -level 0`*, and is more efficient than building a list of arguments and using [join] with an empty join string.
 
 [string]{.cmd} [compare]{.sub} [-nocase]{.optlit} [[-length]{.lit} [length]{.arg}]{.optarg} [string1]{.arg} [string2]{.arg}
 : Perform a character-by-character comparison of strings *string1* and *string2*.  Returns -1, 0, or 1, depending on whether *string1* is lexicographically less than, equal to, or greater than *string2*.  If **-length** is specified, then only the first *length* characters are used in the comparison.  If **-length** is negative, it is ignored.  If **-nocase** is specified, then the strings are compared in a case-insensitive manner.
@@ -94,7 +94,7 @@ The legal *option*s (which may be abbreviated) are:
     : Any character with a value less than \\u0080 (those that are in the 7-bit ascii range).
 
     **boolean**
-    : Any of the forms allowed to **Tcl\_GetBoolean**.
+    : Any of the forms allowed to [Tcl\_GetBoolean][GetInt].
 
     **control**
     : Any Unicode control character.
@@ -106,19 +106,19 @@ The legal *option*s (which may be abbreviated) are:
     : Any Unicode digit character.  Note that this includes characters outside of the [0-9] range.
 
     **double**
-    : Any of the forms allowed to **Tcl\_GetDoubleFromObj**.
+    : Any of the forms allowed to [Tcl\_GetDoubleFromObj][DoubleObj].
 
     **entier**
     : Synonym for **integer**.
 
     **false**
-    : Any of the forms allowed to **Tcl\_GetBoolean** where the value is false.
+    : Any of the forms allowed to [Tcl\_GetBoolean][GetInt] where the value is false.
 
     **graph**
     : Any Unicode printing character, except space.
 
     **integer**
-    : Any of the valid string formats for an integer value of arbitrary size in Tcl, with optional surrounding whitespace. The formats accepted are exactly those accepted by the C routine **Tcl\_GetBignumFromObj**.
+    : Any of the valid string formats for an integer value of arbitrary size in Tcl, with optional surrounding whitespace. The formats accepted are exactly those accepted by the C routine [Tcl\_GetBignumFromObj][IntObj].
 
     [list]
     : Any proper list structure, with optional surrounding whitespace. In case of improper list structure, 0 is returned and the *varname* will contain the index of the "element" where the list parsing fails, or -1 if this cannot be determined.
@@ -136,7 +136,7 @@ The legal *option*s (which may be abbreviated) are:
     : Any Unicode whitespace character, mongolian vowel separator (U+180e), zero width space (U+200b), word joiner (U+2060) or zero width no-break space (U+feff) (=BOM).
 
     **true**
-    : Any of the forms allowed to **Tcl\_GetBoolean** where the value is true.
+    : Any of the forms allowed to [Tcl\_GetBoolean][GetInt] where the value is true.
 
     **upper**
     : Any upper case alphabet character in the Unicode character set.
@@ -148,7 +148,7 @@ The legal *option*s (which may be abbreviated) are:
     : Any Unicode word character.  That is any alphanumeric character, and any Unicode connector punctuation characters (e.g. underscore).
 
     **xdigit**
-    : Any hexadecimal digit character ([0-9A-Fa-f]).
+    : Any hexadecimal digit character (\[0-9A-Fa-f\]).
 
 
     In the case of **boolean**, **true** and **false**, if the function will return 0, then the *varname* will always be set to 0, due to the varied nature of a valid boolean value.
@@ -197,11 +197,11 @@ The legal *option*s (which may be abbreviated) are:
     **?**
     : Matches any single character in *string*.
 
-    **[***chars***]**
-    : Matches any character in the set given by *chars*.  If a sequence of the form *x***-***y* appears in *chars*, then any character between *x* and *y*, inclusive, will match.  When used with **-nocase**, the end points of the range are converted to lower case first.  Whereas {[A-z]} matches "\_" when matching case-sensitively (since "\_" falls between the "Z" and "a"), with **-nocase** this is considered like {[A-Za-z]} (and probably what was meant in the first place).
+    **\[***chars***\]**
+    : Matches any character in the set given by *chars*.  If a sequence of the form *x***-***y* appears in *chars*, then any character between *x* and *y*, inclusive, will match.  When used with **-nocase**, the end points of the range are converted to lower case first.  Whereas {\[A-z\]} matches "\_" when matching case-sensitively (since "\_" falls between the "Z" and "a"), with **-nocase** this is considered like {\[A-Za-z\]} (and probably what was meant in the first place).
 
     **\\***x*
-    : Matches the single character *x*.  This provides a way of avoiding the special interpretation of the characters **\*?[]\\** in *pattern*.
+    : Matches the single character *x*.  This provides a way of avoiding the special interpretation of the characters **\*?\[\]\\** in *pattern*.
 
 
 [string]{.cmd} [range]{.sub} [string]{.arg} [first]{.arg} [last]{.arg}
@@ -287,6 +287,9 @@ if {$length == 0} {
 
 [array]: array.md
 [dict]: dict.md
+[DoubleObj]: DoubleObj.md
+[GetInt]: GetInt.md
+[IntObj]: IntObj.md
 [join]: join.md
 [list]: list.md
 [return]: return.md

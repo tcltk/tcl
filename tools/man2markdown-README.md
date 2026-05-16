@@ -36,7 +36,7 @@ section | number of documents | initial conversion | final conversion
 --------|---------------------|--------------------|-----------------
 1       | 1                   | 1                  | 0
 3       | 108                 | 108                | 0
-n       | 139                 | 139                | 113
+n       | 139                 | 139                | 117
 
 Final conversion of these files is currently done:
 1. after
@@ -152,6 +152,10 @@ Final conversion of these files is currently done:
 111. socket
 112. source
 113. split
+114. string
+115. subst
+116. switch
+117. tailcall
 
 
 

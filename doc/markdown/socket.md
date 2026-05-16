@@ -89,7 +89,7 @@ The following additional option may also be specified before *port*:
 
 Server channels cannot be used for input or output; their sole use is to accept new client connections. The channels created for each incoming client connection are opened for input and output. Closing the server channel shuts down the server so that no new connections will be accepted;  however, existing connections will be unaffected.
 
-Server sockets depend on the Tcl event mechanism to find out when new connections are opened.  If the application does not enter the event loop, for example by invoking the [vwait] command or calling the C procedure **Tcl\_DoOneEvent**, then no connections will be accepted.
+Server sockets depend on the Tcl event mechanism to find out when new connections are opened.  If the application does not enter the event loop, for example by invoking the [vwait] command or calling the C procedure [Tcl\_DoOneEvent][DoOneEvent], then no connections will be accepted.
 
 If *port* is specified as zero, the operating system will allocate an unused port for use as a server socket.  The port number actually allocated may be retrieved from the created server socket using the [chan configure][chan] command to retrieve the **-sockname** option as described below.
 
@@ -151,6 +151,7 @@ puts "That is [lindex $line2 0]s since the server started"
 
 
 [chan]: chan.md
+[DoOneEvent]: DoOneEvent.md
 [encoding]: encoding.md
 [fblocked]: fblocked.md
 [flush]: flush.md
