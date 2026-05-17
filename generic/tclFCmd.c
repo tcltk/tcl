@@ -447,7 +447,6 @@ TclFileDeleteCmd(
 	}
 
 	if (result != TCL_OK) {
-
 	    /*
 	     * Avoid possible race condition (file/directory deleted after call
 	     * of lstat), so bypass ENOENT because not an error, just a no-op

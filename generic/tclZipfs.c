@@ -2488,8 +2488,8 @@ TclZipfs_Mount(
 		    if (ret != TCL_OK) {
 			Tcl_Free(zf);
 		    } else {
-			ret = ZipFSCatalogFilesystem(
-				interp, zf, mountPoint, passwd, normPath);
+			ret = ZipFSCatalogFilesystem(interp,
+				zf, mountPoint, passwd, normPath);
 			/* Note zf is already freed on error! */
 		    }
 		}
@@ -2595,8 +2595,8 @@ TclZipfs_MountBuffer(
 	Tcl_Free(zf);
     } else {
 	/* Note ZipFSCatalogFilesystem will free zf on error */
-	ret = ZipFSCatalogFilesystem(
-	    interp, zf, mountPoint, NULL, "Memory Buffer");
+	ret = ZipFSCatalogFilesystem(interp, zf, mountPoint, NULL,
+		"Memory Buffer");
     }
     if (ret == TCL_OK && interp) {
 	Tcl_DStringResult(interp, &ds);
@@ -5925,11 +5925,11 @@ ZipFSMatchInDirectoryProc(
 		Tcl_DStringAppend(&ds, zf->mountPoint + strip,
 			end ? (Tcl_Size)(end - zf->mountPoint) : -1);
 		const char *matchedPath = Tcl_DStringValue(&ds);
-		(void)Tcl_CreateHashEntry(
-		    &duplicates, matchedPath, &notDuplicate);
+		(void)Tcl_CreateHashEntry(&duplicates, matchedPath,
+			&notDuplicate);
 		if (notDuplicate) {
-		    AppendWithPrefix(
-			result, prefixBuf, matchedPath, Tcl_DStringLength(&ds));
+		    AppendWithPrefix(result, prefixBuf, matchedPath,
+			    Tcl_DStringLength(&ds));
 		}
 		Tcl_DStringFree(&ds);
 	    }

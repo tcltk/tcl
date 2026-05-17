@@ -873,8 +873,7 @@ TclParseNumber(
 			    ((size_t)shift >= CHAR_BIT*sizeof(Tcl_WideUInt) ||
 			    significandWide > (UWIDE_MAX >> shift))) {
 			significandOverflow = 1;
-			err = mp_init_u64(&significandBig,
-				significandWide);
+			err = mp_init_u64(&significandBig, significandWide);
 		    }
 		}
 		if (!significandOverflow) {
@@ -930,8 +929,7 @@ TclParseNumber(
 			    ((size_t)shift >= CHAR_BIT*sizeof(Tcl_WideUInt) ||
 			    significandWide > (UWIDE_MAX >> shift))) {
 			significandOverflow = 1;
-			err = mp_init_u64(&significandBig,
-				significandWide);
+			err = mp_init_u64(&significandBig, significandWide);
 		    }
 		}
 		if (!significandOverflow) {
@@ -4921,7 +4919,6 @@ TclBignumToDouble(
     } else if (shift < 0) {
 	lsb = mp_cnt_lsb(a);
 	if (lsb == -1-shift) {
-
 	    /*
 	     * Round to even
 	     */
@@ -4935,7 +4932,6 @@ TclBignumToDouble(
 		}
 	    }
 	} else {
-
 	    /*
 	     * Ordinary rounding
 	     */

@@ -937,7 +937,7 @@ TestlistobjCmd(
 	return TCL_ERROR;
     }
     if (Tcl_GetIndexFromObj(interp, objv[1], subcommands, "command",
-			    0, &cmdIndex) != TCL_OK) {
+	    0, &cmdIndex) != TCL_OK) {
 	return TCL_ERROR;
     }
     switch(cmdIndex) {
@@ -1738,8 +1738,8 @@ TestbigdataCmd(
 	}
 	objPtr = Tcl_NewListObj(len, NULL);
 	for (i = 0; i < len; ++i) {
-	    Tcl_ListObjAppendElement(
-		interp, objPtr, patternObjs[i % PATTERN_LEN]);
+	    Tcl_ListObjAppendElement(interp,
+		    objPtr, patternObjs[i % PATTERN_LEN]);
 	}
 	if (split >= 0) {
 	    assert(split < len);

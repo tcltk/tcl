@@ -2087,8 +2087,8 @@ TclCompileDictLappendCmd(
  *
  * TclCompileDictWithCmd --
  *
- * 	Compile [dict with]. Delegates code issuing to IssueDictWithEmpty()
- * 	and IssueDictWithBodied().
+ *	Compile [dict with]. Delegates code issuing to IssueDictWithEmpty()
+ *	and IssueDictWithBodied().
  *
  *----------------------------------------------------------------------
  */
@@ -2269,8 +2269,8 @@ IssueDictWithEmpty(
  *
  * IssueDictWithBodied --
  *
- * 	Issue code for a [dict with] that has a non-trivial body. The focus is
- * 	on generating a try-finally structure where the INST_DICT_RECOMBINE_*
+ *	Issue code for a [dict with] that has a non-trivial body. The focus is
+ *	on generating a try-finally structure where the INST_DICT_RECOMBINE_*
  *	goes in the 'finally' clause.
  *
  *	Assumes that EnvInProc() is true.

@@ -352,10 +352,10 @@ DoRenameFile(
     Tcl_DStringFree(&dstString);
 
     if (srcArgc == 1) {
-		/*
-		 * They are trying to move a root directory. Whether or not it
-		 * is across filesystems, this cannot be done.
-		 */
+	/*
+	 * They are trying to move a root directory. Whether or not it
+	 * is across filesystems, this cannot be done.
+	 */
 
 	Tcl_SetErrno(EINVAL);
     } else if ((srcArgc > 0) && (dstArgc > 0) &&
@@ -576,7 +576,7 @@ TclpDeleteFile(
 		int fileAttrChanged = 0;
 		if (attr & FILE_ATTRIBUTE_READONLY) {
 		    fileAttrChanged = SetFileAttributesW(path,
-			attr & ~((DWORD)FILE_ATTRIBUTE_READONLY));
+			    attr & ~((DWORD)FILE_ATTRIBUTE_READONLY));
 
 		    if (fileAttrChanged && (DeleteFileW(path) != FALSE)) {
 			return TCL_OK;

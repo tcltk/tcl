@@ -666,7 +666,7 @@ mstats(
     }
 
     fprintf(stderr, "\n\tTotal small in use: %" TCL_Z_MODIFIER "u, total free: %" TCL_Z_MODIFIER "u\n",
-	totalUsed, totalFree);
+	    totalUsed, totalFree);
     fprintf(stderr, "\n\tNumber of big (>%" TCL_Z_MODIFIER "u) blocks in use: %" TCL_Z_MODIFIER "u\n",
 	    MAXMALLOC, numMallocs[NBUCKETS]);
 

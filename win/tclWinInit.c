@@ -487,7 +487,7 @@ InitializeDefaultLibraryDir(
 {
     *encodingPtr = NULL;
     (void) AllocateGrandparentSiblingPath("lib/tcl" TCL_VERSION,
-		valuePtr, lengthPtr);
+	    valuePtr, lengthPtr);
 }
 
 /*

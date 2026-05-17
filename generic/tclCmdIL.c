@@ -2626,7 +2626,7 @@ Tcl_LpopObjCmd(
 	if (!listLen) {
 	    /* empty list, throw the same error as with index "end" */
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"index \"end\" out of range", -1));
+		    "index \"end\" out of range", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX", "OUTOFRANGE", (char *)NULL);
 	    return TCL_ERROR;
 	}
@@ -2929,8 +2929,8 @@ Tcl_LrepeatObjCmd(
 	return TCL_ERROR;
     }
 
-    if (Tcl_ListObjRepeat(
-	    interp, repeatCount, objc - 2, objv + 2, &resultPtr) != TCL_OK) {
+    if (Tcl_ListObjRepeat(interp,
+		repeatCount, objc - 2, objv + 2, &resultPtr) != TCL_OK) {
 	return TCL_ERROR;
     }
 

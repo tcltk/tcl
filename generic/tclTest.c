@@ -2191,9 +2191,9 @@ static int UtfExtWrapper(
 	if (optObjs[DSTCHARSVAR] == NULL ||
 		(valueObj = Tcl_ObjGetVar2(interp, optObjs[DSTCHARSVAR], NULL, 0)) == NULL) {
 	    Tcl_SetResult(interp,
-		"-dstcharsvar DSTCHARSVAR must be specified with integer value "
-		"in DSTCHARSVAR if TCL_ENCODING_CHAR_LIMIT set in flags.",
-		TCL_STATIC);
+		    "-dstcharsvar DSTCHARSVAR must be specified with integer value "
+		    "in DSTCHARSVAR if TCL_ENCODING_CHAR_LIMIT set in flags.",
+		    TCL_STATIC);
 	    return TCL_ERROR;
 	}
 	if (Tcl_GetSizeIntFromObj(interp, valueObj, &dstChars) != TCL_OK) {
@@ -2462,8 +2462,8 @@ TestencodingCmd(
 	}
 	Tcl_DString ds;
 	string = (index == ENC_GETNAMEUSER
-		    ? Tcl_GetEncodingNameForUser
-		    : Tcl_GetEncodingNameFromEnvironment)(&ds);
+		? Tcl_GetEncodingNameForUser
+		: Tcl_GetEncodingNameFromEnvironment)(&ds);
 	/* Note not string compare, the actual pointer must be the same */
 	if (string != Tcl_DStringValue(&ds)) {
 	    Tcl_DStringFree(&ds);
@@ -4076,7 +4076,7 @@ TestlistapiCmd(
 	return TCL_ERROR;
     }
     if (Tcl_GetIndexFromObj(interp, objv[1], subcommands, "command",
-			    0, &cmdIndex) != TCL_OK) {
+	    0, &cmdIndex) != TCL_OK) {
 	return TCL_ERROR;
     }
     if (cmdIndex == LISTAPI_REPEAT) {
@@ -4090,8 +4090,8 @@ TestlistapiCmd(
 	if (Tcl_GetSizeIntFromObj(interp, objv[2], &repeatCount) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	status = Tcl_ListObjRepeat(
-	    interp, repeatCount, objc - 3, objv + 3, &resultPtr);
+	status = Tcl_ListObjRepeat(interp,
+		repeatCount, objc - 3, objv + 3, &resultPtr);
     } else {
 	if (objc < 4) {
 	    Tcl_WrongNumArgs(interp, 2, objv, "refcount list ?arg...?");

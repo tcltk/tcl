@@ -296,7 +296,7 @@ typedef struct ClockLastTZOffs {
     Tcl_Obj *timezoneObj;
     int changeover;
     Tcl_WideInt localSeconds;
-    Tcl_WideInt rangesVal[2];   /* Bounds for cached time zone offset */
+    Tcl_WideInt rangesVal[2];	/* Bounds for cached time zone offset */
     /* values */
     int tzOffset;
     Tcl_Obj *tzName;		/* Name (abbreviation) of this area in TZ */
@@ -356,8 +356,8 @@ typedef struct ClockClientData {
     /* Last-period cache for fast UTC to Local and backwards conversion */
     ClockLastTZOffs lastTZOffsCache[2];
 
-    int defFlags;		    /* Default flags (from configure), ATM
-				     * only CLF_VALIDATE supported */
+    int defFlags;		/* Default flags (from configure), ATM
+				 * only CLF_VALIDATE supported */
 } ClockClientData;
 
 typedef struct ClockFmtScnCmdArgs {

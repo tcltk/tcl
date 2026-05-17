@@ -148,7 +148,7 @@ SetDelegateSuperclasses(
  *
  * InstallDelegateAsMixin --
  *
- * 	Mixes the delegate into its controlling class.
+ *	Mixes the delegate into its controlling class.
  *
  *----------------------------------------------------------------------
  */
