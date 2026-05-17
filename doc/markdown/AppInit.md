@@ -34,7 +34,7 @@ Tcl\_AppInit - perform application-specific initialization
 
 # Description
 
-**Tcl\_AppInit** is a "hook" procedure that is invoked by the main programs for Tcl applications such as **tclsh** and **wish**. Its purpose is to allow new Tcl applications to be created without modifying the main programs provided as part of Tcl and Tk. To create a new application you write a new version of **Tcl\_AppInit** to replace the default version provided by Tcl, then link your new **Tcl\_AppInit** with the Tcl library.
+**Tcl\_AppInit** is a "hook" procedure that is invoked by the main programs for Tcl applications such as [tclsh] and **wish**. Its purpose is to allow new Tcl applications to be created without modifying the main programs provided as part of Tcl and Tk. To create a new application you write a new version of **Tcl\_AppInit** to replace the default version provided by Tcl, then link your new **Tcl\_AppInit** with the Tcl library.
 
 **Tcl\_AppInit** is invoked by **Tcl\_Main** and **Tk\_Main** after their own initialization and before entering the main loop to process commands. Here are some examples of things that **Tcl\_AppInit** might do:
 
@@ -55,5 +55,8 @@ In addition to **Tcl\_AppInit**, your application should also contain a procedur
 Tcl_Main(argc, argv, Tcl_AppInit);
 ```
 
-The third argument to **Tcl\_Main** gives the address of the application-specific initialization procedure to invoke. This means that you do not have to use the name **Tcl\_AppInit** for the procedure, but in practice the name is nearly always **Tcl\_AppInit** (in versions before Tcl 7.4 the name **Tcl\_AppInit** was implicit;  there was no way to specify the procedure explicitly). The best way to get started is to make a copy of the file **tclAppInit.c** from the Tcl library or source directory. It already contains a **main** procedure and a template for **Tcl\_AppInit** that you can modify for your application.
+The third argument to **Tcl\_Main** gives the address of the application-specific initialization procedure to invoke. This means that you do not have to use the name **Tcl\_AppInit** for the procedure, but in practice the name is nearly always **Tcl\_AppInit** (in versions before Tcl 7.4 the name **Tcl\_AppInit** was implicit;  there was no way to specify the procedure explicitly). The best way to get started is to make a copy of the file **tclAppInit.c** from the Tcl library or source directory. It already contains a **main** procedure and a template for **Tcl\_AppInit** that you can modify for your application. 
+
+
+[tclsh]: tclsh.md
 

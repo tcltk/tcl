@@ -229,7 +229,7 @@ namespace eval ::ndoc {
 	
 	# list of Tcl commands to recognize for links between manual pages:
 	set tclCmdList [lsort [info commands]]
-	lappend tclCmdList my next bgerror Tcl mathop mathfunc tclvars tm msgcat
+	lappend tclCmdList my next bgerror Tcl mathop mathfunc tclvars tm msgcat tclsh
 	
 	# dictionary of links on pages that should link to a page
 	# not identical to the link text.
@@ -268,6 +268,8 @@ namespace eval ::ndoc {
 		safe          {auto_path tclvars tcl_library tclvars auto_index tclvars auto_reset tclvars pkg_mkIndex pkgMkIndex library library}
 		socket        {Tcl_DoOneEvent DoOneEvent}
 		string        {Tcl_GetBoolean GetInt Tcl_GetDoubleFromObj DoubleObj Tcl_GetBignumFromObj IntObj}
+		tclvars       {Tcl_SetObjErrorCode AddErrInfo}
+		timerate      {Tcl_EvalObjEx Eval}
 		
 		switch        {re\_syntax re_syntax}
 	}]
@@ -308,8 +310,10 @@ namespace eval ::ndoc {
 		scale		{label variable}
 		scrollbar	{set}
 		selection	{string}
-		tcltest		{error}
+		tcltest		{error Tcl}
+		tclvars         {Tcl split}
 		text		{bind image lower raise}
+		timerate        {lindex}
 		tkvars		{tk}
 		tkwait		{variable}
 		tm		{exec}
@@ -1939,6 +1943,17 @@ proc ::ndoc::mdExceptions {md} {
 		subst {
 			set md [string map {
 				{returns "**[b] c**", not "**[b] tricky**".} {returns "**\[b\] c**", not "**\[b\] tricky**".}
+			} $md]
+		}
+		tcltest {
+			set md [string map {
+				{are **exact**, [glob], and [regexp].} {are **exact**, **glob**, and **regexp**.}
+				{for *mode* are [regexp], [glob]} {for *mode* are **regexp**, **glob**}
+			} $md]
+		}
+		tclvars {
+			set md [string map {
+				{running [interp debug][interp] **{} -frame 1**} {running `interp debug {} -frame 1`}
 			} $md]
 		}
 	}

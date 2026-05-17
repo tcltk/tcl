@@ -47,13 +47,13 @@ Tcl\_Main, Tcl\_MainEx, Tcl\_MainExW, Tcl\_SetStartupScript, Tcl\_GetStartupScri
 
 The **Tcl\_Main** function has been offered by the Tcl library since release Tcl 7.4.  In older releases of Tcl, the Tcl library itself defined a function **main**, but that lacks flexibility of embedding style and having a function **main** in a library (particularly a shared library) causes problems on many systems. Having **main** in the Tcl library would also make it hard to use Tcl in C++ programs, since C++ programs must have special C++ **main** functions.
 
-Normally each shell application contains a small **main** function that does nothing but invoke **Tcl\_Main**. **Tcl\_Main** then does all the work of creating and running a **tclsh**-like application.
+Normally each shell application contains a small **main** function that does nothing but invoke **Tcl\_Main**. **Tcl\_Main** then does all the work of creating and running a [tclsh]-like application.
 
 **Tcl\_Main** is not provided by the public interface of Tcl's stub library.  Programs that call **Tcl\_Main** must be linked against the standard Tcl library.  If the standard Tcl library is a dll (so, not a static .lib/.a) , then the program must be linked against the stub library as well. Extensions (stub-enabled or not) are not intended to call **Tcl\_Main**.
 
 **Tcl\_Main** is not thread-safe.  It should only be called by a single main thread of a multi-threaded application.  This restriction is not a problem with normal use described above.
 
-**Tcl\_Main** and therefore all applications based upon it, like **tclsh**, use **Tcl\_GetStdChannel** to initialize the standard channels to their default values. See **Tcl\_StandardChannels** for more information.
+**Tcl\_Main** and therefore all applications based upon it, like [tclsh], use **Tcl\_GetStdChannel** to initialize the standard channels to their default values. See **Tcl\_StandardChannels** for more information.
 
 **Tcl\_Main** supports two modes of operation, depending on whether the filename and encoding of a startup script has been established.  The routines **Tcl\_SetStartupScript** and **Tcl\_GetStartupScript** are the tools for controlling this configuration of **Tcl\_Main**.
 
@@ -65,7 +65,7 @@ The file name and encoding values managed by the routines **Tcl\_SetStartupScrip
 
 The caller of **Tcl\_Main** may call **Tcl\_SetStartupScript** first to establish its desired startup script.  If **Tcl\_Main** finds that no such startup script has been established, it consults the first few arguments in *argv*.  If they match ?**-encoding** *name*? *fileName*, where *fileName* does not begin with the character *-*, then *fileName* is taken to be the name of a file containing a *startup script*, and *name* is taken to be the name of the encoding of the contents of that file.  **Tcl\_Main** then calls **Tcl\_SetStartupScript** with these values.
 
-**Tcl\_Main** then defines in its main interpreter the Tcl variables *argc*, *argv*, *argv0*, and *tcl\_interactive*, as described in the documentation for **tclsh**.
+**Tcl\_Main** then defines in its main interpreter the Tcl variables *argc*, *argv*, *argv0*, and *tcl\_interactive*, as described in the documentation for [tclsh].
 
 When it has finished its own initialization, but before it processes commands, **Tcl\_Main** calls the procedure given by the *appInitProc* argument.  This procedure provides a "hook" for the application to perform its own initialization of the interpreter created by **Tcl\_Main**, such as defining application-specific commands.  The application initialization routine might also call **Tcl\_SetStartupScript** to (re-)set the file and encoding to be used as a startup script.  The procedure must have an interface that matches the type **Tcl\_AppInitProc**:
 
@@ -76,7 +76,7 @@ typedef int Tcl_AppInitProc(
 
 *AppInitProc* is almost always a pointer to **Tcl\_AppInit**; for more details on this procedure, see the documentation for **Tcl\_AppInit**.
 
-When the *appInitProc* is finished, **Tcl\_Main** calls **Tcl\_GetStartupScript** to determine what startup script has been requested, if any.  If a startup script has been provided, **Tcl\_Main** attempts to evaluate it.  Otherwise, interactive mode begins with examination of the variable *tcl\_rcFileName* in the main interpreter.  If that variable exists and holds the name of a readable file, the contents of that file are evaluated in the main interpreter.  Then interactive operations begin, with prompts and command evaluation results written to the standard output channel, and commands read from the standard input channel and then evaluated.  The prompts written to the standard output channel may be customized by defining the Tcl variables *tcl\_prompt1* and *tcl\_prompt2* as described in the documentation for **tclsh**. The prompts and command evaluation results are written to the standard output channel only if the Tcl variable *tcl\_interactive* in the main interpreter holds a non-zero integer value.
+When the *appInitProc* is finished, **Tcl\_Main** calls **Tcl\_GetStartupScript** to determine what startup script has been requested, if any.  If a startup script has been provided, **Tcl\_Main** attempts to evaluate it.  Otherwise, interactive mode begins with examination of the variable *tcl\_rcFileName* in the main interpreter.  If that variable exists and holds the name of a readable file, the contents of that file are evaluated in the main interpreter.  Then interactive operations begin, with prompts and command evaluation results written to the standard output channel, and commands read from the standard input channel and then evaluated.  The prompts written to the standard output channel may be customized by defining the Tcl variables *tcl\_prompt1* and *tcl\_prompt2* as described in the documentation for [tclsh]. The prompts and command evaluation results are written to the standard output channel only if the Tcl variable *tcl\_interactive* in the main interpreter holds a non-zero integer value.
 
 **Tcl\_SetMainLoop** allows setting an event loop procedure to be run. This allows, for example, Tk to be dynamically loaded and set its event loop.  The event loop will run following the startup script.  If you are in interactive mode, setting the main loop procedure will cause the prompt to become fileevent based and then the loop procedure is called. When the loop procedure returns in interactive mode, interactive operation will continue. The main loop procedure must have an interface that matches the type **Tcl\_MainLoopProc**:
 
@@ -98,4 +98,5 @@ The difference between Tcl\_MainEx and Tcl\_MainExW is that the arguments are pa
 
 
 [exit]: exit.md
+[tclsh]: tclsh.md
 

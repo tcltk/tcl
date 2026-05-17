@@ -117,11 +117,11 @@ This package also provides several commands to aid the creation of ZIP archives 
 [zipfs]{.cmd} [mkimg]{.sub} [outfile]{.arg} [indir]{.arg} [strip]{.optarg} [password]{.optarg} [infile]{.optarg}
 : Creates an image (potentially a new executable file) similar to **zipfs mkzip**; see that command for a description of most parameters to this command, as they behave identically here. If *outfile* exists, it will be silently overwritten.
 
-    If the *infile* parameter is specified, this file is prepended in front of the ZIP archive, otherwise the file returned by [info nameofexecutable][info] (i.e., the executable file of the running process, typically **wish** or **tclsh**) is used. If the *password* parameter is not the empty string, an obfuscated version of that password (see **zipfs mkkey**) is placed between the image and ZIP chunks of the output file and the contents of the ZIP chunk are protected with that password. If the starting image has a ZIP archive already attached to it, it is removed from the copy in *outfile* before the new ZIP archive is added.
+    If the *infile* parameter is specified, this file is prepended in front of the ZIP archive, otherwise the file returned by [info nameofexecutable][info] (i.e., the executable file of the running process, typically **wish** or [tclsh]) is used. If the *password* parameter is not the empty string, an obfuscated version of that password (see **zipfs mkkey**) is placed between the image and ZIP chunks of the output file and the contents of the ZIP chunk are protected with that password. If the starting image has a ZIP archive already attached to it, it is removed from the copy in *outfile* before the new ZIP archive is added.
 
-    If there is a file, **main.tcl**, in the root directory of the resulting archive and the image file that the archive is attached to is a **tclsh** (or **wish**) instance (true by default, but depends on your configuration), then the resulting image is an executable that will [source] the script in that **main.tcl** after mounting the ZIP archive, and will [exit] once that script has been executed.
+    If there is a file, **main.tcl**, in the root directory of the resulting archive and the image file that the archive is attached to is a [tclsh] (or **wish**) instance (true by default, but depends on your configuration), then the resulting image is an executable that will [source] the script in that **main.tcl** after mounting the ZIP archive, and will [exit] once that script has been executed.
 
-    **Note:** **tclsh** and **wish** can be built using either dynamic binding or static binding of the core implementation libraries. With a dynamic binding, the base application Tcl\_Library contents are attached to the **libtcl** and **libtk** shared library, respectively. With a static binding, the Tcl\_Library contents, etc., are attached to the application, **tclsh** or **wish**. When using **mkimg** with a statically built tclsh, it is the user's responsibility to preserve the attached archive by first extracting it to a temporary location, and then add whatever additional files desired, before creating and attaching the new archive to the new application.
+    **Note:** [tclsh] and **wish** can be built using either dynamic binding or static binding of the core implementation libraries. With a dynamic binding, the base application Tcl\_Library contents are attached to the **libtcl** and **libtk** shared library, respectively. With a static binding, the Tcl\_Library contents, etc., are attached to the application, [tclsh] or **wish**. When using **mkimg** with a statically built tclsh, it is the user's responsibility to preserve the attached archive by first extracting it to a temporary location, and then add whatever additional files desired, before creating and attaching the new archive to the new application.
 
 [zipfs]{.cmd} [mkkey]{.sub} [password]{.arg}
 : Given the clear text *password* argument, an obfuscated string version is returned with the same format used in the **zipfs mkimg** command.
@@ -211,4 +211,5 @@ exec $img >@stdout
 [info]: info.md
 [source]: source.md
 [string]: string.md
+[tclsh]: tclsh.md
 

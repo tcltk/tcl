@@ -124,7 +124,7 @@ Given the above we allow the names for packages in Tcl modules to have mixed-cas
 
 # Default paths
 
-The default list of paths on the module path is computed by a **tclsh** as follows, where *X* is the major version of the Tcl interpreter and *y* is less than or equal to the minor version of the Tcl interpreter.
+The default list of paths on the module path is computed by a [tclsh] as follows, where *X* is the major version of the Tcl interpreter and *y* is less than or equal to the minor version of the Tcl interpreter.
 
 All the default paths are added to the module path, even those paths which do not exist. Non-existent paths are filtered out during actual searches. This enables a user to create one of the paths searched when needed and all running applications will automatically pick up any modules placed in them.
 
@@ -184,4 +184,5 @@ Paths initialized from the environment variables undergo tilde substitution (see
 
 [load]: load.md
 [source]: source.md
+[tclsh]: tclsh.md
 

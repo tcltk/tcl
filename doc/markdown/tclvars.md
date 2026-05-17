@@ -65,7 +65,7 @@ The following global variables are created and managed automatically by the Tcl 
 : These environment variables are used by the [msgcat] package to determine what locale to format messages using.
 
 **env(TCL\_INTERP\_DEBUG\_FRAME)**
-: If existing, it has the same effect as running [interp debug][interp] **{} -frame 1** as the very first command of each new Tcl interpreter.
+: If existing, it has the same effect as running `interp debug {} -frame 1` as the very first command of each new Tcl interpreter.
 
 **errorCode**
 : This variable holds the value of the **-errorcode** return option set by the most recent error that occurred in this interpreter. This list value represents additional information about the error in a form that is easy to process with programs. The first element of the list identifies a general class of errors, and determines the format of the rest of the list. The following formats for **-errorcode** return options are used by the Tcl core; individual applications may define additional formats.
@@ -95,7 +95,7 @@ The following global variables are created and managed automatically by the Tcl 
 : Indicates some sort of problem generated in relation to Tcl itself, e.g. a failure to look up a channel or variable.
 
 
-To set the **-errorcode** return option, applications should use library procedures such as **Tcl\_SetObjErrorCode**, **Tcl\_SetReturnOptions**, and **Tcl\_PosixError**, or they may invoke the **-errorcode** option of the [return] command. If none of these methods for setting the error code has been used, the Tcl interpreter will reset the variable to **NONE** after the next error.
+To set the **-errorcode** return option, applications should use library procedures such as [Tcl\_SetObjErrorCode][AddErrInfo], **Tcl\_SetReturnOptions**, and **Tcl\_PosixError**, or they may invoke the **-errorcode** option of the [return] command. If none of these methods for setting the error code has been used, the Tcl interpreter will reset the variable to **NONE** after the next error.
 
 **errorInfo**
 : This variable holds the value of the **-errorinfo** return option set by the most recent error that occurred in this interpreter. This string value will contain one or more lines identifying the Tcl commands and procedures that were being executed when the most recent error occurred. Its contents take the form of a stack trace showing the various nested Tcl commands that had been invoked at the time of the error.
@@ -119,7 +119,7 @@ To set the **-errorcode** return option, applications should use library procedu
     : If this variable exists, then the interpreter was compiled with and linked to a debug-enabled C run-time.  This variable will only exist on Windows, so extension writers can specify which package to load depending on the C run-time library that is in use.  This is not an indication that this core contains symbols.
 
     **engine**
-    : The name of the Tcl language implementation.  When the interpreter is first created, this is always set to the string [Tcl].
+    : The name of the Tcl language implementation.  When the interpreter is first created, this is always set to the string **Tcl**.
 
     **machine**
     : The instruction set executed by this machine, such as **intel**, **PPC**, **68k**, or **sun4m**.  On UNIX machines, this is the value returned by **uname -m**.
@@ -131,7 +131,7 @@ To set the **-errorcode** return option, applications should use library procedu
     : The version number for the operating system running on this machine. On UNIX machines, this is the value returned by **uname -r**.
 
     **pathSeparator**
-    : The character that should be used to [split] PATH-like environment variables into their corresponding list of directory names.
+    : The character that should be used to **split** PATH-like environment variables into their corresponding list of directory names.
 
     **platform**
     : Either **windows**, or **unix**.  This identifies the general operating environment of the machine.
@@ -167,19 +167,19 @@ This variable and functionality only exist if **TCL\_COMPILE\_DEBUG** was define
 
 # Other global variables
 
-The following variables are only guaranteed to exist in **tclsh** and **wish** executables; the Tcl library does not define them itself but many Tcl environments do.
+The following variables are only guaranteed to exist in [tclsh] and **wish** executables; the Tcl library does not define them itself but many Tcl environments do.
 
 **argc**
-: The number of arguments to **tclsh** or **wish**.
+: The number of arguments to [tclsh] or **wish**.
 
 **argv**
-: Tcl list of arguments to **tclsh** or **wish**.
+: Tcl list of arguments to [tclsh] or **wish**.
 
 **argv0**
-: The script that **tclsh** or **wish** started executing (if it was specified) or otherwise the name by which **tclsh** or **wish** was invoked.
+: The script that [tclsh] or **wish** started executing (if it was specified) or otherwise the name by which [tclsh] or **wish** was invoked.
 
 **tcl\_interactive**
-: Contains 1 if **tclsh** or **wish** is running interactively (no script was specified and standard input is a terminal-like device), 0 otherwise.
+: Contains 1 if [tclsh] or **wish** is running interactively (no script was specified and standard input is a terminal-like device), 0 otherwise.
 
 
 # Examples
@@ -211,6 +211,7 @@ if {$::argv0 eq [info script]} {
 ```
 
 
+[AddErrInfo]: AddErrInfo.md
 [clock]: clock.md
 [exec]: exec.md
 [expr]: expr.md
@@ -224,6 +225,5 @@ if {$::argv0 eq [info script]} {
 [return]: return.md
 [set]: set.md
 [source]: source.md
-[split]: split.md
-[Tcl]: Tcl.md
+[tclsh]: tclsh.md
 

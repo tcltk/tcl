@@ -36,7 +36,7 @@ section | number of documents | initial conversion | final conversion
 --------|---------------------|--------------------|-----------------
 1       | 1                   | 1                  | 0
 3       | 108                 | 108                | 0
-n       | 139                 | 139                | 117
+n       | 139                 | 139                | 123
 
 Final conversion of these files is currently done:
 1. after
@@ -156,6 +156,13 @@ Final conversion of these files is currently done:
 115. subst
 116. switch
 117. tailcall
+118. tcltest
+119. tclvars
+120. tell
+121. throw
+122. time
+123. timerate
+
 
 
 

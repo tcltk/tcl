@@ -128,7 +128,7 @@ See [Creating test suites with tcltest] below for an extended example of how to 
     If the environment variable **::env(TCLTEST\_OPTIONS)** exists when the **tcltest** package is loaded (by [package require][package] **tcltest**) then its value is taken as a list of arguments to pass to **configure**. This allows the default values of the configuration options to be set by the environment.
 
 [customMatch]{.cmd} [mode]{.arg} [script]{.arg}
-: Registers *mode* as a new legal value of the **-match** option to **test**.  When the **-match** *mode* option is passed to **test**, the script *script* will be evaluated to compare the actual result of evaluating the body of the test to the expected result. To perform the match, the *script* is completed with two additional words, the expected result, and the actual result, and the completed script is evaluated in the global namespace. The completed script is expected to return a boolean value indicating whether or not the results match.  The built-in matching modes of **test** are **exact**, [glob], and [regexp].
+: Registers *mode* as a new legal value of the **-match** option to **test**.  When the **-match** *mode* option is passed to **test**, the script *script* will be evaluated to compare the actual result of evaluating the body of the test to the expected result. To perform the match, the *script* is completed with two additional words, the expected result, and the actual result, and the completed script is evaluated in the global namespace. The completed script is expected to return a boolean value indicating whether or not the results match.  The built-in matching modes of **test** are **exact**, **glob**, and **regexp**.
 
 [testConstraint]{.cmd} [constraint]{.arg} [boolean]{.optarg}
 : Sets or returns the boolean value associated with the named *constraint*. See [Test constraints] below for more information.
@@ -199,7 +199,7 @@ See [Creating test suites with tcltest] below for an extended example of how to 
 
 ## Other commands
 
-The remaining commands provided by **tcltest** have better alternatives provided by **tcltest** or [Tcl] itself.  They are retained to support existing test suites, but should be avoided in new code.
+The remaining commands provided by **tcltest** have better alternatives provided by **tcltest** or **Tcl** itself.  They are retained to support existing test suites, but should be avoided in new code.
 
 **test** *name description optionList*
 : This form of **test** was provided to enable passing many options spanning several lines to **test** as a single argument quoted by braces, rather than needing to backslash quote the newlines between arguments to **test**.  The *optionList* argument is expected to be a list with an even number of elements representing *option* and *value* arguments to pass to **test**.  However, these values are not passed directly, as in the alternate forms of [switch].  Instead, this form makes an unfortunate attempt to overthrow Tcl's substitution rules by performing substitutions on some of the list elements as an attempt to implement a "do what I mean" interpretation of a brace-enclosed "block". The result is nearly impossible to document clearly, and for that reason this form is not recommended.  See the examples in [Creating test suites with tcltest] below to see that this form is really not necessary to avoid backslash-quoted newlines. If you insist on using this form, examine the source code of **tcltest** if you want to know the substitution details, or just enclose the third through last argument to **test** in braces and hope for the best.
@@ -265,7 +265,7 @@ Valid attributes and associated values are:
 : The optional **-cleanup** attribute indicates a *script* that will be run after the script indicated by the **-body** attribute. If evaluation of *script* raises an error, the test will fail. The default value is an empty script.
 
 [-match]{.lit} [mode]{.arg}
-: The **-match** attribute determines how expected answers supplied by **-result**, **-output**, and **-errorOutput** are compared.  Valid values for *mode* are [regexp], [glob], **exact**, and any value registered by a prior call to **customMatch**.  The default value is **exact**.
+: The **-match** attribute determines how expected answers supplied by **-result**, **-output**, and **-errorOutput** are compared.  Valid values for *mode* are **regexp**, **glob**, **exact**, and any value registered by a prior call to **customMatch**.  The default value is **exact**.
 
 [-result]{.lit} [expectedValue]{.arg}
 : The **-result** attribute supplies the *expectedValue* against which the return value from script will be compared. The default value is an empty string.
@@ -676,6 +676,5 @@ Implementation of output and error comparison in the test command depends on usa
 [return]: return.md
 [source]: source.md
 [switch]: switch.md
-[Tcl]: Tcl.md
 [time]: time.md
 

@@ -58,7 +58,7 @@ This command is used to delay execution of the program or to execute a command i
 : This command returns information about existing event handlers. If no *id* argument is supplied, the command returns a list of the identifiers for all existing event handlers created by the **after** command for this interpreter. If *id* is supplied, it specifies an existing handler; *id* must have been the return value from some previous call to **after** and it must not have triggered yet or been canceled. In this case the command returns a list with two elements. The first element of the list is the script associated with *id*, and the second element is either **idle** or **timer** to indicate what kind of event handler it is.
 
 
-The **after** *ms* and **after idle** forms of the command assume that the application is event driven:  the delayed commands will not be executed unless the application enters the event loop. In applications that are not normally event-driven, such as **tclsh**, the event loop can be entered with the [vwait] and [update] commands.
+The **after** *ms* and **after idle** forms of the command assume that the application is event driven:  the delayed commands will not be executed unless the application enters the event loop. In applications that are not normally event-driven, such as [tclsh], the event loop can be entered with the [vwait] and [update] commands.
 
 # Examples
 
@@ -90,6 +90,7 @@ doOneStep
 
 [concat]: concat.md
 [interp]: interp.md
+[tclsh]: tclsh.md
 [update]: update.md
 [vwait]: vwait.md
 
