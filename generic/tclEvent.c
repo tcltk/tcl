@@ -1347,11 +1347,18 @@ Tcl_Finalize(void)
     TclFinalizePreserve();
 
     /*
+     * Clear memory used for PostInit registrations. Call before shutting
+     * down synchronization objects and memory allocators.
+     */
+    Tcl_ClearPostInitProcs();
+
+    /*
      * Free synchronization objects. There really should only be one thread
      * alive at this moment.
      */
 
     TclFinalizeSynchronization();
+
 
     /*
      * Close down the thread-specific object allocator.

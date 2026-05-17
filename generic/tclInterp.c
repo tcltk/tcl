@@ -5333,6 +5333,37 @@ TclInitStaticPackages(
 /*
  *----------------------------------------------------------------------
  *
+ * TclPostInitThreadExitProc --
+ *
+ *      Called at thread exit time to clean up any structures related to
+ *      interpreter post-initialization callbacks.
+ *
+ * Results:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+TclPostInitThreadExitProc(
+    void *clientData
+)
+{
+    ThreadSpecificData *tsdPtr = (ThreadSpecificData *)clientData;
+
+    assert(tsdPtr->inUse == 0);
+
+    if (tsdPtr->postInitCache.recordsPtr != NULL) {
+	Tcl_Free(tsdPtr->postInitCache.recordsPtr);
+	tsdPtr->postInitCache.recordsPtr = NULL;
+    }
+    tsdPtr->postInitCache.capacity = 0;
+    tsdPtr->postInitCache.count = 0;
+    tsdPtr->postInitCache.epoch = 0;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TclCallPostInitProcs --
  *
  *      Iterates through the functions registered with Tcl_RegisterPostInitProc
@@ -5391,6 +5422,8 @@ TclCallPostInitProcs(
 	    cachePtr->capacity = postInitRecords.capacity;
 	    cachePtr->recordsPtr = (TclPostInitRecord *)Tcl_Alloc(
 		cachePtr->capacity * sizeof(TclPostInitRecord));
+	    /* Remember to free on thread exit */
+	    Tcl_CreateThreadExitHandler(TclPostInitThreadExitProc, tsdPtr);
 	}
 	for (size_t i = 0; i < postInitRecords.count; ++i) {
 	    cachePtr->recordsPtr[i] = postInitRecords.recordsPtr[i];
@@ -5446,12 +5479,12 @@ Tcl_RegisterPostInitProc(
     }
     Tcl_MutexLock(&postInitMutex);
     if (postInitRecords.recordsPtr == NULL) {
-	/* T: postinit-1.1 or Tcl initialization itself */
+	/* T: postinit-1.* */
 	postInitRecords.capacity = 8;
 	postInitRecords.recordsPtr = (TclPostInitRecord *)Tcl_Alloc(
 	    sizeof(TclPostInitRecord) * postInitRecords.capacity);
 	postInitRecords.count = 0;
-	postInitRecords.epoch = 0;
+	/* Do not set epoch to 0 as recordsPtr is NULL after clear as well */
     } else {
 	for (size_t i = 0; i < postInitRecords.count; ++i) {
 	    if (postInitRecords.recordsPtr[i].postInitProc == proc &&
@@ -5540,6 +5573,16 @@ Tcl_ClearPostInitProcs()
 {
     /* T: postinit-1.3 */
     Tcl_MutexLock(&postInitMutex);
+    if (postInitRecords.recordsPtr) {
+	/*
+	 * Don't strictly need to free, setting count to 0 suffices but
+	 * freeing allows use of this function at exit time and keep
+	 * valgrind happy.
+	 */
+	Tcl_Free(postInitRecords.recordsPtr);
+	postInitRecords.recordsPtr = NULL;
+	postInitRecords.capacity = 0;
+    }
     postInitRecords.count = 0;
     postInitRecords.epoch++;
     Tcl_MutexUnlock(&postInitMutex);
