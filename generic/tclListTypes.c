@@ -209,15 +209,15 @@ TclObjArrayFind(
  *
  * TclNormalizeRangeLimits --
  *
- * 	Compute the length of a range given start and end indices after
- * 	normalizing the indices as follows:
- * 	- the start index is bounded to 0 at the low end
- * 	- the end index is bounded to one less than the length of the list at
- * 	  the high end and one less than the start index at the low end
- * 	- the length of the normalized range is returned
+ *	Compute the length of a range given start and end indices after
+ *	normalizing the indices as follows:
+ *	- the start index is bounded to 0 at the low end
+ *	- the end index is bounded to one less than the length of the list at
+ *	  the high end and one less than the start index at the low end
+ *	- the length of the normalized range is returned
  *
  * FUTURE:
- * 	Move to tclInt.h and use in other list implementations as well
+ *	Move to tclInt.h and use in other list implementations as well
  *
  *----------------------------------------------------------------------
  */

@@ -958,8 +958,7 @@ FileGetOptionProc(
     if (valid) {
 	return TCL_OK;
     }
-    return Tcl_BadChannelOption(interp, optionName,
-		"stat");
+    return Tcl_BadChannelOption(interp, optionName, "stat");
 }
 
 /*

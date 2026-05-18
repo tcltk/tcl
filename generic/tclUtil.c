@@ -2578,7 +2578,7 @@ TclStringMatchObj(
 	uptn  = Tcl_GetUnicodeFromObj(ptnObj, &plen);
 	match = TclUniCharMatch(udata, length, uptn, plen, flags);
     } else if (TclIsPureByteArray(strObj) && TclIsPureByteArray(ptnObj)
-		&& !flags) {
+	    && !flags) {
 	unsigned char *data, *ptn;
 
 	data = Tcl_GetBytesFromObj(NULL, strObj, &length);
@@ -4207,10 +4207,10 @@ TclGetProcessGlobalValue(
 	    Tcl_MutexLock(&pgvPtr->mutex);
 	    epoch = ++pgvPtr->epoch;
 	    Tcl_UtfToExternalDStringEx(NULL, pgvPtr->encoding, pgvPtr->value,
-		pgvPtr->numBytes, TCL_ENCODING_PROFILE_TCL8, &native, NULL);
+		    pgvPtr->numBytes, TCL_ENCODING_PROFILE_TCL8, &native, NULL);
 	    Tcl_ExternalToUtfDStringEx(NULL, current, Tcl_DStringValue(&native),
-		Tcl_DStringLength(&native), TCL_ENCODING_PROFILE_TCL8,
-		&newValue, NULL);
+		    Tcl_DStringLength(&native), TCL_ENCODING_PROFILE_TCL8,
+		    &newValue, NULL);
 	    Tcl_DStringFree(&native);
 	    Tcl_Free(pgvPtr->value);
 	    pgvPtr->value = (char *)Tcl_Alloc(Tcl_DStringLength(&newValue) + 1);
@@ -4354,7 +4354,7 @@ TclGetObjExecutableAncestors(
     if (exePtr == NULL) {
 	if (interp) {
 	    Tcl_SetResult(interp, "Could not retrieve path of executable.",
-		TCL_STATIC);
+		    TCL_STATIC);
 	}
 	return -1;
     }

@@ -666,13 +666,12 @@ Tcl_ConditionWait(
     DWORD mythread = GetCurrentThreadId();
     assert(wmPtr->thread == mythread);
     wmPtr->thread = 0;
-    if (SleepConditionVariableCS(cvPtr,
-	    &wmPtr->crit, wtime) == 0) {
+    if (SleepConditionVariableCS(cvPtr, &wmPtr->crit, wtime) == 0) {
 	DWORD err = GetLastError();
 	if (err != ERROR_TIMEOUT) {
 	    Tcl_Panic(
-		"Tcl_ConditionWait: SleepConditionVariableCS error %lu",
-		err);
+		    "Tcl_ConditionWait: SleepConditionVariableCS error %lu",
+		    err);
 	}
     }
 

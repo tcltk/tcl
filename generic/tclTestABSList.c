@@ -979,8 +979,9 @@ lgen(
 	elemObj = Tcl_GetObjResult(intrp);
 	if (status != TCL_OK) {
 	    Tcl_SetObjResult(intrp, Tcl_ObjPrintf(
-		"Error: %s\nwhile executing %s\n",
-		elemObj ? Tcl_GetString(elemObj) : "NULL", Tcl_GetString(genCmd)));
+		    "Error: %s\nwhile executing %s\n",
+		    elemObj ? Tcl_GetString(elemObj) : "NULL",
+		    Tcl_GetString(genCmd)));
 	    return NULL;
 	}
     }

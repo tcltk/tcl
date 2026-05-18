@@ -699,8 +699,7 @@ FileGetOptionProc(
     if (valid) {
 	return TCL_OK;
     }
-    return Tcl_BadChannelOption(interp, optionName,
-		"stat");
+    return Tcl_BadChannelOption(interp, optionName, "stat");
 }
 
 #ifdef HAVE_TERMIOS_H
@@ -954,7 +953,7 @@ TtySetOptionProc(
 			    "bad signal \"%s\" for -ttycontrol: must be"
 			    " DTR, RTS or BREAK", argv[i]));
 		    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "FCONFIGURE",
-			"VALUE", (char *)NULL);
+			    "VALUE", (char *)NULL);
 		}
 		Tcl_Free(argv);
 		return TCL_ERROR;

@@ -142,7 +142,7 @@ Registry_Init(
     Tcl_Interp *interp)
 {
     (void) Tcl_CreateObjCommand2(interp, "::tcl::registry", RegistryObjCmd,
-		interp, NULL);
+	    interp, NULL);
     return TCL_OK;
 }
 

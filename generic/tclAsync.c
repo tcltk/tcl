@@ -438,7 +438,7 @@ bool *
 TclGetAsyncReadyPtr(void)
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-    return &(tsdPtr->asyncReady);
+    return &tsdPtr->asyncReady;
 }
 
 /*

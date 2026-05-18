@@ -2325,7 +2325,7 @@ StringMatchCmd(
 	}
     }
     Tcl_SetObjResult(interp, Tcl_NewBooleanObj(
-		TclStringMatchObj(objv[objc-1], objv[objc-2], nocase)));
+	    TclStringMatchObj(objv[objc-1], objv[objc-2], nocase)));
     return TCL_OK;
 }
 

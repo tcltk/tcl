@@ -1820,7 +1820,7 @@ NotifierThreadProc(
 
 	pthread_sigmask(SIG_SETMASK, &notifierSigMask, NULL);
 	ret = select(numFdBits, &readableMask, &writableMask, &exceptionalMask,
-		    timePtr);
+		timePtr);
 	pthread_sigmask(SIG_BLOCK, &allSigMask, NULL);
 
 	if (ret == -1) {

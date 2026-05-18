@@ -6525,7 +6525,6 @@ ReadChars(
 	numChars -= (dstRead - dstWrote);
 
 	if (charsToRead > 0 && numChars > charsToRead) {
-
 	    /*
 	     * TODO: This cannot happen anymore.
 	     *
@@ -8829,7 +8828,7 @@ ChannelTimerProc(
 	     * before UpdateInterest gets called by Tcl_NotifyChannel.
 	     */
 	    statePtr->timer = Tcl_CreateTimerHandler(SYNTHETIC_EVENT_TIME,
-		ChannelTimerProc,chanPtr);
+		    ChannelTimerProc,chanPtr);
 	    Tcl_Preserve(statePtr);
 	    Tcl_NotifyChannel((Tcl_Channel) chanPtr, TCL_READABLE);
 	    Tcl_Release(statePtr);

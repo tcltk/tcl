@@ -600,7 +600,7 @@ ListRepUnsharedShiftUp(
 
     storePtr = repPtr->storePtr;
     LIST_ASSERT((storePtr->firstUsed + storePtr->numUsed + shiftCount)
-		<= storePtr->numAllocated);
+	    <= storePtr->numAllocated);
 
     memmove(&storePtr->slots[storePtr->firstUsed + shiftCount],
 	    &storePtr->slots[storePtr->firstUsed],
@@ -1519,6 +1519,7 @@ ListRepRange(
 	 * Option 4 - modify in place. Note that because of the invariant
 	 * that spanless list stores must start at 0, we have to move
 	 * everything to the front.
+	 *
 	 * TODO - perhaps if a span already exists, no need to move to front?
 	 * or maybe no need to move all the way to the front?
 	 * TODO - if range is small relative to allocation, allocate new?
@@ -1837,7 +1838,7 @@ TclListObjAppendElements(
 	/* Current store big enough */
 	numTailFree = ListRepNumFreeTail(&listRep);
 	LIST_ASSERT((numTailFree + listRep.storePtr->firstUsed)
-		    >= elemCount); /* Total free */
+		>= elemCount); /* Total free */
 	if (numTailFree < elemCount) {
 	    /* Not enough room at back. Move some to front */
 	    /* T:listrep-3.5 */
@@ -2285,8 +2286,8 @@ Tcl_ListObjReplace(
 	/* Case (2a) - Append to list. */
 	if (first == origListLen) {
 	    /* T:listrep-1.11,2.9,3.{5,6},2.2.1 */
-	    return TclListObjAppendElements(
-		interp, listObj, numToInsert, insertObjs);
+	    return TclListObjAppendElements(interp, listObj,
+		    numToInsert, insertObjs);
 	}
 
 	/*
@@ -2318,8 +2319,8 @@ Tcl_ListObjReplace(
 		    listRep.spanPtr = NULL;
 		} else {
 		    /* T:listrep-4.3 */
-		    listRep.spanPtr =
-			ListSpanNew(listRep.storePtr->firstUsed, newLen);
+		    listRep.spanPtr = ListSpanNew(
+			    listRep.storePtr->firstUsed, newLen);
 		}
 	    }
 	    ListObjReplaceRepAndInvalidate(listObj, &listRep);
@@ -2338,6 +2339,7 @@ Tcl_ListObjReplace(
      * new allocation below. This avoids expensive ref count manipulation
      * later by not having to go through the ListRepInit and
      * ListObjReplaceAndInvalidate below.
+     *
      * TODO - we could be smarter about the reallocate. Use of realloc
      * means all new free space is at the back. Instead, the realloc could
      * be an explicit alloc and memmove which would let us redistribute
@@ -2366,6 +2368,7 @@ Tcl_ListObjReplace(
      * (a) The passed-in ListStore is shared
      * (b) There is not enough free space in the unshared passed-in ListStore
      * (c) The new unshared size is much "smaller" (TODO) than the allocated space
+     *
      * TODO - for unshared case ONLY, consider a "move" based implementation
      */
     if (ListRepIsShared(&listRep) ||				/* 3a */
@@ -2691,6 +2694,7 @@ TclLindexList(
 	/*
 	 * The argument is neither an index nor a well-formed list.
 	 * Report the error via TclLindexFlat.
+	 *
 	 * TODO - This is as original code. why not directly return an error?
 	 */
 	return TclLindexFlat(interp, listObj, 1, &argObj);
@@ -2883,44 +2887,44 @@ TclLsetList(
 		== TCL_OK) {
 	if (TclObjTypeHasProc(listObj, setElementProc)) {
 	    indices = &indexArgObj;
-	    retValueObj = TclObjTypeSetElement(
-		    interp, listObj, 1, indices, valueObj);
+	    retValueObj = TclObjTypeSetElement(interp,
+		    listObj, 1, indices, valueObj);
 	    if (retValueObj) {
 		Tcl_IncrRefCount(retValueObj);
 	    }
 	} else {
 	    /* indexArgPtr designates a single index. */
 	    /* T:listrep-1.{2.1,12.1,15.1,19.1},2.{2.3,9.3,10.1,13.1,16.1}, 3.{4,5,6}.3 */
-	    retValueObj = TclLsetFlat(interp, listObj, 1, &indexArgObj, valueObj);
+	    retValueObj = TclLsetFlat(interp,
+		    listObj, 1, &indexArgObj, valueObj);
 	}
     } else {
-
 	indexListCopy = TclListObjCopy(NULL,indexArgObj);
 	if (!indexListCopy) {
 	    /*
 	     * indexArgPtr designates something that is neither an index nor a
 	     * well formed list. Report the error via TclLsetFlat.
 	     */
-	    retValueObj = TclLsetFlat(interp, listObj, 1, &indexArgObj, valueObj);
+	    retValueObj = TclLsetFlat(interp,
+		    listObj, 1, &indexArgObj, valueObj);
+	} else if (TCL_OK != TclListObjGetElements(interp,
+		indexListCopy, &indexCount, &indices)) {
+	    Tcl_DecrRefCount(indexListCopy);
+	    /*
+	     * indexArgPtr designates something that is neither an index nor a
+	     * well formed list. Report the error via TclLsetFlat.
+	     */
+	    retValueObj = TclLsetFlat(interp,
+		    listObj, 1, &indexArgObj, valueObj);
 	} else {
-	    if (TCL_OK != TclListObjGetElements(
-		    interp, indexListCopy, &indexCount, &indices)) {
+	    /*
+	     * Let TclLsetFlat perform the actual lset operation.
+	     */
+
+	    retValueObj = TclLsetFlat(interp,
+		    listObj, indexCount, indices, valueObj);
+	    if (indexListCopy) {
 		Tcl_DecrRefCount(indexListCopy);
-		/*
-		 * indexArgPtr designates something that is neither an index nor a
-		 * well formed list. Report the error via TclLsetFlat.
-		 */
-		retValueObj = TclLsetFlat(interp, listObj, 1, &indexArgObj, valueObj);
-	    } else {
-
-		/*
-		 * Let TclLsetFlat perform the actual lset operation.
-		 */
-
-		retValueObj = TclLsetFlat(interp, listObj, indexCount, indices, valueObj);
-		if (indexListCopy) {
-		    Tcl_DecrRefCount(indexListCopy);
-		}
 	    }
 	}
     }
@@ -3149,6 +3153,7 @@ TclLsetFlat(
 		/*
 		 * We're going to store valueObj, so spoil string reps of all
 		 * containing lists.
+		 *
 		 * TODO - historically, the storing of the internal rep was done
 		 * because the ptr2 field of the internal rep was used to chain
 		 * objects whose string rep needed to be invalidated. Now this

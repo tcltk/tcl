@@ -678,8 +678,8 @@ TimerCheckProc(
     ThreadSpecificData *tsdPtr = InitTimer();
 
     if ((flags & TCL_TIMER_EVENTS) &&
-		(tsdPtr->firstTimerHandlerPtr[timerHandlerMonotonic]
-		|| tsdPtr->firstTimerHandlerPtr[timerHandlerWallclock])) {
+	    (tsdPtr->firstTimerHandlerPtr[timerHandlerMonotonic]
+	    || tsdPtr->firstTimerHandlerPtr[timerHandlerWallclock])) {
 	bool queueEvent = false;
 	/*
 	 * Compute the timeout for the next timer on one of the lists.

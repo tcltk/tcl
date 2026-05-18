@@ -2862,7 +2862,7 @@ EachloopCmd(
 		goto done;
 	    }
 	    result = TclListObjGetElements(interp, statePtr->aCopyList[i],
-		&statePtr->argcList[i], &statePtr->argvList[i]);
+		    &statePtr->argcList[i], &statePtr->argvList[i]);
 	    if (result != TCL_OK) {
 		goto done;
 	    }
@@ -2943,8 +2943,8 @@ ForeachLoopStep(
 	    }
 	    break;
 	case TCL_EACH_COLLECT:
-	    result = Tcl_ListObjAppendElement(
-		    interp, statePtr->resultList, Tcl_GetObjResult(interp));
+	    result = Tcl_ListObjAppendElement(interp,
+		    statePtr->resultList, Tcl_GetObjResult(interp));
 	    break;
 	}
 	if (result != TCL_OK) {
