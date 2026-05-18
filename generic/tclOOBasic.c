@@ -148,7 +148,7 @@ SetDelegateSuperclasses(
  *
  * InstallDelegateAsMixin --
  *
- * 	Mixes the delegate into its controlling class.
+ *	Mixes the delegate into its controlling class.
  *
  *----------------------------------------------------------------------
  */
@@ -167,7 +167,7 @@ InstallDelegateAsMixin(
     for (Tcl_Size i = 0; i < clsPtr->thisPtr->mixins.num; i++) {
 	    mixins[i] = clsPtr->thisPtr->mixins.list[i];
 	    if (mixins[i] == delegatePtr) {
-	    TclStackFree(interp, (void *) mixins);
+		TclStackFree(interp, (void *) mixins);
 	    return;
 	}
     }

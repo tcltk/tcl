@@ -722,7 +722,7 @@ IcuConverttoDString(
     Tcl_DString *dsOutPtr)	/* Output encoded string. */
 {
     if (ucnv_open == NULL || ucnv_close == NULL ||
-	ucnv_fromUChars == NULL || UCNV_FROM_U_CALLBACK_STOP == NULL) {
+	    ucnv_fromUChars == NULL || UCNV_FROM_U_CALLBACK_STOP == NULL) {
 	return FunctionNotAvailableError(interp);
     }
 
@@ -804,7 +804,7 @@ IcuBytesToUCharDString(
     Tcl_DString *dsOutPtr)	/* Output UChar string. */
 {
     if (ucnv_open == NULL || ucnv_close == NULL ||
-	ucnv_toUChars == NULL || UCNV_TO_U_CALLBACK_STOP == NULL) {
+	    ucnv_toUChars == NULL || UCNV_TO_U_CALLBACK_STOP == NULL) {
 	return FunctionNotAvailableError(interp);
     }
 
@@ -939,8 +939,8 @@ IcuNormalizeUCharDString(
 	    Tcl_DStringSetLength(dsOutPtr, normLen * sizeof(UCharx));
 	    normPtr = (UCharx *) Tcl_DStringValue(dsOutPtr);
 	    status = U_ZERO_ERRORZ; /* Need to clear error! */
-	    normLen = unorm2_normalize(
-		normalizer, utf16, (int)utf16len, normPtr, normLen, &status);
+	    normLen = unorm2_normalize(normalizer,
+		    utf16, (int)utf16len, normPtr, normLen, &status);
 	    if (U_SUCCESS(status)) {
 		break;
 	    }
@@ -985,8 +985,8 @@ IcuParseConvertOptions(
     int i;
     int strict = 1;
     for (i = 1; i < objc; ++i) {
-	if (Tcl_GetIndexFromObj(
-		interp, objv[i], optNames, "option", 0, &opt) != TCL_OK) {
+	if (Tcl_GetIndexFromObj(interp,
+		objv[i], optNames, "option", 0, &opt) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	++i;
@@ -1155,8 +1155,8 @@ IcuNormalizeObjCmd(
     int strict = 1;
     NormalizationMode mode = MODE_NFC;
     for (i = 1; i < objc - 1; ++i) {
-	if (Tcl_GetIndexFromObj(
-		interp, objv[i], optNames, "option", 0, &opt) != TCL_OK) {
+	if (Tcl_GetIndexFromObj(interp,
+		objv[i], optNames, "option", 0, &opt) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	++i;
@@ -1195,7 +1195,7 @@ IcuNormalizeObjCmd(
     Tcl_DString dsIn;
     Tcl_DString dsNorm;
     if (IcuObjToUCharDString(interp, objv[objc - 1], strict, &dsIn) != TCL_OK ||
-	IcuNormalizeUCharDString(interp, &dsIn, mode, &dsNorm) != TCL_OK) {
+	    IcuNormalizeUCharDString(interp, &dsIn, mode, &dsNorm) != TCL_OK) {
 	return TCL_ERROR;
     }
     Tcl_DStringFree(&dsIn);

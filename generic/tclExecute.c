@@ -715,7 +715,7 @@ static Tcl_NRPostProc	CopyCallback;
 static Tcl_NRPostProc	ExprObjCallback;
 static Tcl_NRPostProc	FinalizeOONext;
 static Tcl_NRPostProc	FinalizeOONextFilter;
-static Tcl_NRPostProc   TEBCresume;
+static Tcl_NRPostProc	TEBCresume;
 
 /*
  * The structure below defines a bytecode Tcl object type to hold the
@@ -3068,7 +3068,7 @@ TEBCresume(
 	pc += pcAdjustment;
 	TEBC_YIELD();
 	return TclNREvalObjv(interp, objc, objv,
-		    TCL_EVAL_NOERR | TCL_EVAL_SOURCE_IN_FRAME, NULL);
+		TCL_EVAL_NOERR | TCL_EVAL_SOURCE_IN_FRAME, NULL);
 
     case INST_INVOKE_REPLACE:
 	objc = TclGetUInt4AtPtr(pc + 1);
@@ -5039,7 +5039,7 @@ TEBCresume(
 		/* Could be list of indices. Let TclLindexList handle it below */
 	    } else {
 		if (TclObjTypeIndex(interp, valuePtr, index, &objResultPtr) !=
-		    TCL_OK) {
+			TCL_OK) {
 		    CACHE_STACK_INFO();
 		    TRACE_ERROR(interp);
 		    goto gotError;
@@ -6871,8 +6871,8 @@ TEBCresume(
 		    status = Tcl_ListObjLength(interp, listPtr, &listLen);
 		    elements = NULL;
 		} else {
-		    status = TclListObjGetElements(
-			interp, listPtr, &listLen, &elements);
+		    status = TclListObjGetElements(interp, listPtr,
+			    &listLen, &elements);
 		}
 		if (status != TCL_OK) {
 		    CACHE_STACK_INFO();
@@ -6889,8 +6889,8 @@ TEBCresume(
 			if (elements) {
 			    valuePtr = elements[valIndex];
 			} else {
-			    status = Tcl_ListObjIndex(
-				    interp, listPtr, valIndex, &valuePtr);
+			    status = Tcl_ListObjIndex(interp,
+				    listPtr, valIndex, &valuePtr);
 			    if (status != TCL_OK) {
 				/* Could happen for abstract lists */
 				CACHE_STACK_INFO();

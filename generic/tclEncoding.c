@@ -1358,14 +1358,14 @@ Tcl_ExternalToUtf(
 	dstChars = *dstCharsPtr;
     }
     result = Tcl_ExternalToUtfEx(interp, encoding, src, srcLen, flags,
-		statePtr, dst, dstLen,
-		srcReadPtr ? &srcRead : NULL,
-		dstWrotePtr ? &dstWrote : NULL,
-		dstCharsPtr ? &dstChars : NULL);
+	    statePtr, dst, dstLen,
+	    srcReadPtr ? &srcRead : NULL,
+	    dstWrotePtr ? &dstWrote : NULL,
+	    dstCharsPtr ? &dstChars : NULL);
 
     if ((srcReadPtr && srcRead > INT_MAX) ||
-	(dstWrotePtr && dstWrote > INT_MAX) ||
-	(dstCharsPtr && dstChars > INT_MAX)) {
+	    (dstWrotePtr && dstWrote > INT_MAX) ||
+	    (dstCharsPtr && dstChars > INT_MAX)) {
 	/* An output count is too large for integer width */
 	srcRead = 0;
 	dstWrote = 0;
@@ -1619,7 +1619,7 @@ Tcl_ExternalToUtfEx(
 	/* Handle the most likely cases first */
 	if (result == TCL_OK) {
 	    if (allInputSeen ||
-		(charLimited && dstCharsWritten >= *dstCharsPtr)) {
+		    (charLimited && dstCharsWritten >= *dstCharsPtr)) {
 		break; /* 1a */
 	    }
 	    /* else 1b continue loop */
@@ -1926,14 +1926,14 @@ Tcl_UtfToExternal(
     }
 
     result = Tcl_UtfToExternalEx(interp, encoding, src, srcLen, flags,
-		statePtr, dst, dstLen,
-		srcReadPtr ? &srcRead : NULL,
-		dstWrotePtr ? &dstWrote : NULL,
-		dstCharsPtr ? &dstChars : NULL);
+	    statePtr, dst, dstLen,
+	    srcReadPtr ? &srcRead : NULL,
+	    dstWrotePtr ? &dstWrote : NULL,
+	    dstCharsPtr ? &dstChars : NULL);
 
     if ((srcReadPtr && srcRead > INT_MAX) ||
-	(dstWrotePtr && dstWrote > INT_MAX) ||
-	(dstCharsPtr && dstChars > INT_MAX)) {
+	    (dstWrotePtr && dstWrote > INT_MAX) ||
+	    (dstCharsPtr && dstChars > INT_MAX)) {
 	/* An output count is too large for integer width */
 	srcRead = 0;
 	dstWrote = 0;
@@ -2197,7 +2197,7 @@ Tcl_UtfToExternalEx(
 	/* Handle the most likely cases first */
 	if (result == TCL_OK) {
 	    if (allInputSeen ||
-		(charLimited && dstCharsWritten >= *dstCharsPtr)) {
+		    (charLimited && dstCharsWritten >= *dstCharsPtr)) {
 		break; /* 1a */
 	    }
 	    /* else 1b continue loop */
@@ -3011,13 +3011,13 @@ UtfToUtfProc(
 	}
 
 	if (BYTE_COPYABLE(*src)) {
-    	    /*
-    	     * Common case fast path for non-nul ASCII bytes.
-    	     *
-    	     * Because we resolved any pending surrogate above (before the
-    	     * loop), *statePtr is guaranteed to be 0 here, so no
-    	     * CHECK_ISOLATEDSURROGATE() call is needed.
-    	     */
+	    /*
+	     * Common case fast path for non-nul ASCII bytes.
+	     *
+	     * Because we resolved any pending surrogate above (before the
+	     * loop), *statePtr is guaranteed to be 0 here, so no
+	     * CHECK_ISOLATEDSURROGATE() call is needed.
+	     */
 	    const char *p = src;
 	    ptrdiff_t copyCount = srcEnd - src;
 	    if (charLimit != INT_MAX) {
@@ -3279,13 +3279,13 @@ UtfToCesu8Proc(
 	}
 	if (BYTE_COPYABLE(*src)) {
 	    CHECK_ISOLATEDSURROGATE();
-    	    /*
-    	     * Common case fast path for non-0 ASCII. Condition to be met
-    	     *  - ASCII byte
-    	     *  - not nul byte when in ENCODING_INPUT (nul must be converted)
-    	     *  - charLimit not reached
-    	     *  - destination not full
-    	     */
+	    /*
+	     * Common case fast path for non-0 ASCII. Condition to be met
+	     *  - ASCII byte
+	     *  - not nul byte when in ENCODING_INPUT (nul must be converted)
+	     *  - charLimit not reached
+	     *  - destination not full
+	     */
 	    const char *p = src;
 	    ptrdiff_t copyCount = srcEnd - src;
 	    /* Limit to caller-specified character count */
@@ -3400,13 +3400,13 @@ UtfToCesu8Proc(
 		    if (savedSurrogate) {
 			assert(HIGH_SURROGATE(savedSurrogate));
 			ch = 0x10000 + ((savedSurrogate - 0xd800) << 10) +
-			     (ch - 0xdc00);
+				(ch - 0xdc00);
 		    } else {
 			/* Isolated low surrogate */
 			if (PROFILE_STRICT(profile)) {
 			    result = (flags & ENCODING_INPUT)
-				       ? TCL_CONVERT_SYNTAX
-				       : TCL_CONVERT_UNKNOWN;
+				    ? TCL_CONVERT_SYNTAX
+				    : TCL_CONVERT_UNKNOWN;
 			    src = saveSrc;
 			    break;
 			} else if (PROFILE_REPLACE(profile)) {

@@ -2255,7 +2255,6 @@ PipeClose2Proc(
 	 */
 
 	if (pipePtr->readThread) {
-
 	    TclPipeThreadStop(&pipePtr->readTI, pipePtr->readThread);
 	    CloseHandle(pipePtr->readThread);
 	    CloseHandle(pipePtr->readable);
@@ -2269,7 +2268,6 @@ PipeClose2Proc(
     }
     if ((!flags || flags & TCL_CLOSE_WRITE) && (pipePtr->writeFile != NULL)) {
 	if (pipePtr->writeThread) {
-
 	    /*
 	     * Wait for the  writer thread to finish the  current buffer, then
 	     * terminate the thread  and close the handles. If  the channel is
@@ -2277,7 +2275,6 @@ PipeClose2Proc(
 	     * thread is not interruptible and we want TIP#398-fast-exit.
 	     */
 	    if ((pipePtr->flags & PIPE_ASYNC) && inExit) {
-
 		/* give it a chance to leave honorably */
 		TclPipeThreadStopSignal(&pipePtr->writeTI);
 

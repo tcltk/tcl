@@ -887,7 +887,7 @@ TclpFindExecutable(
 
     wNamePtr = TclWinGetModuleFileName(NULL, &winPath);
     if (wNamePtr == NULL ||
-	(utf8Ptr = TclWinWCharToUtfDString(wNamePtr, -1, &ds)) == NULL) {
+	    (utf8Ptr = TclWinWCharToUtfDString(wNamePtr, -1, &ds)) == NULL) {
 	Tcl_Panic("Could not retrieve executable module name.");
     }
 
@@ -901,7 +901,7 @@ TclpFindExecutable(
     if (hModule) {
 	wNamePtr = TclWinGetModuleFileName(hModule, &winPath);
 	if (wNamePtr == NULL ||
-	    (utf8Ptr = TclWinWCharToUtfDString(wNamePtr, -1, &ds)) == NULL) {
+		(utf8Ptr = TclWinWCharToUtfDString(wNamePtr, -1, &ds)) == NULL) {
 	    Tcl_Panic("Could not retrieve library module name.");
 	}
 	TclSetObjNameOfShlib(Tcl_NewStringObj(utf8Ptr, TCL_AUTO_LENGTH), NULL);
@@ -1531,7 +1531,7 @@ TclpGetUserHome(
 	    HANDLE hToken;
 	    hToken = GetCurrentProcessToken();
 	    if (GetUserProfileDirectoryW(hToken, winPathBuf, &winPathSize) !=
-		TRUE) {
+		    TRUE) {
 		if (GetLastError() != ERROR_INSUFFICIENT_BUFFER) {
 		    winPathBuf = NULL;
 		} else {
@@ -2256,7 +2256,7 @@ NativeStat(
 	    if (lasterror != ERROR_SHARING_VIOLATION) {
 		Tcl_WinConvertError(lasterror);
 		return -1;
-		}
+	    }
 	    hFind = FindFirstFileW(nativePath, &ffd);
 	    if (hFind == INVALID_HANDLE_VALUE) {
 		Tcl_WinConvertError(GetLastError());

@@ -937,7 +937,7 @@ TestlistobjCmd(
 	return TCL_ERROR;
     }
     if (Tcl_GetIndexFromObj(interp, objv[1], subcommands, "command",
-			    0, &cmdIndex) != TCL_OK) {
+	    0, &cmdIndex) != TCL_OK) {
 	return TCL_ERROR;
     }
     switch(cmdIndex) {
@@ -968,7 +968,7 @@ TestlistobjCmd(
 	    return TCL_ERROR;
 	}
 	if (Tcl_GetIntForIndex(interp, objv[3], TCL_INDEX_NONE, &first) != TCL_OK
-	    || Tcl_GetIntForIndex(interp, objv[4], TCL_INDEX_NONE, &count) != TCL_OK) {
+		|| Tcl_GetIntForIndex(interp, objv[4], TCL_INDEX_NONE, &count) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	if (Tcl_IsShared(varPtr[varIndex])) {
@@ -992,7 +992,7 @@ TestlistobjCmd(
 	for (i = 0; i < len; ++i) {
 	    Tcl_Obj *objP;
 	    if (Tcl_ListObjIndex(interp, varPtr[varIndex], i, &objP)
-		!= TCL_OK) {
+		    != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    if (objP->refCount < 0) {
@@ -1015,7 +1015,7 @@ TestlistobjCmd(
 	} else {
 	    Tcl_Obj **elems;
 	    if (Tcl_ListObjGetElements(interp, varPtr[varIndex], &len, &elems)
-		!= TCL_OK) {
+		    != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    for (i = 0; i < len; ++i) {
@@ -1150,9 +1150,8 @@ TestobjCmd(
     }
 
     varPtr = GetVarPtr(interp);
-    if (Tcl_GetIndexFromObj(
-	    interp, objv[1], subcommands, "command", 0, &cmdIndex)
-	!= TCL_OK) {
+    if (Tcl_GetIndexFromObj(interp, objv[1], subcommands, "command", 0,
+	    &cmdIndex) != TCL_OK) {
 	return TCL_ERROR;
     }
     switch (cmdIndex) {
@@ -1213,7 +1212,7 @@ TestobjCmd(
 		Tcl_SetObjResult(interp, Tcl_NewStringObj("none", -1));
 	    } else {
 		typeName = objv[2]->typePtr->name;
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(typeName, -1));
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(typeName, -1));
 	    }
 	}
 	return TCL_OK;
@@ -1739,8 +1738,8 @@ TestbigdataCmd(
 	}
 	objPtr = Tcl_NewListObj(len, NULL);
 	for (i = 0; i < len; ++i) {
-	    Tcl_ListObjAppendElement(
-		interp, objPtr, patternObjs[i % PATTERN_LEN]);
+	    Tcl_ListObjAppendElement(interp,
+		    objPtr, patternObjs[i % PATTERN_LEN]);
 	}
 	if (split >= 0) {
 	    assert(split < len);

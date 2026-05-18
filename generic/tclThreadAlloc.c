@@ -946,7 +946,6 @@ GetBlocks(
     if (cachePtr != sharedPtr && sharedPtr->buckets[bucket].numFree > 0) {
 	LockBucket(cachePtr, bucket);
 	if (sharedPtr->buckets[bucket].numFree > 0) {
-
 	    /*
 	     * Either move the entire list or walk the list to find the last
 	     * block to move.

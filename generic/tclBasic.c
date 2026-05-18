@@ -1911,7 +1911,7 @@ DeleteInterpProc(
 
     /*
      * Punt if there is an error in the Tcl_Release/Tcl_Preserve matchup,
-	 * unless we are exiting.
+     * unless we are exiting.
      */
 
     if ((iPtr->numLevels > 0) && !TclInExit()) {

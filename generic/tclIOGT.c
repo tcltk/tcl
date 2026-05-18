@@ -742,7 +742,6 @@ TransformInputProc(
 	    gotBytes = -1;
 	    break;
 	} else if (read == 0) {
-
 	    /*
 	     * Zero returned from Tcl_ReadRaw() always indicates EOF
 	     * on the down channel.

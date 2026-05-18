@@ -286,6 +286,7 @@ Clock_itoaw(
 
     return buf + width;
 }
+
 char *
 TclItoAw(
     char *buf,
@@ -1140,7 +1141,6 @@ DetermineGreedySearchLen(
 	}
 	p += tok->lookAhMin;
 	if (laTok->map && p < end) {
-
 	    /* try to find laTok between [lookAhMin, lookAhMax] */
 	    while (minLen < maxLen) {
 		const char *f = FindTokenBegin(p, end, laTok,
@@ -1257,8 +1257,7 @@ LocaleListSearch(
     }
 
     /* search in list */
-    return ObjListSearch(info, val, lstv, lstc,
-	    minLen, maxLen);
+    return ObjListSearch(info, val, lstv, lstc, minLen, maxLen);
 }
 #endif
 
@@ -2146,6 +2145,13 @@ EstimateTokenCount(
 
 /*
  *----------------------------------------------------------------------
+ *
+ * ClockGetOrParseScanFormat --
+ *
+ *	Parse a [clock scan] format, or look up the cache version of a
+ *	previously processed format.
+ *
+ *----------------------------------------------------------------------
  */
 static ClockFmtScnStorage *
 ClockGetOrParseScanFormat(
@@ -2453,7 +2459,7 @@ TclClockScan(
 
 	    if (size < map->minSize) {
 		/* missing input -> error */
-		if ((map->flags & CLF_OPTIONAL)) {
+		if (map->flags & CLF_OPTIONAL) {
 		    continue;
 		}
 		goto not_match;
@@ -2484,7 +2490,7 @@ TclClockScan(
 	    case TCL_OK:
 		break;
 	    case TCL_RETURN:
-		if ((map->flags & CLF_OPTIONAL)) {
+		if (map->flags & CLF_OPTIONAL) {
 		    yyInput = p;
 		    continue;
 		}
@@ -2576,7 +2582,6 @@ TclClockScan(
     /* seconds token (%s) take precedence over all other tokens */
     if ((opts->flags & CLF_EXTENDED) || !(flags & CLF_POSIXSEC)) {
 	if (flags & CLF_DATE) {
-
 	    if (!(flags & CLF_JULIANDAY)) {
 		info->flags |= CLF_ASSEMBLE_SECONDS|CLF_ASSEMBLE_JULIANDAY;
 
@@ -2820,6 +2825,7 @@ ClockFmtToken_StarDate_Proc(
     dateFmt->output = Clock_itoaw(dateFmt->output, v, '0', 1);
     return TCL_OK;
 }
+
 static int
 ClockFmtToken_WeekOfYear_Proc(
     TCL_UNUSED(ClockFmtScnCmdArgs *),
@@ -2838,6 +2844,7 @@ ClockFmtToken_WeekOfYear_Proc(
     *val = (dateFmt->date.dayOfYear - dow + 7) / 7;
     return TCL_OK;
 }
+
 static int
 ClockFmtToken_JDN_Proc(
     TCL_UNUSED(ClockFmtScnCmdArgs *),
@@ -2910,6 +2917,7 @@ ClockFmtToken_JDN_Proc(
     }
     return TCL_OK;
 }
+
 static int
 ClockFmtToken_TimeZone_Proc(
     ClockFmtScnCmdArgs *opts,
@@ -3222,6 +3230,13 @@ static const ClockFormatTokenMap FmtWordTokenMap = {
 
 /*
  *----------------------------------------------------------------------
+ *
+ * ClockGetOrParseFmtFormat --
+ *
+ *	Parse a [clock format] format, or look up the cache version of a
+ *	previously processed format.
+ *
+ *----------------------------------------------------------------------
  */
 static ClockFmtScnStorage *
 ClockGetOrParseFmtFormat(
@@ -3370,6 +3385,13 @@ ClockGetOrParseFmtFormat(
 
 /*
  *----------------------------------------------------------------------
+ *
+ * TclClockFormat --
+ *
+ *	Core of implementation of [clock format]. Arguments are parsed, but
+ *	the actual format may need parsing and compilation.
+ *
+ *----------------------------------------------------------------------
  */
 int
 TclClockFormat(
@@ -3470,7 +3492,8 @@ TclClockFormat(
 		goto error;
 	    }
 	    if (map->width) {
-		dateFmt->output = Clock_witoaw(dateFmt->output, val, *map->tostr, map->width);
+		dateFmt->output = Clock_witoaw(dateFmt->output, val, *map->tostr,
+			map->width);
 	    } else {
 		dateFmt->output += sprintf(dateFmt->output, map->tostr, val);
 	    }
@@ -3546,7 +3569,16 @@ TclClockFormat(
     return TCL_ERROR;
 }
 
-
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclClockFrmScnClearCaches --
+ *
+ *	Invalidate any caches held at global level for [clock].
+ *	(TODO: finish this)
+ *
+ *----------------------------------------------------------------------
+ */
 void
 TclClockFrmScnClearCaches(void)
 {
@@ -3554,7 +3586,16 @@ TclClockFrmScnClearCaches(void)
     /* clear caches ... */
     Tcl_MutexUnlock(&ClockFmtMutex);
 }
-
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclClockFrmScnFinalize --
+ *
+ *	Delete all global storage held by the [clock] implementation.
+ *
+ *----------------------------------------------------------------------
+ */
 void
 TclClockFrmScnFinalize(void)
 {
@@ -3575,6 +3616,7 @@ TclClockFrmScnFinalize(void)
     Tcl_MutexUnlock(&ClockFmtMutex);
     Tcl_MutexFinalize(&ClockFmtMutex);
 }
+
 /*
  * Local Variables:
  * mode: c

@@ -304,7 +304,7 @@ ArithSeriesLenInt(
 
     // Check for opposite sequence directions
     if ((step < 0 && (end-start) > 0)
-	|| (step > 0 && (end-start) < 0)) {
+	    || (step > 0 && (end-start) < 0)) {
 	return 0;
     }
     if (step == 0) {
@@ -972,7 +972,7 @@ TclArithSeriesObjRange(
 	if (Tcl_IsShared(arithSeriesObj) || (arithSeriesRepPtr->refCount > 1)) {
 	    /* as new object */
 	    *newObjPtr = NewArithSeriesDbl(dstart, dblRepPtr->step, len,
-		dblRepPtr->precision);
+		    dblRepPtr->precision);
 	} else {
 	    /* in-place is possible */
 	    *newObjPtr = arithSeriesObj;
@@ -1137,11 +1137,12 @@ TclArithSeriesObjReverse(
 	if (arithSeriesRepPtr->isDouble) {
 	    ArithSeriesDbl *dblRepPtr = (ArithSeriesDbl *)arithSeriesRepPtr;
 	    resultObj = NewArithSeriesDbl(ArithSeriesEndDbl(dblRepPtr),
-		-dblRepPtr->step, arithSeriesRepPtr->len, dblRepPtr->precision);
+		    -dblRepPtr->step, arithSeriesRepPtr->len,
+		    dblRepPtr->precision);
 	} else {
 	    ArithSeriesInt *intRepPtr = (ArithSeriesInt *)arithSeriesRepPtr;
 	    resultObj = NewArithSeriesInt(ArithSeriesEndInt(intRepPtr),
-		-intRepPtr->step, arithSeriesRepPtr->len);
+		    -intRepPtr->step, arithSeriesRepPtr->len);
 	}
     } else {
 	/*

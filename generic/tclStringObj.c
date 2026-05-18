@@ -2817,11 +2817,11 @@ AppendPrintfToObjVA(
 	    case 'g':
 	    case 'G':
 		if (size > 0) {
-		Tcl_ListObjAppendElement(NULL, list, Tcl_NewDoubleObj(
-			(double)va_arg(argList, long double)));
+		    Tcl_ListObjAppendElement(NULL, list, Tcl_NewDoubleObj(
+			    (double)va_arg(argList, long double)));
 		} else {
-			Tcl_ListObjAppendElement(NULL, list, Tcl_NewDoubleObj(
-				va_arg(argList, double)));
+		    Tcl_ListObjAppendElement(NULL, list, Tcl_NewDoubleObj(
+			    va_arg(argList, double)));
 		}
 		seekingConversion = 0;
 		break;
@@ -3420,9 +3420,9 @@ TclStringCat(
 	    if (0 == Tcl_AttemptSetObjLength(objResultPtr, length)) {
 		if (interp) {
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"concatenation failed: unable to alloc %"
-			TCL_Z_MODIFIER "u bytes",
-			STRING_SIZE(length)));
+			    "concatenation failed: unable to alloc %"
+			    TCL_Z_MODIFIER "u bytes",
+			    STRING_SIZE(length)));
 		    Tcl_SetErrorCode(interp, "TCL", "MEMORY", (char *)NULL);
 		}
 		return NULL;
@@ -3437,9 +3437,9 @@ TclStringCat(
 		Tcl_DecrRefCount(objResultPtr);
 		if (interp) {
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"concatenation failed: unable to alloc %"
-			TCL_Z_MODIFIER "u bytes",
-			STRING_SIZE(length)));
+			    "concatenation failed: unable to alloc %"
+			    TCL_Z_MODIFIER "u bytes",
+			    STRING_SIZE(length)));
 		    Tcl_SetErrorCode(interp, "TCL", "MEMORY", (char *)NULL);
 		}
 		return NULL;
@@ -3470,8 +3470,9 @@ TclStringCat(
 	    if (0 == Tcl_AttemptSetObjLength(objResultPtr, length)) {
 		if (interp) {
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"concatenation failed: unable to alloc %" TCL_SIZE_MODIFIER "d bytes",
-			length));
+			    "concatenation failed: unable to alloc %"
+			    TCL_SIZE_MODIFIER "d bytes",
+			    length));
 		    Tcl_SetErrorCode(interp, "TCL", "MEMORY", (char *)NULL);
 		}
 		return NULL;
@@ -3485,8 +3486,9 @@ TclStringCat(
 		Tcl_DecrRefCount(objResultPtr);
 		if (interp) {
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"concatenation failed: unable to alloc %" TCL_SIZE_MODIFIER "d bytes",
-			length));
+			    "concatenation failed: unable to alloc %"
+			    TCL_SIZE_MODIFIER "d bytes",
+			    length));
 		    Tcl_SetErrorCode(interp, "TCL", "MEMORY", (char *)NULL);
 		}
 		return NULL;

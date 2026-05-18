@@ -559,7 +559,7 @@ IsSpecial(
  *
  * SetInvalidRealFromAny --
  *
- * 	Mark an object as holding a weird double.
+ *	Mark an object as holding a weird double.
  *
  *----------------------------------------------------------------------
  */
