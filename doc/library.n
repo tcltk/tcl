@@ -66,19 +66,59 @@ The following procedures are provided in the Tcl library:
 .TP
 \fBauto_execok \fIcmd\fR
 .
-Determines whether there is an executable file or shell builtin
-by the name \fIcmd\fR.  If so, it returns a list of arguments to be
-passed to \fBexec\fR to execute the executable file or shell builtin
-named by \fIcmd\fR.  If not, it returns an empty string.  This command
-examines the directories in the current search path (given by the PATH
-environment variable) in its search for an executable file named
-\fIcmd\fR.  On Windows platforms, the search is expanded with the same
-directories and file extensions as used by \fBexec\fR. \fBAuto_execok\fR
-remembers information about previous searches in an array named
-\fBauto_execs\fR;  this avoids the path search in future calls for the
-same \fIcmd\fR.  The command \fBauto_reset\fR may be used to force
-\fBauto_execok\fR to forget its cached information.
+The command returns a list of arguments to be passed to \fBexec\fR to
+execute the external program named by \fIcmd\fR. If no such program is
+found, the command returns an empty list. Callers must not make any
+assumptions about any returned paths being in any particular form such
+as normalized, absolute, native or canonical.
 .RS
+.PP
+On platforms other than Windows, if \fIcmd\fR contains any path
+separators, \fBauto_execok\fR checks for the existence of an executable
+file with that path. If present, it is returned as the first element of
+the returned list. Note that this may be a relative path. If \fIcmd\fR
+does not contain any path separators, all directories in the \fBPATH\fR
+environment variable are searched for an executable file of that name.
+If found, a list containing a single element holding the full path to
+the file is returned.
+.PP
+The rest of this description applies to Windows platforms.
+.PP
+If \fIcmd\fR contains path separators, the command checks for the
+existence of a file of that name. If found, the file associations in the
+Windows registry is looked up to retrieve the template for the file's
+extension. On success, the template is processed to replace environment
+variables, placeholders for the file path, converted to list form and
+returned. Otherwise, an empty list is returned.
+.PP
+If \fIcmd\fR does not contain path separators, it is first matched
+against the built-in commands in the \fBcmd.exe\fR command shell.
+Built-ins that are intended only for batch file use are excluded. On a
+match, the returned list is the list of arguments to be passed to
+\fBexec\fR to run the built-in using \fBcmd.exe\fR.
+.PP
+Next, \fBauto_execok\fR searches directories in the following order:
+the directory of the process executable, the current working directory
+(subject to conditions described below), the Windows \fBsystem32\fR
+directory, the Windows directory and the directories in the \fBPATH\fR
+environment variable. Within each directory, the command will look for
+a file matching the passed name, and if not found, for a file matching
+the passed name appended with extensions listed in the \fBPATHEXT\fR
+environment variable. The extension of the matched file is looked up in
+the file associations in the registry and the corresponding template is
+returned after processing as described earlier.
+.PP
+Inclusion of the current working directory in the list of examined
+directories depends on Windows system settings retrieved with the
+\fBNeedCurrentDirectoryForExePathW\fR Win32 API. Refer to its
+documentation for details. Note that if the current directory, \fB.\fR,
+is explicitly included in \fBPATH\fR, it is not affected by this
+setting.
+.PP
+Finally, if all above fails, \fIcmd\fR is looked up in the \fBApp
+Paths\fR key in the Windows registry after appending \fB.exe\fR if not
+already present. If listed there as a registered application, its path
+is returned as the first (and only) list element.
 .PP
 For example, to run the \fIumask\fR shell builtin on Linux, you would do:
 .PP

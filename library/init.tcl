@@ -617,7 +617,7 @@ proc tcl::win::ParseFileAssociationTemplate {template target} {
     # One final check. The %N and %* placeholders can only be followed
     # by similar placeholders which stand for arguments. Any other values
     # are rejected as the auto_execok mechanism only allows for trailing
-    # arguments. TODO - combine with above loop
+    # arguments.
     set placeHolderSeen 0
     set result [lmap arg $result {
         if {[string match {%[0-9*]*} $arg]} {
