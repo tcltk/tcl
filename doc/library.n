@@ -120,19 +120,24 @@ Paths\fR key in the Windows registry after appending \fB.exe\fR if not
 already present. If listed there as a registered application, its path
 is returned as the first (and only) list element.
 .PP
-For example, to run the \fIumask\fR shell builtin on Linux, you would do:
-.PP
-.CS
-exec {*}[\fBauto_execok\fR umask]
-.CE
-.PP
 To run the \fIDIR\fR shell builtin on Windows, you would do:
 .PP
 .CS
 exec {*}[\fBauto_execok\fR dir]
 .CE
 .PP
-To discover if there is a \fIfrobnicate\fR binary on the user's PATH,
+To open a \fB.txt\fR file on Windows with the associated program,
+you would do:
+.PP
+.CS
+exec {*}[\fBauto_execok\fR path/to/foo.txt]
+.CE
+.PP
+Note in the above that since \fB.txt\fR is not generally included in
+\fBPATHEXT\fR, the passed name is not searched for even if it does not
+include any path separators.
+.PP
+To discover if there is a \fIfrobnicate\fR that can be run by \fBexec\fR,
 you would do:
 .PP
 .CS
