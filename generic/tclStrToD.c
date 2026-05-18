@@ -236,7 +236,7 @@ static const double tens[] = {
     1e20, 1e21, 1e22
 };
 
-static const int itens [] = {
+static const int itens[] = {
     1,
     10,
     100,
