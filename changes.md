@@ -28,10 +28,11 @@ Tcl DLL in all build configurations.
 - [`Tcl_IsEmpty()` &mdash; checks if the string representation of a value would be the empty string](https://core.tcl-lang.org/tips/doc/trunk/tip/711.md)
 - [`Tcl_GetEncodingNameForUser()` &mdash; returns name of encoding from user settings](https://core.tcl-lang.org/tips/doc/trunk/tip/716.md)
 - [`Tcl_AttemptCreateHashEntry()` &mdash; version of `Tcl_CreateHashEntry()` that returns NULL instead of panic'ing on memory allocation errors](https://core.tcl-lang.org/tips/doc/trunk/tip/717.md)
-- [`Tcl_ListObjRange()`, `Tcl_ListObjRepeat()`, `Tcl_TclListObjReverse()` &mdash; C API for new list operations](https://core.tcl-lang.org/tips/doc/trunk/tip/649.md)
+- [`Tcl_ListObjRange()`, `Tcl_ListObjRepeat()`, `Tcl_ListObjReverse()` &mdash; C API for new list operations](https://core.tcl-lang.org/tips/doc/trunk/tip/649.md)
 - [`Tcl_UtfToNormalized()`, `Tcl_UtfToNormalizedDString()` &mdash; C API for Unicode normalization](https://core.tcl-lang.org/tips/doc/trunk/tip/726.md)
 - [`Tcl_UtfToExternalEx()` and `Tcl_ExternalToUtfEx()` &mdash; C encoding API supporting output buffers larger than INT_MAX](https://core.tcl-lang.org/tips/doc/trunk/tip/737.md)
 - [New API for monotonic clock and microseconds resolution](https://core.tcl-lang.org/tips/doc/trunk/tip/723.md)
+- [Windows `auto_execok` enhancements and `exec` search reform](https://core.tcl-lang.org/tips/doc/trunk/tip/755.md)
 
 # Changes in interpreter initialization
 

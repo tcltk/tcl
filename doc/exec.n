@@ -319,28 +319,17 @@ to have console applications hidden and detached.  This is a designed-in
 limitation as \fBexec\fR wants to communicate over pipes.  The Expect
 extension addresses this issue when communicating with a TUI application.
 .PP
-When attempting to execute an application, \fBexec\fR first searches for
-the name as it was specified.  Then, in order,
-\fB.com\fR, \fB.exe\fR, \fB.bat\fR and \fB.cmd\fR
-are appended to the end of the specified name and it searches
-for the longer name.  If a directory name was not specified as part of the
-application name, the following directories are automatically searched in
-order when attempting to locate the application:
-.IP \(bu 3
-The directory from which the Tcl executable was loaded.
-.IP \(bu 3
-The current directory.
-.IP \(bu 3
-The Windows 32-bit system directory.
-.IP \(bu 3
-The Windows home directory.
-.IP \(bu 3
-The directories listed in the path.
-.PP
+When attempting to execute an application, \fBexec\fR searches directories
+in the same manner as described for the \fBauto_execok\fR command. However,
+with respect to file extensions, unlike \fBauto_execok\fR, \fBexec\fR only
+searches for
+the name as it was specified and then in order,
+\fB.com\fR, \fB.exe\fR, \fB.bat\fR and \fB.cmd\fR. The \fBPATHEXT\fR
+environment variable is disregarded as are any file associations.
 In order to execute shell built-in commands like \fBdir\fR and \fBcopy\fR,
-the caller must prepend the desired command with
-.QW "\fBcmd.exe /c\0\fR"
-because built-in commands are not implemented using executables.
+other extensions in \fBPATHEXT\fR, or registered application paths,
+make use of \fBauto_execok\fR to retrieve the command to be passed to
+\fBexec\fR.
 .RE
 .TP
 \fBUnix\fR (including macOS)

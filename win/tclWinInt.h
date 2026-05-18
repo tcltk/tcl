@@ -212,7 +212,7 @@ TclWinPathGet(
     return pathBufPtr->bufferPtr;
 }
 
-/* Frees a previously initialized path buffer, reseting its state */
+/* Frees a previously initialized path buffer */
 static inline void
 TclWinPathFree(
     TclWinPath *pathBufPtr)	/* Structure to be freed */
@@ -223,6 +223,42 @@ TclWinPathFree(
     pathBufPtr->bufferPtr = pathBufPtr->buffer;
 }
 
+/* Resets a previously initialized path buffer to its initial state */
+static inline WCHAR *
+TclWinPathReset(
+    TclWinPath *pathBufPtr,	/* Structure to be initialized */
+    DWORD *capacityPtr)		/* On return, capacity in WCHARS
+				   Must NOT be NULL */
+{
+    TclWinPathFree(pathBufPtr);
+    *capacityPtr = (DWORD)(sizeof(pathBufPtr->buffer) / sizeof(WCHAR));
+    return pathBufPtr->bufferPtr;
+}
+
+/*
+ * The following values identify the various types of applications that run
+ * under Windows. There is special case code for the various types.
+ */
+typedef enum TclWinExecutableType {
+    APPL_NONE = 0,
+    APPL_DOS = 1,
+    APPL_WIN3X = 2,
+    APPL_WIN32 = 3,
+    APPL_DLL = 4
+} TclWinExecutableType;
+
+/*
+ * GetPathFunc should match the signature of functions such as
+ * GetSystemDirectoryW and GetWindowsDirectoryW. lpBuffer is expected to be
+ * a buffer of size uSize WCHARs. The function should return the number of
+ * WCHARs written to the buffer, not including the null terminator, or 0 on
+ * failure. If the buffer is too small, the function should return the
+ * required size in WCHARs *including* the null terminator.
+ */
+typedef UINT WINAPI GetPathFunc(LPWSTR lpBuffer, UINT uSize);
+
+MODULE_SCOPE WCHAR *	TclWinGetPath(GetPathFunc getPathFunc,
+			    TclWinPath *winPathPtr);
 MODULE_SCOPE char *	TclWinWCharToUtfDString(const WCHAR *wsPtr,
 			    int numChars, Tcl_DString *);
 MODULE_SCOPE WCHAR *	TclWinPathResize(TclWinPath *winPathPtr,
@@ -234,5 +270,25 @@ MODULE_SCOPE WCHAR *	TclWinGetCurrentDirectory(TclWinPath *winPathPtr);
 MODULE_SCOPE WCHAR *	TclWinGetEnvironmentVariable(const WCHAR *envName,
 			    TclWinPath *winPathPtr);
 MODULE_SCOPE WCHAR *	TclWinGetModuleFileName(HMODULE, TclWinPath *);
+MODULE_SCOPE TclWinExecutableType TclWinGetExecutableType(const WCHAR *nativePath);
+
+/*
+ * Retrieve Windows system directory. See TclWinGetDirPath for param and
+ * return details.
+ */
+static inline WCHAR *TclWinGetSystemDirectory(TclWinPath *winPathPtr) {
+    return TclWinGetPath(GetSystemDirectoryW, winPathPtr);
+}
+
+/*
+ * Retrieve Windows system directory. See TclWinGetDirPath for param and
+ * return details.
+ */
+static inline WCHAR *TclWinGetWindowsDirectory(TclWinPath *winPathPtr) {
+    return TclWinGetPath(GetWindowsDirectoryW, winPathPtr);
+}
+
+
+
 
 #endif	/* _TCLWININT */

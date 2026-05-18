@@ -1923,7 +1923,8 @@ NativeAccess(
  * NativeIsExec --
  *
  *	Determines if a path is executable. On windows this is simply defined
- *	by whether the path ends in a standard executable extension.
+ *	by whether the path ends in a standard executable extension or if
+ *	it is identified by its PE header.
  *
  * Results:
  *	1 = executable, 0 = not.
@@ -1952,7 +1953,9 @@ NativeIsExec(
 	    || (_wcsicmp(path, L"bat") == 0)) {
 	return 1;
     }
-    return 0;
+
+    TclWinExecutableType appType = TclWinGetExecutableType(path);
+    return appType != APPL_NONE  && appType != APPL_DLL;
 }
 
 /*
@@ -3522,7 +3525,8 @@ TclWinFileOwned(
 WCHAR *
 TclWinPathResize(
     TclWinPath *pathBufPtr,	/* Path buffer. Must have been initialized */
-    DWORD capacity)		/* Required capacity in WCHARS. */
+    DWORD capacity)		/* Required capacity in WCHARS 
+				   including nul terminator. */
 {
     assert(capacity > 0);
 
@@ -3643,6 +3647,10 @@ TclWinGetCurrentDirectory(
 				 * uninitialized or previously reset with
 				 * TclWinPathFree. */
 {
+    /*
+     * Note: Unfortunately cannot use TclWinGetPath to implement because order
+     * of parameters of wrapped function is different.
+     */
     DWORD numChars;
     DWORD capacity;
     WCHAR *fullPathPtr;
