@@ -9681,6 +9681,26 @@ TestUtfToNormalizedDStringCmd(
 
 /* Tests eval within postinit callback */
 static int
+PostInitEvalProc(
+    Tcl_Interp *interp,
+    void *clientData)
+{
+    int ret;
+    Tcl_Obj *objPtr;
+    if (clientData) {
+	objPtr = (Tcl_Obj *)clientData;
+	/* Caller would have already incremented refcount */
+    } else {
+	objPtr = Tcl_NewObj();
+	Tcl_IncrRefCount(objPtr);
+    }
+    ret = Tcl_EvalObjEx(interp, objPtr, TCL_EVAL_GLOBAL);
+    Tcl_DecrRefCount(objPtr);
+    return ret;
+}
+
+/* Basic callback to add a proc */
+static int
 PostInitAddProc(
     Tcl_Interp *interp,
     void *clientData
@@ -9769,6 +9789,17 @@ PostInitInterpCreateProc(
     }
 }
 
+/* Delete current interp in callback */
+static int
+PostInitInterpDeleteProc(
+    Tcl_Interp *interp,
+    void *clientData)
+{
+    Tcl_DeleteInterp(interp);
+    return (int)(intptr_t)clientData;
+}
+
+
 /* Tests raising of error from postinit callback */
 static int
 PostInitRaiseErrorProc(
@@ -9813,7 +9844,9 @@ PostInitUnregisterInCbProc(
  *         add - creates a "addARG" proc adding N to passed operand. Tests
  *               evaluation of scripts within a postinit callback
  *         clear - deletes all registrations
- *         interp - Creates a new interpreter from within the callback
+ *         eval - Calls Tcl_Eval within the callback with ARG as script
+ *         interpcreate - Creates a new interpreter from within the callback
+ *	   interpdelete - Registers a callback that deletes the interpreter
  *         package - does require of a static package with a "multiply"
  *               command. Tests package require of static package within
  *               a postinit callback.
@@ -9845,11 +9878,12 @@ TestpostinitCmd(
     enum {
 	REGISTER, UNREGISTER, CLEAR
     } action;
-    static const char *const callbacks[] = {"add", "interpcreate", "package",
-	"raiseerror", "registerincb", "safecheck", "unregisterincb", NULL
+    static const char *const callbacks[] = {"add", "eval", "interpcreate",
+	"interpdelete",  "package", "raiseerror", "registerincb",
+	"safecheck", "unregisterincb", NULL
     };
-    enum {ADD, INTERPCREATE, PACKAGE, RAISEERROR, REGISTERINCB,
-	SAFECHECK, UNREGISTERINCB
+    enum {ADD, EVAL, INTERPCREATE, INTERPDELETE, PACKAGE, RAISEERROR,
+	REGISTERINCB, SAFECHECK, UNREGISTERINCB
     } callback;
 
     if (objc < 2 || objc > 4) {
@@ -9867,7 +9901,8 @@ TestpostinitCmd(
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv,
 	    "register|unregister "
-	    "add|interpcreate|package|raiseerror|registerincb|safecheck"
+	    "add|eval|interpcreate|interpdelete|package|raiseerror|"
+	    "registerincb|safecheck"
 	    "unregisterincb ?integerData?");
 	return TCL_ERROR;
     }
@@ -9877,11 +9912,16 @@ TestpostinitCmd(
     }
     void *clientData = NULL;
     if (objc == 4) {
-	int i;
-	if (Tcl_GetIntFromObj(interp, objv[3], &i) != TCL_OK) {
-	    return TCL_ERROR;
+        if (callback == EVAL) {
+	    clientData = (void *)Tcl_DuplicateObj(objv[3]);
+	    Tcl_IncrRefCount((Tcl_Obj *)clientData);
+	} else {
+	    int i;
+	    if (Tcl_GetIntFromObj(interp, objv[3], &i) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    clientData = (void *)i;
 	}
-	clientData = (void *)i;
     }
 
     Tcl_PostInitProc *callbackProc;
@@ -9890,8 +9930,14 @@ TestpostinitCmd(
     case ADD:
 	callbackProc = PostInitAddProc;
 	break;
+    case EVAL:
+	callbackProc = PostInitEvalProc;
+	break;
     case INTERPCREATE:
 	callbackProc = PostInitInterpCreateProc;
+	break;
+    case INTERPDELETE:
+	callbackProc = PostInitInterpDeleteProc;
 	break;
     case PACKAGE:
 	callbackProc = PostInitStaticPackageProc;

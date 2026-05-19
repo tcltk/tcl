@@ -14,6 +14,7 @@ if {"::tcltest" ni [namespace children]} {
     package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
+source [file join [file dirname [info script]] tcltests.tcl]
 
 ::tcltest::loadTestedCommands
 catch [list package require -exact tcl::test [info patchlevel]]
@@ -4112,6 +4113,26 @@ namespace eval tcl::test::postinit {
         testpostinit clear
         interp delete $ip $safe
     } -result {0 1 {invalid command name "isSafe"}}
+
+    # The following is under notValgrind because it is expected to leak memory
+    # if callbacks ignore documentation that the passed interpreter
+    # interpreter must not be deleted.
+    test postinit-2.5 {
+        Verify error on interp deletion within callback
+    } -constraints {testpostinit notValgrind} -setup {
+        foreach i [interp children] {
+            interp delete $i
+        }
+    } -body {
+        testpostinit register interpdelete
+        set result [list [catch {interp create} error] $error]
+        set ip [lindex [interp children] 0]
+        lappend result [catch {$ip eval {set x x}} error] $error
+        interp delete $ip
+        lappend result [interp children]
+    } -cleanup {
+        testpostinit clear
+    } -result [list 1 {interpreter deleted during post-initialization callback} 1 {attempt to call eval in deleted interpreter} {}]
 
     test postinit-3.1 {
         Verify postinit registration within postinit callback

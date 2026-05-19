@@ -5438,13 +5438,38 @@ TclCallPostInitProcs(
 
     /* Iterate through callbacks until done or error */
     int result = TCL_OK;
+    int interpDeleted = 0;
+    Tcl_Preserve(interp);	/* Ensure it does not disappear in callback */
     for (size_t i = 0; i < cachePtr->count; i++) {
 	result = cachePtr->recordsPtr[i].postInitProc(interp,
 	    cachePtr->recordsPtr[i].clientData);
+	interpDeleted = Tcl_InterpDeleted(interp);
+	if (interpDeleted) {
+	    Tcl_SetObjResult(interp,
+		Tcl_NewStringObj(
+		    "interpreter deleted during post-initialization callback",
+		    -1));
+	    result = TCL_ERROR;
+	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "INTERP", "DELETED",
+		(char *)NULL);
+	    break;
+	}
 	if (result != TCL_OK) {
 	    /* T: postinit-2.1 */
 	    break;
 	}
+    }
+
+    /*
+     * If interpreter was deleted, do NOT release else it may be freed.
+     * Tcl_Init callers do not expect that eventuality and would lead to a
+     * crash. This way, there is a memory leak (since there will never be a
+     * matching Tcl_Release) but it is still better than a crash. Note the
+     * documentation warns against deleting the interpreter within a
+     * callback.
+     */
+    if (!interpDeleted) {
+	Tcl_Release(interp);
     }
 
     tsdPtr->inUse--;
