@@ -5634,7 +5634,7 @@ Tcl_UtfToNormalizedDString(
 	if (result != TCL_OK) {
 	    normLength = -1;
 	}
-	free(normUtf8); /* NOT Tcl_Free! */
+	utf8proc_free(normUtf8); /* NOT Tcl_Free! */
     }
     Tcl_FreeEncoding(encoding);
     return normLength >= 0 ? TCL_OK : TCL_ERROR;
@@ -5718,7 +5718,7 @@ Tcl_UtfToNormalized(
 	result = TCL_OK;
     }
 
-    free(normUtf8); /* NOT Tcl_Free! */
+    utf8proc_free(normUtf8); /* NOT Tcl_Free! */
     return result;
 }
 

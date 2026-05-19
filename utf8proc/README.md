@@ -18,7 +18,7 @@ utf8proc is used for basic Unicode
 support in the [Julia language](http://julialang.org/), and the Julia
 developers became involved because they wanted to add Unicode 7 support and other features; it is now regularly updated to keep up with recent Unicode releases.
 
-There are also utf8proc wrappers for [Ruby](https://www.ruby-toolbox.com/projects/utf8_proc) and [Rust](https://docs.rs/utf8proc/latest/utf8proc/) ([github](https://github.com/Techcable/utf8proc.rs)).  (The original utf8proc package also included PostgreSQL bindings.)
+There are also utf8proc wrappers for [Ruby](https://www.ruby-toolbox.com/projects/utf8_proc), [Rust](https://docs.rs/utf8proc/latest/utf8proc/) ([github](https://github.com/Techcable/utf8proc.rs)), and [Swift](https://codeberg.org/Cyberbeni/swift-utf8proc).  (The original utf8proc package also included PostgreSQL bindings.)
 
 The utf8proc package is licensed under the
 free/open-source [MIT "expat"
@@ -67,7 +67,7 @@ The C library is found in this directory after successful compilation
 and is named `libutf8proc.a` (for the static library) and
 `libutf8proc.so` (for the dynamic library).
 
-The Unicode version supported is 17.0.0.
+The Unicode version supported is 18.0.0.
 
 For Unicode normalizations, the following options are used:
 
@@ -126,7 +126,7 @@ utf8proc_uint8_t *fold_str;
 utf8proc_map(str, 0, &fold_str, UTF8PROC_NULLTERM | UTF8PROC_CASEFOLD);
 printf("%s\n", fold_str);
 // ss
-free(fold_str);
+utf8proc_free(fold_str);
 ```
 
 ### Normalization Form C/D (NFC/NFD)
@@ -138,6 +138,6 @@ utf8proc_uint8_t *nfd= utf8proc_NFD(input); // = {0x61, 0xcc, 0x88, 0x6f, 0xcc, 
 // Compose "a\u0308o\u0308u\u0308" into "\u00e4\u00f6\u00fc" (= "äöü" via precomposed characters)
 utf8proc_uint8_t *nfc= utf8proc_NFC(nfd);
 
-free(nfd);
-free(nfc);
+utf8proc_free(nfd);
+utf8proc_free(nfc);
 ```
