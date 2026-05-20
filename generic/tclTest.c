@@ -9844,7 +9844,9 @@ PostInitUnregisterInCbProc(
  *         add - creates a "addARG" proc adding N to passed operand. Tests
  *               evaluation of scripts within a postinit callback
  *         clear - deletes all registrations
- *         eval - Calls Tcl_Eval within the callback with ARG as script
+ *         eval - Calls Tcl_Eval within the callback with ARG as script. Can
+ * 	 	be used to test arbitrary script execution within callback.
+ * 	 	Can only be removed by clear, not unregister.
  *         interpcreate - Creates a new interpreter from within the callback
  *	   interpdelete - Registers a callback that deletes the interpreter
  *         package - does require of a static package with a "multiply"

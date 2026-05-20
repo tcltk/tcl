@@ -80,7 +80,7 @@ callbacks.
 Callback functions registered through \fBTcl_RegisterPostInitProc\fR may load
 static packages, add commands, or set up other facilities so they are available
 in all interpreters. They cannot however execute any code that may result in new
-interpreters.
+interpreters and should not delete the passed interpreter.
 .PP
 The `Tcl_RegisterPostInitProc` and `Tcl_UnregisterPostInitProc` functions may be
 invoked from within a registered callback. However, the change in registration

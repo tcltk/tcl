@@ -4073,6 +4073,20 @@ namespace eval tcl::test::postinit {
         interp delete $ip
     } -result 20
 
+    test postinit-1.10 {
+        Verify coroutine creation and invocation in callback
+    } -constraints testpostinit -body {
+        testpostinit register eval {
+            coroutine coro while 1 {yield [incr value]}
+            coro
+        }
+        set ip [interp create]
+        set result [list [$ip eval coro] [$ip eval {rename coro ""}]]
+    } -cleanup {
+        testpostinit clear
+        interp delete $ip
+    } -result {3 {}}
+
     test postinit-2.1 {
         Verify interp not created on callback error
     } -constraints testpostinit -body {
