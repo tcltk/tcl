@@ -507,6 +507,10 @@ LocatePreInitScript(
 
     TRY_PATH(TclJoinPath(3, pathParts, false));
 
+#ifdef CFG_BUILDTIME_SCRDIR
+    TRY_PATH(Tcl_NewStringObj(CFG_BUILDTIME_SCRDIR, -1));
+#endif
+
   done:		/* initScriptPtr != NULL => dirPtr holds dir of init.tcl */
     if (initScriptPathPtr == NULL) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(

@@ -1404,6 +1404,7 @@ tclInterp.o: $(GENERIC_DIR)/tclInterp.c
 		-DCFG_RUNTIME_LIBDIR="\"$(libdir)\"" \
 		-DCFG_RUNTIME_BINDIR="\"$(bindir)\"" \
 		-DCFG_RUNTIME_SCRDIR="\"$(TCL_LIBRARY)\"" \
+		-DCFG_BUILDTIME_SCRDIR="\"$(TCL_BUILDTIME_LIBRARY)\"" \
 		$(GENERIC_DIR)/tclInterp.c
 
 tclIO.o: $(GENERIC_DIR)/tclIO.c $(IOHDR)
@@ -1541,6 +1542,7 @@ tclPkgConfig.o: $(GENERIC_DIR)/tclPkgConfig.c
 		-DCFG_RUNTIME_INCDIR="\"$(includedir)\"" \
 		-DCFG_RUNTIME_DOCDIR="\"$(mandir)\"" \
 		-DCFG_RUNTIME_DLLFILE="\"$(TCL_LIB_FILE)\"" \
+		-DCFG_BUILDTIME_SCRDIR="\"$(TCL_BUILDTIME_LIBRARY)\"" \
 		$(GENERIC_DIR)/tclPkgConfig.c
 
 tclPosixStr.o: $(GENERIC_DIR)/tclPosixStr.c
