@@ -102,6 +102,7 @@ SRC_DIR			= @srcdir@
 ROOT_DIR		= @srcdir@/..
 TOP_DIR			= $(shell cd '@srcdir@/..'; pwd -W 2>/dev/null || pwd -P)
 BUILD_DIR		= @builddir@
+ABS_BUILD_DIR		= @abs_builddir@
 GENERIC_DIR		= $(TOP_DIR)/generic
 WIN_DIR			= $(TOP_DIR)/win
 UNIX_DIR		= $(TOP_DIR)/unix
@@ -722,6 +723,7 @@ tclPkgConfig.${OBJEXT}: tclPkgConfig.c
 tclInterp.${OBJEXT}: tclInterp.c
 	$(CC)	-c $(CC_SWITCHES)			\
 		-DCFG_BUILDTIME_SCRDIR="\"$(TCL_BUILDTIME_LIBRARY)\"" \
+		-DCFG_BUILDTIME_BINDIR="\"$(ABS_BUILD_DIR)\"" \
 		-DBUILD_tcl \
 		@DEPARG@ $(CC_OBJNAME)
 

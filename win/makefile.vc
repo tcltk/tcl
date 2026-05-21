@@ -929,6 +929,7 @@ $(TMP_DIR)\tclPkgConfig.obj: $(GENERICDIR)\tclPkgConfig.c
 $(TMP_DIR)\tclInterp.obj: $(GENERICDIR)\tclInterp.c
 	$(cc32) $(pkgcflags) \
 	/DCFG_BUILDTIME_SCRDIR="\"$(ROOT:\=/)/library\"" \
+	/DCFG_BUILDTIME_BINDIR="\"$(OUT_DIR:\=/)\"" \
 	-Fo$@ $?
 
 $(TMP_DIR)\tclAppInit.obj: $(WIN_DIR)\tclAppInit.c

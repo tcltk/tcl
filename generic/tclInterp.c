@@ -416,8 +416,8 @@ LocatePreInitScript(
     Tcl_Obj *searchedDirs;
     Tcl_Obj *initScriptPathPtr = NULL;
     Tcl_Obj *pathParts[3] = {NULL, NULL, NULL};
-    Tcl_Obj *exeDirPtr;
-    Tcl_Obj *exePtr;
+    Tcl_Obj *exeDirPtr = NULL;
+    Tcl_Obj *exePtr = NULL;
 
     /*
      * Need to track checked directories for error reporting. As a side
@@ -491,7 +491,6 @@ LocatePreInitScript(
      * executable (i.e. "parent" in the above comment).
      */
     pathParts[0] = TclPathPart(interp, exeDirPtr, TCL_PATH_DIRNAME);
-    Tcl_DecrRefCount(exeDirPtr);
     /*
      * Note: pathParts[] freed at function end. TclPathPart returns
      * Tcl_Obj with ref count incremented so do not incr ref pathParts[0] here.
@@ -507,8 +506,19 @@ LocatePreInitScript(
 
     TRY_PATH(TclJoinPath(3, pathParts, false));
 
-#ifdef CFG_BUILDTIME_SCRDIR
-    TRY_PATH(Tcl_NewStringObj(CFG_BUILDTIME_SCRDIR, -1));
+    /* If we are running the build environment, prior to install ... */
+#if defined(CFG_BUILDTIME_BINDIR) && defined(CFG_BUILDTIME_SCRDIR)
+    assert(exeDirPtr);
+#ifdef _WIN32
+    int runningInBuild =
+	strcasecmp(CFG_BUILDTIME_BINDIR, Tcl_GetString(exeDirPtr)) == 0;
+#else
+    int runningInBuild =
+	strcmp(CFG_BUILDTIME_BINDIR, Tcl_GetString(exeDirPtr)) == 0;
+#endif
+    if (runningInBuild) {
+	TRY_PATH(Tcl_NewStringObj(CFG_BUILDTIME_SCRDIR, -1));
+    }
 #endif
 
   done:		/* initScriptPtr != NULL => dirPtr holds dir of init.tcl */
@@ -523,6 +533,10 @@ LocatePreInitScript(
     }
     if (initNamePtr != NULL) {
 	Tcl_DecrRefCount(initNamePtr);
+    }
+    /* NOTE exePtr NOT to be freed, only exeDirPtr */
+    if (exeDirPtr != NULL) {
+	Tcl_DecrRefCount(exeDirPtr);
     }
     for (size_t i = 0; i < sizeof(pathParts)/sizeof(pathParts[0]); i++) {
 	if (pathParts[i] != NULL) {
