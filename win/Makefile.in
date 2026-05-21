@@ -132,6 +132,7 @@ ROOT_DIR_WIN_NATIVE	= $(shell cd '$(ROOT_DIR)' ; pwd -W 2>/dev/null || pwd -P)
 ZLIB_DIR_NATIVE		= $(shell $(CYGPATH) '$(ZLIB_DIR)')
 MINIZIP_DIR_NATIVE	= $(shell $(CYGPATH) '$(MINIZIP_DIR)')
 TOMMATH_DIR_NATIVE	= $(shell $(CYGPATH) '$(TOMMATH_DIR)')
+TCL_BUILDTIME_LIBRARY	= $(shell $(CYGPATH) '$(TOP_DIR)/library')
 
 DLLSUFFIX		= @DLLSUFFIX@
 LIBSUFFIX		= @LIBSUFFIX@
@@ -711,6 +712,16 @@ tclPkgConfig.${OBJEXT}: tclPkgConfig.c
 		-DCFG_RUNTIME_INCDIR="\"$(includedir_native)\"" \
 		-DCFG_RUNTIME_DOCDIR="\"$(mandir_native)\"" \
 		-DCFG_RUNTIME_DLLFILE="\"$(TCL_DLL_FILE)\"" \
+		-DCFG_BUILDTIME_SCRDIR="\"$(TCL_BUILDTIME_LIBRARY)\"" \
+		-DBUILD_tcl \
+		@DEPARG@ $(CC_OBJNAME)
+
+# Pass CFG_BUILDTIME_SCRDIR as it is used to search for init.tcl.
+# Do not define other CFG_* variables for tclInterp.obj as on Windows
+# it does not make sense to include them in the search path.
+tclInterp.${OBJEXT}: tclInterp.c
+	$(CC)	-c $(CC_SWITCHES)			\
+		-DCFG_BUILDTIME_SCRDIR="\"$(TCL_BUILDTIME_LIBRARY)\"" \
 		-DBUILD_tcl \
 		@DEPARG@ $(CC_OBJNAME)
 
