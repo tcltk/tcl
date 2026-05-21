@@ -1404,6 +1404,20 @@ namespace eval tcl::test::exec {
             auto_execok testApp
         } -result [list [nativeTestPath auto_execok-win-2.3-1 testApp.bat]]
 
+    test auto_execok-win-2.4 {
+        auto_execok - verify files without extension are skipped (Bug 596936dd)
+    } -constraints win -setup {
+        set newCwd [pushContext auto_execok-win-2.4]
+        writeFile [file join $newCwd testApp] ""
+        writeFile [file join $newCwd testApp.bat] ""
+    } -body {
+        list [auto_execok testApp] [auto_execok testApp.bat]
+    } -cleanup {
+        popContext
+        rmdirs $newCwd
+    } -result {{{.\testApp.bat}} {{.\testApp.bat}}}
+
+
     test auto_execok-win-3.1 "auto_execok - verify Windows directory checked before PATH" \
         -constraints haveTestApp \
         -setup {

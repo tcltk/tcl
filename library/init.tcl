@@ -655,13 +655,16 @@ proc auto_execok arg {
 			   erase exit ftype for if md mkdir mklink move path \
 			   pause prompt rd ren rename rmdir set start time \
 			   title type ver vol]
+    # Add an initial {} extension check first but only if
+    # an extension is present in $name
     if {[info exists env(PATHEXT)]} {
-	# Add an initial ; to have the {} extension check first.
-	set execExtensions [split ";$env(PATHEXT)" ";"]
+	set execExtensions [split "$env(PATHEXT)" ";"]
     } else {
-	set execExtensions [list {} .com .exe .bat .cmd]
+	set execExtensions [list .com .exe .bat .cmd]
     }
-
+    if {[file extension $name] ne ""} {
+        ledit execExtensions 0 -1 {}
+    }
     if {[llength [file split $name]] != 1} {
 	foreach ext $execExtensions {
 	    set file ${name}[string tolower $ext]
