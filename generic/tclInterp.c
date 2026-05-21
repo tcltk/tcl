@@ -506,18 +506,21 @@ LocatePreInitScript(
 
     TRY_PATH(TclJoinPath(3, pathParts, false));
 
-    /* If we are running the build environment, prior to install ... */
-#if defined(CFG_BUILDTIME_BINDIR) && defined(CFG_BUILDTIME_SCRDIR)
+    /*
+     * Include the buildtime script location iff we are running in the build
+     * tree environment.
+     */
+#if defined(TCL_BUILDTIME_BINDIR) && defined(TCL_BUILDTIME_SCRDIR)
     assert(exeDirPtr);
 #ifdef _WIN32
     int runningInBuild =
-	strcasecmp(CFG_BUILDTIME_BINDIR, Tcl_GetString(exeDirPtr)) == 0;
+	strcasecmp(TCL_BUILDTIME_BINDIR, Tcl_GetString(exeDirPtr)) == 0;
 #else
     int runningInBuild =
-	strcmp(CFG_BUILDTIME_BINDIR, Tcl_GetString(exeDirPtr)) == 0;
+	strcmp(TCL_BUILDTIME_BINDIR, Tcl_GetString(exeDirPtr)) == 0;
 #endif
     if (runningInBuild) {
-	TRY_PATH(Tcl_NewStringObj(CFG_BUILDTIME_SCRDIR, -1));
+	TRY_PATH(Tcl_NewStringObj(TCL_BUILDTIME_SCRDIR, -1));
     }
 #endif
 

@@ -713,17 +713,16 @@ tclPkgConfig.${OBJEXT}: tclPkgConfig.c
 		-DCFG_RUNTIME_INCDIR="\"$(includedir_native)\"" \
 		-DCFG_RUNTIME_DOCDIR="\"$(mandir_native)\"" \
 		-DCFG_RUNTIME_DLLFILE="\"$(TCL_DLL_FILE)\"" \
-		-DCFG_BUILDTIME_SCRDIR="\"$(TCL_BUILDTIME_LIBRARY)\"" \
 		-DBUILD_tcl \
 		@DEPARG@ $(CC_OBJNAME)
 
 # Pass CFG_BUILDTIME_SCRDIR as it is used to search for init.tcl.
-# Do not define other CFG_* variables for tclInterp.obj as on Windows
+# Do not define CFG_* variables for tclInterp.obj as on Windows
 # it does not make sense to include them in the search path.
 tclInterp.${OBJEXT}: tclInterp.c
 	$(CC)	-c $(CC_SWITCHES)			\
-		-DCFG_BUILDTIME_SCRDIR="\"$(TCL_BUILDTIME_LIBRARY)\"" \
-		-DCFG_BUILDTIME_BINDIR="\"$(ABS_BUILD_DIR)\"" \
+		-DTCL_BUILDTIME_SCRDIR="\"$(TCL_BUILDTIME_LIBRARY)\"" \
+		-DTCL_BUILDTIME_BINDIR="\"$(ABS_BUILD_DIR)\"" \
 		-DBUILD_tcl \
 		@DEPARG@ $(CC_OBJNAME)
 

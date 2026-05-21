@@ -154,10 +154,6 @@ static Tcl_Config const cfg[] = {
     {"includedir,install",	CFG_INSTALL_INCDIR},
     {"docdir,install",		CFG_INSTALL_DOCDIR},
 
-    /* Build time paths to various stuff */
-
-    {"scriptdir,build",		CFG_BUILDTIME_SCRDIR},
-
     /* Last entry, closes the array */
     {NULL, NULL}
 };
