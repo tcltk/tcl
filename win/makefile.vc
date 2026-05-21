@@ -922,6 +922,15 @@ $(TMP_DIR)\tclPkgConfig.obj: $(GENERICDIR)\tclPkgConfig.c
 	/DCFG_RUNTIME_DLLFILE="\"$(TCL_LIB_FILE)\""     \
 	-Fo$@ $?
 
+# Pass CFG_BUILDTIME_SCRDIR as it is used to search for init.tcl.
+# Do not define CFG_* variables for tclInterp.obj as on Windows
+# it does not make sense to include them in the search path.
+$(TMP_DIR)\tclInterp.obj: $(GENERICDIR)\tclInterp.c
+	$(cc32) $(pkgcflags) \
+	/DTCL_BUILDTIME_SCRDIR="\"$(ROOT:\=/)/library\"" \
+	/DTCL_BUILDTIME_BINDIR="\"$(OUT_DIR:\=/)\"" \
+	-Fo$@ $?
+
 $(TMP_DIR)\tclAppInit.obj: $(WIN_DIR)\tclAppInit.c
 	$(cc32) $(appcflags) /DUNICODE /D_UNICODE \
 	    -Fo$@ $?

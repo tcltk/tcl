@@ -32,7 +32,7 @@ Tcl DLL in all build configurations.
 - [`Tcl_UtfToNormalized()`, `Tcl_UtfToNormalizedDString()` &mdash; C API for Unicode normalization](https://core.tcl-lang.org/tips/doc/trunk/tip/726.md)
 - [`Tcl_UtfToExternalEx()` and `Tcl_ExternalToUtfEx()` &mdash; C encoding API supporting output buffers larger than INT_MAX](https://core.tcl-lang.org/tips/doc/trunk/tip/737.md)
 - [New API for monotonic clock and microseconds resolution](https://core.tcl-lang.org/tips/doc/trunk/tip/723.md)
-- [Windows `auto_execok` enhancements and `exec` search reform](https://core.tcl-lang.org/tips/doc/trunk/tip/755.md)
+- [Windows `auto_execok` enhancements and `exec` search reform](https://core.tcl-lang.org/tips/doc/trunk/tip/753.md)
 
 # Changes in interpreter initialization
 
@@ -51,6 +51,7 @@ for list operations on large lists.
 - [Inconsistent `glob` matching on MacOS](https://core.tcl-lang.org/tcl/tktview/e6ca0b1b)
 - [`file normalize` does not uniquely identify a file on MacOS](https://core.tcl-lang.org/tcl/tktview/108904173c)
 - [Inconsistencies between `cd` and `file normalize` for volume-relative paths on Windows](https://core.tcl-lang.org/tcl/tktview/bca391ab51)
+- [Tcl cannot run from an arbitrary build directory with --disable-zipfs](https://core.tcl-lang.org/tcl/tktview/006bef5d75)
 
 # Updated bundled packages, libraries, standards, data
  - Unicode 18.0.0 (draft)

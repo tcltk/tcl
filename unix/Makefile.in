@@ -226,6 +226,7 @@ DTRACE			= @DTRACE@
 SRC_DIR			= @srcdir@
 TOP_DIR			= @TCL_SRC_DIR@
 BUILD_DIR		= @builddir@
+ABS_BUILD_DIR		= @abs_builddir@
 GENERIC_DIR		= $(TOP_DIR)/generic
 COMPAT_DIR		= $(TOP_DIR)/compat
 TOOL_DIR		= $(TOP_DIR)/tools
@@ -1404,6 +1405,8 @@ tclInterp.o: $(GENERIC_DIR)/tclInterp.c
 		-DCFG_RUNTIME_LIBDIR="\"$(libdir)\"" \
 		-DCFG_RUNTIME_BINDIR="\"$(bindir)\"" \
 		-DCFG_RUNTIME_SCRDIR="\"$(TCL_LIBRARY)\"" \
+		-DTCL_BUILDTIME_SCRDIR="\"$(TCL_BUILDTIME_LIBRARY)\"" \
+		-DTCL_BUILDTIME_BINDIR="\"$(ABS_BUILD_DIR)\"" \
 		$(GENERIC_DIR)/tclInterp.c
 
 tclIO.o: $(GENERIC_DIR)/tclIO.c $(IOHDR)
