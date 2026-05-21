@@ -666,21 +666,36 @@ EnvTraceProc(
 
     if (flags & TCL_TRACE_WRITES) {
 	const char *value;
-	Tcl_DString ds;
 
 	value = Tcl_GetVar2(interp, "env", name2, TCL_GLOBAL_ONLY);
-	Tcl_DStringInit(&ds);
-	if (Tcl_UtfToExternalDStringEx(NULL, TCLFSENCODING, name2, -1, 0, &ds, NULL) != TCL_OK) {
+#if defined(_WIN32)
+	/*
+	 * Setting to empty string on Windows -> unset env variable. This
+	 * will recurse back to this function.
+	 */
+	if (value[0] == '\0') {
+	    (void)Tcl_UnsetVar2(interp, "env", name2, TCL_GLOBAL_ONLY);
+	    return NULL;
+	} else
+#endif
+	{
+	    Tcl_DString ds;
+
+	    Tcl_DStringInit(&ds);
+	    if (Tcl_UtfToExternalDStringEx(NULL, TCLFSENCODING, name2, -1, 0,
+		    &ds, NULL) != TCL_OK) {
+		Tcl_DStringFree(&ds);
+		return (char *) "encoding error";
+	    }
+	    if (Tcl_UtfToExternalDStringEx(NULL, TCLFSENCODING, value, -1, 0,
+		    &ds, NULL) != TCL_OK) {
+		Tcl_DStringFree(&ds);
+		return (char *) "encoding error";
+	    }
 	    Tcl_DStringFree(&ds);
-	    return (char *) "encoding error";
+	    TclSetEnv(name2, value);
+	    TclEnvEpoch++;
 	}
-	if (Tcl_UtfToExternalDStringEx(NULL, TCLFSENCODING, value, -1, 0, &ds, NULL) != TCL_OK) {
-	    Tcl_DStringFree(&ds);
-	    return (char *) "encoding error";
-	}
-	Tcl_DStringFree(&ds);
-	TclSetEnv(name2, value);
-	TclEnvEpoch++;
     }
 
     /*
