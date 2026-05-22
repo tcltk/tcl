@@ -3,8 +3,8 @@ if {[info sharedlibextension] != ".dll"} return
 if {[package vsatisfies [package provide Tcl] 9.0-]} {
     # On static builds, registry command is a static package
     if {![::tcl::build-info static]} {
-        package ifneeded registry 1.3.7 \
-            [list load [file join $dir tcl9registry13.dll] Registry]
+	package ifneeded registry 1.3.7 \
+	    [list load [file join $dir tcl9registry13.dll] Registry]
     }
 } else {
     package ifneeded registry 1.3.7 \

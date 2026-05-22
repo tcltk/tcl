@@ -242,9 +242,9 @@ test basic-15.2 {Tcl_CreateObjCommand, Bug 0e4d88b650} -setup {
 }
 test basic-15.3 {Tcl_CreateObjCommand, Bug 24d7f1a695} -body {
     namespace eval ns {
-        proc p {} {}; proc q {} {};
-        namespace delete [namespace current];
-        proc p {} {}; proc q {} {}
+	proc p {} {}; proc q {} {};
+	namespace delete [namespace current];
+	proc p {} {}; proc q {} {}
     }
     # APN - current behavior is that namespace continues to exist
     # as it is recreated by the proc calls after the ns delete.

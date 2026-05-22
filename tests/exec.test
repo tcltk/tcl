@@ -30,8 +30,8 @@ if {[testConstraint win] && ![info exists ::env(CI)] &&
     [info exists ::env(LOCALAPPDATA)]} {
     set wingetPath [file join $::env(LOCALAPPDATA) "Microsoft" "WindowsApps" "winget.exe"]
     if {[file exists $wingetPath]} {
-        # Ensure it is on the PATH
-        testConstraint haveWinget 1
+	# Ensure it is on the PATH
+	testConstraint haveWinget 1
     }
 }
 

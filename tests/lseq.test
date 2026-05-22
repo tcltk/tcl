@@ -156,7 +156,7 @@ test lseq-1.24 {consistence, use double (even if representable as integer) in al
 } [lrepeat 6 {0.0 1.0 2.0}]
 test lseq-1.25 {consistence, use double (even if representable as integer) in all variants, if contains a double somewhere} {
     list [lseq [expr {double(0)}] 2] [lseq 0 [expr {double(2)}]] [lseq [expr {double(0)}] count 3] \
-        [lseq 0 count 3 by [expr {double(1)}]] [lseq 0 .. [expr {double(2)}]] [lseq 0 to 2 by [expr {double(1)}]]
+	[lseq 0 count 3 by [expr {double(1)}]] [lseq 0 .. [expr {double(2)}]] [lseq 0 to 2 by [expr {double(1)}]]
 } [lrepeat 6 {0.0 1.0 2.0}]
 test lseq-1.26 {consistence, double always remains double} {
     list [lseq        1              3.0      ] \

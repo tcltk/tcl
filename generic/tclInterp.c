@@ -157,7 +157,7 @@ typedef struct {
 
 /*
  * Limit callbacks handled by scripts are modelled as structures which are
- * stored in hashes indexed by a two-word key. 
+ * stored in hashes indexed by a two-word key.
  */
 
 typedef struct {
