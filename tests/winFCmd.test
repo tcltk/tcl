@@ -1403,16 +1403,16 @@ testConstraint haveTwoDrives 0
 if {$::tcl_platform(platform) eq "windows"} {
     set drive [string toupper [lindex [file split [pwd]] 0]]
     foreach otherDrive [file volumes] {
-        if {$otherDrive ne $drive
-            && [lindex [file system $otherDrive] 0] eq "native"} {
-            testConstraint haveTwoDrives 1
-            # Do not use file join here. We need a string literal
-            # for the bug, not one with an internal file system rep
-            set pathInOther [string cat \
-                                    ${otherDrive} \
-                                    [lindex [glob -directory $otherDrive -tails *] 0]]
-            break
-        }
+	if {$otherDrive ne $drive
+	    && [lindex [file system $otherDrive] 0] eq "native"} {
+	    testConstraint haveTwoDrives 1
+	    # Do not use file join here. We need a string literal
+	    # for the bug, not one with an internal file system rep
+	    set pathInOther [string cat \
+		      ${otherDrive} \
+		      [lindex [glob -directory $otherDrive -tails *] 0]]
+	    break
+	}
     }
 }
 

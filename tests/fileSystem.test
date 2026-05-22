@@ -25,10 +25,10 @@ namespace eval ::tcl::test::fileSystem {
     # notWSL constraint is true when running under native Windows or
     # native Unix.
     testConstraint notWsl \
-        [expr {
-            $::tcl_platform(platform) eq "windows"
-            || [llength [array names ::env *WSL*]] == 0
-        }]
+	[expr {
+	    $::tcl_platform(platform) eq "windows"
+	    || [llength [array names ::env *WSL*]] == 0
+	}]
 
 testConstraint loaddll 0
 catch {
