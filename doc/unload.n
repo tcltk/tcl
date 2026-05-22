@@ -21,7 +21,7 @@ unload \- Unload machine code
 .PP
 This command tries to unload shared libraries previously loaded
 with \fBload\fR from the application's address space.  \fIfileName\fR
-is the name of the file containing the library file to be unload;  it
+is the name of the file containing the library file unload;  it
 must be the same as the filename provided to \fBload\fR for
 loading the library.
 The \fIprefix\fR argument is the prefix (as
@@ -113,6 +113,10 @@ the library is used by other interpreters),
 library is used only by the target interpreter and the library will be
 detached from the application as soon as the unload procedure returns,
 the \fIflags\fR argument will be set to \fBTCL_UNLOAD_DETACH_FROM_PROCESS\fR.
+.PP
+The unload procedure must take care to delete any commands it owns, rescind
+callbacks or event handler, and free all resources such as file handles, memory,
+TSD storage.
 .SS NOTES
 .PP
 The \fBunload\fR command cannot unload libraries that are statically
