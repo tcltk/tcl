@@ -56,7 +56,7 @@ jobs:
               "--enable-symbols=all"
             ]
   msvc:
-    runs-on: windows-2025
+    runs-on: windows-2025-vs2026
     needs: plan
     defaults:
       run:
@@ -97,7 +97,7 @@ jobs:
         env:
           ERROR_ON_FAILURES: 1
   gcc:
-    runs-on: windows-2025
+    runs-on: windows-2025-vs2026
     needs: plan
     defaults:
       run:
