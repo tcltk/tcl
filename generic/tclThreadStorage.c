@@ -39,9 +39,12 @@ static struct {
     sig_atomic_t counter;	/* The number of different Tcl TSDs used
 				 * across *all* threads. This is a strictly
 				 * increasing value. */
+    sig_atomic_t numThreads;	/* The number of threads that have active TSD
+				 * tables so we know when memory can be safely
+				 * freed (Bug e55a589d2b). */
     Tcl_Mutex mutex;		/* Protection for the rest of this structure,
 				 * which holds per-process data. */
-} tsdGlobal = { NULL, 0, NULL };
+} tsdGlobal = { NULL, 0, 0, NULL };
 
 /*
  * The type of the data held per thread in a system TSD.
@@ -101,6 +104,10 @@ TSDTableCreate(void)
 	tsdTablePtr->tablePtr[i] = NULL;
     }
 
+    Tcl_MutexLock(&tsdGlobal.mutex);
+    tsdGlobal.numThreads++;
+    Tcl_MutexUnlock(&tsdGlobal.mutex);
+
     return tsdTablePtr;
 }
 
@@ -123,6 +130,9 @@ TSDTableDelete(
 
     TclpSysFree(tsdTablePtr->tablePtr);
     TclpSysFree(tsdTablePtr);
+    Tcl_MutexLock(&tsdGlobal.mutex);
+    tsdGlobal.numThreads--;
+    Tcl_MutexUnlock(&tsdGlobal.mutex);
 }
 
 /*
@@ -326,6 +336,7 @@ TclInitThreadStorage(void)
  *
  *	This procedure cleans up the thread storage data key for all threads.
  *	IMPORTANT: All Tcl threads must be finalized before calling this!
+ *	Otherwise, the thread storage area may not be cleaned up.
  *
  * Results:
  *	None.
@@ -339,8 +350,22 @@ TclInitThreadStorage(void)
 void
 TclFinalizeThreadStorage(void)
 {
-    TclpThreadDeleteKey(tsdGlobal.key);
-    tsdGlobal.key = NULL;
+    int safeToFree = 0;
+    /*
+     * Bug e55a589d2b -- If there are still threads with active TSD tables,
+     * we can't safely free the key or the tables, because the threads might
+     * still be using them. This is not a complete solution but there really
+     * isn't any when threads do not coordinate exits by joining. There is
+     * potential for a memory / TLS leak here but better than a crash.
+     * Process should be exiting in any case.
+     */
+    Tcl_MutexLock(&tsdGlobal.mutex);
+    safeToFree = (tsdGlobal.numThreads == 0);
+    Tcl_MutexUnlock(&tsdGlobal.mutex);
+    if (safeToFree) {
+	TclpThreadDeleteKey(tsdGlobal.key);
+	tsdGlobal.key = NULL;
+    }
 }
 
 #else /* !TCL_THREADS */
