@@ -51,7 +51,7 @@ testConstraint testsimplefilesystem [llength [info commands ::testsimplefilesyst
 testConstraint notInCIenv           [expr {![info exists ::env(CI)]}]
 
 variable caseSensitiveFS [expr {
-    $::tcl_platform(os) ne "Darwin" && $::tcl_platform(platform) ne "windows"
+    $::tcl_platform(os) ne "Darwin" && $::tcl_platform(os) ne "Windows NT"
 }]
 testConstraint caseSensitiveFS $caseSensitiveFS
 

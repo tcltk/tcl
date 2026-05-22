@@ -548,7 +548,7 @@ $(EXECTESTAPP): execTestApp.$(OBJEXT)
 
 binaries: $(TCL_STUB_LIB_FILE) @LIBRARIES@ winextensions ${TCL_ZIP_FILE} $(TCLSH)
 
-winextensions: ${DDE_DLL_FILE}
+winextensions: ${DDE_DLL_FILE} tclWinReg.${OBJEXT}
 
 libraries:
 

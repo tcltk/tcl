@@ -110,7 +110,7 @@ MODULE_SCOPE void	TclWinGenerateChannelName(char channelName[],
 			    const char *channelTypeName, void *channelImpl);
 MODULE_SCOPE const char*TclpGetUserName(Tcl_DString *bufferPtr);
 
-MODULE_SCOPE void	TclWinAppendSystemError(Tcl_Interp *, DWORD error);
+MODULE_SCOPE void	TclWinAppendSystemError(Tcl_Interp *, unsigned error);
 
 /* Needed by tclWinFile.c and tclWinFCmd.c */
 #ifndef FILE_ATTRIBUTE_REPARSE_POINT

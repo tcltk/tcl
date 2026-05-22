@@ -12,7 +12,7 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
-#include "tclInt.h"
+#include "tclWinInt.h"
 #ifdef _MSC_VER
 #   pragma comment (lib, "advapi32.lib")
 #endif
@@ -88,7 +88,6 @@ static DWORD lastType = REG_RESOURCE_LIST;
  * Declarations for functions defined in this file.
  */
 
-static void		TclWinAppendSystemError(Tcl_Interp *interp, DWORD error);
 static int		BroadcastValue(Tcl_Interp *interp, Tcl_Size objc,
 			    Tcl_Obj *const objv[]);
 static DWORD		ConvertDWORD(DWORD type, DWORD value);
@@ -719,7 +718,7 @@ GetValue(
 	    WCHAR *wp = (WCHAR *) p;
 
 	    Tcl_DStringInit(&buf);
-	    Tcl_WCharToUtfDString(wp, wcslen(wp), &buf);
+	    Tcl_WCharToUtfDString(wp, -1, &buf);
 	    Tcl_ListObjAppendElement(interp, resultPtr,
 		    Tcl_NewStringObj(Tcl_DStringValue(&buf),
 			    Tcl_DStringLength(&buf)));
@@ -734,7 +733,7 @@ GetValue(
     } else if ((type == REG_SZ) || (type == REG_EXPAND_SZ)) {
 	WCHAR *wp = (WCHAR *) Tcl_DStringValue(&data);
 	Tcl_DStringInit(&buf);
-	Tcl_WCharToUtfDString((const WCHAR *)Tcl_DStringValue(&data), wcslen(wp), &buf);
+	Tcl_WCharToUtfDString(wp, -1, &buf);
 	Tcl_DStringResult(interp, &buf);
     } else {
 	/*
@@ -1329,79 +1328,6 @@ BroadcastValue(
     Tcl_SetObjResult(interp, objPtr);
 
     return TCL_OK;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclWinAppendSystemError --
- *
- *	Formats a Windows system error message and places it into
- *	the interpreter result.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Modifies the interpreter result and sets the error code.
- *
- *----------------------------------------------------------------------
- */
-
-void
-TclWinAppendSystemError(
-    Tcl_Interp *interp,		/* Current interpreter. */
-    DWORD error)		/* Result code from error. */
-{
-    Tcl_Size length;
-    WCHAR *tMsgPtr, **tMsgPtrPtr = &tMsgPtr;
-    const char *msg;
-    char id[TCL_INTEGER_SPACE], msgBuf[24 + TCL_INTEGER_SPACE];
-    Tcl_DString ds;
-    Tcl_Obj *resultPtr = Tcl_GetObjResult(interp);
-
-    if (Tcl_IsShared(resultPtr)) {
-	resultPtr = Tcl_DuplicateObj(resultPtr);
-    }
-    length = FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM
-	    | FORMAT_MESSAGE_ALLOCATE_BUFFER, NULL, error,
-	    MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (WCHAR *) tMsgPtrPtr,
-	    0, NULL);
-    if (length == 0) {
-	snprintf(msgBuf, sizeof(msgBuf), "unknown error: %ld", error);
-	msg = msgBuf;
-    } else {
-	char *msgPtr;
-
-	Tcl_DStringInit(&ds);
-	Tcl_WCharToUtfDString(tMsgPtr, wcslen(tMsgPtr), &ds);
-	LocalFree(tMsgPtr);
-
-	msgPtr = Tcl_DStringValue(&ds);
-	length = Tcl_DStringLength(&ds);
-
-	/*
-	 * Trim the trailing CR/LF from the system message.
-	 */
-
-	if (msgPtr[length-1] == '\n') {
-	    --length;
-	}
-	if (msgPtr[length-1] == '\r') {
-	    --length;
-	}
-	msgPtr[length] = 0;
-	msg = msgPtr;
-    }
-
-    snprintf(id, sizeof(id), "%ld", error);
-    Tcl_SetErrorCode(interp, "WINDOWS", id, msg, (char *)NULL);
-    Tcl_AppendToObj(resultPtr, msg, length);
-    Tcl_SetObjResult(interp, resultPtr);
-
-    if (length != 0) {
-	Tcl_DStringFree(&ds);
-    }
 }
 
 /*

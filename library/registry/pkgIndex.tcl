@@ -1,4 +1,4 @@
-if {$::tcl_platform(platform) != "windows"} return
+if {$::tcl_platform(os) ne "Windows NT"} return
 package ifneeded registry [info patchlevel] [string cat \
 	"interp alias {} ::registry {} ::tcl::registry;" \
     "package provide registry [info patchlevel]" \
