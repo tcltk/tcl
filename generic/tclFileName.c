@@ -909,8 +909,8 @@ TclpNativeJoinPath(
 	 * Check to see if we need to append a separator.
 	 */
 
-	if ((length > 0) &&
-		(start[length-1] != '/') && (start[length-1] != ':')) {
+	if ((length > 0) && (start[length-1] != '/') &&
+		(start[length-1] != '\\') && (start[length-1] != ':')) {
 	    Tcl_AppendToObj(prefix, "/", 1);
 	    (void)TclGetStringFromObj(prefix, &length);
 	}

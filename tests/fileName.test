@@ -1467,6 +1467,26 @@ test filename-16.17 {windows specific globbing} -constraints {win} -body {
     list [glob -nocomplain -tails -dir C:/ *] \
 	[glob -nocomplain -tails -dir C: *]
 } -match compareWords -result equal
+test filename-16.18.1 {
+    Bug e860418c2d - glob -dir $dir -tail has leading / if $dir ends in a \
+} -constraints win -setup {
+    lassign [file split $::env(WINDIR)] drv fn
+    set drv [file nativename $drv]
+} -body {
+    lindex [glob -dir ${drv} -tails $fn] 0
+} -cleanup {
+    unset -nocomplain drv fn
+} -result [file tail $::env(WINDIR)]
+test filename-16.18.2 {
+    Bug e860418c2d - glob -dir $dir has extra separator if $dir ends in \
+} -constraints win -setup {
+    lassign [file split $::env(WINDIR)] drv fn
+    set drv [file nativename $drv]
+} -body {
+    lindex [glob -dir ${drv} $fn] 0
+} -cleanup {
+    unset -nocomplain drv fn
+} -result $::env(WINDIR)
 
 # Put the working directory back now that we're done with globbing in C:/
 if {[testConstraint win]} {
