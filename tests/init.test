@@ -250,7 +250,7 @@ test InitAutoPath-1.0 {
     $ip eval {tcl::InitAutoPath}
 } -cleanup {
     interp delete $ip
-} -result {}
+} -result [list {*}$::auto_path /some/directory /some]
 
 
 # cleanup

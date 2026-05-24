@@ -702,6 +702,8 @@ InitAutoPathObjCmd(
 	    Tcl_DecrRefCount(autoPathPtr);
 	    return TCL_ERROR;
 	}
+    } else {
+	autoPathPtr = Tcl_DuplicateObj(autoPathPtr);
     }
 
     /* tcl_library and its parent */
