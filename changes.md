@@ -49,9 +49,10 @@ for list operations on large lists.
 
 # Bug fixes
 - [Inconsistent `glob` matching on MacOS](https://core.tcl-lang.org/tcl/tktview/e6ca0b1b)
-- [`file normalize` does not uniquely identify a file on MacOS](https://core.tcl-lang.org/tcl/tktview/108904173c)
-- [Inconsistencies between `cd` and `file normalize` for volume-relative paths on Windows](https://core.tcl-lang.org/tcl/tktview/bca391ab51)
-- [Tcl cannot run from an arbitrary build directory with --disable-zipfs](https://core.tcl-lang.org/tcl/tktview/006bef5d75)
+- [`file normalize` does not uniquely identify a file on MacOS](https://core.tcl-lang.org/tcl/tktview/10890417)
+- [Inconsistencies between `cd` and `file normalize` for volume-relative paths on Windows](https://core.tcl-lang.org/tcl/tktview/bca391ab)
+- [Tcl cannot run from an arbitrary build directory with --disable-zipfs](https://core.tcl-lang.org/tcl/tktview/006bef5d)
+- [Crash on finalization with an active thread running.](https://core.tcl-lang.org/tcl/tktview/e55a589d)
 
 # Updated bundled packages, libraries, standards, data
  - Unicode 18.0.0 (draft)
