@@ -576,6 +576,20 @@ test filename-9.24 {Tcl_JoinPath: unix} {testsetplatform} {
 	[file join /x /x {foo/bar}]
     string map [list /x ""] $res
 } {foo/bar /foo/bar /foo/bar}
+test filename-9.25 {
+    Bug 1215dc - Inconsistent file join with volume relative arguments: unix
+} -constraints testsetplatform -body {
+   testsetplatform unix
+   file join //zipfs:/foo c:bar
+} -result "//zipfs:/foo/c:bar"
+test filename-9.26 {
+    Bug 1215dc - Inconsistent file join with volume relative arguments: win
+} -constraints testsetplatform -body {
+   testsetplatform win
+   file join //zipfs:/foo c:bar
+} -result "c:bar"
+
+
 
 test filename-10.1 {Tcl_TranslateFileName} -body {
     testsetplatform unix

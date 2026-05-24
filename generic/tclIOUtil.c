@@ -3914,7 +3914,8 @@ TclGetPathType(
     if (type != TCL_PATH_ABSOLUTE) {
 	type = TclpGetNativePathType(pathPtr, driveNameLengthPtr,
 		driveNameRef);
-	if ((type == TCL_PATH_ABSOLUTE) && (filesystemPtrPtr != NULL)) {
+	/* Bug 1215dca78f - If not relative, need to update owning FS. */
+	if ((type != TCL_PATH_RELATIVE) && (filesystemPtrPtr != NULL)) {
 	    *filesystemPtrPtr = &tclNativeFilesystem;
 	}
     }
