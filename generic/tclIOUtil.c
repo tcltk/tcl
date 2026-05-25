@@ -4010,6 +4010,7 @@ TclFSNonnativePathType(
 		    Tcl_Obj *vol;
 		    Tcl_Size len;
 		    const char *strVol;
+		    bool matched = false;
 
 		    numVolumes--;
 		    Tcl_ListObjIndex(NULL, thisFsVolumes, numVolumes, &vol);
@@ -4019,6 +4020,16 @@ TclFSNonnativePathType(
 		    }
 		    if (strncmp(strVol, path, len) == 0) {
 			type = TCL_PATH_ABSOLUTE;
+			matched = true;
+		    } else if (len > 2 && strVol[len - 1] == '/' &&
+			       strVol[len - 2] == ':' &&
+			       strncmp(strVol, path, len - 2) == 0) {
+			matched = true;
+			type = TCL_PATH_VOLUME_RELATIVE;
+			len--;
+			Tcl_SetObjLength(vol, len);
+		    }
+		    if (matched) {
 			if (filesystemPtrPtr != NULL) {
 			    *filesystemPtrPtr = fsRecPtr->fsPtr;
 			}
@@ -4026,22 +4037,6 @@ TclFSNonnativePathType(
 			    *driveNameLengthPtr = len;
 			}
 			if (driveNameRef != NULL) {
-			    *driveNameRef = vol;
-			    Tcl_IncrRefCount(vol);
-			}
-			break;
-		    }
-		    if (len > 2 && strVol[len-1] == '/' && strVol[len-2] == ':' &&
-			strncmp(strVol, path, len-2) == 0) {
-			type = TCL_PATH_VOLUME_RELATIVE;
-			if (filesystemPtrPtr != NULL) {
-			    *filesystemPtrPtr = fsRecPtr->fsPtr;
-			}
-			if (driveNameLengthPtr != NULL) {
-			    *driveNameLengthPtr = len-1;
-			}
-			if (driveNameRef != NULL) {
-			    Tcl_SetObjLength(vol, len-1);
 			    *driveNameRef = vol;
 			    Tcl_IncrRefCount(vol);
 			}
