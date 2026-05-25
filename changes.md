@@ -24,6 +24,7 @@ to the userbase.
  - [File normalization inconsistency for glob result on Windows](https://core.tcl-lang.org/tcl/info/108904)
  - [Avoid ClockClientData typedef redefinition](https://core.tcl-lang.org/tcl/info/4724f3)
  - [Building sqlite3 for tcl8 redefines typedef](https://core.tcl-lang.org/tcl/info/ad08bc)
+ - [Inconsistent file join with volume-relative arguments.](https://core.tcl-lang.org/tcl/info/1215dc)
 
 # Updated bundled packages, libraries, standards, data
  - autoconf 2.73
