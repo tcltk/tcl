@@ -1081,7 +1081,15 @@ TclJoinPath(
 		}
 	    }
 
-	    if (length > 0 && ptr[length -1] != '/') {
+	    /*
+	     * The check against //zipfs: is required when joining relative
+	     * zipfs paths. For example, [file join c:/ //zipfs:foo]. See
+	     * [1215dca7] or tests filename-9.25.{3,4}. Unfortunately, bit
+	     * of a hack but Tcl lacks VFS abstractions to generalize this.
+	     * Happy to be proven wrong.
+	     */
+	    if (length > 0 && ptr[length - 1] != '/' &&
+		(length != 8 || strcmp(ptr, "//zipfs:"))) {
 		Tcl_AppendToObj(res, &separator, 1);
 		(void)TclGetStringFromObj(res, &length);
 	    }

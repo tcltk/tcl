@@ -3911,7 +3911,7 @@ TclGetPathType(
     type = TclFSNonnativePathType(path, pathLen, filesystemPtrPtr,
 	    driveNameLengthPtr, driveNameRef);
 
-    if (type != TCL_PATH_ABSOLUTE) {
+    if (type == TCL_PATH_RELATIVE) {
 	type = TclpGetNativePathType(pathPtr, driveNameLengthPtr,
 		driveNameRef);
 	/* Bug 1215dca78f - If not relative, need to update owning FS. */
@@ -4031,9 +4031,25 @@ TclFSNonnativePathType(
 			}
 			break;
 		    }
+		    if (len > 2 && strVol[len-1] == '/' && strVol[len-2] == ':' &&
+			strncmp(strVol, path, len-2) == 0) {
+			type = TCL_PATH_VOLUME_RELATIVE;
+			if (filesystemPtrPtr != NULL) {
+			    *filesystemPtrPtr = fsRecPtr->fsPtr;
+			}
+			if (driveNameLengthPtr != NULL) {
+			    *driveNameLengthPtr = len-1;
+			}
+			if (driveNameRef != NULL) {
+			    Tcl_SetObjLength(vol, len-1);
+			    *driveNameRef = vol;
+			    Tcl_IncrRefCount(vol);
+			}
+			break;
+		    }
 		}
 		Tcl_DecrRefCount(thisFsVolumes);
-		if (type == TCL_PATH_ABSOLUTE) {
+		if (type != TCL_PATH_RELATIVE) {
 		    /*
 		     * No need to examine additional filesystems.
 		     */
