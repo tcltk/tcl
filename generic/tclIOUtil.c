@@ -3914,10 +3914,11 @@ TclGetPathType(
     type = TclFSNonnativePathType(path, pathLen, filesystemPtrPtr,
 	    driveNameLengthPtr, driveNameRef);
 
-    if (type != TCL_PATH_ABSOLUTE) {
+    if (type == TCL_PATH_RELATIVE) {
 	type = TclpGetNativePathType(pathPtr, driveNameLengthPtr,
 		driveNameRef);
-	if ((type == TCL_PATH_ABSOLUTE) && (filesystemPtrPtr != NULL)) {
+	/* Bug 1215dca78f - If not relative, need to update owning FS. */
+	if ((type != TCL_PATH_RELATIVE) && (filesystemPtrPtr != NULL)) {
 	    *filesystemPtrPtr = &tclNativeFilesystem;
 	}
     }
@@ -4012,6 +4013,7 @@ TclFSNonnativePathType(
 		    Tcl_Obj *vol;
 		    Tcl_Size len;
 		    const char *strVol;
+		    bool matched = false;
 
 		    numVolumes--;
 		    Tcl_ListObjIndex(NULL, thisFsVolumes, numVolumes, &vol);
@@ -4021,6 +4023,16 @@ TclFSNonnativePathType(
 		    }
 		    if (strncmp(strVol, path, len) == 0) {
 			type = TCL_PATH_ABSOLUTE;
+			matched = true;
+		    } else if (len > 2 && strVol[len - 1] == '/' &&
+			       strVol[len - 2] == ':' &&
+			       strncmp(strVol, path, len - 2) == 0) {
+			matched = true;
+			type = TCL_PATH_VOLUME_RELATIVE;
+			len--;
+			Tcl_SetObjLength(vol, len);
+		    }
+		    if (matched) {
 			if (filesystemPtrPtr != NULL) {
 			    *filesystemPtrPtr = fsRecPtr->fsPtr;
 			}
@@ -4035,7 +4047,7 @@ TclFSNonnativePathType(
 		    }
 		}
 		Tcl_DecrRefCount(thisFsVolumes);
-		if (type == TCL_PATH_ABSOLUTE) {
+		if (type != TCL_PATH_RELATIVE) {
 		    /*
 		     * No need to examine additional filesystems.
 		     */

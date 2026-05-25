@@ -5184,7 +5184,7 @@ typedef struct NRE_callback {
 #define Tcl_Free		TclpFree
 #endif
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__CYGWIN__)
 /* Here, not in tclWinInt.h because that's not included in generic modules */
 MODULE_SCOPE int       Registry_Init(Tcl_Interp *interp);
 #if STATIC_BUILD

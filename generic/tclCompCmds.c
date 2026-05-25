@@ -31,8 +31,8 @@ static AuxDataPrintProc	DisassembleForeachInfo;
 static AuxDataPrintProc	PrintNewForeachInfo;
 static AuxDataPrintProc	DisassembleNewForeachInfo;
 static int		CompileEachloopCmd(Tcl_Interp *interp,
-			    Tcl_Parse *parsePtr, Command *cmdPtr,
-			    CompileEnv *envPtr, int collect);
+			    Tcl_Parse *parsePtr, CompileEnv *envPtr,
+			    int collect);
 static int		CompileDictEachCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    CompileEnv *envPtr, int collect);
@@ -1594,6 +1594,119 @@ TclCompileDictMergeCmd(
 }
 
 int
+TclCompileDictAppendCmd(
+    Tcl_Interp *interp,		/* Used for looking up stuff. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    Command *cmdPtr,		/* Points to definition of command being
+				 * compiled. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    DefineLineInformation;	/* TIP #280 */
+    Tcl_Token *tokenPtr;
+    Tcl_Size i, numWords = parsePtr->numWords;
+    Tcl_LVTIndex dictVarIndex;
+
+    /*
+     * There must be at least two argument after the command. And we impose an
+     * (arbitrary) safe limit; anyone exceeding it should stop worrying about
+     * speed quite so much. ;-)
+     * TODO: Raise the limit...
+     */
+
+    /* TODO: Consider support for compiling expanded args. */
+    if (numWords < 4 || numWords > 100) {
+	return TCL_ERROR;
+    }
+
+    /*
+     * Get the index of the local variable that we will be working with.
+     */
+
+    tokenPtr = TokenAfter(parsePtr->tokenPtr);
+    dictVarIndex = TclLocalScalarFromToken(tokenPtr, envPtr);
+    if (OutOfUintRange(dictVarIndex)) {
+	return TclCompileBasicMin2ArgCmd(interp, parsePtr,cmdPtr, envPtr);
+    }
+
+    /*
+     * Produce the string to concatenate onto the dictionary entry.
+     */
+
+    tokenPtr = TokenAfter(tokenPtr);
+    for (i=2 ; i<numWords ; i++) {
+	PUSH_TOKEN(		tokenPtr, i);
+	tokenPtr = TokenAfter(tokenPtr);
+    }
+    if (numWords > 4) {
+	OP1(			STR_CONCAT1, numWords - 3);
+    }
+
+    /*
+     * Do the concatenation.
+     */
+
+    OP4(			DICT_APPEND, dictVarIndex);
+    return TCL_OK;
+}
+
+int
+TclCompileDictLappendCmd(
+    Tcl_Interp *interp,		/* Used for looking up stuff. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    Command *cmdPtr,		/* Points to definition of command being
+				 * compiled. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    DefineLineInformation;	/* TIP #280 */
+    Tcl_Token *varTokenPtr, *keyTokenPtr, *valueTokenPtr;
+    Tcl_LVTIndex dictVarIndex;
+
+    /*
+     * There must be three arguments after the command.
+     */
+
+    /* TODO: Consider support for compiling expanded args. */
+    /* Probably not.  Why is INST_DICT_LAPPEND limited to one value? */
+    if (parsePtr->numWords != 4) {
+	return TCL_ERROR;
+    }
+
+    /*
+     * Parse the arguments.
+     */
+
+    varTokenPtr = TokenAfter(parsePtr->tokenPtr);
+    keyTokenPtr = TokenAfter(varTokenPtr);
+    valueTokenPtr = TokenAfter(keyTokenPtr);
+    dictVarIndex = TclLocalScalarFromToken(varTokenPtr, envPtr);
+    if (OutOfUintRange(dictVarIndex)) {
+	return TclCompileBasic3ArgCmd(interp, parsePtr, cmdPtr, envPtr);
+    }
+
+    /*
+     * Issue the implementation.
+     */
+
+    PUSH_TOKEN(			keyTokenPtr, 2);
+    PUSH_TOKEN(			valueTokenPtr, 3);
+    OP4(			DICT_LAPPEND, dictVarIndex);
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclCompileDictForCmd, TclCompileDictMapCmd --
+ *
+ *	Compile [dict for] and [dict map]. Delegates code issuing to
+ *	CompileDictEachCmd().
+ *
+ *----------------------------------------------------------------------
+ */
+
+ int
 TclCompileDictForCmd(
     Tcl_Interp *interp,		/* Used for looking up stuff. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
@@ -1619,7 +1732,7 @@ TclCompileDictMapCmd(
 	    TCL_EACH_COLLECT);
 }
 
-int
+static int
 CompileDictEachCmd(
     Tcl_Interp *interp,		/* Used for looking up stuff. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
@@ -1646,7 +1759,7 @@ CompileDictEachCmd(
      */
 
     if (parsePtr->numWords != 4) {
-	return TclCompileBasic3ArgCmd(interp, parsePtr, cmdPtr, envPtr);
+	return TCL_ERROR;
     }
     if (!EnvIsProc(envPtr)) {
 	return TclCompileBasic3ArgCmd(interp, parsePtr, cmdPtr, envPtr);
@@ -1830,6 +1943,16 @@ CompileDictEachCmd(
     }
     return TCL_OK;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclCompileDictUpdateCmd --
+ *
+ *	Compile [dict update].
+ *
+ *----------------------------------------------------------------------
+ */
 
 int
 TclCompileDictUpdateCmd(
@@ -1979,119 +2102,20 @@ TclCompileDictUpdateCmd(
   issueFallback:
     return TclCompileBasicMin2ArgCmd(interp, parsePtr, cmdPtr, envPtr);
 }
-
-int
-TclCompileDictAppendCmd(
-    Tcl_Interp *interp,		/* Used for looking up stuff. */
-    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
-				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to definition of command being
-				 * compiled. */
-    CompileEnv *envPtr)		/* Holds resulting instructions. */
-{
-    DefineLineInformation;	/* TIP #280 */
-    Tcl_Token *tokenPtr;
-    Tcl_Size i, numWords = parsePtr->numWords;
-    Tcl_LVTIndex dictVarIndex;
-
-    /*
-     * There must be at least two argument after the command. And we impose an
-     * (arbitrary) safe limit; anyone exceeding it should stop worrying about
-     * speed quite so much. ;-)
-     * TODO: Raise the limit...
-     */
-
-    /* TODO: Consider support for compiling expanded args. */
-    if (numWords < 4 || numWords > 100) {
-	return TCL_ERROR;
-    }
-
-    /*
-     * Get the index of the local variable that we will be working with.
-     */
-
-    tokenPtr = TokenAfter(parsePtr->tokenPtr);
-    dictVarIndex = TclLocalScalarFromToken(tokenPtr, envPtr);
-    if (OutOfUintRange(dictVarIndex)) {
-	return TclCompileBasicMin2ArgCmd(interp, parsePtr,cmdPtr, envPtr);
-    }
-
-    /*
-     * Produce the string to concatenate onto the dictionary entry.
-     */
-
-    tokenPtr = TokenAfter(tokenPtr);
-    for (i=2 ; i<numWords ; i++) {
-	PUSH_TOKEN(		tokenPtr, i);
-	tokenPtr = TokenAfter(tokenPtr);
-    }
-    if (numWords > 4) {
-	OP1(			STR_CONCAT1, numWords - 3);
-    }
-
-    /*
-     * Do the concatenation.
-     */
-
-    OP4(			DICT_APPEND, dictVarIndex);
-    return TCL_OK;
-}
-
-int
-TclCompileDictLappendCmd(
-    Tcl_Interp *interp,		/* Used for looking up stuff. */
-    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
-				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to definition of command being
-				 * compiled. */
-    CompileEnv *envPtr)		/* Holds resulting instructions. */
-{
-    DefineLineInformation;	/* TIP #280 */
-    Tcl_Token *varTokenPtr, *keyTokenPtr, *valueTokenPtr;
-    Tcl_LVTIndex dictVarIndex;
-
-    /*
-     * There must be three arguments after the command.
-     */
-
-    /* TODO: Consider support for compiling expanded args. */
-    /* Probably not.  Why is INST_DICT_LAPPEND limited to one value? */
-    if (parsePtr->numWords != 4) {
-	return TCL_ERROR;
-    }
-
-    /*
-     * Parse the arguments.
-     */
-
-    varTokenPtr = TokenAfter(parsePtr->tokenPtr);
-    keyTokenPtr = TokenAfter(varTokenPtr);
-    valueTokenPtr = TokenAfter(keyTokenPtr);
-    dictVarIndex = TclLocalScalarFromToken(varTokenPtr, envPtr);
-    if (OutOfUintRange(dictVarIndex)) {
-	return TclCompileBasic3ArgCmd(interp, parsePtr, cmdPtr, envPtr);
-    }
-
-    /*
-     * Issue the implementation.
-     */
-
-    PUSH_TOKEN(			keyTokenPtr, 2);
-    PUSH_TOKEN(			valueTokenPtr, 3);
-    OP4(			DICT_LAPPEND, dictVarIndex);
-    return TCL_OK;
-}
-
+
 /*
  *----------------------------------------------------------------------
  *
  * TclCompileDictWithCmd --
  *
  *	Compile [dict with]. Delegates code issuing to IssueDictWithEmpty()
- *	and IssueDictWithBodied().
+ *	and IssueDictWithBodied(), which handle code issuing for the two
+ *	cases: an empty body (which allows a lot of optimisation) or a body
+ *	with substantive content.
  *
  *----------------------------------------------------------------------
  */
+
 int
 TclCompileDictWithCmd(
     Tcl_Interp *interp,		/* Used for looking up stuff. */
@@ -2786,12 +2810,10 @@ TclCompileForeachCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to definition of command being
-				 * compiled. */
+    TCL_UNUSED(Command *),
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
-    return CompileEachloopCmd(interp, parsePtr, cmdPtr, envPtr,
-	    TCL_EACH_KEEP_NONE);
+    return CompileEachloopCmd(interp, parsePtr, envPtr, TCL_EACH_KEEP_NONE);
 }
 
 /*
@@ -2817,12 +2839,10 @@ TclCompileLmapCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to the definition of the command
-				 * being compiled. */
+    TCL_UNUSED(Command *),
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
-    return CompileEachloopCmd(interp, parsePtr, cmdPtr, envPtr,
-	    TCL_EACH_COLLECT);
+    return CompileEachloopCmd(interp, parsePtr, envPtr, TCL_EACH_COLLECT);
 }
 
 /*
@@ -2848,7 +2868,6 @@ CompileEachloopCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    TCL_UNUSED(Command *),
     CompileEnv *envPtr,		/* Holds resulting instructions. */
     int collect)		/* Select collecting or accumulating mode
 				 * (TCL_EACH_*) */
@@ -3579,7 +3598,7 @@ TclCompileFormatCmd(
      */
 
     tmpObj = Tcl_Format(interp, TclGetString(formatObj), numWords - 2, objv);
-    for (; --i>=0 ;) {
+    while (--i >= 0) {
 	Tcl_DecrRefCount(objv[i]);
     }
     TclStackFree(interp, objv);

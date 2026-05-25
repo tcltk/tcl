@@ -28,10 +28,11 @@ Tcl DLL in all build configurations.
 - [`Tcl_IsEmpty()` &mdash; checks if the string representation of a value would be the empty string](https://core.tcl-lang.org/tips/doc/trunk/tip/711.md)
 - [`Tcl_GetEncodingNameForUser()` &mdash; returns name of encoding from user settings](https://core.tcl-lang.org/tips/doc/trunk/tip/716.md)
 - [`Tcl_AttemptCreateHashEntry()` &mdash; version of `Tcl_CreateHashEntry()` that returns NULL instead of panic'ing on memory allocation errors](https://core.tcl-lang.org/tips/doc/trunk/tip/717.md)
-- [`Tcl_ListObjRange()`, `Tcl_ListObjRepeat()`, `Tcl_TclListObjReverse()` &mdash; C API for new list operations](https://core.tcl-lang.org/tips/doc/trunk/tip/649.md)
+- [`Tcl_ListObjRange()`, `Tcl_ListObjRepeat()`, `Tcl_ListObjReverse()` &mdash; C API for new list operations](https://core.tcl-lang.org/tips/doc/trunk/tip/649.md)
 - [`Tcl_UtfToNormalized()`, `Tcl_UtfToNormalizedDString()` &mdash; C API for Unicode normalization](https://core.tcl-lang.org/tips/doc/trunk/tip/726.md)
 - [`Tcl_UtfToExternalEx()` and `Tcl_ExternalToUtfEx()` &mdash; C encoding API supporting output buffers larger than INT_MAX](https://core.tcl-lang.org/tips/doc/trunk/tip/737.md)
 - [New API for monotonic clock and microseconds resolution](https://core.tcl-lang.org/tips/doc/trunk/tip/723.md)
+- [Windows `auto_execok` enhancements and `exec` search reform](https://core.tcl-lang.org/tips/doc/trunk/tip/753.md)
 
 # Changes in interpreter initialization
 
@@ -48,5 +49,10 @@ for list operations on large lists.
 
 # Bug fixes
 - [Inconsistent `glob` matching on MacOS](https://core.tcl-lang.org/tcl/tktview/e6ca0b1b)
-- [`file normalize` does not uniquely identify a file on MacOS](https://core.tcl-lang.org/tcl/tktview/108904173c)
-- [Inconsistencies between `cd` and `file normalize` for volume-relative paths on Windows](https://core.tcl-lang.org/tcl/tktview/bca391ab51)
+- [`file normalize` does not uniquely identify a file on MacOS](https://core.tcl-lang.org/tcl/tktview/10890417)
+- [Inconsistencies between `cd` and `file normalize` for volume-relative paths on Windows](https://core.tcl-lang.org/tcl/tktview/bca391ab)
+- [Tcl cannot run from an arbitrary build directory with --disable-zipfs](https://core.tcl-lang.org/tcl/tktview/006bef5d)
+- [Crash on finalization with an active thread running.](https://core.tcl-lang.org/tcl/tktview/e55a589d)
+
+# Updated bundled packages, libraries, standards, data
+ - Unicode 18.0.0 (draft)

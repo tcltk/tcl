@@ -11284,7 +11284,7 @@ FixLevelCode(
 	     * !integer, integer != 0
 	     */
 
-	    res = TclGetIntFromObj(NULL, lv [i+1], &val);
+	    res = TclGetIntFromObj(NULL, lv[i + 1], &val);
 	    if ((res != TCL_OK) || (val != 0)) {
 		newlevel = 0;
 	    }

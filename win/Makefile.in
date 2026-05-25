@@ -102,6 +102,7 @@ SRC_DIR			= @srcdir@
 ROOT_DIR		= @srcdir@/..
 TOP_DIR			= $(shell cd '@srcdir@/..'; pwd -W 2>/dev/null || pwd -P)
 BUILD_DIR		= @builddir@
+ABS_BUILD_DIR		= @abs_builddir@
 GENERIC_DIR		= $(TOP_DIR)/generic
 WIN_DIR			= $(TOP_DIR)/win
 UNIX_DIR		= $(TOP_DIR)/unix
@@ -132,6 +133,7 @@ ROOT_DIR_WIN_NATIVE	= $(shell cd '$(ROOT_DIR)' ; pwd -W 2>/dev/null || pwd -P)
 ZLIB_DIR_NATIVE		= $(shell $(CYGPATH) '$(ZLIB_DIR)')
 MINIZIP_DIR_NATIVE	= $(shell $(CYGPATH) '$(MINIZIP_DIR)')
 TOMMATH_DIR_NATIVE	= $(shell $(CYGPATH) '$(TOMMATH_DIR)')
+TCL_BUILDTIME_LIBRARY	= $(shell $(CYGPATH) '$(TOP_DIR)/library')
 
 DLLSUFFIX		= @DLLSUFFIX@
 LIBSUFFIX		= @LIBSUFFIX@
@@ -159,6 +161,8 @@ TEST_LOAD_PRMS		= lappend ::auto_path {$(ROOT_DIR_WIN_NATIVE)/tests};\
 			  package ifneeded dde 1.5a2 [list load ${DDE_DLL_FILE}]
 TEST_LOAD_FACILITIES	= package ifneeded tcl::test ${VERSION}@TCL_PATCH_LEVEL@ [list load ${TEST_DLL_FILE} Tcltest];\
 			  $(TEST_LOAD_PRMS)
+EXECTESTAPP		= execTestApp$(EXEEXT)
+
 ZLIB_DLL_FILE		= zlib1.dll
 TOMMATH_DLL_FILE	= libtommath.dll
 
@@ -534,9 +538,17 @@ tcltest.sh: tcltest.cmd
 
 tcltest: binaries $(TEST_EXE_FILE) $(TEST_DLL_FILE) $(CAT32) tcltest.cmd
 
+exectestapp: $(EXECTESTAPP)
+
+execTestApp.$(OBJEXT): execTestApp.c
+	$(CC) -c $(CC_SWITCHES) -DUNICODE -D_UNICODE @DEPARG@ $(CC_OBJNAME)
+
+$(EXECTESTAPP): execTestApp.$(OBJEXT)
+	$(CC) $(CFLAGS) execTestApp.$(OBJEXT) $(CC_EXENAME) $(LIBS) $(LDFLAGS_CONSOLE)
+
 binaries: $(TCL_STUB_LIB_FILE) @LIBRARIES@ winextensions ${TCL_ZIP_FILE} $(TCLSH)
 
-winextensions: ${DDE_DLL_FILE}
+winextensions: ${DDE_DLL_FILE} tclWinReg.${OBJEXT}
 
 libraries:
 
@@ -701,6 +713,16 @@ tclPkgConfig.${OBJEXT}: tclPkgConfig.c
 		-DCFG_RUNTIME_INCDIR="\"$(includedir_native)\"" \
 		-DCFG_RUNTIME_DOCDIR="\"$(mandir_native)\"" \
 		-DCFG_RUNTIME_DLLFILE="\"$(TCL_DLL_FILE)\"" \
+		-DBUILD_tcl \
+		@DEPARG@ $(CC_OBJNAME)
+
+# Pass CFG_BUILDTIME_SCRDIR as it is used to search for init.tcl.
+# Do not define CFG_* variables for tclInterp.obj as on Windows
+# it does not make sense to include them in the search path.
+tclInterp.${OBJEXT}: tclInterp.c
+	$(CC)	-c $(CC_SWITCHES)			\
+		-DTCL_BUILDTIME_SCRDIR="\"$(TCL_BUILDTIME_LIBRARY)\"" \
+		-DTCL_BUILDTIME_BINDIR="\"$(ABS_BUILD_DIR)\"" \
 		-DBUILD_tcl \
 		@DEPARG@ $(CC_OBJNAME)
 

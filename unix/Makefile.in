@@ -226,6 +226,7 @@ DTRACE			= @DTRACE@
 SRC_DIR			= @srcdir@
 TOP_DIR			= @TCL_SRC_DIR@
 BUILD_DIR		= @builddir@
+ABS_BUILD_DIR		= @abs_builddir@
 GENERIC_DIR		= $(TOP_DIR)/generic
 COMPAT_DIR		= $(TOP_DIR)/compat
 TOOL_DIR		= $(TOP_DIR)/tools
@@ -367,7 +368,7 @@ NOTIFY_OBJS = tclEpollNotfy.o tclKqueueNotfy.o tclSelectNotfy.o
 
 MAC_OSX_OBJS = tclMacOSXBundle.o tclMacOSXFCmd.o tclMacOSXNotify.o
 
-CYGWIN_OBJS = tclWinError.o
+CYGWIN_OBJS = tclWinError.o $(TOP_DIR)/win/tclWinReg.o
 
 DTRACE_OBJ = tclDTrace.o
 
@@ -703,7 +704,8 @@ MAC_OSX_SRCS = \
 	$(MAC_OSX_DIR)/tclMacOSXNotify.c
 
 CYGWIN_SRCS = \
-	$(TOP_DIR)/win/tclWinError.c
+	$(TOP_DIR)/win/tclWinError.c \
+	$(TOP_DIR)/win/tclWinReg.c
 
 DTRACE_HDR = tclDTrace.h
 
@@ -796,7 +798,7 @@ ${TCL_ZIP_FILE}: ${ZIP_INSTALL_OBJS}
 	    cp -a $(TOP_DIR)/library/* ${TCL_VFS_PATH}; \
 	fi
 	mv ${TCL_VFS_PATH}/manifest.txt ${TCL_VFS_PATH}/pkgIndex.tcl
-	rm -rf ${TCL_VFS_PATH}/dde ${TCL_VFS_PATH}/registry
+	rm -rf ${TCL_VFS_PATH}/dde
 	@find ${TCL_VFS_ROOT} -type d -empty -delete
 	@echo "creating ${TCL_ZIP_FILE} from ${TCL_VFS_PATH}"
 	@(zip=`(realpath '${NATIVE_ZIP}' || readlink -m '${NATIVE_ZIP}' || \
@@ -1404,6 +1406,8 @@ tclInterp.o: $(GENERIC_DIR)/tclInterp.c
 		-DCFG_RUNTIME_LIBDIR="\"$(libdir)\"" \
 		-DCFG_RUNTIME_BINDIR="\"$(bindir)\"" \
 		-DCFG_RUNTIME_SCRDIR="\"$(TCL_LIBRARY)\"" \
+		-DTCL_BUILDTIME_SCRDIR="\"$(TCL_BUILDTIME_LIBRARY)\"" \
+		-DTCL_BUILDTIME_BINDIR="\"$(ABS_BUILD_DIR)\"" \
 		$(GENERIC_DIR)/tclInterp.c
 
 tclIO.o: $(GENERIC_DIR)/tclIO.c $(IOHDR)

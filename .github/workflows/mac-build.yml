@@ -3,7 +3,7 @@ on:
   push:
     branches:
     - "main"
-    - "core-9-0-branch"
+    - "core-9-1-branch"
     tags:
     - "core-*"
 permissions:
@@ -21,7 +21,7 @@ jobs:
             echo clang=$(jq -nc '{config: (if env.IsMatched == "true" then env.FULL else env.PARTIAL end) | fromjson }' )
           ) | tee -a $GITHUB_OUTPUT
         env:
-          IsMatched: ${{ github.ref_name == 'main' || github.ref_name == 'core-9-0-branch' }}
+          IsMatched: ${{ github.ref_name == 'main' || github.ref_name == 'core-9-1-branch' }}
           # DO NOT CHANGE THIS MATRIX SPEC; IT AFFECTS OUR COST CONTROLS
           FULL: >
             [

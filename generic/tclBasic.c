@@ -1325,7 +1325,7 @@ Tcl_CreateInterp(void)
 	Tcl_Panic("%s", Tcl_GetStringResult(interp));
     }
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__CYGWIN__)
     /* Ignore failures, let [package require registry] fail instead */
     (void) Registry_Init(interp);
 #endif

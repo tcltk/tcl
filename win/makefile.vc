@@ -210,6 +210,8 @@ TCLDDELIB	= $(OUT_DIR)\$(TCLDDELIBNAME)
 TCLTEST		= $(OUT_DIR)\$(PROJECT)test$(VERSION)$(SUFX:t=).exe
 TCLTESTRAW	= $(TCLTEST:.exe=-raw.exe)
 
+EXECTESTAPP	= $(OUT_DIR)\execTestApp.exe
+
 UTF8PROCDIR	= $(ROOT)\utf8proc
 
 TCLSHOBJS = \
@@ -528,7 +530,7 @@ shell:      libtclzip
 dlls:	    setup $(TCLDDELIB) $(OUT_DIR)\zlib1.dll $(OUT_DIR)\libtommath.dll
 libtclzip:  $(TCLSCRIPTZIP)
 
-tcltest:    setup core $(TCLTEST) dlls
+tcltest:    setup core $(TCLTEST) dlls $(EXECTESTAPP)
 !if $(TCL_EMBED_SCRIPTS) && $(STATIC_BUILD)
 tcltest:      libtclzip
 	@$(COPY) /b "$(TCLTESTRAW)"+"$(TCLSCRIPTZIP)" "$(TCLTEST)"
@@ -611,6 +613,10 @@ $(TCLDDELIB): $(TMP_DIR)\tclWinDde.obj $(TCLSTUBLIB)
 	$(DLLCMD) $**
 	$(_VC_MANIFEST_EMBED_DLL)
 !endif
+
+exectestapp: $(EXECTESTAPP)
+$(EXECTESTAPP): execTestApp.c
+	cl /Fe: $@ $**
 
 !if "$(MACHINE)" == "ARM64"
 $(OUT_DIR)\zlib1.dll:	$(COMPATDIR)\zlib\win64-arm\zlib1.dll
@@ -922,6 +928,15 @@ $(TMP_DIR)\tclPkgConfig.obj: $(GENERICDIR)\tclPkgConfig.c
 	/DCFG_RUNTIME_DLLFILE="\"$(TCL_LIB_FILE)\""     \
 	-Fo$@ $?
 
+# Pass CFG_BUILDTIME_SCRDIR as it is used to search for init.tcl.
+# Do not define CFG_* variables for tclInterp.obj as on Windows
+# it does not make sense to include them in the search path.
+$(TMP_DIR)\tclInterp.obj: $(GENERICDIR)\tclInterp.c
+	$(cc32) $(pkgcflags) \
+	/DTCL_BUILDTIME_SCRDIR="\"$(ROOT:\=/)/library\"" \
+	/DTCL_BUILDTIME_BINDIR="\"$(OUT_DIR:\=/)\"" \
+	-Fo$@ $?
+
 $(TMP_DIR)\tclAppInit.obj: $(WIN_DIR)\tclAppInit.c
 	$(cc32) $(appcflags) /DUNICODE /D_UNICODE \
 	    -Fo$@ $?
@@ -1040,10 +1055,8 @@ install-binaries:
 	@$(CPY) "$(OUT_DIR)\zdll.lib" "$(LIB_INSTALL_DIR)\"
 	@$(CPY) "$(OUT_DIR)\tommath.lib" "$(LIB_INSTALL_DIR)\"
 !endif
-!if exist($(TCLSH))
 	@echo Installing $(TCLSHNAME)
 	@$(CPY) "$(TCLSH)" "$(BIN_INSTALL_DIR)\"
-!endif
 	@echo Installing $(TCLSTUBLIBNAME)
 	@$(CPY) "$(TCLSTUBLIB)" "$(LIB_INSTALL_DIR)\"
 
