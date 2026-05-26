@@ -840,10 +840,12 @@ Tcl_Init(
     }
 
     result = RunPreInitScript(interp);
-    TclpSetInitialEncodings();
+    TclpSetInitialEncodings(); /* Even if above failed */
 
-    /* Callbacks registered via Tcl_RegisterPostInitProc */
-    result = TclCallPostInitProcs(interp);
+    if (result == TCL_OK) {
+	/* Callbacks registered via Tcl_RegisterPostInitProc */
+	result = TclCallPostInitProcs(interp);
+    }
 
 end:
     *names = (*names)->nextPtr;
