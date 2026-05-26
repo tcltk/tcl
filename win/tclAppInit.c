@@ -114,6 +114,7 @@ TclSetRcFilePath(Tcl_Interp *interp, const char *path)
     return TCL_OK;
 }
 
+#ifndef TCL_OMIT_MAIN
 /*
  *----------------------------------------------------------------------
  *
@@ -155,6 +156,10 @@ _tmain(
     TclZipfs_AppHook(&argc, &argv);
 #endif
 
+#ifdef TCL_BI
+    Tcl_RegisterPostInitProc(TclBIPostInit, NULL);
+#endif
+
 #if defined(TCL_TEST)
     Tcl_RegisterPostInitProc(TcltestStaticInit, NULL);
 #endif
@@ -162,7 +167,8 @@ _tmain(
     Tcl_Main(argc, argv, TCL_LOCAL_APPINIT);
     return 0;			/* Needed only to prevent compiler warning. */
 }
-
+#endif /* TCL_OMIT_MAIN */
+
 /*
  *----------------------------------------------------------------------
  *

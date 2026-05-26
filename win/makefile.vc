@@ -142,6 +142,8 @@ RCFILE = tcl.rc
 # Ditto for the DLL and tcltest
 TCLSHRAW=$(TCLSH:.exe=-raw.exe)
 TCLLIBRAW=$(TCLLIB:.dll=-raw.dll)
+TCLBI=$(OUT_DIR)\tclbi.exe
+TCLBIRAW=$(OUT_DIR)\tclbi-raw.exe
 
 # Tcl version info based on macros set up by rules.vc
 DOTVERSION      = $(TCL_MAJOR_VERSION).$(TCL_MINOR_VERSION)
@@ -217,6 +219,12 @@ UTF8PROCDIR	= $(ROOT)\utf8proc
 TCLSHOBJS = \
 	$(TMP_DIR)\tclAppInit.obj \
 	$(TMP_DIR)\tclsh.res
+
+TCLBIOBJS = \
+	$(TMP_DIR)\tclBIMain.obj \
+	$(TMP_DIR)\tclBIAppInit.obj \
+	$(TMP_DIR)\tclsh.res
+
 
 TCLTESTOBJS = \
 	$(TMP_DIR)\tclTest.obj \
@@ -527,6 +535,12 @@ shell:      libtclzip
 	@$(COPY) /b "$(TCLSHRAW)"+"$(TCLSCRIPTZIP)" "$(TCLSH)"
 !endif
 
+!if $(TCL_EMBED_SCRIPTS) && $(STATIC_BUILD)
+tclbi:      setup core pkgs $(TCLBI)
+!else
+tclbi:	    $(TCLBI)
+!endif
+
 dlls:	    setup $(TCLDDELIB) $(OUT_DIR)\zlib1.dll $(OUT_DIR)\libtommath.dll
 libtclzip:  $(TCLSCRIPTZIP)
 
@@ -596,6 +610,17 @@ $(TCLSH): $(TCLSHOBJS) $(TCLSTUBLIB) $(TCLIMPLIB)
 	$(COPY) $@ $(TCLSHRAW)
 !endif
 
+!if $(STATIC_BUILD) && $(TCL_EMBED_SCRIPTS)
+$(TCLBI): $(TCLBIOBJS) $(TCLSTUBLIB) $(TCLIMPLIB)
+	$(CONEXECMD) $(PKGSDIR)\sqlite\win\$(BUILDDIRTOP)\tcl9sqlite3512s.lib -stack:2300000 $**
+	copy $(TMP_DIR)\tclsh.exe.manifest $(TCLSH).manifest
+	$(_VC_MANIFEST_EMBED_EXE)
+	$(COPY) $@ $(TCLBIRAW)
+!else
+$(TCLBI):
+	echo A tclbi build only supports static builds with embedded zipfs.
+	exit 1
+!endif
 
 $(TCLTEST): $(TCLTESTOBJS) $(TCLSTUBLIB) $(TCLIMPLIB)
 	$(CONEXECMD) -stack:2300000 $**
@@ -940,6 +965,13 @@ $(TMP_DIR)\tclInterp.obj: $(GENERICDIR)\tclInterp.c
 $(TMP_DIR)\tclAppInit.obj: $(WIN_DIR)\tclAppInit.c
 	$(cc32) $(appcflags) /DUNICODE /D_UNICODE \
 	    -Fo$@ $?
+
+$(TMP_DIR)\tclBIAppInit.obj: $(WIN_DIR)\tclAppInit.c
+	$(cc32) $(appcflags) /DTCL_OMIT_MAIN /DUNICODE /D_UNICODE \
+	    -Fo$@ $?
+
+$(TMP_DIR)\tclBIMain.obj: $(GENERICDIR)\tclBIMain.c
+	$(cc32) $(appcflags) /DUNICODE /D_UNICODE -Fo$@ $?
 
 ### The following objects should be built using the stub interfaces
 
