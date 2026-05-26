@@ -30,6 +30,7 @@
 MODULE_SCOPE int Tcl_AppInit(Tcl_Interp *); /* TODO - move to tclInt.h */
 
 extern int Sqlite3_Init(Tcl_Interp *interp);
+extern int Thread_Init(Tcl_Interp *interp);
 
 static int
 TclBIPostInit(
@@ -37,6 +38,9 @@ TclBIPostInit(
     void *clientData)
 {
     if (Sqlite3_Init(interp) == TCL_ERROR) {
+	return TCL_ERROR;
+    }
+    if (Thread_Init(interp) == TCL_ERROR) {
 	return TCL_ERROR;
     }
     return TCL_OK;

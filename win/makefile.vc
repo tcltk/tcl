@@ -466,6 +466,9 @@ TCLSTUBOBJS = \
 ### the left side of implicit rules.
 TOMMATHDIR	= $(ROOT)\libtommath
 PKGSDIR		= $(ROOT)\pkgs
+PKGSLIBS	= \
+	$(PKGSDIR)\sqlite\win\$(BUILDDIRTOP)\tcl9sqlite3512s.lib \
+	$(PKGSDIR)\thread\win\$(BUILDDIRTOP)\tcl9thread305s.lib \
 
 LIBTCLVFSSUBDIR = libtcl.vfs
 LIBTCLVFS = $(OUT_DIR)\$(LIBTCLVFSSUBDIR)
@@ -613,7 +616,7 @@ $(TCLSH): $(TCLSHOBJS) $(TCLSTUBLIB) $(TCLIMPLIB)
 
 !if $(STATIC_BUILD) && $(TCL_EMBED_SCRIPTS)
 $(TCLBI): $(TCLBIOBJS) $(TCLSTUBLIB) $(TCLIMPLIB)
-	$(CONEXECMD) $(PKGSDIR)\sqlite\win\$(BUILDDIRTOP)\tcl9sqlite3512s.lib -stack:2300000 $**
+	$(CONEXECMD) $(PKGSLIBS) -stack:2300000 $**
 	copy $(TMP_DIR)\tclsh.exe.manifest $(TCLSH).manifest
 	$(_VC_MANIFEST_EMBED_EXE)
 	$(COPY) $@ $(TCLBIRAW)
