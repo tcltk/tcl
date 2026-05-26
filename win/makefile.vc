@@ -536,7 +536,8 @@ shell:      libtclzip
 !endif
 
 !if $(TCL_EMBED_SCRIPTS) && $(STATIC_BUILD)
-tclbi:      setup core pkgs $(TCLBI)
+tclbi:      setup core libtclzip pkgs $(TCLBI)
+	@$(COPY) /b "$(TCLBIRAW)"+"$(TCLSCRIPTZIP)" "$(TCLBI)"
 !else
 tclbi:	    $(TCLBI)
 !endif
