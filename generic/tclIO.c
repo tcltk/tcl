@@ -9289,7 +9289,7 @@ Tcl_FileEventObjCmd(
      * If we are supposed to delete a stored script, do so.
      */
 
-    if (*(TclGetString(objv[3])) == '\0') {
+    if (Tcl_IsEmpty(objv[3])) {
 	DeleteScriptRecord(interp, chanPtr, mask);
 	return TCL_OK;
     }

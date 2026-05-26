@@ -3528,22 +3528,22 @@ TestlinkCmd(
 		    " longValue ulongValue floatValue uwideValue");
 	    return TCL_ERROR;
 	}
-	if (Tcl_GetString(objv[2])[0] != 0) {
+	if (!Tcl_IsEmpty(objv[2])) {
 	    if (Tcl_GetIntFromObj(interp, objv[2], &intVar) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	}
-	if (Tcl_GetString(objv[3])[0] != 0) {
+	if (!Tcl_IsEmpty(objv[3])) {
 	    if (Tcl_GetDoubleFromObj(interp, objv[3], &realVar) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	}
-	if (Tcl_GetString(objv[4])[0] != 0) {
+	if (!Tcl_IsEmpty(objv[4])) {
 	    if (Tcl_GetBooleanFromObj(interp, objv[4], &boolVar) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	}
-	if (Tcl_GetString(objv[5])[0] != 0) {
+	if (!Tcl_IsEmpty(objv[5])) {
 	    if (stringVar != NULL) {
 		Tcl_Free(stringVar);
 	    }
@@ -3554,7 +3554,7 @@ TestlinkCmd(
 		strcpy(stringVar, Tcl_GetString(objv[5]));
 	    }
 	}
-	if (Tcl_GetString(objv[6])[0] != 0) {
+	if (!Tcl_IsEmpty(objv[6])) {
 	    tmp = Tcl_NewStringObj(Tcl_GetString(objv[6]), -1);
 	    if (Tcl_GetWideIntFromObj(interp, tmp, &wideVar) != TCL_OK) {
 		Tcl_DecrRefCount(tmp);
@@ -3562,56 +3562,56 @@ TestlinkCmd(
 	    }
 	    Tcl_DecrRefCount(tmp);
 	}
-	if (Tcl_GetString(objv[7])[0]) {
+	if (!Tcl_IsEmpty(objv[7])) {
 	    if (Tcl_GetIntFromObj(interp, objv[7], &v) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    charVar = (char) v;
 	}
-	if (Tcl_GetString(objv[8])[0]) {
+	if (!Tcl_IsEmpty(objv[8])) {
 	    if (Tcl_GetIntFromObj(interp, objv[8], &v) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    ucharVar = (unsigned char) v;
 	}
-	if (Tcl_GetString(objv[9])[0]) {
+	if (!Tcl_IsEmpty(objv[9])) {
 	    if (Tcl_GetIntFromObj(interp, objv[9], &v) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    shortVar = (short) v;
 	}
-	if (Tcl_GetString(objv[10])[0]) {
+	if (!Tcl_IsEmpty(objv[10])) {
 	    if (Tcl_GetIntFromObj(interp, objv[10], &v) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    ushortVar = (unsigned short) v;
 	}
-	if (Tcl_GetString(objv[11])[0]) {
+	if (!Tcl_IsEmpty(objv[11])) {
 	    if (Tcl_GetIntFromObj(interp, objv[11], &v) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    uintVar = (unsigned int) v;
 	}
-	if (Tcl_GetString(objv[12])[0]) {
+	if (!Tcl_IsEmpty(objv[12])) {
 	    if (Tcl_GetIntFromObj(interp, objv[12], &v) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    longVar = (long) v;
 	}
-	if (Tcl_GetString(objv[13])[0]) {
+	if (!Tcl_IsEmpty(objv[13])) {
 	    if (Tcl_GetIntFromObj(interp, objv[13], &v) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    ulongVar = (unsigned long) v;
 	}
-	if (Tcl_GetString(objv[14])[0]) {
+	if (!Tcl_IsEmpty(objv[14])) {
 	    double d;
 	    if (Tcl_GetDoubleFromObj(interp, objv[14], &d) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    floatVar = (float) d;
 	}
-	if (Tcl_GetString(objv[15])[0]) {
+	if (!Tcl_IsEmpty(objv[15])) {
 	    Tcl_WideInt w;
 	    tmp = Tcl_NewStringObj(Tcl_GetString(objv[15]), -1);
 	    if (Tcl_GetWideIntFromObj(interp, tmp, &w) != TCL_OK) {
@@ -3630,25 +3630,25 @@ TestlinkCmd(
 		    " longValue ulongValue floatValue uwideValue");
 	    return TCL_ERROR;
 	}
-	if (Tcl_GetString(objv[2])[0] != 0) {
+	if (!Tcl_IsEmpty(objv[2])) {
 	    if (Tcl_GetIntFromObj(interp, objv[2], &intVar) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    Tcl_UpdateLinkedVar(interp, "int");
 	}
-	if (Tcl_GetString(objv[3])[0] != 0) {
+	if (!Tcl_IsEmpty(objv[3])) {
 	    if (Tcl_GetDoubleFromObj(interp, objv[3], &realVar) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    Tcl_UpdateLinkedVar(interp, "real");
 	}
-	if (Tcl_GetString(objv[4])[0] != 0) {
+	if (!Tcl_IsEmpty(objv[4])) {
 	    if (Tcl_GetIntFromObj(interp, objv[4], &boolVar) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    Tcl_UpdateLinkedVar(interp, "bool");
 	}
-	if (Tcl_GetString(objv[5])[0] != 0) {
+	if (!Tcl_IsEmpty(objv[5])) {
 	    if (stringVar != NULL) {
 		Tcl_Free(stringVar);
 	    }
@@ -3660,7 +3660,7 @@ TestlinkCmd(
 	    }
 	    Tcl_UpdateLinkedVar(interp, "string");
 	}
-	if (Tcl_GetString(objv[6])[0] != 0) {
+	if (!Tcl_IsEmpty(objv[6])) {
 	    tmp = Tcl_NewStringObj(Tcl_GetString(objv[6]), -1);
 	    if (Tcl_GetWideIntFromObj(interp, tmp, &wideVar) != TCL_OK) {
 		Tcl_DecrRefCount(tmp);
@@ -3669,56 +3669,56 @@ TestlinkCmd(
 	    Tcl_DecrRefCount(tmp);
 	    Tcl_UpdateLinkedVar(interp, "wide");
 	}
-	if (Tcl_GetString(objv[7])[0]) {
+	if (!Tcl_IsEmpty(objv[7])) {
 	    if (Tcl_GetIntFromObj(interp, objv[7], &v) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    charVar = (char) v;
 	    Tcl_UpdateLinkedVar(interp, "char");
 	}
-	if (Tcl_GetString(objv[8])[0]) {
+	if (!Tcl_IsEmpty(objv[8])) {
 	    if (Tcl_GetIntFromObj(interp, objv[8], &v) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    ucharVar = (unsigned char) v;
 	    Tcl_UpdateLinkedVar(interp, "uchar");
 	}
-	if (Tcl_GetString(objv[9])[0]) {
+	if (!Tcl_IsEmpty(objv[9])) {
 	    if (Tcl_GetIntFromObj(interp, objv[9], &v) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    shortVar = (short) v;
 	    Tcl_UpdateLinkedVar(interp, "short");
 	}
-	if (Tcl_GetString(objv[10])[0]) {
+	if (!Tcl_IsEmpty(objv[10])) {
 	    if (Tcl_GetIntFromObj(interp, objv[10], &v) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    ushortVar = (unsigned short) v;
 	    Tcl_UpdateLinkedVar(interp, "ushort");
 	}
-	if (Tcl_GetString(objv[11])[0]) {
+	if (!Tcl_IsEmpty(objv[11])) {
 	    if (Tcl_GetIntFromObj(interp, objv[11], &v) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    uintVar = (unsigned int) v;
 	    Tcl_UpdateLinkedVar(interp, "uint");
 	}
-	if (Tcl_GetString(objv[12])[0]) {
+	if (!Tcl_IsEmpty(objv[12])) {
 	    if (Tcl_GetIntFromObj(interp, objv[12], &v) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    longVar = (long) v;
 	    Tcl_UpdateLinkedVar(interp, "long");
 	}
-	if (Tcl_GetString(objv[13])[0]) {
+	if (!Tcl_IsEmpty(objv[13])) {
 	    if (Tcl_GetIntFromObj(interp, objv[13], &v) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    ulongVar = (unsigned long) v;
 	    Tcl_UpdateLinkedVar(interp, "ulong");
 	}
-	if (Tcl_GetString(objv[14])[0]) {
+	if (!Tcl_IsEmpty(objv[14])) {
 	    double d;
 	    if (Tcl_GetDoubleFromObj(interp, objv[14], &d) != TCL_OK) {
 		return TCL_ERROR;
@@ -3726,7 +3726,7 @@ TestlinkCmd(
 	    floatVar = (float) d;
 	    Tcl_UpdateLinkedVar(interp, "float");
 	}
-	if (Tcl_GetString(objv[15])[0]) {
+	if (!Tcl_IsEmpty(objv[15])) {
 	    Tcl_WideInt w;
 	    tmp = Tcl_NewStringObj(Tcl_GetString(objv[15]), -1);
 	    if (Tcl_GetWideIntFromObj(interp, tmp, &w) != TCL_OK) {
@@ -5358,7 +5358,7 @@ TestupvarCmd(
 	    flags = TCL_NAMESPACE_ONLY;
 	}
 	return Tcl_UpVar2(interp, Tcl_GetString(objv[1]), Tcl_GetString(objv[2]),
-		(Tcl_GetString(objv[3])[0] == 0) ? NULL : Tcl_GetString(objv[3]),
+		(Tcl_IsEmpty(objv[3])) ? NULL : Tcl_GetString(objv[3]),
 		Tcl_GetString(objv[4]), flags);
     }
 }
@@ -5685,7 +5685,7 @@ TestfileCmd(
 
     if (result != TCL_OK) {
 	if (error != NULL) {
-	    if (Tcl_GetString(error)[0] != '\0') {
+	    if (!Tcl_IsEmpty(error)) {
 		Tcl_AppendResult(interp, Tcl_GetString(error), " ", (char *)NULL);
 	    }
 	    Tcl_DecrRefCount(error);
@@ -7309,7 +7309,7 @@ TestGetIndexFromObjStructCmd(
 	return TCL_ERROR;
     }
     memset(idx, 85, sizeof(idx));
-    if (Tcl_GetIndexFromObjStruct(interp, (Tcl_GetString(objv[1])[0] ? objv[1] : NULL),
+    if (Tcl_GetIndexFromObjStruct(interp, (Tcl_IsEmpty(objv[1]) ? NULL: objv[1]),
 	    ary, 2*sizeof(char *), "dummy", flags, &idx[1]) != TCL_OK) {
 	return TCL_ERROR;
     }
