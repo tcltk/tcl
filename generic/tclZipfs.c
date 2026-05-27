@@ -6590,8 +6590,8 @@ TclZipfsInitEncodingDirs(void)
     }
     Tcl_Obj *fullPathObj = Tcl_FSJoinToPath(libDirObj, 1, &subDirObj);
     Tcl_IncrRefCount(fullPathObj);
-    TclListObjAppendIfAbsent(NULL, searchPathObj, fullPathObj);
     Tcl_IncrRefCount(searchPathObj);
+    TclListObjInsertIfAbsent(NULL, searchPathObj, fullPathObj, 0);
     Tcl_DecrRefCount(fullPathObj);
     Tcl_DecrRefCount(subDirObj);
     Tcl_DecrRefCount(libDirObj);

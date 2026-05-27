@@ -1943,9 +1943,74 @@ Tcl_ListObjAppendElement(
 /*
  *------------------------------------------------------------------------
  *
+ * TclListObjInsertIfAbsent --
+ *
+ *	Inserts an element elemObj to list toObj if no element with the same
+ *	string representation is already present. If toObj is not a list
+ *	object, it will be converted and an error raised if the conversion
+ *	fails.
+ *
+ *	Reference counting:
+ *	 - toObj must not be shared else the function will panic.
+ *	 - if elemObj is not added to the list, either because it already
+ *	   exists or because of an error, it will be freed if there are no
+ *	   references to it. Caller can therefore pass in a 0-ref elemObj and
+ *	   not have to worry about decrementing it on return. Conversely,
+ *	   this means if caller passes in a 0-ref elemObj it should NOT
+ *	   decrement the reference count on return irrespective of return
+ *	   code.
+ *
+ *	CAUTION: Linear search (of course)
+ *
+ * Results:
+ *	Standard Tcl result code. Note element being already present is not
+ *	an error.
+ *
+ * Side effects:
+ *    None.
+ *
+ *------------------------------------------------------------------------
+ */
+int
+TclListObjInsertIfAbsent(
+    Tcl_Interp *interp,		/* Used to report errors if not NULL. */
+    Tcl_Obj *toObj,		/* List object to append */
+    Tcl_Obj *newElemObj,	/* Element to append to toObj's list. */
+    Tcl_Size index)		/* Index at which to insert */
+{
+    Tcl_Obj **elemObjs;
+    Tcl_Size numElems;
+    int result;
+
+    result = Tcl_ListObjGetElements(interp, toObj, &numElems, &elemObjs);
+    if (result != TCL_OK) {
+	goto vamoose;
+    }
+    Tcl_Size newElemLen;
+    const char *newElem;
+    newElem = Tcl_GetStringFromObj(newElemObj, &newElemLen);
+    for (Tcl_Size i = 0; i < numElems; ++i) {
+	Tcl_Size toElemLen;
+	const char *toElemStr = Tcl_GetStringFromObj(elemObjs[i], &toElemLen);
+	if (toElemLen == newElemLen &&
+		strncmp(newElem, toElemStr, newElemLen) == 0) {
+	    result = TCL_OK;
+	    goto vamoose;
+	}
+    }
+    result = Tcl_ListObjReplace(interp, toObj, index, 0, 1, &newElemObj);
+
+vamoose: /* Return result after freeing elemObj if unreferenced */
+    Tcl_BounceRefCount(newElemObj);
+    return result;
+}
+
+/*
+ *------------------------------------------------------------------------
+ *
  * TclListObjAppendIfAbsent --
  *
- *	Appends an element elemObj to list toObj if no element with the same
+ *	Appends an element elemObj to list toObj if element with the same
  *	string representation is not already present. If toObj is not a list
  *	object, it will be converted and an error raised if the conversion
  *	fails.
@@ -1977,37 +2042,7 @@ TclListObjAppendIfAbsent(
     Tcl_Obj *toObj,		/* List object to append */
     Tcl_Obj *elemObj)		/* Element to append to toObj's list. */
 {
-    Tcl_Obj **elemObjs;
-    Tcl_Size numElems;
-    int result;
-
-    result = Tcl_ListObjGetElements(interp, toObj, &numElems, &elemObjs);
-    if (result != TCL_OK) {
-	goto vamoose;
-    }
-    /* Assume it is worth doing a pointer compare over the whole list first */
-    for (Tcl_Size i = 0; i < numElems; ++i) {
-	if (elemObjs[i] == elemObj) {
-	    result = TCL_OK;
-	    goto vamoose;
-	}
-    }
-    Tcl_Size elemLen;
-    const char *elemStr;
-    elemStr = Tcl_GetStringFromObj(elemObj, &elemLen);
-    for (Tcl_Size i = 0; i < numElems; ++i) {
-	Tcl_Size toLen;
-	const char *toStr = Tcl_GetStringFromObj(elemObjs[i], &toLen);
-	if (toLen == elemLen && !strncmp(elemStr, toStr, elemLen)) {
-	    result = TCL_OK;
-	    goto vamoose;
-	}
-    }
-    result = TclListObjAppendElements(interp, toObj, 1, &elemObj);
-
-  vamoose: /* Return result after freeing elemObj if unreferenced */
-    Tcl_BounceRefCount(elemObj);
-    return result;
+    return TclListObjInsertIfAbsent(interp, toObj, elemObj, TCL_SIZE_MAX);
 }
 
 /*
