@@ -9238,6 +9238,7 @@ Tcl_FileEventObjCmd(
     const char *chanName;
     int modeIndex;		/* Index of mode argument. */
     int mask;
+    Tcl_Size length;            /* llength of callback script */
     static const char *const modeOptions[] = {"readable", "writable", NULL};
     static const int maskArray[] = {TCL_READABLE, TCL_WRITABLE};
 
@@ -9285,7 +9286,12 @@ Tcl_FileEventObjCmd(
      * If we are supposed to delete a stored script, do so.
      */
 
-    if (*(TclGetString(objv[3])) == '\0') {
+    if ((objv[3]->bytes == NULL) && TclObjTypeHasProc(objv[3], lengthProc)) {
+	length = TclObjTypeLength(objv[3]);
+    } else {
+	TclGetStringFromObj(objv[3], &length);
+    }
+    if (0 == length) {
 	DeleteScriptRecord(interp, chanPtr, mask);
 	return TCL_OK;
     }

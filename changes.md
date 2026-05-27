@@ -27,6 +27,7 @@ to the userbase.
  - [Building sqlite3 for tcl8 redefines typedef](https://core.tcl-lang.org/tcl/info/ad08bc)
  - [Inconsistent file join with volume-relative arguments](https://core.tcl-lang.org/tcl/info/1215dc)
  - [mind PTHREAD_NULL as sentinel value vs legitimate pthread_t arg](https://core.tcl-lang.org/tcl/info/673f2d)
+ - [fileevent poor performance due to shimmering](https://core.tcl-lang.org/tcl/info/7da6c2)
 
 # Updated bundled packages, libraries, standards, data
  - autoconf 2.73
