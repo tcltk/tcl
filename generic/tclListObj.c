@@ -1946,7 +1946,7 @@ Tcl_ListObjAppendElement(
  * TclListObjInsertIfAbsent --
  *
  *	Inserts an element elemObj to list toObj if no element with the same
- *	string representation is not already present. If toObj is not a list
+ *	string representation is already present. If toObj is not a list
  *	object, it will be converted and an error raised if the conversion
  *	fails.
  *
@@ -1975,7 +1975,7 @@ int
 TclListObjInsertIfAbsent(
     Tcl_Interp *interp,		/* Used to report errors if not NULL. */
     Tcl_Obj *toObj,		/* List object to append */
-    Tcl_Obj *elemObj,		/* Element to append to toObj's list. */
+    Tcl_Obj *newElemObj,	/* Element to append to toObj's list. */
     Tcl_Size index)		/* Index at which to insert */
 {
     Tcl_Obj **elemObjs;
@@ -1986,28 +1986,22 @@ TclListObjInsertIfAbsent(
     if (result != TCL_OK) {
 	goto vamoose;
     }
-    /* Assume it is worth doing a pointer compare over the whole list first */
+    Tcl_Size newElemLen;
+    const char *newElem;
+    newElem = Tcl_GetStringFromObj(newElemObj, &newElemLen);
     for (Tcl_Size i = 0; i < numElems; ++i) {
-	if (elemObjs[i] == elemObj) {
+	Tcl_Size toElemLen;
+	const char *toElemStr = Tcl_GetStringFromObj(elemObjs[i], &toElemLen);
+	if (toElemLen == newElemLen &&
+		strncmp(newElem, toElemStr, newElemLen) == 0) {
 	    result = TCL_OK;
 	    goto vamoose;
 	}
     }
-    Tcl_Size elemLen;
-    const char *elemStr;
-    elemStr = Tcl_GetStringFromObj(elemObj, &elemLen);
-    for (Tcl_Size i = 0; i < numElems; ++i) {
-	Tcl_Size toLen;
-	const char *toStr = Tcl_GetStringFromObj(elemObjs[i], &toLen);
-	if (toLen == elemLen && !strncmp(elemStr, toStr, elemLen)) {
-	    result = TCL_OK;
-	    goto vamoose;
-	}
-    }
-    result = Tcl_ListObjReplace(interp, toObj, index, 0, 1, &elemObj);
+    result = Tcl_ListObjReplace(interp, toObj, index, 0, 1, &newElemObj);
 
 vamoose: /* Return result after freeing elemObj if unreferenced */
-    Tcl_BounceRefCount(elemObj);
+    Tcl_BounceRefCount(newElemObj);
     return result;
 }
 
@@ -2016,7 +2010,7 @@ vamoose: /* Return result after freeing elemObj if unreferenced */
  *
  * TclListObjAppendIfAbsent --
  *
- *	Appends an element elemObj to list toObj if no element with the same
+ *	Appends an element elemObj to list toObj if element with the same
  *	string representation is not already present. If toObj is not a list
  *	object, it will be converted and an error raised if the conversion
  *	fails.
