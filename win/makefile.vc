@@ -1062,10 +1062,8 @@ install-binaries:
 	@$(CPY) "$(OUT_DIR)\zdll.lib" "$(LIB_INSTALL_DIR)\"
 	@$(CPY) "$(OUT_DIR)\tommath.lib" "$(LIB_INSTALL_DIR)\"
 !endif
-!if exist($(TCLSH))
 	@echo Installing $(TCLSHNAME)
 	@$(CPY) "$(TCLSH)" "$(BIN_INSTALL_DIR)\"
-!endif
 	@echo Installing $(TCLSTUBLIBNAME)
 	@$(CPY) "$(TCLSTUBLIB)" "$(LIB_INSTALL_DIR)\"
 
