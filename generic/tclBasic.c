@@ -82,7 +82,7 @@
 void *
 TclGetCStackPtr(void)
 {
-#if defined( __GNUC__ ) || __has_builtin(__builtin_frame_address)
+#if defined(__GNUC__) || __has_builtin(__builtin_frame_address)
     return __builtin_frame_address(0);
 #elif defined(_MSC_VER)
     return _AddressOfReturnAddress();
@@ -655,7 +655,6 @@ BuildInfoObjCmd2(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     const char *buildData = (const char *) clientData;
-    char buf[80];
     const char *arg, *p, *q;
     Tcl_Size len;
     int idx;
@@ -686,9 +685,7 @@ BuildInfoObjCmd2(
     switch (idx) {
     case ID_PATCHLEVEL:
 	if ((p = strchr(buildData, '+')) != NULL) {
-	    memcpy(buf, buildData, p - buildData);
-	    buf[p - buildData] = '\0';
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(buf, TCL_INDEX_NONE));
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(buildData, p - buildData));
 	}
 	return TCL_OK;
     case ID_VERSION:
@@ -698,17 +695,13 @@ BuildInfoObjCmd2(
 	    p = (q < r) ? q : r;
 	}
 	if (p != NULL) {
-	    memcpy(buf, buildData, p - buildData);
-	    buf[p - buildData] = '\0';
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(buf, TCL_INDEX_NONE));
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(buildData, p - buildData));
 	}
 	return TCL_OK;
     case ID_COMMIT:
 	if ((p = strchr(buildData, '+')) != NULL) {
 	    if ((q = strchr(p++, '.')) != NULL) {
-		memcpy(buf, p, q - p);
-		buf[q - p] = '\0';
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(buf, TCL_INDEX_NONE));
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(p, q - p));
 	    } else {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(p, TCL_INDEX_NONE));
 	    }
@@ -725,9 +718,7 @@ BuildInfoObjCmd2(
 		    || !strncmp(p, "icc-", 4)
 		    || !strncmp(p, "msvc-", 5)) {
 		if ((q = strchr(p, '.')) != NULL) {
-		    memcpy(buf, p, q - p);
-		    buf[q - p] = '\0';
-		    Tcl_SetObjResult(interp, Tcl_NewStringObj(buf, TCL_INDEX_NONE));
+		    Tcl_SetObjResult(interp, Tcl_NewStringObj(p, q - p));
 		} else {
 		    Tcl_SetObjResult(interp, Tcl_NewStringObj(p, TCL_INDEX_NONE));
 		}
@@ -747,9 +738,7 @@ BuildInfoObjCmd2(
 		    if (!q) {
 			q = p + strlen(p);
 		    }
-		    memcpy(buf, p, q - p);
-		    buf[q - p] = '\0';
-		    Tcl_SetObjResult(interp, Tcl_NewStringObj(buf, TCL_INDEX_NONE));
+		    Tcl_SetObjResult(interp, Tcl_NewStringObj(p, q - p));
 		} else {
 		    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(1));
 		}
@@ -4534,7 +4523,6 @@ EvalObjvCore(
      */
 
     if (iPtr->lookupNsPtr) {
-
 	/*
 	 * Capture the namespace we should do command name resolution in, as
 	 * instructed by our caller sneaking it in to us in a private interp
@@ -4550,7 +4538,6 @@ EvalObjvCore(
     } else if (flags & TCL_EVAL_INVOKE) {
 	lookupNsPtr = iPtr->globalNsPtr;
     } else {
-
 	/*
 	 * TCL_EVAL_INVOKE was not set: clear rewrite rules
 	 */

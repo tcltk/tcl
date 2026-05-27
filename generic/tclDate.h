@@ -465,9 +465,7 @@ struct ClockFormatToken {
     } tokWord;
 };
 
-typedef struct ClockFmtScnStorage ClockFmtScnStorage;
-
-struct ClockFmtScnStorage {
+typedef struct ClockFmtScnStorage {
     int objRefCount;		/* Reference count shared across threads */
     ClockScanToken *scnTok;
     unsigned scnTokC;
@@ -475,15 +473,13 @@ struct ClockFmtScnStorage {
     ClockFormatToken *fmtTok;
     unsigned fmtTokC;
 #if CLOCK_FMT_SCN_STORAGE_GC_SIZE > 0
-    ClockFmtScnStorage *nextPtr;
-    ClockFmtScnStorage *prevPtr;
+    struct ClockFmtScnStorage *nextPtr;
+    struct ClockFmtScnStorage *prevPtr;
 #endif
     size_t fmtMinAlloc;
-#if 0
-    Tcl_HashEntry hashEntry		/* ClockFmtScnStorage is a derivate of Tcl_HashEntry,
-					 * stored by offset +sizeof(self) */
-#endif
-};
+    Tcl_HashEntry hashEntry;	/* ClockFmtScnStorage is a derivate of Tcl_HashEntry,
+				 * stored by offset +sizeof(self) */
+} ClockFmtScnStorage;
 
 /*
  * Clock macros.

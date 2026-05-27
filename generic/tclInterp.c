@@ -702,6 +702,8 @@ InitAutoPathObjCmd(
 	    Tcl_DecrRefCount(autoPathPtr);
 	    return TCL_ERROR;
 	}
+    } else {
+	autoPathPtr = Tcl_DuplicateObj(autoPathPtr);
     }
 
     /* tcl_library and its parent */
@@ -1030,7 +1032,7 @@ NRInterpCmd(
 	if (objc == 4) {
 	    return AliasDescribe(interp, childInterp, objv[3]);
 	}
-	if ((objc == 5) && (TclGetString(objv[4])[0] == '\0')) {
+	if ((objc == 5) && (Tcl_IsEmpty(objv[4]))) {
 	    return AliasDelete(interp, childInterp, objv[3]);
 	}
 	if (objc > 5) {
@@ -2902,7 +2904,7 @@ NRChildCmd(
 	    if (objc == 3) {
 		return AliasDescribe(interp, childInterp, objv[2]);
 	    }
-	    if (TclGetString(objv[3])[0] == '\0') {
+	    if (Tcl_IsEmpty(objv[3])) {
 		if (objc == 4) {
 		    return AliasDelete(interp, childInterp, objv[2]);
 		}

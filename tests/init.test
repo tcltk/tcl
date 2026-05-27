@@ -240,6 +240,19 @@ test init-5.0 {return options passed through ::unknown} -setup {
 cleanupTests
 }	;#  End of [interp eval $testInterp]
 
+test InitAutoPath-1.0 {
+    Bug [c0f678f2] - Crash in secondary interp on auto_path reinit
+} -setup {
+    set ip [interp create]
+} -body {
+    $ip eval {set auto_path_copy $auto_path}
+    $ip eval {set tcl_library /some/directory}
+    $ip eval {tcl::InitAutoPath}
+} -cleanup {
+    interp delete $ip
+} -result [list {*}$::auto_path /some/directory /some]
+
+
 # cleanup
 interp delete $testInterp
 ::tcltest::cleanupTests

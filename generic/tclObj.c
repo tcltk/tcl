@@ -1954,7 +1954,7 @@ Tcl_GetBoolFromObj(
 {
     int result;
 
-    if ((flags & TCL_NULL_OK) && (objPtr == NULL || Tcl_GetString(objPtr)[0] == '\0')) {
+    if ((flags & TCL_NULL_OK) && (objPtr == NULL || Tcl_IsEmpty(objPtr))) {
 	result = -1;
 	goto boolEnd;
     } else if (objPtr == NULL) {

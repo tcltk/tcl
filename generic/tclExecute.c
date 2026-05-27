@@ -7092,9 +7092,9 @@ TEBCresume(
 	    if (a && b) {
 		match = TclStringCmp(a, b, 1, 0, -1) == 0;
 	    } else if (a) {
-		match = TclGetString(a)[0] == '\0';
+		match = Tcl_IsEmpty(a);
 	    } else if (b) {
-		match = TclGetString(b)[0] == '\0';
+		match = Tcl_IsEmpty(b);
 	    }
 	}
 	TRACE_APPEND("%d\n", match ? 1 : 0);
