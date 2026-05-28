@@ -322,7 +322,7 @@ TclOOInvokeContext(
 				 * commands, variables) depending on method
 				 * implementation. */
     Tcl_Size objc,		/* The number of arguments. */
-    Tcl_Obj *const objv[])	/* The arguments as actually seen. */
+    Tcl_Obj *const *objv)	/* The arguments as actually seen. */
 {
     CallContext *const contextPtr = (CallContext *) clientData;
     Method *const mPtr = contextPtr->callPtr->chain[contextPtr->index].mPtr;
@@ -477,7 +477,7 @@ TclOOGetSortedMethodList(
     Tcl_Obj ***namesLstPtr)	/* Where to write a pointer to the array of
 				 * names to. */
 {
-    Tcl_HashTable names;	/* Tcl_Obj* method name to "wanted in list"
+    Tcl_HashTable names;	/* Tcl_Obj * method name to "wanted in list"
 				 * mapping. */
     Tcl_HashTable examinedClasses;
 				/* Used to track what classes have been looked
@@ -562,7 +562,7 @@ TclOOGetSortedClassMethodList(
     Tcl_Obj ***namesLstPtr)	/* Where to write a pointer to the array of
 				 * strings to. */
 {
-    Tcl_HashTable names;	/* Tcl_Obj* method name to "wanted in list"
+    Tcl_HashTable names;	/* Tcl_Obj * method name to "wanted in list"
 				 * mapping. */
     Tcl_HashTable examinedClasses;
 				/* Used to track what classes have been looked

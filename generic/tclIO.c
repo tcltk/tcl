@@ -9234,7 +9234,7 @@ Tcl_FileEventObjCmd(
     Tcl_Interp *interp,		/* Interpreter in which the channel for which
 				 * to create the handler is found. */
     Tcl_Size objc,		/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
+    Tcl_Obj *const *objv)	/* Argument objects. */
 {
     Channel *chanPtr;		/* The channel to create the handler for. */
     ChannelState *statePtr;	/* State info for channel */
@@ -11218,7 +11218,7 @@ Tcl_SetChannelError(
  *	no problems.
  *
  * Results:
- *	A Tcl_Obj*
+ *	A Tcl_Obj *
  *
  * Side effects:
  *	None.

@@ -1163,7 +1163,7 @@ namespace eval listtype {
     # In addition, in the *current* implementation, but not guaranteed
     # by the contract in the documented API,
     # - $resultRefCount is 0 (i.e. unshared object is returned)
-    # - on errors, the result Tcl_Obj* is set to NULL
+    # - on errors, the result Tcl_Obj * is set to NULL
     # This may change in a future implementation, in which case the tests
     # will have to be modified.
 
@@ -1239,7 +1239,7 @@ namespace eval listtype {
     #
     # In addition, in the *current* implementation, but not guaranteed
     # by the contract in the documented API,
-    # - on errors, the result Tcl_Obj* is set to NULL
+    # - on errors, the result Tcl_Obj * is set to NULL
     # This may change in a future implementation, in which case the tests
     # will have to be modified.
 

@@ -509,7 +509,7 @@ PrefixMatchObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,		/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
+    Tcl_Obj *const *objv)	/* Argument objects. */
 {
     int flags = 0, result;
     Tcl_Size errorLength, i;
@@ -633,7 +633,7 @@ PrefixAllObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,		/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
+    Tcl_Obj *const *objv)	/* Argument objects. */
 {
     int result;
     Tcl_Size length, elemLength, tableObjc, t;
@@ -691,7 +691,7 @@ PrefixLongestObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,		/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
+    Tcl_Obj *const *objv)	/* Argument objects. */
 {
     int result;
     Tcl_Size i, length, elemLength, resultLength, tableObjc, t;
@@ -810,7 +810,7 @@ void
 Tcl_WrongNumArgs(
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,		/* Number of arguments to print from objv. */
-    Tcl_Obj *const objv[],	/* Initial argument objects, which should be
+    Tcl_Obj *const *objv,	/* Initial argument objects, which should be
 				 * included in the error message. */
     const char *message)	/* Error message to print after the leading
 				 * objects in objv. The message may be

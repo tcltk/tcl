@@ -78,7 +78,7 @@ typedef struct BasicBlock {
 				/* BasicBlock structure of the following
 				 * block: NULL at the end of the bytecode
 				 * sequence. */
-    Tcl_Obj* jumpTarget;	/* Jump target label if the jump target is
+    Tcl_Obj *jumpTarget;	/* Jump target label if the jump target is
 				 * unresolved */
     int initialStackDepth;	/* Absolute stack depth on entry */
     int minStackDepth;		/* Low-water relative stack depth */
@@ -231,80 +231,79 @@ typedef struct AssemblyEnv {
  * Static functions defined in this file.
  */
 
-static void		AddBasicBlockRangeToErrorInfo(AssemblyEnv*,
-			    BasicBlock*);
-static BasicBlock *	AllocBB(AssemblyEnv*);
-static int		AssembleOneLine(AssemblyEnv* envPtr);
-static void		BBAdjustStackDepth(BasicBlock* bbPtr, int consumed,
+static void		AddBasicBlockRangeToErrorInfo(AssemblyEnv *,
+			    BasicBlock *);
+static BasicBlock *	AllocBB(AssemblyEnv *);
+static int		AssembleOneLine(AssemblyEnv *envPtr);
+static void		BBAdjustStackDepth(BasicBlock *bbPtr, int consumed,
 			    int produced);
-static void		BBUpdateStackReqs(BasicBlock* bbPtr, int tblIdx,
+static void		BBUpdateStackReqs(BasicBlock *bbPtr, int tblIdx,
 			    int count);
-static void		BBEmitInstInt1(AssemblyEnv* assemEnvPtr, int tblIdx,
+static void		BBEmitInstInt1(AssemblyEnv *assemEnvPtr, int tblIdx,
 			    int opnd, int count);
-static void		BBEmitInstInt4(AssemblyEnv* assemEnvPtr, int tblIdx,
+static void		BBEmitInstInt4(AssemblyEnv *assemEnvPtr, int tblIdx,
 			    int opnd, int count);
-static void		BBEmitOpcode(AssemblyEnv* assemEnvPtr, int tblIdx,
+static void		BBEmitOpcode(AssemblyEnv *assemEnvPtr, int tblIdx,
 			    int count);
-static int		BuildExceptionRanges(AssemblyEnv* assemEnvPtr);
-static int		ValidateJumpTargets(AssemblyEnv*);
-static int		CheckForUnclosedCatches(AssemblyEnv*);
-static int		CheckForThrowInWrongContext(AssemblyEnv*);
-static int		CheckNonThrowingBlock(AssemblyEnv*, BasicBlock*);
+static int		BuildExceptionRanges(AssemblyEnv *assemEnvPtr);
+static int		ValidateJumpTargets(AssemblyEnv *);
+static int		CheckForUnclosedCatches(AssemblyEnv *);
+static int		CheckForThrowInWrongContext(AssemblyEnv *);
+static int		CheckNonThrowingBlock(AssemblyEnv *, BasicBlock *);
 static int		BytecodeMightThrow(unsigned char);
-static int		CheckJumpTableLabels(AssemblyEnv*, BasicBlock*);
-static int		CheckNamespaceQualifiers(Tcl_Interp*, const char*,
+static int		CheckJumpTableLabels(AssemblyEnv *, BasicBlock *);
+static int		CheckNamespaceQualifiers(Tcl_Interp *, const char *,
 			    Tcl_Size);
-static int		CheckNonNegative(Tcl_Interp*, Tcl_Size);
-static int		CheckOneByte(Tcl_Interp*, Tcl_Size);
-static int		CheckSignedOneByte(Tcl_Interp*, Tcl_Size);
-static int		CheckStack(AssemblyEnv*);
-static int		CheckStrictlyPositive(Tcl_Interp*, Tcl_Size);
-static ByteCode *	CompileAssembleObj(Tcl_Interp *interp,
-			    Tcl_Obj *objPtr);
-static void		CompileEmbeddedScript(AssemblyEnv*, Tcl_Token*,
-			    const TalInstDesc*);
-static int		DefineLabel(AssemblyEnv* envPtr, const char* label);
-static void		DeleteMirrorJumpTable(JumptableInfo* jtPtr,
-			    JumptableNumInfo* jtnPtr);
-static void		FillInJumpOffsets(AssemblyEnv*);
-static int		CreateMirrorJumpTable(AssemblyEnv* assemEnvPtr,
-			    Tcl_Size objc, Tcl_Obj** objv);
-static int		CreateMirrorNumJumpTable(AssemblyEnv* assemEnvPtr,
-			    Tcl_Size objc, Tcl_Obj** objv);
-static size_t		FindLocalVar(AssemblyEnv* envPtr,
+static int		CheckNonNegative(Tcl_Interp *, Tcl_Size);
+static int		CheckOneByte(Tcl_Interp *, Tcl_Size);
+static int		CheckSignedOneByte(Tcl_Interp *, Tcl_Size);
+static int		CheckStack(AssemblyEnv *);
+static int		CheckStrictlyPositive(Tcl_Interp *, Tcl_Size);
+static ByteCode *	CompileAssembleObj(Tcl_Interp *, Tcl_Obj *objPtr);
+static void		CompileEmbeddedScript(AssemblyEnv *, Tcl_Token *,
+			    const TalInstDesc *);
+static int		DefineLabel(AssemblyEnv *envPtr, const char *label);
+static void		DeleteMirrorJumpTable(JumptableInfo *jtPtr,
+			    JumptableNumInfo *jtnPtr);
+static void		FillInJumpOffsets(AssemblyEnv *);
+static int		CreateMirrorJumpTable(AssemblyEnv *assemEnvPtr,
+			    Tcl_Size objc, Tcl_Obj **objv);
+static int		CreateMirrorNumJumpTable(AssemblyEnv *assemEnvPtr,
+			    Tcl_Size objc, Tcl_Obj **objv);
+static size_t		FindLocalVar(AssemblyEnv *envPtr,
 			    Tcl_Token** tokenPtrPtr);
-static int		FinishAssembly(AssemblyEnv*);
-static void		FreeAssemblyEnv(AssemblyEnv*);
-static int		GetBooleanOperand(AssemblyEnv*, Tcl_Token**, int*);
-static int		GetListIndexOperand(AssemblyEnv*, Tcl_Token**, int*);
-static int		GetIntegerOperand(AssemblyEnv*, Tcl_Token**, int*);
-static int		GetNextOperand(AssemblyEnv*, Tcl_Token**, Tcl_Obj**);
-static void		LookForFreshCatches(BasicBlock*, BasicBlock**);
-static void		MoveExceptionRangesToBasicBlock(AssemblyEnv*, Tcl_Size);
-static AssemblyEnv*	NewAssemblyEnv(CompileEnv*, int);
-static int		ProcessCatches(AssemblyEnv*);
-static int		ProcessCatchesInBasicBlock(AssemblyEnv*, BasicBlock*,
-			    BasicBlock*, enum BasicBlockCatchState, int);
-static void		ResetVisitedBasicBlocks(AssemblyEnv*);
-static void		ResolveJumpTableTargets(AssemblyEnv*, BasicBlock*);
-static void		ReportUndefinedLabel(AssemblyEnv*, BasicBlock*,
-			    Tcl_Obj*);
-static void		RestoreEmbeddedExceptionRanges(AssemblyEnv*);
-static int		StackCheckBasicBlock(AssemblyEnv*, BasicBlock *,
+static int		FinishAssembly(AssemblyEnv *);
+static void		FreeAssemblyEnv(AssemblyEnv *);
+static int		GetBooleanOperand(AssemblyEnv *, Tcl_Token **, int *);
+static int		GetListIndexOperand(AssemblyEnv *, Tcl_Token **, int *);
+static int		GetIntegerOperand(AssemblyEnv *, Tcl_Token **, int *);
+static int		GetNextOperand(AssemblyEnv *, Tcl_Token **, Tcl_Obj **);
+static void		LookForFreshCatches(BasicBlock *, BasicBlock **);
+static void		MoveExceptionRangesToBasicBlock(AssemblyEnv *, Tcl_Size);
+static AssemblyEnv*	NewAssemblyEnv(CompileEnv *, int);
+static int		ProcessCatches(AssemblyEnv *);
+static int		ProcessCatchesInBasicBlock(AssemblyEnv *, BasicBlock *,
+			    BasicBlock *, enum BasicBlockCatchState, int);
+static void		ResetVisitedBasicBlocks(AssemblyEnv *);
+static void		ResolveJumpTableTargets(AssemblyEnv *, BasicBlock *);
+static void		ReportUndefinedLabel(AssemblyEnv *, BasicBlock *,
+			    Tcl_Obj *);
+static void		RestoreEmbeddedExceptionRanges(AssemblyEnv *);
+static int		StackCheckBasicBlock(AssemblyEnv *, BasicBlock *,
 			    BasicBlock *, int);
 static BasicBlock*	StartBasicBlock(AssemblyEnv*, int fallthrough,
-			    Tcl_Obj* jumpLabel);
+			    Tcl_Obj *jumpLabel);
 /* static int		AdvanceIp(const unsigned char *pc); */
-static int		StackCheckBasicBlock(AssemblyEnv*, BasicBlock *,
+static int		StackCheckBasicBlock(AssemblyEnv *, BasicBlock *,
 			    BasicBlock *, int);
-static int		StackCheckExit(AssemblyEnv*);
-static void		StackFreshCatches(AssemblyEnv*, BasicBlock*, int,
-			    BasicBlock**, Tcl_Size*);
-static void		SyncStackDepth(AssemblyEnv*);
-static int		TclAssembleCode(CompileEnv* envPtr, const char* code,
+static int		StackCheckExit(AssemblyEnv *);
+static void		StackFreshCatches(AssemblyEnv *, BasicBlock *, int,
+			    BasicBlock **, Tcl_Size *);
+static void		SyncStackDepth(AssemblyEnv *);
+static int		TclAssembleCode(CompileEnv *envPtr, const char *code,
 			    Tcl_Size codeLen, int flags);
-static void		UnstackExpiredCatches(CompileEnv*, BasicBlock*, int,
-			    BasicBlock**, Tcl_Size*);
+static void		UnstackExpiredCatches(CompileEnv *, BasicBlock *, int,
+			    BasicBlock **, Tcl_Size *);
 
 /*
  * Tcl_ObjType that describes bytecode emitted by the assembler.
@@ -735,7 +734,7 @@ Tcl_AssembleObjCmd(
     void *clientData,		/* clientData */
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,		/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
+    Tcl_Obj *const *objv)	/* Argument objects. */
 {
     /*
      * Boilerplate - make sure that there is an NRE trampoline on the C stack
@@ -751,7 +750,7 @@ TclNRAssembleObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,		/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
+    Tcl_Obj *const *objv)	/* Argument objects. */
 {
     ByteCode *codePtr;		/* Pointer to the bytecode to execute */
 
@@ -991,7 +990,7 @@ TclAssembleCode(
     Tcl_Size codeLen,		/* Length of the code */
     int flags)			/* OR'ed combination of flags */
 {
-    Tcl_Interp* interp = (Tcl_Interp*) envPtr->iPtr;
+    Tcl_Interp *interp = (Tcl_Interp *) envPtr->iPtr;
 				/* Tcl interpreter */
     /*
      * Walk through the assembly script using the Tcl parser.  Each 'command'
@@ -1116,7 +1115,7 @@ NewAssemblyEnv(
 				 * generation*/
     int flags)			/* Compilation flags (TCL_EVAL_DIRECT) */
 {
-    Tcl_Interp* interp = (Tcl_Interp*) envPtr->iPtr;
+    Tcl_Interp *interp = (Tcl_Interp *) envPtr->iPtr;
 				/* Tcl interpreter */
     AssemblyEnv* assemEnvPtr = (AssemblyEnv*)TclStackAlloc(interp,
 	    sizeof(AssemblyEnv));
@@ -1169,7 +1168,7 @@ FreeAssemblyEnv(
     CompileEnv* envPtr = assemEnvPtr->envPtr;
 				/* Compilation environment being used for code
 				 * generation */
-    Tcl_Interp* interp = (Tcl_Interp*) envPtr->iPtr;
+    Tcl_Interp *interp = (Tcl_Interp *) envPtr->iPtr;
 				/* Tcl interpreter */
     BasicBlock* thisBB;		/* Pointer to a basic block being deleted */
     BasicBlock* nextBB;		/* Pointer to a deleted basic block's
@@ -1226,18 +1225,18 @@ AssembleOneLine(
     CompileEnv* envPtr = assemEnvPtr->envPtr;
 				/* Compilation environment being used for code
 				 * gen */
-    Tcl_Interp* interp = (Tcl_Interp*) envPtr->iPtr;
+    Tcl_Interp *interp = (Tcl_Interp *) envPtr->iPtr;
 				/* Tcl interpreter */
     Tcl_Parse* parsePtr = assemEnvPtr->parsePtr;
 				/* Parse of the line of code */
     Tcl_Token* tokenPtr;	/* Current token within the line of code */
-    Tcl_Obj* instNameObj;	/* Name of the instruction */
+    Tcl_Obj *instNameObj;	/* Name of the instruction */
     int tblIdx;			/* Index in TalInstructionTable of the
 				 * instruction */
     TalInstType instType;	/* Type of the instruction */
-    Tcl_Obj* operand1Obj = NULL;
+    Tcl_Obj *operand1Obj = NULL;
 				/* First operand to the instruction */
-    const char* operand1;	/* String rep of the operand */
+    const char *operand1;	/* String rep of the operand */
     Tcl_Size operand1Len;	/* String length of the operand */
     int opnd;			/* Integer representation of an operand */
     int litIndex;		/* Literal pool index of a constant */
@@ -1768,7 +1767,7 @@ CompileEmbeddedScript(
 {
     CompileEnv* envPtr = assemEnvPtr->envPtr;
 				/* Compilation environment */
-    Tcl_Interp* interp = (Tcl_Interp*) envPtr->iPtr;
+    Tcl_Interp *interp = (Tcl_Interp *) envPtr->iPtr;
 				/* Tcl interpreter */
 
     /*
@@ -1939,11 +1938,11 @@ static int
 CreateMirrorJumpTable(
     AssemblyEnv* assemEnvPtr,	/* Assembly environment */
     Tcl_Size objc,		/* Number of elements in the 'jumps' list */
-    Tcl_Obj** objv)		/* Pointers to the elements in the list */
+    Tcl_Obj **objv)		/* Pointers to the elements in the list */
 {
     CompileEnv* envPtr = assemEnvPtr->envPtr;
 				/* Compilation environment */
-    Tcl_Interp* interp = (Tcl_Interp*) envPtr->iPtr;
+    Tcl_Interp *interp = (Tcl_Interp *) envPtr->iPtr;
 				/* Tcl interpreter */
     BasicBlock* bbPtr = assemEnvPtr->curr_bb;
 				/* Current basic block */
@@ -2015,11 +2014,11 @@ static int
 CreateMirrorNumJumpTable(
     AssemblyEnv* assemEnvPtr,	/* Assembly environment */
     Tcl_Size objc,		/* Number of elements in the 'jumps' list */
-    Tcl_Obj** objv)		/* Pointers to the elements in the list */
+    Tcl_Obj **objv)		/* Pointers to the elements in the list */
 {
     CompileEnv* envPtr = assemEnvPtr->envPtr;
 				/* Compilation environment */
-    Tcl_Interp* interp = (Tcl_Interp*) envPtr->iPtr;
+    Tcl_Interp *interp = (Tcl_Interp *) envPtr->iPtr;
 				/* Tcl interpreter */
     BasicBlock* bbPtr = assemEnvPtr->curr_bb;
 				/* Current basic block */
@@ -2099,14 +2098,14 @@ DeleteMirrorJumpTable(
     Tcl_HashTable* hashPtr;	/* Hash table pointer */
     Tcl_HashSearch search;	/* Hash search control */
     Tcl_HashEntry* entry;	/* Hash table entry containing a jump label */
-    Tcl_Obj* label;		/* Jump label from the hash table */
+    Tcl_Obj *label;		/* Jump label from the hash table */
 
     if (jtPtr) {
 	hashPtr = &jtPtr->hashTable;
 	for (entry = Tcl_FirstHashEntry(hashPtr, &search);
 		entry != NULL;
 		entry = Tcl_NextHashEntry(&search)) {
-	    label = (Tcl_Obj*)Tcl_GetHashValue(entry);
+	    label = (Tcl_Obj *)Tcl_GetHashValue(entry);
 	    Tcl_DecrRefCount(label);
 	    Tcl_SetHashValue(entry, NULL);
 	}
@@ -2118,7 +2117,7 @@ DeleteMirrorJumpTable(
 	for (entry = Tcl_FirstHashEntry(hashPtr, &search);
 		entry != NULL;
 		entry = Tcl_NextHashEntry(&search)) {
-	    label = (Tcl_Obj*)Tcl_GetHashValue(entry);
+	    label = (Tcl_Obj *)Tcl_GetHashValue(entry);
 	    Tcl_DecrRefCount(label);
 	    Tcl_SetHashValue(entry, NULL);
 	}
@@ -2148,14 +2147,14 @@ DeleteMirrorJumpTable(
 
 static int
 GetNextOperand(
-    AssemblyEnv* assemEnvPtr,	/* Assembly environment */
-    Tcl_Token** tokenPtrPtr,	/* INPUT/OUTPUT: Pointer to the token holding
+    AssemblyEnv *assemEnvPtr,	/* Assembly environment */
+    Tcl_Token **tokenPtrPtr,	/* INPUT/OUTPUT: Pointer to the token holding
 				 * the operand */
-    Tcl_Obj** operandObjPtr)	/* OUTPUT: Tcl object holding the operand text
+    Tcl_Obj **operandObjPtr)	/* OUTPUT: Tcl object holding the operand text
 				 * with \-substitutions done. */
 {
-    Tcl_Interp* interp = (Tcl_Interp*) assemEnvPtr->envPtr->iPtr;
-    Tcl_Obj* operandObj;
+    Tcl_Interp *interp = (Tcl_Interp *) assemEnvPtr->envPtr->iPtr;
+    Tcl_Obj *operandObj;
 
     TclNewObj(operandObj);
     if (!TclWordKnownAtCompileTime(*tokenPtrPtr, operandObj)) {
@@ -2201,12 +2200,12 @@ GetBooleanOperand(
 {
     CompileEnv* envPtr = assemEnvPtr->envPtr;
 				/* Compilation environment */
-    Tcl_Interp* interp = (Tcl_Interp*) envPtr->iPtr;
+    Tcl_Interp *interp = (Tcl_Interp *) envPtr->iPtr;
 				/* Tcl interpreter */
     Tcl_Token* tokenPtr = *tokenPtrPtr;
 				/* INOUT: Pointer to the next token in the
 				 * source code */
-    Tcl_Obj* intObj;		/* Integer from the source code */
+    Tcl_Obj *intObj;		/* Integer from the source code */
     int status;			/* Tcl status return */
 
     /*
@@ -2254,12 +2253,12 @@ GetIntegerOperand(
 {
     CompileEnv* envPtr = assemEnvPtr->envPtr;
 				/* Compilation environment */
-    Tcl_Interp* interp = (Tcl_Interp*) envPtr->iPtr;
+    Tcl_Interp *interp = (Tcl_Interp *) envPtr->iPtr;
 				/* Tcl interpreter */
     Tcl_Token* tokenPtr = *tokenPtrPtr;
 				/* INOUT: Pointer to the next token in the
 				 * source code */
-    Tcl_Obj* intObj;		/* Integer from the source code */
+    Tcl_Obj *intObj;		/* Integer from the source code */
     int status;			/* Tcl status return */
 
     /*
@@ -2305,11 +2304,11 @@ GetListIndexOperand(
     Tcl_Token** tokenPtrPtr,	/* Current token from the parser */
     int* result)		/* OUTPUT: encoded index derived from the token */
 {
-    CompileEnv* envPtr = assemEnvPtr->envPtr;
+    CompileEnv *envPtr = assemEnvPtr->envPtr;
 				/* Compilation environment */
-    Tcl_Interp* interp = (Tcl_Interp*) envPtr->iPtr;
+    Tcl_Interp *interp = (Tcl_Interp *) envPtr->iPtr;
 				/* Tcl interpreter */
-    Tcl_Token* tokenPtr = *tokenPtrPtr;
+    Tcl_Token *tokenPtr = *tokenPtrPtr;
 				/* INOUT: Pointer to the next token in the
 				 * source code */
     Tcl_Obj *value;
@@ -2357,18 +2356,18 @@ GetListIndexOperand(
 
 static size_t
 FindLocalVar(
-    AssemblyEnv* assemEnvPtr,	/* Assembly environment */
-    Tcl_Token** tokenPtrPtr)
+    AssemblyEnv *assemEnvPtr,	/* Assembly environment */
+    Tcl_Token **tokenPtrPtr)
 {
-    CompileEnv* envPtr = assemEnvPtr->envPtr;
+    CompileEnv *envPtr = assemEnvPtr->envPtr;
 				/* Compilation environment */
-    Tcl_Interp* interp = (Tcl_Interp*) envPtr->iPtr;
+    Tcl_Interp *interp = (Tcl_Interp *) envPtr->iPtr;
 				/* Tcl interpreter */
-    Tcl_Token* tokenPtr = *tokenPtrPtr;
+    Tcl_Token *tokenPtr = *tokenPtrPtr;
 				/* INOUT: Pointer to the next token in the
 				 * source code. */
-    Tcl_Obj* varNameObj;	/* Name of the variable */
-    const char* varNameStr;
+    Tcl_Obj *varNameObj;	/* Name of the variable */
+    const char *varNameStr;
     Tcl_Size varNameLen;
     Tcl_Size localVar;		/* Index of the variable in the LVT */
 
@@ -2412,11 +2411,11 @@ FindLocalVar(
 
 static int
 CheckNamespaceQualifiers(
-    Tcl_Interp* interp,		/* Tcl interpreter for error reporting */
-    const char* name,		/* Variable name to check */
+    Tcl_Interp *interp,		/* Tcl interpreter for error reporting */
+    const char *name,		/* Variable name to check */
     Tcl_Size nameLen)		/* Length of the variable */
 {
-    const char* p;
+    const char *p;
 
     for (p = name; p+2 < name+nameLen;  p++) {
 	if ((*p == ':') && (p[1] == ':')) {
@@ -2446,7 +2445,7 @@ CheckNamespaceQualifiers(
 
 static int
 CheckOneByte(
-    Tcl_Interp* interp,		/* Tcl interpreter for error reporting */
+    Tcl_Interp *interp,		/* Tcl interpreter for error reporting */
     Tcl_Size value)		/* Value to check */
 {
     if (value < 0 || value > 0xFF) {
@@ -2478,7 +2477,7 @@ CheckOneByte(
 
 static int
 CheckSignedOneByte(
-    Tcl_Interp* interp,		/* Tcl interpreter for error reporting */
+    Tcl_Interp *interp,		/* Tcl interpreter for error reporting */
     Tcl_Size value)		/* Value to check */
 {
     if (value > 0x7F || value < -0x80) {
@@ -2509,7 +2508,7 @@ CheckSignedOneByte(
 
 static int
 CheckNonNegative(
-    Tcl_Interp* interp,		/* Tcl interpreter for error reporting */
+    Tcl_Interp *interp,		/* Tcl interpreter for error reporting */
     Tcl_Size value)		/* Value to check */
 {
     if (value < 0 || value > INT_MAX) {
@@ -2540,7 +2539,7 @@ CheckNonNegative(
 
 static int
 CheckStrictlyPositive(
-    Tcl_Interp* interp,		/* Tcl interpreter for error reporting */
+    Tcl_Interp *interp,		/* Tcl interpreter for error reporting */
     Tcl_Size value)		/* Value to check */
 {
     if (value <= 0 || value > INT_MAX) {
@@ -2569,14 +2568,14 @@ CheckStrictlyPositive(
 
 static int
 DefineLabel(
-    AssemblyEnv* assemEnvPtr,	/* Assembly environment */
-    const char* labelName)	/* Label being defined */
+    AssemblyEnv *assemEnvPtr,	/* Assembly environment */
+    const char *labelName)	/* Label being defined */
 {
-    CompileEnv* envPtr = assemEnvPtr->envPtr;
+    CompileEnv *envPtr = assemEnvPtr->envPtr;
 				/* Compilation environment */
-    Tcl_Interp* interp = (Tcl_Interp*) envPtr->iPtr;
+    Tcl_Interp *interp = (Tcl_Interp *) envPtr->iPtr;
 				/* Tcl interpreter */
-    Tcl_HashEntry* entry;	/* Label's entry in the symbol table */
+    Tcl_HashEntry *entry;	/* Label's entry in the symbol table */
     int isNew;			/* Flag == 1 iff the label was previously
 				 * undefined */
 
@@ -2630,7 +2629,7 @@ StartBasicBlock(
     AssemblyEnv* assemEnvPtr,	/* Assembly environment */
     int flags,			/* Flags to apply to the basic block being
 				 * closed, if there is one. */
-    Tcl_Obj* jumpLabel)		/* Label of the location that the block jumps
+    Tcl_Obj *jumpLabel)		/* Label of the location that the block jumps
 				 * to, or NULL if the block does not jump */
 {
     CompileEnv* envPtr = assemEnvPtr->envPtr;
@@ -2875,11 +2874,11 @@ CheckJumpTableLabels(
     AssemblyEnv* assemEnvPtr,	/* Assembly environment */
     BasicBlock* bbPtr)		/* Basic block that ends in a jump table */
 {
-    Tcl_HashTable* symHash;	/* Hash table with the symbols */
+    Tcl_HashTable *symHash;	/* Hash table with the symbols */
     Tcl_HashSearch search;	/* Hash table iterator */
-    Tcl_HashEntry* symEntryPtr;	/* Hash entry for the symbols */
-    Tcl_Obj* symbolObj;		/* Jump target */
-    Tcl_HashEntry* valEntryPtr;	/* Hash entry for the resolutions */
+    Tcl_HashEntry *symEntryPtr;	/* Hash entry for the symbols */
+    Tcl_Obj *symbolObj;		/* Jump target */
+    Tcl_HashEntry *valEntryPtr;	/* Hash entry for the resolutions */
 
     /*
      * Look up every jump target in the jump hash.
@@ -2891,7 +2890,7 @@ CheckJumpTableLabels(
 	for (symEntryPtr = Tcl_FirstHashEntry(symHash, &search);
 		symEntryPtr != NULL;
 		symEntryPtr = Tcl_NextHashEntry(&search)) {
-	    symbolObj = (Tcl_Obj*)Tcl_GetHashValue(symEntryPtr);
+	    symbolObj = (Tcl_Obj *)Tcl_GetHashValue(symEntryPtr);
 	    valEntryPtr = Tcl_FindHashEntry(&assemEnvPtr->labelHash,
 		    TclGetString(symbolObj));
 	    DEBUG_PRINT("  %s -> %s (%d)\n",
@@ -2907,7 +2906,7 @@ CheckJumpTableLabels(
 	for (symEntryPtr = Tcl_FirstHashEntry(symHash, &search);
 		symEntryPtr != NULL;
 		symEntryPtr = Tcl_NextHashEntry(&search)) {
-	    symbolObj = (Tcl_Obj*)Tcl_GetHashValue(symEntryPtr);
+	    symbolObj = (Tcl_Obj *)Tcl_GetHashValue(symEntryPtr);
 	    valEntryPtr = Tcl_FindHashEntry(&assemEnvPtr->labelHash,
 		    TclGetString(symbolObj));
 	    DEBUG_PRINT("  %" TCL_SIZE_MODIFIER "d -> %s (%d)\n",
@@ -2939,14 +2938,14 @@ CheckJumpTableLabels(
 
 static void
 ReportUndefinedLabel(
-    AssemblyEnv* assemEnvPtr,	/* Assembly environment */
-    BasicBlock* bbPtr,		/* Basic block that contains the undefined
+    AssemblyEnv *assemEnvPtr,	/* Assembly environment */
+    BasicBlock *bbPtr,		/* Basic block that contains the undefined
 				 * label */
-    Tcl_Obj* jumpTarget)	/* Label of a jump target */
+    Tcl_Obj *jumpTarget)	/* Label of a jump target */
 {
-    CompileEnv* envPtr = assemEnvPtr->envPtr;
+    CompileEnv *envPtr = assemEnvPtr->envPtr;
 				/* Compilation environment */
-    Tcl_Interp* interp = (Tcl_Interp*) envPtr->iPtr;
+    Tcl_Interp *interp = (Tcl_Interp *) envPtr->iPtr;
 				/* Tcl interpreter */
 
     if (assemEnvPtr->flags & TCL_EVAL_DIRECT) {
@@ -3024,7 +3023,7 @@ ResolveJumpTableTargets(
     Tcl_HashTable* symHash;	/* Hash table with the symbols */
     Tcl_HashSearch search;	/* Hash table iterator */
     Tcl_HashEntry* symEntryPtr;	/* Hash entry for the symbols */
-    Tcl_Obj* symbolObj;		/* Jump target */
+    Tcl_Obj *symbolObj;		/* Jump target */
     Tcl_HashEntry* valEntryPtr;	/* Hash entry for the resolutions */
     Tcl_HashTable* realJumpHashPtr;
 				/* Jump table hash in the actual code */
@@ -3056,7 +3055,7 @@ ResolveJumpTableTargets(
 	for (symEntryPtr = Tcl_FirstHashEntry(symHash, &search);
 		symEntryPtr != NULL;
 		symEntryPtr = Tcl_NextHashEntry(&search)) {
-	    symbolObj = (Tcl_Obj*)Tcl_GetHashValue(symEntryPtr);
+	    symbolObj = (Tcl_Obj *)Tcl_GetHashValue(symEntryPtr);
 	    DEBUG_PRINT("     symbol %s\n", TclGetString(symbolObj));
 
 	    valEntryPtr = Tcl_FindHashEntry(&assemEnvPtr->labelHash,
@@ -3097,7 +3096,7 @@ ResolveJumpTableTargets(
 	for (symEntryPtr = Tcl_FirstHashEntry(symHash, &search);
 		symEntryPtr != NULL;
 		symEntryPtr = Tcl_NextHashEntry(&search)) {
-	    symbolObj = (Tcl_Obj*)Tcl_GetHashValue(symEntryPtr);
+	    symbolObj = (Tcl_Obj *)Tcl_GetHashValue(symEntryPtr);
 	    DEBUG_PRINT("     symbol %s\n", TclGetString(symbolObj));
 
 	    valEntryPtr = Tcl_FindHashEntry(&assemEnvPtr->labelHash,
@@ -3183,15 +3182,15 @@ CheckForThrowInWrongContext(
 
 static int
 CheckNonThrowingBlock(
-    AssemblyEnv* assemEnvPtr,	/* Assembly environment */
-    BasicBlock* blockPtr)	/* Basic block where exceptions are not
+    AssemblyEnv *assemEnvPtr,	/* Assembly environment */
+    BasicBlock *blockPtr)	/* Basic block where exceptions are not
 				 * allowed */
 {
-    CompileEnv* envPtr = assemEnvPtr->envPtr;
+    CompileEnv *envPtr = assemEnvPtr->envPtr;
 				/* Compilation environment */
-    Tcl_Interp* interp = (Tcl_Interp*) envPtr->iPtr;
+    Tcl_Interp *interp = (Tcl_Interp *) envPtr->iPtr;
 				/* Tcl interpreter */
-    BasicBlock* nextPtr;	/* Pointer to the succeeding basic block */
+    BasicBlock *nextPtr;	/* Pointer to the succeeding basic block */
     Tcl_Size offset;		/* Bytecode offset of the current
 				 * instruction */
     Tcl_Size bound;		/* Bytecode offset following the last
@@ -3374,23 +3373,23 @@ CheckStack(
 
 static int
 StackCheckBasicBlock(
-    AssemblyEnv* assemEnvPtr,	/* Assembly environment */
-    BasicBlock* blockPtr,	/* Pointer to the basic block being checked */
-    BasicBlock* predecessor,	/* Pointer to the block that passed control to
+    AssemblyEnv *assemEnvPtr,	/* Assembly environment */
+    BasicBlock *blockPtr,	/* Pointer to the basic block being checked */
+    BasicBlock *predecessor,	/* Pointer to the block that passed control to
 				 * this one. */
     int initialStackDepth)	/* Stack depth on entry to the block */
 {
-    CompileEnv* envPtr = assemEnvPtr->envPtr;
+    CompileEnv *envPtr = assemEnvPtr->envPtr;
 				/* Compilation environment */
-    Tcl_Interp* interp = (Tcl_Interp*) envPtr->iPtr;
+    Tcl_Interp *interp = (Tcl_Interp *) envPtr->iPtr;
 				/* Tcl interpreter */
     BasicBlock* jumpTarget;	/* Basic block where a jump goes */
     int stackDepth;		/* Current stack depth */
     int maxDepth;		/* Maximum stack depth so far */
     int result;			/* Tcl status return */
     Tcl_HashSearch jtSearch;	/* Search structure for the jump table */
-    Tcl_HashEntry* jtEntry;	/* Hash entry in the jump table */
-    Tcl_Obj* targetLabel;	/* Target label from the jump table */
+    Tcl_HashEntry *jtEntry;	/* Hash entry in the jump table */
+    Tcl_Obj *targetLabel;	/* Target label from the jump table */
     Tcl_HashEntry* entry;	/* Hash entry in the label table */
 
     if (blockPtr->flags & BB_VISITED) {
@@ -3502,10 +3501,10 @@ StackCheckBasicBlock(
 	for (jtEntry = Tcl_FirstHashEntry(tablePtr, &jtSearch);
 		result == TCL_OK && jtEntry != NULL;
 		jtEntry = Tcl_NextHashEntry(&jtSearch)) {
-	    targetLabel = (Tcl_Obj*)Tcl_GetHashValue(jtEntry);
+	    targetLabel = (Tcl_Obj *)Tcl_GetHashValue(jtEntry);
 	    entry = Tcl_FindHashEntry(&assemEnvPtr->labelHash,
 		    TclGetString(targetLabel));
-	    jumpTarget = (BasicBlock*)Tcl_GetHashValue(entry);
+	    jumpTarget = (BasicBlock *)Tcl_GetHashValue(entry);
 	    result = StackCheckBasicBlock(assemEnvPtr, jumpTarget,
 		    blockPtr, stackDepth);
 	}
@@ -3537,16 +3536,16 @@ StackCheckBasicBlock(
 
 static int
 StackCheckExit(
-    AssemblyEnv* assemEnvPtr)	/* Assembly environment */
+    AssemblyEnv *assemEnvPtr)	/* Assembly environment */
 {
-    CompileEnv* envPtr = assemEnvPtr->envPtr;
+    CompileEnv *envPtr = assemEnvPtr->envPtr;
 				/* Compilation environment */
-    Tcl_Interp* interp = (Tcl_Interp*) envPtr->iPtr;
+    Tcl_Interp *interp = (Tcl_Interp *) envPtr->iPtr;
 				/* Tcl interpreter */
     int depth;			/* Net stack effect */
     int litIndex;		/* Index in the literal pool of the empty
 				 * string */
-    BasicBlock* curr_bb = assemEnvPtr->curr_bb;
+    BasicBlock *curr_bb = assemEnvPtr->curr_bb;
 				/* Final basic block in the assembly */
 
     /*
@@ -3687,34 +3686,34 @@ ProcessCatches(
 
 static int
 ProcessCatchesInBasicBlock(
-    AssemblyEnv* assemEnvPtr,	/* Assembly environment */
-    BasicBlock* bbPtr,		/* Basic block being processed */
-    BasicBlock* enclosing,	/* Start basic block of the enclosing catch */
+    AssemblyEnv *assemEnvPtr,	/* Assembly environment */
+    BasicBlock *bbPtr,		/* Basic block being processed */
+    BasicBlock *enclosing,	/* Start basic block of the enclosing catch */
     enum BasicBlockCatchState state,
 				/* BBCS_NONE, BBCS_INCATCH, or BBCS_CAUGHT */
     int catchDepth)		/* Depth of nesting of catches */
 {
-    CompileEnv* envPtr = assemEnvPtr->envPtr;
+    CompileEnv *envPtr = assemEnvPtr->envPtr;
 				/* Compilation environment */
-    Tcl_Interp* interp = (Tcl_Interp*) envPtr->iPtr;
+    Tcl_Interp *interp = (Tcl_Interp *) envPtr->iPtr;
 				/* Tcl interpreter */
     int result;			/* Return value from this procedure */
-    BasicBlock* fallThruEnclosing;
+    BasicBlock *fallThruEnclosing;
 				/* Enclosing catch if execution falls thru */
     enum BasicBlockCatchState fallThruState;
 				/* Catch state of the successor block */
-    BasicBlock* jumpEnclosing;	/* Enclosing catch if execution goes to jump
+    BasicBlock *jumpEnclosing;	/* Enclosing catch if execution goes to jump
 				 * target */
     enum BasicBlockCatchState jumpState;
 				/* Catch state of the jump target */
     int changed = 0;		/* Flag == 1 iff successor blocks need to be
 				 * checked because the state of this block has
 				 * changed. */
-    BasicBlock* jumpTarget;	/* Basic block where a jump goes */
+    BasicBlock *jumpTarget;	/* Basic block where a jump goes */
     Tcl_HashSearch jtSearch;	/* Hash search control for a jumptable */
-    Tcl_HashEntry* jtEntry;	/* Entry in a jumptable */
-    Tcl_Obj* targetLabel;	/* Target label from a jumptable */
-    Tcl_HashEntry* entry;	/* Entry from the label table */
+    Tcl_HashEntry *jtEntry;	/* Entry in a jumptable */
+    Tcl_Obj *targetLabel;	/* Target label from a jumptable */
+    Tcl_HashEntry *entry;	/* Entry from the label table */
 
     /*
      * Update the state of the current block, checking for consistency.  Set
@@ -3826,7 +3825,7 @@ ProcessCatchesInBasicBlock(
 	for (jtEntry = Tcl_FirstHashEntry(tablePtr, &jtSearch);
 		result == TCL_OK && jtEntry != NULL;
 		jtEntry = Tcl_NextHashEntry(&jtSearch)) {
-	    targetLabel = (Tcl_Obj*)Tcl_GetHashValue(jtEntry);
+	    targetLabel = (Tcl_Obj *)Tcl_GetHashValue(jtEntry);
 	    entry = Tcl_FindHashEntry(&assemEnvPtr->labelHash,
 		    TclGetString(targetLabel));
 	    jumpTarget = (BasicBlock*)Tcl_GetHashValue(entry);
@@ -3855,11 +3854,11 @@ ProcessCatchesInBasicBlock(
 
 static int
 CheckForUnclosedCatches(
-    AssemblyEnv* assemEnvPtr)	/* Assembly environment */
+    AssemblyEnv *assemEnvPtr)	/* Assembly environment */
 {
-    CompileEnv* envPtr = assemEnvPtr->envPtr;
+    CompileEnv *envPtr = assemEnvPtr->envPtr;
 				/* Compilation environment */
-    Tcl_Interp* interp = (Tcl_Interp*) envPtr->iPtr;
+    Tcl_Interp *interp = (Tcl_Interp *) envPtr->iPtr;
 				/* Tcl interpreter */
 
     if (assemEnvPtr->curr_bb->catchState >= BBCS_INCATCH) {
@@ -4260,12 +4259,12 @@ ResetVisitedBasicBlocks(
 
 static void
 AddBasicBlockRangeToErrorInfo(
-    AssemblyEnv* assemEnvPtr,	/* Assembly environment */
-    BasicBlock* bbPtr)		/* Basic block in which the error is found */
+    AssemblyEnv *assemEnvPtr,	/* Assembly environment */
+    BasicBlock *bbPtr)		/* Basic block in which the error is found */
 {
-    CompileEnv* envPtr = assemEnvPtr->envPtr;
+    CompileEnv *envPtr = assemEnvPtr->envPtr;
 				/* Compilation environment */
-    Tcl_Interp* interp = (Tcl_Interp*) envPtr->iPtr;
+    Tcl_Interp *interp = (Tcl_Interp *) envPtr->iPtr;
 				/* Tcl interpreter */
 
     if (bbPtr->successor1 != NULL) {

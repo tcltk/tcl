@@ -4077,7 +4077,7 @@ extern const TclStubs *tclStubsPtr;
 #	undef Tcl_GetLongFromObj
 #	undef Tcl_ExprLong
 #	undef Tcl_ExprLongObj
-#	define Tcl_GetLongFromObj ((int(*)(Tcl_Interp*,Tcl_Obj*,long*))Tcl_GetWideIntFromObj)
+#	define Tcl_GetLongFromObj ((int(*)(Tcl_Interp *,Tcl_Obj *,long *))Tcl_GetWideIntFromObj)
 #	define Tcl_ExprLong TclExprLong
 	static inline int TclExprLong(Tcl_Interp *interp, const char *string, long *ptr){
 	    int intValue;

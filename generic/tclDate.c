@@ -114,7 +114,7 @@
 #include "tclDate.h"
 
 #define YYMALLOC	Tcl_Alloc
-#define YYFREE(x)	(Tcl_Free((void*) (x)))
+#define YYFREE(x)	(Tcl_Free((void *) (x)))
 
 #define EPOCH		1970
 #define START_OF_TIME	1902
@@ -255,7 +255,7 @@ struct YYLTYPE
 
 
 
-int TclDateparse (DateInfo* info);
+int TclDateparse (DateInfo *info);
 
 
 
@@ -333,12 +333,12 @@ typedef enum yysymbol_kind_t yysymbol_kind_t;
  * Prototypes of internal functions.
  */
 
-static int		LookupWord(YYSTYPE* yylvalPtr, char *buff);
-static void		TclDateerror(YYLTYPE* location,
-				     DateInfo* info, const char *s);
-static int		TclDatelex(YYSTYPE* yylvalPtr, YYLTYPE* location,
-				   DateInfo* info);
-MODULE_SCOPE int	yyparse(DateInfo*);
+static int		LookupWord(YYSTYPE *yylvalPtr, char *buff);
+static void		TclDateerror(YYLTYPE *location,
+				     DateInfo *info, const char *s);
+static int		TclDatelex(YYSTYPE *yylvalPtr, YYLTYPE *location,
+				   DateInfo *info);
+MODULE_SCOPE int	yyparse(DateInfo *);
 
 
 
@@ -1060,7 +1060,7 @@ do {                                                                      \
 
 static void
 yy_symbol_value_print (FILE *yyo,
-                       yysymbol_kind_t yykind, YYSTYPE const * const yyvaluep, YYLTYPE const * const yylocationp, DateInfo* info)
+                       yysymbol_kind_t yykind, YYSTYPE const * const yyvaluep, YYLTYPE const * const yylocationp, DateInfo *info)
 {
   FILE *yyoutput = yyo;
   YY_USE (yyoutput);
@@ -1080,7 +1080,7 @@ yy_symbol_value_print (FILE *yyo,
 
 static void
 yy_symbol_print (FILE *yyo,
-                 yysymbol_kind_t yykind, YYSTYPE const * const yyvaluep, YYLTYPE const * const yylocationp, DateInfo* info)
+                 yysymbol_kind_t yykind, YYSTYPE const * const yyvaluep, YYLTYPE const * const yylocationp, DateInfo *info)
 {
   YYFPRINTF (yyo, "%s %s (",
              yykind < YYNTOKENS ? "token" : "nterm", yysymbol_name (yykind));
@@ -1121,7 +1121,7 @@ do {                                                            \
 
 static void
 yy_reduce_print (yy_state_t *yyssp, YYSTYPE *yyvsp, YYLTYPE *yylsp,
-                 int yyrule, DateInfo* info)
+                 int yyrule, DateInfo *info)
 {
   int yylno = yyrline[yyrule];
   int yynrhs = yyr2[yyrule];
@@ -1184,7 +1184,7 @@ int yydebug;
 
 static void
 yydestruct (const char *yymsg,
-            yysymbol_kind_t yykind, YYSTYPE *yyvaluep, YYLTYPE *yylocationp, DateInfo* info)
+            yysymbol_kind_t yykind, YYSTYPE *yyvaluep, YYLTYPE *yylocationp, DateInfo *info)
 {
   YY_USE (yyvaluep);
   YY_USE (yylocationp);
@@ -1208,7 +1208,7 @@ yydestruct (const char *yymsg,
 `----------*/
 
 int
-yyparse (DateInfo* info)
+yyparse (DateInfo *info)
 {
 /* Lookahead token kind.  */
 int yychar;
@@ -1600,14 +1600,14 @@ yyreduce:
 
   case 21: /* zone: tZONEwO4 sign INTNUM  */
                                { /* GMT+0100, GMT-1000, etc. */
-	    yyTimezone = (yyvsp[-2].Number) - (yyvsp[-1].Number)*((yyvsp[0].Number) % 100 + ((yyvsp[0].Number) / 100) * 60);
+	    yyTimezone = (yyvsp[-2].Number) - (yyvsp[-1].Number) * ((yyvsp[0].Number) % 100 + ((yyvsp[0].Number) / 100) * 60);
 	    yyDSTmode = DSToff;
 	}
     break;
 
   case 22: /* zone: tZONEwO2 sign INTNUM  */
                                { /* GMT+1, GMT-10, etc. */
-	    yyTimezone = (yyvsp[-2].Number) - (yyvsp[-1].Number)*((yyvsp[0].Number) * 60);
+	    yyTimezone = (yyvsp[-2].Number) - (yyvsp[-1].Number) * ((yyvsp[0].Number) * 60);
 	    yyDSTmode = DSToff;
 	}
     break;
@@ -1620,9 +1620,9 @@ yyreduce:
   case 24: /* nmzone: sign tUNUMBER $@1  */
                                                                      {
 	    if (yyDigitCount == 4) { /* +0100, -0100 */
-		yyTimezone = -(yyvsp[-2].Number)*((yyvsp[-1].Number) % 100 + ((yyvsp[-1].Number) / 100) * 60);
+		yyTimezone = -(yyvsp[-2].Number) * ((yyvsp[-1].Number) % 100 + ((yyvsp[-1].Number) / 100) * 60);
 	    } else { /* +01, -01, +1, -1 */
-		yyTimezone = -(yyvsp[-2].Number)*((yyvsp[-1].Number) * 60);
+		yyTimezone = -(yyvsp[-2].Number) * ((yyvsp[-1].Number) * 60);
 	    }
 	    yyDSTmode = DSToff;
 	}
@@ -2365,11 +2365,11 @@ bypassSpaces(
 
 static void
 TclDateerror(
-    YYLTYPE* location,
-    DateInfo* infoPtr,
+    YYLTYPE *location,
+    DateInfo *infoPtr,
     const char *s)
 {
-    Tcl_Obj* t;
+    Tcl_Obj *t;
     if (!infoPtr->messages) {
 	TclNewObj(infoPtr->messages);
     }
@@ -2409,7 +2409,7 @@ TclToSeconds(
 
 static int
 LookupWord(
-    YYSTYPE* yylvalPtr,
+    YYSTYPE *yylvalPtr,
     char *buff)
 {
     char *p;
@@ -2533,8 +2533,8 @@ LookupWord(
 
 static int
 TclDatelex(
-    YYSTYPE* yylvalPtr,
-    YYLTYPE* location,
+    YYSTYPE *yylvalPtr,
+    YYLTYPE *location,
     DateInfo *info)
 {
     char c;
@@ -2573,7 +2573,7 @@ TclDatelex(
 		 * (8 chars is isodate) */
 		p = (char *)yyInput+8;
 		if (TclAtoWIe(&yylvalPtr->Number, yyInput, p, 1) != TCL_OK) {
-		    return tID; /* overflow*/
+		    return tID; /* overflow */
 		}
 		yyDigitCount = 8;
 		yyInput = p;
@@ -2584,7 +2584,7 @@ TclDatelex(
 	     * Convert the string into a number
 	     */
 	    if (TclAtoWIe(&yylvalPtr->Number, yyInput, p, 1) != TCL_OK) {
-		return tID; /* overflow*/
+		return tID; /* overflow */
 	    }
 	    yyInput = p;
 	    /*

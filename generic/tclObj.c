@@ -486,7 +486,7 @@ TclFinalizeObjects(void)
  *
  *	This procedure is a helper which returns the thread-specific
  *	hash-table used to track continuation line information associated with
- *	Tcl_Obj*, and the objThreadMap, etc.
+ *	Tcl_Obj *, and the objThreadMap, etc.
  *
  * Results:
  *	A reference to the thread-data.
@@ -525,7 +525,7 @@ TclGetContLineTable(void)
  * TclContinuationsEnter --
  *
  *	This procedure is a helper which saves the continuation line
- *	information associated with a Tcl_Obj*.
+ *	information associated with a Tcl_Obj *.
  *
  * Results:
  *	A reference to the newly created continuation line location table.
@@ -589,7 +589,7 @@ TclContinuationsEnter(
  * TclContinuationsEnterDerived --
  *
  *	This procedure is a helper which computes the continuation line
- *	information associated with a Tcl_Obj* cut from the middle of a
+ *	information associated with a Tcl_Obj * cut from the middle of a
  *	script.
  *
  * Results:
@@ -682,7 +682,7 @@ TclContinuationsEnterDerived(
  * TclContinuationsCopy --
  *
  *	This procedure is a helper which copies the continuation line
- *	information associated with a Tcl_Obj* to another Tcl_Obj*. It is
+ *	information associated with a Tcl_Obj * to another Tcl_Obj *. It is
  *	assumed that both contain the same string/script. Use this when a
  *	script is duplicated because it was shared.
  *
@@ -718,11 +718,11 @@ TclContinuationsCopy(
  * TclContinuationsGet --
  *
  *	This procedure is a helper which retrieves the continuation line
- *	information associated with a Tcl_Obj*, if it has any.
+ *	information associated with a Tcl_Obj *, if it has any.
  *
  * Results:
  *	A reference to the continuation line location table, or NULL if the
- *	Tcl_Obj* has no such information associated with it.
+ *	Tcl_Obj * has no such information associated with it.
  *
  * Side effects:
  *	None.
@@ -4592,7 +4592,7 @@ Tcl_RepresentationCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_Size objc,
-    Tcl_Obj *const objv[])
+    Tcl_Obj *const *objv)
 {
     Tcl_Obj *descObj;
 

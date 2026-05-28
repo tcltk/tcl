@@ -342,7 +342,7 @@ InfoObjectClassCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_Size objc,
-    Tcl_Obj *const objv[])
+    Tcl_Obj *const *objv)
 {
     Object *oPtr;
 
@@ -399,7 +399,7 @@ InfoObjectDefnCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_Size objc,
-    Tcl_Obj *const objv[])
+    Tcl_Obj *const *objv)
 {
     Object *oPtr;
     Method *mPtr;
@@ -450,7 +450,7 @@ InfoObjectFiltersCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_Size objc,
-    Tcl_Obj *const objv[])
+    Tcl_Obj *const *objv)
 {
     Tcl_Size i;
     Tcl_Obj *filterObj, *resultObj;
@@ -489,7 +489,7 @@ InfoObjectForwardCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_Size objc,
-    Tcl_Obj *const objv[])
+    Tcl_Obj *const *objv)
 {
     Object *oPtr;
     Method *mPtr;
@@ -536,7 +536,7 @@ InfoObjectIsACmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_Size objc,
-    Tcl_Obj *const objv[])
+    Tcl_Obj *const *objv)
 {
     static const char *const categories[] = {
 	"class", "metaclass", "mixin", "object", "typeof", NULL
@@ -660,7 +660,7 @@ InfoObjectMethodsCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_Size objc,
-    Tcl_Obj *const objv[])
+    Tcl_Obj *const *objv)
 {
     static const char *const options[] = {
 	"-all", "-localprivate", "-private", "-scope", NULL
@@ -799,7 +799,7 @@ InfoObjectMethodTypeCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_Size objc,
-    Tcl_Obj *const objv[])
+    Tcl_Obj *const *objv)
 {
     Object *oPtr;
     Method *mPtr;
@@ -838,7 +838,7 @@ InfoObjectMixinsCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_Size objc,
-    Tcl_Obj *const objv[])
+    Tcl_Obj *const *objv)
 {
     Class *mixinPtr;
     Object *oPtr;
@@ -881,7 +881,7 @@ InfoObjectIdCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_Size objc,
-    Tcl_Obj *const objv[])
+    Tcl_Obj *const *objv)
 {
     Object *oPtr;
 
@@ -913,7 +913,7 @@ InfoObjectNsCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_Size objc,
-    Tcl_Obj *const objv[])
+    Tcl_Obj *const *objv)
 {
     Object *oPtr;
 
@@ -945,7 +945,7 @@ InfoObjectVariablesCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_Size objc,
-    Tcl_Obj *const objv[])
+    Tcl_Obj *const *objv)
 {
     Object *oPtr;
     Tcl_Obj *resultObj;
@@ -1004,7 +1004,7 @@ InfoObjectVarsCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_Size objc,
-    Tcl_Obj *const objv[])
+    Tcl_Obj *const *objv)
 {
     Object *oPtr;
     const char *pattern = NULL;
@@ -1065,7 +1065,7 @@ InfoClassConstrCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_Size objc,
-    Tcl_Obj *const objv[])
+    Tcl_Obj *const *objv)
 {
     Proc *procPtr;
     Tcl_Obj *resultObjs[2];
@@ -1108,7 +1108,7 @@ InfoClassDefnCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_Size objc,
-    Tcl_Obj *const objv[])
+    Tcl_Obj *const *objv)
 {
     Method *mPtr;
     Proc *procPtr;
@@ -1153,7 +1153,7 @@ InfoClassDefnNsCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_Size objc,
-    Tcl_Obj *const objv[])
+    Tcl_Obj *const *objv)
 {
     static const char *const kindList[] = {
 	"-class",
@@ -1203,7 +1203,7 @@ InfoClassDestrCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_Size objc,
-    Tcl_Obj *const objv[])
+    Tcl_Obj *const *objv)
 {
     Proc *procPtr;
     Class *clsPtr;
@@ -1244,7 +1244,7 @@ InfoClassFiltersCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_Size objc,
-    Tcl_Obj *const objv[])
+    Tcl_Obj *const *objv)
 {
     Tcl_Size i;
     Tcl_Obj *filterObj, *resultObj;
@@ -1282,7 +1282,7 @@ InfoClassForwardCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_Size objc,
-    Tcl_Obj *const objv[])
+    Tcl_Obj *const *objv)
 {
     Method *mPtr;
     Tcl_Obj *prefixObj;
@@ -1324,7 +1324,7 @@ InfoClassInstancesCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_Size objc,
-    Tcl_Obj *const objv[])
+    Tcl_Obj *const *objv)
 {
     Object *oPtr;
     Class *clsPtr;
@@ -1372,7 +1372,7 @@ InfoClassMethodsCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_Size objc,
-    Tcl_Obj *const objv[])
+    Tcl_Obj *const *objv)
 {
     static const char *const options[] = {
 	"-all", "-localprivate", "-private", "-scope", NULL
@@ -1502,7 +1502,7 @@ InfoClassMethodTypeCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_Size objc,
-    Tcl_Obj *const objv[])
+    Tcl_Obj *const *objv)
 {
     Method *mPtr;
     Class *clsPtr;
@@ -1540,7 +1540,7 @@ InfoClassMixinsCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_Size objc,
-    Tcl_Obj *const objv[])
+    Tcl_Obj *const *objv)
 {
     Class *clsPtr, *mixinPtr;
     Tcl_Obj *resultObj;
@@ -1582,7 +1582,7 @@ InfoClassSubsCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_Size objc,
-    Tcl_Obj *const objv[])
+    Tcl_Obj *const *objv)
 {
     Class *clsPtr, *subclassPtr;
     Tcl_Obj *resultObj;
@@ -1637,7 +1637,7 @@ InfoClassSupersCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_Size objc,
-    Tcl_Obj *const objv[])
+    Tcl_Obj *const *objv)
 {
     Class *clsPtr, *superPtr;
     Tcl_Obj *resultObj;
@@ -1676,7 +1676,7 @@ InfoClassVariablesCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_Size objc,
-    Tcl_Obj *const objv[])
+    Tcl_Obj *const *objv)
 {
     Class *clsPtr;
     Tcl_Obj *resultObj;
@@ -1735,7 +1735,7 @@ InfoObjectCallCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_Size objc,
-    Tcl_Obj *const objv[])
+    Tcl_Obj *const *objv)
 {
     Object *oPtr;
     CallContext *contextPtr;
@@ -1782,7 +1782,7 @@ InfoClassCallCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_Size objc,
-    Tcl_Obj *const objv[])
+    Tcl_Obj *const *objv)
 {
     Class *clsPtr;
     CallChain *callPtr;

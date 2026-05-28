@@ -119,11 +119,11 @@ enum ListRepresentationFlags {
  * Prototypes for non-inline static functions defined later in this file:
  */
 static int	MemoryAllocationError(Tcl_Interp *, size_t size);
-static ListStore *ListStoreNew(Tcl_Size objc, Tcl_Obj *const objv[], int flags);
-static int	ListRepInit(Tcl_Size objc, Tcl_Obj *const objv[], int flags, ListRep *);
+static ListStore *ListStoreNew(Tcl_Size objc, Tcl_Obj *const *objv, int flags);
+static int	ListRepInit(Tcl_Size objc, Tcl_Obj *const *objv, int flags, ListRep *);
 static int	ListRepInitAttempt(Tcl_Interp *,
 		    Tcl_Size objc,
-		    Tcl_Obj *const objv[],
+		    Tcl_Obj *const *objv,
 		    ListRep *);
 static void	ListRepClone(ListRep *fromRepPtr, ListRep *toRepPtr, int flags);
 static void	ListRepUnsharedFreeUnreferenced(const ListRep *repPtr);
@@ -421,7 +421,7 @@ ObjArrayDecrRefs(
  *
  * ObjArrayCopy --
  *
- *	Copies an array of Tcl_Obj* pointers.
+ *	Copies an array of Tcl_Obj * pointers.
  *
  * Results:
  *	None.
@@ -435,7 +435,7 @@ static inline void
 ObjArrayCopy(
     Tcl_Obj **to,		/* Destination */
     Tcl_Size count,		/* Number of pointers to copy */
-    Tcl_Obj *const from[])	/* Source array of Tcl_Obj* */
+    Tcl_Obj *const from[])	/* Source array of Tcl_Obj * */
 {
     Tcl_Obj **end;
     LIST_COUNT_ASSERT(count);
@@ -741,7 +741,7 @@ TclListObjValidate(
 static ListStore *
 ListStoreNew(
     Tcl_Size objc,
-    Tcl_Obj *const objv[],
+    Tcl_Obj *const *objv,
     int flags)
 {
     ListStore *storePtr;
@@ -882,7 +882,7 @@ ListStoreReallocate(
 static int
 ListRepInit(
     Tcl_Size objc,
-    Tcl_Obj *const objv[],
+    Tcl_Obj *const *objv,
     int flags,
     ListRep *repPtr)
 {
@@ -937,7 +937,7 @@ static int
 ListRepInitAttempt(
     Tcl_Interp *interp,
     Tcl_Size objc,
-    Tcl_Obj *const objv[],
+    Tcl_Obj *const *objv,
     ListRep *repPtr)
 {
     int result = ListRepInit(objc, objv, 0, repPtr);
@@ -1084,7 +1084,7 @@ ListRepUnsharedFreeUnreferenced(
 Tcl_Obj *
 Tcl_NewListObj(
     Tcl_Size objc,		/* Count of objects referenced by objv. */
-    Tcl_Obj *const objv[])	/* An array of pointers to Tcl objects. */
+    Tcl_Obj *const *objv)	/* An array of pointers to Tcl objects. */
 {
     return Tcl_DbNewListObj(objc, objv, "unknown", 0);
 }
@@ -1094,7 +1094,7 @@ Tcl_NewListObj(
 Tcl_Obj *
 Tcl_NewListObj(
     Tcl_Size objc,		/* Count of objects referenced by objv. */
-    Tcl_Obj *const objv[])	/* An array of pointers to Tcl objects. */
+    Tcl_Obj *const *objv)	/* An array of pointers to Tcl objects. */
 {
     ListRep listRep;
     Tcl_Obj *listObj;
@@ -1146,7 +1146,7 @@ Tcl_NewListObj(
 Tcl_Obj *
 Tcl_DbNewListObj(
     Tcl_Size objc,		/* Count of objects referenced by objv. */
-    Tcl_Obj *const objv[],	/* An array of pointers to Tcl objects. */
+    Tcl_Obj *const *objv,	/* An array of pointers to Tcl objects. */
     const char *file,		/* The name of the source file calling this
 				 * function; used for debugging. */
     int line)			/* Line number in the source file; used for
@@ -1172,7 +1172,7 @@ Tcl_DbNewListObj(
 Tcl_Obj *
 Tcl_DbNewListObj(
     Tcl_Size objc,		/* Count of objects referenced by objv. */
-    Tcl_Obj *const objv[],	/* An array of pointers to Tcl objects. */
+    Tcl_Obj *const *objv,	/* An array of pointers to Tcl objects. */
     TCL_UNUSED(const char *) /*file*/,
     TCL_UNUSED(int) /*line*/)
 {
@@ -1186,7 +1186,7 @@ Tcl_DbNewListObj(
  * TclNewListObj2 --
  *
  *	Create a new Tcl_Obj list comprising of the concatenation of two
- *	Tcl_Obj* arrays.
+ *	Tcl_Obj * arrays.
  *
  *	TODO - currently this function is not used within tclListObj but
  *	need to see if it would be useful in other files that preallocate
@@ -1308,7 +1308,7 @@ void
 Tcl_SetListObj(
     Tcl_Obj *objPtr,		/* Object whose internal rep to init. */
     Tcl_Size objc,		/* Count of objects referenced by objv. */
-    Tcl_Obj *const objv[])	/* An array of pointers to Tcl objects. */
+    Tcl_Obj *const *objv)	/* An array of pointers to Tcl objects. */
 {
     if (Tcl_IsShared(objPtr)) {
 	Tcl_Panic("%s called with shared object", "Tcl_SetListObj");
@@ -2006,46 +2006,6 @@ vamoose: /* Return result after freeing elemObj if unreferenced */
 }
 
 /*
- *------------------------------------------------------------------------
- *
- * TclListObjAppendIfAbsent --
- *
- *	Appends an element elemObj to list toObj if element with the same
- *	string representation is not already present. If toObj is not a list
- *	object, it will be converted and an error raised if the conversion
- *	fails.
- *
- *	Reference counting:
- *	 - toObj must not be shared else the function will panic.
- *	 - if elemObj is not added to the list, either because it already
- *	   exists or because of an error, it will be freed if there are no
- *	   references to it. Caller can therefore pass in a 0-ref elemObj and
- *	   not have to worry about decrementing it on return. Conversely,
- *	   this means if caller passes in a 0-ref elemObj it should NOT
- *	   decrement the reference count on return irrespective of return
- *	   code.
- *
- *	CAUTION: Linear search (of course)
- *
- * Results:
- *	Standard Tcl result code. Note element being already present is not
- *	an error.
- *
- * Side effects:
- *	None.
- *
- *------------------------------------------------------------------------
- */
-int
-TclListObjAppendIfAbsent(
-    Tcl_Interp *interp,		/* Used to report errors if not NULL. */
-    Tcl_Obj *toObj,		/* List object to append */
-    Tcl_Obj *elemObj)		/* Element to append to toObj's list. */
-{
-    return TclListObjInsertIfAbsent(interp, toObj, elemObj, TCL_SIZE_MAX);
-}
-
-/*
  *----------------------------------------------------------------------
  *
  * Tcl_ListObjIndex --
@@ -2075,7 +2035,7 @@ Tcl_ListObjIndex(
     Tcl_Interp *interp,		/* Used to report errors if not NULL. */
     Tcl_Obj *listObj,		/* List object to index into. */
     Tcl_Size index,		/* Index of element to return. */
-    Tcl_Obj **objPtrPtr)	/* The resulting Tcl_Obj* is stored here. */
+    Tcl_Obj **objPtrPtr)	/* The resulting Tcl_Obj * is stored here. */
 {
     Tcl_Obj **elemObjs;
     Tcl_Size numElems;

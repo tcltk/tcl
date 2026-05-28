@@ -24,7 +24,7 @@ provider tcl {
      *	    triggered immediately before proc bytecode execution
      *		arg0: proc name				(string)
      *		arg1: number of arguments		(Tcl_Size)
-     *		arg2: array of proc argument objects	(Tcl_Obj**)
+     *		arg2: array of proc argument objects	(Tcl_Obj **)
      */
     probe proc__entry(const char *name, Tcl_Size objc, struct Tcl_Obj **objv);
     /*
@@ -40,7 +40,7 @@ provider tcl {
      *		arg0: proc name				(string)
      *		arg1: return code			(int)
      *		arg2: proc result			(string)
-     *		arg3: proc result object		(Tcl_Obj*)
+     *		arg3: proc result object		(Tcl_Obj *)
      */
     probe proc__result(const char *name, int code, const char *result,
 	    struct Tcl_Obj *resultobj);
@@ -78,7 +78,7 @@ provider tcl {
      *	    triggered immediately before commmand execution
      *		arg0: command name			(string)
      *		arg1: number of arguments		(Tcl_Size)
-     *		arg2: array of command argument objects	(Tcl_Obj**)
+     *		arg2: array of command argument objects	(Tcl_Obj **)
      */
     probe cmd__entry(const char *name, Tcl_Size objc, struct Tcl_Obj **objv);
     /*
@@ -94,7 +94,7 @@ provider tcl {
      *		arg0: command name			(string)
      *		arg1: return code			(int)
      *		arg2: command result			(string)
-     *		arg3: command result object		(Tcl_Obj*)
+     *		arg3: command result object		(Tcl_Obj *)
      */
     probe cmd__result(const char *name, int code, const char *result,
 	    struct Tcl_Obj *resultobj);
@@ -132,7 +132,7 @@ provider tcl {
      *	    triggered immediately before execution of a bytecode
      *		arg0: bytecode name			(string)
      *		arg1: depth of stack			(Tcl_Size)
-     *		arg2: top of stack			(Tcl_Obj**)
+     *		arg2: top of stack			(Tcl_Obj **)
      */
     probe inst__start(const char *name, Tcl_Size depth, struct Tcl_Obj **stack);
     /*
@@ -140,7 +140,7 @@ provider tcl {
      *	    triggered immediately after execution of a bytecode
      *		arg0: bytecode name			(string)
      *		arg1: depth of stack			(Tcl_Size)
-     *		arg2: top of stack			(Tcl_Obj**)
+     *		arg2: top of stack			(Tcl_Obj **)
      */
     probe inst__done(const char *name, Tcl_Size depth, struct Tcl_Obj **stack);
 
@@ -148,15 +148,15 @@ provider tcl {
     /*
      *	tcl*:::obj-create probe
      *	    triggered immediately after a new Tcl_Obj has been created
-     *		arg0: object created			(Tcl_Obj*)
+     *		arg0: object created			(Tcl_Obj *)
      */
-    probe obj__create(struct Tcl_Obj* obj);
+    probe obj__create(struct Tcl_Obj *obj);
     /*
      *	tcl*:::obj-free probe
      *	    triggered immediately before a Tcl_Obj is freed
-     *		arg0: object to be freed		(Tcl_Obj*)
+     *		arg0: object to be freed		(Tcl_Obj *)
      */
-    probe obj__free(struct Tcl_Obj* obj);
+    probe obj__free(struct Tcl_Obj *obj);
 
     /***************************** tcl probes ******************************/
     /*

@@ -1407,7 +1407,7 @@ MODULE_SCOPE Tcl_Obj *	TclGetInnerContext(Tcl_Interp *interp,
 MODULE_SCOPE Tcl_Obj *	TclNewInstNameObj(unsigned char inst);
 MODULE_SCOPE int	TclPushProcCallFrame(void *clientData,
 			    Tcl_Interp *interp, Tcl_Size objc,
-			    Tcl_Obj *const objv[], int isLambda);
+			    Tcl_Obj *const *objv, int isLambda);
 
 /*
  *----------------------------------------------------------------

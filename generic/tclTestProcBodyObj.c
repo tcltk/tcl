@@ -50,7 +50,7 @@ typedef struct {
 static Tcl_ObjCmdProc2 ProcBodyTestProcObjCmd;
 static Tcl_ObjCmdProc2 ProcBodyTestCheckObjCmd;
 static int	ProcBodyTestInitInternal(Tcl_Interp *interp, int isSafe);
-static int	RegisterCommand(Tcl_Interp* interp,
+static int	RegisterCommand(Tcl_Interp *interp,
 			const char *namesp, const CmdTable *cmdTablePtr);
 
 /*
@@ -137,7 +137,7 @@ Procbodytest_SafeInit(
 
 static int
 RegisterCommand(
-    Tcl_Interp* interp,		/* the Tcl interpreter for which the operation
+    Tcl_Interp *interp,		/* the Tcl interpreter for which the operation
 				 * is performed */
     const char *namesp,		/* the namespace in which the command is
 				 * registered */
@@ -231,7 +231,7 @@ ProcBodyTestProcObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* the current interpreter */
     Tcl_Size objc,		/* argument count */
-    Tcl_Obj *const objv[])	/* arguments */
+    Tcl_Obj *const *objv)	/* arguments */
 {
     const char *fullName;
     Tcl_Command procCmd;
@@ -330,7 +330,7 @@ ProcBodyTestCheckObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* the current interpreter */
     Tcl_Size objc,		/* argument count */
-    Tcl_Obj *const objv[])	/* arguments */
+    Tcl_Obj *const *objv)	/* arguments */
 {
     const char *version;
 

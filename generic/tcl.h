@@ -534,11 +534,11 @@ typedef void (Tcl_ChannelProc) (void *clientData, int mask);
 typedef void (Tcl_CloseProc) (void *data);
 typedef void (Tcl_CmdDeleteProc) (void *clientData);
 typedef int (Tcl_CmdProc) (void *clientData, Tcl_Interp *interp,
-	int argc, const char *argv[]);
+	int argc, const char **argv);
 #ifndef TCL_NO_DEPRECATED
 typedef void (Tcl_CmdTraceProc) (void *clientData, Tcl_Interp *interp,
 	int level, char *command, Tcl_CmdProc *proc,
-	void *cmdClientData, int argc, const char *argv[]);
+	void *cmdClientData, int argc, const char **argv);
 typedef int (Tcl_CmdObjTraceProc) (void *clientData, Tcl_Interp *interp,
 	int level, const char *command, Tcl_Command commandInfo, int objc,
 	struct Tcl_Obj *const *objv);
@@ -600,7 +600,7 @@ typedef void (Tcl_MainLoopProc) (void);
 /* Abstract List functions */
 typedef Tcl_Size (Tcl_ObjTypeLengthProc) (struct Tcl_Obj *listPtr);
 typedef int (Tcl_ObjTypeIndexProc) (Tcl_Interp *interp, struct Tcl_Obj *listPtr,
-	Tcl_Size index, struct Tcl_Obj** elemObj);
+	Tcl_Size index, struct Tcl_Obj **elemObj);
 typedef int (Tcl_ObjTypeSliceProc) (Tcl_Interp *interp, struct Tcl_Obj *listPtr,
 	Tcl_Size fromIdx, Tcl_Size toIdx, struct Tcl_Obj **newObjPtr);
 typedef int (Tcl_ObjTypeReverseProc) (Tcl_Interp *interp,
@@ -2436,8 +2436,8 @@ EXTERN const char *TclZipfs_AppHook(int *argc, char ***argv);
 
 static inline void
 TclBounceRefCount(
-    Tcl_Obj* objPtr,
-    const char* file,
+    Tcl_Obj *objPtr,
+    const char *file,
     int line)
 {
     if (objPtr) {
@@ -2475,7 +2475,7 @@ TclBounceRefCount(
 
 static inline void
 TclBounceRefCount(
-    Tcl_Obj* objPtr)
+    Tcl_Obj *objPtr)
 {
     if (objPtr) {
 	if ((objPtr)->refCount == 0) {

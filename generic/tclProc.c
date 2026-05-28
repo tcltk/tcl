@@ -157,7 +157,7 @@ Tcl_ProcObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,		/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
+    Tcl_Obj *const *objv)	/* Argument objects. */
 {
     Interp *iPtr = (Interp *) interp;
     Proc *procPtr;
@@ -907,7 +907,7 @@ Tcl_UplevelObjCmd(
     void *clientData,
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,		/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
+    Tcl_Obj *const *objv)	/* Argument objects. */
 {
     return Tcl_NRCallObjProc2(interp, TclNRUplevelObjCmd, clientData, objc, objv);
 }
@@ -917,7 +917,7 @@ TclNRUplevelObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,		/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
+    Tcl_Obj *const *objv)	/* Argument objects. */
 {
 
     Interp *iPtr = (Interp *) interp;
@@ -1526,7 +1526,7 @@ TclPushProcCallFrame(
 				 * invoked. */
     Tcl_Size objc,		/* Count of number of arguments to this
 				 * procedure. */
-    Tcl_Obj *const objv[],	/* Argument value objects. */
+    Tcl_Obj *const *objv,	/* Argument value objects. */
     int isLambda)		/* 1 if this is a call by ApplyObjCmd: it
 				 * needs special rules for error msg */
 {
@@ -1620,7 +1620,7 @@ TclObjInterpProc2(
 				 * invoked. */
     Tcl_Size objc,		/* Count of number of arguments to this
 				 * procedure. */
-    Tcl_Obj *const objv[])	/* Argument value objects. */
+    Tcl_Obj *const *objv)	/* Argument value objects. */
 {
     /*
      * Not used much in the core; external interface for iTcl
@@ -1637,7 +1637,7 @@ TclNRInterpProc(
 				 * invoked. */
     Tcl_Size objc,		/* Count of number of arguments to this
 				 * procedure. */
-    Tcl_Obj *const objv[])	/* Argument value objects. */
+    Tcl_Obj *const *objv)	/* Argument value objects. */
 {
     int result = TclPushProcCallFrame(clientData, interp, objc, objv,
 	    /*isLambda*/ 0);
@@ -1657,7 +1657,7 @@ NRInterpProc(
 				 * invoked. */
     int objc,			/* Count of number of arguments to this
 				 * procedure. */
-    Tcl_Obj *const objv[])	/* Argument value objects. */
+    Tcl_Obj *const *objv)	/* Argument value objects. */
 {
     int result = TclPushProcCallFrame(clientData, interp, objc, objv,
 	    /*isLambda*/ 0);
@@ -1677,7 +1677,7 @@ TclObjInterpProc(
 				 * invoked. */
     int objc,			/* Count of number of arguments to this
 				 * procedure. */
-    Tcl_Obj *const objv[])	/* Argument value objects. */
+    Tcl_Obj *const *objv)	/* Argument value objects. */
 {
     /*
      * Not used much in the core; external interface for iTcl
@@ -2678,7 +2678,7 @@ Tcl_ApplyObjCmd(
     void *clientData,
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,		/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
+    Tcl_Obj *const *objv)	/* Argument objects. */
 {
     return Tcl_NRCallObjProc2(interp, TclNRApplyObjCmd, clientData, objc, objv);
 }
@@ -2688,7 +2688,7 @@ TclNRApplyObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,		/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
+    Tcl_Obj *const *objv)	/* Argument objects. */
 {
     Proc *procPtr = NULL;
     Tcl_Obj *lambdaPtr, *nsObjPtr;

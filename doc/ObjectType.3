@@ -54,13 +54,13 @@ For \fBTcl_AppendAllObjTypes\fR, this points to the value onto which
 it appends the name of each value type as a list element.
 For \fBTcl_ConvertToType\fR, this points to a value that
 must have been the result of a previous call to \fBTcl_NewObj\fR.
-.AP "const char*" bytes in
+.AP "const char" *bytes in
 String representation.
 .AP "size_t" numBytes in
 Length of the string representation in bytes.
-.AP "const Tcl_ObjInternalRep *" irPtr in
+.AP "const Tcl_ObjInternalRep" *irPtr in
 Internal object representation.
-.AP "const Tcl_ObjType *" typePtr in
+.AP "const Tcl_ObjType" *typePtr in
 Requested internal representation type.
 .BE
 
@@ -369,7 +369,7 @@ to be converted to a list.
 Unless specified otherwise, all functions specific to Version 2 should return
 \fBTCL_OK\fR on success and \fBTCL_ERROR\fR on failure.
 
-In the case that a \fBTcl_Obj*\fR is also returned, the reference count of the
+In the case that a \fBTcl_Obj *\fR is also returned, the reference count of the
 returned \fBTcl_Obj\fR should not be incremented so, for example, if a new
 \fBTcl_Obj\fR value is returned it should have a reference count of zero.
 
@@ -400,7 +400,7 @@ typedef int (\fBTcl_ObjTypeIndexProc\fR) (
     Tcl_Interp *interp,
     Tcl_Obj *listPtr,
     Tcl_Size index,
-    Tcl_Obj** elemObj);
+    Tcl_Obj **elemObj);
 .CE
 .SS "THE SLICEPROC FIELD"
 .PP

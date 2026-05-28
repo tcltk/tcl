@@ -730,7 +730,7 @@ TclpCreateTempFile(
  *	This function returns a unique filename.
  *
  * Results:
- *	Returns a valid Tcl_Obj* with refCount 0, or NULL on failure.
+ *	Returns a valid Tcl_Obj * with refCount 0, or NULL on failure.
  *
  * Side effects:
  *	None.

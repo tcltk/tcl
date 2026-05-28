@@ -1139,7 +1139,7 @@ TclSetByteCodeFromAny(
      * Make available to the compilation environment any data about invisible
      * continuation lines for the script.
      *
-     * It is not clear if the script Tcl_Obj* can be free'd while the compiler
+     * It is not clear if the script Tcl_Obj * can be free'd while the compiler
      * is using it, leading to the release of the associated ContLineLoc
      * structure as well. To ensure that the latter doesn't happen set a lock
      * on it, which is released in TclFreeCompileEnv().  The "lineCLPtr"
@@ -1556,7 +1556,7 @@ IsCompactibleCompileEnv(
  *	documentation for "subst".
  *
  * Results:
- *	A Tcl_Obj* containing the substituted string, or NULL to indicate that
+ *	A Tcl_Obj * containing the substituted string, or NULL to indicate that
  *	an error occurred.
  *
  * Side effects:

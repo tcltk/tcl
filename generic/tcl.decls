@@ -2493,7 +2493,7 @@ export {
 	int exact)
 }
 export {
-    const char *TclTomMathInitializeStubs(Tcl_Interp* interp,
+    const char *TclTomMathInitializeStubs(Tcl_Interp *interp,
 	const char* version, int epoch, int revision)
 }
 export {
