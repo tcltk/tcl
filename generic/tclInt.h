@@ -1195,7 +1195,7 @@ TclObjTypeGetElements(
     return proc(interp, objPtr, objCPtr, objVPtr);
 }
 
-static inline Tcl_Obj*
+static inline Tcl_Obj *
 TclObjTypeSetElement(
     Tcl_Interp *interp,
     Tcl_Obj *objPtr,
@@ -1510,10 +1510,10 @@ typedef struct ContLineLoc {
 typedef Tcl_Obj * (GetFrameInfoValueProc)(void *clientData);
 typedef struct {
     const char *name;		/* Name of this field. */
-    GetFrameInfoValueProc *proc;/* Function to generate a Tcl_Obj* from the
+    GetFrameInfoValueProc *proc;/* Function to generate a Tcl_Obj * from the
 				 * clientData, or just use the clientData
 				 * directly (after casting) if NULL. */
-    void *clientData;		/* Context for above function, or Tcl_Obj* if
+    void *clientData;		/* Context for above function, or Tcl_Obj * if
 				 * proc field is NULL. */
 } ExtraFrameInfoField;
 typedef struct {
@@ -2257,7 +2257,7 @@ typedef struct Interp {
 				 * Proc structure for a procedure. The values
 				 * are "struct ExtCmdLoc*". (See
 				 * tclCompile.h) */
-    Tcl_HashTable *lineLABCPtr;	/* Tcl_Obj* (by exact pointer) -> CFWordBC* */
+    Tcl_HashTable *lineLABCPtr;	/* Tcl_Obj * (by exact pointer) -> CFWordBC* */
     Tcl_HashTable *lineLAPtr;	/* This table remembers for each argument of a
 				 * command on the execution stack the index of
 				 * the argument in the command, and the
@@ -3539,8 +3539,6 @@ MODULE_SCOPE int	TclListObjAppendElements(Tcl_Interp *interp,
 			    Tcl_Obj *const elemObjv[]);
 MODULE_SCOPE int	TclListObjInsertIfAbsent(Tcl_Interp *interp,
 			    Tcl_Obj *toObj, Tcl_Obj *elem, Tcl_Size index);
-MODULE_SCOPE int	TclListObjAppendIfAbsent(Tcl_Interp *interp,
-			    Tcl_Obj *toObj, Tcl_Obj *elem);
 MODULE_SCOPE Tcl_Obj *	TclListObjRange(Tcl_Interp *interp, Tcl_Obj *listPtr,
 			    Tcl_Size fromIdx, Tcl_Size toIdx);
 MODULE_SCOPE Tcl_Obj *	TclLsetList(Tcl_Interp *interp, Tcl_Obj *listPtr,
@@ -3579,15 +3577,15 @@ MODULE_SCOPE int	TclProcessReturn(Tcl_Interp *interp,
 			    int code, int level, Tcl_Obj *returnOpts);
 MODULE_SCOPE void	TclUndoRefCount(Tcl_Obj *objPtr);
 MODULE_SCOPE int	TclpObjLstat(Tcl_Obj *pathPtr, Tcl_StatBuf *buf);
-MODULE_SCOPE Tcl_Obj *	TclpTempFileName(void);
-MODULE_SCOPE Tcl_Obj *	TclpTempFileNameForLibrary(Tcl_Interp *interp,
-			    Tcl_Obj* pathPtr);
-MODULE_SCOPE Tcl_Obj *	TclNewArithSeriesObj(Tcl_Interp *interp,
+MODULE_SCOPE Tcl_Obj *TclpTempFileName(void);
+MODULE_SCOPE Tcl_Obj *TclpTempFileNameForLibrary(Tcl_Interp *interp,
+			    Tcl_Obj *pathPtr);
+MODULE_SCOPE Tcl_Obj *TclNewArithSeriesObj(Tcl_Interp *interp,
 			    int useDoubles, Tcl_Obj *startObj, Tcl_Obj *endObj,
 			    Tcl_Obj *stepObj, Tcl_Obj *lenObj);
-MODULE_SCOPE Tcl_Obj *	TclNewFSPathObj(Tcl_Obj *dirPtr, const char *addStrRep,
+MODULE_SCOPE Tcl_Obj *TclNewFSPathObj(Tcl_Obj *dirPtr, const char *addStrRep,
 			    Tcl_Size len);
-MODULE_SCOPE Tcl_Obj *	TclNewNamespaceObj(Tcl_Namespace *namespacePtr);
+MODULE_SCOPE Tcl_Obj *TclNewNamespaceObj(Tcl_Namespace *namespacePtr);
 MODULE_SCOPE void	TclpAlertNotifier(void *clientData);
 MODULE_SCOPE void *	TclpNotifierData(void);
 MODULE_SCOPE void	TclpServiceModeHook(int mode);
@@ -4834,7 +4832,7 @@ MODULE_SCOPE Tcl_LibraryInitProc Tcl_ABSListTest_Init;
  * MODULE_SCOPE void	TclNewIntObj(Tcl_Obj *objPtr, Tcl_WideInt w);
  * MODULE_SCOPE void	TclNewDoubleObj(Tcl_Obj *objPtr, double d);
  * MODULE_SCOPE void	TclNewStringObj(Tcl_Obj *objPtr, const char *s, Tcl_Size len);
- * MODULE_SCOPE void	TclNewLiteralStringObj(Tcl_Obj*objPtr, const char *sLiteral);
+ * MODULE_SCOPE void	TclNewLiteralStringObj(Tcl_Obj *objPtr, const char *sLiteral);
  *
  *----------------------------------------------------------------
  */
