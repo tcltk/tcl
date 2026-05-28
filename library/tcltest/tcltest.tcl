@@ -753,6 +753,11 @@ namespace eval tcltest {
 	whether to run all tests in one process
     } AcceptBoolean singleProcess
 
+    # Default is to run each test once
+    Option -iterations 1 {
+	number of times to run each test
+    } AcceptInteger numberOfIterations
+
     proc AcceptTemporaryDirectory { directory } {
 	set directory [AcceptAbsolutePath $directory]
 	if {![file exists $directory]} {
@@ -1922,8 +1927,14 @@ proc tcltest::SubstArguments {argList} {
 # Side effects:
 #       Just about anything is possible depending on the test.
 #
-
 proc tcltest::test {name description args} {
+    variable numberOfIterations
+    for {set i 0} {$i < $numberOfIterations} {incr i} {
+        uplevel 1 [list tcltest::TestOnce $name $description {*}$args]
+    }
+}
+
+proc tcltest::TestOnce {name description args} {
     global tcl_platform
     variable testLevel
     variable coreModTime
