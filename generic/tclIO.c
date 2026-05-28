@@ -679,6 +679,10 @@ TclFinalizeIOSubsystem(void)
 
 		Tcl_Flush((Tcl_Channel) chanPtr);
 
+#ifdef _WIN32
+		CutChannel((Tcl_Channel) chanPtr);
+#endif
+
 		/*
 		 * Call the device driver to actually close the underlying
 		 * device for this channel.
