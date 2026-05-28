@@ -1024,8 +1024,11 @@ test filesystem-10.1 {Bug 3414754} {
 # See Bug [e6ca0b1b67]
 test filesystem-11.1 {
     Bug 10890417 - case of tail is correct after normalization
-} -constraints {notWsl notOSX} -body {
-    tcltest::makeFile "" mIxEdCaSe.TxT
+} -constraints {notWsl notOSX} -setup {
+    makeFile "" mIxEdCaSe.TxT
+} -cleanup {
+    removeFile mIxEdCaSe.TxT
+} -body {
     lmap file1 [glob [tcltest::temporaryDirectory]/mixedcase.txt \
                     [tcltest::temporaryDirectory]/MIXEDCASE.TXT \
                     [tcltest::temporaryDirectory]/mIxEdCaSe.TxT \
@@ -1040,8 +1043,11 @@ test filesystem-11.1 {
 
 test filesystem-11.2 {
     Bug 10890417 - case of tail is correct after normalization (-directory)
-} -constraints {notWsl notOSX} -body {
-    tcltest::makeFile "" mIxEdCaSe.TxT
+} -constraints {notWsl notOSX} -setup {
+    makeFile "" mIxEdCaSe.TxT
+} -cleanup {
+    removeFile mIxEdCaSe.TxT
+} -body {
     lmap file1 [glob -directory [tcltest::temporaryDirectory] \
                     mixedcase.txt MIXEDCASE.TXT mIxEdCaSe.TxT ] {
                         file normalize $file1
@@ -1055,9 +1061,13 @@ test filesystem-11.2 {
 test filesystem-11.3 {
     Bug 10890417 - case of dir is correct after normalization
 } -constraints {notWsl notOSX} -setup {
-    set dir [tcltest::makeDirectory MiXeDcAsE]
+    set dir [makeDirectory MiXeDcAsE]
     set parent [file dirname $dir]
-    tcltest::makeFile "" foo.txt $dir
+    makeFile "" foo.txt $dir
+} -cleanup {
+    removeFile foo.txt $dir
+    removeDirectory MiXeDcAsE
+    unset -nocomplain parent dir
 } -body {
     lmap file1 [glob $parent/mixedcase/foo.txt \
                     $parent/MIXEDCASE/foo.txt \
@@ -1073,9 +1083,13 @@ test filesystem-11.3 {
 test filesystem-11.4 {
     Bug 10890417 - case of dir is correct after normalization (-directory)
 } -constraints {notWsl notOSX} -setup {
-    set dir [tcltest::makeDirectory MiXeDcAsE]
+    set dir [makeDirectory MiXeDcAsE]
     set parent [file dirname $dir]
-    tcltest::makeFile "" foo.txt $dir
+    makeFile "" foo.txt $dir
+} -cleanup {
+    removeFile foo.txt $dir
+    removeDirectory MiXeDcAsE
+    unset -nocomplain parent dir
 } -body {
     lmap file1 [concat [glob -dir $parent/mixedcase foo.txt] \
                     [glob -dir $parent/MIXEDCASE foo.txt] \
