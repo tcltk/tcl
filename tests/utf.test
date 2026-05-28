@@ -1128,7 +1128,7 @@ test utf-24.6 {unicode space char in regc_locale.c} tip413 {
     list [regexp {^[[:space:]]+$} \x85\u1680\u180E\u200B\u202F\u2060] [regexp {^\s+$} \x85\u1680\u180E\u200B\u202F\u2060]
 } {1 1}
 
-test utf-25.1 {tupper/tolower/totitle out of range values} testuniclass {
+test utf-25.1.0 {tupper/tolower/totitle out of range values} testuniclass {
     list [testuniclass 0x11FFFF] \
 	[testuniclass 0x1FFFFF] \
 	[testuniclass 0x200041] \
