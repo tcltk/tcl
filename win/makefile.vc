@@ -466,9 +466,14 @@ TCLSTUBOBJS = \
 ### the left side of implicit rules.
 TOMMATHDIR	= $(ROOT)\libtommath
 PKGSDIR		= $(ROOT)\pkgs
-PKGSLIBS	= \
-	$(PKGSDIR)\sqlite\win\$(BUILDDIRTOP)\tcl9sqlite3512s.lib \
-	$(PKGSDIR)\thread\win\$(BUILDDIRTOP)\tcl9thread305s.lib \
+!IF [cmd /c "for /d %D in (..\pkgs\sqlite*) do @(echo SQLITEDIR=%~nxD& exit 0) > pkgdirs.i"] == 0
+!ENDIF
+!IF [cmd /c "for /d %D in (..\pkgs\thread*) do @(echo THREADDIR=%~nxD& exit 0) >> pkgdirs.i"] == 0
+!ENDIF
+!INCLUDE pkgdirs.i
+PKGLIBS	= \
+	$(PKGSDIR)\$(SQLITEDIR)\win\$(BUILDDIRTOP)\tcl9$(SQLITEDIR:.=)s.lib \
+	$(PKGSDIR)\$(THREADDIR)\win\$(BUILDDIRTOP)\tcl9$(THREADDIR:.=)s.lib
 
 LIBTCLVFSSUBDIR = libtcl.vfs
 LIBTCLVFS = $(OUT_DIR)\$(LIBTCLVFSSUBDIR)
@@ -616,7 +621,7 @@ $(TCLSH): $(TCLSHOBJS) $(TCLSTUBLIB) $(TCLIMPLIB)
 
 !if $(STATIC_BUILD) && $(TCL_EMBED_SCRIPTS)
 $(TCLBI): $(TCLBIOBJS) $(TCLSTUBLIB) $(TCLIMPLIB)
-	$(CONEXECMD) $(PKGSLIBS) -stack:2300000 $**
+	$(CONEXECMD) $(PKGLIBS) -stack:2300000 $**
 	copy $(TMP_DIR)\tclsh.exe.manifest $(TCLSH).manifest
 	$(_VC_MANIFEST_EMBED_EXE)
 	$(COPY) $@ $(TCLBIRAW)
