@@ -21,7 +21,7 @@ namespace eval tcltest {
     # When the version number changes, be sure to update the pkgIndex.tcl file,
     # and the install directory in the Makefiles.  When the minor version
     # changes (new feature) be sure to update the man page as well.
-    variable Version 2.5.11
+    variable Version 2.6.0
 
     # Compatibility support for dumb variables defined in tcltest 1
     # Do not use these.  Call [package require] and [info patchlevel]
@@ -756,7 +756,7 @@ namespace eval tcltest {
     # Default is to run each test once
     Option -iterations 1 {
 	number of times to run each test
-    } AcceptInteger numberOfIterations
+    } AcceptInteger testIterations
 
     proc AcceptTemporaryDirectory { directory } {
 	set directory [AcceptAbsolutePath $directory]
@@ -1604,6 +1604,7 @@ proc tcltest::ProcessCmdLineArgs {} {
     DebugPuts    2 "tcltest::temporaryDirectory = [temporaryDirectory]"
     DebugPuts    2 "tcltest::outputChannel      = [outputChannel]"
     DebugPuts    2 "tcltest::errorChannel       = [errorChannel]"
+    DebugPuts    2 "tcltest::testIterations     = [testIterations]"
     DebugPuts    2 "Original environment (tcltest::originalEnv):"
     DebugPArray  2 originalEnv
     DebugPuts    2 "Constraints:"
@@ -1928,8 +1929,8 @@ proc tcltest::SubstArguments {argList} {
 #       Just about anything is possible depending on the test.
 #
 proc tcltest::test {name description args} {
-    variable numberOfIterations
-    for {set i 0} {$i < $numberOfIterations} {incr i} {
+    set iterations [testIterations]
+    for {set i 0} {$i < $iterations} {incr i} {
         uplevel 1 [list tcltest::TestOnce $name $description {*}$args]
     }
 }
