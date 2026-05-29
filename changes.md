@@ -22,6 +22,7 @@ the registry package to be loaded. The registry module is now part of the core
 Tcl DLL in all build configurations.
 - [New `lfilter` command for selecting items from a list](https://core.tcl-lang.org/tips/doc/trunk/tip/735.md)
 - [Many new functions from C99](https://core.tcl-lang.org/tips/doc/trunk/tip/745.md), specifically: `acosh()`, `asinh()`, `atanh()`, `cbrt()`, `copysign()`, `dim()`,  `erf()`, `erfc()`, `exp2()`, `expm1()`, `fma()`, `gamma()`, `ldexp()`, `lgamma()`, `log1p()`, `log2()`, `logb()`, `nextafter()`, `remainder()`, `signbit()`, and `trunc()`, and (for functions that return multiple values in their C99 API) the commands: `divmod`, `frexp`, `modf`, and `remquo`. (See [this page](https://en.cppreference.com/w/c/numeric/math.html) for more information about these functions; the Tcl functions are _intentionally_ only thin wrappers around the functions in the C99 standard.)
+- New `tcltest::configure` option `-iterations` to control number of iterations of each test.
 
 # New public C API
 
@@ -53,6 +54,7 @@ for list operations on large lists.
 - [Inconsistencies between `cd` and `file normalize` for volume-relative paths on Windows](https://core.tcl-lang.org/tcl/tktview/bca391ab)
 - [Tcl cannot run from an arbitrary build directory with --disable-zipfs](https://core.tcl-lang.org/tcl/tktview/006bef5d)
 - [Crash on finalization with an active thread running.](https://core.tcl-lang.org/tcl/tktview/e55a589d)
+- [Crash on use-after-free in Windows socket thread.](https://core.tcl-lang.org/tcl/tktview/06f19cc4)
 
 # Updated bundled packages, libraries, standards, data
  - Unicode 18.0.0 (draft)
