@@ -466,14 +466,6 @@ TCLSTUBOBJS = \
 ### the left side of implicit rules.
 TOMMATHDIR	= $(ROOT)\libtommath
 PKGSDIR		= $(ROOT)\pkgs
-!IF [cmd /c "for /d %D in (..\pkgs\sqlite*) do @(echo SQLITEDIR=%~nxD& exit 0) > pkgdirs.i"] == 0
-!ENDIF
-!IF [cmd /c "for /d %D in (..\pkgs\thread*) do @(echo THREADDIR=%~nxD& exit 0) >> pkgdirs.i"] == 0
-!ENDIF
-!INCLUDE pkgdirs.i
-PKGLIBS	= \
-	$(PKGSDIR)\$(SQLITEDIR)\win\$(BUILDDIRTOP)\tcl9$(SQLITEDIR:.=)s.lib \
-	$(PKGSDIR)\$(THREADDIR)\win\$(BUILDDIRTOP)\tcl9$(THREADDIR:.=)s.lib
 
 LIBTCLVFSSUBDIR = libtcl.vfs
 LIBTCLVFS = $(OUT_DIR)\$(LIBTCLVFSSUBDIR)
@@ -484,7 +476,27 @@ PRJ_INCLUDES	= -I"$(TOMMATHDIR)"
 PRJ_DEFINES	= /DMP_PREC=4 /Dinline=__inline /D_CRT_SECURE_NO_DEPRECATE /D_CRT_NONSTDC_NO_DEPRECATE /DMP_FIXED_CUTOFFS /DUTF8PROC_STATIC
 
 !if $(STATIC_BUILD)
+
 PRJ_DEFINES = $(PRJ_DEFINES) /DTCL_WITH_INTERNAL_ZLIB
+
+!if [cmd /c "if exist pkgdirs.i del pkgdirs.i"] == 0
+!endif
+!if [cmd /c "for /d %D in (..\pkgs\sqlite*) do @(echo SQLITEDIR=%~nxD& exit 0) >> pkgdirs.i"] == 0
+!endif
+!if [cmd /c "for /d %D in (..\pkgs\thread*) do @(echo THREADDIR=%~nxD& exit 0) >> pkgdirs.i"] == 0
+!endif
+!if exists(pkgdirs.i)
+!include pkgdirs.i
+!endif
+!if "$(SQLITEDIR)" != ""
+PKGLIBS = $(PKGLIBS) $(PKGSDIR)\$(SQLITEDIR)\win\$(BUILDDIRTOP)\tcl9$(SQLITEDIR:.=)s.lib
+PRJ_DEFINES = $(PRJ_DEFINES) -DTCLBI_HAVE_SQLITE
+!endif
+!if "$(THREADDIR)" != ""
+PKGLIBS = $(PKGLIBS) $(PKGSDIR)\$(THREADDIR)\win\$(BUILDDIRTOP)\tcl9$(THREADDIR:.=)s.lib
+PRJ_DEFINES = $(PRJ_DEFINES) -DTCLBI_HAVE_THREAD
+!endif
+
 !endif
 
 # Additional Link libraries needed beyond those in rules.vc
@@ -1214,6 +1226,7 @@ tidy:
 	@if exist $(TCLDDELIB) del $(TCLDDELIB)
 
 clean: default-clean clean-pkgs
+	@del "$(WIN_DIR)\pkgdirs.i"
 hose: default-hose hose-pkgs
 realclean: hose
 .PHONY:
