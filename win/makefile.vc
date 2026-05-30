@@ -489,11 +489,13 @@ PRJ_DEFINES = $(PRJ_DEFINES) /DTCL_WITH_INTERNAL_ZLIB
 !include pkgdirs.i
 !endif
 !if "$(SQLITEDIR)" != ""
-PKGLIBS = $(PKGLIBS) $(PKGSDIR)\$(SQLITEDIR)\win\$(BUILDDIRTOP)\tcl9$(SQLITEDIR:.=)s.lib
+SQLITELIBDIR = $(PKGSDIR)\$(SQLITEDIR)\win\$(BUILDDIRTOP)
+PKGLIBS = $(PKGLIBS) $(SQLITELIBDIR)\tcl9$(SQLITEDIR:.=)s.lib
 PRJ_DEFINES = $(PRJ_DEFINES) -DTCLBI_HAVE_SQLITE
 !endif
 !if "$(THREADDIR)" != ""
-PKGLIBS = $(PKGLIBS) $(PKGSDIR)\$(THREADDIR)\win\$(BUILDDIRTOP)\tcl9$(THREADDIR:.=)s.lib
+THREADLIBDIR = $(PKGSDIR)\$(THREADDIR)\win\$(BUILDDIRTOP)
+PKGLIBS = $(PKGLIBS) $(THREADLIBDIR)\tcl9$(THREADDIR:.=)s.lib
 PRJ_DEFINES = $(PRJ_DEFINES) -DTCLBI_HAVE_THREAD
 !endif
 
@@ -555,15 +557,16 @@ shell:      libtclzip
 	@$(COPY) /b "$(TCLSHRAW)"+"$(TCLSCRIPTZIP)" "$(TCLSH)"
 !endif
 
+dlls:	    setup $(TCLDDELIB) $(OUT_DIR)\zlib1.dll $(OUT_DIR)\libtommath.dll
+libtclzip:  $(TCLSCRIPTZIP)
+
 !if $(TCL_EMBED_SCRIPTS) && $(STATIC_BUILD)
-tclbi:      setup core libtclzip pkgs $(TCLBI)
+tclbi:      setup core libtclzip pkgs libtclbizip libtclzip $(TCLBI)
 	@$(COPY) /b "$(TCLBIRAW)"+"$(TCLSCRIPTZIP)" "$(TCLBI)"
+
 !else
 tclbi:	    $(TCLBI)
 !endif
-
-dlls:	    setup $(TCLDDELIB) $(OUT_DIR)\zlib1.dll $(OUT_DIR)\libtommath.dll
-libtclzip:  $(TCLSCRIPTZIP)
 
 tcltest:    setup core $(TCLTEST) dlls $(EXECTESTAPP)
 !if $(TCL_EMBED_SCRIPTS) && $(STATIC_BUILD)
@@ -693,9 +696,7 @@ $(OUT_DIR)\tommath.lib:	$(TOMMATHDIR)\win64\tommath.lib
 	$(COPY) $(TOMMATHDIR)\win64\tommath.lib $(OUT_DIR)\tommath.lib
 !endif
 
-$(TCLSCRIPTZIP): $(TCLLIB) $(TCLSH) dlls
-	@echo Building Tcl library zip file $(TCLSCRIPTZIP)
-	@set TCL_LIBRARY=$(ROOT:\=/)/library
+$(LIBTCLVFS): .PHONY
 	@if exist "$(LIBTCLVFS)" $(RMDIR) "$(LIBTCLVFS)"
 	@$(MKDIR) "$(LIBTCLVFS)"
 	@$(CPYDIR) $(LIBDIR) "$(LIBTCLVFS)\tcl_library"
@@ -703,10 +704,31 @@ $(TCLSCRIPTZIP): $(TCLLIB) $(TCLSH) dlls
 # Remove the dde directories as the DLLS are still external
 	@del "$(LIBTCLVFS)\tcl_library\dde\pkgIndex.tcl"
 	@rmdir "$(LIBTCLVFS)\tcl_library\dde"
+
+$(TCLSCRIPTZIP): $(TCLLIB) $(TCLSH) $(LIBTCLVFS) dlls
+	@echo Building Tcl library zip file $(TCLSCRIPTZIP)
+	@set TCL_LIBRARY=$(ROOT:\=/)/library
 	@echo cd {$(OUT_DIR)} > "$(OUT_DIR)\zipper.tcl"
 	@echo file delete -force {$(@F)} >> "$(OUT_DIR)\zipper.tcl"
 	@echo zipfs mkzip {$(@F)} {$(LIBTCLVFSSUBDIR)} {$(LIBTCLVFSSUBDIR)} >> "$(OUT_DIR)\zipper.tcl"
 	@$(TCLSH_NATIVE) "$(OUT_DIR)/zipper.tcl"
+
+# Unfortunately code duplication that I don't know how to eliminate in nmake
+!if $(TCL_EMBED_SCRIPTS) && $(STATIC_BUILD)
+libtclbizip: $(TCLLIB) $(TCLSH) $(LIBTCLVFS)
+	@echo Building BI zip
+!if "$(THREADDIR)" != ""
+	@echo Copying thread scripts
+	@$(CPYDIR) $(PKGSDIR)\$(THREADDIR)\lib "$(LIBTCLVFS)\$(THREADDIR)"
+	@$(COPY) $(THREADLIBDIR)\pkgIndex.tcl "$(LIBTCLVFS)\$(THREADDIR)"
+!endif
+	@echo Building Tcl library zip file $(TCLSCRIPTZIP)
+	@set TCL_LIBRARY=$(ROOT:\=/)/library
+	@echo cd {$(OUT_DIR)} > "$(OUT_DIR)\zipper.tcl"
+	@echo file delete -force {$(@F)} >> "$(OUT_DIR)\zipper.tcl"
+	@echo zipfs mkzip {$(TCLSCRIPTZIP)} {$(LIBTCLVFSSUBDIR)} {$(LIBTCLVFSSUBDIR)} >> "$(OUT_DIR)\zipper.tcl"
+	@$(TCLSH_NATIVE) "$(OUT_DIR)/zipper.tcl"
+!endif
 
 pkgs:
 	@for /d %d in ($(PKGSDIR)\*) do \
