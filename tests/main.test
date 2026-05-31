@@ -234,7 +234,7 @@ namespace eval ::tcl::test::main {
 	close $f
 	file delete result
 	removeFile script
-    } -result "application-specific initialization failed: \n"
+    } -result "application-specific initialization failed: interpreter deleted during post-initialization callback\n"
 
     test Tcl_Main-2.4 {
 	Tcl_Main: appInitProc deletes interp
@@ -248,7 +248,7 @@ namespace eval ::tcl::test::main {
     } -cleanup {
 	close $f
 	file delete result
-    } -result "application-specific initialization failed: \n"
+    } -result "application-specific initialization failed: interpreter deleted during post-initialization callback\n"
 
     test Tcl_Main-2.5 {
 	Tcl_Main: appInitProc closes stderr

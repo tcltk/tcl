@@ -89,7 +89,7 @@ PMutexDestroy(
     PMutex *pmutexPtr)
 {
     pthread_mutex_destroy(&pmutexPtr->mutex);
-    assert(pthread_equal(pmutexPtr->thread, PTHREAD_NULL) && !pmutexPtr->counter);
+    assert(PTHREAD_NULL == pmutexPtr->thread && !pmutexPtr->counter);
 }
 
 static void
@@ -98,7 +98,7 @@ PMutexLock(
 {
     pthread_t mythread = pthread_self();
 
-    if (pthread_equal(pmutexPtr->thread, mythread)) {
+    if (PTHREAD_NULL != pmutexPtr->thread && pthread_equal(pmutexPtr->thread, mythread)) {
 	// We own the lock already, so it's recursive.
 	pmutexPtr->counter++;
     } else {
@@ -112,7 +112,7 @@ static void
 PMutexUnlock(
     PMutex *pmutexPtr)
 {
-    assert(pthread_equal(pmutexPtr->thread, pthread_self()));
+    assert(PTHREAD_NULL != pmutexPtr->thread && pthread_equal(pmutexPtr->thread, pthread_self()));
     if (pmutexPtr->counter) {
 	// It's recursive
 	pmutexPtr->counter--;
@@ -129,7 +129,7 @@ PCondWait(
 {
     pthread_t mythread = pthread_self();
 
-    assert(pthread_equal(pmutexPtr->thread, mythread));
+    assert(PTHREAD_NULL != pmutexPtr->thread && pthread_equal(pmutexPtr->thread, mythread));
     int counter = pmutexPtr->counter;
     pmutexPtr->counter = 0;
     pmutexPtr->thread = PTHREAD_NULL;
@@ -146,7 +146,7 @@ PCondTimedWait(
 {
     pthread_t mythread = pthread_self();
 
-    assert(pthread_equal(pmutexPtr->thread, mythread));
+    assert(PTHREAD_NULL != pmutexPtr->thread && pthread_equal(pmutexPtr->thread, mythread));
     int counter = pmutexPtr->counter;
     pmutexPtr->counter = 0;
     pmutexPtr->thread = PTHREAD_NULL;

@@ -1801,7 +1801,7 @@ test socket_$af-12.3 {testing inheritance of accepted sockets} -setup {
 	vwait forever
     }
     close $f
-} -constraints [list socket supported_$af stdio exec knownBug] -body {
+} -constraints [list socket supported_$af stdio exec] -body {
     # Launch the script2 process and connect to it. See how long the socket
     # stays open
     ## exec [interpreter] script2 &

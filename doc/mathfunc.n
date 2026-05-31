@@ -124,7 +124,7 @@ Tcl supports the following mathematical functions in expressions, all
 of which work solely with floating-point numbers unless otherwise noted:
 .DS
 .ta 3.2c 6.4c 9.6c
-\fBabs\fR	\fBacos\fR	.fBacosh\fR	\fBasin\fR
+\fBabs\fR	\fBacos\fR	\fBacosh\fR	\fBasin\fR
 \fBasinh\fR	\fBatan\fR	\fBatan2\fR	\fBatanh\fR
 \fBbool\fR	\fBcbrt\fR	\fBcopysign\fR	\fBceil\fR
 \fBcos\fR	\fBcosh\fR	\fBdim\fR	\fBdouble\fR

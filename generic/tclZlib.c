@@ -2067,7 +2067,7 @@ ZlibAdler32Cmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_Size objc,
-    Tcl_Obj *const objv[])
+    Tcl_Obj *const *objv)
 {
     Tcl_Size dlen = 0;
     const unsigned char *data;
@@ -2105,7 +2105,7 @@ ZlibCRC32Cmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_Size objc,
-    Tcl_Obj *const objv[])
+    Tcl_Obj *const *objv)
 {
     Tcl_Size dlen = 0;
     const unsigned char *data;
@@ -2143,7 +2143,7 @@ ZlibDeflateCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_Size objc,
-    Tcl_Obj *const objv[])
+    Tcl_Obj *const *objv)
 {
     int level;
 
@@ -2171,7 +2171,7 @@ ZlibCompressCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_Size objc,
-    Tcl_Obj *const objv[])
+    Tcl_Obj *const *objv)
 {
     int level;
 
@@ -2199,7 +2199,7 @@ ZlibGzipCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_Size objc,
-    Tcl_Obj *const objv[])
+    Tcl_Obj *const *objv)
 {
     static const char *const gzipopts[] = {
 	"-header", "-level", NULL
@@ -2262,7 +2262,7 @@ ZlibInflateCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_Size objc,
-    Tcl_Obj *const objv[])
+    Tcl_Obj *const *objv)
 {
     size_t buffersize = 0;
     if (objc < 2 || objc > 3) {
@@ -2289,7 +2289,7 @@ ZlibDecompressCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_Size objc,
-    Tcl_Obj *const objv[])
+    Tcl_Obj *const *objv)
 {
     size_t buffersize = 0;
     if (objc < 2 || objc > 3) {
@@ -2316,7 +2316,7 @@ ZlibGunzipCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_Size objc,
-    Tcl_Obj *const objv[])
+    Tcl_Obj *const *objv)
 {
     static const char *const gunzipopts[] = {
 	"-buffersize", "-headerVar", NULL
@@ -2379,7 +2379,7 @@ ZlibStreamCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_Size objc,
-    Tcl_Obj *const objv[])
+    Tcl_Obj *const *objv)
 {
     static const char *const stream_formats[] = {
 	"compress", "decompress", "deflate", "gunzip", "gzip", "inflate",
@@ -2533,7 +2533,7 @@ ZlibPushCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_Size objc,
-    Tcl_Obj *const objv[])
+    Tcl_Obj *const *objv)
 {
     static const char *const stream_formats[] = {
 	"compress", "decompress", "deflate", "gunzip", "gzip", "inflate",
@@ -2709,7 +2709,7 @@ ZlibStreamImplCmd(
     void *clientData,
     Tcl_Interp *interp,
     Tcl_Size objc,
-    Tcl_Obj *const objv[])
+    Tcl_Obj *const *objv)
 {
     Tcl_ZlibStream zstream = (Tcl_ZlibStream) clientData;
     int count, code;
@@ -2835,7 +2835,7 @@ ZlibStreamAddCmd(
     void *clientData,
     Tcl_Interp *interp,
     Tcl_Size objc,
-    Tcl_Obj *const objv[])
+    Tcl_Obj *const *objv)
 {
     Tcl_ZlibStream zstream = (Tcl_ZlibStream) clientData;
     int code, buffersize = -1, flush = -1, i;
@@ -2964,7 +2964,7 @@ ZlibStreamPutCmd(
     void *clientData,
     Tcl_Interp *interp,
     Tcl_Size objc,
-    Tcl_Obj *const objv[])
+    Tcl_Obj *const *objv)
 {
     Tcl_ZlibStream zstream = (Tcl_ZlibStream) clientData;
     int flush = -1, i;
@@ -3057,7 +3057,7 @@ ZlibStreamHeaderCmd(
     void *clientData,
     Tcl_Interp *interp,
     Tcl_Size objc,
-    Tcl_Obj *const objv[])
+    Tcl_Obj *const *objv)
 {
     ZlibStreamHandle *zshPtr = (ZlibStreamHandle *) clientData;
     Tcl_Obj *resultObj;

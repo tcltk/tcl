@@ -89,7 +89,7 @@ static DWORD lastType = REG_RESOURCE_LIST;
  */
 
 static int		BroadcastValue(Tcl_Interp *interp, Tcl_Size objc,
-			    Tcl_Obj *const objv[]);
+			    Tcl_Obj *const *objv);
 static DWORD		ConvertDWORD(DWORD type, DWORD value);
 static int		DeleteKey(Tcl_Interp *interp, Tcl_Obj *keyNameObj,
 			    REGSAM mode);
@@ -115,7 +115,7 @@ static DWORD		RecursiveDeleteKey(HKEY hStartKey,
 			    const WCHAR * pKeyName, REGSAM mode);
 static int		RegistryObjCmd(void *clientData,
 			    Tcl_Interp *interp, Tcl_Size objc,
-			    Tcl_Obj *const objv[]);
+			    Tcl_Obj *const *objv);
 static int		SetValue(Tcl_Interp *interp, Tcl_Obj *keyNameObj,
 			    Tcl_Obj *valueNameObj, Tcl_Obj *dataObj,
 			    Tcl_Obj *typeObj, REGSAM mode);
@@ -166,7 +166,7 @@ RegistryObjCmd(
     void *dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,		/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument values. */
+    Tcl_Obj *const *objv)	/* Argument values. */
 {
     Tcl_Size n = 1, argc;
     int index;
@@ -1286,7 +1286,7 @@ static int
 BroadcastValue(
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,		/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument values. */
+    Tcl_Obj *const *objv)	/* Argument values. */
 {
     LRESULT result;
     DWORD_PTR sendResult;

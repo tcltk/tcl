@@ -14,7 +14,7 @@
  */
 
 Tcl_Obj *		myNewLStringObj(Tcl_WideInt start, Tcl_WideInt length);
-static void		freeRep(Tcl_Obj* alObj);
+static void		freeRep(Tcl_Obj *alObj);
 static Tcl_Obj *	my_LStringObjSetElem(Tcl_Interp *interp, Tcl_Obj *listPtr,
 			    Tcl_Size numIndcies, Tcl_Obj *const indicies[],
 			    Tcl_Obj *valueObj);
@@ -31,7 +31,7 @@ static int		my_LStringReplace(Tcl_Interp *interp, Tcl_Obj *listObj,
 			    Tcl_Obj *const insertObjs[]);
 static int		my_LStringGetElements(Tcl_Interp *interp, Tcl_Obj *listPtr,
 			    Tcl_Size *objcptr, Tcl_Obj ***objvptr);
-static void		lstringFreeElements(Tcl_Obj* lstringObj);
+static void		lstringFreeElements(Tcl_Obj *lstringObj);
 static void		UpdateStringOfLString(Tcl_Obj *objPtr);
 
 /*
@@ -42,7 +42,7 @@ typedef struct LString {
     char *string;		// NULL terminated utf-8 string
     Tcl_Size strlen;		// num bytes in string
     Tcl_Size allocated;		// num bytes allocated
-    Tcl_Obj**elements;		// elements array, allocated when GetElements is
+    Tcl_Obj **elements;		// elements array, allocated when GetElements is
 				// called
 } LString;
 
@@ -353,7 +353,7 @@ DupLStringRep(
  *----------------------------------------------------------------------
  */
 
-static Tcl_Obj*
+static Tcl_Obj *
 my_LStringObjSetElem(
     Tcl_Interp *interp,
     Tcl_Obj *lstringObj,
@@ -660,7 +660,7 @@ static Tcl_Obj *
 my_NewLStringObj(
     Tcl_Interp *interp,
     Tcl_Size objc,
-    Tcl_Obj *const objv[])
+    Tcl_Obj *const *objv)
 {
     LString *lstringRepPtr;
     Tcl_ObjInternalRep itr;
@@ -730,15 +730,15 @@ my_NewLStringObj(
 
 static void
 lstringFreeElements(
-    Tcl_Obj* lstringObj)
+    Tcl_Obj *lstringObj)
 {
-    LString *lstringRepPtr = (LString*)lstringObj->internalRep.twoPtrValue.ptr1;
+    LString *lstringRepPtr = (LString *)lstringObj->internalRep.twoPtrValue.ptr1;
     if (lstringRepPtr->elements) {
 	Tcl_Obj **objptr = lstringRepPtr->elements;
 	while (objptr < &lstringRepPtr->elements[lstringRepPtr->strlen]) {
 	    Tcl_DecrRefCount(*objptr++);
 	}
-	Tcl_Free((char*)lstringRepPtr->elements);
+	Tcl_Free((char *)lstringRepPtr->elements);
 	lstringRepPtr->elements = NULL;
     }
 }
@@ -761,9 +761,9 @@ lstringFreeElements(
 
 static void
 freeRep(
-    Tcl_Obj* lstringObj)
+    Tcl_Obj *lstringObj)
 {
-    LString *lstringRepPtr = (LString*)lstringObj->internalRep.twoPtrValue.ptr1;
+    LString *lstringRepPtr = (LString *)lstringObj->internalRep.twoPtrValue.ptr1;
     if (lstringRepPtr->string) {
 	Tcl_Free(lstringRepPtr->string);
     }
@@ -805,7 +805,7 @@ my_LStringGetElements(
 	return TCL_OK;
     }
     if (lstringRepPtr->elements == NULL) {
-	lstringRepPtr->elements = (Tcl_Obj**)Tcl_Alloc(sizeof(Tcl_Obj*) * lstringRepPtr->strlen);
+	lstringRepPtr->elements = (Tcl_Obj **)Tcl_Alloc(sizeof(Tcl_Obj *) * lstringRepPtr->strlen);
 	objPtr=lstringRepPtr->elements;
 	while (objPtr < &lstringRepPtr->elements[lstringRepPtr->strlen]) {
 	    *objPtr = Tcl_NewStringObj(cptr++,1);
@@ -918,7 +918,7 @@ lLStringObjCmd(
     void *clientData,
     Tcl_Interp *interp,
     Tcl_Size objc,
-    Tcl_Obj *const objv[])
+    Tcl_Obj *const *objv)
 {
     Tcl_Obj *lstringObj;
 
@@ -958,12 +958,12 @@ typedef struct LgenSeries {
  * Evaluate the generation function.
  * The provided funtion computes the value for a give index
  */
-static Tcl_Obj*
+static Tcl_Obj *
 lgen(
-    Tcl_Obj* objPtr,
+    Tcl_Obj *objPtr,
     Tcl_Size index)
 {
-    LgenSeries *lgenSeriesPtr = (LgenSeries*)objPtr->internalRep.twoPtrValue.ptr1;
+    LgenSeries *lgenSeriesPtr = (LgenSeries *)objPtr->internalRep.twoPtrValue.ptr1;
     Tcl_Obj *elemObj = NULL;
     Tcl_Interp *intrp = lgenSeriesPtr->interp;
     Tcl_Obj *genCmd = lgenSeriesPtr->genFnObj;
@@ -1137,7 +1137,7 @@ Tcl_Obj *
 newLgenObj(
     Tcl_Interp *interp,
 	Tcl_Size objc,
-    Tcl_Obj *const objv[])
+    Tcl_Obj *const *objv)
 {
     Tcl_WideInt length;
     LgenSeries *lGenSeriesRepPtr;
@@ -1188,7 +1188,7 @@ lGenObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_Size objc,
-    Tcl_Obj *const objv[])
+    Tcl_Obj *const *objv)
 {
     Tcl_Obj *genObj = newLgenObj(interp, objc-1, &objv[1]);
     if (genObj) {

@@ -318,7 +318,7 @@ struct Class {
 				 * entities happens properly when the class
 				 * itself is deleted. */
     Tcl_HashTable classMethods;	/* Hash table of all methods. Hash maps from
-				 * the (Tcl_Obj*) method name to the (Method*)
+				 * the (Tcl_Obj *) method name to the (Method*)
 				 * method record. */
     Method *constructorPtr;	/* Method record of the class constructor (if
 				 * any). */
@@ -617,7 +617,7 @@ MODULE_SCOPE int	TclOOInit(Tcl_Interp *interp);
 MODULE_SCOPE void	TclOOInitInfo(Tcl_Interp *interp);
 MODULE_SCOPE int	TclOOInvokeContext(void *clientData,
 			    Tcl_Interp *interp, Tcl_Size objc,
-			    Tcl_Obj *const objv[]);
+			    Tcl_Obj *const *objv);
 MODULE_SCOPE Tcl_Var	TclOOLookupObjectVar(Tcl_Interp *interp,
 			    Tcl_Object object, Tcl_Obj *varName,
 			    Tcl_Var *aryPtr);
@@ -647,9 +647,9 @@ MODULE_SCOPE bool	TclOOUnexportMethods(Class *clsPtr, ...);
 MODULE_SCOPE Tcl_Obj *	TclOOGetPropertyList(PropertyList *propList);
 MODULE_SCOPE void	TclOOReleasePropertyStorage(PropertyStorage *propsPtr);
 MODULE_SCOPE void	TclOOInstallReadableProperties(PropertyStorage *props,
-			    Tcl_Size objc, Tcl_Obj *const objv[]);
+			    Tcl_Size objc, Tcl_Obj *const *objv);
 MODULE_SCOPE void	TclOOInstallWritableProperties(PropertyStorage *props,
-			    Tcl_Size objc, Tcl_Obj *const objv[]);
+			    Tcl_Size objc, Tcl_Obj *const *objv);
 MODULE_SCOPE void	TclOORegisterProperty(Class *clsPtr,
 			    Tcl_Obj *propName, bool mayRead, bool mayWrite);
 MODULE_SCOPE void	TclOORegisterInstanceProperty(Object *oPtr,

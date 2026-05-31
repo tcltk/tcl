@@ -18,19 +18,19 @@
  */
 
 static Tcl_Command	InitEnsembleFromOptions(Tcl_Interp *interp,
-			    Tcl_Size objc, Tcl_Obj *const objv[]);
+			    Tcl_Size objc, Tcl_Obj *const *objv);
 static int		ReadOneEnsembleOption(Tcl_Interp *interp,
 			    Tcl_Command token, Tcl_Obj *optionObj);
 static int		ReadAllEnsembleOptions(Tcl_Interp *interp,
 			    Tcl_Command token);
 static int		SetEnsembleConfigOptions(Tcl_Interp *interp,
 			    Tcl_Command token, Tcl_Size objc,
-			    Tcl_Obj *const objv[]);
+			    Tcl_Obj *const *objv);
 static inline int	EnsembleUnknownCallback(Tcl_Interp *interp,
 			    EnsembleConfig *ensemblePtr, Tcl_Size objc,
-			    Tcl_Obj *const objv[], Tcl_Obj **prefixObjPtr);
+			    Tcl_Obj *const *objv, Tcl_Obj **prefixObjPtr);
 static int		NsEnsembleImplementationCmdNR(void *clientData,
-			    Tcl_Interp *interp,Tcl_Size objc,Tcl_Obj *const objv[]);
+			    Tcl_Interp *interp,Tcl_Size objc,Tcl_Obj *const *objv);
 static void		BuildEnsembleConfig(EnsembleConfig *ensemblePtr);
 static int		NsEnsembleStringOrder(const void *strPtr1,
 			    const void *strPtr2);
@@ -152,7 +152,7 @@ TclNamespaceEnsembleCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_Size objc,
-    Tcl_Obj *const objv[])
+    Tcl_Obj *const *objv)
 {
     Namespace *nsPtr = (Namespace *) TclGetCurrentNamespace(interp);
     Tcl_Command token;		/* The ensemble command. */
@@ -259,7 +259,7 @@ static Tcl_Command
 InitEnsembleFromOptions(
     Tcl_Interp *interp,
     Tcl_Size objc,
-    Tcl_Obj *const objv[])
+    Tcl_Obj *const *objv)
 {
     Namespace *nsPtr = (Namespace *) TclGetCurrentNamespace(interp);
     Namespace *cxtPtr = nsPtr->parentPtr;
@@ -589,7 +589,7 @@ SetEnsembleConfigOptions(
     Tcl_Interp *interp,
     Tcl_Command token,		/* The ensemble to configure. */
     Tcl_Size objc,		/* The count of option-related arguments. */
-    Tcl_Obj *const objv[])	/* Option-related arguments. */
+    Tcl_Obj *const *objv)	/* Option-related arguments. */
 {
     Tcl_Size len;
     int allocatedMapFlag = 0;
@@ -1740,7 +1740,7 @@ TclEnsembleImplementationCmd(
     void *clientData,
     Tcl_Interp *interp,
     Tcl_Size objc,
-    Tcl_Obj *const objv[])
+    Tcl_Obj *const *objv)
 {
     return Tcl_NRCallObjProc2(interp, NsEnsembleImplementationCmdNR,
 	    clientData, objc, objv);
@@ -1751,7 +1751,7 @@ NsEnsembleImplementationCmdNR(
     void *clientData,		/* The ensemble this is the impl. of. */
     Tcl_Interp *interp,
     Tcl_Size objc,
-    Tcl_Obj *const objv[])
+    Tcl_Obj *const *objv)
 {
     EnsembleConfig *ensemblePtr = (EnsembleConfig *) clientData;
 				/* The ensemble itself. */
@@ -2348,7 +2348,7 @@ EnsembleUnknownCallback(
     Tcl_Interp *interp,
     EnsembleConfig *ensemblePtr,/* The ensemble structure. */
     Tcl_Size objc,		/* Number of arguments. */
-    Tcl_Obj *const objv[],	/* Actual arguments. */
+    Tcl_Obj *const *objv,	/* Actual arguments. */
     Tcl_Obj **prefixObjPtr)	/* Where to write the prefix suggested by the
 				 * unknown callback. Must not be NULL. Only has
 				 * a meaningful value on TCL_OK. */

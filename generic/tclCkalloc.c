@@ -798,7 +798,7 @@ MemoryCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_Size objc,		/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Obj values of arguments. */
+    Tcl_Obj *const *objv)	/* Obj values of arguments. */
 {
     const char *fileName;
     FILE *fileP;
@@ -968,7 +968,7 @@ CheckmemCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Interpreter for evaluation. */
     Tcl_Size objc,		/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Obj values of arguments. */
+    Tcl_Obj *const *objv)	/* Obj values of arguments. */
 {
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "fileName");

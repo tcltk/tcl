@@ -1032,7 +1032,7 @@ Tcl_FSMatchInDirectory(
 	return ret;
     }
 
-    if (pathPtr != NULL && TclGetString(pathPtr)[0] != '\0') {
+    if (pathPtr != NULL && !Tcl_IsEmpty(pathPtr)) {
 	/*
 	 * There is a pathname but it belongs to no known filesystem. Mayday!
 	 */

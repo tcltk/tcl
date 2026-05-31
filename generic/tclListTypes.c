@@ -758,7 +758,7 @@ Tcl_ListObjRepeat(
     Tcl_Interp *interp,
     Tcl_Size repeatCount,	/* Number of times to repeat */
     Tcl_Size objc,		/* Number of elements in objv */
-    Tcl_Obj *const objv[],	/* Source whose elements are to be repeated */
+    Tcl_Obj *const *objv,	/* Source whose elements are to be repeated */
     Tcl_Obj **resultPtrPtr)	/* Location to store result object */
 {
     if (repeatCount < 0) {

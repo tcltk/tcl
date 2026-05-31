@@ -253,7 +253,7 @@ TclStrIdxTreeBuildFromList(
 
     /* create lowercase reflection of the list keys */
 
-    lwrv = (Tcl_Obj **) Tcl_AttemptAlloc(sizeof(Tcl_Obj*) * lstc);
+    lwrv = (Tcl_Obj **) Tcl_AttemptAlloc(sizeof(Tcl_Obj *) * lstc);
     if (lwrv == NULL) {
 	return TCL_ERROR;
     }
@@ -485,7 +485,7 @@ TclStrIdxTreePrint(
 int
 TclStrIdxTreeTestObjCmd(
     void *clientData, Tcl_Interp *interp,
-    Tcl_Size objc, Tcl_Obj *const objv[])
+    Tcl_Size objc, Tcl_Obj *const *objv)
 {
     const char *cs, *cin, *ret;
     static const char *const options[] = {

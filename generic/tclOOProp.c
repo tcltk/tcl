@@ -361,7 +361,7 @@ TclOO_Configurable_Configure(
  *
  * Configurable_Getter, Configurable_Setter --
  *
- *	Standard property implementation. The clientData is a simple Tcl_Obj*
+ *	Standard property implementation. The clientData is a simple Tcl_Obj *
  *	that contains the name of the property.
  *
  * ----------------------------------------------------------------------
@@ -369,7 +369,7 @@ TclOO_Configurable_Configure(
 
 static int
 Configurable_Getter(
-    void *clientData,		/* Which property to read. Actually a Tcl_Obj*
+    void *clientData,		/* Which property to read. Actually a Tcl_Obj *
 				 * reference that is the name of the variable
 				 * in the cpntext object. */
     Tcl_Interp *interp,		/* Interpreter used for the result, error
@@ -405,7 +405,7 @@ Configurable_Getter(
 
 static int
 Configurable_Setter(
-    void *clientData,		/* Which property to write. Actually a Tcl_Obj*
+    void *clientData,		/* Which property to write. Actually a Tcl_Obj *
 				 * reference that is the name of the variable
 				 * in the cpntext object. */
     Tcl_Interp *interp,		/* Interpreter used for the result, error
@@ -821,7 +821,7 @@ SetPropertyList(
     PropertyList *propList,	/* The property list to write. Replaces the
 				 * property list's contents. */
     Tcl_Size objc,		/* Number of property names. */
-    Tcl_Obj *const objv[])	/* Property names. */
+    Tcl_Obj *const *objv)	/* Property names. */
 {
     Tcl_Size i, n;
     Tcl_Obj *propObj;
@@ -884,7 +884,7 @@ void
 TclOOInstallReadableProperties(
     PropertyStorage *props,	/* Which property list to install into. */
     Tcl_Size objc,		/* Number of property names. */
-    Tcl_Obj *const objv[])	/* Property names. */
+    Tcl_Obj *const *objv)	/* Property names. */
 {
     if (props->allReadableCache) {
 	Tcl_DecrRefCount(props->allReadableCache);
@@ -908,7 +908,7 @@ void
 TclOOInstallWritableProperties(
     PropertyStorage *props,	/* Which property list to install into. */
     Tcl_Size objc,		/* Number of property names. */
-    Tcl_Obj *const objv[])	/* Property names. */
+    Tcl_Obj *const *objv)	/* Property names. */
 {
     if (props->allWritableCache) {
 	Tcl_DecrRefCount(props->allWritableCache);
@@ -1196,7 +1196,7 @@ TclOOInfoClassPropCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_Size objc,
-    Tcl_Obj *const objv[])
+    Tcl_Obj *const *objv)
 {
     Class *clsPtr;
     Tcl_Size i;
@@ -1258,7 +1258,7 @@ TclOOInfoObjectPropCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_Size objc,
-    Tcl_Obj *const objv[])
+    Tcl_Obj *const *objv)
 {
     Object *oPtr;
     Tcl_Size i;

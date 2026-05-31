@@ -35,7 +35,7 @@ Pkga_EqObjCmd(
     void *dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
+    Tcl_Obj *const *objv)	/* Argument objects. */
 {
     int result;
     const char *str1, *str2;
@@ -82,7 +82,7 @@ Pkga_QuoteObjCmd(
     void *dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument strings. */
+    Tcl_Obj *const *objv)	/* Argument strings. */
 {
     (void)dummy;
 

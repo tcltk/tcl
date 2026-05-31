@@ -842,7 +842,7 @@ Tcl_FSJoinPath(
 Tcl_Obj *
 TclJoinPath(
     Tcl_Size elements,		/* Number of elements to use */
-    Tcl_Obj *const objv[],	/* Path elements to join */
+    Tcl_Obj *const *objv,	/* Path elements to join */
     bool forceRelative)		/* If true, assume all more paths are
 				 * relative (e.g. simple normalization) */
 {

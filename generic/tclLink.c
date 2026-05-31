@@ -1151,7 +1151,7 @@ LinkTraceProc(
  *
  * ObjValue --
  *
- *	Converts the value of a C variable to a Tcl_Obj* for use in a Tcl
+ *	Converts the value of a C variable to a Tcl_Obj * for use in a Tcl
  *	variable to which it is linked.
  *
  * Results:

@@ -214,7 +214,7 @@ ThreadObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,		/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
+    Tcl_Obj *const *objv)	/* Argument objects. */
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     static const char *const threadOptions[] = {
