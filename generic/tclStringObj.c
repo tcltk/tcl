@@ -1857,7 +1857,7 @@ Tcl_AppendFormatToObj(
     Tcl_Obj *appendObj,
     const char *format,
     Tcl_Size objc,
-    Tcl_Obj *const objv[])
+    Tcl_Obj *const *objv)
 {
     const char *span = format, *msg, *errCode;
     int gotXpg = 0, gotSequential = 0;
@@ -2657,7 +2657,7 @@ Tcl_Format(
     Tcl_Interp *interp,
     const char *format,
     Tcl_Size objc,
-    Tcl_Obj *const objv[])
+    Tcl_Obj *const *objv)
 {
     int result;
     Tcl_Obj *objPtr;
@@ -3156,7 +3156,7 @@ Tcl_Obj *
 TclStringCat(
     Tcl_Interp *interp,
     Tcl_Size objc,
-    Tcl_Obj *const objv[],
+    Tcl_Obj *const *objv,
     int flags)
 {
     Tcl_Obj *objResultPtr, *const *ov;

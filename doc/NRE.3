@@ -163,7 +163,7 @@ int
     void *clientData,
     Tcl_Interp *interp,
     Tcl_Size objc,
-    Tcl_Obj *const objv[])
+    Tcl_Obj *const *objv)
 {
     int result;
     Tcl_Obj *objPtr;
@@ -194,7 +194,7 @@ int
     void *clientData,
     Tcl_Interp *interp,
     Tcl_Size objc,
-    Tcl_Obj *const objv[])
+    Tcl_Obj *const *objv)
 {
     return \fBTcl_NRCallObjProc2\fR(interp, \fITheCmdNRObjProc\fR,
             clientData, objc, objv);
@@ -207,7 +207,7 @@ int
     void *clientData,
     Tcl_Interp *interp,
     Tcl_Size objc,
-    Tcl_Obj *const objv[])
+    Tcl_Obj *const *objv)
 {
     Tcl_Obj *objPtr;
 

@@ -249,7 +249,7 @@ HandleBgErrors(
 	errPtr = assocPtr->firstBgPtr;
 
 	TclListObjGetElements(NULL, copyObj, &prefixObjc, &prefixObjv);
-	tempObjv = (Tcl_Obj**)Tcl_Alloc((prefixObjc+2) * sizeof(Tcl_Obj *));
+	tempObjv = (Tcl_Obj **)Tcl_Alloc((prefixObjc+2) * sizeof(Tcl_Obj *));
 	memcpy(tempObjv, prefixObjv, prefixObjc*sizeof(Tcl_Obj *));
 	tempObjv[prefixObjc] = errPtr->errorMsg;
 	tempObjv[prefixObjc+1] = errPtr->returnOpts;
@@ -333,7 +333,7 @@ TclDefaultBgErrorHandlerObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,		/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
+    Tcl_Obj *const *objv)	/* Argument objects. */
 {
     Tcl_Obj *valuePtr;
     Tcl_Obj *tempObjv[2];
@@ -1537,7 +1537,7 @@ Tcl_VwaitObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,		/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
+    Tcl_Obj *const *objv)	/* Argument objects. */
 {
     Tcl_Size i, done = 0, numItems = 0, timedOut = 0;
     int foundEvent, any = 1, timeout = 0;
@@ -1993,7 +1993,7 @@ Tcl_UpdateObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,		/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
+    Tcl_Obj *const *objv)	/* Argument objects. */
 {
     int flags = 0;		/* Initialized to avoid compiler warning. */
     static const char *const updateOptions[] = {"idletasks", NULL};

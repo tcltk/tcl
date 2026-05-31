@@ -84,7 +84,7 @@ static inline Tcl_Namespace *GetNamespaceInOuterContext(Tcl_Interp *interp,
 			    Tcl_Obj *namespaceName);
 static inline int	InitDefineContext(Tcl_Interp *interp,
 			    Tcl_Namespace *namespacePtr, Object *oPtr,
-			    Tcl_Size objc, Tcl_Obj *const objv[]);
+			    Tcl_Size objc, Tcl_Obj *const *objv);
 static inline void	RecomputeClassCacheFlag(Object *oPtr);
 static int		RenameDeleteMethod(Tcl_Interp *interp, Object *oPtr,
 			    bool useClass, Tcl_Obj *const fromPtr,
@@ -855,7 +855,7 @@ TclOOUnknownDefinition(
 	 */
 
 	Tcl_Obj **newObjv = (Tcl_Obj **)
-		TclStackAlloc(interp, sizeof(Tcl_Obj*) * (objc - 1));
+		TclStackAlloc(interp, sizeof(Tcl_Obj *) * (objc - 1));
 	int result;
 
 	newObjv[0] = Tcl_NewStringObj(matchedStr, TCL_AUTO_LENGTH);
@@ -955,7 +955,7 @@ InitDefineContext(
     Tcl_Namespace *namespacePtr,
     Object *oPtr,
     Tcl_Size objc,
-    Tcl_Obj *const objv[])
+    Tcl_Obj *const *objv)
 {
     CallFrame *framePtr, **framePtrPtr = &framePtr;
 
@@ -3118,7 +3118,7 @@ Slot_Unknown(
 		sizeof(Tcl_Obj *) * (objc - skip + 2));
 	args[0] = oPtr->fPtr->myName;
 	args[1] = oPtr->fPtr->slotDefOpName;
-	memcpy(args+2, objv+skip, sizeof(Tcl_Obj*) * (objc - skip));
+	memcpy(args+2, objv+skip, sizeof(Tcl_Obj *) * (objc - skip));
 	int code = TclOOPrivateObjectCmd(oPtr, interp, objc - skip + 2, args);
 	TclStackFree(interp, args);
 	return code;

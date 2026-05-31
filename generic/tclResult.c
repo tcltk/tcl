@@ -812,7 +812,7 @@ ExpandedOptions(
     Tcl_Obj **keys,		/* Built-in keys (per thread) */
     Tcl_Obj *returnOpts,	/* Options dict we are building */
     Tcl_Size objc,		/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
+    Tcl_Obj *const *objv)	/* Argument objects. */
 {
     for (;  objc > 1;  objv += 2, objc -= 2) {
 	const char *opt = TclGetString(objv[0]);
@@ -853,7 +853,7 @@ int
 TclMergeReturnOptions(
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,		/* Number of arguments. */
-    Tcl_Obj *const objv[],	/* Argument objects. */
+    Tcl_Obj *const *objv,	/* Argument objects. */
     Tcl_Obj **optionsPtrPtr,	/* If not NULL, points to space for a (Tcl_Obj
 				 * *) where the pointer to the merged return
 				 * options dictionary should be written. */
@@ -1223,7 +1223,7 @@ TclSafeCatchCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_Size objc,
-    Tcl_Obj *const objv[])
+    Tcl_Obj *const *objv)
 {
     Interp *iPtr = (Interp *)interp;
     int ret, flags = 0;

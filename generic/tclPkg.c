@@ -1051,7 +1051,7 @@ Tcl_PackageObjCmd(
     void *clientData,
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,		/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
+    Tcl_Obj *const *objv)	/* Argument objects. */
 {
     return Tcl_NRCallObjProc2(interp, TclNRPackageObjCmd, clientData, objc, objv);
 }
@@ -1061,7 +1061,7 @@ TclNRPackageObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,		/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
+    Tcl_Obj *const *objv)	/* Argument objects. */
 {
     static const char *const pkgOptions[] = {
 	"files",  "forget",  "ifneeded", "names",   "prefer",

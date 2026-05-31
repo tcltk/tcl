@@ -23,7 +23,7 @@ and the second element of the result is the integer exponent from \fIvalue\fR.
 When \fIvalue\fR is infinite, the fraction is also infinite (of the same sign).
 .SH EXAMPLE
 .PP
-The \fBfrexp\fR command is paired with the \fRldexp\fR function, like this:
+The \fBfrexp\fR command is paired with the \fBldexp\fR function, like this:
 .PP
 .CS
 set value 123.456

@@ -8,7 +8,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-.TH "tcltest" n 2.5 tcltest "Tcl Bundled Packages"
+.TH "tcltest" n 2.6 tcltest "Tcl Bundled Packages"
 .so man.macros
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
@@ -16,7 +16,7 @@
 tcltest \- Test harness support code and utilities
 .SH SYNOPSIS
 .nf
-\fBpackage require tcltest\fR ?\fB2.5\fR?
+\fBpackage require tcltest\fR ?\fB2.6\fR?
 
 \fBtcltest::test \fIname description\fR ?\fI\-option value ...\fR?
 \fBtcltest::test \fIname description\fR ?\fIconstraints\fR? \fIbody result\fR
@@ -54,6 +54,7 @@ tcltest \- Test harness support code and utilities
 \fBtcltest::skipDirectories \fR?\fIpatternList\fR?
 \fBtcltest::skipFiles \fR?\fIpatternList\fR?
 \fBtcltest::temporaryDirectory \fR?\fIdirectory\fR?
+\fBtcltest::testIterations \fR?\fIcount\fR?
 \fBtcltest::testsDirectory \fR?\fIdirectory\fR?
 \fBtcltest::verbose \fR?\fIlevel\fR?
 
@@ -383,6 +384,12 @@ Same as
 .
 Same as
 .QW "\fBconfigure \-tmpdir\fR ?\fIdirectory\fR?" .
+.\" COMMAND: testIterations
+.TP
+\fBtestIterations\fR ?\fIcount\fR?
+.
+Same as
+.QW "\fBconfigure \-iterations\fR ?\fIcount\fR?" .
 .\" COMMAND: testsDirectory
 .TP
 \fBtestsDirectory\fR ?\fIdirectory\fR?
@@ -1022,6 +1029,11 @@ Sets the file to which all error output produced by tcltest
 should be written.  A file named \fIfilename\fR will be \fBopen\fRed
 for writing, and the resulting channel will be set as the value
 of \fBerrorChannel\fR.
+.\" OPTION: -iterations
+.TP
+\fB\-iterations \fIcount\fR
+.
+Sets the number of times each test is executed. Default value is \fB1\fR.
 .SH "CREATING TEST SUITES WITH TCLTEST"
 .PP
 The fundamental element of a test suite is the individual \fBtest\fR
@@ -1147,7 +1159,7 @@ Here is a sketch of a sample test file illustrating those points:
 .RS
 .PP
 .CS
-\fBpackage require tcltest 2.5\fR
+\fBpackage require tcltest 2.6\fR
 \fB::tcltest::configure\fR {*}$::argv
 \fBpackage require example\fR
 namespace eval ::example::test {
@@ -1181,7 +1193,7 @@ Here is a sketch of a sample test suite main script:
 .RS
 .PP
 .CS
-\fBpackage require tcltest 2.5\fR
+\fBpackage require tcltest 2.6\fR
 \fBpackage require example\fR
 \fB::tcltest::configure\fR -testdir \e
         [file dirname [file normalize [info script]]]

@@ -857,7 +857,7 @@ TclCreateExecEnv(
     Tcl_Interp *interp,		/* Interpreter for which the execution
 				 * environment is being created. */
     size_t size)		/* The initial stack size, in number of words
-				 * [sizeof(Tcl_Obj*)] */
+				 * [sizeof(Tcl_Obj *)] */
 {
     ExecEnv *eePtr = (ExecEnv *)Tcl_Alloc(sizeof(ExecEnv));
     ExecStack *esPtr = (ExecStack *)Tcl_Alloc(offsetof(ExecStack, stackWords)
@@ -1351,7 +1351,7 @@ Tcl_ExprObj(
 				 * expression. */
     Tcl_Obj *objPtr,		/* Points to Tcl object containing expression
 				 * to evaluate. */
-    Tcl_Obj **resultPtrPtr)	/* Where the Tcl_Obj* that is the expression
+    Tcl_Obj **resultPtrPtr)	/* Where the Tcl_Obj * that is the expression
 				 * result is stored if no errors occur. */
 {
     NRE_callback *rootPtr = TOP_CB(interp);
@@ -7092,9 +7092,9 @@ TEBCresume(
 	    if (a && b) {
 		match = TclStringCmp(a, b, 1, 0, -1) == 0;
 	    } else if (a) {
-		match = TclGetString(a)[0] == '\0';
+		match = Tcl_IsEmpty(a);
 	    } else if (b) {
-		match = TclGetString(b)[0] == '\0';
+		match = Tcl_IsEmpty(b);
 	    }
 	}
 	TRACE_APPEND("%d\n", match ? 1 : 0);
@@ -8314,7 +8314,7 @@ WidePwrSmallExpon(
  *	them.
  *
  * Results:
- *	A Tcl_Obj* result, or a NULL (in which case valuePtr is updated to
+ *	A Tcl_Obj * result, or a NULL (in which case valuePtr is updated to
  *	hold the result value), or one of the special flag values
  *	GENERAL_ARITHMETIC_ERROR, EXPONENT_OF_ZERO or DIVIDED_BY_ZERO. The
  *	latter two signify a zero value raised to a negative power or a value
@@ -9690,7 +9690,7 @@ Tcl_Obj *
 TclGetSourceFromFrame(
     CmdFrame *cfPtr,
     Tcl_Size objc,
-    Tcl_Obj *const objv[])
+    Tcl_Obj *const *objv)
 {
     if (cfPtr == NULL) {
 	return Tcl_NewListObj(objc, objv);
@@ -10111,7 +10111,7 @@ EvalStatsCmd(
     TCL_UNUSED(void *),		/* Unused. */
     Tcl_Interp *interp,		/* The current interpreter. */
     Tcl_Size objc,		/* The number of arguments. */
-    Tcl_Obj *const objv[])	/* The argument strings. */
+    Tcl_Obj *const *objv)	/* The argument strings. */
 {
     Interp *iPtr = (Interp *) interp;
     LiteralTable *globalTablePtr = &iPtr->literalTable;

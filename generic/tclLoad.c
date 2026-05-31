@@ -131,7 +131,7 @@ Tcl_LoadObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,		/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
+    Tcl_Obj *const *objv)	/* Argument objects. */
 {
     Tcl_Interp *target;
     LoadedLibrary *libraryPtr, *defaultPtr;
@@ -560,7 +560,7 @@ Tcl_UnloadObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,		/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
+    Tcl_Obj *const *objv)	/* Argument objects. */
 {
     Tcl_Interp *target;		/* Which interpreter to unload from. */
     LoadedLibrary *libraryPtr;

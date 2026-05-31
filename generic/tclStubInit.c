@@ -331,7 +331,7 @@ TclpGetPid(Tcl_Pid pid)
 /* On Cygwin, long is 64-bit while on Win64 long is 32-bit. Therefore we have
  * to make sure that all stub entries on Cygwin follow the Win64 signature.
  */
-#define Tcl_GetLongFromObj (int(*)(Tcl_Interp*,Tcl_Obj*,long*))(void *)Tcl_GetIntFromObj
+#define Tcl_GetLongFromObj (int(*)(Tcl_Interp *,Tcl_Obj *,long *))(void *)Tcl_GetIntFromObj
 static int exprInt(Tcl_Interp *interp, const char *expr, int *ptr){
     long longValue;
     int result = Tcl_ExprLong(interp, expr, &longValue);
@@ -347,8 +347,8 @@ static int exprInt(Tcl_Interp *interp, const char *expr, int *ptr){
     }
     return result;
 }
-#define Tcl_ExprLong (int(*)(Tcl_Interp*,const char*,long*))(void *)exprInt
-static int exprIntObj(Tcl_Interp *interp, Tcl_Obj*expr, int *ptr){
+#define Tcl_ExprLong (int(*)(Tcl_Interp *, const char *,long *))(void *)exprInt
+static int exprIntObj(Tcl_Interp *interp, Tcl_Obj *expr, int *ptr){
     long longValue;
     int result = Tcl_ExprLongObj(interp, expr, &longValue);
     if (result == TCL_OK) {
@@ -363,7 +363,7 @@ static int exprIntObj(Tcl_Interp *interp, Tcl_Obj*expr, int *ptr){
     }
     return result;
 }
-#define Tcl_ExprLongObj (int(*)(Tcl_Interp*,Tcl_Obj*,long*))(void *)exprIntObj
+#define Tcl_ExprLongObj (int(*)(Tcl_Interp *, Tcl_Obj *,long *))(void *)exprIntObj
 
 #else /* __CYGWIN__ */
 #   define TclWinGetTclInstance 0

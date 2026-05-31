@@ -1063,7 +1063,7 @@ TclArithSeriesGetElements(
 		objv = arithSeriesRepPtr->elements;
 	    } else {
 		/* Construct the elements array */
-		objv = (Tcl_Obj **) Tcl_Alloc(sizeof(Tcl_Obj*) * objc);
+		objv = (Tcl_Obj **) Tcl_Alloc(sizeof(Tcl_Obj *) * objc);
 		if (objv == NULL) {
 		    if (interp) {
 			Tcl_SetObjResult(interp, Tcl_NewStringObj(

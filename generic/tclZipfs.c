@@ -2706,7 +2706,7 @@ ZipFSMountObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,		/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
+    Tcl_Obj *const *objv)	/* Argument objects. */
 {
     const char *mountPoint = NULL, *zipFile = NULL, *password = NULL;
     int result;
@@ -2757,7 +2757,7 @@ ZipFSMountBufferObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,		/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
+    Tcl_Obj *const *objv)	/* Argument objects. */
 {
     const char *mountPoint = NULL;	/* Mount point path. */
     unsigned char *data = NULL;
@@ -2827,7 +2827,7 @@ ZipFSUnmountObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,		/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
+    Tcl_Obj *const *objv)	/* Argument objects. */
 {
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "mountpoint");
@@ -2858,7 +2858,7 @@ ZipFSMkKeyObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,		/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
+    Tcl_Obj *const *objv)	/* Argument objects. */
 {
     Tcl_Size len, i = 0;
     const char *pw;
@@ -3957,7 +3957,7 @@ ZipFSMkZipObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,		/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
+    Tcl_Obj *const *objv)	/* Argument objects. */
 {
     Tcl_Obj *stripPrefix, *password;
 
@@ -3982,7 +3982,7 @@ ZipFSLMkZipObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,		/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
+    Tcl_Obj *const *objv)	/* Argument objects. */
 {
     Tcl_Obj *password;
 
@@ -4023,7 +4023,7 @@ ZipFSMkImgObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,		/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
+    Tcl_Obj *const *objv)	/* Argument objects. */
 {
     Tcl_Obj *originFile, *stripPrefix, *password;
 
@@ -4050,7 +4050,7 @@ ZipFSLMkImgObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,		/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
+    Tcl_Obj *const *objv)	/* Argument objects. */
 {
     Tcl_Obj *originFile, *password;
 
@@ -4092,7 +4092,7 @@ ZipFSCanonicalObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,		/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
+    Tcl_Obj *const *objv)	/* Argument objects. */
 {
     const char *mntPoint = NULL;
     Tcl_DString dsPath, dsMount;
@@ -4142,7 +4142,7 @@ ZipFSExistsObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,		/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
+    Tcl_Obj *const *objv)	/* Argument objects. */
 {
     char *filename;
     int exists;
@@ -4191,7 +4191,7 @@ ZipFSInfoObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,		/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
+    Tcl_Obj *const *objv)	/* Argument objects. */
 {
     char *filename;
     ZipEntry *z;
@@ -4251,7 +4251,7 @@ ZipFSListObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,		/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
+    Tcl_Obj *const *objv)	/* Argument objects. */
 {
     const char *pattern = NULL;
     Tcl_RegExp regexp = NULL;
@@ -6590,8 +6590,8 @@ TclZipfsInitEncodingDirs(void)
     }
     Tcl_Obj *fullPathObj = Tcl_FSJoinToPath(libDirObj, 1, &subDirObj);
     Tcl_IncrRefCount(fullPathObj);
-    TclListObjAppendIfAbsent(NULL, searchPathObj, fullPathObj);
     Tcl_IncrRefCount(searchPathObj);
+    TclListObjInsertIfAbsent(NULL, searchPathObj, fullPathObj, 0);
     Tcl_DecrRefCount(fullPathObj);
     Tcl_DecrRefCount(subDirObj);
     Tcl_DecrRefCount(libDirObj);

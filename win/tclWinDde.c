@@ -121,7 +121,7 @@ static int		MakeDdeConnection(Tcl_Interp *interp,
 static void		SetDdeError(Tcl_Interp *interp);
 static int		DdeObjCmd(void *clientData,
 			    Tcl_Interp *interp, Tcl_Size objc,
-			    Tcl_Obj *const objv[]);
+			    Tcl_Obj *const *objv);
 
 #ifdef __cplusplus
 extern "C" {
@@ -384,7 +384,7 @@ DdeSetServerName(
 	     */
 
 	    for (n = 0; n < srvCount; ++n) {
-		Tcl_Obj* namePtr;
+		Tcl_Obj *namePtr;
 		Tcl_DString ds;
 
 		Tcl_ListObjIndex(interp, srvPtrPtr[n], 1, &namePtr);

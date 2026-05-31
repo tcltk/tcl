@@ -92,7 +92,7 @@ Clock_str2int(
      * Overflow impossible for max 9 digits ("9..9"),
      * or for 10 digits if it starts with 1 ("19..9").
      */
-    if (e - p <= 9 || *p <= '1' ) {
+    if (e - p <= 9 || *p <= '1') {
 	while (p < e) {
 	    val = val * 10 + (*p++ - '0');
 	}
@@ -109,7 +109,7 @@ Clock_str2int(
     if (sign >= 0) {
 	if ((val > INT_MAX / 10) ||
 		((val == INT_MAX / 10) && (last > INT_MAX % 10))) {
-	    return TCL_ERROR;	/* overflow*/
+	    return TCL_ERROR;	/* overflow */
 	}
 	val = val * 10 + last;
     } else {
@@ -118,7 +118,7 @@ Clock_str2int(
 		((val == INT_MIN / 10) && ((INT_MIN % 10 < 0)
 			? (last > -(INT_MIN % 10))
 			: (last > 10-(INT_MIN % 10))))) {
-	    return TCL_ERROR;	/* overflow*/
+	    return TCL_ERROR;	/* overflow */
 	}
 	val = val * 10 - last;
     }
@@ -145,7 +145,7 @@ Clock_str2wideInt(
      * Overflow impossible for max 18 digits ("9..9"),
      * or for 19 digits if it starts with 8 ("89..9").
      */
-    if (e - p <= 18 || *p <= '8' ) {
+    if (e - p <= 18 || *p <= '8') {
 	while (p < e) {
 	    val = val * 10 + (*p++ - '0');
 	}
@@ -162,7 +162,7 @@ Clock_str2wideInt(
     if (sign >= 0) {
 	if ((val > WIDE_MAX / 10) ||
 		((val == WIDE_MAX / 10) && (last > WIDE_MAX % 10))) {
-	    return TCL_ERROR;	/* overflow*/
+	    return TCL_ERROR;	/* overflow */
 	}
 	val = val * 10 + last;
     } else {
@@ -171,7 +171,7 @@ Clock_str2wideInt(
 		((val == WIDE_MIN / 10) && ((WIDE_MIN % 10 < 0)
 			? (last > -(WIDE_MIN % 10))
 			: (last > 10-(WIDE_MIN % 10))))) {
-	    return TCL_ERROR;	/* overflow*/
+	    return TCL_ERROR;	/* overflow */
 	}
 	val = val * 10 - last;
     }
@@ -497,20 +497,14 @@ static Tcl_HashTable FmtScnHashTable;
 static int initialized = 0;
 
 /*
- * Wrappers between pointers to hash entry and format storage object
+ * Wrapper between pointers to hash entry and containing format storage object.
  */
-static inline Tcl_HashEntry *
-HashEntry4FmtScn(
-    ClockFmtScnStorage *fss)
-{
-    return (Tcl_HashEntry*)(fss + 1);
-}
-
 static inline ClockFmtScnStorage *
 FmtScn4HashEntry(
     Tcl_HashEntry *hKeyPtr)
 {
-    return (ClockFmtScnStorage*)(((char*)hKeyPtr) - sizeof(ClockFmtScnStorage));
+    return (ClockFmtScnStorage *)
+	    (((char *)hKeyPtr) - offsetof(ClockFmtScnStorage, hashEntry));
 }
 
 /*
@@ -536,14 +530,13 @@ ClockFmtScnStorageAllocProc(
     const char *string = (const char *) keyPtr;
     Tcl_HashEntry *hPtr;
     size_t size = strlen(string) + 1;
-    size_t allocsize = sizeof(ClockFmtScnStorage) + sizeof(Tcl_HashEntry);
+    size_t allocsize = sizeof(ClockFmtScnStorage) + size;
 
-    allocsize += size;
     if (size > sizeof(hPtr->key)) {
 	allocsize -= sizeof(hPtr->key);
     }
 
-    fss = (ClockFmtScnStorage *)Tcl_AttemptAlloc(allocsize);
+    fss = (ClockFmtScnStorage *) Tcl_AttemptAlloc(allocsize);
     if (!fss) {
 	return NULL;
     }
@@ -551,7 +544,7 @@ ClockFmtScnStorageAllocProc(
     /* initialize */
     memset(fss, 0, sizeof(*fss));
 
-    hPtr = HashEntry4FmtScn(fss);
+    hPtr = &fss->hashEntry;
     memcpy(&hPtr->key.string, string, size);
     hPtr->clientData = 0;	/* currently unused */
 
@@ -608,12 +601,11 @@ static void
 ClockFmtScnStorageDelete(
     ClockFmtScnStorage *fss)
 {
-    Tcl_HashEntry *hPtr = HashEntry4FmtScn(fss);
     /*
      * This will delete a hash entry and call "Tcl_Free" for storage self, if
      * some additionally handling required, freeEntryProc can be used instead
      */
-    Tcl_DeleteHashEntry(hPtr);
+    Tcl_DeleteHashEntry(&fss->hashEntry);
 }
 
 /*
@@ -721,8 +713,7 @@ ClockFmtObj_UpdateString(
     ClockFmtScnStorage *fss = ObjClockFmtScn(objPtr);
 
     if (fss != NULL) {
-	Tcl_HashEntry *hPtr = HashEntry4FmtScn(fss);
-	name = hPtr->key.string;
+	name = fss->hashEntry.key.string;
     }
     len = strlen(name);
     objPtr->length = len++,
@@ -753,7 +744,7 @@ ClockFmtObj_UpdateString(
  *----------------------------------------------------------------------
  */
 
-Tcl_Obj*
+Tcl_Obj *
 ClockFrmObjGetLocFmtKey(
     Tcl_Interp *interp,
     Tcl_Obj *objPtr)
@@ -2178,7 +2169,7 @@ ClockGetOrParseScanFormat(
 	unsigned tokCnt;
 	const char *p, *e, *cp;
 
-	e = p = HashEntry4FmtScn(fss)->key.string;
+	e = p = fss->hashEntry.key.string;
 	e += strlen(p);
 
 	/* estimate token count by % char and format length */
@@ -2704,7 +2695,7 @@ TclClockScan(
     Tcl_SetObjResult(opts->interp, Tcl_ObjPrintf(
 	    "input string \"%s\" does not match supplied format \"%s\","
 	    " locale \"%s\" - token \"%s\"",
-	    info->dateStart, HashEntry4FmtScn(fss)->key.string,
+	    info->dateStart, fss->hashEntry.key.string,
 	    TclGetString(opts->localeObj),
 	    tok && tok->tokWord.start ? tok->tokWord.start : "NULL"));
 #endif
@@ -3018,12 +3009,12 @@ ClockFmtToken_LocaleERAYear_Proc(
 		    dateFmt->date.localSeconds, rowc, rowv, NULL);
 	}
 	if (dateFmt->localeEra == NULL) {
-	    dateFmt->localeEra = (Tcl_Obj*)1;
+	    dateFmt->localeEra = (Tcl_Obj *) 1;
 	}
     }
 
     /* if no LOCALE_ERAS in catalog or era not found */
-    if (dateFmt->localeEra == (Tcl_Obj*)1) {
+    if (dateFmt->localeEra == (Tcl_Obj *) 1) {
 	if (FrmResultAllocate(dateFmt, 11) != TCL_OK) {
 	    return TCL_ERROR;
 	}
@@ -3263,7 +3254,7 @@ ClockGetOrParseFmtFormat(
 	unsigned tokCnt;
 	const char *p, *e, *cp;
 
-	e = p = HashEntry4FmtScn(fss)->key.string;
+	e = p = fss->hashEntry.key.string;
 	e += strlen(p);
 
 	/* estimate token count by % char and format length */

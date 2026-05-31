@@ -520,9 +520,9 @@ MakeByteArray(
 	    if (demandProper) {
 		if (interp) {
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			    "expected byte sequence but character %"
-			    TCL_Z_MODIFIER "u was '%1s' (U+%06X)",
-			    dst - byteArrayPtr->bytes, src, ch));
+			    "expected code point values below 0xff but value at byte offset %"
+			    TCL_Z_MODIFIER "u was 0x%x",
+			    dst - byteArrayPtr->bytes, ch));
 		    Tcl_SetErrorCode(interp, "TCL", "VALUE", "BYTES", (char *)NULL);
 		}
 		Tcl_Free(byteArrayPtr);
@@ -806,7 +806,7 @@ BinaryFormatCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,		/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
+    Tcl_Obj *const *objv)	/* Argument objects. */
 {
     Tcl_Size arg;		/* Index of next argument to consume. */
     int value = 0;		/* Current integer value to be packed.
@@ -1318,7 +1318,7 @@ BinaryScanCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,		/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
+    Tcl_Obj *const *objv)	/* Argument objects. */
 {
     Tcl_Size arg;		/* Index of next argument to consume. */
     int value = 0;		/* Current integer value to be packed.
@@ -2402,7 +2402,7 @@ BinaryEncodeHex(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_Size objc,
-    Tcl_Obj *const objv[])
+    Tcl_Obj *const *objv)
 {
     Tcl_Obj *resultObj = NULL;
     unsigned char *data = NULL;
@@ -2450,7 +2450,7 @@ BinaryDecodeHex(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_Size objc,
-    Tcl_Obj *const objv[])
+    Tcl_Obj *const *objv)
 {
     Tcl_Obj *resultObj = NULL;
     unsigned char *data, *datastart, *dataend;
@@ -2577,7 +2577,7 @@ BinaryEncode64(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_Size objc,
-    Tcl_Obj *const objv[])
+    Tcl_Obj *const *objv)
 {
     Tcl_Obj *resultObj;
     unsigned char *data, *limit;
@@ -2705,7 +2705,7 @@ BinaryEncodeUu(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_Size objc,
-    Tcl_Obj *const objv[])
+    Tcl_Obj *const *objv)
 {
     Tcl_Obj *resultObj;
     unsigned char *data, *start, *cursor;
@@ -2856,7 +2856,7 @@ BinaryDecodeUu(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_Size objc,
-    Tcl_Obj *const objv[])
+    Tcl_Obj *const *objv)
 {
     Tcl_Obj *resultObj = NULL;
     unsigned char *data, *datastart, *dataend;
@@ -3032,7 +3032,7 @@ BinaryDecode64(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_Size objc,
-    Tcl_Obj *const objv[])
+    Tcl_Obj *const *objv)
 {
     Tcl_Obj *resultObj = NULL;
     unsigned char *data, *datastart, *dataend, c = '\0';

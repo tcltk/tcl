@@ -165,7 +165,7 @@ const Tcl_ObjType tclDictType = {
     } while (0)
 
 /*
- * The type of the specially adapted version of the Tcl_Obj*-containing hash
+ * The type of the specially adapted version of the Tcl_Obj *-containing hash
  * table defined in the tclObj.c code. This version differs in that it
  * allocates a bit more space in each hash entry in order to hold the pointers
  * used to keep the hash entries in a linked list.

@@ -758,7 +758,7 @@ Tcl_Obj *
 TclFSJoinPathHelper(
     Tcl_Obj *pathPtr,		/* Valid path or NULL. */
     Tcl_Size objc,		/* Number of array elements to join */
-    Tcl_Obj *const objv[],	/* Path elements to join. */
+    Tcl_Obj *const *objv,	/* Path elements to join. */
     bool forceRelative)		/* If true, assume all paths except first are
 				 * relative. If false, discards paths before
 				 * any absolute/volume-relative paths */
@@ -777,7 +777,7 @@ TclFSJoinPathHelper(
 	return TclJoinPath(2, pair, forceRelative);
     } else {
 	Tcl_Size elemc = objc + 1;
-	Tcl_Obj *ret, **elemv = (Tcl_Obj**)Tcl_Alloc(elemc*sizeof(Tcl_Obj *));
+	Tcl_Obj *ret, **elemv = (Tcl_Obj **)Tcl_Alloc(elemc*sizeof(Tcl_Obj *));
 
 	elemv[0] = pathPtr;
 	memcpy(elemv+1, objv, objc*sizeof(Tcl_Obj *));
@@ -816,7 +816,7 @@ Tcl_Obj *
 Tcl_FSJoinToPath(
     Tcl_Obj *pathPtr,		/* Valid path or NULL. */
     Tcl_Size objc,		/* Number of array elements to join */
-    Tcl_Obj *const objv[])	/* Path elements to join. */
+    Tcl_Obj *const *objv)	/* Path elements to join. */
 {
     return TclFSJoinPathHelper(pathPtr, objc, objv, false);
 }
@@ -1151,7 +1151,7 @@ Tcl_GlobObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,		/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
+    Tcl_Obj *const *objv)	/* Argument objects. */
 {
     int globFlags, join, dir, result;
     Tcl_Size i, length;

@@ -208,11 +208,11 @@ static int		TimerIdleDo(Tcl_Interp *interp,
 static Tcl_ObjCmdProc2	TimerInfoCmd;
 static void		TimeTooFarError(Tcl_Interp *interp);
 static int		ParseTimeUnit(Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const objv[],
+			    Tcl_Obj *const *objv,
 			    bool useDefaultUnit, enum unitEnum defaultUnit,
 			    long long *wakeupPtr);
 static int		TimerInfoDo(Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const objv[], bool isAfter);
+			    Tcl_Obj *const *objv, bool isAfter);
 static Tcl_TimerToken	CreateTimerHandler(long long time,
 			    Tcl_TimerProc *proc, void *clientData,
 			    bool monotonic);
@@ -1025,7 +1025,7 @@ Tcl_AfterObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,		/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
+    Tcl_Obj *const *objv)	/* Argument objects. */
 {
     Tcl_WideInt ms = 0;		/* Number of milliseconds to wait */
     int index = -1;
@@ -1679,7 +1679,7 @@ static int
 ParseTimeUnit(
     Tcl_Interp *interp,		/* Current interpreter. */
     int timeIndex,		/* Index of time value in objv. */
-    Tcl_Obj *const objv[],	/* Argument objects. */
+    Tcl_Obj *const *objv,	/* Argument objects. */
     bool useDefaultUnit,	/* True, if the default unit is used.
 				 * False, if unit object follows the time value */
     enum unitEnum defaultUnit,	/* Default unit value */
@@ -1761,7 +1761,7 @@ TimerAtCmd(
     TCL_UNUSED(void *),		/* Client data. */
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,		/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
+    Tcl_Obj *const *objv)	/* Argument objects. */
 {
     long long timeArgUS;
     AfterInfo *afterPtr;
@@ -1850,7 +1850,7 @@ TimerInCmd(
     TCL_UNUSED(void *),		/* Client data. */
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,		/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
+    Tcl_Obj *const *objv)	/* Argument objects. */
 {
     long long wakeupArgUS;
     AfterInfo *afterPtr;
@@ -1933,7 +1933,7 @@ TimerSleepCmd(
     TCL_UNUSED(void *),		/* Client data. */
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,		/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
+    Tcl_Obj *const *objv)	/* Argument objects. */
 {
     long long sleepArgUS;
     static const char *const sleepOptionItems[] = {
@@ -2088,7 +2088,7 @@ TimerCancelCmd(
     TCL_UNUSED(void *),		/* Client data. */
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,		/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
+    Tcl_Obj *const *objv)	/* Argument objects. */
 {
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "id|script");
@@ -2189,7 +2189,7 @@ TimerIdleCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,		/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
+    Tcl_Obj *const *objv)	/* Argument objects. */
 {
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "script");
@@ -2260,7 +2260,7 @@ TimerInfoCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,		/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
+    Tcl_Obj *const *objv)	/* Argument objects. */
 {
     if (objc < 1 || objc > 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?id?");
@@ -2290,7 +2290,7 @@ static int
 TimerInfoDo(
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[],	/* Argument objects. */
+    Tcl_Obj *const *objv,	/* Argument objects. */
     bool isAfter)
 {
     AfterInfo *afterPtr;

@@ -827,7 +827,7 @@ test encoding-24.15.tcl8 {Parse invalid utf-8, -profile tcl8} -body {
 } -result Z\xE0\u20AC
 test encoding-24.16 {Parse valid or invalid utf-8} -constraints testbytestring -body {
     encoding convertto utf-8 [testbytestring "Z\u4343\x80"]
-} -returnCodes 1 -result {expected byte sequence but character 1 was '䍃' (U+004343)}
+} -returnCodes 1 -result {expected code point values below 0xff but value at byte offset 1 was 0x4343}
 test encoding-24.17 {Parse valid or invalid utf-8} -constraints testbytestring -body {
     encoding convertto utf-8 [testbytestring "Z\xE0\x80"]
 } -result "Z\xC3\xA0\xE2\x82\xAC"

@@ -166,7 +166,7 @@ TestbignumobjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Tcl interpreter */
     Tcl_Size objc,		/* Argument count */
-    Tcl_Obj *const objv[])	/* Argument vector */
+    Tcl_Obj *const *objv)	/* Argument vector */
 {
     static const char *const subcmds[] = {
 	"set", "get", "mult10", "div10", "iseven", "radixsize", NULL
@@ -365,7 +365,7 @@ TestbooleanobjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,		/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
+    Tcl_Obj *const *objv)	/* Argument objects. */
 {
     Tcl_Size varIndex;
     bool boolValue;
@@ -465,7 +465,7 @@ TestdoubleobjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,		/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
+    Tcl_Obj *const *objv)	/* Argument objects. */
 {
     Tcl_Size varIndex;
     double doubleValue;
@@ -581,7 +581,7 @@ TestindexobjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,		/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
+    Tcl_Obj *const *objv)	/* Argument objects. */
 {
     bool allowAbbrev, setError;
     int index, result;
@@ -673,7 +673,7 @@ TestintobjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,		/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
+    Tcl_Obj *const *objv)	/* Argument objects. */
 {
     Tcl_Size varIndex;
 #if (INT_MAX != LONG_MAX)   /* int is not the same size as long */
@@ -901,7 +901,7 @@ TestlistobjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Tcl interpreter */
     Tcl_Size objc,		/* Number of arguments */
-    Tcl_Obj *const objv[])	/* Argument objects */
+    Tcl_Obj *const *objv)	/* Argument objects */
 {
     /* Subcommands supported by this command */
     static const char *const subcommands[] = {
@@ -1121,7 +1121,7 @@ TestobjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,		/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
+    Tcl_Obj *const *objv)	/* Argument objects. */
 {
     Tcl_Size varIndex, destIndex;
     int i;
@@ -1359,7 +1359,7 @@ TeststringobjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,		/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
+    Tcl_Obj *const *objv)	/* Argument objects. */
 {
     Tcl_UniChar *unicode;
     Tcl_Size size, varIndex, i;
@@ -1656,7 +1656,7 @@ TestbigdataCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,		/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
+    Tcl_Obj *const *objv)	/* Argument objects. */
 {
     static const char *const subcmds[] = {
 	"string", "bytearray", "list", "dict", NULL
@@ -1769,8 +1769,8 @@ TestbigdataCmd(
  *
  * SetVarToObj --
  *
- *	Utility routine to assign a Tcl_Obj* to a test variable. The
- *	Tcl_Obj* can be NULL.
+ *	Utility routine to assign a Tcl_Obj * to a test variable. The
+ *	Tcl_Obj * can be NULL.
  *
  * Results:
  *	None.
@@ -1877,7 +1877,7 @@ TestisemptyCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,		/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
+    Tcl_Obj *const *objv)	/* Argument objects. */
 {
     Tcl_Obj *result;
     if (objc != 2) {

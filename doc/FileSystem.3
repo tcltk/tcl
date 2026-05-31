@@ -284,7 +284,7 @@ trigger proper error-handling), otherwise expect it to crash.
 The base path on to which to join the given elements. May be NULL.
 .AP Tcl_Size objc in
 The number of elements in \fIobjv\fR.
-.AP "Tcl_Obj *const" objv[] in
+.AP "Tcl_Obj *const" *objv in
 The elements to join to the given base path.
 .AP Tcl_Obj *linkNamePtr in
 The name of the link to be created or read.
@@ -737,8 +737,8 @@ value, which will only receive
 a UTF-8 string representation if that is required by some Tcl code.
 .PP
 \fBTcl_FSGetNativePath\fR is for use by the Win/Unix native
-filesystems, so that they can easily retrieve the native (char* or
-TCHAR*) representation of a path. This function is a convenience
+filesystems, so that they can easily retrieve the native (char * or
+TCHAR *) representation of a path. This function is a convenience
 wrapper around \fBTcl_FSGetInternalRep\fR. It may be desirable in the
 future to have non-string-based native representations (for example,
 on macOS, a representation using a fileSpec of FSRef structure would

@@ -679,6 +679,16 @@ TclFinalizeIOSubsystem(void)
 
 		Tcl_Flush((Tcl_Channel) chanPtr);
 
+#ifdef _WIN32
+                /*
+                 * Bug  [06f19cc401] - Windows crash on thread exit with
+                 * active socket. TODO - not clear if this is required
+                 * on Unix. Don't want to make the change there without a
+                 * clear reason.
+                 */
+		CutChannel((Tcl_Channel) chanPtr);
+#endif
+
 		/*
 		 * Call the device driver to actually close the underlying
 		 * device for this channel.
@@ -9234,7 +9244,7 @@ Tcl_FileEventObjCmd(
     Tcl_Interp *interp,		/* Interpreter in which the channel for which
 				 * to create the handler is found. */
     Tcl_Size objc,		/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
+    Tcl_Obj *const *objv)	/* Argument objects. */
 {
     Channel *chanPtr;		/* The channel to create the handler for. */
     ChannelState *statePtr;	/* State info for channel */
@@ -9289,7 +9299,7 @@ Tcl_FileEventObjCmd(
      * If we are supposed to delete a stored script, do so.
      */
 
-    if (*(TclGetString(objv[3])) == '\0') {
+    if (Tcl_IsEmpty(objv[3])) {
 	DeleteScriptRecord(interp, chanPtr, mask);
 	return TCL_OK;
     }
@@ -11218,7 +11228,7 @@ Tcl_SetChannelError(
  *	no problems.
  *
  * Results:
- *	A Tcl_Obj*
+ *	A Tcl_Obj *
  *
  * Side effects:
  *	None.
