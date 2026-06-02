@@ -9922,7 +9922,7 @@ TestpostinitCmd(
 	    if (Tcl_GetIntFromObj(interp, objv[3], &i) != TCL_OK) {
 		return TCL_ERROR;
 	    }
-	    clientData = (void *)i;
+	    clientData = INT2PTR(i);
 	}
     }
 
