@@ -45,8 +45,8 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-DLLEXPORT int		Tcltest_Init(Tcl_Interp *interp);
-DLLEXPORT int		Tcltest_SafeInit(Tcl_Interp *interp);
+DLLEXPORT int	Tcltest_Init(Tcl_Interp *interp);
+DLLEXPORT int	Tcltest_SafeInit(Tcl_Interp *interp);
 #ifdef __cplusplus
 }
 #endif
@@ -266,6 +266,7 @@ static Tcl_ObjCmdProc2	TestparseargsCmd;
 static Tcl_ObjCmdProc2	TestparserCmd;
 static Tcl_ObjCmdProc2	TestparsevarCmd;
 static Tcl_ObjCmdProc2	TestparsevarnameCmd;
+static Tcl_ObjCmdProc2	TestpostinitCmd;
 static Tcl_ObjCmdProc2	TestpreferstableCmd;
 static Tcl_ObjCmdProc2	TestprintCmd;
 static Tcl_ObjCmdProc2	TestregexpCmd;
@@ -668,6 +669,8 @@ Tcltest_Init(
 	    NULL, NULL);
     Tcl_CreateObjCommand2(interp, "testparsevarname", TestparsevarnameCmd,
 	    NULL, NULL);
+    Tcl_CreateObjCommand2(interp, "testpostinit", TestpostinitCmd,
+	    NULL, NULL);
     Tcl_CreateObjCommand2(interp, "testpreferstable", TestpreferstableCmd,
 	    NULL, NULL);
     Tcl_CreateObjCommand2(interp, "testprint", TestprintCmd,
@@ -834,6 +837,51 @@ Tcltest_SafeInit(
 	return TCL_ERROR;
     }
     return Procbodytest_SafeInit(interp);
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * TcltestStaticInit --
+ *
+ *	Registers statically linked Tcltest packages so they are made
+ *	available to all Tcl interpreters created subsequently.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The passed callback is added to the list of callbacks invoked
+ *	on interpreter initialization.
+ *
+ *---------------------------------------------------------------------------
+ */
+int
+TcltestStaticInit(
+    Tcl_Interp *interp,
+    TCL_UNUSED(void *))
+{
+    /*
+     * For some reason not known to me, tclTest.c always defines
+     * USE_TCL_STUBS even for static builds. (As an aside this does not make
+     * sense to me because then test suite goes through the stubs table even
+     * for static builds.) In any case, this means Tcl_StaticLibrary call
+     * below needs stubs to be initialized. The Tcl_InitStubs call in
+     * TestCommoninit happens too late.
+     */
+    if (Tcl_InitStubs(interp, "9.0-", 0) == NULL) {
+	return TCL_ERROR;
+    }
+
+    /*
+     * Note, we pass NULL, not interp, into Tcl_StaticLibrary. Passing
+     * interp causes Tcl_StaticLibrary to mark the package as already loaded
+     * so a subsequent load command becomes a no-op. Since we actually want
+     * the package init to be called at the point of the load command, we
+     * pass NULL.
+     */
+    Tcl_StaticLibrary(NULL, "Tcltest", Tcltest_Init, Tcltest_SafeInit);
+    return Tcl_Eval(interp, "load {} Tcltest");
 }
 
 /*
@@ -9623,6 +9671,305 @@ TestUtfToNormalizedDStringCmd(
     }
     return result;
 }
+
+/***************************************************************************
+ * TIP 755 test routines.
+ *
+ * The following set of functions test various callbacks registered via
+ * Tcl_RegisterPostInitProc. See comment header for TestpostinitCmd below.
+ */
+
+/* Tests eval within postinit callback */
+static int
+PostInitEvalProc(
+    Tcl_Interp *interp,
+    void *clientData)
+{
+    int ret;
+    Tcl_Obj *objPtr;
+    if (clientData) {
+	objPtr = (Tcl_Obj *)clientData;
+	/* Caller would have already incremented refcount */
+    } else {
+	objPtr = Tcl_NewObj();
+	Tcl_IncrRefCount(objPtr);
+    }
+    ret = Tcl_EvalObjEx(interp, objPtr, TCL_EVAL_GLOBAL);
+    Tcl_DecrRefCount(objPtr);
+    return ret;
+}
+
+/* Basic callback to add a proc */
+static int
+PostInitAddProc(
+    Tcl_Interp *interp,
+    void *clientData
+) {
+    int value = (int)(intptr_t)clientData;
+    Tcl_Obj *objPtr;
+    objPtr = Tcl_ObjPrintf("proc add%d arg {incr arg %d}", value, value);
+    Tcl_IncrRefCount(objPtr);
+    int ret = Tcl_EvalObjEx(interp, objPtr, TCL_EVAL_GLOBAL);
+    Tcl_DecrRefCount(objPtr);
+    return ret;
+}
+
+/* Tests safe interp callbacks */
+static int
+PostInitSafeCheckProc(
+    Tcl_Interp *interp,
+    void *clientData
+) {
+    Tcl_Obj *objPtr;
+    objPtr = Tcl_ObjPrintf("proc isSafe {} {return %d}", Tcl_IsSafe(interp));
+    Tcl_IncrRefCount(objPtr);
+    int ret = Tcl_EvalObjEx(interp, objPtr, TCL_EVAL_GLOBAL);
+    Tcl_DecrRefCount(objPtr);
+    return ret;
+}
+
+/* Tests static package require within postinit callback */
+static int
+MultiplyCmd(
+    void *clientData,		/* (integer) multiplicand */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    Tcl_Size objc,		/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Arguments. */
+{
+    if (objc != 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "multiplicand multiplier");
+	return TCL_ERROR;
+    }
+    Tcl_WideInt multiplicand, multiplier;
+    if (Tcl_GetWideIntFromObj(interp, objv[1], &multiplicand) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    if (Tcl_GetWideIntFromObj(interp, objv[2], &multiplier) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(multiplier * multiplicand));
+    return TCL_OK;
+}
+
+static int
+Postinitpackage_Init(
+	Tcl_Interp *interp
+)
+{
+    Tcl_CreateObjCommand2(interp, "multiply", MultiplyCmd, NULL, NULL);
+    Tcl_PkgProvideEx(interp, "postinitpackage", TCL_PATCH_LEVEL, NULL);
+    return TCL_OK;
+}
+
+static int
+PostInitStaticPackageProc(
+    Tcl_Interp *interp,
+    void *clientData
+) {
+    Tcl_StaticLibrary(NULL, "postinitpackage", Postinitpackage_Init, NULL);
+    return Tcl_Eval(interp, "package ifneeded postinitpackage [info patchlevel] [list load {} postinitpackage]");
+}
+
+/* Test creation of interpreter within a callback - will error out */
+static int
+PostInitInterpCreateProc(
+    Tcl_Interp *interp,
+    void *clientData
+) {
+    if (clientData) {
+	Tcl_Interp *child = Tcl_CreateInterp();
+	int result = Tcl_Init(child);
+	if (result != TCL_OK) {
+	    Tcl_TransferResult(child, result, interp);
+	    Tcl_DeleteInterp(child);
+	}
+	return result;
+    } else {
+	return Tcl_Eval(interp, "interp create");
+    }
+}
+
+/* Delete current interp in callback */
+static int
+PostInitInterpDeleteProc(
+    Tcl_Interp *interp,
+    void *clientData)
+{
+    Tcl_DeleteInterp(interp);
+    return (int)(intptr_t)clientData;
+}
+
+
+/* Tests raising of error from postinit callback */
+static int
+PostInitRaiseErrorProc(
+    Tcl_Interp *interp,
+    void *clientData
+) {
+    Tcl_SetResult(interp, "PostInit test error raised", TCL_STATIC);
+    return TCL_ERROR;
+}
+
+/* Tests recursive registration */
+static int
+PostInitRegisterInCbProc(
+    Tcl_Interp *interp,
+    void *clientData
+)
+{
+    Tcl_RegisterPostInitProc(PostInitAddProc, clientData);
+    return TCL_OK;
+}
+
+/* Tests recursive unregistration */
+static int
+PostInitUnregisterInCbProc(
+    Tcl_Interp *interp,
+    void *clientData
+)
+{
+    Tcl_UnregisterPostInitProc(PostInitAddProc, clientData);
+    return TCL_OK;
+}
+/*
+ *----------------------------------------------------------------------
+ *
+ * TestpostinitCmd --
+ *
+ *      This procedure implements the "testpostinit" command for testing
+ *      Tcl_{Register,Unregister}PostInitProc functions.
+ *          testpostinit register COMMAND ?ARG?
+ *          testpostinit unregister COMMAND ?ARG?
+ *      COMMAND should be
+ *         add - creates a "addARG" proc adding N to passed operand. Tests
+ *               evaluation of scripts within a postinit callback
+ *         clear - deletes all registrations
+ *         eval - Calls Tcl_Eval within the callback with ARG as script. Can
+ * 	 	be used to test arbitrary script execution within callback.
+ * 	 	Can only be removed by clear, not unregister.
+ *         interpcreate - Creates a new interpreter from within the callback
+ *	   interpdelete - Registers a callback that deletes the interpreter
+ *         package - does require of a static package with a "multiply"
+ *               command. Tests package require of static package within
+ *               a postinit callback.
+ *         raiseerror - raises an error within the postinit callback
+ *         registerincb - Register add callback from within the callback
+ *	   safecheck - Register isSafe command
+ *         unregisterincb - Unregister add callback from within callback
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	Registers or unregisters the TestPostInitProc function to be
+ *	called on interpreter creation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TestpostinitCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,		/* Current interpreter. */
+    Tcl_Size objc,		/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Arguments. */
+{
+    static const char *const actions[] = {
+	"register", "unregister", "clear", NULL
+    };
+    enum {
+	REGISTER, UNREGISTER, CLEAR
+    } action;
+    static const char *const callbacks[] = {"add", "eval", "interpcreate",
+	"interpdelete",  "package", "raiseerror", "registerincb",
+	"safecheck", "unregisterincb", NULL
+    };
+    enum {ADD, EVAL, INTERPCREATE, INTERPDELETE, PACKAGE, RAISEERROR,
+	REGISTERINCB, SAFECHECK, UNREGISTERINCB
+    } callback;
+
+    if (objc < 2 || objc > 4) {
+	Tcl_WrongNumArgs(interp, 1, objv,
+	    "action ?arg ...?");
+	return TCL_ERROR;
+    }
+    if (Tcl_GetIndexFromObj(interp, objv[1], actions, "action", 0, &action)
+		!= TCL_OK) {
+	return TCL_ERROR;
+    }
+    if (action == CLEAR) {
+	return Tcl_ClearPostInitProcs();
+    }
+    if (objc < 3) {
+	Tcl_WrongNumArgs(interp, 1, objv,
+	    "register|unregister "
+	    "add|eval|interpcreate|interpdelete|package|raiseerror|"
+	    "registerincb|safecheck"
+	    "unregisterincb ?integerData?");
+	return TCL_ERROR;
+    }
+    if (Tcl_GetIndexFromObj(interp, objv[2], callbacks, "callback", 0,
+	    &callback) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    void *clientData = NULL;
+    if (objc == 4) {
+        if (callback == EVAL) {
+	    clientData = (void *)Tcl_DuplicateObj(objv[3]);
+	    Tcl_IncrRefCount((Tcl_Obj *)clientData);
+	} else {
+	    int i;
+	    if (Tcl_GetIntFromObj(interp, objv[3], &i) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    clientData = (void *)i;
+	}
+    }
+
+    Tcl_PostInitProc *callbackProc;
+    int ret;
+    switch (callback) {
+    case ADD:
+	callbackProc = PostInitAddProc;
+	break;
+    case EVAL:
+	callbackProc = PostInitEvalProc;
+	break;
+    case INTERPCREATE:
+	callbackProc = PostInitInterpCreateProc;
+	break;
+    case INTERPDELETE:
+	callbackProc = PostInitInterpDeleteProc;
+	break;
+    case PACKAGE:
+	callbackProc = PostInitStaticPackageProc;
+	break;
+    case RAISEERROR:
+	callbackProc = PostInitRaiseErrorProc;
+	break;
+    case REGISTERINCB:
+	callbackProc = PostInitRegisterInCbProc;
+	break;
+    case SAFECHECK:
+	callbackProc = PostInitSafeCheckProc;
+	break;
+    case UNREGISTERINCB:
+	callbackProc = PostInitUnregisterInCbProc;
+	break;
+    }
+
+    ret = (action == REGISTER
+	       ? Tcl_RegisterPostInitProc
+	       : Tcl_UnregisterPostInitProc)(callbackProc, clientData);
+
+    if (ret != TCL_OK) {
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf("Could not %s callback %s",
+				     actions[action], callbacks[callback]));
+    }
+    return ret;
+}
+
+/******************* End of TIP 755 Test routines *********************/
 
 #ifdef _WIN32
 /*

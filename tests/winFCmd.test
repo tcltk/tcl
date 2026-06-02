@@ -1461,7 +1461,6 @@ test winFCmd-20.1 {
 test winFCmd-20.2 {
     Bug b0682c3c24 - absolute paths in pattern (-directory)
 } -constraints haveTwoDrives -body {
-    puts $pathInOther
     glob -directory $pathInOther $pathInOther
 } -result {}
 

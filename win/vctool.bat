@@ -142,7 +142,7 @@ if "%debug%" == "" (
 ) else (
     nmake /s /f makefile.vc OUT_DIR=%currentDir%\vc-%ARCH%-%1-debug TMP_DIR=%currentDir%\vc-%ARCH%-%1-debug\objs OPTS=pdbs,%2 cdebug="-Zi -Od" INSTALLDIR=%INSTROOT%-%1-debug %TARGETS% && goto error
 )
-goto eof
+goto :eof
 
 :help
 echo.

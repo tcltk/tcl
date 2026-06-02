@@ -34,6 +34,7 @@ Tcl DLL in all build configurations.
 - [`Tcl_UtfToExternalEx()` and `Tcl_ExternalToUtfEx()` &mdash; C encoding API supporting output buffers larger than INT_MAX](https://core.tcl-lang.org/tips/doc/trunk/tip/737.md)
 - [New API for monotonic clock and microseconds resolution](https://core.tcl-lang.org/tips/doc/trunk/tip/723.md)
 - [Windows `auto_execok` enhancements and `exec` search reform](https://core.tcl-lang.org/tips/doc/trunk/tip/753.md)
+- [New API Tcl_RegisterPostInitProc for post-initialization of an interpreter](https://core.tcl-lang.org/tips/doc/trunk/tip/755.md)
 
 # Changes in interpreter initialization
 

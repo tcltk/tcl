@@ -21,6 +21,41 @@
  */
 
 static const char *tclPreInitScript = NULL;
+
+/*
+ * TIP 755
+ *
+ * TclPostInitRecord holds callbacks to be invoked when an interpreter is
+ * initialized. A process-wide global database of callback registrations is
+ * kept. This is cached in the TSD for each thread to minimize locking when
+ * iterating through the records. This is the pattern followed in other
+ * components like the filesystem registration system except that we use a
+ * simpler array implementation in lieu of a linked list for better cache
+ * locality and fewer allocations. There should be only a few entries in any
+ * case.
+ */
+typedef struct TclPostInitRecord {
+    Tcl_PostInitProc *postInitProc;	/* The callback to invoke. */
+    void *clientData;			/* Opaque argument. */
+} TclPostInitRecord;
+
+/* Process-wide post-initialization registrations */
+typedef struct TclPostInitRecords {
+    TclPostInitRecord *recordsPtr;
+    size_t capacity;
+    size_t count;
+    size_t epoch;
+} TclPostInitRecords;
+static TclPostInitRecords postInitRecords = {NULL, 0, 0, 0};
+TCL_DECLARE_MUTEX(postInitMutex)
+
+/* Per thread cache of post-initialization registrations */
+typedef struct ThreadSpecificData {
+    TclPostInitRecords postInitCache;
+    size_t inUse; 		/* When > 0, cache cannot be updated */
+} ThreadSpecificData;
+static Tcl_ThreadDataKey postInitTsdKey;
+
 
 /* Forward declaration */
 struct Target;
@@ -288,6 +323,7 @@ static void		RunLimitHandlers(LimitHandler *handlerPtr,
 static void		TimeLimitCallback(void *clientData);
 static int		RunPreInitScript(Tcl_Interp *interp);
 static Tcl_Obj *	LocatePreInitScript(Tcl_Interp *interp);
+static int		TclCallPostInitProcs(Tcl_Interp *interp);
 static Tcl_ObjCmdProc2	InitAutoPathObjCmd;
 #define INIT_AUTO_PATH_CMD "::tcl::InitAutoPath"
 
@@ -804,7 +840,13 @@ Tcl_Init(
     }
 
     result = RunPreInitScript(interp);
-    TclpSetInitialEncodings();
+    TclpSetInitialEncodings(); /* Even if above failed */
+
+    if (result == TCL_OK) {
+	/* Callbacks registered via Tcl_RegisterPostInitProc */
+	result = TclCallPostInitProcs(interp);
+    }
+
 end:
     *names = (*names)->nextPtr;
     return result;
@@ -5271,6 +5313,330 @@ ChildTimeLimitCmd(
 	}
 	return TCL_OK;
     }
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * TclInitStaticPackages --
+ *
+ *	Registers statically linked Tcl core packages so they are made
+ *	available to all Tcl interpreters created subsequently.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The passed callback is added to the list of callbacks invoked
+ *	on interpreter initialization.
+ *
+ *---------------------------------------------------------------------------
+ */
+int
+TclInitStaticPackages(
+    Tcl_Interp *interp,
+    TCL_UNUSED(void *))
+{
+    int result = TCL_OK;
+    /*
+     * Note, we pass NULL, not interp, into Tcl_StaticLibrary. Passing
+     * interp causes Tcl_StaticLibrary to mark the package as already loaded
+     * so a subsequent load command becomes a no-op. Since we actually want
+     * the package init to be called at the point of the load command, we
+     * pass NULL.
+     */
+#if defined(_WIN32) && defined(STATIC_BUILD)
+    Tcl_StaticLibrary(NULL, "Dde", Dde_Init, Dde_SafeInit);
+    result = Tcl_Eval(interp, "package ifneeded dde 1.5a2 [list load {} Dde]");
+#else
+    (void)interp;		/* Silence compiler */
+#endif
+
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclPostInitThreadExitProc --
+ *
+ *      Called at thread exit time to clean up any structures related to
+ *      interpreter post-initialization callbacks.
+ *
+ * Results:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+TclPostInitThreadExitProc(
+    void *clientData
+)
+{
+    ThreadSpecificData *tsdPtr = (ThreadSpecificData *)clientData;
+
+    assert(tsdPtr->inUse == 0);
+
+    if (tsdPtr->postInitCache.recordsPtr != NULL) {
+	Tcl_Free(tsdPtr->postInitCache.recordsPtr);
+	tsdPtr->postInitCache.recordsPtr = NULL;
+    }
+    tsdPtr->postInitCache.capacity = 0;
+    tsdPtr->postInitCache.count = 0;
+    tsdPtr->postInitCache.epoch = 0;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclCallPostInitProcs --
+ *
+ *      Iterates through the functions registered with Tcl_RegisterPostInitProc
+ *      calling them in order of their registration. The iteration is aborted
+ *      on any callback returning a value other than TCL_OK.
+ *
+ * Results:
+ *	The return value from the last function called.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+TclCallPostInitProcs(
+    Tcl_Interp *interp)		/* Interp undergoing post-initialization */
+{
+    /*
+     * Each thread keeps it own copy of the process-wide registrations.
+     * This simplifies implementation and avoids some thorny issues with
+     * locking and recursion. Inconsistency is not an issue since there
+     * are no guarantees between registration from one thread to when
+     * it is seen by other threads. For the same reason, the epoch checks
+     * are also outside a lock as in other components.
+     */
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&postInitTsdKey);
+
+    /*
+     * If we are already invoking callbacks, it means a callback is
+     * recursively initializing a new interpreter. We do not permit this as
+     * it leads to infinite recursion if care is not taken by the callback.
+     * See TIP 755.
+     * IF YOU REMOVE/MODIFY THIS CHECK, add a check for inUse==0 in the
+     * cache update epoch check below! Else you risk updating cache while in
+     * use.
+     */
+    if (tsdPtr->inUse) {
+	/* T: postinit-2.2 */
+	Tcl_SetResult(interp,
+	    "Recursive interp create from post-initialization callback.",
+	    TCL_STATIC);
+	return TCL_ERROR;
+    }
+
+    TclPostInitRecords *cachePtr = &tsdPtr->postInitCache;
+
+    /*
+     * If the cache is not in use and content has changed, update it. In the
+     * code below, the capacity counts guard against NULL pointer access.
+     */
+    if (tsdPtr->postInitCache.epoch != postInitRecords.epoch) {
+	/* T: postinit-1.* */
+	Tcl_MutexLock(&postInitMutex);
+	if (cachePtr->capacity < postInitRecords.count) {
+	    if (cachePtr->recordsPtr != NULL) {
+		Tcl_Free(cachePtr->recordsPtr);
+	    }
+	    cachePtr->capacity = postInitRecords.capacity;
+	    cachePtr->recordsPtr = (TclPostInitRecord *)Tcl_Alloc(
+		cachePtr->capacity * sizeof(TclPostInitRecord));
+	    /* Remember to free on thread exit */
+	    Tcl_CreateThreadExitHandler(TclPostInitThreadExitProc, tsdPtr);
+	}
+	for (size_t i = 0; i < postInitRecords.count; ++i) {
+	    cachePtr->recordsPtr[i] = postInitRecords.recordsPtr[i];
+	}
+	cachePtr->count = postInitRecords.count;
+	cachePtr->epoch = postInitRecords.epoch;
+	Tcl_MutexUnlock(&postInitMutex);
+    }
+
+    /* Mark as in use to prevent modification in case of recursion. */
+    tsdPtr->inUse++;
+
+    /* Iterate through callbacks until done or error */
+    int result = TCL_OK;
+    int interpDeleted = 0;
+    Tcl_Preserve(interp);	/* Ensure it does not disappear in callback */
+    for (size_t i = 0; i < cachePtr->count; i++) {
+	result = cachePtr->recordsPtr[i].postInitProc(interp,
+	    cachePtr->recordsPtr[i].clientData);
+	interpDeleted = Tcl_InterpDeleted(interp);
+	if (interpDeleted) {
+	    Tcl_SetObjResult(interp,
+		Tcl_NewStringObj(
+		    "interpreter deleted during post-initialization callback",
+		    -1));
+	    result = TCL_ERROR;
+	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "INTERP", "DELETED",
+		(char *)NULL);
+	    break;
+	}
+	if (result != TCL_OK) {
+	    /* T: postinit-2.1 */
+	    break;
+	}
+    }
+
+    /*
+     * If interpreter was deleted, do NOT release else it may be freed.
+     * Tcl_Init callers do not expect that eventuality and would lead to a
+     * crash. This way, there is a memory leak (since there will never be a
+     * matching Tcl_Release) but it is still better than a crash. Note the
+     * documentation warns against deleting the interpreter within a
+     * callback.
+     */
+    if (!interpDeleted) {
+	Tcl_Release(interp);
+    }
+
+    tsdPtr->inUse--;
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_RegisterPostInitProc --
+ *
+ *	Registers a callback to be called at the end of every interp
+ *	initialization at which time every callback is invoked in the order
+ *	of registration.
+ *
+ *	The registration key is the pair (proc, clientData). If the same
+ *	key is already registered, it will not be added again but this is not
+ *	treated as an error.
+ *
+ * Results:
+ *	Returns a standard Tcl result code.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+Tcl_RegisterPostInitProc(
+    Tcl_PostInitProc *proc,	/* The callback to register. */
+    void *clientData)		/* Opaque argument to the callback. */
+{
+    if (proc == NULL) {
+	return TCL_ERROR;
+    }
+    Tcl_MutexLock(&postInitMutex);
+    if (postInitRecords.recordsPtr == NULL) {
+	/* T: postinit-1.* */
+	postInitRecords.capacity = 8;
+	postInitRecords.recordsPtr = (TclPostInitRecord *)Tcl_Alloc(
+	    sizeof(TclPostInitRecord) * postInitRecords.capacity);
+	postInitRecords.count = 0;
+	/* Do not set epoch to 0 as recordsPtr is NULL after clear as well */
+    } else {
+	for (size_t i = 0; i < postInitRecords.count; ++i) {
+	    if (postInitRecords.recordsPtr[i].postInitProc == proc &&
+		postInitRecords.recordsPtr[i].clientData == clientData) {
+		/* T: postinit-1.4 */
+		goto done;	/* Already present, don't add */
+	    }
+	}
+	if (postInitRecords.count == postInitRecords.capacity) {
+		   /* T: postinit-1.6 */
+	    postInitRecords.capacity *= 2;
+	    postInitRecords.recordsPtr =
+		(TclPostInitRecord *)Tcl_Realloc(postInitRecords.recordsPtr,
+		    sizeof(TclPostInitRecord) * postInitRecords.capacity);
+	}
+    }
+    /* T: postinit-1.* */
+    postInitRecords.recordsPtr[postInitRecords.count].postInitProc = proc;
+    postInitRecords.recordsPtr[postInitRecords.count].clientData = clientData;
+    postInitRecords.count++;
+    postInitRecords.epoch++;
+
+done: /* postInitMutex must be held at this point */
+    Tcl_MutexUnlock(&postInitMutex);
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_UnregisterPostInitProc --
+ *
+ *	Unregisters a callback registered through Tcl_RegisterPostInitProc.
+ *	The registration key is the pair (proc, clientData). It is not an
+ *	an error if the key does not exist.
+ *
+ * Results:
+ *	Returns a standard Tcl result code.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+Tcl_UnregisterPostInitProc(
+    Tcl_PostInitProc *proc,	/* The callback to unregister. */
+    void *clientData)		/* Opaque argument included in matching. */
+{
+    if (proc == NULL) {
+	return TCL_ERROR;
+    }
+    Tcl_MutexLock(&postInitMutex);
+    if (postInitRecords.recordsPtr != NULL && postInitRecords.count > 0) {
+	size_t i;
+	for (i = 0; i < postInitRecords.count; ++i) {
+	    if (postInitRecords.recordsPtr[i].postInitProc == proc &&
+		postInitRecords.recordsPtr[i].clientData == clientData) {
+		/* T: postinit-1.* */
+		break;
+	    }
+	}
+	if (i < postInitRecords.count) {
+	    while (++i < postInitRecords.count) {
+		postInitRecords.recordsPtr[i-1] = postInitRecords.recordsPtr[i];
+	    }
+	    postInitRecords.epoch++;
+	    postInitRecords.count--;
+	} /* else T: postinit-1.{8.9} */
+    }
+    Tcl_MutexUnlock(&postInitMutex);
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_ClearPostInitProcs --
+ *
+ *	Unregisters all callbacks registered through Tcl_RegisterPostInitProc.
+ *
+ * Results:
+ *	Returns a standard Tcl result code.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+Tcl_ClearPostInitProcs()
+{
+    /* T: postinit-1.3 */
+    Tcl_MutexLock(&postInitMutex);
+    if (postInitRecords.recordsPtr) {
+	/*
+	 * Don't strictly need to free, setting count to 0 suffices but
+	 * freeing allows use of this function at exit time and keep
+	 * valgrind happy.
+	 */
+	Tcl_Free(postInitRecords.recordsPtr);
+	postInitRecords.recordsPtr = NULL;
+	postInitRecords.capacity = 0;
+    }
+    postInitRecords.count = 0;
+    postInitRecords.epoch++;
+    Tcl_MutexUnlock(&postInitMutex);
+    return TCL_OK;
 }
 
 /*

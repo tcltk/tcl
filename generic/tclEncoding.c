@@ -2276,6 +2276,9 @@ Tcl_FindExecutable(
     const char *version = Tcl_InitSubsystems();
     TclpSetInitialEncodings();
     TclpFindExecutable(argv0);
+#ifdef STATIC_BUILD
+    Tcl_RegisterPostInitProc(TclInitStaticPackages, NULL);
+#endif
     return version;
 }
 
