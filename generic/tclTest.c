@@ -9926,7 +9926,7 @@ TestpostinitCmd(
 	}
     }
 
-    Tcl_PostInitProc *callbackProc;
+    Tcl_PostInitProc *callbackProc = NULL;
     int ret;
     switch (callback) {
     case ADD:
