@@ -9718,7 +9718,7 @@ PostInitAddProc(
 static int
 PostInitSafeCheckProc(
     Tcl_Interp *interp,
-    void *clientData
+    TCL_UNUSED(void *)
 ) {
     Tcl_Obj *objPtr;
     objPtr = Tcl_ObjPrintf("proc isSafe {} {return %d}", Tcl_IsSafe(interp));
@@ -9731,7 +9731,7 @@ PostInitSafeCheckProc(
 /* Tests static package require within postinit callback */
 static int
 MultiplyCmd(
-    void *clientData,		/* (integer) multiplicand */
+    TCL_UNUSED(void *),		/* (integer) multiplicand */
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Arguments. */
@@ -9764,7 +9764,7 @@ Postinitpackage_Init(
 static int
 PostInitStaticPackageProc(
     Tcl_Interp *interp,
-    void *clientData
+    TCL_UNUSED(void *)
 ) {
     Tcl_StaticLibrary(NULL, "postinitpackage", Postinitpackage_Init, NULL);
     return Tcl_Eval(interp, "package ifneeded postinitpackage [info patchlevel] [list load {} postinitpackage]");
@@ -9804,7 +9804,7 @@ PostInitInterpDeleteProc(
 static int
 PostInitRaiseErrorProc(
     Tcl_Interp *interp,
-    void *clientData
+    TCL_UNUSED(void *)
 ) {
     Tcl_SetResult(interp, "PostInit test error raised", TCL_STATIC);
     return TCL_ERROR;
@@ -9813,7 +9813,7 @@ PostInitRaiseErrorProc(
 /* Tests recursive registration */
 static int
 PostInitRegisterInCbProc(
-    Tcl_Interp *interp,
+    TCL_UNUSED(Tcl_Interp *),
     void *clientData
 )
 {
@@ -9824,7 +9824,7 @@ PostInitRegisterInCbProc(
 /* Tests recursive unregistration */
 static int
 PostInitUnregisterInCbProc(
-    Tcl_Interp *interp,
+    TCL_UNUSED(Tcl_Interp *),
     void *clientData
 )
 {
