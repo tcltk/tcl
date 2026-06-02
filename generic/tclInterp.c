@@ -624,13 +624,13 @@ RunPreInitScript(
 	return TCL_ERROR;
     }
     int result = Tcl_FSEvalFile(interp, initScriptPathPtr);
-    Tcl_DecrRefCount(initScriptPathPtr);
     if (result != TCL_OK) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"Error sourcing Tcl initialization script from %s:\n%s",
 		Tcl_GetString(initScriptPathPtr),
 		Tcl_GetString(Tcl_GetObjResult(interp))));
     }
+    Tcl_DecrRefCount(initScriptPathPtr);
     return result;
 }
 
