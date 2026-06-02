@@ -1510,7 +1510,10 @@ const TclStubs tclStubs = {
     Tcl_UtfToNormalized, /* 696 */
     Tcl_ExternalToUtfEx, /* 697 */
     Tcl_UtfToExternalEx, /* 698 */
-    TclUnusedStubEntry, /* 699 */
+    Tcl_RegisterPostInitProc, /* 699 */
+    Tcl_UnregisterPostInitProc, /* 700 */
+    Tcl_ClearPostInitProcs, /* 701 */
+    TclUnusedStubEntry, /* 702 */
 };
 
 /* !END!: Do not edit above this line. */

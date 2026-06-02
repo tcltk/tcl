@@ -25,6 +25,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+extern Tcl_PostInitProc    TcltestStaticInit;
 extern Tcl_LibraryInitProc Tcltest_Init;
 extern Tcl_LibraryInitProc Tcltest_SafeInit;
 #ifdef __cplusplus
@@ -143,6 +144,10 @@ main(
     TclZipfs_AppHook(&argc, &argv);
 #endif
 
+#if defined(TCL_TEST)
+    Tcl_RegisterPostInitProc(TcltestStaticInit, NULL);
+#endif
+
     Tcl_Main(argc, argv, TCL_LOCAL_APPINIT);
     return 0;			/* Needed only to prevent compiler warning. */
 }
@@ -179,13 +184,6 @@ Tcl_AppInit(
 	return TCL_ERROR;
     }
 #endif
-
-#ifdef TCL_TEST
-    if (Tcltest_Init(interp) == TCL_ERROR) {
-	return TCL_ERROR;
-    }
-    Tcl_StaticLibrary(interp, "Tcltest", Tcltest_Init, Tcltest_SafeInit);
-#endif /* TCL_TEST */
 
     /*
      * Call the init procedures for included packages. Each call should look

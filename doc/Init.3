@@ -16,6 +16,19 @@ int
 .sp
 const char *
 \fBTcl_SetPreInitScript\fR(\fIscriptPtr\fR)
+.sp
+.VS TIP755
+typedef int \fBTcl_PostInitProc\fR(\fBTcl_Interp *\fIinterp\fR, \fBvoid *\fIclientData\fR)
+.sp
+int
+\fBTcl_RegisterPostInitProc\fR(\fIpostInitProc\fR, \fIclientData\fR)
+.sp
+int
+\fBTcl_UnregisterPostInitProc\fR(\fIpostInitProc, \fIclientData\fR)
+.sp
+int
+\fBTcl_ClearPostInitProcs\fR(void)
+.VE TIP755
 .fi
 .SH ARGUMENTS
 .AS Tcl_Interp *interp
@@ -23,8 +36,11 @@ const char *
 Interpreter to initialize.
 .AP "const char" *scriptPtr in
 Address of the initialization script.
+.AP Tcl_PostInitProc *postInitProc in
+Function to call post initialization of interpreter.
+.AP "void" *clientData in
+Arbitrary one-word value to pass to \fBpostInitProc\fR.
 .BE
-
 .SH DESCRIPTION
 .PP
 \fBTcl_Init\fR is a helper procedure that finds and \fBsource\fRs the
@@ -39,6 +55,37 @@ A value of \fINULL\fR may be passed to not register any script.
 The pre-initialization script is executed by \fBTcl_Init\fR before accessing
 the file system. The purpose is to typically prepare a custom file system
 (like an embedded zip-file) to be activated before the search.
+.VS TIP755
+.PP
+\fBTcl_RegisterPostInitProc\fR registers a callback that should be invoked by
+\fBTcl_Init\fR at the end of initialization of subsequently created
+interpreters except safe interpreters. The function returns a Tcl return code.
+.PP
+This callback function is passed the interpreter being initialized and the
+opaque \fIclientData\fR value that was passed at the time of registration. It
+should return a Tcl return code. Multiple callbacks are supported and will be
+invoked in the order of their registration except that an error return from a
+callback will skip the remaining registrations. The Tcl return code from the
+last callback invoked is returned as the return value from \fBTcl_Init\fR.
+.PP
+\fBTcl_UnregisterPostInitProc\fR unregisters a previously registered callback.
+Both \fIpostInitProc\fR and \fIclientData\fR must match the the corresponding
+values that were passed to \fBTcl_RegisterPostInitProc\fR. The function returns
+a standard Tcl return code. It is not an error if there is no matching prior
+registration.
+.PP
+The \fBTcl_ClearPostInitProcs\fR function unregisters all currently registered
+callbacks.
+.PP
+Callback functions registered through \fBTcl_RegisterPostInitProc\fR may load
+static packages, add commands, or set up other facilities so they are available
+in all interpreters. They cannot however execute any code that may result in new
+interpreters and should not delete the passed interpreter.
+.PP
+The `Tcl_RegisterPostInitProc` and `Tcl_UnregisterPostInitProc` functions may be
+invoked from within a registered callback. However, the change in registration
+will not have effect for the interpreter that is being initialized.
+.VE TIP755
 .PP
 When used in stub-enabled embedders, the stubs table must be first initialized
 using one of \fBTcl_InitSubsystems\fR, \fBTcl_SetPanicProc\fR,

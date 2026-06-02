@@ -3525,6 +3525,7 @@ MODULE_SCOPE void	TclInitLimitSupport(Tcl_Interp *interp);
 MODULE_SCOPE void	TclInitNamespaceSubsystem(void);
 MODULE_SCOPE void	TclInitNotifier(void);
 MODULE_SCOPE void	TclInitObjSubsystem(void);
+MODULE_SCOPE int	TclInitStaticPackages(Tcl_Interp *interp, void *);
 MODULE_SCOPE int	TclInterpReady(Tcl_Interp *interp);
 MODULE_SCOPE bool	TclIsBareword(int byte);
 MODULE_SCOPE Tcl_Obj *	TclJoinPath(Tcl_Size elements, Tcl_Obj * const *objv,
@@ -5186,6 +5187,10 @@ typedef struct NRE_callback {
 #if defined(_WIN32) || defined(__CYGWIN__)
 /* Here, not in tclWinInt.h because that's not included in generic modules */
 MODULE_SCOPE int       Registry_Init(Tcl_Interp *interp);
+#if STATIC_BUILD
+extern int       Dde_Init(Tcl_Interp *interp);
+extern int       Dde_SafeInit(Tcl_Interp *interp);
+#endif
 #endif
 
 /*

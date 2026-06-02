@@ -1,5 +1,7 @@
 if {![package vsatisfies [package provide Tcl] 9.0-]} return
 if {[info sharedlibextension] != ".dll"} return
-package ifneeded dde 1.5a2 \
-	[list load [file join $dir tcl9dde15.dll] Dde]
-
+# On static builds, dde command is a static package
+if {![::tcl::build-info static]} {
+    package ifneeded dde 1.5a2 \
+        [list load [file join $dir tcl9dde15.dll] Dde]
+}
