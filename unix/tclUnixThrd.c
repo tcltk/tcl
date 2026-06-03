@@ -699,7 +699,7 @@ Tcl_ConditionWait2(
 	 * current time, including possible overflow situations. [Bug #411603]
 	 */
 
-	now = TclpGetMicroseconds();
+	now = Tcl_GetDayTime();
 	ptime.tv_sec = (time + now) / 1000000;
 	ptime.tv_nsec = 1000 * ((time + now) % 1000000);
 	PCondTimedWait(pcondPtr, pmutexPtr, &ptime);
