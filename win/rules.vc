@@ -854,6 +854,7 @@ USE_STUBS       = 0
 !else
 USE_STUBS       = 1
 !endif
+VERBOSE		= 0
 
 # If OPTS is not empty AND does not contain "none" which turns off all OPTS
 # set the above macros based on OPTS content
