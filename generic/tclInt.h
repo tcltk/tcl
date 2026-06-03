@@ -3134,8 +3134,6 @@ MODULE_SCOPE void	TclGetEncodingProfiles(Tcl_Interp *interp);
  */
 
 MODULE_SCOPE Tcl_GetMonotonicTimeProc *tclGetMonotonicTimeProcPtr;
-MODULE_SCOPE void TclSetMaxBlockTime(long long);
-MODULE_SCOPE int TclWaitForEvent(long long);
 
 /*
  * Variables denoting the Tcl object types defined in the core.
@@ -3757,7 +3755,6 @@ MODULE_SCOPE double	TclpWideClickInMicrosec(void);
 		((double)(clicks) * TclpWideClickInMicrosec() * 1000)
 #   endif
 #endif
-MODULE_SCOPE long long	TclpGetMicroseconds(void);
 
 MODULE_SCOPE int	TclZlibInit(Tcl_Interp *interp);
 MODULE_SCOPE void *	TclpThreadCreateKey(void);
@@ -5187,7 +5184,7 @@ typedef struct NRE_callback {
 #if defined(_WIN32) || defined(__CYGWIN__)
 /* Here, not in tclWinInt.h because that's not included in generic modules */
 MODULE_SCOPE int       Registry_Init(Tcl_Interp *interp);
-#if STATIC_BUILD
+#ifdef STATIC_BUILD
 extern int       Dde_Init(Tcl_Interp *interp);
 extern int       Dde_SafeInit(Tcl_Interp *interp);
 #endif

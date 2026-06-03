@@ -2428,7 +2428,7 @@ ForwardOpToOwnerThread(
 	 * immediately after.
 	 */
 
-	Tcl_ConditionWait(&resultPtr->done, &rtForwardMutex, NULL);
+	Tcl_ConditionWait2(&resultPtr->done, &rtForwardMutex, -1);
     }
 
     /*

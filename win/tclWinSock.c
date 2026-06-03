@@ -961,9 +961,8 @@ TcpOutputProc(
 	     */
 
 	    if (GOT_BITS(statePtr->watchEvents, FD_WRITE)) {
-		Tcl_Time blockTime = { 0, 0 };
 
-		Tcl_SetMaxBlockTime(&blockTime);
+		Tcl_SetMaxBlockTime2(0);
 	    }
 	    break;
 	}
@@ -1569,9 +1568,8 @@ TcpWatchProc(
 	 */
 
 	if (statePtr->readyEvents & statePtr->watchEvents) {
-	    Tcl_Time blockTime = { 0, 0 };
 
-	    Tcl_SetMaxBlockTime(&blockTime);
+	    Tcl_SetMaxBlockTime2(0);
 	}
     }
 }
@@ -2478,7 +2476,6 @@ SocketSetupProc(
     int flags)			/* Event flags as passed to Tcl_DoOneEvent. */
 {
     TcpState *statePtr;
-    Tcl_Time blockTime = { 0, 0 };
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
     if (!GOT_BITS(flags, TCL_FILE_EVENTS)) {
@@ -2493,7 +2490,7 @@ SocketSetupProc(
 	    statePtr = statePtr->nextPtr) {
 	if (GOT_BITS(statePtr->readyEvents,
 		statePtr->watchEvents | FD_CONNECT | FD_ACCEPT)) {
-	    Tcl_SetMaxBlockTime(&blockTime);
+	    Tcl_SetMaxBlockTime2(0);
 	    break;
 	}
     }
@@ -2732,9 +2729,7 @@ SocketEventProc(
 	 * trying to do unwind protection.
 	 */
 
-	Tcl_Time blockTime = { 0, 0 };
-
-	Tcl_SetMaxBlockTime(&blockTime);
+	Tcl_SetMaxBlockTime2(0);
 	SET_BITS(mask, TCL_READABLE | TCL_WRITABLE);
     } else if (GOT_BITS(events, FD_READ)) {
 	/*

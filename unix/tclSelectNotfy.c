@@ -772,7 +772,7 @@ TclpWaitForEvent(
 	    long long now;
 	    struct timespec ptime;
 
-	    now = TclpGetMicroseconds();
+	    now = Tcl_GetDayTime();
 	    ptime.tv_sec = (time + now) / 1000000;
 	    ptime.tv_nsec = 1000 * ((time + now) % 1000000);
 

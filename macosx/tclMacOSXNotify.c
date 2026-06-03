@@ -566,7 +566,7 @@ TclpInitNotifier(void)
 	triggerPipe = fds[1];
 
 	/*
-	 * Create notifier thread lazily in Tcl_WaitForEvent() to avoid
+	 * Create notifier thread lazily in Tcl_WaitForEvent2() to avoid
 	 * interfering with fork() followed immediately by execve() (we cannot
 	 * execve() when more than one thread is present).
 	 */
@@ -1586,7 +1586,7 @@ TclUnixWaitForFile(
      */
 
     if (timeout > 0) {
-	now = TclpGetMicroseconds();
+	now = Tcl_GetDayTime();
 	abortTime = now + timeout * 1000;
 	timeoutPtr = &blockTime;
     } else if (timeout == 0) {
@@ -1667,7 +1667,7 @@ TclUnixWaitForFile(
 	 * The select returned early, so we need to recompute the timeout.
 	 */
 
-	now = TclpGetMicroseconds();
+	now = Tcl_GetDayTime();
 	if (abortTime <= now) {
 	    break;
 	}

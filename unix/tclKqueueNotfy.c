@@ -174,7 +174,7 @@ PlatformEventsControl(
     }
 
     /*
-     * N.B. As discussed in Tcl_WaitForEvent(), kqueue(2) does not reproduce
+     * N.B. As discussed in Tcl_WaitForEvent2(), kqueue(2) does not reproduce
      * the `always ready' {select,poll}(2) behaviour for regular files
      * (S_IFREG) prior to FreeBSD 11.0-RELEASE. Therefore, filePtr is in these
      * cases simply added or deleted from the list of FileHandlers associated

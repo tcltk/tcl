@@ -145,10 +145,13 @@ TclpGetSeconds(void)
     if ( (usecSincePosixEpoch = NativeGetMicroseconds()) ) {
 	return usecSincePosixEpoch / 1000000;
     } else {
-	Tcl_Time t;
+	/*
+	 * High resolution timer is not available. Just use ftime.
+	 */
+	struct _timeb t;
 
-	Tcl_GetTime(&t);
-	return (unsigned long long)t.sec;
+	_ftime(&t);
+	return (unsigned long long)t.time;
     }
 }
 
@@ -184,10 +187,10 @@ TclpGetClicks(void)
 	return (Tcl_WideUInt) usecSincePosixEpoch;
     } else {
 	/*
-	* Use the TclpGetMicroseconds abstraction to get the time in microseconds, as
+	* Use the Tcl_GetDayTime abstraction to get the time in microseconds, as
 	* nearly as we can, and return it.
 	*/
-	return TclpGetMicroseconds();
+	return Tcl_GetDayTime();
     }
 }
 
@@ -242,9 +245,9 @@ TclpGetWideClicks(void)
 	/* fallback using microseconds */
 	wideClick.perfCounter = 0;
 	wideClick.microsecsScale = 1;
-	return TclpGetMicroseconds();
+	return Tcl_GetDayTime();
     } else {
-	return TclpGetMicroseconds();
+	return Tcl_GetDayTime();
     }
 }
 
@@ -278,7 +281,7 @@ TclpWideClickInMicrosec(void)
 /*
  *----------------------------------------------------------------------
  *
- * TclpGetMicroseconds --
+ * Tcl_GetDayTime --
  *
  *	This procedure returns a WideInt value that represents the highest
  *	resolution clock in microseconds available on the system.
@@ -293,7 +296,7 @@ TclpWideClickInMicrosec(void)
  */
 
 long long
-TclpGetMicroseconds(void)
+Tcl_GetDayTime(void)
 {
     long long usecSincePosixEpoch;
 
@@ -305,14 +308,12 @@ TclpGetMicroseconds(void)
 	return usecSincePosixEpoch;
     } else {
 	/*
-	 * Use the Tcl_GetTime abstraction to get the time in microseconds, as
-	 * nearly as we can, and return it.
+	 * High resolution timer is not available. Just use ftime.
 	 */
+	struct _timeb t;
 
-	Tcl_Time now;
-
-	Tcl_GetTime(&now);
-	return now.sec * 1000000 + now.usec;
+	_ftime(&t);
+	return (unsigned long long)(t.time * 1000000 + t.millitm * 1000);
     }
 }
 

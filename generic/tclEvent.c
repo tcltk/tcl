@@ -1752,7 +1752,7 @@ Tcl_VwaitObjCmd(
 	vwaitItems[numItems].sourceObj = NULL;
 	timer = Tcl_CreateTimerHandler(timeout, VwaitTimeoutProc,
 		&vwaitItems[numItems]);
-	before = TclpGetMicroseconds();
+	before = Tcl_GetDayTime();
     } else {
 	timeout = 0;
     }
@@ -1827,7 +1827,7 @@ Tcl_VwaitObjCmd(
     if (timedOut) {
 	diff = -1;
     } else {
-	after = TclpGetMicroseconds();
+	after = Tcl_GetDayTime();
 	diff = after / 1000;
 	diff -= before / 1000;
 	diff = timeout - diff;

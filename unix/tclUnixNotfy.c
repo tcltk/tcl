@@ -558,7 +558,7 @@ TclUnixWaitForFile(
      */
 
     if (timeout > 0) {
-	now = TclpGetMicroseconds();
+	now = Tcl_GetDayTime();
 	abortTime = now + timeout * 1000;
 	timeoutPtr = &blockTime;
     } else if (timeout == 0) {
@@ -641,7 +641,7 @@ TclUnixWaitForFile(
 	 * The select returned early, so we need to recompute the timeout.
 	 */
 
-	now = TclpGetMicroseconds();
+	now = Tcl_GetDayTime();
     } while (abortTime > now);
     return result;
 }
