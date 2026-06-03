@@ -126,8 +126,14 @@ NMAKEHLPC = $(_RULESDIR)\nmakehlp.c
 !undef OUR_RULES_MINOR
 
 !if exist("$(_RULESDIR)\rules.vc")
-!message *** Using $(_RULESDIR)\rules.vc
 !include "$(_RULESDIR)\rules.vc"
+!ifndef VERBOSE
+# Backward compatibility
+VERBOSE=1
+!endif
+!if $(VERBOSE)
+!message *** Using $(_RULESDIR)\rules.vc
+!endif
 !else
 !error *** Could not locate rules.vc in $(_RULESDIR)
 !endif

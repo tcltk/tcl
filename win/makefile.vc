@@ -161,11 +161,9 @@ VERSION         = $(TCL_MAJOR_VERSION)$(TCL_MINOR_VERSION)
 !endif
 
 !if [$(NMAKEHLP_NATIVE) -f $(OPTS) "noembed"]
-!message *** Option noembed specified. Tcl script library will not be appended to the binary.
 TCL_EMBED_SCRIPTS = 0
 TCL_TEST_LIBRARY=$(ROOT:\=/)/library
 !else
-!message *** Tcl script library will be appended to the binary.
 TCL_EMBED_SCRIPTS = 1
 TCL_TEST_LIBRARY=
 !endif
@@ -648,7 +646,7 @@ $(OUT_DIR)\tommath.lib:	$(TOMMATHDIR)\win64\tommath.lib
 !endif
 
 $(TCLSCRIPTZIP): $(TCLLIB) $(TCLSH) dlls
-	@echo Building Tcl library zip file $(TCLSCRIPTZIP)
+	@$(ECHO) Building Tcl library zip file $(TCLSCRIPTZIP)
 	@set TCL_LIBRARY=$(ROOT:\=/)/library
 	@if exist "$(LIBTCLVFS)" $(RMDIR) "$(LIBTCLVFS)"
 	@$(MKDIR) "$(LIBTCLVFS)"
@@ -738,7 +736,7 @@ htmldocs: $(DOCDIR)\*
 	@$(TCLSH) $(TOOLSDIR)\tcltk-man2html.tcl "--htmldir=$(HTMLDIR)"
 
 $(CHMFILE): htmldocs chmsetup
-	@echo Compiling HTML help project
+	@$(ECHO) Compiling HTML help project
 	-"$(HHC)" <<$(HHPFILE) >NUL
 [OPTIONS]
 Compatibility=1.1 or later
@@ -765,7 +763,7 @@ chmsetup:
 
 install-docs:
 !if exist("$(CHMFILE)")
-	@echo Installing compiled HTML help
+	@$(ECHO) Installing compiled HTML help
 	@$(CPY) "$(CHMFILE)" "$(DOC_INSTALL_DIR)\"
 !endif
 
@@ -791,7 +789,7 @@ tclConfig: $(OUT_DIR)\tclConfig.sh
 
 # TBD - is this tclConfig.sh file ever used? The values are incorrect!
 $(OUT_DIR)\tclConfig.sh: $(WIN_DIR)\tclConfig.sh.in
-	@echo Creating tclConfig.sh
+	@$(ECHO) Creating tclConfig.sh
 	@$(NMAKEHLP_NATIVE) -s << $** >$@
 @TCL_DLL_FILE@       $(TCLLIBNAME)
 @TCL_VERSION@        $(DOTVERSION)
@@ -1003,9 +1001,13 @@ $(TCLOBJS)
 
 !if exist("$(OUT_DIR)\depend.mk")
 !include "$(OUT_DIR)\depend.mk"
+!if $(VERBOSE)
 !message *** Dependency rules in use.
+!endif
 !else
+!if $(VERBOSE)
 !message *** Dependency rules are not being used.
+!endif
 !endif
 
 ### add a spacer in the output
@@ -1044,7 +1046,7 @@ $(TMP_DIR)\tcltest.res: $(TMP_DIR)\tclsh.exe.manifest $(WIN_DIR)\tcltest.rc
 
 install-binaries:
 	@echo Installing to '$(_INSTALLDIR)'
-	@echo Installing $(TCLLIBNAME)
+	@$(ECHO) Installing $(TCLLIBNAME)
 !if "$(TCLLIB)" != "$(TCLIMPLIB)"
 	@$(CPY) "$(TCLLIB)" "$(BIN_INSTALL_DIR)\"
 !endif
@@ -1055,15 +1057,15 @@ install-binaries:
 	@$(CPY) "$(OUT_DIR)\zdll.lib" "$(LIB_INSTALL_DIR)\"
 	@$(CPY) "$(OUT_DIR)\tommath.lib" "$(LIB_INSTALL_DIR)\"
 !endif
-	@echo Installing $(TCLSHNAME)
+	@$(ECHO) Installing $(TCLSHNAME)
 	@$(CPY) "$(TCLSH)" "$(BIN_INSTALL_DIR)\"
-	@echo Installing $(TCLSTUBLIBNAME)
+	@$(ECHO) Installing $(TCLSTUBLIBNAME)
 	@$(CPY) "$(TCLSTUBLIB)" "$(LIB_INSTALL_DIR)\"
 
 install-libraries: tclConfig tcl-nmake install-msgs install-tzdata
 	@if not exist "$(LIB_INSTALL_DIR)\nmake" \
 		$(MKDIR) "$(LIB_INSTALL_DIR)\nmake"
-	@echo Installing header files
+	@$(ECHO) Installing header files
 	@$(CPY) "$(GENERICDIR)\tcl.h"             "$(INCLUDE_INSTALL_DIR)\"
 	@$(CPY) "$(GENERICDIR)\tclDecls.h"        "$(INCLUDE_INSTALL_DIR)\"
 	@$(CPY) "$(GENERICDIR)\tclOO.h"           "$(INCLUDE_INSTALL_DIR)\"
@@ -1073,7 +1075,7 @@ install-libraries: tclConfig tcl-nmake install-msgs install-tzdata
 	@$(CPY) "$(GENERICDIR)\tclTomMathDecls.h" "$(INCLUDE_INSTALL_DIR)\"
 	@$(CPY) "$(TOMMATHDIR)\tommath.h"         "$(INCLUDE_INSTALL_DIR)\"
 !if !$(TCL_EMBED_SCRIPTS)
-	@echo Installing library files to $(SCRIPT_INSTALL_DIR)
+	@$(ECHO) Installing library files to $(SCRIPT_INSTALL_DIR)
 	@if not exist "$(SCRIPT_INSTALL_DIR)" \
 	    $(MKDIR) "$(SCRIPT_INSTALL_DIR)"
 	@$(CPY) "$(ROOT)\library\*.tcl"           "$(SCRIPT_INSTALL_DIR)\"
@@ -1088,46 +1090,46 @@ install-libraries: tclConfig tcl-nmake install-msgs install-tzdata
 	@$(CPY) "$(WIN_DIR)\nmakehlp.exe"         "$(LIB_INSTALL_DIR)\nmake\"
 	@$(CPY) "$(OUT_DIR)\tcl.nmake"            "$(LIB_INSTALL_DIR)\nmake\"
 !if !$(TCL_EMBED_SCRIPTS)
-	@echo Installing package cookiejar $(PKG_COOKIEJAR_VER)
+	@$(ECHO) Installing package cookiejar $(PKG_COOKIEJAR_VER)
 	@if not exist "$(SCRIPT_INSTALL_DIR)\cookiejar0.2" \
 	    $(MKDIR) "$(SCRIPT_INSTALL_DIR)\cookiejar0.2"
 	@$(CPY) "$(ROOT)\library\cookiejar\*.tcl" \
 	    "$(SCRIPT_INSTALL_DIR)\cookiejar0.2\"
 	@$(CPY) "$(ROOT)\library\cookiejar\*.gz" \
 	    "$(SCRIPT_INSTALL_DIR)\cookiejar0.2\"
-	@echo Installing package opt $(PKG_OPT_VER)
+	@$(ECHO) Installing package opt $(PKG_OPT_VER)
 	@if not exist "$(SCRIPT_INSTALL_DIR)\opt0.4" \
 	    $(MKDIR) "$(SCRIPT_INSTALL_DIR)\opt0.4"
 	@$(CPY) "$(ROOT)\library\opt\*.tcl" \
 	    "$(SCRIPT_INSTALL_DIR)\opt0.4\"
 	@if not exist "$(MODULE_INSTALL_DIR)" \
 	    $(MKDIR) "$(MODULE_INSTALL_DIR)"
-	@echo Installing package http $(PKG_HTTP_VER) as a Tcl Module
+	@$(ECHO) Installing package http $(PKG_HTTP_VER) as a Tcl Module
 	@if not exist "$(MODULE_INSTALL_DIR)\9.0" \
 	    $(MKDIR) "$(MODULE_INSTALL_DIR)\9.0"
 	@$(COPY) "$(ROOT)\library\http\http.tcl" \
 	    "$(MODULE_INSTALL_DIR)\9.0\http-$(PKG_HTTP_VER).tm"
-	@echo Installing package msgcat $(PKG_MSGCAT_VER) as a Tcl Module
+	@$(ECHO) Installing package msgcat $(PKG_MSGCAT_VER) as a Tcl Module
 	@$(COPY) "$(ROOT)\library\msgcat\msgcat.tcl" \
 	    "$(MODULE_INSTALL_DIR)\9.0\msgcat-$(PKG_MSGCAT_VER).tm"
-	@echo Installing package tcltest $(PKG_TCLTEST_VER) as a Tcl Module
+	@$(ECHO) Installing package tcltest $(PKG_TCLTEST_VER) as a Tcl Module
 	@$(COPY) "$(ROOT)\library\tcltest\tcltest.tcl" \
 	    "$(MODULE_INSTALL_DIR)\9.0\tcltest-$(PKG_TCLTEST_VER).tm"
-	@echo Installing package platform $(PKG_PLATFORM_VER) as a Tcl Module
+	@$(ECHO) Installing package platform $(PKG_PLATFORM_VER) as a Tcl Module
 	@if not exist "$(MODULE_INSTALL_DIR)\9.0\platform" \
 	    $(MKDIR) "$(MODULE_INSTALL_DIR)\9.0\platform"
 	@$(COPY) "$(ROOT)\library\platform\platform.tcl" \
 	    "$(MODULE_INSTALL_DIR)\9.0\platform-$(PKG_PLATFORM_VER).tm"
-	@echo Installing package platform::shell $(PKG_SHELL_VER) as a Tcl Module
+	@$(ECHO) Installing package platform::shell $(PKG_SHELL_VER) as a Tcl Module
 	@$(COPY) "$(ROOT)\library\platform\shell.tcl" \
 	    "$(MODULE_INSTALL_DIR)\9.0\platform\shell-$(PKG_SHELL_VER).tm"
 !endif
-	@echo Installing $(TCLDDELIBNAME)
+	@$(ECHO) Installing $(TCLDDELIBNAME)
 	@$(CPY) "$(TCLDDELIB)" "$(LIB_INSTALL_DIR)\dde$(DDEDOTVERSION)\"
 	@$(CPY) "$(ROOT)\library\dde\pkgIndex.tcl" \
 	    "$(LIB_INSTALL_DIR)\dde$(DDEDOTVERSION)\"
 !if !$(TCL_EMBED_SCRIPTS)
-	@echo Installing encodings
+	@$(ECHO) Installing encodings
 	@$(CPY) "$(ROOT)\library\encoding\*.enc" \
 		"$(SCRIPT_INSTALL_DIR)\encoding\"
 !endif
@@ -1135,7 +1137,7 @@ install-libraries: tclConfig tcl-nmake install-msgs install-tzdata
 
 install-tzdata:
 !if !$(TCL_EMBED_SCRIPTS)
-	@echo Installing time zone data
+	@$(ECHO) Installing time zone data
 	@set TCL_LIBRARY=$(ROOT:\=/)/library
 	@$(TCLSH_NATIVE) "$(ROOT:\=/)/tools/installData.tcl" \
 	    "$(ROOT:\=/)/library/tzdata" "$(SCRIPT_INSTALL_DIR)/tzdata"
@@ -1143,14 +1145,14 @@ install-tzdata:
 
 install-msgs:
 !if !$(TCL_EMBED_SCRIPTS)
-	@echo Installing message catalogs
+	@$(ECHO) Installing message catalogs
 	@set TCL_LIBRARY=$(ROOT:\=/)/library
 	@$(TCLSH_NATIVE) "$(ROOT:\=/)/tools/installData.tcl" \
 	    "$(ROOT:\=/)/library/msgs" "$(SCRIPT_INSTALL_DIR)/msgs"
 !endif
 
 install-pdbs:
-	@echo Installing debug symbols
+	@$(ECHO) Installing debug symbols
 	@$(CPY) "$(OUT_DIR)\*.pdb" "$(BIN_INSTALL_DIR)\"
 # "emacs font-lock highlighting fix
 
@@ -1160,16 +1162,16 @@ install-pdbs:
 
 tidy:
 !if "$(TCLLIB)" != "$(TCLIMPLIB)"
-	@echo Removing $(TCLLIB) ...
+	@$(ECHO) Removing $(TCLLIB) ...
 	@if exist $(TCLLIB) del $(TCLLIB)
 !endif
-	@echo Removing $(TCLIMPLIB) ...
+	@$(ECHO) Removing $(TCLIMPLIB) ...
 	@if exist $(TCLIMPLIB) del $(TCLIMPLIB)
-	@echo Removing $(TCLSH) ...
+	@$(ECHO) Removing $(TCLSH) ...
 	@if exist $(TCLSH) del $(TCLSH)
-	@echo Removing $(TCLTEST) ...
+	@$(ECHO) Removing $(TCLTEST) ...
 	@if exist $(TCLTEST) del $(TCLTEST)
-	@echo Removing $(TCLDDELIB) ...
+	@$(ECHO) Removing $(TCLDDELIB) ...
 	@if exist $(TCLDDELIB) del $(TCLDDELIB)
 
 clean: default-clean clean-pkgs
