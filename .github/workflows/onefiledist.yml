@@ -124,7 +124,7 @@ jobs:
       url: ${{ steps.upload.outputs.artifact-url }}
   win:
     name: Windows
-    runs-on: windows-2025
+    runs-on: windows-2025-vs2026
     defaults:
       run:
         shell: msys2 {0}
