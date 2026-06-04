@@ -574,7 +574,7 @@ NMAKEHLPC = $(_TCLDIR)\win\nmakehlp.c
 
 # We always build nmakehlp even if it exists since we do not know
 # what source it was built from.
-!if [$(cc32) -nologo "$(NMAKEHLPC)" -link -subsystem:console > nul]
+!if [$(cc32) -nologo -DNDEBUG "$(NMAKEHLPC)" -link -subsystem:console > nul]
 !endif
 
 ################################################################
@@ -802,7 +802,7 @@ VERSION         = $(DOTVERSION:.=)
 DOTSEPARATED=$(DOTVERSION:a=.)
 DOTSEPARATED=$(DOTSEPARATED:b=.)
 !if [echo RCCOMMAVERSION = \> versions.vc] \
-  || [for /f "tokens=1,2,3,4,5* delims=." %a in ("$(DOTSEPARATED).0.0.0.0") do echo %a,%b,%c,%d >> versions.vc]
+  || [for /f "tokens=1,2,3,4,5* delims=." %a in ("$(DOTSEPARATED).0.0.0.0") do @echo %a,%b,%c,%d >> versions.vc]
 !error *** Could not generate RCCOMMAVERSION ***
 !endif
 !include versions.vc
