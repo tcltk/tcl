@@ -1362,11 +1362,15 @@ INCLUDE_INSTALL_DIR	= $(_INSTALLDIR)\include
 
 PRJ_INSTALL_DIR         = $(_INSTALLDIR)\$(PROJECT)$(DOTVERSION)
 !if $(MULTIPLATFORM_INSTALL)
-LIB_INSTALL_DIR		= $(PRJ_INSTALL_DIR)\$(PLATFORM_IDENTIFY)
 BIN_INSTALL_DIR		= $(PRJ_INSTALL_DIR)\$(PLATFORM_IDENTIFY)
 !else
-LIB_INSTALL_DIR		= $(PRJ_INSTALL_DIR)
 BIN_INSTALL_DIR		= $(PRJ_INSTALL_DIR)
+!endif
+!if $(STATIC_BUILD)
+# For extensions, _INSTALLDIR is location of Tcl's static libs
+LIB_INSTALL_DIR		= $(_INSTALLDIR)
+!else
+LIB_INSTALL_DIR		= $(BIN_INSTALL_DIR)
 !endif
 DOC_INSTALL_DIR		= $(PRJ_INSTALL_DIR)
 SCRIPT_INSTALL_DIR	= $(PRJ_INSTALL_DIR)
@@ -1694,7 +1698,7 @@ default-install: default-install-pdbs
 # for executables (exes). On the other hand the "install-libraries"
 # target is for *scripts* and should have been called "install-scripts".
 default-install-binaries: $(PRJLIB)
-	@$(ECHO) Installing binaries to '$(LIB_INSTALL_DIR)'
+	@$(ECHO) Installing $(PRJLIB) to '$(LIB_INSTALL_DIR)'
 	@if not exist "$(LIB_INSTALL_DIR)" mkdir "$(LIB_INSTALL_DIR)"
 	@$(CPY) $(PRJLIB) "$(LIB_INSTALL_DIR)" >NUL
 
@@ -1714,9 +1718,11 @@ default-install-stubs:
 	@$(CPY) $(PRJSTUBLIB) "$(SCRIPT_INSTALL_DIR)" >NUL
 
 default-install-pdbs:
+!if !$(STATIC_BUILD)
 	@$(ECHO) Installing PDBs to '$(LIB_INSTALL_DIR)'
 	@if not exist "$(LIB_INSTALL_DIR)" mkdir "$(LIB_INSTALL_DIR)"
 	@$(CPY) "$(OUT_DIR)\*.pdb" "$(LIB_INSTALL_DIR)\"
+!endif
 
 # "emacs font-lock highlighting fix
 
