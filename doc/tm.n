@@ -95,7 +95,7 @@ an actual limitation, as some may believe.
 Ever since 8.4 the Tcl \fBsource\fR command reads only until the first
 ^Z character. This allows us to combine an arbitrary Tcl script with
 arbitrary binary data into one file, where the script processes the
-attached data in any it chooses to fully import and activate the
+attached data in any way it chooses to fully import and activate the
 package.
 .PP
 The name of a module file has to match the regular expression:

@@ -206,6 +206,7 @@ List of nroff commands/macros currently implemented (partly not a complete imple
 - \\fI (italic text)
 - \\fR (reset font info)
 - \\fP (treated the same as \\fB)
+- \\(fm (prime symbol)
 - .QW (text in quotes)
 - .PQ (text in quotes + paranthesis)
 - .QR (text in quotes + dash between elements)

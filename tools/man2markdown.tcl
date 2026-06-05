@@ -268,10 +268,11 @@ namespace eval ::ndoc {
 		safe          {auto_path tclvars tcl_library tclvars auto_index tclvars auto_reset tclvars pkg_mkIndex pkgMkIndex library library}
 		socket        {Tcl_DoOneEvent DoOneEvent}
 		string        {Tcl_GetBoolean GetInt Tcl_GetDoubleFromObj DoubleObj Tcl_GetBignumFromObj IntObj}
+		switch        {re\_syntax re_syntax}
 		tclvars       {Tcl_SetObjErrorCode AddErrInfo}
 		timerate      {Tcl_EvalObjEx Eval}
+		tm            {auto_path tclvars tcl_pkgPath tclvars}
 		
-		switch        {re\_syntax re_syntax}
 	}]
 	
 	# dictionary of pages in which specific cmd words should *not* be linked
@@ -632,6 +633,7 @@ proc ::ndoc::parseBackslash {text} {
 		\\| {}
 		\\0 { }
 		\\& {}
+		\\(fm '
 	} $text]
 	return $text
 }
@@ -1954,6 +1956,15 @@ proc ::ndoc::mdExceptions {md} {
 		tclvars {
 			set md [string map {
 				{running [interp debug][interp] **{} -frame 1**} {running `interp debug {} -frame 1`}
+			} $md]
+		}
+		tm {
+			set md [string map {
+				{"**tcl***X***/site-tcl**", and "**tcl***X***/***X***.***y*"} {"**tcl**_X_**/site-tcl**", and "**tcl**_X_**/**_X_**.**_y_"}
+				{MF = /module_path/PNAME\(fm-PVERSION.tm} {MF = /module_path/PNAME'-PVERSION.tm}
+				{https://core.tcl-lang.org/tips/doc/trunk/tip/189.md} {<https://core.tcl-lang.org/tips/doc/trunk/tip/189.md>}
+				{https://core.tcl-lang.org/tips/doc/trunk/tip/190.md} {<https://core.tcl-lang.org/tips/doc/trunk/tip/190.md>}
+				
 			} $md]
 		}
 	}

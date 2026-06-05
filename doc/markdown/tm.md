@@ -47,7 +47,7 @@ This document describes the facilities for locating and loading Tcl Modules (see
 : Returns a list containing all registered module paths, in the order that they are searched for modules.
 
 [::tcl::tm::roots]{.cmd} [paths]{.arg}
-: Similar to **path add**, and layered on top of it. This command takes a single argument containing a list of paths, extends each with "**tcl***X***/site-tcl**", and "**tcl***X***/***X***.***y*", for major version *X* of the Tcl interpreter and minor version *y* less than or equal to the minor version of the interpreter, and adds the resulting set of paths to the list of paths to search.
+: Similar to **path add**, and layered on top of it. This command takes a single argument containing a list of paths, extends each with "**tcl**_X_**/site-tcl**", and "**tcl**_X_**/**_X_**.**_y_", for major version *X* of the Tcl interpreter and minor version *y* less than or equal to the minor version of the interpreter, and adds the resulting set of paths to the list of paths to search.
 
     This command is used internally by the system to set up the system-specific default paths.
 
@@ -62,7 +62,7 @@ A Tcl Module is a Tcl Package contained in a single file, and no other files req
 source module_file
 ```
 
-The [load] command is not directly used. This restriction is not an actual limitation, as some may believe. Ever since 8.4 the Tcl [source] command reads only until the first ^Z character. This allows us to combine an arbitrary Tcl script with arbitrary binary data into one file, where the script processes the attached data in any it chooses to fully import and activate the package.
+The [load] command is not directly used. This restriction is not an actual limitation, as some may believe. Ever since 8.4 the Tcl [source] command reads only until the first ^Z character. This allows us to combine an arbitrary Tcl script with arbitrary binary data into one file, where the script processes the attached data in any way it chooses to fully import and activate the package.
 
 The name of a module file has to match the regular expression:
 
@@ -78,9 +78,9 @@ package vcompare $version 0
 
 # Finding modules
 
-The directory tree for storing Tcl modules is separate from other parts of the filesystem and independent of **auto\_path**.
+The directory tree for storing Tcl modules is separate from other parts of the filesystem and independent of [auto\_path][tclvars].
 
-Tcl Modules are searched for in all directories listed in the result of the command **::tcl::tm::path list**. This is called the *Module path*. Neither the **auto\_path** nor the **tcl\_pkgPath** variables are used. All directories on the module path have to obey one restriction:
+Tcl Modules are searched for in all directories listed in the result of the command **::tcl::tm::path list**. This is called the *Module path*. Neither the [auto\_path][tclvars] nor the [tcl\_pkgPath][tclvars] variables are used. All directories on the module path have to obey one restriction:
 
 For any two directories, neither is an ancestor directory of the other.
 
@@ -113,10 +113,10 @@ source MF
 Both package name **PNAME** and package version **PVERSION** are extracted from the filename **MF** according to the definition below:
 
 ```
-MF = /module_path/PNAME\(fm-PVERSION.tm
+MF = /module_path/PNAME'-PVERSION.tm
 ```
 
-Where **PNAME\\(fm** is the partial path of the module as defined in section [Finding modules], and translated into **PNAME** by changing all directory separators to "**::**", and **module\_path** is the path (from the list of paths to search) that we found the module file under.
+Where **PNAME'** is the partial path of the module as defined in section [Finding modules], and translated into **PNAME** by changing all directory separators to "**::**", and **module\_path** is the path (from the list of paths to search) that we found the module file under.
 
 Note also that we are here creating a connection between package names and paths. Tcl is case-sensitive when it comes to comparing package names, but there are filesystems which are not, like NTFS. Luckily these filesystems do store the case of the name, despite not using the information when comparing.
 
@@ -179,10 +179,11 @@ $::env(TCL9.0_TM_PATH)  $::env(TCL9_0_TM_PATH)
 
 Paths initialized from the environment variables undergo tilde substitution (see **filename**). Any path whose tilde substitution fails because the user is unknown will be omitted from search paths.
 
-"*Tcl Modules*" (online at https://core.tcl-lang.org/tips/doc/trunk/tip/189.md), Tcl Improvement Proposal #190 "*Implementation Choices for Tcl Modules*" (online at https://core.tcl-lang.org/tips/doc/trunk/tip/190.md)
+"*Tcl Modules*" (online at <https://core.tcl-lang.org/tips/doc/trunk/tip/189.md>), Tcl Improvement Proposal #190 "*Implementation Choices for Tcl Modules*" (online at <https://core.tcl-lang.org/tips/doc/trunk/tip/190.md>)
 
 
 [load]: load.md
 [source]: source.md
 [tclsh]: tclsh.md
+[tclvars]: tclvars.md
 
