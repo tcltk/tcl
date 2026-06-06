@@ -42,7 +42,7 @@ NMAKEHLP_NATIVE=nmakehlp
 # For modifications that are not backward-compatible, you *must* change
 # the major version.
 RULES_VERSION_MAJOR = 1
-RULES_VERSION_MINOR = 17
+RULES_VERSION_MINOR = 18
 
 # The PROJECT macro must be defined by parent makefile.
 !if "$(PROJECT)" == ""
@@ -168,6 +168,7 @@ CPY	= xcopy /i /y >NUL
 CPYDIR  = xcopy /e /i /y >NUL
 COPY	= copy /y >NUL
 MKDIR   = md
+ECHO    = if "$(VERBOSE)" == "1" echo
 
 ######################################################################
 # 2. Figure out our build environment in terms of what we're building.
@@ -573,7 +574,7 @@ NMAKEHLPC = $(_TCLDIR)\win\nmakehlp.c
 
 # We always build nmakehlp even if it exists since we do not know
 # what source it was built from.
-!if [$(cc32) -nologo "$(NMAKEHLPC)" -link -subsystem:console > nul]
+!if [$(cc32) -nologo -DNDEBUG "$(NMAKEHLPC)" -link -subsystem:console > nul]
 !endif
 
 ################################################################
@@ -801,7 +802,7 @@ VERSION         = $(DOTVERSION:.=)
 DOTSEPARATED=$(DOTVERSION:a=.)
 DOTSEPARATED=$(DOTSEPARATED:b=.)
 !if [echo RCCOMMAVERSION = \> versions.vc] \
-  || [for /f "tokens=1,2,3,4,5* delims=." %a in ("$(DOTSEPARATED).0.0.0.0") do echo %a,%b,%c,%d >> versions.vc]
+  || [for /f "tokens=1,2,3,4,5* delims=." %a in ("$(DOTSEPARATED).0.0.0.0") do @echo %a,%b,%c,%d >> versions.vc]
 !error *** Could not generate RCCOMMAVERSION ***
 !endif
 !include versions.vc
@@ -853,6 +854,7 @@ USE_STUBS       = 0
 !else
 USE_STUBS       = 1
 !endif
+VERBOSE		= 0
 
 # If OPTS is not empty AND does not contain "none" which turns off all OPTS
 # set the above macros based on OPTS content
@@ -861,21 +863,17 @@ USE_STUBS       = 1
 # OPTS are specified, parse them
 
 !if [$(NMAKEHLP_NATIVE) -f $(OPTS) "static"]
-!message *** Doing static
 STATIC_BUILD	= 1
 !endif
 
 !if [$(NMAKEHLP_NATIVE) -f $(OPTS) "nostubs"]
-!message *** Not using stubs
 USE_STUBS	= 0
 !endif
 
 !if [$(NMAKEHLP_NATIVE) -f $(OPTS) "nomsvcrt"]
-!message *** Doing nomsvcrt
 MSVCRT		= 0
 !else
 !if [$(NMAKEHLP_NATIVE) -f $(OPTS) "msvcrt"]
-!message *** Doing msvcrt
 !else
 !if $(TCL_MAJOR_VERSION) == 8 && $(TCL_MINOR_VERSION) < 7 && $(STATIC_BUILD)
 MSVCRT		= 0
@@ -884,24 +882,20 @@ MSVCRT		= 0
 !endif # [$(NMAKEHLP_NATIVE) -f $(OPTS) "nomsvcrt"]
 
 !if [$(NMAKEHLP_NATIVE) -f $(OPTS) "staticpkg"] && $(STATIC_BUILD)
-!message *** Doing staticpkg
 TCL_USE_STATIC_PACKAGES	= 1
 !endif
 
 !if [$(NMAKEHLP_NATIVE) -f $(OPTS) "nothreads"]
-!message *** Compile explicitly for non-threaded tcl
 TCL_THREADS = 0
 USE_THREAD_ALLOC= 0
 !endif
 
 !if [$(NMAKEHLP_NATIVE) -f $(OPTS) "tcl8"]
-!message *** Build for Tcl8
 TCL_BUILD_FOR = 8
 !endif
 
 !if $(TCL_MAJOR_VERSION) == 8
 !if [$(NMAKEHLP_NATIVE) -f $(OPTS) "time64bit"]
-!message *** Force 64-bit time_t
 _USE_64BIT_TIME_T = 1
 !endif
 !endif
@@ -909,31 +903,26 @@ _USE_64BIT_TIME_T = 1
 # Yes, it's weird that the "symbols" option controls DEBUG and
 # the "pdbs" option controls SYMBOLS. That's historical.
 !if [$(NMAKEHLP_NATIVE) -f $(OPTS) "symbols"]
-!message *** Doing symbols
 DEBUG		= 1
 !else
 DEBUG		= 0
 !endif
 
 !if [$(NMAKEHLP_NATIVE) -f $(OPTS) "pdbs"]
-!message *** Doing pdbs
 SYMBOLS		= 1
 !else
 SYMBOLS		= 0
 !endif
 
 !if [$(NMAKEHLP_NATIVE) -f $(OPTS) "profile"]
-!message *** Doing profile
 PROFILE		= 1
 !else
 PROFILE		= 0
 !endif
 
 !if [$(NMAKEHLP_NATIVE) -f $(OPTS) "pgi"]
-!message *** Doing profile guided optimization instrumentation
 PGO		= 1
 !elseif [$(NMAKEHLP_NATIVE) -f $(OPTS) "pgo"]
-!message *** Doing profile guided optimization
 PGO		= 2
 !else
 PGO		= 0
@@ -945,7 +934,6 @@ PGO		= 0
 
 # TBD - should get rid of this option
 !if [$(NMAKEHLP_NATIVE) -f $(OPTS) "thrdalloc"]
-!message *** Doing thrdalloc
 USE_THREAD_ALLOC = 1
 !endif
 
@@ -954,7 +942,6 @@ USE_THREAD_ALLOC = 0
 !endif
 
 !if [$(NMAKEHLP_NATIVE) -f $(OPTS) "unchecked"]
-!message *** Doing unchecked
 UNCHECKED = 1
 !else
 UNCHECKED = 0
@@ -964,6 +951,16 @@ UNCHECKED = 0
 CONFIG_CHECK = 1
 !else
 CONFIG_CHECK = 0
+!endif
+
+!if [$(NMAKEHLP_NATIVE) -f $(OPTS) "verbose"]
+VERBOSE		= 1
+!else
+VERBOSE		= 0
+!endif
+
+!if $(VERBOSE)
+!message *** OPTS=$(OPTS)
 !endif
 
 !endif # "$(OPTS)" != ""  && ... parsing of OPTS
@@ -1002,15 +999,17 @@ TCL_COMPILE_DEBUG   = 0
 
 !if "$(STATS)" != "" && ![$(NMAKEHLP_NATIVE) -f "$(STATS)" "none"]
 
+!if $(VERBOSE)
+!message *** STATS=$(STATS)
+!endif
+
 !if [$(NMAKEHLP_NATIVE) -f $(STATS) "memdbg"]
-!message *** Doing memdbg
 TCL_MEM_DEBUG	    = 1
 !else
 TCL_MEM_DEBUG	    = 0
 !endif
 
 !if [$(NMAKEHLP_NATIVE) -f $(STATS) "compdbg"]
-!message *** Doing compdbg
 TCL_COMPILE_DEBUG   = 1
 !else
 TCL_COMPILE_DEBUG   = 0
@@ -1032,12 +1031,10 @@ WARNINGS		    = -W3
 !if "$(CHECKS)" != "" && ![$(NMAKEHLP_NATIVE) -f "$(CHECKS)" "none"]
 
 !if [$(NMAKEHLP_NATIVE) -f $(CHECKS) "nodep"]
-!message *** Doing nodep check
 TCL_NO_DEPRECATED	    = 1
 !endif
 
 !if [$(NMAKEHLP_NATIVE) -f $(CHECKS) "fullwarn"]
-!message *** Doing full warnings check
 WARNINGS		    = -W4
 !if [$(NMAKEHLP_NATIVE) -l -warn:3 $(LINKER_TESTFLAGS)]
 LINKERFLAGS		    = $(LINKERFLAGS) -warn:3
@@ -1045,7 +1042,6 @@ LINKERFLAGS		    = $(LINKERFLAGS) -warn:3
 !endif
 
 !if [$(NMAKEHLP_NATIVE) -f $(CHECKS) "64bit"] && [$(NMAKEHLP_NATIVE) -c -Wp64]
-!message *** Doing 64bit portability warnings
 WARNINGS		    = $(WARNINGS) -Wp64
 !endif
 
@@ -1366,11 +1362,15 @@ INCLUDE_INSTALL_DIR	= $(_INSTALLDIR)\include
 
 PRJ_INSTALL_DIR         = $(_INSTALLDIR)\$(PROJECT)$(DOTVERSION)
 !if $(MULTIPLATFORM_INSTALL)
-LIB_INSTALL_DIR		= $(PRJ_INSTALL_DIR)\$(PLATFORM_IDENTIFY)
 BIN_INSTALL_DIR		= $(PRJ_INSTALL_DIR)\$(PLATFORM_IDENTIFY)
 !else
-LIB_INSTALL_DIR		= $(PRJ_INSTALL_DIR)
 BIN_INSTALL_DIR		= $(PRJ_INSTALL_DIR)
+!endif
+!if $(STATIC_BUILD)
+# For extensions, _INSTALLDIR is location of Tcl's static libs
+LIB_INSTALL_DIR		= $(_INSTALLDIR)
+!else
+LIB_INSTALL_DIR		= $(BIN_INSTALL_DIR)
 !endif
 DOC_INSTALL_DIR		= $(PRJ_INSTALL_DIR)
 SCRIPT_INSTALL_DIR	= $(PRJ_INSTALL_DIR)
@@ -1698,7 +1698,7 @@ default-install: default-install-pdbs
 # for executables (exes). On the other hand the "install-libraries"
 # target is for *scripts* and should have been called "install-scripts".
 default-install-binaries: $(PRJLIB)
-	@echo Installing binaries to '$(LIB_INSTALL_DIR)'
+	@$(ECHO) Installing $(PRJLIB) to '$(LIB_INSTALL_DIR)'
 	@if not exist "$(LIB_INSTALL_DIR)" mkdir "$(LIB_INSTALL_DIR)"
 	@$(CPY) $(PRJLIB) "$(LIB_INSTALL_DIR)" >NUL
 
@@ -1706,54 +1706,55 @@ default-install-binaries: $(PRJLIB)
 default-install-libraries: default-install-scripts
 
 default-install-scripts: $(OUT_DIR)\pkgIndex.tcl
-	@echo Installing libraries to '$(SCRIPT_INSTALL_DIR)'
+	@$(ECHO) Installing $(PROJECT) scripts to '$(SCRIPT_INSTALL_DIR)'
 	@if not exist "$(SCRIPT_INSTALL_DIR)" mkdir "$(SCRIPT_INSTALL_DIR)"
 	@if exist $(LIBDIR) $(CPY) $(LIBDIR)\*.tcl "$(SCRIPT_INSTALL_DIR)"
-	@echo Installing package index in '$(SCRIPT_INSTALL_DIR)'
 	@$(CPY) $(OUT_DIR)\pkgIndex.tcl $(SCRIPT_INSTALL_DIR)
 
 default-install-stubs:
-	@echo Installing stubs library to '$(SCRIPT_INSTALL_DIR)'
+	@$(ECHO) Installing stubs library to '$(SCRIPT_INSTALL_DIR)'
 	@if not exist "$(SCRIPT_INSTALL_DIR)" mkdir "$(SCRIPT_INSTALL_DIR)"
 	@$(CPY) $(PRJSTUBLIB) "$(SCRIPT_INSTALL_DIR)" >NUL
 
 default-install-pdbs:
-	@echo Installing PDBs to '$(LIB_INSTALL_DIR)'
+!if !$(STATIC_BUILD)
+	@$(ECHO) Installing PDBs to '$(LIB_INSTALL_DIR)'
 	@if not exist "$(LIB_INSTALL_DIR)" mkdir "$(LIB_INSTALL_DIR)"
 	@$(CPY) "$(OUT_DIR)\*.pdb" "$(LIB_INSTALL_DIR)\"
+!endif
 
 # "emacs font-lock highlighting fix
 
 default-install-docs-html:
-	@echo Installing documentation files to '$(DOC_INSTALL_DIR)'
+	@$(ECHO) Installing documentation files to '$(DOC_INSTALL_DIR)'
 	@if not exist "$(DOC_INSTALL_DIR)" mkdir "$(DOC_INSTALL_DIR)"
 	@if exist $(DOCDIR) for %f in ("$(DOCDIR)\*.html" "$(DOCDIR)\*.css" "$(DOCDIR)\*.png") do @$(COPY) %f "$(DOC_INSTALL_DIR)"
 
 default-install-docs-n:
-	@echo Installing documentation files to '$(DOC_INSTALL_DIR)'
+	@$(ECHO) Installing documentation files to '$(DOC_INSTALL_DIR)'
 	@if not exist "$(DOC_INSTALL_DIR)" mkdir "$(DOC_INSTALL_DIR)"
 	@if exist $(DOCDIR) for %f in ("$(DOCDIR)\*.n") do @$(COPY) %f "$(DOC_INSTALL_DIR)"
 
 default-install-demos:
-	@echo Installing demos to '$(DEMO_INSTALL_DIR)'
+	@$(ECHO) Installing demos to '$(DEMO_INSTALL_DIR)'
 	@if not exist "$(DEMO_INSTALL_DIR)" mkdir "$(DEMO_INSTALL_DIR)"
 	@if exist $(DEMODIR) $(CPYDIR) "$(DEMODIR)" "$(DEMO_INSTALL_DIR)"
 
 default-clean:
-	@echo Cleaning $(TMP_DIR)\* ...
+	@$(ECHO) Cleaning $(TMP_DIR)\* ...
 	@if exist $(TMP_DIR)\nul $(RMDIR) $(TMP_DIR)
-	@echo Cleaning $(WIN_DIR)\nmakehlp.obj, nmakehlp.exe ...
+	@$(ECHO) Cleaning $(WIN_DIR)\nmakehlp.obj, nmakehlp.exe ...
 	@if exist $(WIN_DIR)\nmakehlp.obj del $(WIN_DIR)\nmakehlp.obj
 	@if exist $(WIN_DIR)\nmakehlp.exe del $(WIN_DIR)\nmakehlp.exe
 	@if exist $(WIN_DIR)\nmakehlp.out del $(WIN_DIR)\nmakehlp.out
-	@echo Cleaning $(WIN_DIR)\nmhlp-out.txt ...
+	@$(ECHO) Cleaning $(WIN_DIR)\nmhlp-out.txt ...
 	@if exist $(WIN_DIR)\nmhlp-out.txt del $(WIN_DIR)\nmhlp-out.txt
-	@echo Cleaning $(WIN_DIR)\_junk.pch ...
+	@$(ECHO) Cleaning $(WIN_DIR)\_junk.pch ...
 	@if exist $(WIN_DIR)\_junk.pch del $(WIN_DIR)\_junk.pch
-	@echo Cleaning $(WIN_DIR)\vercl.x, vercl.i ...
+	@$(ECHO) Cleaning $(WIN_DIR)\vercl.x, vercl.i ...
 	@if exist $(WIN_DIR)\vercl.x del $(WIN_DIR)\vercl.x
 	@if exist $(WIN_DIR)\vercl.i del $(WIN_DIR)\vercl.i
-	@echo Cleaning $(WIN_DIR)\versions.vc, version.vc ...
+	@$(ECHO) Cleaning $(WIN_DIR)\versions.vc, version.vc ...
 	@if exist $(WIN_DIR)\versions.vc del $(WIN_DIR)\versions.vc
 	@if exist $(WIN_DIR)\version.vc del $(WIN_DIR)\version.vc
 
@@ -1917,6 +1918,7 @@ TCLNMAKECONFIG	= "$(_TCLDIR)\win\$(BUILDDIRTOP)\tcl.nmake"
 # Display stats being used.
 #----------------------------------------------------------
 
+!if $(VERBOSE)
 !if !$(DOING_TCL)
 !message *** Building against Tcl at '$(_TCLDIR)'
 !endif
@@ -1928,5 +1930,6 @@ TCLNMAKECONFIG	= "$(_TCLDIR)\win\$(BUILDDIRTOP)\tcl.nmake"
 !message *** Installation, if selected, will be in '$(_INSTALLDIR)'
 !message *** Suffix for binaries will be '$(SUFX)'
 !message *** Compiler version $(VCVER). Target $(MACHINE), host $(NATIVE_ARCH).
+!endif
 
 !endif # ifdef _RULES_VC
