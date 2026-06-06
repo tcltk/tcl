@@ -1706,10 +1706,9 @@ default-install-binaries: $(PRJLIB)
 default-install-libraries: default-install-scripts
 
 default-install-scripts: $(OUT_DIR)\pkgIndex.tcl
-	@$(ECHO) Installing libraries to '$(SCRIPT_INSTALL_DIR)'
+	@$(ECHO) Installing $(PROJECT) scripts to '$(SCRIPT_INSTALL_DIR)'
 	@if not exist "$(SCRIPT_INSTALL_DIR)" mkdir "$(SCRIPT_INSTALL_DIR)"
 	@if exist $(LIBDIR) $(CPY) $(LIBDIR)\*.tcl "$(SCRIPT_INSTALL_DIR)"
-	@$(ECHO) Installing package index in '$(SCRIPT_INSTALL_DIR)'
 	@$(CPY) $(OUT_DIR)\pkgIndex.tcl $(SCRIPT_INSTALL_DIR)
 
 default-install-stubs:
