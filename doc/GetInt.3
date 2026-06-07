@@ -75,6 +75,18 @@ if the first such characters are
 then \fIsrc\fR
 is expected to be in binary form;  otherwise, \fIsrc\fR is
 expected to be in decimal form.
+.VS "TIP 551"
+One or more underscore characters,
+.QW _ ,
+may be inserted between digits, acting as numeric whitespace, but not
+before the first digit or after the last digit, or between the prefix
+(as described above, if present) and the first digit.
+Which is to say,
+.QW "1_000_000"
+is a \fIvalid\fR way of writing one million, but
+.QW "0d_1000_000"
+is \fInot valid\fR, and will be reported as an error.
+.VE "TIP 551"
 .PP
 \fBTcl_GetDouble\fR expects \fIsrc\fR to consist of a floating-point
 number, which is:  white space;  a sign; a sequence of digits;  a
