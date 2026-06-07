@@ -26,7 +26,7 @@ unknown - Handle attempts to use non-existent commands
 # Synopsis
 
 ::: {.synopsis} :::
-[unknown]{.cmd} [cmdName]{.arg} [arg arg]{.optdot}
+[unknown]{.cmd} [cmdName]{.arg} [arg]{.optdot}
 :::
 
 # Description
@@ -35,7 +35,7 @@ This command is invoked by the Tcl interpreter whenever a script tries to invoke
 
 If the Tcl interpreter encounters a command name for which there is not a defined command (in either the current namespace, or the global namespace), then Tcl checks for the existence of an unknown handler for the current namespace. By default, this handler is a command named **::unknown**.  If there is no such command, then the interpreter returns an error. If the **unknown** command exists (or a new handler has been registered for the current namespace), then it is invoked with arguments consisting of the fully-substituted name and arguments for the original non-existent command. The **unknown** command typically does things like searching through library directories for a command procedure with the name *cmdName*, or expanding abbreviated command names to full-length, or automatically executing unknown commands as sub-processes. In some cases (such as expanding abbreviations) **unknown** will change the original command slightly and then (re-)execute it. The result of the **unknown** command is used as the result for the original non-existent command.
 
-The default implementation of **unknown** behaves as follows. It first calls the **auto\_load** library procedure to load the command. If this succeeds, then it executes the original command with its original arguments. If the auto-load fails and Tcl is run interactively then **unknown** calls **auto\_execok** to see if there is an executable file by the name *cmd*. If so, it invokes the Tcl [exec] command with *cmd* and all the *args* as arguments. If *cmd* cannot be auto-executed, **unknown** checks to see if the command was invoked at top-level and outside of any script.  If so, then **unknown** takes two additional steps. First, it sees if *cmd* has one of the following three forms: **!!**, **!***event*, or **^***old***^***new*?**^**?. If so, then **unknown** carries out history substitution in the same way that **csh** would for these constructs. Finally, **unknown** checks to see if *cmd* is a unique abbreviation for an existing Tcl command. If so, it expands the command name and executes the command with the original arguments. If none of the above efforts has been able to execute the command, **unknown** generates an error return. If the global variable **auto\_noload** is defined, then the auto-load step is skipped. If the global variable **auto\_noexec** is defined then the auto-exec step is skipped. Under normal circumstances the return value from **unknown** is the return value from the command that was eventually executed.
+The default implementation of **unknown** behaves as follows. It first calls the [auto\_load][library] library procedure to load the command. If this succeeds, then it executes the original command with its original arguments. If the auto-load fails and Tcl is run interactively then **unknown** calls [auto\_execok][library] to see if there is an executable file by the name *cmd*. If so, it invokes the Tcl [exec] command with *cmd* and all the *args* as arguments. If *cmd* cannot be auto-executed, **unknown** checks to see if the command was invoked at top-level and outside of any script.  If so, then **unknown** takes two additional steps. First, it sees if *cmd* has one of the following three forms: **!!**, **!***event*, or **^***old***^***new*?**^**?. If so, then **unknown** carries out history substitution in the same way that **csh** would for these constructs. Finally, **unknown** checks to see if *cmd* is a unique abbreviation for an existing Tcl command. If so, it expands the command name and executes the command with the original arguments. If none of the above efforts has been able to execute the command, **unknown** generates an error return. If the global variable [auto\_noload][library] is defined, then the auto-load step is skipped. If the global variable [auto\_noexec][library] is defined then the auto-exec step is skipped. Under normal circumstances the return value from **unknown** is the return value from the command that was eventually executed.
 
 # Example
 
@@ -54,5 +54,6 @@ proc unknown args {
 
 
 [exec]: exec.md
+[library]: library.md
 [namespace]: namespace.md
 

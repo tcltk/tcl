@@ -71,7 +71,7 @@ The *flags* argument can be either **TCL\_UNLOAD\_DETACH\_FROM\_INTERPRETER** or
 
 The **unload** command cannot unload libraries that are statically linked with the application. If *fileName* is an empty string, then the *prefix* argument must be specified.
 
-If *prefix* is omitted or specified as an empty string, Tcl tries to guess the prefix. This may be done differently on different platforms. The default guess, which is used on most UNIX platforms, is to take the last element of *fileName*, strip off the first three characters if they are **lib**, then strip off the next three characters if they are **tcl9**, and use any following wordchars but not digits, converted to titlecase as the prefix. For example, the command **unload libxyz4.2.so** uses the prefix **Xyz** and the command **unload bin/last.so {}** uses the prefix **Last**.
+If *prefix* is omitted or specified as an empty string, Tcl tries to guess the prefix. This may be done differently on different platforms. The default guess, which is used on most UNIX platforms, is to take the last element of *fileName*, strip off the first three characters if they are **lib**, then strip off the next three characters if they are **tcl9**, and use any following wordchars but not digits, converted to titlecase as the prefix. For example, the command `unload libxyz4.2.so` uses the prefix **Xyz** and the command `unload bin/last.so {}` uses the prefix **Last**.
 
 # Portability issues
 

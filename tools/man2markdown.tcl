@@ -272,6 +272,7 @@ namespace eval ::ndoc {
 		tclvars       {Tcl_SetObjErrorCode AddErrInfo}
 		timerate      {Tcl_EvalObjEx Eval}
 		tm            {auto_path tclvars tcl_pkgPath tclvars}
+		unknown       {auto_load library auto_execok library auto_noload library auto_noexec library}
 		
 	}]
 	
@@ -318,7 +319,10 @@ namespace eval ::ndoc {
 		tkvars		{tk}
 		tkwait		{variable}
 		tm		{exec}
-		zlib		{binary close filename text}
+		trace           {variable rename unset read}
+		transchan       {read}
+		try             {error return break continue}
+		zlib		{binary close filename text time}
 		ttk_checkbutton	{variable}
 		ttk_combobox	{selection}
 		ttk_entry	{focus variable}
@@ -1967,6 +1971,31 @@ proc ::ndoc::mdExceptions {md} {
 				
 			} $md]
 		}
+		unicode {
+			set md [string map {
+				{see https://www.unicode.org/versions/Unicode16.0.0/core-spec/chapter-3/).} {see <https://www.unicode.org/versions/Unicode16.0.0/core-spec/chapter-3/>).}
+			} $md]
+		}
+		unload {
+			set md [string map {
+				{command **unload libxyz4.2.so**} {command `unload libxyz4.2.so`}
+				{the command **unload bin/last.so {}**} {the command `unload bin/last.so {}`}
+			} $md]
+		}
+		vwait {
+			set md [string map {
+				{e.g.,\\ **http**} {e.g., [http]}
+			} $md]
+			append md \n {[http]: http.md}
+		}
+		zipfs {
+			set md [string map {
+				{1.     the name of the ZIP archive file that contains the file,} {    1. the name of the ZIP archive file that contains the file,}
+				{2.     the size of the file after decompressions,} {    2. the size of the file after decompressions,}
+				{3.     the compressed size of the file, and} {    3. the compressed size of the file, and}
+				{4.     the offset of the compressed data in the ZIP archive file.} {    4. the offset of the compressed data in the ZIP archive file.}
+			} $md]
+		}
 	}
 	regsub {\s+$} $md \n md
 	return $md
@@ -1986,6 +2015,7 @@ proc ::ndoc::mdLinks {md} {
 	variable manual
 	variable tclCmdListExclude
 	variable sectionTitles
+	# list to build the markdown references for external links (these are put at the end of the document):
 	set refList [list]
 	set cmdName [dict get $manual meta CommandName]
 	set fileName [dict get $manual fileName]
@@ -2036,7 +2066,7 @@ proc ::ndoc::mdLinks {md} {
 			set replaceString \[$linkText\]
 			if {$linkTarget ne $linkText} {append replaceString \[$linkTarget\]}
 			set md [string replace $md {*}$fullRange $replaceString]
-			# only add externl links, not internal ones:
+			# only add external links, not internal ones:
 			if {$isValidLink == 1} {lappend refList $linkTarget}
 			# the next search should start at the character after $fullMatch,
 			# but since we have changed the content with a string that is

@@ -13,7 +13,7 @@
 .SH NAME
 unset \- Delete variables
 .SH SYNOPSIS
-\fBunset \fR?\fB\-nocomplain\fR? ?\fB\-\-\fR? ?\fIname name name ...\fR?
+\fBunset \fR?\fB\-nocomplain\fR? ?\fB\-\-\fR? ?\fIname ...\fR?
 .BE
 .SH DESCRIPTION
 .PP

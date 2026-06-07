@@ -24,7 +24,7 @@ unset - Delete variables
 # Synopsis
 
 ::: {.synopsis} :::
-[unset]{.cmd} [-nocomplain]{.optlit} [--]{.optlit} [name name name]{.optdot}
+[unset]{.cmd} [-nocomplain]{.optlit} [--]{.optlit} [name]{.optdot}
 :::
 
 # Description

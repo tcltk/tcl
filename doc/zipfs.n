@@ -125,7 +125,7 @@ In the third form, the command mounts the ZIP archive \fIzipfile\fR as a Tcl
 virtual filesystem at \fImountpoint\fR.  After this command executes, files
 contained in \fIzipfile\fR will appear to Tcl to be regular files at the
 mount point. If \fImountpoint\fR is
-specified as an empty string, it is defaulted to the \fB[zipfs root]\fR.
+specified as an empty string, it is defaulted to the \fBzipfs root\fR.
 The command returns the normalized mount point path.
 .PP
 If not under the zipfs file system root, \fImountpoint\fR is normalized with

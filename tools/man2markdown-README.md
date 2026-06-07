@@ -36,7 +36,7 @@ section | number of documents | initial conversion | final conversion
 --------|---------------------|--------------------|-----------------
 1       | 1                   | 1                  | 0
 3       | 108                 | 108                | 0
-n       | 139                 | 139                | 123
+n       | 139                 | 139                | 139
 
 Final conversion of these files is currently done:
 1. after
@@ -162,6 +162,22 @@ Final conversion of these files is currently done:
 121. throw
 122. time
 123. timerate
+124. tm
+125. trace
+126. transchan
+127. try
+128. unicode
+129. unknown
+130. unload
+131. unset
+132. update
+133. uplevel
+134. upvar
+135. variable
+136. vwait
+137. while
+138. zipfs
+139. zlib (will need some manual adjustments)
 
 
 

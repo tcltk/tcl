@@ -28,7 +28,7 @@ trace - Monitor variable accesses, command usages and command executions
 # Synopsis
 
 ::: {.synopsis} :::
-[trace]{.cmd} [option]{.arg} [arg arg]{.optdot}
+[trace]{.cmd} [option]{.arg} [arg]{.optdot}
 :::
 
 # Description
@@ -36,7 +36,7 @@ trace - Monitor variable accesses, command usages and command executions
 This command causes Tcl commands to be executed whenever certain operations are invoked.  The legal *option*s (which may be abbreviated) are:
 
 [trace]{.cmd} [add]{.sub} [type]{.arg} [name]{.arg} [ops]{.arg} [args]{.optarg}
-: Where *type* is **command**, **execution**, or [variable].
+: Where *type* is **command**, **execution**, or **variable**.
 
     [trace]{.cmd} [add]{.sub} [command]{.lit} [name]{.arg} [ops]{.arg} [commandPrefix]{.arg}
     : Arrange for *commandPrefix* to be executed (with additional arguments) whenever command *name* is modified in one of the ways given by the list *ops*. *Name* will be resolved using the usual namespace resolution rules used by commands. If the command does not exist, an error will be thrown.
@@ -45,10 +45,10 @@ This command causes Tcl commands to be executed whenever certain operations are 
     *Ops* indicates which operations are of interest, and is a list of one or more of the following items:
 
     [rename]{.cmd}
-    : Invoke *commandPrefix* whenever the traced command is renamed.  Note that renaming to the empty string is considered deletion, and will not be traced with "[rename]".
+    : Invoke *commandPrefix* whenever the traced command is renamed.  Note that renaming to the empty string is considered deletion, and will not be traced with "**rename**".
 
     [delete]{.cmd}
-    : Invoke *commandPrefix* when the traced command is deleted. Commands can be deleted explicitly by using the [rename] command to rename the command to an empty string. Commands are also deleted when the interpreter is deleted, but traces will not be invoked because there is no interpreter in which to execute them.
+    : Invoke *commandPrefix* when the traced command is deleted. Commands can be deleted explicitly by using the **rename** command to rename the command to an empty string. Commands are also deleted when the interpreter is deleted, but traces will not be invoked because there is no interpreter in which to execute them.
 
 
     When the trace triggers, depending on the operations being traced, a number of arguments are appended to *commandPrefix* so that the actual command is as follows:
@@ -57,7 +57,7 @@ This command causes Tcl commands to be executed whenever certain operations are 
     commandPrefix oldName newName op
     ```
 
-    *OldName* and *newName* give the traced command's current (old) name, and the name to which it is being renamed (the empty string if this is a "delete" operation). *Op* indicates what operation is being performed on the command, and is one of [rename] or **delete** as defined above.  The trace operation cannot be used to stop a command from being deleted.  Tcl will always remove the command once the trace is complete.  Recursive renaming or deleting will not cause further traces of the same type to be evaluated, so a delete trace which itself deletes the command, or a rename trace which itself renames the command will not cause further trace evaluations to occur. Both *oldName* and *newName* are fully qualified with any namespace(s) in which they appear.
+    *OldName* and *newName* give the traced command's current (old) name, and the name to which it is being renamed (the empty string if this is a "delete" operation). *Op* indicates what operation is being performed on the command, and is one of **rename** or **delete** as defined above.  The trace operation cannot be used to stop a command from being deleted.  Tcl will always remove the command once the trace is complete.  Recursive renaming or deleting will not cause further traces of the same type to be evaluated, so a delete trace which itself deletes the command, or a rename trace which itself renames the command will not cause further trace evaluations to occur. Both *oldName* and *newName* are fully qualified with any namespace(s) in which they appear.
 
 [trace]{.cmd} [add]{.sub} [execution]{.lit} [name]{.arg} [ops]{.arg} [commandPrefix]{.arg}
 : Arrange for *commandPrefix* to be executed (with additional arguments) whenever command *name* is executed, with traces occurring at the points indicated by the list *ops*.  *Name* will be resolved using the usual namespace resolution rules used by commands.  If the command does not exist, an error will be thrown.
@@ -120,7 +120,7 @@ This command causes Tcl commands to be executed whenever certain operations are 
     : Invoke *commandPrefix* whenever the variable is written.
 
     [unset]{.cmd}
-    : Invoke *commandPrefix* whenever the variable is unset.  Variables can be unset explicitly with the [unset] command, or implicitly when procedures return (all of their local variables are unset).  Variables are also unset when interpreters are deleted, but traces will not be invoked because there is no interpreter in which to execute them.
+    : Invoke *commandPrefix* whenever the variable is unset.  Variables can be unset explicitly with the **unset** command, or implicitly when procedures return (all of their local variables are unset).  Variables are also unset when interpreters are deleted, but traces will not be invoked because there is no interpreter in which to execute them.
 
 
     When the trace triggers, three arguments are appended to *commandPrefix* so that the actual command is as follows:
@@ -129,7 +129,7 @@ This command causes Tcl commands to be executed whenever certain operations are 
     commandPrefix name1 name2 op
     ```
 
-    *Name1* gives the name for the variable being accessed. This is not necessarily the same as the name used in the **trace add variable** command:  the [upvar] command allows a procedure to reference a variable under a different name. If the trace was originally set on an array or array element, *name2* provides which index into the array was affected. This information is present even when *name1* refers to a scalar, which may happen if the [upvar] command was used to create a reference to a single array element. If an entire array is being deleted and the trace was registered on the overall array, rather than a single element, then *name1* gives the array name and *name2* is an empty string. *Op* indicates what operation is being performed on the variable, and is one of [read], **write**, or [unset] as defined above.
+    *Name1* gives the name for the variable being accessed. This is not necessarily the same as the name used in the **trace add variable** command:  the [upvar] command allows a procedure to reference a variable under a different name. If the trace was originally set on an array or array element, *name2* provides which index into the array was affected. This information is present even when *name1* refers to a scalar, which may happen if the [upvar] command was used to create a reference to a single array element. If an entire array is being deleted and the trace was registered on the overall array, rather than a single element, then *name1* gives the array name and *name2* is an empty string. *Op* indicates what operation is being performed on the variable, and is one of **read**, **write**, or **unset** as defined above.
 
     *CommandPrefix* executes in the same context as the code that invoked the traced operation:  if the variable was accessed as part of a Tcl procedure, then *commandPrefix* will have access to the same local variables as code in the procedure.  This context may be different than the context in which the trace was created. If *commandPrefix* invokes a procedure (which it normally does) then the procedure will have to use [upvar] or [uplevel] if it wishes to access the traced variable.  Note also that *name1* may not necessarily be the same as the name used to set the trace on the variable; differences can occur if the access is made through a variable defined with the [upvar] command.
 
@@ -146,7 +146,7 @@ This command causes Tcl commands to be executed whenever certain operations are 
     This command returns an empty string.
 
 [trace]{.cmd} [remove]{.sub} [type]{.arg} [name]{.arg} [opList]{.arg} [commandPrefix]{.arg}
-: Where *type* is either **command**, **execution** or [variable].
+: Where *type* is either **command**, **execution** or **variable**.
 
     [trace]{.cmd} [remove]{.sub} [command]{.lit} [name]{.arg} [opList]{.arg} [commandPrefix]{.arg}
     : If there is a trace set on command *name* with the operations and command given by *opList* and *commandPrefix*, then the trace is removed, so that *commandPrefix* will never again be invoked.  Returns an empty string.   If *name* does not exist, the command will throw an error.
@@ -159,7 +159,7 @@ This command causes Tcl commands to be executed whenever certain operations are 
 
 
 [trace]{.cmd} [info]{.sub} [type]{.arg} [name]{.arg}
-: Where *type* is either **command**, **execution** or [variable].
+: Where *type* is either **command**, **execution** or **variable**.
 
     [trace]{.cmd} [info]{.sub} [command]{.lit} [name]{.arg}
     : Returns a list containing one element for each trace currently set on command *name*. Each element of the list is itself a list containing two elements, which are the *opList* and *commandPrefix* associated with the trace.  If *name* does not have any traces set, then the result of the command will be an empty string.  If *name* does not exist, the command will throw an error.
@@ -215,10 +215,6 @@ x
 [array]: array.md
 [info]: info.md
 [namespace]: namespace.md
-[read]: read.md
-[rename]: rename.md
-[unset]: unset.md
 [uplevel]: uplevel.md
 [upvar]: upvar.md
-[variable]: variable.md
 

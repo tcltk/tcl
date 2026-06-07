@@ -40,7 +40,7 @@ transchan - Command handler API for channel transforms implemented in Tcl code
 
 The Tcl-level handler for a channel transformation has to be a command with subcommands (termed an *ensemble* despite not implying that it must be created with **namespace ensemble create**; this mechanism is not tied to [namespace ensemble][namespace] in any way). Note that *cmdPrefix* is whatever was specified in the call to [chan push][chan], and may consist of multiple arguments; this will be expanded to multiple words in place of the prefix.
 
-Of all the possible subcommands, the handler *must* support **initialize** and **finalize**. Transformations for writable channels must also support **write**, and transformations for readable channels must also support [read].
+Of all the possible subcommands, the handler *must* support **initialize** and **finalize**. Transformations for writable channels must also support **write**, and transformations for readable channels must also support **read**.
 
 Note that in the descriptions below *cmdPrefix* may be more than one word, and *handle* is the value returned by the [chan push][chan] call used to create the transformation.
 
@@ -55,12 +55,12 @@ The following subcommands are relevant to all types of channel.
 : This mandatory subcommand is called last for the given *handle*, and then never again, and it exists to allow for cleaning up any Tcl-level data structures associated with the transformation. *Warning!* Any errors thrown by this subcommand will be ignored. It is not guaranteed to be called if the interpreter is deleted.
 
 [cmdPrefix]{.ins} [initialize]{.sub} [handle]{.arg} [mode]{.arg}
-: This mandatory subcommand is called first, and then never again (for the given *handle*). Its responsibility is to initialize all parts of the transformation at the Tcl level. The *mode* is a list containing any of [read] and **write**.
+: This mandatory subcommand is called first, and then never again (for the given *handle*). Its responsibility is to initialize all parts of the transformation at the Tcl level. The *mode* is a list containing any of **read** and **write**.
 
     **write**
     : implies that the channel is writable.
 
-    [read]
+    **read**
     : implies that the channel is readable.
 
 
@@ -69,7 +69,7 @@ The following subcommands are relevant to all types of channel.
 
 ## Read-related subcommands
 
-These subcommands are used for handling transformations applied to readable channels; though strictly [read] is optional, it must be supported if any of the others is or the channel will be made non-readable.
+These subcommands are used for handling transformations applied to readable channels; though strictly **read** is optional, it must be supported if any of the others is or the channel will be made non-readable.
 
 [cmdPrefix]{.ins} [drain]{.sub} [handle]{.arg}
 : This optional subcommand is called whenever data in the transformation input (i.e. read) buffer has to be forced upward, i.e. towards the user or script. The result returned by the method is taken as the *binary* data to push upward to the level above this transformation (the reader or a higher-level transformation).
@@ -103,5 +103,4 @@ These subcommands are used for handling transformations applied to writable chan
 
 [chan]: chan.md
 [namespace]: namespace.md
-[read]: read.md
 

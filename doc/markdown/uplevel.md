@@ -26,12 +26,12 @@ uplevel - Execute a script in a different stack frame
 # Synopsis
 
 ::: {.synopsis} :::
-[uplevel]{.cmd} [level=?+ arg= ?+arg]{.optdot}
+[uplevel]{.cmd} [level]{.optarg} [arg]{.arg} [arg]{.optdot}
 :::
 
 # Description
 
-All of the *arg* arguments are concatenated as if they had been passed to [concat]; the result is then evaluated in the variable context indicated by *level*.  **Uplevel** returns the result of that evaluation.
+All of the *arg* arguments are concatenated as if they had been passed to [concat]; the result is then evaluated in the variable context indicated by *level*.  **uplevel** returns the result of that evaluation.
 
 If *level* is an integer then it gives a distance (up the procedure calling stack) to move before executing the command.  If *level* consists of **#** followed by a integer then the level gives an absolute level.  If *level* is omitted then it defaults to **1**.  *Level* cannot be defaulted if the first *command* argument is an integer or starts with **#**.
 

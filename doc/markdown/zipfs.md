@@ -62,13 +62,13 @@ Paths in mounted archives are case-sensitive on all platforms.
 [zipfs]{.cmd} [info]{.sub} [file]{.arg}
 : Return information about the given *file* in the mounted zipfs.  The information consists of:
 
-1.     the name of the ZIP archive file that contains the file,
+    1. the name of the ZIP archive file that contains the file,
 
-2.     the size of the file after decompressions,
+    2. the size of the file after decompressions,
 
-3.     the compressed size of the file, and
+    3. the compressed size of the file, and
 
-4.     the offset of the compressed data in the ZIP archive file.
+    4. the offset of the compressed data in the ZIP archive file.
 
 
     As a special case, querying the mount point gives the start of the zip data as the offset in (4), which can be used to truncate the zip information from an executable. Querying an ancestor of a mount point will raise an error.
@@ -89,7 +89,7 @@ Paths in mounted archives are case-sensitive on all platforms.
 
     In the single argument form, the command returns the file path of the ZIP archive mounted at the specified mount point.
 
-    In the third form, the command mounts the ZIP archive *zipfile* as a Tcl virtual filesystem at *mountpoint*.  After this command executes, files contained in *zipfile* will appear to Tcl to be regular files at the mount point. If *mountpoint* is specified as an empty string, it is defaulted to the **[zipfs root]**. The command returns the normalized mount point path.
+    In the third form, the command mounts the ZIP archive *zipfile* as a Tcl virtual filesystem at *mountpoint*.  After this command executes, files contained in *zipfile* will appear to Tcl to be regular files at the mount point. If *mountpoint* is specified as an empty string, it is defaulted to the **zipfs root**. The command returns the normalized mount point path.
 
     If not under the zipfs file system root, *mountpoint* is normalized with respect to it. For example, a mount point passed as either **mt** or **/mt** would be normalized to **//zipfs:/mt** (given that **zipfs root** returns "//zipfs:/"). An error is raised if the mount point includes a drive or UNC volume.
 

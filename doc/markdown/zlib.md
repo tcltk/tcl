@@ -28,7 +28,7 @@ zlib - Compression and decompression operations
 # Synopsis
 
 ::: {.synopsis} :::
-[zlib]{.cmd} [subcommand]{.arg} [arg]{.arg} [...]{.arg}
+[zlib]{.cmd} [subcommand]{.arg} [arg]{.arg} [arg]{.optdot}
 :::
 
 # Description
@@ -64,7 +64,7 @@ The **zlib** command provides access to the compression and check-summing facili
     **size**
     : The size of the uncompressed data.
 
-    [time]
+    **time**
     : The time field from the header if non-zero, expected to be time that the file named by the **filename** field was modified. Suitable for use with [clock format][clock].
 
     **type**
@@ -86,7 +86,7 @@ The **zlib** command provides access to the compression and check-summing facili
     **os**
     : The operating system type code, which should be one of the values described in RFC 1952.
 
-    [time]
+    **time**
     : The time that the file named in the **filename** key was last modified. This will be in the same as is returned by [clock seconds][clock] or [file mtime][file].
 
     **type**
@@ -283,5 +283,4 @@ $strm close
 [chan]: chan.md
 [clock]: clock.md
 [file]: file.md
-[time]: time.md
 
