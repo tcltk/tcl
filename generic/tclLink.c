@@ -605,12 +605,17 @@ SetInvalidRealFromAny(
 }
 
 /*
- * This function checks for integer representations, which are valid
- * when linking with C variables, but which are invalid in other
- * contexts in Tcl. Handled are "+", "-", "", "0x", "0b", "0d" and "0o"
- * (upperand lowercase). See bug [39f6304c2e].
+ *----------------------------------------------------------------------
+ *
+ * GetInvalidIntFromObj --
+ *
+ *	This function checks for integer representations, which are valid
+ *	when linking with C variables, but which are invalid in other
+ *	contexts in Tcl. Handled are "+", "-", "", "0x", "0b", "0d" and "0o"
+ *	(upperand lowercase). See bug [39f6304c2e].
+ *
+ *----------------------------------------------------------------------
  */
-
 static int
 GetInvalidIntFromObj(
     Tcl_Obj *objPtr,
@@ -629,14 +634,19 @@ GetInvalidIntFromObj(
     }
     return TCL_ERROR;
 }
-
+
 /*
- * This function checks for double representations, which are valid
- * when linking with C variables, but which are invalid in other
- * contexts in Tcl. Handled are "+", "-", "", ".", "0x", "0b" and "0o"
- * (upper- and lowercase) and sequences like "1e-". See bug [39f6304c2e].
+ *----------------------------------------------------------------------
+ *
+ * GetInvalidDoubleFromObj --
+ *
+ *	This function checks for double representations, which are valid
+ *	when linking with C variables, but which are invalid in other
+ *	contexts in Tcl. Handled are "+", "-", "", ".", "0x", "0b" and "0o"
+ *	(upper- and lowercase) and sequences like "1e-". See bug [39f6304c2e].
+ *
+ *----------------------------------------------------------------------
  */
-
 static int
 GetInvalidDoubleFromObj(
     Tcl_Obj *objPtr,
@@ -679,7 +689,6 @@ GetInvalidDoubleFromObj(
  *
  *----------------------------------------------------------------------
  */
-
 static char *
 LinkTraceProc(
     void *clientData,		/* Contains information about the link. */
@@ -1163,7 +1172,6 @@ LinkTraceProc(
  *
  *----------------------------------------------------------------------
  */
-
 static Tcl_Obj *
 ObjValue(
     Link *linkPtr)		/* Structure describing linked variable. */
@@ -1373,7 +1381,6 @@ ObjValue(
  *
  *----------------------------------------------------------------------
  */
-
 static void
 LinkFree(
     Link *linkPtr)		/* Structure describing linked variable. */

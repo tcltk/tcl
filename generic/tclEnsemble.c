@@ -3437,10 +3437,15 @@ TclAttemptCompileProc(
 }
 
 /*
- * How to compile a subcommand to a _replacing_ invoke of its implementation
- * command.
+ *----------------------------------------------------------------------
+ *
+ * CompileToInvokedCommand --
+ *
+ *	How to compile a subcommand to a _replacing_ invoke of its
+ *	implementation command.
+ *
+ *----------------------------------------------------------------------
  */
-
 static void
 CompileToInvokedCommand(
     Tcl_Interp *interp,
@@ -3514,6 +3519,11 @@ CompileToInvokedCommand(
  * Note that these are NOT suitable for commands where there's an argument
  * that is a script, as an [info level] or [info frame] in the inner context
  * can see the difference.
+ *
+ * The compiler here looks to see if the number of arguments known to be
+ * passed is such that Tcl_WrongNumArgs() won't be called by the interpreted
+ * command; it knows how to check this because we use the correct wrapper
+ * that handles that.
  */
 
 static int

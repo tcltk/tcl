@@ -395,8 +395,15 @@ TestExceptionCmd(
 }
 
 /*
- * This "chmod" works sufficiently for test script purposes. Do not expect
- * it to be exact emulation of Unix chmod (not sure if that's even possible)
+ *----------------------------------------------------------------------
+ *
+ * TestplatformChmod --
+ *
+ *	This "chmod" works sufficiently for test script purposes. Do not expect
+ *	it to be exact emulation of Unix chmod (not sure if that's even
+ *	possible).
+ *
+ *----------------------------------------------------------------------
  */
 static int
 TestplatformChmod(

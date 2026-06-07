@@ -160,6 +160,15 @@ TclPipeThreadInfo *	TclPipeThreadCreateTI(TclPipeThreadInfo **pipeTIPtr,
 MODULE_SCOPE int	TclPipeThreadWaitForSignal(
 			    TclPipeThreadInfo **pipeTIPtr);
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclPipeThreadSignal --
+ *
+ *	Send a signal to the thread that is managing a pipe.
+ *
+ *----------------------------------------------------------------------
+ */
 static inline void
 TclPipeThreadSignal(
     TclPipeThreadInfo **pipeTIPtr)
@@ -168,15 +177,24 @@ TclPipeThreadSignal(
     if (pipeTI) {
 	SetEvent(pipeTI->evControl);
     }
-};
+}
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclPipeThreadIsAlive --
+ *
+ *	Test if the thread (that is managing a pipe) is alive.
+ *
+ *----------------------------------------------------------------------
+ */
 static inline int
 TclPipeThreadIsAlive(
     TclPipeThreadInfo **pipeTIPtr)
 {
     TclPipeThreadInfo *pipeTI = *pipeTIPtr;
-    return (pipeTI && pipeTI->state != PTI_STATE_DOWN);
-};
+    return pipeTI && (pipeTI->state != PTI_STATE_DOWN);
+}
 
 MODULE_SCOPE int	TclPipeThreadStopSignal(TclPipeThreadInfo **pipeTIPtr);
 MODULE_SCOPE void	TclPipeThreadStop(TclPipeThreadInfo **pipeTIPtr,
@@ -192,7 +210,15 @@ typedef struct TclWinPath {
 				 * or a heap-allocated extension) */
 } TclWinPath;
 
-/* Initialize a path buffer. Never returns NULL. */
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclWinPathInit --
+ *
+ *	Initialize a path buffer. Never returns NULL.
+ *
+ *----------------------------------------------------------------------
+ */
 static inline WCHAR *
 TclWinPathInit(
     TclWinPath *pathBufPtr,	/* Structure to be initialized */
@@ -204,7 +230,15 @@ TclWinPathInit(
     return pathBufPtr->bufferPtr;
 }
 
-/* Returns pointer to the current buffer */
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclWinPathGet --
+ *
+ *	Returns pointer to the current buffer.
+ *
+ *----------------------------------------------------------------------
+ */
 static inline WCHAR *
 TclWinPathGet(
     TclWinPath *pathBufPtr)
@@ -212,7 +246,15 @@ TclWinPathGet(
     return pathBufPtr->bufferPtr;
 }
 
-/* Frees a previously initialized path buffer */
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclWinPathFree --
+ *
+ *	Frees a previously initialized path buffer.
+ *
+ *----------------------------------------------------------------------
+ */
 static inline void
 TclWinPathFree(
     TclWinPath *pathBufPtr)	/* Structure to be freed */
@@ -223,7 +265,15 @@ TclWinPathFree(
     pathBufPtr->bufferPtr = pathBufPtr->buffer;
 }
 
-/* Resets a previously initialized path buffer to its initial state */
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclWinPathReset --
+ *
+ *	Resets a previously initialized path buffer to its initial state.
+ *
+ *----------------------------------------------------------------------
+ */
 static inline WCHAR *
 TclWinPathReset(
     TclWinPath *pathBufPtr,	/* Structure to be initialized */
@@ -273,22 +323,45 @@ MODULE_SCOPE WCHAR *	TclWinGetModuleFileName(HMODULE, TclWinPath *);
 MODULE_SCOPE TclWinExecutableType TclWinGetExecutableType(const WCHAR *nativePath);
 
 /*
- * Retrieve Windows system directory. See TclWinGetDirPath for param and
- * return details.
+ *----------------------------------------------------------------------
+ *
+ * TclWinGetSystemDirectory --
+ *
+ *	Retrieve Windows system directory. See TclWinGetDirPath for param and
+ *	return details.
+ *
+ *----------------------------------------------------------------------
  */
-static inline WCHAR *TclWinGetSystemDirectory(TclWinPath *winPathPtr) {
+static inline WCHAR *
+TclWinGetSystemDirectory(
+    TclWinPath *winPathPtr)
+{
     return TclWinGetPath(GetSystemDirectoryW, winPathPtr);
 }
 
 /*
- * Retrieve Windows system directory. See TclWinGetDirPath for param and
- * return details.
+ *----------------------------------------------------------------------
+ *
+ * TclWinGetWindowsDirectory --
+ *
+ *	Retrieve Windows system directory. See TclWinGetDirPath for param and
+ *	return details.
+ *
+ *----------------------------------------------------------------------
  */
-static inline WCHAR *TclWinGetWindowsDirectory(TclWinPath *winPathPtr) {
+static inline WCHAR *
+TclWinGetWindowsDirectory(
+    TclWinPath *winPathPtr)
+{
     return TclWinGetPath(GetWindowsDirectoryW, winPathPtr);
 }
 
-
-
-
 #endif	/* _TCLWININT */
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * End:
+ */

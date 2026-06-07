@@ -68,6 +68,9 @@ typedef struct {
 
 /* Forward declarations. */
 
+static int		ExtractNumber(Tcl_Interp *interp, bool useDoubles,
+			    Tcl_WideInt *intNumberPtr, double *dblNumberPtr,
+			    Tcl_Obj *numberObj);
 static int		TclArithSeriesObjIndex(TCL_UNUSED(Tcl_Interp *),
 			    Tcl_Obj *arithSeriesObj, Tcl_Size index,
 			    Tcl_Obj **elemObj);
@@ -453,11 +456,11 @@ FreeArithSeriesInternalRep(
  *
  * NewArithSeriesInt --
  *
- *	Creates a new ArithSeries object. The returned object has
- *	refcount = 0.
+ *	Creates a new ArithSeries object.
  *
  * Results:
- *	A Tcl_Obj pointer to the created ArithSeries object.
+ *	A Tcl_Obj pointer to the created ArithSeries object. The returned
+ *	object has refcount = 0.
  *	A NULL pointer of the range is invalid.
  *
  * Side Effects:
@@ -553,11 +556,11 @@ NewArithSeriesInt(
  *
  * NewArithSeriesDbl --
  *
- *	Creates a new ArithSeries object with doubles. The returned object has
- *	refcount = 0.
+ *	Creates a new ArithSeries object with doubles.
  *
  * Results:
- *	A Tcl_Obj pointer to the created ArithSeries object.
+ *	A Tcl_Obj pointer to the created ArithSeries object. The returned
+ *	object has refcount = 0.
  *	A NULL pointer of the range is invalid.
  *
  * Side Effects:
@@ -609,27 +612,28 @@ NewArithSeriesDbl(
 /*
  *----------------------------------------------------------------------
  *
- * assignNumber --
+ * ExtractNumber --
  *
- *	Create the appropriate Tcl_Obj value for the given numeric values.
- *	Used locally only for decoding [lseq] numeric arguments.
- *	refcount = 0.
+ *	Extract the number from a Tcl_Obj value given the type of number
+ *	expected at that point. Used locally only for decoding [lseq]
+ *	numeric arguments.
  *
  * Results:
- *	A Tcl_Obj pointer.  No assignment on error.
+ *	A Tcl result code, with OUT parameters assigned on success.
+ *	No assignment on error.
  *
  * Side Effects:
- *	None.
+ *	May alter the Tcl_Obj's type. May set the interpreter result.
  *
  *----------------------------------------------------------------------
  */
 static int
-assignNumber(
-    Tcl_Interp *interp,
-    bool useDoubles,
-    Tcl_WideInt *intNumberPtr,
-    double *dblNumberPtr,
-    Tcl_Obj *numberObj)
+ExtractNumber(
+    Tcl_Interp *interp,		// Where to report errors.
+    bool useDoubles,		// Whether we're looking for doubles.
+    Tcl_WideInt *intNumberPtr,	// Where to write the integer value.
+    double *dblNumberPtr,	// Where to write the double value.
+    Tcl_Obj *numberObj)		// The Tcl value to read the number from.
 {
     void *ptr;
     int type;
@@ -674,7 +678,7 @@ assignNumber(
  *
  *	Creates a new ArithSeries object. Some arguments may be NULL and will
  *	be computed based on the other given arguments.
- *      refcount = 0.
+ *	refcount = 0.
  *
  * Results:
  *	A Tcl_Obj pointer to the created ArithSeries object.
@@ -713,7 +717,7 @@ TclNewArithSeriesObj(
     }
 
     if (stepObj) {
-	if (assignNumber(interp, useDoubles, &step, &dstep, stepObj) != TCL_OK) {
+	if (ExtractNumber(interp, useDoubles, &step, &dstep, stepObj) != TCL_OK) {
 	    return NULL;
 	}
     } else {
@@ -723,7 +727,7 @@ TclNewArithSeriesObj(
     }
 
     if (startObj) {
-	if (assignNumber(interp, useDoubles, &start, &dstart, startObj) != TCL_OK) {
+	if (ExtractNumber(interp, useDoubles, &start, &dstart, startObj) != TCL_OK) {
 	    return NULL;
 	}
     } else {
@@ -733,12 +737,12 @@ TclNewArithSeriesObj(
     }
 
     if (endObj) {
-	if (assignNumber(interp, useDoubles, &end, &dend, endObj) != TCL_OK) {
+	if (ExtractNumber(interp, useDoubles, &end, &dend, endObj) != TCL_OK) {
 	    return NULL;
 	}
     }
     if (endObj) {
-	if (assignNumber(interp, useDoubles, &end, &dend, endObj) != TCL_OK) {
+	if (ExtractNumber(interp, useDoubles, &end, &dend, endObj) != TCL_OK) {
 	    return NULL;
 	}
     }
@@ -915,7 +919,7 @@ ArithSeriesObjLength(
  * TclArithSeriesObjRange --
  *
  *	Makes a slice of an ArithSeries value.
- *      *arithSeriesObj must be known to be a valid list.
+ *	*arithSeriesObj must be known to be a valid list.
  *
  * Results:
  *	Returns a pointer to the sliced series.

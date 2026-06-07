@@ -2024,7 +2024,6 @@ TestdstringCmd(
 	}
 	Tcl_DStringGetResult(interp, &dstring);
     } else if (strcmp(Tcl_GetString(objv[1]), "length") == 0) {
-
 	if (objc != 2) {
 	    goto wrongNumArgs;
 	}
@@ -2078,50 +2077,50 @@ SpecialFree(
  *
  * UtfTransformFn --
  *
- *    Implements a direct call into Tcl_UtfToExternal and Tcl_ExternalToUtf
- *    as otherwise there is no script level command that directly exercises
- *    these functions (i/o command cannot test all combinations)
- *    The arguments at the script level are roughly those of the above
- *    functions:
- *	encodingname srcbytes flags state dstlen prefixlen ?srcreadvar? ?dstwrotevar? ?dstcharsvar?
+ *	Implements a direct call into Tcl_UtfToExternal and Tcl_ExternalToUtf
+ *	as otherwise there is no script level command that directly exercises
+ *	these functions (i/o command cannot test all combinations)
+ *	The arguments at the script level are roughly those of the above
+ *	functions:
+ *	    encodingname srcbytes flags state dstlen prefixlen ?srcreadvar? ?dstwrotevar? ?dstcharsvar?
  *
- *    The result in the interpreter is a list of the return code from the
- *    Tcl_UtfToExternal/Tcl_ExternalToUtf functions, the encoding state, and
- *    an encoded binary string of length dstLen. Note the string is the
- *    entire output buffer, not just the part containing the decoded
- *    portion. This allows for additional checks at test script level.
+ *	The result in the interpreter is a list of the return code from the
+ *	Tcl_UtfToExternal/Tcl_ExternalToUtf functions, the encoding state, and
+ *	an encoded binary string of length dstLen. Note the string is the
+ *	entire output buffer, not just the part containing the decoded
+ *	portion. This allows for additional checks at test script level.
  *
- *    The prefixUnit argument indicates the bytes to use as a prefix unit.
- *    The main purpose of the prefix is to allow testing of very large
- *    strings without the caller having to allocate at the script level
- *    which is slow and memory intensive. The source string is appended to
- *    the prefix in the buffer before calling the transform function.
- *    Generally, it is used to test conditions at the INT_MAX length
- *    boundary.
+ *	The prefixUnit argument indicates the bytes to use as a prefix unit.
+ *	The main purpose of the prefix is to allow testing of very large
+ *	strings without the caller having to allocate at the script level
+ *	which is slow and memory intensive. The source string is appended to
+ *	the prefix in the buffer before calling the transform function.
+ *	Generally, it is used to test conditions at the INT_MAX length
+ *	boundary.
  *
- *    If any of the srcreadvar, dstwrotevar and dstcharsvar are specified and
- *    not empty, they are treated as names of variables where the *srcRead,
- *    *dstWrote and *dstChars output from the functions are stored.
+ *	If any of the srcreadvar, dstwrotevar and dstcharsvar are specified and
+ *	not empty, they are treated as names of variables where the *srcRead,
+ *	*dstWrote and *dstChars output from the functions are stored.
  *
- *    The function also checks internally whether nuls are correctly
- *    appended as requested but the TCL_ENCODING_NO_TERMINATE flag
- *    and that no buffer overflows occur.
+ *	The function also checks internally whether nuls are correctly
+ *	appended as requested but the TCL_ENCODING_NO_TERMINATE flag
+ *	and that no buffer overflows occur.
  *
  * Results:
- *    TCL_OK or TCL_ERROR. This indicates any errors running the test, NOT the
- *    result of Tcl_UtfToExternal or Tcl_ExternalToUtf.
+ *	TCL_OK or TCL_ERROR. This indicates any errors running the test, NOT
+ *	the result of Tcl_UtfToExternal or Tcl_ExternalToUtf.
  *
  *------------------------------------------------------------------------
  */
-typedef int
-UtfTransformFn(Tcl_Interp *interp, Tcl_Encoding encoding, const char *src,
-	Tcl_Size srcLen, int flags, Tcl_EncodingState *statePtr, char *dst,
-	Tcl_Size dstLen, int *srcReadPtr, int *dstWrotePtr, int *dstCharsPtr);
+typedef int UtfTransformFn(Tcl_Interp *interp, Tcl_Encoding encoding,
+	const char *src, Tcl_Size srcLen, int flags,
+	Tcl_EncodingState *statePtr, char *dst, Tcl_Size dstLen,
+	int *srcReadPtr, int *dstWrotePtr, int *dstCharsPtr);
 typedef enum {
-	UTF_TO_EXTERNAL,
-	EXTERNAL_TO_UTF,
-	UTF_TO_EXTERNAL_EX,
-	EXTERNAL_TO_UTF_EX
+    UTF_TO_EXTERNAL,
+    EXTERNAL_TO_UTF,
+    UTF_TO_EXTERNAL_EX,
+    EXTERNAL_TO_UTF_EX
 } UtfTransformType;
 
 static int UtfExtWrapper(
@@ -3376,14 +3375,16 @@ TestlinkCmd(
     bool writable;
 
     if (objc < 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "option ?arg arg arg arg arg arg arg arg arg arg arg arg"
+	Tcl_WrongNumArgs(interp, 1, objv,
+		"option ?arg arg arg arg arg arg arg arg arg arg arg arg"
 		" arg arg?");
 	return TCL_ERROR;
     }
     if (strcmp(Tcl_GetString(objv[1]), "create") == 0) {
 	if (objc != 16) {
-		Tcl_WrongNumArgs(interp, 2, objv, "intRO realRO boolRO stringRO wideRO charRO ucharRO shortRO"
-			" ushortRO uintRO longRO ulongRO floatRO uwideRO");
+	    Tcl_WrongNumArgs(interp, 2, objv,
+		    "intRO realRO boolRO stringRO wideRO charRO ucharRO shortRO"
+		    " ushortRO uintRO longRO ulongRO floatRO uwideRO");
 	    return TCL_ERROR;
 	}
 	if (created) {
@@ -3515,7 +3516,6 @@ TestlinkCmd(
 		TCL_LINK_WIDE_UINT | flag) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-
     } else if (strcmp(Tcl_GetString(objv[1]), "delete") == 0) {
 	Tcl_UnlinkVar(interp, "int");
 	Tcl_UnlinkVar(interp, "real");
@@ -6056,6 +6056,7 @@ NoopObjCmd(
  *----------------------------------------------------------------------
  *
  * TeststringbytesCmd --
+ *
  *	Returns bytearray value of the bytes in argument string rep
  *
  * Results:
@@ -6250,7 +6251,7 @@ TestbytestringCmd(
  *	A standard Tcl result.
  *
  * Side effects:
- *     Variables may be set.
+ *	Variables may be set.
  *
  *----------------------------------------------------------------------
  */
@@ -6519,7 +6520,6 @@ TestChannelCmd(
     }
 
     if ((cmdName[0] == 's') && (strncmp(cmdName, "setchannelerror", len) == 0)) {
-
 	Tcl_Obj *msg = objv[3];
 
 	Tcl_IncrRefCount(msg);
@@ -6532,7 +6532,6 @@ TestChannelCmd(
 	return TCL_OK;
     }
     if ((cmdName[0] == 's') && (strncmp(cmdName, "setchannelerrorinterp", len) == 0)) {
-
 	Tcl_Obj *msg = objv[3];
 
 	Tcl_IncrRefCount(msg);
@@ -6832,7 +6831,7 @@ TestChannelCmd(
 	for (hPtr = Tcl_FirstHashEntry(hTblPtr, &hSearch);
 		hPtr != NULL;
 		hPtr = Tcl_NextHashEntry(&hSearch)) {
-	    chanPtr  = (Channel *) Tcl_GetHashValue(hPtr);
+	    chanPtr = (Channel *) Tcl_GetHashValue(hPtr);
 	    statePtr = chanPtr->state;
 	    if (statePtr->flags & TCL_READABLE) {
 		Tcl_AppendElement(interp, (char *)Tcl_GetHashKey(hTblPtr, hPtr));
@@ -7192,12 +7191,12 @@ TestSocketCmd(
 	    return TCL_ERROR;
 	}
 	hChannel = Tcl_GetChannel(interp, Tcl_GetString(objv[2]), &modePtr);
-	if ( NULL == hChannel ) {
+	if (NULL == hChannel) {
 	    Tcl_AppendResult(interp, "unknown channel:", Tcl_GetString(objv[2]), (char *)NULL);
 	    return TCL_ERROR;
 	}
 	statePtr = (TcpState *)Tcl_GetChannelInstanceData(hChannel);
-	if ( NULL == statePtr) {
+	if (NULL == statePtr) {
 	    Tcl_AppendResult(interp, "No channel instance data:", Tcl_GetString(objv[2]),
 		    (char *)NULL);
 	    return TCL_ERROR;
@@ -7224,10 +7223,10 @@ TestSocketCmd(
  * TestServiceModeCmd --
  *
  *	This procedure implements the "testservicemode" command which gets or
- *      sets the current Tcl ServiceMode.  There are several tests which open
- *      a file and assign various handlers to it.  For these tests to be
- *      deterministic it is important that file events not be processed until
- *      all of the handlers are in place.
+ *	sets the current Tcl ServiceMode.  There are several tests which open
+ *	a file and assign various handlers to it.  For these tests to be
+ *	deterministic it is important that file events not be processed until
+ *	all of the handlers are in place.
  *
  * Results:
  *	A standard Tcl result.
@@ -7927,11 +7926,17 @@ SimpleListVolumes(void)
 }
 
 /*
- * Used to check operations of Tcl_UtfNext.
+ *----------------------------------------------------------------------
  *
- * Usage: testutfnext -bytestring $bytes
+ * TestUtfNextCmd --
+ *
+ *	Used to check operations of Tcl_UtfNext.
+ *
+ * Usage:
+ *	testutfnext -bytestring $bytes
+ *
+ *----------------------------------------------------------------------
  */
-
 static int
 TestUtfNextCmd(
     TCL_UNUSED(void *),
@@ -7960,20 +7965,24 @@ TestUtfNextCmd(
     }
 
     memcpy(buffer + 1, bytes, numBytes);
-    buffer[0] = buffer[numBytes + 1] = buffer[numBytes + 2] = buffer[numBytes + 3] = '\xA0';
+    buffer[0] = buffer[numBytes + 1] = buffer[numBytes + 2] =
+	    buffer[numBytes + 3] = '\xA0';
 
     first = result = Tcl_UtfNext(buffer + 1);
     while ((buffer[0] = *p++) != '\0') {
-	/* Run Tcl_UtfNext with many more possible bytes at src[-1], all should give the same result */
+	/* Run Tcl_UtfNext with many more possible bytes at src[-1], all
+	 * should give the same result */
 	result = Tcl_UtfNext(buffer + 1);
 	if (first != result) {
-	    Tcl_AppendResult(interp, "Tcl_UtfNext is not supposed to read src[-1]", (char *)NULL);
+	    Tcl_AppendResult(interp, "Tcl_UtfNext is not supposed to read src[-1]",
+		    (char *)NULL);
 	    return TCL_ERROR;
 	}
     }
     p = tobetested;
     while ((buffer[numBytes + 1] = *p++) != '\0') {
-	/* Run Tcl_UtfNext with many more possible bytes at src[end], all should give the same result */
+	/* Run Tcl_UtfNext with many more possible bytes at src[end], all
+	 * should give the same result */
 	result = Tcl_UtfNext(buffer + 1);
 	if (first != result) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -7987,12 +7996,19 @@ TestUtfNextCmd(
 
     return TCL_OK;
 }
+
 /*
- * Used to check operations of Tcl_UtfPrev.
+ *----------------------------------------------------------------------
  *
- * Usage: testutfprev $bytes $offset
+ * TestUtfPrevCmd --
+ *
+ *	Used to check operations of Tcl_UtfPrev.
+ *
+ * Usage:
+ *	testutfprev $bytes $offset
+ *
+ *----------------------------------------------------------------------
  */
-
 static int
 TestUtfPrevCmd(
     TCL_UNUSED(void *),
@@ -8030,9 +8046,14 @@ TestUtfPrevCmd(
 }
 
 /*
- * Used to check correct string-length determining in Tcl_NumUtfChars
+ *----------------------------------------------------------------------
+ *
+ * TestNumUtfCharsCmd --
+ *
+ *	Used to check correct string-length determining in Tcl_NumUtfChars
+ *
+ *----------------------------------------------------------------------
  */
-
 static int
 TestNumUtfCharsCmd(
     TCL_UNUSED(void *),
@@ -8059,10 +8080,16 @@ TestNumUtfCharsCmd(
 }
 
 /*
- * Used to check correct operation of Tcl_GetUniChar
- * testgetunichar STRING INDEX
- * This differs from just using "string index" in being a direct
- * call to Tcl_GetUniChar without any prior range checking.
+ *----------------------------------------------------------------------
+ *
+ * TestGetUniCharCmd --
+ *
+ *	Used to check correct operation of Tcl_GetUniChar
+ *	    testgetunichar STRING INDEX
+ *	This differs from just using "string index" in being a direct
+ *	call to Tcl_GetUniChar without any prior range checking.
+ *
+ *----------------------------------------------------------------------
  */
 static int
 TestGetUniCharCmd(
@@ -8085,9 +8112,14 @@ TestGetUniCharCmd(
 }
 
 /*
- * Used to check correct operation of Tcl_UtfFindFirst
+ *----------------------------------------------------------------------
+ *
+ * TestFindFirstCmd --
+ *
+ *	Used to check correct operation of Tcl_UtfFindFirst
+ *
+ *----------------------------------------------------------------------
  */
-
 static int
 TestFindFirstCmd(
     TCL_UNUSED(void *),
@@ -8101,15 +8133,21 @@ TestFindFirstCmd(
 	if (objc > 2) {
 	    (void) Tcl_GetIntFromObj(interp, objv[2], &len);
 	}
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(Tcl_UtfFindFirst(Tcl_GetString(objv[1]), len), -1));
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		Tcl_UtfFindFirst(Tcl_GetString(objv[1]), len), -1));
     }
     return TCL_OK;
 }
 
 /*
- * Used to check correct operation of Tcl_UtfFindLast
+ *----------------------------------------------------------------------
+ *
+ * TestFindLastCmd --
+ *
+ *	Used to check correct operation of Tcl_UtfFindLast
+ *
+ *----------------------------------------------------------------------
  */
-
 static int
 TestFindLastCmd(
     TCL_UNUSED(void *),
@@ -8123,11 +8161,24 @@ TestFindLastCmd(
 	if (objc > 2) {
 	    (void) Tcl_GetIntFromObj(interp, objv[2], &len);
 	}
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(Tcl_UtfFindLast(Tcl_GetString(objv[1]), len), -1));
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		Tcl_UtfFindLast(Tcl_GetString(objv[1]), len), -1));
     }
     return TCL_OK;
 }
-
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TestGetIntForIndexCmd --
+ *
+ *	Test harness for Tcl_GetIntForIndex.
+ *
+ * Usage:
+ *	testgetintforindex index endvalue
+ *
+ *----------------------------------------------------------------------
+ */
 static int
 TestGetIntForIndexCmd(
     TCL_UNUSED(void *),
@@ -8152,7 +8203,7 @@ TestGetIntForIndexCmd(
     Tcl_SetObjResult(interp, Tcl_NewWideIntObj(result));
     return TCL_OK;
 }
-
+
 #if defined(HAVE_CPUID) && !defined(MAC_OSX_TCL)
 /*
  *----------------------------------------------------------------------
@@ -8832,7 +8883,7 @@ InterpCmdResolver(
 	    const char *callingCmdName =
 		Tcl_GetCommandName(interp, (Tcl_Command) procPtr->cmdPtr);
 
-	    if ( callingCmdName[0] == 'x' && callingCmdName[1] == '\0' ) {
+	    if (callingCmdName[0] == 'x' && callingCmdName[1] == '\0') {
 		resolvedCmdPtr = Tcl_FindCommand(interp, "y", NULL, TCL_GLOBAL_ONLY);
 	    }
 	} else if (callerNsPtr != NULL) {
@@ -8861,7 +8912,6 @@ InterpCmdResolver(
 	    if (strcmp(context, "ctx1") == 0 && (name[0] == 'z') && (name[1] == '\0')) {
 		resolvedCmdPtr = Tcl_FindCommand(interp, "y", NULL, TCL_GLOBAL_ONLY);
 		/* fprintf(stderr, "... y ==> %p\n", resolvedCmdPtr);*/
-
 	    } else if (strcmp(context, "ctx2") == 0 && (name[0] == 'z') && (name[1] == '\0')) {
 		resolvedCmdPtr = Tcl_FindCommand(interp, "Y", NULL, TCL_GLOBAL_ONLY);
 		/*fprintf(stderr, "... Y ==> %p\n", resolvedCmdPtr);*/
@@ -9419,10 +9469,10 @@ static const Tcl_ChannelType TestChanSinkDispatch = {
  *	and encodings.
  *
  *	testchancreate source ?BINARY?
- *        Creates a read-only channel that will continuously return
- *        BINARY (defaults to '\0')
+ *	  Creates a read-only channel that will continuously return
+ *	  BINARY (defaults to '\0')
  *	testchancreate sink
- *        Sends written data off into the void.
+ *	  Sends written data off into the void.
  *
  * Results:
  *	A standard Tcl result.
@@ -9526,7 +9576,7 @@ TestChanCreateCmd(
  *
  *	This procedure implements the "testutftonormalized" command which
  *	provides a raw interface to the Tcl_UtfToNormalized API.
- *      objv[1] - input byte array encoded in Tcl internal UTF-8. Use
+ *	objv[1] - input byte array encoded in Tcl internal UTF-8. Use
  *		  teststringbytes to construct.
  *	objv[2] - normForm value to pass to Tcl_UtfToNormalized
  *	objv[3] - profile value to pass to Tcl_UtfToNormalized
@@ -9608,7 +9658,7 @@ TestUtfToNormalizedCmd(
  *
  *	This procedure implements the "testutftonormalizedstring" command which
  *	provides a raw interface to the Tcl_UtfToNormalizedDString API.
- *      objv[1] - input byte array encoded in Tcl internal UTF-8. Use
+ *	objv[1] - input byte array encoded in Tcl internal UTF-8. Use
  *		  teststringbytes to construct.
  *	objv[2] - normForm value to pass to Tcl_UtfToNormalizedDString
  *	objv[3] - profile value to pass to Tcl_UtfToNormalizedDString

@@ -580,7 +580,7 @@ TclpCreateProcess(
 		    "%dforked process couldn't set up input/output", errno);
 	    len = strlen(errSpace);
 	    if (len != (size_t) write(fd, errSpace, len)) {
-		    Tcl_Panic("TclpCreateProcess: unable to write to errPipeOut");
+		Tcl_Panic("TclpCreateProcess: unable to write to errPipeOut");
 	    }
 	    _exit(1);
 	}
@@ -1223,6 +1223,25 @@ PipeOutputProc(
 /*
  *----------------------------------------------------------------------
  *
+ * PipeWatchNotifyChannelWrapper --
+ *
+ *	Workaround for Bug ad5a57f2f271: Tcl_NotifyChannel is not a
+ *	Tcl_FileProc, so do not pass it to directly to Tcl_CreateFileHandler.
+ *	Instead, pass a wrapper which is a Tcl_FileProc.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+PipeWatchNotifyChannelWrapper(
+    void *clientData,
+    int mask)
+{
+    Tcl_NotifyChannel((Tcl_Channel)clientData, mask);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * PipeWatchProc --
  *
  *	Initialize the notifier to watch the fds from this channel.
@@ -1236,22 +1255,6 @@ PipeOutputProc(
  *
  *----------------------------------------------------------------------
  */
-
-/*
- * Bug ad5a57f2f271: Tcl_NotifyChannel is not a Tcl_FileProc,
- * so do not pass it to directly to Tcl_CreateFileHandler.
- * Instead, pass a wrapper which is a Tcl_FileProc.
- */
-
-static void
-PipeWatchNotifyChannelWrapper(
-    void *clientData,
-    int mask)
-{
-    Tcl_Channel channel = (Tcl_Channel)clientData;
-
-    Tcl_NotifyChannel(channel, mask);
-}
 
 static void
 PipeWatchProc(

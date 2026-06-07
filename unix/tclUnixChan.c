@@ -465,6 +465,25 @@ FileWideSeekProc(
 /*
  *----------------------------------------------------------------------
  *
+ * FileWatchNotifyChannelWrapper --
+ *
+ *	Workaround for Bug ad5a57f2f271: Tcl_NotifyChannel is not a
+ *	Tcl_FileProc, so do not pass it to directly to Tcl_CreateFileHandler.
+ *	Instead, pass a wrapper which is a Tcl_FileProc.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+FileWatchNotifyChannelWrapper(
+    void *clientData,
+    int mask)
+{
+    Tcl_NotifyChannel((Tcl_Channel)clientData, mask);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * FileWatchProc --
  *
  *	Initialize the notifier to watch the fd from this channel.
@@ -478,20 +497,6 @@ FileWideSeekProc(
  *
  *----------------------------------------------------------------------
  */
-
-/*
- * Bug ad5a57f2f271: Tcl_NotifyChannel is not a Tcl_FileProc,
- * so do not pass it to directly to Tcl_CreateFileHandler.
- * Instead, pass a wrapper which is a Tcl_FileProc.
- */
-static void
-FileWatchNotifyChannelWrapper(
-    void *clientData,
-    int mask)
-{
-    Tcl_Channel channel = (Tcl_Channel)clientData;
-    Tcl_NotifyChannel(channel, mask);
-}
 
 static void
 FileWatchProc(

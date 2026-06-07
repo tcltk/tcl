@@ -84,14 +84,13 @@ static const Tcl_MethodType2 SetterType = {
  *
  *	Implementation of the oo::configurable->configure method.
  *
+ *	Ugly thunks to read and write a property by calling the right method
+ *	in the right way. Note that we MUST be correct in holding references
+ *	to Tcl_Obj values, as this is potentially a call into user code.
+ *
  * ----------------------------------------------------------------------
  */
 
-/*
- * Ugly thunks to read and write a property by calling the right method in
- * the right way. Note that we MUST be correct in holding references to Tcl_Obj
- * values, as this is potentially a call into user code.
- */
 static inline int
 ReadProperty(
     Tcl_Interp *interp,
@@ -536,7 +535,6 @@ ImplementClassProperty(
  *
  * ----------------------------------------------------------------------
  */
-
 static void
 FindClassProps(
     Class *clsPtr,		/* The object to inspect. Must exist. */
@@ -587,7 +585,6 @@ FindClassProps(
  *
  * ----------------------------------------------------------------------
  */
-
 static void
 FindObjectProps(
     Object *oPtr,		/* The object to inspect. Must exist. */
@@ -625,7 +622,6 @@ FindObjectProps(
  *
  * ----------------------------------------------------------------------
  */
-
 static Tcl_Obj *
 GetAllClassProperties(
     Class *clsPtr,		/* The class to inspect. Must exist. */
@@ -699,6 +695,7 @@ GetAllClassProperties(
  * ----------------------------------------------------------------------
  *
  * SortPropList --
+ *
  *	Sort a list of names of properties. Simple support function. Assumes
  *	that the list Tcl_Obj is unshared and doesn't have a string
  *	representation.
