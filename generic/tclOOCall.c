@@ -154,7 +154,6 @@ static inline void	StashCallChain(Tcl_Obj *objPtr, CallChain *callPtr);
 /*
  * Object type used to manage type caches attached to method names.
  */
-
 static const Tcl_ObjType methodNameType = {
     "TclOO method name",
     FreeMethodNameRep,
@@ -173,7 +172,6 @@ static const Tcl_ObjType methodNameType = {
  *
  * ----------------------------------------------------------------------
  */
-
 void
 TclOODeleteContext(
     CallContext *contextPtr)
@@ -201,7 +199,6 @@ TclOODeleteContext(
  *
  * ----------------------------------------------------------------------
  */
-
 void
 TclOODeleteChainCache(
     Tcl_HashTable *tablePtr)
@@ -227,7 +224,6 @@ TclOODeleteChainCache(
  *
  * ----------------------------------------------------------------------
  */
-
 void
 TclOODeleteChain(
     CallChain *callPtr)
@@ -313,7 +309,6 @@ FreeMethodNameRep(
  *
  * ----------------------------------------------------------------------
  */
-
 int
 TclOOInvokeContext(
     void *clientData,		/* The method call context. */
@@ -612,7 +607,6 @@ TclOOGetSortedClassMethodList(
  *
  * ----------------------------------------------------------------------
  */
-
 static Tcl_Size
 SortMethodNames(
     Tcl_HashTable *namesTbl,	/* The table of names; unsorted, but contains
@@ -705,7 +699,6 @@ CmpNames(
  *
  * ----------------------------------------------------------------------
  */
-
 static void
 AddClassMethodNames(
     Class *clsPtr,		/* Class to get method names from. */
@@ -851,7 +844,6 @@ AddStandardMethodName(
  *
  * ----------------------------------------------------------------------
  */
-
 static inline bool
 AddInstancePrivateToCallContext(
     Object *const oPtr,		/* Object to add call chain entries for. */
@@ -889,7 +881,6 @@ AddInstancePrivateToCallContext(
  *
  * ----------------------------------------------------------------------
  */
-
 static inline bool
 AddSimpleChainToCallContext(
     Object *const oPtr,		/* Object to add call chain entries for. */
@@ -980,7 +971,6 @@ AddSimpleChainToCallContext(
  *
  * ----------------------------------------------------------------------
  */
-
 static inline void
 AddMethodToCallChain(
     Method *const mPtr,		/* Actual method implementation to add to call
@@ -1088,12 +1078,12 @@ AddMethodToCallChain(
  * ----------------------------------------------------------------------
  *
  * InitCallChain --
+ *
  *	Encoding of the policy of how to set up a call chain. Doesn't populate
  *	the chain with the method implementation data.
  *
  * ----------------------------------------------------------------------
  */
-
 static inline void
 InitCallChain(
     CallChain *callPtr,
@@ -1244,10 +1234,11 @@ TclOOGetCallContext(
 	 * the object, and in the class).
 	 */
 
-	const Tcl_ObjInternalRep *irPtr;
 	const int reuseMask = (WANT_PUBLIC(flags) ? ~0 : ~PUBLIC_METHOD);
+	const Tcl_ObjInternalRep *irPtr = TclFetchInternalRep(cacheInThisObj,
+		&methodNameType);
 
-	if ((irPtr = TclFetchInternalRep(cacheInThisObj, &methodNameType))) {
+	if (irPtr) {
 	    callPtr = (CallChain *) irPtr->twoPtrValue.ptr1;
 	    if (IsStillValid(callPtr, oPtr, flags, reuseMask)) {
 		callPtr->refCount++;

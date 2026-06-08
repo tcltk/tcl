@@ -724,7 +724,7 @@ my_NewLStringObj(
  *
  * freeElements --
  *
- *      Free the element array
+ *	Free the element array
  *
  */
 
@@ -955,8 +955,14 @@ typedef struct LgenSeries {
 } LgenSeries;
 
 /*
- * Evaluate the generation function.
- * The provided funtion computes the value for a give index
+ *----------------------------------------------------------------------
+ *
+ * lgen --
+ *
+ *	Evaluate the generation function.
+ *	The provided funtion computes the value for a give index
+ *
+ *----------------------------------------------------------------------
  */
 static Tcl_Obj *
 lgen(
@@ -989,18 +995,19 @@ lgen(
 }
 
 /*
- *  Abstract List Length function
+ * Abstract List Length function
  */
 static Tcl_Size
 lgenSeriesObjLength(
     Tcl_Obj *objPtr)
 {
-    LgenSeries *lgenSeriesRepPtr = (LgenSeries *)objPtr->internalRep.twoPtrValue.ptr1;
+    LgenSeries *lgenSeriesRepPtr = (LgenSeries *)
+	    objPtr->internalRep.twoPtrValue.ptr1;
     return lgenSeriesRepPtr->len;
 }
 
 /*
- *  Abstract List Index function
+ * Abstract List Index function
  */
 static int
 lgenSeriesObjIndex(
@@ -1012,7 +1019,8 @@ lgenSeriesObjIndex(
     LgenSeries *lgenSeriesRepPtr;
     Tcl_Obj *element;
 
-    lgenSeriesRepPtr = (LgenSeries*)lgenSeriesObjPtr->internalRep.twoPtrValue.ptr1;
+    lgenSeriesRepPtr = (LgenSeries*)
+	    lgenSeriesObjPtr->internalRep.twoPtrValue.ptr1;
 
     if (index < 0 || index >= lgenSeriesRepPtr->len) {
 	*elemPtr = NULL;
@@ -1069,7 +1077,7 @@ UpdateStringOfLgen(
 }
 
 /*
- *  ObjType Free Internal Rep function
+ * ObjType Free Internal Rep function
  */
 static void
 FreeLgenInternalRep(
@@ -1087,7 +1095,7 @@ FreeLgenInternalRep(
 static void DupLgenSeriesRep(Tcl_Obj *srcPtr, Tcl_Obj *copyPtr);
 
 /*
- *  Abstract List ObjType definition
+ * Abstract List ObjType definition
  */
 
 static const Tcl_ObjType lgenType = {
@@ -1108,7 +1116,7 @@ static const Tcl_ObjType lgenType = {
 };
 
 /*
- *  ObjType Duplicate Internal Rep Function
+ * ObjType Duplicate Internal Rep Function
  */
 static void
 DupLgenSeriesRep(
@@ -1131,9 +1139,9 @@ DupLgenSeriesRep(
 }
 
 /*
- *  Create a new lgen Tcl_Obj
+ * Create a new lgen Tcl_Obj
  */
-Tcl_Obj *
+static Tcl_Obj *
 newLgenObj(
     Tcl_Interp *interp,
 	Tcl_Size objc,
@@ -1181,7 +1189,7 @@ newLgenObj(
 }
 
 /*
- *  The [lgen] command
+ * The [lgen] command
  */
 static int
 lGenObjCmd(
@@ -1200,7 +1208,7 @@ lGenObjCmd(
 }
 
 /*
- *  lgen package init
+ * lgen package init
  */
 int
 Lgen_Init(
@@ -1226,16 +1234,16 @@ Lgen_Init(
  *      lstring /string/
  *
  * Description:
- *      Creates a list where each character in the string is treated as an
- *      element. The string is kept as a string, not an actual list. Indexing
- *      is done by char.
+ *	Creates a list where each character in the string is treated as an
+ *	element. The string is kept as a string, not an actual list. Indexing
+ *	is done by char.
  *
  * lgen command
  * Usage:
  *      lgen /length/ /cmd/ ?args...?
  *
- *      The /cmd/ should take the last argument as the index value, and return
- *      a value for that element.
+ *	The /cmd/ should take the last argument as the index value, and return
+ *	a value for that element.
  *
  * Results:
  *	The commands listed above are added to the interp.

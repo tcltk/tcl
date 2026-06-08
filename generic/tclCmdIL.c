@@ -1081,6 +1081,7 @@ TclInfoExistsCmd(
  *----------------------------------------------------------------------
  *
  * InfoFrameCmd --
+ *
  *	TIP #280
  *
  *	Called to implement the "info frame" command that returns the location
@@ -3865,6 +3866,7 @@ Tcl_LsearchObjCmd(
  *----------------------------------------------------------------------
  *
  * SequenceIdentifyArgument --
+ *
  *	(for [lseq] command)
  *
  *	Given a Tcl_Obj, identify if it is a keyword or a number

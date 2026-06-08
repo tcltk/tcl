@@ -1234,9 +1234,9 @@ HasConsole(void)
  *----------------------------------------------------------------------
  */
 TclWinExecutableType
-TclWinGetExecutableType(const WCHAR *nativePath)
+TclWinGetExecutableType(
+    const WCHAR *nativePath)
 {
-
     /* Ignore matches on directories */
     DWORD attr = GetFileAttributesW(nativePath);
     if ((attr == 0xFFFFFFFF) || (attr & FILE_ATTRIBUTE_DIRECTORY)) {
@@ -1375,11 +1375,11 @@ checkExtension: /* hFile should be open handle at this point */
  *
  * Results:
  *
- *      One of APPL_DOS, APPL_WIN3X, APPL_DLL or APPL_WIN32 if the
- *      filename referred to the corresponding application type. If the file
- *      name could not be found or did not refer to any known application
- *      type, APPL_NONE is returned and an error message is left in interp.
- *      .bat files are identified as APPL_DOS.
+ *	One of APPL_DOS, APPL_WIN3X, APPL_DLL or APPL_WIN32 if the
+ *	filename referred to the corresponding application type. If the file
+ *	name could not be found or did not refer to any known application
+ *	type, APPL_NONE is returned and an error message is left in interp.
+ *	.bat files are identified as APPL_DOS.
  *
  * Side effects:
  *	None.

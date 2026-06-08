@@ -553,7 +553,7 @@ Tcl_GetUniChar(
 	Tcl_Size length = 0;
 	unsigned char *bytes = Tcl_GetBytesFromObj(NULL, objPtr, &length);
 	if (index >= length) {
-		return -1;
+	    return -1;
 	}
 
 	return bytes[index];
@@ -3525,6 +3525,7 @@ TclStringCat(
  *---------------------------------------------------------------------------
  *
  * TclStringCmp --
+ *
  *	Compare two Tcl_Obj values as strings.
  *
  * Results:

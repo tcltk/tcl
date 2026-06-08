@@ -858,34 +858,33 @@ TestintobjCmd(
  *	test a few possible corner cases in list object manipulation from
  *	C code that cannot occur at the Tcl level.
  *
- *      Following new commands are added for 9.0 as regression tests for
- *      memory leaks and use-after-free. Unlike 8.6, 9.0 has multiple internal
- *      representations for lists.  It has to be ensured that corresponding
- *      implementations obey the invariants of the C list API. The script
- *      level tests do not suffice as Tcl list commands do not execute
- *      the same exact code path as the exported C API.
+ *	Following new commands are added for 9.0 as regression tests for
+ *	memory leaks and use-after-free. Unlike 8.6, 9.0 has multiple internal
+ *	representations for lists.  It has to be ensured that corresponding
+ *	implementations obey the invariants of the C list API. The script
+ *	level tests do not suffice as Tcl list commands do not execute
+ *	the same exact code path as the exported C API.
  *
- *      Note these new commands are only useful when Tcl is compiled with
- *      TCL_MEM_DEBUG defined.
+ *	Note these new commands are only useful when Tcl is compiled with
+ *	TCL_MEM_DEBUG defined.
  *
  *	indexmemcheck - loops calling Tcl_ListObjIndex on each element. This
  *	is to test that abstract lists returning elements do not depend
  *	on caller to free them. The test case should check allocated counts
- *      with the following sequence:
- *            set before <get memory counts>
- *            testobj set VARINDEX [list a b c] (or lseq etc.)
- *            testlistobj indexnoop VARINDEX
- *            testobj unset VARINDEX
- *            set after <get memory counts>
- *      after calling this command AND freeing the passed list. The targeted
- *      bug is if Tcl_LOI returns a ephemeral Tcl_Obj with no other reference
- *      resulting in a memory leak. Conversely, the command also checks
- *      that the Tcl_Obj returned by Tcl_LOI does not have a zero reference
- *      count since it is supposed to have at least one reference held
- *      by the list implementation. Returns a message in interp otherwise.
+ *	with the following sequence:
+ *	      set before <get memory counts>
+ *	      testobj set VARINDEX [list a b c] (or lseq etc.)
+ *	      testlistobj indexnoop VARINDEX
+ *	      testobj unset VARINDEX
+ *	      set after <get memory counts>
+ *	after calling this command AND freeing the passed list. The targeted
+ *	bug is if Tcl_LOI returns a ephemeral Tcl_Obj with no other reference
+ *	resulting in a memory leak. Conversely, the command also checks
+ *	that the Tcl_Obj returned by Tcl_LOI does not have a zero reference
+ *	count since it is supposed to have at least one reference held
+ *	by the list implementation. Returns a message in interp otherwise.
  *
- *      getelementsmemcheck - as above but for Tcl_ListObjGetElements
-
+ *	getelementsmemcheck - as above but for Tcl_ListObjGetElements
  *
  * Results:
  *	A standard Tcl object result.
@@ -1242,10 +1241,10 @@ TestobjCmd(
 	    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(objv[2]->refCount));
 	}
 	return TCL_OK;
-    case TESTOBJ_HUGE: {
-	    if (objc != 2) {
-		goto wrongNumArgs;
-	    }
+    case TESTOBJ_HUGE:
+	if (objc != 2) {
+	    goto wrongNumArgs;
+	} else {
 	    Tcl_Obj *hugeObjPtr = Tcl_NewObj();
 	    hugeObjPtr->typePtr = &hugeType;
 	    hugeObjPtr->length = INT_MAX - 1;
@@ -1635,19 +1634,19 @@ TeststringobjCmd(
  *
  * TestbigdataCmd --
  *
- *    Implements the Tcl command testbigdata
- *	testbigdata string ?LEN? ?SPLIT? - returns 01234567890123...
- *      testbigdata bytearray ?LEN? ?SPLIT? - returns {0 1 2 3 4 5 6 7 8 9 0 1 ...}
- *      testbigdata dict ?SIZE? - returns dict mapping integers to themselves
- *    If no arguments given, returns the pattern used to generate strings.
- *    If SPLIT is specified, the character at that position is set to "X".
+ *	Implements the Tcl command testbigdata
+ *	  testbigdata string ?LEN? ?SPLIT? - returns 01234567890123...
+ *	  testbigdata bytearray ?LEN? ?SPLIT? - returns {0 1 2 3 4 5 6 7 8 9 0 1 ...}
+ *	  testbigdata dict ?SIZE? - returns dict mapping integers to themselves
+ *	If no arguments given, returns the pattern used to generate strings.
+ *	If SPLIT is specified, the character at that position is set to "X".
  *
  * Results:
- *    TCL_OK    - Success.
- *    TCL_ERROR - Error.
+ *	TCL_OK    - Success.
+ *	TCL_ERROR - Error.
  *
  * Side effects:
- *    Interpreter result holds result or error message.
+ *	Interpreter result holds result or error message.
  *
  *------------------------------------------------------------------------
  */

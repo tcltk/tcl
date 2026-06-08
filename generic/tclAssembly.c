@@ -1932,8 +1932,9 @@ MoveExceptionRangesToBasicBlock(
  *	JumptableInfo. The keys in the JumptableInfo are the comparison
  *	strings. The values, instead of being jump displacements, are
  *	Tcl_Obj's with the code labels.
+ *
+ *-----------------------------------------------------------------------------
  */
-
 static int
 CreateMirrorJumpTable(
     AssemblyEnv* assemEnvPtr,	/* Assembly environment */
@@ -2008,8 +2009,9 @@ CreateMirrorJumpTable(
  *	JumptableNumInfo. The keys in the JumptableNumInfo are the comparison
  *	integers. The values, instead of being jump displacements, are
  *	Tcl_Obj's with the code labels.
+ *
+ *-----------------------------------------------------------------------------
  */
-
 static int
 CreateMirrorNumJumpTable(
     AssemblyEnv* assemEnvPtr,	/* Assembly environment */
