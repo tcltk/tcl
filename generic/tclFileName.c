@@ -716,6 +716,7 @@ SplitWinPath(
 	length = p - elementStart;
 	if (length > 0) {
 	    Tcl_Obj *nextElt;
+	    /* Bug https://core.tcl-lang.org/tcl/tktview/1194458 */
 	    if ((elementStart != path) &&
 		    isalpha(UCHAR(elementStart[0])) &&
 		    (elementStart[1] == ':')) {
@@ -857,6 +858,7 @@ TclpNativeJoinPath(
 
     p = joining;
 
+    /* Bug https://core.tcl-lang.org/tcl/tktview/1194458 */
     if (length != 0) {
 	if ((p[0] == '.') && (p[1] == '/') &&
 		(tclPlatform==TCL_PLATFORM_WINDOWS) && isalpha(UCHAR(p[2]))
