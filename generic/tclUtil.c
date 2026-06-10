@@ -4861,6 +4861,20 @@ TclMSB(
 #endif
 }
 
+int
+TclDArrayValidate(
+    const Tcl_DArray *daPtr)
+{
+    TCL_CT_ASSERT(sizeof(daPtr->storage[0]) == 1); /* ptr arith assumes char*! */
+    if ((daPtr->elemSize > 0) && (daPtr->occupancy <= daPtr->capacity) &&
+	   (daPtr->occupancy == 0 || daPtr->storage != NULL)) {
+	return 1;
+    }
+    Tcl_Panic("Invalid Tcl_DArray: elemSize=%zu occupancy=%zu capacity=%zu "
+	      "storage=%p. Uninitialized or corrupted.",
+	daPtr->elemSize, daPtr->occupancy, daPtr->capacity, daPtr->storage);
+}
+
 /*
  *------------------------------------------------------------------------
  *
@@ -4879,11 +4893,7 @@ Tcl_DArrayInit(
     Tcl_Size elemSize,		/* Size of each element in vector. Non-0!! */
     Tcl_Size initialCapacity)	/* Initial storage size as count of elements */
 {
-    TCL_CT_ASSERT(sizeof(daPtr->storage[0]) == 1); /* ptr arith assumes char*! */
-
-    daPtr->capacity = initialCapacity;
-    daPtr->occupancy = 0;
-    daPtr->elemSize = elemSize;
+    *daPtr = (Tcl_DArray) TCL_DARRAY_INITIALIZER(elemSize);
     daPtr->storage = (char *)Tcl_Alloc(elemSize * initialCapacity);
 }
 
@@ -4904,6 +4914,7 @@ Tcl_DArrayClone(
     const Tcl_DArray *fromPtr,	/* The dynamic vector to clone */
     Tcl_DArray *toPtr)		/* The dynamic vector to initialize */
 {
+    assert(TclDArrayValidate(fromPtr));
     Tcl_DArrayInit(toPtr, fromPtr->elemSize, fromPtr->occupancy);
     Tcl_DArrayInsert(toPtr, 0, fromPtr->occupancy, fromPtr->storage);
 }
@@ -4927,7 +4938,7 @@ void
 Tcl_DArrayFinit (
     Tcl_DArray *daPtr)
 {
-    /* Check in case called on static store without initialization */
+    assert(TclDArrayValidate(daPtr));
     if (daPtr->storage != NULL) {
 	Tcl_Free(daPtr->storage);
 	daPtr->storage = NULL;
@@ -4959,7 +4970,8 @@ Tcl_DArrayIndex (
     Tcl_DArray *daPtr,
     Tcl_Size index)		/* Index of element to be retrieved */
 {
-    if (daPtr->occupancy > index) {
+    assert(TclDArrayValidate(daPtr));
+    if (index >= 0 && daPtr->occupancy > index) {
 	return (index * daPtr->elemSize) + (char *)daPtr->storage;
     }
     return NULL;
@@ -4990,6 +5002,8 @@ Tcl_DArrayInsert (
     Tcl_Size count,		/* Number of elements to insert */
     const void *elementsPtr)	/* Pointer to the elements to be inserted */
 {
+    assert(TclDArrayValidate(daPtr));
+
     if (count <= 0) {
 	return;
     }
@@ -4998,8 +5012,11 @@ Tcl_DArrayInsert (
     } else if (index > daPtr->occupancy) {
 	index = daPtr->occupancy;
     }
-    if (daPtr->occupancy + count > daPtr->capacity) {
-	/* Need more storage */
+    if (daPtr->storage == NULL) {
+	/* First allocation */
+	Tcl_DArrayInit(daPtr, daPtr->elemSize, count);
+    } else if (daPtr->occupancy + count > daPtr->capacity) {
+	/* Need to expand storage */
 	Tcl_Size newCapacity = daPtr->capacity * 2;
 	char *newStorage = (char *)Tcl_Alloc(newCapacity * daPtr->elemSize);
 	/* Copy leading elements */
@@ -5012,6 +5029,7 @@ Tcl_DArrayInsert (
 	daPtr->storage = newStorage;
 	daPtr->capacity = newCapacity;
     } else {
+	/* ALready have enough capacity for new elements */
 	memmove(daPtr->storage + (index + count) * daPtr->elemSize,
 		daPtr->storage + (index * daPtr->elemSize),
 		(daPtr->occupancy - index) * daPtr->elemSize);
@@ -5046,6 +5064,8 @@ Tcl_DArrayDelete(
 				 * occupancy are a no-op */
     Tcl_Size count)		/* Number of elements to delete */
 {
+    assert(TclDArrayValidate(daPtr));
+
     if (count <= 0 || index >= daPtr->occupancy) {
 	return;
     }
@@ -5085,6 +5105,9 @@ Tcl_DArrayCopy(
     Tcl_DArray *toPtr,		/* Destination array */
     Tcl_Size toIndex)		/* Index in destination to insert */
 {
+    assert(TclDArrayValidate(fromPtr));
+    assert(TclDArrayValidate(toPtr));
+
     if (count <= 0) {
 	return;
     }
@@ -5147,6 +5170,7 @@ Tcl_DArrayFind(Tcl_DArray *daPtr,
     void **elemPtrPtr)		/* Output pointer to matched element.
 				 * Pass as NULL if of no interest. */
 {
+    assert(TclDArrayValidate(daPtr));
     if (start < 0) {
 	start = 0;
     }

@@ -5108,6 +5108,9 @@ typedef struct Tcl_DArray {
     Tcl_Size elemSize;		/* Size of each array element */
     char *storage;		/* Allocated storage */
 } Tcl_DArray;
+#define TCL_DARRAY_INITIALIZER(elemSize_) \
+    { 0, 0, (elemSize_), NULL }
+
 MODULE_SCOPE void Tcl_DArrayInit(Tcl_DArray *daPtr, Tcl_Size elemSize,
 			Tcl_Size initialCapacity);
 MODULE_SCOPE void Tcl_DArrayClone(const Tcl_DArray *fromPtr, Tcl_DArray *toPtr);
