@@ -645,16 +645,6 @@ if {![\fBfile isdirectory\fR [\fBfile dirname\fR $newName]]} {
 \fBfile rename\fR $oldName $newName
 \fBfile link\fR -symbolic $oldName $newName
 .CE
-.PP
-On Windows, a file can be
-.QW started
-easily enough (equivalent to double-clicking on it in the Explorer
-interface) but the name passed to the operating system must be in
-native format:
-.PP
-.CS
-exec {*}[auto_execok start] {} [\fBfile nativename\fR C:/Users/fred/example.txt]
-.CE
 .SH "SEE ALSO"
 filename(n), open(n), close(n), eof(n), gets(n), tell(n), seek(n),
 fblocked(n), flush(n)
