@@ -4862,6 +4862,308 @@ TclMSB(
 }
 
 /*
+ *------------------------------------------------------------------------
+ *
+ * Tcl_DArrayInit --
+ *
+ *	Initialize a dynamic vector.
+ *
+ * Results:
+ *	None.
+ *
+ *------------------------------------------------------------------------
+ */
+void
+Tcl_DArrayInit(
+    Tcl_DArray *daPtr,		/* The dynamic vector to initialize */
+    Tcl_Size elemSize,		/* Size of each element in vector. Non-0!! */
+    Tcl_Size initialCapacity)	/* Initial storage size as count of elements */
+{
+    TCL_CT_ASSERT(sizeof(daPtr->storage[0]) == 1); /* ptr arith assumes char*! */
+
+    daPtr->capacity = initialCapacity;
+    daPtr->occupancy = 0;
+    daPtr->elemSize = elemSize;
+    daPtr->storage = (char *)Tcl_Alloc(elemSize * initialCapacity);
+}
+
+/*
+ *------------------------------------------------------------------------
+ *
+ * Tcl_DArrayClone --
+ *
+ *	Clones a dynamic array.
+ *
+ * Results:
+ *	None.
+ *
+ *------------------------------------------------------------------------
+ */
+void
+Tcl_DArrayClone(
+    const Tcl_DArray *fromPtr,	/* The dynamic vector to clone */
+    Tcl_DArray *toPtr)		/* The dynamic vector to initialize */
+{
+    Tcl_DArrayInit(toPtr, fromPtr->elemSize, fromPtr->occupancy);
+    Tcl_DArrayInsert(toPtr, 0, fromPtr->occupancy, fromPtr->storage);
+}
+
+/*
+ *------------------------------------------------------------------------
+ *
+ * Tcl_DArrayFinit --
+ *
+ *	Finalizes a dynamic array, releasing any allocated resources.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Memory is freed.
+ *
+ *------------------------------------------------------------------------
+ */
+void
+Tcl_DArrayFinit (
+    Tcl_DArray *daPtr)
+{
+    /* Check in case called on static store without initialization */
+    if (daPtr->storage != NULL) {
+	Tcl_Free(daPtr->storage);
+	daPtr->storage = NULL;
+    }
+    daPtr->capacity = 0;
+    daPtr->occupancy = 0;
+    daPtr->elemSize = 0;
+}
+
+/*
+ *------------------------------------------------------------------------
+ *
+ * Tcl_DArrayIndex --
+ *
+ *	Retrieves a pointer to the element at a given index. Caller
+ *	must make a copy before making any other calls to a Tcl_DArray API
+ *	as they may invalidate the returned pointer.
+ *
+ * Results:
+ *	Pointer to an element or NULL in case of invalid index.
+ *
+ * Side effects:
+ *	None.
+ *
+ *------------------------------------------------------------------------
+ */
+void *
+Tcl_DArrayIndex (
+    Tcl_DArray *daPtr,
+    Tcl_Size index)		/* Index of element to be retrieved */
+{
+    if (daPtr->occupancy > index) {
+	return (index * daPtr->elemSize) + (char *)daPtr->storage;
+    }
+    return NULL;
+}
+
+/*
+ *------------------------------------------------------------------------
+ *
+ * Tcl_DArrayInsert --
+ *
+ *	Inserts one or more elements at a given index.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The storage may be reallocated invalidating any pointers in clients
+ *	including any pointers within elements to other elements.
+ *
+ *------------------------------------------------------------------------
+ */
+void
+Tcl_DArrayInsert (
+    Tcl_DArray *daPtr,
+    Tcl_Size index,		/* Index at which to insert. Negative indices
+				 * are treated as 0. Indices greater than 
+				 * occupancy are appended */
+    Tcl_Size count,		/* Number of elements to insert */
+    const void *elementsPtr)	/* Pointer to the elements to be inserted */
+{
+    if (count <= 0) {
+	return;
+    }
+    if (index < 0) {
+	index = 0;
+    } else if (index > daPtr->occupancy) {
+	index = daPtr->occupancy;
+    }
+    if (daPtr->occupancy + count > daPtr->capacity) {
+	/* Need more storage */
+	Tcl_Size newCapacity = daPtr->capacity * 2;
+	char *newStorage = (char *)Tcl_Alloc(newCapacity * daPtr->elemSize);
+	/* Copy leading elements */
+	memcpy(newStorage, daPtr->storage, index * daPtr->elemSize);
+	/* Copy trailing elements */
+	memcpy(newStorage + (index + count) * daPtr->elemSize,
+		daPtr->storage + (index * daPtr->elemSize),
+		(daPtr->occupancy - index) * daPtr->elemSize);
+	Tcl_Free(daPtr->storage);
+	daPtr->storage = newStorage;
+	daPtr->capacity = newCapacity;
+    } else {
+	memmove(daPtr->storage + (index + count) * daPtr->elemSize,
+		daPtr->storage + (index * daPtr->elemSize),
+		(daPtr->occupancy - index) * daPtr->elemSize);
+    }
+    /* Copy new elements */
+    memcpy(daPtr->storage + (index * daPtr->elemSize), elementsPtr,
+	    count * daPtr->elemSize);
+    daPtr->occupancy += count;
+}
+
+/*
+ *------------------------------------------------------------------------
+ *
+ * Tcl_DArrayDelete --
+ *
+ *	Delete one or more elements at a given index.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The storage may be reallocated invalidating any pointers in clients
+ *	including any pointers within elements to other elements.
+ *
+ *------------------------------------------------------------------------
+ */
+void
+Tcl_DArrayDelete(
+    Tcl_DArray *daPtr,
+    Tcl_Size index,		/* Index at which to insert. Negative indices
+				 * are treated as 0. Indices greater than
+				 * occupancy are a no-op */
+    Tcl_Size count)		/* Number of elements to delete */
+{
+    if (count <= 0 || index >= daPtr->occupancy) {
+	return;
+    }
+    if (index < 0) {
+	index = 0;
+    }
+    if (index + count > daPtr->occupancy) {
+	count = daPtr->occupancy - index;
+    }
+    memmove(daPtr->storage + (index * daPtr->elemSize),
+	    daPtr->storage + ((index + count) * daPtr->elemSize),
+	    (daPtr->occupancy - (index + count)) * daPtr->elemSize);
+    daPtr->occupancy -= count;
+}
+
+/*
+ *------------------------------------------------------------------------
+ *
+ * Tcl_DArrayCopy --
+ *
+ *	Copies elements from one array to another.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The storage may be reallocated invalidating any pointers in clients
+ *	including any pointers within elements to other elements.
+ *
+ *------------------------------------------------------------------------
+ */
+void
+Tcl_DArrayCopy(
+    const Tcl_DArray *fromPtr,	/* Source array */
+    Tcl_Size fromIndex,		/* Start index in source */
+    Tcl_Size count,		/* Number of items to copy */
+    Tcl_DArray *toPtr,		/* Destination array */
+    Tcl_Size toIndex)		/* Index in destination to insert */
+{
+    if (count <= 0) {
+	return;
+    }
+    if (fromIndex < 0) {
+	fromIndex = 0;
+    } else if (fromIndex + count > fromPtr->occupancy) {
+	count = fromPtr->occupancy - fromIndex;
+    }
+    Tcl_DArrayInsert(toPtr, toIndex, count,
+	    (fromIndex * fromPtr->elemSize) + fromPtr->storage);
+}
+
+
+/*
+ *------------------------------------------------------------------------
+ *
+ * Tcl_DArrayClear --
+ *
+ *	Deletes all elements in the vector.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The storage may be reallocated invalidating any pointers in clients
+ *	including any pointers within elements to other elements.
+ *
+ *------------------------------------------------------------------------
+ */
+void
+Tcl_DArrayClear(
+    Tcl_DArray *daPtr)
+{
+    daPtr->occupancy = 0;
+}
+
+/*
+ *------------------------------------------------------------------------
+ *
+ * Tcl_DArrayFind --
+ *
+ *	Finds a matching element using the passed match function. If
+ *	found, stores a pointer to the matched element in matchPtr. Caller
+ *	must make a copy before any other calls to a Tcl_DArray API
+ *	as they may invalidate the returned pointer.
+ *
+ * Results:
+ *	Index of the matched element or -1 if not found.
+ *
+ * Side effects:
+ *	None.
+ *
+ *------------------------------------------------------------------------
+ */
+Tcl_Size
+Tcl_DArrayFind(Tcl_DArray *daPtr,
+    Tcl_Size start, /* Index of element to start */
+    Tcl_DArrayMatchProc *matchProc,	/* Callback to check for match */
+    void *clientData,		/* Client data to pass to match function */
+    void **elemPtrPtr)		/* Output pointer to matched element.
+				 * Pass as NULL if of no interest. */
+{
+    if (start < 0) {
+	start = 0;
+    }
+    for (Tcl_Size i = start; i < daPtr->occupancy; i++) {
+	void *elemPtr = (i * daPtr->elemSize) + (char *)daPtr->storage;
+	if (matchProc(elemPtr, clientData)) {
+	    if (elemPtrPtr != NULL) {
+		*elemPtrPtr = elemPtr;
+	    }
+	    return i;
+	}
+    }
+    return -1;
+}
+
+
+/*
  * Local Variables:
  * mode: c
  * c-basic-offset: 4

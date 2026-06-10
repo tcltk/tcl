@@ -5098,6 +5098,34 @@ MODULE_SCOPE Tcl_LibraryInitProc Tcl_ABSListTest_Init;
 #endif   /* TCL_MEM_DEBUG */
 
 /*
+ * Dynamic array allocation utilities. Generally meant for use cases where
+ * relatively small ordered collections of fixed size elements are mostly
+ * appended.
+ */
+typedef struct Tcl_DArray {
+    Tcl_Size capacity;		/* Capacity in elemSize units */
+    Tcl_Size occupancy;		/* Current element count */
+    Tcl_Size elemSize;		/* Size of each array element */
+    char *storage;		/* Allocated storage */
+} Tcl_DArray;
+MODULE_SCOPE void Tcl_DArrayInit(Tcl_DArray *daPtr, Tcl_Size elemSize,
+			Tcl_Size initialCapacity);
+MODULE_SCOPE void Tcl_DArrayClone(const Tcl_DArray *fromPtr, Tcl_DArray *toPtr);
+MODULE_SCOPE void Tcl_DArrayFinit(Tcl_DArray *daPtr);
+MODULE_SCOPE void *Tcl_DArrayIndex(Tcl_DArray *daPtr, Tcl_Size index);
+MODULE_SCOPE void Tcl_DArrayInsert(Tcl_DArray *daPtr, Tcl_Size index,
+			Tcl_Size count, const void *elemsPtr);
+MODULE_SCOPE void Tcl_DArrayCopy(const Tcl_DArray *fromPtr, Tcl_Size fromIndex,
+			Tcl_Size count, Tcl_DArray *toPtr, Tcl_Size toIndex);
+MODULE_SCOPE void Tcl_DarrayDelete(Tcl_DArray *daPtr, Tcl_Size index,
+			Tcl_Size count);
+MODULE_SCOPE void Tcl_DArrayClear(Tcl_DArray *daPtr);
+typedef int Tcl_DArrayMatchProc(void *elemPtr, void *clientData);
+MODULE_SCOPE Tcl_Size Tcl_DArrayFind(Tcl_DArray *daPtr, Tcl_Size start,
+			Tcl_DArrayMatchProc *matchProc, void *clientData,
+			void **elemPtrPtr);
+
+/*
  * Support for Clang Static Analyzer <http://clang-analyzer.llvm.org>
  */
 
