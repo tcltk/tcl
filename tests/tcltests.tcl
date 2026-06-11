@@ -127,7 +127,7 @@ namespace eval ::tcltests {
 		# Note we cannot use result of chcp because that returns OEM code page.
 		package require registry
 		set cp [registry get HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Nls\\CodePage ACP]
-		if {$cp eq "65001"} {}
+		if {$cp eq "65001"} {
 		    proc windowscodepage {} "return utf-8"
 		} else {
 		    proc windowscodepage {} "return cp$cp"
