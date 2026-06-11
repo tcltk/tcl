@@ -5124,7 +5124,7 @@ MODULE_SCOPE void Tcl_DArrayCopy(const Tcl_DArray *fromPtr, Tcl_Size fromIndex,
 MODULE_SCOPE void Tcl_DArrayDelete(Tcl_DArray *daPtr, Tcl_Size index,
 			Tcl_Size count);
 MODULE_SCOPE void Tcl_DArrayClear(Tcl_DArray *daPtr);
-typedef bool Tcl_DArrayMatchProc(void *elemPtr, void *clientData);
+typedef bool Tcl_DArrayMatchProc(const void *elemPtr, const void *clientData);
 MODULE_SCOPE Tcl_Size Tcl_DArrayFind(Tcl_DArray *daPtr, Tcl_Size start,
 			Tcl_DArrayMatchProc *matchProc, void *clientData,
 			void **elemPtrPtr);

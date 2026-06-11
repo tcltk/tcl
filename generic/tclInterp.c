@@ -41,21 +41,22 @@ typedef struct TclPostInitRecord {
 
 /* Process-wide post-initialization registrations */
 typedef struct TclPostInitRecords {
-    TclPostInitRecord *recordsPtr;
-    size_t capacity;
-    size_t count;
+    Tcl_DArray da;
     size_t epoch;
 } TclPostInitRecords;
-static TclPostInitRecords postInitRecords = {NULL, 0, 0, 0};
+static TclPostInitRecords postInitRecords = {
+    TCL_DARRAY_INITIALIZER(sizeof(TclPostInitRecord)),
+    0
+};
 TCL_DECLARE_MUTEX(postInitMutex)
 
 /* Per thread cache of post-initialization registrations */
 typedef struct ThreadSpecificData {
     TclPostInitRecords postInitCache;
-    size_t inUse; 		/* When > 0, cache cannot be updated */
+    bool initialized;
+    bool inUse; /* When > 0, cache cannot be updated */
 } ThreadSpecificData;
 static Tcl_ThreadDataKey postInitTsdKey;
-
 
 /* Forward declaration */
 struct Target;
@@ -5395,17 +5396,70 @@ TclPostInitThreadExitProc(
 {
     ThreadSpecificData *tsdPtr = (ThreadSpecificData *)clientData;
 
-    assert(tsdPtr->inUse == 0);
+    assert(tsdPtr->initialized);
+    assert(!tsdPtr->inUse);
 
-    if (tsdPtr->postInitCache.recordsPtr != NULL) {
-	Tcl_Free(tsdPtr->postInitCache.recordsPtr);
-	tsdPtr->postInitCache.recordsPtr = NULL;
-    }
-    tsdPtr->postInitCache.capacity = 0;
-    tsdPtr->postInitCache.count = 0;
+    Tcl_DArrayFinit(&tsdPtr->postInitCache.da);
     tsdPtr->postInitCache.epoch = 0;
+    tsdPtr->initialized = false;
 }
-
+
+/*
+ *------------------------------------------------------------------------
+ *
+ * TclGetPostInitCache --
+ *
+ *	Returns a pointer to the per thread post-initialization cache,
+ *	initializing it if necessar.
+ *
+ * Results:
+ *	Pointer to the cache structure.
+ *
+ * Side effects:
+ *	None.
+ *
+ *------------------------------------------------------------------------
+ */
+ThreadSpecificData *
+TclGetPostInitCache ()
+{
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&postInitTsdKey);
+    if (!tsdPtr->initialized) {
+	Tcl_DArrayInit(&tsdPtr->postInitCache.da, sizeof(TclPostInitRecord), 8);
+	tsdPtr->postInitCache.epoch = 0;
+	tsdPtr->initialized = true;
+	tsdPtr->inUse = false;
+	Tcl_CreateThreadExitHandler(TclPostInitThreadExitProc, tsdPtr);
+    }
+    return tsdPtr;
+}
+
+/*
+ *------------------------------------------------------------------------
+ *
+ * TclMatchPostInitRecord --
+ *
+ *	Compares two PostInitRecord structures.
+ *
+ * Results:
+ *	1 on a match, 0 otherwise.
+ *
+ * Side effects:
+ *	None.
+ *
+ *------------------------------------------------------------------------
+ */
+static bool
+TclMatchPostInitRecord(
+    const void *firstPtr,
+    const void *secondPtr)
+{
+    const TclPostInitRecord *recPtr = (const TclPostInitRecord *)firstPtr;
+    const TclPostInitRecord *matchPtr = (const TclPostInitRecord *)secondPtr;
+    return recPtr->clientData == matchPtr->clientData &&
+	    recPtr->postInitProc == matchPtr->postInitProc;
+}
+
 /*
  *----------------------------------------------------------------------
  *
@@ -5432,7 +5486,7 @@ TclCallPostInitProcs(
      * it is seen by other threads. For the same reason, the epoch checks
      * are also outside a lock as in other components.
      */
-    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&postInitTsdKey);
+    ThreadSpecificData *tsdPtr = TclGetPostInitCache();
 
     /*
      * If we are already invoking callbacks, it means a callback is
@@ -5454,40 +5508,30 @@ TclCallPostInitProcs(
     TclPostInitRecords *cachePtr = &tsdPtr->postInitCache;
 
     /*
-     * If the cache is not in use and content has changed, update it. In the
-     * code below, the capacity counts guard against NULL pointer access.
+     * If the cache is not in use and content has changed, update it.
      */
     if (tsdPtr->postInitCache.epoch != postInitRecords.epoch) {
 	/* T: postinit-1.* */
 	Tcl_MutexLock(&postInitMutex);
-	if (cachePtr->capacity < postInitRecords.count) {
-	    if (cachePtr->recordsPtr != NULL) {
-		Tcl_Free(cachePtr->recordsPtr);
-	    }
-	    cachePtr->capacity = postInitRecords.capacity;
-	    cachePtr->recordsPtr = (TclPostInitRecord *)Tcl_Alloc(
-		cachePtr->capacity * sizeof(TclPostInitRecord));
-	    /* Remember to free on thread exit */
-	    Tcl_CreateThreadExitHandler(TclPostInitThreadExitProc, tsdPtr);
-	}
-	for (size_t i = 0; i < postInitRecords.count; ++i) {
-	    cachePtr->recordsPtr[i] = postInitRecords.recordsPtr[i];
-	}
-	cachePtr->count = postInitRecords.count;
+	Tcl_DArrayClear(&tsdPtr->postInitCache.da);
+	Tcl_DArrayCopy(&postInitRecords.da, 0, TCL_SIZE_MAX,
+		&tsdPtr->postInitCache.da, 0);
 	cachePtr->epoch = postInitRecords.epoch;
 	Tcl_MutexUnlock(&postInitMutex);
     }
 
     /* Mark as in use to prevent modification in case of recursion. */
-    tsdPtr->inUse++;
+    tsdPtr->inUse = true;
 
     /* Iterate through callbacks until done or error */
     int result = TCL_OK;
     int interpDeleted = 0;
     Tcl_Preserve(interp);	/* Ensure it does not disappear in callback */
-    for (size_t i = 0; i < cachePtr->count; i++) {
-	result = cachePtr->recordsPtr[i].postInitProc(interp,
-	    cachePtr->recordsPtr[i].clientData);
+    Tcl_Size count = Tcl_DArrayCount(&tsdPtr->postInitCache.da);
+    for (Tcl_Size i = 0; i < count; i++) {
+	const TclPostInitRecord *recPtr = (TclPostInitRecord *)Tcl_DArrayIndex(
+		&tsdPtr->postInitCache.da, i);
+	result = recPtr->postInitProc(interp, recPtr->clientData);
 	interpDeleted = Tcl_InterpDeleted(interp);
 	if (interpDeleted) {
 	    Tcl_SetObjResult(interp,
@@ -5517,7 +5561,7 @@ TclCallPostInitProcs(
 	Tcl_Release(interp);
     }
 
-    tsdPtr->inUse--;
+    tsdPtr->inUse = false;
     return result;
 }
 
@@ -5547,37 +5591,17 @@ Tcl_RegisterPostInitProc(
     if (proc == NULL) {
 	return TCL_ERROR;
     }
+
+    TclPostInitRecord key = {proc, clientData};
     Tcl_MutexLock(&postInitMutex);
-    if (postInitRecords.recordsPtr == NULL) {
-	/* T: postinit-1.* */
-	postInitRecords.capacity = 8;
-	postInitRecords.recordsPtr = (TclPostInitRecord *)Tcl_Alloc(
-	    sizeof(TclPostInitRecord) * postInitRecords.capacity);
-	postInitRecords.count = 0;
-	/* Do not set epoch to 0 as recordsPtr is NULL after clear as well */
-    } else {
-	for (size_t i = 0; i < postInitRecords.count; ++i) {
-	    if (postInitRecords.recordsPtr[i].postInitProc == proc &&
-		postInitRecords.recordsPtr[i].clientData == clientData) {
-		/* T: postinit-1.4 */
-		goto done;	/* Already present, don't add */
-	    }
-	}
-	if (postInitRecords.count == postInitRecords.capacity) {
-		   /* T: postinit-1.6 */
-	    postInitRecords.capacity *= 2;
-	    postInitRecords.recordsPtr =
-		(TclPostInitRecord *)Tcl_Realloc(postInitRecords.recordsPtr,
-		    sizeof(TclPostInitRecord) * postInitRecords.capacity);
-	}
-    }
-    /* T: postinit-1.* */
-    postInitRecords.recordsPtr[postInitRecords.count].postInitProc = proc;
-    postInitRecords.recordsPtr[postInitRecords.count].clientData = clientData;
-    postInitRecords.count++;
+
+    if (Tcl_DArrayFind(&postInitRecords.da, 0, TclMatchPostInitRecord, &key,
+		NULL) < 0) {
+        /* T: postinit-1.* (new registration)*/
+	Tcl_DArrayInsert(&postInitRecords.da, TCL_SIZE_MAX, 1, &key);
+    } /* else T: postinit-1.4 (registration already present) */
     postInitRecords.epoch++;
 
-done: /* postInitMutex must be held at this point */
     Tcl_MutexUnlock(&postInitMutex);
     return TCL_OK;
 }
@@ -5605,23 +5629,16 @@ Tcl_UnregisterPostInitProc(
 	return TCL_ERROR;
     }
     Tcl_MutexLock(&postInitMutex);
-    if (postInitRecords.recordsPtr != NULL && postInitRecords.count > 0) {
-	size_t i;
-	for (i = 0; i < postInitRecords.count; ++i) {
-	    if (postInitRecords.recordsPtr[i].postInitProc == proc &&
-		postInitRecords.recordsPtr[i].clientData == clientData) {
-		/* T: postinit-1.* */
-		break;
-	    }
-	}
-	if (i < postInitRecords.count) {
-	    while (++i < postInitRecords.count) {
-		postInitRecords.recordsPtr[i-1] = postInitRecords.recordsPtr[i];
-	    }
-	    postInitRecords.epoch++;
-	    postInitRecords.count--;
-	} /* else T: postinit-1.{8.9} */
-    }
+    TclPostInitRecord key = {proc, clientData};
+    Tcl_Size index;
+    index = Tcl_DArrayFind(&postInitRecords.da, 0, TclMatchPostInitRecord, &key,
+	   NULL);
+    if (index >= 0) {
+	/* T: postinit-1.* */
+	Tcl_DArrayDelete(&postInitRecords.da, index, 1);
+	postInitRecords.epoch++;
+    } /* else T: postinit-1.{8.9} (registration not present) */
+
     Tcl_MutexUnlock(&postInitMutex);
     return TCL_OK;
 }
@@ -5643,17 +5660,7 @@ Tcl_ClearPostInitProcs()
 {
     /* T: postinit-1.3 */
     Tcl_MutexLock(&postInitMutex);
-    if (postInitRecords.recordsPtr) {
-	/*
-	 * Don't strictly need to free, setting count to 0 suffices but
-	 * freeing allows use of this function at exit time and keep
-	 * valgrind happy.
-	 */
-	Tcl_Free(postInitRecords.recordsPtr);
-	postInitRecords.recordsPtr = NULL;
-	postInitRecords.capacity = 0;
-    }
-    postInitRecords.count = 0;
+    Tcl_DArrayFinit(&postInitRecords.da);
     postInitRecords.epoch++;
     Tcl_MutexUnlock(&postInitMutex);
     return TCL_OK;
