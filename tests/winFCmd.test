@@ -43,7 +43,7 @@ if {![catch {exec {*}[auto_execok cmd.exe] /c ver} winVer]} {
 	    } else {
 		catch {
 		    package require registry
-		    testConstraint longPathAware [registry get "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\FileSystem" LongPathsEnabled]
+		    testConstraint longPathAware [tcl::registry get "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\FileSystem" LongPathsEnabled]
 		}
 	    }
 	}

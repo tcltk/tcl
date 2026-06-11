@@ -127,7 +127,7 @@ namespace eval ::tcltests {
 	    proc windowscodepage {} {
 		# Note we cannot use result of chcp because that returns OEM code page.
 		package require registry
-		set cp [registry get HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Nls\\CodePage ACP]
+		set cp [tcl::registry get HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Nls\\CodePage ACP]
 		proc windowscodepage {} "return cp$cp"
 		return [windowscodepage]
 	    }

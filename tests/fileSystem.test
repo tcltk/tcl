@@ -35,9 +35,8 @@ testConstraint loaddll 0
 catch {
     ::tcltest::loadTestedCommands
     package require -exact tcl::test [info patchlevel]
-    set ::ddever [package require dde]
+    package require dde
     set ::ddelib [info loaded {} Dde]
-    set ::regver  [package require registry]
     set ::reglib [info loaded {} Registry]
     testConstraint loaddll [expr {$::ddelib ne "" && $::reglib ne ""}]
 }
