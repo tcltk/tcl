@@ -3,7 +3,7 @@
  *
  *	This file implements the testmutex command.
  *
- * Copyright (c) 2025 Ashok P. Nadkarni.  All rights reserved.
+ * Copyright © 2025 Ashok P. Nadkarni.  All rights reserved.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.

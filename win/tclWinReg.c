@@ -5,8 +5,8 @@
  *	command. This command is built as a dynamically loadable extension in
  *	a separate DLL.
  *
- * Copyright (c) 1997 by Sun Microsystems, Inc.
- * Copyright (c) 1998-1999 by Scriptics Corporation.
+ * Copyright © 1997 by Sun Microsystems, Inc.
+ * Copyright © 1998-1999 by Scriptics Corporation.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.

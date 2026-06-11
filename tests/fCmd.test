@@ -25,23 +25,6 @@ testConstraint testchmod [llength [info commands testchmod]]
 testConstraint winLessThan10 0
 # Don't know how to determine this constraint correctly
 testConstraint notNetworkFilesystem 0
-testConstraint reg 0
-if {[testConstraint win]} {
-    if {[catch {
-	# Is the registry extension already static to this shell?
-	try {
-	    load {} Registry
-	    set ::reglib {}
-	} on error {} {
-	    # try the location given to use on the commandline to tcltest
-	    ::tcltest::loadTestedCommands
-	    load $::reglib Registry
-	}
-	testConstraint reg 1
-    } regError]} {
-	catch {package require registry; testConstraint reg 1}
-    }
-}
 
 testConstraint notInCIenv [expr {![info exists ::env(CI)] || !$::env(CI)}]
 
@@ -130,7 +113,7 @@ proc gethomedirglob {user} {
 		return [string tolower $home]
 	    }
 	}
-    } elseif {[testConstraint reg]} {
+    } elseif {[testConstraint win]} {
 	# Windows with registry extension loaded
 	if {![catch {
 	    set sid [exec {*}[auto_execok powershell] -Command "(Get-LocalUser -Name '$user')\[0\].sid.Value"]
@@ -2691,7 +2674,7 @@ test fCmd-29.1 {weird memory corruption fault} -body {
 test fCmd-30.1 {file writable on 'My Documents'} -setup {
     # Get the localized version of the folder name by looking in the registry.
     set mydocsname [tcl::registry get {HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders} Personal]
-} -constraints {win reg} -body {
+} -constraints win -body {
     file writable $mydocsname
 } -result 1
 test fCmd-30.2 {file readable on 'NTUSER.DAT'} -constraints {win notWine} -body {

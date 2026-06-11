@@ -4,7 +4,7 @@
  *	This file contains functions that implement the Tcl abstract list
  *	object types.
  *
- * Copyright (c) 2025 Ashok P. Nadkarni.  All rights reserved.
+ * Copyright © 2025 Ashok P. Nadkarni.  All rights reserved.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
