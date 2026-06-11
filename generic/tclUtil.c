@@ -4894,9 +4894,10 @@ Tcl_DArrayInit(
     Tcl_Size initialCapacity)	/* Initial storage size as count of elements */
 {
     *daPtr = (Tcl_DArray) TCL_DARRAY_INITIALIZER(elemSize);
+    daPtr->capacity = initialCapacity;
     daPtr->storage = (char *)Tcl_Alloc(elemSize * initialCapacity);
 }
-
+
 /*
  *------------------------------------------------------------------------
  *
@@ -4925,6 +4926,8 @@ Tcl_DArrayClone(
  * Tcl_DArrayFinit --
  *
  *	Finalizes a dynamic array, releasing any allocated resources.
+ *	The dynamic array can be immediately reused without needing
+ *	reinitialization SO LONG AS ELEMENTS ARE OF THE SAME SIZE.
  *
  * Results:
  *	None.
@@ -4945,7 +4948,7 @@ Tcl_DArrayFinit (
     }
     daPtr->capacity = 0;
     daPtr->occupancy = 0;
-    daPtr->elemSize = 0;
+    /* Preserve elementSize! */
 }
 
 /*
@@ -4967,7 +4970,7 @@ Tcl_DArrayFinit (
  */
 void *
 Tcl_DArrayIndex (
-    Tcl_DArray *daPtr,
+    const Tcl_DArray *daPtr,
     Tcl_Size index)		/* Index of element to be retrieved */
 {
     assert(TclDArrayValidate(daPtr));
@@ -4975,6 +4978,26 @@ Tcl_DArrayIndex (
 	return (index * daPtr->elemSize) + (char *)daPtr->storage;
     }
     return NULL;
+}
+
+/*
+ *------------------------------------------------------------------------
+ *
+ * Tcl_DArrayCount --
+ *
+ *	Returns number of elements in the dynamic array.
+ *
+ * Results:
+ *	Count of elements
+ *
+ *------------------------------------------------------------------------
+ */
+Tcl_Size
+Tcl_DArrayCount (
+    const Tcl_DArray *daPtr)
+{
+    assert(TclDArrayValidate(daPtr));
+    return daPtr->occupancy;
 }
 
 /*
@@ -5015,9 +5038,10 @@ Tcl_DArrayInsert (
     if (daPtr->storage == NULL) {
 	/* First allocation */
 	Tcl_DArrayInit(daPtr, daPtr->elemSize, count);
-    } else if (daPtr->occupancy + count > daPtr->capacity) {
+    } else if (daPtr->occupancy > (daPtr->capacity - count)) {
 	/* Need to expand storage */
-	Tcl_Size newCapacity = daPtr->capacity * 2;
+	Tcl_Size newCapacity = TclUpsizeAlloc(daPtr->occupancy, daPtr->occupancy + count,
+		TCL_SIZE_MAX);
 	char *newStorage = (char *)Tcl_Alloc(newCapacity * daPtr->elemSize);
 	/* Copy leading elements */
 	memcpy(newStorage, daPtr->storage, index * daPtr->elemSize);
@@ -5038,6 +5062,7 @@ Tcl_DArrayInsert (
     memcpy(daPtr->storage + (index * daPtr->elemSize), elementsPtr,
 	    count * daPtr->elemSize);
     daPtr->occupancy += count;
+    assert(TclDArrayValidate(daPtr));
 }
 
 /*
@@ -5086,7 +5111,7 @@ Tcl_DArrayDelete(
  *
  * Tcl_DArrayCopy --
  *
- *	Copies elements from one array to another.
+ *	Copies up to count elements from one array to another.
  *
  * Results:
  *	None.
@@ -5100,20 +5125,21 @@ Tcl_DArrayDelete(
 void
 Tcl_DArrayCopy(
     const Tcl_DArray *fromPtr,	/* Source array */
-    Tcl_Size fromIndex,		/* Start index in source */
-    Tcl_Size count,		/* Number of items to copy */
+    Tcl_Size fromIndex,		/* Start index in source.  */
+    Tcl_Size count,		/* Max number of items to copy */
     Tcl_DArray *toPtr,		/* Destination array */
-    Tcl_Size toIndex)		/* Index in destination to insert */
+    Tcl_Size toIndex)		/* Index at which to insert in destination.
+				 * Same semantics as for Tcl_DArrayInsert */
 {
     assert(TclDArrayValidate(fromPtr));
     assert(TclDArrayValidate(toPtr));
 
-    if (count <= 0) {
+    if (count <= 0 || fromIndex > fromPtr->occupancy) {
 	return;
     }
     if (fromIndex < 0) {
 	fromIndex = 0;
-    } else if (fromIndex + count > fromPtr->occupancy) {
+    } else if (count > fromPtr->occupancy - fromIndex) {
 	count = fromPtr->occupancy - fromIndex;
     }
     Tcl_DArrayInsert(toPtr, toIndex, count,
@@ -5163,9 +5189,10 @@ Tcl_DArrayClear(
  *------------------------------------------------------------------------
  */
 Tcl_Size
-Tcl_DArrayFind(Tcl_DArray *daPtr,
-    Tcl_Size start, /* Index of element to start */
-    Tcl_DArrayMatchProc *matchProc,	/* Callback to check for match */
+Tcl_DArrayFind(
+    Tcl_DArray *daPtr,
+    Tcl_Size start,		/* Index of element to start */
+    Tcl_DArrayMatchProc *matchProc, /* Callback to check for match */
     void *clientData,		/* Client data to pass to match function */
     void **elemPtrPtr)		/* Output pointer to matched element.
 				 * Pass as NULL if of no interest. */

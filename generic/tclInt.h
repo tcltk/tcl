@@ -5115,15 +5115,16 @@ MODULE_SCOPE void Tcl_DArrayInit(Tcl_DArray *daPtr, Tcl_Size elemSize,
 			Tcl_Size initialCapacity);
 MODULE_SCOPE void Tcl_DArrayClone(const Tcl_DArray *fromPtr, Tcl_DArray *toPtr);
 MODULE_SCOPE void Tcl_DArrayFinit(Tcl_DArray *daPtr);
-MODULE_SCOPE void *Tcl_DArrayIndex(Tcl_DArray *daPtr, Tcl_Size index);
+MODULE_SCOPE Tcl_Size Tcl_DArrayCount(const Tcl_DArray *daPtr);
+MODULE_SCOPE void *Tcl_DArrayIndex(const Tcl_DArray *daPtr, Tcl_Size index);
 MODULE_SCOPE void Tcl_DArrayInsert(Tcl_DArray *daPtr, Tcl_Size index,
 			Tcl_Size count, const void *elemsPtr);
 MODULE_SCOPE void Tcl_DArrayCopy(const Tcl_DArray *fromPtr, Tcl_Size fromIndex,
 			Tcl_Size count, Tcl_DArray *toPtr, Tcl_Size toIndex);
-MODULE_SCOPE void Tcl_DarrayDelete(Tcl_DArray *daPtr, Tcl_Size index,
+MODULE_SCOPE void Tcl_DArrayDelete(Tcl_DArray *daPtr, Tcl_Size index,
 			Tcl_Size count);
 MODULE_SCOPE void Tcl_DArrayClear(Tcl_DArray *daPtr);
-typedef int Tcl_DArrayMatchProc(void *elemPtr, void *clientData);
+typedef bool Tcl_DArrayMatchProc(void *elemPtr, void *clientData);
 MODULE_SCOPE Tcl_Size Tcl_DArrayFind(Tcl_DArray *daPtr, Tcl_Size start,
 			Tcl_DArrayMatchProc *matchProc, void *clientData,
 			void **elemPtrPtr);
