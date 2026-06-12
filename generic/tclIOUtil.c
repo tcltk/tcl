@@ -29,54 +29,95 @@
 #endif
 
 /*
- * struct FilesystemRecord --
- *
- * An item in a linked list of registered filesystems
+ * File system registration tracking
  */
 
-typedef struct FilesystemRecord {
+/* TclFSRecord - record of a registered file system */
+typedef struct TclFsRecord {
     void *clientData;		/* Client-specific data for the filesystem
 				 * (can be NULL) */
     const Tcl_Filesystem *fsPtr;/* Pointer to filesystem dispatch table. */
-    struct FilesystemRecord *nextPtr;
-				/* The next registered filesystem, or NULL to
-				 * indicate the end of the list. */
-    struct FilesystemRecord *prevPtr;
-				/* The previous filesystem, or NULL to indicate
-				 * the ned of the list */
-} FilesystemRecord;
+} TclFsRecord;
+
+/* TclFsRecords - records all file system registrations */
+typedef struct TclFsRecords {
+    Tcl_DArray records;		/* Dynamic array of TclFSRecord */
+    size_t epoch;		/* The filesystem epoch corresponding to the
+				 * contents of records. Update to invalidate
+				 * caches */
+} TclFsRecords;
+
+/* TclFsTSD - Per thread cache of file systems registrations  */
+typedef struct TclFsTSD {
+    TclFsRecords fsRecordCache;
+				/* Cache of process-wide registrations */
+    size_t claims;		/* Cache in-use count. Cache cannot
+				 * be updated when in use */
+    bool initialized;
+} TclFsTSD;
+
+/* Process-wide database of registered file systems. */
+static TclFsRecords tclFsRecords = {
+	TCL_DARRAY_INITIALIZER(sizeof(TclFsRecord)),
+				/* FS records */
+	1 			/* Starting epoch */
+};
+
+/* Control multi-thread access to tclFsRecords */
+TCL_DECLARE_MUTEX(tclFsMutex)
+
+/* TSD key for looking up TclFsTSD */
+static Tcl_ThreadDataKey tclFsDataKey;
 
 /*
+ * Current working directory tracking
  */
 
-typedef struct {
-    bool initialized;
-    size_t cwdPathEpoch;	/* Compared with the global cwdPathEpoch to
-				 * determine whether cwdPathPtr is stale. */
-    size_t filesystemEpoch;
+/* struct TclCwdRecord - encapsulates information needed to track the cwd. */
+typedef struct TclCwdRecord {
     Tcl_Obj *cwdPathPtr;	/* A private copy of cwdPathPtr. Updated when
 				 * the value is accessed  and cwdPathEpoch has
 				 * changed. */
     void *cwdClientData;
-    FilesystemRecord *filesystemList;
-    size_t claims;
-} ThreadSpecificData;
+    size_t cwdPathEpoch;	/* Compared with the global cwdPathEpoch to
+				 * determine whether cwdPathPtr is stale. */
+} TclCwdRecord;
+
+/* struct TclCwdTSD - Per thread cache of above */
+typedef struct TclCwdTSD {
+    size_t cwdPathEpoch;	/* Compared with the global cwdPathEpoch to
+				 * determine whether cwdPathPtr is stale. */
+    Tcl_Obj *cwdPathPtr;	/* A private copy of cwdPathPtr. Updated when
+				 * the value is accessed  and cwdPathEpoch has
+				 * changed. */
+    void *cwdClientData;
+    bool initialized;
+} TclCwdTSD;
+
+/* Process-wide record of current working directory */
+static TclCwdRecord tclCwdRecord = {NULL, NULL, 0};
+
+/* Control multi-thread access to tclCwdRecord */
+TCL_DECLARE_MUTEX(tclCwdMutex)
+
+/* TSD key for looking up TclCwdTSD for a thread*/
+static Tcl_ThreadDataKey tclCwdDataKey;
 
 /*
  * Forward declarations.
  */
 
-static Tcl_NRPostProc	EvalFileCallback;
-static FilesystemRecord*FsGetFirstFilesystem(void);
-static void		FsThrExitProc(void *cd);
+static Tcl_NRPostProc EvalFileCallback;
+static void		TclFsThreadExitProc(void *cd);
+static void		TclCwdThreadExitProc(void *cd);
 static Tcl_Obj *	FsListMounts(Tcl_Obj *pathPtr, const char *pattern);
 static void		FsAddMountsToGlobResult(Tcl_Obj *resultPtr,
 			    Tcl_Obj *pathPtr, const char *pattern,
 			    Tcl_GlobTypeData *types);
 static void		FsUpdateCwd(Tcl_Obj *cwdObj, void *clientData);
-static void		FsRecacheFilesystemList(void);
-static void		Claim(void);
-static void		Disclaim(void);
+static void		TclFsUpdateCache(void);
+static void		TclFsClaim(void);
+static void		TclFsDisclaim(void);
 
 static void *		DivertFindSymbol(Tcl_Interp *interp,
 			    Tcl_LoadHandle loadHandle, const char *symbol);
@@ -180,40 +221,11 @@ const Tcl_Filesystem tclNativeFilesystem = {
  * uses of Tcl that provide no native filesystem.
  */
 
-static FilesystemRecord nativeFilesystemRecord = {
+static TclFsRecord tclNativeFsRecord = {
     NULL,
     &tclNativeFilesystem,
-    NULL,
-    NULL
 };
 
-/*
- * Incremented each time the linked list of filesystems is modified.  For
- * multithreaded builds, invalidates all cached filesystem internal
- * representations.
- */
-
-static size_t theFilesystemEpoch = 1;
-
-/*
- * The linked list of filesystems.  To minimize locking each thread maintains a
- * local copy of this list.
- *
- */
-
-static FilesystemRecord *filesystemList = &nativeFilesystemRecord;
-TCL_DECLARE_MUTEX(filesystemMutex)
-
-/*
- * A files-system indepent sense of the current directory.
- */
-
-static Tcl_Obj *cwdPathPtr = NULL; /* The pathname of the current directory */
-static size_t cwdPathEpoch = 0;
-static void *cwdClientData = NULL;
-TCL_DECLARE_MUTEX(cwdMutex)
-
-static Tcl_ThreadDataKey fsDataKey;
 
 /*
  * When a temporary copy of a file is created on the native filesystem in order
@@ -410,16 +422,89 @@ Tcl_EvalFile(
  * The basic filesystem implementation.
  */
 
+/*
+ *------------------------------------------------------------------------
+ *
+ * TclFsThreadExitProc --
+ *
+ *	Callback invoked at thread exit time to clean up the thread's cache
+ *	of file system information.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *------------------------------------------------------------------------
+ */
 static void
-FsThrExitProc(
-    void *cd)
+TclFsThreadExitProc(
+    void *clientData)		/* Pointer to the TSD */
 {
-    ThreadSpecificData *tsdPtr = (ThreadSpecificData *)cd;
-    FilesystemRecord *fsRecPtr = NULL, *tmpFsRecPtr = NULL;
+    TclFsTSD *tsdPtr = (TclFsTSD *) clientData;
 
-    /*
-     * Discard the cwd copy.
-     */
+    assert(tsdPtr->initialized);
+    assert(tsdPtr->claims == 0);
+
+    Tcl_DArrayFinit(&tsdPtr->fsRecordCache.records);
+    tsdPtr->initialized = false;
+    tsdPtr->fsRecordCache.epoch = 0;
+}
+
+/*
+ *------------------------------------------------------------------------
+ *
+ * TclFsGetTSD --
+ *
+ *	Returns a pointer to the per thread cache of file system registrations,
+ *	initializing it if necessary.
+ *
+ * Results:
+ *	Pointer to the cache structure.
+ *
+ * Side effects:
+ *	None.
+ *
+ *------------------------------------------------------------------------
+ */
+static TclFsTSD *
+TclFsGetTSD ()
+{
+    TclFsTSD *tsdPtr = TCL_TYPED_TSD_INIT(&tclFsDataKey, TclFsTSD);
+    if (!tsdPtr->initialized) {
+	Tcl_DArrayInit(&tsdPtr->fsRecordCache.records, sizeof(TclFsRecord), 8);
+	Tcl_DArrayInsert(&tsdPtr->fsRecordCache.records, 0, 1,
+		&tclNativeFsRecord);
+	tsdPtr->fsRecordCache.epoch = 0;
+	tsdPtr->initialized = true;
+	tsdPtr->claims = 0;
+	Tcl_CreateThreadExitHandler(TclFsThreadExitProc, tsdPtr);
+    }
+    return tsdPtr;
+}
+
+/*
+ *------------------------------------------------------------------------
+ *
+ * TclCwdThreadExitProc --
+ *
+ *	Callback invoked at thread exit time to clean up the thread's cache
+ *	of current directory information.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *------------------------------------------------------------------------
+ */
+static void
+TclCwdThreadExitProc(
+    void *clientData)		/* Pointer to the TSD */
+{
+    TclCwdTSD *tsdPtr = (TclCwdTSD *)clientData;
 
     if (tsdPtr->cwdPathPtr != NULL) {
 	Tcl_DecrRefCount(tsdPtr->cwdPathPtr);
@@ -428,26 +513,43 @@ FsThrExitProc(
     if (tsdPtr->cwdClientData != NULL) {
 	NativeFreeInternalRep(tsdPtr->cwdClientData);
     }
-
-    /*
-     * Discard the filesystems cache.
-     */
-
-    fsRecPtr = tsdPtr->filesystemList;
-    while (fsRecPtr != NULL) {
-	tmpFsRecPtr = fsRecPtr->nextPtr;
-	fsRecPtr->fsPtr = NULL;
-	Tcl_Free(fsRecPtr);
-	fsRecPtr = tmpFsRecPtr;
-    }
-    tsdPtr->filesystemList = NULL;
-    tsdPtr->initialized = false;
 }
 
+/*
+ *------------------------------------------------------------------------
+ *
+ * TclCwdGetTSD --
+ *
+ *	Returns a pointer to the per thread cache of current directory,
+ *	initializing it if necessary.
+ *
+ * Results:
+ *	Pointer to the cache structure.
+ *
+ * Side effects:
+ *	None.
+ *
+ *------------------------------------------------------------------------
+ */
+static TclCwdTSD *
+xxTclCwdGetTSD ()
+{
+    TclCwdTSD *tsdPtr = TCL_TYPED_TSD_INIT(&tclCwdDataKey, TclCwdTSD);
+    if (!tsdPtr->initialized) {
+	Tcl_Obj *temp = Tcl_FSGetCwd(NULL);
+	if (temp) {
+	    Tcl_DecrRefCount(temp);
+	}
+	tsdPtr->initialized = true;
+	Tcl_CreateThreadExitHandler(TclCwdThreadExitProc, tsdPtr);
+    }
+    return tsdPtr;
+}
+
 int
 TclFSCwdIsNative(void)
 {
-    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&fsDataKey);
+    TclCwdTSD *tsdPtr = TCL_TYPED_TSD_INIT(&tclCwdDataKey, TclCwdTSD);
 
     /* if not yet initialized - ensure we'll once obtain cwd */
     if (!tsdPtr->cwdPathEpoch) {
@@ -457,11 +559,7 @@ TclFSCwdIsNative(void)
 	}
     }
 
-    if (tsdPtr->cwdClientData != NULL) {
-	return 1;
-    } else {
-	return 0;
-    }
+    return tsdPtr->cwdClientData != NULL;
 }
 
 /*
@@ -489,36 +587,32 @@ int
 TclFSCwdPointerEquals(
     Tcl_Obj **pathPtrPtr)
 {
-    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&fsDataKey);
+    TclCwdTSD *tsdPtr = TCL_TYPED_TSD_INIT(&tclCwdDataKey, TclCwdTSD);
 
-    Tcl_MutexLock(&cwdMutex);
+    Tcl_MutexLock(&tclCwdMutex);
     if (tsdPtr->cwdPathPtr == NULL
-	    || tsdPtr->cwdPathEpoch != cwdPathEpoch) {
+	    || tsdPtr->cwdPathEpoch != tclCwdRecord.cwdPathEpoch) {
 	if (tsdPtr->cwdPathPtr != NULL) {
 	    Tcl_DecrRefCount(tsdPtr->cwdPathPtr);
 	}
 	if (tsdPtr->cwdClientData != NULL) {
 	    NativeFreeInternalRep(tsdPtr->cwdClientData);
 	}
-	if (cwdPathPtr == NULL) {
+	if (tclCwdRecord.cwdPathPtr == NULL) {
 	    tsdPtr->cwdPathPtr = NULL;
 	} else {
-	    tsdPtr->cwdPathPtr = Tcl_DuplicateObj(cwdPathPtr);
+	    tsdPtr->cwdPathPtr = Tcl_DuplicateObj(tclCwdRecord.cwdPathPtr);
 	    Tcl_IncrRefCount(tsdPtr->cwdPathPtr);
 	}
-	if (cwdClientData == NULL) {
+	if (tclCwdRecord.cwdClientData == NULL) {
 	    tsdPtr->cwdClientData = NULL;
 	} else {
-	    tsdPtr->cwdClientData = TclNativeDupInternalRep(cwdClientData);
+	    tsdPtr->cwdClientData =
+		    TclNativeDupInternalRep(tclCwdRecord.cwdClientData);
 	}
-	tsdPtr->cwdPathEpoch = cwdPathEpoch;
+	tsdPtr->cwdPathEpoch = tclCwdRecord.cwdPathEpoch;
     }
-    Tcl_MutexUnlock(&cwdMutex);
-
-    if (!tsdPtr->initialized) {
-	Tcl_CreateThreadExitHandler(FsThrExitProc, tsdPtr);
-	tsdPtr->initialized = true;
-    }
+    Tcl_MutexUnlock(&tclCwdMutex);
 
     if (pathPtrPtr == NULL) {
 	return (tsdPtr->cwdPathPtr == NULL);
@@ -548,80 +642,39 @@ TclFSCwdPointerEquals(
     }
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclFsUpdateCache --
+ *
+ *	Update the thread-specific cache of file system registrations
+ *	iff stale and the cache is not in use.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Updates TSD if needed.
+ *
+ *----------------------------------------------------------------------
+ */
 static void
-FsRecacheFilesystemList(void)
+TclFsUpdateCache(void)
 {
-    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&fsDataKey);
-    FilesystemRecord *fsRecPtr, *tmpFsRecPtr = NULL, *toFree = NULL, *list;
+    TclFsTSD *tsdPtr = TclFsGetTSD();
 
-    /*
-     * Trash the current cache.
-     */
-
-    fsRecPtr = tsdPtr->filesystemList;
-    while (fsRecPtr != NULL) {
-	tmpFsRecPtr = fsRecPtr->nextPtr;
-	fsRecPtr->nextPtr = toFree;
-	toFree = fsRecPtr;
-	fsRecPtr = tmpFsRecPtr;
+	   /* TODO */
+    if (tsdPtr->claims != 0 ||
+	    tsdPtr->fsRecordCache.epoch == tclFsRecords.epoch) {
+	return;
     }
 
-    /*
-     * Locate tail of the global filesystem list.
-     */
-
-    Tcl_MutexLock(&filesystemMutex);
-    fsRecPtr = filesystemList;
-    while (fsRecPtr != NULL) {
-	tmpFsRecPtr = fsRecPtr;
-	fsRecPtr = fsRecPtr->nextPtr;
-    }
-
-    /*
-     * Refill the cache, honouring the order.
-     */
-
-    list = NULL;
-    fsRecPtr = tmpFsRecPtr;
-    while (fsRecPtr != NULL) {
-	tmpFsRecPtr = (FilesystemRecord *)Tcl_Alloc(sizeof(FilesystemRecord));
-	*tmpFsRecPtr = *fsRecPtr;
-	tmpFsRecPtr->nextPtr = list;
-	tmpFsRecPtr->prevPtr = NULL;
-	list = tmpFsRecPtr;
-	fsRecPtr = fsRecPtr->prevPtr;
-    }
-    tsdPtr->filesystemList = list;
-    tsdPtr->filesystemEpoch = theFilesystemEpoch;
-    Tcl_MutexUnlock(&filesystemMutex);
-
-    while (toFree) {
-	FilesystemRecord *next = toFree->nextPtr;
-
-	toFree->fsPtr = NULL;
-	Tcl_Free(toFree);
-	toFree = next;
-    }
-
-    /*
-     * Make sure the above gets released on thread exit.
-     */
-
-    if (!tsdPtr->initialized) {
-	Tcl_CreateThreadExitHandler(FsThrExitProc, tsdPtr);
-	tsdPtr->initialized = true;
-    }
-}
-
-static FilesystemRecord *
-FsGetFirstFilesystem(void)
-{
-    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&fsDataKey);
-    if (tsdPtr->filesystemList == NULL || ((tsdPtr->claims == 0)
-	    && (tsdPtr->filesystemEpoch != theFilesystemEpoch))) {
-	FsRecacheFilesystemList();
-    }
-    return tsdPtr->filesystemList;
+    Tcl_DArrayClear(&tsdPtr->fsRecordCache.records);
+    Tcl_MutexLock(&tclFsMutex);
+    Tcl_DArrayCopy(&tclFsRecords.records, 0, TCL_SIZE_MAX,
+	    &tsdPtr->fsRecordCache.records, 0);
+    tsdPtr->fsRecordCache.epoch = tclFsRecords.epoch;
+    Tcl_MutexUnlock(&tclFsMutex);
 }
 
 /*
@@ -631,33 +684,30 @@ FsGetFirstFilesystem(void)
 
 int
 TclFSEpochOk(
-    size_t filesystemEpoch)
+    size_t epoch)
 {
-    return (filesystemEpoch == 0 || filesystemEpoch == theFilesystemEpoch);
+    return (epoch == 0 || epoch == tclFsRecords.epoch);
 }
 
 static void
-Claim(void)
+TclFsClaim(void)
 {
-    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&fsDataKey);
-
+    TclFsTSD *tsdPtr = TclFsGetTSD();
     tsdPtr->claims++;
 }
 
 static void
-Disclaim(void)
+TclFsDisclaim(void)
 {
-    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&fsDataKey);
-
+    TclFsTSD *tsdPtr = TclFsGetTSD();
     tsdPtr->claims--;
 }
 
 size_t
 TclFSEpoch(void)
 {
-    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&fsDataKey);
-
-    return tsdPtr->filesystemEpoch;
+    TclFsTSD *tsdPtr = TclFsGetTSD();
+    return tsdPtr->fsRecordCache.epoch;
 }
 
 /*
@@ -671,38 +721,38 @@ FsUpdateCwd(
 {
     Tcl_Size len = 0;
     const char *str = NULL;
-    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&fsDataKey);
+    TclCwdTSD *tsdPtr = TCL_TYPED_TSD_INIT(&tclCwdDataKey, TclCwdTSD);
 
     if (cwdObj != NULL) {
 	str = TclGetStringFromObj(cwdObj, &len);
     }
 
-    Tcl_MutexLock(&cwdMutex);
-    if (cwdPathPtr != NULL) {
-	Tcl_DecrRefCount(cwdPathPtr);
+    Tcl_MutexLock(&tclCwdMutex);
+    if (tclCwdRecord.cwdPathPtr != NULL) {
+	Tcl_DecrRefCount(tclCwdRecord.cwdPathPtr);
     }
-    if (cwdClientData != NULL) {
-	NativeFreeInternalRep(cwdClientData);
+    if (tclCwdRecord.cwdClientData != NULL) {
+	NativeFreeInternalRep(tclCwdRecord.cwdClientData);
     }
 
     if (cwdObj == NULL) {
-	cwdPathPtr = NULL;
-	cwdClientData = NULL;
+	tclCwdRecord.cwdPathPtr = NULL;
+	tclCwdRecord.cwdClientData = NULL;
     } else {
 	/*
 	 * This must be stored as a string obj!
 	 */
 
-	cwdPathPtr = Tcl_NewStringObj(str, len);
-	Tcl_IncrRefCount(cwdPathPtr);
-	cwdClientData = TclNativeDupInternalRep(clientData);
+	tclCwdRecord.cwdPathPtr = Tcl_NewStringObj(str, len);
+	Tcl_IncrRefCount(tclCwdRecord.cwdPathPtr);
+	tclCwdRecord.cwdClientData = TclNativeDupInternalRep(clientData);
     }
 
-    if (++cwdPathEpoch == 0) {
-	++cwdPathEpoch;
+    if (++tclCwdRecord.cwdPathEpoch == 0) {
+	++tclCwdRecord.cwdPathEpoch;
     }
-    tsdPtr->cwdPathEpoch = cwdPathEpoch;
-    Tcl_MutexUnlock(&cwdMutex);
+    tsdPtr->cwdPathEpoch = tclCwdRecord.cwdPathEpoch;
+    Tcl_MutexUnlock(&tclCwdMutex);
 
     if (tsdPtr->cwdPathPtr) {
 	Tcl_DecrRefCount(tsdPtr->cwdPathPtr);
@@ -744,51 +794,38 @@ FsUpdateCwd(
 void
 TclFinalizeFilesystem(void)
 {
-    FilesystemRecord *fsRecPtr;
 
     /*
      * Assume that only one thread is active. Otherwise mutexes would be needed
      * around this code.
-     * TO DO:  This assumption is false, isn't it?
+     * TODO:  This assumption is false, isn't it?
      */
 
-    if (cwdPathPtr != NULL) {
-	Tcl_DecrRefCount(cwdPathPtr);
-	cwdPathPtr = NULL;
-	cwdPathEpoch = 0;
+    if (tclCwdRecord.cwdPathPtr != NULL) {
+	Tcl_DecrRefCount(tclCwdRecord.cwdPathPtr);
+	tclCwdRecord.cwdPathPtr = NULL;
+	tclCwdRecord.cwdPathEpoch = 0;
     }
-    if (cwdClientData != NULL) {
-	NativeFreeInternalRep(cwdClientData);
-	cwdClientData = NULL;
+    if (tclCwdRecord.cwdClientData != NULL) {
+	NativeFreeInternalRep(tclCwdRecord.cwdClientData);
+	tclCwdRecord.cwdClientData = NULL;
     }
 
+    /* Remove all filesystems, freeing allocated memory. */
+
     /*
-     * Remove all filesystems, freeing any allocated memory that is no longer
-     * needed.
+     * TODO - isn't there a mechanism to finalize other file systems?
+     * Why does zipfs get special treatment?
      */
 
     TclZipfsFinalize();
-    fsRecPtr = filesystemList;
-    while (fsRecPtr != NULL) {
-	FilesystemRecord *tmpFsRecPtr = fsRecPtr->nextPtr;
-
-	/*
-	 * The native filesystem is static, so don't free it.
-	 */
-
-	if (fsRecPtr != &nativeFilesystemRecord) {
-	    Tcl_Free(fsRecPtr);
-	}
-	fsRecPtr = tmpFsRecPtr;
+    Tcl_DArrayFinit(&tclFsRecords.records);
+    if (++tclFsRecords.epoch == 0) {
+	++tclFsRecords.epoch;
     }
-    if (++theFilesystemEpoch == 0) {
-	++theFilesystemEpoch;
-    }
-    filesystemList = NULL;
 
     /*
-     * filesystemList is now NULL. Any attempt to use the filesystem is likely
-     * to fail.
+     * Any attempt to use the filesystem is likely to fail.
      */
 
 #ifdef _WIN32
@@ -815,10 +852,36 @@ TclFinalizeFilesystem(void)
 void
 TclResetFilesystem(void)
 {
-    filesystemList = &nativeFilesystemRecord;
-    if (++theFilesystemEpoch == 0) {
-	++theFilesystemEpoch;
+    Tcl_DArrayInit(&tclFsRecords.records, sizeof(TclFsRecord), 8);
+    if (++tclFsRecords.epoch == 0) {
+	++tclFsRecords.epoch;
     }
+}
+
+/*
+ *------------------------------------------------------------------------
+ *
+ * TclFsMatchRecord --
+ *
+ *	Compares two TclFSRecord structures for equality.
+ *
+ * Results:
+ *	1 on a match, 0 otherwise.
+ *
+ * Side effects:
+ *	None.
+ *
+ *------------------------------------------------------------------------
+ */
+static bool
+TclFsMatchRecord(
+    const void *firstPtr,
+    const void *secondPtr)
+{
+    const TclFsRecord *recPtr = (const TclFsRecord *)firstPtr;
+    const TclFsRecord *matchPtr = (const TclFsRecord *)secondPtr;
+    /* Currently, only the filesystem pointer has to match, not client data */
+    return recPtr->fsPtr == matchPtr->fsPtr;
 }
 
 /*
@@ -826,24 +889,25 @@ TclResetFilesystem(void)
  *
  * Tcl_FSRegister --
  *
- *	Prepends to the list of registered fileystems a new FilesystemRecord
- *	for the given Tcl_Filesystem, which is added even if it is already in
- *	the list.  To determine whether the filesystem is already in the list,
+ *	Registers a new fileystem, adding it even if it already registered.
+ *	To determine whether the filesystem is already registered,
  *	use Tcl_FSData().
+ *	TODO - why allow multiple registrations? At least require different
+ *	       clientData. Even Tcl_FSData does not distinguish between
+ *	       multiple registrations.
  *
- *	Functions that use the list generally process it from head to tail and
- *	use the first filesystem that is suitable.  Therefore, when adding a
- *	diagnostic filsystem (one which simply reports all fs activity), it
- *	must be at the head of the list.  I.e. it must be the last one
- *	registered.
+ *      Functions that process file systems generally process them in
+ *      reverse order of registration. Therefore, when adding a
+ *      diagnostic filsystem (one which simply reports all fs activity), it
+ *      must be at the head of the list.  I.e. it must be the last one
+ *      registered.
  *
  * Results:
  *	TCL_OK, or TCL_ERROR if memory for a new node in the list could
  *	not be allocated.
  *
  * Side effects:
- *	Allocates memory for a filesystem record and modifies the list of
- *	registered filesystems.
+ *	The global file system registry is modified.
  *
  *----------------------------------------------------------------------
  */
@@ -853,35 +917,20 @@ Tcl_FSRegister(
     void *clientData,		/* Client-specific data for this filesystem. */
     const Tcl_Filesystem *fsPtr)/* The filesystem record for the new fs. */
 {
-    FilesystemRecord *newFilesystemPtr;
+    TclFsRecord fsr = {clientData, fsPtr};
 
-    if (fsPtr == NULL) {
-	return TCL_ERROR;
-    }
-
-    newFilesystemPtr = (FilesystemRecord *)Tcl_Alloc(sizeof(FilesystemRecord));
-
-    newFilesystemPtr->clientData = clientData;
-    newFilesystemPtr->fsPtr = fsPtr;
-
-    Tcl_MutexLock(&filesystemMutex);
-
-    newFilesystemPtr->nextPtr = filesystemList;
-    newFilesystemPtr->prevPtr = NULL;
-    if (filesystemList) {
-	filesystemList->prevPtr = newFilesystemPtr;
-    }
-    filesystemList = newFilesystemPtr;
+    Tcl_MutexLock(&tclFsMutex);
+    Tcl_DArrayInsert(&tclFsRecords.records, TCL_SIZE_MAX, 1, &fsr);
 
     /*
      * Increment the filesystem epoch counter since existing pathnames might
      * conceivably now belong to different filesystems.
      */
 
-    if (++theFilesystemEpoch == 0) {
-	++theFilesystemEpoch;
+    if (++tclFsRecords.epoch == 0) {
+	++tclFsRecords.epoch;
     }
-    Tcl_MutexUnlock(&filesystemMutex);
+    Tcl_MutexUnlock(&tclFsMutex);
 
     return TCL_OK;
 }
@@ -898,12 +947,10 @@ Tcl_FSRegister(
  *	network connection.
  *
  * Results:
- *	TCL_OK if the function pointer was successfully removed, or TCL_ERROR
- *	otherwise.
+ *	TCL_OK on successful removal or TCL_ERROR otherwise.
  *
  * Side effects:
- *	The list of registered filesystems is updated.  Memory for the
- *	corresponding FilesystemRecord is eventually freed.
+ *	The process-wide file system registry is updated.
  *
  *----------------------------------------------------------------------
  */
@@ -913,47 +960,28 @@ Tcl_FSUnregister(
     const Tcl_Filesystem *fsPtr)/* The filesystem record to remove. */
 {
     int retVal = TCL_ERROR;
-    FilesystemRecord *fsRecPtr;
 
-    Tcl_MutexLock(&filesystemMutex);
+    /* TODO - check if in use, open channels etc. ? */
 
-    /*
-     * Traverse filesystemList in search of the record whose
-     * 'fsPtr' member matches 'fsPtr' and remove that record from the list.
-     * Do not revmoe the record for the native filesystem.
-     */
-
-    fsRecPtr = filesystemList;
-    while ((retVal == TCL_ERROR) && (fsRecPtr != &nativeFilesystemRecord)) {
-	if (fsRecPtr->fsPtr == fsPtr) {
-	    if (fsRecPtr->prevPtr) {
-		fsRecPtr->prevPtr->nextPtr = fsRecPtr->nextPtr;
-	    } else {
-		filesystemList = fsRecPtr->nextPtr;
-	    }
-	    if (fsRecPtr->nextPtr) {
-		fsRecPtr->nextPtr->prevPtr = fsRecPtr->prevPtr;
-	    }
-
-	    /*
-	     * Each cached pathname could now belong to a different filesystem,
-	     * so increment the filesystem epoch counter to ensure that cached
-	     * information about the removed filesystem is not used.
-	     */
-
-	    if (++theFilesystemEpoch == 0) {
-		++theFilesystemEpoch;
-	    }
-
-	    Tcl_Free(fsRecPtr);
-
-	    retVal = TCL_OK;
-	} else {
-	    fsRecPtr = fsRecPtr->nextPtr;
-	}
+    if (fsPtr == &tclNativeFilesystem) {
+	return TCL_ERROR;
     }
 
-    Tcl_MutexUnlock(&filesystemMutex);
+    Tcl_MutexLock(&tclFsMutex);
+
+    TclFsRecord fsr = {NULL, fsPtr};
+    Tcl_Size index;
+    index = Tcl_DArrayFind(&tclFsRecords.records, 0,
+	    TclFsMatchRecord, &fsr, NULL);
+    if (index >= 0) {
+	Tcl_DArrayDelete(&tclFsRecords.records, index, 1);
+	if (++tclFsRecords.epoch) {
+	    ++tclFsRecords.epoch;
+	}
+	retVal = TCL_OK;
+    }
+
+    Tcl_MutexUnlock(&tclFsMutex);
     return retVal;
 }
 
@@ -1192,14 +1220,14 @@ FsAddMountsToGlobResult(
  *
  * Tcl_FSMountsChanged --
  *
- *	Announecs that mount points have changed or that the system encoding
+ *	Announces that mount points have changed or that the system encoding
  *	has changed.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	The shared 'theFilesystemEpoch' is incremented, invalidating every
+ *	The file system epoch is incremented, invalidating every
  *	exising cached internal representation of a pathname.  Avoid calling
  *	Tcl_FSMountsChanged whenever possible.  It must be called when:
  *
@@ -1220,7 +1248,7 @@ FsAddMountsToGlobResult(
  *	normalized pathname changes.
  *
  *	Tcl has no control over (2) and (3), so each registered filesystem must
- *	call Tcl_FSMountsChnaged in each of those circumstances.
+ *	call Tcl_FSMountsChanged in each of those circumstances.
  *
  *	The reason for the exception in 2,3 for the native filesystem is that
  *	the native filesystem claims every file without determining whether
@@ -1228,7 +1256,6 @@ FsAddMountsToGlobResult(
  *
  *----------------------------------------------------------------------
  */
-
 void
 Tcl_FSMountsChanged(
     TCL_UNUSED(const Tcl_Filesystem *) /*fsPtr*/)
@@ -1242,11 +1269,11 @@ Tcl_FSMountsChanged(
      * internal representation.
      */
 
-    Tcl_MutexLock(&filesystemMutex);
-    if (++theFilesystemEpoch == 0) {
-	++theFilesystemEpoch;
+    Tcl_MutexLock(&tclFsMutex);
+    if (++tclFsRecords.epoch == 0) {
+	++tclFsRecords.epoch;
     }
-    Tcl_MutexUnlock(&filesystemMutex);
+    Tcl_MutexUnlock(&tclFsMutex);
 }
 
 /*
@@ -1258,7 +1285,7 @@ Tcl_FSMountsChanged(
  *
  * Results:
  *	A clientData value, or NULL if the given filesystem is not registered.
- *	The clientData value itself may also be NULL.
+ *	The clientData value itself may also be NULL - TODO
  *
  * Side effects:
  *	None.
@@ -1272,20 +1299,14 @@ Tcl_FSData(
 				  * registered filesystems. */
 {
     void *retVal = NULL;
-    FilesystemRecord *fsRecPtr = FsGetFirstFilesystem();
 
-    /*
-     * Find the filesystem in and retrieve its clientData.
-     */
-
-    while ((retVal == NULL) && (fsRecPtr != NULL)) {
-	if (fsRecPtr->fsPtr == fsPtr) {
-	    retVal = fsRecPtr->clientData;
-	}
-	fsRecPtr = fsRecPtr->nextPtr;
-    }
-
-    return retVal;
+    TclFsUpdateCache();
+    Tcl_Size index;
+    TclFsRecord fsr = {NULL, fsPtr};
+    void *recPtr;
+    index = Tcl_DArrayFind(&tclFsRecords.records, 0, TclFsMatchRecord, &fsr,
+	    &recPtr);
+    return index >= 0 ? ((TclFsRecord *)recPtr)->clientData : NULL;
 }
 
 /*
@@ -1326,7 +1347,6 @@ TclFSNormalizeToUniquePath(
 				 * is already normalized, i.e. not the index of
 				 * the byte just after the separator. */
 {
-    FilesystemRecord *fsRecPtr, *firstFsRecPtr;
 
     Tcl_Size i;
     int isVfsPath = 0;
@@ -1362,18 +1382,22 @@ TclFSNormalizeToUniquePath(
     /*
      * Call the the normalizePathProc routine of each registered filesystem.
      */
-    firstFsRecPtr = FsGetFirstFilesystem();
+    Tcl_Size fsRecCount;
+    const TclFsRecord *fsRecPtr;
+    const TclFsRecord *fsRecEndPtr;
+    TclFsUpdateCache();
+    TclFsClaim();	/* So pointers don't change in below loop */
 
-    Claim();
-
+    fsRecPtr = (TclFsRecord *)Tcl_DArrayElements(&tclFsRecords.records,
+	    &fsRecCount);
+    fsRecEndPtr = fsRecPtr + fsRecCount;
     if (!isVfsPath) {
 	/*
 	 * Find and call the native filesystem handler first if there is one
 	 * because the root of Tcl's filesystem is always a native filesystem
 	 * (i.e., '/' on unix is native).
 	 */
-
-	for (fsRecPtr=firstFsRecPtr; fsRecPtr!=NULL; fsRecPtr=fsRecPtr->nextPtr) {
+	for (; fsRecPtr < fsRecEndPtr; ++fsRecPtr) {
 	    if (fsRecPtr->fsPtr != &tclNativeFilesystem) {
 		continue;
 	    }
@@ -1389,9 +1413,10 @@ TclFSNormalizeToUniquePath(
 	    }
 	    break;
 	}
+	fsRecPtr = fsRecEndPtr - fsRecCount; /* Compensate for loop above */
     }
 
-    for (fsRecPtr=firstFsRecPtr; fsRecPtr!=NULL; fsRecPtr=fsRecPtr->nextPtr) {
+    for (; fsRecPtr < fsRecEndPtr; ++fsRecPtr) {
 	if (fsRecPtr->fsPtr == &tclNativeFilesystem) {
 	    /*
 	     * Skip the native system this time through.
@@ -1410,11 +1435,11 @@ TclFSNormalizeToUniquePath(
 	 * but there's not much benefit.
 	 */
     }
-    Disclaim();
+    TclFsDisclaim();
 
     return startAt;
 }
-
+
 /*
  *---------------------------------------------------------------------------
  *
@@ -2609,23 +2634,25 @@ Tcl_Obj *
 Tcl_FSGetCwd(
     Tcl_Interp *interp)
 {
-    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&fsDataKey);
+    TclFsTSD *fsTsdPtr = TclFsGetTSD();
+    TclCwdTSD *cwdTsdPtr = TCL_TYPED_TSD_INIT(&tclCwdDataKey, TclCwdTSD);
 
     if (TclFSCwdPointerEquals(NULL)) {
-	FilesystemRecord *fsRecPtr;
-	Tcl_Obj *retVal = NULL;
-
 	/*
 	 * This is the first time this routine has been called. Call
 	 * 'getCwdProc' for each registered filsystems until one returns
 	 * something other than NULL, which is a pointer to the pathname of the
 	 * current directory.
 	 */
-
-	fsRecPtr = FsGetFirstFilesystem();
-	Claim();
-	for (; (retVal == NULL) && (fsRecPtr != NULL);
-		fsRecPtr = fsRecPtr->nextPtr) {
+	const TclFsRecord *fsRecPtr;
+	const TclFsRecord *fsRecEndPtr;
+	Tcl_Size fsRecCount;
+	Tcl_Obj *retVal = NULL;
+	fsRecPtr = (TclFsRecord *)Tcl_DArrayElements(&tclFsRecords.records,
+		&fsRecCount);
+	fsRecEndPtr = fsRecPtr + fsRecCount;
+	TclFsClaim();
+	for (; (retVal == NULL) && (fsRecPtr < fsRecEndPtr); ++fsRecPtr) {
 	    void *retCd;
 	    TclFSGetCwdProc2 *proc2;
 
@@ -2671,7 +2698,7 @@ Tcl_FSGetCwd(
 		}
 		Tcl_DecrRefCount(retVal);
 		retVal = NULL;
-		Disclaim();
+		TclFsDisclaim();
 		goto cdDidNotChange;
 	    } else if (interp != NULL) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -2679,7 +2706,7 @@ Tcl_FSGetCwd(
 			Tcl_PosixError(interp)));
 	    }
 	}
-	Disclaim();
+	TclFsDisclaim();
 
 	if (retVal != NULL) {
 	    /*
@@ -2724,9 +2751,8 @@ Tcl_FSGetCwd(
 	 * example, the permissions on the current working directory have
 	 * changed.
 	 */
-
 	const Tcl_Filesystem *fsPtr =
-		Tcl_FSGetFileSystemForPath(tsdPtr->cwdPathPtr);
+		Tcl_FSGetFileSystemForPath(cwdTsdPtr->cwdPathPtr);
 	void *retCd = NULL;
 	Tcl_Obj *retVal, *norm;
 
@@ -2747,7 +2773,7 @@ Tcl_FSGetCwd(
 
 	    TclFSGetCwdProc2 *proc2 = (TclFSGetCwdProc2 *) fsPtr->getCwdProc;
 
-	    retCd = proc2(tsdPtr->cwdClientData);
+	    retCd = proc2(cwdTsdPtr->cwdClientData);
 	    if (retCd == NULL) {
 		if (interp != NULL) {
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -2756,7 +2782,7 @@ Tcl_FSGetCwd(
 		}
 		retVal = NULL;
 	    } else {
-		if (retCd == tsdPtr->cwdClientData) {
+		if (retCd == cwdTsdPtr->cwdClientData) {
 		    goto cdDidNotChange;
 		}
 
@@ -2792,7 +2818,7 @@ Tcl_FSGetCwd(
 	    if (retCd != NULL) {
 		fsPtr->freeInternalRepProc(retCd);
 	    }
-	} else if (norm == tsdPtr->cwdPathPtr) {
+	} else if (norm == cwdTsdPtr->cwdPathPtr) {
 	    goto cdEqual;
 	} else {
 	    /*
@@ -2806,7 +2832,7 @@ Tcl_FSGetCwd(
 	    Tcl_Size len1, len2;
 	    const char *str1, *str2;
 
-	    str1 = TclGetStringFromObj(tsdPtr->cwdPathPtr, &len1);
+	    str1 = TclGetStringFromObj(cwdTsdPtr->cwdPathPtr, &len1);
 	    str2 = TclGetStringFromObj(norm, &len2);
 	    if ((len1 == len2) && (strcmp(str1, str2) == 0)) {
 		/*
@@ -2829,14 +2855,14 @@ Tcl_FSGetCwd(
 	    }
 	}
 	Tcl_DecrRefCount(retVal);
-    }
+		}
 
   cdDidNotChange:
-    if (tsdPtr->cwdPathPtr != NULL) {
-	Tcl_IncrRefCount(tsdPtr->cwdPathPtr);
+    if (cwdTsdPtr->cwdPathPtr != NULL) {
+	Tcl_IncrRefCount(cwdTsdPtr->cwdPathPtr);
     }
 
-    return tsdPtr->cwdPathPtr;
+    return cwdTsdPtr->cwdPathPtr;
 }
 
 /*
@@ -2866,7 +2892,7 @@ Tcl_FSChdir(
     Tcl_Obj *pathPtr)
 {
     const Tcl_Filesystem *fsPtr, *oldFsPtr = NULL;
-    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&fsDataKey);
+    TclCwdTSD *tsdPtr = TCL_TYPED_TSD_INIT(&tclCwdDataKey, TclCwdTSD);
     int retVal = -1;
 
     if (tsdPtr->cwdPathPtr != NULL) {
@@ -3700,8 +3726,11 @@ Tcl_FSLink(
 Tcl_Obj *
 Tcl_FSListVolumes(void)
 {
-    FilesystemRecord *fsRecPtr;
+    TclFsTSD *tsdPtr = TclFsGetTSD();
     Tcl_Obj *resultPtr;
+    Tcl_Size fsRecCount;
+    const TclFsRecord *fsRecPtr;
+    const TclFsRecord *fsRecEndPtr;
 
     /*
      * Call each "listVolumes" function of each registered filesystem in
@@ -3710,9 +3739,11 @@ Tcl_FSListVolumes(void)
      */
 
     TclNewObj(resultPtr);
-    fsRecPtr = FsGetFirstFilesystem();
-    Claim();
-    while (fsRecPtr != NULL) {
+    fsRecPtr = (TclFsRecord *)Tcl_DArrayElements(&tclFsRecords.records,
+	    &fsRecCount);
+    fsRecEndPtr = fsRecPtr + fsRecCount;
+    TclFsClaim();
+    for (; fsRecPtr < fsRecEndPtr; ++fsRecPtr) {
 	if (fsRecPtr->fsPtr->listVolumesProc != NULL) {
 	    Tcl_Obj *thisFsVolumes = fsRecPtr->fsPtr->listVolumesProc();
 
@@ -3727,9 +3758,8 @@ Tcl_FSListVolumes(void)
 		Tcl_DecrRefCount(thisFsVolumes);
 	    }
 	}
-	fsRecPtr = fsRecPtr->nextPtr;
     }
-    Disclaim();
+    TclFsDisclaim();
 
     return resultPtr;
 }
@@ -3756,7 +3786,10 @@ FsListMounts(
     Tcl_Obj *pathPtr,		/* Pathname of directory to search. */
     const char *pattern)	/* Pattern to match against. */
 {
-    FilesystemRecord *fsRecPtr;
+    TclFsTSD *tsdPtr = TclFsGetTSD();
+    Tcl_Size fsRecCount;
+    const TclFsRecord *fsRecPtr;
+    const TclFsRecord *fsRecEndPtr;
     Tcl_GlobTypeData mountsOnly = { TCL_GLOB_TYPE_MOUNT, 0, NULL, NULL };
     Tcl_Obj *resultPtr = NULL;
 
@@ -3765,9 +3798,11 @@ FsListMounts(
      * passing it 'mountsOnly'.  Results accumulate in resultPtr.
      */
 
-    fsRecPtr = FsGetFirstFilesystem();
-    Claim();
-    while (fsRecPtr != NULL) {
+    fsRecPtr = (TclFsRecord *)Tcl_DArrayElements(&tclFsRecords.records,
+	    &fsRecCount);
+    fsRecEndPtr = fsRecPtr + fsRecCount;
+    TclFsClaim();
+    for (;fsRecPtr < fsRecEndPtr; ++fsRecPtr) {
 	if (fsRecPtr->fsPtr != &tclNativeFilesystem &&
 		fsRecPtr->fsPtr->matchInDirectoryProc != NULL) {
 	    if (resultPtr == NULL) {
@@ -3776,9 +3811,8 @@ FsListMounts(
 	    fsRecPtr->fsPtr->matchInDirectoryProc(NULL, resultPtr, pathPtr,
 		    pattern, &mountsOnly);
 	}
-	fsRecPtr = fsRecPtr->nextPtr;
     }
-    Disclaim();
+    TclFsDisclaim();
 
     return resultPtr;
 }
@@ -3963,7 +3997,10 @@ TclFSNonnativePathType(
 				 * incremented, and contining the name of the
 				 * volume if the pathname is absolute. */
 {
-    FilesystemRecord *fsRecPtr;
+    TclFsTSD *tsdPtr = TclFsGetTSD();
+    Tcl_Size fsRecCount;
+    const TclFsRecord *fsRecPtr;
+    const TclFsRecord *fsRecEndPtr;
     Tcl_PathType type = TCL_PATH_RELATIVE;
 
     /*
@@ -3971,9 +4008,10 @@ TclFSNonnativePathType(
      * filesystem other than the native filesystem.
      */
 
-    fsRecPtr = FsGetFirstFilesystem();
-    Claim();
-    while (fsRecPtr != NULL) {
+    fsRecPtr = (TclFsRecord *)Tcl_DArrayElements(&tclFsRecords.records,
+	    &fsRecCount);
+    fsRecEndPtr = fsRecCount + fsRecPtr;
+    for (; fsRecPtr < fsRecEndPtr; ++fsRecPtr) {
 	/*
 	 * Skip the native filesystem because otherwise some of the tests
 	 * in the Tcl testsuite might fail because some of the tests
@@ -4056,9 +4094,8 @@ TclFSNonnativePathType(
 		}
 	    }
 	}
-	fsRecPtr = fsRecPtr->nextPtr;
     }
-    Disclaim();
+    TclFsDisclaim();
     return type;
 }
 
@@ -4430,7 +4467,6 @@ const Tcl_Filesystem *
 Tcl_FSGetFileSystemForPath(
     Tcl_Obj *pathPtr)
 {
-    FilesystemRecord *fsRecPtr;
     const Tcl_Filesystem *retVal = NULL;
 
     if (pathPtr == NULL) {
@@ -4448,21 +4484,21 @@ Tcl_FSGetFileSystemForPath(
     }
 
     /* Start with an up-to-date copy of the filesystem. */
-    fsRecPtr = FsGetFirstFilesystem();
-    Claim();
+    TclFsUpdateCache();
+    TclFsClaim();
 
     /*
      * Ensure that pathPtr is a valid pathname.
      */
     if (TclFSEnsureEpochOk(pathPtr, &retVal) != TCL_OK) {
 	/* not a valid pathname */
-	Disclaim();
+	TclFsDisclaim();
 	return NULL;
     } else if (retVal != NULL) {
 	/*
 	 * Found the filesystem in the internal representation of pathPtr.
 	*/
-	Disclaim();
+	TclFsDisclaim();
 	return retVal;
     }
 
@@ -4470,7 +4506,13 @@ Tcl_FSGetFileSystemForPath(
      * Call each of the "pathInFilesystem" functions in succession until the
      * corresponding filesystem is found.
      */
-    for (; fsRecPtr!=NULL ; fsRecPtr=fsRecPtr->nextPtr) {
+    const TclFsRecord *fsRecPtr;
+    const TclFsRecord *fsRecEndPtr;
+    Tcl_Size fsRecCount;
+    fsRecPtr = (TclFsRecord *)Tcl_DArrayElements(&tclFsRecords.records,
+	    &fsRecCount);
+    fsRecEndPtr = fsRecCount + fsRecPtr;
+    for (; fsRecPtr < fsRecEndPtr; ++fsRecPtr) {
 	void *clientData = NULL;
 
 	if (fsRecPtr->fsPtr->pathInFilesystemProc == NULL) {
@@ -4484,11 +4526,11 @@ Tcl_FSGetFileSystemForPath(
 	     * representation of pathPtr. */
 
 	    TclFSSetPathDetails(pathPtr, fsRecPtr->fsPtr, clientData);
-	    Disclaim();
+	    TclFsDisclaim();
 	    return fsRecPtr->fsPtr;
 	}
     }
-    Disclaim();
+    TclFsDisclaim();
 
     return NULL;
 }

@@ -1544,6 +1544,9 @@ MODULE_SCOPE void	TclThreadDataKeySet(Tcl_ThreadDataKey *keyPtr,
 
 #define TCL_TSD_INIT(keyPtr) \
 	(ThreadSpecificData *)Tcl_GetThreadData((keyPtr), sizeof(ThreadSpecificData))
+#define TCL_TYPED_TSD_INIT(keyPtr, tsdType) \
+	(tsdType *)Tcl_GetThreadData((keyPtr), sizeof(tsdType))
+
 
 /*
  *----------------------------------------------------------------
@@ -5117,6 +5120,8 @@ MODULE_SCOPE void Tcl_DArrayClone(const Tcl_DArray *fromPtr, Tcl_DArray *toPtr);
 MODULE_SCOPE void Tcl_DArrayFinit(Tcl_DArray *daPtr);
 MODULE_SCOPE Tcl_Size Tcl_DArrayCount(const Tcl_DArray *daPtr);
 MODULE_SCOPE void *Tcl_DArrayIndex(const Tcl_DArray *daPtr, Tcl_Size index);
+MODULE_SCOPE void *Tcl_DArrayElements(const Tcl_DArray *daPtr,
+			Tcl_Size *countPtr);
 MODULE_SCOPE void Tcl_DArrayInsert(Tcl_DArray *daPtr, Tcl_Size index,
 			Tcl_Size count, const void *elemsPtr);
 MODULE_SCOPE void Tcl_DArrayCopy(const Tcl_DArray *fromPtr, Tcl_Size fromIndex,

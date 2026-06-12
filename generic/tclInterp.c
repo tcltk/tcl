@@ -39,11 +39,11 @@ typedef struct TclPostInitRecord {
     void *clientData;			/* Opaque argument. */
 } TclPostInitRecord;
 
-/* Process-wide post-initialization registrations */
 typedef struct TclPostInitRecords {
     Tcl_DArray da;
     size_t epoch;
 } TclPostInitRecords;
+/* Process-wide post-initialization registrations */
 static TclPostInitRecords postInitRecords = {
     TCL_DARRAY_INITIALIZER(sizeof(TclPostInitRecord)),
     0
@@ -5410,7 +5410,7 @@ TclPostInitThreadExitProc(
  * TclGetPostInitCache --
  *
  *	Returns a pointer to the per thread post-initialization cache,
- *	initializing it if necessar.
+ *	initializing it if necessary.
  *
  * Results:
  *	Pointer to the cache structure.
@@ -5510,12 +5510,11 @@ TclCallPostInitProcs(
     /*
      * If the cache is not in use and content has changed, update it.
      */
-    if (tsdPtr->postInitCache.epoch != postInitRecords.epoch) {
+    if (cachePtr->epoch != postInitRecords.epoch) {
 	/* T: postinit-1.* */
+	Tcl_DArrayClear(&cachePtr->da);
 	Tcl_MutexLock(&postInitMutex);
-	Tcl_DArrayClear(&tsdPtr->postInitCache.da);
-	Tcl_DArrayCopy(&postInitRecords.da, 0, TCL_SIZE_MAX,
-		&tsdPtr->postInitCache.da, 0);
+	Tcl_DArrayCopy(&postInitRecords.da, 0, TCL_SIZE_MAX, &cachePtr->da, 0);
 	cachePtr->epoch = postInitRecords.epoch;
 	Tcl_MutexUnlock(&postInitMutex);
     }

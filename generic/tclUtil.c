@@ -4983,6 +4983,35 @@ Tcl_DArrayIndex (
 /*
  *------------------------------------------------------------------------
  *
+ * Tcl_DArrayElements --
+ *
+ *	Retrieves a pointer to the array similar to Tcl_ListObjGetElements.
+ *	The returned pointer references the internal array so caller needs to
+ *	be careful to not reference it after any calls to a Tcl_DArray API
+ *	that can modify the array.
+ *
+ * Results:
+ *	Pointer to the array. This may be NULL for empty arrays. Caller should
+ *	check that *countPtr is not 0.
+ *
+ * Side effects:
+ *	None.
+ *
+ *------------------------------------------------------------------------
+ */
+void *
+Tcl_DArrayElements (
+    const Tcl_DArray *daPtr,
+    Tcl_Size *countPtr)		/* Holds count on return. Must not be NULL. */
+{
+    assert(TclDArrayValidate(daPtr));
+    *countPtr = daPtr->occupancy;
+    return daPtr->storage;
+}
+
+/*
+ *------------------------------------------------------------------------
+ *
  * Tcl_DArrayCount --
  *
  *	Returns number of elements in the dynamic array.
@@ -5195,7 +5224,8 @@ Tcl_DArrayFind(
     Tcl_DArrayMatchProc *matchProc, /* Callback to check for match */
     void *clientData,		/* Client data to pass to match function */
     void **elemPtrPtr)		/* Output pointer to matched element.
-				 * Pass as NULL if of no interest. */
+				 * Pass as NULL if of no interest. Only
+				 * valid if return value is >=0 */
 {
     assert(TclDArrayValidate(daPtr));
     if (start < 0) {
