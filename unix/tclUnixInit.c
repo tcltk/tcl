@@ -676,7 +676,8 @@ Tcl_GetEncodingNameFromEnvironment(
 }
 
 const char *
-Tcl_GetEncodingNameForUser(Tcl_DString *bufPtr)
+Tcl_GetEncodingNameForUser(
+    Tcl_DString *bufPtr)
 {
     return Tcl_GetEncodingNameFromEnvironment(bufPtr);
 }

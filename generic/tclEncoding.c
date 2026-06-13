@@ -3513,7 +3513,7 @@ UtfToCesu8Proc(
 
 #undef BYTE_COPYABLE
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -3531,9 +3531,15 @@ UtfToCesu8Proc(
  *----------------------------------------------------------------------
  */
 static int
-Cesu8ToUtfProc(void *clientData, const char *src, int srcLen, int flags,
-    Tcl_EncodingState *statePtr, char *dst, int dstLen,
-    int *srcReadPtr, int *dstWrotePtr, int *dstCharsPtr)
+Cesu8ToUtfProc(
+    void *clientData,
+    const char *src, int srcLen,
+    int flags,
+    Tcl_EncodingState *statePtr,
+    char *dst, int dstLen,
+    int *srcReadPtr,
+    int *dstWrotePtr,
+    int *dstCharsPtr)
 {
     return UtfToCesu8Proc(clientData,
 	    src, srcLen, flags | ENCODING_INPUT, statePtr,
