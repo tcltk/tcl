@@ -1190,7 +1190,8 @@ Tcl_InitSubsystems(void)
 					 * converting to/from double. */
 	    TclInitObjSubsystem();	/* Register obj types, create
 					 * mutexes. */
-	    TclInitIOSubsystem();	/* Inits a tsd key (noop). */
+	    TclInitFilesystem();	/* File system registrations. */
+	    TclInitIOSubsystem();       /* Inits a tsd key (noop). */
 	    TclInitEncodingSubsystem();	/* Process wide encoding init. */
 	    TclInitNamespaceSubsystem();/* Register ns obj type (mutexed). */
 	    TclZipfsInit();		/* Initialize zipfs subsystem. */

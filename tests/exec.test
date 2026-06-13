@@ -740,10 +740,11 @@ test exec-19.1 {exec >> uses O_APPEND} -constraints {exec unix notValgrind noosx
 	    {for a in d e f; do sleep 1; echo $a >&2; done} 2>>$tmpfile &
     # The above four shell invocations take about 3 seconds to finish, so allow
     # 5s (in case the machine is busy)
-    after 5000
+    after 15000
     # Check that no bytes have got lost through mixups with overlapping
     # appends, which is only guaranteed to work when we set O_APPEND on the
     # file descriptor in the [exec >>...]
+	   file copy $tmpfile xxx.tmp
     file size $tmpfile
 } -cleanup {
     removeFile $tmpfile

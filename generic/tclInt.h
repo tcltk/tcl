@@ -3469,7 +3469,7 @@ MODULE_SCOPE double	TclFloor(const void *a);
 MODULE_SCOPE void	TclFormatNaN(double value, char *buffer);
 MODULE_SCOPE int	TclFSFileAttrIndex(Tcl_Obj *pathPtr,
 			    const char *attributeName, int *indexPtr);
-MODULE_SCOPE Tcl_Size TclFSGetAncestorPaths(Tcl_Interp *interp, Tcl_Obj *pathPtr,
+MODULE_SCOPE Tcl_Size	TclFSGetAncestorPaths(Tcl_Interp *interp, Tcl_Obj *pathPtr,
 			    Tcl_Size numPaths, Tcl_Obj *pathsPtrs[]);
 MODULE_SCOPE Tcl_Obj *	TclFSJoinPathHelper(Tcl_Obj *pathPtr, Tcl_Size objc,
 			    Tcl_Obj *const *objv, bool forceRelative);
@@ -3521,6 +3521,7 @@ MODULE_SCOPE void	TclInitDoubleConversion(void);
 MODULE_SCOPE void	TclInitEmbeddedConfigurationInformation(
 			    Tcl_Interp *interp);
 MODULE_SCOPE void	TclInitEncodingSubsystem(void);
+MODULE_SCOPE void	TclInitFilesystem(void);
 MODULE_SCOPE void	TclInitIOSubsystem(void);
 MODULE_SCOPE void	TclInitLimitSupport(Tcl_Interp *interp);
 MODULE_SCOPE void	TclInitNamespaceSubsystem(void);

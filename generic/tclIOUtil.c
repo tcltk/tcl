@@ -115,7 +115,7 @@ static void		FsAddMountsToGlobResult(Tcl_Obj *resultPtr,
 			    Tcl_Obj *pathPtr, const char *pattern,
 			    Tcl_GlobTypeData *types);
 static void		FsUpdateCwd(Tcl_Obj *cwdObj, void *clientData);
-static void		TclFsUpdateCache(void);
+static TclFsTSD *	TclFsUpdateCache(void);
 static void		TclFsClaim(void);
 static void		TclFsDisclaim(void);
 
@@ -474,8 +474,6 @@ TclFsGetTSD ()
     TclFsTSD *tsdPtr = TCL_TYPED_TSD_INIT(&tclFsDataKey, TclFsTSD);
     if (!tsdPtr->initialized) {
 	Tcl_DArrayInit(&tsdPtr->fsRecordCache.records, sizeof(TclFsRecord), 8);
-	Tcl_DArrayInsert(&tsdPtr->fsRecordCache.records, 0, 1,
-		&tclNativeFsRecord);
 	tsdPtr->fsRecordCache.epoch = 0;
 	tsdPtr->initialized = true;
 	tsdPtr->claims = 0;
@@ -518,33 +516,26 @@ TclCwdThreadExitProc(
 /*
  *------------------------------------------------------------------------
  *
- * TclCwdGetTSD --
+ * TclFsRegisterNative --
  *
- *	Returns a pointer to the per thread cache of current directory,
- *	initializing it if necessary.
+ *	Registers the native file system.
  *
  * Results:
- *	Pointer to the cache structure.
+ *	None.
  *
  * Side effects:
- *	None.
+ *	Updates the global registry of file systems.
  *
  *------------------------------------------------------------------------
  */
-static TclCwdTSD *
-xxTclCwdGetTSD ()
+void
+TclInitFilesystem()
 {
-    TclCwdTSD *tsdPtr = TCL_TYPED_TSD_INIT(&tclCwdDataKey, TclCwdTSD);
-    if (!tsdPtr->initialized) {
-	Tcl_Obj *temp = Tcl_FSGetCwd(NULL);
-	if (temp) {
-	    Tcl_DecrRefCount(temp);
-	}
-	tsdPtr->initialized = true;
-	Tcl_CreateThreadExitHandler(TclCwdThreadExitProc, tsdPtr);
+    if (Tcl_FSRegister(NULL, &tclNativeFilesystem) != TCL_OK) {
+	Tcl_Panic("Could not initialize file system.");
     }
-    return tsdPtr;
 }
+
 
 int
 TclFSCwdIsNative(void)
@@ -651,22 +642,21 @@ TclFSCwdPointerEquals(
  *	iff stale and the cache is not in use.
  *
  * Results:
- *	None.
+ *	Returns pointer to updated thread-specific cache.
  *
  * Side effects:
  *	Updates TSD if needed.
  *
  *----------------------------------------------------------------------
  */
-static void
+static TclFsTSD *
 TclFsUpdateCache(void)
 {
     TclFsTSD *tsdPtr = TclFsGetTSD();
 
-	   /* TODO */
     if (tsdPtr->claims != 0 ||
 	    tsdPtr->fsRecordCache.epoch == tclFsRecords.epoch) {
-	return;
+	return tsdPtr;
     }
 
     Tcl_DArrayClear(&tsdPtr->fsRecordCache.records);
@@ -675,8 +665,9 @@ TclFsUpdateCache(void)
 	    &tsdPtr->fsRecordCache.records, 0);
     tsdPtr->fsRecordCache.epoch = tclFsRecords.epoch;
     Tcl_MutexUnlock(&tclFsMutex);
+    return tsdPtr;
 }
-
+
 /*
  * The epoch can is changed when a filesystems is added or removed, when
  * "system encoding" changes, and when env(HOME) changes.
@@ -1298,14 +1289,12 @@ Tcl_FSData(
     const Tcl_Filesystem *fsPtr) /* The filesystem to find in the list of
 				  * registered filesystems. */
 {
-    void *retVal = NULL;
-
-    TclFsUpdateCache();
     Tcl_Size index;
     TclFsRecord fsr = {NULL, fsPtr};
+    TclFsTSD *fsTsdPtr = TclFsUpdateCache();
     void *recPtr;
-    index = Tcl_DArrayFind(&tclFsRecords.records, 0, TclFsMatchRecord, &fsr,
-	    &recPtr);
+    index = Tcl_DArrayFind(&fsTsdPtr->fsRecordCache.records, 0,
+	    TclFsMatchRecord, &fsr, &recPtr);
     return index >= 0 ? ((TclFsRecord *)recPtr)->clientData : NULL;
 }
 
@@ -1383,22 +1372,20 @@ TclFSNormalizeToUniquePath(
      * Call the the normalizePathProc routine of each registered filesystem.
      */
     Tcl_Size fsRecCount;
-    const TclFsRecord *fsRecPtr;
-    const TclFsRecord *fsRecEndPtr;
-    TclFsUpdateCache();
+    const TclFsRecord *fsRecords;
+    TclFsTSD *fsTsdPtr = TclFsUpdateCache();
     TclFsClaim();	/* So pointers don't change in below loop */
+    fsRecords = (TclFsRecord *)Tcl_DArrayElements(
+	    &fsTsdPtr->fsRecordCache.records, &fsRecCount);
 
-    fsRecPtr = (TclFsRecord *)Tcl_DArrayElements(&tclFsRecords.records,
-	    &fsRecCount);
-    fsRecEndPtr = fsRecPtr + fsRecCount;
     if (!isVfsPath) {
 	/*
 	 * Find and call the native filesystem handler first if there is one
 	 * because the root of Tcl's filesystem is always a native filesystem
 	 * (i.e., '/' on unix is native).
 	 */
-	for (; fsRecPtr < fsRecEndPtr; ++fsRecPtr) {
-	    if (fsRecPtr->fsPtr != &tclNativeFilesystem) {
+	for (Tcl_Size fsIndex = fsRecCount; --fsIndex >= 0 ; ) {
+	    if (fsRecords[fsIndex].fsPtr != &tclNativeFilesystem) {
 		continue;
 	    }
 
@@ -1407,26 +1394,26 @@ TclFSNormalizeToUniquePath(
 	     * always exist.
 	     */
 
-	    if (fsRecPtr->fsPtr->normalizePathProc != NULL && startAt < INT_MAX) {
-		startAt = fsRecPtr->fsPtr->normalizePathProc(interp, pathPtr,
-			(int)startAt);
+	    if (fsRecords[fsIndex].fsPtr->normalizePathProc != NULL &&
+		    startAt < INT_MAX) {
+		startAt = fsRecords[fsIndex].fsPtr->normalizePathProc(interp,
+			pathPtr, (int)startAt);
 	    }
 	    break;
 	}
-	fsRecPtr = fsRecEndPtr - fsRecCount; /* Compensate for loop above */
     }
 
-    for (; fsRecPtr < fsRecEndPtr; ++fsRecPtr) {
-	if (fsRecPtr->fsPtr == &tclNativeFilesystem) {
+    for (Tcl_Size fsIndex = fsRecCount; --fsIndex >= 0; ) {
+	if (fsRecords[fsIndex].fsPtr == &tclNativeFilesystem) {
 	    /*
 	     * Skip the native system this time through.
 	     */
 	    continue;
 	}
 
-	if (fsRecPtr->fsPtr->normalizePathProc != NULL && startAt < INT_MAX) {
-	    startAt = fsRecPtr->fsPtr->normalizePathProc(interp, pathPtr,
-		    (int)startAt);
+	if (fsRecords[fsIndex].fsPtr->normalizePathProc != NULL && startAt < INT_MAX) {
+	    startAt = fsRecords[fsIndex].fsPtr->normalizePathProc(interp,
+		    pathPtr, (int)startAt);
 	}
 
 	/*
@@ -2634,7 +2621,6 @@ Tcl_Obj *
 Tcl_FSGetCwd(
     Tcl_Interp *interp)
 {
-    TclFsTSD *fsTsdPtr = TclFsGetTSD();
     TclCwdTSD *cwdTsdPtr = TCL_TYPED_TSD_INIT(&tclCwdDataKey, TclCwdTSD);
 
     if (TclFSCwdPointerEquals(NULL)) {
@@ -2644,28 +2630,27 @@ Tcl_FSGetCwd(
 	 * something other than NULL, which is a pointer to the pathname of the
 	 * current directory.
 	 */
-	const TclFsRecord *fsRecPtr;
-	const TclFsRecord *fsRecEndPtr;
-	Tcl_Size fsRecCount;
+	const TclFsRecord *fsRecords;
+	Tcl_Size index;
 	Tcl_Obj *retVal = NULL;
-	fsRecPtr = (TclFsRecord *)Tcl_DArrayElements(&tclFsRecords.records,
-		&fsRecCount);
-	fsRecEndPtr = fsRecPtr + fsRecCount;
+	TclFsTSD *fsTsdPtr = TclFsUpdateCache();
 	TclFsClaim();
-	for (; (retVal == NULL) && (fsRecPtr < fsRecEndPtr); ++fsRecPtr) {
+	fsRecords = (TclFsRecord *)Tcl_DArrayElements(
+		&fsTsdPtr->fsRecordCache.records, &index);
+	while (--index >= 0) {
 	    void *retCd;
 	    TclFSGetCwdProc2 *proc2;
 
-	    if (fsRecPtr->fsPtr->getCwdProc == NULL) {
+	    if (fsRecords[index].fsPtr->getCwdProc == NULL) {
 		continue;
 	    }
 
-	    if (fsRecPtr->fsPtr->version == TCL_FILESYSTEM_VERSION_1) {
-		retVal = fsRecPtr->fsPtr->getCwdProc(interp);
+	    if (fsRecords[index].fsPtr->version == TCL_FILESYSTEM_VERSION_1) {
+		retVal = fsRecords[index].fsPtr->getCwdProc(interp);
 		continue;
 	    }
 
-	    proc2 = (TclFSGetCwdProc2 *) fsRecPtr->fsPtr->getCwdProc;
+	    proc2 = (TclFSGetCwdProc2 *) fsRecords[index].fsPtr->getCwdProc;
 	    retCd = proc2(NULL);
 	    if (retCd != NULL) {
 		Tcl_Obj *norm;
@@ -2674,7 +2659,7 @@ Tcl_FSGetCwd(
 		 * Found the pathname of the current directory.
 		 */
 
-		retVal = fsRecPtr->fsPtr->internalToNormalizedProc(retCd);
+		retVal = fsRecords[index].fsPtr->internalToNormalizedProc(retCd);
 		Tcl_IncrRefCount(retVal);
 		norm = TclFSNormalizeAbsolutePath(interp,retVal);
 		if (norm != NULL) {
@@ -2694,7 +2679,7 @@ Tcl_FSGetCwd(
 		    FsUpdateCwd(norm, retCd);
 		    Tcl_DecrRefCount(norm);
 		} else {
-		    fsRecPtr->fsPtr->freeInternalRepProc(retCd);
+		    fsRecords[index].fsPtr->freeInternalRepProc(retCd);
 		}
 		Tcl_DecrRefCount(retVal);
 		retVal = NULL;
@@ -3726,27 +3711,23 @@ Tcl_FSLink(
 Tcl_Obj *
 Tcl_FSListVolumes(void)
 {
-    TclFsTSD *tsdPtr = TclFsGetTSD();
     Tcl_Obj *resultPtr;
-    Tcl_Size fsRecCount;
-    const TclFsRecord *fsRecPtr;
-    const TclFsRecord *fsRecEndPtr;
+    TclNewObj(resultPtr);
+    Tcl_Size fsIndex;
+    TclFsTSD *fsTsdPtr = TclFsUpdateCache();
+    TclFsClaim();
+    const TclFsRecord *fsRecords = (TclFsRecord *)Tcl_DArrayElements(
+	    &fsTsdPtr->fsRecordCache.records, &fsIndex);
 
     /*
      * Call each "listVolumes" function of each registered filesystem in
      * succession. A non-NULL return value indicates the particular function
      * has succeeded.
      */
-
-    TclNewObj(resultPtr);
-    fsRecPtr = (TclFsRecord *)Tcl_DArrayElements(&tclFsRecords.records,
-	    &fsRecCount);
-    fsRecEndPtr = fsRecPtr + fsRecCount;
-    TclFsClaim();
-    for (; fsRecPtr < fsRecEndPtr; ++fsRecPtr) {
-	if (fsRecPtr->fsPtr->listVolumesProc != NULL) {
-	    Tcl_Obj *thisFsVolumes = fsRecPtr->fsPtr->listVolumesProc();
-
+    while (--fsIndex >= 0) {
+	if (fsRecords[fsIndex].fsPtr->listVolumesProc != NULL) {
+	    Tcl_Obj *thisFsVolumes;
+	    thisFsVolumes = fsRecords[fsIndex].fsPtr->listVolumesProc();
 	    if (thisFsVolumes != NULL) {
 		Tcl_ListObjAppendList(NULL, resultPtr, thisFsVolumes);
 		/*
@@ -3786,30 +3767,28 @@ FsListMounts(
     Tcl_Obj *pathPtr,		/* Pathname of directory to search. */
     const char *pattern)	/* Pattern to match against. */
 {
-    TclFsTSD *tsdPtr = TclFsGetTSD();
-    Tcl_Size fsRecCount;
-    const TclFsRecord *fsRecPtr;
-    const TclFsRecord *fsRecEndPtr;
+    Tcl_Size fsIndex;
+    const TclFsRecord *fsRecords;
     Tcl_GlobTypeData mountsOnly = { TCL_GLOB_TYPE_MOUNT, 0, NULL, NULL };
     Tcl_Obj *resultPtr = NULL;
+    TclFsTSD *fsTsdPtr = TclFsUpdateCache();
+
+    TclFsClaim();
+    fsRecords = (TclFsRecord *)Tcl_DArrayElements(
+	    &fsTsdPtr->fsRecordCache.records, &fsIndex);
 
     /*
      * Call the matchInDirectory function of each registered filesystem,
      * passing it 'mountsOnly'.  Results accumulate in resultPtr.
      */
-
-    fsRecPtr = (TclFsRecord *)Tcl_DArrayElements(&tclFsRecords.records,
-	    &fsRecCount);
-    fsRecEndPtr = fsRecPtr + fsRecCount;
-    TclFsClaim();
-    for (;fsRecPtr < fsRecEndPtr; ++fsRecPtr) {
-	if (fsRecPtr->fsPtr != &tclNativeFilesystem &&
-		fsRecPtr->fsPtr->matchInDirectoryProc != NULL) {
+    while (--fsIndex >= 0) {
+	if (fsRecords[fsIndex].fsPtr != &tclNativeFilesystem &&
+		fsRecords[fsIndex].fsPtr->matchInDirectoryProc != NULL) {
 	    if (resultPtr == NULL) {
 		TclNewObj(resultPtr);
 	    }
-	    fsRecPtr->fsPtr->matchInDirectoryProc(NULL, resultPtr, pathPtr,
-		    pattern, &mountsOnly);
+	    fsRecords[fsIndex].fsPtr->matchInDirectoryProc(NULL, resultPtr,
+		    pathPtr, pattern, &mountsOnly);
 	}
     }
     TclFsDisclaim();
@@ -3997,26 +3976,25 @@ TclFSNonnativePathType(
 				 * incremented, and contining the name of the
 				 * volume if the pathname is absolute. */
 {
-    TclFsTSD *tsdPtr = TclFsGetTSD();
-    Tcl_Size fsRecCount;
-    const TclFsRecord *fsRecPtr;
-    const TclFsRecord *fsRecEndPtr;
     Tcl_PathType type = TCL_PATH_RELATIVE;
+    Tcl_Size index;
+    const TclFsRecord *fsRecords;
+    TclFsTSD *fsTsdPtr = TclFsUpdateCache();
+    TclFsClaim();
+    fsRecords = (TclFsRecord *)Tcl_DArrayElements(
+	    &fsTsdPtr->fsRecordCache.records, &index);
 
     /*
      * Determine whether the given pathname is an absolute pathname on some
      * filesystem other than the native filesystem.
      */
 
-    fsRecPtr = (TclFsRecord *)Tcl_DArrayElements(&tclFsRecords.records,
-	    &fsRecCount);
-    fsRecEndPtr = fsRecCount + fsRecPtr;
-    for (; fsRecPtr < fsRecEndPtr; ++fsRecPtr) {
+    while (--index >= 0) {
 	/*
 	 * Skip the native filesystem because otherwise some of the tests
 	 * in the Tcl testsuite might fail because some of the tests
 	 * artificially change the current platform (between win, unix) but the
-	 * list of volumes obtained by calling fsRecPtr->fsPtr->listVolumesProc
+	 * list of volumes obtained by calling fsRecords[index].fsPtr->listVolumesProc
 	 * reflects the current (real) platform only. In particular, on Unix
 	 * '/' matchs the beginning of certain absolute Windows pathnames
 	 * starting '//' and those tests go wrong.
@@ -4028,10 +4006,10 @@ TclFSNonnativePathType(
 	 * filesystem continuously returning a list of volumes.
 	 */
 
-	if ((fsRecPtr->fsPtr != &tclNativeFilesystem)
-		&& (fsRecPtr->fsPtr->listVolumesProc != NULL)) {
+	if ((fsRecords[index].fsPtr != &tclNativeFilesystem)
+		&& (fsRecords[index].fsPtr->listVolumesProc != NULL)) {
 	    Tcl_Size numVolumes;
-	    Tcl_Obj *thisFsVolumes = fsRecPtr->fsPtr->listVolumesProc();
+	    Tcl_Obj *thisFsVolumes = fsRecords[index].fsPtr->listVolumesProc();
 
 	    if (thisFsVolumes != NULL) {
 		if (TclListObjLength(NULL, thisFsVolumes, &numVolumes)
@@ -4072,7 +4050,7 @@ TclFSNonnativePathType(
 		    }
 		    if (matched) {
 			if (filesystemPtrPtr != NULL) {
-			    *filesystemPtrPtr = fsRecPtr->fsPtr;
+			    *filesystemPtrPtr = fsRecords[index].fsPtr;
 			}
 			if (driveNameLengthPtr != NULL) {
 			    *driveNameLengthPtr = len;
@@ -4484,7 +4462,7 @@ Tcl_FSGetFileSystemForPath(
     }
 
     /* Start with an up-to-date copy of the filesystem. */
-    TclFsUpdateCache();
+    TclFsTSD *fsTsdPtr = TclFsUpdateCache();
     TclFsClaim();
 
     /*
@@ -4506,28 +4484,26 @@ Tcl_FSGetFileSystemForPath(
      * Call each of the "pathInFilesystem" functions in succession until the
      * corresponding filesystem is found.
      */
-    const TclFsRecord *fsRecPtr;
-    const TclFsRecord *fsRecEndPtr;
-    Tcl_Size fsRecCount;
-    fsRecPtr = (TclFsRecord *)Tcl_DArrayElements(&tclFsRecords.records,
-	    &fsRecCount);
-    fsRecEndPtr = fsRecCount + fsRecPtr;
-    for (; fsRecPtr < fsRecEndPtr; ++fsRecPtr) {
+    Tcl_Size fsIndex;
+    const TclFsRecord *fsRecords;
+    fsRecords = (TclFsRecord *)Tcl_DArrayElements(
+	    &fsTsdPtr->fsRecordCache.records, &fsIndex);
+    while (--fsIndex >= 0) {
 	void *clientData = NULL;
 
-	if (fsRecPtr->fsPtr->pathInFilesystemProc == NULL) {
+	if (fsRecords[fsIndex].fsPtr->pathInFilesystemProc == NULL) {
 	    continue;
 	}
 
-	if (fsRecPtr->fsPtr->pathInFilesystemProc(pathPtr, &clientData)!=-1) {
+	if (fsRecords[fsIndex].fsPtr->pathInFilesystemProc(pathPtr, &clientData)!=-1) {
 	    /* This is the filesystem for pathPtr.  Assume the type of pathPtr
 	     * hasn't been changed by the above call to the
 	     * pathInFilesystemProc, and cache this result in the internal
 	     * representation of pathPtr. */
 
-	    TclFSSetPathDetails(pathPtr, fsRecPtr->fsPtr, clientData);
+	    TclFSSetPathDetails(pathPtr, fsRecords[fsIndex].fsPtr, clientData);
 	    TclFsDisclaim();
-	    return fsRecPtr->fsPtr;
+	    return fsRecords[fsIndex].fsPtr;
 	}
     }
     TclFsDisclaim();
