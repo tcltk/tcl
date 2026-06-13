@@ -442,14 +442,14 @@ static void
 TclFsThreadExitProc(
     void *clientData)		/* Pointer to the TSD */
 {
-    TclFsTSD *tsdPtr = (TclFsTSD *) clientData;
+    TclFsTSD *fsTsdPtr = (TclFsTSD *) clientData;
 
-    assert(tsdPtr->initialized);
-    assert(tsdPtr->claims == 0);
+    assert(fsTsdPtr->initialized);
+    assert(fsTsdPtr->claims == 0);
 
-    Tcl_DArrayFinit(&tsdPtr->fsRecordCache.records);
-    tsdPtr->initialized = false;
-    tsdPtr->fsRecordCache.epoch = 0;
+    Tcl_DArrayFinit(&fsTsdPtr->fsRecordCache.records);
+    fsTsdPtr->initialized = false;
+    fsTsdPtr->fsRecordCache.epoch = 0;
 }
 
 /*
@@ -471,15 +471,15 @@ TclFsThreadExitProc(
 static TclFsTSD *
 TclFsGetTSD ()
 {
-    TclFsTSD *tsdPtr = TCL_TYPED_TSD_INIT(&tclFsDataKey, TclFsTSD);
-    if (!tsdPtr->initialized) {
-	Tcl_DArrayInit(&tsdPtr->fsRecordCache.records, sizeof(TclFsRecord), 8);
-	tsdPtr->fsRecordCache.epoch = 0;
-	tsdPtr->initialized = true;
-	tsdPtr->claims = 0;
-	Tcl_CreateThreadExitHandler(TclFsThreadExitProc, tsdPtr);
+    TclFsTSD *fsTsdPtr = TCL_TYPED_TSD_INIT(&tclFsDataKey, TclFsTSD);
+    if (!fsTsdPtr->initialized) {
+	Tcl_DArrayInit(&fsTsdPtr->fsRecordCache.records, sizeof(TclFsRecord), 8);
+	fsTsdPtr->fsRecordCache.epoch = 0;
+	fsTsdPtr->initialized = true;
+	fsTsdPtr->claims = 0;
+	Tcl_CreateThreadExitHandler(TclFsThreadExitProc, fsTsdPtr);
     }
-    return tsdPtr;
+    return fsTsdPtr;
 }
 
 /*
@@ -502,14 +502,14 @@ static void
 TclCwdThreadExitProc(
     void *clientData)		/* Pointer to the TSD */
 {
-    TclCwdTSD *tsdPtr = (TclCwdTSD *)clientData;
+    TclCwdTSD *cwdTsdPtr = (TclCwdTSD *)clientData;
 
-    if (tsdPtr->cwdPathPtr != NULL) {
-	Tcl_DecrRefCount(tsdPtr->cwdPathPtr);
-	tsdPtr->cwdPathPtr = NULL;
+    if (cwdTsdPtr->cwdPathPtr != NULL) {
+	Tcl_DecrRefCount(cwdTsdPtr->cwdPathPtr);
+	cwdTsdPtr->cwdPathPtr = NULL;
     }
-    if (tsdPtr->cwdClientData != NULL) {
-	NativeFreeInternalRep(tsdPtr->cwdClientData);
+    if (cwdTsdPtr->cwdClientData != NULL) {
+	NativeFreeInternalRep(cwdTsdPtr->cwdClientData);
     }
 }
 
@@ -540,17 +540,17 @@ TclInitFilesystem()
 int
 TclFSCwdIsNative(void)
 {
-    TclCwdTSD *tsdPtr = TCL_TYPED_TSD_INIT(&tclCwdDataKey, TclCwdTSD);
+    TclCwdTSD *cwdTsdPtr = TCL_TYPED_TSD_INIT(&tclCwdDataKey, TclCwdTSD);
 
     /* if not yet initialized - ensure we'll once obtain cwd */
-    if (!tsdPtr->cwdPathEpoch) {
+    if (!cwdTsdPtr->cwdPathEpoch) {
 	Tcl_Obj *temp = Tcl_FSGetCwd(NULL);
 	if (temp) {
 	    Tcl_DecrRefCount(temp);
 	}
     }
 
-    return tsdPtr->cwdClientData != NULL;
+    return cwdTsdPtr->cwdClientData != NULL;
 }
 
 /*
@@ -579,44 +579,49 @@ int
 TclFSCwdPointerEquals(
     Tcl_Obj **pathPtrPtr)
 {
-    TclCwdTSD *tsdPtr = TCL_TYPED_TSD_INIT(&tclCwdDataKey, TclCwdTSD);
+    TclCwdTSD *cwdTsdPtr = TCL_TYPED_TSD_INIT(&tclCwdDataKey, TclCwdTSD);
 
     Tcl_MutexLock(&tclCwdMutex);
-    if (tsdPtr->cwdPathPtr == NULL
-	    || tsdPtr->cwdPathEpoch != tclCwdRecord.cwdPathEpoch) {
-	if (tsdPtr->cwdPathPtr != NULL) {
-	    Tcl_DecrRefCount(tsdPtr->cwdPathPtr);
+    if (cwdTsdPtr->cwdPathPtr == NULL
+	    || cwdTsdPtr->cwdPathEpoch != tclCwdRecord.cwdPathEpoch) {
+	if (cwdTsdPtr->cwdPathPtr != NULL) {
+	    Tcl_DecrRefCount(cwdTsdPtr->cwdPathPtr);
 	}
-	if (tsdPtr->cwdClientData != NULL) {
-	    NativeFreeInternalRep(tsdPtr->cwdClientData);
+	if (cwdTsdPtr->cwdClientData != NULL) {
+	    NativeFreeInternalRep(cwdTsdPtr->cwdClientData);
 	}
 	if (tclCwdRecord.cwdPathPtr == NULL) {
-	    tsdPtr->cwdPathPtr = NULL;
+	    cwdTsdPtr->cwdPathPtr = NULL;
 	} else {
-	    tsdPtr->cwdPathPtr = Tcl_DuplicateObj(tclCwdRecord.cwdPathPtr);
-	    Tcl_IncrRefCount(tsdPtr->cwdPathPtr);
+	    cwdTsdPtr->cwdPathPtr = Tcl_DuplicateObj(tclCwdRecord.cwdPathPtr);
+	    Tcl_IncrRefCount(cwdTsdPtr->cwdPathPtr);
 	}
 	if (tclCwdRecord.cwdClientData == NULL) {
-	    tsdPtr->cwdClientData = NULL;
+	    cwdTsdPtr->cwdClientData = NULL;
 	} else {
-	    tsdPtr->cwdClientData =
+	    cwdTsdPtr->cwdClientData =
 		    TclNativeDupInternalRep(tclCwdRecord.cwdClientData);
 	}
-	tsdPtr->cwdPathEpoch = tclCwdRecord.cwdPathEpoch;
+	cwdTsdPtr->cwdPathEpoch = tclCwdRecord.cwdPathEpoch;
     }
     Tcl_MutexUnlock(&tclCwdMutex);
 
-    if (pathPtrPtr == NULL) {
-	return tsdPtr->cwdPathPtr == NULL;
+    if (!cwdTsdPtr->initialized) {
+	Tcl_CreateThreadExitHandler(TclCwdThreadExitProc, cwdTsdPtr);
+	cwdTsdPtr->initialized = true;
     }
 
-    if (tsdPtr->cwdPathPtr == *pathPtrPtr) {
+    if (pathPtrPtr == NULL) {
+	return cwdTsdPtr->cwdPathPtr == NULL;
+    }
+
+    if (cwdTsdPtr->cwdPathPtr == *pathPtrPtr) {
 	return 1;
     } else {
 	Tcl_Size len1, len2;
 	const char *str1, *str2;
 
-	str1 = TclGetStringFromObj(tsdPtr->cwdPathPtr, &len1);
+	str1 = TclGetStringFromObj(cwdTsdPtr->cwdPathPtr, &len1);
 	str2 = TclGetStringFromObj(*pathPtrPtr, &len2);
 	if ((len1 == len2) && !memcmp(str1, str2, len1)) {
 	    /*
@@ -625,7 +630,7 @@ TclFSCwdPointerEquals(
 	     */
 
 	    Tcl_DecrRefCount(*pathPtrPtr);
-	    *pathPtrPtr = tsdPtr->cwdPathPtr;
+	    *pathPtrPtr = cwdTsdPtr->cwdPathPtr;
 	    Tcl_IncrRefCount(*pathPtrPtr);
 	    return 1;
 	} else {
@@ -653,20 +658,20 @@ TclFSCwdPointerEquals(
 static TclFsTSD *
 TclFsUpdateCache(void)
 {
-    TclFsTSD *tsdPtr = TclFsGetTSD();
+    TclFsTSD *fsTsdPtr = TclFsGetTSD();
 
-    if (tsdPtr->claims != 0 ||
-	    tsdPtr->fsRecordCache.epoch == tclFsRecords.epoch) {
-	return tsdPtr;
+    if (fsTsdPtr->claims != 0 ||
+	    fsTsdPtr->fsRecordCache.epoch == tclFsRecords.epoch) {
+	return fsTsdPtr;
     }
 
-    Tcl_DArrayClear(&tsdPtr->fsRecordCache.records);
+    Tcl_DArrayClear(&fsTsdPtr->fsRecordCache.records);
     Tcl_MutexLock(&tclFsMutex);
     Tcl_DArrayCopy(&tclFsRecords.records, 0, TCL_SIZE_MAX,
-	    &tsdPtr->fsRecordCache.records, 0);
-    tsdPtr->fsRecordCache.epoch = tclFsRecords.epoch;
+	    &fsTsdPtr->fsRecordCache.records, 0);
+    fsTsdPtr->fsRecordCache.epoch = tclFsRecords.epoch;
     Tcl_MutexUnlock(&tclFsMutex);
-    return tsdPtr;
+    return fsTsdPtr;
 }
 
 /*
@@ -684,22 +689,22 @@ TclFSEpochOk(
 static void
 TclFsClaim(void)
 {
-    TclFsTSD *tsdPtr = TclFsGetTSD();
-    tsdPtr->claims++;
+    TclFsTSD *fsTsdPtr = TclFsGetTSD();
+    fsTsdPtr->claims++;
 }
 
 static void
 TclFsDisclaim(void)
 {
-    TclFsTSD *tsdPtr = TclFsGetTSD();
-    tsdPtr->claims--;
+    TclFsTSD *fsTsdPtr = TclFsGetTSD();
+    fsTsdPtr->claims--;
 }
 
 size_t
 TclFSEpoch(void)
 {
-    TclFsTSD *tsdPtr = TclFsGetTSD();
-    return tsdPtr->fsRecordCache.epoch;
+    TclFsTSD *fsTsdPtr = TclFsGetTSD();
+    return fsTsdPtr->fsRecordCache.epoch;
 }
 
 /*
@@ -713,7 +718,7 @@ FsUpdateCwd(
 {
     Tcl_Size len = 0;
     const char *str = NULL;
-    TclCwdTSD *tsdPtr = TCL_TYPED_TSD_INIT(&tclCwdDataKey, TclCwdTSD);
+    TclCwdTSD *cwdTsdPtr = TCL_TYPED_TSD_INIT(&tclCwdDataKey, TclCwdTSD);
 
     if (cwdObj != NULL) {
 	str = TclGetStringFromObj(cwdObj, &len);
@@ -743,23 +748,23 @@ FsUpdateCwd(
     if (++tclCwdRecord.cwdPathEpoch == 0) {
 	++tclCwdRecord.cwdPathEpoch;
     }
-    tsdPtr->cwdPathEpoch = tclCwdRecord.cwdPathEpoch;
+    cwdTsdPtr->cwdPathEpoch = tclCwdRecord.cwdPathEpoch;
     Tcl_MutexUnlock(&tclCwdMutex);
 
-    if (tsdPtr->cwdPathPtr) {
-	Tcl_DecrRefCount(tsdPtr->cwdPathPtr);
+    if (cwdTsdPtr->cwdPathPtr) {
+	Tcl_DecrRefCount(cwdTsdPtr->cwdPathPtr);
     }
-    if (tsdPtr->cwdClientData) {
-	NativeFreeInternalRep(tsdPtr->cwdClientData);
+    if (cwdTsdPtr->cwdClientData) {
+	NativeFreeInternalRep(cwdTsdPtr->cwdClientData);
     }
 
     if (cwdObj == NULL) {
-	tsdPtr->cwdPathPtr = NULL;
-	tsdPtr->cwdClientData = NULL;
+	cwdTsdPtr->cwdPathPtr = NULL;
+	cwdTsdPtr->cwdClientData = NULL;
     } else {
-	tsdPtr->cwdPathPtr = Tcl_NewStringObj(str, len);
-	tsdPtr->cwdClientData = clientData;
-	Tcl_IncrRefCount(tsdPtr->cwdPathPtr);
+	cwdTsdPtr->cwdPathPtr = Tcl_NewStringObj(str, len);
+	cwdTsdPtr->cwdClientData = clientData;
+	Tcl_IncrRefCount(cwdTsdPtr->cwdPathPtr);
     }
 }
 
@@ -844,7 +849,9 @@ TclFinalizeFilesystem(void)
 void
 TclResetFilesystem(void)
 {
-    Tcl_DArrayInit(&tclFsRecords.records, sizeof(TclFsRecord), 8);
+    /* Call with 0 capacity to avoid valgrind reachable warning on exit */
+    Tcl_DArrayInit(&tclFsRecords.records, sizeof(TclFsRecord), 0);
+    //tclFsRecords.records = (Tcl_DArray) TCL_DARRAY_INITIALIZER(sizeof(TclFsRecord));
     if (++tclFsRecords.epoch == 0) {
 	++tclFsRecords.epoch;
     }
@@ -2880,11 +2887,11 @@ Tcl_FSChdir(
     Tcl_Obj *pathPtr)
 {
     const Tcl_Filesystem *fsPtr, *oldFsPtr = NULL;
-    TclCwdTSD *tsdPtr = TCL_TYPED_TSD_INIT(&tclCwdDataKey, TclCwdTSD);
+    TclCwdTSD *cwdTsdPtr = TCL_TYPED_TSD_INIT(&tclCwdDataKey, TclCwdTSD);
     int retVal = -1;
 
-    if (tsdPtr->cwdPathPtr != NULL) {
-	oldFsPtr = Tcl_FSGetFileSystemForPath(tsdPtr->cwdPathPtr);
+    if (cwdTsdPtr->cwdPathPtr != NULL) {
+	oldFsPtr = Tcl_FSGetFileSystemForPath(cwdTsdPtr->cwdPathPtr);
     }
     if (Tcl_FSGetNormalizedPath(NULL, pathPtr) == NULL) {
 	Tcl_SetErrno(ENOENT);
@@ -2949,7 +2956,7 @@ Tcl_FSChdir(
 
 	if (fsPtr == &tclNativeFilesystem) {
 	    void *cd;
-	    void *oldcd = tsdPtr->cwdClientData;
+	    void *oldcd = cwdTsdPtr->cwdClientData;
 
 	    /*
 	     * Assume that the native filesystem has a getCwdProc and that it

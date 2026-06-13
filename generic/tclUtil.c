@@ -4894,7 +4894,11 @@ Tcl_DArrayInit(
 {
     *daPtr = (Tcl_DArray) TCL_DARRAY_INITIALIZER(elemSize);
     daPtr->capacity = initialCapacity;
-    daPtr->storage = (char *)Tcl_Alloc(elemSize * initialCapacity);
+    if (initialCapacity > 0) {
+	daPtr->storage = (char *)Tcl_Alloc(elemSize * initialCapacity);
+    } else {
+	daPtr->storage = NULL;
+    }
 }
 
 /*
