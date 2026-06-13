@@ -118,29 +118,30 @@ enum ListRepresentationFlags {
 /*
  * Prototypes for non-inline static functions defined later in this file:
  */
-static int	MemoryAllocationError(Tcl_Interp *, size_t size);
-static ListStore *ListStoreNew(Tcl_Size objc, Tcl_Obj *const *objv, int flags);
-static int	ListRepInit(Tcl_Size objc, Tcl_Obj *const *objv, int flags, ListRep *);
-static int	ListRepInitAttempt(Tcl_Interp *,
-		    Tcl_Size objc,
-		    Tcl_Obj *const *objv,
-		    ListRep *);
-static void	ListRepClone(ListRep *fromRepPtr, ListRep *toRepPtr, int flags);
-static void	ListRepUnsharedFreeUnreferenced(const ListRep *repPtr);
-static int	TclListObjGetRep(Tcl_Interp *, Tcl_Obj *listPtr, ListRep *repPtr);
-static void	ListRepRange(ListRep *srcRepPtr,
-		    Tcl_Size rangeStart,
-		    Tcl_Size rangeEnd,
-		    bool preserveSrcRep,
-		    ListRep *rangeRepPtr);
-static ListStore *ListStoreReallocate(ListStore *storePtr, Tcl_Size numSlots);
-static void	ListRepValidate(const ListRep *repPtr, const char *file,
-		    int lineNum);
-static void	DupListInternalRep(Tcl_Obj *srcPtr, Tcl_Obj *copyPtr);
-static void	FreeListInternalRep(Tcl_Obj *listPtr);
-static int	SetListFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
-static void	UpdateStringOfList(Tcl_Obj *listPtr);
-static Tcl_Size ListLength(Tcl_Obj *listPtr);
+static int		MemoryAllocationError(Tcl_Interp *, size_t size);
+static ListStore *	ListStoreNew(Tcl_Size objc, Tcl_Obj *const *objv,
+			    int flags);
+static int		ListRepInit(Tcl_Size objc, Tcl_Obj *const *objv,
+			    int flags, ListRep *);
+static int		ListRepInitAttempt(Tcl_Interp *,
+			    Tcl_Size objc, Tcl_Obj *const *objv, ListRep *);
+static void		ListRepClone(ListRep *fromRepPtr, ListRep *toRepPtr,
+			    int flags);
+static void		ListRepUnsharedFreeUnreferenced(const ListRep *repPtr);
+static int		TclListObjGetRep(Tcl_Interp *, Tcl_Obj *listPtr,
+			    ListRep *repPtr);
+static void		ListRepRange(ListRep *srcRepPtr,
+			    Tcl_Size rangeStart, Tcl_Size rangeEnd,
+			    bool preserveSrcRep, ListRep *rangeRepPtr);
+static ListStore *	ListStoreReallocate(ListStore *storePtr,
+			    Tcl_Size numSlots);
+static void		ListRepValidate(const ListRep *repPtr,
+			    const char *file, int lineNum);
+static void		DupListInternalRep(Tcl_Obj *srcPtr, Tcl_Obj *copyPtr);
+static void		FreeListInternalRep(Tcl_Obj *listPtr);
+static int		SetListFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
+static void		UpdateStringOfList(Tcl_Obj *listPtr);
+static Tcl_Size		ListLength(Tcl_Obj *listPtr);
 
 /*
  * The structure below defines the list Tcl object type by means of functions
@@ -170,7 +171,7 @@ const Tcl_ObjType tclListType = {
 /* Returns number of free unused slots at the back of the ListRep's ListStore */
 #define ListRepNumFreeTail(repPtr_) \
     ((repPtr_)->storePtr->numAllocated \
-     - ((repPtr_)->storePtr->firstUsed + (repPtr_)->storePtr->numUsed))
+	    - ((repPtr_)->storePtr->firstUsed + (repPtr_)->storePtr->numUsed))
 
 /* Returns number of free unused slots at the front of the ListRep's ListStore */
 #define ListRepNumFreeHead(repPtr_) ((repPtr_)->storePtr->firstUsed)
@@ -3256,8 +3257,8 @@ TclListObjSetElement(
     /* Ensure that the index is in bounds. */
     if ((index < 0) || (index >= elemCount)) {
 	if (interp != NULL) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"index \"%" TCL_SIZE_MODIFIER "d\" out of range", index));
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "index \"%" TCL_SIZE_MODIFIER "d\" out of range", index));
 	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX", "OUTOFRANGE", (char *)NULL);
 	}
 	return TCL_ERROR;
@@ -3454,7 +3455,6 @@ SetListFromAny(
 	LIST_ASSERT((Tcl_Size)(elemPtrs - listRep.storePtr->slots) == elemCount);
 
 	listRep.storePtr->numUsed = elemCount;
-
     } else {
 	Tcl_Size estCount, length;
 	const char *limit, *nextElem = TclGetStringFromObj(objPtr, &length);

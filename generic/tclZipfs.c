@@ -912,7 +912,7 @@ IsCryptHeaderValid(
     /* DOS time did not match, may be CRC does */
     if (z->crc32) {
 	/* Pkware style - Tested with test-password2.zip */
-	return (cryptHeader[11] == (unsigned char)(z->crc32 >> 24));
+	return cryptHeader[11] == (unsigned char)(z->crc32 >> 24);
     }
 
     /* No CRC, no way to verify. Assume valid */
@@ -4336,7 +4336,7 @@ ZipFSListObjCmd(
  *	If not, attempts to mount the zip archive attached to the application
  *	executable on to ZIPFS_APP_MOUNT.
  *
- *	Caller should not be holding any locks	when calling this function.
+ *	Caller should not be holding any locks when calling this function.
  *
  * Results:
  *	1 -> if an archive is present on ZIPFS_APP_MOUNT
@@ -4385,7 +4385,7 @@ TclZipfsMountExe(void)
  *	If not, attempts to mount the zip archive attached to the application
  *	executable on to ZIPFS_ZIP_MOUNT.
  *
- *	Caller should not be holding any locks	when calling this function.
+ *	Caller should not be holding any locks when calling this function.
  *
  * Results:
  *	1 -> if an archive is present on ZIPFS_ZIP_MOUNT

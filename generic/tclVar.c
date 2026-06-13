@@ -694,22 +694,22 @@ TclObjLookupVarEx(
 
     ParsedGetInternalRep(part1Ptr, parsed, arrayPtr, elem);
     if (parsed && arrayPtr) {
-	    if (part2Ptr != NULL) {
-		/*
-		 * ERROR: part1Ptr is already an array element, cannot specify
-		 * a part2.
-		 */
+	if (part2Ptr != NULL) {
+	    /*
+	     * ERROR: part1Ptr is already an array element, cannot specify
+	     * a part2.
+	     */
 
-		if (flags & TCL_LEAVE_ERR_MSG) {
-		    TclObjVarErrMsg(interp, part1Ptr, part2Ptr, msg,
-			    NOSUCHVAR, -1);
-		    Tcl_SetErrorCode(interp, "TCL", "VALUE", "VARNAME", (char *)NULL);
-		}
-		return NULL;
+	    if (flags & TCL_LEAVE_ERR_MSG) {
+		TclObjVarErrMsg(interp, part1Ptr, part2Ptr, msg,
+			NOSUCHVAR, -1);
+		Tcl_SetErrorCode(interp, "TCL", "VALUE", "VARNAME", (char *)NULL);
 	    }
-	    part2Ptr = elem;
-	    part1Ptr = arrayPtr;
-	    goto restart;
+	    return NULL;
+	}
+	part2Ptr = elem;
+	part1Ptr = arrayPtr;
+	goto restart;
     }
 
     if (!parsed) {
@@ -2679,7 +2679,6 @@ UnsetVarStruct(
 
 	if ((dummyVar.flags & VAR_TRACED_UNSET)
 		|| (arrayPtr && (arrayPtr->flags & VAR_TRACED_UNSET))) {
-
 	    /*
 	     * Pass the array element name to TclObjCallVarTraces(), because
 	     * it cannot be determined from dummyVar. Alternatively, indicate
@@ -6836,7 +6835,7 @@ CompareVarKeys(
      * Only compare string representations of the same length.
      */
 
-    return ((l1 == l2) && !memcmp(p1, p2, l1));
+    return (l1 == l2) && !memcmp(p1, p2, l1);
 }
 
 /*----------------------------------------------------------------------

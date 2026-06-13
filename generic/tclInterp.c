@@ -139,7 +139,7 @@ typedef struct {
  */
 
 typedef struct Target {
-    Tcl_Command	childCmd;	/* Command for alias in child interp. */
+    Tcl_Command childCmd;	/* Command for alias in child interp. */
     Tcl_Interp *childInterp;	/* Child Interpreter. */
     struct Target *nextPtr;	/* Next in list of target records, or NULL if
 				 * at the end of the list of targets. */
