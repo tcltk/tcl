@@ -14,6 +14,7 @@ const TclOOIntStubs *tclOOIntStubsPtr = NULL;
  *----------------------------------------------------------------------
  *
  * TclOOInitializeStubs --
+ *
  *	Load the tclOO package, initialize stub table pointer. Do not call
  *	this function directly, use Tcl_OOInitStubs() macro instead.
  *

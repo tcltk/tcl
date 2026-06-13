@@ -211,6 +211,7 @@ Tcl_DiscardInterpState(
  *----------------------------------------------------------------------
  *
  * Tcl_SetObjResult --
+ *
  *	Makes objPtr the interpreter's result value.
  *
  * Results:
@@ -917,7 +918,7 @@ TclMergeReturnOptions(
     if (valuePtr != NULL) {
 	Tcl_Size length;
 
-	if (TCL_ERROR == TclListObjLength(NULL, valuePtr, &length )) {
+	if (TCL_ERROR == TclListObjLength(NULL, valuePtr, &length)) {
 	    /*
 	     * Value is not a list, which is illegal for -errorcode.
 	     */

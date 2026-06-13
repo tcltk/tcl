@@ -2288,6 +2288,7 @@ Tcl_OpenTcpServerEx(
  *----------------------------------------------------------------------
  *
  * TcpAccept --
+ *
  *	Accept a TCP socket connection.	 This is called by the event loop.
  *
  * Results:

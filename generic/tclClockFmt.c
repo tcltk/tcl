@@ -4,7 +4,7 @@
  *	Contains the date format (and scan) routines. This code is back-ported
  *	from the time and date facilities of tclSE engine, by Serg G. Brester.
  *
- * Copyright (c) 2015 by Sergey G. Brester aka sebres. All rights reserved.
+ * Copyright © 2015 by Sergey G. Brester aka sebres. All rights reserved.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.

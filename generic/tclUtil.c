@@ -752,7 +752,6 @@ FindElement(
 		}
 	    }
 	    break;
-
 	}
 	p++;
     }
@@ -1502,7 +1501,7 @@ TclConvertElement(
 	}
 	*p = '}';
 	p++;
-	return (p - dst);
+	return p - dst;
     }
 
     /* conversion == CONVERT_ESCAPE or CONVERT_MASK */
@@ -1565,7 +1564,7 @@ TclConvertElement(
 	    continue;
 	case '\0':
 	    if (length < 0) {
-		return (p - dst);
+		return p - dst;
 	    }
 
 	    /*
@@ -1581,7 +1580,7 @@ TclConvertElement(
 	*p = *src;
 	p++;
     }
-    return (p - dst);
+    return p - dst;
 }
 
 /*
@@ -1639,7 +1638,7 @@ Tcl_Merge(
 	flagPtr = (char *)Tcl_Alloc(argc);
     }
     for (i = 0; i < argc; i++) {
-	flagPtr[i] = ( i ? DONT_QUOTE_HASH : 0 );
+	flagPtr[i] = (i ? DONT_QUOTE_HASH : 0);
 	bytesNeeded += TclScanElement(argv[i], TCL_INDEX_NONE, &flagPtr[i]);
     }
     bytesNeeded += argc;
@@ -1670,6 +1669,7 @@ Tcl_Merge(
  *----------------------------------------------------------------------
  *
  * TclTrimRight --
+ *
  *	Takes two counted strings in the Tcl encoding.  Conceptually
  *	finds the sub string (offset) to trim from the right side of the
  *	first string all characters found in the second string.
@@ -1824,6 +1824,7 @@ TclTrimLeft(
  *----------------------------------------------------------------------
  *
  * TclTrim --
+ *
  *	Finds the sub string (offset) to trim from both sides of the
  *	first string all characters found in the second string.
  *
@@ -1852,7 +1853,6 @@ TclTrim(
 
     /* Empty strings -> nothing to do */
     if ((numBytes > 0) && (numTrim > 0)) {
-
 	/* When bytes is NUL-terminated, returns 0 <= trimLeft <= numBytes */
 	trimLeft = TclTrimLeft(bytes, numBytes, trim, numTrim);
 	numBytes -= trimLeft;
@@ -2160,7 +2160,7 @@ Tcl_StringCaseMatch(
 	 */
 
 	if (p == '\0') {
-	    return (*str == '\0');
+	    return *str == '\0';
 	}
 	if ((*str == '\0') && (p != '*')) {
 	    return 0;
@@ -2320,7 +2320,7 @@ Tcl_StringCaseMatch(
 		    /* We ran out of pattern after matching something in
 		     * (unclosed!) brackets. So long as we ran out of string
 		     * at the same time, we have a match. Otherwise, not. */
-		    return (*str == '\0');
+		    return *str == '\0';
 		}
 		pattern++;
 	    }
@@ -2401,7 +2401,7 @@ TclByteArrayMatch(
 	 */
 
 	if (pattern == patternEnd) {
-	    return (string == stringEnd);
+	    return string == stringEnd;
 	}
 	p = *pattern;
 	if ((string == stringEnd) && (p != '*')) {
@@ -3491,13 +3491,13 @@ Tcl_GetIntForIndex(
     if (indexPtr != NULL) {
 	/* Note: check against TCL_SIZE_MAX needed for 32-bit builds */
 	if (wide >= 0 && wide <= TCL_SIZE_MAX) {
-	    *indexPtr = (Tcl_Size)wide; /* A valid index */
+	    *indexPtr = (Tcl_Size)wide;	/* A valid index */
 	} else if (wide > TCL_SIZE_MAX) {
-	    *indexPtr = TCL_SIZE_MAX;   /* Beyond max possible index */
+	    *indexPtr = TCL_SIZE_MAX;	/* Beyond max possible index */
 	} else if (wide < -1-TCL_SIZE_MAX) {
 	    *indexPtr = -1-TCL_SIZE_MAX; /* Below most negative index */
 	} else if ((wide < 0) && (endValue >= 0)) {
-	    *indexPtr = TCL_INDEX_NONE; /* No clue why this special case */
+	    *indexPtr = TCL_INDEX_NONE;	/* No clue why this special case */
 	} else {
 	    *indexPtr = (Tcl_Size) wide;
 	}
@@ -4227,7 +4227,6 @@ TclGetProcessGlobalValue(
     cacheMap = GetThreadHash(&pgvPtr->key);
     hPtr = Tcl_FindHashEntry(cacheMap, INT2PTR(epoch));
     if (NULL == hPtr) {
-
 	/*
 	 * No cache for the current epoch - must be a new one.
 	 *
@@ -4706,7 +4705,7 @@ TclReToGlob(
  *	Electrotechnical and Computer Science Conference, Portoroz,
  *	Slovenia, 1993.  The adaptations permit the computation to take
  *	place within unsigned long long values without the need for double
- *	length	buffers for calculation.  They also fill in a number of
+ *	length buffers for calculation.  They also fill in a number of
  *	details the paper omits or leaves unclear.
  *
  * Results:
@@ -4723,8 +4722,8 @@ int
 TclMSB(
     unsigned long long n)
 {
-    /* assert ( 64 == CHAR_BIT * sizeof(unsigned long long) ); */
-    /* assert ( n != 0 ); */
+    /* assert(64 == CHAR_BIT * sizeof(unsigned long long)); */
+    /* assert(n != 0); */
 
     /*
      * Many platforms offer access to this functionality through

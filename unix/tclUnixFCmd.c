@@ -537,7 +537,8 @@ TclUnixCopyFile(
 
 #define DEFAULT_COPY_BLOCK_SIZE 4096
 
-    if ((srcFd = TclOSopen(src, O_RDONLY BINMODE, 0)) < 0) { /* INTL: Native */
+    srcFd = TclOSopen(src, O_RDONLY BINMODE, 0);	/* INTL: Native */
+    if (srcFd < 0) {
 	return TCL_ERROR;
     }
 
@@ -1231,7 +1232,6 @@ TraversalDelete(
 				 * filled with UTF-8 name of file causing
 				 * error. */
 {
-
     switch (type) {
     case DOTREE_F:
 	if (TclpDeleteFile(Tcl_DStringValue(srcPtr)) == 0) {
@@ -1832,7 +1832,7 @@ GetModeFromPermString(
     for (n = 0 ; modeStringPtr[n] != '\0' ; n += i) {
 	oldMode = *modePtr;
 	who = op = what = op_found = who_found = 0;
-	for (i = 0 ; modeStringPtr[n + i] != '\0' ; i++ ) {
+	for (i = 0 ; modeStringPtr[n + i] != '\0' ; i++) {
 	    if (!who_found) {
 		/* who */
 		switch (modeStringPtr[n + i]) {
@@ -1921,19 +1921,19 @@ GetModeFromPermString(
  *
  * TclpMapLeafName --
  *
- *      On case-insensitive, case-preserving filesystems (e.g. macos HFS+, APFS),
- *      check the true on-disk name of the final component of a file path
- *      and replace it in pathPtr if it differs from the supplied name.
+ *	On case-insensitive, case-preserving filesystems (e.g. macos HFS+, APFS),
+ *	check the true on-disk name of the final component of a file path
+ *	and replace it in pathPtr if it differs from the supplied name.
  *
  * Results:
- *      TCL_OK on success irrespective of any changes made.
- *      Returns TCL_ERROR if an encoding conversion fails, in which case
- *      an error message is left in interp if interp is non-NULL and pathPtr
- *      is left unchanged.
+ *	TCL_OK on success irrespective of any changes made.
+ *	Returns TCL_ERROR if an encoding conversion fails, in which case
+ *	an error message is left in interp if interp is non-NULL and pathPtr
+ *	is left unchanged.
  *
  * Side effects:
- *      The bytes field of pathPtr may be updated and internal
- *      representation invalidated.
+ *	The bytes field of pathPtr may be updated and internal
+ *	representation invalidated.
  *
  *---------------------------------------------------------------------------
  */
@@ -1983,7 +1983,7 @@ TclpMapLeafName(
     Tcl_DStringFree(&ds);
 
     if (attrResult != 0) {
-	/* 
+	/*
 	 * Path does not exist or is inaccessible. Not an error, the caller
 	 * may be normalizing a path to a non-existent file.
 	 */

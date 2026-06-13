@@ -4,8 +4,8 @@
  *
  *	This is used to fix limitations within nmake and the environment.
  *
- * Copyright (c) 2002 David Gravereaux.
- * Copyright (c) 2006 Pat Thoyts
+ * Copyright © 2002 David Gravereaux.
+ * Copyright © 2006 Pat Thoyts
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.

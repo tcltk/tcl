@@ -557,6 +557,7 @@ TclFSCwdIsNative(void)
  *----------------------------------------------------------------------
  *
  * TclFSCwdPointerEquals --
+ *
  *	Determine whether the given pathname is equal to the current working
  *	directory.
  *
@@ -606,7 +607,7 @@ TclFSCwdPointerEquals(
     Tcl_MutexUnlock(&tclCwdMutex);
 
     if (pathPtrPtr == NULL) {
-	return (tsdPtr->cwdPathPtr == NULL);
+	return tsdPtr->cwdPathPtr == NULL;
     }
 
     if (tsdPtr->cwdPathPtr == *pathPtrPtr) {
@@ -1108,6 +1109,7 @@ Tcl_FSMatchInDirectory(
  *----------------------------------------------------------------------
  *
  * FsAddMountsToGlobResult --
+ *
  *	Adds any mounted pathnames to a set of results so that simple things
  *	like 'glob *' merge mounts and listings correctly.  Used by the
  *	Tcl_FSMatchInDirectory.
@@ -1615,7 +1617,6 @@ TclGetOpenMode(
 	    }
 	    goto invAccessMode;
 #endif
-
 	} else if ((c == 'N') && (strcmp(flag, "NONBLOCK") == 0)) {
 #ifdef O_NONBLOCK
 	    if (mode & O_NONBLOCK) {
@@ -2081,6 +2082,7 @@ Tcl_PosixError(
  *----------------------------------------------------------------------
  *
  * Tcl_FSStat --
+ *
  *	Calls 'statProc' of the filesystem corresponding to pathPtr.
  *
  *	Replaces the standard library "stat" routine.
@@ -2114,6 +2116,7 @@ Tcl_FSStat(
  *----------------------------------------------------------------------
  *
  * Tcl_FSLstat --
+ *
  *	Calls the 'lstatProc' of the filesystem corresponding to pathPtr.
  *
  *	Replaces the library version of lstat.  If the filesystem doesn't
@@ -3100,7 +3103,6 @@ Tcl_FSLoadFile(
  * Doing the unlink is also an issue within docker containers, whose AUFS
  * bungles this as well, see
  *     https://github.com/dotcloud/docker/issues/1911
- *
  */
 
 #ifdef _WIN32
@@ -4555,6 +4557,7 @@ NativeFreeInternalRep(
  *---------------------------------------------------------------------------
  *
  * Tcl_FSFileSystemInfo --
+ *
  *	Produce the type of a pathname and the type of its filesystem.
  *
  *

@@ -755,13 +755,13 @@ ListRemove(
  *
  * ThreadList --
  *
- *    Return a list of threads running Tcl interpreters.
+ *	Return a list of threads running Tcl interpreters.
  *
  * Results:
- *    A standard Tcl result.
+ *	A standard Tcl result.
  *
  * Side effects:
- *    None.
+ *	None.
  *
  *------------------------------------------------------------------------
  */
@@ -788,13 +788,13 @@ ThreadList(
  *
  * ThreadSend --
  *
- *    Send a script to another thread.
+ *	Send a script to another thread.
  *
  * Results:
- *    A standard Tcl result.
+ *	A standard Tcl result.
  *
  * Side effects:
- *    None.
+ *	None.
  *
  *------------------------------------------------------------------------
  */
@@ -943,13 +943,13 @@ ThreadSend(
  *
  * ThreadCancel --
  *
- *    Cancels a script in another thread.
+ *	Cancels a script in another thread.
  *
  * Results:
- *    A standard Tcl result.
+ *	A standard Tcl result.
  *
  * Side effects:
- *    None.
+ *	None.
  *
  *------------------------------------------------------------------------
  */
@@ -999,13 +999,13 @@ ThreadCancel(
  *
  * ThreadEventProc --
  *
- *    Handle the event in the target thread.
+ *	Handle the event in the target thread.
  *
  * Results:
- *    Returns 1 to indicate that the event was processed.
+ *	Returns 1 to indicate that the event was processed.
  *
  * Side effects:
- *    Fills out the ThreadEventResult struct.
+ *	Fills out the ThreadEventResult struct.
  *
  *------------------------------------------------------------------------
  */
@@ -1069,11 +1069,11 @@ ThreadEventProc(
  *
  * ThreadFreeProc --
  *
- *    This is called from when we are exiting and memory needs
- *    to be freed.
+ *	This is called from when we are exiting and memory needs
+ *	to be freed.
  *
  * Results:
- *    None.
+ *	None.
  *
  * Side effects:
  *	Clears up mem specified in clientData
@@ -1122,7 +1122,7 @@ ThreadDeleteEvent(
      * should be removed
      */
 
-    return (eventPtr->proc == NULL);
+    return eventPtr->proc == NULL;
 }
 
 /*
