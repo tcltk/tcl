@@ -547,16 +547,18 @@ LocatePreInitScript(
      * tree environment.
      */
 #if defined(TCL_BUILDTIME_BINDIR) && defined(TCL_BUILDTIME_SCRDIR)
-    assert(exeDirPtr);
+    {
+	assert(exeDirPtr);
 #ifdef _WIN32
-    int runningInBuild =
-	strcasecmp(TCL_BUILDTIME_BINDIR, Tcl_GetString(exeDirPtr)) == 0;
+	int runningInBuild =
+	    strcasecmp(TCL_BUILDTIME_BINDIR, Tcl_GetString(exeDirPtr)) == 0;
 #else
-    int runningInBuild =
-	strcmp(TCL_BUILDTIME_BINDIR, Tcl_GetString(exeDirPtr)) == 0;
+	int runningInBuild =
+	    strcmp(TCL_BUILDTIME_BINDIR, Tcl_GetString(exeDirPtr)) == 0;
 #endif
-    if (runningInBuild) {
-	TRY_PATH(Tcl_NewStringObj(TCL_BUILDTIME_SCRDIR, -1));
+	if (runningInBuild) {
+	    TRY_PATH(Tcl_NewStringObj(TCL_BUILDTIME_SCRDIR, -1));
+	}
     }
 #endif
 
