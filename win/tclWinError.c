@@ -440,7 +440,7 @@ TclWinAppendSystemError(
     unsigned error)		/* Result code from error. */
 {
     Tcl_Size length;
-    WCHAR *tMsgPtr, **tMsgPtrPtr = &tMsgPtr;
+    wchar_t *tMsgPtr;
     const char *msg;
     char id[TCL_INTEGER_SPACE], msgBuf[24 + TCL_INTEGER_SPACE];
     Tcl_DString ds;
@@ -451,7 +451,7 @@ TclWinAppendSystemError(
     }
     length = FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM
 	    | FORMAT_MESSAGE_ALLOCATE_BUFFER, NULL, error,
-	    MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (WCHAR *) tMsgPtrPtr,
+	    MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (WCHAR *)&tMsgPtr,
 	    0, NULL);
     if (length == 0) {
 	snprintf(msgBuf, sizeof(msgBuf), "unknown error: %d", error);
