@@ -166,7 +166,8 @@ It is not normally necessary to call this command directly.
 This command attempts to load the definition for a Tcl command named
 \fIcmd\fR.  To do this, it searches an \fIauto-load path\fR, which is
 a list of one or more directories.  The auto-load path is given by the
-global variable \fBauto_path\fR if it exists.  If there is no
+global variable \fBauto_path\fR if it exists (see the tclvars manual page).
+If there is no
 \fBauto_path\fR variable, then the \fBTCLLIBPATH\fR environment variable is
 used, if it exists.  Otherwise the auto-load path consists of just the
 Tcl library directory.  Within each directory in the auto-load path
@@ -448,32 +449,6 @@ any commands.
 .
 If set to any value, then \fBunknown\fR will not attempt to auto-load
 any commands.
-.\" VARIABLE: auto_path
-.TP
-\fBauto_path\fR
-.
-If set, then it must contain a valid Tcl list giving directories to
-search during auto-load operations (including for package index
-files when using the default \fBpackage unknown\fR handler).
-This variable is initialized during startup to contain, in order:
-the directories listed in the \fBTCLLIBPATH\fR environment variable,
-the directory named by the \fBtcl_library\fR global variable,
-the parent directory of \fBtcl_library\fR,
-the directories listed in the \fBtcl_pkgPath\fR variable.
-Additional locations to look for files and package indices should
-normally be added to this variable using \fBlappend\fR.
-.RS
-.PP
-For example, to add the \fIlib\fR directory next to the running
-script, you would do:
-.PP
-.CS
-lappend \fBauto_path\fR [file dirname [info script]]/lib
-.CE
-.PP
-Note that if the script uses \fBcd\fR, it is advisable to ensure that
-entries on the \fBauto_path\fR are \fBfile normalize\fRd.
-.RE
 .\" VARIABLE: env(TCL_LIBRARY)
 .TP
 \fBenv(TCL_LIBRARY)\fR
@@ -498,7 +473,8 @@ search during auto-load operations.  Directories must be specified in
 Tcl format, using
 .QW /
 as the path separator, regardless of platform.
-This variable is only used when initializing the \fBauto_path\fR variable.
+This variable is only used when initializing the \fBauto_path\fR variable
+(see the \fBauto_load\fR command).
 .RS
 .PP
 A key consequence of this variable is that it gives a way to let the user
