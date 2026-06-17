@@ -250,6 +250,7 @@ const EnsembleImplMap tclZlibImplMap[] = {
  *----------------------------------------------------------------------
  *
  * Latin1 --
+ *
  *	Helper to definitely get the ISO 8859-1 encoding. It's internally
  *	defined by Tcl so this operation should always succeed.
  *
@@ -3103,7 +3104,6 @@ HaveFlag(
  *
  *----------------------------------------------------------------------
  */
-
 static int
 ZlibTransformClose(
     void *instanceData,
@@ -3211,7 +3211,6 @@ ZlibTransformClose(
  *
  *----------------------------------------------------------------------
  */
-
 static int
 ZlibTransformInput(
     void *instanceData,
@@ -3293,7 +3292,7 @@ ZlibTransformInput(
 	/* more bytes (or Eof if readBytes == 0) */
 	chanDataPtr->inStream.avail_in += readBytes;
 
-copyDecompressed:
+    copyDecompressed:
 
 	/*
 	 * Transform the read chunk, if not empty. Anything we get
@@ -3347,7 +3346,6 @@ copyDecompressed:
  *
  *----------------------------------------------------------------------
  */
-
 static int
 ZlibTransformOutput(
     void *instanceData,
@@ -3416,7 +3414,6 @@ ZlibTransformOutput(
  *
  *----------------------------------------------------------------------
  */
-
 static int
 ZlibTransformFlush(
     Tcl_Interp *interp,
@@ -3473,7 +3470,6 @@ ZlibTransformFlush(
  *
  *----------------------------------------------------------------------
  */
-
 static int
 ZlibTransformSetOption(			/* not used */
     void *instanceData,
@@ -3590,7 +3586,6 @@ ZlibTransformSetOption(			/* not used */
  *
  *----------------------------------------------------------------------
  */
-
 static int
 ZlibTransformGetOption(
     void *instanceData,
@@ -3777,7 +3772,6 @@ ZlibTransformTimerRun(
  *
  *----------------------------------------------------------------------
  */
-
 static int
 ZlibTransformGetHandle(
     void *instanceData,
@@ -3798,7 +3792,6 @@ ZlibTransformGetHandle(
  *
  *----------------------------------------------------------------------
  */
-
 static int
 ZlibTransformBlockMode(
     void *instanceData,
@@ -3826,7 +3819,6 @@ ZlibTransformBlockMode(
  *
  *----------------------------------------------------------------------
  */
-
 static Tcl_Channel
 ZlibStackChannelTransform(
     Tcl_Interp *interp,		/* Where to write error messages. */
@@ -4003,7 +3995,6 @@ ZlibStackChannelTransform(
  *
  *----------------------------------------------------------------------
  */
-
 static int
 ResultDecompress(
     ZlibChannelData *chanDataPtr,

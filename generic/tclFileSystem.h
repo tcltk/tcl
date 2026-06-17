@@ -23,7 +23,7 @@
  */
 
 MODULE_SCOPE int	TclFSCwdPointerEquals(Tcl_Obj **pathPtrPtr);
-MODULE_SCOPE Tcl_Size TclFSNormalizeToUniquePath(Tcl_Interp *interp,
+MODULE_SCOPE Tcl_Size	TclFSNormalizeToUniquePath(Tcl_Interp *interp,
 			    Tcl_Obj *pathPtr, Tcl_Size startAt);
 MODULE_SCOPE Tcl_Obj *	TclFSMakePathRelative(Tcl_Interp *interp,
 			    Tcl_Obj *pathPtr, Tcl_Obj *cwdPtr);

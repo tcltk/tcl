@@ -129,7 +129,7 @@ typedef struct ChannelState {
     char *channelName;		/* The name of the channel instance in Tcl
 				 * commands. Storage is owned by the generic
 				 * IO code, is dynamically allocated. */
-    int	flags;			/* OR'ed combination of the flags defined
+    int flags;			/* OR'ed combination of the flags defined
 				 * below. */
     Tcl_Encoding encoding;	/* Encoding to apply when reading or writing
 				 * data on this channel. NULL means no

@@ -1343,7 +1343,7 @@ ClockMCGetListIdxTree(
 static TclStrIdxTree *
 ClockMCGetMultiListIdxTree(
     ClockFmtScnCmdArgs *opts,
-    int	mcKey,
+    int mcKey,
     const int *mcKeys)
 {
     TclStrIdxTree * idxTree;

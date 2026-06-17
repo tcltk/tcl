@@ -46,8 +46,9 @@ Tcl DLL in all build configurations.
 - [Memory efficient internal representations](https://core.tcl-lang.org/tcl/wiki?name=New+abstract+list+representations)
 for list operations on large lists.
 - [Continued 64-bit capacity: Command line arguments larger than 2Gb](https://core.tcl-lang.org/tips/doc/trunk/tip/626.md)
-- Substantial speedup in interpreter creation
 - [Support for long paths on Windows](https://core.tcl-lang.org/tips/doc/trunk/tip/744.md)
+- [Faster UTF-8 encoding and I/O](https://core.tcl-lang.org/tcl/wiki?name=Faster+UTF+encoding)
+- Faster interpreter creation
 
 # Bug fixes
 - [Inconsistent `glob` matching on MacOS](https://core.tcl-lang.org/tcl/tktview/e6ca0b1b)

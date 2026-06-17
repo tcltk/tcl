@@ -185,7 +185,8 @@ MODULE_SCOPE void	tclWinDebugPanic(const char *format, ...);
  *----------------------------------------------------------------------
  */
 static inline int
-IsNoSuchFileError(DWORD winError)
+IsNoSuchFileError(
+    DWORD winError)
 {
     return (winError == ERROR_FILE_NOT_FOUND ||
 	    winError == ERROR_PATH_NOT_FOUND ||
@@ -1317,7 +1318,6 @@ WinIsReserved(
 
 	    return 3;
 	}
-
     } else if ((path[0] == 'l' || path[0] == 'L')
 	    && (path[1] == 'p' || path[1] == 'P')
 	    && (path[2] == 't' || path[2] == 'T')) {
@@ -1332,7 +1332,6 @@ WinIsReserved(
 		return 4;
 	    }
 	}
-
     } else if (!strcasecmp(path, "prn") || !strcasecmp(path, "nul")
 	    || !strcasecmp(path, "aux")) {
 	/*
@@ -1426,7 +1425,6 @@ NativeMatchType(
 	 */
 
 	return 1;
-
     } else if (types->type != 0) {
 	unsigned short st_mode;
 	int isExec = NativeIsExec(nativeName);
@@ -1912,7 +1910,6 @@ NativeAccess(
 	    Tcl_SetErrno(EACCES);
 	    return -1;
 	}
-
     }
     return 0;
 }
@@ -1955,7 +1952,7 @@ NativeIsExec(
     }
 
     TclWinExecutableType appType = TclWinGetExecutableType(path);
-    return appType != APPL_NONE  && appType != APPL_DLL;
+    return appType != APPL_NONE && appType != APPL_DLL;
 }
 
 /*
@@ -3092,14 +3089,13 @@ TclWinVolumeRelativeNormalize(
 	     * one already, and if we are going to be adding some more
 	     * characters.
 	     */
-	    if (cwdPath[cwdLen-1] != '/' && (path[2] != '\0')) {
-
+	    if (cwdPath[cwdLen - 1] != '/' && (path[2] != '\0')) {
 		Tcl_AppendToObj(absolutePath, "/", 1);
 	    }
 	} else {
-		/* Non-existent drive? Assume root */
-		absolutePath = Tcl_NewStringObj(path, 2);
-		Tcl_AppendToObj(absolutePath, "/", 1);
+	    /* Non-existent drive? Assume root */
+	    absolutePath = Tcl_NewStringObj(path, 2);
+	    Tcl_AppendToObj(absolutePath, "/", 1);
 	}
 	path += 2; /* Skip X: before appending below */
     }
@@ -3498,7 +3494,7 @@ TclWinFileOwned(
 	Tcl_Free(buf);
     }
 
-    return (owned != 0);	/* Convert non-0 to 1 */
+    return owned != 0;		/* Convert non-0 to 1 */
 }
 
 /*
@@ -3525,8 +3521,8 @@ TclWinFileOwned(
 WCHAR *
 TclWinPathResize(
     TclWinPath *pathBufPtr,	/* Path buffer. Must have been initialized */
-    DWORD capacity)		/* Required capacity in WCHARS 
-				   including nul terminator. */
+    DWORD capacity)		/* Required capacity in WCHARS, including
+				 * the nul terminator. */
 {
     assert(capacity > 0);
 

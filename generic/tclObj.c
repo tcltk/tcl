@@ -1507,7 +1507,7 @@ int
 TclObjBeingDeleted(
     Tcl_Obj *objPtr)
 {
-    return (objPtr->length == TCL_INDEX_NONE);
+    return objPtr->length == TCL_INDEX_NONE;
 }
 
 /*
@@ -2104,11 +2104,11 @@ ParseBoolean(
 	}
 
 	if (TclHasInternalRep(objPtr, &tclBignumType)) {
-		return TCL_ERROR;
+	    return TCL_ERROR;
 	}
 
 	if (TclHasInternalRep(objPtr, &tclDoubleType)) {
-		return TCL_ERROR;
+	    return TCL_ERROR;
 	}
 	/* Handle dict separately, because it doesn't have a lengthProc */
 	if (TclHasInternalRep(objPtr, &tclDictType)) {
@@ -2672,7 +2672,7 @@ Tcl_GetLongFromObj(
 	    TclUnpackBignum(objPtr, big);
 	    if (mp_to_ubin(&big, bytes, sizeof(long), &numBytes) == MP_OKAY) {
 		while (numBytes-- > 0) {
-			value = (value << CHAR_BIT) | *bytes++;
+		    value = (value << CHAR_BIT) | *bytes++;
 		}
 		if (big.sign) {
 		    if (value <= 1 + (unsigned long)LONG_MAX) {
@@ -3783,7 +3783,7 @@ int
 Tcl_IsShared(
     Tcl_Obj *objPtr)		/* The object to test for being shared. */
 {
-    return ((objPtr)->refCount > 1);
+    return objPtr->refCount > 1;
 }
 
 /*
@@ -4015,7 +4015,7 @@ Tcl_DbIsShared(
     Tcl_MutexUnlock(&tclObjMutex);
 #endif /* TCL_COMPILE_STATS */
 
-    return ((objPtr)->refCount > 1);
+    return objPtr->refCount > 1;
 }
 
 /*

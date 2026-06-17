@@ -608,7 +608,7 @@ typedef int (Tcl_ObjTypeReverseProc) (Tcl_Interp *interp,
 	struct Tcl_Obj *listPtr, struct Tcl_Obj **newObjPtr);
 typedef int (Tcl_ObjTypeGetElements) (Tcl_Interp *interp,
 	struct Tcl_Obj *listPtr, Tcl_Size *objcptr, struct Tcl_Obj ***objvptr);
-typedef	struct Tcl_Obj *(Tcl_ObjTypeSetElement) (Tcl_Interp *interp,
+typedef struct Tcl_Obj *(Tcl_ObjTypeSetElement) (Tcl_Interp *interp,
 	struct Tcl_Obj *listPtr, Tcl_Size indexCount,
 	struct Tcl_Obj *const indexArray[], struct Tcl_Obj *valueObj);
 typedef int (Tcl_ObjTypeReplaceProc) (Tcl_Interp *interp,
@@ -2315,9 +2315,9 @@ EXTERN void		Tcl_StaticLibrary(Tcl_Interp *interp,
 #endif
 EXTERN Tcl_ExitProc *	Tcl_SetExitProc(Tcl_ExitProc *proc);
 #ifdef _WIN32
-EXTERN const char *TclZipfs_AppHook(int *argc, unsigned short ***argv);
+EXTERN const char *	TclZipfs_AppHook(int *argc, unsigned short ***argv);
 #else
-EXTERN const char *TclZipfs_AppHook(int *argc, char ***argv);
+EXTERN const char *	TclZipfs_AppHook(int *argc, char ***argv);
 #endif
 #if defined(_WIN32) && defined(UNICODE)
 #ifndef USE_TCL_STUBS

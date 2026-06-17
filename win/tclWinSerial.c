@@ -1021,7 +1021,6 @@ SerialOutputProc(
 	ResetEvent(infoPtr->evWritable);
 	TclPipeThreadSignal(&infoPtr->writeTI);
 	bytesWritten = (DWORD) toWrite;
-
     } else {
 	/*
 	 * In the blocking case, just try to write the buffer directly. This
@@ -1877,21 +1876,24 @@ SerialSetOptionProc(
 	 * -sysbuffer 4096 or -sysbuffer {64536 4096}
 	 */
 
-	int inSize = -1, outSize = -1;
+	int inSize = -1, outSize = -1, parseState = TCL_OK;
 
 	if (Tcl_SplitList(interp, value, &argc, &argv) == TCL_ERROR) {
 	    return TCL_ERROR;
 	}
 	if (argc == 1) {
-	    inSize = atoi(argv[0]);
+	    parseState = Tcl_GetInt(NULL, argv[0], &inSize);
 	    outSize = infoPtr->sysBufWrite;
 	} else if (argc == 2) {
-	    inSize  = atoi(argv[0]);
-	    outSize = atoi(argv[1]);
+	    parseState = Tcl_GetInt(NULL, argv[0], &inSize);
+	    if (parseState == TCL_OK) {
+		parseState = Tcl_GetInt(NULL, argv[1], &outSize);
+	    }
 	}
 	Tcl_Free((void *)argv);
 
-	if ((argc < 1) || (argc > 2) || (inSize <= 0) || (outSize <= 0)) {
+	if ((argc < 1) || (argc > 2) || (parseState != TCL_OK)
+		|| (inSize <= 0) || (outSize <= 0)) {
 	    if (interp != NULL) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"bad value \"%s\" for -sysbuffer: should be "

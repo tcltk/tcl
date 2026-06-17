@@ -96,7 +96,9 @@ MODULE_SCOPE int TCL_LOCAL_MAIN_HOOK(int *argc, char ***argv);
  *----------------------------------------------------------------------
  */
 static int
-TclSetRcFilePath(Tcl_Interp *interp, const char *path)
+TclSetRcFilePath(
+    Tcl_Interp *interp,
+    const char *path)
 {
     Tcl_DString ds;
     if (Tcl_FSTildeExpand(interp, path, &ds) != TCL_OK) {

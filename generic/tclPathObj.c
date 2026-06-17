@@ -916,7 +916,6 @@ TclJoinPath(
 
 		    if ((tclPlatform != TCL_PLATFORM_WINDOWS)
 			    || (strchr(TclGetString(elt), '\\') == NULL)) {
-
 			if (PATHFLAGS(elt)) {
 			    return TclNewFSPathObj(elt, str, len, 0);
 			}
@@ -1196,7 +1195,7 @@ IsSeparatorOrNull(
     case TCL_PLATFORM_UNIX:
 	return (ch == '/');
     case TCL_PLATFORM_WINDOWS:
-	return ((ch == '/' || ch == '\\'));
+	return (ch == '/') || (ch == '\\');
     }
     return false;
 }
@@ -2215,7 +2214,7 @@ Tcl_FSEqualPaths(
 
     firstStr = TclGetStringFromObj(firstPtr, &firstLen);
     secondStr = TclGetStringFromObj(secondPtr, &secondLen);
-    return ((firstLen == secondLen) && !memcmp(firstStr, secondStr, firstLen));
+    return (firstLen == secondLen) && !memcmp(firstStr, secondStr, firstLen);
 }
 
 /*
@@ -2402,7 +2401,7 @@ UpdateStringOfFsPath(
 	    copy = Tcl_DuplicateObj(fsPathPtr->translatedPathPtr);
 	}
     } else {
-	    copy = AppendPath(fsPathPtr->cwdPtr, fsPathPtr->normPathPtr);
+	copy = AppendPath(fsPathPtr->cwdPtr, fsPathPtr->normPathPtr);
     }
 
     if (Tcl_IsShared(copy)) {
