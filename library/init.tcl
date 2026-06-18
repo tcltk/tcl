@@ -520,16 +520,16 @@ namespace eval tcl::win {}
 proc tcl::win::LookupFileAssociation {path} {
     set ext [file extension $path]
     if {$ext eq ""} {
-        return ""
+	return ""
     }
     try {
-        set ftype [tcl::registry get "HKEY_CLASSES_ROOT\\$ext" ""]
-        if {[catch {tcl::registry get "HKEY_CLASSES_ROOT\\${ftype}\\shell\\open\\command" ""} command]} {
-            set command [tcl::registry get "HKEY_CLASSES_ROOT\\${ftype}\\shell\\run\\command" ""]
-        }
-        return $command
+	set ftype [tcl::registry get "HKEY_CLASSES_ROOT\\$ext" ""]
+	if {[catch {tcl::registry get "HKEY_CLASSES_ROOT\\${ftype}\\shell\\open\\command" ""} command]} {
+	    set command [tcl::registry get "HKEY_CLASSES_ROOT\\${ftype}\\shell\\run\\command" ""]
+	}
+	return $command
     } on error {} {
-        return ""
+	return ""
     }
 }
 
@@ -548,19 +548,19 @@ proc tcl::win::ParseFileAssociationTemplate {template target} {
     # (there may be intervening spaces!). This routine does not worry about
     # quotes within quotes.
     if {[string index $template 0] eq "\""} {
-        # Quoted exe path
-        set exeend [string first "\"" $template 1]
-        set exe [string range $template 1 $exeend-1]
-        incr exeend 2
+	# Quoted exe path
+	set exeend [string first "\"" $template 1]
+	set exe [string range $template 1 $exeend-1]
+	incr exeend 2
     } else {
-        # Not quoted, look for .exe marker
-        set exeend [string first ".exe" [string tolower $template]]
-        incr exeend 4
-        set exe [string range $template 0 $exeend-1]
-        incr exeend
+	# Not quoted, look for .exe marker
+	set exeend [string first ".exe" [string tolower $template]]
+	incr exeend 4
+	set exe [string range $template 0 $exeend-1]
+	incr exeend
     }
     if {$exe eq ""} {
-        return ""; # Heuristic did not work.
+	return ""; # Heuristic did not work.
     }
 
     set result [list $exe]
@@ -572,46 +572,46 @@ proc tcl::win::ParseFileAssociationTemplate {template target} {
     set arg ""
     set inQuotes 0; # 0 -> outside quotes
     foreach ch [split [string range $template $exeend end] ""] {
-        if {$inQuotes} {
-            if {$ch eq "\""} {
-                set inQuotes 0
-                # Do NOT terminate prior arg, "foob "ar is single arg {foob ar}
-            } else {
-                append arg $ch
-            }
-        } else {
-            if {[string is space $ch]} {
-                if {$arg ne ""} {
-                    lappend result $arg
-                    set arg ""
-                }
-            } elseif {$ch eq "\""} {
-                set inQuotes 1
-                # Do NOT terminate prior arg, foo"b ar" is single arg {foob ar}
-            } else {
-                append arg $ch
-            }
-        }
+	if {$inQuotes} {
+	    if {$ch eq "\""} {
+		set inQuotes 0
+		# Do NOT terminate prior arg, "foob "ar is single arg {foob ar}
+	    } else {
+		append arg $ch
+	    }
+	} else {
+	    if {[string is space $ch]} {
+		if {$arg ne ""} {
+		    lappend result $arg
+		    set arg ""
+		}
+	    } elseif {$ch eq "\""} {
+		set inQuotes 1
+		# Do NOT terminate prior arg, foo"b ar" is single arg {foob ar}
+	    } else {
+		append arg $ch
+	    }
+	}
     }
     # Last arg or unterminated quoted empty string
     if {$arg ne "" || $inQuotes} {
-        lappend result $arg
+	lappend result $arg
     }
 
     set result [lmap arg $result {
-        if {$arg eq "%1"} {
-            file nativename $target
-        } else {
-            regsub -all -nocase -command {%([^%]+)%} $arg {
-                apply {{match envvar} {
-                    if {[info exists ::env($envvar)]} {
-                        return $::env($envvar)
-                    } else {
-                        return $match; # original string including %
-                    }
-                }}
-            }
-        }
+	if {$arg eq "%1"} {
+	    file nativename $target
+	} else {
+	    regsub -all -nocase -command {%([^%]+)%} $arg {
+		apply {{match envvar} {
+		    if {[info exists ::env($envvar)]} {
+			return $::env($envvar)
+		    } else {
+			return $match; # original string including %
+		    }
+		}}
+	    }
+	}
     }]
 
     # One final check. The %N and %* placeholders can only be followed
@@ -620,17 +620,17 @@ proc tcl::win::ParseFileAssociationTemplate {template target} {
     # arguments.
     set placeHolderSeen 0
     set result [lmap arg $result {
-        if {[string match {%[0-9*]*} $arg]} {
-            set placeHolderSeen 1
-            # Don't pass this up as a real argument
-            continue
-        } elseif $placeHolderSeen {
-            # Saw an earlier placeholder. Cannot deal with non-trailing
-            # arguments. Indicate failure.
-            return [list ]
-        } else {
-            set arg
-        }
+	if {[string match {%[0-9*]*} $arg]} {
+	    set placeHolderSeen 1
+	    # Don't pass this up as a real argument
+	    continue
+	} elseif $placeHolderSeen {
+	    # Saw an earlier placeholder. Cannot deal with non-trailing
+	    # arguments. Indicate failure.
+	    return [list ]
+	} else {
+	    set arg
+	}
     }]
 
     return $result
@@ -663,15 +663,15 @@ proc auto_execok arg {
 	set execExtensions [list .com .exe .bat .cmd]
     }
     if {[file extension $name] ne ""} {
-        ledit execExtensions 0 -1 {}
+	ledit execExtensions 0 -1 {}
     }
     if {[llength [file split $name]] != 1} {
 	foreach ext $execExtensions {
 	    set file ${name}[string tolower $ext]
 	    if {[file exists $file] && ![file isdirectory $file]} {
-                return [tcl::win::ParseFileAssociationTemplate \
-                            [tcl::win::LookupFileAssociation $file] \
-                            $file]
+		return [tcl::win::ParseFileAssociationTemplate \
+			    [tcl::win::LookupFileAssociation $file] \
+			    $file]
 	    }
 	}
 	return ""
@@ -685,44 +685,44 @@ proc auto_execok arg {
 	set windir $env(WINDIR)
     }
     if {[info exists windir]} {
-        set system32dir [file join $windir system32]
+	set system32dir [file join $windir system32]
     }
 
     if {[string tolower $name] in $shellBuiltins} {
-        # Always use cmd.exe, not env(COMSPEC) as the latter may or may not
-        # interpret commands the same way.
+	# Always use cmd.exe, not env(COMSPEC) as the latter may or may not
+	# interpret commands the same way.
 
-        if {![info exists system32dir]} {
-            error "Could not locate cmd.exe."
-        }
-        return [list [file nativename [file join $system32dir cmd.exe]] /c $name]
+	if {![info exists system32dir]} {
+	    error "Could not locate cmd.exe."
+	}
+	return [list [file nativename [file join $system32dir cmd.exe]] /c $name]
     }
 
     lappend searchDirs [list [file dirname [info nameofexecutable]]]
 
     # Only include cwd based on Windows settings - see TIP 753
     if {![info exists env(NoDefaultCurrentDirectoryInExePath)]} {
-        lappend searchDirs "."
+	lappend searchDirs "."
     }
     if {[info exists windir]} {
-        lappend searchDirs $system32dir $windir
+	lappend searchDirs $system32dir $windir
     }
     # Do not use [info exists env(PATH)] due to Bug b492c33154. Instead just
     # catch error.
     catch {lappend searchDirs {*}[split $env(PATH) ";"]}
 
     foreach dir $searchDirs {
-        if {[info exists checked($dir)] || ($dir eq "")} {
-            continue
-        }
-        set checked($dir) {}
-        foreach ext $execExtensions {
+	if {[info exists checked($dir)] || ($dir eq "")} {
+	    continue
+	}
+	set checked($dir) {}
+	foreach ext $execExtensions {
 	    # Skip already checked directories
 	    set file [file join $dir ${name}[string tolower $ext]]
 	    if {[file exists $file] && ![file isdirectory $file]} {
-                return [tcl::win::ParseFileAssociationTemplate \
-                            [tcl::win::LookupFileAssociation $file] \
-                            $file]
+		return [tcl::win::ParseFileAssociationTemplate \
+			    [tcl::win::LookupFileAssociation $file] \
+			    $file]
 	    }
 	}
     }
@@ -732,13 +732,13 @@ proc auto_execok arg {
     set key "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\App Paths\\$name"
     set ext [file extension $name]
     if {$ext ne ".exe"} {
-        # foo. -> foo.exe, foo.bar -> foo.bar.exe
-        append key [expr {$ext eq "." ? "exe" : ".exe"}]
+	# foo. -> foo.exe, foo.bar -> foo.bar.exe
+	append key [expr {$ext eq "." ? "exe" : ".exe"}]
     }
     foreach hive {HKEY_CURRENT_USER HKEY_LOCAL_MACHINE} {
-        if {![catch {tcl::registry get "$hive\\$key" ""} exePath]} {
-            return [list $exePath]
-        }
+	if {![catch {tcl::registry get "$hive\\$key" ""} exePath]} {
+	    return [list $exePath]
+	}
     }
     return ""
 }

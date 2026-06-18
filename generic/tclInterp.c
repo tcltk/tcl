@@ -52,7 +52,7 @@ TCL_DECLARE_MUTEX(postInitMutex)
 /* Per thread cache of post-initialization registrations */
 typedef struct ThreadSpecificData {
     TclPostInitRecords postInitCache;
-    size_t inUse; 		/* When > 0, cache cannot be updated */
+    size_t inUse;		/* When > 0, cache cannot be updated */
 } ThreadSpecificData;
 static Tcl_ThreadDataKey postInitTsdKey;
 

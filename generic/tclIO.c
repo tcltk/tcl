@@ -680,12 +680,12 @@ TclFinalizeIOSubsystem(void)
 		Tcl_Flush((Tcl_Channel) chanPtr);
 
 #ifdef _WIN32
-                /*
-                 * Bug  [06f19cc401] - Windows crash on thread exit with
-                 * active socket. TODO - not clear if this is required
-                 * on Unix. Don't want to make the change there without a
-                 * clear reason.
-                 */
+		/*
+		 * Bug  [06f19cc401] - Windows crash on thread exit with
+		 * active socket. TODO - not clear if this is required
+		 * on Unix. Don't want to make the change there without a
+		 * clear reason.
+		 */
 		CutChannel((Tcl_Channel) chanPtr);
 #endif
 
