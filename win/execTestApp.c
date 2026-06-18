@@ -11,15 +11,15 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-void print(const WCHAR *s) 
+void print(const WCHAR *s)
 {
     int utf8len = WideCharToMultiByte(CP_UTF8, 0, s, -1, NULL, 0, NULL, NULL);
     if (utf8len > 0) {
-        char *utf8 = (char *)malloc((size_t)utf8len);
-        if (utf8) {
-            WideCharToMultiByte(CP_UTF8, 0, s, -1, utf8, utf8len, NULL, NULL);
-            printf("%s\n", utf8);
-            free(utf8);
+	char *utf8 = (char *)malloc((size_t)utf8len);
+	if (utf8) {
+	    WideCharToMultiByte(CP_UTF8, 0, s, -1, utf8, utf8len, NULL, NULL);
+	    printf("%s\n", utf8);
+	    free(utf8);
 	    return;
 	}
     }
