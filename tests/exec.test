@@ -957,14 +957,11 @@ namespace eval tcl::test::exec {
 	set path [makeDirectory exec-win-2.0.$ext]
 	test exec-win-2.1-$ext "Exec directories with extension $ext" \
 	    -constraints win \
-	    -setup {
-		set dir $path
-	    } -cleanup {
-		rmdirs $path
-	    } -body {
+	    -body {
 		exec $path
 	    } -result "couldn't execute \"[file nativename $path]\": no such file or directory" \
 	    -returnCodes error
+	rmdirs $path
     }
 
     # Junk content - only test for .exe as bat,cmd may have any content
