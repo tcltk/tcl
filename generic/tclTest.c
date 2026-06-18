@@ -856,6 +856,13 @@ Tcltest_SafeInit(
  *
  *---------------------------------------------------------------------------
  */
+#ifdef __cplusplus
+extern "C" {
+#endif
+extern Tcl_PostInitProc    TcltestStaticInit;
+#ifdef __cplusplus
+}
+#endif
 int
 TcltestStaticInit(
     Tcl_Interp *interp,
@@ -9886,26 +9893,26 @@ PostInitUnregisterInCbProc(
  *
  * TestpostinitCmd --
  *
- *      This procedure implements the "testpostinit" command for testing
- *      Tcl_{Register,Unregister}PostInitProc functions.
- *          testpostinit register COMMAND ?ARG?
- *          testpostinit unregister COMMAND ?ARG?
- *      COMMAND should be
- *         add - creates a "addARG" proc adding N to passed operand. Tests
- *               evaluation of scripts within a postinit callback
- *         clear - deletes all registrations
- *         eval - Calls Tcl_Eval within the callback with ARG as script. Can
- * 	 	be used to test arbitrary script execution within callback.
- * 	 	Can only be removed by clear, not unregister.
- *         interpcreate - Creates a new interpreter from within the callback
- *	   interpdelete - Registers a callback that deletes the interpreter
- *         package - does require of a static package with a "multiply"
- *               command. Tests package require of static package within
- *               a postinit callback.
- *         raiseerror - raises an error within the postinit callback
- *         registerincb - Register add callback from within the callback
- *	   safecheck - Register isSafe command
- *         unregisterincb - Unregister add callback from within callback
+ *  This procedure implements the "testpostinit" command for testing
+ *  Tcl_{Register,Unregister}PostInitProc functions.
+ *	testpostinit register COMMAND ?ARG?
+ *	testpostinit unregister COMMAND ?ARG?
+ *  COMMAND should be
+ *	add - creates a "addARG" proc adding N to passed operand. Tests
+ *	      evaluation of scripts within a postinit callback
+ *	clear - deletes all registrations
+ *	eval - Calls Tcl_Eval within the callback with ARG as script. Can
+ *	       be used to test arbitrary script execution within callback.
+ *	       Can only be removed by clear, not unregister.
+ *	interpcreate - Creates a new interpreter from within the callback
+ *	interpdelete - Registers a callback that deletes the interpreter
+ *	package - does require of a static package with a "multiply"
+ *	       command. Tests package require of static package within
+ *	       a postinit callback.
+ *	raiseerror - raises an error within the postinit callback
+ *	registerincb - Register add callback from within the callback
+ *	safecheck - Register isSafe command
+ *	unregisterincb - Unregister add callback from within callback
  *
  * Results:
  *	A standard Tcl result.
@@ -9964,7 +9971,7 @@ TestpostinitCmd(
     }
     void *clientData = NULL;
     if (objc == 4) {
-        if (callback == EVAL) {
+	if (callback == EVAL) {
 	    clientData = (void *)Tcl_DuplicateObj(objv[3]);
 	    Tcl_IncrRefCount((Tcl_Obj *)clientData);
 	} else {
