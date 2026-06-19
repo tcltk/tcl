@@ -432,6 +432,7 @@ static const EnsembleSetup ensembleCommands[] = {
     {"dict",		tclDictImplMap,		NULL, CMD_IS_SAFE},
     {"encoding",	tclEncodingImplMap,	NULL, 0},
     {"file",		tclFileImplMap,		NULL, 0},
+    {"grapheme",	tclGraphemeImplMap,	NULL, 0},
     {"info",		tclInfoImplMap,		NULL, CMD_IS_SAFE},
     {"namespace",	tclNamespaceImplMap,	NULL, CMD_IS_SAFE},
     {"string",		tclStringImplMap,	NULL, CMD_IS_SAFE},

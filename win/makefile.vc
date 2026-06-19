@@ -264,6 +264,7 @@ COREOBJS = \
 	$(TMP_DIR)\tclFCmd.obj \
 	$(TMP_DIR)\tclFileName.obj \
 	$(TMP_DIR)\tclGet.obj \
+	$(TMP_DIR)\tclGrapheme.obj \
 	$(TMP_DIR)\tclHash.obj \
 	$(TMP_DIR)\tclHistory.obj \
 	$(TMP_DIR)\tclIcu.obj \

@@ -144,6 +144,15 @@ TclCompileGlobalCmd(
     return TCL_OK;
 }
 
+/* TODO - placeholders */
+int TclCompileGraphemeIndexCmd(Tcl_Interp *interp, Tcl_Parse *parsePtr, Command *cmdPtr, CompileEnv *envPtr) { return TCL_ERROR; }
+int TclCompileGraphemeLengthCmd(Tcl_Interp *interp, Tcl_Parse *parsePtr, Command *cmdPtr, CompileEnv *envPtr) { return TCL_ERROR; }
+int TclCompileGraphemeNextCmd(Tcl_Interp *interp, Tcl_Parse *parsePtr, Command *cmdPtr, CompileEnv *envPtr) { return TCL_ERROR; }
+int TclCompileGraphemePrevCmd(Tcl_Interp *interp, Tcl_Parse *parsePtr, Command *cmdPtr, CompileEnv *envPtr) { return TCL_ERROR; }
+int TclCompileGraphemeRangeCmd(Tcl_Interp *interp, Tcl_Parse *parsePtr, Command *cmdPtr, CompileEnv *envPtr) { return TCL_ERROR; }
+int TclCompileGraphemeReverseCmd(Tcl_Interp *interp, Tcl_Parse *parsePtr, Command *cmdPtr, CompileEnv *envPtr) { return TCL_ERROR; }
+int TclCompileGraphemeSplitCmd(Tcl_Interp *interp, Tcl_Parse *parsePtr, Command *cmdPtr, CompileEnv *envPtr) { return TCL_ERROR; }
+
 /*
  *----------------------------------------------------------------------
  *
