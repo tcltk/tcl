@@ -1,4 +1,8 @@
 # Utilities to read Unicode Character Data files
+# Copyright © 2025-2026 Ashok P. Nadkarni
+#
+# See the file license.terms for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 if {[namespace exists tcltest::ucd]} {
     return
@@ -241,11 +245,11 @@ namespace eval tcltests::ucd {
                 puts stderr "Unexpected format of line $lineno in $graphemeBreaksDataFile $definition"
                 continue
             }
-            set record [dict create LineNo $lineno Comment $comment]
+            set record [list $lineno $comment]
             set grapheme {}
             set graphemes [list ]
             foreach {hex breakChar} [regexp -all -inline {\S+} [string range $definition 1 end]] {
-                lappend grapheme [format %c 0x$hex]
+                append grapheme [format %c 0x$hex]
                 if {$breakChar eq $break} {
                     lappend graphemes $grapheme
                     set grapheme ""
@@ -255,11 +259,22 @@ namespace eval tcltests::ucd {
                     break
                 }
             }
-            dict set record Graphemes $graphemes
             if {[info exists record]} {
+                lappend record $graphemes
                 lappend graphemeBreaksData $record
             }
-            puts $lineno:$graphemes
         }
+    }
+
+    # Returns the test vectors for graphemes as a list of triples comprising
+    # the line number in GraphemeBreakTest.txt, the comment and the test case
+    # data. This last is a list of strings each of which is a single grapheme.
+    proc getGraphemeData {} {
+        readGraphemeBreaks
+        proc getGraphemeData {} {
+            variable graphemeBreaksData
+            return $graphemeBreaksData
+        }
+        tailcall getGraphemeData
     }
 }

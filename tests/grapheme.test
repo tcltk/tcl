@@ -1,0 +1,57 @@
+# Test coverage for the grapheme command
+# Copyright © 2026 Ashok P. Nadkarni
+#
+# See the file license.terms for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest
+    namespace import ::tcltest::*
+
+}
+tcltest::loadTestedCommands
+package require tcl::test
+
+source [file join [file dirname [info script]] ucdUtils.tcl]
+namespace eval grapheme::test {
+    namespace path ::tcltests::ucd
+    variable testCase
+    variable comment
+    variable testNum
+    variable graphemes
+    variable text
+    variable l
+    proc cleanupVars {} {
+        unset -nocomplain {*}
+    }
+
+    # The -ucd- tests all run off the test vectors from the Unicode Character
+    # Database. The test numbering is based on the corresponding line from
+    # the GraphemeBreakTest.txt file and may therefore be unstable.
+    foreach testCase [getGraphemeData] {
+        lassign $testCase testNum comment graphemes
+        test grapheme-next-ucd-$testNum.0 $comment -body {
+            set text [join $graphemes ""]
+            set l {}
+            set i 0
+            while {[set grapheme [grapheme next $text i]] ne ""} {
+                lappend l $grapheme
+            }
+            set l
+        } -result $graphemes
+
+        test grapheme-prev-ucd-$testNum.0 $comment -body {
+            set text [join $graphemes ""]
+            set l {}
+            set i end
+            while {[set grapheme [grapheme prev $text i]] ne ""} {
+                lappend l $grapheme
+            }
+            lreverse $l
+        } -result $graphemes
+    }
+}
+
+::tcltest::cleanupTests
+namespace delete grapheme::test
+return
