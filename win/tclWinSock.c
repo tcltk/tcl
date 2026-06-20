@@ -2289,7 +2289,7 @@ Tcl_OpenTcpServerEx(
  *
  * TcpAccept --
  *
- *	Accept a TCP socket connection.	 This is called by the event loop.
+ *	Accept a TCP socket connection. This is called by the event loop.
  *
  * Results:
  *	None.
@@ -2484,7 +2484,7 @@ SocketSetupProc(
     }
 
     /*
-     * Check to see if there is a ready socket.	 If so, poll.
+     * Check to see if there is a ready socket. If so, poll.
      */
     WaitForSingleObject(tsdPtr->socketListLock, INFINITE);
     for (statePtr = tsdPtr->socketList; statePtr != NULL;

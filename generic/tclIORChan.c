@@ -43,7 +43,7 @@ static void		ReflectThread(void *clientData, int action);
 static int		ReflectEventRun(Tcl_Event *ev, int flags);
 static int		ReflectEventDelete(Tcl_Event *ev, void *cd);
 #endif
-static long long	 ReflectSeekWide(void *clientData,
+static long long	ReflectSeekWide(void *clientData,
 			    long long offset, int mode, int *errorCodePtr);
 static int		ReflectGetOption(void *clientData,
 			    Tcl_Interp *interp, const char *optionName,

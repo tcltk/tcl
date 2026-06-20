@@ -1309,8 +1309,8 @@ TclWinGetExecutableType(
 		numRead == sizeof(imageHeader)) {
 		CloseHandle(hFile);
 		return imageHeader.Characteristics & IMAGE_FILE_DLL
-			 ? APPL_DLL
-			 : APPL_WIN32;
+			? APPL_DLL
+			: APPL_WIN32;
 	    }
 	    goto checkExtension;
 	}

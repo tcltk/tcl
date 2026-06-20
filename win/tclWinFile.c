@@ -1817,7 +1817,7 @@ NativeAccess(
 	/*
 	 * As of Samba 3.0.23 (10-Jul-2006), unmapped users and groups are
 	 * assigned to SID domains S-1-22-1 and S-1-22-2, where "22" is the
-	 * top-level authority.	 If the file owner and group is unmapped then
+	 * top-level authority.  If the file owner and group is unmapped then
 	 * the ACL access check below will only test against world access,
 	 * which is likely to be more restrictive than the actual access
 	 * restrictions.  Since the ACL tests are more likely wrong than

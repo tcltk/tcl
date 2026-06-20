@@ -1429,7 +1429,7 @@ ConvertFileNameFormat(
     }
 
     /*
-     * We will decrement this again at the end.	 It is safer to do this in
+     * We will decrement this again at the end. It is safer to do this in
      * case any of the calls below retain a reference to splitPath.
      */
 

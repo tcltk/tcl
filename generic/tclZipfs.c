@@ -4229,7 +4229,7 @@ ZipFSInfoObjCmd(
  *
  * ZipFSListObjCmd --
  *
- *	This procedure is invoked to process the [zipfs list] command.	 On
+ *	This procedure is invoked to process the [zipfs list] command. On
  *	success, it returns a Tcl list of files of the ZIP filesystem which
  *	match a search pattern (glob or regexp).
  *
