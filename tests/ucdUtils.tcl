@@ -3,6 +3,7 @@
 if {[namespace exists tcltest::ucd]} {
     return
 }
+package require tcltest
 
 namespace eval tcltests::ucd {
     # UCD file paths
@@ -12,12 +13,15 @@ namespace eval tcltests::ucd {
 	[file join [file dirname [info script]] unicodeTestVectors DerivedNormalizationProps.txt]
     variable derivedCorePropertiesFile \
 	[file join [file dirname [info script]] unicodeTestVectors DerivedCoreProperties.txt]
+    variable graphemeBreaksDataFile \
+	[file join [file dirname [info script]] unicodeTestVectors GraphemeBreakTest.txt]
 
     # Highest assigned Unicode code point
     variable maxCodepoint 0x10ffff
 
     tcltest::testConstraint ucdnormalization [file exists $normalizationDataFile]
     tcltest::testConstraint ucdproperties [file exists $derivedCorePropertiesFile]
+    tcltest::testConstraint ucdgraphemes [file exists $graphemeBreaksDataFile]
 
     # Don't enable casefolding tests - not implemented or TIP'ed in core
     # tcltest::testConstraint ucdcasefolding [file exists $caseFoldDataFile]
@@ -208,5 +212,54 @@ namespace eval tcltests::ucd {
 	variable derivedCoreProperties
 	readDerivedCoreProperties
 	return [dict get $derivedCoreProperties Uppercase]
+    }
+
+    proc readGraphemeBreaks {} {
+        variable graphemeBreaksDataFile
+        variable graphemeBreaksData
+
+        set fd [open $graphemeBreaksDataFile]
+        fconfigure $fd -encoding utf-8
+        set lineno 0
+        # See comments atop $graphemeBreaksDataFile for format
+        while {[gets $fd line] >= 0} {
+            incr lineno
+            set line [string trim $line]
+	    if {[string index $line 0] in {{} #}} {
+		continue
+	    }
+            # Line is of the form
+            # (SEP XXXX)+ SEP (# comment)?
+            # where SEP is
+            #	÷ (U+00F7) wherever there is a break opportunity, and
+            #	× (U+00D7) wherever there is not.
+            set break \u00f7
+            set nobreak \u00d7
+            lassign [split $line #] definition comment
+            set definition [string trim $definition]
+            if {[string index $definition 0] ne $break || [string index $definition end] ne $break} {
+                puts stderr "Unexpected format of line $lineno in $graphemeBreaksDataFile $definition"
+                continue
+            }
+            set record [dict create LineNo $lineno Comment $comment]
+            set grapheme {}
+            set graphemes [list ]
+            foreach {hex breakChar} [regexp -all -inline {\S+} [string range $definition 1 end]] {
+                lappend grapheme [format %c 0x$hex]
+                if {$breakChar eq $break} {
+                    lappend graphemes $grapheme
+                    set grapheme ""
+                } elseif {$breakChar ne $nobreak} {
+                    puts stderr "Unexpected separator character $breakChar"
+                    unset record
+                    break
+                }
+            }
+            dict set record Graphemes $graphemes
+            if {[info exists record]} {
+                lappend graphemeBreaksData $record
+            }
+            puts $lineno:$graphemes
+        }
     }
 }

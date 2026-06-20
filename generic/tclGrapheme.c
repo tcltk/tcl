@@ -54,17 +54,17 @@ static Tcl_UpdateStringProc	UpdateStringOfGraphemeList;
  */
 
 const EnsembleImplMap tclGraphemeImplMap[] = {
-	   #if 0
+#if 0
     {"index",	GraphemeIndexCmd,	TclCompileGraphemeIndexCmd, NULL, NULL, 0},
     {"length",	GraphemeLengthCmd,	TclCompileGraphemeLengthCmd, NULL, NULL, 0},
-	   #endif
+#endif
     {"next",	GraphemeNextCmd,	TclCompileGraphemeNextCmd, NULL, NULL, 0},
-	   #if 0
     {"prev",	GraphemePrevCmd,	TclCompileGraphemePrevCmd, NULL, NULL, 0},
+#if 0
     {"range",	GraphemeRangeCmd,	TclCompileGraphemeRangeCmd, NULL, NULL, 0},
     {"reverse",	GraphemeReverseCmd,	TclCompileGraphemeReverseCmd, NULL, NULL, 0},
     {"split",	GraphemeSplitCmd,	TclCompileGraphemeSplitCmd, NULL, NULL, 0},
-	   #endif
+#endif
     {NULL, NULL, NULL, NULL, NULL, 0}
 };
 
@@ -147,20 +147,22 @@ IsPrecore (
  *
  * GraphemeNextCmd --
  *
- *	Implements the Tcl command GraphemeNextCmd
+ *	Implements the Tcl "grapheme next" command. Sets the interpreter
+ *	result to the grapheme in the string objv[1] at the string
+ *	index passed via the variable named in objv[2]. The variable is
+ *	set to the string index following the returned grapheme.
  *
  * Results:
- *	TCL_OK    - Success.
- *	TCL_ERROR - Error.
+ *	A standard Tcl result code.
  *
  * Side effects:
- *	Interpreter result holds result or error message.
+ *	Modifies interpreter result and variable passed in objv[2].
  *
  *------------------------------------------------------------------------
  */
-int
+static int
 GraphemeNextCmd (
-	ClientData notUsed,
+	TCL_UNUSED(void *),
 	Tcl_Interp *interp,	/* Current interpreter. */
 	Tcl_Size objc,		/* Number of arguments. */
 	Tcl_Obj *const objv[])	/* Argument objects. */
@@ -171,31 +173,123 @@ GraphemeNextCmd (
     }
 
     Tcl_Size strIndex = 0;
+    Tcl_Size uniLen;
+    Tcl_UniChar *uniStartPtr = Tcl_GetUnicodeFromObj(objv[1], &uniLen);
     Tcl_Obj *indexObj = Tcl_ObjGetVar2(interp, objv[2], NULL, 0);
+
     if (indexObj) {
-	if (Tcl_GetSizeIntFromObj(interp, indexObj, &strIndex) != TCL_OK) {
+	if (TclGetIntForIndexM(interp, indexObj, uniLen, &strIndex) != TCL_OK) {
 	    return TCL_ERROR;
+	}
+	if (strIndex < 0) {
+	    strIndex = 0;
 	}
     }
 
     Tcl_Size grLen = 0;
-    Tcl_Size uniLen;
-    Tcl_UniChar *uniStartPtr = Tcl_GetUnicodeFromObj(objv[1], &uniLen);
     Tcl_UniChar *uniEndPtr = uniStartPtr + uniLen;
     if (strIndex < uniLen) {
 	int state = 0;
-	uniStartPtr += strIndex;
-	Tcl_UniChar *uniPtr = uniStartPtr;
+	Tcl_UniChar *grStartPtr = uniStartPtr + strIndex;
+	Tcl_UniChar *uniPtr = grStartPtr;
 	while (++uniPtr < uniEndPtr) {
 	    if (utf8proc_grapheme_break_stateful(uniPtr[-1],
 			uniPtr[0], &state)) {
 		break;
 	    }
 	}
-	grLen = uniPtr - uniStartPtr;
-	Tcl_SetObjResult(interp, Tcl_NewUnicodeObj(uniStartPtr, grLen));
+	grLen = uniPtr - grStartPtr;
+	Tcl_SetObjResult(interp, Tcl_NewUnicodeObj(grStartPtr, grLen));
     }
-    Tcl_ObjSetVar2(interp, objv[2], NULL, Tcl_NewWideIntObj(grLen), 0);
+    Tcl_ObjSetVar2(interp, objv[2], NULL, Tcl_NewWideIntObj(strIndex+grLen), 0);
+    return TCL_OK;
+}
+
+/*
+ *------------------------------------------------------------------------
+ *
+ * GraphemePrevCmd --
+ *
+ *	Implements the Tcl "grapheme prev" command. Sets the interpreter
+ *	result to the grapheme in the string objv[1] preceding the string
+ *	index passed via the variable named in objv[2]. The variable is
+ *	set to the string index preceding the returned grapheme.
+ *
+ * Results:
+ *	A standard Tcl result code.
+ *
+ * Side effects:
+ *	Modifies interpreter result and variable passed in objv[2].
+ *
+ *------------------------------------------------------------------------
+ */
+static int
+GraphemePrevCmd (
+	TCL_UNUSED(void *),
+	Tcl_Interp *interp,	/* Current interpreter. */
+	Tcl_Size objc,		/* Number of arguments. */
+	Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    if (objc != 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "STRING INDEXVAR");
+	return TCL_ERROR;
+    }
+
+    Tcl_Size uniLen;
+    Tcl_UniChar *uniStartPtr = Tcl_GetUnicodeFromObj(objv[1], &uniLen);
+    Tcl_Size strIndex = uniLen;
+
+    Tcl_Obj *indexObj = Tcl_ObjGetVar2(interp, objv[2], NULL, 0);
+    if (indexObj) {
+	if (TclGetIntForIndexM(interp, indexObj, uniLen, &strIndex) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+    }
+    if (strIndex < 0) {
+	strIndex = 0;
+    } else if (strIndex > uniLen) {
+	strIndex = uniLen;
+    }
+
+    /*
+     * The utf8proc grapheme functions only maintain correct state when
+     * traversing in the forward direction. We have to therefore first go
+     * back to a place that is guaranteed to not be in the middle of a
+     * grapheme and work forward from there. The reason for having to work
+     * forward is that the backward scan is a conservative heuristic and
+     * may go further back than it needs to. Therefore we have to work 
+     * forward again to skip over the extra scan.
+     */
+
+    /*
+     * Scan backward to a safe starting point for the forward scan 
+     * TODO - Back scan below is only basics - have not understood UAX #29
+     * rules GB6-8 (Hangul) and GB12-13 (Regional Indicators).
+     */
+    Tcl_UniChar *uniEndPtr = uniStartPtr + strIndex;
+    Tcl_UniChar *uniPtr = uniEndPtr - 1;
+
+    while (uniPtr > uniStartPtr
+	    && (IsPostcore(*uniPtr) || IsPrecore(uniPtr[-1]))) {
+	uniPtr--;
+    }
+
+    Tcl_Size grLen = 0;
+    int state = 0;
+    /* Now scan forward. Note uniPtr may be < uniStartPtr if uniLen was 0 */
+    if (uniPtr >= uniStartPtr) {
+	Tcl_UniChar *grStartPtr = uniPtr;
+	while (++uniPtr < uniEndPtr) {
+	    if (utf8proc_grapheme_break_stateful(uniPtr[-1],
+			uniPtr[0], &state)) {
+		grStartPtr = uniPtr;
+	    }
+	}
+	grLen = uniEndPtr - grStartPtr;
+	Tcl_SetObjResult(interp, Tcl_NewUnicodeObj(grStartPtr, grLen));
+    }
+
+    Tcl_ObjSetVar2(interp, objv[2], NULL, Tcl_NewWideIntObj(strIndex-grLen), 0);
     return TCL_OK;
 }
 

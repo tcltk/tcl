@@ -11,7 +11,7 @@ package require tcl::test
 source [file join [file dirname [info script]] ucdUtils.tcl]
 
 namespace eval unicode::normalization::test {
-	namespace path ::tcltests::ucd
+    namespace path ::tcltests::ucd
 
     variable singleFormChar
     variable testCase
