@@ -962,9 +962,9 @@ TclpCreateProcess(
 
     ZeroMemory(&startInfo, sizeof(startInfo));
     startInfo.cb = sizeof(startInfo);
-    startInfo.dwFlags	= STARTF_USESTDHANDLES;
-    startInfo.hStdInput	= INVALID_HANDLE_VALUE;
-    startInfo.hStdOutput= INVALID_HANDLE_VALUE;
+    startInfo.dwFlags = STARTF_USESTDHANDLES;
+    startInfo.hStdInput = INVALID_HANDLE_VALUE;
+    startInfo.hStdOutput = INVALID_HANDLE_VALUE;
     startInfo.hStdError = INVALID_HANDLE_VALUE;
 
     secAtts.nLength = sizeof(SECURITY_ATTRIBUTES);
@@ -1357,7 +1357,7 @@ checkExtension: /* hFile should be open handle at this point */
  * ApplicationType --
  *
  *	Search for the specified program and identify if it refers to a DOS,
- *	Windows 3.X, or Win32 program.	Used to determine how to invoke a
+ *	Windows 3.X, or Win32 program. Used to determine how to invoke a
  *	program, or if it can even be invoked.
  *
  *	It is possible to almost positively identify DOS and Windows

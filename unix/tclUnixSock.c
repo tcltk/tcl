@@ -20,7 +20,7 @@
 
 #define SET_BITS(var, bits)	((var) |= (bits))
 #define CLEAR_BITS(var, bits)	((var) &= ~(bits))
-#define GOT_BITS(var, bits)     (((var) & (bits)) != 0)
+#define GOT_BITS(var, bits)	(((var) & (bits)) != 0)
 
 /* "sock" + a pointer in hex + \0 */
 #define SOCK_CHAN_LENGTH	(4 + sizeof(void *) * 2 + 1)

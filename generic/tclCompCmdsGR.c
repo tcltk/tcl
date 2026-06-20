@@ -2675,7 +2675,7 @@ TclCompileRegsubCmd(
 
     result = TCL_OK;
     bytes = Tcl_DStringValue(&pattern) + 1;
-    PushLiteral(envPtr,	bytes, len);
+    PushLiteral(envPtr, bytes, len);
     PUSH_OBJ(			replacementObj);
     PUSH_TOKEN(			stringTokenPtr, numWords - 2);
     OP(				STR_MAP);

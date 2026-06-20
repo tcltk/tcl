@@ -7100,7 +7100,7 @@ TestChannelEventCmd(
 	return TCL_OK;
     }
 
-    if	((cmd[0] == 's') && (strncmp(cmd, "set", len) == 0)) {
+    if ((cmd[0] == 's') && (strncmp(cmd, "set", len) == 0)) {
 	if (objc != 5) {
 	    Tcl_WrongNumArgs(interp, 1, objv, "channel delete index event");
 	    return TCL_ERROR;

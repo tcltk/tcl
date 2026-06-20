@@ -2632,7 +2632,7 @@ Tcl_LpopObjCmd(
 	    return TCL_ERROR;
 	}
 
-	result = Tcl_ListObjIndex(interp, listPtr, (listLen-1),	&elemPtr);
+	result = Tcl_ListObjIndex(interp, listPtr, listLen-1, &elemPtr);
 	if (result != TCL_OK) {
 	    return result;
 	}

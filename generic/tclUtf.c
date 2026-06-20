@@ -149,7 +149,7 @@ TclUtfCount(
  *	prevent this.
  *
  *	Given a pointer to something else (an ASCII byte, a trail byte,
- *	or another byte	that can never begin a valid byte sequence such
+ *	or another byte that can never begin a valid byte sequence such
  *	as \xF5) this routine returns false.  That makes the routine poorly
  *	named, as it does not detect and report all invalid sequences.
  *

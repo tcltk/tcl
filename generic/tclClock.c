@@ -4478,7 +4478,7 @@ ClockWeekdaysOffs(
  *
  * Notes:
  *	It is possible that adding a number of months or years will adjust the
- *	day of the month as well.	For instance, the time at one month after
+ *	day of the month as well.  For instance, the time at one month after
  *	31 January is either 28 or 29 February, because February has fewer
  *	than 31 days.
  *

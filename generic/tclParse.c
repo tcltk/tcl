@@ -570,7 +570,7 @@ TclIsSpaceProc(
  *	in determining what variable names can be parsed as variable
  *	substitutions without the benefit of enclosing braces.  The set of
  *	ASCII chars that are accepted are the numeric chars ('0'-'9'),
- *	the alphabetic chars ('a'-'z', 'A'-'Z')	and underscore ('_').
+ *	the alphabetic chars ('a'-'z', 'A'-'Z') and underscore ('_').
  *
  * Results:
  *	Returns true if byte is in the accepted set of chars, false otherwise.

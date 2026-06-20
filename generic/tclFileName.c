@@ -1592,7 +1592,7 @@ Tcl_GlobObjCmd(
  *
  * TclGlob --
  *
- *	Sets the separator string based on the platform	and calls DoGlob.
+ *	Sets the separator string based on the platform and calls DoGlob.
  *
  *	The interpreter's result, on entry to this function, must be a valid
  *	Tcl list (e.g. it could be empty), since we will lappend any new
