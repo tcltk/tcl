@@ -551,10 +551,10 @@ LocatePreInitScript(
 	assert(exeDirPtr);
 #ifdef _WIN32
 	int runningInBuild =
-	    strcasecmp(TCL_BUILDTIME_BINDIR, Tcl_GetString(exeDirPtr)) == 0;
+		strcasecmp(TCL_BUILDTIME_BINDIR, Tcl_GetString(exeDirPtr)) == 0;
 #else
 	int runningInBuild =
-	    strcmp(TCL_BUILDTIME_BINDIR, Tcl_GetString(exeDirPtr)) == 0;
+		strcmp(TCL_BUILDTIME_BINDIR, Tcl_GetString(exeDirPtr)) == 0;
 #endif
 	if (runningInBuild) {
 	    TRY_PATH(Tcl_NewStringObj(TCL_BUILDTIME_SCRDIR, -1));
@@ -5448,8 +5448,8 @@ TclCallPostInitProcs(
     if (tsdPtr->inUse) {
 	/* T: postinit-2.2 */
 	Tcl_SetResult(interp,
-	    "Recursive interp create from post-initialization callback.",
-	    TCL_STATIC);
+		"Recursive interp create from post-initialization callback.",
+		TCL_STATIC);
 	return TCL_ERROR;
     }
 
@@ -5468,7 +5468,7 @@ TclCallPostInitProcs(
 	    }
 	    cachePtr->capacity = postInitRecords.capacity;
 	    cachePtr->recordsPtr = (TclPostInitRecord *)Tcl_Alloc(
-		cachePtr->capacity * sizeof(TclPostInitRecord));
+		    cachePtr->capacity * sizeof(TclPostInitRecord));
 	    /* Remember to free on thread exit */
 	    Tcl_CreateThreadExitHandler(TclPostInitThreadExitProc, tsdPtr);
 	}
@@ -5489,16 +5489,15 @@ TclCallPostInitProcs(
     Tcl_Preserve(interp);	/* Ensure it does not disappear in callback */
     for (size_t i = 0; i < cachePtr->count; i++) {
 	result = cachePtr->recordsPtr[i].postInitProc(interp,
-	    cachePtr->recordsPtr[i].clientData);
+		cachePtr->recordsPtr[i].clientData);
 	interpDeleted = Tcl_InterpDeleted(interp);
 	if (interpDeleted) {
-	    Tcl_SetObjResult(interp,
-		Tcl_NewStringObj(
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "interpreter deleted during post-initialization callback",
 		    -1));
 	    result = TCL_ERROR;
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "INTERP", "DELETED",
-		(char *)NULL);
+		    (char *)NULL);
 	    break;
 	}
 	if (result != TCL_OK) {
@@ -5554,13 +5553,13 @@ Tcl_RegisterPostInitProc(
 	/* T: postinit-1.* */
 	postInitRecords.capacity = 8;
 	postInitRecords.recordsPtr = (TclPostInitRecord *)Tcl_Alloc(
-	    sizeof(TclPostInitRecord) * postInitRecords.capacity);
+		sizeof(TclPostInitRecord) * postInitRecords.capacity);
 	postInitRecords.count = 0;
 	/* Do not set epoch to 0 as recordsPtr is NULL after clear as well */
     } else {
 	for (size_t i = 0; i < postInitRecords.count; ++i) {
 	    if (postInitRecords.recordsPtr[i].postInitProc == proc &&
-		postInitRecords.recordsPtr[i].clientData == clientData) {
+		    postInitRecords.recordsPtr[i].clientData == clientData) {
 		/* T: postinit-1.4 */
 		goto done;	/* Already present, don't add */
 	    }
@@ -5568,9 +5567,9 @@ Tcl_RegisterPostInitProc(
 	if (postInitRecords.count == postInitRecords.capacity) {
 		   /* T: postinit-1.6 */
 	    postInitRecords.capacity *= 2;
-	    postInitRecords.recordsPtr =
-		(TclPostInitRecord *)Tcl_Realloc(postInitRecords.recordsPtr,
-		    sizeof(TclPostInitRecord) * postInitRecords.capacity);
+	    postInitRecords.recordsPtr = (TclPostInitRecord *)
+		    Tcl_Realloc(postInitRecords.recordsPtr,
+			sizeof(TclPostInitRecord) * postInitRecords.capacity);
 	}
     }
     /* T: postinit-1.* */
@@ -5611,7 +5610,7 @@ Tcl_UnregisterPostInitProc(
 	size_t i;
 	for (i = 0; i < postInitRecords.count; ++i) {
 	    if (postInitRecords.recordsPtr[i].postInitProc == proc &&
-		postInitRecords.recordsPtr[i].clientData == clientData) {
+		    postInitRecords.recordsPtr[i].clientData == clientData) {
 		/* T: postinit-1.* */
 		break;
 	    }

@@ -4557,7 +4557,7 @@ TEBCresume(
 #ifndef REMOVE_DEPRECATED_OPCODES
 		    || (*pc == INST_JUMP_TRUE1)
 #endif
-	    ) {
+		    ) {
 		TRACE_APPEND("%.20s false\n", O2S(valuePtr));
 	    } else {
 		TRACE_APPEND("%.20s false, new pc %" SIZEd "\n", O2S(valuePtr),
