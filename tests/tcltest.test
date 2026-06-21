@@ -1851,15 +1851,15 @@ test tcltest-27.1 {
     child msg1 $script
     child msg2 $script -iterations 2
     list [regexp "Total.+4.+Passed.+1.+Skipped.+1.+Failed.+2" $msg1] \
-        [regexp "Total.+8.+Passed.+2.+Skipped.+2.+Failed.+4" $msg2] \
+	[regexp "Total.+8.+Passed.+2.+Skipped.+2.+Failed.+4" $msg2] \
 } -result {1 1}
 
 test tcltest-27.2 {
     tcltest [testIterations]
 } -setup {
     set script [makeFile [string insert $testScript 0 {
-        package require tcltest
-        tcltest::testIterations 2
+	package require tcltest
+	tcltest::testIterations 2
     }] testIterations.tcl]
 } -cleanup {
     removeFile $script
@@ -1873,8 +1873,8 @@ test tcltest-27.3 {
     tcltest configure -iterations
 } -setup {
     set script [makeFile [string insert $testScript 0 {
-        package require tcltest
-        tcltest::configure -iterations 2
+	package require tcltest
+	tcltest::configure -iterations 2
     }] testIterations.tcl]
 } -cleanup {
     removeFile $script

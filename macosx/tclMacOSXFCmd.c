@@ -86,7 +86,7 @@ enum {
 
 #define kFinfoIsInvisible	(OSSwapHostToBigConstInt16(kIsInvisible))
 
-typedef	struct finderinfo {
+typedef struct finderinfo {
     u_int32_t type;
     u_int32_t creator;
     u_int16_t fdFlags;

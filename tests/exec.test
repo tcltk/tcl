@@ -407,7 +407,7 @@ test exec-9.8 {commands returning errors} -constraints {exec} -setup {
 err}
 
 test exec-9.9 "exec - empty executable path" -body {
-        exec ""
+	exec ""
 } -result {couldn't execute "": no such file or directory} -returnCodes error
 
 # Errors in executing the Tcl command, as opposed to errors in the processes
@@ -818,924 +818,924 @@ namespace eval tcl::test::exec {
     # idea how to check it in GHA programmatically, so simply disable it (todo:
     # rewrite with better check later)
     if {[testConstraint win]} {
-        if {[file exists $testApp]} {
-            testConstraint haveTestApp 1
-        }
-        if {![info exists ::env(CI)] && [info exists ::env(LOCALAPPDATA)]} {
-            set wingetPath [file join $::env(LOCALAPPDATA) "Microsoft" "WindowsApps" "winget.exe"]
-            if {[file exists $wingetPath]} {
-                # Ensure it is on the PATH
-                testConstraint haveWinget 1
-            }
-        }
-        if {[file executable [file join $::env(WINDIR) system32 wscript.exe]] &&
-            [info exists ::env(PATHEXT)] &&
-            [lsearch -nocase -ascii [split $::env(PATHEXT) ";"] ".VBS"] >= 0
-        } {
-            testConstraint haveWScript 1
-        }
+	if {[file exists $testApp]} {
+	    testConstraint haveTestApp 1
+	}
+	if {![info exists ::env(CI)] && [info exists ::env(LOCALAPPDATA)]} {
+	    set wingetPath [file join $::env(LOCALAPPDATA) "Microsoft" "WindowsApps" "winget.exe"]
+	    if {[file exists $wingetPath]} {
+		# Ensure it is on the PATH
+		testConstraint haveWinget 1
+	    }
+	}
+	if {[file executable [file join $::env(WINDIR) system32 wscript.exe]] &&
+	    [info exists ::env(PATHEXT)] &&
+	    [lsearch -nocase -ascii [split $::env(PATHEXT) ";"] ".VBS"] >= 0
+	} {
+	    testConstraint haveWScript 1
+	}
     }
 
     proc rmdirs {args} {
-        foreach arg $args {
-            removeDirectory $arg
-        }
+	foreach arg $args {
+	    removeDirectory $arg
+	}
     }
 
     proc nativeTestPath {args} {
-        return [file nativename [file join [temporaryDirectory] {*}$args]]
+	return [file nativename [file join [temporaryDirectory] {*}$args]]
     }
 
     # Save env vars specified by args
     proc pushEnv {args} {
-        global env
-        variable envStack
-        set saved [dict create]
-        foreach envVar $args {
-            if {[info exists env($envVar)]} {
-                dict set saved $envVar $env($envVar)
-            } else {
-                dict set saved $envVar ""
-            }
-        }
-        lappend envStack $saved
+	global env
+	variable envStack
+	set saved [dict create]
+	foreach envVar $args {
+	    if {[info exists env($envVar)]} {
+		dict set saved $envVar $env($envVar)
+	    } else {
+		dict set saved $envVar ""
+	    }
+	}
+	lappend envStack $saved
     }
 
     # Restore env vars saved by pushEnv
     proc popEnv {} {
-        global env
-        variable envStack
-        if {[llength $envStack] == 0} {
-            error "Test implementation error: mismatched push/pops for envStack."
-        }
-        dict for {envVar envValue} [lpop envStack] {
-            if {$envValue ne ""} {
-                set env($envVar) $envValue
-            } else {
-                unset -nocomplain env($envVar)
-            }
-        }
+	global env
+	variable envStack
+	if {[llength $envStack] == 0} {
+	    error "Test implementation error: mismatched push/pops for envStack."
+	}
+	dict for {envVar envValue} [lpop envStack] {
+	    if {$envValue ne ""} {
+		set env($envVar) $envValue
+	    } else {
+		unset -nocomplain env($envVar)
+	    }
+	}
     }
 
-    # Save cwd, and env vars specified by args, makeDirectory $dir, cd $dir 
+    # Save cwd, and env vars specified by args, makeDirectory $dir, cd $dir
     # Returns path to dir
     proc pushContext {dir args} {
-        global env
-        variable dirStack
-        lappend dirStack [pwd]
-        pushEnv {*}$args
-        set dir [makeDirectory $dir]
-        cd $dir
-        return $dir
+	global env
+	variable dirStack
+	lappend dirStack [pwd]
+	pushEnv {*}$args
+	set dir [makeDirectory $dir]
+	cd $dir
+	return $dir
     }
 
     # Restore last context saved by pushContext
     proc popContext {} {
-        global env
-        variable dirStack
-        if {[llength $dirStack] == 0} {
-            error "Test implementation error: mismatched push/pops for dirStack."
-        }
-        popEnv
-        cd [lpop dirStack]
+	global env
+	variable dirStack
+	if {[llength $dirStack] == 0} {
+	    error "Test implementation error: mismatched push/pops for dirStack."
+	}
+	popEnv
+	cd [lpop dirStack]
     }
 
     # Content of batch files
     variable batContent {
        @echo off
-        setlocal enabledelayedexpansion
+	setlocal enabledelayedexpansion
 
-        :parse
-        if "%~1"=="" goto :eof
+	:parse
+	if "%~1"=="" goto :eof
 
-        if /i "%~1"=="-path" (
-             rem fullname of this script
-             echo %~dpnx0
-             shift
-             goto parse
-        )
+	if /i "%~1"=="-path" (
+	     rem fullname of this script
+	     echo %~dpnx0
+	     shift
+	     goto parse
+	)
 
-        if /i "%~1"=="-cwd" (
-             rem Current working directory
-             echo %CD%
-             shift
-             goto parse
-        )
+	if /i "%~1"=="-cwd" (
+	     rem Current working directory
+	     echo %CD%
+	     shift
+	     goto parse
+	)
 
-        if /i "%~1"=="-argv0" (
-             rem Script name as passed
-             echo %0
-             shift
-             goto parse
-         )
+	if /i "%~1"=="-argv0" (
+	     rem Script name as passed
+	     echo %0
+	     shift
+	     goto parse
+	 )
 
-        if /i "%~1"=="-env" (
-             rem Next argument is environment variable name
-             if "%~2"=="" (
-                  echo Error: -env requires a variable name
-                  goto :eof
-             )
-             call echo %%%~2%%
-             shift
-             shift
-             goto parse
-        )
+	if /i "%~1"=="-env" (
+	     rem Next argument is environment variable name
+	     if "%~2"=="" (
+		  echo Error: -env requires a variable name
+		  goto :eof
+	     )
+	     call echo %%%~2%%
+	     shift
+	     shift
+	     goto parse
+	)
 
-        rem Unknown option
-        echo Unknown option: %~1
-        shift
-        goto parse
+	rem Unknown option
+	echo Unknown option: %~1
+	shift
+	goto parse
     }
 
     foreach ext $execExts {
-        set path nosuchfile.$ext
-        test exec-win-1.1-$ext "Exec missing $ext file" -constraints win -body {
-            exec $path
-        } -result "couldn't execute \"$path\": no such file or directory" \
-            -returnCodes error
+	set path nosuchfile.$ext
+	test exec-win-1.1-$ext "Exec missing $ext file" -constraints win -body {
+	    exec $path
+	} -result "couldn't execute \"$path\": no such file or directory" \
+	    -returnCodes error
 
-        set path [makeDirectory exec-win-2.0.$ext]
-        test exec-win-2.1-$ext "Exec directories with extension $ext" \
-            -constraints win \
-            -setup {
-                set dir $path
-            } -cleanup {
-                rmdirs $path
-            } -body {
-                exec $path
-            } -result "couldn't execute \"[file nativename $path]\": no such file or directory" \
-            -returnCodes error
+	set path [makeDirectory exec-win-2.0.$ext]
+	test exec-win-2.1-$ext "Exec directories with extension $ext" \
+	    -constraints win \
+	    -setup {
+		set dir $path
+	    } -cleanup {
+		rmdirs $path
+	    } -body {
+		exec $path
+	    } -result "couldn't execute \"[file nativename $path]\": no such file or directory" \
+	    -returnCodes error
     }
 
     # Junk content - only test for .exe as bat,cmd may have any content
     test exec-win-3.1 "exec - junk .exe files" \
-        -constraints win -setup {
-            set prog [makeFile [string repeat x 1000] exec-win-3.1.exe]
-        } -body {
-            exec $prog
-        } -cleanup {
-            removeFile $prog
-        } -result "couldn't execute \"[nativeTestPath exec-win-3.1.exe]\": no such file or directory" \
-        -returnCodes error
+	-constraints win -setup {
+	    set prog [makeFile [string repeat x 1000] exec-win-3.1.exe]
+	} -body {
+	    exec $prog
+	} -cleanup {
+	    removeFile $prog
+	} -result "couldn't execute \"[nativeTestPath exec-win-3.1.exe]\": no such file or directory" \
+	-returnCodes error
 
     test exec-win-3.2 "exec - ignore invalid exe files along path without aborting"  \
-        -constraints haveTestApp \
-        -setup {
-            set dir1 [makeDirectory exec-win-3.2-1]
-            set dir2 [makeDirectory exec-win-3.2-2]
-            writeFile [file join $dir1 testApp.exe] [string repeat x 200]
-            file copy $testApp [file join $dir2 testApp.exe]
-            pushEnv PATH
-            append ::env(PATH) ";" [file nativename $dir1] ";" [file nativename $dir2]
-        } -cleanup {
-            popEnv
-            rmdirs $dir1 $dir2
-        } -body {
-            exec testApp -path
-        } -result [nativeTestPath exec-win-3.2-2 testApp.exe]
+	-constraints haveTestApp \
+	-setup {
+	    set dir1 [makeDirectory exec-win-3.2-1]
+	    set dir2 [makeDirectory exec-win-3.2-2]
+	    writeFile [file join $dir1 testApp.exe] [string repeat x 200]
+	    file copy $testApp [file join $dir2 testApp.exe]
+	    pushEnv PATH
+	    append ::env(PATH) ";" [file nativename $dir1] ";" [file nativename $dir2]
+	} -cleanup {
+	    popEnv
+	    rmdirs $dir1 $dir2
+	} -body {
+	    exec testApp -path
+	} -result [nativeTestPath exec-win-3.2-2 testApp.exe]
 
     test exec-win-4.1 "exec - verify exe priority over bat, cmd" \
-        -constraints haveTestApp \
-        -setup {
-            set dir [pushContext exec-win-4.1]
-            writeFile [file join $dir testApp.bat] $batContent
-            writeFile [file join $dir testApp.cmd] $batContent
-            file copy $testApp [file join $dir testApp.exe]
-        } -cleanup {
-            popContext
-            rmdirs $dir
-        } -body {
-            exec testApp -path
-        } -result [nativeTestPath exec-win-4.1 testApp.exe]
+	-constraints haveTestApp \
+	-setup {
+	    set dir [pushContext exec-win-4.1]
+	    writeFile [file join $dir testApp.bat] $batContent
+	    writeFile [file join $dir testApp.cmd] $batContent
+	    file copy $testApp [file join $dir testApp.exe]
+	} -cleanup {
+	    popContext
+	    rmdirs $dir
+	} -body {
+	    exec testApp -path
+	} -result [nativeTestPath exec-win-4.1 testApp.exe]
 
     test exec-win-4.2 "Verify bat priority over cmd" \
-        -constraints haveTestApp \
-        -setup {
-            set dir [pushContext exec-win-4.2]
-            writeFile [file join $dir testApp.cmd] $batContent
-            writeFile [file join $dir testApp.bat] $batContent
-        } -cleanup {
-            popContext
-            rmdirs $dir
-        } -body {
-            exec testApp -path
-        } -result [nativeTestPath exec-win-4.2 testApp.bat]
+	-constraints haveTestApp \
+	-setup {
+	    set dir [pushContext exec-win-4.2]
+	    writeFile [file join $dir testApp.cmd] $batContent
+	    writeFile [file join $dir testApp.bat] $batContent
+	} -cleanup {
+	    popContext
+	    rmdirs $dir
+	} -body {
+	    exec testApp -path
+	} -result [nativeTestPath exec-win-4.2 testApp.bat]
 
     test exec-win-4.3 "Exec explicit extensions" \
-        -constraints haveTestApp \
-        -setup {
-            set dir [pushContext exec-win-4.1]
-            writeFile [file join $dir testApp.bat] $batContent
-            writeFile [file join $dir testApp.cmd] $batContent
-            file copy $testApp [file join $dir testApp.exe]
-        } -cleanup {
-            popContext
-            rmdirs $dir
-        } -body {
-            list \
-                [exec testApp.cmd -path] \
-                [exec testApp.bat -path] \
-                [exec testApp.exe -path]
-        } -result [list \
-                       [nativeTestPath exec-win-4.1 testApp.cmd] \
-                       [nativeTestPath exec-win-4.1 testApp.bat] \
-                       [nativeTestPath exec-win-4.1 testApp.exe]]
+	-constraints haveTestApp \
+	-setup {
+	    set dir [pushContext exec-win-4.1]
+	    writeFile [file join $dir testApp.bat] $batContent
+	    writeFile [file join $dir testApp.cmd] $batContent
+	    file copy $testApp [file join $dir testApp.exe]
+	} -cleanup {
+	    popContext
+	    rmdirs $dir
+	} -body {
+	    list \
+		[exec testApp.cmd -path] \
+		[exec testApp.bat -path] \
+		[exec testApp.exe -path]
+	} -result [list \
+		       [nativeTestPath exec-win-4.1 testApp.cmd] \
+		       [nativeTestPath exec-win-4.1 testApp.bat] \
+		       [nativeTestPath exec-win-4.1 testApp.exe]]
 
     test exec-win-5.1 "exec - verify search path prioritized over extension"  \
-        -constraints haveTestApp \
-        -setup {
-            set dir1 [makeDirectory exec-win-5.1-1]
-            set dir2 [makeDirectory exec-win-5.1-2]
-            writeFile [file join $dir1 testApp.bat] $batContent
-            file copy $testApp [file join $dir2 testApp.exe]
-            pushEnv PATH
-            append ::env(PATH) ";" [file nativename $dir1] ";" [file nativename $dir2]
-        } -cleanup {
-            popEnv
-            rmdirs $dir1 $dir2
-        } -body {
-            exec testApp -path
-        } -result [nativeTestPath exec-win-5.1-1 testApp.bat]
+	-constraints haveTestApp \
+	-setup {
+	    set dir1 [makeDirectory exec-win-5.1-1]
+	    set dir2 [makeDirectory exec-win-5.1-2]
+	    writeFile [file join $dir1 testApp.bat] $batContent
+	    file copy $testApp [file join $dir2 testApp.exe]
+	    pushEnv PATH
+	    append ::env(PATH) ";" [file nativename $dir1] ";" [file nativename $dir2]
+	} -cleanup {
+	    popEnv
+	    rmdirs $dir1 $dir2
+	} -body {
+	    exec testApp -path
+	} -result [nativeTestPath exec-win-5.1-1 testApp.bat]
 
     test exec-win-6.1 "exec - verify execution irrespective of random extension" \
-        -constraints haveTestApp \
-        -setup {
-            set fooFile [file join [temporaryDirectory] testApp.foo]
-            file copy $testApp $fooFile
-        } -cleanup {
-            file delete $fooFile
-            unset fooFile
-        } -body {
-            exec $fooFile -path
-        } -result [nativeTestPath testApp.foo]
+	-constraints haveTestApp \
+	-setup {
+	    set fooFile [file join [temporaryDirectory] testApp.foo]
+	    file copy $testApp $fooFile
+	} -cleanup {
+	    file delete $fooFile
+	    unset fooFile
+	} -body {
+	    exec $fooFile -path
+	} -result [nativeTestPath testApp.foo]
 
     test exec-win-6.2 "exec - verify execution of exe masquerading as .bat" \
-        -constraints haveTestApp \
-        -setup {
-            set batFile [file join [temporaryDirectory] testApp.bat]
-            file copy $testApp $batFile
-        } -cleanup {
-            file delete $batFile
-            unset batFile
-        } -body {
-            exec $batFile -path
-        } -result [nativeTestPath testApp.bat]
+	-constraints haveTestApp \
+	-setup {
+	    set batFile [file join [temporaryDirectory] testApp.bat]
+	    file copy $testApp $batFile
+	} -cleanup {
+	    file delete $batFile
+	    unset batFile
+	} -body {
+	    exec $batFile -path
+	} -result [nativeTestPath testApp.bat]
 
     test exec-win-6.3 "exec - verify execution of exe in path masquerading as .com" \
-        -constraints win \
-        -body {
-            exec chcp
-        } -result "Active code*" -match glob
+	-constraints win \
+	-body {
+	    exec chcp
+	} -result "Active code*" -match glob
 
     test exec-win-7.1 "exec - verify Windows directory checked before PATH" \
-        -constraints haveTestApp \
-        -setup {
-            set dir [makeDirectory exec-win-7.1]
-            # copy to a name that is present in the Windows dir
-            set dummyAttribExe [file join $dir attrib.exe]
-            file copy $testApp [file join $dir testApp.exe]
-            file copy $testApp $dummyAttribExe
-            pushEnv PATH
-            set ::env(PATH) [file nativename $dir]
-        } -cleanup {
-            rmdirs $dir
-            popEnv
-        } -body {
-            # Verify path is correct by calling testApp and then
-            # the real attrib is picked up though not on path
-            list [exec testApp.exe -path] [exec attrib.exe /?]
-        } -result {*testApp.exe*Displays or changes*} -match glob
+	-constraints haveTestApp \
+	-setup {
+	    set dir [makeDirectory exec-win-7.1]
+	    # copy to a name that is present in the Windows dir
+	    set dummyAttribExe [file join $dir attrib.exe]
+	    file copy $testApp [file join $dir testApp.exe]
+	    file copy $testApp $dummyAttribExe
+	    pushEnv PATH
+	    set ::env(PATH) [file nativename $dir]
+	} -cleanup {
+	    rmdirs $dir
+	    popEnv
+	} -body {
+	    # Verify path is correct by calling testApp and then
+	    # the real attrib is picked up though not on path
+	    list [exec testApp.exe -path] [exec attrib.exe /?]
+	} -result {*testApp.exe*Displays or changes*} -match glob
 
     test exec-win-7.2.1 "exec - verify cwd checked before Windows and PATH" \
-        -constraints haveTestApp \
-        -setup {
-            set dir [makeDirectory exec-win-7.2.1]
-            set newCwd [pushContext exec-win-7.2.1-cwd PATH]
-            # copy to a name that is present in the Windows dir to cwd and PATH
-            file copy $testApp [file join $newCwd attrib.exe]
-            file copy $testApp [file join $dir attrib.exe]
-            set ::env(PATH) [file nativename $dir]
-        } -cleanup {
-            popContext
-            file delete [file join [pwd] attrib.exe]
-            rmdirs $dir $newCwd
-            unset -nocomplain fp
-        } -body {
-            # The dummy attrib.exe in cwd should be executed
-            # file normalize because some commands return lower case drive letters
-            # and some return upper case
-            lmap fp [split [exec attrib.exe -path -env PATH] \n] {
-                file normalize $fp
-            }
-        } -result [list [file normalize [file join [temporaryDirectory] exec-win-7.2.1-cwd attrib.exe]] \
-                       [file normalize [file join [temporaryDirectory] exec-win-7.2.1]]]
+	-constraints haveTestApp \
+	-setup {
+	    set dir [makeDirectory exec-win-7.2.1]
+	    set newCwd [pushContext exec-win-7.2.1-cwd PATH]
+	    # copy to a name that is present in the Windows dir to cwd and PATH
+	    file copy $testApp [file join $newCwd attrib.exe]
+	    file copy $testApp [file join $dir attrib.exe]
+	    set ::env(PATH) [file nativename $dir]
+	} -cleanup {
+	    popContext
+	    file delete [file join [pwd] attrib.exe]
+	    rmdirs $dir $newCwd
+	    unset -nocomplain fp
+	} -body {
+	    # The dummy attrib.exe in cwd should be executed
+	    # file normalize because some commands return lower case drive letters
+	    # and some return upper case
+	    lmap fp [split [exec attrib.exe -path -env PATH] \n] {
+		file normalize $fp
+	    }
+	} -result [list [file normalize [file join [temporaryDirectory] exec-win-7.2.1-cwd attrib.exe]] \
+		       [file normalize [file join [temporaryDirectory] exec-win-7.2.1]]]
 
     test exec-win-7.2.2 "exec - verify cwd NOT checked if env NoDefaultCurrentDirectoryInExePath exists " \
-        -constraints haveTestApp \
-        -setup {
-            set dir [makeDirectory exec-win-7.2.2]
-            set newCwd [pushContext exec-win-7.2.2-cwd \
-                            PATH NoDefaultCurrentDirectoryInExePath]
-            file copy $testApp [file join $dir testApp.exe]
-            file copy $testApp [file join $newCwd testApp.exe]
-            set ::env(PATH) [file nativename $dir]
-            set ::env(NoDefaultCurrentDirectoryInExePath) 1
-        } -cleanup {
-            popContext
-            rmdirs $dir $newCwd
-            unset -nocomplain fp
-        } -body {
-            # The testApp.exe in PATH, not cwd should be executed
-            # file normalize because some commands return lower case drive letters
-            # and some return upper case
-            file normalize [exec testApp.exe -path]
-        } -result [file normalize [file join [temporaryDirectory] exec-win-7.2.2 testApp.exe]]
+	-constraints haveTestApp \
+	-setup {
+	    set dir [makeDirectory exec-win-7.2.2]
+	    set newCwd [pushContext exec-win-7.2.2-cwd \
+			    PATH NoDefaultCurrentDirectoryInExePath]
+	    file copy $testApp [file join $dir testApp.exe]
+	    file copy $testApp [file join $newCwd testApp.exe]
+	    set ::env(PATH) [file nativename $dir]
+	    set ::env(NoDefaultCurrentDirectoryInExePath) 1
+	} -cleanup {
+	    popContext
+	    rmdirs $dir $newCwd
+	    unset -nocomplain fp
+	} -body {
+	    # The testApp.exe in PATH, not cwd should be executed
+	    # file normalize because some commands return lower case drive letters
+	    # and some return upper case
+	    file normalize [exec testApp.exe -path]
+	} -result [file normalize [file join [temporaryDirectory] exec-win-7.2.2 testApp.exe]]
 
     test exec-win-7.2.3 "exec - verify *explicit* cwd checked even if env NoDefaultCurrentDirectoryInExePath exists " \
-        -constraints haveTestApp \
-        -setup {
-            set dir [makeDirectory exec-win-7.2.3]
-            set newCwd [pushContext exec-win-7.2.3-cwd \
-                            PATH NoDefaultCurrentDirectoryInExePath]
-            file copy $testApp [file join $dir testApp.exe]
-            file copy $testApp [file join $newCwd testApp.exe]
-            set ::env(PATH) [string cat ".;" [file nativename $dir]]
-            set ::env(NoDefaultCurrentDirectoryInExePath) 1
-        } -cleanup {
-            popContext
-            rmdirs $dir $newCwd
-            unset -nocomplain fp
-        } -body {
-            # The testApp.exe in PATH, not cwd should be executed
-            # file normalize because some commands return lower case drive letters
-            # and some return upper case
-            file normalize [exec testApp.exe -path]
-        } -result [file normalize [file join [temporaryDirectory] exec-win-7.2.3-cwd testApp.exe]]
+	-constraints haveTestApp \
+	-setup {
+	    set dir [makeDirectory exec-win-7.2.3]
+	    set newCwd [pushContext exec-win-7.2.3-cwd \
+			    PATH NoDefaultCurrentDirectoryInExePath]
+	    file copy $testApp [file join $dir testApp.exe]
+	    file copy $testApp [file join $newCwd testApp.exe]
+	    set ::env(PATH) [string cat ".;" [file nativename $dir]]
+	    set ::env(NoDefaultCurrentDirectoryInExePath) 1
+	} -cleanup {
+	    popContext
+	    rmdirs $dir $newCwd
+	    unset -nocomplain fp
+	} -body {
+	    # The testApp.exe in PATH, not cwd should be executed
+	    # file normalize because some commands return lower case drive letters
+	    # and some return upper case
+	    file normalize [exec testApp.exe -path]
+	} -result [file normalize [file join [temporaryDirectory] exec-win-7.2.3-cwd testApp.exe]]
 
     # We really want to test an empty path but Tcl is broken with unsetting
     # PATH to empty. Bug b492c33154.
     test exec-win-7.3 "exec - verify Windows program with dummy PATH" \
-        -constraints win \
-        -setup {
-            pushEnv PATH
-            set ::env(PATH) "C:\\NoSuchDir"
-        } -cleanup {
-            popEnv
-        } -body {
-            exec attrib /?
-        } -result {*Displays or changes file attributes*} -match glob
+	-constraints win \
+	-setup {
+	    pushEnv PATH
+	    set ::env(PATH) "C:\\NoSuchDir"
+	} -cleanup {
+	    popEnv
+	} -body {
+	    exec attrib /?
+	} -result {*Displays or changes file attributes*} -match glob
 
     test exec-win-7.4 "exec - verify cwd works with dummy PATH" \
-        -constraints haveTestApp \
-        -setup {
-            file copy $testApp [file join [pwd] testApp.exe]
-            pushEnv PATH
-            set ::env(PATH) "C:\\NoSuchDir"
-        } -cleanup {
-            file delete [file join [pwd] testApp.exe]
-            popEnv
-        } -body {
-            exec testApp -path
-        } -result [file nativename [file join [pwd] testApp.exe]]
+	-constraints haveTestApp \
+	-setup {
+	    file copy $testApp [file join [pwd] testApp.exe]
+	    pushEnv PATH
+	    set ::env(PATH) "C:\\NoSuchDir"
+	} -cleanup {
+	    file delete [file join [pwd] testApp.exe]
+	    popEnv
+	} -body {
+	    exec testApp -path
+	} -result [file nativename [file join [pwd] testApp.exe]]
 
     test exec-win-7.5 "exec - ignore empty elements in PATH"  \
-        -constraints haveTestApp \
-        -setup {
-            set dir [makeDirectory exec-win-7.5]
-            file copy $testApp [file join $dir testApp.exe]
-            pushEnv PATH
-            set ::env(PATH) [string cat \
-                                 ";;;" \
-                                 $::env(PATH) \
-                                 ";" [file nativename $dir] \
-                                 ";;;"]
-        } -cleanup {
-            popEnv
-            rmdirs $dir
-        } -body {
-            exec testApp -path
-        } -result [nativeTestPath exec-win-7.5 testApp.exe]
+	-constraints haveTestApp \
+	-setup {
+	    set dir [makeDirectory exec-win-7.5]
+	    file copy $testApp [file join $dir testApp.exe]
+	    pushEnv PATH
+	    set ::env(PATH) [string cat \
+				 ";;;" \
+				 $::env(PATH) \
+				 ";" [file nativename $dir] \
+				 ";;;"]
+	} -cleanup {
+	    popEnv
+	    rmdirs $dir
+	} -body {
+	    exec testApp -path
+	} -result [nativeTestPath exec-win-7.5 testApp.exe]
 
     test exec-win-7.6 "exec - ignore non-existent dirs in PATH"  \
-        -constraints haveTestApp \
-        -setup {
-            set dir [makeDirectory exec-win-7.5]
-            file copy $testApp [file join $dir testApp.exe]
-            pushEnv PATH
-            set ::env(PATH) [string cat \
-                                 $::env(PATH) \
-                                 ";" [file nativename [file join $dir nosuchdir]] \
-                                 ";" [file nativename $dir]]
-        } -cleanup {
-            popEnv
-            rmdirs $dir
-        } -body {
-            exec testApp -path
-        } -result [nativeTestPath exec-win-7.5 testApp.exe]
+	-constraints haveTestApp \
+	-setup {
+	    set dir [makeDirectory exec-win-7.5]
+	    file copy $testApp [file join $dir testApp.exe]
+	    pushEnv PATH
+	    set ::env(PATH) [string cat \
+				 $::env(PATH) \
+				 ";" [file nativename [file join $dir nosuchdir]] \
+				 ";" [file nativename $dir]]
+	} -cleanup {
+	    popEnv
+	    rmdirs $dir
+	} -body {
+	    exec testApp -path
+	} -result [nativeTestPath exec-win-7.5 testApp.exe]
 
     test exec-win-7.7 "exec - verify dir of current executable checked first" \
-        -constraints haveTestApp \
-        -setup {
-            # copy to a name that is present in the Windows dir (attrib) to
-            # directory of current exe, cwd and PATH
-            set newCwd [pushContext exec-win-7.7-1 PATH]
-            set dir2 [makeDirectory exec-win-7.7-2]; # Will be added to PATH
-            file copy $testApp [file join [file dirname [info nameofexecutable]] attrib.exe]
-            file copy $testApp [file join $newCwd attrib.exe]
-            file copy $testApp [file join $dir2 attrib.exe]
-            set ::env(PATH) [file nativename $dir2]
-        } -cleanup {
-            file delete [file join [file dirname [info nameofexecutable]] attrib.exe]
-            rmdirs $newCwd $dir2
-            popContext
-        } -body {
-            # The dummy attrib.exe in the program's directory should be executed
-            # file normalize because some commands return lower case drive letters
-            # and some return upper case
-            exec attrib -path
-        } -result [file nativename \
-                       [file join [file dirname [info nameofexecutable]] \
-                            attrib.exe]]
+	-constraints haveTestApp \
+	-setup {
+	    # copy to a name that is present in the Windows dir (attrib) to
+	    # directory of current exe, cwd and PATH
+	    set newCwd [pushContext exec-win-7.7-1 PATH]
+	    set dir2 [makeDirectory exec-win-7.7-2]; # Will be added to PATH
+	    file copy $testApp [file join [file dirname [info nameofexecutable]] attrib.exe]
+	    file copy $testApp [file join $newCwd attrib.exe]
+	    file copy $testApp [file join $dir2 attrib.exe]
+	    set ::env(PATH) [file nativename $dir2]
+	} -cleanup {
+	    file delete [file join [file dirname [info nameofexecutable]] attrib.exe]
+	    rmdirs $newCwd $dir2
+	    popContext
+	} -body {
+	    # The dummy attrib.exe in the program's directory should be executed
+	    # file normalize because some commands return lower case drive letters
+	    # and some return upper case
+	    exec attrib -path
+	} -result [file nativename \
+		       [file join [file dirname [info nameofexecutable]] \
+			    attrib.exe]]
 
     test exec-win-8.1 "exec - verify / separator" \
-        -constraints haveTestApp \
-        -setup {
-            set fn [file join [pwd] testApp.exe]
-            file copy $testApp $fn
-        } -cleanup {
-            file delete $fn
-            unset -nocomplain fn
-        } -body {
-            exec $fn -path
-        } -result [file nativename [file join [pwd] testApp.exe]]
+	-constraints haveTestApp \
+	-setup {
+	    set fn [file join [pwd] testApp.exe]
+	    file copy $testApp $fn
+	} -cleanup {
+	    file delete $fn
+	    unset -nocomplain fn
+	} -body {
+	    exec $fn -path
+	} -result [file nativename [file join [pwd] testApp.exe]]
 
     test exec-win-8.2 "exec - verify \ separator" \
-        -constraints haveTestApp \
-        -setup {
-            set fn [file join [pwd] testApp.exe]
-            file copy $testApp $fn
-        } -cleanup {
-            file delete $fn
-        } -body {
-            exec [file nativename $fn] -path
-        } -result [file nativename [file join [pwd] testApp.exe]]
+	-constraints haveTestApp \
+	-setup {
+	    set fn [file join [pwd] testApp.exe]
+	    file copy $testApp $fn
+	} -cleanup {
+	    file delete $fn
+	} -body {
+	    exec [file nativename $fn] -path
+	} -result [file nativename [file join [pwd] testApp.exe]]
 
     test exec-win-9.1 "exec - verify relative paths work relative to cwd" \
-        -constraints haveTestApp \
-        -setup {
-            set dir [pushContext exec-win-9.1 PATH]
-            file copy $testApp [file join $dir testApp.exe]
-            set newCwd [file dirname $dir]
-            cd $newCwd
-            set ::env(PATH) [file nativename $newCwd]
-        } -cleanup {
-            rmdirs $dir
-            popContext
-        } -body {
-            file normalize [exec exec-win-9.1/testApp.exe -path]
-        } -result [file normalize [nativeTestPath exec-win-9.1 testApp.exe]]
+	-constraints haveTestApp \
+	-setup {
+	    set dir [pushContext exec-win-9.1 PATH]
+	    file copy $testApp [file join $dir testApp.exe]
+	    set newCwd [file dirname $dir]
+	    cd $newCwd
+	    set ::env(PATH) [file nativename $newCwd]
+	} -cleanup {
+	    rmdirs $dir
+	    popContext
+	} -body {
+	    file normalize [exec exec-win-9.1/testApp.exe -path]
+	} -result [file normalize [nativeTestPath exec-win-9.1 testApp.exe]]
 
     test exec-win-9.2 "exec - verify relative paths are not searched in PATH" \
-        -constraints haveTestApp \
-        -setup {
-            set dir [makeDirectory exec-win-9.2]
-            file copy $testApp [file join $dir testApp.exe]
-            set newCwd [pushContext exec-win-9.2-cwd PATH]
-            set ::env(PATH) [file nativename $dir]
-            unset -nocomplain result
-        } -cleanup {
-            popContext
-            rmdirs $dir $newCwd
-            unset -nocomplain dir err
-        } -body {
-            # Verify can be executed if no directory separator
-            # but not if directory separator is present
-            lappend result [file normalize [exec testApp.exe -path]]
-            lappend result [catch {file normalize [exec ./testApp.exe -path]} err] $err
-        } -result [list [file normalize [nativeTestPath exec-win-9.2 testApp.exe]] \
-                      1 \
-                       {couldn't execute ".\testApp.exe": no such file or directory}]
+	-constraints haveTestApp \
+	-setup {
+	    set dir [makeDirectory exec-win-9.2]
+	    file copy $testApp [file join $dir testApp.exe]
+	    set newCwd [pushContext exec-win-9.2-cwd PATH]
+	    set ::env(PATH) [file nativename $dir]
+	    unset -nocomplain result
+	} -cleanup {
+	    popContext
+	    rmdirs $dir $newCwd
+	    unset -nocomplain dir err
+	} -body {
+	    # Verify can be executed if no directory separator
+	    # but not if directory separator is present
+	    lappend result [file normalize [exec testApp.exe -path]]
+	    lappend result [catch {file normalize [exec ./testApp.exe -path]} err] $err
+	} -result [list [file normalize [nativeTestPath exec-win-9.2 testApp.exe]] \
+		      1 \
+		       {couldn't execute ".\testApp.exe": no such file or directory}]
 
     test exec-win-10.1 {exec App Execution Alias - Bug 4f0b5767ac} -setup {
-        # Ensure winget is on the PATH
-        pushEnv PATH
-        append ::env(PATH) ";" [file nativename [file dirname $wingetPath]]
+	# Ensure winget is on the PATH
+	pushEnv PATH
+	append ::env(PATH) ";" [file nativename [file dirname $wingetPath]]
     } -cleanup {
-        popEnv
+	popEnv
     } -constraints haveWinget -body {
-        exec winget --info
+	exec winget --info
     } -result "*Windows*" -match glob
 
     #
     # auto_execok tests for Windows
     variable cmdBuiltin
     foreach cmdBuiltin {
-        assoc call cd cls color copy date del dir echo
-        erase exit ftype for if md mkdir mklink move path
-        pause prompt rd ren rename rmdir set start time
-        title type ver vol
+	assoc call cd cls color copy date del dir echo
+	erase exit ftype for if md mkdir mklink move path
+	pause prompt rd ren rename rmdir set start time
+	title type ver vol
     } {
-        test auto_execok-win-1.1-$cmdBuiltin "auto_execok cmd built-in $cmdBuiltin" \
-            -constraints win \
-            -cleanup {
-                unset -nocomplain rest cmd
-            } -body {
-                set rest [lassign [auto_execok $cmdBuiltin] cmd]
-                set cmd [file normalize $cmd]
-                list [file normalize $cmd] {*}$rest
-            } -result [list [file normalize [file join $windir system32 cmd.exe]] /c $cmdBuiltin]
+	test auto_execok-win-1.1-$cmdBuiltin "auto_execok cmd built-in $cmdBuiltin" \
+	    -constraints win \
+	    -cleanup {
+		unset -nocomplain rest cmd
+	    } -body {
+		set rest [lassign [auto_execok $cmdBuiltin] cmd]
+		set cmd [file normalize $cmd]
+		list [file normalize $cmd] {*}$rest
+	    } -result [list [file normalize [file join $windir system32 cmd.exe]] /c $cmdBuiltin]
     }
     unset cmdBuiltin
 
 
     test auto_execok-win-2.1 "auto_execok - verify PATHEXT order of priority and explicit extensions" \
-        -constraints win \
-        -setup {
-            # Assumes .bat and .cmd are in configured in the registry
-            set dir [pushContext auto_execok-win-2.1 PATHEXT]
-            writeFile [file join $dir testApp.bat] ""
-            writeFile [file join $dir testApp.cmd] ""
-        } -cleanup {
-            popContext
-            rmdirs $dir
-        } -body {
-            set result [list ]
-            set ::env(PATHEXT) ".bat;.cmd"
-            lappend result [auto_execok testApp]
-            set ::env(PATHEXT) ".cmd;.bat"
-            lappend result [auto_execok testApp]
-            lappend result [auto_execok testApp.cmd]
-            lappend result [auto_execok testApp.bat]
-        } -result [list \
-                       [list {.\testApp.bat}] \
-                       [list {.\testApp.cmd}] \
-                       [list {.\testApp.cmd}] \
-                       [list {.\testApp.bat}]]
+	-constraints win \
+	-setup {
+	    # Assumes .bat and .cmd are in configured in the registry
+	    set dir [pushContext auto_execok-win-2.1 PATHEXT]
+	    writeFile [file join $dir testApp.bat] ""
+	    writeFile [file join $dir testApp.cmd] ""
+	} -cleanup {
+	    popContext
+	    rmdirs $dir
+	} -body {
+	    set result [list ]
+	    set ::env(PATHEXT) ".bat;.cmd"
+	    lappend result [auto_execok testApp]
+	    set ::env(PATHEXT) ".cmd;.bat"
+	    lappend result [auto_execok testApp]
+	    lappend result [auto_execok testApp.cmd]
+	    lappend result [auto_execok testApp.bat]
+	} -result [list \
+		       [list {.\testApp.bat}] \
+		       [list {.\testApp.cmd}] \
+		       [list {.\testApp.cmd}] \
+		       [list {.\testApp.bat}]]
 
     test auto_execok-win-2.2 "auto_execok - verify cmd built-ins prioritized" \
-        -constraints haveTestApp \
-        -setup {
-            set dir [pushContext auto_execok-win-2.2]
-            writeFile [file join $dir echo.exe] ""
-        } -cleanup {
-            popContext
-            rmdirs $dir
-        } -body {
-            list [string tolower [auto_execok echo]] [auto_execok echo.exe]
-        } -result [list \
-                       [list [string tolower $windir\\system32\\cmd.exe] \
-                            /c echo]  \
-                       [list {.\echo.exe}]]
+	-constraints haveTestApp \
+	-setup {
+	    set dir [pushContext auto_execok-win-2.2]
+	    writeFile [file join $dir echo.exe] ""
+	} -cleanup {
+	    popContext
+	    rmdirs $dir
+	} -body {
+	    list [string tolower [auto_execok echo]] [auto_execok echo.exe]
+	} -result [list \
+		       [list [string tolower $windir\\system32\\cmd.exe] \
+			    /c echo]  \
+		       [list {.\echo.exe}]]
 
     test auto_execok-win-2.3 "auto_execok - verify search path prioritized over extension"  \
-        -constraints haveTestApp \
-        -setup {
-            set dir1 [makeDirectory auto_execok-win-2.3-1]
-            set dir2 [makeDirectory auto_execok-win-2.3-2]
-            writeFile [file join $dir1 testApp.bat] $batContent
-            writeFile [file join $dir2 testApp.exe] ""
-            pushEnv PATH PATHEXT
-            append ::env(PATH) ";" [file nativename $dir1] ";" [file nativename $dir2]
-            set ::env(PATHEXT) ".exe;.bat"
-        } -cleanup {
-            popEnv
-            rmdirs $dir1 $dir2
-        } -body {
-            auto_execok testApp
-        } -result [list [nativeTestPath auto_execok-win-2.3-1 testApp.bat]]
+	-constraints haveTestApp \
+	-setup {
+	    set dir1 [makeDirectory auto_execok-win-2.3-1]
+	    set dir2 [makeDirectory auto_execok-win-2.3-2]
+	    writeFile [file join $dir1 testApp.bat] $batContent
+	    writeFile [file join $dir2 testApp.exe] ""
+	    pushEnv PATH PATHEXT
+	    append ::env(PATH) ";" [file nativename $dir1] ";" [file nativename $dir2]
+	    set ::env(PATHEXT) ".exe;.bat"
+	} -cleanup {
+	    popEnv
+	    rmdirs $dir1 $dir2
+	} -body {
+	    auto_execok testApp
+	} -result [list [nativeTestPath auto_execok-win-2.3-1 testApp.bat]]
 
     test auto_execok-win-2.4 {
-        auto_execok - verify files without extension are skipped (Bug 596936dd)
+	auto_execok - verify files without extension are skipped (Bug 596936dd)
     } -constraints win -setup {
-        set newCwd [pushContext auto_execok-win-2.4]
-        writeFile [file join $newCwd testApp] ""
-        writeFile [file join $newCwd testApp.bat] ""
+	set newCwd [pushContext auto_execok-win-2.4]
+	writeFile [file join $newCwd testApp] ""
+	writeFile [file join $newCwd testApp.bat] ""
     } -body {
-        list [auto_execok testApp] [auto_execok testApp.bat]
+	list [auto_execok testApp] [auto_execok testApp.bat]
     } -cleanup {
-        popContext
-        rmdirs $newCwd
+	popContext
+	rmdirs $newCwd
     } -result {{{.\testApp.bat}} {{.\testApp.bat}}}
 
 
     test auto_execok-win-3.1 "auto_execok - verify Windows directory checked before PATH" \
-        -constraints haveTestApp \
-        -setup {
-            set dir [makeDirectory auto_execok-win-3.0]
-            # copy to a name that is present in the Windows dir
-            set dummyAttribExe [file join $dir attrib.exe]
-            writeFile $dummyAttribExe ""
-            pushEnv PATH
-            set ::env(PATH) [file nativename $dir]
-        } -cleanup {
-            popEnv
-            rmdirs $dir
-        } -body {
-            string tolower [auto_execok attrib]
-        } -result [list [string tolower $windir\\system32\\attrib.exe]]
+	-constraints haveTestApp \
+	-setup {
+	    set dir [makeDirectory auto_execok-win-3.0]
+	    # copy to a name that is present in the Windows dir
+	    set dummyAttribExe [file join $dir attrib.exe]
+	    writeFile $dummyAttribExe ""
+	    pushEnv PATH
+	    set ::env(PATH) [file nativename $dir]
+	} -cleanup {
+	    popEnv
+	    rmdirs $dir
+	} -body {
+	    string tolower [auto_execok attrib]
+	} -result [list [string tolower $windir\\system32\\attrib.exe]]
 
     test auto_execok-win-3.2.1 {
-        auto_execok - verify cwd checked before Windows and PATH
+	auto_execok - verify cwd checked before Windows and PATH
     } -constraints win -setup {
-        set dir [makeDirectory auto_execok-win-3.2.1]
-        set newCwd [pushContext auto_execok-win-3.2.1-cwd PATH]
-        # copy to a name that is present in the Windows dir to cwd and PATH
-        writeFile [file join $newCwd attrib.exe] ""
-        writeFile [file join $dir attrib.exe] ""
-        set ::env(PATH) [file nativename $dir]
+	set dir [makeDirectory auto_execok-win-3.2.1]
+	set newCwd [pushContext auto_execok-win-3.2.1-cwd PATH]
+	# copy to a name that is present in the Windows dir to cwd and PATH
+	writeFile [file join $newCwd attrib.exe] ""
+	writeFile [file join $dir attrib.exe] ""
+	set ::env(PATH) [file nativename $dir]
     } -cleanup {
-        popContext
-        rmdirs $dir $newCwd
-        unset -nocomplain fp
+	popContext
+	rmdirs $dir $newCwd
+	unset -nocomplain fp
     } -body {
-        auto_execok attrib
+	auto_execok attrib
     } -result [list .\\attrib.exe]
 
     test auto_execok-win-3.2.2 {
-        auto_execok - verify cwd NOT checked if env NoDefaultCurrentDirectoryInExePath exists
+	auto_execok - verify cwd NOT checked if env NoDefaultCurrentDirectoryInExePath exists
     } -constraints win -setup {
-        set dir [makeDirectory auto_execok-win-3.2.2]
-        set newCwd [pushContext auto_execok-win-3.2.2-cwd \
-                       PATH NoDefaultCurrentDirectoryInExePath]
-        # copy to a name that is present in the cwd and PATH
-        writeFile [file join $newCwd testApp.exe] ""
-        writeFile [file join $dir testApp.exe] ""
-        set ::env(PATH) [file nativename $dir]
-        set ::env(NoDefaultCurrentDirectoryInExePath) 1
+	set dir [makeDirectory auto_execok-win-3.2.2]
+	set newCwd [pushContext auto_execok-win-3.2.2-cwd \
+		       PATH NoDefaultCurrentDirectoryInExePath]
+	# copy to a name that is present in the cwd and PATH
+	writeFile [file join $newCwd testApp.exe] ""
+	writeFile [file join $dir testApp.exe] ""
+	set ::env(PATH) [file nativename $dir]
+	set ::env(NoDefaultCurrentDirectoryInExePath) 1
     } -cleanup {
-        popContext
-        rmdirs $dir $newCwd
-        unset -nocomplain fp
+	popContext
+	rmdirs $dir $newCwd
+	unset -nocomplain fp
     } -body {
-        string tolower [auto_execok testApp]
+	string tolower [auto_execok testApp]
     } -result [list [string tolower [nativeTestPath auto_execok-win-3.2.2 testApp.exe]]]
 
     test auto_execok-win-3.2.3 {
-        auto_execok - verify explicit cwd checked even if env NoDefaultCurrentDirectoryInExePath exists
+	auto_execok - verify explicit cwd checked even if env NoDefaultCurrentDirectoryInExePath exists
     } -constraints win -setup {
-        set dir [makeDirectory auto_execok-win-3.2.3]
-        set newCwd [pushContext auto_execok-win-3.2.3-cwd \
-                       PATH NoDefaultCurrentDirectoryInExePath]
-        # copy to a name that is present in cwd and PATH
-        writeFile [file join $newCwd testApp.exe] ""
-        writeFile [file join $dir testApp.exe] ""
-        set ::env(PATH) [file nativename $dir]
-        set ::env(NoDefaultCurrentDirectoryInExePath) 1
+	set dir [makeDirectory auto_execok-win-3.2.3]
+	set newCwd [pushContext auto_execok-win-3.2.3-cwd \
+		       PATH NoDefaultCurrentDirectoryInExePath]
+	# copy to a name that is present in cwd and PATH
+	writeFile [file join $newCwd testApp.exe] ""
+	writeFile [file join $dir testApp.exe] ""
+	set ::env(PATH) [file nativename $dir]
+	set ::env(NoDefaultCurrentDirectoryInExePath) 1
     } -cleanup {
-        popContext
-        rmdirs $dir $newCwd
-        unset -nocomplain fp
+	popContext
+	rmdirs $dir $newCwd
+	unset -nocomplain fp
     } -body {
-        auto_execok ./testApp
+	auto_execok ./testApp
     } -result [list .\\testApp.exe]
 
     # We really want to test an empty path but Tcl is broken with unsetting
     # PATH to empty. Bug b492c33154.
     test auto_execok-win-3.3 {
-        auto_execok - verify Windows program with dummy PATH
+	auto_execok - verify Windows program with dummy PATH
     } -constraints win -setup {
-        pushEnv PATH
-        set ::env(PATH) "C:\\NoSuchDir"
+	pushEnv PATH
+	set ::env(PATH) "C:\\NoSuchDir"
     } -cleanup {
-        popEnv
+	popEnv
     } -body {
-        string tolower [auto_execok attrib]
+	string tolower [auto_execok attrib]
     } -result [list [string tolower $windir\\system32\\attrib.exe]]
 
     test auto_execok-win-3.4 {
-        auto_execok - verify cwd with dummy PATH
+	auto_execok - verify cwd with dummy PATH
     } -constraints win -setup {
-        set dir [pushContext auto_execok-win-3.4 PATH]
-        # copy to a name that is present in cwd and PATH
-        writeFile [file join $dir testApp.exe] ""
-        set ::env(PATH) "C:\\NoSuchDir"
+	set dir [pushContext auto_execok-win-3.4 PATH]
+	# copy to a name that is present in cwd and PATH
+	writeFile [file join $dir testApp.exe] ""
+	set ::env(PATH) "C:\\NoSuchDir"
     } -cleanup {
-        popContext
+	popContext
     } -body {
-        auto_execok testApp
+	auto_execok testApp
     } -result [list .\\testApp.exe]
 
     test auto_execok-win-3.5 {
-        auto_execok - ignore empty elements in PATH
+	auto_execok - ignore empty elements in PATH
     }  -constraints win -setup {
-        set dir [makeDirectory auto_execok-win-3.5]
-        writeFile [file join $dir testApp.exe] ""
-        pushEnv PATH
-        set ::env(PATH) [string cat \
-                             ";;;" \
-                             $::env(PATH) \
-                             ";" [file nativename $dir] \
-                             ";;;"]
+	set dir [makeDirectory auto_execok-win-3.5]
+	writeFile [file join $dir testApp.exe] ""
+	pushEnv PATH
+	set ::env(PATH) [string cat \
+			     ";;;" \
+			     $::env(PATH) \
+			     ";" [file nativename $dir] \
+			     ";;;"]
     } -cleanup {
-        popEnv
-        rmdirs $dir
+	popEnv
+	rmdirs $dir
     } -body {
-        auto_execok testApp
+	auto_execok testApp
     } -result [list [nativeTestPath auto_execok-win-3.5 testApp.exe]]
 
     test auto_execok-win-3.6 {
-        auto_execok - ignore non-existent elements in PATH
+	auto_execok - ignore non-existent elements in PATH
     }  -constraints win -setup {
-        set dir [makeDirectory auto_execok-win-3.6]
-        writeFile [file join $dir testApp.exe] ""
-        pushEnv PATH
-        set ::env(PATH) [string cat \
-                                 $::env(PATH) \
-                                 ";" [file nativename [file join $dir nosuchdir]] \
-                                 ";" [file nativename $dir]]
+	set dir [makeDirectory auto_execok-win-3.6]
+	writeFile [file join $dir testApp.exe] ""
+	pushEnv PATH
+	set ::env(PATH) [string cat \
+				 $::env(PATH) \
+				 ";" [file nativename [file join $dir nosuchdir]] \
+				 ";" [file nativename $dir]]
     } -cleanup {
-        popEnv
-        rmdirs $dir
+	popEnv
+	rmdirs $dir
     } -body {
-        auto_execok testApp
+	auto_execok testApp
     } -result [list [nativeTestPath auto_execok-win-3.6 testApp.exe]]
 
     test auto_execok-win-3.7 {
-        auto_execok - verify dir of current executable checked first
+	auto_execok - verify dir of current executable checked first
     } -constraints win -setup {
-        # copy to a name that is present in the Windows dir (attrib) to
-        # directory of current exe, cwd and PATH
-        set newCwd [pushContext exec-win-7.7-1 PATH]
-        set dir2 [makeDirectory exec-win-7.7-2]; # Will be added to PATH
-        writeFile [file join [file dirname [info nameofexecutable]] attrib.exe] ""
-        writeFile [file join $newCwd attrib.exe] ""
-        writeFile [file join $dir2 attrib.exe] ""
-        set ::env(PATH) [file nativename $dir2]
+	# copy to a name that is present in the Windows dir (attrib) to
+	# directory of current exe, cwd and PATH
+	set newCwd [pushContext exec-win-7.7-1 PATH]
+	set dir2 [makeDirectory exec-win-7.7-2]; # Will be added to PATH
+	writeFile [file join [file dirname [info nameofexecutable]] attrib.exe] ""
+	writeFile [file join $newCwd attrib.exe] ""
+	writeFile [file join $dir2 attrib.exe] ""
+	set ::env(PATH) [file nativename $dir2]
     } -cleanup {
-        file delete [file join [file dirname [info nameofexecutable]] attrib.exe]
-        rmdirs $newCwd $dir2
-        popContext
+	file delete [file join [file dirname [info nameofexecutable]] attrib.exe]
+	rmdirs $newCwd $dir2
+	popContext
     } -body {
-        string tolower [auto_execok attrib]
+	string tolower [auto_execok attrib]
     } -result [list [string tolower \
-                         [file nativename \
-                              [file join [file dirname [info nameofexecutable]] \
-                                   attrib.exe]]]]
+			 [file nativename \
+			      [file join [file dirname [info nameofexecutable]] \
+				   attrib.exe]]]]
 
     test auto_execok-win-4.1 {
-        auto_execok - verify / separator
+	auto_execok - verify / separator
     } -constraints win -setup {
-        set fn [file join [temporaryDirectory] testApp.exe]
-        writeFile $fn ""
+	set fn [file join [temporaryDirectory] testApp.exe]
+	writeFile $fn ""
     } -cleanup {
-        file delete $fn
-        unset -nocomplain fn
+	file delete $fn
+	unset -nocomplain fn
     } -body {
-        # File join ensures / separator
-        string tolower [auto_execok [file join $fn]]
+	# File join ensures / separator
+	string tolower [auto_execok [file join $fn]]
     } -result [list [string tolower \
-                         [file nativename \
-                              [file join [temporaryDirectory] testApp.exe]]]]
+			 [file nativename \
+			      [file join [temporaryDirectory] testApp.exe]]]]
 
     test auto_execok-win-4.2 {
-        auto_execok - verify \ separator
+	auto_execok - verify \ separator
     } -constraints win -setup {
-        set fn [file join [temporaryDirectory] testApp.exe]
-        writeFile $fn ""
+	set fn [file join [temporaryDirectory] testApp.exe]
+	writeFile $fn ""
     } -cleanup {
-        file delete $fn
-        unset -nocomplain fn
+	file delete $fn
+	unset -nocomplain fn
     } -body {
-        string tolower [auto_execok [file nativename $fn]]
+	string tolower [auto_execok [file nativename $fn]]
     } -result [list [string tolower \
-                         [file nativename \
-                              [file join [temporaryDirectory] testApp.exe]]]]
+			 [file nativename \
+			      [file join [temporaryDirectory] testApp.exe]]]]
 
     test auto_execok-win-5.1 {
-        auto_execok - verify relative paths work relative to cwd
+	auto_execok - verify relative paths work relative to cwd
     } -constraints haveTestApp -setup {
-        set dir [pushContext auto_execok-win-5.1 PATH]
-        writeFile [file join $dir testApp.exe] ""
-        set newCwd [file dirname $dir]
-        cd $newCwd
-        set ::env(PATH) [file nativename $newCwd]
+	set dir [pushContext auto_execok-win-5.1 PATH]
+	writeFile [file join $dir testApp.exe] ""
+	set newCwd [file dirname $dir]
+	cd $newCwd
+	set ::env(PATH) [file nativename $newCwd]
     } -cleanup {
-        rmdirs $dir
-        popContext
+	rmdirs $dir
+	popContext
     } -body {
-        auto_execok auto_execok-win-5.1/testApp.exe
+	auto_execok auto_execok-win-5.1/testApp.exe
     } -result [list auto_execok-win-5.1\\testApp.exe]
 
     test auto_execok-win-5.2 {
-        auto_execok - verify relative paths are not searched in PATH
+	auto_execok - verify relative paths are not searched in PATH
     } -constraints win -setup {
-        set dir [makeDirectory auto_execok-win-5.2]
-        writeFile [file join $dir testApp.exe] ""
-        set newCwd [pushContext auto_execok-win-5.2-cwd PATH]
-        set ::env(PATH) [file nativename $dir]
-        unset -nocomplain result
+	set dir [makeDirectory auto_execok-win-5.2]
+	writeFile [file join $dir testApp.exe] ""
+	set newCwd [pushContext auto_execok-win-5.2-cwd PATH]
+	set ::env(PATH) [file nativename $dir]
+	unset -nocomplain result
     } -cleanup {
-        popContext
-        rmdirs $dir $newCwd
-        unset -nocomplain dir result
+	popContext
+	rmdirs $dir $newCwd
+	unset -nocomplain dir result
     } -body {
-        # Verify can be found if no directory separator
-        # but not if directory separator is present
-        lappend result [auto_execok testApp.exe]
-        lappend result [auto_execok ./testApp.exe]
+	# Verify can be found if no directory separator
+	# but not if directory separator is present
+	lappend result [auto_execok testApp.exe]
+	lappend result [auto_execok ./testApp.exe]
     } -result [list [list [nativeTestPath auto_execok-win-5.2 testApp.exe]] \
-                   {}]
+		   {}]
 
     test auto_execok-win-6.1 {
-        auto_execok - verify paths are not cached. Bugs 1244733 and 4dc35e0c0c
+	auto_execok - verify paths are not cached. Bugs 1244733 and 4dc35e0c0c
     } -constraints win -setup {
-        set dir [pushContext auto_execok-win-6.1]
-        writeFile [file join $dir testApp.exe] ""
-        unset -nocomplain result
+	set dir [pushContext auto_execok-win-6.1]
+	writeFile [file join $dir testApp.exe] ""
+	unset -nocomplain result
     } -cleanup {
-        rmdirs $dir
-        popContext
+	rmdirs $dir
+	popContext
     } -body {
-        lappend result [lindex [auto_execok testApp.exe] 0]
-        cd ..
-        lappend result [lindex [auto_execok testApp.exe] 0]
+	lappend result [lindex [auto_execok testApp.exe] 0]
+	cd ..
+	lappend result [lindex [auto_execok testApp.exe] 0]
     } -result [list .\\testApp.exe {}]
 
     test auto_execok-unix-6.1 {
-        auto_execok - verify paths are not cached. Bugs 1244733 and 4dc35e0c0c
+	auto_execok - verify paths are not cached. Bugs 1244733 and 4dc35e0c0c
     } -constraints unix -setup {
-        set dir [pushContext auto_execok-win-6.1 PATH]
-        set fn [file join $dir testApp.sh]
-        writeFile $fn ""
-        file attributes $fn -permissions u+x
-        unset -nocomplain result
-        append ::env(PATH) ":."
+	set dir [pushContext auto_execok-win-6.1 PATH]
+	set fn [file join $dir testApp.sh]
+	writeFile $fn ""
+	file attributes $fn -permissions u+x
+	unset -nocomplain result
+	append ::env(PATH) ":."
     } -cleanup {
-        rmdirs $dir
-        popContext
-        unset -nocomplain fn
+	rmdirs $dir
+	popContext
+	unset -nocomplain fn
     } -body {
-        lappend result [lindex [auto_execok testApp.sh] 0]
-        cd ..
-        lappend result [lindex [auto_execok testApp.sh] 0]
+	lappend result [lindex [auto_execok testApp.sh] 0]
+	cd ..
+	lappend result [lindex [auto_execok testApp.sh] 0]
     } -result [list ./testApp.sh {}]
 
     test auto_execok-win-7.1 {
-        auto_execok - verify execution of PATHEXT extension in current directory
+	auto_execok - verify execution of PATHEXT extension in current directory
     } -constraints haveWScript -setup {
-        set dir [pushContext auto_execok-win-7.1]
-        writeFile [file join $dir testApp.vbs] ""
-        unset -nocomplain result
+	set dir [pushContext auto_execok-win-7.1]
+	writeFile [file join $dir testApp.vbs] ""
+	unset -nocomplain result
     } -cleanup {
-        rmdirs $dir
-        popContext
+	rmdirs $dir
+	popContext
     } -body {
-        set cmd [auto_execok testApp]
-        # The exec passes an empty file to wscript so no output expected
-        # Primarily ensures wscript is found and run
-        list [string tolower $cmd] [exec {*}$cmd]
+	set cmd [auto_execok testApp]
+	# The exec passes an empty file to wscript so no output expected
+	# Primarily ensures wscript is found and run
+	list [string tolower $cmd] [exec {*}$cmd]
     }  -result [list \
-                    [list \
-                          [string tolower $windir\\system32\\wscript.exe] \
-                          .\\testapp.vbs] \
-                    {}]
+		    [list \
+			  [string tolower $windir\\system32\\wscript.exe] \
+			  .\\testapp.vbs] \
+		    {}]
 
     test auto_execok-win-7.2 {
-        auto_execok - verify execution of PATHEXT extension in PATH
+	auto_execok - verify execution of PATHEXT extension in PATH
     } -constraints haveWScript -setup {
-        set dir [makeDirectory auto_execok-win-7.2]
-        writeFile [file join $dir testApp.vbs] ""
-        pushEnv PATH
-        append ::env(PATH) ";[file nativename $dir]"
-        unset -nocomplain result
+	set dir [makeDirectory auto_execok-win-7.2]
+	writeFile [file join $dir testApp.vbs] ""
+	pushEnv PATH
+	append ::env(PATH) ";[file nativename $dir]"
+	unset -nocomplain result
     } -cleanup {
-        rmdirs $dir
-        popEnv
+	rmdirs $dir
+	popEnv
     } -body {
-        set cmd [auto_execok testApp]
-        # The exec passes an empty file to wscript so no output expected
-        # Primarily ensures wscript is found and run
-        list [string tolower $cmd] [exec {*}$cmd]
+	set cmd [auto_execok testApp]
+	# The exec passes an empty file to wscript so no output expected
+	# Primarily ensures wscript is found and run
+	list [string tolower $cmd] [exec {*}$cmd]
     }  -result [list \
-                    [list \
-                         [string tolower $windir\\system32\\wscript.exe] \
-                         [string tolower \
-                              [nativeTestPath auto_execok-win-7.2 testApp.vbs]]] \
-                    {}]
+		    [list \
+			 [string tolower $windir\\system32\\wscript.exe] \
+			 [string tolower \
+			      [nativeTestPath auto_execok-win-7.2 testApp.vbs]]] \
+		    {}]
 
     test auto_execok-win-8.1 {
-        auto_execok - verify execution of App Paths
+	auto_execok - verify execution of App Paths
     } -constraints win -setup {
-        set dir [makeDirectory auto_execok-win-8.1]
-        set fn [file join $dir testApp.tcl]
-        writeFile $fn {
-            puts [info nameofexecutable]
-            puts [pwd]
-        }
-        set key [string cat  \
-                     {HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths} \
-                     "\\" [file tail [info nameofexecutable]]]
-        tcl::registry set $key "" [file nativename [info nameofexecutable]]
+	set dir [makeDirectory auto_execok-win-8.1]
+	set fn [file join $dir testApp.tcl]
+	writeFile $fn {
+	    puts [info nameofexecutable]
+	    puts [pwd]
+	}
+	set key [string cat  \
+		     {HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths} \
+		     "\\" [file tail [info nameofexecutable]]]
+	tcl::registry set $key "" [file nativename [info nameofexecutable]]
     } -cleanup {
-        tcl::registry delete $key
-        rmdirs $dir
-        unset -nocomplain fn
+	tcl::registry delete $key
+	rmdirs $dir
+	unset -nocomplain fn
     } -body {
-        set cmd [auto_execok [file tail [info nameofexecutable]]]
-        list [string tolower $cmd] [split [exec {*}$cmd $fn] \n]
+	set cmd [auto_execok [file tail [info nameofexecutable]]]
+	list [string tolower $cmd] [split [exec {*}$cmd $fn] \n]
     } -result [list \
-                   [list [string tolower [file nativename [info nameofexecutable]]] ] \
-                   [list [info nameofexecutable] [pwd]]]
+		   [list [string tolower [file nativename [info nameofexecutable]]] ] \
+		   [list [info nameofexecutable] [pwd]]]
 
 }
 

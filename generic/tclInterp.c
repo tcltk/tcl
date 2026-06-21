@@ -52,7 +52,7 @@ TCL_DECLARE_MUTEX(postInitMutex)
 /* Per thread cache of post-initialization registrations */
 typedef struct ThreadSpecificData {
     TclPostInitRecords postInitCache;
-    size_t inUse; 		/* When > 0, cache cannot be updated */
+    size_t inUse;		/* When > 0, cache cannot be updated */
 } ThreadSpecificData;
 static Tcl_ThreadDataKey postInitTsdKey;
 
@@ -117,7 +117,7 @@ typedef struct {
 				 * record, and used when deleting the child
 				 * interpreter to delete it from the parent's
 				 * table. */
-    Tcl_Interp	*childInterp;	/* The child interpreter. */
+    Tcl_Interp *childInterp;	/* The child interpreter. */
     Tcl_Command interpCmd;	/* Interpreter object command. */
     Tcl_HashTable aliasTable;	/* Table which maps from names of commands in
 				 * child interpreter to struct Alias defined

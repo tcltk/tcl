@@ -2205,7 +2205,7 @@ ClockGetOrParseScanFormat(
 		    continue;
 		case 'E':
 		    scnMap = ScnETokenMap,
-		    mapIndex =	ScnETokenMapIndex,
+		    mapIndex = ScnETokenMapIndex,
 		    aliasIndex = ScnETokenMapAliasIndex;
 		    p++;
 		    break;
@@ -3267,7 +3267,7 @@ ClockGetOrParseFmtFormat(
 	    switch (*p) {
 	    case '%': {
 		const ClockFormatTokenMap *fmtMap = FmtSTokenMap;
-		const char *mapIndex =	FmtSTokenMapIndex;
+		const char *mapIndex = FmtSTokenMapIndex;
 		const char **aliasIndex = FmtSTokenMapAliasIndex;
 
 		if (p + 1 >= e) {
@@ -3288,7 +3288,7 @@ ClockGetOrParseFmtFormat(
 		    continue;
 		case 'E':
 		    fmtMap = FmtETokenMap,
-		    mapIndex =	FmtETokenMapIndex,
+		    mapIndex = FmtETokenMapIndex,
 		    aliasIndex = FmtETokenMapAliasIndex;
 		    p++;
 		    break;

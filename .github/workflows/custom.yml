@@ -188,7 +188,7 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.ref }}
 
-      - name: Configure with ${{ github.event.inputs.linux_compiler }} 
+      - name: Configure with ${{ github.event.inputs.linux_compiler }}
         env:
           ERROR_ON_FAILURES: 1
           CC: ${{ github.event.inputs.linux_compiler }}

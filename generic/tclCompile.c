@@ -194,7 +194,7 @@ InstructionDesc const tclInstructionTable[] = {
 	/* Bitwise or:	push (stknext | stktop) */
     TCL_INSTRUCTION_ENTRY(
 	"bitxor",		-1),
-	/* Bitwise xor	push (stknext ^ stktop) */
+	/* Bitwise xor:	push (stknext ^ stktop) */
     TCL_INSTRUCTION_ENTRY(
 	"bitand",		-1),
 	/* Bitwise and:	push (stknext & stktop) */

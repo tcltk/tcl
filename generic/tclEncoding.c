@@ -5283,7 +5283,7 @@ unilen4(
 /*
  *-------------------------------------------------------------------------
  *
- * InitializeEncodingSearchPath	--
+ * InitializeEncodingSearchPath --
  *
  *	This is the fallback routine that sets the default value of the
  *	encoding search path if the application has not set one via a call to

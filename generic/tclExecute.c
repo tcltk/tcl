@@ -1981,9 +1981,9 @@ FindTclOOMethodIndex(
  *
  *----------------------------------------------------------------------
  */
-#define	bcFramePtr	(&TD->cmdFrame)
-#define	initCatchTop	(TD->stack - 1)
-#define	initTosPtr	(initCatchTop+codePtr->maxExceptDepth)
+#define bcFramePtr	(&TD->cmdFrame)
+#define initCatchTop	(TD->stack - 1)
+#define initTosPtr	(initCatchTop+codePtr->maxExceptDepth)
 #define esPtr		(iPtr->execEnvPtr->execStackPtr)
 
 int

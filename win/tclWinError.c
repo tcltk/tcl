@@ -177,7 +177,7 @@ static const unsigned char errorTable[] = {
     EACCES,	/* ERROR_NOT_LOCKED		158 */
     EINVAL,	/* 159 */
     EINVAL,	/* 160 */
-    ENOENT,	/* ERROR_BAD_PATHNAME	        161 */
+    ENOENT,	/* ERROR_BAD_PATHNAME		161 */
     EINVAL,	/* 162 */
     EINVAL,	/* 163 */
     EINVAL,	/* 164 */

@@ -72,9 +72,9 @@ union overhead {
 #define RMAGIC		0x5555	/* magic # on range info */
 
 #ifndef NDEBUG
-#define	RSLOP		sizeof(unsigned short)
+#define RSLOP		sizeof(unsigned short)
 #else
-#define	RSLOP		0
+#define RSLOP		0
 #endif
 
 #define OVERHEAD (sizeof(union overhead) + RSLOP)
@@ -138,10 +138,10 @@ static	size_t numMallocs[NBUCKETS+1];
 #endif
 
 #if !defined(NDEBUG)
-#define	ASSERT(p)	if (!(p)) Tcl_Panic(# p)
+#define ASSERT(p)	if (!(p)) Tcl_Panic(# p)
 #define RANGE_ASSERT(p) if (!(p)) Tcl_Panic(# p)
 #else
-#define	ASSERT(p)
+#define ASSERT(p)
 #define RANGE_ASSERT(p)
 #endif
 
