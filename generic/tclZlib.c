@@ -3310,6 +3310,14 @@ ZlibTransformInput(
 	gotBytes += decBytes;
 	buf += decBytes;
 	toRead -= decBytes;
+	/*
+	 * Guard against decompression bombs: if total decompressed output
+	 * exceeds 1 GiB, return an error to prevent memory exhaustion.
+	 */
+	if (chanDataPtr->inStream.total_out > (1024UL*1024UL*1024UL)) {
+	    *errorCodePtr = EFBIG;
+	    return -1;
+	}
 
 	if ((decBytes == 0) || HaveFlag(chanDataPtr, STREAM_DECOMPRESS)) {
 	    /*
