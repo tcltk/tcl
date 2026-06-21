@@ -110,6 +110,11 @@ IsPostcore (
     case UTF8PROC_BOUNDCLASS_EXTEND:
     case UTF8PROC_BOUNDCLASS_SPACINGMARK:
     case UTF8PROC_BOUNDCLASS_ZWJ:
+    case UTF8PROC_BOUNDCLASS_L:
+    case UTF8PROC_BOUNDCLASS_V:
+    case UTF8PROC_BOUNDCLASS_T:
+    case UTF8PROC_BOUNDCLASS_LV:
+    case UTF8PROC_BOUNDCLASS_LVT:
 	return 1;
     default:
 	return 0;
@@ -138,10 +143,17 @@ static inline
 IsPrecore (
     Tcl_UniChar cp)		/* Unicode code point */
 {
+    utf8proc_property_t *propPtr;
     /* https://www.unicode.org/reports/tr29/tr29-47.html#Regex_Definitions*/
-    return utf8proc_get_property(cp)->boundclass == UTF8PROC_BOUNDCLASS_PREPEND;
+    propPtr = utf8proc_get_property(cp);
+    return propPtr->boundclass == UTF8PROC_BOUNDCLASS_PREPEND
+	|| propPtr->boundclass == UTF8PROC_BOUNDCLASS_ZWJ
+	|| propPtr->boundclass == UTF8PROC_BOUNDCLASS_REGIONAL_INDICATOR
+	|| propPtr->category == UTF8PROC_CATEGORY_MN
+	|| propPtr->category == UTF8PROC_CATEGORY_MC
+	|| propPtr->category == UTF8PROC_CATEGORY_ME;
 }
-
+
 /*
  *------------------------------------------------------------------------
  *
@@ -261,22 +273,19 @@ GraphemePrevCmd (
      * forward again to skip over the extra scan.
      */
 
-    /*
-     * Scan backward to a safe starting point for the forward scan 
-     * TODO - Back scan below is only basics - have not understood UAX #29
-     * rules GB6-8 (Hangul) and GB12-13 (Regional Indicators).
-     */
+    /* Scan backward to a safe starting point for the forward scan */
     Tcl_UniChar *uniEndPtr = uniStartPtr + strIndex;
     Tcl_UniChar *uniPtr = uniEndPtr - 1;
 
     while (uniPtr > uniStartPtr
-	    && (IsPostcore(*uniPtr) || IsPrecore(uniPtr[-1]))) {
+	    && ((*uniPtr == '\n' && uniPtr[-1] == '\r') ||
+		IsPostcore(*uniPtr) || IsPrecore(uniPtr[-1]))) {
 	uniPtr--;
     }
 
+    /* Now scan forward. Note uniPtr may be < uniStartPtr if uniLen was 0 */
     Tcl_Size grLen = 0;
     int state = 0;
-    /* Now scan forward. Note uniPtr may be < uniStartPtr if uniLen was 0 */
     if (uniPtr >= uniStartPtr) {
 	Tcl_UniChar *grStartPtr = uniPtr;
 	while (++uniPtr < uniEndPtr) {
