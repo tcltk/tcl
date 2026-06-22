@@ -140,7 +140,7 @@ static int		TraverseWinTree(TraversalProc *traverseProc,
  *	EEXIST:	    dst is a non-empty directory.
  *	EINVAL:	    src is a root directory or dst is a subdirectory of src.
  *	EISDIR:	    dst is a directory, but src is not.
- *	ENOENT:	    src doesn't exist.	src or dst is "".
+ *	ENOENT:	    src doesn't exist. src or dst is "".
  *	ENOTDIR:    src is a directory, but dst is not.
  *	EXDEV:	    src and dst are on different filesystems.
  *
@@ -400,7 +400,7 @@ DoRenameFile(
  *
  *	EACCES:	    src or dst parent directory can't be read and/or written.
  *	EISDIR:	    src or dst is a directory.
- *	ENOENT:	    src doesn't exist.	src or dst is "".
+ *	ENOENT:	    src doesn't exist. src or dst is "".
  *
  *	EACCES:	    exists an open file already referring to dst (95).
  *	EACCES:	    src specifies a char device (nul:, com1:, etc.) (NT)
@@ -1429,7 +1429,7 @@ ConvertFileNameFormat(
     }
 
     /*
-     * We will decrement this again at the end.	 It is safer to do this in
+     * We will decrement this again at the end. It is safer to do this in
      * case any of the calls below retain a reference to splitPath.
      */
 

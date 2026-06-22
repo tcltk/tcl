@@ -4229,7 +4229,7 @@ ZipFSInfoObjCmd(
  *
  * ZipFSListObjCmd --
  *
- *	This procedure is invoked to process the [zipfs list] command.	 On
+ *	This procedure is invoked to process the [zipfs list] command. On
  *	success, it returns a Tcl list of files of the ZIP filesystem which
  *	match a search pattern (glob or regexp).
  *
@@ -5776,8 +5776,7 @@ ZipFSMatchInDirectoryProc(
 	    /* Not looking for files,dirs,mounts. zipfs cannot have others */
 	    return TCL_OK;
 	}
-	wanted &=
-	    (TCL_GLOB_TYPE_DIR | TCL_GLOB_TYPE_FILE | TCL_GLOB_TYPE_MOUNT);
+	wanted &= TCL_GLOB_TYPE_DIR | TCL_GLOB_TYPE_FILE | TCL_GLOB_TYPE_MOUNT;
     } else {
 	wanted = TCL_GLOB_TYPE_DIR | TCL_GLOB_TYPE_FILE;
     }

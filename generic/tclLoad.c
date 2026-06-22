@@ -1051,11 +1051,11 @@ Tcl_StaticLibrary(
 	strcpy(libraryPtr->prefix, prefix);
 	libraryPtr->loadHandle	= NULL;
 	libraryPtr->initProc	= initProc;
-	libraryPtr->safeInitProc	= safeInitProc;
+	libraryPtr->safeInitProc= safeInitProc;
 	libraryPtr->unloadProc = NULL;
 	libraryPtr->safeUnloadProc = NULL;
 	Tcl_MutexLock(&libraryMutex);
-	libraryPtr->nextPtr		= firstLibraryPtr;
+	libraryPtr->nextPtr	= firstLibraryPtr;
 	firstLibraryPtr		= libraryPtr;
 	Tcl_MutexUnlock(&libraryMutex);
     }

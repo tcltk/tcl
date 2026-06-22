@@ -2632,7 +2632,7 @@ Tcl_LpopObjCmd(
 	    return TCL_ERROR;
 	}
 
-	result = Tcl_ListObjIndex(interp, listPtr, (listLen-1),	&elemPtr);
+	result = Tcl_ListObjIndex(interp, listPtr, listLen-1, &elemPtr);
 	if (result != TCL_OK) {
 	    return result;
 	}
@@ -2931,7 +2931,7 @@ Tcl_LrepeatObjCmd(
     }
 
     if (Tcl_ListObjRepeat(interp,
-		repeatCount, objc - 2, objv + 2, &resultPtr) != TCL_OK) {
+	    repeatCount, objc - 2, objv + 2, &resultPtr) != TCL_OK) {
 	return TCL_ERROR;
     }
 

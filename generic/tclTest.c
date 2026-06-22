@@ -2491,8 +2491,8 @@ TestencodingCmd(
 	    Tcl_WrongNumArgs(interp, 2, objv, "?encoding?");
 	    return TCL_ERROR;
 	}
-	encoding =
-	    Tcl_GetEncoding(interp, objc == 2 ? NULL : Tcl_GetString(objv[2]));
+	encoding = Tcl_GetEncoding(
+		interp, objc == 2 ? NULL : Tcl_GetString(objv[2]));
 	if (encoding == NULL) {
 	    return TCL_ERROR;
 	}
@@ -7100,7 +7100,7 @@ TestChannelEventCmd(
 	return TCL_OK;
     }
 
-    if	((cmd[0] == 's') && (strncmp(cmd, "set", len) == 0)) {
+    if ((cmd[0] == 's') && (strncmp(cmd, "set", len) == 0)) {
 	if (objc != 5) {
 	    Tcl_WrongNumArgs(interp, 1, objv, "channel delete index event");
 	    return TCL_ERROR;
@@ -9947,7 +9947,7 @@ TestpostinitCmd(
 
     if (objc < 2 || objc > 4) {
 	Tcl_WrongNumArgs(interp, 1, objv,
-	    "action ?arg ...?");
+		"action ?arg ...?");
 	return TCL_ERROR;
     }
     if (Tcl_GetIndexFromObj(interp, objv[1], actions, "action", 0, &action)
@@ -9959,10 +9959,10 @@ TestpostinitCmd(
     }
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv,
-	    "register|unregister "
-	    "add|eval|interpcreate|interpdelete|package|raiseerror|"
-	    "registerincb|safecheck"
-	    "unregisterincb ?integerData?");
+		"register|unregister "
+		"add|eval|interpcreate|interpdelete|package|raiseerror|"
+		"registerincb|safecheck"
+		"unregisterincb ?integerData?");
 	return TCL_ERROR;
     }
     if (Tcl_GetIndexFromObj(interp, objv[2], callbacks, "callback", 0,
@@ -10016,12 +10016,12 @@ TestpostinitCmd(
     }
 
     ret = (action == REGISTER
-	       ? Tcl_RegisterPostInitProc
-	       : Tcl_UnregisterPostInitProc)(callbackProc, clientData);
+	    ? Tcl_RegisterPostInitProc
+	    : Tcl_UnregisterPostInitProc)(callbackProc, clientData);
 
     if (ret != TCL_OK) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf("Could not %s callback %s",
-				     actions[action], callbacks[callback]));
+		actions[action], callbacks[callback]));
     }
     return ret;
 }

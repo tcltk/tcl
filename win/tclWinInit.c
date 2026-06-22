@@ -54,7 +54,7 @@ static const char *const processors[NUMPROCESSORS] = {
  * Forward declarations
  */
 
-static TclInitProcessGlobalValueProc InitializeDefaultLibraryDir;
+static TclInitProcessGlobalValueProc	InitializeDefaultLibraryDir;
 static TclInitProcessGlobalValueProc	InitializeSourceLibraryDir;
 static void		AppendEnvironment(Tcl_Obj *listPtr, const char *lib);
 
