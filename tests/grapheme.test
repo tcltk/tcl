@@ -12,6 +12,7 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 tcltest::loadTestedCommands
 package require tcl::test
 
+source [file join [file dirname [info script]] tcltests.tcl]
 source [file join [file dirname [info script]] ucdUtils.tcl]
 namespace eval grapheme::test {
     namespace path ::tcltests::ucd
@@ -28,6 +29,11 @@ namespace eval grapheme::test {
     # The -ucd- tests all run off the test vectors from the Unicode Character
     # Database. The test numbering is based on the corresponding line from
     # the GraphemeBreakTest.txt file and may therefore be unstable.
+
+    ### grapheme next
+
+    tcltests::testnumargs "grapheme next" "string strIndex" ""
+
     foreach testCase [getGraphemeData] {
         lassign $testCase testNum comment graphemes
         test grapheme-next-ucd-$testNum.0 $comment -body {
@@ -39,7 +45,14 @@ namespace eval grapheme::test {
             }
             set l
         } -result $graphemes
+    }
 
+    ### grapheme prev
+
+    tcltests::testnumargs "grapheme prev" "string strIndex" ""
+
+    foreach testCase [getGraphemeData] {
+        lassign $testCase testNum comment graphemes
         test grapheme-prev-ucd-$testNum.0 $comment -body {
             set text [join $graphemes ""]
             set l {}
@@ -49,6 +62,32 @@ namespace eval grapheme::test {
             }
             lreverse $l
         } -result $graphemes
+    }
+
+    ### grapheme length
+
+    tcltests::testnumargs "grapheme length" "string" ""
+
+    foreach testCase [getGraphemeData] {
+        lassign $testCase testNum comment graphemes
+        test grapheme-length-ucd-$testNum.0 $comment -body {
+            grapheme length [join $graphemes ""]
+        } -result [llength $graphemes]
+    }
+
+    ### grapheme index
+
+    tcltests::testnumargs "grapheme index" "string strIndex" ""
+
+    foreach testCase [getGraphemeData] {
+        lassign $testCase testNum comment graphemes
+        set text [join $graphemes ""]
+        set len [llength $graphemes]
+        foreach index [list -1 {*}[lseq $len] $len end end-1] {
+            test grapheme-index-ucd-$testNum.$index $comment -body {
+                grapheme index $text $index
+            } -result [lindex $graphemes $index]
+        }
     }
 }
 

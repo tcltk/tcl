@@ -54,10 +54,8 @@ static Tcl_UpdateStringProc	UpdateStringOfGraphemeList;
  */
 
 const EnsembleImplMap tclGraphemeImplMap[] = {
-#if 0
     {"index",	GraphemeIndexCmd,	TclCompileGraphemeIndexCmd, NULL, NULL, 0},
     {"length",	GraphemeLengthCmd,	TclCompileGraphemeLengthCmd, NULL, NULL, 0},
-#endif
     {"next",	GraphemeNextCmd,	TclCompileGraphemeNextCmd, NULL, NULL, 0},
     {"prev",	GraphemePrevCmd,	TclCompileGraphemePrevCmd, NULL, NULL, 0},
 #if 0
@@ -86,12 +84,11 @@ const Tcl_ObjType tclGraphemeListType = {
 /*
  *------------------------------------------------------------------------
  *
- * IsPostcore --
+ * IsPossibleContinuation --
  *
- *	Checks if the passed code point is a postcore code point as per
- *	the definition in UAX #29 Table 1c. A postcore code point is to be
- *	be combined with the preceding core code point, possibly with
- *	other intervening postcore code points.
+ *	Checks if the passed code point is possibly a continuation of
+ *	of a preceding base character possibly separated by intervening
+ *	continuations.
  *
  * Results:
  *	1 if the code point is postcore, 0 otherwise.
@@ -102,14 +99,18 @@ const Tcl_ObjType tclGraphemeListType = {
  *------------------------------------------------------------------------
  */
 static inline
-IsPostcore (
+IsPossibleContinuation (
     Tcl_UniChar cp)		/* Unicode code point */
 {
-    /* https://www.unicode.org/reports/tr29/tr29-47.html#Regex_Definitions*/
+    /*
+     * https://www.unicode.org/reports/tr29/tr29-47.html
+     */
     switch (utf8proc_get_property(cp)->boundclass) {
+		/* postcore */
     case UTF8PROC_BOUNDCLASS_EXTEND:
     case UTF8PROC_BOUNDCLASS_SPACINGMARK:
     case UTF8PROC_BOUNDCLASS_ZWJ:
+	   	/* hangul-syllable */
     case UTF8PROC_BOUNDCLASS_L:
     case UTF8PROC_BOUNDCLASS_V:
     case UTF8PROC_BOUNDCLASS_T:
@@ -124,12 +125,13 @@ IsPostcore (
 /*
  *------------------------------------------------------------------------
  *
- * IsPrecore --
+ * IsPossiblePrefix --
  *
- *	Checks if the passed code point is a precore code point as per
- *	the definition in UAX #29 Table 1c. A pre code point is to be
- *	be combined with the next core code point, possibly with
- *	other intervening precore code points.
+ *	Checks if the passed code point might be a prefix to a base core
+ *	character, that is combined with the next core code point, possibly
+ *	with other intervening prefix code points. Note this is a loose check,
+ *	not exact, so it may return true even in cases where the character
+ *	does not meet the necessary conditions.
  *
  * Results:
  *	1 if the code point is precore, 0 otherwise.
@@ -140,11 +142,10 @@ IsPostcore (
  *------------------------------------------------------------------------
  */
 static inline
-IsPrecore (
+IsPossiblePrefix (
     Tcl_UniChar cp)		/* Unicode code point */
 {
     utf8proc_property_t *propPtr;
-    /* https://www.unicode.org/reports/tr29/tr29-47.html#Regex_Definitions*/
     propPtr = utf8proc_get_property(cp);
     return propPtr->boundclass == UTF8PROC_BOUNDCLASS_PREPEND
 	|| propPtr->boundclass == UTF8PROC_BOUNDCLASS_ZWJ
@@ -153,7 +154,38 @@ IsPrecore (
 	|| propPtr->category == UTF8PROC_CATEGORY_MC
 	|| propPtr->category == UTF8PROC_CATEGORY_ME;
 }
-
+
+/*
+ *------------------------------------------------------------------------
+ *
+ * GraphemeNext --
+ *
+ *	Returns the start of the next grapheme. uniLen must be positive!
+ *
+ * Results:
+ *	Pointer to start of next grapheme.
+ *
+ * Side effects:
+ *	None.
+ *
+ *------------------------------------------------------------------------
+ */
+static Tcl_UniChar *
+GraphemeNext(
+    const Tcl_UniChar *uniPtr,	/* Start of a grapheme */
+    Tcl_Size uniLen)		/* Number of Tcl_UniChar's, > 0! */
+{
+    assert(uniLen > 0);
+    Tcl_UniChar *uniEndPtr = uniPtr + uniLen;
+    int state = 0;
+    while (++uniPtr < uniEndPtr) {
+	if (utf8proc_grapheme_break_stateful(uniPtr[-1], uniPtr[0], &state)) {
+	    break;
+	}
+    }
+    return uniPtr;
+}
+
 /*
  *------------------------------------------------------------------------
  *
@@ -180,7 +212,7 @@ GraphemeNextCmd (
 	Tcl_Obj *const objv[])	/* Argument objects. */
 {
     if (objc != 3) {
-	Tcl_WrongNumArgs(interp, 1, objv, "STRING INDEXVAR");
+	Tcl_WrongNumArgs(interp, 1, objv, "string strIndex");
 	return TCL_ERROR;
     }
 
@@ -199,18 +231,11 @@ GraphemeNextCmd (
     }
 
     Tcl_Size grLen = 0;
-    Tcl_UniChar *uniEndPtr = uniStartPtr + uniLen;
     if (strIndex < uniLen) {
 	int state = 0;
 	Tcl_UniChar *grStartPtr = uniStartPtr + strIndex;
-	Tcl_UniChar *uniPtr = grStartPtr;
-	while (++uniPtr < uniEndPtr) {
-	    if (utf8proc_grapheme_break_stateful(uniPtr[-1],
-			uniPtr[0], &state)) {
-		break;
-	    }
-	}
-	grLen = uniPtr - grStartPtr;
+	Tcl_UniChar *grEndPtr = GraphemeNext(grStartPtr, uniLen - strIndex);
+	grLen = grEndPtr - grStartPtr;
 	Tcl_SetObjResult(interp, Tcl_NewUnicodeObj(grStartPtr, grLen));
     }
     Tcl_ObjSetVar2(interp, objv[2], NULL, Tcl_NewWideIntObj(strIndex+grLen), 0);
@@ -243,7 +268,7 @@ GraphemePrevCmd (
 	Tcl_Obj *const objv[])	/* Argument objects. */
 {
     if (objc != 3) {
-	Tcl_WrongNumArgs(interp, 1, objv, "STRING INDEXVAR");
+	Tcl_WrongNumArgs(interp, 1, objv, "string strIndex");
 	return TCL_ERROR;
     }
 
@@ -269,7 +294,7 @@ GraphemePrevCmd (
      * back to a place that is guaranteed to not be in the middle of a
      * grapheme and work forward from there. The reason for having to work
      * forward is that the backward scan is a conservative heuristic and
-     * may go further back than it needs to. Therefore we have to work 
+     * may go further back than it needs to. Therefore we have to work
      * forward again to skip over the extra scan.
      */
 
@@ -279,7 +304,7 @@ GraphemePrevCmd (
 
     while (uniPtr > uniStartPtr
 	    && ((*uniPtr == '\n' && uniPtr[-1] == '\r') ||
-		IsPostcore(*uniPtr) || IsPrecore(uniPtr[-1]))) {
+		IsPossibleContinuation(*uniPtr) || IsPossiblePrefix(uniPtr[-1]))) {
 	uniPtr--;
     }
 
@@ -287,18 +312,110 @@ GraphemePrevCmd (
     Tcl_Size grLen = 0;
     int state = 0;
     if (uniPtr >= uniStartPtr) {
-	Tcl_UniChar *grStartPtr = uniPtr;
-	while (++uniPtr < uniEndPtr) {
-	    if (utf8proc_grapheme_break_stateful(uniPtr[-1],
-			uniPtr[0], &state)) {
-		grStartPtr = uniPtr;
-	    }
-	}
+	Tcl_UniChar *grStartPtr;
+	assert(uniEndPtr > uniPtr);
+	do {
+	    grStartPtr = uniPtr;
+	    uniPtr = GraphemeNext(uniPtr, uniEndPtr - uniPtr);
+	} while (uniPtr < uniEndPtr);
 	grLen = uniEndPtr - grStartPtr;
 	Tcl_SetObjResult(interp, Tcl_NewUnicodeObj(grStartPtr, grLen));
     }
 
     Tcl_ObjSetVar2(interp, objv[2], NULL, Tcl_NewWideIntObj(strIndex-grLen), 0);
+    return TCL_OK;
+}
+
+/*
+ *------------------------------------------------------------------------
+ *
+ * GraphemeLengthCmd --
+ *
+ *	Implements the Tcl "grapheme length" command. Stores the number
+ *	of graphemes in the passed string into the interpreter result.
+ *
+ * Results:
+ *	A standard Tcl result code.
+ *
+ * Side effects:
+ *	Modifies interpreter result.
+ *
+ *------------------------------------------------------------------------
+ */
+static int
+GraphemeLengthCmd (
+	TCL_UNUSED(void *),
+	Tcl_Interp *interp,	/* Current interpreter. */
+	Tcl_Size objc,		/* Number of arguments. */
+	Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "string");
+	return TCL_ERROR;
+    }
+
+    Tcl_Size uniLen;
+    Tcl_UniChar *uniPtr = Tcl_GetUnicodeFromObj(objv[1], &uniLen);
+    Tcl_UniChar *uniEndPtr = uniPtr + uniLen;
+    Tcl_Size count = 0;
+    while (uniPtr < uniEndPtr) {
+	uniPtr = GraphemeNext(uniPtr, uniEndPtr - uniPtr);
+	++count;
+    }
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(count));
+    return TCL_OK;
+}
+
+/*
+ *------------------------------------------------------------------------
+ *
+ * GraphemeIndexCmd --
+ *
+ *	Implements the Tcl "grapheme index" command. Stores the grapheme
+ *	at the specified grapheme index into the interpreter result.
+ *
+ * Results:
+ *	A standard Tcl result code.
+ *
+ * Side effects:
+ *	Modifies interpreter result.
+ *
+ *------------------------------------------------------------------------
+ */
+static int
+GraphemeIndexCmd (
+	TCL_UNUSED(void *),
+	Tcl_Interp *interp,	/* Current interpreter. */
+	Tcl_Size objc,		/* Number of arguments. */
+	Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    if (objc != 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "string grIndex");
+	return TCL_ERROR;
+    }
+
+    Tcl_Size grIndex;
+    Tcl_Size uniLen;
+    Tcl_UniChar *uniPtr = Tcl_GetUnicodeFromObj(objv[1], &uniLen);
+    if (TclGetIntForIndexM(interp, objv[2], uniLen-1, &grIndex) != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    if (grIndex < 0 || grIndex >= uniLen) {
+	return TCL_OK;
+    }
+
+    Tcl_UniChar *uniEndPtr = uniPtr + uniLen;
+    Tcl_UniChar *grPtr;
+    Tcl_Size i;
+    for (i = 0, grPtr = uniPtr; grPtr < uniEndPtr; ++i) {
+	uniPtr = GraphemeNext(grPtr, uniEndPtr - grPtr);
+	if (i == grIndex) {
+	    Tcl_SetObjResult(interp, Tcl_NewUnicodeObj(grPtr, uniPtr - grPtr));
+	    break;
+	}
+	grPtr = uniPtr;
+    }
     return TCL_OK;
 }
 
