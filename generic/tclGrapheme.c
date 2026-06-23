@@ -189,6 +189,36 @@ GraphemeNext(
 /*
  *------------------------------------------------------------------------
  *
+ * GraphemeLength --
+ *
+ *	Counts the number of graphemes in the passed string.
+ *
+ * Results:
+ *	Number of graphemes in the string.
+ *
+ *------------------------------------------------------------------------
+ */
+static Tcl_Size
+GraphemeLength (
+    Tcl_UniChar *uniPtr,	/* Tcl_UniChar string */
+    Tcl_Size uniLen)		/* Number of Tcl_UniChar's in string. -1 if
+				 * nul terminated */
+{
+    if (uniLen < 0) {
+	uniLen = Tcl_UniCharLen(uniPtr);
+    }
+    Tcl_UniChar *uniEndPtr = uniPtr + uniLen;
+    Tcl_Size count = 0;
+    while (uniPtr < uniEndPtr) {
+	uniPtr = GraphemeNext(uniPtr, uniEndPtr - uniPtr);
+	++count;
+    }
+    return count;
+}
+
+/*
+ *------------------------------------------------------------------------
+ *
  * GraphemeNextCmd --
  *
  *	Implements the Tcl "grapheme next" command. Sets the interpreter
@@ -206,10 +236,10 @@ GraphemeNext(
  */
 static int
 GraphemeNextCmd (
-	TCL_UNUSED(void *),
-	Tcl_Interp *interp,	/* Current interpreter. */
-	Tcl_Size objc,		/* Number of arguments. */
-	Tcl_Obj *const objv[])	/* Argument objects. */
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,	/* Current interpreter. */
+    Tcl_Size objc,		/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
 {
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "string strIndex");
@@ -262,10 +292,10 @@ GraphemeNextCmd (
  */
 static int
 GraphemePrevCmd (
-	TCL_UNUSED(void *),
-	Tcl_Interp *interp,	/* Current interpreter. */
-	Tcl_Size objc,		/* Number of arguments. */
-	Tcl_Obj *const objv[])	/* Argument objects. */
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,	/* Current interpreter. */
+    Tcl_Size objc,		/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
 {
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "string strIndex");
@@ -344,10 +374,10 @@ GraphemePrevCmd (
  */
 static int
 GraphemeLengthCmd (
-	TCL_UNUSED(void *),
-	Tcl_Interp *interp,	/* Current interpreter. */
-	Tcl_Size objc,		/* Number of arguments. */
-	Tcl_Obj *const objv[])	/* Argument objects. */
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,	/* Current interpreter. */
+    Tcl_Size objc,		/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
 {
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "string");
@@ -356,13 +386,7 @@ GraphemeLengthCmd (
 
     Tcl_Size uniLen;
     Tcl_UniChar *uniPtr = Tcl_GetUnicodeFromObj(objv[1], &uniLen);
-    Tcl_UniChar *uniEndPtr = uniPtr + uniLen;
-    Tcl_Size count = 0;
-    while (uniPtr < uniEndPtr) {
-	uniPtr = GraphemeNext(uniPtr, uniEndPtr - uniPtr);
-	++count;
-    }
-    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(count));
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(GraphemeLength(uniPtr, uniLen)));
     return TCL_OK;
 }
 
@@ -384,30 +408,28 @@ GraphemeLengthCmd (
  */
 static int
 GraphemeIndexCmd (
-	TCL_UNUSED(void *),
-	Tcl_Interp *interp,	/* Current interpreter. */
-	Tcl_Size objc,		/* Number of arguments. */
-	Tcl_Obj *const objv[])	/* Argument objects. */
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,	/* Current interpreter. */
+    Tcl_Size objc,		/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
 {
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "string grIndex");
 	return TCL_ERROR;
     }
 
-    Tcl_Size grIndex;
-    Tcl_Size uniLen;
+    Tcl_Size grIndex, grLen, uniLen;
     Tcl_UniChar *uniPtr = Tcl_GetUnicodeFromObj(objv[1], &uniLen);
-    if (TclGetIntForIndexM(interp, objv[2], uniLen-1, &grIndex) != TCL_OK) {
+    grLen = GraphemeLength(uniPtr, uniLen); /* Need for end, end-1 etc. */
+    if (TclGetIntForIndexM(interp, objv[2], grLen - 1, &grIndex) != TCL_OK) {
 	return TCL_ERROR;
     }
 
-    if (grIndex < 0 || grIndex >= uniLen) {
+    if (grIndex < 0 || grIndex >= grLen) {
 	return TCL_OK;
     }
 
-    Tcl_UniChar *uniEndPtr = uniPtr + uniLen;
-    Tcl_UniChar *grPtr;
-    Tcl_Size i;
+#if 0
     for (i = 0, grPtr = uniPtr; grPtr < uniEndPtr; ++i) {
 	uniPtr = GraphemeNext(grPtr, uniEndPtr - grPtr);
 	if (i == grIndex) {
@@ -416,6 +438,16 @@ GraphemeIndexCmd (
 	}
 	grPtr = uniPtr;
     }
+#endif
+    Tcl_Size i = 0;
+    Tcl_UniChar *uniEndPtr = uniPtr + uniLen;
+    Tcl_UniChar *grPtr = uniPtr;
+    while (i++ < grIndex) {
+	grPtr = GraphemeNext(grPtr, uniEndPtr - grPtr);
+    }
+    uniPtr = GraphemeNext(grPtr, uniEndPtr - grPtr);
+    Tcl_SetObjResult(interp, Tcl_NewUnicodeObj(grPtr, uniPtr - grPtr));
+
     return TCL_OK;
 }
 

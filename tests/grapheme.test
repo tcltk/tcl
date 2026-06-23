@@ -77,7 +77,7 @@ namespace eval grapheme::test {
 
     ### grapheme index
 
-    tcltests::testnumargs "grapheme index" "string strIndex" ""
+    tcltests::testnumargs "grapheme index" "string grIndex" ""
 
     foreach testCase [getGraphemeData] {
         lassign $testCase testNum comment graphemes
