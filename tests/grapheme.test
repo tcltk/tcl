@@ -83,11 +83,42 @@ namespace eval grapheme::test {
         lassign $testCase testNum comment graphemes
         set text [join $graphemes ""]
         set len [llength $graphemes]
-        foreach index [list -1 {*}[lseq $len] $len end end-1] {
+        foreach index [list end-[expr {$len+2}] -1 {*}[lseq $len] $len end end-1 end+1] {
             test grapheme-index-ucd-$testNum.$index $comment -body {
                 grapheme index $text $index
             } -result [lindex $graphemes $index]
         }
+    }
+
+    ### grapheme range
+
+    tcltests::testnumargs "grapheme range" "string grFirst grLast" ""
+
+    foreach testCase [getGraphemeData] {
+        lassign $testCase testNum comment graphemes
+        set text [join $graphemes ""]
+        set len [llength $graphemes]
+
+        foreach grStart [list -1 {*}[lseq $len] $len end end-1] {
+            foreach grEnd [list -1 {*}[lseq $len] $len end end-1] {
+                test grapheme-range-ucd-$testNum.$grStart:$grEnd $comment -body {
+                    grapheme range $text $grStart $grEnd
+                } -result [join [lrange $graphemes $grStart $grEnd] ""]
+            }
+        }
+    }
+
+    ### grapheme reverse
+
+    tcltests::testnumargs "grapheme reverse" "string" ""
+
+    foreach testCase [getGraphemeData] {
+        lassign $testCase testNum comment graphemes
+        set text [join $graphemes ""]
+        set len [llength $graphemes]
+        test grapheme-reverse-ucd-$testNum $comment -body {
+            grapheme reverse $text
+        } -result [join [lreverse $graphemes] ""]
     }
 }
 

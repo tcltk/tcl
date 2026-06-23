@@ -58,9 +58,9 @@ const EnsembleImplMap tclGraphemeImplMap[] = {
     {"length",	GraphemeLengthCmd,	TclCompileGraphemeLengthCmd, NULL, NULL, 0},
     {"next",	GraphemeNextCmd,	TclCompileGraphemeNextCmd, NULL, NULL, 0},
     {"prev",	GraphemePrevCmd,	TclCompileGraphemePrevCmd, NULL, NULL, 0},
-#if 0
     {"range",	GraphemeRangeCmd,	TclCompileGraphemeRangeCmd, NULL, NULL, 0},
     {"reverse",	GraphemeReverseCmd,	TclCompileGraphemeReverseCmd, NULL, NULL, 0},
+#if 0
     {"split",	GraphemeSplitCmd,	TclCompileGraphemeSplitCmd, NULL, NULL, 0},
 #endif
     {NULL, NULL, NULL, NULL, NULL, 0}
@@ -219,6 +219,53 @@ GraphemeLength (
 /*
  *------------------------------------------------------------------------
  *
+ * GraphemeIndex --
+ *
+ *	Locates the grapheme at an index and returns a pointer to it.
+ *	If grWidthPtr is not NULL, the number of code points in the
+ *	grapheme is returned in it.
+ *
+ * Results:
+ *	Pointer to the grapheme at specified grapheme index. NULL if the
+ *	index is out of range and stores 0 in grWidthPtr.
+ *
+ *------------------------------------------------------------------------
+ */
+static Tcl_UniChar *
+GraphemeIndex(
+    Tcl_UniChar *uniPtr,	/* Tcl_UniChar string */
+    Tcl_Size uniLen,		/* Number of Tcl_UniChar's in string. -1 if
+				 * nul terminated */
+    Tcl_Size grIndex,		/* Index of desired grapheme */
+    Tcl_Size *grWidthPtr)		/* Length of grapheme */
+{
+    if (grIndex >= 0) {
+	if (uniLen < 0) {
+	    uniLen = Tcl_UniCharLen(uniPtr);
+	}
+	Tcl_UniChar *uniEndPtr = uniPtr + uniLen;
+	Tcl_UniChar *grPtr;
+	Tcl_Size i;
+	for (i = 0, grPtr = uniPtr; grPtr < uniEndPtr; ++i) {
+	    uniPtr = GraphemeNext(grPtr, uniEndPtr - grPtr);
+	    if (i == grIndex) {
+		if (grWidthPtr != NULL) {
+		    *grWidthPtr = uniPtr - grPtr;
+		}
+		return grPtr;
+	    }
+	    grPtr = uniPtr;
+	}
+    }
+    if (grWidthPtr != NULL) {
+	*grWidthPtr = 0;
+    }
+    return NULL;
+}
+
+/*
+ *------------------------------------------------------------------------
+ *
  * GraphemeNextCmd --
  *
  *	Implements the Tcl "grapheme next" command. Sets the interpreter
@@ -260,15 +307,16 @@ GraphemeNextCmd (
 	}
     }
 
-    Tcl_Size grLen = 0;
+    Tcl_Size grWidth = 0;
     if (strIndex < uniLen) {
 	int state = 0;
 	Tcl_UniChar *grStartPtr = uniStartPtr + strIndex;
 	Tcl_UniChar *grEndPtr = GraphemeNext(grStartPtr, uniLen - strIndex);
-	grLen = grEndPtr - grStartPtr;
-	Tcl_SetObjResult(interp, Tcl_NewUnicodeObj(grStartPtr, grLen));
+	grWidth = grEndPtr - grStartPtr;
+	Tcl_SetObjResult(interp, Tcl_NewUnicodeObj(grStartPtr, grWidth));
     }
-    Tcl_ObjSetVar2(interp, objv[2], NULL, Tcl_NewWideIntObj(strIndex+grLen), 0);
+    Tcl_ObjSetVar2(interp, objv[2], NULL,
+	    Tcl_NewWideIntObj(strIndex + grWidth), 0);
     return TCL_OK;
 }
 
@@ -428,26 +476,135 @@ GraphemeIndexCmd (
     if (grIndex < 0 || grIndex >= grLen) {
 	return TCL_OK;
     }
+    Tcl_Size grWidth;
+    Tcl_UniChar *grPtr = GraphemeIndex(uniPtr, uniLen, grIndex, &grWidth);
+    assert(grPtr);	/* Since we already checked length above */
+    Tcl_SetObjResult(interp, Tcl_NewUnicodeObj(grPtr, grWidth));
 
-#if 0
-    for (i = 0, grPtr = uniPtr; grPtr < uniEndPtr; ++i) {
-	uniPtr = GraphemeNext(grPtr, uniEndPtr - grPtr);
-	if (i == grIndex) {
-	    Tcl_SetObjResult(interp, Tcl_NewUnicodeObj(grPtr, uniPtr - grPtr));
-	    break;
-	}
+    return TCL_OK;
+}
+
+/*
+ *------------------------------------------------------------------------
+ *
+ * GraphemeRangeCmd --
+ *
+ *	Implements the Tcl "grapheme range" command. Stores the graphemes
+ *	in at the specified grapheme index range into the interpreter result.
+ *
+ * Results:
+ *	A standard Tcl result code.
+ *
+ * Side effects:
+ *	Modifies interpreter result.
+ *
+ *------------------------------------------------------------------------
+ */
+static int
+GraphemeRangeCmd (
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,	/* Current interpreter. */
+    Tcl_Size objc,		/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    if (objc != 4) {
+	Tcl_WrongNumArgs(interp, 1, objv, "string grFirst grLast");
+	return TCL_ERROR;
+    }
+
+    Tcl_Size grFirst, grLast, grLen, uniLen;
+    Tcl_UniChar *uniPtr = Tcl_GetUnicodeFromObj(objv[1], &uniLen);
+    grLen = GraphemeLength(uniPtr, uniLen); /* Need for end, end-1 etc. */
+    if (TclGetIntForIndexM(interp, objv[2], grLen-1, &grFirst) != TCL_OK ||
+	    TclGetIntForIndexM(interp, objv[3], grLen-1, &grLast) != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    if (grFirst < 0) {
+	grFirst = 0;
+    }
+    if (grLast >= grLen) {
+	grLast = grLen - 1;
+    }
+    if (grFirst >= grLen || grLast < grFirst) {
+	return TCL_OK;		/* Empty result */
+    }
+
+    Tcl_UniChar *rangeFirstPtr;
+    Tcl_UniChar *rangeLastPtr;
+    Tcl_Size lastWidth;
+    Tcl_Obj *resultObj;
+    rangeFirstPtr = GraphemeIndex(uniPtr, uniLen, grFirst, NULL);
+    assert(rangeFirstPtr);
+    rangeLastPtr = GraphemeIndex(rangeFirstPtr,
+	    uniLen - (rangeFirstPtr - uniPtr), grLast - grFirst, &lastWidth);
+    assert(rangeLastPtr);
+
+    resultObj = Tcl_NewUnicodeObj(rangeFirstPtr,
+			rangeLastPtr - rangeFirstPtr + lastWidth);
+    Tcl_SetObjResult(interp, resultObj);
+    return TCL_OK;
+}
+
+/*
+ *------------------------------------------------------------------------
+ *
+ * GraphemeReverseCmd --
+ *
+ *	Implements the Tcl "grapheme reverse" command. Stores the graphemes
+ *	in reverse order into the interpreter result.
+ *
+ * Results:
+ *	A standard Tcl result code.
+ *
+ * Side effects:
+ *	Modifies interpreter result.
+ *
+ *------------------------------------------------------------------------
+ */
+static int
+GraphemeReverseCmd (
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,	/* Current interpreter. */
+    Tcl_Size objc,		/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "string");
+	return TCL_ERROR;
+    }
+
+    /*
+     * Graphemes can vary in size with no theoritical limit so reversing in
+     * place in unshared object case is not straightforward. Just allocate a
+     * new object.
+     *
+     * TODO - use Tcl unicode string internals rather than appending
+     * one at a time with a temporary buffer.
+     */
+
+    Tcl_Size uniLen;
+    Tcl_UniChar *uniPtr = Tcl_GetUnicodeFromObj(objv[1], &uniLen);
+    if (uniLen == 0) {
+	return TCL_OK;
+    }
+    Tcl_UniChar *uniEndPtr = uniPtr + uniLen;
+    Tcl_UniChar *tempBufPtr = Tcl_Alloc(uniLen * sizeof(*tempBufPtr));
+    Tcl_UniChar *tempPtr = tempBufPtr + uniLen;
+    Tcl_Obj *resultObj;
+    TclNewObj(resultObj);
+    for (Tcl_UniChar *grPtr = uniPtr; uniPtr < uniEndPtr; ) {
+	Tcl_Size grWidth;
+	uniPtr = GraphemeNext(uniPtr, uniEndPtr - uniPtr);
+	grWidth = uniPtr - grPtr;
+	tempPtr -= grWidth;
+	assert(tempPtr >= tempBufPtr);
+	memcpy(tempPtr, grPtr, sizeof(Tcl_UniChar) * grWidth);
 	grPtr = uniPtr;
     }
-#endif
-    Tcl_Size i = 0;
-    Tcl_UniChar *uniEndPtr = uniPtr + uniLen;
-    Tcl_UniChar *grPtr = uniPtr;
-    while (i++ < grIndex) {
-	grPtr = GraphemeNext(grPtr, uniEndPtr - grPtr);
-    }
-    uniPtr = GraphemeNext(grPtr, uniEndPtr - grPtr);
-    Tcl_SetObjResult(interp, Tcl_NewUnicodeObj(grPtr, uniPtr - grPtr));
-
+    assert(tempPtr == tempBufPtr);
+    Tcl_SetObjResult(interp, Tcl_NewUnicodeObj(tempBufPtr, uniLen));
+    Tcl_Free(tempBufPtr);
     return TCL_OK;
 }
 
