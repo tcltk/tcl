@@ -90,6 +90,7 @@ typedef struct GraphemeSegment {
 typedef struct GraphemeOffsetMap {
     Tcl_Size capacity;				/* Number allocated */
     Tcl_Size used;				/* Count of segments in-use */
+    Tcl_Size numGraphemes;			/* Total count of graphemes */
     GraphemeSegment segments[TCLFLEXARRAY];	/* Grapheme segment table */
 } GraphemeOffsetMap;
 
@@ -163,7 +164,7 @@ nomemory:
     Tcl_Panic("Max capacity of grapheme map exceeded.");
     return NULL;
 }
-
+
 /*
  *------------------------------------------------------------------------
  *
@@ -190,6 +191,7 @@ CreateGraphemeOffsetMap (
     mapPtr = (GraphemeOffsetMap *)Tcl_Alloc(GRAPHEME_OFFSET_MAP_SIZE(8));
     mapPtr->capacity = 8;
     mapPtr->used = 0;
+    mapPtr->numGraphemes = 0;
 
     if (uniLen < 0) {
 	uniLen = Tcl_UniCharLen(uniPtr);
@@ -242,10 +244,56 @@ CreateGraphemeOffsetMap (
 	mapPtr = GrowGraphemeOffsetMap(mapPtr, 1);
     }
     mapPtr->segments[mapPtr->used] = segment;
+    mapPtr->numGraphemes = segment.graphemeOffset + segment.length;
+    mapPtr->used++;
 
     return mapPtr;
 }
+
+/*
+ *------------------------------------------------------------------------
+ *
+ * LookupGraphemeOffsetMap --
+ *
+ *	Given a grapheme index, looks up the corresponding Tcl_UniChar
+ *	index in the passed grapheme offset map.
+ *
+ * Results:
+ *	Returns the starting offset of the grapheme or -1 if the index
+ *
+ * Side effects:
+ *	None.
+ *
+ *------------------------------------------------------------------------
+ */
+static Tcl_Size
+LookupGraphemeOffsetMap(
+    const GraphemeOffsetMap *mapPtr,	/* Grapheme offset map */
+    Tcl_Size grIndex)			/* Grapheme index to look up */
+{
 
+    if (grIndex < 0 || grIndex >= mapPtr->numGraphemes) {
+	return -1;
+    }
+
+    Tcl_Size low, high;
+    low = 0;
+    high = mapPtr->used - 1;
+    while (low < high) {
+	Tcl_Size mid = (low + high + 1) / 2;
+	if (mapPtr->segments[mid].graphemeOffset <= grIndex) {
+	    low = mid;
+	} else {
+	    high = mid - 1;
+	}
+    }
+
+    /* low identifies the segment in which the grapheme index falls */
+    Tcl_Size grIndexInSegment = grIndex - mapPtr->segments[low].graphemeOffset;
+    return mapPtr->segments[low].uniOffset
+	 + (grIndexInSegment * mapPtr->segments[low].width);
+}
+
 /*
  *------------------------------------------------------------------------
  *
