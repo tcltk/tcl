@@ -437,6 +437,7 @@ GENERIC_SRCS = \
 	$(GENERIC_DIR)/tclFCmd.c \
 	$(GENERIC_DIR)/tclFileName.c \
 	$(GENERIC_DIR)/tclGet.c \
+	$(GENERIC_DIR)/tclGrapheme.c \
 	$(GENERIC_DIR)/tclHash.c \
 	$(GENERIC_DIR)/tclHistory.c \
 	$(GENERIC_DIR)/tclIcu.c \
@@ -1385,6 +1386,9 @@ tclFileName.o: $(GENERIC_DIR)/tclFileName.c $(FSHDR) $(TCLREHDRS)
 
 tclGet.o: $(GENERIC_DIR)/tclGet.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclGet.c
+
+tclGrapheme.o: $(GENERIC_DIR)/tclGrapheme.c
+	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclGrapheme.c
 
 tclHash.o: $(GENERIC_DIR)/tclHash.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclHash.c

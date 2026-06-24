@@ -18,7 +18,7 @@ namespace eval tcltests::ucd {
     variable derivedCorePropertiesFile \
 	[file join [file dirname [info script]] unicodeTestVectors DerivedCoreProperties.txt]
     variable graphemeBreaksDataFile \
-	[file join [file dirname [info script]] unicodeTestVectors GraphemeBreakTest-17.0.txt]
+	[file join [file dirname [info script]] unicodeTestVectors GraphemeBreakTest.txt]
 
     # Highest assigned Unicode code point
     variable maxCodepoint 0x10ffff
