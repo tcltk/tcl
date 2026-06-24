@@ -49,6 +49,8 @@ static Tcl_FreeInternalRepProc	FreeGraphemeListInternalRep;
 static Tcl_SetFromAnyProc	SetGraphemeListFromAny;
 static Tcl_UpdateStringProc	UpdateStringOfGraphemeList;
 
+static Tcl_UniChar *GraphemeNext(const Tcl_UniChar *uniPtr, Tcl_Size uniLen);
+
 /*
  * Table of grapheme subcommand names and implementations.
  */
@@ -65,6 +67,40 @@ const EnsembleImplMap tclGraphemeImplMap[] = {
 #endif
     {NULL, NULL, NULL, NULL, NULL, 0}
 };
+
+/*
+ * Graphemes have variable width (number of code points in the grapheme) and
+ * no theoretical limit on it. To be able to iterate or locate the grapheme
+ * a grapheme by its index (its *grapheme* index, not its Tcl_UniChar index)
+ * requires a linear scan. To avoid repeated scans, we keep a lookup
+ * structure making use of the fact that most graphemes will have a width of
+ * one. So we use a run-length encoding (RLE) scheme where the GraphemeSegment
+ * structure stores information about one grapheme run where each grapheme
+ * in the run has the same width. The GraphemeOffsetMap is a table of these
+ * structures that can then be searched to locate the offset for a grapheme
+ * index.
+ */
+typedef struct GraphemeSegment {
+    Tcl_Size width;		/* Width of each grapheme in the segment */
+    Tcl_Size length;		/* Number of graphemes in this segment */
+    Tcl_Size graphemeOffset;	/* Offset in graphemes of this segment */
+    Tcl_Size uniOffset;		/* Offset in Tcl_UniChar's of this segment */
+} GraphemeSegment;
+
+typedef struct GraphemeOffsetMap {
+    Tcl_Size capacity;				/* Number allocated */
+    Tcl_Size used;				/* Count of segments in-use */
+    GraphemeSegment segments[TCLFLEXARRAY];	/* Grapheme segment table */
+} GraphemeOffsetMap;
+
+/* Memory size needed for a GraphemeOffsetMap to hold numSegs_ segments */
+#define GRAPHEME_OFFSET_MAP_SIZE(numSegs_)            \
+    ((Tcl_Size)(offsetof(GraphemeOffsetMap, segments) \
+		+ ((numSegs_) * sizeof(GraphemeSegment))))
+/* Max number of segments possible in a map */
+#define GRAPHEME_SEGMENT_MAX \
+    ((Tcl_Size)(((size_t)TCL_SIZE_MAX - offsetof(GraphemeOffsetMap, segments))	\
+	    / sizeof(GraphemeSegment)))
 
 /*
  * The structure below defines the grapheme list object type by means of
@@ -84,6 +120,135 @@ const Tcl_ObjType tclGraphemeListType = {
 /*
  *------------------------------------------------------------------------
  *
+ * GrowGraphemeOffsetMap --
+ *
+ *      Reallocates a GraphemeOffsetMap to a new size. Panics on failure. If
+ *      increment is positive, capacity is increased by exactly that amount.
+ *      Otherwise, capacity is grown heuristically but at least by one.
+ *
+ * Results:
+ *	Pointer to reallocated GraphemeOffsetMap.
+ *
+ * Side effects:
+ *	None.
+ *
+ *------------------------------------------------------------------------
+ */
+static GraphemeOffsetMap *
+GrowGraphemeOffsetMap (
+    GraphemeOffsetMap *mapPtr,	/* Allocation to resize */
+    Tcl_Size increment		/* Capacity increment. If <= 0, heuristic */
+)
+{
+    Tcl_Size newCapacity;
+    if (increment > 0) {
+	if (GRAPHEME_SEGMENT_MAX - mapPtr->capacity < increment) {
+	    goto nomemory;
+	}
+	newCapacity = mapPtr->capacity + increment;
+	mapPtr = (GraphemeOffsetMap *)Tcl_Realloc(mapPtr,
+		GRAPHEME_OFFSET_MAP_SIZE(newCapacity));
+    } else {
+	if (mapPtr->capacity == (GRAPHEME_SEGMENT_MAX-1)) {
+	    goto nomemory;
+	}
+	mapPtr = TclReallocElemsEx(mapPtr, mapPtr->capacity + 1,
+		sizeof(GraphemeSegment), offsetof(GraphemeOffsetMap, segments),
+		&newCapacity);
+    }
+    mapPtr->capacity = newCapacity;
+    return mapPtr;
+
+nomemory:
+    Tcl_Panic("Max capacity of grapheme map exceeded.");
+    return NULL;
+}
+
+/*
+ *------------------------------------------------------------------------
+ *
+ * CreateGraphemeOffsetMap --
+ *
+ *	Allocates an returns a lookup table mapping grapheme indices to
+ *
+ *
+ * Results:
+ *	Pointer to an allocated grapheme lookup table.
+ *
+ * Side effects:
+ *	None.
+ *
+ *------------------------------------------------------------------------
+ */
+static GraphemeOffsetMap *
+CreateGraphemeOffsetMap (
+    Tcl_UniChar *uniPtr,	/* Tcl_UniChar string */
+    Tcl_Size uniLen)		/* Number of Tcl_UniChar's in string. -1 if
+				 * nul terminated */
+{
+    GraphemeOffsetMap *mapPtr;
+    mapPtr = (GraphemeOffsetMap *)Tcl_Alloc(GRAPHEME_OFFSET_MAP_SIZE(8));
+    mapPtr->capacity = 8;
+    mapPtr->used = 0;
+
+    if (uniLen < 0) {
+	uniLen = Tcl_UniCharLen(uniPtr);
+    }
+    if (uniLen == 0) {
+	return mapPtr;
+    }
+
+    const Tcl_UniChar *endPtr = uniPtr + uniLen;
+
+    /* Handling first grapheme separately avoids a check in loop */
+    const Tcl_UniChar *grPtr = GraphemeNext(uniPtr, uniLen);
+    assert(grPtr > uniPtr); /* Since we checked for 0 length above */
+
+    GraphemeSegment segment = {grPtr - uniPtr, 0, 0, 0};
+
+    while (grPtr < endPtr) {
+	assert(segment.length > 0); /* already seen a grapheme in segment */
+	const Tcl_UniChar *nextGrPtr = GraphemeNext(grPtr, endPtr - grPtr);
+	assert(nextGrPtr > grPtr);
+	Tcl_Size grWidth = nextGrPtr - grPtr;
+	if (grWidth == segment.width) {
+	    /* Grapheme same width as current run */
+	    segment.length++;
+	} else {
+	    /*
+	     * Grapheme has a different width than the current run. Store the
+	     * current run length segment and start a new one.
+	     */
+	    if (mapPtr->used == mapPtr->capacity) {
+		mapPtr = GrowGraphemeOffsetMap(mapPtr, 0);
+	    }
+	    GraphemeSegment *segmentPtr = &mapPtr->segments[mapPtr->used];
+	    /* Store the just completed segment and init the next one */
+	    mapPtr->segments[mapPtr->used] = segment;
+
+	    /* Initialize for next segment */
+	    segment.graphemeOffset += segment.length;
+	    segment.uniOffset += segment.length * segment.width;
+	    segment.length = 1;
+	    segment.width = grWidth;
+
+	    mapPtr->used++;
+	}
+	grPtr = nextGrPtr;
+    }
+
+    /* Store final segment */
+    if (mapPtr->used == mapPtr->capacity) {
+	mapPtr = GrowGraphemeOffsetMap(mapPtr, 1);
+    }
+    mapPtr->segments[mapPtr->used] = segment;
+
+    return mapPtr;
+}
+
+/*
+ *------------------------------------------------------------------------
+ *
  * IsPossibleContinuation --
  *
  *	Checks if the passed code point is possibly a continuation of
@@ -99,8 +264,8 @@ const Tcl_ObjType tclGraphemeListType = {
  *------------------------------------------------------------------------
  */
 static inline
-IsPossibleContinuation (
-    Tcl_UniChar cp)		/* Unicode code point */
+IsPossibleContinuation(
+    Tcl_UniChar cp) /* Unicode code point */
 {
     /*
      * https://www.unicode.org/reports/tr29/tr29-47.html
@@ -237,7 +402,7 @@ GraphemeIndex(
     Tcl_Size uniLen,		/* Number of Tcl_UniChar's in string. -1 if
 				 * nul terminated */
     Tcl_Size grIndex,		/* Index of desired grapheme */
-    Tcl_Size *grWidthPtr)		/* Length of grapheme */
+    Tcl_Size *grWidthPtr)	/* Length of grapheme */
 {
     if (grIndex >= 0) {
 	if (uniLen < 0) {
@@ -284,7 +449,7 @@ GraphemeIndex(
 static int
 GraphemeNextCmd (
     TCL_UNUSED(void *),
-    Tcl_Interp *interp,	/* Current interpreter. */
+    Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
@@ -341,7 +506,7 @@ GraphemeNextCmd (
 static int
 GraphemePrevCmd (
     TCL_UNUSED(void *),
-    Tcl_Interp *interp,	/* Current interpreter. */
+    Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
@@ -423,7 +588,7 @@ GraphemePrevCmd (
 static int
 GraphemeLengthCmd (
     TCL_UNUSED(void *),
-    Tcl_Interp *interp,	/* Current interpreter. */
+    Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
@@ -457,7 +622,7 @@ GraphemeLengthCmd (
 static int
 GraphemeIndexCmd (
     TCL_UNUSED(void *),
-    Tcl_Interp *interp,	/* Current interpreter. */
+    Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
@@ -503,7 +668,7 @@ GraphemeIndexCmd (
 static int
 GraphemeRangeCmd (
     TCL_UNUSED(void *),
-    Tcl_Interp *interp,	/* Current interpreter. */
+    Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
@@ -565,7 +730,7 @@ GraphemeRangeCmd (
 static int
 GraphemeReverseCmd (
     TCL_UNUSED(void *),
-    Tcl_Interp *interp,	/* Current interpreter. */
+    Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
