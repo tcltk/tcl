@@ -120,6 +120,19 @@ namespace eval grapheme::test {
             grapheme reverse $text
         } -result [join [lreverse $graphemes] ""]
     }
+
+    ### grapheme split
+
+    tcltests::testnumargs "grapheme split" "string" ""
+
+    foreach testCase [getGraphemeData] {
+        lassign $testCase testNum comment graphemes
+        set text [join $graphemes ""]
+        set len [llength $graphemes]
+        test grapheme-split-ucd-$testNum $comment -body {
+            grapheme split $text
+        } -result $graphemes
+    }
 }
 
 ::tcltest::cleanupTests

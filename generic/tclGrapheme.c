@@ -44,10 +44,6 @@ static Tcl_ObjCmdProc2		GraphemePrevCmd;
 static Tcl_ObjCmdProc2		GraphemeRangeCmd;
 static Tcl_ObjCmdProc2		GraphemeReverseCmd;
 static Tcl_ObjCmdProc2		GraphemeSplitCmd;
-static Tcl_DupInternalRepProc	DupGraphemeListInternalRep;
-static Tcl_FreeInternalRepProc	FreeGraphemeListInternalRep;
-static Tcl_SetFromAnyProc	SetGraphemeListFromAny;
-static Tcl_UpdateStringProc	UpdateStringOfGraphemeList;
 
 /*
  * Table of grapheme subcommand names and implementations.
@@ -60,26 +56,61 @@ const EnsembleImplMap tclGraphemeImplMap[] = {
     {"prev",	GraphemePrevCmd,	TclCompileGraphemePrevCmd, NULL, NULL, 0},
     {"range",	GraphemeRangeCmd,	TclCompileGraphemeRangeCmd, NULL, NULL, 0},
     {"reverse",	GraphemeReverseCmd,	TclCompileGraphemeReverseCmd, NULL, NULL, 0},
-#if 0
     {"split",	GraphemeSplitCmd,	TclCompileGraphemeSplitCmd, NULL, NULL, 0},
-#endif
     {NULL, NULL, NULL, NULL, NULL, 0}
 };
 
 /*
- * The structure below defines the grapheme list object type by means of
- * functions that can be invoked by generic object code.
+ * GraphemeListRep --
+ *
+ * Iterations over graphemes ("foreach gr [grapheme split string] {}") may
+ * be implemented in one of several ways -
+ * 1. Convert to a native Tcl list
+ * 2. Maintain a lookup table mapping grapheme indices to Tcl_UniChar offsets
+ * 3. Maintain an iterator that caches the last index access
+ *
+ * Option 1 potentially consumes a lot more memory than necessary for the
+ * common case where the "gr" above is discarded on every iteration.
+ * Option 2 is generally not memory intensive because the lookup table can
+ * be quite small using a form of RLE but there is the performance cost
+ * of constructing the lookup table that may only be used once. There is also
+ * potential of memory growth in pathlogical cases where RLE is not effective.
+ * Option 3, implemented below as an abstract list, depends on the fact
+ * that most operations on lists of graphemes will be sequential iteration.
+ * It therefore caches the offset of the last grapheme index accessed so
+ * the next or previous index can be accessed quickly and without any cost
+ * in memory. It does not however help with random access.
+ *
+ * Note the list is read-only, so writing will cause shimmer to a native list.
  */
-#if 0
+typedef struct GraphemeListRep {
+    Tcl_Obj *objPtr;		/* The target string */
+    Tcl_Size refCount;		/* Shared amongst Tcl_Obj's */
+    Tcl_Size graphemeIndex;     /* Cached grapheme index */
+    Tcl_Size graphemeOffset;	/* Corresponding Tcl_UniChar offset */
+} GraphemeListRep;
+
+static Tcl_DupInternalRepProc	GraphemeListDupProc;
+static Tcl_FreeInternalRepProc	GraphemeListFreeProc;
+static Tcl_SetFromAnyProc	GraphemeListSetFromAnyProc;
+static Tcl_ObjTypeLengthProc	GraphemeListLengthProc;
+static Tcl_ObjTypeIndexProc	GraphemeListIndexProc;
 const Tcl_ObjType tclGraphemeListType = {
     "graphemeList",
-    FreeGraphemeListInternalRep,
-    DupGraphemeListInternalRep,
-    UpdateStringOfGraphemeList,
-    SetGraphemeListFromAny,
-    TCL_OBJTYPE_V0
+    GraphemeListFreeProc,
+    GraphemeListDupProc,
+    TclAbstractListUpdateString,
+    NULL,			/* SetFromAny */
+    TCL_OBJTYPE_V2(
+	GraphemeListLengthProc,
+	GraphemeListIndexProc,
+	NULL,			/* Slice */
+	NULL,			/* Reverse */
+	NULL,			/* GetElements */
+	NULL,			/* SetElement */
+	NULL,			/* Replace */
+	NULL)			/* In */
 };
-#endif
 
 /*
  *------------------------------------------------------------------------
@@ -189,6 +220,59 @@ GraphemeNext(
 /*
  *------------------------------------------------------------------------
  *
+ * GraphemePrev --
+ *
+ *	Returns the start of the previous grapheme. uniLen must be positive!
+ *
+ * Results:
+ *	Pointer to start of previous grapheme.
+ *
+ * Side effects:
+ *	None.
+ *
+ *------------------------------------------------------------------------
+ */
+static Tcl_UniChar *
+GraphemePrev(
+    const Tcl_UniChar *uniEndPtr,	/* Points beyond grapheme to return */
+    Tcl_Size uniLen)			/* Number of preceding Tcl_UniChar's,
+					 * must be > 0! */
+{
+    assert(uniLen > 0);
+
+    /*
+     * The utf8proc grapheme functions only maintain correct state when
+     * traversing in the forward direction. We have to therefore first go
+     * back to a place that is guaranteed to not be in the middle of a
+     * grapheme and work forward from there. The reason for having to work
+     * forward is that the backward scan is a conservative heuristic and
+     * may go further back than it needs to. Therefore we have to work
+     * forward again to skip over the extra scan.
+     */
+    Tcl_UniChar *uniStartPtr = uniEndPtr - uniLen;
+    Tcl_UniChar *uniPtr = uniEndPtr - 1;
+    while (uniPtr > uniStartPtr
+	    && ((*uniPtr == '\n' && uniPtr[-1] == '\r') ||
+		IsPossibleContinuation(*uniPtr) || IsPossiblePrefix(uniPtr[-1]))) {
+	uniPtr--;
+    }
+
+    /* Now scan forward. Note uniPtr may be < uniStartPtr if uniLen was 0 */
+    Tcl_Size grLen = 0;
+    int state = 0;
+    Tcl_UniChar *grPtr;
+    assert(uniEndPtr > uniPtr);
+    do {
+	grPtr = uniPtr;
+	uniPtr = GraphemeNext(uniPtr, uniEndPtr - uniPtr);
+    } while (uniPtr < uniEndPtr);
+    grLen = uniEndPtr - grPtr;
+    return grPtr;
+}
+
+/*
+ *------------------------------------------------------------------------
+ *
  * GraphemeLength --
  *
  *	Counts the number of graphemes in the passed string.
@@ -237,7 +321,7 @@ GraphemeIndex(
     Tcl_Size uniLen,		/* Number of Tcl_UniChar's in string. -1 if
 				 * nul terminated */
     Tcl_Size grIndex,		/* Index of desired grapheme */
-    Tcl_Size *grWidthPtr)		/* Length of grapheme */
+    Tcl_Size *grWidthPtr)	/* Length of grapheme */
 {
     if (grIndex >= 0) {
 	if (uniLen < 0) {
@@ -605,6 +689,252 @@ GraphemeReverseCmd (
     assert(tempPtr == tempBufPtr);
     Tcl_SetObjResult(interp, Tcl_NewUnicodeObj(tempBufPtr, uniLen));
     Tcl_Free(tempBufPtr);
+    return TCL_OK;
+}
+
+/*
+ *------------------------------------------------------------------------
+ *
+ * GraphemeListRepNew --
+ *
+ *	Allocates a new GraphemeListRep internal representation for the
+ *	graphemeList type. The returned GraphemeListRep has a reference
+ *	count of 0.
+ *
+ * Results:
+ *	Pointer to the allocated GraphemeListRep.
+ *
+ *------------------------------------------------------------------------
+ */
+static inline GraphemeListRep *
+GraphemeListRepNew(
+    Tcl_Obj *objPtr)		/* Target Tcl_Obj containing graphemes */
+{
+    GraphemeListRep *glrPtr = Tcl_Alloc(sizeof(*glrPtr));
+    glrPtr->objPtr = objPtr;
+    Tcl_IncrRefCount(objPtr);
+    glrPtr->refCount = 0;
+    glrPtr->graphemeIndex = 0;
+    glrPtr->graphemeOffset = 0;
+    return glrPtr;
+}
+
+/*
+ *------------------------------------------------------------------------
+ *
+ * GraphemeListRepUnref --
+ *
+ *	Decrements the reference count of a GraphemeListRep, freeing
+ *	it if not positive.
+ *
+ * Results:
+ *	None.
+ *
+ *------------------------------------------------------------------------
+ */
+static inline void
+GraphemeListRepDecrRefs(GraphemeListRep *glrPtr)
+{
+    if (glrPtr->refCount <= 1) {
+	if (glrPtr->objPtr != NULL) {
+	    Tcl_DecrRefCount(glrPtr->objPtr);
+	}
+    } else {
+	glrPtr->refCount--;
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * GraphemeListFreeProc --
+ *
+ *      Frees resources associated with a GraphemeList object's
+ *      internal representation.
+ *
+ * Results:
+ *	None
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+GraphemeListFreeProc(
+    Tcl_Obj *objPtr)
+{
+    GraphemeListRepDecrRefs(
+	    (GraphemeListRep *)objPtr->internalRep.otherValuePtr);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * GraphemeListDupProc --
+ *
+ *	Initialize the internal representation of a new Tcl_Obj to a copy of
+ *	the internal representation of an existing GraphemeList object.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	copyPtr's internal rep is set to a copy of srcPtr's internal
+ *	representation.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+GraphemeListDupProc(
+    Tcl_Obj *srcPtr,		/* Object with internal rep to copy. Must have
+				 * an internal rep of type "graphemeList". */
+    Tcl_Obj *copyPtr)		/* Object with internal rep to set. Must not
+				 * currently have an internal rep.*/
+{
+    copyPtr->internalRep.otherValuePtr = srcPtr->internalRep.otherValuePtr;
+    ((GraphemeListRep *)srcPtr->internalRep.otherValuePtr)->refCount++;
+    copyPtr->typePtr = srcPtr->typePtr;
+}
+
+/*
+ *------------------------------------------------------------------------
+ *
+ * GraphemeListLengthProc --
+ *
+ *	Returns the number of elements in a GraphemeList.
+ *
+ * Results:
+ *	Count of graphemes.
+ *
+ * Side effects:
+ *	None.
+ *
+ *------------------------------------------------------------------------
+ */
+Tcl_Size
+GraphemeListLengthProc (
+    Tcl_Obj *objPtr
+)
+{
+    GraphemeListRep *glrPtr = (GraphemeListRep *) objPtr->internalRep.otherValuePtr;
+    Tcl_Size uniLen;
+    Tcl_UniChar *uniPtr = Tcl_GetUnicodeFromObj(glrPtr->objPtr, &uniLen);
+    return GraphemeLength(uniPtr, uniLen);
+}
+
+/*
+ *------------------------------------------------------------------------
+ *
+ * GraphemeListIndexProc --
+ *
+ *	Retrieve the grapheme at the specified index.
+ *
+ * Results:
+ *	Pointer to the Tcl_Obj containing the grapheme.
+ *
+ * Side effects:
+ *	None.
+ *
+ *------------------------------------------------------------------------
+ */
+int
+GraphemeListIndexProc (
+    Tcl_Interp *interp,
+    Tcl_Obj *objPtr,		/* Source list */
+    Tcl_Size index,		/* Element index */
+    Tcl_Obj **elemPtrPtr)	/* Returned element */
+{
+    GraphemeListRep *glrPtr = (GraphemeListRep *) objPtr->internalRep.otherValuePtr;
+    Tcl_Size uniLen;
+    Tcl_UniChar *uniStartPtr = Tcl_GetUnicodeFromObj(glrPtr->objPtr, &uniLen);
+    Tcl_UniChar *grPtr = NULL;
+    Tcl_Size grWidth = 0;
+
+    /*
+     * We will use the cached index or start from 0 depending on
+     * - the requested index is greater than the cached index - use the cache
+     * - the requested index is smaller than the cached index - use the cache
+     *   iff (index > 2*(cachedIndex-index)). This is because moving backwards
+     *   involves both backward and forward scans and is therefore slower.
+     */
+    assert(glrPtr->graphemeOffset <= uniLen);
+    if (index >= glrPtr->graphemeIndex) {
+	/* Move forward from the cached index */
+	grPtr = GraphemeIndex(glrPtr->graphemeOffset + uniStartPtr,
+		uniLen - glrPtr->graphemeOffset, index - glrPtr->graphemeIndex,
+		&grWidth);
+    } else if (index > 2*(glrPtr->graphemeIndex - index)) {
+	/* index is sufficiently closer to cached index */
+	assert(glrPtr->graphemeOffset > 0);
+	assert(glrPtr->graphemeOffset <= uniLen);
+	Tcl_UniChar *uniEndPtr = uniStartPtr + glrPtr->graphemeOffset;
+	Tcl_Size currentIndex = glrPtr->graphemeIndex;
+	while (uniEndPtr > uniStartPtr) {
+	    Tcl_UniChar *uniPtr;
+	    uniPtr = GraphemePrev(uniEndPtr, uniEndPtr - uniStartPtr);
+	    if (--currentIndex == index) {
+		grPtr = uniPtr;
+		grWidth = uniEndPtr - uniPtr;
+		break;
+	    }
+	    uniEndPtr = uniPtr;
+	}
+    } else {
+	/* Start from the beginning */
+	grPtr = GraphemeIndex(uniStartPtr, uniLen, index, &grWidth);
+    }
+    if (grPtr != NULL) {
+	/* Update the cached values */
+	assert(index >= 0);
+	assert(grPtr >= uniStartPtr);
+	assert((grPtr - uniStartPtr) < uniLen);
+	glrPtr->graphemeIndex = index;
+	glrPtr->graphemeOffset = grPtr - uniStartPtr;
+	*elemPtrPtr = grWidth ? Tcl_NewUnicodeObj(grPtr, grWidth) : NULL;
+    } else {
+	/* Index out of bounds */
+	*elemPtrPtr = NULL;
+    }
+    return TCL_OK;
+}
+
+/*
+ *------------------------------------------------------------------------
+ *
+ * GraphemeSplitCmd --
+ *
+ *	Implements the Tcl command "grapheme split". Returns a list object
+ *	each element of which is a single grapheme of the string passed
+ *	in objv[1].
+ *
+ * Results:
+ *	TCL_OK    - Success.
+ *	TCL_ERROR - Error.
+ *
+ * Side effects:
+ *	Interpreter result holds result or error message.
+ *
+ *------------------------------------------------------------------------
+ */
+int
+GraphemeSplitCmd (
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,		/* Current interpreter. */
+    Tcl_Size objc,		/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "string");
+	return TCL_ERROR;
+    }
+
+    Tcl_Obj *objPtr;
+    TclNewObj(objPtr);
+    objPtr->typePtr = &tclGraphemeListType;
+    GraphemeListRep *glrPtr = GraphemeListRepNew(objv[1]);
+    glrPtr->refCount = 1;
+    objPtr->internalRep.otherValuePtr = glrPtr;
+    Tcl_InvalidateStringRep(objPtr);
+    Tcl_SetObjResult(interp, objPtr);
     return TCL_OK;
 }
 

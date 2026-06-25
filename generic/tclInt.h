@@ -1210,6 +1210,8 @@ TclObjTypeInOperator(
     return proc(interp, valueObj, listObj, boolResult);
 }
 
+MODULE_SCOPE void TclAbstractListUpdateString(Tcl_Obj *objPtr);
+
 /*
  * The structure below defines an entry in the assocData hash table which is
  * associated with an interpreter. The entry contains a pointer to a function
