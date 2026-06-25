@@ -34,7 +34,7 @@ namespace eval grapheme::test {
 
     tcltests::testnumargs "grapheme next" "string strIndex" ""
 
-    foreach testCase [getGraphemeData] {
+    foreach testCase [list [list 0 "empty string" ""] {*}[getGraphemeData]] {
         lassign $testCase testNum comment graphemes
         test grapheme-next-ucd-$testNum.0 $comment -body {
             set text [join $graphemes ""]
@@ -51,7 +51,7 @@ namespace eval grapheme::test {
 
     tcltests::testnumargs "grapheme prev" "string strIndex" ""
 
-    foreach testCase [getGraphemeData] {
+    foreach testCase [list [list 0 "empty string" ""] {*}[getGraphemeData]] {
         lassign $testCase testNum comment graphemes
         test grapheme-prev-ucd-$testNum.0 $comment -body {
             set text [join $graphemes ""]
@@ -74,12 +74,15 @@ namespace eval grapheme::test {
             grapheme length [join $graphemes ""]
         } -result [llength $graphemes]
     }
+    test grapheme-length-empty-1.0 $comment -body {
+        grapheme length ""
+    } -result 0
 
     ### grapheme index
 
     tcltests::testnumargs "grapheme index" "string grIndex" ""
 
-    foreach testCase [getGraphemeData] {
+    foreach testCase [list [list 0 "empty string" ""] {*}[getGraphemeData]] {
         lassign $testCase testNum comment graphemes
         set text [join $graphemes ""]
         set len [llength $graphemes]
@@ -106,12 +109,18 @@ namespace eval grapheme::test {
             incr offset [string length [lindex $graphemes $i]]
         }
     }
+    test grapheme-offset-oob-1.0 {Negative index} -body {
+        grapheme offset abc -42
+    } -result -1
+    test grapheme-offset-oob-1.1 {Index too large} -body {
+        grapheme offset abc 42
+    } -result -1
 
     ### grapheme range
 
     tcltests::testnumargs "grapheme range" "string grFirst grLast" ""
 
-    foreach testCase [getGraphemeData] {
+    foreach testCase [list [list 0 "empty string" ""] {*}[getGraphemeData]] {
         lassign $testCase testNum comment graphemes
         set text [join $graphemes ""]
         set len [llength $graphemes]
@@ -129,7 +138,7 @@ namespace eval grapheme::test {
 
     tcltests::testnumargs "grapheme reverse" "string" ""
 
-    foreach testCase [getGraphemeData] {
+    foreach testCase [list [list 0 "empty string" ""] {*}[getGraphemeData]] {
         lassign $testCase testNum comment graphemes
         set text [join $graphemes ""]
         set len [llength $graphemes]
@@ -142,7 +151,7 @@ namespace eval grapheme::test {
 
     tcltests::testnumargs "grapheme split" "string" ""
 
-    foreach testCase [getGraphemeData] {
+    foreach testCase [list [list 0 "empty string" ""] {*}[getGraphemeData]] {
         lassign $testCase testNum comment graphemes
         set text [join $graphemes ""]
         set len [llength $graphemes]
