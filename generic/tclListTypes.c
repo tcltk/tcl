@@ -347,8 +347,6 @@ TclAbstractListUpdateString(
     char localFlags[LOCAL_SIZE], *flagPtr = NULL;
     Tcl_Size numElems, i, length;
     size_t bytesNeeded = 0;
-    Tcl_Obj *elemObj;
-    const char *elem;
     char *start, *dst;
     int ret;
 
@@ -372,6 +370,8 @@ TclAbstractListUpdateString(
 	flagPtr = (char *)Tcl_Alloc(numElems);
     }
     for (i = 0; i < numElems; i++) {
+        Tcl_Obj *elemObj;
+        const char *elem;
 	flagPtr[i] = (i ? TCL_DONT_QUOTE_HASH : 0);
 	ret = Tcl_ListObjIndex(NULL, objPtr, i, &elemObj);
 	assert(ret == TCL_OK);
@@ -382,9 +382,7 @@ TclAbstractListUpdateString(
 		    "u bytes) exceeded",
 		    SIZE_MAX);
 	}
-#if TCL_MAJOR_VERSION > 8
 	Tcl_BounceRefCount(elemObj);
-#endif
     }
     bytesNeeded += numElems; /* Including trailing nul */
 
@@ -394,12 +392,15 @@ TclAbstractListUpdateString(
 
     start = dst = (char *) Tcl_Alloc(bytesNeeded);
     for (i = 0; i < numElems; i++) {
+        Tcl_Obj *elemObj;
+        const char *elem;
 	flagPtr[i] |= (i ? TCL_DONT_QUOTE_HASH : 0);
 	ret = Tcl_ListObjIndex(NULL, objPtr, i, &elemObj);
 	assert(ret == TCL_OK);
 	elem = Tcl_GetStringFromObj(elemObj, &length);
 	dst += TclConvertElement(elem, length, dst, flagPtr[i]);
 	*dst++ = ' ';
+	Tcl_BounceRefCount(elemObj);
     }
     dst[-1] = '\0'; /* Overwrite last space */
     size_t finalLen = dst - start; /* Includes trailing nul */
