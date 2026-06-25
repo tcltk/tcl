@@ -90,6 +90,23 @@ namespace eval grapheme::test {
         }
     }
 
+    ### grapheme offset
+
+    tcltests::testnumargs "grapheme offset" "string grIndex" ""
+
+    foreach testCase [getGraphemeData] {
+        lassign $testCase testNum comment graphemes
+        set text [join $graphemes ""]
+        set len [llength $graphemes]
+        set offset 0
+        for {set i 0} {$i < $len} {incr i} {
+            test grapheme-offset-ucd-$testNum.$offset $comment -body {
+                grapheme offset $text $i
+            } -result $offset
+            incr offset [string length [lindex $graphemes $i]]
+        }
+    }
+
     ### grapheme range
 
     tcltests::testnumargs "grapheme range" "string grFirst grLast" ""

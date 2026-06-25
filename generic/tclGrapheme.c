@@ -40,6 +40,7 @@
 static Tcl_ObjCmdProc2		GraphemeIndexCmd;
 static Tcl_ObjCmdProc2		GraphemeLengthCmd;
 static Tcl_ObjCmdProc2		GraphemeNextCmd;
+static Tcl_ObjCmdProc2		GraphemeOffsetCmd;
 static Tcl_ObjCmdProc2		GraphemePrevCmd;
 static Tcl_ObjCmdProc2		GraphemeRangeCmd;
 static Tcl_ObjCmdProc2		GraphemeReverseCmd;
@@ -53,6 +54,7 @@ const EnsembleImplMap tclGraphemeImplMap[] = {
     {"index",	GraphemeIndexCmd,	TclCompileGraphemeIndexCmd, NULL, NULL, 0},
     {"length",	GraphemeLengthCmd,	TclCompileGraphemeLengthCmd, NULL, NULL, 0},
     {"next",	GraphemeNextCmd,	TclCompileGraphemeNextCmd, NULL, NULL, 0},
+    {"offset",	GraphemeOffsetCmd,	NULL, NULL, NULL, 0},
     {"prev",	GraphemePrevCmd,	TclCompileGraphemePrevCmd, NULL, NULL, 0},
     {"range",	GraphemeRangeCmd,	TclCompileGraphemeRangeCmd, NULL, NULL, 0},
     {"reverse",	GraphemeReverseCmd,	TclCompileGraphemeReverseCmd, NULL, NULL, 0},
@@ -317,7 +319,7 @@ GraphemeIndex(
     Tcl_Size uniLen,		/* Number of Tcl_UniChar's in string. -1 if
 				 * nul terminated */
     Tcl_Size grIndex,		/* Index of desired grapheme */
-    Tcl_Size *grWidthPtr)	/* Length of grapheme */
+    Tcl_Size *grWidthPtr)	/* Location for grapheme width, may be NULL */
 {
     if (grIndex >= 0) {
 	if (uniLen < 0) {
@@ -535,7 +537,7 @@ GraphemeLengthCmd (
 static int
 GraphemeIndexCmd (
     TCL_UNUSED(void *),
-    Tcl_Interp *interp,	/* Current interpreter. */
+    Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
@@ -558,6 +560,53 @@ GraphemeIndexCmd (
     const Tcl_UniChar *grPtr = GraphemeIndex(uniPtr, uniLen, grIndex, &grWidth);
     assert(grPtr);	/* Since we already checked length above */
     Tcl_SetObjResult(interp, Tcl_NewUnicodeObj(grPtr, grWidth));
+
+    return TCL_OK;
+}
+
+/*
+ *------------------------------------------------------------------------
+ *
+ * GraphemeOffsetCmd --
+ *
+ *	Implements the Tcl "grapheme offset" command. Stores the offset of
+ *	the specified grapheme index into the interpreter result.
+ *
+ * Results:
+ *	A standard Tcl result code.
+ *
+ * Side effects:
+ *	Modifies interpreter result.
+ *
+ *------------------------------------------------------------------------
+ */
+static int
+GraphemeOffsetCmd (
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,		/* Current interpreter. */
+    Tcl_Size objc,		/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    if (objc != 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "string grIndex");
+	return TCL_ERROR;
+    }
+
+    Tcl_Size grIndex, grLen, uniLen;
+    Tcl_UniChar *uniPtr = Tcl_GetUnicodeFromObj(objv[1], &uniLen);
+    grLen = GraphemeLength(uniPtr, uniLen); /* Need for end, end-1 etc. */
+    if (TclGetIntForIndexM(interp, objv[2], grLen - 1, &grIndex) != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    if (grIndex < 0 || grIndex >= grLen) {
+	Tcl_SetObjResult(interp, Tcl_NewIntObj(-1));
+    } else {
+	const Tcl_UniChar *grPtr;
+	grPtr = GraphemeIndex(uniPtr, uniLen, grIndex, NULL);
+	assert(grPtr); /* Since we already checked length above */
+	Tcl_SetObjResult(interp, Tcl_NewWideIntObj(grPtr - uniPtr));
+    }
 
     return TCL_OK;
 }
