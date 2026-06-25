@@ -546,11 +546,11 @@ test-core: tcltest
 	set TCL_LIBRARY=$(TCL_TEST_LIBRARY)
 !if $(STATIC_BUILD)
 	$(DEBUGGER) $(TCLTEST) "$(ROOT:\=/)/tests/all.tcl" $(TESTFLAGS) -loadfile <<
-		package ifneeded dde 1.5a2 [list load {} Dde]
+		package ifneeded dde 1.5b0 [list load {} Dde]
 <<
 !else
 	$(DEBUGGER) $(TCLTEST) "$(ROOT:\=/)/tests/all.tcl" $(TESTFLAGS) -loadfile <<
-		package ifneeded dde 1.5a2 [list load "$(TCLDDELIB:\=/)"]
+		package ifneeded dde 1.5b0 [list load "$(TCLDDELIB:\=/)"]
 <<
 !endif
 

@@ -1335,7 +1335,7 @@ TclWinGetExecutableType(
 	}
     }
 
-checkExtension: /* hFile should be open handle at this point */
+  checkExtension: /* hFile should be open handle at this point */
     /*
      * Could not identify based on content. Check the extension.
      * Not clear why .cmd and .bat which are actually run by cmd.exe are
@@ -1344,7 +1344,8 @@ checkExtension: /* hFile should be open handle at this point */
     CloseHandle(hFile);
     WCHAR *ext = wcsrchr(nativePath, L'.');
     if ((ext != NULL) &&
-	(_wcsicmp(ext, L".cmd") == 0 || _wcsicmp(ext, L".bat") == 0 ||
+	    (_wcsicmp(ext, L".cmd") == 0 ||
+	    _wcsicmp(ext, L".bat") == 0 ||
 	    _wcsicmp(ext, L".com") == 0)) {
 	return APPL_DOS;
     }
@@ -1487,7 +1488,7 @@ ApplicationType(
 		}
 		size_t numBytes = (char *)lastSep - (char *)fullNativePath;
 		Tcl_DStringAppend(&dsSearchDirs, (char *)fullNativePath,
-		    numBytes);
+			numBytes);
 	    }
 	    fullNativePath = TclWinPathReset(&winPath, &winPathCapacity);
 	}
@@ -1512,7 +1513,7 @@ ApplicationType(
 	    if (fullNativePath[0] != L'\0') {
 		Tcl_DStringAppend(&dsSearchDirs, (char *)L";", sizeof(WCHAR));
 		Tcl_DStringAppend(&dsSearchDirs, (char *)fullNativePath,
-		    wcslen(fullNativePath) * sizeof(WCHAR));
+			wcslen(fullNativePath) * sizeof(WCHAR));
 	    }
 	    fullNativePath = TclWinPathReset(&winPath, &winPathCapacity);
 	}
@@ -1523,7 +1524,7 @@ ApplicationType(
 	    if (fullNativePath[0] != L'\0') {
 		Tcl_DStringAppend(&dsSearchDirs, (char *)L";", sizeof(WCHAR));
 		Tcl_DStringAppend(&dsSearchDirs, (char *)fullNativePath,
-		    wcslen(fullNativePath) * sizeof(WCHAR));
+			wcslen(fullNativePath) * sizeof(WCHAR));
 	    }
 	    fullNativePath = TclWinPathReset(&winPath, &winPathCapacity);
 	}
@@ -1534,7 +1535,7 @@ ApplicationType(
 	    if (envPathPtr[0] != L'\0') {
 		Tcl_DStringAppend(&dsSearchDirs, (char *)L";", sizeof(WCHAR));
 		Tcl_DStringAppend(&dsSearchDirs, (char *)envPathPtr,
-		    wcslen(envPathPtr) * sizeof(WCHAR));
+			wcslen(envPathPtr) * sizeof(WCHAR));
 	    }
 	    TclWinPathFree(&envPath);
 	}
@@ -1598,7 +1599,7 @@ ApplicationType(
 		winPathCapacity = numChars;
 		fullNativePath = TclWinPathResize(&winPath, winPathCapacity);
 		numChars = SearchPathW(dirStart, (WCHAR *)nativeName, NULL,
-		    winPathCapacity, fullNativePath, &rest);
+			winPathCapacity, fullNativePath, &rest);
 		if (numChars == 0 || numChars >= winPathCapacity) {
 		    continue; /* Give up on this dir+ext combination. */
 		}
@@ -1607,7 +1608,7 @@ ApplicationType(
 	    applType = TclWinGetExecutableType(fullNativePath);
 	    if (applType != APPL_NONE) {
 		Tcl_WCharToUtfDString(fullNativePath, TCL_AUTO_LENGTH,
-		    dsFullNamePtr);
+			dsFullNamePtr);
 		goto resolved;
 	    }
 	} /* end inner loop for extensions within a dir */
@@ -1623,8 +1624,8 @@ resolved:
     case APPL_NONE:
 	Tcl_WinConvertError(winError ? winError : ERROR_FILE_NOT_FOUND);
 	if (interp) {
-	    Tcl_SetObjResult(interp,
-		Tcl_ObjPrintf("couldn't execute \"%s\": %s", originalName,
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "couldn't execute \"%s\": %s", originalName,
 		    Tcl_PosixError(interp)));
 	}
 	Tcl_DStringFree(dsFullNamePtr);

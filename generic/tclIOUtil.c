@@ -4027,8 +4027,8 @@ TclFSNonnativePathType(
 			type = TCL_PATH_ABSOLUTE;
 			matched = true;
 		    } else if (len > 2 && strVol[len - 1] == '/' &&
-			       strVol[len - 2] == ':' &&
-			       strncmp(strVol, path, len - 2) == 0) {
+			    strVol[len - 2] == ':' &&
+			    strncmp(strVol, path, len - 2) == 0) {
 			matched = true;
 			type = TCL_PATH_VOLUME_RELATIVE;
 			len--;
