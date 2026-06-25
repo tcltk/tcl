@@ -32,10 +32,10 @@ to the userbase.
 # Updated bundled packages, libraries, standards, data
  - autoconf 2.73
  - http 2.10.2
- - Itcl 4.3.7
+ - Itcl 4.3.8
  - sqlite3 3.53.0
  - tcltest 2.5.11
- - Thread 3.0.5
+ - Thread 3.0.6
  - tzdata 2026b
  - zlib 1.3.2
 
