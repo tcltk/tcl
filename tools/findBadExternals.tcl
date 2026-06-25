@@ -21,31 +21,27 @@ proc main {argc argv} {
 	puts stderr "syntax is: [info script] libtcl"
 	return 1
     }
+    lassign $argv libtcl
 
-    switch -exact -- $::tcl_platform(platform) {
-	unix -
-	macosx {
-	    set status [catch {
-		exec nm --extern-only --defined-only [lindex $argv 0]
-	    } result]
+    try {
+	switch $::tcl_platform(platform) {
+	    unix - macosx {
+		exec nm --extern-only --defined-only $libtcl
+	    }
+	    windows {
+		exec dumpbin /exports $libtcl
+	    }
 	}
-	windows {
-	    set status [catch {
-		exec dumpbin /exports [lindex $argv 0]
-	    } result]
+    } on ok result - trap NONE result {
+	foreach line [split $result \n] {
+	    if {! [string match {* [Tt]cl*} $line]} {
+		puts $line
+	    }
 	}
-    }
-    if {$status != 0 && $::errorCode ne "NONE"} {
-	puts $result
+	return 0
+    } on error msg {
+	puts stderr $msg
 	return 1
     }
-
-    foreach line [split $result \n] {
-	if {! [string match {* [Tt]cl*} $line]} {
-	    puts $line
-	}
-    }
-
-    return 0
 }
 exit [main $::argc $::argv]
