@@ -370,8 +370,8 @@ TclAbstractListUpdateString(
 	flagPtr = (char *)Tcl_Alloc(numElems);
     }
     for (i = 0; i < numElems; i++) {
-        Tcl_Obj *elemObj;
-        const char *elem;
+	Tcl_Obj *elemObj;
+	const char *elem;
 	flagPtr[i] = (i ? TCL_DONT_QUOTE_HASH : 0);
 	ret = Tcl_ListObjIndex(NULL, objPtr, i, &elemObj);
 	assert(ret == TCL_OK);
@@ -392,8 +392,8 @@ TclAbstractListUpdateString(
 
     start = dst = (char *) Tcl_Alloc(bytesNeeded);
     for (i = 0; i < numElems; i++) {
-        Tcl_Obj *elemObj;
-        const char *elem;
+	Tcl_Obj *elemObj;
+	const char *elem;
 	flagPtr[i] |= (i ? TCL_DONT_QUOTE_HASH : 0);
 	ret = Tcl_ListObjIndex(NULL, objPtr, i, &elemObj);
 	assert(ret == TCL_OK);
