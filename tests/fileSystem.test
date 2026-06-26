@@ -1063,10 +1063,15 @@ test filesystem-10.1 {Bug 3414754} {
 
 # The filesystem-11.* tests are currently disabled on WSL because it is
 # case-sensitivity depends on whether running on a Windows FS or Unix FS.
-
+# The filesystem-11.* tests are currently disabled on MacOS.
+# See Bug [e6ca0b1b67]
 test filesystem-11.1 {
     Bug 10890417 - case of tail is correct after normalization
-} -constraints notWSL -body {
+} -constraints {notWSL notOSX} -setup {
+    makeFile "" mIxEdCaSe.TxT
+} -cleanup {
+    removeFile mIxEdCaSe.TxT
+} -body {
     lmap file1 [glob $tempDir/mixedcase.file \
 	$tempDir/MIXEDCASE.FILE \
 	$tempDir/MixedCase.File \
@@ -1081,11 +1086,15 @@ test filesystem-11.1 {
 
 test filesystem-11.2 {
     Bug 10890417 - case of tail is correct after normalization (-directory)
-} -constraints notWSL -body {
+} -constraints {notWsl notOSX} -setup {
+    makeFile "" mIxEdCaSe.TxT
+} -cleanup {
+    removeFile mIxEdCaSe.TxT
+} -body {
     lmap file1 [glob -directory $tempDir \
-	    mixedcase.file MIXEDCASE.FILE MixedCase.File ] {
-	file normalize $file1
-    }
+                    mixedcase.txt MIXEDCASE.TXT mIxEdCaSe.TxT ] {
+                        file normalize $file1
+                    }
 } -result [expr {
     $caseSensitiveFS
     ? [list [file join $tempDir MixedCase.File]]
@@ -1094,26 +1103,40 @@ test filesystem-11.2 {
 
 test filesystem-11.3 {
     Bug 10890417 - case of dir is correct after normalization
-} -constraints notWSL -body {
-    lmap file1 [glob \
-	    $tempDir/mixedcase.dir/inside.file \
-	    $tempDir/MIXEDCASE.DIR/INSIDE.FILE \
-	    $tempDir/MixedCase.Dir/Inside.File] {
-	file tail [file dirname [file normalize $file1]]
-    }
+} -constraints {notWsl notOSX} -setup {
+    set dir [makeDirectory MiXeDcAsE]
+    set parent [file dirname $dir]
+    makeFile "" foo.txt $dir
+} -cleanup {
+    removeFile foo.txt $dir
+    removeDirectory MiXeDcAsE
+    unset -nocomplain parent dir
+} -body {
+    lmap file1 [glob $parent/mixedcase/foo.txt \
+                    $parent/MIXEDCASE/foo.txt \
+                    $parent/MiXeDcAsE/foo.txt] {
+                        file tail [file dirname [file normalize $file1]]
+                    }
 } -result [expr {
     $caseSensitiveFS ?  [list MixedCase.Dir] :[lrepeat 3 MixedCase.Dir]
 }]
 
 test filesystem-11.4 {
     Bug 10890417 - case of dir is correct after normalization (-directory)
-} -constraints notWSL -body {
-    lmap file1 [concat \
-	    [glob -dir $tempDir/mixedcase.dir inside.file] \
-	    [glob -dir $tempDir/MIXEDCASE.DIR INSIDE.FILE] \
-	    [glob -dir $tempDir/MixedCase.Dir Inside.File]] {
-	file tail [file dirname [file normalize $file1]]
-    }
+} -constraints {notWsl notOSX} -setup {
+    set dir [makeDirectory MiXeDcAsE]
+    set parent [file dirname $dir]
+    makeFile "" foo.txt $dir
+} -cleanup {
+    removeFile foo.txt $dir
+    removeDirectory MiXeDcAsE
+    unset -nocomplain parent dir
+} -body {
+    lmap file1 [concat [glob -dir $parent/mixedcase foo.txt] \
+                    [glob -dir $parent/MIXEDCASE foo.txt] \
+                    [glob -dir $parent/MiXeDcAsE foo.txt]] {
+                        file tail [file dirname [file normalize $file1]]
+                    }
 } -result [expr {
     $caseSensitiveFS ?  [list MixedCase.Dir] :[lrepeat 3 MixedCase.Dir]
 }]
