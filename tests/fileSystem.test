@@ -1263,7 +1263,12 @@ test filesystem-13.12 {
     : "$tempDir/MixedCase.Dir/Inside.File"
 }]]
 
-file delete -force MixedCaseLink.Dir MixedCaseLink.File
+catch {
+	file delete -force MixedCaseLink.File MixedCaseLink.Dir
+}
+removeFile [file join MixedCase.Dir Inside.File]
+removeDirectory MixedCase.Dir
+removeFile MixedCase.File
 
 cleanupTests
 unset -nocomplain drive drives
