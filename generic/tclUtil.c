@@ -3447,6 +3447,65 @@ TclPrecTraceProc(
 /*
  *----------------------------------------------------------------------
  *
+ * TclFormatDouble --
+ *
+ *	Format a floating-point value with a printf-style format, like
+ *	snprintf(), but always using '.' as the decimal separator regardless
+ *	of the process LC_NUMERIC locale.
+ *
+ *	Tcl treats numbers as locale-independent: the decimal separator is
+ *	always '.' and Tcl forces LC_NUMERIC to "C" during initialization (see
+ *	TclpSetInitialEncodings).  However an embedding application (e.g. a
+ *	Python program using tkinter) may set LC_NUMERIC to a locale that uses
+ *	another separator after Tcl is initialized.  Plain snprintf() would
+ *	then format e.g. 0.1 as "0,1", which is not a valid Tcl number and
+ *	fails to parse when read back from a linked variable or a widget
+ *	subcommand result.  This wrapper normalizes the separator back to '.'.
+ *
+ * Results:
+ *	The return value of snprintf(): the number of characters that would
+ *	have been written had the buffer been large enough (excluding the
+ *	terminating NUL), or a negative value on error.
+ *
+ * Side effects:
+ *	Writes the formatted string to buffer.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclFormatDouble(
+    char *buffer,		/* Where to store the formatted string. */
+    size_t size,		/* Size of buffer in bytes. */
+    const char *format,		/* A printf-style format containing a single
+				 * floating-point conversion, e.g. "%.4g". */
+    double value)		/* The value to format. */
+{
+    int length = snprintf(buffer, size, format, value);
+    const char *decimal = localeconv()->decimal_point;
+
+    /*
+     * snprintf() above honours LC_NUMERIC.  If that locale uses a single-byte
+     * decimal separator other than '.' (e.g. ',' in many European locales),
+     * replace it so the result stays a valid Tcl number.  printf's "%f"/"%e"/
+     * "%g" conversions emit at most one such separator and never a thousands
+     * separator, so a single replacement is sufficient.
+     */
+
+    if (length > 0 && decimal[0] != '.' && decimal[1] == '\0') {
+	size_t scan = ((size_t)length < size) ? (size_t)length : size - 1;
+	char *p = (char *)memchr(buffer, decimal[0], scan);
+
+	if (p != NULL) {
+	    *p = '.';
+	}
+    }
+    return length;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TclNeedSpace --
  *
  *	This function checks to see whether it is appropriate to add a space
