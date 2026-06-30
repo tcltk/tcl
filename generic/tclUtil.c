@@ -16,6 +16,7 @@
 #include "tclParse.h"
 #include "tclStringTrim.h"
 #include <math.h>
+#include <locale.h>
 
 /*
  * The absolute pathname of the executable in which this Tcl library is
