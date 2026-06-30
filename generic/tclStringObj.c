@@ -2545,7 +2545,7 @@ Tcl_AppendFormatToObj(
 		goto errorMsg;
 	    }
 	    bytes = TclGetString(segment);
-	    if (!Tcl_AttemptSetObjLength(segment, snprintf(bytes, segment->length, spec, d))) {
+	    if (!Tcl_AttemptSetObjLength(segment, TclFormatDouble(bytes, segment->length, spec, d))) {
 		if (allocSegment) {
 		    Tcl_DecrRefCount(segment);
 		}
