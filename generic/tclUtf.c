@@ -132,11 +132,9 @@ UtfCount(
     if (ch <= 0x7FF) {
 	return 2;
     }
-#if TCL_UTF_MAX > 3
     if (((unsigned)(ch - 0x10000) <= 0xFFFFF)) {
-	return 4;
+	return (TCL_UTF_MAX > 3) ? 4 : 6;
     }
-#endif
     return 3;
 }
 
