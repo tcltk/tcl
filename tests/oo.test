@@ -2794,6 +2794,7 @@ test oo-16.16 {OO: object introspection: creationid #500} -setup {
     list $id $id2
 } -cleanup {
     cls destroy
+    unset -nocomplain id id2
 } -result {^(\d+) \1$} -match regexp
 test oo-16.17 {OO: object introspection: creationid #500} -body {
     info object creationid nosuchobject

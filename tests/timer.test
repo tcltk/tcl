@@ -97,6 +97,7 @@ test timer-2.1 {Tcl_DeleteTimerHandler procedure} -setup {
 } -result {100 200}
 
 test timer-2.1.1 {Tcl_DeleteTimerHandler procedure - timer in} -setup {
+    unset -nocomplain id
     foreach i [timer info] {
 	timer cancel $i
     }
