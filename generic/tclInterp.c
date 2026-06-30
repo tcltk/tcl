@@ -5369,7 +5369,7 @@ TclInitStaticPackages(
      */
 #if defined(_WIN32) && defined(STATIC_BUILD)
     Tcl_StaticLibrary(NULL, "Dde", Dde_Init, Dde_SafeInit);
-    result = Tcl_Eval(interp, "package ifneeded dde 1.5b0 [list load {} Dde]");
+    result = Tcl_Eval(interp, "package ifneeded dde 1.5b1 [list load {} Dde]");
 #else
     (void)interp;		/* Silence compiler */
 #endif
