@@ -432,7 +432,6 @@ static const EnsembleSetup ensembleCommands[] = {
     {"dict",		tclDictImplMap,		NULL, CMD_IS_SAFE},
     {"encoding",	tclEncodingImplMap,	NULL, 0},
     {"file",		tclFileImplMap,		NULL, 0},
-    {"grapheme",	tclGraphemeImplMap,	NULL, 0},
     {"info",		tclInfoImplMap,		NULL, CMD_IS_SAFE},
     {"namespace",	tclNamespaceImplMap,	NULL, CMD_IS_SAFE},
     {"string",		tclStringImplMap,	NULL, CMD_IS_SAFE},
@@ -442,6 +441,7 @@ static const EnsembleSetup ensembleCommands[] = {
     {"unicode",		tclUnicodeImplMap,	NULL, CMD_IS_SAFE},
     {"zipfs",		tclZipfsImplMap,	NULL, 0},
     {"zlib",		tclZlibImplMap,		NULL, CMD_IS_SAFE},
+    {"::tcl::unsupported::grapheme", tclGraphemeImplMap, NULL, 0},
     {NULL, NULL, NULL, 0}
 };
 
