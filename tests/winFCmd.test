@@ -1530,7 +1530,7 @@ namespace eval testlongpaths {
 	file join $longPathRoot [join $longPathComponents \\] $pathTail
     } -result $longPathFile
 
-    testlongpath file-join-longpath-0 "deep path file join - relative" {
+    testlongpath file-join-longpath-2 "deep path file join - relative" {
 	file join {*}$deepPathComponents
     } -result [join $deepPathComponents /]
 
@@ -1668,7 +1668,7 @@ namespace eval testlongpaths {
 	ops $deepPathDir dir
     } -result $dirOpsResult
 
-    testlongpath dirops-longpath-2 "Long path directory operations - dot, dotdot" {
+    testlongpath dirops-longpath-3 "Long path directory operations - dot, dotdot" {
 	ops $longPathDir/.././$longPathComponent dir
     } -result $dirOpsResult
 
@@ -1728,7 +1728,7 @@ namespace eval testlongpaths {
 	ops $deepPathFile file
     } -result $fileOpsResult
 
-    testlongpath fileops-longpath-2 "Long path file operations - dot, dotdot" {
+    testlongpath fileops-longpath-3 "Long path file operations - dot, dotdot" {
 	ops $longPathDir/.././$longPathComponent/$pathTail file
     } -result $fileOpsResult
 

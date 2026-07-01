@@ -265,6 +265,7 @@ namespace eval utftest {
 
     proc testfragment {direction enc comment hexin hexout fragindex args} {
 
+	set origargs $args
 	if {$fragindex < 0} {
 	    # Single byte encodings so no question of fragmentation
 	    return
@@ -342,7 +343,7 @@ namespace eval utftest {
 	if {$direction in "toutf toutfex"} {
 	    # Fragmentation but with no more data.
 	    # Only check status. Content output is already checked in above test.
-	    test $cmd-$enc-$id-1 "$cmd - $enc - $hexin - frag=$fragindex - no more data" -constraints $constraints -body {
+	    test $cmd-$enc-$id-$origargs-1 "$cmd - $enc - $hexin - frag=$fragindex - no more data" -constraints $constraints -body {
 		set frag1Result  \
 		    [testencoding $cmd $enc \
 			 [string range $in 0 $fragindex-1] {start end} 0 \
