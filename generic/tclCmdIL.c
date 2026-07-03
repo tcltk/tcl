@@ -130,11 +130,13 @@ static Tcl_ObjCmdProc2	InfoHostnameCmd;
 static Tcl_ObjCmdProc2	InfoLevelCmd;
 static Tcl_ObjCmdProc2	InfoLibraryCmd;
 static Tcl_ObjCmdProc2	InfoLoadedCmd;
+static Tcl_ObjCmdProc2	InfoLocaleCmd;
 static Tcl_ObjCmdProc2	InfoNameOfExecutableCmd;
 static Tcl_ObjCmdProc2	InfoPatchLevelCmd;
 static Tcl_ObjCmdProc2	InfoProcsCmd;
 static Tcl_ObjCmdProc2	InfoScriptCmd;
 static Tcl_ObjCmdProc2	InfoSharedlibCmd;
+static Tcl_ObjCmdProc2	InfoTimezoneCmd;
 static Tcl_ObjCmdProc2	InfoCmdTypeCmd;
 static Tcl_ObjCmdProc2	InfoTclVersionCmd;
 static SortElement *	MergeLists(SortElement *leftPtr, SortElement *rightPtr,
@@ -169,6 +171,7 @@ const EnsembleImplMap tclInfoImplMap[] = {
     {"level",		   InfoLevelCmd,	    TclCompileInfoLevelCmd, NULL, NULL, 0},
     {"library",		   InfoLibraryCmd,	    TclCompileBasic0ArgCmd, NULL, NULL, 0},
     {"loaded",		   InfoLoadedCmd,	    TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
+    {"locale",		   InfoLocaleCmd,	    TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
     {"locals",		   TclInfoLocalsCmd,	    TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
     {"nameofexecutable",   InfoNameOfExecutableCmd, TclCompileBasic0ArgCmd, NULL, NULL, 1},
     {"patchlevel",	   InfoPatchLevelCmd,	    TclCompileBasic0ArgCmd, NULL, NULL, 0},
@@ -176,6 +179,7 @@ const EnsembleImplMap tclInfoImplMap[] = {
     {"script",		   InfoScriptCmd,	    TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
     {"sharedlibextension", InfoSharedlibCmd,	    TclCompileBasic0ArgCmd, NULL, NULL, 0},
     {"tclversion",	   InfoTclVersionCmd,	    TclCompileBasic0ArgCmd, NULL, NULL, 0},
+    {"timezone",	   InfoTimezoneCmd,	    TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
     {"vars",		   TclInfoVarsCmd,	    TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
     {NULL, NULL, NULL, NULL, NULL, 0}
 };
@@ -1707,6 +1711,109 @@ InfoLoadedCmd(
 /*
  *----------------------------------------------------------------------
  *
+ * InfoLocaleCmd --
+ *
+ *	Called to implement the "info locale" command that can be used
+ *	to retreive or set the current locale. Handles the
+ *	following syntax:
+ *
+ *	    info locale ?locale?
+ *
+ * Results:
+ *	Returns TCL_OK if successful and TCL_ERROR if there is an error.
+ *
+ * Side effects:
+ *	Returns a result in the interpreter's result object. If there is an
+ *	error, the result is an error message.
+ *
+ *----------------------------------------------------------------------
+ */
+
+#ifndef LC_ADDRESS
+#   define LC_ADDRESS -1
+#endif
+#ifndef LC_IDENTIFICATION
+#   define LC_IDENTIFICATION -1
+#endif
+#ifndef LC_MEASUREMENT
+#   define LC_MEASUREMENT -1
+#endif
+#ifndef LC_MESSAGES
+#   define LC_MESSAGES -1
+#endif
+#ifndef LC_MONETARY
+#   define LC_MONETARY -1
+#endif
+#ifndef LC_NAME
+#   define LC_NAME -1
+#endif
+#ifndef LC_PAPER
+#   define LC_PAPER -1
+#endif
+#ifndef LC_TELEPHONE
+#   define LC_TELEPHONE -1
+#endif
+
+static int
+InfoLocaleCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,		/* Current interpreter. */
+    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    int index = 12;
+    const char *locale = NULL;
+    static const char *const optionStrings[] = {
+	"-address", "-collate", "-ctype", "-identification", "-measurement", "-messages",
+	"-monetary", "-name", "-numeric", "-paper", "-telephone", "-time", NULL
+    };
+    static const int lcTypes[] = {
+	LC_ADDRESS, LC_COLLATE, LC_CTYPE, LC_IDENTIFICATION, LC_MEASUREMENT, LC_MESSAGES,
+	LC_MONETARY, LC_NAME, LC_NUMERIC, LC_PAPER, LC_TELEPHONE, LC_TIME, LC_ALL
+    };
+
+    if (objc > 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "?option? ?locale?");
+	return TCL_ERROR;
+    }
+    if (objc > 1) {
+	if (Tcl_GetIndexFromObj((objc > 2) ? interp : NULL, objv[1], optionStrings, "option", 0,
+		&index) != TCL_OK) {
+	    if ((objc > 2)) {
+		return TCL_ERROR;
+	    }
+	    if (Tcl_IsSafe(interp)) {
+		goto notSafeError;
+	    }
+	    locale = setlocale(LC_ALL, Tcl_GetString(objv[1]));
+	} else {
+	    if (Tcl_IsSafe(interp) && (objc > 2)) {
+	    notSafeError:
+		Tcl_AppendResult(interp, "Setting locale not allowed in safe interp", (char *)NULL);
+		return TCL_ERROR;
+	    }
+	    if (lcTypes[index] < 0) {
+		Tcl_AppendResult(interp, "option not supported by this platform", (char *)NULL);
+		return TCL_ERROR;
+	    }
+	    locale = setlocale(lcTypes[index], (objc > 2) ? Tcl_GetString(objv[2]) : NULL);
+	}
+	if (!locale) {
+	    Tcl_AppendResult(interp, "invalid locale: \"",
+		    Tcl_GetString(objv[objc-1]), "\"", (char *)NULL);
+	    return TCL_ERROR;
+	}
+    }
+    if (!locale) {
+	locale = setlocale(lcTypes[index], NULL);
+    }
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(locale, TCL_INDEX_NONE));
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * InfoNameOfExecutableCmd --
  *
  *	Called to implement the "info nameofexecutable" command that returns
@@ -2109,6 +2216,55 @@ InfoCmdTypeCmd(
 	Tcl_SetObjResult(interp,
 		Tcl_NewStringObj(TclGetCommandTypeName(command), -1));
     }
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * InfoTimezoneCmd --
+ *
+ *	Called to implement the "info timezone" command that can be used
+ *	to retreive or set the current timezone. Handles the
+ *	following syntax:
+ *
+ *	    info timezone ?timezone?
+ *
+ * Results:
+ *	Returns TCL_OK if successful and TCL_ERROR if there is an error.
+ *
+ * Side effects:
+ *	Returns a result in the interpreter's result object. If there is an
+ *	error, the result is an error message.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+InfoTimezoneCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,		/* Current interpreter. */
+    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    Tcl_Obj *tzObj;
+
+    if (objc > 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "?timezone?");
+	return TCL_ERROR;
+    }
+    if (objc > 1) {
+	tzObj = Tcl_SetVar2Ex(interp, "env", "TCL_TZ", objv[1], TCL_GLOBAL_ONLY);
+    } else {
+	tzObj = Tcl_GetVar2Ex(interp, "env", "TCL_TZ", TCL_GLOBAL_ONLY);
+    }
+    if (!tzObj) {
+	tzObj = Tcl_GetVar2Ex(interp, "env", "TZ", TCL_GLOBAL_ONLY);
+	if (!tzObj) {
+	    tzObj = Tcl_NewStringObj(":localtime", -1);
+	}
+    }
+    Tcl_SetObjResult(interp, tzObj);
     return TCL_OK;
 }
 

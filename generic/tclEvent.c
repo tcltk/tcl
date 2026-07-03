@@ -1177,15 +1177,6 @@ Tcl_InitSubsystems(void)
 
 	    setlocale(LC_CTYPE, "");
 
-	    /*
-	     * In case the initial locale is not "C", ensure that the numeric
-	     * processing is done in "C" locale regardless. This is needed because Tcl
-	     * relies on routines like strtol/strtoul, but should not have locale dependent
-	     * behavior.
-	     */
-
-	    setlocale(LC_NUMERIC, "C");
-
 	    TclInitDoubleConversion();	/* Initializes constants for
 					 * converting to/from double. */
 	    TclInitObjSubsystem();	/* Register obj types, create
