@@ -1514,6 +1514,8 @@ const TclStubs tclStubs = {
     Tcl_UnregisterPostInitProc, /* 700 */
     Tcl_ClearPostInitProcs, /* 701 */
     TclUnusedStubEntry, /* 702 */
+    Tcl_PrintfResult, /* 703 */
+    Tcl_AppendPrintfResult, /* 704 */
 };
 
 /* !END!: Do not edit above this line. */

@@ -2474,6 +2474,13 @@ declare 702 {
     void TclUnusedStubEntry(void)
 }
 
+declare 703 {
+    void Tcl_PrintfResult(Tcl_Interp *interp, const char *format, ...)
+}
+declare 704 {
+    void Tcl_AppendPrintfResult(Tcl_Interp *interp, const char *format, ...)
+}
+
 ##############################################################################
 
 # Define the platform specific public Tcl interface. These functions are only

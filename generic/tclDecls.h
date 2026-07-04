@@ -1948,6 +1948,12 @@ EXTERN int		Tcl_UnregisterPostInitProc(
 EXTERN int		Tcl_ClearPostInitProcs(void);
 /* 702 */
 EXTERN void		TclUnusedStubEntry(void);
+/* 703 */
+EXTERN void		Tcl_PrintfResult(Tcl_Interp *interp,
+				const char *format, ...) TCL_FORMAT_PRINTF(2, 3);
+/* 704 */
+EXTERN void		Tcl_AppendPrintfResult(Tcl_Interp *interp,
+				const char *format, ...) TCL_FORMAT_PRINTF(2, 3);
 
 typedef struct {
     const struct TclPlatStubs *tclPlatStubs;
@@ -2662,6 +2668,8 @@ typedef struct TclStubs {
     int (*tcl_UnregisterPostInitProc) (Tcl_PostInitProc *postInitProc, void *clientData); /* 700 */
     int (*tcl_ClearPostInitProcs) (void); /* 701 */
     void (*tclUnusedStubEntry) (void); /* 702 */
+    void (*tcl_PrintfResult) (Tcl_Interp *interp, const char *format, ...) TCL_FORMAT_PRINTF(2, 3); /* 703 */
+    void (*tcl_AppendPrintfResult) (Tcl_Interp *interp, const char *format, ...) TCL_FORMAT_PRINTF(2, 3); /* 704 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -4027,6 +4035,10 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_ClearPostInitProcs) /* 701 */
 #define TclUnusedStubEntry \
 	(tclStubsPtr->tclUnusedStubEntry) /* 702 */
+#define Tcl_PrintfResult \
+	(tclStubsPtr->tcl_PrintfResult) /* 703 */
+#define Tcl_AppendPrintfResult \
+	(tclStubsPtr->tcl_AppendPrintfResult) /* 704 */
 
 #endif /* defined(USE_TCL_STUBS) */
 

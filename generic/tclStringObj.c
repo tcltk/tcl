@@ -2950,6 +2950,72 @@ Tcl_ObjPrintf(
 /*
  *---------------------------------------------------------------------------
  *
+ * Tcl_PrintfResult --
+ *
+ *	Produces an interpreter result containing the string produced by
+ *	applying the format to the remaining arguments.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Sets the interpreter result to the Tcl_Obj produced.
+ *
+ *---------------------------------------------------------------------------
+ */
+Tcl_Obj *
+Tcl_PrintfResult(
+    Tcl_Interp *interp,
+    const char *format,
+    ...)
+{
+    va_list argList;
+    Tcl_Obj *objPtr;
+
+    TclNewObj(objPtr);
+    va_start(argList, format);
+    AppendPrintfToObjVA(objPtr, format, argList);
+    va_end(argList);
+    Tcl_SetObjResult(interp, objPtr);
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * Tcl_AppendPrintfResult --
+ *
+ *	Updates the interpreter result by appending the string produced by
+ *	applying the format to the remaining arguments.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Appends the Tcl_Obj produced to the interpreter result.
+ *
+ *---------------------------------------------------------------------------
+ */
+Tcl_Obj *
+Tcl_AppendPrintfResult(
+    Tcl_Interp *interp,
+    const char *format,
+    ...)
+{
+    va_list argList;
+    Tcl_Obj *objPtr = Tcl_GetObjResult(interp);
+
+    if (Tcl_IsShared(objPtr)) {
+	objPtr = Tcl_DuplicateObj(objPtr);
+    }
+    va_start(argList, format);
+    AppendPrintfToObjVA(objPtr, format, argList);
+    va_end(argList);
+    Tcl_SetObjResult(interp, objPtr);
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
  * TclGetStringStorage --
  *
  *	Returns the string storage space of a Tcl_Obj.
