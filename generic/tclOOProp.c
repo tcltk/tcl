@@ -110,12 +110,12 @@ ReadProperty(
     Tcl_DecrRefCount(args[1]);
     switch (code) {
     case TCL_BREAK:
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"property getter for %s did a break", propName));
+	Tcl_PrintfResult(interp, "property getter for %s did a break",
+		propName);
 	return TCL_ERROR;
     case TCL_CONTINUE:
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"property getter for %s did a continue", propName));
+	Tcl_PrintfResult(interp, "property getter for %s did a continue",
+		propName);
 	return TCL_ERROR;
     default:
 	return code;
@@ -145,12 +145,12 @@ WriteProperty(
     Tcl_DecrRefCount(args[2]);
     switch (code) {
     case TCL_BREAK:
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"property setter for %s did a break", propName));
+	Tcl_PrintfResult(interp, "property setter for %s did a break",
+		propName);
 	return TCL_ERROR;
     case TCL_CONTINUE:
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"property setter for %s did a continue", propName));
+	Tcl_PrintfResult(interp, "property setter for %s did a continue",
+		propName);
 	return TCL_ERROR;
     default:
 	return code;
@@ -217,10 +217,9 @@ GetPropertyName(
 		flags ^ (GPN_WRITABLE | GPN_FALLING_BACK), namePtr, NULL);
 	result = Tcl_RestoreInterpState(interp, state);
 	if (otherName != NULL) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "property \"%s\" is %s only",
+	    Tcl_PrintfResult(interp, "property \"%s\" is %s only",
 		    TclGetString(otherName),
-		    (flags & GPN_WRITABLE) ? "read" : "write"));
+		    (flags & GPN_WRITABLE) ? "read" : "write");
 	}
     }
     if (!cachePtr) {
@@ -1006,8 +1005,7 @@ InstallStdPropertyImpls(
     return TCL_OK;
 
   badProp:
-    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-	    "bad property name \"%s\": %s", name, reason));
+    Tcl_PrintfResult(interp, "bad property name \"%s\": %s", name, reason);
     OO_ERROR(interp, PROPERTY_FORMAT);
     return TCL_ERROR;
 }
@@ -1049,8 +1047,7 @@ TclOODefinePropertyCmd(
 	return TCL_ERROR;
     }
     if (!useInstance && !oPtr->classPtr) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"attempt to misuse API", TCL_AUTO_LENGTH));
+	Tcl_PrintfResult(interp, "attempt to misuse API");
 	OO_ERROR(interp, MONKEY_BUSINESS);
 	return TCL_ERROR;
     }
@@ -1076,10 +1073,9 @@ TclOODefinePropertyCmd(
 		return TCL_ERROR;
 	    }
 	    if (i + 2 >= objc) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"missing %s to go with %s option",
+		Tcl_PrintfResult(interp, "missing %s to go with %s option",
 			(option == OPT_KIND ? "kind value" : "body"),
-			options[option]));
+			options[option]);
 		Tcl_SetErrorCode(interp, "TCL", "WRONGARGS", (char *)NULL);
 		return TCL_ERROR;
 	    }

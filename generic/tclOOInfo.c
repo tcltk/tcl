@@ -184,8 +184,8 @@ TclOOGetClassFromObj(
 	return NULL;
     }
     if (oPtr->classPtr == NULL) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"\"%s\" is not a class", TclGetString(objPtr)));
+	Tcl_PrintfResult(interp, "\"%s\" is not a class",
+		TclGetString(objPtr));
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "CLASS",
 		TclGetString(objPtr), (char *)NULL);
 	return NULL;
@@ -226,8 +226,8 @@ GetClassMethodFromObj(
     return mPtr;
 
   unknownMethod:
-    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-	    "unknown method \"%s\"", TclGetString(methodName)));
+    Tcl_PrintfResult(interp, "unknown method \"%s\"",
+	    TclGetString(methodName));
     Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
 	    TclGetString(methodName), (char *)NULL);
     return NULL;
@@ -270,8 +270,8 @@ GetInstanceMethodFromObj(
     return mPtr;
 
   unknownMethod:
-    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-	    "unknown method \"%s\"", TclGetString(methodName)));
+    Tcl_PrintfResult(interp, "unknown method \"%s\"",
+	    TclGetString(methodName));
     Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
 	    TclGetString(methodName), (char *)NULL);
     return NULL;
@@ -293,9 +293,8 @@ GetProcFromMethod(
 {
     Proc *procPtr = TclOOGetProcFromMethod(mPtr);
     if (procPtr == NULL) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"definition not available for this kind of method",
-		TCL_AUTO_LENGTH));
+	Tcl_PrintfResult(interp,
+		"definition not available for this kind of method");
 	OO_ERROR(interp, METHOD_TYPE);
 	return NULL;
     }
@@ -318,9 +317,8 @@ GetForwardFromMethod(
 {
     Tcl_Obj *prefixObj = TclOOGetFwdFromMethod(mPtr);
     if (prefixObj == NULL) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"prefix argument list not available for this kind of method",
-		TCL_AUTO_LENGTH));
+	Tcl_PrintfResult(interp,
+		"prefix argument list not available for this kind of method");
 	OO_ERROR(interp, METHOD_TYPE);
 	return NULL;
     }
@@ -713,8 +711,7 @@ InfoObjectMethodsCmd(
 		break;
 	    case OPT_SCOPE:
 		if (++i >= objc) {
-		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			    "missing option for -scope"));
+		    Tcl_PrintfResult(interp, "missing option for -scope");
 		    Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "MISSING",
 			    (char *)NULL);
 		    return TCL_ERROR;
@@ -958,9 +955,9 @@ InfoObjectVariablesCmd(
     }
     if (objc == 3) {
 	if (strcmp("-private", TclGetString(objv[2])) != 0) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    Tcl_PrintfResult(interp,
 		    "option \"%s\" is not exactly \"-private\"",
-		    TclGetString(objv[2])));
+		    TclGetString(objv[2]));
 	    OO_ERROR(interp, BAD_ARG);
 	    return TCL_ERROR;
 	}
@@ -1419,8 +1416,7 @@ InfoClassMethodsCmd(
 		break;
 	    case OPT_SCOPE:
 		if (++i >= objc) {
-		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			    "missing option for -scope"));
+		    Tcl_PrintfResult(interp, "missing option for -scope");
 		    Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "MISSING",
 			    (char *)NULL);
 		    return TCL_ERROR;
@@ -1689,9 +1685,9 @@ InfoClassVariablesCmd(
     }
     if (objc == 3) {
 	if (strcmp("-private", TclGetString(objv[2])) != 0) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    Tcl_PrintfResult(interp,
 		    "option \"%s\" is not exactly \"-private\"",
-		    TclGetString(objv[2])));
+		    TclGetString(objv[2]));
 	    OO_ERROR(interp, BAD_ARG);
 	    return TCL_ERROR;
 	}
@@ -1756,8 +1752,7 @@ InfoObjectCallCmd(
     contextPtr = TclOOGetCallContext(oPtr, objv[2], PUBLIC_METHOD, NULL, NULL,
 	    NULL);
     if (contextPtr == NULL) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"cannot construct any call chain", TCL_AUTO_LENGTH));
+	Tcl_PrintfResult(interp, "cannot construct any call chain");
 	OO_ERROR(interp, BAD_CALL_CHAIN);
 	return TCL_ERROR;
     }
@@ -1802,8 +1797,7 @@ InfoClassCallCmd(
 
     callPtr = TclOOGetStereotypeCallChain(clsPtr, objv[2], PUBLIC_METHOD);
     if (callPtr == NULL) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"cannot construct any call chain", TCL_AUTO_LENGTH));
+	Tcl_PrintfResult(interp, "cannot construct any call chain");
 	OO_ERROR(interp, BAD_CALL_CHAIN);
 	return TCL_ERROR;
     }

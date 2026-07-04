@@ -2963,7 +2963,7 @@ Tcl_ObjPrintf(
  *
  *---------------------------------------------------------------------------
  */
-Tcl_Obj *
+void
 Tcl_PrintfResult(
     Tcl_Interp *interp,
     const char *format,
@@ -2995,7 +2995,7 @@ Tcl_PrintfResult(
  *
  *---------------------------------------------------------------------------
  */
-Tcl_Obj *
+void
 Tcl_AppendPrintfResult(
     Tcl_Interp *interp,
     const char *format,

@@ -945,8 +945,8 @@ Tcl_ConvertToType(
 
     if (typePtr->setFromAnyProc == NULL) {
 	if (interp) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "can't convert value to type %s", typePtr->name));
+	    Tcl_PrintfResult(interp,
+		    "can't convert value to type %s", typePtr->name);
 	    Tcl_SetErrorCode(interp, "TCL", "API_ABUSE", (char *)NULL);
 	}
 	return TCL_ERROR;
@@ -2649,9 +2649,9 @@ Tcl_GetLongFromObj(
 #endif
 	if (TclHasInternalRep(objPtr, &tclDoubleType)) {
 	    if (interp != NULL) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		Tcl_PrintfResult(interp,
 			"expected integer but got \"%s\"",
-			TclGetString(objPtr)));
+			TclGetString(objPtr));
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", (char *)NULL);
 	    }
 	    return TCL_ERROR;
@@ -2949,9 +2949,9 @@ Tcl_GetWideIntFromObj(
 	}
 	if (TclHasInternalRep(objPtr, &tclDoubleType)) {
 	    if (interp != NULL) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		Tcl_PrintfResult(interp,
 			"expected integer but got \"%s\"",
-			TclGetString(objPtr)));
+			TclGetString(objPtr));
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", (char *)NULL);
 	    }
 	    return TCL_ERROR;
