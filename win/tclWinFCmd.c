@@ -1808,14 +1808,18 @@ TclpCreateTemporaryDirectory(
      */
 
     if (dirObj) {
-	TclGetString(dirObj);
-	if (dirObj->length < 1) {
+	Tcl_Size dirLen;
+	const char *dirPtr = TclGetStringFromObj(dirObj, &dirLen);
+	if (dirLen < 1) {
 	    goto useSystemTemp;
 	}
 	Tcl_DStringInit(&base);
-	Tcl_UtfToWCharDString(TclGetString(dirObj), TCL_INDEX_NONE, &base);
-	if (dirObj->bytes[dirObj->length - 1] != '\\') {
-	    Tcl_UtfToWCharDString("\\", TCL_INDEX_NONE, &base);
+	Tcl_UtfToWCharDString(dirPtr, dirLen, &base);
+	/* Bug 59cc110f */
+	if (dirPtr[dirLen - 1] != '\\' && dirPtr[dirLen - 1] != '/') {
+	    /* Append the separator in use */
+	    const char *sepPtr = strchr(dirPtr, '\\');
+	    Tcl_UtfToWCharDString(sepPtr ? "\\" : "/", 1, &base);
 	}
     } else {
     useSystemTemp:
