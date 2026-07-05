@@ -342,7 +342,7 @@ ContextClass(
     if (oPtr->classPtr == NULL) {
 	Tcl_Obj *cmdnameObj = TclOOObjectName(interp, oPtr);
 
-	Tcl_PrintfResult(interp, "object \"%&s\" is not a class", cmdnameObj);
+	Tcl_PrintfResult(interp, "object \"%#s\" is not a class", cmdnameObj);
 	Tcl_SetErrorCode(interp, "TCL", "OO", "INSTANTIATE_NONCLASS",
 		(char *)NULL);
 	return NULL;
@@ -929,7 +929,7 @@ TclOO_Object_Unknown(
 	} else {
 	    piece = "methods";
 	}
-	Tcl_PrintfResult(interp, "object \"%&s\" has no %s", tmpBuf, piece);
+	Tcl_PrintfResult(interp, "object \"%#s\" has no %s", tmpBuf, piece);
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
 		TclGetString(objv[skip]), (char *)NULL);
 	return TCL_ERROR;
@@ -1431,13 +1431,13 @@ TclOONextToObjCmd(
 
 	if (!miPtr->isFilter && miPtr->mPtr->declaringClassPtr == classPtr) {
 	    Tcl_PrintfResult(interp,
-		    "%s implementation by \"%&s\" not reachable from here",
+		    "%s implementation by \"%#s\" not reachable from here",
 		    methodType, objv[1]);
 	    OO_ERROR(interp, CLASS_NOT_REACHABLE);
 	    return TCL_ERROR;
 	}
     }
-    Tcl_PrintfResult(interp, "%s has no non-filter implementation by \"%&s\"",
+    Tcl_PrintfResult(interp, "%s has no non-filter implementation by \"%#s\"",
 	    methodType, objv[1]);
     OO_ERROR(interp, CLASS_NOT_THERE);
     return TCL_ERROR;

@@ -736,7 +736,7 @@ RenameDeleteMethod(
     if (!useClass) {
 	if (!oPtr->methodsPtr) {
 	noSuchMethod:
-	    Tcl_PrintfResult(interp, "method %&s does not exist", fromPtr);
+	    Tcl_PrintfResult(interp, "method %#s does not exist", fromPtr);
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
 		    TclGetString(fromPtr), (char *)NULL);
 	    return TCL_ERROR;
@@ -755,7 +755,7 @@ RenameDeleteMethod(
 		return TCL_ERROR;
 	    } else if (!isNew) {
 	    renameToExisting:
-		Tcl_PrintfResult(interp, "method called %&s already exists",
+		Tcl_PrintfResult(interp, "method called %#s already exists",
 			toPtr);
 		OO_ERROR(interp, RENAME_OVER);
 		return TCL_ERROR;
@@ -1390,7 +1390,7 @@ TclOODefineObjCmd(
 	return TCL_ERROR;
     }
     if (oPtr->classPtr == NULL) {
-	Tcl_PrintfResult(interp, "%&s does not refer to a class",
+	Tcl_PrintfResult(interp, "%#s does not refer to a class",
 		objv[1]);
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "CLASS",
 		TclGetString(objv[1]), (char *)NULL);
