@@ -3003,8 +3003,8 @@ TclOOObjectCmdCore(
 	TclDecrRefCount(mappedMethodName);
 	if (contextPtr == NULL) {
 	    Tcl_PrintfResult(interp,
-		    "impossible to invoke method \"%s\": no defined method or"
-		    " unknown method", TclGetString(methodNamePtr));
+		    "impossible to invoke method \"%&s\": no defined method or"
+		    " unknown method", methodNamePtr);
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD_MAPPED",
 		    TclGetString(methodNamePtr), (char *)NULL);
 	    return TCL_ERROR;
@@ -3020,8 +3020,8 @@ TclOOObjectCmdCore(
 		callerClsPtr, NULL);
 	if (contextPtr == NULL) {
 	    Tcl_PrintfResult(interp,
-		    "impossible to invoke method \"%s\": no defined method or"
-		    " unknown method", TclGetString(methodNamePtr));
+		    "impossible to invoke method \"%&s\": no defined method or"
+		    " unknown method", methodNamePtr);
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
 		    TclGetString(methodNamePtr), (char *)NULL);
 	    return TCL_ERROR;
@@ -3251,8 +3251,7 @@ Tcl_GetObjectFromObj(
     return (Tcl_Object) cmdPtr->objClientData2;
 
   notAnObject:
-    Tcl_PrintfResult(interp, "%s does not refer to an object",
-	    TclGetString(objPtr));
+    Tcl_PrintfResult(interp, "%&s does not refer to an object", objPtr);
     Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "OBJECT", TclGetString(objPtr),
 	    (char *)NULL);
     return NULL;

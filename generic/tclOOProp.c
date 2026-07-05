@@ -217,9 +217,8 @@ GetPropertyName(
 		flags ^ (GPN_WRITABLE | GPN_FALLING_BACK), namePtr, NULL);
 	result = Tcl_RestoreInterpState(interp, state);
 	if (otherName != NULL) {
-	    Tcl_PrintfResult(interp, "property \"%s\" is %s only",
-		    TclGetString(otherName),
-		    (flags & GPN_WRITABLE) ? "read" : "write");
+	    Tcl_PrintfResult(interp, "property \"%&s\" is %s only",
+		    otherName, (flags & GPN_WRITABLE) ? "read" : "write");
 	}
     }
     if (!cachePtr) {

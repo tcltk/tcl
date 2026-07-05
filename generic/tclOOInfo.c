@@ -184,8 +184,7 @@ TclOOGetClassFromObj(
 	return NULL;
     }
     if (oPtr->classPtr == NULL) {
-	Tcl_PrintfResult(interp, "\"%s\" is not a class",
-		TclGetString(objPtr));
+	Tcl_PrintfResult(interp, "\"%&s\" is not a class", objPtr);
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "CLASS",
 		TclGetString(objPtr), (char *)NULL);
 	return NULL;
@@ -226,8 +225,7 @@ GetClassMethodFromObj(
     return mPtr;
 
   unknownMethod:
-    Tcl_PrintfResult(interp, "unknown method \"%s\"",
-	    TclGetString(methodName));
+    Tcl_PrintfResult(interp, "unknown method \"%&s\"", methodName);
     Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
 	    TclGetString(methodName), (char *)NULL);
     return NULL;
@@ -270,8 +268,7 @@ GetInstanceMethodFromObj(
     return mPtr;
 
   unknownMethod:
-    Tcl_PrintfResult(interp, "unknown method \"%s\"",
-	    TclGetString(methodName));
+    Tcl_PrintfResult(interp, "unknown method \"%&s\"", methodName);
     Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
 	    TclGetString(methodName), (char *)NULL);
     return NULL;
@@ -956,8 +953,8 @@ InfoObjectVariablesCmd(
     if (objc == 3) {
 	if (strcmp("-private", TclGetString(objv[2])) != 0) {
 	    Tcl_PrintfResult(interp,
-		    "option \"%s\" is not exactly \"-private\"",
-		    TclGetString(objv[2]));
+		    "option \"%&s\" is not exactly \"-private\"",
+		    objv[2]);
 	    OO_ERROR(interp, BAD_ARG);
 	    return TCL_ERROR;
 	}
@@ -1686,8 +1683,8 @@ InfoClassVariablesCmd(
     if (objc == 3) {
 	if (strcmp("-private", TclGetString(objv[2])) != 0) {
 	    Tcl_PrintfResult(interp,
-		    "option \"%s\" is not exactly \"-private\"",
-		    TclGetString(objv[2]));
+		    "option \"%&s\" is not exactly \"-private\"",
+		    objv[2]);
 	    OO_ERROR(interp, BAD_ARG);
 	    return TCL_ERROR;
 	}

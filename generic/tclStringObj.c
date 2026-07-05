@@ -1967,6 +1967,7 @@ Tcl_AppendFormatToObj(
 	    switch (ch) {
 	    case '-':
 		gotMinus = 1;
+	    case '&':
 		break;
 	    case '#':
 		gotHash = 1;
@@ -2676,9 +2677,15 @@ Tcl_Format(
  *
  * AppendPrintfToObjVA --
  *
+ *	Shared core of Tcl_AppendPrintfToObj, Tcl_ObjPrintf, Tcl_PrintfResult,
+ *	and Tcl_AppendPrintfResult. Appends the result of formatting the
+ *	string to the given Tcl_Obj (used as a buffer holding a string).
+ *
  * Results:
+ *	None
  *
  * Side effects:
+ *	Appends t
  *
  *---------------------------------------------------------------------------
  */
@@ -2724,7 +2731,7 @@ AppendPrintfToObjVA(
     p = format;
     Tcl_IncrRefCount(list);
     while (*p != '\0') {
-	int size = 0, seekingConversion = 1, gotPrecision = 0;
+	int size = 0, seekingConversion = 1, gotPrecision = 0, gotSpecial = 0;
 	int lastNum = -1;
 
 	if (*p++ != '%') {
@@ -2740,7 +2747,14 @@ AppendPrintfToObjVA(
 		seekingConversion = 0;
 		break;
 	    case 's': {
-		const char *q, *end, *bytes = va_arg(argList, char *);
+		const char *q, *end, *bytes;
+		if (gotSpecial) {
+		    Tcl_Obj *argPtr = va_arg(argList, Tcl_Obj *);
+		    bytes = Tcl_GetString(argPtr);
+		    gotSpecial = 0;
+		} else {
+		    bytes = va_arg(argList, char *);
+		}
 		seekingConversion = 0;
 
 		/*
@@ -2838,6 +2852,10 @@ AppendPrintfToObjVA(
 		p = end;
 		break;
 	    }
+	    case '&':
+		gotSpecial = 1;
+		p++;
+		break;
 	    case '.':
 		gotPrecision = 1;
 		p++;
