@@ -2970,7 +2970,8 @@ Tcl_PrintfResult(
     ...)
 {
     va_list argList;
-    Tcl_Obj *objPtr = Tcl_GetObjResult(interp);
+    Interp *iPtr = (Interp *) interp;
+    Tcl_Obj *objPtr = iPtr->objResultPtr;
 
     /*
      * If the result is shared, has an internal representation, or is
@@ -2978,8 +2979,10 @@ Tcl_PrintfResult(
      */
     if (Tcl_IsShared(objPtr) || objPtr->typePtr ||
 	    (objPtr->bytes && objPtr->bytes[0])) {
+	TclDecrRefCount(objPtr);
 	TclNewObj(objPtr);
-	Tcl_SetObjResult(interp, objPtr);
+	iPtr->objResultPtr = objPtr;
+	Tcl_IncrRefCount(objPtr);
     }
 
     va_start(argList, format);
@@ -3010,15 +3013,20 @@ Tcl_AppendPrintfResult(
     ...)
 {
     va_list argList;
-    Tcl_Obj *objPtr = Tcl_GetObjResult(interp);
+    Interp *iPtr = (Interp *) interp;
+    Tcl_Obj *objPtr = iPtr->objResultPtr;
 
+    // If the result is shared, we must duplicate so we can modify it.
     if (Tcl_IsShared(objPtr)) {
+	Tcl_Obj *oldResult = objPtr;
 	objPtr = Tcl_DuplicateObj(objPtr);
+	iPtr->objResultPtr = objPtr;
+	TclDecrRefCount(oldResult);
+	Tcl_IncrRefCount(objPtr);
     }
     va_start(argList, format);
     AppendPrintfToObjVA(objPtr, format, argList);
     va_end(argList);
-    Tcl_SetObjResult(interp, objPtr);
 }
 
 /*
