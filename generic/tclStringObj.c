@@ -2970,13 +2970,21 @@ Tcl_PrintfResult(
     ...)
 {
     va_list argList;
-    Tcl_Obj *objPtr;
+    Tcl_Obj *objPtr = Tcl_GetObjResult(interp);
 
-    TclNewObj(objPtr);
+    /*
+     * If the result is shared, has an internal representation, or is
+     * non-empty, then we should allocate anew.
+     */
+    if (Tcl_IsShared(objPtr) || objPtr->typePtr ||
+	    (objPtr->bytes && objPtr->bytes[0])) {
+	TclNewObj(objPtr);
+	Tcl_SetObjResult(interp, objPtr);
+    }
+
     va_start(argList, format);
     AppendPrintfToObjVA(objPtr, format, argList);
     va_end(argList);
-    Tcl_SetObjResult(interp, objPtr);
 }
 
 /*
