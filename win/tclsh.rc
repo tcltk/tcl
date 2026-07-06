@@ -40,19 +40,19 @@ VS_VERSION_INFO VERSIONINFO
 BEGIN
     BLOCK "StringFileInfo"
     BEGIN
-        BLOCK "040904b0"
-        BEGIN
-            VALUE "FileDescription", "Tclsh Application\0"
-            VALUE "OriginalFilename", "tclsh" STRINGIFY(TCL_MAJOR_VERSION) STRINGIFY(TCL_MINOR_VERSION) SUFFIX ".exe\0"
-            VALUE "FileVersion", TCL_PATCH_LEVEL
-            VALUE "LegalCopyright", "Copyright \251 1987-2022 Regents of the University of California and other parties\0"
-            VALUE "ProductName", "Tcl " TCL_VERSION " for Windows\0"
-            VALUE "ProductVersion", TCL_PATCH_LEVEL
-        END
+	BLOCK "040904b0"
+	BEGIN
+	    VALUE "FileDescription", "Tclsh Application\0"
+	    VALUE "OriginalFilename", "tclsh" STRINGIFY(TCL_MAJOR_VERSION) STRINGIFY(TCL_MINOR_VERSION) SUFFIX ".exe\0"
+	    VALUE "FileVersion", TCL_PATCH_LEVEL
+	    VALUE "LegalCopyright", "Copyright \251 1987-2022 Regents of the University of California and other parties\0"
+	    VALUE "ProductName", "Tcl " TCL_VERSION " for Windows\0"
+	    VALUE "ProductVersion", TCL_PATCH_LEVEL
+	END
     END
     BLOCK "VarFileInfo"
     BEGIN
-        VALUE "Translation", 0x409, 1200
+	VALUE "Translation", 0x409, 1200
     END
 END
 
@@ -62,14 +62,4 @@ END
 
 tclsh                      ICON    DISCARDABLE     "tclsh.ico"
 
-//
-// This is needed for Windows 8.1 onwards.
-//
-
-#ifndef RT_MANIFEST
-#define RT_MANIFEST     24
-#endif
-#ifndef CREATEPROCESS_MANIFEST_RESOURCE_ID
-#define CREATEPROCESS_MANIFEST_RESOURCE_ID 1
-#endif
 CREATEPROCESS_MANIFEST_RESOURCE_ID RT_MANIFEST "tclsh.exe.manifest"
