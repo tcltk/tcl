@@ -575,8 +575,6 @@ ${TCL_ZIP_FILE}:  ${ZIP_INSTALL_OBJS} ${DDE_DLL_FILE}
 $(TCLSH): $(TCLSH_OBJS) @LIBRARIES@ $(TCL_STUB_LIB_FILE) tclsh.$(RES) ${TCL_ZIP_FILE}
 	$(CC) $(CFLAGS) $(TCLSH_OBJS) $(TCL_LIB_FILE) $(TCL_STUB_LIB_FILE) $(LIBS) \
 	tclsh.$(RES) $(CC_EXENAME) $(LDFLAGS_CONSOLE)
-	$(COPY) tclsh.exe.manifest $(TCLSH).manifest
-	@VC_MANIFEST_EMBED_EXE@
 	@if test "${ZIPFS_BUILD}" = "2" ; then \
 		cat ${TCL_ZIP_FILE} >> ${TCLSH}; \
 	fi
@@ -598,8 +596,6 @@ ${TCL_STUB_LIB_FILE}: ${STUB_OBJS} ${DDE_OBJS}
 ${TCL_DLL_FILE}: ${TCL_LIB_FILE} ${TCL_OBJS} tcl.$(RES) @ZLIB_DLL_FILE@ @TOMMATH_DLL_FILE@ ${TCL_ZIP_FILE}
 	@$(RM) ${TCL_DLL_FILE} $(TCL_LIB_FILE)
 	@MAKE_DLL@ ${TCL_OBJS} tcl.$(RES) $(SHLIB_LD_LIBS)
-	$(COPY) tclsh.exe.manifest ${TCL_DLL_FILE}.manifest
-	@VC_MANIFEST_EMBED_DLL@
 	@if test "${ZIPFS_BUILD}" = "1" ; then \
 		cat ${TCL_ZIP_FILE} >> ${TCL_DLL_FILE}; \
 	fi
@@ -616,18 +612,15 @@ endif
 
 ${DDE_DLL_FILE}: ${TCL_STUB_LIB_FILE} ${DDE_OBJS}
 	@MAKE_DLL@ ${DDE_OBJS} $(TCL_STUB_LIB_FILE) $(SHLIB_LD_LIBS)
-	$(COPY) tclsh.exe.manifest ${DDE_DLL_FILE}.manifest
 
 ${TEST_DLL_FILE}: ${TCL_STUB_LIB_FILE} ${TCLTEST_OBJS}
 	@$(RM) ${TEST_DLL_FILE} ${TEST_LIB_FILE}
 	@MAKE_DLL@ ${TCLTEST_OBJS} $(TCL_STUB_LIB_FILE) $(SHLIB_LD_LIBS)
-	$(COPY) tclsh.exe.manifest ${TEST_DLL_FILE}.manifest
 
 ${TEST_EXE_FILE}: @LIBRARIES@ ${TCL_STUB_LIB_FILE} ${TCLTEST_OBJS} tclTestMain.${OBJEXT}
 	@$(RM) ${TEST_EXE_FILE}
 	$(CC) $(CFLAGS) $(TCLTEST_OBJS) tclTestMain.$(OBJEXT) $(TCL_LIB_FILE) $(TCL_STUB_LIB_FILE) $(LIBS) \
 	tclsh.$(RES) $(CC_EXENAME) $(LDFLAGS_CONSOLE)
-	$(COPY) tclsh.exe.manifest ${TEST_EXE_FILE}.manifest
 
 # use prebuilt zlib1.dll
 ${ZLIB_DLL_FILE}: ${TCL_STUB_LIB_FILE}
