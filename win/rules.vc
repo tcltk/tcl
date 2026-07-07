@@ -451,6 +451,8 @@ rc32		= $(RC)   # built-in default.
 # preprocessor and reading back the created file
 
 _HASH=^#
+_VC_MANIFEST_EMBED_EXE=
+_VC_MANIFEST_EMBED_DLL=
 VCVER=0
 !if ![echo VCVERSION=_MSC_VER > vercl.x] \
     && ![echo $(_HASH)if defined(_M_IX86) >> vercl.x] \
@@ -523,6 +525,12 @@ NATIVE_ARCH=IX86
 NATIVE_ARCH=ARM64
 !else
 NATIVE_ARCH=AMD64
+!endif
+
+# Since MSVC8 we must deal with manifest resources.
+!if $(VCVERSION) >= 1400
+_VC_MANIFEST_EMBED_EXE=if exist $@.manifest mt -nologo -manifest $@.manifest -outputresource:$@;1
+_VC_MANIFEST_EMBED_DLL=if exist $@.manifest mt -nologo -manifest $@.manifest -outputresource:$@;2
 !endif
 
 ################################################################

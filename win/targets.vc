@@ -31,6 +31,7 @@ $(PRJLIB): $(PRJ_OBJS) $(RESFILE)
        $(LIBCMD) $**
 !else
        $(DLLCMD) $**
+       $(_VC_MANIFEST_EMBED_DLL)
 !endif
        -@del $*.exp
 !endif
