@@ -263,31 +263,18 @@ proc ::platform::identify {} {
 
 proc ::platform::LibcVersion {base _->_ vv} {
     upvar 1 $vv v
-    set libclist [lsort [glob -nocomplain -directory $base libc*]]
-
-    if {![llength $libclist]} { return 0 }
-
-    set libc [lindex $libclist 0]
-
-    # Try executing the library first. This should succeed
+    # Try executing ldd first. This should succeed
     # for a glibc library, and return the version information.
 
     try {
-	set vdata [lindex [split [exec $libc] \n] 0]
+	set vdata [lindex [split [exec ldd --version] \n] 0]
     } on ok {} {
-	regexp {version ([0-9]+(\.[0-9]+)*)} $vdata -> v
+	regexp {GLIBC ([0-9]+(\.[0-9]+)*)} $vdata -> v
 	lassign [split $v .] major minor
 	set v glibc${major}.${minor}
 	return 1
     } on error {} {
-	# We had trouble executing the library. We are now
-	# inspecting its name to determine the version
-	# number. This code by Larry McVoy.
-
-	if {[regexp -- {libc-([0-9]+)\.([0-9]+)} $libc -> major minor]} {
-	    set v glibc${major}.${minor}
-	    return 1
-	}
+	# We had trouble executing the library.
     }
     return 0
 }
@@ -423,7 +410,7 @@ proc ::platform::patterns {id} {
 # ### ### ### ######### ######### #########
 ## Ready
 
-package provide platform 1.1.0
+package provide platform 1.1.1
 
 # ### ### ### ######### ######### #########
 ## Demo application
