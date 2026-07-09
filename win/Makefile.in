@@ -324,6 +324,7 @@ GENERIC_OBJS = \
 	tclFCmd.$(OBJEXT) \
 	tclFileName.$(OBJEXT) \
 	tclGet.$(OBJEXT) \
+	tclGrapheme.$(OBJEXT) \
 	tclHash.$(OBJEXT) \
 	tclHistory.$(OBJEXT) \
 	tclIcu.$(OBJEXT) \

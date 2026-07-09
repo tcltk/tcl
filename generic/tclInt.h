@@ -1210,6 +1210,8 @@ TclObjTypeInOperator(
     return proc(interp, valueObj, listObj, boolResult);
 }
 
+MODULE_SCOPE void TclAbstractListUpdateString(Tcl_Obj *objPtr);
+
 /*
  * The structure below defines an entry in the assocData hash table which is
  * associated with an interpreter. The entry contains a pointer to a function
@@ -3176,6 +3178,7 @@ MODULE_SCOPE const EnsembleImplMap tclClockImplMap[];
 MODULE_SCOPE const EnsembleImplMap tclDictImplMap[];
 MODULE_SCOPE const EnsembleImplMap tclEncodingImplMap[];
 MODULE_SCOPE const EnsembleImplMap tclFileImplMap[];
+MODULE_SCOPE const EnsembleImplMap tclGraphemeImplMap[];
 MODULE_SCOPE const EnsembleImplMap tclInfoImplMap[];
 MODULE_SCOPE const EnsembleImplMap tclNamespaceImplMap[];
 MODULE_SCOPE const EnsembleImplMap tclPrefixImplMap[];
