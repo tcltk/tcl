@@ -11,6 +11,10 @@ to the userbase.
 
 # Bug fixes
  - [format honours LC_NUMERIC for %f/%g](https://core.tcl-lang.org/tcl/tktview/fcd3da)
+ - [Glibc detection broken on Linux for platform::identify](https://core.tcl-lang.org/tcl/tktview/917c4a)
+
+# Updated bundled packages, libraries, standards, data
+ - platform 1.1.1
 
 Release Tcl 9.0.4 arises from the check-in with tag `core-9-0-4`.
 
