@@ -501,6 +501,12 @@ proc auto_import {pattern} {
     }
 }
 
+# auto_execok --
+# Lazy loaded for better startup performance.
+proc auto_execok arg {
+    uplevel #0 [list ::tcl::Pkg::source [file join [info library] autoexecok.tcl]]
+    tailcall auto_execok $arg
+}
 
 # ::tcl::CopyDirectory --
 #

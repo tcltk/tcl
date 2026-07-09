@@ -6,7 +6,6 @@
 # element name is the name of a command and the value is
 # a script that loads the command.
 
-set auto_index(auto_execok) [list ::tcl::Pkg::source [file join $dir autoexecok.tcl]]
 set auto_index(auto_reset) [list ::tcl::Pkg::source [file join $dir auto.tcl]]
 set auto_index(tcl_findLibrary) [list ::tcl::Pkg::source [file join $dir auto.tcl]]
 set auto_index(auto_mkindex) [list ::tcl::Pkg::source [file join $dir auto.tcl]]
