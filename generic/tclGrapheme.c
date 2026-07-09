@@ -51,14 +51,14 @@ static Tcl_ObjCmdProc2		GraphemeSplitCmd;
  */
 
 const EnsembleImplMap tclGraphemeImplMap[] = {
-    {"index",	GraphemeIndexCmd,	TclCompileGraphemeIndexCmd, NULL, NULL, 0},
-    {"length",	GraphemeLengthCmd,	TclCompileGraphemeLengthCmd, NULL, NULL, 0},
-    {"next",	GraphemeNextCmd,	TclCompileGraphemeNextCmd, NULL, NULL, 0},
+    {"index",	GraphemeIndexCmd,	NULL, NULL, NULL, 0},
+    {"length",	GraphemeLengthCmd,	NULL, NULL, NULL, 0},
+    {"next",	GraphemeNextCmd,	NULL, NULL, NULL, 0},
     {"offset",	GraphemeOffsetCmd,	NULL, NULL, NULL, 0},
-    {"prev",	GraphemePrevCmd,	TclCompileGraphemePrevCmd, NULL, NULL, 0},
-    {"range",	GraphemeRangeCmd,	TclCompileGraphemeRangeCmd, NULL, NULL, 0},
-    {"reverse",	GraphemeReverseCmd,	TclCompileGraphemeReverseCmd, NULL, NULL, 0},
-    {"split",	GraphemeSplitCmd,	TclCompileGraphemeSplitCmd, NULL, NULL, 0},
+    {"prev",	GraphemePrevCmd,	NULL, NULL, NULL, 0},
+    {"range",	GraphemeRangeCmd,	NULL, NULL, NULL, 0},
+    {"reverse",	GraphemeReverseCmd,	NULL, NULL, NULL, 0},
+    {"split",	GraphemeSplitCmd,	NULL, NULL, NULL, 0},
     {NULL, NULL, NULL, NULL, NULL, 0}
 };
 
