@@ -42,7 +42,7 @@ NMAKEHLP_NATIVE=nmakehlp
 # For modifications that are not backward-compatible, you *must* change
 # the major version.
 RULES_VERSION_MAJOR = 1
-RULES_VERSION_MINOR = 18
+RULES_VERSION_MINOR = 19
 
 # The PROJECT macro must be defined by parent makefile.
 !if "$(PROJECT)" == ""
@@ -1064,6 +1064,7 @@ WARNINGS		    = $(WARNINGS) -Wp64
 # SUFX - the suffix to use for binaries based on above naming convention
 # BUILDDIRTOP - the toplevel default output directory
 #      is of the form {Release,Debug}[_AMD64][_COMPILERVERSION]
+#      unless overridden by defining OUT_DIR on the command line.
 # TMP_DIR - directory where object files are created
 # OUT_DIR - directory where output executables are created
 # Both TMP_DIR and OUT_DIR are defaulted only if not defined by the
@@ -1079,17 +1080,41 @@ WARNINGS		    = $(WARNINGS) -Wp64
 
 SUFX	    = tsgx
 
+# If OUT_DIR is defined (via command line or environment) make that
+# define BUILDDIRTOP as its tail. Otherwise, default it as below and
+# define OUT_DIR based on BUILDDIRTOP.
+!ifdef OUT_DIR
+# Relative paths -> absolute
+!if [echo OUT_DIR = \> nmakehlp.out] \
+   || [$(NMAKEHLP_NATIVE) -Q "$(OUT_DIR)" >> nmakehlp.out]
+!error *** Could not fully qualify path OUT_DIR=$(OUT_DIR)
+!endif
+# The undef is needed when OUT_DIR is passed on the command line
+# otherwise the definition in the include will not take effect
+!undef OUT_DIR
+!include nmakehlp.out
+!if [echo BUILDDIRTOP = \> nmakehlp.out] \
+   || [for %A in ("$(OUT_DIR)") do echo %~nxA \>> nmakehlp.out]
+!error *** Could not get tail of path OUT_DIR=$(OUT_DIR)
+!endif
+!include nmakehlp.out
+
+!else
+
 !if $(DEBUG)
 BUILDDIRTOP = Debug
 !else
 BUILDDIRTOP = Release
 !endif
 
+
 !if "$(MACHINE)" != "IX86"
 BUILDDIRTOP =$(BUILDDIRTOP)_$(MACHINE)
 !endif
 !if $(VCVER) > 6
 BUILDDIRTOP =$(BUILDDIRTOP)_VC$(VCVER)
+!endif
+
 !endif
 
 !if !$(DEBUG) || $(TCL_VERSION) > 86 || $(DEBUG) && $(UNCHECKED)

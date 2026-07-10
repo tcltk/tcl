@@ -132,16 +132,22 @@ endlocal
 exit /b 0
 
 :error
+echo ERROR Build failed!
 endlocal
 exit /b 1
 
 :: call :runmake dir opts
 :runmake
 if "%debug%" == "" (
-    nmake /s /f makefile.vc OUT_DIR=%currentDir%\vc-%ARCH%-%1 TMP_DIR=%currentDir%\vc-%ARCH%-%1\objs OPTS=pdbs,%2 INSTALLDIR=%INSTROOT%-%1 %TARGETS% && goto error
+    set "outDir=%currentDir%\vc-%ARCH%-%1"
+    set "debugOpts="
 ) else (
-    nmake /s /f makefile.vc OUT_DIR=%currentDir%\vc-%ARCH%-%1-debug TMP_DIR=%currentDir%\vc-%ARCH%-%1-debug\objs OPTS=pdbs,%2 cdebug="-Zi -Od" INSTALLDIR=%INSTROOT%-%1-debug %TARGETS% && goto error
+    set "outDir=%currentDir%\vc-%ARCH%-%1-debug"
+    set "debugOpts=-Zi -Od"
 )
+
+nmake /s /nologo /f makefile.vc OUT_DIR=%outDir% TMP_DIR=outDir%\objs OPTS=pdbs,%2 cdebug="%debugOpts%" INSTALLDIR=%INSTROOT%-%1 %TARGETS% || goto error
+echo Build binaries in %outDir%
 goto :eof
 
 :help
