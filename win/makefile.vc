@@ -575,7 +575,6 @@ $(TCLLIB): $(TCLOBJS)
 	$(DLLCMD) @<<
 $**
 <<
-	$(_VC_MANIFEST_EMBED_DLL)
 !if $(TCL_EMBED_SCRIPTS) && !$(STATIC_BUILD)
 	$(COPY) $@ $(TCLLIBRAW)
 !endif
@@ -589,8 +588,6 @@ $(TCLSTUBLIB): $(TCLSTUBOBJS)
 
 $(TCLSH): $(TCLSHOBJS) $(TCLSTUBLIB) $(TCLIMPLIB)
 	$(CONEXECMD) -stack:2300000 $**
-	copy $(TMP_DIR)\tclsh.exe.manifest $(TCLSH).manifest
-	$(_VC_MANIFEST_EMBED_EXE)
 !if $(TCL_EMBED_SCRIPTS) && $(STATIC_BUILD)
 	$(COPY) $@ $(TCLSHRAW)
 !endif
@@ -598,8 +595,6 @@ $(TCLSH): $(TCLSHOBJS) $(TCLSTUBLIB) $(TCLIMPLIB)
 
 $(TCLTEST): $(TCLTESTOBJS) $(TCLSTUBLIB) $(TCLIMPLIB)
 	$(CONEXECMD) -stack:2300000 $**
-	copy $(TMP_DIR)\tclsh.exe.manifest $(TCLTEST).manifest
-	$(_VC_MANIFEST_EMBED_EXE)
 !if $(TCL_EMBED_SCRIPTS) && $(STATIC_BUILD)
 	$(COPY) $@ $(TCLTESTRAW)
 !endif
@@ -610,7 +605,6 @@ $(TCLDDELIB): $(TMP_DIR)\tclWinDde.obj
 !else
 $(TCLDDELIB): $(TMP_DIR)\tclWinDde.obj $(TCLSTUBLIB)
 	$(DLLCMD) $**
-	$(_VC_MANIFEST_EMBED_DLL)
 !endif
 
 exectestapp: $(EXECTESTAPP)

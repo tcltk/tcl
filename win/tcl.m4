@@ -648,7 +648,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	SHLIB_LD_LIBS='${LIBS}'
 	LIBS="-lnetapi32 -lkernel32 -luser32 -ladvapi32 -luserenv -lws2_32"
 	# mingw needs to link ole32 and oleaut32 for [send], but MSVC doesn't
-	LIBS_GUI="-lgdi32 -lcomdlg32 -limm32 -lcomctl32 -lshell32 -luuid -loleacc -lole32 -loleaut32 -lwinspool -luxtheme -luiautomationcore"
+	LIBS_GUI="-lgdi32 -lcomdlg32 -limm32 -lcomctl32 -lshell32 -luuid -loleacc -lole32 -loleaut32 -lwinspool -luxtheme -lusp10 -ldwmapi -lmsimg32 -luiautomationcore"
 	STLIB_LD='${AR} cr'
 	RC_OUT=-o
 	RC_TYPE=
@@ -837,7 +837,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    LINKBIN="link"
 	fi
 
-	LIBS_GUI="gdi32.lib comdlg32.lib imm32.lib comctl32.lib shell32.lib uuid.lib winspool.lib uxtheme.lib oleacc.lib ole32.lib uiautomationcore.lib"
+	LIBS_GUI="gdi32.lib comdlg32.lib imm32.lib comctl32.lib shell32.lib uuid.lib winspool.lib uxtheme.lib oleacc.lib ole32.lib usp10.lib ldwmapi.lib msimg32.lib uiautomationcore.lib"
 
 	SHLIB_LD="${LINKBIN} -dll -incremental:no ${lflags}"
 	SHLIB_LD_LIBS='${LIBS}'
@@ -1067,58 +1067,6 @@ AC_DEFUN([SC_TCL_CFG_ENCODING], [
     else
 	AC_DEFINE(TCL_CFGVAL_ENCODING,"utf-8")
     fi
-])
-
-#--------------------------------------------------------------------
-# SC_EMBED_MANIFEST
-#
-#	Figure out if we can embed the manifest where necessary
-#
-# Arguments:
-#	An optional manifest to merge into DLL/EXE.
-#
-# Results:
-#	Will define the following vars:
-#		VC_MANIFEST_EMBED_DLL
-#		VC_MANIFEST_EMBED_EXE
-#
-#--------------------------------------------------------------------
-
-AC_DEFUN([SC_EMBED_MANIFEST], [
-    AC_MSG_CHECKING(whether to embed manifest)
-    AC_ARG_ENABLE(embedded-manifest,
-	AS_HELP_STRING([--enable-embedded-manifest],
-		[embed manifest if possible (default: yes)]),
-	[embed_ok=$enableval], [embed_ok=yes])
-
-    VC_MANIFEST_EMBED_DLL=
-    VC_MANIFEST_EMBED_EXE=
-    result=no
-    if test "$embed_ok" = "yes" -a "${SHARED_BUILD}" = "1" \
-       -a "$GCC" != "yes" ; then
-	# Add the magic to embed the manifest into the dll/exe
-	AC_EGREP_CPP([manifest needed], [
-#if defined(_MSC_VER) && _MSC_VER >= 1400
-print("manifest needed")
-#endif
-	], [
-	# Could do a CHECK_PROG for mt, but should always be with MSVC8+
-	# Could add 'if test -f' check, but manifest should be created
-	# in this compiler case
-	# Add in a manifest argument that may be specified
-	# XXX Needs improvement so that the test for existence accounts
-	# XXX for a provided (known) manifest
-	VC_MANIFEST_EMBED_DLL="if test -f \[$]@.manifest ; then mt.exe -nologo -manifest \[$]@.manifest $1 -outputresource:\[$]@\;2 ; fi"
-	VC_MANIFEST_EMBED_EXE="if test -f \[$]@.manifest ; then mt.exe -nologo -manifest \[$]@.manifest $1 -outputresource:\[$]@\;1 ; fi"
-	result=yes
-	if test "x$1" != x ; then
-	    result="yes ($1)"
-	fi
-	])
-    fi
-    AC_MSG_RESULT([$result])
-    AC_SUBST(VC_MANIFEST_EMBED_DLL)
-    AC_SUBST(VC_MANIFEST_EMBED_EXE)
 ])
 
 #------------------------------------------------------------------------
