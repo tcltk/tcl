@@ -197,19 +197,20 @@ proc ::platform::identify {} {
 	    return "${plat}-${cpu}"
 	}
 	linux {
+	    set v unknown
 	    try {
 		set vdata [lindex [split [exec ldd --version] \n] 0]
 	    } on ok {} {
-		regexp {GLIBC ([0-9]+(\.[0-9]+)*)} $vdata -> v
-		lassign [split $v .] major minor
-		set v glibc${major}.${minor}
+		set v unknown
+		if {[string match -nocase *GLIBC* $vdata]} {
+		    set v glibc
+		} elseif {[string match -nocase *MUSL* $vdata]} {
+		    set v musl
+		}
 	    } on error {} {
 		# We had trouble executing ldd.
-		set v unknown
 	    }
-
-	    append plat -$v
-	    return "${plat}-${cpu}"
+	    return "${plat}-${v}-${cpu}"
 	}
     }
 
