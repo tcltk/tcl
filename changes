@@ -9448,7 +9448,7 @@ Many code fixes to avoid overflow or undefined behavior.  Thanks chrstphrchvz.
 2026-03-09 Valgrind reported error in SetScriptLimitCallback (nadkarni,nijtmans)
 
 2026-04-16 (feature) Adapt tcltest to support up to Tcl 9.1.
-=> tcltest 2.5.11
+	=> tcltest 2.5.11
 
 2026-04-22 (bug) crash in proc during namespace deletion (nadkarni)
 
@@ -9459,3 +9459,6 @@ Many code fixes to avoid overflow or undefined behavior.  Thanks chrstphrchvz.
 2026-06-30 format honours LC_NUMERIC for %f/%g (nijtmans)
 
 2026-06-30 Crash in Tcl_UtfToUpper/Lower/Title (nijtmans)
+
+2026-07-13 Warning: argument 1 of 'Tcl_SetPanicProc' might be a candiate
+	for a format attribute (nijtmans)
