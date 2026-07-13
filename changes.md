@@ -12,6 +12,7 @@ to the userbase.
 # Bug fixes
  - [format honours LC_NUMERIC for %f/%g](https://core.tcl-lang.org/tcl/tktview/fcd3da)
  - [Glibc detection broken on Linux for platform::identify](https://core.tcl-lang.org/tcl/tktview/917c4a)
+ - [Warning: argument 1 of 'Tcl_SetPanicProc' might be a candiate for a format attribute](https://core.tcl-lang.org/tcl/tktview/6ae6c1)
 
 # Updated bundled packages, libraries, standards, data
  - platform 1.1.1
