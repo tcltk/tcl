@@ -158,41 +158,41 @@ test console-input-2.1 {Console file channel: non-blocking read} -constraints {
 test console-input-3.0 {Console gets blocking - long lines bug-bda99f2393} -constraints {
     win interactive
 } -body {
-    prompt "Try typing a line of at least 256 characters. Hit ENTER exactly once unless you don't see another prompt.\n"
+    prompt "Try typing a line of at least 257 characters. Hit ENTER exactly once unless you don't see another prompt.\n"
     gets stdin line
     set len [string length $line]
-    list [yesno "Did you hit ENTER only once?"] [expr {$len > 256}] [yesno "Line length was $len characters. Is this correct?"]
+    list [yesno "Did you hit ENTER only once?"] [expr {$len >= 257}] [yesno "Line length was $len characters. Is this correct?"]
 } -result {1 1 1}
 
 test console-input-3.1 {Console gets blocking, small channel buffer size - long lines bug-bda99f2393} -constraints {
     win interactive
 } -body {
-    prompt "Try typing a line of at least 256 characters. Hit ENTER exactly once unless you don't see another prompt.\n"
+    prompt "Try typing a line of at least 257 characters. Hit ENTER exactly once unless you don't see another prompt.\n"
     set bufSize [fconfigure stdin -buffersize]
     fconfigure stdin -buffersize 10
     gets stdin line
     fconfigure stdin -buffersize $bufSize
     set len [string length $line]
-    list [yesno "Did you hit ENTER only once?"] [expr {$len > 256}] [yesno "Line length was $len characters. Is this correct?"]
+    list [yesno "Did you hit ENTER only once?"] [expr {$len >= 257}] [yesno "Line length was $len characters. Is this correct?"]
 } -result {1 1 1}
 
 test console-input-3.2 {Console gets nonblocking - long lines bug-bda99f2393} -constraints {
     win interactive
 } -body {
-    prompt "Try typing a line of at least 256 characters. Hit ENTER exactly once unless you don't see another prompt.\n"
+    prompt "Try typing a line of at least 257 characters. Hit ENTER exactly once unless you don't see another prompt.\n"
     fconfigure stdin -blocking 0
     while {[gets stdin line] < 0} {
 	after 1000
     }
     fconfigure stdin -blocking 1
     set len [string length $line]
-    list [yesno "Did you hit ENTER only once?"] [expr {$len > 256}] [yesno "Line length was $len characters. Is this correct?"]
+    list [yesno "Did you hit ENTER only once?"] [expr {$len >= 257}] [yesno "Line length was $len characters. Is this correct?"]
 } -result {1 1 1}
 
 test console-input-3.3 {Console gets nonblocking small channel buffer size - long lines bug-bda99f2393} -constraints {
     win interactive
 } -body {
-    prompt "Try typing a line of at least 256 characters. Hit ENTER exactly once unless you don't see another prompt.\n"
+    prompt "Try typing a line of at least 257 characters. Hit ENTER exactly once unless you don't see another prompt.\n"
     set bufSize [fconfigure stdin -buffersize]
     fconfigure stdin -blocking 0 -buffersize 10
     while {[gets stdin line] < 0} {
@@ -200,7 +200,7 @@ test console-input-3.3 {Console gets nonblocking small channel buffer size - lon
     }
     fconfigure stdin -blocking 1 -buffersize $bufSize
     set len [string length $line]
-    list [yesno "Did you hit ENTER only once?"] [expr {$len > 256}] [yesno "Line length was $len characters. Is this correct?"]
+    list [yesno "Did you hit ENTER only once?"] [expr {$len >= 257}] [yesno "Line length was $len characters. Is this correct?"]
 } -result {1 1 1}
 
 test console-input-3.4 {Console command line arrow keys} -constraints {
