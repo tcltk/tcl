@@ -200,7 +200,7 @@ proc ::platform::identify {} {
 	    catch {exec ldd --version} vdata
 	    set vdata [lindex [split $vdata \n] 0]
 	    set v unknown
-	    if {[string match -nocase *GLIBC* $vdata]} {
+	    if {[string match -nocase *GLIBC* $vdata] || [string match -nocase "*GNU libc*" $vdata]} {
 		set v glibc
 	    } elseif {[string match -nocase *MUSL* $vdata]} {
 		set v musl
