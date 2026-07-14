@@ -40,6 +40,8 @@ Tcl DLL in all build configurations.
 
 - [Custom applications must call Tcl\_FindExecutable or TclZipfs_AppHook to initialize Tcl](https://core.tcl-lang.org/tips/doc/trunk/tip/732.md) *Potential incompatibility*
 - [Search path for locating Tcl core script and encodings is changed](https://core.tcl-lang.org/tips/doc/trunk/tip/732.md) *Potential incompatibility*
+- [`Tcl_RegisterPostInitProc` callback for post-initialization of interpreters](https://core.tcl-lang.org/tips/doc/trunk/tip/755.md)
+
 
 # Performance
 
