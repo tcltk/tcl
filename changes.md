@@ -62,3 +62,4 @@ for list operations on large lists.
 
 # Updated bundled packages, libraries, standards, data
  - Unicode 18.0.0 (draft)
+ - platorm 1.2b1
