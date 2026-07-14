@@ -263,7 +263,7 @@ proc ::platform::identify {} {
 
 proc ::platform::LibcVersion {base _->_ vv} {
     upvar 1 $vv v
-    set libclist [lsort [glob -nocomplain -directory $base libc*]]
+    set libclist [lsort [glob -nocomplain -directory $base libc.so.*]]
 
     if {![llength $libclist]} { return 0 }
 
@@ -424,7 +424,7 @@ proc ::platform::patterns {id} {
 # ### ### ### ######### ######### #########
 ## Ready
 
-package provide platform 1.1.0
+package provide platform 1.1.1
 
 # ### ### ### ######### ######### #########
 ## Demo application

@@ -12,6 +12,10 @@ to the userbase.
 # Bug fixes
  - [format honours LC_NUMERIC for %f/%g](https://core.tcl-lang.org/tcl/tktview/fcd3da)
  - [Warning: argument 1 of 'Tcl_SetPanicProc' might be a candiate for a format attribute](https://core.tcl-lang.org/tcl/tktview/6ae6c1)
+ - [platform::identify broken on Red Hat Linux](https://core.tcl-lang.org/tcl/tktview/61ba0b)
+
+# Updated bundled packages, libraries, standards, data
+ - platform 1.1.1
 
 Release Tcl 9.0.4 arises from the check-in with tag `core-9-0-4`.
 
