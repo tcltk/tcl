@@ -22,6 +22,10 @@ the registry package to be loaded. The registry module is now part of the core
 Tcl DLL in all build configurations.
 - [New `lfilter` command for selecting items from a list](https://core.tcl-lang.org/tips/doc/trunk/tip/735.md)
 - [Many new functions from C99](https://core.tcl-lang.org/tips/doc/trunk/tip/745.md), specifically: `acosh()`, `asinh()`, `atanh()`, `cbrt()`, `copysign()`, `dim()`,  `erf()`, `erfc()`, `exp2()`, `expm1()`, `fma()`, `gamma()`, `ldexp()`, `lgamma()`, `log1p()`, `log2()`, `logb()`, `nextafter()`, `remainder()`, `signbit()`, and `trunc()`, and (for functions that return multiple values in their C99 API) the commands: `divmod`, `frexp`, `modf`, and `remquo`. (See [this page](https://en.cppreference.com/w/c/numeric/math.html) for more information about these functions; the Tcl functions are _intentionally_ only thin wrappers around the functions in the C99 standard.)
+- [New `switch` option `-integer` to compare values as integers](https://core.tcl-lang.org/tips/doc/trunk/tip/730.md)
+- [Reading and writing of child interpreter variables](https://core.tcl-lang.org/tips/doc/trunk/tip/728.md)
+- [Updated Tcl Bytecode opcodes](https://core.tcl-lang.org/tips/doc/trunk/tip/720.md)
+
 - New `tcltest::configure` option `-iterations` to control number of iterations of each test.
 
 # New public C API
