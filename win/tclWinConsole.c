@@ -1424,10 +1424,12 @@ ConsoleEventProc(
 	    AcquireSRWLockShared(&handleInfoPtr->lock);
 	    /* Remember at most one of READABLE, WRITABLE set */
 	    if ((chanInfoPtr->watchMask & TCL_READABLE)
-		    && RingBufferLength(&handleInfoPtr->buffer)) {
+		    && (RingBufferLength(&handleInfoPtr->buffer)
+			|| handleInfoPtr->lastError != 0)) {
 		mask = TCL_READABLE;
 	    } else if ((chanInfoPtr->watchMask & TCL_WRITABLE)
-		    && RingBufferHasFreeSpace(&handleInfoPtr->buffer)) {
+		       && (RingBufferHasFreeSpace(&handleInfoPtr->buffer)
+				|| handleInfoPtr->lastError != 0)) {
 		/* Generate write event space available */
 		mask = TCL_WRITABLE;
 	    }
@@ -1718,9 +1720,18 @@ ConsoleReaderThread(
 	    AcquireSRWLockExclusive(&handleInfoPtr->lock);
 
 	    /*
-	     * Loop back to recheck for exit conditions changes while the
-	     * lock was not held.
+	     * Loop back in case exit condition changed after releasing lock.
 	     */
+	    if (handleInfoPtr->lastError != 0) {
+		/*
+		 * (Partly bug [f10d91c2]) - on error, give interp threads
+		 * a chance to close channel. Note we are relying on the
+		 * interpreter threads to close the channel (or exit) else
+		 * this will loop forever.
+		 */
+		SleepConditionVariableSRW(&handleInfoPtr->consoleThreadCV,
+			&handleInfoPtr->lock, 50, 0);
+	    }
 	    continue;
 	}
 

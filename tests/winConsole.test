@@ -17,6 +17,7 @@ if {"::tcltest" ni [namespace children]} {
 
 catch {package require twapi} ;# Only to bring window to foreground. Not critical
 ::tcltest::ConstraintInitializer haveThread { expr {![catch {package require Thread}]} }
+tcltest::testConstraint havePowershell [tcl::mathop::ne [auto_execok powershell] ""]
 
 # Prompt user for a yes/no response
 proc yesno {question {default "Y"}} {
@@ -158,41 +159,41 @@ test console-input-2.1 {Console file channel: non-blocking read} -constraints {
 test console-input-3.0 {Console gets blocking - long lines bug-bda99f2393} -constraints {
     win interactive
 } -body {
-    prompt "Try typing a line of at least 256 characters. Hit ENTER exactly once unless you don't see another prompt.\n"
+    prompt "Try typing a line of at least 257 characters. Hit ENTER exactly once unless you don't see another prompt.\n"
     gets stdin line
     set len [string length $line]
-    list [yesno "Did you hit ENTER only once?"] [expr {$len > 256}] [yesno "Line length was $len characters. Is this correct?"]
+    list [yesno "Did you hit ENTER only once?"] [expr {$len >= 257}] [yesno "Line length was $len characters. Is this correct?"]
 } -result {1 1 1}
 
 test console-input-3.1 {Console gets blocking, small channel buffer size - long lines bug-bda99f2393} -constraints {
     win interactive
 } -body {
-    prompt "Try typing a line of at least 256 characters. Hit ENTER exactly once unless you don't see another prompt.\n"
+    prompt "Try typing a line of at least 257 characters. Hit ENTER exactly once unless you don't see another prompt.\n"
     set bufSize [fconfigure stdin -buffersize]
     fconfigure stdin -buffersize 10
     gets stdin line
     fconfigure stdin -buffersize $bufSize
     set len [string length $line]
-    list [yesno "Did you hit ENTER only once?"] [expr {$len > 256}] [yesno "Line length was $len characters. Is this correct?"]
+    list [yesno "Did you hit ENTER only once?"] [expr {$len >= 257}] [yesno "Line length was $len characters. Is this correct?"]
 } -result {1 1 1}
 
 test console-input-3.2 {Console gets nonblocking - long lines bug-bda99f2393} -constraints {
     win interactive
 } -body {
-    prompt "Try typing a line of at least 256 characters. Hit ENTER exactly once unless you don't see another prompt.\n"
+    prompt "Try typing a line of at least 257 characters. Hit ENTER exactly once unless you don't see another prompt.\n"
     fconfigure stdin -blocking 0
     while {[gets stdin line] < 0} {
 	after 1000
     }
     fconfigure stdin -blocking 1
     set len [string length $line]
-    list [yesno "Did you hit ENTER only once?"] [expr {$len > 256}] [yesno "Line length was $len characters. Is this correct?"]
+    list [yesno "Did you hit ENTER only once?"] [expr {$len >= 257}] [yesno "Line length was $len characters. Is this correct?"]
 } -result {1 1 1}
 
 test console-input-3.3 {Console gets nonblocking small channel buffer size - long lines bug-bda99f2393} -constraints {
     win interactive
 } -body {
-    prompt "Try typing a line of at least 256 characters. Hit ENTER exactly once unless you don't see another prompt.\n"
+    prompt "Try typing a line of at least 257 characters. Hit ENTER exactly once unless you don't see another prompt.\n"
     set bufSize [fconfigure stdin -buffersize]
     fconfigure stdin -blocking 0 -buffersize 10
     while {[gets stdin line] < 0} {
@@ -200,7 +201,7 @@ test console-input-3.3 {Console gets nonblocking small channel buffer size - lon
     }
     fconfigure stdin -blocking 1 -buffersize $bufSize
     set len [string length $line]
-    list [yesno "Did you hit ENTER only once?"] [expr {$len > 256}] [yesno "Line length was $len characters. Is this correct?"]
+    list [yesno "Did you hit ENTER only once?"] [expr {$len >= 257}] [yesno "Line length was $len characters. Is this correct?"]
 } -result {1 1 1}
 
 test console-input-3.4 {Console command line arrow keys} -constraints {
@@ -427,6 +428,90 @@ test console-thread-output-1.0 {Output from thread} -constraints {
     thread::send $tid {puts [thread::id]}
     yesno "Did you see $tid printed?"
 } -result 1
+
+# Bug f10d91c2 - dead console busy loop
+# Test script courtesy @JulianNoble
+test console-bug-f10d91c2 {
+    Test termination of console process with extreme prejudice
+} -constraints {win havePowershell} -setup {
+    set tclScript [tcltest::makeFile {
+        #stdin fileevent + 1s heartbeat. Optional argv 0: heartbeat file path.
+        if {[llength $argv]} {
+            set hbf [lindex $argv 0]
+        } else {
+            set hbf [file join [file dirname [info script]] heartbeat.txt]
+        }
+        chan configure stdin -blocking 0
+        chan event stdin readable {
+            set status [catch {read stdin} data]
+            puts stderr "readable fired"
+            flush stderr
+            if {$status} {
+                puts stderr "Error: $data - exiting"
+                exit 0
+            } else {
+                if {[chan eof stdin]} {
+                    puts stderr "eof - exiting"
+                    exit 0
+                }
+            }
+        }
+        proc heartbeat {} {
+            set f [open $::hbf a]
+            puts $f "[clock format [clock seconds] -format %H:%M:%S] alive - pid [pid]"
+            close $f
+            after 1000 heartbeat
+        }
+        heartbeat
+        puts stderr "armed - pid [pid]"
+        flush stderr
+        vwait ::forever
+    } bug-f10d91.tcl ]
+
+    # The powershell driver script
+    set psProgram {
+       param([string]$Tclsh = '%TCLINTERP%')
+$dir = Join-Path $env:TEMP ("deadconsole_" + (Get-Date -Format HHmmss_fff))
+New-Item -ItemType Directory $dir | Out-Null
+$err = Join-Path $dir err.txt
+$hb  = Join-Path $dir heartbeat.txt
+# 1. launch the payload under its OWN dedicated CLASSIC conhost (bypasses Windows Terminal)
+$con = Start-Process -WindowStyle Hidden -PassThru conhost.exe -ArgumentList `
+    "$env:SystemRoot\System32\cmd.exe /c `"$Tclsh %TCLSCRIPT% $hb 2> $err`""
+# 2. wait for the payload to arm and report its pid
+$tclpid = $null
+foreach ($i in 1..20) {
+    Start-Sleep -Milliseconds 500
+    if ((Test-Path $err) -and ((Get-Content $err -Raw) -match 'armed - pid (\d+)')) {
+        $tclpid = [int]$Matches[1]; break
+    }
+}
+if (-not $tclpid) { throw "payload never armed (see $err)" }
+"conhost $($con.Id), tclsh $tclpid armed; baselining..."
+$p = Get-Process -Id $tclpid; $c0 = $p.CPU; Start-Sleep 3; $p.Refresh()
+"idle baseline: $($p.CPU - $c0) cpu-sec over 3s (expect ~0)"
+# 3. force-kill the console server (TerminateProcess - no CTRL_CLOSE_EVENT is generated)
+Stop-Process -Force -Id $con.Id
+Start-Sleep 2
+$p = Get-Process -Id $tclpid -ErrorAction SilentlyContinue
+if (-not $p) { "tclsh terminated - not reproduced"; Get-Content $err; exit 1 }
+$c1 = $p.CPU; Start-Sleep 10; $p.Refresh()
+"SURVIVED. cpu rate: $(($p.CPU - $c1) / 10) cores over 10s"
+$p.Threads | Sort-Object {$_.TotalProcessorTime} -Descending |
+    Select-Object -First 3 Id, ThreadState, WaitReason, TotalProcessorTime
+"stderr trail (no 'readable fired'/'eof' will have appeared):"; Get-Content $err
+"heartbeat tail (still ticking - event loop alive, timers fire, only the fileevent is lost):"
+Get-Content $hb -Tail 3
+"kill the specimen when done:  Stop-Process -Force -Id $tclpid"
+    }
+    set psProgram [string map [list %TCLINTERP% [file nativename [info nameofexecutable]] %TCLSCRIPT% [file nativename $tclScript]] $psProgram]
+    set psScript [tcltest::makeFile $psProgram bug-f10d91.ps1]
+} -cleanup {
+    tcltest::removeFile $tclScript
+    tcltest::removeFile $psScript
+} -body {
+    exec {*}[auto_execok powershell] -File $psScript
+} -result {*tclsh terminated*readable fired*exiting*} -match glob -returnCodes error
 
 ::tcltest::cleanupTests
 return
