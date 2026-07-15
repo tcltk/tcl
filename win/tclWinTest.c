@@ -738,7 +738,7 @@ TestfilesddlCmd (
 	Tcl_Size utflen;
 	const char *utfPtr = Tcl_GetStringFromObj(objv[2], &utflen);
 	WCHAR *newSddl = (WCHAR *) Tcl_UtfToChar16DString(utfPtr, utflen, &ds);
-	if (!ConvertStringSecurityDescriptorToSecurityDescriptorW(sddlPtr,
+	if (!ConvertStringSecurityDescriptorToSecurityDescriptorW(newSddl,
 		    SDDL_REVISION_1, &secdPtr, NULL)) {
 	    err = GetLastError();
 	    errorMessage = "Failed to convert SDDL to security descriptor";

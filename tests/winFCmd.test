@@ -23,6 +23,7 @@ catch [list package require -exact tcl::test [info patchlevel]]
 testConstraint testvolumetype [llength [info commands testvolumetype]]
 testConstraint testfile       [llength [info commands testfile]]
 testConstraint testchmod      [llength [info commands testchmod]]
+testConstraint testfilesddl   [llength [info commands testfilesddl]]
 testConstraint cdrom 0
 testConstraint exdev 0
 testConstraint longFileNames 0
@@ -113,7 +114,7 @@ proc parseSddlAcl {acl} {
     # (upper case letters) followed by optional joined parenthisized expressions
     # Returns a pair consisting of the flags and a list of ACE SDDL strings
     regexp {^([A-Z]*)} $acl -> flags
-    set aces [regexp -all -inline {\(([^)]*)\)} $acl]
+    set aces [regexp -all -inline {\((?:[^)]*)\)} $acl]
     return [list $flags $aces]
 }
 
@@ -1295,6 +1296,40 @@ test winFCmd-16.14 {Windows file normalization - relative HOME} -setup {
     set ::env(HOME) $oldhome
     cd $pwd
 } -result $pwd
+# Following test only run under constraint allowfilesecuritychanges to
+# protect against consequences from bugs that clobber permissions. Bitter
+# experience - write-protected my entire work tree and wondered why compiles
+# failed.
+test winFCmd-16.25 {
+    Windows file normalization - Bug d40d8db3 - denied dir read
+} -constraints {
+    win testchmod testfilesddl allowfilesecuritychanges
+} -setup {
+    set dir [tcltest::makeDirectory winFCmd-16.25]
+    if {[file exists $dir]} {
+        testchmod 0o777 $dir
+        file delete -force $dir
+        if {[file exists $dir]} {
+            error "Could not delete $dir"
+        }
+    }
+    set path [file join $dir subdir tail]
+    file mkdir $path
+    set secd [parseSddl [testfilesddl $dir]]
+    set dacl [dict getdef $secd dacl ""]
+    lassign [parseSddlAcl [dict getdef $secd dacl ""]] aclFlags aces
+    ledit aces 0 -1 "(D;;0x1;;;[dict get $secd owner])"
+    set sddl "D:$aclFlags[join $aces {}]"
+    testfilesddl $dir $sddl
+} -cleanup {
+    testchmod 0o777 $path
+    testchmod 0o777 [file dirname $path]
+    testchmod 0o777 $dir
+    file delete -force $dir
+    unset -nocomplain dir path secd dacl aclFlags aces sddl
+} -body {
+    file normalize $path
+} -result [file join [tcltest::temporaryDirectory] winFCmd-16.25 subdir tail]
 
 test winFCmd-17.1 {Windows bad permissions cd} -constraints win -body {
     set d {}
