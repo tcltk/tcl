@@ -77,6 +77,46 @@ proc findfile {dir} {
     return ""
 }
 
+proc parseSddl {sddl} {
+    # Parse an SDDL, returning a dictionary with keys owner, group,
+    # dacl and sacl. If any component is not present in the SDDL, the
+    # dictionary omits the corresponding key. Note a component may be
+    # present but empty in which case the dictionary key is present with
+    # an empty string as its value
+    # SDDL syntax:
+    # O: owner SID
+    # G: group SID
+    # D: DACL - optional control flags, followed by parenthesized ACE list
+    # S: SACL - ditto
+    set sddlRe {(?x)
+        ^
+        (?: (O:) ( [A-Za-z0-9-]+? ) (?=G:|D:|S:|$) )?
+        (?: (G:) ( [A-Za-z0-9-]+? ) (?=D:|S:|$)    )?
+        (?: (D:) ((?: [A-Z]+ )? (?: \( [^)]* \) )*))?
+        (?: (S:) ((?: [A-Z]+ )? (?: \( [^)]* \) )*))?
+        $
+    }
+    if {![regexp $sddlRe $sddl -> ownerTag owner groupTag group daclTag dacl saclTag sacl]} {
+        error "Could not parse SDDL \"$sddl\""
+    }
+    set result [dict create]
+    foreach field {owner group dacl sacl} {
+        if {[set ${field}Tag] ne ""} {
+            dict set result $field [set $field]
+        }
+    }
+    return $result
+}
+
+proc parseSddlAcl {acl} {
+    # Parse a SDDL ACL component consisting of optional leading flags
+    # (upper case letters) followed by optional joined parenthisized expressions
+    # Returns a pair consisting of the flags and a list of ACE SDDL strings
+    regexp {^([A-Z]*)} $acl -> flags
+    set aces [regexp -all -inline {\(([^)]*)\)} $acl]
+    return [list $flags $aces]
+}
+
 if {[testConstraint testvolumetype]} {
     foreach p {d e f g h i j k l m n o p q r s t u v w x y z} {
 	if {![catch {testvolumetype ${p}:} result] && $result in {CDFS UDF}} {
