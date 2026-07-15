@@ -2724,11 +2724,17 @@ TclpObjNormalizePath(
 		    handle = FindFirstFileW((WCHAR *) nativePath, &fData);
 		    if (handle == INVALID_HANDLE_VALUE) {
 			/*
-			 * This is usually the '/' in 'c:/' at end of string.
+			 * The GetFileAttributesEx above already verified
+			 * existence of the file. The FindFirstFile may fail
+			 * either because it is the root directory or
+			 * because an ACL prevents us from listing directory
+			 * content (Bug d40d8db3fb). In such a case, just
+			 * copy the part. This does mean we may not get the
+			 * file name case right and not do the short name
+			 * to long name translation but that's life.
 			 */
-
-			Tcl_DStringAppend(&dsNorm, (const char *) L"/",
-				sizeof(WCHAR));
+			Tcl_UtfToWCharDString(lastValidPathEnd,
+				currentPathEndPosition - lastValidPathEnd, &dsNorm);
 		    } else {
 			WCHAR *nativeName;
 
