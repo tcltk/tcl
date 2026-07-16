@@ -2644,21 +2644,6 @@ TclpFilesystemPathType(
 }
 
 /*
- * This define can be turned on to experiment with a different way of
- * normalizing paths (using a different Windows API). Unfortunately the new
- * path seems to take almost exactly the same amount of time as the old path!
- * The primary time taken by normalization is in
- * GetFileAttributesEx/FindFirstFile or GetFileAttributesEx/GetLongPathName.
- * Conversion to/from native is not a significant factor at all.
- *
- * Also, since we have to check for symbolic links (reparse points) then we
- * have to call GetFileAttributes on each path segment anyway, so there's no
- * benefit to doing anything clever there.
- */
-
-/* #define TclNORM_LONG_PATH */
-
-/*
  *---------------------------------------------------------------------------
  *
  * TclpObjNormalizePath --
@@ -2815,7 +2800,6 @@ TclpObjNormalizePath(
 		}
 	    }
 
-#ifndef TclNORM_LONG_PATH
 	    /*
 	     * Now we convert the tail of the current path to its 'long form',
 	     * and append it to 'dsNorm' which holds the current normalized
@@ -2869,11 +2853,17 @@ TclpObjNormalizePath(
 		    handle = FindFirstFileW((WCHAR *) nativePath, &fData);
 		    if (handle == INVALID_HANDLE_VALUE) {
 			/*
-			 * This is usually the '/' in 'c:/' at end of string.
+			 * The GetFileAttributesEx above already verified
+			 * existence of the file. The FindFirstFile may fail
+			 * either because it is the root directory or
+			 * because an ACL prevents us from listing directory
+			 * content (Bug d40d8db3fb). In such a case, just
+			 * copy the part. This does mean we may not get the
+			 * file name case right and not do the short name
+			 * to long name translation but that's life.
 			 */
-
-			Tcl_DStringAppend(&dsNorm, (const char *) L"/",
-				sizeof(WCHAR));
+			Tcl_UtfToWCharDString(lastValidPathEnd,
+				currentPathEndPosition - lastValidPathEnd, &dsNorm);
 		    } else {
 			WCHAR *nativeName;
 
@@ -2891,7 +2881,6 @@ TclpObjNormalizePath(
 		    }
 		}
 	    }
-#endif /* !TclNORM_LONG_PATH */
 	    Tcl_DStringFree(&ds);
 	    lastValidPathEnd = currentPathEndPosition;
 	    if (cur == 0) {
@@ -2907,31 +2896,6 @@ TclpObjNormalizePath(
 	}
 	currentPathEndPosition++;
 
-#ifdef TclNORM_LONG_PATH
-	/*
-	 * Convert the entire known path to long form.
-	 */
-
-	WCHAR wpath[MAX_PATH];
-	const WCHAR *nativePath;
-	DWORD wpathlen;
-
-	Tcl_DStringInit(&ds);
-	nativePath =
-		Tcl_UtfToWCharDString(path, lastValidPathEnd - path, &ds);
-	wpathlen = GetLongPathNameProc(nativePath,
-		(WCHAR *) wpath, MAX_PATH);
-	/*
-	 * We have to make the drive letter uppercase.
-	 */
-
-	if (wpath[0] >= 'a') {
-	    wpath[0] -= ('a' - 'A');
-	}
-	Tcl_DStringAppend(&dsNorm, (const char *) wpath,
-		wpathlen * sizeof(WCHAR));
-	Tcl_DStringFree(&ds);
-#endif /* TclNORM_LONG_PATH */
     }
 
     /*
