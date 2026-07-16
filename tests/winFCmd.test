@@ -32,6 +32,12 @@ testConstraint longFileNames 0
 testConstraint notInCIenv     [expr {![info exists ::env(CI)]}]
 testConstraint knownMsvcBug [expr {[tcl::build-info msvc] eq 0}]
 
+# If in a CI environment, file system changes are ephemeral anyways so
+# always set allowfilesecuritychanges constraint
+if {![testConstraint notInCIenv]} {
+    testConstraint allowfilesecuritychanges 1
+}
+
 proc createfile {file {string a}} {
     set f [open $file w]
     puts -nonewline $f $string
@@ -1296,40 +1302,53 @@ test winFCmd-16.14 {Windows file normalization - relative HOME} -setup {
     set ::env(HOME) $oldhome
     cd $pwd
 } -result $pwd
+
 # Following test only run under constraint allowfilesecuritychanges to
 # protect against consequences from bugs that clobber permissions. Bitter
 # experience - write-protected my entire work tree and wondered why compiles
 # failed.
-test winFCmd-16.25 {
-    Windows file normalization - Bug d40d8db3 - denied dir read
-} -constraints {
-    win testchmod testfilesddl allowfilesecuritychanges
-} -setup {
-    set dir [tcltest::makeDirectory winFCmd-16.25]
-    if {[file exists $dir]} {
-        testchmod 0o777 $dir
-        file delete -force $dir
-        if {[file exists $dir]} {
-            error "Could not delete $dir"
-        }
+proc test_bug_d40d8db3 {id comment subdir} {
+    set testScript {
+        test @ID@ {
+            @COMMENT@
+        } -constraints {
+            win testchmod testfilesddl allowfilesecuritychanges
+        } -setup {
+            set dir [tcltest::makeDirectory @ID@]
+            if {[file exists $dir]} {
+                testchmod 0o777 $dir
+                file delete -force $dir
+                if {[file exists $dir]} {
+                    error "Could not delete $dir"
+                }
+            }
+            set aclTarget [file join $dir @SUBDIR@]
+            set path [file join $aclTarget tail]
+            file mkdir $path
+            set secd [parseSddl [testfilesddl $aclTarget]]
+            set dacl [dict getdef $secd dacl ""]
+            lassign [parseSddlAcl [dict getdef $secd dacl ""]] aclFlags aces
+            ledit aces 0 -1 "(D;;0x1;;;[dict get $secd owner])"
+            set sddl "D:$aclFlags[join $aces {}]"
+            testfilesddl $aclTarget $sddl
+        } -cleanup {
+            testchmod 0o777 $path
+            testchmod 0o777 $aclTarget
+            testchmod 0o777 $dir
+            file delete -force $dir
+            unset -nocomplain dir path secd dacl aclFlags aces sddl
+        } -body {
+            file normalize $path
+        } -result [file join [tcltest::temporaryDirectory] @ID@ @SUBDIR@ tail]
     }
-    set path [file join $dir subdir tail]
-    file mkdir $path
-    set secd [parseSddl [testfilesddl $dir]]
-    set dacl [dict getdef $secd dacl ""]
-    lassign [parseSddlAcl [dict getdef $secd dacl ""]] aclFlags aces
-    ledit aces 0 -1 "(D;;0x1;;;[dict get $secd owner])"
-    set sddl "D:$aclFlags[join $aces {}]"
-    testfilesddl $dir $sddl
-} -cleanup {
-    testchmod 0o777 $path
-    testchmod 0o777 [file dirname $path]
-    testchmod 0o777 $dir
-    file delete -force $dir
-    unset -nocomplain dir path secd dacl aclFlags aces sddl
-} -body {
-    file normalize $path
-} -result [file join [tcltest::temporaryDirectory] winFCmd-16.25 subdir tail]
+    uplevel 1 [string map [list @ID@ $id @COMMENT@ $comment @SUBDIR@ $subdir] $testScript]
+}
+test_bug_d40d8db3 winFCmd-16.25.1 {
+    Windows file normalization - Bug d40d8db3 - denied dir read
+} middledir
+test_bug_d40d8db3 winFCmd-16.25.2 {
+    Windows file normalization - Bug d40d8db3 - denied dir read (unicode)
+} \xe9\u4E4E
 
 test winFCmd-17.1 {Windows bad permissions cd} -constraints win -body {
     set d {}
