@@ -13,6 +13,8 @@ to the userbase.
  - [format honours LC_NUMERIC for %f/%g](https://core.tcl-lang.org/tcl/tktview/fcd3da)
  - [Warning: argument 1 of 'Tcl_SetPanicProc' might be a candiate for a format attribute](https://core.tcl-lang.org/tcl/tktview/6ae6c1)
  - [platform::identify broken on Red Hat Linux](https://core.tcl-lang.org/tcl/tktview/61ba0b)
+ - [Windows: file normalize drops a component when parent enumeration is denied](https://core.tcl-lang.org/tcl/tktview/d40d8d)
+ - [Windows: busy loop when conhost process is killed](https://core.tcl-lang.org/tcl/tktview/f10d91)
 
 # Updated bundled packages, libraries, standards, data
  - platform 1.1.1
