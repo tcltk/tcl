@@ -706,13 +706,13 @@ TestfilesddlCmd (
     Tcl_DStringInit(&ds);
 
     /* Note no SACL because that requires privileges */
-    SECURITY_DESCRIPTOR *secdPtr = NULL;
+    PSECURITY_DESCRIPTOR secdPtr = NULL;
     WCHAR *sddlPtr = NULL;
     SECURITY_INFORMATION secInfo = OWNER_SECURITY_INFORMATION
 				 | GROUP_SECURITY_INFORMATION
 				 | DACL_SECURITY_INFORMATION;
-    char *errorMessage = "";
-    WCHAR *nativePath = (const WCHAR *)Tcl_FSGetNativePath(objv[1]);
+    const char *errorMessage = "";
+    WCHAR *nativePath = (WCHAR *)Tcl_FSGetNativePath(objv[1]);
     DWORD err = GetNamedSecurityInfoW(nativePath, SE_FILE_OBJECT,
 	    secInfo, NULL, NULL, NULL, NULL, &secdPtr);
     if (err != ERROR_SUCCESS) {
@@ -785,7 +785,7 @@ vamoose:
     }
     if (err != ERROR_SUCCESS) {
 	Tcl_SetObjResult(interp,
-		Tcl_ObjPrintf("%s (path %s, Windows error %d)", errorMessage,
+		Tcl_ObjPrintf("%s (path %s, Windows error %lu)", errorMessage,
 			Tcl_GetString(objv[1]), err));
 	return TCL_ERROR;
     }
