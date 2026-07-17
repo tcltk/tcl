@@ -1191,9 +1191,8 @@ TcpSetOptionProc(
 	if (rtn != 0) {
 	    Tcl_WinConvertError(WSAGetLastError());
 	    if (interp) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"couldn't set socket option: %s",
-			Tcl_PosixError(interp)));
+		Tcl_PrintfResult(interp, "couldn't set socket option: %s",
+			Tcl_PosixError(interp));
 	    }
 	    return TCL_ERROR;
 	}
@@ -1212,9 +1211,8 @@ TcpSetOptionProc(
 	if (rtn != 0) {
 	    Tcl_WinConvertError(WSAGetLastError());
 	    if (interp) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"couldn't set socket option: %s",
-			Tcl_PosixError(interp)));
+		Tcl_PrintfResult(interp, "couldn't set socket option: %s",
+			Tcl_PosixError(interp));
 	    }
 	    return TCL_ERROR;
 	}
@@ -1400,9 +1398,8 @@ TcpGetOptionProc(
 	    if (len) {
 		Tcl_WinConvertError((DWORD) WSAGetLastError());
 		if (interp) {
-		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			    "can't get peername: %s",
-			    Tcl_PosixError(interp)));
+		    Tcl_PrintfResult(interp, "can't get peername: %s",
+			    Tcl_PosixError(interp));
 		}
 		return TCL_ERROR;
 	    }
@@ -1474,8 +1471,8 @@ TcpGetOptionProc(
 	} else {
 	    if (interp) {
 		Tcl_WinConvertError((DWORD) WSAGetLastError());
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"can't get sockname: %s", Tcl_PosixError(interp)));
+		Tcl_PrintfResult(interp, "can't get sockname: %s",
+			Tcl_PosixError(interp));
 	    }
 	    return TCL_ERROR;
 	}
@@ -1942,8 +1939,8 @@ TcpConnect(
 	 */
 
 	if (interp != NULL) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "couldn't open socket: %s", Tcl_PosixError(interp)));
+	    Tcl_PrintfResult(interp, "couldn't open socket: %s",
+		    Tcl_PosixError(interp));
 	}
 	return TCL_ERROR;
     }
@@ -1996,8 +1993,7 @@ Tcl_OpenTcpClient(
 	    freeaddrinfo(addrlist);
 	}
 	if (interp != NULL) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "couldn't open socket: %s", errorMsg));
+	    Tcl_PrintfResult(interp, "couldn't open socket: %s", errorMsg);
 	}
 	return NULL;
     }
@@ -2273,9 +2269,8 @@ Tcl_OpenTcpServerEx(
     }
 
     if (interp != NULL) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"couldn't open socket: %s",
-		(errorMsg ? errorMsg : Tcl_PosixError(interp))));
+	Tcl_PrintfResult(interp, "couldn't open socket: %s",
+		(errorMsg ? errorMsg : Tcl_PosixError(interp)));
     }
 
     if (sock != INVALID_SOCKET) {

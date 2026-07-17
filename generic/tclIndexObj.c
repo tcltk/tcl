@@ -206,15 +206,14 @@ Tcl_GetIndexFromObjStruct(
     const char *key, *p1;
     const char *p2;
     const char *const *entryPtr;
-    Tcl_Obj *resultPtr;
     IndexRep *indexRep;
     const Tcl_ObjInternalRep *irPtr;
 
     if (offset < (Tcl_Size)sizeof(char *)) {
 	if (interp) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    Tcl_PrintfResult(interp,
 		    "Invalid %s value %" TCL_SIZE_MODIFIER "d.",
-		    "struct offset", offset));
+		    "struct offset", offset);
 	}
 	return TCL_ERROR;
     }
@@ -337,35 +336,32 @@ Tcl_GetIndexFromObjStruct(
 
 	int count = 0;
 
-	TclNewObj(resultPtr);
 	entryPtr = (const char *const *)tablePtr;
 	while ((*entryPtr != NULL) && !**entryPtr) {
 	    entryPtr = NEXT_ENTRY(entryPtr, offset);
 	}
-	Tcl_AppendStringsToObj(resultPtr,
-		(numAbbrev>1 && !(flags & TCL_EXACT) ? "ambiguous " : "bad "),
-		msg, " \"", key, (char *)NULL);
+	Tcl_PrintfResult(interp, "%s %s \"%s\": ",
+		(numAbbrev>1 && !(flags & TCL_EXACT) ? "ambiguous" : "bad"),
+		msg, key);
 	if (*entryPtr == NULL) {
-	    Tcl_AppendStringsToObj(resultPtr, "\": no valid options", (char *)NULL);
+	    Tcl_AppendPrintfResult(interp, "no valid options");
 	} else {
-	    Tcl_AppendStringsToObj(resultPtr, "\": must be ",
-		    *entryPtr, (char *)NULL);
+	    Tcl_AppendPrintfResult(interp, "must be %s", *entryPtr);
 	    entryPtr = NEXT_ENTRY(entryPtr, offset);
 	    while (*entryPtr != NULL) {
 		if ((*NEXT_ENTRY(entryPtr, offset) == NULL) && !(flags & TCL_NULL_OK)) {
-		    Tcl_AppendStringsToObj(resultPtr, (count > 0 ? "," : ""),
-			    " or ", *entryPtr, (char *)NULL);
+		    Tcl_AppendPrintfResult(interp, "%s or %s",
+			    (count > 0 ? "," : ""), *entryPtr);
 		} else if (**entryPtr) {
-		    Tcl_AppendStringsToObj(resultPtr, ", ", *entryPtr, (char *)NULL);
+		    Tcl_AppendPrintfResult(interp, ", %s", *entryPtr);
 		    count++;
 		}
 		entryPtr = NEXT_ENTRY(entryPtr, offset);
 	    }
 	    if ((flags & TCL_NULL_OK)) {
-		Tcl_AppendStringsToObj(resultPtr, ", or \"\"", (char *)NULL);
+		Tcl_AppendPrintfResult(interp, ", or \"\"");
 	    }
 	}
-	Tcl_SetObjResult(interp, resultPtr);
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "INDEX", msg, key, (char *)NULL);
     }
     return TCL_ERROR;
@@ -539,8 +535,7 @@ PrefixMatchObjCmd(
 	    break;
 	case PRFMATCH_MESSAGE:
 	    if (i > objc-4) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"missing value for -message", TCL_INDEX_NONE));
+		Tcl_PrintfResult(interp, "missing value for -message");
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "NOARG", (char *)NULL);
 		return TCL_ERROR;
 	    }
@@ -549,8 +544,7 @@ PrefixMatchObjCmd(
 	    break;
 	case PRFMATCH_ERROR:
 	    if (i > objc-4) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"missing value for -error", TCL_INDEX_NONE));
+		Tcl_PrintfResult(interp, "missing value for -error");
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "NOARG", (char *)NULL);
 		return TCL_ERROR;
 	    }
@@ -560,9 +554,8 @@ PrefixMatchObjCmd(
 		return TCL_ERROR;
 	    }
 	    if ((errorLength % 2) != 0) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"error options must have an even number of elements",
-			-1));
+		Tcl_PrintfResult(interp,
+			"error options must have an even number of elements");
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", "DICTIONARY", (char *)NULL);
 		return TCL_ERROR;
 	    }
@@ -806,6 +799,28 @@ PrefixLongestObjCmd(
  *----------------------------------------------------------------------
  */
 
+static inline void
+AppendWithQuoteIfNeeded(
+    Tcl_Interp *interp,
+    const char *elementStr,
+    Tcl_Size elementLen)
+{
+    Tcl_Obj *objPtr = Tcl_GetObjResult(interp);
+    char flags = 0;
+    Tcl_Size len = TclScanElement(elementStr, elementLen, &flags);
+
+    if (len != elementLen) {
+	char *quotedElementStr = (char *)TclStackAlloc(interp, len + 1);
+
+	len = TclConvertElement(elementStr, elementLen,
+		quotedElementStr, flags);
+	Tcl_AppendToObj(objPtr, quotedElementStr, len);
+	TclStackFree(interp, quotedElementStr);
+    } else {
+	Tcl_AppendToObj(objPtr, elementStr, elementLen);
+    }
+}
+
 void
 Tcl_WrongNumArgs(
     Tcl_Interp *interp,		/* Current interpreter. */
@@ -816,19 +831,15 @@ Tcl_WrongNumArgs(
 				 * objects in objv. The message may be
 				 * NULL. */
 {
-    Tcl_Obj *objPtr;
-    Tcl_Size i, len, elemLen;
-    char flags;
+    Tcl_Size i, elemLen;
     Interp *iPtr = (Interp *)interp;
     const char *elementStr;
 
-    TclNewObj(objPtr);
     if (iPtr->flags & INTERP_ALTERNATE_WRONG_ARGS) {
 	iPtr->flags &= ~INTERP_ALTERNATE_WRONG_ARGS;
-	Tcl_AppendObjToObj(objPtr, Tcl_GetObjResult(interp));
-	Tcl_AppendToObj(objPtr, " or \"", TCL_INDEX_NONE);
+	Tcl_AppendPrintfResult(interp, " or \"");
     } else {
-	Tcl_AppendToObj(objPtr, "wrong # args: should be \"", TCL_INDEX_NONE);
+	Tcl_PrintfResult(interp, "wrong # args: should be \"");
     }
 
     /*
@@ -877,19 +888,7 @@ Tcl_WrongNumArgs(
 	    } else {
 		elementStr = TclGetStringFromObj(origObjv[i], &elemLen);
 	    }
-	    flags = 0;
-	    len = TclScanElement(elementStr, elemLen, &flags);
-
-	    if (len != elemLen) {
-		char *quotedElementStr = (char *)TclStackAlloc(interp, len + 1);
-
-		len = TclConvertElement(elementStr, elemLen,
-			quotedElementStr, flags);
-		Tcl_AppendToObj(objPtr, quotedElementStr, len);
-		TclStackFree(interp, quotedElementStr);
-	    } else {
-		Tcl_AppendToObj(objPtr, elementStr, elemLen);
-	    }
+	    AppendWithQuoteIfNeeded(interp, elementStr, elemLen);
 
 	    /*
 	     * Add a space if the word is not the last one (which has a
@@ -897,7 +896,7 @@ Tcl_WrongNumArgs(
 	     */
 
 	    if (i + 1 < toPrint || objc!=0 || message!=NULL) {
-		Tcl_AppendStringsToObj(objPtr, " ", (char *)NULL);
+		Tcl_AppendPrintfResult(interp, " ");
 	    }
 	}
     }
@@ -919,26 +918,14 @@ Tcl_WrongNumArgs(
 	if ((irPtr = TclFetchInternalRep(objv[i], &tclIndexType))) {
 	    IndexRep *indexRep = (IndexRep *)irPtr->twoPtrValue.ptr1;
 
-	    Tcl_AppendStringsToObj(objPtr, EXPAND_OF(indexRep), (char *)NULL);
+	    Tcl_AppendPrintfResult(interp, "%s", EXPAND_OF(indexRep));
 	} else {
 	    /*
 	     * Quote the argument if it contains spaces (Bug 942757).
 	     */
 
 	    elementStr = TclGetStringFromObj(objv[i], &elemLen);
-	    flags = 0;
-	    len = TclScanElement(elementStr, elemLen, &flags);
-
-	    if (len != elemLen) {
-		char *quotedElementStr = (char *)TclStackAlloc(interp, len + 1);
-
-		len = TclConvertElement(elementStr, elemLen,
-			quotedElementStr, flags);
-		Tcl_AppendToObj(objPtr, quotedElementStr, len);
-		TclStackFree(interp, quotedElementStr);
-	    } else {
-		Tcl_AppendToObj(objPtr, elementStr, elemLen);
-	    }
+	    AppendWithQuoteIfNeeded(interp, elementStr, elemLen);
 	}
 
 	/*
@@ -946,8 +933,8 @@ Tcl_WrongNumArgs(
 	 * (either another element from objv, or the message string).
 	 */
 
-	if (i + 1 < objc || message!=NULL) {
-	    Tcl_AppendStringsToObj(objPtr, " ", (char *)NULL);
+	if (i + 1 < objc || message != NULL) {
+	    Tcl_AppendPrintfResult(interp, " ");
 	}
     }
 
@@ -958,11 +945,10 @@ Tcl_WrongNumArgs(
      */
 
     if (message != NULL) {
-	Tcl_AppendStringsToObj(objPtr, message, (char *)NULL);
+	Tcl_AppendPrintfResult(interp, "%s", message);
     }
-    Tcl_AppendStringsToObj(objPtr, "\"", (char *)NULL);
+    Tcl_AppendPrintfResult(interp, "\"");
     Tcl_SetErrorCode(interp, "TCL", "WRONGARGS", (char *)NULL);
-    Tcl_SetObjResult(interp, objPtr);
 }
 
 /*
@@ -1079,8 +1065,7 @@ Tcl_ParseArgsObjv(
 		goto gotMatch;
 	    }
 	    if (matchPtr != NULL) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"ambiguous option \"%s\"", str));
+		Tcl_PrintfResult(interp, "ambiguous option \"%s\"", str);
 		goto error;
 	    }
 	    matchPtr = infoPtr;
@@ -1092,8 +1077,7 @@ Tcl_ParseArgsObjv(
 	     */
 
 	    if (remObjv == NULL) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"unrecognized argument \"%s\"", str));
+		Tcl_PrintfResult(interp, "unrecognized argument \"%s\"", str);
 		goto error;
 	    }
 
@@ -1118,9 +1102,9 @@ Tcl_ParseArgsObjv(
 	    }
 	    if (Tcl_GetIntFromObj(interp, objv[srcIndex],
 		    (int *) infoPtr->dstPtr) == TCL_ERROR) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		Tcl_PrintfResult(interp,
 			"expected integer argument for \"%s\" but got \"%s\"",
-			infoPtr->keyStr, TclGetString(objv[srcIndex])));
+			infoPtr->keyStr, TclGetString(objv[srcIndex]));
 		goto error;
 	    }
 	    srcIndex++;
@@ -1151,9 +1135,9 @@ Tcl_ParseArgsObjv(
 	    }
 	    if (Tcl_GetDoubleFromObj(interp, objv[srcIndex],
 		    (double *)infoPtr->dstPtr) == TCL_ERROR) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		Tcl_PrintfResult(interp,
 			"expected floating-point argument for \"%s\" but got \"%s\"",
-			infoPtr->keyStr, TclGetString(objv[srcIndex])));
+			infoPtr->keyStr, TclGetString(objv[srcIndex]));
 		goto error;
 	    }
 	    srcIndex++;
@@ -1194,8 +1178,8 @@ Tcl_ParseArgsObjv(
 	    PrintUsage(interp, argTable);
 	    goto error;
 	default:
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "bad argument type %d in Tcl_ArgvInfo", infoPtr->type));
+	    Tcl_PrintfResult(interp, "bad argument type %d in Tcl_ArgvInfo",
+		    infoPtr->type);
 	    goto error;
 	}
     }
@@ -1231,8 +1215,8 @@ Tcl_ParseArgsObjv(
      */
 
   missingArg:
-    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-	    "\"%s\" option requires an additional argument", str));
+    Tcl_PrintfResult(interp, "\"%s\" option requires an additional argument",
+	    str);
   error:
     if (leftovers != NULL) {
 	Tcl_Free(leftovers);
@@ -1267,9 +1251,6 @@ PrintUsage(
 {
     const Tcl_ArgvInfo *infoPtr;
     Tcl_Size width, numSpaces;
-#define NUM_SPACES 20
-    static const char spaces[] = "                    ";
-    Tcl_Obj *msg;
 
     /*
      * First, compute the width of the widest option key, so that we can make
@@ -1293,37 +1274,29 @@ PrintUsage(
      * Now add the option information, with pretty-printing.
      */
 
-    msg = Tcl_NewStringObj("Command-specific options:", TCL_INDEX_NONE);
+    Tcl_PrintfResult(interp, "Command-specific options:");
     for (infoPtr = argTable; infoPtr->type != TCL_ARGV_END; infoPtr++) {
 	if ((infoPtr->type == TCL_ARGV_HELP) && (infoPtr->keyStr == NULL)) {
-	    Tcl_AppendPrintfToObj(msg, "\n%s", infoPtr->helpStr);
+	    Tcl_AppendPrintfResult(interp, "\n%s", infoPtr->helpStr);
 	    continue;
 	}
-	Tcl_AppendPrintfToObj(msg, "\n %s:", infoPtr->keyStr);
 	numSpaces = width + 1 - strlen(infoPtr->keyStr);
-	while (numSpaces > 0) {
-	    if (numSpaces >= NUM_SPACES) {
-		Tcl_AppendToObj(msg, spaces, NUM_SPACES);
-	    } else {
-		Tcl_AppendToObj(msg, spaces, numSpaces);
-	    }
-	    numSpaces -= NUM_SPACES;
-	}
-	Tcl_AppendToObj(msg, infoPtr->helpStr, TCL_INDEX_NONE);
+	Tcl_AppendPrintfResult(interp, "\n %s:%*s%s",
+		infoPtr->keyStr, (int) numSpaces, "", infoPtr->helpStr);
 	switch (infoPtr->type) {
 	case TCL_ARGV_INT:
-	    Tcl_AppendPrintfToObj(msg, "\n\t\tDefault value: %d",
+	    Tcl_AppendPrintfResult(interp, "\n\t\tDefault value: %d",
 		    *((int *) infoPtr->dstPtr));
 	    break;
 	case TCL_ARGV_FLOAT:
-	    Tcl_AppendPrintfToObj(msg, "\n\t\tDefault value: %g",
+	    Tcl_AppendPrintfResult(interp, "\n\t\tDefault value: %g",
 		    *((double *) infoPtr->dstPtr));
 	    break;
 	case TCL_ARGV_STRING: {
 	    char *string = *((char **) infoPtr->dstPtr);
 
 	    if (string != NULL) {
-		Tcl_AppendPrintfToObj(msg, "\n\t\tDefault value: \"%s\"",
+		Tcl_AppendPrintfResult(interp, "\n\t\tDefault value: \"%s\"",
 			string);
 	    }
 	    break;
@@ -1332,7 +1305,6 @@ PrintUsage(
 	    break;
 	}
     }
-    Tcl_SetObjResult(interp, msg);
 }
 
 /*
@@ -1377,10 +1349,10 @@ TclGetCompletionCodeFromObj(
      */
 
     if (interp != NULL) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	Tcl_PrintfResult(interp,
 		"bad completion code \"%s\": must be"
 		" ok, error, return, break, continue, or an integer",
-		TclGetString(value)));
+		TclGetString(value));
 	Tcl_SetErrorCode(interp, "TCL", "RESULT", "ILLEGAL_CODE", (char *)NULL);
     }
     return TCL_ERROR;

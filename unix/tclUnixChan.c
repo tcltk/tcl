@@ -109,9 +109,9 @@ typedef struct {
 
 #define UNSUPPORTED_OPTION(detail) \
     if (interp) {							\
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(				\
-		"%s not supported for this platform", (detail)));	\
-	Tcl_SetErrorCode(interp, "TCL", "UNSUPPORTED", (char *)NULL);		\
+	Tcl_PrintfResult(interp, "%s not supported for this platform",	\
+		(detail));						\
+	Tcl_SetErrorCode(interp, "TCL", "UNSUPPORTED", (char *)NULL);	\
     }
 
 /*
@@ -683,9 +683,8 @@ FileGetOptionProc(
 	Tcl_Size dictLength;
 
 	if (dictObj == NULL) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "couldn't read file channel status: %s",
-		    Tcl_PosixError(interp)));
+	    Tcl_PrintfResult(interp, "couldn't read file channel status: %s",
+		    Tcl_PosixError(interp));
 	    return TCL_ERROR;
 	}
 
@@ -825,9 +824,9 @@ TtySetOptionProc(
 	    return TCL_ERROR;
 	} else {
 	    if (interp) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		Tcl_PrintfResult(interp,
 			"bad value for -handshake: must be one of"
-			" xonxoff, rtscts, dtrdsr or none", -1));
+			" xonxoff, rtscts, dtrdsr or none");
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "FCONFIGURE",
 			"VALUE", (char *)NULL);
 	    }
@@ -847,9 +846,9 @@ TtySetOptionProc(
 	} else if (argc != 2) {
 	badXchar:
 	    if (interp) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		Tcl_PrintfResult(interp,
 			"bad value for -xchar: should be a list of"
-			" two elements with each a single 8-bit character", -1));
+			" two elements with each a single 8-bit character");
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", "XCHAR", (char *)NULL);
 	    }
 	    Tcl_Free(argv);
@@ -912,9 +911,9 @@ TtySetOptionProc(
 	}
 	if ((argc % 2) == 1) {
 	    if (interp) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		Tcl_PrintfResult(interp,
 			"bad value for -ttycontrol: should be a list of"
-			" signal,value pairs", -1));
+			" signal,value pairs");
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "FCONFIGURE",
 			"VALUE", (char *)NULL);
 	    }
@@ -954,9 +953,9 @@ TtySetOptionProc(
 #endif /* TIOCSBRK & TIOCCBRK */
 	    } else {
 		if (interp) {
-		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    Tcl_PrintfResult(interp,
 			    "bad signal \"%s\" for -ttycontrol: must be"
-			    " DTR, RTS or BREAK", argv[i]));
+			    " DTR, RTS or BREAK", argv[i]);
 		    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "FCONFIGURE",
 			    "VALUE", (char *)NULL);
 		}
@@ -986,9 +985,9 @@ TtySetOptionProc(
 	    fsPtr->closeMode = CLOSE_DISCARD;
 	} else {
 	    if (interp) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		Tcl_PrintfResult(interp,
 			"bad mode \"%s\" for -closemode: must be"
-			" default, discard, or drain", value));
+			" default, discard, or drain", value);
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "FCONFIGURE",
 			"VALUE", (char *)NULL);
 	    }
@@ -1004,9 +1003,9 @@ TtySetOptionProc(
     if ((len > 2) && (strncmp(optionName, "-inputmode", len) == 0)) {
 	if (tcgetattr(fsPtr->fileState.fd, &iostate) < 0) {
 	    if (interp != NULL) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		Tcl_PrintfResult(interp,
 			"couldn't read serial terminal control state: %s",
-			Tcl_PosixError(interp)));
+			Tcl_PosixError(interp));
 	    }
 	    return TCL_ERROR;
 	}
@@ -1044,9 +1043,9 @@ TtySetOptionProc(
 	    iostate = fsPtr->initState;
 	} else {
 	    if (interp) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		Tcl_PrintfResult(interp,
 			"bad mode \"%s\" for -inputmode: must be"
-			" normal, password, raw, or reset", value));
+			" normal, password, raw, or reset", value);
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "FCONFIGURE",
 			"VALUE", (char *)NULL);
 	    }
@@ -1054,9 +1053,9 @@ TtySetOptionProc(
 	}
 	if (tcsetattr(fsPtr->fileState.fd, TCSADRAIN, &iostate) < 0) {
 	    if (interp != NULL) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		Tcl_PrintfResult(interp,
 			"couldn't update serial terminal control state: %s",
-			Tcl_PosixError(interp)));
+			Tcl_PosixError(interp));
 	    }
 	    return TCL_ERROR;
 	}
@@ -1153,9 +1152,9 @@ TtyGetOptionProc(
 	valid = true;
 	if (tcgetattr(fsPtr->fileState.fd, &iostate) < 0) {
 	    if (interp != NULL) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		Tcl_PrintfResult(interp,
 			"couldn't read serial terminal control state: %s",
-			Tcl_PosixError(interp)));
+			Tcl_PosixError(interp));
 	    }
 	    return TCL_ERROR;
 	}
@@ -1265,9 +1264,8 @@ TtyGetOptionProc(
 	valid = true;
 	if (ioctl(fsPtr->fileState.fd, TIOCGWINSZ, &ws) < 0) {
 	    if (interp != NULL) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"couldn't read terminal size: %s",
-			Tcl_PosixError(interp)));
+		Tcl_PrintfResult(interp, "couldn't read terminal size: %s",
+			Tcl_PosixError(interp));
 	    }
 	    return TCL_ERROR;
 	}
@@ -1626,8 +1624,7 @@ TtyParseMode(
 	    &ttyPtr->stop, &end);
     if ((i != 4) || (mode[end] != '\0')) {
 	if (interp != NULL) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "%s: should be baud,parity,data,stop", bad));
+	    Tcl_PrintfResult(interp, "%s: should be baud,parity,data,stop", bad);
 	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "SERIALMODE", (char *)NULL);
 	}
 	return TCL_ERROR;
@@ -1652,8 +1649,7 @@ TtyParseMode(
 
     if (strchr(PARITY_CHARS, parity) == NULL) {
 	if (interp != NULL) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "%s parity: should be %s", bad, PARITY_MSG));
+	    Tcl_PrintfResult(interp, "%s parity: should be %s", bad, PARITY_MSG);
 	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "SERIALMODE", (char *)NULL);
 	}
 	return TCL_ERROR;
@@ -1661,16 +1657,14 @@ TtyParseMode(
     ttyPtr->parity = parity;
     if ((ttyPtr->data < 5) || (ttyPtr->data > 8)) {
 	if (interp != NULL) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "%s data: should be 5, 6, 7, or 8", bad));
+	    Tcl_PrintfResult(interp, "%s data: should be 5, 6, 7, or 8", bad);
 	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "SERIALMODE", (char *)NULL);
 	}
 	return TCL_ERROR;
     }
     if ((ttyPtr->stop < 0) || (ttyPtr->stop > 2)) {
 	if (interp != NULL) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "%s stop: should be 1 or 2", bad));
+	    Tcl_PrintfResult(interp, "%s stop: should be 1 or 2", bad);
 	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "SERIALMODE", (char *)NULL);
 	}
 	return TCL_ERROR;
@@ -1790,9 +1784,9 @@ TclpOpenFileChannel(
 		return NULL;
 	    }
 
-	    Tcl_AppendResult(interp, "couldn't open \"",
-		    TclGetString(pathPtr),
-		    "\": filename is invalid on this platform", (char *)NULL);
+	    Tcl_PrintfResult(interp,
+		    "couldn't open \"%s\": filename is invalid on this platform",
+		    TclGetString(pathPtr));
 	}
 	return NULL;
     }
@@ -1805,9 +1799,8 @@ TclpOpenFileChannel(
 
     if (fd < 0) {
 	if (interp != NULL) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "couldn't open \"%s\": %s",
-		    TclGetString(pathPtr), Tcl_PosixError(interp)));
+	    Tcl_PrintfResult(interp, "couldn't open \"%s\": %s",
+		    TclGetString(pathPtr), Tcl_PosixError(interp));
 	}
 	return NULL;
     }
@@ -2082,14 +2075,12 @@ Tcl_GetOpenFile(
 	return TCL_ERROR;
     }
     if (forWriting && !(chanMode & TCL_WRITABLE)) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"\"%s\" wasn't opened for writing", chanID));
+	Tcl_PrintfResult(interp, "\"%s\" wasn't opened for writing", chanID);
 	Tcl_SetErrorCode(interp, "TCL", "VALUE", "CHANNEL", "NOT_WRITABLE",
 		(char *)NULL);
 	return TCL_ERROR;
     } else if (!forWriting && !(chanMode & TCL_READABLE)) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"\"%s\" wasn't opened for reading", chanID));
+	Tcl_PrintfResult(interp, "\"%s\" wasn't opened for reading", chanID);
 	Tcl_SetErrorCode(interp, "TCL", "VALUE", "CHANNEL", "NOT_READABLE",
 		(char *)NULL);
 	return TCL_ERROR;
@@ -2120,8 +2111,8 @@ Tcl_GetOpenFile(
 
 	    f = fdopen(fd, (forWriting ? "w" : "r"));
 	    if (f == NULL) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"cannot get a FILE * for \"%s\"", chanID));
+		Tcl_PrintfResult(interp, "cannot get a FILE * for \"%s\"",
+			chanID);
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", "CHANNEL",
 			"FILE_FAILURE", (char *)NULL);
 		return TCL_ERROR;
@@ -2131,8 +2122,7 @@ Tcl_GetOpenFile(
 	}
     }
 
-    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-	    "\"%s\" cannot be used to get a FILE *", chanID));
+    Tcl_PrintfResult(interp, "\"%s\" cannot be used to get a FILE *", chanID);
     Tcl_SetErrorCode(interp, "TCL", "VALUE", "CHANNEL", "NO_DESCRIPTOR",
 	    (char *)NULL);
     return TCL_ERROR;

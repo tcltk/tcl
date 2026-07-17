@@ -225,8 +225,7 @@ Tcl_ParseCommand(
     TclParseInit(interp, start, numBytes, parsePtr);
     if ((start == NULL) && (numBytes != 0)) {
 	if (interp != NULL) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "can't parse a NULL pointer", -1));
+	    Tcl_PrintfResult(interp, "can't parse a NULL pointer");
 	}
 	return TCL_ERROR;
     }
@@ -279,14 +278,14 @@ Tcl_ParseCommand(
 	if (scanned == 0) {
 	    if (src[-1] == '"') {
 		if (interp != NULL) {
-		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			    "extra characters after close-quote", -1));
+		    Tcl_PrintfResult(interp,
+			    "extra characters after close-quote");
 		}
 		parsePtr->errorType = TCL_PARSE_QUOTE_EXTRA;
 	    } else {
 		if (interp != NULL) {
-		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			    "extra characters after close-brace", -1));
+		    Tcl_PrintfResult(interp,
+			    "extra characters after close-brace");
 		}
 		parsePtr->errorType = TCL_PARSE_BRACE_EXTRA;
 	    }
@@ -1156,8 +1155,8 @@ ParseTokens(
 		}
 		if (numBytes == 0) {
 		    if (parsePtr->interp != NULL) {
-			Tcl_SetObjResult(parsePtr->interp, Tcl_NewStringObj(
-				"missing close-bracket", -1));
+			Tcl_PrintfResult(parsePtr->interp,
+				"missing close-bracket");
 		    }
 		    parsePtr->errorType = TCL_PARSE_MISSING_BRACKET;
 		    parsePtr->term = tokenPtr->start;
@@ -1408,8 +1407,8 @@ Tcl_ParseVarName(
 	}
 	if (numBytes == 0) {
 	    if (parsePtr->interp != NULL) {
-		Tcl_SetObjResult(parsePtr->interp, Tcl_NewStringObj(
-			"missing close-brace for variable name", -1));
+		Tcl_PrintfResult(parsePtr->interp,
+			"missing close-brace for variable name");
 	    }
 	    parsePtr->errorType = TCL_PARSE_MISSING_VAR_BRACE;
 	    parsePtr->term = tokenPtr->start-1;
@@ -1466,8 +1465,7 @@ Tcl_ParseVarName(
 	    }
 	    if (parsePtr->term == src+numBytes){
 		if (parsePtr->interp != NULL) {
-		    Tcl_SetObjResult(parsePtr->interp, Tcl_NewStringObj(
-			    "missing )", -1));
+		    Tcl_PrintfResult(parsePtr->interp, "missing )");
 		}
 		parsePtr->errorType = TCL_PARSE_MISSING_PAREN;
 		parsePtr->term = src;
@@ -1475,8 +1473,8 @@ Tcl_ParseVarName(
 		goto error;
 	    } else if ((*parsePtr->term != ')')){
 		if (parsePtr->interp != NULL) {
-		    Tcl_SetObjResult(parsePtr->interp, Tcl_NewStringObj(
-			    "invalid character in array index", -1));
+		    Tcl_PrintfResult(parsePtr->interp,
+			    "invalid character in array index");
 		}
 		parsePtr->errorType = TCL_PARSE_SYNTAX;
 		parsePtr->term = src;
@@ -1746,8 +1744,7 @@ Tcl_ParseBraces(
 	goto error;
     }
 
-    Tcl_SetObjResult(parsePtr->interp, Tcl_NewStringObj(
-	    "missing close-brace", -1));
+    Tcl_PrintfResult(parsePtr->interp, "missing close-brace");
 
     /*
      * Guess if the problem is due to comments by searching the source string
@@ -1769,8 +1766,8 @@ Tcl_ParseBraces(
 		break;
 	    case '#' :
 		if (openBrace && TclIsSpaceProcM(src[-1])) {
-		    Tcl_AppendToObj(Tcl_GetObjResult(parsePtr->interp),
-			    ": possible unbalanced brace in comment", -1);
+		    Tcl_AppendPrintfResult(parsePtr->interp,
+			    ": possible unbalanced brace in comment");
 		    goto error;
 		}
 		break;
@@ -1847,8 +1844,7 @@ Tcl_ParseQuotedString(
     }
     if (*parsePtr->term != '"') {
 	if (parsePtr->interp != NULL) {
-	    Tcl_SetObjResult(parsePtr->interp, Tcl_NewStringObj(
-		    "missing \"", -1));
+	    Tcl_PrintfResult(parsePtr->interp, "missing \"");
 	}
 	parsePtr->errorType = TCL_PARSE_MISSING_QUOTE;
 	parsePtr->term = start;

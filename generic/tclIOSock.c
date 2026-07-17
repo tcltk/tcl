@@ -95,8 +95,8 @@ TclSockGetPort(
 	return TCL_ERROR;
     }
     if (*portPtr > 0xFFFF) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"couldn't open socket: port number too high", -1));
+	Tcl_PrintfResult(interp,
+		"couldn't open socket: port number too high");
 	return TCL_ERROR;
     }
     return TCL_OK;

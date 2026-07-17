@@ -444,11 +444,7 @@ TclWinAppendSystemError(
     const char *msg;
     char id[TCL_INTEGER_SPACE], msgBuf[24 + TCL_INTEGER_SPACE];
     Tcl_DString ds;
-    Tcl_Obj *resultPtr = Tcl_GetObjResult(interp);
 
-    if (Tcl_IsShared(resultPtr)) {
-	resultPtr = Tcl_DuplicateObj(resultPtr);
-    }
     length = FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM
 	    | FORMAT_MESSAGE_ALLOCATE_BUFFER, NULL, error,
 	    MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (WCHAR *)&tMsgPtr,
@@ -482,8 +478,7 @@ TclWinAppendSystemError(
 
     snprintf(id, sizeof(id), "%d", error);
     Tcl_SetErrorCode(interp, "WINDOWS", id, msg, (char *)NULL);
-    Tcl_AppendToObj(resultPtr, msg, length);
-    Tcl_SetObjResult(interp, resultPtr);
+    Tcl_AppendPrintfResult(interp, "%.*s", (int) length, msg);
 
     if (length != 0) {
 	Tcl_DStringFree(&ds);

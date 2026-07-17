@@ -109,7 +109,6 @@ TclpDlopen(
 
     if (hInstance == NULL) {
 	DWORD lastError;
-	Tcl_Obj *errMsg;
 
 	/*
 	 * We choose to only use the error from the second call if the first
@@ -123,9 +122,6 @@ TclpDlopen(
 	    lastError = firstError;
 	}
 
-	errMsg = Tcl_ObjPrintf("couldn't load library \"%s\": ",
-		TclGetString(pathPtr));
-
 	/*
 	 * Check for possible DLL errors. This doesn't work quite right,
 	 * because Windows seems to only return ERROR_MOD_NOT_FOUND for just
@@ -134,6 +130,8 @@ TclpDlopen(
 	 */
 
 	if (interp) {
+	    Tcl_PrintfResult(interp, "couldn't load library \"%s\": ",
+		    TclGetString(pathPtr));
 	    switch (lastError) {
 	    case ERROR_MOD_NOT_FOUND:
 		Tcl_SetErrorCode(interp, "WIN_LOAD", "MOD_NOT_FOUND", (char *)NULL);
@@ -141,34 +139,34 @@ TclpDlopen(
 	    case ERROR_DLL_NOT_FOUND:
 		Tcl_SetErrorCode(interp, "WIN_LOAD", "DLL_NOT_FOUND", (char *)NULL);
 	    notFoundMsg:
-		Tcl_AppendToObj(errMsg, "this library or a dependent library"
-			" could not be found in library path", TCL_INDEX_NONE);
+		Tcl_AppendPrintfResult(interp, "this library or a dependent library"
+			" could not be found in library path");
 		break;
 	    case ERROR_PROC_NOT_FOUND:
 		Tcl_SetErrorCode(interp, "WIN_LOAD", "PROC_NOT_FOUND", (char *)NULL);
-		Tcl_AppendToObj(errMsg, "A function specified in the import"
+		Tcl_AppendPrintfResult(interp, "A function specified in the import"
 			" table could not be resolved by the system. Windows"
-			" is not telling which one, I'm sorry.", TCL_INDEX_NONE);
+			" is not telling which one, I'm sorry.");
 		break;
 	    case ERROR_INVALID_DLL:
 		Tcl_SetErrorCode(interp, "WIN_LOAD", "INVALID_DLL", (char *)NULL);
-		Tcl_AppendToObj(errMsg, "this library or a dependent library"
-			" is damaged", TCL_INDEX_NONE);
+		Tcl_AppendPrintfResult(interp,
+			"this library or a dependent library is damaged");
 		break;
 	    case ERROR_DLL_INIT_FAILED:
 		Tcl_SetErrorCode(interp, "WIN_LOAD", "DLL_INIT_FAILED", (char *)NULL);
-		Tcl_AppendToObj(errMsg, "the library initialization"
-			" routine failed", TCL_INDEX_NONE);
+		Tcl_AppendPrintfResult(interp,
+			"the library initialization routine failed");
 		break;
 	    case ERROR_BAD_EXE_FORMAT:
 		Tcl_SetErrorCode(interp, "WIN_LOAD", "BAD_EXE_FORMAT", (char *)NULL);
-		Tcl_AppendToObj(errMsg, "Bad exe format. Possibly a 32/64-bit mismatch.", TCL_INDEX_NONE);
+		Tcl_AppendPrintfResult(interp,
+			"Bad exe format. Possibly a 32/64-bit mismatch.");
 		break;
 	    default:
 		Tcl_WinConvertError(lastError);
-		Tcl_AppendToObj(errMsg, Tcl_PosixError(interp), TCL_INDEX_NONE);
+		Tcl_AppendPrintfResult(interp, "%s", Tcl_PosixError(interp));
 	    }
-	    Tcl_SetObjResult(interp, errMsg);
 	}
 	return TCL_ERROR;
     }
@@ -228,8 +226,7 @@ FindSymbol(
 	Tcl_DStringFree(&ds);
     }
     if (proc == NULL && interp != NULL) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"cannot find symbol \"%s\"", symbol));
+	Tcl_PrintfResult(interp, "cannot find symbol \"%s\"", symbol);
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "LOAD_SYMBOL", symbol, (char *)NULL);
     }
     return proc;
@@ -295,9 +292,8 @@ TclpTempFileNameForLibrary(
     Tcl_MutexLock(&dllDirectoryNameMutex);
     if (dllDirectoryName == NULL) {
 	if (InitDLLDirectoryName() == TCL_ERROR) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "couldn't create temporary directory: %s",
-		    Tcl_PosixError(interp)));
+	    Tcl_PrintfResult(interp, "couldn't create temporary directory: %s",
+		    Tcl_PosixError(interp));
 	    Tcl_MutexUnlock(&dllDirectoryNameMutex);
 	    return NULL;
 	}

@@ -2396,8 +2396,8 @@ Tcl_GetDoubleFromObj(
 	if (TclHasInternalRep(objPtr, &tclDoubleType)) {
 	    if (isnan(objPtr->internalRep.doubleValue)) {
 		if (interp != NULL) {
-		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			    "floating point value is Not a Number", -1));
+		    Tcl_PrintfResult(interp,
+			    "floating point value is Not a Number");
 		    Tcl_SetErrorCode(interp, "TCL", "VALUE", "DOUBLE", "NAN",
 			    (char *)NULL);
 		}
@@ -2649,8 +2649,7 @@ Tcl_GetLongFromObj(
 #endif
 	if (TclHasInternalRep(objPtr, &tclDoubleType)) {
 	    if (interp != NULL) {
-		Tcl_PrintfResult(interp,
-			"expected integer but got \"%s\"",
+		Tcl_PrintfResult(interp, "expected integer but got \"%s\"",
 			TclGetString(objPtr));
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", (char *)NULL);
 	    }
@@ -2949,8 +2948,7 @@ Tcl_GetWideIntFromObj(
 	}
 	if (TclHasInternalRep(objPtr, &tclDoubleType)) {
 	    if (interp != NULL) {
-		Tcl_PrintfResult(interp,
-			"expected integer but got \"%s\"",
+		Tcl_PrintfResult(interp, "expected integer but got \"%s\"",
 			TclGetString(objPtr));
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", (char *)NULL);
 	    }
@@ -3031,9 +3029,9 @@ Tcl_GetWideUIntFromObj(
 	    if (objPtr->internalRep.wideValue < 0) {
 	wideUIntOutOfRange:
 		if (interp != NULL) {
-		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    Tcl_PrintfResult(interp,
 			    "expected unsigned integer but got \"%s\"",
-			    TclGetString(objPtr)));
+			    TclGetString(objPtr));
 		    Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", (char *)NULL);
 		}
 		return TCL_ERROR;
@@ -3117,9 +3115,8 @@ TclGetWideBitsFromObj(
 	}
 	if (TclHasInternalRep(objPtr, &tclDoubleType)) {
 	    if (interp != NULL) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"expected integer but got \"%s\"",
-			TclGetString(objPtr)));
+		Tcl_PrintfResult(interp, "expected integer but got \"%s\"",
+			TclGetString(objPtr));
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", (char *)NULL);
 	    }
 	    return TCL_ERROR;
@@ -3441,9 +3438,8 @@ GetBignumFromObj(
 	}
 	if (TclHasInternalRep(objPtr, &tclDoubleType)) {
 	    if (interp != NULL) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"expected integer but got \"%s\"",
-			TclGetString(objPtr)));
+		Tcl_PrintfResult(interp, "expected integer but got \"%s\"",
+			TclGetString(objPtr));
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", (char *)NULL);
 	    }
 	    return TCL_ERROR;

@@ -726,7 +726,7 @@ TclRegError(
     Tcl_ResetResult(interp);
     n = TclReError(status, buf, sizeof(buf));
     p = (n > sizeof(buf)) ? "..." : "";
-    Tcl_SetObjResult(interp, Tcl_ObjPrintf("%s%s%s", msg, buf, p));
+    Tcl_PrintfResult(interp, "%s%s%s", msg, buf, p);
 
     snprintf(cbuf, sizeof(cbuf), "%d", status);
     (void) TclReError(REG_ITOA, cbuf, sizeof(cbuf));

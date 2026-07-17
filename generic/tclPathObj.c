@@ -2528,9 +2528,8 @@ MakeTildeRelativePath(
 	dir = TclGetEnv("HOME", &dirString);
 	if (dir == NULL) {
 	    if (interp) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"couldn't find HOME environment variable to expand path",
-			-1));
+		Tcl_PrintfResult(interp,
+			"couldn't find HOME environment variable to expand path");
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", "PATH",
 			"HOMELESS", (char *)NULL);
 	    }
@@ -2541,8 +2540,7 @@ MakeTildeRelativePath(
 	dir = TclpGetUserHome(user, &dirString);
 	if (dir == NULL) {
 	    if (interp != NULL) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"user \"%s\" doesn't exist", user));
+		Tcl_PrintfResult(interp, "user \"%s\" doesn't exist", user);
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", "PATH", "NOUSER",
 			(char *)NULL);
 	    }

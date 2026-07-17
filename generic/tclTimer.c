@@ -1044,9 +1044,9 @@ Tcl_AfterObjCmd(
 		!= TCL_OK) {
 	    const char *arg = TclGetString(objv[1]);
 
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "bad argument \"%s\": must be"
-		    " cancel, idle, info, or an integer", arg));
+	    Tcl_PrintfResult(interp,
+		    "bad argument \"%s\": must be cancel, idle, info, or an integer",
+		    arg);
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "INDEX", "argument",
 		    arg, (char *)NULL);
 	    return TCL_ERROR;
@@ -1817,8 +1817,7 @@ TimeTooFarError(
     Tcl_Interp *interp)		/* Current interpreter. */
 {
     if (interp != NULL) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"time too far away", -1));
+	Tcl_PrintfResult(interp, "time too far away");
 	Tcl_SetErrorCode(interp, "TCL","TIME","OVERFLOW", (char *)NULL);
     }
 }
@@ -2317,8 +2316,7 @@ TimerInfoDo(
     if (afterPtr == NULL) {
 	const char *eventStr = TclGetString(objv[1]);
 
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"event \"%s\" doesn't exist", eventStr));
+	Tcl_PrintfResult(interp, "event \"%s\" doesn't exist", eventStr);
 	Tcl_SetErrorCode(interp, "TCL","LOOKUP","EVENT", eventStr, (char *)NULL);
 	return TCL_ERROR;
     }

@@ -877,7 +877,6 @@ TclOO_Object_Unknown(
     Tcl_Size numMethodNames, i;
     Tcl_Size skip = Tcl_ObjectContextSkippedArgs(context);
     CallFrame *framePtr = ((Interp *) interp)->varFramePtr;
-    Tcl_Obj *errorMsg;
 
     /*
      * If no method name, generate an error asking for a method name. (Only by
@@ -937,20 +936,15 @@ TclOO_Object_Unknown(
 	return TCL_ERROR;
     }
 
-    errorMsg = Tcl_ObjPrintf("unknown method \"%s\": must be ",
+    Tcl_PrintfResult(interp, "unknown method \"%s\": must be ",
 	    TclGetString(objv[skip]));
     for (i=0 ; i<numMethodNames-1 ; i++) {
-	if (i) {
-	    Tcl_AppendToObj(errorMsg, ", ", TCL_AUTO_LENGTH);
-	}
-	Tcl_AppendObjToObj(errorMsg, methodNames[i]);
+	Tcl_AppendPrintfResult(interp, "%s%s", (i ? ", " : ""),
+		TclGetString(methodNames[i]));
     }
-    if (i) {
-	Tcl_AppendToObj(errorMsg, " or ", TCL_AUTO_LENGTH);
-    }
-    Tcl_AppendObjToObj(errorMsg, methodNames[i]);
+    Tcl_AppendPrintfResult(interp, "%s%s", (i ? " or " : ""),
+	    TclGetString(methodNames[i]));
     Tcl_Free((void *)methodNames);
-    Tcl_SetObjResult(interp, errorMsg);
     Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
 	    TclGetString(objv[skip]), (char *)NULL);
     return TCL_ERROR;

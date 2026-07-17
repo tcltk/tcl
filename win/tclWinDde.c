@@ -351,7 +351,7 @@ DdeSetServerName(
 	if (r != TCL_OK) {
 	    Tcl_DStringInit(&dString);
 	    OutputDebugStringW(Tcl_UtfToWCharDString(
-		    Tcl_GetString(Tcl_GetObjResult(interp)), -1, &dString));
+		    Tcl_GetStringResult(interp), -1, &dString));
 	    Tcl_DStringFree(&dString);
 	    return NULL;
 	}
@@ -545,9 +545,8 @@ ExecuteRemoteObject(
     int result = TCL_OK;
 
     if ((riPtr->handlerPtr == NULL) && Tcl_IsSafe(riPtr->interp)) {
-	Tcl_SetObjResult(riPtr->interp, Tcl_NewStringObj("permission denied: "
-		"a handler procedure must be defined for use in a safe "
-		"interp", -1));
+	Tcl_PrintfResult(riPtr->interp, "permission denied: "
+		"a handler procedure must be defined for use in a safe interp");
 	Tcl_SetErrorCode(riPtr->interp, "TCL", "DDE", "SECURITY_CHECK", (char *)NULL);
 	result = TCL_ERROR;
     }
@@ -879,9 +878,7 @@ DdeServerProc(
 
 	    Tcl_DStringInit(&dsBuf);
 	    Tcl_WCharToUtfDString(utilString, (dlen>>1) - 1, &dsBuf);
-	    ddeObjectPtr = Tcl_NewStringObj(Tcl_DStringValue(&dsBuf),
-		    Tcl_DStringLength(&dsBuf));
-	    Tcl_DStringFree(&dsBuf);
+	    ddeObjectPtr = Tcl_DStringToObj(&dsBuf);
 	}
 	Tcl_IncrRefCount(ddeObjectPtr);
 	DdeUnaccessData(hData);
@@ -1017,8 +1014,8 @@ MakeDdeConnection(
 
 	    Tcl_DStringInit(&dString);
 	    Tcl_WCharToUtfDString(name, wcslen(name), &dString);
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "no registered server named \"%s\"", Tcl_DStringValue(&dString)));
+	    Tcl_PrintfResult(interp, "no registered server named \"%s\"",
+		    Tcl_DStringValue(&dString));
 	    Tcl_DStringFree(&dString);
 	    Tcl_SetErrorCode(interp, "TCL", "DDE", "NO_SERVER", (char *)NULL);
 	}
@@ -1127,13 +1124,11 @@ DdeServicesOnAck(
 	GlobalGetAtomNameW(service, sz, 255);
 	Tcl_DStringInit(&dString);
 	Tcl_WCharToUtfDString(sz, wcslen(sz), &dString);
-	Tcl_ListObjAppendElement(NULL, matchPtr, Tcl_NewStringObj(Tcl_DStringValue(&dString), -1));
-	Tcl_DStringFree(&dString);
+	Tcl_ListObjAppendElement(NULL, matchPtr, Tcl_DStringToObj(&dString));
 	GlobalGetAtomNameW(topic, sz, 255);
 	Tcl_DStringInit(&dString);
 	Tcl_WCharToUtfDString(sz, wcslen(sz), &dString);
-	Tcl_ListObjAppendElement(NULL, matchPtr, Tcl_NewStringObj(Tcl_DStringValue(&dString), -1));
-	Tcl_DStringFree(&dString);
+	Tcl_ListObjAppendElement(NULL, matchPtr, Tcl_DStringToObj(&dString));
 
 	/*
 	 * Adding the hwnd as a third list element provides a unique
@@ -1507,9 +1502,7 @@ DdeObjCmd(
 
 	    Tcl_DStringInit(&dsBuf);
 	    Tcl_WCharToUtfDString(serviceName, wcslen(serviceName), &dsBuf);
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(Tcl_DStringValue(&dsBuf),
-		    Tcl_DStringLength(&dsBuf)));
-	    Tcl_DStringFree(&dsBuf);
+	    Tcl_DStringResult(interp, &dsBuf);
 	} else {
 	    Tcl_ResetResult(interp);
 	}
@@ -1535,8 +1528,7 @@ DdeObjCmd(
 	}
 
 	if (dataLength + 1 < 2) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "cannot execute null data", -1));
+	    Tcl_PrintfResult(interp, "cannot execute null data");
 	    Tcl_DStringFree(&dsBuf);
 	    Tcl_SetErrorCode(interp, "TCL", "DDE", "NULL", (char *)NULL);
 	    result = TCL_ERROR;
@@ -1586,8 +1578,7 @@ DdeObjCmd(
 	length = Tcl_DStringLength(&itemBuf) / sizeof(WCHAR);
 
 	if (length == 0) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "cannot request value of null data", -1));
+	    Tcl_PrintfResult(interp, "cannot request value of null data");
 	    Tcl_SetErrorCode(interp, "TCL", "DDE", "NULL", (char *)NULL);
 	    result = TCL_ERROR;
 	    goto cleanup;
@@ -1625,10 +1616,7 @@ DdeObjCmd(
 			}
 			Tcl_DStringInit(&dsBuf);
 			Tcl_WCharToUtfDString(dataString, tmp>>1, &dsBuf);
-			returnObjPtr = Tcl_NewStringObj(
-				Tcl_DStringValue(&dsBuf),
-				Tcl_DStringLength(&dsBuf));
-			Tcl_DStringFree(&dsBuf);
+			returnObjPtr = Tcl_DStringToObj(&dsBuf);
 		    }
 		    DdeUnaccessData(ddeData);
 		    DdeFreeDataHandle(ddeData);
@@ -1652,8 +1640,7 @@ DdeObjCmd(
 	itemString = Tcl_UtfToWCharDString(src, length, &itemBuf);
 	length = Tcl_DStringLength(&itemBuf) / sizeof(WCHAR);
 	if (length == 0) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "cannot have a null item", -1));
+	    Tcl_PrintfResult(interp, "cannot have a null item");
 	    Tcl_SetErrorCode(interp, "TCL", "DDE", "NULL", (char *)NULL);
 	    result = TCL_ERROR;
 	    goto cleanup;
@@ -1706,8 +1693,7 @@ DdeObjCmd(
 	ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
 	if (serviceName == NULL) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "invalid service name \"\"", -1));
+	    Tcl_PrintfResult(interp, "invalid service name \"\"");
 	    Tcl_SetErrorCode(interp, "TCL", "DDE", "NO_SERVER", (char *)NULL);
 	    result = TCL_ERROR;
 	    goto cleanup;
@@ -1753,9 +1739,9 @@ DdeObjCmd(
 	     */
 
 	    if (Tcl_IsSafe(riPtr->interp) && (riPtr->handlerPtr == NULL)) {
-		Tcl_SetObjResult(riPtr->interp, Tcl_NewStringObj(
+		Tcl_PrintfResult(riPtr->interp,
 			"permission denied: a handler procedure must be"
-			" defined for use in a safe interp", -1));
+			" defined for use in a safe interp");
 		Tcl_SetErrorCode(interp, "TCL", "DDE", "SECURITY_CHECK",
 			(char *)NULL);
 		result = TCL_ERROR;
@@ -1820,8 +1806,7 @@ DdeObjCmd(
 
 	    if (MakeDdeConnection(interp, serviceName, &hConv) != TCL_OK) {
 	    invalidServerResponse:
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"invalid data returned from server", -1));
+		Tcl_PrintfResult(interp, "invalid data returned from server");
 		Tcl_SetErrorCode(interp, "TCL", "DDE", "BAD_RESPONSE", (char *)NULL);
 		result = TCL_ERROR;
 		goto cleanup;
@@ -1883,9 +1868,7 @@ DdeObjCmd(
 		}
 		Tcl_DStringInit(&dsBuf);
 		Tcl_WCharToUtfDString(ddeDataString, length>>1, &dsBuf);
-		resultPtr = Tcl_NewStringObj(Tcl_DStringValue(&dsBuf),
-			Tcl_DStringLength(&dsBuf));
-		Tcl_DStringFree(&dsBuf);
+		resultPtr = Tcl_DStringToObj(&dsBuf);
 		Tcl_Free((char *) ddeDataString);
 
 		if (Tcl_ListObjIndex(NULL, resultPtr, 0, &objPtr) != TCL_OK) {

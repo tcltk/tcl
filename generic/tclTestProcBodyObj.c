@@ -264,8 +264,8 @@ ProcBodyTestProcObjCmd(
      */
 
     if (cmdPtr->objClientData2 != TclIsProc(cmdPtr)) {
-	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-		"command \"", fullName, "\" is not a Tcl procedure", (char *)NULL);
+	Tcl_PrintfResult(interp, "command \"%s\" is not a Tcl procedure",
+		fullName);
 	return TCL_ERROR;
     }
 
@@ -275,8 +275,8 @@ ProcBodyTestProcObjCmd(
 
     procPtr = (Proc *) cmdPtr->objClientData2;
     if (procPtr == NULL) {
-	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), "procedure \"",
-		fullName, "\" does not have a Proc struct!", (char *)NULL);
+	Tcl_PrintfResult(interp, "procedure \"%s\" does not have a Proc struct!",
+		fullName);
 	return TCL_ERROR;
     }
 
@@ -286,9 +286,9 @@ ProcBodyTestProcObjCmd(
 
     bodyObjPtr = TclNewProcBodyObj(procPtr);
     if (bodyObjPtr == NULL) {
-	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-		"failed to create a procbody object for procedure \"",
-		fullName, "\"", (char *)NULL);
+	Tcl_PrintfResult(interp,
+		"failed to create a procbody object for procedure \"%s\"",
+		fullName);
 	return TCL_ERROR;
     }
     Tcl_IncrRefCount(bodyObjPtr);
