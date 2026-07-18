@@ -1530,10 +1530,9 @@ TclGetOpenMode(
     if (Tcl_SplitList(interp, modeString, &modeArgc, &modeArgv) != TCL_OK) {
     invAccessMode:
 	if (interp != NULL) {
-	    Tcl_AddErrorInfo(interp,
-		    "\n    while processing open access modes \"");
-	    Tcl_AddErrorInfo(interp, modeString);
-	    Tcl_AddErrorInfo(interp, "\"");
+	    Tcl_AppendPrintfToErrorInfo(interp,
+		    "\n    while processing open access modes \"%s\"",
+		    modeString);
 	    Tcl_SetErrorCode(interp, "TCL", "OPENMODE", "INVALID", (char *)NULL);
 	}
 	if (modeArgv) {
@@ -1813,10 +1812,9 @@ Tcl_FSEvalFileEx(
 	int limit = 150;
 	int overflow = (length > limit);
 
-	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-		"\n    (file \"%.*s%s\" line %d)",
+	Tcl_AppendPrintfToErrorInfo(interp, "\n    (file \"%.*s%s\" line %d)",
 		(overflow ? limit : (int)length), pathString,
-		(overflow ? "..." : ""), Tcl_GetErrorLine(interp)));
+		(overflow ? "..." : ""), Tcl_GetErrorLine(interp));
     }
 
   end:
@@ -1966,10 +1964,9 @@ EvalFileCallback(
 	const int limit = 150;
 	int overflow = (length > limit);
 
-	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-		"\n    (file \"%.*s%s\" line %d)",
+	Tcl_AppendPrintfToErrorInfo(interp, "\n    (file \"%.*s%s\" line %d)",
 		(overflow ? limit : (int)length), pathString,
-		(overflow ? "..." : ""), Tcl_GetErrorLine(interp)));
+		(overflow ? "..." : ""), Tcl_GetErrorLine(interp));
     }
 
     Tcl_DecrRefCount(objPtr);

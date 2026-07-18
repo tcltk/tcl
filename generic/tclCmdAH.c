@@ -269,8 +269,8 @@ CatchObjCmdCallback(
      */
 
     if (rewind || Tcl_LimitExceeded(interp)) {
-	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-		"\n    (\"catch\" body line %d)", Tcl_GetErrorLine(interp)));
+	Tcl_AppendPrintfToErrorInfo(interp, "\n    (\"%s\" body line %d)",
+		"catch", Tcl_GetErrorLine(interp));
 	return TCL_ERROR;
     }
 
@@ -960,8 +960,8 @@ EvalCmdErrMsg(
     int result)
 {
     if (result == TCL_ERROR) {
-	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-		"\n    (\"eval\" body line %d)", Tcl_GetErrorLine(interp)));
+	Tcl_AppendPrintfToErrorInfo(interp, "\n    (\"%s\" body line %d)",
+		"eval", Tcl_GetErrorLine(interp));
     }
     return result;
 }
@@ -2517,7 +2517,7 @@ TclNRForObjCmd(
     iterPtr->cond = objv[2];
     iterPtr->body = objv[4];
     iterPtr->next = objv[3];
-    iterPtr->msg  = "\n    (\"for\" body line %d)";
+    iterPtr->cmdName = "for";
     iterPtr->word = 4;
 
     TclNRAddCallback(interp, ForSetupCallback, iterPtr, NULL, NULL, NULL);
@@ -2576,8 +2576,8 @@ TclNRForIterCallback(
 	Tcl_ResetResult(interp);
 	break;
     case TCL_ERROR:
-	Tcl_AppendObjToErrorInfo(interp,
-		Tcl_ObjPrintf(iterPtr->msg, Tcl_GetErrorLine(interp)));
+	Tcl_AppendPrintfToErrorInfo(interp, "\n    (\"%s\" body line %d)",
+		 iterPtr->cmdName, Tcl_GetErrorLine(interp));
     }
     TclSmallFreeEx(interp, iterPtr);
     return result;
@@ -2956,9 +2956,8 @@ ForeachLoopStep(
 	result = TCL_OK;
 	goto finish;
     case TCL_ERROR:
-	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-		"\n    (\"%s\" body line %d)",
-		collectModeNames[statePtr->mode], Tcl_GetErrorLine(interp)));
+	Tcl_AppendPrintfToErrorInfo(interp, "\n    (\"%s\" body line %d)",
+		collectModeNames[statePtr->mode], Tcl_GetErrorLine(interp));
 	TCL_FALLTHROUGH();
     default:
 	goto done;
@@ -3025,10 +3024,10 @@ ForeachAssignments(
 		if (isAbstractList) {
 		    if (TclObjTypeIndex(interp, statePtr->aCopyList[i], k,
 			    &valuePtr) != TCL_OK) {
-			Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
+			Tcl_AppendPrintfToErrorInfo(interp,
 				"\n    (setting %s loop variable \"%s\")",
 				collectModeNames[statePtr->mode],
-				TclGetString(statePtr->varvList[i][v])));
+				TclGetString(statePtr->varvList[i][v]));
 			return TCL_ERROR;
 		    }
 		} else {
@@ -3051,10 +3050,10 @@ ForeachAssignments(
 		    NULL, valuePtr, TCL_LEAVE_ERR_MSG);
 
 	    if (varValuePtr == NULL) {
-		Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
+		Tcl_AppendPrintfToErrorInfo(interp,
 			"\n    (setting %s loop variable \"%s\")",
 			collectModeNames[statePtr->mode],
-			TclGetString(statePtr->varvList[i][v])));
+			TclGetString(statePtr->varvList[i][v]));
 		return TCL_ERROR;
 	    }
 	}

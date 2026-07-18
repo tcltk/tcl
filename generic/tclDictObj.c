@@ -2796,9 +2796,8 @@ DictForLoopCallback(
 	    Tcl_ResetResult(interp);
 	    result = TCL_OK;
 	} else if (result == TCL_ERROR) {
-	    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-		    "\n    (\"dict for\" body line %d)",
-		    Tcl_GetErrorLine(interp)));
+	    Tcl_AppendPrintfToErrorInfo(interp, "\n    (\"%s\" body line %d)",
+		    "dict for", Tcl_GetErrorLine(interp));
 	}
 	goto done;
     }
@@ -2999,9 +2998,8 @@ DictMapLoopCallback(
 	    Tcl_ResetResult(interp);
 	    result = TCL_OK;
 	} else if (result == TCL_ERROR) {
-	    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-		    "\n    (\"dict map\" body line %d)",
-		    Tcl_GetErrorLine(interp)));
+	    Tcl_AppendPrintfToErrorInfo(interp, "\n    (\"%s\" body line %d)",
+		    "dict map", Tcl_GetErrorLine(interp));
 	}
 	goto done;
     } else {
@@ -3381,15 +3379,17 @@ DictFilterCmd(
 	    Tcl_IncrRefCount(valueObj);
 	    if (Tcl_ObjSetVar2(interp, keyVarObj, NULL, keyObj,
 		    TCL_LEAVE_ERR_MSG) == NULL) {
-		Tcl_AddErrorInfo(interp,
-			"\n    (\"dict filter\" filter script key variable)");
+		Tcl_AppendPrintfToErrorInfo(interp,
+			"\n    (\"dict filter\" filter script %s variable)",
+			"key");
 		result = TCL_ERROR;
 		goto abnormalResult;
 	    }
 	    if (Tcl_ObjSetVar2(interp, valueVarObj, NULL, valueObj,
 		    TCL_LEAVE_ERR_MSG) == NULL) {
-		Tcl_AddErrorInfo(interp,
-			"\n    (\"dict filter\" filter script value variable)");
+		Tcl_AppendPrintfToErrorInfo(interp,
+			"\n    (\"dict filter\" filter script %s variable)",
+			"value");
 		result = TCL_ERROR;
 		goto abnormalResult;
 	    }
@@ -3429,9 +3429,8 @@ DictFilterCmd(
 		result = TCL_OK;
 		break;
 	    case TCL_ERROR:
-		Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-			"\n    (\"dict filter\" script line %d)",
-			Tcl_GetErrorLine(interp)));
+		Tcl_AppendPrintfToErrorInfo(interp, "\n    (\"%s\" script line %d)",
+			"dict filter", Tcl_GetErrorLine(interp));
 		TCL_FALLTHROUGH();
 	    default:
 		goto abnormalResult;
@@ -3561,7 +3560,8 @@ FinalizeDictUpdate(
      */
 
     if (result == TCL_ERROR) {
-	Tcl_AddErrorInfo(interp, "\n    (body of \"dict update\")");
+	Tcl_AppendPrintfToErrorInfo(interp, "\n    (\"%s\" body line %d)",
+		"dict update", Tcl_GetErrorLine(interp));
     }
 
     /*
@@ -3710,7 +3710,8 @@ FinalizeDictWith(
     Var *varPtr, *arrayPtr;
 
     if (result == TCL_ERROR) {
-	Tcl_AddErrorInfo(interp, "\n    (body of \"dict with\")");
+	Tcl_AppendPrintfToErrorInfo(interp, "\n    (\"%s\" body line %d)",
+		"dict with", Tcl_GetErrorLine(interp));
     }
 
     /*

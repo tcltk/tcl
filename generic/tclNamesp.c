@@ -3539,15 +3539,14 @@ NsEval_Callback(
 
     if (result == TCL_ERROR) {
 	size_t length = strlen(namespacePtr->fullName);
-	unsigned limit = 200;
-	int overflow = (length > limit);
+	unsigned limit = 60;
+	bool overflow = (length > limit);
 	char *cmd = (char *) data[1];
 
-	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
+	Tcl_AppendPrintfToErrorInfo(interp,
 		"\n    (in namespace %s \"%.*s%s\" script line %d)",
-		cmd,
-		(overflow ? limit : (unsigned)length), namespacePtr->fullName,
-		(overflow ? "..." : ""), Tcl_GetErrorLine(interp)));
+		cmd, limit, namespacePtr->fullName, (overflow ? "..." : ""),
+		Tcl_GetErrorLine(interp));
     }
 
     /*
@@ -5008,8 +5007,6 @@ TclLogCommandInfo(
     const char *p;
     Interp *iPtr = (Interp *) interp;
     Var *varPtr, *arrayPtr;
-    int limit = 150;
-    bool overflow;
 
     if (iPtr->flags & ERR_ALREADY_LOGGED) {
 	/*
@@ -5021,6 +5018,9 @@ TclLogCommandInfo(
     }
 
     if (command != NULL) {
+	const int limit = 150;
+	bool overflow;
+
 	/*
 	 * Compute the line number where the error occurred.
 	 */
@@ -5036,11 +5036,9 @@ TclLogCommandInfo(
 	    length = strlen(command);
 	}
 	overflow = (length > limit);
-	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-		"\n    %s\n\"%.*s%s\"", ((iPtr->errorInfo == NULL)
-		? "while executing" : "invoked from within"),
-		(overflow ? limit : (int)length), command,
-		(overflow ? "..." : "")));
+	Tcl_AppendPrintfToErrorInfo(interp, "\n    %s\n\"%.*s%s\"",
+		((iPtr->errorInfo == NULL) ? "while executing" : "invoked from within"),
+		(overflow ? limit : (int)length), command, (overflow ? "..." : ""));
 
 	varPtr = TclObjLookupVarEx(interp, iPtr->eiVar, NULL, TCL_GLOBAL_ONLY,
 		NULL, 0, 0, &arrayPtr);

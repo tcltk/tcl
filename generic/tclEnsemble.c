@@ -2432,28 +2432,27 @@ EnsembleUnknownCallback(
     if (!Tcl_InterpDeleted(interp)) {
 	if (result != TCL_ERROR) {
 	    Tcl_ResetResult(interp);
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "unknown subcommand handler returned bad code: ",
-		    TCL_AUTO_LENGTH));
+	    Tcl_PrintfResult(interp,
+		    "unknown subcommand handler returned bad code: ");
 	    switch (result) {
 	    case TCL_RETURN:
-		Tcl_AppendToObj(Tcl_GetObjResult(interp), "return",
-			TCL_AUTO_LENGTH);
+		Tcl_AppendPrintfResult(interp, "return");
 		break;
 	    case TCL_BREAK:
-		Tcl_AppendToObj(Tcl_GetObjResult(interp), "break",
-			TCL_AUTO_LENGTH);
+		Tcl_AppendPrintfResult(interp, "break");
 		break;
 	    case TCL_CONTINUE:
-		Tcl_AppendToObj(Tcl_GetObjResult(interp), "continue",
-			TCL_AUTO_LENGTH);
+		Tcl_AppendPrintfResult(interp, "continue");
 		break;
 	    default:
-		Tcl_AppendPrintfToObj(Tcl_GetObjResult(interp), "%d", result);
+		Tcl_AppendPrintfResult(interp, "%d", result);
 	    }
-	    Tcl_AddErrorInfo(interp, "\n    result of "
-		    "ensemble unknown subcommand handler: ");
-	    Tcl_AppendObjToErrorInfo(interp, unknownCmd);
+	    Tcl_Size len;
+	    const char *unknownStr = TclGetStringFromObj(unknownCmd, &len);
+	    const int limit = 30;
+	    Tcl_AppendPrintfToErrorInfo(interp,
+		    "\n    result of ensemble unknown subcommand handler: %.*s%s",
+		    limit, unknownStr, (limit < len) ? "..." : "");
 	    Tcl_SetErrorCode(interp, "TCL", "ENSEMBLE", "UNKNOWN_RESULT",
 		    (char *)NULL);
 	} else {

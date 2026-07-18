@@ -466,6 +466,68 @@ ResetObjResult(
 /*
  *----------------------------------------------------------------------
  *
+ * Tcl_AppendObjToErrorInfo --
+ *
+ *	Add a Tcl_Obj value to the errorInfo field that describes the current
+ *	error.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The value of the Tcl_Obj is appended to the errorInfo field. If we are
+ *	just starting to log an error, errorInfo is initialized from the error
+ *	message in the interpreter's result. The Tcl_Obj has its reference
+ *	count bumped, which will deallocate it if the reference count is zero
+ *	on entry.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Tcl_AppendObjToErrorInfo(
+    Tcl_Interp *interp,		/* Interpreter to which error information
+				 * pertains. */
+    Tcl_Obj *objPtr)		/* Message to record. */
+{
+    Tcl_Size length;
+    const char *message = TclGetStringFromObj(objPtr, &length);
+    Interp *iPtr = (Interp *) interp;
+
+    Tcl_IncrRefCount(objPtr);
+
+    /*
+     * If we are just starting to log an error, errorInfo is initialized from
+     * the error message in the interpreter's result.
+     */
+
+    iPtr->flags |= ERR_LEGACY_COPY;
+    if (iPtr->errorInfo == NULL) {
+	iPtr->errorInfo = iPtr->objResultPtr;
+	Tcl_IncrRefCount(iPtr->errorInfo);
+	if (!iPtr->errorCode) {
+	    Tcl_SetErrorCode(interp, "NONE", (char *)NULL);
+	}
+    }
+
+    /*
+     * Now append "message" to the end of errorInfo.
+     */
+
+    if (length != 0) {
+	if (Tcl_IsShared(iPtr->errorInfo)) {
+	    Tcl_DecrRefCount(iPtr->errorInfo);
+	    iPtr->errorInfo = Tcl_DuplicateObj(iPtr->errorInfo);
+	    Tcl_IncrRefCount(iPtr->errorInfo);
+	}
+	Tcl_AppendToObj(iPtr->errorInfo, message, length);
+    }
+    Tcl_DecrRefCount(objPtr);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Tcl_SetErrorCode --
  *
  *	This function is called to record machine-readable information about
@@ -1199,8 +1261,8 @@ Tcl_TransferResult(
 	if (tiPtr->errorLine > 1 && tiPtr->errorInfo &&
 		tiPtr->errorInfo->length &&
 		tiPtr->errorInfo->bytes[tiPtr->errorInfo->length-1] != ')') {
-	    Tcl_AppendObjToErrorInfo(targetInterp, Tcl_ObjPrintf(
-		    "\n    (\"interp eval\" body line %d)", tiPtr->errorLine));
+	    Tcl_AppendPrintfToErrorInfo(targetInterp, "\n    (\"%s\" body line %d)",
+		    "interp eval", tiPtr->errorLine);
 	}
 	tiPtr->flags &= ~(ERR_ALREADY_LOGGED);
     }

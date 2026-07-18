@@ -560,8 +560,7 @@ PkgRequireCoreStep2(
 	result = TCL_ERROR;
     }
     if (result == TCL_ERROR) {
-	Tcl_AddErrorInfo(interp,
-		"\n    (\"package unknown\" script)");
+	Tcl_AddErrorInfo(interp, "\n    (\"package unknown\" script)");
 	return result;
     }
     Tcl_ResetResult(interp);
@@ -913,9 +912,9 @@ SelectPackageFinal(
     }
 
     if (result == TCL_ERROR) {
-	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
+	Tcl_AppendPrintfToErrorInfo(interp,
 		"\n    (\"package ifneeded %s %s\" script)",
-		name, versionToProvide));
+		name, versionToProvide);
     }
     Tcl_Release(versionToProvide);
 

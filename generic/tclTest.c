@@ -4424,9 +4424,8 @@ TestparserCmd(
 	length = dummy;
     }
     if (Tcl_ParseCommand(interp, script, length, 0, &parse) != TCL_OK) {
-	Tcl_AddErrorInfo(interp, "\n    (remainder of script: \"");
-	Tcl_AddErrorInfo(interp, parse.term);
-	Tcl_AddErrorInfo(interp, "\")");
+	Tcl_AppendPrintfToErrorInfo(interp, "\n    (remainder of script: \"%s\")",
+		parse.term);
 	return TCL_ERROR;
     }
 
@@ -4485,9 +4484,8 @@ TestexprparserCmd(
     parse.commandStart = NULL;
     parse.commandSize = 0;
     if (Tcl_ParseExpr(interp, script, length, &parse) != TCL_OK) {
-	Tcl_AddErrorInfo(interp, "\n    (remainder of expr: \"");
-	Tcl_AddErrorInfo(interp, parse.term);
-	Tcl_AddErrorInfo(interp, "\")");
+	Tcl_AppendPrintfToErrorInfo(interp, "\n    (remainder of expr: \"%s\")",
+		parse.term);
 	return TCL_ERROR;
     }
 
@@ -4674,9 +4672,8 @@ TestparsevarnameCmd(
 	return TCL_ERROR;
     }
     if (Tcl_ParseVarName(interp, script, length, &parse, append) != TCL_OK) {
-	Tcl_AddErrorInfo(interp, "\n    (remainder of script: \"");
-	Tcl_AddErrorInfo(interp, parse.term);
-	Tcl_AddErrorInfo(interp, "\")");
+	Tcl_AppendPrintfToErrorInfo(interp, "\n    (remainder of script: \"%s\")",
+		parse.term);
 	return TCL_ERROR;
     }
 

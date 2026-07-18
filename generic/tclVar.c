@@ -3248,9 +3248,8 @@ ArrayForLoopCallback(
 	    Tcl_ResetResult(interp);
 	    result = TCL_OK;
 	} else if (result == TCL_ERROR) {
-	    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-		    "\n    (\"array for\" body line %d)",
-		    Tcl_GetErrorLine(interp)));
+	    Tcl_AppendPrintfToErrorInfo(interp, "\n    (\"%s\" body line %d)",
+		    "array for", Tcl_GetErrorLine(interp));
 	}
 	goto arrayfordone;
     }

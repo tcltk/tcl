@@ -2480,6 +2480,9 @@ declare 703 {
 declare 704 {
     void Tcl_AppendPrintfResult(Tcl_Interp *interp, const char *format, ...)
 }
+declare 705 {
+    void Tcl_AppendPrintfToErrorInfo(Tcl_Interp *interp, const char *format, ...)
+}
 
 ##############################################################################
 

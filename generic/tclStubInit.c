@@ -1516,6 +1516,7 @@ const TclStubs tclStubs = {
     TclUnusedStubEntry, /* 702 */
     Tcl_PrintfResult, /* 703 */
     Tcl_AppendPrintfResult, /* 704 */
+    Tcl_AppendPrintfToErrorInfo, /* 705 */
 };
 
 /* !END!: Do not edit above this line. */

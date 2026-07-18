@@ -3273,7 +3273,7 @@ typedef struct ForIterData {
     Tcl_Obj *cond;		/* Loop condition expression. */
     Tcl_Obj *body;		/* Loop body. */
     Tcl_Obj *next;		/* Loop step script, NULL for 'while'. */
-    const char *msg;		/* Error message part. */
+    const char *cmdName;	/* Command name for error info part. */
     Tcl_Size word;		/* Index of the body script in the command */
 } ForIterData;
 

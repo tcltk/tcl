@@ -2690,9 +2690,8 @@ ZlibPushCmd(
     return TCL_OK;
 
   genericOptionError:
-    Tcl_AddErrorInfo(interp, "\n    (in ");
-    Tcl_AddErrorInfo(interp, pushOptions[option]);
-    Tcl_AddErrorInfo(interp, " option)");
+    Tcl_AppendPrintfToErrorInfo(interp, "\n    (in %s option)",
+	    pushOptions[option]);
     return TCL_ERROR;
 }
 

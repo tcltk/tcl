@@ -1954,6 +1954,9 @@ EXTERN void		Tcl_PrintfResult(Tcl_Interp *interp,
 /* 704 */
 EXTERN void		Tcl_AppendPrintfResult(Tcl_Interp *interp,
 				const char *format, ...) TCL_FORMAT_PRINTF(2, 3);
+/* 705 */
+EXTERN void		Tcl_AppendPrintfToErrorInfo(Tcl_Interp *interp,
+				const char *format, ...) TCL_FORMAT_PRINTF(2, 3);
 
 typedef struct {
     const struct TclPlatStubs *tclPlatStubs;
@@ -2670,6 +2673,7 @@ typedef struct TclStubs {
     void (*tclUnusedStubEntry) (void); /* 702 */
     void (*tcl_PrintfResult) (Tcl_Interp *interp, const char *format, ...) TCL_FORMAT_PRINTF(2, 3); /* 703 */
     void (*tcl_AppendPrintfResult) (Tcl_Interp *interp, const char *format, ...) TCL_FORMAT_PRINTF(2, 3); /* 704 */
+    void (*tcl_AppendPrintfToErrorInfo) (Tcl_Interp *interp, const char *format, ...) TCL_FORMAT_PRINTF(2, 3); /* 705 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -4039,6 +4043,8 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_PrintfResult) /* 703 */
 #define Tcl_AppendPrintfResult \
 	(tclStubsPtr->tcl_AppendPrintfResult) /* 704 */
+#define Tcl_AppendPrintfToErrorInfo \
+	(tclStubsPtr->tcl_AppendPrintfToErrorInfo) /* 705 */
 
 #endif /* defined(USE_TCL_STUBS) */
 

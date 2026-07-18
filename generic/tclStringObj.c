@@ -3027,6 +3027,68 @@ Tcl_AppendPrintfResult(
 }
 
 /*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_AppendPrintfToErrorInfo --
+ *
+ *	Add a formatted string to the errorInfo field that describes the
+ *	current error.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The errorInfo field is appended to. If we are just starting to log
+ *	an error, errorInfo is initialized from the error message in the
+ *	interpreter's result.
+ *
+ * Note:
+ *	Would be in tclResult.c, except it needs access to the static
+ *	function AppendPrintfToObjVA() as part of its implementation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Tcl_AppendPrintfToErrorInfo(
+    Tcl_Interp *interp,		/* Interpreter to which error information
+				 * pertains. */
+    const char *format,		/* Format string. */
+    ...)			/* Additional arguments as required for
+				 * formatting. */
+{
+    Interp *iPtr = (Interp *) interp;
+    va_list argList;
+
+    /*
+     * If we are just starting to log an error, errorInfo is initialized from
+     * the error message in the interpreter's result.
+     */
+
+    iPtr->flags |= ERR_LEGACY_COPY;
+    if (iPtr->errorInfo == NULL) {
+	iPtr->errorInfo = iPtr->objResultPtr;
+	Tcl_IncrRefCount(iPtr->errorInfo);
+	if (!iPtr->errorCode) {
+	    Tcl_SetErrorCode(interp, "NONE", (char *)NULL);
+	}
+    }
+
+    /*
+     * Now append "format" to the end of errorInfo.
+     */
+
+    if (Tcl_IsShared(iPtr->errorInfo)) {
+	Tcl_DecrRefCount(iPtr->errorInfo);
+	iPtr->errorInfo = Tcl_DuplicateObj(iPtr->errorInfo);
+	Tcl_IncrRefCount(iPtr->errorInfo);
+    }
+    va_start(argList, format);
+    AppendPrintfToObjVA(iPtr->errorInfo, format, argList);
+    va_end(argList);
+}
+
+/*
  *---------------------------------------------------------------------------
  *
  * TclGetStringStorage --

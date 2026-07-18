@@ -2927,9 +2927,9 @@ RandomChar(
     return TCL_OK;
 
   failed:
-    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
+    Tcl_AppendPrintfToErrorInfo(interp,
 	    "\n    (evaluating PRNG step %d for password encoding)",
-	    step));
+	    step);
     return TCL_ERROR;
 }
 

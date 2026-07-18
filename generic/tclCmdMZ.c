@@ -883,9 +883,9 @@ Tcl_RegsubObjCmd(
 	    Tcl_Free(args);
 	    if (result != TCL_OK) {
 		if (result == TCL_ERROR) {
-		    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
+		    Tcl_AppendPrintfToErrorInfo(interp,
 			    "\n    (%s substitution computation script)",
-			    options[REGSUB_COMMAND]));
+			    options[REGSUB_COMMAND]);
 		}
 		goto done;
 	    }
@@ -3976,10 +3976,9 @@ SwitchPostProc(
 	int limit = 50;
 	int overflow = (patternLength > limit);
 
-	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-		"\n    (\"%.*s%s\" arm line %d)",
-		(int) (overflow ? limit : patternLength), pattern,
-		(overflow ? "..." : ""), Tcl_GetErrorLine(interp)));
+	Tcl_AppendPrintfToErrorInfo(interp, "\n    (\"%.*s%s\" arm line %d)",
+		limit, pattern, (overflow ? "..." : ""),
+		Tcl_GetErrorLine(interp));
     }
     TclStackFree(interp, ctxPtr);
     return result;
@@ -4976,9 +4975,8 @@ TryPostBody(
      */
 
     if (((Interp*) interp)->execEnvPtr->rewind || Tcl_LimitExceeded(interp)) {
-	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-		"\n    (\"%s\" body line %d)", TclGetString(cmdObj),
-		Tcl_GetErrorLine(interp)));
+	Tcl_AppendPrintfToErrorInfo(interp, "\n    (\"%s\" body line %d)",
+		TclGetString(cmdObj), Tcl_GetErrorLine(interp));
 	if (handlersObj != NULL) {
 	    Tcl_DecrRefCount(handlersObj);
 	}
@@ -4991,9 +4989,8 @@ TryPostBody(
      */
 
     if (result == TCL_ERROR) {
-	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-		"\n    (\"%s\" body line %d)", TclGetString(cmdObj),
-		Tcl_GetErrorLine(interp)));
+	Tcl_AppendPrintfToErrorInfo(interp, "\n    (\"%s\" body line %d)",
+		TclGetString(cmdObj), Tcl_GetErrorLine(interp));
     }
     resultObj = Tcl_GetObjResult(interp);
     Tcl_IncrRefCount(resultObj);
@@ -5353,7 +5350,7 @@ TclNRWhileObjCmd(
     iterPtr->cond = objv[1];
     iterPtr->body = objv[2];
     iterPtr->next = NULL;
-    iterPtr->msg  = "\n    (\"while\" body line %d)";
+    iterPtr->cmdName = "while";
     iterPtr->word = 2;
 
     TclNRAddCallback(interp, TclNRForIterCallback, iterPtr,

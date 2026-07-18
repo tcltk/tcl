@@ -2433,9 +2433,9 @@ InvokeTclMethod(
 		Tcl_DecrRefCount(cmd);
 		result = TCL_ERROR;
 	    }
-	    Tcl_AppendObjToErrorInfo(rcPtr->interp, Tcl_ObjPrintf(
+	    Tcl_AppendPrintfToErrorInfo(rcPtr->interp,
 		    "\n    (chan handler subcommand \"%s\")",
-		    methodNames[method]));
+		    methodNames[method]);
 	    resObj = MarshallError(rcPtr->interp);
 	}
 	Tcl_IncrRefCount(resObj);
