@@ -9252,8 +9252,8 @@ Tcl_FileEventObjCmd(
     const char *chanName;
     int modeIndex;		/* Index of mode argument. */
     int mask;
-    static const char *const modeOptions[] = {"readable", "writable", NULL};
-    static const int maskArray[] = {TCL_READABLE, TCL_WRITABLE};
+    static const char *const modeOptions[] = {"readable", "writable", "exception", NULL};
+    static const int maskArray[] = {TCL_READABLE, TCL_WRITABLE, TCL_EXCEPTION};
 
     if ((objc != 3) && (objc != 4)) {
 	Tcl_WrongNumArgs(interp, 1, objv, "channel event ?script?");
@@ -9273,8 +9273,8 @@ Tcl_FileEventObjCmd(
     chanPtr = (Channel *) chan;
     statePtr = chanPtr->state;
     if (GotFlag(statePtr, mask) == 0) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf("channel is not %s",
-		(mask == TCL_READABLE) ? "readable" : "writable"));
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf("channel not allowed to have %s callback",
+		modeOptions[modeIndex]));
 	return TCL_ERROR;
     }
 
