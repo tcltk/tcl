@@ -401,26 +401,26 @@ returning 1 if end-of-file was reached, and 0 otherwise.
 Arrange for the Tcl script \fIscript\fR to be installed as a \fIfile
 event handler\fR to be called whenever the channel called
 \fIchannel\fR enters the state described by \fIevent\fR (which must
-be either \fBreadable\fR or \fBwritable\fR); only one such handler may
-be installed per event per channel at a time.  If \fIscript\fR is the
-empty string, the current handler is deleted (this also happens if the
-channel is closed or the interpreter deleted).  If \fIscript\fR is
-omitted, the currently installed script is returned (or an empty
-string if no such handler is installed).  The callback is only
-performed if the event loop is being serviced (e.g. via \fBvwait\fR or
-\fBupdate\fR).
+be either \fBreadable\fR, \fBwritable\fR, or \fBexception\fR); only
+one such handler may be installed per event per channel at a time.
+If \fIscript\fR is the empty string, the current handler is deleted
+(this also happens if the channel is closed or the interpreter
+deleted).  If \fIscript\fR is omitted, the currently installed script
+is returned (or an empty string if no such handler is installed).
+The callback is only performed if the event loop is being serviced
+(e.g. via \fBvwait\fR or \fBupdate\fR).
 .RS
 .PP
 A file event handler is a binding between a channel and a script, such
-that the script is evaluated whenever the channel becomes readable or
-writable.  File event handlers are most commonly used to allow data to
-be received from another process on an event-driven basis, so that the
-receiver can continue to interact with the user or with other channels
-while waiting for the data to arrive.  If an application invokes
-\fBchan gets\fR or \fBchan read\fR on a blocking channel when there is
-no input data available, the process will block; until the input data
-arrives, it will not be able to service other events, so it will
-appear to the user to
+that the script is evaluated whenever the channel becomes readable,
+writable, or has an exception.  File event handlers are most commonly
+used to allow data to be received from another process on an
+event-driven basis, so that the receiver can continue to interact with
+the user or with other channels while waiting for the data to arrive.
+If an application invokes \fBchan gets\fR or \fBchan read\fR on a
+blocking channel when there is no input data available, the process
+will block; until the input data arrives, it will not be able to
+service other events, so it will appear to the user to
 .QW "freeze up"
 \&.
 With \fBchan event\fR, the
@@ -446,6 +446,10 @@ can be written to the underlying file or device without blocking, or
 if an error condition is present on the underlying file or device.
 Note that client sockets opened in asynchronous mode become writable
 when they become connected or if the connection fails.
+.PP
+An exception event is specific to the channel type in use.  See the
+documention of the command that created the channel for the use
+of its exception handler, if any.
 .PP
 Event-driven I/O works best for channels that have been placed into
 non-blocking mode with the \fBchan configure\fR command.  In blocking
