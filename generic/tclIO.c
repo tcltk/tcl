@@ -9273,7 +9273,7 @@ Tcl_FileEventObjCmd(
     chanPtr = (Channel *) chan;
     statePtr = chanPtr->state;
     if (GotFlag(statePtr, mask) == 0) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf("channel not allowed to have %s callback",
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf("channel is not allowed to have the %s handler",
 		modeOptions[modeIndex]));
 	return TCL_ERROR;
     }

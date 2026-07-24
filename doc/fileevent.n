@@ -11,11 +11,13 @@
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
-fileevent \- Execute a script when a channel becomes readable or writable
+fileevent \- Execute a script when a channel becomes readable, writable, or has an exception
 .SH SYNOPSIS
 \fBfileevent \fIchannel \fBreadable \fR?\fIscript\fR?
 .sp
 \fBfileevent \fIchannel \fBwritable \fR?\fIscript\fR?
+.sp
+\fBfileevent \fIchannel \fBexception \fR?\fIscript\fR?
 .BE
 .SH DESCRIPTION
 .PP
