@@ -1614,8 +1614,10 @@ Tcl_CreateChannel(
     const Tcl_ChannelType *typePtr, /* The channel type record. */
     const char *chanName,	/* Name of channel to record. */
     void *instanceData,		/* Instance specific data. */
-    int mask)			/* TCL_READABLE & TCL_WRITABLE to indicate if
-				 * the channel is readable, writable. */
+    int validmask)		/* OR-ed combination of TCL_READABLE,
+				 * TCL_WRITABLE, and TCL_EXCEPTION to
+				 * indicate whether a channel is readable,
+				 * writable and can generate exceptions. */
 {
     Channel *chanPtr;		/* The channel structure newly created. */
     ChannelState *statePtr;	/* The stack-level independent state info for
@@ -1633,11 +1635,11 @@ Tcl_CreateChannel(
     if (typePtr->close2Proc == NULL) {
 	Tcl_Panic("channel type %s must define close2Proc", typePtr->typeName);
     }
-    if ((TCL_READABLE & mask) && (NULL == typePtr->inputProc)) {
+    if ((TCL_READABLE & validmask) && (NULL == typePtr->inputProc)) {
 	Tcl_Panic("channel type %s must define inputProc when used for reader channel",
 		typePtr->typeName);
     }
-    if ((TCL_WRITABLE & mask) &&  (NULL == typePtr->outputProc)) {
+    if ((TCL_WRITABLE & validmask) &&  (NULL == typePtr->outputProc)) {
 	Tcl_Panic("channel type %s must define outputProc when used for writer channel",
 		typePtr->typeName);
     }
@@ -1677,8 +1679,8 @@ Tcl_CreateChannel(
 	tmp[0] = '\0';
     }
     statePtr->channelName = tmp;
-    statePtr->flags = mask;
-    statePtr->maxPerms = mask; /* Save max privileges for close callback */
+    statePtr->flags = validmask;
+    statePtr->maxPerms = validmask; /* Save max privileges for close callback */
 
     /*
      * Set the channel to system default encoding.
