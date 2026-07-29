@@ -18,6 +18,10 @@ if {"::tcltest" ni [namespace children]} {
     namespace import -force ::tcltest::*
 }
 
+testConstraint testchancreate [expr {
+    [llength [info commands testchancreate]] != 0
+}]
+
 testConstraint noappverifier [expr {
 	[llength [info commands testappverifierpresent]] == 0
 	|| ![testappverifierpresent]}]
@@ -7835,6 +7839,26 @@ test chan-io-73.1 {channel Tcl_Obj SetChannelFromAny} -body {
     # Test for Bug 1847044 - don't spoil type unless we have a valid channel
     chan close [lreplace [list a] 0 end]
 } -returnCodes error -match glob -result *
+
+test chan-io-74.1 {
+    Bug 6e82720e14 - panic on reading 4294967296 characters
+} -constraints {bigdata testchancreate} -setup {
+    set chan [testchancreate source X 4294967296]
+} -cleanup {
+    close $chan
+} -body {
+   string length [read $chan 4294967296]
+} -result 4294967296
+
+test chan-io-74.2 {
+    0-length read on reading 4294967296 characters from small non-empty file
+} -constraints testchancreate -setup {
+    set chan [testchancreate source AB]
+} -cleanup {
+    close $chan
+} -body {
+   read $chan 4294967296
+} -result AB
 
 # ### ### ### ######### ######### #########
 
