@@ -217,10 +217,10 @@ static Tcl_HashTable *	GetChannelTable(Tcl_Interp *interp);
 static int		GetInput(Channel *chanPtr);
 static void		PeekAhead(Channel *chanPtr, char **dstEndPtr,
 			    GetsState *gsPtr);
-static int		ReadBytes(ChannelState *statePtr, Tcl_Obj *objPtr,
-			    int charsLeft);
-static int		ReadChars(ChannelState *statePtr, Tcl_Obj *objPtr,
-			    int charsLeft, int *factorPtr);
+static Tcl_Size		ReadBytes(ChannelState *statePtr, Tcl_Obj *objPtr,
+			    Tcl_Size charsLeft);
+static Tcl_Size		ReadChars(ChannelState *statePtr, Tcl_Obj *objPtr,
+			    Tcl_Size charsLeft, Tcl_Size *factorPtr);
 static void		RecycleBuffer(ChannelState *statePtr,
 			    ChannelBuffer *bufPtr, int mustDiscard);
 static int		StackSetBlockMode(Channel *chanPtr, int mode);
@@ -229,7 +229,8 @@ static int		SetBlockMode(Tcl_Interp *interp, Channel *chanPtr,
 static void		StopCopy(CopyState *csPtr);
 static void		CopyDecrRefCount(CopyState *csPtr);
 static void		TranslateInputEOL(ChannelState *statePtr, char *dst,
-			    const char *src, int *dstLenPtr, int *srcLenPtr);
+			    const char *src, Tcl_Size *dstLenPtr,
+			    Tcl_Size *srcLenPtr);
 static void		UpdateInterest(Channel *chanPtr);
 static Tcl_Size		Write(Channel *chanPtr, const char *src,
 			    Tcl_Size srcLen, Tcl_Encoding encoding);
@@ -5969,7 +5970,7 @@ DoReadChars(
     Tcl_Encoding encoding = statePtr->encoding;
     int binaryMode;
 #define UTF_EXPANSION_FACTOR	1024
-    int factor = UTF_EXPANSION_FACTOR;
+    Tcl_Size factor = UTF_EXPANSION_FACTOR;
 
     if (GotFlag(statePtr, CHANNEL_ENCODING_ERROR)) {
 	ResetFlag(statePtr, CHANNEL_EOF|CHANNEL_ENCODING_ERROR);
@@ -6043,7 +6044,7 @@ DoReadChars(
     ResetFlag(statePtr, CHANNEL_BLOCKED|CHANNEL_EOF);
     statePtr->inputEncodingFlags &= ~TCL_ENCODING_END;
     for (copied = 0; toRead != 0 ; ) {
-	int copiedNow = -1;
+	Tcl_Size copiedNow = -1;
 	if (statePtr->inQueueHead != NULL) {
 	    if (binaryMode) {
 		copiedNow = ReadBytes(statePtr, objPtr, toRead);
@@ -6192,7 +6193,7 @@ finish:
  *---------------------------------------------------------------------------
  */
 
-static int
+static Tcl_Size
 ReadBytes(
     ChannelState *statePtr,	/* State of the channel to read. */
     Tcl_Obj *objPtr,		/* Input data is appended to this ByteArray
@@ -6200,7 +6201,7 @@ ReadBytes(
 				 * been allocated to hold data, not how many
 				 * bytes of data have been stored in the
 				 * object. */
-    int bytesToRead)		/* Maximum number of bytes to store, or -1 to
+    Tcl_Size bytesToRead)	/* Maximum number of bytes to store, or -1 to
 				 * get all available bytes. Bytes are obtained
 				 * from the first buffer in the queue - even
 				 * if this number is larger than the number of
@@ -6209,8 +6210,8 @@ ReadBytes(
 				 * returned. */
 {
     ChannelBuffer *bufPtr = statePtr->inQueueHead;
-    int srcLen = BytesLeft(bufPtr);
-    int toRead = bytesToRead>srcLen || bytesToRead<0 ? srcLen : bytesToRead;
+    Tcl_Size srcLen = BytesLeft(bufPtr);
+    Tcl_Size toRead = bytesToRead>srcLen || bytesToRead<0 ? srcLen : bytesToRead;
 
     TclAppendBytesToByteArray(objPtr, (unsigned char *) RemovePoint(bufPtr),
 	    toRead);
@@ -6245,14 +6246,14 @@ ReadBytes(
  *---------------------------------------------------------------------------
  */
 
-static int
+static Tcl_Size
 ReadChars(
     ChannelState *statePtr,	/* State of channel to read. */
     Tcl_Obj *objPtr,		/* Input data is appended to this object.
 				 * objPtr->length is how much space has been
 				 * allocated to hold data, not how many bytes
 				 * of data have been stored in the object. */
-    int charsToRead,		/* Maximum number of characters to store, or
+    Tcl_Size charsToRead,	/* Maximum number of characters to store, or
 				 * TCL_INDEX_NONE to get all available characters.
 				 * Characters are obtained from the first
 				 * buffer in the queue -- even if this number
@@ -6264,7 +6265,7 @@ ReadChars(
 				 * buffer.  In that case, a recursive call
 				 * effectively obtains chars from the
 				 * second buffer. */
-    int *factorPtr)		/* On input, contains a guess of how many
+    Tcl_Size *factorPtr)	/* On input, contains a guess of how many
 				 * bytes need to be allocated to hold the
 				 * result of converting N source bytes to
 				 * UTF-8. On output, contains another guess
@@ -6277,7 +6278,7 @@ ReadChars(
     int savedFlags = statePtr->flags;
     char *dst, *src = RemovePoint(bufPtr);
     Tcl_Size numBytes;
-    int srcLen = BytesLeft(bufPtr);
+    Tcl_Size srcLen = BytesLeft(bufPtr);
 
     /*
      * One src byte can yield at most one character.  So when the number of
@@ -6286,7 +6287,9 @@ ReadChars(
      * value of "srcLen" as a tighter limit for sizing receiving buffers.
      */
 
-    int toRead = ((charsToRead<0)||(charsToRead > srcLen)) ? srcLen : charsToRead;
+    Tcl_Size toRead = ((charsToRead < 0) || (charsToRead > srcLen))
+			    ? srcLen
+			    : charsToRead;
 
     /*
      * 'factor' is how much we guess that the bytes in the source buffer will
@@ -6294,11 +6297,11 @@ ReadChars(
      * how many characters were produced by the previous pass.
      */
 
-    int factor = *factorPtr;
-    int dstLimit = TCL_UTF_MAX - 1 + toRead * factor / UTF_EXPANSION_FACTOR;
+    Tcl_Size factor = *factorPtr;
+    Tcl_Size dstLimit = TCL_UTF_MAX - 1 + toRead * factor / UTF_EXPANSION_FACTOR;
 
     if (dstLimit <= 0) {
-	dstLimit = INT_MAX; /* avoid overflow */
+	dstLimit = TCL_SIZE_MAX; /* avoid overflow */
     }
     (void)TclGetStringFromObj(objPtr, &numBytes);
     TclAppendUtfToUtf(objPtr, NULL, dstLimit);
@@ -6306,7 +6309,7 @@ ReadChars(
 	Tcl_Size size;
 
 	dst = TclGetStringStorage(objPtr, &size) + numBytes;
-	dstLimit = (size - numBytes) > INT_MAX ? INT_MAX : (size - numBytes);
+	dstLimit = (size - numBytes) > TCL_SIZE_MAX ? TCL_SIZE_MAX : (size - numBytes);
     } else {
 	dst = TclGetString(objPtr) + numBytes;
     }
@@ -6327,7 +6330,7 @@ ReadChars(
      */
 
     while (1) {
-	int dstDecoded, dstRead, dstWrote, srcRead, numChars, code;
+	Tcl_Size dstDecoded, dstRead, dstWrote, srcRead, numChars, code;
 	int flags = statePtr->inputEncodingFlags | TCL_ENCODING_NO_TERMINATE;
 
 	if (charsToRead > 0) {
@@ -6352,7 +6355,7 @@ ReadChars(
 	assert(bufPtr->nextPtr == NULL || BytesLeft(bufPtr->nextPtr) == 0
 		|| (statePtr->inputEncodingFlags & TCL_ENCODING_END) == 0);
 
-	code = Tcl_ExternalToUtf(NULL, encoding, src, srcLen,
+	code = Tcl_ExternalToUtfEx(NULL, encoding, src, srcLen,
 		flags, &statePtr->inputEncodingState,
 		dst, dstLimit, &srcRead, &dstDecoded, &numChars);
 
@@ -6459,7 +6462,7 @@ ReadChars(
 	     */
 
 	    {
-		int read, decoded, count;
+		Tcl_Size read, decoded, count;
 		char buffer[TCL_UTF_MAX + 1];
 
 		/*
@@ -6481,7 +6484,7 @@ ReadChars(
 		 * handled.
 		 */
 
-		code = Tcl_ExternalToUtf(NULL, encoding, src, srcLen,
+		code = Tcl_ExternalToUtfEx(NULL, encoding, src, srcLen,
 			(statePtr->inputEncodingFlags | TCL_ENCODING_NO_TERMINATE),
 			&statePtr->inputEncodingState, buffer, sizeof(buffer),
 			&read, &decoded, &count);
@@ -6662,16 +6665,16 @@ TranslateInputEOL(
 				 * appropriate EOL translation to source
 				 * characters. */
     const char *srcStart,	/* Source characters. */
-    int *dstLenPtr,		/* On entry, the maximum length of output
+    Tcl_Size *dstLenPtr,	/* On entry, the maximum length of output
 				 * buffer in bytes. On exit, the number of
 				 * bytes actually used in output buffer. */
-    int *srcLenPtr)		/* On entry, the length of source buffer. On
+    Tcl_Size *srcLenPtr)	/* On entry, the length of source buffer. On
 				 * exit, the number of bytes read from the
 				 * source buffer. */
 {
     const char *eof = NULL;
-    int dstLen = *dstLenPtr;
-    int srcLen = *srcLenPtr;
+    Tcl_Size dstLen = *dstLenPtr;
+    Tcl_Size srcLen = *srcLenPtr;
     int inEofChar = statePtr->inEofChar;
 
     /*
@@ -6732,10 +6735,10 @@ TranslateInputEOL(
     case TCL_TRANSLATE_CRLF: {
 	const char *crFound, *src = srcStart;
 	char *dst = dstStart;
-	int lesser = (dstLen < srcLen) ? dstLen : srcLen;
+	Tcl_Size lesser = (dstLen < srcLen) ? dstLen : srcLen;
 
 	while ((crFound = (const char *)memchr(src, '\r', lesser))) {
-	    int numBytes = crFound - src;
+	    Tcl_Size numBytes = crFound - src;
 	    memmove(dst, src, numBytes);
 
 	    dst += numBytes;
@@ -6772,7 +6775,7 @@ TranslateInputEOL(
     case TCL_TRANSLATE_AUTO: {
 	const char *crFound, *src = srcStart;
 	char *dst = dstStart;
-	int lesser;
+	Tcl_Size lesser;
 
 	if (GotFlag(statePtr, INPUT_SAW_CR) && srcLen) {
 	    if (*src == '\n') {
@@ -6783,7 +6786,7 @@ TranslateInputEOL(
 	}
 	lesser = (dstLen < srcLen) ? dstLen : srcLen;
 	while ((crFound = (const char *)memchr(src, '\r', lesser))) {
-	    int numBytes = crFound - src;
+	    Tcl_Size numBytes = crFound - src;
 	    memmove(dst, src, numBytes);
 
 	    dst[numBytes] = '\n';
@@ -10144,7 +10147,7 @@ DoRead(
 	 * buffer.
 	 */
 
-	int bytesRead, bytesWritten;
+	Tcl_Size bytesRead, bytesWritten;
 	ChannelBuffer *bufPtr = statePtr->inQueueHead;
 
 	/*
