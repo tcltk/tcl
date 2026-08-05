@@ -1301,8 +1301,12 @@ proc ::ndoc::parseCommand {mode line} {
 			set sublist [list]
 			if $DEBUG {puts "word [expr {$i + 1}]: $word"}
 			if {$cmdType eq "ccmd"} {
-				if $DEBUG {puts "API arguments: [string range $word 1 end-1]"}
-				lappend spanList [list Span .cargs [list [list Text {} [string range $word 1 end-1]]]]
+				# the arguments may be wrapped as a single \fI...\fR group (one leading/trailing marker)
+				# or as several individual \fI...\fR groups (one marker pair per argument), so strip
+				# all bold/italic/reset markers here:
+				set cargsText [string map {§ {} + {} = {}} $word]
+				if $DEBUG {puts "API arguments: $cargsText"}
+				lappend spanList [list Span .cargs [list [list Text {} $cargsText]]]
 				continue
 			}
 			switch -regexp $word {

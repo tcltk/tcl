@@ -18,7 +18,7 @@ Tcl\_GetCwd, Tcl\_Chdir - manipulate the current working directory
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[char \*]{.ret} [Tcl\_GetCwd]{.ccmd}[interp=, +bufferPtr]{.cargs}
+[char \*]{.ret} [Tcl\_GetCwd]{.ccmd}[interp, bufferPtr]{.cargs}
 [int]{.ret} [Tcl\_Chdir]{.ccmd}[dirName]{.cargs}
 :::
 

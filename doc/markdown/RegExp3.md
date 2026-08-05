@@ -28,14 +28,14 @@ Tcl\_RegExpMatch, Tcl\_RegExpCompile, Tcl\_RegExpExec, Tcl\_RegExpRange, Tcl\_Ge
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[int]{.ret} [Tcl\_RegExpMatchObj]{.ccmd}[interp=, +textObj=, +patObj]{.cargs}
-[int]{.ret} [Tcl\_RegExpMatch]{.ccmd}[interp=, +text=, +pattern]{.cargs}
-[Tcl\_RegExp]{.ret} [Tcl\_RegExpCompile]{.ccmd}[interp=, +pattern]{.cargs}
-[int]{.ret} [Tcl\_RegExpExec]{.ccmd}[interp=, +regexp=, +text=, +start]{.cargs}
-[Tcl\_RegExpRange]{.ccmd}[regexp=, +index=, +startPtr=, +endPtr]{.cargs}
-[Tcl\_RegExp]{.ret} [Tcl\_GetRegExpFromObj]{.ccmd}[interp=, +patObj=, +cflags]{.cargs}
-[int]{.ret} [Tcl\_RegExpExecObj]{.ccmd}[interp=, +regexp=, +textObj=, +offset=, +nmatches=, +eflags]{.cargs}
-[Tcl\_RegExpGetInfo]{.ccmd}[regexp=, +infoPtr]{.cargs}
+[int]{.ret} [Tcl\_RegExpMatchObj]{.ccmd}[interp, textObj, patObj]{.cargs}
+[int]{.ret} [Tcl\_RegExpMatch]{.ccmd}[interp, text, pattern]{.cargs}
+[Tcl\_RegExp]{.ret} [Tcl\_RegExpCompile]{.ccmd}[interp, pattern]{.cargs}
+[int]{.ret} [Tcl\_RegExpExec]{.ccmd}[interp, regexp, text, start]{.cargs}
+[Tcl\_RegExpRange]{.ccmd}[regexp, index, startPtr, endPtr]{.cargs}
+[Tcl\_RegExp]{.ret} [Tcl\_GetRegExpFromObj]{.ccmd}[interp, patObj, cflags]{.cargs}
+[int]{.ret} [Tcl\_RegExpExecObj]{.ccmd}[interp, regexp, textObj, offset, nmatches, eflags]{.cargs}
+[Tcl\_RegExpGetInfo]{.ccmd}[regexp, infoPtr]{.cargs}
 :::
 
 # Arguments

@@ -24,7 +24,7 @@ Tcl\_TranslateFileName - convert file name to native form
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[char \*]{.ret} [Tcl\_TranslateFileName]{.ccmd}[interp=, +name=, +bufferPtr]{.cargs}
+[char \*]{.ret} [Tcl\_TranslateFileName]{.ccmd}[interp, name, bufferPtr]{.cargs}
 :::
 
 # Arguments

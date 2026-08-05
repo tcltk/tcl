@@ -25,8 +25,8 @@ Tcl\_CallWhenDeleted, Tcl\_DontCallWhenDeleted - Arrange for callback when inter
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[Tcl\_CallWhenDeleted]{.ccmd}[interp=, +proc=, +clientData]{.cargs}
-[Tcl\_DontCallWhenDeleted]{.ccmd}[interp=, +proc=, +clientData]{.cargs}
+[Tcl\_CallWhenDeleted]{.ccmd}[interp, proc, clientData]{.cargs}
+[Tcl\_DontCallWhenDeleted]{.ccmd}[interp, proc, clientData]{.cargs}
 :::
 
 # Arguments

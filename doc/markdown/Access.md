@@ -22,8 +22,8 @@ Tcl\_Access, Tcl\_Stat - check file permissions and other attributes
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[int]{.ret} [Tcl\_Access]{.ccmd}[path=, +mode]{.cargs}
-[int]{.ret} [Tcl\_Stat]{.ccmd}[path=, +statPtr]{.cargs}
+[int]{.ret} [Tcl\_Access]{.ccmd}[path, mode]{.cargs}
+[int]{.ret} [Tcl\_Stat]{.ccmd}[path, statPtr]{.cargs}
 :::
 
 # Arguments

@@ -47,7 +47,7 @@ Tcl\_NewStringObj, Tcl\_NewUnicodeObj, Tcl\_SetStringObj, Tcl\_SetUnicodeObj, Tc
 [void]{.ret} [Tcl\_AppendToObj]{.ccmd}[objPtr, bytes, length]{.cargs}
 [void]{.ret} [Tcl\_AppendUnicodeToObj]{.ccmd}[objPtr, unicode, numChars]{.cargs}
 [void]{.ret} [Tcl\_AppendObjToObj]{.ccmd}[objPtr, appendObjPtr]{.cargs}
-[void]{.ret} [Tcl\_AppendStringsToObj]{.ccmd}[objPtr, string, string, ...= §(char \*)NULL]{.cargs}
+[void]{.ret} [Tcl\_AppendStringsToObj]{.ccmd}[objPtr, string, string, ... (char \*)NULL]{.cargs}
 [void]{.ret} [Tcl\_AppendLimitedToObj]{.ccmd}[objPtr, bytes, length, limit, ellipsis]{.cargs}
 [Tcl\_Obj \*]{.ret} [Tcl\_Format]{.ccmd}[interp, format, objc, objv]{.cargs}
 [int]{.ret} [Tcl\_AppendFormatToObj]{.ccmd}[interp, objPtr, format, objc, objv]{.cargs}

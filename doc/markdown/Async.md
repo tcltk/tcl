@@ -25,7 +25,7 @@ Tcl\_AsyncCreate, Tcl\_AsyncMark, Tcl\_AsyncMarkFromSignal, Tcl\_AsyncInvoke, Tc
 **#include <tcl.h>**
 [Tcl\_AsyncHandler]{.ret} [Tcl\_AsyncCreate]{.ccmd}[proc, clientData]{.cargs}
 [void]{.ret} [Tcl\_AsyncMark]{.ccmd}[async]{.cargs}
-[int]{.ret} [Tcl\_AsyncMarkFromSignal]{.ccmd}[async=, +sigNumber]{.cargs}
+[int]{.ret} [Tcl\_AsyncMarkFromSignal]{.ccmd}[async, sigNumber]{.cargs}
 [int]{.ret} [Tcl\_AsyncInvoke]{.ccmd}[interp, code]{.cargs}
 [void]{.ret} [Tcl\_AsyncDelete]{.ccmd}[async]{.cargs}
 [int]{.ret} [Tcl\_AsyncReady]{.ccmd}[]{.cargs}

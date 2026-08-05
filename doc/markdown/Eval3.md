@@ -32,7 +32,7 @@ Tcl\_EvalObjEx, Tcl\_EvalFile, Tcl\_EvalObjv, Tcl\_Eval, Tcl\_EvalEx, Tcl\_Globa
 [int]{.ret} [Tcl\_EvalEx]{.ccmd}[interp, script, numBytes, flags]{.cargs}
 [int]{.ret} [Tcl\_GlobalEval]{.ccmd}[interp, script]{.cargs}
 [int]{.ret} [Tcl\_GlobalEvalObj]{.ccmd}[interp, objPtr]{.cargs}
-[int]{.ret} [Tcl\_VarEval]{.ccmd}[interp, part, part, ...= §(char \*)NULL]{.cargs}
+[int]{.ret} [Tcl\_VarEval]{.ccmd}[interp, part, part, ... (char \*)NULL]{.cargs}
 :::
 
 # Arguments

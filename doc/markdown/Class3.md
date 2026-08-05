@@ -40,9 +40,9 @@ Tcl\_ClassGetMetadata, Tcl\_ClassSetMetadata, Tcl\_CopyObjectInstance, Tcl\_GetC
 [void \*]{.ret} [Tcl\_ClassGetMetadata]{.ccmd}[class, metaTypePtr]{.cargs}
 [Tcl\_ClassSetMetadata]{.ccmd}[class, metaTypePtr, metadata]{.cargs}
 [Tcl\_ObjectMapMethodNameProc]{.ret} [Tcl\_ObjectGetMethodNameMapper]{.ccmd}[object]{.cargs}
-[Tcl\_ObjectSetMethodNameMapper]{.ccmd}[object=, +methodNameMapper]{.cargs}
+[Tcl\_ObjectSetMethodNameMapper]{.ccmd}[object, methodNameMapper]{.cargs}
 [Tcl\_Class]{.ret} [Tcl\_GetClassOfObject]{.ccmd}[object]{.cargs}
-[Tcl\_Obj \*]{.ret} [Tcl\_GetObjectClassName]{.ccmd}[interp=, +object]{.cargs}
+[Tcl\_Obj \*]{.ret} [Tcl\_GetObjectClassName]{.ccmd}[interp, object]{.cargs}
 :::
 
 # Arguments

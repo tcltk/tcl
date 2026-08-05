@@ -24,9 +24,9 @@ Tcl\_Panic, Tcl\_SetPanicProc, Tcl\_ConsolePanic - report fatal error and abort
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[Tcl\_Panic]{.ccmd}[format=, +arg=, +arg=, +...]{.cargs}
+[Tcl\_Panic]{.ccmd}[format, arg, arg, ...]{.cargs}
 [const char \*]{.ret} [Tcl\_SetPanicProc]{.ccmd}[panicProc]{.cargs}
-[Tcl\_ConsolePanic]{.ccmd}[format=, +arg=, +arg=, +...]{.cargs}
+[Tcl\_ConsolePanic]{.ccmd}[format, arg, arg, ...]{.cargs}
 :::
 
 # Arguments

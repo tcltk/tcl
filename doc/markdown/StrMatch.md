@@ -21,8 +21,8 @@ Tcl\_StringMatch, Tcl\_StringCaseMatch - test whether a string matches a pattern
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[int]{.ret} [Tcl\_StringMatch]{.ccmd}[str=, +pattern]{.cargs}
-[int]{.ret} [Tcl\_StringCaseMatch]{.ccmd}[str=, +pattern=, +flags]{.cargs}
+[int]{.ret} [Tcl\_StringMatch]{.ccmd}[str, pattern]{.cargs}
+[int]{.ret} [Tcl\_StringCaseMatch]{.ccmd}[str, pattern, flags]{.cargs}
 :::
 
 # Arguments
