@@ -31,7 +31,20 @@ Tcl\_GetInt, Tcl\_GetDouble, Tcl\_GetBoolean - convert from string to integer, d
 
 # Arguments
 
-.AP Tcl\_Interp \*interp in Interpreter to use for error reporting. .AP "const char" \*src in Textual value to be converted. .AP int \*intPtr out Points to place to store integer value converted from *src*. .AP double \*doublePtr out Points to place to store double-precision floating-point value converted from *src*. .AP char \*charPtr out Points to place to store boolean value (0 or 1) value converted from *src*. .AP int flags in 0 or TCL\_NULL\_OK. If TCL\_NULL\_OK is used, then the empty string or NULL will result in **Tcl\_GetBool** return TCL\_OK, the \*charPtr filled with the value **'\\xFF'**; 
+::: {.arguments} :::
+[\*interp]{.carg .in type="Tcl_Interp"}
+Interpreter to use for error reporting.
+[\*src]{.carg .in type="const char"}
+Textual value to be converted.
+[\*intPtr]{.carg .out type="int"}
+Points to place to store integer value converted from *src*.
+[\*doublePtr]{.carg .out type="double"}
+Points to place to store double-precision floating-point value converted from *src*.
+[\*charPtr]{.carg .out type="char"}
+Points to place to store boolean value (0 or 1) value converted from *src*.
+[flags]{.carg .in type="int"}
+0 or TCL\_NULL\_OK. If TCL\_NULL\_OK is used, then the empty string or NULL will result in **Tcl\_GetBool** return TCL\_OK, the \*charPtr filled with the value **'\\xFF'**;
+:::
 
 # Description
 

@@ -38,7 +38,20 @@ Tcl\_ExprLongObj, Tcl\_ExprDoubleObj, Tcl\_ExprBooleanObj, Tcl\_ExprObj - evalua
 
 # Arguments
 
-.AP Tcl\_Interp \*interp in Interpreter in whose context to evaluate *objPtr*. .AP Tcl\_Obj \*objPtr in Pointer to a value containing the expression to evaluate. .AP long \*longPtr out Pointer to location in which to store the integer value of the expression. .AP int \*doublePtr out Pointer to location in which to store the floating-point value of the expression. .AP int \*booleanPtr out Pointer to location in which to store the 0/1 boolean value of the expression. .AP Tcl\_Obj \*\*resultPtrPtr out Pointer to location in which to store a pointer to the value that is the result of the expression. 
+::: {.arguments} :::
+[\*interp]{.carg .in type="Tcl_Interp"}
+Interpreter in whose context to evaluate *objPtr*.
+[\*objPtr]{.carg .in type="Tcl_Obj"}
+Pointer to a value containing the expression to evaluate.
+[\*longPtr]{.carg .out type="long"}
+Pointer to location in which to store the integer value of the expression.
+[\*doublePtr]{.carg .out type="int"}
+Pointer to location in which to store the floating-point value of the expression.
+[\*booleanPtr]{.carg .out type="int"}
+Pointer to location in which to store the 0/1 boolean value of the expression.
+[\*\*resultPtrPtr]{.carg .out type="Tcl_Obj"}
+Pointer to location in which to store a pointer to the value that is the result of the expression.
+:::
 
 # Description
 

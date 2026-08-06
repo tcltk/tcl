@@ -30,7 +30,18 @@ Tcl\_DetachPids, Tcl\_ReapDetachedProcs, Tcl\_WaitPid - manage child processes i
 
 # Arguments
 
-.AP Tcl\_Size numPids in Number of process ids contained in the array pointed to by *pidPtr*. .AP int \*pidPtr in Address of array containing *numPids* process ids. .AP Tcl\_Pid pid in The id of the process (pipe) to wait for. .AP int \*statusPtr out The result of waiting on a process (pipe). Either 0 or ECHILD. .AP int options in The options controlling the wait. WNOHANG specifies not to wait when checking the process.
+::: {.arguments} :::
+[numPids]{.carg .in type="Tcl_Size"}
+Number of process ids contained in the array pointed to by *pidPtr*.
+[\*pidPtr]{.carg .in type="int"}
+Address of array containing *numPids* process ids.
+[pid]{.carg .in type="Tcl_Pid"}
+The id of the process (pipe) to wait for.
+[\*statusPtr]{.carg .out type="int"}
+The result of waiting on a process (pipe). Either 0 or ECHILD.
+[options]{.carg .in type="int"}
+The options controlling the wait. WNOHANG specifies not to wait when checking the process.
+:::
 
 # Description
 

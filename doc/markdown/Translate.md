@@ -29,7 +29,14 @@ Tcl\_TranslateFileName - convert file name to native form
 
 # Arguments
 
-.AP Tcl\_Interp \*interp in Interpreter in which to report an error, if any. .AP "const char" \*name in File name .AP Tcl\_DString \*bufferPtr in/out If needed, this dynamic string is used to store the new file name. At the time of the call it should be uninitialized or free.  The caller must eventually call **Tcl\_DStringFree** to free up anything stored here.
+::: {.arguments} :::
+[\*interp]{.carg .in type="Tcl_Interp"}
+Interpreter in which to report an error, if any.
+[\*name]{.carg .in type="const char"}
+File name
+[\*bufferPtr]{.carg .in/out type="Tcl_DString"}
+If needed, this dynamic string is used to store the new file name. At the time of the call it should be uninitialized or free.  The caller must eventually call **Tcl\_DStringFree** to free up anything stored here.
+:::
 
 # Description
 

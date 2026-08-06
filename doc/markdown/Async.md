@@ -33,7 +33,20 @@ Tcl\_AsyncCreate, Tcl\_AsyncMark, Tcl\_AsyncMarkFromSignal, Tcl\_AsyncInvoke, Tc
 
 # Arguments
 
-.AP Tcl\_AsyncProc \*proc in Procedure to invoke to handle an asynchronous event. .AP void \*clientData in One-word value to pass to *proc*. .AP Tcl\_AsyncHandler async in Token for asynchronous event handler. .AP int sigNumber in POSIX signal number, when used in a signal context. .AP Tcl\_Interp \*interp in Tcl interpreter in which command was being evaluated when handler was invoked, or NULL if handler was invoked when there was no interpreter active. .AP int code in Completion code from command that just completed in *interp*, or 0 if *interp* is NULL. 
+::: {.arguments} :::
+[\*proc]{.carg .in type="Tcl_AsyncProc"}
+Procedure to invoke to handle an asynchronous event.
+[\*clientData]{.carg .in type="void"}
+One-word value to pass to *proc*.
+[async]{.carg .in type="Tcl_AsyncHandler"}
+Token for asynchronous event handler.
+[sigNumber]{.carg .in type="int"}
+POSIX signal number, when used in a signal context.
+[\*interp]{.carg .in type="Tcl_Interp"}
+Tcl interpreter in which command was being evaluated when handler was invoked, or NULL if handler was invoked when there was no interpreter active.
+[code]{.carg .in type="int"}
+Completion code from command that just completed in *interp*, or 0 if *interp* is NULL.
+:::
 
 # Description
 

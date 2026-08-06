@@ -33,7 +33,10 @@ Tcl\_CreateInterp, Tcl\_DeleteInterp, Tcl\_InterpActive, Tcl\_InterpDeleted - cr
 
 # Arguments
 
-.AP Tcl\_Interp \*interp in Token for interpreter to be destroyed or queried.
+::: {.arguments} :::
+[\*interp]{.carg .in type="Tcl_Interp"}
+Token for interpreter to be destroyed or queried.
+:::
 
 # Description
 

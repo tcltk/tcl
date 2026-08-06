@@ -27,7 +27,14 @@ Tcl\_SubstObj - perform substitutions on Tcl values
 
 # Arguments
 
-.AP Tcl\_Interp \*interp in Interpreter in which to execute Tcl scripts and lookup variables.  If an error occurs, the interpreter's result is modified to hold an error message. .AP Tcl\_Obj \*objPtr in A Tcl value containing the string to perform substitutions on. .AP int flags in OR'ed combination of flag bits that specify which substitutions to perform.  The flags **TCL\_SUBST\_COMMANDS**, **TCL\_SUBST\_VARIABLES** and **TCL\_SUBST\_BACKSLASHES** are currently supported, and **TCL\_SUBST\_ALL** is provided as a convenience for the common case where all substitutions are desired.
+::: {.arguments} :::
+[\*interp]{.carg .in type="Tcl_Interp"}
+Interpreter in which to execute Tcl scripts and lookup variables.  If an error occurs, the interpreter's result is modified to hold an error message.
+[\*objPtr]{.carg .in type="Tcl_Obj"}
+A Tcl value containing the string to perform substitutions on.
+[flags]{.carg .in type="int"}
+OR'ed combination of flag bits that specify which substitutions to perform.  The flags **TCL\_SUBST\_COMMANDS**, **TCL\_SUBST\_VARIABLES** and **TCL\_SUBST\_BACKSLASHES** are currently supported, and **TCL\_SUBST\_ALL** is provided as a convenience for the common case where all substitutions are desired.
+:::
 
 # Description
 

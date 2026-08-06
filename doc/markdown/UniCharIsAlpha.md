@@ -34,7 +34,10 @@ Tcl\_UniCharIsAlnum, Tcl\_UniCharIsAlpha, Tcl\_UniCharIsControl, Tcl\_UniCharIsD
 
 # Arguments
 
-.AP int ch in The Unicode character to be examined. 
+::: {.arguments} :::
+[ch]{.carg .in type="int"}
+The Unicode character to be examined.
+:::
 
 # Description
 

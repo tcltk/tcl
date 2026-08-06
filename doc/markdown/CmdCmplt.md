@@ -25,7 +25,10 @@ Tcl\_CommandComplete - Check for unmatched braces in a Tcl command
 
 # Arguments
 
-.AP "const char" \*cmd in Command string to test for completeness. 
+::: {.arguments} :::
+[\*cmd]{.carg .in type="const char"}
+Command string to test for completeness.
+:::
 
 # Description
 

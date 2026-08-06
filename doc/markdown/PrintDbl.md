@@ -27,7 +27,14 @@ Tcl\_PrintDouble - Convert floating value to string
 
 # Arguments
 
-.AP Tcl\_Interp \*interp in This argument is ignored. .AP double value in Floating-point value to be converted. .AP char \*dst out Where to store the string representing *value*.  Must have at least **TCL\_DOUBLE\_SPACE** characters of storage.
+::: {.arguments} :::
+[\*interp]{.carg .in type="Tcl_Interp"}
+This argument is ignored.
+[value]{.carg .in type="double"}
+Floating-point value to be converted.
+[\*dst]{.carg .out type="char"}
+Where to store the string representing *value*.  Must have at least **TCL\_DOUBLE\_SPACE** characters of storage.
+:::
 
 # Description
 

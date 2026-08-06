@@ -31,7 +31,14 @@ Tcl\_Panic, Tcl\_SetPanicProc, Tcl\_ConsolePanic - report fatal error and abort
 
 # Arguments
 
-.AP "const char\*" format in A printf-style format string. .AP "" arg in Arguments matching the format string. .AP Tcl\_PanicProc \*panicProc in Procedure to report fatal error message and abort.
+::: {.arguments} :::
+[format]{.carg .in type="const char*"}
+A printf-style format string.
+[arg]{.carg .in type=""}
+Arguments matching the format string.
+[\*panicProc]{.carg .in type="Tcl_PanicProc"}
+Procedure to report fatal error message and abort.
+:::
 
 # Description
 

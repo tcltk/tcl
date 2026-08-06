@@ -36,7 +36,18 @@ Tcl\_CreateCommand - implement new commands in C
 
 # Arguments
 
-.AP Tcl\_Interp \*interp in Interpreter in which to create new command. .AP "const char" \*cmdName in Name of command. .AP Tcl\_CmdProc \*proc in Implementation of new command:  *proc* will be called whenever *cmdName* is invoked as a command. .AP void \*clientData in Arbitrary one-word value to pass to *proc* and *deleteProc*. .AP Tcl\_CmdDeleteProc \*deleteProc in Procedure to call before *cmdName* is deleted from the interpreter; allows for command-specific cleanup.  If NULL, then no procedure is called before the command is deleted.
+::: {.arguments} :::
+[\*interp]{.carg .in type="Tcl_Interp"}
+Interpreter in which to create new command.
+[\*cmdName]{.carg .in type="const char"}
+Name of command.
+[\*proc]{.carg .in type="Tcl_CmdProc"}
+Implementation of new command:  *proc* will be called whenever *cmdName* is invoked as a command.
+[\*clientData]{.carg .in type="void"}
+Arbitrary one-word value to pass to *proc* and *deleteProc*.
+[\*deleteProc]{.carg .in type="Tcl_CmdDeleteProc"}
+Procedure to call before *cmdName* is deleted from the interpreter; allows for command-specific cleanup.  If NULL, then no procedure is called before the command is deleted.
+:::
 
 # Description
 

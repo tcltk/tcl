@@ -47,7 +47,32 @@ Tcl\_GetReturnOptions, Tcl\_SetReturnOptions, Tcl\_AddErrorInfo, Tcl\_AppendObjT
 
 # Arguments
 
-.AP Tcl\_Interp \*interp in Interpreter in which to record information. .AP int code The code returned from script evaluation. .AP Tcl\_Obj \*options A dictionary of return options. .AP "const char" \*message in For **Tcl\_AddErrorInfo**, this is a conventional C string to append to the **-errorinfo** return option. For **Tcl\_AddObjErrorInfo**, this points to the first byte of an array of *length* bytes containing a string to append to the **-errorinfo** return option. This byte array may contain embedded null bytes unless *length* is negative. .AP Tcl\_Obj \*objPtr in A message to be appended to the **-errorinfo** return option in the form of a Tcl\_Obj value. .AP Tcl\_Size length in The number of bytes to copy from *message* when appending to the **-errorinfo** return option. If negative, all bytes up to the first null byte are used. .AP Tcl\_Obj \*errorObjPtr in The **-errorcode** return option will be set to this value. .AP "const char" \*element in String to record as one element of the **-errorcode** return option. Last *element* argument must be (char \*)NULL. .AP int lineNum The line number of a script where an error occurred. .AP "const char" \*script in Pointer to first character in script containing command (must be <= *command*). .AP "const char" \*command in Pointer to first character in the command that generated the error; must point within the string given by *script*. .AP Tcl\_Size commandLength in Number of bytes in command; a negative value means use all bytes up to the first null byte.
+::: {.arguments} :::
+[\*interp]{.carg .in type="Tcl_Interp"}
+Interpreter in which to record information.
+[code]{.carg . type="int"}
+The code returned from script evaluation.
+[\*options]{.carg . type="Tcl_Obj"}
+A dictionary of return options.
+[\*message]{.carg .in type="const char"}
+For **Tcl\_AddErrorInfo**, this is a conventional C string to append to the **-errorinfo** return option. For **Tcl\_AddObjErrorInfo**, this points to the first byte of an array of *length* bytes containing a string to append to the **-errorinfo** return option. This byte array may contain embedded null bytes unless *length* is negative.
+[\*objPtr]{.carg .in type="Tcl_Obj"}
+A message to be appended to the **-errorinfo** return option in the form of a Tcl\_Obj value.
+[length]{.carg .in type="Tcl_Size"}
+The number of bytes to copy from *message* when appending to the **-errorinfo** return option. If negative, all bytes up to the first null byte are used.
+[\*errorObjPtr]{.carg .in type="Tcl_Obj"}
+The **-errorcode** return option will be set to this value.
+[\*element]{.carg .in type="const char"}
+String to record as one element of the **-errorcode** return option. Last *element* argument must be (char \*)NULL.
+[lineNum]{.carg . type="int"}
+The line number of a script where an error occurred.
+[\*script]{.carg .in type="const char"}
+Pointer to first character in script containing command (must be <= *command*).
+[\*command]{.carg .in type="const char"}
+Pointer to first character in the command that generated the error; must point within the string given by *script*.
+[commandLength]{.carg .in type="Tcl_Size"}
+Number of bytes in command; a negative value means use all bytes up to the first null byte.
+:::
 
 # Description
 

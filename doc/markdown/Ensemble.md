@@ -40,7 +40,34 @@ Tcl\_CreateEnsemble, Tcl\_FindEnsemble, Tcl\_GetEnsembleFlags, Tcl\_GetEnsembleM
 
 # Arguments
 
-.AP Tcl\_Interp \*interp in/out The interpreter in which the ensemble is to be created or found. Also where error result messages are written. The functions whose names start with **Tcl\_GetEnsemble** may have a NULL for the *interp*, but all other functions must not. .AP "const char" \*name in The name of the ensemble command to be created. .AP Tcl\_Namespace \*namespacePtr in The namespace to which the ensemble command is to be bound, or NULL for the current namespace. .AP int ensFlags in An OR'ed set of flag bits describing the basic configuration of the ensemble. Currently only one bit has meaning, **TCL\_ENSEMBLE\_PREFIX**, which is present when the ensemble command should also match unambiguous prefixes of subcommands. .AP Tcl\_Obj \*cmdNameObj in A value holding the name of the ensemble command to look up. .AP int flags in An OR'ed set of flag bits controlling the behavior of **Tcl\_FindEnsemble**. Currently only **TCL\_LEAVE\_ERR\_MSG** is supported. .AP Tcl\_Command token in A normal command token that refers to an ensemble command, or which you wish to use for testing as an ensemble command in **Tcl\_IsEnsemble**. .AP int \*ensFlagsPtr out Pointer to a variable into which to write the current ensemble flag bits; currently only the bit **TCL\_ENSEMBLE\_PREFIX** is defined. .AP Tcl\_Obj \*dictObj in A dictionary value to use for the subcommand to implementation command prefix mapping dictionary in the ensemble. May be NULL if the mapping dictionary is to be removed. .AP Tcl\_Obj \*\*dictObjPtr out Pointer to a variable into which to write the current ensemble mapping dictionary. .AP Tcl\_Obj \*listObj in A list value to use for the list of formal pre-subcommand parameters, the defined list of subcommands in the dictionary or the unknown subcommand handler command prefix. May be NULL if the subcommand list or unknown handler are to be removed. .AP Tcl\_Obj \*\*listObjPtr out Pointer to a variable into which to write the current list of formal pre-subcommand parameters, the defined list of subcommands or the current unknown handler prefix. .AP Tcl\_Namespace \*\*namespacePtrPtr out Pointer to a variable into which to write the handle of the namespace to which the ensemble is bound.
+::: {.arguments} :::
+[\*interp]{.carg .in/out type="Tcl_Interp"}
+The interpreter in which the ensemble is to be created or found. Also where error result messages are written. The functions whose names start with **Tcl\_GetEnsemble** may have a NULL for the *interp*, but all other functions must not.
+[\*name]{.carg .in type="const char"}
+The name of the ensemble command to be created.
+[\*namespacePtr]{.carg .in type="Tcl_Namespace"}
+The namespace to which the ensemble command is to be bound, or NULL for the current namespace.
+[ensFlags]{.carg .in type="int"}
+An OR'ed set of flag bits describing the basic configuration of the ensemble. Currently only one bit has meaning, **TCL\_ENSEMBLE\_PREFIX**, which is present when the ensemble command should also match unambiguous prefixes of subcommands.
+[\*cmdNameObj]{.carg .in type="Tcl_Obj"}
+A value holding the name of the ensemble command to look up.
+[flags]{.carg .in type="int"}
+An OR'ed set of flag bits controlling the behavior of **Tcl\_FindEnsemble**. Currently only **TCL\_LEAVE\_ERR\_MSG** is supported.
+[token]{.carg .in type="Tcl_Command"}
+A normal command token that refers to an ensemble command, or which you wish to use for testing as an ensemble command in **Tcl\_IsEnsemble**.
+[\*ensFlagsPtr]{.carg .out type="int"}
+Pointer to a variable into which to write the current ensemble flag bits; currently only the bit **TCL\_ENSEMBLE\_PREFIX** is defined.
+[\*dictObj]{.carg .in type="Tcl_Obj"}
+A dictionary value to use for the subcommand to implementation command prefix mapping dictionary in the ensemble. May be NULL if the mapping dictionary is to be removed.
+[\*\*dictObjPtr]{.carg .out type="Tcl_Obj"}
+Pointer to a variable into which to write the current ensemble mapping dictionary.
+[\*listObj]{.carg .in type="Tcl_Obj"}
+A list value to use for the list of formal pre-subcommand parameters, the defined list of subcommands in the dictionary or the unknown subcommand handler command prefix. May be NULL if the subcommand list or unknown handler are to be removed.
+[\*\*listObjPtr]{.carg .out type="Tcl_Obj"}
+Pointer to a variable into which to write the current list of formal pre-subcommand parameters, the defined list of subcommands or the current unknown handler prefix.
+[\*\*namespacePtrPtr]{.carg .out type="Tcl_Namespace"}
+Pointer to a variable into which to write the handle of the namespace to which the ensemble is bound.
+:::
 
 # Description
 

@@ -1032,6 +1032,57 @@ proc ::ndoc::parseBlock {parent manContent} {
 						# remove eaten lines from manContent:
 						set manContent [lrange $manContent $lineCount end]
 					}
+					"Arguments" {
+						# C API function arguments
+						#
+						# (.AP is a normal one)
+						# (.AS should be the longest argument name, only used for nroff formatting, can be ignored here)
+						#
+						# two examples:
+						# .AP "struct stat" *statPtr out  --> markdown: [*statPtr]{.carg .out type="struct stat"}
+						# .AP "const char" *path in       --> markdown: [*path]{.carg .in type="const char"}
+						#
+						# every line starting with .AP is the definition, then followed by one or more lines
+						# with explanatory text
+						lappend blockList [list Header {-level 1} $SHcontent]
+						# go to first line of section content:
+						set manContent [lrange $manContent 1 end]
+						set line [lindex $manContent 0]
+						set cmd [string range $line 0 2]
+						set contentList [list]
+						set lineCount 0
+						set argName ""
+						while {$cmd ne ".SH"} {
+							if {$cmd eq ".AP"} {
+								# finish previous carg:
+								if {$argName ne ""} {
+									lappend contentList [list Span ".carg .$argDirection type=\"$argType\"" [list [list Text {} $argName]]]
+									lappend contentList [parseInline Inline {} [string trim $argExplanation]]
+								}
+								# new carg:
+								lassign $line - argType argName argDirection
+								set argExplanation ""
+							} elseif {$cmd in {.AS .BS .BE}} {
+								# .AS = max size hint for tab stops; .BS .BE = box enclosure: can be ignored
+							} else {
+								# explanatory text:
+								append argExplanation $line { }
+							}
+							# next line:
+							incr lineCount
+							set line [lindex $manContent $lineCount]
+							set cmd [string range $line 0 2]
+						}
+						# finish last carg:
+						if {$argName ne ""} {
+							lappend contentList [list Span ".carg .$argDirection type=\"$argType\"" [list [list Text {} $argName]]]
+							lappend contentList [parseInline Inline {} [string trim $argExplanation]]
+						}
+						# add to AST wrapped in a fenced div:
+						lappend blockList [list Div .arguments $contentList]
+						# remove eaten lines from manContent:
+						set manContent [lrange $manContent $lineCount end]
+					}
 					"Class hierarchy" {
 						# this is a section only present for oo commands
 						# and presenting a hierarchical view of the object in the man page

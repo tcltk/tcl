@@ -30,7 +30,16 @@ Tcl\_StaticLibrary, Tcl\_StaticPackage - make a statically linked library availa
 
 # Arguments
 
-.AP Tcl\_Interp \*interp in If not NULL, points to an interpreter into which the library has already been incorporated (i.e., the caller has already invoked the appropriate initialization procedure).  NULL means the library has not yet been incorporated into any interpreter. .AP "const char" \*prefix in Prefix for library initialization function. Normally in titlecase (first letter upper-case, all others lower-case), but this is no longer required. .AP Tcl\_LibraryInitProc \*initProc in Procedure to invoke to incorporate this library into a trusted interpreter. .AP Tcl\_LibraryInitProc \*safeInitProc in Procedure to call to incorporate this library into a safe interpreter (one that will execute untrusted scripts).  NULL means the library cannot be used in safe interpreters.
+::: {.arguments} :::
+[\*interp]{.carg .in type="Tcl_Interp"}
+If not NULL, points to an interpreter into which the library has already been incorporated (i.e., the caller has already invoked the appropriate initialization procedure).  NULL means the library has not yet been incorporated into any interpreter.
+[\*prefix]{.carg .in type="const char"}
+Prefix for library initialization function. Normally in titlecase (first letter upper-case, all others lower-case), but this is no longer required.
+[\*initProc]{.carg .in type="Tcl_LibraryInitProc"}
+Procedure to invoke to incorporate this library into a trusted interpreter.
+[\*safeInitProc]{.carg .in type="Tcl_LibraryInitProc"}
+Procedure to call to incorporate this library into a safe interpreter (one that will execute untrusted scripts).  NULL means the library cannot be used in safe interpreters.
+:::
 
 # Description
 

@@ -24,7 +24,14 @@ Tcl\_GetCwd, Tcl\_Chdir - manipulate the current working directory
 
 # Arguments
 
-.AP Tcl\_Interp \*interp in Interpreter in which to report an error, if any. .AP Tcl\_DString \*bufferPtr in/out This dynamic string is used to store the current working directory. At the time of the call it should be uninitialized or free.  The caller must eventually call **Tcl\_DStringFree** to free up anything stored here. .AP "const char" \*dirName in File path in UTF-8 format. 
+::: {.arguments} :::
+[\*interp]{.carg .in type="Tcl_Interp"}
+Interpreter in which to report an error, if any.
+[\*bufferPtr]{.carg .in/out type="Tcl_DString"}
+This dynamic string is used to store the current working directory. At the time of the call it should be uninitialized or free.  The caller must eventually call **Tcl\_DStringFree** to free up anything stored here.
+[\*dirName]{.carg .in type="const char"}
+File path in UTF-8 format.
+:::
 
 # Description
 

@@ -29,7 +29,14 @@ Tcl\_CreateCloseHandler, Tcl\_DeleteCloseHandler - arrange for callbacks when ch
 
 # Arguments
 
-.AP Tcl\_Channel channel in The channel for which to create or delete a close callback. .AP Tcl\_CloseProc \*proc in The procedure to call as the callback. .AP void \*clientData in Arbitrary one-word value to pass to *proc*.
+::: {.arguments} :::
+[channel]{.carg .in type="Tcl_Channel"}
+The channel for which to create or delete a close callback.
+[\*proc]{.carg .in type="Tcl_CloseProc"}
+The procedure to call as the callback.
+[\*clientData]{.carg .in type="void"}
+Arbitrary one-word value to pass to *proc*.
+:::
 
 # Description
 

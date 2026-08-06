@@ -28,7 +28,14 @@ Tcl\_Access, Tcl\_Stat - check file permissions and other attributes
 
 # Arguments
 
-.AP "const char" \*path in Native name of the file to check the attributes of. .AP int mode in Mask consisting of one or more of **R\_OK**, **W\_OK**, **X\_OK** and **F\_OK**. **R\_OK**, **W\_OK** and **X\_OK** request checking whether the file exists and has read, write and execute permissions, respectively. **F\_OK** just requests a check for the existence of the file. .AP "struct stat" \*statPtr out The structure that contains the result.
+::: {.arguments} :::
+[\*path]{.carg .in type="const char"}
+Native name of the file to check the attributes of.
+[mode]{.carg .in type="int"}
+Mask consisting of one or more of **R\_OK**, **W\_OK**, **X\_OK** and **F\_OK**. **R\_OK**, **W\_OK** and **X\_OK** request checking whether the file exists and has read, write and execute permissions, respectively. **F\_OK** just requests a check for the existence of the file.
+[\*statPtr]{.carg .out type="struct stat"}
+The structure that contains the result.
+:::
 
 # Description
 

@@ -28,7 +28,16 @@ Tcl\_CancelEval, Tcl\_Canceled - cancel Tcl scripts
 
 # Arguments
 
-.AP Tcl\_Interp \*interp in Interpreter in which to cancel the script. .AP Tcl\_Obj \*resultObjPtr in Error message to use in the cancellation, or NULL to use a default message. If not NULL, this object will have its reference count decremented before **Tcl\_CancelEval** returns. .AP int flags in OR'ed combination of flag bits that specify additional options. For **Tcl\_CancelEval**, only **TCL\_CANCEL\_UNWIND** is currently supported.  For **Tcl\_Canceled**, only **TCL\_LEAVE\_ERR\_MSG** and **TCL\_CANCEL\_UNWIND** are currently supported. .AP void \*clientData in Currently reserved for future use. It should be set to NULL.
+::: {.arguments} :::
+[\*interp]{.carg .in type="Tcl_Interp"}
+Interpreter in which to cancel the script.
+[\*resultObjPtr]{.carg .in type="Tcl_Obj"}
+Error message to use in the cancellation, or NULL to use a default message. If not NULL, this object will have its reference count decremented before **Tcl\_CancelEval** returns.
+[flags]{.carg .in type="int"}
+OR'ed combination of flag bits that specify additional options. For **Tcl\_CancelEval**, only **TCL\_CANCEL\_UNWIND** is currently supported.  For **Tcl\_Canceled**, only **TCL\_LEAVE\_ERR\_MSG** and **TCL\_CANCEL\_UNWIND** are currently supported.
+[\*clientData]{.carg .in type="void"}
+Currently reserved for future use. It should be set to NULL.
+:::
 
 # Description
 

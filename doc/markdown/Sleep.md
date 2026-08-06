@@ -26,7 +26,10 @@ Tcl\_Sleep - delay execution for a given number of milliseconds
 
 # Arguments
 
-.AP int ms in Number of milliseconds to sleep.
+::: {.arguments} :::
+[ms]{.carg .in type="int"}
+Number of milliseconds to sleep.
+:::
 
 # Description
 

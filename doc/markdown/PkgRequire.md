@@ -36,7 +36,24 @@ Tcl\_PkgRequire, Tcl\_PkgRequireEx, Tcl\_PkgRequireProc, Tcl\_PkgPresent, Tcl\_P
 
 # Arguments
 
-.AP Tcl\_Interp \*interp in Interpreter where package is needed or available. .AP "const char" \*name in Name of package. .AP "const char" \*version in A version specification string as described for [package require][package]. .AP int exact in Non-zero means that only the particular version specified by *version* is acceptable. Zero means that newer versions than *version* are also acceptable as long as they have the same major version number as *version*. .AP "const void" \*clientData in Arbitrary value to be associated with the package. .AP void \*clientDataPtr out Pointer to place to store the value associated with the matching package. It is only changed if the pointer is not NULL and the function completed successfully. The storage can be any pointer type with the same size as a void pointer. .AP Tcl\_Size objc in Number of requirements. .AP Tcl\_Obj\* objv[] in Array of requirements.
+::: {.arguments} :::
+[\*interp]{.carg .in type="Tcl_Interp"}
+Interpreter where package is needed or available.
+[\*name]{.carg .in type="const char"}
+Name of package.
+[\*version]{.carg .in type="const char"}
+A version specification string as described for [package require][package].
+[exact]{.carg .in type="int"}
+Non-zero means that only the particular version specified by *version* is acceptable. Zero means that newer versions than *version* are also acceptable as long as they have the same major version number as *version*.
+[\*clientData]{.carg .in type="const void"}
+Arbitrary value to be associated with the package.
+[\*clientDataPtr]{.carg .out type="void"}
+Pointer to place to store the value associated with the matching package. It is only changed if the pointer is not NULL and the function completed successfully. The storage can be any pointer type with the same size as a void pointer.
+[objc]{.carg .in type="Tcl_Size"}
+Number of requirements.
+[objv[]]{.carg .in type="Tcl_Obj*"}
+Array of requirements.
+:::
 
 # Description
 

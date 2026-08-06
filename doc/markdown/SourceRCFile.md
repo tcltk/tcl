@@ -25,7 +25,10 @@ Tcl\_SourceRCFile - source the Tcl rc file
 
 # Arguments
 
-.AP Tcl\_Interp \*interp in Tcl interpreter to source rc file into. 
+::: {.arguments} :::
+[\*interp]{.carg .in type="Tcl_Interp"}
+Tcl interpreter to source rc file into.
+:::
 
 # Description
 

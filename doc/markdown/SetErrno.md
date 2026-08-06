@@ -29,7 +29,12 @@ Tcl\_SetErrno, Tcl\_GetErrno, Tcl\_ErrnoId, Tcl\_ErrnoMsg, Tcl\_WinConvertError 
 
 # Arguments
 
-.AP int errorCode in A POSIX error code such as **ENOENT**. .AP DWORD winErrorCode in A Windows or Winsock error code such as **ERROR\_FILE\_NOT\_FOUND**. 
+::: {.arguments} :::
+[errorCode]{.carg .in type="int"}
+A POSIX error code such as **ENOENT**.
+[winErrorCode]{.carg .in type="DWORD"}
+A Windows or Winsock error code such as **ERROR\_FILE\_NOT\_FOUND**.
+:::
 
 # Description
 

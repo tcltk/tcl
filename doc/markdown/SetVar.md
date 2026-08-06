@@ -44,7 +44,26 @@ Tcl\_SetVar2Ex, Tcl\_SetVar, Tcl\_SetVar2, Tcl\_ObjSetVar2, Tcl\_GetVar2Ex, Tcl\
 
 # Arguments
 
-.AP Tcl\_Interp \*interp in Interpreter containing variable. .AP "const char" \*name1 in Contains the name of an array variable (if *name2* is non-NULL) or (if *name2* is NULL) either the name of a scalar variable or a complete name including both variable name and index. May include **::** namespace qualifiers to specify a variable in a particular namespace. .AP "const char" \*name2 in If non-NULL, gives name of element within array; in this case *name1* must refer to an array variable. .AP Tcl\_Obj \*newValuePtr in Points to a Tcl value containing the new value for the variable. .AP int flags in OR-ed combination of bits providing additional information. See below for valid values. .AP "const char" \*varName in Name of variable. May include **::** namespace qualifiers to specify a variable in a particular namespace. May refer to a scalar variable or an element of an array. .AP "const char" \*newValue in New value for variable, specified as a null-terminated string. A copy of this value is stored in the variable. .AP Tcl\_Obj \*part1Ptr in Points to a Tcl value containing the variable's name. The name may include a series of **::** namespace qualifiers to specify a variable in a particular namespace. May refer to a scalar variable or an element of an array variable. .AP Tcl\_Obj \*part2Ptr in If non-NULL, points to a value containing the name of an element within an array and *part1Ptr* must refer to an array variable. 
+::: {.arguments} :::
+[\*interp]{.carg .in type="Tcl_Interp"}
+Interpreter containing variable.
+[\*name1]{.carg .in type="const char"}
+Contains the name of an array variable (if *name2* is non-NULL) or (if *name2* is NULL) either the name of a scalar variable or a complete name including both variable name and index. May include **::** namespace qualifiers to specify a variable in a particular namespace.
+[\*name2]{.carg .in type="const char"}
+If non-NULL, gives name of element within array; in this case *name1* must refer to an array variable.
+[\*newValuePtr]{.carg .in type="Tcl_Obj"}
+Points to a Tcl value containing the new value for the variable.
+[flags]{.carg .in type="int"}
+OR-ed combination of bits providing additional information. See below for valid values.
+[\*varName]{.carg .in type="const char"}
+Name of variable. May include **::** namespace qualifiers to specify a variable in a particular namespace. May refer to a scalar variable or an element of an array.
+[\*newValue]{.carg .in type="const char"}
+New value for variable, specified as a null-terminated string. A copy of this value is stored in the variable.
+[\*part1Ptr]{.carg .in type="Tcl_Obj"}
+Points to a Tcl value containing the variable's name. The name may include a series of **::** namespace qualifiers to specify a variable in a particular namespace. May refer to a scalar variable or an element of an array variable.
+[\*part2Ptr]{.carg .in type="Tcl_Obj"}
+If non-NULL, points to a value containing the name of an element within an array and *part1Ptr* must refer to an array variable.
+:::
 
 # Description
 

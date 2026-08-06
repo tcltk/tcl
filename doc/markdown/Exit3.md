@@ -40,7 +40,14 @@ Tcl\_Exit, Tcl\_Finalize, Tcl\_CreateExitHandler, Tcl\_DeleteExitHandler, Tcl\_E
 
 # Arguments
 
-.AP int status  in Provides information about why the application or thread exited. Exact meaning may be platform-specific. 0 usually means a normal exit, any nonzero value usually means that an error occurred. .AP Tcl\_ExitProc \*proc in Procedure to invoke before exiting application, or (for **Tcl\_SetExitProc**) NULL to uninstall the current application exit procedure. .AP void \*clientData in Arbitrary one-word value to pass to *proc*. 
+::: {.arguments} :::
+[status]{.carg .in type="int"}
+Provides information about why the application or thread exited. Exact meaning may be platform-specific. 0 usually means a normal exit, any nonzero value usually means that an error occurred.
+[\*proc]{.carg .in type="Tcl_ExitProc"}
+Procedure to invoke before exiting application, or (for **Tcl\_SetExitProc**) NULL to uninstall the current application exit procedure.
+[\*clientData]{.carg .in type="void"}
+Arbitrary one-word value to pass to *proc*.
+:::
 
 # Description
 

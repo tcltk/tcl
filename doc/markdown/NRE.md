@@ -45,9 +45,46 @@ Tcl\_NRCreateCommand, Tcl\_NRCreateCommand2, Tcl\_NRCallObjProc, Tcl\_NRCallObjP
 
 # Arguments
 
-.AP Tcl\_Interp \*interp in The relevant Interpreter. .AP "const char" \*cmdName in Name of the command to create. .AP Tcl\_ObjCmdProc \*proc in Called in order to evaluate a command.  Is often just a small wrapper that uses **Tcl\_NRCallObjProc** to call *nreProc* using a new trampoline.  Behaves in the same way as the *proc* argument to **Tcl\_CreateObjCommand**(3) (*q.v.*). .AP Tcl\_ObjCmdProc2 \*proc2 in Called in order to evaluate a command.  Is often just a small wrapper that uses **Tcl\_NRCallObjProc2** to call *nreProc2* using a new trampoline.  Behaves in the same way as the *proc2* argument to **Tcl\_CreateObjCommand2**(3) (*q.v.*). .AP Tcl\_ObjCmdProc \*nreProc in Called instead of *proc* when a trampoline is already in use. .AP Tcl\_ObjCmdProc2 \*nreProc2 in Called instead of *proc2* when a trampoline is already in use. .AP void \*clientData in Arbitrary one-word value passed to *proc*, *nreProc*, *deleteProc* and *objProc*. .AP Tcl\_CmdDeleteProc \*deleteProc in/out Called before *cmdName* is deleted from the interpreter, allowing for command-specific cleanup. May be NULL. .AP Tcl\_Size objc in Number of items in *objv*. .AP Tcl\_Obj \*\*objv in Words in the command. .AP Tcl\_Obj \*objPtr in A script or expression to evaluate. .AP int flags in As described for *Tcl\_EvalObjv*.
+::: {.arguments} :::
+[\*interp]{.carg .in type="Tcl_Interp"}
+The relevant Interpreter.
+[\*cmdName]{.carg .in type="const char"}
+Name of the command to create.
+[\*proc]{.carg .in type="Tcl_ObjCmdProc"}
+Called in order to evaluate a command.  Is often just a small wrapper that uses **Tcl\_NRCallObjProc** to call *nreProc* using a new trampoline.  Behaves in the same way as the *proc* argument to **Tcl\_CreateObjCommand**(3) (*q.v.*).
+[\*proc2]{.carg .in type="Tcl_ObjCmdProc2"}
+Called in order to evaluate a command.  Is often just a small wrapper that uses **Tcl\_NRCallObjProc2** to call *nreProc2* using a new trampoline.  Behaves in the same way as the *proc2* argument to **Tcl\_CreateObjCommand2**(3) (*q.v.*).
+[\*nreProc]{.carg .in type="Tcl_ObjCmdProc"}
+Called instead of *proc* when a trampoline is already in use.
+[\*nreProc2]{.carg .in type="Tcl_ObjCmdProc2"}
+Called instead of *proc2* when a trampoline is already in use.
+[\*clientData]{.carg .in type="void"}
+Arbitrary one-word value passed to *proc*, *nreProc*, *deleteProc* and *objProc*.
+[\*deleteProc]{.carg .in/out type="Tcl_CmdDeleteProc"}
+Called before *cmdName* is deleted from the interpreter, allowing for command-specific cleanup. May be NULL.
+[objc]{.carg .in type="Tcl_Size"}
+Number of items in *objv*.
+[\*\*objv]{.carg .in type="Tcl_Obj"}
+Words in the command.
+[\*objPtr]{.carg .in type="Tcl_Obj"}
+A script or expression to evaluate.
+[flags]{.carg .in type="int"}
+As described for *Tcl\_EvalObjv*. .PP
+[cmd]{.carg .in type="Tcl_Command"}
+Token to use instead of one derived from the first word of *objv* in order to evaluate a command.
+[\*resultPtr]{.carg .out type="Tcl_Obj"}
+Pointer to an unshared Tcl\_Obj where the result of the evaluation is stored if the return code is TCL\_OK.
+[\*postProcPtr]{.carg .in type="Tcl_NRPostProc"}
+A function to push.
+[\*data0]{.carg .in type="void"}
 
-.AP Tcl\_Command cmd in Token to use instead of one derived from the first word of *objv* in order to evaluate a command. .AP Tcl\_Obj \*resultPtr out Pointer to an unshared Tcl\_Obj where the result of the evaluation is stored if the return code is TCL\_OK. .AP Tcl\_NRPostProc \*postProcPtr in A function to push. .AP void \*data0 in .AP void \*data1 in .AP void \*data2 in .AP void \*data3 in *data0* through *data3* are four one-word values that will be passed to the function designated by *postProcPtr* when it is invoked.
+[\*data1]{.carg .in type="void"}
+
+[\*data2]{.carg .in type="void"}
+
+[\*data3]{.carg .in type="void"}
+*data0* through *data3* are four one-word values that will be passed to the function designated by *postProcPtr* when it is invoked.
+:::
 
 # Description
 

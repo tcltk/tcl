@@ -44,7 +44,50 @@ Tcl\_GetEncoding, Tcl\_FreeEncoding, Tcl\_GetEncodingFromObj, Tcl\_ExternalToUtf
 
 # Arguments
 
-.AP Tcl\_Interp \*interp in Interpreter to use for error reporting, or NULL if no error reporting is desired. .AP "const char" \*name in Name of encoding to load. .AP Tcl\_Encoding encoding in The encoding to query, free, or use for converting text.  If *encoding* is NULL, the current system encoding is used. .AP Tcl\_Obj \*objPtr in Name of encoding to get token for. .AP Tcl\_Encoding \*encodingPtr out Points to storage where encoding token is to be written. .AP "const char" \*src in For the **Tcl\_ExternalToUtf** functions, an array of bytes in the specified encoding that are to be converted to TUTF-8.  For the **Tcl\_UtfToExternal** function, a TUTF-8 byte sequence to be converted to the specified encoding. .AP "const TCHAR" \*tsrc in An array of Windows TCHAR characters to convert to TUTF-8. .AP Tcl\_Size srcLen in Length of *src* or *tsrc* in bytes.  If the length is negative, the encoding-specific length of the string is used. .AP Tcl\_DString \*dstPtr out Pointer to an uninitialized or free **Tcl\_DString** in which the converted result will be stored. .AP int flags in This is a bit mask passed in to control the operation of the encoding functions. **TCL\_ENCODING\_START** signifies that the source buffer is the first block in a (potentially multi-block) input stream, telling the conversion routine to reset to an initial state and perform any initialization that needs to occur before the first byte is converted. **TCL\_ENCODING\_END** signifies that the source buffer is the last block in a (potentially multi-block) input stream, telling the conversion routine to perform any finalization that needs to occur after the last byte is converted and then to reset to an initial state. The **TCL\_PROFILE\_\*** bits defined in the [Profiles] section below control the encoding profile to be used for dealing with invalid data or other errors in the encoding transform. The flag **TCL\_ENCODING\_STOPONERROR** has no effect, it only has meaning in Tcl 8.x. Some flags bits may not be usable with some functions as noted in the function descriptions below. .AP Tcl\_EncodingState \*statePtr in/out Used when converting a (generally long or indefinite length) byte stream in a piece-by-piece fashion.  The conversion routine stores its current state in *\*statePtr* after *src* (the buffer containing the current piece) has been converted; that state information must be passed back when converting the next piece of the stream so the conversion routine knows what state it was in when it left off at the end of the last piece.  May be NULL, in which case the value specified for *flags* is ignored and the source buffer is assumed to contain the complete string to convert. .AP char \*dst out Buffer in which the converted result will be stored.  No more than *dstLen* bytes will be stored in *dst*. .AP Tcl\_Size dstLen in The maximum length of the output buffer *dst* in bytes. .AP int \*srcReadPtr out Filled with the number of bytes from *src* that were actually converted.  This may be less than the original source length if there was a problem converting some source characters.  May be NULL. .AP int \*dstWrotePtr out Filled with the number of bytes that were actually stored in the output buffer as a result of the conversion.  May be NULL. .AP int \*dstCharsPtr out Filled with the number of characters that correspond to the number of bytes stored in the output buffer.  May be NULL. .AP Tcl\_Size \*errorIdxPtr out Filled with the index of the byte or character that caused the encoding transform to fail. May be NULL. .AP Tcl\_DString \*bufPtr out Storage for the prescribed system encoding name. .AP "const Tcl\_EncodingType" \*typePtr in Structure that defines a new type of encoding. .AP Tcl\_Obj \*searchPath in List of filesystem directories in which to search for encoding data files. .AP "const char" \*path in A path to the location of the encoding file.
+::: {.arguments} :::
+[\*interp]{.carg .in type="Tcl_Interp"}
+Interpreter to use for error reporting, or NULL if no error reporting is desired.
+[\*name]{.carg .in type="const char"}
+Name of encoding to load.
+[encoding]{.carg .in type="Tcl_Encoding"}
+The encoding to query, free, or use for converting text.  If *encoding* is NULL, the current system encoding is used.
+[\*objPtr]{.carg .in type="Tcl_Obj"}
+Name of encoding to get token for.
+[\*encodingPtr]{.carg .out type="Tcl_Encoding"}
+Points to storage where encoding token is to be written.
+[\*src]{.carg .in type="const char"}
+For the **Tcl\_ExternalToUtf** functions, an array of bytes in the specified encoding that are to be converted to TUTF-8.  For the **Tcl\_UtfToExternal** function, a TUTF-8 byte sequence to be converted to the specified encoding.
+[\*tsrc]{.carg .in type="const TCHAR"}
+An array of Windows TCHAR characters to convert to TUTF-8.
+[srcLen]{.carg .in type="Tcl_Size"}
+Length of *src* or *tsrc* in bytes.  If the length is negative, the encoding-specific length of the string is used.
+[\*dstPtr]{.carg .out type="Tcl_DString"}
+Pointer to an uninitialized or free **Tcl\_DString** in which the converted result will be stored.
+[flags]{.carg .in type="int"}
+This is a bit mask passed in to control the operation of the encoding functions. **TCL\_ENCODING\_START** signifies that the source buffer is the first block in a (potentially multi-block) input stream, telling the conversion routine to reset to an initial state and perform any initialization that needs to occur before the first byte is converted. **TCL\_ENCODING\_END** signifies that the source buffer is the last block in a (potentially multi-block) input stream, telling the conversion routine to perform any finalization that needs to occur after the last byte is converted and then to reset to an initial state. The **TCL\_PROFILE\_\*** bits defined in the [Profiles] section below control the encoding profile to be used for dealing with invalid data or other errors in the encoding transform. The flag **TCL\_ENCODING\_STOPONERROR** has no effect, it only has meaning in Tcl 8.x. Some flags bits may not be usable with some functions as noted in the function descriptions below.
+[\*statePtr]{.carg .in/out type="Tcl_EncodingState"}
+Used when converting a (generally long or indefinite length) byte stream in a piece-by-piece fashion.  The conversion routine stores its current state in *\*statePtr* after *src* (the buffer containing the current piece) has been converted; that state information must be passed back when converting the next piece of the stream so the conversion routine knows what state it was in when it left off at the end of the last piece.  May be NULL, in which case the value specified for *flags* is ignored and the source buffer is assumed to contain the complete string to convert.
+[\*dst]{.carg .out type="char"}
+Buffer in which the converted result will be stored.  No more than *dstLen* bytes will be stored in *dst*.
+[dstLen]{.carg .in type="Tcl_Size"}
+The maximum length of the output buffer *dst* in bytes.
+[\*srcReadPtr]{.carg .out type="int"}
+Filled with the number of bytes from *src* that were actually converted.  This may be less than the original source length if there was a problem converting some source characters.  May be NULL.
+[\*dstWrotePtr]{.carg .out type="int"}
+Filled with the number of bytes that were actually stored in the output buffer as a result of the conversion.  May be NULL.
+[\*dstCharsPtr]{.carg .out type="int"}
+Filled with the number of characters that correspond to the number of bytes stored in the output buffer.  May be NULL.
+[\*errorIdxPtr]{.carg .out type="Tcl_Size"}
+Filled with the index of the byte or character that caused the encoding transform to fail. May be NULL.
+[\*bufPtr]{.carg .out type="Tcl_DString"}
+Storage for the prescribed system encoding name.
+[\*typePtr]{.carg .in type="const Tcl_EncodingType"}
+Structure that defines a new type of encoding.
+[\*searchPath]{.carg .in type="Tcl_Obj"}
+List of filesystem directories in which to search for encoding data files.
+[\*path]{.carg .in type="const char"}
+A path to the location of the encoding file.
+:::
 
 # Introduction
 

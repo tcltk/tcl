@@ -31,7 +31,12 @@ Tcl\_Preserve, Tcl\_Release, Tcl\_EventuallyFree - avoid freeing storage while i
 
 # Arguments
 
-.AP void \*clientData in Token describing structure to be freed or reallocated.  Usually a pointer to memory for structure. .AP Tcl\_FreeProc \*freeProc in Procedure to invoke to free *clientData*.
+::: {.arguments} :::
+[\*clientData]{.carg .in type="void"}
+Token describing structure to be freed or reallocated.  Usually a pointer to memory for structure.
+[\*freeProc]{.carg .in type="Tcl_FreeProc"}
+Procedure to invoke to free *clientData*.
+:::
 
 # Description
 

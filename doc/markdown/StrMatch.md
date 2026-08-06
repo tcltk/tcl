@@ -27,7 +27,14 @@ Tcl\_StringMatch, Tcl\_StringCaseMatch - test whether a string matches a pattern
 
 # Arguments
 
-.AP "const char" \*str in String to test. .AP "const char" \*pattern in Pattern to match against string.  May contain special characters from the set \*?\\[]. .AP int flags in OR-ed combination of match flags, currently only **TCL\_MATCH\_NOCASE**. 0 specifies a case-sensitive search. 
+::: {.arguments} :::
+[\*str]{.carg .in type="const char"}
+String to test.
+[\*pattern]{.carg .in type="const char"}
+Pattern to match against string.  May contain special characters from the set \*?\\[].
+[flags]{.carg .in type="int"}
+OR-ed combination of match flags, currently only **TCL\_MATCH\_NOCASE**. 0 specifies a case-sensitive search.
+:::
 
 # Description
 

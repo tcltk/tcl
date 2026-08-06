@@ -40,7 +40,38 @@ Tcl\_RegExpMatch, Tcl\_RegExpCompile, Tcl\_RegExpExec, Tcl\_RegExpRange, Tcl\_Ge
 
 # Arguments
 
-.AP Tcl\_Interp \*interp in Tcl interpreter to use for error reporting.  The interpreter may be NULL if no error reporting is desired. .AP Tcl\_Obj \*textObj in/out Refers to the value from which to get the text to search.  The internal representation of the value may be converted to a form that can be efficiently searched. .AP Tcl\_Obj \*patObj in/out Refers to the value from which to get a regular expression. The compiled regular expression is cached in the value. .AP "const char" \*text in Text to search for a match with a regular expression. .AP "const char" \*pattern in String in the form of a regular expression pattern. .AP Tcl\_RegExp regexp in Compiled regular expression.  Must have been returned previously by **Tcl\_GetRegExpFromObj** or **Tcl\_RegExpCompile**. .AP "const char" \*start in If *text* is just a portion of some other string, this argument identifies the beginning of the larger string. If it is not the same as *text*, then no "**^**" matches will be allowed. .AP Tcl\_Size index in Specifies which range is desired:  0 means the range of the entire match, 1 or greater means the range that matched a parenthesized sub-expression. .AP "const char" \*\*startPtr out The address of the first character in the range is stored here, or NULL if there is no such range. .AP "const char" \*\*endPtr out The address of the character just after the last one in the range is stored here, or NULL if there is no such range. .AP int cflags in OR-ed combination of the compilation flags **TCL\_REG\_ADVANCED**, **TCL\_REG\_EXTENDED**, **TCL\_REG\_BASIC**, **TCL\_REG\_EXPANDED**, **TCL\_REG\_QUOTE**, **TCL\_REG\_NOCASE**, **TCL\_REG\_NEWLINE**, **TCL\_REG\_NLSTOP**, **TCL\_REG\_NLANCH**, **TCL\_REG\_NOSUB**, and **TCL\_REG\_CANMATCH**. See below for more information. .AP Tcl\_Size offset in The character offset into the text where matching should begin. The value of the offset has no impact on **^** matches.  This behavior is controlled by *eflags*. .AP Tcl\_Size nmatches in The number of matching subexpressions that should be remembered for later use.  If this value is 0, then no subexpression match information will be computed.  If the value is negative, then all of the matching subexpressions will be remembered.  Any other value will be taken as the maximum number of subexpressions to remember. .AP int eflags in OR-ed combination of the execution flags **TCL\_REG\_NOTBOL** and **TCL\_REG\_NOTEOL**. See below for more information. .AP Tcl\_RegExpInfo \*infoPtr out The address of the location where information about a previous match should be stored by **Tcl\_RegExpGetInfo**.
+::: {.arguments} :::
+[\*interp]{.carg .in type="Tcl_Interp"}
+Tcl interpreter to use for error reporting.  The interpreter may be NULL if no error reporting is desired.
+[\*textObj]{.carg .in/out type="Tcl_Obj"}
+Refers to the value from which to get the text to search.  The internal representation of the value may be converted to a form that can be efficiently searched.
+[\*patObj]{.carg .in/out type="Tcl_Obj"}
+Refers to the value from which to get a regular expression. The compiled regular expression is cached in the value.
+[\*text]{.carg .in type="const char"}
+Text to search for a match with a regular expression.
+[\*pattern]{.carg .in type="const char"}
+String in the form of a regular expression pattern.
+[regexp]{.carg .in type="Tcl_RegExp"}
+Compiled regular expression.  Must have been returned previously by **Tcl\_GetRegExpFromObj** or **Tcl\_RegExpCompile**.
+[\*start]{.carg .in type="const char"}
+If *text* is just a portion of some other string, this argument identifies the beginning of the larger string. If it is not the same as *text*, then no .QW **^** matches will be allowed.
+[index]{.carg .in type="Tcl_Size"}
+Specifies which range is desired:  0 means the range of the entire match, 1 or greater means the range that matched a parenthesized sub-expression.
+[\*\*startPtr]{.carg .out type="const char"}
+The address of the first character in the range is stored here, or NULL if there is no such range.
+[\*\*endPtr]{.carg .out type="const char"}
+The address of the character just after the last one in the range is stored here, or NULL if there is no such range.
+[cflags]{.carg .in type="int"}
+OR-ed combination of the compilation flags **TCL\_REG\_ADVANCED**, **TCL\_REG\_EXTENDED**, **TCL\_REG\_BASIC**, **TCL\_REG\_EXPANDED**, **TCL\_REG\_QUOTE**, **TCL\_REG\_NOCASE**, **TCL\_REG\_NEWLINE**, **TCL\_REG\_NLSTOP**, **TCL\_REG\_NLANCH**, **TCL\_REG\_NOSUB**, and **TCL\_REG\_CANMATCH**. See below for more information.
+[offset]{.carg .in type="Tcl_Size"}
+The character offset into the text where matching should begin. The value of the offset has no impact on **^** matches.  This behavior is controlled by *eflags*.
+[nmatches]{.carg .in type="Tcl_Size"}
+The number of matching subexpressions that should be remembered for later use.  If this value is 0, then no subexpression match information will be computed.  If the value is negative, then all of the matching subexpressions will be remembered.  Any other value will be taken as the maximum number of subexpressions to remember.
+[eflags]{.carg .in type="int"}
+OR-ed combination of the execution flags **TCL\_REG\_NOTBOL** and **TCL\_REG\_NOTEOL**. See below for more information.
+[\*infoPtr]{.carg .out type="Tcl_RegExpInfo"}
+The address of the location where information about a previous match should be stored by **Tcl\_RegExpGetInfo**.
+:::
 
 # Description
 

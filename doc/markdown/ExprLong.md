@@ -38,7 +38,18 @@ Tcl\_ExprLong, Tcl\_ExprDouble, Tcl\_ExprBoolean, Tcl\_ExprString - evaluate an 
 
 # Arguments
 
-.AP Tcl\_Interp \*interp in Interpreter in whose context to evaluate *expr*. .AP "const char" \*expr in Expression to be evaluated. .AP long \*longPtr out Pointer to location in which to store the integer value of the expression. .AP int \*doublePtr out Pointer to location in which to store the floating-point value of the expression. .AP int \*booleanPtr out Pointer to location in which to store the 0/1 boolean value of the expression. 
+::: {.arguments} :::
+[\*interp]{.carg .in type="Tcl_Interp"}
+Interpreter in whose context to evaluate *expr*.
+[\*expr]{.carg .in type="const char"}
+Expression to be evaluated.
+[\*longPtr]{.carg .out type="long"}
+Pointer to location in which to store the integer value of the expression.
+[\*doublePtr]{.carg .out type="int"}
+Pointer to location in which to store the floating-point value of the expression.
+[\*booleanPtr]{.carg .out type="int"}
+Pointer to location in which to store the 0/1 boolean value of the expression.
+:::
 
 # Description
 

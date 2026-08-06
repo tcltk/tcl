@@ -32,7 +32,12 @@ Tcl\_GetStdChannel, Tcl\_SetStdChannel - procedures for retrieving and replacing
 
 # Arguments
 
-.AP int type in The identifier for the standard channel to retrieve or modify.  Must be one of **TCL\_STDIN**, **TCL\_STDOUT**, or **TCL\_STDERR**. .AP Tcl\_Channel channel in The channel to use as the new value for the specified standard channel. 
+::: {.arguments} :::
+[type]{.carg .in type="int"}
+The identifier for the standard channel to retrieve or modify.  Must be one of **TCL\_STDIN**, **TCL\_STDOUT**, or **TCL\_STDERR**.
+[channel]{.carg .in type="Tcl_Channel"}
+The channel to use as the new value for the specified standard channel.
+:::
 
 # Description
 

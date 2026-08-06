@@ -42,7 +42,28 @@ Tcl\_CreateObjCommand, Tcl\_CreateObjCommand2, Tcl\_DeleteCommand, Tcl\_DeleteCo
 
 # Arguments
 
-.AP Tcl\_Interp \*interp in Interpreter in which to create a new command or that contains a command. .AP "const char" \*cmdName in Name of command. .AP Tcl\_ObjCmdProc \*proc in Implementation of the new command: *proc* will be called whenever *cmdName* is invoked as a command. .AP Tcl\_ObjCmdProc2 \*proc2 in Implementation of the new command: *proc2* will be called whenever *cmdName* is invoked as a command. .AP void \*clientData in Arbitrary one-word value to pass to *proc* and *deleteProc*. .AP Tcl\_CmdDeleteProc \*deleteProc in Procedure to call before *cmdName* is deleted from the interpreter; allows for command-specific cleanup. If NULL, then no procedure is called before the command is deleted. .AP Tcl\_Command token in Token for command, returned by previous call to **Tcl\_CreateObjCommand**. The command must not have been deleted. .AP Tcl\_CmdInfo \*infoPtr in/out Pointer to structure containing various information about a Tcl command. .AP Tcl\_Obj \*objPtr in Value containing the name of a Tcl command. .AP "const char" \*typeName in Indicates the name of the type of command implementation associated with a particular *proc*, or NULL to break the association.
+::: {.arguments} :::
+[\*interp]{.carg .in type="Tcl_Interp"}
+Interpreter in which to create a new command or that contains a command.
+[\*cmdName]{.carg .in type="const char"}
+Name of command.
+[\*proc]{.carg .in type="Tcl_ObjCmdProc"}
+Implementation of the new command: *proc* will be called whenever *cmdName* is invoked as a command.
+[\*proc2]{.carg .in type="Tcl_ObjCmdProc2"}
+Implementation of the new command: *proc2* will be called whenever *cmdName* is invoked as a command.
+[\*clientData]{.carg .in type="void"}
+Arbitrary one-word value to pass to *proc* and *deleteProc*.
+[\*deleteProc]{.carg .in type="Tcl_CmdDeleteProc"}
+Procedure to call before *cmdName* is deleted from the interpreter; allows for command-specific cleanup. If NULL, then no procedure is called before the command is deleted.
+[token]{.carg .in type="Tcl_Command"}
+Token for command, returned by previous call to **Tcl\_CreateObjCommand**. The command must not have been deleted.
+[\*infoPtr]{.carg .in/out type="Tcl_CmdInfo"}
+Pointer to structure containing various information about a Tcl command.
+[\*objPtr]{.carg .in type="Tcl_Obj"}
+Value containing the name of a Tcl command.
+[\*typeName]{.carg .in type="const char"}
+Indicates the name of the type of command implementation associated with a particular *proc*, or NULL to break the association.
+:::
 
 # Description
 

@@ -34,7 +34,32 @@ Tcl\_OpenTcpClient, Tcl\_MakeTcpClientChannel, Tcl\_OpenTcpServer, Tcl\_OpenTcpS
 
 # Arguments
 
-.AP Tcl\_Interp \*interp in Tcl interpreter to use for error reporting.  If non-NULL and an error occurs, an error message is left in the interpreter's result. .AP int port in A port number to connect to as a client or to listen on as a server. .AP "const char" \*service in A string specifying the port number to connect to as a client or to listen on as  a server. .AP "const char" \*host in A string specifying a host name or address for the remote end of the connection. .AP int myport in A port number for the client's end of the socket.  If 0, a port number is allocated at random. .AP "const char" \*myaddr in A string specifying the host name or address for network interface to use for the local end of the connection.  If NULL, a default interface is chosen. .AP int async in If nonzero, the client socket is connected asynchronously to the server. .AP int backlog in Length of OS listen backlog queue. Use -1 for default value. .AP "unsigned int" flags in ORed combination of **TCL\_TCPSERVER\_\*** flags that specify additional information about the socket being created. .AP void \*sock in Platform-specific handle for client TCP socket. .AP Tcl\_TcpAcceptProc \*proc in Pointer to a procedure to invoke each time a new connection is accepted via the socket. .AP void \*clientData in Arbitrary one-word value to pass to *proc*.
+::: {.arguments} :::
+[\*interp]{.carg .in type="Tcl_Interp"}
+Tcl interpreter to use for error reporting.  If non-NULL and an error occurs, an error message is left in the interpreter's result.
+[port]{.carg .in type="int"}
+A port number to connect to as a client or to listen on as a server.
+[\*service]{.carg .in type="const char"}
+A string specifying the port number to connect to as a client or to listen on as  a server.
+[\*host]{.carg .in type="const char"}
+A string specifying a host name or address for the remote end of the connection.
+[myport]{.carg .in type="int"}
+A port number for the client's end of the socket.  If 0, a port number is allocated at random.
+[\*myaddr]{.carg .in type="const char"}
+A string specifying the host name or address for network interface to use for the local end of the connection.  If NULL, a default interface is chosen.
+[async]{.carg .in type="int"}
+If nonzero, the client socket is connected asynchronously to the server.
+[backlog]{.carg .in type="int"}
+Length of OS listen backlog queue. Use -1 for default value.
+[flags]{.carg .in type="unsigned int"}
+ORed combination of **TCL\_TCPSERVER\_\*** flags that specify additional information about the socket being created.
+[\*sock]{.carg .in type="void"}
+Platform-specific handle for client TCP socket.
+[\*proc]{.carg .in type="Tcl_TcpAcceptProc"}
+Pointer to a procedure to invoke each time a new connection is accepted via the socket.
+[\*clientData]{.carg .in type="void"}
+Arbitrary one-word value to pass to *proc*.
+:::
 
 # Description
 

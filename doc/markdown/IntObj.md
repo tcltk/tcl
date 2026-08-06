@@ -53,7 +53,38 @@ Tcl\_NewIntObj, Tcl\_NewLongObj, Tcl\_NewWideIntObj, Tcl\_NewWideUIntObj, Tcl\_S
 
 # Arguments
 
-.AP Tcl\_Size endValue in **Tcl\_GetIntForIndex** will return this when the input value is "end". .AP int intValue in Integer value used to initialize or set a Tcl value. .AP long longValue in Long integer value used to initialize or set a Tcl value. .AP Tcl\_WideInt wideValue in Wide integer value used to initialize or set a Tcl value. .AP Tcl\_WideUInt uwideValue in Unsigned wide integer value used to initialize or set a Tcl value. .AP Tcl\_Obj \*objPtr in/out For **Tcl\_SetIntObj**, **Tcl\_SetLongObj**, **Tcl\_SetWideIntObj**, **Tcl\_SetWideUIntObj**, and **Tcl\_SetBignumObj**, this points to the value in which to store an integral value.  For **Tcl\_GetIntFromObj**, **Tcl\_GetLongFromObj**, **Tcl\_GetWideIntFromObj**, **Tcl\_GetBignumFromObj**, and **Tcl\_TakeBignumFromObj**, this refers to the value from which to retrieve an integral value. .AP Tcl\_Interp \*interp in/out When non-NULL, an error message is left here when integral value retrieval fails. .AP int \*intPtr out Points to place to store the integer value retrieved from *objPtr*. .AP long \*longPtr out Points to place to store the long integer value retrieved from *objPtr*. .AP Tcl\_Size \*indexPtr out Points to place to store the Tcl\_Size value retrieved from *objPtr*. .AP Tcl\_WideInt \*widePtr out Points to place to store the wide integer value retrieved from *objPtr*. .AP Tcl\_WideUInt \*uwidePtr out Points to place to store the unsigned wide integer value retrieved from *objPtr*. .AP Tcl\_Size \*sizePtr out Points to place to store the **Tcl\_Size** integer value retrieved from *objPtr*. .AP mp\_int \*bigValue in/out Points to a multi-precision integer structure declared by the LibTomMath library. .AP double doubleValue in Double value from which the integer part is determined and used to initialize a multi-precision integer value.
+::: {.arguments} :::
+[endValue]{.carg .in type="Tcl_Size"}
+**Tcl\_GetIntForIndex** will return this when the input value is "end".
+[intValue]{.carg .in type="int"}
+Integer value used to initialize or set a Tcl value.
+[longValue]{.carg .in type="long"}
+Long integer value used to initialize or set a Tcl value.
+[wideValue]{.carg .in type="Tcl_WideInt"}
+Wide integer value used to initialize or set a Tcl value.
+[uwideValue]{.carg .in type="Tcl_WideUInt"}
+Unsigned wide integer value used to initialize or set a Tcl value.
+[\*objPtr]{.carg .in/out type="Tcl_Obj"}
+For **Tcl\_SetIntObj**, **Tcl\_SetLongObj**, **Tcl\_SetWideIntObj**, **Tcl\_SetWideUIntObj**, and **Tcl\_SetBignumObj**, this points to the value in which to store an integral value.  For **Tcl\_GetIntFromObj**, **Tcl\_GetLongFromObj**, **Tcl\_GetWideIntFromObj**, **Tcl\_GetBignumFromObj**, and **Tcl\_TakeBignumFromObj**, this refers to the value from which to retrieve an integral value.
+[\*interp]{.carg .in/out type="Tcl_Interp"}
+When non-NULL, an error message is left here when integral value retrieval fails.
+[\*intPtr]{.carg .out type="int"}
+Points to place to store the integer value retrieved from *objPtr*.
+[\*longPtr]{.carg .out type="long"}
+Points to place to store the long integer value retrieved from *objPtr*.
+[\*indexPtr]{.carg .out type="Tcl_Size"}
+Points to place to store the Tcl\_Size value retrieved from *objPtr*.
+[\*widePtr]{.carg .out type="Tcl_WideInt"}
+Points to place to store the wide integer value retrieved from *objPtr*.
+[\*uwidePtr]{.carg .out type="Tcl_WideUInt"}
+Points to place to store the unsigned wide integer value retrieved from *objPtr*.
+[\*sizePtr]{.carg .out type="Tcl_Size"}
+Points to place to store the **Tcl\_Size** integer value retrieved from *objPtr*.
+[\*bigValue]{.carg .in/out type="mp_int"}
+Points to a multi-precision integer structure declared by the LibTomMath library.
+[doubleValue]{.carg .in type="double"}
+Double value from which the integer part is determined and used to initialize a multi-precision integer value.
+:::
 
 # Description
 

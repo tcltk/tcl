@@ -33,7 +33,12 @@ Tcl\_UniCharToUpper, Tcl\_UniCharToLower, Tcl\_UniCharToTitle, Tcl\_UtfToUpper, 
 
 # Arguments
 
-.AP int ch in The Unicode character to be converted. .AP char \*str in/out Pointer to the TUTF-8 byte sequence to be converted in place. 
+::: {.arguments} :::
+[ch]{.carg .in type="int"}
+The Unicode character to be converted.
+[\*str]{.carg .in/out type="char"}
+Pointer to the TUTF-8 byte sequence to be converted in place.
+:::
 
 # Description
 

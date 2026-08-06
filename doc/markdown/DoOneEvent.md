@@ -28,7 +28,10 @@ Tcl\_DoOneEvent - wait for events and invoke event handlers
 
 # Arguments
 
-.AP int flags in This parameter is normally zero.  It may be an OR-ed combination of any of the following flag bits: **TCL\_WINDOW\_EVENTS**, **TCL\_FILE\_EVENTS**, **TCL\_TIMER\_EVENTS**, **TCL\_IDLE\_EVENTS**, **TCL\_ALL\_EVENTS**, or **TCL\_DONT\_WAIT**. 
+::: {.arguments} :::
+[flags]{.carg .in type="int"}
+This parameter is normally zero.  It may be an OR-ed combination of any of the following flag bits: **TCL\_WINDOW\_EVENTS**, **TCL\_FILE\_EVENTS**, **TCL\_TIMER\_EVENTS**, **TCL\_IDLE\_EVENTS**, **TCL\_ALL\_EVENTS**, or **TCL\_DONT\_WAIT**.
+:::
 
 # Description
 

@@ -31,7 +31,26 @@ TclZipfs\_AppHook, TclZipfs\_Mount, TclZipfs\_MountBuffer, TclZipfs\_Unmount - h
 
 # Arguments
 
-.AP "int" \*argcPtr in Pointer to a variable holding the number of command line arguments from **main**(). .AP "char" \*\*\*argvPtr in Pointer to an array of strings containing the command line arguments to **main**(). .AP Tcl\_Interp \*interp in Interpreter in which the ZIP file system is mounted.  The interpreter's result is modified to hold the result or error message from the script. .AP "const char" \*zipname in Name of a ZIP file. Must not be NULL when either mounting or unmounting a ZIP. .AP "const char" \*mountpoint in Name of a mount point, which must be a legal Tcl file or directory name. May be NULL to query current mount points. .AP "const char" \*password in An (optional) password. Use NULL if no password is wanted to read the file. .AP "const void" \*data in A data buffer to mount. The data buffer must hold the contents of a ZIP archive, and must not be NULL. .AP size\_t dataLen in The number of bytes in the supplied data buffer argument, *data*. .AP int copy in If non-zero, the ZIP archive in the data buffer will be internally copied before mounting, allowing the data buffer to be disposed once **TclZipfs\_MountBuffer** returns. If zero, the caller guarantees that the buffer will be valid to read from for the duration of the mount.
+::: {.arguments} :::
+[\*argcPtr]{.carg .in type="int"}
+Pointer to a variable holding the number of command line arguments from **main**().
+[\*\*\*argvPtr]{.carg .in type="char"}
+Pointer to an array of strings containing the command line arguments to **main**().
+[\*interp]{.carg .in type="Tcl_Interp"}
+Interpreter in which the ZIP file system is mounted.  The interpreter's result is modified to hold the result or error message from the script.
+[\*zipname]{.carg .in type="const char"}
+Name of a ZIP file. Must not be NULL when either mounting or unmounting a ZIP.
+[\*mountpoint]{.carg .in type="const char"}
+Name of a mount point, which must be a legal Tcl file or directory name. May be NULL to query current mount points.
+[\*password]{.carg .in type="const char"}
+An (optional) password. Use NULL if no password is wanted to read the file.
+[\*data]{.carg .in type="const void"}
+A data buffer to mount. The data buffer must hold the contents of a ZIP archive, and must not be NULL.
+[dataLen]{.carg .in type="size_t"}
+The number of bytes in the supplied data buffer argument, *data*.
+[copy]{.carg .in type="int"}
+If non-zero, the ZIP archive in the data buffer will be internally copied before mounting, allowing the data buffer to be disposed once **TclZipfs\_MountBuffer** returns. If zero, the caller guarantees that the buffer will be valid to read from for the duration of the mount.
+:::
 
 # Description
 

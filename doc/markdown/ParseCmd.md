@@ -36,7 +36,24 @@ Tcl\_ParseCommand, Tcl\_ParseExpr, Tcl\_ParseBraces, Tcl\_ParseQuotedString, Tcl
 
 # Arguments
 
-.AP Tcl\_Interp \*interp out For procedures other than **Tcl\_FreeParse** and **Tcl\_EvalTokensStandard**, used only for error reporting; if NULL, then no error messages are left after errors. For **Tcl\_EvalTokensStandard**, determines the context for evaluating the script and also is used for error reporting; must not be NULL. .AP "const char" \*start in Pointer to first character in string to parse. .AP Tcl\_Size numBytes in Number of bytes in string to parse, not including any terminating null character.  If less than 0 then the script consists of all characters following *start* up to the first null character. .AP int nested in Non-zero means that the script is part of a command substitution so an unquoted close bracket should be treated as a command terminator.  If zero, close brackets have no special meaning. .AP int append in Non-zero means that *\*parsePtr* already contains valid tokens; the new tokens should be appended to those already present.  Zero means that *\*parsePtr* is uninitialized; any information in it is ignored. This argument is normally 0. .AP Tcl\_Parse \*parsePtr out Points to structure to fill in with information about the parsed command, expression, variable name, etc. Any previous information in this structure is ignored, unless *append* is non-zero in a call to **Tcl\_ParseBraces**, **Tcl\_ParseQuotedString**, or **Tcl\_ParseVarName**. .AP "const char" \*\*termPtr out If not NULL, points to a location where **Tcl\_ParseBraces**, **Tcl\_ParseQuotedString**, and **Tcl\_ParseVar** will store a pointer to the character just after the terminating character (the close-brace, the last character of the variable name, or the close-quote (respectively)) if the parse was successful. .AP Tcl\_Parse \*usedParsePtr in Points to structure that was filled in by a previous call to **Tcl\_ParseCommand**, **Tcl\_ParseExpr**, **Tcl\_ParseVarName**, etc.
+::: {.arguments} :::
+[\*interp]{.carg .out type="Tcl_Interp"}
+For procedures other than **Tcl\_FreeParse** and **Tcl\_EvalTokensStandard**, used only for error reporting; if NULL, then no error messages are left after errors. For **Tcl\_EvalTokensStandard**, determines the context for evaluating the script and also is used for error reporting; must not be NULL.
+[\*start]{.carg .in type="const char"}
+Pointer to first character in string to parse.
+[numBytes]{.carg .in type="Tcl_Size"}
+Number of bytes in string to parse, not including any terminating null character.  If less than 0 then the script consists of all characters following *start* up to the first null character.
+[nested]{.carg .in type="int"}
+Non-zero means that the script is part of a command substitution so an unquoted close bracket should be treated as a command terminator.  If zero, close brackets have no special meaning.
+[append]{.carg .in type="int"}
+Non-zero means that *\*parsePtr* already contains valid tokens; the new tokens should be appended to those already present.  Zero means that *\*parsePtr* is uninitialized; any information in it is ignored. This argument is normally 0.
+[\*parsePtr]{.carg .out type="Tcl_Parse"}
+Points to structure to fill in with information about the parsed command, expression, variable name, etc. Any previous information in this structure is ignored, unless *append* is non-zero in a call to **Tcl\_ParseBraces**, **Tcl\_ParseQuotedString**, or **Tcl\_ParseVarName**.
+[\*\*termPtr]{.carg .out type="const char"}
+If not NULL, points to a location where **Tcl\_ParseBraces**, **Tcl\_ParseQuotedString**, and **Tcl\_ParseVar** will store a pointer to the character just after the terminating character (the close-brace, the last character of the variable name, or the close-quote (respectively)) if the parse was successful.
+[\*usedParsePtr]{.carg .in type="Tcl_Parse"}
+Points to structure that was filled in by a previous call to **Tcl\_ParseCommand**, **Tcl\_ParseExpr**, **Tcl\_ParseVarName**, etc.
+:::
 
 # Description
 

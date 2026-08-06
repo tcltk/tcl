@@ -25,7 +25,16 @@ Tcl\_RegisterConfig - procedures to register embedded configuration information
 
 # Arguments
 
-.AP Tcl\_Interp \*interp in Refers to the interpreter the embedded configuration information is registered for. Must not be NULL. .AP "const char" \*pkgName in Contains the name of the package registering the embedded configuration as ASCII string. This means that this information is in UTF-8 too. Must not be NULL. .AP "const Tcl\_Config" \*configuration in Refers to an array of Tcl\_Config entries containing the information embedded in the library. Must not be NULL. The end of the array is signaled by either a key identical to NULL, or a key referring to the empty string. .AP "const char" \*valEncoding in Contains the name of the encoding used to store the configuration values as ASCII string. This means that this information is in UTF-8 too. Must not be NULL.
+::: {.arguments} :::
+[\*interp]{.carg .in type="Tcl_Interp"}
+Refers to the interpreter the embedded configuration information is registered for. Must not be NULL.
+[\*pkgName]{.carg .in type="const char"}
+Contains the name of the package registering the embedded configuration as ASCII string. This means that this information is in UTF-8 too. Must not be NULL.
+[\*configuration]{.carg .in type="const Tcl_Config"}
+Refers to an array of Tcl\_Config entries containing the information embedded in the library. Must not be NULL. The end of the array is signaled by either a key identical to NULL, or a key referring to the empty string.
+[\*valEncoding]{.carg .in type="const char"}
+Contains the name of the encoding used to store the configuration values as ASCII string. This means that this information is in UTF-8 too. Must not be NULL.
+:::
 
 # Description
 

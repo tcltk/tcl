@@ -32,7 +32,18 @@ Tcl\_StackChannel, Tcl\_UnstackChannel, Tcl\_GetStackedChannel, Tcl\_GetTopChann
 
 # Arguments
 
-.AP Tcl\_Interp \*interp in Interpreter for error reporting. .AP "const Tcl\_ChannelType" \*typePtr in The new channel I/O procedures to use for *channel*. .AP void \*clientData in Arbitrary one-word value to pass to channel I/O procedures. .AP int mask in Conditions under which *channel* will be used: OR-ed combination of **TCL\_READABLE**, **TCL\_WRITABLE** and **TCL\_EXCEPTION**. This can be a subset of the operations currently allowed on *channel*. .AP Tcl\_Channel channel in An existing Tcl channel such as returned by **Tcl\_CreateChannel**. 
+::: {.arguments} :::
+[\*interp]{.carg .in type="Tcl_Interp"}
+Interpreter for error reporting.
+[\*typePtr]{.carg .in type="const Tcl_ChannelType"}
+The new channel I/O procedures to use for *channel*.
+[\*clientData]{.carg .in type="void"}
+Arbitrary one-word value to pass to channel I/O procedures.
+[mask]{.carg .in type="int"}
+Conditions under which *channel* will be used: OR-ed combination of **TCL\_READABLE**, **TCL\_WRITABLE** and **TCL\_EXCEPTION**. This can be a subset of the operations currently allowed on *channel*.
+[channel]{.carg .in type="Tcl_Channel"}
+An existing Tcl channel such as returned by **Tcl\_CreateChannel**.
+:::
 
 # Description
 

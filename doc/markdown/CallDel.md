@@ -31,7 +31,14 @@ Tcl\_CallWhenDeleted, Tcl\_DontCallWhenDeleted - Arrange for callback when inter
 
 # Arguments
 
-.AP Tcl\_Interp \*interp in Interpreter with which to associated callback. .AP Tcl\_InterpDeleteProc \*proc in Procedure to call when *interp* is deleted. .AP void \*clientData in Arbitrary one-word value to pass to *proc*.
+::: {.arguments} :::
+[\*interp]{.carg .in type="Tcl_Interp"}
+Interpreter with which to associated callback.
+[\*proc]{.carg .in type="Tcl_InterpDeleteProc"}
+Procedure to call when *interp* is deleted.
+[\*clientData]{.carg .in type="void"}
+Arbitrary one-word value to pass to *proc*.
+:::
 
 # Description
 

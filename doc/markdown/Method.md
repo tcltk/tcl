@@ -48,13 +48,36 @@ Tcl\_ClassSetConstructor, Tcl\_ClassSetDestructor, Tcl\_MethodDeclarerClass, Tcl
 
 # Arguments
 
-.AP Tcl\_Interp \*interp in/out The interpreter holding the object or class to create or update a method in. .AP Tcl\_Object object in The object to create the method in. .AP Tcl\_Class class in The class to create the method in. .AP Tcl\_Obj \*nameObj in The name of the method to create. Should not be NULL unless creating constructors or destructors. .AP int flags in A flag saying (currently) what the visibility of the method is. The supported public values of this flag are **TCL\_OO\_METHOD\_PUBLIC** (which is fixed at 1 for backward compatibility) for an exported method, **TCL\_OO\_METHOD\_UNEXPORTED** (which is fixed at 0 for backward compatibility) for a non-exported method,
-
-::: {.info version="TIP500"}
-and **TCL\_OO\_METHOD\_PRIVATE** for a private method.
+::: {.arguments} :::
+[\*interp]{.carg .in/out type="Tcl_Interp"}
+The interpreter holding the object or class to create or update a method in.
+[object]{.carg .in type="Tcl_Object"}
+The object to create the method in.
+[class]{.carg .in type="Tcl_Class"}
+The class to create the method in.
+[\*nameObj]{.carg .in type="Tcl_Obj"}
+The name of the method to create. Should not be NULL unless creating constructors or destructors.
+[flags]{.carg .in type="int"}
+A flag saying (currently) what the visibility of the method is. The supported public values of this flag are **TCL\_OO\_METHOD\_PUBLIC** (which is fixed at 1 for backward compatibility) for an exported method, **TCL\_OO\_METHOD\_UNEXPORTED** (which is fixed at 0 for backward compatibility) for a non-exported method, .VS TIP500 and **TCL\_OO\_METHOD\_PRIVATE** for a private method. .VE TIP500
+[\*methodTypePtr]{.carg .in type="Tcl_MethodType"}
+A description of the type of the method to create, or the type of method to compare against.
+[\*methodType2Ptr]{.carg .in type="Tcl_MethodType2"}
+A description of the type of the method to create, or the type of method to compare against.
+[\*clientData]{.carg .in type="void"}
+A piece of data that is passed to the implementation of the method without interpretation.
+[\*\*clientDataPtr]{.carg .out type="void"}
+A pointer to a variable in which to write the *clientData* value supplied when the method was created. If NULL, the *clientData* value will not be retrieved.
+[method]{.carg .in type="Tcl_Method"}
+A reference to a method to query.
+[context]{.carg .in type="Tcl_ObjectContext"}
+A reference to a method-call context. Note that client code *must not* retain a reference to a context.
+[objc]{.carg .in type="Tcl_Size"}
+The number of arguments to pass to the method implementation.
+[\*objv]{.carg .in type="Tcl_Obj *const"}
+An array of arguments to pass to the method implementation.
+[skip]{.carg .in type="Tcl_Size"}
+The number of arguments passed to the method implementation that do not represent "real" arguments.
 :::
-
-.AP Tcl\_MethodType \*methodTypePtr in A description of the type of the method to create, or the type of method to compare against. .AP Tcl\_MethodType2 \*methodType2Ptr in A description of the type of the method to create, or the type of method to compare against. .AP void \*clientData in A piece of data that is passed to the implementation of the method without interpretation. .AP void \*\*clientDataPtr out A pointer to a variable in which to write the *clientData* value supplied when the method was created. If NULL, the *clientData* value will not be retrieved. .AP Tcl\_Method method in A reference to a method to query. .AP Tcl\_ObjectContext context in A reference to a method-call context. Note that client code *must not* retain a reference to a context. .AP Tcl\_Size objc in The number of arguments to pass to the method implementation. .AP "Tcl\_Obj \*const" \*objv in An array of arguments to pass to the method implementation. .AP Tcl\_Size skip in The number of arguments passed to the method implementation that do not represent "real" arguments.
 
 # Description
 

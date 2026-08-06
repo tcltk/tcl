@@ -25,7 +25,10 @@ Tcl\_OOInitStubs - initialize library access to TclOO functionality
 
 # Arguments
 
-.AP Tcl\_Interp \*interp in The Tcl interpreter that the TclOO API is integrated with and whose C interface is going to be used.
+::: {.arguments} :::
+[\*interp]{.carg .in type="Tcl_Interp"}
+The Tcl interpreter that the TclOO API is integrated with and whose C interface is going to be used.
+:::
 
 # Description
 

@@ -27,7 +27,10 @@ Tcl\_AllowExceptions - allow all exceptions in next script evaluation
 
 # Arguments
 
-.AP Tcl\_Interp \*interp in Interpreter in which script will be evaluated. 
+::: {.arguments} :::
+[\*interp]{.carg .in type="Tcl_Interp"}
+Interpreter in which script will be evaluated.
+:::
 
 # Description
 

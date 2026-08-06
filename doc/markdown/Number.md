@@ -37,7 +37,20 @@ Tcl\_GetNumber, Tcl\_GetNumberFromObj - get numeric value from Tcl value
 
 # Arguments
 
-.AP Tcl\_Interp \*interp out When non-NULL, error information is recorded here when the value is not in any of the numeric formats recognized by Tcl. .AP "const char" \*bytes in Points to first byte of the string value to be examined. .AP Tcl\_Size numBytes in The number of bytes, starting at *bytes*, that should be examined. If **numBytes** is negative, then all bytes should be examined until the first **NUL** byte terminates examination. .AP "void \*" \*clientDataPtr out Points to space where a pointer value may be written through which a numeric value is available to read. .AP int \*typePtr out Points to space where a value may be written reporting what type of numeric storage is available to read. .AP Tcl\_Obj \*objPtr in A Tcl value to be examined.
+::: {.arguments} :::
+[\*interp]{.carg .out type="Tcl_Interp"}
+When non-NULL, error information is recorded here when the value is not in any of the numeric formats recognized by Tcl.
+[\*bytes]{.carg .in type="const char"}
+Points to first byte of the string value to be examined.
+[numBytes]{.carg .in type="Tcl_Size"}
+The number of bytes, starting at *bytes*, that should be examined. If **numBytes** is negative, then all bytes should be examined until the first **NUL** byte terminates examination.
+[\*clientDataPtr]{.carg .out type="void *"}
+Points to space where a pointer value may be written through which a numeric value is available to read.
+[\*typePtr]{.carg .out type="int"}
+Points to space where a value may be written reporting what type of numeric storage is available to read.
+[\*objPtr]{.carg .in type="Tcl_Obj"}
+A Tcl value to be examined.
+:::
 
 # Description
 

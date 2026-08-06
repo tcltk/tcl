@@ -47,7 +47,32 @@ Tcl\_ClassGetMetadata, Tcl\_ClassSetMetadata, Tcl\_CopyObjectInstance, Tcl\_GetC
 
 # Arguments
 
-.AP Tcl\_Interp \*interp in/out Interpreter providing the context for looking up or creating an object, and into whose result error messages will be written on failure. .AP Tcl\_Obj \*objPtr in The name of the object to look up. .AP Tcl\_Object object in Reference to the object to operate upon. .AP Tcl\_Class class in Reference to the class to operate upon. .AP "const char" \*name in The name of the object to create, or NULL if a new unused name is to be automatically selected. .AP "const char" \*nsName in The name of the namespace to create for the object's private use, or NULL if a new unused name is to be automatically selected. The namespace must not already exist. .AP Tcl\_Size objc in The number of elements in the *objv* array. .AP "Tcl\_Obj \*const" \*objv in The arguments to the command to create the instance of the class. .AP Tcl\_Size skip in The number of arguments at the start of the argument array, *objv*, that are not arguments to any constructors. This allows the generation of correct error messages even when complicated calling patterns are used (e.g., via the [next] command). .AP Tcl\_ObjectMetadataType \*metaTypePtr in The type of *metadata* being set with **Tcl\_ClassSetMetadata** or retrieved with **Tcl\_ClassGetMetadata**. .AP void \*metadata in An item of metadata to attach to the class, or NULL to remove the metadata associated with a particular *metaTypePtr*. .AP "Tcl\_ObjectMapMethodNameProc" "methodNameMapper" in A pointer to a function to call to adjust the mapping of objects and method names to implementations, or NULL when no such mapping is required.
+::: {.arguments} :::
+[\*interp]{.carg .in/out type="Tcl_Interp"}
+Interpreter providing the context for looking up or creating an object, and into whose result error messages will be written on failure.
+[\*objPtr]{.carg .in type="Tcl_Obj"}
+The name of the object to look up.
+[object]{.carg .in type="Tcl_Object"}
+Reference to the object to operate upon.
+[class]{.carg .in type="Tcl_Class"}
+Reference to the class to operate upon.
+[\*name]{.carg .in type="const char"}
+The name of the object to create, or NULL if a new unused name is to be automatically selected.
+[\*nsName]{.carg .in type="const char"}
+The name of the namespace to create for the object's private use, or NULL if a new unused name is to be automatically selected. The namespace must not already exist.
+[objc]{.carg .in type="Tcl_Size"}
+The number of elements in the *objv* array.
+[\*objv]{.carg .in type="Tcl_Obj *const"}
+The arguments to the command to create the instance of the class.
+[skip]{.carg .in type="Tcl_Size"}
+The number of arguments at the start of the argument array, *objv*, that are not arguments to any constructors. This allows the generation of correct error messages even when complicated calling patterns are used (e.g., via the [next] command).
+[\*metaTypePtr]{.carg .in type="Tcl_ObjectMetadataType"}
+The type of *metadata* being set with **Tcl\_ClassSetMetadata** or retrieved with **Tcl\_ClassGetMetadata**.
+[\*metadata]{.carg .in type="void"}
+An item of metadata to attach to the class, or NULL to remove the metadata associated with a particular *metaTypePtr*.
+[methodNameMapper]{.carg .in type="Tcl_ObjectMapMethodNameProc"}
+A pointer to a function to call to adjust the mapping of objects and method names to implementations, or NULL when no such mapping is required.
+:::
 
 # Description
 

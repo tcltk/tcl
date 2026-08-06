@@ -30,7 +30,10 @@ Tcl\_AppInit - perform application-specific initialization
 
 # Arguments
 
-.AP Tcl\_Interp \*interp in Interpreter for the application. 
+::: {.arguments} :::
+[\*interp]{.carg .in type="Tcl_Interp"}
+Interpreter for the application.
+:::
 
 # Description
 

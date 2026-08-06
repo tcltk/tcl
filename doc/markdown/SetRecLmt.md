@@ -25,7 +25,12 @@ Tcl\_SetRecursionLimit - set maximum allowable nesting depth in interpreter
 
 # Arguments
 
-.AP Tcl\_Interp \*interp in Interpreter whose recursion limit is to be set. Must be greater than zero. .AP Tcl\_Size depth in New limit for nested calls to **Tcl\_Eval** for *interp*. 
+::: {.arguments} :::
+[\*interp]{.carg .in type="Tcl_Interp"}
+Interpreter whose recursion limit is to be set. Must be greater than zero.
+[depth]{.carg .in type="Tcl_Size"}
+New limit for nested calls to **Tcl\_Eval** for *interp*.
+:::
 
 # Description
 

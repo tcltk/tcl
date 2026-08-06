@@ -34,7 +34,14 @@ Tcl\_Alloc, Tcl\_Free, Tcl\_Realloc, Tcl\_AttemptAlloc, Tcl\_AttemptRealloc, Tcl
 
 # Arguments
 
-.AP "size\_t" size in Size in bytes of the memory block to allocate. .AP void \*ptr in Pointer to memory block to free or realloc. .AP Tcl\_DString \*dsPtr in Initialized DString pointer. 
+::: {.arguments} :::
+[size]{.carg .in type="size_t"}
+Size in bytes of the memory block to allocate.
+[\*ptr]{.carg .in type="void"}
+Pointer to memory block to free or realloc.
+[\*dsPtr]{.carg .in type="Tcl_DString"}
+Initialized DString pointer.
+:::
 
 # Description
 

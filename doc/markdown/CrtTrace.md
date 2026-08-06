@@ -34,7 +34,26 @@ Tcl\_CreateTrace, Tcl\_CreateObjTrace, Tcl\_CreateObjTrace2, Tcl\_DeleteTrace - 
 
 # Arguments
 
-.AP Tcl\_Interp \*interp in Interpreter containing command to be traced or untraced. .AP Tcl\_Size level in Only commands at or below this nesting level will be traced unless 0 is specified.  1 means top-level commands only, 2 means top-level commands or those that are invoked as immediate consequences of executing top-level commands (procedure bodies, bracketed commands, etc.) and so on. A value of 0 means that commands at any level are traced. .AP int flags in Flags governing the trace execution.  See below for details. .AP Tcl\_CmdObjTraceProc \*objProc in Procedure to call for each command that is executed.  See below for details of the calling sequence. .AP Tcl\_CmdObjTraceProc2 \*objProc2 in Procedure to call for each command that is executed.  See below for details of the calling sequence. .AP Tcl\_CmdTraceProc \*proc in Procedure to call for each command that is executed.  See below for details on the calling sequence. .AP void \*clientData in Arbitrary one-word value to pass to *objProc*, *objProc2* or *proc*. .AP Tcl\_CmdObjTraceDeleteProc \*deleteProc in Procedure to call when the trace is deleted.  See below for details of the calling sequence.  A NULL pointer is permissible and results in no callback when the trace is deleted. .AP Tcl\_Trace trace in Token for trace to be removed (return value from previous call to **Tcl\_CreateTrace**).
+::: {.arguments} :::
+[\*interp]{.carg .in type="Tcl_Interp"}
+Interpreter containing command to be traced or untraced.
+[level]{.carg .in type="Tcl_Size"}
+Only commands at or below this nesting level will be traced unless 0 is specified.  1 means top-level commands only, 2 means top-level commands or those that are invoked as immediate consequences of executing top-level commands (procedure bodies, bracketed commands, etc.) and so on. A value of 0 means that commands at any level are traced.
+[flags]{.carg .in type="int"}
+Flags governing the trace execution.  See below for details.
+[\*objProc]{.carg .in type="Tcl_CmdObjTraceProc"}
+Procedure to call for each command that is executed.  See below for details of the calling sequence.
+[\*objProc2]{.carg .in type="Tcl_CmdObjTraceProc2"}
+Procedure to call for each command that is executed.  See below for details of the calling sequence.
+[\*proc]{.carg .in type="Tcl_CmdTraceProc"}
+Procedure to call for each command that is executed.  See below for details on the calling sequence.
+[\*clientData]{.carg .in type="void"}
+Arbitrary one-word value to pass to *objProc*, *objProc2* or *proc*.
+[\*deleteProc]{.carg .in type="Tcl_CmdObjTraceDeleteProc"}
+Procedure to call when the trace is deleted.  See below for details of the calling sequence.  A NULL pointer is permissible and results in no callback when the trace is deleted.
+[trace]{.carg .in type="Tcl_Trace"}
+Token for trace to be removed (return value from previous call to **Tcl\_CreateTrace**).
+:::
 
 # Description
 

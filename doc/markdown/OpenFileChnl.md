@@ -72,7 +72,76 @@ Tcl\_OpenFileChannel, Tcl\_OpenCommandChannel, Tcl\_MakeFileChannel, Tcl\_GetCha
 
 # Arguments
 
-.AP Tcl\_Interp \*interp in Used for error reporting and to look up a channel registered in it. .AP "const char" \*fileName in The name of a local or network file. .AP "const char" \*mode in Specifies how the file is to be accessed.  May have any of the values allowed for the *mode* argument to the Tcl [open] command. .AP int permissions in POSIX-style permission flags such as 0644.  If a new file is created, these permissions will be set on the created file. .AP Tcl\_Size argc in The number of elements in *argv*. .AP "const char" \*\*argv in Arguments for constructing a command pipeline.  These values have the same meaning as the non-switch arguments to the Tcl [exec] command. .AP int flags in Specifies the disposition of the stdio handles in pipeline: OR-ed combination of **TCL\_STDIN**, **TCL\_STDOUT**, **TCL\_STDERR**, and **TCL\_ENFORCE\_MODE**. If **TCL\_STDIN** is set, stdin for the first child in the pipe is the pipe channel, otherwise it is the same as the standard input of the invoking process; likewise for **TCL\_STDOUT** and **TCL\_STDERR**. If **TCL\_ENFORCE\_MODE** is not set, then the pipe can redirect stdio handles to override the stdio handles for which **TCL\_STDIN**, **TCL\_STDOUT** and **TCL\_STDERR** have been set.  If it is set, then such redirections cause an error. .AP void \*handle in Operating system specific handle for I/O to a file. For Unix this is a file descriptor, for Windows it is a HANDLE. .AP int readOrWrite in OR-ed combination of **TCL\_READABLE** and **TCL\_WRITABLE** to indicate what operations are valid on *handle*. .AP "const char" \*channelName in The name of the channel. .AP int \*modePtr out Points at an integer variable that will receive an OR-ed combination of **TCL\_READABLE** and **TCL\_WRITABLE** denoting whether the channel is open for reading and writing. .AP "const char" \*pattern in The pattern to match on, passed to Tcl\_StringMatch, or NULL. .AP Tcl\_Channel channel in A Tcl channel for input or output.  Must have been the return value from a procedure such as **Tcl\_OpenFileChannel**. .AP Tcl\_Obj \*readObjPtr in/out A pointer to a Tcl value in which to store the characters read from the channel. .AP Tcl\_Size charsToRead in The number of characters to read from the channel.  If the channel's encoding is [binary], this is equivalent to the number of bytes to read from the channel. .AP int closeFlags in If **0**, the channel is closed in both directions. If **TCL\_CLOSE\_READ**, the channel is only closed for reading. If **TCL\_CLOSE\_WRITE**, the channel is only closed for writing. These flags must not be combined. .AP int appendFlag in If non-zero, data read from the channel will be appended to the value. Otherwise, the data will replace the existing contents of the value. .AP char \*readBuf out A buffer in which to store the bytes read from the channel. .AP Tcl\_Size bytesToRead in The number of bytes to read from the channel.  The buffer *readBuf* must be large enough to hold this many bytes. .AP Tcl\_Obj \*lineObjPtr in/out A pointer to a Tcl value in which to store the line read from the channel.  The line read will be appended to the current value of the value. .AP Tcl\_DString \*lineRead in/out A pointer to a Tcl dynamic string in which to store the line read from the channel.  Must have been initialized by the caller.  The line read will be appended to any data already in the dynamic string. .AP "const char" \*input in The input to add to a channel buffer. .AP Tcl\_Size inputLen in Length of the input .AP int addAtEnd in Flag indicating whether the input should be added to the end or beginning of the channel buffer. .AP Tcl\_Obj \*writeObjPtr in A pointer to a Tcl value whose contents will be output to the channel. .AP "const char" \*charBuf in A buffer containing the characters to output to the channel. .AP "const char" \*byteBuf in A buffer containing the bytes to output to the channel. .AP Tcl\_Size bytesToWrite in The number of bytes to consume from *charBuf* or *byteBuf* and output to the channel. .AP "long long" offset in How far to move the access point in the channel at which the next input or output operation will be applied, measured in bytes from the position given by *seekMode*.  May be either positive or negative. .AP int seekMode in Relative to which point to seek; used with *offset* to calculate the new access point for the channel. Legal values are **SEEK\_SET**, **SEEK\_CUR**, and **SEEK\_END**. .AP "long long" length in The (non-negative) length to truncate the channel the channel to. .AP "const char" \*optionName in The name of an option applicable to this channel, such as **-blocking**. May have any of the values accepted by the [fconfigure] command. .AP Tcl\_DString \*optionValue in Where to store the value of an option or a list of all options and their values. Must have been initialized by the caller. .AP "const char" \*newValue in New value for the option given by *optionName*.
+::: {.arguments} :::
+[\*interp]{.carg .in type="Tcl_Interp"}
+Used for error reporting and to look up a channel registered in it.
+[\*fileName]{.carg .in type="const char"}
+The name of a local or network file.
+[\*mode]{.carg .in type="const char"}
+Specifies how the file is to be accessed.  May have any of the values allowed for the *mode* argument to the Tcl [open] command.
+[permissions]{.carg .in type="int"}
+POSIX-style permission flags such as 0644.  If a new file is created, these permissions will be set on the created file.
+[argc]{.carg .in type="Tcl_Size"}
+The number of elements in *argv*.
+[\*\*argv]{.carg .in type="const char"}
+Arguments for constructing a command pipeline.  These values have the same meaning as the non-switch arguments to the Tcl [exec] command.
+[flags]{.carg .in type="int"}
+Specifies the disposition of the stdio handles in pipeline: OR-ed combination of **TCL\_STDIN**, **TCL\_STDOUT**, **TCL\_STDERR**, and **TCL\_ENFORCE\_MODE**. If **TCL\_STDIN** is set, stdin for the first child in the pipe is the pipe channel, otherwise it is the same as the standard input of the invoking process; likewise for **TCL\_STDOUT** and **TCL\_STDERR**. If **TCL\_ENFORCE\_MODE** is not set, then the pipe can redirect stdio handles to override the stdio handles for which **TCL\_STDIN**, **TCL\_STDOUT** and **TCL\_STDERR** have been set.  If it is set, then such redirections cause an error.
+[\*handle]{.carg .in type="void"}
+Operating system specific handle for I/O to a file. For Unix this is a file descriptor, for Windows it is a HANDLE.
+[readOrWrite]{.carg .in type="int"}
+OR-ed combination of **TCL\_READABLE** and **TCL\_WRITABLE** to indicate what operations are valid on *handle*.
+[\*channelName]{.carg .in type="const char"}
+The name of the channel.
+[\*modePtr]{.carg .out type="int"}
+Points at an integer variable that will receive an OR-ed combination of **TCL\_READABLE** and **TCL\_WRITABLE** denoting whether the channel is open for reading and writing.
+[\*pattern]{.carg .in type="const char"}
+The pattern to match on, passed to Tcl\_StringMatch, or NULL.
+[channel]{.carg .in type="Tcl_Channel"}
+A Tcl channel for input or output.  Must have been the return value from a procedure such as **Tcl\_OpenFileChannel**.
+[\*readObjPtr]{.carg .in/out type="Tcl_Obj"}
+A pointer to a Tcl value in which to store the characters read from the channel.
+[charsToRead]{.carg .in type="Tcl_Size"}
+The number of characters to read from the channel.  If the channel's encoding is [binary], this is equivalent to the number of bytes to read from the channel.
+[closeFlags]{.carg .in type="int"}
+If **0**, the channel is closed in both directions. If **TCL\_CLOSE\_READ**, the channel is only closed for reading. If **TCL\_CLOSE\_WRITE**, the channel is only closed for writing. These flags must not be combined.
+[appendFlag]{.carg .in type="int"}
+If non-zero, data read from the channel will be appended to the value. Otherwise, the data will replace the existing contents of the value.
+[\*readBuf]{.carg .out type="char"}
+A buffer in which to store the bytes read from the channel.
+[bytesToRead]{.carg .in type="Tcl_Size"}
+The number of bytes to read from the channel.  The buffer *readBuf* must be large enough to hold this many bytes.
+[\*lineObjPtr]{.carg .in/out type="Tcl_Obj"}
+A pointer to a Tcl value in which to store the line read from the channel.  The line read will be appended to the current value of the value.
+[\*lineRead]{.carg .in/out type="Tcl_DString"}
+A pointer to a Tcl dynamic string in which to store the line read from the channel.  Must have been initialized by the caller.  The line read will be appended to any data already in the dynamic string.
+[\*input]{.carg .in type="const char"}
+The input to add to a channel buffer.
+[inputLen]{.carg .in type="Tcl_Size"}
+Length of the input
+[addAtEnd]{.carg .in type="int"}
+Flag indicating whether the input should be added to the end or beginning of the channel buffer.
+[\*writeObjPtr]{.carg .in type="Tcl_Obj"}
+A pointer to a Tcl value whose contents will be output to the channel.
+[\*charBuf]{.carg .in type="const char"}
+A buffer containing the characters to output to the channel.
+[\*byteBuf]{.carg .in type="const char"}
+A buffer containing the bytes to output to the channel.
+[bytesToWrite]{.carg .in type="Tcl_Size"}
+The number of bytes to consume from *charBuf* or *byteBuf* and output to the channel.
+[offset]{.carg .in type="long long"}
+How far to move the access point in the channel at which the next input or output operation will be applied, measured in bytes from the position given by *seekMode*.  May be either positive or negative.
+[seekMode]{.carg .in type="int"}
+Relative to which point to seek; used with *offset* to calculate the new access point for the channel. Legal values are **SEEK\_SET**, **SEEK\_CUR**, and **SEEK\_END**.
+[length]{.carg .in type="long long"}
+The (non-negative) length to truncate the channel the channel to.
+[\*optionName]{.carg .in type="const char"}
+The name of an option applicable to this channel, such as **-blocking**. May have any of the values accepted by the [fconfigure] command.
+[\*optionValue]{.carg .in type="Tcl_DString"}
+Where to store the value of an option or a list of all options and their values. Must have been initialized by the caller.
+[\*newValue]{.carg .in type="const char"}
+New value for the option given by *optionName*.
+:::
 
 # Description
 

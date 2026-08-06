@@ -40,7 +40,24 @@ Tcl\_RegisterObjType, Tcl\_GetObjType, Tcl\_AppendAllObjTypes, Tcl\_ConvertToTyp
 
 # Arguments
 
-.AP "const Tcl\_ObjType" \*typePtr in Points to the structure containing information about the Tcl value type. This storage must live forever, typically by being statically allocated. .AP "const char" \*typeName in The name of a Tcl value type that **Tcl\_GetObjType** should look up. .AP Tcl\_Interp \*interp in Interpreter to use for error reporting. .AP Tcl\_Obj \*objPtr in For **Tcl\_AppendAllObjTypes**, this points to the value onto which it appends the name of each value type as a list element. For **Tcl\_ConvertToType**, this points to a value that must have been the result of a previous call to **Tcl\_NewObj**. .AP "const char\*" bytes in String representation. .AP "unsigned int" numBytes in Length of the string representation in bytes. .AP "const Tcl\_ObjInternalRep\*" irPtr in Internal object representation. .AP "const Tcl\_ObjType\*" typePtr in Requested internal representation type. 
+::: {.arguments} :::
+[\*typePtr]{.carg .in type="const Tcl_ObjType"}
+Points to the structure containing information about the Tcl value type. This storage must live forever, typically by being statically allocated.
+[\*typeName]{.carg .in type="const char"}
+The name of a Tcl value type that **Tcl\_GetObjType** should look up.
+[\*interp]{.carg .in type="Tcl_Interp"}
+Interpreter to use for error reporting.
+[\*objPtr]{.carg .in type="Tcl_Obj"}
+For **Tcl\_AppendAllObjTypes**, this points to the value onto which it appends the name of each value type as a list element. For **Tcl\_ConvertToType**, this points to a value that must have been the result of a previous call to **Tcl\_NewObj**.
+[bytes]{.carg .in type="const char*"}
+String representation.
+[numBytes]{.carg .in type="unsigned int"}
+Length of the string representation in bytes.
+[irPtr]{.carg .in type="const Tcl_ObjInternalRep*"}
+Internal object representation.
+[typePtr]{.carg .in type="const Tcl_ObjType*"}
+Requested internal representation type.
+:::
 
 # Description
 

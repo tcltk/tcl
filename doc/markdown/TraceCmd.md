@@ -27,7 +27,20 @@ Tcl\_CommandTraceInfo, Tcl\_TraceCommand, Tcl\_UntraceCommand - monitor renames 
 
 # Arguments
 
-.AP Tcl\_Interp \*interp in Interpreter containing the command. .AP "const char" \*cmdName in Name of command. .AP int flags in OR'ed collection of the values **TCL\_TRACE\_RENAME** and **TCL\_TRACE\_DELETE**. .AP Tcl\_CommandTraceProc \*proc in Procedure to call when specified operations occur to *cmdName*. .AP void \*clientData in Arbitrary argument to pass to *proc*. .AP void \*prevClientData in If non-NULL, gives last value returned by **Tcl\_CommandTraceInfo**, so this call will return information about next trace.  If NULL, this call will return information about first trace.
+::: {.arguments} :::
+[\*interp]{.carg .in type="Tcl_Interp"}
+Interpreter containing the command.
+[\*cmdName]{.carg .in type="const char"}
+Name of command.
+[flags]{.carg .in type="int"}
+OR'ed collection of the values **TCL\_TRACE\_RENAME** and **TCL\_TRACE\_DELETE**.
+[\*proc]{.carg .in type="Tcl_CommandTraceProc"}
+Procedure to call when specified operations occur to *cmdName*.
+[\*clientData]{.carg .in type="void"}
+Arbitrary argument to pass to *proc*.
+[\*prevClientData]{.carg .in type="void"}
+If non-NULL, gives last value returned by **Tcl\_CommandTraceInfo**, so this call will return information about next trace.  If NULL, this call will return information about first trace.
+:::
 
 # Description
 
