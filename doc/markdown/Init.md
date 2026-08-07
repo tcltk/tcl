@@ -30,10 +30,14 @@ Tcl\_Init - find and source initialization script
 # Arguments
 
 ::: {.arguments} :::
+
 [\*interp]{.carg .in type="Tcl_Interp"}
-Interpreter to initialize.
+: Interpreter to initialize.
+
 [\*scriptPtr]{.carg .in type="const char"}
-Address of the initialization script.
+: Address of the initialization script.
+
+
 :::
 
 # Description

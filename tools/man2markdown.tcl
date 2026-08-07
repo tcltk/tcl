@@ -1039,28 +1039,34 @@ proc ::ndoc::parseBlock {parent manContent} {
 						# (.AS should be the longest argument name, only used for nroff formatting, can be ignored here)
 						#
 						# two examples:
-						# .AP "struct stat" *statPtr out  --> markdown: [*statPtr]{.carg .out type="struct stat"}
-						# .AP "const char" *path in       --> markdown: [*path]{.carg .in type="const char"}
+						# .AP "struct stat" *statPtr out  --> markdown term: [*statPtr]{.carg .out type="struct stat"}
+						# .AP "const char" *path in       --> markdown term: [*path]{.carg .in type="const char"}
 						#
-						# every line starting with .AP is the definition, then followed by one or more lines
-						# with explanatory text
+						# every line starting with .AP is the term of a definition-list item, followed by
+						# one or more lines with explanatory text making up that item's definition
+						# (same Dlist/DlistItem AST used for .TP/.IP lists, so it gets rendered as native
+						# Pandoc definition-list markdown, e.g. "Term\n:   Definition", instead of a
+						# hand-parsed fenced div):
 						lappend blockList [list Header {-level 1} $SHcontent]
 						# go to first line of section content:
 						set manContent [lrange $manContent 1 end]
 						set line [lindex $manContent 0]
 						set cmd [string range $line 0 2]
-						set contentList [list]
+						set dlistContent [list]
 						set lineCount 0
 						set argName ""
 						while {$cmd ne ".SH"} {
 							if {$cmd eq ".AP"} {
 								# finish previous carg:
 								if {$argName ne ""} {
-									lappend contentList [list Span ".carg .$argDirection type=\"$argType\"" [list [list Text {} $argName]]]
-									lappend contentList [parseInline Inline {} [string trim $argExplanation]]
+									set cargTerm [list Span ".carg .$argDirection type=\"$argType\"" [list [list Text {} $argName]]]
+									set cargExplanation [lindex [parseInline Inline {} [string trim $argExplanation]] 2]
+									lappend dlistContent [list DlistItem [list -definition [list $cargTerm]] \
+										[list [list Paragraph {} $cargExplanation]]]
 								}
 								# new carg:
 								lassign $line - argType argName argDirection
+								if {$argDirection eq ""} {set argDirection inout}
 								set argExplanation ""
 							} elseif {$cmd in {.AS .BS .BE}} {
 								# .AS = max size hint for tab stops; .BS .BE = box enclosure: can be ignored
@@ -1075,11 +1081,14 @@ proc ::ndoc::parseBlock {parent manContent} {
 						}
 						# finish last carg:
 						if {$argName ne ""} {
-							lappend contentList [list Span ".carg .$argDirection type=\"$argType\"" [list [list Text {} $argName]]]
-							lappend contentList [parseInline Inline {} [string trim $argExplanation]]
+							set cargTerm [list Span ".carg .$argDirection type=\"$argType\"" [list [list Text {} $argName]]]
+							set cargExplanation [lindex [parseInline Inline {} [string trim $argExplanation]] 2]
+							lappend dlistContent [list DlistItem [list -definition [list $cargTerm]] \
+								[list [list Paragraph {} $cargExplanation]]]
 						}
-						# add to AST wrapped in a fenced div:
-						lappend blockList [list Div .arguments $contentList]
+						# add to AST as a definition list, still wrapped in a fenced div so CSS can target
+						# ".arguments" specifically (e.g. to style the .carg direction/type badges):
+						lappend blockList [list Div .arguments [list [list Dlist {} $dlistContent]]]
 						# remove eaten lines from manContent:
 						set manContent [lrange $manContent $lineCount end]
 					}

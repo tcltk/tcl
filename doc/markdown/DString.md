@@ -39,18 +39,26 @@ Tcl\_DStringInit, Tcl\_DStringAppend, Tcl\_DStringAppendElement, Tcl\_DStringSta
 # Arguments
 
 ::: {.arguments} :::
+
 [\*dsPtr]{.carg .in/out type="Tcl_DString"}
-Pointer to structure that is used to manage a dynamic string.
+: Pointer to structure that is used to manage a dynamic string.
+
 [\*bytes]{.carg .in type="const char"}
-Pointer to characters to append to dynamic string.
+: Pointer to characters to append to dynamic string.
+
 [\*element]{.carg .in type="const char"}
-Pointer to characters to append as list element to dynamic string.
+: Pointer to characters to append as list element to dynamic string.
+
 [length]{.carg .in type="Tcl_Size"}
-Number of bytes from *bytes* to add to dynamic string.  If negative, add all characters up to null terminating character.
+: Number of bytes from *bytes* to add to dynamic string.  If negative, add all characters up to null terminating character.
+
 [newLength]{.carg .in type="Tcl_Size"}
-New length for dynamic string, not including null terminating character.
+: New length for dynamic string, not including null terminating character.
+
 [\*interp]{.carg .in/out type="Tcl_Interp"}
-Interpreter whose result is to be set from or moved to the dynamic string.
+: Interpreter whose result is to be set from or moved to the dynamic string.
+
+
 :::
 
 # Description

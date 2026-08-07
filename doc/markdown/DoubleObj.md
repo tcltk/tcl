@@ -37,14 +37,20 @@ Tcl\_NewDoubleObj, Tcl\_SetDoubleObj, Tcl\_GetDoubleFromObj - manipulate Tcl val
 # Arguments
 
 ::: {.arguments} :::
+
 [doubleValue]{.carg .in type="double"}
-A double-precision floating-point value used to initialize or set a Tcl value.
+: A double-precision floating-point value used to initialize or set a Tcl value.
+
 [\*objPtr]{.carg .in/out type="Tcl_Obj"}
-For **Tcl\_SetDoubleObj**, this points to the value in which to store a double value. For **Tcl\_GetDoubleFromObj**, this refers to the value from which to retrieve a double value.
+: For **Tcl\_SetDoubleObj**, this points to the value in which to store a double value. For **Tcl\_GetDoubleFromObj**, this refers to the value from which to retrieve a double value.
+
 [\*interp]{.carg .in/out type="Tcl_Interp"}
-When non-NULL, an error message is left here when double value retrieval fails.
+: When non-NULL, an error message is left here when double value retrieval fails.
+
 [\*doublePtr]{.carg .out type="double"}
-Points to place to store the double value obtained from *objPtr*.
+: Points to place to store the double value obtained from *objPtr*.
+
+
 :::
 
 # Description

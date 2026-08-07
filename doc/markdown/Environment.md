@@ -27,8 +27,11 @@ Tcl\_PutEnv - procedures to manipulate the environment
 # Arguments
 
 ::: {.arguments} :::
+
 [\*assignment]{.carg .in type="const char"}
-Info about environment variable in the format .QW *NAME***=***value* . The *assignment* argument is in the system encoding.
+: Info about environment variable in the format .QW *NAME***=***value* . The *assignment* argument is in the system encoding.
+
+
 :::
 
 # Description

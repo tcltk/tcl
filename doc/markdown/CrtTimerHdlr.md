@@ -33,14 +33,20 @@ Tcl\_CreateTimerHandler, Tcl\_DeleteTimerHandler - call a procedure at a given t
 # Arguments
 
 ::: {.arguments} :::
+
 [milliseconds]{.carg .in type="int"}
-How many milliseconds to wait before invoking *proc*.
+: How many milliseconds to wait before invoking *proc*.
+
 [\*proc]{.carg .in type="Tcl_TimerProc"}
-Procedure to invoke after *milliseconds* have elapsed.
+: Procedure to invoke after *milliseconds* have elapsed.
+
 [\*clientData]{.carg .in type="void"}
-Arbitrary one-word value to pass to *proc*.
+: Arbitrary one-word value to pass to *proc*.
+
 [token]{.carg .in type="Tcl_TimerToken"}
-Token for previously created timer handler (the return value from some previous call to **Tcl\_CreateTimerHandler**).
+: Token for previously created timer handler (the return value from some previous call to **Tcl\_CreateTimerHandler**).
+
+
 :::
 
 # Description

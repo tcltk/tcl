@@ -62,40 +62,59 @@ Tcl\_NewStringObj, Tcl\_NewUnicodeObj, Tcl\_SetStringObj, Tcl\_SetUnicodeObj, Tc
 # Arguments
 
 ::: {.arguments} :::
+
 [\*bytes]{.carg .in type="const char"}
-Points to a TUTF-8 (Tcl's internal modified UTF-8 encoding) byte sequence bytes used to set or append to a string value. This byte array may contain embedded null characters unless *numChars* is negative.  (Applications needing null bytes should represent them as the two-byte sequence *0xC0 0x80* used in TUTF-8 to represent a null byte, use **Tcl\_ExternalToUtf** to convert, or **Tcl\_NewByteArrayObj** if the string is a collection of uninterpreted bytes.)
+: Points to a TUTF-8 (Tcl's internal modified UTF-8 encoding) byte sequence bytes used to set or append to a string value. This byte array may contain embedded null characters unless *numChars* is negative.  (Applications needing null bytes should represent them as the two-byte sequence *0xC0 0x80* used in TUTF-8 to represent a null byte, use **Tcl\_ExternalToUtf** to convert, or **Tcl\_NewByteArrayObj** if the string is a collection of uninterpreted bytes.)
+
 [length]{.carg .in type="Tcl_Size"}
-The number of bytes to copy from *bytes* when initializing, setting, or appending to a string value. If negative, all bytes up to the first null are used.
+: The number of bytes to copy from *bytes* when initializing, setting, or appending to a string value. If negative, all bytes up to the first null are used.
+
 [\*unicode]{.carg .in type="const Tcl_UniChar"}
-Points to the first byte of an array of Unicode characters used to set or append to a string value. This byte array may contain embedded null characters unless *numChars* is negative.
+: Points to the first byte of an array of Unicode characters used to set or append to a string value. This byte array may contain embedded null characters unless *numChars* is negative.
+
 [numChars]{.carg .in type="Tcl_Size"}
-The number of Unicode characters to copy from *unicode* when initializing, setting, or appending to a string value. If negative, all characters up to the first null character are used.
+: The number of Unicode characters to copy from *unicode* when initializing, setting, or appending to a string value. If negative, all characters up to the first null character are used.
+
 [index]{.carg .in type="Tcl_Size"}
-The index of the Unicode character to return.
+: The index of the Unicode character to return.
+
 [first]{.carg .in type="Tcl_Size"}
-The index of the first Unicode character in the Unicode range to be returned as a new value. If negative, behave the same as if the value was 0.
+: The index of the first Unicode character in the Unicode range to be returned as a new value. If negative, behave the same as if the value was 0.
+
 [last]{.carg .in type="Tcl_Size"}
-The index of the last Unicode character in the Unicode range to be returned as a new value. If negative, take all characters up to the last one available.
+: The index of the last Unicode character in the Unicode range to be returned as a new value. If negative, take all characters up to the last one available.
+
 [\*objPtr]{.carg .in/out type="Tcl_Obj"}
-A pointer to a value to read, or to an unshared value to modify.
+: A pointer to a value to read, or to an unshared value to modify.
+
 [\*appendObjPtr]{.carg .in type="Tcl_Obj"}
-The value to append to *objPtr* in **Tcl\_AppendObjToObj**.
+: The value to append to *objPtr* in **Tcl\_AppendObjToObj**.
+
 [\*lengthPtr]{.carg .out type="Tcl_Size &| int"}
-The location where **Tcl\_GetStringFromObj** will store the length of a value's string representation. May be (Tcl\_Size \*)NULL when not used. If it points to a variable which type is not **Tcl\_Size**, a compiler warning will be generated. If your extensions is compiled with **-DTCL\_8\_API**, this function will panic for strings with more than INT\_MAX bytes/characters, otherwise expect it to crash.
+: The location where **Tcl\_GetStringFromObj** will store the length of a value's string representation. May be (Tcl\_Size \*)NULL when not used. If it points to a variable which type is not **Tcl\_Size**, a compiler warning will be generated. If your extensions is compiled with **-DTCL\_8\_API**, this function will panic for strings with more than INT\_MAX bytes/characters, otherwise expect it to crash.
+
 [\*string]{.carg .in type="const char"}
-Null-terminated string value to append to *objPtr*.
+: Null-terminated string value to append to *objPtr*.
+
 [limit]{.carg .in type="Tcl_Size"}
-Maximum number of bytes to be appended.
+: Maximum number of bytes to be appended.
+
 [\*ellipsis]{.carg .in type="const char"}
-Suffix to append when the limit leads to string truncation. If NULL is passed then the suffix .QW "..." is used.
+: Suffix to append when the limit leads to string truncation. If NULL is passed then the suffix .QW "..." is used.
+
 [\*format]{.carg .in type="const char"}
-Format control string including % conversion specifiers.
+: Format control string including % conversion specifiers.
+
 [objc]{.carg .in type="Tcl_Size"}
-The number of elements to format or concatenate.
+: The number of elements to format or concatenate.
+
 [\*objv[]]{.carg .in type="Tcl_Obj"}
-The array of values to format or concatenate.
+: The array of values to format or concatenate.
+
 [newLength]{.carg .in type="Tcl_Size"}
-New length for the string value of *objPtr*, not including the final null character.
+: New length for the string value of *objPtr*, not including the final null character.
+
+
 :::
 
 # Description

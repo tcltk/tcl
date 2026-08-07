@@ -32,14 +32,20 @@ Tcl\_CreateFileHandler, Tcl\_DeleteFileHandler - associate procedure callbacks w
 # Arguments
 
 ::: {.arguments} :::
+
 [fd]{.carg .in type="int"}
-Unix file descriptor for an open file or device.
+: Unix file descriptor for an open file or device.
+
 [mask]{.carg .in type="int"}
-Conditions under which *proc* should be called: OR-ed combination of **TCL\_READABLE**, **TCL\_WRITABLE**, and **TCL\_EXCEPTION**.  May be set to 0 to temporarily disable a handler.
+: Conditions under which *proc* should be called: OR-ed combination of **TCL\_READABLE**, **TCL\_WRITABLE**, and **TCL\_EXCEPTION**.  May be set to 0 to temporarily disable a handler.
+
 [\*proc]{.carg .in type="Tcl_FileProc"}
-Procedure to invoke whenever the file or device indicated by *file* meets the conditions specified by *mask*.
+: Procedure to invoke whenever the file or device indicated by *file* meets the conditions specified by *mask*.
+
 [\*clientData]{.carg .in type="void"}
-Arbitrary one-word value to pass to *proc*.
+: Arbitrary one-word value to pass to *proc*.
+
+
 :::
 
 # Description

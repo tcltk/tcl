@@ -26,8 +26,11 @@ Tcl\_SignalId, Tcl\_SignalMsg - Convert signal codes
 # Arguments
 
 ::: {.arguments} :::
+
 [sig]{.carg .in type="int"}
-A POSIX signal number such as **SIGPIPE**.
+: A POSIX signal number such as **SIGPIPE**.
+
+
 :::
 
 # Description

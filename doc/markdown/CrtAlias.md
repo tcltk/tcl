@@ -42,40 +42,59 @@ Tcl\_IsSafe, Tcl\_CreateChild, Tcl\_GetChild, Tcl\_GetParent, Tcl\_GetInterpPath
 # Arguments
 
 ::: {.arguments} :::
+
 [\*interp]{.carg .in type="Tcl_Interp"}
-Interpreter in which to execute the specified command.
+: Interpreter in which to execute the specified command.
+
 [\*name]{.carg .in type="const char"}
-Name of child interpreter to create or manipulate.
+: Name of child interpreter to create or manipulate.
+
 [isSafe]{.carg .in type="int"}
-If non-zero, a .QW safe child that is suitable for running untrusted code is created, otherwise a trusted child is created.
+: If non-zero, a .QW safe child that is suitable for running untrusted code is created, otherwise a trusted child is created.
+
 [\*childInterp]{.carg .in type="Tcl_Interp"}
-Interpreter to use for creating the source command for an alias (see below).
+: Interpreter to use for creating the source command for an alias (see below).
+
 [\*childCmd]{.carg .in type="const char"}
-Name of source command for alias.
+: Name of source command for alias.
+
 [\*targetInterp]{.carg .in type="Tcl_Interp"}
-Interpreter that contains the target command for an alias.
+: Interpreter that contains the target command for an alias.
+
 [\*targetCmd]{.carg .in type="const char"}
-Name of target command for alias in *targetInterp*.
+: Name of target command for alias in *targetInterp*.
+
 [argc]{.carg .in type="Tcl_Size"}
-Count of additional arguments to pass to the alias command.
+: Count of additional arguments to pass to the alias command.
+
 [\*argv]{.carg .in type="const char *const"}
-Vector of strings, the additional arguments to pass to the alias command. This storage is owned by the caller.
+: Vector of strings, the additional arguments to pass to the alias command. This storage is owned by the caller.
+
 [objc]{.carg .in type="Tcl_Size"}
-Count of additional value arguments to pass to the aliased command.
+: Count of additional value arguments to pass to the aliased command.
+
 [\*\*objv]{.carg .in type="Tcl_Obj"}
-Vector of Tcl\_Obj structures, the additional value arguments to pass to the aliased command. This storage is owned by the caller.
+: Vector of Tcl\_Obj structures, the additional value arguments to pass to the aliased command. This storage is owned by the caller.
+
 [\*\*targetInterpPtr]{.carg .in type="Tcl_Interp"}
-Pointer to location to store the address of the interpreter where a target command is defined for an alias.
+: Pointer to location to store the address of the interpreter where a target command is defined for an alias.
+
 [\*\*targetCmdPtr]{.carg .out type="const char"}
-Pointer to location to store the address of the name of the target command for an alias.
+: Pointer to location to store the address of the name of the target command for an alias.
+
 [\*objcPtr]{.carg .out type="Tcl_Size &| int"}
-Pointer to location to store count of additional value arguments to be passed to the alias. The location is in storage owned by the caller. If it points to a variable which type is not **Tcl\_Size**, a compiler warning will be generated. If your extensions is compiled with **-DTCL\_8\_API**, this function will return TCL\_ERROR for aliases with more than INT\_MAX value arguments, otherwise expect it to crash
+: Pointer to location to store count of additional value arguments to be passed to the alias. The location is in storage owned by the caller. If it points to a variable which type is not **Tcl\_Size**, a compiler warning will be generated. If your extensions is compiled with **-DTCL\_8\_API**, this function will return TCL\_ERROR for aliases with more than INT\_MAX value arguments, otherwise expect it to crash
+
 [\*\*\*objvPtr]{.carg .out type="Tcl_Obj"}
-Pointer to location to store a vector of Tcl\_Obj structures, the additional arguments to pass to an alias command. The location is in storage owned by the caller, the vector of Tcl\_Obj structures is owned by the called function.
+: Pointer to location to store a vector of Tcl\_Obj structures, the additional arguments to pass to an alias command. The location is in storage owned by the caller, the vector of Tcl\_Obj structures is owned by the called function.
+
 [\*cmdName]{.carg .in type="const char"}
-Name of an exposed command to hide or create.
+: Name of an exposed command to hide or create.
+
 [\*hiddenCmdName]{.carg .in type="const char"}
-Name under which a hidden command is stored and with which it can be exposed or invoked.
+: Name under which a hidden command is stored and with which it can be exposed or invoked.
+
+
 :::
 
 # Description

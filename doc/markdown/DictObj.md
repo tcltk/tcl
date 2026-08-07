@@ -44,28 +44,41 @@ Tcl\_NewDictObj, Tcl\_DictObjPut, Tcl\_DictObjGet, Tcl\_DictObjRemove, Tcl\_Dict
 # Arguments
 
 ::: {.arguments} :::
+
 [\*interp]{.carg .in type="Tcl_Interp"}
-If an error occurs while converting a value to be a dictionary value, an error message is left in the interpreter's result value unless *interp* is NULL.
+: If an error occurs while converting a value to be a dictionary value, an error message is left in the interpreter's result value unless *interp* is NULL.
+
 [\*dictPtr]{.carg .in/out type="Tcl_Obj"}
-Points to the dictionary value to be manipulated. If *dictPtr* does not already point to a dictionary value, an attempt will be made to convert it to one.
+: Points to the dictionary value to be manipulated. If *dictPtr* does not already point to a dictionary value, an attempt will be made to convert it to one.
+
 [\*keyPtr]{.carg .in type="Tcl_Obj"}
-Points to the key for the key/value pair being manipulated within the dictionary value.
+: Points to the key for the key/value pair being manipulated within the dictionary value.
+
 [\*\*keyPtrPtr]{.carg .out type="Tcl_Obj"}
-Points to a variable that will have the key from a key/value pair placed within it.  May be NULL to indicate that the caller is not interested in the key.
+: Points to a variable that will have the key from a key/value pair placed within it.  May be NULL to indicate that the caller is not interested in the key.
+
 [\*valuePtr]{.carg .in type="Tcl_Obj"}
-Points to the value for the key/value pair being manipulated within the dictionary value (or sub-value, in the case of **Tcl\_DictObjPutKeyList**.)
+: Points to the value for the key/value pair being manipulated within the dictionary value (or sub-value, in the case of **Tcl\_DictObjPutKeyList**.)
+
 [\*\*valuePtrPtr]{.carg .out type="Tcl_Obj"}
-Points to a variable that will have the value from a key/value pair placed within it.  For **Tcl\_DictObjFirst** and **Tcl\_DictObjNext**, this may be NULL to indicate that the caller is not interested in the value.
+: Points to a variable that will have the value from a key/value pair placed within it.  For **Tcl\_DictObjFirst** and **Tcl\_DictObjNext**, this may be NULL to indicate that the caller is not interested in the value.
+
 [\*sizePtr]{.carg .out type="Tcl_Size &| int"}
-Points to a variable that will have the number of key/value pairs contained within the dictionary placed within it. May be (Tcl\_Size \*)NULL when not used. If it points to a variable which type is not **Tcl\_Size**, a compiler warning will be generated. If your extensions is compiled with **-DTCL\_8\_API**, this function will return NULL for dictionaries larger than INT\_MAX (which should trigger proper error-handling), otherwise expect it to crash.
+: Points to a variable that will have the number of key/value pairs contained within the dictionary placed within it. May be (Tcl\_Size \*)NULL when not used. If it points to a variable which type is not **Tcl\_Size**, a compiler warning will be generated. If your extensions is compiled with **-DTCL\_8\_API**, this function will return NULL for dictionaries larger than INT\_MAX (which should trigger proper error-handling), otherwise expect it to crash.
+
 [\*searchPtr]{.carg .in/out type="Tcl_DictSearch"}
-Pointer to record to use to keep track of progress in enumerating all key/value pairs in a dictionary.  The contents of the record will be initialized by the call to **Tcl\_DictObjFirst**.  If the enumerating is to be terminated before all values in the dictionary have been returned, the search record *must* be passed to **Tcl\_DictObjDone** to enable the internal locks to be released.
+: Pointer to record to use to keep track of progress in enumerating all key/value pairs in a dictionary.  The contents of the record will be initialized by the call to **Tcl\_DictObjFirst**.  If the enumerating is to be terminated before all values in the dictionary have been returned, the search record *must* be passed to **Tcl\_DictObjDone** to enable the internal locks to be released.
+
 [\*donePtr]{.carg .out type="int"}
-Points to a variable that will have a non-zero value written into it when the enumeration of the key/value pairs in a dictionary has completed, and a zero otherwise.
+: Points to a variable that will have a non-zero value written into it when the enumeration of the key/value pairs in a dictionary has completed, and a zero otherwise.
+
 [keyc]{.carg .in type="Tcl_Size"}
-Indicates the number of keys that will be supplied in the *keyv* array.
+: Indicates the number of keys that will be supplied in the *keyv* array.
+
 [\*keyv]{.carg .in type="Tcl_Obj *const"}
-Array of *keyc* pointers to values that **Tcl\_DictObjPutKeyList** and **Tcl\_DictObjRemoveKeyList** will use to locate the key/value pair to manipulate within the sub-dictionaries of the main dictionary value passed to them.
+: Array of *keyc* pointers to values that **Tcl\_DictObjPutKeyList** and **Tcl\_DictObjRemoveKeyList** will use to locate the key/value pair to manipulate within the sub-dictionaries of the main dictionary value passed to them.
+
+
 :::
 
 # Description

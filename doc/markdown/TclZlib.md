@@ -43,36 +43,53 @@ Tcl\_ZlibAdler32, Tcl\_ZlibCRC32, Tcl\_ZlibDeflate, Tcl\_ZlibInflate, Tcl\_ZlibS
 # Arguments
 
 ::: {.arguments} :::
+
 [\*interp]{.carg .in type="Tcl_Interp"}
-The interpreter to store resulting compressed or uncompressed data in. Also where any error messages are written. For **Tcl\_ZlibStreamInit**, this can be NULL to create a stream that is not bound to a command.
+: The interpreter to store resulting compressed or uncompressed data in. Also where any error messages are written. For **Tcl\_ZlibStreamInit**, this can be NULL to create a stream that is not bound to a command.
+
 [format]{.carg .in type="int"}
-What format of compressed data to work with. Must be one of **TCL\_ZLIB\_FORMAT\_ZLIB** for zlib-format data, **TCL\_ZLIB\_FORMAT\_GZIP** for gzip-format data, or **TCL\_ZLIB\_FORMAT\_RAW** for raw compressed data. In addition, for decompression only, **TCL\_ZLIB\_FORMAT\_AUTO** may also be chosen which can automatically detect whether the compressed data was in zlib or gzip format.
+: What format of compressed data to work with. Must be one of **TCL\_ZLIB\_FORMAT\_ZLIB** for zlib-format data, **TCL\_ZLIB\_FORMAT\_GZIP** for gzip-format data, or **TCL\_ZLIB\_FORMAT\_RAW** for raw compressed data. In addition, for decompression only, **TCL\_ZLIB\_FORMAT\_AUTO** may also be chosen which can automatically detect whether the compressed data was in zlib or gzip format.
+
 [\*dataObj]{.carg .in/out type="Tcl_Obj"}
-A byte-array value containing the data to be compressed or decompressed, or to which the data extracted from the stream is appended when passed to **Tcl\_ZlibStreamGet**.
+: A byte-array value containing the data to be compressed or decompressed, or to which the data extracted from the stream is appended when passed to **Tcl\_ZlibStreamGet**.
+
 [level]{.carg .in type="int"}
-What level of compression to use. Should be a number from 0 to 9 or one of the following: **TCL\_ZLIB\_COMPRESS\_NONE** for no compression, **TCL\_ZLIB\_COMPRESS\_FAST** for fast but inefficient compression, **TCL\_ZLIB\_COMPRESS\_BEST** for slow but maximal compression, or **TCL\_ZLIB\_COMPRESS\_DEFAULT** for the level recommended by the zlib library.
+: What level of compression to use. Should be a number from 0 to 9 or one of the following: **TCL\_ZLIB\_COMPRESS\_NONE** for no compression, **TCL\_ZLIB\_COMPRESS\_FAST** for fast but inefficient compression, **TCL\_ZLIB\_COMPRESS\_BEST** for slow but maximal compression, or **TCL\_ZLIB\_COMPRESS\_DEFAULT** for the level recommended by the zlib library.
+
 [\*dictObj]{.carg .in/out type="Tcl_Obj"}
-A dictionary that contains, or which will be updated to contain, a description of the gzip header associated with the compressed data. Only useful when the *format* is **TCL\_ZLIB\_FORMAT\_GZIP** or **TCL\_ZLIB\_FORMAT\_AUTO**. If a NULL is passed, a default header will be used on compression and the header will be ignored (apart from integrity checks) on decompression. See the section [Gzip options dictionary] for details about the contents of this dictionary.
+: A dictionary that contains, or which will be updated to contain, a description of the gzip header associated with the compressed data. Only useful when the *format* is **TCL\_ZLIB\_FORMAT\_GZIP** or **TCL\_ZLIB\_FORMAT\_AUTO**. If a NULL is passed, a default header will be used on compression and the header will be ignored (apart from integrity checks) on decompression. See the section [Gzip options dictionary] for details about the contents of this dictionary.
+
 [initValue]{.carg .in type="unsigned int"}
-The initial value for the checksum algorithm.
+: The initial value for the checksum algorithm.
+
 [bufferSize]{.carg .in type="Tcl_Size"}
-A hint as to what size of buffer is to be used to receive the data. Use 0 to use a geric guess based on the input data.
+: A hint as to what size of buffer is to be used to receive the data. Use 0 to use a geric guess based on the input data.
+
 [\*bytes]{.carg .in type="unsigned char"}
-An array of bytes to run the checksum algorithm over, or NULL to get the recommended initial value for the checksum algorithm.
+: An array of bytes to run the checksum algorithm over, or NULL to get the recommended initial value for the checksum algorithm.
+
 [length]{.carg .in type="Tcl_Size"}
-The number of bytes in the array.
+: The number of bytes in the array.
+
 [mode]{.carg .in type="int"}
-What mode to operate the stream in. Should be either **TCL\_ZLIB\_STREAM\_DEFLATE** for a compressing stream or **TCL\_ZLIB\_STREAM\_INFLATE** for a decompressing stream.
+: What mode to operate the stream in. Should be either **TCL\_ZLIB\_STREAM\_DEFLATE** for a compressing stream or **TCL\_ZLIB\_STREAM\_INFLATE** for a decompressing stream.
+
 [\*zshandlePtr]{.carg .out type="Tcl_ZlibStream"}
-A pointer to a variable in which to write the abstract token for the stream upon successful creation.
+: A pointer to a variable in which to write the abstract token for the stream upon successful creation.
+
 [zshandle]{.carg .in type="Tcl_ZlibStream"}
-The abstract token for the stream to operate on.
+: The abstract token for the stream to operate on.
+
 [flush]{.carg .in type="int"}
-Whether and how to flush the stream after writing the data to it. Must be one of: **TCL\_ZLIB\_NO\_FLUSH** if no flushing is to be done, **TCL\_ZLIB\_FLUSH** if the currently compressed data must be made available for access using **Tcl\_ZlibStreamGet**, **TCL\_ZLIB\_FULLFLUSH** if the stream must be put into a state where the decompressor can recover from on corruption, or **TCL\_ZLIB\_FINALIZE** to ensure that the stream is finished and that any trailer demanded by the format is written.
+: Whether and how to flush the stream after writing the data to it. Must be one of: **TCL\_ZLIB\_NO\_FLUSH** if no flushing is to be done, **TCL\_ZLIB\_FLUSH** if the currently compressed data must be made available for access using **Tcl\_ZlibStreamGet**, **TCL\_ZLIB\_FULLFLUSH** if the stream must be put into a state where the decompressor can recover from on corruption, or **TCL\_ZLIB\_FINALIZE** to ensure that the stream is finished and that any trailer demanded by the format is written.
+
 [count]{.carg .in type="Tcl_Size"}
-The maximum number of bytes to get from the stream, or -1 to get all remaining bytes from the stream's buffers.
+: The maximum number of bytes to get from the stream, or -1 to get all remaining bytes from the stream's buffers.
+
 [\*compDict]{.carg .in type="Tcl_Obj"}
-A byte array value that is the compression dictionary to use with the stream. Note that this is *not a Tcl dictionary*, and it is recommended that this only ever be used with streams that were created with their *format* set to **TCL\_ZLIB\_FORMAT\_ZLIB** because the other formats have no mechanism to indicate whether a compression dictionary was present other than to fail on decompression.
+: A byte array value that is the compression dictionary to use with the stream. Note that this is *not a Tcl dictionary*, and it is recommended that this only ever be used with streams that were created with their *format* set to **TCL\_ZLIB\_FORMAT\_ZLIB** because the other formats have no mechanism to indicate whether a compression dictionary was present other than to fail on decompression.
+
+
 :::
 
 # Description

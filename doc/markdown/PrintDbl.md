@@ -28,12 +28,17 @@ Tcl\_PrintDouble - Convert floating value to string
 # Arguments
 
 ::: {.arguments} :::
+
 [\*interp]{.carg .in type="Tcl_Interp"}
-This argument is ignored.
+: This argument is ignored.
+
 [value]{.carg .in type="double"}
-Floating-point value to be converted.
+: Floating-point value to be converted.
+
 [\*dst]{.carg .out type="char"}
-Where to store the string representing *value*.  Must have at least **TCL\_DOUBLE\_SPACE** characters of storage.
+: Where to store the string representing *value*.  Must have at least **TCL\_DOUBLE\_SPACE** characters of storage.
+
+
 :::
 
 # Description

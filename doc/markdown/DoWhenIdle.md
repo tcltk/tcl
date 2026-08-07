@@ -32,10 +32,14 @@ Tcl\_DoWhenIdle, Tcl\_CancelIdleCall - invoke a procedure when there are no pend
 # Arguments
 
 ::: {.arguments} :::
+
 [\*proc]{.carg .in type="Tcl_IdleProc"}
-Procedure to invoke.
+: Procedure to invoke.
+
 [\*clientData]{.carg .in type="void"}
-Arbitrary one-word value to pass to *proc*.
+: Arbitrary one-word value to pass to *proc*.
+
+
 :::
 
 # Description

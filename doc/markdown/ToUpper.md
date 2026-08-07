@@ -34,10 +34,14 @@ Tcl\_UniCharToUpper, Tcl\_UniCharToLower, Tcl\_UniCharToTitle, Tcl\_UtfToUpper, 
 # Arguments
 
 ::: {.arguments} :::
+
 [ch]{.carg .in type="int"}
-The Unicode character to be converted.
+: The Unicode character to be converted.
+
 [\*str]{.carg .in/out type="char"}
-Pointer to the TUTF-8 byte sequence to be converted in place.
+: Pointer to the TUTF-8 byte sequence to be converted in place.
+
+
 :::
 
 # Description

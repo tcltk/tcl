@@ -27,12 +27,17 @@ Tcl\_InitStubs - initialize the Tcl stubs mechanism
 # Arguments
 
 ::: {.arguments} :::
+
 [\*interp]{.carg .in type="Tcl_Interp"}
-Tcl interpreter handle.
+: Tcl interpreter handle.
+
 [\*version]{.carg .in type="const char"}
-A version string, indicating which minimal version of Tcl is accepted. Normally just **"9.0"**. Or **"8.6-"** if both 8.6 and 9.0 are accepted.
+: A version string, indicating which minimal version of Tcl is accepted. Normally just **"9.0"**. Or **"8.6-"** if both 8.6 and 9.0 are accepted.
+
 [exact]{.carg .in type="int"}
-1 means that only the particular version specified by *version* is accepted. 0 means that versions newer than *version* are also accepted. If the*version* ends with **-**, higher major versions are accepted as well, otherwise the major version must be the same as in *version*. Other bits have no effect.
+: 1 means that only the particular version specified by *version* is accepted. 0 means that versions newer than *version* are also accepted. If the*version* ends with **-**, higher major versions are accepted as well, otherwise the major version must be the same as in *version*. Other bits have no effect.
+
+
 :::
 
 # Introduction

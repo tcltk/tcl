@@ -33,22 +33,32 @@ Tcl\_LoadFile, Tcl\_FindSymbol - platform-independent dynamic library loading
 # Arguments
 
 ::: {.arguments} :::
+
 [\*interp]{.carg .in type="Tcl_Interp"}
-Interpreter to use for reporting error messages.
+: Interpreter to use for reporting error messages.
+
 [\*pathPtr]{.carg .in type="Tcl_Obj"}
-The name of the file to load. If it is a single name, the library search path of the current environment will be used to resolve it.
+: The name of the file to load. If it is a single name, the library search path of the current environment will be used to resolve it.
+
 [symbols[]]{.carg .in type="const char *const"}
-Array of names of symbols to be resolved during the load of the library, or NULL if no symbols are to be resolved. If an array is given, the last entry in the array must be NULL.
+: Array of names of symbols to be resolved during the load of the library, or NULL if no symbols are to be resolved. If an array is given, the last entry in the array must be NULL.
+
 [flags]{.carg .in type="int"}
-The value should normally be 0, but *TCL\_LOAD\_GLOBAL* or *TCL\_LOAD\_LAZY* or a combination of those two is allowed as well.
+: The value should normally be 0, but *TCL\_LOAD\_GLOBAL* or *TCL\_LOAD\_LAZY* or a combination of those two is allowed as well.
+
 [\*procPtrs]{.carg .out type="void"}
-Points to an array that will hold the addresses of the functions described in the *symbols* argument. Should be NULL if no symbols are to be resolved.
+: Points to an array that will hold the addresses of the functions described in the *symbols* argument. Should be NULL if no symbols are to be resolved.
+
 [\*loadHandlePtr]{.carg .out type="Tcl_LoadHandle"}
-Points to a variable that will hold the handle to the abstract token describing the library that has been loaded.
+: Points to a variable that will hold the handle to the abstract token describing the library that has been loaded.
+
 [loadHandle]{.carg .in type="Tcl_LoadHandle"}
-Abstract token describing the library to look up a symbol in.
+: Abstract token describing the library to look up a symbol in.
+
 [\*symbol]{.carg .in type="const char"}
-The name of the symbol to look up.
+: The name of the symbol to look up.
+
+
 :::
 
 # Description

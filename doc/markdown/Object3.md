@@ -43,8 +43,11 @@ Tcl\_NewObj, Tcl\_DuplicateObj, Tcl\_IncrRefCount, Tcl\_DecrRefCount, Tcl\_Bounc
 # Arguments
 
 ::: {.arguments} :::
+
 [\*objPtr]{.carg .in type="Tcl_Obj"}
-Points to a value; must have been the result of a previous call to **Tcl\_NewObj**.
+: Points to a value; must have been the result of a previous call to **Tcl\_NewObj**.
+
+
 :::
 
 # Introduction

@@ -34,22 +34,32 @@ Tcl\_TraceVar, Tcl\_TraceVar2, Tcl\_UntraceVar, Tcl\_UntraceVar2, Tcl\_VarTraceI
 # Arguments
 
 ::: {.arguments} :::
+
 [\*interp]{.carg .in type="Tcl_Interp"}
-Interpreter containing variable.
+: Interpreter containing variable.
+
 [\*varName]{.carg .in type="const char"}
-Name of variable.  May refer to a scalar variable, to an array variable with no index, or to an array variable with a parenthesized index.
+: Name of variable.  May refer to a scalar variable, to an array variable with no index, or to an array variable with a parenthesized index.
+
 [flags]{.carg .in type="int"}
-OR-ed combination of the values **TCL\_TRACE\_READS**, **TCL\_TRACE\_WRITES**, **TCL\_TRACE\_UNSETS**, **TCL\_TRACE\_ARRAY**, **TCL\_GLOBAL\_ONLY**, **TCL\_NAMESPACE\_ONLY**, **TCL\_TRACE\_RESULT\_DYNAMIC** and **TCL\_TRACE\_RESULT\_OBJECT**. Not all flags are used by all procedures.  See below for more information.
+: OR-ed combination of the values **TCL\_TRACE\_READS**, **TCL\_TRACE\_WRITES**, **TCL\_TRACE\_UNSETS**, **TCL\_TRACE\_ARRAY**, **TCL\_GLOBAL\_ONLY**, **TCL\_NAMESPACE\_ONLY**, **TCL\_TRACE\_RESULT\_DYNAMIC** and **TCL\_TRACE\_RESULT\_OBJECT**. Not all flags are used by all procedures.  See below for more information.
+
 [\*proc]{.carg .in type="Tcl_VarTraceProc"}
-Procedure to invoke whenever one of the traced operations occurs.
+: Procedure to invoke whenever one of the traced operations occurs.
+
 [\*clientData]{.carg .in type="void"}
-Arbitrary one-word value to pass to *proc*.
+: Arbitrary one-word value to pass to *proc*.
+
 [\*name1]{.carg .in type="const char"}
-Name of scalar or array variable (without array index).
+: Name of scalar or array variable (without array index).
+
 [\*name2]{.carg .in type="const char"}
-For a trace on an element of an array, gives the index of the element.  For traces on scalar variables or on whole arrays, is NULL.
+: For a trace on an element of an array, gives the index of the element.  For traces on scalar variables or on whole arrays, is NULL.
+
 [\*prevClientData]{.carg .in type="void"}
-If non-NULL, gives last value returned by **Tcl\_VarTraceInfo** or **Tcl\_VarTraceInfo2**, so this call will return information about next trace.  If NULL, this call will return information about first trace.
+: If non-NULL, gives last value returned by **Tcl\_VarTraceInfo** or **Tcl\_VarTraceInfo2**, so this call will return information about next trace.  If NULL, this call will return information about first trace.
+
+
 :::
 
 # Description

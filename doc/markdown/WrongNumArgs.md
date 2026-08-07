@@ -28,14 +28,20 @@ Tcl\_WrongNumArgs - generate standard error message for wrong number of argument
 # Arguments
 
 ::: {.arguments} :::
+
 [interp]{.carg .in type="Tcl_Interp"}
-Interpreter in which error will be reported: error message gets stored in its result value.
+: Interpreter in which error will be reported: error message gets stored in its result value.
+
 [objc]{.carg .in type="Tcl_Size"}
-Number of leading arguments from *objv* to include in error message.
+: Number of leading arguments from *objv* to include in error message.
+
 [objv[]]{.carg .in type="Tcl_Obj *const"}
-Arguments to command that had the wrong number of arguments.
+: Arguments to command that had the wrong number of arguments.
+
 [\*message]{.carg .in type="const char"}
-Additional error information to print after leading arguments from *objv*.  This typically gives the acceptable syntax of the command.  This argument may be NULL.
+: Additional error information to print after leading arguments from *objv*.  This typically gives the acceptable syntax of the command.  This argument may be NULL.
+
+
 :::
 
 # Description

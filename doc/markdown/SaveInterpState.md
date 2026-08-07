@@ -28,12 +28,17 @@ Tcl\_SaveInterpState, Tcl\_RestoreInterpState, Tcl\_DiscardInterpState - save an
 # Arguments
 
 ::: {.arguments} :::
+
 [\*interp]{.carg .in type="Tcl_Interp"}
-Interpreter for which state should be saved.
+: Interpreter for which state should be saved.
+
 [status]{.carg .in type="int"}
-Return code value to save as part of interpreter state.
+: Return code value to save as part of interpreter state.
+
 [state]{.carg .in type="Tcl_InterpState"}
-Saved state token to be restored or discarded.
+: Saved state token to be restored or discarded.
+
+
 :::
 
 # Description

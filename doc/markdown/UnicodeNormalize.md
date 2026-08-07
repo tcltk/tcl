@@ -29,24 +29,35 @@ Tcl\_UtfToNormalized, Tcl\_UtfToNormalizedDString - procedures for Unicode norma
 # Arguments
 
 ::: {.arguments} :::
+
 [\*interp]{.carg .in type="Tcl_Interp"}
-Interpreter to use for error reporting, or NULL if no error reporting is desired.
+: Interpreter to use for error reporting, or NULL if no error reporting is desired.
+
 [\*src]{.carg .in type="const char"}
-An array of bytes in Tcl's internal UTF-8 based encoding.
+: An array of bytes in Tcl's internal UTF-8 based encoding.
+
 [numBytes]{.carg .in type="Tcl_Size"}
-Length of *src* in bytes.  If the length is negative, the length includes all bytes until the first nul byte.
+: Length of *src* in bytes.  If the length is negative, the length includes all bytes until the first nul byte.
+
 [\*dst]{.carg .out type="char"}
-Buffer in which the converted result will be stored.  No more than *dstLen* bytes will be stored in *dst*.
+: Buffer in which the converted result will be stored.  No more than *dstLen* bytes will be stored in *dst*.
+
 [dstLen]{.carg .in type="Tcl_Size"}
-The size of the output buffer *dst* in bytes.
+: The size of the output buffer *dst* in bytes.
+
 [\*dstWrotePtr]{.carg .out type="Tcl_Size"}
-Filled with the number of bytes in the normalized string. This number does not include the terminating nul character. May be NULL.
+: Filled with the number of bytes in the normalized string. This number does not include the terminating nul character. May be NULL.
+
 [normForm]{.carg .in type="Tcl_UnicodeNormalizationForm"}
-Must be one of the **Tcl\_UnicodeNormalizationForm** members **TCL\_NFC**, **TCL\_NFD**, **TCL\_NFKC** or **TCL\_NFKD** specifying the Unicode normalization type.
+: Must be one of the **Tcl\_UnicodeNormalizationForm** members **TCL\_NFC**, **TCL\_NFD**, **TCL\_NFKC** or **TCL\_NFKD** specifying the Unicode normalization type.
+
 [profile]{.carg .in/out type="int"}
-The encoding profile as described in the **Tcl\_GetEncoding** documentation. Must be either **TCL\_ENCODING\_PROFILE\_STRICT** or **TCL\_ENCODING\_PROFILE\_REPLACE**.
+: The encoding profile as described in the **Tcl\_GetEncoding** documentation. Must be either **TCL\_ENCODING\_PROFILE\_STRICT** or **TCL\_ENCODING\_PROFILE\_REPLACE**.
+
 [\*dstPtr]{.carg .out type="Tcl_DString"}
-Pointer to an uninitialized or free **Tcl\_DString** in which the converted result, which is also encoded in Tcl's internal UTF-8 encoding, will be stored. The function initializes the storage and caller must call **Tcl\_DStringFree** on success.
+: Pointer to an uninitialized or free **Tcl\_DString** in which the converted result, which is also encoded in Tcl's internal UTF-8 encoding, will be stored. The function initializes the storage and caller must call **Tcl\_DStringFree** on success.
+
+
 :::
 
 # Description

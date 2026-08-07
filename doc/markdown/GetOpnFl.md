@@ -29,16 +29,23 @@ Tcl\_GetOpenFile - Return a FILE\* for a channel registered in the given interpr
 # Arguments
 
 ::: {.arguments} :::
+
 [\*interp]{.carg .in type="Tcl_Interp"}
-Tcl interpreter from which file handle is to be obtained.
+: Tcl interpreter from which file handle is to be obtained.
+
 [\*chanID]{.carg .in type="const char"}
-String identifying channel, such as **stdin** or **file4**.
+: String identifying channel, such as **stdin** or **file4**.
+
 [write]{.carg .in type="int"}
-Non-zero means the file will be used for writing, zero means it will be used for reading.
+: Non-zero means the file will be used for writing, zero means it will be used for reading.
+
 [checkUsage]{.carg .in type="int"}
-If non-zero, then an error will be generated if the file was not opened for the access indicated by *write*.
+: If non-zero, then an error will be generated if the file was not opened for the access indicated by *write*.
+
 [\*\*filePtr]{.carg .out type="void"}
-Points to word in which to store pointer to FILE structure for the file given by *chanID*.
+: Points to word in which to store pointer to FILE structure for the file given by *chanID*.
+
+
 :::
 
 # Description

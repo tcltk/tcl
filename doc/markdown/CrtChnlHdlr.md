@@ -35,14 +35,20 @@ Tcl\_CreateChannelHandler, Tcl\_DeleteChannelHandler - call a procedure when a c
 # Arguments
 
 ::: {.arguments} :::
+
 [channel]{.carg .in type="Tcl_Channel"}
-Tcl channel such as returned by **Tcl\_CreateChannel**.
+: Tcl channel such as returned by **Tcl\_CreateChannel**.
+
 [mask]{.carg .in type="int"}
-Conditions under which *proc* should be called: OR-ed combination of **TCL\_READABLE**, **TCL\_WRITABLE** and **TCL\_EXCEPTION**. Specify a zero value to temporarily disable an existing handler.
+: Conditions under which *proc* should be called: OR-ed combination of **TCL\_READABLE**, **TCL\_WRITABLE** and **TCL\_EXCEPTION**. Specify a zero value to temporarily disable an existing handler.
+
 [\*proc]{.carg .in type="Tcl_ChannelProc"}
-Procedure to invoke whenever the channel indicated by *channel* meets the conditions specified by *mask*.
+: Procedure to invoke whenever the channel indicated by *channel* meets the conditions specified by *mask*.
+
 [\*clientData]{.carg .in type="void"}
-Arbitrary one-word value to pass to *proc*.
+: Arbitrary one-word value to pass to *proc*.
+
+
 :::
 
 # Description

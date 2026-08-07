@@ -33,14 +33,20 @@ Tcl\_SetChannelError, Tcl\_SetChannelErrorInterp, Tcl\_GetChannelError, Tcl\_Get
 # Arguments
 
 ::: {.arguments} :::
+
 [chan]{.carg .in type="Tcl_Channel"}
-Refers to the Tcl channel whose bypass area is accessed.
+: Refers to the Tcl channel whose bypass area is accessed.
+
 [interp]{.carg .in type="Tcl_Interp*"}
-Refers to the Tcl interpreter whose bypass area is accessed.
+: Refers to the Tcl interpreter whose bypass area is accessed.
+
 [msg]{.carg .in type="Tcl_Obj*"}
-Error message put into a bypass area. A list of return options and values, followed by a string message. Both message and the option/value information are optional. This *must* be a well-formed list.
+: Error message put into a bypass area. A list of return options and values, followed by a string message. Both message and the option/value information are optional. This *must* be a well-formed list.
+
 [msgPtr]{.carg .out type="Tcl_Obj**"}
-Reference to a place where the message stored in the accessed bypass area can be stored in.
+: Reference to a place where the message stored in the accessed bypass area can be stored in.
+
+
 :::
 
 # Description

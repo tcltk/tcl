@@ -45,30 +45,44 @@ Tcl\_ConditionNotify, Tcl\_ConditionWait, Tcl\_ConditionFinalize, Tcl\_GetThread
 # Arguments
 
 ::: {.arguments} :::
+
 [\*condPtr]{.carg .in type="Tcl_Condition"}
-A condition variable, which must be associated with a mutex lock.
+: A condition variable, which must be associated with a mutex lock.
+
 [\*mutexPtr]{.carg .in type="Tcl_Mutex"}
-.VS TIP509 A recursive mutex lock. .VE TIP509
+: .VS TIP509 A recursive mutex lock. .VE TIP509
+
 [\*timePtr]{.carg .in type="const Tcl_Time"}
-A time limit on the condition wait.  NULL to wait forever. Note that a polling value of 0 seconds does not make much sense.
+: A time limit on the condition wait.  NULL to wait forever. Note that a polling value of 0 seconds does not make much sense.
+
 [\*keyPtr]{.carg .in type="Tcl_ThreadDataKey"}
-This identifies a block of thread local storage.  The key should be static and process-wide, yet each thread will end up associating a different block of storage with this key.
+: This identifies a block of thread local storage.  The key should be static and process-wide, yet each thread will end up associating a different block of storage with this key.
+
 [\*size]{.carg .in type="int"}
-The size of the thread local storage block.  This amount of data is allocated and initialized to zero the first time each thread calls **Tcl\_GetThreadData**.
+: The size of the thread local storage block.  This amount of data is allocated and initialized to zero the first time each thread calls **Tcl\_GetThreadData**.
+
 [\*idPtr]{.carg .out type="Tcl_ThreadId"}
-The referred storage will contain the id of the newly created thread as returned by the operating system.
+: The referred storage will contain the id of the newly created thread as returned by the operating system.
+
 [id]{.carg .in type="Tcl_ThreadId"}
-Id of the thread waited upon.
+: Id of the thread waited upon.
+
 [\*proc]{.carg .in type="Tcl_ThreadCreateProc"}
-This procedure will act as the **main()** of the newly created thread. The specified *clientData* will be its sole argument.
+: This procedure will act as the **main()** of the newly created thread. The specified *clientData* will be its sole argument.
+
 [\*clientData]{.carg .in type="void"}
-Arbitrary information. Passed as sole argument to the *proc*.
+: Arbitrary information. Passed as sole argument to the *proc*.
+
 [stackSize]{.carg .in type="size_t"}
-The size of the stack given to the new thread.
+: The size of the stack given to the new thread.
+
 [flags]{.carg .in type="int"}
-Bitmask containing flags allowing the caller to modify behavior of the new thread.
+: Bitmask containing flags allowing the caller to modify behavior of the new thread.
+
 [\*result]{.carg .out type="int"}
-The referred storage is used to place the exit code of the thread waited upon into it.
+: The referred storage is used to place the exit code of the thread waited upon into it.
+
+
 :::
 
 # Introduction

@@ -38,24 +38,35 @@ Tcl\_EvalObjEx, Tcl\_EvalFile, Tcl\_EvalObjv, Tcl\_Eval, Tcl\_EvalEx, Tcl\_Globa
 # Arguments
 
 ::: {.arguments} :::
+
 [\*interp]{.carg .in type="Tcl_Interp"}
-Interpreter in which to execute the script.  The interpreter's result is modified to hold the result or error message from the script.
+: Interpreter in which to execute the script.  The interpreter's result is modified to hold the result or error message from the script.
+
 [\*objPtr]{.carg .in type="Tcl_Obj"}
-A Tcl value containing the script to execute.
+: A Tcl value containing the script to execute.
+
 [flags]{.carg .in type="int"}
-OR'ed combination of flag bits that specify additional options. **TCL\_EVAL\_GLOBAL** and **TCL\_EVAL\_DIRECT** are currently supported.
+: OR'ed combination of flag bits that specify additional options. **TCL\_EVAL\_GLOBAL** and **TCL\_EVAL\_DIRECT** are currently supported.
+
 [\*fileName]{.carg .in type="const char"}
-Name of a file containing a Tcl script.
+: Name of a file containing a Tcl script.
+
 [objc]{.carg .in type="Tcl_Size"}
-The number of values in the array pointed to by *objv*; this is also the number of words in the command.
+: The number of values in the array pointed to by *objv*; this is also the number of words in the command.
+
 [\*\*objv]{.carg .in type="Tcl_Obj"}
-Points to an array of pointers to values; each value holds the value of a single word in the command to execute.
+: Points to an array of pointers to values; each value holds the value of a single word in the command to execute.
+
 [numBytes]{.carg .in type="int"}
-The number of bytes in *script*, not including any null terminating character.  If -1, then all characters up to the first null byte are used.
+: The number of bytes in *script*, not including any null terminating character.  If -1, then all characters up to the first null byte are used.
+
 [\*script]{.carg .in type="const char"}
-Points to first byte of script to execute (null-terminated TUTF-8 byte sequence).
+: Points to first byte of script to execute (null-terminated TUTF-8 byte sequence).
+
 [\*part]{.carg .in type="const char"}
-String forming part of a Tcl script.
+: String forming part of a Tcl script.
+
+
 :::
 
 # Description

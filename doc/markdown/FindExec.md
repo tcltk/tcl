@@ -26,8 +26,11 @@ Tcl\_FindExecutable, Tcl\_GetNameOfExecutable - identify or return the name of t
 # Arguments
 
 ::: {.arguments} :::
+
 [\*argv0]{.carg .in type="char"}
-The first command-line argument to the program, which gives the application's name.
+: The first command-line argument to the program, which gives the application's name.
+
+
 :::
 
 # Description

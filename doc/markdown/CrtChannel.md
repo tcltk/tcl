@@ -69,30 +69,44 @@ Tcl\_CreateChannel, Tcl\_GetChannelInstanceData, Tcl\_GetChannelType, Tcl\_GetCh
 # Arguments
 
 ::: {.arguments} :::
+
 [\*typePtr]{.carg .in type="const Tcl_ChannelType"}
-Points to a structure containing the addresses of procedures that can be called to perform I/O and other functions on the channel.
+: Points to a structure containing the addresses of procedures that can be called to perform I/O and other functions on the channel.
+
 [\*channelName]{.carg .in type="const char"}
-The name of this channel, such as **file3**; must not be in use by any other channel. Can be NULL, in which case the channel is created without a name. If the created channel is assigned to one of the standard channels (**stdin**, **stdout** or **stderr**), the assigned channel name will be the name of the standard channel.
+: The name of this channel, such as **file3**; must not be in use by any other channel. Can be NULL, in which case the channel is created without a name. If the created channel is assigned to one of the standard channels (**stdin**, **stdout** or **stderr**), the assigned channel name will be the name of the standard channel.
+
 [\*instanceData]{.carg .in type="void"}
-Arbitrary one-word value to be associated with this channel.  This value is passed to procedures in *typePtr* when they are invoked.
+: Arbitrary one-word value to be associated with this channel.  This value is passed to procedures in *typePtr* when they are invoked.
+
 [mask]{.carg .in type="int"}
-OR-ed combination of **TCL\_READABLE** and **TCL\_WRITABLE** to indicate whether a channel is readable and writable.
+: OR-ed combination of **TCL\_READABLE** and **TCL\_WRITABLE** to indicate whether a channel is readable and writable.
+
 [channel]{.carg .in type="Tcl_Channel"}
-The channel to operate on.
+: The channel to operate on.
+
 [direction]{.carg .in type="int"}
-**TCL\_READABLE** means the input handle is wanted; **TCL\_WRITABLE** means the output handle is wanted.
+: **TCL\_READABLE** means the input handle is wanted; **TCL\_WRITABLE** means the output handle is wanted.
+
 [\*\*handlePtr]{.carg .out type="void"}
-Points to the location where the desired OS-specific handle should be stored.
+: Points to the location where the desired OS-specific handle should be stored.
+
 [size]{.carg .in type="Tcl_Size"}
-The size, in bytes, of buffers to allocate in this channel.
+: The size, in bytes, of buffers to allocate in this channel.
+
 [mask]{.carg .in type="int"}
-An OR-ed combination of **TCL\_READABLE**, **TCL\_WRITABLE** and **TCL\_EXCEPTION** that indicates events that have occurred on this channel.
+: An OR-ed combination of **TCL\_READABLE**, **TCL\_WRITABLE** and **TCL\_EXCEPTION** that indicates events that have occurred on this channel.
+
 [\*interp]{.carg .in type="Tcl_Interp"}
-Current interpreter. (can be NULL)
+: Current interpreter. (can be NULL)
+
 [\*optionName]{.carg .in type="const char"}
-Name of the invalid option.
+: Name of the invalid option.
+
 [\*optionList]{.carg .in type="const char"}
-Specific options list (space separated words, without .QW - ) to append to the standard generic options list. Can be NULL for generic options error message only.
+: Specific options list (space separated words, without .QW - ) to append to the standard generic options list. Can be NULL for generic options error message only.
+
+
 :::
 
 # Description

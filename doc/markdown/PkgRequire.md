@@ -37,22 +37,32 @@ Tcl\_PkgRequire, Tcl\_PkgRequireEx, Tcl\_PkgRequireProc, Tcl\_PkgPresent, Tcl\_P
 # Arguments
 
 ::: {.arguments} :::
+
 [\*interp]{.carg .in type="Tcl_Interp"}
-Interpreter where package is needed or available.
+: Interpreter where package is needed or available.
+
 [\*name]{.carg .in type="const char"}
-Name of package.
+: Name of package.
+
 [\*version]{.carg .in type="const char"}
-A version specification string as described for [package require][package].
+: A version specification string as described for [package require][package].
+
 [exact]{.carg .in type="int"}
-Non-zero means that only the particular version specified by *version* is acceptable. Zero means that newer versions than *version* are also acceptable as long as they have the same major version number as *version*.
+: Non-zero means that only the particular version specified by *version* is acceptable. Zero means that newer versions than *version* are also acceptable as long as they have the same major version number as *version*.
+
 [\*clientData]{.carg .in type="const void"}
-Arbitrary value to be associated with the package.
+: Arbitrary value to be associated with the package.
+
 [\*clientDataPtr]{.carg .out type="void"}
-Pointer to place to store the value associated with the matching package. It is only changed if the pointer is not NULL and the function completed successfully. The storage can be any pointer type with the same size as a void pointer.
+: Pointer to place to store the value associated with the matching package. It is only changed if the pointer is not NULL and the function completed successfully. The storage can be any pointer type with the same size as a void pointer.
+
 [objc]{.carg .in type="Tcl_Size"}
-Number of requirements.
+: Number of requirements.
+
 [objv[]]{.carg .in type="Tcl_Obj*"}
-Array of requirements.
+: Array of requirements.
+
+
 :::
 
 # Description

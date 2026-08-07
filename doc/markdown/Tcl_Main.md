@@ -40,26 +40,38 @@ Tcl\_Main, Tcl\_MainEx, Tcl\_MainExW, Tcl\_SetStartupScript, Tcl\_GetStartupScri
 # Arguments
 
 ::: {.arguments} :::
+
 [argc]{.carg .in type="Tcl_Size"}
-Number of elements in *argv*.
+: Number of elements in *argv*.
+
 [\*argv[]]{.carg .in type="char"}
-Array of strings containing command-line arguments. On Windows, when using **-DUNICODE**, the parameter type changes to wchar\_t \*.
+: Array of strings containing command-line arguments. On Windows, when using **-DUNICODE**, the parameter type changes to wchar\_t \*.
+
 [\*charargv[]]{.carg .in type="char"}
-As argv, but does not change type to wchar\_t.
+: As argv, but does not change type to wchar\_t.
+
 [\*wideargv[]]{.carg .in type="char"}
-As argv, but type is always wchar\_t.
+: As argv, but type is always wchar\_t.
+
 [\*appInitProc]{.carg .in type="Tcl_AppInitProc"}
-Address of an application-specific initialization procedure. The value for this argument is usually **Tcl\_AppInit**.
+: Address of an application-specific initialization procedure. The value for this argument is usually **Tcl\_AppInit**.
+
 [\*path]{.carg .in type="Tcl_Obj"}
-Name of file to use as startup script, or NULL.
+: Name of file to use as startup script, or NULL.
+
 [\*encoding]{.carg .in type="const char"}
-Encoding of file to use as startup script, or NULL.
+: Encoding of file to use as startup script, or NULL.
+
 [\*\*encodingPtr]{.carg .out type="const char"}
-If non-NULL, location to write a copy of the (const char \*) pointing to the encoding name.
+: If non-NULL, location to write a copy of the (const char \*) pointing to the encoding name.
+
 [\*mainLoopProc]{.carg .in type="Tcl_MainLoopProc"}
-Address of an application-specific event loop procedure.
+: Address of an application-specific event loop procedure.
+
 [\*interp]{.carg .in type="Tcl_Interp"}
-Already created Tcl Interpreter.
+: Already created Tcl Interpreter.
+
+
 :::
 
 # Description

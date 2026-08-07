@@ -52,54 +52,80 @@ Tcl\_UniChar, Tcl\_UniCharToUtf, Tcl\_UtfToUniChar, Tcl\_UtfToChar16, Tcl\_UtfTo
 # Arguments
 
 ::: {.arguments} :::
+
 [\*buf]{.carg .out type="char"}
-Buffer in which the TUTF-8 representation of the Tcl\_UniChar is stored.  At most **TCL\_UTF\_MAX** bytes are stored in the buffer.
+: Buffer in which the TUTF-8 representation of the Tcl\_UniChar is stored.  At most **TCL\_UTF\_MAX** bytes are stored in the buffer.
+
 [ch]{.carg .in type="int"}
-The Unicode character to be converted or examined.
+: The Unicode character to be converted or examined.
+
 [\*chPtr]{.carg .out type="Tcl_UniChar"}
-Filled with the Tcl\_UniChar represented by the head of the TUTF-8 byte sequence.
+: Filled with the Tcl\_UniChar represented by the head of the TUTF-8 byte sequence.
+
 [short]{.carg .*uPtr type="unsigned"}
-Filled with the utf-16 represented by the head of the TUTF-8 byte sequence.
+: Filled with the utf-16 represented by the head of the TUTF-8 byte sequence.
+
 [\*wPtr]{.carg .out type="wchar_t"}
-Filled with the wchar\_t represented by the head of the TUTF-8 byte sequence.
+: Filled with the wchar\_t represented by the head of the TUTF-8 byte sequence.
+
 [\*src]{.carg .in type="const char"}
-Pointer to a TUTF-8 byte sequence.
+: Pointer to a TUTF-8 byte sequence.
+
 [\*cs]{.carg .in type="const char"}
-Pointer to a TUTF-8 byte sequence.
+: Pointer to a TUTF-8 byte sequence.
+
 [\*ct]{.carg .in type="const char"}
-Pointer to a TUTF-8 byte sequence.
+: Pointer to a TUTF-8 byte sequence.
+
 [\*uniStr]{.carg .in type="const Tcl_UniChar"}
-A sequence of **Tcl\_UniChar** units with null-termination optional depending on function.
+: A sequence of **Tcl\_UniChar** units with null-termination optional depending on function.
+
 [\*ucs]{.carg .in type="const Tcl_UniChar"}
-A null-terminated sequence of **Tcl\_UniChar**.
+: A null-terminated sequence of **Tcl\_UniChar**.
+
 [\*uct]{.carg .in type="const Tcl_UniChar"}
-A null-terminated sequence of **Tcl\_UniChar**.
+: A null-terminated sequence of **Tcl\_UniChar**.
+
 [\*uniPattern]{.carg .in type="const Tcl_UniChar"}
-A null-terminated sequence of **Tcl\_UniChar**.
+: A null-terminated sequence of **Tcl\_UniChar**.
+
 [\*utf16]{.carg .in type="const unsigned short"}
-A sequence of UTF-16 units with null-termination optional depending on function.
+: A sequence of UTF-16 units with null-termination optional depending on function.
+
 [\*wcharStr]{.carg .in type="const wchar_t"}
-A sequence of **wchar\_t** units with null-termination optional depending on function.
+: A sequence of **wchar\_t** units with null-termination optional depending on function.
+
 [numBytes]{.carg .in type="int"}
-The length of the TUTF-8 input in bytes.  If negative, the length includes all bytes until the first null byte.
+: The length of the TUTF-8 input in bytes.  If negative, the length includes all bytes until the first null byte.
+
 [numUtf16]{.carg .in type="int"}
-The length of the input in UTF-16 units. If negative, the length includes all bytes until the first null.
+: The length of the input in UTF-16 units. If negative, the length includes all bytes until the first null.
+
 [numUniChars]{.carg .in type="int"}
-The length of the input in Tcl\_UniChar units. If negative, the length includes all bytes until the first null.
+: The length of the input in Tcl\_UniChar units. If negative, the length includes all bytes until the first null.
+
 [numWChars]{.carg .in type="int"}
-The length of the input in wchar\_t units. If negative, the length includes all bytes until the first null.
+: The length of the input in wchar\_t units. If negative, the length includes all bytes until the first null.
+
 [\*dsPtr]{.carg .in/out type="Tcl_DString"}
-A pointer to a previously initialized **Tcl\_DString**.
+: A pointer to a previously initialized **Tcl\_DString**.
+
 [\*start]{.carg .in type="const char"}
-Pointer to the beginning of a TUTF-8 byte sequence.
+: Pointer to the beginning of a TUTF-8 byte sequence.
+
 [index]{.carg .in type="Tcl_Size"}
-The index of a character (not byte) in the TUTF-8 byte sequence.
+: The index of a character (not byte) in the TUTF-8 byte sequence.
+
 [\*readPtr]{.carg .out type="int"}
-If non-NULL, filled with the number of bytes in the backslash sequence, including the backslash character.
+: If non-NULL, filled with the number of bytes in the backslash sequence, including the backslash character.
+
 [\*dst]{.carg .out type="char"}
-Buffer in which the bytes represented by the backslash sequence are stored. At most **TCL\_UTF\_MAX** bytes are stored in the buffer.
+: Buffer in which the bytes represented by the backslash sequence are stored. At most **TCL\_UTF\_MAX** bytes are stored in the buffer.
+
 [nocase]{.carg .in type="int"}
-Specifies whether the match should be done case-sensitive (0) or case-insensitive (1).
+: Specifies whether the match should be done case-sensitive (0) or case-insensitive (1).
+
+
 :::
 
 # Description

@@ -30,14 +30,20 @@ Tcl\_GetVersion - get the version of the library at runtime
 # Arguments
 
 ::: {.arguments} :::
+
 [\*major]{.carg .out type="int"}
-Major version number of the Tcl library.
+: Major version number of the Tcl library.
+
 [\*minor]{.carg .out type="int"}
-Minor version number of the Tcl library.
+: Minor version number of the Tcl library.
+
 [\*patchLevel]{.carg .out type="int"}
-The patch level of the Tcl library (or alpha or beta number).
+: The patch level of the Tcl library (or alpha or beta number).
+
 [\*type]{.carg .out type="int"}
-The type of release, also indicates the type of patch level. Can be one of **TCL\_ALPHA\_RELEASE**, **TCL\_BETA\_RELEASE**, or **TCL\_FINAL\_RELEASE**.
+: The type of release, also indicates the type of patch level. Can be one of **TCL\_ALPHA\_RELEASE**, **TCL\_BETA\_RELEASE**, or **TCL\_FINAL\_RELEASE**.
+
+
 :::
 
 # Description

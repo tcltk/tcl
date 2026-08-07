@@ -45,22 +45,32 @@ Tcl\_SetObjResult, Tcl\_GetObjResult, Tcl\_SetResult, Tcl\_GetStringResult, Tcl\
 # Arguments
 
 ::: {.arguments} :::
+
 [\*interp]{.carg .out type="Tcl_Interp"}
-Interpreter whose result is to be modified or read.
+: Interpreter whose result is to be modified or read.
+
 [\*objPtr]{.carg .in type="Tcl_Obj"}
-Tcl value to become result for *interp*.
+: Tcl value to become result for *interp*.
+
 [\*result]{.carg .in type="char"}
-String value to become result for *interp* or to be appended to the existing result.
+: String value to become result for *interp* or to be appended to the existing result.
+
 [\*element]{.carg .in type="const char"}
-String value to append as a list element to the existing result of *interp*.
+: String value to append as a list element to the existing result of *interp*.
+
 [\*freeProc]{.carg .in type="Tcl_FreeProc"}
-Address of procedure to call to release storage at *result*, or **TCL\_STATIC**, **TCL\_DYNAMIC**, or **TCL\_VOLATILE**.
+: Address of procedure to call to release storage at *result*, or **TCL\_STATIC**, **TCL\_DYNAMIC**, or **TCL\_VOLATILE**.
+
 [\*sourceInterp]{.carg .in type="Tcl_Interp"}
-Interpreter that the result and return options should be transferred from.
+: Interpreter that the result and return options should be transferred from.
+
 [\*targetInterp]{.carg .in type="Tcl_Interp"}
-Interpreter that the result and return options should be transferred to.
+: Interpreter that the result and return options should be transferred to.
+
 [code]{.carg .in type="int"}
-Return code value that controls transfer of return options.
+: Return code value that controls transfer of return options.
+
+
 :::
 
 # Description

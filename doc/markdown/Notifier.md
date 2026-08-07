@@ -57,28 +57,41 @@ Tcl\_CreateEventSource, Tcl\_DeleteEventSource, Tcl\_SetMaxBlockTime, Tcl\_Queue
 # Arguments
 
 ::: {.arguments} :::
+
 [\*setupProc]{.carg .in type="Tcl_EventSetupProc"}
-Procedure to invoke to prepare for event wait in **Tcl\_DoOneEvent**.
+: Procedure to invoke to prepare for event wait in **Tcl\_DoOneEvent**.
+
 [\*checkProc]{.carg .in type="Tcl_EventCheckProc"}
-Procedure for **Tcl\_DoOneEvent** to invoke after waiting for events.  Checks to see if any events have occurred and, if so, queues them.
+: Procedure for **Tcl\_DoOneEvent** to invoke after waiting for events.  Checks to see if any events have occurred and, if so, queues them.
+
 [\*clientData]{.carg .in type="void"}
-Arbitrary one-word value to pass to *setupProc*, *checkProc*, or *deleteProc*.
+: Arbitrary one-word value to pass to *setupProc*, *checkProc*, or *deleteProc*.
+
 [\*timePtr]{.carg .in type="const Tcl_Time"}
-Indicates the maximum amount of time to wait for an event.  This is specified as an interval (how long to wait), not an absolute time (when to wakeup).  If the pointer passed to **Tcl\_WaitForEvent** is NULL, it means there is no maximum wait time:  wait forever if necessary.
+: Indicates the maximum amount of time to wait for an event.  This is specified as an interval (how long to wait), not an absolute time (when to wakeup).  If the pointer passed to **Tcl\_WaitForEvent** is NULL, it means there is no maximum wait time:  wait forever if necessary.
+
 [\*evPtr]{.carg .in type="Tcl_Event"}
-An event to add to the event queue.  The storage for the event must have been allocated by the caller using **Tcl\_Alloc**.
+: An event to add to the event queue.  The storage for the event must have been allocated by the caller using **Tcl\_Alloc**.
+
 [position]{.carg .in type="int"}
-Where to add the new event in the queue:  **TCL\_QUEUE\_TAIL**, **TCL\_QUEUE\_HEAD**, **TCL\_QUEUE\_MARK**, and whether to do an alert if the queue is empty: **TCL\_QUEUE\_ALERT\_IF\_EMPTY**.
+: Where to add the new event in the queue:  **TCL\_QUEUE\_TAIL**, **TCL\_QUEUE\_HEAD**, **TCL\_QUEUE\_MARK**, and whether to do an alert if the queue is empty: **TCL\_QUEUE\_ALERT\_IF\_EMPTY**.
+
 [threadId]{.carg .in type="Tcl_ThreadId"}
-A unique identifier for a thread.
+: A unique identifier for a thread.
+
 [\*deleteProc]{.carg .in type="Tcl_EventDeleteProc"}
-Procedure to invoke for each queued event in **Tcl\_DeleteEvents**.
+: Procedure to invoke for each queued event in **Tcl\_DeleteEvents**.
+
 [flags]{.carg .in type="int"}
-What types of events to service.  These flags are the same as those passed to **Tcl\_DoOneEvent**.
+: What types of events to service.  These flags are the same as those passed to **Tcl\_DoOneEvent**.
+
 [mode]{.carg .in type="int"}
-Indicates whether events should be serviced by **Tcl\_ServiceAll**. Must be one of **TCL\_SERVICE\_NONE** or **TCL\_SERVICE\_ALL**.
+: Indicates whether events should be serviced by **Tcl\_ServiceAll**. Must be one of **TCL\_SERVICE\_NONE** or **TCL\_SERVICE\_ALL**.
+
 [Tcl\_NotifierProcs\*]{.carg .notifierProcPtr type="const"}
-Structure of function pointers describing notifier procedures that are to replace the ones installed in the executable.  See [Replacing the notifier] for details.
+: Structure of function pointers describing notifier procedures that are to replace the ones installed in the executable.  See [Replacing the notifier] for details.
+
+
 :::
 
 # Introduction

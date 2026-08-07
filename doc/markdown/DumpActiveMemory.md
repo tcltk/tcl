@@ -31,12 +31,17 @@ Tcl\_DumpActiveMemory, Tcl\_InitMemory, Tcl\_ValidateAllMemory - Validated memor
 # Arguments
 
 ::: {.arguments} :::
+
 [\*interp]{.carg .in type="Tcl_Interp"}
-Tcl interpreter in which to add commands.
+: Tcl interpreter in which to add commands.
+
 [\*fileName]{.carg .in type="const char"}
-For **Tcl\_DumpActiveMemory**, name of the file to which memory information will be written.  For **Tcl\_ValidateAllMemory**, name of the file from which the call is being made (normally **\_\_FILE\_\_**).
+: For **Tcl\_DumpActiveMemory**, name of the file to which memory information will be written.  For **Tcl\_ValidateAllMemory**, name of the file from which the call is being made (normally **\_\_FILE\_\_**).
+
 [line]{.carg .in type="int"}
-Line number at which the call to **Tcl\_ValidateAllMemory** is made (normally **\_\_LINE\_\_**).
+: Line number at which the call to **Tcl\_ValidateAllMemory** is made (normally **\_\_LINE\_\_**).
+
+
 :::
 
 # Description

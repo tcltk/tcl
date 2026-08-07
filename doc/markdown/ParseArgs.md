@@ -29,16 +29,23 @@ Tcl\_ParseArgsObjv - parse arguments according to a tabular description
 # Arguments
 
 ::: {.arguments} :::
+
 [\*interp]{.carg .out type="Tcl_Interp"}
-Where to store error messages.
+: Where to store error messages.
+
 [\*argTable]{.carg .in type="const Tcl_ArgvInfo"}
-Pointer to array of option descriptors.
+: Pointer to array of option descriptors.
+
 [\*objcPtr]{.carg .in/out type="Tcl_Size &| int"}
-A pointer to variable holding number of arguments in *objv*. Will be modified to hold number of arguments left in the unprocessed argument list stored in *remObjv*. May be (Tcl\_Size \*)NULL when not used. If it points to a variable which type is not **Tcl\_Size**, a compiler warning will be generated. If your extensions is compiled with **-DTCL\_8\_API**, this function will return NULL for argument lists with more than INT\_MAX elements (which should trigger proper error-handling), otherwise expect it to crash.
+: A pointer to variable holding number of arguments in *objv*. Will be modified to hold number of arguments left in the unprocessed argument list stored in *remObjv*. May be (Tcl\_Size \*)NULL when not used. If it points to a variable which type is not **Tcl\_Size**, a compiler warning will be generated. If your extensions is compiled with **-DTCL\_8\_API**, this function will return NULL for argument lists with more than INT\_MAX elements (which should trigger proper error-handling), otherwise expect it to crash.
+
 [\*objv]{.carg .in type="Tcl_Obj *const"}
-The array of arguments to be parsed.
+: The array of arguments to be parsed.
+
 [\*\*\*remObjv]{.carg .out type="Tcl_Obj"}
-Pointer to a variable that will hold the array of unprocessed arguments. Should be NULL if no return of unprocessed arguments is required. If *objcPtr* is updated to a non-zero value, the array returned through this must be deallocated using **Tcl\_Free**.
+: Pointer to a variable that will hold the array of unprocessed arguments. Should be NULL if no return of unprocessed arguments is required. If *objcPtr* is updated to a non-zero value, the array returned through this must be deallocated using **Tcl\_Free**.
+
+
 :::
 
 # Description

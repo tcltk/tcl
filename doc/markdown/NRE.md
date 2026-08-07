@@ -46,44 +46,65 @@ Tcl\_NRCreateCommand, Tcl\_NRCreateCommand2, Tcl\_NRCallObjProc, Tcl\_NRCallObjP
 # Arguments
 
 ::: {.arguments} :::
+
 [\*interp]{.carg .in type="Tcl_Interp"}
-The relevant Interpreter.
+: The relevant Interpreter.
+
 [\*cmdName]{.carg .in type="const char"}
-Name of the command to create.
+: Name of the command to create.
+
 [\*proc]{.carg .in type="Tcl_ObjCmdProc"}
-Called in order to evaluate a command.  Is often just a small wrapper that uses **Tcl\_NRCallObjProc** to call *nreProc* using a new trampoline.  Behaves in the same way as the *proc* argument to **Tcl\_CreateObjCommand**(3) (*q.v.*).
+: Called in order to evaluate a command.  Is often just a small wrapper that uses **Tcl\_NRCallObjProc** to call *nreProc* using a new trampoline.  Behaves in the same way as the *proc* argument to **Tcl\_CreateObjCommand**(3) (*q.v.*).
+
 [\*proc2]{.carg .in type="Tcl_ObjCmdProc2"}
-Called in order to evaluate a command.  Is often just a small wrapper that uses **Tcl\_NRCallObjProc2** to call *nreProc2* using a new trampoline.  Behaves in the same way as the *proc2* argument to **Tcl\_CreateObjCommand2**(3) (*q.v.*).
+: Called in order to evaluate a command.  Is often just a small wrapper that uses **Tcl\_NRCallObjProc2** to call *nreProc2* using a new trampoline.  Behaves in the same way as the *proc2* argument to **Tcl\_CreateObjCommand2**(3) (*q.v.*).
+
 [\*nreProc]{.carg .in type="Tcl_ObjCmdProc"}
-Called instead of *proc* when a trampoline is already in use.
+: Called instead of *proc* when a trampoline is already in use.
+
 [\*nreProc2]{.carg .in type="Tcl_ObjCmdProc2"}
-Called instead of *proc2* when a trampoline is already in use.
+: Called instead of *proc2* when a trampoline is already in use.
+
 [\*clientData]{.carg .in type="void"}
-Arbitrary one-word value passed to *proc*, *nreProc*, *deleteProc* and *objProc*.
+: Arbitrary one-word value passed to *proc*, *nreProc*, *deleteProc* and *objProc*.
+
 [\*deleteProc]{.carg .in/out type="Tcl_CmdDeleteProc"}
-Called before *cmdName* is deleted from the interpreter, allowing for command-specific cleanup. May be NULL.
+: Called before *cmdName* is deleted from the interpreter, allowing for command-specific cleanup. May be NULL.
+
 [objc]{.carg .in type="Tcl_Size"}
-Number of items in *objv*.
+: Number of items in *objv*.
+
 [\*\*objv]{.carg .in type="Tcl_Obj"}
-Words in the command.
+: Words in the command.
+
 [\*objPtr]{.carg .in type="Tcl_Obj"}
-A script or expression to evaluate.
+: A script or expression to evaluate.
+
 [flags]{.carg .in type="int"}
-As described for *Tcl\_EvalObjv*. .PP
+: As described for *Tcl\_EvalObjv*. .PP
+
 [cmd]{.carg .in type="Tcl_Command"}
-Token to use instead of one derived from the first word of *objv* in order to evaluate a command.
+: Token to use instead of one derived from the first word of *objv* in order to evaluate a command.
+
 [\*resultPtr]{.carg .out type="Tcl_Obj"}
-Pointer to an unshared Tcl\_Obj where the result of the evaluation is stored if the return code is TCL\_OK.
+: Pointer to an unshared Tcl\_Obj where the result of the evaluation is stored if the return code is TCL\_OK.
+
 [\*postProcPtr]{.carg .in type="Tcl_NRPostProc"}
-A function to push.
+: A function to push.
+
 [\*data0]{.carg .in type="void"}
+: 
 
 [\*data1]{.carg .in type="void"}
+: 
 
 [\*data2]{.carg .in type="void"}
+: 
 
 [\*data3]{.carg .in type="void"}
-*data0* through *data3* are four one-word values that will be passed to the function designated by *postProcPtr* when it is invoked.
+: *data0* through *data3* are four one-word values that will be passed to the function designated by *postProcPtr* when it is invoked.
+
+
 :::
 
 # Description

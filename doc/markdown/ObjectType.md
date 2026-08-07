@@ -41,22 +41,32 @@ Tcl\_RegisterObjType, Tcl\_GetObjType, Tcl\_AppendAllObjTypes, Tcl\_ConvertToTyp
 # Arguments
 
 ::: {.arguments} :::
+
 [\*typePtr]{.carg .in type="const Tcl_ObjType"}
-Points to the structure containing information about the Tcl value type. This storage must live forever, typically by being statically allocated.
+: Points to the structure containing information about the Tcl value type. This storage must live forever, typically by being statically allocated.
+
 [\*typeName]{.carg .in type="const char"}
-The name of a Tcl value type that **Tcl\_GetObjType** should look up.
+: The name of a Tcl value type that **Tcl\_GetObjType** should look up.
+
 [\*interp]{.carg .in type="Tcl_Interp"}
-Interpreter to use for error reporting.
+: Interpreter to use for error reporting.
+
 [\*objPtr]{.carg .in type="Tcl_Obj"}
-For **Tcl\_AppendAllObjTypes**, this points to the value onto which it appends the name of each value type as a list element. For **Tcl\_ConvertToType**, this points to a value that must have been the result of a previous call to **Tcl\_NewObj**.
+: For **Tcl\_AppendAllObjTypes**, this points to the value onto which it appends the name of each value type as a list element. For **Tcl\_ConvertToType**, this points to a value that must have been the result of a previous call to **Tcl\_NewObj**.
+
 [bytes]{.carg .in type="const char*"}
-String representation.
+: String representation.
+
 [numBytes]{.carg .in type="unsigned int"}
-Length of the string representation in bytes.
+: Length of the string representation in bytes.
+
 [irPtr]{.carg .in type="const Tcl_ObjInternalRep*"}
-Internal object representation.
+: Internal object representation.
+
 [typePtr]{.carg .in type="const Tcl_ObjType*"}
-Requested internal representation type.
+: Requested internal representation type.
+
+
 :::
 
 # Description

@@ -29,10 +29,14 @@ Tcl\_BackgroundException, Tcl\_BackgroundError - report Tcl exception that occur
 # Arguments
 
 ::: {.arguments} :::
+
 [\*interp]{.carg .in type="Tcl_Interp"}
-Interpreter in which the exception occurred.
+: Interpreter in which the exception occurred.
+
 [code]{.carg .in type="int"}
-The exceptional return code to be reported.
+: The exceptional return code to be reported.
+
+
 :::
 
 # Description

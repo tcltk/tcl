@@ -37,16 +37,23 @@ Tcl\_NewByteArrayObj, Tcl\_SetByteArrayObj, Tcl\_GetBytesFromObj, Tcl\_GetByteAr
 # Arguments
 
 ::: {.arguments} :::
+
 [\*bytes]{.carg .in type="const unsigned char"}
-The array of bytes used to initialize or set a byte-array value. May be NULL even if *numBytes* is non-zero.
+: The array of bytes used to initialize or set a byte-array value. May be NULL even if *numBytes* is non-zero.
+
 [numBytes]{.carg .in type="Tcl_Size"}
-The number of bytes in the array.
+: The number of bytes in the array.
+
 [\*objPtr]{.carg .in/out type="Tcl_Obj"}
-For **Tcl\_SetByteArrayObj**, this points to an unshared value to be overwritten by a byte-array value.  For **Tcl\_GetBytesFromObj**, **Tcl\_GetByteArrayFromObj** and **Tcl\_SetByteArrayLength**, this points to the value from which to extract an array of bytes.
+: For **Tcl\_SetByteArrayObj**, this points to an unshared value to be overwritten by a byte-array value.  For **Tcl\_GetBytesFromObj**, **Tcl\_GetByteArrayFromObj** and **Tcl\_SetByteArrayLength**, this points to the value from which to extract an array of bytes.
+
 [\*interp]{.carg .in type="Tcl_Interp"}
-Interpreter to use for error reporting.
+: Interpreter to use for error reporting.
+
 [\*numBytesPtr]{.carg .out type="Tcl_Size &| int"}
-Points to space where the number of bytes in the array may be written. May be (Tcl\_Size \*)NULL when not used. If it points to a variable which type is not **Tcl\_Size**, a compiler warning will be generated. If your extensions is compiled with **-DTCL\_8\_API**, this function will return NULL for byte arrays larger than INT\_MAX (which should trigger proper error-handling), otherwise expect it to crash.
+: Points to space where the number of bytes in the array may be written. May be (Tcl\_Size \*)NULL when not used. If it points to a variable which type is not **Tcl\_Size**, a compiler warning will be generated. If your extensions is compiled with **-DTCL\_8\_API**, this function will return NULL for byte arrays larger than INT\_MAX (which should trigger proper error-handling), otherwise expect it to crash.
+
+
 :::
 
 # Description

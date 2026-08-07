@@ -33,12 +33,17 @@ Tcl\_RecordAndEvalObj - save command on history list before evaluating
 # Arguments
 
 ::: {.arguments} :::
+
 [\*interp]{.carg .in type="Tcl_Interp"}
-Tcl interpreter in which to evaluate command.
+: Tcl interpreter in which to evaluate command.
+
 [\*cmdPtr]{.carg .in type="Tcl_Obj"}
-Points to a Tcl value containing a command (or sequence of commands) to execute.
+: Points to a Tcl value containing a command (or sequence of commands) to execute.
+
 [flags]{.carg .in type="int"}
-An OR'ed combination of flag bits.  **TCL\_NO\_EVAL** means record the command but do not evaluate it.  **TCL\_EVAL\_GLOBAL** means evaluate the command at global level instead of the current stack level.
+: An OR'ed combination of flag bits.  **TCL\_NO\_EVAL** means record the command but do not evaluate it.  **TCL\_EVAL\_GLOBAL** means evaluate the command at global level instead of the current stack level.
+
+
 :::
 
 # Description

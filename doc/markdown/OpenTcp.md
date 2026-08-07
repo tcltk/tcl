@@ -35,30 +35,44 @@ Tcl\_OpenTcpClient, Tcl\_MakeTcpClientChannel, Tcl\_OpenTcpServer, Tcl\_OpenTcpS
 # Arguments
 
 ::: {.arguments} :::
+
 [\*interp]{.carg .in type="Tcl_Interp"}
-Tcl interpreter to use for error reporting.  If non-NULL and an error occurs, an error message is left in the interpreter's result.
+: Tcl interpreter to use for error reporting.  If non-NULL and an error occurs, an error message is left in the interpreter's result.
+
 [port]{.carg .in type="int"}
-A port number to connect to as a client or to listen on as a server.
+: A port number to connect to as a client or to listen on as a server.
+
 [\*service]{.carg .in type="const char"}
-A string specifying the port number to connect to as a client or to listen on as  a server.
+: A string specifying the port number to connect to as a client or to listen on as  a server.
+
 [\*host]{.carg .in type="const char"}
-A string specifying a host name or address for the remote end of the connection.
+: A string specifying a host name or address for the remote end of the connection.
+
 [myport]{.carg .in type="int"}
-A port number for the client's end of the socket.  If 0, a port number is allocated at random.
+: A port number for the client's end of the socket.  If 0, a port number is allocated at random.
+
 [\*myaddr]{.carg .in type="const char"}
-A string specifying the host name or address for network interface to use for the local end of the connection.  If NULL, a default interface is chosen.
+: A string specifying the host name or address for network interface to use for the local end of the connection.  If NULL, a default interface is chosen.
+
 [async]{.carg .in type="int"}
-If nonzero, the client socket is connected asynchronously to the server.
+: If nonzero, the client socket is connected asynchronously to the server.
+
 [backlog]{.carg .in type="int"}
-Length of OS listen backlog queue. Use -1 for default value.
+: Length of OS listen backlog queue. Use -1 for default value.
+
 [flags]{.carg .in type="unsigned int"}
-ORed combination of **TCL\_TCPSERVER\_\*** flags that specify additional information about the socket being created.
+: ORed combination of **TCL\_TCPSERVER\_\*** flags that specify additional information about the socket being created.
+
 [\*sock]{.carg .in type="void"}
-Platform-specific handle for client TCP socket.
+: Platform-specific handle for client TCP socket.
+
 [\*proc]{.carg .in type="Tcl_TcpAcceptProc"}
-Pointer to a procedure to invoke each time a new connection is accepted via the socket.
+: Pointer to a procedure to invoke each time a new connection is accepted via the socket.
+
 [\*clientData]{.carg .in type="void"}
-Arbitrary one-word value to pass to *proc*.
+: Arbitrary one-word value to pass to *proc*.
+
+
 :::
 
 # Description

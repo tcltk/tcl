@@ -28,20 +28,29 @@ Tcl\_UpVar, Tcl\_UpVar2 - link one variable to another
 # Arguments
 
 ::: {.arguments} :::
+
 [\*interp]{.carg .in type="Tcl_Interp"}
-Interpreter containing variables;  also used for error reporting.
+: Interpreter containing variables;  also used for error reporting.
+
 [\*frameName]{.carg .in type="const char"}
-Identifies the stack frame containing source variable. May have any of the forms accepted by the [upvar] command, such as **#0** or **1**.
+: Identifies the stack frame containing source variable. May have any of the forms accepted by the [upvar] command, such as **#0** or **1**.
+
 [\*sourceName]{.carg .in type="const char"}
-Name of source variable, in the frame given by *frameName*. May refer to a scalar variable or to an array variable with a parenthesized index.
+: Name of source variable, in the frame given by *frameName*. May refer to a scalar variable or to an array variable with a parenthesized index.
+
 [\*destName]{.carg .in type="const char"}
-Name of destination variable, which is to be linked to source variable so that references to *destName* refer to the other variable.  Must not currently exist except as an upvar-ed variable.
+: Name of destination variable, which is to be linked to source variable so that references to *destName* refer to the other variable.  Must not currently exist except as an upvar-ed variable.
+
 [flags]{.carg .in type="int"}
-One of **TCL\_GLOBAL\_ONLY**, **TCL\_NAMESPACE\_ONLY** or 0;  if non-zero, then *destName* is a global or namespace variable;  otherwise it is local to the current procedure (or current namespace if no procedure is active).
+: One of **TCL\_GLOBAL\_ONLY**, **TCL\_NAMESPACE\_ONLY** or 0;  if non-zero, then *destName* is a global or namespace variable;  otherwise it is local to the current procedure (or current namespace if no procedure is active).
+
 [\*name1]{.carg .in type="const char"}
-First part of source variable's name (scalar name, or name of array without array index).
+: First part of source variable's name (scalar name, or name of array without array index).
+
 [\*name2]{.carg .in type="const char"}
-If source variable is an element of an array, gives the index of the element. For scalar source variables, is NULL.
+: If source variable is an element of an array, gives the index of the element. For scalar source variables, is NULL.
+
+
 :::
 
 # Description

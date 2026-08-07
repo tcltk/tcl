@@ -30,16 +30,23 @@ Tcl\_GetAssocData, Tcl\_SetAssocData, Tcl\_DeleteAssocData - manage associations
 # Arguments
 
 ::: {.arguments} :::
+
 [\*interp]{.carg .in type="Tcl_Interp"}
-Interpreter in which to execute the specified command.
+: Interpreter in which to execute the specified command.
+
 [\*key]{.carg .in type="const char"}
-Key for association with which to store data or from which to delete or retrieve data.  Typically the module prefix for a package.
+: Key for association with which to store data or from which to delete or retrieve data.  Typically the module prefix for a package.
+
 [\*delProc]{.carg .in type="Tcl_InterpDeleteProc"}
-Procedure to call when *interp* is deleted.
+: Procedure to call when *interp* is deleted.
+
 [\*\*delProcPtr]{.carg .in type="Tcl_InterpDeleteProc"}
-Pointer to location in which to store address of current deletion procedure for association.  Ignored if NULL.
+: Pointer to location in which to store address of current deletion procedure for association.  Ignored if NULL.
+
 [\*clientData]{.carg .in type="void"}
-Arbitrary one-word value associated with the given key in this interpreter.  This data is owned by the caller.
+: Arbitrary one-word value associated with the given key in this interpreter.  This data is owned by the caller.
+
+
 :::
 
 # Description

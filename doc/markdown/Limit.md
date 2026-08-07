@@ -43,22 +43,32 @@ Tcl\_LimitAddHandler, Tcl\_LimitCheck, Tcl\_LimitExceeded, Tcl\_LimitGetCommands
 # Arguments
 
 ::: {.arguments} :::
+
 [\*interp]{.carg .in type="Tcl_Interp"}
-Interpreter that the limit being managed applies to or that will have its limits checked.
+: Interpreter that the limit being managed applies to or that will have its limits checked.
+
 [type]{.carg .in type="int"}
-The type of limit that the operation refers to.  This must be either **TCL\_LIMIT\_COMMANDS** or **TCL\_LIMIT\_TIME**.
+: The type of limit that the operation refers to.  This must be either **TCL\_LIMIT\_COMMANDS** or **TCL\_LIMIT\_TIME**.
+
 [commandLimit]{.carg .in type="Tcl_Size"}
-The maximum number of commands (as reported by [info cmdcount][info]) that may be executed in the interpreter.
+: The maximum number of commands (as reported by [info cmdcount][info]) that may be executed in the interpreter.
+
 [\*timeLimitPtr]{.carg .in/out type="Tcl_Time"}
-A pointer to a structure that will either have the new time limit read from (**Tcl\_LimitSetTime**) or the current time limit written to (**Tcl\_LimitGetTime**).
+: A pointer to a structure that will either have the new time limit read from (**Tcl\_LimitSetTime**) or the current time limit written to (**Tcl\_LimitGetTime**).
+
 [granularity]{.carg .in type="int"}
-Divisor that indicates how often a particular limit should really be checked.  Must be at least 1.
+: Divisor that indicates how often a particular limit should really be checked.  Must be at least 1.
+
 [\*handlerProc]{.carg .in type="Tcl_LimitHandlerProc"}
-Function to call when a particular limit is exceeded.  If the *handlerProc* removes or raises the limit during its processing, the limited interpreter will be permitted to continue to process after the handler returns.  Many handlers may be attached to the same interpreter limit; their order of execution is not defined, and they must be identified by *handlerProc* and *clientData* when they are deleted.
+: Function to call when a particular limit is exceeded.  If the *handlerProc* removes or raises the limit during its processing, the limited interpreter will be permitted to continue to process after the handler returns.  Many handlers may be attached to the same interpreter limit; their order of execution is not defined, and they must be identified by *handlerProc* and *clientData* when they are deleted.
+
 [\*clientData]{.carg .in type="void"}
-Arbitrary pointer-sized word used to pass some context to the *handlerProc* function.
+: Arbitrary pointer-sized word used to pass some context to the *handlerProc* function.
+
 [\*deleteProc]{.carg .in type="Tcl_LimitHandlerDeleteProc"}
-Function to call whenever a handler is deleted.  May be NULL if the *clientData* requires no deletion.
+: Function to call whenever a handler is deleted.  May be NULL if the *clientData* requires no deletion.
+
+
 :::
 
 # Description

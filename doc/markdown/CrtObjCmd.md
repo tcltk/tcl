@@ -43,26 +43,38 @@ Tcl\_CreateObjCommand, Tcl\_CreateObjCommand2, Tcl\_DeleteCommand, Tcl\_DeleteCo
 # Arguments
 
 ::: {.arguments} :::
+
 [\*interp]{.carg .in type="Tcl_Interp"}
-Interpreter in which to create a new command or that contains a command.
+: Interpreter in which to create a new command or that contains a command.
+
 [\*cmdName]{.carg .in type="const char"}
-Name of command.
+: Name of command.
+
 [\*proc]{.carg .in type="Tcl_ObjCmdProc"}
-Implementation of the new command: *proc* will be called whenever *cmdName* is invoked as a command.
+: Implementation of the new command: *proc* will be called whenever *cmdName* is invoked as a command.
+
 [\*proc2]{.carg .in type="Tcl_ObjCmdProc2"}
-Implementation of the new command: *proc2* will be called whenever *cmdName* is invoked as a command.
+: Implementation of the new command: *proc2* will be called whenever *cmdName* is invoked as a command.
+
 [\*clientData]{.carg .in type="void"}
-Arbitrary one-word value to pass to *proc* and *deleteProc*.
+: Arbitrary one-word value to pass to *proc* and *deleteProc*.
+
 [\*deleteProc]{.carg .in type="Tcl_CmdDeleteProc"}
-Procedure to call before *cmdName* is deleted from the interpreter; allows for command-specific cleanup. If NULL, then no procedure is called before the command is deleted.
+: Procedure to call before *cmdName* is deleted from the interpreter; allows for command-specific cleanup. If NULL, then no procedure is called before the command is deleted.
+
 [token]{.carg .in type="Tcl_Command"}
-Token for command, returned by previous call to **Tcl\_CreateObjCommand**. The command must not have been deleted.
+: Token for command, returned by previous call to **Tcl\_CreateObjCommand**. The command must not have been deleted.
+
 [\*infoPtr]{.carg .in/out type="Tcl_CmdInfo"}
-Pointer to structure containing various information about a Tcl command.
+: Pointer to structure containing various information about a Tcl command.
+
 [\*objPtr]{.carg .in type="Tcl_Obj"}
-Value containing the name of a Tcl command.
+: Value containing the name of a Tcl command.
+
 [\*typeName]{.carg .in type="const char"}
-Indicates the name of the type of command implementation associated with a particular *proc*, or NULL to break the association.
+: Indicates the name of the type of command implementation associated with a particular *proc*, or NULL to break the association.
+
+
 :::
 
 # Description

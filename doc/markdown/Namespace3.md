@@ -40,30 +40,44 @@ Tcl\_AppendExportList, Tcl\_CreateNamespace, Tcl\_DeleteNamespace, Tcl\_Export, 
 # Arguments
 
 ::: {.arguments} :::
+
 [\*interp]{.carg .in/out type="Tcl_Interp"}
-The interpreter in which the namespace exists and where name lookups are performed. Also where error result messages are written.
+: The interpreter in which the namespace exists and where name lookups are performed. Also where error result messages are written.
+
 [\*name]{.carg .in type="const char"}
-The name of the namespace or command to be created or accessed.
+: The name of the namespace or command to be created or accessed.
+
 [\*clientData]{.carg .in type="void"}
-A context pointer by the creator of the namespace.  Not interpreted by Tcl at all.
+: A context pointer by the creator of the namespace.  Not interpreted by Tcl at all.
+
 [\*deleteProc]{.carg .in type="Tcl_NamespaceDeleteProc"}
-A pointer to function to call when the namespace is deleted, or NULL if no such callback is to be performed.
+: A pointer to function to call when the namespace is deleted, or NULL if no such callback is to be performed.
+
 [\*nsPtr]{.carg .in type="Tcl_Namespace"}
-The namespace to be manipulated, or NULL (for other than **Tcl\_DeleteNamespace**) to manipulate the current namespace.
+: The namespace to be manipulated, or NULL (for other than **Tcl\_DeleteNamespace**) to manipulate the current namespace.
+
 [\*objPtr]{.carg .out type="Tcl_Obj"}
-A reference to an unshared value to which the function output will be written.
+: A reference to an unshared value to which the function output will be written.
+
 [\*pattern]{.carg .in type="const char"}
-The glob-style pattern (see **Tcl\_StringMatch**) that describes the commands to be imported or exported.
+: The glob-style pattern (see **Tcl\_StringMatch**) that describes the commands to be imported or exported.
+
 [resetListFirst]{.carg .in type="int"}
-Whether the list of export patterns should be reset before adding the current pattern to it.
+: Whether the list of export patterns should be reset before adding the current pattern to it.
+
 [allowOverwrite]{.carg .in type="int"}
-Whether new commands created by this import action can overwrite existing commands.
+: Whether new commands created by this import action can overwrite existing commands.
+
 [\*contextNsPtr]{.carg .in type="Tcl_Namespace"}
-The location in the namespace hierarchy where the search for a namespace or command should be conducted relative to when the search term is not rooted at the global namespace.  NULL indicates the current namespace.
+: The location in the namespace hierarchy where the search for a namespace or command should be conducted relative to when the search term is not rooted at the global namespace.  NULL indicates the current namespace.
+
 [flags]{.carg .in type="int"}
-OR-ed combination of bits controlling how the search is to be performed.  The following flags are supported: **TCL\_GLOBAL\_ONLY** (indicates that the search is always to be conducted relative to the global namespace), **TCL\_NAMESPACE\_ONLY** (just for **Tcl\_FindCommand**; indicates that the search is always to be conducted relative to the context namespace), and **TCL\_LEAVE\_ERR\_MSG** (indicates that an error message should be left in the interpreter if the search fails.)
+: OR-ed combination of bits controlling how the search is to be performed.  The following flags are supported: **TCL\_GLOBAL\_ONLY** (indicates that the search is always to be conducted relative to the global namespace), **TCL\_NAMESPACE\_ONLY** (just for **Tcl\_FindCommand**; indicates that the search is always to be conducted relative to the context namespace), and **TCL\_LEAVE\_ERR\_MSG** (indicates that an error message should be left in the interpreter if the search fails.)
+
 [\*handlerPtr]{.carg .in type="Tcl_Obj"}
-A script fragment to be installed as the unknown command handler for the namespace, or NULL to reset the handler to its default.
+: A script fragment to be installed as the unknown command handler for the namespace, or NULL to reset the handler to its default.
+
+
 :::
 
 # Description

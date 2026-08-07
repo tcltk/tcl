@@ -31,22 +31,32 @@ Tcl\_GetIndexFromObj, Tcl\_GetIndexFromObjStruct - lookup string in table of key
 # Arguments
 
 ::: {.arguments} :::
+
 [\*interp]{.carg .in type="Tcl_Interp"}
-Interpreter to use for error reporting; if NULL, then no message is provided on errors.
+: Interpreter to use for error reporting; if NULL, then no message is provided on errors.
+
 [\*objPtr]{.carg .in/out type="Tcl_Obj"}
-The string value of this value is used to search through *tablePtr*. If the **TCL\_INDEX\_TEMP\_TABLE** flag is not specified, the internal representation is modified to hold the index of the matching table entry.
+: The string value of this value is used to search through *tablePtr*. If the **TCL\_INDEX\_TEMP\_TABLE** flag is not specified, the internal representation is modified to hold the index of the matching table entry.
+
 [\*tablePtr]{.carg .in type="const char *const"}
-An array of null-terminated strings.  The end of the array is marked by a NULL string pointer. Note that, unless the **TCL\_INDEX\_TEMP\_TABLE** flag is specified, references to the *tablePtr* may be retained in the internal representation of *objPtr*, so this should represent the address of a statically-allocated array.
+: An array of null-terminated strings.  The end of the array is marked by a NULL string pointer. Note that, unless the **TCL\_INDEX\_TEMP\_TABLE** flag is specified, references to the *tablePtr* may be retained in the internal representation of *objPtr*, so this should represent the address of a statically-allocated array.
+
 [\*structTablePtr]{.carg .in type="const void"}
-An array of arbitrary type, typically some **struct** type. The first member of the structure must be a null-terminated string. The size of the structure is given by *offset*. Note that, unless the **TCL\_INDEX\_TEMP\_TABLE** flag is specified, references to the *structTablePtr* may be retained in the internal representation of *objPtr*, so this should represent the address of a statically-allocated array of structures.
+: An array of arbitrary type, typically some **struct** type. The first member of the structure must be a null-terminated string. The size of the structure is given by *offset*. Note that, unless the **TCL\_INDEX\_TEMP\_TABLE** flag is specified, references to the *structTablePtr* may be retained in the internal representation of *objPtr*, so this should represent the address of a statically-allocated array of structures.
+
 [offset]{.carg .in type="int"}
-The offset to add to structTablePtr to get to the next entry. The end of the array is marked by a NULL string pointer.
+: The offset to add to structTablePtr to get to the next entry. The end of the array is marked by a NULL string pointer.
+
 [\*msg]{.carg .in type="const char"}
-Null-terminated string describing what is being looked up, such as **option**.  This string is included in error messages.
+: Null-terminated string describing what is being looked up, such as **option**.  This string is included in error messages.
+
 [flags]{.carg .in type="int"}
-OR-ed combination of bits providing additional information for operation.  The only bits that are currently defined are **TCL\_EXACT** , **TCL\_INDEX\_TEMP\_TABLE**, and **TCL\_NULL\_OK**.
+: OR-ed combination of bits providing additional information for operation.  The only bits that are currently defined are **TCL\_EXACT** , **TCL\_INDEX\_TEMP\_TABLE**, and **TCL\_NULL\_OK**.
+
 [\*indexPtr]{.carg .out type="enum|char|short|int|long"}
-If not (int \*)NULL, the index of the string in *tablePtr* that matches the value of *objPtr* is returned here. The variable can be any integer type, signed or unsigned, char, short, long or long long. It can also be an enum.
+: If not (int \*)NULL, the index of the string in *tablePtr* that matches the value of *objPtr* is returned here. The variable can be any integer type, signed or unsigned, char, short, long or long long. It can also be an enum.
+
+
 :::
 
 # Description

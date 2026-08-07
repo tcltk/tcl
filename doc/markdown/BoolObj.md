@@ -32,18 +32,26 @@ Tcl\_NewBooleanObj, Tcl\_SetBooleanObj, Tcl\_GetBooleanFromObj, Tcl\_GetBoolFrom
 # Arguments
 
 ::: {.arguments} :::
+
 [intValue]{.carg .in type="int"}
-Integer value to be stored as a boolean value in a Tcl\_Obj.
+: Integer value to be stored as a boolean value in a Tcl\_Obj.
+
 [\*objPtr]{.carg .in/out type="Tcl_Obj"}
-Points to the Tcl\_Obj in which to store, or from which to retrieve a boolean value.
+: Points to the Tcl\_Obj in which to store, or from which to retrieve a boolean value.
+
 [\*interp]{.carg .in/out type="Tcl_Interp"}
-If a boolean value cannot be retrieved, an error message is left in the interpreter's result value unless *interp* is NULL.
+: If a boolean value cannot be retrieved, an error message is left in the interpreter's result value unless *interp* is NULL.
+
 [\*boolPtr]{.carg .out type="bool &| int"}
-Points to place where **Tcl\_GetBooleanFromObj** stores the boolean value (0 or 1) obtained from *objPtr*.
+: Points to place where **Tcl\_GetBooleanFromObj** stores the boolean value (0 or 1) obtained from *objPtr*.
+
 [\*charPtr]{.carg .out type="char"}
-Points to place where **Tcl\_GetBoolFromObj** stores the boolean value (0 or 1) obtained from *objPtr*.
+: Points to place where **Tcl\_GetBoolFromObj** stores the boolean value (0 or 1) obtained from *objPtr*.
+
 [flags]{.carg .in type="int"}
-0 or TCL\_NULL\_OK. If TCL\_NULL\_OK is used, then the empty string or NULL will result in **Tcl\_GetBoolFromObj** return TCL\_OK, the \*charPtr filled with the value **'\\xFF'**;
+: 0 or TCL\_NULL\_OK. If TCL\_NULL\_OK is used, then the empty string or NULL will result in **Tcl\_GetBoolFromObj** return TCL\_OK, the \*charPtr filled with the value **'\\xFF'**;
+
+
 :::
 
 # Description

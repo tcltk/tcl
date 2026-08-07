@@ -44,22 +44,32 @@ Tcl\_InitHashTable, Tcl\_InitCustomHashTable, Tcl\_InitObjHashTable, Tcl\_Delete
 # Arguments
 
 ::: {.arguments} :::
+
 [\*tablePtr]{.carg .in type="Tcl_HashTable"}
-Address of hash table structure (for all procedures but **Tcl\_InitHashTable**, this must have been initialized by previous call to **Tcl\_InitHashTable**).
+: Address of hash table structure (for all procedures but **Tcl\_InitHashTable**, this must have been initialized by previous call to **Tcl\_InitHashTable**).
+
 [keyType]{.carg .in type="int"}
-Kind of keys to use for new hash table.  Must be either **TCL\_STRING\_KEYS**, **TCL\_ONE\_WORD\_KEYS**, **TCL\_CUSTOM\_TYPE\_KEYS**, **TCL\_CUSTOM\_PTR\_KEYS**, or an integer value greater than 1.
+: Kind of keys to use for new hash table.  Must be either **TCL\_STRING\_KEYS**, **TCL\_ONE\_WORD\_KEYS**, **TCL\_CUSTOM\_TYPE\_KEYS**, **TCL\_CUSTOM\_PTR\_KEYS**, or an integer value greater than 1.
+
 [\*typePtr]{.carg .in type="Tcl_HashKeyType"}
-Address of structure which defines the behavior of the hash table.
+: Address of structure which defines the behavior of the hash table.
+
 [\*key]{.carg .in type="const void"}
-Key to use for probe into table.  Exact form depends on *keyType* used to create table.
+: Key to use for probe into table.  Exact form depends on *keyType* used to create table.
+
 [\*newPtr]{.carg .out type="int"}
-The word at *\*newPtr* is set to 1 if a new entry was created and 0 if there was already an entry for *key*.
+: The word at *\*newPtr* is set to 1 if a new entry was created and 0 if there was already an entry for *key*.
+
 [\*entryPtr]{.carg .in type="Tcl_HashEntry"}
-Pointer to hash table entry.
+: Pointer to hash table entry.
+
 [\*value]{.carg .in type="void"}
-New value to assign to hash table entry.
+: New value to assign to hash table entry.
+
 [\*searchPtr]{.carg .in type="Tcl_HashSearch"}
-Pointer to record to use to keep track of progress in enumerating all the entries in a hash table.
+: Pointer to record to use to keep track of progress in enumerating all the entries in a hash table.
+
+
 :::
 
 # Description

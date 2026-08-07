@@ -29,20 +29,29 @@ Tcl\_GetTime, Tcl\_SetTimeProc, Tcl\_QueryTimeProc - get date and time
 # Arguments
 
 ::: {.arguments} :::
+
 [\*timePtr]{.carg .out type="Tcl_Time"}
-Points to memory in which to store the date and time information.
+: Points to memory in which to store the date and time information.
+
 [getProc]{.carg .in type="Tcl_GetTimeProc"}
-Pointer to handler function replacing **Tcl\_GetTime**'s access to the OS.
+: Pointer to handler function replacing **Tcl\_GetTime**'s access to the OS.
+
 [scaleProc]{.carg .in type="Tcl_ScaleTimeProc"}
-Pointer to handler function for the conversion of time delays in the virtual domain to real-time.
+: Pointer to handler function for the conversion of time delays in the virtual domain to real-time.
+
 [\*clientData]{.carg .in type="void"}
-Value passed through to the two handler functions.
+: Value passed through to the two handler functions.
+
 [\*getProcPtr]{.carg .out type="Tcl_GetTimeProc"}
-Pointer to place the currently registered get handler function into.
+: Pointer to place the currently registered get handler function into.
+
 [\*scaleProcPtr]{.carg .out type="Tcl_ScaleTimeProc"}
-Pointer to place the currently registered scale handler function into.
+: Pointer to place the currently registered scale handler function into.
+
 [\*\*clientDataPtr]{.carg .out type="void"}
-Pointer to place the currently registered pass-through value into.
+: Pointer to place the currently registered pass-through value into.
+
+
 :::
 
 # Description

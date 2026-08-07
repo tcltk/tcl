@@ -50,34 +50,50 @@ Tcl\_ListObjAppendList, Tcl\_ListObjAppendElement, Tcl\_NewListObj, Tcl\_SetList
 # Arguments
 
 ::: {.arguments} :::
+
 [\*interp]{.carg .in type="Tcl_Interp"}
-If an error occurs while converting a value to be a list value, an error message is left in the interpreter's result value unless *interp* is NULL.
+: If an error occurs while converting a value to be a list value, an error message is left in the interpreter's result value unless *interp* is NULL.
+
 [\*listPtr]{.carg .in/out type="Tcl_Obj"}
-Points to the input list value. If *listPtr* does not already point to a list value, an attempt will be made to convert it to one. Some functions may store a reference to it internally so care must be taken when managing its reference count. See the [Reference count management] section below.
+: Points to the input list value. If *listPtr* does not already point to a list value, an attempt will be made to convert it to one. Some functions may store a reference to it internally so care must be taken when managing its reference count. See the [Reference count management] section below.
+
 [\*elemListPtr]{.carg .in/out type="Tcl_Obj"}
-For **Tcl\_ListObjAppendList**, this points to a list value containing elements to be appended onto *listPtr*. Each element of \**elemListPtr* will become a new element of *listPtr*. If \**elemListPtr* is not NULL and does not already point to a list value, an attempt will be made to convert it to one.
+: For **Tcl\_ListObjAppendList**, this points to a list value containing elements to be appended onto *listPtr*. Each element of \**elemListPtr* will become a new element of *listPtr*. If \**elemListPtr* is not NULL and does not already point to a list value, an attempt will be made to convert it to one.
+
 [\*objPtr]{.carg .in type="Tcl_Obj"}
-For **Tcl\_ListObjAppendElement**, points to the Tcl value that will be appended to *listPtr*. For **Tcl\_SetListObj**, this points to the Tcl value that will be converted to a list value containing the *objc* elements of the array referenced by *objv*.
+: For **Tcl\_ListObjAppendElement**, points to the Tcl value that will be appended to *listPtr*. For **Tcl\_SetListObj**, this points to the Tcl value that will be converted to a list value containing the *objc* elements of the array referenced by *objv*.
+
 [\*objcPtr]{.carg .in type="Tcl_Size &| int"}
-Points to location where **Tcl\_ListObjGetElements** stores the number of element values in *listPtr*. May be (Tcl\_Size \*)NULL when not used. If it points to a variable which type is not **Tcl\_Size**, a compiler warning will be generated. If your extensions is compiled with **-DTCL\_8\_API**, this function will return NULL for lists with more than INT\_MAX elements (which should trigger proper error-handling), otherwise expect it to crash.
+: Points to location where **Tcl\_ListObjGetElements** stores the number of element values in *listPtr*. May be (Tcl\_Size \*)NULL when not used. If it points to a variable which type is not **Tcl\_Size**, a compiler warning will be generated. If your extensions is compiled with **-DTCL\_8\_API**, this function will return NULL for lists with more than INT\_MAX elements (which should trigger proper error-handling), otherwise expect it to crash.
+
 [\*\*\*objvPtr]{.carg .out type="Tcl_Obj"}
-A location where **Tcl\_ListObjGetElements** stores a pointer to an array of pointers to the element values of *listPtr*.
+: A location where **Tcl\_ListObjGetElements** stores a pointer to an array of pointers to the element values of *listPtr*.
+
 [objc]{.carg .in type="Tcl_Size"}
-The number of Tcl values in the *objv* array.
+: The number of Tcl values in the *objv* array.
+
 [objv[]]{.carg .in type="Tcl_Obj *const"}
-An array of pointers to Tcl values.
+: An array of pointers to Tcl values.
+
 [\*lengthPtr]{.carg .out type="Tcl_Size &| int"}
-Points to location where **Tcl\_ListObjLength** stores the length of the list. May be (Tcl\_Size \*)NULL when not used. If it points to a variable which type is not **Tcl\_Size**, a compiler warning will be generated. If your extensions is compiled with **-DTCL\_8\_API**, this function will return TCL\_ERROR for lists with more than INT\_MAX elements (which should trigger proper error-handling), otherwise expect it to crash.
+: Points to location where **Tcl\_ListObjLength** stores the length of the list. May be (Tcl\_Size \*)NULL when not used. If it points to a variable which type is not **Tcl\_Size**, a compiler warning will be generated. If your extensions is compiled with **-DTCL\_8\_API**, this function will return TCL\_ERROR for lists with more than INT\_MAX elements (which should trigger proper error-handling), otherwise expect it to crash.
+
 [index]{.carg .in type="Tcl_Size"}
-Index of the list element that **Tcl\_ListObjIndex** is to return. The first element has index 0.
+: Index of the list element that **Tcl\_ListObjIndex** is to return. The first element has index 0.
+
 [\*\*objPtrPtr]{.carg .out type="Tcl_Obj"}
-Points to location to store an output list or element value. No assumptions should be made about the reference count of the returned value. See the [Reference count management] section below.
+: Points to location to store an output list or element value. No assumptions should be made about the reference count of the returned value. See the [Reference count management] section below.
+
 [first]{.carg .in type="Tcl_Size"}
-Index of the first element in a range of elements in a list.
+: Index of the first element in a range of elements in a list.
+
 [last]{.carg .in type="Tcl_Size"}
-Index of the last element in a range of elements in a list.
+: Index of the last element in a range of elements in a list.
+
 [count]{.carg .in type="Tcl_Size"}
-The number of elements to be operated on or a repetition count.
+: The number of elements to be operated on or a repetition count.
+
+
 :::
 
 # Description

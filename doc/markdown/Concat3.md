@@ -28,10 +28,14 @@ Tcl\_Concat - concatenate a collection of strings
 # Arguments
 
 ::: {.arguments} :::
+
 [argc]{.carg .in type="Tcl_Size"}
-Number of strings.
+: Number of strings.
+
 [argv[]]{.carg .in type="const char *const"}
-Array of strings to concatenate.  Must have *argc* entries.
+: Array of strings to concatenate.  Must have *argc* entries.
+
+
 :::
 
 # Description
