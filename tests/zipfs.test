@@ -1970,6 +1970,30 @@ namespace eval test_ns_zipfs {
 	zipfs mount $zipfile $mt
 	lsort [zipfs list $mt/*]
     } -result {//zipfs:/bug-7d5f1c1308-mt/bug-7d5f1c1308 //zipfs:/bug-7d5f1c1308-mt/bug-7d5f1c1308/.ext}
+
+    test bug-4676f5c78-0 {
+        Corrupted entries with glob -dir .
+    } -constraints {zipfs zipfslib} -setup {
+        set dir [pwd]
+        cd //zipfs:/
+    } -cleanup {
+        cd $dir
+    } -body {
+        glob -dir . *
+    } -result [list ./lib]
+
+    test bug-4676f5c78-1 {
+        Corrupted entries with glob -dir .
+    } -constraints zipfs} -setup {
+        mount [zippath test.zip] $defMountPt
+        set dir [pwd]
+        cd //zipfs:/
+    } -cleanup {
+        cd $dir
+        cleanup
+    } -body {
+        lsort [glob -dir . *]
+    } -result [list ./lib ./[file tail $defMountPt]]
 }
 
 
