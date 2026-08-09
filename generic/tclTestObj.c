@@ -202,14 +202,12 @@ TestbignumobjCmd(
 	}
 	string = Tcl_GetString(objv[3]);
 	if (mp_init(&bignumValue) != MP_OKAY) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "error in mp_init", -1));
+	    Tcl_PrintfResult(interp, "error in mp_init");
 	    return TCL_ERROR;
 	}
 	if (mp_read_radix(&bignumValue, string, 10) != MP_OKAY) {
 	    mp_clear(&bignumValue);
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "error in mp_read_radix", -1));
+	    Tcl_PrintfResult(interp, "error in mp_read_radix");
 	    return TCL_ERROR;
 	}
 
@@ -252,8 +250,7 @@ TestbignumobjCmd(
 	}
 	if (mp_mul_d(&bignumValue, 10, &bignumValue) != MP_OKAY) {
 	    mp_clear(&bignumValue);
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "error in mp_mul_d", -1));
+	    Tcl_PrintfResult(interp, "error in mp_mul_d");
 	    return TCL_ERROR;
 	}
 	if (!Tcl_IsShared(varPtr[varIndex])) {
@@ -277,8 +274,7 @@ TestbignumobjCmd(
 	}
 	if (mp_div_d(&bignumValue, 10, &bignumValue, NULL) != MP_OKAY) {
 	    mp_clear(&bignumValue);
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "error in mp_div_d", -1));
+	    Tcl_PrintfResult(interp, "error in mp_div_d");
 	    return TCL_ERROR;
 	}
 	if (!Tcl_IsShared(varPtr[varIndex])) {
@@ -302,8 +298,7 @@ TestbignumobjCmd(
 	}
 	if (mp_mod_2d(&bignumValue, 1, &bignumValue) != MP_OKAY) {
 	    mp_clear(&bignumValue);
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "error in mp_mod_2d", -1));
+	    Tcl_PrintfResult(interp, "error in mp_mod_2d");
 	    return TCL_ERROR;
 	}
 	if (!Tcl_IsShared(varPtr[varIndex])) {
@@ -623,7 +618,7 @@ TestindexobjCmd(
     }
 
     if (objc < 5) {
-	Tcl_AppendToObj(Tcl_GetObjResult(interp), "wrong # args", -1);
+	Tcl_PrintfResult(interp, "wrong # args");
 	return TCL_ERROR;
     }
 
@@ -762,8 +757,7 @@ TestintobjCmd(
 	if (Tcl_GetWideIntFromObj(interp, varPtr[varIndex], &wideValue) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	Tcl_AppendToObj(Tcl_GetObjResult(interp),
-		((wideValue == WIDE_MAX)? "1" : "0"), -1);
+	Tcl_SetObjResult(interp, Tcl_NewBooleanObj(wideValue == WIDE_MAX));
     } else if (strcmp(subCmd, "get") == 0) {
 	if (objc != 3) {
 	    goto wrongNumArgs;
@@ -995,9 +989,8 @@ TestlistobjCmd(
 		return TCL_ERROR;
 	    }
 	    if (objP->refCount < 0) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"Tcl_ListObjIndex returned object with ref count < 0",
-			TCL_INDEX_NONE));
+		Tcl_PrintfResult(interp,
+			"Tcl_ListObjIndex returned object with ref count < 0");
 		/* Keep looping since we are also looping for leaks */
 	    }
 	    Tcl_BounceRefCount(objP);
@@ -1019,9 +1012,8 @@ TestlistobjCmd(
 	    }
 	    for (i = 0; i < len; ++i) {
 		if (elems[i]->refCount <= 0) {
-		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			    "Tcl_ListObjGetElements element has ref count <= 0",
-			    TCL_INDEX_NONE));
+		    Tcl_PrintfResult(interp,
+			    "Tcl_ListObjGetElements element has ref count <= 0");
 		    break;
 		}
 	    }
@@ -1568,8 +1560,7 @@ TeststringobjCmd(
 		return TCL_ERROR;
 	    }
 	    if (length == TCL_INDEX_NONE) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"index value out of range", -1));
+		Tcl_PrintfResult(interp, "index value out of range");
 		return TCL_ERROR;
 	    }
 
@@ -1599,8 +1590,7 @@ TeststringobjCmd(
 		return TCL_ERROR;
 	    }
 	    if (length == TCL_INDEX_NONE) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"index value out of range", -1));
+		Tcl_PrintfResult(interp, "index value out of range");
 		return TCL_ERROR;
 	    }
 
@@ -1698,9 +1688,9 @@ TestbigdataCmd(
     /* Need one byte for nul terminator */
     Tcl_Size limit = TCL_SIZE_MAX-1;
     if (len < 0 || len > limit) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	Tcl_PrintfResult(interp,
 		"%s is greater than max permitted length %" TCL_SIZE_MODIFIER "d",
-		Tcl_GetString(objv[2]), limit));
+		Tcl_GetString(objv[2]), limit);
 	return TCL_ERROR;
     }
 
@@ -1827,8 +1817,7 @@ GetVariableIndex(
 	return TCL_ERROR;
     }
     if (index == TCL_INDEX_NONE) {
-	Tcl_ResetResult(interp);
-	Tcl_AppendToObj(Tcl_GetObjResult(interp), "bad variable index", -1);
+	Tcl_PrintfResult(interp, "bad variable index");
 	return TCL_ERROR;
     }
 

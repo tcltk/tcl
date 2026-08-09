@@ -678,9 +678,9 @@ FindElement(
 			    && (p2 < p+20)) {
 			p2++;
 		    }
-		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    Tcl_PrintfResult(interp,
 			    "%s element in braces followed by \"%.*s\" "
-			    "instead of space", typeStr, (int) (p2-p), p));
+			    "instead of space", typeStr, (int) (p2-p), p);
 		    Tcl_SetErrorCode(interp, "TCL", "VALUE", typeCode, "JUNK",
 			    (char *)NULL);
 		}
@@ -730,9 +730,9 @@ FindElement(
 			    && (p2 < p+20)) {
 			p2++;
 		    }
-		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    Tcl_PrintfResult(interp,
 			    "%s element in quotes followed by \"%.*s\" "
-			    "instead of space", typeStr, (int) (p2-p), p));
+			    "instead of space", typeStr, (int) (p2-p), p);
 		    Tcl_SetErrorCode(interp, "TCL", "VALUE", typeCode, "JUNK",
 			    (char *)NULL);
 		}
@@ -763,16 +763,16 @@ FindElement(
     if (p == limit) {
 	if (openBraces != 0) {
 	    if (interp != NULL) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"unmatched open brace in %s", typeStr));
+		Tcl_PrintfResult(interp, "unmatched open brace in %s",
+			typeStr);
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", typeCode, "BRACE",
 			(char *)NULL);
 	    }
 	    return TCL_ERROR;
 	} else if (inQuotes) {
 	    if (interp != NULL) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"unmatched open quote in %s", typeStr));
+		Tcl_PrintfResult(interp, "unmatched open quote in %s",
+			typeStr);
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", typeCode, "QUOTE",
 			(char *)NULL);
 	    }
@@ -910,7 +910,7 @@ Tcl_SplitList(
     if (!argv) {
     memerror:
 	if (interp) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj("cannot allocate", -1));
+	    Tcl_PrintfResult(interp, "cannot allocate");
 	    Tcl_SetErrorCode(interp, "TCL", "MEMORY", (char *)NULL);
 	}
 	return TCL_ERROR;
@@ -934,8 +934,7 @@ Tcl_SplitList(
 	if (i >= size) {
 	    Tcl_Free((void *)argv);
 	    if (interp != NULL) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"internal error in Tcl_SplitList", -1));
+		Tcl_PrintfResult(interp, "internal error in Tcl_SplitList");
 		Tcl_SetErrorCode(interp, "TCL", "INTERNAL", "Tcl_SplitList",
 			(char *)NULL);
 	    }
@@ -3822,9 +3821,9 @@ GetEndOffsetFromObj(
   parseError:
     if (interp != NULL) {
 	char * bytes = TclGetString(objPtr);
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	Tcl_PrintfResult(interp,
 		"bad index \"%s\": must be integer?[+-]integer? or"
-		" end?[+-]integer?", bytes));
+		" end?[+-]integer?", bytes);
 	if (!strncmp(bytes, "end-", 4)) {
 	    bytes += 4;
 	}
@@ -4017,9 +4016,9 @@ TclIndexEncode(
     *indexPtr = idx;
     return TCL_OK;
 
-rangeerror:
+  rangeerror:
     if (interp) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf("index \"%s\" out of range", TclGetString(objPtr)));
+	Tcl_PrintfResult(interp, "index \"%s\" out of range", TclGetString(objPtr));
 	Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX", "OUTOFRANGE", (char *)NULL);
     }
     return TCL_ERROR;
@@ -4411,8 +4410,7 @@ TclGetObjExecutableAncestors(
     Tcl_Obj *exePtr = TclGetObjNameOfExecutable();
     if (exePtr == NULL) {
 	if (interp) {
-	    Tcl_SetResult(interp, "Could not retrieve path of executable.",
-		    TCL_STATIC);
+	    Tcl_PrintfResult(interp, "Could not retrieve path of executable.");
 	}
 	return -1;
     }

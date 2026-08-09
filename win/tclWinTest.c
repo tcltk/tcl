@@ -154,8 +154,8 @@ TesteventloopCmd(
 	(void) Tcl_SetServiceMode(oldMode);
 	framePtr = oldFramePtr;
     } else {
-	Tcl_AppendResult(interp, "bad option \"", Tcl_GetString(objv[1]),
-		"\": must be done or wait", (char *)NULL);
+	Tcl_PrintfResult(interp, "bad option \"%s\": must be %s",
+		Tcl_GetString(objv[1]), "done or wait");
 	return TCL_ERROR;
     }
     return TCL_OK;
@@ -208,8 +208,8 @@ TestvolumetypeCmd(
 	    VOL_BUF_SIZE);
 
     if (found == 0) {
-	Tcl_AppendResult(interp, "could not get volume type for \"",
-		(path?path:""), "\"", (char *)NULL);
+	Tcl_PrintfResult(interp, "could not get volume type for \"%s\"",
+		(path ? path : ""));
 	Tcl_WinConvertError(GetLastError());
 	return TCL_ERROR;
     }
@@ -672,8 +672,7 @@ TestchmodCmd(
 	    return TCL_ERROR;
 	}
 	if (TestplatformChmod(translated, mode) != 0) {
-	    Tcl_AppendResult(interp, translated, ": ", Tcl_PosixError(interp),
-		    (char *)NULL);
+	    Tcl_PrintfResult(interp, "%s: %s", translated, Tcl_PosixError(interp));
 	    return TCL_ERROR;
 	}
 	Tcl_DStringFree(&buffer);

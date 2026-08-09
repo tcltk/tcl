@@ -1851,15 +1851,13 @@ TclOOClassVariableObjCmd(
     for (Tcl_Size i = 1; i < objc; i++) {
 	const char *varName = TclGetString(objv[i]);
 	if (Tcl_StringMatch(varName, "*(*)")) {
-	    Tcl_PrintfResult(interp,
-		    "bad variable name \"%s\": can't create a %s",
+	    Tcl_PrintfResult(interp, "bad variable name \"%s\": can't create a %s",
 		    varName, "scalar variable that looks like an array element");
 	    Tcl_SetErrorCode(interp, "TCL", "UPVAR", "LOCAL_ELEMENT", (char *)NULL);
 	    return TCL_ERROR;
 	}
 	if (Tcl_StringMatch(varName, "*::*")) {
-	    Tcl_PrintfResult(interp,
-		    "bad variable name \"%s\": can't create a %s",
+	    Tcl_PrintfResult(interp, "bad variable name \"%s\": can't create a %s",
 		    varName, "local variable with a namespace separator in it");
 	    Tcl_SetErrorCode(interp, "TCL", "UPVAR", "LOCAL_ELEMENT", (char *)NULL);
 	    return TCL_ERROR;

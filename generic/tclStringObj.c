@@ -1869,7 +1869,6 @@ Tcl_AppendFormatToObj(
 	"not enough arguments for all format specifiers",
 	"\"%n$\" argument index out of range"
     };
-    static const char *overflow = "max size for a Tcl value exceeded";
 
     if (Tcl_IsShared(appendObj)) {
 	Tcl_Panic("%s called with shared object", "Tcl_AppendFormatToObj");
@@ -1899,9 +1898,7 @@ Tcl_AppendFormatToObj(
 	}
 	if (numBytes) {
 	    if (numBytes > limit) {
-		msg = overflow;
-		errCode = "OVERFLOW";
-		goto errorMsg;
+		goto overflow;
 	    }
 	    Tcl_AppendToObj(appendObj, span, numBytes);
 	    limit -= numBytes;
@@ -2000,9 +1997,7 @@ Tcl_AppendFormatToObj(
 	    ull = strtoull(format, &end, 10);
 	    /* Comparison is >=, not >, to leave room for nul */
 	    if (ull >= WIDE_MAX) {
-		msg = overflow;
-		errCode = "OVERFLOW";
-		goto errorMsg;
+		goto overflow;
 	    }
 	    width = (Tcl_WideInt)ull;
 	    format = end;
@@ -2025,9 +2020,7 @@ Tcl_AppendFormatToObj(
 	    step = TclUtfToUniChar(format, &ch);
 	}
 	if (width > limit) {
-	    msg = overflow;
-	    errCode = "OVERFLOW";
-	    goto errorMsg;
+	    goto overflow;
 	}
 
 	/*
@@ -2046,9 +2039,7 @@ Tcl_AppendFormatToObj(
 	    ull = strtoull(format, &end, 10);
 	    /* Comparison is >=, not >, to leave room for nul */
 	    if (ull >= WIDE_MAX) {
-		msg = overflow;
-		errCode = "OVERFLOW";
-		goto errorMsg;
+		goto overflow;
 	    }
 	    precision = (Tcl_WideInt)ull;
 	    format = end;
@@ -2338,9 +2329,7 @@ Tcl_AppendFormatToObj(
 		    }
 		}
 		if (toAppend > segmentLimit) {
-		    msg = overflow;
-		    errCode = "OVERFLOW";
-		    goto errorMsg;
+		    goto overflow;
 		}
 		Tcl_AppendToObj(segment, bytes, toAppend);
 		Tcl_DecrRefCount(pure);
@@ -2396,9 +2385,7 @@ Tcl_AppendFormatToObj(
 			mask >>= numBits;
 		    }
 		    if (numDigits > INT_MAX) {
-			msg = overflow;
-			errCode = "OVERFLOW";
-			goto errorMsg;
+			goto overflow;
 		    }
 		} else if (!useBig) {
 		    unsigned ul = (unsigned) l;
@@ -2468,9 +2455,7 @@ Tcl_AppendFormatToObj(
 		    }
 		}
 		if (toAppend > segmentLimit) {
-		    msg = overflow;
-		    errCode = "OVERFLOW";
-		    goto errorMsg;
+		    goto overflow;
 		}
 		Tcl_AppendObjToObj(segment, pure);
 		Tcl_DecrRefCount(pure);
@@ -2524,9 +2509,7 @@ Tcl_AppendFormatToObj(
 		*p++ = '.';
 		p += snprintf(p, TCL_INTEGER_SPACE, "%" TCL_LL_MODIFIER "d", precision);
 		if (precision > INT_MAX - length) {
-		    msg = overflow;
-		    errCode = "OVERFLOW";
-		    goto errorMsg;
+		    goto overflow;
 		}
 		length += (int)precision;
 	    }
@@ -2544,18 +2527,14 @@ Tcl_AppendFormatToObj(
 		if (allocSegment) {
 		    Tcl_DecrRefCount(segment);
 		}
-		msg = overflow;
-		errCode = "OVERFLOW";
-		goto errorMsg;
+		goto overflow;
 	    }
 	    bytes = TclGetString(segment);
 	    if (!Tcl_AttemptSetObjLength(segment, TclFormatDouble(bytes, segment->length, spec, d))) {
 		if (allocSegment) {
 		    Tcl_DecrRefCount(segment);
 		}
-		msg = overflow;
-		errCode = "OVERFLOW";
-		goto errorMsg;
+		goto overflow;
 	    }
 	    if (ch == 'A') {
 		char *q = TclGetString(segment) + 1;
@@ -2593,9 +2572,7 @@ Tcl_AppendFormatToObj(
 	    if (allocSegment) {
 		Tcl_DecrRefCount(segment);
 	    }
-	    msg = overflow;
-	    errCode = "OVERFLOW";
-	    goto errorMsg;
+	    goto overflow;
 	}
 	Tcl_AppendObjToObj(appendObj, segment);
 	limit -= segmentNumBytes;
@@ -2616,9 +2593,7 @@ Tcl_AppendFormatToObj(
     }
     if (numBytes) {
 	if (numBytes > limit) {
-	    msg = overflow;
-	    errCode = "OVERFLOW";
-	    goto errorMsg;
+	    goto overflow;
 	}
 	Tcl_AppendToObj(appendObj, span, numBytes);
 	limit -= numBytes;
@@ -2626,6 +2601,13 @@ Tcl_AppendFormatToObj(
     }
 
     return TCL_OK;
+
+  overflow:
+    if (interp != NULL) {
+	Tcl_PrintfResult(interp, "max size for a Tcl value exceeded");
+	Tcl_SetErrorCode(interp, "TCL", "FORMAT", "OVERFLOW", (char *)NULL);
+    }
+    goto error;
 
   errorMsg:
     if (interp != NULL) {

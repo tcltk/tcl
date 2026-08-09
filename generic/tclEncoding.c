@@ -1264,10 +1264,10 @@ Tcl_ExternalToUtfDStringEx(
 		    char buf[TCL_INTEGER_SPACE];
 		    snprintf(buf, sizeof(buf), "%" TCL_SIZE_MODIFIER "d",
 			    nBytesProcessed);
-		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    Tcl_PrintfResult(interp,
 			    "unexpected byte sequence starting at index %"
 			    TCL_SIZE_MODIFIER "d: '\\x%02X'",
-			    nBytesProcessed, UCHAR(srcStart[nBytesProcessed])));
+			    nBytesProcessed, UCHAR(srcStart[nBytesProcessed]));
 		    Tcl_SetErrorCode(
 			    interp, "TCL", "ENCODING", "ILLEGALSEQUENCE", buf,
 			    (char *)NULL);
@@ -1374,10 +1374,9 @@ Tcl_ExternalToUtf(
 	    statePtr = 0;
 	}
 	if (interp) {
-	    Tcl_SetResult(interp,
-		    "Tcl_ExternalToUtf does not support lengths greater than "
-		    "INT_MAX. Use Tcl_ExternalToUtfEx instead.",
-		    TCL_STATIC);
+	    Tcl_PrintfResult(interp,
+		    "%s does not support lengths greater than INT_MAX. Use %s instead.",
+		    "Tcl_ExternalToUtf", "Tcl_ExternalToUtfEx");
 	}
 	/*
 	 * This is a incompatibility with 9.0 as TCL_ERROR is not documented
@@ -1836,10 +1835,10 @@ Tcl_UtfToExternalDStringEx(
 		    TclUtfToUniChar(&srcStart[nBytesProcessed], &ucs4);
 		    snprintf(buf, sizeof(buf), "%" TCL_SIZE_MODIFIER "d",
 			    nBytesProcessed);
-		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    Tcl_PrintfResult(interp,
 			    "unexpected character at index %" TCL_SIZE_MODIFIER
 			    "u: 'U+%06X'",
-			    pos, ucs4));
+			    pos, ucs4);
 		    Tcl_SetErrorCode(interp, "TCL", "ENCODING", "ILLEGALSEQUENCE",
 			    buf, (char *)NULL);
 		}
@@ -1942,10 +1941,9 @@ Tcl_UtfToExternal(
 	    statePtr = 0;
 	}
 	if (interp) {
-	    Tcl_SetResult(interp,
-		    "Tcl_UtfToExternal does not support lengths greater than "
-		    "INT_MAX. Use Tcl_UtfToExternalEx instead.",
-		    TCL_STATIC);
+	    Tcl_PrintfResult(interp,
+		    "%s does not support lengths greater than INT_MAX. Use %s instead.",
+		    "Tcl_UtfToExternal", "Tcl_UtfToExternalEx");
 	}
 	/*
 	 * This is a incompatibility with 9.0 as TCL_ERROR is not documented
@@ -2385,8 +2383,7 @@ OpenEncodingFileChannel(
     }
 
     if ((NULL == chan) && (interp != NULL)) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"unknown encoding \"%s\"", name));
+	Tcl_PrintfResult(interp, "unknown encoding \"%s\"", name);
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ENCODING", name, (char *)NULL);
     }
     Tcl_DecrRefCount(fileNameObj);
@@ -2459,8 +2456,7 @@ LoadEncodingFile(
 	break;
     }
     if ((encoding == NULL) && (interp != NULL)) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"invalid encoding file \"%s\"", name));
+	Tcl_PrintfResult(interp, "invalid encoding file \"%s\"", name);
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ENCODING", name, (char *)NULL);
     }
     Tcl_CloseEx(NULL, chan, 0);
@@ -5380,16 +5376,15 @@ TclEncodingProfileNameToId(
     }
     if (interp) {
 	/* This code assumes at least two profiles :-) */
-	Tcl_Obj *errorObj = Tcl_ObjPrintf("bad profile name \"%s\": must be",
+	Tcl_PrintfResult(interp, "bad profile name \"%s\": must be",
 		profileName);
 	for (i = 0; i < (numProfiles - 1); ++i) {
-	    Tcl_AppendStringsToObj(
-		    errorObj, " ", encodingProfiles[i].name, ",", (char *)NULL);
+	    Tcl_AppendPrintfResult(interp, " %s,",
+		    encodingProfiles[i].name);
 	}
-	Tcl_AppendStringsToObj(
-		errorObj, " or ", encodingProfiles[numProfiles-1].name, (char *)NULL);
+	Tcl_AppendPrintfResult(interp, " or %s",
+		encodingProfiles[numProfiles-1].name);
 
-	Tcl_SetObjResult(interp, errorObj);
 	Tcl_SetErrorCode(
 		interp, "TCL", "ENCODING", "PROFILE", profileName, (char *)NULL);
     }
@@ -5424,8 +5419,8 @@ TclEncodingProfileIdToName(
 	}
     }
     if (interp) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"Internal error. Bad profile id \"%d\".", profileValue));
+	Tcl_PrintfResult(interp, "Internal error. Bad profile id \"%d\".",
+		profileValue);
 	Tcl_SetErrorCode(
 		interp, "TCL", "ENCODING", "PROFILEID", (char *)NULL);
     }
@@ -5539,9 +5534,9 @@ TclUtfNormalize(
     if (profile != TCL_ENCODING_PROFILE_REPLACE &&
 	    profile != TCL_ENCODING_PROFILE_STRICT) {
 	if (interp) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    Tcl_PrintfResult(interp,
 		    "Invalid value %d passed for encoding profile.",
-		    profile));
+		    profile);
 	    Tcl_SetErrorCode(
 		    interp, "TCL", "ENCODING", "PROFILEID", (char *)NULL);
 	}
@@ -5564,9 +5559,9 @@ TclUtfNormalize(
 	break;
     default:
 	if (interp) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    Tcl_PrintfResult(interp,
 		    "Invalid value %d passed for normalization form.",
-		    normForm));
+		    normForm);
 	    Tcl_SetErrorCode(
 		    interp, "TCL", "ENCODING", "NORMFORM", (char *)NULL);
 	}
@@ -5715,8 +5710,7 @@ Tcl_UtfToNormalized(
 	}
     }
     if (from < fromEnd) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"Output buffer too small.", -1));
+	Tcl_PrintfResult(interp, "Output buffer too small.");
 	result = TCL_CONVERT_NOSPACE;
     } else {
 	assert(to <= toEnd);

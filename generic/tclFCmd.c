@@ -806,27 +806,26 @@ CopyRenameOneFile(
 	    }
 	}
 	if (result != TCL_OK) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf("can't unlink \"%s\": %s",
-		    TclGetString(errfile), Tcl_PosixError(interp)));
+	    Tcl_PrintfResult(interp, "can't unlink \"%s\": %s",
+		    TclGetString(errfile), Tcl_PosixError(interp));
 	    errfile = NULL;
 	}
     }
 
   done:
     if (errfile != NULL) {
-	Tcl_Obj *errorMsg = Tcl_ObjPrintf("error %s \"%s\"",
+	Tcl_PrintfResult(interp, "error %s \"%s\"",
 		(copyFlag ? "copying" : "renaming"), TclGetString(source));
 
 	if (errfile != source) {
-	    Tcl_AppendPrintfToObj(errorMsg, " to \"%s\"",
+	    Tcl_AppendPrintfResult(interp, " to \"%s\"",
 		    TclGetString(target));
 	    if (errfile != target) {
-		Tcl_AppendPrintfToObj(errorMsg, ": \"%s\"",
+		Tcl_AppendPrintfResult(interp, ": \"%s\"",
 			TclGetString(errfile));
 	    }
 	}
-	Tcl_AppendPrintfToObj(errorMsg, ": %s", Tcl_PosixError(interp));
-	Tcl_SetObjResult(interp, errorMsg);
+	Tcl_AppendPrintfResult(interp, ": %s", Tcl_PosixError(interp));
     }
     if (errorBuffer != NULL) {
 	Tcl_DecrRefCount(errorBuffer);

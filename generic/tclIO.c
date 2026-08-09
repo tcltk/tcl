@@ -7928,7 +7928,6 @@ Tcl_BadChannelOption(
 	const char **argv;
 	Tcl_Size argc, i;
 	Tcl_DString ds;
-	Tcl_Obj *errObj;
 
 	Tcl_DStringInit(&ds);
 	Tcl_DStringAppend(&ds, genericopt, -1);
@@ -7941,14 +7940,13 @@ Tcl_BadChannelOption(
 	    Tcl_Panic("malformed option list in channel driver");
 	}
 	Tcl_ResetResult(interp);
-	errObj = Tcl_ObjPrintf("bad option \"%s\": should be one of ",
+	Tcl_PrintfResult(interp, "bad option \"%s\": should be one of ",
 		optionName ? optionName : "");
 	argc--;
 	for (i = 0; i < argc; i++) {
-	    Tcl_AppendPrintfToObj(errObj, "-%s, ", argv[i]);
+	    Tcl_AppendPrintfResult(interp, "-%s, ", argv[i]);
 	}
-	Tcl_AppendPrintfToObj(errObj, "or -%s", argv[i]);
-	Tcl_SetObjResult(interp, errObj);
+	Tcl_AppendPrintfResult(interp, "or -%s", argv[i]);
 	Tcl_DStringFree(&ds);
 	Tcl_Free((void *)argv);
     }

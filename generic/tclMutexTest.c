@@ -187,9 +187,8 @@ TestMutexObjCmd(
 
     if (context.numIterations <= 0 || context.numRecursions <= 0 ||
 	    context.numThreads <= 0) {
-	Tcl_SetResult(interp,
-		"thread, recursion and iteration counts must be positive",
-		TCL_STATIC);
+	Tcl_PrintfResult(interp,
+		"thread, recursion and iteration counts must be positive");
 	return TCL_ERROR;
     }
 
@@ -318,7 +317,7 @@ TestConditionVariable(
     MutexSharedContext *contextPtr)
 {
     if (contextPtr->numThreads < 2) {
-	Tcl_SetResult(interp, "Need at least 2 threads.", TCL_STATIC);
+	Tcl_PrintfResult(interp, "Need at least 2 threads.");
 	return TCL_ERROR;
     }
     int numProducers = contextPtr->numThreads / 2;

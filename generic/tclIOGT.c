@@ -270,8 +270,7 @@ TclChannelTransform(
     }
 
     if (TCL_OK != TclListObjLength(interp, cmdObjPtr, &objc)) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"-command value is not a list", -1));
+	Tcl_PrintfResult(interp, "-command value is not a list");
 	return TCL_ERROR;
     }
 
@@ -313,8 +312,8 @@ TclChannelTransform(
     dataPtr->self = Tcl_StackChannel(interp, &transformChannelType, dataPtr,
 	    mode, chan);
     if (dataPtr->self == NULL) {
-	Tcl_AppendPrintfToObj(Tcl_GetObjResult(interp),
-		"\nfailed to stack channel \"%s\"", Tcl_GetChannelName(chan));
+	Tcl_AppendPrintfResult(interp, "\nfailed to stack channel \"%s\"",
+		Tcl_GetChannelName(chan));
 	ReleaseData(dataPtr);
 	return TCL_ERROR;
     }
@@ -475,9 +474,8 @@ ExecuteCallback(
 	    ResultAdd(&dataPtr->result, resBuf, resLen);
 	    break;
 	}
-	nonBytes:
-	Tcl_AppendResult(interp, "chan transform callback received non-bytes",
-		(char *)NULL);
+    nonBytes:
+	Tcl_PrintfResult(interp, "chan transform callback received non-bytes");
 	Tcl_Release(eval);
 	return TCL_ERROR;
 

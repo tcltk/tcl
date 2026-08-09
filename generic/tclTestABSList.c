@@ -410,8 +410,7 @@ LStringSetElem(
     Tcl_Obj *returnObj;
 
     if (numIndicies > 1) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"Multiple indicies not supported by lstring."));
+	Tcl_PrintfResult(interp, "Multiple indicies not supported by lstring.");
 	return NULL;
     }
 
@@ -476,7 +475,7 @@ LStringRange(
 
     if (lstringRepPtr->strlen < fromIdx ||
 	    lstringRepPtr->strlen < toIdx) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf("Range out of bounds "));
+	Tcl_PrintfResult(interp, "Range out of bounds ");
 	return TCL_ERROR;
     }
 
@@ -1015,10 +1014,9 @@ LgenSeriesGenerateIndex(
 	int status = Tcl_EvalObjEx(intrp, genCmd, flags);
 	elemObj = Tcl_GetObjResult(intrp);
 	if (status != TCL_OK) {
-	    Tcl_SetObjResult(intrp, Tcl_ObjPrintf(
-		    "Error: %s\nwhile executing %s\n",
+	    Tcl_PrintfResult(intrp, "Error: %s\nwhile executing %s\n",
 		    elemObj ? Tcl_GetString(elemObj) : "NULL",
-		    Tcl_GetString(genCmd)));
+		    Tcl_GetString(genCmd));
 	    return NULL;
 	}
     }

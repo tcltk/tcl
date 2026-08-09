@@ -2058,18 +2058,17 @@ AddRequirementsToResult(
     Tcl_Obj *const reqv[])	/* 0 means to use the latest version
 				 * available. */
 {
-    Tcl_Obj *result = Tcl_GetObjResult(interp);
     int i;
-    Tcl_Size length;
 
     for (i = 0; i < reqc; i++) {
+	Tcl_Size length;
 	const char *v = TclGetStringFromObj(reqv[i], &length);
 
 	if ((length & 0x1) && (v[length/2] == '-')
 		&& (strncmp(v, v+((length+1)/2), length/2) == 0)) {
-	    Tcl_AppendPrintfToObj(result, " exactly %s", v+((length+1)/2));
+	    Tcl_AppendPrintfResult(interp, " exactly %s", v+((length+1)/2));
 	} else {
-	    Tcl_AppendPrintfToObj(result, " %s", v);
+	    Tcl_AppendPrintfResult(interp, " %s", v);
 	}
     }
 }
@@ -2098,9 +2097,9 @@ AddRequirementsToDString(
     Tcl_Obj *const reqv[])	/* 0 means to use the latest version
 				 * available. */
 {
-    int i;
-
     if (reqc > 0) {
+	int i;
+
 	for (i = 0; i < reqc; i++) {
 	    TclDStringAppendLiteral(dsPtr, " ");
 	    TclDStringAppendObj(dsPtr, reqv[i]);

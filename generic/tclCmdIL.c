@@ -221,9 +221,9 @@ TclNRIfObjCmd(
     Tcl_Obj *boolObj;
 
     if (objc <= 1) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	Tcl_PrintfResult(interp,
 		"wrong # args: no expression after \"%s\" argument",
-		TclGetString(objv[0])));
+		TclGetString(objv[0]));
 	Tcl_SetErrorCode(interp, "TCL", "WRONGARGS", (char *)NULL);
 	return TCL_ERROR;
     }
@@ -313,9 +313,9 @@ IfConditionCallback(
 	 */
 
 	if (i >= objc) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    Tcl_PrintfResult(interp,
 		    "wrong # args: no expression after \"%s\" argument",
-		    clause));
+		    clause);
 	    Tcl_SetErrorCode(interp, "TCL", "WRONGARGS", (char *)NULL);
 	    return TCL_ERROR;
 	}
@@ -340,9 +340,8 @@ IfConditionCallback(
 	}
     }
     if (i < objc - 1) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"wrong # args: extra words after \"else\" clause in \"if\" command",
-		-1));
+	Tcl_PrintfResult(interp,
+		"wrong # args: extra words after \"else\" clause in \"if\" command");
 	Tcl_SetErrorCode(interp, "TCL", "WRONGARGS", (char *)NULL);
 	return TCL_ERROR;
     }
@@ -357,9 +356,9 @@ IfConditionCallback(
     return TclNREvalObjEx(interp, objv[i], 0, iPtr->cmdFramePtr, i);
 
   missingScript:
-    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+    Tcl_PrintfResult(interp,
 	    "wrong # args: no script following \"%s\" argument",
-	    TclGetString(objv[i-1])));
+	    TclGetString(objv[i - 1]));
     Tcl_SetErrorCode(interp, "TCL", "WRONGARGS", (char *)NULL);
     return TCL_ERROR;
 }
@@ -463,8 +462,7 @@ InfoArgsCmd(
     name = TclGetString(objv[1]);
     procPtr = TclFindProc(iPtr, name);
     if (procPtr == NULL) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"\"%s\" isn't a procedure", name));
+	Tcl_PrintfResult(interp, "\"%s\" isn't a procedure", name);
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "PROCEDURE", name, (char *)NULL);
 	return TCL_ERROR;
     }
@@ -525,8 +523,7 @@ InfoBodyCmd(
     name = TclGetString(objv[1]);
     procPtr = TclFindProc(iPtr, name);
     if (procPtr == NULL) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"\"%s\" isn't a procedure", name));
+	Tcl_PrintfResult(interp, "\"%s\" isn't a procedure", name);
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "PROCEDURE", name, (char *)NULL);
 	return TCL_ERROR;
     }
@@ -945,8 +942,7 @@ InfoDefaultCmd(
 
     procPtr = TclFindProc(iPtr, procName);
     if (procPtr == NULL) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"\"%s\" isn't a procedure", procName));
+	Tcl_PrintfResult(interp, "\"%s\" isn't a procedure", procName);
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "PROCEDURE", procName,
 		(char *)NULL);
 	return TCL_ERROR;
@@ -978,9 +974,8 @@ InfoDefaultCmd(
 	}
     }
 
-    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-	    "procedure \"%s\" doesn't have an argument \"%s\"",
-	    procName, argName));
+    Tcl_PrintfResult(interp, "procedure \"%s\" doesn't have an argument \"%s\"",
+	    procName, argName);
     Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ARGUMENT", argName, (char *)NULL);
     return TCL_ERROR;
 }
@@ -1162,8 +1157,7 @@ InfoFrameCmd(
 
     if ((level > topLevel) || (level <= - topLevel)) {
     levelError:
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"bad level \"%s\"", TclGetString(objv[1])));
+	Tcl_PrintfResult(interp, "bad level \"%s\"", TclGetString(objv[1]));
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "LEVEL",
 		TclGetString(objv[1]), (char *)NULL);
 	code = TCL_ERROR;
@@ -1530,8 +1524,7 @@ InfoHostnameCmd(
 	return TCL_OK;
     }
 
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-	    "unable to determine name of host", -1));
+    Tcl_PrintfResult(interp, "unable to determine name of host");
     Tcl_SetErrorCode(interp, "TCL", "OPERATION", "HOSTNAME", "UNKNOWN", (char *)NULL);
     return TCL_ERROR;
 }
@@ -1602,8 +1595,7 @@ InfoLevelCmd(
     return TCL_ERROR;
 
   levelError:
-    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-	    "bad level \"%s\"", TclGetString(objv[1])));
+    Tcl_PrintfResult(interp, "bad level \"%s\"", TclGetString(objv[1]));
     Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "LEVEL",
 	    TclGetString(objv[1]), (char *)NULL);
     return TCL_ERROR;
@@ -1650,8 +1642,7 @@ InfoLibraryCmd(
 	return TCL_OK;
     }
 
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-	    "no library has been specified for Tcl", -1));
+    Tcl_PrintfResult(interp, "no library has been specified for Tcl");
     Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "VARIABLE", "tcl_library", (char *)NULL);
     return TCL_ERROR;
 }
@@ -2104,10 +2095,10 @@ InfoCmdTypeCmd(
 
     if (Tcl_IsSafe(interp)
 	    && (((Command *) command)->objProc2 == TclAliasObjCmd)) {
-	Tcl_AppendResult(interp, "native", (char *)NULL);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj("native", -1));
     } else {
-	Tcl_SetObjResult(interp,
-		Tcl_NewStringObj(TclGetCommandTypeName(command), -1));
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		TclGetCommandTypeName(command), -1));
     }
     return TCL_OK;
 }
@@ -2626,8 +2617,7 @@ Tcl_LpopObjCmd(
     if (objc == 2) {
 	if (!listLen) {
 	    /* empty list, throw the same error as with index "end" */
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "index \"end\" out of range", -1));
+	    Tcl_PrintfResult(interp, "index \"end\" out of range");
 	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX", "OUTOFRANGE", (char *)NULL);
 	    return TCL_ERROR;
 	}
@@ -3236,8 +3226,7 @@ Tcl_LsearchObjCmd(
 		startPtr = NULL;
 	    }
 	    if (i > objc-4) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"missing starting index", -1));
+		Tcl_PrintfResult(interp, "missing starting index");
 		Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "MISSING", (char *)NULL);
 		result = TCL_ERROR;
 		goto done;
@@ -3259,9 +3248,8 @@ Tcl_LsearchObjCmd(
 	    break;
 	case LSEARCH_STRIDE:		/* -stride */
 	    if (i > objc-4) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"\"-stride\" option must be "
-			"followed by stride length", -1));
+		Tcl_PrintfResult(interp,
+			"\"-stride\" option must be followed by stride length");
 		Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "MISSING", (char *)NULL);
 		result = TCL_ERROR;
 		goto done;
@@ -3271,8 +3259,7 @@ Tcl_LsearchObjCmd(
 		goto done;
 	    }
 	    if (wide < 1) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"stride length must be at least 1", -1));
+		Tcl_PrintfResult(interp, "stride length must be at least 1");
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LSEARCH",
 			"BADSTRIDE", (char *)NULL);
 		result = TCL_ERROR;
@@ -3290,9 +3277,8 @@ Tcl_LsearchObjCmd(
 		allocatedIndexVector = 0;
 	    }
 	    if (i > objc-4) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"\"-index\" option must be followed by list index",
-			-1));
+		Tcl_PrintfResult(interp,
+			"\"-index\" option must be followed by list index");
 		Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "MISSING", (char *)NULL);
 		result = TCL_ERROR;
 		goto done;
@@ -3337,9 +3323,8 @@ Tcl_LsearchObjCmd(
 		    result = TCL_ERROR;
 		}
 		if (encoded == (int)TCL_INDEX_NONE) {
-		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			    "index \"%s\" out of range",
-			    TclGetString(indices[j])));
+		    Tcl_PrintfResult(interp, "index \"%s\" out of range",
+			    TclGetString(indices[j]));
 		    Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX", "OUTOFRANGE", (char *)NULL);
 		    result = TCL_ERROR;
 		}
@@ -3363,8 +3348,8 @@ Tcl_LsearchObjCmd(
      */
 
     if (returnSubindices && sortInfo.indexc==0) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"-subindices cannot be used without -index option", -1));
+	Tcl_PrintfResult(interp,
+		"-subindices cannot be used without -index option");
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LSEARCH",
 		"BAD_OPTION_MIX", (char *)NULL);
 	result = TCL_ERROR;
@@ -3372,8 +3357,8 @@ Tcl_LsearchObjCmd(
     }
 
     if (bisect && (allMatches || negatedMatch)) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"-bisect is not compatible with -all or -not", -1));
+	Tcl_PrintfResult(interp,
+		"-bisect is not compatible with -all or -not");
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LSEARCH",
 		"BAD_OPTION_MIX", (char *)NULL);
 	result = TCL_ERROR;
@@ -3425,9 +3410,8 @@ Tcl_LsearchObjCmd(
 
     if (groupSize > 1) {
 	if (listc % groupSize) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "list size must be a multiple of the stride length",
-		    -1));
+	    Tcl_PrintfResult(interp,
+		    "list size must be a multiple of the stride length");
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LSEARCH", "BADSTRIDE",
 		    (char *)NULL);
 	    result = TCL_ERROR;
@@ -3441,9 +3425,9 @@ Tcl_LsearchObjCmd(
 
 	    groupOffset = TclIndexDecode(sortInfo.indexv[0], groupSize - 1);
 	    if (groupOffset < 0 || groupOffset >= groupSize) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		Tcl_PrintfResult(interp,
 			"when used with \"-stride\", the leading \"-index\""
-			" value must be within the group", -1));
+			" value must be within the group");
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LSEARCH",
 			"BADINDEX", (char *)NULL);
 		result = TCL_ERROR;
@@ -3910,8 +3894,8 @@ SequenceIdentifyArgument(
     if (result == TCL_OK) {
 	if (allowedArgs & LastArg) {
 	    /* keyword found, but no followed number */
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "missing \"%s\" value.", TclGetString(argPtr)));
+	    Tcl_PrintfResult(interp, "missing \"%s\" value.",
+		    TclGetString(argPtr));
 	    return ErrArg;
 	}
 	*keywordIndexPtr = opmode;
@@ -4410,9 +4394,8 @@ Tcl_LsortObjCmd(
 	    break;
 	case LSORT_COMMAND:
 	    if (i == objc-2) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"\"-command\" option must be followed "
-			"by comparison command", -1));
+		Tcl_PrintfResult(interp, "\"-command\" option must be "
+			"followed by comparison command");
 		Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "MISSING", (char *)NULL);
 		sortInfo.resultCode = TCL_ERROR;
 		goto done;
@@ -4435,9 +4418,8 @@ Tcl_LsortObjCmd(
 	    Tcl_Obj **indexv;
 
 	    if (i == objc-2) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"\"-index\" option must be followed by list index",
-			-1));
+		Tcl_PrintfResult(interp,
+			"\"-index\" option must be followed by list index");
 		Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "MISSING", (char *)NULL);
 		sortInfo.resultCode = TCL_ERROR;
 		goto done;
@@ -4462,9 +4444,8 @@ Tcl_LsortObjCmd(
 			TCL_INDEX_NONE, TCL_INDEX_NONE, &encoded);
 
 		if ((result == TCL_OK) && (encoded == (int)TCL_INDEX_NONE)) {
-		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			    "index \"%s\" out of range",
-			    TclGetString(indexv[j])));
+		    Tcl_PrintfResult(interp, "index \"%s\" out of range",
+			    TclGetString(indexv[j]));
 		    Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX", "OUTOFRANGE", (char *)NULL);
 		    result = TCL_ERROR;
 		}
@@ -4497,9 +4478,8 @@ Tcl_LsortObjCmd(
 	    break;
 	case LSORT_STRIDE:
 	    if (i == objc-2) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"\"-stride\" option must be "
-			"followed by stride length", -1));
+		Tcl_PrintfResult(interp, "\"-stride\" option must be "
+			"followed by stride length");
 		Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "MISSING", (char *)NULL);
 		sortInfo.resultCode = TCL_ERROR;
 		goto done;
@@ -4509,8 +4489,7 @@ Tcl_LsortObjCmd(
 		goto done;
 	    }
 	    if (wide < 2) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"stride length must be at least 2", -1));
+		Tcl_PrintfResult(interp, "stride length must be at least 2");
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LSORT",
 			"BADSTRIDE", (char *)NULL);
 		sortInfo.resultCode = TCL_ERROR;
@@ -4613,9 +4592,8 @@ Tcl_LsortObjCmd(
 
     if (group) {
 	if (length % groupSize) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "list size must be a multiple of the stride length",
-		    -1));
+	    Tcl_PrintfResult(interp,
+		    "list size must be a multiple of the stride length");
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LSORT", "BADSTRIDE",
 		    (char *)NULL);
 	    sortInfo.resultCode = TCL_ERROR;
@@ -4630,9 +4608,9 @@ Tcl_LsortObjCmd(
 
 	    groupOffset = TclIndexDecode(sortInfo.indexv[0], groupSize - 1);
 	    if (groupOffset < 0 || groupOffset >= groupSize) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		Tcl_PrintfResult(interp,
 			"when used with \"-stride\", the leading \"-index\""
-			" value must be within the group", -1));
+			" value must be within the group");
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LSORT",
 			"BADINDEX", (char *)NULL);
 		sortInfo.resultCode = TCL_ERROR;
@@ -4694,8 +4672,9 @@ Tcl_LsortObjCmd(
 	elementArray = (SortElement *)malloc(elmArrSize);
     }
     if (!elementArray) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"no enough memory to proccess sort of %" TCL_Z_MODIFIER "u items", length));
+	Tcl_PrintfResult(interp,
+		"no enough memory to proccess sort of %" TCL_Z_MODIFIER "u items",
+		length);
 	Tcl_SetErrorCode(interp, "TCL", "MEMORY", (char *)NULL);
 	sortInfo.resultCode = TCL_ERROR;
 	goto done;
@@ -5147,8 +5126,8 @@ SortCompare(
 
 	if (TclGetIntFromObj(infoPtr->interp,
 		Tcl_GetObjResult(infoPtr->interp), &order) != TCL_OK) {
-	    Tcl_SetObjResult(infoPtr->interp, Tcl_NewStringObj(
-		    "-compare command returned non-integer result", -1));
+	    Tcl_PrintfResult(infoPtr->interp,
+		    "-compare command returned non-integer result");
 	    Tcl_SetErrorCode(infoPtr->interp, "TCL", "OPERATION", "LSORT",
 		    "COMPARISONFAILED", (char *)NULL);
 	    infoPtr->resultCode = TCL_ERROR;
@@ -5357,13 +5336,13 @@ SelectObjFromSublist(
 	if (currentObj == NULL) {
 	    if (index == TCL_INDEX_NONE) {
 		index = TCL_INDEX_END - infoPtr->indexv[i];
-		Tcl_SetObjResult(infoPtr->interp, Tcl_ObjPrintf(
+		Tcl_PrintfResult(infoPtr->interp,
 			"element end-%" TCL_SIZE_MODIFIER "d missing from sublist \"%s\"",
-			index, TclGetString(objPtr)));
+			index, TclGetString(objPtr));
 	    } else {
-		Tcl_SetObjResult(infoPtr->interp, Tcl_ObjPrintf(
+		Tcl_PrintfResult(infoPtr->interp,
 			"element %" TCL_SIZE_MODIFIER "d missing from sublist \"%s\"",
-			index, TclGetString(objPtr)));
+			index, TclGetString(objPtr));
 	    }
 	    Tcl_SetErrorCode(infoPtr->interp, "TCL", "OPERATION", "LSORT",
 		    "INDEXFAILED", (char *)NULL);

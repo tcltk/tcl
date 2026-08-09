@@ -160,13 +160,7 @@ TclpDlopen(
 	*loadHandle = newHandle;
 	result = TCL_OK;
     } else {
-	Tcl_Obj *errObj;
-
-	TclNewObj(errObj);
-	if (errMsg != NULL) {
-	    Tcl_AppendToObj(errObj, errMsg, TCL_INDEX_NONE);
-	}
-	Tcl_SetObjResult(interp, errObj);
+	Tcl_PrintfResult(interp, "%s", (errMsg ? errMsg : ""));
 	result = TCL_ERROR;
     }
 
@@ -270,8 +264,8 @@ FindSymbol(
     }
     Tcl_DStringFree(&ds);
     if (errMsg && (interp != NULL)) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"cannot find symbol \"%s\": %s", symbol, errMsg));
+	Tcl_PrintfResult(interp, "cannot find symbol \"%s\": %s",
+		symbol, errMsg);
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "LOAD_SYMBOL", symbol,
 		(char *)NULL);
     }
