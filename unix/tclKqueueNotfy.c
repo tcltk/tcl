@@ -640,7 +640,7 @@ TclpWaitForEvent(
      * for, we return with a negative result rather than blocking forever.
      */
 
-    if (time > 0) {
+    if (time >= 0) {
 	timeout.tv_sec = time / 1000000;
 	timeout.tv_usec = time % 1000000;
 	timeoutPtr = &timeout;

@@ -9277,7 +9277,8 @@ TestChanSinkWatch(
 
 typedef struct TestChanSourceState {
     Tcl_Size numSourced;	/* How many bytes returned so far */
-    size_t len;			/* Length of data[] */
+    Tcl_Size contentLength;	/* Total number of bytes in channel. */
+    size_t   dataLength;	/* Size of data[] */
     unsigned char data[TCLFLEXARRAY];
 } TestChanSourceState;
 
@@ -9285,18 +9286,24 @@ static int
 TestChanSourceInput(
     void *instanceData,
     char *outPtr,		/* Where to store data. Assumed aligned */
-    const int maxReadCount,	/* Maximum number of bytes to read. */
+    int maxReadCount,		/* Maximum number of bytes to read. */
     TCL_UNUSED(int *))		/* errorCodePtr - Where to store error codes. */
 {
     TestChanSourceState *chanPtr = (TestChanSourceState *)instanceData;
 
+    if ((chanPtr->contentLength - chanPtr->numSourced) < maxReadCount) {
+	maxReadCount = chanPtr->contentLength - chanPtr->numSourced;
+    }
+    if (maxReadCount == 0) {
+	return 0;
+    }
     /*
      * Bit of optimization to minimize overhead since goal is channel i/o
      * measurement. Wonder if compiler would have been better anyways...
      */
-    if (chanPtr->len == 1) {
+    if (chanPtr->dataLength == 1) {
 	memset(outPtr, chanPtr->data[0], maxReadCount);
-    } else if (chanPtr->len == sizeof(unsigned short) &&
+    } else if (chanPtr->dataLength == sizeof(unsigned short) &&
 	    sizeof(unsigned short) == 2) {
 	union {
 	    unsigned short val;
@@ -9317,7 +9324,7 @@ TestChanSourceInput(
 	if (maxReadCount - (sizeof(unsigned short) * (end-to))) {
 	    *to = u.bytes[0];
 	}
-    } else if (chanPtr->len == sizeof(unsigned int) &&
+    } else if (chanPtr->dataLength == sizeof(unsigned int) &&
 	    sizeof(unsigned int) == 4) {
 	union {
 	    unsigned int val;
@@ -9335,16 +9342,16 @@ TestChanSourceInput(
 	while (to < end) {
 	    *to++ = u.val;
 	}
-	assert(nremain < chanPtr->len);
+	assert(nremain < chanPtr->dataLength);
 	while (nremain--) {
 	    *(nremain + (char *)to) = u.bytes[nremain];
 	}
     } else {
 	char *to = outPtr;
 	int ncopied = 0;
-	int offset = chanPtr->numSourced % chanPtr->len;
+	int offset = chanPtr->numSourced % chanPtr->dataLength;
 	if (offset) {
-	    int nbytes = (chanPtr->len - offset);
+	    int nbytes = (chanPtr->dataLength - offset);
 	    if (maxReadCount <= nbytes) {
 		nbytes = maxReadCount;
 	    }
@@ -9352,17 +9359,17 @@ TestChanSourceInput(
 	    to += nbytes;
 	    ncopied += nbytes;
 	}
-	int nchunks = (maxReadCount-ncopied)/chanPtr->len;
-	char *end = to + (nchunks * chanPtr->len);
+	int nchunks = (maxReadCount-ncopied)/chanPtr->dataLength;
+	char *end = to + (nchunks * chanPtr->dataLength);
 	size_t nremain = (maxReadCount-ncopied) - (end - to);
 	/* Copy the data in chunks */
 	while (to < end) {
-	    memmove(to, chanPtr->data, chanPtr->len);
-	    to += chanPtr->len;
+	    memmove(to, chanPtr->data, chanPtr->dataLength);
+	    to += chanPtr->dataLength;
 	}
 	assert(to == end);
 	if (nremain) {
-	    assert(nremain < chanPtr->len);
+	    assert(nremain < chanPtr->dataLength);
 	    memmove(outPtr + maxReadCount - nremain, chanPtr->data, nremain);
 	}
     }
@@ -9480,6 +9487,7 @@ TestChanCreateCmd(
     void *instancePtr = NULL;
     const Tcl_ChannelType *dispatchPtr = NULL;
     const unsigned char *bytes = NULL;
+    Tcl_Size contentLength = TCL_SIZE_MAX;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "source|sink ...");
@@ -9501,7 +9509,7 @@ TestChanCreateCmd(
 	dispatchPtr = &TestChanSinkDispatch;
 	break;
     case SOURCE:
-	if (objc > 3) {
+	if (objc > 4) {
 	    Tcl_WrongNumArgs(interp, 1, objv, "source ?BINARY?");
 	    return TCL_ERROR;
 	}
@@ -9513,6 +9521,15 @@ TestChanCreateCmd(
 	    if (bytes == NULL) {
 		return TCL_ERROR;
 	    }
+	    if (objc == 4) {
+		if (Tcl_GetSizeIntFromObj(interp, objv[3], &contentLength)
+			!= TCL_OK) {
+		    return TCL_ERROR;
+		}
+		if (contentLength <= 0) {
+		    contentLength = TCL_SIZE_MAX;
+		}
+	    }
 	}
 	if (len == 0) {
 	    len = 1;
@@ -9521,7 +9538,8 @@ TestChanCreateCmd(
 	TestChanSourceState *sourceStatePtr = (TestChanSourceState *)Tcl_Alloc(
 		offsetof(TestChanSourceState, data) + len);
 	sourceStatePtr->numSourced = 0;
-	sourceStatePtr->len = len;
+	sourceStatePtr->contentLength = contentLength;
+	sourceStatePtr->dataLength = len;
 	memmove(sourceStatePtr->data, bytes, len);
 	instancePtr = sourceStatePtr;
 	flags = TCL_READABLE;

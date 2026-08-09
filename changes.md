@@ -22,6 +22,10 @@ the registry package to be loaded. The registry module is now part of the core
 Tcl DLL in all build configurations.
 - [New `lfilter` command for selecting items from a list](https://core.tcl-lang.org/tips/doc/trunk/tip/735.md)
 - [Many new functions from C99](https://core.tcl-lang.org/tips/doc/trunk/tip/745.md), specifically: `acosh()`, `asinh()`, `atanh()`, `cbrt()`, `copysign()`, `dim()`,  `erf()`, `erfc()`, `exp2()`, `expm1()`, `fma()`, `gamma()`, `ldexp()`, `lgamma()`, `log1p()`, `log2()`, `logb()`, `nextafter()`, `remainder()`, `signbit()`, and `trunc()`, and (for functions that return multiple values in their C99 API) the commands: `divmod`, `frexp`, `modf`, and `remquo`. (See [this page](https://en.cppreference.com/w/c/numeric/math.html) for more information about these functions; the Tcl functions are _intentionally_ only thin wrappers around the functions in the C99 standard.)
+- [New `switch` option `-integer` to compare values as integers](https://core.tcl-lang.org/tips/doc/trunk/tip/730.md)
+- [Reading and writing of child interpreter variables](https://core.tcl-lang.org/tips/doc/trunk/tip/728.md)
+- [Updated Tcl Bytecode opcodes](https://core.tcl-lang.org/tips/doc/trunk/tip/720.md)
+
 - New `tcltest::configure` option `-iterations` to control number of iterations of each test.
 
 # New public C API
@@ -40,6 +44,8 @@ Tcl DLL in all build configurations.
 
 - [Custom applications must call Tcl\_FindExecutable or TclZipfs_AppHook to initialize Tcl](https://core.tcl-lang.org/tips/doc/trunk/tip/732.md) *Potential incompatibility*
 - [Search path for locating Tcl core script and encodings is changed](https://core.tcl-lang.org/tips/doc/trunk/tip/732.md) *Potential incompatibility*
+- [`Tcl_RegisterPostInitProc` callback for post-initialization of interpreters](https://core.tcl-lang.org/tips/doc/trunk/tip/755.md)
+
 
 # Performance
 
@@ -60,3 +66,4 @@ for list operations on large lists.
 
 # Updated bundled packages, libraries, standards, data
  - Unicode 18.0.0 (draft)
+ - platorm 1.2b1

@@ -308,7 +308,7 @@ GENERIC_OBJS = regcomp.o regexec.o regfree.o regerror.o tclAlloc.o \
 	tclCompile.o tclConfig.o tclDate.o tclDictObj.o tclDisassemble.o \
 	tclEncoding.o tclEnsemble.o \
 	tclEnv.o tclEvent.o tclExecute.o tclFCmd.o tclFileName.o tclGet.o \
-	tclHash.o tclHistory.o \
+	tclGrapheme.o tclHash.o tclHistory.o \
 	tclIcu.o tclIndexObj.o tclInterp.o tclIO.o tclIOCmd.o \
 	tclIORChan.o tclIORTrans.o tclIOGT.o tclIOSock.o tclIOUtil.o \
 	tclLink.o tclListObj.o tclListTypes.o \
@@ -437,6 +437,7 @@ GENERIC_SRCS = \
 	$(GENERIC_DIR)/tclFCmd.c \
 	$(GENERIC_DIR)/tclFileName.c \
 	$(GENERIC_DIR)/tclGet.c \
+	$(GENERIC_DIR)/tclGrapheme.c \
 	$(GENERIC_DIR)/tclHash.c \
 	$(GENERIC_DIR)/tclHistory.c \
 	$(GENERIC_DIR)/tclIcu.c \
@@ -1090,12 +1091,12 @@ install-libraries: libraries
 	@echo "Installing package msgcat 1.7.1 as a Tcl Module"
 	@$(INSTALL_DATA) $(TOP_DIR)/library/msgcat/msgcat.tcl \
 		"$(MODULE_INSTALL_DIR)/9.0/msgcat-1.7.1.tm"
-	@echo "Installing package tcltest 2.5.11 as a Tcl Module"
+	@echo "Installing package tcltest 2.6.0 as a Tcl Module"
 	@$(INSTALL_DATA) $(TOP_DIR)/library/tcltest/tcltest.tcl \
-		"$(MODULE_INSTALL_DIR)/9.0/tcltest-2.5.11.tm"
-	@echo "Installing package platform 1.1.0 as a Tcl Module"
+		"$(MODULE_INSTALL_DIR)/9.0/tcltest-2.6.0.tm"
+	@echo "Installing package platform 1.2b1 as a Tcl Module"
 	@$(INSTALL_DATA) $(TOP_DIR)/library/platform/platform.tcl \
-		"$(MODULE_INSTALL_DIR)/9.0/platform-1.1.0.tm"
+		"$(MODULE_INSTALL_DIR)/9.0/platform-1.2b1.tm"
 	@echo "Installing package platform::shell 1.1.4 as a Tcl Module"
 	@$(INSTALL_DATA) $(TOP_DIR)/library/platform/shell.tcl \
 		"$(MODULE_INSTALL_DIR)/9.0/platform/shell-1.1.4.tm"
@@ -1385,6 +1386,9 @@ tclFileName.o: $(GENERIC_DIR)/tclFileName.c $(FSHDR) $(TCLREHDRS)
 
 tclGet.o: $(GENERIC_DIR)/tclGet.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclGet.c
+
+tclGrapheme.o: $(GENERIC_DIR)/tclGrapheme.c
+	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclGrapheme.c
 
 tclHash.o: $(GENERIC_DIR)/tclHash.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclHash.c

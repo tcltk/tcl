@@ -23,6 +23,7 @@ catch [list package require -exact tcl::test [info patchlevel]]
 testConstraint testvolumetype [llength [info commands testvolumetype]]
 testConstraint testfile       [llength [info commands testfile]]
 testConstraint testchmod      [llength [info commands testchmod]]
+testConstraint testfilesddl   [llength [info commands testfilesddl]]
 testConstraint cdrom 0
 testConstraint exdev 0
 testConstraint longFileNames 0
@@ -30,6 +31,12 @@ testConstraint longFileNames 0
 # such as CI often running with elevated privileges in a container.
 testConstraint notInCIenv     [expr {![info exists ::env(CI)]}]
 testConstraint knownMsvcBug [expr {[tcl::build-info msvc] eq 0}]
+
+# If in a CI environment, file system changes are ephemeral anyways so
+# always set allowfilesecuritychanges constraint
+if {![testConstraint notInCIenv]} {
+    testConstraint allowfilesecuritychanges 1
+}
 
 # Long path support (not to be confused with long name support!) depends on
 # the system being recent enough AND configured for long paths in the registry.
@@ -94,6 +101,46 @@ proc findfile {dir} {
 	}
     }
     return ""
+}
+
+proc parseSddl {sddl} {
+    # Parse an SDDL, returning a dictionary with keys owner, group,
+    # dacl and sacl. If any component is not present in the SDDL, the
+    # dictionary omits the corresponding key. Note a component may be
+    # present but empty in which case the dictionary key is present with
+    # an empty string as its value
+    # SDDL syntax:
+    # O: owner SID
+    # G: group SID
+    # D: DACL - optional control flags, followed by parenthesized ACE list
+    # S: SACL - ditto
+    set sddlRe {(?x)
+        ^
+        (?: (O:) ( [A-Za-z0-9-]+? ) (?=G:|D:|S:|$) )?
+        (?: (G:) ( [A-Za-z0-9-]+? ) (?=D:|S:|$)    )?
+        (?: (D:) ((?: [A-Z]+ )? (?: \( [^)]* \) )*))?
+        (?: (S:) ((?: [A-Z]+ )? (?: \( [^)]* \) )*))?
+        $
+    }
+    if {![regexp $sddlRe $sddl -> ownerTag owner groupTag group daclTag dacl saclTag sacl]} {
+        error "Could not parse SDDL \"$sddl\""
+    }
+    set result [dict create]
+    foreach field {owner group dacl sacl} {
+        if {[set ${field}Tag] ne ""} {
+            dict set result $field [set $field]
+        }
+    }
+    return $result
+}
+
+proc parseSddlAcl {acl} {
+    # Parse a SDDL ACL component consisting of optional leading flags
+    # (upper case letters) followed by optional joined parenthisized expressions
+    # Returns a pair consisting of the flags and a list of ACE SDDL strings
+    regexp {^([A-Z]*)} $acl -> flags
+    set aces [regexp -all -inline {\((?:[^)]*)\)} $acl]
+    return [list $flags $aces]
 }
 
 if {[testConstraint testvolumetype]} {
@@ -1291,6 +1338,53 @@ test winFCmd-16.15 {Windows file normalization - invalid drive} -setup {
     string equal [file norm ${baddrive}:foo] ${baddrive}:/foo
 } -result 1
 
+# Following test only run under constraint allowfilesecuritychanges to
+# protect against consequences from bugs that clobber permissions. Bitter
+# experience - write-protected my entire work tree and wondered why compiles
+# failed.
+proc test_bug_d40d8db3 {id comment subdir} {
+    set testScript {
+        test @ID@ {
+            @COMMENT@
+        } -constraints {
+            win testchmod testfilesddl allowfilesecuritychanges
+        } -setup {
+            set dir [tcltest::makeDirectory @ID@]
+            if {[file exists $dir]} {
+                testchmod 0o777 $dir
+                file delete -force $dir
+                if {[file exists $dir]} {
+                    error "Could not delete $dir"
+                }
+            }
+            set aclTarget [file join $dir @SUBDIR@]
+            set path [file join $aclTarget tail]
+            file mkdir $path
+            set secd [parseSddl [testfilesddl $aclTarget]]
+            set dacl [dict getdef $secd dacl ""]
+            lassign [parseSddlAcl [dict getdef $secd dacl ""]] aclFlags aces
+            ledit aces 0 -1 "(D;;0x1;;;[dict get $secd owner])"
+            set sddl "D:$aclFlags[join $aces {}]"
+            testfilesddl $aclTarget $sddl
+        } -cleanup {
+            testchmod 0o777 $path
+            testchmod 0o777 $aclTarget
+            testchmod 0o777 $dir
+            file delete -force $dir
+            unset -nocomplain dir path secd dacl aclFlags aces sddl
+        } -body {
+            file normalize $path
+        } -result [file join [tcltest::temporaryDirectory] @ID@ @SUBDIR@ tail]
+    }
+    uplevel 1 [string map [list @ID@ $id @COMMENT@ $comment @SUBDIR@ $subdir] $testScript]
+}
+test_bug_d40d8db3 winFCmd-16.25.1 {
+    Windows file normalization - Bug d40d8db3 - denied dir read
+} middledir
+test_bug_d40d8db3 winFCmd-16.25.2 {
+    Windows file normalization - Bug d40d8db3 - denied dir read (unicode)
+} \xe9\u4E4E
+
 test winFCmd-17.1 {Windows bad permissions cd} -constraints win -body {
     set d {}
     foreach dd {c:/ d:/ e:/} {
@@ -1460,7 +1554,6 @@ test winFCmd-20.1 {
 test winFCmd-20.2 {
     Bug b0682c3c24 - absolute paths in pattern (-directory)
 } -constraints haveTwoDrives -body {
-    puts $pathInOther
     glob -directory $pathInOther $pathInOther
 } -result {}
 

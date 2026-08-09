@@ -339,7 +339,7 @@ TclListContainsValue(
  *
  *------------------------------------------------------------------------
  */
-static void
+void
 TclAbstractListUpdateString(
     Tcl_Obj *objPtr)
 {
