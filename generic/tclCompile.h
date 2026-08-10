@@ -114,7 +114,11 @@ OutOfUintRange(
 
 static inline bool
 OutOfUintRangeUpper(
+#if defined(PTRDIFF_MAX) && PTRDIFF_MAX == INT_MAX
+    TCL_UNUSED(Tcl_Size))
+#else
     Tcl_Size value)
+#endif
 {
     // Not sure what to do on 32-bit platforms that don't have PTRDIFF_MAX.
 #if defined(PTRDIFF_MAX) && PTRDIFF_MAX == INT_MAX
