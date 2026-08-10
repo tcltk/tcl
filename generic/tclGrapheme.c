@@ -142,7 +142,7 @@ IsPossibleContinuation (
     case UTF8PROC_BOUNDCLASS_EXTEND:
     case UTF8PROC_BOUNDCLASS_SPACINGMARK:
     case UTF8PROC_BOUNDCLASS_ZWJ:
-	   	/* hangul-syllable */
+		/* hangul-syllable */
     case UTF8PROC_BOUNDCLASS_L:
     case UTF8PROC_BOUNDCLASS_V:
     case UTF8PROC_BOUNDCLASS_T:

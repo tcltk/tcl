@@ -4,7 +4,7 @@
 #	uses the standard Unix build system in tcl/unix (which can be used directly instead of this
 #	if you are not using the tk/macosx projects).
 #
-# Copyright (c) 2002-2008 Daniel A. Steffen <das@users.sourceforge.net>
+# Copyright © 2002-2008 Daniel A. Steffen <das@users.sourceforge.net>
 #
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.

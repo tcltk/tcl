@@ -4,7 +4,7 @@
  *	This file contains the common definitions and prototypes for use by
  *	Tcl's filesystem and path handling layers.
  *
- * Copyright (c) 2003 Vince Darley.
+ * Copyright © 2003 Vince Darley.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.

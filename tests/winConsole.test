@@ -435,37 +435,37 @@ test console-bug-f10d91c2 {
     Test termination of console process with extreme prejudice
 } -constraints {win havePowershell} -setup {
     set tclScript [tcltest::makeFile {
-        #stdin fileevent + 1s heartbeat. Optional argv 0: heartbeat file path.
-        if {[llength $argv]} {
-            set hbf [lindex $argv 0]
-        } else {
-            set hbf [file join [file dirname [info script]] heartbeat.txt]
-        }
-        chan configure stdin -blocking 0
-        chan event stdin readable {
-            set status [catch {read stdin} data]
-            puts stderr "readable fired"
-            flush stderr
-            if {$status} {
-                puts stderr "Error: $data - exiting"
-                exit 0
-            } else {
-                if {[chan eof stdin]} {
-                    puts stderr "eof - exiting"
-                    exit 0
-                }
-            }
-        }
-        proc heartbeat {} {
-            set f [open $::hbf a]
-            puts $f "[clock format [clock seconds] -format %H:%M:%S] alive - pid [pid]"
-            close $f
-            after 1000 heartbeat
-        }
-        heartbeat
-        puts stderr "armed - pid [pid]"
-        flush stderr
-        vwait ::forever
+	#stdin fileevent + 1s heartbeat. Optional argv 0: heartbeat file path.
+	if {[llength $argv]} {
+	    set hbf [lindex $argv 0]
+	} else {
+	    set hbf [file join [file dirname [info script]] heartbeat.txt]
+	}
+	chan configure stdin -blocking 0
+	chan event stdin readable {
+	    set status [catch {read stdin} data]
+	    puts stderr "readable fired"
+	    flush stderr
+	    if {$status} {
+		puts stderr "Error: $data - exiting"
+		exit 0
+	    } else {
+		if {[chan eof stdin]} {
+		    puts stderr "eof - exiting"
+		    exit 0
+		}
+	    }
+	}
+	proc heartbeat {} {
+	    set f [open $::hbf a]
+	    puts $f "[clock format [clock seconds] -format %H:%M:%S] alive - pid [pid]"
+	    close $f
+	    after 1000 heartbeat
+	}
+	heartbeat
+	puts stderr "armed - pid [pid]"
+	flush stderr
+	vwait ::forever
     } bug-f10d91.tcl ]
 
     # The powershell driver script
@@ -483,7 +483,7 @@ $tclpid = $null
 foreach ($i in 1..20) {
     Start-Sleep -Milliseconds 500
     if ((Test-Path $err) -and ((Get-Content $err -Raw) -match 'armed - pid (\d+)')) {
-        $tclpid = [int]$Matches[1]; break
+	$tclpid = [int]$Matches[1]; break
     }
 }
 if (-not $tclpid) { throw "payload never armed (see $err)" }

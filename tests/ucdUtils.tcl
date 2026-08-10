@@ -219,62 +219,62 @@ namespace eval tcltests::ucd {
     }
 
     proc readGraphemeBreaks {} {
-        variable graphemeBreaksDataFile
-        variable graphemeBreaksData
+	variable graphemeBreaksDataFile
+	variable graphemeBreaksData
 
-        set fd [open $graphemeBreaksDataFile]
-        fconfigure $fd -encoding utf-8
-        set lineno 0
-        # See comments atop $graphemeBreaksDataFile for format
-        while {[gets $fd line] >= 0} {
-            incr lineno
-            set line [string trim $line]
+	set fd [open $graphemeBreaksDataFile]
+	fconfigure $fd -encoding utf-8
+	set lineno 0
+	# See comments atop $graphemeBreaksDataFile for format
+	while {[gets $fd line] >= 0} {
+	    incr lineno
+	    set line [string trim $line]
 	    if {[string index $line 0] in {{} #}} {
 		continue
 	    }
-            # Line is of the form
-            # (SEP XXXX)+ SEP (# comment)?
-            # where SEP is
-            #	÷ (U+00F7) wherever there is a break opportunity, and
-            #	× (U+00D7) wherever there is not.
-            set break \u00f7
-            set nobreak \u00d7
-            lassign [split $line #] definition comment
-            set definition [string trim $definition]
-            if {[string index $definition 0] ne $break || [string index $definition end] ne $break} {
-                puts stderr "Unexpected format of line $lineno in $graphemeBreaksDataFile $definition"
-                continue
-            }
-            set record [list $lineno $comment]
-            set grapheme {}
-            set graphemes [list ]
-            foreach {hex breakChar} [regexp -all -inline {\S+} [string range $definition 1 end]] {
-                append grapheme [format %c 0x$hex]
-                if {$breakChar eq $break} {
-                    lappend graphemes $grapheme
-                    set grapheme ""
-                } elseif {$breakChar ne $nobreak} {
-                    puts stderr "Unexpected separator character $breakChar"
-                    unset record
-                    break
-                }
-            }
-            if {[info exists record]} {
-                lappend record $graphemes
-                lappend graphemeBreaksData $record
-            }
-        }
+	    # Line is of the form
+	    # (SEP XXXX)+ SEP (# comment)?
+	    # where SEP is
+	    #	÷ (U+00F7) wherever there is a break opportunity, and
+	    #	× (U+00D7) wherever there is not.
+	    set break \u00f7
+	    set nobreak \u00d7
+	    lassign [split $line #] definition comment
+	    set definition [string trim $definition]
+	    if {[string index $definition 0] ne $break || [string index $definition end] ne $break} {
+		puts stderr "Unexpected format of line $lineno in $graphemeBreaksDataFile $definition"
+		continue
+	    }
+	    set record [list $lineno $comment]
+	    set grapheme {}
+	    set graphemes [list ]
+	    foreach {hex breakChar} [regexp -all -inline {\S+} [string range $definition 1 end]] {
+		append grapheme [format %c 0x$hex]
+		if {$breakChar eq $break} {
+		    lappend graphemes $grapheme
+		    set grapheme ""
+		} elseif {$breakChar ne $nobreak} {
+		    puts stderr "Unexpected separator character $breakChar"
+		    unset record
+		    break
+		}
+	    }
+	    if {[info exists record]} {
+		lappend record $graphemes
+		lappend graphemeBreaksData $record
+	    }
+	}
     }
 
     # Returns the test vectors for graphemes as a list of triples comprising
     # the line number in GraphemeBreakTest.txt, the comment and the test case
     # data. This last is a list of strings each of which is a single grapheme.
     proc getGraphemeData {} {
-        readGraphemeBreaks
-        proc getGraphemeData {} {
-            variable graphemeBreaksData
-            return $graphemeBreaksData
-        }
-        tailcall getGraphemeData
+	readGraphemeBreaks
+	proc getGraphemeData {} {
+	    variable graphemeBreaksData
+	    return $graphemeBreaksData
+	}
+	tailcall getGraphemeData
     }
 }
