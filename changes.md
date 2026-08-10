@@ -18,6 +18,7 @@ to the userbase.
 
 # Updated bundled packages, libraries, standards, data
  - platform 1.1.1
+ - tzdata 2026c
 
 Release Tcl 9.0.4 arises from the check-in with tag `core-9-0-4`.
 
