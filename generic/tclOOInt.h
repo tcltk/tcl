@@ -598,6 +598,7 @@ MODULE_SCOPE CallContext *TclOOGetCallContext(Object *oPtr,
 			    Object *contextObjPtr, Class *contextClsPtr,
 			    Tcl_Obj *cacheInThisObj);
 MODULE_SCOPE Class *	TclOOGetClassDefineCmdContext(Tcl_Interp *interp);
+MODULE_SCOPE Tcl_Obj *	TclOOGetClassDelegateName(Object *oPtr);
 MODULE_SCOPE Class *	TclOOGetClassFromObj(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr);
 MODULE_SCOPE Tcl_Namespace *TclOOGetDefineContextNamespace(
