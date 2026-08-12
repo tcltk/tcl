@@ -2349,8 +2349,7 @@ TclOODefineClassMethodObjCmd(
 
     // Create the method on the delegate class if the caller gave arguments and body
     if (objc == 4) {
-	Tcl_Obj *delegateName = Tcl_ObjPrintf("%s:: oo ::delegate",
-		clsPtr->thisPtr->namespacePtr->fullName);
+	Tcl_Obj *delegateName = TclOOGetClassDelegateName(clsPtr->thisPtr);
 	Class *delegatePtr = TclOOGetClassFromObj(interp, delegateName);
 	Tcl_DecrRefCount(delegateName);
 	if (!delegatePtr) {

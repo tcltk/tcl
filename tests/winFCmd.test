@@ -115,21 +115,21 @@ proc parseSddl {sddl} {
     # D: DACL - optional control flags, followed by parenthesized ACE list
     # S: SACL - ditto
     set sddlRe {(?x)
-        ^
-        (?: (O:) ( [A-Za-z0-9-]+? ) (?=G:|D:|S:|$) )?
-        (?: (G:) ( [A-Za-z0-9-]+? ) (?=D:|S:|$)    )?
-        (?: (D:) ((?: [A-Z]+ )? (?: \( [^)]* \) )*))?
-        (?: (S:) ((?: [A-Z]+ )? (?: \( [^)]* \) )*))?
-        $
+	^
+	(?: (O:) ( [A-Za-z0-9-]+? ) (?=G:|D:|S:|$) )?
+	(?: (G:) ( [A-Za-z0-9-]+? ) (?=D:|S:|$)    )?
+	(?: (D:) ((?: [A-Z]+ )? (?: \( [^)]* \) )*))?
+	(?: (S:) ((?: [A-Z]+ )? (?: \( [^)]* \) )*))?
+	$
     }
     if {![regexp $sddlRe $sddl -> ownerTag owner groupTag group daclTag dacl saclTag sacl]} {
-        error "Could not parse SDDL \"$sddl\""
+	error "Could not parse SDDL \"$sddl\""
     }
     set result [dict create]
     foreach field {owner group dacl sacl} {
-        if {[set ${field}Tag] ne ""} {
-            dict set result $field [set $field]
-        }
+	if {[set ${field}Tag] ne ""} {
+	    dict set result $field [set $field]
+	}
     }
     return $result
 }
@@ -1344,37 +1344,37 @@ test winFCmd-16.15 {Windows file normalization - invalid drive} -setup {
 # failed.
 proc test_bug_d40d8db3 {id comment subdir} {
     set testScript {
-        test @ID@ {
-            @COMMENT@
-        } -constraints {
-            win testchmod testfilesddl allowfilesecuritychanges
-        } -setup {
-            set dir [tcltest::makeDirectory @ID@]
-            if {[file exists $dir]} {
-                testchmod 0o777 $dir
-                file delete -force $dir
-                if {[file exists $dir]} {
-                    error "Could not delete $dir"
-                }
-            }
-            set aclTarget [file join $dir @SUBDIR@]
-            set path [file join $aclTarget tail]
-            file mkdir $path
-            set secd [parseSddl [testfilesddl $aclTarget]]
-            set dacl [dict getdef $secd dacl ""]
-            lassign [parseSddlAcl [dict getdef $secd dacl ""]] aclFlags aces
-            ledit aces 0 -1 "(D;;0x1;;;[dict get $secd owner])"
-            set sddl "D:$aclFlags[join $aces {}]"
-            testfilesddl $aclTarget $sddl
-        } -cleanup {
-            testchmod 0o777 $path
-            testchmod 0o777 $aclTarget
-            testchmod 0o777 $dir
-            file delete -force $dir
-            unset -nocomplain dir path secd dacl aclFlags aces sddl
-        } -body {
-            file normalize $path
-        } -result [file join [tcltest::temporaryDirectory] @ID@ @SUBDIR@ tail]
+	test @ID@ {
+	    @COMMENT@
+	} -constraints {
+	    win testchmod testfilesddl allowfilesecuritychanges
+	} -setup {
+	    set dir [tcltest::makeDirectory @ID@]
+	    if {[file exists $dir]} {
+		testchmod 0o777 $dir
+		file delete -force $dir
+		if {[file exists $dir]} {
+		    error "Could not delete $dir"
+		}
+	    }
+	    set aclTarget [file join $dir @SUBDIR@]
+	    set path [file join $aclTarget tail]
+	    file mkdir $path
+	    set secd [parseSddl [testfilesddl $aclTarget]]
+	    set dacl [dict getdef $secd dacl ""]
+	    lassign [parseSddlAcl [dict getdef $secd dacl ""]] aclFlags aces
+	    ledit aces 0 -1 "(D;;0x1;;;[dict get $secd owner])"
+	    set sddl "D:$aclFlags[join $aces {}]"
+	    testfilesddl $aclTarget $sddl
+	} -cleanup {
+	    testchmod 0o777 $path
+	    testchmod 0o777 $aclTarget
+	    testchmod 0o777 $dir
+	    file delete -force $dir
+	    unset -nocomplain dir path secd dacl aclFlags aces sddl
+	} -body {
+	    file normalize $path
+	} -result [file join [tcltest::temporaryDirectory] @ID@ @SUBDIR@ tail]
     }
     uplevel 1 [string map [list @ID@ $id @COMMENT@ $comment @SUBDIR@ $subdir] $testScript]
 }

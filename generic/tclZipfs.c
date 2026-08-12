@@ -5802,7 +5802,7 @@ ZipFSMatchInDirectoryProc(
 	 * it with the official prefix that we were expecting to get.
 	 */
 
-	strip = len + 1;
+	strip = len == ZIPFS_VOLUME_LEN ? len : len + 1;
 	Tcl_DStringAppend(&dsPref, prefix, prefixLen);
 	Tcl_DStringAppend(&dsPref, "/", 1);
 	prefix = Tcl_DStringValue(&dsPref);
@@ -5916,8 +5916,8 @@ ZipFSMatchInDirectoryProc(
 		}
 		const char *end = strchr(tail, '/');
 		Tcl_DStringAppend(&ds, zf->mountPoint + strip,
-			end ? (Tcl_Size)(end - zf->mountPoint) : -1);
-		const char *matchedPath = Tcl_DStringValue(&ds);
+			end ? (Tcl_Size)(end - tail + len - strip) : -1);
+ 		const char *matchedPath = Tcl_DStringValue(&ds);
 		(void)Tcl_CreateHashEntry(&duplicates, matchedPath,
 			&notDuplicate);
 		if (notDuplicate) {
@@ -6023,7 +6023,13 @@ ZipFSMatchMountPoints(
 	     * Standard mount; append if it matches.
 	     */
 
-	    AppendWithPrefix(result, prefix, zf->mountPoint, zf->mountPointLen);
+	    if (prefix) {
+		AppendWithPrefix(result, prefix, zf->mountPoint + len,
+			zf->mountPointLen - len);
+	    } else {
+		AppendWithPrefix(result, prefix, zf->mountPoint,
+			zf->mountPointLen);
+	    }
 	}
     }
 }
