@@ -1098,7 +1098,10 @@ TclOOLookupObjectVar(
     if (arg[0] == ':' && arg[1] == ':') {
 	varNamePtr = varName;
     } else {
-	Tcl_Namespace *namespacePtr = Tcl_GetObjectNamespace(object);
+	Tcl_DString ds;
+	Tcl_DStringInit(&ds);
+	Tcl_DStringAppend(&ds, 	Tcl_GetObjectNamespace(object)->fullName, -1);
+	Tcl_DStringAppend(&ds, "::", 2);
 	CallFrame *framePtr = ((Interp *) interp)->varFramePtr;
 
 	/*
@@ -1153,8 +1156,8 @@ TclOOLookupObjectVar(
 	}
 
 	// The namespace isn't the global one; necessarily true for any object!
-	varNamePtr = Tcl_ObjPrintf("%s::%s",
-		namespacePtr->fullName, TclGetString(varName));
+	TclDStringAppendObj(&ds, varName);
+	varNamePtr = Tcl_DStringToObj(&ds);
     }
     Tcl_IncrRefCount(varNamePtr);
     Tcl_Var var = (Tcl_Var) TclObjLookupVar(interp, varNamePtr, NULL,
