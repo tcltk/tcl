@@ -75,15 +75,28 @@ FinalizeConstruction(
  *
  * TclOOGetClassDelegateName --
  *
- *	Get the name of the delegate for a class. This is a zero-ref Tcl_Obj.
+ *	Get the name of the delegate for a class. Callers need to handle
+ *	reference counts for their uses; this is a cached value. May be
+ *	called prior to the creation of the delegate.
  *
  *----------------------------------------------------------------------
  */
 Tcl_Obj *
 TclOOGetClassDelegateName(
-    Object *oPtr)
+    Object *oPtr)		// Object handle for a class.
 {
-    return Tcl_ObjPrintf("%s:: oo ::delegate", oPtr->namespacePtr->fullName);
+    if (!oPtr->classPtr) {
+	Tcl_Panic("getting delegate for non-class");
+    }
+
+    Tcl_Obj *nameObj = oPtr->classPtr->delegateNameObj;
+    if (!nameObj) {
+	nameObj = Tcl_ObjPrintf("%s:: oo ::delegate",
+		oPtr->namespacePtr->fullName);
+	oPtr->classPtr->delegateNameObj = nameObj;
+	Tcl_IncrRefCount(nameObj);
+    }
+    return nameObj;
 }
 
 /*
@@ -102,7 +115,7 @@ GetClassDelegate(
 {
     Tcl_Obj *delegateName = TclOOGetClassDelegateName(clsPtr->thisPtr);
     Class *delegatePtr = TclOOGetClassFromObj(interp, delegateName);
-    Tcl_DecrRefCount(delegateName);
+    Tcl_BounceRefCount(delegateName);
     return delegatePtr;
 }
 

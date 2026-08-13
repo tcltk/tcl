@@ -1363,6 +1363,11 @@ TclOOReleaseClassContents(
     if (IsRootClass(oPtr) && !Destructing(fPtr->objectCls->thisPtr)) {
 	Tcl_DeleteCommandFromToken(interp, fPtr->objectCls->thisPtr->command);
     }
+
+    if (oPtr->classPtr->delegateNameObj) {
+	TclDecrRefCount(oPtr->classPtr->delegateNameObj);
+	oPtr->classPtr->delegateNameObj = NULL;
+    }
 }
 
 /*
