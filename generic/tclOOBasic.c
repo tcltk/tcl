@@ -1330,10 +1330,15 @@ TclOOLinkObjCmd(
 	}
 
 	// Qualify the source if necessary
-	const char *srcStr = TclGetString(src);
+	Tcl_Size srcLen;
+	const char *srcStr = TclGetStringFromObj(src, &srcLen);
 	if (srcStr[0] != ':' || srcStr[1] != ':') {
-	    src = Tcl_ObjPrintf("%s::%s",
-		    context->oPtr->namespacePtr->fullName, srcStr);
+	    Tcl_DString ds;
+	    Tcl_DStringInit(&ds);
+	    Tcl_DStringAppend(&ds, context->oPtr->namespacePtr->fullName, -1);
+	    TclDStringAppendLiteral(&ds, "::");
+	    Tcl_DStringAppend(&ds, srcStr, srcLen);
+	    src = Tcl_DStringToObj(&ds);
 	}
 
 	// Make the alias command
