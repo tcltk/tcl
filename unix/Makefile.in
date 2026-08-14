@@ -2420,6 +2420,7 @@ dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in gen
 	$(DIST_INSTALL_DATA) $(TOP_DIR)/tests-perf/*.tcl $(DISTDIR)/tests-perf
 	$(INSTALL_DATA_DIR) $(DISTDIR)/tests/unicodeTestVectors
 	for i in DerivedNormalizationProps.txt NormalizationTest.txt \
+		GraphemeBreakTest-17.0.txt GraphemeBreakTest.txt \
 		license.txt README-tcl.md; \
 	    do \
 		$(DIST_INSTALL_DATA) \
