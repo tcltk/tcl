@@ -1421,27 +1421,40 @@ HideCommandInTclNs(
     const char *name,
     Tcl_Obj *publicNameTuple)
 {
-    Tcl_Obj *cmdName = Tcl_ObjPrintf("::tcl::%s::%s", nsName, name);
-    Tcl_Obj *hideName = Tcl_ObjPrintf("tcl:%s:%s", nsName, name);
+    Tcl_DString cmd, hide;
+    Tcl_Size nsLen = strlen(nsName), nameLen = strlen(name);
+
+    Tcl_DStringInit(&cmd);
+    TclDStringAppendLiteral(&cmd, "::tcl::");
+    Tcl_DStringAppend(&cmd, nsName, nsLen);
+    TclDStringAppendLiteral(&cmd, "::");
+    Tcl_DStringAppend(&cmd, name, nameLen);
+
+    Tcl_DStringInit(&hide);
+    TclDStringAppendLiteral(&hide, "tcl:");
+    Tcl_DStringAppend(&hide, nsName, nsLen);
+    TclDStringAppendLiteral(&hide, ":");
+    Tcl_DStringAppend(&hide, name, nameLen);
 
 #define INTERIM_HACK_NAME "___tmp"
     // TODO: Fix the hiding machinery to handle namespaced commands.
 
-    if (TclRenameCommand(interp, TclGetString(cmdName),
+    if (TclRenameCommand(interp, Tcl_DStringValue(&cmd),
 		INTERIM_HACK_NAME) != TCL_OK
 	    || Tcl_HideCommand(interp, INTERIM_HACK_NAME,
-		    TclGetString(hideName)) != TCL_OK) {
+		    Tcl_DStringValue(&hide)) != TCL_OK) {
 	Tcl_Panic("problem making '%s %s' safe: %s",
 		nsName, name, Tcl_GetStringResult(interp));
     }
     if (publicNameTuple) {
 	Tcl_IncrRefCount(publicNameTuple);
-	Tcl_CreateObjCommand2(interp, TclGetString(cmdName),
+	Tcl_CreateObjCommand2(interp, Tcl_DStringValue(&cmd),
 		BadEnsembleSubcommand, (void *)publicNameTuple,
 		BadEnsembleSubcommandCleanup);
     }
-    TclDecrRefCount(cmdName);
-    TclDecrRefCount(hideName);
+
+    Tcl_DStringFree(&cmd);
+    Tcl_DStringFree(&hide);
 }
 
 int
