@@ -2305,7 +2305,8 @@ OpenEncodingFileChannel(
     const char *name)		/* The name of the encoding file on disk and
 				 * also the name for new encoding. */
 {
-    Tcl_Obj *fileNameObj = Tcl_ObjPrintf("%s.enc", name);
+    Tcl_Obj *fileNameObj = Tcl_NewStringObj(name, TCL_AUTO_LENGTH);
+    Tcl_AppendToObj(fileNameObj, ".enc", TCL_AUTO_LENGTH);
     Tcl_Obj *searchPath = Tcl_DuplicateObj(Tcl_GetEncodingSearchPath());
     Tcl_Obj *map = TclGetProcessGlobalValue(&encodingFileMap);
     Tcl_Obj **dir, *path, *directory = NULL;

@@ -3,7 +3,7 @@
  *
  *	Declarations of functions in the platform independent public Tcl API.
  *
- * Copyright (c) 1998-1999 by Scriptics Corporation.
+ * Copyright © 1998-1999 by Scriptics Corporation.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.

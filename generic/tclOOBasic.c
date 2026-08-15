@@ -73,6 +73,35 @@ FinalizeConstruction(
 /*
  *----------------------------------------------------------------------
  *
+ * TclOOGetClassDelegateName --
+ *
+ *	Get the name of the delegate for a class. Callers need to handle
+ *	reference counts for their uses; this is a cached value. May be
+ *	called prior to the creation of the delegate.
+ *
+ *----------------------------------------------------------------------
+ */
+Tcl_Obj *
+TclOOGetClassDelegateName(
+    Object *oPtr)		// Object handle for a class.
+{
+    if (!oPtr->classPtr) {
+	Tcl_Panic("getting delegate for non-class");
+    }
+
+    Tcl_Obj *nameObj = oPtr->classPtr->delegateNameObj;
+    if (!nameObj) {
+	nameObj = Tcl_ObjPrintf("%s:: oo ::delegate",
+		oPtr->namespacePtr->fullName);
+	oPtr->classPtr->delegateNameObj = nameObj;
+	Tcl_IncrRefCount(nameObj);
+    }
+    return nameObj;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * GetClassDelegate --
  *
  *	Look up the delegate for a class.
@@ -84,10 +113,9 @@ GetClassDelegate(
     Tcl_Interp *interp,
     Class *clsPtr)
 {
-    Tcl_Obj *delegateName = Tcl_ObjPrintf("%s:: oo ::delegate",
-	    clsPtr->thisPtr->namespacePtr->fullName);
+    Tcl_Obj *delegateName = TclOOGetClassDelegateName(clsPtr->thisPtr);
     Class *delegatePtr = TclOOGetClassFromObj(interp, delegateName);
-    Tcl_DecrRefCount(delegateName);
+    Tcl_BounceRefCount(delegateName);
     return delegatePtr;
 }
 
@@ -236,8 +264,7 @@ TclOO_Class_Constructor(
      * argument to [oo::define]. [Bug 680503]
      */
 
-    Tcl_Obj *delegateName = Tcl_ObjPrintf("%s:: oo ::delegate",
-	    oPtr->namespacePtr->fullName);
+    Tcl_Obj *delegateName = TclOOGetClassDelegateName(oPtr);
     Tcl_IncrRefCount(delegateName);
     Tcl_NewObjectInstance(interp, (Tcl_Class) oPtr->fPtr->classCls,
 	    TclGetString(delegateName), NULL, TCL_INDEX_NONE, NULL, 0);
@@ -564,8 +591,7 @@ UpdateClassDelegatesAfterClone(
     if (result == TCL_OK && originPtr->classPtr && targetPtr->classPtr) {
 	// Get the originating delegate to be cloned.
 
-	Tcl_Obj *originName = Tcl_ObjPrintf("%s:: oo ::delegate",
-		originPtr->namespacePtr->fullName);
+	Tcl_Obj *originName = TclOOGetClassDelegateName(originPtr);
 	Object *originDelegate = (Object *) Tcl_GetObjectFromObj(interp,
 		originName);
 	Tcl_BounceRefCount(originName);
@@ -577,8 +603,7 @@ UpdateClassDelegatesAfterClone(
 
 	// Create the cloned target delegate.
 
-	Tcl_Obj *targetName = Tcl_ObjPrintf("%s:: oo ::delegate",
-		targetPtr->namespacePtr->fullName);
+	Tcl_Obj *targetName = TclOOGetClassDelegateName(targetPtr);
 	Object *targetDelegate = (Object *) Tcl_CopyObjectInstance(interp,
 		(Tcl_Object) originDelegate, Tcl_GetString(targetName), NULL);
 	Tcl_BounceRefCount(targetName);
@@ -1094,7 +1119,10 @@ TclOOLookupObjectVar(
     if (arg[0] == ':' && arg[1] == ':') {
 	varNamePtr = varName;
     } else {
-	Tcl_Namespace *namespacePtr = Tcl_GetObjectNamespace(object);
+	Tcl_DString ds;
+	Tcl_DStringInit(&ds);
+	Tcl_DStringAppend(&ds, 	Tcl_GetObjectNamespace(object)->fullName, -1);
+	Tcl_DStringAppend(&ds, "::", 2);
 	CallFrame *framePtr = ((Interp *) interp)->varFramePtr;
 
 	/*
@@ -1149,8 +1177,8 @@ TclOOLookupObjectVar(
 	}
 
 	// The namespace isn't the global one; necessarily true for any object!
-	varNamePtr = Tcl_ObjPrintf("%s::%s",
-		namespacePtr->fullName, TclGetString(varName));
+	TclDStringAppendObj(&ds, varName);
+	varNamePtr = Tcl_DStringToObj(&ds);
     }
     Tcl_IncrRefCount(varNamePtr);
     Tcl_Var var = (Tcl_Var) TclObjLookupVar(interp, varNamePtr, NULL,
@@ -1297,10 +1325,15 @@ TclOOLinkObjCmd(
 	}
 
 	// Qualify the source if necessary
-	const char *srcStr = TclGetString(src);
+	Tcl_Size srcLen;
+	const char *srcStr = TclGetStringFromObj(src, &srcLen);
 	if (srcStr[0] != ':' || srcStr[1] != ':') {
-	    src = Tcl_ObjPrintf("%s::%s",
-		    context->oPtr->namespacePtr->fullName, srcStr);
+	    Tcl_DString ds;
+	    Tcl_DStringInit(&ds);
+	    Tcl_DStringAppend(&ds, context->oPtr->namespacePtr->fullName, -1);
+	    TclDStringAppendLiteral(&ds, "::");
+	    Tcl_DStringAppend(&ds, srcStr, srcLen);
+	    src = Tcl_DStringToObj(&ds);
 	}
 
 	// Make the alias command
@@ -1917,8 +1950,7 @@ TclOODelegateNameObjCmd(
     if (clsPtr == NULL) {
 	return TCL_ERROR;
     }
-    Tcl_SetObjResult(interp, Tcl_ObjPrintf("%s:: oo ::delegate",
-	    clsPtr->thisPtr->namespacePtr->fullName));
+    Tcl_SetObjResult(interp, TclOOGetClassDelegateName(clsPtr->thisPtr));
     return TCL_OK;
 }
 

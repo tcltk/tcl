@@ -762,7 +762,11 @@ ClockFrmObjGetLocFmtKey(
 	return keyObj;
     }
 
-    keyObj = Tcl_ObjPrintf("FMT_%s", TclGetString(objPtr));
+    Tcl_DString ds;
+    Tcl_DStringInit(&ds);
+    TclDStringAppendLiteral(&ds, "FMT_");
+    TclDStringAppendObj(&ds, objPtr);
+    keyObj = Tcl_DStringToObj(&ds);
     TclInitObjRef(ObjLocFmtKey(objPtr), keyObj);
 
     return keyObj;
