@@ -266,8 +266,7 @@ FunctionNotAvailableError(
     Tcl_Interp *interp)
 {
     if (interp) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"ICU function not available", TCL_AUTO_LENGTH));
+	Tcl_PrintfResult(interp, "ICU function not available");
 	Tcl_SetErrorCode(interp, "TCL", "ICU", "UNSUPPORTED_OP", (char *)NULL);
     }
     return TCL_ERROR;
@@ -284,12 +283,11 @@ IcuError(
 	if (u_errorName) {
 	    codeMessage = u_errorName(code);
 	}
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"%s%sICU error (%d): %s",
+	Tcl_PrintfResult(interp, "%s%sICU error (%d): %s",
 		message ? message : "",
 		message ? ". " : "",
 		code,
-		codeMessage ? codeMessage : ""));
+		codeMessage ? codeMessage : "");
 	Tcl_SetErrorCode(interp, "TCL", "ICU", codeMessage, (char *)NULL);
     }
     return TCL_ERROR;
@@ -333,8 +331,7 @@ DetectEncoding(
 	return TCL_ERROR;
     }
     if (len > INT_MAX) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"Max length supported by ICU exceeded.", TCL_INDEX_NONE));
+	Tcl_PrintfResult(interp, "Max length supported by ICU exceeded.");
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LENGTH", (char *)NULL);
 	return TCL_ERROR;
     }
@@ -577,9 +574,8 @@ IcuDetectObjCmd(
     int all = 0;
     if (objc == 3) {
 	if (strcmp("-all", Tcl_GetString(objv[2]))) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "Invalid option %s, must be \"-all\"",
-		    Tcl_GetString(objv[2])));
+	    Tcl_PrintfResult(interp, "Invalid option %s, must be \"-all\"",
+		    Tcl_GetString(objv[2]));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "BADARG", (char *)NULL);
 	    return TCL_ERROR;
 	}
@@ -744,8 +740,7 @@ IcuConverttoDString(
     Tcl_Size utf16len = Tcl_DStringLength(dsInPtr) / sizeof(UCharx);
     Tcl_Size dstLen, dstCapacity;
     if (utf16len > INT_MAX) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"Max length supported by ICU exceeded.", TCL_INDEX_NONE));
+	Tcl_PrintfResult(interp, "Max length supported by ICU exceeded.");
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LENGTH", (char *)NULL);
 	return TCL_ERROR;
     }
@@ -809,8 +804,7 @@ IcuBytesToUCharDString(
     }
 
     if (nbytes > INT_MAX) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"Max length supported by ICU exceeded.", TCL_INDEX_NONE));
+	Tcl_PrintfResult(interp, "Max length supported by ICU exceeded.");
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LENGTH", (char *)NULL);
 	return TCL_ERROR;
     }
@@ -918,8 +912,7 @@ IcuNormalizeUCharDString(
     utf16 = (UCharx *) Tcl_DStringValue(dsInPtr);
     utf16len = Tcl_DStringLength(dsInPtr) / sizeof(UCharx);
     if (utf16len > INT_MAX) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"Max length supported by ICU exceeded.", TCL_INDEX_NONE));
+	Tcl_PrintfResult(interp, "Max length supported by ICU exceeded.");
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LENGTH", (char *)NULL);
 	return TCL_ERROR;
     }
@@ -991,9 +984,8 @@ IcuParseConvertOptions(
 	}
 	++i;
 	if (i == objc) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "Missing value for option %s.",
-		    Tcl_GetString(objv[i - 1])));
+	    Tcl_PrintfResult(interp, "Missing value for option %s.",
+		    Tcl_GetString(objv[i - 1]));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "NOARG", (char *)NULL);
 	    return TCL_ERROR;
 	}
@@ -1003,18 +995,16 @@ IcuParseConvertOptions(
 	    if (!strcmp(s, "replace")) {
 		strict = 0;
 	    } else if (strcmp(s, "strict")) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"Invalid value \"%s\" supplied for option"
+		Tcl_PrintfResult(interp, "Invalid value \"%s\" supplied for option"
 			" \"-profile\". Must be \"strict\" or \"replace\".",
-			s));
+			s);
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", "PROFILE", (char *)NULL);
 		return TCL_ERROR;
 	    }
 	    break;
 	case OPT_FAILINDEX:
 	    /* TBD */
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "Option -failindex not implemented.", TCL_INDEX_NONE));
+	    Tcl_PrintfResult(interp, "Option -failindex not implemented.");
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "UNIMPLEMENTED", (char *)NULL);
 	    return TCL_ERROR;
 	default:
@@ -1161,9 +1151,8 @@ IcuNormalizeObjCmd(
 	}
 	++i;
 	if (i == (objc-1)) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "Missing value for option %s.",
-		    Tcl_GetString(objv[i - 1])));
+	    Tcl_PrintfResult(interp, "Missing value for option %s.",
+		    Tcl_GetString(objv[i - 1]));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "NOARG", (char *)NULL);
 	    return TCL_ERROR;
 	}
@@ -1173,10 +1162,10 @@ IcuNormalizeObjCmd(
 	    if (!strcmp(s, "replace")) {
 		strict = 0;
 	    } else if (strcmp(s, "strict")) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		Tcl_PrintfResult(interp,
 			"Invalid value \"%s\" supplied for option \"-profile\". "
 			"Must be \"strict\" or \"replace\".",
-			s));
+			s);
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", "PROFILE", (char *)NULL);
 		return TCL_ERROR;
 	    }

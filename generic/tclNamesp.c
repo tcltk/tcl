@@ -830,8 +830,8 @@ Tcl_CreateNamespace(
      */
 
     if (*name == '\0') {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj("can't create namespace"
-		" \"\": only global namespace can have empty name", -1));
+	Tcl_PrintfResult(interp, "can't create namespace \"\": "
+		"only global namespace can have empty name");
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "NAMESPACE",
 		"CREATEGLOBAL", (char *)NULL);
 	Tcl_DStringFree(&tmpBuffer);
@@ -862,8 +862,8 @@ Tcl_CreateNamespace(
      */
 
     if (FindChildEntry(parentPtr, simpleName) != NULL) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"can't create namespace \"%s\": already exists", name));
+	Tcl_PrintfResult(interp,
+		"can't create namespace \"%s\": already exists", name);
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "NAMESPACE",
 		"CREATEEXISTING", (char *)NULL);
 	Tcl_DStringFree(&tmpBuffer);
@@ -1505,8 +1505,8 @@ Tcl_Export(
 	    &exportNsPtr, &dummyPtr, &dummyPtr, &simplePattern);
 
     if ((exportNsPtr != nsPtr) || (strcmp(pattern, simplePattern) != 0)) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf("invalid export pattern"
-		" \"%s\": pattern can't specify a namespace", pattern));
+	Tcl_PrintfResult(interp, "invalid export pattern \"%s\": "
+		"pattern can't specify a namespace", pattern);
 	Tcl_SetErrorCode(interp, "TCL", "EXPORT", "INVALID", (char *)NULL);
 	return TCL_ERROR;
     }
@@ -1713,7 +1713,7 @@ Tcl_Import(
      */
 
     if (strlen(pattern) == 0) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj("empty import pattern",-1));
+	Tcl_PrintfResult(interp, "empty import pattern");
 	Tcl_SetErrorCode(interp, "TCL", "IMPORT", "EMPTY", (char *)NULL);
 	return TCL_ERROR;
     }
@@ -1721,21 +1721,21 @@ Tcl_Import(
 	    &importNsPtr, &dummyPtr, &dummyPtr, &simplePattern);
 
     if (importNsPtr == NULL) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"unknown namespace in import pattern \"%s\"", pattern));
+	Tcl_PrintfResult(interp,
+		"unknown namespace in import pattern \"%s\"", pattern);
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "NAMESPACE", pattern, (char *)NULL);
 	return TCL_ERROR;
     }
     if (importNsPtr == nsPtr) {
 	if (pattern == simplePattern) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    Tcl_PrintfResult(interp,
 		    "no namespace specified in import pattern \"%s\"",
-		    pattern));
+		    pattern);
 	    Tcl_SetErrorCode(interp, "TCL", "IMPORT", "ORIGIN", (char *)NULL);
 	} else {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    Tcl_PrintfResult(interp,
 		    "import pattern \"%s\" tries to import from namespace"
-		    " \"%s\" into itself", pattern, importNsPtr->name));
+		    " \"%s\" into itself", pattern, importNsPtr->name);
 	    Tcl_SetErrorCode(interp, "TCL", "IMPORT", "SELF", (char *)NULL);
 	}
 	return TCL_ERROR;
@@ -1853,10 +1853,10 @@ DoImport(
 		dataPtr = (ImportedCmdData *)linkCmd->objClientData2;
 		linkCmd = dataPtr->realCmdPtr;
 		if (overwrite == linkCmd) {
-		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    Tcl_PrintfResult(interp,
 			    "import pattern \"%s\" would create a loop"
 			    " containing command \"%s\"",
-			    pattern, Tcl_DStringValue(&ds)));
+			    pattern, Tcl_DStringValue(&ds));
 		    Tcl_DStringFree(&ds);
 		    Tcl_SetErrorCode(interp, "TCL", "IMPORT", "LOOP", (char *)NULL);
 		    return TCL_ERROR;
@@ -1898,8 +1898,8 @@ DoImport(
 		return TCL_OK;
 	    }
 	}
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"can't import command \"%s\": already exists", cmdName));
+	Tcl_PrintfResult(interp,
+		"can't import command \"%s\": already exists", cmdName);
 	Tcl_SetErrorCode(interp, "TCL", "IMPORT", "OVERWRITE", (char *)NULL);
 	return TCL_ERROR;
     }
@@ -1967,9 +1967,9 @@ Tcl_ForgetImport(
 	    &sourceNsPtr, &dummyPtr, &dummyPtr, &simplePattern);
 
     if (sourceNsPtr == NULL) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	Tcl_PrintfResult(interp,
 		"unknown namespace in namespace forget pattern \"%s\"",
-		pattern));
+		pattern);
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "NAMESPACE", pattern, (char *)NULL);
 	return TCL_ERROR;
     }
@@ -2606,8 +2606,7 @@ Tcl_FindNamespace(
     }
 
     if (flags & TCL_LEAVE_ERR_MSG) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"unknown namespace \"%s\"", name));
+	Tcl_PrintfResult(interp, "unknown namespace \"%s\"", name);
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "NAMESPACE", name, (char *)NULL);
     }
     return NULL;
@@ -2795,8 +2794,7 @@ Tcl_FindCommand(
     }
 
     if (flags & TCL_LEAVE_ERR_MSG) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"unknown command \"%s\"", name));
+	Tcl_PrintfResult(interp, "unknown command \"%s\"", name);
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "COMMAND", name, (char *)NULL);
     }
     return NULL;
@@ -2972,17 +2970,15 @@ TclGetNamespaceFromObj(
 	const char *name = TclGetString(objPtr);
 
 	if ((name[0] == ':') && (name[1] == ':')) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "namespace \"%s\" not found", name));
+	    Tcl_PrintfResult(interp, "namespace \"%s\" not found", name);
 	} else {
 	    /*
 	     * Get the current namespace name.
 	     */
 
 	    NamespaceCurrentCmd(NULL, interp, 1, NULL);
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "namespace \"%s\" not found in \"%s\"", name,
-		    Tcl_GetStringResult(interp)));
+	    Tcl_PrintfResult(interp, "namespace \"%s\" not found in \"%s\"",
+		    name, Tcl_GetStringResult(interp));
 	}
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "NAMESPACE", name, (char *)NULL);
 	return TCL_ERROR;
@@ -3386,9 +3382,9 @@ NamespaceDeleteCmd(
 	namespacePtr = Tcl_FindNamespace(interp, name, NULL, /*flags*/ 0);
 	if ((namespacePtr == NULL)
 		|| (((Namespace *) namespacePtr)->flags & NS_TEARDOWN)) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    Tcl_PrintfResult(interp,
 		    "unknown namespace \"%s\" in namespace delete command",
-		    TclGetString(objv[i])));
+		    TclGetString(objv[i]));
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "NAMESPACE",
 		    TclGetString(objv[i]), (char *)NULL);
 	    return TCL_ERROR;
@@ -4016,8 +4012,8 @@ NamespaceOriginCmd(
     return TCL_OK;
 
   namespaceOriginError:
-    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-	    "invalid command name \"%s\"", TclGetString(objv[1])));
+    Tcl_PrintfResult(interp, "invalid command name \"%s\"",
+	    TclGetString(objv[1]));
     Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "COMMAND",
 	    TclGetString(objv[1]), (char *)NULL);
     return TCL_ERROR;

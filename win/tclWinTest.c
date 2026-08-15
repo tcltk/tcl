@@ -834,9 +834,8 @@ vamoose:
 	LocalFree(secdPtr);
     }
     if (err != ERROR_SUCCESS) {
-	Tcl_SetObjResult(interp,
-		Tcl_ObjPrintf("%s (path %s, Windows error %lu)", errorMessage,
-			Tcl_GetString(objv[1]), err));
+	Tcl_PrintfResult(interp, "%s (path %s, Windows error %lu)",
+		errorMessage, Tcl_GetString(objv[1]), err);
 	return TCL_ERROR;
     }
     return TCL_OK;

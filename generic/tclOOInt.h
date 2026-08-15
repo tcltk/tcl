@@ -697,9 +697,8 @@ TclOOGetContextFromCurrentStackFrame(
 
     if (framePtr == NULL || !(framePtr->isProcCallFrame & FRAME_IS_METHOD)) {
 	if (commandName != NULL) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "%s may only be called from inside a method",
-		    commandName));
+	    Tcl_PrintfResult(interp, "%s may only be called from inside a method",
+		    commandName);
 	    Tcl_SetErrorCode(interp, "TCL", "OO", "CONTEXT_REQUIRED",
 		    (char *)NULL);
 	}

@@ -2288,9 +2288,8 @@ ConsoleSetOptionProc(
 	if (GetConsoleMode(chanInfoPtr->handle, &mode) == 0) {
 	    Tcl_WinConvertError(GetLastError());
 	    if (interp != NULL) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"couldn't read console mode: %s",
-			Tcl_PosixError(interp)));
+		Tcl_PrintfResult(interp, "couldn't read console mode: %s",
+			Tcl_PosixError(interp));
 	    }
 	    return TCL_ERROR;
 	}
@@ -2309,9 +2308,9 @@ ConsoleSetOptionProc(
 	    mode = chanInfoPtr->initMode;
 	} else {
 	    if (interp) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		Tcl_PrintfResult(interp,
 			"bad mode \"%s\" for -inputmode: must be"
-			" normal, password, raw, or reset", value));
+			" normal, password, raw, or reset", value);
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "FCONFIGURE",
 			"VALUE", (char *)NULL);
 	    }
@@ -2320,9 +2319,8 @@ ConsoleSetOptionProc(
 	if (SetConsoleMode(chanInfoPtr->handle, mode) == 0) {
 	    Tcl_WinConvertError(GetLastError());
 	    if (interp != NULL) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"couldn't set console mode: %s",
-			Tcl_PosixError(interp)));
+		Tcl_PrintfResult(interp, "couldn't set console mode: %s",
+			Tcl_PosixError(interp));
 	    }
 	    return TCL_ERROR;
 	}
@@ -2391,9 +2389,8 @@ ConsoleGetOptionProc(
 	    if (GetConsoleMode(chanInfoPtr->handle, &mode) == 0) {
 		Tcl_WinConvertError(GetLastError());
 		if (interp != NULL) {
-		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			    "couldn't read console mode: %s",
-			    Tcl_PosixError(interp)));
+		    Tcl_PrintfResult(interp, "couldn't read console mode: %s",
+			    Tcl_PosixError(interp));
 		}
 		return TCL_ERROR;
 	    }
@@ -2425,9 +2422,8 @@ ConsoleGetOptionProc(
 		    &consoleInfo)) {
 		Tcl_WinConvertError(GetLastError());
 		if (interp != NULL) {
-		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			    "couldn't read console size: %s",
-			    Tcl_PosixError(interp)));
+		    Tcl_PrintfResult(interp, "couldn't read console size: %s",
+			    Tcl_PosixError(interp));
 		}
 		return TCL_ERROR;
 	    }
