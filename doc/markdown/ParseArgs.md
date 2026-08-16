@@ -43,7 +43,7 @@ Tcl\_ParseArgsObjv - parse arguments according to a tabular description
 : The array of arguments to be parsed.
 
 [\*\*\*remObjv]{.carg .out type="Tcl_Obj"}
-: Pointer to a variable that will hold the array of unprocessed arguments. Should be NULL if no return of unprocessed arguments is required. If *objcPtr* is updated to a non-zero value, the array returned through this must be deallocated using **Tcl\_Free**.
+: Pointer to a variable that will hold the array of unprocessed arguments. Should be NULL if no return of unprocessed arguments is required. If *objcPtr* is updated to a non-zero value, the array returned through this must be deallocated using [Tcl\_Free][Alloc].
 
 
 :::
@@ -92,7 +92,7 @@ As noted above, the *type* field is used to describe the interpretation of the a
 : This value marks the end of all option descriptors in the table. All other fields are ignored.
 
 **TCL\_ARGV\_FLOAT**
-: This argument takes a following floating point value argument. The value (once parsed by **Tcl\_GetDoubleFromObj**) will be stored as a double-precision value in the variable pointed to by the *dstPtr* field. The *srcPtr* and *clientData* fields are ignored.
+: This argument takes a following floating point value argument. The value (once parsed by [Tcl\_GetDoubleFromObj][DoubleObj]) will be stored as a double-precision value in the variable pointed to by the *dstPtr* field. The *srcPtr* and *clientData* fields are ignored.
 
 **TCL\_ARGV\_FUNC**
 : This argument optionally takes a following value argument; it is up to the handler callback function passed in *srcPtr* to decide. That function will have the following signature:
@@ -124,7 +124,7 @@ As noted above, the *type* field is used to describe the interpretation of the a
 : This special argument does not take any following value argument, but instead causes **Tcl\_ParseArgsObjv** to generate an error message describing the arguments supported. All other fields except the *helpStr* field are ignored.
 
 **TCL\_ARGV\_INT**
-: This argument takes a following integer value argument. The value (once parsed by **Tcl\_GetIntFromObj**) will be stored as an int in the variable pointed to by the *dstPtr* field. The *srcPtr* field is ignored.
+: This argument takes a following integer value argument. The value (once parsed by [Tcl\_GetIntFromObj][IntObj]) will be stored as an int in the variable pointed to by the *dstPtr* field. The *srcPtr* field is ignored.
 
 **TCL\_ARGV\_REST**
 : This special argument does not take any following value argument, but instead marks all following arguments to be left unprocessed. The *srcPtr*, *dstPtr* and *clientData* fields are ignored.
@@ -136,4 +136,9 @@ As noted above, the *type* field is used to describe the interpretation of the a
 # Reference count management
 
 The values in the *objv* argument to **Tcl\_ParseArgsObjv** will not have their reference counts modified by this function. The interpreter result may be modified on error; the values passed should not be the interpreter result with no further reference added.
+
+
+[Alloc]: Alloc.md
+[DoubleObj]: DoubleObj.md
+[IntObj]: IntObj.md
 

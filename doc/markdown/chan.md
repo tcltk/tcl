@@ -85,7 +85,7 @@ This command provides several operations for reading from, writing to and otherw
     The options described below are supported for all channels. In addition, each channel type may add options that only it supports. See the manual entry for the command that creates each type of channel for the options supported by that specific type of channel. For example, see the manual entry for the [socket] command for additional options for sockets, and the [open] command for additional options for serial devices.
 
 [-blocking]{.lit} [boolean]{.arg}
-: The **-blocking** option determines whether I/O operations on the channel can cause the process to block indefinitely.  The value of the option must be a proper boolean value.  Channels are normally in blocking mode; if a channel is placed into non-blocking mode it will affect the operation of the **chan gets**, **chan read**, **chan puts**, **chan flush**, and **chan close** commands; see the documentation for those commands for details.  For non-blocking mode to work correctly, the application must be using the Tcl event loop (e.g. by calling **Tcl\_DoOneEvent** or invoking the [vwait] command).
+: The **-blocking** option determines whether I/O operations on the channel can cause the process to block indefinitely.  The value of the option must be a proper boolean value.  Channels are normally in blocking mode; if a channel is placed into non-blocking mode it will affect the operation of the **chan gets**, **chan read**, **chan puts**, **chan flush**, and **chan close** commands; see the documentation for those commands for details.  For non-blocking mode to work correctly, the application must be using the Tcl event loop (e.g. by calling [Tcl\_DoOneEvent][DoOneEvent] or invoking the [vwait] command).
 
 [-buffering]{.lit} [newValue]{.arg}
 : If *newValue* is **full** then the I/O system will buffer output until its internal buffer is full or until the **chan flush** command is invoked. If *newValue* is **line**, then the I/O system will automatically flush output for the channel whenever a newline character is output. If *newValue* is **none**, the I/O system will flush automatically after every output operation.  The default is for **-buffering** to be set to **full** except for channels that connect to terminal-like devices; for these channels the initial setting is **line**.  Additionally, **stdin** and **stdout** are initially set to **line**, and **stderr** is set to **none**.
@@ -626,6 +626,7 @@ vwait done
 
 [binary]: binary.md
 [close]: close.md
+[DoOneEvent]: DoOneEvent.md
 [encoding]: encoding.md
 [exec]: exec.md
 [file]: file.md

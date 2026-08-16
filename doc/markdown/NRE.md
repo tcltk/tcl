@@ -54,10 +54,10 @@ Tcl\_NRCreateCommand, Tcl\_NRCreateCommand2, Tcl\_NRCallObjProc, Tcl\_NRCallObjP
 : Name of the command to create.
 
 [\*proc]{.carg .in type="Tcl_ObjCmdProc"}
-: Called in order to evaluate a command.  Is often just a small wrapper that uses **Tcl\_NRCallObjProc** to call *nreProc* using a new trampoline.  Behaves in the same way as the *proc* argument to **Tcl\_CreateObjCommand**(3) (*q.v.*).
+: Called in order to evaluate a command.  Is often just a small wrapper that uses **Tcl\_NRCallObjProc** to call *nreProc* using a new trampoline.  Behaves in the same way as the *proc* argument to [Tcl\_CreateObjCommand][CrtObjCmd](3) (*q.v.*).
 
 [\*proc2]{.carg .in type="Tcl_ObjCmdProc2"}
-: Called in order to evaluate a command.  Is often just a small wrapper that uses **Tcl\_NRCallObjProc2** to call *nreProc2* using a new trampoline.  Behaves in the same way as the *proc2* argument to **Tcl\_CreateObjCommand2**(3) (*q.v.*).
+: Called in order to evaluate a command.  Is often just a small wrapper that uses **Tcl\_NRCallObjProc2** to call *nreProc2* using a new trampoline.  Behaves in the same way as the *proc2* argument to [Tcl\_CreateObjCommand2][CrtObjCmd](3) (*q.v.*).
 
 [\*nreProc]{.carg .in type="Tcl_ObjCmdProc"}
 : Called instead of *proc* when a trampoline is already in use.
@@ -113,17 +113,17 @@ These functions provide an interface to the function stack that an interpreter i
 
 **Tcl\_NRCallObjProc** calls *nreProc* using a new trampoline.
 
-**Tcl\_NRCreateCommand**, an alternative to **Tcl\_CreateObjCommand**, resolves *cmdName*, which may contain namespace qualifiers, relative to the current namespace, creates a command by that name, and returns a token for the command which may be used in subsequent calls to **Tcl\_GetCommandName**. Except for a few cases noted below any existing command by the same name is first deleted.  If *interp* is in the process of being deleted **Tcl\_NRCreateCommand** does not create any command, does not delete any command, and returns NULL.
+**Tcl\_NRCreateCommand**, an alternative to [Tcl\_CreateObjCommand][CrtObjCmd], resolves *cmdName*, which may contain namespace qualifiers, relative to the current namespace, creates a command by that name, and returns a token for the command which may be used in subsequent calls to [Tcl\_GetCommandName][CrtObjCmd]. Except for a few cases noted below any existing command by the same name is first deleted.  If *interp* is in the process of being deleted **Tcl\_NRCreateCommand** does not create any command, does not delete any command, and returns NULL.
 
-**Tcl\_NRCreateCommand2**, is an alternative to **Tcl\_NRCreateCommand** in the same way as **Tcl\_CreateObjCommand2**.
+**Tcl\_NRCreateCommand2**, is an alternative to **Tcl\_NRCreateCommand** in the same way as [Tcl\_CreateObjCommand2][CrtObjCmd].
 
-**Tcl\_NREvalObj** pushes a function that is like **Tcl\_EvalObjEx** but consumes no space on the C stack.
+**Tcl\_NREvalObj** pushes a function that is like [Tcl\_EvalObjEx][Eval3] but consumes no space on the C stack.
 
-**Tcl\_NREvalObjv** pushes a function that is like **Tcl\_EvalObjv** but consumes no space on the C stack.
+**Tcl\_NREvalObjv** pushes a function that is like [Tcl\_EvalObjv][Eval3] but consumes no space on the C stack.
 
-**Tcl\_NRCmdSwap** is like **Tcl\_NREvalObjv**, but uses *cmd*, a token previously returned by **Tcl\_CreateObjCommand** or **Tcl\_GetCommandFromObj**, instead of resolving the first word of *objv*. .  The name of this command must be the same as *objv[0]*.
+**Tcl\_NRCmdSwap** is like **Tcl\_NREvalObjv**, but uses *cmd*, a token previously returned by [Tcl\_CreateObjCommand][CrtObjCmd] or [Tcl\_GetCommandFromObj][CrtObjCmd], instead of resolving the first word of *objv*. .  The name of this command must be the same as *objv[0]*.
 
-**Tcl\_NRExprObj** pushes a function that evaluates *objPtr* as an expression in the same manner as **Tcl\_ExprObj** but without consuming space on the C stack.
+**Tcl\_NRExprObj** pushes a function that evaluates *objPtr* as an expression in the same manner as [Tcl\_ExprObj][ExprLongObj] but without consuming space on the C stack.
 
 All of the functions return **TCL\_OK** if the evaluation of the script, command, or expression has been scheduled successfully.  Otherwise (for example if the command name cannot be resolved), they return **TCL\_ERROR** and store a message as the interpreter's result.
 
@@ -141,7 +141,7 @@ Tcl_NRPostProc(
 
 # Example
 
-The following command uses **Tcl\_EvalObjEx**, which consumes space on the C stack, to evaluate a script:
+The following command uses [Tcl\_EvalObjEx][Eval3], which consumes space on the C stack, to evaluate a script:
 
 ```
 int
@@ -234,5 +234,10 @@ The
 
 # Copyright
 
-Copyright \\(co 2008 Kevin B. Kenny. Copyright \\(co 2018 Nathan Coulter.
+Copyright \\(co 2008 Kevin B. Kenny. Copyright \\(co 2018 Nathan Coulter. 
+
+
+[CrtObjCmd]: CrtObjCmd.md
+[Eval3]: Eval3.md
+[ExprLongObj]: ExprLongObj.md
 

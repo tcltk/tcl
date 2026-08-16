@@ -62,5 +62,10 @@ These procedures provide a platform and compiler independent interface for memor
 
 When a module or Tcl itself is compiled with **TCL\_MEM\_DEBUG** defined, the procedures **Tcl\_Alloc**, **Tcl\_Free**, **Tcl\_Realloc**, **Tcl\_AttemptAlloc**, and **Tcl\_AttempRealloc** are implemented as macros, redefined to be special debugging versions of these procedures.
 
-**Tcl\_GetMemoryInfo** appends a list-of-lists of memory stats to the provided DString. This function cannot be used in stub-enabled extensions, and it is only available if Tcl is compiled with the threaded memory allocator When used in stub-enabled embedders, the stubs table must be first initialized using one of **Tcl\_InitSubsystems**, **Tcl\_SetPanicProc**, **Tcl\_FindExecutable** or **TclZipfs\_AppHook**.
+**Tcl\_GetMemoryInfo** appends a list-of-lists of memory stats to the provided DString. This function cannot be used in stub-enabled extensions, and it is only available if Tcl is compiled with the threaded memory allocator When used in stub-enabled embedders, the stubs table must be first initialized using one of [Tcl\_InitSubsystems][InitSubSyst], [Tcl\_SetPanicProc][Panic], [Tcl\_FindExecutable][FindExec] or **TclZipfs\_AppHook**. 
+
+
+[FindExec]: FindExec.md
+[InitSubSyst]: InitSubSyst.md
+[Panic]: Panic.md
 

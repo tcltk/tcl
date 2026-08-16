@@ -45,7 +45,7 @@ Tcl\_CreateCloseHandler, Tcl\_DeleteCloseHandler - arrange for callbacks when ch
 
 # Description
 
-**Tcl\_CreateCloseHandler** arranges for *proc* to be called when *channel* is closed with **Tcl\_Close** or **Tcl\_UnregisterChannel**, or using the Tcl [close] command. *Proc* should match the following prototype:
+**Tcl\_CreateCloseHandler** arranges for *proc* to be called when *channel* is closed with [Tcl\_Close][OpenFileChnl] or [Tcl\_UnregisterChannel][OpenFileChnl], or using the Tcl [close] command. *Proc* should match the following prototype:
 
 ```
 typedef void Tcl_CloseProc(
@@ -58,4 +58,5 @@ The *clientData* is the same as the value provided in the call to **Tcl\_CreateC
 
 
 [close]: close.md
+[OpenFileChnl]: OpenFileChnl.md
 

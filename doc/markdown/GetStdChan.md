@@ -49,9 +49,9 @@ Tcl defines three special channels that are used by various I/O related commands
 
 The standard channels are actually aliases for other normal channels.  The current channel associated with a standard channel can be retrieved by calling **Tcl\_GetStdChannel** with one of **TCL\_STDIN**, **TCL\_STDOUT**, or **TCL\_STDERR** as the *type*.  The return value will be a valid channel, or NULL.
 
-A new channel can be set for the standard channel specified by *type* by calling **Tcl\_SetStdChannel** with a new channel or NULL in the *channel* argument.  If the specified channel is closed by a later call to **Tcl\_Close**, then the corresponding standard channel will automatically be set to NULL.
+A new channel can be set for the standard channel specified by *type* by calling **Tcl\_SetStdChannel** with a new channel or NULL in the *channel* argument.  If the specified channel is closed by a later call to [Tcl\_Close][OpenFileChnl], then the corresponding standard channel will automatically be set to NULL.
 
-If a non-NULL value for *channel* is passed to **Tcl\_SetStdChannel**, then that same value should be passed to **Tcl\_RegisterChannel**, like so:
+If a non-NULL value for *channel* is passed to **Tcl\_SetStdChannel**, then that same value should be passed to [Tcl\_RegisterChannel][OpenFileChnl], like so:
 
 ```
 Tcl_RegisterChannel(NULL, channel);
@@ -61,14 +61,17 @@ This is a workaround for a misfeature in **Tcl\_SetStdChannel** that it fails to
 
 If **Tcl\_GetStdChannel** is called before **Tcl\_SetStdChannel**, Tcl will construct a new channel to wrap the appropriate platform-specific standard file handle.  If **Tcl\_SetStdChannel** is called before **Tcl\_GetStdChannel**, then the default channel will not be created.
 
-If one of the standard channels is set to NULL, either by calling **Tcl\_SetStdChannel** with a NULL *channel* argument, or by calling **Tcl\_Close** on the channel, then the next call to **Tcl\_CreateChannel** will automatically set the standard channel with the newly created channel.  If more than one standard channel is NULL, then the standard channels will be assigned starting with standard input, followed by standard output, with standard error being last.
+If one of the standard channels is set to NULL, either by calling **Tcl\_SetStdChannel** with a NULL *channel* argument, or by calling [Tcl\_Close][OpenFileChnl] on the channel, then the next call to [Tcl\_CreateChannel][CrtChannel] will automatically set the standard channel with the newly created channel.  If more than one standard channel is NULL, then the standard channels will be assigned starting with standard input, followed by standard output, with standard error being last.
 
-See **Tcl\_StandardChannels** for a general treatise about standard channels and the behavior of the Tcl library with regard to them. 
+See [Tcl\_StandardChannels][StdChannels] for a general treatise about standard channels and the behavior of the Tcl library with regard to them. 
 
 
+[CrtChannel]: CrtChannel.md
 [exec]: exec.md
 [gets]: gets.md
 [open]: open.md
+[OpenFileChnl]: OpenFileChnl.md
 [puts]: puts.md
 [read]: read.md
+[StdChannels]: StdChannels.md
 

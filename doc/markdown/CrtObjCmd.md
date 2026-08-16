@@ -79,7 +79,7 @@ Tcl\_CreateObjCommand, Tcl\_CreateObjCommand2, Tcl\_DeleteCommand, Tcl\_DeleteCo
 
 # Description
 
-**Tcl\_CreateObjCommand** defines a new command in *interp* and associates it with procedure *proc* such that whenever *name* is invoked as a Tcl command (e.g., via a call to **Tcl\_EvalObjEx**) the Tcl interpreter will call *proc* to process the command.
+**Tcl\_CreateObjCommand** defines a new command in *interp* and associates it with procedure *proc* such that whenever *name* is invoked as a Tcl command (e.g., via a call to [Tcl\_EvalObjEx][Eval3]) the Tcl interpreter will call *proc* to process the command.
 
 **Tcl\_CreateObjCommand** deletes any existing command *name* already associated with the interpreter (however see below for an exception where the existing command is not deleted). It returns a token that may be used to refer to the command in subsequent calls to **Tcl\_GetCommandName**. If *name* contains any **::** namespace qualifiers, then the command is added to the specified namespace; otherwise the command is added to the global namespace. If **Tcl\_CreateObjCommand** is called for an interpreter that is in the process of being deleted, then it does not create a new command and it returns NULL. *proc* should have arguments and result that match the type **Tcl\_ObjCmdProc**:
 
@@ -93,17 +93,17 @@ typedef int Tcl_ObjCmdProc(
 
 When *proc* is invoked, the *clientData* and *interp* parameters will be copies of the *clientData* and *interp* arguments given to **Tcl\_CreateObjCommand**.  Typically, *clientData* points to an application-specific data structure that describes what to do when the command procedure is invoked. *Objc* and *objv* describe the arguments to the command, *objc* giving the number of argument values (including the command name) and *objv* giving the values of the arguments.  The *objv* array will contain *objc* values, pointing to the argument values.  Unlike *argv*[*argv*] used in a string-based command procedure, *objv*[*objc*] will not contain NULL.
 
-Additionally, when *proc* is invoked, it must not modify the contents of the *objv* array by assigning new pointer values to any element of the array (for example, *objv*[**2**] = **NULL**) because this will cause memory to be lost and the runtime stack to be corrupted.  The [const] in the declaration of *objv* will cause ANSI-compliant compilers to report any such attempted assignment as an error.  However, it is acceptable to modify the internal representation of any individual value argument.  For instance, the user may call **Tcl\_GetIntFromObj** on *objv*[**2**] to obtain the integer representation of that value; that call may change the type of the value that *objv*[**2**] points at, but will not change where *objv*[**2**] points.
+Additionally, when *proc* is invoked, it must not modify the contents of the *objv* array by assigning new pointer values to any element of the array (for example, *objv*[**2**] = **NULL**) because this will cause memory to be lost and the runtime stack to be corrupted.  The [const] in the declaration of *objv* will cause ANSI-compliant compilers to report any such attempted assignment as an error.  However, it is acceptable to modify the internal representation of any individual value argument.  For instance, the user may call [Tcl\_GetIntFromObj][IntObj] on *objv*[**2**] to obtain the integer representation of that value; that call may change the type of the value that *objv*[**2**] points at, but will not change where *objv*[**2**] points.
 
 *proc* must return an integer code that is either **TCL\_OK**, **TCL\_ERROR**, **TCL\_RETURN**, **TCL\_BREAK**, or **TCL\_CONTINUE**. See the [return] man page for details on what these codes mean and the use of extended values for an extension's private use. Most normal commands will only return **TCL\_OK** or **TCL\_ERROR**.
 
-In addition, if *proc* needs to return a non-empty result, it can call **Tcl\_SetObjResult** to set the interpreter's result. In the case of a **TCL\_OK** return code this gives the result of the command, and in the case of **TCL\_ERROR** this gives an error message. Before invoking a command procedure, **Tcl\_EvalObjEx** sets interpreter's result to point to a value representing an empty string, so simple commands can return an empty result by doing nothing at all.
+In addition, if *proc* needs to return a non-empty result, it can call [Tcl\_SetObjResult][SetResult] to set the interpreter's result. In the case of a **TCL\_OK** return code this gives the result of the command, and in the case of **TCL\_ERROR** this gives an error message. Before invoking a command procedure, [Tcl\_EvalObjEx][Eval3] sets interpreter's result to point to a value representing an empty string, so simple commands can return an empty result by doing nothing at all.
 
-The contents of the *objv* array belong to Tcl and are not guaranteed to persist once *proc* returns: *proc* should not modify them. Call **Tcl\_SetObjResult** if you want to return something from the *objv* array.
+The contents of the *objv* array belong to Tcl and are not guaranteed to persist once *proc* returns: *proc* should not modify them. Call [Tcl\_SetObjResult][SetResult] if you want to return something from the *objv* array.
 
-Ordinarily, **Tcl\_CreateObjCommand** deletes any existing command *name* already associated with the interpreter. However, if the existing command was created by a previous call to **Tcl\_CreateCommand**, **Tcl\_CreateObjCommand** does not delete the command but instead arranges for the Tcl interpreter to call the **Tcl\_ObjCmdProc** *proc* in the future. The old string-based **Tcl\_CmdProc** associated with the command is retained and its address can be obtained by subsequent **Tcl\_GetCommandInfo** calls. This is done for backwards compatibility.
+Ordinarily, **Tcl\_CreateObjCommand** deletes any existing command *name* already associated with the interpreter. However, if the existing command was created by a previous call to [Tcl\_CreateCommand][CrtCommand], **Tcl\_CreateObjCommand** does not delete the command but instead arranges for the Tcl interpreter to call the **Tcl\_ObjCmdProc** *proc* in the future. The old string-based **Tcl\_CmdProc** associated with the command is retained and its address can be obtained by subsequent **Tcl\_GetCommandInfo** calls. This is done for backwards compatibility.
 
-*DeleteProc* will be invoked when (if) *name* is deleted. This can occur through a call to **Tcl\_DeleteCommand**, **Tcl\_DeleteCommandFromToken**, or **Tcl\_DeleteInterp**, or by replacing *name* in another call to **Tcl\_CreateObjCommand**. *DeleteProc* is invoked before the command is deleted, and gives the application an opportunity to release any structures associated with the command.  *DeleteProc* should have arguments and result that match the type **Tcl\_CmdDeleteProc**:
+*DeleteProc* will be invoked when (if) *name* is deleted. This can occur through a call to **Tcl\_DeleteCommand**, **Tcl\_DeleteCommandFromToken**, or [Tcl\_DeleteInterp][CrtInterp], or by replacing *name* in another call to **Tcl\_CreateObjCommand**. *DeleteProc* is invoked before the command is deleted, and gives the application an opportunity to release any structures associated with the command.  *DeleteProc* should have arguments and result that match the type **Tcl\_CmdDeleteProc**:
 
 ```
 typedef void Tcl_CmdDeleteProc(
@@ -143,7 +143,7 @@ typedef struct {
 } Tcl_CmdInfo;
 ```
 
-The *isNativeObjectProc* field has the value 2 if **Tcl\_CreateObjCommand2** was called to register the command; it has the value 1 if **Tcl\_CreateObjCommand** was called to register the command; it is 0 if only **Tcl\_CreateCommand** was called. It allows a program to determine whether it is faster to call *objProc2*, *objProc* or *proc*: *objProc2*/*objProc* is normally faster if *isNativeObjectProc* has the value 2; *objProc*/*objProc* is normally faster if *isNativeObjectProc* has the value 1. The fields *objProc* and *objClientData* have the same meaning as the *proc* and *clientData* arguments to **Tcl\_CreateObjCommand**; they hold information about the value-based command procedure that the Tcl interpreter calls to implement the command. The fields *proc* and *clientData* hold information about the string-based command procedure that implements the command. If **Tcl\_CreateCommand** was called for this command, this is the procedure passed to it; otherwise, this is a compatibility procedure registered by **Tcl\_CreateObjCommand** that simply calls the command's value-based procedure after converting its string arguments to Tcl values. The field *deleteData* is the clientData value to pass to *deleteProc*;  it is normally the same as *clientData* but may be set independently using the **Tcl\_SetCommandInfo** procedure. The field *namespacePtr* holds a pointer to the Tcl\_Namespace that contains the command.
+The *isNativeObjectProc* field has the value 2 if **Tcl\_CreateObjCommand2** was called to register the command; it has the value 1 if **Tcl\_CreateObjCommand** was called to register the command; it is 0 if only [Tcl\_CreateCommand][CrtCommand] was called. It allows a program to determine whether it is faster to call *objProc2*, *objProc* or *proc*: *objProc2*/*objProc* is normally faster if *isNativeObjectProc* has the value 2; *objProc*/*objProc* is normally faster if *isNativeObjectProc* has the value 1. The fields *objProc* and *objClientData* have the same meaning as the *proc* and *clientData* arguments to **Tcl\_CreateObjCommand**; they hold information about the value-based command procedure that the Tcl interpreter calls to implement the command. The fields *proc* and *clientData* hold information about the string-based command procedure that implements the command. If [Tcl\_CreateCommand][CrtCommand] was called for this command, this is the procedure passed to it; otherwise, this is a compatibility procedure registered by **Tcl\_CreateObjCommand** that simply calls the command's value-based procedure after converting its string arguments to Tcl values. The field *deleteData* is the clientData value to pass to *deleteProc*;  it is normally the same as *clientData* but may be set independently using the **Tcl\_SetCommandInfo** procedure. The field *namespacePtr* holds a pointer to the Tcl\_Namespace that contains the command.
 
 **Tcl\_GetCommandInfoFromToken** is identical to **Tcl\_GetCommandInfo** except that it uses a command token returned from **Tcl\_CreateObjCommand** in place of the command name.  If the *token* parameter is NULL, it returns 0; otherwise, it returns 1 and fills in the structure designated by *infoPtr*.
 
@@ -151,7 +151,7 @@ The *isNativeObjectProc* field has the value 2 if **Tcl\_CreateObjCommand2** was
 
 **Tcl\_SetCommandInfoFromToken** is identical to **Tcl\_SetCommandInfo** except that it takes a command token as returned by **Tcl\_CreateObjCommand** instead of the command name. If the *token* parameter is NULL, it returns 0.  Otherwise, it copies the information from *\*infoPtr* to Tcl's internal structure for the command and returns 1.
 
-Note that **Tcl\_SetCommandInfo** and **Tcl\_SetCommandInfoFromToken** both allow the clientData for a command's deletion procedure to be given a different value than the clientData for its command procedure. Note also that neither **Tcl\_SetCommandInfo** nor **Tcl\_SetCommandInfoFromToken** will change a command's namespace. Use **Tcl\_Eval** to call the [rename] command to do that.
+Note that **Tcl\_SetCommandInfo** and **Tcl\_SetCommandInfoFromToken** both allow the clientData for a command's deletion procedure to be given a different value than the clientData for its command procedure. Note also that neither **Tcl\_SetCommandInfo** nor **Tcl\_SetCommandInfoFromToken** will change a command's namespace. Use [Tcl\_Eval][Eval3] to call the [rename] command to do that.
 
 **Tcl\_GetCommandName** provides a mechanism for tracking commands that have been renamed. Given a token returned by **Tcl\_CreateObjCommand** when the command was created, **Tcl\_GetCommandName** returns the string name of the command.  If the command has been renamed since it was created, then **Tcl\_GetCommandName** returns the current name. This name does not include any **::** namespace qualifiers. The command corresponding to *token* must not have been deleted. The string returned by **Tcl\_GetCommandName** is in dynamic memory owned by Tcl and is only guaranteed to retain its value as long as the command is not deleted or renamed;  callers should copy the string if they need to keep it for a long time.
 
@@ -161,7 +161,7 @@ Note that **Tcl\_SetCommandInfo** and **Tcl\_SetCommandInfoFromToken** both allo
 
 # Reference count management
 
-When the *proc* passed to **Tcl\_CreateObjCommand** is called, the values in its *objv* argument will have a reference count of at least 1, with that guaranteed reference being from the Tcl evaluation stack. You should not call **Tcl\_DecrRefCount** on any of those values unless you call **Tcl\_IncrRefCount** on them first. Also, when the *proc* is called, the interpreter result is guaranteed to be an empty string value with a reference count of 1.
+When the *proc* passed to **Tcl\_CreateObjCommand** is called, the values in its *objv* argument will have a reference count of at least 1, with that guaranteed reference being from the Tcl evaluation stack. You should not call [Tcl\_DecrRefCount][Object3] on any of those values unless you call [Tcl\_IncrRefCount][Object3] on them first. Also, when the *proc* is called, the interpreter result is guaranteed to be an empty string value with a reference count of 1.
 
 **Tcl\_GetCommandFullName** does not modify the reference count of its *objPtr* argument, but does require that the object be unshared.
 
@@ -169,6 +169,12 @@ When the *proc* passed to **Tcl\_CreateObjCommand** is called, the values in its
 
 
 [const]: const.md
+[CrtCommand]: CrtCommand.md
+[CrtInterp]: CrtInterp.md
+[Eval3]: Eval3.md
+[IntObj]: IntObj.md
+[Object3]: Object3.md
 [rename]: rename.md
 [return]: return.md
+[SetResult]: SetResult.md
 

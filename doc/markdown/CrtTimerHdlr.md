@@ -51,7 +51,7 @@ Tcl\_CreateTimerHandler, Tcl\_DeleteTimerHandler - call a procedure at a given t
 
 # Description
 
-**Tcl\_CreateTimerHandler** arranges for *proc* to be invoked at a time *milliseconds* milliseconds in the future. The callback to *proc* will be made by **Tcl\_DoOneEvent**, so **Tcl\_CreateTimerHandler** is only useful in programs that dispatch events through **Tcl\_DoOneEvent** or through Tcl commands such as [vwait]. The call to *proc* may not be made at the exact time given by *milliseconds*:  it will be made at the next opportunity after that time.  For example, if **Tcl\_DoOneEvent** is not called until long after the time has elapsed, or if there are other pending events to process before the call to *proc*, then the call to *proc* will be delayed.
+**Tcl\_CreateTimerHandler** arranges for *proc* to be invoked at a time *milliseconds* milliseconds in the future. The callback to *proc* will be made by [Tcl\_DoOneEvent][DoOneEvent], so **Tcl\_CreateTimerHandler** is only useful in programs that dispatch events through [Tcl\_DoOneEvent][DoOneEvent] or through Tcl commands such as [vwait]. The call to *proc* may not be made at the exact time given by *milliseconds*:  it will be made at the next opportunity after that time.  For example, if [Tcl\_DoOneEvent][DoOneEvent] is not called until long after the time has elapsed, or if there are other pending events to process before the call to *proc*, then the call to *proc* will be delayed.
 
 *Proc* should have arguments and return value that match the type **Tcl\_TimerProc**:
 
@@ -65,5 +65,6 @@ The *clientData* parameter to *proc* is a copy of the *clientData* argument give
 **Tcl\_DeleteTimerHandler** may be called to delete a previously created timer handler.  It deletes the handler indicated by *token* so that no call to *proc* will be made;  if that handler no longer exists (e.g. because the time period has already elapsed and *proc* has been invoked then **Tcl\_DeleteTimerHandler** does nothing. The tokens returned by **Tcl\_CreateTimerHandler** never have a value of NULL, so if NULL is passed to **Tcl\_DeleteTimerHandler** then the procedure does nothing.
 
 
+[DoOneEvent]: DoOneEvent.md
 [vwait]: vwait.md
 

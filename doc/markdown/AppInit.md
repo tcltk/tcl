@@ -42,7 +42,7 @@ Tcl\_AppInit - perform application-specific initialization
 
 **Tcl\_AppInit** is a "hook" procedure that is invoked by the main programs for Tcl applications such as [tclsh] and **wish**. Its purpose is to allow new Tcl applications to be created without modifying the main programs provided as part of Tcl and Tk. To create a new application you write a new version of **Tcl\_AppInit** to replace the default version provided by Tcl, then link your new **Tcl\_AppInit** with the Tcl library.
 
-**Tcl\_AppInit** is invoked by **Tcl\_Main** and **Tk\_Main** after their own initialization and before entering the main loop to process commands. Here are some examples of things that **Tcl\_AppInit** might do:
+**Tcl\_AppInit** is invoked by [Tcl\_Main][Tcl_Main] and **Tk\_Main** after their own initialization and before entering the main loop to process commands. Here are some examples of things that **Tcl\_AppInit** might do:
 
 1. Call initialization procedures for various packages used by the application. Each initialization procedure adds new commands to *interp* for its package and performs other package-specific initialization.
 
@@ -50,19 +50,20 @@ Tcl\_AppInit - perform application-specific initialization
 
 3. Invoke a startup script to initialize the application.
 
-4. Use the routines **Tcl\_SetStartupScript** and **Tcl\_GetStartupScript** to set or query the file and encoding that the active **Tcl\_Main** or **Tk\_Main** routine will use as a startup script.
+4. Use the routines [Tcl\_SetStartupScript][Tcl_Main] and [Tcl\_GetStartupScript][Tcl_Main] to set or query the file and encoding that the active [Tcl\_Main][Tcl_Main] or **Tk\_Main** routine will use as a startup script.
 
 
 **Tcl\_AppInit** returns **TCL\_OK** or **TCL\_ERROR**. If it returns **TCL\_ERROR** then it must leave an error message in for the interpreter's result;  otherwise the result is ignored.
 
-In addition to **Tcl\_AppInit**, your application should also contain a procedure **main** that calls **Tcl\_Main** as follows:
+In addition to **Tcl\_AppInit**, your application should also contain a procedure **main** that calls [Tcl\_Main][Tcl_Main] as follows:
 
 ```
 Tcl_Main(argc, argv, Tcl_AppInit);
 ```
 
-The third argument to **Tcl\_Main** gives the address of the application-specific initialization procedure to invoke. This means that you do not have to use the name **Tcl\_AppInit** for the procedure, but in practice the name is nearly always **Tcl\_AppInit** (in versions before Tcl 7.4 the name **Tcl\_AppInit** was implicit;  there was no way to specify the procedure explicitly). The best way to get started is to make a copy of the file **tclAppInit.c** from the Tcl library or source directory. It already contains a **main** procedure and a template for **Tcl\_AppInit** that you can modify for your application. 
+The third argument to [Tcl\_Main][Tcl_Main] gives the address of the application-specific initialization procedure to invoke. This means that you do not have to use the name **Tcl\_AppInit** for the procedure, but in practice the name is nearly always **Tcl\_AppInit** (in versions before Tcl 7.4 the name **Tcl\_AppInit** was implicit;  there was no way to specify the procedure explicitly). The best way to get started is to make a copy of the file **tclAppInit.c** from the Tcl library or source directory. It already contains a **main** procedure and a template for **Tcl\_AppInit** that you can modify for your application. 
 
 
+[Tcl_Main]: Tcl_Main.md
 [tclsh]: tclsh.md
 

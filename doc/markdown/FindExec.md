@@ -41,7 +41,7 @@ The result of **Tcl\_FindExecutable** is the full Tcl version with build informa
 
 On UNIX platforms this procedure is typically invoked as the very first thing in the application's main program;  it must be passed *argv[0]* as its argument.  It is important not to change the working directory before the invocation. **Tcl\_FindExecutable** uses *argv0* along with the **PATH** environment variable to find the application's executable, if possible.  If it fails to find the binary, then future calls to [info nameofexecutable][info] will return an empty string.
 
-On Windows platforms this procedure is typically invoked as the very first thing in the application's main program as well; Its *argv[0]* argument is only used to indicate whether the executable has a stderr channel (any non-null value) or not (the value null). If **Tcl\_SetPanicProc** is never called and no debugger is running, this determines whether the panic message is sent to stderr or to a standard system dialog.
+On Windows platforms this procedure is typically invoked as the very first thing in the application's main program as well; Its *argv[0]* argument is only used to indicate whether the executable has a stderr channel (any non-null value) or not (the value null). If [Tcl\_SetPanicProc][Panic] is never called and no debugger is running, this determines whether the panic message is sent to stderr or to a standard system dialog.
 
 **Tcl\_GetNameOfExecutable** simply returns a pointer to the internal full path name of the executable file as computed by **Tcl\_FindExecutable**.  This procedure call is the C API equivalent to the [info nameofexecutable][info] command.  NULL is returned if the internal full path name has not been computed or unknown.
 
@@ -50,4 +50,5 @@ On Windows platforms this procedure is typically invoked as the very first thing
 
 [info]: info.md
 [load]: load.md
+[Panic]: Panic.md
 

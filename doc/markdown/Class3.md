@@ -100,7 +100,7 @@ The class of an object can be retrieved with **Tcl\_GetClassOfObject**, and the 
 
 Instances of classes are created using **Tcl\_NewObjectInstance**, which creates an object from any class (and which is internally called by both the **create** and **new** methods of the **oo::class** class). It takes parameters that optionally give the name of the object and namespace to create, and which describe the arguments to pass to the class's constructor (if any). The result of the function will be either a reference to the newly created object, or NULL if the creation failed (when an error message will be left in the interpreter result). In addition, objects may be copied by using **Tcl\_CopyObjectInstance** which creates a copy of an object without running any constructors.
 
-Note that the lifetime management of objects is handled internally within TclOO, and does not use **Tcl\_Preserve**. *It is not safe to put a Tcl\_Object handle in a C structure with a lifespan different to the object;* you should use the object's command name (as retrieved with **Tcl\_GetObjectName**) instead. It is safe to use a Tcl\_Object handle for the lifespan of a call of a method on that object; handles do not become invalid while there is an outstanding call on their object (even if the only operation guaranteed to be safe on them is **Tcl\_ObjectDeleted**; the other operations are only guaranteed to work on non-deleted objects).
+Note that the lifetime management of objects is handled internally within TclOO, and does not use [Tcl\_Preserve][Preserve]. *It is not safe to put a Tcl\_Object handle in a C structure with a lifespan different to the object;* you should use the object's command name (as retrieved with **Tcl\_GetObjectName**) instead. It is safe to use a Tcl\_Object handle for the lifespan of a call of a method on that object; handles do not become invalid while there is an outstanding call on their object (even if the only operation guaranteed to be safe on them is **Tcl\_ObjectDeleted**; the other operations are only guaranteed to work on non-deleted objects).
 
 # Object and class metadata
 
@@ -179,4 +179,5 @@ The *methodNameObj* argument to a Tcl\_ObjectMapMethodNameProc implementation wi
 
 
 [next]: next.md
+[Preserve]: Preserve.md
 

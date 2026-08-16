@@ -60,7 +60,7 @@ Tcl\_AppendExportList, Tcl\_CreateNamespace, Tcl\_DeleteNamespace, Tcl\_Export, 
 : A reference to an unshared value to which the function output will be written.
 
 [\*pattern]{.carg .in type="const char"}
-: The glob-style pattern (see **Tcl\_StringMatch**) that describes the commands to be imported or exported.
+: The glob-style pattern (see [Tcl\_StringMatch][StrMatch]) that describes the commands to be imported or exported.
 
 [resetListFirst]{.carg .in type="int"}
 : Whether the list of export patterns should be reset before adding the current pattern to it.
@@ -125,4 +125,5 @@ The *handlerPtr* argument to **Tcl\_SetNamespaceUnknownHandler** will have its r
 
 
 [namespace]: namespace.md
+[StrMatch]: StrMatch.md
 

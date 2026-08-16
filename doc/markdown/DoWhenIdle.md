@@ -44,7 +44,7 @@ Tcl\_DoWhenIdle, Tcl\_CancelIdleCall - invoke a procedure when there are no pend
 
 # Description
 
-**Tcl\_DoWhenIdle** arranges for *proc* to be invoked when the application becomes idle.  The application is considered to be idle when **Tcl\_DoOneEvent** has been called, could not find any events to handle, and is about to go to sleep waiting for an event to occur.  At this point all pending **Tcl\_DoWhenIdle** handlers are invoked.  For each call to **Tcl\_DoWhenIdle** there will be a single call to *proc*;  after *proc* is invoked the handler is automatically removed. **Tcl\_DoWhenIdle** is only usable in programs that use **Tcl\_DoOneEvent** to dispatch events.
+**Tcl\_DoWhenIdle** arranges for *proc* to be invoked when the application becomes idle.  The application is considered to be idle when [Tcl\_DoOneEvent][DoOneEvent] has been called, could not find any events to handle, and is about to go to sleep waiting for an event to occur.  At this point all pending **Tcl\_DoWhenIdle** handlers are invoked.  For each call to **Tcl\_DoWhenIdle** there will be a single call to *proc*;  after *proc* is invoked the handler is automatically removed. **Tcl\_DoWhenIdle** is only usable in programs that use [Tcl\_DoOneEvent][DoOneEvent] to dispatch events.
 
 *Proc* should have arguments and result that match the type **Tcl\_IdleProc**:
 
@@ -64,4 +64,7 @@ For example, **Tcl\_DoWhenIdle** might be used by an editor to defer display upd
 # Bugs
 
 At present it is not safe for an idle callback to reschedule itself continuously.  This will interact badly with certain features of Tk that attempt to wait for all idle callbacks to complete.  If you would like for an idle callback to reschedule itself continuously, it is better to use a timer handler with a zero timeout period.
+
+
+[DoOneEvent]: DoOneEvent.md
 

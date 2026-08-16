@@ -44,7 +44,7 @@ Tcl\_Access, Tcl\_Stat - check file permissions and other attributes
 
 # Description
 
-The object-based APIs **Tcl\_FSAccess** and **Tcl\_FSStat** should be used in preference to **Tcl\_Access** and **Tcl\_Stat**, wherever possible. Those functions also support Tcl's virtual filesystem layer, which these do not.
+The object-based APIs [Tcl\_FSAccess][FileSystem] and [Tcl\_FSStat][FileSystem] should be used in preference to **Tcl\_Access** and **Tcl\_Stat**, wherever possible. Those functions also support Tcl's virtual filesystem layer, which these do not.
 
 ## Obsolete functions
 
@@ -57,4 +57,7 @@ On success (all requested permissions granted), zero is returned. On error (at l
 **Tcl\_Stat** fills the stat structure *statPtr* with information about the specified file. You do not need any access rights to the file to get this information but you need search rights to all directories named in the path leading to the file. The stat structure includes info regarding device, inode (always 0 on Windows), privilege mode, nlink (always 1 on Windows), user id (always 0 on Windows), group id (always 0 on Windows), rdev (same as device on Windows), size, last access time, last modification time, and creation time.
 
 If *path* exists, **Tcl\_Stat** returns 0 and the stat structure is filled with data. Otherwise, -1 is returned, and no stat info is given.
+
+
+[FileSystem]: FileSystem.md
 

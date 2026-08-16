@@ -65,9 +65,12 @@ These procedures are used to create, modify, and read Tcl values that hold doubl
 
 # Reference count management
 
-**Tcl\_NewDoubleObj** always returns a zero-reference object, much like **Tcl\_NewObj**.
+**Tcl\_NewDoubleObj** always returns a zero-reference object, much like [Tcl\_NewObj][Object3].
 
 **Tcl\_SetDoubleObj** does not modify the reference count of its *objPtr* argument, but does require that the object be unshared.
 
 **Tcl\_GetDoubleFromObj** does not modify the reference count of its *objPtr* argument; it only reads. Note however that this function may set the interpreter result; if that is the only place that is holding a reference to the object, it will be deleted.
+
+
+[Object3]: Object3.md
 

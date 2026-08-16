@@ -88,7 +88,7 @@ Performs one of several operations on dictionary values or variables containing 
 : This adds the given increment value (an integer that defaults to 1 if not specified) to the value that the given key maps to in the dictionary value contained in the given variable, writing the resulting dictionary value back to that variable. Non-existent keys are treated as if they map to 0. It is an error to increment a value for an existing key if that value is not an integer. The updated dictionary value is returned. If *dictionaryVariable* indicates an element that does not exist of an array that has a default value set, the default value and will be used as the value of the dictionary prior to the incrementing operation.
 
 [dict]{.cmd} [info]{.sub} [dictionaryValue]{.arg}
-: This returns information (intended for display to people) about the given dictionary though the format of this data is dependent on the implementation of the dictionary. For dictionaries that are implemented by hash tables, it is expected that this will return the string produced by **Tcl\_HashStats**, similar to [array statistics][array].
+: This returns information (intended for display to people) about the given dictionary though the format of this data is dependent on the implementation of the dictionary. For dictionaries that are implemented by hash tables, it is expected that this will return the string produced by [Tcl\_HashStats][Hash], similar to [array statistics][array].
 
 [dict]{.cmd} [keys]{.sub} [dictionaryValue]{.arg} [globPattern]{.optarg}
 : Return a list of all keys in the given dictionary value. If a pattern is supplied, only those keys that match it (according to the rules of [string match][string]) will be returned. The returned keys will be in the order that they were inserted into the dictionary.
@@ -273,6 +273,7 @@ puts $foo
 [continue]: continue.md
 [error]: error.md
 [foreach]: foreach.md
+[Hash]: Hash.md
 [lmap]: lmap.md
 [proc]: proc.md
 [string]: string.md

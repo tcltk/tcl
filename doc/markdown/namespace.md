@@ -380,7 +380,7 @@ Three subcommands of the **namespace ensemble** command are defined:
 : Returns a boolean value that describes whether the command *command* exists and is an ensemble command.  This command only ever returns an error if the number of arguments to the command is wrong.
 
 
-When called, an ensemble command takes its first argument and looks it up (according to the rules described below) to discover a list of words to replace the ensemble command and subcommand with.  The resulting list of words is then evaluated (with no further substitutions) as if that was what was typed originally (i.e. by passing the list of words through [Tcl\_EvalObjv][Eval]) and returning the result of the command.  Note that it is legal to make the target of an ensemble rewrite be another (or even the same) ensemble command.  The ensemble command will not be visible through the use of the [uplevel] or [info level][info] commands.
+When called, an ensemble command takes its first argument and looks it up (according to the rules described below) to discover a list of words to replace the ensemble command and subcommand with.  The resulting list of words is then evaluated (with no further substitutions) as if that was what was typed originally (i.e. by passing the list of words through [Tcl\_EvalObjv][Eval3]) and returning the result of the command.  Note that it is legal to make the target of an ensemble rewrite be another (or even the same) ensemble command.  The ensemble command will not be visible through the use of the [uplevel] or [info level][info] commands.
 
 ## Ensemble options
 
@@ -494,8 +494,8 @@ puts [do 1 plus [do 9 minus 7]]
 ```
 
 
-[Eval]: Eval.md
 [eval]: eval.md
+[Eval3]: Eval3.md
 [GetIndex]: GetIndex.md
 [global]: global.md
 [info]: info.md

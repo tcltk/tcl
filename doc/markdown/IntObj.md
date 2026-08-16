@@ -123,9 +123,12 @@ The **Tcl\_InitBignumFromDouble** routine is a utility procedure that extracts t
 
 # Reference count management
 
-**Tcl\_NewIntObj**, **Tcl\_NewLongObj**, **Tcl\_NewWideIntObj**, and **Tcl\_NewBignumObj** always return a zero-reference object, much like **Tcl\_NewObj**.
+**Tcl\_NewIntObj**, **Tcl\_NewLongObj**, **Tcl\_NewWideIntObj**, and **Tcl\_NewBignumObj** always return a zero-reference object, much like [Tcl\_NewObj][Object3].
 
 **Tcl\_SetIntObj**, **Tcl\_SetLongObj**, **Tcl\_SetWideIntObj**, and **Tcl\_SetBignumObj** do not modify the reference count of their *objPtr* arguments, but do require that the object be unshared.
 
-**Tcl\_GetIntFromObj**, **Tcl\_GetIntForIndex**, **Tcl\_GetLongFromObj**, **Tcl\_GetWideIntFromObj**, **Tcl\_GetSizeIntFromObj**, **Tcl\_GetBignumFromObj**, and **Tcl\_TakeBignumFromObj** do not modify the reference count of their *objPtr* arguments; they only read. Note however that this function may set the interpreter result; if that is the only place that is holding a reference to the object, it will be deleted. Also note that if **Tcl\_TakeBignumFromObj** is given an unshared value, the value of that object may be modified; it is intended to be used when the value is "consumed" by the operation at this point.
+**Tcl\_GetIntFromObj**, **Tcl\_GetIntForIndex**, **Tcl\_GetLongFromObj**, **Tcl\_GetWideIntFromObj**, **Tcl\_GetSizeIntFromObj**, **Tcl\_GetBignumFromObj**, and **Tcl\_TakeBignumFromObj** do not modify the reference count of their *objPtr* arguments; they only read. Note however that this function may set the interpreter result; if that is the only place that is holding a reference to the object, it will be deleted. Also note that if **Tcl\_TakeBignumFromObj** is given an unshared value, the value of that object may be modified; it is intended to be used when the value is "consumed" by the operation at this point. 
+
+
+[Object3]: Object3.md
 

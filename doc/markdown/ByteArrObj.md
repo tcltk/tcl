@@ -58,13 +58,13 @@ Tcl\_NewByteArrayObj, Tcl\_SetByteArrayObj, Tcl\_GetBytesFromObj, Tcl\_GetByteAr
 
 # Description
 
-N.B. Refer to the **Tcl\_UniChar** documentation page for a description of the *TUTF-8* encoding and related terms referenced here.
+N.B. Refer to the [Tcl\_UniChar][Utf] documentation page for a description of the *TUTF-8* encoding and related terms referenced here.
 
 These routines are used to create, modify, store, transfer, and retrieve arbitrary binary data in Tcl values.  Specifically, data that can be represented as a sequence of arbitrary byte values is supported. This includes data read from binary channels, values created by the [binary] command, encrypted data, or other information representable as a finite byte sequence.
 
 A byte is an 8-bit quantity with no inherent meaning.  When the 8 bits are interpreted as an integer value, the range of possible values is (0-255). The C type best suited to store a byte is the **unsigned char**. An **unsigned char** array of size *N* stores an arbitrary binary value of size *N* bytes.  We call this representation a byte-array. Here we document the routines that allow us to operate on Tcl values as byte-arrays.
 
-All Tcl values must correspond to a string representation. When a byte-array value must be processed as a string, the sequence of *N* bytes is transformed into the corresponding sequence of *N* characters, where each byte value transforms to the same character codepoint value in the range (U+0000 - U+00FF).  Obtaining the string representation of a byte-array value (by calling **Tcl\_GetStringFromObj**) produces this string in TUTF-8 encoding.
+All Tcl values must correspond to a string representation. When a byte-array value must be processed as a string, the sequence of *N* bytes is transformed into the corresponding sequence of *N* characters, where each byte value transforms to the same character codepoint value in the range (U+0000 - U+00FF).  Obtaining the string representation of a byte-array value (by calling [Tcl\_GetStringFromObj][StringObj]) produces this string in TUTF-8 encoding.
 
 **Tcl\_NewByteArrayObj** and **Tcl\_SetByteArrayObj** create a new value or overwrite an existing unshared value, respectively, to hold a byte-array value of *numBytes* bytes.  When a caller passes a non-NULL value of *bytes*, it must point to memory from which *numBytes* bytes can be read.  These routines allocate *numBytes* bytes of memory, copy *numBytes* bytes from *bytes* into it, and keep the result in the internal representation of the new or overwritten value. When the caller passes a NULL value of *bytes*, the data copying step is skipped, and the bytes stored in the value are undefined. A *bytes* value of NULL is useful only when the caller will arrange to write known contents into the byte-array through a pointer retrieved by a call to one of the routines explained below.  **Tcl\_NewByteArrayObj** returns a pointer to the created value with a reference count of zero. **Tcl\_SetByteArrayObj** overwrites and invalidates any old contents of the unshared *objPtr* as appropriate, and keeps its reference count (0 or 1) unchanged.  The value produced by these routines has no string representation.  Any memory allocation failure may cause a panic.
 
@@ -80,7 +80,7 @@ On success, both **Tcl\_GetBytesFromObj** and **Tcl\_GetByteArrayFromObj** write
 
 # Reference count management
 
-**Tcl\_NewByteArrayObj** always returns a zero-reference object, much like **Tcl\_NewObj**.
+**Tcl\_NewByteArrayObj** always returns a zero-reference object, much like [Tcl\_NewObj][Object3].
 
 **Tcl\_SetByteArrayObj** and **Tcl\_SetByteArrayLength** do not modify the reference count of their *objPtr* arguments, but do require that the object be unshared.
 
@@ -88,4 +88,7 @@ On success, both **Tcl\_GetBytesFromObj** and **Tcl\_GetByteArrayFromObj** write
 
 
 [binary]: binary.md
+[Object3]: Object3.md
+[StringObj]: StringObj.md
+[Utf]: Utf.md
 

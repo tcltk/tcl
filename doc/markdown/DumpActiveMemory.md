@@ -48,9 +48,13 @@ Tcl\_DumpActiveMemory, Tcl\_InitMemory, Tcl\_ValidateAllMemory - Validated memor
 
 These functions provide access to Tcl memory debugging information. They are only functional when Tcl has been compiled with **TCL\_MEM\_DEBUG** defined at compile-time.  When **TCL\_MEM\_DEBUG** is not defined, these functions are all no-ops.
 
-**Tcl\_DumpActiveMemory** will output a list of all currently allocated memory to the specified file.  The information output for each allocated block of memory is:  starting and ending addresses (excluding guard zone), size, source file where **Tcl\_Alloc** was called to allocate the block and line number in that file.  It is especially useful to call **Tcl\_DumpActiveMemory** after the Tcl interpreter has been deleted.
+**Tcl\_DumpActiveMemory** will output a list of all currently allocated memory to the specified file.  The information output for each allocated block of memory is:  starting and ending addresses (excluding guard zone), size, source file where [Tcl\_Alloc][Alloc] was called to allocate the block and line number in that file.  It is especially useful to call **Tcl\_DumpActiveMemory** after the Tcl interpreter has been deleted.
 
-**Tcl\_InitMemory** adds the Tcl **memory** command to the interpreter given by *interp*.  **Tcl\_InitMemory** is called by **Tcl\_Main**.
+**Tcl\_InitMemory** adds the Tcl **memory** command to the interpreter given by *interp*.  **Tcl\_InitMemory** is called by [Tcl\_Main][Tcl_Main].
 
-**Tcl\_ValidateAllMemory** forces a validation of the guard zones of all currently allocated blocks of memory.  Normally validation of a block occurs when its freed, unless full validation is enabled, in which case validation of all blocks occurs when **Tcl\_Alloc** and **Tcl\_Free** are called.  This function forces the validation to occur at any point.
+**Tcl\_ValidateAllMemory** forces a validation of the guard zones of all currently allocated blocks of memory.  Normally validation of a block occurs when its freed, unless full validation is enabled, in which case validation of all blocks occurs when [Tcl\_Alloc][Alloc] and [Tcl\_Free][Alloc] are called.  This function forces the validation to occur at any point. 
+
+
+[Alloc]: Alloc.md
+[Tcl_Main]: Tcl_Main.md
 

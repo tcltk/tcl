@@ -96,7 +96,7 @@ Tcl_Free(argv);
 
 **Tcl\_SplitList** normally returns **TCL\_OK**, which means the list was successfully parsed. If *sizePtr* points to a variable of type **int** and the list contains more than 2\*\*31 key/value pairs, or there was a syntax error in *list*, then **TCL\_ERROR** is returned and the interpreter's result will point to an error message describing the problem (if *interp* was not NULL). If **TCL\_ERROR** is returned then no memory is allocated and *\*argvPtr* is not modified.
 
-**Tcl\_Merge** is the inverse of **Tcl\_SplitList**:  it takes a collection of strings given by *argc* and *argv* and generates a result string that has proper list structure. This means that commands like **index** may be used to extract the original elements again. In addition, if the result of **Tcl\_Merge** is passed to **Tcl\_Eval**, it will be parsed into *argc* words whose values will be the same as the *argv* strings passed to **Tcl\_Merge**. **Tcl\_Merge** will modify the list elements with braces and/or backslashes in order to produce proper Tcl list structure. The result string is dynamically allocated using **Tcl\_Alloc**;  the caller must eventually release the space using **Tcl\_Free**.
+**Tcl\_Merge** is the inverse of **Tcl\_SplitList**:  it takes a collection of strings given by *argc* and *argv* and generates a result string that has proper list structure. This means that commands like **index** may be used to extract the original elements again. In addition, if the result of **Tcl\_Merge** is passed to [Tcl\_Eval][Eval3], it will be parsed into *argc* words whose values will be the same as the *argv* strings passed to **Tcl\_Merge**. **Tcl\_Merge** will modify the list elements with braces and/or backslashes in order to produce proper Tcl list structure. The result string is dynamically allocated using [Tcl\_Alloc][Alloc];  the caller must eventually release the space using [Tcl\_Free][Alloc].
 
 If the result of **Tcl\_Merge** is passed to **Tcl\_SplitList**, the elements returned by **Tcl\_SplitList** will be identical to those passed into **Tcl\_Merge**. However, the converse is not true:  if **Tcl\_SplitList** is passed a given string, and the resulting *argc* and *argv* are passed to **Tcl\_Merge**, the resulting string may not be the same as the original string passed to **Tcl\_SplitList**. This is because **Tcl\_Merge** may use backslashes and braces differently than the original string.
 
@@ -111,5 +111,7 @@ By default, **Tcl\_ConvertElement** will use quoting in its output to be sure th
 **Tcl\_ScanCountedElement** and **Tcl\_ConvertCountedElement** are the same as **Tcl\_ScanElement** and **Tcl\_ConvertElement**, except the length of string *src* is specified by the *length* argument, and the string may contain embedded nulls.
 
 
+[Alloc]: Alloc.md
 [eval]: eval.md
+[Eval3]: Eval3.md
 

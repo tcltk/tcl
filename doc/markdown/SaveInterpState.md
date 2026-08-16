@@ -43,7 +43,7 @@ Tcl\_SaveInterpState, Tcl\_RestoreInterpState, Tcl\_DiscardInterpState - save an
 
 # Description
 
-These routines allows a C procedure to take a snapshot of the current state of an interpreter so that it can be restored after a call to **Tcl\_Eval** or some other routine that modifies the interpreter state.
+These routines allows a C procedure to take a snapshot of the current state of an interpreter so that it can be restored after a call to [Tcl\_Eval][Eval3] or some other routine that modifies the interpreter state.
 
 **Tcl\_SaveInterpState** stores a snapshot of the interpreter state in an opaque token returned by **Tcl\_SaveInterpState**.  That token value may then be passed back to one of **Tcl\_RestoreInterpState** or **Tcl\_DiscardInterpState**, depending on whether the interp state is to be restored.  So long as one of the latter two routines is called, Tcl will take care of memory management.
 
@@ -54,4 +54,7 @@ These routines allows a C procedure to take a snapshot of the current state of a
 **Tcl\_DiscardInterpState** is called to release a **Tcl\_InterpState** token previously returned by **Tcl\_SaveInterpState** when that snapshot is not to be restored to an interp.
 
 The **Tcl\_InterpState** token returned by **Tcl\_SaveInterpState** must eventually be passed to either **Tcl\_RestoreInterpState** or **Tcl\_DiscardInterpState** to avoid a memory leak.  Once the **Tcl\_InterpState** token is passed to one of them, the token is no longer valid and should not be used anymore.
+
+
+[Eval3]: Eval3.md
 

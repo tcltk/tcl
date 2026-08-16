@@ -136,7 +136,7 @@ The **interp** command is used to create, delete, and manipulate child interpret
 : Marks the interpreter identified by *path* as trusted. Does not expose the hidden commands. This command can only be invoked from a trusted interpreter. The command has no effect if the interpreter identified by *path* is already trusted.
 
 [interp]{.cmd} [recursionlimit]{.sub} [path]{.arg} [newlimit]{.optarg}
-: Returns the maximum allowable nesting depth for the interpreter specified by *path*.  If *newlimit* is specified, the interpreter recursion limit will be set so that nesting of more than *newlimit* calls to [Tcl\_Eval][Eval] and related procedures in that interpreter will return an error. The *newlimit* value is also returned. The *newlimit* value must be a positive integer between 1 and the maximum value of a non-long integer on the platform.
+: Returns the maximum allowable nesting depth for the interpreter specified by *path*.  If *newlimit* is specified, the interpreter recursion limit will be set so that nesting of more than *newlimit* calls to [Tcl\_Eval][Eval3] and related procedures in that interpreter will return an error. The *newlimit* value is also returned. The *newlimit* value must be a positive integer between 1 and the maximum value of a non-long integer on the platform.
 
     The command sets the maximum size of the Tcl call stack only. It cannot by itself prevent stack overflows on the C stack being used by the application. If your machine has a limit on the size of the C stack, you may get stack overflows before reaching the limit set by the command. If this happens, see if there is a mechanism in your system for increasing the maximum size of the C stack.
 
@@ -209,7 +209,7 @@ child command ?arg arg ...?
 : Marks the child interpreter as trusted. Can only be invoked by a trusted interpreter. This command does not expose any hidden commands in the child interpreter. The command has no effect if the child is already trusted.
 
 [child]{.ins} [recursionlimit]{.sub} [newlimit]{.optarg}
-: Returns the maximum allowable nesting depth for the *child* interpreter. If *newlimit* is specified, the recursion limit in *child* will be set so that nesting of more than *newlimit* calls to [Tcl\_Eval][Eval] and related procedures in *child* will return an error. The *newlimit* value is also returned. The *newlimit* value must be a positive integer between 1 and the maximum value of a non-long integer on the platform.
+: Returns the maximum allowable nesting depth for the *child* interpreter. If *newlimit* is specified, the recursion limit in *child* will be set so that nesting of more than *newlimit* calls to [Tcl\_Eval][Eval3] and related procedures in *child* will return an error. The *newlimit* value is also returned. The *newlimit* value must be a positive integer between 1 and the maximum value of a non-long integer on the platform.
 
     The command sets the maximum size of the Tcl call stack only. It cannot by itself prevent stack overflows on the C stack being used by the application. If your machine has a limit on the size of the C stack, you may get stack overflows before reaching the limit set by the command. If this happens, see if there is a mechanism in your system for increasing the maximum size of the C stack.
 
@@ -375,8 +375,8 @@ interp eval $i {
 [encoding]: encoding.md
 [eof]: eof.md
 [error]: error.md
-[Eval]: Eval.md
 [eval]: eval.md
+[Eval3]: Eval3.md
 [exec]: exec.md
 [exit]: exit.md
 [expr]: expr.md

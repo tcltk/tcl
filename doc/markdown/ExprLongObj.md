@@ -67,15 +67,15 @@ These four procedures all evaluate an expression, returning the result in one of
 
 The *interp* argument refers to an interpreter used to evaluate the expression (e.g. for variables and nested Tcl commands) and to return error information.
 
-For all of these procedures the return value is a standard Tcl result: **TCL\_OK** means the expression was successfully evaluated, and **TCL\_ERROR** means that an error occurred while evaluating the expression. If **TCL\_ERROR** is returned, then a message describing the error can be retrieved using **Tcl\_GetObjResult**. If an error occurs while executing a Tcl command embedded in the expression then that error will be returned.
+For all of these procedures the return value is a standard Tcl result: **TCL\_OK** means the expression was successfully evaluated, and **TCL\_ERROR** means that an error occurred while evaluating the expression. If **TCL\_ERROR** is returned, then a message describing the error can be retrieved using [Tcl\_GetObjResult][SetResult]. If an error occurs while executing a Tcl command embedded in the expression then that error will be returned.
 
 If the expression is successfully evaluated, then its value is returned in one of four forms, depending on which procedure is invoked. **Tcl\_ExprLongObj** stores an integer value at *\*longPtr*. If the expression's actual value is a floating-point number, then it is truncated to an integer. If the expression's actual value is a non-numeric string then an error is returned.
 
 **Tcl\_ExprDoubleObj** stores a floating-point value at *\*doublePtr*. If the expression's actual value is an integer, it is converted to floating-point. If the expression's actual value is a non-numeric string then an error is returned.
 
-**Tcl\_ExprBooleanObj** stores a 0/1 integer value at *\*booleanPtr*. If the expression's actual value is an integer or floating-point number, then they store 0 at *\*booleanPtr* if the value was zero and 1 otherwise. If the expression's actual value is a non-numeric string then it must be one of the values accepted by **Tcl\_GetBoolean** such as "yes" or "no", or else an error occurs.
+**Tcl\_ExprBooleanObj** stores a 0/1 integer value at *\*booleanPtr*. If the expression's actual value is an integer or floating-point number, then they store 0 at *\*booleanPtr* if the value was zero and 1 otherwise. If the expression's actual value is a non-numeric string then it must be one of the values accepted by [Tcl\_GetBoolean][GetInt] such as "yes" or "no", or else an error occurs.
 
-If **Tcl\_ExprObj** successfully evaluates the expression, it stores a pointer to the Tcl value containing the expression's value at *\*resultPtrPtr*. In this case, the caller is responsible for calling **Tcl\_DecrRefCount** to decrement the value's reference count when it is finished with the value.
+If **Tcl\_ExprObj** successfully evaluates the expression, it stores a pointer to the Tcl value containing the expression's value at *\*resultPtrPtr*. In this case, the caller is responsible for calling [Tcl\_DecrRefCount][Object3] to decrement the value's reference count when it is finished with the value.
 
 # Reference count management
 
@@ -83,4 +83,7 @@ If **Tcl\_ExprObj** successfully evaluates the expression, it stores a pointer t
 
 
 [expr]: expr.md
+[GetInt]: GetInt.md
+[Object3]: Object3.md
+[SetResult]: SetResult.md
 

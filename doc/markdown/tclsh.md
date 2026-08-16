@@ -92,7 +92,7 @@ When **tclsh** is invoked interactively it normally prompts for each command wit
 
 # Standard channels
 
-See **Tcl\_StandardChannels** for more explanations.
+See [Tcl\_StandardChannels][StdChannels] for more explanations.
 
 # Zipfs virtual file system
 
@@ -106,5 +106,6 @@ Only one zipfile can be concatenated to the end of executable image (tclsh, or w
 [exit]: exit.md
 [format]: format.md
 [source]: source.md
+[StdChannels]: StdChannels.md
 [zipfs]: zipfs.md
 

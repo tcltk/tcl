@@ -46,7 +46,7 @@ Tcl\_UniCharToUpper, Tcl\_UniCharToLower, Tcl\_UniCharToTitle, Tcl\_UtfToUpper, 
 
 # Description
 
-N.B. Refer to the **Tcl\_UniChar** documentation page for a description of the *TUTF-8* encoding and related terms referenced here.
+N.B. Refer to the [Tcl\_UniChar][Utf] documentation page for a description of the *TUTF-8* encoding and related terms referenced here.
 
 The first three routines convert the case of individual Unicode characters:
 
@@ -62,5 +62,8 @@ The next three routines convert the case of null-terminated TUTF-8 byte sequence
 
 **Tcl\_UtfToLower** is the same as **Tcl\_UtfToUpper** except it turns each character in the string into its lower-case equivalent.
 
-**Tcl\_UtfToTitle** is the same as **Tcl\_UtfToUpper** except it turns the first character in the string into its title-case equivalent and all following characters into their lower-case equivalents.
+**Tcl\_UtfToTitle** is the same as **Tcl\_UtfToUpper** except it turns the first character in the string into its title-case equivalent and all following characters into their lower-case equivalents. 
+
+
+[Utf]: Utf.md
 

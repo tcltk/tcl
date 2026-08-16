@@ -96,13 +96,13 @@ Which functions of a channel driver are allowed to use which bypass function is 
 Given the information above the following public functions of the Tcl C API are affected by these changes; when these functions are called, the channel may now contain a stored arbitrary error message requiring processing by the caller.
 
 ::: {.info DISPLAY="yes"}
-**Tcl\_Flush**	**Tcl\_GetsObj**	**Tcl\_Gets** **Tcl\_ReadChars**	**Tcl\_ReadRaw**	**Tcl\_Read** **Tcl\_Seek**	**Tcl\_StackChannel**	**Tcl\_Tell** **Tcl\_WriteChars**	**Tcl\_WriteObj**	**Tcl\_WriteRaw** **Tcl\_Write**
+[Tcl\_Flush][OpenFileChnl]	[Tcl\_GetsObj][OpenFileChnl]	[Tcl\_Gets][OpenFileChnl] [Tcl\_ReadChars][OpenFileChnl]	[Tcl\_ReadRaw][OpenFileChnl]	[Tcl\_Read][OpenFileChnl] [Tcl\_Seek][OpenFileChnl]	[Tcl\_StackChannel][ChnlStack]	[Tcl\_Tell][OpenFileChnl] [Tcl\_WriteChars][OpenFileChnl]	[Tcl\_WriteObj][OpenFileChnl]	[Tcl\_WriteRaw][OpenFileChnl] [Tcl\_Write][OpenFileChnl]
 :::
 
 All other API functions are unchanged. In particular, the functions below leave all their error information in the interpreter result.
 
 ::: {.info DISPLAY="yes"}
-**Tcl\_Close**	**Tcl\_UnstackChannel**	**Tcl\_UnregisterChannel**
+[Tcl\_Close][OpenFileChnl]	[Tcl\_UnstackChannel][ChnlStack]	[Tcl\_UnregisterChannel][OpenFileChnl]
 :::
 
 # Reference count management
@@ -110,4 +110,8 @@ All other API functions are unchanged. In particular, the functions below leave 
 The *msg* argument to **Tcl\_SetChannelError** and **Tcl\_SetChannelErrorInterp**, if not NULL, may have any reference count; these functions will copy.
 
 **Tcl\_GetChannelError** and **Tcl\_GetChannelErrorInterp** write a value reference into their *msgPtr*, but do not manipulate its reference count. The reference count will be at least 1 (unless the reference is NULL).
+
+
+[ChnlStack]: ChnlStack.md
+[OpenFileChnl]: OpenFileChnl.md
 

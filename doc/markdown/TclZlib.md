@@ -108,15 +108,15 @@ Note that the Adler-32 algorithm is not a real checksum, but instead is a relate
 
 ## Zlib streams
 
-**Tcl\_ZlibStreamInit** creates a compressing or decompressing stream that is linked to a Tcl command, according to its arguments, and provides an abstract token for the stream and returns a normal Tcl result code; **Tcl\_ZlibStreamGetCommandName** returns the name of that command given the stream token, or NULL if the stream has no command. Streams are not designed to be thread-safe; each stream should only ever be used from the thread that created it. When working with gzip streams, a dictionary (fields as given in the [Gzip options dictionary] section below) can be given via the *dictObj* parameter that on compression allows control over the generated headers, and on decompression allows discovery of the existing headers. Note that the dictionary will be written to on decompression once sufficient data has been read to have a complete header. This means that the dictionary must be an unshared value in that case; a blank value created with **Tcl\_NewObj** is suggested.
+**Tcl\_ZlibStreamInit** creates a compressing or decompressing stream that is linked to a Tcl command, according to its arguments, and provides an abstract token for the stream and returns a normal Tcl result code; **Tcl\_ZlibStreamGetCommandName** returns the name of that command given the stream token, or NULL if the stream has no command. Streams are not designed to be thread-safe; each stream should only ever be used from the thread that created it. When working with gzip streams, a dictionary (fields as given in the [Gzip options dictionary] section below) can be given via the *dictObj* parameter that on compression allows control over the generated headers, and on decompression allows discovery of the existing headers. Note that the dictionary will be written to on decompression once sufficient data has been read to have a complete header. This means that the dictionary must be an unshared value in that case; a blank value created with [Tcl\_NewObj][Object3] is suggested.
 
 Once a stream has been constructed, **Tcl\_ZlibStreamPut** is used to add data to the stream and **Tcl\_ZlibStreamGet** is used to retrieve data from the stream after processing. Both return normal Tcl result codes and leave an error message in the result of the interpreter that the stream is registered with in the error case (if such a registration has been performed). With **Tcl\_ZlibStreamPut**, the data buffer value passed to it should not be modified afterwards. With **Tcl\_ZlibStreamGet**, the data buffer value passed to it will have the data bytes appended to it. Internally to the stream, data is kept compressed so as to minimize the cost of buffer space.
 
 **Tcl\_ZlibStreamChecksum** returns the checksum computed over the uncompressed data according to the format, and **Tcl\_ZlibStreamEof** returns a boolean value indicating whether the end of the uncompressed data has been reached.
 
-**Tcl\_ZlibStreamSetCompressionDictionary** is used to control the compression dictionary used with the stream, a compression dictionary being an array of bytes (such as might be created with **Tcl\_NewByteArrayObj**) that is used to initialize the compression engine rather than leaving it to create it on the fly from the data being compressed. Setting a compression dictionary allows for more efficient compression in the case where the start of the data is highly regular, but it does require both the compressor and the decompressor to agree on the value to use. Compression dictionaries are only fully supported for zlib-format data; on compression, they must be set before any data is sent in with **Tcl\_ZlibStreamPut**, and on decompression they should be set when **Tcl\_ZlibStreamGet** produces an [error] with its **-errorcode** set to "**ZLIB NEED\_DICT** *code*"; the *code* will be the Adler-32 checksum (see **Tcl\_ZlibAdler32**) of the compression dictionary sought. (Note that this is only true for zlib-format streams; gzip streams ignore compression dictionaries as the format specification doesn't permit them, and raw streams just produce a data error if the compression dictionary is missing or incorrect.)
+**Tcl\_ZlibStreamSetCompressionDictionary** is used to control the compression dictionary used with the stream, a compression dictionary being an array of bytes (such as might be created with [Tcl\_NewByteArrayObj][ByteArrObj]) that is used to initialize the compression engine rather than leaving it to create it on the fly from the data being compressed. Setting a compression dictionary allows for more efficient compression in the case where the start of the data is highly regular, but it does require both the compressor and the decompressor to agree on the value to use. Compression dictionaries are only fully supported for zlib-format data; on compression, they must be set before any data is sent in with **Tcl\_ZlibStreamPut**, and on decompression they should be set when **Tcl\_ZlibStreamGet** produces an [error] with its **-errorcode** set to "**ZLIB NEED\_DICT** *code*"; the *code* will be the Adler-32 checksum (see **Tcl\_ZlibAdler32**) of the compression dictionary sought. (Note that this is only true for zlib-format streams; gzip streams ignore compression dictionaries as the format specification doesn't permit them, and raw streams just produce a data error if the compression dictionary is missing or incorrect.)
 
-If you wish to clear a stream and reuse it for a new compression or decompression action, **Tcl\_ZlibStreamReset** will do this and return a normal Tcl result code to indicate whether it was successful; if the stream is registered with an interpreter, an error message will be left in the interpreter result when this function returns TCL\_ERROR. Finally, **Tcl\_ZlibStreamClose** will clean up the stream and delete the associated command: using **Tcl\_DeleteCommand** on the stream's command is equivalent (when such a command exists).
+If you wish to clear a stream and reuse it for a new compression or decompression action, **Tcl\_ZlibStreamReset** will do this and return a normal Tcl result code to indicate whether it was successful; if the stream is registered with an interpreter, an error message will be left in the interpreter result when this function returns TCL\_ERROR. Finally, **Tcl\_ZlibStreamClose** will clean up the stream and delete the associated command: using [Tcl\_DeleteCommand][CrtObjCmd] on the stream's command is equivalent (when such a command exists).
 
 # Gzip options dictionary
 
@@ -152,11 +152,11 @@ The following fields in the dictionary value are understood. All other fields ar
 
 **Tcl\_ZlibStreamInit** takes a value with arbitrary reference count for its *dictObj* argument; it only reads from it. The existing interpreter result should not be passed unless an additional reference is held.
 
-**Tcl\_ZlibStreamGetCommandName** returns a zero reference count value, much like **Tcl\_NewObj**.
+**Tcl\_ZlibStreamGetCommandName** returns a zero reference count value, much like [Tcl\_NewObj][Object3].
 
 The *dataObj* argument to **Tcl\_ZlibStreamPut** is a value with arbitrary reference count; it is only ever read from.
 
-The *dataObj* argument to **Tcl\_ZlibStreamGet** is an unshared value (see **Tcl\_IsShared**) that will be updated by the function.
+The *dataObj* argument to **Tcl\_ZlibStreamGet** is an unshared value (see [Tcl\_IsShared][Object3]) that will be updated by the function.
 
 The *compDict* argument to **Tcl\_ZlibStreamSetCompressionDictionary**, if non-NULL, may be duplicated or may have its reference count incremented. Using a zero reference count value is not recommended. 
 
@@ -165,8 +165,11 @@ The *compDict* argument to **Tcl\_ZlibStreamSetCompressionDictionary**, if non-N
 These functions will fail gracefully if Tcl is not linked with the zlib library.
 
 
+[ByteArrObj]: ByteArrObj.md
 [clock]: clock.md
+[CrtObjCmd]: CrtObjCmd.md
 [error]: error.md
 [file]: file.md
+[Object3]: Object3.md
 [time]: time.md
 

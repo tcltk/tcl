@@ -114,7 +114,7 @@ Tcl\_GetEncoding, Tcl\_FreeEncoding, Tcl\_GetEncodingFromObj, Tcl\_ExternalToUtf
 
 # Introduction
 
-N.B. Refer to the **Tcl\_UniChar** documentation page for a description of the *TUTF-8* encoding and related terms referenced here.
+N.B. Refer to the [Tcl\_UniChar][Utf] documentation page for a description of the *TUTF-8* encoding and related terms referenced here.
 
 These routines convert between TUTF-8 and character representations using encodings such as standard UTF-8, UTF-16, ASCII, or Shift-JIS that might be expected by system interfaces or other software components. For instance, on a Japanese Unix workstation, a user might obtain a filename represented in the EUC-JP file encoding and then translate the characters to the jisx0208 font encoding in order to display the filename in a Tk widget. The purpose of the encoding package is to help bridge the translation gap. TUTF-8 provides an intermediate staging ground for all the various encodings. In the example above, text would be translated into TUTF-8 from whatever file encoding the operating system is using. Then it would be translated from TUTF-8 into whatever font encoding the display routines require.
 
@@ -130,11 +130,11 @@ When an *encoding* is no longer needed, **Tcl\_FreeEncoding** should be called t
 
 **Tcl\_GetEncodingFromObj** treats the string representation of *objPtr* as an encoding name, and finds an encoding with that name, just as **Tcl\_GetEncoding** does. When an encoding is found, it is cached within the **objPtr** value for future reference, the **Tcl\_Encoding** token is written to the storage pointed to by *encodingPtr*, and the value **TCL\_OK** is returned. If no such encoding is found, the value **TCL\_ERROR** is returned, and no writing to **\****encodingPtr* takes place. Just as with **Tcl\_GetEncoding**, the caller should call **Tcl\_FreeEncoding** on the resulting encoding token when that token will no longer be used.
 
-**Tcl\_ExternalToUtfDString** converts a source buffer *src* from the specified *encoding* into TUTF-8.  The converted bytes are stored in *dstPtr*, which is then null-terminated.  The caller should eventually call **Tcl\_DStringFree** to free any information stored in *dstPtr*. When converting, if any of the characters in the source buffer cannot be represented in the target encoding, a default fallback character will be used.  The return value is a pointer to the value stored in the DString.
+**Tcl\_ExternalToUtfDString** converts a source buffer *src* from the specified *encoding* into TUTF-8.  The converted bytes are stored in *dstPtr*, which is then null-terminated.  The caller should eventually call [Tcl\_DStringFree][DString] to free any information stored in *dstPtr*. When converting, if any of the characters in the source buffer cannot be represented in the target encoding, a default fallback character will be used.  The return value is a pointer to the value stored in the DString.
 
 **Tcl\_ExternalToUtfDStringEx** is a more flexible version of older **Tcl\_ExternalToUtfDString** function. It takes three additional parameters, [interp], **flags** and **errorIdxPtr**. The **flags** parameter may be used to specify the profile to be used for the transform. The **TCL\_ENCODING\_START** and **TCL\_ENCODING\_END** bits in **flags** are ignored as the function assumes the entire source string to be decoded is passed into the function. On success, the function returns **TCL\_OK** with the converted string stored in **\*dstPtr**. For errors *other than conversion errors*, such as invalid flags, the function returns **TCL\_ERROR** with an error message in [interp] if it is not NULL. For conversion errors, **Tcl\_ExternalToUtfDStringEx** returns one of the **TCL\_CONVERT\_\*** errors listed below for **Tcl\_ExternalToUtf**. When one of these conversion errors is returned, an error message is stored in [interp] only if **errorIdxPtr** is NULL. Otherwise, no error message is stored as the function expects the caller is interested the decoded data up to that point and not treating this as an immediate error condition. The index of the error location is stored in **\*errorIdxPtr**.
 
-The caller must call **Tcl\_DStringFree** to free up the **\*dstPtr** resources irrespective of the return value from the function.
+The caller must call [Tcl\_DStringFree][DString] to free up the **\*dstPtr** resources irrespective of the return value from the function.
 
 **Tcl\_ExternalToUtf** converts a source buffer *src* from the specified *encoding* into TUTF-8.  Up to *srcLen* bytes are converted from the source buffer and up to *dstLen* converted bytes are stored in *dst*. In all cases, *\*srcReadPtr* is filled with the number of bytes that were successfully converted from *src* and *\*dstWrotePtr* is filled with the corresponding number of bytes that were stored in *dst*.  The return value is one of the following:
 
@@ -154,7 +154,7 @@ The caller must call **Tcl\_DStringFree** to free up the **\*dstPtr** resources 
 : The source buffer contained a character that could not be represented in the target encoding.
 
 
-**Tcl\_UtfToExternalDString** converts a source buffer *src* from TUTF-8 into the specified *encoding*.  The converted bytes are stored in *dstPtr*, which is then terminated with the appropriate encoding-specific null.  The caller should eventually call **Tcl\_DStringFree** to free any information stored in *dstPtr*.  When converting, if any of the characters in the source buffer cannot be represented in the target encoding, a default fallback character will be used.  The return value is a pointer to the value stored in the DString.
+**Tcl\_UtfToExternalDString** converts a source buffer *src* from TUTF-8 into the specified *encoding*.  The converted bytes are stored in *dstPtr*, which is then terminated with the appropriate encoding-specific null.  The caller should eventually call [Tcl\_DStringFree][DString] to free any information stored in *dstPtr*.  When converting, if any of the characters in the source buffer cannot be represented in the target encoding, a default fallback character will be used.  The return value is a pointer to the value stored in the DString.
 
 **Tcl\_UtfToExternalDStringEx** is an enhanced version of **Tcl\_UtfToExternalDString** that transforms TUTF-8 encoded source data to a specified *encoding*. Except for the direction of the transform, the parameters and return values are identical to those of **Tcl\_ExternalToUtfDStringEx**. See that function above for details about the same.
 
@@ -325,6 +325,8 @@ For details about profiles, see the [Profiles] section in the documentation of t
 
 
 [binary]: binary.md
+[DString]: DString.md
 [encoding]: encoding.md
 [interp]: interp.md
+[Utf]: Utf.md
 

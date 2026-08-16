@@ -96,7 +96,7 @@ typedef int Tcl_CmdObjTraceProc2(
         Tcl_Obj *const objv[]);
 ```
 
-The *clientData* and *interp* parameters are copies of the corresponding arguments given to **Tcl\_CreateTrace**. *clientData* typically points to an application-specific data structure that describes what to do when *objProc* is invoked.  The *level* parameter gives the nesting level of the command (1 for top-level commands passed to **Tcl\_Eval** by the application, 2 for the next-level commands passed to **Tcl\_Eval** as part of parsing or interpreting level-1 commands, and so on). The *command* parameter points to a string containing the text of the command, before any argument substitution.  The *commandToken* parameter is a Tcl command token that identifies the command to be invoked.  The token may be passed to **Tcl\_GetCommandName**, **Tcl\_GetCommandInfoFromToken**, or **Tcl\_SetCommandInfoFromToken** to manipulate the definition of the command. The *objc* and *objv* parameters designate the final parameter count and parameter vector that will be passed to the command, and have had all substitutions performed.
+The *clientData* and *interp* parameters are copies of the corresponding arguments given to **Tcl\_CreateTrace**. *clientData* typically points to an application-specific data structure that describes what to do when *objProc* is invoked.  The *level* parameter gives the nesting level of the command (1 for top-level commands passed to [Tcl\_Eval][Eval3] by the application, 2 for the next-level commands passed to [Tcl\_Eval][Eval3] as part of parsing or interpreting level-1 commands, and so on). The *command* parameter points to a string containing the text of the command, before any argument substitution.  The *commandToken* parameter is a Tcl command token that identifies the command to be invoked.  The token may be passed to [Tcl\_GetCommandName][CrtObjCmd], [Tcl\_GetCommandInfoFromToken][CrtObjCmd], or [Tcl\_SetCommandInfoFromToken][CrtObjCmd] to manipulate the definition of the command. The *objc* and *objv* parameters designate the final parameter count and parameter vector that will be passed to the command, and have had all substitutions performed.
 
 The *objProc* callback is expected to return a standard Tcl status return code.  If this code is **TCL\_OK** (the normal case), then the Tcl interpreter will invoke the command.  Any other return code is treated as if the command returned that status, and the command is *not* invoked.
 
@@ -139,9 +139,12 @@ If a trace created with **Tcl\_CreateTrace** is in effect, inline compilation of
 
 # Reference count management
 
-When the *proc* passed to **Tcl\_CreateObjTrace** is called, the values in its *objv* argument will have a reference count of at least 1, with that guaranteed reference being from the Tcl evaluation stack. You should not call **Tcl\_DecrRefCount** on any of those values unless you call **Tcl\_IncrRefCount** on them first.
+When the *proc* passed to **Tcl\_CreateObjTrace** is called, the values in its *objv* argument will have a reference count of at least 1, with that guaranteed reference being from the Tcl evaluation stack. You should not call [Tcl\_DecrRefCount][Object3] on any of those values unless you call [Tcl\_IncrRefCount][Object3] on them first.
 
 
+[CrtObjCmd]: CrtObjCmd.md
+[Eval3]: Eval3.md
 [if]: if.md
+[Object3]: Object3.md
 [while]: while.md
 

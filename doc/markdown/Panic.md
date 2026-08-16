@@ -51,7 +51,7 @@ When the Tcl library detects that its internal data structures are in an inconsi
 
 In a freshly loaded Tcl library, **Tcl\_Panic** prints the formatted error message to the standard error file of the process, and then calls **abort** to terminate the process.  **Tcl\_Panic** does not return. On Windows, when a debugger is running, the formatted error message is sent to the debugger instead. If the windows executable does not have a stderr channel (e.g. **wish.exe**), then a system dialog box is used to display the panic message.
 
-If your application doesn't use **Tcl\_Main** or **Tk\_Main** and you want to implicitly use the stderr channel of your application's C runtime (instead of the stderr channel of the C runtime used by Tcl), you can call **Tcl\_SetPanicProc** with **Tcl\_ConsolePanic** as its argument. On platforms which only have one C runtime (almost all platforms except Windows) **Tcl\_ConsolePanic** is equivalent to NULL.
+If your application doesn't use [Tcl\_Main][Tcl_Main] or **Tk\_Main** and you want to implicitly use the stderr channel of your application's C runtime (instead of the stderr channel of the C runtime used by Tcl), you can call **Tcl\_SetPanicProc** with **Tcl\_ConsolePanic** as its argument. On platforms which only have one C runtime (almost all platforms except Windows) **Tcl\_ConsolePanic** is equivalent to NULL.
 
 **Tcl\_SetPanicProc** may be used to modify the behavior of **Tcl\_Panic**.  The *panicProc* argument should match the type **Tcl\_PanicProc**:
 
@@ -73,4 +73,5 @@ Although the primary callers of **Tcl\_Panic** are the procedures of the Tcl lib
 
 
 [format]: format.md
+[Tcl_Main]: Tcl_Main.md
 

@@ -153,7 +153,7 @@ Tcl\_FSRegister, Tcl\_FSUnregister, Tcl\_FSData, Tcl\_FSMountsChanged, Tcl\_FSGe
 : Filled with a value containing the result of the operation.
 
 [\*resultPtr]{.carg .out type="Tcl_Obj"}
-: Preallocated value in which to store (using **Tcl\_ListObjAppendElement**) the list of files or directories which are successfully matched.
+: Preallocated value in which to store (using [Tcl\_ListObjAppendElement][ListObj]) the list of files or directories which are successfully matched.
 
 [mode]{.carg .in type="int"}
 : Mask consisting of one or more of R\_OK, W\_OK, X\_OK and F\_OK. R\_OK, W\_OK and X\_OK request checking whether the file exists and  has  read, write and  execute  permissions, respectively. F\_OK just requests checking for the existence of the file.
@@ -253,13 +253,13 @@ is wrong, and may cause memory errors. The *path* must have its reference count 
 
 **Tcl\_FSListVolumes** calls each filesystem which has a non-NULL "list volumes" function and asks them to return their list of root volumes. It accumulates the return values in a list which is returned to the caller (with a reference count of 0).
 
-**Tcl\_FSEvalFileEx** reads the file given by *pathPtr* using the encoding identified by *encodingName* and evaluates its contents as a Tcl script. It returns the same information as **Tcl\_EvalObjEx**. If *encodingName* is NULL, the utf-8 encoding is used for reading the file contents. If the file could not be read then a Tcl error is returned to describe why the file could not be read. The eofchar for files is "\\x1A" (^Z) for all platforms. If you require a "^Z" in code for string comparison, you can use "\\x1A", which will be safely substituted by the Tcl interpreter into "^Z". **Tcl\_FSEvalFile** is a simpler version of **Tcl\_FSEvalFileEx** that always uses the utf-8 encoding when reading the file.
+**Tcl\_FSEvalFileEx** reads the file given by *pathPtr* using the encoding identified by *encodingName* and evaluates its contents as a Tcl script. It returns the same information as [Tcl\_EvalObjEx][Eval3]. If *encodingName* is NULL, the utf-8 encoding is used for reading the file contents. If the file could not be read then a Tcl error is returned to describe why the file could not be read. The eofchar for files is "\\x1A" (^Z) for all platforms. If you require a "^Z" in code for string comparison, you can use "\\x1A", which will be safely substituted by the Tcl interpreter into "^Z". **Tcl\_FSEvalFile** is a simpler version of **Tcl\_FSEvalFileEx** that always uses the utf-8 encoding when reading the file.
 
 **Tcl\_FSLoadFile** dynamically loads a binary code file into memory and returns the addresses of two procedures within that file, if they are defined. The appropriate function for the filesystem to which *pathPtr* belongs will be called. If that filesystem does not implement this function (most virtual filesystems will not, because of OS limitations in dynamically loading binary code), Tcl will attempt to copy the file to a temporary directory and load that temporary file. **Tcl\_FSUnloadFile** reverses the operation, asking for the library indicated by the *loadHandle* to be removed from the process. Note that, unlike with the [unload] command, this does not give the library any opportunity to clean up.
 
 Both the above functions return a standard Tcl completion code. If an error occurs, an error message is left in the *interp*'s result.
 
-The token provided via the variable indicated by *loadHandlePtr* may be used with **Tcl\_FindSymbol**.
+The token provided via the variable indicated by *loadHandlePtr* may be used with [Tcl\_FindSymbol][Load3].
 
 **Tcl\_FSMatchInDirectory** is used by the globbing code to search a directory for all files which match a given pattern. The appropriate function for the filesystem to which *pathPtr* belongs will be called.
 
@@ -269,7 +269,7 @@ Note that the [glob] code implements recursive patterns internally, so this func
 
 **Tcl\_FSLink** replaces the library version of **readlink**, and extends it to support the creation of links. The appropriate function for the filesystem to which *linkNamePtr* belongs will be called.
 
-If the *toPtr* is NULL, a "read link" action is performed. The result is a Tcl\_Obj specifying the contents of the symbolic link given by *linkNamePtr*, or NULL if the link could not be read. The result is owned by the caller, which should call **Tcl\_DecrRefCount** when the result is no longer needed. If the *toPtr* is not NULL, Tcl should create a link of one of the types passed in in the *linkAction* flag. This flag is an OR'ed combination of **TCL\_CREATE\_SYMBOLIC\_LINK** and **TCL\_CREATE\_HARD\_LINK**. Where a choice exists (i.e.\\ more than one flag is passed in), the Tcl convention is to prefer symbolic links. When a link is successfully created, the return value should be *toPtr* (which is therefore already owned by the caller). If unsuccessful, NULL is returned.
+If the *toPtr* is NULL, a "read link" action is performed. The result is a Tcl\_Obj specifying the contents of the symbolic link given by *linkNamePtr*, or NULL if the link could not be read. The result is owned by the caller, which should call [Tcl\_DecrRefCount][Object3] when the result is no longer needed. If the *toPtr* is not NULL, Tcl should create a link of one of the types passed in in the *linkAction* flag. This flag is an OR'ed combination of **TCL\_CREATE\_SYMBOLIC\_LINK** and **TCL\_CREATE\_HARD\_LINK**. Where a choice exists (i.e.\\ more than one flag is passed in), the Tcl convention is to prefer symbolic links. When a link is successfully created, the return value should be *toPtr* (which is therefore already owned by the caller). If unsuccessful, NULL is returned.
 
 **Tcl\_FSLstat** fills the *Tcl\_StatBuf* structure *statPtr* with information about the specified file. You do not need any access rights to the file to get this information but you need search rights to all directories named in the path leading to the file. The *Tcl\_StatBuf* structure includes info regarding device, inode (always 0 on Windows), privilege mode, nlink (always 1 on Windows), user id (always 0 on Windows), group id (always 0 on Windows), rdev (same as device on Windows), size, last access time, last modification time, and last metadata change time. See [Portable stat result api] for a description of how to write portable code to allocate and access the *Tcl\_StatBuf* structure.
 
@@ -281,7 +281,7 @@ This returns 0 on success and -1 on error (as per the **utime** documentation). 
 
 **Tcl\_FSFileAttrsGet** implements read access for the hookable [file attributes][file] subcommand. The appropriate function for the filesystem to which *pathPtr* belongs will be called.
 
-If the result is **TCL\_OK**, then a value was placed in *objPtrRef*, which will only be temporarily valid (unless **Tcl\_IncrRefCount** is called).
+If the result is **TCL\_OK**, then a value was placed in *objPtrRef*, which will only be temporarily valid (unless [Tcl\_IncrRefCount][Object3] is called).
 
 **Tcl\_FSFileAttrsSet** implements write access for the hookable [file attributes][file] subcommand. The appropriate function for the filesystem to which *pathPtr* belongs will be called.
 
@@ -297,9 +297,9 @@ On success (all requested permissions granted), zero is returned. On error (at l
 
 If *path* exists, **Tcl\_FSStat** returns 0 and the stat structure is filled with data. Otherwise, -1 is returned, and no stat info is given.
 
-**Tcl\_FSOpenFileChannel** opens a file specified by *pathPtr* and returns a channel handle that can be used to perform input and output on the file. This API is modeled after the **fopen** procedure of the Unix standard I/O library. The syntax and meaning of all arguments is similar to those given in the Tcl [open] command when opening a file. If an error occurs while opening the channel, **Tcl\_FSOpenFileChannel** returns NULL and records a POSIX error code that can be retrieved with **Tcl\_GetErrno**. In addition, if *interp* is non-NULL, **Tcl\_FSOpenFileChannel** leaves an error message in *interp*'s result after any error.
+**Tcl\_FSOpenFileChannel** opens a file specified by *pathPtr* and returns a channel handle that can be used to perform input and output on the file. This API is modeled after the **fopen** procedure of the Unix standard I/O library. The syntax and meaning of all arguments is similar to those given in the Tcl [open] command when opening a file. If an error occurs while opening the channel, **Tcl\_FSOpenFileChannel** returns NULL and records a POSIX error code that can be retrieved with [Tcl\_GetErrno][SetErrno]. In addition, if *interp* is non-NULL, **Tcl\_FSOpenFileChannel** leaves an error message in *interp*'s result after any error.
 
-The newly created channel is not registered in the supplied interpreter; to register it, use **Tcl\_RegisterChannel**. If one of the standard channels, **stdin**, **stdout** or **stderr** was previously closed, the act of creating the new channel also assigns it as a replacement for the standard channel.
+The newly created channel is not registered in the supplied interpreter; to register it, use [Tcl\_RegisterChannel][OpenFileChnl]. If one of the standard channels, **stdin**, **stdout** or **stderr** was previously closed, the act of creating the new channel also assigns it as a replacement for the standard channel.
 
 **Tcl\_FSGetCwd** replaces the library version of **getcwd**.
 
@@ -345,9 +345,9 @@ Returns NULL or a valid internal path representation. This internal representati
 
 **Tcl\_FSGetTranslatedPath** attempts to extract the translated path from the given Tcl\_Obj.
 
-If the translation succeeds (i.e.\\ the value is a valid path), then it is returned. Otherwise NULL will be returned, and an error message may be left in the interpreter. The value returned is owned by the caller, which must store it or call **Tcl\_DecrRefCount** to ensure memory is freed. This function is of little practical use, and **Tcl\_FSGetNormalizedPath** or **Tcl\_FSGetNativePath** are usually better functions to use for most purposes.
+If the translation succeeds (i.e.\\ the value is a valid path), then it is returned. Otherwise NULL will be returned, and an error message may be left in the interpreter. The value returned is owned by the caller, which must store it or call [Tcl\_DecrRefCount][Object3] to ensure memory is freed. This function is of little practical use, and **Tcl\_FSGetNormalizedPath** or **Tcl\_FSGetNativePath** are usually better functions to use for most purposes.
 
-**Tcl\_FSGetTranslatedStringPath** does the same as **Tcl\_FSGetTranslatedPath**, but returns a character string or NULL. The string returned is dynamically allocated and owned by the caller, which must store it or call **Tcl\_Free** to ensure it is freed. Again, **Tcl\_FSGetNormalizedPath** or **Tcl\_FSGetNativePath** are usually better functions to use for most purposes.
+**Tcl\_FSGetTranslatedStringPath** does the same as **Tcl\_FSGetTranslatedPath**, but returns a character string or NULL. The string returned is dynamically allocated and owned by the caller, which must store it or call [Tcl\_Free][Alloc] to ensure it is freed. Again, **Tcl\_FSGetNormalizedPath** or **Tcl\_FSGetNativePath** are usually better functions to use for most purposes.
 
 **Tcl\_FSNewNativePath** performs something like the reverse of the usual obj->path->nativerep conversions. If some code retrieves a path in native form (from, e.g.\\ **readlink** or a native dialog), and that path is to be used at the Tcl level, then calling this function is an efficient way of creating the appropriate path value type.
 
@@ -373,7 +373,7 @@ It returns one of **TCL\_PATH\_ABSOLUTE**, **TCL\_PATH\_RELATIVE**, or **TCL\_PA
 
 ## Portable stat result api
 
-**Tcl\_AllocStatBuf** allocates a *Tcl\_StatBuf* on the system heap (which may be deallocated by being passed to **Tcl\_Free**). This allows extensions to invoke **Tcl\_FSStat** and **Tcl\_FSLstat** without being dependent on the size of the buffer. That in turn depends on the flags used to build Tcl.
+**Tcl\_AllocStatBuf** allocates a *Tcl\_StatBuf* on the system heap (which may be deallocated by being passed to [Tcl\_Free][Alloc]). This allows extensions to invoke **Tcl\_FSStat** and **Tcl\_FSLstat** without being dependent on the size of the buffer. That in turn depends on the flags used to build Tcl.
 
 The portable fields of a *Tcl\_StatBuf* may be read using the following functions, each of which returns the value of the corresponding field listed in the table below. Note that on some platforms there may be other fields in the *Tcl\_StatBuf* as it is an alias for a suitable system structure, but only the portable ones are made available here. See your system documentation for a full description of these fields.
 
@@ -632,7 +632,7 @@ typedef Tcl_Channel Tcl_FSOpenFileChannelProc(
         int permissions);
 ```
 
-The **Tcl\_FSOpenFileChannelProc** opens a file specified by *pathPtr* and returns a channel handle that can be used to perform input and output on the file. This API is modeled after the **fopen** procedure of the Unix standard I/O library. The syntax and meaning of all arguments is similar to those given in the Tcl [open] command when opening a file, where the *mode* argument is a combination of the POSIX flags O\_RDONLY, O\_WRONLY, etc. If an error occurs while opening the channel, the **Tcl\_FSOpenFileChannelProc** returns NULL and records a POSIX error code that can be retrieved with **Tcl\_GetErrno**. In addition, if *interp* is non-NULL, the **Tcl\_FSOpenFileChannelProc** leaves an error message in *interp*'s result after any error.
+The **Tcl\_FSOpenFileChannelProc** opens a file specified by *pathPtr* and returns a channel handle that can be used to perform input and output on the file. This API is modeled after the **fopen** procedure of the Unix standard I/O library. The syntax and meaning of all arguments is similar to those given in the Tcl [open] command when opening a file, where the *mode* argument is a combination of the POSIX flags O\_RDONLY, O\_WRONLY, etc. If an error occurs while opening the channel, the **Tcl\_FSOpenFileChannelProc** returns NULL and records a POSIX error code that can be retrieved with [Tcl\_GetErrno][SetErrno]. In addition, if *interp* is non-NULL, the **Tcl\_FSOpenFileChannelProc** leaves an error message in *interp*'s result after any error.
 
 The newly created channel must not be registered in the supplied interpreter by a **Tcl\_FSOpenFileChannelProc**; that task is up to the caller of **Tcl\_FSOpenFileChannel** (if necessary). If one of the standard channels, **stdin**, **stdout** or **stderr** was previously closed, the act of creating the new channel also assigns it as a replacement for the standard channel.
 
@@ -695,7 +695,7 @@ typedef Tcl_Obj *Tcl_FSLinkProc(
         int linkAction);
 ```
 
-If *toPtr* is NULL, the function is being asked to read the contents of a link. The result is a Tcl\_Obj specifying the contents of the link given by *linkNamePtr*, or NULL if the link could not be read. The result is owned by the caller (and should therefore have its ref count incremented before being returned). Any callers should call **Tcl\_DecrRefCount** on this result when it is no longer needed. If *toPtr* is not NULL, the function should attempt to create a link. The result in this case should be *toPtr* if the link was successful and NULL otherwise. In this case the result is not owned by the caller (i.e.\\ no reference count manipulations on either end are needed). See the documentation for **Tcl\_FSLink** for the correct interpretation of the *linkAction* flags.
+If *toPtr* is NULL, the function is being asked to read the contents of a link. The result is a Tcl\_Obj specifying the contents of the link given by *linkNamePtr*, or NULL if the link could not be read. The result is owned by the caller (and should therefore have its ref count incremented before being returned). Any callers should call [Tcl\_DecrRefCount][Object3] on this result when it is no longer needed. If *toPtr* is not NULL, the function should attempt to create a link. The result in this case should be *toPtr* if the link was successful and NULL otherwise. In this case the result is not owned by the caller (i.e.\\ no reference count manipulations on either end are needed). See the documentation for **Tcl\_FSLink** for the correct interpretation of the *linkAction* flags.
 
 ## Listvolumesproc
 
@@ -888,31 +888,31 @@ The **Tcl\_FSChdirProc** changes the applications current working directory to t
 
 For all of these functions, *pathPtr* (including the *srcPathPtr* and *destPathPtr* arguments to **Tcl\_FSCopyFile**, **Tcl\_FSCopyDirectory**, and **Tcl\_FSRenameFile**, the *firstPtr* and *secondPtr* arguments to **Tcl\_FSEqualPaths**, and the *linkNamePtr* and *toPtr* arguments to **Tcl\_FSLink**) must not be a zero reference count value; references may be retained in internal caches even for theoretically read-only operations.  These functions may also manipulate the interpreter result (if they take and are given a non-NULL *interp* argument); you must not count on the interpreter result to hold the reference count of any argument value over these calls and should manage your own references there. However, references held by the arguments to a Tcl command *are* suitable for reference count management purposes for the duration of the implementation of that command.
 
-The *errorPtr* argument to **Tcl\_FSCopyDirectory** and **Tcl\_FSRemoveDirectory** is, when an object is set into it at all, set to an object with a non-zero reference count that should be passed to **Tcl\_DecrRefCount** when no longer needed.
+The *errorPtr* argument to **Tcl\_FSCopyDirectory** and **Tcl\_FSRemoveDirectory** is, when an object is set into it at all, set to an object with a non-zero reference count that should be passed to [Tcl\_DecrRefCount][Object3] when no longer needed.
 
-**Tcl\_FSListVolumes** always returns a zero-reference object, much like **Tcl\_NewObj**.
+**Tcl\_FSListVolumes** always returns a zero-reference object, much like [Tcl\_NewObj][Object3].
 
-**Tcl\_FSLink** always returns a non-zero-reference object when it is asked to read; you must call **Tcl\_DecrRefCount** on the object once you no longer need it.
+**Tcl\_FSLink** always returns a non-zero-reference object when it is asked to read; you must call [Tcl\_DecrRefCount][Object3] on the object once you no longer need it.
 
-**Tcl\_FSGetCwd** always returns a non-zero-reference object; you must call **Tcl\_DecrRefCount** on the object once you no longer need it.
+**Tcl\_FSGetCwd** always returns a non-zero-reference object; you must call [Tcl\_DecrRefCount][Object3] on the object once you no longer need it.
 
-**Tcl\_FSPathSeparator** always returns a zero-reference object, much like **Tcl\_NewObj**.
+**Tcl\_FSPathSeparator** always returns a zero-reference object, much like [Tcl\_NewObj][Object3].
 
-**Tcl\_FSJoinPath** always returns a zero-reference object, much like **Tcl\_NewObj**. Its *listObj* argument can have any reference count; it is only read by this function.
+**Tcl\_FSJoinPath** always returns a zero-reference object, much like [Tcl\_NewObj][Object3]. Its *listObj* argument can have any reference count; it is only read by this function.
 
-**Tcl\_FSSplitPath** always returns a zero-reference object, much like **Tcl\_NewObj**.
+**Tcl\_FSSplitPath** always returns a zero-reference object, much like [Tcl\_NewObj][Object3].
 
 **Tcl\_FSGetNormalizedPath** returns an object with a non-zero reference count where Tcl is the owner. You should increment its reference count if you want to retain it, but do not need to if you are just using the value immediately.
 
-**Tcl\_FSJoinToPath** always returns a zero-reference object, much like **Tcl\_NewObj**. Its *basePtr* argument follows the rules above for *pathPtr*, as do the values in the *objv* argument.
+**Tcl\_FSJoinToPath** always returns a zero-reference object, much like [Tcl\_NewObj][Object3]. Its *basePtr* argument follows the rules above for *pathPtr*, as do the values in the *objv* argument.
 
-**Tcl\_FSGetTranslatedPath** returns a non-zero-reference object (or NULL in the error case); you must call **Tcl\_DecrRefCount** on the object once you no longer need it.
+**Tcl\_FSGetTranslatedPath** returns a non-zero-reference object (or NULL in the error case); you must call [Tcl\_DecrRefCount][Object3] on the object once you no longer need it.
 
-**Tcl\_FSNewNativePath** always returns a zero-reference object (or NULL), much like **Tcl\_NewObj**.
+**Tcl\_FSNewNativePath** always returns a zero-reference object (or NULL), much like [Tcl\_NewObj][Object3].
 
-**Tcl\_FSFileSystemInfo** always returns a zero-reference object (or NULL), much like **Tcl\_NewObj**.
+**Tcl\_FSFileSystemInfo** always returns a zero-reference object (or NULL), much like [Tcl\_NewObj][Object3].
 
-The *objPtr* and *objPtrRef* arguments to **Tcl\_FSFileAttrsGet**, **Tcl\_FSFileAttrsSet** and **Tcl\_FSFileAttrStrings** are conventional Tcl values; the *objPtr* argument will be read but not retained, and the *objPtrRef* argument will have (on success) a zero-reference value written into it (as with **Tcl\_NewObj**). **Tcl\_FSFileAttrsGet** and **Tcl\_FSFileAttrsSet** may also manipulate the interpreter result.
+The *objPtr* and *objPtrRef* arguments to **Tcl\_FSFileAttrsGet**, **Tcl\_FSFileAttrsSet** and **Tcl\_FSFileAttrStrings** are conventional Tcl values; the *objPtr* argument will be read but not retained, and the *objPtrRef* argument will have (on success) a zero-reference value written into it (as with [Tcl\_NewObj][Object3]). **Tcl\_FSFileAttrsGet** and **Tcl\_FSFileAttrsSet** may also manipulate the interpreter result.
 
 The *resultPtr* argument to **Tcl\_FSMatchInDirectory** will not have its reference count manipulated, but it should have a reference count of no more than 1, and should not be the current interpreter result (as the function may overwrite that on error).
 
@@ -921,7 +921,7 @@ The *resultPtr* argument to **Tcl\_FSMatchInDirectory** will not have its refere
 For all virtual filesystem implementation functions, any *pathPtr* arguments should not have their reference counts manipulated. If they take an *interp* argument, they may set an error message in that, but must not manipulate the *pathPtr* afterwards. Aside from that:
 
 *internalToNormalizedProc*
-: This should return a zero-reference count value, as if allocated with **Tcl\_NewObj**.
+: This should return a zero-reference count value, as if allocated with [Tcl\_NewObj][Object3].
 
 *normalizePathProc*
 : Unlike with other API implementation functions, the *pathPtr* argument here is guaranteed to be an unshared object that should be updated. Its reference count should not be modified.
@@ -936,42 +936,49 @@ For all virtual filesystem implementation functions, any *pathPtr* arguments sho
 : The *resultPtr* argument should be assumed to hold a list that can be appended to (i.e., that has a reference count no greater than 1). No reference to it should be retained.
 
 *linkProc*
-: If *toPtr* is NULL, this should return a value with reference count 1 that has just been allocated and passed to **Tcl\_IncrRefCount**. If *toPtr* is not NULL, it should be returned on success.
+: If *toPtr* is NULL, this should return a value with reference count 1 that has just been allocated and passed to [Tcl\_IncrRefCount][Object3]. If *toPtr* is not NULL, it should be returned on success.
 
 *listVolumesProc*
-: The result value should be a list (if non-NULL); it will have its reference count decremented once (with **Tcl\_DecrRefCount**) by Tcl once done.
+: The result value should be a list (if non-NULL); it will have its reference count decremented once (with [Tcl\_DecrRefCount][Object3]) by Tcl once done.
 
 *fileAttrStringsProc*
-: If the result is NULL, the *objPtrRef* should have a list value written to it; that list will have its reference count both incremented (with **Tcl\_IncrRefCount**) and decremented (with **Tcl\_DecrRefCount**).
+: If the result is NULL, the *objPtrRef* should have a list value written to it; that list will have its reference count both incremented (with [Tcl\_IncrRefCount][Object3]) and decremented (with [Tcl\_DecrRefCount][Object3]).
 
 *fileAttrsGetProc*
-: The *objPtrRef* argument should have (on non-error return) a zero reference count value written to it (allocated as if with **Tcl\_NewObj**).
+: The *objPtrRef* argument should have (on non-error return) a zero reference count value written to it (allocated as if with [Tcl\_NewObj][Object3]).
 
 *fileAttrsSetProc*
 : The *objPtr* argument should either just be read or its reference count incremented to retain it.
 
 *removeDirectoryProc*
-: If an error is being reported, the problem filename reported via *errorPtr* should be newly allocated (as if with **Tcl\_NewObj**) and have a reference count of 1 (i.e., have been passed to **Tcl\_IncrRefCount**).
+: If an error is being reported, the problem filename reported via *errorPtr* should be newly allocated (as if with [Tcl\_NewObj][Object3]) and have a reference count of 1 (i.e., have been passed to [Tcl\_IncrRefCount][Object3]).
 
 *copyDirectoryProc*
-: If an error is being reported, the problem filename reported via *errorPtr* should be newly allocated (as if with **Tcl\_NewObj**) and have a reference count of 1 (i.e., have been passed to **Tcl\_IncrRefCount**).
+: If an error is being reported, the problem filename reported via *errorPtr* should be newly allocated (as if with [Tcl\_NewObj][Object3]) and have a reference count of 1 (i.e., have been passed to [Tcl\_IncrRefCount][Object3]).
 
 *getCwdProc*
-: The result will be passed to **Tcl\_DecrRefCount** by the implementation of **Tcl\_FSGetCwd** after it has been normalized.
+: The result will be passed to [Tcl\_DecrRefCount][Object3] by the implementation of **Tcl\_FSGetCwd** after it has been normalized.
 
 
 
+[Alloc]: Alloc.md
 [cd]: cd.md
 [encoding]: encoding.md
+[Eval3]: Eval3.md
 [fcopy]: fcopy.md
 [file]: file.md
 [glob]: glob.md
 [interp]: interp.md
 [join]: join.md
+[ListObj]: ListObj.md
 [load]: load.md
+[Load3]: Load3.md
+[Object3]: Object3.md
 [open]: open.md
+[OpenFileChnl]: OpenFileChnl.md
 [pwd]: pwd.md
 [set]: set.md
+[SetErrno]: SetErrno.md
 [string]: string.md
 [unload]: unload.md
 

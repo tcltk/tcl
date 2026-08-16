@@ -50,7 +50,7 @@ Tcl\_CreateFileHandler, Tcl\_DeleteFileHandler - associate procedure callbacks w
 
 # Description
 
-**Tcl\_CreateFileHandler** arranges for *proc* to be invoked in the future whenever I/O becomes possible on a file or an exceptional condition exists for the file.  The file is indicated by *fd*, and the conditions of interest are indicated by *mask*.  For example, if *mask* is **TCL\_READABLE**, *proc* will be called when the file is readable. The callback to *proc* is made by **Tcl\_DoOneEvent**, so **Tcl\_CreateFileHandler** is only useful in programs that dispatch events through **Tcl\_DoOneEvent** or through Tcl commands such as [vwait].
+**Tcl\_CreateFileHandler** arranges for *proc* to be invoked in the future whenever I/O becomes possible on a file or an exceptional condition exists for the file.  The file is indicated by *fd*, and the conditions of interest are indicated by *mask*.  For example, if *mask* is **TCL\_READABLE**, *proc* will be called when the file is readable. The callback to *proc* is made by [Tcl\_DoOneEvent][DoOneEvent], so **Tcl\_CreateFileHandler** is only useful in programs that dispatch events through [Tcl\_DoOneEvent][DoOneEvent] or through Tcl commands such as [vwait].
 
 *Proc* should have arguments and result that match the type **Tcl\_FileProc**:
 
@@ -66,10 +66,12 @@ There may exist only one handler for a given file at a given time. If **Tcl\_Cre
 
 **Tcl\_DeleteFileHandler** may be called to delete the file handler for *fd*;  if no handler exists for the file given by *fd* then the procedure has no effect.
 
-The purpose of file handlers is to enable an application to respond to events while waiting for files to become ready for I/O.  For this to work correctly, the application may need to use non-blocking I/O operations on the files for which handlers are declared.  Otherwise the application may block if it reads or writes too much data; while waiting for the I/O to complete the application will not be able to service other events. Use **Tcl\_SetChannelOption** with **-blocking** to set the channel into blocking or nonblocking mode as required.
+The purpose of file handlers is to enable an application to respond to events while waiting for files to become ready for I/O.  For this to work correctly, the application may need to use non-blocking I/O operations on the files for which handlers are declared.  Otherwise the application may block if it reads or writes too much data; while waiting for the I/O to complete the application will not be able to service other events. Use [Tcl\_SetChannelOption][OpenFileChnl] with **-blocking** to set the channel into blocking or nonblocking mode as required.
 
 Note that these interfaces are only supported by the Unix implementation of the Tcl notifier.
 
 
+[DoOneEvent]: DoOneEvent.md
+[OpenFileChnl]: OpenFileChnl.md
 [vwait]: vwait.md
 

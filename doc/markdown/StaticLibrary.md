@@ -49,7 +49,7 @@ Tcl\_StaticLibrary, Tcl\_StaticPackage - make a statically linked library availa
 
 # Description
 
-This procedure may be invoked to announce that a library has been linked statically with a Tcl application and, optionally, that it has already been incorporated into an interpreter. Once **Tcl\_StaticLibrary** has been invoked for a library, it may be incorporated into interpreters using the [load] command. **Tcl\_StaticLibrary** is normally invoked only by the **Tcl\_AppInit** procedure for the application, not by libraries for themselves (**Tcl\_StaticLibrary** should only be invoked for statically linked libraries, and code in the library itself should not need to know whether the library is dynamically loaded or statically linked).
+This procedure may be invoked to announce that a library has been linked statically with a Tcl application and, optionally, that it has already been incorporated into an interpreter. Once **Tcl\_StaticLibrary** has been invoked for a library, it may be incorporated into interpreters using the [load] command. **Tcl\_StaticLibrary** is normally invoked only by the [Tcl\_AppInit][AppInit] procedure for the application, not by libraries for themselves (**Tcl\_StaticLibrary** should only be invoked for statically linked libraries, and code in the library itself should not need to know whether the library is dynamically loaded or statically linked).
 
 When the [load] command is used later to incorporate the library into an interpreter, one of *initProc* and *safeInitProc* will be invoked, depending on whether the target interpreter is safe or not. *initProc* and *safeInitProc* must both match the following prototype:
 
@@ -65,5 +65,6 @@ The *interp* argument identifies the interpreter in which the library is to be i
 **Tcl\_StaticLibrary** can not be used in stub-enabled extensions.
 
 
+[AppInit]: AppInit.md
 [load]: load.md
 

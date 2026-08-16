@@ -59,10 +59,13 @@ Any OR'ed combination of the following values may be used for the *flags* argume
 : This flag is used by **Tcl\_CancelEval** and **Tcl\_Canceled**. For **Tcl\_CancelEval**, if this flag is set, the script in progress is canceled and the evaluation stack for the interpreter is unwound. For **Tcl\_Canceled**, if this flag is set, the script in progress is considered to be canceled only if the evaluation stack for the interpreter is being unwound.
 
 **TCL\_LEAVE\_ERR\_MSG**
-: This flag is only used by **Tcl\_Canceled**; it is ignored by other procedures.  If an error is returned and this bit is set in *flags*, then an error message will be left in the interpreter's result, where it can be retrieved with **Tcl\_GetObjResult** or **Tcl\_GetStringResult**.  If this flag bit is not set then no error message is left and the interpreter's result will not be modified.
+: This flag is only used by **Tcl\_Canceled**; it is ignored by other procedures.  If an error is returned and this bit is set in *flags*, then an error message will be left in the interpreter's result, where it can be retrieved with [Tcl\_GetObjResult][SetResult] or [Tcl\_GetStringResult][SetResult].  If this flag bit is not set then no error message is left and the interpreter's result will not be modified.
 
 
 # Reference count management
 
 **Tcl\_CancelEval** always decrements the reference count of its *resultObjPtr* argument (if that is non-NULL). It is expected to be usually called with an object with zero reference count. If the object is shared with some other location (including the Tcl evaluation stack) it should have its reference count incremented before calling this function.
+
+
+[SetResult]: SetResult.md
 

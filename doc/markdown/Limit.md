@@ -83,7 +83,7 @@ When a limit is exceeded (and the callbacks have run; the order of execution of 
 
 # Limit checking api
 
-To check the resource limits for an interpreter, call **Tcl\_LimitCheck**, which returns **TCL\_OK** if the limit was not exceeded (after processing callbacks) and **TCL\_ERROR** if the limit was exceeded (in which case an error message is also placed in the interpreter result).  That function should only be called when **Tcl\_LimitReady** returns non-zero so that granularity policy is enforced.  This API is designed to be similar in usage to **Tcl\_AsyncReady** and **Tcl\_AsyncInvoke**.
+To check the resource limits for an interpreter, call **Tcl\_LimitCheck**, which returns **TCL\_OK** if the limit was not exceeded (after processing callbacks) and **TCL\_ERROR** if the limit was exceeded (in which case an error message is also placed in the interpreter result).  That function should only be called when **Tcl\_LimitReady** returns non-zero so that granularity policy is enforced.  This API is designed to be similar in usage to [Tcl\_AsyncReady][Async] and [Tcl\_AsyncInvoke][Async].
 
 When writing code that may behave like [catch] in respect of errors, you should only trap an error if **Tcl\_LimitExceeded** returns zero.  If it returns non-zero, the interpreter is in a limit-exceeded state and errors should be allowed to propagate to the calling context.  You can also check whether a particular type of limit has been exceeded using **Tcl\_LimitTypeExceeded**.
 
@@ -107,7 +107,7 @@ typedef void Tcl_LimitHandlerProc(
 
 The *clientData* argument to the handler will be whatever is passed to the *clientData* argument to **Tcl\_LimitAddHandler**, and the *interp* is the interpreter that had its limit exceeded.
 
-The *deleteProc* argument to **Tcl\_LimitAddHandler** is a function to call to delete the *clientData* value.  It may be **TCL\_STATIC** or NULL if no deletion action is necessary, or **TCL\_DYNAMIC** if all that is necessary is to free the structure with **Tcl\_Free**.  Otherwise, it should refer to a function with the following prototype:
+The *deleteProc* argument to **Tcl\_LimitAddHandler** is a function to call to delete the *clientData* value.  It may be **TCL\_STATIC** or NULL if no deletion action is necessary, or **TCL\_DYNAMIC** if all that is necessary is to free the structure with [Tcl\_Free][Alloc].  Otherwise, it should refer to a function with the following prototype:
 
 ```
 typedef void Tcl_LimitHandlerDeleteProc(
@@ -117,6 +117,8 @@ typedef void Tcl_LimitHandlerDeleteProc(
 A limit handler may be deleted using **Tcl\_LimitRemoveHandler**; the handler removed will be the first one found (out of the handlers added with **Tcl\_LimitAddHandler**) with exactly matching *type*, *handlerProc* and *clientData* arguments.  This function always invokes the *deleteProc* on the *clientData* (unless the *deleteProc* was NULL or **TCL\_STATIC**).
 
 
+[Alloc]: Alloc.md
+[Async]: Async.md
 [catch]: catch.md
 [info]: info.md
 [while]: while.md

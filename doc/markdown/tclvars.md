@@ -95,7 +95,7 @@ The following global variables are created and managed automatically by the Tcl 
 : Indicates some sort of problem generated in relation to Tcl itself, e.g. a failure to look up a channel or variable.
 
 
-To set the **-errorcode** return option, applications should use library procedures such as [Tcl\_SetObjErrorCode][AddErrInfo], **Tcl\_SetReturnOptions**, and **Tcl\_PosixError**, or they may invoke the **-errorcode** option of the [return] command. If none of these methods for setting the error code has been used, the Tcl interpreter will reset the variable to **NONE** after the next error.
+To set the **-errorcode** return option, applications should use library procedures such as [Tcl\_SetObjErrorCode][AddErrInfo], [Tcl\_SetReturnOptions][AddErrInfo], and [Tcl\_PosixError][AddErrInfo], or they may invoke the **-errorcode** option of the [return] command. If none of these methods for setting the error code has been used, the Tcl interpreter will reset the variable to **NONE** after the next error.
 
 **errorInfo**
 : This variable holds the value of the **-errorinfo** return option set by the most recent error that occurred in this interpreter. This string value will contain one or more lines identifying the Tcl commands and procedures that were being executed when the most recent error occurred. Its contents take the form of a stack trace showing the various nested Tcl commands that had been invoked at the time of the error.

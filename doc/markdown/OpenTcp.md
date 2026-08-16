@@ -77,7 +77,7 @@ Tcl\_OpenTcpClient, Tcl\_MakeTcpClientChannel, Tcl\_OpenTcpServer, Tcl\_OpenTcpS
 
 # Description
 
-These functions are convenience procedures for creating channels that communicate over TCP sockets. The operations on a channel are described in the manual entry for **Tcl\_OpenFileChannel**.
+These functions are convenience procedures for creating channels that communicate over TCP sockets. The operations on a channel are described in the manual entry for [Tcl\_OpenFileChannel][OpenFileChnl].
 
 ## Tcl\_opentcpclient
 
@@ -85,17 +85,17 @@ These functions are convenience procedures for creating channels that communicat
 
 The *myaddr* and *myport* arguments allow a client to specify an address for the local end of the connection.  If *myaddr* is NULL, then an interface is chosen automatically by the operating system. If *myport* is 0, then a port number is chosen at random by the operating system.
 
-If *async* is zero, the call to **Tcl\_OpenTcpClient** returns only after the client socket has either successfully connected to the server, or the attempted connection has failed. If *async* is nonzero the socket is connected asynchronously and the returned channel may not yet be connected to the server when the call to **Tcl\_OpenTcpClient** returns. If the channel is in blocking mode and an input or output operation is done on the channel before the connection is completed or fails, that operation will wait until the connection either completes successfully or fails. If the channel is in nonblocking mode, the input or output operation will return immediately and a subsequent call to **Tcl\_InputBlocked** on the channel will return nonzero.
+If *async* is zero, the call to **Tcl\_OpenTcpClient** returns only after the client socket has either successfully connected to the server, or the attempted connection has failed. If *async* is nonzero the socket is connected asynchronously and the returned channel may not yet be connected to the server when the call to **Tcl\_OpenTcpClient** returns. If the channel is in blocking mode and an input or output operation is done on the channel before the connection is completed or fails, that operation will wait until the connection either completes successfully or fails. If the channel is in nonblocking mode, the input or output operation will return immediately and a subsequent call to [Tcl\_InputBlocked][OpenFileChnl] on the channel will return nonzero.
 
-The returned channel is opened for reading and writing. If an error occurs in opening the socket, **Tcl\_OpenTcpClient** returns NULL and records a POSIX error code that can be retrieved with **Tcl\_GetErrno**. In addition, if *interp* is non-NULL, an error message is left in the interpreter's result.
+The returned channel is opened for reading and writing. If an error occurs in opening the socket, **Tcl\_OpenTcpClient** returns NULL and records a POSIX error code that can be retrieved with [Tcl\_GetErrno][SetErrno]. In addition, if *interp* is non-NULL, an error message is left in the interpreter's result.
 
-The newly created channel is not registered in the supplied interpreter; to register it, use **Tcl\_RegisterChannel**. If one of the standard channels, **stdin**, **stdout** or **stderr** was previously closed, the act of creating the new channel also assigns it as a replacement for the standard channel.
+The newly created channel is not registered in the supplied interpreter; to register it, use [Tcl\_RegisterChannel][OpenFileChnl]. If one of the standard channels, **stdin**, **stdout** or **stderr** was previously closed, the act of creating the new channel also assigns it as a replacement for the standard channel.
 
 ## Tcl\_maketcpclientchannel
 
 **Tcl\_MakeTcpClientChannel** creates a **Tcl\_Channel** around an existing, platform specific, handle for a client TCP socket.
 
-The newly created channel is not registered in the supplied interpreter; to register it, use **Tcl\_RegisterChannel**. If one of the standard channels, **stdin**, **stdout** or **stderr** was previously closed, the act of creating the new channel also assigns it as a replacement for the standard channel.
+The newly created channel is not registered in the supplied interpreter; to register it, use [Tcl\_RegisterChannel][OpenFileChnl]. If one of the standard channels, **stdin**, **stdout** or **stderr** was previously closed, the act of creating the new channel also assigns it as a replacement for the standard channel.
 
 ## Tcl\_opentcpserver
 
@@ -111,13 +111,13 @@ typedef void Tcl_TcpAcceptProc(
 
 The *clientData* argument will be the same as the *clientData* argument to **Tcl\_OpenTcpServer**, *channel* will be the handle for the new channel, *hostName* points to a string containing the name of the client host making the connection, and *port* will contain the client's port number. The new channel is opened for both input and output. If *proc* raises an error, the connection is closed automatically. *Proc* has no return value, but if it wishes to reject the connection it can close *channel*.
 
-**Tcl\_OpenTcpServer** normally returns a pointer to a channel representing the server socket. If an error occurs, **Tcl\_OpenTcpServer** returns NULL and records a POSIX error code that can be retrieved with **Tcl\_GetErrno**. In addition, if the interpreter is non-NULL, an error message is left in the interpreter's result.
+**Tcl\_OpenTcpServer** normally returns a pointer to a channel representing the server socket. If an error occurs, **Tcl\_OpenTcpServer** returns NULL and records a POSIX error code that can be retrieved with [Tcl\_GetErrno][SetErrno]. In addition, if the interpreter is non-NULL, an error message is left in the interpreter's result.
 
 The channel returned by **Tcl\_OpenTcpServer** cannot be used for either input or output. It is simply a handle for the socket used to accept connections. The caller can close the channel to shut down the server and disallow further connections from new clients.
 
-TCP server channels operate correctly only in applications that dispatch events through **Tcl\_DoOneEvent** or through Tcl commands such as [vwait]; otherwise Tcl will never notice that a connection request from a remote client is pending.
+TCP server channels operate correctly only in applications that dispatch events through [Tcl\_DoOneEvent][DoOneEvent] or through Tcl commands such as [vwait]; otherwise Tcl will never notice that a connection request from a remote client is pending.
 
-The newly created channel is not registered in the supplied interpreter; to register it, use **Tcl\_RegisterChannel**. If one of the standard channels, **stdin**, **stdout** or **stderr** was previously closed, the act of creating the new channel also assigns it as a replacement for the standard channel.
+The newly created channel is not registered in the supplied interpreter; to register it, use [Tcl\_RegisterChannel][OpenFileChnl]. If one of the standard channels, **stdin**, **stdout** or **stderr** was previously closed, the act of creating the new channel also assigns it as a replacement for the standard channel.
 
 ## Tcl\_opentcpserverex
 
@@ -128,6 +128,9 @@ The newly created channel is not registered in the supplied interpreter; to regi
 On Unix platforms, the socket handle is a Unix file descriptor as returned by the [socket] system call.  On the Windows platform, the socket handle is a **SOCKET** as defined in the WinSock API.
 
 
+[DoOneEvent]: DoOneEvent.md
+[OpenFileChnl]: OpenFileChnl.md
+[SetErrno]: SetErrno.md
 [socket]: socket.md
 [vwait]: vwait.md
 

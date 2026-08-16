@@ -45,5 +45,8 @@ Tcl\_PrintDouble - Convert floating value to string
 
 **Tcl\_PrintDouble** generates a string that represents the value of *value* and stores it in memory at the location given by *dst*.  It uses **%g** format to generate the string, with one special twist: the string is guaranteed to contain either a "." or an "e" so that it does not look like an integer.  Where **%g** would generate an integer with no decimal point, **Tcl\_PrintDouble** adds ".0".
 
-The result will have the fewest digits needed to represent the number in such a way that **Tcl\_NewDoubleObj** will generate the same number when presented with the given string. IEEE semantics of rounding to even apply to the conversion.
+The result will have the fewest digits needed to represent the number in such a way that [Tcl\_NewDoubleObj][DoubleObj] will generate the same number when presented with the given string. IEEE semantics of rounding to even apply to the conversion.
+
+
+[DoubleObj]: DoubleObj.md
 

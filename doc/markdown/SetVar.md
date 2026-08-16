@@ -104,7 +104,7 @@ The *flags* argument may be used to specify any of several options to the proced
 : If this bit is set in *flags* then the variable is looked up only in the current namespace; if a procedure is active its variables are ignored, and the global namespace is also ignored unless it is the current namespace.
 
 **TCL\_LEAVE\_ERR\_MSG**
-: If an error is returned and this bit is set in *flags*, then an error message will be left in the interpreter's result, where it can be retrieved with **Tcl\_GetObjResult** or **Tcl\_GetStringResult**. If this flag bit is not set then no error message is left and the interpreter's result will not be modified.
+: If an error is returned and this bit is set in *flags*, then an error message will be left in the interpreter's result, where it can be retrieved with [Tcl\_GetObjResult][SetResult] or [Tcl\_GetStringResult][SetResult]. If this flag bit is not set then no error message is left and the interpreter's result will not be modified.
 
 **TCL\_APPEND\_VALUE**
 : If this bit is set then *newValuePtr* or *newValue* is appended to the current value instead of replacing it. If the variable is currently undefined, then the bit is ignored. This bit is only used by the **Tcl\_Set\*** procedures.
@@ -125,5 +125,8 @@ The *newValuePtr* argument to **Tcl\_SetVar2Ex** and **Tcl\_ObjSetVar2** may be 
 
 The *part1Ptr* argument to **Tcl\_ObjSetVar2** and **Tcl\_ObjGetVar2** can have any reference count.  These functions never modify it.
 
-The *part2Ptr* argument to **Tcl\_ObjSetVar2** and **Tcl\_ObjGetVar2**, if non-NULL, should not have a zero reference count as these functions may retain a reference to it, particularly when it is used to create an array element that did not previously exist, and decrementing the reference count later would leave them pointing to a freed Tcl\_Obj.
+The *part2Ptr* argument to **Tcl\_ObjSetVar2** and **Tcl\_ObjGetVar2**, if non-NULL, should not have a zero reference count as these functions may retain a reference to it, particularly when it is used to create an array element that did not previously exist, and decrementing the reference count later would leave them pointing to a freed Tcl\_Obj. 
+
+
+[SetResult]: SetResult.md
 

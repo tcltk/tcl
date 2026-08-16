@@ -111,7 +111,7 @@ Tcl\_CreateChannel, Tcl\_GetChannelInstanceData, Tcl\_GetChannelType, Tcl\_GetCh
 
 # Description
 
-Tcl uses a two-layered channel architecture. It provides a generic upper layer to enable C and Tcl programs to perform input and output using the same APIs for a variety of files, devices, sockets etc. The generic C APIs are described in the manual entry for **Tcl\_OpenFileChannel**.
+Tcl uses a two-layered channel architecture. It provides a generic upper layer to enable C and Tcl programs to perform input and output using the same APIs for a variety of files, devices, sockets etc. The generic C APIs are described in the manual entry for [Tcl\_OpenFileChannel][OpenFileChnl].
 
 The lower layer provides type-specific channel drivers for each type of device supported on each platform.  This manual entry describes the C APIs used to communicate between the generic layer and the type-specific channel drivers.  It also explains how new types of channels can be added by providing new channel drivers.
 
@@ -119,13 +119,13 @@ Channel drivers consist of a number of components: First, each channel driver pr
 
 Second, channel drivers usually provide a Tcl command to create instances of that type of channel. For example, the Tcl [open] command creates channels that use the file and command channel drivers, and the Tcl [socket] command creates channels that use TCP sockets for network communication.
 
-Third, a channel driver optionally provides a C function to open channel instances of that type. For example, **Tcl\_OpenFileChannel** opens a channel that uses the file channel driver, and **Tcl\_OpenTcpClient** opens a channel that uses the TCP network protocol.  These creation functions typically use **Tcl\_CreateChannel** internally to open the channel.
+Third, a channel driver optionally provides a C function to open channel instances of that type. For example, [Tcl\_OpenFileChannel][OpenFileChnl] opens a channel that uses the file channel driver, and [Tcl\_OpenTcpClient][OpenTcp] opens a channel that uses the TCP network protocol.  These creation functions typically use **Tcl\_CreateChannel** internally to open the channel.
 
 To add a new type of channel you must implement a C API or a Tcl command that opens a channel by invoking **Tcl\_CreateChannel**. When your driver calls **Tcl\_CreateChannel** it passes in a **Tcl\_ChannelType** structure describing the driver's I/O procedures. The generic layer will then invoke the functions referenced in that structure to perform operations on the channel.
 
 **Tcl\_CreateChannel** opens a new channel and associates the supplied *typePtr* and *instanceData* with it. The channel is opened in the mode indicated by *mask*. For a discussion of channel drivers, their operations and the **Tcl\_ChannelType** structure, see the section **TCL\_CHANNELTYPE**, below.
 
-**Tcl\_CreateChannel** interacts with the code managing the standard channels. Once a standard channel was initialized either through a call to **Tcl\_GetStdChannel** or a call to **Tcl\_SetStdChannel** closing this standard channel will cause the next call to **Tcl\_CreateChannel** to make the new channel the new standard channel too. See **Tcl\_StandardChannels** for a general treatise about standard channels and the behavior of the Tcl library with regard to them.
+**Tcl\_CreateChannel** interacts with the code managing the standard channels. Once a standard channel was initialized either through a call to [Tcl\_GetStdChannel][GetStdChan] or a call to [Tcl\_SetStdChannel][GetStdChan] closing this standard channel will cause the next call to **Tcl\_CreateChannel** to make the new channel the new standard channel too. See [Tcl\_StandardChannels][StdChannels] for a general treatise about standard channels and the behavior of the Tcl library with regard to them.
 
 **Tcl\_GetChannelInstanceData** returns the instance data associated with the channel in *channel*. This is the same as the *instanceData* argument in the call to **Tcl\_CreateChannel** that created this channel.
 
@@ -300,7 +300,7 @@ typedef long long Tcl_DriverWideSeekProc(
         int *errorCodePtr);
 ```
 
-The *instanceData* argument is the same as the value given to **Tcl\_CreateChannel** when this channel was created.  *Offset* and *seekMode* have the same meaning as for the **Tcl\_Seek** procedure (described in the manual entry for **Tcl\_OpenFileChannel**).
+The *instanceData* argument is the same as the value given to **Tcl\_CreateChannel** when this channel was created.  *Offset* and *seekMode* have the same meaning as for the [Tcl\_Seek][OpenFileChnl] procedure (described in the manual entry for [Tcl\_OpenFileChannel][OpenFileChnl]).
 
 The *errorCodePtr* argument points to an integer variable provided by the generic layer for returning **errno** values from the function.  The function should set this variable to a POSIX error code if an error occurs. The function should store an **EINVAL** error code if the channel type does not implement seeking.
 
@@ -324,7 +324,7 @@ typedef int Tcl_DriverSetOptionProc(
 
 Some options are handled by the generic code and this function is never called to set them, e.g. **-blockmode**. Other options are specific to each channel type and the *setOptionProc* procedure of the channel driver will get called to implement them. The *setOptionProc* field can be NULL, which indicates that this channel type supports no type specific options.
 
-If the option value is successfully modified to the new value, the function returns **TCL\_OK**. It should call **Tcl\_BadChannelOption** which itself returns **TCL\_ERROR** if the *optionName* is unrecognized. If *newValue* specifies a value for the option that is not supported or if a system call error occurs, the function should leave an error message in the result of *interp* if *interp* is not NULL. The function should also call **Tcl\_SetErrno** to store an appropriate POSIX error code.
+If the option value is successfully modified to the new value, the function returns **TCL\_OK**. It should call **Tcl\_BadChannelOption** which itself returns **TCL\_ERROR** if the *optionName* is unrecognized. If *newValue* specifies a value for the option that is not supported or if a system call error occurs, the function should leave an error message in the result of *interp* if *interp* is not NULL. The function should also call [Tcl\_SetErrno][SetErrno] to store an appropriate POSIX error code.
 
 This value can be retrieved with **Tcl\_ChannelSetOptionProc**, which returns a pointer to the function.
 
@@ -340,7 +340,7 @@ typedef int Tcl_DriverGetOptionProc(
         Tcl_DString *optionValue);
 ```
 
-*OptionName* is the name of an option supported by this type of channel. If the option name is not NULL, the function stores its current value, as a string, in the Tcl dynamic string *optionValue*. If *optionName* is NULL, the function stores in *optionValue* an alternating list of all supported options and their current values. On success, the function returns **TCL\_OK**. It should call **Tcl\_BadChannelOption** which itself returns **TCL\_ERROR** if the *optionName* is unrecognized. If a system call error occurs, the function should leave an error message in the result of *interp* if *interp* is not NULL. The function should also call **Tcl\_SetErrno** to store an appropriate POSIX error code.
+*OptionName* is the name of an option supported by this type of channel. If the option name is not NULL, the function stores its current value, as a string, in the Tcl dynamic string *optionValue*. If *optionName* is NULL, the function stores in *optionValue* an alternating list of all supported options and their current values. On success, the function returns **TCL\_OK**. It should call **Tcl\_BadChannelOption** which itself returns **TCL\_ERROR** if the *optionName* is unrecognized. If a system call error occurs, the function should leave an error message in the result of *interp* if *interp* is not NULL. The function should also call [Tcl\_SetErrno][SetErrno] to store an appropriate POSIX error code.
 
 Some options are handled by the generic code and this function is never called to retrieve their value, e.g. **-blockmode**. Other options are specific to each channel type and the *getOptionProc* procedure of the channel driver will get called to implement them. The *getOptionProc* field can be NULL, which indicates that this channel type supports no type specific options.
 
@@ -358,7 +358,7 @@ typedef void Tcl_DriverWatchProc(
 
 The *instanceData* is the same as the value passed to **Tcl\_CreateChannel** when this channel was created. The *mask* argument is an OR-ed combination of **TCL\_READABLE**, **TCL\_WRITABLE** and **TCL\_EXCEPTION**; it indicates events the caller is interested in noticing on this channel.
 
-The function should initialize device type specific mechanisms to notice when an event of interest is present on the channel.  When one or more of the designated events occurs on the channel, the channel driver is responsible for calling **Tcl\_NotifyChannel** to inform the generic channel module.  The driver should take care not to starve other channel drivers or sources of callbacks by invoking Tcl\_NotifyChannel too frequently.  Fairness can be insured by using the Tcl event queue to allow the channel event to be scheduled in sequence with other events.  See the description of **Tcl\_QueueEvent** for details on how to queue an event.
+The function should initialize device type specific mechanisms to notice when an event of interest is present on the channel.  When one or more of the designated events occurs on the channel, the channel driver is responsible for calling **Tcl\_NotifyChannel** to inform the generic channel module.  The driver should take care not to starve other channel drivers or sources of callbacks by invoking Tcl\_NotifyChannel too frequently.  Fairness can be insured by using the Tcl event queue to allow the channel event to be scheduled in sequence with other events.  See the description of [Tcl\_QueueEvent][Notifier] for details on how to queue an event.
 
 This value can be retrieved with **Tcl\_ChannelWatchProc**, which returns a pointer to the function.
 
@@ -430,7 +430,7 @@ typedef int Tcl_DriverTruncateProc(
         long long length);
 ```
 
-*InstanceData* is the same as the value passed to **Tcl\_CreateChannel** when this channel was created, and *length* is the new length of the underlying file, which should not be negative. The result should be 0 on success or an errno code (suitable for use with **Tcl\_SetErrno**) on failure.
+*InstanceData* is the same as the value passed to **Tcl\_CreateChannel** when this channel was created, and *length* is the new length of the underlying file, which should not be negative. The result should be 0 on success or an errno code (suitable for use with [Tcl\_SetErrno][SetErrno]) on failure.
 
 These values can be retrieved with **Tcl\_ChannelTruncateProc**, which returns a pointer to the function.
 
@@ -461,6 +461,12 @@ when called with *optionList* equal to "peername sockname"
 
 
 [file]: file.md
+[GetStdChan]: GetStdChan.md
+[Notifier]: Notifier.md
 [open]: open.md
+[OpenFileChnl]: OpenFileChnl.md
+[OpenTcp]: OpenTcp.md
+[SetErrno]: SetErrno.md
 [socket]: socket.md
+[StdChannels]: StdChannels.md
 

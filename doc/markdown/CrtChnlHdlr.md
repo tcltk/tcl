@@ -37,7 +37,7 @@ Tcl\_CreateChannelHandler, Tcl\_DeleteChannelHandler - call a procedure when a c
 ::: {.arguments} :::
 
 [channel]{.carg .in type="Tcl_Channel"}
-: Tcl channel such as returned by **Tcl\_CreateChannel**.
+: Tcl channel such as returned by [Tcl\_CreateChannel][CrtChannel].
 
 [mask]{.carg .in type="int"}
 : Conditions under which *proc* should be called: OR-ed combination of **TCL\_READABLE**, **TCL\_WRITABLE** and **TCL\_EXCEPTION**. Specify a zero value to temporarily disable an existing handler.
@@ -70,5 +70,6 @@ Each channel handler is identified by a unique combination of *channel*, *proc* 
 Channel handlers are invoked via the Tcl event mechanism, so they are only useful in applications that are event-driven. Note also that the conditions specified in the *mask* argument to *proc* may no longer exist when *proc* is invoked:  for example, if there are two handlers for **TCL\_READABLE** on the same channel, the first handler could consume all of the available input so that the channel is no longer readable when the second handler is invoked. For this reason it may be useful to use nonblocking I/O on channels for which there are event handlers.
 
 
+[CrtChannel]: CrtChannel.md
 [fileevent]: fileevent.md
 

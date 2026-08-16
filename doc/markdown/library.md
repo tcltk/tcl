@@ -55,7 +55,7 @@ To access the procedures in the Tcl library, an application should source the fi
 source [file join [info library] init.tcl]
 ```
 
-If the library procedure **Tcl\_Init** is invoked from an application's [Tcl\_AppInit][AppInit] procedure, this happens automatically. The code in **init.tcl** will define the [unknown] procedure and arrange for the other procedures to be loaded on-demand using the auto-load mechanism defined below.
+If the library procedure [Tcl\_Init][Init] is invoked from an application's [Tcl\_AppInit][AppInit] procedure, this happens automatically. The code in **init.tcl** will define the [unknown] procedure and arrange for the other procedures to be loaded on-demand using the auto-load mechanism defined below.
 
 # Command procedures
 
@@ -234,6 +234,7 @@ These variables are only used in the **tcl\_endOfWord**, **tcl\_startOfNextWord*
 [file]: file.md
 [glob]: glob.md
 [info]: info.md
+[Init]: Init.md
 [interp]: interp.md
 [lappend]: lappend.md
 [namespace]: namespace.md

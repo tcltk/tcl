@@ -60,7 +60,7 @@ Tcl\_ExprLong, Tcl\_ExprDouble, Tcl\_ExprBoolean, Tcl\_ExprString - evaluate an 
 
 # Description
 
-These four procedures all evaluate the expression given by the *expr* argument and return the result in one of four different forms. The expression can have any of the forms accepted by the [expr] command. Note that these procedures have been largely replaced by the value-based procedures **Tcl\_ExprLongObj**, **Tcl\_ExprDoubleObj**, **Tcl\_ExprBooleanObj**, and **Tcl\_ExprObj**. Those value-based procedures evaluate an expression held in a Tcl value instead of a string. The value argument can retain an internal representation that is more efficient to execute.
+These four procedures all evaluate the expression given by the *expr* argument and return the result in one of four different forms. The expression can have any of the forms accepted by the [expr] command. Note that these procedures have been largely replaced by the value-based procedures [Tcl\_ExprLongObj][ExprLongObj], [Tcl\_ExprDoubleObj][ExprLongObj], [Tcl\_ExprBooleanObj][ExprLongObj], and [Tcl\_ExprObj][ExprLongObj]. Those value-based procedures evaluate an expression held in a Tcl value instead of a string. The value argument can retain an internal representation that is more efficient to execute.
 
 The *interp* argument refers to an interpreter used to evaluate the expression (e.g. for variables and nested Tcl commands) and to return error information.
 
@@ -70,10 +70,12 @@ If the expression is successfully evaluated, then its value is returned in one o
 
 **Tcl\_ExprDouble** stores a floating-point value at *\*doublePtr*. If the expression's actual value is an integer, it is converted to floating-point. If the expression's actual value is a non-numeric string then an error is returned.
 
-**Tcl\_ExprBoolean** stores a 0/1 integer value at *\*booleanPtr*. If the expression's actual value is an integer or floating-point number, then they store 0 at *\*booleanPtr* if the value was zero and 1 otherwise. If the expression's actual value is a non-numeric string then it must be one of the values accepted by **Tcl\_GetBoolean** such as "yes" or "no", or else an error occurs.
+**Tcl\_ExprBoolean** stores a 0/1 integer value at *\*booleanPtr*. If the expression's actual value is an integer or floating-point number, then they store 0 at *\*booleanPtr* if the value was zero and 1 otherwise. If the expression's actual value is a non-numeric string then it must be one of the values accepted by [Tcl\_GetBoolean][GetInt] such as "yes" or "no", or else an error occurs.
 
 **Tcl\_ExprString** returns the value of the expression as a string stored in the interpreter's result. 
 
 
 [expr]: expr.md
+[ExprLongObj]: ExprLongObj.md
+[GetInt]: GetInt.md
 

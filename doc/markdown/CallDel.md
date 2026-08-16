@@ -47,7 +47,7 @@ Tcl\_CallWhenDeleted, Tcl\_DontCallWhenDeleted - Arrange for callback when inter
 
 # Description
 
-**Tcl\_CallWhenDeleted** arranges for *proc* to be called by **Tcl\_DeleteInterp** if/when *interp* is deleted at some future time.  *Proc* will be invoked just before the interpreter is deleted, but the interpreter will still be valid at the time of the call. *Proc* should have arguments and result that match the type **Tcl\_InterpDeleteProc**:
+**Tcl\_CallWhenDeleted** arranges for *proc* to be called by [Tcl\_DeleteInterp][CrtInterp] if/when *interp* is deleted at some future time.  *Proc* will be invoked just before the interpreter is deleted, but the interpreter will still be valid at the time of the call. *Proc* should have arguments and result that match the type **Tcl\_InterpDeleteProc**:
 
 ```
 typedef void Tcl_InterpDeleteProc(
@@ -59,5 +59,9 @@ The *clientData* and *interp* parameters are copies of the *clientData* and *int
 
 **Tcl\_DontCallWhenDeleted** cancels a previous call to **Tcl\_CallWhenDeleted** with the same arguments, so that *proc* will not be called after all when *interp* is deleted. If there is no deletion callback that matches *interp*, *proc*, and *clientData* then the call to **Tcl\_DontCallWhenDeleted** has no effect.
 
-Note that if the callback is being used to delete a resource that *must* be released on exit, **Tcl\_CreateExitHandler** should be used to ensure that a callback is received even if the application terminates without deleting the interpreter.
+Note that if the callback is being used to delete a resource that *must* be released on exit, [Tcl\_CreateExitHandler][Exit3] should be used to ensure that a callback is received even if the application terminates without deleting the interpreter.
+
+
+[CrtInterp]: CrtInterp.md
+[Exit3]: Exit3.md
 

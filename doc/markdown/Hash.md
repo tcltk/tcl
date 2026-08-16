@@ -120,7 +120,7 @@ The core provides three functions for the initialization of hash tables, Tcl\_In
 
 **Tcl\_FirstHashEntry** and **Tcl\_NextHashEntry** may be used to scan all of the entries in a hash table. A structure of type "Tcl\_HashSearch", provided by the client, is used to keep track of progress through the table. **Tcl\_FirstHashEntry** initializes the search record and returns the first entry in the table (or NULL if the table is empty). Each subsequent call to **Tcl\_NextHashEntry** returns the next entry in the table or NULL if the end of the table has been reached. A call to **Tcl\_FirstHashEntry** followed by calls to **Tcl\_NextHashEntry** will return each of the entries in the table exactly once, in an arbitrary order. It is inadvisable to modify the structure of the table, e.g. by creating or deleting entries, while the search is in progress, with the exception of deleting the entry returned by **Tcl\_FirstHashEntry** or **Tcl\_NextHashEntry**.
 
-**Tcl\_HashStats** returns a dynamically-allocated string with overall information about a hash table, such as the number of entries it contains, the number of buckets in its hash array, and the utilization of the buckets. It is the caller's responsibility to free the result string by passing it to **Tcl\_Free**.
+**Tcl\_HashStats** returns a dynamically-allocated string with overall information about a hash table, such as the number of entries it contains, the number of buckets in its hash array, and the utilization of the buckets. It is the caller's responsibility to free the result string by passing it to [Tcl\_Free][Alloc].
 
 The header file **tcl.h** defines the actual data structures used to implement hash tables. This is necessary so that clients can allocate Tcl\_HashTable structures and so that macros can be used to read and write the values of entries. However, users of the hashing routines should never refer directly to any of the fields of any of the hash-related data structures; use the procedures and macros defined here.
 
@@ -178,7 +178,7 @@ typedef Tcl_HashEntry *Tcl_AllocHashEntryProc(
         void *keyPtr);
 ```
 
-If this is NULL then **Tcl\_Alloc** is used to allocate enough space for a Tcl\_HashEntry, the key pointer is assigned to key.oneWordValue and the clientData is set to NULL. String keys and array keys use this function to allocate enough space for the entry and the key in one block, rather than doing it in two blocks. This saves space for a pointer to the key from the entry and another memory allocation. Tcl\_Obj\* keys use this function to allocate enough space for an entry and increment the reference count on the value.
+If this is NULL then [Tcl\_Alloc][Alloc] is used to allocate enough space for a Tcl\_HashEntry, the key pointer is assigned to key.oneWordValue and the clientData is set to NULL. String keys and array keys use this function to allocate enough space for the entry and the key in one block, rather than doing it in two blocks. This saves space for a pointer to the key from the entry and another memory allocation. Tcl\_Obj\* keys use this function to allocate enough space for an entry and increment the reference count on the value.
 
 The *freeEntryProc* member contains the address of a function called to free space for an entry.
 
@@ -187,11 +187,14 @@ typedef void Tcl_FreeHashEntryProc(
         Tcl_HashEntry *hPtr);
 ```
 
-If this is NULL then **Tcl\_Free** is used to free the space for the entry. Tcl\_Obj\* keys use this function to decrement the reference count on the value.
+If this is NULL then [Tcl\_Free][Alloc] is used to free the space for the entry. Tcl\_Obj\* keys use this function to decrement the reference count on the value.
 
 # Reference count management
 
 When a hash table is created with **Tcl\_InitCustomHashTable**, the **Tcl\_CreateHashEntry** function will increment the reference count of its *key* argument when it creates a key (but not if there is an existing matching key). The reference count of the key will be decremented when the corresponding hash entry is deleted, whether with **Tcl\_DeleteHashEntry** or with **Tcl\_DeleteHashTable**. The **Tcl\_GetHashKey** function will return the key without further modifying its reference count.
 
 Custom hash tables that use a Tcl\_Obj\* as key will generally need to do something similar in their *allocEntryProc*.
+
+
+[Alloc]: Alloc.md
 

@@ -181,15 +181,15 @@ Tcl\_OpenFileChannel, Tcl\_OpenCommandChannel, Tcl\_MakeFileChannel, Tcl\_GetCha
 
 # Description
 
-N.B. Refer to the **Tcl\_UniChar** documentation page for a description of the *TUTF-8* encoding and related terms referenced here.
+N.B. Refer to the [Tcl\_UniChar][Utf] documentation page for a description of the *TUTF-8* encoding and related terms referenced here.
 
-The Tcl channel mechanism provides a device-independent and platform-independent mechanism for performing buffered input and output operations on a variety of file, socket, and device types. The channel mechanism is extensible to new channel types, by providing a low-level channel driver for the new type; the channel driver interface is described in the manual entry for **Tcl\_CreateChannel**. The channel mechanism provides a buffering scheme modeled after Unix's standard I/O, and it also allows for nonblocking I/O on channels.
+The Tcl channel mechanism provides a device-independent and platform-independent mechanism for performing buffered input and output operations on a variety of file, socket, and device types. The channel mechanism is extensible to new channel types, by providing a low-level channel driver for the new type; the channel driver interface is described in the manual entry for [Tcl\_CreateChannel][CrtChannel]. The channel mechanism provides a buffering scheme modeled after Unix's standard I/O, and it also allows for nonblocking I/O on channels.
 
-The procedures described in this manual entry comprise the C APIs of the generic layer of the channel architecture. For a description of the channel driver architecture and how to implement channel drivers for new types of channels, see the manual entry for **Tcl\_CreateChannel**.
+The procedures described in this manual entry comprise the C APIs of the generic layer of the channel architecture. For a description of the channel driver architecture and how to implement channel drivers for new types of channels, see the manual entry for [Tcl\_CreateChannel][CrtChannel].
 
 # Tcl\_openfilechannel
 
-**Tcl\_OpenFileChannel** opens a file specified by *fileName* and returns a channel handle that can be used to perform input and output on the file. This API is modeled after the **fopen** procedure of the Unix standard I/O library. The syntax and meaning of all arguments is similar to those given in the Tcl [open] command when opening a file. If an error occurs while opening the channel, **Tcl\_OpenFileChannel** returns NULL and records a POSIX error code that can be retrieved with **Tcl\_GetErrno**. In addition, if *interp* is non-NULL, **Tcl\_OpenFileChannel** leaves an error message in *interp*'s result after any error. As of Tcl 8.4, the value-based API **Tcl\_FSOpenFileChannel** should be used in preference to **Tcl\_OpenFileChannel** wherever possible.
+**Tcl\_OpenFileChannel** opens a file specified by *fileName* and returns a channel handle that can be used to perform input and output on the file. This API is modeled after the **fopen** procedure of the Unix standard I/O library. The syntax and meaning of all arguments is similar to those given in the Tcl [open] command when opening a file. If an error occurs while opening the channel, **Tcl\_OpenFileChannel** returns NULL and records a POSIX error code that can be retrieved with [Tcl\_GetErrno][SetErrno]. In addition, if *interp* is non-NULL, **Tcl\_OpenFileChannel** leaves an error message in *interp*'s result after any error. As of Tcl 8.4, the value-based API [Tcl\_FSOpenFileChannel][FileSystem] should be used in preference to **Tcl\_OpenFileChannel** wherever possible.
 
 The newly created channel is not registered in the supplied interpreter; to register it, use **Tcl\_RegisterChannel**, described below. If one of the standard channels, **stdin**, **stdout** or **stderr** was previously closed, the act of creating the new channel also assigns it as a replacement for the standard channel.
 
@@ -199,7 +199,7 @@ The newly created channel is not registered in the supplied interpreter; to regi
 
 If the **TCL\_STDIN** flag is set then the standard input for the first subprocess will be tied to the channel: writing to the channel will provide input to the subprocess.  If **TCL\_STDIN** is not set, then standard input for the first subprocess will be the same as this application's standard input.  If **TCL\_STDOUT** is set then standard output from the last subprocess can be read from the channel; otherwise it goes to this application's standard output.  If **TCL\_STDERR** is set, standard error output for all subprocesses is returned to the channel and results in an error when the channel is closed; otherwise it goes to this application's standard error.  If **TCL\_ENFORCE\_MODE** is not set, then *argc* and *argv* can redirect the stdio handles to override **TCL\_STDIN**, **TCL\_STDOUT**, and **TCL\_STDERR**; if it is set, then it is an error for argc and argv to override stdio channels for which **TCL\_STDIN**, **TCL\_STDOUT**, and **TCL\_STDERR** have been set.
 
-If an error occurs while opening the channel, **Tcl\_OpenCommandChannel** returns NULL and records a POSIX error code that can be retrieved with **Tcl\_GetErrno**. In addition, **Tcl\_OpenCommandChannel** leaves an error message in the interpreter's result. *interp* cannot be NULL.
+If an error occurs while opening the channel, **Tcl\_OpenCommandChannel** returns NULL and records a POSIX error code that can be retrieved with [Tcl\_GetErrno][SetErrno]. In addition, **Tcl\_OpenCommandChannel** leaves an error message in the interpreter's result. *interp* cannot be NULL.
 
 The newly created channel is not registered in the supplied interpreter; to register it, use **Tcl\_RegisterChannel**, described below. If one of the standard channels, **stdin**, **stdout** or **stderr** was previously closed, the act of creating the new channel also assigns it as a replacement for the standard channel.
 
@@ -209,17 +209,17 @@ The newly created channel is not registered in the supplied interpreter; to regi
 
 # Tcl\_getchannel
 
-**Tcl\_GetChannel** returns a channel given the *channelName* used to create it with **Tcl\_CreateChannel** and a pointer to a Tcl interpreter in *interp*. If a channel by that name is not registered in that interpreter, the procedure returns NULL. If the *modePtr* argument is not NULL, it points at an integer variable that will receive an OR-ed combination of **TCL\_READABLE** and **TCL\_WRITABLE** describing whether the channel is open for reading and writing.
+**Tcl\_GetChannel** returns a channel given the *channelName* used to create it with [Tcl\_CreateChannel][CrtChannel] and a pointer to a Tcl interpreter in *interp*. If a channel by that name is not registered in that interpreter, the procedure returns NULL. If the *modePtr* argument is not NULL, it points at an integer variable that will receive an OR-ed combination of **TCL\_READABLE** and **TCL\_WRITABLE** describing whether the channel is open for reading and writing.
 
 **Tcl\_GetChannelNames** and **Tcl\_GetChannelNamesEx** write the names of the registered channels to the interpreter's result as a list value.  **Tcl\_GetChannelNamesEx** will filter these names according to the *pattern*.  If *pattern* is NULL, then it will not do any filtering.  The return value is **TCL\_OK** if no errors occurred writing to the result, otherwise it is **TCL\_ERROR**, and the error message is left in the interpreter's result.
 
 # Tcl\_registerchannel
 
-**Tcl\_RegisterChannel** adds a channel to the set of channels accessible in *interp*. After this call, Tcl programs executing in that interpreter can refer to the channel in input or output operations using the name given in the call to **Tcl\_CreateChannel**.  After this call, the channel becomes the property of the interpreter, and the caller should not call **Tcl\_Close** for the channel; the channel will be closed automatically when it is unregistered from the interpreter.
+**Tcl\_RegisterChannel** adds a channel to the set of channels accessible in *interp*. After this call, Tcl programs executing in that interpreter can refer to the channel in input or output operations using the name given in the call to [Tcl\_CreateChannel][CrtChannel].  After this call, the channel becomes the property of the interpreter, and the caller should not call **Tcl\_Close** for the channel; the channel will be closed automatically when it is unregistered from the interpreter.
 
 Code executing outside of any Tcl interpreter can call **Tcl\_RegisterChannel** with *interp* as NULL, to indicate that it wishes to hold a reference to this channel. Subsequently, the channel can be registered in a Tcl interpreter and it will only be closed when the matching number of calls to **Tcl\_UnregisterChannel** have been made. This allows code executing outside of any interpreter to safely hold a reference to a channel that is also registered in a Tcl interpreter.
 
-This procedure interacts with the code managing the standard channels. If no standard channels were initialized before the first call to **Tcl\_RegisterChannel**, they will get initialized by that call. See **Tcl\_StandardChannels** for a general treatise about standard channels and the behavior of the Tcl library with regard to them.
+This procedure interacts with the code managing the standard channels. If no standard channels were initialized before the first call to **Tcl\_RegisterChannel**, they will get initialized by that call. See [Tcl\_StandardChannels][StdChannels] for a general treatise about standard channels and the behavior of the Tcl library with regard to them.
 
 # Tcl\_unregisterchannel
 
@@ -245,13 +245,13 @@ No attempt is made to check whether the given channel or the standard channels a
 
 **Tcl\_CloseEx** allows for both full closing and half-closing of channels depending on its **closeFlags** parameter. See the description of the parameter above. It is an error to attempt to close the channel for a direction for which it is not open. The channel is destroyed only when it has been closed for both reading and writing. Only socket and command pipe channels support half-closing.
 
-If the channel was closed successfully, **Tcl\_Close** and **Tcl\_CloseEx** return **TCL\_OK**. If an error occurs, they return **TCL\_ERROR** and record a POSIX error code that can be retrieved with **Tcl\_GetErrno**. If the channel is being closed synchronously and an error occurs during closing of the channel and *interp* is not NULL, an error message is left in the interpreter's result.
+If the channel was closed successfully, **Tcl\_Close** and **Tcl\_CloseEx** return **TCL\_OK**. If an error occurs, they return **TCL\_ERROR** and record a POSIX error code that can be retrieved with [Tcl\_GetErrno][SetErrno]. If the channel is being closed synchronously and an error occurs during closing of the channel and *interp* is not NULL, an error message is left in the interpreter's result.
 
 Note that it is not safe to call the channel closing functions on a channel that has been registered using **Tcl\_RegisterChannel**; see the documentation for **Tcl\_RegisterChannel**, above, for details. If the channel has ever been given as the [chan] argument in a call to **Tcl\_RegisterChannel**, you should instead use **Tcl\_UnregisterChannel**, which will internally call **Tcl\_Close** when all calls to **Tcl\_RegisterChannel** have been matched by corresponding calls to **Tcl\_UnregisterChannel**.
 
 # Tcl\_readchars and tcl\_read
 
-**Tcl\_ReadChars** consumes bytes from *channel*, converting the bytes to TUTF-8 based on the channel's encoding and storing the produced data in *readObjPtr*'s string representation.  The return value of **Tcl\_ReadChars** is the number of characters, up to *charsToRead*, that were stored in *readObjPtr*.  If an error occurs while reading, the return value is -1 and **Tcl\_ReadChars** records a POSIX error code that can be retrieved with **Tcl\_GetErrno**. If an encoding error happens while the channel is in blocking mode with -profile strict, the characters retrieved until the encoding error happened will be stored in *readObjPtr*.
+**Tcl\_ReadChars** consumes bytes from *channel*, converting the bytes to TUTF-8 based on the channel's encoding and storing the produced data in *readObjPtr*'s string representation.  The return value of **Tcl\_ReadChars** is the number of characters, up to *charsToRead*, that were stored in *readObjPtr*.  If an error occurs while reading, the return value is -1 and **Tcl\_ReadChars** records a POSIX error code that can be retrieved with [Tcl\_GetErrno][SetErrno]. If an encoding error happens while the channel is in blocking mode with -profile strict, the characters retrieved until the encoding error happened will be stored in *readObjPtr*.
 
 Setting *charsToRead* to -1 will cause the command to read all characters currently available (non-blocking) or everything until eof (blocking mode).
 
@@ -261,7 +261,7 @@ If the channel is in blocking mode, a return value of zero indicates an end-of-f
 
 **Tcl\_ReadChars** translates the various end-of-line representations into the canonical **\\n** internal representation according to the current end-of-line recognition mode.  End-of-line recognition and the various platform-specific modes are described in the manual entry for the Tcl [fconfigure] command.
 
-As a performance optimization, when reading from a channel with the encoding [binary], the bytes are not converted to TUTF-8 as they are read. Instead, they are stored in *readObjPtr*'s internal representation as a byte-array value.  The string representation of this value will only be constructed if it is needed (e.g., because of a call to **Tcl\_GetStringFromObj**).  In this way, byte-oriented data can be read from a channel, manipulated by calling **Tcl\_GetByteArrayFromObj** and related functions, and then written to a channel without the expense of ever converting to or from TUTF-8.
+As a performance optimization, when reading from a channel with the encoding [binary], the bytes are not converted to TUTF-8 as they are read. Instead, they are stored in *readObjPtr*'s internal representation as a byte-array value.  The string representation of this value will only be constructed if it is needed (e.g., because of a call to [Tcl\_GetStringFromObj][StringObj]).  In this way, byte-oriented data can be read from a channel, manipulated by calling [Tcl\_GetByteArrayFromObj][ByteArrObj] and related functions, and then written to a channel without the expense of ever converting to or from TUTF-8.
 
 **Tcl\_Read** is similar to **Tcl\_ReadChars**, except that it does not do encoding conversions, regardless of the channel's encoding.  It is deprecated and exists for backwards compatibility with non-internationalized Tcl extensions.  It consumes bytes from *channel* and stores them in *readBuf*, performing end-of-line translations on the way.  The return value of **Tcl\_Read** is the number of bytes, up to *bytesToRead*, written in *readBuf*.  The buffer produced by **Tcl\_Read** is not null-terminated. Its contents are valid from the zeroth position up to and excluding the position indicated by the return value.
 
@@ -271,7 +271,7 @@ As a performance optimization, when reading from a channel with the encoding [bi
 
 **Tcl\_GetsObj** consumes bytes from *channel*, based on the channel's encoding, until a full line of input has been seen.  If the channel's encoding is [binary], each byte read from the channel is treated as an individual Unicode character.  All of the characters of the line except for the terminating end-of-line character(s) are appended to *lineObjPtr*'s string representation.  The end-of-line character(s) are read and discarded.
 
-If a line was successfully read, the return value is greater than or equal to zero and indicates the number of bytes stored in *lineObjPtr*.  If an error occurs, **Tcl\_GetsObj** returns -1 and records a POSIX error code that can be retrieved with **Tcl\_GetErrno**.  **Tcl\_GetsObj** also returns -1 if the end of the file is reached; the **Tcl\_Eof** procedure can be used to distinguish an error from an end-of-file condition.
+If a line was successfully read, the return value is greater than or equal to zero and indicates the number of bytes stored in *lineObjPtr*.  If an error occurs, **Tcl\_GetsObj** returns -1 and records a POSIX error code that can be retrieved with [Tcl\_GetErrno][SetErrno].  **Tcl\_GetsObj** also returns -1 if the end of the file is reached; the **Tcl\_Eof** procedure can be used to distinguish an error from an end-of-file condition.
 
 If the channel is in nonblocking mode, the return value can also be -1 if no data was available or the data that was available did not contain an end-of-line character.  When -1 is returned, the **Tcl\_InputBlocked** procedure may be invoked to determine if the channel is blocked because of input unavailability.
 
@@ -287,11 +287,11 @@ If the channel is in nonblocking mode, the return value can also be -1 if no dat
 
 Data queued for output may not appear on the output device immediately, due to internal buffering.  If the data should appear immediately, call **Tcl\_Flush** after the call to **Tcl\_WriteChars**, or set the **-buffering** option on the channel to **none**.  If you wish the data to appear as soon as a complete line is accepted for output, set the **-buffering** option on the channel to **line** mode.
 
-The return value of **Tcl\_WriteChars** is a count of how many bytes were accepted for output to the channel.  This is either -1 to indicate that an error occurred or another number greater than zero to indicate success.  If an error occurs, **Tcl\_WriteChars** records a POSIX error code that may be retrieved with **Tcl\_GetErrno**.
+The return value of **Tcl\_WriteChars** is a count of how many bytes were accepted for output to the channel.  This is either -1 to indicate that an error occurred or another number greater than zero to indicate success.  If an error occurs, **Tcl\_WriteChars** records a POSIX error code that may be retrieved with [Tcl\_GetErrno][SetErrno].
 
 Newline characters in the output data are translated to platform-specific end-of-line sequences according to the **-translation** option for the channel.  This is done even if the channel has no encoding.
 
-**Tcl\_WriteObj** is similar to **Tcl\_WriteChars** except it accepts a Tcl value whose contents will be output to the channel.  The characters in *writeObjPtr*'s string representation are converted to the channel's encoding and queued for output to *channel*. As a performance optimization, when writing to a channel with the encoding [binary], characters are not converted as they are written. Instead, the bytes in *writeObjPtr*'s internal representation as a byte-array value are written to the channel.  The byte-array representation of the value will be constructed if it is needed.  In this way, byte-oriented data can be read from a channel, manipulated by calling **Tcl\_GetByteArrayFromObj** and related functions, and then written to a channel without the expense of encoding conversion.
+**Tcl\_WriteObj** is similar to **Tcl\_WriteChars** except it accepts a Tcl value whose contents will be output to the channel.  The characters in *writeObjPtr*'s string representation are converted to the channel's encoding and queued for output to *channel*. As a performance optimization, when writing to a channel with the encoding [binary], characters are not converted as they are written. Instead, the bytes in *writeObjPtr*'s internal representation as a byte-array value are written to the channel.  The byte-array representation of the value will be constructed if it is needed.  In this way, byte-oriented data can be read from a channel, manipulated by calling [Tcl\_GetByteArrayFromObj][ByteArrObj] and related functions, and then written to a channel without the expense of encoding conversion.
 
 **Tcl\_Write** is similar to **Tcl\_WriteChars** except that it does not do encoding conversions, regardless of the channel's encoding.  It is deprecated and exists for backwards compatibility with non-internationalized Tcl extensions.  It accepts *bytesToWrite* bytes of data at *byteBuf* and queues them for output to *channel*.  If *bytesToWrite* is negative, **Tcl\_Write** expects *byteBuf* to be null-terminated and it outputs everything up to the null.
 
@@ -301,13 +301,13 @@ Newline characters in the output data are translated to platform-specific end-of
 
 **Tcl\_Flush** causes all of the buffered output data for *channel* to be written to its underlying file or device as soon as possible. If the channel is in blocking mode, the call does not return until all the buffered data has been sent to the channel or some error occurred. The call returns immediately if the channel is nonblocking; it starts a background flush that will write the buffered data to the channel eventually, as fast as the channel is able to absorb it.
 
-The return value is normally **TCL\_OK**. If an error occurs, **Tcl\_Flush** returns **TCL\_ERROR** and records a POSIX error code that can be retrieved with **Tcl\_GetErrno**.
+The return value is normally **TCL\_OK**. If an error occurs, **Tcl\_Flush** returns **TCL\_ERROR** and records a POSIX error code that can be retrieved with [Tcl\_GetErrno][SetErrno].
 
 # Tcl\_seek
 
 **Tcl\_Seek** moves the access point in *channel* where subsequent data will be read or written. Buffered output is flushed to the channel and buffered input is discarded, prior to the seek operation.
 
-**Tcl\_Seek** normally returns the new access point. If an error occurs, **Tcl\_Seek** returns -1 and records a POSIX error code that can be retrieved with **Tcl\_GetErrno**. After an error, the access point may or may not have been moved.
+**Tcl\_Seek** normally returns the new access point. If an error occurs, **Tcl\_Seek** returns -1 and records a POSIX error code that can be retrieved with [Tcl\_GetErrno][SetErrno]. After an error, the access point may or may not have been moved.
 
 # Tcl\_tell
 
@@ -319,7 +319,7 @@ The return value is normally **TCL\_OK**. If an error occurs, **Tcl\_Flush** ret
 
 # Tcl\_getchanneloption
 
-**Tcl\_GetChannelOption** retrieves, in *optionValue*, the value of one of the options currently in effect for a channel, or a list of all options and their values.  The *channel* argument identifies the channel for which to query an option or retrieve all options and their values. If *optionName* is not NULL, it is the name of the option to query; the option's value is copied to the Tcl dynamic string denoted by *optionValue*. If *optionName* is NULL, the function stores an alternating list of option names and their values in *optionValue*, using a series of calls to **Tcl\_DStringAppendElement**. The various preexisting options and their possible values are described in the manual entry for the Tcl [fconfigure] command. Other options can be added by each channel type. These channel type specific options are described in the manual entry for the Tcl command that creates a channel of that type; for example, the additional options for TCP-based channels are described in the manual entry for the Tcl [socket] command. The procedure normally returns **TCL\_OK**. If an error occurs, it returns **TCL\_ERROR** and calls **Tcl\_SetErrno** to store an appropriate POSIX error code.
+**Tcl\_GetChannelOption** retrieves, in *optionValue*, the value of one of the options currently in effect for a channel, or a list of all options and their values.  The *channel* argument identifies the channel for which to query an option or retrieve all options and their values. If *optionName* is not NULL, it is the name of the option to query; the option's value is copied to the Tcl dynamic string denoted by *optionValue*. If *optionName* is NULL, the function stores an alternating list of option names and their values in *optionValue*, using a series of calls to [Tcl\_DStringAppendElement][DString]. The various preexisting options and their possible values are described in the manual entry for the Tcl [fconfigure] command. Other options can be added by each channel type. These channel type specific options are described in the manual entry for the Tcl command that creates a channel of that type; for example, the additional options for TCP-based channels are described in the manual entry for the Tcl [socket] command. The procedure normally returns **TCL\_OK**. If an error occurs, it returns **TCL\_ERROR** and calls [Tcl\_SetErrno][SetErrno] to store an appropriate POSIX error code.
 
 # Tcl\_setchanneloption
 
@@ -343,21 +343,31 @@ The return value is normally **TCL\_OK**. If an error occurs, **Tcl\_Flush** ret
 
 # Platform issues
 
-The handles returned from **Tcl\_GetChannelHandle** depend on the platform and the channel type.  On Unix platforms, the handle is always a Unix file descriptor as returned from the [open] system call.  On Windows platforms, the handle is a file **HANDLE** when the channel was created with **Tcl\_OpenFileChannel**, **Tcl\_OpenCommandChannel**, or **Tcl\_MakeFileChannel**.  Other channel types may return a different type of handle on Windows platforms.
+The handles returned from [Tcl\_GetChannelHandle][CrtChannel] depend on the platform and the channel type.  On Unix platforms, the handle is always a Unix file descriptor as returned from the [open] system call.  On Windows platforms, the handle is a file **HANDLE** when the channel was created with **Tcl\_OpenFileChannel**, **Tcl\_OpenCommandChannel**, or **Tcl\_MakeFileChannel**.  Other channel types may return a different type of handle on Windows platforms.
 
 # Reference count management
 
-The *readObjPtr* argument to **Tcl\_ReadChars** must be an unshared value; it will be modified by this function.  Using the interpreter result for this purpose is *strongly* not recommended; the preferred pattern is to use a new value from **Tcl\_NewObj** to receive the data and only to pass it to **Tcl\_SetObjResult** if this function succeeds.
+The *readObjPtr* argument to **Tcl\_ReadChars** must be an unshared value; it will be modified by this function.  Using the interpreter result for this purpose is *strongly* not recommended; the preferred pattern is to use a new value from [Tcl\_NewObj][Object3] to receive the data and only to pass it to [Tcl\_SetObjResult][SetResult] if this function succeeds.
 
-The *lineObjPtr* argument to **Tcl\_GetsObj** must be an unshared value; it will be modified by this function.  Using the interpreter result for this purpose is *strongly* not recommended; the preferred pattern is to use a new value from **Tcl\_NewObj** to receive the data and only to pass it to **Tcl\_SetObjResult** if this function succeeds.
+The *lineObjPtr* argument to **Tcl\_GetsObj** must be an unshared value; it will be modified by this function.  Using the interpreter result for this purpose is *strongly* not recommended; the preferred pattern is to use a new value from [Tcl\_NewObj][Object3] to receive the data and only to pass it to [Tcl\_SetObjResult][SetResult] if this function succeeds.
 
 The *writeObjPtr* argument to **Tcl\_WriteObj** should be a value with any reference count. This function will not modify the reference count. Using the interpreter result without adding an additional reference to it is not recommended.
 
 
 [binary]: binary.md
+[ByteArrObj]: ByteArrObj.md
 [chan]: chan.md
+[CrtChannel]: CrtChannel.md
+[DString]: DString.md
 [exec]: exec.md
 [fconfigure]: fconfigure.md
+[FileSystem]: FileSystem.md
+[Object3]: Object3.md
 [open]: open.md
+[SetErrno]: SetErrno.md
+[SetResult]: SetResult.md
 [socket]: socket.md
+[StdChannels]: StdChannels.md
+[StringObj]: StringObj.md
+[Utf]: Utf.md
 

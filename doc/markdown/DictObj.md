@@ -105,7 +105,7 @@ The procedures **Tcl\_DictObjPutKeyList** and **Tcl\_DictObjRemoveKeyList** are 
 
 # Reference count management
 
-**Tcl\_NewDictObj** always returns a zero-reference object, much like **Tcl\_NewObj**.
+**Tcl\_NewDictObj** always returns a zero-reference object, much like [Tcl\_NewObj][Object3].
 
 **Tcl\_DictObjPut** does not modify the reference count of its *dictPtr* argument, but does require that the object be unshared.  If **Tcl\_DictObjPut** returns **TCL\_ERROR** it does not manipulate any reference counts; but if it returns **TCL\_OK** then it definitely increments the reference count of *valuePtr* and may increment the reference count of *keyPtr*; the latter case happens exactly when the key did not previously exist in the dictionary.  Note however that this function may set the interpreter result; if that is the only place that is holding a reference to an object, it will be deleted.
 
@@ -166,4 +166,5 @@ return TCL_OK;
 
 
 [dict]: dict.md
+[Object3]: Object3.md
 

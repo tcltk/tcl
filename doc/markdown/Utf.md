@@ -156,7 +156,7 @@ The **Tcl\_UniChar** type is an C integer type wide enough to hold a single Unic
 
 **Tcl\_UniCharNcmp** and **Tcl\_UniCharNcasecmp** correspond to **strncmp** and **strncasecmp**, respectively, for Tcl\_UniChar code points. They accept two null-terminated Tcl\_UniChar strings and the number of Tcl\_UniChar code points to compare. Both strings are assumed to be at least *uniLength* characters long. **Tcl\_UniCharNcmp** compares the code points in two strings in order according to the Unicode character ordering. It returns an integer greater than, equal to, or less than 0 if the first string is greater than, equal to, or less than the second string respectively. **Tcl\_UniCharNcasecmp** is the case insensitive variant of **Tcl\_UniCharNcmp**.
 
-**Tcl\_UniCharCaseMatch** is the Unicode equivalent to **Tcl\_StringCaseMatch**.  It accepts a null-terminated Tcl\_UniChar string, a Tcl\_UniChar pattern, a boolean value specifying whether the match should be case sensitive and returns whether the string matches the pattern.
+**Tcl\_UniCharCaseMatch** is the Unicode equivalent to [Tcl\_StringCaseMatch][StrMatch].  It accepts a null-terminated Tcl\_UniChar string, a Tcl\_UniChar pattern, a boolean value specifying whether the match should be case sensitive and returns whether the string matches the pattern.
 
 **Tcl\_UtfNcmp** corresponds to **strncmp** and accepts two null-terminated TUTF-8 encoded strings each of which should represent a sequence of at least *length* code points. **Tcl\_UtfNcmp** compares the code points represented by each of the encoded strings in order. It returns an integer greater than, equal to, or less than 0 if the first string is greater than, equal to, or less than the second string respectively.
 
@@ -183,5 +183,6 @@ When the conditions of completeness and well-formedness may not be satisfied, a 
 **Tcl\_UtfBackslash** is a utility procedure used by several of the Tcl commands.  It parses a backslash sequence and stores the properly formed TUTF-8 encoding of the character represented by the backslash sequence in the output buffer *dst*.  At most **TCL\_UTF\_MAX** bytes are stored in the buffer. **Tcl\_UtfBackslash** modifies *\*readPtr* to contain the number of bytes in the backslash sequence, including the backslash character. The return value is the number of bytes stored in the output buffer. See the [Tcl] manual entry for information on the valid backslash sequences.  All of the sequences described in the Tcl manual entry are supported by **Tcl\_UtfBackslash**. 
 
 
+[StrMatch]: StrMatch.md
 [Tcl]: Tcl.md
 

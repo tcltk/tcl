@@ -63,11 +63,14 @@ Tcl\_LoadFile, Tcl\_FindSymbol - platform-independent dynamic library loading
 
 # Description
 
-**Tcl\_LoadFile** loads a file from the filesystem (including potentially any virtual filesystem that has been installed) and provides a handle to it that may be used in further operations. The *symbols* array, if non-NULL, supplies a set of names of symbols (typically functions) that must be resolved from the library and which will be stored in the array indicated by *procPtrs*. If any of the symbols is not resolved, the loading of the file will fail with an error message left in the interpreter (if that is non-NULL). The result of **Tcl\_LoadFile** is a standard Tcl error code. The library may be unloaded with **Tcl\_FSUnloadFile**.
+**Tcl\_LoadFile** loads a file from the filesystem (including potentially any virtual filesystem that has been installed) and provides a handle to it that may be used in further operations. The *symbols* array, if non-NULL, supplies a set of names of symbols (typically functions) that must be resolved from the library and which will be stored in the array indicated by *procPtrs*. If any of the symbols is not resolved, the loading of the file will fail with an error message left in the interpreter (if that is non-NULL). The result of **Tcl\_LoadFile** is a standard Tcl error code. The library may be unloaded with [Tcl\_FSUnloadFile][FileSystem].
 
-**Tcl\_FindSymbol** locates a symbol in a loaded library and returns it. If the symbol cannot be found, it returns NULL and sets an error message in the given *interp* (if that is non-NULL). Note that it is unsafe to use this operation on a handle that has been passed to **Tcl\_FSUnloadFile**.
+**Tcl\_FindSymbol** locates a symbol in a loaded library and returns it. If the symbol cannot be found, it returns NULL and sets an error message in the given *interp* (if that is non-NULL). Note that it is unsafe to use this operation on a handle that has been passed to [Tcl\_FSUnloadFile][FileSystem].
 
 # Reference count management
 
 The reference count of the *pathPtr* argument to **Tcl\_LoadFile** may be incremented. As such, it should not be given a zero reference count value.
+
+
+[FileSystem]: FileSystem.md
 

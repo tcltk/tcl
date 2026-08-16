@@ -58,11 +58,11 @@ Tcl\_CreateCommand - implement new commands in C
 
 # Description
 
-**Tcl\_CreateCommand** defines a new command in *interp* and associates it with procedure *proc* such that whenever *cmdName* is invoked as a Tcl command (via a call to **Tcl\_Eval**) the Tcl interpreter will call *proc* to process the command. It differs from **Tcl\_CreateObjCommand** in that a new string-based command is defined; that is, a command procedure is defined that takes an array of argument strings instead of values. The value-based command procedures registered by **Tcl\_CreateObjCommand** can execute significantly faster than the string-based command procedures defined by **Tcl\_CreateCommand**. This is because they take Tcl values as arguments and those values can retain an internal representation that can be manipulated more efficiently. Also, Tcl's interpreter now uses values internally. In order to invoke a string-based command procedure registered by **Tcl\_CreateCommand**, it must generate and fetch a string representation from each argument value before the call. New commands should be defined using **Tcl\_CreateObjCommand**. We support **Tcl\_CreateCommand** for backwards compatibility.
+**Tcl\_CreateCommand** defines a new command in *interp* and associates it with procedure *proc* such that whenever *cmdName* is invoked as a Tcl command (via a call to [Tcl\_Eval][Eval3]) the Tcl interpreter will call *proc* to process the command. It differs from [Tcl\_CreateObjCommand][CrtObjCmd] in that a new string-based command is defined; that is, a command procedure is defined that takes an array of argument strings instead of values. The value-based command procedures registered by [Tcl\_CreateObjCommand][CrtObjCmd] can execute significantly faster than the string-based command procedures defined by **Tcl\_CreateCommand**. This is because they take Tcl values as arguments and those values can retain an internal representation that can be manipulated more efficiently. Also, Tcl's interpreter now uses values internally. In order to invoke a string-based command procedure registered by **Tcl\_CreateCommand**, it must generate and fetch a string representation from each argument value before the call. New commands should be defined using [Tcl\_CreateObjCommand][CrtObjCmd]. We support **Tcl\_CreateCommand** for backwards compatibility.
 
-The procedures **Tcl\_DeleteCommand**, **Tcl\_GetCommandInfo**, and **Tcl\_SetCommandInfo** are used in conjunction with **Tcl\_CreateCommand**.
+The procedures [Tcl\_DeleteCommand][CrtObjCmd], [Tcl\_GetCommandInfo][CrtObjCmd], and [Tcl\_SetCommandInfo][CrtObjCmd] are used in conjunction with **Tcl\_CreateCommand**.
 
-**Tcl\_CreateCommand** will delete an existing command *cmdName*, if one is already associated with the interpreter. It returns a token that may be used to refer to the command in subsequent calls to **Tcl\_GetCommandName**. If *cmdName* contains any **::** namespace qualifiers, then the command is added to the specified namespace; otherwise the command is added to the global namespace. If **Tcl\_CreateCommand** is called for an interpreter that is in the process of being deleted, then it does not create a new command and it returns NULL. *Proc* should have arguments and result that match the type **Tcl\_CmdProc**:
+**Tcl\_CreateCommand** will delete an existing command *cmdName*, if one is already associated with the interpreter. It returns a token that may be used to refer to the command in subsequent calls to [Tcl\_GetCommandName][CrtObjCmd]. If *cmdName* contains any **::** namespace qualifiers, then the command is added to the specified namespace; otherwise the command is added to the global namespace. If **Tcl\_CreateCommand** is called for an interpreter that is in the process of being deleted, then it does not create a new command and it returns NULL. *Proc* should have arguments and result that match the type **Tcl\_CmdProc**:
 
 ```
 typedef int Tcl_CmdProc(
@@ -78,11 +78,11 @@ Note that the argument strings should not be modified as they may point to const
 
 *Proc* must return an integer code that is expected to be one of **TCL\_OK**, **TCL\_ERROR**, **TCL\_RETURN**, **TCL\_BREAK**, or **TCL\_CONTINUE**. See the [return] man page for details on what these codes mean and the use of extended values for an extension's private use. Most normal commands will only return **TCL\_OK** or **TCL\_ERROR**.
 
-In addition, *proc* must set the interpreter result; in the case of a **TCL\_OK** return code this gives the result of the command, and in the case of **TCL\_ERROR** it gives an error message. The **Tcl\_SetResult** procedure provides an easy interface for setting the return value;  for complete details on how the interpreter result field is managed, see the **Tcl\_Interp** man page. Before invoking a command procedure, **Tcl\_Eval** sets the interpreter result to point to an empty string, so simple commands can return an empty result by doing nothing at all.
+In addition, *proc* must set the interpreter result; in the case of a **TCL\_OK** return code this gives the result of the command, and in the case of **TCL\_ERROR** it gives an error message. The [Tcl\_SetResult][SetResult] procedure provides an easy interface for setting the return value;  for complete details on how the interpreter result field is managed, see the **Tcl\_Interp** man page. Before invoking a command procedure, [Tcl\_Eval][Eval3] sets the interpreter result to point to an empty string, so simple commands can return an empty result by doing nothing at all.
 
-The contents of the *argv* array belong to Tcl and are not guaranteed to persist once *proc* returns:  *proc* should not modify them, nor should it set the interpreter result to point anywhere within the *argv* values. Call **Tcl\_SetResult** with status **TCL\_VOLATILE** if you want to return something from the *argv* array.
+The contents of the *argv* array belong to Tcl and are not guaranteed to persist once *proc* returns:  *proc* should not modify them, nor should it set the interpreter result to point anywhere within the *argv* values. Call [Tcl\_SetResult][SetResult] with status **TCL\_VOLATILE** if you want to return something from the *argv* array.
 
-*DeleteProc* will be invoked when (if) *cmdName* is deleted. This can occur through a call to **Tcl\_DeleteCommand** or **Tcl\_DeleteInterp**, or by replacing *cmdName* in another call to **Tcl\_CreateCommand**. *DeleteProc* is invoked before the command is deleted, and gives the application an opportunity to release any structures associated with the command.  *DeleteProc* should have arguments and result that match the type **Tcl\_CmdDeleteProc**:
+*DeleteProc* will be invoked when (if) *cmdName* is deleted. This can occur through a call to [Tcl\_DeleteCommand][CrtObjCmd] or [Tcl\_DeleteInterp][CrtInterp], or by replacing *cmdName* in another call to **Tcl\_CreateCommand**. *DeleteProc* is invoked before the command is deleted, and gives the application an opportunity to release any structures associated with the command.  *DeleteProc* should have arguments and result that match the type **Tcl\_CmdDeleteProc**:
 
 ```
 typedef void Tcl_CmdDeleteProc(
@@ -92,5 +92,9 @@ typedef void Tcl_CmdDeleteProc(
 The *clientData* argument will be the same as the *clientData* argument passed to **Tcl\_CreateCommand**.
 
 
+[CrtInterp]: CrtInterp.md
+[CrtObjCmd]: CrtObjCmd.md
+[Eval3]: Eval3.md
 [return]: return.md
+[SetResult]: SetResult.md
 

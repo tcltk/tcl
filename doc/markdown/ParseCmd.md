@@ -83,7 +83,7 @@ These procedures parse Tcl commands or portions of Tcl commands such as expressi
 
 The information left at *\*parsePtr* by **Tcl\_ParseCommand**, **Tcl\_ParseExpr**, **Tcl\_ParseBraces**, **Tcl\_ParseQuotedString**, and **Tcl\_ParseVarName** may include dynamically allocated memory. If these five parsing procedures return **TCL\_OK** then the caller must invoke **Tcl\_FreeParse** to release the storage at *\*parsePtr*. These procedures ignore any existing information in *\*parsePtr* (unless *append* is non-zero), so if repeated calls are being made to any of them then **Tcl\_FreeParse** must be invoked once after each call.
 
-**Tcl\_EvalTokensStandard** evaluates a sequence of parse tokens from a Tcl\_Parse structure.  The tokens typically consist of all the tokens in a word or all the tokens that make up the index for a reference to an array variable.  **Tcl\_EvalTokensStandard** performs the substitutions requested by the tokens and concatenates the resulting values. The return value from **Tcl\_EvalTokensStandard** is a Tcl completion code with one of the values **TCL\_OK**, **TCL\_ERROR**, **TCL\_RETURN**, **TCL\_BREAK**, or **TCL\_CONTINUE**, or possibly some other integer value originating in an extension. In addition, a result value or error message is left in *interp*'s result; it can be retrieved using **Tcl\_GetObjResult**.
+**Tcl\_EvalTokensStandard** evaluates a sequence of parse tokens from a Tcl\_Parse structure.  The tokens typically consist of all the tokens in a word or all the tokens that make up the index for a reference to an array variable.  **Tcl\_EvalTokensStandard** performs the substitutions requested by the tokens and concatenates the resulting values. The return value from **Tcl\_EvalTokensStandard** is a Tcl completion code with one of the values **TCL\_OK**, **TCL\_ERROR**, **TCL\_RETURN**, **TCL\_BREAK**, or **TCL\_CONTINUE**, or possibly some other integer value originating in an extension. In addition, a result value or error message is left in *interp*'s result; it can be retrieved using [Tcl\_GetObjResult][SetResult].
 
 # Tcl\_parse structure
 
@@ -156,4 +156,7 @@ After **Tcl\_ParseVarName** returns, the first token pointed to by the *tokenPtr
 All of the character pointers in the Tcl\_Parse and Tcl\_Token structures refer to characters in the *start* argument passed to **Tcl\_ParseCommand**, **Tcl\_ParseExpr**, **Tcl\_ParseBraces**, **Tcl\_ParseQuotedString**, and **Tcl\_ParseVarName**.
 
 There are additional fields in the Tcl\_Parse structure after the *numTokens* field, but these are for the private use of **Tcl\_ParseCommand**, **Tcl\_ParseExpr**, **Tcl\_ParseBraces**, **Tcl\_ParseQuotedString**, and **Tcl\_ParseVarName**; they should not be referenced by code outside of these procedures.
+
+
+[SetResult]: SetResult.md
 

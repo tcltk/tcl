@@ -230,7 +230,181 @@ namespace eval ::ndoc {
 	# list of Tcl commands to recognize for links between manual pages:
 	set tclCmdList [lsort [info commands]]
 	lappend tclCmdList my next bgerror Tcl mathop mathfunc tclvars tm msgcat tclsh
-	
+
+	# dictionary mapping every documented Tcl C API function (Tcl_...) to the
+	# manual page (file root) that documents it:
+	set tclCApiFileMap [dict create {*}{
+		Tcl_Access Access Tcl_AddErrorInfo AddErrInfo Tcl_AddObjErrorInfo AddErrInfo Tcl_AlertNotifier Notifier
+		Tcl_Alloc Alloc Tcl_AllocStatBuf FileSystem Tcl_AllowExceptions AllowExc Tcl_AppInit AppInit
+		Tcl_AppendAllObjTypes ObjectType Tcl_AppendElement SetResult Tcl_AppendExportList Namespace3 Tcl_AppendFormatToObj StringObj
+		Tcl_AppendLimitedToObj StringObj Tcl_AppendObjToErrorInfo AddErrInfo Tcl_AppendObjToObj StringObj Tcl_AppendPrintfToObj StringObj
+		Tcl_AppendResult SetResult Tcl_AppendStringsToObj StringObj Tcl_AppendToObj StringObj Tcl_AppendUnicodeToObj StringObj
+		Tcl_AsyncCreate Async Tcl_AsyncDelete Async Tcl_AsyncInvoke Async Tcl_AsyncMark Async
+		Tcl_AsyncMarkFromSignal Async Tcl_AsyncReady Async Tcl_AttemptAlloc Alloc Tcl_AttemptCreateHashEntry Hash
+		Tcl_AttemptRealloc Alloc Tcl_AttemptSetObjLength StringObj Tcl_BackgroundError BackgdErr Tcl_BackgroundException BackgdErr
+		Tcl_BadChannelOption CrtChannel Tcl_BounceRefCount Object3 Tcl_CallWhenDeleted CallDel Tcl_CancelEval Cancel
+		Tcl_CancelIdleCall DoWhenIdle Tcl_Canceled Cancel Tcl_ChannelBlockModeProc CrtChannel Tcl_ChannelBuffered CrtChannel
+		Tcl_ChannelClose2Proc CrtChannel Tcl_ChannelFlushProc CrtChannel Tcl_ChannelGetHandleProc CrtChannel Tcl_ChannelGetOptionProc CrtChannel
+		Tcl_ChannelHandlerProc CrtChannel Tcl_ChannelInputProc CrtChannel Tcl_ChannelName CrtChannel Tcl_ChannelOutputProc CrtChannel
+		Tcl_ChannelSetOptionProc CrtChannel Tcl_ChannelThreadActionProc CrtChannel Tcl_ChannelTruncateProc CrtChannel Tcl_ChannelVersion CrtChannel
+		Tcl_ChannelWatchProc CrtChannel Tcl_ChannelWideSeekProc CrtChannel Tcl_Char16Len Utf Tcl_Char16ToUtfDString Utf
+		Tcl_Chdir GetCwd Tcl_ClassGetMetadata Class3 Tcl_ClassSetConstructor Method Tcl_ClassSetDestructor Method
+		Tcl_ClassSetMetadata Class3 Tcl_ClearChannelHandlers CrtChannel Tcl_Close OpenFileChnl Tcl_CloseEx OpenFileChnl
+		Tcl_CommandComplete CmdCmplt Tcl_CommandTraceInfo TraceCmd Tcl_Concat Concat3 Tcl_ConcatObj StringObj
+		Tcl_ConditionFinalize Thread Tcl_ConditionNotify Thread Tcl_ConditionWait Thread Tcl_ConsolePanic Panic
+		Tcl_ConvertCountedElement SplitList Tcl_ConvertElement SplitList Tcl_ConvertToType ObjectType Tcl_CopyObjectInstance Class3
+		Tcl_CreateAlias CrtAlias Tcl_CreateAliasObj CrtAlias Tcl_CreateChannel CrtChannel Tcl_CreateChannelHandler CrtChnlHdlr
+		Tcl_CreateChild CrtAlias Tcl_CreateCloseHandler CrtCloseHdlr Tcl_CreateCommand CrtCommand Tcl_CreateEncoding Encoding3
+		Tcl_CreateEnsemble Ensemble Tcl_CreateEventSource Notifier Tcl_CreateExitHandler Exit3 Tcl_CreateFileHandler CrtFileHdlr
+		Tcl_CreateHashEntry Hash Tcl_CreateInterp CrtInterp Tcl_CreateNamespace Namespace3 Tcl_CreateObjCommand CrtObjCmd
+		Tcl_CreateObjCommand2 CrtObjCmd Tcl_CreateObjTrace CrtTrace Tcl_CreateObjTrace2 CrtTrace Tcl_CreateThread Thread
+		Tcl_CreateThreadExitHandler Exit3 Tcl_CreateTimerHandler CrtTimerHdlr Tcl_CreateTrace CrtTrace Tcl_CutChannel CrtChannel
+		Tcl_DStringAppend DString Tcl_DStringAppendElement DString Tcl_DStringEndSublist DString Tcl_DStringFree DString
+		Tcl_DStringGetResult DString Tcl_DStringInit DString Tcl_DStringLength DString Tcl_DStringResult DString
+		Tcl_DStringSetLength DString Tcl_DStringStartSublist DString Tcl_DStringToObj DString Tcl_DStringValue DString
+		Tcl_DecrRefCount Object3 Tcl_DeleteAssocData AssocData Tcl_DeleteChannelHandler CrtChnlHdlr Tcl_DeleteCloseHandler CrtCloseHdlr
+		Tcl_DeleteCommand CrtObjCmd Tcl_DeleteCommandFromToken CrtObjCmd Tcl_DeleteEventSource Notifier Tcl_DeleteEvents Notifier
+		Tcl_DeleteExitHandler Exit3 Tcl_DeleteFileHandler CrtFileHdlr Tcl_DeleteHashEntry Hash Tcl_DeleteHashTable Hash
+		Tcl_DeleteInterp CrtInterp Tcl_DeleteNamespace Namespace3 Tcl_DeleteThreadExitHandler Exit3 Tcl_DeleteTimerHandler CrtTimerHdlr
+		Tcl_DeleteTrace CrtTrace Tcl_DetachChannel OpenFileChnl Tcl_DetachPids DetachPids Tcl_DictObjDone DictObj
+		Tcl_DictObjFirst DictObj Tcl_DictObjGet DictObj Tcl_DictObjNext DictObj Tcl_DictObjPut DictObj
+		Tcl_DictObjPutKeyList DictObj Tcl_DictObjRemove DictObj Tcl_DictObjRemoveKeyList DictObj Tcl_DictObjSize DictObj
+		Tcl_DiscardInterpState SaveInterpState Tcl_DoOneEvent DoOneEvent Tcl_DoWhenIdle DoWhenIdle Tcl_DontCallWhenDeleted CallDel
+		Tcl_DumpActiveMemory DumpActiveMemory Tcl_DuplicateObj Object3 Tcl_Eof OpenFileChnl Tcl_ErrnoId SetErrno
+		Tcl_ErrnoMsg SetErrno Tcl_Eval Eval3 Tcl_EvalEx Eval3 Tcl_EvalFile Eval3
+		Tcl_EvalObjEx Eval3 Tcl_EvalObjv Eval3 Tcl_EvalTokensStandard ParseCmd Tcl_EventuallyFree Preserve
+		Tcl_Exit Exit3 Tcl_ExitThread Exit3 Tcl_Export Namespace3 Tcl_ExposeCommand CrtAlias
+		Tcl_ExprBoolean ExprLong Tcl_ExprBooleanObj ExprLongObj Tcl_ExprDouble ExprLong Tcl_ExprDoubleObj ExprLongObj
+		Tcl_ExprLong ExprLong Tcl_ExprLongObj ExprLongObj Tcl_ExprObj ExprLongObj Tcl_ExprString ExprLong
+		Tcl_ExternalToUtf Encoding3 Tcl_ExternalToUtfDString Encoding3 Tcl_ExternalToUtfDStringEx Encoding3 Tcl_FSAccess FileSystem
+		Tcl_FSChdir FileSystem Tcl_FSConvertToPathType FileSystem Tcl_FSCopyDirectory FileSystem Tcl_FSCopyFile FileSystem
+		Tcl_FSCreateDirectory FileSystem Tcl_FSData FileSystem Tcl_FSDeleteFile FileSystem Tcl_FSEqualPaths FileSystem
+		Tcl_FSEvalFile FileSystem Tcl_FSEvalFileEx FileSystem Tcl_FSFileAttrStrings FileSystem Tcl_FSFileAttrsGet FileSystem
+		Tcl_FSFileAttrsSet FileSystem Tcl_FSFileSystemInfo FileSystem Tcl_FSGetCwd FileSystem Tcl_FSGetFileSystemForPath FileSystem
+		Tcl_FSGetInternalRep FileSystem Tcl_FSGetNativePath FileSystem Tcl_FSGetNormalizedPath FileSystem Tcl_FSGetPathType FileSystem
+		Tcl_FSGetTranslatedPath FileSystem Tcl_FSGetTranslatedStringPath FileSystem Tcl_FSJoinPath FileSystem Tcl_FSJoinToPath FileSystem
+		Tcl_FSLink FileSystem Tcl_FSListVolumes FileSystem Tcl_FSLoadFile FileSystem Tcl_FSLstat FileSystem
+		Tcl_FSMatchInDirectory FileSystem Tcl_FSMountsChanged FileSystem Tcl_FSNewNativePath FileSystem Tcl_FSOpenFileChannel FileSystem
+		Tcl_FSPathSeparator FileSystem Tcl_FSRegister FileSystem Tcl_FSRemoveDirectory FileSystem Tcl_FSRenameFile FileSystem
+		Tcl_FSSplitPath FileSystem Tcl_FSStat FileSystem Tcl_FSTildeExpand FileSystem Tcl_FSUnloadFile FileSystem
+		Tcl_FSUnregister FileSystem Tcl_FSUtime FileSystem Tcl_FetchInternalRep ObjectType Tcl_Finalize Exit3
+		Tcl_FinalizeNotifier Notifier Tcl_FinalizeThread Exit3 Tcl_FindCommand Namespace3 Tcl_FindEnsemble Ensemble
+		Tcl_FindExecutable FindExec Tcl_FindHashEntry Hash Tcl_FindNamespace Namespace3 Tcl_FindSymbol Load3
+		Tcl_FirstHashEntry Hash Tcl_Flush OpenFileChnl Tcl_ForgetImport Namespace3 Tcl_Format StringObj
+		Tcl_Free Alloc Tcl_FreeEncoding Encoding3 Tcl_FreeInternalRep ObjectType Tcl_FreeParse ParseCmd
+		Tcl_GetAccessTimeFromStat FileSystem Tcl_GetAliasObj CrtAlias Tcl_GetAssocData AssocData Tcl_GetBignumFromObj IntObj
+		Tcl_GetBlockSizeFromStat FileSystem Tcl_GetBlocksFromStat FileSystem Tcl_GetBoolFromObj BoolObj Tcl_GetBoolean GetInt
+		Tcl_GetBooleanFromObj BoolObj Tcl_GetByteArrayFromObj ByteArrObj Tcl_GetBytesFromObj ByteArrObj Tcl_GetChangeTimeFromStat FileSystem
+		Tcl_GetChannel OpenFileChnl Tcl_GetChannelBufferSize CrtChannel Tcl_GetChannelError SetChanErr Tcl_GetChannelErrorInterp SetChanErr
+		Tcl_GetChannelHandle CrtChannel Tcl_GetChannelInstanceData CrtChannel Tcl_GetChannelMode CrtChannel Tcl_GetChannelName CrtChannel
+		Tcl_GetChannelNames OpenFileChnl Tcl_GetChannelNamesEx OpenFileChnl Tcl_GetChannelOption OpenFileChnl Tcl_GetChannelThread CrtChannel
+		Tcl_GetChannelType CrtChannel Tcl_GetCharLength StringObj Tcl_GetChild CrtAlias Tcl_GetClassAsObject Class3
+		Tcl_GetCommandFromObj CrtObjCmd Tcl_GetCommandFullName CrtObjCmd Tcl_GetCommandInfo CrtObjCmd Tcl_GetCommandInfoFromToken CrtObjCmd
+		Tcl_GetCommandName CrtObjCmd Tcl_GetCurrentNamespace Namespace3 Tcl_GetCurrentThread Notifier Tcl_GetCwd GetCwd
+		Tcl_GetDeviceTypeFromStat FileSystem Tcl_GetDouble GetInt Tcl_GetDoubleFromObj DoubleObj Tcl_GetEncoding Encoding3
+		Tcl_GetEncodingFromObj Encoding3 Tcl_GetEncodingName Encoding3 Tcl_GetEncodingNameForUser Encoding3 Tcl_GetEncodingNameFromEnvironment Encoding3
+		Tcl_GetEncodingNames Encoding3 Tcl_GetEncodingSearchPath Encoding3 Tcl_GetEnsembleFlags Ensemble Tcl_GetEnsembleMappingDict Ensemble
+		Tcl_GetEnsembleNamespace Ensemble Tcl_GetEnsembleParameterList Ensemble Tcl_GetEnsembleSubcommandList Ensemble Tcl_GetEnsembleUnknownHandler Ensemble
+		Tcl_GetErrno SetErrno Tcl_GetErrorLine AddErrInfo Tcl_GetFSDeviceFromStat FileSystem Tcl_GetFSInodeFromStat FileSystem
+		Tcl_GetGlobalNamespace Namespace3 Tcl_GetGroupIdFromStat FileSystem Tcl_GetHashKey Hash Tcl_GetHashValue Hash
+		Tcl_GetHostName GetHostName Tcl_GetIndexFromObj GetIndex Tcl_GetIndexFromObjStruct GetIndex Tcl_GetInt GetInt
+		Tcl_GetIntForIndex IntObj Tcl_GetIntFromObj IntObj Tcl_GetInterpPath CrtAlias Tcl_GetLinkCountFromStat FileSystem
+		Tcl_GetLongFromObj IntObj Tcl_GetMemoryInfo Alloc Tcl_GetModeFromStat FileSystem Tcl_GetModificationTimeFromStat FileSystem
+		Tcl_GetNameOfExecutable FindExec Tcl_GetNamespaceUnknownHandler Namespace3 Tcl_GetNumber Number Tcl_GetNumberFromObj Number
+		Tcl_GetObjResult SetResult Tcl_GetObjType ObjectType Tcl_GetObjectAsClass Class3 Tcl_GetObjectCommand Class3
+		Tcl_GetObjectFromObj Class3 Tcl_GetObjectName Class3 Tcl_GetObjectNamespace Class3 Tcl_GetOpenFile GetOpnFl
+		Tcl_GetParent CrtAlias Tcl_GetPathType SplitPath Tcl_GetRange StringObj Tcl_GetRegExpFromObj RegExp3
+		Tcl_GetReturnOptions AddErrInfo Tcl_GetServiceMode Notifier Tcl_GetSizeFromStat FileSystem Tcl_GetSizeIntFromObj IntObj
+		Tcl_GetStackedChannel ChnlStack Tcl_GetStartupScript Tcl_Main Tcl_GetStdChannel GetStdChan Tcl_GetString StringObj
+		Tcl_GetStringFromObj StringObj Tcl_GetStringResult SetResult Tcl_GetThreadData Thread Tcl_GetTime GetTime
+		Tcl_GetTopChannel ChnlStack Tcl_GetUniChar StringObj Tcl_GetUnicode StringObj Tcl_GetUnicodeFromObj StringObj
+		Tcl_GetUserIdFromStat FileSystem Tcl_GetVar SetVar Tcl_GetVar2 SetVar Tcl_GetVar2Ex SetVar
+		Tcl_GetVersion GetVersion Tcl_GetWideIntFromObj IntObj Tcl_GetWideUIntFromObj IntObj Tcl_Gets OpenFileChnl
+		Tcl_GetsObj OpenFileChnl Tcl_GlobalEval Eval3 Tcl_GlobalEvalObj Eval3 Tcl_HasStringRep ObjectType
+		Tcl_HashStats Hash Tcl_HideCommand CrtAlias Tcl_Import Namespace3 Tcl_IncrRefCount Object3
+		Tcl_Init Init Tcl_InitCustomHashTable Hash Tcl_InitHashTable Hash Tcl_InitMemory DumpActiveMemory
+		Tcl_InitNotifier Notifier Tcl_InitObjHashTable Hash Tcl_InitStringRep ObjectType Tcl_InitStubs InitStubs
+		Tcl_InitSubsystems InitSubSyst Tcl_InputBlocked OpenFileChnl Tcl_InputBuffered OpenFileChnl Tcl_InterpActive CrtInterp
+		Tcl_InterpDeleted CrtInterp Tcl_InvalidateStringRep Object3 Tcl_IsChannelExisting CrtChannel Tcl_IsChannelRegistered CrtChannel
+		Tcl_IsChannelShared CrtChannel Tcl_IsEmpty StringObj Tcl_IsEnsemble Ensemble Tcl_IsSafe CrtAlias
+		Tcl_IsShared Object3 Tcl_IsStandardChannel OpenFileChnl Tcl_JoinPath SplitPath Tcl_JoinThread Thread
+		Tcl_LimitAddHandler Limit Tcl_LimitCheck Limit Tcl_LimitExceeded Limit Tcl_LimitGetCommands Limit
+		Tcl_LimitGetGranularity Limit Tcl_LimitGetTime Limit Tcl_LimitReady Limit Tcl_LimitRemoveHandler Limit
+		Tcl_LimitSetCommands Limit Tcl_LimitSetGranularity Limit Tcl_LimitSetTime Limit Tcl_LimitTypeEnabled Limit
+		Tcl_LimitTypeExceeded Limit Tcl_LimitTypeReset Limit Tcl_LimitTypeSet Limit Tcl_LinkArray LinkVar
+		Tcl_LinkVar LinkVar Tcl_ListObjAppendElement ListObj Tcl_ListObjAppendList ListObj Tcl_ListObjGetElements ListObj
+		Tcl_ListObjIndex ListObj Tcl_ListObjLength ListObj Tcl_ListObjRange ListObj Tcl_ListObjRepeat ListObj
+		Tcl_ListObjReplace ListObj Tcl_ListObjReverse ListObj Tcl_LoadFile Load3 Tcl_LogCommandInfo AddErrInfo
+		Tcl_Main Tcl_Main Tcl_MainEx Tcl_Main Tcl_MainExW Tcl_Main Tcl_MakeFileChannel OpenFileChnl
+		Tcl_MakeTcpClientChannel OpenTcp Tcl_Merge SplitList Tcl_MethodDeclarerClass Method Tcl_MethodDeclarerObject Method
+		Tcl_MethodIsPrivate Method Tcl_MethodIsPublic Method Tcl_MethodIsType Method Tcl_MethodIsType2 Method
+		Tcl_MethodName Method Tcl_MutexFinalize Thread Tcl_MutexLock Thread Tcl_MutexUnlock Thread
+		Tcl_NRAddCallback NRE Tcl_NRCallObjProc NRE Tcl_NRCallObjProc2 NRE Tcl_NRCmdSwap NRE
+		Tcl_NRCreateCommand NRE Tcl_NRCreateCommand2 NRE Tcl_NREvalObj NRE Tcl_NREvalObjv NRE
+		Tcl_NRExprObj NRE Tcl_NewBignumObj IntObj Tcl_NewBooleanObj BoolObj Tcl_NewByteArrayObj ByteArrObj
+		Tcl_NewDictObj DictObj Tcl_NewDoubleObj DoubleObj Tcl_NewInstanceMethod Method Tcl_NewInstanceMethod2 Method
+		Tcl_NewIntObj IntObj Tcl_NewListObj ListObj Tcl_NewLongObj IntObj Tcl_NewMethod Method
+		Tcl_NewMethod2 Method Tcl_NewObj Object3 Tcl_NewObjectInstance Class3 Tcl_NewStringObj StringObj
+		Tcl_NewUnicodeObj StringObj Tcl_NewWideIntObj IntObj Tcl_NewWideUIntObj IntObj Tcl_NextHashEntry Hash
+		Tcl_NotifyChannel CrtChannel Tcl_NumUtfChars Utf Tcl_OOInitStubs OOInitStubs Tcl_ObjGetVar2 SetVar
+		Tcl_ObjPrintf StringObj Tcl_ObjSetVar2 SetVar Tcl_ObjectContextInvokeNext Method Tcl_ObjectContextIsFiltering Method
+		Tcl_ObjectContextMethod Method Tcl_ObjectContextObject Method Tcl_ObjectContextSkippedArgs Method Tcl_ObjectDeleted Class3
+		Tcl_ObjectGetMetadata Class3 Tcl_ObjectGetMethodNameMapper Class3 Tcl_ObjectSetMetadata Class3 Tcl_ObjectSetMethodNameMapper Class3
+		Tcl_OpenCommandChannel OpenFileChnl Tcl_OpenFileChannel OpenFileChnl Tcl_OpenTcpClient OpenTcp Tcl_OpenTcpServer OpenTcp
+		Tcl_OpenTcpServerEx OpenTcp Tcl_OutputBuffered OpenFileChnl Tcl_Panic Panic Tcl_ParseArgsObjv ParseArgs
+		Tcl_ParseBraces ParseCmd Tcl_ParseCommand ParseCmd Tcl_ParseExpr ParseCmd Tcl_ParseQuotedString ParseCmd
+		Tcl_ParseVar ParseCmd Tcl_ParseVarName ParseCmd Tcl_PkgPresent PkgRequire Tcl_PkgPresentEx PkgRequire
+		Tcl_PkgProvide PkgRequire Tcl_PkgProvideEx PkgRequire Tcl_PkgRequire PkgRequire Tcl_PkgRequireEx PkgRequire
+		Tcl_PkgRequireProc PkgRequire Tcl_PosixError AddErrInfo Tcl_Preserve Preserve Tcl_PrintDouble PrintDbl
+		Tcl_PutEnv Environment Tcl_QueryTimeProc GetTime Tcl_QueueEvent Notifier Tcl_Read OpenFileChnl
+		Tcl_ReadChars OpenFileChnl Tcl_ReadRaw OpenFileChnl Tcl_Realloc Alloc Tcl_ReapDetachedProcs DetachPids
+		Tcl_RecordAndEval RecordEval Tcl_RecordAndEvalObj RecEvalObj Tcl_RegExpCompile RegExp3 Tcl_RegExpExec RegExp3
+		Tcl_RegExpExecObj RegExp3 Tcl_RegExpGetInfo RegExp3 Tcl_RegExpMatch RegExp3 Tcl_RegExpMatchObj RegExp3
+		Tcl_RegExpRange RegExp3 Tcl_RegisterChannel OpenFileChnl Tcl_RegisterConfig RegConfig Tcl_RegisterObjType ObjectType
+		Tcl_Release Preserve Tcl_ResetResult SetResult Tcl_RestoreInterpState SaveInterpState Tcl_SaveInterpState SaveInterpState
+		Tcl_ScanCountedElement SplitList Tcl_ScanElement SplitList Tcl_Seek OpenFileChnl Tcl_ServiceAll Notifier
+		Tcl_ServiceEvent Notifier Tcl_ServiceModeHook Notifier Tcl_SetAssocData AssocData Tcl_SetBignumObj IntObj
+		Tcl_SetBooleanObj BoolObj Tcl_SetByteArrayLength ByteArrObj Tcl_SetByteArrayObj ByteArrObj Tcl_SetChannelBufferSize CrtChannel
+		Tcl_SetChannelError SetChanErr Tcl_SetChannelErrorInterp SetChanErr Tcl_SetChannelOption OpenFileChnl Tcl_SetCommandInfo CrtObjCmd
+		Tcl_SetCommandInfoFromToken CrtObjCmd Tcl_SetDoubleObj DoubleObj Tcl_SetEncodingSearchPath Encoding3 Tcl_SetEnsembleFlags Ensemble
+		Tcl_SetEnsembleMappingDict Ensemble Tcl_SetEnsembleParameterList Ensemble Tcl_SetEnsembleSubcommandList Ensemble Tcl_SetEnsembleUnknownHandler Ensemble
+		Tcl_SetErrno SetErrno Tcl_SetErrorCode AddErrInfo Tcl_SetErrorLine AddErrInfo Tcl_SetExitProc Exit3
+		Tcl_SetHashValue Hash Tcl_SetIntObj IntObj Tcl_SetListObj ListObj Tcl_SetLongObj IntObj
+		Tcl_SetMainLoop Tcl_Main Tcl_SetMaxBlockTime Notifier Tcl_SetNamespaceUnknownHandler Namespace3 Tcl_SetNotifier Notifier
+		Tcl_SetObjErrorCode AddErrInfo Tcl_SetObjLength StringObj Tcl_SetObjResult SetResult Tcl_SetPanicProc Panic
+		Tcl_SetRecursionLimit SetRecLmt Tcl_SetResult SetResult Tcl_SetReturnOptions AddErrInfo Tcl_SetServiceMode Notifier
+		Tcl_SetStartupScript Tcl_Main Tcl_SetStdChannel GetStdChan Tcl_SetStringObj StringObj Tcl_SetSystemEncoding Encoding3
+		Tcl_SetTimeProc GetTime Tcl_SetTimer Notifier Tcl_SetUnicodeObj StringObj Tcl_SetVar SetVar
+		Tcl_SetVar2 SetVar Tcl_SetVar2Ex SetVar Tcl_SetWideIntObj IntObj Tcl_SetWideUIntObj IntObj
+		Tcl_SignalId Signal Tcl_SignalMsg Signal Tcl_Sleep Sleep Tcl_SourceRCFile SourceRCFile
+		Tcl_SpliceChannel CrtChannel Tcl_SplitList SplitList Tcl_SplitPath SplitPath Tcl_StackChannel ChnlStack
+		Tcl_StandardChannels StdChannels Tcl_Stat Access Tcl_StaticLibrary StaticLibrary Tcl_StaticPackage StaticLibrary
+		Tcl_StoreInternalRep ObjectType Tcl_StringCaseMatch StrMatch Tcl_StringMatch StrMatch Tcl_SubstObj SubstObj
+		Tcl_TakeBignumFromObj IntObj Tcl_Tell OpenFileChnl Tcl_ThreadAlert Notifier Tcl_ThreadQueueEvent Notifier
+		Tcl_TraceCommand TraceCmd Tcl_TraceVar TraceVar Tcl_TraceVar2 TraceVar Tcl_TransferResult SetResult
+		Tcl_TranslateFileName Translate Tcl_TruncateChannel OpenFileChnl Tcl_Ungets OpenFileChnl Tcl_UniChar Utf
+		Tcl_UniCharAtIndex Utf Tcl_UniCharCaseMatch Utf Tcl_UniCharIsAlnum UniCharIsAlpha Tcl_UniCharIsAlpha UniCharIsAlpha
+		Tcl_UniCharIsControl UniCharIsAlpha Tcl_UniCharIsDigit UniCharIsAlpha Tcl_UniCharIsGraph UniCharIsAlpha Tcl_UniCharIsLower UniCharIsAlpha
+		Tcl_UniCharIsPrint UniCharIsAlpha Tcl_UniCharIsPunct UniCharIsAlpha Tcl_UniCharIsSpace UniCharIsAlpha Tcl_UniCharIsUpper UniCharIsAlpha
+		Tcl_UniCharIsWordChar UniCharIsAlpha Tcl_UniCharLen Utf Tcl_UniCharNcasecmp Utf Tcl_UniCharNcmp Utf
+		Tcl_UniCharToLower ToUpper Tcl_UniCharToTitle ToUpper Tcl_UniCharToUpper ToUpper Tcl_UniCharToUtf Utf
+		Tcl_UniCharToUtfDString Utf Tcl_UnlinkVar LinkVar Tcl_UnregisterChannel OpenFileChnl Tcl_UnsetVar SetVar
+		Tcl_UnsetVar2 SetVar Tcl_UnstackChannel ChnlStack Tcl_UntraceCommand TraceCmd Tcl_UntraceVar TraceVar
+		Tcl_UntraceVar2 TraceVar Tcl_UpVar UpVar3 Tcl_UpVar2 UpVar3 Tcl_UpdateLinkedVar LinkVar
+		Tcl_UtfAtIndex Utf Tcl_UtfBackslash Utf Tcl_UtfCharComplete Utf Tcl_UtfFindFirst Utf
+		Tcl_UtfFindLast Utf Tcl_UtfNcasecmp Utf Tcl_UtfNcmp Utf Tcl_UtfNext Utf
+		Tcl_UtfPrev Utf Tcl_UtfToChar16 Utf Tcl_UtfToChar16DString Utf Tcl_UtfToExternal Encoding3
+		Tcl_UtfToExternalDString Encoding3 Tcl_UtfToExternalDStringEx Encoding3 Tcl_UtfToLower ToUpper Tcl_UtfToNormalized UnicodeNormalize
+		Tcl_UtfToNormalizedDString UnicodeNormalize Tcl_UtfToTitle ToUpper Tcl_UtfToUniChar Utf Tcl_UtfToUniCharDString Utf
+		Tcl_UtfToUpper ToUpper Tcl_UtfToWChar Utf Tcl_UtfToWCharDString Utf Tcl_ValidateAllMemory DumpActiveMemory
+		Tcl_VarEval Eval3 Tcl_VarTraceInfo TraceVar Tcl_VarTraceInfo2 TraceVar Tcl_WCharLen Utf
+		Tcl_WCharToUtfDString Utf Tcl_WaitForEvent Notifier Tcl_WaitPid DetachPids Tcl_WinConvertError SetErrno
+		Tcl_Write OpenFileChnl Tcl_WriteChars OpenFileChnl Tcl_WriteObj OpenFileChnl Tcl_WriteRaw OpenFileChnl
+		Tcl_WrongNumArgs WrongNumArgs Tcl_ZlibAdler32 TclZlib Tcl_ZlibCRC32 TclZlib Tcl_ZlibDeflate TclZlib
+		Tcl_ZlibInflate TclZlib Tcl_ZlibStreamChecksum TclZlib Tcl_ZlibStreamClose TclZlib Tcl_ZlibStreamEof TclZlib
+		Tcl_ZlibStreamGet TclZlib Tcl_ZlibStreamGetCommandName TclZlib Tcl_ZlibStreamInit TclZlib Tcl_ZlibStreamPut TclZlib
+	}]
+
 	# dictionary of links on pages that should link to a page
 	# not identical to the link text.
 	# The keys of this dict are filenames (nroff files),
@@ -2078,11 +2252,17 @@ proc ::ndoc::mdLinks {md} {
 	variable tclCmdListRemap
 	variable manual
 	variable tclCmdListExclude
+	variable tclCApiFileMap
 	variable sectionTitles
 	# list to build the markdown references for external links (these are put at the end of the document):
 	set refList [list]
 	set cmdName [dict get $manual meta CommandName]
 	set fileName [dict get $manual fileName]
+	# rename links as done in ::ndoc::main to avoid clashing with a same-named section "n" page:
+	set fileRoot $fileName
+	if {$fileRoot in {Class Concat Encoding Eval Exit Load Namespace Object RegExp UpVar zipfs}} {
+		append fileRoot 3
+	}
 	# detect all strings with ** around, using a non-greedy regexp.
 	# we go through the file one by one as ce can't use '-all' here
 	# (it would shift indices into the md after each match is replaced)
@@ -2109,9 +2289,22 @@ proc ::ndoc::mdLinks {md} {
 			set isValidLink 9
 		}
 		if {! $isValidLink && $linkCmd ne $cmdName && $linkCmd in $tclCmdList} {
-			## the file to link to is the same as the command name)
+			## link to a known Tcl command (the file to link to is the same as the command name)
 			set linkTarget $linkCmd
 			set isValidLink 1
+		}
+		if {! $isValidLink && [string match {Tcl\\_*} $linkCmd]} {
+			## a Tcl C API function (Tcl_...)
+			# (note that we can't handle this in tclCmdList as the md conversion has added a backslash (Tcl\_...):
+			set linkCmdSubst [subst -novariables -nocommands $linkCmd]
+			if {[dict exists $tclCApiFileMap $linkCmdSubst]} {
+				set apiTarget [dict get $tclCApiFileMap $linkCmdSubst]
+				if {$apiTarget ne $fileRoot} {
+					## don't link to another Tcl_ function documented on this very page:
+					set linkTarget $apiTarget
+					set isValidLink 1
+				}
+			}
 		}
 		if {! $isValidLink && $linkCmd ne $cmdName && [dict exists $tclCmdListRemap $fileName]} {
 			## it's a valid link if there is a remapping entry here

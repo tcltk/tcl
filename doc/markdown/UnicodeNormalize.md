@@ -52,10 +52,10 @@ Tcl\_UtfToNormalized, Tcl\_UtfToNormalizedDString - procedures for Unicode norma
 : Must be one of the **Tcl\_UnicodeNormalizationForm** members **TCL\_NFC**, **TCL\_NFD**, **TCL\_NFKC** or **TCL\_NFKD** specifying the Unicode normalization type.
 
 [profile]{.carg .in/out type="int"}
-: The encoding profile as described in the **Tcl\_GetEncoding** documentation. Must be either **TCL\_ENCODING\_PROFILE\_STRICT** or **TCL\_ENCODING\_PROFILE\_REPLACE**.
+: The encoding profile as described in the [Tcl\_GetEncoding][Encoding3] documentation. Must be either **TCL\_ENCODING\_PROFILE\_STRICT** or **TCL\_ENCODING\_PROFILE\_REPLACE**.
 
 [\*dstPtr]{.carg .out type="Tcl_DString"}
-: Pointer to an uninitialized or free **Tcl\_DString** in which the converted result, which is also encoded in Tcl's internal UTF-8 encoding, will be stored. The function initializes the storage and caller must call **Tcl\_DStringFree** on success.
+: Pointer to an uninitialized or free **Tcl\_DString** in which the converted result, which is also encoded in Tcl's internal UTF-8 encoding, will be stored. The function initializes the storage and caller must call [Tcl\_DStringFree][DString] on success.
 
 
 :::
@@ -66,5 +66,9 @@ The **Tcl\_UtfToNormalized** and **Tcl\_UtfToNormalizedDString** functions trans
 
 The **Tcl\_UtfToNormalized** function stores the normalized result in the buffer provided by the caller through the *dst* argument. The result is nul terminated but the nul is not included in the count of stored bytes returned in *dstWrotePtr*. The function returns TCL\_OK on success, TCL\_CONVERT\_NOSPACE if there is insufficient room in the output buffer and TCL\_ERROR in case of other failures. In the latter two cases, an error message is stored in *interp* if it is not NULL.
 
-The **Tcl\_UtfToNormalizedDString** function stores the normalized result in *dstPtr* which must eventually be freed by caller through **Tcl\_DStringFree**. The function returns TCL\_OK on success and TCL\_ERROR on failure with an error message in *interp* if it is not NULL.
+The **Tcl\_UtfToNormalizedDString** function stores the normalized result in *dstPtr* which must eventually be freed by caller through [Tcl\_DStringFree][DString]. The function returns TCL\_OK on success and TCL\_ERROR on failure with an error message in *interp* if it is not NULL.
+
+
+[DString]: DString.md
+[Encoding3]: Encoding3.md
 

@@ -35,7 +35,7 @@ Tcl generalizes this concept in a cross-platform way and exposes standard channe
 
 ## Application programming interfaces
 
-The public API procedures dealing directly with standard channels are **Tcl\_GetStdChannel** and **Tcl\_SetStdChannel**. Additional public APIs to consider are **Tcl\_RegisterChannel**, **Tcl\_CreateChannel** and **Tcl\_GetChannel**.
+The public API procedures dealing directly with standard channels are [Tcl\_GetStdChannel][GetStdChan] and [Tcl\_SetStdChannel][GetStdChan]. Additional public APIs to consider are [Tcl\_RegisterChannel][OpenFileChnl], [Tcl\_CreateChannel][CrtChannel] and [Tcl\_GetChannel][OpenFileChnl].
 
 # Initialization of tcl standard channels
 
@@ -43,40 +43,44 @@ Standard channels are initialized by the Tcl library in three cases: when explic
 
 These cases differ in how they handle unavailable platform- specific standard channels.  (A channel is not "available" if it could not be successfully opened; for example, in a Tcl application run as a Windows NT service.)
 
-1. A single standard channel is initialized when it is explicitly specified in a call to **Tcl\_SetStdChannel**.  The states of the other standard channels are unaffected.
+1. A single standard channel is initialized when it is explicitly specified in a call to [Tcl\_SetStdChannel][GetStdChan].  The states of the other standard channels are unaffected.
 Missing platform-specific standard channels do not matter here. This approach is not available at the script level.
 
 2. All uninitialized standard channels are initialized to platform-specific default values:
 
 (a)
-: when open channels are listed with **Tcl\_GetChannelNames** (or the [file channels][file] script command), or
+: when open channels are listed with [Tcl\_GetChannelNames][OpenFileChnl] (or the [file channels][file] script command), or
 
 (b)
-: when information about any standard channel is requested with a call to **Tcl\_GetStdChannel**, or with a call to **Tcl\_GetChannel** which specifies one of the standard names (**stdin**, **stdout** and **stderr**).
+: when information about any standard channel is requested with a call to [Tcl\_GetStdChannel][GetStdChan], or with a call to [Tcl\_GetChannel][OpenFileChnl] which specifies one of the standard names (**stdin**, **stdout** and **stderr**).
 
 In case of missing platform-specific standard channels, the Tcl standard channels are considered as initialized and then immediately closed. This means that the first three Tcl channels then opened by the application are designated as the Tcl standard channels.
 
-3. All uninitialized standard channels are initialized to platform-specific default values when a user-requested channel is registered with **Tcl\_RegisterChannel**.
+3. All uninitialized standard channels are initialized to platform-specific default values when a user-requested channel is registered with [Tcl\_RegisterChannel][OpenFileChnl].
 
 
 In case of unavailable platform-specific standard channels the channel whose creation caused the initialization of the Tcl standard channels is made a normal channel.  The next three Tcl channels opened by the application are designated as the Tcl standard channels.  In other words, of the first four Tcl channels opened by the application the second to fourth are designated as the Tcl standard channels.
 
 # Re-initialization of tcl standard channels
 
-Once a Tcl standard channel is initialized through one of the methods above, closing this Tcl standard channel will cause the next call to **Tcl\_CreateChannel** to make the new channel the new standard channel, too. If more than one Tcl standard channel was closed **Tcl\_CreateChannel** will fill the empty slots in the order **stdin**, **stdout** and **stderr**.
+Once a Tcl standard channel is initialized through one of the methods above, closing this Tcl standard channel will cause the next call to [Tcl\_CreateChannel][CrtChannel] to make the new channel the new standard channel, too. If more than one Tcl standard channel was closed [Tcl\_CreateChannel][CrtChannel] will fill the empty slots in the order **stdin**, **stdout** and **stderr**.
 
-**Tcl\_CreateChannel** will not try to reinitialize an empty slot if that slot was not initialized before. It is this behavior which enables an application to employ method 1 of initialization, i.e. to create and designate their own Tcl standard channels.
+[Tcl\_CreateChannel][CrtChannel] will not try to reinitialize an empty slot if that slot was not initialized before. It is this behavior which enables an application to employ method 1 of initialization, i.e. to create and designate their own Tcl standard channels.
 
 # Shell-specific details
 
 ## Tclsh
 
-The Tcl shell (or rather the function **Tcl\_Main**, which forms the core of the shell's implementation) uses method 2 to initialize the standard channels.
+The Tcl shell (or rather the function [Tcl\_Main][Tcl_Main], which forms the core of the shell's implementation) uses method 2 to initialize the standard channels.
 
 ## Wish
 
 The windowing shell (or rather the function **Tk\_MainEx**, which forms the core of the shell's implementation) uses method 1 to initialize the standard channels (See **Tk\_InitConsoleChannels**) on non-Unix platforms.  On Unix platforms, **Tk\_MainEx** implicitly uses method 2 to initialize the standard channels.
 
 
+[CrtChannel]: CrtChannel.md
 [file]: file.md
+[GetStdChan]: GetStdChan.md
+[OpenFileChnl]: OpenFileChnl.md
+[Tcl_Main]: Tcl_Main.md
 

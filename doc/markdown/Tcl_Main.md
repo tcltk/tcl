@@ -54,7 +54,7 @@ Tcl\_Main, Tcl\_MainEx, Tcl\_MainExW, Tcl\_SetStartupScript, Tcl\_GetStartupScri
 : As argv, but type is always wchar\_t.
 
 [\*appInitProc]{.carg .in type="Tcl_AppInitProc"}
-: Address of an application-specific initialization procedure. The value for this argument is usually **Tcl\_AppInit**.
+: Address of an application-specific initialization procedure. The value for this argument is usually [Tcl\_AppInit][AppInit].
 
 [\*path]{.carg .in type="Tcl_Obj"}
 : Name of file to use as startup script, or NULL.
@@ -86,7 +86,7 @@ Normally each shell application contains a small **main** function that does not
 
 **Tcl\_Main** is not thread-safe.  It should only be called by a single main thread of a multi-threaded application.  This restriction is not a problem with normal use described above.
 
-**Tcl\_Main** and therefore all applications based upon it, like [tclsh], use **Tcl\_GetStdChannel** to initialize the standard channels to their default values. See **Tcl\_StandardChannels** for more information.
+**Tcl\_Main** and therefore all applications based upon it, like [tclsh], use [Tcl\_GetStdChannel][GetStdChan] to initialize the standard channels to their default values. See [Tcl\_StandardChannels][StdChannels] for more information.
 
 **Tcl\_Main** supports two modes of operation, depending on whether the filename and encoding of a startup script has been established.  The routines **Tcl\_SetStartupScript** and **Tcl\_GetStartupScript** are the tools for controlling this configuration of **Tcl\_Main**.
 
@@ -107,7 +107,7 @@ typedef int Tcl_AppInitProc(
         Tcl_Interp *interp);
 ```
 
-*AppInitProc* is almost always a pointer to **Tcl\_AppInit**; for more details on this procedure, see the documentation for **Tcl\_AppInit**.
+*AppInitProc* is almost always a pointer to [Tcl\_AppInit][AppInit]; for more details on this procedure, see the documentation for [Tcl\_AppInit][AppInit].
 
 When the *appInitProc* is finished, **Tcl\_Main** calls **Tcl\_GetStartupScript** to determine what startup script has been requested, if any.  If a startup script has been provided, **Tcl\_Main** attempts to evaluate it.  Otherwise, interactive mode begins with examination of the variable *tcl\_rcFileName* in the main interpreter.  If that variable exists and holds the name of a readable file, the contents of that file are evaluated in the main interpreter.  Then interactive operations begin, with prompts and command evaluation results written to the standard output channel, and commands read from the standard input channel and then evaluated.  The prompts written to the standard output channel may be customized by defining the Tcl variables *tcl\_prompt1* and *tcl\_prompt2* as described in the documentation for [tclsh]. The prompts and command evaluation results are written to the standard output channel only if the Tcl variable *tcl\_interactive* in the main interpreter holds a non-zero integer value.
 
@@ -121,7 +121,7 @@ typedef void Tcl_MainLoopProc(void);
 
 **Tcl\_Main** can not be used in stub-enabled extensions.
 
-The difference between Tcl\_MainEx and Tcl\_MainExW is that the arguments are passed as characters or wide characters. When used in stub-enabled embedders, the stubs table must be first initialized using one of **Tcl\_InitSubsystems**, **Tcl\_SetPanicProc**, **Tcl\_FindExecutable** or **TclZipfs\_AppHook**.
+The difference between Tcl\_MainEx and Tcl\_MainExW is that the arguments are passed as characters or wide characters. When used in stub-enabled embedders, the stubs table must be first initialized using one of [Tcl\_InitSubsystems][InitSubSyst], [Tcl\_SetPanicProc][Panic], [Tcl\_FindExecutable][FindExec] or **TclZipfs\_AppHook**.
 
 # Reference count management
 
@@ -130,6 +130,12 @@ The difference between Tcl\_MainEx and Tcl\_MainExW is that the arguments are pa
 **Tcl\_GetStartupScript** returns a value with reference count at least 1, or NULL. It's *encodingPtr* is also used (if non-NULL) to return a value with a reference count at least 1, or NULL. In both cases, the owner of the values is the current thread.
 
 
+[AppInit]: AppInit.md
 [exit]: exit.md
+[FindExec]: FindExec.md
+[GetStdChan]: GetStdChan.md
+[InitSubSyst]: InitSubSyst.md
+[Panic]: Panic.md
+[StdChannels]: StdChannels.md
 [tclsh]: tclsh.md
 

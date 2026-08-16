@@ -59,7 +59,10 @@ typedef void Tcl_FreeProc(
 
 The *blockPtr* argument to *freeProc* will be the same as the *clientData* argument to **Tcl\_EventuallyFree**.
 
-When the *clientData* argument to **Tcl\_EventuallyFree** refers to storage allocated and returned by a prior call to **Tcl\_Alloc** or another function of the Tcl library, then the *freeProc* argument should be given the special value of **TCL\_DYNAMIC**.
+When the *clientData* argument to **Tcl\_EventuallyFree** refers to storage allocated and returned by a prior call to [Tcl\_Alloc][Alloc] or another function of the Tcl library, then the *freeProc* argument should be given the special value of **TCL\_DYNAMIC**.
 
 This mechanism can be used to solve the problem described above by placing **Tcl\_Preserve** and **Tcl\_Release** calls around actions that may cause undesired storage re-allocation.  The mechanism is intended only for short-term use (i.e. while procedures are pending on the stack);  it will not work efficiently as a mechanism for long-term reference counts. The implementation does not depend in any way on the internal structure of the objects being freed;  it keeps the reference counts in a separate structure.
+
+
+[Alloc]: Alloc.md
 

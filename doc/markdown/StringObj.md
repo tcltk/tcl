@@ -64,7 +64,7 @@ Tcl\_NewStringObj, Tcl\_NewUnicodeObj, Tcl\_SetStringObj, Tcl\_SetUnicodeObj, Tc
 ::: {.arguments} :::
 
 [\*bytes]{.carg .in type="const char"}
-: Points to a TUTF-8 (Tcl's internal modified UTF-8 encoding) byte sequence bytes used to set or append to a string value. This byte array may contain embedded null characters unless *numChars* is negative.  (Applications needing null bytes should represent them as the two-byte sequence *0xC0 0x80* used in TUTF-8 to represent a null byte, use **Tcl\_ExternalToUtf** to convert, or **Tcl\_NewByteArrayObj** if the string is a collection of uninterpreted bytes.)
+: Points to a TUTF-8 (Tcl's internal modified UTF-8 encoding) byte sequence bytes used to set or append to a string value. This byte array may contain embedded null characters unless *numChars* is negative.  (Applications needing null bytes should represent them as the two-byte sequence *0xC0 0x80* used in TUTF-8 to represent a null byte, use [Tcl\_ExternalToUtf][Encoding3] to convert, or [Tcl\_NewByteArrayObj][ByteArrObj] if the string is a collection of uninterpreted bytes.)
 
 [length]{.carg .in type="Tcl_Size"}
 : The number of bytes to copy from *bytes* when initializing, setting, or appending to a string value. If negative, all bytes up to the first null are used.
@@ -123,7 +123,7 @@ The procedures described in this manual entry allow Tcl values to be manipulated
 
 **Tcl\_NewStringObj** and **Tcl\_SetStringObj** create a new value or modify an existing value to hold a copy of the string given by *bytes* and *length*.  **Tcl\_NewUnicodeObj** and **Tcl\_SetUnicodeObj** create a new value or modify an existing value to hold a copy of the Unicode string given by *unicode* and *numChars*.  **Tcl\_NewStringObj** and **Tcl\_NewUnicodeObj** return a pointer to a newly created value with reference count zero. All four procedures set the value to hold a copy of the specified string.  **Tcl\_SetStringObj** and **Tcl\_SetUnicodeObj** free any old string representation as well as any old internal representation of the value.
 
-**Tcl\_GetStringFromObj** and **Tcl\_GetString** return a value's string representation.  This is given by the returned byte pointer and (for **Tcl\_GetStringFromObj**) length, which is stored in *lengthPtr* if it is non-NULL.  If the value's UTF string representation is invalid (its byte pointer is NULL), the string representation is regenerated from the value's internal representation.  The storage referenced by the returned byte pointer is owned by the value manager.  It is passed back as a writable pointer so that extension author creating their own **Tcl\_ObjType** will be able to modify the string representation within the **Tcl\_UpdateStringProc** of their **Tcl\_ObjType**.  Except for that limited purpose, the pointer returned by **Tcl\_GetStringFromObj** or **Tcl\_GetString** should be treated as read-only.  It is recommended that this pointer be assigned to a (const char \*) variable. Even in the limited situations where writing to this pointer is acceptable, one should take care to respect the copy-on-write semantics required by **Tcl\_Obj**'s, with appropriate calls to **Tcl\_IsShared** and **Tcl\_DuplicateObj** prior to any in-place modification of the string representation. The procedure **Tcl\_GetString** is used in the common case where the caller does not need the length of the string representation.
+**Tcl\_GetStringFromObj** and **Tcl\_GetString** return a value's string representation.  This is given by the returned byte pointer and (for **Tcl\_GetStringFromObj**) length, which is stored in *lengthPtr* if it is non-NULL.  If the value's UTF string representation is invalid (its byte pointer is NULL), the string representation is regenerated from the value's internal representation.  The storage referenced by the returned byte pointer is owned by the value manager.  It is passed back as a writable pointer so that extension author creating their own **Tcl\_ObjType** will be able to modify the string representation within the **Tcl\_UpdateStringProc** of their **Tcl\_ObjType**.  Except for that limited purpose, the pointer returned by **Tcl\_GetStringFromObj** or **Tcl\_GetString** should be treated as read-only.  It is recommended that this pointer be assigned to a (const char \*) variable. Even in the limited situations where writing to this pointer is acceptable, one should take care to respect the copy-on-write semantics required by **Tcl\_Obj**'s, with appropriate calls to [Tcl\_IsShared][Object3] and [Tcl\_DuplicateObj][Object3] prior to any in-place modification of the string representation. The procedure **Tcl\_GetString** is used in the common case where the caller does not need the length of the string representation.
 
 **Tcl\_GetUnicodeFromObj** and **Tcl\_GetUnicode** return a value's value as a Unicode string.  This is given by the returned pointer and (for **Tcl\_GetUnicodeFromObj**) length, which is stored in *lengthPtr* if it is non-NULL.  The storage referenced by the returned byte pointer is owned by the value manager and should not be modified by the caller.  The procedure **Tcl\_GetUnicode** is used in the common case where the caller does not need the length of the unicode string representation.
 
@@ -209,7 +209,7 @@ The **Tcl\_IsEmpty** function returns 1 if *objPtr* is the empty string, 0 other
 
 # Reference count management
 
-**Tcl\_NewStringObj**, **Tcl\_NewUnicodeObj**, **Tcl\_Format**, **Tcl\_ObjPrintf**, and **Tcl\_ConcatObj** always return a zero-reference object, much like **Tcl\_NewObj**.
+**Tcl\_NewStringObj**, **Tcl\_NewUnicodeObj**, **Tcl\_Format**, **Tcl\_ObjPrintf**, and **Tcl\_ConcatObj** always return a zero-reference object, much like [Tcl\_NewObj][Object3].
 
 **Tcl\_GetStringFromObj**, **Tcl\_GetString**, **Tcl\_GetUnicodeFromObj**, **Tcl\_GetUnicode**, **Tcl\_GetUniChar**, **Tcl\_GetCharLength**, and **Tcl\_GetRange** all only work with an existing value; they do not manipulate its reference count in any way.
 
@@ -220,6 +220,9 @@ Additional arguments to the above functions (the *appendObjPtr* argument to **Tc
 **Tcl\_Format** and **Tcl\_AppendFormatToObj** may modify the interpreter result, which involves changing the reference count of a value. 
 
 
+[ByteArrObj]: ByteArrObj.md
 [concat]: concat.md
+[Encoding3]: Encoding3.md
 [format]: format.md
+[Object3]: Object3.md
 
