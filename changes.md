@@ -16,6 +16,7 @@ to the userbase.
  - [Windows: file normalize drops a component when parent enumeration is denied](https://core.tcl-lang.org/tcl/tktview/d40d8d)
  - [Windows: busy loop when conhost process is killed](https://core.tcl-lang.org/tcl/tktview/f10d91)
  - [glob -dir . returns corrupted entries in zipfs](https://core.tcl-lang.org/tcl/tktview/4676f5)
+ - [--without-tzdata on windows](https://core.tcl-lang.org/tcl/tktview/4bd630)
 
 # Updated bundled packages, libraries, standards, data
  - platform 1.1.1

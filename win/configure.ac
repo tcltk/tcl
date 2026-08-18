@@ -208,6 +208,34 @@ AC_SUBST(TCL_ZIP_FILE)
 AC_SUBST(INSTALL_LIBRARIES)
 AC_SUBST(INSTALL_MSGS)
 
+#--------------------------------------------------------------------
+#	Timezone data
+#--------------------------------------------------------------------
+
+AC_MSG_CHECKING([for timezone data])
+AC_ARG_WITH(tzdata,
+    AS_HELP_STRING([--with-tzdata],
+	[install timezone data (default: yes)]),
+    [tcl_ok=$withval], [tcl_ok=yes])
+#
+# Unlike on Unix there is no system copy to fall back on, so the default is
+# to install ours. Saying no is for a build that supplies the data by some
+# other means.
+#
+case $tcl_ok in
+    no)
+	AC_MSG_RESULT([supplied by other means])
+    ;;
+    yes)
+	AC_MSG_RESULT([supplied by Tcl])
+	INSTALL_TZDATA=install-tzdata
+    ;;
+    *)
+	AC_MSG_ERROR([invalid argument: $tcl_ok])
+    ;;
+esac
+AC_SUBST(INSTALL_TZDATA)
+
 
 #--------------------------------------------------------------------
 # Perform additinal compiler tests.
