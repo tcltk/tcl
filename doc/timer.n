@@ -24,7 +24,7 @@ timer \- timer events for monotonic and wall clock time
 .SH DESCRIPTION
 .PP
 This command is used to delay execution of the program or to execute
-a command in background sometime in the future.
+a command in the background sometime in the future.
 Time may be specified by a monotonic time delay or by wall clock time point.
 It has the following methods:
 .\" METHOD: in
@@ -50,7 +50,7 @@ priority over other event types (if not installed with an event proc,
 which will wait for next round of events).
 .TP
 The command \fBafter ms script\fR may also be used to register monotonic clock timer events.
-Theey are handled by the same que as this form of the \fBtimer\fR command.
+They are handled by the same queue as this form of the \fBtimer\fR command.
 .\" METHOD: at
 .TP
 \fBtimer at \fItimepoint\fR \fIunit\fR \fIscript\fR
@@ -73,17 +73,17 @@ to cancel the delayed command using \fBtimer cancel\fR or \fBafter cancel\fR.
 If an error occurs while executing the script then the
 background error will be reported by the command
 registered with \fBinterp bgerror\fR.
-.\" METHOD: wait for
+.\" METHOD: sleep for
 .TP
-\fBtimer wait for \fIdelay\fR ?\fIunit\fR?
+\fBtimer sleep for \fIdelay\fR ?\fIunit\fR?
 \fIdelay\fR must be a wide integer giving a time in the given unit (default: \fBmilliseconds\fR).
 A negative number is treated as 0.
 The command sleeps for the given monotonic delay and then returns.
 While the command is sleeping the application does not respond to
 events.
-.\" METHOD: wait until
+.\" METHOD: sleep until
 .TP
-\fBtimer wait until \fItimepoint\fR ?\fIunit\fR?
+\fBtimer sleep until \fItimepoint\fR ?\fIunit\fR?
 \fItimepoint\fR must be a wide integer giving a wall clock time point in the given unit (default: \fBseconds\fR).
 A negative number is treated as 0.
 The command sleeps (at least) until the given wall clock time point and then returns.
@@ -116,7 +116,7 @@ The first element of the list is the script associated
 with \fIid\fR, and the second element is either
 \fBidle\fR, \fBmonotonic\fR or \fBwallclock\fR to indicate what kind of event
 handler it is.
-A thierd list element is present for the kinds \fB monotonic\fR or \fBwallclock\fR.
+A third list element is present for the kinds \fB monotonic\fR or \fBwallclock\fR.
 This element is the scheduled execution time point in microseconds of the given clock type.
 .LP
 The \fBtimer in\fR, \fBtimer at\fR and \fBtimer idle\fR forms of the command
@@ -126,7 +126,7 @@ In applications that are not normally event-driven, such as
 \fBtclsh\fR, the event loop can be entered with the \fBvwait\fR
 and \fBupdate\fR commands.
 .LP
-Note, that the output differs from \fBafter info\fR.
+Note that the output differs from \fBafter info\fR.
 .SH "TIME UNITS"
 Some forms of the command take a time unit.
 Available units are: \fBus\fR (for microseconds), \fBmicroseconds\fR,
@@ -135,13 +135,13 @@ Available units are: \fBus\fR (for microseconds), \fBmicroseconds\fR,
 .SH "TIME MAXIMUM VALUE"
 The arguments \fIdelay\fR and \fItimepoint\fR are bound to a resulting 63 bit clock value
 (in unit microseconds).
-Any higher value (which is after year 294441) will result in a \fBtime to far\fR error.
+Any higher value (which is after year 294441) will result in a \fBtime too far away\fR error.
 .SH "EXAMPLES"
 This arranges for the command \fIwake_up\fR to be run in eight hours
 wall clock time (providing the event loop is active at that time):
 .PP
 .CS
-\fBtime at\fR [\fBclock add\fR [\fBclock seconds\fR] 24 hours] seconds wake_up
+\fBtimer at\fR [\fBclock add\fR [\fBclock seconds\fR] 8 hours] seconds wake_up
 .CE
 .PP
 .SH "SEE ALSO"
