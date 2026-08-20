@@ -35,8 +35,9 @@ currently supported:
 .TP 13
 \fB\-encoding \fIencodingName\fR
 .
-Specifies the name of the encoding to use to decode the output of the first
-subprocess. Defaults to that returned by the \fBencoding system\fR command.
+Specifies the name of the encoding to use to decode the result of the
+command when not run in the background. Defaults to that returned by
+the \fBencoding system\fR command.
 .\" OPTION: -ignorestderr
 .TP 13
 \fB\-ignorestderr\fR
