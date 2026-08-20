@@ -434,7 +434,7 @@ seconds from the epoch, that group is used to determine the date.
 If the string contains a \fB%J\fR, \fB%EJ\fR or \fB%Ej\fR format groups,
 representing the Calendar or Astronomical Julian Day Number, that groups
 are used to determine the date.
-Note, that in case of \fB%EJ\fR or \fB%Ej\fR format groups, representing
+Note that in case of \fB%EJ\fR or \fB%Ej\fR format groups, representing
 the Julian Date with time fraction, this groups may be used to determine
 the date and time.
 .IP [3]

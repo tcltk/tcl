@@ -197,7 +197,7 @@ pipeline is taken from the application's current standard input.
 .PP
 If the last \fIarg\fR is
 .QW &
-then the pipeline will be executed in background.
+then the pipeline will be executed in the background.
 In this case the \fBexec\fR command will return a list whose
 elements are the process identifiers for all of the subprocesses
 in the pipeline.
