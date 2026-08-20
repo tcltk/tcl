@@ -143,6 +143,7 @@ VER			= @TCL_MAJOR_VERSION@@TCL_MINOR_VERSION@
 DOTVER			= @TCL_MAJOR_VERSION@.@TCL_MINOR_VERSION@
 DDEVER			= @TCL_DDE_MAJOR_VERSION@@TCL_DDE_MINOR_VERSION@
 DDEDOTVER		= @TCL_DDE_MAJOR_VERSION@.@TCL_DDE_MINOR_VERSION@
+REGDOTVER		= @TCL_REG_MAJOR_VERSION@.@TCL_REG_MINOR_VERSION@
 
 TCL_ZIP_FILE		= @TCL_ZIP_FILE@
 TCL_VFS_PATH		= libtcl.vfs/tcl_library
@@ -239,6 +240,7 @@ ZIP_PROG_VFSSEARCH  = @ZIP_PROG_VFSSEARCH@
 SHARED_BUILD		= @SHARED_BUILD@
 INSTALL_MSGS            = @INSTALL_MSGS@
 INSTALL_LIBRARIES       = @INSTALL_LIBRARIES@
+INSTALL_TZDATA          = @INSTALL_TZDATA@
 
 # Fully qualify library path so that `make test`
 # does not depend on the current directory.
@@ -894,7 +896,7 @@ install-binaries: binaries
 	@$(INSTALL_DATA_DIR) "$(LIB_INSTALL_DIR)/pkgconfig"
 	@$(INSTALL_DATA) tcl.pc "$(LIB_INSTALL_DIR)/pkgconfig/tcl.pc"
 
-install-libraries: libraries install-tzdata install-msgs
+install-libraries: libraries
 	@for i in "$(prefix)/lib" "$(INCLUDE_INSTALL_DIR)" \
 		"$(SCRIPT_INSTALL_DIR)" "$(MODULE_INSTALL_DIR)"; \
 	    do \
@@ -924,6 +926,18 @@ install-libraries: libraries install-tzdata install-msgs
 	@for i in $(ROOT_DIR)/library/*.tcl $(ROOT_DIR)/library/tclIndex; do \
 	    $(COPY) "$$i" "$(SCRIPT_INSTALL_DIR)"; \
 	    done;
+ifeq ($(ZIPFS_BUILD), 0)
+	@for i in registry${REGDOTVER}; \
+	    do \
+	    if [ ! -d "$(LIB_INSTALL_DIR)/$$i" ] ; then \
+		echo "Making directory $(LIB_INSTALL_DIR)/$$i"; \
+		$(MKDIR) "$(LIB_INSTALL_DIR)/$$i"; \
+		else true; \
+		fi; \
+	    $(COPY) $(ROOT_DIR)/library/registry/pkgIndex.tcl \
+		"$(LIB_INSTALL_DIR)/registry${REGDOTVER}"; \
+	    done;
+endif
 	@echo "Installing package cookiejar 0.2"
 	@for j in $(ROOT_DIR)/library/cookiejar/*.tcl \
 		  $(ROOT_DIR)/library/cookiejar/*.gz; do \

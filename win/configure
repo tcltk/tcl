@@ -598,6 +598,8 @@ RC_DEFINE
 RC_INCLUDE
 RC_TYPE
 RC_OUT
+TCL_REG_MINOR_VERSION
+TCL_REG_MAJOR_VERSION
 TCL_DDE_MINOR_VERSION
 TCL_DDE_MAJOR_VERSION
 TCL_DDE_VERSION
@@ -658,6 +660,7 @@ MACHINE
 TCL_WIN_VERSION
 LDFLAGS_DEFAULT
 CFLAGS_DEFAULT
+INSTALL_TZDATA
 INSTALL_MSGS
 INSTALL_LIBRARIES
 TCL_ZIP_FILE
@@ -743,6 +746,7 @@ with_encoding
 enable_shared
 enable_64bit
 enable_zipfs
+with_tzdata
 enable_symbols
 '
       ac_precious_vars='build_alias
@@ -1380,6 +1384,7 @@ Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
   --with-encoding         encoding for configuration values
+  --with-tzdata           install timezone data (default: yes)
 
 Some influential environment variables:
   CC          C compiler command
@@ -2459,6 +2464,9 @@ TCL_DDE_VERSION=1.5
 TCL_DDE_MAJOR_VERSION=1
 TCL_DDE_MINOR_VERSION=5
 DDEVER=$TCL_DDE_MAJOR_VERSION$TCL_DDE_MINOR_VERSION
+
+TCL_REG_MAJOR_VERSION=1
+TCL_REG_MINOR_VERSION=4
 
 PKG_CFG_ARGS=$@
 
@@ -5167,6 +5175,43 @@ fi
 
 
 
+#--------------------------------------------------------------------
+#	Timezone data
+#--------------------------------------------------------------------
+
+{ printf '%s\n' "$as_me:${as_lineno-$LINENO}: checking for timezone data" >&5
+printf %s "checking for timezone data... " >&6; }
+
+# Check whether --with-tzdata was given.
+if test ${with_tzdata+y}
+then :
+  withval=$with_tzdata; tcl_ok=$withval
+else case e in #(
+  e) tcl_ok=yes ;;
+esac
+fi
+
+#
+# Unlike on Unix there is no system copy to fall back on, so the default is
+# to install ours. Saying no is for a build that supplies the data by some
+# other means.
+#
+case $tcl_ok in
+    no)
+	{ printf '%s\n' "$as_me:${as_lineno-$LINENO}: result: supplied by other means" >&5
+printf '%s\n' "supplied by other means" >&6; }
+    ;;
+    yes)
+	{ printf '%s\n' "$as_me:${as_lineno-$LINENO}: result: supplied by Tcl" >&5
+printf '%s\n' "supplied by Tcl" >&6; }
+	INSTALL_TZDATA=install-tzdata
+    ;;
+    *)
+	as_fn_error $? "invalid argument: $tcl_ok" "$LINENO" 5
+    ;;
+esac
+
+
 
 #--------------------------------------------------------------------
 # Perform additinal compiler tests.
@@ -5610,6 +5655,8 @@ TCL_WIN_VERSION="$TCL_VERSION.$TCL_RELEASE_LEVEL.`echo $TCL_PATCH_LEVEL | tr -d 
 
 
 # win only
+
+
 
 
 

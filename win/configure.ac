@@ -23,6 +23,9 @@ TCL_DDE_MAJOR_VERSION=1
 TCL_DDE_MINOR_VERSION=5
 DDEVER=$TCL_DDE_MAJOR_VERSION$TCL_DDE_MINOR_VERSION
 
+TCL_REG_MAJOR_VERSION=1
+TCL_REG_MINOR_VERSION=4
+
 PKG_CFG_ARGS=$@
 
 #------------------------------------------------------------------------
@@ -202,6 +205,34 @@ AC_SUBST(ZIPFS_BUILD)
 AC_SUBST(TCL_ZIP_FILE)
 AC_SUBST(INSTALL_LIBRARIES)
 AC_SUBST(INSTALL_MSGS)
+
+#--------------------------------------------------------------------
+#	Timezone data
+#--------------------------------------------------------------------
+
+AC_MSG_CHECKING([for timezone data])
+AC_ARG_WITH(tzdata,
+    AS_HELP_STRING([--with-tzdata],
+	[install timezone data (default: yes)]),
+    [tcl_ok=$withval], [tcl_ok=yes])
+#
+# Unlike on Unix there is no system copy to fall back on, so the default is
+# to install ours. Saying no is for a build that supplies the data by some
+# other means.
+#
+case $tcl_ok in
+    no)
+	AC_MSG_RESULT([supplied by other means])
+    ;;
+    yes)
+	AC_MSG_RESULT([supplied by Tcl])
+	INSTALL_TZDATA=install-tzdata
+    ;;
+    *)
+	AC_MSG_ERROR([invalid argument: $tcl_ok])
+    ;;
+esac
+AC_SUBST(INSTALL_TZDATA)
 
 
 #--------------------------------------------------------------------
@@ -464,6 +495,8 @@ AC_SUBST(TCL_PACKAGE_PATH)
 AC_SUBST(TCL_DDE_VERSION)
 AC_SUBST(TCL_DDE_MAJOR_VERSION)
 AC_SUBST(TCL_DDE_MINOR_VERSION)
+AC_SUBST(TCL_REG_MAJOR_VERSION)
+AC_SUBST(TCL_REG_MINOR_VERSION)
 
 AC_SUBST(RC)
 AC_SUBST(RC_OUT)
