@@ -825,47 +825,53 @@ TclSetByteCodeFromAny(
     if (clLocPtr) {
 	compEnv.clNext = &clLocPtr->loc[0];
     }
+    /* TIP759 ARITHMETIC SCRIPT Support :
+     * The script begin with a '(' and finish with a ')' ?
+     * compile it as expression ! */
+    if (stringPtr[0] == '(' && stringPtr[length-1] == ')') {
+	TclCompileExpr(interp, &stringPtr[0], length, &compEnv, 0);
+	TclEmitOpcode(INST_DONE, &compEnv);
+     } else {
+	TclCompileScript(interp, stringPtr, length, &compEnv);
 
-    TclCompileScript(interp, stringPtr, length, &compEnv);
+	/*
+	 * Compilation succeeded. Add a "done" instruction at the end.
+	 */
 
-    /*
-     * Compilation succeeded. Add a "done" instruction at the end.
-     */
+	TclEmitOpcode(INST_DONE, &compEnv);
 
-    TclEmitOpcode(INST_DONE, &compEnv);
-
-    /*
-     * Check for optimizations!
-     *
-     * If the generated code is free of most hazards, recompile with generation
-     * of INST_START_CMD disabled to produce code that more compact in many
-     * cases, and also sometimes more performant.
-     */
-
-    if (Tcl_GetParent(interp) == NULL &&
+	/*
+	 * Check for optimizations!
+	 *
+	 * If the generated code is free of most hazards, recompile with generation
+	 * of INST_START_CMD disabled to produce code that more compact in many
+	 * cases, and also sometimes more performant.
+	 */
+	
+	if (Tcl_GetParent(interp) == NULL &&
 	    !Tcl_LimitTypeEnabled(interp, TCL_LIMIT_COMMANDS|TCL_LIMIT_TIME)
 	    && IsCompactibleCompileEnv(&compEnv)) {
-	TclFreeCompileEnv(&compEnv);
-	iPtr->compiledProcPtr = procPtr;
-	TclInitCompileEnv(interp, &compEnv, stringPtr, length,
-		iPtr->invokeCmdFramePtr, iPtr->invokeWord);
-	if (clLocPtr) {
-	    compEnv.clNext = &clLocPtr->loc[0];
+	    TclFreeCompileEnv(&compEnv);
+	    iPtr->compiledProcPtr = procPtr;
+	    TclInitCompileEnv(interp, &compEnv, stringPtr, length,
+			      iPtr->invokeCmdFramePtr, iPtr->invokeWord);
+	    if (clLocPtr) {
+		compEnv.clNext = &clLocPtr->loc[0];
+	    }
+	    compEnv.atCmdStart = 2;		/* The disabling magic. */
+	    TclCompileScript(interp, stringPtr, length, &compEnv);
+	    assert (compEnv.atCmdStart > 1);
+	    TclEmitOpcode(INST_DONE, &compEnv);
+	    assert (compEnv.atCmdStart > 1);
 	}
-	compEnv.atCmdStart = 2;		/* The disabling magic. */
-	TclCompileScript(interp, stringPtr, length, &compEnv);
-	assert (compEnv.atCmdStart > 1);
-	TclEmitOpcode(INST_DONE, &compEnv);
-	assert (compEnv.atCmdStart > 1);
-    }
+	/*
+	 * Apply some peephole optimizations that can cross specific/generic
+	 * instruction generator boundaries.
+	 */
 
-    /*
-     * Apply some peephole optimizations that can cross specific/generic
-     * instruction generator boundaries.
-     */
-
-    if (iPtr->optimizer) {
-	(iPtr->optimizer)(&compEnv);
+	if (iPtr->optimizer) {
+	    (iPtr->optimizer)(&compEnv);
+	}
     }
 
     /*
@@ -2275,7 +2281,20 @@ TclCompileScript(
 	     */
 	    iPtr->numLevels++;
 
-	    lastCmdIdx = CompileCommandTokens(interp, parsePtr, envPtr);
+	    if (parsePtr->tokenPtr[0].type == TCL_TOKEN_WORD
+		&& parsePtr->tokenPtr[0].numComponents == 1
+		&& parsePtr->tokenPtr[1].type == TCL_TOKEN_SUB_EXPR) {
+		/* TIP 759 : Arithmetic Script : 
+		   if Token was of TCL_TOKEN_SUB_EXPR category.
+		   Compile it as expression. */  	    
+		TclCompileExpr(interp, parsePtr->tokenPtr[1].start,
+			   parsePtr->tokenPtr[1].size, envPtr, true);
+		
+		TclEmitOpcode(INST_POP, envPtr);
+		lastCmdIdx=envPtr->numCommands;
+	    } else {
+		lastCmdIdx = CompileCommandTokens(interp, parsePtr, envPtr);
+	    }
 
 	    iPtr->numLevels--;
 
@@ -2535,6 +2554,21 @@ TclCompileTokens(
 	    numObjsToConcat++;
 	    break;
 
+	case TCL_TOKEN_SUB_EXPR :
+	    /* TIP759 ARITHMETIC SCRIPT support*/
+	    if (Tcl_DStringLength(&textBuffer) > 0) {
+		int literal;
+		literal = TclRegisterDStringLiteral(envPtr, &textBuffer);
+		TclEmitPush(literal, envPtr);
+		numObjsToConcat++;
+		Tcl_DStringFree(&textBuffer);
+	    }
+	    envPtr->line += adjust;
+	    TclCompileExpr(interp,  tokenPtr->start, tokenPtr->size, envPtr, 0);
+	    envPtr->line -= adjust;
+	    numObjsToConcat++;
+	    break;
+		
 	case TCL_TOKEN_VARIABLE:
 	    /*
 	     * Push any accumulated chars appearing before the $<var>.

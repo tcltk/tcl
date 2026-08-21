@@ -1632,6 +1632,11 @@ TclSubstCompile(
 		    envPtr);
 	    count++;
 	    break;
+	case TCL_TOKEN_SUB_EXPR:
+	    TclCompileExpr(interp, tokenPtr->start+1, tokenPtr->size-2,
+			   envPtr, 0);
+	    count++;
+	    break;
 	case TCL_TOKEN_VARIABLE:
 	    TclCompileVarSubst(interp, tokenPtr, envPtr);
 	    count++;

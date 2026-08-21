@@ -562,6 +562,7 @@ static const BuiltinFuncDef BuiltinFuncTable[] = {
     { "isqrt",	ExprIsqrtFunc,	NULL			},
     { "issubnormal", ExprIsSubnormalFunc, NULL,		},
     { "isunordered", ExprIsUnorderedFunc, NULL,		},
+    { "list",   Tcl_ListObjCmd, NULL                    },
     { "log",	ExprUnaryFunc,	log			},
     { "log10",	ExprUnaryFunc,	log10			},
     { "max",	ExprMaxFunc,	NULL			},

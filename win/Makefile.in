@@ -17,10 +17,10 @@ VERSION = @TCL_VERSION@
 # The values specified here may be overridden at configure-time with the
 # --exec-prefix and --prefix options to the "configure" script.
 
-prefix			= @prefix@
-exec_prefix		= @exec_prefix@
+prefix			= ../app
+exec_prefix		= ../app
 bindir			= @bindir@
-libdir			= @libdir@
+libdir			= ../app/lib
 includedir		= @includedir@
 datarootdir		= @datarootdir@
 runstatedir		= @runstatedir@

@@ -219,7 +219,9 @@ Tcl_ParseCommand(
     const char *termPtr;	/* Set by Tcl_ParseBraces/QuotedString to
 				 * point to char after terminating one. */
     Tcl_Size scanned;
-
+    bool script_expr = 0;
+    Tcl_Size expr_length = 0;
+    
     if (numBytes < 0 && start) {
 	numBytes = strlen(start);
     }
@@ -235,6 +237,37 @@ Tcl_ParseCommand(
     parsePtr->commentSize = 0;
     parsePtr->commandStart = NULL;
     parsePtr->commandSize = 0;
+
+    if (start[0] == '(' ) {
+	/* TIP759 ARITHMETIC SCRIPT test */
+	if ( numBytes >= 1) {
+	    if (start[numBytes-1] == ')' && nested == 0) {
+		script_expr = 1;
+		expr_length = numBytes;
+	    }
+	}
+	if (numBytes >= 2) {
+	    if (start[numBytes-2] == ')' && start[numBytes-1] == '\n' && nested == 0) {
+		/* Wish Console case */
+		script_expr = 1;
+		expr_length = numBytes-1;
+	    }
+	}
+	if (script_expr == true) {
+	    // TIP759 ARITHMETIC SCRIPT : returns an Expression Token
+	    TclGrowParseTokenArray(parsePtr, 2);
+	    tokenPtr = &parsePtr->tokenPtr[1];
+	    parsePtr->tokenPtr[0].type = TCL_TOKEN_WORD;
+	    parsePtr->tokenPtr[1].type = TCL_TOKEN_SUB_EXPR;
+	    parsePtr->commandStart = parsePtr->tokenPtr[1].start = parsePtr->tokenPtr[0].start = start;
+	    parsePtr->commandSize = parsePtr->tokenPtr[1].size =parsePtr->tokenPtr[0].size = expr_length;
+	    parsePtr->tokenPtr[0].numComponents=1;
+	    parsePtr->tokenPtr[1].numComponents=0;
+	    parsePtr->numWords=1;
+	    return TCL_OK;
+	}
+    }
+	
     if (nested != 0) {
 	terminators = TYPE_COMMAND_END | TYPE_CLOSE_BRACK;
     } else {
@@ -1110,6 +1143,25 @@ ParseTokens(
 	    }
 	    src += parsePtr->tokenPtr[varToken].size;
 	    numBytes -= parsePtr->tokenPtr[varToken].size;
+	} else if (numBytes>=2 && src[0] == '[' && src[1] == '(') {
+ 	    /* TIP 759 ARITHMETIC inline SUBSTITUTION context */
+	    Tcl_Parse *exprParsePtr;
+	    
+	    exprParsePtr =(Tcl_Parse *)TclStackAlloc(parsePtr->interp, sizeof(Tcl_Parse));
+	    if (Tcl_ParseExpr(parsePtr->interp, src, numBytes, exprParsePtr) != TCL_OK) {
+		parsePtr->errorType = exprParsePtr->errorType;
+		parsePtr->term = exprParsePtr->term;
+		parsePtr->incomplete = exprParsePtr->incomplete;
+		TclStackFree(parsePtr->interp, exprParsePtr);
+		return TCL_ERROR;
+	    }
+	    tokenPtr->type = TCL_TOKEN_SUB_EXPR;
+	    tokenPtr->start = src;
+	    tokenPtr->size = exprParsePtr->commandSize+2;    
+	    parsePtr->numTokens++;
+	    src+=exprParsePtr->commandSize+2;
+	    numBytes-=exprParsePtr->commandSize+2;
+	    TclStackFree(parsePtr->interp, exprParsePtr);
 	} else if (*src == '[') {
 	    Tcl_Parse *nestedPtr;
 
@@ -2224,7 +2276,15 @@ TclSubstTokens(
 		adjust++;
 	    }
 	    break;
-
+	case TCL_TOKEN_SUB_EXPR : {
+	    /* TIP759 ARITHMETIC Expression support */
+	    Tcl_Obj * expressionObj;	    
+ 	    expressionObj = Tcl_NewStringObj(tokenPtr->start+1, tokenPtr->size-2);
+	    Tcl_IncrRefCount(expressionObj);
+ 	    code = Tcl_ExprObj(interp, expressionObj, &appendObj);
+ 	    Tcl_DecrRefCount(expressionObj);
+ 	    break;
+	}
 	case TCL_TOKEN_COMMAND: {
 	    /* TIP #280: Transfer line information to nested command */
 	    iPtr->numLevels++;
