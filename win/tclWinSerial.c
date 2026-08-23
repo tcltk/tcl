@@ -1648,9 +1648,8 @@ SerialSetOptionProc(
 
 	if (result == FALSE) {
 	    if (interp != NULL) {
-		Tcl_PrintfResult(interp,
-			"bad value \"%s\" for -mode: should be baud,parity,data,stop",
-			value);
+		Tcl_PrintfResult(interp, "bad value \"%s\" for %s: should be %s",
+			value, "-mode", "baud,parity,data,stop");
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", "SERIALMODE", (char *)NULL);
 	    }
 	    return TCL_ERROR;
@@ -1712,9 +1711,8 @@ SerialSetOptionProc(
 	    dcb.fDtrControl = DTR_CONTROL_HANDSHAKE;
 	} else {
 	    if (interp != NULL) {
-		Tcl_PrintfResult(interp,
-			"bad value \"%s\" for -handshake: must be one of"
-			" xonxoff, rtscts, dtrdsr or none", value);
+		Tcl_PrintfResult(interp, "bad value \"%s\" for %s: should be %s",
+			value, "-handshake", "one of xonxoff, rtscts, dtrdsr or none");
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", "HANDSHAKE", (char *)NULL);
 	    }
 	    return TCL_ERROR;
@@ -1798,9 +1796,8 @@ SerialSetOptionProc(
 	}
 	if ((argc % 2) == 1) {
 	    if (interp != NULL) {
-		Tcl_PrintfResult(interp,
-			"bad value \"%s\" for -ttycontrol: should be "
-			"a list of signal,value pairs", value);
+		Tcl_PrintfResult(interp, "bad value \"%s\" for %s: should be %s",
+			value, "-ttycontrol", "a list of signal,value pairs");
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", "TTYCONTROL", (char *)NULL);
 	    }
 	    Tcl_Free((void *)argv);
@@ -1891,9 +1888,8 @@ SerialSetOptionProc(
 	if ((argc < 1) || (argc > 2) || (parseState != TCL_OK)
 		|| (inSize <= 0) || (outSize <= 0)) {
 	    if (interp != NULL) {
-		Tcl_PrintfResult(interp,
-			"bad value \"%s\" for -sysbuffer: should be "
-			"a list of one or two integers > 0", value);
+		Tcl_PrintfResult(interp, "bad value \"%s\" for %s: should be %s",
+			value, "-sysbuffer", "a list of one or two integers > 0");
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", "SYS_BUFFER", (char *)NULL);
 	    }
 	    return TCL_ERROR;

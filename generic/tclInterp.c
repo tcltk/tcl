@@ -1269,8 +1269,7 @@ NRInterpCmd(
 	    if (childInterp == NULL) {
 		return TCL_ERROR;
 	    } else if (childInterp == interp) {
-		Tcl_PrintfResult(interp,
-			"cannot delete the current interpreter");
+		Tcl_PrintfResult(interp, "cannot delete the current interpreter");
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "INTERP",
 			"DELETESELF", (char *)NULL);
 		return TCL_ERROR;
@@ -4928,8 +4927,7 @@ ChildCommandLimitCmd(
      */
 
     if (interp == childInterp) {
-	Tcl_PrintfResult(interp,
-		"limits on current interpreter inaccessible");
+	Tcl_PrintfResult(interp, "limits on current interpreter inaccessible");
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "INTERP", "SELF",
 		(char *)NULL);
 	return TCL_ERROR;
@@ -5042,8 +5040,7 @@ ChildCommandLimitCmd(
 		    return TCL_ERROR;
 		}
 		if (limit < 0) {
-		    Tcl_PrintfResult(interp,
-			    "command limit value must be at least 0");
+		    Tcl_PrintfResult(interp, "command limit value must be at least 0");
 		    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "INTERP",
 			    "BADVALUE", (char *)NULL);
 		    return TCL_ERROR;
@@ -5249,8 +5246,7 @@ ChildTimeLimitCmd(
 		    return TCL_ERROR;
 		}
 		if (tmp < 0) {
-		    Tcl_PrintfResult(interp,
-			    "milliseconds must be non-negative");
+		    Tcl_PrintfResult(interp, "milliseconds must be non-negative");
 		    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "INTERP",
 			    "BADVALUE", (char *)NULL);
 		    return TCL_ERROR;

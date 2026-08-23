@@ -1474,7 +1474,7 @@ TestcmdtraceCmd(
 	result = Tcl_EvalEx(interp, Tcl_GetString(objv[2]), TCL_INDEX_NONE, 0);
 	Tcl_DeleteTrace(interp, cmdTrace);
 	if (!deleteCalled) {
-	    Tcl_AppendResult(interp, "Delete wasn't called", (char *)NULL);
+	    Tcl_PrintfResult(interp, "Delete wasn't called");
 	    return TCL_ERROR;
 	} else {
 	    return result;
@@ -1647,9 +1647,9 @@ CreatedCommandProc(
     found = Tcl_GetCommandInfo(interp, "test_ns_basic::createdcommand",
 	    &info) != 0;
     if (!found) {
-	Tcl_AppendResult(interp,
-		"CreatedCommandProc could not get command info for test_ns_basic::createdcommand",
-		(char *)NULL);
+	Tcl_PrintfResult(interp,
+		"CreatedCommandProc could not get command info for %s",
+		"test_ns_basic::createdcommand");
 	return TCL_ERROR;
     }
     Tcl_AppendResult(interp, "CreatedCommandProc in ",
@@ -1669,9 +1669,9 @@ CreatedCommandProc2(
 
     found = Tcl_GetCommandInfo(interp, "value:at:", &info) != 0;
     if (!found) {
-	Tcl_AppendResult(interp,
-		"CreatedCommandProc2 could not get command info for test_ns_basic::createdcommand",
-		(char *)NULL);
+	Tcl_PrintfResult(interp,
+		"CreatedCommandProc2 could not get command info for %s",
+		"test_ns_basic::createdcommand");
 	return TCL_ERROR;
     }
     Tcl_AppendResult(interp, "CreatedCommandProc2 in ",
@@ -3984,7 +3984,7 @@ TestlistrepCmd(
 	    }
 	    resultObj = TclListTestObj(length, leadSpace, endSpace);
 	    if (resultObj == NULL) {
-		Tcl_AppendResult(interp, "List capacity exceeded", (char *)NULL);
+		Tcl_PrintfResult(interp, "List capacity exceeded");
 		return TCL_ERROR;
 	    }
 	}
@@ -5506,7 +5506,7 @@ TestseterrorcodeCmd(
     Tcl_Obj *const *objv)	/* Arguments. */
 {
     if (objc > 6) {
-	Tcl_AppendResult(interp, "too many args", (char *)NULL);
+	Tcl_PrintfResult(interp, "too many args");
 	return TCL_ERROR;
     }
     switch (objc) {
@@ -5607,9 +5607,8 @@ TestfeventCmd(
 	    Tcl_SetObjResult(interp, Tcl_GetObjResult(interp2));
 	    return code;
 	} else {
-	    Tcl_AppendResult(interp,
-		    "called \"testfevent code\" before \"testfevent create\"",
-		    (char *)NULL);
+	    Tcl_PrintfResult(interp,
+		    "called \"testfevent code\" before \"testfevent create\"");
 	    return TCL_ERROR;
 	}
     } else if (strcmp(Tcl_GetString(objv[1]), "create") == 0) {
@@ -6175,7 +6174,7 @@ TestsetbytearraylengthCmd(
 	if (obj != objv[1]) {
 	    Tcl_DecrRefCount(obj);
 	}
-	Tcl_AppendResult(interp, "expected bytes", (char *)NULL);
+	Tcl_PrintfResult(interp, "expected bytes");
 	return TCL_ERROR;
     }
     Tcl_SetObjResult(interp, obj);
@@ -6227,7 +6226,7 @@ TestbytestringCmd(
     }
 
     if (x.m != 1) {
-	Tcl_AppendResult(interp, "Tcl_GetBytesFromObj() overwrites variable", (char *)NULL);
+	Tcl_PrintfResult(interp, "Tcl_GetBytesFromObj() overwrites variable");
 	return TCL_ERROR;
     }
     Tcl_SetObjResult(interp, Tcl_NewStringObj(p, x.n));
@@ -7351,9 +7350,8 @@ TestGetIndexFromObjStructCmd(
 	return TCL_ERROR;
     }
     if (idx[0] != 85 || idx[2] != 85) {
-	Tcl_AppendResult(interp,
-		"Tcl_GetIndexFromObjStruct overwrites bytes near index variable",
-		(char *)NULL);
+	Tcl_PrintfResult(interp,
+		"Tcl_GetIndexFromObjStruct overwrites bytes near index variable");
 	return TCL_ERROR;
     } else if (idx[1] != target) {
 	Tcl_PrintfResult(interp,

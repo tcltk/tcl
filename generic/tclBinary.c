@@ -950,8 +950,7 @@ BinaryFormatCmd(
 
 	case 'x':
 	    if (count == BINARY_ALL) {
-		Tcl_PrintfResult(interp,
-			"cannot use \"*\" in format string with \"x\"");
+		Tcl_PrintfResult(interp, "cannot use \"*\" in format string with \"x\"");
 		return TCL_ERROR;
 	    } else if (count == BINARY_NOCOUNT) {
 		count = 1;
@@ -2759,8 +2758,7 @@ BinaryEncodeUu(
 	    }
 	    if (numBytes) {
 	    badwrap:
-		Tcl_PrintfResult(interp,
-			"invalid wrapchar; will defeat decoding");
+		Tcl_PrintfResult(interp, "invalid wrapchar; will defeat decoding");
 		Tcl_SetErrorCode(interp, "TCL", "BINARY",
 			"ENCODE", "WRAPCHAR", (char *)NULL);
 		return TCL_ERROR;

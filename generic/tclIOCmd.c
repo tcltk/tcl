@@ -1597,7 +1597,8 @@ Tcl_SocketObjCmd(
 	case SKT_MYADDR:
 	    a++;
 	    if (a >= objc) {
-		Tcl_PrintfResult(interp, "no argument given for -myaddr option");
+		Tcl_PrintfResult(interp, "no argument given for %s option",
+			"-myaddr");
 		return TCL_ERROR;
 	    }
 	    myaddr = TclGetString(objv[a]);
@@ -1607,7 +1608,8 @@ Tcl_SocketObjCmd(
 
 	    a++;
 	    if (a >= objc) {
-		Tcl_PrintfResult(interp, "no argument given for -myport option");
+		Tcl_PrintfResult(interp, "no argument given for %s option",
+			"-myport");
 		return TCL_ERROR;
 	    }
 	    myPortName = TclGetString(objv[a]);
@@ -1624,7 +1626,8 @@ Tcl_SocketObjCmd(
 	    server = 1;
 	    a++;
 	    if (a >= objc) {
-		Tcl_PrintfResult(interp, "no argument given for -server option");
+		Tcl_PrintfResult(interp, "no argument given for %s option",
+			"-server");
 		return TCL_ERROR;
 	    }
 	    script = objv[a];
@@ -1632,7 +1635,8 @@ Tcl_SocketObjCmd(
 	case SKT_REUSEADDR:
 	    a++;
 	    if (a >= objc) {
-		Tcl_PrintfResult(interp, "no argument given for -reuseaddr option");
+		Tcl_PrintfResult(interp, "no argument given for %s option",
+			"-reuseaddr");
 		return TCL_ERROR;
 	    }
 	    if (Tcl_GetBooleanFromObj(interp, objv[a], &reusea) != TCL_OK) {
@@ -1642,7 +1646,8 @@ Tcl_SocketObjCmd(
 	case SKT_REUSEPORT:
 	    a++;
 	    if (a >= objc) {
-		Tcl_PrintfResult(interp, "no argument given for -reuseport option");
+		Tcl_PrintfResult(interp, "no argument given for %s option",
+			"-reuseport");
 		return TCL_ERROR;
 	    }
 	    if (Tcl_GetBooleanFromObj(interp, objv[a], &reusep) != TCL_OK) {
@@ -1652,7 +1657,8 @@ Tcl_SocketObjCmd(
 	case SKT_BACKLOG:
 	    a++;
 	    if (a >= objc) {
-		Tcl_PrintfResult(interp, "no argument given for -backlog option");
+		Tcl_PrintfResult(interp, "no argument given for %s option",
+			"-backlog");
 		return TCL_ERROR;
 	    }
 	    if (Tcl_GetIntFromObj(interp, objv[a], &backlog) != TCL_OK) {
@@ -1981,8 +1987,7 @@ ChanTruncateObjCmd(
 	    return TCL_ERROR;
 	}
 	if (length < 0) {
-	    Tcl_PrintfResult(interp,
-		    "cannot truncate to negative length of file");
+	    Tcl_PrintfResult(interp, "cannot truncate to negative length of file");
 	    return TCL_ERROR;
 	}
     } else {

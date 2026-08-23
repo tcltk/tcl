@@ -1497,9 +1497,8 @@ Tcl_GlobObjCmd(
 		goto endOfGlob;
 
 	    badMacTypesArg:
-		Tcl_PrintfResult(interp,
-			"only one MacOS type or creator argument"
-			" to \"-types\" allowed");
+		Tcl_PrintfResult(interp, "only one MacOS type or creator "
+			"argument to \"-types\" allowed");
 		result = TCL_ERROR;
 		Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "BAD", (char *)NULL);
 		join = 0;

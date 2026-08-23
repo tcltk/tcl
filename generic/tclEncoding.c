@@ -5386,8 +5386,8 @@ TclEncodingProfileNameToId(
 	Tcl_AppendPrintfResult(interp, " or %s",
 		encodingProfiles[numProfiles-1].name);
 
-	Tcl_SetErrorCode(
-		interp, "TCL", "ENCODING", "PROFILE", profileName, (char *)NULL);
+	Tcl_SetErrorCode(interp, "TCL", "ENCODING", "PROFILE", profileName,
+		(char *)NULL);
     }
     return TCL_ERROR;
 }
@@ -5422,8 +5422,7 @@ TclEncodingProfileIdToName(
     if (interp) {
 	Tcl_PrintfResult(interp, "Internal error. Bad profile id \"%d\".",
 		profileValue);
-	Tcl_SetErrorCode(
-		interp, "TCL", "ENCODING", "PROFILEID", (char *)NULL);
+	Tcl_SetErrorCode(interp, "TCL", "ENCODING", "PROFILEID", (char *)NULL);
     }
     return NULL;
 }
@@ -5535,11 +5534,9 @@ TclUtfNormalize(
     if (profile != TCL_ENCODING_PROFILE_REPLACE &&
 	    profile != TCL_ENCODING_PROFILE_STRICT) {
 	if (interp) {
-	    Tcl_PrintfResult(interp,
-		    "Invalid value %d passed for encoding profile.",
+	    Tcl_PrintfResult(interp, "Invalid value %d passed for encoding profile.",
 		    profile);
-	    Tcl_SetErrorCode(
-		    interp, "TCL", "ENCODING", "PROFILEID", (char *)NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "ENCODING", "PROFILEID", (char *)NULL);
 	}
 	return -1;
     }
@@ -5563,8 +5560,7 @@ TclUtfNormalize(
 	    Tcl_PrintfResult(interp,
 		    "Invalid value %d passed for normalization form.",
 		    normForm);
-	    Tcl_SetErrorCode(
-		    interp, "TCL", "ENCODING", "NORMFORM", (char *)NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "ENCODING", "NORMFORM", (char *)NULL);
 	}
 	return -1;
     }

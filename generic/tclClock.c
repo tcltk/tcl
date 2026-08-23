@@ -3789,8 +3789,7 @@ ClockScanCommit(
 	double curJDN = (double)yydate.julianDay
 		+ ((double)yySecondOfDay - SECONDS_PER_DAY/2) / SECONDS_PER_DAY;
 	if (curJDN > opts->dataPtr->maxJDN) {
-	    Tcl_PrintfResult(opts->interp,
-		    "requested date too large to represent");
+	    Tcl_PrintfResult(opts->interp, "requested date too large to represent");
 	    Tcl_SetErrorCode(opts->interp, "CLOCK", "dateTooLarge", (char *)NULL);
 	    return TCL_ERROR;
 	}

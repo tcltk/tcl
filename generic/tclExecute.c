@@ -6299,8 +6299,7 @@ TEBCresume(
 		     * good place to draw the line.
 		     */
 
-		    Tcl_PrintfResult(interp,
-			    "integer value too large to represent");
+		    Tcl_PrintfResult(interp, "integer value too large to represent");
 #ifdef ERROR_CODE_FOR_EARLY_DETECTED_ARITH_ERROR
 		    DECACHE_STACK_INFO();
 		    Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW",
@@ -8517,8 +8516,7 @@ ExecuteExtendedBinaryMathOp(
 		 * place to draw the line.
 		 */
 
-		Tcl_PrintfResult(interp,
-			"integer value too large to represent");
+		Tcl_PrintfResult(interp, "integer value too large to represent");
 		return GENERAL_ARITHMETIC_ERROR;
 	    }
 	    shift = (int)(*((const Tcl_WideInt *)ptr2));

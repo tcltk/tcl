@@ -1721,8 +1721,8 @@ Tcl_Import(
 	    &importNsPtr, &dummyPtr, &dummyPtr, &simplePattern);
 
     if (importNsPtr == NULL) {
-	Tcl_PrintfResult(interp,
-		"unknown namespace in import pattern \"%s\"", pattern);
+	Tcl_PrintfResult(interp, "unknown namespace in import pattern \"%s\"",
+		pattern);
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "NAMESPACE", pattern, (char *)NULL);
 	return TCL_ERROR;
     }
@@ -1898,8 +1898,8 @@ DoImport(
 		return TCL_OK;
 	    }
 	}
-	Tcl_PrintfResult(interp,
-		"can't import command \"%s\": already exists", cmdName);
+	Tcl_PrintfResult(interp, "can't import command \"%s\": already exists",
+		cmdName);
 	Tcl_SetErrorCode(interp, "TCL", "IMPORT", "OVERWRITE", (char *)NULL);
 	return TCL_ERROR;
     }

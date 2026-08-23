@@ -803,8 +803,8 @@ UnloadLibrary(
 	if (libraryPtr->safeUnloadProc == NULL) {
 	    if (!interpExiting) {
 		Tcl_PrintfResult(interp,
-			"file \"%s\" cannot be unloaded under a safe interpreter",
-			fullFileName);
+			"file \"%s\" cannot be unloaded under a %s interpreter",
+			fullFileName, "safe");
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "UNLOAD", "CANNOT",
 			(char *)NULL);
 		code = TCL_ERROR;
@@ -816,8 +816,8 @@ UnloadLibrary(
 	if (libraryPtr->unloadProc == NULL) {
 	    if (!interpExiting) {
 		Tcl_PrintfResult(interp,
-			"file \"%s\" cannot be unloaded under a trusted interpreter",
-			fullFileName);
+			"file \"%s\" cannot be unloaded under a %s interpreter",
+			fullFileName, "trusted");
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "UNLOAD", "CANNOT",
 			(char *)NULL);
 		code = TCL_ERROR;

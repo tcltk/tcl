@@ -1069,8 +1069,7 @@ TclArithSeriesGetElements(
 		objv = (Tcl_Obj **) Tcl_Alloc(sizeof(Tcl_Obj *) * objc);
 		if (objv == NULL) {
 		    if (interp) {
-			Tcl_PrintfResult(interp,
-				"max length of a Tcl list exceeded");
+			Tcl_PrintfResult(interp, "max length of a Tcl list exceeded");
 			Tcl_SetErrorCode(interp, "TCL", "MEMORY", (char *)NULL);
 		    }
 		    return TCL_ERROR;

@@ -221,8 +221,7 @@ TclNRIfObjCmd(
     Tcl_Obj *boolObj;
 
     if (objc <= 1) {
-	Tcl_PrintfResult(interp,
-		"wrong # args: no expression after \"%s\" argument",
+	Tcl_PrintfResult(interp, "wrong # args: no expression after \"%s\" argument",
 		TclGetString(objv[0]));
 	Tcl_SetErrorCode(interp, "TCL", "WRONGARGS", (char *)NULL);
 	return TCL_ERROR;
@@ -356,8 +355,7 @@ IfConditionCallback(
     return TclNREvalObjEx(interp, objv[i], 0, iPtr->cmdFramePtr, i);
 
   missingScript:
-    Tcl_PrintfResult(interp,
-	    "wrong # args: no script following \"%s\" argument",
+    Tcl_PrintfResult(interp, "wrong # args: no script following \"%s\" argument",
 	    TclGetString(objv[i - 1]));
     Tcl_SetErrorCode(interp, "TCL", "WRONGARGS", (char *)NULL);
     return TCL_ERROR;
@@ -3248,8 +3246,8 @@ Tcl_LsearchObjCmd(
 	    break;
 	case LSEARCH_STRIDE:		/* -stride */
 	    if (i > objc-4) {
-		Tcl_PrintfResult(interp,
-			"\"-stride\" option must be followed by stride length");
+		Tcl_PrintfResult(interp, "\"%s\" option must be followed by %s",
+			"-stride", "stride length");
 		Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "MISSING", (char *)NULL);
 		result = TCL_ERROR;
 		goto done;
@@ -3277,8 +3275,8 @@ Tcl_LsearchObjCmd(
 		allocatedIndexVector = 0;
 	    }
 	    if (i > objc-4) {
-		Tcl_PrintfResult(interp,
-			"\"-index\" option must be followed by list index");
+		Tcl_PrintfResult(interp, "\"%s\" option must be followed by %s",
+			"-index", "list index");
 		Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "MISSING", (char *)NULL);
 		result = TCL_ERROR;
 		goto done;
@@ -3348,8 +3346,7 @@ Tcl_LsearchObjCmd(
      */
 
     if (returnSubindices && sortInfo.indexc==0) {
-	Tcl_PrintfResult(interp,
-		"-subindices cannot be used without -index option");
+	Tcl_PrintfResult(interp, "-subindices cannot be used without -index option");
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LSEARCH",
 		"BAD_OPTION_MIX", (char *)NULL);
 	result = TCL_ERROR;
@@ -3357,8 +3354,7 @@ Tcl_LsearchObjCmd(
     }
 
     if (bisect && (allMatches || negatedMatch)) {
-	Tcl_PrintfResult(interp,
-		"-bisect is not compatible with -all or -not");
+	Tcl_PrintfResult(interp, "-bisect is not compatible with -all or -not");
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LSEARCH",
 		"BAD_OPTION_MIX", (char *)NULL);
 	result = TCL_ERROR;
@@ -3410,8 +3406,7 @@ Tcl_LsearchObjCmd(
 
     if (groupSize > 1) {
 	if (listc % groupSize) {
-	    Tcl_PrintfResult(interp,
-		    "list size must be a multiple of the stride length");
+	    Tcl_PrintfResult(interp, "list size must be a multiple of the stride length");
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LSEARCH", "BADSTRIDE",
 		    (char *)NULL);
 	    result = TCL_ERROR;
@@ -4394,8 +4389,8 @@ Tcl_LsortObjCmd(
 	    break;
 	case LSORT_COMMAND:
 	    if (i == objc-2) {
-		Tcl_PrintfResult(interp, "\"-command\" option must be "
-			"followed by comparison command");
+		Tcl_PrintfResult(interp, "\"%s\" option must be followed by %s",
+			"-command", "comparison command");
 		Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "MISSING", (char *)NULL);
 		sortInfo.resultCode = TCL_ERROR;
 		goto done;
@@ -4418,8 +4413,8 @@ Tcl_LsortObjCmd(
 	    Tcl_Obj **indexv;
 
 	    if (i == objc-2) {
-		Tcl_PrintfResult(interp,
-			"\"-index\" option must be followed by list index");
+		Tcl_PrintfResult(interp, "\"%s\" option must be followed by %s",
+			"-index", "list index");
 		Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "MISSING", (char *)NULL);
 		sortInfo.resultCode = TCL_ERROR;
 		goto done;

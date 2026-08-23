@@ -336,8 +336,7 @@ TclCleanupChildren(
 		result = TCL_ERROR;
 		Tcl_DecrRefCount(objPtr);
 		Tcl_ResetResult(interp);
-		Tcl_PrintfResult(interp,
-			"error reading stderr output file: %s",
+		Tcl_PrintfResult(interp, "error reading stderr output file: %s",
 			Tcl_PosixError(interp));
 	    } else if (count > 0) {
 		anyErrorInfo = 1;
@@ -709,8 +708,7 @@ TclCreatePipeline(
 
 	    inputFile = TclpCreateTempFile(inputLiteral);
 	    if (inputFile == NULL) {
-		Tcl_PrintfResult(interp,
-			"couldn't create input file for command: %s",
+		Tcl_PrintfResult(interp, "couldn't create input file for command: %s",
 			Tcl_PosixError(interp));
 		goto error;
 	    }
@@ -722,8 +720,7 @@ TclCreatePipeline(
 	     */
 
 	    if (TclpCreatePipe(&inputFile, inPipePtr) == 0) {
-		Tcl_PrintfResult(interp,
-			"couldn't create input pipe for command: %s",
+		Tcl_PrintfResult(interp, "couldn't create input pipe for command: %s",
 			Tcl_PosixError(interp));
 		goto error;
 	    }
@@ -751,8 +748,7 @@ TclCreatePipeline(
 	     */
 
 	    if (TclpCreatePipe(outPipePtr, &outputFile) == 0) {
-		Tcl_PrintfResult(interp,
-			"couldn't create output pipe for command: %s",
+		Tcl_PrintfResult(interp, "couldn't create output pipe for command: %s",
 			Tcl_PosixError(interp));
 		goto error;
 	    }
@@ -791,8 +787,7 @@ TclCreatePipeline(
 
 	    errorFile = TclpCreateTempFile(NULL);
 	    if (errorFile == NULL) {
-		Tcl_PrintfResult(interp,
-			"couldn't create error file for command: %s",
+		Tcl_PrintfResult(interp, "couldn't create error file for command: %s",
 			Tcl_PosixError(interp));
 		goto error;
 	    }

@@ -8251,8 +8251,8 @@ Tcl_SetChannelOption(
 	    ResetFlag(statePtr, CHANNEL_LINEBUFFERED);
 	    SetFlag(statePtr, CHANNEL_UNBUFFERED);
 	} else if (interp) {
-	    Tcl_PrintfResult(interp, "bad value for -buffering: must be one of"
-		    " full, line, or none");
+	    Tcl_PrintfResult(interp, "bad value for %s: must be %s",
+		    "-buffering", "one of full, line, or none");
 	    return TCL_ERROR;
 	}
 	return TCL_OK;
@@ -8327,8 +8327,8 @@ Tcl_SetChannelOption(
 	    }
 	} else {
 	    if (interp) {
-		Tcl_PrintfResult(interp,
-			"bad value for -eofchar: must be non-NUL ASCII character");
+		Tcl_PrintfResult(interp, "bad value for %s: must be %s",
+			"-eofchar", "non-NUL ASCII character");
 	    }
 	    Tcl_Free((void *)argv);
 	    return TCL_ERROR;
@@ -8373,9 +8373,8 @@ Tcl_SetChannelOption(
 	    writeMode = GotFlag(statePtr, TCL_WRITABLE) ? argv[1] : NULL;
 	} else {
 	    if (interp) {
-		Tcl_PrintfResult(interp,
-			"bad value for -translation: must be a one or two"
-			" element list");
+		Tcl_PrintfResult(interp, "bad value for %s: must be %s",
+			"-translation", "a one or two element list");
 	    }
 	    Tcl_Free((void *)argv);
 	    return TCL_ERROR;
@@ -8403,9 +8402,9 @@ Tcl_SetChannelOption(
 		translation = TCL_PLATFORM_TRANSLATION;
 	    } else {
 		if (interp) {
-		    Tcl_PrintfResult(interp,
-			    "bad value for -translation: must be one of "
-			    "auto, binary, cr, lf, crlf, or platform");
+		    Tcl_PrintfResult(interp, "bad value for %s: must be %s",
+			    "-translation",
+			    "one of auto, binary, cr, lf, crlf, or platform");
 		}
 		Tcl_Free((void *)argv);
 		return TCL_ERROR;
@@ -8452,9 +8451,9 @@ Tcl_SetChannelOption(
 		statePtr->outputTranslation = TCL_PLATFORM_TRANSLATION;
 	    } else {
 		if (interp) {
-		    Tcl_PrintfResult(interp,
-			    "bad value for -translation: must be one of "
-			    "auto, binary, cr, lf, crlf, or platform");
+		    Tcl_PrintfResult(interp, "bad value for %s: must be %s",
+			    "-translation",
+			    "one of auto, binary, cr, lf, crlf, or platform");
 		}
 		Tcl_Free((void *)argv);
 		return TCL_ERROR;
@@ -9833,15 +9832,9 @@ CopyData(
 	if (size < 0) {
 	readError:
 	    if (interp) {
-		TclNewObj(errObj);
-		Tcl_AppendStringsToObj(errObj, "error reading \"",
-			Tcl_GetChannelName(inChan), "\": ", (char *)NULL);
-		if (msg != NULL) {
-		    Tcl_AppendObjToObj(errObj, msg);
-		} else {
-		    Tcl_AppendStringsToObj(errObj, Tcl_PosixError(interp),
-			    (char *)NULL);
-		}
+		errObj = Tcl_ObjPrintf("error reading \"%s\": %s",
+			Tcl_GetChannelName(inChan),
+			msg ? Tcl_GetString(msg) : Tcl_PosixError(interp));
 	    }
 	    if (msg != NULL) {
 		Tcl_DecrRefCount(msg);
@@ -9909,15 +9902,9 @@ CopyData(
 	if (sizeb < 0) {
 	writeError:
 	    if (interp) {
-		TclNewObj(errObj);
-		Tcl_AppendStringsToObj(errObj, "error writing \"",
-			Tcl_GetChannelName(outChan), "\": ", (char *)NULL);
-		if (msg != NULL) {
-		    Tcl_AppendObjToObj(errObj, msg);
-		} else {
-		    Tcl_AppendStringsToObj(errObj, Tcl_PosixError(interp),
-			    (char *)NULL);
-		}
+		errObj = Tcl_ObjPrintf("error writing \"%s\": %s",
+			Tcl_GetChannelName(outChan),
+			msg ? Tcl_GetString(msg) : Tcl_PosixError(interp));
 	    }
 	    if (msg != NULL) {
 		Tcl_DecrRefCount(msg);

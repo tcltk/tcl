@@ -3518,8 +3518,7 @@ TclNRSwitchObjCmd(
 		 * Mode already set via -exact, -glob, or -regexp.
 		 */
 
-		Tcl_PrintfResult(interp,
-			"bad option \"%s\": %s option already found",
+		Tcl_PrintfResult(interp, "bad option \"%s\": %s option already found",
 			TclGetString(objv[i]), options[mode]);
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "SWITCH",
 			"DOUBLEOPT", (char *)NULL);

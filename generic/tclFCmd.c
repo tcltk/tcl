@@ -179,8 +179,7 @@ FileCopyRename(
 	if ((objc - i) > 2) {
 	    errno = ENOTDIR;
 	    Tcl_PosixError(interp);
-	    Tcl_PrintfResult(interp,
-		    "error %s: target \"%s\" is not a directory",
+	    Tcl_PrintfResult(interp, "error %s: target \"%s\" is not a directory",
 		    (copyFlag?"copying":"renaming"), TclGetString(target));
 	    result = TCL_ERROR;
 	} else {

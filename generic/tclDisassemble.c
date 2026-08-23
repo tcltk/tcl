@@ -1488,8 +1488,8 @@ Tcl_DisassembleObjCmd(
 	}
 	procPtr = TclOOGetProcFromMethod(methodPtr);
 	if (procPtr == NULL) {
-	    Tcl_PrintfResult(interp,
-		    "body not available for this kind of constructor");
+	    Tcl_PrintfResult(interp, "body not available for this kind of %s",
+		    "constructor");
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "DISASSEMBLE",
 		    "METHODTYPE", (char *)NULL);
 	    return TCL_ERROR;
@@ -1525,8 +1525,8 @@ Tcl_DisassembleObjCmd(
 	}
 	procPtr = TclOOGetProcFromMethod(methodPtr);
 	if (procPtr == NULL) {
-	    Tcl_PrintfResult(interp,
-		    "body not available for this kind of destructor");
+	    Tcl_PrintfResult(interp, "body not available for this kind of %s",
+		    "destructor");
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "DISASSEMBLE",
 		    "METHODTYPE", (char *)NULL);
 	    return TCL_ERROR;
@@ -1590,8 +1590,8 @@ Tcl_DisassembleObjCmd(
 	}
 	procPtr = TclOOGetProcFromMethod((Method *)Tcl_GetHashValue(hPtr));
 	if (procPtr == NULL) {
-	    Tcl_PrintfResult(interp,
-		    "body not available for this kind of method");
+	    Tcl_PrintfResult(interp, "body not available for this kind of %s",
+		    "method");
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "DISASSEMBLE",
 		    "METHODTYPE", (char *)NULL);
 	    return TCL_ERROR;

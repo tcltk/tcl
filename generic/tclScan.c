@@ -982,8 +982,7 @@ Tcl_ScanObjCmd(
 			    Tcl_Free(objs);
 			}
 			Tcl_DecrRefCount(objPtr);
-			Tcl_PrintfResult(interp,
-				"unsigned bignum scans are invalid");
+			Tcl_PrintfResult(interp, "unsigned bignum scans are invalid");
 			Tcl_SetErrorCode(interp, "TCL", "FORMAT",
 				"BADUNSIGNED", (char *)NULL);
 			return TCL_ERROR;

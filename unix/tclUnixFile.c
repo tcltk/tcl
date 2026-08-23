@@ -346,9 +346,8 @@ TclpMatchInDirectory(
 	if (d == NULL) {
 	    Tcl_DStringFree(&ds);
 	    if (interp != NULL) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"couldn't read directory \"%s\": %s",
-			Tcl_DStringValue(&dsOrig), Tcl_PosixError(interp)));
+		Tcl_PrintfResult(interp, "couldn't read directory \"%s\": %s",
+			Tcl_DStringValue(&dsOrig), Tcl_PosixError(interp));
 	    }
 	    Tcl_DStringFree(&dsOrig);
 	    Tcl_DecrRefCount(fileNamePtr);
@@ -821,9 +820,8 @@ TclpGetCwd(
 #endif /* USEGETWD */
     {
 	if (interp != NULL) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "error getting working directory name: %s",
-		    Tcl_PosixError(interp)));
+	    Tcl_PrintfResult(interp, "error getting working directory name: %s",
+		    Tcl_PosixError(interp));
 	}
 	return NULL;
     }

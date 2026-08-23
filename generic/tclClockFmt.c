@@ -2693,9 +2693,8 @@ TclClockScan(
     Tcl_PrintfResult(opts->interp, "input string does not match supplied format");
 #else
     /* to debug where exactly scan breaks */
-    Tcl_PrintfResult(opts->interp,
-	    "input string \"%s\" does not match supplied format \"%s\","
-	    " locale \"%s\" - token \"%s\"",
+    Tcl_PrintfResult(opts->interp, "input string \"%s\" does not match "
+	    "supplied format \"%s\", locale \"%s\" - token \"%s\"",
 	    info->dateStart, fss->hashEntry.key.string,
 	    TclGetString(opts->localeObj),
 	    tok && tok->tokWord.start ? tok->tokWord.start : "NULL");

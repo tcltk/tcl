@@ -899,8 +899,7 @@ SelectPackageFinal(
 	Tcl_Obj *codePtr;
 
 	TclNewIntObj(codePtr, result);
-	Tcl_PrintfResult(interp,
-		"attempt to provide package %s %s failed:"
+	Tcl_PrintfResult(interp, "attempt to provide package %s %s failed:"
 		" bad return code: %s",
 		name, versionToProvide, TclGetString(codePtr));
 	Tcl_SetErrorCode(interp, "TCL", "PACKAGE", "BADRESULT", (char *)NULL);

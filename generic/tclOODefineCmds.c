@@ -1713,14 +1713,14 @@ TclOODefineClassObjCmd(
 	return TCL_ERROR;
     }
     if (oPtr->flags & ROOT_OBJECT) {
-	Tcl_PrintfResult(interp,
-		"may not modify the class of the root object class");
+	Tcl_PrintfResult(interp, "may not modify the class of the %s",
+		"root object class");
 	OO_ERROR(interp, MONKEY_BUSINESS);
 	return TCL_ERROR;
     }
     if (oPtr->flags & ROOT_CLASS) {
-	Tcl_PrintfResult(interp,
-		"may not modify the class of the class of classes");
+	Tcl_PrintfResult(interp, "may not modify the class of the %s",
+		"class of classes");
 	OO_ERROR(interp, MONKEY_BUSINESS);
 	return TCL_ERROR;
     }
@@ -3302,8 +3302,7 @@ ClassMixin_Set(
 	}
 	(void) Tcl_CreateHashEntry(&uniqueCheck, mixins[i], &isNew);
 	if (!isNew) {
-	    Tcl_PrintfResult(interp,
-		    "class should only be a direct mixin once");
+	    Tcl_PrintfResult(interp, "class should only be a direct mixin once");
 	    OO_ERROR(interp, REPETITIOUS);
 	    goto freeAndError;
 	}
@@ -3390,8 +3389,7 @@ ClassSuper_Set(
 
     Foundation *fPtr = clsPtr->thisPtr->fPtr;
     if (clsPtr == fPtr->objectCls) {
-	Tcl_PrintfResult(interp,
-		"may not modify the superclass of the root object");
+	Tcl_PrintfResult(interp, "may not modify the superclass of the root object");
 	OO_ERROR(interp, MONKEY_BUSINESS);
 	return TCL_ERROR;
     } else if (TclListObjGetElements(interp, objv[0], &superc,
@@ -3437,8 +3435,7 @@ ClassSuper_Set(
 		}
 	    }
 	    if (TclOOIsReachable(clsPtr, superclasses[i])) {
-		Tcl_PrintfResult(interp,
-			"attempt to form circular dependency graph");
+		Tcl_PrintfResult(interp, "attempt to form circular dependency graph");
 		OO_ERROR(interp, CIRCULARITY);
 	    failedAfterAlloc:
 		for (; i-- > 0 ;) {
@@ -3711,8 +3708,7 @@ ObjMixin_Set(
 	}
 	(void) Tcl_CreateHashEntry(&uniqueCheck, mixins[i], &isNew);
 	if (!isNew) {
-	    Tcl_PrintfResult(interp,
-		    "class should only be a direct mixin once");
+	    Tcl_PrintfResult(interp, "class should only be a direct mixin once");
 	    OO_ERROR(interp, REPETITIOUS);
 	    goto freeAndError;
 	}

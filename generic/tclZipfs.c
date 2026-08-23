@@ -4972,8 +4972,7 @@ ZipChannelOpen(
     if ((mode & (O_APPEND|O_TRUNC)) && !wr) {
 	Tcl_SetErrno(EINVAL);
 	if (interp) {
-	    Tcl_PrintfResult(interp,
-		    "Invalid flags 0x%x. O_APPEND and "
+	    Tcl_PrintfResult(interp, "Invalid flags 0x%x. O_APPEND and "
 		    "O_TRUNC require write access: %s",
 		    mode, Tcl_PosixError(interp));
 	}

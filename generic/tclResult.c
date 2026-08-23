@@ -893,9 +893,8 @@ ExpandedOptions(
 
 	    if (TCL_ERROR == TclListObjGetElements(interp, objv[1],
 		    &nestc, &nestv) || (nestc % 2)) {
-		Tcl_PrintfResult(interp,
-			"bad -options value: expected dictionary but got"
-			" \"%s\"", TclGetString(objv[1]));
+		Tcl_PrintfResult(interp, "bad %s value: expected %s but got \"%s\"",
+			"-options", "dictionary", TclGetString(objv[1]));
 		Tcl_SetErrorCode(interp, "TCL", "RESULT", "ILLEGAL_OPTIONS",
 			(char *)NULL);
 		return TCL_ERROR;
@@ -963,9 +962,8 @@ TclMergeReturnOptions(
 	     * Value is not a legal level.
 	     */
 
-	    Tcl_PrintfResult(interp,
-		    "bad -level value: expected non-negative integer but got"
-		    " \"%s\"", TclGetString(valuePtr));
+	    Tcl_PrintfResult(interp, "bad %s value: expected %s but got \"%s\"",
+		    "-level", "non-negative integer", TclGetString(valuePtr));
 	    Tcl_SetErrorCode(interp, "TCL", "RESULT", "ILLEGAL_LEVEL", (char *)NULL);
 	    goto error;
 	}
@@ -985,9 +983,8 @@ TclMergeReturnOptions(
 	     * Value is not a list, which is illegal for -errorcode.
 	     */
 
-	    Tcl_PrintfResult(interp,
-		    "bad -errorcode value: expected a list but got \"%s\"",
-		    TclGetString(valuePtr));
+	    Tcl_PrintfResult(interp, "bad %s value: expected %s but got \"%s\"",
+		    "-errorcode", "a list", TclGetString(valuePtr));
 	    Tcl_SetErrorCode(interp, "TCL", "RESULT", "ILLEGAL_ERRORCODE",
 		    (char *)NULL);
 	    goto error;
@@ -1007,9 +1004,8 @@ TclMergeReturnOptions(
 	     * Value is not a list, which is illegal for -errorstack.
 	     */
 
-	    Tcl_PrintfResult(interp,
-		    "bad -errorstack value: expected a list but got \"%s\"",
-		    TclGetString(valuePtr));
+	    Tcl_PrintfResult(interp, "bad %s value: expected %s but got \"%s\"",
+		    "-errorstack", "a list", TclGetString(valuePtr));
 	    Tcl_SetErrorCode(interp, "TCL", "RESULT", "NONLIST_ERRORSTACK",
 		    (char *)NULL);
 	    goto error;

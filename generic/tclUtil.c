@@ -679,8 +679,8 @@ FindElement(
 			p2++;
 		    }
 		    Tcl_PrintfResult(interp,
-			    "%s element in braces followed by \"%.*s\" "
-			    "instead of space", typeStr, (int) (p2-p), p);
+			    "%s element in %s followed by \"%.*s\" instead of space",
+			    typeStr, "braces", (int) (p2-p), p);
 		    Tcl_SetErrorCode(interp, "TCL", "VALUE", typeCode, "JUNK",
 			    (char *)NULL);
 		}
@@ -731,8 +731,8 @@ FindElement(
 			p2++;
 		    }
 		    Tcl_PrintfResult(interp,
-			    "%s element in quotes followed by \"%.*s\" "
-			    "instead of space", typeStr, (int) (p2-p), p);
+			    "%s element in %s followed by \"%.*s\" instead of space",
+			    typeStr, "quotes", (int) (p2-p), p);
 		    Tcl_SetErrorCode(interp, "TCL", "VALUE", typeCode, "JUNK",
 			    (char *)NULL);
 		}

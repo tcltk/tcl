@@ -955,9 +955,8 @@ InfoObjectVariablesCmd(
     }
     if (objc == 3) {
 	if (strcmp("-private", TclGetString(objv[2])) != 0) {
-	    Tcl_PrintfResult(interp,
-		    "option \"%s\" is not exactly \"-private\"",
-		    TclGetString(objv[2]));
+	    Tcl_PrintfResult(interp, "option \"%s\" is not exactly \"%s\"",
+		    TclGetString(objv[2]), "-private");
 	    OO_ERROR(interp, BAD_ARG);
 	    return TCL_ERROR;
 	}
@@ -1685,9 +1684,8 @@ InfoClassVariablesCmd(
     }
     if (objc == 3) {
 	if (strcmp("-private", TclGetString(objv[2])) != 0) {
-	    Tcl_PrintfResult(interp,
-		    "option \"%s\" is not exactly \"-private\"",
-		    TclGetString(objv[2]));
+	    Tcl_PrintfResult(interp, "option \"%s\" is not exactly \"%s\"",
+		    TclGetString(objv[2]), "-private");
 	    OO_ERROR(interp, BAD_ARG);
 	    return TCL_ERROR;
 	}

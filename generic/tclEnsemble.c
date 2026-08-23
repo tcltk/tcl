@@ -1792,8 +1792,7 @@ NsEnsembleImplementationCmdNR(
 	 */
 
 	if (!Tcl_InterpDeleted(interp)) {
-	    Tcl_PrintfResult(interp,
-		    "ensemble activated for deleted namespace");
+	    Tcl_PrintfResult(interp, "ensemble activated for deleted namespace");
 	    Tcl_SetErrorCode(interp, "TCL", "ENSEMBLE", "DEAD", (char *)NULL);
 	}
 	return TCL_ERROR;

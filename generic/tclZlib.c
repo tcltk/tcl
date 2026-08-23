@@ -471,10 +471,11 @@ GenerateHeader(
 	if (result != TCL_OK) {
 	    if (interp) {
 		if (result == TCL_CONVERT_UNKNOWN) {
-		    Tcl_PrintfResult(interp,
-			    "Comment contains characters > 0xFF");
+		    Tcl_PrintfResult(interp, "%s contains characters > 0xFF",
+			    "Comment");
 		} else {
-		    Tcl_PrintfResult(interp, "Comment too large for zip");
+		    Tcl_PrintfResult(interp, "%s too large for zip",
+			    "Comment");
 		}
 	    }
 	    result = TCL_ERROR; /* TCL_CONVERT_* -> TCL_ERROR */
@@ -506,10 +507,11 @@ GenerateHeader(
 	if (result != TCL_OK) {
 	    if (interp) {
 		if (result == TCL_CONVERT_UNKNOWN) {
-		    Tcl_PrintfResult(interp,
-			    "Filename contains characters > 0xFF");
+		    Tcl_PrintfResult(interp, "%s contains characters > 0xFF",
+			    "Filename");
 		} else {
-		    Tcl_PrintfResult(interp, "Filename too large for zip");
+		    Tcl_PrintfResult(interp, "%s too large for zip",
+			    "Filename");
 		}
 	    }
 	    result = TCL_ERROR;	/* TCL_CONVERT_* -> TCL_ERROR */
@@ -1239,8 +1241,7 @@ Tcl_ZlibStreamPut(
 
     if (zshPtr->streamEnd) {
 	if (zshPtr->interp) {
-	    Tcl_PrintfResult(zshPtr->interp,
-		    "already past compressed stream end");
+	    Tcl_PrintfResult(zshPtr->interp, "already past compressed stream end");
 	    Tcl_SetErrorCode(zshPtr->interp, "TCL", "ZIP", "CLOSED", (char *)NULL);
 	}
 	return TCL_ERROR;
@@ -2601,14 +2602,14 @@ ZlibPushCmd(
      */
 
     if (mode == TCL_ZLIB_STREAM_DEFLATE && !(chanMode & TCL_WRITABLE)) {
-	Tcl_PrintfResult(interp,
-		"compression may only be applied to writable channels");
+	Tcl_PrintfResult(interp, "%s may only be applied to %s channels",
+		"compression", "writable");
 	Tcl_SetErrorCode(interp, "TCL", "ZIP", "UNWRITABLE", (char *)NULL);
 	return TCL_ERROR;
     }
     if (mode == TCL_ZLIB_STREAM_INFLATE && !(chanMode & TCL_READABLE)) {
-	Tcl_PrintfResult(interp,
-		"decompression may only be applied to readable channels");
+	Tcl_PrintfResult(interp, "%s may only be applied to %s channels",
+		"decompression", "readable");
 	Tcl_SetErrorCode(interp, "TCL", "ZIP", "UNREADABLE", (char *)NULL);
 	return TCL_ERROR;
     }

@@ -276,8 +276,7 @@ QueryConfigObjCmd(
 	listPtr = Tcl_NewListObj(m, NULL);
 
 	if (!listPtr) {
-	    Tcl_PrintfResult(interp,
-		    "insufficient memory to create list");
+	    Tcl_PrintfResult(interp, "insufficient memory to create list");
 	    Tcl_SetErrorCode(interp, "TCL", "MEMORY", (char *)NULL);
 	    return TCL_ERROR;
 	}

@@ -1506,8 +1506,7 @@ AssembleOneLine(
 	    goto cleanup;
 	}
 	if (jtObjc % 2 != 0) {
-	    Tcl_PrintfResult(interp,
-		    "jump table must have an even number of list elements");
+	    Tcl_PrintfResult(interp, "jump table must have an even number of list elements");
 	    Tcl_SetErrorCode(interp, "TCL", "ASSEM", "BADJUMPTABLE", (char *)NULL);
 	    goto cleanup;
 	}
@@ -2153,8 +2152,7 @@ GetNextOperand(
     if (!TclWordKnownAtCompileTime(*tokenPtrPtr, operandObj)) {
 	Tcl_DecrRefCount(operandObj);
 	if (assemEnvPtr->flags & TCL_EVAL_DIRECT) {
-	    Tcl_PrintfResult(interp,
-		    "assembly code may not contain substitutions");
+	    Tcl_PrintfResult(interp, "assembly code may not contain substitutions");
 	    Tcl_SetErrorCode(interp, "TCL", "ASSEM", "NOSUBST", (char *)NULL);
 	}
 	return TCL_ERROR;
@@ -3846,8 +3844,7 @@ CheckForUnclosedCatches(
 
     if (assemEnvPtr->curr_bb->catchState >= BBCS_INCATCH) {
 	if (assemEnvPtr->flags & TCL_EVAL_DIRECT) {
-	    Tcl_PrintfResult(interp,
-		    "catch still active on exit from assembly code");
+	    Tcl_PrintfResult(interp, "catch still active on exit from assembly code");
 	    Tcl_SetErrorLine(interp,
 		    assemEnvPtr->curr_bb->enclosingCatch->startLine);
 	    Tcl_SetErrorCode(interp, "TCL", "ASSEM", "UNCLOSEDCATCH", (char *)NULL);

@@ -945,8 +945,8 @@ Tcl_ConvertToType(
 
     if (typePtr->setFromAnyProc == NULL) {
 	if (interp) {
-	    Tcl_PrintfResult(interp,
-		    "can't convert value to type %s", typePtr->name);
+	    Tcl_PrintfResult(interp, "can't convert value to type %s",
+		    typePtr->name);
 	    Tcl_SetErrorCode(interp, "TCL", "API_ABUSE", (char *)NULL);
 	}
 	return TCL_ERROR;
@@ -2649,8 +2649,7 @@ Tcl_GetLongFromObj(
 #endif
 	if (TclHasInternalRep(objPtr, &tclDoubleType)) {
 	    if (interp != NULL) {
-		Tcl_PrintfResult(interp,
-			"expected integer but got \"%s\"",
+		Tcl_PrintfResult(interp, "expected integer but got \"%s\"",
 			TclGetString(objPtr));
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", (char *)NULL);
 	    }
@@ -2949,8 +2948,7 @@ Tcl_GetWideIntFromObj(
 	}
 	if (TclHasInternalRep(objPtr, &tclDoubleType)) {
 	    if (interp != NULL) {
-		Tcl_PrintfResult(interp,
-			"expected integer but got \"%s\"",
+		Tcl_PrintfResult(interp, "expected integer but got \"%s\"",
 			TclGetString(objPtr));
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", (char *)NULL);
 	    }
@@ -3031,8 +3029,7 @@ Tcl_GetWideUIntFromObj(
 	    if (objPtr->internalRep.wideValue < 0) {
 	    wideUIntOutOfRange:
 		if (interp != NULL) {
-		    Tcl_PrintfResult(interp,
-			    "expected unsigned integer but got \"%s\"",
+		    Tcl_PrintfResult(interp, "expected unsigned integer but got \"%s\"",
 			    TclGetString(objPtr));
 		    Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", (char *)NULL);
 		}

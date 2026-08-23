@@ -278,14 +278,12 @@ Tcl_ParseCommand(
 	if (scanned == 0) {
 	    if (src[-1] == '"') {
 		if (interp != NULL) {
-		    Tcl_PrintfResult(interp,
-			    "extra characters after close-quote");
+		    Tcl_PrintfResult(interp, "extra characters after close-quote");
 		}
 		parsePtr->errorType = TCL_PARSE_QUOTE_EXTRA;
 	    } else {
 		if (interp != NULL) {
-		    Tcl_PrintfResult(interp,
-			    "extra characters after close-brace");
+		    Tcl_PrintfResult(interp, "extra characters after close-brace");
 		}
 		parsePtr->errorType = TCL_PARSE_BRACE_EXTRA;
 	    }
@@ -1155,8 +1153,7 @@ ParseTokens(
 		}
 		if (numBytes == 0) {
 		    if (parsePtr->interp != NULL) {
-			Tcl_PrintfResult(parsePtr->interp,
-				"missing close-bracket");
+			Tcl_PrintfResult(parsePtr->interp, "missing close-bracket");
 		    }
 		    parsePtr->errorType = TCL_PARSE_MISSING_BRACKET;
 		    parsePtr->term = tokenPtr->start;

@@ -203,10 +203,8 @@ Tcl_GetIndexFromObjStruct(
     void *indexPtr)		/* Place to store resulting index. */
 {
     Tcl_Size index, idx, numAbbrev;
-    const char *key, *p1;
-    const char *p2;
+    const char *key, *p1, *p2;
     const char *const *entryPtr;
-    Tcl_Obj *resultPtr;
     IndexRep *indexRep;
     const Tcl_ObjInternalRep *irPtr;
 
@@ -336,35 +334,32 @@ Tcl_GetIndexFromObjStruct(
 
 	int count = 0;
 
-	TclNewObj(resultPtr);
 	entryPtr = (const char *const *)tablePtr;
 	while ((*entryPtr != NULL) && !**entryPtr) {
 	    entryPtr = NEXT_ENTRY(entryPtr, offset);
 	}
-	Tcl_AppendStringsToObj(resultPtr,
-		(numAbbrev>1 && !(flags & TCL_EXACT) ? "ambiguous " : "bad "),
-		msg, " \"", key, (char *)NULL);
+	Tcl_PrintfResult(interp, "%s %s \"%s\": ",
+		(numAbbrev > 1 && !(flags & TCL_EXACT) ? "ambiguous" : "bad"),
+		msg, key);
 	if (*entryPtr == NULL) {
-	    Tcl_AppendStringsToObj(resultPtr, "\": no valid options", (char *)NULL);
+	    Tcl_AppendPrintfResult(interp, "no valid options");
 	} else {
-	    Tcl_AppendStringsToObj(resultPtr, "\": must be ",
-		    *entryPtr, (char *)NULL);
+	    Tcl_AppendPrintfResult(interp, "must be %s", *entryPtr);
 	    entryPtr = NEXT_ENTRY(entryPtr, offset);
 	    while (*entryPtr != NULL) {
 		if ((*NEXT_ENTRY(entryPtr, offset) == NULL) && !(flags & TCL_NULL_OK)) {
-		    Tcl_AppendStringsToObj(resultPtr, (count > 0 ? "," : ""),
-			    " or ", *entryPtr, (char *)NULL);
+		    Tcl_AppendPrintfResult(interp, "%s or %s",
+			    (count > 0 ? "," : ""), *entryPtr);
 		} else if (**entryPtr) {
-		    Tcl_AppendStringsToObj(resultPtr, ", ", *entryPtr, (char *)NULL);
+		    Tcl_AppendPrintfResult(interp, ", %s", *entryPtr);
 		    count++;
 		}
 		entryPtr = NEXT_ENTRY(entryPtr, offset);
 	    }
 	    if ((flags & TCL_NULL_OK)) {
-		Tcl_AppendStringsToObj(resultPtr, ", or \"\"", (char *)NULL);
+		Tcl_AppendPrintfResult(interp, ", or \"\"");
 	    }
 	}
-	Tcl_SetObjResult(interp, resultPtr);
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "INDEX", msg, key, (char *)NULL);
     }
     return TCL_ERROR;
@@ -1108,8 +1103,7 @@ Tcl_ParseArgsObjv(
 	    }
 	    if (Tcl_GetIntFromObj(interp, objv[srcIndex],
 		    (int *) infoPtr->dstPtr) == TCL_ERROR) {
-		Tcl_PrintfResult(interp,
-			"expected %s argument for \"%s\" but got \"%s\"",
+		Tcl_PrintfResult(interp, "expected %s argument for \"%s\" but got \"%s\"",
 			"integer", infoPtr->keyStr,
 			TclGetString(objv[srcIndex]));
 		goto error;
@@ -1142,8 +1136,7 @@ Tcl_ParseArgsObjv(
 	    }
 	    if (Tcl_GetDoubleFromObj(interp, objv[srcIndex],
 		    (double *)infoPtr->dstPtr) == TCL_ERROR) {
-		Tcl_PrintfResult(interp,
-			"expected %s argument for \"%s\" but got \"%s\"",
+		Tcl_PrintfResult(interp, "expected %s argument for \"%s\" but got \"%s\"",
 			"floating-point", infoPtr->keyStr,
 			TclGetString(objv[srcIndex]));
 		goto error;

@@ -1254,8 +1254,7 @@ FileAttrModifyTimeCmd(
 #if defined(_WIN32)
     /* We use a value of 0 to indicate the modification time not available */
     if (Tcl_GetModificationTimeFromStat(&buf) == 0) {
-	Tcl_PrintfResult(interp,
-		"could not get modification time for file \"%s\"",
+	Tcl_PrintfResult(interp, "could not get modification time for file \"%s\"",
 		TclGetString(objv[1]));
 	return TCL_ERROR;
     }
@@ -1276,8 +1275,7 @@ FileAttrModifyTimeCmd(
 	tval.modtime = newTime;
 
 	if (Tcl_FSUtime(objv[1], &tval) != 0) {
-	    Tcl_PrintfResult(interp,
-		    "could not set modification time for file \"%s\": %s",
+	    Tcl_PrintfResult(interp, "could not set modification time for file \"%s\": %s",
 		    TclGetString(objv[1]), Tcl_PosixError(interp));
 	    return TCL_ERROR;
 	}

@@ -4125,8 +4125,7 @@ TclInterpReady(
      */
 
     if (iPtr->flags & DELETED) {
-	Tcl_PrintfResult(interp,
-		"attempt to call eval in deleted interpreter");
+	Tcl_PrintfResult(interp, "attempt to call eval in deleted interpreter");
 	Tcl_SetErrorCode(interp, "TCL", "IDELETE",
 		"attempt to call eval in deleted interpreter", (char *)NULL);
 	return TCL_ERROR;
@@ -9251,7 +9250,8 @@ TclNRYieldObjCmd(
     }
 
     if (!corPtr) {
-	Tcl_PrintfResult(interp, "yield can only be called in a coroutine");
+	Tcl_PrintfResult(interp, "%s can only be called in a coroutine",
+		"yield");
 	Tcl_SetErrorCode(interp, "TCL", "COROUTINE", "ILLEGAL_YIELD", (char *)NULL);
 	return TCL_ERROR;
     }
@@ -9283,7 +9283,8 @@ TclNRYieldToObjCmd(
     }
 
     if (!corPtr) {
-	Tcl_PrintfResult(interp, "yieldto can only be called in a coroutine");
+	Tcl_PrintfResult(interp, "%s can only be called in a coroutine",
+		"yieldto");
 	Tcl_SetErrorCode(interp, "TCL", "COROUTINE", "ILLEGAL_YIELD", (char *)NULL);
 	return TCL_ERROR;
     }
@@ -9672,8 +9673,8 @@ TclNRCoroInjectObjCmd(
 	return TCL_ERROR;
     }
     if (!COR_IS_SUSPENDED(corPtr)) {
-	Tcl_PrintfResult(interp,
-		"can only inject a command into a suspended coroutine");
+	Tcl_PrintfResult(interp, "can only inject a %s into a suspended coroutine",
+		"command");
 	Tcl_SetErrorCode(interp, "TCL", "COROUTINE", "ACTIVE", (char *)NULL);
 	return TCL_ERROR;
     }
@@ -9717,8 +9718,8 @@ TclNRCoroProbeObjCmd(
 	return TCL_ERROR;
     }
     if (!COR_IS_SUSPENDED(corPtr)) {
-	Tcl_PrintfResult(interp,
-		"can only inject a probe command into a suspended coroutine");
+	Tcl_PrintfResult(interp, "can only inject a %s into a suspended coroutine",
+		"probe command");
 	Tcl_SetErrorCode(interp, "TCL", "COROUTINE", "ACTIVE", (char *)NULL);
 	return TCL_ERROR;
     }

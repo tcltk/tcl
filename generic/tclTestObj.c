@@ -428,9 +428,8 @@ TestbooleanobjCmd(
 	}
 	Tcl_SetObjResult(interp, varPtr[varIndex]);
     } else {
-	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-		"bad option \"", Tcl_GetString(objv[1]),
-		"\": must be set, get, or not", (char *)NULL);
+	Tcl_PrintfResult(interp, "bad option \"%s\": must be %s",
+		Tcl_GetString(objv[1]), "set, get, or not");
 	return TCL_ERROR;
     }
     return TCL_OK;
@@ -545,9 +544,8 @@ TestdoubleobjCmd(
 	}
 	Tcl_SetObjResult(interp, varPtr[varIndex]);
     } else {
-	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-		"bad option \"", Tcl_GetString(objv[1]),
-		"\": must be set, get, mult10, or div10", (char *)NULL);
+	Tcl_PrintfResult(interp, "bad option \"%s\": must be %s",
+		Tcl_GetString(objv[1]), "set, get, mult10, or div10");
 	return TCL_ERROR;
     }
     return TCL_OK;
@@ -835,9 +833,8 @@ TestintobjCmd(
 	}
 	Tcl_SetObjResult(interp, varPtr[varIndex]);
     } else {
-	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-		"bad option \"", Tcl_GetString(objv[1]),
-		"\": must be set, get, get2, mult10, or div10", (char *)NULL);
+	Tcl_PrintfResult(interp, "bad option \"%s\": must be %s",
+		Tcl_GetString(objv[1]), "set, get, get2, mult10, or div10");
 	return TCL_ERROR;
     }
     return TCL_OK;
@@ -1276,8 +1273,8 @@ TestobjCmd(
 	    goto wrongNumArgs;
 	}
 	if ((targetType = Tcl_GetObjType(Tcl_GetString(objv[3]))) == NULL) {
-	    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-		    "no type ", Tcl_GetString(objv[3]), " found", (char *)NULL);
+	    Tcl_PrintfResult(interp, "no type %s found",
+		    Tcl_GetString(objv[3]));
 	    return TCL_ERROR;
 	}
 	if (Tcl_ConvertToType(interp, varPtr[varIndex], targetType)

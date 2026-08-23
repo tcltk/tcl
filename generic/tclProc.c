@@ -1953,8 +1953,7 @@ TclProcCompileProc(
 
 	if (codePtr->flags & TCL_BYTECODE_PRECOMPILED) {
 	    if ((Interp *) *codePtr->interpHandle != iPtr) {
-		Tcl_PrintfResult(interp,
-			"a precompiled script jumped interps");
+		Tcl_PrintfResult(interp, "a precompiled script jumped interps");
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "PROC",
 			"CROSSINTERPBYTECODE", (char *)NULL);
 		return TCL_ERROR;

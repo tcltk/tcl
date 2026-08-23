@@ -351,7 +351,7 @@ TclDefaultBgErrorHandlerObjCmd(
 
     result = TclDictGet(NULL, objv[2], "-level", &valuePtr);
     if (result != TCL_OK || valuePtr == NULL) {
-	Tcl_PrintfResult(interp, "missing return option \"-level\"");
+	Tcl_PrintfResult(interp, "missing return option \"%s\"", "-level");
 	Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "MISSING", (char *)NULL);
 	return TCL_ERROR;
     }
@@ -360,7 +360,7 @@ TclDefaultBgErrorHandlerObjCmd(
     }
     result = TclDictGet(NULL, objv[2], "-code", &valuePtr);
     if (result != TCL_OK || valuePtr == NULL) {
-	Tcl_PrintfResult(interp, "missing return option \"-code\"");
+	Tcl_PrintfResult(interp, "missing return option \"%s\"", "-code");
 	Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "MISSING", (char *)NULL);
 	return TCL_ERROR;
     }
@@ -1651,8 +1651,8 @@ Tcl_VwaitObjCmd(
 		goto done;
 	    }
 	    if (!(mode & TCL_READABLE)) {
-		Tcl_PrintfResult(interp, "channel \"%s\" wasn't open for reading",
-			TclGetString(objv[i]));
+		Tcl_PrintfResult(interp, "channel \"%s\" wasn't open for %s",
+			TclGetString(objv[i]), "reading");
 		result = TCL_ERROR;
 		goto done;
 	    }
@@ -1674,8 +1674,8 @@ Tcl_VwaitObjCmd(
 		goto done;
 	    }
 	    if (!(mode & TCL_WRITABLE)) {
-		Tcl_PrintfResult(interp, "channel \"%s\" wasn't open for writing",
-			TclGetString(objv[i]));
+		Tcl_PrintfResult(interp, "channel \"%s\" wasn't open for %s",
+			TclGetString(objv[i]), "writing");
 		result = TCL_ERROR;
 		goto done;
 	    }
