@@ -10,7 +10,7 @@ permissions:
   contents: read
 jobs:
   plan:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     outputs:
       gcc: ${{ steps.matrix.outputs.gcc }}
     steps:
@@ -43,7 +43,7 @@ jobs:
             ]
   gcc:
     needs: plan
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     strategy:
       matrix: ${{ fromJson(needs.plan.outputs.gcc) }}
     defaults:
