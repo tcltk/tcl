@@ -10,7 +10,7 @@ permissions:
   contents: read
 jobs:
   plan:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     outputs:
       msvc: ${{ steps.matrix.outputs.msvc }}
       gcc: ${{ steps.matrix.outputs.gcc }}
