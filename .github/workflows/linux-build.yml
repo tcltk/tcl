@@ -90,6 +90,7 @@ jobs:
           echo "::remove-matcher::.github/tcltest.json"
         env:
           ERROR_ON_FAILURES: 1
+          CI: 1
         timeout-minutes: 30
       - name: Test-Drive Installation
         run: |
