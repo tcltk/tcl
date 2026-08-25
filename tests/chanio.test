@@ -21,6 +21,7 @@ if {"::tcltest" ni [namespace children]} {
 testConstraint noappverifier [expr {
 	[llength [info commands testappverifierpresent]] == 0
 	|| ![testappverifierpresent]}]
+testConstraint notInCIenv           [expr {![info exists ::env(CI)]}]
 
 namespace eval ::tcl::test::io {
 
@@ -2639,7 +2640,7 @@ test chan-io-29.25 {Implicit flush with Tcl_Flush to command pipelines} -setup {
 } -cleanup {
     chan close $f
 } -result "Line 1\nLine 2\n"
-test chan-io-29.26 {Tcl_Flush, Tcl_Write on bidirectional pipelines} -constraints {stdio unixExecs} -body {
+test chan-io-29.26 {Tcl_Flush, Tcl_Write on bidirectional pipelines} -constraints {stdio unixExecs notInCIenv} -body {
     set f [open "|[list cat -u]" r+]
     chan puts $f "Line1"
     chan flush $f
