@@ -45,6 +45,7 @@ testConstraint testchannelevent [llength [info commands testchannelevent]]
 testConstraint testmainthread   [llength [info commands testmainthread]]
 testConstraint testobj		[llength [info commands testobj]]
 testConstraint testservicemode  [llength [info commands testservicemode]]
+testConstraint notInCIenv           [expr {![info exists ::env(CI)]}]
 # Some things fail under Windows in Continuous Integration systems for subtle
 # reasons such as CI often running with elevated privileges in a container.
 testConstraint notWinCI [expr {
@@ -2932,7 +2933,7 @@ test io-29.25 {Implicit flush with Tcl_Flush to command pipelines} {stdio fileev
     close $f
     set x
 } "Line 1\nLine 2\n"
-test io-29.26 {Tcl_Flush, Tcl_Write on bidirectional pipelines} {stdio unixExecs} {
+test io-29.26 {Tcl_Flush, Tcl_Write on bidirectional pipelines} {stdio unixExecs notInCIenv} {
     set f [open "|[list cat -u]" r+]
     puts $f "Line1"
     flush $f
