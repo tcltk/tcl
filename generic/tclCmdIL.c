@@ -1248,7 +1248,7 @@ TclInfoFrame(
      * Procedure CallFrame.
      */
 
-    if (procPtr != NULL) {
+    if (procPtr != NULL && procPtr->cmdPtr) {
 	Tcl_HashEntry *namePtr = procPtr->cmdPtr->hPtr;
 
 	if (namePtr) {

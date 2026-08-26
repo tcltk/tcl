@@ -2747,6 +2747,8 @@ Tcl_ApplyObjCmd(
 	iPtr->ensembleRewrite.numInsertedObjs = 0;
     }
 
+    procPtr->cmdPtr = NULL; /* clear (cmd is in local stack frame) */
+
     return result;
 }
 
