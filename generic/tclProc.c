@@ -2166,6 +2166,9 @@ TclProcCleanupProc(
       && !procPtr->cmdPtr->objProc && !procPtr->cmdPtr->refCount
     ) {
 	/* cmdPtr owned by procPtr (lambda) */
+	if (procPtr->cmdPtr->nsPtr) {
+	    TclNsDecrRefCount(procPtr->cmdPtr->nsPtr);
+	}
 	ckfree(procPtr->cmdPtr);
     }
     ckfree(procPtr);
@@ -2501,6 +2504,7 @@ SetLambdaFromAny(
     cmdPtr = (Command *)ckalloc(sizeof(Command));
     memset(cmdPtr, 0, sizeof(*cmdPtr));
     cmdPtr->nsPtr = (Namespace *) nsPtr;
+    ((Namespace *)nsPtr)->refCount++;
     cmdPtr->objClientData = objPtr;
     procPtr->cmdPtr = cmdPtr;
 
@@ -2664,6 +2668,23 @@ TclNRApplyObjCmd(
 	    return result;
 	}
 	procPtr = lambdaPtr->internalRep.twoPtrValue.ptr1;
+    }
+
+    if (!procPtr->cmdPtr->nsPtr || procPtr->cmdPtr->nsPtr->flags & NS_DEAD) {
+    	Tcl_Obj * nsObjPtr;
+    	Command *cmdPtr = procPtr->cmdPtr;
+    	Tcl_Namespace *nsPtr;
+	if (procPtr->cmdPtr->nsPtr) {
+	    TclNsDecrRefCount(procPtr->cmdPtr->nsPtr);
+	}
+	/* Retry to obtain namespace again... */
+	nsObjPtr = lambdaPtr->internalRep.twoPtrValue.ptr2;
+	result = TclGetNamespaceFromObj(interp, nsObjPtr, &nsPtr);
+	if (result != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	cmdPtr->nsPtr = (Namespace *) nsPtr;
+	((Namespace *)nsPtr)->refCount++;
     }
 
     /*
