@@ -1835,10 +1835,10 @@ test info-39.2 {Bug 4b61afd660} -setup {
     rename probe {}
 } -result 3
 
-test info-39.3 {Bug [e533296a92d89044]: no segfault} -setup {
+test info-39.3 {Bug [e533296a92d89044]: no segfault, nested lambda invocation doesn't remove info from stack} -setup {
     set ::res {}
     proc probe {s} {
-	lappend ::res [dict get [info frame -1] cmd]
+	lappend ::res [dict filter [info frame -1] key {[cl]*m*d*}]
 	catch {apply {{s} {eval $s}} $s}
     }
 } -body {
@@ -1846,7 +1846,7 @@ test info-39.3 {Bug [e533296a92d89044]: no segfault} -setup {
     set ::res
 } -cleanup {
     unset -nocomplain ::res
-} -result {{probe {catch {probe {error X}}; probe {}}} {probe {error X}} {probe {}}}
+} -result {{cmd {probe {catch {probe {error X}}; probe {}}}} {cmd {probe {error X}} lambda {{s} {eval $s}}} {cmd {probe {}} lambda {{s} {eval $s}}}}
 
 # cleanup
 catch {namespace delete test_ns_info1 test_ns_info2}

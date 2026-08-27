@@ -2647,11 +2647,9 @@ Tcl_ApplyObjCmd(
 {
     Interp *iPtr = (Interp *) interp;
     Proc *procPtr = NULL;
-    Tcl_Obj *lambdaPtr, *nsObjPtr;
+    Tcl_Obj *lambdaPtr;
     int result, isRootEnsemble;
-    Command cmd;
-    Tcl_Namespace *nsPtr;
-    ExtraFrameInfo efi;
+    Command *locCmdPtr = NULL;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "lambdaExpr ?arg1 arg2 ...?");
@@ -2695,37 +2693,49 @@ Tcl_ApplyObjCmd(
 	procPtr = lambdaPtr->internalRep.twoPtrValue.ptr1;
     }
 
-    memset(&cmd, 0, sizeof(Command));
-    procPtr->cmdPtr = &cmd;
-
     /*
      * TIP#280 (semi-)HACK!
      *
-     * Using cmd.clientData to tell [info frame] how to render the
-     * 'lambdaPtr'. The InfoFrameCmd will detect this case by testing cmd.hPtr
-     * for NULL. This condition holds here because of the 'memset' above, and
-     * nowhere else (in the core). Regular commands always have a valid
-     * 'hPtr', and lambda's never.
+     * Create locally owned cmdPtr once. This would avoid override and usage
+     * after free of procPtr->cmdPtr by nested invocations of this lambda.
      */
+    if (!procPtr->cmdPtr) {
+	Tcl_Obj *nsObjPtr;
+	Tcl_Namespace *nsPtr;
+	ExtraFrameInfo *efiPtr;
 
-    efi.length = 1;
-    efi.fields[0].name = "lambda";
-    efi.fields[0].proc = NULL;
-    efi.fields[0].clientData = lambdaPtr;
-    cmd.clientData = &efi;
+	/*
+	 * Find the namespace where this lambda should run.
+	 */
 
-    /*
-     * Find the namespace where this lambda should run, and push a call frame
-     * for that namespace. Note that TclObjInterpProc() will pop it.
-     */
+	nsObjPtr = lambdaPtr->internalRep.twoPtrValue.ptr2;
+	result = TclGetNamespaceFromObj(interp, nsObjPtr, &nsPtr);
+	if (result != TCL_OK) {
+	    return result;
+	}
 
-    nsObjPtr = lambdaPtr->internalRep.twoPtrValue.ptr2;
-    result = TclGetNamespaceFromObj(interp, nsObjPtr, &nsPtr);
-    if (result != TCL_OK) {
-	return result;
+	locCmdPtr = (Command *)TclStackAlloc(interp,
+				sizeof(Command) + sizeof(ExtraFrameInfo));
+	memset(locCmdPtr, 0, sizeof(Command));
+	procPtr->cmdPtr = locCmdPtr;
+
+	efiPtr = (ExtraFrameInfo *)(locCmdPtr + 1);
+	/*
+	 * Using locCmdPtr->clientData to tell [info frame] how to render the
+	 * 'lambdaPtr'. The InfoFrameCmd will detect this case by testing hPtr
+	 * for NULL. This condition holds here because of the 'memset' above,
+	 * and nowhere else (in the core). Regular commands always have a valid
+	 * 'hPtr', and lambda's never.
+	 */
+
+	efiPtr->length = 1;
+	efiPtr->fields[0].name = "lambda";
+	efiPtr->fields[0].proc = NULL;
+	efiPtr->fields[0].clientData = lambdaPtr;
+	locCmdPtr->clientData = efiPtr;
+
+	locCmdPtr->nsPtr = (Namespace *) nsPtr;
     }
-
-    cmd.nsPtr = (Namespace *) nsPtr;
 
     isRootEnsemble = (iPtr->ensembleRewrite.sourceObjs == NULL);
     if (isRootEnsemble) {
@@ -2736,6 +2746,9 @@ Tcl_ApplyObjCmd(
 	iPtr->ensembleRewrite.numInsertedObjs -= 1;
     }
 
+    /*
+     * Push a call frame for that. Note that TclObjInterpProcCore will pop it.
+     */
     result = PushProcCallFrame((ClientData) procPtr, interp, objc, objv, 1);
     if (result == TCL_OK) {
 	result = TclObjInterpProcCore(interp, objv[1], 2, &MakeLambdaError);
@@ -2747,7 +2760,11 @@ Tcl_ApplyObjCmd(
 	iPtr->ensembleRewrite.numInsertedObjs = 0;
     }
 
-    procPtr->cmdPtr = NULL; /* clear (cmd is in local stack frame) */
+    if (locCmdPtr) {
+	/* clear temporary cmd allocated here... */
+	TclStackFree(interp, locCmdPtr);
+	procPtr->cmdPtr = NULL;
+    }
 
     return result;
 }
