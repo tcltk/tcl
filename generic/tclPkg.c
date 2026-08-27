@@ -1120,7 +1120,7 @@ TclNRPackageObjCmd(
 	     */
 
 	    ov = Tcl_NewStringObj(version, -1);
-	    Tcl_AppendStringsToObj(ov, "-", version, NULL);
+	    Tcl_AppendStringsToObj(ov, "-", version, (char *)NULL);
 	    version = NULL;
 	    argv3 = TclGetString(objv[3]);
 	    Tcl_IncrRefCount(objv[3]);

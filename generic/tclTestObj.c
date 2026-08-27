@@ -418,7 +418,7 @@ TestbooleanobjCmd(
     } else {
 	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
 		"bad option \"", Tcl_GetString(objv[1]),
-		"\": must be set, get, or not", NULL);
+		"\": must be set, get, or not", (char *)NULL);
 	return TCL_ERROR;
     }
     return TCL_OK;
@@ -537,7 +537,7 @@ TestdoubleobjCmd(
     } else {
 	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
 		"bad option \"", Tcl_GetString(objv[1]),
-		"\": must be set, get, mult10, or div10", NULL);
+		"\": must be set, get, mult10, or div10", (char *)NULL);
 	return TCL_ERROR;
     }
     return TCL_OK;
@@ -844,7 +844,7 @@ TestintobjCmd(
     } else {
 	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
 		"bad option \"", Tcl_GetString(objv[1]),
-		"\": must be set, get, get2, mult10, or div10", NULL);
+		"\": must be set, get, get2, mult10, or div10", (char *)NULL);
 	return TCL_ERROR;
     }
     return TCL_OK;
@@ -1051,7 +1051,7 @@ TestobjCmd(
 	typeName = Tcl_GetString(objv[3]);
 	if ((targetType = Tcl_GetObjType(typeName)) == NULL) {
 	    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-		    "no type ", typeName, " found", NULL);
+		    "no type ", typeName, " found", (char *)NULL);
 	    return TCL_ERROR;
 	}
 	if (Tcl_ConvertToType(interp, varPtr[varIndex], targetType)
@@ -1177,7 +1177,7 @@ TestobjCmd(
 	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
 		"bad option \"", Tcl_GetString(objv[1]),
 		"\": must be assign, convert, duplicate, freeallvars, huge, "
-		"newobj, objcount, objtype, refcount, type, or types", NULL);
+		"newobj, objcount, objtype, refcount, type, or types", (char *)NULL);
 	return TCL_ERROR;
     }
     return TCL_OK;
@@ -1285,7 +1285,7 @@ TeststringobjCmd(
 	    Tcl_AppendStringsToObj(varPtr[varIndex], strings[0], strings[1],
 		    strings[2], strings[3], strings[4], strings[5],
 		    strings[6], strings[7], strings[8], strings[9],
-		    strings[10], strings[11]);
+		    strings[10], strings[11], (char *)NULL);
 	    Tcl_SetObjResult(interp, varPtr[varIndex]);
 	    break;
 	case 2:				/* get */

@@ -1377,7 +1377,7 @@ InitLocalCache(
 
 static int
 InitArgsAndLocals(
-    Tcl_Interp *interp,/* Interpreter in which procedure was
+    Tcl_Interp *interp,		/* Interpreter in which procedure was
 				 * invoked. */
     Tcl_Obj *procNameObj,	/* Procedure name for error reporting. */
     int skip)			/* Number of initial arguments to be skipped,
@@ -1542,7 +1542,7 @@ int
 TclPushProcCallFrame(
     ClientData clientData,	/* Record describing procedure to be
 				 * interpreted. */
-    Tcl_Interp *interp,/* Interpreter in which procedure was
+    Tcl_Interp *interp,		/* Interpreter in which procedure was
 				 * invoked. */
     int objc,			/* Count of number of arguments to this
 				 * procedure. */
@@ -1637,7 +1637,7 @@ int
 TclObjInterpProc(
     ClientData clientData,	/* Record describing procedure to be
 				 * interpreted. */
-    Tcl_Interp *interp,/* Interpreter in which procedure was
+    Tcl_Interp *interp,		/* Interpreter in which procedure was
 				 * invoked. */
     int objc,			/* Count of number of arguments to this
 				 * procedure. */
@@ -1654,7 +1654,7 @@ int
 TclNRInterpProc(
     ClientData clientData,	/* Record describing procedure to be
 				 * interpreted. */
-    Tcl_Interp *interp,/* Interpreter in which procedure was
+    Tcl_Interp *interp,		/* Interpreter in which procedure was
 				 * invoked. */
     int objc,			/* Count of number of arguments to this
 				 * procedure. */
@@ -1689,7 +1689,7 @@ TclNRInterpProc(
 
 int
 TclNRInterpProcCore(
-    Tcl_Interp *interp,/* Interpreter in which procedure was
+    Tcl_Interp *interp,		/* Interpreter in which procedure was
 				 * invoked. */
     Tcl_Obj *procNameObj,	/* Procedure name for error reporting. */
     int skip,			/* Number of initial arguments to be skipped,
@@ -1965,7 +1965,7 @@ TclProcCompileProc(
 
 	    TclNewLiteralStringObj(message, "Compiling ");
 	    Tcl_IncrRefCount(message);
-	    Tcl_AppendStringsToObj(message, description, " \"", NULL);
+	    Tcl_AppendStringsToObj(message, description, " \"", (char *)NULL);
 	    Tcl_AppendLimitedToObj(message, procName, -1, 50, NULL);
 	    fprintf(stdout, "%s\"\n", TclGetString(message));
 	    Tcl_DecrRefCount(message);
@@ -2382,7 +2382,7 @@ ProcBodyFree(
  *
  *	How to manage the internal representations of lambda term objects.
  *	Syntactically they look like a two- or three-element list, where the
- *	first element is the formal arguments, the second is the the body, and
+ *	first element is the formal arguments, the second is the body, and
  *	the (optional) third is the namespace to execute the lambda term
  *	within (the global namespace is assumed if it is absent).
  *
@@ -2392,7 +2392,7 @@ ProcBodyFree(
 static void
 DupLambdaInternalRep(
     Tcl_Obj *srcPtr,		/* Object with internal rep to copy. */
-    Tcl_Obj *copyPtr)	/* Object with internal rep to set. */
+    Tcl_Obj *copyPtr)		/* Object with internal rep to set. */
 {
     Proc *procPtr = srcPtr->internalRep.twoPtrValue.ptr1;
     Tcl_Obj *nsObjPtr = srcPtr->internalRep.twoPtrValue.ptr2;
@@ -2407,7 +2407,7 @@ DupLambdaInternalRep(
 
 static void
 FreeLambdaInternalRep(
-    Tcl_Obj *objPtr)	/* CmdName object with internal representation
+    Tcl_Obj *objPtr)		/* CmdName object with internal representation
 				 * to free. */
 {
     Proc *procPtr = objPtr->internalRep.twoPtrValue.ptr1;
@@ -2423,7 +2423,7 @@ FreeLambdaInternalRep(
 static int
 SetLambdaFromAny(
     Tcl_Interp *interp,		/* Used for error reporting if not NULL. */
-    Tcl_Obj *objPtr)	/* The object to convert. */
+    Tcl_Obj *objPtr)		/* The object to convert. */
 {
     Interp *iPtr = (Interp *) interp;
     const char *name;
