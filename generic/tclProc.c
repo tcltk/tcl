@@ -23,6 +23,7 @@
 
 typedef struct {
     Command cmd;
+    Command *oldCmdPtr;
     ExtraFrameInfo efi;
 } ApplyExtraData;
 
@@ -2672,6 +2673,7 @@ TclNRApplyObjCmd(
 
     extraPtr = (ApplyExtraData *)TclStackAlloc(interp, sizeof(ApplyExtraData));
     memset(&extraPtr->cmd, 0, sizeof(Command));
+    extraPtr->oldCmdPtr = procPtr->cmdPtr;
     procPtr->cmdPtr = &extraPtr->cmd;
     extraPtr->cmd.nsPtr = (Namespace *) nsPtr;
 
@@ -2693,8 +2695,11 @@ TclNRApplyObjCmd(
 
     result = TclPushProcCallFrame(procPtr, interp, objc, objv, 1);
     if (result == TCL_OK) {
-	TclNRAddCallback(interp, ApplyNR2, extraPtr, NULL, NULL, NULL);
+	TclNRAddCallback(interp, ApplyNR2, extraPtr, procPtr, NULL, NULL);
 	result = TclNRInterpProcCore(interp, objv[1], 2, &MakeLambdaError);
+    } else {
+	procPtr->cmdPtr = extraPtr->oldCmdPtr;
+	TclStackFree(interp, extraPtr);
     }
     return result;
 }
@@ -2706,7 +2711,9 @@ ApplyNR2(
     int result)
 {
     ApplyExtraData *extraPtr = (ApplyExtraData *)data[0];
+    Proc *procPtr = (Proc *) data[1];
 
+    procPtr->cmdPtr = extraPtr->oldCmdPtr;
     TclStackFree(interp, extraPtr);
     return result;
 }

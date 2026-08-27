@@ -2437,6 +2437,19 @@ test info-39.2 {Bug 4b61afd660} -setup {
     rename probe {}
 } -result 3
 
+test info-39.3 {Bug [e533296a92d89044]: no segfault} -setup {
+    set ::res {}
+    proc probe {s} {
+	lappend ::res [dict get [info frame -1] cmd]
+	catch {apply {{s} {eval $s}} $s}
+    }
+} -body {
+    probe {catch {probe {error X}}; probe {}}
+    set ::res
+} -cleanup {
+    unset -nocomplain ::res
+} -result {{probe {catch {probe {error X}}; probe {}}} {probe {error X}} {probe {}}}
+
 test info-41.0 {Bug 0de6c1d79c crash} -setup {
     interp create child
     child hide info
