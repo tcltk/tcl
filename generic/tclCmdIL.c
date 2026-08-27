@@ -1393,7 +1393,7 @@ TclInfoFrame(
      * Procedure CallFrame.
      */
 
-    if (procPtr != NULL) {
+    if (procPtr != NULL && procPtr->cmdPtr) {
 	Tcl_HashEntry *namePtr = procPtr->cmdPtr->hPtr;
 
 	if (namePtr) {
@@ -1407,6 +1407,8 @@ TclInfoFrame(
 	    Tcl_GetCommandFullName(interp, (Tcl_Command) procPtr->cmdPtr,
 		    procNameObj);
 	    ADD_PAIR("proc", procNameObj);
+	} else if (!procPtr->cmdPtr->objProc && procPtr->cmdPtr->objClientData) {
+	    ADD_PAIR("lambda", procPtr->cmdPtr->objClientData);
 	} else if (procPtr->cmdPtr->clientData) {
 	    ExtraFrameInfo *efiPtr = (ExtraFrameInfo *)procPtr->cmdPtr->clientData;
 	    int i;
