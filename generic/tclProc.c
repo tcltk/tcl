@@ -432,6 +432,7 @@ TclCreateProc(
 	procPtr->numCompiledLocals = 0;
 	procPtr->firstLocalPtr = NULL;
 	procPtr->lastLocalPtr = NULL;
+	procPtr->flags = 0;
     }
 
     /*
@@ -2162,8 +2163,8 @@ TclProcCleanupProc(
 	localPtr = nextPtr;
     }
 
-    if ( procPtr->cmdPtr && !procPtr->cmdPtr->hPtr
-      && !procPtr->cmdPtr->objProc && !procPtr->cmdPtr->refCount
+    if ( procPtr->cmdPtr && (procPtr->flags & PROC_CMD_OWNED)
+      && !procPtr->cmdPtr->refCount
     ) {
 	/* cmdPtr owned by procPtr (lambda) */
 	if (procPtr->cmdPtr->nsPtr) {
@@ -2507,6 +2508,7 @@ SetLambdaFromAny(
     ((Namespace *)nsPtr)->refCount++;
     cmdPtr->objClientData = objPtr;
     procPtr->cmdPtr = cmdPtr;
+    procPtr->flags = PROC_CMD_OWNED;
 
     /*
      * TIP #280: Remember the line the apply body is starting on. In a Byte
