@@ -2676,8 +2676,9 @@ TclNRApplyObjCmd(
     	Tcl_Obj * nsObjPtr;
     	Command *cmdPtr = procPtr->cmdPtr;
     	Tcl_Namespace *nsPtr;
-	if (procPtr->cmdPtr->nsPtr) {
-	    TclNsDecrRefCount(procPtr->cmdPtr->nsPtr);
+	if (cmdPtr->nsPtr) {
+	    TclNsDecrRefCount(cmdPtr->nsPtr);
+	    cmdPtr->nsPtr = NULL;
 	}
 	/* Retry to obtain namespace again... */
 	nsObjPtr = lambdaPtr->internalRep.twoPtrValue.ptr2;
