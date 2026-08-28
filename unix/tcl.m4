@@ -1185,7 +1185,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    ;;
 	CYGWIN_*|MINGW32_*|MSYS_*)
 	    SHLIB_CFLAGS="-fno-common"
-	    SHLIB_LD='${CC} -shared'
+	    SHLIB_LD='${CC} -shared -Wl,--out-implib,$(patsubst %.dll,%.dll.a,${LIB_FILE})'
 	    SHLIB_SUFFIX=".dll"
 	    DL_OBJS="tclLoadDl.o"
 	    PLAT_OBJS='${CYGWIN_OBJS}'

@@ -9467,3 +9467,5 @@ Many code fixes to avoid overflow or undefined behavior.  Thanks chrstphrchvz.
 	=> platform 1.1.1
 
 2026-08-10 tzdata updated to Olson's tzdata2026c (nijtmans)
+
+2026-08-28 Missing libtcl?.?.dll.a in Cygwin (nijtmans)
