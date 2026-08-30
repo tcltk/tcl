@@ -496,8 +496,8 @@ ChanSeek(
 	return TCL_INDEX_NONE;
     }
 
-	return Tcl_ChannelWideSeekProc(chanPtr->typePtr)(chanPtr->instanceData,
-		offset, mode, errnoPtr);
+    return Tcl_ChannelWideSeekProc(chanPtr->typePtr)(chanPtr->instanceData,
+	    offset, mode, errnoPtr);
 }
 
 static inline void
@@ -6121,7 +6121,7 @@ DoReadChars(
 	}
     }
 
-finish:
+  finish:
     /*
      * Failure to fill a channel buffer may have left channel reporting a
      * "blocked" state, but so long as we fulfilled the request here, the
@@ -6288,8 +6288,8 @@ ReadChars(
      */
 
     Tcl_Size toRead = ((charsToRead < 0) || (charsToRead > srcLen))
-			    ? srcLen
-			    : charsToRead;
+	    ? srcLen
+	    : charsToRead;
 
     /*
      * 'factor' is how much we guess that the bytes in the source buffer will
@@ -8692,7 +8692,7 @@ Tcl_NotifyChannel(
 	UpdateInterest(chanPtr);
     }
 
-done:
+  done:
     Tcl_Release(statePtr);
     TclChannelRelease(channel);
 
@@ -9822,8 +9822,8 @@ CopyData(
 			!GotFlag(inStatePtr, CHANNEL_NONBLOCKING));
 	    } else {
 		size = DoReadChars(inStatePtr->topChanPtr, bufObj, sizeb,
-			!GotFlag(inStatePtr, CHANNEL_NONBLOCKING)
-			,0 /* No append */);
+			!GotFlag(inStatePtr, CHANNEL_NONBLOCKING),
+			0 /* No append */);
 		/*
 		 * In case of a recoverable encoding error, any data before
 		 * the error should be written. This data is in the bufObj.
@@ -10756,7 +10756,7 @@ Tcl_IsChannelShared(
     ChannelState *statePtr = ((Channel *) chan)->state;
 				/* State of real channel structure. */
 
-    return (statePtr->refCount > 1);
+    return statePtr->refCount > 1;
 }
 
 /*
