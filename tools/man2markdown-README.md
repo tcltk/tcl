@@ -35,10 +35,10 @@ The tcl/doc directory contains 248 manual pages which are divided as follows:
 section | number of documents | initial conversion | final conversion
 --------|---------------------|--------------------|-----------------
 1       | 1                   | 1                  | 0
-3       | 108                 | 108                | 0
+3       | 108                 | 108                | 8
 n       | 139                 | 139                | 139
 
-Final conversion of these files is currently done:
+Final conversion of these files in the n section is currently done:
 1. after
 2. append
 3. apply
@@ -179,6 +179,16 @@ Final conversion of these files is currently done:
 138. zipfs
 139. zlib (will need some manual adjustments)
 
+Now the 3 section:
+
+1. Access
+2. AddErrInfo
+3. Alloc
+4. AllowExc
+5. AppInit
+6. AssocData
+7. Async
+8. BackgdErr
 
 
 

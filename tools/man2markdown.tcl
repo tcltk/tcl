@@ -229,11 +229,12 @@ namespace eval ::ndoc {
 	
 	# list of Tcl commands to recognize for links between manual pages:
 	set tclCmdList [lsort [info commands]]
-	lappend tclCmdList my next bgerror Tcl mathop mathfunc tclvars tm msgcat tclsh
+	lappend tclCmdList my next bgerror Tcl mathop mathfunc tclvars tm msgcat tclsh wish
 
 	# dictionary mapping every documented Tcl C API function (Tcl_...) to the
 	# manual page (file root) that documents it:
 	set tclCApiFileMap [dict create {*}{
+		Tcl_Obj Object
 		Tcl_Access Access Tcl_AddErrorInfo AddErrInfo Tcl_AddObjErrorInfo AddErrInfo Tcl_AlertNotifier Notifier
 		Tcl_Alloc Alloc Tcl_AllocStatBuf FileSystem Tcl_AllowExceptions AllowExc Tcl_AppInit AppInit
 		Tcl_AppendAllObjTypes ObjectType Tcl_AppendElement SetResult Tcl_AppendExportList Namespace3 Tcl_AppendFormatToObj StringObj
@@ -403,6 +404,80 @@ namespace eval ::ndoc {
 		Tcl_WrongNumArgs WrongNumArgs Tcl_ZlibAdler32 TclZlib Tcl_ZlibCRC32 TclZlib Tcl_ZlibDeflate TclZlib
 		Tcl_ZlibInflate TclZlib Tcl_ZlibStreamChecksum TclZlib Tcl_ZlibStreamClose TclZlib Tcl_ZlibStreamEof TclZlib
 		Tcl_ZlibStreamGet TclZlib Tcl_ZlibStreamGetCommandName TclZlib Tcl_ZlibStreamInit TclZlib Tcl_ZlibStreamPut TclZlib
+	}]
+
+	# dictionary mapping every documented Tk C API function (Tk_...) to the
+	# manual page (file root) that documents it:
+	set tkCApiFileMap [dict create {*}{
+		Tk_3DBorderColor 3DBorder Tk_3DBorderGC 3DBorder Tk_3DHorizontalBevel 3DBorder Tk_3DVerticalBevel 3DBorder
+		Tk_AddOption AddOption Tk_Alloc3DBorderFromObj 3DBorder Tk_AllocBitmapFromObj GetBitmap Tk_AllocColorFromObj GetColor
+		Tk_AllocCursorFromObj GetCursor Tk_AllocFontFromObj GetFont Tk_AlwaysShowSelection WindowId Tk_AttachHWND GetHWND
+		Tk_Attributes WindowId Tk_BindEvent BindTable Tk_CanvasDrawableCoords CanvTkwin Tk_CanvasEventuallyRedraw CanvTkwin
+		Tk_CanvasGetCoord CanvTkwin Tk_CanvasPsBitmap CanvPsY Tk_CanvasPsColor CanvPsY Tk_CanvasPsFont CanvPsY
+		Tk_CanvasPsPath CanvPsY Tk_CanvasPsStipple CanvPsY Tk_CanvasPsY CanvPsY Tk_CanvasSetStippleOrigin CanvTkwin
+		Tk_CanvasTagsOption CanvTkwin Tk_CanvasTextInfo CanvTxtInfo Tk_CanvasTkwin CanvTkwin Tk_CanvasWindowCoords CanvTkwin
+		Tk_ChangeWindowAttributes ConfigWind Tk_Changes WindowId Tk_CharBbox TextLayout Tk_Class SetClass
+		Tk_ClearSelection ClrSelect Tk_ClipDrawableToRect 3DBorder Tk_ClipboardAppend Clipboard3 Tk_ClipboardClear Clipboard3
+		Tk_CollapseMotionEvents QWinEvent Tk_Colormap WindowId Tk_ComputeTextLayout TextLayout Tk_ConfigureInfo ConfigWidg
+		Tk_ConfigureValue ConfigWidg Tk_ConfigureWidget ConfigWidg Tk_ConfigureWindow ConfigWind Tk_CoordsToWindow CoordToWin
+		Tk_CreateBinding BindTable Tk_CreateBindingTable BindTable Tk_CreateClientMessageHandler CrtCmHdlr Tk_CreateErrorHandler CrtErrHdlr
+		Tk_CreateEventHandler EventHndlr Tk_CreateGenericHandler CrtGenHdlr Tk_CreateImageType CrtImgType Tk_CreateItemType CrtItemType
+		Tk_CreateOptionTable SetOptions Tk_CreatePhotoImageFormat CrtPhImgFmt Tk_CreateSelHandler CrtSelHdlr Tk_CreateWindow CrtWindow
+		Tk_CreateWindowFromPath CrtWindow Tk_DefineBitmap GetBitmap Tk_DefineCursor ConfigWind Tk_DeleteAllBindings BindTable
+		Tk_DeleteBinding BindTable Tk_DeleteBindingTable BindTable Tk_DeleteClientMessageHandler CrtCmHdlr Tk_DeleteErrorHandler CrtErrHdlr
+		Tk_DeleteEventHandler EventHndlr Tk_DeleteGenericHandler CrtGenHdlr Tk_DeleteImage DeleteImg Tk_DeleteOptionTable SetOptions
+		Tk_DeleteSelHandler CrtSelHdlr Tk_Depth WindowId Tk_DestroyWindow CrtWindow Tk_Display WindowId
+		Tk_DisplayName WindowId Tk_DistanceToTextLayout TextLayout Tk_Draw3DPolygon 3DBorder Tk_Draw3DRectangle 3DBorder
+		Tk_DrawChars MeasureChar Tk_DrawCharsInContext MeasureChar Tk_DrawFocusHighlight DrawFocHlt Tk_DrawHighlightBorder 3DBorder
+		Tk_DrawTextLayout TextLayout Tk_Fill3DPolygon 3DBorder Tk_Fill3DRectangle 3DBorder Tk_FindPhoto FindPhoto
+		Tk_FontGetDescription GetFont Tk_FontId FontId Tk_Free3DBorder 3DBorder Tk_Free3DBorderFromObj 3DBorder
+		Tk_FreeBitmap GetBitmap Tk_FreeBitmapFromObj GetBitmap Tk_FreeColor GetColor Tk_FreeColorFromObj GetColor
+		Tk_FreeColormap GetClrmap Tk_FreeConfigOptions SetOptions Tk_FreeCursor GetCursor Tk_FreeCursorFromObj GetCursor
+		Tk_FreeFont GetFont Tk_FreeFontFromObj GetFont Tk_FreeGC GetGC Tk_FreeImage GetImage
+		Tk_FreeOptions ConfigWidg Tk_FreePixmap GetPixmap Tk_FreeSavedOptions SetOptions Tk_FreeTextLayout TextLayout
+		Tk_GeometryRequest GeomReq Tk_Get3DBorder 3DBorder Tk_Get3DBorderColors 3DBorder Tk_Get3DBorderFromObj 3DBorder
+		Tk_GetAllBindings BindTable Tk_GetAnchor GetAnchor Tk_GetAnchorFromObj GetAnchor Tk_GetAtomName InternAtom
+		Tk_GetBinding BindTable Tk_GetBitmap GetBitmap Tk_GetBitmapFromObj GetBitmap Tk_GetButtonMask EventHndlr
+		Tk_GetCapStyle GetCapStyl Tk_GetColor GetColor Tk_GetColorByValue GetColor Tk_GetColorFromObj GetColor
+		Tk_GetColormap GetClrmap Tk_GetCursor GetCursor Tk_GetCursorFromData GetCursor Tk_GetCursorFromObj GetCursor
+		Tk_GetDash GetDash Tk_GetDoublePixelsFromObj GetPixels Tk_GetFont GetFont Tk_GetFontFromObj GetFont
+		Tk_GetFontMetrics FontId Tk_GetGC GetGC Tk_GetHINSTANCE GetHINSTANCE Tk_GetHWND GetHWND
+		Tk_GetImage GetImage Tk_GetImageModelData CrtImgType Tk_GetItemTypes CrtItemType Tk_GetJoinStyle GetJoinStl
+		Tk_GetJustify GetJustify Tk_GetJustifyFromObj GetJustify Tk_GetMMFromObj GetPixels Tk_GetNumMainWindows MainWin
+		Tk_GetOption GetOption Tk_GetOptionInfo SetOptions Tk_GetOptionValue SetOptions Tk_GetOtherWindow WinUtil
+		Tk_GetPixels GetPixels Tk_GetPixelsFromObj GetPixels Tk_GetPixmap GetPixmap Tk_GetRelief GetRelief
+		Tk_GetReliefFromObj GetRelief Tk_GetRootCoords GetRootCrd Tk_GetScreenMM GetPixels Tk_GetScrollInfo GetScroll
+		Tk_GetScrollInfoObj GetScroll Tk_GetSelection GetSelect Tk_GetUid GetUid Tk_GetUserInactiveTime Inactive
+		Tk_GetVRootGeometry GetVRoot Tk_GetVisual GetVisual Tk_Grab Grab3 Tk_HWNDToWindow HWNDToWindow
+		Tk_HandleEvent HandleEvent Tk_Height WindowId Tk_IdToWindow IdToWindow Tk_ImageChanged ImgChanged
+		Tk_Init Tk_Init Tk_InitConsoleChannels CrtConsoleChan Tk_InitOptions SetOptions Tk_InitStubs TkInitStubs
+		Tk_InternAtom InternAtom Tk_InternalBorderBottom WindowId Tk_InternalBorderLeft WindowId Tk_InternalBorderRight WindowId
+		Tk_InternalBorderTop WindowId Tk_Interp WindowId Tk_IntersectTextLayout TextLayout Tk_IsContainer WindowId
+		Tk_IsEmbedded WindowId Tk_IsMapped WindowId Tk_IsTopLevel WindowId Tk_Main Tk_Main
+		Tk_MainLoop MainLoop Tk_MainWindow MainWin Tk_MaintainGeometry MaintGeom Tk_MakeContainer WinUtil
+		Tk_MakeWindow WinUtil Tk_MakeWindowExist CrtWindow Tk_ManageGeometry ManageGeom Tk_MapWindow MapWindow
+		Tk_MeasureChars MeasureChar Tk_MeasureCharsInContext MeasureChar Tk_MinReqHeight WindowId Tk_MinReqWidth WindowId
+		Tk_MoveResizeWindow ConfigWind Tk_MoveToplevelWindow MoveToplev Tk_MoveWindow ConfigWind Tk_Name Name
+		Tk_NameOf3DBorder 3DBorder Tk_NameOfAnchor GetAnchor Tk_NameOfBitmap GetBitmap Tk_NameOfCapStyle GetCapStyl
+		Tk_NameOfColor GetColor Tk_NameOfCursor GetCursor Tk_NameOfFont GetFont Tk_NameOfImage NameOfImg
+		Tk_NameOfJoinStyle GetJoinStl Tk_NameOfJustify GetJustify Tk_NameOfRelief GetRelief Tk_NameToWindow Name
+		Tk_NewWindowObj WindowId Tk_OwnSelection OwnSelect Tk_Parent WindowId Tk_ParseArgv ParseArgv
+		Tk_PathName Name Tk_PhotoBlank FindPhoto Tk_PhotoExpand FindPhoto Tk_PhotoGetImage FindPhoto
+		Tk_PhotoGetSize FindPhoto Tk_PhotoPutBlock FindPhoto Tk_PhotoPutZoomedBlock FindPhoto Tk_PhotoSetSize FindPhoto
+		Tk_PointToChar TextLayout Tk_PostscriptFontName FontId Tk_PreserveColormap GetClrmap Tk_QueueWindowEvent QWinEvent
+		Tk_RedrawImage GetImage Tk_ReqHeight WindowId Tk_ReqWidth WindowId Tk_ResetUserInactiveTime Inactive
+		Tk_ResizeWindow ConfigWind Tk_RestackWindow Restack Tk_RestoreSavedOptions SetOptions Tk_RestrictEvents RestrictEv
+		Tk_SafeInit Tk_Init Tk_Screen WindowId Tk_ScreenNumber WindowId Tk_SendVirtualEvent EventHndlr
+		Tk_SetAppName SetAppName Tk_SetBackgroundFromBorder 3DBorder Tk_SetCaretPos SetCaret Tk_SetClass SetClass
+		Tk_SetClassProcs SetClassProcs Tk_SetGrid SetGrid Tk_SetInternalBorder GeomReq Tk_SetInternalBorderEx GeomReq
+		Tk_SetMinimumRequestSize GeomReq Tk_SetOptions SetOptions Tk_SetWindowBackground ConfigWind Tk_SetWindowBackgroundPixmap ConfigWind
+		Tk_SetWindowBorder ConfigWind Tk_SetWindowBorderPixmap ConfigWind Tk_SetWindowBorderWidth ConfigWind Tk_SetWindowColormap ConfigWind
+		Tk_SetWindowVisual SetVisual Tk_SizeOfBitmap GetBitmap Tk_SizeOfImage GetImage Tk_StrictMotif StrictMotif
+		Tk_TextLayoutToPostscript TextLayout Tk_TextWidth MeasureChar Tk_Uid GetUid Tk_UndefineCursor ConfigWind
+		Tk_UnderlineChars MeasureChar Tk_UnderlineCharsInContext MeasureChar Tk_UnderlineTextLayout TextLayout Tk_Ungrab Grab3
+		Tk_UnmaintainGeometry MaintGeom Tk_UnmapWindow MapWindow Tk_UnsetGrid SetGrid Tk_UseWindow WinUtil
+		Tk_Visual WindowId Tk_Width WindowId Tk_WindowId WindowId Tk_X WindowId
+		Tk_Y WindowId
 	}]
 
 	# dictionary of links on pages that should link to a page
@@ -2253,6 +2328,7 @@ proc ::ndoc::mdLinks {md} {
 	variable manual
 	variable tclCmdListExclude
 	variable tclCApiFileMap
+	variable tkCApiFileMap
 	variable sectionTitles
 	# list to build the markdown references for external links (these are put at the end of the document):
 	set refList [list]
@@ -2301,6 +2377,19 @@ proc ::ndoc::mdLinks {md} {
 				set apiTarget [dict get $tclCApiFileMap $linkCmdSubst]
 				if {$apiTarget ne $fileRoot} {
 					## don't link to another Tcl_ function documented on this very page:
+					set linkTarget $apiTarget
+					set isValidLink 1
+				}
+			}
+		}
+		if {! $isValidLink && [string match {Tk\\_*} $linkCmd]} {
+			## a Tk C API function (Tk_...)
+			# (note that we can't handle this in tclCmdList as the md conversion has added a backslash (Tk\_...):
+			set linkCmdSubst [subst -novariables -nocommands $linkCmd]
+			if {[dict exists $tkCApiFileMap $linkCmdSubst]} {
+				set apiTarget [dict get $tkCApiFileMap $linkCmdSubst]
+				if {$apiTarget ne $fileRoot} {
+					## don't link to another Tk_ function documented on this very page:
 					set linkTarget $apiTarget
 					set isValidLink 1
 				}

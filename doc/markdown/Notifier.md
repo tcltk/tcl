@@ -205,7 +205,7 @@ typedef int Tcl_EventProc(
 
 The first argument to *proc* is a pointer to the event, which will be the same as the first argument to the **Tcl\_QueueEvent** call that added the event to the queue. The second argument to *proc* is the *flags* argument for the current call to **Tcl\_ServiceEvent**;  this is used by the event source to return immediately if its events are not relevant.
 
-It is up to *proc* to handle the event, typically by invoking one or more Tcl commands or C-level callbacks. Once the event source has finished handling the event it returns 1 to indicate that the event can be removed from the queue. If for some reason the event source decides that the event cannot be handled at this time, it may return 0 to indicate that the event should be deferred for processing later;  in this case **Tcl\_ServiceEvent** will go on to the next event in the queue and attempt to service it. There are several reasons why an event source might defer an event. One possibility is that events of this type are excluded by the *flags* argument. For example, the file event source will always return 0 if the **TCL\_FILE\_EVENTS** bit is not set in *flags*. Another example of deferring events happens in Tk if **Tk\_RestrictEvents** has been invoked to defer certain kinds of window events.
+It is up to *proc* to handle the event, typically by invoking one or more Tcl commands or C-level callbacks. Once the event source has finished handling the event it returns 1 to indicate that the event can be removed from the queue. If for some reason the event source decides that the event cannot be handled at this time, it may return 0 to indicate that the event should be deferred for processing later;  in this case **Tcl\_ServiceEvent** will go on to the next event in the queue and attempt to service it. There are several reasons why an event source might defer an event. One possibility is that events of this type are excluded by the *flags* argument. For example, the file event source will always return 0 if the **TCL\_FILE\_EVENTS** bit is not set in *flags*. Another example of deferring events happens in Tk if [Tk\_RestrictEvents][RestrictEv] has been invoked to defer certain kinds of window events.
 
 When *proc* returns 1, **Tcl\_ServiceEvent** will remove the event from the event queue and free its storage. Note that the storage for an event must be allocated by the event source (using [Tcl\_Alloc][Alloc]) before calling **Tcl\_QueueEvent**, but it will be freed by **Tcl\_ServiceEvent**, not by the event source.
 
@@ -285,6 +285,7 @@ In some cases, however, it may be necessary for **Tcl\_ServiceAll** to service e
 [CrtTimerHdlr]: CrtTimerHdlr.md
 [DoOneEvent]: DoOneEvent.md
 [Exit3]: Exit3.md
+[RestrictEv]: RestrictEv.md
 [Sleep]: Sleep.md
 [update]: update.md
 [vwait]: vwait.md

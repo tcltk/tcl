@@ -157,7 +157,7 @@ Note that **Tcl\_SetCommandInfo** and **Tcl\_SetCommandInfoFromToken** both allo
 
 **Tcl\_GetCommandFullName** produces the fully qualified name of a command from a command token. The name, including all namespace prefixes, is appended to the value specified by *objPtr*.
 
-**Tcl\_GetCommandFromObj** returns a token for the command specified by the name in a **Tcl\_Obj**. The command name is resolved relative to the current namespace. Returns NULL if the command is not found.
+**Tcl\_GetCommandFromObj** returns a token for the command specified by the name in a [Tcl\_Obj][Object]. The command name is resolved relative to the current namespace. Returns NULL if the command is not found.
 
 # Reference count management
 
@@ -173,6 +173,7 @@ When the *proc* passed to **Tcl\_CreateObjCommand** is called, the values in its
 [CrtInterp]: CrtInterp.md
 [Eval3]: Eval3.md
 [IntObj]: IntObj.md
+[Object]: Object.md
 [Object3]: Object3.md
 [rename]: rename.md
 [return]: return.md

@@ -227,7 +227,7 @@ There are several reasons for calling the **Tcl\_FS** API functions (e.g.\\ **Tc
 
 If appropriate VFSes have been registered, the "files" may, to give two examples, be remote (e.g.\\ situated on a remote ftp server) or archived (e.g.\\ lying inside a .zip archive). Such registered filesystems provide a lookup table of functions to implement all or some of the functionality listed here. Finally, the **Tcl\_FSStat** and **Tcl\_FSLstat** calls abstract away from what the "struct stat" buffer is actually declared to be, allowing the same code to be used both on systems with and systems without support for files larger than 2GB in size.
 
-The **Tcl\_FS** API is **Tcl\_Obj**-ified and may cache internal representations and other path-related strings (e.g.\\ the current working directory). One side-effect of this is that one must not pass in values with a reference count of zero to any of these functions. If such calls were handled, they might result in memory leaks (under some circumstances, the filesystem code may wish to retain a reference to the passed in value, and so one must not assume that after any of these calls return, the value still has a reference count of zero - it may have been incremented) or in a direct segmentation fault (or other memory access error) due to the value being freed part way through the complex value manipulation required to ensure that the path is fully normalized and absolute for filesystem determination. The practical lesson to learn from this is that
+The **Tcl\_FS** API is [Tcl\_Obj][Object]-ified and may cache internal representations and other path-related strings (e.g.\\ the current working directory). One side-effect of this is that one must not pass in values with a reference count of zero to any of these functions. If such calls were handled, they might result in memory leaks (under some circumstances, the filesystem code may wish to retain a reference to the passed in value, and so one must not assume that after any of these calls return, the value still has a reference count of zero - it may have been incremented) or in a direct segmentation fault (or other memory access error) due to the value being freed part way through the complex value manipulation required to ensure that the path is fully normalized and absolute for filesystem determination. The practical lesson to learn from this is that
 
 ```
 Tcl_Obj *path = Tcl_NewStringObj(...);
@@ -973,6 +973,7 @@ For all virtual filesystem implementation functions, any *pathPtr* arguments sho
 [ListObj]: ListObj.md
 [load]: load.md
 [Load3]: Load3.md
+[Object]: Object.md
 [Object3]: Object3.md
 [open]: open.md
 [OpenFileChnl]: OpenFileChnl.md

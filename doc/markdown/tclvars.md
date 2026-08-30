@@ -147,7 +147,7 @@ To set the **-errorcode** return option, applications should use library procedu
 
 
 **tcl\_rcFileName**
-: This variable is used during initialization to indicate the name of a user-specific startup file.  If it is set by application-specific initialization, then the Tcl startup code will check for the existence of this file and [source] it if it exists.  For example, for **wish** the variable is set to **~/.wishrc** for Unix and **~/wishrc.tcl** for Windows.
+: This variable is used during initialization to indicate the name of a user-specific startup file.  If it is set by application-specific initialization, then the Tcl startup code will check for the existence of this file and [source] it if it exists.  For example, for [wish] the variable is set to **~/.wishrc** for Unix and **~/wishrc.tcl** for Windows.
 
 **tcl\_traceCompile**
 : The value of this variable can be set to control how much tracing information is displayed during bytecode compilation. By default, **tcl\_traceCompile** is zero and no information is displayed. Setting **tcl\_traceCompile** to 1 generates a one-line summary in **stdout** whenever a procedure or top-level command is compiled. Setting it to 2 generates a detailed listing in **stdout** of the bytecode instructions emitted during every compilation. This variable is useful in tracking down suspected problems with the Tcl compiler.
@@ -167,19 +167,19 @@ This variable and functionality only exist if **TCL\_COMPILE\_DEBUG** was define
 
 # Other global variables
 
-The following variables are only guaranteed to exist in [tclsh] and **wish** executables; the Tcl library does not define them itself but many Tcl environments do.
+The following variables are only guaranteed to exist in [tclsh] and [wish] executables; the Tcl library does not define them itself but many Tcl environments do.
 
 **argc**
-: The number of arguments to [tclsh] or **wish**.
+: The number of arguments to [tclsh] or [wish].
 
 **argv**
-: Tcl list of arguments to [tclsh] or **wish**.
+: Tcl list of arguments to [tclsh] or [wish].
 
 **argv0**
-: The script that [tclsh] or **wish** started executing (if it was specified) or otherwise the name by which [tclsh] or **wish** was invoked.
+: The script that [tclsh] or [wish] started executing (if it was specified) or otherwise the name by which [tclsh] or [wish] was invoked.
 
 **tcl\_interactive**
-: Contains 1 if [tclsh] or **wish** is running interactively (no script was specified and standard input is a terminal-like device), 0 otherwise.
+: Contains 1 if [tclsh] or [wish] is running interactively (no script was specified and standard input is a terminal-like device), 0 otherwise.
 
 
 # Examples
@@ -226,4 +226,5 @@ if {$::argv0 eq [info script]} {
 [set]: set.md
 [source]: source.md
 [tclsh]: tclsh.md
+[wish]: wish.md
 

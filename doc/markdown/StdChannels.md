@@ -75,10 +75,11 @@ The Tcl shell (or rather the function [Tcl\_Main][Tcl_Main], which forms the cor
 
 ## Wish
 
-The windowing shell (or rather the function **Tk\_MainEx**, which forms the core of the shell's implementation) uses method 1 to initialize the standard channels (See **Tk\_InitConsoleChannels**) on non-Unix platforms.  On Unix platforms, **Tk\_MainEx** implicitly uses method 2 to initialize the standard channels.
+The windowing shell (or rather the function **Tk\_MainEx**, which forms the core of the shell's implementation) uses method 1 to initialize the standard channels (See [Tk\_InitConsoleChannels][CrtConsoleChan]) on non-Unix platforms.  On Unix platforms, **Tk\_MainEx** implicitly uses method 2 to initialize the standard channels.
 
 
 [CrtChannel]: CrtChannel.md
+[CrtConsoleChan]: CrtConsoleChan.md
 [file]: file.md
 [GetStdChan]: GetStdChan.md
 [OpenFileChnl]: OpenFileChnl.md

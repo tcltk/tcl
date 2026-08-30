@@ -78,7 +78,7 @@ When Tcl processes a **dde request** command, it returns the value of the variab
 
 An external application which wishes to run a script in Tcl should have that script store its result in a variable, run the **dde execute** command, and then run **dde request** to get the value of the variable.
 
-When using DDE, be careful to ensure that the event queue is flushed using either [update] or [vwait].  This happens by default when using **wish** unless a blocking command is called (such as [exec] without adding the **&** to place the process in the background). If for any reason the event queue is not flushed, DDE commands may hang until the event queue is flushed.  This can create a deadlock situation.
+When using DDE, be careful to ensure that the event queue is flushed using either [update] or [vwait].  This happens by default when using [wish] unless a blocking command is called (such as [exec] without adding the **&** to place the process in the background). If for any reason the event queue is not flushed, DDE commands may hang until the event queue is flushed.  This can create a deadlock situation.
 
 # Example
 
@@ -94,4 +94,5 @@ dde execute -async iexplore WWW_OpenURL http://www.tcl-lang.org/
 [exec]: exec.md
 [update]: update.md
 [vwait]: vwait.md
+[wish]: wish.md
 

@@ -38,7 +38,7 @@ Tcl\_DoOneEvent - wait for events and invoke event handlers
 
 # Description
 
-This procedure is the entry point to Tcl's event loop; it is responsible for waiting for events and dispatching event handlers created with procedures such as **Tk\_CreateEventHandler**, [Tcl\_CreateFileHandler][CrtFileHdlr], [Tcl\_CreateTimerHandler][CrtTimerHdlr], and [Tcl\_DoWhenIdle][DoWhenIdle]. **Tcl\_DoOneEvent** checks to see if events are already present on the Tcl event queue; if so, it calls the handler(s) for the first (oldest) event, removes it from the queue, and returns. If there are no events ready to be handled, then **Tcl\_DoOneEvent** checks for new events from all possible sources. If any are found, it puts all of them on Tcl's event queue, calls handlers for the first event on the queue, and returns. If no events are found, **Tcl\_DoOneEvent** checks for [Tcl\_DoWhenIdle][DoWhenIdle] callbacks; if any are found, it invokes all of them and returns. Finally, if no events or idle callbacks have been found, then **Tcl\_DoOneEvent** sleeps until an event occurs; then it adds any new events to the Tcl event queue, calls handlers for the first event, and returns. The normal return value is 1 to signify that some event was processed (see below for other alternatives).
+This procedure is the entry point to Tcl's event loop; it is responsible for waiting for events and dispatching event handlers created with procedures such as [Tk\_CreateEventHandler][EventHndlr], [Tcl\_CreateFileHandler][CrtFileHdlr], [Tcl\_CreateTimerHandler][CrtTimerHdlr], and [Tcl\_DoWhenIdle][DoWhenIdle]. **Tcl\_DoOneEvent** checks to see if events are already present on the Tcl event queue; if so, it calls the handler(s) for the first (oldest) event, removes it from the queue, and returns. If there are no events ready to be handled, then **Tcl\_DoOneEvent** checks for new events from all possible sources. If any are found, it puts all of them on Tcl's event queue, calls handlers for the first event on the queue, and returns. If no events are found, **Tcl\_DoOneEvent** checks for [Tcl\_DoWhenIdle][DoWhenIdle] callbacks; if any are found, it invokes all of them and returns. Finally, if no events or idle callbacks have been found, then **Tcl\_DoOneEvent** sleeps until an event occurs; then it adds any new events to the Tcl event queue, calls handlers for the first event, and returns. The normal return value is 1 to signify that some event was processed (see below for other alternatives).
 
 If the *flags* argument to **Tcl\_DoOneEvent** is non-zero, it restricts the kinds of events that will be processed by **Tcl\_DoOneEvent**. *Flags* may be an OR-ed combination of any of the following bits:
 
@@ -71,5 +71,6 @@ The **TCL\_DONT\_WAIT** flag causes **Tcl\_DoOneEvent** not to put the process t
 [CrtFileHdlr]: CrtFileHdlr.md
 [CrtTimerHdlr]: CrtTimerHdlr.md
 [DoWhenIdle]: DoWhenIdle.md
+[EventHndlr]: EventHndlr.md
 [Notifier]: Notifier.md
 

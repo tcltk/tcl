@@ -62,7 +62,7 @@ Enabling the stubs mechanism for an extension requires the following steps:
 3. Link the extension with the Tcl stubs library instead of the standard Tcl library.  For example, to use the Tcl 9.0 ABI on Unix platforms, the library name is *libtclstub.a*; on Windows platforms, the library name is *tclstub.lib*.
 
 
-If the extension also requires the Tk API, it must also call **Tk\_InitStubs** to initialize the Tk stubs interface and link with the Tk stubs libraries.  See the **Tk\_InitStubs** page for more information.
+If the extension also requires the Tk API, it must also call [Tk\_InitStubs][TkInitStubs] to initialize the Tk stubs interface and link with the Tk stubs libraries.  See the [Tk\_InitStubs][TkInitStubs] page for more information.
 
 # Description
 
@@ -70,4 +70,5 @@ If the extension also requires the Tk API, it must also call **Tk\_InitStubs** t
 
 
 [package]: package.md
+[TkInitStubs]: TkInitStubs.md
 
