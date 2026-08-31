@@ -2164,7 +2164,7 @@ TclProcCleanupProc(
     }
 
     if ( procPtr->cmdPtr && (procPtr->flags & PROC_CMD_OWNED)
-      && !procPtr->cmdPtr->refCount
+      && procPtr->cmdPtr->refCount-- <= 1
     ) {
 	/* cmdPtr owned by procPtr (lambda) */
 	if (procPtr->cmdPtr->nsPtr) {
@@ -2507,6 +2507,7 @@ SetLambdaFromAny(
     cmdPtr->nsPtr = (Namespace *) nsPtr;
     ((Namespace *)nsPtr)->refCount++;
     cmdPtr->objClientData = objPtr;
+    cmdPtr->refCount++;
     procPtr->cmdPtr = cmdPtr;
     procPtr->flags = PROC_CMD_OWNED;
 
