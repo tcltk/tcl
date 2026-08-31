@@ -15,16 +15,7 @@
 
 #include "tclInt.h"
 #include "tclCompile.h"
-
-/*
- * Variables that are part of the [apply] command implementation and which
- * have to be passed to the other side of the NRE call.
- */
-
-typedef struct {
-    Command cmd;
-    ExtraFrameInfo efi;
-} ApplyExtraData;
+#include <assert.h>
 
 /*
  * Prototypes for static functions in this file
@@ -2687,8 +2678,6 @@ TclNRApplyObjCmd(
     Proc *procPtr = NULL;
     Tcl_Obj *lambdaPtr, *nsObjPtr;
     int result;
-    Tcl_Namespace *nsPtr;
-    ApplyExtraData *extraPtr;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "lambdaExpr ?arg ...?");
@@ -2708,39 +2697,52 @@ TclNRApplyObjCmd(
     }
 
     /*
-     * Push a call frame for the lambda namespace.
-     * Note that TclObjInterpProc() will pop it.
-     */
-
-    result = TclGetNamespaceFromObj(interp, nsObjPtr, &nsPtr);
-    if (result != TCL_OK) {
-	return TCL_ERROR;
-    }
-
-    extraPtr = (ApplyExtraData *)TclStackAlloc(interp, sizeof(ApplyExtraData));
-    memset(&extraPtr->cmd, 0, sizeof(Command));
-    procPtr->cmdPtr = &extraPtr->cmd;
-    extraPtr->cmd.nsPtr = (Namespace *) nsPtr;
-
-    /*
      * TIP#280 (semi-)HACK!
      *
-     * Using cmd.clientData to tell [info frame] how to render the lambdaPtr.
-     * The InfoFrameCmd will detect this case by testing cmd.hPtr for NULL.
-     * This condition holds here because of the memset() above, and nowhere
-     * else (in the core). Regular commands always have a valid hPtr, and
-     * lambda's never.
+     * Create procPtr->cmdPtr once. This would avoid override and usage
+     * after free of procPtr->cmdPtr by nested invocations of this lambda.
      */
+    if (!procPtr->cmdPtr) {
+	Tcl_Namespace *nsPtr;
+	Command * cmdPtr;
+	ExtraFrameInfo * efiPtr;
 
-    extraPtr->efi.length = 1;
-    extraPtr->efi.fields[0].name = "lambda";
-    extraPtr->efi.fields[0].proc = NULL;
-    extraPtr->efi.fields[0].clientData = lambdaPtr;
-    extraPtr->cmd.clientData = &extraPtr->efi;
+	/* Find the namespace where this lambda should run. */
+	result = TclGetNamespaceFromObj(interp, nsObjPtr, &nsPtr);
+	if (result != TCL_OK) {
+	    return TCL_ERROR;
+	}
 
+	cmdPtr = (Command *)TclStackAlloc(interp,
+			sizeof(Command) + sizeof(ExtraFrameInfo));
+	efiPtr = (ExtraFrameInfo *)(cmdPtr + 1);
+	memset(cmdPtr, 0, sizeof(*cmdPtr));
+	cmdPtr->nsPtr = (Namespace *) nsPtr;
+
+	/*
+	 * Using cmdPtr->clientData to tell [info frame] how to render the lambda.
+	 * The InfoFrameCmd will detect this case by testing cmdPtr->hPtr for NULL.
+	 * This condition holds here because of the memset() above, and nowhere
+	 * else (in the core). Regular commands always have a valid hPtr, and
+	 * lambda's never.
+	*/
+
+	efiPtr->length = 1;
+	efiPtr->fields[0].name = "lambda";
+	efiPtr->fields[0].proc = NULL;
+	efiPtr->fields[0].clientData = lambdaPtr;
+	cmdPtr->clientData = efiPtr;
+
+	procPtr->cmdPtr = cmdPtr;
+	TclNRAddCallback(interp, ApplyNR2, cmdPtr, procPtr, NULL, NULL);
+    }
+
+    /*
+     * Push a call frame for that namespace. Note that TclNRInterpProcCore()
+     * will pop it (NRE-based).
+     */
     result = TclPushProcCallFrame(procPtr, interp, objc, objv, 1);
     if (result == TCL_OK) {
-	TclNRAddCallback(interp, ApplyNR2, extraPtr, NULL, NULL, NULL);
 	result = TclNRInterpProcCore(interp, objv[1], 2, &MakeLambdaError);
     }
     return result;
@@ -2752,9 +2754,12 @@ ApplyNR2(
     Tcl_Interp *interp,
     int result)
 {
-    ApplyExtraData *extraPtr = (ApplyExtraData *)data[0];
+    Proc *procPtr = (Proc *) data[1];
 
-    TclStackFree(interp, extraPtr);
+    assert(procPtr->cmdPtr == data[0]);
+    /* clear cmd of lambdaProc (released here)... */
+    procPtr->cmdPtr = NULL;
+    TclStackFree(interp, data[0]);
     return result;
 }
 
