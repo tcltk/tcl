@@ -5,7 +5,7 @@
  *	differences between Windows and Unix. It should be the only
  *	file that contains #ifdefs to handle different flavors of OS.
  *
- * Copyright (c) 1994-1997 Sun Microsystems, Inc.
+ * Copyright © 1994-1997 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -24,16 +24,16 @@
 #endif
 
 /*
- * We must specify the lower version we intend to support.
+ * We must specify the lowest version we intend to support.
  *
- * WINVER = 0x0601 means Windows 7 and above
+ * 0x0A00 means Windows 10 and above
  */
 
-#ifndef WINVER
-#   define WINVER 0x0601
-#endif
 #ifndef _WIN32_WINNT
-#   define _WIN32_WINNT 0x0601
+#   define _WIN32_WINNT 0x0A00
+#endif
+#ifndef WINVER
+#   define WINVER _WIN32_WINNT		/* Should match _WIN32_WINNT */
 #endif
 
 #define WIN32_LEAN_AND_MEAN
@@ -59,7 +59,7 @@ typedef DWORD_PTR * PDWORD_PTR;
 #endif
 
 /*
- *  Pull in the typedef of TCHAR for windows.
+ * Pull in the typedef of TCHAR for windows.
  */
 #include <tchar.h>
 #ifndef _TCHAR_DEFINED
@@ -354,7 +354,7 @@ typedef DWORD_PTR * PDWORD_PTR;
  */
 
 #ifndef S_IFLNK
-#   define S_IFLNK        0120000  /* Symbolic Link */
+#   define S_IFLNK	0120000	/* Symbolic Link */
 #endif
 
 /*

@@ -148,11 +148,11 @@ static int		FindElement(Tcl_Interp *interp, const char *string,
  */
 
 static const Tcl_ObjType endOffsetType = {
-    "end-offset",			/* name */
-    NULL,				/* freeIntRepProc */
-    NULL,				/* dupIntRepProc */
-    NULL,				/* updateStringProc */
-    NULL,				/* setFromAnyProc */
+    "end-offset",
+    NULL,			// FreeIntRep
+    NULL,			// DupIntRep
+    NULL,			// UpdateString
+    NULL,			// SetFromAny
     TCL_OBJTYPE_V1(TclLengthOne)
 };
 
@@ -752,7 +752,6 @@ FindElement(
 		}
 	    }
 	    break;
-
 	}
 	p++;
     }
@@ -982,9 +981,9 @@ Tcl_SplitList(
 
 Tcl_Size
 Tcl_ScanElement(
-    const char *src,	/* String to convert to list element. */
-    int *flagPtr)	/* Where to store information to guide
-			 * Tcl_ConvertCountedElement. */
+    const char *src,		/* String to convert to list element. */
+    int *flagPtr)		/* Where to store information to guide
+				 * Tcl_ConvertCountedElement. */
 {
     return Tcl_ScanCountedElement(src, TCL_INDEX_NONE, flagPtr);
 }
@@ -1502,7 +1501,7 @@ TclConvertElement(
 	}
 	*p = '}';
 	p++;
-	return (p - dst);
+	return p - dst;
     }
 
     /* conversion == CONVERT_ESCAPE or CONVERT_MASK */
@@ -1565,7 +1564,7 @@ TclConvertElement(
 	    continue;
 	case '\0':
 	    if (length < 0) {
-		return (p - dst);
+		return p - dst;
 	    }
 
 	    /*
@@ -1581,7 +1580,7 @@ TclConvertElement(
 	*p = *src;
 	p++;
     }
-    return (p - dst);
+    return p - dst;
 }
 
 /*
@@ -1639,7 +1638,7 @@ Tcl_Merge(
 	flagPtr = (char *)Tcl_Alloc(argc);
     }
     for (i = 0; i < argc; i++) {
-	flagPtr[i] = ( i ? DONT_QUOTE_HASH : 0 );
+	flagPtr[i] = (i ? DONT_QUOTE_HASH : 0);
 	bytesNeeded += TclScanElement(argv[i], TCL_INDEX_NONE, &flagPtr[i]);
     }
     bytesNeeded += argc;
@@ -1670,6 +1669,7 @@ Tcl_Merge(
  *----------------------------------------------------------------------
  *
  * TclTrimRight --
+ *
  *	Takes two counted strings in the Tcl encoding.  Conceptually
  *	finds the sub string (offset) to trim from the right side of the
  *	first string all characters found in the second string.
@@ -1824,6 +1824,7 @@ TclTrimLeft(
  *----------------------------------------------------------------------
  *
  * TclTrim --
+ *
  *	Finds the sub string (offset) to trim from both sides of the
  *	first string all characters found in the second string.
  *
@@ -1852,7 +1853,6 @@ TclTrim(
 
     /* Empty strings -> nothing to do */
     if ((numBytes > 0) && (numTrim > 0)) {
-
 	/* When bytes is NUL-terminated, returns 0 <= trimLeft <= numBytes */
 	trimLeft = TclTrimLeft(bytes, numBytes, trim, numTrim);
 	numBytes -= trimLeft;
@@ -2001,7 +2001,7 @@ Tcl_Concat(
 Tcl_Obj *
 Tcl_ConcatObj(
     Tcl_Size objc,		/* Number of objects to concatenate. */
-    Tcl_Obj *const objv[])	/* Array of objects to concatenate. */
+    Tcl_Obj *const *objv)	/* Array of objects to concatenate. */
 {
     int needSpace = 0;
     Tcl_Size i, bytesNeeded = 0, elemLength;
@@ -2160,7 +2160,7 @@ Tcl_StringCaseMatch(
 	 */
 
 	if (p == '\0') {
-	    return (*str == '\0');
+	    return *str == '\0';
 	}
 	if ((*str == '\0') && (p != '*')) {
 	    return 0;
@@ -2320,7 +2320,7 @@ Tcl_StringCaseMatch(
 		    /* We ran out of pattern after matching something in
 		     * (unclosed!) brackets. So long as we ran out of string
 		     * at the same time, we have a match. Otherwise, not. */
-		    return (*str == '\0');
+		    return *str == '\0';
 		}
 		pattern++;
 	    }
@@ -2367,7 +2367,7 @@ Tcl_StringCaseMatch(
  *	Parallels tclUtf.c:TclUniCharMatch, adjusted for char* and sans nocase.
  *
  * Results:
- *	The return value is 1 if string matches pattern, and 0 otherwise. The
+ *	The return value is true if string matches pattern, and false otherwise. The
  *	matching operation permits the following special characters in the
  *	pattern: *?\[] (see the manual entry for details on what these mean).
  *
@@ -2377,7 +2377,7 @@ Tcl_StringCaseMatch(
  *----------------------------------------------------------------------
  */
 
-int
+bool
 TclByteArrayMatch(
     const unsigned char *string,/* String. */
     Tcl_Size strLen,		/* Length of String */
@@ -2401,11 +2401,11 @@ TclByteArrayMatch(
 	 */
 
 	if (pattern == patternEnd) {
-	    return (string == stringEnd);
+	    return string == stringEnd;
 	}
 	p = *pattern;
 	if ((string == stringEnd) && (p != '*')) {
-	    return 0;
+	    return false;
 	}
 
 	/*
@@ -2425,7 +2425,7 @@ TclByteArrayMatch(
 		/* empty body */
 	    }
 	    if (pattern == patternEnd) {
-		return 1;
+		return true;
 	    }
 	    p = *pattern;
 	    while (1) {
@@ -2442,10 +2442,10 @@ TclByteArrayMatch(
 		}
 		if (TclByteArrayMatch(string, stringEnd - string,
 			pattern, patternEnd - pattern, 0)) {
-		    return 1;
+		    return true;
 		}
 		if (string == stringEnd) {
-		    return 0;
+		    return false;
 		}
 		string++;
 	    }
@@ -2476,14 +2476,14 @@ TclByteArrayMatch(
 	    string++;
 	    while (1) {
 		if ((*pattern == ']') || (pattern == patternEnd)) {
-		    return 0;
+		    return false;
 		}
 		startChar = *pattern;
 		pattern++;
 		if (*pattern == '-') {
 		    pattern++;
 		    if (pattern == patternEnd) {
-			return 0;
+			return false;
 		    }
 		    endChar = *pattern;
 		    pattern++;
@@ -2517,7 +2517,7 @@ TclByteArrayMatch(
 
 	if (p == '\\') {
 	    if (++pattern == patternEnd) {
-		return 0;
+		return false;
 	    }
 	}
 
@@ -2527,7 +2527,7 @@ TclByteArrayMatch(
 	 */
 
 	if (*string != *pattern) {
-	    return 0;
+	    return false;
 	}
 	string++;
 	pattern++;
@@ -2544,7 +2544,7 @@ TclByteArrayMatch(
  *	matching algorithms.
  *
  * Results:
- *	The return value is 1 if string matches pattern, and 0 otherwise. The
+ *	The return value is true if string matches pattern, and false otherwise. The
  *	matching operation permits the following special characters in the
  *	pattern: *?\[] (see the manual entry for details on what these mean).
  *
@@ -2554,14 +2554,14 @@ TclByteArrayMatch(
  *----------------------------------------------------------------------
  */
 
-int
+bool
 TclStringMatchObj(
     Tcl_Obj *strObj,		/* string object. */
     Tcl_Obj *ptnObj,		/* pattern object. */
     int flags)			/* Only TCL_MATCH_NOCASE should be passed, or
 				 * 0. */
 {
-    int match;
+    bool match;
     Tcl_Size length = 0, plen = 0;
 
     /*
@@ -2578,7 +2578,7 @@ TclStringMatchObj(
 	uptn  = Tcl_GetUnicodeFromObj(ptnObj, &plen);
 	match = TclUniCharMatch(udata, length, uptn, plen, flags);
     } else if (TclIsPureByteArray(strObj) && TclIsPureByteArray(ptnObj)
-		&& !flags) {
+	    && !flags) {
 	unsigned char *data, *ptn;
 
 	data = Tcl_GetBytesFromObj(NULL, strObj, &length);
@@ -3221,6 +3221,65 @@ Tcl_PrintDouble(
 /*
  *----------------------------------------------------------------------
  *
+ * TclFormatDouble --
+ *
+ *	Format a floating-point value with a printf-style format, like
+ *	snprintf(), but always using '.' as the decimal separator regardless
+ *	of the process LC_NUMERIC locale.
+ *
+ *	Tcl treats numbers as locale-independent: the decimal separator is
+ *	always '.' and Tcl forces LC_NUMERIC to "C" during initialization (see
+ *	TclpSetInitialEncodings).  However an embedding application (e.g. a
+ *	Python program using tkinter) may set LC_NUMERIC to a locale that uses
+ *	another separator after Tcl is initialized.  Plain snprintf() would
+ *	then format e.g. 0.1 as "0,1", which is not a valid Tcl number and
+ *	fails to parse when read back from a linked variable or a widget
+ *	subcommand result.  This wrapper normalizes the separator back to '.'.
+ *
+ * Results:
+ *	The return value of snprintf(): the number of characters that would
+ *	have been written had the buffer been large enough (excluding the
+ *	terminating NUL), or a negative value on error.
+ *
+ * Side effects:
+ *	Writes the formatted string to buffer.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclFormatDouble(
+    char *buffer,		/* Where to store the formatted string. */
+    size_t size,		/* Size of buffer in bytes. */
+    const char *format,		/* A printf-style format containing a single
+				 * floating-point conversion, e.g. "%.4g". */
+    double value)		/* The value to format. */
+{
+    int length = snprintf(buffer, size, format, value);
+    const char *decimal = localeconv()->decimal_point;
+
+    /*
+     * snprintf() above honours LC_NUMERIC.  If that locale uses a single-byte
+     * decimal separator other than '.' (e.g. ',' in many European locales),
+     * replace it so the result stays a valid Tcl number.  printf's "%f"/"%e"/
+     * "%g" conversions emit at most one such separator and never a thousands
+     * separator, so a single replacement is sufficient.
+     */
+
+    if (length > 0 && decimal[0] != '.' && decimal[1] == '\0') {
+	size_t scan = ((size_t)length < size) ? (size_t)length : size - 1;
+	char *p = (char *)memchr(buffer, decimal[0], scan);
+
+	if (p != NULL) {
+	    *p = '.';
+	}
+    }
+    return length;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TclNeedSpace --
  *
  *	This function checks to see whether it is appropriate to add a space
@@ -3451,7 +3510,7 @@ GetWideForIndex(
  *	TCL_SIZE_MAX. Negative values are returned as TCL_INDEX_NONE (-1).
  *
  *	Callers should pass reasonable values for endValue - one in the
- *      valid index range or TCL_INDEX_NONE (-1), for example for an empty
+ *	valid index range or TCL_INDEX_NONE (-1), for example for an empty
  *	list.
  *
  * Results:
@@ -3491,13 +3550,13 @@ Tcl_GetIntForIndex(
     if (indexPtr != NULL) {
 	/* Note: check against TCL_SIZE_MAX needed for 32-bit builds */
 	if (wide >= 0 && wide <= TCL_SIZE_MAX) {
-	    *indexPtr = (Tcl_Size)wide; /* A valid index */
+	    *indexPtr = (Tcl_Size)wide;	/* A valid index */
 	} else if (wide > TCL_SIZE_MAX) {
-	    *indexPtr = TCL_SIZE_MAX;   /* Beyond max possible index */
+	    *indexPtr = TCL_SIZE_MAX;	/* Beyond max possible index */
 	} else if (wide < -1-TCL_SIZE_MAX) {
 	    *indexPtr = -1-TCL_SIZE_MAX; /* Below most negative index */
 	} else if ((wide < 0) && (endValue >= 0)) {
-	    *indexPtr = TCL_INDEX_NONE; /* No clue why this special case */
+	    *indexPtr = TCL_INDEX_NONE;	/* No clue why this special case */
 	} else {
 	    *indexPtr = (Tcl_Size) wide;
 	}
@@ -3522,7 +3581,7 @@ Tcl_GetIntForIndex(
  *	-1:         Index "end"
  *	0:          Index "0"
  *	WIDE_MAX-1: Index "end+n", for any n > 1. Distinguish from end+1 for
- *                  commands like lset.
+ *	            commands like lset.
  *	WIDE_MAX:   Index "end+1"
  *
  * Results:
@@ -3779,57 +3838,58 @@ GetEndOffsetFromObj(
  *----------------------------------------------------------------------
  *
  * TclIndexEncode --
- *      IMPORTANT: function only encodes indices in the range that fits within
- *      an "int" type. Do NOT change this as the byte code compiler and engine
- *      which call this function cannot handle wider index types. Indices
- *      outside the range will result in the function returning an error.
  *
- *      Parse objPtr to determine if it is an index value. Two cases
+ *	IMPORTANT: function only encodes indices in the range that fits within
+ *	an "int" type. Do NOT change this as the byte code compiler and engine
+ *	which call this function cannot handle wider index types. Indices
+ *	outside the range will result in the function returning an error.
+ *
+ *	Parse objPtr to determine if it is an index value. Two cases
  *	are possible.  The value objPtr might be parsed as an absolute
  *	index value in the Tcl_Size range.  Note that this includes
  *	index values that are integers as presented and it includes index
- *      arithmetic expressions.
+ *	arithmetic expressions.
  *
- *      The largest string supported in Tcl 8 has byte length TCL_SIZE_MAX.
- *      This means the largest supported character length is also TCL_SIZE_MAX,
- *      and the index of the last character in a string of length TCL_SIZE_MAX
- *      is TCL_SIZE_MAX-1. Thus the absolute index values that can be
+ *	The largest string supported in Tcl 8 has byte length TCL_SIZE_MAX.
+ *	This means the largest supported character length is also TCL_SIZE_MAX,
+ *	and the index of the last character in a string of length TCL_SIZE_MAX
+ *	is TCL_SIZE_MAX-1. Thus the absolute index values that can be
  *	directly meaningful as an index into either a list or a string are
  *	integer values in the range 0 to TCL_SIZE_MAX - 1.
  *
- *      This function however can only handle integer indices in the range
- *      0 : INT_MAX-1.
+ *	This function however can only handle integer indices in the range
+ *	0 : INT_MAX-1.
  *
- *      Any absolute index value parsed outside that range is encoded
- *      using the before and after values passed in by the
- *      caller as the encoding to use for indices that are either
- *      less than or greater than the usable index range. TCL_INDEX_NONE
- *      is available as a good choice for most callers to use for
- *      after. Likewise, the value TCL_INDEX_NONE is good for
- *      most callers to use for before.  Other values are possible
- *      when the caller knows it is helpful in producing its own behavior
- *      for indices before and after the indexed item.
+ *	Any absolute index value parsed outside that range is encoded
+ *	using the before and after values passed in by the
+ *	caller as the encoding to use for indices that are either
+ *	less than or greater than the usable index range. TCL_INDEX_NONE
+ *	is available as a good choice for most callers to use for
+ *	after. Likewise, the value TCL_INDEX_NONE is good for
+ *	most callers to use for before.  Other values are possible
+ *	when the caller knows it is helpful in producing its own behavior
+ *	for indices before and after the indexed item.
  *
- *      A token can also be parsed as an end-relative index expression.
- *      All end-relative expressions that indicate an index larger
- *      than end (end+2, end--5) point beyond the end of the indexed
- *      collection, and can be encoded as after.  The end-relative
- *      expressions that indicate an index less than or equal to end
- *      are encoded relative to the value TCL_INDEX_END (-2).  The
- *      index "end" is encoded as -2, down to the index "end-0x7FFFFFFE"
- *      which is encoded as INT_MIN. Since the largest index into a
- *      string possible in Tcl 8 is 0x7FFFFFFE, the interpretation of
+ *	A token can also be parsed as an end-relative index expression.
+ *	All end-relative expressions that indicate an index larger
+ *	than end (end+2, end--5) point beyond the end of the indexed
+ *	collection, and can be encoded as after.  The end-relative
+ *	expressions that indicate an index less than or equal to end
+ *	are encoded relative to the value TCL_INDEX_END (-2).  The
+ *	index "end" is encoded as -2, down to the index "end-0x7FFFFFFE"
+ *	which is encoded as INT_MIN. Since the largest index into a
+ *	string possible in Tcl 8 is 0x7FFFFFFE, the interpretation of
  *      "end-0x7FFFFFFE" for that largest string would be 0.  Thus,
- *      if the tokens "end-0x7FFFFFFF" or "end+-0x80000000" are parsed,
- *      they can be encoded with the before value.
+ *	if the tokens "end-0x7FFFFFFF" or "end+-0x80000000" are parsed,
+ *	they can be encoded with the before value.
  *
  * Returns:
- *      TCL_OK if parsing succeeded, and TCL_ERROR if it failed or the
- *      index does not fit in an int type.
+ *	TCL_OK if parsing succeeded, and TCL_ERROR if it failed or the
+ *	index does not fit in an int type.
  *
  * Side effects:
- *      When TCL_OK is returned, the encoded index value is written
- *      to *indexPtr.
+ *	When TCL_OK is returned, the encoded index value is written
+ *	to *indexPtr.
  *
  *----------------------------------------------------------------------
  */
@@ -3993,42 +4053,6 @@ TclIndexDecode(
 	return endValue;
     }
     return TCL_INDEX_NONE;
-}
-
-/*
- *------------------------------------------------------------------------
- *
- * TclCommandWordLimitErrpr --
- *
- *    Generates an error message limit on number of command words exceeded.
- *
- * Results:
- *    Always return TCL_ERROR.
- *
- * Side effects:
- *    If interp is not-NULL, an error message is stored in it.
- *
- *------------------------------------------------------------------------
- */
-int
-TclCommandWordLimitError(
-    Tcl_Interp *interp,		/* May be NULL */
-    Tcl_Size count)		/* If <= 0, "unknown" */
-{
-    if (interp) {
-	if (count > 0) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "Number of words (%" TCL_SIZE_MODIFIER
-		    "d) in command exceeds limit %" TCL_SIZE_MODIFIER "d.",
-		    count, (Tcl_Size)INT_MAX));
-	} else {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "Number of words in command exceeds limit %"
-		    TCL_SIZE_MODIFIER "d.",
-		    (Tcl_Size)INT_MAX));
-	}
-    }
-    return TCL_ERROR; /* Always */
 }
 
 /*
@@ -4242,10 +4266,10 @@ TclGetProcessGlobalValue(
 	    Tcl_MutexLock(&pgvPtr->mutex);
 	    epoch = ++pgvPtr->epoch;
 	    Tcl_UtfToExternalDStringEx(NULL, pgvPtr->encoding, pgvPtr->value,
-		pgvPtr->numBytes, TCL_ENCODING_PROFILE_TCL8, &native, NULL);
+		    pgvPtr->numBytes, TCL_ENCODING_PROFILE_TCL8, &native, NULL);
 	    Tcl_ExternalToUtfDStringEx(NULL, current, Tcl_DStringValue(&native),
-		Tcl_DStringLength(&native), TCL_ENCODING_PROFILE_TCL8,
-		&newValue, NULL);
+		    Tcl_DStringLength(&native), TCL_ENCODING_PROFILE_TCL8,
+		    &newValue, NULL);
 	    Tcl_DStringFree(&native);
 	    Tcl_Free(pgvPtr->value);
 	    pgvPtr->value = (char *)Tcl_Alloc(Tcl_DStringLength(&newValue) + 1);
@@ -4262,7 +4286,6 @@ TclGetProcessGlobalValue(
     cacheMap = GetThreadHash(&pgvPtr->key);
     hPtr = Tcl_FindHashEntry(cacheMap, INT2PTR(epoch));
     if (NULL == hPtr) {
-
 	/*
 	 * No cache for the current epoch - must be a new one.
 	 *
@@ -4358,6 +4381,48 @@ TclGetObjNameOfExecutable(void)
 /*
  *----------------------------------------------------------------------
  *
+ * TclGetObjExecutableAncestors --
+ *
+ *	This function retrieves the paths to the directory ancestor(s) of
+ *	the application. The first element of the returned pathPtrs array is
+ *	the directory of the application, the second is the parent of that
+ *	directory and so on. If the number of elements requested is greater
+ *	that the directory depth, the additional elements will contain NULL.
+ *
+ *	IMPORTANT: The objects returned in pathPtrs[] will have had their
+ *	reference counts incremented so caller owns them.
+ *
+ * Results:
+ *	Returns the number of elements filled with paths. On error, returns
+ *	-1 with an error message in interp if not NULL.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_Size
+TclGetObjExecutableAncestors(
+    Tcl_Interp *interp,		/* interp for errors. May be NULL */
+    Tcl_Size numPaths,		/* Size of pathPtrs[] */
+    Tcl_Obj *pathsPtr[])	/* Output array holding ancestor paths */
+{
+    Tcl_Obj *exePtr = TclGetObjNameOfExecutable();
+    if (exePtr == NULL) {
+	if (interp) {
+	    Tcl_SetResult(interp, "Could not retrieve path of executable.",
+		    TCL_STATIC);
+	}
+	return -1;
+    }
+
+    return TclFSGetAncestorPaths(interp, exePtr, numPaths, pathsPtr);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Tcl_GetNameOfExecutable --
  *
  *	This function retrieves the absolute pathname of the application in
@@ -4390,6 +4455,8 @@ Tcl_GetNameOfExecutable(void)
 
 #if !defined(STATIC_BUILD)
 /*
+ *----------------------------------------------------------------------
+ *
  * TclSetObjNameOfShlib --
  *
  *	This function stores the absolute pathname of the Tcl shared library.
@@ -4399,8 +4466,9 @@ Tcl_GetNameOfExecutable(void)
  *
  * Side effects:
  *	Stores the shared library name in the process global database.
+ *
+ *----------------------------------------------------------------------
  */
-
 void
 TclSetObjNameOfShlib(
     Tcl_Obj *name,
@@ -4408,7 +4476,7 @@ TclSetObjNameOfShlib(
 {
     TclSetProcessGlobalValue(&shlibName, name);
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -4696,7 +4764,7 @@ TclReToGlob(
  *	Electrotechnical and Computer Science Conference, Portoroz,
  *	Slovenia, 1993.  The adaptations permit the computation to take
  *	place within unsigned long long values without the need for double
- *	length	buffers for calculation.  They also fill in a number of
+ *	length buffers for calculation.  They also fill in a number of
  *	details the paper omits or leaves unclear.
  *
  * Results:
@@ -4713,8 +4781,8 @@ int
 TclMSB(
     unsigned long long n)
 {
-    /* assert ( 64 == CHAR_BIT * sizeof(unsigned long long) ); */
-    /* assert ( n != 0 ); */
+    /* assert(64 == CHAR_BIT * sizeof(unsigned long long)); */
+    /* assert(n != 0); */
 
     /*
      * Many platforms offer access to this functionality through
@@ -4850,7 +4918,7 @@ TclMSB(
 #undef LEAD
 #endif
 }
-
+
 /*
  * Local Variables:
  * mode: c

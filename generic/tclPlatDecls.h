@@ -3,7 +3,7 @@
  *
  *	Declarations of platform specific Tcl APIs.
  *
- * Copyright (c) 1998-1999 by Scriptics Corporation.
+ * Copyright © 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  */
 
@@ -117,6 +117,8 @@ extern const TclPlatStubs *tclPlatStubsPtr;
 #   undef Tcl_CreateFileHandler
 #   undef Tcl_DeleteFileHandler
 #   undef Tcl_GetOpenFile
+#else
+#   undef Tcl_WinConvertError
 #endif
 #ifndef MAC_OSX_TCL
 #   undef Tcl_MacOSXOpenVersionedBundleResources

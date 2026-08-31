@@ -5,7 +5,7 @@
 
 AC_INIT([tcl],[9.1])
 AC_CONFIG_SRCDIR([../generic/tcl.h])
-AC_PREREQ([2.72])
+AC_PREREQ([2.73])
 
 # The following define is needed when building with Cygwin since newer
 # versions of autoconf incorrectly set SHELL to /bin/bash instead of
@@ -15,7 +15,7 @@ SHELL=/bin/sh
 TCL_VERSION=9.1
 TCL_MAJOR_VERSION=9
 TCL_MINOR_VERSION=1
-TCL_PATCH_LEVEL="a1"
+TCL_PATCH_LEVEL="b1"
 VER=$TCL_MAJOR_VERSION$TCL_MINOR_VERSION
 
 TCL_DDE_VERSION=1.5
@@ -23,10 +23,8 @@ TCL_DDE_MAJOR_VERSION=1
 TCL_DDE_MINOR_VERSION=5
 DDEVER=$TCL_DDE_MAJOR_VERSION$TCL_DDE_MINOR_VERSION
 
-TCL_REG_VERSION=1.4
 TCL_REG_MAJOR_VERSION=1
 TCL_REG_MINOR_VERSION=4
-REGVER=$TCL_REG_MAJOR_VERSION$TCL_REG_MINOR_VERSION
 
 PKG_CFG_ARGS=$@
 
@@ -208,6 +206,34 @@ AC_SUBST(TCL_ZIP_FILE)
 AC_SUBST(INSTALL_LIBRARIES)
 AC_SUBST(INSTALL_MSGS)
 
+#--------------------------------------------------------------------
+#	Timezone data
+#--------------------------------------------------------------------
+
+AC_MSG_CHECKING([for timezone data])
+AC_ARG_WITH(tzdata,
+    AS_HELP_STRING([--with-tzdata],
+	[install timezone data (default: yes)]),
+    [tcl_ok=$withval], [tcl_ok=yes])
+#
+# Unlike on Unix there is no system copy to fall back on, so the default is
+# to install ours. Saying no is for a build that supplies the data by some
+# other means.
+#
+case $tcl_ok in
+    no)
+	AC_MSG_RESULT([supplied by other means])
+    ;;
+    yes)
+	AC_MSG_RESULT([supplied by Tcl])
+	INSTALL_TZDATA=install-tzdata
+    ;;
+    *)
+	AC_MSG_ERROR([invalid argument: $tcl_ok])
+    ;;
+esac
+AC_SUBST(INSTALL_TZDATA)
+
 
 #--------------------------------------------------------------------
 # Perform additinal compiler tests.
@@ -316,12 +342,6 @@ fi
 #--------------------------------------------------------------------
 
 SC_ENABLE_SYMBOLS
-
-#--------------------------------------------------------------------
-# Embed the manifest if we can determine how
-#--------------------------------------------------------------------
-
-SC_EMBED_MANIFEST
 
 #------------------------------------------------------------------------
 # tclConfig.sh refers to this by a different name
@@ -475,7 +495,6 @@ AC_SUBST(TCL_PACKAGE_PATH)
 AC_SUBST(TCL_DDE_VERSION)
 AC_SUBST(TCL_DDE_MAJOR_VERSION)
 AC_SUBST(TCL_DDE_MINOR_VERSION)
-AC_SUBST(TCL_REG_VERSION)
 AC_SUBST(TCL_REG_MAJOR_VERSION)
 AC_SUBST(TCL_REG_MINOR_VERSION)
 

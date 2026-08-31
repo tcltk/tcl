@@ -1,0 +1,168 @@
+# Test coverage for the grapheme command
+# Copyright © 2026 Ashok P. Nadkarni
+#
+# See the file license.terms for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest
+    namespace import ::tcltest::*
+
+}
+tcltest::loadTestedCommands
+package require tcl::test
+
+source [file join [file dirname [info script]] tcltests.tcl]
+source [file join [file dirname [info script]] ucdUtils.tcl]
+interp alias {} grapheme {} ::tcl::unsupported::grapheme
+namespace eval grapheme::test {
+    namespace path ::tcltests::ucd
+    variable testCase
+    variable comment
+    variable testNum
+    variable graphemes
+    variable text
+    variable l
+
+    proc cleanupVars {} {
+	unset -nocomplain {*}
+    }
+
+    # The -ucd- tests all run off the test vectors from the Unicode Character
+    # Database. The test numbering is based on the corresponding line from
+    # the GraphemeBreakTest.txt file and may therefore be unstable.
+
+    ### grapheme next
+
+    tcltests::testnumargs "grapheme next" "string strIndex" ""
+
+    foreach testCase [list [list 0 "empty string" ""] {*}[getGraphemeData]] {
+	lassign $testCase testNum comment graphemes
+	test grapheme-next-ucd-$testNum.0 $comment -body {
+	    set text [join $graphemes ""]
+	    set l {}
+	    set i 0
+	    while {[set grapheme [grapheme next $text i]] ne ""} {
+		lappend l $grapheme
+	    }
+	    set l
+	} -result $graphemes
+    }
+
+    ### grapheme prev
+
+    tcltests::testnumargs "grapheme prev" "string strIndex" ""
+
+    foreach testCase [list [list 0 "empty string" ""] {*}[getGraphemeData]] {
+	lassign $testCase testNum comment graphemes
+	test grapheme-prev-ucd-$testNum.0 $comment -body {
+	    set text [join $graphemes ""]
+	    set l {}
+	    set i end
+	    while {[set grapheme [grapheme prev $text i]] ne ""} {
+		lappend l $grapheme
+	    }
+	    lreverse $l
+	} -result $graphemes
+    }
+
+    ### grapheme length
+
+    tcltests::testnumargs "grapheme length" "string" ""
+
+    foreach testCase [getGraphemeData] {
+	lassign $testCase testNum comment graphemes
+	test grapheme-length-ucd-$testNum.0 $comment -body {
+	    grapheme length [join $graphemes ""]
+	} -result [llength $graphemes]
+    }
+    test grapheme-length-empty-1.0 $comment -body {
+	grapheme length ""
+    } -result 0
+
+    ### grapheme index
+
+    tcltests::testnumargs "grapheme index" "string grIndex" ""
+
+    foreach testCase [list [list 0 "empty string" ""] {*}[getGraphemeData]] {
+	lassign $testCase testNum comment graphemes
+	set text [join $graphemes ""]
+	set len [llength $graphemes]
+	foreach index [list end-[expr {$len+2}] -1 {*}[lseq $len] $len end end-1 end+1] {
+	    test grapheme-index-ucd-$testNum.$index $comment -body {
+		grapheme index $text $index
+	    } -result [lindex $graphemes $index]
+	}
+    }
+
+    ### grapheme offset
+
+    tcltests::testnumargs "grapheme offset" "string grIndex" ""
+
+    foreach testCase [getGraphemeData] {
+	lassign $testCase testNum comment graphemes
+	set text [join $graphemes ""]
+	set len [llength $graphemes]
+	set offset 0
+	for {set i 0} {$i < $len} {incr i} {
+	    test grapheme-offset-ucd-$testNum.$offset $comment -body {
+		grapheme offset $text $i
+	    } -result $offset
+	    incr offset [string length [lindex $graphemes $i]]
+	}
+    }
+    test grapheme-offset-oob-1.0 {Negative index} -body {
+	grapheme offset abc -42
+    } -result -1
+    test grapheme-offset-oob-1.1 {Index too large} -body {
+	grapheme offset abc 42
+    } -result -1
+
+    ### grapheme range
+
+    tcltests::testnumargs "grapheme range" "string grFirst grLast" ""
+
+    foreach testCase [list [list 0 "empty string" ""] {*}[getGraphemeData]] {
+	lassign $testCase testNum comment graphemes
+	set text [join $graphemes ""]
+	set len [llength $graphemes]
+
+	foreach grStart [list -1 {*}[lseq $len] $len end end-1] {
+	    foreach grEnd [list -1 {*}[lseq $len] $len end end-1] {
+		test grapheme-range-ucd-$testNum.$grStart:$grEnd $comment -body {
+		    grapheme range $text $grStart $grEnd
+		} -result [join [lrange $graphemes $grStart $grEnd] ""]
+	    }
+	}
+    }
+
+    ### grapheme reverse
+
+    tcltests::testnumargs "grapheme reverse" "string" ""
+
+    foreach testCase [list [list 0 "empty string" ""] {*}[getGraphemeData]] {
+	lassign $testCase testNum comment graphemes
+	set text [join $graphemes ""]
+	set len [llength $graphemes]
+	test grapheme-reverse-ucd-$testNum $comment -body {
+	    grapheme reverse $text
+	} -result [join [lreverse $graphemes] ""]
+    }
+
+    ### grapheme split
+
+    tcltests::testnumargs "grapheme split" "string" ""
+
+    foreach testCase [list [list 0 "empty string" ""] {*}[getGraphemeData]] {
+	lassign $testCase testNum comment graphemes
+	set text [join $graphemes ""]
+	set len [llength $graphemes]
+	test grapheme-split-ucd-$testNum $comment -body {
+	    grapheme split $text
+	} -result $graphemes
+    }
+}
+
+::tcltest::cleanupTests
+namespace delete grapheme::test
+return

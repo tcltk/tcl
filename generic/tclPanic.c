@@ -46,7 +46,7 @@ Tcl_SetPanicProc(
     Tcl_PanicProc *proc)
 {
     panicProc = proc;
-    return Tcl_InitSubsystems();
+    return TclGetBuildInfo();
 }
 
 /*

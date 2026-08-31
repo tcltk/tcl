@@ -319,7 +319,7 @@ Tcl_HashEntry, the key pointer is assigned to key.oneWordValue and the
 clientData is set to NULL. String keys and array keys use this function to
 allocate enough space for the entry and the key in one block, rather than
 doing it in two blocks. This saves space for a pointer to the key from the
-entry and another memory allocation. Tcl_Obj* keys use this function to
+entry and another memory allocation. Tcl_Obj * keys use this function to
 allocate enough space for an entry and increment the reference count on the
 value.
 .PP
@@ -332,7 +332,7 @@ typedef void \fBTcl_FreeHashEntryProc\fR(
 .CE
 .PP
 If this is NULL then \fBTcl_Free\fR is used to free the space for the entry.
-Tcl_Obj* keys use this function to decrement the reference count on the
+Tcl_Obj * keys use this function to decrement the reference count on the
 value.
 .SH "REFERENCE COUNT MANAGEMENT"
 .PP
@@ -344,7 +344,7 @@ corresponding hash entry is deleted, whether with \fBTcl_DeleteHashEntry\fR or
 with \fBTcl_DeleteHashTable\fR. The \fBTcl_GetHashKey\fR function will return
 the key without further modifying its reference count.
 .PP
-Custom hash tables that use a Tcl_Obj* as key will generally need to do
+Custom hash tables that use a Tcl_Obj * as key will generally need to do
 something similar in their \fIallocEntryProc\fR.
 .SH "SEE ALSO"
 Dict(3)

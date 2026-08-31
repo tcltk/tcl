@@ -136,7 +136,9 @@ test load-5.1 {file name not specified and no static package: pick default} -set
 } -constraints [list $dll $loaded] -body {
     load -global [file join $testDir tcl9pkga$ext] Pkga
     load {} Pkga x
-    info loaded x
+    # As of TIP 755, test package is loaded in secondary interpreters as well.
+    # So search that Pkga is present
+    lsearch -all -inline -index 1 [info loaded x] Pkga
 } -cleanup {
     interp delete x
 } -result [list [list [file join $testDir tcl9pkga$ext] Pkga]]

@@ -14,6 +14,7 @@ const TclOOIntStubs *tclOOIntStubsPtr = NULL;
  *----------------------------------------------------------------------
  *
  * TclOOInitializeStubs --
+ *
  *	Load the tclOO package, initialize stub table pointer. Do not call
  *	this function directly, use Tcl_OOInitStubs() macro instead.
  *
@@ -63,7 +64,7 @@ TclOOInitializeStubs(
     tclStubsPtr->tcl_ResetResult(interp);
     tclStubsPtr->tcl_AppendResult(interp, "Error loading ", packageName,
 	    " (requested version ", version, ", actual version ",
-	    actualVersion, "): ", errMsg, NULL);
+	    actualVersion, "): ", errMsg, (char *)NULL);
     return NULL;
 }
 

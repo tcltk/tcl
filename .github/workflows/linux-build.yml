@@ -3,14 +3,14 @@ on:
   push:
     branches:
     - "main"
-    - "core-9-0-branch"
+    - "core-9-1-branch"
     tags:
     - "core-*"
 permissions:
   contents: read
 jobs:
   plan:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     outputs:
       gcc: ${{ steps.matrix.outputs.gcc }}
     steps:
@@ -21,7 +21,7 @@ jobs:
             echo gcc=$(jq -nc '{config: (if env.IsMatched == "true" then env.FULL else env.PARTIAL end) | fromjson }' )
           ) | tee -a $GITHUB_OUTPUT
         env:
-          IsMatched: ${{ github.ref_name == 'main' || github.ref_name == 'core-9-0-branch' }}
+          IsMatched: ${{ github.ref_name == 'main' || github.ref_name == 'core-9-1-branch' }}
           # DO NOT CHANGE THESE MATRIX SPECS; IT AFFECTS OUR COST CONTROLS
           FULL: >
             [
@@ -43,7 +43,7 @@ jobs:
             ]
   gcc:
     needs: plan
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     strategy:
       matrix: ${{ fromJson(needs.plan.outputs.gcc) }}
     defaults:
@@ -52,7 +52,7 @@ jobs:
         working-directory: unix
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         timeout-minutes: 5
       - name: Install 32-bit dependencies if needed
         # Duplicated from above
@@ -90,6 +90,7 @@ jobs:
           echo "::remove-matcher::.github/tcltest.json"
         env:
           ERROR_ON_FAILURES: 1
+          CI: 1
         timeout-minutes: 30
       - name: Test-Drive Installation
         run: |

@@ -20,11 +20,11 @@
 
 #define SET_BITS(var, bits)	((var) |= (bits))
 #define CLEAR_BITS(var, bits)	((var) &= ~(bits))
-#define GOT_BITS(var, bits)     (((var) & (bits)) != 0)
+#define GOT_BITS(var, bits)	(((var) & (bits)) != 0)
 
 /* "sock" + a pointer in hex + \0 */
-#define SOCK_CHAN_LENGTH        (4 + sizeof(void *) * 2 + 1)
-#define SOCK_TEMPLATE           "sock%" TCL_Z_MODIFIER "x"
+#define SOCK_CHAN_LENGTH	(4 + sizeof(void *) * 2 + 1)
+#define SOCK_TEMPLATE		"sock%" TCL_Z_MODIFIER "x"
 
 #undef SOCKET   /* Possible conflict with win32 SOCKET */
 
@@ -598,7 +598,6 @@ TcpCloseProc(
 	if (close(fds->fd) < 0) {
 	    errorCode = errno;
 	}
-
     }
     fds = statePtr->fds.next;
     while (fds != NULL) {
@@ -1175,7 +1174,6 @@ TcpWatchProc(
 
 	statePtr->filehandlers = mask;
     } else if (mask) {
-
 	/*
 	 * Whether it is a bug or feature or otherwise, it is a fact of life
 	 * that on at least some Linux kernels select() fails to report that a
@@ -1261,9 +1259,9 @@ TcpAsyncCallback(
  *	This function opens a new socket in client mode.
  *
  * Results:
- *      TCL_OK, if the socket was successfully connected or an asynchronous
- *      connection is in progress. If an error occurs, TCL_ERROR is returned
- *      and an error message is left in interp.
+ *	TCL_OK, if the socket was successfully connected or an asynchronous
+ *	connection is in progress. If an error occurs, TCL_ERROR is returned
+ *	and an error message is left in interp.
  *
  * Side effects:
  *	Opens a socket.
@@ -1374,7 +1372,7 @@ TcpConnect(
 	     */
 
 	    ret = connect(statePtr->fds.fd, statePtr->addr->ai_addr,
-			statePtr->addr->ai_addrlen);
+		    statePtr->addr->ai_addrlen);
 	    if (ret < 0) {
 		error = errno;
 	    }
@@ -1867,7 +1865,8 @@ Tcl_OpenTcpServerEx(
  *----------------------------------------------------------------------
  *
  * TcpAccept --
- *	Accept a TCP socket connection.	 This is called by the event loop.
+ *
+ *	Accept a TCP socket connection. This is called by the event loop.
  *
  * Results:
  *	None.

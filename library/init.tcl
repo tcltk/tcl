@@ -15,7 +15,7 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
 
-package require -exact tcl 9.1a1
+package require -exact tcl 9.1b1
 
 # Compute the auto path to use in this interpreter.
 # The values on the path come from several locations:
@@ -23,8 +23,6 @@ package require -exact tcl 9.1a1
 # The environment variable TCLLIBPATH
 #
 # tcl_library, which is the directory containing this init.tcl script.
-# [tclInit] (Tcl_Init()) searches around for the directory containing this
-# init.tcl and defines tcl_library to that location before sourcing it.
 #
 # The parent directory of tcl_library. Adding the parent
 # means that packages in peer directories will be found automatically.
@@ -41,55 +39,9 @@ package require -exact tcl 9.1a1
 # ::auto_path (other than to {} if it is undefined). The caller, typically
 # a Safe Base command, is responsible for setting ::auto_path.
 
-if {![info exists auto_path]} {
-    if {[info exists env(TCLLIBPATH)] && (![interp issafe])} {
-	set auto_path [apply {{} {
-	    lmap path $::env(TCLLIBPATH) {
-		# Paths relative to unresolvable home dirs are ignored
-		if {[catch {file tildeexpand $path} expanded_path]} {
-		    continue
-		}
-		set expanded_path
-	    }
-	}}]
-    } else {
-	set auto_path ""
-    }
-}
-
-namespace eval tcl {
-    if {![interp issafe]} {
-	variable Dir
-	foreach Dir [list $::tcl_library [file dirname $::tcl_library]] {
-	    if {$Dir ni $::auto_path} {
-		lappend ::auto_path $Dir
-	    }
-	}
-	set Dir [file join [file dirname [file dirname \
-		[info nameofexecutable]]] lib]
-	if {$Dir ni $::auto_path} {
-	    lappend ::auto_path $Dir
-	}
-	if {[info exists ::tcl_pkgPath]} { catch {
-	    foreach Dir $::tcl_pkgPath {
-		if {$Dir ni $::auto_path} {
-		    lappend ::auto_path $Dir
-		}
-	    }
-	}}
-
-	variable Path [encoding dirs]
-	set Dir [file join $::tcl_library encoding]
-	if {$Dir ni $Path} {
-	    lappend Path $Dir
-	    encoding dirs $Path
-	}
-	unset Dir Path
-    }
-}
+tcl::InitAutoPath
 
 namespace eval tcl::Pkg {}
-
 
 # Setup the unknown package handler
 if {[interp issafe]} {
@@ -550,126 +502,10 @@ proc auto_import {pattern} {
 }
 
 # auto_execok --
-#
-# Returns string that indicates name of program to execute if
-# name corresponds to a shell builtin or an executable in the
-# Windows search path, or "" otherwise.  Builds an associative
-# array auto_execs that caches information about previous checks,
-# for speed.
-#
-# Arguments:
-# name -			Name of a command.
-
-if {$tcl_platform(platform) eq "windows"} {
-# Windows version.
-#
-# Note that file executable doesn't work under Windows, so we have to
-# look for files with .exe, .com, or .bat extensions.  Also, the path
-# may be in the Path or PATH environment variables, and path
-# components are separated with semicolons, not colons as under Unix.
-#
-proc auto_execok name {
-    global auto_execs env tcl_platform
-
-    if {[info exists auto_execs($name)]} {
-	return $auto_execs($name)
-    }
-    set auto_execs($name) ""
-
-    set shellBuiltins [list assoc call cd cls color copy date del dir echo \
-			   erase exit ftype for if md mkdir mklink move path \
-			   pause prompt rd ren rename rmdir set start time \
-			   title type ver vol]
-    if {[info exists env(PATHEXT)]} {
-	# Add an initial ; to have the {} extension check first.
-	set execExtensions [split ";$env(PATHEXT)" ";"]
-    } else {
-	set execExtensions [list {} .com .exe .bat .cmd]
-    }
-
-    if {[string tolower $name] in $shellBuiltins} {
-	# When this is command.com for some reason on Win2K, Tcl won't
-	# exec it unless the case is right, which this corrects.  COMSPEC
-	# may not point to a real file, so do the check.
-	set cmd $env(COMSPEC)
-	if {[file exists $cmd]} {
-	    set cmd [file attributes $cmd -shortname]
-	}
-	return [set auto_execs($name) [list $cmd /c $name]]
-    }
-
-    if {[llength [file split $name]] != 1} {
-	foreach ext $execExtensions {
-	    set file ${name}${ext}
-	    if {[file exists $file] && ![file isdirectory $file]} {
-		return [set auto_execs($name) [list $file]]
-	    }
-	}
-	return ""
-    }
-
-    set path "[file dirname [info nameofexecutable]];.;"
-    if {[info exists env(SystemRoot)]} {
-	set windir $env(SystemRoot)
-    } elseif {[info exists env(WINDIR)]} {
-	set windir $env(WINDIR)
-    }
-    if {[info exists windir]} {
-	append path "$windir/system32;$windir/system;$windir;"
-    }
-
-    foreach var {PATH Path path} {
-	if {[info exists env($var)]} {
-	    append path ";$env($var)"
-	}
-    }
-
-    foreach ext $execExtensions {
-	unset -nocomplain checked
-	foreach dir [split $path {;}] {
-	    # Skip already checked directories
-	    if {[info exists checked($dir)] || ($dir eq "")} {
-		continue
-	    }
-	    set checked($dir) {}
-	    set file [file join $dir ${name}${ext}]
-	    if {[file exists $file] && ![file isdirectory $file]} {
-		return [set auto_execs($name) [list $file]]
-	    }
-	}
-    }
-    return ""
-}
-
-} else {
-# Unix version.
-#
-proc auto_execok name {
-    global auto_execs env
-
-    if {[info exists auto_execs($name)]} {
-	return $auto_execs($name)
-    }
-    set auto_execs($name) ""
-    if {[llength [file split $name]] != 1} {
-	if {[file executable $name] && ![file isdirectory $name]} {
-	    set auto_execs($name) [list $name]
-	}
-	return $auto_execs($name)
-    }
-    foreach dir [split $env(PATH) :] {
-	if {$dir eq ""} {
-	    set dir .
-	}
-	set file [file join $dir $name]
-	if {[file executable $file] && ![file isdirectory $file]} {
-	    set auto_execs($name) [list $file]
-	    return $auto_execs($name)
-	}
-    }
-    return ""
-}
-
+# Lazy loaded for better startup performance.
+proc auto_execok arg {
+    uplevel #0 [list ::tcl::Pkg::source [file join [info library] autoexecok.tcl]]
+    tailcall auto_execok $arg
 }
 
 # ::tcl::CopyDirectory --

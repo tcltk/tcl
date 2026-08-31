@@ -381,7 +381,7 @@ communications hardware.
 .SS "ERROR CODES (Windows only)"
 .PP
 A lot of different errors may occur during serial read operations or during
-event polling in background. The external device may have been switched
+event polling in the background. The external device may have been switched
 off, the data lines may be noisy, system buffers may overrun or your mode
 settings may be wrong.  That is why a reliable software should always
 \fBcatch\fR serial read operations.  In cases of an error Tcl returns a

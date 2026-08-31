@@ -1162,6 +1162,22 @@ test zlib-15.1 {Bug cfdf80a2efc6 - negative checksums} -setup {
     $compressor close
 } -result 3984772369
 
+# Non-portable: potential high memory load
+test zlib-16.1 {Bug 9563b8eeec - very large compression ratios} -setup {
+    set file [makeFile {} test.z]
+} -constraints nonPortable -body {
+    set f [open $file wb]
+    puts -nonewline $f [zlib compress [string repeat "\0" 0x1000000]]
+    close $f
+    set f [open $file rb]
+    zlib push decompress $f
+    set len [string length [read $f]]
+    close $f
+    list [file size $file] $len
+} -cleanup {
+    removeFile $file
+} -result {16291 16777216}
+
 
 ::tcltest::cleanupTests
 return

@@ -101,7 +101,7 @@ UTF8PROC_DLLEXPORT const char *utf8proc_version(void) {
 }
 
 UTF8PROC_DLLEXPORT const char *utf8proc_unicode_version(void) {
-  return "17.0.0";
+  return "18.0.0";
 }
 
 UTF8PROC_DLLEXPORT const char *utf8proc_errmsg(utf8proc_ssize_t errcode) {
@@ -294,7 +294,7 @@ static utf8proc_bool grapheme_break_extended(int lbc, int tbc, int licb, int tic
     int state_bc, state_icb; /* boundclass and indic_conjunct_break state */
     if (*state == 0) { /* state initialization */
       state_bc = lbc;
-      state_icb = licb == UTF8PROC_INDIC_CONJUNCT_BREAK_CONSONANT ? licb : UTF8PROC_INDIC_CONJUNCT_BREAK_NONE;
+      state_icb = licb;
     }
     else { /* lbc and licb are already encoded in *state */
       state_bc = *state & 0xff;  // 1st byte of state is bound class
@@ -305,16 +305,9 @@ static utf8proc_bool grapheme_break_extended(int lbc, int tbc, int licb, int tic
        !(state_icb == UTF8PROC_INDIC_CONJUNCT_BREAK_LINKER
         && ticb == UTF8PROC_INDIC_CONJUNCT_BREAK_CONSONANT); // GB9c
 
-    // Special support for GB9c.  Don't break between two consonants
-    // separated 1+ linker characters and 0+ extend characters in any order.
-    // After a consonant, we enter LINKER state after at least one linker.
-    if (ticb == UTF8PROC_INDIC_CONJUNCT_BREAK_CONSONANT
-        || state_icb == UTF8PROC_INDIC_CONJUNCT_BREAK_CONSONANT
-        || state_icb == UTF8PROC_INDIC_CONJUNCT_BREAK_EXTEND)
-      state_icb = ticb;
-    else if (state_icb == UTF8PROC_INDIC_CONJUNCT_BREAK_LINKER)
-      state_icb = ticb == UTF8PROC_INDIC_CONJUNCT_BREAK_EXTEND ?
-                  UTF8PROC_INDIC_CONJUNCT_BREAK_LINKER : ticb;
+    // Special support for GB9c.  Don't break between linker + 0+ extend chars and consonant.
+    // We enter LINKER state after a linker and stay in it for extend chars.
+    state_icb = (state_icb == UTF8PROC_INDIC_CONJUNCT_BREAK_LINKER && ticb == UTF8PROC_INDIC_CONJUNCT_BREAK_EXTEND) ? state_icb : ticb;
 
     // Special support for GB 12/13 made possible by GB999. After two RI
     // class codepoints we want to force a break. Do this by resetting the
@@ -433,7 +426,7 @@ UTF8PROC_DLLEXPORT int utf8proc_charwidth(utf8proc_int32_t c) {
 }
 
 UTF8PROC_DLLEXPORT utf8proc_bool utf8proc_charwidth_ambiguous(utf8proc_int32_t c) {
-  return utf8proc_get_property(c)->ambiguous_width;
+  return (utf8proc_bool) utf8proc_get_property(c)->ambiguous_width;
 }
 
 UTF8PROC_DLLEXPORT utf8proc_category_t utf8proc_category(utf8proc_int32_t c) {
@@ -662,6 +655,10 @@ UTF8PROC_DLLEXPORT utf8proc_ssize_t utf8proc_normalize_utf32(utf8proc_int32_t *b
     utf8proc_ssize_t wpos = 0;
     for (rpos = 0; rpos < length; rpos++) {
       utf8proc_int32_t current_char = buffer[rpos];
+      if (current_char < 0) {
+        /* skip grapheme break */
+        continue;
+      }
       const utf8proc_property_t *current_property = unsafe_get_property(current_char);
       if (starter && current_property->combining_class > max_combining_class) {
         /* combination perhaps possible */
@@ -831,4 +828,8 @@ UTF8PROC_DLLEXPORT utf8proc_uint8_t *utf8proc_NFKC_Casefold(const utf8proc_uint8
   utf8proc_map(str, 0, &retval, (utf8proc_option_t)(UTF8PROC_NULLTERM | UTF8PROC_STABLE |
     UTF8PROC_COMPOSE | UTF8PROC_COMPAT | UTF8PROC_CASEFOLD | UTF8PROC_IGNORE));
   return retval;
+}
+
+UTF8PROC_DLLEXPORT void utf8proc_free(utf8proc_uint8_t *ptr) {
+  free(ptr);
 }

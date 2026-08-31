@@ -324,7 +324,7 @@ CreateHashEntry(
 		}
 		/* if keys pointers or values are equal */
 		if ((key == hPtr->key.oneWordValue)
-		    || compareKeysProc((void *) key, hPtr)) {
+			|| compareKeysProc((void *) key, hPtr)) {
 		    if (newPtr && (newPtr != TCL_HASH_FIND)) {
 			*newPtr = 0;
 		    }

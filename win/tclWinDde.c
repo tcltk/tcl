@@ -4,7 +4,7 @@
  *	This file provides functions that implement the "send" command,
  *	allowing commands to be passed from interpreter to interpreter.
  *
- * Copyright (c) 1997 by Sun Microsystems, Inc.
+ * Copyright © 1997 by Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -83,7 +83,7 @@ static DWORD ddeInstance;	/* The application instance handle given to us
 				 * by DdeInitialize. */
 static int ddeIsServer = 0;
 
-#define TCL_DDE_VERSION		"1.5a1"
+#define TCL_DDE_VERSION		"1.5b1"
 #define TCL_DDE_PACKAGE_NAME	"dde"
 #define TCL_DDE_SERVICE_NAME	L"TclEval"
 #define TCL_DDE_EXECUTE_RESULT	L"$TCLEVAL$EXECUTE$RESULT"
@@ -121,7 +121,7 @@ static int		MakeDdeConnection(Tcl_Interp *interp,
 static void		SetDdeError(Tcl_Interp *interp);
 static int		DdeObjCmd(void *clientData,
 			    Tcl_Interp *interp, Tcl_Size objc,
-			    Tcl_Obj *const objv[]);
+			    Tcl_Obj *const *objv);
 
 #ifdef __cplusplus
 extern "C" {
@@ -384,7 +384,7 @@ DdeSetServerName(
 	     */
 
 	    for (n = 0; n < srvCount; ++n) {
-		Tcl_Obj* namePtr;
+		Tcl_Obj *namePtr;
 		Tcl_DString ds;
 
 		Tcl_ListObjIndex(interp, srvPtrPtr[n], 1, &namePtr);
@@ -1625,9 +1625,9 @@ DdeObjCmd(
 			}
 			Tcl_DStringInit(&dsBuf);
 			Tcl_WCharToUtfDString(dataString, tmp>>1, &dsBuf);
-			returnObjPtr =
-			    Tcl_NewStringObj(Tcl_DStringValue(&dsBuf),
-				    Tcl_DStringLength(&dsBuf));
+			returnObjPtr = Tcl_NewStringObj(
+				Tcl_DStringValue(&dsBuf),
+				Tcl_DStringLength(&dsBuf));
 			Tcl_DStringFree(&dsBuf);
 		    }
 		    DdeUnaccessData(ddeData);

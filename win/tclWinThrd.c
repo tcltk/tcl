@@ -15,9 +15,9 @@
 
 /* Workaround for mingw versions which don't provide this in float.h */
 #ifndef _MCW_EM
-#   define	_MCW_EM		0x0008001F	/* Error masks */
-#   define	_MCW_RC		0x00000300	/* Rounding */
-#   define	_MCW_PC		0x00030000	/* Precision */
+#   define _MCW_EM	0x0008001F	/* Error masks */
+#   define _MCW_RC	0x00000300	/* Rounding */
+#   define _MCW_PC	0x00030000	/* Precision */
 _CRTIMP unsigned int __cdecl _controlfp (unsigned int unNew, unsigned int unMask);
 #endif
 
@@ -50,7 +50,7 @@ static CRITICAL_SECTION initLock;
 
 typedef struct WMutex {
     CRITICAL_SECTION crit;
-    volatile LONG thread;
+    volatile DWORD thread;
     int counter;
 } WMutex;
 
@@ -207,32 +207,6 @@ TclpThreadCreate(
 	LeaveCriticalSection(&joinLock);
 	return TCL_OK;
     }
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Tcl_JoinThread --
- *
- *	This procedure waits upon the exit of the specified thread.
- *
- * Results:
- *	TCL_OK if the wait was successful, TCL_ERROR else.
- *
- * Side effects:
- *	The result area is set to the exit code of the thread we
- *	waited upon.
- *
- *----------------------------------------------------------------------
- */
-
-int
-Tcl_JoinThread(
-    Tcl_ThreadId threadId,	/* Id of the thread to wait upon */
-    int *result)		/* Reference to the storage the result of the
-				 * thread we wait upon will be written into. */
-{
-    return TclJoinThread(threadId, result);
 }
 
 /*
@@ -514,7 +488,7 @@ static void
 WMutexLock(
     WMutex *wmPtr)
 {
-    LONG mythread = GetCurrentThreadId();
+    DWORD mythread = GetCurrentThreadId();
 
     if (wmPtr->thread == mythread) {
 	// We owned the lock already, so it's recursive.
@@ -539,7 +513,6 @@ WMutexUnlock(
 	LeaveCriticalSection(&wmPtr->crit);
     }
 }
-
 
 /*
  *----------------------------------------------------------------------
@@ -640,7 +613,7 @@ TclpFinalizeMutex(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_ConditionWait --
+ * Tcl_ConditionWait2 --
  *
  *	This procedure is invoked to wait on a condition variable. The mutex
  *	is atomically released as part of the wait, and automatically grabbed
@@ -660,19 +633,19 @@ TclpFinalizeMutex(
  */
 
 void
-Tcl_ConditionWait(
+Tcl_ConditionWait2(
     Tcl_Condition *condPtr,	/* Really (WinCondition **) */
     Tcl_Mutex *mutexPtr,	/* Really (CRITICAL_SECTION **) */
-    const Tcl_Time *timePtr)	/* Timeout on waiting period */
+    long long time)		/* Timeout on waiting period */
 {
     CONDITION_VARIABLE *cvPtr;	/* Per-condition queue head */
     WMutex *wmPtr;		/* Caller's Mutex, after casting */
     DWORD wtime;		/* Windows time value */
 
-    if (timePtr == NULL) {
+    if (time < 0) {
 	wtime = INFINITE;
     } else {
-	wtime = (DWORD)timePtr->sec * 1000 + (DWORD)timePtr->usec / 1000;
+	wtime = (DWORD)time / 1000;
     }
 
     if (*condPtr == NULL) {
@@ -690,16 +663,15 @@ Tcl_ConditionWait(
 
     int counter = wmPtr->counter;
     wmPtr->counter = 0;
-    LONG mythread = GetCurrentThreadId();
+    DWORD mythread = GetCurrentThreadId();
     assert(wmPtr->thread == mythread);
     wmPtr->thread = 0;
-    if (SleepConditionVariableCS(cvPtr,
-	    &wmPtr->crit, wtime) == 0) {
+    if (SleepConditionVariableCS(cvPtr, &wmPtr->crit, wtime) == 0) {
 	DWORD err = GetLastError();
 	if (err != ERROR_TIMEOUT) {
 	    Tcl_Panic(
-		"Tcl_ConditionWait: SleepConditionVariableCS error %lu",
-		err);
+		    "Tcl_ConditionWait: SleepConditionVariableCS error %lu",
+		    err);
 	}
     }
 
@@ -772,7 +744,7 @@ TclpFinalizeCondition(
 	*condPtr = NULL;
     }
 }
-
+
 /*
  * Additions by AOL for specialized thread memory allocator.
  */

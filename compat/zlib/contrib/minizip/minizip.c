@@ -1,15 +1,14 @@
 /*
    minizip.c
-   Version 1.1, February 14h, 2010
-   sample part of the MiniZip project - ( http://www.winimage.com/zLibDll/minizip.html )
+   sample part of the MiniZip project - ( https://www.winimage.com/zLibDll/minizip.html )
 
-         Copyright (C) 1998-2010 Gilles Vollant (minizip) ( http://www.winimage.com/zLibDll/minizip.html )
+         Copyright (C) 1998-2026 Gilles Vollant (minizip) ( https://www.winimage.com/zLibDll/minizip.html )
 
          Modifications of Unzip for Zip64
          Copyright (C) 2007-2008 Even Rouault
 
          Modifications for Zip64 support on both zip and unzip
-         Copyright (C) 2009-2010 Mathias Svensson ( http://result42.com )
+         Copyright (C) 2009-2010 Mathias Svensson ( https://result42.com )
 */
 
 
@@ -28,11 +27,7 @@
         #endif
 #endif
 
-#if defined(_WIN32)
-#define FOPEN_FUNC(filename, mode) fopen(filename, mode)
-#define FTELLO_FUNC(stream) _ftelli64(stream)
-#define FSEEKO_FUNC(stream, offset, origin) _fseeki64(stream, offset, origin)
-#elif defined(__APPLE__) || defined(IOAPI_NO_64)
+#if defined(__APPLE__) || defined(__HAIKU__) || defined(MINIZIP_FOPEN_NO_64)
 // In darwin and perhaps other BSD variants off_t is a 64 bit value, hence no need for specific 64 bit functions
 #define FOPEN_FUNC(filename, mode) fopen(filename, mode)
 #define FTELLO_FUNC(stream) ftello(stream)
@@ -43,7 +38,14 @@
 #define FSEEKO_FUNC(stream, offset, origin) fseeko64(stream, offset, origin)
 #endif
 
-#include "tinydir.h"
+
+
+#ifndef _CRT_SECURE_NO_WARNINGS
+#  define _CRT_SECURE_NO_WARNINGS
+#endif
+#ifdef HAVE_DIRENT_H
+#  include <dirent.h>
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -62,13 +64,11 @@
 #endif
 
 #include "zip.h"
+#include "ints.h"
 
 #ifdef _WIN32
         #define USEWIN32IOAPI
         #include "iowin32.h"
-#       if defined(_MSC_VER)
-#           define snprintf _snprintf
-#       endif
 #endif
 
 
@@ -80,6 +80,7 @@
 /* f: name of file to get info on, tmzip: return value: access,
    modification and creation times, dt: dostime */
 static int filetime(const char *f, tm_zip *tmzip, uLong *dt) {
+  (void)tmzip;
   int ret = 0;
   {
       FILETIME ftLocal;
@@ -97,8 +98,7 @@ static int filetime(const char *f, tm_zip *tmzip, uLong *dt) {
   }
   return ret;
 }
-#else
-#if defined(unix) || defined(__APPLE__)
+#elif defined(__unix__) || defined(__unix) || defined(__APPLE__)
 /* f: name of file to get info on, tmzip: return value: access,
    modification and creation times, dt: dostime */
 static int filetime(const char *f, tm_zip *tmzip, uLong *dt) {
@@ -149,7 +149,6 @@ static int filetime(const char *f, tm_zip *tmzip, uLong *dt) {
     return 0;
 }
 #endif
-#endif
 
 
 
@@ -167,11 +166,11 @@ static int check_exist_file(const char* filename) {
 
 static void do_banner(void) {
     printf("MiniZip 1.1, demo of zLib + MiniZip64 package, written by Gilles Vollant\n");
-    printf("more info on MiniZip at http://www.winimage.com/zLibDll/minizip.html\n\n");
+    printf("more info on MiniZip at https://www.winimage.com/zLibDll/minizip.html\n\n");
 }
 
 static void do_help(void) {
-    printf("Usage : minizip [-o] [-a] [-0 to -9] [-p password] [-j] file.zip [files_to_add]\n\n" \
+    printf("Usage : minizip [-r] [-o] [-a] [-0 to -9] [-p password] [-j] file.zip [files_to_add]\n\n" \
            "  -r  Scan directories recursively\n" \
            "  -o  Overwrite existing file.zip\n" \
            "  -a  Append to existing file.zip\n" \
@@ -199,7 +198,7 @@ static int getFileCrc(const char* filenameinzip, void* buf, unsigned long size_b
         do
         {
             err = ZIP_OK;
-            size_read = fread(buf,1,size_buf,fin);
+            size_read = (unsigned long)fread(buf,1,size_buf,fin);
             if (size_read < size_buf)
                 if (feof(fin)==0)
             {
@@ -231,7 +230,7 @@ static int isLargeFile(const char* filename) {
     FSEEKO_FUNC(pFile, 0, SEEK_END);
     pos = (ZPOS64_T)FTELLO_FUNC(pFile);
 
-                printf("File : %s is %llu bytes\n", filename, pos);
+                printf("File : %s is %"PUI64" bytes\n", filename, pos);
 
     if(pos >= 0xffffffff)
      largeFile = 1;
@@ -243,8 +242,8 @@ static int isLargeFile(const char* filename) {
 }
 
 void addFileToZip(zipFile zf, const char *filenameinzip, const char *password, int opt_exclude_path,int opt_compress_level) {
-    FILE * fin;
-    int size_read;
+    FILE * fin = NULL;
+    size_t size_read;
     const char *savefilenameinzip;
     zip_fileinfo zi;
     unsigned long crcFile=0;
@@ -292,7 +291,7 @@ void addFileToZip(zipFile zf, const char *filenameinzip, const char *password, i
          }
          if( lastslash != NULL )
          {
-             savefilenameinzip = lastslash+1; // base filename follows last slash.
+             savefilenameinzip = lastslash+1; /* base filename follows last slash. */
          }
      }
 
@@ -321,7 +320,7 @@ void addFileToZip(zipFile zf, const char *filenameinzip, const char *password, i
         do
         {
             err = ZIP_OK;
-            size_read = (int)fread(buf,1,size_buf,fin);
+            size_read = fread(buf,1,size_buf,fin);
             if (size_read < size_buf)
                 if (feof(fin)==0)
             {
@@ -331,7 +330,7 @@ void addFileToZip(zipFile zf, const char *filenameinzip, const char *password, i
 
             if (size_read>0)
             {
-                err = zipWriteInFileInZip (zf,buf,size_read);
+                err = zipWriteInFileInZip (zf,buf,(unsigned)size_read);
                 if (err<0)
                 {
                     printf("error in writing %s in the zipfile\n",
@@ -357,28 +356,30 @@ void addFileToZip(zipFile zf, const char *filenameinzip, const char *password, i
 
 
 void addPathToZip(zipFile zf, const char *filenameinzip, const char *password, int opt_exclude_path,int opt_compress_level) {
-    tinydir_dir dir;
-    int i;
+#ifdef HAVE_DIRENT_H
+#   if defined(_MSC_VER)
+#       define snprintf _snprintf
+#   endif
     char newname[MAXFILENAME+1+MAXFILENAME+1];
+    struct dirent *dp;
 
-    tinydir_open_sorted(&dir, filenameinzip);
-
-    for (i = 0; i < dir.n_files; i++)
+    DIR *dir = opendir(filenameinzip);
+    if (dir == NULL) {
+        addFileToZip(zf,filenameinzip,password,opt_exclude_path,opt_compress_level);
+        return;
+    }
+    while ((dp = readdir(dir)))
     {
-        tinydir_file file;
-        tinydir_readfile_n(&dir, &file, i);
-        if(strcmp(file.name,".")==0) continue;
-        if(strcmp(file.name,"..")==0) continue;
-        snprintf(newname, sizeof(newname), "%.*s/%.*s", MAXFILENAME, dir.path, MAXFILENAME, file.name);
-        if (file.is_dir)
-        {
-            addPathToZip(zf,newname,password,opt_exclude_path,opt_compress_level);
-        } else {
-            addFileToZip(zf,newname,password,opt_exclude_path,opt_compress_level);
-        }
+        if(strcmp(dp->d_name,".")==0) continue;
+        if(strcmp(dp->d_name,"..")==0) continue;
+        snprintf(newname, sizeof(newname), "%.*s/%.*s", MAXFILENAME, filenameinzip, MAXFILENAME, dp->d_name);
+        addPathToZip(zf,newname,password,opt_exclude_path,opt_compress_level);
     }
 
-    tinydir_close(&dir);
+    closedir(dir);
+#else
+    printf("-r option not supported");
+#endif
 }
 
 
@@ -392,7 +393,7 @@ int main(int argc, char *argv[]) {
     char filename_try[MAXFILENAME+16];
     int zipok;
     int err=0;
-    size_t size_buf=0;
+    unsigned long size_buf=0;
     void* buf=NULL;
     const char* password=NULL;
 
@@ -456,7 +457,7 @@ int main(int argc, char *argv[]) {
     }
     else
     {
-        int i,len;
+        int len;
         int dot_found=0;
 
         zipok = 1 ;
@@ -532,7 +533,7 @@ int main(int argc, char *argv[]) {
                    (argv[i][1]=='a') || (argv[i][1]=='A') ||
                    (argv[i][1]=='p') || (argv[i][1]=='P') ||
                    (argv[i][1]=='r') || (argv[i][1]=='R') ||
-                   ((argv[i][1]>='0') || (argv[i][1]<='9'))) &&
+                   ((argv[i][1]>='0') && (argv[i][1]<='9'))) &&
                   (strlen(argv[i]) == 2)))
             {
                 if(opt_recursive) {
@@ -552,5 +553,5 @@ int main(int argc, char *argv[]) {
     }
 
     free(buf);
-    return 0;
+    return err;
 }

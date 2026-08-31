@@ -18,7 +18,7 @@ catch {
 testConstraint testevalex [llength [info commands testevalex]]
 testConstraint testobj [llength [info commands testobj]]
 testConstraint lstring [llength [info commands lstring]]
-testConstraint lgen [llength [info commands lgegenn]]
+testConstraint lgen [llength [info commands lgen]]
 
 set abstractlisttestvars [info var *]
 
@@ -526,9 +526,8 @@ testConstraint [format "%sShimmer" [string totitle $not]] 1
 # stack management was not included for these instructions in TEBC.
 #
 test abstractlist-lgen-bug {bug in str concat and list operations} -constraints lgen -setup {
+    # Test TIP 192 - Lazy Lists
     set lgenfile [makeFile {
-	# Test TIP 192 - Lazy Lists
-
 	set res {}
 	set cntr 0
 
@@ -577,9 +576,7 @@ test abstractlist-lgen-bug {bug in str concat and list operations} -constraints 
     set tcl_traceExec 0
     set tcl_traceCompile 0
     set f $lgenfile
-    #set script [format "puts ====-%s-====\nsource %s\nputs ====-done-====\n" $f $f]
-    set script [format "source %s" $f]
-    #puts stderr "eval $script"
+    set script [format "source %s" [list $f]]
     eval $script
 } -cleanup {
     removeFile source.file

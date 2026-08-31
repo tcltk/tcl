@@ -20,11 +20,29 @@
 !ifndef _RULES_VC
 _RULES_VC = 1
 
+# We need a nmakehlp that will run on the host machine as part of the build.
+# if TCLSH_NATIVE is set for cross compilation, we'll try to find an associated
+# nmakehlp.exe that runs on the build architecture.
+!ifdef TCLSH_NATIVE
+!message *** Using TCLSH_NATIVE=$(TCLSH_NATIVE)
+!ifndef NMAKEHLP_NATIVE
+!if [$(TCLSH_NATIVE) find_nmakehlp.tcl $(TCLSH_NATIVE) > find_nmakehlp.out]
+!error TCLSH_NATIVE is set, but unable to find associated nmakehlp.exe nearby.
+!else
+!include find_nmakehlp.out
+!endif
+!endif
+!endif
+
+!ifndef NMAKEHLP_NATIVE
+NMAKEHLP_NATIVE=nmakehlp
+!endif
+
 # The following macros define the version of the rules.vc nmake build system
 # For modifications that are not backward-compatible, you *must* change
 # the major version.
 RULES_VERSION_MAJOR = 1
-RULES_VERSION_MINOR = 15
+RULES_VERSION_MINOR = 19
 
 # The PROJECT macro must be defined by parent makefile.
 !if "$(PROJECT)" == ""
@@ -140,12 +158,17 @@ macro to the name of the project makefile.
 # to the user when copying files and selecting the right
 # "delete all" method.
 #----------------------------------------------------------
+# Tcl Bug be40b736: use rd/md instead rmdir/mkdir.
+# Otherwise, an eventual cygwin version with different
+# parameters may be used.
+#----------------------------------------------------------
 
-RMDIR	= rmdir /S /Q
+RMDIR	= rd /S /Q
 CPY	= xcopy /i /y >NUL
 CPYDIR  = xcopy /e /i /y >NUL
 COPY	= copy /y >NUL
-MKDIR   = mkdir
+MKDIR   = md
+ECHO    = if "$(VERBOSE)" == "1" echo
 
 ######################################################################
 # 2. Figure out our build environment in terms of what we're building.
@@ -256,7 +279,7 @@ _TCL_H = ..\generic\tcl.h
 TCLINSTALL = 0 # Tk always builds against Tcl source, not an installed Tcl
 !if "$(TCLDIR)" == ""
 !if [echo TCLDIR = \> nmakehlp.out] \
-   || [nmakehlp -L generic\tcl.h >> nmakehlp.out]
+   || [$(NMAKEHLP_NATIVE) -L generic\tcl.h >> nmakehlp.out]
 !error *** Could not locate Tcl source directory.
 !endif
 !include nmakehlp.out
@@ -306,7 +329,7 @@ _TCL_H          = $(_TCLDIR)\include\tcl.h
 !else # exist(...) && !$(NEED_TCL_SOURCE)
 
 !if [echo _TCLDIR = \> nmakehlp.out] \
-   || [nmakehlp -L generic\tcl.h >> nmakehlp.out]
+   || [$(NMAKEHLP_NATIVE) -L generic\tcl.h >> nmakehlp.out]
 !error *** Could not locate Tcl source directory.
 !endif
 !include nmakehlp.out
@@ -355,7 +378,7 @@ TKDIR          = $(_TKDIR)
 !else # exist("$(_INSTALLDIR)\include\tk.h") && !$(NEED_TK_SOURCE)
 
 !if [echo _TKDIR = \> nmakehlp.out] \
-   || [nmakehlp -L generic\tk.h >> nmakehlp.out]
+   || [$(NMAKEHLP_NATIVE) -L generic\tk.h >> nmakehlp.out]
 !error *** Could not locate Tk source directory.
 !endif
 !include nmakehlp.out
@@ -551,12 +574,7 @@ NMAKEHLPC = $(_TCLDIR)\win\nmakehlp.c
 
 # We always build nmakehlp even if it exists since we do not know
 # what source it was built from.
-!if "$(MACHINE)" == "IX86" || "$(MACHINE)" == "$(NATIVE_ARCH)"
-!if [$(cc32) -nologo "$(NMAKEHLPC)" -link -subsystem:console > nul]
-!endif
-!else
-!if [copy $(NMAKEHLPC:nmakehlp.c=x86_64-w64-mingw32-nmakehlp.exe) nmakehlp.exe >NUL]
-!endif
+!if [$(cc32) -nologo -DNDEBUG "$(NMAKEHLPC)" -link -subsystem:console > nul]
 !endif
 
 ################################################################
@@ -579,18 +597,18 @@ NMAKEHLPC = $(_TCLDIR)\win\nmakehlp.c
 
 # -Op improves float consistency. Note only needed for older compilers
 # Newer compilers do not need or support this option.
-!if [nmakehlp -c -Op]
+!if [$(NMAKEHLP_NATIVE) -c -Op]
 FPOPTS  = -Op
 !endif
 
 # Strict floating point semantics - present in newer compilers in lieu of -Op
-!if [nmakehlp -c -fp:strict]
+!if [$(NMAKEHLP_NATIVE) -c -fp:strict]
 FPOPTS  = $(FPOPTS) -fp:strict
 !endif
 
 !if "$(MACHINE)" == "IX86"
 ### test for pentium errata
-!if [nmakehlp -c -QI0f]
+!if [$(NMAKEHLP_NATIVE) -c -QI0f]
 !message *** Compiler has 'Pentium 0x0f fix'
 FPOPTS  = $(FPOPTS) -QI0f
 !else
@@ -609,7 +627,7 @@ FPOPTS  = $(FPOPTS) -QI0f
 
 OPTIMIZATIONS = $(FPOPTS)
 
-!if [nmakehlp -c -O2]
+!if [$(NMAKEHLP_NATIVE) -c -O2]
 OPTIMIZING = 1
 OPTIMIZATIONS   = $(OPTIMIZATIONS) -O2
 !else
@@ -619,30 +637,30 @@ OPTIMIZING = 0
 !endif
 
 # Checks for buffer overflows in local arrays
-!if [nmakehlp -c -GS]
+!if [$(NMAKEHLP_NATIVE) -c -GS]
 OPTIMIZATIONS  = $(OPTIMIZATIONS) -GS
 !endif
 
 # Link time optimization. Note that this option (potentially) makes
 # generated libraries only usable by the specific VC++ version that
 # created it. Requires /LTCG linker option
-!if [nmakehlp -c -GL]
+!if [$(NMAKEHLP_NATIVE) -c -GL]
 OPTIMIZATIONS  = $(OPTIMIZATIONS) -GL
 CC_GL_OPT_ENABLED = 1
 !else
 # In newer compilers -GL and -YX are incompatible.
-!if [nmakehlp -c -YX]
+!if [$(NMAKEHLP_NATIVE) -c -YX]
 OPTIMIZATIONS  = $(OPTIMIZATIONS) -YX
 !endif
-!endif # [nmakehlp -c -GL]
+!endif # [$(NMAKEHLP_NATIVE) -c -GL]
 
 DEBUGFLAGS     = $(FPOPTS)
 
 # Run time error checks. Not available or valid in a release, non-debug build
 # RTC is for modern compilers, -GZ is legacy
-!if [nmakehlp -c -RTC1]
+!if [$(NMAKEHLP_NATIVE) -c -RTC1]
 DEBUGFLAGS     = $(DEBUGFLAGS) -RTC1
-!elseif [nmakehlp -c -GZ]
+!elseif [$(NMAKEHLP_NATIVE) -c -GZ]
 DEBUGFLAGS     = $(DEBUGFLAGS) -GZ
 !endif
 
@@ -662,7 +680,7 @@ LINKERFLAGS     =
 
 # If compiler has enabled link time optimization, linker must too with -ltcg
 !ifdef CC_GL_OPT_ENABLED
-!if [nmakehlp -l -ltcg $(LINKER_TESTFLAGS)]
+!if [$(NMAKEHLP_NATIVE) -l -ltcg $(LINKER_TESTFLAGS)]
 LINKERFLAGS     = $(LINKERFLAGS) -ltcg
 !endif
 !endif
@@ -694,30 +712,30 @@ LINKERFLAGS     = $(LINKERFLAGS) -ltcg
 !if [echo REM = This file is generated from rules.vc > versions.vc]
 !endif
 !if [echo TCL_MAJOR_VERSION = \>> versions.vc] \
-   && [nmakehlp -V "$(_TCL_H)" "define TCL_MAJOR_VERSION" >> versions.vc]
+   && [$(NMAKEHLP_NATIVE) -V "$(_TCL_H)" "define TCL_MAJOR_VERSION" >> versions.vc]
 !endif
 !if [echo TCL_MINOR_VERSION = \>> versions.vc] \
-   && [nmakehlp -V "$(_TCL_H)" "define TCL_MINOR_VERSION" >> versions.vc]
+   && [$(NMAKEHLP_NATIVE) -V "$(_TCL_H)" "define TCL_MINOR_VERSION" >> versions.vc]
 !endif
 !if [echo TCL_RELEASE_SERIAL = \>> versions.vc] \
-   && [nmakehlp -V "$(_TCL_H)" TCL_RELEASE_SERIAL >> versions.vc]
+   && [$(NMAKEHLP_NATIVE) -V "$(_TCL_H)" TCL_RELEASE_SERIAL >> versions.vc]
 !endif
 !if [echo TCL_PATCH_LEVEL = \>> versions.vc] \
-   && [nmakehlp -V "$(_TCL_H)" TCL_PATCH_LEVEL >> versions.vc]
+   && [$(NMAKEHLP_NATIVE) -V "$(_TCL_H)" TCL_PATCH_LEVEL >> versions.vc]
 !endif
 
 !if defined(_TK_H)
 !if [echo TK_MAJOR_VERSION = \>> versions.vc] \
-   && [nmakehlp -V $(_TK_H) "define TK_MAJOR_VERSION" >> versions.vc]
+   && [$(NMAKEHLP_NATIVE) -V $(_TK_H) "define TK_MAJOR_VERSION" >> versions.vc]
 !endif
 !if [echo TK_MINOR_VERSION = \>> versions.vc] \
-   && [nmakehlp -V $(_TK_H) TK_MINOR_VERSION >> versions.vc]
+   && [$(NMAKEHLP_NATIVE) -V $(_TK_H) TK_MINOR_VERSION >> versions.vc]
 !endif
 !if [echo TK_RELEASE_SERIAL = \>> versions.vc] \
-   && [nmakehlp -V "$(_TK_H)" TK_RELEASE_SERIAL >> versions.vc]
+   && [$(NMAKEHLP_NATIVE) -V "$(_TK_H)" TK_RELEASE_SERIAL >> versions.vc]
 !endif
 !if [echo TK_PATCH_LEVEL = \>> versions.vc] \
-   && [nmakehlp -V $(_TK_H) TK_PATCH_LEVEL >> versions.vc]
+   && [$(NMAKEHLP_NATIVE) -V $(_TK_H) TK_PATCH_LEVEL >> versions.vc]
 !endif
 !endif # _TK_H
 
@@ -725,9 +743,9 @@ LINKERFLAGS     = $(LINKERFLAGS) -ltcg
 
 TCL_VERSION	= $(TCL_MAJOR_VERSION)$(TCL_MINOR_VERSION)
 TCL_DOTVERSION	= $(TCL_MAJOR_VERSION).$(TCL_MINOR_VERSION)
-!if [nmakehlp -f $(TCL_PATCH_LEVEL) "a"]
+!if [$(NMAKEHLP_NATIVE) -f $(TCL_PATCH_LEVEL) "a"]
 TCL_PATCH_LETTER = a
-!elseif [nmakehlp -f $(TCL_PATCH_LEVEL) "b"]
+!elseif [$(NMAKEHLP_NATIVE) -f $(TCL_PATCH_LEVEL) "b"]
 TCL_PATCH_LETTER = b
 !else
 TCL_PATCH_LETTER = .
@@ -737,9 +755,9 @@ TCL_PATCH_LETTER = .
 
 TK_VERSION	= $(TK_MAJOR_VERSION)$(TK_MINOR_VERSION)
 TK_DOTVERSION	= $(TK_MAJOR_VERSION).$(TK_MINOR_VERSION)
-!if [nmakehlp -f $(TK_PATCH_LEVEL) "a"]
+!if [$(NMAKEHLP_NATIVE) -f $(TK_PATCH_LEVEL) "a"]
 TK_PATCH_LETTER = a
-!elseif [nmakehlp -f $(TK_PATCH_LEVEL) "b"]
+!elseif [$(NMAKEHLP_NATIVE) -f $(TK_PATCH_LEVEL) "b"]
 TK_PATCH_LETTER = b
 !else
 TK_PATCH_LETTER = .
@@ -764,9 +782,9 @@ VERSION = $(TK_VERSION)
 # first from a configure.in file, and then from configure.ac
 !ifndef DOTVERSION
 !if [echo DOTVERSION = \> versions.vc] \
-   || [nmakehlp -V $(ROOT)\configure.in ^[$(PROJECT)^] >> versions.vc]
+   || [$(NMAKEHLP_NATIVE) -V $(ROOT)\configure.in ^[$(PROJECT)^] >> versions.vc]
 !if [echo DOTVERSION = \> versions.vc] \
-   || [nmakehlp -V $(ROOT)\configure.ac ^[$(PROJECT)^] >> versions.vc]
+   || [$(NMAKEHLP_NATIVE) -V $(ROOT)\configure.ac ^[$(PROJECT)^] >> versions.vc]
 !error *** Could not figure out extension version. Please define DOTVERSION in parent makefile before including rules.vc.
 !endif
 !endif
@@ -784,7 +802,7 @@ VERSION         = $(DOTVERSION:.=)
 DOTSEPARATED=$(DOTVERSION:a=.)
 DOTSEPARATED=$(DOTSEPARATED:b=.)
 !if [echo RCCOMMAVERSION = \> versions.vc] \
-  || [for /f "tokens=1,2,3,4,5* delims=." %a in ("$(DOTSEPARATED).0.0.0.0") do echo %a,%b,%c,%d >> versions.vc]
+  || [for /f "tokens=1,2,3,4,5* delims=." %a in ("$(DOTSEPARATED).0.0.0.0") do @echo %a,%b,%c,%d >> versions.vc]
 !error *** Could not generate RCCOMMAVERSION ***
 !endif
 !include versions.vc
@@ -836,117 +854,113 @@ USE_STUBS       = 0
 !else
 USE_STUBS       = 1
 !endif
+VERBOSE		= 0
 
 # If OPTS is not empty AND does not contain "none" which turns off all OPTS
 # set the above macros based on OPTS content
-!if "$(OPTS)" != "" && ![nmakehlp -f "$(OPTS)" "none"]
+!if "$(OPTS)" != "" && ![$(NMAKEHLP_NATIVE) -f "$(OPTS)" "none"]
 
 # OPTS are specified, parse them
 
-!if [nmakehlp -f $(OPTS) "static"]
-!message *** Doing static
+!if [$(NMAKEHLP_NATIVE) -f $(OPTS) "static"]
 STATIC_BUILD	= 1
 !endif
 
-!if [nmakehlp -f $(OPTS) "nostubs"]
-!message *** Not using stubs
+!if [$(NMAKEHLP_NATIVE) -f $(OPTS) "nostubs"]
 USE_STUBS	= 0
 !endif
 
-!if [nmakehlp -f $(OPTS) "nomsvcrt"]
-!message *** Doing nomsvcrt
+!if [$(NMAKEHLP_NATIVE) -f $(OPTS) "nomsvcrt"]
 MSVCRT		= 0
 !else
-!if [nmakehlp -f $(OPTS) "msvcrt"]
-!message *** Doing msvcrt
+!if [$(NMAKEHLP_NATIVE) -f $(OPTS) "msvcrt"]
 !else
 !if $(TCL_MAJOR_VERSION) == 8 && $(TCL_MINOR_VERSION) < 7 && $(STATIC_BUILD)
 MSVCRT		= 0
 !endif
 !endif
-!endif # [nmakehlp -f $(OPTS) "nomsvcrt"]
+!endif # [$(NMAKEHLP_NATIVE) -f $(OPTS) "nomsvcrt"]
 
-!if [nmakehlp -f $(OPTS) "staticpkg"] && $(STATIC_BUILD)
-!message *** Doing staticpkg
+!if [$(NMAKEHLP_NATIVE) -f $(OPTS) "staticpkg"] && $(STATIC_BUILD)
 TCL_USE_STATIC_PACKAGES	= 1
 !endif
 
-!if [nmakehlp -f $(OPTS) "nothreads"]
-!message *** Compile explicitly for non-threaded tcl
+!if [$(NMAKEHLP_NATIVE) -f $(OPTS) "nothreads"]
 TCL_THREADS = 0
 USE_THREAD_ALLOC= 0
 !endif
 
-!if [nmakehlp -f $(OPTS) "tcl8"]
-!message *** Build for Tcl8
+!if [$(NMAKEHLP_NATIVE) -f $(OPTS) "tcl8"]
 TCL_BUILD_FOR = 8
 !endif
 
 !if $(TCL_MAJOR_VERSION) == 8
-!if [nmakehlp -f $(OPTS) "time64bit"]
-!message *** Force 64-bit time_t
+!if [$(NMAKEHLP_NATIVE) -f $(OPTS) "time64bit"]
 _USE_64BIT_TIME_T = 1
 !endif
 !endif
 
 # Yes, it's weird that the "symbols" option controls DEBUG and
 # the "pdbs" option controls SYMBOLS. That's historical.
-!if [nmakehlp -f $(OPTS) "symbols"]
-!message *** Doing symbols
+!if [$(NMAKEHLP_NATIVE) -f $(OPTS) "symbols"]
 DEBUG		= 1
 !else
 DEBUG		= 0
 !endif
 
-!if [nmakehlp -f $(OPTS) "pdbs"]
-!message *** Doing pdbs
+!if [$(NMAKEHLP_NATIVE) -f $(OPTS) "pdbs"]
 SYMBOLS		= 1
 !else
 SYMBOLS		= 0
 !endif
 
-!if [nmakehlp -f $(OPTS) "profile"]
-!message *** Doing profile
+!if [$(NMAKEHLP_NATIVE) -f $(OPTS) "profile"]
 PROFILE		= 1
 !else
 PROFILE		= 0
 !endif
 
-!if [nmakehlp -f $(OPTS) "pgi"]
-!message *** Doing profile guided optimization instrumentation
+!if [$(NMAKEHLP_NATIVE) -f $(OPTS) "pgi"]
 PGO		= 1
-!elseif [nmakehlp -f $(OPTS) "pgo"]
-!message *** Doing profile guided optimization
+!elseif [$(NMAKEHLP_NATIVE) -f $(OPTS) "pgo"]
 PGO		= 2
 !else
 PGO		= 0
 !endif
 
-!if [nmakehlp -f $(OPTS) "loimpact"]
+!if [$(NMAKEHLP_NATIVE) -f $(OPTS) "loimpact"]
 !message *** Warning: ignoring option "loimpact" - deprecated on modern Windows.
 !endif
 
 # TBD - should get rid of this option
-!if [nmakehlp -f $(OPTS) "thrdalloc"]
-!message *** Doing thrdalloc
+!if [$(NMAKEHLP_NATIVE) -f $(OPTS) "thrdalloc"]
 USE_THREAD_ALLOC = 1
 !endif
 
-!if [nmakehlp -f $(OPTS) "tclalloc"]
+!if [$(NMAKEHLP_NATIVE) -f $(OPTS) "tclalloc"]
 USE_THREAD_ALLOC = 0
 !endif
 
-!if [nmakehlp -f $(OPTS) "unchecked"]
-!message *** Doing unchecked
+!if [$(NMAKEHLP_NATIVE) -f $(OPTS) "unchecked"]
 UNCHECKED = 1
 !else
 UNCHECKED = 0
 !endif
 
-!if [nmakehlp -f $(OPTS) "noconfigcheck"]
+!if [$(NMAKEHLP_NATIVE) -f $(OPTS) "noconfigcheck"]
 CONFIG_CHECK = 1
 !else
 CONFIG_CHECK = 0
+!endif
+
+!if [$(NMAKEHLP_NATIVE) -f $(OPTS) "verbose"]
+VERBOSE		= 1
+!else
+VERBOSE		= 0
+!endif
+
+!if $(VERBOSE)
+!message *** OPTS=$(OPTS)
 !endif
 
 !endif # "$(OPTS)" != ""  && ... parsing of OPTS
@@ -954,7 +968,7 @@ CONFIG_CHECK = 0
 # Set linker flags based on above
 
 !if $(PGO) > 1
-!if [nmakehlp -l -ltcg:pgoptimize $(LINKER_TESTFLAGS)]
+!if [$(NMAKEHLP_NATIVE) -l -ltcg:pgoptimize $(LINKER_TESTFLAGS)]
 LINKERFLAGS	= $(LINKERFLAGS:-ltcg=) -ltcg:pgoptimize
 !else
 MSG=^
@@ -962,7 +976,7 @@ This compiler does not support profile guided optimization.
 !error $(MSG)
 !endif
 !elseif $(PGO) > 0
-!if [nmakehlp -l -ltcg:pginstrument $(LINKER_TESTFLAGS)]
+!if [$(NMAKEHLP_NATIVE) -l -ltcg:pginstrument $(LINKER_TESTFLAGS)]
 LINKERFLAGS	= $(LINKERFLAGS:-ltcg=) -ltcg:pginstrument
 !else
 MSG=^
@@ -983,17 +997,19 @@ This compiler does not support profile guided optimization.
 TCL_MEM_DEBUG	    = 0
 TCL_COMPILE_DEBUG   = 0
 
-!if "$(STATS)" != "" && ![nmakehlp -f "$(STATS)" "none"]
+!if "$(STATS)" != "" && ![$(NMAKEHLP_NATIVE) -f "$(STATS)" "none"]
 
-!if [nmakehlp -f $(STATS) "memdbg"]
-!message *** Doing memdbg
+!if $(VERBOSE)
+!message *** STATS=$(STATS)
+!endif
+
+!if [$(NMAKEHLP_NATIVE) -f $(STATS) "memdbg"]
 TCL_MEM_DEBUG	    = 1
 !else
 TCL_MEM_DEBUG	    = 0
 !endif
 
-!if [nmakehlp -f $(STATS) "compdbg"]
-!message *** Doing compdbg
+!if [$(NMAKEHLP_NATIVE) -f $(STATS) "compdbg"]
 TCL_COMPILE_DEBUG   = 1
 !else
 TCL_COMPILE_DEBUG   = 0
@@ -1012,23 +1028,20 @@ TCL_COMPILE_DEBUG   = 0
 TCL_NO_DEPRECATED	    = 0
 WARNINGS		    = -W3
 
-!if "$(CHECKS)" != "" && ![nmakehlp -f "$(CHECKS)" "none"]
+!if "$(CHECKS)" != "" && ![$(NMAKEHLP_NATIVE) -f "$(CHECKS)" "none"]
 
-!if [nmakehlp -f $(CHECKS) "nodep"]
-!message *** Doing nodep check
+!if [$(NMAKEHLP_NATIVE) -f $(CHECKS) "nodep"]
 TCL_NO_DEPRECATED	    = 1
 !endif
 
-!if [nmakehlp -f $(CHECKS) "fullwarn"]
-!message *** Doing full warnings check
+!if [$(NMAKEHLP_NATIVE) -f $(CHECKS) "fullwarn"]
 WARNINGS		    = -W4
-!if [nmakehlp -l -warn:3 $(LINKER_TESTFLAGS)]
+!if [$(NMAKEHLP_NATIVE) -l -warn:3 $(LINKER_TESTFLAGS)]
 LINKERFLAGS		    = $(LINKERFLAGS) -warn:3
 !endif
 !endif
 
-!if [nmakehlp -f $(CHECKS) "64bit"] && [nmakehlp -c -Wp64]
-!message *** Doing 64bit portability warnings
+!if [$(NMAKEHLP_NATIVE) -f $(CHECKS) "64bit"] && [$(NMAKEHLP_NATIVE) -c -Wp64]
 WARNINGS		    = $(WARNINGS) -Wp64
 !endif
 
@@ -1051,6 +1064,7 @@ WARNINGS		    = $(WARNINGS) -Wp64
 # SUFX - the suffix to use for binaries based on above naming convention
 # BUILDDIRTOP - the toplevel default output directory
 #      is of the form {Release,Debug}[_AMD64][_COMPILERVERSION]
+#      unless overridden by defining OUT_DIR on the command line.
 # TMP_DIR - directory where object files are created
 # OUT_DIR - directory where output executables are created
 # Both TMP_DIR and OUT_DIR are defaulted only if not defined by the
@@ -1066,17 +1080,41 @@ WARNINGS		    = $(WARNINGS) -Wp64
 
 SUFX	    = tsgx
 
+# If OUT_DIR is defined (via command line or environment) make that
+# define BUILDDIRTOP as its tail. Otherwise, default it as below and
+# define OUT_DIR based on BUILDDIRTOP.
+!ifdef OUT_DIR
+# Relative paths -> absolute
+!if [echo OUT_DIR = \> nmakehlp.out] \
+   || [$(NMAKEHLP_NATIVE) -Q "$(OUT_DIR)" >> nmakehlp.out]
+!error *** Could not fully qualify path OUT_DIR=$(OUT_DIR)
+!endif
+# The undef is needed when OUT_DIR is passed on the command line
+# otherwise the definition in the include will not take effect
+!undef OUT_DIR
+!include nmakehlp.out
+!if [echo BUILDDIRTOP = \> nmakehlp.out] \
+   || [for %A in ("$(OUT_DIR)") do echo %~nxA \>> nmakehlp.out]
+!error *** Could not get tail of path OUT_DIR=$(OUT_DIR)
+!endif
+!include nmakehlp.out
+
+!else
+
 !if $(DEBUG)
 BUILDDIRTOP = Debug
 !else
 BUILDDIRTOP = Release
 !endif
 
+
 !if "$(MACHINE)" != "IX86"
 BUILDDIRTOP =$(BUILDDIRTOP)_$(MACHINE)
 !endif
 !if $(VCVER) > 6
 BUILDDIRTOP =$(BUILDDIRTOP)_VC$(VCVER)
+!endif
+
 !endif
 
 !if !$(DEBUG) || $(TCL_VERSION) > 86 || $(DEBUG) && $(UNCHECKED)
@@ -1118,11 +1156,11 @@ OUT_DIR	    = $(TMP_DIR)
 
 # Relative paths -> absolute
 !if [echo OUT_DIR = \> nmakehlp.out] \
-   || [nmakehlp -Q "$(OUT_DIR)" >> nmakehlp.out]
+   || [$(NMAKEHLP_NATIVE) -Q "$(OUT_DIR)" >> nmakehlp.out]
 !error *** Could not fully qualify path OUT_DIR=$(OUT_DIR)
 !endif
 !if [echo TMP_DIR = \>> nmakehlp.out] \
-   || [nmakehlp -Q "$(TMP_DIR)" >> nmakehlp.out]
+   || [$(NMAKEHLP_NATIVE) -Q "$(TMP_DIR)" >> nmakehlp.out]
 !error *** Could not fully qualify path TMP_DIR=$(TMP_DIR)
 !endif
 !include nmakehlp.out
@@ -1349,11 +1387,15 @@ INCLUDE_INSTALL_DIR	= $(_INSTALLDIR)\include
 
 PRJ_INSTALL_DIR         = $(_INSTALLDIR)\$(PROJECT)$(DOTVERSION)
 !if $(MULTIPLATFORM_INSTALL)
-LIB_INSTALL_DIR		= $(PRJ_INSTALL_DIR)\$(PLATFORM_IDENTIFY)
 BIN_INSTALL_DIR		= $(PRJ_INSTALL_DIR)\$(PLATFORM_IDENTIFY)
 !else
-LIB_INSTALL_DIR		= $(PRJ_INSTALL_DIR)
 BIN_INSTALL_DIR		= $(PRJ_INSTALL_DIR)
+!endif
+!if $(STATIC_BUILD)
+# For extensions, _INSTALLDIR is location of Tcl's static libs
+LIB_INSTALL_DIR		= $(_INSTALLDIR)
+!else
+LIB_INSTALL_DIR		= $(BIN_INSTALL_DIR)
 !endif
 DOC_INSTALL_DIR		= $(PRJ_INSTALL_DIR)
 SCRIPT_INSTALL_DIR	= $(PRJ_INSTALL_DIR)
@@ -1660,7 +1702,7 @@ default-pkgindex:
 !endif
 
 default-pkgindex-tea:
-	@if exist $(ROOT)\pkgIndex.tcl.in nmakehlp -s << $(ROOT)\pkgIndex.tcl.in > $(OUT_DIR)\pkgIndex.tcl
+	@if exist $(ROOT)\pkgIndex.tcl.in $(NMAKEHLP_NATIVE) -s << $(ROOT)\pkgIndex.tcl.in > $(OUT_DIR)\pkgIndex.tcl
 @PACKAGE_VERSION@    $(DOTVERSION)
 @PACKAGE_NAME@       $(PRJ_PACKAGE_TCLNAME)
 @PACKAGE_TCLNAME@    $(PRJ_PACKAGE_TCLNAME)
@@ -1681,7 +1723,7 @@ default-install: default-install-pdbs
 # for executables (exes). On the other hand the "install-libraries"
 # target is for *scripts* and should have been called "install-scripts".
 default-install-binaries: $(PRJLIB)
-	@echo Installing binaries to '$(LIB_INSTALL_DIR)'
+	@$(ECHO) Installing $(PRJLIB) to '$(LIB_INSTALL_DIR)'
 	@if not exist "$(LIB_INSTALL_DIR)" mkdir "$(LIB_INSTALL_DIR)"
 	@$(CPY) $(PRJLIB) "$(LIB_INSTALL_DIR)" >NUL
 
@@ -1689,54 +1731,55 @@ default-install-binaries: $(PRJLIB)
 default-install-libraries: default-install-scripts
 
 default-install-scripts: $(OUT_DIR)\pkgIndex.tcl
-	@echo Installing libraries to '$(SCRIPT_INSTALL_DIR)'
+	@$(ECHO) Installing $(PROJECT) scripts to '$(SCRIPT_INSTALL_DIR)'
 	@if not exist "$(SCRIPT_INSTALL_DIR)" mkdir "$(SCRIPT_INSTALL_DIR)"
 	@if exist $(LIBDIR) $(CPY) $(LIBDIR)\*.tcl "$(SCRIPT_INSTALL_DIR)"
-	@echo Installing package index in '$(SCRIPT_INSTALL_DIR)'
 	@$(CPY) $(OUT_DIR)\pkgIndex.tcl $(SCRIPT_INSTALL_DIR)
 
 default-install-stubs:
-	@echo Installing stubs library to '$(SCRIPT_INSTALL_DIR)'
+	@$(ECHO) Installing stubs library to '$(SCRIPT_INSTALL_DIR)'
 	@if not exist "$(SCRIPT_INSTALL_DIR)" mkdir "$(SCRIPT_INSTALL_DIR)"
 	@$(CPY) $(PRJSTUBLIB) "$(SCRIPT_INSTALL_DIR)" >NUL
 
 default-install-pdbs:
-	@echo Installing PDBs to '$(LIB_INSTALL_DIR)'
+!if !$(STATIC_BUILD)
+	@$(ECHO) Installing PDBs to '$(LIB_INSTALL_DIR)'
 	@if not exist "$(LIB_INSTALL_DIR)" mkdir "$(LIB_INSTALL_DIR)"
 	@$(CPY) "$(OUT_DIR)\*.pdb" "$(LIB_INSTALL_DIR)\"
+!endif
 
 # "emacs font-lock highlighting fix
 
 default-install-docs-html:
-	@echo Installing documentation files to '$(DOC_INSTALL_DIR)'
+	@$(ECHO) Installing documentation files to '$(DOC_INSTALL_DIR)'
 	@if not exist "$(DOC_INSTALL_DIR)" mkdir "$(DOC_INSTALL_DIR)"
 	@if exist $(DOCDIR) for %f in ("$(DOCDIR)\*.html" "$(DOCDIR)\*.css" "$(DOCDIR)\*.png") do @$(COPY) %f "$(DOC_INSTALL_DIR)"
 
 default-install-docs-n:
-	@echo Installing documentation files to '$(DOC_INSTALL_DIR)'
+	@$(ECHO) Installing documentation files to '$(DOC_INSTALL_DIR)'
 	@if not exist "$(DOC_INSTALL_DIR)" mkdir "$(DOC_INSTALL_DIR)"
 	@if exist $(DOCDIR) for %f in ("$(DOCDIR)\*.n") do @$(COPY) %f "$(DOC_INSTALL_DIR)"
 
 default-install-demos:
-	@echo Installing demos to '$(DEMO_INSTALL_DIR)'
+	@$(ECHO) Installing demos to '$(DEMO_INSTALL_DIR)'
 	@if not exist "$(DEMO_INSTALL_DIR)" mkdir "$(DEMO_INSTALL_DIR)"
 	@if exist $(DEMODIR) $(CPYDIR) "$(DEMODIR)" "$(DEMO_INSTALL_DIR)"
 
 default-clean:
-	@echo Cleaning $(TMP_DIR)\* ...
+	@$(ECHO) Cleaning $(TMP_DIR)\* ...
 	@if exist $(TMP_DIR)\nul $(RMDIR) $(TMP_DIR)
-	@echo Cleaning $(WIN_DIR)\nmakehlp.obj, nmakehlp.exe ...
+	@$(ECHO) Cleaning $(WIN_DIR)\nmakehlp.obj, nmakehlp.exe ...
 	@if exist $(WIN_DIR)\nmakehlp.obj del $(WIN_DIR)\nmakehlp.obj
 	@if exist $(WIN_DIR)\nmakehlp.exe del $(WIN_DIR)\nmakehlp.exe
 	@if exist $(WIN_DIR)\nmakehlp.out del $(WIN_DIR)\nmakehlp.out
-	@echo Cleaning $(WIN_DIR)\nmhlp-out.txt ...
+	@$(ECHO) Cleaning $(WIN_DIR)\nmhlp-out.txt ...
 	@if exist $(WIN_DIR)\nmhlp-out.txt del $(WIN_DIR)\nmhlp-out.txt
-	@echo Cleaning $(WIN_DIR)\_junk.pch ...
+	@$(ECHO) Cleaning $(WIN_DIR)\_junk.pch ...
 	@if exist $(WIN_DIR)\_junk.pch del $(WIN_DIR)\_junk.pch
-	@echo Cleaning $(WIN_DIR)\vercl.x, vercl.i ...
+	@$(ECHO) Cleaning $(WIN_DIR)\vercl.x, vercl.i ...
 	@if exist $(WIN_DIR)\vercl.x del $(WIN_DIR)\vercl.x
 	@if exist $(WIN_DIR)\vercl.i del $(WIN_DIR)\vercl.i
-	@echo Cleaning $(WIN_DIR)\versions.vc, version.vc ...
+	@$(ECHO) Cleaning $(WIN_DIR)\versions.vc, version.vc ...
 	@if exist $(WIN_DIR)\versions.vc del $(WIN_DIR)\versions.vc
 	@if exist $(WIN_DIR)\version.vc del $(WIN_DIR)\version.vc
 
@@ -1900,6 +1943,7 @@ TCLNMAKECONFIG	= "$(_TCLDIR)\win\$(BUILDDIRTOP)\tcl.nmake"
 # Display stats being used.
 #----------------------------------------------------------
 
+!if $(VERBOSE)
 !if !$(DOING_TCL)
 !message *** Building against Tcl at '$(_TCLDIR)'
 !endif
@@ -1911,5 +1955,6 @@ TCLNMAKECONFIG	= "$(_TCLDIR)\win\$(BUILDDIRTOP)\tcl.nmake"
 !message *** Installation, if selected, will be in '$(_INSTALLDIR)'
 !message *** Suffix for binaries will be '$(SUFX)'
 !message *** Compiler version $(VCVER). Target $(MACHINE), host $(NATIVE_ARCH).
+!endif
 
 !endif # ifdef _RULES_VC

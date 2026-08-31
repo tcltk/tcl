@@ -111,26 +111,26 @@ static inline void	AddMethodToCallChain(Method *const mPtr,
 			    ChainBuilder *const cbPtr,
 			    Tcl_HashTable *const doneFilters,
 			    Class *const filterDecl, int flags);
-static inline int	AddInstancePrivateToCallContext(Object *const oPtr,
+static inline bool	AddInstancePrivateToCallContext(Object *const oPtr,
 			    Tcl_Obj *const methodNameObj,
 			    ChainBuilder *const cbPtr, int flags);
 static inline void	AddStandardMethodName(int flags, Tcl_Obj *namePtr,
 			    Method *mPtr, Tcl_HashTable *namesPtr);
 static inline void	AddPrivateMethodNames(Tcl_HashTable *methodsTablePtr,
 			    Tcl_HashTable *namesPtr);
-static inline int	AddSimpleChainToCallContext(Object *const oPtr,
+static inline bool	AddSimpleChainToCallContext(Object *const oPtr,
 			    Class *const contextCls,
 			    Tcl_Obj *const methodNameObj,
 			    ChainBuilder *const cbPtr,
 			    Tcl_HashTable *const doneFilters, int flags,
 			    Class *const filterDecl);
-static int		AddPrivatesFromClassChainToCallContext(Class *classPtr,
+static bool		AddPrivatesFromClassChainToCallContext(Class *classPtr,
 			    Class *const contextCls,
 			    Tcl_Obj *const methodNameObj,
 			    ChainBuilder *const cbPtr,
 			    Tcl_HashTable *const doneFilters, int flags,
 			    Class *const filterDecl);
-static int		AddSimpleClassChainToCallContext(Class *classPtr,
+static bool		AddSimpleClassChainToCallContext(Class *classPtr,
 			    Tcl_Obj *const methodNameObj,
 			    ChainBuilder *const cbPtr,
 			    Tcl_HashTable *const doneFilters, int flags,
@@ -143,24 +143,23 @@ static int		CmpNames(const void *ptr1, const void *ptr2);
 static void		DupMethodNameRep(Tcl_Obj *srcPtr, Tcl_Obj *dstPtr);
 static Tcl_NRPostProc	FinalizeMethodRefs;
 static void		FreeMethodNameRep(Tcl_Obj *objPtr);
-static inline int	IsStillValid(CallChain *callPtr, Object *oPtr,
+static inline bool	IsStillValid(CallChain *callPtr, Object *oPtr,
 			    int flags, int reuseMask);
 static Tcl_NRPostProc	ResetFilterFlags;
 static Tcl_NRPostProc	SetFilterFlags;
-static size_t		SortMethodNames(Tcl_HashTable *namesPtr, int flags,
+static Tcl_Size	SortMethodNames(Tcl_HashTable *namesPtr, int flags,
 			    Tcl_Obj ***stringsPtr);
 static inline void	StashCallChain(Tcl_Obj *objPtr, CallChain *callPtr);
 
 /*
  * Object type used to manage type caches attached to method names.
  */
-
 static const Tcl_ObjType methodNameType = {
     "TclOO method name",
     FreeMethodNameRep,
     DupMethodNameRep,
-    NULL,
-    NULL,
+    NULL,			// UpdateString
+    NULL,			// SetFromAny
     TCL_OBJTYPE_V0
 };
 
@@ -173,7 +172,6 @@ static const Tcl_ObjType methodNameType = {
  *
  * ----------------------------------------------------------------------
  */
-
 void
 TclOODeleteContext(
     CallContext *contextPtr)
@@ -201,7 +199,6 @@ TclOODeleteContext(
  *
  * ----------------------------------------------------------------------
  */
-
 void
 TclOODeleteChainCache(
     Tcl_HashTable *tablePtr)
@@ -227,7 +224,6 @@ TclOODeleteChainCache(
  *
  * ----------------------------------------------------------------------
  */
-
 void
 TclOODeleteChain(
     CallChain *callPtr)
@@ -313,7 +309,6 @@ FreeMethodNameRep(
  *
  * ----------------------------------------------------------------------
  */
-
 int
 TclOOInvokeContext(
     void *clientData,		/* The method call context. */
@@ -321,12 +316,12 @@ TclOOInvokeContext(
 				 * other sorts of context handling (e.g.,
 				 * commands, variables) depending on method
 				 * implementation. */
-    int objc,			/* The number of arguments. */
-    Tcl_Obj *const objv[])	/* The arguments as actually seen. */
+    Tcl_Size objc,		/* The number of arguments. */
+    Tcl_Obj *const *objv)	/* The arguments as actually seen. */
 {
     CallContext *const contextPtr = (CallContext *) clientData;
     Method *const mPtr = contextPtr->callPtr->chain[contextPtr->index].mPtr;
-    const int isFilter =
+    const bool isFilter =
 	    contextPtr->callPtr->chain[contextPtr->index].isFilter;
 
     /*
@@ -365,9 +360,9 @@ TclOOInvokeContext(
      */
 
     if (contextPtr->oPtr->flags & FILTER_HANDLING) {
-	TclNRAddCallback(interp, SetFilterFlags, contextPtr, NULL,NULL,NULL);
+	TclNRAddCallback(interp, SetFilterFlags, contextPtr, NULL, NULL, NULL);
     } else {
-	TclNRAddCallback(interp, ResetFilterFlags,contextPtr,NULL,NULL,NULL);
+	TclNRAddCallback(interp, ResetFilterFlags, contextPtr, NULL, NULL, NULL);
     }
     if (isFilter || contextPtr->callPtr->flags & FILTER_HANDLING) {
 	contextPtr->oPtr->flags |= FILTER_HANDLING;
@@ -379,10 +374,12 @@ TclOOInvokeContext(
      * Run the method implementation.
      */
 
+#ifndef TCL_NO_DEPRECATED
     if (mPtr->typePtr->version < TCL_OO_METHOD_VERSION_2) {
 	return (mPtr->typePtr->callProc)(mPtr->clientData, interp,
-		(Tcl_ObjectContext) contextPtr, objc, objv);
+		(Tcl_ObjectContext) contextPtr, (int)objc, objv);
     }
+#endif /* TCL_NO_DEPRECATED */
     return (mPtr->type2Ptr->callProc)(mPtr->clientData, interp,
 	    (Tcl_ObjectContext) contextPtr, objc, objv);
 }
@@ -475,7 +472,7 @@ TclOOGetSortedMethodList(
     Tcl_Obj ***namesLstPtr)	/* Where to write a pointer to the array of
 				 * names to. */
 {
-    Tcl_HashTable names;	/* Tcl_Obj* method name to "wanted in list"
+    Tcl_HashTable names;	/* Tcl_Obj * method name to "wanted in list"
 				 * mapping. */
     Tcl_HashTable examinedClasses;
 				/* Used to track what classes have been looked
@@ -552,7 +549,7 @@ TclOOGetSortedMethodList(
     return numStrings;
 }
 
-size_t
+Tcl_Size
 TclOOGetSortedClassMethodList(
     Class *clsPtr,		/* The class to get the method names for. */
     int flags,			/* Whether we just want the public method
@@ -560,13 +557,13 @@ TclOOGetSortedClassMethodList(
     Tcl_Obj ***namesLstPtr)	/* Where to write a pointer to the array of
 				 * strings to. */
 {
-    Tcl_HashTable names;	/* Tcl_Obj* method name to "wanted in list"
+    Tcl_HashTable names;	/* Tcl_Obj * method name to "wanted in list"
 				 * mapping. */
     Tcl_HashTable examinedClasses;
 				/* Used to track what classes have been looked
 				 * at. Is set-like in nature and keyed by
 				 * pointer to class. */
-    size_t numStrings;
+    Tcl_Size numStrings;
 
     Tcl_InitObjHashTable(&names);
     Tcl_InitHashTable(&examinedClasses, TCL_ONE_WORD_KEYS);
@@ -610,8 +607,7 @@ TclOOGetSortedClassMethodList(
  *
  * ----------------------------------------------------------------------
  */
-
-static size_t
+static Tcl_Size
 SortMethodNames(
     Tcl_HashTable *namesTbl,	/* The table of names; unsorted, but contains
 				 * whether the names are wanted and under what
@@ -626,7 +622,7 @@ SortMethodNames(
     FOREACH_HASH_DECLS;
     Tcl_Obj *namePtr;
     void *isWanted;
-    size_t i = 0;
+    Tcl_Size i = 0;
 
     /*
      * See how many (visible) method names there are. If none, we do not (and
@@ -673,7 +669,13 @@ SortMethodNames(
 }
 
 /*
- * Comparator for SortMethodNames()
+ *----------------------------------------------------------------------
+ *
+ * CmpNames --
+ *
+ *	Comparator for SortMethodNames()
+ *
+ *----------------------------------------------------------------------
  */
 static int
 CmpNames(
@@ -697,7 +699,6 @@ CmpNames(
  *
  * ----------------------------------------------------------------------
  */
-
 static void
 AddClassMethodNames(
     Class *clsPtr,		/* Class to get method names from. */
@@ -819,10 +820,10 @@ AddStandardMethodName(
 	    int isWanted = (!WANT_PUBLIC(flags) || IS_PUBLIC(mPtr))
 		    ? IN_LIST : 0;
 
-	    isWanted |= (mPtr->typePtr == NULL ? NO_IMPLEMENTATION : 0);
+	    isWanted |= (mPtr->type2Ptr == NULL ? NO_IMPLEMENTATION : 0);
 	    Tcl_SetHashValue(hPtr, INT2PTR(isWanted));
 	} else if ((PTR2INT(Tcl_GetHashValue(hPtr)) & NO_IMPLEMENTATION)
-		&& mPtr->typePtr != NULL) {
+		&& mPtr->type2Ptr != NULL) {
 	    Tcl_Size isWanted = PTR2INT(Tcl_GetHashValue(hPtr));
 
 	    isWanted &= ~NO_IMPLEMENTATION;
@@ -843,8 +844,7 @@ AddStandardMethodName(
  *
  * ----------------------------------------------------------------------
  */
-
-static inline int
+static inline bool
 AddInstancePrivateToCallContext(
     Object *const oPtr,		/* Object to add call chain entries for. */
     Tcl_Obj *const methodName,	/* Name of method to add the call chain
@@ -854,7 +854,7 @@ AddInstancePrivateToCallContext(
 {
     Tcl_HashEntry *hPtr;
     Method *mPtr;
-    int donePrivate = 0;
+    bool donePrivate = false;
 
     if (oPtr->methodsPtr) {
 	hPtr = Tcl_FindHashEntry(oPtr->methodsPtr, methodName);
@@ -862,7 +862,7 @@ AddInstancePrivateToCallContext(
 	    mPtr = (Method *) Tcl_GetHashValue(hPtr);
 	    if (IS_PRIVATE(mPtr)) {
 		AddMethodToCallChain(mPtr, cbPtr, NULL, NULL, flags);
-		donePrivate = 1;
+		donePrivate = true;
 	    }
 	}
     }
@@ -881,8 +881,7 @@ AddInstancePrivateToCallContext(
  *
  * ----------------------------------------------------------------------
  */
-
-static inline int
+static inline bool
 AddSimpleChainToCallContext(
     Object *const oPtr,		/* Object to add call chain entries for. */
     Class *const contextCls,	/* Context class; the currently considered
@@ -901,7 +900,7 @@ AddSimpleChainToCallContext(
 				 * object or this isn't a filter. */
 {
     Tcl_Size i;
-    int foundPrivate = 0, blockedUnexported = 0;
+    bool foundPrivate = false, blockedUnexported = false;
     Tcl_HashEntry *hPtr;
     Method *mPtr;
 
@@ -913,7 +912,7 @@ AddSimpleChainToCallContext(
 	    if (!IS_PRIVATE(mPtr)) {
 		if (WANT_PUBLIC(flags)) {
 		    if (!IS_PUBLIC(mPtr)) {
-			blockedUnexported = 1;
+			blockedUnexported = true;
 		    } else {
 			flags |= DEFINITE_PUBLIC;
 		    }
@@ -972,7 +971,6 @@ AddSimpleChainToCallContext(
  *
  * ----------------------------------------------------------------------
  */
-
 static inline void
 AddMethodToCallChain(
     Method *const mPtr,		/* Actual method implementation to add to call
@@ -1005,7 +1003,7 @@ AddMethodToCallChain(
      * This is also where we enforce mixin-consistency.
      */
 
-    if (mPtr == NULL || mPtr->typePtr == NULL || !MIXIN_CONSISTENT(flags)) {
+    if (mPtr == NULL || mPtr->type2Ptr == NULL || !MIXIN_CONSISTENT(flags)) {
 	return;
     }
 
@@ -1080,12 +1078,12 @@ AddMethodToCallChain(
  * ----------------------------------------------------------------------
  *
  * InitCallChain --
+ *
  *	Encoding of the policy of how to set up a call chain. Doesn't populate
  *	the chain with the method implementation data.
  *
  * ----------------------------------------------------------------------
  */
-
 static inline void
 InitCallChain(
     CallChain *callPtr,
@@ -1136,7 +1134,7 @@ InitCallChain(
  * ----------------------------------------------------------------------
  */
 
-static inline int
+static inline bool
 IsStillValid(
     CallChain *callPtr,
     Object *oPtr,
@@ -1196,7 +1194,7 @@ TclOOGetCallContext(
     CallChain *callPtr;
     ChainBuilder cb;
     Tcl_Size i, count;
-    int doFilters, donePrivate = 0;
+    bool doFilters, donePrivate = false;
     Tcl_HashEntry *hPtr;
     Tcl_HashTable doneFilters;
 
@@ -1205,7 +1203,7 @@ TclOOGetCallContext(
     }
     if (flags&(SPECIAL|FILTER_HANDLING) || (oPtr->flags&FILTER_HANDLING)) {
 	hPtr = NULL;
-	doFilters = 0;
+	doFilters = false;
 
 	/*
 	 * Check if we have a cached valid constructor or destructor.
@@ -1236,10 +1234,11 @@ TclOOGetCallContext(
 	 * the object, and in the class).
 	 */
 
-	const Tcl_ObjInternalRep *irPtr;
 	const int reuseMask = (WANT_PUBLIC(flags) ? ~0 : ~PUBLIC_METHOD);
+	const Tcl_ObjInternalRep *irPtr = TclFetchInternalRep(cacheInThisObj,
+		&methodNameType);
 
-	if ((irPtr = TclFetchInternalRep(cacheInThisObj, &methodNameType))) {
+	if (irPtr) {
 	    callPtr = (CallChain *) irPtr->twoPtrValue.ptr1;
 	    if (IsStillValid(callPtr, oPtr, flags, reuseMask)) {
 		callPtr->refCount++;
@@ -1282,7 +1281,7 @@ TclOOGetCallContext(
 	    TclOODeleteChain(callPtr);
 	}
 
-	doFilters = 1;
+	doFilters = true;
     }
 
     callPtr = (CallChain *) Tcl_Alloc(sizeof(CallChain));
@@ -1321,7 +1320,6 @@ TclOOGetCallContext(
 	Tcl_Obj *filterObj;
 	Class *mixinPtr;
 
-	doFilters = 1;
 	Tcl_InitObjHashTable(&doneFilters);
 	FOREACH(mixinPtr, oPtr->mixins) {
 	    AddClassFiltersToCallContext(oPtr, mixinPtr, &cb, &doneFilters,
@@ -1683,7 +1681,7 @@ AddClassFiltersToCallContext(
  * ----------------------------------------------------------------------
  */
 
-static int
+static bool
 AddPrivatesFromClassChainToCallContext(
     Class *classPtr,		/* Class to add the call chain entries for. */
     Class *const contextCls,	/* Context class; the currently considered
@@ -1717,13 +1715,13 @@ AddPrivatesFromClassChainToCallContext(
 
   tailRecurse:
     if (classPtr == NULL) {
-	return 0;
+	return false;
     }
     FOREACH(superPtr, classPtr->mixins) {
 	if (AddPrivatesFromClassChainToCallContext(superPtr, contextCls,
 		methodName, cbPtr, doneFilters, flags|TRAVERSED_MIXIN,
 		filterDecl)) {
-	    return 1;
+	    return true;
 	}
     }
 
@@ -1737,7 +1735,7 @@ AddPrivatesFromClassChainToCallContext(
 	    if (IS_PRIVATE(mPtr)) {
 		AddMethodToCallChain(mPtr, cbPtr, doneFilters, filterDecl,
 			flags);
-		return 1;
+		return true;
 	    }
 	}
     }
@@ -1750,12 +1748,12 @@ AddPrivatesFromClassChainToCallContext(
 	FOREACH(superPtr, classPtr->superclasses) {
 	    if (AddPrivatesFromClassChainToCallContext(superPtr, contextCls,
 		    methodName, cbPtr, doneFilters, flags, filterDecl)) {
-		return 1;
+		return true;
 	    }
 	}
 	TCL_FALLTHROUGH();
     case 0:
-	return 0;
+	return false;
     }
 }
 
@@ -1769,7 +1767,7 @@ AddPrivatesFromClassChainToCallContext(
  * ----------------------------------------------------------------------
  */
 
-static int
+static bool
 AddSimpleClassChainToCallContext(
     Class *classPtr,		/* Class to add the call chain entries for. */
     Tcl_Obj *const methodNameObj,
@@ -1785,7 +1783,7 @@ AddSimpleClassChainToCallContext(
 				 * object or this isn't a filter. */
 {
     Tcl_Size i;
-    int privateDanger = 0;
+    bool privateDanger = false;
     Class *superPtr;
 
     /*
@@ -1817,7 +1815,7 @@ AddSimpleClassChainToCallContext(
 		methodNameObj);
 
 	if (classPtr->flags & HAS_PRIVATE_METHODS) {
-	    privateDanger |= 1;
+	    privateDanger |= true;
 	}
 	if (hPtr != NULL) {
 	    Method *mPtr = (Method *) Tcl_GetHashValue(hPtr);
@@ -1902,19 +1900,19 @@ TclOORenderCallChain(
 	MInvoke *miPtr = &callPtr->chain[i];
 
 	descObjs[0] =
-	    miPtr->isFilter ? filterLiteral :
-	    callPtr->flags & OO_UNKNOWN_METHOD ? fPtr->unknownMethodNameObj :
-	    IS_PRIVATE(miPtr->mPtr) ? privateLiteral :
-		    methodLiteral;
+		miPtr->isFilter ? filterLiteral :
+		callPtr->flags & OO_UNKNOWN_METHOD ? fPtr->unknownMethodNameObj :
+		IS_PRIVATE(miPtr->mPtr) ? privateLiteral :
+			methodLiteral;
 	descObjs[1] =
-	    callPtr->flags & CONSTRUCTOR ? fPtr->constructorName :
-	    callPtr->flags & DESTRUCTOR ? fPtr->destructorName :
-		    miPtr->mPtr->namePtr;
+		callPtr->flags & CONSTRUCTOR ? fPtr->constructorName :
+		callPtr->flags & DESTRUCTOR ? fPtr->destructorName :
+			miPtr->mPtr->namePtr;
 	descObjs[2] = miPtr->mPtr->declaringClassPtr
 		? Tcl_GetObjectName(interp,
 			(Tcl_Object) miPtr->mPtr->declaringClassPtr->thisPtr)
 		: objectLiteral;
-	descObjs[3] = Tcl_NewStringObj(miPtr->mPtr->typePtr->name,
+	descObjs[3] = Tcl_NewStringObj(miPtr->mPtr->type2Ptr->name,
 		TCL_AUTO_LENGTH);
 
 	objv[i] = Tcl_NewListObj(4, descObjs);
@@ -1965,7 +1963,7 @@ TclOOGetDefineContextNamespace(
     Tcl_Interp *interp,		/* In what interpreter should namespace names
 				 * actually be resolved. */
     Object *oPtr,		/* The object to get the context for. */
-    int forClass)		/* What sort of context are we looking for.
+    bool forClass)		/* What sort of context are we looking for.
 				 * If true, we are going to use this for
 				 * [oo::define], otherwise, we are going to
 				 * use this for [oo::objdefine]. */

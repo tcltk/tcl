@@ -11,7 +11,7 @@
 #   - These are tests 7.1 7.2 7.4 9.11 9.13 17.1 17.2 17.4
 #   - Tests 5.* test the example packages themselves before they
 #     are used to test Safe Base interpreters.
-# - Alternative tests using stock packages of Tcl 8.7 are in file
+# - Alternative tests using stock packages of Tcl 9.0 are in file
 #   safe-stock.test.
 #
 # Copyright © 1995-1996 Sun Microsystems, Inc.

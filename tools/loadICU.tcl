@@ -328,8 +328,6 @@ proc handleLocaleFile { localeName fileName msgFileName } {
 		}
 	    }
 	    data {
-
-
 		# Inside a data block, collect the strings, doing backslash
 		# expansion to pick up the Unicodes
 

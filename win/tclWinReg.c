@@ -5,18 +5,14 @@
  *	command. This command is built as a dynamically loadable extension in
  *	a separate DLL.
  *
- * Copyright (c) 1997 by Sun Microsystems, Inc.
- * Copyright (c) 1998-1999 by Scriptics Corporation.
+ * Copyright © 1997 by Sun Microsystems, Inc.
+ * Copyright © 1998-1999 by Scriptics Corporation.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
-#undef STATIC_BUILD
-#ifndef USE_TCL_STUBS
-#   define USE_TCL_STUBS
-#endif
-#include "tclInt.h"
+#include "tclWinInt.h"
 #ifdef _MSC_VER
 #   pragma comment (lib, "advapi32.lib")
 #endif
@@ -75,8 +71,6 @@ static const HKEY rootKeys[] = {
     HKEY_CURRENT_CONFIG, HKEY_PERFORMANCE_DATA, HKEY_DYN_DATA
 };
 
-static const char REGISTRY_ASSOC_KEY[] = "registry::command";
-
 /*
  * The following table maps from registry types to strings. Note that the
  * indices for this array are the same as the constants for the known registry
@@ -94,11 +88,9 @@ static DWORD lastType = REG_RESOURCE_LIST;
  * Declarations for functions defined in this file.
  */
 
-static void		AppendSystemError(Tcl_Interp *interp, DWORD error);
 static int		BroadcastValue(Tcl_Interp *interp, Tcl_Size objc,
-			    Tcl_Obj *const objv[]);
+			    Tcl_Obj *const *objv);
 static DWORD		ConvertDWORD(DWORD type, DWORD value);
-static void		DeleteCmd(void *clientData);
 static int		DeleteKey(Tcl_Interp *interp, Tcl_Obj *keyNameObj,
 			    REGSAM mode);
 static int		DeleteValue(Tcl_Interp *interp, Tcl_Obj *keyNameObj,
@@ -123,19 +115,10 @@ static DWORD		RecursiveDeleteKey(HKEY hStartKey,
 			    const WCHAR * pKeyName, REGSAM mode);
 static int		RegistryObjCmd(void *clientData,
 			    Tcl_Interp *interp, Tcl_Size objc,
-			    Tcl_Obj *const objv[]);
+			    Tcl_Obj *const *objv);
 static int		SetValue(Tcl_Interp *interp, Tcl_Obj *keyNameObj,
 			    Tcl_Obj *valueNameObj, Tcl_Obj *dataObj,
 			    Tcl_Obj *typeObj, REGSAM mode);
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-DLLEXPORT int		Registry_Init(Tcl_Interp *interp);
-DLLEXPORT int		Registry_Unload(Tcl_Interp *interp, int flags);
-#ifdef __cplusplus
-}
-#endif
 
 /*
  *----------------------------------------------------------------------
@@ -157,88 +140,9 @@ int
 Registry_Init(
     Tcl_Interp *interp)
 {
-    Tcl_Command cmd;
-
-    if (Tcl_InitStubs(interp, "9.0-", 0) == NULL) {
-	return TCL_ERROR;
-    }
-
-    cmd = Tcl_CreateObjCommand2(interp, "registry", RegistryObjCmd,
-	    interp, DeleteCmd);
-    Tcl_SetAssocData(interp, REGISTRY_ASSOC_KEY, NULL, cmd);
-    return Tcl_PkgProvideEx(interp, "registry", "1.4a1", NULL);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Registry_Unload --
- *
- *	This function removes the registry command.
- *
- * Results:
- *	A standard Tcl result.
- *
- * Side effects:
- *	The registry command is deleted and the dll may be unloaded.
- *
- *----------------------------------------------------------------------
- */
-
-int
-Registry_Unload(
-    Tcl_Interp *interp,		/* Interpreter for unloading */
-    int flags)			/* Flags passed by the unload system */
-{
-    Tcl_Command cmd;
-    Tcl_Obj *objv[3];
-    (void)flags;
-
-    /*
-     * Unregister the registry package. There is no Tcl_PkgForget()
-     */
-
-    objv[0] = Tcl_NewStringObj("package", -1);
-    objv[1] = Tcl_NewStringObj("forget", -1);
-    objv[2] = Tcl_NewStringObj("registry", -1);
-    Tcl_EvalObjv(interp, 3, objv, TCL_EVAL_GLOBAL);
-
-    /*
-     * Delete the originally registered command.
-     */
-
-    cmd = (Tcl_Command)Tcl_GetAssocData(interp, REGISTRY_ASSOC_KEY, NULL);
-    if (cmd != NULL) {
-	Tcl_DeleteCommandFromToken(interp, cmd);
-    }
-
+    (void) Tcl_CreateObjCommand2(interp, "::tcl::registry", RegistryObjCmd,
+	    interp, NULL);
     return TCL_OK;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * DeleteCmd --
- *
- *	Cleanup the interp command token so that unloading doesn't try to
- *	re-delete the command (which will crash).
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	The unload command will not attempt to delete this command.
- *
- *----------------------------------------------------------------------
- */
-
-static void
-DeleteCmd(
-    void *clientData)
-{
-    Tcl_Interp *interp = (Tcl_Interp *)clientData;
-
-    Tcl_SetAssocData(interp, REGISTRY_ASSOC_KEY, NULL, NULL);
 }
 
 /*
@@ -262,7 +166,7 @@ RegistryObjCmd(
     void *dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,		/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument values. */
+    Tcl_Obj *const *objv)	/* Argument values. */
 {
     Tcl_Size n = 1, argc;
     int index;
@@ -454,7 +358,7 @@ DeleteKey(
 	}
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"unable to delete key: ", -1));
-	AppendSystemError(interp, result);
+	TclWinAppendSystemError(interp, result);
 	return TCL_ERROR;
     }
 
@@ -470,7 +374,7 @@ DeleteKey(
     if (result != ERROR_SUCCESS && result != ERROR_FILE_NOT_FOUND) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"unable to delete key: ", -1));
-	AppendSystemError(interp, result);
+	TclWinAppendSystemError(interp, result);
 	result = TCL_ERROR;
     } else {
 	result = TCL_OK;
@@ -528,7 +432,7 @@ DeleteValue(
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"unable to delete value \"%s\" from key \"%s\": ",
 		Tcl_GetString(valueNameObj), Tcl_GetString(keyNameObj)));
-	AppendSystemError(interp, result);
+	TclWinAppendSystemError(interp, result);
 	result = TCL_ERROR;
     } else {
 	result = TCL_OK;
@@ -605,7 +509,7 @@ GetKeyNames(
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"unable to enumerate subkeys of \"%s\": ",
 			Tcl_GetString(keyNameObj)));
-		AppendSystemError(interp, result);
+		TclWinAppendSystemError(interp, result);
 		result = TCL_ERROR;
 	    }
 	    break;
@@ -689,7 +593,7 @@ GetType(
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"unable to get type of value \"%s\" from key \"%s\": ",
 		Tcl_GetString(valueNameObj), Tcl_GetString(keyNameObj)));
-	AppendSystemError(interp, result);
+	TclWinAppendSystemError(interp, result);
 	return TCL_ERROR;
     }
 
@@ -784,7 +688,7 @@ GetValue(
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"unable to get value \"%s\" from key \"%s\": ",
 		Tcl_GetString(valueNameObj), Tcl_GetString(keyNameObj)));
-	AppendSystemError(interp, result);
+	TclWinAppendSystemError(interp, result);
 	Tcl_DStringFree(&data);
 	return TCL_ERROR;
     }
@@ -814,7 +718,7 @@ GetValue(
 	    WCHAR *wp = (WCHAR *) p;
 
 	    Tcl_DStringInit(&buf);
-	    Tcl_WCharToUtfDString(wp, wcslen(wp), &buf);
+	    Tcl_WCharToUtfDString(wp, -1, &buf);
 	    Tcl_ListObjAppendElement(interp, resultPtr,
 		    Tcl_NewStringObj(Tcl_DStringValue(&buf),
 			    Tcl_DStringLength(&buf)));
@@ -829,7 +733,7 @@ GetValue(
     } else if ((type == REG_SZ) || (type == REG_EXPAND_SZ)) {
 	WCHAR *wp = (WCHAR *) Tcl_DStringValue(&data);
 	Tcl_DStringInit(&buf);
-	Tcl_WCharToUtfDString((const WCHAR *)Tcl_DStringValue(&data), wcslen(wp), &buf);
+	Tcl_WCharToUtfDString(wp, -1, &buf);
 	Tcl_DStringResult(interp, &buf);
     } else {
 	/*
@@ -967,7 +871,7 @@ OpenKey(
 	if (result != ERROR_SUCCESS) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "unable to open key: ", -1));
-	    AppendSystemError(interp, result);
+	    TclWinAppendSystemError(interp, result);
 	    result = TCL_ERROR;
 	} else {
 	    result = TCL_OK;
@@ -1355,7 +1259,7 @@ SetValue(
     if (result != ERROR_SUCCESS) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"unable to set value: ", -1));
-	AppendSystemError(interp, result);
+	TclWinAppendSystemError(interp, result);
 	return TCL_ERROR;
     }
     return TCL_OK;
@@ -1382,7 +1286,7 @@ static int
 BroadcastValue(
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,		/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument values. */
+    Tcl_Obj *const *objv)	/* Argument values. */
 {
     LRESULT result;
     DWORD_PTR sendResult;
@@ -1424,79 +1328,6 @@ BroadcastValue(
     Tcl_SetObjResult(interp, objPtr);
 
     return TCL_OK;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * AppendSystemError --
- *
- *	Formats a Windows system error message and places it into
- *	the interpreter result.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-static void
-AppendSystemError(
-    Tcl_Interp *interp,		/* Current interpreter. */
-    DWORD error)		/* Result code from error. */
-{
-    Tcl_Size length;
-    WCHAR *tMsgPtr, **tMsgPtrPtr = &tMsgPtr;
-    const char *msg;
-    char id[TCL_INTEGER_SPACE], msgBuf[24 + TCL_INTEGER_SPACE];
-    Tcl_DString ds;
-    Tcl_Obj *resultPtr = Tcl_GetObjResult(interp);
-
-    if (Tcl_IsShared(resultPtr)) {
-	resultPtr = Tcl_DuplicateObj(resultPtr);
-    }
-    length = FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM
-	    | FORMAT_MESSAGE_ALLOCATE_BUFFER, NULL, error,
-	    MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (WCHAR *) tMsgPtrPtr,
-	    0, NULL);
-    if (length == 0) {
-	snprintf(msgBuf, sizeof(msgBuf), "unknown error: %ld", error);
-	msg = msgBuf;
-    } else {
-	char *msgPtr;
-
-	Tcl_DStringInit(&ds);
-	Tcl_WCharToUtfDString(tMsgPtr, wcslen(tMsgPtr), &ds);
-	LocalFree(tMsgPtr);
-
-	msgPtr = Tcl_DStringValue(&ds);
-	length = Tcl_DStringLength(&ds);
-
-	/*
-	 * Trim the trailing CR/LF from the system message.
-	 */
-
-	if (msgPtr[length-1] == '\n') {
-	    --length;
-	}
-	if (msgPtr[length-1] == '\r') {
-	    --length;
-	}
-	msgPtr[length] = 0;
-	msg = msgPtr;
-    }
-
-    snprintf(id, sizeof(id), "%ld", error);
-    Tcl_SetErrorCode(interp, "WINDOWS", id, msg, (char *)NULL);
-    Tcl_AppendToObj(resultPtr, msg, length);
-    Tcl_SetObjResult(interp, resultPtr);
-
-    if (length != 0) {
-	Tcl_DStringFree(&ds);
-    }
 }
 
 /*

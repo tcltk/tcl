@@ -244,13 +244,12 @@ FileChannelExitHandler(
  *----------------------------------------------------------------------
  */
 
-void
+static void
 FileSetupProc(
     TCL_UNUSED(void *),
     int flags)			/* Event flags as passed to Tcl_DoOneEvent. */
 {
     FileInfo *infoPtr;
-    Tcl_Time blockTime = { 0, 0 };
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
     if (!TEST_FLAG(flags, TCL_FILE_EVENTS)) {
@@ -264,7 +263,7 @@ FileSetupProc(
     for (infoPtr = tsdPtr->firstFilePtr; infoPtr != NULL;
 	    infoPtr = infoPtr->nextPtr) {
 	if (infoPtr->watchMask) {
-	    Tcl_SetMaxBlockTime(&blockTime);
+	    Tcl_SetMaxBlockTime2(0);
 	    break;
 	}
     }
@@ -741,7 +740,6 @@ FileWatchProc(
 				 * TCL_EXCEPTION. */
 {
     FileInfo *infoPtr = (FileInfo *)instanceData;
-    Tcl_Time blockTime = { 0, 0 };
 
     /*
      * Since the file is always ready for events, we set the block time to
@@ -750,7 +748,7 @@ FileWatchProc(
 
     infoPtr->watchMask = mask & infoPtr->validMask;
     if (infoPtr->watchMask) {
-	Tcl_SetMaxBlockTime(&blockTime);
+	Tcl_SetMaxBlockTime2(0);
     }
 }
 
@@ -958,8 +956,7 @@ FileGetOptionProc(
     if (valid) {
 	return TCL_OK;
     }
-    return Tcl_BadChannelOption(interp, optionName,
-		"stat");
+    return Tcl_BadChannelOption(interp, optionName, "stat");
 }
 
 /*
@@ -1224,9 +1221,6 @@ Tcl_MakeFileChannel(
     int mode)			/* OR'ed combination of TCL_READABLE and
 				 * TCL_WRITABLE to indicate file mode. */
 {
-#if defined(HAVE_NO_SEH) && !defined(_WIN64) && !defined(__clang__)
-    TCLEXCEPTION_REGISTRATION registration;
-#endif
     char channelName[16 + TCL_INTEGER_SPACE];
     Tcl_Channel channel = NULL;
     HANDLE handle = (HANDLE) rawHandle;
@@ -1290,96 +1284,8 @@ Tcl_MakeFileChannel(
 	 */
 
 	result = 0;
-#if defined(HAVE_NO_SEH) && !defined(_WIN64) && !defined(__clang__)
-	/*
-	 * Don't have SEH available, do things the hard way. Note that this
-	 * needs to be one block of asm, to avoid stack imbalance; also, it is
-	 * illegal for one asm block to contain a jump to another.
-	 */
-
-	__asm__ __volatile__ (
-
-	    /*
-	     * Pick up parameters before messing with the stack
-	     */
-
-	    "movl       %[dupedHandle], %%ebx"          "\n\t"
-
-	    /*
-	     * Construct an TCLEXCEPTION_REGISTRATION to protect the call to
-	     * CloseHandle.
-	     */
-
-	    "leal       %[registration], %%edx"         "\n\t"
-	    "movl       %%fs:0,         %%eax"          "\n\t"
-	    "movl       %%eax,          0x0(%%edx)"     "\n\t" /* link */
-	    "leal       1f,             %%eax"          "\n\t"
-	    "movl       %%eax,          0x4(%%edx)"     "\n\t" /* handler */
-	    "movl       %%ebp,          0x8(%%edx)"     "\n\t" /* ebp */
-	    "movl       %%esp,          0xC(%%edx)"     "\n\t" /* esp */
-	    "movl       $0,             0x10(%%edx)"    "\n\t" /* status */
-
-	    /*
-	     * Link the TCLEXCEPTION_REGISTRATION on the chain.
-	     */
-
-	    "movl       %%edx,          %%fs:0"         "\n\t"
-
-	    /*
-	     * Call CloseHandle(dupedHandle).
-	     */
-
-	    "pushl      %%ebx"                          "\n\t"
-	    "call       _CloseHandle@4"                 "\n\t"
-
-	    /*
-	     * Come here on normal exit. Recover the TCLEXCEPTION_REGISTRATION
-	     * and put a TRUE status return into it.
-	     */
-
-	    "movl       %%fs:0,         %%edx"          "\n\t"
-	    "movl	$1,		%%eax"		"\n\t"
-	    "movl       %%eax,          0x10(%%edx)"    "\n\t"
-	    "jmp        2f"                             "\n"
-
-	    /*
-	     * Come here on an exception. Recover the TCLEXCEPTION_REGISTRATION
-	     */
-
-	    "1:"                                        "\t"
-	    "movl       %%fs:0,         %%edx"          "\n\t"
-	    "movl       0x8(%%edx),     %%edx"          "\n\t"
-
-	    /*
-	     * Come here however we exited. Restore context from the
-	     * TCLEXCEPTION_REGISTRATION in case the stack is unbalanced.
-	     */
-
-	    "2:"                                        "\t"
-	    "movl       0xC(%%edx),     %%esp"          "\n\t"
-	    "movl       0x8(%%edx),     %%ebp"          "\n\t"
-	    "movl       0x0(%%edx),     %%eax"          "\n\t"
-	    "movl       %%eax,          %%fs:0"         "\n\t"
-
-	    :
-	    /* No outputs */
-	    :
-	    [registration]  "m"     (registration),
-	    [dupedHandle]   "m"	    (dupedHandle)
-	    :
-	    "%eax", "%ebx", "%ecx", "%edx", "%esi", "%edi", "memory"
-	    );
-	result = registration.status;
-#else
-#ifndef HAVE_NO_SEH
-	__try {
-#endif
-	    CloseHandle(dupedHandle);
-	    result = 1;
-#ifndef HAVE_NO_SEH
-	} __except (EXCEPTION_EXECUTE_HANDLER) {}
-#endif
-#endif
+	CloseHandle(dupedHandle);
+	result = 1;
 	if (result == FALSE) {
 	    return NULL;
 	}
@@ -1495,7 +1401,7 @@ TclpGetDefaultStdChannel(
  *----------------------------------------------------------------------
  */
 
-Tcl_Channel
+static Tcl_Channel
 OpenFileChannel(
     HANDLE handle,		/* Win32 HANDLE to swallow */
     char *channelName,		/* Buffer to receive channel name */
@@ -1656,7 +1562,7 @@ FileThreadActionProc(
  *----------------------------------------------------------------------
  */
 
-DWORD
+static DWORD
 FileGetType(
     HANDLE handle)		/* Opened file handle */
 {

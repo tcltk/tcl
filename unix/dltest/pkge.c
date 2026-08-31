@@ -11,7 +11,6 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
-#undef STATIC_BUILD
 #include "tcl.h"
 
 /*

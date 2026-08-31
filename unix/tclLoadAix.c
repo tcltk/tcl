@@ -46,7 +46,7 @@
 typedef struct {
     char *name;			/* The symbols's name. */
     void *addr;			/* Its relocated virtual address. */
-} Export, *ExportPtr;
+} Export;
 
 /*
  * xlC uses the following structure to list its constructors and destructors.
@@ -56,10 +56,10 @@ typedef struct {
 typedef struct {
     void (*init)(void);		/* call static constructors */
     void (*term)(void);		/* call static destructors */
-} Cdtor, *CdtorPtr;
+} Cdtor;
 
 /*
- * The void * handle returned from dlopen is actually a ModulePtr.
+ * The void * handle returned from dlopen is actually a pointer to a Module.
  */
 
 typedef struct Module {
@@ -68,37 +68,37 @@ typedef struct Module {
     int refCnt;			/* the number of references */
     void *entry;		/* entry point from load */
     struct dl_info *info;	/* optional init/terminate functions */
-    CdtorPtr cdtors;		/* optional C++ constructors */
+    Cdtor *cdtors;		/* optional C++ constructors */
     int nExports;		/* the number of exports found */
-    ExportPtr exports;		/* the array of exports */
-} Module, *ModulePtr;
+    Export *exports;		/* the array of exports */
+} Module;
 
 /*
  * We keep a list of all loaded modules to be able to call the fini handlers
  * and destructors at atexit() time.
  */
 
-static ModulePtr modList;
+static Module *modList;
 
 /*
  * The last error from one of the dl* routines is kept in static variables
  * here. Each error is returned only once to the caller.
  */
 
-static char errbuf[BUFSIZ];
-static int errvalid;
+static char errBuf[BUFSIZ];
+static int errValid;
 
-static void caterr(char *);
-static int readExports(ModulePtr);
-static void terminate(void);
-static void *findMain(void);
+static void	AppendErrorDescription(char *);
+static int	ReadXcoffExports(Module *);
+static void	TerminateHandler(void);
+static void *	FindMainModule(void);
 
 void *
 dlopen(
     const char *path,
     int mode)
 {
-    ModulePtr mp;
+    Module *mp;
     static void *mainModule;
 
     /*
@@ -108,11 +108,11 @@ dlopen(
      */
 
     if (!mainModule) {
-	mainModule = findMain();
+	mainModule = FindMainModule();
 	if (mainModule == NULL) {
 	    return NULL;
 	}
-	atexit(terminate);
+	atexit(TerminateHandler);
     }
 
     /*
@@ -126,11 +126,11 @@ dlopen(
 	}
     }
 
-    mp = (ModulePtr) calloc(1, sizeof(*mp));
+    mp = (Module *) calloc(1, sizeof(*mp));
     if (mp == NULL) {
-	errvalid++;
-	strcpy(errbuf, "calloc: ");
-	strcat(errbuf, strerror(errno));
+	errValid = 1;
+	strcpy(errBuf, "calloc: ");
+	strcat(errBuf, strerror(errno));
 	return NULL;
     }
 
@@ -146,10 +146,10 @@ dlopen(
     if (mp->entry == NULL) {
 	free(mp->name);
 	free(mp);
-	errvalid++;
-	strcpy(errbuf, "dlopen: ");
-	strcat(errbuf, path);
-	strcat(errbuf, ": ");
+	errValid = 1;
+	strcpy(errBuf, "dlopen: ");
+	strcat(errBuf, path);
+	strcat(errBuf, ": ");
 
 	/*
 	 * If AIX says the file is not executable, the error can be further
@@ -160,14 +160,14 @@ dlopen(
 	    char *tmp[BUFSIZ/sizeof(char *)], **p;
 
 	    if (loadquery(L_GETMESSAGES, tmp, sizeof(tmp)) == -1) {
-		strcpy(errbuf, strerror(errno));
+		strcpy(errBuf, strerror(errno));
 	    } else {
 		for (p=tmp ; *p ; p++) {
-		    caterr(*p);
+		    AppendErrorDescription(*p);
 		}
 	    }
 	} else {
-	    strcat(errbuf, strerror(errno));
+	    strcat(errBuf, strerror(errno));
 	}
 	return NULL;
     }
@@ -179,9 +179,9 @@ dlopen(
     if (loadbind(0, mainModule, mp->entry) == -1) {
     loadbindFailure:
 	dlclose(mp);
-	errvalid++;
-	strcpy(errbuf, "loadbind: ");
-	strcat(errbuf, strerror(errno));
+	errValid = 1;
+	strcpy(errBuf, "loadbind: ");
+	strcat(errBuf, strerror(errno));
 	return NULL;
     }
 
@@ -191,7 +191,7 @@ dlopen(
      */
 
     if (mode & RTLD_GLOBAL) {
-	ModulePtr mp1;
+	Module *mp1;
 
 	for (mp1 = mp->next; mp1; mp1 = mp1->next) {
 	    if (loadbind(0, mp1->entry, mp->entry) == -1) {
@@ -200,7 +200,7 @@ dlopen(
 	}
     }
 
-    if (readExports(mp) == -1) {
+    if (ReadXcoffExports(mp) == -1) {
 	dlclose(mp);
 	return NULL;
     }
@@ -209,12 +209,12 @@ dlopen(
      * If there is a dl_info structure, call the init function.
      */
 
-    if (mp->info = (struct dl_info *)dlsym(mp, "dl_info")) {
+    if ((mp->info = (struct dl_info *) dlsym(mp, "dl_info"))) {
 	if (mp->info->init) {
 	    mp->info->init();
 	}
     } else {
-	errvalid = 0;
+	errValid = 0;
     }
 
     /*
@@ -222,25 +222,36 @@ dlopen(
      * constructors (and later on dlclose destructors).
      */
 
-    if (mp->cdtors = (CdtorPtr) dlsym(mp, "__cdtors")) {
+    if ((mp->cdtors = (Cdtor *) dlsym(mp, "__cdtors"))) {
 	while (mp->cdtors->init) {
 	    mp->cdtors->init();
 	    mp->cdtors++;
 	}
     } else {
-	errvalid = 0;
+	errValid = 0;
     }
 
     return (void *)mp;
 }
 
 /*
- * Attempt to decipher an AIX loader error message and append it to our static
- * error message buffer.
+ *----------------------------------------------------------------------
+ *
+ * AppendErrorDescription --
+ *
+ *	Attempt to decipher an AIX loader error message and append it to our
+ *	static error message buffer.
+ *
+ * Returns:
+ *	None
+ *
+ * Side effects:
+ *	Updates the errBuf global static variable.
+ *
+ *----------------------------------------------------------------------
  */
-
 static void
-caterr(
+AppendErrorDescription(
     char *s)
 {
     char *p = s;
@@ -250,29 +261,29 @@ caterr(
     }
     switch (atoi(s)) {		/* INTL: "C", UTF safe. */
     case L_ERROR_TOOMANY:
-	strcat(errbuf, "to many errors");
+	strcat(errBuf, "to many errors");
 	break;
     case L_ERROR_NOLIB:
-	strcat(errbuf, "cannot load library");
-	strcat(errbuf, p);
+	strcat(errBuf, "cannot load library");
+	strcat(errBuf, p);
 	break;
     case L_ERROR_UNDEF:
-	strcat(errbuf, "cannot find symbol");
-	strcat(errbuf, p);
+	strcat(errBuf, "cannot find symbol");
+	strcat(errBuf, p);
 	break;
     case L_ERROR_RLDBAD:
-	strcat(errbuf, "bad RLD");
-	strcat(errbuf, p);
+	strcat(errBuf, "bad RLD");
+	strcat(errBuf, p);
 	break;
     case L_ERROR_FORMAT:
-	strcat(errbuf, "bad exec format in");
-	strcat(errbuf, p);
+	strcat(errBuf, "bad exec format in");
+	strcat(errBuf, p);
 	break;
     case L_ERROR_ERRNO:
-	strcat(errbuf, strerror(atoi(++p)));	/* INTL: "C", UTF safe. */
+	strcat(errBuf, strerror(atoi(++p)));	/* INTL: "C", UTF safe. */
 	break;
     default:
-	strcat(errbuf, s);
+	strcat(errBuf, s);
 	break;
     }
 }
@@ -282,8 +293,8 @@ dlsym(
     void *handle,
     const char *symbol)
 {
-    ModulePtr mp = (ModulePtr)handle;
-    ExportPtr ep;
+    Module *mp = (Module *)handle;
+    Export *ep;
     int i;
 
     /*
@@ -297,18 +308,18 @@ dlsym(
 	}
     }
 
-    errvalid++;
-    strcpy(errbuf, "dlsym: undefined symbol ");
-    strcat(errbuf, symbol);
+    errValid = 1;
+    strcpy(errBuf, "dlsym: undefined symbol ");
+    strcat(errBuf, symbol);
     return NULL;
 }
 
 char *
 dlerror(void)
 {
-    if (errvalid) {
-	errvalid = 0;
-	return errbuf;
+    if (errValid) {
+	errValid = 0;
+	return errBuf;
     }
     return NULL;
 }
@@ -317,9 +328,9 @@ int
 dlclose(
     void *handle)
 {
-    ModulePtr mp = (ModulePtr)handle;
+    Module *mp = (Module *)handle;
     int result;
-    ModulePtr mp1;
+    Module *mp1;
 
     if (--mp->refCnt > 0) {
 	return 0;
@@ -338,12 +349,12 @@ dlclose(
 
     result = unload(mp->entry);
     if (result == -1) {
-	errvalid++;
-	strcpy(errbuf, strerror(errno));
+	errValid = 1;
+	strcpy(errBuf, strerror(errno));
     }
 
     if (mp->exports) {
-	ExportPtr ep;
+	Export *ep;
 	int i;
 	for (ep = mp->exports, i = mp->nExports; i; i--, ep++) {
 	    if (ep->name) {
@@ -369,8 +380,23 @@ dlclose(
     return result;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * TerminateHandler --
+ *
+ *	Callback at exit to clean things up.
+ *
+ * Returns:
+ *	None.
+ *
+ * Side effects:
+ *	Closes attached modules.
+ *
+ *----------------------------------------------------------------------
+ */
 static void
-terminate(void)
+TerminateHandler(void)
 {
     while (modList) {
 	dlclose(modList);
@@ -378,12 +404,23 @@ terminate(void)
 }
 
 /*
- * Build the export table from the XCOFF .loader section.
+ *----------------------------------------------------------------------
+ *
+ * ReadXcoffExports --
+ *
+ *	Build the export table from the XCOFF .loader section.
+ *
+ * Returns:
+ *	0 on success, -1 on failure.
+ *
+ * Side effects:
+ *	Updates the module descriptor with the exports it has found.
+ *
+ *----------------------------------------------------------------------
  */
-
 static int
-readExports(
-    ModulePtr mp)
+ReadXcoffExports(
+    Module *mp)
 {
     LDFILE *ldp = NULL;
     SCNHDR sh, shdata;
@@ -391,7 +428,7 @@ readExports(
     char *ldbuf;
     LDSYM *ls;
     int i;
-    ExportPtr ep;
+    Export *ep;
     const char *errMsg;
 
 #define Error(msg) \
@@ -511,7 +548,7 @@ readExports(
 	mp->nExports++;
     }
 
-    mp->exports = (ExportPtr) calloc(mp->nExports, sizeof(*mp->exports));
+    mp->exports = (Export *) calloc(mp->nExports, sizeof(*mp->exports));
     if (mp->exports == NULL) {
 	free(ldbuf);
 	SysErr();
@@ -563,9 +600,9 @@ readExports(
      */
 
   error:
-    errvalid++;
-    strcpy(errbuf, "readExports: ");
-    strcat(errbuf, errMsg);
+    errValid = 1;
+    strcpy(errBuf, "ReadXcoffExports: ");
+    strcat(errBuf, errMsg);
 
     if (ldp != NULL) {
 	while (ldclose(ldp) == FAILURE) {
@@ -576,12 +613,20 @@ readExports(
 }
 
 /*
- * Find the main modules entry point. This is used as export pointer for
- * loadbind() to be able to resolve references to the main part.
+ *----------------------------------------------------------------------
+ *
+ * FindMainModule --
+ *
+ *	Find the main modules entry point. This is used as export pointer for
+ *	loadbind() to be able to resolve references to the main part.
+ *
+ * Returns:
+ *	Address of main entry point, or NULL if it can't be located.
+ *
+ *----------------------------------------------------------------------
  */
-
 static void *
-findMain(void)
+FindMainModule(void)
 {
     struct ld_info *lp;
     char *buf;
@@ -619,9 +664,9 @@ findMain(void)
     return ret;
 
   error:
-    errvalid++;
-    strcpy(errbuf, "findMain: ");
-    strcat(errbuf, strerror(errno));
+    errValid = 1;
+    strcpy(errBuf, "FindMainModule: ");
+    strcat(errBuf, strerror(errno));
     return NULL;
 }
 

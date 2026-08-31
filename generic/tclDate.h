@@ -4,7 +4,7 @@
  *	This header file handles common usage of clock primitives
  *	between tclDate.c (yacc), tclClock.c and tclClockFmt.c.
  *
- * Copyright (c) 2014 Serg G. Brester (aka sebres)
+ * Copyright © 2014 Serg G. Brester (aka sebres)
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -290,26 +290,13 @@ enum ClockFmtScnCmdArgsFlags {
     CLF_LOCALE_USED = (1 << 15)
 };
 
-typedef struct ClockClientData ClockClientData;
-
-typedef struct ClockFmtScnCmdArgs {
-    ClockClientData *dataPtr;	/* Pointer to literal pool, etc. */
-    Tcl_Interp *interp;		/* Tcl interpreter */
-    Tcl_Obj *formatObj;		/* Format */
-    Tcl_Obj *localeObj;		/* Name of the locale where the time will be expressed. */
-    Tcl_Obj *timezoneObj;	/* Default time zone in which the time will be expressed */
-    Tcl_Obj *baseObj;		/* Base (scan and add) or clockValue (format) */
-    int flags;			/* Flags control scanning */
-    Tcl_Obj *mcDictObj;		/* Current dictionary of tcl::clock package for given localeObj*/
-} ClockFmtScnCmdArgs;
-
 /* Last-period cache for fast UTC to local and backwards conversion */
 typedef struct ClockLastTZOffs {
     /* keys */
     Tcl_Obj *timezoneObj;
     int changeover;
     Tcl_WideInt localSeconds;
-    Tcl_WideInt rangesVal[2];   /* Bounds for cached time zone offset */
+    Tcl_WideInt rangesVal[2];	/* Bounds for cached time zone offset */
     /* values */
     int tzOffset;
     Tcl_Obj *tzName;		/* Name (abbreviation) of this area in TZ */
@@ -369,9 +356,20 @@ typedef struct ClockClientData {
     /* Last-period cache for fast UTC to Local and backwards conversion */
     ClockLastTZOffs lastTZOffsCache[2];
 
-    int defFlags;		    /* Default flags (from configure), ATM
-				     * only CLF_VALIDATE supported */
+    int defFlags;		/* Default flags (from configure), ATM
+				 * only CLF_VALIDATE supported */
 } ClockClientData;
+
+typedef struct ClockFmtScnCmdArgs {
+    ClockClientData *dataPtr;	/* Pointer to literal pool, etc. */
+    Tcl_Interp *interp;		/* Tcl interpreter */
+    Tcl_Obj *formatObj;		/* Format */
+    Tcl_Obj *localeObj;		/* Name of the locale where the time will be expressed. */
+    Tcl_Obj *timezoneObj;	/* Default time zone in which the time will be expressed */
+    Tcl_Obj *baseObj;		/* Base (scan and add) or clockValue (format) */
+    int flags;			/* Flags control scanning */
+    Tcl_Obj *mcDictObj;		/* Current dictionary of tcl::clock package for given localeObj*/
+} ClockFmtScnCmdArgs;
 
 #define ClockDefaultYearCentury 2000
 #define ClockDefaultCenturySwitch 38
@@ -390,10 +388,8 @@ typedef struct ClockClientData {
 
 typedef struct ClockScanToken ClockScanToken;
 
-typedef int ClockScanTokenProc(
-	ClockFmtScnCmdArgs *opts,
-	DateInfo *info,
-	const ClockScanToken *tok);
+typedef int (ClockScanTokenProc)(ClockFmtScnCmdArgs *opts,
+	DateInfo *info, const ClockScanToken *tok);
 
 typedef enum {
    CTOKT_INT = 1, CTOKT_WIDE, CTOKT_PARSER, CTOKT_SPACE, CTOKT_WORD, CTOKT_CHAR,
@@ -446,11 +442,8 @@ enum ClockFormatTokenMapFlags {
 
 typedef struct ClockFormatToken ClockFormatToken;
 
-typedef int ClockFormatTokenProc(
-	ClockFmtScnCmdArgs *opts,
-	DateFormat *dateFmt,
-	ClockFormatToken *tok,
-	int *val);
+typedef int (ClockFormatTokenProc)(ClockFmtScnCmdArgs *opts,
+	DateFormat *dateFmt, ClockFormatToken *tok, int *val);
 
 typedef struct ClockFormatTokenMap {
     unsigned short type;
@@ -472,9 +465,7 @@ struct ClockFormatToken {
     } tokWord;
 };
 
-typedef struct ClockFmtScnStorage ClockFmtScnStorage;
-
-struct ClockFmtScnStorage {
+typedef struct ClockFmtScnStorage {
     int objRefCount;		/* Reference count shared across threads */
     ClockScanToken *scnTok;
     unsigned scnTokC;
@@ -482,15 +473,13 @@ struct ClockFmtScnStorage {
     ClockFormatToken *fmtTok;
     unsigned fmtTokC;
 #if CLOCK_FMT_SCN_STORAGE_GC_SIZE > 0
-    ClockFmtScnStorage *nextPtr;
-    ClockFmtScnStorage *prevPtr;
+    struct ClockFmtScnStorage *nextPtr;
+    struct ClockFmtScnStorage *prevPtr;
 #endif
     size_t fmtMinAlloc;
-#if 0
-    Tcl_HashEntry hashEntry		/* ClockFmtScnStorage is a derivate of Tcl_HashEntry,
-					 * stored by offset +sizeof(self) */
-#endif
-};
+    Tcl_HashEntry hashEntry;	/* ClockFmtScnStorage is a derivate of Tcl_HashEntry,
+				 * stored by offset +sizeof(self) */
+} ClockFmtScnStorage;
 
 /*
  * Clock macros.

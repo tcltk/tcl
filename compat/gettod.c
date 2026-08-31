@@ -4,7 +4,7 @@
  *	This file provides the gettimeofday function on systems
  *	that only have the System V ftime function.
  *
- * Copyright (c) 1995 Sun Microsystems, Inc.
+ * Copyright © 1995 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.

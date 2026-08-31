@@ -10,7 +10,6 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
-#undef STATIC_BUILD
 #include "tcl.h"
 
 /*
@@ -35,8 +34,8 @@ static int
 Pkga_EqObjCmd(
     void *dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
+    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Obj *const *objv)	/* Argument objects. */
 {
     int result;
     const char *str1, *str2;
@@ -82,8 +81,8 @@ static int
 Pkga_QuoteObjCmd(
     void *dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument strings. */
+    Tcl_Size objc,			/* Number of arguments. */
+    Tcl_Obj *const *objv)	/* Argument strings. */
 {
     (void)dummy;
 
@@ -126,8 +125,8 @@ Pkga_Init(
     if (code != TCL_OK) {
 	return code;
     }
-    Tcl_CreateObjCommand(interp, "pkga_eq", Pkga_EqObjCmd, NULL, NULL);
-    Tcl_CreateObjCommand(interp, "pkga_quote", Pkga_QuoteObjCmd, NULL,
+    Tcl_CreateObjCommand2(interp, "pkga_eq", Pkga_EqObjCmd, NULL, NULL);
+    Tcl_CreateObjCommand2(interp, "pkga_quote", Pkga_QuoteObjCmd, NULL,
 	    NULL);
     return TCL_OK;
 }

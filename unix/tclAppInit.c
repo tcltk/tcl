@@ -4,9 +4,9 @@
  *	Provides a default version of the main program and Tcl_AppInit
  *	procedure for tclsh and other Tcl-based applications (without Tk).
  *
- * Copyright (c) 1993 The Regents of the University of California.
- * Copyright (c) 1994-1997 Sun Microsystems, Inc.
- * Copyright (c) 1998-1999 Scriptics Corporation.
+ * Copyright © 1993 The Regents of the University of California.
+ * Copyright © 1994-1997 Sun Microsystems, Inc.
+ * Copyright © 1998-1999 Scriptics Corporation.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -25,6 +25,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+extern Tcl_PostInitProc    TcltestStaticInit;
 extern Tcl_LibraryInitProc Tcltest_Init;
 extern Tcl_LibraryInitProc Tcltest_SafeInit;
 #ifdef __cplusplus
@@ -33,9 +34,20 @@ extern Tcl_LibraryInitProc Tcltest_SafeInit;
 #endif /* TCL_TEST */
 
 #ifdef TCL_XT_TEST
-extern void                XtToolkitInitialize(void);
+extern void		   XtToolkitInitialize(void);
 extern Tcl_LibraryInitProc Tclxttest_Init;
 #endif /* TCL_XT_TEST */
+
+/*
+ * The following allows changing of the script file read at startup.
+ */
+#ifndef TCL_RC_FILE
+#ifdef DJGPP
+#define TCL_RC_FILE "~/tclshrc.tcl"
+#else
+#define TCL_RC_FILE "~/.tclshrc"
+#endif
+#endif
 
 /*
  * The following #if block allows you to change the AppInit function by using
@@ -46,6 +58,7 @@ extern Tcl_LibraryInitProc Tclxttest_Init;
 #ifndef TCL_LOCAL_APPINIT
 #define TCL_LOCAL_APPINIT Tcl_AppInit
 #endif
+
 #ifndef MODULE_SCOPE
 #   define MODULE_SCOPE extern
 #endif
@@ -61,6 +74,44 @@ MODULE_SCOPE int main(int, char **);
 #ifdef TCL_LOCAL_MAIN_HOOK
 MODULE_SCOPE int TCL_LOCAL_MAIN_HOOK(int *argc, char ***argv);
 #endif
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclSetRcFilePath --
+ *
+ *	Sets the path of the Tcl startup file (usually ".tclshrc"). Will
+ *	do tilde expansion and normalization of the passed path and set
+ *	the tclRcFilePath variable to the result
+ *
+ * Results:
+ *	A Tcl result code.
+ *
+ * Side effects:
+ *	Sets the tclRcFilePath variable.
+ *
+ * TODO - this function is duplicated in the Windows version of tclAppInit.c.
+ * Consider adding it to Tcl library and callable via the stubs table.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+TclSetRcFilePath(
+    Tcl_Interp *interp,
+    const char *path)
+{
+    Tcl_DString ds;
+    if (Tcl_FSTildeExpand(interp, path, &ds) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    Tcl_Obj *rcPathObj = Tcl_DStringToObj(&ds);
+    /* Reminder: don't worry about rcPathObj ref count on success/failure */
+    if (Tcl_SetVar2Ex(interp, "tcl_rcFileName", NULL, rcPathObj,
+	    TCL_GLOBAL_ONLY) == NULL) {
+	return TCL_ERROR;
+    }
+    return TCL_OK;
+}
 
 /*
  *----------------------------------------------------------------------
@@ -93,6 +144,10 @@ main(
 #elif TCL_MAJOR_VERSION > 8 && (!defined(_WIN32) || defined(UNICODE))
     /* New in Tcl 9.0. This doesn't work on Windows without UNICODE */
     TclZipfs_AppHook(&argc, &argv);
+#endif
+
+#if defined(TCL_TEST)
+    Tcl_RegisterPostInitProc(TcltestStaticInit, NULL);
 #endif
 
     Tcl_Main(argc, argv, TCL_LOCAL_APPINIT);
@@ -132,13 +187,6 @@ Tcl_AppInit(
     }
 #endif
 
-#ifdef TCL_TEST
-    if (Tcltest_Init(interp) == TCL_ERROR) {
-	return TCL_ERROR;
-    }
-    Tcl_StaticLibrary(interp, "Tcltest", Tcltest_Init, Tcltest_SafeInit);
-#endif /* TCL_TEST */
-
     /*
      * Call the init procedures for included packages. Each call should look
      * like this:
@@ -161,16 +209,11 @@ Tcl_AppInit(
      * run interactively. Typically the startup file is "~/.apprc" where "app"
      * is the name of the application. If this line is deleted then no
      * user-specific startup file will be run under any conditions.
+     * In keeping with the historical behavior, errors setting the name
+     * for example, if the home directory cannot be found, are ignored.
      */
-#ifdef DJGPP
-#define INITFILENAME "tclshrc.tcl"
-#else
-#define INITFILENAME ".tclshrc"
-#endif
-
-    (void) Tcl_EvalEx(interp,
-	    "set tcl_rcFileName [file tildeexpand ~/" INITFILENAME "]",
-	    -1, TCL_EVAL_GLOBAL);
+    (void) TclSetRcFilePath(interp, TCL_RC_FILE);
+    Tcl_ResetResult(interp);
     return TCL_OK;
 }
 

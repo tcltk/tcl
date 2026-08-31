@@ -39,7 +39,7 @@ static SyncObjRecord condRecord = {0, 0, NULL};
 static void		ForgetSyncObject(void *objPtr, SyncObjRecord *recPtr);
 static void		RememberSyncObject(void *objPtr,
 			    SyncObjRecord *recPtr);
-
+
 /*
  *----------------------------------------------------------------------
  *

@@ -3,7 +3,7 @@
  *
  *	Declarations of Windows-specific shared variables and procedures.
  *
- * Copyright (c) 1994-1996 Sun Microsystems, Inc.
+ * Copyright © 1994-1996 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -14,22 +14,76 @@
 
 #include "tclInt.h"
 
-#ifdef HAVE_NO_SEH
 /*
- * Unlike Borland and Microsoft, we don't register exception handlers by
- * pushing registration records onto the runtime stack. Instead, we register
- * them by creating an TCLEXCEPTION_REGISTRATION within the activation record.
+ * Common system information that is initialized once at startup.
  */
+typedef struct {
+    OSVERSIONINFOW osVersion;	/* Windows version information */
+    DWORD longPathsSupported;	/* Long paths supported without \\?\ ? */
+    char codePage[20];		/* User code page */
+} TclWinInfo;
 
-typedef struct TCLEXCEPTION_REGISTRATION {
-    struct TCLEXCEPTION_REGISTRATION *link;
-    EXCEPTION_DISPOSITION (*handler)(
-	    struct _EXCEPTION_RECORD*, void*, struct _CONTEXT*, void*);
-    void *ebp;
-    void *esp;
-    int status;
-} TCLEXCEPTION_REGISTRATION;
-#endif
+MODULE_SCOPE const TclWinInfo *	TclGetWinInfo(void);
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclpGetWindowsVersion --
+ *
+ *	Returns a pointer to the OSVERSIONINFOW structure containing the
+ *	version information for the current Windows version.
+ *
+ * Results:
+ *	Pointer to OSVERSIONINFOW structure that remains valid for lifetime
+ *	of the process or NULL on failure.
+ *
+ *----------------------------------------------------------------------
+ */
+static inline const OSVERSIONINFOW *
+TclpGetWindowsVersion(void)
+{
+    const TclWinInfo *winInfoPtr = TclGetWinInfo();
+    return winInfoPtr ? &winInfoPtr->osVersion : NULL;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclpGetCodePage --
+ *
+ *	Returns a pointer to the string identifying the user code page.
+ *
+ *	For consistency with Windows, which caches the code page at program
+ *	startup, the code page is not updated even if the value in the registry
+ *	changes. (This is similar to environment variables.)
+ *
+ *----------------------------------------------------------------------
+ */
+static inline const char *
+TclpGetCodePage(void)
+{
+    const TclWinInfo *winInfoPtr = TclGetWinInfo();
+    assert(winInfoPtr);
+    assert(winInfoPtr->codePage[0] != '\0');
+    return winInfoPtr->codePage;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclpLongPathSupported --
+ *
+ *	Returns 1 if OS supports long paths without a \\?\ prefix, 0 otherwise.
+ *
+ *----------------------------------------------------------------------
+ */
+static inline int
+TclpLongPathSupported(void)
+{
+    const TclWinInfo *winInfoPtr = TclGetWinInfo();
+    assert(winInfoPtr);
+    return winInfoPtr->longPathsSupported;
+}
 
 /*
  * Declarations of functions that are not accessible by way of the
@@ -51,10 +105,12 @@ MODULE_SCOPE int	TclWinSymLinkCopyDirectory(const WCHAR *LinkOriginal,
 			    const WCHAR *LinkCopy);
 MODULE_SCOPE int	TclWinSymLinkDelete(const WCHAR *LinkOriginal,
 			    int linkOnly);
-MODULE_SCOPE int        TclWinFileOwned(Tcl_Obj *);
+MODULE_SCOPE int	TclWinFileOwned(Tcl_Obj *);
 MODULE_SCOPE void	TclWinGenerateChannelName(char channelName[],
 			    const char *channelTypeName, void *channelImpl);
 MODULE_SCOPE const char*TclpGetUserName(Tcl_DString *bufferPtr);
+
+MODULE_SCOPE void	TclWinAppendSystemError(Tcl_Interp *, unsigned error);
 
 /* Needed by tclWinFile.c and tclWinFCmd.c */
 #ifndef FILE_ATTRIBUTE_REPARSE_POINT
@@ -104,6 +160,15 @@ TclPipeThreadInfo *	TclPipeThreadCreateTI(TclPipeThreadInfo **pipeTIPtr,
 MODULE_SCOPE int	TclPipeThreadWaitForSignal(
 			    TclPipeThreadInfo **pipeTIPtr);
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclPipeThreadSignal --
+ *
+ *	Send a signal to the thread that is managing a pipe.
+ *
+ *----------------------------------------------------------------------
+ */
 static inline void
 TclPipeThreadSignal(
     TclPipeThreadInfo **pipeTIPtr)
@@ -112,19 +177,191 @@ TclPipeThreadSignal(
     if (pipeTI) {
 	SetEvent(pipeTI->evControl);
     }
-};
+}
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclPipeThreadIsAlive --
+ *
+ *	Test if the thread (that is managing a pipe) is alive.
+ *
+ *----------------------------------------------------------------------
+ */
 static inline int
 TclPipeThreadIsAlive(
     TclPipeThreadInfo **pipeTIPtr)
 {
     TclPipeThreadInfo *pipeTI = *pipeTIPtr;
-    return (pipeTI && pipeTI->state != PTI_STATE_DOWN);
-};
+    return pipeTI && (pipeTI->state != PTI_STATE_DOWN);
+}
 
 MODULE_SCOPE int	TclPipeThreadStopSignal(TclPipeThreadInfo **pipeTIPtr);
 MODULE_SCOPE void	TclPipeThreadStop(TclPipeThreadInfo **pipeTIPtr,
 			    HANDLE hThread);
 MODULE_SCOPE void	TclPipeThreadExit(TclPipeThreadInfo **pipeTIPtr);
 
+/*
+ * Utilities dealing with path buffers
+ */
+typedef struct TclWinPath {
+    WCHAR buffer[MAX_PATH];	/* buffer for path */
+    WCHAR *bufferPtr;		/* pointer to buffer (may be same as buffer
+				 * or a heap-allocated extension) */
+} TclWinPath;
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclWinPathInit --
+ *
+ *	Initialize a path buffer. Never returns NULL.
+ *
+ *----------------------------------------------------------------------
+ */
+static inline WCHAR *
+TclWinPathInit(
+    TclWinPath *pathBufPtr,	/* Structure to be initialized */
+    DWORD *capacityPtr)		/* On return, capacity in WCHARS
+				   Must NOT be NULL */
+{
+    pathBufPtr->bufferPtr = pathBufPtr->buffer;
+    *capacityPtr = (DWORD)(sizeof(pathBufPtr->buffer) / sizeof(WCHAR));
+    return pathBufPtr->bufferPtr;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclWinPathGet --
+ *
+ *	Returns pointer to the current buffer.
+ *
+ *----------------------------------------------------------------------
+ */
+static inline WCHAR *
+TclWinPathGet(
+    TclWinPath *pathBufPtr)
+{
+    return pathBufPtr->bufferPtr;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclWinPathFree --
+ *
+ *	Frees a previously initialized path buffer.
+ *
+ *----------------------------------------------------------------------
+ */
+static inline void
+TclWinPathFree(
+    TclWinPath *pathBufPtr)	/* Structure to be freed */
+{
+    if (pathBufPtr->bufferPtr != pathBufPtr->buffer) {
+	Tcl_Free(pathBufPtr->bufferPtr);
+    }
+    pathBufPtr->bufferPtr = pathBufPtr->buffer;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclWinPathReset --
+ *
+ *	Resets a previously initialized path buffer to its initial state.
+ *
+ *----------------------------------------------------------------------
+ */
+static inline WCHAR *
+TclWinPathReset(
+    TclWinPath *pathBufPtr,	/* Structure to be initialized */
+    DWORD *capacityPtr)		/* On return, capacity in WCHARS
+				   Must NOT be NULL */
+{
+    TclWinPathFree(pathBufPtr);
+    *capacityPtr = (DWORD)(sizeof(pathBufPtr->buffer) / sizeof(WCHAR));
+    return pathBufPtr->bufferPtr;
+}
+
+/*
+ * The following values identify the various types of applications that run
+ * under Windows. There is special case code for the various types.
+ */
+typedef enum TclWinExecutableType {
+    APPL_NONE = 0,
+    APPL_DOS = 1,
+    APPL_WIN3X = 2,
+    APPL_WIN32 = 3,
+    APPL_DLL = 4
+} TclWinExecutableType;
+
+/*
+ * GetPathFunc should match the signature of functions such as
+ * GetSystemDirectoryW and GetWindowsDirectoryW. lpBuffer is expected to be
+ * a buffer of size uSize WCHARs. The function should return the number of
+ * WCHARs written to the buffer, not including the null terminator, or 0 on
+ * failure. If the buffer is too small, the function should return the
+ * required size in WCHARs *including* the null terminator.
+ */
+typedef UINT WINAPI GetPathFunc(LPWSTR lpBuffer, UINT uSize);
+
+MODULE_SCOPE WCHAR *	TclWinGetPath(GetPathFunc getPathFunc,
+			    TclWinPath *winPathPtr);
+MODULE_SCOPE char *	TclWinWCharToUtfDString(const WCHAR *wsPtr,
+			    int numChars, Tcl_DString *);
+MODULE_SCOPE WCHAR *	TclWinPathResize(TclWinPath *winPathPtr,
+			    DWORD capacityNeeded);
+MODULE_SCOPE WCHAR *	TclWinGetFullPathName(const WCHAR *pathPtr,
+			    TclWinPath *winPathPtr,
+			    WCHAR **filePartPtrPtr);
+MODULE_SCOPE WCHAR *	TclWinGetCurrentDirectory(TclWinPath *winPathPtr);
+MODULE_SCOPE WCHAR *	TclWinGetEnvironmentVariable(const WCHAR *envName,
+			    TclWinPath *winPathPtr);
+MODULE_SCOPE WCHAR *	TclWinGetModuleFileName(HMODULE, TclWinPath *);
+MODULE_SCOPE TclWinExecutableType TclWinGetExecutableType(const WCHAR *nativePath);
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclWinGetSystemDirectory --
+ *
+ *	Retrieve Windows system directory. See TclWinGetDirPath for param and
+ *	return details.
+ *
+ *----------------------------------------------------------------------
+ */
+static inline WCHAR *
+TclWinGetSystemDirectory(
+    TclWinPath *winPathPtr)
+{
+    return TclWinGetPath(GetSystemDirectoryW, winPathPtr);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclWinGetWindowsDirectory --
+ *
+ *	Retrieve Windows system directory. See TclWinGetDirPath for param and
+ *	return details.
+ *
+ *----------------------------------------------------------------------
+ */
+static inline WCHAR *
+TclWinGetWindowsDirectory(
+    TclWinPath *winPathPtr)
+{
+    return TclWinGetPath(GetWindowsDirectoryW, winPathPtr);
+}
+
 #endif	/* _TCLWININT */
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * End:
+ */

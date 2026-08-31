@@ -441,8 +441,13 @@ AC_DEFUN([SC_PROG_TCLSH], [
 		    `ls -r $dir/tclsh* 2> /dev/null` ; do
 		if test x"$ac_cv_path_tclsh" = x ; then
 		    if test -f "$j" ; then
-			ac_cv_path_tclsh=$j
-			break
+			if ! echo '[if {![package vsatisfies [info tclversion] 8.6-]} { exit 1 }]' | $j; then
+			    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: rejected $j - insufficient version, 8.6 or later is required." >&5
+			      printf %s "rejected $j - insufficient version, 8.6 or later is required. " >&6; }
+			else
+			    ac_cv_path_tclsh=$j
+			    break
+			fi
 		    fi
 		fi
 	    done
@@ -733,7 +738,7 @@ AC_DEFUN([SC_CONFIG_MANPAGES], [
 	AC_MSG_CHECKING([for compressed file suffix])
 	touch TeST
 	$enableval TeST
-	Z=`ls TeST* | sed 's/^....//'`
+	Z=`ls TeST.* | sed 's/^....//'`
 	rm -f TeST*
 	MAN_FLAGS="$MAN_FLAGS --extension $Z"
 	AC_MSG_RESULT([$Z])
@@ -2176,6 +2181,7 @@ AC_DEFUN([SC_TCL_LINK_LIBS], [
     #--------------------------------------------------------------------
 
     AC_CHECK_LIB(inet, main, [LIBS="$LIBS -linet"])
+    AC_CHECK_LIB(rt, clock_gettime, [LIBS="$LIBS -lrt"])
     AC_CHECK_HEADER(net/errno.h, [
 	AC_DEFINE(HAVE_NET_ERRNO_H, 1, [Do we have <net/errno.h>?])])
 
@@ -2254,7 +2260,7 @@ AC_DEFUN([SC_TCL_LINK_LIBS], [
 
     ac_saved_libs=$LIBS
     LIBS="$LIBS $THREADS_LIBS"
-    AC_CHECK_FUNCS(pthread_attr_setstacksize pthread_atfork)
+    AC_CHECK_FUNCS(pthread_attr_setstacksize pthread_atfork clock_gettime)
     LIBS=$ac_saved_libs
 ])
 

@@ -12,8 +12,8 @@
  *	Much of the material in this file was originally contributed by Karl
  *	Lehenbauer, Mark Diekhans and Peter da Silva.
  *
- * Copyright (c) 1991-1994 The Regents of the University of California.
- * Copyright (c) 1994-1997 Sun Microsystems, Inc.
+ * Copyright © 1991-1994 The Regents of the University of California.
+ * Copyright © 1994-1997 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -88,9 +88,16 @@ extern "C" {
 #   define MAX_PATH 260
 #   define SOCKET unsigned int
 #   define WSAEWOULDBLOCK 10035
+#   define SUBLANG_DEFAULT 0x01
+#   define LANG_NEUTRAL 0x00
+#   define MAKELANGID(p, s)       ((((unsigned short)(s)) << 10) | (unsigned short)(p))
+#   define FORMAT_MESSAGE_FROM_SYSTEM 0x00001000
+#   define FORMAT_MESSAGE_ALLOCATE_BUFFER 0x00000100
     typedef unsigned short WCHAR;
-    __declspec(dllimport) extern int GetModuleHandleExW(unsigned int, const void *, void *);
+    __declspec(dllimport) extern int GetModuleHandleExW(unsigned, const void *, void *);
     __declspec(dllimport) extern int GetModuleFileNameW(void *, const void *, int);
+    __declspec(dllimport) extern int FormatMessageW(unsigned, void *, unsigned, unsigned, void *, unsigned, void *);
+    __declspec(dllimport) extern int LocalFree(void *);
     __declspec(dllimport) extern int WideCharToMultiByte(int, int, const void *, int,
 	    char *, int, const char *, void *);
     __declspec(dllimport) extern int MultiByteToWideChar(int, int, const char *, int,
@@ -646,7 +653,7 @@ MODULE_SCOPE struct group *	TclpGetGrGid(gid_t gid);
 MODULE_SCOPE struct hostent *	TclpGetHostByName(const char *name);
 MODULE_SCOPE struct hostent *	TclpGetHostByAddr(const char *addr,
 				    int length, int type);
-MODULE_SCOPE void *TclpMakeTcpClientChannelMode(
+MODULE_SCOPE void *		TclpMakeTcpClientChannelMode(
 				    void *tcpSocket, int mode);
 
 #endif /* _TCLUNIXPORT */

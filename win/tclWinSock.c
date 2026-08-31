@@ -334,7 +334,7 @@ SendSelectMessage(
  *----------------------------------------------------------------------
  */
 
-void
+static void
 InitializeHostName(
     char **valuePtr,
     size_t *lengthPtr,
@@ -961,9 +961,8 @@ TcpOutputProc(
 	     */
 
 	    if (GOT_BITS(statePtr->watchEvents, FD_WRITE)) {
-		Tcl_Time blockTime = { 0, 0 };
 
-		Tcl_SetMaxBlockTime(&blockTime);
+		Tcl_SetMaxBlockTime2(0);
 	    }
 	    break;
 	}
@@ -1569,9 +1568,8 @@ TcpWatchProc(
 	 */
 
 	if (statePtr->readyEvents & statePtr->watchEvents) {
-	    Tcl_Time blockTime = { 0, 0 };
 
-	    Tcl_SetMaxBlockTime(&blockTime);
+	    Tcl_SetMaxBlockTime2(0);
 	}
     }
 }
@@ -2290,7 +2288,8 @@ Tcl_OpenTcpServerEx(
  *----------------------------------------------------------------------
  *
  * TcpAccept --
- *	Accept a TCP socket connection.	 This is called by the event loop.
+ *
+ *	Accept a TCP socket connection. This is called by the event loop.
  *
  * Results:
  *	None.
@@ -2472,13 +2471,12 @@ SocketExitHandler(
  *----------------------------------------------------------------------
  */
 
-void
+static void
 SocketSetupProc(
     TCL_UNUSED(void *),
     int flags)			/* Event flags as passed to Tcl_DoOneEvent. */
 {
     TcpState *statePtr;
-    Tcl_Time blockTime = { 0, 0 };
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
     if (!GOT_BITS(flags, TCL_FILE_EVENTS)) {
@@ -2486,14 +2484,14 @@ SocketSetupProc(
     }
 
     /*
-     * Check to see if there is a ready socket.	 If so, poll.
+     * Check to see if there is a ready socket. If so, poll.
      */
     WaitForSingleObject(tsdPtr->socketListLock, INFINITE);
     for (statePtr = tsdPtr->socketList; statePtr != NULL;
 	    statePtr = statePtr->nextPtr) {
 	if (GOT_BITS(statePtr->readyEvents,
 		statePtr->watchEvents | FD_CONNECT | FD_ACCEPT)) {
-	    Tcl_SetMaxBlockTime(&blockTime);
+	    Tcl_SetMaxBlockTime2(0);
 	    break;
 	}
     }
@@ -2732,9 +2730,7 @@ SocketEventProc(
 	 * trying to do unwind protection.
 	 */
 
-	Tcl_Time blockTime = { 0, 0 };
-
-	Tcl_SetMaxBlockTime(&blockTime);
+	Tcl_SetMaxBlockTime2(0);
 	SET_BITS(mask, TCL_READABLE | TCL_WRITABLE);
     } else if (GOT_BITS(events, FD_READ)) {
 	/*

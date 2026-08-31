@@ -72,11 +72,11 @@ static int		SetOSTypeFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
 static void		UpdateStringOfOSType(Tcl_Obj *objPtr);
 
 static const Tcl_ObjType tclOSTypeType = {
-    "osType",			/* name */
-    NULL,			/* freeIntRepProc */
-    NULL,			/* dupIntRepProc */
-    UpdateStringOfOSType,	/* updateStringProc */
-    SetOSTypeFromAny,		/* setFromAnyProc */
+    "osType",
+    NULL,			// FreeIntRep
+    NULL,			// DupIntRep
+    UpdateStringOfOSType,
+    SetOSTypeFromAny,
     TCL_OBJTYPE_V0
 };
 
@@ -86,7 +86,7 @@ enum {
 
 #define kFinfoIsInvisible	(OSSwapHostToBigConstInt16(kIsInvisible))
 
-typedef	struct finderinfo {
+typedef struct finderinfo {
     u_int32_t type;
     u_int32_t creator;
     u_int16_t fdFlags;

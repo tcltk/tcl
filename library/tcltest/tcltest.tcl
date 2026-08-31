@@ -21,7 +21,7 @@ namespace eval tcltest {
     # When the version number changes, be sure to update the pkgIndex.tcl file,
     # and the install directory in the Makefiles.  When the minor version
     # changes (new feature) be sure to update the man page as well.
-    variable Version 2.5.10
+    variable Version 2.6.0
 
     # Compatibility support for dumb variables defined in tcltest 1
     # Do not use these.  Call [package require] and [info patchlevel]
@@ -30,7 +30,7 @@ namespace eval tcltest {
     variable patchLevel [info patchlevel]
 
     # Detect if we can use code points >= \U10000
-    variable fullutf [package vsatisfies $version 8.7-]
+    variable fullutf [package vsatisfies $version 9.0-]
 
 ##### Export the public tcltest procs; several categories
     #
@@ -752,6 +752,11 @@ namespace eval tcltest {
     Option -singleproc 0 {
 	whether to run all tests in one process
     } AcceptBoolean singleProcess
+
+    # Default is to run each test once
+    Option -iterations 1 {
+	number of times to run each test
+    } AcceptInteger testIterations
 
     proc AcceptTemporaryDirectory { directory } {
 	set directory [AcceptAbsolutePath $directory]
@@ -1599,6 +1604,7 @@ proc tcltest::ProcessCmdLineArgs {} {
     DebugPuts    2 "tcltest::temporaryDirectory = [temporaryDirectory]"
     DebugPuts    2 "tcltest::outputChannel      = [outputChannel]"
     DebugPuts    2 "tcltest::errorChannel       = [errorChannel]"
+    DebugPuts    2 "tcltest::testIterations     = [testIterations]"
     DebugPuts    2 "Original environment (tcltest::originalEnv):"
     DebugPArray  2 originalEnv
     DebugPuts    2 "Constraints:"
@@ -1922,8 +1928,14 @@ proc tcltest::SubstArguments {argList} {
 # Side effects:
 #       Just about anything is possible depending on the test.
 #
-
 proc tcltest::test {name description args} {
+    set iterations [testIterations]
+    for {set i 0} {$i < $iterations} {incr i} {
+        uplevel 1 [list tcltest::TestOnce $name $description {*}$args]
+    }
+}
+
+proc tcltest::TestOnce {name description args} {
     global tcl_platform
     variable testLevel
     variable coreModTime
@@ -2266,6 +2278,18 @@ proc tcltest::test {name description args} {
 	if {$scriptCompare} {
 	    puts [outputChannel] "---- Error testing result: $scriptMatch"
 	} else {
+	    if {[string length $actualAnswer] > 1000} {
+		set actualAnswer [string cat \
+				      [string range $actualAnswer 0 499] \
+				      "(long output elided)" \
+				      [string range $actualAnswer end-499 end]]
+	    }
+	    if {[string length $result] > 1000} {
+		set result [string cat \
+				      [string range $result 0 499] \
+				      "(long output elided)" \
+				      [string range $result end-499 end]]
+	    }
 	    if {[catch {
 		puts [outputChannel] "---- Result was:\n[Asciify $actualAnswer]"
 	    } errMsg]} {
@@ -2911,7 +2935,7 @@ proc tcltest::runAllTests { {shell ""} } {
 		"Only running test files that match:  [matchFiles]"
     }
 
-    set timeCmd {clock format now -format "%Y-%m-%d %H:%M:%S %Z" -locale en}
+    set timeCmd {clock format [clock seconds] -format "%Y-%m-%d %H:%M:%S %Z" -locale en}
     puts [outputChannel] "Tests began at [eval $timeCmd]"
 
     # Run each of the specified tests
@@ -3330,7 +3354,7 @@ proc tcltest::viewFile {name {directory ""}} {
 # construct improperly formed strings in this manner, because it involves
 # exposing that Tcl uses UTF-8 internally.
 #
-# This function doesn't work any more in Tcl 8.7, since the 'identity'
+# This function doesn't work any more in Tcl 9.0, since the 'identity'
 # is gone (TIP #345)
 #
 # Arguments:

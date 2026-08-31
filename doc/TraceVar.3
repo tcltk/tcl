@@ -120,7 +120,7 @@ string that will be released by the Tcl library via a call to
 .TP
 \fBTCL_TRACE_RESULT_OBJECT\fR
 .
-The result of invoking the \fIproc\fR is a Tcl_Obj* (cast to a char*)
+The result of invoking the \fIproc\fR is a Tcl_Obj * (cast to a char *)
 with a reference count of at least one.  The ownership of that
 reference will be transferred to the Tcl core for release (when the
 core has finished with it) via a call to \fBTcl_DecrRefCount\fR.  Must
@@ -320,7 +320,7 @@ containing an error message,
 unless (\fIexactly\fR one of) the \fBTCL_TRACE_RESULT_DYNAMIC\fR and
 \fBTCL_TRACE_RESULT_OBJECT\fR flags is set, which specify that the result is
 either a dynamic string (to be released with \fBTcl_Free\fR) or a
-Tcl_Obj* (cast to char* and to be released with
+Tcl_Obj * (cast to char * and to be released with
 \fBTcl_DecrRefCount\fR) containing the error message.
 If a trace procedure returns an error, no further traces are
 invoked for the access and the traced access aborts with the

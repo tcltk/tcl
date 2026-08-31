@@ -1259,10 +1259,11 @@ proc writeZones {outDir} {
 	} [processTimeZone $zoneName $zones($zoneName)] {
 	    if {$name eq "%z"} {
 		# map %z to pure offset zone (e. g. offset -7200 -> -0200):
+		set offmin [expr {abs($offset) / 60}]
 		set name [format "%+03d%02d" [expr {
-				$offset / 60 / 60
+				($offset < 0 ? -1 : 1) * ($offmin / 60)
 			    }] [expr {
-				(abs($offset) / 60) % 60
+				$offmin % 60
 			    }]
 			]
 		if {![dict exists $tzmapped $offset]} { # output once per offs

@@ -972,12 +972,12 @@ single-precision floating point number will be scanned.  The size of a
 floating point number may vary across architectures, so the number of
 bytes that are scanned may vary.  If the data does not represent a
 valid floating point number, the resulting value is undefined and
-compiler dependent.  For example, on a Windows system running on an
-Intel Pentium processor,
+compiler dependent.  For example, on a MS-Windows system running on an
+x86/x64 processor,
 .RS
 .PP
 .CS
-\fBbinary scan\fR \ex3F\exCC\exCC\exCD f var1
+\fBbinary scan\fR \exCD\exCC\exCC\ex3F f var1
 .CE
 .PP
 will return \fB1\fR with \fB1.6000000238418579\fR stored in

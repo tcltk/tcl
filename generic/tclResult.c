@@ -211,6 +211,7 @@ Tcl_DiscardInterpState(
  *----------------------------------------------------------------------
  *
  * Tcl_SetObjResult --
+ *
  *	Makes objPtr the interpreter's result value.
  *
  * Results:
@@ -550,7 +551,7 @@ Tcl_SetObjErrorCode(
  *
  * Tcl_GetErrorLine --
  *
- *      Returns the line number associated with the current error.
+ *	Returns the line number associated with the current error.
  *
  *----------------------------------------------------------------------
  */
@@ -567,7 +568,7 @@ Tcl_GetErrorLine(
  *
  * Tcl_SetErrorLine --
  *
- *      Sets the line number associated with the current error.
+ *	Sets the line number associated with the current error.
  *
  *----------------------------------------------------------------------
  */
@@ -812,7 +813,7 @@ ExpandedOptions(
     Tcl_Obj **keys,		/* Built-in keys (per thread) */
     Tcl_Obj *returnOpts,	/* Options dict we are building */
     Tcl_Size objc,		/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
+    Tcl_Obj *const *objv)	/* Argument objects. */
 {
     for (;  objc > 1;  objv += 2, objc -= 2) {
 	const char *opt = TclGetString(objv[0]);
@@ -853,7 +854,7 @@ int
 TclMergeReturnOptions(
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,		/* Number of arguments. */
-    Tcl_Obj *const objv[],	/* Argument objects. */
+    Tcl_Obj *const *objv,	/* Argument objects. */
     Tcl_Obj **optionsPtrPtr,	/* If not NULL, points to space for a (Tcl_Obj
 				 * *) where the pointer to the merged return
 				 * options dictionary should be written. */
@@ -917,7 +918,7 @@ TclMergeReturnOptions(
     if (valuePtr != NULL) {
 	Tcl_Size length;
 
-	if (TCL_ERROR == TclListObjLength(NULL, valuePtr, &length )) {
+	if (TCL_ERROR == TclListObjLength(NULL, valuePtr, &length)) {
 	    /*
 	     * Value is not a list, which is illegal for -errorcode.
 	     */
@@ -1196,9 +1197,8 @@ Tcl_TransferResult(
 	 * yet at end of the stack (e. g. proc etc), to avoid double reporting
 	 */
 	if (tiPtr->errorLine > 1 && tiPtr->errorInfo &&
-	    tiPtr->errorInfo->length &&
-	    tiPtr->errorInfo->bytes[tiPtr->errorInfo->length-1] != ')'
-	) {
+		tiPtr->errorInfo->length &&
+		tiPtr->errorInfo->bytes[tiPtr->errorInfo->length-1] != ')') {
 	    Tcl_AppendObjToErrorInfo(targetInterp, Tcl_ObjPrintf(
 		    "\n    (\"interp eval\" body line %d)", tiPtr->errorLine));
 	}
@@ -1223,8 +1223,8 @@ int
 TclSafeCatchCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const objv[])
+    Tcl_Size objc,
+    Tcl_Obj *const *objv)
 {
     Interp *iPtr = (Interp *)interp;
     int ret, flags = 0;

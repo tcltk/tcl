@@ -43,7 +43,7 @@ static void		ReflectThread(void *clientData, int action);
 static int		ReflectEventRun(Tcl_Event *ev, int flags);
 static int		ReflectEventDelete(Tcl_Event *ev, void *cd);
 #endif
-static long long	 ReflectSeekWide(void *clientData,
+static long long	ReflectSeekWide(void *clientData,
 			    long long offset, int mode, int *errorCodePtr);
 static int		ReflectGetOption(void *clientData,
 			    Tcl_Interp *interp, const char *optionName,
@@ -501,7 +501,7 @@ int
 TclChanCreateObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj *const *objv)
 {
     ReflectedChannel *rcPtr;	/* Instance data of the new channel */
@@ -821,7 +821,7 @@ int
 TclChanPostEventObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj *const *objv)
 {
     /*
@@ -1321,7 +1321,7 @@ ReflectInput(
 	    *errorCodePtr = EOK;
 	}
 
-	return p.input.toRead;
+	return (int)p.input.toRead;
     }
 #endif
 
@@ -1365,7 +1365,7 @@ ReflectInput(
     Tcl_DecrRefCount(toReadObj);
     Tcl_DecrRefCount(resObj);		/* Remove reference held from invoke */
     Tcl_Release(rcPtr);
-    return bytec;
+    return (int)bytec;
   invalid:
     *errorCodePtr = EINVAL;
   error:
@@ -1430,7 +1430,7 @@ ReflectOutput(
 	    *errorCodePtr = EOK;
 	}
 
-	return p.output.toWrite;
+	return (int)p.output.toWrite;
     }
 #endif
 
@@ -2950,7 +2950,7 @@ ForwardOpToHandlerThread(
 	 * immediately after.
 	 */
 
-	Tcl_ConditionWait(&resultPtr->done, &rcForwardMutex, NULL);
+	Tcl_ConditionWait2(&resultPtr->done, &rcForwardMutex, -1);
     }
 
     /*

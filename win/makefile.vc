@@ -46,11 +46,6 @@
 # to start a command shell using one of the short cuts installed by
 # Visual Studio/Windows SDK for the appropriate target architecture.
 #
-# NOTE: For older (Visual C++ 6 or the 2003 SDK), to use the Platform
-# SDK (not expressly needed), run setenv.bat after vcvars32.bat
-# according to the instructions for it.  This can also turn on the
-# 64-bit compiler, if your SDK has it.
-#
 # Basic macros and options usable on the commandline (see rules.vc for more info):
 #	OPTS=nomsvcrt,noembed,nothreads,pdbs,profile,static,symbols,thrdalloc,unchecked,none
 #		Sets special options for the core.  The default is for none.
@@ -72,7 +67,7 @@
 #		profile   = Adds profiling hooks.  Map file is assumed.
 #		static    = Builds a static library of the core instead of a
 #			    dll.  The shell will be static (and large), and
-#			    have the dde and registry extensions linked inside.
+#			    have the dde extension linked inside.
 #		symbols   = Adds symbols for step debugging.
 #		thrdalloc = Use the thread allocator (shared global free pool).
 #		unchecked = Allows a symbols build to not use the debug
@@ -165,12 +160,10 @@ VERSION         = $(TCL_MAJOR_VERSION)$(TCL_MINOR_VERSION)
 !endif
 !endif
 
-!if [nmakehlp -f $(OPTS) "noembed"]
-!message *** Option noembed specified. Tcl script library will not be appended to the binary.
+!if [$(NMAKEHLP_NATIVE) -f $(OPTS) "noembed"]
 TCL_EMBED_SCRIPTS = 0
 TCL_TEST_LIBRARY=$(ROOT:\=/)/library
 !else
-!message *** Tcl script library will be appended to the binary.
 TCL_EMBED_SCRIPTS = 1
 TCL_TEST_LIBRARY=
 !endif
@@ -180,31 +173,28 @@ TCL_TEST_LIBRARY=
 !if [echo REM = This file is generated from makefile.vc > versions.vc]
 !endif
 !if [echo PKG_HTTP_VER = \>> versions.vc] \
-   && [nmakehlp -V ..\library\http\pkgIndex.tcl http >> versions.vc]
+   && [$(NMAKEHLP_NATIVE) -V ..\library\http\pkgIndex.tcl http >> versions.vc]
 !endif
 !if [echo PKG_OPT_VER = \>> versions.vc] \
-   && [nmakehlp -V ..\library\opt\pkgIndex.tcl opt >> versions.vc]
+   && [$(NMAKEHLP_NATIVE) -V ..\library\opt\pkgIndex.tcl opt >> versions.vc]
 !endif
 !if [echo PKG_COOKIEJAR_VER = \>> versions.vc] \
-   && [nmakehlp -V ..\library\cookiejar\pkgIndex.tcl cookiejar >> versions.vc]
+   && [$(NMAKEHLP_NATIVE) -V ..\library\cookiejar\pkgIndex.tcl cookiejar >> versions.vc]
 !endif
 !if [echo PKG_TCLTEST_VER = \>> versions.vc] \
-   && [nmakehlp -V ..\library\tcltest\pkgIndex.tcl tcltest >> versions.vc]
+   && [$(NMAKEHLP_NATIVE) -V ..\library\tcltest\pkgIndex.tcl tcltest >> versions.vc]
 !endif
 !if [echo PKG_MSGCAT_VER = \>> versions.vc] \
-   && [nmakehlp -V ..\library\msgcat\pkgIndex.tcl msgcat >> versions.vc]
+   && [$(NMAKEHLP_NATIVE) -V ..\library\msgcat\pkgIndex.tcl msgcat >> versions.vc]
 !endif
 !if [echo PKG_PLATFORM_VER = \>> versions.vc] \
-   && [nmakehlp -V ..\library\platform\pkgIndex.tcl "platform " >> versions.vc]
+   && [$(NMAKEHLP_NATIVE) -V ..\library\platform\pkgIndex.tcl "platform " >> versions.vc]
 !endif
 !if [echo PKG_SHELL_VER = \>> versions.vc] \
-   && [nmakehlp -V ..\library\platform\pkgIndex.tcl "platform::shell" >> versions.vc]
+   && [$(NMAKEHLP_NATIVE) -V ..\library\platform\pkgIndex.tcl "platform::shell" >> versions.vc]
 !endif
 !if [echo PKG_DDE_VER = \>> versions.vc] \
-   && [nmakehlp -V ..\library\dde\pkgIndex.tcl "dde " >> versions.vc]
-!endif
-!if [echo PKG_REG_VER =\>> versions.vc] \
-   && [nmakehlp -V ..\library\registry\pkgIndex.tcl "registry " >> versions.vc]
+   && [$(NMAKEHLP_NATIVE) -V ..\library\dde\pkgIndex.tcl "dde " >> versions.vc]
 !endif
 
 !include versions.vc
@@ -215,14 +205,13 @@ DDEVERSION = $(DDEDOTVERSION:.=)
 REGDOTVERSION = 1.4
 REGVERSION = $(REGDOTVERSION:.=)
 
-TCLREGLIBNAME	= $(PROJECT)9registry$(REGVERSION)$(SUFX:t=).$(EXT)
-TCLREGLIB	= $(OUT_DIR)\$(TCLREGLIBNAME)
-
 TCLDDELIBNAME	= $(PROJECT)9dde$(DDEVERSION)$(SUFX:t=).$(EXT)
 TCLDDELIB	= $(OUT_DIR)\$(TCLDDELIBNAME)
 
 TCLTEST		= $(OUT_DIR)\$(PROJECT)test$(VERSION)$(SUFX:t=).exe
 TCLTESTRAW	= $(TCLTEST:.exe=-raw.exe)
+
+EXECTESTAPP	= $(OUT_DIR)\execTestApp.exe
 
 UTF8PROCDIR	= $(ROOT)\utf8proc
 
@@ -278,6 +267,7 @@ COREOBJS = \
 	$(TMP_DIR)\tclFCmd.obj \
 	$(TMP_DIR)\tclFileName.obj \
 	$(TMP_DIR)\tclGet.obj \
+	$(TMP_DIR)\tclGrapheme.obj \
 	$(TMP_DIR)\tclHash.obj \
 	$(TMP_DIR)\tclHistory.obj \
 	$(TMP_DIR)\tclIcu.obj \
@@ -329,7 +319,6 @@ COREOBJS = \
 	$(TMP_DIR)\tclStubInit.obj \
 	$(TMP_DIR)\tclThread.obj \
 	$(TMP_DIR)\tclThreadAlloc.obj \
-	$(TMP_DIR)\tclThreadJoin.obj \
 	$(TMP_DIR)\tclThreadStorage.obj \
 	$(TMP_DIR)\tclTimer.obj \
 	$(TMP_DIR)\tclTomMathInterface.obj \
@@ -443,14 +432,15 @@ PLATFORMOBJS = \
 	$(TMP_DIR)\tclWinInit.obj \
 	$(TMP_DIR)\tclWinLoad.obj \
 	$(TMP_DIR)\tclWinNotify.obj \
+	$(TMP_DIR)\tclWinReg.obj \
 	$(TMP_DIR)\tclWinPipe.obj \
 	$(TMP_DIR)\tclWinSerial.obj \
 	$(TMP_DIR)\tclWinSock.obj \
 	$(TMP_DIR)\tclWinThrd.obj \
+	$(TMP_DIR)\tclWinThreadJoin.obj \
 	$(TMP_DIR)\tclWinTime.obj \
 !if $(STATIC_BUILD)
 	$(TMP_DIR)\tclWinPanic.obj \
-	$(TMP_DIR)\tclWinReg.obj \
 	$(TMP_DIR)\tclWinDde.obj \
 !else
 	$(TMP_DIR)\tcl.res
@@ -504,7 +494,7 @@ TESTFLAGS = $(TESTFLAGS) -file $(TESTPAT)
 #             build does not embed the library zip in the DLL irrespective
 #             of the noembed setting. A copy is made as $(TCLLIBRAW)
 #             as the $(TCLLIB) binary is potentially modified later.
-# dlls      - these are the registry and dde DLL's or static libraries
+# dlls      - these are the dde DLL's or static libraries
 # $(TCLSH)  - the Tcl shell WITHOUT any embedded zip. This needs $(TCLLIB)
 #             to be built first as it links against it. A copy is made
 #             as $(TCLSHRAW) as $(TCLSH) binary may be modified later.
@@ -539,10 +529,10 @@ shell:      libtclzip
 	@$(COPY) /b "$(TCLSHRAW)"+"$(TCLSCRIPTZIP)" "$(TCLSH)"
 !endif
 
-dlls:	    setup $(TCLREGLIB) $(TCLDDELIB) $(OUT_DIR)\zlib1.dll $(OUT_DIR)\libtommath.dll
+dlls:	    setup $(TCLDDELIB) $(OUT_DIR)\zlib1.dll $(OUT_DIR)\libtommath.dll
 libtclzip:  $(TCLSCRIPTZIP)
 
-tcltest:    setup core $(TCLTEST) dlls
+tcltest:    setup core $(TCLTEST) dlls $(EXECTESTAPP)
 !if $(TCL_EMBED_SCRIPTS) && $(STATIC_BUILD)
 tcltest:      libtclzip
 	@$(COPY) /b "$(TCLTESTRAW)"+"$(TCLSCRIPTZIP)" "$(TCLTEST)"
@@ -557,10 +547,15 @@ setup:      default-setup
 test: test-core test-pkgs
 test-core: tcltest
 	set TCL_LIBRARY=$(TCL_TEST_LIBRARY)
+!if $(STATIC_BUILD)
 	$(DEBUGGER) $(TCLTEST) "$(ROOT:\=/)/tests/all.tcl" $(TESTFLAGS) -loadfile <<
-		package ifneeded dde 1.5a1 [list load "$(TCLDDELIB:\=/)"]
-		package ifneeded registry 1.4a1 [list load "$(TCLREGLIB:\=/)"]
+		package ifneeded dde 1.5b1 [list load {} Dde]
 <<
+!else
+	$(DEBUGGER) $(TCLTEST) "$(ROOT:\=/)/tests/all.tcl" $(TESTFLAGS) -loadfile <<
+		package ifneeded dde 1.5b1 [list load "$(TCLDDELIB:\=/)"]
+<<
+!endif
 
 runtest: setup $(TCLTEST) dlls
 	set TCL_LIBRARY=$(TCL_TEST_LIBRARY)
@@ -583,7 +578,6 @@ $(TCLLIB): $(TCLOBJS)
 	$(DLLCMD) @<<
 $**
 <<
-	$(_VC_MANIFEST_EMBED_DLL)
 !if $(TCL_EMBED_SCRIPTS) && !$(STATIC_BUILD)
 	$(COPY) $@ $(TCLLIBRAW)
 !endif
@@ -597,8 +591,6 @@ $(TCLSTUBLIB): $(TCLSTUBOBJS)
 
 $(TCLSH): $(TCLSHOBJS) $(TCLSTUBLIB) $(TCLIMPLIB)
 	$(CONEXECMD) -stack:2300000 $**
-	copy $(TMP_DIR)\tclsh.exe.manifest $(TCLSH).manifest
-	$(_VC_MANIFEST_EMBED_EXE)
 !if $(TCL_EMBED_SCRIPTS) && $(STATIC_BUILD)
 	$(COPY) $@ $(TCLSHRAW)
 !endif
@@ -606,8 +598,6 @@ $(TCLSH): $(TCLSHOBJS) $(TCLSTUBLIB) $(TCLIMPLIB)
 
 $(TCLTEST): $(TCLTESTOBJS) $(TCLSTUBLIB) $(TCLIMPLIB)
 	$(CONEXECMD) -stack:2300000 $**
-	copy $(TMP_DIR)\tclsh.exe.manifest $(TCLTEST).manifest
-	$(_VC_MANIFEST_EMBED_EXE)
 !if $(TCL_EMBED_SCRIPTS) && $(STATIC_BUILD)
 	$(COPY) $@ $(TCLTESTRAW)
 !endif
@@ -618,17 +608,11 @@ $(TCLDDELIB): $(TMP_DIR)\tclWinDde.obj
 !else
 $(TCLDDELIB): $(TMP_DIR)\tclWinDde.obj $(TCLSTUBLIB)
 	$(DLLCMD) $**
-	$(_VC_MANIFEST_EMBED_DLL)
 !endif
 
-!if $(STATIC_BUILD)
-$(TCLREGLIB): $(TMP_DIR)\tclWinReg.obj
-	$(LIBCMD) $**
-!else
-$(TCLREGLIB): $(TMP_DIR)\tclWinReg.obj $(TCLSTUBLIB)
-	$(DLLCMD) $**
-	$(_VC_MANIFEST_EMBED_DLL)
-!endif
+exectestapp: $(EXECTESTAPP)
+$(EXECTESTAPP): execTestApp.c
+	cl /Fe: $@ $**
 
 !if "$(MACHINE)" == "ARM64"
 $(OUT_DIR)\zlib1.dll:	$(COMPATDIR)\zlib\win64-arm\zlib1.dll
@@ -660,15 +644,13 @@ $(OUT_DIR)\tommath.lib:	$(TOMMATHDIR)\win64\tommath.lib
 !endif
 
 $(TCLSCRIPTZIP): $(TCLLIB) $(TCLSH) dlls
-	@echo Building Tcl library zip file $(TCLSCRIPTZIP)
+	@$(ECHO) Building Tcl library zip file $(TCLSCRIPTZIP)
 	@set TCL_LIBRARY=$(ROOT:\=/)/library
 	@if exist "$(LIBTCLVFS)" $(RMDIR) "$(LIBTCLVFS)"
 	@$(MKDIR) "$(LIBTCLVFS)"
 	@$(CPYDIR) $(LIBDIR) "$(LIBTCLVFS)\tcl_library"
 	@move /y "$(LIBTCLVFS)\tcl_library\manifest.txt"  "$(LIBTCLVFS)\tcl_library\pkgIndex.tcl" > NUL
-# Remove the registry and dde directories as the DLLS are still external
-	@del "$(LIBTCLVFS)\tcl_library\registry\pkgIndex.tcl"
-	@rmdir "$(LIBTCLVFS)\tcl_library\registry"
+# Remove the dde directories as the DLLS are still external
 	@del "$(LIBTCLVFS)\tcl_library\dde\pkgIndex.tcl"
 	@rmdir "$(LIBTCLVFS)\tcl_library\dde"
 	@echo cd {$(OUT_DIR)} > "$(OUT_DIR)\zipper.tcl"
@@ -752,7 +734,7 @@ htmldocs: $(DOCDIR)\*
 	@$(TCLSH) $(TOOLSDIR)\tcltk-man2html.tcl "--htmldir=$(HTMLDIR)"
 
 $(CHMFILE): htmldocs chmsetup
-	@echo Compiling HTML help project
+	@$(ECHO) Compiling HTML help project
 	-"$(HHC)" <<$(HHPFILE) >NUL
 [OPTIONS]
 Compatibility=1.1 or later
@@ -779,7 +761,7 @@ chmsetup:
 
 install-docs:
 !if exist("$(CHMFILE)")
-	@echo Installing compiled HTML help
+	@$(ECHO) Installing compiled HTML help
 	@$(CPY) "$(CHMFILE)" "$(DOC_INSTALL_DIR)\"
 !endif
 
@@ -805,8 +787,8 @@ tclConfig: $(OUT_DIR)\tclConfig.sh
 
 # TBD - is this tclConfig.sh file ever used? The values are incorrect!
 $(OUT_DIR)\tclConfig.sh: $(WIN_DIR)\tclConfig.sh.in
-	@echo Creating tclConfig.sh
-	@nmakehlp -s << $** >$@
+	@$(ECHO) Creating tclConfig.sh
+	@$(NMAKEHLP_NATIVE) -s << $** >$@
 @TCL_DLL_FILE@       $(TCLLIBNAME)
 @TCL_VERSION@        $(DOTVERSION)
 @TCL_MAJOR_VERSION@  $(TCL_MAJOR_VERSION)
@@ -887,7 +869,7 @@ $(ROOT)\manifest.uuid:
 	git rev-parse HEAD >>$(ROOT)\manifest.uuid
 
 $(TMP_DIR)\tclUuid.h:	$(ROOT)\manifest.uuid
-	copy $(WIN_DIR)\tclUuid.h.in+$(ROOT)\manifest.uuid $(TMP_DIR)\tclUuid.h
+	copy /b $(WIN_DIR)\tclUuid.h.in+$(ROOT)\manifest.uuid $(TMP_DIR)\tclUuid.h
 
 $(TMP_DIR)\tclEvent.obj: $(GENERICDIR)\tclEvent.c $(TMP_DIR)\tclUuid.h
 	$(cc32) $(pkgcflags) -I$(COMPATDIR)\zlib -I$(TMP_DIR) \
@@ -942,15 +924,20 @@ $(TMP_DIR)\tclPkgConfig.obj: $(GENERICDIR)\tclPkgConfig.c
 	/DCFG_RUNTIME_DLLFILE="\"$(TCL_LIB_FILE)\""     \
 	-Fo$@ $?
 
+# Pass CFG_BUILDTIME_SCRDIR as it is used to search for init.tcl.
+# Do not define CFG_* variables for tclInterp.obj as on Windows
+# it does not make sense to include them in the search path.
+$(TMP_DIR)\tclInterp.obj: $(GENERICDIR)\tclInterp.c
+	$(cc32) $(pkgcflags) \
+	/DTCL_BUILDTIME_SCRDIR="\"$(ROOT:\=/)/library\"" \
+	/DTCL_BUILDTIME_BINDIR="\"$(OUT_DIR:\=/)\"" \
+	-Fo$@ $?
+
 $(TMP_DIR)\tclAppInit.obj: $(WIN_DIR)\tclAppInit.c
 	$(cc32) $(appcflags) /DUNICODE /D_UNICODE \
 	    -Fo$@ $?
 
 ### The following objects should be built using the stub interfaces
-
-$(TMP_DIR)\tclWinReg.obj: $(WIN_DIR)\tclWinReg.c
-	$(cc32) $(appcflags_nostubs) /DUSE_TCL_STUBS=1 -Fo$@ $?
-
 
 $(TMP_DIR)\tclWinDde.obj: $(WIN_DIR)\tclWinDde.c
 	$(cc32) $(appcflags_nostubs) /DUSE_TCL_STUBS=1 -Fo$@ $?
@@ -982,7 +969,7 @@ $(TMP_DIR)\tclWinPanic.obj: $(WIN_DIR)\tclWinPanic.c
 	$(cc32) $(stubscflags) -Fo$@ $?
 
 $(TMP_DIR)\tclsh.exe.manifest: $(WIN_DIR)\tclsh.exe.manifest.in
-	@nmakehlp -s << $** >$@
+	@$(NMAKEHLP_NATIVE) -s << $** >$@
 @MACHINE@	  $(MACHINE:IX86=X86)
 @TCL_WIN_VERSION@  $(DOTVERSION).0.0
 <<
@@ -1012,9 +999,13 @@ $(TCLOBJS)
 
 !if exist("$(OUT_DIR)\depend.mk")
 !include "$(OUT_DIR)\depend.mk"
+!if $(VERBOSE)
 !message *** Dependency rules in use.
+!endif
 !else
+!if $(VERBOSE)
 !message *** Dependency rules are not being used.
+!endif
 !endif
 
 ### add a spacer in the output
@@ -1053,7 +1044,7 @@ $(TMP_DIR)\tcltest.res: $(TMP_DIR)\tclsh.exe.manifest $(WIN_DIR)\tcltest.rc
 
 install-binaries:
 	@echo Installing to '$(_INSTALLDIR)'
-	@echo Installing $(TCLLIBNAME)
+	@$(ECHO) Installing $(TCLLIBNAME)
 !if "$(TCLLIB)" != "$(TCLIMPLIB)"
 	@$(CPY) "$(TCLLIB)" "$(BIN_INSTALL_DIR)\"
 !endif
@@ -1064,17 +1055,15 @@ install-binaries:
 	@$(CPY) "$(OUT_DIR)\zdll.lib" "$(LIB_INSTALL_DIR)\"
 	@$(CPY) "$(OUT_DIR)\tommath.lib" "$(LIB_INSTALL_DIR)\"
 !endif
-!if exist($(TCLSH))
-	@echo Installing $(TCLSHNAME)
+	@$(ECHO) Installing $(TCLSHNAME)
 	@$(CPY) "$(TCLSH)" "$(BIN_INSTALL_DIR)\"
-!endif
-	@echo Installing $(TCLSTUBLIBNAME)
+	@$(ECHO) Installing $(TCLSTUBLIBNAME)
 	@$(CPY) "$(TCLSTUBLIB)" "$(LIB_INSTALL_DIR)\"
 
 install-libraries: tclConfig tcl-nmake install-msgs install-tzdata
 	@if not exist "$(LIB_INSTALL_DIR)\nmake" \
 		$(MKDIR) "$(LIB_INSTALL_DIR)\nmake"
-	@echo Installing header files
+	@$(ECHO) Installing header files
 	@$(CPY) "$(GENERICDIR)\tcl.h"             "$(INCLUDE_INSTALL_DIR)\"
 	@$(CPY) "$(GENERICDIR)\tclDecls.h"        "$(INCLUDE_INSTALL_DIR)\"
 	@$(CPY) "$(GENERICDIR)\tclOO.h"           "$(INCLUDE_INSTALL_DIR)\"
@@ -1084,7 +1073,7 @@ install-libraries: tclConfig tcl-nmake install-msgs install-tzdata
 	@$(CPY) "$(GENERICDIR)\tclTomMathDecls.h" "$(INCLUDE_INSTALL_DIR)\"
 	@$(CPY) "$(TOMMATHDIR)\tommath.h"         "$(INCLUDE_INSTALL_DIR)\"
 !if !$(TCL_EMBED_SCRIPTS)
-	@echo Installing library files to $(SCRIPT_INSTALL_DIR)
+	@$(ECHO) Installing library files to $(SCRIPT_INSTALL_DIR)
 	@if not exist "$(SCRIPT_INSTALL_DIR)" \
 	    $(MKDIR) "$(SCRIPT_INSTALL_DIR)"
 	@$(CPY) "$(ROOT)\library\*.tcl"           "$(SCRIPT_INSTALL_DIR)\"
@@ -1096,53 +1085,52 @@ install-libraries: tclConfig tcl-nmake install-msgs install-tzdata
 	@$(CPY) "$(WIN_DIR)\rules.vc"              "$(LIB_INSTALL_DIR)\nmake\"
 	@$(CPY) "$(WIN_DIR)\targets.vc"              "$(LIB_INSTALL_DIR)\nmake\"
 	@$(CPY) "$(WIN_DIR)\nmakehlp.c"            "$(LIB_INSTALL_DIR)\nmake\"
-	@$(CPY) "$(WIN_DIR)\x86_64-w64-mingw32-nmakehlp.exe" "$(LIB_INSTALL_DIR)\nmake\"
+	@$(CPY) "$(WIN_DIR)\nmakehlp.exe"         "$(LIB_INSTALL_DIR)\nmake\"
 	@$(CPY) "$(OUT_DIR)\tcl.nmake"            "$(LIB_INSTALL_DIR)\nmake\"
 !if !$(TCL_EMBED_SCRIPTS)
-	@echo Installing package cookiejar $(PKG_COOKIEJAR_VER)
+	@$(ECHO) Installing package cookiejar $(PKG_COOKIEJAR_VER)
 	@if not exist "$(SCRIPT_INSTALL_DIR)\cookiejar0.2" \
 	    $(MKDIR) "$(SCRIPT_INSTALL_DIR)\cookiejar0.2"
 	@$(CPY) "$(ROOT)\library\cookiejar\*.tcl" \
 	    "$(SCRIPT_INSTALL_DIR)\cookiejar0.2\"
 	@$(CPY) "$(ROOT)\library\cookiejar\*.gz" \
 	    "$(SCRIPT_INSTALL_DIR)\cookiejar0.2\"
-	@echo Installing package opt $(PKG_OPT_VER)
+	@$(ECHO) Installing package opt $(PKG_OPT_VER)
 	@if not exist "$(SCRIPT_INSTALL_DIR)\opt0.4" \
 	    $(MKDIR) "$(SCRIPT_INSTALL_DIR)\opt0.4"
 	@$(CPY) "$(ROOT)\library\opt\*.tcl" \
 	    "$(SCRIPT_INSTALL_DIR)\opt0.4\"
 	@if not exist "$(MODULE_INSTALL_DIR)" \
 	    $(MKDIR) "$(MODULE_INSTALL_DIR)"
-	@echo Installing package http $(PKG_HTTP_VER) as a Tcl Module
+	@$(ECHO) Installing package http $(PKG_HTTP_VER) as a Tcl Module
 	@if not exist "$(MODULE_INSTALL_DIR)\9.0" \
 	    $(MKDIR) "$(MODULE_INSTALL_DIR)\9.0"
 	@$(COPY) "$(ROOT)\library\http\http.tcl" \
 	    "$(MODULE_INSTALL_DIR)\9.0\http-$(PKG_HTTP_VER).tm"
-	@echo Installing package msgcat $(PKG_MSGCAT_VER) as a Tcl Module
+	@$(ECHO) Installing package msgcat $(PKG_MSGCAT_VER) as a Tcl Module
 	@$(COPY) "$(ROOT)\library\msgcat\msgcat.tcl" \
 	    "$(MODULE_INSTALL_DIR)\9.0\msgcat-$(PKG_MSGCAT_VER).tm"
-	@echo Installing package tcltest $(PKG_TCLTEST_VER) as a Tcl Module
+	@$(ECHO) Installing package tcltest $(PKG_TCLTEST_VER) as a Tcl Module
 	@$(COPY) "$(ROOT)\library\tcltest\tcltest.tcl" \
 	    "$(MODULE_INSTALL_DIR)\9.0\tcltest-$(PKG_TCLTEST_VER).tm"
-	@echo Installing package platform $(PKG_PLATFORM_VER) as a Tcl Module
+	@$(ECHO) Installing package platform $(PKG_PLATFORM_VER) as a Tcl Module
 	@if not exist "$(MODULE_INSTALL_DIR)\9.0\platform" \
 	    $(MKDIR) "$(MODULE_INSTALL_DIR)\9.0\platform"
 	@$(COPY) "$(ROOT)\library\platform\platform.tcl" \
 	    "$(MODULE_INSTALL_DIR)\9.0\platform-$(PKG_PLATFORM_VER).tm"
-	@echo Installing package platform::shell $(PKG_SHELL_VER) as a Tcl Module
+	@$(ECHO) Installing package platform::shell $(PKG_SHELL_VER) as a Tcl Module
 	@$(COPY) "$(ROOT)\library\platform\shell.tcl" \
 	    "$(MODULE_INSTALL_DIR)\9.0\platform\shell-$(PKG_SHELL_VER).tm"
 !endif
-	@echo Installing $(TCLDDELIBNAME)
+	@$(ECHO) Installing $(TCLDDELIBNAME)
 	@$(CPY) "$(TCLDDELIB)" "$(LIB_INSTALL_DIR)\dde$(DDEDOTVERSION)\"
 	@$(CPY) "$(ROOT)\library\dde\pkgIndex.tcl" \
 	    "$(LIB_INSTALL_DIR)\dde$(DDEDOTVERSION)\"
-	@echo Installing $(TCLREGLIBNAME)
-	@$(CPY) "$(TCLREGLIB)" "$(LIB_INSTALL_DIR)\registry$(REGDOTVERSION)\"
+!if !$(TCL_EMBED_SCRIPTS)
+	@echo Installing registry package
 	@$(CPY) "$(ROOT)\library\registry\pkgIndex.tcl" \
 	    "$(LIB_INSTALL_DIR)\registry$(REGDOTVERSION)\"
-!if !$(TCL_EMBED_SCRIPTS)
-	@echo Installing encodings
+	@$(ECHO) Installing encodings
 	@$(CPY) "$(ROOT)\library\encoding\*.enc" \
 		"$(SCRIPT_INSTALL_DIR)\encoding\"
 !endif
@@ -1150,7 +1138,7 @@ install-libraries: tclConfig tcl-nmake install-msgs install-tzdata
 
 install-tzdata:
 !if !$(TCL_EMBED_SCRIPTS)
-	@echo Installing time zone data
+	@$(ECHO) Installing time zone data
 	@set TCL_LIBRARY=$(ROOT:\=/)/library
 	@$(TCLSH_NATIVE) "$(ROOT:\=/)/tools/installData.tcl" \
 	    "$(ROOT:\=/)/library/tzdata" "$(SCRIPT_INSTALL_DIR)/tzdata"
@@ -1158,14 +1146,14 @@ install-tzdata:
 
 install-msgs:
 !if !$(TCL_EMBED_SCRIPTS)
-	@echo Installing message catalogs
+	@$(ECHO) Installing message catalogs
 	@set TCL_LIBRARY=$(ROOT:\=/)/library
 	@$(TCLSH_NATIVE) "$(ROOT:\=/)/tools/installData.tcl" \
 	    "$(ROOT:\=/)/library/msgs" "$(SCRIPT_INSTALL_DIR)/msgs"
 !endif
 
 install-pdbs:
-	@echo Installing debug symbols
+	@$(ECHO) Installing debug symbols
 	@$(CPY) "$(OUT_DIR)\*.pdb" "$(BIN_INSTALL_DIR)\"
 # "emacs font-lock highlighting fix
 
@@ -1175,19 +1163,17 @@ install-pdbs:
 
 tidy:
 !if "$(TCLLIB)" != "$(TCLIMPLIB)"
-	@echo Removing $(TCLLIB) ...
+	@$(ECHO) Removing $(TCLLIB) ...
 	@if exist $(TCLLIB) del $(TCLLIB)
 !endif
-	@echo Removing $(TCLIMPLIB) ...
+	@$(ECHO) Removing $(TCLIMPLIB) ...
 	@if exist $(TCLIMPLIB) del $(TCLIMPLIB)
-	@echo Removing $(TCLSH) ...
+	@$(ECHO) Removing $(TCLSH) ...
 	@if exist $(TCLSH) del $(TCLSH)
-	@echo Removing $(TCLTEST) ...
+	@$(ECHO) Removing $(TCLTEST) ...
 	@if exist $(TCLTEST) del $(TCLTEST)
-	@echo Removing $(TCLDDELIB) ...
+	@$(ECHO) Removing $(TCLDDELIB) ...
 	@if exist $(TCLDDELIB) del $(TCLDDELIB)
-	@echo Removing $(TCLREGLIB) ...
-	@if exist $(TCLREGLIB) del $(TCLREGLIB)
 
 clean: default-clean clean-pkgs
 hose: default-hose hose-pkgs

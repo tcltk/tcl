@@ -20,7 +20,7 @@
 # None.
 
 proc auto_reset {} {
-    global auto_execs auto_index auto_path
+    global auto_index auto_path
     if {[array exists auto_index]} {
 	foreach cmdName [array names auto_index] {
 	    set fqcn [namespace which $cmdName]
@@ -30,7 +30,7 @@ proc auto_reset {} {
 	    rename $fqcn {}
 	}
     }
-    unset -nocomplain auto_execs auto_index ::tcl::auto_oldpath
+    unset -nocomplain auto_index ::tcl::auto_oldpath
     if {[catch {llength $auto_path}]} {
 	set auto_path [list [info library]]
     } elseif {[info library] ni $auto_path} {
@@ -216,7 +216,6 @@ proc tcl_findLibrary {basename version patch initScript enVarName varName} {
     append msg "This probably means that $basename wasn't installed properly.\n"
     error $msg
 }
-
 
 # ----------------------------------------------------------------------
 # auto_mkindex

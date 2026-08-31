@@ -16,33 +16,33 @@
 #include "tclInt.h"
 #include "tclOOInt.h"
 
-static Tcl_ObjCmdProc InfoObjectCallCmd;
-static Tcl_ObjCmdProc InfoObjectClassCmd;
-static Tcl_ObjCmdProc InfoObjectDefnCmd;
-static Tcl_ObjCmdProc InfoObjectFiltersCmd;
-static Tcl_ObjCmdProc InfoObjectForwardCmd;
-static Tcl_ObjCmdProc InfoObjectIdCmd;
-static Tcl_ObjCmdProc InfoObjectIsACmd;
-static Tcl_ObjCmdProc InfoObjectMethodsCmd;
-static Tcl_ObjCmdProc InfoObjectMethodTypeCmd;
-static Tcl_ObjCmdProc InfoObjectMixinsCmd;
-static Tcl_ObjCmdProc InfoObjectNsCmd;
-static Tcl_ObjCmdProc InfoObjectVarsCmd;
-static Tcl_ObjCmdProc InfoObjectVariablesCmd;
-static Tcl_ObjCmdProc InfoClassCallCmd;
-static Tcl_ObjCmdProc InfoClassConstrCmd;
-static Tcl_ObjCmdProc InfoClassDefnCmd;
-static Tcl_ObjCmdProc InfoClassDefnNsCmd;
-static Tcl_ObjCmdProc InfoClassDestrCmd;
-static Tcl_ObjCmdProc InfoClassFiltersCmd;
-static Tcl_ObjCmdProc InfoClassForwardCmd;
-static Tcl_ObjCmdProc InfoClassInstancesCmd;
-static Tcl_ObjCmdProc InfoClassMethodsCmd;
-static Tcl_ObjCmdProc InfoClassMethodTypeCmd;
-static Tcl_ObjCmdProc InfoClassMixinsCmd;
-static Tcl_ObjCmdProc InfoClassSubsCmd;
-static Tcl_ObjCmdProc InfoClassSupersCmd;
-static Tcl_ObjCmdProc InfoClassVariablesCmd;
+static Tcl_ObjCmdProc2 InfoObjectCallCmd;
+static Tcl_ObjCmdProc2 InfoObjectClassCmd;
+static Tcl_ObjCmdProc2 InfoObjectDefnCmd;
+static Tcl_ObjCmdProc2 InfoObjectFiltersCmd;
+static Tcl_ObjCmdProc2 InfoObjectForwardCmd;
+static Tcl_ObjCmdProc2 InfoObjectIdCmd;
+static Tcl_ObjCmdProc2 InfoObjectIsACmd;
+static Tcl_ObjCmdProc2 InfoObjectMethodsCmd;
+static Tcl_ObjCmdProc2 InfoObjectMethodTypeCmd;
+static Tcl_ObjCmdProc2 InfoObjectMixinsCmd;
+static Tcl_ObjCmdProc2 InfoObjectNsCmd;
+static Tcl_ObjCmdProc2 InfoObjectVarsCmd;
+static Tcl_ObjCmdProc2 InfoObjectVariablesCmd;
+static Tcl_ObjCmdProc2 InfoClassCallCmd;
+static Tcl_ObjCmdProc2 InfoClassConstrCmd;
+static Tcl_ObjCmdProc2 InfoClassDefnCmd;
+static Tcl_ObjCmdProc2 InfoClassDefnNsCmd;
+static Tcl_ObjCmdProc2 InfoClassDestrCmd;
+static Tcl_ObjCmdProc2 InfoClassFiltersCmd;
+static Tcl_ObjCmdProc2 InfoClassForwardCmd;
+static Tcl_ObjCmdProc2 InfoClassInstancesCmd;
+static Tcl_ObjCmdProc2 InfoClassMethodsCmd;
+static Tcl_ObjCmdProc2 InfoClassMethodTypeCmd;
+static Tcl_ObjCmdProc2 InfoClassMixinsCmd;
+static Tcl_ObjCmdProc2 InfoClassSubsCmd;
+static Tcl_ObjCmdProc2 InfoClassSupersCmd;
+static Tcl_ObjCmdProc2 InfoClassVariablesCmd;
 
 /*
  * List of commands that are used to implement the [info object] subcommands.
@@ -215,7 +215,7 @@ GetClassMethodFromObj(
 	goto unknownMethod;
     }
     mPtr = (Method *)Tcl_GetHashValue(hPtr);
-    if (mPtr->typePtr == NULL) {
+    if (mPtr->type2Ptr == NULL) {
 	/*
 	 * Special entry for visibility control: pretend the method doesnt
 	 * exist.
@@ -259,7 +259,7 @@ GetInstanceMethodFromObj(
 	goto unknownMethod;
     }
     mPtr = (Method *)Tcl_GetHashValue(hPtr);
-    if (mPtr->typePtr == NULL) {
+    if (mPtr->type2Ptr == NULL) {
 	/*
 	 * Special entry for visibility control: pretend the method doesnt
 	 * exist.
@@ -341,8 +341,8 @@ static int
 InfoObjectClassCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const objv[])
+    Tcl_Size objc,
+    Tcl_Obj *const *objv)
 {
     Object *oPtr;
 
@@ -398,8 +398,8 @@ static int
 InfoObjectDefnCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const objv[])
+    Tcl_Size objc,
+    Tcl_Obj *const *objv)
 {
     Object *oPtr;
     Method *mPtr;
@@ -449,8 +449,8 @@ static int
 InfoObjectFiltersCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const objv[])
+    Tcl_Size objc,
+    Tcl_Obj *const *objv)
 {
     Tcl_Size i;
     Tcl_Obj *filterObj, *resultObj;
@@ -488,8 +488,8 @@ static int
 InfoObjectForwardCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const objv[])
+    Tcl_Size objc,
+    Tcl_Obj *const *objv)
 {
     Object *oPtr;
     Method *mPtr;
@@ -535,8 +535,8 @@ static int
 InfoObjectIsACmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const objv[])
+    Tcl_Size objc,
+    Tcl_Obj *const *objv)
 {
     static const char *const categories[] = {
 	"class", "metaclass", "mixin", "object", "typeof", NULL
@@ -659,8 +659,8 @@ static int
 InfoObjectMethodsCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const objv[])
+    Tcl_Size objc,
+    Tcl_Obj *const *objv)
 {
     static const char *const options[] = {
 	"-all", "-localprivate", "-private", "-scope", NULL
@@ -677,7 +677,8 @@ InfoObjectMethodsCmd(
 	SCOPE_DEFAULT = -1
     };
     Object *oPtr;
-    int flag = PUBLIC_METHOD, recurse = 0, scope = SCOPE_DEFAULT;
+    int flag = PUBLIC_METHOD, scope = SCOPE_DEFAULT;
+    bool recurse = false;
     FOREACH_HASH_DECLS;
     Tcl_Obj *namePtr, *resultObj;
     Method *mPtr;
@@ -695,16 +696,14 @@ InfoObjectMethodsCmd(
 	return TCL_ERROR;
     }
     if (objc != 2) {
-	int i;
-
-	for (i=2 ; i<objc ; i++) {
+	for (Tcl_Size i=2 ; i<objc ; i++) {
 	    if (Tcl_GetIndexFromObj(interp, objv[i], options, "option", 0,
 		    &idx) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    switch (idx) {
 	    case OPT_ALL:
-		recurse = 1;
+		recurse = true;
 		break;
 	    case OPT_LOCALPRIVATE:
 		flag = PRIVATE_METHOD;
@@ -731,7 +730,7 @@ InfoObjectMethodsCmd(
 	}
     }
     if (scope != SCOPE_DEFAULT) {
-	recurse = 0;
+	recurse = false;
 	switch (scope) {
 	case SCOPE_PRIVATE:
 	    flag = TRUE_PRIVATE_METHOD;
@@ -769,13 +768,13 @@ InfoObjectMethodsCmd(
 	    int scopeFilter = flag | TRUE_PRIVATE_METHOD;
 
 	    FOREACH_HASH(namePtr, mPtr, oPtr->methodsPtr) {
-		if (mPtr->typePtr && (mPtr->flags & scopeFilter) == flag) {
+		if (mPtr->type2Ptr && (mPtr->flags & scopeFilter) == flag) {
 		    Tcl_ListObjAppendElement(NULL, resultObj, namePtr);
 		}
 	    }
 	} else {
 	    FOREACH_HASH(namePtr, mPtr, oPtr->methodsPtr) {
-		if (mPtr->typePtr && (mPtr->flags & SCOPE_FLAGS) == flag) {
+		if (mPtr->type2Ptr && (mPtr->flags & SCOPE_FLAGS) == flag) {
 		    Tcl_ListObjAppendElement(NULL, resultObj, namePtr);
 		}
 	    }
@@ -799,8 +798,8 @@ static int
 InfoObjectMethodTypeCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const objv[])
+    Tcl_Size objc,
+    Tcl_Obj *const *objv)
 {
     Object *oPtr;
     Method *mPtr;
@@ -820,7 +819,7 @@ InfoObjectMethodTypeCmd(
     }
 
     Tcl_SetObjResult(interp,
-	    Tcl_NewStringObj(mPtr->typePtr->name, TCL_AUTO_LENGTH));
+	    Tcl_NewStringObj(mPtr->type2Ptr->name, TCL_AUTO_LENGTH));
     return TCL_OK;
 }
 
@@ -838,8 +837,8 @@ static int
 InfoObjectMixinsCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const objv[])
+    Tcl_Size objc,
+    Tcl_Obj *const *objv)
 {
     Class *mixinPtr;
     Object *oPtr;
@@ -881,8 +880,8 @@ static int
 InfoObjectIdCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const objv[])
+    Tcl_Size objc,
+    Tcl_Obj *const *objv)
 {
     Object *oPtr;
 
@@ -913,8 +912,8 @@ static int
 InfoObjectNsCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const objv[])
+    Tcl_Size objc,
+    Tcl_Obj *const *objv)
 {
     Object *oPtr;
 
@@ -945,13 +944,13 @@ static int
 InfoObjectVariablesCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const objv[])
+    Tcl_Size objc,
+    Tcl_Obj *const *objv)
 {
     Object *oPtr;
     Tcl_Obj *resultObj;
     Tcl_Size i;
-    int isPrivate = 0;
+    bool isPrivate = false;
 
     if (objc != 2 && objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "objName ?-private?");
@@ -965,7 +964,7 @@ InfoObjectVariablesCmd(
 	    OO_ERROR(interp, BAD_ARG);
 	    return TCL_ERROR;
 	}
-	isPrivate = 1;
+	isPrivate = true;
     }
     oPtr = (Object *) Tcl_GetObjectFromObj(interp, objv[1]);
     if (oPtr == NULL) {
@@ -1004,8 +1003,8 @@ static int
 InfoObjectVarsCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const objv[])
+    Tcl_Size objc,
+    Tcl_Obj *const *objv)
 {
     Object *oPtr;
     const char *pattern = NULL;
@@ -1065,8 +1064,8 @@ static int
 InfoClassConstrCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const objv[])
+    Tcl_Size objc,
+    Tcl_Obj *const *objv)
 {
     Proc *procPtr;
     Tcl_Obj *resultObjs[2];
@@ -1108,8 +1107,8 @@ static int
 InfoClassDefnCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const objv[])
+    Tcl_Size objc,
+    Tcl_Obj *const *objv)
 {
     Method *mPtr;
     Proc *procPtr;
@@ -1153,10 +1152,10 @@ static int
 InfoClassDefnNsCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const objv[])
+    Tcl_Size objc,
+    Tcl_Obj *const *objv)
 {
-    static const char *kindList[] = {
+    static const char *const kindList[] = {
 	"-class",
 	"-instance",
 	NULL
@@ -1203,8 +1202,8 @@ static int
 InfoClassDestrCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const objv[])
+    Tcl_Size objc,
+    Tcl_Obj *const *objv)
 {
     Proc *procPtr;
     Class *clsPtr;
@@ -1244,8 +1243,8 @@ static int
 InfoClassFiltersCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const objv[])
+    Tcl_Size objc,
+    Tcl_Obj *const *objv)
 {
     Tcl_Size i;
     Tcl_Obj *filterObj, *resultObj;
@@ -1282,8 +1281,8 @@ static int
 InfoClassForwardCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const objv[])
+    Tcl_Size objc,
+    Tcl_Obj *const *objv)
 {
     Method *mPtr;
     Tcl_Obj *prefixObj;
@@ -1324,8 +1323,8 @@ static int
 InfoClassInstancesCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const objv[])
+    Tcl_Size objc,
+    Tcl_Obj *const *objv)
 {
     Object *oPtr;
     Class *clsPtr;
@@ -1372,8 +1371,8 @@ static int
 InfoClassMethodsCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const objv[])
+    Tcl_Size objc,
+    Tcl_Obj *const *objv)
 {
     static const char *const options[] = {
 	"-all", "-localprivate", "-private", "-scope", NULL
@@ -1388,7 +1387,8 @@ InfoClassMethodsCmd(
 	SCOPE_PRIVATE, SCOPE_PUBLIC, SCOPE_UNEXPORTED,
 	SCOPE_DEFAULT = -1
     };
-    int flag = PUBLIC_METHOD, recurse = 0, scope = SCOPE_DEFAULT;
+    int flag = PUBLIC_METHOD, scope = SCOPE_DEFAULT;
+    bool recurse = false;
     Tcl_Obj *namePtr, *resultObj;
     Method *mPtr;
     Class *clsPtr;
@@ -1402,16 +1402,14 @@ InfoClassMethodsCmd(
 	return TCL_ERROR;
     }
     if (objc != 2) {
-	int i;
-
-	for (i=2 ; i<objc ; i++) {
+	for (Tcl_Size i=2 ; i<objc ; i++) {
 	    if (Tcl_GetIndexFromObj(interp, objv[i], options, "option", 0,
 		    &idx) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    switch (idx) {
 	    case OPT_ALL:
-		recurse = 1;
+		recurse = true;
 		break;
 	    case OPT_LOCALPRIVATE:
 		flag = PRIVATE_METHOD;
@@ -1438,7 +1436,7 @@ InfoClassMethodsCmd(
 	}
     }
     if (scope != SCOPE_DEFAULT) {
-	recurse = 0;
+	recurse = false;
 	switch (scope) {
 	case SCOPE_PRIVATE:
 	    flag = TRUE_PRIVATE_METHOD;
@@ -1473,13 +1471,13 @@ InfoClassMethodsCmd(
 	    int scopeFilter = flag | TRUE_PRIVATE_METHOD;
 
 	    FOREACH_HASH(namePtr, mPtr, &clsPtr->classMethods) {
-		if (mPtr->typePtr && (mPtr->flags & scopeFilter) == flag) {
+		if (mPtr->type2Ptr && (mPtr->flags & scopeFilter) == flag) {
 		    Tcl_ListObjAppendElement(NULL, resultObj, namePtr);
 		}
 	    }
 	} else {
 	    FOREACH_HASH(namePtr, mPtr, &clsPtr->classMethods) {
-		if (mPtr->typePtr && (mPtr->flags & SCOPE_FLAGS) == flag) {
+		if (mPtr->type2Ptr && (mPtr->flags & SCOPE_FLAGS) == flag) {
 		    Tcl_ListObjAppendElement(NULL, resultObj, namePtr);
 		}
 	    }
@@ -1503,8 +1501,8 @@ static int
 InfoClassMethodTypeCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const objv[])
+    Tcl_Size objc,
+    Tcl_Obj *const *objv)
 {
     Method *mPtr;
     Class *clsPtr;
@@ -1523,7 +1521,7 @@ InfoClassMethodTypeCmd(
 	return TCL_ERROR;
     }
     Tcl_SetObjResult(interp,
-	    Tcl_NewStringObj(mPtr->typePtr->name, TCL_AUTO_LENGTH));
+	    Tcl_NewStringObj(mPtr->type2Ptr->name, TCL_AUTO_LENGTH));
     return TCL_OK;
 }
 
@@ -1541,8 +1539,8 @@ static int
 InfoClassMixinsCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const objv[])
+    Tcl_Size objc,
+    Tcl_Obj *const *objv)
 {
     Class *clsPtr, *mixinPtr;
     Tcl_Obj *resultObj;
@@ -1583,8 +1581,8 @@ static int
 InfoClassSubsCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const objv[])
+    Tcl_Size objc,
+    Tcl_Obj *const *objv)
 {
     Class *clsPtr, *subclassPtr;
     Tcl_Obj *resultObj;
@@ -1638,8 +1636,8 @@ static int
 InfoClassSupersCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const objv[])
+    Tcl_Size objc,
+    Tcl_Obj *const *objv)
 {
     Class *clsPtr, *superPtr;
     Tcl_Obj *resultObj;
@@ -1677,13 +1675,13 @@ static int
 InfoClassVariablesCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const objv[])
+    Tcl_Size objc,
+    Tcl_Obj *const *objv)
 {
     Class *clsPtr;
     Tcl_Obj *resultObj;
     Tcl_Size i;
-    int isPrivate = 0;
+    bool isPrivate = false;
 
     if (objc != 2 && objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "className ?-private?");
@@ -1697,7 +1695,7 @@ InfoClassVariablesCmd(
 	    OO_ERROR(interp, BAD_ARG);
 	    return TCL_ERROR;
 	}
-	isPrivate = 1;
+	isPrivate = true;
     }
     clsPtr = TclOOGetClassFromObj(interp, objv[1]);
     if (clsPtr == NULL) {
@@ -1736,8 +1734,8 @@ static int
 InfoObjectCallCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const objv[])
+    Tcl_Size objc,
+    Tcl_Obj *const *objv)
 {
     Object *oPtr;
     CallContext *contextPtr;
@@ -1783,8 +1781,8 @@ static int
 InfoClassCallCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const objv[])
+    Tcl_Size objc,
+    Tcl_Obj *const *objv)
 {
     Class *clsPtr;
     CallChain *callPtr;

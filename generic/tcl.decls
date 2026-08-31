@@ -116,6 +116,9 @@ declare 25 {
     Tcl_Obj *Tcl_DbNewListObj(Tcl_Size objc, Tcl_Obj *const *objv,
 	    const char *file, int line)
 }
+declare 26 {
+    void Tcl_SetTimer2(long long time)
+}
 declare 27 {
     Tcl_Obj *Tcl_DbNewObj(const char *file, int line)
 }
@@ -135,6 +138,9 @@ declare 34 {
 declare 35 {
     int Tcl_GetDoubleFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
 	    double *doublePtr)
+}
+declare 36 {
+    int Tcl_WaitForEvent2(long long time)
 }
 declare 37 {
     int Tcl_GetInt(Tcl_Interp *interp, const char *src, int *intPtr)
@@ -178,11 +184,18 @@ declare 48 {
     int Tcl_ListObjReplace(Tcl_Interp *interp, Tcl_Obj *listPtr, Tcl_Size first,
 	    Tcl_Size count, Tcl_Size objc, Tcl_Obj *const objv[])
 }
+declare 49 {
+    void Tcl_SetMaxBlockTime2(long long time)
+}
 declare 50 {
     Tcl_Obj *Tcl_NewByteArrayObj(const unsigned char *bytes, Tcl_Size numBytes)
 }
 declare 51 {
     Tcl_Obj *Tcl_NewDoubleObj(double doubleValue)
+}
+declare 52 {
+    void Tcl_ConditionWait2(Tcl_Condition *condPtr, Tcl_Mutex *mutexPtr,
+	    long long time)
 }
 declare 53 {
     Tcl_Obj *Tcl_NewListObj(Tcl_Size objc, Tcl_Obj *const objv[])
@@ -205,6 +218,9 @@ declare 60 {
 }
 declare 62 {
     void Tcl_SetListObj(Tcl_Obj *objPtr, Tcl_Size objc, Tcl_Obj *const objv[])
+}
+declare 63 {
+    void Tcl_LimitSetTime2(Tcl_Interp *interp, long long timeLimit)
 }
 declare 64 {
     void Tcl_SetObjLength(Tcl_Obj *objPtr, Tcl_Size length)
@@ -236,6 +252,12 @@ declare 74 {
 }
 declare 75 {
     int Tcl_AsyncReady(void)
+}
+declare 76 {
+    long long Tcl_LimitGetTime2(Tcl_Interp *interp)
+}
+declare 77 {
+    long long Tcl_GetDayTime(void)
 }
 declare 78 {
     int Tcl_BadChannelOption(Tcl_Interp *interp, const char *optionName,
@@ -1038,6 +1060,16 @@ declare 338 {
 declare 339 {
     Tcl_Size Tcl_WriteObj(Tcl_Channel chan, Tcl_Obj *objPtr)
 }
+declare 340 {
+    long long Tcl_GetMonotonicTime(void)
+}
+declare 341 {
+    Tcl_TimerToken  Tcl_CreateTimerHandlerMicroSeconds(long long microSeconds,
+	    Tcl_TimerProc *proc, void *clientData)
+}
+declare 342 {
+    void Tcl_SleepMicroSeconds(long long microSeconds)
+}
 declare 343 {
     void Tcl_AlertNotifier(void *clientData)
 }
@@ -1771,12 +1803,12 @@ declare 551 {
 }
 
 # TIP#233 (virtualized time) akupries
-declare 552 {
+declare 552 {deprecated {No longer supported}} {
     void Tcl_SetTimeProc(Tcl_GetTimeProc *getProc,
 	    Tcl_ScaleTimeProc *scaleProc,
 	    void *clientData)
 }
-declare 553 {
+declare 553 {deprecated {No longer supported}} {
     void Tcl_QueryTimeProc(Tcl_GetTimeProc **getProc,
 	    Tcl_ScaleTimeProc **scaleProc,
 	    void **clientData)
@@ -2026,11 +2058,11 @@ declare 611 {
 	    Tcl_Size buffersize, Tcl_Obj *gzipHeaderDictObj)
 }
 declare 612 {
-    unsigned int Tcl_ZlibCRC32(unsigned int crc, const unsigned char *buf,
+    unsigned Tcl_ZlibCRC32(unsigned crc, const unsigned char *buf,
 	    Tcl_Size len)
 }
 declare 613 {
-    unsigned int Tcl_ZlibAdler32(unsigned int adler, const unsigned char *buf,
+    unsigned Tcl_ZlibAdler32(unsigned adler, const unsigned char *buf,
 	    Tcl_Size len)
 }
 declare 614 {
@@ -2108,7 +2140,7 @@ declare 630 {
 # TIP #456/#468
 declare 631 {
     Tcl_Channel Tcl_OpenTcpServerEx(Tcl_Interp *interp, const char *service,
-	    const char *host, unsigned int flags, int backlog,
+	    const char *host, unsigned flags, int backlog,
 	    Tcl_TcpAcceptProc *acceptProc, void *callbackData)
 }
 
@@ -2405,9 +2437,40 @@ declare 696 {
 	    char *bufPtr, Tcl_Size bufLen, Tcl_Size *lengthPtr)
 }
 
+# TIP 732
+declare 697 {
+    int Tcl_ExternalToUtfEx(
+	    Tcl_Interp *interp, Tcl_Encoding encoding, const char *src,
+	    Tcl_Size srcLen, int flags, Tcl_EncodingState *statePtr, char *dst,
+	    Tcl_Size dstLen, Tcl_Size *srcReadPtr, Tcl_Size *dstWrotePtr,
+	    Tcl_Size *dstCharsPtr)
+}
+
+declare 698 {
+    int Tcl_UtfToExternalEx(
+	    Tcl_Interp *interp, Tcl_Encoding encoding, const char *src,
+	    Tcl_Size srcLen, int flags, Tcl_EncodingState *statePtr, char *dst,
+	    Tcl_Size dstLen, Tcl_Size *srcReadPtr, Tcl_Size *dstWrotePtr,
+	    Tcl_Size *dstCharsPtr)
+}
+
+declare 699 {
+    int Tcl_RegisterPostInitProc(Tcl_PostInitProc *postInitProc,
+	    void * clientData)
+}
+
+declare 700 {
+    int Tcl_UnregisterPostInitProc(Tcl_PostInitProc *postInitProc,
+	    void * clientData)
+}
+
+declare 701 {
+    int Tcl_ClearPostInitProcs(void)
+}
+
 # ----- BASELINE -- FOR -- 9.1.0 ----- #
 
-declare 697 {
+declare 702 {
     void TclUnusedStubEntry(void)
 }
 
@@ -2466,7 +2529,7 @@ export {
 	int exact)
 }
 export {
-    const char *TclTomMathInitializeStubs(Tcl_Interp* interp,
+    const char *TclTomMathInitializeStubs(Tcl_Interp *interp,
 	const char* version, int epoch, int revision)
 }
 export {

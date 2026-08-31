@@ -17,7 +17,6 @@
 #pragma clang diagnostic ignored "-Wc++-keyword"
 #endif
 
-
 /*
  * The following variable is used to tell whether this module has been
  * initialized.
@@ -92,8 +91,8 @@ typedef struct SerialInfo {
     int readable;		/* Flag that the channel is readable. */
     int writable;		/* Flag that the channel is writable. */
     int blockTime;		/* Maximum blocktime in msec. */
-    unsigned long long lastEventTime;
-				/* Time in milliseconds since last readable
+    long long lastEventTime;
+				/* Time in microseconds since last readable
 				 * event. */
 				/* Next readable event only after blockTime */
     DWORD error;		/* pending error code returned by
@@ -358,38 +357,7 @@ static void
 SerialBlockTime(
     int msec)			/* milli-seconds */
 {
-    Tcl_Time blockTime;
-
-    blockTime.sec  =  msec / 1000;
-    blockTime.usec = (msec % 1000) * 1000;
-    Tcl_SetMaxBlockTime(&blockTime);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * SerialGetMilliseconds --
- *
- *	Get current time in milliseconds,ignoring integer overruns.
- *
- * Results:
- *	The current time.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-static unsigned long long
-SerialGetMilliseconds(void)
-{
-    Tcl_Time time;
-
-    Tcl_GetTime(&time);
-
-    return (unsigned long long)time.sec * 1000
-	    + (unsigned long)time.usec / 1000;
+    Tcl_SetMaxBlockTime2(msec * 1000);
 }
 
 /*
@@ -413,7 +381,7 @@ SerialGetMilliseconds(void)
 #define min(a, b)  (((a) < (b)) ? (a) : (b))
 #endif
 
-void
+static void
 SerialSetupProc(
     TCL_UNUSED(void *),
     int flags)			/* Event flags as passed to Tcl_DoOneEvent. */
@@ -478,7 +446,7 @@ SerialCheckProc(
     int needEvent;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     COMSTAT cStat;
-    unsigned long long time;
+    long long time;
 
     if (!(flags & TCL_FILE_EVENTS)) {
 	return;
@@ -527,9 +495,9 @@ SerialCheckProc(
 		    if ((cStat.cbInQue > 0) ||
 			    (infoPtr->error & SERIAL_READ_ERRORS)) {
 			infoPtr->readable = 1;
-			time = SerialGetMilliseconds();
+			time = Tcl_GetMonotonicTime();
 			if ((time - infoPtr->lastEventTime)
-				>= (unsigned long long) infoPtr->blockTime) {
+				>= infoPtr->blockTime * 1000LL) {
 			    needEvent = 1;
 			    infoPtr->lastEventTime = time;
 			}
@@ -716,10 +684,10 @@ SerialBlockingRead(
     LPOVERLAPPED osPtr)		/* OVERLAPPED structure */
 {
     /*
-     *  Perform overlapped blocking read.
-     *  1. Reset the overlapped event
-     *  2. Start overlapped read operation
-     *  3. Wait for completion
+     * Perform overlapped blocking read.
+     * 1. Reset the overlapped event
+     * 2. Start overlapped read operation
+     * 3. Wait for completion
      */
 
     /*
@@ -782,12 +750,12 @@ SerialBlockingWrite(
 
     /*
      * Perform overlapped blocking write.
-     *  1. Reset the overlapped event
-     *  2. Remove these bytes from the output queue counter
-     *  3. Start overlapped write operation
-     *  3. Remove these bytes from the output queue counter
-     *  4. Wait for completion
-     *  5. Adjust the output queue counter
+     * 1. Reset the overlapped event
+     * 2. Remove these bytes from the output queue counter
+     * 3. Start overlapped write operation
+     * 4. Remove these bytes from the output queue counter
+     * 5. Wait for completion
+     * 6. Adjust the output queue counter
      */
 
     ResetEvent(osPtr->hEvent);
@@ -1053,7 +1021,6 @@ SerialOutputProc(
 	ResetEvent(infoPtr->evWritable);
 	TclPipeThreadSignal(&infoPtr->writeTI);
 	bytesWritten = (DWORD) toWrite;
-
     } else {
 	/*
 	 * In the blocking case, just try to write the buffer directly. This
@@ -1909,21 +1876,24 @@ SerialSetOptionProc(
 	 * -sysbuffer 4096 or -sysbuffer {64536 4096}
 	 */
 
-	int inSize = -1, outSize = -1;
+	int inSize = -1, outSize = -1, parseState = TCL_OK;
 
 	if (Tcl_SplitList(interp, value, &argc, &argv) == TCL_ERROR) {
 	    return TCL_ERROR;
 	}
 	if (argc == 1) {
-	    inSize = atoi(argv[0]);
+	    parseState = Tcl_GetInt(NULL, argv[0], &inSize);
 	    outSize = infoPtr->sysBufWrite;
 	} else if (argc == 2) {
-	    inSize  = atoi(argv[0]);
-	    outSize = atoi(argv[1]);
+	    parseState = Tcl_GetInt(NULL, argv[0], &inSize);
+	    if (parseState == TCL_OK) {
+		parseState = Tcl_GetInt(NULL, argv[1], &outSize);
+	    }
 	}
 	Tcl_Free((void *)argv);
 
-	if ((argc < 1) || (argc > 2) || (inSize <= 0) || (outSize <= 0)) {
+	if ((argc < 1) || (argc > 2) || (parseState != TCL_OK)
+		|| (inSize <= 0) || (outSize <= 0)) {
 	    if (interp != NULL) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"bad value \"%s\" for -sysbuffer: should be "

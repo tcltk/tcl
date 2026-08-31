@@ -4,8 +4,8 @@
  *	This file provides the generic portions (those that are the same on
  *	all platforms and for all channel types) of Tcl's IO facilities.
  *
- * Copyright (c) 1998-2000 Ajuba Solutions
- * Copyright (c) 1995-1997 Sun Microsystems, Inc.
+ * Copyright © 1998-2000 Ajuba Solutions
+ * Copyright © 1995-1997 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -129,7 +129,7 @@ typedef struct ChannelState {
     char *channelName;		/* The name of the channel instance in Tcl
 				 * commands. Storage is owned by the generic
 				 * IO code, is dynamically allocated. */
-    int	flags;			/* OR'ed combination of the flags defined
+    int flags;			/* OR'ed combination of the flags defined
 				 * below. */
     Tcl_Encoding encoding;	/* Encoding to apply when reading or writing
 				 * data on this channel. NULL means no

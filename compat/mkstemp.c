@@ -3,7 +3,7 @@
  *
  *	Source code for the "mkstemp" library routine.
  *
- * Copyright (c) 2009 Donal K. Fellows
+ * Copyright © 2009 Donal K. Fellows
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.

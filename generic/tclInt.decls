@@ -122,7 +122,7 @@ declare 45 {
     int TclHideUnsafeCommands(Tcl_Interp *interp)
 }
 declare 46 {
-    int TclInExit(void)
+    bool TclInExit(void)
 }
 # Removed in 9.0:
 #declare 50 {
@@ -398,10 +398,10 @@ declare 171 {
 	    Tcl_Size objc, Tcl_Obj *const objv[])
 }
 declare 172 {
-    int TclInThreadExit(void)
+    bool TclInThreadExit(void)
 }
 declare 173 {
-    int TclUniCharMatch(const Tcl_UniChar *string, Tcl_Size strLen,
+    bool TclUniCharMatch(const Tcl_UniChar *string, Tcl_Size strLen,
 	    const Tcl_UniChar *pattern, Tcl_Size ptnLen, int flags)
 }
 declare 175 {
@@ -508,7 +508,7 @@ declare 227 {
 }
 declare 229 {
     int	TclPtrMakeUpvar(Tcl_Interp *interp, Var *otherP1Ptr,
-	    const char *myName, int myFlags, int index)
+	    const char *myName, int myFlags, Tcl_Size index)
 }
 declare 230 {
     Var *TclObjLookupVar(Tcl_Interp *interp, Tcl_Obj *part1Ptr,
@@ -523,7 +523,7 @@ declare 231 {
 # Bits and pieces of TIP#280's guts
 declare 232 {
     int TclEvalObjEx(Tcl_Interp *interp, Tcl_Obj *objPtr, int flags,
-	    const CmdFrame *invoker, int word)
+	    const CmdFrame *invoker, Tcl_Size word)
 }
 declare 233 {
     void TclGetSrcInfoForPc(CmdFrame *contextPtr)
@@ -559,7 +559,7 @@ declare 240 {
 }
 declare 241 {
     int TclNREvalObjEx(Tcl_Interp *interp, Tcl_Obj *objPtr, int flags,
-	    const CmdFrame *invoker, int word)
+	    const CmdFrame *invoker, Tcl_Size word)
 }
 declare 242 {
     int TclNREvalObjv(Tcl_Interp *interp, Tcl_Size objc,
@@ -690,7 +690,7 @@ declare 15 {
 	    TclFile errorFile, Tcl_Pid *pidPtr)
 }
 declare 16 {
-    int TclpIsAtty(int fd)
+    bool TclpIsAtty(int fd)
 }
 declare 17 {
     int TclUnixCopyFile(const char *src, const char *dst,

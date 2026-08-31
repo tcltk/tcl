@@ -296,13 +296,10 @@ Tcl_MainEx(
     Tcl_Channel chan;
     InteractiveState is;
 
-    TclpSetInitialEncodings();
     if (argc > 0) {
 	--argc;			/* consume argv[0] */
 	++i;
     }
-    TclpFindExecutable((const char *)argv[0]);	/* nb: this could be NULL
-						 * w/ (eg) an empty argv supplied to execve() */
 
     Tcl_InitMemory(interp);
 
@@ -529,9 +526,9 @@ Tcl_MainEx(
 	    if (code != TCL_OK) {
 		chan = Tcl_GetStdChannel(TCL_STDERR);
 		if (chan) {
-			if (Tcl_WriteObj(chan, Tcl_GetObjResult(interp)) < 0) {
-			    Tcl_WriteChars(chan, ENCODING_ERROR, -1);
-			}
+		    if (Tcl_WriteObj(chan, Tcl_GetObjResult(interp)) < 0) {
+			Tcl_WriteChars(chan, ENCODING_ERROR, -1);
+		    }
 		    Tcl_WriteChars(chan, "\n", 1);
 		}
 	    } else if (is.tty) {

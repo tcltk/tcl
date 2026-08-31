@@ -52,7 +52,7 @@ typedef struct {
 				 * invoked step trace */
     int curFlags;		/* Trace flags for the current command */
     int curCode;		/* Return code for the current command */
-    size_t refCount;		/* Used to ensure this structure is not
+    Tcl_Size refCount;		/* Used to ensure this structure is not
 				 * deleted too early. Keeps track of how many
 				 * pieces of code have a pointer to this
 				 * structure. */
@@ -97,7 +97,7 @@ typedef enum TraceOptions {
     TRACE_ADD, TRACE_INFO, TRACE_REMOVE
 } TraceOptions;
 typedef int (Tcl_TraceTypeObjCmd)(Tcl_Interp *interp, TraceOptions optionIndex,
-	Tcl_Size objc, Tcl_Obj *const objv[]);
+	Tcl_Size objc, Tcl_Obj *const *objv);
 
 static Tcl_TraceTypeObjCmd TraceVariableObjCmd;
 static Tcl_TraceTypeObjCmd TraceCommandObjCmd;
@@ -125,18 +125,20 @@ static Tcl_TraceTypeObjCmd *const traceSubCmds[] = {
 
 static int		CallTraceFunction(Tcl_Interp *interp, Trace *tracePtr,
 			    Command *cmdPtr, const char *command, Tcl_Size numChars,
-			    Tcl_Size objc, Tcl_Obj *const objv[]);
+			    Tcl_Size objc, Tcl_Obj *const *objv);
 static char *		TraceVarProc(void *clientData, Tcl_Interp *interp,
 			    const char *name1, const char *name2, int flags);
 static void		TraceCommandProc(void *clientData,
 			    Tcl_Interp *interp, const char *oldName,
 			    const char *newName, int flags);
 static Tcl_CmdObjTraceProc2 TraceExecutionProc;
+#ifndef TCL_NO_DEPRECATED
 static int		StringTraceProc(void *clientData,
 			    Tcl_Interp *interp, Tcl_Size level,
 			    const char *command, Tcl_Command commandInfo,
-			    Tcl_Size objc, Tcl_Obj *const objv[]);
+			    Tcl_Size objc, Tcl_Obj *const *objv);
 static void		StringTraceDeleteProc(void *clientData);
+#endif /* TCL_NO_DEPRECATED */
 static void		DisposeTraceResult(int flags, char *result);
 static int		TraceVarEx(Tcl_Interp *interp, const char *part1,
 			    const char *part2, VarTrace *tracePtr);
@@ -146,10 +148,12 @@ static int		TraceVarEx(Tcl_Interp *interp, const char *part1,
  * trace procs
  */
 
+#ifndef TCL_NO_DEPRECATED
 typedef struct {
     void *clientData;		/* Client data from Tcl_CreateTrace */
     Tcl_CmdTraceProc *proc;	/* Trace function from Tcl_CreateTrace */
 } StringTraceData;
+#endif /* TCL_NO_DEPRECATED */
 
 /*
  * Convenience macros for iterating over the list of traces. Note that each of
@@ -189,8 +193,8 @@ int
 Tcl_TraceObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
+    Tcl_Size objc,		/* Number of arguments. */
+    Tcl_Obj *const *objv)	/* Argument objects. */
 {
     /* Main sub commands to 'trace' */
     static const char *const traceOptions[] = {
@@ -282,7 +286,7 @@ TraceExecutionObjCmd(
     Tcl_Interp *interp,		/* Current interpreter. */
     TraceOptions optionIndex,	/* Add, info or remove */
     Tcl_Size objc,		/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
+    Tcl_Obj *const *objv)	/* Argument objects. */
 {
     const char *name, *command;
     Tcl_Size length;
@@ -533,7 +537,7 @@ TraceCommandObjCmd(
     Tcl_Interp *interp,		/* Current interpreter. */
     TraceOptions optionIndex,	/* Add, info or remove */
     Tcl_Size objc,		/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
+    Tcl_Obj *const *objv)	/* Argument objects. */
 {
     const char *name, *command;
     Tcl_Size length;
@@ -731,7 +735,7 @@ TraceVariableObjCmd(
     Tcl_Interp *interp,		/* Current interpreter. */
     TraceOptions optionIndex,	/* Add, info or remove */
     Tcl_Size objc,		/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
+    Tcl_Obj *const *objv)	/* Argument objects. */
 {
     const char *name, *command;
     Tcl_Size length;
@@ -1308,7 +1312,7 @@ TclCheckExecutionTraces(
     int code,			/* The current result code. */
     int traceFlags,		/* Current tracing situation. */
     Tcl_Size objc,		/* Number of arguments for the command. */
-    Tcl_Obj *const objv[])	/* Pointers to Tcl_Obj of each argument. */
+    Tcl_Obj *const *objv)	/* Pointers to Tcl_Obj of each argument. */
 {
     Interp *iPtr = (Interp *) interp;
     CommandTrace *tracePtr, *lastTracePtr;
@@ -1336,7 +1340,7 @@ TclCheckExecutionTraces(
 	     * Execute the trace command in order of creation for "leave".
 	     */
 
-	    active.reverseScan = 1;
+	    active.reverseScan = true;
 	    active.nextTracePtr = NULL;
 	    tracePtr = cmdPtr->tracePtr;
 	    while (tracePtr->nextPtr != lastTracePtr) {
@@ -1344,7 +1348,7 @@ TclCheckExecutionTraces(
 		tracePtr = tracePtr->nextPtr;
 	    }
 	} else {
-	    active.reverseScan = 0;
+	    active.reverseScan = false;
 	    active.nextTracePtr = tracePtr->nextPtr;
 	}
 	if (tracePtr->traceProc == TraceCommandProc) {
@@ -1414,7 +1418,7 @@ TclCheckInterpTraces(
     int code,			/* The current result code. */
     int traceFlags,		/* Current tracing situation. */
     Tcl_Size objc,		/* Number of arguments for the command. */
-    Tcl_Obj *const objv[])	/* Pointers to Tcl_Obj of each argument. */
+    Tcl_Obj *const *objv)	/* Pointers to Tcl_Obj of each argument. */
 {
     Interp *iPtr = (Interp *) interp;
     Trace *tracePtr, *lastTracePtr;
@@ -1447,7 +1451,7 @@ TclCheckInterpTraces(
 	     * results in one more reversal of trace invocation.
 	     */
 
-	    active.reverseScan = 1;
+	    active.reverseScan = true;
 	    active.nextTracePtr = NULL;
 	    tracePtr = iPtr->tracePtr;
 	    while (tracePtr->nextPtr != lastTracePtr) {
@@ -1458,7 +1462,7 @@ TclCheckInterpTraces(
 		lastTracePtr = active.nextTracePtr->nextPtr;
 	    }
 	} else {
-	    active.reverseScan = 0;
+	    active.reverseScan = false;
 	    active.nextTracePtr = tracePtr->nextPtr;
 	}
 
@@ -1558,7 +1562,7 @@ CallTraceFunction(
     Tcl_Size numChars,		/* The number of characters in the command's
 				 * source. */
     Tcl_Size objc,		/* Number of arguments for the command. */
-    Tcl_Obj *const objv[])	/* Pointers to Tcl_Obj of each argument. */
+    Tcl_Obj *const *objv)	/* Pointers to Tcl_Obj of each argument. */
 {
     Interp *iPtr = (Interp *) interp;
     char *commandCopy;
@@ -1644,7 +1648,7 @@ TraceExecutionProc(
     const char *command,
     TCL_UNUSED(Tcl_Command),
     Tcl_Size objc,
-    Tcl_Obj *const objv[])
+    Tcl_Obj *const *objv)
 {
     int call = 0;
     Interp *iPtr = (Interp *) interp;
@@ -1958,7 +1962,7 @@ TraceVarProc(
  *		  const char *	 command,
  *		  Tcl_Command	 commandInfo,
  *		  int		 objc,
- *		  Tcl_Obj *const objv[]);
+ *		  Tcl_Obj *const *objv);
  *
  *	The 'clientData' and 'interp' arguments to 'proc' will be the same as
  *	the arguments to Tcl_CreateObjTrace. The 'level' argument gives the
@@ -1991,6 +1995,7 @@ TraceVarProc(
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_DEPRECATED
 typedef struct {
     Tcl_CmdObjTraceProc *proc;
     Tcl_CmdObjTraceDeleteProc *delProc;
@@ -2005,7 +2010,7 @@ TraceWrapperProc(
     const char *command,
     Tcl_Command commandInfo,
     Tcl_Size objc,
-    Tcl_Obj *const objv[])
+    Tcl_Obj *const *objv)
 {
     TraceWrapperInfo *info = (TraceWrapperInfo *)clientData;
     if (objc > INT_MAX || objc < 0) {
@@ -2027,6 +2032,7 @@ TraceWrapperDelProc(
     Tcl_Free(info);
 }
 
+#undef Tcl_CreateObjTrace
 Tcl_Trace
 Tcl_CreateObjTrace(
     Tcl_Interp *interp,		/* Tcl interpreter */
@@ -2045,6 +2051,7 @@ Tcl_CreateObjTrace(
 	    (proc ? TraceWrapperProc : NULL),
 	    info, TraceWrapperDelProc);
 }
+#endif /* TCL_NO_DEPRECATED */
 
 Tcl_Trace
 Tcl_CreateObjTrace2(
@@ -2135,6 +2142,7 @@ Tcl_CreateObjTrace2(
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_DEPRECATED
 Tcl_Trace
 Tcl_CreateTrace(
     Tcl_Interp *interp,		/* Interpreter in which to create trace. */
@@ -2230,6 +2238,7 @@ StringTraceDeleteProc(
 {
     Tcl_Free(clientData);
 }
+#endif /* TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------
@@ -2448,7 +2457,7 @@ TclCheckArrayTraces(
 int
 TclObjCallVarTraces(
     Interp *iPtr,		/* Interpreter containing variable. */
-    Var *arrayPtr,	/* Pointer to array variable that contains the
+    Var *arrayPtr,		/* Pointer to array variable that contains the
 				 * variable, or NULL if the variable isn't an
 				 * element of an array. */
     Var *varPtr,		/* Variable whose traces are to be invoked. */
@@ -2482,7 +2491,7 @@ TclObjCallVarTraces(
 int
 TclCallVarTraces(
     Interp *iPtr,		/* Interpreter containing variable. */
-    Var *arrayPtr,	/* Pointer to array variable that contains the
+    Var *arrayPtr,		/* Pointer to array variable that contains the
 				 * variable, or NULL if the variable isn't an
 				 * element of an array. */
     Var *varPtr,		/* Variable whose traces are to be invoked. */

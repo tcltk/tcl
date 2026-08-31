@@ -87,7 +87,6 @@ proc getTopics {pkg sect} {
 # Arguments:
 # string -		Text to index.
 
-
 proc text string {
     global state curID curPkg curSect topics keywords
 
@@ -117,7 +116,6 @@ proc text string {
 	}
     }
 }
-
 
 # macro --
 #
@@ -165,7 +163,6 @@ proc macro {name args} {
     }
 }
 
-
 # dash --
 #
 # This procedure is invoked to handle dash characters ("\-" in
@@ -180,8 +177,6 @@ proc dash {} {
 	set state DASH
     }
 }
-
-
 
 # initGlobals, tab, font, char, macro2 --
 #
