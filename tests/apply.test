@@ -85,6 +85,7 @@ test apply-3.2 {non-existing namespace} -body {
     apply $lambda x
 } -returnCodes error -result {namespace "::NONEXIST::FOR::SURE" not found}
 test apply-3.2.2 {non-existing namespace (recreated between apply-calls)} -body {
+    set res {}
     namespace eval ::NONEXIST::FOR::SURE {}
     set lambda {{step} {variable x; lappend x $step} ::NONEXIST::FOR::SURE}
     lappend res [catch { apply $lambda A} x] $x
