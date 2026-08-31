@@ -61,8 +61,8 @@ where:
 .TP
 \fIcode\fR
 .
-is a standard Tcl return code, i.e., \fB0\fR for TCL_OK and \fB1\fR
-for TCL_ERROR,
+is a standard Tcl return code, i.e., \fB0\fR for \fBTCL_OK\fR and \fB1\fR
+for \fBTCL_ERROR\fR,
 .TP
 \fImsg\fR
 .
