@@ -2665,6 +2665,7 @@ TclNRApplyObjCmd(
     if ((lambdaPtr->typePtr != &tclLambdaType)
      || !(procPtr = lambdaPtr->internalRep.twoPtrValue.ptr1)
      || (procPtr->iPtr != iPtr)
+     || !procPtr->cmdPtr->nsPtr
      || (procPtr->cmdPtr->nsPtr->flags & NS_DEAD)
     ) {
 	result = SetLambdaFromAny(interp, lambdaPtr);

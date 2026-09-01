@@ -1297,6 +1297,7 @@ Tcl_DisassembleObjCmd(
 	if ((lambdaPtr->typePtr != &tclLambdaType)
 	 || !(procPtr = lambdaPtr->internalRep.twoPtrValue.ptr1)
 	 || (procPtr->iPtr != (Interp *)interp)
+	 || !procPtr->cmdPtr->nsPtr
 	 || (procPtr->cmdPtr->nsPtr->flags & NS_DEAD)
 	) {
 	    result = tclLambdaType.setFromAnyProc(interp, lambdaPtr);
