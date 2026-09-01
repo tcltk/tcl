@@ -322,6 +322,15 @@ test apply-9.3 {leaking internal rep} -setup {
     rename getbytes {}
     unset -nocomplain end i x tmp leakedBytes
 } -result 0
+test apply-9.4 {lambda representation may shimmer during invocation} -setup {
+    set ::t {apply {n {
+	expr {[llength [lindex $::t 1 1 1]] + $n}
+    }} _}
+} -body {
+    {*}[lset ::t end 123]
+} -cleanup {
+    unset -nocomplain ::t
+} -result {131}
 
 # Tests for specific bugs
 test apply-10.1 {Test for precompiled bytecode body} -constraints {

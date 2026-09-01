@@ -39,7 +39,6 @@ static void		MakeLambdaError(Tcl_Interp *interp,
 			    Tcl_Obj *procNameObj);
 static int		SetLambdaFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
 
-static Tcl_NRPostProc ApplyNR2;
 static Tcl_NRPostProc InterpProcNR2;
 static Tcl_NRPostProc Uplevel_Callback;
 
@@ -433,6 +432,7 @@ TclCreateProc(
 	procPtr->numCompiledLocals = 0;
 	procPtr->firstLocalPtr = NULL;
 	procPtr->lastLocalPtr = NULL;
+	procPtr->flags = 0;
     }
 
     /*
@@ -2162,6 +2162,16 @@ TclProcCleanupProc(
 	ckfree(localPtr);
 	localPtr = nextPtr;
     }
+
+    if ( procPtr->cmdPtr && (procPtr->flags & PROC_CMD_OWNED)
+      && procPtr->cmdPtr->refCount-- <= 1
+    ) {
+	/* cmdPtr owned by procPtr (lambda) */
+	if (procPtr->cmdPtr->nsPtr) {
+	    TclNsDecrRefCount(procPtr->cmdPtr->nsPtr);
+	}
+	ckfree(procPtr->cmdPtr);
+    }
     ckfree(procPtr);
 
     /*
@@ -2422,6 +2432,8 @@ SetLambdaFromAny(
     int isNew, objc, result;
     CmdFrame *cfPtr = NULL;
     Proc *procPtr;
+    Tcl_Namespace *nsPtr;
+    Command *cmdPtr;
 
     if (interp == NULL) {
 	return TCL_ERROR;
@@ -2441,12 +2453,38 @@ SetLambdaFromAny(
 	return TCL_ERROR;
     }
 
+    /*
+     * Set the namespace for this lambda: given by objv[2] understood as a
+     * global reference, or else global per default.
+     */
+
+    if (objc == 2) {
+	TclNewLiteralStringObj(nsObjPtr, "::");
+    } else {
+	const char *nsName = TclGetString(objv[2]);
+
+	if ((*nsName != ':') || (*(nsName+1) != ':')) {
+	    TclNewLiteralStringObj(nsObjPtr, "::");
+	    Tcl_AppendObjToObj(nsObjPtr, objv[2]);
+	} else {
+	    nsObjPtr = objv[2];
+	}
+    }
+    Tcl_IncrRefCount(nsObjPtr);
+    /* Find the namespace where this lambda should run. */
+    result = TclGetNamespaceFromObj(interp, nsObjPtr, &nsPtr);
+    if (result != TCL_OK) {
+	Tcl_DecrRefCount(nsObjPtr);
+	return TCL_ERROR;
+    }
+
     argsPtr = objv[0];
     bodyPtr = objv[1];
 
     /*
-     * Create and initialize the Proc struct. The cmdPtr field is set to NULL
-     * to signal that this is an anonymous function.
+     * Create and initialize the Proc struct. The cmdPtr field is set to
+     * artificial command owned by the procPtr with few info, e. g. used
+     * in TclInfoFrame.
      */
 
     name = TclGetString(objPtr);
@@ -2455,6 +2493,7 @@ SetLambdaFromAny(
 	    &procPtr) != TCL_OK) {
 	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 		"\n    (parsing lambda expression \"%s\")", name));
+	Tcl_DecrRefCount(nsObjPtr);
 	return TCL_ERROR;
     }
 
@@ -2463,7 +2502,14 @@ SetLambdaFromAny(
      * procPtr->refCount = 1;
      */
 
-    procPtr->cmdPtr = NULL;
+    cmdPtr = (Command *)ckalloc(sizeof(Command));
+    memset(cmdPtr, 0, sizeof(*cmdPtr));
+    cmdPtr->nsPtr = (Namespace *) nsPtr;
+    ((Namespace *)nsPtr)->refCount++;
+    cmdPtr->objClientData = objPtr;
+    cmdPtr->refCount++;
+    procPtr->cmdPtr = cmdPtr;
+    procPtr->flags = PROC_CMD_OWNED;
 
     /*
      * TIP #280: Remember the line the apply body is starting on. In a Byte
@@ -2553,26 +2599,6 @@ SetLambdaFromAny(
 	    &isNew), cfPtr);
 
     /*
-     * Set the namespace for this lambda: given by objv[2] understood as a
-     * global reference, or else global per default.
-     */
-
-    if (objc == 2) {
-	TclNewLiteralStringObj(nsObjPtr, "::");
-    } else {
-	const char *nsName = TclGetString(objv[2]);
-
-	if ((*nsName != ':') || (*(nsName+1) != ':')) {
-	    TclNewLiteralStringObj(nsObjPtr, "::");
-	    Tcl_AppendObjToObj(nsObjPtr, objv[2]);
-	} else {
-	    nsObjPtr = objv[2];
-	}
-    }
-
-    Tcl_IncrRefCount(nsObjPtr);
-
-    /*
      * Free the list internalrep of objPtr - this will free argsPtr, but
      * bodyPtr retains a reference from the Proc structure. Then finish the
      * conversion to tclLambdaType.
@@ -2636,11 +2662,10 @@ TclNRApplyObjCmd(
      */
 
     lambdaPtr = objv[1];
-    if (lambdaPtr->typePtr == &tclLambdaType) {
-	procPtr = lambdaPtr->internalRep.twoPtrValue.ptr1;
-    }
-
-    if ((procPtr == NULL) || (procPtr->iPtr != iPtr)) {
+    if ((lambdaPtr->typePtr != &tclLambdaType)
+     || !(procPtr = lambdaPtr->internalRep.twoPtrValue.ptr1)
+     || (procPtr->iPtr != iPtr)
+    ) {
 	result = SetLambdaFromAny(interp, lambdaPtr);
 	if (result != TCL_OK) {
 	    return result;
@@ -2648,72 +2673,32 @@ TclNRApplyObjCmd(
 	procPtr = lambdaPtr->internalRep.twoPtrValue.ptr1;
     }
 
-    /*
-     * TIP#280 (semi-)HACK!
-     *
-     * Create procPtr->cmdPtr once. This would avoid override and usage
-     * after free of procPtr->cmdPtr by nested invocations of this lambda.
-     */
-    if (!procPtr->cmdPtr) {
-	Tcl_Obj *nsObjPtr;
-	Tcl_Namespace *nsPtr;
-	Command * cmdPtr;
-	ExtraFrameInfo * efiPtr;
-
-	/* Find the namespace where this lambda should run. */
+    if (!procPtr->cmdPtr->nsPtr || procPtr->cmdPtr->nsPtr->flags & NS_DEAD) {
+    	Tcl_Obj * nsObjPtr;
+    	Command *cmdPtr = procPtr->cmdPtr;
+    	Tcl_Namespace *nsPtr;
+	if (cmdPtr->nsPtr) {
+	    TclNsDecrRefCount(cmdPtr->nsPtr);
+	    cmdPtr->nsPtr = NULL;
+	}
+	/* Retry to obtain namespace again... */
 	nsObjPtr = lambdaPtr->internalRep.twoPtrValue.ptr2;
 	result = TclGetNamespaceFromObj(interp, nsObjPtr, &nsPtr);
 	if (result != TCL_OK) {
 	    return TCL_ERROR;
 	}
-
-	cmdPtr = (Command *)TclStackAlloc(interp,
-			sizeof(Command) + sizeof(ExtraFrameInfo));
-	efiPtr = (ExtraFrameInfo *)(cmdPtr + 1);
-	memset(cmdPtr, 0, sizeof(*cmdPtr));
 	cmdPtr->nsPtr = (Namespace *) nsPtr;
-
-	/*
-	 * Using cmdPtr->clientData to tell [info frame] how to render the lambda.
-	 * The InfoFrameCmd will detect this case by testing cmdPtr->hPtr for NULL.
-	 * This condition holds here because of the memset() above, and nowhere
-	 * else (in the core). Regular commands always have a valid hPtr, and
-	 * lambda's never.
-	*/
-
-	efiPtr->length = 1;
-	efiPtr->fields[0].name = "lambda";
-	efiPtr->fields[0].proc = NULL;
-	efiPtr->fields[0].clientData = lambdaPtr;
-	cmdPtr->clientData = efiPtr;
-
-	procPtr->cmdPtr = cmdPtr;
-	TclNRAddCallback(interp, ApplyNR2, cmdPtr, procPtr, NULL, NULL);
+	((Namespace *)nsPtr)->refCount++;
     }
 
     /*
-     * Push a call frame for that namespace. Note that TclNRInterpProcCore()
+     * Push a call frame for that procPtr. Note that TclNRInterpProcCore()
      * will pop it (NRE-based).
      */
     result = TclPushProcCallFrame(procPtr, interp, objc, objv, 1);
     if (result == TCL_OK) {
 	result = TclNRInterpProcCore(interp, objv[1], 2, &MakeLambdaError);
     }
-    return result;
-}
-
-static int
-ApplyNR2(
-    ClientData data[],
-    Tcl_Interp *interp,
-    int result)
-{
-    Proc *procPtr = (Proc *) data[1];
-
-    assert(procPtr->cmdPtr == data[0]);
-    /* clear cmd of lambdaProc (released here)... */
-    procPtr->cmdPtr = NULL;
-    TclStackFree(interp, data[0]);
     return result;
 }
 
