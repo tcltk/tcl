@@ -1382,8 +1382,9 @@ TclInfoFrame(
      * Procedure CallFrame.
      */
 
-    if (procPtr != NULL) {
-	Tcl_HashEntry *namePtr = procPtr->cmdPtr->hPtr;
+    if (procPtr != NULL && procPtr->cmdPtr) {
+	Command *cmdPtr = procPtr->cmdPtr;
+	Tcl_HashEntry *namePtr = cmdPtr->hPtr;
 
 	if (namePtr) {
 	    Tcl_Obj *procNameObj;
@@ -1393,11 +1394,15 @@ TclInfoFrame(
 	     */
 
 	    TclNewObj(procNameObj);
-	    Tcl_GetCommandFullName(interp, (Tcl_Command) procPtr->cmdPtr,
+	    Tcl_GetCommandFullName(interp, (Tcl_Command) cmdPtr,
 		    procNameObj);
 	    ADD_PAIR("proc", procNameObj);
-	} else if (procPtr->cmdPtr->clientData) {
-	    ExtraFrameInfo *efiPtr = (ExtraFrameInfo *)procPtr->cmdPtr->clientData;
+	} else if ((procPtr->flags && PROC_CMD_OWNED) && !cmdPtr->objProc &&
+		   cmdPtr->objClientData
+	) {
+	    ADD_PAIR("lambda", (Tcl_Obj *)cmdPtr->objClientData);
+	} else if (cmdPtr->clientData) {
+	    ExtraFrameInfo *efiPtr = (ExtraFrameInfo *)cmdPtr->clientData;
 	    Tcl_Size i;
 
 	    /*
