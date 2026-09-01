@@ -2665,30 +2665,13 @@ TclNRApplyObjCmd(
     if ((lambdaPtr->typePtr != &tclLambdaType)
      || !(procPtr = lambdaPtr->internalRep.twoPtrValue.ptr1)
      || (procPtr->iPtr != iPtr)
+     || (procPtr->cmdPtr->nsPtr->flags & NS_DEAD)
     ) {
 	result = SetLambdaFromAny(interp, lambdaPtr);
 	if (result != TCL_OK) {
 	    return result;
 	}
 	procPtr = lambdaPtr->internalRep.twoPtrValue.ptr1;
-    }
-
-    if (!procPtr->cmdPtr->nsPtr || procPtr->cmdPtr->nsPtr->flags & NS_DEAD) {
-    	Tcl_Obj * nsObjPtr;
-    	Command *cmdPtr = procPtr->cmdPtr;
-    	Tcl_Namespace *nsPtr;
-	if (cmdPtr->nsPtr) {
-	    TclNsDecrRefCount(cmdPtr->nsPtr);
-	    cmdPtr->nsPtr = NULL;
-	}
-	/* Retry to obtain namespace again... */
-	nsObjPtr = lambdaPtr->internalRep.twoPtrValue.ptr2;
-	result = TclGetNamespaceFromObj(interp, nsObjPtr, &nsPtr);
-	if (result != TCL_OK) {
-	    return TCL_ERROR;
-	}
-	cmdPtr->nsPtr = (Namespace *) nsPtr;
-	((Namespace *)nsPtr)->refCount++;
     }
 
     /*

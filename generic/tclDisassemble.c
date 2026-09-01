@@ -1281,10 +1281,7 @@ Tcl_DisassembleObjCmd(
 
     switch ((enum Types) idx) {
     case DISAS_LAMBDA: {
-	Command cmd;
-	Tcl_Obj *nsObjPtr;
-	Tcl_Namespace *nsPtr;
-
+    	Tcl_Obj *lambdaPtr;
 	/*
 	 * Compile (if uncompiled) and disassemble a lambda term.
 	 *
@@ -1295,25 +1292,19 @@ Tcl_DisassembleObjCmd(
 	    Tcl_WrongNumArgs(interp, 2, objv, "lambdaTerm");
 	    return TCL_ERROR;
 	}
-	if (objv[2]->typePtr == &tclLambdaType) {
-	    procPtr = (Proc *)objv[2]->internalRep.twoPtrValue.ptr1;
-	}
-	if (procPtr == NULL || procPtr->iPtr != (Interp *) interp) {
-	    result = tclLambdaType.setFromAnyProc(interp, objv[2]);
+
+	lambdaPtr = objv[2];
+	if ((lambdaPtr->typePtr != &tclLambdaType)
+	 || !(procPtr = lambdaPtr->internalRep.twoPtrValue.ptr1)
+	 || (procPtr->iPtr != (Interp *)interp)
+	 || (procPtr->cmdPtr->nsPtr->flags & NS_DEAD)
+	) {
+	    result = tclLambdaType.setFromAnyProc(interp, lambdaPtr);
 	    if (result != TCL_OK) {
 		return result;
 	    }
-	    procPtr = (Proc *)objv[2]->internalRep.twoPtrValue.ptr1;
+	    procPtr = lambdaPtr->internalRep.twoPtrValue.ptr1;
 	}
-
-	memset(&cmd, 0, sizeof(Command));
-	nsObjPtr = (Tcl_Obj *)objv[2]->internalRep.twoPtrValue.ptr2;
-	result = TclGetNamespaceFromObj(interp, nsObjPtr, &nsPtr);
-	if (result != TCL_OK) {
-	    return result;
-	}
-	cmd.nsPtr = (Namespace *) nsPtr;
-	procPtr->cmdPtr = &cmd;
 	result = TclPushProcCallFrame(procPtr, interp, objc, objv, 1);
 	if (result != TCL_OK) {
 	    return result;
