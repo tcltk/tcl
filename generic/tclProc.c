@@ -2662,8 +2662,21 @@ TclGetLambdaFromObj(
     }
 
     assert(procPtr != NULL);
-    if (procPtr->iPtr != (Interp *)interp) {
-	return NULL;
+    assert(procPtr->cmdPtr != NULL);
+
+    if (!procPtr->cmdPtr->nsPtr || procPtr->cmdPtr->nsPtr->flags & NS_DEAD) {
+	Command *cmdPtr = procPtr->cmdPtr;
+	Tcl_Namespace *nsPtr;
+	if (cmdPtr->nsPtr) {
+	    TclNsDecrRefCount(cmdPtr->nsPtr);
+	    cmdPtr->nsPtr = NULL;
+	}
+	/* Retry to obtain namespace again... */
+	if (TclGetNamespaceFromObj(interp, nsObjPtr, &nsPtr) != TCL_OK) {
+	    return NULL;
+	}
+	cmdPtr->nsPtr = (Namespace *) nsPtr;
+	((Namespace *)nsPtr)->refCount++;
     }
 
     *nsObjPtrPtr = nsObjPtr;
@@ -2723,22 +2736,6 @@ TclNRApplyObjCmd(
 
     if (procPtr == NULL) {
 	return TCL_ERROR;
-    }
-
-    if (!procPtr->cmdPtr->nsPtr || procPtr->cmdPtr->nsPtr->flags & NS_DEAD) {
-	Command *cmdPtr = procPtr->cmdPtr;
-	Tcl_Namespace *nsPtr;
-	if (cmdPtr->nsPtr) {
-	    TclNsDecrRefCount(cmdPtr->nsPtr);
-	    cmdPtr->nsPtr = NULL;
-	}
-	/* Retry to obtain namespace again... */
-	result = TclGetNamespaceFromObj(interp, nsObjPtr, &nsPtr);
-	if (result != TCL_OK) {
-	    return TCL_ERROR;
-	}
-	cmdPtr->nsPtr = (Namespace *) nsPtr;
-	((Namespace *)nsPtr)->refCount++;
     }
 
     /*
