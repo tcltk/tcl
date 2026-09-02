@@ -1049,7 +1049,11 @@ typedef struct Proc {
     CompiledLocal *lastLocalPtr;/* Pointer to the last allocated local
 				 * variable or NULL if none. This has frame
 				 * index (numCompiledLocals-1). */
+    int flags;			/* Miscellaneous bits of proc. */
 } Proc;
+
+#define PROC_CMD_OWNED		0x80
+
 
 /*
  * The type of functions called to process errors found during the execution
