@@ -2911,6 +2911,7 @@ DuplicateProc(
     newProc->numCompiledLocals = origProc->numArgs;
     newProc->firstLocalPtr = NULL;
     newProc->lastLocalPtr = NULL;
+    newProc->flags = 0;
 
     /* Work through the original arguments, duplicating them. */
     origLocal = origProc->firstLocalPtr;
