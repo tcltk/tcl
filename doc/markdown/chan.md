@@ -58,7 +58,7 @@ This command provides several operations for reading from, writing to and otherw
 [chan]{.cmd} [blocked]{.sub} [channel]{.arg}
 : This tests whether the last input operation on the channel called *channel* failed because it would have otherwise caused the process to block, and returns 1 if that was the case. It returns 0 otherwise. Note that this only ever returns 1 when the channel has been configured to be non-blocking; all Tcl channels have blocking turned on by default.
 
-[chan]{.cmd} [close]{.sub} [channel]{.arg} [direction]{.optarg}
+**chan close** *channel* ?*direction*?
 : Close and destroy the channel called *channel*. Note that this deletes all existing file-events registered on the channel. If the *direction* argument (which must be **read** or **write** or any unique abbreviation of them) is present, the channel will only be half-closed, so that it can go from being read-write to write-only or read-only respectively. If a read-only channel is closed for reading, it is the same as if the channel is fully closed, and respectively similar for write-only channels. Without the *direction* argument, the channel is closed for both reading and writing (but only if those directions are currently open). It is an error to close a read-only channel for writing, or a write-only channel for reading.
 
     As part of closing the channel, all buffered output is flushed to the channel's output device (only if the channel is ceasing to be writable), any buffered input is discarded (only if the channel is ceasing to be readable), the underlying operating system resource is closed and *channel* becomes unavailable for future use (both only if the channel is being completely closed).
@@ -77,36 +77,36 @@ This command provides several operations for reading from, writing to and otherw
 
     Channels are automatically closed when an interpreter is destroyed and when the process exits. Nonblocking channels are not switched to blocking mode when exiting; this guarantees a timely exit even when the peer or a communication channel is stalled. To ensure proper flushing of stalled nonblocking channels on exit, one must either (a) actively switch them back to blocking or (b) use the environment variable **TCL\_FLUSH\_NONBLOCKING\_ON\_EXIT**.
 
-[chan]{.cmd} [configure]{.sub} [channel]{.arg} [optionName]{.optarg} [value]{.optarg} [optionName value]{.optdot}
+**chan configure** *channel* ?*optionName*? ?*value*? ?*optionName value ...*?
 : Query or set the configuration options of the channel named *channel*.
 
     If no *optionName* or *value* arguments are supplied, the command returns a list containing alternating option names and values for the channel.  If *optionName* is supplied but no *value* then the command returns the current value of the given option.  If one or more pairs of *optionName* and *value* are supplied, the command sets each of the named options to the corresponding *value*; in this case the return value is an empty string.
 
     The options described below are supported for all channels. In addition, each channel type may add options that only it supports. See the manual entry for the command that creates each type of channel for the options supported by that specific type of channel. For example, see the manual entry for the [socket] command for additional options for sockets, and the [open] command for additional options for serial devices.
 
-[-blocking]{.lit} [boolean]{.arg}
+**-blocking** *boolean*
 : The **-blocking** option determines whether I/O operations on the channel can cause the process to block indefinitely.  The value of the option must be a proper boolean value.  Channels are normally in blocking mode; if a channel is placed into non-blocking mode it will affect the operation of the **chan gets**, **chan read**, **chan puts**, **chan flush**, and **chan close** commands; see the documentation for those commands for details.  For non-blocking mode to work correctly, the application must be using the Tcl event loop (e.g. by calling [Tcl\_DoOneEvent][DoOneEvent] or invoking the [vwait] command).
 
-[-buffering]{.lit} [newValue]{.arg}
+**-buffering** *newValue*
 : If *newValue* is **full** then the I/O system will buffer output until its internal buffer is full or until the **chan flush** command is invoked. If *newValue* is **line**, then the I/O system will automatically flush output for the channel whenever a newline character is output. If *newValue* is **none**, the I/O system will flush automatically after every output operation.  The default is for **-buffering** to be set to **full** except for channels that connect to terminal-like devices; for these channels the initial setting is **line**.  Additionally, **stdin** and **stdout** are initially set to **line**, and **stderr** is set to **none**.
 
-[-buffersize]{.lit} [newSize]{.arg}
+**-buffersize** *newSize*
 : *newSize* must be an integer; its value is used to set the size of buffers, in bytes, subsequently allocated for this channel to store input or output. *newSize* must be a number of no more than one million, allowing buffers of up to one million bytes in size.
 
-[-encoding]{.lit} [name]{.arg}
+**-encoding** *name*
 : This option is used to specify the encoding of the channel as one of the named encodings returned by [encoding names][encoding], so that the data can be converted to and from Unicode for use in Tcl.  For instance, in order for Tcl to read characters from a Japanese file in **shiftjis** and properly process and display the contents, the encoding would be set to **shiftjis**. Thereafter, when reading from the channel, the bytes in the Japanese file would be converted to Unicode as they are read.  Writing is also supported - as Tcl strings are written to the channel they will automatically be converted to the specified encoding on output.
 
     If a file contains pure binary data (for instance, a JPEG image), the encoding for the channel should be configured to be **iso8859-1**.  Tcl will then assign no interpretation to the data in the file and simply read or write raw bytes.  The Tcl [binary] command can be used to manipulate this byte-oriented data.  It is usually better to set the **-translation** option to [binary] when you want to transfer binary data, as this turns off the other automatic interpretations of the bytes in the stream as well.
 
     The default encoding for newly opened channels is the same platform- and locale-dependent system encoding used for interfacing with the operating system, as returned by [encoding system][encoding].
 
-[-eofchar]{.lit} [char]{.arg}
+**-eofchar** *char*
 : This option supports DOS file systems that use Control-z (\\x1A) as an end of file marker.  If *char* is not an empty string, then this character signals end-of-file when it is encountered during input. Otherwise (the default) there is no special end of file character marker. The acceptable range for **-eofchar** values is \\x01 - \\x7f; attempting to set **-eofchar** to a value outside of this range will generate an error.
 
-[-profile]{.lit} [profile]{.arg}
+**-profile** *profile*
 : Specifies the encoding profile to be used on the channel. The encoding transforms in use for the channel's input and output will then be subject to the rules of that profile. Any failures will result in a channel error. See **PROFILES** in the documentation of the [encoding] command for details about encoding profiles.
 
-[-translation]{.lit} [translationMode]{.arg}
+**-translation** *translationMode*
 : In Tcl scripts the end of a line is always represented using a single newline character (\\n).  However, in actual files and devices the end of a line may be represented differently on different platforms, or even for different devices on the same platform.  For example, under UNIX newlines are used in files, whereas carriage-return-linefeed sequences are normally used in network connections.  On input (i.e., with **chan gets** and **chan read**) the Tcl I/O system automatically translates the external end-of-line representation into newline characters.  Upon output (i.e., with **chan puts**), the I/O system translates newlines to the external end-of-line representation. The default translation mode, **auto**, handles all the common cases automatically, but the **-translation** option provides explicit control over the end of line translations.
 
     The value of *translationMode* associated with **-translation** is a single item for read-only and write-only channels. The value is a two-element list for read-write channels; the read translation mode is the first element of the list, and the write translation mode is the second element.  As a convenience, when setting the translation mode for a read-write channel you can specify a single value that will apply to both reading and writing.  When querying the translation mode of a read-write channel, a two-element list will always be returned.  The following values are currently supported:
@@ -127,7 +127,7 @@ This command provides several operations for reading from, writing to and otherw
     : The end of a line in the underlying file or device is represented by a single newline (linefeed) character.  In this mode no translations occur during either input or output.  This mode is typically used on UNIX platforms.
 
 
-[chan]{.cmd} [copy]{.sub} [inputChan]{.arg} [outputChan]{.arg} [[-size]{.lit} [size]{.arg}]{.optarg} [[-command]{.lit} [callback]{.arg}]{.optarg}
+**chan copy** *inputChan outputChan* ?**-size** *size*? ?**-command** *callback*?
 : Reads characters from *inputChan* and writes them to *outputChan* until all characters are copied, blocking until the copy is complete and returning the number of characters copied.  Leverages internal buffers to avoid extra copies and to avoid buffering too much data in main memory when copying large files to slow destinations like network sockets.
 
     **-size** limits the number of characters copied.
@@ -140,7 +140,7 @@ This command provides several operations for reading from, writing to and otherw
 
     There should be no event handler established for *inputChan*  because it may become readable during a background copy.  An attempt to read or write from within an event handler results result in the error,  "channel busy".  Any wrong-sided I/O attempted (by a **chan event** handler or otherwise) results in a "channel busy" error.
 
-[chan]{.cmd} [create]{.sub} [mode]{.arg} [cmdPrefix]{.arg}
+**chan create** *mode cmdPrefix*
 : This subcommand creates a new script level channel using the command prefix *cmdPrefix* as its handler. Any such channel is called a **reflected** channel. The specified command prefix, **cmdPrefix**, must be a non-empty list, and should provide the API described in the **refchan** manual page. The handle of the new channel is returned as the result of the **chan create** command, and the channel is open. Use either [close] or **chan close** to remove the channel.
 
     The argument *mode* specifies if the new channel is opened for reading, writing, or both. It has to be a list containing any of the strings "**read**" or "**write**", The list must have at least one element, as a channel you can neither write to nor read from makes no sense. The handler command for the new channel must support the chosen mode, or an error is thrown.
@@ -155,10 +155,10 @@ This command provides several operations for reading from, writing to and otherw
 
     This subcommand is **safe** and made accessible to safe interpreters.  While it arranges for the execution of arbitrary Tcl code the system also makes sure that the code is always executed within the safe interpreter.
 
-[chan]{.cmd} [eof]{.sub} [channel]{.arg}
+**chan eof** *channel*
 : Test whether the last input operation on the channel called *channel* failed because the end of the data stream was reached, returning 1 if end-of-file was reached, and 0 otherwise.
 
-[chan]{.cmd} [event]{.sub} [channel]{.arg} [event]{.arg} [script]{.optarg}
+**chan event** *channel event* ?*script*?
 : Arrange for the Tcl script *script* to be installed as a *file event handler* to be called whenever the channel called *channel* enters the state described by *event* (which must be either **readable** or **writable**); only one such handler may be installed per event per channel at a time.  If *script* is the empty string, the current handler is deleted (this also happens if the channel is closed or the interpreter deleted).  If *script* is omitted, the currently installed script is returned (or an empty string if no such handler is installed).  The callback is only performed if the event loop is being serviced (e.g. via [vwait] or [update]).
 
     A file event handler is a binding between a channel and a script, such that the script is evaluated whenever the channel becomes readable or writable.  File event handlers are most commonly used to allow data to be received from another process on an event-driven basis, so that the receiver can continue to interact with the user or with other channels while waiting for the data to arrive.  If an application invokes **chan gets** or **chan read** on a blocking channel when there is no input data available, the process will block; until the input data arrives, it will not be able to service other events, so it will appear to the user to "freeze up". With **chan event**, the process can tell when data is present and only invoke **chan gets** or **chan read** when they will not block.
@@ -171,12 +171,12 @@ This command provides several operations for reading from, writing to and otherw
 
     The script for a file event is executed at global level (outside the context of any Tcl procedure) in the interpreter in which the **chan event** command was invoked.  If an error occurs while executing the script then the command registered with [interp bgerror][interp] is used to report the error.  In addition, the file event handler is deleted if it ever returns an error; this is done in order to prevent infinite loops due to buggy handlers.
 
-[chan]{.cmd} [flush]{.sub} [channel]{.arg}
+**chan flush** *channel*
 : Ensures that all pending output for the channel called *channel* is written.
 
     If the channel is in blocking mode the command does not return until all the buffered output has been flushed to the channel. If the channel is in non-blocking mode, the command may return before all buffered output has been flushed; the remainder will be flushed in the background as fast as the underlying file or device is able to absorb it.
 
-[chan]{.cmd} [gets]{.sub} [channel]{.arg} [varName]{.optarg}
+**chan gets** *channel* ?*varName*?
 : Reads a line from the channel consisting of all characters up to the next end-of-line sequence or until end of file is seen. The line feed character corresponding to end-of-line sequence is not included as part of the line. If the *varName* argument is specified, the line is stored in the variable of that name and the command returns the length of the line. If *varName* is not specified, the command returns the line itself as the result of the command.
 
     If a complete line is not available and the channel is not at EOF, the command will block in the case of a blocking channel. For non-blocking channels, the command will return the empty string as the result in the case of *varName* not specified and -1 if it is.
@@ -187,24 +187,24 @@ This command provides several operations for reading from, writing to and otherw
 
     If the encoding profile **strict** is in effect for the channel, the command will raise an exception with the POSIX error code **EILSEQ** if any encoding errors are encountered in the channel input data. The file pointer remains unchanged and it is possible to introspect, and in some cases recover, by changing the encoding in use. See [Encoding error examples] later.
 
-[chan]{.cmd} [isbinary]{.sub} [channel]{.arg}
+**chan isbinary** *channel*
 : Test whether the channel called *channel* is a binary channel, returning 1 if it is and, and 0 otherwise. A binary channel is a channel with iso8859-1 encoding, -eofchar set to {} and -translation set to lf.
 
-[chan]{.cmd} [names]{.sub} [pattern]{.optarg}
+**chan names** ?*pattern*?
 : Produces a list of all channel names. If *pattern* is specified, only those channel names that match it (according to the rules of [string match][string]) will be returned.
 
-[chan]{.cmd} [pending]{.sub} [mode]{.arg} [channel]{.arg}
+**chan pending** *mode channel*
 : Depending on whether *mode* is **input** or **output**, returns the number of bytes of input or output (respectively) currently buffered internally for *channel* (especially useful in a readable event callback to impose application-specific limits on input line lengths to avoid a potential denial-of-service attack where a hostile user crafts an extremely long line that exceeds the available memory to buffer it). Returns -1 if the channel was not opened for the mode in question.
 
-[chan]{.cmd} [pipe]{.sub}
+**chan pipe**
 : Creates a standalone pipe whose read- and write-side channels are returned as a 2-element list, the first element being the read side and the second the write side. Can be useful e.g. to redirect separately **stderr** and **stdout** from a subprocess. To do this, spawn with "2>@" or ">@" redirection operators onto the write side of a pipe, and then immediately close it in the parent. This is necessary to get an EOF on the read side once the child has exited or otherwise closed its output.
 
     Note that the pipe buffering semantics can vary at the operating system level substantially; it is not safe to assume that a write performed on the output side of the pipe will appear instantly to the input side. This is a fundamental difference and Tcl cannot conceal it. The overall stream semantics *are* compatible, so blocking reads and writes will not see most of the differences, but the details of what exactly gets written when are not. This is most likely to show up when using pipelines for testing; care should be taken to ensure that deadlocks do not occur and that potential short reads are allowed for.
 
-[chan]{.cmd} [pop]{.sub} [channel]{.arg}
+**chan pop** *channel*
 : Removes the topmost transformation from the channel *channel*, if there is any. If there are no transformations added to *channel*, this is equivalent to **chan close** of that channel. The result is normally the empty string, but can be an error in some situations (i.e. where the underlying system stream is closed and that results in an error).
 
-[chan]{.cmd} [postevent]{.sub} [channel]{.arg} [eventSpec]{.arg}
+**chan postevent** *channel eventSpec*
 : This subcommand is used by command handlers specified with **chan create**. It notifies the channel represented by the handle *channel* that the event(s) listed in the *eventSpec* have occurred. The argument has to be a list containing any of the strings **read** and **write**. The list must contain at least one element as it does not make sense to invoke the command if there are no events to post.
 
     Note that this subcommand can only be used with channel handles that were created/opened by **chan create**. All other channels will cause this subcommand to report an error.
@@ -215,10 +215,10 @@ This command provides several operations for reading from, writing to and otherw
 
     This command is **safe** and made accessible to safe interpreters. It can trigger the execution of **chan event** handlers, whether in the current interpreter or in other interpreters or other threads, even where the event is posted from a safe interpreter and listened for by a trusted interpreter. **Chan event** handlers are *always* executed in the interpreter that set them up.
 
-[chan]{.cmd} [push]{.sub} [channel]{.arg} [cmdPrefix]{.arg}
+**chan push** *channel cmdPrefix*
 : Adds a new transformation on top of the channel *channel*. The *cmdPrefix* argument describes a list of one or more words which represent a handler that will be used to implement the transformation. The command prefix must provide the API described in the **transchan** manual page. The result of this subcommand is a handle to the transformation. Note that it is important to make sure that the transformation is capable of supporting the channel mode that it is used with or this can make the channel neither readable nor writable.
 
-[chan]{.cmd} [puts]{.sub} [-nonewline]{.optlit} [channel]{.optarg} [string]{.arg}
+**chan puts** ?**-nonewline**? ?*channel*? *string*
 : Writes *string* to the channel named *channel* followed by a newline character. A trailing newline character is written unless the optional flag **-nonewline** is given. If *channel* is omitted, the string is written to the standard output channel, **stdout**.
 
     Newline characters in the output are translated by **chan puts** to platform-specific end-of-line sequences according to the currently configured value of the **-translation** option for the channel (for example, on PCs newlines are normally replaced with carriage-return-linefeed sequences; see **chan configure** above for details).
@@ -229,10 +229,10 @@ This command provides several operations for reading from, writing to and otherw
 
     The command will raise an error exception with POSIX error code **EILSEQ** if the encoding profile **strict** is in effect for the channel and the output data cannot be encoded in the encoding configured for the channel. Data may be partially written to the channel in this case.
 
-[chan]{.cmd} [read]{.sub} [channel]{.arg} [numChars]{.optarg}
+**chan read** *channel* ?*numChars*?
 : see below ...
 
-[chan]{.cmd} [read]{.sub} [-nonewline]{.optlit} [channel]{.arg}
+**chan read** ?**-nonewline**? *channel*
 : In the first form, the result will be the next *numChars* characters read from the channel named *channel*; if *numChars* is omitted, all characters up to the point when the channel would signal a failure (whether an end-of-file, blocked or other error condition) are read. In the second form (i.e. when *numChars* has been omitted) the flag **-nonewline** may be given to indicate that any trailing newline in the string that has been read should be trimmed.
 
     If *channel* is in non-blocking mode, **chan read** may not read as many characters as requested: once all available input has been read, the command will return the data that is available rather than blocking for more input.  If the channel is configured to use a multi-byte encoding, then there may actually be some bytes remaining in the internal buffers that do not form a complete character.  These bytes will not be returned until a complete character is available or end-of-file is reached.  The **-nonewline** switch is ignored if the command returns before reaching the end of the file.
@@ -247,16 +247,16 @@ This command provides several operations for reading from, writing to and otherw
 
     Then **chan read** behaves much like described above.  Note that most serial ports are comparatively slow; it is entirely possible to get a **readable** event for each character read from them. Care must be taken when using **chan read** on blocking serial ports:
 
-    [chan]{.cmd} [read]{.sub} [channel]{.arg} [numChars]{.arg}
+    **chan read** *channel numChars*
     : In this form **chan read** blocks until *numChars* have been received from the serial port.
 
-    [chan]{.cmd} [read]{.sub} [channel]{.arg}
+    **chan read** *channel*
     : In this form **chan read** blocks until the reception of the end-of-file character, see **chan configure -eofchar**. If there no end-of-file character has been configured for the channel, then **chan read** will block forever.
 
 
     If the encoding profile **strict** is in effect for the channel, the command will raise an exception with the POSIX error code **EILSEQ** if any encoding errors are encountered in the channel input data. If the channel is in blocking mode, the error is thrown after advancing the file pointer to the beginning of the invalid data. The successfully decoded leading portion of the data prior to the error location is returned as the value of the **-data** key of the error option dictionary. If the channel is in non-blocking mode, the successfully decoded portion of data is returned by the command without an error exception being raised. A subsequent read will start at the invalid data and immediately raise a **EILSEQ** POSIX error exception. Unlike the blocking channel case, the **-data** key is not present in the error option dictionary. In the case of exception thrown due to encoding errors, it is possible to introspect, and in some cases recover, by changing the encoding in use. See [Encoding error examples] later.
 
-[chan]{.cmd} [seek]{.sub} [channel]{.arg} [offset]{.arg} [origin]{.optarg}
+**chan seek** *channel offset* ?*origin*?
 : Sets the current access position within the underlying data stream for the channel named *channel* to be *offset* bytes relative to *origin*. *offset* must be an integer (which may be negative) and *origin* must be one of the following:
 
     **start**
@@ -275,10 +275,10 @@ This command provides several operations for reading from, writing to and otherw
 
     Note that *offset* values are byte offsets, not character offsets. Both **chan seek** and **chan tell** operate in terms of bytes, not characters, unlike **chan read**.
 
-[chan]{.cmd} [tell]{.sub} [channel]{.arg}
+**chan tell** *channel*
 : Returns a number giving the current access position within the underlying data stream for the channel named *channel*. This value returned is a byte offset that can be passed to **chan seek** in order to set the channel to a particular position.  Note that this value is in terms of bytes, not characters like **chan read**.  The value returned is -1 for channels that do not support seeking.
 
-[chan]{.cmd} [truncate]{.sub} [channel]{.arg} [length]{.optarg}
+**chan truncate** *channel* ?*length*?
 : Sets the byte length of the underlying data stream for the channel named *channel* to be *length* (or to the current byte offset within the underlying data stream if *length* is omitted). The channel is flushed before truncation.
 
 

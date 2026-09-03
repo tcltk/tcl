@@ -61,7 +61,7 @@ These procedures are used to create, modify, and read Tcl values that hold doubl
 
 **Tcl\_SetDoubleObj** sets the value of an existing Tcl value pointed to by *objPtr* to the double value *doubleValue*.  The *objPtr* argument must point to an unshared Tcl value.  Any attempt to set the value of a shared Tcl value violates Tcl's copy-on-write policy.  Any existing string representation or internal representation in the unshared Tcl value will be freed as a consequence of setting the new value.
 
-**Tcl\_GetDoubleFromObj** attempts to retrieve a double value from the Tcl value *objPtr*.  If the attempt succeeds, then **TCL\_OK** is returned, and the double value is written to the storage pointed to by *doublePtr*.  If the attempt fails, then **TCL\_ERROR** is returned, and if *interp* is non-NULL, an error message is left in *interp*. The **Tcl\_ObjType** of *objPtr* may be changed to make subsequent calls to **Tcl\_GetDoubleFromObj** more efficient.
+**Tcl\_GetDoubleFromObj** attempts to retrieve a double value from the Tcl value *objPtr*.  If the attempt succeeds, then [TCL\_OK][catch] is returned, and the double value is written to the storage pointed to by *doublePtr*.  If the attempt fails, then [TCL\_ERROR][catch] is returned, and if *interp* is non-NULL, an error message is left in *interp*. The **Tcl\_ObjType** of *objPtr* may be changed to make subsequent calls to **Tcl\_GetDoubleFromObj** more efficient.
 
 # Reference count management
 
@@ -72,5 +72,6 @@ These procedures are used to create, modify, and read Tcl values that hold doubl
 **Tcl\_GetDoubleFromObj** does not modify the reference count of its *objPtr* argument; it only reads. Note however that this function may set the interpreter result; if that is the only place that is holding a reference to the object, it will be deleted.
 
 
+[catch]: catch.md
 [Object3]: Object3.md
 

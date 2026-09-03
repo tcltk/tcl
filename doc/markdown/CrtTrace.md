@@ -98,7 +98,7 @@ typedef int Tcl_CmdObjTraceProc2(
 
 The *clientData* and *interp* parameters are copies of the corresponding arguments given to **Tcl\_CreateTrace**. *clientData* typically points to an application-specific data structure that describes what to do when *objProc* is invoked.  The *level* parameter gives the nesting level of the command (1 for top-level commands passed to [Tcl\_Eval][Eval3] by the application, 2 for the next-level commands passed to [Tcl\_Eval][Eval3] as part of parsing or interpreting level-1 commands, and so on). The *command* parameter points to a string containing the text of the command, before any argument substitution.  The *commandToken* parameter is a Tcl command token that identifies the command to be invoked.  The token may be passed to [Tcl\_GetCommandName][CrtObjCmd], [Tcl\_GetCommandInfoFromToken][CrtObjCmd], or [Tcl\_SetCommandInfoFromToken][CrtObjCmd] to manipulate the definition of the command. The *objc* and *objv* parameters designate the final parameter count and parameter vector that will be passed to the command, and have had all substitutions performed.
 
-The *objProc* callback is expected to return a standard Tcl status return code.  If this code is **TCL\_OK** (the normal case), then the Tcl interpreter will invoke the command.  Any other return code is treated as if the command returned that status, and the command is *not* invoked.
+The *objProc* callback is expected to return a standard Tcl status return code.  If this code is [TCL\_OK][catch] (the normal case), then the Tcl interpreter will invoke the command.  Any other return code is treated as if the command returned that status, and the command is *not* invoked.
 
 The *objProc* callback must not modify *objv* in any way.
 
@@ -106,7 +106,7 @@ Tracing will only occur for commands at nesting level less than or equal to the 
 
 Tracing has a significant effect on runtime performance because it causes the bytecode compiler to refrain from generating in-line code for Tcl commands such as [if] and [while] in order that they may be traced.  If traces for the built-in commands are not required, the *flags* parameter may be set to the constant value **TCL\_ALLOW\_INLINE\_COMPILATION**.  In this case, traces on built-in commands may or may not result in trace callbacks, depending on the state of the interpreter, but run-time performance will be improved significantly.  (This functionality is desirable, for example, when using **Tcl\_CreateObjTrace** to implement an execution time profiler.)
 
-Calls to *objProc* will be made by the Tcl parser immediately before it calls the command procedure for the command (*cmdProc*).  This occurs after argument parsing and substitution, so tracing for substituted commands occurs before tracing of the commands containing the substitutions.  If there is a syntax error in a command, or if there is no command procedure associated with a command name, then no tracing will occur for that command.  If a string passed to Tcl\_Eval contains multiple commands (bracketed, or on different lines) then multiple calls to *objProc* will occur, one for each command.
+Calls to *objProc* will be made by the Tcl parser immediately before it calls the command procedure for the command (*cmdProc*).  This occurs after argument parsing and substitution, so tracing for substituted commands occurs before tracing of the commands containing the substitutions.  If there is a syntax error in a command, or if there is no command procedure associated with a command name, then no tracing will occur for that command.  If a string passed to [Tcl\_Eval][Eval3] contains multiple commands (bracketed, or on different lines) then multiple calls to *objProc* will occur, one for each command.
 
 **Tcl\_DeleteTrace** removes a trace, so that no future calls will be made to the procedure associated with the trace.  After **Tcl\_DeleteTrace** returns, the caller should never again use the *trace* token.
 
@@ -142,6 +142,7 @@ If a trace created with **Tcl\_CreateTrace** is in effect, inline compilation of
 When the *proc* passed to **Tcl\_CreateObjTrace** is called, the values in its *objv* argument will have a reference count of at least 1, with that guaranteed reference being from the Tcl evaluation stack. You should not call [Tcl\_DecrRefCount][Object3] on any of those values unless you call [Tcl\_IncrRefCount][Object3] on them first.
 
 
+[catch]: catch.md
 [CrtObjCmd]: CrtObjCmd.md
 [Eval3]: Eval3.md
 [if]: if.md

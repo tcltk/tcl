@@ -76,9 +76,9 @@ When *proc* is invoked the *clientData* and *interp* parameters will be copies o
 
 Note that the argument strings should not be modified as they may point to constant strings or may be shared with other parts of the interpreter. Note also that the argument strings are encoded in normalized TUTF-8 since version 8.1 of Tcl.
 
-*Proc* must return an integer code that is expected to be one of **TCL\_OK**, **TCL\_ERROR**, **TCL\_RETURN**, **TCL\_BREAK**, or **TCL\_CONTINUE**. See the [return] man page for details on what these codes mean and the use of extended values for an extension's private use. Most normal commands will only return **TCL\_OK** or **TCL\_ERROR**.
+*Proc* must return an integer code that is expected to be one of [TCL\_OK][catch], [TCL\_ERROR][catch], [TCL\_RETURN][catch], [TCL\_BREAK][catch], or [TCL\_CONTINUE][catch]. See the [return] man page for details on what these codes mean and the use of extended values for an extension's private use. Most normal commands will only return [TCL\_OK][catch] or [TCL\_ERROR][catch].
 
-In addition, *proc* must set the interpreter result; in the case of a **TCL\_OK** return code this gives the result of the command, and in the case of **TCL\_ERROR** it gives an error message. The [Tcl\_SetResult][SetResult] procedure provides an easy interface for setting the return value;  for complete details on how the interpreter result field is managed, see the **Tcl\_Interp** man page. Before invoking a command procedure, [Tcl\_Eval][Eval3] sets the interpreter result to point to an empty string, so simple commands can return an empty result by doing nothing at all.
+In addition, *proc* must set the interpreter result; in the case of a [TCL\_OK][catch] return code this gives the result of the command, and in the case of [TCL\_ERROR][catch] it gives an error message. The [Tcl\_SetResult][SetResult] procedure provides an easy interface for setting the return value;  for complete details on how the interpreter result field is managed, see the **Tcl\_Interp** man page. Before invoking a command procedure, [Tcl\_Eval][Eval3] sets the interpreter result to point to an empty string, so simple commands can return an empty result by doing nothing at all.
 
 The contents of the *argv* array belong to Tcl and are not guaranteed to persist once *proc* returns:  *proc* should not modify them, nor should it set the interpreter result to point anywhere within the *argv* values. Call [Tcl\_SetResult][SetResult] with status **TCL\_VOLATILE** if you want to return something from the *argv* array.
 
@@ -92,6 +92,7 @@ typedef void Tcl_CmdDeleteProc(
 The *clientData* argument will be the same as the *clientData* argument passed to **Tcl\_CreateCommand**.
 
 
+[catch]: catch.md
 [CrtInterp]: CrtInterp.md
 [CrtObjCmd]: CrtObjCmd.md
 [Eval3]: Eval3.md

@@ -35,19 +35,19 @@ This document describes commands looking up a prefix in a list of strings. The f
 [::tcl::prefix]{.cmd} [all]{.sub} [table]{.arg} [string]{.arg}
 : Returns a list of all elements in *table* that begin with the prefix *string*.
 
-[::tcl::prefix]{.cmd} [longest]{.sub} [table]{.arg} [string]{.arg}
+**::tcl::prefix longest** *table string*
 : Returns the longest common prefix of all elements in *table* that begin with the prefix *string*.
 
-[::tcl::prefix]{.cmd} [match]{.sub} [option]{.optdot} [table]{.arg} [string]{.arg}
+**::tcl::prefix match** ?*option ...*? *table string*
 : If *string* equals one element in *table* or is a prefix to exactly one element, the matched element is returned. If not, the result depends on the **-error** option. (It is recommended that the *table* be sorted before use with this subcommand, so that the list of matches presented in the error message also becomes sorted, though this is not strictly necessary for the operation of this subcommand itself.) The following options are supported:
 
-    [-exact]{.lit}
+    **-exact**
     : Accept only exact matches.
 
-    [-message]{.lit} [string]{.arg}
+    **-message** *string*
     : Use *string* in the error message at a mismatch. Default is "option".
 
-    [-error]{.lit} [options]{.arg}
+    **-error** *options*
     : The *options* are used when no match is found. If *options* is empty, no error is generated and an empty string is returned. Otherwise the *options* are used as [return] options when generating the error message. The default corresponds to setting "-level 0". Example: If "**-error** {-errorcode MyError -level 1}" is used, an error would be generated as:
 
 

@@ -84,7 +84,7 @@ The core provides three functions for the initialization of hash tables, Tcl\_In
 
 **Tcl\_InitHashTable** initializes a structure that describes a new hash table.  The space for the structure is provided by the caller, not by the hash module.  The value of *keyType* indicates what kinds of keys will be used for all entries in the table. All of the key types described later are allowed, with the exception of **TCL\_CUSTOM\_TYPE\_KEYS** and **TCL\_CUSTOM\_PTR\_KEYS**.
 
-**Tcl\_InitObjHashTable** is a wrapper around **Tcl\_InitCustomHashTable** and initializes a hash table whose keys are Tcl\_Obj \*.
+**Tcl\_InitObjHashTable** is a wrapper around **Tcl\_InitCustomHashTable** and initializes a hash table whose keys are [Tcl\_Obj][Object3] \*.
 
 **Tcl\_InitCustomHashTable** initializes a structure that describes a new hash table. The space for the structure is provided by the caller, not by the hash module.  The value of *keyType* indicates what kinds of keys will be used for all entries in the table. *KeyType* must have one of the following values:
 
@@ -178,7 +178,7 @@ typedef Tcl_HashEntry *Tcl_AllocHashEntryProc(
         void *keyPtr);
 ```
 
-If this is NULL then [Tcl\_Alloc][Alloc] is used to allocate enough space for a Tcl\_HashEntry, the key pointer is assigned to key.oneWordValue and the clientData is set to NULL. String keys and array keys use this function to allocate enough space for the entry and the key in one block, rather than doing it in two blocks. This saves space for a pointer to the key from the entry and another memory allocation. Tcl\_Obj\* keys use this function to allocate enough space for an entry and increment the reference count on the value.
+If this is NULL then [Tcl\_Alloc][Alloc] is used to allocate enough space for a Tcl\_HashEntry, the key pointer is assigned to key.oneWordValue and the clientData is set to NULL. String keys and array keys use this function to allocate enough space for the entry and the key in one block, rather than doing it in two blocks. This saves space for a pointer to the key from the entry and another memory allocation. [Tcl\_Obj][Object3] \* keys use this function to allocate enough space for an entry and increment the reference count on the value.
 
 The *freeEntryProc* member contains the address of a function called to free space for an entry.
 
@@ -187,14 +187,15 @@ typedef void Tcl_FreeHashEntryProc(
         Tcl_HashEntry *hPtr);
 ```
 
-If this is NULL then [Tcl\_Free][Alloc] is used to free the space for the entry. Tcl\_Obj\* keys use this function to decrement the reference count on the value.
+If this is NULL then [Tcl\_Free][Alloc] is used to free the space for the entry. [Tcl\_Obj][Object3] \* keys use this function to decrement the reference count on the value.
 
 # Reference count management
 
 When a hash table is created with **Tcl\_InitCustomHashTable**, the **Tcl\_CreateHashEntry** function will increment the reference count of its *key* argument when it creates a key (but not if there is an existing matching key). The reference count of the key will be decremented when the corresponding hash entry is deleted, whether with **Tcl\_DeleteHashEntry** or with **Tcl\_DeleteHashTable**. The **Tcl\_GetHashKey** function will return the key without further modifying its reference count.
 
-Custom hash tables that use a Tcl\_Obj\* as key will generally need to do something similar in their *allocEntryProc*.
+Custom hash tables that use a [Tcl\_Obj][Object3] \* as key will generally need to do something similar in their *allocEntryProc*.
 
 
 [Alloc]: Alloc.md
+[Object3]: Object3.md
 

@@ -36,34 +36,34 @@ In the second more complex command form *options* allow for finer control of the
 [--]{.lit}
 : Marks the end of options. All following arguments are handled as variable names.
 
-[-all]{.lit}
+**-all**
 : All conditions for the wait operation must be met to complete the wait operation. Otherwise (the default) the first event completes the wait.
 
-[-extended]{.lit}
+**-extended**
 : An extended result in list form is returned, see below for explanation.
 
-[-nofileevents]{.lit}
+**-nofileevents**
 : File events are not handled in the wait operation.
 
-[-noidleevents]{.lit}
+**-noidleevents**
 : Idle handlers are not invoked during the wait operation.
 
-[-notimerevents]{.lit}
+**-notimerevents**
 : Timer handlers are not serviced during the wait operation.
 
-[-nowindowevents]{.lit}
+**-nowindowevents**
 : Events of the windowing system are not handled during the wait operation.
 
-[-readable]{.lit} [channel]{.arg}
+**-readable** *channel*
 : *Channel* must name a Tcl channel open for reading. If *channel* is or becomes readable the wait operation completes.
 
-[-timeout]{.lit} [milliseconds]{.arg}
-: The wait operation is constrained to *milliseconds*.
+**-timeout** *milliseconds*
+: The wait operation is constrained to *milliseconds*. A monotonic clock is used if available.
 
-[-variable]{.lit} [varName]{.arg}
+**-variable** *varName*
 : *VarName* must be the name of a global variable. Writing or unsetting this variable completes the wait operation.
 
-[-writable]{.lit} [channel]{.arg}
+**-writable** *channel*
 : *Channel* must name a Tcl channel open for writing. If *channel* is or becomes writable the wait operation completes.
 
 

@@ -42,10 +42,10 @@ For applications like a code repository it is important to identify the architec
 [platform::shell::identify]{.cmd} [shell]{.arg}
 : This command does the same identification as **platform::identify**, for the specified Tcl shell, in contrast to the running shell.
 
-[platform::shell::generic]{.cmd} [shell]{.arg}
+**platform::shell::generic** *shell*
 : This command does the same identification as **platform::generic**, for the specified Tcl shell, in contrast to the running shell.
 
-[platform::shell::platform]{.cmd} [shell]{.arg}
+**platform::shell::platform** *shell*
 : This command returns the contents of [tcl\_platform(platform)][tclvars] for the specified Tcl shell.
 
 

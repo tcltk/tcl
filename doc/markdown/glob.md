@@ -37,19 +37,19 @@ If the initial arguments to **glob** start with **-** then they are treated as s
 [-directory]{.lit} [directory]{.arg}
 : Search for files which match the given patterns starting in the given *directory*. This allows searching of directories whose name contains glob-sensitive characters without the need to quote such characters explicitly. This option may not be used in conjunction with **-path**, which is used to allow searching for complete file paths whose names may contain glob-sensitive characters.
 
-[-join]{.lit}
+**-join**
 : The remaining pattern arguments, after option processing, are treated as a single pattern obtained by joining the arguments with directory separators.
 
-[-nocomplain]{.lit}
+**-nocomplain**
 : Allows an empty list to be returned without error; This is the default behavior in Tcl 9.0, so this switch has no effect any more.
 
-[-path]{.lit} [pathPrefix]{.arg}
+**-path** *pathPrefix*
 : Search for files with the given *pathPrefix* where the rest of the name matches the given patterns. This allows searching for files with names similar to a given file (as opposed to a directory) even when the names contain glob-sensitive characters. This option may not be used in conjunction with **-directory**. For example, to find all files with the same root name as $path, but differing extensions, you should use "**glob -path [file rootname $path] .\***" which will work even if **$path** contains numerous glob-sensitive characters.
 
-[-tails]{.lit}
+**-tails**
 : Only return the part of each file found which follows the last directory named in any **-directory** or **-path** path specification. Thus `glob -tails -directory $dir *` is equivalent to `set pwd [pwd]; cd $dir; glob *; cd $pwd`. For **-path** specifications, the returned names will include the last path segment, so `glob -tails -path [file rootname /home/fred/foo.tex] .*` will return paths like **foo.aux foo.bib foo.tex** etc.
 
-[-types]{.lit} [typeList]{.arg}
+**-types** *typeList*
 : Only list files or directories which match *typeList*, where the items in the list have two forms. The first form is like the -type option of the Unix find command: *b* (block special file), *c* (character special file), *d* (directory), *f* (plain file), *l* (symbolic link), *p* (named pipe), or *s* (socket), where multiple types may be specified in the list. **glob** will return all files which match at least one of the types given. Note that symbolic links will be returned both if **-types l** is given, or if the target of a link matches the requested type. So, a link to a directory will be returned if **-types d** was specified.
 
     The second form specifies types where all the types given must match. These are *r*, *w*, *x* as file permissions, and *readonly*, *hidden* as special permission cases. On the Macintosh, macOS types and creators are also supported, where any item which is four characters long is assumed to be a macOS type (e.g. **TEXT**). Items which are of the form *{macintosh type XXXX}* or *{macintosh creator XXXX}* will match types or creators respectively. Unrecognized types, or specifications of multiple macOS types/creators will signal an error.
@@ -63,7 +63,7 @@ If the initial arguments to **glob** start with **-** then they are treated as s
 
     except that the first case doesn't return the trailing "/" and is more platform independent.
 
-[--]{.lit}
+**--**
 : Marks the end of switches. The argument following this one will be treated as a *pattern* even if it starts with a **-**.
 
 

@@ -66,13 +66,14 @@ The *mask* parameter specifies the operations that are allowed on the new channe
 
 Closing a channel closes the channels stacked below it.  The close of stacked channels is executed in a way that allows buffered data to be properly flushed.
 
-**Tcl\_UnstackChannel** reverses the process.  The old channel is associated with the channel name, and the processing module added by **Tcl\_StackChannel** is destroyed.  If there is no old channel, then **Tcl\_UnstackChannel** is equivalent to [Tcl\_Close][OpenFileChnl].  If an error occurs unstacking the channel, **TCL\_ERROR** is returned, otherwise **TCL\_OK** is returned.
+**Tcl\_UnstackChannel** reverses the process.  The old channel is associated with the channel name, and the processing module added by **Tcl\_StackChannel** is destroyed.  If there is no old channel, then **Tcl\_UnstackChannel** is equivalent to [Tcl\_Close][OpenFileChnl].  If an error occurs unstacking the channel, [TCL\_ERROR][catch] is returned, otherwise [TCL\_OK][catch] is returned.
 
 **Tcl\_GetTopChannel** returns the top channel in the stack of channels the supplied channel is part of.
 
 **Tcl\_GetStackedChannel** returns the channel in the stack of channels which is just below the supplied channel. 
 
 
+[catch]: catch.md
 [CrtChannel]: CrtChannel.md
 [OpenFileChnl]: OpenFileChnl.md
 

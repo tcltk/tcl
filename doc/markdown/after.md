@@ -7,6 +7,7 @@ TclDescription: Tcl Built-In Commands
 Links:
  - concat(n)
  - interp(n)
+ - timer(n)
  - update(n)
  - vwait(n)
 Keywords:
@@ -37,28 +38,32 @@ after - Execute a command after a time delay
 
 # Description
 
-This command is used to delay execution of the program or to execute a command in background sometime in the future.  It has several forms, depending on the first argument to the command:
+This command is used to delay execution of the program or to execute a command in the background sometime in the future. This command uses a monotonic clock if available. It has several forms, depending on the first argument to the command:
 
 [after]{.cmd} [ms]{.arg}
 : *Ms* must be an integer giving a time in milliseconds. A negative number is treated as 0. The command sleeps for *ms* milliseconds and then returns. While the command is sleeping the application does not respond to events.
 
-[after]{.cmd} [ms]{.arg} [script]{.arg} [script]{.optdot}
+**after** *ms script* ?*script ...*?
 : In this form the command returns immediately, but it arranges for a Tcl command to be executed *ms* milliseconds later as an event handler. The command will be executed exactly once, at the given time. The delayed command is formed by concatenating all the *script* arguments in the same fashion as the [concat] command. The command will be executed at global level (outside the context of any Tcl procedure). If an error occurs while executing the delayed command then the background error will be reported by the command registered with [interp bgerror][interp]. The **after** command returns an identifier that can be used to cancel the delayed command using **after cancel**. A *ms* value of 0 (or negative) queues the event immediately with priority over other event types (if not installed with an event proc, which will wait for next round of events).
 
-[after]{.cmd} [cancel]{.sub} [id]{.arg}
-: Cancels the execution of a delayed command that was previously scheduled. *Id* indicates which command should be canceled;  it must have been the return value from a previous **after** command. If the command given by *id* has already been executed then the **after cancel** command has no effect.
+**after cancel** *id*
+: Cancels the execution of a delayed command that was previously scheduled. *Id* indicates which command should be canceled;  it must have been the return value from a previous **after** or **timer** command. If the command given by *id* has already been executed then the **after cancel** command has no effect.
 
-[after]{.cmd} [cancel]{.sub} [script]{.arg} [script]{.optdot}
+**after cancel** *script* ?*script ...*?
 : This command also cancels the execution of a delayed command. The *script* arguments are concatenated together with space separators (just as in the [concat] command). If there is a pending command that matches the string, it is canceled and will never be executed;  if no such command is currently pending then the **after cancel** command has no effect.
 
-[after]{.cmd} [idle]{.sub} [script]{.arg} [script]{.optdot}
+**after idle** *script* ?*script ...*?
 : Concatenates the *script* arguments together with space separators (just as in the [concat] command), and arranges for the resulting script to be evaluated later as an idle callback. The script will be run exactly once, the next time the event loop is entered and there are no events to process. The command returns an identifier that can be used to cancel the delayed command using **after cancel**. If an error occurs while executing the script then the background error will be reported by the command registered with [interp bgerror][interp].
 
-[after]{.cmd} [info]{.sub} [id]{.optarg}
-: This command returns information about existing event handlers. If no *id* argument is supplied, the command returns a list of the identifiers for all existing event handlers created by the **after** command for this interpreter. If *id* is supplied, it specifies an existing handler; *id* must have been the return value from some previous call to **after** and it must not have triggered yet or been canceled. In this case the command returns a list with two elements. The first element of the list is the script associated with *id*, and the second element is either **idle** or **timer** to indicate what kind of event handler it is.
+**after info** ?*id*?
+: This command returns information about existing event handlers. If no *id* argument is supplied, the command returns a list of the identifiers for all existing event handlers created by the **after** command for this interpreter. If *id* is supplied, it specifies an existing handler; *id* must have been the return value from some previous call to **after** and it must not have triggered yet or been canceled. In this case the command returns a list with two elements. The first element of the list is the script associated with *id*, and the second element is either **idle** or **timer** to indicate what kind of event handler it is. Monotonic and wall clock events have the kind **timer**. Use **timer info** to differntiate between the two clocks and to retrieve the scheduled event time.
 
 
 The **after** *ms* and **after idle** forms of the command assume that the application is event driven:  the delayed commands will not be executed unless the application enters the event loop. In applications that are not normally event-driven, such as [tclsh], the event loop can be entered with the [vwait] and [update] commands.
+
+# Time maximum value
+
+The argument *delay* is bound to a resulting 63 bit monotonic clock value (in unit microseconds). Any higher value (which is after year 294441) will result in a **time too far away** error.
 
 # Examples
 
@@ -86,6 +91,14 @@ proc doOneStep {} {
 }
 doOneStep
 ```
+
+# Maximum time
+
+The maximum supported time point is bound to a 63 bit microseconds value. This is minimum around year 294441. Specifying time delays resulting in larger monotonic time values will raise an error.
+
+# Compatibility
+
+This command uses a monotonic clock if available. All versions prior to 9.1 used a wall clock for this command. The new **timer** command features options using the wall clock.
 
 
 [concat]: concat.md

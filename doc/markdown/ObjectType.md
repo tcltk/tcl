@@ -77,9 +77,9 @@ The procedures in this man page manage Tcl value types (sometimes referred to as
 
 **Tcl\_GetObjType** returns a pointer to the registered Tcl\_ObjType with name *typeName*. It returns NULL if no type with that name is registered.
 
-**Tcl\_AppendAllObjTypes** appends the name of each registered value type as a list element onto the Tcl value referenced by *objPtr*. The return value is **TCL\_OK** unless there was an error converting *objPtr* to a list value; in that case **TCL\_ERROR** is returned.
+**Tcl\_AppendAllObjTypes** appends the name of each registered value type as a list element onto the Tcl value referenced by *objPtr*. The return value is [TCL\_OK][catch] unless there was an error converting *objPtr* to a list value; in that case [TCL\_ERROR][catch] is returned.
 
-**Tcl\_ConvertToType** converts a value from one type to another if possible. It creates a new internal representation for *objPtr* appropriate for the target type *typePtr* and sets its *typePtr* member as determined by calling the *typePtr->setFromAnyProc* routine. Any internal representation for *objPtr*'s old type is freed. If an error occurs during conversion, it returns **TCL\_ERROR** and leaves an error message in the result value for *interp* unless *interp* is NULL. Otherwise, it returns **TCL\_OK**. Passing a NULL *interp* allows this procedure to be used as a test whether the conversion can be done (and in fact was done).
+**Tcl\_ConvertToType** converts a value from one type to another if possible. It creates a new internal representation for *objPtr* appropriate for the target type *typePtr* and sets its *typePtr* member as determined by calling the *typePtr->setFromAnyProc* routine. Any internal representation for *objPtr*'s old type is freed. If an error occurs during conversion, it returns [TCL\_ERROR][catch] and leaves an error message in the result value for *interp* unless *interp* is NULL. Otherwise, it returns [TCL\_OK][catch]. Passing a NULL *interp* allows this procedure to be used as a test whether the conversion can be done (and in fact was done).
 
 In many cases, the *typePtr->setFromAnyProc* routine will set *objPtr->typePtr* to the argument value *typePtr*, but that is no longer guaranteed.  The *setFromAnyProc* is free to set the internal representation for *objPtr* to make use of another related Tcl\_ObjType, if it sees fit.
 
@@ -99,7 +99,7 @@ This returns a public type
 typedef union Tcl_ObjInternalRep {...} Tcl_ObjInternalRep
 ```
 
-where the contents are exactly the existing contents of the union in the *internalRep* field of the *Tcl\_Obj* struct. This definition permits us to pass internal representations and pointers to them as arguments and results in public routines.
+where the contents are exactly the existing contents of the union in the *internalRep* field of the *[Tcl\_Obj][Object3]* struct. This definition permits us to pass internal representations and pointers to them as arguments and results in public routines.
 
 # The tcl\_objtype structure
 
@@ -140,7 +140,7 @@ typedef int Tcl_SetFromAnyProc(
         Tcl_Obj *objPtr);
 ```
 
-If an internal representation cannot be created from the string, it returns **TCL\_ERROR** and puts a message describing the error in the result value for *interp* unless *interp* is NULL. If *setFromAnyProc* is successful, it stores the new internal representation, sets *objPtr*'s *typePtr* member to point to the **Tcl\_ObjType** struct corresponding to the new internal representation, and returns **TCL\_OK**. Before setting the new internal representation, the *setFromAnyProc* must free any internal representation of *objPtr*'s old type; it does this by calling the old type's *freeIntRepProc* if it is not NULL.
+If an internal representation cannot be created from the string, it returns [TCL\_ERROR][catch] and puts a message describing the error in the result value for *interp* unless *interp* is NULL. If *setFromAnyProc* is successful, it stores the new internal representation, sets *objPtr*'s *typePtr* member to point to the **Tcl\_ObjType** struct corresponding to the new internal representation, and returns [TCL\_OK][catch]. Before setting the new internal representation, the *setFromAnyProc* must free any internal representation of *objPtr*'s old type; it does this by calling the old type's *freeIntRepProc* if it is not NULL.
 
 As an example, the *setFromAnyProc* for the built-in Tcl list type gets an up-to-date string representation for *objPtr* by calling [Tcl\_GetStringFromObj][StringObj]. It parses the string to verify it is in a valid list format and to obtain each element value in the list, and, if this succeeds, stores the list elements in *objPtr*'s internal representation and sets *objPtr*'s *typePtr* member to point to the list type's Tcl\_ObjType structure.
 
@@ -159,7 +159,7 @@ typedef void Tcl_UpdateStringProc(
 
 *objPtr*'s *bytes* member is always NULL when it is called. It must always set *bytes* non-NULL before returning. We require the string representation's byte array to have a null after the last byte, at offset *length*, and to have no null bytes before that; this allows string representations to be treated as conventional null character-terminated C strings. These restrictions are easily met by using Tcl's internal UTF encoding for the string representation, same as one would do for other Tcl routines accepting string values as arguments. Storage for the byte array must be allocated in the heap by [Tcl\_Alloc][Alloc]. Note that *updateStringProc*s must allocate enough storage for the string's bytes and the terminating null byte.
 
-The *updateStringProc* for Tcl's built-in double type, for example, calls Tcl\_PrintDouble to write to a buffer of size TCL\_DOUBLE\_SPACE, then allocates and copies the string representation to just enough space to hold it.  A pointer to the allocated space is stored in the *bytes* member.
+The *updateStringProc* for Tcl's built-in double type, for example, calls [Tcl\_PrintDouble][PrintDbl] to write to a buffer of size TCL\_DOUBLE\_SPACE, then allocates and copies the string representation to just enough space to hold it.  A pointer to the allocated space is stored in the *bytes* member.
 
 The *updateStringProc* member may be set to NULL, if the routines making use of the internal representation are written so that the string representation is never invalidated.  Failure to meet this obligation will lead to panics or crashes when [Tcl\_GetStringFromObj][StringObj] or other similar routines ask for the string representation.
 
@@ -208,7 +208,7 @@ For a custom value type that is scalar or atomic in nature, i.e., not a divisibl
 
 ## Version 2: abstract lists
 
-Version 2, **TCL\_OBJTYPE\_V2**, allows full List support when the functions described below are provided.  This allows for script level use of the List commands without causing the type of the Tcl\_Obj value to be converted to a list.  Unless specified otherwise, all functions specific to Version 2 should return **TCL\_OK** on success and **TCL\_ERROR** on failure.  In the case that a **Tcl\_Obj\*** is also returned, the reference count of the returned [Tcl\_Obj][Object] should not be incremented so, for example, if a new [Tcl\_Obj][Object] value is returned it should have a reference count of zero.  The functions should not assume that any [Tcl\_Obj][Object] passed in is unshared. 
+Version 2, **TCL\_OBJTYPE\_V2**, allows full List support when the functions described below are provided.  This allows for script level use of the List commands without causing the type of the [Tcl\_Obj][Object3] value to be converted to a list.  Unless specified otherwise, all functions specific to Version 2 should return [TCL\_OK][catch] on success and [TCL\_ERROR][catch] on failure.  In the case that a **[Tcl\_Obj][Object3]\*** is also returned, the reference count of the returned [Tcl\_Obj][Object3] should not be incremented so, for example, if a new [Tcl\_Obj][Object3] value is returned it should have a reference count of zero.  The functions should not assume that any [Tcl\_Obj][Object3] passed in is unshared. 
 
 ## The lengthproc field
 
@@ -221,7 +221,7 @@ typedef Tcl_Size
 
 ## The indexproc field
 
-The **IndexProc** function correlates with with the [Tcl\_ListObjIndex][ListObj] C API. The function should store a pointer to the element at the specified **index** in **\*elemObj**. Indices that are out of bounds should not be treated as errors; rather, the function should store a null pointer and return TCL\_OK.
+The **IndexProc** function correlates with with the [Tcl\_ListObjIndex][ListObj] C API. The function should store a pointer to the element at the specified **index** in **\*elemObj**. Indices that are out of bounds should not be treated as errors; rather, the function should store a null pointer and return [TCL\_OK][catch].
 
 ```
 typedef int (Tcl_ObjTypeIndexProc) (
@@ -257,7 +257,7 @@ typedef int (Tcl_ObjTypeReverseProc) (
 
 ## The getelements field
 
-The **GetElements** function returns a count and a pointer to an array of Tcl\_Obj values for the entire Abstract List. This correlates to the [Tcl\_ListObjGetElements][ListObj] C API call.
+The **GetElements** function returns a count and a pointer to an array of [Tcl\_Obj][Object3] values for the entire Abstract List. This correlates to the [Tcl\_ListObjGetElements][ListObj] C API call.
 
 ```
 typedef int (Tcl_ObjTypeGetElements) (
@@ -316,11 +316,12 @@ None of the callback functions in the **Tcl\_ObjType** structure should modify t
 
 
 [Alloc]: Alloc.md
+[catch]: catch.md
 [ListObj]: ListObj.md
 [lrange]: lrange.md
 [lreverse]: lreverse.md
 [lset]: lset.md
-[Object]: Object.md
 [Object3]: Object3.md
+[PrintDbl]: PrintDbl.md
 [StringObj]: StringObj.md
 

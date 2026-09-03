@@ -53,7 +53,7 @@ Tcl\_AppInit - perform application-specific initialization
 4. Use the routines [Tcl\_SetStartupScript][Tcl_Main] and [Tcl\_GetStartupScript][Tcl_Main] to set or query the file and encoding that the active [Tcl\_Main][Tcl_Main] or [Tk\_Main][Tk_Main] routine will use as a startup script.
 
 
-**Tcl\_AppInit** returns **TCL\_OK** or **TCL\_ERROR**. If it returns **TCL\_ERROR** then it must leave an error message in for the interpreter's result;  otherwise the result is ignored.
+**Tcl\_AppInit** returns [TCL\_OK][catch] or [TCL\_ERROR][catch]. If it returns [TCL\_ERROR][catch] then it must leave an error message in for the interpreter's result;  otherwise the result is ignored.
 
 In addition to **Tcl\_AppInit**, your application should also contain a procedure **main** that calls [Tcl\_Main][Tcl_Main] as follows:
 
@@ -64,6 +64,7 @@ Tcl_Main(argc, argv, Tcl_AppInit);
 The third argument to [Tcl\_Main][Tcl_Main] gives the address of the application-specific initialization procedure to invoke. This means that you do not have to use the name **Tcl\_AppInit** for the procedure, but in practice the name is nearly always **Tcl\_AppInit** (in versions before Tcl 7.4 the name **Tcl\_AppInit** was implicit;  there was no way to specify the procedure explicitly). The best way to get started is to make a copy of the file **tclAppInit.c** from the Tcl library or source directory. It already contains a **main** procedure and a template for **Tcl\_AppInit** that you can modify for your application. 
 
 
+[catch]: catch.md
 [Tcl_Main]: Tcl_Main.md
 [tclsh]: tclsh.md
 [Tk_Main]: Tk_Main.md

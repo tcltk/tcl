@@ -46,7 +46,7 @@ typedef int Tcl_LibraryInitProc(
         Tcl_Interp *interp);
 ```
 
-The *interp* argument identifies the interpreter in which the library is to be loaded.  The initialization procedure must return **TCL\_OK** or **TCL\_ERROR** to indicate whether or not it completed successfully;  in the event of an error it should set the interpreter's result to point to an error message.  The result of the **load** command will be the result returned by the initialization procedure.
+The *interp* argument identifies the interpreter in which the library is to be loaded.  The initialization procedure must return [TCL\_OK][catch] or [TCL\_ERROR][catch] to indicate whether or not it completed successfully;  in the event of an error it should set the interpreter's result to point to an error message.  The result of the **load** command will be the result returned by the initialization procedure.
 
 The actual loading of a file will only be done once for each *fileName* in an application.  If a given *fileName* is loaded into multiple interpreters, then the first **load** will load the code and call the initialization procedure;  subsequent **load**s will call the initialization procedure without loading the code again. For Tcl versions lower than 8.5, it is not possible to unload or reload a library. From version 8.5 however, the [unload] command allows the unloading of libraries loaded with **load**, for libraries that are aware of the Tcl's unloading mechanism.
 
@@ -82,7 +82,7 @@ The following is a minimal extension:
 #include <tcl.h>
 #include <stdio.h>
 static int fooCmd(void *clientData,
-        Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]) {
+        Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const *objv) {
     printf("called with %d arguments\n", objc);
     return TCL_OK;
 }
@@ -91,7 +91,7 @@ int Foo_Init(Tcl_Interp *interp) {
 	return TCL_ERROR;
     }
     printf("creating foo command");
-    Tcl_CreateObjCommand(interp, "foo", fooCmd, NULL, NULL);
+    Tcl_CreateObjCommand2(interp, "foo", fooCmd, NULL, NULL);
     return TCL_OK;
 }
 ```
@@ -114,6 +114,7 @@ foo
 ```
 
 
+[catch]: catch.md
 [interp]: interp.md
 [StaticLibrary]: StaticLibrary.md
 [unload]: unload.md

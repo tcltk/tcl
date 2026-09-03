@@ -71,16 +71,16 @@ The **oo::object** class supports the following non-exported methods:
 
     Note that object-internal commands such as [my] and **self** can be invoked in this context.
 
-[obj]{.ins} [unknown]{.sub} [methodName]{.optarg} [arg]{.optdot}
+*obj* [unknown] ?*methodName*? ?*arg ...*?
 : This method is called when an attempt to invoke the method *methodName* on object *obj* fails. The arguments that the user supplied to the method are given as *arg* arguments. If *methodName* is absent, the object was invoked with no method name at all (or any other arguments). The default implementation (i.e., the one defined by the **oo::object** class) generates a suitable error, detailing what methods the object supports given whether the object was invoked by its public name or through the [my] command.
 
-[obj]{.ins} [variable]{.sub} [varName]{.optdot}
+*obj* [variable] ?*varName ...*?
 : This method arranges for each variable called *varName* to be linked from the object *obj*'s unique namespace into the caller's context. Thus, if it is invoked from inside a procedure then the namespace variable in the object is linked to the local variable in the procedure. Each *varName* argument must not have any namespace separators in it. The result is the empty string.
 
-[obj]{.ins} [varname]{.sub} [varName]{.arg}
+*obj* **varname** *varName*
 : This method returns the globally qualified name of the variable *varName* in the unique namespace for the object *obj*.
 
-[obj]{.ins} [<cloned>]{.sub} [sourceObjectName]{.arg}
+*obj* **<cloned>** *sourceObjectName*
 : This method is used by the **oo::object** command to copy the state of one object to another. It is responsible for copying the procedures and variables of the namespace of the source object (*sourceObjectName*) to the current object. It does not copy any other types of commands or any traces on the variables; that can be added if desired by overriding this method in a subclass.
 
 
@@ -106,4 +106,6 @@ $obj foo             → error "unknown command obj"
 [concat]: concat.md
 [my]: my.md
 [rename]: rename.md
+[unknown]: unknown.md
+[variable]: variable.md
 

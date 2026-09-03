@@ -48,7 +48,6 @@ to cancel the delayed command using \fBtimer cancel\fR or \fBafter cancel\fR.
 A \fIdelay\fR value of 0 (or negative) queues the event immediately with
 priority over other event types (if not installed with an event proc,
 which will wait for next round of events).
-.TP
 The command \fBafter ms script\fR may also be used to register monotonic clock timer events.
 They are handled by the same queue as this form of the \fBtimer\fR command.
 .\" METHOD: at

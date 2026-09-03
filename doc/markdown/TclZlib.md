@@ -116,7 +116,7 @@ Once a stream has been constructed, **Tcl\_ZlibStreamPut** is used to add data t
 
 **Tcl\_ZlibStreamSetCompressionDictionary** is used to control the compression dictionary used with the stream, a compression dictionary being an array of bytes (such as might be created with [Tcl\_NewByteArrayObj][ByteArrObj]) that is used to initialize the compression engine rather than leaving it to create it on the fly from the data being compressed. Setting a compression dictionary allows for more efficient compression in the case where the start of the data is highly regular, but it does require both the compressor and the decompressor to agree on the value to use. Compression dictionaries are only fully supported for zlib-format data; on compression, they must be set before any data is sent in with **Tcl\_ZlibStreamPut**, and on decompression they should be set when **Tcl\_ZlibStreamGet** produces an [error] with its **-errorcode** set to "**ZLIB NEED\_DICT** *code*"; the *code* will be the Adler-32 checksum (see **Tcl\_ZlibAdler32**) of the compression dictionary sought. (Note that this is only true for zlib-format streams; gzip streams ignore compression dictionaries as the format specification doesn't permit them, and raw streams just produce a data error if the compression dictionary is missing or incorrect.)
 
-If you wish to clear a stream and reuse it for a new compression or decompression action, **Tcl\_ZlibStreamReset** will do this and return a normal Tcl result code to indicate whether it was successful; if the stream is registered with an interpreter, an error message will be left in the interpreter result when this function returns TCL\_ERROR. Finally, **Tcl\_ZlibStreamClose** will clean up the stream and delete the associated command: using [Tcl\_DeleteCommand][CrtObjCmd] on the stream's command is equivalent (when such a command exists).
+If you wish to clear a stream and reuse it for a new compression or decompression action, **Tcl\_ZlibStreamReset** will do this and return a normal Tcl result code to indicate whether it was successful; if the stream is registered with an interpreter, an error message will be left in the interpreter result when this function returns [TCL\_ERROR][catch]. Finally, **Tcl\_ZlibStreamClose** will clean up the stream and delete the associated command: using [Tcl\_DeleteCommand][CrtObjCmd] on the stream's command is equivalent (when such a command exists).
 
 # Gzip options dictionary
 
@@ -166,6 +166,7 @@ These functions will fail gracefully if Tcl is not linked with the zlib library.
 
 
 [ByteArrObj]: ByteArrObj.md
+[catch]: catch.md
 [clock]: clock.md
 [CrtObjCmd]: CrtObjCmd.md
 [error]: error.md

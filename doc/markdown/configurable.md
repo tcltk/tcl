@@ -84,12 +84,12 @@ The **property** command takes the name of a property to define first, *without 
 [-get]{.lit} [getterScript]{.arg}
 : This defines the implementation of how to read from the property; the *getterScript* will become the body of a method (taking no arguments) defined on the class, if the kind of the property is such that the property can be read from. The method will be named **<ReadProp-***propertyName***>**, and will default to being a simple read of the instance variable with the same name as the property (e.g., "**property** xyz" will result in a method "<ReadProp-xyz>" being created).
 
-[-kind]{.lit} [propertyKind]{.arg}
+**-kind** *propertyKind*
 : This defines what sort of property is being created. The *propertyKind* must be exactly one of **readable**, **writable**, or **readwrite** (which is the default) which will make the property read-only, write-only or read-write, respectively.  Read-only properties can only ever be read from, write-only properties can only ever be written to, and read-write properties can be both read and written.
 
     Note that write-only properties are not particularly discoverable as they are never reported by the **configure** method other than by error messages when attempting to write to a property that does not exist.
 
-[-set]{.lit} [setterScript]{.arg}
+**-set** *setterScript*
 : This defines the implementation of how to write to the property; the *setterScript* will become the body of a method taking a single argument, *value*, defined on the class, if the kind of the property is such that the property can be written to. The method will be named **<WriteProp-***propertyName***>**, and will default to being a simple write of the instance variable with the same name as the property (e.g., "**property** xyz" will result in a method "<WriteProp-xyz>" being created).
 
 
@@ -104,10 +104,10 @@ The configurable class system is comprised of several pieces. The **oo::configur
 [oo::configuresupport::configurable]{.cmd}
 : This is a class that provides the implementation of the **configure** method (described above in [Configure method]).
 
-[oo::configuresupport::configurableclass]{.cmd}
+**oo::configuresupport::configurableclass**
 : This is a namespace that contains the definition dialect that provides the **property** declaration for use in classes (i.e., via [oo::define][define], and class constructors under normal circumstances), as described above in [Property definitions]. It [namespace export][namespace]s its **property** command so that it may be used easily in user definition dialects.
 
-[oo::configuresupport::configurableobject]{.cmd}
+**oo::configuresupport::configurableobject**
 : This is a namespace that contains the definition dialect that provides the **property** declaration for use in instance objects (i.e., via [oo::objdefine][objdefine], and the **self** declaration in [oo::define][define]), as described above in [Property definitions]. It [namespace export][namespace]s its **property** command so that it may be used easily in user definition dialects.
 
 
@@ -118,13 +118,13 @@ These slots, and their intended semantics, are:
 [oo::configuresupport::readableproperties]{.cmd}
 : The set of properties of a class (not including those from its superclasses) that may be read from when configuring an instance of the class. This slot can also be read with the **info class properties** command.
 
-[oo::configuresupport::writableproperties]{.cmd}
+**oo::configuresupport::writableproperties**
 : The set of properties of a class (not including those from its superclasses) that may be written to when configuring an instance of the class. This slot can also be read with the **info class properties** command.
 
-[oo::configuresupport::objreadableproperties]{.cmd}
+**oo::configuresupport::objreadableproperties**
 : The set of properties of an object instance (not including those from its classes) that may be read from when configuring the object. This slot can also be read with the **info object properties** command.
 
-[oo::configuresupport::objwritableproperties]{.cmd}
+**oo::configuresupport::objwritableproperties**
 : The set of properties of an object instance (not including those from its classes) that may be written to when configuring the object. This slot can also be read with the **info object properties** command.
 
 

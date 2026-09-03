@@ -50,7 +50,7 @@ Tcl\_IsSafe, Tcl\_CreateChild, Tcl\_GetChild, Tcl\_GetParent, Tcl\_GetInterpPath
 : Name of child interpreter to create or manipulate.
 
 [isSafe]{.carg .in type="int"}
-: If non-zero, a .QW safe child that is suitable for running untrusted code is created, otherwise a trusted child is created.
+: If non-zero, a "safe" child that is suitable for running untrusted code is created, otherwise a trusted child is created.
 
 [\*childInterp]{.carg .in type="Tcl_Interp"}
 : Interpreter to use for creating the source command for an alias (see below).
@@ -74,7 +74,7 @@ Tcl\_IsSafe, Tcl\_CreateChild, Tcl\_GetChild, Tcl\_GetParent, Tcl\_GetInterpPath
 : Count of additional value arguments to pass to the aliased command.
 
 [\*\*objv]{.carg .in type="Tcl_Obj"}
-: Vector of Tcl\_Obj structures, the additional value arguments to pass to the aliased command. This storage is owned by the caller.
+: Vector of [Tcl\_Obj][Object3] structures, the additional value arguments to pass to the aliased command. This storage is owned by the caller.
 
 [\*\*targetInterpPtr]{.carg .in type="Tcl_Interp"}
 : Pointer to location to store the address of the interpreter where a target command is defined for an alias.
@@ -83,10 +83,10 @@ Tcl\_IsSafe, Tcl\_CreateChild, Tcl\_GetChild, Tcl\_GetParent, Tcl\_GetInterpPath
 : Pointer to location to store the address of the name of the target command for an alias.
 
 [\*objcPtr]{.carg .out type="Tcl_Size &| int"}
-: Pointer to location to store count of additional value arguments to be passed to the alias. The location is in storage owned by the caller. If it points to a variable which type is not **Tcl\_Size**, a compiler warning will be generated. If your extensions is compiled with **-DTCL\_8\_API**, this function will return TCL\_ERROR for aliases with more than INT\_MAX value arguments, otherwise expect it to crash
+: Pointer to location to store count of additional value arguments to be passed to the alias. The location is in storage owned by the caller. If it points to a variable which type is not **Tcl\_Size**, a compiler warning will be generated. If your extensions is compiled with **-DTCL\_8\_API**, this function will return [TCL\_ERROR][catch] for aliases with more than INT\_MAX value arguments, otherwise expect it to crash
 
 [\*\*\*objvPtr]{.carg .out type="Tcl_Obj"}
-: Pointer to location to store a vector of Tcl\_Obj structures, the additional arguments to pass to an alias command. The location is in storage owned by the caller, the vector of Tcl\_Obj structures is owned by the called function.
+: Pointer to location to store a vector of [Tcl\_Obj][Object3] structures, the additional arguments to pass to an alias command. The location is in storage owned by the caller, the vector of [Tcl\_Obj][Object3] structures is owned by the called function.
 
 [\*cmdName]{.carg .in type="const char"}
 : Name of an exposed command to hide or create.
@@ -99,7 +99,7 @@ Tcl\_IsSafe, Tcl\_CreateChild, Tcl\_GetChild, Tcl\_GetParent, Tcl\_GetInterpPath
 
 # Description
 
-These procedures are intended for access to the multiple interpreter facility from inside C programs. They enable managing multiple interpreters in a hierarchical relationship, and the management of aliases, commands that when invoked in one interpreter execute a command in another interpreter. The return value for those procedures that return an **int** is either **TCL\_OK** or **TCL\_ERROR**. If **TCL\_ERROR** is returned then the interpreter's result contains an error message.
+These procedures are intended for access to the multiple interpreter facility from inside C programs. They enable managing multiple interpreters in a hierarchical relationship, and the management of aliases, commands that when invoked in one interpreter execute a command in another interpreter. The return value for those procedures that return an **int** is either [TCL\_OK][catch] or [TCL\_ERROR][catch]. If [TCL\_ERROR][catch] is returned then the interpreter's result contains an error message.
 
 **Tcl\_CreateChild** creates a new interpreter as a child of *interp*. It also creates a child command named *name* in *interp* which allows *interp* to manipulate the new child. If *isSafe* is zero, the command creates a trusted child in which Tcl code has access to all the Tcl commands. If it is **1**, the command creates a "safe" child in which Tcl code has access only to set of Tcl commands defined as "Safe Tcl"; see the manual entry for the Tcl [interp] command for details. If the creation of the new child interpreter failed, **NULL** is returned.
 
@@ -109,17 +109,17 @@ These procedures are intended for access to the multiple interpreter facility fr
 
 **Tcl\_GetParent** returns a pointer to the parent interpreter of *interp*. If *interp* has no parent (it is a top-level interpreter) then **NULL** is returned.
 
-**Tcl\_GetInterpPath** stores in the result of *interp* the relative path between *interp* and *childInterp*; *childInterp* must be a child of *interp*. If the computation of the relative path succeeds, **TCL\_OK** is returned, else **TCL\_ERROR** is returned and an error message is stored as the result of *interp*.
+**Tcl\_GetInterpPath** stores in the result of *interp* the relative path between *interp* and *childInterp*; *childInterp* must be a child of *interp*. If the computation of the relative path succeeds, [TCL\_OK][catch] is returned, else [TCL\_ERROR][catch] is returned and an error message is stored as the result of *interp*.
 
-**Tcl\_CreateAlias** creates a command named *childCmd* in *childInterp* that when invoked, will cause the command *targetCmd* to be invoked in *targetInterp*. The arguments specified by the strings contained in *argv* are always prepended to any arguments supplied in the invocation of *childCmd* and passed to *targetCmd*. This operation returns **TCL\_OK** if it succeeds, or **TCL\_ERROR** if it fails; in that case, an error message is left in the value result of *childInterp*. Note that there are no restrictions on the ancestry relationship (as created by **Tcl\_CreateChild**) between *childInterp* and *targetInterp*. Any two interpreters can be used, without any restrictions on how they are related.
+**Tcl\_CreateAlias** creates a command named *childCmd* in *childInterp* that when invoked, will cause the command *targetCmd* to be invoked in *targetInterp*. The arguments specified by the strings contained in *argv* are always prepended to any arguments supplied in the invocation of *childCmd* and passed to *targetCmd*. This operation returns [TCL\_OK][catch] if it succeeds, or [TCL\_ERROR][catch] if it fails; in that case, an error message is left in the value result of *childInterp*. Note that there are no restrictions on the ancestry relationship (as created by **Tcl\_CreateChild**) between *childInterp* and *targetInterp*. Any two interpreters can be used, without any restrictions on how they are related.
 
 **Tcl\_CreateAliasObj** is similar to **Tcl\_CreateAlias** except that it takes a vector of values to pass as additional arguments instead of a vector of strings.
 
-**Tcl\_GetAliasObj** returns information in the form of a pointer to a vector of Tcl\_Obj structures about an alias *aliasName* in *interp*. Any of the result fields can be **NULL**, in which case the corresponding datum is not returned. If a result field is non-**NULL**, the address indicated is set to the corresponding datum. For example, if *targetCmdPtr* is non-**NULL** it is set to a pointer to the string containing the name of the target command.
+**Tcl\_GetAliasObj** returns information in the form of a pointer to a vector of [Tcl\_Obj][Object3] structures about an alias *aliasName* in *interp*. Any of the result fields can be **NULL**, in which case the corresponding datum is not returned. If a result field is non-**NULL**, the address indicated is set to the corresponding datum. For example, if *targetCmdPtr* is non-**NULL** it is set to a pointer to the string containing the name of the target command.
 
-**Tcl\_ExposeCommand** moves the command named *hiddenCmdName* from the set of hidden commands to the set of exposed commands, putting it under the name *cmdName*. *HiddenCmdName* must be the name of an existing hidden command, or the operation will return **TCL\_ERROR** and leave an error message as the result of *interp*. If an exposed command named *cmdName* already exists, the operation returns **TCL\_ERROR** and leaves an error message as the result of *interp*. If the operation succeeds, it returns **TCL\_OK**. After executing this command, attempts to use *cmdName* in any script evaluation mechanism will again succeed.
+**Tcl\_ExposeCommand** moves the command named *hiddenCmdName* from the set of hidden commands to the set of exposed commands, putting it under the name *cmdName*. *HiddenCmdName* must be the name of an existing hidden command, or the operation will return [TCL\_ERROR][catch] and leave an error message as the result of *interp*. If an exposed command named *cmdName* already exists, the operation returns [TCL\_ERROR][catch] and leaves an error message as the result of *interp*. If the operation succeeds, it returns [TCL\_OK][catch]. After executing this command, attempts to use *cmdName* in any script evaluation mechanism will again succeed.
 
-**Tcl\_HideCommand** moves the command named *cmdName* from the set of exposed commands to the set of hidden commands, under the name *hiddenCmdName*. *CmdName* must be the name of an existing exposed command, or the operation will return **TCL\_ERROR** and leave an error message as the result of *interp*. Currently both *cmdName* and *hiddenCmdName* must not contain namespace qualifiers, or the operation will return **TCL\_ERROR** and leave an error message as the result of *interp*. The *CmdName* will be looked up in the global namespace, and not relative to the current namespace, even if the current namespace is not the global one. If a hidden command whose name is *hiddenCmdName* already exists, the operation also returns **TCL\_ERROR** and an error message is left as the result of *interp*. If the operation succeeds, it returns **TCL\_OK**. After executing this command, attempts to use *cmdName* in any script evaluation mechanism will fail.
+**Tcl\_HideCommand** moves the command named *cmdName* from the set of exposed commands to the set of hidden commands, under the name *hiddenCmdName*. *CmdName* must be the name of an existing exposed command, or the operation will return [TCL\_ERROR][catch] and leave an error message as the result of *interp*. Currently both *cmdName* and *hiddenCmdName* must not contain namespace qualifiers, or the operation will return [TCL\_ERROR][catch] and leave an error message as the result of *interp*. The *CmdName* will be looked up in the global namespace, and not relative to the current namespace, even if the current namespace is not the global one. If a hidden command whose name is *hiddenCmdName* already exists, the operation also returns [TCL\_ERROR][catch] and an error message is left as the result of *interp*. If the operation succeeds, it returns [TCL\_OK][catch]. After executing this command, attempts to use *cmdName* in any script evaluation mechanism will fail.
 
 For a description of the Tcl interface to multiple interpreters, see *interp(n)*.
 
@@ -130,5 +130,7 @@ For a description of the Tcl interface to multiple interpreters, see *interp(n)*
 **Tcl\_GetAliasObj** returns (via its *objvPtr* argument) a pointer to values that it holds a reference to.
 
 
+[catch]: catch.md
 [interp]: interp.md
+[Object3]: Object3.md
 

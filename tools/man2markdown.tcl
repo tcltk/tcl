@@ -234,7 +234,7 @@ namespace eval ::ndoc {
 	# dictionary mapping every documented Tcl C API function (Tcl_...) to the
 	# manual page (file root) that documents it:
 	set tclCApiFileMap [dict create {*}{
-		Tcl_Obj Object
+		Tcl_Obj Object3
 		Tcl_Access Access Tcl_AddErrorInfo AddErrInfo Tcl_AddObjErrorInfo AddErrInfo Tcl_AlertNotifier Notifier
 		Tcl_Alloc Alloc Tcl_AllocStatBuf FileSystem Tcl_AllowExceptions AllowExc Tcl_AppInit AppInit
 		Tcl_AppendAllObjTypes ObjectType Tcl_AppendElement SetResult Tcl_AppendExportList Namespace3 Tcl_AppendFormatToObj StringObj
@@ -480,6 +480,11 @@ namespace eval ::ndoc {
 		Tk_Y WindowId
 	}]
 
+	# dictionary mapping Tcl's return code constants to the manual page (file root) that documents them:
+	set tclReturnCodeFileMap [dict create {*}{
+		TCL_OK catch TCL_ERROR catch TCL_RETURN catch TCL_BREAK catch TCL_CONTINUE catch
+	}]
+
 	# dictionary of links on pages that should link to a page
 	# not identical to the link text.
 	# The keys of this dict are filenames (nroff files),
@@ -522,6 +527,7 @@ namespace eval ::ndoc {
 		timerate      {Tcl_EvalObjEx Eval}
 		tm            {auto_path tclvars tcl_pkgPath tclvars}
 		unknown       {auto_load library auto_execok library auto_noload library auto_noexec library}
+		Class         {oo::class class}
 		
 	}]
 	
@@ -1168,6 +1174,10 @@ proc ::ndoc::parseBlock {parent manContent} {
 										set itemTitle [dict get $manual lastComment]_$itemTitle
 									}
 								}
+								# the comment only ever labels the single .TP/.IP directly below it, so it
+								# must not leak into a later, unlabeled .TP/.IP (which would otherwise be
+								# misidentified as Tcl syntax and mishandled by parseCommand):
+								dict set manual lastComment {}
 								set itemContent {}
 							}
 						}
@@ -1263,8 +1273,11 @@ proc ::ndoc::parseBlock {parent manContent} {
 							if {! [string match ".*" $cmd]} {
 								# in the synopsis of section 3 pages there are lines of their own with
 								# the return type of the Tcl API function. We want to get them onto the same
-								# line as the command for processing:
-								if {[dict get $manual meta ManualSection] == 3 && [string range $line 0 2] ne "\\fB"} {
+								# line as the command for processing. Only do this when the line is truly
+								# just the bare return type (no \fB...\fR anywhere on it yet): a line such as
+								# 'typedef int \fBTcl_PostInitProc\fR(...)' already has its own function name
+								# embedded and must not have the following (unrelated) line appended to it:
+								if {[dict get $manual meta ManualSection] == 3 && [string range $line 0 2] ne "\\fB" && ![string match {*\\fB*} $line]} {
 									set line "#$line "
 									incr lineCount
 									append line [lindex $manContent $lineCount]
@@ -1319,6 +1332,9 @@ proc ::ndoc::parseBlock {parent manContent} {
 								set argExplanation ""
 							} elseif {$cmd in {.AS .BS .BE}} {
 								# .AS = max size hint for tab stops; .BS .BE = box enclosure: can be ignored
+							} elseif {$cmd in {.QW .PQ .QR}} {
+								# inline quoting:
+								append argExplanation [parseQuoting $line] { }
 							} else {
 								# explanatory text:
 								append argExplanation $line { }
@@ -2329,6 +2345,7 @@ proc ::ndoc::mdLinks {md} {
 	variable tclCmdListExclude
 	variable tclCApiFileMap
 	variable tkCApiFileMap
+	variable tclReturnCodeFileMap
 	variable sectionTitles
 	# list to build the markdown references for external links (these are put at the end of the document):
 	set refList [list]
@@ -2395,6 +2412,20 @@ proc ::ndoc::mdLinks {md} {
 				}
 			}
 		}
+		if {! $isValidLink && [string match {TCL\\_*} $linkCmd]} {
+			## a Tcl script-level return code constant (TCL_OK, TCL_ERROR, ...):
+			# (note that we can't handle this in tclCmdList as the md conversion has added a backslash (TCL\_...);
+			#  dict exists also excludes unrelated TCL_-prefixed tokens such as TCL_LIBRARY or TCL_VERSION):
+			set linkCmdSubst [subst -novariables -nocommands $linkCmd]
+			if {[dict exists $tclReturnCodeFileMap $linkCmdSubst]} {
+				set apiTarget [dict get $tclReturnCodeFileMap $linkCmdSubst]
+				if {$apiTarget ne $fileRoot} {
+					## don't link to catch.md from catch.n itself:
+					set linkTarget $apiTarget
+					set isValidLink 1
+				}
+			}
+		}
 		if {! $isValidLink && $linkCmd ne $cmdName && [dict exists $tclCmdListRemap $fileName]} {
 			## it's a valid link if there is a remapping entry here
 			## (note that we need to 'subst' the linkCmd word here as it may contain a literal backslash
@@ -2424,6 +2455,44 @@ proc ::ndoc::mdLinks {md} {
 			set nextIndex [expr {[lindex $fullRange end] + 1}]
 		}
 		set matchIndices [regexp -inline -expanded -indices -line -start $nextIndex {\*\*(.+?)\*\*} $md]
+	}
+	# second pass for plain text Tcl_OK, TCL_ERROR etc.
+	# while skiping text that is already inside a markdown link/span or in an inline code span:
+	set pos 0
+	while 1 {
+		set matchIndices [regexp -inline -expanded -indices -start $pos {
+			(\[[^]\n]*\](?:\{[^\}\n]*\}|\([^)\n]*\)|\[[^]\n]*\])?)  # existing link or span: skip over
+			|
+			(`[^`\n]*`)                                             # inline code span: skip over
+			|
+			(\m(?:Tcl|Tk|TCL)\\_[A-Za-z0-9]+)                       # candidate API identifier
+		} $md]
+		if {![llength $matchIndices]} break
+		lassign $matchIndices fullRange skipRange codeRange candRange
+		if {[lindex $candRange 0] == -1} {
+			# a link/span or inline code span: leave untouched:
+			set pos [expr {[lindex $fullRange 1] + 1}]
+			continue
+		}
+		set linkCmd [string range $md {*}$candRange]
+		set linkCmdSubst [subst -novariables -nocommands $linkCmd]
+		set apiTarget {}
+		if {[dict exists $tclCApiFileMap $linkCmdSubst]} {
+			set apiTarget [dict get $tclCApiFileMap $linkCmdSubst]
+		} elseif {[dict exists $tkCApiFileMap $linkCmdSubst]} {
+			set apiTarget [dict get $tkCApiFileMap $linkCmdSubst]
+		} elseif {[dict exists $tclReturnCodeFileMap $linkCmdSubst]} {
+			set apiTarget [dict get $tclReturnCodeFileMap $linkCmdSubst]
+		}
+		if {$apiTarget ne {} && $apiTarget ne $fileRoot} {
+			## don't link to the very page that documents this identifier:
+			set replaceString \[$linkCmd\]\[$apiTarget\]
+			set md [string replace $md {*}$candRange $replaceString]
+			lappend refList $apiTarget
+			set pos [expr {[lindex $candRange 0] + [string length $replaceString]}]
+		} else {
+			set pos [expr {[lindex $candRange 1] + 1}]
+		}
 	}
 	# add link references at the bottom of the page:
 	if {[llength $refList]} {

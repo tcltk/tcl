@@ -132,27 +132,27 @@ The [chan configure][chan] and [fconfigure] commands can be used to query and se
 [-mode]{.lit} [baud,parity,data,stop]{.arg}
 : This option is a set of 4 comma-separated values: the baud rate, parity, number of data bits, and number of stop bits for this serial port.  The *baud* rate is a simple integer that specifies the connection speed. *Parity* is one of the following letters: **n**, **o**, **e**, **m**, **s**; respectively signifying the parity options of "none", "odd", "even", "mark", or "space". *Data* is the number of data bits and should be an integer from 5 to 8, while *stop* is the number of stop bits and should be the integer 1 or 2.
 
-[-handshake]{.lit} [type]{.arg}
+**-handshake** *type*
 : (Windows and Unix). This option is used to setup automatic handshake control. Note that not all handshake types maybe supported by your operating system. The *type* parameter is case-independent.
 
     If *type* is **none** then any handshake is switched off. **rtscts** activates hardware handshake. Hardware handshake signals are described below. For software handshake **xonxoff** the handshake characters can be redefined with **-xchar**. An additional hardware handshake **dtrdsr** is available only under Windows. There is no default handshake configuration, the initial value depends on your operating system settings. The **-handshake** option cannot be queried.
 
-[-queue]{.lit}
+**-queue**
 : (Windows and Unix). The **-queue** option can only be queried. It returns a list of two integers representing the current number of bytes in the input and output queue respectively.
 
-[-timeout]{.lit} [msec]{.arg}
+**-timeout** *msec*
 : (Windows and Unix). This option is used to set the timeout for blocking read operations. It specifies the maximum interval between the reception of two bytes in milliseconds. For Unix systems the granularity is 100 milliseconds. The **-timeout** option does not affect write operations or nonblocking reads. This option cannot be queried.
 
-[-ttycontrol]{.lit} [signalList]{.arg}
+**-ttycontrol** *signalList*
 : (Windows and Unix). This option is used to setup the handshake output lines (see below) permanently or to send a BREAK over the serial line. *signalList* consists of one or more pairs of a signal name and a boolean value. The first element of *signalList* is the case-independent signal name. The second element is a boolean value switching the signal on or off. The list can be extended with more pairs. E.g., **{RTS 1 DTR 0}** sets the RTS output to high and the DTR output to low. The BREAK condition (see below) is enabled and disabled with **{BREAK 1}** and **{BREAK 0}** respectively. It is not a good idea to change the **RTS** (or **DTR**) signal with active hardware handshake **rtscts** (or **dtrdsr**). The result is unpredictable. The **-ttycontrol** option cannot be queried.
 
-[-ttystatus]{.lit}
+**-ttystatus**
 : (Windows and Unix). The **-ttystatus** option can only be queried.  It returns the current modem status and handshake input signals (see below). The result is a list of signal/value pairs with a fixed order, e.g. **{CTS 1 DSR 0 RING 1 DCD 0}**. The *signal* names are returned upper case.
 
-[-xchar]{.lit} [charList]{.arg}
+**-xchar** *charList*
 : (Windows and Unix). This option is used to query or change the software handshake characters. *charList* is a list of two elements. The first is the character for XON, the second element the one for XOFF. Normally the operating system default should be DC1 (0x11) and DC3 (0x13) representing the ASCII standard XON and XOFF characters.
 
-[-closemode]{.lit} [closeMode]{.arg}
+**-closemode** *closeMode*
 : (Windows and Unix). This option is used to query or change the close mode of the serial channel, which defines how pending output in operating system buffers is handled when the channel is closed. The following values for *closeMode* are supported:
 
     **default**
@@ -165,7 +165,7 @@ The [chan configure][chan] and [fconfigure] commands can be used to query and se
     : indicates that Tcl should wait when closing the channel until all output has been consumed. This may slow down [close] noticeably.
 
 
-[-inputmode]{.lit} [inputMode]{.arg}
+**-inputmode** *inputMode*
 : (Unix only; Windows has the equivalent option on console channels). This option is used to query or change the input mode of the serial channel under the assumption that it is talking to a terminal, which controls how interactive input from users is handled. The following values for *inputMode* are supported:
 
     **normal**
@@ -183,16 +183,16 @@ The [chan configure][chan] and [fconfigure] commands can be used to query and se
 
     Note that setting this option (technically, anything that changes the terminal state from its initial value *via this option*) will cause the channel to turn on an automatic reset of the terminal when the channel is closed.
 
-[-winsize]{.lit}
+**-winsize**
 : (Unix only; Windows has the equivalent option on console channels). This option is query only. It retrieves a two-element list with the the current width and height of the terminal.
 
-[-pollinterval]{.lit} [msec]{.arg}
+**-pollinterval** *msec*
 : (Windows only). This option is used to set the maximum time between polling for fileevents. This affects the time interval between checking for events throughout the Tcl interpreter (the smallest value always wins).  Use this option only if you want to poll the serial port more or less often than 10 msec (the default).
 
-[-sysbuffer]{.lit} [sizeList]{.arg}
+**-sysbuffer** *sizeList*
 : (Windows only). This option is used to change the size of Windows system buffers for a serial channel. Especially at higher communication rates the default input buffer size of 4096 bytes can overrun for latent systems. *sizeList* is a list of one or two elements. If only one element is specified, is defines the input buffer size. If two elements are specified, they define the input and output buffers respectively.
 
-[-lasterror]{.lit}
+**-lasterror**
 : (Windows only). This option is query only. In case of a serial communication error, [read] or [puts] returns a general Tcl file I/O error. [fconfigure] **-lasterror** can be called to get a list of error details. See below for an explanation of the various error codes.
 
 
@@ -230,7 +230,7 @@ RS-232 is the most commonly used standard electrical interface for serial commun
 
 ## Error codes (Windows only)
 
-A lot of different errors may occur during serial read operations or during event polling in background. The external device may have been switched off, the data lines may be noisy, system buffers may overrun or your mode settings may be wrong.  That is why a reliable software should always [catch] serial read operations.  In cases of an error Tcl returns a general file I/O error.  Then [fconfigure] **-lasterror** may help to locate the problem.  The following error codes may be returned.
+A lot of different errors may occur during serial read operations or during event polling in the background. The external device may have been switched off, the data lines may be noisy, system buffers may overrun or your mode settings may be wrong.  That is why a reliable software should always [catch] serial read operations.  In cases of an error Tcl returns a general file I/O error.  Then [fconfigure] **-lasterror** may help to locate the problem.  The following error codes may be returned.
 
 **RXOVER**
 : Windows input buffer overrun. The data comes faster than your scripts reads it or your system is overloaded. Use [fconfigure] **-sysbuffer** to avoid a temporary bottleneck and/or make your script faster.
@@ -293,7 +293,7 @@ On Windows only, console channels (usually **stdin** or **stdout**) support the 
 
     Note that setting this option (technically, anything that changes the console state from its default *via this option*) will cause the channel to turn on an automatic reset of the console when the channel is closed.
 
-[-winsize]{.lit}
+**-winsize**
 : This option is query only. It retrieves a two-element list with the current width and height of the console that this channel is talking to.
 
 

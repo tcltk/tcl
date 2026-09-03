@@ -1,7 +1,7 @@
 ---
 CommandName: tcltest
 ManualSection: n
-Version: 2.5
+Version: 2.6
 TclPart: tcltest
 TclDescription: Tcl Bundled Packages
 Keywords:
@@ -22,7 +22,7 @@ tcltest - Test harness support code and utilities
 # Synopsis
 
 ::: {.synopsis} :::
-[package]{.cmd} [require]{.sub} [tcltest]{.lit} [2.5]{.optlit}
+[package]{.cmd} [require]{.sub} [tcltest]{.lit} [2.6]{.optlit}
 
 [tcltest::test]{.cmd} [name]{.arg} [description]{.arg} [-option value]{.optdot}
 [tcltest::test]{.cmd} [name]{.arg} [description]{.arg} [constraints]{.optarg} [body]{.arg} [result]{.arg}
@@ -41,8 +41,8 @@ tcltest - Test harness support code and utilities
 [tcltest::configure]{.cmd} [-option]{.arg} [value]{.arg} [-option value]{.optdot}
 [tcltest::customMatch]{.cmd} [mode]{.arg} [command]{.arg}
 [tcltest::testConstraint]{.cmd} [constraint]{.arg} [value]{.optarg}
-[tcltest::outputChannel]{.cmd} [channelID]{.optarg}
-[tcltest::errorChannel]{.cmd} [channelID]{.optarg}
+[tcltest::outputChannel]{.cmd} [channel]{.optarg}
+[tcltest::errorChannel]{.cmd} [channel]{.optarg}
 [tcltest::interpreter]{.cmd} [interp]{.optarg}
 
 [tcltest::debug]{.cmd} [level]{.optarg}
@@ -60,6 +60,7 @@ tcltest - Test harness support code and utilities
 [tcltest::skipDirectories]{.cmd} [patternList]{.optarg}
 [tcltest::skipFiles]{.cmd} [patternList]{.optarg}
 [tcltest::temporaryDirectory]{.cmd} [directory]{.optarg}
+[tcltest::testIterations]{.cmd} [count]{.optarg}
 [tcltest::testsDirectory]{.cmd} [directory]{.optarg}
 [tcltest::verbose]{.cmd} [level]{.optarg}
 
@@ -84,33 +85,33 @@ See [Creating test suites with tcltest] below for an extended example of how to 
 [test]{.cmd} [name]{.arg} [description]{.arg} [-option value]{.optdot}
 : Defines and possibly runs a test with the name *name* and description *description*.  The name and description of a test are used in messages reported by **test** during the test, as configured by the options of **tcltest**.  The remaining *option value* arguments to **test** define the test, including the scripts to run, the conditions under which to run them, the expected result, and the means by which the expected and actual results should be compared. See [Tests] below for a complete description of the valid options and how they define a test.  The **test** command returns an empty string.
 
-[test]{.cmd} [name]{.arg} [description]{.arg} [constraints]{.optarg} [body]{.arg} [result]{.arg}
+**test** *name description* ?*constraints*? *body result*
 : This form of **test** is provided to support test suites written for version 1 of the **tcltest** package, and also a simpler interface for a common usage.  It is the same as "**test** *name description* **-constraints** *constraints* **-body** *body* **-result** *result*". All other options to **test** take their default values.  When *constraints* is omitted, this form of **test** can be distinguished from the first because all *option*s begin with "-".
 
-[loadTestedCommands]{.cmd}
+**loadTestedCommands**
 : Evaluates in the caller's context the script specified by **configure -load** or **configure -loadfile**. Returns the result of that script evaluation, including any error raised by the script.  Use this command and the related configuration options to provide the commands to be tested to the interpreter running the test suite.
 
-[makeFile]{.cmd} [contents]{.arg} [name]{.arg} [directory]{.optarg}
+**makeFile** *contents name* ?*directory*?
 : Creates a file named *name* relative to directory *directory* and write *contents* to that file using the encoding [encoding system][encoding]. If *contents* does not end with a newline, a newline will be appended so that the file named *name* does end with a newline.  Because the system encoding is used, this command is only suitable for making text files. The file will be removed by the next evaluation of **cleanupTests**, unless it is removed by **removeFile** first.  The default value of *directory* is the directory **configure -tmpdir**. Returns the full path of the file created.  Use this command to create any text file required by a test with contents as needed.
 
-[removeFile]{.cmd} [name]{.arg} [directory]{.optarg}
+**removeFile** *name* ?*directory*?
 : Forces the file referenced by *name* to be removed.  This file name should be relative to *directory*.   The default value of *directory* is the directory **configure -tmpdir**. Returns an empty string.  Use this command to delete files created by **makeFile**.
 
-[makeDirectory]{.cmd} [name]{.arg} [directory]{.optarg}
+**makeDirectory** *name* ?*directory*?
 : Creates a directory named *name* relative to directory *directory*. The directory will be removed by the next evaluation of **cleanupTests**, unless it is removed by **removeDirectory** first. The default value of *directory* is the directory **configure -tmpdir**. Returns the full path of the directory created.  Use this command to create any directories that are required to exist by a test.
 
-[removeDirectory]{.cmd} [name]{.arg} [directory]{.optarg}
+**removeDirectory** *name* ?*directory*?
 : Forces the directory referenced by *name* to be removed. This directory should be relative to *directory*. The default value of *directory* is the directory **configure -tmpdir**. Returns an empty string.  Use this command to delete any directories created by **makeDirectory**.
 
-[viewFile]{.cmd} [file]{.arg} [directory]{.optarg}
+**viewFile** *file* ?*directory*?
 : Returns the contents of *file*, except for any final newline, just as [read -nonewline][read] would return. This file name should be relative to *directory*. The default value of *directory* is the directory **configure -tmpdir**.  Use this command as a convenient way to turn the contents of a file generated by a test into the result of that test for matching against an expected result.  The contents of the file are read using the system encoding, so its usefulness is limited to text files.
 
-[cleanupTests]{.cmd}
+**cleanupTests**
 : Intended to clean up and summarize after several tests have been run.  Typically called once per test file, at the end of the file after all tests have been completed.  For best effectiveness, be sure that the **cleanupTests** is evaluated even if an error occurs earlier in the test file evaluation.
 
     Prints statistics about the tests run and removes files that were created by **makeDirectory** and **makeFile** since the last **cleanupTests**.  Names of files and directories in the directory **configure -tmpdir** created since the last **cleanupTests**, but not created by **makeFile** or **makeDirectory** are printed to **outputChannel**.  This command also restores the original shell environment, as described by the global **env** array. Returns an empty string.
 
-[runAllTests]{.cmd}
+**runAllTests**
 : This is a main command meant to run an entire suite of tests, spanning multiple files and/or directories, as governed by the configurable options of **tcltest**.  See [Running all tests] below for a complete description of the many variations possible with **runAllTests**.
 
 
@@ -119,28 +120,28 @@ See [Creating test suites with tcltest] below for an extended example of how to 
 [configure]{.cmd}
 : Returns the list of configurable options supported by **tcltest**. See [Configurable options] below for the full list of options, their valid values, and their effect on **tcltest** operations.
 
-[configure]{.cmd} [option]{.arg}
+**configure** *option*
 : Returns the current value of the supported configurable option *option*. Raises an error if *option* is not a supported configurable option.
 
-[configure]{.cmd} [option]{.arg} [value]{.arg} [-option value]{.optdot}
+**configure** *option value* ?*-option value ...*?
 : Sets the value of each configurable option *option* to the corresponding value *value*, in order.  Raises an error if an *option* is not a supported configurable option, or if *value* is not a valid value for the corresponding *option*, or if a *value* is not provided.  When an error is raised, the operation of **configure** is halted, and subsequent *option value* arguments are not processed.
 
     If the environment variable **::env(TCLTEST\_OPTIONS)** exists when the **tcltest** package is loaded (by [package require][package] **tcltest**) then its value is taken as a list of arguments to pass to **configure**. This allows the default values of the configuration options to be set by the environment.
 
-[customMatch]{.cmd} [mode]{.arg} [script]{.arg}
+**customMatch** *mode script*
 : Registers *mode* as a new legal value of the **-match** option to **test**.  When the **-match** *mode* option is passed to **test**, the script *script* will be evaluated to compare the actual result of evaluating the body of the test to the expected result. To perform the match, the *script* is completed with two additional words, the expected result, and the actual result, and the completed script is evaluated in the global namespace. The completed script is expected to return a boolean value indicating whether or not the results match.  The built-in matching modes of **test** are **exact**, **glob**, and **regexp**.
 
-[testConstraint]{.cmd} [constraint]{.arg} [boolean]{.optarg}
+**testConstraint** *constraint* ?*boolean*?
 : Sets or returns the boolean value associated with the named *constraint*. See [Test constraints] below for more information.
 
-[interpreter]{.cmd} [executableName]{.optarg}
+**interpreter** ?*executableName*?
 : Sets or returns the name of the executable to be [exec]ed by **runAllTests** to run each test file when **configure -singleproc** is false. The default value for **interpreter** is the name of the currently running program as returned by [info nameofexecutable][info].
 
-[outputChannel]{.cmd} [channelID]{.optarg}
-: Sets or returns the output channel ID.  This defaults to **stdout**. Any test that prints test related output should send that output to **outputChannel** rather than letting that output default to **stdout**.
+**outputChannel** ?*channel*?
+: Sets or returns the output channel.  This defaults to **stdout**. Any test that prints test related output should send that output to **outputChannel** rather than letting that output default to **stdout**.
 
-[errorChannel]{.cmd} [channelID]{.optarg}
-: Sets or returns the error channel ID.  This defaults to **stderr**. Any test that prints error messages should send that output to **errorChannel** rather than printing directly to **stderr**.
+**errorChannel** ?*channel*?
+: Sets or returns the error channel.  This defaults to **stderr**. Any test that prints error messages should send that output to **errorChannel** rather than printing directly to **stderr**.
 
 
 ## Shortcut configuration commands
@@ -148,52 +149,55 @@ See [Creating test suites with tcltest] below for an extended example of how to 
 [debug]{.cmd} [level]{.optarg}
 : Same as "**configure -debug** ?*level*?".
 
-[errorFile]{.cmd} [filename]{.optarg}
+**errorFile** ?*filename*?
 : Same as "**configure -errfile** ?*filename*?".
 
-[limitConstraints]{.cmd} [boolean]{.optarg}
+**limitConstraints** ?*boolean*?
 : Same as "**configure -limitconstraints** ?*boolean*?".
 
-[loadFile]{.cmd} [filename]{.optarg}
+**loadFile** ?*filename*?
 : Same as "**configure -loadfile** ?*filename*?".
 
-[loadScript]{.cmd} [script]{.optarg}
+**loadScript** ?*script*?
 : Same as "**configure -load** ?*script*?".
 
-[match]{.cmd} [patternList]{.optarg}
+**match** ?*patternList*?
 : Same as "**configure -match** ?*patternList*?".
 
-[matchDirectories]{.cmd} [patternList]{.optarg}
+**matchDirectories** ?*patternList*?
 : Same as "**configure -relateddir** ?*patternList*?".
 
-[matchFiles]{.cmd} [patternList]{.optarg}
+**matchFiles** ?*patternList*?
 : Same as "**configure -file** ?*patternList*?".
 
-[outputFile]{.cmd} [filename]{.optarg}
+**outputFile** ?*filename*?
 : Same as "**configure -outfile** ?*filename*?".
 
-[preserveCore]{.cmd} [level]{.optarg}
+**preserveCore** ?*level*?
 : Same as "**configure -preservecore** ?*level*?".
 
-[singleProcess]{.cmd} [boolean]{.optarg}
+**singleProcess** ?*boolean*?
 : Same as "**configure -singleproc** ?*boolean*?".
 
-[skip]{.cmd} [patternList]{.optarg}
+**skip** ?*patternList*?
 : Same as "**configure -skip** ?*patternList*?".
 
-[skipDirectories]{.cmd} [patternList]{.optarg}
+**skipDirectories** ?*patternList*?
 : Same as "**configure -asidefromdir** ?*patternList*?".
 
-[skipFiles]{.cmd} [patternList]{.optarg}
+**skipFiles** ?*patternList*?
 : Same as "**configure -notfile** ?*patternList*?".
 
-[temporaryDirectory]{.cmd} [directory]{.optarg}
+**temporaryDirectory** ?*directory*?
 : Same as "**configure -tmpdir** ?*directory*?".
 
-[testsDirectory]{.cmd} [directory]{.optarg}
+**testIterations** ?*count*?
+: Same as "**configure -iterations** ?*count*?".
+
+**testsDirectory** ?*directory*?
 : Same as "**configure -testdir** ?*directory*?".
 
-[verbose]{.cmd} [level]{.optarg}
+**verbose** ?*level*?
 : Same as "**configure -verbose** ?*level*?".
 
 
@@ -255,31 +259,31 @@ Valid attributes and associated values are:
 
     Appropriate constraints should be added to any tests that should not always be run.  That is, conditional evaluation of a test should be accomplished by the **-constraints** option, not by conditional evaluation of **test**.  In that way, the same number of tests are always reported by the test suite, though the number skipped may change based on the testing environment. The default value is an empty list. See [Test constraints] below for a list of built-in constraints and information on how to add your own constraints.
 
-[-setup]{.lit} [script]{.arg}
+**-setup** *script*
 : The optional **-setup** attribute indicates a *script* that will be run before the script indicated by the **-body** attribute.  If evaluation of *script* raises an error, the test will fail.  The default value is an empty script.
 
-[-body]{.lit} [script]{.arg}
+**-body** *script*
 : The **-body** attribute indicates the *script* to run to carry out the test, which must return a result that can be checked for correctness. If evaluation of *script* raises an error, the test will fail (unless the **-returnCodes** option is used to state that an error is expected). The default value is an empty script.
 
-[-cleanup]{.lit} [script]{.arg}
+**-cleanup** *script*
 : The optional **-cleanup** attribute indicates a *script* that will be run after the script indicated by the **-body** attribute. If evaluation of *script* raises an error, the test will fail. The default value is an empty script.
 
-[-match]{.lit} [mode]{.arg}
+**-match** *mode*
 : The **-match** attribute determines how expected answers supplied by **-result**, **-output**, and **-errorOutput** are compared.  Valid values for *mode* are **regexp**, **glob**, **exact**, and any value registered by a prior call to **customMatch**.  The default value is **exact**.
 
-[-result]{.lit} [expectedValue]{.arg}
+**-result** *expectedValue*
 : The **-result** attribute supplies the *expectedValue* against which the return value from script will be compared. The default value is an empty string.
 
-[-output]{.lit} [expectedValue]{.arg}
+**-output** *expectedValue*
 : The **-output** attribute supplies the *expectedValue* against which any output sent to **stdout** or **outputChannel** during evaluation of the script(s) will be compared.  Note that only output printed using the global [puts] command is used for comparison.  If **-output** is not specified, output sent to **stdout** and **outputChannel** is not processed for comparison.
 
-[-errorOutput]{.lit} [expectedValue]{.arg}
+**-errorOutput** *expectedValue*
 : The **-errorOutput** attribute supplies the *expectedValue* against which any output sent to **stderr** or **errorChannel** during evaluation of the script(s) will be compared. Note that only output printed using the global [puts] command is used for comparison.  If **-errorOutput** is not specified, output sent to **stderr** and **errorChannel** is not processed for comparison.
 
-[-returnCodes]{.lit} [expectedCodeList]{.arg}
+**-returnCodes** *expectedCodeList*
 : The optional **-returnCodes** attribute supplies *expectedCodeList*, a list of return codes that may be accepted from evaluation of the **-body** script.  If evaluation of the **-body** script returns a code not in the *expectedCodeList*, the test fails.  All return codes known to [return], in both numeric and symbolic form, including extended return codes, are acceptable elements in the *expectedCodeList*.  Default value is "**ok return**".
 
-[-errorCode]{.lit} [expectedErrorCode]{.arg}
+**-errorCode** *expectedErrorCode*
 : The optional **-errorCode** attribute supplies *expectedErrorCode*, a glob pattern that should match the error code reported from evaluation of the **-body** script.  If evaluation of the **-body** script returns a code not matching *expectedErrorCode*, the test fails.  Default value is "**\***". If **-returnCodes** does not include **error** it is set to **error**.
 
 
@@ -401,7 +405,7 @@ The **configure** command is used to set and query the configurable options of *
 [-singleproc]{.lit} [boolean]{.arg}
 : Controls whether or not **runAllTests** spawns a child process for each test file.  No spawning when *boolean* is true.  Default value is false.
 
-[-debug]{.lit} [level]{.arg}
+**-debug** *level*
 : Sets the debug level to *level*, an integer value indicating how much debugging information should be printed to **stdout**.  Note that debug messages always go to **stdout**, independent of the value of **configure -outfile**.  Default value is 0.  Levels are defined as:
 
     0
@@ -417,7 +421,7 @@ The **configure** command is used to set and query the configurable options of *
     : Display information regarding what individual procs in the test harness are doing.
 
 
-[-verbose]{.lit} [level]{.arg}
+**-verbose** *level*
 : Sets the type of output verbosity desired to *level*, a list of zero or more of the elements **body**, **pass**, **skip**, **start**, **error**, **line**, **msec** and **usec**. Default value is "**body error**". Levels are defined as:
 
     body (**b**)
@@ -449,7 +453,7 @@ The **configure** command is used to set and query the configurable options of *
 
     The single letter abbreviations noted above are also recognized so that "**configure -verbose pt**" is the same as "**configure -verbose {pass start}**".
 
-[-preservecore]{.lit} [level]{.arg}
+**-preservecore** *level*
 : Sets the core preservation level to *level*.  This level determines how stringent checks for core files are.  Default value is 0.  Levels are defined as:
 
     0
@@ -462,47 +466,50 @@ The **configure** command is used to set and query the configurable options of *
     : Check for core files at all times described above, and save a copy of each core file produced in **configure -tmpdir**.
 
 
-[-limitconstraints]{.lit} [boolean]{.arg}
+**-limitconstraints** *boolean*
 : Sets the mode by which **test** honors constraints as described in [Tests] above.  Default value is false.
 
-[-constraints]{.lit} [list]{.arg}
+**-constraints** *list*
 : Sets all the constraints in *list* to true.  Also used in combination with **configure -limitconstraints true** to control an alternative constraint mode as described in [Tests] above. Default value is an empty list.
 
-[-tmpdir]{.lit} [directory]{.arg}
+**-tmpdir** *directory*
 : Sets the temporary directory to be used by **makeFile**, **makeDirectory**, **viewFile**, **removeFile**, and **removeDirectory** as the default directory where temporary files and directories created by test files should be created.  Default value is **workingDirectory**.
 
-[-testdir]{.lit} [directory]{.arg}
+**-testdir** *directory*
 : Sets the directory searched by **runAllTests** for test files and subdirectories.  Default value is **workingDirectory**.
 
-[-file]{.lit} [patternList]{.arg}
+**-file** *patternList*
 : Sets the list of patterns used by **runAllTests** to determine what test files to evaluate.  Default value is "**\*.test**".
 
-[-notfile]{.lit} [patternList]{.arg}
+**-notfile** *patternList*
 : Sets the list of patterns used by **runAllTests** to determine what test files to skip.  Default value is "**l.\*.test**", so that any SCCS lock files are skipped.
 
-[-relateddir]{.lit} [patternList]{.arg}
+**-relateddir** *patternList*
 : Sets the list of patterns used by **runAllTests** to determine what subdirectories to search for an **all.tcl** file.  Default value is "**\***".
 
-[-asidefromdir]{.lit} [patternList]{.arg}
+**-asidefromdir** *patternList*
 : Sets the list of patterns used by **runAllTests** to determine what subdirectories to skip when searching for an **all.tcl** file. Default value is an empty list.
 
-[-match]{.lit} [patternList]{.arg}
+**-match** *patternList*
 : Set the list of patterns used by **test** to determine whether a test should be run.  Default value is "**\***".
 
-[-skip]{.lit} [patternList]{.arg}
+**-skip** *patternList*
 : Set the list of patterns used by **test** to determine whether a test should be skipped.  Default value is an empty list.
 
-[-load]{.lit} [script]{.arg}
+**-load** *script*
 : Sets a script to be evaluated by **loadTestedCommands**. Default value is an empty script.
 
-[-loadfile]{.lit} [filename]{.arg}
+**-loadfile** *filename*
 : Sets the filename from which to read a script to be evaluated by **loadTestedCommands**.  This is an alternative to **-load**.  They cannot be used together.
 
-[-outfile]{.lit} [filename]{.arg}
+**-outfile** *filename*
 : Sets the file to which all output produced by tcltest should be written.  A file named *filename* will be [open]ed for writing, and the resulting channel will be set as the value of **outputChannel**.
 
-[-errfile]{.lit} [filename]{.arg}
+**-errfile** *filename*
 : Sets the file to which all error output produced by tcltest should be written.  A file named *filename* will be [open]ed for writing, and the resulting channel will be set as the value of **errorChannel**.
+
+**-iterations** *count*
+: Sets the number of times each test is executed. Default value is **1**.
 
 
 # Creating test suites with tcltest
@@ -587,8 +594,8 @@ After all **test**s in a test file, the command **cleanupTests** should be calle
 1. Here is a sketch of a sample test file illustrating those points:
 
 ```
-package require tcltest 2.5
-eval ::tcltest::configure $argv
+package require tcltest 2.6
+::tcltest::configure {*}$::argv
 package require example
 namespace eval ::example::test {
     namespace import ::tcltest::*
@@ -615,11 +622,11 @@ The next level of organization is a full test suite, made up of several test fil
 1. Here is a sketch of a sample test suite main script:
 
 ```
-package require tcltest 2.5
+package require tcltest 2.6
 package require example
 ::tcltest::configure -testdir \
         [file dirname [file normalize [info script]]]
-eval ::tcltest::configure $argv
+::tcltest::configure {*}$::argv
 ::tcltest::runAllTests
 ```
 
@@ -627,12 +634,6 @@ eval ::tcltest::configure $argv
 # Compatibility
 
 A number of commands and variables in the **::tcltest** namespace provided by earlier releases of **tcltest** have not been documented here.  They are no longer part of the supported public interface of **tcltest** and should not be used in new test suites.  However, to continue to support existing test suites written to the older interface specifications, many of those deprecated commands and variables still work as before.  For example, in many circumstances, **configure** will be automatically called shortly after [package require][package] **tcltest 2.1** succeeds with arguments from the variable **::argv**.  This is to support test suites that depend on the old behavior that **tcltest** was automatically configured from command line arguments.  New test files should not depend on this, but should explicitly include
-
-```
-eval ::tcltest::configure $::argv
-```
-
-or
 
 ```
 ::tcltest::configure {*}$::argv

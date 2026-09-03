@@ -104,7 +104,7 @@ Tcl\_CreateChannel, Tcl\_GetChannelInstanceData, Tcl\_GetChannelType, Tcl\_GetCh
 : Name of the invalid option.
 
 [\*optionList]{.carg .in type="const char"}
-: Specific options list (space separated words, without .QW - ) to append to the standard generic options list. Can be NULL for generic options error message only.
+: Specific options list (space separated words, without "-") to append to the standard generic options list. Can be NULL for generic options error message only.
 
 
 :::
@@ -133,13 +133,13 @@ To add a new type of channel you must implement a C API or a Tcl command that op
 
 **Tcl\_GetChannelName** returns a string containing the name associated with the channel, or NULL if the *channelName* argument to **Tcl\_CreateChannel** was NULL.
 
-**Tcl\_GetChannelHandle** places the OS-specific device handle associated with *channel* for the given *direction* in the location specified by *handlePtr* and returns **TCL\_OK**.  If the channel does not have a device handle for the specified direction, then **TCL\_ERROR** is returned instead.  Different channel drivers will return different types of handle.  Refer to the manual entries for each driver to determine what type of handle is returned.
+**Tcl\_GetChannelHandle** places the OS-specific device handle associated with *channel* for the given *direction* in the location specified by *handlePtr* and returns [TCL\_OK][catch].  If the channel does not have a device handle for the specified direction, then [TCL\_ERROR][catch] is returned instead.  Different channel drivers will return different types of handle.  Refer to the manual entries for each driver to determine what type of handle is returned.
 
 **Tcl\_GetChannelThread** returns the id of the thread currently managing the specified *channel*. This allows channel drivers to send their file events to the correct event queue even for a multi-threaded core.
 
 **Tcl\_GetChannelMode** returns an OR-ed combination of **TCL\_READABLE** and **TCL\_WRITABLE**, indicating whether the channel is open for input and output.
 
-**Tcl\_RemoveChannelMode** removes an access privilege from the channel, either **TCL\_READABLE** or **TCL\_WRITABLE**, and returns a regular Tcl result code, **TCL\_OK**, or **TCL\_ERROR**. The function throws an error if either an invalid mode is specified or the result of the removal would be an inaccessible channel. In that case an error message is left in the interp argument, if not NULL.
+**Tcl\_RemoveChannelMode** removes an access privilege from the channel, either **TCL\_READABLE** or **TCL\_WRITABLE**, and returns a regular Tcl result code, [TCL\_OK][catch], or [TCL\_ERROR][catch]. The function throws an error if either an invalid mode is specified or the result of the removal would be an inaccessible channel. In that case an error message is left in the interp argument, if not NULL.
 
 **Tcl\_GetChannelBufferSize** returns the size, in bytes, of buffers allocated to store input or output in *channel*. If the value was not set by a previous call to **Tcl\_SetChannelBufferSize**, described below, then the default value of 4096 is returned.
 
@@ -324,7 +324,7 @@ typedef int Tcl_DriverSetOptionProc(
 
 Some options are handled by the generic code and this function is never called to set them, e.g. **-blockmode**. Other options are specific to each channel type and the *setOptionProc* procedure of the channel driver will get called to implement them. The *setOptionProc* field can be NULL, which indicates that this channel type supports no type specific options.
 
-If the option value is successfully modified to the new value, the function returns **TCL\_OK**. It should call **Tcl\_BadChannelOption** which itself returns **TCL\_ERROR** if the *optionName* is unrecognized. If *newValue* specifies a value for the option that is not supported or if a system call error occurs, the function should leave an error message in the result of *interp* if *interp* is not NULL. The function should also call [Tcl\_SetErrno][SetErrno] to store an appropriate POSIX error code.
+If the option value is successfully modified to the new value, the function returns [TCL\_OK][catch]. It should call **Tcl\_BadChannelOption** which itself returns [TCL\_ERROR][catch] if the *optionName* is unrecognized. If *newValue* specifies a value for the option that is not supported or if a system call error occurs, the function should leave an error message in the result of *interp* if *interp* is not NULL. The function should also call [Tcl\_SetErrno][SetErrno] to store an appropriate POSIX error code.
 
 This value can be retrieved with **Tcl\_ChannelSetOptionProc**, which returns a pointer to the function.
 
@@ -340,7 +340,7 @@ typedef int Tcl_DriverGetOptionProc(
         Tcl_DString *optionValue);
 ```
 
-*OptionName* is the name of an option supported by this type of channel. If the option name is not NULL, the function stores its current value, as a string, in the Tcl dynamic string *optionValue*. If *optionName* is NULL, the function stores in *optionValue* an alternating list of all supported options and their current values. On success, the function returns **TCL\_OK**. It should call **Tcl\_BadChannelOption** which itself returns **TCL\_ERROR** if the *optionName* is unrecognized. If a system call error occurs, the function should leave an error message in the result of *interp* if *interp* is not NULL. The function should also call [Tcl\_SetErrno][SetErrno] to store an appropriate POSIX error code.
+*OptionName* is the name of an option supported by this type of channel. If the option name is not NULL, the function stores its current value, as a string, in the Tcl dynamic string *optionValue*. If *optionName* is NULL, the function stores in *optionValue* an alternating list of all supported options and their current values. On success, the function returns [TCL\_OK][catch]. It should call **Tcl\_BadChannelOption** which itself returns [TCL\_ERROR][catch] if the *optionName* is unrecognized. If a system call error occurs, the function should leave an error message in the result of *interp* if *interp* is not NULL. The function should also call [Tcl\_SetErrno][SetErrno] to store an appropriate POSIX error code.
 
 Some options are handled by the generic code and this function is never called to retrieve their value, e.g. **-blockmode**. Other options are specific to each channel type and the *getOptionProc* procedure of the channel driver will get called to implement them. The *getOptionProc* field can be NULL, which indicates that this channel type supports no type specific options.
 
@@ -375,7 +375,7 @@ typedef int Tcl_DriverGetHandleProc(
 
 *InstanceData* is the same as the value passed to **Tcl\_CreateChannel** when this channel was created. The *direction* argument is either **TCL\_READABLE** to retrieve the handle used for input, or **TCL\_WRITABLE** to retrieve the handle used for output.
 
-If the channel implementation has device-specific handles, the function should retrieve the appropriate handle associated with the channel, according the *direction* argument.  The handle should be stored in the location referred to by *handlePtr*, and **TCL\_OK** should be returned.  If the channel is not open for the specified direction, or if the channel implementation does not use device handles, the function should return **TCL\_ERROR**.
+If the channel implementation has device-specific handles, the function should retrieve the appropriate handle associated with the channel, according the *direction* argument.  The handle should be stored in the location referred to by *handlePtr*, and [TCL\_OK][catch] should be returned.  If the channel is not open for the specified direction, or if the channel implementation does not use device handles, the function should return [TCL\_ERROR][catch].
 
 This value can be retrieved with **Tcl\_ChannelGetHandleProc**, which returns a pointer to the function.
 
@@ -438,7 +438,7 @@ These values can be retrieved with **Tcl\_ChannelTruncateProc**, which returns a
 
 This procedure generates a "bad option" error message in an (optional) interpreter.  It is used by channel drivers when an invalid Set/Get option is requested. Its purpose is to concatenate the generic options list to the specific ones and factorize the generic options error message string.
 
-It always returns **TCL\_ERROR**
+It always returns [TCL\_ERROR][catch]
 
 An error message is generated in *interp*'s result value to indicate that a command was invoked with a bad option. The message has the form
 
@@ -460,6 +460,7 @@ when called with *optionList* equal to "peername sockname"
 "blah" is the *optionName* argument and "<specific options>" is a space separated list of specific option words. The function takes good care of inserting minus signs before each option, commas after, and an "or" before the last option.
 
 
+[catch]: catch.md
 [file]: file.md
 [GetStdChan]: GetStdChan.md
 [Notifier]: Notifier.md

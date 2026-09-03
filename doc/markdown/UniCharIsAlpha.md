@@ -13,7 +13,7 @@ Copyright:
 
 # Name
 
-Tcl\_UniCharIsAlnum, Tcl\_UniCharIsAlpha, Tcl\_UniCharIsControl, Tcl\_UniCharIsDigit, Tcl\_UniCharIsGraph, Tcl\_UniCharIsLower, Tcl\_UniCharIsPrint, Tcl\_UniCharIsPunct, Tcl\_UniCharIsSpace, Tcl\_UniCharIsUpper, Tcl\_UniCharIsWordChar - routines for classification of Tcl\_UniChar characters
+Tcl\_UniCharIsAlnum, Tcl\_UniCharIsAlpha, Tcl\_UniCharIsControl, Tcl\_UniCharIsDigit, Tcl\_UniCharIsGraph, Tcl\_UniCharIsLower, Tcl\_UniCharIsPrint, Tcl\_UniCharIsPunct, Tcl\_UniCharIsSpace, Tcl\_UniCharIsUpper, Tcl\_UniCharIsWordChar - routines for classification of [Tcl\_UniChar][Utf] characters
 
 # Synopsis
 
@@ -68,5 +68,8 @@ All of the routines described examine Unicode characters and return a boolean va
 
 **Tcl\_UniCharIsUpper** tests if the character is an uppercase Unicode character.
 
-**Tcl\_UniCharIsWordChar** tests if the character is alphanumeric or a connector punctuation mark.
+**Tcl\_UniCharIsWordChar** tests if the character is alphanumeric or a connector punctuation mark. 
+
+
+[Utf]: Utf.md
 

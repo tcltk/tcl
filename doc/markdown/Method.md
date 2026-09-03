@@ -177,7 +177,7 @@ typedef int Tcl_MethodCallProc2(
         Tcl_Obj *const *objv);
 ```
 
-The *clientData* argument to a Tcl\_MethodCallProc is the value that was given when the method was created, the *interp* is a place in which to execute scripts and access variables as well as being where to put the result of the method, and the *objc* and *objv* fields give the parameter objects to the method. The calling context of the method can be discovered through the *objectContext* argument, and the return value from a Tcl\_MethodCallProc is any Tcl return code (e.g. TCL\_OK, TCL\_ERROR).
+The *clientData* argument to a Tcl\_MethodCallProc is the value that was given when the method was created, the *interp* is a place in which to execute scripts and access variables as well as being where to put the result of the method, and the *objc* and *objv* fields give the parameter objects to the method. The calling context of the method can be discovered through the *objectContext* argument, and the return value from a Tcl\_MethodCallProc is any Tcl return code (e.g. [TCL\_OK][catch], [TCL\_ERROR][catch]).
 
 ## Tcl\_methoddeleteproc function signature
 
@@ -201,7 +201,7 @@ typedef int Tcl_CloneProc(
         void **newClientDataPtr);
 ```
 
-The *interp* argument gives a place to write an error message when the attempt to clone the object is to fail, in which case the clone procedure must also return TCL\_ERROR; it should return TCL\_OK otherwise. The *oldClientData* field to a Tcl\_CloneProc gives the value from the method being copied from, and the *newClientDataPtr* field will point to a variable in which to write the value for the method being copied to.
+The *interp* argument gives a place to write an error message when the attempt to clone the object is to fail, in which case the clone procedure must also return [TCL\_ERROR][catch]; it should return [TCL\_OK][catch] otherwise. The *oldClientData* field to a Tcl\_CloneProc gives the value from the method being copied from, and the *newClientDataPtr* field will point to a variable in which to write the value for the method being copied to.
 
 # Reference count management
 
@@ -214,6 +214,7 @@ The values in the first *objc* values of the *objv* argument to **Tcl\_ObjectCon
 The *callProc* of the **Tcl\_MethodType** structure takes values of at least reference count 1 in its *objv* argument. It may add its own references, but must not decrement the reference count below that level; the caller of the method will decrement the reference count once the method returns properly (and the reference will be held if the method [yield]s).
 
 
+[catch]: catch.md
 [Class3]: Class3.md
 [next]: next.md
 [NRE]: NRE.md

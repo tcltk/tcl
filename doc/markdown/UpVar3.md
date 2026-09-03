@@ -57,10 +57,11 @@ Tcl\_UpVar, Tcl\_UpVar2 - link one variable to another
 
 **Tcl\_UpVar** and **Tcl\_UpVar2** provide the same functionality as the [upvar] command:  they make a link from a source variable to a destination variable, so that references to the destination are passed transparently through to the source. The name of the source variable may be specified either as a single string such as **xyx** or **a(24)** (by calling **Tcl\_UpVar**) or in two parts where the array name has been separated from the element name (by calling **Tcl\_UpVar2**). The destination variable name is specified in a single string;  it may not be an array element.
 
-Both procedures return either **TCL\_OK** or **TCL\_ERROR**, and they leave an error message in the interpreter's result if an error occurs.
+Both procedures return either [TCL\_OK][catch] or [TCL\_ERROR][catch], and they leave an error message in the interpreter's result if an error occurs.
 
 As with the [upvar] command, the source variable need not exist; if it does exist, unsetting it later does not destroy the link.  The destination variable may exist at the time of the call, but if so it must exist as a linked variable. 
 
 
+[catch]: catch.md
 [upvar]: upvar.md
 

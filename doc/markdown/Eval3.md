@@ -75,7 +75,7 @@ N.B. Refer to the [Tcl\_UniChar][Utf] documentation page for a description of th
 
 The procedures described here are invoked to execute Tcl scripts in various forms. **Tcl\_EvalObjEx** is the core procedure and is used by many of the others. It executes the commands in the script stored in *objPtr* until either an error occurs or the end of the script is reached. If this is the first time *objPtr* has been executed, its commands are compiled into bytecode instructions which are then executed.  The bytecodes are saved in *objPtr* so that the compilation step can be skipped if the value is evaluated again in the future.
 
-The return value from **Tcl\_EvalObjEx** (and all the other procedures described here) is a Tcl completion code with one of the values **TCL\_OK**, **TCL\_ERROR**, **TCL\_RETURN**, **TCL\_BREAK**, or **TCL\_CONTINUE**, or possibly some other integer value originating in an extension. In addition, a result value or error message is left in *interp*'s result; it can be retrieved using [Tcl\_GetObjResult][SetResult].
+The return value from **Tcl\_EvalObjEx** (and all the other procedures described here) is a Tcl completion code with one of the values [TCL\_OK][catch], [TCL\_ERROR][catch], [TCL\_RETURN][catch], [TCL\_BREAK][catch], or [TCL\_CONTINUE][catch], or possibly some other integer value originating in an extension. In addition, a result value or error message is left in *interp*'s result; it can be retrieved using [Tcl\_GetObjResult][SetResult].
 
 **Tcl\_EvalFile** reads the file given by *fileName* and evaluates its contents as a Tcl script.  It returns the same information as **Tcl\_EvalObjEx**. If the file could not be read then a Tcl error is returned to describe why the file could not be read. The eofchar for files is "\\x1A" (^Z) for all platforms. If you require a "^Z" in code for string comparison, you can use "\\x1A", which will be safely substituted by the Tcl interpreter into "^Z".
 
@@ -102,9 +102,9 @@ Any OR'ed combination of the following values may be used for the *flags* argume
 
 # Miscellaneous details
 
-During the processing of a Tcl command it is legal to make nested calls to evaluate other commands (this is how procedures and some control structures are implemented). If a code other than **TCL\_OK** is returned from a nested **Tcl\_EvalObjEx** invocation, then the caller should normally return immediately, passing that same return code back to its caller, and so on until the top-level application is reached. A few commands, like [for], will check for certain return codes, like **TCL\_BREAK** and **TCL\_CONTINUE**, and process them specially without returning.
+During the processing of a Tcl command it is legal to make nested calls to evaluate other commands (this is how procedures and some control structures are implemented). If a code other than [TCL\_OK][catch] is returned from a nested **Tcl\_EvalObjEx** invocation, then the caller should normally return immediately, passing that same return code back to its caller, and so on until the top-level application is reached. A few commands, like [for], will check for certain return codes, like [TCL\_BREAK][catch] and [TCL\_CONTINUE][catch], and process them specially without returning.
 
-**Tcl\_EvalObjEx** keeps track of how many nested **Tcl\_EvalObjEx** invocations are in progress for *interp*. If a code of **TCL\_RETURN**, **TCL\_BREAK**, or **TCL\_CONTINUE** is about to be returned from the topmost **Tcl\_EvalObjEx** invocation for *interp*, it converts the return code to **TCL\_ERROR** and sets *interp*'s result to an error message indicating that the [return], [break], or [continue] command was invoked in an inappropriate place. This means that top-level applications should never see a return code from **Tcl\_EvalObjEx** other than **TCL\_OK** or **TCL\_ERROR**.
+**Tcl\_EvalObjEx** keeps track of how many nested **Tcl\_EvalObjEx** invocations are in progress for *interp*. If a code of [TCL\_RETURN][catch], [TCL\_BREAK][catch], or [TCL\_CONTINUE][catch] is about to be returned from the topmost **Tcl\_EvalObjEx** invocation for *interp*, it converts the return code to [TCL\_ERROR][catch] and sets *interp*'s result to an error message indicating that the [return], [break], or [continue] command was invoked in an inappropriate place. This means that top-level applications should never see a return code from **Tcl\_EvalObjEx** other than [TCL\_OK][catch] or [TCL\_ERROR][catch].
 
 # Reference count management
 
@@ -114,6 +114,7 @@ During the processing of a Tcl command it is legal to make nested calls to evalu
 
 
 [break]: break.md
+[catch]: catch.md
 [continue]: continue.md
 [Encoding3]: Encoding3.md
 [for]: for.md

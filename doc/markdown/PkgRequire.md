@@ -75,7 +75,7 @@ See the documentation for the Tcl commands for details on what these procedures 
 
 If **Tcl\_PkgPresent** or **Tcl\_PkgRequire** complete successfully they return a pointer to the version string for the version of the package that is provided in the interpreter (which may be different than *version*); if an error occurs they return NULL and leave an error message in the interpreter's result.
 
-**Tcl\_PkgProvide** returns **TCL\_OK** if it completes successfully; if an error occurs it returns **TCL\_ERROR** and leaves an error message in the interpreter's result.
+**Tcl\_PkgProvide** returns [TCL\_OK][catch] if it completes successfully; if an error occurs it returns [TCL\_ERROR][catch] and leaves an error message in the interpreter's result.
 
 **Tcl\_PkgProvideEx**, **Tcl\_PkgPresentEx** and **Tcl\_PkgRequireEx** allow the setting and retrieving of the client data associated with the package. In all other respects they are equivalent to the matching functions.
 
@@ -86,5 +86,6 @@ If **Tcl\_PkgPresent** or **Tcl\_PkgRequire** complete successfully they return 
 The requirements values given (in the *objv* argument) to **Tcl\_PkgRequireProc** must have non-zero reference counts.
 
 
+[catch]: catch.md
 [package]: package.md
 

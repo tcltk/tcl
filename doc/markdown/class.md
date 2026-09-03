@@ -57,7 +57,7 @@ The **oo::class** class does not define an explicit destructor. However, when a 
 [cls]{.ins} [create]{.sub} [name]{.arg} [arg]{.optdot}
 : This creates a new instance of the class *cls* called *name* (which is resolved within the calling context's namespace if not fully qualified), passing the arguments, *arg ...*, to the constructor, and (if that returns a successful result) returning the fully qualified name of the created object (the result of the constructor is ignored). If the constructor fails (i.e. returns a non-OK result) then the object is destroyed and the error message is the result of this method call.
 
-[cls]{.ins} [new]{.sub} [arg]{.optdot}
+*cls* **new** ?*arg ...*?
 : This creates a new instance of the class *cls* with a new unique name, passing the arguments, *arg ...*, to the constructor, and (if that returns a successful result) returning the fully qualified name of the created object (the result of the constructor is ignored). If the constructor fails (i.e., returns a non-OK result) then the object is destroyed and the error message is the result of this method call.
 
     Note that this method is not exported by the **oo::class** object itself, so classes should not be created using this method.

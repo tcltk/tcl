@@ -31,17 +31,17 @@ unload - Unload machine code
 
 # Description
 
-This command tries to unload shared libraries previously loaded with [load] from the application's address space.  *fileName* is the name of the file containing the library file to be unload;  it must be the same as the filename provided to [load] for loading the library. The *prefix* argument is the prefix (as determined by or passed to [load]), and is used to compute the name of the unload procedure; if not supplied, it is computed from *fileName* in the same manner as [load]. The *interp* argument is the path name of the interpreter from which to unload the package (see the [interp] manual entry for details); if *interp* is omitted, it defaults to the interpreter in which the **unload** command was invoked.
+This command tries to unload shared libraries previously loaded with [load] from the application's address space.  *fileName* is the name of the file containing the library file unload;  it must be the same as the filename provided to [load] for loading the library. The *prefix* argument is the prefix (as determined by or passed to [load]), and is used to compute the name of the unload procedure; if not supplied, it is computed from *fileName* in the same manner as [load]. The *interp* argument is the path name of the interpreter from which to unload the package (see the [interp] manual entry for details); if *interp* is omitted, it defaults to the interpreter in which the **unload** command was invoked.
 
 If the initial arguments to **unload** start with **-** then they are treated as switches.  The following switches are currently supported:
 
 [-nocomplain]{.lit}
 : Suppresses all error messages. If this switch is given, **unload** will never report an error.
 
-[-keeplibrary]{.lit}
+**-keeplibrary**
 : This switch will prevent **unload** from issuing the operating system call that will unload the library from the process.
 
-[--]{.lit}
+**--**
 : Marks the end of switches.  The argument following this one will be treated as a *fileName* even if it starts with a **-**.
 
 
@@ -51,7 +51,7 @@ When a file containing a shared library is loaded through the [load] command, Tc
 
 **unload** works in the opposite direction. As a first step, **unload** will check whether the library is unloadable: an unloadable library exports a special unload procedure. The name of the unload procedure is determined by *prefix* and whether or not the target interpreter is a safe one.  For normal interpreters the name of the initialization procedure will have the form *pfx***\_Unload**, where *pfx* is the same as *prefix* except that the first letter is converted to upper case and all other letters are converted to lower case.  For example, if *prefix* is **foo** or **FOo**, the initialization procedure's name will be **Foo\_Unload**. If the target interpreter is a safe interpreter, then the name of the initialization procedure will be *pkg***\_SafeUnload** instead of *pkg***\_Unload**.
 
-If **unload** determines that a library is not unloadable (or unload functionality has been disabled during compilation), an error will be returned. If the library is unloadable, then **unload** will call the unload procedure. If the unload procedure returns **TCL\_OK**, **unload** will proceed and decrease the proper reference count (depending on the target interpreter type). When both reference counts have reached 0, the library will be detached from the process.
+If **unload** determines that a library is not unloadable (or unload functionality has been disabled during compilation), an error will be returned. If the library is unloadable, then **unload** will call the unload procedure. If the unload procedure returns [TCL\_OK][catch], **unload** will proceed and decrease the proper reference count (depending on the target interpreter type). When both reference counts have reached 0, the library will be detached from the process.
 
 ## Unload hook prototype
 
@@ -63,9 +63,11 @@ typedef int Tcl_LibraryUnloadProc(
         int flags);
 ```
 
-The *interp* argument identifies the interpreter from which the library is to be unloaded.  The unload procedure must return **TCL\_OK** or **TCL\_ERROR** to indicate whether or not it completed successfully;  in the event of an error it should set the interpreter's result to point to an error message.  In this case, the result of the **unload** command will be the result returned by the unload procedure.
+The *interp* argument identifies the interpreter from which the library is to be unloaded.  The unload procedure must return [TCL\_OK][catch] or [TCL\_ERROR][catch] to indicate whether or not it completed successfully;  in the event of an error it should set the interpreter's result to point to an error message.  In this case, the result of the **unload** command will be the result returned by the unload procedure.
 
 The *flags* argument can be either **TCL\_UNLOAD\_DETACH\_FROM\_INTERPRETER** or **TCL\_UNLOAD\_DETACH\_FROM\_PROCESS**. In case the library will remain attached to the process after the unload procedure returns (i.e. because the library is used by other interpreters), **TCL\_UNLOAD\_DETACH\_FROM\_INTERPRETER** will be defined. However, if the library is used only by the target interpreter and the library will be detached from the application as soon as the unload procedure returns, the *flags* argument will be set to **TCL\_UNLOAD\_DETACH\_FROM\_PROCESS**.
+
+The unload procedure must take care to delete any commands it owns, rescind callbacks or event handler, and free all resources such as file handles, memory, TSD storage.
 
 ## Notes
 
@@ -100,6 +102,7 @@ unload c:/some/dir/foobar.dll
 This allows a C code module to be installed temporarily into a long-running Tcl program and then removed again (either because it is no longer needed or because it is being updated with a new version) without having to shut down the overall Tcl process.
 
 
+[catch]: catch.md
 [interp]: interp.md
 [load]: load.md
 

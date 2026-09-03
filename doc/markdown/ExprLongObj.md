@@ -67,7 +67,7 @@ These four procedures all evaluate an expression, returning the result in one of
 
 The *interp* argument refers to an interpreter used to evaluate the expression (e.g. for variables and nested Tcl commands) and to return error information.
 
-For all of these procedures the return value is a standard Tcl result: **TCL\_OK** means the expression was successfully evaluated, and **TCL\_ERROR** means that an error occurred while evaluating the expression. If **TCL\_ERROR** is returned, then a message describing the error can be retrieved using [Tcl\_GetObjResult][SetResult]. If an error occurs while executing a Tcl command embedded in the expression then that error will be returned.
+For all of these procedures the return value is a standard Tcl result: [TCL\_OK][catch] means the expression was successfully evaluated, and [TCL\_ERROR][catch] means that an error occurred while evaluating the expression. If [TCL\_ERROR][catch] is returned, then a message describing the error can be retrieved using [Tcl\_GetObjResult][SetResult]. If an error occurs while executing a Tcl command embedded in the expression then that error will be returned.
 
 If the expression is successfully evaluated, then its value is returned in one of four forms, depending on which procedure is invoked. **Tcl\_ExprLongObj** stores an integer value at *\*longPtr*. If the expression's actual value is a floating-point number, then it is truncated to an integer. If the expression's actual value is a non-numeric string then an error is returned.
 
@@ -82,6 +82,7 @@ If **Tcl\_ExprObj** successfully evaluates the expression, it stores a pointer t
 **Tcl\_ExprLongObj**, **Tcl\_ExprDoubleObj**, **Tcl\_ExprBooleanObj**, and **Tcl\_ExprObj** all increment and decrement the reference count of their *objPtr* arguments; you must not pass them any value with a reference count of zero. They also manipulate the interpreter result; you must not count on the interpreter result to hold the reference count of any value over these calls. 
 
 
+[catch]: catch.md
 [expr]: expr.md
 [GetInt]: GetInt.md
 [Object3]: Object3.md

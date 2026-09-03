@@ -34,10 +34,10 @@ The **self** command, which should only be used from within the context of a cal
 [self]{.cmd} [call]{.sub}
 : This returns a two-element list describing the method implementations used to implement the current call chain. The first element is the same as would be reported by [info object][info] **call** for the current method (except that this also reports useful values from within constructors and destructors, whose names are reported as **\<constructor\>** and **\<destructor\>** respectively, and for private methods, which are described as being **private** instead of being a **method**), and the second element is an index into the first element's list that indicates which actual implementation is currently executing (the first implementation to execute is always at index 0).
 
-[self]{.cmd} [caller]{.sub}
+**self caller**
 : When the method was invoked from inside another object method, this subcommand returns a three element list describing the containing object and method. The first element describes the declaring object or class of the method, the second element is the name of the object on which the containing method was invoked, and the third element is the name of the method (with the strings **\<constructor\>** and **\<destructor\>** indicating constructors and destructors respectively).
 
-[self]{.cmd} [class]{.sub}
+**self class**
 : This returns the name of the class that the current method was defined within. Note that this will change as the chain of method implementations is traversed with [next], and that if the method was defined on an object then this will fail.
 
     If you want the class of the current object, you need to use this other construct:
@@ -46,22 +46,22 @@ The **self** command, which should only be used from within the context of a cal
     info object class [self object]
     ```
 
-[self]{.cmd} [filter]{.sub}
+**self filter**
 : When invoked inside a filter, this subcommand returns a three element list describing the filter. The first element gives the name of the object or class that declared the filter (note that this may be different from the object or class that provided the implementation of the filter), the second element is either **object** or **class** depending on whether the declaring entity was an object or class, and the third element is the name of the filter.
 
-[self]{.cmd} [method]{.sub}
+**self method**
 : This returns the name of the current method (with the strings **\<constructor\>** and **\<destructor\>** indicating constructors and destructors respectively).
 
-[self]{.cmd} [namespace]{.sub}
+**self namespace**
 : This returns the name of the unique namespace of the object that the method was invoked upon.
 
-[self]{.cmd} [next]{.sub}
+**self next**
 : When invoked from a method that is not at the end of a call chain (i.e. where the [next] command will invoke an actual method implementation), this subcommand returns a two element list describing the next element in the method call chain; the first element is the name of the class or object that declares the next part of the call chain, and the second element is the name of the method (with the strings **\<constructor\>** and **\<destructor\>** indicating constructors and destructors respectively). If invoked from a method that is at the end of a call chain, this subcommand returns the empty string.
 
-[self]{.cmd} [object]{.sub}
+**self object**
 : This returns the name of the object that the method was invoked upon.
 
-[self]{.cmd} [target]{.sub}
+**self target**
 : When invoked inside a filter implementation, this subcommand returns a two element list describing the method being filtered. The first element will be the name of the declarer of the method, and the second element will be the actual name of the method.
 
 

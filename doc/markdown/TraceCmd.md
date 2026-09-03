@@ -52,7 +52,7 @@ Tcl\_CommandTraceInfo, Tcl\_TraceCommand, Tcl\_UntraceCommand - monitor renames 
 
 # Description
 
-**Tcl\_TraceCommand** allows a C procedure to monitor operations performed on a Tcl command, so that the C procedure is invoked whenever the command is renamed or deleted.  If the trace is created successfully then **Tcl\_TraceCommand** returns **TCL\_OK**. If an error occurred (e.g. *cmdName* specifies a non-existent command) then **TCL\_ERROR** is returned and an error message is left in the interpreter's result.
+**Tcl\_TraceCommand** allows a C procedure to monitor operations performed on a Tcl command, so that the C procedure is invoked whenever the command is renamed or deleted.  If the trace is created successfully then **Tcl\_TraceCommand** returns [TCL\_OK][catch]. If an error occurred (e.g. *cmdName* specifies a non-existent command) then [TCL\_ERROR][catch] is returned and an error message is left in the interpreter's result.
 
 The *flags* argument to **Tcl\_TraceCommand** indicates when the trace procedure is to be invoked.  It consists of an OR'ed combination of any of the following values:
 
@@ -93,5 +93,6 @@ It is possible for multiple traces to exist on the same command. When this happe
 In a delete callback to *proc*, the **TCL\_TRACE\_DESTROYED** bit is set in *flags*.
 
 
+[catch]: catch.md
 [CrtInterp]: CrtInterp.md
 

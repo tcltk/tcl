@@ -35,7 +35,7 @@ The tcl/doc directory contains 248 manual pages which are divided as follows:
 section | number of documents | initial conversion | final conversion
 --------|---------------------|--------------------|-----------------
 1       | 1                   | 1                  | 0
-3       | 108                 | 108                | 8
+3       | 108                 | 108                | 17
 n       | 139                 | 139                | 139
 
 Final conversion of these files in the n section is currently done:
@@ -189,7 +189,15 @@ Now the 3 section:
 6. AssocData
 7. Async
 8. BackgdErr
-
+9. BoolObj
+10. ByteArrObj
+11. CallDel
+12. Cancel
+13. ChnlStack
+14. Class
+15. CmdCmpIt
+16. Concat (Concat3)
+17. CrtAlias
 
 
 The tk/doc directory comes next, after finishing Tcl.

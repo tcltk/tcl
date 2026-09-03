@@ -29,76 +29,76 @@ This command provides a way to retrieve information about how Tcl was built. Wit
 [::tcl::build-info]{.cmd} [clang]{.sub}
 : Returns the clang version number (as 4 digits) if Tcl is compiled with clang, 0 otherwise.
 
-[::tcl::build-info]{.cmd} [commit]{.sub}
+**::tcl::build-info commit**
 : Returns the fossil commit-id where Tcl was built from.
 
-[::tcl::build-info]{.cmd} [compiledebug]{.sub}
+**::tcl::build-info compiledebug**
 : Returns 1 if Tcl is compiled with **-DTCL\_COMPILE\_DEBUG**, 0 otherwise.
 
-[::tcl::build-info]{.cmd} [compiler]{.sub}
+**::tcl::build-info compiler**
 : Returns the compiler name (either clang, gcc, icc or msvc), followed by a dash and a (4-digit) version number.
 
-[::tcl::build-info]{.cmd} [compilestats]{.sub}
+**::tcl::build-info compilestats**
 : Returns 1 if Tcl is compiled with **-DTCL\_COMPILE\_STATS**, 0 otherwise.
 
-[::tcl::build-info]{.cmd} [cplusplus]{.sub}
+**::tcl::build-info cplusplus**
 : Returns 1 if Tcl is compiled with a C++ compiler, 0 otherwise.
 
-[::tcl::build-info]{.cmd} [debug]{.sub}
+**::tcl::build-info debug**
 : Returns 1 if Tcl is not compiled with **-DNDEBUG**, 0 otherwise.
 
-[::tcl::build-info]{.cmd} [gcc]{.sub}
+**::tcl::build-info gcc**
 : Returns the gcc version number (as 4 digits) if Tcl is compiled with gcc, 0 otherwise.
 
-[::tcl::build-info]{.cmd} [icc]{.sub}
+**::tcl::build-info icc**
 : Returns the icc version number (as 4 digits) if Tcl is compiled with icc, 0 otherwise.
 
-[::tcl::build-info]{.cmd} [ilp32]{.sub}
+**::tcl::build-info ilp32**
 : Returns 1 if Tcl is compiled such that integers, longs and pointers are all 32-bit, 0 otherwise.
 
-[::tcl::build-info]{.cmd} [memdebug]{.sub}
+**::tcl::build-info memdebug**
 : Returns 1 if Tcl is compiled with **-DTCL\_MEM\_DEBUG**, 0 otherwise.
 
-[::tcl::build-info]{.cmd} [msvc]{.sub}
+**::tcl::build-info msvc**
 : Returns the msvc version number (as 4 digits) if Tcl is compiled with msvc, 0 otherwise.
 
-[::tcl::build-info]{.cmd} [nmake]{.sub}
+**::tcl::build-info nmake**
 : Returns 1 if Tcl is built using nmake, 0 otherwise.
 
-[::tcl::build-info]{.cmd} [no-deprecate]{.sub}
+**::tcl::build-info no-deprecate**
 : Returns 1 if Tcl is compiled with **-DTCL\_NO\_DEPRECATED**, 0 otherwise.
 
-[::tcl::build-info]{.cmd} [no-thread]{.sub}
+**::tcl::build-info no-thread**
 : Returns 1 if Tcl is compiled with **-DTCL\_THREADS=0**, 0 otherwise.
 
-[::tcl::build-info]{.cmd} [no-optimize]{.sub}
+**::tcl::build-info no-optimize**
 : Returns 1 if Tcl is not compiled with **-DTCL\_CFG\_OPTIMIZED**, 0 otherwise.
 
-[::tcl::build-info]{.cmd} [objective-c]{.sub}
+**::tcl::build-info objective-c**
 : Returns 1 if Tcl is compiled with an objective-c compiler, 0 otherwise.
 
-[::tcl::build-info]{.cmd} [objective-cplusplus]{.sub}
+**::tcl::build-info objective-cplusplus**
 : Returns 1 if Tcl is compiled with an objective-c++ compiler, 0 otherwise.
 
-[::tcl::build-info]{.cmd} [patchlevel]{.sub}
+**::tcl::build-info patchlevel**
 : Returns the Tcl patchlevel, same as [info patchlevel][info].
 
-[::tcl::build-info]{.cmd} [profile]{.sub}
+**::tcl::build-info profile**
 : Returns 1 if Tcl is compiled with **-DTCL\_CFG\_PROFILED**, 0 otherwise.
 
-[::tcl::build-info]{.cmd} [purify]{.sub}
+**::tcl::build-info purify**
 : Returns 1 if Tcl is compiled with **-DPURIFY**, 0 otherwise.
 
-[::tcl::build-info]{.cmd} [static]{.sub}
+**::tcl::build-info static**
 : Returns 1 if Tcl is compiled as a static library, 0 otherwise.
 
-[::tcl::build-info]{.cmd} [tommath]{.sub}
+**::tcl::build-info tommath**
 : Returns the libtommath version number (as 4 digits) if libtommath is built into Tcl, 0 otherwise.
 
-[::tcl::build-info]{.cmd} [version]{.sub}
+**::tcl::build-info version**
 : Returns the Tcl version, same as [info tclversion][info].
 
-[::tcl::build-info]{.cmd} [zlib]{.sub}
+**::tcl::build-info zlib**
 : Returns the zlib version number (as 4 digits) if zlib is built into Tcl, 0 otherwise.
 
 

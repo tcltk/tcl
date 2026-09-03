@@ -58,7 +58,7 @@ Tcl\_LinkArray, Tcl\_LinkVar, Tcl\_UnlinkVar, Tcl\_UpdateLinkedVar - link Tcl va
 
 # Description
 
-**Tcl\_LinkVar** uses variable traces to keep the Tcl variable named by *varName* in sync with the C variable at the address given by *addr*. Whenever the Tcl variable is read the value of the C variable will be returned, and whenever the Tcl variable is written the C variable will be updated to have the same value. **Tcl\_LinkVar** normally returns **TCL\_OK**;  if an error occurs while setting up the link (e.g. because *varName* is the name of array) then **TCL\_ERROR** is returned and the interpreter's result contains an error message.
+**Tcl\_LinkVar** uses variable traces to keep the Tcl variable named by *varName* in sync with the C variable at the address given by *addr*. Whenever the Tcl variable is read the value of the C variable will be returned, and whenever the Tcl variable is written the C variable will be updated to have the same value. **Tcl\_LinkVar** normally returns [TCL\_OK][catch];  if an error occurs while setting up the link (e.g. because *varName* is the name of array) then [TCL\_ERROR][catch] is returned and the interpreter's result contains an error message.
 
 ::: {.info version="TIP312"}
 **Tcl\_LinkArray** is similar, but for arrays of fixed size (given by the *size* argument). When asked to allocate the backing C array storage (via the *addr* argument being NULL), it writes the address that it allocated to the Tcl interpreter result.
@@ -131,6 +131,7 @@ Note that, as with any call to a Tcl interpreter, **Tcl\_UpdateLinkedVar** must 
 [Alloc]: Alloc.md
 [Async]: Async.md
 [BoolObj]: BoolObj.md
+[catch]: catch.md
 [DoubleObj]: DoubleObj.md
 [IntObj]: IntObj.md
 [Notifier]: Notifier.md

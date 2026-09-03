@@ -92,13 +92,13 @@ Tcl\_ClassGetMetadata, Tcl\_ClassSetMetadata, Tcl\_CopyObjectInstance, Tcl\_GetC
 
 Objects are typed entities that have a set of operations ("methods") associated with them. Classes are objects that can manufacture objects. Each class can be viewed as an object itself; the object view can be retrieved using **Tcl\_GetClassAsObject** which always returns the object when applied to a non-destroyed class, and an object can be viewed as a class with the aid of the **Tcl\_GetObjectAsClass** (which either returns the class, or NULL if the object is not a class). An object may be looked up using the **Tcl\_GetObjectFromObj** function, which either returns an object or NULL (with an error message in the interpreter result) if the object cannot be found. The correct way to look up a class by name is to look up the object with that name, and then to use **Tcl\_GetObjectAsClass**.
 
-Every object has its own command and namespace associated with it. The command may be retrieved using the **Tcl\_GetObjectCommand** function, the name of the object (and hence the name of the command) with **Tcl\_GetObjectName**, and the namespace may be retrieved using the **Tcl\_GetObjectNamespace** function. Note that the Tcl\_Obj reference returned by **Tcl\_GetObjectName** is a shared reference. You can also get whether the object has been marked for deletion with **Tcl\_ObjectDeleted** (it returns true if deletion of the object has begun); this can be useful during the processing of methods.
+Every object has its own command and namespace associated with it. The command may be retrieved using the **Tcl\_GetObjectCommand** function, the name of the object (and hence the name of the command) with **Tcl\_GetObjectName**, and the namespace may be retrieved using the **Tcl\_GetObjectNamespace** function. Note that the [Tcl\_Obj][Object3] reference returned by **Tcl\_GetObjectName** is a shared reference. You can also get whether the object has been marked for deletion with **Tcl\_ObjectDeleted** (it returns true if deletion of the object has begun); this can be useful during the processing of methods.
 
 ::: {.info version="TIP605"}
 The class of an object can be retrieved with **Tcl\_GetClassOfObject**, and the name of the class of an object with **Tcl\_GetObjectClassName**; note that these two *may* return NULL during deletion of an object (this is transient, and only occurs when the object is a long way through being deleted).
 :::
 
-Instances of classes are created using **Tcl\_NewObjectInstance**, which creates an object from any class (and which is internally called by both the **create** and **new** methods of the **oo::class** class). It takes parameters that optionally give the name of the object and namespace to create, and which describe the arguments to pass to the class's constructor (if any). The result of the function will be either a reference to the newly created object, or NULL if the creation failed (when an error message will be left in the interpreter result). In addition, objects may be copied by using **Tcl\_CopyObjectInstance** which creates a copy of an object without running any constructors.
+Instances of classes are created using **Tcl\_NewObjectInstance**, which creates an object from any class (and which is internally called by both the **create** and **new** methods of the [oo::class][class] class). It takes parameters that optionally give the name of the object and namespace to create, and which describe the arguments to pass to the class's constructor (if any). The result of the function will be either a reference to the newly created object, or NULL if the creation failed (when an error message will be left in the interpreter result). In addition, objects may be copied by using **Tcl\_CopyObjectInstance** which creates a copy of an object without running any constructors.
 
 Note that the lifetime management of objects is handled internally within TclOO, and does not use [Tcl\_Preserve][Preserve]. *It is not safe to put a Tcl\_Object handle in a C structure with a lifespan different to the object;* you should use the object's command name (as retrieved with **Tcl\_GetObjectName**) instead. It is safe to use a Tcl\_Object handle for the lifespan of a call of a method on that object; handles do not become invalid while there is an outstanding call on their object (even if the only operation guaranteed to be safe on them is **Tcl\_ObjectDeleted**; the other operations are only guaranteed to work on non-deleted objects).
 
@@ -147,7 +147,7 @@ typedef int Tcl_CloneProc(
         void **dstMetadataPtr);
 ```
 
-The *interp* argument gives a place to write an error message when the attempt to clone the object is to fail, in which case the clone procedure must also return TCL\_ERROR; it should return TCL\_OK otherwise. The *srcMetadata* argument gives the address of the metadata to be cloned, and the cloned metadata should be written into the variable pointed to by *dstMetadataPtr*; a NULL should be written if the metadata is to not be cloned but the overall object copy operation is still to succeed.
+The *interp* argument gives a place to write an error message when the attempt to clone the object is to fail, in which case the clone procedure must also return [TCL\_ERROR][catch]; it should return [TCL\_OK][catch] otherwise. The *srcMetadata* argument gives the address of the metadata to be cloned, and the cloned metadata should be written into the variable pointed to by *dstMetadataPtr*; a NULL should be written if the metadata is to not be cloned but the overall object copy operation is still to succeed.
 
 # Object method name mapping
 
@@ -165,7 +165,7 @@ typedef int Tcl_ObjectMapMethodNameProc(
         Tcl_Obj *methodNameObj);
 ```
 
-If the result is TCL\_OK, the remapping is assumed to have been done. If the result is TCL\_ERROR, an error message will have been left in *interp* and the method call will fail. If the result is TCL\_BREAK, the standard method name lookup rules will be used; the behavior of other result codes is currently undefined. The *object* parameter says which object is being processed. The *startClsPtr* parameter points to a variable that contains the first class to provide a definition in the method chain to process, or NULL if the whole chain is to be processed (the argument itself is never NULL); this variable may be updated by the callback. The *methodNameObj* parameter gives an unshared object containing the name of the method being invoked, as provided by the user; this object may be updated by the callback.
+If the result is [TCL\_OK][catch], the remapping is assumed to have been done. If the result is [TCL\_ERROR][catch], an error message will have been left in *interp* and the method call will fail. If the result is [TCL\_BREAK][catch], the standard method name lookup rules will be used; the behavior of other result codes is currently undefined. The *object* parameter says which object is being processed. The *startClsPtr* parameter points to a variable that contains the first class to provide a definition in the method chain to process, or NULL if the whole chain is to be processed (the argument itself is never NULL); this variable may be updated by the callback. The *methodNameObj* parameter gives an unshared object containing the name of the method being invoked, as provided by the user; this object may be updated by the callback.
 
 # Reference count management
 
@@ -178,6 +178,9 @@ The first *objc* values in the *objv* argument to **Tcl\_NewObjectInstance** are
 The *methodNameObj* argument to a Tcl\_ObjectMapMethodNameProc implementation will be a value with a reference count of at least 1 where at least one reference is not held by the interpreter result. It is expected that method name mappers will only read their *methodNameObj* arguments.
 
 
+[catch]: catch.md
+[class]: class.md
 [next]: next.md
+[Object3]: Object3.md
 [Preserve]: Preserve.md
 

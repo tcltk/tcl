@@ -53,28 +53,28 @@ By default ASCII sorting is used with the result returned in increasing order.  
 [-ascii]{.lit}
 : Use string comparison with Unicode code-point collation order (the name is for backward-compatibility reasons.)  This is the default.
 
-[-dictionary]{.lit}
+**-dictionary**
 : Use dictionary-style comparison.  This is the same as **-ascii** except (a) case is ignored except as a tie-breaker and (b) if two strings contain embedded numbers, the numbers compare as integers, not characters.  For example, in **-dictionary** mode, **bigBoy** sorts between **bigbang** and **bigboy**, and **x10y** sorts between **x9y** and **x11y**. Overrides the **-nocase** option.
 
-[-integer]{.lit}
+**-integer**
 : Convert list elements to integers and use integer comparison.
 
-[-real]{.lit}
+**-real**
 : Convert list elements to floating-point values and use floating comparison.
 
-[-command]{.lit} [command]{.arg}
+**-command** *command*
 : Use *command* as a comparison command. To compare two elements, evaluate a Tcl script consisting of *command* with the two elements appended as additional arguments.  The script should return an integer less than, equal to, or greater than zero if the first element is to be considered less than, equal to, or greater than the second, respectively.
 
-[-increasing]{.lit}
+**-increasing**
 : Sort the list in increasing order ("smallest"items first). This is the default.
 
-[-decreasing]{.lit}
+**-decreasing**
 : Sort the list in decreasing order ("largest"items first).
 
-[-indices]{.lit}
+**-indices**
 : Return a list of indices into *list* in sorted order instead of the values themselves.
 
-[-index]{.lit} [indexList]{.arg}
+**-index** *indexList*
 : If this option is specified, each of the elements of *list* must itself be a proper Tcl sublist (unless **-stride** is used). Instead of sorting based on whole sublists, **lsort** will extract the *indexList*'th element from each sublist (as if the overall element and the *indexList* were passed to [lindex]) and sort based on the given element. For example,
 
     ```

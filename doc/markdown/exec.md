@@ -31,68 +31,68 @@ exec - Invoke subprocesses
 
 # Description
 
-This command treats its arguments as the specification of one or more subprocesses to execute. The arguments take the form of a standard shell pipeline where each *arg* becomes one word of a command, and each distinct command becomes a subprocess. The result of the command is the standard output of the final subprocess in the pipeline, interpreted using the system [encoding]; to use any other encoding (especially including binary data), the pipeline must be [open]ed, configured and read explicitly.
+This command treats its arguments as the specification of one or more subprocesses to execute. The arguments take the form of a standard shell pipeline where each *arg* becomes one word of a command, and each distinct command becomes a subprocess. The result of the command is the standard output of the final subprocess in the pipeline, decoded as per the **-encoding** option. 
 
 If the initial arguments to **exec** start with **-** then they are treated as command-line switches and are not part of the pipeline specification.  The following switches are currently supported:
 
 [-encoding]{.lit} [encodingName]{.arg}
-: Specifies the name of the encoding to use to decode the output of the first subprocess. Defaults to that returned by the [encoding system][encoding] command.
+: Specifies the name of the encoding to use to decode the result of the command when not run in the background. Defaults to that returned by the [encoding system][encoding] command.
 
-[-ignorestderr]{.lit}
+**-ignorestderr**
 : Stops the **exec** command from treating the output of messages to the pipeline's standard error channel as an error case.
 
-[-keepnewline]{.lit}
+**-keepnewline**
 : Retains a trailing newline in the pipeline's output. Normally a trailing newline will be deleted.
 
-[--]{.lit}
+**--**
 : Marks the end of switches.  The argument following this one will be treated as the first *arg* even if it starts with a **-**.
 
 
 If an *arg* (or pair of *arg*s) has one of the forms described below then it is used by **exec** to control the flow of input and output among the subprocess(es). Such arguments will not be passed to the subprocess(es).  In forms such as "**<** *fileName*", *fileName* may either be in a separate argument from "**<**" or in the same argument with no intervening space (i.e. "**<***fileName*").
 
-[|]{.lit}
+**|**
 : Separates distinct commands in the pipeline.  The standard output of the preceding command will be piped into the standard input of the next command.
 
-[|&]{.lit}
+**|&**
 : Separates distinct commands in the pipeline.  Both standard output and standard error of the preceding command will be piped into the standard input of the next command. This form of redirection overrides forms such as 2> and >&.
 
-[<]{.lit} [fileName]{.arg}
+**<** *fileName*
 : The file named by *fileName* is opened and used as the standard input for the first command in the pipeline.
 
-[<@]{.lit} [fileId]{.arg}
+**<@** *fileId*
 : *FileId* must be the identifier for an open file, such as the return value from a previous call to [open]. It is used as the standard input for the first command in the pipeline. *FileId* must have been opened for reading.
 
-[<<]{.lit} [value]{.arg}
+**<<** *value*
 : *Value* is encoded using the system encoding, newlines replaced by platform-specific line ending sequences, and then passed to the first command as its standard input.
 
-[>]{.lit} [fileName]{.arg}
+**>** *fileName*
 : Standard output from the last command is redirected to the file named *fileName*, overwriting its previous contents.
 
-[2>]{.lit} [fileName]{.arg}
+**2>** *fileName*
 : Standard error from all commands in the pipeline is redirected to the file named *fileName*, overwriting its previous contents.
 
-[>&]{.lit} [fileName]{.arg}
+**>&** *fileName*
 : Both standard output from the last command and standard error from all commands are redirected to the file named *fileName*, overwriting its previous contents.
 
-[>>]{.lit} [fileName]{.arg}
+**>>** *fileName*
 : Standard output from the last command is redirected to the file named *fileName*, appending to it rather than overwriting it.
 
-[2>>]{.lit} [fileName]{.arg}
+**2>>** *fileName*
 : Standard error from all commands in the pipeline is redirected to the file named *fileName*, appending to it rather than overwriting it.
 
-[>>&]{.lit} [fileName]{.arg}
+**>>&** *fileName*
 : Both standard output from the last command and standard error from all commands are redirected to the file named *fileName*, appending to it rather than overwriting it.
 
-[>@]{.lit} [fileId]{.arg}
+**>@** *fileId*
 : *FileId* must be the identifier for an open file, such as the return value from a previous call to [open]. Standard output from the last command is redirected to *fileId*'s file, which must have been opened for writing.
 
-[2>@]{.lit} [fileId]{.arg}
+**2>@** *fileId*
 : *FileId* must be the identifier for an open file, such as the return value from a previous call to [open]. Standard error from all commands in the pipeline is redirected to *fileId*'s file. The file must have been opened for writing.
 
-[2>@1]{.lit}
+**2>@1** 
 : Standard error from all commands in the pipeline is redirected to the command result.  This operator is only valid at the end of the command pipeline.
 
-[>&@]{.lit} [fileId]{.arg}
+**>&@** *fileId*
 : *FileId* must be the identifier for an open file, such as the return value from a previous call to [open]. Both standard output from the last command and standard error from all commands are redirected to *fileId*'s file. The file must have been opened for writing.
 
 
@@ -102,7 +102,7 @@ If the last character of the result or error message is a newline then that char
 
 If standard input is not redirected with "<", "<<" or "<@" then the standard input for the first command in the pipeline is taken from the application's current standard input.
 
-If the last *arg* is "&" then the pipeline will be executed in background. In this case the **exec** command will return a list whose elements are the process identifiers for all of the subprocesses in the pipeline. The standard output from the last command in the pipeline will go to the application's standard output if it has not been redirected, and error output from all of the commands in the pipeline will go to the application's standard error file unless redirected.
+If the last *arg* is "&" then the pipeline will be executed in the background. In this case the **exec** command will return a list whose elements are the process identifiers for all of the subprocesses in the pipeline. The standard output from the last command in the pipeline will go to the application's standard output if it has not been redirected, and error output from all of the commands in the pipeline will go to the application's standard error file unless redirected.
 
 The first word in each command is taken as the command name; if the result contains no slashes then the directories in the PATH environment variable are searched for an executable by the given name. If the name contains a slash then it must refer to an executable reachable from the current directory. No "glob" expansion or other shell-like substitutions are performed on the arguments to commands.
 
@@ -147,20 +147,7 @@ Note that there are two general types of Win32 console applications:
 
 **exec** will not work well with TUI applications when a console is not present, as is done when launching applications under wish.  It is desirable to have console applications hidden and detached.  This is a designed-in limitation as **exec** wants to communicate over pipes.  The Expect extension addresses this issue when communicating with a TUI application.
 
-When attempting to execute an application, **exec** first searches for the name as it was specified.  Then, in order, **.com**, **.exe**, **.bat** and **.cmd** are appended to the end of the specified name and it searches for the longer name.  If a directory name was not specified as part of the application name, the following directories are automatically searched in order when attempting to locate the application:
-
-- The directory from which the Tcl executable was loaded.
-
-- The current directory.
-
-- The Windows 32-bit system directory.
-
-- The Windows home directory.
-
-- The directories listed in the path.
-
-
-In order to execute shell built-in commands like **dir** and **copy**, the caller must prepend the desired command with "**cmd.exe /c **" because built-in commands are not implemented using executables.
+When attempting to execute an application, **exec** searches directories in the same manner as described for the **auto\_execok** command. However, with respect to file extensions, unlike **auto\_execok**, **exec** only searches for the name as it was specified and then in order, **.com**, **.exe**, **.bat** and **.cmd**. The **PATHEXT** environment variable is disregarded as are any file associations. In order to execute shell built-in commands like **dir** and **copy**, other extensions in **PATHEXT**, or registered application paths, make use of **auto\_execok** to retrieve the command to be passed to **exec**.
 
 **Unix** (including macOS)
 : The **exec** command is fully functional and works as described.

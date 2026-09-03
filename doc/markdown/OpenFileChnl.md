@@ -108,7 +108,7 @@ Tcl\_OpenFileChannel, Tcl\_OpenCommandChannel, Tcl\_MakeFileChannel, Tcl\_GetCha
 : Points at an integer variable that will receive an OR-ed combination of **TCL\_READABLE** and **TCL\_WRITABLE** denoting whether the channel is open for reading and writing.
 
 [\*pattern]{.carg .in type="const char"}
-: The pattern to match on, passed to Tcl\_StringMatch, or NULL.
+: The pattern to match on, passed to [Tcl\_StringMatch][StrMatch], or NULL.
 
 [channel]{.carg .in type="Tcl_Channel"}
 : A Tcl channel for input or output.  Must have been the return value from a procedure such as **Tcl\_OpenFileChannel**.
@@ -211,7 +211,7 @@ The newly created channel is not registered in the supplied interpreter; to regi
 
 **Tcl\_GetChannel** returns a channel given the *channelName* used to create it with [Tcl\_CreateChannel][CrtChannel] and a pointer to a Tcl interpreter in *interp*. If a channel by that name is not registered in that interpreter, the procedure returns NULL. If the *modePtr* argument is not NULL, it points at an integer variable that will receive an OR-ed combination of **TCL\_READABLE** and **TCL\_WRITABLE** describing whether the channel is open for reading and writing.
 
-**Tcl\_GetChannelNames** and **Tcl\_GetChannelNamesEx** write the names of the registered channels to the interpreter's result as a list value.  **Tcl\_GetChannelNamesEx** will filter these names according to the *pattern*.  If *pattern* is NULL, then it will not do any filtering.  The return value is **TCL\_OK** if no errors occurred writing to the result, otherwise it is **TCL\_ERROR**, and the error message is left in the interpreter's result.
+**Tcl\_GetChannelNames** and **Tcl\_GetChannelNamesEx** write the names of the registered channels to the interpreter's result as a list value.  **Tcl\_GetChannelNamesEx** will filter these names according to the *pattern*.  If *pattern* is NULL, then it will not do any filtering.  The return value is [TCL\_OK][catch] if no errors occurred writing to the result, otherwise it is [TCL\_ERROR][catch], and the error message is left in the interpreter's result.
 
 # Tcl\_registerchannel
 
@@ -229,7 +229,7 @@ Code not associated with a Tcl interpreter can call **Tcl\_UnregisterChannel** w
 
 # Tcl\_detachchannel
 
-**Tcl\_DetachChannel** removes a channel from the set of channels accessible in *interp*. After this call, Tcl programs will no longer be able to use the channel's name to refer to the channel in that interpreter. Beyond that, this command has no further effect.  It cannot be used on the standard channels (**stdout**, **stderr**, **stdin**), and will return **TCL\_ERROR** if passed one of those channels.
+**Tcl\_DetachChannel** removes a channel from the set of channels accessible in *interp*. After this call, Tcl programs will no longer be able to use the channel's name to refer to the channel in that interpreter. Beyond that, this command has no further effect.  It cannot be used on the standard channels (**stdout**, **stderr**, **stdin**), and will return [TCL\_ERROR][catch] if passed one of those channels.
 
 Code not associated with a Tcl interpreter can call **Tcl\_DetachChannel** with *interp* as NULL, to indicate to Tcl that it no longer holds a reference to that channel. If this is the last reference to the channel, unlike **Tcl\_UnregisterChannel**, it will not be closed.
 
@@ -245,7 +245,7 @@ No attempt is made to check whether the given channel or the standard channels a
 
 **Tcl\_CloseEx** allows for both full closing and half-closing of channels depending on its **closeFlags** parameter. See the description of the parameter above. It is an error to attempt to close the channel for a direction for which it is not open. The channel is destroyed only when it has been closed for both reading and writing. Only socket and command pipe channels support half-closing.
 
-If the channel was closed successfully, **Tcl\_Close** and **Tcl\_CloseEx** return **TCL\_OK**. If an error occurs, they return **TCL\_ERROR** and record a POSIX error code that can be retrieved with [Tcl\_GetErrno][SetErrno]. If the channel is being closed synchronously and an error occurs during closing of the channel and *interp* is not NULL, an error message is left in the interpreter's result.
+If the channel was closed successfully, **Tcl\_Close** and **Tcl\_CloseEx** return [TCL\_OK][catch]. If an error occurs, they return [TCL\_ERROR][catch] and record a POSIX error code that can be retrieved with [Tcl\_GetErrno][SetErrno]. If the channel is being closed synchronously and an error occurs during closing of the channel and *interp* is not NULL, an error message is left in the interpreter's result.
 
 Note that it is not safe to call the channel closing functions on a channel that has been registered using **Tcl\_RegisterChannel**; see the documentation for **Tcl\_RegisterChannel**, above, for details. If the channel has ever been given as the [chan] argument in a call to **Tcl\_RegisterChannel**, you should instead use **Tcl\_UnregisterChannel**, which will internally call **Tcl\_Close** when all calls to **Tcl\_RegisterChannel** have been matched by corresponding calls to **Tcl\_UnregisterChannel**.
 
@@ -301,7 +301,7 @@ Newline characters in the output data are translated to platform-specific end-of
 
 **Tcl\_Flush** causes all of the buffered output data for *channel* to be written to its underlying file or device as soon as possible. If the channel is in blocking mode, the call does not return until all the buffered data has been sent to the channel or some error occurred. The call returns immediately if the channel is nonblocking; it starts a background flush that will write the buffered data to the channel eventually, as fast as the channel is able to absorb it.
 
-The return value is normally **TCL\_OK**. If an error occurs, **Tcl\_Flush** returns **TCL\_ERROR** and records a POSIX error code that can be retrieved with [Tcl\_GetErrno][SetErrno].
+The return value is normally [TCL\_OK][catch]. If an error occurs, **Tcl\_Flush** returns [TCL\_ERROR][catch] and records a POSIX error code that can be retrieved with [Tcl\_GetErrno][SetErrno].
 
 # Tcl\_seek
 
@@ -315,15 +315,15 @@ The return value is normally **TCL\_OK**. If an error occurs, **Tcl\_Flush** ret
 
 # Tcl\_truncatechannel
 
-**Tcl\_TruncateChannel** truncates the file underlying *channel* to a given *length* of bytes. It returns **TCL\_OK** if the operation succeeded, and **TCL\_ERROR** otherwise.
+**Tcl\_TruncateChannel** truncates the file underlying *channel* to a given *length* of bytes. It returns [TCL\_OK][catch] if the operation succeeded, and [TCL\_ERROR][catch] otherwise.
 
 # Tcl\_getchanneloption
 
-**Tcl\_GetChannelOption** retrieves, in *optionValue*, the value of one of the options currently in effect for a channel, or a list of all options and their values.  The *channel* argument identifies the channel for which to query an option or retrieve all options and their values. If *optionName* is not NULL, it is the name of the option to query; the option's value is copied to the Tcl dynamic string denoted by *optionValue*. If *optionName* is NULL, the function stores an alternating list of option names and their values in *optionValue*, using a series of calls to [Tcl\_DStringAppendElement][DString]. The various preexisting options and their possible values are described in the manual entry for the Tcl [fconfigure] command. Other options can be added by each channel type. These channel type specific options are described in the manual entry for the Tcl command that creates a channel of that type; for example, the additional options for TCP-based channels are described in the manual entry for the Tcl [socket] command. The procedure normally returns **TCL\_OK**. If an error occurs, it returns **TCL\_ERROR** and calls [Tcl\_SetErrno][SetErrno] to store an appropriate POSIX error code.
+**Tcl\_GetChannelOption** retrieves, in *optionValue*, the value of one of the options currently in effect for a channel, or a list of all options and their values.  The *channel* argument identifies the channel for which to query an option or retrieve all options and their values. If *optionName* is not NULL, it is the name of the option to query; the option's value is copied to the Tcl dynamic string denoted by *optionValue*. If *optionName* is NULL, the function stores an alternating list of option names and their values in *optionValue*, using a series of calls to [Tcl\_DStringAppendElement][DString]. The various preexisting options and their possible values are described in the manual entry for the Tcl [fconfigure] command. Other options can be added by each channel type. These channel type specific options are described in the manual entry for the Tcl command that creates a channel of that type; for example, the additional options for TCP-based channels are described in the manual entry for the Tcl [socket] command. The procedure normally returns [TCL\_OK][catch]. If an error occurs, it returns [TCL\_ERROR][catch] and calls [Tcl\_SetErrno][SetErrno] to store an appropriate POSIX error code.
 
 # Tcl\_setchanneloption
 
-**Tcl\_SetChannelOption** sets a new value *newValue* for an option *optionName* on *channel*. The procedure normally returns **TCL\_OK**.  If an error occurs, it returns **TCL\_ERROR**;  in addition, if *interp* is non-NULL, **Tcl\_SetChannelOption** leaves an error message in the interpreter's result.
+**Tcl\_SetChannelOption** sets a new value *newValue* for an option *optionName* on *channel*. The procedure normally returns [TCL\_OK][catch].  If an error occurs, it returns [TCL\_ERROR][catch];  in addition, if *interp* is non-NULL, **Tcl\_SetChannelOption** leaves an error message in the interpreter's result.
 
 # Tcl\_eof
 
@@ -356,6 +356,7 @@ The *writeObjPtr* argument to **Tcl\_WriteObj** should be a value with any refer
 
 [binary]: binary.md
 [ByteArrObj]: ByteArrObj.md
+[catch]: catch.md
 [chan]: chan.md
 [CrtChannel]: CrtChannel.md
 [DString]: DString.md
@@ -369,5 +370,6 @@ The *writeObjPtr* argument to **Tcl\_WriteObj** should be a value with any refer
 [socket]: socket.md
 [StdChannels]: StdChannels.md
 [StringObj]: StringObj.md
+[StrMatch]: StrMatch.md
 [Utf]: Utf.md
 

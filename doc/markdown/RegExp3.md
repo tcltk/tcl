@@ -61,7 +61,7 @@ Tcl\_RegExpMatch, Tcl\_RegExpCompile, Tcl\_RegExpExec, Tcl\_RegExpRange, Tcl\_Ge
 : Compiled regular expression.  Must have been returned previously by **Tcl\_GetRegExpFromObj** or **Tcl\_RegExpCompile**.
 
 [\*start]{.carg .in type="const char"}
-: If *text* is just a portion of some other string, this argument identifies the beginning of the larger string. If it is not the same as *text*, then no .QW **^** matches will be allowed.
+: If *text* is just a portion of some other string, this argument identifies the beginning of the larger string. If it is not the same as *text*, then no "**^**" matches will be allowed.
 
 [index]{.carg .in type="Tcl_Size"}
 : Specifies which range is desired:  0 means the range of the entire match, 1 or greater means the range that matched a parenthesized sub-expression.

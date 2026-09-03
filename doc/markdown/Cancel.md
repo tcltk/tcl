@@ -47,9 +47,9 @@ Tcl\_CancelEval, Tcl\_Canceled - cancel Tcl scripts
 
 # Description
 
-**Tcl\_CancelEval** cancels or unwinds the script in progress soon after the next invocation of asynchronous handlers, causing **TCL\_ERROR** to be the return code for that script.  This function is thread-safe and may be called from any thread in the process.
+**Tcl\_CancelEval** cancels or unwinds the script in progress soon after the next invocation of asynchronous handlers, causing [TCL\_ERROR][catch] to be the return code for that script.  This function is thread-safe and may be called from any thread in the process.
 
-**Tcl\_Canceled** checks if the script in progress has been canceled and returns **TCL\_ERROR** if it has.  Otherwise, **TCL\_OK** is returned. Extensions can use this function to check to see if they should abort a long running command.  This function is thread sensitive and may only be called from the thread the interpreter was created in.
+**Tcl\_Canceled** checks if the script in progress has been canceled and returns [TCL\_ERROR][catch] if it has.  Otherwise, [TCL\_OK][catch] is returned. Extensions can use this function to check to see if they should abort a long running command.  This function is thread sensitive and may only be called from the thread the interpreter was created in.
 
 ## Flag bits
 
@@ -67,5 +67,6 @@ Any OR'ed combination of the following values may be used for the *flags* argume
 **Tcl\_CancelEval** always decrements the reference count of its *resultObjPtr* argument (if that is non-NULL). It is expected to be usually called with an object with zero reference count. If the object is shared with some other location (including the Tcl evaluation stack) it should have its reference count incremented before calling this function.
 
 
+[catch]: catch.md
 [SetResult]: SetResult.md
 

@@ -40,32 +40,32 @@ If the initial arguments to **regsub** start with **-** then they are treated as
 [-all]{.lit}
 : All ranges in *string* that match *exp* are found and substitution is performed for each of these ranges. Without this switch only the first matching range is found and substituted. If **-all** is specified, then "&" and "\\*n*" sequences are handled for each substitution using the information from the corresponding match.
 
-[-command]{.lit}
+**-command**
 : Changes the handling of *subSpec* so that it is not treated as a template for a substitution string and the substrings "&" and "\\*n*" no longer have special meaning. Instead *subSpec* must be a command prefix, that is, a non-empty list.  The substring of *string* that matches *exp*, and then each substring that matches each capturing sub-RE within *exp* are appended as additional elements to that list. (The items appended to the list are much like what [regexp] **-inline** would return).  The completed list is then evaluated as a Tcl command, and the result of that command is the substitution string.  Any error or exception from command evaluation becomes an error or exception from the **regsub** command.
 
     If **-all** is not also given, the command callback will be invoked at most once (exactly when the regular expression matches). If **-all** is given, the command callback will be invoked for each matched location, in sequence. The exact location indices that matched are not made available to the script.
 
     See [Examples] below for illustrative cases.
 
-[-expanded]{.lit}
+**-expanded**
 : Enables use of the expanded regular expression syntax where whitespace and comments are ignored.  This is the same as specifying the **(?x)** embedded option (see the [re\_syntax][re_syntax] manual page).
 
-[-line]{.lit}
+**-line**
 : Enables newline-sensitive matching.  By default, newline is a completely ordinary character with no special meaning.  With this flag, "\[^" bracket expressions and "." never match newline, "^" matches an empty string after any newline in addition to its normal function, and "$" matches an empty string before any newline in addition to its normal function.  This flag is equivalent to specifying both **-linestop** and **-lineanchor**, or the **(?n)** embedded option (see the [re\_syntax][re_syntax] manual page).
 
-[-linestop]{.lit}
+**-linestop**
 : Changes the behavior of "\[^" bracket expressions and "." so that they stop at newlines.  This is the same as specifying the **(?p)** embedded option (see the [re\_syntax][re_syntax] manual page).
 
-[-lineanchor]{.lit}
+**-lineanchor**
 : Changes the behavior of "^" and "$" (the "anchors") so they match the beginning and end of a line respectively.  This is the same as specifying the **(?w)** embedded option (see the [re\_syntax][re_syntax] manual page).
 
-[-nocase]{.lit}
+**-nocase**
 : Upper-case characters in *string* will be converted to lower-case before matching against *exp*;  however, substitutions specified by *subSpec* use the original unconverted form of *string*.
 
-[-start]{.lit} [index]{.arg}
+**-start** *index*
 : Specifies a character index offset into the string to start matching the regular expression at. The *index* value is interpreted in the same manner as the *index* argument to [string index][string]. When using this switch, "^" will not match the beginning of the line, and \\A will still match the start of the string at *index*. *index* will be constrained to the bounds of the input string.
 
-[--]{.lit}
+**--**
 : Marks the end of switches.  The argument following this one will be treated as *exp* even if it starts with a **-**.
 
 

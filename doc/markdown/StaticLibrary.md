@@ -58,7 +58,7 @@ typedef int Tcl_LibraryInitProc(
         Tcl_Interp *interp);
 ```
 
-The *interp* argument identifies the interpreter in which the library is to be incorporated.  The initialization procedure must return **TCL\_OK** or **TCL\_ERROR** to indicate whether or not it completed successfully; in the event of an error it should set the interpreter's result to point to an error message.  The result or error from the initialization procedure will be returned as the result of the [load] command that caused the initialization procedure to be invoked.
+The *interp* argument identifies the interpreter in which the library is to be incorporated.  The initialization procedure must return [TCL\_OK][catch] or [TCL\_ERROR][catch] to indicate whether or not it completed successfully; in the event of an error it should set the interpreter's result to point to an error message.  The result or error from the initialization procedure will be returned as the result of the [load] command that caused the initialization procedure to be invoked.
 
 **Tcl\_StaticLibrary** was named **Tcl\_StaticPackage** in Tcl 8.6 and earlier, but the old name is deprecated now.
 
@@ -66,5 +66,6 @@ The *interp* argument identifies the interpreter in which the library is to be i
 
 
 [AppInit]: AppInit.md
+[catch]: catch.md
 [load]: load.md
 

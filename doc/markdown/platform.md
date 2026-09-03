@@ -42,10 +42,10 @@ The **platform** package prevents such fragmentation - i.e., it establishes a st
 [platform::identify]{.cmd}
 : This command returns an identifier describing the platform the Tcl core is running on. The returned identifier has the general format *OS*-*CPU*. The *OS* part of the identifier may contain details like kernel version, libc version, etc., and this information may contain dashes as well.  The *CPU* part will not contain dashes, making the preceding dash the last dash in the result.
 
-[platform::generic]{.cmd}
+**platform::generic**
 : This command returns a simplified identifier describing the platform the Tcl core is running on. In contrast to **platform::identify** it leaves out details like kernel version, libc version, etc. The returned identifier has the general format *OS*-*CPU*.
 
-[platform::patterns]{.cmd} [identifier]{.arg}
+**platform::patterns** *identifier*
 : This command takes an identifier as returned by **platform::identify** and returns a list of identifiers describing compatible architectures.
 
 

@@ -52,7 +52,7 @@ Tcl\_ParseArgsObjv - parse arguments according to a tabular description
 
 The **Tcl\_ParseArgsObjv** function provides a system for parsing argument lists of the form "**-someName** *someValue ...*". Such argument lists are commonly found both in the arguments to a program and in the arguments to an individual Tcl command. This parser assumes that the order of the arguments does not matter, other than in so far as later copies of a duplicated option overriding earlier ones.
 
-The argument array is described by the *objcPtr* and *objv* parameters, and an array of unprocessed arguments is returned through the *objcPtr* and *remObjv* parameters; if no return of unprocessed arguments is desired, the *remObjv* parameter should be NULL. If any problems happen, including if the "generate help" option is selected, an error message is left in the interpreter result and TCL\_ERROR is returned. Otherwise, the interpreter result is left unchanged and TCL\_OK is returned.
+The argument array is described by the *objcPtr* and *objv* parameters, and an array of unprocessed arguments is returned through the *objcPtr* and *remObjv* parameters; if no return of unprocessed arguments is desired, the *remObjv* parameter should be NULL. If any problems happen, including if the "generate help" option is selected, an error message is left in the interpreter result and [TCL\_ERROR][catch] is returned. Otherwise, the interpreter result is left unchanged and [TCL\_OK][catch] is returned.
 
 The collection of arguments to be parsed is described by the *argTable* parameter. This points to a table of descriptor structures that is terminated by an entry with the *type* field set to TCL\_ARGV\_END. As convenience, the following prototypical entries are provided:
 
@@ -139,6 +139,7 @@ The values in the *objv* argument to **Tcl\_ParseArgsObjv** will not have their 
 
 
 [Alloc]: Alloc.md
+[catch]: catch.md
 [DoubleObj]: DoubleObj.md
 [IntObj]: IntObj.md
 

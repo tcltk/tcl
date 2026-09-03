@@ -95,9 +95,9 @@ When *proc* is invoked, the *clientData* and *interp* parameters will be copies 
 
 Additionally, when *proc* is invoked, it must not modify the contents of the *objv* array by assigning new pointer values to any element of the array (for example, *objv*[**2**] = **NULL**) because this will cause memory to be lost and the runtime stack to be corrupted.  The [const] in the declaration of *objv* will cause ANSI-compliant compilers to report any such attempted assignment as an error.  However, it is acceptable to modify the internal representation of any individual value argument.  For instance, the user may call [Tcl\_GetIntFromObj][IntObj] on *objv*[**2**] to obtain the integer representation of that value; that call may change the type of the value that *objv*[**2**] points at, but will not change where *objv*[**2**] points.
 
-*proc* must return an integer code that is either **TCL\_OK**, **TCL\_ERROR**, **TCL\_RETURN**, **TCL\_BREAK**, or **TCL\_CONTINUE**. See the [return] man page for details on what these codes mean and the use of extended values for an extension's private use. Most normal commands will only return **TCL\_OK** or **TCL\_ERROR**.
+*proc* must return an integer code that is either [TCL\_OK][catch], [TCL\_ERROR][catch], [TCL\_RETURN][catch], [TCL\_BREAK][catch], or [TCL\_CONTINUE][catch]. See the [return] man page for details on what these codes mean and the use of extended values for an extension's private use. Most normal commands will only return [TCL\_OK][catch] or [TCL\_ERROR][catch].
 
-In addition, if *proc* needs to return a non-empty result, it can call [Tcl\_SetObjResult][SetResult] to set the interpreter's result. In the case of a **TCL\_OK** return code this gives the result of the command, and in the case of **TCL\_ERROR** this gives an error message. Before invoking a command procedure, [Tcl\_EvalObjEx][Eval3] sets interpreter's result to point to a value representing an empty string, so simple commands can return an empty result by doing nothing at all.
+In addition, if *proc* needs to return a non-empty result, it can call [Tcl\_SetObjResult][SetResult] to set the interpreter's result. In the case of a [TCL\_OK][catch] return code this gives the result of the command, and in the case of [TCL\_ERROR][catch] this gives an error message. Before invoking a command procedure, [Tcl\_EvalObjEx][Eval3] sets interpreter's result to point to a value representing an empty string, so simple commands can return an empty result by doing nothing at all.
 
 The contents of the *objv* array belong to Tcl and are not guaranteed to persist once *proc* returns: *proc* should not modify them. Call [Tcl\_SetObjResult][SetResult] if you want to return something from the *objv* array.
 
@@ -157,7 +157,7 @@ Note that **Tcl\_SetCommandInfo** and **Tcl\_SetCommandInfoFromToken** both allo
 
 **Tcl\_GetCommandFullName** produces the fully qualified name of a command from a command token. The name, including all namespace prefixes, is appended to the value specified by *objPtr*.
 
-**Tcl\_GetCommandFromObj** returns a token for the command specified by the name in a [Tcl\_Obj][Object]. The command name is resolved relative to the current namespace. Returns NULL if the command is not found.
+**Tcl\_GetCommandFromObj** returns a token for the command specified by the name in a [Tcl\_Obj][Object3]. The command name is resolved relative to the current namespace. Returns NULL if the command is not found.
 
 # Reference count management
 
@@ -168,12 +168,12 @@ When the *proc* passed to **Tcl\_CreateObjCommand** is called, the values in its
 **Tcl\_GetCommandFromObj** does not modify the reference count of its *objPtr* argument; it only reads.
 
 
+[catch]: catch.md
 [const]: const.md
 [CrtCommand]: CrtCommand.md
 [CrtInterp]: CrtInterp.md
 [Eval3]: Eval3.md
 [IntObj]: IntObj.md
-[Object]: Object.md
 [Object3]: Object3.md
 [rename]: rename.md
 [return]: return.md

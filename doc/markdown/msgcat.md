@@ -77,15 +77,15 @@ Object oriented programming is supported by the use of a package namespace.
 
     **::msgcat::mc** is the main function used to localize an application.  Instead of using an English string directly, an application can pass the English string through **::msgcat::mc** and use the result.  If an application is written for a single language in this fashion, then it is easy to add support for additional languages later simply by defining new message catalog entries.
 
-[::msgcat::mcn]{.cmd} [namespace]{.arg} [src-string]{.arg} [arg arg]{.optdot}
+**::msgcat::mcn** *namespace src-string* ?*arg arg ...*?
 : Like **::msgcat::mc**, but with the message namespace specified as first argument.
 
     **mcn** may be used for cases where the package namespace is not the namespace of the caller. An example is shown within the description of the command **::msgcat::mcpackagenamespaceget** below.
 
-[::msgcat::mcmax]{.cmd} [src-string]{.optdot}
+**::msgcat::mcmax** ?*src-string ...*?
 : Given several source strings, **::msgcat::mcmax** returns the length of the longest translated string.  This is useful when designing localized GUIs, which may require that all buttons, for example, be a fixed width (which will be the width of the widest button).
 
-[::msgcat::mcexists]{.cmd} [-exactnamespace]{.optlit} [-exactlocale]{.optlit} [[-namespace]{.lit} [namespace]{.arg}]{.optarg} [src-string]{.arg}
+**::msgcat::mcexists** ?**-exactnamespace**? ?**-exactlocale**? ?**-namespace** *namespace*? *src-string*
 : Return true, if there is a translation for the given *src-string*.
 
     The search may be limited by the option **-exactnamespace** to only check the current namespace and not any parent namespaces.
@@ -129,7 +129,7 @@ Object oriented programming is supported by the use of a package namespace.
 
     If the locale is set, the preference list of locales is evaluated. Locales in this list are loaded now, if not jet loaded.
 
-[::msgcat::mcpreferences]{.cmd} [locale preference]{.optdot}
+**::msgcat::mcpreferences** ?*locale preference ...*?
 : Without arguments, returns an ordered list of the locales preferred by the user. The list is ordered from most specific to least preference.
 
     A set of locale preferences may be given to set the list of locale preferences. The current locale is also set, which is the first element of the locale preferences list.
@@ -150,29 +150,29 @@ Object oriented programming is supported by the use of a package namespace.
 
     The subcommand **clear** removes all locales and their data, which are not in the current preference list.
 
-[::msgcat::mcload]{.cmd} [dirname]{.arg}
+**::msgcat::mcload** *dirname*
 : Searches the specified directory for files that match the language specifications returned by **::msgcat::mcloadedlocales loaded** (or **msgcat::mcpackagelocale preferences** if a package locale is set) (note that these are all lowercase), extended by the file extension ".msg". Each matching file is read in order, assuming a UTF-8 encoding.  The file contents are then evaluated as a Tcl script.  This means that Unicode characters may be present in the message file either directly in their UTF-8 encoded form, or by use of the backslash-u quoting recognized by Tcl evaluation.  The number of message files which matched the specification and were loaded is returned.
 
     In addition, the given folder is stored in the **msgcat** package configuration option *mcfolder* to eventually load message catalog files required by a locale change.
 
-[::msgcat::mcset]{.cmd} [locale]{.arg} [src-string]{.arg} [translate-string]{.optarg}
+**::msgcat::mcset** *locale src-string* ?*translate-string*?
 : Sets the translation for *src-string* to *translate-string* in the specified *locale* and the current namespace.  If *translate-string* is not specified, *src-string* is used for both.  The function returns *translate-string*.
 
-[::msgcat::mcmset]{.cmd} [locale]{.arg} [src-trans-list]{.arg}
+**::msgcat::mcmset** *locale src-trans-list*
 : Sets the translation for multiple source strings in *src-trans-list* in the specified *locale* and the current namespace. *src-trans-list* must have an even number of elements and is in the form {*src-string translate-string* ?*src-string translate-string ...*?} **::msgcat::mcmset** can be significantly faster than multiple invocations of **::msgcat::mcset**. The function returns the number of translations set.
 
-[::msgcat::mcflset]{.cmd} [src-string]{.arg} [translate-string]{.optarg}
+**::msgcat::mcflset** *src-string* ?*translate-string*?
 : Sets the translation for *src-string* to *translate-string* in the current namespace for the locale implied by the name of the message catalog being loaded via **::msgcat::mcload**.  If *translate-string* is not specified, *src-string* is used for both.  The function returns *translate-string*.
 
-[::msgcat::mcflmset]{.cmd} [src-trans-list]{.arg}
+**::msgcat::mcflmset** *src-trans-list*
 : Sets the translation for multiple source strings in *src-trans-list* in the current namespace for the locale implied by the name of the message catalog being loaded via **::msgcat::mcload**. *src-trans-list* must have an even number of elements and is in the form {*src-string translate-string* ?*src-string translate-string ...*?} **::msgcat::mcflmset** can be significantly faster than multiple invocations of **::msgcat::mcflset**. The function returns the number of translations set.
 
-[::msgcat::mcunknown]{.cmd} [locale]{.arg} [src-string]{.arg} [arg arg]{.optdot}
+**::msgcat::mcunknown** *locale src-string* ?*arg arg ...*?
 : This routine is called by **::msgcat::mc** in the case when a translation for *src-string* is not defined in the current locale.  The default action is to return *src-string* passed by format if there are any arguments.  This procedure can be redefined by the application, for example to log error messages for each unknown string.  The **::msgcat::mcunknown** procedure is invoked at the same stack context as the call to **::msgcat::mc**.  The return value of **::msgcat::mcunknown** is used as the return value for the call to **::msgcat::mc**.
 
     Note that this routine is only called if the concerned package did not set a package locale unknown command name.
 
-[::msgcat::mcforgetpackage]{.cmd}
+**::msgcat::mcforgetpackage**
 : The calling package clears all its state within the **msgcat** package including all settings and translations.
 
 
@@ -184,7 +184,7 @@ Object oriented programming is supported by the use of a package namespace.
     fr_ch fr de_ch de {}
     ```
 
-[::msgcat::mcutil]{.cmd} [getsystemlocale]{.sub}
+**::msgcat::mcutil getsystemlocale**
 : The system locale is returned as described by the section [Locale specification].
 
 
@@ -341,7 +341,7 @@ This command may cause the load of locales.
 [::msgcat::mcpackagelocale]{.cmd} [get]{.sub}
 : Return the package private locale or the global locale, if no package private locale is set.
 
-[::msgcat::mcpackagelocale]{.cmd} [preferences]{.sub} [locale preference]{.optdot}
+**::msgcat::mcpackagelocale preferences** ?*locale preference ...*?
 : With no parameters, return the package private preferences or the global preferences, if no package private locale is set. The package locale state (set or not) is not changed (in contrast to the command **::msgcat::mcpackagelocale set**).
 
 
@@ -354,16 +354,16 @@ Locale preferences are loaded now for the package, if not yet loaded.
 [::msgcat::mcpackagelocale]{.cmd} [loaded]{.sub}
 : Return the list of locales loaded for this package.
 
-[::msgcat::mcpackagelocale]{.cmd} [isset]{.sub}
+**::msgcat::mcpackagelocale isset**
 : Returns true, if a package private locale is set.
 
-[::msgcat::mcpackagelocale]{.cmd} [unset]{.sub}
+**::msgcat::mcpackagelocale unset**
 : Unset the package private locale and use the global locale. Load and remove locales to adjust the list of loaded locales for the package to the global loaded locales list.
 
-[::msgcat::mcpackagelocale]{.cmd} [present]{.sub} [locale]{.arg}
+**::msgcat::mcpackagelocale present** *locale*
 : Returns true, if the given locale is loaded for the package.
 
-[::msgcat::mcpackagelocale]{.cmd} [clear]{.sub}
+**::msgcat::mcpackagelocale clear**
 : Clear any loaded locales of the package not present in the package preferences.
 
 
@@ -374,13 +374,13 @@ Each package using msgcat has a set of options within **msgcat**. The package op
 [::msgcat::mcpackageconfig]{.cmd} [get]{.sub} [option]{.arg}
 : Return the current value of the given *option*. This call returns an error if the option is not set for the package.
 
-[::msgcat::mcpackageconfig]{.cmd} [isset]{.sub} [option]{.arg}
+**::msgcat::mcpackageconfig isset** *option*
 : Returns 1, if the given *option* is set for the package, 0 otherwise.
 
-[::msgcat::mcpackageconfig]{.cmd} [set]{.sub} [option]{.arg} [value]{.arg}
+**::msgcat::mcpackageconfig set** *option value*
 : Set the given *option* to the given *value*. This may invoke additional actions in dependency of the *option*. The return value is 0 or the number of loaded packages for the option **mcfolder**.
 
-[::msgcat::mcpackageconfig]{.cmd} [unset]{.sub} [option]{.arg}
+**::msgcat::mcpackageconfig unset** *option*
 : Unsets the given *option* for the package. No action is taken if the *option* is not set for the package. The empty string is returned.
 
 

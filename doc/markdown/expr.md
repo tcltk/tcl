@@ -161,7 +161,7 @@ Unless otherwise specified, operators accept non-numeric operands.  The value of
 : Logical OR.  If both operands are false, the result is 0, or 1 otherwise. This operator evaluates lazily; it only evaluates its second operand if it must in order to determine its result.
 
 *x* **?** *y* **:** *z*
-: If-then-else, as in C.  If *x* is false , the result is the value of *y*.  Otherwise the result is the value of *z*. This operator evaluates lazily; it evaluates only one of *y* or *z*.
+: If-then-else, as in C.  If *x* is true , the result is the value of *y*.  Otherwise the result is the value of *z*. This operator evaluates lazily; it evaluates only one of *y* or *z*.
 
 
 The exponentiation operator promotes types in the same way that the multiply and divide operators do, and the result is is the same as the result of **pow**. Exponentiation groups right-to-left within a precedence level. Other binary operators group left-to-right.  For example, the value of

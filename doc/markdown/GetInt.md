@@ -49,20 +49,27 @@ Tcl\_GetInt, Tcl\_GetDouble, Tcl\_GetBoolean - convert from string to integer, d
 : Points to place to store boolean value (0 or 1) value converted from *src*.
 
 [flags]{.carg .in type="int"}
-: 0 or TCL\_NULL\_OK. If TCL\_NULL\_OK is used, then the empty string or NULL will result in **Tcl\_GetBool** return TCL\_OK, the \*charPtr filled with the value **'\\xFF'**;
+: 0 or TCL\_NULL\_OK. If TCL\_NULL\_OK is used, then the empty string or NULL will result in **Tcl\_GetBool** return [TCL\_OK][catch], the \*charPtr filled with the value **'\\xFF'**;
 
 
 :::
 
 # Description
 
-These procedures convert from strings to integers or double-precision floating-point values or booleans (represented as 0- or 1-valued integers).  Each of the procedures takes a *src* argument, converts it to an internal form of a particular type, and stores the converted value at the location indicated by the procedure's third argument.  If all goes well, each of the procedures returns **TCL\_OK**.  If *src* does not have the proper syntax for the desired type then **TCL\_ERROR** is returned, an error message is left in the interpreter's result, and nothing is stored at \**intPtr* or \**doublePtr*.
+These procedures convert from strings to integers or double-precision floating-point values or booleans (represented as 0- or 1-valued integers).  Each of the procedures takes a *src* argument, converts it to an internal form of a particular type, and stores the converted value at the location indicated by the procedure's third argument.  If all goes well, each of the procedures returns [TCL\_OK][catch].  If *src* does not have the proper syntax for the desired type then [TCL\_ERROR][catch] is returned, an error message is left in the interpreter's result, and nothing is stored at \**intPtr* or \**doublePtr*.
 
 **Tcl\_GetInt** expects *src* to consist of a collection of integer digits, optionally signed and optionally preceded and followed by white space.  If the first two characters of *src* after the optional white space and sign are "**0x**" then *src* is expected to be in hexadecimal form;  otherwise, if the first such characters are "**0d**" then *src* is expected to be in decimal form; otherwise, if the first such characters are "**0o**" then *src* is expected to be in octal form;  otherwise, if the first such characters are "**0b**" then *src* is expected to be in binary form;  otherwise, *src* is expected to be in decimal form.
+
+::: {.info version="TIP 551"}
+One or more underscore characters, "\_", may be inserted between digits, acting as numeric whitespace, but not before the first digit or after the last digit, or between the prefix (as described above, if present) and the first digit. Which is to say, "1\_000\_000" is a *valid* way of writing one million, but "0d\_1000\_000" is *not valid*, and will be reported as an error.
+:::
 
 **Tcl\_GetDouble** expects *src* to consist of a floating-point number, which is:  white space;  a sign; a sequence of digits;  a decimal point "**.**"; a sequence of digits;  the letter "**e**"; a signed decimal exponent;  and more white space. Any of the fields may be omitted, except that the digits either before or after the decimal point must be present and if the "**e**" is present then it must be followed by the exponent number. If there are no fields apart from the sign and initial sequence of digits (i.e., no decimal point or exponent indicator), that initial sequence of digits should take one of the forms that **Tcl\_GetInt** supports, described above. The use of "**,**" as a decimal point is not supported nor should any other sort of inter-digit separator be present.
 
 **Tcl\_GetBoolean** expects *src* to specify a boolean value.  If *src* is any of **0**, **false**, **no**, or **off**, then **Tcl\_GetBoolean** stores a zero value at *\*intPtr*. If *src* is any of **1**, **true**, **yes**, or **on**, then 1 is stored at *\*intPtr*. Any of these values may be abbreviated, and upper-case spellings are also acceptable.
 
-**Tcl\_GetBool** functions almost the same as **Tcl\_GetBoolean**, but it has an additional parameter **flags**, which can be used to specify whether the empty string or NULL is accepted as valid.
+**Tcl\_GetBool** functions almost the same as **Tcl\_GetBoolean**, but it has an additional parameter **flags**, which can be used to specify whether the empty string or NULL is accepted as valid. 
+
+
+[catch]: catch.md
 

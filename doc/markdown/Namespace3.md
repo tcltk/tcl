@@ -99,7 +99,7 @@ typedef void Tcl_NamespaceDeleteProc(
 
 **Tcl\_Export** sets and appends to the export patterns for a namespace.  Patterns are appended unless the *resetListFirst* flag is true.
 
-**Tcl\_Import** imports commands matching a pattern into a namespace.  Note that the pattern must include the name of the namespace to import from.  This function returns TCL\_ERROR if an attempt to import a command over an existing command is made, unless the *allowOverwrite* flag has been set.
+**Tcl\_Import** imports commands matching a pattern into a namespace.  Note that the pattern must include the name of the namespace to import from.  This function returns [TCL\_ERROR][catch] if an attempt to import a command over an existing command is made, unless the *allowOverwrite* flag has been set.
 
 **Tcl\_ForgetImport** removes imports matching a pattern.
 
@@ -124,6 +124,7 @@ The *objPtr* argument to **Tcl\_AppendExportList** should be an unshared object,
 The *handlerPtr* argument to **Tcl\_SetNamespaceUnknownHandler** will have its reference count incremented if it is a non-empty list.
 
 
+[catch]: catch.md
 [namespace]: namespace.md
 [StrMatch]: StrMatch.md
 

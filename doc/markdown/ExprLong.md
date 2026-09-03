@@ -64,7 +64,7 @@ These four procedures all evaluate the expression given by the *expr* argument a
 
 The *interp* argument refers to an interpreter used to evaluate the expression (e.g. for variables and nested Tcl commands) and to return error information.
 
-For all of these procedures the return value is a standard Tcl result: **TCL\_OK** means the expression was successfully evaluated, and **TCL\_ERROR** means that an error occurred while evaluating the expression. If **TCL\_ERROR** is returned then the interpreter's result will hold a message describing the error. If an error occurs while executing a Tcl command embedded in the expression then that error will be returned.
+For all of these procedures the return value is a standard Tcl result: [TCL\_OK][catch] means the expression was successfully evaluated, and [TCL\_ERROR][catch] means that an error occurred while evaluating the expression. If [TCL\_ERROR][catch] is returned then the interpreter's result will hold a message describing the error. If an error occurs while executing a Tcl command embedded in the expression then that error will be returned.
 
 If the expression is successfully evaluated, then its value is returned in one of four forms, depending on which procedure is invoked. **Tcl\_ExprLong** stores an integer value at *\*longPtr*. If the expression's actual value is a floating-point number, then it is truncated to an integer. If the expression's actual value is a non-numeric string then an error is returned.
 
@@ -75,6 +75,7 @@ If the expression is successfully evaluated, then its value is returned in one o
 **Tcl\_ExprString** returns the value of the expression as a string stored in the interpreter's result. 
 
 
+[catch]: catch.md
 [expr]: expr.md
 [ExprLongObj]: ExprLongObj.md
 [GetInt]: GetInt.md

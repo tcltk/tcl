@@ -37,10 +37,11 @@ Tcl\_AllowExceptions - allow all exceptions in next script evaluation
 
 # Description
 
-If a script is evaluated at top-level (i.e. no other scripts are pending evaluation when the script is invoked), and if the script terminates with a completion code other than **TCL\_OK**, **TCL\_ERROR** or **TCL\_RETURN**, then Tcl normally converts this into a **TCL\_ERROR** return with an appropriate message.  The particular script evaluation procedures of Tcl that act in the manner are [Tcl\_EvalObjEx][Eval3], [Tcl\_EvalObjv][Eval3], [Tcl\_Eval][Eval3], [Tcl\_EvalEx][Eval3], [Tcl\_GlobalEval][Eval3], [Tcl\_GlobalEvalObj][Eval3] and [Tcl\_VarEval][Eval3].
+If a script is evaluated at top-level (i.e. no other scripts are pending evaluation when the script is invoked), and if the script terminates with a completion code other than [TCL\_OK][catch], [TCL\_ERROR][catch] or [TCL\_RETURN][catch], then Tcl normally converts this into a [TCL\_ERROR][catch] return with an appropriate message.  The particular script evaluation procedures of Tcl that act in the manner are [Tcl\_EvalObjEx][Eval3], [Tcl\_EvalObjv][Eval3], [Tcl\_Eval][Eval3], [Tcl\_EvalEx][Eval3], [Tcl\_GlobalEval][Eval3], [Tcl\_GlobalEvalObj][Eval3] and [Tcl\_VarEval][Eval3].
 
-However, if **Tcl\_AllowExceptions** is invoked immediately before calling one of those a procedures, then arbitrary completion codes are permitted from the script, and they are returned without modification. This is useful in cases where the caller can deal with exceptions such as **TCL\_BREAK** or **TCL\_CONTINUE** in a meaningful way. 
+However, if **Tcl\_AllowExceptions** is invoked immediately before calling one of those a procedures, then arbitrary completion codes are permitted from the script, and they are returned without modification. This is useful in cases where the caller can deal with exceptions such as [TCL\_BREAK][catch] or [TCL\_CONTINUE][catch] in a meaningful way. 
 
 
+[catch]: catch.md
 [Eval3]: Eval3.md
 

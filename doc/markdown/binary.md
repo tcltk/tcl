@@ -47,43 +47,43 @@ When encoding binary data as a readable string, the starting binary data is pass
 
     During encoding, the following options are supported:
 
-    [-maxlen]{.lit} [length]{.arg}
+    **-maxlen** *length*
     : Indicates that the output should be split into lines of no more than *length* characters. By default, lines are not split.
 
-    [-wrapchar]{.lit} [character]{.arg}
+    **-wrapchar** *character*
     : Indicates that, when lines are split because of the **-maxlen** option, *character* should be used to separate lines. By default, this is a newline character, "\\n".
 
 
     During decoding, the following options are supported:
 
-    [-strict]{.lit}
+    **-strict**
     : Instructs the decoder to throw an error if it encounters any characters that are not strictly part of the encoding itself. Otherwise it ignores them. RFC 2045 calls for base64 decoders to be non-strict.
 
 
-[hex]{.cmd}
+**hex**
 : The **hex** binary encoding converts each byte to a pair of hexadecimal digits that represent the byte value as a hexadecimal integer. When encoding, lower characters are used. When decoding, upper and lower characters are accepted.
 
     No options are supported during encoding. During decoding, the following options are supported:
 
-    [-strict]{.lit}
+    **-strict**
     : Instructs the decoder to throw an error if it encounters whitespace characters. Otherwise it ignores them.
 
 
-[uuencode]{.cmd}
+**uuencode**
 : The **uuencode** binary encoding used to be common for transfer of data between Unix systems and on USENET, but is less common these days, having been largely superseded by the **base64** binary encoding.
 
     During encoding, the following options are supported (though changing them may produce files that other implementations of decoders cannot process):
 
-    [-maxlen]{.lit} [length]{.arg}
+    **-maxlen** *length*
     : Indicates the maximum number of characters to produce for each encoded line. The valid range is 5 to 85. Line lengths outside that range cannot be accommodated by the encoding format. The default value is 61.
 
-    [-wrapchar]{.lit} [character]{.arg}
+    **-wrapchar** *character*
     : Indicates the character(s) to use to mark the end of each encoded line. Acceptable values are a sequence of zero or more characters from the set { \\x09 (TAB), \\x0B (VT), \\x0C (FF), \\x0D (CR) } followed by zero or one newline \\x0A (LF).  Any other values are rejected because they would generate encoded text that could not be decoded. The default value is a single newline.
 
 
     During decoding, the following options are supported:
 
-    [-strict]{.lit}
+    **-strict**
     : Instructs the decoder to throw an error if it encounters anything outside of the standard encoding format. Without this option, the decoder tolerates some deviations, mostly to forgive reflows of lines between the encoder and decoder.
 
 
@@ -589,10 +589,10 @@ Each type-count pair moves an imaginary cursor through the binary data, reading 
 : The data is interpreted as *count* 64-bit signed integers represented in the native byte order of the machine running the Tcl script, or as unsigned if **u** is placed immediately after the **m**.  It is otherwise identical to **w** and **W**. To determine what the native byte order of the machine is, refer to the **byteOrder** element of the [tcl\_platform][tclvars] array.
 
 **f**
-: The data is interpreted as *count* single-precision floating point numbers in the machine's native representation.  The floating point numbers are stored in the corresponding variable as a list.  If *count* is "**\***", then all of the remaining bytes in *string* will be scanned.  If *count* is omitted, then one single-precision floating point number will be scanned.  The size of a floating point number may vary across architectures, so the number of bytes that are scanned may vary.  If the data does not represent a valid floating point number, the resulting value is undefined and compiler dependent.  For example, on a Windows system running on an Intel Pentium processor,
+: The data is interpreted as *count* single-precision floating point numbers in the machine's native representation.  The floating point numbers are stored in the corresponding variable as a list.  If *count* is "**\***", then all of the remaining bytes in *string* will be scanned.  If *count* is omitted, then one single-precision floating point number will be scanned.  The size of a floating point number may vary across architectures, so the number of bytes that are scanned may vary.  If the data does not represent a valid floating point number, the resulting value is undefined and compiler dependent.  For example, on a MS-Windows system running on an x86/x64 processor,
 
     ```
-    binary scan \x3F\xCC\xCC\xCD f var1
+    binary scan \xCD\xCC\xCC\x3F f var1
     ```
 
     will return **1** with **1.6000000238418579** stored in *var1*.

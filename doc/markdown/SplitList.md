@@ -46,7 +46,7 @@ Tcl\_SplitList, Tcl\_Merge, Tcl\_ScanElement, Tcl\_ConvertElement, Tcl\_ScanCoun
 : Pointer to a string with proper list structure.
 
 [\*argcPtr]{.carg .out type="Tcl_Size &| int"}
-: Filled in with number of elements in *list*. May be (Tcl\_Size \*)NULL when not used. If it points to a variable which type is not **Tcl\_Size**, a compiler warning will be generated. If your extensions is compiled with **-DTCL\_8\_API**, this function will return TCL\_ERROR for lists with more than INT\_MAX elements (which should trigger proper error-handling), otherwise expect it to crash.
+: Filled in with number of elements in *list*. May be (Tcl\_Size \*)NULL when not used. If it points to a variable which type is not **Tcl\_Size**, a compiler warning will be generated. If your extensions is compiled with **-DTCL\_8\_API**, this function will return [TCL\_ERROR][catch] for lists with more than INT\_MAX elements (which should trigger proper error-handling), otherwise expect it to crash.
 
 [\*\*\*argvPtr]{.carg .out type="const char"}
 : *\*argvPtr* will be filled in with the address of an array of pointers to the strings that are the extracted elements of *list*. There will be *\*argcPtr* valid entries in the array, followed by a NULL entry.
@@ -94,7 +94,7 @@ Then you should eventually free the storage with a call like the following:
 Tcl_Free(argv);
 ```
 
-**Tcl\_SplitList** normally returns **TCL\_OK**, which means the list was successfully parsed. If *sizePtr* points to a variable of type **int** and the list contains more than 2\*\*31 key/value pairs, or there was a syntax error in *list*, then **TCL\_ERROR** is returned and the interpreter's result will point to an error message describing the problem (if *interp* was not NULL). If **TCL\_ERROR** is returned then no memory is allocated and *\*argvPtr* is not modified.
+**Tcl\_SplitList** normally returns [TCL\_OK][catch], which means the list was successfully parsed. If *sizePtr* points to a variable of type **int** and the list contains more than 2\*\*31 key/value pairs, or there was a syntax error in *list*, then [TCL\_ERROR][catch] is returned and the interpreter's result will point to an error message describing the problem (if *interp* was not NULL). If [TCL\_ERROR][catch] is returned then no memory is allocated and *\*argvPtr* is not modified.
 
 **Tcl\_Merge** is the inverse of **Tcl\_SplitList**:  it takes a collection of strings given by *argc* and *argv* and generates a result string that has proper list structure. This means that commands like **index** may be used to extract the original elements again. In addition, if the result of **Tcl\_Merge** is passed to [Tcl\_Eval][Eval3], it will be parsed into *argc* words whose values will be the same as the *argv* strings passed to **Tcl\_Merge**. **Tcl\_Merge** will modify the list elements with braces and/or backslashes in order to produce proper Tcl list structure. The result string is dynamically allocated using [Tcl\_Alloc][Alloc];  the caller must eventually release the space using [Tcl\_Free][Alloc].
 
@@ -112,6 +112,7 @@ By default, **Tcl\_ConvertElement** will use quoting in its output to be sure th
 
 
 [Alloc]: Alloc.md
+[catch]: catch.md
 [eval]: eval.md
 [Eval3]: Eval3.md
 

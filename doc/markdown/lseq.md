@@ -52,29 +52,34 @@ If a *start* value is specified as the first argument, the *end* value of the se
 
 A short form use of the command with a single argument *count* will create a sequence from 0 to *count*-1. It can optioanlly be followed by a step value preceeded by the word **by**.
 
-The **lseq** command can produce both increasing and decreasing sequences. When both *start* and *end* are provided without a *stepValue*, then if *start* <= *end*, the sequence will be increasing and if *start* > *end* it will be decreasing. If the *stepValue* is included, it's sign should agree with the direction of the sequence (descending → negative and ascending → positive), otherwise an empty list is returned.  For example:
+The **lseq** command can produce both increasing and decreasing sequences. When both *start* and *end* are provided without a *stepValue*, then if *start* <= *end*, the sequence will be increasing and if *start* > *end* it will be decreasing. If the *stepValue* value is included, it's sign should agree with the direction of the sequence (descending → negative and ascending → positive), otherwise the list will have a length of 0.  For example:
 
 ```
-% lseq 1 to 5    ;# increasing
+# increasing:
+% lseq 1 to 5
 → 1 2 3 4 5
 
-% lseq 5 to 1    ;# decreasing
+# decreasing:
+% lseq 5 to 1
 → 5 4 3 2 1
 
-% lseq 0 0.5 by 0.1  ;# doubles
+# doubles:
+% lseq 0 0.5 by 0.1
 → 0.0 0.1 0.2 0.3 0.4 0.5
 
-% lseq 6 to 1 by 2   ;# decreasing, step wrong sign, empty list
+# decreasing, step with wrong sign:
+% lseq 6 to 1 by 2
+→ {}
 
-% lseq 1 to 5 by 0   ;# all step sizes of 0 produce an empty list
+# step of 0,
+% lseq 3 to 9 by 0
+→ 3
 ```
 
-The numeric arguments in *start*, *end*, *stepValue* and *count* may also be valid expressions. The expression will be evaluated and the numeric result will be used.  An expression that does not evaluate to a number will produce an invalid argument error.
-
-*Start* defines the initial value and *end* defines the limit, not necessarily the last value. **lseq** produces a list with *count* elements, and if *count* is not supplied, it is computed as:
+*Start* defines the initial value and *end* defines the limit, not necessarily the last value. **lseq** produces a list with *count* elements, always, even if the step value is 0. and if *count* is not supplied, it is computed as:
 
 ```
-count = int( (end - start + stepValue) / stepValueq )
+count = int( ( (end - start) / stepValueq ) + 1 )
 ```
 
 # Examples
@@ -91,6 +96,9 @@ lseq 10 .. 1 by -2
 
 set l [lseq 0 -5]
 → 0 -1 -2 -3 -4 -5
+
+lseq 1 count 5 by 0
+→ 1 1 1 1 1
 
 foreach i [lseq [llength $l]] {
     puts l($i)=[lindex $l $i]
@@ -113,13 +121,13 @@ foreach i [lseq {[llength $l]-1} 0] {
 → l(0)=0
 
 set i 17
-         → 17
+→ 17
+
 if {$i in [lseq 0 50]} { # equivalent to: (0 <= $i && $i <= 50)
     puts "Ok"
 } else {
     puts "outside :("
-}
-→ Ok
+} → Ok
 
 set sqrs [lmap i [lseq 1 10] { expr {$i*$i} }]
 → 1 4 9 16 25 36 49 64 81 100

@@ -72,7 +72,7 @@ All Tcl values must correspond to a string representation. When a byte-array val
 
 **Tcl\_GetByteArrayFromObj** performs exactly the same function as **Tcl\_GetBytesFromObj** does when called with the *interp* argument passed the value NULL.  This is incompatible with the way **Tcl\_GetByteArrayFromObj** functioned in Tcl 8. **Tcl\_GetBytesFromObj** is the more capable interface and should usually be favored for use over **Tcl\_GetByteArrayFromObj**.
 
-On success, both **Tcl\_GetBytesFromObj** and **Tcl\_GetByteArrayFromObj** return a pointer into the internal representation of a [Tcl\_Obj][Object]. That pointer must not be freed by the caller, and should not be retained for use beyond the known time the internal representation of the value has not been disturbed.  The pointer may be used to overwrite the byte contents of the internal representation, so long as the value is unshared and any string representation is invalidated.
+On success, both **Tcl\_GetBytesFromObj** and **Tcl\_GetByteArrayFromObj** return a pointer into the internal representation of a [Tcl\_Obj][Object3]. That pointer must not be freed by the caller, and should not be retained for use beyond the known time the internal representation of the value has not been disturbed.  The pointer may be used to overwrite the byte contents of the internal representation, so long as the value is unshared and any string representation is invalidated.
 
 On success, both **Tcl\_GetBytesFromObj** and **Tcl\_GetByteArrayFromObj** write the number of bytes in the byte-array value of *objPtr* to the space pointed to by *numBytesPtr*.  This space may be of type **Tcl\_Size** or of type **int**.  It is recommended that callers provide a **Tcl\_Size** space for this purpose.  If the caller provides only an **int** space and the number of bytes in the byte-array value of *objPtr* is greater than **INT\_MAX**, the routine will fail due to being unable to correctly report the byte-array size to the caller. The ability to provide an **int** space is best considered a migration aid for codebases constrained to continue operating with Tcl releases older than 9.0.
 
@@ -88,7 +88,6 @@ On success, both **Tcl\_GetBytesFromObj** and **Tcl\_GetByteArrayFromObj** write
 
 
 [binary]: binary.md
-[Object]: Object.md
 [Object3]: Object3.md
 [StringObj]: StringObj.md
 [Utf]: Utf.md

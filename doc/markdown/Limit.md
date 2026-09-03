@@ -83,7 +83,7 @@ When a limit is exceeded (and the callbacks have run; the order of execution of 
 
 # Limit checking api
 
-To check the resource limits for an interpreter, call **Tcl\_LimitCheck**, which returns **TCL\_OK** if the limit was not exceeded (after processing callbacks) and **TCL\_ERROR** if the limit was exceeded (in which case an error message is also placed in the interpreter result).  That function should only be called when **Tcl\_LimitReady** returns non-zero so that granularity policy is enforced.  This API is designed to be similar in usage to [Tcl\_AsyncReady][Async] and [Tcl\_AsyncInvoke][Async].
+To check the resource limits for an interpreter, call **Tcl\_LimitCheck**, which returns [TCL\_OK][catch] if the limit was not exceeded (after processing callbacks) and [TCL\_ERROR][catch] if the limit was exceeded (in which case an error message is also placed in the interpreter result).  That function should only be called when **Tcl\_LimitReady** returns non-zero so that granularity policy is enforced.  This API is designed to be similar in usage to [Tcl\_AsyncReady][Async] and [Tcl\_AsyncInvoke][Async].
 
 When writing code that may behave like [catch] in respect of errors, you should only trap an error if **Tcl\_LimitExceeded** returns zero.  If it returns non-zero, the interpreter is in a limit-exceeded state and errors should be allowed to propagate to the calling context.  You can also check whether a particular type of limit has been exceeded using **Tcl\_LimitTypeExceeded**.
 

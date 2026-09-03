@@ -45,9 +45,9 @@ Tcl\_CreateInterp, Tcl\_DeleteInterp, Tcl\_InterpActive, Tcl\_InterpDeleted - cr
 
 **Tcl\_CreateInterp** creates a new interpreter structure and returns a token for it. The token is required in calls to most other Tcl procedures, such as [Tcl\_CreateCommand][CrtCommand], [Tcl\_Eval][Eval3], and **Tcl\_DeleteInterp**.  The token returned by **Tcl\_CreateInterp** may only be passed to Tcl routines called from the same thread as the original **Tcl\_CreateInterp** call.  It is not safe for multiple threads to pass the same token to Tcl's routines. The new interpreter is initialized with the built-in Tcl commands and with standard variables like **tcl\_platform** and **env**. To bind in additional commands, call [Tcl\_CreateCommand][CrtCommand], and to create additional variables, call [Tcl\_SetVar][SetVar].
 
-**Tcl\_DeleteInterp** marks an interpreter as deleted; the interpreter will eventually be deleted when all calls to [Tcl\_Preserve][Preserve] for it have been matched by calls to [Tcl\_Release][Preserve]. At that time, all of the resources associated with it, including variables, procedures, and application-specific command bindings, will be deleted. After **Tcl\_DeleteInterp** returns any attempt to use [Tcl\_Eval][Eval3] on the interpreter will fail and return **TCL\_ERROR**. After the call to **Tcl\_DeleteInterp** it is safe to examine the interpreter's result, query or set the values of variables, define, undefine or retrieve procedures, and examine the runtime evaluation stack. See below, in the section [Interpreters and memory management] for details.
+**Tcl\_DeleteInterp** marks an interpreter as deleted; the interpreter will eventually be deleted when all calls to [Tcl\_Preserve][Preserve] for it have been matched by calls to [Tcl\_Release][Preserve]. At that time, all of the resources associated with it, including variables, procedures, and application-specific command bindings, will be deleted. After **Tcl\_DeleteInterp** returns any attempt to use [Tcl\_Eval][Eval3] on the interpreter will fail and return [TCL\_ERROR][catch]. After the call to **Tcl\_DeleteInterp** it is safe to examine the interpreter's result, query or set the values of variables, define, undefine or retrieve procedures, and examine the runtime evaluation stack. See below, in the section [Interpreters and memory management] for details.
 
-**Tcl\_InterpDeleted** returns nonzero if **Tcl\_DeleteInterp** was called with *interp* as its argument; this indicates that the interpreter will eventually be deleted, when the last call to [Tcl\_Preserve][Preserve] for it is matched by a call to [Tcl\_Release][Preserve]. If nonzero is returned, further calls to [Tcl\_Eval][Eval3] in this interpreter will return **TCL\_ERROR**.
+**Tcl\_InterpDeleted** returns nonzero if **Tcl\_DeleteInterp** was called with *interp* as its argument; this indicates that the interpreter will eventually be deleted, when the last call to [Tcl\_Preserve][Preserve] for it is matched by a call to [Tcl\_Release][Preserve]. If nonzero is returned, further calls to [Tcl\_Eval][Eval3] in this interpreter will return [TCL\_ERROR][catch].
 
 **Tcl\_InterpDeleted** is useful in deletion callbacks to distinguish between when only the memory the callback is responsible for is being deleted and when the whole interpreter is being deleted. In the former case the callback may recreate the data being deleted, but this would lead to an infinite loop if the interpreter were being deleted.
 
@@ -76,6 +76,7 @@ All uses of interpreters in Tcl and Tk have already been protected. Extension wr
 Note that the protection mechanisms do not work well with conventional garbage collection systems. When in such a managed environment, **Tcl\_InterpActive** should be used to determine when an interpreter is a candidate for deletion due to inactivity.
 
 
+[catch]: catch.md
 [CrtCommand]: CrtCommand.md
 [Eval3]: Eval3.md
 [Preserve]: Preserve.md
