@@ -84,6 +84,19 @@ test apply-3.2 {non-existing namespace} -body {
     namespace delete ::NONEXIST
     apply $lambda x
 } -returnCodes error -result {namespace "::NONEXIST::FOR::SURE" not found}
+test apply-3.2.2 {non-existing namespace (recreated between apply-calls)} -body {
+    set res {}
+    namespace eval ::NONEXIST::FOR::SURE {}
+    set lambda {{step} {variable x; lappend x $step} ::NONEXIST::FOR::SURE}
+    lappend res [catch { apply $lambda A} x] $x
+    namespace delete ::NONEXIST
+    lappend res [catch { apply $lambda B} x] $x
+    namespace eval ::NONEXIST::FOR::SURE {}
+    lappend res [catch { apply $lambda C} x] $x
+    set res
+} -cleanup {
+    namespace delete ::NONEXIST
+} -result {0 A 1 {namespace "::NONEXIST::FOR::SURE" not found} 0 C}
 test apply-3.3 {non-existing namespace} -body {
     apply [list x {set x 1} NONEXIST::FOR::SURE] x
 } -returnCodes error -result {namespace "::NONEXIST::FOR::SURE" not found}
@@ -309,6 +322,15 @@ test apply-9.3 {leaking internal rep} -setup {
     rename getbytes {}
     unset -nocomplain end i x tmp leakedBytes
 } -result 0
+test apply-9.4 {lambda representation may shimmer during invocation} -setup {
+    set ::t {apply {n {
+	expr {[llength [lindex $::t 1 1 1]] + $n}
+    }} _}
+} -body {
+    {*}[lset ::t end 123]
+} -cleanup {
+    unset -nocomplain ::t
+} -result {131}
 
 # Tests for specific bugs
 test apply-10.1 {Test for precompiled bytecode body} -constraints {
