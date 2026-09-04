@@ -6,6 +6,7 @@ on:
     - "core-9-1-branch"
     tags:
     - "core-*"
+  workflow_dispatch:
 permissions:
   contents: read
 jobs:
@@ -19,7 +20,7 @@ jobs:
         id: matrix
         run: |
           (
-            echo msvc=$(jq -nc '{config: (if env.IsMatched == "true" then env.MSVC_FULL else env.MSVC_PARTIAL end) | fromjson }' )
+            echo msvc=$(jq -nc '{arch: ["x64"], config: (if env.IsMatched == "true" then env.MSVC_FULL else env.MSVC_PARTIAL end) | fromjson }' )
             echo gcc=$(jq -nc '{config: (if env.IsMatched == "true" then env.GCC_FULL else env.GCC_PARTIAL end) | fromjson }' )
           ) | tee -a $GITHUB_OUTPUT
         env:
@@ -70,8 +71,11 @@ jobs:
         uses: actions/checkout@v7
         timeout-minutes: 5
       - name: Init MSVC
-        uses: ilammy/msvc-dev-cmd@v1
-        timeout-minutes: 5
+        shell: cmd
+        run: |
+          for /f "usebackq tokens=*" %%i in (`vswhere -latest -property installationPath`) do set "VS_PATH=%%i"
+          call "%VS_PATH%\VC\Auxiliary\Build\vcvarsall.bat" ${{ matrix.arch }}
+          set | findstr /i "^VC ^VCTools ^Windows ^Universal ^INCLUDE ^LIB ^PATH ^DevEnv" >> %GITHUB_ENV%
       - name: Build ${{ matrix.config }}
         run: |
           &nmake -f makefile.vc ${{ matrix.config }} all
