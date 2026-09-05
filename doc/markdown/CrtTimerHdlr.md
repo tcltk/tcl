@@ -66,7 +66,7 @@ typedef void Tcl_TimerProc(
 
 The *clientData* parameter to *proc* is a copy of the *clientData* argument given to **Tcl\_CreateTimerHandler** when the callback was created.  Typically, *clientData* points to a data structure containing application-specific information about what to do in *proc*.
 
-Both functions return a **tolken**. In case of **Tcl\_CreateTimerHandlerMicroSeconds**, the return value is **NULL**, if the given time interval is to much in the future and may not be represented. This is a theoretical case, as it is in around 26 thousand years. **Tcl\_CreateTimerHandler** does not check for overflow and never returns **NULL**.
+Both functions return a **token**. In case of **Tcl\_CreateTimerHandlerMicroSeconds**, the return value is **NULL**, if the given time interval is to much in the future and may not be represented. This is a theoretical case, as it is in around 26 thousand years. **Tcl\_CreateTimerHandler** does not check for overflow and never returns **NULL**.
 
 **Tcl\_DeleteTimerHandler** may be called to delete a previously created timer handler.  It deletes the handler indicated by *token* so that no call to *proc* will be made;  if that handler no longer exists (e.g. because the time period has already elapsed and *proc* has been invoked then **Tcl\_DeleteTimerHandler** does nothing. The tokens returned by **Tcl\_CreateTimerHandler** never have a value of NULL, so if NULL is passed to **Tcl\_DeleteTimerHandler** then the procedure does nothing.
 

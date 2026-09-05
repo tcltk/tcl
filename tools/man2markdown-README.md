@@ -35,8 +35,8 @@ The tcl/doc directory contains 248 manual pages which are divided as follows:
 section | number of documents | initial conversion | final conversion
 --------|---------------------|--------------------|-----------------
 1       | 1                   | 1                  | 0
-3       | 108                 | 108                | 17
-n       | 139                 | 139                | 139
+3       | 108                 | 108                | 27
+n       | 140                 | 140                | 140
 
 Final conversion of these files in the n section is currently done:
 1. after
@@ -178,6 +178,7 @@ Final conversion of these files in the n section is currently done:
 137. while
 138. zipfs
 139. zlib (will need some manual adjustments)
+140. timer (new in Tcl 9.1)
 
 Now the 3 section:
 
@@ -198,6 +199,16 @@ Now the 3 section:
 15. CmdCmpIt
 16. Concat (Concat3)
 17. CrtAlias
+18. CrtChannel
+19. CrtChnlHdlr
+20. CrtCloseHndlr
+21. CrtCommand
+22. CrtFileHndlr
+23. CrtInterp
+24. CrtObjCmd
+25. CrtTimerHndlr
+26. CrtTrace
+27. DString
 
 
 The tk/doc directory comes next, after finishing Tcl.
