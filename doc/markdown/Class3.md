@@ -106,7 +106,7 @@ Note that the lifetime management of objects is handled internally within TclOO,
 
 Every object and every class may have arbitrary amounts of metadata attached to it, which the object or class attaches no meaning to beyond what is described in a Tcl\_ObjectMetadataType structure instance. Metadata to be attached is described by the type of the metadata (given in the *metaTypePtr* argument) and an arbitrary pointer (the *metadata* argument) that are given to **Tcl\_ObjectSetMetadata** and **Tcl\_ClassSetMetadata**, and a particular piece of metadata can be retrieved given its type using **Tcl\_ObjectGetMetadata** and **Tcl\_ClassGetMetadata**. If the *metadata* parameter to either **Tcl\_ObjectSetMetadata** or **Tcl\_ClassSetMetadata** is NULL, the metadata is removed if it was attached, and the results of **Tcl\_ObjectGetMetadata** and **Tcl\_ClassGetMetadata** are NULL if the given type of metadata was not attached. It is not an error to request or remove a piece of metadata that was not attached.
 
-## Tcl\_objectmetadatatype structure
+## Tcl\_ObjectMetadataType structure
 
 The contents of the Tcl\_ObjectMetadataType structure are as follows:
 
@@ -125,7 +125,7 @@ The *deleteProc* field gives a function of type Tcl\_ObjectMetadataDeleteProc th
 
 The *cloneProc* field gives a function that is used to copy a piece of metadata (used when a copy of an object is created using **Tcl\_CopyObjectInstance**); if NULL, the metadata will be just directly copied.
 
-## Tcl\_objectmetadatadeleteproc function signature
+## Tcl\_ObjectMetadataDeleteProc function signature
 
 Functions matching this signature are used to delete metadata associated with a class or object.
 
@@ -136,7 +136,7 @@ typedef void Tcl_ObjectMetadataDeleteProc(
 
 The *metadata* argument gives the address of the metadata to be deleted.
 
-## Tcl\_cloneproc function signature
+## Tcl\_CloneProc function signature
 
 Functions matching this signature are used to create copies of metadata associated with a class or object.
 
@@ -153,7 +153,7 @@ The *interp* argument gives a place to write an error message when the attempt t
 
 It is possible to control, on a per-object basis, what methods are invoked when a particular method is invoked. Normally this is done by looking up the method name in the object and then in the class hierarchy, but fine control of exactly what the value used to perform the look up is afforded through the ability to set a method name mapper callback via **Tcl\_ObjectSetMethodNameMapper** (and its introspection counterpart, **Tcl\_ObjectGetMethodNameMapper**, which returns the current mapper). The current mapper (if any) is invoked immediately before looking up what chain of method implementations is to be used.
 
-## Tcl\_objectmapmethodnameproc function signature
+## Tcl\_ObjectMapMethodNameProc function signature
 
 The *Tcl\_ObjectMapMethodNameProc* callback is defined as follows:
 

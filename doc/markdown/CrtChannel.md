@@ -197,19 +197,19 @@ The user should only use the above structure for **Tcl\_ChannelType** instantiat
 
 The change to the structures was made in such a way that standard channel types are binary compatible.  However, channel types that use stacked channels (i.e. TLS, Trf) have new versions to correspond to the above change since the previous code for stacked channels had problems.
 
-## Typename
+## typeName
 
 The *typeName* field contains a null-terminated string that identifies the type of the device implemented by this driver, e.g. [file] or [socket].
 
 This value can be retrieved with **Tcl\_ChannelName**, which returns a pointer to the string.
 
-## Version
+## version
 
 The *version* field should be set to the version of the structure that you require. **TCL\_CHANNEL\_VERSION\_5** is the minimum supported.
 
 This value can be retrieved with **Tcl\_ChannelVersion**.
 
-## Blockmodeproc
+## blockModeProc
 
 The *blockModeProc* field contains the address of a function called by the generic layer to set blocking and nonblocking mode on the device. *BlockModeProc* should match the following prototype:
 
@@ -227,7 +227,7 @@ This value can be retrieved with **Tcl\_ChannelBlockModeProc**, which returns a 
 
 A channel driver **not** supplying a *blockModeProc* has to be very, very careful. It has to tell the generic layer exactly which blocking mode is acceptable to it, and should this also document for the user so that the blocking mode of the channel is not changed to an unacceptable value. Any confusion here may lead the interpreter into a (spurious and difficult to find) deadlock.
 
-## Close2proc
+## close2Proc
 
 The *close2Proc* field contains the address of a function called by the generic layer to clean up driver-related information when the channel is closed. *Close2Proc* must match the following prototype:
 
@@ -244,7 +244,7 @@ Alternatively, channels that support closing the read and write sides independen
 
 The *close2Proc* value can be retrieved with **Tcl\_ChannelClose2Proc**, which returns a pointer to the function.
 
-## Inputproc
+## inputProc
 
 The *inputProc* field contains the address of a function called by the generic layer to read data from the file or device and store it in an internal buffer. *InputProc* must match the following prototype:
 
@@ -266,7 +266,7 @@ If *inputProc* can determine that the input device has some data available but l
 
 This value can be retrieved with **Tcl\_ChannelInputProc**, which returns a pointer to the function.
 
-## Outputproc
+## outputProc
 
 The *outputProc* field contains the address of a function called by the generic layer to transfer data from an internal buffer to the output device. *OutputProc* must match the following prototype:
 
@@ -288,7 +288,7 @@ If the channel is nonblocking and the output device is unable to absorb any data
 
 This value can be retrieved with **Tcl\_ChannelOutputProc**, which returns a pointer to the function.
 
-## Wideseekproc
+## wideSeekProc
 
 The *wideSeekProc* field contains the address of a function called by the generic layer to move the access point at which subsequent input or output operations will be applied. *WideSeekProc* must match the following prototype:
 
@@ -308,7 +308,7 @@ The return value is the new access point or -1 in case of error. If an error occ
 
 The *wideSseekProc* value can be retrieved with **Tcl\_ChannelWideSeekProc**, which returns a pointer to the function.
 
-## Setoptionproc
+## setOptionProc
 
 The *setOptionProc* field contains the address of a function called by the generic layer to set a channel type specific option on a channel. *setOptionProc* must match the following prototype:
 
@@ -328,7 +328,7 @@ If the option value is successfully modified to the new value, the function retu
 
 This value can be retrieved with **Tcl\_ChannelSetOptionProc**, which returns a pointer to the function.
 
-## Getoptionproc
+## getOptionProc
 
 The *getOptionProc* field contains the address of a function called by the generic layer to get the value of a channel type specific option on a channel. *getOptionProc* must match the following prototype:
 
@@ -346,7 +346,7 @@ Some options are handled by the generic code and this function is never called t
 
 This value can be retrieved with **Tcl\_ChannelGetOptionProc**, which returns a pointer to the function.
 
-## Watchproc
+## watchProc
 
 The *watchProc* field contains the address of a function called by the generic layer to initialize the event notification mechanism to notice events of interest on this channel. *WatchProc* should match the following prototype:
 
@@ -362,7 +362,7 @@ The function should initialize device type specific mechanisms to notice when an
 
 This value can be retrieved with **Tcl\_ChannelWatchProc**, which returns a pointer to the function.
 
-## Gethandleproc
+## getHandleProc
 
 The *getHandleProc* field contains the address of a function called by the generic layer to retrieve a device-specific handle from the channel. *GetHandleProc* should match the following prototype:
 
@@ -379,7 +379,7 @@ If the channel implementation has device-specific handles, the function should r
 
 This value can be retrieved with **Tcl\_ChannelGetHandleProc**, which returns a pointer to the function.
 
-## Flushproc
+## flushProc
 
 The *flushProc* field is currently reserved for future use. It should be set to NULL. *FlushProc* should match the following prototype:
 
@@ -390,7 +390,7 @@ typedef int Tcl_DriverFlushProc(
 
 This value can be retrieved with **Tcl\_ChannelFlushProc**, which returns a pointer to the function.
 
-## Handlerproc
+## handlerProc
 
 The *handlerProc* field contains the address of a function called by the generic layer to notify the channel that an event occurred.  It should be defined for stacked channel drivers that wish to be notified of events that occur on the underlying (stacked) channel. *HandlerProc* should match the following prototype:
 
@@ -404,7 +404,7 @@ typedef int Tcl_DriverHandlerProc(
 
 This value can be retrieved with **Tcl\_ChannelHandlerProc**, which returns a pointer to the function. 
 
-## Threadactionproc
+## threadActionProc
 
 The *threadActionProc* field contains the address of the function called by the generic layer when a channel is created, closed, or going to move to a different thread, i.e. whenever thread-specific driver state might have to initialized or updated. It can be NULL. The action *TCL\_CHANNEL\_THREAD\_REMOVE* is used to notify the driver that it should update or remove any thread-specific data it might be maintaining for the channel.
 
@@ -420,7 +420,7 @@ typedef void Tcl_DriverThreadActionProc(
 
 These values can be retrieved with **Tcl\_ChannelThreadActionProc**, which returns a pointer to the function.
 
-## Truncateproc
+## truncateProc
 
 The *truncateProc* field contains the address of the function called by the generic layer when a channel is truncated to some length. It can be NULL.
 
@@ -434,7 +434,7 @@ typedef int Tcl_DriverTruncateProc(
 
 These values can be retrieved with **Tcl\_ChannelTruncateProc**, which returns a pointer to the function.
 
-# Tcl\_badchanneloption
+# Tcl\_BadChannelOption
 
 This procedure generates a "bad option" error message in an (optional) interpreter.  It is used by channel drivers when an invalid Set/Get option is requested. Its purpose is to concatenate the generic options list to the specific ones and factorize the generic options error message string.
 
@@ -457,7 +457,7 @@ so you get for instance:
 
 when called with *optionList* equal to "peername sockname"
 
-"blah" is the *optionName* argument and "<specific options>" is a space separated list of specific option words. The function takes good care of inserting minus signs before each option, commas after, and an "or" before the last option.
+"blah" is the *optionName* argument and "\<specific options\>" is a space separated list of specific option words. The function takes good care of inserting minus signs before each option, commas after, and an "or" before the last option.
 
 
 [catch]: catch.md

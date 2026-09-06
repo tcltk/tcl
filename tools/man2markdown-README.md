@@ -35,7 +35,7 @@ The tcl/doc directory contains 248 manual pages which are divided as follows:
 section | number of documents | initial conversion | final conversion
 --------|---------------------|--------------------|-----------------
 1       | 1                   | 1                  | 0
-3       | 108                 | 108                | 27
+3       | 108                 | 108                | 41
 n       | 140                 | 140                | 140
 
 Final conversion of these files in the n section is currently done:
@@ -209,6 +209,20 @@ Now the 3 section:
 25. CrtTimerHndlr
 26. CrtTrace
 27. DString
+28. DetachPids
+29. DictObj
+30. DoOneEvent
+31. DoWhenIdle
+32. DoubleObj
+33. DumpActiveMemory
+34. Encoding
+35. Ensemble
+36. Environment
+37. Eval
+38. Exit
+39. ExprLong
+40. ExprLongObj
+41. FileSystem
 
 
 The tk/doc directory comes next, after finishing Tcl.

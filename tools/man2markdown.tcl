@@ -235,6 +235,7 @@ namespace eval ::ndoc {
 	# manual page (file root) that documents it:
 	set tclCApiFileMap [dict create {*}{
 		Tcl_Obj Object3
+		Tcl_DString DString
 		Tcl_Access Access Tcl_AddErrorInfo AddErrInfo Tcl_AddObjErrorInfo AddErrInfo Tcl_AlertNotifier Notifier
 		Tcl_Alloc Alloc Tcl_AllocStatBuf FileSystem Tcl_AllowExceptions AllowExc Tcl_AppInit AppInit
 		Tcl_AppendAllObjTypes ObjectType Tcl_AppendElement SetResult Tcl_AppendExportList Namespace3 Tcl_AppendFormatToObj StringObj
@@ -2323,6 +2324,84 @@ proc ::ndoc::mdExceptions {md} {
 				{2.     the size of the file after decompressions,} {    2. the size of the file after decompressions,}
 				{3.     the compressed size of the file, and} {    3. the compressed size of the file, and}
 				{4.     the offset of the compressed data in the ZIP archive file.} {    4. the offset of the compressed data in the ZIP archive file.}
+			} $md]
+		}
+		Tcl_Class {
+			set md [string map {
+				{## Tcl\_objectmetadatatype structure} {## Tcl\_ObjectMetadataType structure}
+				{## Tcl\_objectmetadatadeleteproc function signature} {## Tcl\_ObjectMetadataDeleteProc function signature}
+				{## Tcl\_cloneproc function signature} {## Tcl\_CloneProc function signature}
+				{## Tcl\_objectmapmethodnameproc function signature} {## Tcl\_ObjectMapMethodNameProc function signature}
+			} $md]
+		}
+		Tcl_CreateChannel {
+			set md [string map {
+				{## Typename} {## typeName}
+				{## Version} {## version}
+				{## Blockmodeproc} {## blockModeProc}
+				{## Close2proc} {## close2Proc}
+				{## Inputproc} {## inputProc}
+				{## Outputproc} {## outputProc}
+				{## Wideseekproc} {## wideSeekProc}
+				{## Setoptionproc} {## setOptionProc}
+				{## Getoptionproc} {## getOptionProc}
+				{## Watchproc} {## watchProc}
+				{## Gethandleproc} {## getHandleProc}
+				{## Flushproc} {## flushProc}
+				{## Handlerproc} {## handlerProc}
+				{## Threadactionproc} {## threadActionProc}
+				{## Truncateproc} {## truncateProc}
+				{# Tcl\_badchanneloption} {# Tcl\_BadChannelOption}
+				{and "<specific options>" is} {and "\<specific options\>" is}
+			} $md]
+		}
+		Tcl_GetEncoding {
+			set md [string map {
+				{using tcl\_dstring} {using Tcl\_DString}
+			} $md]
+		}
+		Filesystem {
+			set md [string map {
+				{(e.g.\\ } {(e.g. }
+				{[open], etc.\\ Tcl commands} {[open], etc. Tcl commands}
+				{## Fs api functions} {## FS API functions}
+				{.i.e\\ } {i.e. }
+				{## Portable stat result api} {## Portable stat result API}
+				{# The virtual filesystem api} {# The virtual filesystem API}
+				{## The tcl\_filesystem structure} {## The Tcl\_Filesystem structure}
+				{## Typename} {## typeName}
+				{## Structure length} {## structureLength}
+				{## Version} {## version}
+				{## Pathinfilesystemproc} {## pathInFilesystemProc}
+				{## Dupinternalrepproc} {## dupInternalRepProc}
+				{## Freeinternalrepproc} {## freeInternalRepProc}
+				{## Internaltonormalizedproc} {## internalToNormalizedProc}
+				{## Createinternalrepproc} {## createInternalRepProc}
+				{## Normalizepathproc} {## normalizePathProc}
+				{## Filesystempathtypeproc} {## filesystemPathTypeProc}
+				{## Filesystemseparatorproc} {## filesystemSeparatorProc}
+				{## Statproc} {## statProc}
+				{## Accessproc} {## accessProc}
+				{## Openfilechannelproc} {## openFileChannelProc}
+				{## Matchindirectoryproc} {## matchInDirectoryProc}
+				{## Utimeproc} {## utimeProc}
+				{## Linkproc} {## linkProc}
+				{## Listvolumesproc} {## listVolumesProc}
+				{## Fileattrstringsproc} {## fileAttrStringsProc}
+				{## Fileattrsgetproc} {## fileAttrsGetProc}
+				{## Fileattrssetproc} {## fileAttrsSetProc}
+				{## Createdirectoryproc} {## createDirectoryProc}
+				{## Removedirectoryproc} {## removeDirectoryProc}
+				{## Deletefileproc} {## deleteFileProc}
+				{## Lstatproc} {## lstatProc}
+				{## Copyfileproc} {## copyFileProc}
+				{## Renamefileproc} {## renameFileProc}
+				{## Copydirectoryproc} {## copyDirectoryProc}
+				{## Loadfileproc} {## loadFileProc}
+				{## Unloadfileproc} {## unloadFileProc}
+				{## Getcwdproc} {## getCwdProc}
+				{## Chdirproc} {## chdirProc}
+				{## Public api calls} {## Public API calls}
 			} $md]
 		}
 	}
