@@ -2404,6 +2404,16 @@ proc ::ndoc::mdExceptions {md} {
 				{## Public api calls} {## Public API calls}
 			} $md]
 		}
+		Tcl_GetIndexFromObj {
+			set md [string map {
+				{bad option \\"firt\\"} {bad option "firt"}
+			} $md]
+		}
+		Tcl_Hash {
+			set md [string map {
+				{# The tcl\_hashkeytype structure} {# The Tcl\_HashKeyType structure}
+			} $md]
+		}
 	}
 	regsub {\s+$} $md \n md
 	return $md

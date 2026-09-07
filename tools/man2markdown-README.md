@@ -35,7 +35,7 @@ The tcl/doc directory contains 248 manual pages which are divided as follows:
 section | number of documents | initial conversion | final conversion
 --------|---------------------|--------------------|-----------------
 1       | 1                   | 1                  | 0
-3       | 108                 | 108                | 41
+3       | 108                 | 108                | 51
 n       | 140                 | 140                | 140
 
 Final conversion of these files in the n section is currently done:
@@ -223,6 +223,16 @@ Now the 3 section:
 39. ExprLong
 40. ExprLongObj
 41. FileSystem
+42. FindExec
+43. GetCwd
+44. GetHostName
+45. GetIndex
+46. GetInt
+47. GetOpnFl
+48. GetStdChan
+49. GetTime
+50. GetVersion
+51. Hash
 
 
 The tk/doc directory comes next, after finishing Tcl.
