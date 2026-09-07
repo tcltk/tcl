@@ -249,7 +249,8 @@ HandleBgErrors(
 	errPtr = assocPtr->firstBgPtr;
 
 	TclListObjGetElements(NULL, copyObj, &prefixObjc, &prefixObjv);
-	tempObjv = (Tcl_Obj **)Tcl_Alloc((prefixObjc+2) * sizeof(Tcl_Obj *));
+	tempObjv = (Tcl_Obj **)
+		TclStackAlloc(interp, (prefixObjc+2) * sizeof(Tcl_Obj *));
 	memcpy(tempObjv, prefixObjv, prefixObjc*sizeof(Tcl_Obj *));
 	tempObjv[prefixObjc] = errPtr->errorMsg;
 	tempObjv[prefixObjc+1] = errPtr->returnOpts;
@@ -265,7 +266,7 @@ HandleBgErrors(
 	Tcl_DecrRefCount(errPtr->returnOpts);
 	assocPtr->firstBgPtr = errPtr->nextPtr;
 	Tcl_Free(errPtr);
-	Tcl_Free(tempObjv);
+	TclStackFree(interp, tempObjv);
 
 	if (code == TCL_BREAK) {
 	    /*
@@ -1568,7 +1569,8 @@ Tcl_VwaitObjCmd(
     }
 
     if ((unsigned) objc - 1 > sizeof(localItems) / sizeof(localItems[0])) {
-	vwaitItems = (VwaitItem *)Tcl_Alloc(sizeof(VwaitItem) * (objc - 1));
+	vwaitItems = (VwaitItem *)
+		TclStackAlloc(interp, sizeof(VwaitItem) * (objc - 1));
     }
 
     for (i = 1; i < objc; i++) {
@@ -1900,7 +1902,7 @@ Tcl_VwaitObjCmd(
 	result = Tcl_RestoreInterpState(interp, saved);
     }
     if (vwaitItems != localItems) {
-	Tcl_Free(vwaitItems);
+	TclStackFree(interp, vwaitItems);
     }
     return result;
 }

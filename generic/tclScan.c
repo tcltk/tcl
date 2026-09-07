@@ -633,7 +633,7 @@ Tcl_ScanObjCmd(
      */
 
     if (totalVars > 0) {
-	objs = (Tcl_Obj **)Tcl_Alloc(sizeof(Tcl_Obj *) * totalVars);
+	objs = (Tcl_Obj **)TclStackAlloc(interp, sizeof(Tcl_Obj *) * totalVars);
 	for (i = 0; i < totalVars; i++) {
 	    objs[i] = NULL;
 	}
@@ -1162,7 +1162,7 @@ Tcl_ScanObjCmd(
 
   error:
     if (objs != NULL) {
-	Tcl_Free(objs);
+	TclStackFree(interp, objs);
     }
     return code;
 }

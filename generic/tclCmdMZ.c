@@ -850,7 +850,7 @@ Tcl_RegsubObjCmd(
 
 	    TclListObjGetElements(interp, subPtr, &numParts, &parts);
 	    numArgs = numParts + info.nsubs + 1;
-	    args = (Tcl_Obj **)Tcl_Alloc(sizeof(Tcl_Obj *) * numArgs);
+	    args = (Tcl_Obj **)TclStackAlloc(interp, sizeof(Tcl_Obj *) * numArgs);
 	    memcpy(args, parts, sizeof(Tcl_Obj *) * numParts);
 
 	    for (idx = 0 ; idx <= info.nsubs ; idx++) {
@@ -880,7 +880,7 @@ Tcl_RegsubObjCmd(
 	    for (idx = 0 ; idx <= info.nsubs ; idx++) {
 		TclDecrRefCount(args[idx + numParts]);
 	    }
-	    Tcl_Free(args);
+	    TclStackFree(interp, args);
 	    if (result != TCL_OK) {
 		if (result == TCL_ERROR) {
 		    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(

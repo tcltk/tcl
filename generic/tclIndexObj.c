@@ -135,14 +135,15 @@ GetIndexFromObjList(
      * Build a string table from the list.
      */
 
-    tablePtr = (const char **)Tcl_Alloc((objc + 1) * sizeof(char *));
+    tablePtr = (const char **)
+	    TclStackAlloc(interp, (objc + 1) * sizeof(char *));
     for (t = 0; t < objc; t++) {
 	if (objv[t] == objPtr) {
 	    /*
 	     * An exact match is always chosen, so we can stop here.
 	     */
 
-	    Tcl_Free(tablePtr);
+	    TclStackFree(interp, tablePtr);
 	    *indexPtr = t;
 	    return TCL_OK;
 	}
@@ -154,7 +155,7 @@ GetIndexFromObjList(
     result = Tcl_GetIndexFromObjStruct(interp, objPtr, tablePtr,
 	    sizeof(char *), msg, flags | TCL_INDEX_TEMP_TABLE, indexPtr);
 
-    Tcl_Free(tablePtr);
+    TclStackFree(interp, tablePtr);
 
     return result;
 }

@@ -1672,7 +1672,7 @@ Tcl_CreateChannel(
 	 */
 
 	tmp = (char *)Tcl_Alloc((len < 7) ? 7 : len);
-	strcpy(tmp, chanName);
+	memcpy(tmp, chanName, len);
     } else {
 	tmp = (char *)Tcl_Alloc(7);
 	tmp[0] = '\0';

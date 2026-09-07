@@ -1089,8 +1089,10 @@ Tcl_CreateEncoding(
 	    replaceMe->hPtr = NULL;
 	}
 
-	name = (char *)Tcl_Alloc(strlen(typePtr->encodingName) + 1);
-	encodingPtr->name	= strcpy(name, typePtr->encodingName);
+	size_t len = strlen(typePtr->encodingName) + 1;
+	name = (char *)Tcl_Alloc(len);
+	memcpy(name, typePtr->encodingName, len);
+	encodingPtr->name	= name;
 	encodingPtr->hPtr	= hPtr;
 	Tcl_SetHashValue(hPtr, encodingPtr);
 

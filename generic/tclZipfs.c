@@ -2267,8 +2267,9 @@ ZipfsSetup(void)
     ZipFS.idCount = 1;
     ZipFS.wrmax = DEFAULT_WRITE_MAX_SIZE;
     ZipFS.fallbackEntryEncoding = (char *)
-	    Tcl_Alloc(strlen(ZIPFS_FALLBACK_ENCODING) + 1);
-    strcpy(ZipFS.fallbackEntryEncoding, ZIPFS_FALLBACK_ENCODING);
+	    Tcl_Alloc(sizeof(ZIPFS_FALLBACK_ENCODING));
+    memcpy(ZipFS.fallbackEntryEncoding, ZIPFS_FALLBACK_ENCODING,
+	    sizeof(ZIPFS_FALLBACK_ENCODING));
     ZipFS.initialized = 1;
 }
 

@@ -80,8 +80,9 @@ Tcl_RegisterConfig(
 
     cdPtr->interp = interp;
     if (valEncoding) {
-	cdPtr->encoding = (char *)Tcl_Alloc(strlen(valEncoding)+1);
-	strcpy(cdPtr->encoding, valEncoding);
+	size_t len = strlen(valEncoding) + 1;
+	cdPtr->encoding = (char *)Tcl_Alloc(len);
+	memcpy(cdPtr->encoding, valEncoding, len);
     } else {
 	cdPtr->encoding = NULL;
     }

@@ -719,7 +719,7 @@ GraphemeReverseCmd(
     }
     const Tcl_UniChar *uniEndPtr = uniPtr + uniLen;
     Tcl_UniChar *tempBufPtr = (Tcl_UniChar *)
-	    Tcl_Alloc(uniLen * sizeof(*tempBufPtr));
+	    TclStackAlloc(interp, uniLen * sizeof(*tempBufPtr));
     Tcl_UniChar *tempPtr = tempBufPtr + uniLen;
     for (const Tcl_UniChar *grPtr = uniPtr; uniPtr < uniEndPtr; ) {
 	uniPtr = GraphemeNext(uniPtr, uniEndPtr - uniPtr);
@@ -731,7 +731,7 @@ GraphemeReverseCmd(
     }
     assert(tempPtr == tempBufPtr);
     Tcl_SetObjResult(interp, Tcl_NewUnicodeObj(tempBufPtr, uniLen));
-    Tcl_Free(tempBufPtr);
+    TclStackFree(interp, tempBufPtr);
     return TCL_OK;
 }
 

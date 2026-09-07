@@ -115,7 +115,11 @@ static int validate_memory = FALSE;
 char *tclMemDumpFileName = NULL;
 
 static char *onExitMemDumpFileName = NULL;
-static char dumpFile[100];	/* Records where to dump memory allocation
+
+#define DUMP_FILE_NAME_LEN	100
+
+static char dumpFile[DUMP_FILE_NAME_LEN];
+				/* Records where to dump memory allocation
 				 * information. */
 
 /*
@@ -897,8 +901,13 @@ MemoryCmd(
 	if (fileName == NULL) {
 	    return TCL_ERROR;
 	}
+	if (strlen(fileName) > DUMP_FILE_NAME_LEN - 1) {
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "file name too long", TCL_AUTO_LENGTH));
+	    return TCL_ERROR;
+	}
 	onExitMemDumpFileName = dumpFile;
-	strcpy(onExitMemDumpFileName,fileName);
+	strcpy(onExitMemDumpFileName, fileName);
 	Tcl_DStringFree(&buffer);
 	return TCL_OK;
     case OPT_TAG:
@@ -974,8 +983,14 @@ CheckmemCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "fileName");
 	return TCL_ERROR;
     }
+    const char *fileName = TclGetString(objv[1]);
+    if (strlen(fileName) > DUMP_FILE_NAME_LEN - 1) {
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"file name too long", TCL_AUTO_LENGTH));
+	return TCL_ERROR;
+    }
     tclMemDumpFileName = dumpFile;
-    strcpy(tclMemDumpFileName, TclGetString(objv[1]));
+    strcpy(tclMemDumpFileName, fileName);
     return TCL_OK;
 }
 

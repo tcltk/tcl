@@ -771,9 +771,10 @@ TclpGetNativeCwd(
 #endif /* USEGETWD */
 
     if ((clientData == NULL) || strcmp(buffer, (const char *) clientData)) {
-	char *newCd = (char *)Tcl_Alloc(strlen(buffer) + 1);
+	size_t len = strlen(buffer) + 1;
+	char *newCd = (char *)Tcl_Alloc(len);
 
-	strcpy(newCd, buffer);
+	memcpy(newCd, buffer, len);
 	return newCd;
     }
 

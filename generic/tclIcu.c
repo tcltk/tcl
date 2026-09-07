@@ -1268,7 +1268,7 @@ IcuFindSymbol(
      * 0 - don't know, 1 - have suffix, -1 - no suffix
      */
     static int suffixConvention = 0;
-    char symbol[256];
+    char symbol[256];		// Definitely enough space for any ICU symbol
     void *value = NULL;
 
     /* Note we only update suffixConvention on a positive result */
