@@ -12,7 +12,7 @@
 zlib \- Compression and decompression operations
 .SH SYNOPSIS
 .nf
-\fBzlib \fIsubcommand arg ...\fR
+\fBzlib \fIsubcommand arg\fR ?\fIarg ...\fR?
 .fi
 .BE
 .SH DESCRIPTION

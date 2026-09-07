@@ -23,7 +23,7 @@ value; if it is a true value
 then \fIbody\fR is executed by passing it to the Tcl interpreter.
 Once \fIbody\fR has been executed then \fItest\fR is evaluated
 again, and the process repeats until eventually \fItest\fR
-evaluates to a false boolean value.  \fBContinue\fR
+evaluates to a false boolean value.  \fBcontinue\fR
 commands may be executed inside \fIbody\fR to terminate the current
 iteration of the loop, and \fBbreak\fR
 commands may be executed inside \fIbody\fR to cause immediate

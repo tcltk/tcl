@@ -13,7 +13,7 @@
 .SH NAME
 list \- Create a list
 .SH SYNOPSIS
-\fBlist \fR?\fIarg arg ...\fR?
+\fBlist \fR?\fIarg ...\fR?
 .BE
 .SH DESCRIPTION
 .PP

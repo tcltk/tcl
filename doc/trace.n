@@ -13,7 +13,7 @@
 .SH NAME
 trace \- Monitor variable accesses, command usages and command executions
 .SH SYNOPSIS
-\fBtrace \fIoption\fR ?\fIarg arg ...\fR?
+\fBtrace \fIoption\fR ?\fIarg ...\fR?
 .BE
 .SH DESCRIPTION
 .PP

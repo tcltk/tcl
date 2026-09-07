@@ -13,7 +13,7 @@
 .SH NAME
 linsert \- Insert elements into a list
 .SH SYNOPSIS
-\fBlinsert \fIlist index \fR?\fIelement element ...\fR?
+\fBlinsert \fIlist index \fR?\fIelement ...\fR?
 .BE
 .SH DESCRIPTION
 .PP
