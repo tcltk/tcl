@@ -99,6 +99,7 @@ typedef struct DateInfo {
     time_t *dateRelPointer;
 
     int dateDigitCount;
+    int datePrevDigitCount;
 } DateInfo;
 
 #define YYMALLOC	ckalloc
@@ -128,6 +129,7 @@ typedef struct DateInfo {
 #define yyRelPointer	(info->dateRelPointer)
 #define yyInput		(info->dateInput)
 #define yyDigitCount	(info->dateDigitCount)
+#define yyPrevDigitCount	(info->datePrevDigitCount)
 
 #define EPOCH		1970
 #define START_OF_TIME	1902
@@ -292,7 +294,16 @@ zone	: tZONE tDST {
 	    yyDSTmode = DSTon;
 	}
 	| sign tUNUMBER {
-	    yyTimezone = -$1*($2 % 100 + ($2 / 100) * 60);
+	    /*
+	     * A signed zone number is hours when it has one or two digits
+	     * ("+02", "+2") and hhmm when it has four ("+0200").  The lexer
+	     * records the digit count of the last number it read, so when the
+	     * parser holds a numeric lookahead that count belongs to the
+	     * lookahead and the zone's own count is the one before it.
+	     */
+	    int digits = (yychar == tUNUMBER || yychar == tISOBASE)
+		    ? yyPrevDigitCount : yyDigitCount;
+	    yyTimezone = -$1*(digits <= 2 ? $2 * 60 : $2 % 100 + ($2 / 100) * 60);
 	    yyDSTmode = DSToff;
 	}
 	;
@@ -872,6 +883,7 @@ TclDatelex(
     char *p;
     char buff[20];
     int Count;
+    int token;
 
     location->first_column = yyInput - info->dateStart;
     for ( ; ; ) {
@@ -891,6 +903,7 @@ TclDatelex(
 		Count++;
 	    }
 	    yyInput--;
+	    yyPrevDigitCount = yyDigitCount;
 	    yyDigitCount = Count;
 
 	    /*
@@ -915,7 +928,18 @@ TclDatelex(
 	    *p = '\0';
 	    yyInput--;
 	    location->last_column = yyInput - info->dateStart - 1;
-	    return LookupWord(yylvalPtr, buff);
+	    token = LookupWord(yylvalPtr, buff);
+	    if (token == tUNUMBER || token == tISOBASE) {
+		/*
+		 * A keyword standing for a number ("last") yields a numeric
+		 * token without passing through the digit branch above, so
+		 * advance the digit-count history here too - otherwise the
+		 * zone rule, seeing a numeric lookahead, would read a count
+		 * belonging to some earlier number.
+		 */
+		yyPrevDigitCount = yyDigitCount;
+	    }
+	    return token;
 	}
 	if (c != '(') {
 	    location->last_column = yyInput - info->dateStart;
@@ -958,6 +982,8 @@ TclClockOldscanObjCmd(
 
     yyInput = TclGetString(objv[1]);
     dateInfo.dateStart = yyInput;
+    yyDigitCount = 0;
+    yyPrevDigitCount = 0;
 
     yyHaveDate = 0;
     if (Tcl_GetIntFromObj(interp, objv[2], &yr) != TCL_OK

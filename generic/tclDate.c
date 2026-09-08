@@ -151,6 +151,7 @@ typedef struct DateInfo {
     time_t *dateRelPointer;
 
     int dateDigitCount;
+    int datePrevDigitCount;
 } DateInfo;
 
 #define YYMALLOC	ckalloc
@@ -180,6 +181,7 @@ typedef struct DateInfo {
 #define yyRelPointer	(info->dateRelPointer)
 #define yyInput		(info->dateInput)
 #define yyDigitCount	(info->dateDigitCount)
+#define yyPrevDigitCount	(info->datePrevDigitCount)
 
 #define EPOCH		1970
 #define START_OF_TIME	1902
@@ -764,12 +766,12 @@ static const yytype_int8 yytranslate[] =
 /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_int16 yyrline[] =
 {
-       0,   226,   226,   227,   230,   233,   236,   239,   242,   245,
-     248,   252,   257,   260,   266,   272,   280,   285,   290,   294,
-     300,   304,   308,   312,   316,   322,   326,   331,   336,   341,
-     346,   350,   355,   359,   364,   371,   375,   381,   391,   400,
-     409,   419,   433,   438,   441,   444,   447,   450,   453,   458,
-     461,   466,   470,   474,   480,   498,   501
+       0,   228,   228,   229,   232,   235,   238,   241,   244,   247,
+     250,   254,   259,   262,   268,   274,   282,   287,   292,   296,
+     311,   315,   319,   323,   327,   333,   337,   342,   347,   352,
+     357,   361,   366,   370,   375,   382,   386,   392,   402,   411,
+     420,   430,   444,   449,   452,   455,   458,   461,   464,   469,
+     472,   477,   481,   485,   491,   509,   512
 };
 #endif
 
@@ -1608,7 +1610,16 @@ yyreduce:
 
   case 19: /* zone: sign tUNUMBER  */
                         {
-	    yyTimezone = -(yyvsp[-1].Number)*((yyvsp[0].Number) % 100 + ((yyvsp[0].Number) / 100) * 60);
+	    /*
+	     * A signed zone number is hours when it has one or two digits
+	     * ("+02", "+2") and hhmm when it has four ("+0200").  The lexer
+	     * records the digit count of the last number it read, so when the
+	     * parser holds a numeric lookahead that count belongs to the
+	     * lookahead and the zone's own count is the one before it.
+	     */
+	    int digits = (yychar == tUNUMBER || yychar == tISOBASE)
+		    ? yyPrevDigitCount : yyDigitCount;
+	    yyTimezone = -(yyvsp[-1].Number)*(digits <= 2 ? (yyvsp[0].Number) * 60 : (yyvsp[0].Number) % 100 + ((yyvsp[0].Number) / 100) * 60);
 	    yyDSTmode = DSToff;
 	}
     break;
@@ -2470,6 +2481,7 @@ TclDatelex(
     char *p;
     char buff[20];
     int Count;
+    int token;
 
     location->first_column = yyInput - info->dateStart;
     for ( ; ; ) {
@@ -2489,6 +2501,7 @@ TclDatelex(
 		Count++;
 	    }
 	    yyInput--;
+	    yyPrevDigitCount = yyDigitCount;
 	    yyDigitCount = Count;
 
 	    /*
@@ -2513,7 +2526,18 @@ TclDatelex(
 	    *p = '\0';
 	    yyInput--;
 	    location->last_column = yyInput - info->dateStart - 1;
-	    return LookupWord(yylvalPtr, buff);
+	    token = LookupWord(yylvalPtr, buff);
+	    if (token == tUNUMBER || token == tISOBASE) {
+		/*
+		 * A keyword standing for a number ("last") yields a numeric
+		 * token without passing through the digit branch above, so
+		 * advance the digit-count history here too - otherwise the
+		 * zone rule, seeing a numeric lookahead, would read a count
+		 * belonging to some earlier number.
+		 */
+		yyPrevDigitCount = yyDigitCount;
+	    }
+	    return token;
 	}
 	if (c != '(') {
 	    location->last_column = yyInput - info->dateStart;
@@ -2556,6 +2580,8 @@ TclClockOldscanObjCmd(
 
     yyInput = TclGetString(objv[1]);
     dateInfo.dateStart = yyInput;
+    yyDigitCount = 0;
+    yyPrevDigitCount = 0;
 
     yyHaveDate = 0;
     if (Tcl_GetIntFromObj(interp, objv[2], &yr) != TCL_OK

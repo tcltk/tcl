@@ -37066,6 +37066,93 @@ test clock-59.2 {correct time zone names, format and scan back, bug and regressi
     set result
 } [lrepeat 12 1]
 
+test clock-59.4 {free-form scan of a signed numeric zone, [7bad415e3ec8baf4]} {
+    # A signed zone number is hours with one or two digits and hhmm with four,
+    # which is how the %Z abbreviation of the SYSTEM zoneinfo is written
+    # ("+02", "+03"); Tcl's bundled tzdata writes "+0200", which is why the
+    # existing clock-59.2 round-trip passes without this fix.  (%z is always
+    # four digits and is never affected.)
+    # The last case has a number after the zone, so the parser holds a numeric
+    # lookahead whose digit count is not the zone's.
+    set result {}
+    foreach {text expected} {
+	{2023-11-15 00:13:20 +02}	1700000000
+	{2023-11-14 20:13:20 -02}	1700000000
+	{2023-11-15 01:13:20 +3}	1700000000
+	{2023-11-15 03:43:20 +0530}	1700000000
+	{2023-11-15 00:13:20 +0200}	1700000000
+	{2023-11-15 00:13:20 +02 2024}	1731622400
+    } {
+	if {[catch {clock scan $text -gmt 1} t]} {
+	    lappend result "error ($t) for $text"
+	} else {
+	    lappend result [expr {$t == $expected ? 1 : "0 ($t != $expected for $text)"}]
+	}
+    }
+    set result
+} [lrepeat 6 1]
+
+test clock-59.5 {free-form scan, zone before the timestamp} {
+    # Stock 8.6 already accepts this order and returns a value, so these cases
+    # are about the value being right, not about accepting new syntax.  Whether
+    # free-form scan SHOULD accept a zone before the time is a separate
+    # question; if the answer is no, this whole test can be deleted, and with
+    # it the only coverage of the tISOBASE half of the lookahead test, which
+    # could then be dropped from the action as well.
+    set result {}
+    foreach {text expected} {
+	{+02 2023-11-15 00:13:20}	1700000000
+	{+0200 15 Nov 2023 00:13:20}	1700000000
+	{+0200 20231115 001320}	1700000000
+	{+02 20231115 001320}	1700000000
+    } {
+	if {[catch {clock scan $text -gmt 1} t]} {
+	    lappend result "error ($t) for $text"
+	} else {
+	    lappend result [expr {$t == $expected ? 1 : "0 ($t != $expected for $text)"}]
+	}
+    }
+    set result
+} [lrepeat 4 1]
+
+test clock-59.6 {free-form scan, a keyword standing for a number is a lookahead too} {
+    # "last" is lexed as a number without passing through the digit scanner,
+    # so it must advance the digit-count history like any other number.
+    set result {}
+    foreach {text expected} {
+	{2023-11-15 00:13:20 +0200 last month}	1697321600
+	{2023-11-15 00:13:20 +02 last month}	1697321600
+	{2023-11-15 +0200 last month}	1697320800
+	{+0200 last month}	1697234400
+    } {
+	if {[catch {clock scan $text -base 1700000000 -gmt 1} t]} {
+	    lappend result "error ($t) for $text"
+	} else {
+	    lappend result [expr {$t == $expected ? 1 : "0 ($t != $expected for $text)"}]
+	}
+    }
+    set result
+} [lrepeat 4 1]
+
+test clock-59.7 {free-form scan, signed relative units are not zones} {
+    # The zone rule shares the lexer's digit counter with every other number,
+    # so the relative forms must be unaffected.
+    set result {}
+    foreach {text base expected} {
+	{+2 days}	0	172800
+	{-1 day}	172800	86400
+	{+2 hours}	0	7200
+	{+02 hours}	0	7200
+    } {
+	if {[catch {clock scan $text -base $base -gmt 1} t]} {
+	    lappend result "error ($t) for $text"
+	} else {
+	    lappend result [expr {$t == $expected ? 1 : "0 ($t != $expected for $text)"}]
+	}
+    }
+    set result
+} [lrepeat 4 1]
+
 # case-insensitive matching of weekday and month names [Bug 1781282]
 
 test clock-60.1 {case insensitive weekday names} {
