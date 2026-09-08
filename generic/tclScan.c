@@ -601,7 +601,7 @@ Tcl_ScanObjCmd(
 {
     const char *format;
     int numVars, nconversions, totalVars = -1;
-    int objIndex, value, i, result, code;
+    int objIndex, value, i, result = 0, code = TCL_ERROR;
     Tcl_Size offset;
     const char *string, *end, *baseString;
     char op = 0;
@@ -613,8 +613,7 @@ Tcl_ScanObjCmd(
     int flags;
 
     if (objc < 3 || objc - 3 > INT_MAX) {
-	Tcl_WrongNumArgs(interp, 1, objv,
-		"string format ?varName ...?");
+	Tcl_WrongNumArgs(interp, 1, objv, "string format ?varName ...?");
 	return TCL_ERROR;
     }
 
@@ -716,7 +715,7 @@ Tcl_ScanObjCmd(
 
 	if ((ch < 0x80) && isdigit(UCHAR(ch))) {	/* INTL: "C" locale. */
 	    unsigned long long ull;
-	    ull  = strtoull(format-1, (char **)&format, 10); /* INTL: "C" locale. */
+	    ull = strtoull(format-1, (char **)&format, 10); /* INTL: "C" locale. */
 	    assert(ull <= TCL_SIZE_MAX); /* Else ValidateFormat should've error'ed */
 	    width = (Tcl_Size)ull;
 	    format += TclUtfToUniChar(format, &ch);
@@ -975,10 +974,9 @@ Tcl_ScanObjCmd(
 			Tcl_SetObjResult(interp, Tcl_NewStringObj(
 				"insufficient memory to create bignum", -1));
 			Tcl_SetErrorCode(interp, "TCL", "MEMORY", (char *)NULL);
-			return TCL_ERROR;
-		    } else {
-			Tcl_SetBignumObj(objPtr, &big);
+			goto error;
 		    }
+		    Tcl_SetBignumObj(objPtr, &big);
 		} else {
 		    TclSetIntObj(objPtr, wideValue);
 		}
@@ -995,15 +993,12 @@ Tcl_ScanObjCmd(
 		    }
 
 		    if (res == TCL_ERROR) {
-			if (objs != NULL) {
-			    Tcl_Free(objs);
-			}
 			Tcl_DecrRefCount(objPtr);
 			Tcl_SetObjResult(interp, Tcl_NewStringObj(
 				"unsigned bignum scans are invalid", -1));
 			Tcl_SetErrorCode(interp, "TCL", "FORMAT",
 				"BADUNSIGNED", (char *)NULL);
-			return TCL_ERROR;
+			goto error;
 		    }
 		}
 	    } else {
@@ -1021,10 +1016,9 @@ Tcl_ScanObjCmd(
 			Tcl_SetObjResult(interp, Tcl_NewStringObj(
 				"insufficient memory to create bignum", -1));
 			Tcl_SetErrorCode(interp, "TCL", "MEMORY", (char *)NULL);
-			return TCL_ERROR;
-		    } else {
-			Tcl_SetBignumObj(objPtr, &big);
+			goto error;
 		    }
+		    Tcl_SetBignumObj(objPtr, &big);
 #else
 		    Tcl_SetWideIntObj(objPtr, (unsigned long)value);
 #endif
@@ -1145,9 +1139,6 @@ Tcl_ScanObjCmd(
 	    objPtr = NULL;
 	}
     }
-    if (objs != NULL) {
-	Tcl_Free(objs);
-    }
     if (code == TCL_OK) {
 	if (underflow && (nconversions == 0)) {
 	    if (numVars) {
@@ -1163,6 +1154,15 @@ Tcl_ScanObjCmd(
 	    TclNewIntObj(objPtr, result);
 	}
 	Tcl_SetObjResult(interp, objPtr);
+    }
+
+    /*
+     * Errors inside the main processing loop all come to here.
+     */
+
+  error:
+    if (objs != NULL) {
+	Tcl_Free(objs);
     }
     return code;
 }

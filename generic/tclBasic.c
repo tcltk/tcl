@@ -441,7 +441,7 @@ static const EnsembleSetup ensembleCommands[] = {
     {"unicode",		tclUnicodeImplMap,	NULL, CMD_IS_SAFE},
     {"zipfs",		tclZipfsImplMap,	NULL, 0},
     {"zlib",		tclZlibImplMap,		NULL, CMD_IS_SAFE},
-    {"::tcl::unsupported::grapheme", tclGraphemeImplMap, NULL, 0},
+    {"::tcl::unsupported::grapheme", tclGraphemeImplMap, NULL, CMD_IS_SAFE},
     {NULL, NULL, NULL, 0}
 };
 
