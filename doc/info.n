@@ -15,7 +15,7 @@
 .SH NAME
 info \- Information about the state of the Tcl interpreter
 .SH SYNOPSIS
-\fBinfo \fIoption \fR?\fIarg arg ...\fR?
+\fBinfo \fIoption \fR?\fIarg ...\fR?
 .BE
 .SH DESCRIPTION
 .PP
@@ -32,7 +32,7 @@ Returns the names of the parameters to the procedure named \fIprocname\fR.
 Returns the body of the procedure named \fIprocname\fR.
 .\" METHOD: class
 .TP
-\fBinfo class\fI subcommand class\fR ?\fIarg ...\fR
+\fBinfo class\fI subcommand class\fR ?\fIarg ...\fR?
 .
 Returns information about the class named \fIclass\fR.
 See \fBCLASS INTROSPECTION\fR below.
@@ -83,7 +83,7 @@ Returns the names of all commands visible in the current namespace.  If
 \fIpattern\fR is given, returns only those names that match according to
 \fBstring match\fR.  Only the last component of \fIpattern\fR is a pattern.
 Other components identify a namespace.  See \fBNAMESPACE RESOLUTION\fR in the
-\fBnamespace\fR(n) documentation.
+manual page for the \fBnamespace\fR command.
 .\" METHOD: complete
 .TP
 \fBinfo complete \fIcommand\fR
@@ -161,7 +161,7 @@ defined, and \fB0\fR otherwise.
 Returns the depth of the call to \fBinfo frame\fR itself.  Otherwise, returns a
 dictionary describing the active command at the \fIdepth\fR, which counts all
 commands visible to \fBinfo level\fR, plus commands that don't create a new
-level, such as \fBeval\fR, \fBsource\fR, or \fIuplevel\fR. The frame depth is
+level, such as \fBeval\fR, \fBsource\fR, or \fBuplevel\fR. The frame depth is
 always greater than the current level.
 .RS
 .PP
@@ -305,7 +305,7 @@ Returns the absolute pathname of the program for the current interpreter.  If
 such a file can not be identified an empty string is returned.
 .\" METHOD: object
 .TP
-\fBinfo object\fI subcommand object\fR ?\fIarg ...\fR
+\fBinfo object\fI subcommand object\fR ?\fIarg ...\fR?
 .
 Returns information about the object named \fIobject\fR. \fIsubcommand\fR is
 described \fBOBJECT INTROSPECTION\fR below.
@@ -323,7 +323,7 @@ Returns the names of all visible procedures. If \fIpattern\fR is given, returns
 only those names that match according to \fBstring match\fR.  Only the final
 component in \fIpattern\fR is actually considered a pattern.  Any qualifying
 components simply select a namespace.  See \fBNAMESPACE RESOLUTION\fR in the
-\fBnamespace\fR(n) documentation.
+manual page of the \fBnamespace\fR command.
 .\" METHOD: script
 .TP
 \fBinfo script\fR ?\fIfilename\fR?
@@ -354,7 +354,7 @@ If \fIpattern\fR is not given, returns the names of all visible variables.  If
 \fIpattern\fR is given, returns only those names that match according to
 \fBstring match\fR.  Only the last component of \fIpattern\fR is a pattern.
 Other components identify a namespace.  See \fBNAMESPACE RESOLUTION\fR in the
-\fBnamespace\fR(n) documentation.  When \fIpattern\fR is a qualified name,
+manual page for the \fBnamespace\fR command.  When \fIpattern\fR is a qualified name,
 results are fully qualified.
 .RS
 .PP
@@ -528,7 +528,7 @@ This subcommand returns a list of all classes that have been mixed into the
 class named \fIclass\fR.
 .\" METHOD: properties
 .TP
-\fBinfo class properties\fI class\fR ?\fIoptions...\fR
+\fBinfo class properties\fI class\fR ?\fIoptions ...\fR?
 .VS TIP558
 This subcommand returns a sorted list of properties defined on the class named
 \fIclass\fR. The \fIoptions\fR define exactly which properties are returned:
@@ -761,7 +761,7 @@ This subcommand returns the name of the internal namespace of the object named
 \fIobject\fR.
 .\" METHOD: properties
 .TP
-\fBinfo object properties\fI object\fR ?\fIoptions...\fR
+\fBinfo object properties\fI object\fR ?\fIoptions...\fR?
 .VS TIP558
 This subcommand returns a sorted list of properties defined on the object
 named \fIobject\fR. The \fIoptions\fR define exactly which properties are
