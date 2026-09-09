@@ -243,15 +243,6 @@ proc ::platform::patterns {id} {
 		}
 	    }
 	}
-	linux*-* {
-	    if {[regexp {linux-glibc([^-]*)-(.*)} $id -> v cpu]} {
-		lassign [split $v .] major minor
-		incr minor -1
-		for {set j $minor} {$j >= 0} {incr j -1} {
-		    lappend res linux-glibc${major}.${j}-${cpu}
-		}
-	    }
-	}
 	macosx-powerpc {
 	    lappend res macosx-universal
 	}
