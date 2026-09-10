@@ -1365,7 +1365,7 @@ proc ::tcl::clock::ReadZoneinfoFile {fileName fname} {
     # In a version 2 file, we use the second part of the file, which contains
     # 64-bit transition times.
 
-    if {$version eq "2"} {
+    if {[string is digit -strict $version] && $version >= 2} {
 	set seek [expr {
 	    44
 	    + 5 * $nTime
@@ -1445,7 +1445,7 @@ proc ::tcl::clock::ReadZoneinfoFile {fileName fname} {
     # values (8 bytes each),
     # nIsStd standard/DST indicators and nIsGMT UTC/local indicators.
 
-    if {$version eq {2}} {
+    if {[string is digit -strict $version] && $version >= 2} {
 	set seek [expr {$seek + 8 * $nLeap + $nIsStd + $nIsGMT + 1}]
 	set last [string first \n $d $seek]
 	set posix [string range $d $seek [expr {$last-1}]]
@@ -1586,7 +1586,7 @@ proc ::tcl::clock::ParsePosixTimeZone { tz } {
 		    )
 		    (?:
 			# 16 - Start time of DST - hours
-			/ ( [[:digit:]]{1,2} )
+			/ ( [-+]?[[:digit:]]{1,3} )
 			(?:
 			    # 17 - Start time of DST - minutes
 			    : ( [[:digit:]]{1,2} )
@@ -1608,7 +1608,7 @@ proc ::tcl::clock::ParsePosixTimeZone { tz } {
 		    )
 		    (?:
 			# 24 - End time of DST - hours
-			/ ( [[:digit:]]{1,2} )
+			/ ( [-+]?[[:digit:]]{1,3} )
 			(?:
 			    # 25 - End time of DST - minutes
 			    : ( [[:digit:]]{1,2} )
@@ -1858,8 +1858,13 @@ proc ::tcl::clock::DeterminePosixDSTTime { z bound y } {
     set h [dict get $z ${bound}Hours]
     if { $h eq {} } {
 	set h 2
+	set todSign 1
     } else {
-	set h [lindex [::scan $h %d] 0]
+	# RFC 9636 section 3.3.2: the transition time may be signed, and the
+	# sign belongs to the whole time of day rather than to its hours
+	# field.  Take it from the text, because [::scan -0 %d] returns 0.
+	set todSign [expr { [string index $h 0] eq "-" ? -1 : 1 }]
+	set h [expr { abs([lindex [::scan $h %d] 0]) }]
     }
     set m [dict get $z ${bound}Minutes]
     if { $m eq {} } {
@@ -1873,7 +1878,7 @@ proc ::tcl::clock::DeterminePosixDSTTime { z bound y } {
     } else {
 	set s [lindex [::scan $s %d] 0]
     }
-    set tod [expr { ( $h * 60 + $m ) * 60 + $s }]
+    set tod [expr { $todSign * ( ( $h * 60 + $m ) * 60 + $s ) }]
     return [expr { $seconds + $tod }]
 }
 
