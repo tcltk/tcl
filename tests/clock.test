@@ -36475,14 +36475,35 @@ test clock-55.10 {Common Era} {
 	-gmt 1 -format {%d %m %Y %EE} -locale en_US_roman
 } -62135856000
 
+# BEGIN clock-56 tests: alternative TZ directory
+proc ::testClock::_setupAltTZDir {tz content} {
+    variable altTZDir
+    if {![info exists altTZDir] || $altTZDir eq ""} {
+	clock format 0
+	set tzdir [makeDirectory zoneinfo]
+	set altTZDir [makeDirectory Test $tzdir]
+	set ::tcl::clock::ZoneinfoPaths \
+	    [linsert $::tcl::clock::ZoneinfoPaths 0 $tzdir]
+	::tcl::clock::ClearCaches
+    }
+    set tzfile [makeFile {} $tz $altTZDir]
+    set f [open $tzfile wb]
+    puts -nonewline $f $content
+    close $f
+}
+proc ::testClock::_cleanupAltTZDir {} {
+    variable altTZDir
+    if {[info exists altTZDir] && $altTZDir ne ""} {
+	set ::tcl::clock::ZoneinfoPaths \
+	    [lrange $::tcl::clock::ZoneinfoPaths 1 end]
+	::tcl::clock::ClearCaches
+	removeDirectory zoneinfo
+    }
+}
+
 test clock-56.1 {use of zoneinfo, version 1} {*}{
     -setup {
-	clock format [clock seconds]
-	set tzdir [makeDirectory zoneinfo]
-	set tzdir2 [makeDirectory Test $tzdir]
-	set tzfile [makeFile {} PhoenixOne $tzdir2]
-	set f [open $tzfile wb]
-	puts -nonewline $f [binary format c* {
+	::testClock::_setupAltTZDir PhoenixOne [binary format c* {
 	    0x54 0x5a 0x69 0x66 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00
 	    0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x03
 	    0x00 0x00 0x00 0x03 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x0a
@@ -36495,18 +36516,6 @@ test clock-56.1 {use of zoneinfo, version 1} {*}{
 	    0xab 0xa0 0x01 0x08 0x4d 0x44 0x54 0x00 0x4d 0x53 0x54 0x00
 	    0x4d 0x57 0x54 0x00 0x00 0x00 0x00 0x00 0x00 0x00
 	}]
-	close $f
-	set ::tcl::clock::ZoneinfoPaths \
-	    [linsert $::tcl::clock::ZoneinfoPaths 0 $tzdir]
-	::tcl::clock::ClearCaches
-    }
-    -cleanup {
-	set ::tcl::clock::ZoneinfoPaths \
-	    [lrange $::tcl::clock::ZoneinfoPaths 1 end]
-	::tcl::clock::ClearCaches
-	removeFile PhoenixOne $tzdir2
-	removeDirectory Test $tzdir
-	removeDirectory zoneinfo
     }
     -body {
 	clock format 1072940400 -timezone :Test/PhoenixOne \
@@ -36517,12 +36526,7 @@ test clock-56.1 {use of zoneinfo, version 1} {*}{
 
 test clock-56.2 {use of zoneinfo, version 2} {*}{
     -setup {
-	clock format [clock seconds]
-	set tzdir [makeDirectory zoneinfo]
-	set tzdir2 [makeDirectory Test $tzdir]
-	set tzfile [makeFile {} PhoenixTwo $tzdir2]
-	set f [open $tzfile wb]
-	puts -nonewline $f [binary format c* {
+	::testClock::_setupAltTZDir PhoenixTwo [binary format c* {
 	    0x54 0x5a 0x69 0x66 0x32 0x00 0x00 0x00 0x00 0x00 0x00 0x00
 	    0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x03
 	    0x00 0x00 0x00 0x03 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x0a
@@ -36552,18 +36556,6 @@ test clock-56.2 {use of zoneinfo, version 2} {*}{
 	    0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x0a 0x4d 0x53
 	    0x54 0x37 0x0a
 	}]
-	close $f
-	set ::tcl::clock::ZoneinfoPaths \
-	    [linsert $::tcl::clock::ZoneinfoPaths 0 $tzdir]
-	::tcl::clock::ClearCaches
-    }
-    -cleanup {
-	set ::tcl::clock::ZoneinfoPaths \
-	    [lrange $::tcl::clock::ZoneinfoPaths 1 end]
-	::tcl::clock::ClearCaches
-	removeFile PhoenixTwo $tzdir2
-	removeDirectory Test $tzdir
-	removeDirectory zoneinfo
     }
     -body {
 	clock format 1072940400 -timezone :Test/PhoenixTwo \
@@ -36574,12 +36566,7 @@ test clock-56.2 {use of zoneinfo, version 2} {*}{
 
 test clock-56.3 {use of zoneinfo, version 2, Y2038 compliance} {*}{
     -setup {
-	clock format [clock seconds]
-	set tzdir [makeDirectory zoneinfo]
-	set tzdir2 [makeDirectory Test $tzdir]
-	set tzfile [makeFile {} TijuanaTwo $tzdir2]
-	set f [open $tzfile wb]
-	puts -nonewline $f [binary format c* {
+	::testClock::_setupAltTZDir TijuanaTwo [binary format c* {
             0x54 0x5a 0x69 0x66 0x32 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00
             0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x06 0x00 0x00
             0x00 0x06 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x95 0x00 0x00 0x00
@@ -36762,18 +36749,6 @@ test clock-56.3 {use of zoneinfo, version 2, Y2038 compliance} {*}{
             0x4d 0x34 0x2e 0x31 0x2e 0x30 0x2c 0x4d 0x31 0x30 0x2e 0x35 0x2e
             0x30 0x0a
 	}]
-	close $f
-	set ::tcl::clock::ZoneinfoPaths \
-	    [linsert $::tcl::clock::ZoneinfoPaths 0 $tzdir]
-	::tcl::clock::ClearCaches
-    }
-    -cleanup {
-	set ::tcl::clock::ZoneinfoPaths \
-	    [lrange $::tcl::clock::ZoneinfoPaths 1 end]
-	::tcl::clock::ClearCaches
-	removeFile TijuanaTwo $tzdir2
-	removeDirectory Test $tzdir
-	removeDirectory zoneinfo
     }
     -body {
 	clock format 2224738800 -timezone :Test/TijuanaTwo \
@@ -36784,12 +36759,7 @@ test clock-56.3 {use of zoneinfo, version 2, Y2038 compliance} {*}{
 
 test clock-56.4 {Bug 3470928} {*}{
     -setup {
-	clock format [clock seconds]
-	set tzdir [makeDirectory zoneinfo]
-	set tzdir2 [makeDirectory Test $tzdir]
-	set tzfile [makeFile {} Windhoek $tzdir2]
-	set f [open $tzfile wb]
-	puts -nonewline $f [binary format c* {
+	::testClock::_setupAltTZDir Windhoek [binary format c* {
             0x54 0x5a 0x69 0x66 0x32 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00
             0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x06 0x00 0x00
             0x00 0x06 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x5c 0x00 0x00 0x00
@@ -36911,24 +36881,15 @@ test clock-56.4 {Bug 3470928} {*}{
             0x54 0x2d 0x31 0x57 0x41 0x53 0x54 0x2c 0x4d 0x39 0x2e 0x31 0x2e
             0x30 0x2c 0x4d 0x34 0x2e 0x31 0x2e 0x30 0x0a
 	}]
-	close $f
-	set ::tcl::clock::ZoneinfoPaths \
-	    [linsert $::tcl::clock::ZoneinfoPaths 0 $tzdir]
-	::tcl::clock::ClearCaches
     }
     -body {
 	clock format 1326054606 -timezone :Test/Windhoek
     }
-    -cleanup {
-	set ::tcl::clock::ZoneinfoPaths \
-	    [lrange $::tcl::clock::ZoneinfoPaths 1 end]
-	::tcl::clock::ClearCaches
-	removeFile Windhoek $tzdir2
-	removeDirectory Test $tzdir
-	removeDirectory zoneinfo
-    }
     -result {Sun Jan 08 22:30:06 WAST 2012}
 }
+
+::testClock::_cleanupAltTZDir
+# END clock-56
 
 test clock-57.1 {clock scan - abbreviated options} {
     clock scan 1970-01-01 -f %Y-%m-%d -g true
