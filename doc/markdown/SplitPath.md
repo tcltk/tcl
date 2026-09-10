@@ -48,7 +48,7 @@ Tcl\_SplitPath, Tcl\_JoinPath, Tcl\_GetPathType - manipulate platform-dependent 
 : Array of path elements to merge together into a single path.
 
 [\*resultPtr]{.carg .in/out type="Tcl_DString"}
-: A pointer to an initialized **Tcl\_DString** to which the result of **Tcl\_JoinPath** will be appended.
+: A pointer to an initialized [Tcl\_DString][DString] to which the result of **Tcl\_JoinPath** will be appended.
 
 
 :::
@@ -75,12 +75,13 @@ Then you should eventually free the storage with a call like the following:
 Tcl_Free(argv);
 ```
 
-**Tcl\_JoinPath** is the inverse of **Tcl\_SplitPath**: it takes a collection of path elements given by *argc* and *argv* and generates a result string that is a properly constructed path. The result string is appended to *resultPtr*.  *ResultPtr* must refer to an initialized **Tcl\_DString**.
+**Tcl\_JoinPath** is the inverse of **Tcl\_SplitPath**: it takes a collection of path elements given by *argc* and *argv* and generates a result string that is a properly constructed path. The result string is appended to *resultPtr*.  *ResultPtr* must refer to an initialized [Tcl\_DString][DString].
 
 If the result of **Tcl\_SplitPath** is passed to **Tcl\_JoinPath**, the result will refer to the same location, but may not be in the same form.  This is because **Tcl\_SplitPath** and **Tcl\_JoinPath** eliminate duplicate path separators and return a normalized form for each platform.
 
 **Tcl\_GetPathType** returns the type of the specified *path*, where **Tcl\_PathType** is one of **TCL\_PATH\_ABSOLUTE**, **TCL\_PATH\_RELATIVE**, or **TCL\_PATH\_VOLUME\_RELATIVE**.  See the **filename** manual entry for a description of the path types for each platform. 
 
 
+[DString]: DString.md
 [file]: file.md
 

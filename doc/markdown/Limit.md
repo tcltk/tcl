@@ -81,7 +81,7 @@ The final component of the limit engine is a callback scheme which allows for no
 
 When a limit is exceeded (and the callbacks have run; the order of execution of the callbacks is unspecified) execution in the limited interpreter is stopped by raising an error and setting a flag that prevents the [catch] command in that interpreter from trapping that error.  It is up to the context that started execution in that interpreter (typically the main interpreter) to handle the error.
 
-# Limit checking api
+# Limit checking API
 
 To check the resource limits for an interpreter, call **Tcl\_LimitCheck**, which returns [TCL\_OK][catch] if the limit was not exceeded (after processing callbacks) and [TCL\_ERROR][catch] if the limit was exceeded (in which case an error message is also placed in the interpreter result).  That function should only be called when **Tcl\_LimitReady** returns non-zero so that granularity policy is enforced.  This API is designed to be similar in usage to [Tcl\_AsyncReady][Async] and [Tcl\_AsyncInvoke][Async].
 

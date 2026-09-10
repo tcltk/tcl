@@ -108,7 +108,7 @@ Tcl\_NewStringObj, Tcl\_NewUnicodeObj, Tcl\_SetStringObj, Tcl\_SetUnicodeObj, Tc
 [objc]{.carg .in type="Tcl_Size"}
 : The number of elements to format or concatenate.
 
-[\*objv[]]{.carg .in type="Tcl_Obj"}
+[\*\*objv]{.carg .in type="Tcl_Obj"}
 : The array of values to format or concatenate.
 
 [newLength]{.carg .in type="Tcl_Size"}

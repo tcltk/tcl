@@ -60,7 +60,7 @@ Tcl\_OpenTcpClient, Tcl\_MakeTcpClientChannel, Tcl\_OpenTcpServer, Tcl\_OpenTcpS
 [backlog]{.carg .in type="int"}
 : Length of OS listen backlog queue. Use -1 for default value.
 
-[flags]{.carg .in type="unsigned int"}
+[flags]{.carg .in type="unsigned"}
 : ORed combination of **TCL\_TCPSERVER\_\*** flags that specify additional information about the socket being created.
 
 [\*sock]{.carg .in type="void"}

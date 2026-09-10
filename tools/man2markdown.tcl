@@ -405,6 +405,7 @@ namespace eval ::ndoc {
 		Tcl_WrongNumArgs WrongNumArgs Tcl_ZlibAdler32 TclZlib Tcl_ZlibCRC32 TclZlib Tcl_ZlibDeflate TclZlib
 		Tcl_ZlibInflate TclZlib Tcl_ZlibStreamChecksum TclZlib Tcl_ZlibStreamClose TclZlib Tcl_ZlibStreamEof TclZlib
 		Tcl_ZlibStreamGet TclZlib Tcl_ZlibStreamGetCommandName TclZlib Tcl_ZlibStreamInit TclZlib Tcl_ZlibStreamPut TclZlib
+		TclZipfs_AppHook zipfs TclZipfs_Mount zipfs TclZipfs_MountBuffer zipfs Tcl_zipfsUnmount zipfs
 	}]
 
 	# dictionary mapping every documented Tk C API function (Tk_...) to the
@@ -1500,7 +1501,19 @@ proc ::ndoc::parseCommand {mode line} {
 	set state =
 	set chunk {}
 	# some more processing is needed for section 3 pages:
-	if {[regexp {^.+\(.*\)$} $line]} {
+	if {[string match "typedef *" $line]} {
+		# a raw 'typedef <returntype> \fBname\fR(...)' declaration appearing directly in
+		# the SYNOPSIS of a section 3 page:
+		# treat "typedef <returntype>" as the return type (.ret), just like the bare return
+		# type on its own line does for a normal API function, then fall through to
+		# the regular command()/args splitting below:
+		set startIndex [string first "§" $line]
+		set l0 "#[string trim [string range $line 0 [expr {$startIndex - 1}]]]"
+		set openParens [string first ( $line $startIndex]
+		set l1 [string range $line $startIndex [expr {$openParens - 1}]]
+		set l2 [string range $line [expr {$openParens + 1}] end-1]
+		set line [list $l0 $l1 $l2]
+	} elseif {[regexp {^.+\(.*\)$} $line]} {
 		if {$DEBUG == 3} {puts "===\nline API=$line"}
 		set l0 {}
 		set startIndex 0
@@ -2414,6 +2427,11 @@ proc ::ndoc::mdExceptions {md} {
 				{# The tcl\_hashkeytype structure} {# The Tcl\_HashKeyType structure}
 			} $md]
 		}
+		Tcl_LimitCheck {
+			set md [string map {
+				{# Limit checking api} {# Limit checking API}
+			} $md]
+		}
 	}
 	regsub {\s+$} $md \n md
 	return $md
@@ -2475,8 +2493,8 @@ proc ::ndoc::mdLinks {md} {
 			set linkTarget $linkCmd
 			set isValidLink 1
 		}
-		if {! $isValidLink && [string match {Tcl\\_*} $linkCmd]} {
-			## a Tcl C API function (Tcl_...)
+		if {! $isValidLink && ([string match {Tcl\\_*} $linkCmd] || [string match {TclZipfs\\_*} $linkCmd])} {
+			## a Tcl C API function (Tcl_... or TclZipfs_...)
 			# (note that we can't handle this in tclCmdList as the md conversion has added a backslash (Tcl\_...):
 			set linkCmdSubst [subst -novariables -nocommands $linkCmd]
 			if {[dict exists $tclCApiFileMap $linkCmdSubst]} {

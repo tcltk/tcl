@@ -58,39 +58,35 @@ TclZipfs\_AppHook, TclZipfs\_Mount, TclZipfs\_MountBuffer, TclZipfs\_Unmount - h
 : The number of bytes in the supplied data buffer argument, *data*.
 
 [copy]{.carg .in type="int"}
-: If non-zero, the ZIP archive in the data buffer will be internally copied before mounting, allowing the data buffer to be disposed once **TclZipfs\_MountBuffer** returns. If zero, the caller guarantees that the buffer will be valid to read from for the duration of the mount.
+: If non-zero, the ZIP archive in the data buffer will be internally copied before mounting, allowing the data buffer to be disposed once [TclZipfs\_MountBuffer][zipfs] returns. If zero, the caller guarantees that the buffer will be valid to read from for the duration of the mount.
 
 
 :::
 
 # Description
 
-**TclZipfs\_AppHook** is a utility function to perform standard application initialization procedures, taking into account available ZIP archives as follows:
+[TclZipfs\_AppHook][zipfs] performs all functions required to initialize Tcl for use in an application, taking into account available ZIP archives as follows:
 
-1. If the current application has a mountable ZIP archive, that archive is mounted under *ZIPFS\_VOLUME***/app** as a read-only Tcl virtual file system (VFS). The value of *ZIPFS\_VOLUME* can be retrieved using the Tcl command [zipfs root][zipfs].
+1. If the current application executable has a mountable ZIP archive, that archive is mounted under *ZIPFS\_VOLUME***/app** as a read-only Tcl virtual file system (VFS). If the Tcl shared library has a mountable ZIP archive, that archive mounted under *ZIPFS\_VOLUME***/lib/tcl** as a read-only Tcl VFS. The value of *ZIPFS\_VOLUME* can be retrieved using the Tcl command [zipfs root][zipfs]. Both are included in the search path for locating Tcl support scripts as described in the **tcl\_library** global variable documentation.
 
 2. If a file named **main.tcl** is located in the root directory of that file system (i.e., at *ZIPFS\_VOLUME***/app/main.tcl** after the ZIP archive is mounted as described above) it is treated as the startup script for the process.
 
-3. If the file *ZIPFS\_VOLUME***/app/tcl\_library/init.tcl** is present, the **tcl\_library** global variable in the initial Tcl interpreter is set to *ZIPFS\_VOLUME***/app/tcl\_library**.
 
-4. If the directory **tcl\_library** was not found in the main application mount, the system will then search for it as either a VFS attached to the application dynamic library, or as a zip archive named **libtcl\_***major***\_***minor***\_***patchlevel***.zip** either in the present working directory or in the standard Tcl install location. (For example, the Tcl 9.0.2 release would be searched for in a file **libtcl\_9\_0\_2.zip**.) That archive, if located, is also mounted read-only.
+On Windows, [TclZipfs\_AppHook][zipfs] has a slightly different signature, since it uses WCHAR instead of char. As a result, it requires the application to be compiled with the UNICODE preprocessor symbol defined (e.g., via the **-DUNICODE** compiler flag).
 
+The result of [TclZipfs\_AppHook][zipfs] is the full Tcl version with build information (e.g., **9.0.0+abcdef...abcdef.gcc-1002**). The function *may* modify the variables pointed to by *argcPtr* and *argvPtr* to remove arguments; the current implementation does not do so, but callers *should not* assume that this will be true in the future.
 
-On Windows, **TclZipfs\_AppHook** has a slightly different signature, since it uses WCHAR instead of char. As a result, it requires the application to be compiled with the UNICODE preprocessor symbol defined (e.g., via the **-DUNICODE** compiler flag).
-
-The result of **TclZipfs\_AppHook** is the full Tcl version with build information (e.g., **9.0.0+abcdef...abcdef.gcc-1002**). The function *may* modify the variables pointed to by *argcPtr* and *argvPtr* to remove arguments; the current implementation does not do so, but callers *should not* assume that this will be true in the future.
-
-**TclZipfs\_Mount** is used to mount ZIP archives and to retrieve information about currently mounted archives. If *mountpoint* and *zipname* are both specified (i.e. non-NULL), the function mounts the ZIP archive *zipname* on the mount point given in *mountpoint*. If *password* is not NULL, it should point to the NUL terminated password protecting the archive. If not under the zipfs file system root, *mountpoint* is normalized with respect to it. For example, a mount point passed as either **mt** or **/mt** would be normalized to **//zipfs:/mt**, given that *ZIPFS\_VOLUME* as returned by [zipfs root][zipfs] is "//zipfs:/". An error is raised if the mount point includes a drive or UNC volume. On success, *interp*'s result is set to the normalized mount point path.
+[TclZipfs\_Mount][zipfs] is used to mount ZIP archives and to retrieve information about currently mounted archives. If *mountpoint* and *zipname* are both specified (i.e. non-NULL), the function mounts the ZIP archive *zipname* on the mount point given in *mountpoint*. If *password* is not NULL, it should point to the NUL terminated password protecting the archive. If not under the zipfs file system root, *mountpoint* is normalized with respect to it. For example, a mount point passed as either **mt** or **/mt** would be normalized to **//zipfs:/mt**, given that *ZIPFS\_VOLUME* as returned by [zipfs root][zipfs] is "//zipfs:/". An error is raised if the mount point includes a drive or UNC volume. On success, *interp*'s result is set to the normalized mount point path.
 
 If *mountpoint* is a NULL pointer, information on all currently mounted ZIP file systems is stored in *interp*'s result as a sequence of mount points and ZIP file names.
 
 If *mountpoint* is not NULL but *zipfile* is NULL, the path to the archive mounted at that mount point is stored as *interp*'s result. The function returns a standard Tcl result code.
 
-**TclZipfs\_MountBuffer** mounts the ZIP archive content *data* on the mount point given in *mountpoint*. Both *mountpoint* and *data* must be specified as non-NULL. The *copy* argument determines whether the buffer is internally copied before mounting or not. The ZIP archive is assumed to be not password protected. On success, *interp*'s result is set to the normalized mount point path.
+[TclZipfs\_MountBuffer][zipfs] mounts the ZIP archive content *data* on the mount point given in *mountpoint*. Both *mountpoint* and *data* must be specified as non-NULL. The *copy* argument determines whether the buffer is internally copied before mounting or not. The ZIP archive is assumed to be not password protected. On success, *interp*'s result is set to the normalized mount point path.
 
-**TclZipfs\_Unmount** undoes the effect of **TclZipfs\_Mount**, i.e., it unmounts the mounted ZIP file system that was mounted from *zipname* (at *mountpoint*). Errors are reported in the interpreter *interp*.  The result of this call is a standard Tcl result code.
+**TclZipfs\_Unmount** undoes the effect of [TclZipfs\_Mount][zipfs], i.e., it unmounts the mounted ZIP file system that was mounted from *zipname* (at *mountpoint*). Errors are reported in the interpreter *interp*.  The result of this call is a standard Tcl result code.
 
-**TclZipfs\_AppHook** can not be used in stub-enabled extensions.
+[TclZipfs\_AppHook][zipfs] can not be used in stub-enabled extensions.
 
 
 [zipfs]: zipfs.md

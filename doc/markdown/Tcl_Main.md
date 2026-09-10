@@ -44,14 +44,14 @@ Tcl\_Main, Tcl\_MainEx, Tcl\_MainExW, Tcl\_SetStartupScript, Tcl\_GetStartupScri
 [argc]{.carg .in type="Tcl_Size"}
 : Number of elements in *argv*.
 
-[\*argv[]]{.carg .in type="char"}
-: Array of strings containing command-line arguments. On Windows, when using **-DUNICODE**, the parameter type changes to wchar\_t \*.
+[\*\*argv]{.carg .in type="char"}
+: Array of strings containing command-line arguments. On Windows, when using **-DUNICODE**, the parameter type changes to wchar\_t \*\*.
 
-[\*charargv[]]{.carg .in type="char"}
-: As argv, but does not change type to wchar\_t.
+[\*\*charargv]{.carg .in type="char"}
+: As argv, but does not change type to wchar\_t \*\*.
 
-[\*wideargv[]]{.carg .in type="char"}
-: As argv, but type is always wchar\_t.
+[\*\*wideargv]{.carg .in type="char"}
+: As argv, but type is always wchar\_t \*\*.
 
 [\*appInitProc]{.carg .in type="Tcl_AppInitProc"}
 : Address of an application-specific initialization procedure. The value for this argument is usually [Tcl\_AppInit][AppInit].
@@ -121,7 +121,7 @@ typedef void Tcl_MainLoopProc(void);
 
 **Tcl\_Main** can not be used in stub-enabled extensions.
 
-The difference between Tcl\_MainEx and Tcl\_MainExW is that the arguments are passed as characters or wide characters. When used in stub-enabled embedders, the stubs table must be first initialized using one of [Tcl\_InitSubsystems][InitSubSyst], [Tcl\_SetPanicProc][Panic], [Tcl\_FindExecutable][FindExec] or **TclZipfs\_AppHook**.
+The difference between Tcl\_MainEx and Tcl\_MainExW is that the arguments are passed as characters or wide characters. When used in stub-enabled embedders, the stubs table must be first initialized using one of [Tcl\_InitSubsystems][InitSubSyst], [Tcl\_SetPanicProc][Panic], [Tcl\_FindExecutable][FindExec] or [TclZipfs\_AppHook][zipfs].
 
 # Reference count management
 
@@ -138,4 +138,5 @@ The difference between Tcl\_MainEx and Tcl\_MainExW is that the arguments are pa
 [Panic]: Panic.md
 [StdChannels]: StdChannels.md
 [tclsh]: tclsh.md
+[zipfs]: zipfs.md
 

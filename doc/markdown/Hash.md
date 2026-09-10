@@ -124,7 +124,7 @@ The core provides three functions for the initialization of hash tables, Tcl\_In
 
 The header file **tcl.h** defines the actual data structures used to implement hash tables. This is necessary so that clients can allocate Tcl\_HashTable structures and so that macros can be used to read and write the values of entries. However, users of the hashing routines should never refer directly to any of the fields of any of the hash-related data structures; use the procedures and macros defined here.
 
-# The tcl\_hashkeytype structure
+# The Tcl\_HashKeyType structure
 
 Extension writers can define new hash key types by defining four procedures, initializing a **Tcl\_HashKeyType** structure to describe the type, and calling **Tcl\_InitCustomHashTable**. The **Tcl\_HashKeyType** structure is defined as follows:
 

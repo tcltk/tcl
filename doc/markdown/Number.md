@@ -48,7 +48,7 @@ Tcl\_GetNumber, Tcl\_GetNumberFromObj - get numeric value from Tcl value
 [numBytes]{.carg .in type="Tcl_Size"}
 : The number of bytes, starting at *bytes*, that should be examined. If **numBytes** is negative, then all bytes should be examined until the first **NUL** byte terminates examination.
 
-[\*clientDataPtr]{.carg .out type="void *"}
+[\*\*clientDataPtr]{.carg .out type="void"}
 : Points to space where a pointer value may be written through which a numeric value is available to read.
 
 [\*typePtr]{.carg .out type="int"}

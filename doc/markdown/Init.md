@@ -25,7 +25,7 @@ Tcl\_Init - find and source initialization script
 **#include <tcl.h>**
 [int]{.ret} [Tcl\_Init]{.ccmd}[interp]{.cargs}
 [const char \*]{.ret} [Tcl\_SetPreInitScript]{.ccmd}[scriptPtr]{.cargs}
-**typedef int Tcl\_PostInitProc(Tcl\_Interp \*interp, void \*clientData)**
+[typedef int]{.ret} [Tcl\_PostInitProc]{.ccmd}[Tcl\_Interp \*interp, void \*clientData]{.cargs}
 [int]{.ret} [Tcl\_RegisterPostInitProc]{.ccmd}[postInitProc, clientData]{.cargs}
 [int]{.ret} [Tcl\_UnregisterPostInitProc]{.ccmd}[postInitProc, clientData]{.cargs}
 [int]{.ret} [Tcl\_ClearPostInitProcs]{.ccmd}[void]{.cargs}
@@ -70,7 +70,7 @@ Callback functions registered through **Tcl\_RegisterPostInitProc** may load sta
 
 The `Tcl\_RegisterPostInitProc` and `Tcl\_UnregisterPostInitProc` functions may be invoked from within a registered callback. However, the change in registration will not have effect for the interpreter that is being initialized.
 
-When used in stub-enabled embedders, the stubs table must be first initialized using one of [Tcl\_InitSubsystems][InitSubSyst], [Tcl\_SetPanicProc][Panic], [Tcl\_FindExecutable][FindExec] or **TclZipfs\_AppHook** before **Tcl\_SetPreInitScript** may be called.
+When used in stub-enabled embedders, the stubs table must be first initialized using one of [Tcl\_InitSubsystems][InitSubSyst], [Tcl\_SetPanicProc][Panic], [Tcl\_FindExecutable][FindExec] or [TclZipfs\_AppHook][zipfs] before **Tcl\_SetPreInitScript** may be called.
 
 
 [AppInit]: AppInit.md
@@ -78,4 +78,5 @@ When used in stub-enabled embedders, the stubs table must be first initialized u
 [InitSubSyst]: InitSubSyst.md
 [Panic]: Panic.md
 [source]: source.md
+[zipfs]: zipfs.md
 

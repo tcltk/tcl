@@ -35,7 +35,7 @@ The tcl/doc directory contains 248 manual pages which are divided as follows:
 section | number of documents | initial conversion | final conversion
 --------|---------------------|--------------------|-----------------
 1       | 1                   | 1                  | 0
-3       | 108                 | 108                | 51
+3       | 108                 | 108                | 56
 n       | 140                 | 140                | 140
 
 Final conversion of these files in the n section is currently done:
@@ -233,6 +233,12 @@ Now the 3 section:
 49. GetTime
 50. GetVersion
 51. Hash
+52. Init (perhaps the typedef line in the synopsis needs some manual formatting)
+53. InitStubs
+54. InitSubSyst
+55. IntObj
+56. Limit
+
 
 
 The tk/doc directory comes next, after finishing Tcl.

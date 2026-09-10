@@ -54,16 +54,16 @@ Tcl\_RegisterObjType, Tcl\_GetObjType, Tcl\_AppendAllObjTypes, Tcl\_ConvertToTyp
 [\*objPtr]{.carg .in type="Tcl_Obj"}
 : For **Tcl\_AppendAllObjTypes**, this points to the value onto which it appends the name of each value type as a list element. For **Tcl\_ConvertToType**, this points to a value that must have been the result of a previous call to [Tcl\_NewObj][Object3].
 
-[bytes]{.carg .in type="const char*"}
+[\*bytes]{.carg .in type="const char"}
 : String representation.
 
-[numBytes]{.carg .in type="unsigned int"}
+[numBytes]{.carg .in type="size_t"}
 : Length of the string representation in bytes.
 
-[irPtr]{.carg .in type="const Tcl_ObjInternalRep*"}
+[\*irPtr]{.carg .in type="const Tcl_ObjInternalRep"}
 : Internal object representation.
 
-[typePtr]{.carg .in type="const Tcl_ObjType*"}
+[\*typePtr]{.carg .in type="const Tcl_ObjType"}
 : Requested internal representation type.
 
 
@@ -208,7 +208,7 @@ For a custom value type that is scalar or atomic in nature, i.e., not a divisibl
 
 ## Version 2: abstract lists
 
-Version 2, **TCL\_OBJTYPE\_V2**, allows full List support when the functions described below are provided.  This allows for script level use of the List commands without causing the type of the [Tcl\_Obj][Object3] value to be converted to a list.  Unless specified otherwise, all functions specific to Version 2 should return [TCL\_OK][catch] on success and [TCL\_ERROR][catch] on failure.  In the case that a **[Tcl\_Obj][Object3]\*** is also returned, the reference count of the returned [Tcl\_Obj][Object3] should not be incremented so, for example, if a new [Tcl\_Obj][Object3] value is returned it should have a reference count of zero.  The functions should not assume that any [Tcl\_Obj][Object3] passed in is unshared. 
+Version 2, **TCL\_OBJTYPE\_V2**, allows full List support when the functions described below are provided.  This allows for script level use of the List commands without causing the type of the [Tcl\_Obj][Object3] value to be converted to a list.  Unless specified otherwise, all functions specific to Version 2 should return [TCL\_OK][catch] on success and [TCL\_ERROR][catch] on failure.  In the case that a [Tcl\_Obj \][Object3]* is also returned, the reference count of the returned [Tcl\_Obj][Object3] should not be incremented so, for example, if a new [Tcl\_Obj][Object3] value is returned it should have a reference count of zero.  The functions should not assume that any [Tcl\_Obj][Object3] passed in is unshared. 
 
 ## The lengthproc field
 
@@ -228,7 +228,7 @@ typedef int (Tcl_ObjTypeIndexProc) (
     Tcl_Interp *interp,
     Tcl_Obj *listPtr,
     Tcl_Size index,
-    Tcl_Obj** elemObj);
+    Tcl_Obj **elemObj);
 ```
 
 ## The sliceproc field

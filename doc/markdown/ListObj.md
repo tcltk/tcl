@@ -72,7 +72,7 @@ Tcl\_ListObjAppendList, Tcl\_ListObjAppendElement, Tcl\_NewListObj, Tcl\_SetList
 [objc]{.carg .in type="Tcl_Size"}
 : The number of Tcl values in the *objv* array.
 
-[objv[]]{.carg .in type="Tcl_Obj *const"}
+[\*objv]{.carg .in type="Tcl_Obj *const"}
 : An array of pointers to Tcl values.
 
 [\*lengthPtr]{.carg .out type="Tcl_Size &| int"}

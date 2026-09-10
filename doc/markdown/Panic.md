@@ -33,7 +33,7 @@ Tcl\_Panic, Tcl\_SetPanicProc, Tcl\_ConsolePanic - report fatal error and abort
 
 ::: {.arguments} :::
 
-[format]{.carg .in type="const char*"}
+[\*format]{.carg .in type="const char"}
 : A printf-style format string.
 
 [arg]{.carg .in type=""}

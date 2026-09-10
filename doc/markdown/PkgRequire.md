@@ -59,7 +59,7 @@ Tcl\_PkgRequire, Tcl\_PkgRequireEx, Tcl\_PkgRequireProc, Tcl\_PkgPresent, Tcl\_P
 [objc]{.carg .in type="Tcl_Size"}
 : Number of requirements.
 
-[objv[]]{.carg .in type="Tcl_Obj*"}
+[\*\*objv]{.carg .in type="Tcl_Obj"}
 : Array of requirements.
 
 

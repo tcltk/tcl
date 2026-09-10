@@ -35,7 +35,7 @@ Tcl\_WrongNumArgs - generate standard error message for wrong number of argument
 [objc]{.carg .in type="Tcl_Size"}
 : Number of leading arguments from *objv* to include in error message.
 
-[objv[]]{.carg .in type="Tcl_Obj *const"}
+[\*objv]{.carg .in type="Tcl_Obj *const"}
 : Arguments to command that had the wrong number of arguments.
 
 [\*message]{.carg .in type="const char"}

@@ -24,13 +24,14 @@ Tcl\_InitSubsystems - initialize the Tcl library.
 
 # Description
 
-The **Tcl\_InitSubsystems** procedure initializes the Tcl library. This procedure is typically invoked as the very first thing in the application's main program.
+The **Tcl\_InitSubsystems** procedure initializes various Tcl subsystems. It should be called by any additional Tcl threads created after the main thread in a Tcl application that wish to use Tcl facilities without creating an interpreter. Threads that create interpreters using [Tcl\_CreateInterp][CrtInterp] do not need to call this function, provided that [Tcl\_CreateInterp][CrtInterp] is the first call into Tcl from that thread.
 
-The result of **Tcl\_InitSubsystems** is the full Tcl version with build information (e.g., **9.0.0+abcdef...abcdef.gcc-1002**).
+Note that the main thread must have first called either [TclZipfs\_AppHook][zipfs] or [Tcl\_FindExecutable][FindExec] to perform application-wide Tcl initialization before additional threads using Tcl are created. **Tcl\_InitSubsystems** does not suffice for this purpose and should only be used to initialize Tcl in secondary threads. It need not be called in the main thread invoking one of the two aforementioned functions.
 
-**Tcl\_InitSubsystems** is very similar in use to [Tcl\_FindExecutable][FindExec]. It can be used when Tcl is used as utility library, no other encodings than utf-8, iso8859-1 or utf-16 are used, and no interest exists in the value of [info nameofexecutable][info]. The system encoding will not be extracted from the environment, but falls back to utf-8.
+The result of **Tcl\_InitSubsystems** is the full Tcl version string, including build information (for example, **9.0.0+abcdef...abcdef.gcc-1002**).
 
 
+[CrtInterp]: CrtInterp.md
 [FindExec]: FindExec.md
-[info]: info.md
+[zipfs]: zipfs.md
 

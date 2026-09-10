@@ -148,8 +148,8 @@ int
 TheCmdOldObjProc(
     void *clientData,
     Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const objv[])
+    Tcl_Size objc,
+    Tcl_Obj *const *objv)
 {
     int result;
     Tcl_Obj *objPtr;
@@ -162,7 +162,7 @@ TheCmdOldObjProc(
 
     return result;
 }
-Tcl_CreateObjCommand(interp, "theCommand",
+Tcl_CreateObjCommand2(interp, "theCommand",
         TheCmdOldObjProc, clientData, TheCmdDeleteProc);
 ```
 
@@ -173,10 +173,10 @@ int
 TheCmdOldObjProc(
     void *clientData,
     Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const objv[])
+    Tcl_Size objc,
+    Tcl_Obj *const *objv)
 {
-    return Tcl_NRCallObjProc(interp, TheCmdNRObjProc,
+    return Tcl_NRCallObjProc2(interp, TheCmdNRObjProc,
             clientData, objc, objv);
 }
 ```
@@ -186,8 +186,8 @@ int
 TheCmdNRObjProc
     void *clientData,
     Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const objv[])
+    Tcl_Size objc,
+    Tcl_Obj *const *objv)
 {
     Tcl_Obj *objPtr;
 

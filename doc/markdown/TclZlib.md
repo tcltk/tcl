@@ -27,8 +27,8 @@ Tcl\_ZlibAdler32, Tcl\_ZlibCRC32, Tcl\_ZlibDeflate, Tcl\_ZlibInflate, Tcl\_ZlibS
 **#include <tcl.h>**
 [int]{.ret} [Tcl\_ZlibDeflate]{.ccmd}[interp, format, dataObj, level, dictObj]{.cargs}
 [int]{.ret} [Tcl\_ZlibInflate]{.ccmd}[interp, format, dataObj, bufferSize, dictObj]{.cargs}
-[unsigned int]{.ret} [Tcl\_ZlibCRC32]{.ccmd}[initValue, bytes, length]{.cargs}
-[unsigned int]{.ret} [Tcl\_ZlibAdler32]{.ccmd}[initValue, bytes, length]{.cargs}
+[unsigned]{.ret} [Tcl\_ZlibCRC32]{.ccmd}[initValue, bytes, length]{.cargs}
+[unsigned]{.ret} [Tcl\_ZlibAdler32]{.ccmd}[initValue, bytes, length]{.cargs}
 [int]{.ret} [Tcl\_ZlibStreamInit]{.ccmd}[interp, mode, format, level, dictObj, zshandlePtr]{.cargs}
 [Tcl\_Obj \*]{.ret} [Tcl\_ZlibStreamGetCommandName]{.ccmd}[zshandle]{.cargs}
 [int]{.ret} [Tcl\_ZlibStreamEof]{.ccmd}[zshandle]{.cargs}
@@ -59,7 +59,7 @@ Tcl\_ZlibAdler32, Tcl\_ZlibCRC32, Tcl\_ZlibDeflate, Tcl\_ZlibInflate, Tcl\_ZlibS
 [\*dictObj]{.carg .in/out type="Tcl_Obj"}
 : A dictionary that contains, or which will be updated to contain, a description of the gzip header associated with the compressed data. Only useful when the *format* is **TCL\_ZLIB\_FORMAT\_GZIP** or **TCL\_ZLIB\_FORMAT\_AUTO**. If a NULL is passed, a default header will be used on compression and the header will be ignored (apart from integrity checks) on decompression. See the section [Gzip options dictionary] for details about the contents of this dictionary.
 
-[initValue]{.carg .in type="unsigned int"}
+[initValue]{.carg .in type="unsigned"}
 : The initial value for the checksum algorithm.
 
 [bufferSize]{.carg .in type="Tcl_Size"}

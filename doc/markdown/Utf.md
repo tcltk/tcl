@@ -14,7 +14,7 @@ Copyright:
 
 # Name
 
-Tcl\_UniChar, Tcl\_UniCharToUtf, Tcl\_UtfToUniChar, Tcl\_UtfToChar16, Tcl\_UtfToWChar, Tcl\_UniCharToUtfDString, Tcl\_UtfToUniCharDString, Tcl\_Char16ToUtfDString, Tcl\_UtfToWCharDString, Tcl\_UtfToChar16DString, Tcl\_WCharToUtfDString, Tcl\_WCharLen, Tcl\_Char16Len, Tcl\_UniCharLen, Tcl\_UniCharNcmp, Tcl\_UniCharNcasecmp, Tcl\_UniCharCaseMatch, Tcl\_UtfNcmp, Tcl\_UtfNcasecmp, Tcl\_UtfCharComplete, Tcl\_NumUtfChars, Tcl\_UtfFindFirst, Tcl\_UtfFindLast, Tcl\_UtfNext, Tcl\_UtfPrev, Tcl\_UniCharAtIndex, Tcl\_UtfAtIndex, Tcl\_UtfBackslash - routines for manipulating TUTF-8 encoded byte sequences
+Tcl\_UniChar, Tcl\_UniCharToUtf, Tcl\_UtfToUniChar, Tcl\_UtfToChar16, Tcl\_UtfToWChar, Tcl\_UniCharToUtfDString, Tcl\_UtfToUniCharDString, Tcl\_Char16ToUtfDString, Tcl\_UtfToWCharDString, Tcl\_UtfToChar16DString, Tcl\_WCharToUtfDString, Tcl\_WCharLen, Tcl\_Char16Len, Tcl\_UniCharLen, Tcl\_UtfNcmp, Tcl\_UtfNcasecmp, Tcl\_UtfCharComplete, Tcl\_NumUtfChars, Tcl\_UtfFindFirst, Tcl\_UtfFindLast, Tcl\_UtfNext, Tcl\_UtfPrev, Tcl\_UniCharAtIndex, Tcl\_UtfAtIndex, Tcl\_UtfBackslash - routines for manipulating TUTF-8 encoded byte sequences
 
 # Synopsis
 
@@ -33,9 +33,6 @@ Tcl\_UniChar, Tcl\_UniCharToUtf, Tcl\_UtfToUniChar, Tcl\_UtfToChar16, Tcl\_UtfTo
 [Tcl\_Size]{.ret} [Tcl\_Char16Len]{.ccmd}[utf16]{.cargs}
 [Tcl\_Size]{.ret} [Tcl\_WCharLen]{.ccmd}[wcharStr]{.cargs}
 [Tcl\_Size]{.ret} [Tcl\_UniCharLen]{.ccmd}[uniStr]{.cargs}
-[int]{.ret} [Tcl\_UniCharNcmp]{.ccmd}[ucs, uct, uniLength]{.cargs}
-[int]{.ret} [Tcl\_UniCharNcasecmp]{.ccmd}[ucs, uct, uniLength]{.cargs}
-[int]{.ret} [Tcl\_UniCharCaseMatch]{.ccmd}[uniStr, uniPattern, nocase]{.cargs}
 [int]{.ret} [Tcl\_UtfNcmp]{.ccmd}[cs, ct, length]{.cargs}
 [int]{.ret} [Tcl\_UtfNcasecmp]{.ccmd}[cs, ct, length]{.cargs}
 [int]{.ret} [Tcl\_UtfCharComplete]{.ccmd}[src, numBytes]{.cargs}
@@ -95,20 +92,20 @@ Tcl\_UniChar, Tcl\_UniCharToUtf, Tcl\_UtfToUniChar, Tcl\_UtfToChar16, Tcl\_UtfTo
 [\*wcharStr]{.carg .in type="const wchar_t"}
 : A sequence of **wchar\_t** units with null-termination optional depending on function.
 
-[numBytes]{.carg .in type="int"}
+[numBytes]{.carg .in type="Tcl_Size"}
 : The length of the TUTF-8 input in bytes.  If negative, the length includes all bytes until the first null byte.
 
-[numUtf16]{.carg .in type="int"}
+[numUtf16]{.carg .in type="Tcl_Size"}
 : The length of the input in UTF-16 units. If negative, the length includes all bytes until the first null.
 
-[numUniChars]{.carg .in type="int"}
+[numUniChars]{.carg .in type="Tcl_Size"}
 : The length of the input in Tcl\_UniChar units. If negative, the length includes all bytes until the first null.
 
-[numWChars]{.carg .in type="int"}
+[numWChars]{.carg .in type="Tcl_Size"}
 : The length of the input in wchar\_t units. If negative, the length includes all bytes until the first null.
 
 [\*dsPtr]{.carg .in/out type="Tcl_DString"}
-: A pointer to a previously initialized **Tcl\_DString**.
+: A pointer to a previously initialized [Tcl\_DString][DString].
 
 [\*start]{.carg .in type="const char"}
 : Pointer to the beginning of a TUTF-8 byte sequence.
@@ -140,9 +137,9 @@ The **Tcl\_UniChar** type is an C integer type wide enough to hold a single Unic
 
 **Tcl\_UtfToUniChar** reads a TUTF-8 byte sequence starting at *src* and encoding a single code point, and stores it as a Tcl\_UniChar in *\*chPtr*.  The return value is the number of bytes read from *src*.  The caller must ensure that the source buffer is long enough such that this routine does not run off the end and dereference non-existent or random memory; if the source buffer is known to be null-terminated, this will not happen.  If the input starts with a byte in the range 0x80 - 0x9F, **Tcl\_UtfToUniChar** assumes the cp1252 encoding, stores the corresponding Tcl\_UniChar in *\*chPtr* and returns 1. If the input is otherwise not in proper TUTF-8 format, **Tcl\_UtfToUniChar** will store the first byte of *src* in *\*chPtr* as a Tcl\_UniChar between 0x00A0 and 0x00FF and return 1.
 
-**Tcl\_UniCharToUtfDString** converts the input in the form of a sequence of **Tcl\_UniChar** code points to TUTF-8, appending the result to the previously initialized output **Tcl\_DString**. The return value is a pointer to the TUTF-8 encoded representation of the **appended** string.
+**Tcl\_UniCharToUtfDString** converts the input in the form of a sequence of **Tcl\_UniChar** code points to TUTF-8, appending the result to the previously initialized output [Tcl\_DString][DString]. The return value is a pointer to the TUTF-8 encoded representation of the **appended** string.
 
-**Tcl\_UtfToUniCharDString** converts the input in the form of a TUTF-8 byte sequence to a **Tcl\_UniChar** sequence appending the result in the previously initialized **Tcl\_DString**. The return value is a pointer to the appended result which is also terminated with a **Tcl\_UniChar** NUL character.
+**Tcl\_UtfToUniCharDString** converts the input in the form of a TUTF-8 byte sequence to a **Tcl\_UniChar** sequence appending the result in the previously initialized [Tcl\_DString][DString]. The return value is a pointer to the appended result which is also terminated with a **Tcl\_UniChar** NUL character.
 
 **Tcl\_WCharToUtfDString** and **Tcl\_UtfToWCharDString** are similar to **Tcl\_UniCharToUtfDString** and **Tcl\_UtfToUniCharDString** except they operate on sequences of **wchar\_t** instead of **Tcl\_UniChar**.
 
@@ -153,10 +150,6 @@ The **Tcl\_UniChar** type is an C integer type wide enough to hold a single Unic
 **Tcl\_WCharLen** corresponds to **strlen** for **wchar\_t** characters.  It accepts a null-terminated **wchar\_t** sequence and returns the number of **wchar\_t** units until the null.
 
 **Tcl\_UniCharLen** corresponds to **strlen** for Tcl\_UniChar characters.  It accepts a null-terminated Tcl\_UniChar string and returns the number of Tcl\_UniChar's (not bytes) in that string.
-
-**Tcl\_UniCharNcmp** and **Tcl\_UniCharNcasecmp** correspond to **strncmp** and **strncasecmp**, respectively, for Tcl\_UniChar code points. They accept two null-terminated Tcl\_UniChar strings and the number of Tcl\_UniChar code points to compare. Both strings are assumed to be at least *uniLength* characters long. **Tcl\_UniCharNcmp** compares the code points in two strings in order according to the Unicode character ordering. It returns an integer greater than, equal to, or less than 0 if the first string is greater than, equal to, or less than the second string respectively. **Tcl\_UniCharNcasecmp** is the case insensitive variant of **Tcl\_UniCharNcmp**.
-
-**Tcl\_UniCharCaseMatch** is the Unicode equivalent to [Tcl\_StringCaseMatch][StrMatch].  It accepts a null-terminated Tcl\_UniChar string, a Tcl\_UniChar pattern, a boolean value specifying whether the match should be case sensitive and returns whether the string matches the pattern.
 
 **Tcl\_UtfNcmp** corresponds to **strncmp** and accepts two null-terminated TUTF-8 encoded strings each of which should represent a sequence of at least *length* code points. **Tcl\_UtfNcmp** compares the code points represented by each of the encoded strings in order. It returns an integer greater than, equal to, or less than 0 if the first string is greater than, equal to, or less than the second string respectively.
 
@@ -183,6 +176,6 @@ When the conditions of completeness and well-formedness may not be satisfied, a 
 **Tcl\_UtfBackslash** is a utility procedure used by several of the Tcl commands.  It parses a backslash sequence and stores the properly formed TUTF-8 encoding of the character represented by the backslash sequence in the output buffer *dst*.  At most **TCL\_UTF\_MAX** bytes are stored in the buffer. **Tcl\_UtfBackslash** modifies *\*readPtr* to contain the number of bytes in the backslash sequence, including the backslash character. The return value is the number of bytes stored in the output buffer. See the [Tcl] manual entry for information on the valid backslash sequences.  All of the sequences described in the Tcl manual entry are supported by **Tcl\_UtfBackslash**. 
 
 
-[StrMatch]: StrMatch.md
+[DString]: DString.md
 [Tcl]: Tcl.md
 
