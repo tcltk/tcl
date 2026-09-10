@@ -3900,15 +3900,18 @@ proc ::tcl::clock::DeterminePosixDSTTime { z bound y } {
 
     # Determine the start or end day of DST
 
-    set date [dict create era CE year $y]
+    set date [dict create era CE year $y gregorian 1]
     set doy [dict get $z ${bound}DayOfYear]
     if { $doy ne {} } {
 
 	# Time was specified as a day of the year
 
+	# Jn is 1-based and never counts 29 February, so J59 is 28 February,
+	# while FEB_28 is a 0-based day number.  Compare in the same units, or
+	# J59 is pushed onto 29 February in a leap year, see [aa082a279c5d3a39].
 	if { [dict get $z ${bound}J] ne {}
-	     && [IsGregorianLeapYear $y]
-	     && ( $doy > $FEB_28 ) } {
+	     && [IsGregorianLeapYear $date]
+	     && ( $doy - 1 > $FEB_28 ) } {
 	    incr doy
 	}
 	dict set date dayOfYear $doy

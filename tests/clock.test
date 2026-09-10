@@ -37409,6 +37409,102 @@ test clock-68.1 {Leap second, minute, hour [f2b5f89c0d], regression test (no val
     set res; # must be empty
 } -result {}
 
+test clock-70.1 {POSIX TZ string, day-of-year (Jn) form, [aa082a279c5d3a39]} {
+    list \
+	[clock format 1894060800 -timezone {EST5EDT,J60,J300} \
+	     -format {%Y-%m-%d %H:%M:%S %z %Z}] \
+	[clock format 1909742400 -timezone {EST5EDT,J60,J300} \
+	     -format {%Y-%m-%d %H:%M:%S %z %Z}]
+} {{2030-01-07 19:00:00 -0500 EST} {2030-07-08 08:00:00 -0400 EDT}}
+
+test clock-70.2 {POSIX TZ string, Jn form never counts February 29} {
+    # Jn calls March 1 day 60 in every year, leap or not, so in a leap year
+    # the day number must be advanced past February 29.  Without that, the
+    # first instant below would already be in DST.
+    list \
+	[clock format 1961650800 -timezone {EST5EDT,J60,J300} \
+	     -format {%Y-%m-%d %H:%M:%S %z %Z}] \
+	[clock format 1961737199 -timezone {EST5EDT,J60,J300} \
+	     -format {%Y-%m-%d %H:%M:%S %z %Z}] \
+	[clock format 1961737200 -timezone {EST5EDT,J60,J300} \
+	     -format {%Y-%m-%d %H:%M:%S %z %Z}]
+} {{2032-02-29 02:00:00 -0500 EST} {2032-03-01 01:59:59 -0500 EST} {2032-03-01 03:00:00 -0400 EDT}}
+
+test clock-70.3 {POSIX TZ string, Jn form with a transition hour of 24} {
+    # Iran's rule until 2022, and the zone named in the original report.
+    list \
+	[clock format 1894060800 -timezone {IRST-3:30IRDT,J79/24,J263/24} \
+	     -format {%Y-%m-%d %H:%M:%S %z %Z}] \
+	[clock format 1909742400 -timezone {IRST-3:30IRDT,J79/24,J263/24} \
+	     -format {%Y-%m-%d %H:%M:%S %z %Z}]
+} {{2030-01-08 03:30:00 +0330 IRST} {2030-07-08 16:30:00 +0430 IRDT}}
+
+test clock-70.4 {POSIX TZ string, Jn form reached through a zoneinfo footer} {*}{
+    -setup {
+	clock format [clock seconds]
+	set tzdir [makeDirectory zoneinfo]
+	set tzdir2 [makeDirectory Test $tzdir]
+	set tzfile [makeFile {} JDay $tzdir2]
+	set f [open $tzfile wb]
+	puts -nonewline $f [binary format c* {
+	    0x54 0x5a 0x69 0x66 0x32 0x00 0x00 0x00 0x00 0x00 0x00 0x00
+	    0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00
+	    0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00
+	    0x00 0x00 0x00 0x01 0x00 0x00 0x00 0x04 0xff 0xff 0xb9 0xb0
+	    0x00 0x00 0x45 0x53 0x54 0x00 0x54 0x5a 0x69 0x66 0x32 0x00
+	    0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00
+	    0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00
+	    0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x01 0x00 0x00
+	    0x00 0x04 0xff 0xff 0xb9 0xb0 0x00 0x00 0x45 0x53 0x54 0x00
+	    0x0a 0x45 0x53 0x54 0x35 0x45 0x44 0x54 0x2c 0x4a 0x36 0x30
+	    0x2c 0x4a 0x33 0x30 0x30 0x0a
+	}]
+	close $f
+	set ::tcl::clock::ZoneinfoPaths \
+	    [linsert $::tcl::clock::ZoneinfoPaths 0 $tzdir]
+	::tcl::clock::ClearCaches
+    }
+    -cleanup {
+	set ::tcl::clock::ZoneinfoPaths \
+	    [lrange $::tcl::clock::ZoneinfoPaths 1 end]
+	::tcl::clock::ClearCaches
+	removeFile JDay $tzdir2
+	removeDirectory Test $tzdir
+	removeDirectory zoneinfo
+    }
+    -body {
+	list \
+	    [clock format 1894060800 -timezone :Test/JDay \
+		 -format {%Y-%m-%d %H:%M:%S %z %Z}] \
+	    [clock format 1909742400 -timezone :Test/JDay \
+		 -format {%Y-%m-%d %H:%M:%S %z %Z}]
+    }
+    -result {{2030-01-07 19:00:00 -0500 EST} {2030-07-08 08:00:00 -0400 EDT}}
+}
+
+test clock-70.5 {POSIX TZ string, Jn form, the value asked for in [aa082a279c5d3a39]} {
+    # The result Tcl 9 gives, quoted in the ticket as the condition for
+    # closing it; glibc agrees.
+    clock format 1720000000 -timezone {EST5EDT,J60,J300}
+} {Wed Jul 03 05:46:40 EDT 2024}
+
+test clock-70.6 {POSIX TZ string, Jn form, J59 is 28 February in a leap year} {
+    # In a leap year J59 is the last day on which Jn and the Gregorian day
+    # number agree; from 60 they diverge, because Jn never counts 29 February.
+    # Without the units correction J59 is pushed onto 29 February.  The
+    # non-leap year is the control: there the two never diverge, so it must be
+    # unaffected.
+    list \
+	[clock format 1961564399 -timezone {EST5EDT,J59,J300} \
+	     -format {%Y-%m-%d %H:%M:%S %z %Z}] \
+	[clock format 1961564400 -timezone {EST5EDT,J59,J300} \
+	     -format {%Y-%m-%d %H:%M:%S %z %Z}] \
+	[clock format 1993186799 -timezone {EST5EDT,J59,J300} \
+	     -format {%Y-%m-%d %H:%M:%S %z %Z}] \
+	[clock format 1993186800 -timezone {EST5EDT,J59,J300} \
+	     -format {%Y-%m-%d %H:%M:%S %z %Z}]
+} {{2032-02-28 01:59:59 -0500 EST} {2032-02-28 03:00:00 -0400 EDT} {2033-02-28 01:59:59 -0500 EST} {2033-02-28 03:00:00 -0400 EDT}}
+
 # cleanup
 
 namespace delete ::testClock
