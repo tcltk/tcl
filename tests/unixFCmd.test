@@ -212,7 +212,7 @@ test unixFCmd-2.3 {TclpCopyFile: src is block} -setup {
 } -result {}
 test unixFCmd-2.4 {TclpCopyFile: src is fifo} -setup {
     cleanup
-} -constraints {unix notRoot execMknod} -body {
+} -constraints {unix notRoot execMknod tempNotMac} -body { # tempNotMac -- see bug [7b4a819535231639]
     exec mknod tf1 p
     file copy tf1 tf2
     list [file type tf1] [file type tf2]

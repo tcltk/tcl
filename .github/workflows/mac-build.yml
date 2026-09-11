@@ -64,7 +64,7 @@ jobs:
         env:
           ERROR_ON_FAILURES: 1
           MAC_CI: 1
-        timeout-minutes: 30
+        timeout-minutes: 15
   clang:
     runs-on: macos-26
     needs: plan
@@ -107,4 +107,4 @@ jobs:
         env:
           ERROR_ON_FAILURES: 1
           MAC_CI: 1
-        timeout-minutes: 30
+        timeout-minutes: 20
