@@ -1,4 +1,4 @@
-a Utilities to read Unicode Character Data files
+# Utilities to read Unicode Character Data files
 # Copyright © 2025-2026 Ashok P. Nadkarni
 #
 # See the file license.terms for information on usage and redistribution
