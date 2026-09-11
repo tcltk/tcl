@@ -11,7 +11,7 @@
 .SH NAME
 tcl::process \- Subprocess management
 .SH SYNOPSIS
-\fB::tcl::process \fIoption \fR?\fIarg arg ...\fR?
+\fB::tcl::process \fIoption \fR?\fIarg  ...\fR?
 .BE
 .SH DESCRIPTION
 .PP
