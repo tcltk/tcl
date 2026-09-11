@@ -147,7 +147,7 @@ If no \fIpattern\fRs are given and the \fB\-clear\fR flag is not given,
 this command returns the namespace's current export list.
 .\" METHOD: forget
 .TP
-\fBnamespace forget \fR?\fIpattern pattern ...\fR?
+\fBnamespace forget \fR?\fIpattern ...\fR?
 .
 Removes previously imported commands from a namespace.
 Each \fIpattern\fR is a simple or qualified name such as
@@ -173,7 +173,7 @@ If so, this command deletes the corresponding imported commands.
 In effect, this undoes the action of a \fBnamespace import\fR command.
 .\" METHOD: import
 .TP
-\fBnamespace import \fR?\fB\-force\fR? ?\fIpattern pattern ...\fR?
+\fBnamespace import \fR?\fB\-force\fR? ?\fIpattern ...\fR?
 .
 Imports commands into a namespace, or queries the set of imported
 commands in a namespace.  When no arguments are present,

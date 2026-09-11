@@ -9,7 +9,7 @@
 .SH NAME
 pkg::create \- Construct an appropriate 'package ifneeded' command for a given package specification
 .SH SYNOPSIS
-\fB::pkg::create\fR \fB\-name \fIpackageName \fB\-version \fIpackageVersion\fR ?\fB\-load \fIfilespec\fR? ... ?\fB\-source \fIfilespec\fR? ...
+\fB::pkg::create\fR \fB\-name \fIpackageName \fB\-version \fIpackageVersion\fR ?\fB\-load \fIfilespec ...\fR? ?\fB\-source \fIfilespec ...\fR?
 .BE
 .SH DESCRIPTION
 .PP
