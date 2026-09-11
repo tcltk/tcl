@@ -36053,7 +36053,13 @@ test clock-35.2 {clock seconds tests} {
 } {1 {wrong # args: should be "clock seconds"}}
 test clock-35.3 {clock seconds tests} {
     set start [clock seconds]
-    after 2000
+    # wait for next second:
+    apply {start {
+	set time [expr {($start+1)*1000 + 25 - [clock milliseconds]}]
+	if {abs($time) > 2000} {set time 2000}; # fallback for broken/obscure case or a time jump
+	after $time
+	if {[clock seconds] <= $start} { after 50 }; # time granularity adjustment (25ms was not enough)
+    }} $start
     set end [clock seconds]
     expr {$end > $start}
 } {1}
