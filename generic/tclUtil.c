@@ -4205,8 +4205,7 @@ TclSetProcessGlobalValue(
     Tcl_UtfToExternalDStringEx(NULL, NULL, bytes, pgvPtr->numBytes,
 	    TCL_ENCODING_PROFILE_TCL8, &ds, NULL);
     pgvPtr->numBytes = Tcl_DStringLength(&ds);
-    pgvPtr->value = (char *)Tcl_Alloc(pgvPtr->numBytes + 1);
-    memcpy(pgvPtr->value, Tcl_DStringValue(&ds), pgvPtr->numBytes + 1);
+    pgvPtr->value = TclDupDStringContents(&ds);
     Tcl_DStringFree(&ds);
     if (pgvPtr->encoding) {
 	Tcl_FreeEncoding(pgvPtr->encoding);
@@ -4272,9 +4271,7 @@ TclGetProcessGlobalValue(
 		    &newValue, NULL);
 	    Tcl_DStringFree(&native);
 	    Tcl_Free(pgvPtr->value);
-	    pgvPtr->value = (char *)Tcl_Alloc(Tcl_DStringLength(&newValue) + 1);
-	    memcpy(pgvPtr->value, Tcl_DStringValue(&newValue),
-		    Tcl_DStringLength(&newValue) + 1);
+	    pgvPtr->value = TclDupDStringContents(&newValue);
 	    Tcl_DStringFree(&newValue);
 	    Tcl_FreeEncoding(pgvPtr->encoding);
 	    pgvPtr->encoding = current;

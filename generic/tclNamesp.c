@@ -877,9 +877,7 @@ Tcl_CreateNamespace(
 
   doCreate:
     nsPtr = (Namespace *) Tcl_Alloc(sizeof(Namespace));
-    nameLen = strlen(simpleName) + 1;
-    nsPtr->name = (char *) Tcl_Alloc(nameLen);
-    memcpy(nsPtr->name, simpleName, nameLen);
+    nsPtr->name = TclDupString(simpleName);
     nsPtr->fullName = NULL;		/* Set below. */
     nsPtr->clientData = clientData;
     nsPtr->deleteProc = deleteProc;
@@ -962,10 +960,7 @@ Tcl_CreateNamespace(
 	}
     }
 
-    name = Tcl_DStringValue(namePtr);
-    nameLen = Tcl_DStringLength(namePtr);
-    nsPtr->fullName = (char *) Tcl_Alloc(nameLen + 1);
-    memcpy(nsPtr->fullName, name, nameLen + 1);
+    nsPtr->fullName = TclDupDStringContents(namePtr);
 
     Tcl_DStringFree(&buffer1);
     Tcl_DStringFree(&buffer2);
@@ -1466,8 +1461,7 @@ Tcl_Export(
     Namespace *nsPtr, *exportNsPtr, *dummyPtr;
     Namespace *currNsPtr = (Namespace *) TclGetCurrentNamespace(interp);
     const char *simplePattern;
-    char *patternCpy;
-    Tcl_Size neededElems, len, i;
+    Tcl_Size neededElems, i;
 
     /*
      * If the specified namespace is NULL, use the current namespace.
@@ -1544,11 +1538,7 @@ Tcl_Export(
      * Add the pattern to the namespace's array of export patterns.
      */
 
-    len = strlen(pattern);
-    patternCpy = (char *) Tcl_Alloc(len + 1);
-    memcpy(patternCpy, pattern, len + 1);
-
-    nsPtr->exportArrayPtr[nsPtr->numExportPatterns] = patternCpy;
+    nsPtr->exportArrayPtr[nsPtr->numExportPatterns] = TclDupString(pattern);
     nsPtr->numExportPatterns++;
 
     /*

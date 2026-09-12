@@ -1906,10 +1906,8 @@ MoveExceptionRangesToBasicBlock(
     curr_bb->foreignExceptionBase = savedExceptArrayNext;
     curr_bb->foreignExceptionCount = exceptionCount;
     curr_bb->foreignExceptions = (ExceptionRange*)
-	    Tcl_Alloc(exceptionCount * sizeof(ExceptionRange));
-    memcpy(curr_bb->foreignExceptions,
-	    envPtr->exceptArrayPtr + savedExceptArrayNext,
-	    exceptionCount * sizeof(ExceptionRange));
+	    TclDupBlock(envPtr->exceptArrayPtr + savedExceptArrayNext,
+		    exceptionCount * sizeof(ExceptionRange));
     for (i = 0; i < exceptionCount; ++i) {
 	curr_bb->foreignExceptions[i].nestingLevel -= envPtr->exceptDepth;
     }

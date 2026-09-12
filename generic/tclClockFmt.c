@@ -651,8 +651,7 @@ ClockFmtObj_DupInternalRep(
 
     /* if no format representation, dup string representation */
     if (fss == NULL) {
-	copyPtr->bytes = (char *)Tcl_Alloc(srcPtr->length + 1);
-	memcpy(copyPtr->bytes, srcPtr->bytes, srcPtr->length + 1);
+	copyPtr->bytes = TclDupObjContents(srcPtr);
 	copyPtr->length = srcPtr->length;
     }
 }

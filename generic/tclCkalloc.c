@@ -898,7 +898,7 @@ MemoryCmd(
 	    return TCL_ERROR;
 	}
 	onExitMemDumpFileName = dumpFile;
-	strcpy(onExitMemDumpFileName,fileName);
+	strcpy(onExitMemDumpFileName, fileName);
 	Tcl_DStringFree(&buffer);
 	return TCL_OK;
     case OPT_TAG:

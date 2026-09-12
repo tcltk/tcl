@@ -2482,15 +2482,10 @@ static void *
 DupDictUpdateInfo(
     void *clientData)
 {
-    DictUpdateInfo *dui1Ptr, *dui2Ptr;
-    size_t len;
-
-    dui1Ptr = (DictUpdateInfo *)clientData;
-    len = offsetof(DictUpdateInfo, varIndices)
+    DictUpdateInfo *dui1Ptr = (DictUpdateInfo *)clientData;
+    size_t len = offsetof(DictUpdateInfo, varIndices)
 	    + sizeof(size_t) * dui1Ptr->length;
-    dui2Ptr = (DictUpdateInfo *)Tcl_Alloc(len);
-    memcpy(dui2Ptr, dui1Ptr, len);
-    return dui2Ptr;
+    return (DictUpdateInfo *)TclDupBlock(dui1Ptr, len);
 }
 
 static void

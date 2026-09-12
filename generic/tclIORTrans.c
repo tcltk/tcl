@@ -2567,8 +2567,7 @@ ForwardProc(
 	    paramPtr->transform.size = bytec;
 
 	    if (bytec > 0) {
-		paramPtr->transform.buf = (char *)Tcl_Alloc(bytec);
-		memcpy(paramPtr->transform.buf, bytev, bytec);
+		paramPtr->transform.buf = (char *) TclDupBlock(bytev, bytec);
 	    } else {
 		paramPtr->transform.buf = NULL;
 	    }
@@ -2601,8 +2600,7 @@ ForwardProc(
 	    paramPtr->transform.size = bytec;
 
 	    if (bytec > 0) {
-		paramPtr->transform.buf = (char *)Tcl_Alloc(bytec);
-		memcpy(paramPtr->transform.buf, bytev, bytec);
+		paramPtr->transform.buf = (char *) TclDupBlock(bytev, bytec);
 	    } else {
 		paramPtr->transform.buf = NULL;
 	    }
@@ -2630,8 +2628,7 @@ ForwardProc(
 	    paramPtr->transform.size = bytec;
 
 	    if (bytec > 0) {
-		paramPtr->transform.buf = (char *)Tcl_Alloc(bytec);
-		memcpy(paramPtr->transform.buf, bytev, bytec);
+		paramPtr->transform.buf = (char *) TclDupBlock(bytev, bytec);
 	    } else {
 		paramPtr->transform.buf = NULL;
 	    }
@@ -2657,8 +2654,7 @@ ForwardProc(
 	    paramPtr->transform.size = bytec;
 
 	    if (bytec > 0) {
-		paramPtr->transform.buf = (char *)Tcl_Alloc(bytec);
-		memcpy(paramPtr->transform.buf, bytev, bytec);
+		paramPtr->transform.buf = (char *) TclDupBlock(bytev, bytec);
 	    } else {
 		paramPtr->transform.buf = NULL;
 	    }
@@ -2766,12 +2762,7 @@ ForwardSetObjError(
     ForwardParam *paramPtr,
     Tcl_Obj *obj)
 {
-    Tcl_Size len;
-    const char *msgStr = TclGetStringFromObj(obj, &len);
-
-    len++;
-    ForwardSetDynamicError(paramPtr, Tcl_Alloc(len));
-    memcpy(paramPtr->base.msgStr, msgStr, len);
+    ForwardSetDynamicError(paramPtr, TclDupObjContents(obj));
 }
 #endif /* TCL_THREADS */
 

@@ -372,8 +372,7 @@ InitializeHostName(
 
     *encodingPtr = Tcl_GetEncoding(NULL, NULL);
     *lengthPtr = Tcl_DStringLength(&ds);
-    *valuePtr = (char *)Tcl_Alloc(*lengthPtr + 1);
-    memcpy(*valuePtr, Tcl_DStringValue(&ds), *lengthPtr + 1);
+    *valuePtr = TclDupDStringContents(&ds);
     Tcl_DStringFree(&ds);
 }
 

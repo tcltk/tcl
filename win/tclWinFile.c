@@ -3319,7 +3319,6 @@ void *
 TclNativeDupInternalRep(
     void *clientData)
 {
-    char *copy;
     size_t len;
 
     if (clientData == NULL) {
@@ -3327,10 +3326,7 @@ TclNativeDupInternalRep(
     }
 
     len = sizeof(WCHAR) * (wcslen((const WCHAR *) clientData) + 1);
-
-    copy = (char *)Tcl_Alloc(len);
-    memcpy(copy, clientData, len);
-    return copy;
+    return TclDupBlock(clientData, len);
 }
 
 /*

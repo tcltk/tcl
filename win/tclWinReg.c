@@ -317,15 +317,13 @@ DeleteKey(
     DWORD result;
     Tcl_DString buf;
     REGSAM saveMode = mode;
-    Tcl_Size len;
 
     /*
      * Find the parent of the key being deleted and open it.
      */
 
-    keyName = Tcl_GetStringFromObj(keyNameObj, &len);
-    buffer = (char *)Tcl_Alloc(len + 1);
-    strcpy(buffer, keyName);
+    keyName = Tcl_GetString(keyNameObj);
+    buffer = TclDupObjContents(keyNameObj);
 
     if (ParseKeyName(interp, buffer, &hostName, &rootKey,
 	    &keyName) != TCL_OK) {
@@ -859,11 +857,9 @@ OpenKey(
     char *keyName, *buffer, *hostName;
     HKEY rootKey;
     DWORD result;
-    Tcl_Size len;
 
-    keyName = Tcl_GetStringFromObj(keyNameObj, &len);
-    buffer = (char *)Tcl_Alloc(len + 1);
-    strcpy(buffer, keyName);
+    keyName = Tcl_GetString(keyNameObj);
+    buffer = TclDupObjContents(keyNameObj);
 
     result = ParseKeyName(interp, buffer, &hostName, &rootKey, &keyName);
     if (result == TCL_OK) {

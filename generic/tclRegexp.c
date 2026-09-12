@@ -997,8 +997,7 @@ CompileRegexp(
 	tsdPtr->patLengths[i+1] = tsdPtr->patLengths[i];
 	tsdPtr->regexps[i+1] = tsdPtr->regexps[i];
     }
-    tsdPtr->patterns[0] = (char *)Tcl_Alloc(length + 1);
-    memcpy(tsdPtr->patterns[0], string, length + 1);
+    tsdPtr->patterns[0] = (char *)TclDupBlock(string, length + 1);
     tsdPtr->patLengths[0] = length;
     tsdPtr->regexps[0] = regexpPtr;
 

@@ -705,7 +705,6 @@ NewLStringObj(
     Tcl_ObjInternalRep itr;
     size_t repSize;
     Tcl_Obj *lstringPtr;
-    const char *string;
     static const char* procTypeNames[] = {
 	"FREEREP", "DUPREP", "UPDATESTRING", "SETFROMANY",
 	"LENGTH", "INDEX", "SLICE", "REVERSE", "GETELEMENTS",
@@ -739,12 +738,10 @@ NewLStringObj(
 	Tcl_WrongNumArgs(interp, 0, objv, "lstring string");
 	return NULL;
     }
-    string = Tcl_GetString(objv[i]);
 
-    lstringRepPtr->strlen = strlen(string);
+    lstringRepPtr->string = TclDupObjContents(objv[i]);
+    lstringRepPtr->strlen = objv[i]->length;
     lstringRepPtr->allocated = lstringRepPtr->strlen + 1;
-    lstringRepPtr->string = (char*)Tcl_Alloc(lstringRepPtr->allocated);
-    strcpy(lstringRepPtr->string, string);
     lstringRepPtr->elements = NULL;
     lstringPtr = Tcl_NewObj();
     itr.twoPtrValue.ptr1 = lstringRepPtr;

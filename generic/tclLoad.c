@@ -146,7 +146,6 @@ Tcl_LoadObjCmd(
     const char *p, *fullFileName, *prefix;
     Tcl_LoadHandle loadHandle;
     Tcl_UniChar ch = 0;
-    size_t len;
     int flags = 0;
     Tcl_Obj *const *savedobjv = objv;
     static const char *const options[] = {
@@ -420,28 +419,24 @@ Tcl_LoadObjCmd(
 	 */
 
 	libraryPtr = (LoadedLibrary *)Tcl_Alloc(sizeof(LoadedLibrary));
-	len = strlen(fullFileName) + 1;
-	libraryPtr->fileName	   = (char *)Tcl_Alloc(len);
-	memcpy(libraryPtr->fileName, fullFileName, len);
-	len = Tcl_DStringLength(&pfx) + 1;
-	libraryPtr->prefix	   = (char *)Tcl_Alloc(len);
-	memcpy(libraryPtr->prefix, Tcl_DStringValue(&pfx), len);
+	libraryPtr->fileName	   = TclDupString(fullFileName);
+	libraryPtr->prefix	   = TclDupDStringContents(&pfx);
 	libraryPtr->loadHandle	   = loadHandle;
 	libraryPtr->initProc	   = initProc;
-	libraryPtr->safeInitProc	   = (Tcl_LibraryInitProc *)
+	libraryPtr->safeInitProc   = (Tcl_LibraryInitProc *)
 		Tcl_FindSymbol(interp, loadHandle,
 			Tcl_DStringValue(&safeInitName));
 	libraryPtr->unloadProc	   = (Tcl_LibraryUnloadProc *)
 		Tcl_FindSymbol(interp, loadHandle,
 			Tcl_DStringValue(&unloadName));
-	libraryPtr->safeUnloadProc	   = (Tcl_LibraryUnloadProc *)
+	libraryPtr->safeUnloadProc = (Tcl_LibraryUnloadProc *)
 		Tcl_FindSymbol(interp, loadHandle,
 			Tcl_DStringValue(&safeUnloadName));
-	libraryPtr->interpRefCount	   = 0;
+	libraryPtr->interpRefCount = 0;
 	libraryPtr->safeInterpRefCount = 0;
 
 	Tcl_MutexLock(&libraryMutex);
-	libraryPtr->nextPtr		   = firstLibraryPtr;
+	libraryPtr->nextPtr	   = firstLibraryPtr;
 	firstLibraryPtr		   = libraryPtr;
 	Tcl_MutexUnlock(&libraryMutex);
 
@@ -1047,8 +1042,7 @@ Tcl_StaticLibrary(
 	libraryPtr = (LoadedLibrary *)Tcl_Alloc(sizeof(LoadedLibrary));
 	libraryPtr->fileName	= (char *)Tcl_Alloc(1);
 	libraryPtr->fileName[0]	= 0;
-	libraryPtr->prefix	= (char *)Tcl_Alloc(strlen(prefix) + 1);
-	strcpy(libraryPtr->prefix, prefix);
+	libraryPtr->prefix	= TclDupString(prefix);
 	libraryPtr->loadHandle	= NULL;
 	libraryPtr->initProc	= initProc;
 	libraryPtr->safeInitProc= safeInitProc;

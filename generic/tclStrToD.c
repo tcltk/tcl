@@ -2463,14 +2463,12 @@ FormatInfAndNaN(
 
     *decpt = 9999;
     if (!(d->w.word1) && !(d->w.word0 & HI_ORDER_SIG_MASK)) {
-	retval = (char *)Tcl_Alloc(9);
-	strcpy(retval, "Infinity");
+	retval = TclDupString("Infinity");
 	if (endPtr) {
 	    *endPtr = retval + 8;
 	}
     } else {
-	retval = (char *)Tcl_Alloc(4);
-	strcpy(retval, "NaN");
+	retval = TclDupString("NaN");
 	if (endPtr) {
 	    *endPtr = retval + 3;
 	}
@@ -2500,9 +2498,8 @@ FormatZero(
     int *decpt,			/* Location of the decimal point. */
     char **endPtr)		/* Pointer to the end of the formatted data */
 {
-    char *retval = (char *)Tcl_Alloc(2);
+    char *retval = TclDupString("0");
 
-    strcpy(retval, "0");
     if (endPtr) {
 	*endPtr = retval+1;
     }

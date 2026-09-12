@@ -929,8 +929,7 @@ TestasyncCmd(
 	    goto wrongNumArgs;
 	}
 	asyncPtr = (TestAsyncHandler *)Tcl_Alloc(sizeof(TestAsyncHandler));
-	asyncPtr->command = (char *)Tcl_Alloc(strlen(Tcl_GetString(objv[2])) + 1);
-	strcpy(asyncPtr->command, Tcl_GetString(objv[2]));
+	asyncPtr->command = TclDupObjContents(objv[2]);
 	Tcl_MutexLock(&asyncTestMutex);
 	asyncPtr->id = nextId;
 	nextId++;
@@ -1781,8 +1780,7 @@ TestdelCmd(
 
     dPtr = (DelCmd *)Tcl_Alloc(sizeof(DelCmd));
     dPtr->interp = interp;
-    dPtr->deleteCmd = (char *)Tcl_Alloc(strlen(Tcl_GetString(objv[3])) + 1);
-    strcpy(dPtr->deleteCmd, Tcl_GetString(objv[3]));
+    dPtr->deleteCmd = TclDupObjContents(objv[3]);
 
     Tcl_CreateObjCommand2(child, Tcl_GetString(objv[2]), DelCmdProc, dPtr,
 	    DelDeleteProc);
@@ -2417,7 +2415,6 @@ TestencodingCmd(
     Tcl_Obj *const *objv)	/* Argument objects. */
 {
     Tcl_Encoding encoding;
-    Tcl_Size length;
     const char *string;
     TclEncoding *encodingPtr;
     static const char *const optionStrings[] = {
@@ -2453,16 +2450,10 @@ TestencodingCmd(
 	}
 	encodingPtr = (TclEncoding *)Tcl_Alloc(sizeof(TclEncoding));
 	encodingPtr->interp = interp;
+	encodingPtr->toUtfCmd = TclDupObjContents(objv[3]);
+	encodingPtr->fromUtfCmd = TclDupObjContents(objv[4]);
 
-	string = Tcl_GetStringFromObj(objv[3], &length);
-	encodingPtr->toUtfCmd = (char *)Tcl_Alloc(length + 1);
-	memcpy(encodingPtr->toUtfCmd, string, length + 1);
-
-	string = Tcl_GetStringFromObj(objv[4], &length);
-	encodingPtr->fromUtfCmd = (char *)Tcl_Alloc(length + 1);
-	memcpy(encodingPtr->fromUtfCmd, string, length + 1);
-
-	string = Tcl_GetStringFromObj(objv[2], &length);
+	string = Tcl_GetString(objv[2]);
 
 	type.encodingName = string;
 	type.toUtfProc = EncodingToUtfProc;
@@ -3605,8 +3596,7 @@ TestlinkCmd(
 	    if (strcmp(Tcl_GetString(objv[5]), "-") == 0) {
 		stringVar = NULL;
 	    } else {
-		stringVar = (char *)Tcl_Alloc(strlen(Tcl_GetString(objv[5])) + 1);
-		strcpy(stringVar, Tcl_GetString(objv[5]));
+		stringVar = TclDupObjContents(objv[5]);
 	    }
 	}
 	if (!Tcl_IsEmpty(objv[6])) {
@@ -3710,8 +3700,7 @@ TestlinkCmd(
 	    if (strcmp(Tcl_GetString(objv[5]), "-") == 0) {
 		stringVar = NULL;
 	    } else {
-		stringVar = (char *)Tcl_Alloc(strlen(Tcl_GetString(objv[5])) + 1);
-		strcpy(stringVar, Tcl_GetString(objv[5]));
+		stringVar = TclDupObjContents(objv[5]);
 	    }
 	    Tcl_UpdateLinkedVar(interp, "string");
 	}
@@ -5151,8 +5140,7 @@ TestsetassocdataCmd(
 	return TCL_ERROR;
     }
 
-    buf = (char *)Tcl_Alloc(strlen(Tcl_GetString(objv[2])) + 1);
-    strcpy(buf, Tcl_GetString(objv[2]));
+    buf = TclDupObjContents(objv[2]);
 
     /*
      * If we previously associated a malloced value with the variable,
@@ -6135,11 +6123,8 @@ TestpurebytesobjCmd(
     */
     memset(&objPtr->internalRep, 0, sizeof(objPtr->internalRep));
     if (objc == 2) {
-	const char *s = Tcl_GetString(objv[1]);
+	objPtr->bytes = TclDupObjContents(objv[1]);
 	objPtr->length = objv[1]->length;
-	objPtr->bytes = (char *)Tcl_Alloc(objPtr->length + 1);
-	memcpy(objPtr->bytes, s, objPtr->length);
-	objPtr->bytes[objPtr->length] = 0;
     }
     Tcl_SetObjResult(interp, objPtr);
     return TCL_OK;

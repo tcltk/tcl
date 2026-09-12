@@ -3397,12 +3397,7 @@ ForwardSetObjError(
     ForwardParam *paramPtr,
     Tcl_Obj *obj)
 {
-    Tcl_Size len;
-    const char *msgStr = TclGetStringFromObj(obj, &len);
-
-    len++;
-    ForwardSetDynamicError(paramPtr, Tcl_Alloc(len));
-    memcpy(paramPtr->base.msgStr, msgStr, len);
+    ForwardSetDynamicError(paramPtr, TclDupObjContents(obj));
 }
 #endif
 

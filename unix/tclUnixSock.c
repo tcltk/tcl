@@ -263,8 +263,7 @@ InitializeHostName(
     *encodingPtr = Tcl_GetEncoding(NULL, NULL);
     if (native) {
 	*lengthPtr = strlen(native);
-	*valuePtr = (char *)Tcl_Alloc(*lengthPtr + 1);
-	memcpy(*valuePtr, native, *lengthPtr + 1);
+	*valuePtr = TclDupString(native);
     } else {
 	*lengthPtr = 0;
 	*valuePtr = (char *)Tcl_Alloc(1);

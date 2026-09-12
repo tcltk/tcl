@@ -65,7 +65,6 @@ Tcl_AddInterpResolvers(
 {
     Interp *iPtr = (Interp *) interp;
     ResolverScheme *resPtr;
-    size_t len;
 
     /*
      * Since we're adding a new name resolution scheme, we must force all code
@@ -102,9 +101,7 @@ Tcl_AddInterpResolvers(
      */
 
     resPtr = (ResolverScheme *)Tcl_Alloc(sizeof(ResolverScheme));
-    len = strlen(name) + 1;
-    resPtr->name = (char *)Tcl_Alloc(len);
-    memcpy(resPtr->name, name, len);
+    resPtr->name = TclDupString(name);
     resPtr->cmdResProc = cmdProc;
     resPtr->varResProc = varProc;
     resPtr->compiledVarResProc = compiledVarProc;

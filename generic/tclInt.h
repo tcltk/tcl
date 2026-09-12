@@ -5106,6 +5106,113 @@ MODULE_SCOPE Tcl_LibraryInitProc Tcl_ABSListTest_Init;
     } while (0)
 #endif   /* TCL_MEM_DEBUG */
 
+#ifndef TCL_MEM_DEBUG
+/*
+ *---------------------------------------------------------------------
+ *
+ * TclDupString --
+ *
+ *	Helper function for duplicating a string into new Tcl_Alloc'ed memory.
+ *
+ *---------------------------------------------------------------------
+ */
+static inline char *
+TclDupString(
+    const char *str)		// String to duplicate.
+{
+    size_t len = (strlen(str) + 1) * sizeof(char);
+    char *buf = (char *) Tcl_Alloc(len);
+    memcpy(buf, str, len);
+    return buf;
+}
+
+/*
+ *---------------------------------------------------------------------
+ *
+ * TclDupBlock --
+ *
+ *	Helper function for duplicating a memory block into new Tcl_Alloc'ed
+ *	memory.
+ *
+ *---------------------------------------------------------------------
+ */
+static inline void *
+TclDupBlock(
+    const void *mem,		// Memory to duplicate.
+    size_t len)			// Length of data.
+{
+    void *buf = Tcl_Alloc(len);
+    memcpy(buf, mem, len);
+    return buf;
+}
+
+/*
+ *---------------------------------------------------------------------
+ *
+ * TclDupObjContents --
+ *
+ *	Helper function for duplicating the string from a Tcl_Obj.
+ *
+ *---------------------------------------------------------------------
+ */
+static inline char *
+TclDupObjContents(
+    Tcl_Obj *objPtr)		// The object to get a copy of the string from.
+{
+    Tcl_Size len;
+    const char *str = Tcl_GetStringFromObj(objPtr, &len);
+    char *buf = (char *) Tcl_Alloc((size_t) len + 1);
+    memcpy(buf, str, (size_t) len + 1);
+    return buf;
+}
+#else
+static inline char *
+TclDbDupString(
+    const char *str, 		// String to duplicate.
+    const char *file,		// Filename.
+    int line)			// Line number.
+{
+    size_t len = strlen(str) + 1;
+    char *buf = (char *) Tcl_DbCkalloc(len, file, line);
+    memcpy(buf, str, len);
+    return buf;
+}
+
+static inline void *
+TclDbDupBlock(
+    const void *mem, 		// String to duplicate.
+    size_t len,			// Length of data.
+    const char *file,		// Filename.
+    int line)			// Line number.
+{
+    void *buf = Tcl_DbCkalloc(len, file, line);
+    memcpy(buf, mem, len);
+    return buf;
+}
+
+static inline char *
+TclDbDupObjContents(
+    Tcl_Obj *objPtr		// The object to get a copy of the string from.
+    const char *file,		// Filename.
+    int line)			// Line number.
+{
+    Tcl_Size len;
+    const char *str = TclGetStringFromObj(objPtr, &len);
+    char *buf = (char *) Tcl_DbCkalloc((size_t) len + 1, file, line);
+    memcpy(buf, str, (size_t) len + 1);
+    return buf;
+}
+
+#define TclDupString(str) \
+    TclDbDupString((str), __FILE__, __LINE__)
+#define TclDupBlock(mem, len) \
+    TclDbDupBlock((str), (len), __FILE__, __LINE__)
+#define TclDupObjContents(objPtr) \
+    TclDbDupObjContents((objPtr), __FILE__, __LINE__)
+#endif
+#define TclDupDStringContents(dsPtr) \
+    ((char *) TclDupBlock(Tcl_DStringValue(dsPtr), Tcl_DStringLength(dsPtr) + 1))
+
 /*
  * Support for Clang Static Analyzer <http://clang-analyzer.llvm.org>
  */

@@ -771,10 +771,7 @@ TclpGetNativeCwd(
 #endif /* USEGETWD */
 
     if ((clientData == NULL) || strcmp(buffer, (const char *) clientData)) {
-	char *newCd = (char *)Tcl_Alloc(strlen(buffer) + 1);
-
-	strcpy(newCd, buffer);
-	return newCd;
+	return TclDupString(buffer);
     }
 
     /*
@@ -1187,8 +1184,7 @@ TclNativeCreateNativeRep(
 	return NULL;
     }
     Tcl_DecrRefCount(validPathPtr);
-    nativePathPtr = (char *)Tcl_Alloc(len);
-    memcpy(nativePathPtr, Tcl_DStringValue(&ds), len);
+    nativePathPtr = TclDupDStringContents(&ds);
 
     Tcl_DStringFree(&ds);
     return nativePathPtr;
@@ -1215,9 +1211,6 @@ void *
 TclNativeDupInternalRep(
     void *clientData)
 {
-    char *copy;
-    size_t len;
-
     if (clientData == NULL) {
 	return NULL;
     }
@@ -1226,11 +1219,7 @@ TclNativeDupInternalRep(
      * ASCII representation when running on Unix.
      */
 
-    len = (strlen((const char*) clientData) + 1) * sizeof(char);
-
-    copy = (char *)Tcl_Alloc(len);
-    memcpy(copy, clientData, len);
-    return copy;
+    return TclDupString((const char *) clientData);
 }
 
 /*

@@ -500,11 +500,8 @@ TclpInitLibraryPath(
      * pass directly to Tcl_GetStringFromObj.
      * TODO - why is the type size_t anyways?
      */
-    Tcl_Size length;
-    str = TclGetStringFromObj(pathPtr, &length);
-    *lengthPtr = length;
-    *valuePtr = (char *)Tcl_Alloc(length + 1);
-    memcpy(*valuePtr, str, length + 1);
+    *valuePtr = TclDupObjContents(pathPtr);
+    *lengthPtr = pathPtr->length;
     Tcl_DecrRefCount(pathPtr);
 }
 

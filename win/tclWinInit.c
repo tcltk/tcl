@@ -263,8 +263,6 @@ TclpInitLibraryPath(
 #define LIBRARY_SIZE	    64
     Tcl_Obj *pathPtr;
     char installLib[LIBRARY_SIZE];
-    const char *bytes;
-    Tcl_Size length;
 
     TclNewObj(pathPtr);
 
@@ -300,10 +298,8 @@ TclpInitLibraryPath(
 	    TclGetProcessGlobalValue(&sourceLibraryDir));
 
     *encodingPtr = NULL;
-    bytes = TclGetStringFromObj(pathPtr, &length);
-    *lengthPtr = length++;
-    *valuePtr = (char *)Tcl_Alloc(length);
-    memcpy(*valuePtr, bytes, length);
+    *valuePtr = TclDupObjContents(pathPtr);
+    *lengthPtr = pathPtr->length;
     Tcl_DecrRefCount(pathPtr);
 }
 
@@ -451,10 +447,8 @@ AllocateGrandparentSiblingPath(
 	    *end = '/';
 	    Tcl_DStringSetLength(&ds, (Tcl_Size)(end - utf8Ptr + 1));
 	    Tcl_DStringAppend(&ds, siblingPtr, TCL_AUTO_LENGTH);
-	    utf8Ptr = Tcl_DStringValue(&ds);
 	    *lengthPtr = (size_t)Tcl_DStringLength(&ds);
-	    *valuePtr = (char *)Tcl_Alloc(*lengthPtr + 1);
-	    memcpy(*valuePtr, utf8Ptr, *lengthPtr + 1);
+	    *valuePtr = TclDupDStringContents(&ds);
 	    Tcl_DStringFree(&ds);
 	    result = TCL_OK;
 	}
@@ -743,9 +737,7 @@ TclpFindVariable(
      * Convert the name to all upper case for the case insensitive comparison.
      */
 
-    length = strlen(name);
-    nameUpper = (char *)Tcl_Alloc(length + 1);
-    memcpy(nameUpper, name, length+1);
+    nameUpper = TclDupString(name);
     Tcl_UtfToUpper(nameUpper);
 
     Tcl_DStringInit(&envString);

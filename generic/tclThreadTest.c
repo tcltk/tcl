@@ -429,8 +429,6 @@ ThreadObjCmd(
 	 * Arrange for this proc to handle thread death errors.
 	 */
 
-	const char *proc;
-
 	if (objc != 3) {
 	    Tcl_WrongNumArgs(interp, 2, objv, "proc");
 	    return TCL_ERROR;
@@ -440,9 +438,7 @@ ThreadObjCmd(
 	if (errorProcString) {
 	    Tcl_Free(errorProcString);
 	}
-	proc = Tcl_GetString(objv[2]);
-	errorProcString = (char *)Tcl_Alloc(strlen(proc) + 1);
-	strcpy(errorProcString, proc);
+	errorProcString = TclDupObjContents(objv[2]);
 	Tcl_MutexUnlock(&threadMutex);
 	return TCL_OK;
     }
@@ -600,9 +596,7 @@ NewTestThread(
      * eval'ing, for the case that we exit during evaluation
      */
 
-    threadEvalScript = (char *)Tcl_Alloc(strlen(ctrlPtr->script) + 1);
-    strcpy(threadEvalScript, ctrlPtr->script);
-
+    threadEvalScript = TclDupString(ctrlPtr->script);
     Tcl_CreateThreadExitHandler(ThreadExitProc, threadEvalScript);
 
     /*
@@ -845,8 +839,7 @@ ThreadSend(
      */
 
     threadEventPtr = (ThreadEvent*)Tcl_Alloc(sizeof(ThreadEvent));
-    threadEventPtr->script = (char *)Tcl_Alloc(strlen(script) + 1);
-    strcpy(threadEventPtr->script, script);
+    threadEventPtr->script = TclDupString(script);
     if (!wait) {
 	resultPtr = threadEventPtr->resultPtr = NULL;
     } else {
@@ -1045,15 +1038,12 @@ ThreadEventProc(
     if (resultPtr) {
 	Tcl_MutexLock(&threadMutex);
 	resultPtr->code = code;
-	resultPtr->result = (char *)Tcl_Alloc(strlen(result) + 1);
-	strcpy(resultPtr->result, result);
+	resultPtr->result = TclDupString(result);
 	if (errorCode != NULL) {
-	    resultPtr->errorCode = (char *)Tcl_Alloc(strlen(errorCode) + 1);
-	    strcpy(resultPtr->errorCode, errorCode);
+	    resultPtr->errorCode = TclDupString(errorCode);
 	}
 	if (errorInfo != NULL) {
-	    resultPtr->errorInfo = (char *)Tcl_Alloc(strlen(errorInfo) + 1);
-	    strcpy(resultPtr->errorInfo, errorInfo);
+	    resultPtr->errorInfo = TclDupString(errorInfo);
 	}
 	Tcl_ConditionNotify(&resultPtr->done);
 	Tcl_MutexUnlock(&threadMutex);
@@ -1199,8 +1189,7 @@ ThreadExitProc(
 
 	    const char *msg = "target thread died";
 
-	    resultPtr->result = (char *)Tcl_Alloc(strlen(msg) + 1);
-	    strcpy(resultPtr->result, msg);
+	    resultPtr->result = TclDupString(msg);
 	    resultPtr->code = TCL_ERROR;
 	    Tcl_ConditionNotify(&resultPtr->done);
 	}

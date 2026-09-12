@@ -1516,8 +1516,7 @@ CloneProcedureMethod(
      * record.
      */
 
-    pm2Ptr = (ProcedureMethod *) Tcl_Alloc(sizeof(ProcedureMethod));
-    memcpy(pm2Ptr, pmPtr, sizeof(ProcedureMethod));
+    pm2Ptr = (ProcedureMethod *) TclDupBlock(pmPtr, sizeof(ProcedureMethod));
     pm2Ptr->refCount = 1;
     pm2Ptr->cmd.clientData = &pm2Ptr->efi;
     pm2Ptr->efi.length = 0;	/* Trigger a reinit of this. */

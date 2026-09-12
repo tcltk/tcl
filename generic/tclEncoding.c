@@ -1075,7 +1075,6 @@ Tcl_CreateEncoding(
     if (typePtr->encodingName) {
 	Tcl_HashEntry *hPtr;
 	int isNew;
-	char *name;
 
 	Tcl_MutexLock(&encodingMutex);
 	hPtr = Tcl_CreateHashEntry(&encodingTable, typePtr->encodingName, &isNew);
@@ -1089,8 +1088,7 @@ Tcl_CreateEncoding(
 	    replaceMe->hPtr = NULL;
 	}
 
-	name = (char *)Tcl_Alloc(strlen(typePtr->encodingName) + 1);
-	encodingPtr->name	= strcpy(name, typePtr->encodingName);
+	encodingPtr->name	= TclDupString(typePtr->encodingName);
 	encodingPtr->hPtr	= hPtr;
 	Tcl_SetHashValue(hPtr, encodingPtr);
 
@@ -5310,8 +5308,7 @@ InitializeEncodingSearchPath(
     size_t *lengthPtr,
     Tcl_Encoding *encodingPtr)
 {
-    const char *bytes;
-    Tcl_Size i, numDirs, numBytes;
+    Tcl_Size i, numDirs;
     Tcl_Obj *libPathObj, *encodingObj, *searchPathObj;
 
     TclNewLiteralStringObj(encodingObj, "encoding");
@@ -5341,11 +5338,9 @@ InitializeEncodingSearchPath(
     if (*encodingPtr) {
 	((Encoding *)(*encodingPtr))->refCount++;
     }
-    bytes = TclGetStringFromObj(searchPathObj, &numBytes);
 
-    *lengthPtr = numBytes;
-    *valuePtr = (char *)Tcl_Alloc(numBytes + 1);
-    memcpy(*valuePtr, bytes, numBytes + 1);
+    *valuePtr = TclDupObjContents(searchPathObj);
+    *lengthPtr = searchPathObj->length;
     Tcl_DecrRefCount(searchPathObj);
 }
 

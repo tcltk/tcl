@@ -1804,11 +1804,8 @@ TraceExecutionProc(
 	if ((flags & TCL_TRACE_ENTER_EXEC) && (tcmdPtr->stepTrace == NULL)
 		&& (tcmdPtr->flags & (TCL_TRACE_ENTER_DURING_EXEC |
 			TCL_TRACE_LEAVE_DURING_EXEC))) {
-	    size_t len = strlen(command) + 1;
-
 	    tcmdPtr->startLevel = level;
-	    tcmdPtr->startCmd = (char *)Tcl_Alloc(len);
-	    memcpy(tcmdPtr->startCmd, command, len);
+	    tcmdPtr->startCmd = TclDupString(command);
 	    tcmdPtr->refCount++;
 	    tcmdPtr->stepTrace = Tcl_CreateObjTrace2(interp, 0,
 		    (tcmdPtr->flags & TCL_TRACE_ANY_EXEC) >> 2,
