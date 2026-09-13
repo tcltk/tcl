@@ -20,7 +20,7 @@ to the userbase.
 
 # Updated bundled packages, libraries, standards, data
  - platform 1.1.1
- - tzdata 2026c
+ - tzdata 2026d
  - Unicode 18.0.0
 
 Release Tcl 9.0.4 arises from the check-in with tag `core-9-0-4`.
