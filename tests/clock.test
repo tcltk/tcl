@@ -16,9 +16,9 @@ if {"::tcltest" ni [namespace children]} {
     namespace import -force ::tcltest::*
 }
 
+::tcltest::loadTestedCommands
 if {[testConstraint win]} {
     if {[catch {
-	    ::tcltest::loadTestedCommands
 	    package require registry
 	}]} {
 	namespace eval ::tcl::clock {variable NoRegistry {}}
@@ -256,6 +256,39 @@ proc ::testClock::registry { cmd path key } {
     }
     return [dict get $reg $path $key]
 }
+
+# (compiled) body that returns pair of clock values guaranteed in the same time unit
+# of larger command (used in clock-3[35].*):
+proc ::testClock::aligned-times-body {cmdL cmdS} {
+    # ensure cmdS (e. g. milliseconds) doesn't jump to larger unit (next second)
+    # after we take result of cmdL (e. g. seconds), timerate used thereby to
+    # avoid obscure case the command returns random values (remember we test them)
+    string map [list \$cmdL $cmdL \$cmdS $cmdS] {
+	set t1 [$cmdL]
+	timerate {
+	    set t2 [$cmdS]
+	    set t3 [$cmdL]
+	    if { $t3 == $t1 } break
+	    set t1 $t3
+	} 1000
+	if { $t3 != $t1 } { return -code error "unable to retrieve stable value of $cmdL in 1s" }
+	list $t1 $t2
+    }
+}
+proc ::testClock::aligned-times-noncmpl {cmdL cmdS} {
+    # apply script with non-compiled (direct) invocation of commands:
+    if {[namespace which -command testevalobjv] ne ""} {
+	apply [list {cmdL cmdS} [aligned-times-body {testevalobjv 0 clock {*}$cmdL} {testevalobjv 0 clock {*}$cmdS}]] $cmdL $cmdS
+    } else {
+	apply [list {cmdL cmdS} [aligned-times-body {clock {*}$cmdL} {clock {*}$cmdS}]] $cmdL $cmdS
+    }
+}
+proc ::testClock::aligned-times {cmdL cmdS} {
+    # apply script with compiled invocation of commands:
+    apply [list {cmdL cmdS} [aligned-times-body "clock $cmdL" "clock $cmdS"]] $cmdL $cmdS
+}
+# used in test clock-35.*:
+lassign [::testClock::aligned-times seconds milliseconds] ::testClock::startS ::testClock::startMS
 
 # Test some of the basics of [clock format]
 
@@ -35660,68 +35693,32 @@ test clock-33.8a {clock test, microsecond timing test} {
     expr {($end > $start) && (($end - $start) <= 60000)}
 } {1}
 
-test clock-33.9 {clock clicks test, millis align with seconds} {
-    set t1 [clock seconds]
-    while { 1 } {
-	set t2 [clock clicks -millis]
-	set t3 [clock seconds]
-	if { $t3 == $t1 } break
-	set t1 $t3
-    }
-    expr { $t2 / 1000 == $t3 }
-} {1}
-test clock-33.9a {clock test, millis align with seconds} {
-    set t1 [clock seconds]
-    while { 1 } {
-	set t2 [clock milliseconds]
-	set t3 [clock seconds]
-	if { $t3 == $t1 } break
-	set t1 $t3
-    }
-    expr { $t2 / 1000 == $t3 }
-} {1}
-
-test clock-33.10 {clock clicks test, micros align with seconds} {
-    set t1 [clock seconds]
-    while { 1 } {
-	set t2 [clock clicks -micros]
-	set t3 [clock seconds]
-	if { $t3 == $t1 } break
-	set t1 $t3
-    }
-    expr { $t2 / 1000000 == $t3 }
-} {1}
-test clock-33.10a {clock test, micros align with seconds} {
-    set t1 [clock seconds]
-    while { 1 } {
-	set t2 [clock microseconds]
-	set t3 [clock seconds]
-	if { $t3 == $t1 } break
-	set t1 $t3
-    }
-    expr { $t2 / 1000000 == $t3 }
-} {1}
-
-test clock-33.11 {clock clicks test, millis align with micros} {
-    set t1 [clock clicks -millis]
-    while { 1 } {
-	set t2 [clock clicks -micros]
-	set t3 [clock clicks -millis]
-	if { $t3 == $t1 } break
-	set t1 $t3
-    }
-    expr { $t2 / 1000 == $t3 }
-} {1}
-test clock-33.11a {clock test, millis align with micros} {
-    set t1 [clock milliseconds]
-    while { 1 } {
-	set t2 [clock microseconds]
-	set t3 [clock milliseconds]
-	if { $t3 == $t1 } break
-	set t1 $t3
-    }
-    expr { $t2 / 1000 == $t3 }
-} {1}
+foreach {suf} {{} -noncmpl} {
+  test clock-33.9$suf {clock clicks test, millis align with seconds} {
+    lassign [::testClock::aligned-times$suf seconds {clicks -millis}] t1 t2
+    expr { $t2 / 1000 == $t1 }
+  } {1}
+  test clock-33.9a$suf {clock test, millis align with seconds} {
+    lassign [::testClock::aligned-times$suf seconds milliseconds] t1 t2
+    expr { $t2 / 1000 == $t1 }
+  } {1}
+  test clock-33.10$suf {clock clicks test, micros align with seconds} {
+    lassign [::testClock::aligned-times$suf seconds {clicks -micros}] t1 t2
+    expr { $t2 / 1000000 == $t1 }
+  } {1}
+  test clock-33.10a$suf {clock test, micros align with seconds} {
+    lassign [::testClock::aligned-times$suf seconds microseconds] t1 t2
+    expr { $t2 / 1000000 == $t1 }
+  } {1}
+  test clock-33.11$suf {clock clicks test, millis align with micros} {
+    lassign [::testClock::aligned-times$suf {clicks -millis} {clicks -micros}] t1 t2
+    expr { $t2 / 1000 == $t1 }
+  } {1}
+  test clock-33.11a$suf {clock test, millis align with micros} {
+    lassign [::testClock::aligned-times$suf milliseconds microseconds] t1 t2
+    expr { $t2 / 1000 == $t1 }
+  } {1}
+}
 
 # clock scan
 test clock-34.1 {clock scan tests} {
@@ -36052,17 +36049,28 @@ test clock-35.2 {clock seconds tests} {
     list [catch {clock seconds foo} msg] $msg
 } {1 {wrong # args: should be "clock seconds"}}
 test clock-35.3 {clock seconds tests} {
-    set start [clock seconds]
     # wait for next second:
     apply {start {
 	set time [expr {($start+1)*1000 + 25 - [clock milliseconds]}]
-	if {abs($time) > 2000} {set time 2000}; # fallback for broken/obscure case or a time jump
+	if {$time > 2000 || $time < 0} {set time 0}; # fallback for broken/obscure case or a time jump
 	after $time
-	if {[clock seconds] <= $start} { after 50 }; # time granularity adjustment (25ms was not enough)
-    }} $start
+	if {[clock milliseconds] <= $start*1000} { after 50 }; # time granularity adjustment (25ms was not enough)
+    }} $::testClock::startS
     set end [clock seconds]
-    expr {$end > $start}
+    expr {$end > $::testClock::startS}
 } {1}
+test clock-35.4 {clock seconds tests} {
+    apply {{} {
+	set res {}
+	upvar ::testClock::startS startS ::testClock::startMS startMS
+	# like for start-time ensure we don't jump to next second, so both times are aligned to the same second:
+	lassign [::testClock::aligned-times seconds milliseconds] endS endMS
+	lappend res [expr {($endS - $::testClock::startS) - ($endMS/1000 - $::testClock::startMS/1000)}]
+	lassign [::testClock::aligned-times-noncmpl seconds milliseconds] endS endMS
+	lappend res [expr {($endS - $::testClock::startS) - ($endMS/1000 - $::testClock::startMS/1000)}]
+	set res
+    }}
+} {0 0}
 
 
 test clock-36.1 {clock scan next monthname} {
