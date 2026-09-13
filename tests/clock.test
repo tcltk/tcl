@@ -38781,7 +38781,6 @@ test clock-68.2 {Leap second, "24:00", regression test (validity check)} -constr
 } -result {}
 
 test clock-69.1 {clock monotonic syntax} -body {
-    string is entier [expr {[clock monotonic] + 0}]
     list [string is entier [set time [expr {[clock monotonic] + 0}]]] $time
 } -match glob -result {1 *}
 
