@@ -335,6 +335,39 @@ proc ::testClock::_cleanupNoTZ {} {
 # Don't confuse all following tests with TZ or TCL_TZ environment vars (unset them here):
 ::testClock::_setupNoTZ
 
+# (compiled) body that returns pair of clock values guaranteed in the same time unit
+# of larger command (used in clock-3[35].*):
+proc ::testClock::aligned-times-body {cmdL cmdS} {
+    # ensure cmdS (e. g. milliseconds) doesn't jump to larger unit (next second)
+    # after we take result of cmdL (e. g. seconds), timerate used thereby to
+    # avoid obscure case the command returns random values (remember we test them)
+    string map [list \$cmdL $cmdL \$cmdS $cmdS] {
+	set t1 [$cmdL]
+	timerate {
+	    set t2 [$cmdS]
+	    set t3 [$cmdL]
+	    if { $t3 == $t1 } break
+	    set t1 $t3
+	} 1000
+	if { $t3 != $t1 } { return -code error "unable to retrieve stable value of $cmdL in 1s" }
+	list $t1 $t2
+    }
+}
+proc ::testClock::aligned-times-noncmpl {cmdL cmdS} {
+    # apply script with non-compiled (direct) invocation of commands:
+    if {[namespace which -command testevalobjv] ne ""} {
+	apply [list {cmdL cmdS} [aligned-times-body {testevalobjv 0 clock {*}$cmdL} {testevalobjv 0 clock {*}$cmdS}]] $cmdL $cmdS
+    } else {
+	apply [list {cmdL cmdS} [aligned-times-body {clock {*}$cmdL} {clock {*}$cmdS}]] $cmdL $cmdS
+    }
+}
+proc ::testClock::aligned-times {cmdL cmdS} {
+    # apply script with compiled invocation of commands:
+    apply [list {cmdL cmdS} [aligned-times-body "clock $cmdL" "clock $cmdS"]] $cmdL $cmdS
+}
+# used in test clock-35.*:
+lassign [::testClock::aligned-times seconds milliseconds] ::testClock::startS ::testClock::startMS
+
 # Base test cases:
 
 # no lazy creation of clock-ensemble (interim, bug [9889f96f4da77e3b], [31fd84270644f67d]),
@@ -382,39 +415,6 @@ test clock-0.2 "initial: loading of format/locale does not overwrite interp stat
 	list $::errorCode $::errorInfo
     }
 } -result {{EXPERR TEST-ERROR} {ERROR expected error}}
-
-# (compiled) body that returns pair of clock values guaranteed in the same time unit
-# of larger command (used in clock-3[35].*):
-proc ::testClock::aligned-times-body {cmdL cmdS} {
-    # ensure cmdS (e. g. milliseconds) doesn't jump to larger unit (next second)
-    # after we take result of cmdL (e. g. seconds), timerate used thereby to
-    # avoid obscure case the command returns random values (remember we test them)
-    string map [list \$cmdL $cmdL \$cmdS $cmdS] {
-	set t1 [$cmdL]
-	timerate {
-	    set t2 [$cmdS]
-	    set t3 [$cmdL]
-	    if { $t3 == $t1 } break
-	    set t1 $t3
-	} 1000
-	if { $t3 != $t1 } { return -code error "unable to retrieve stable value of $cmdL in 1s" }
-	list $t1 $t2
-    }
-}
-proc ::testClock::aligned-times-noncmpl {cmdL cmdS} {
-    # apply script with non-compiled (direct) invocation of commands:
-    if {[namespace which -command testevalobjv] ne ""} {
-	apply [list {cmdL cmdS} [aligned-times-body {testevalobjv 0 clock {*}$cmdL} {testevalobjv 0 clock {*}$cmdS}]] $cmdL $cmdS
-    } else {
-	apply [list {cmdL cmdS} [aligned-times-body {clock {*}$cmdL} {clock {*}$cmdS}]] $cmdL $cmdS
-    }
-}
-proc ::testClock::aligned-times {cmdL cmdS} {
-    # apply script with compiled invocation of commands:
-    apply [list {cmdL cmdS} [aligned-times-body "clock $cmdL" "clock $cmdS"]] $cmdL $cmdS
-}
-# used in test clock-35.*:
-lassign [::testClock::aligned-times seconds milliseconds] ::testClock::startS ::testClock::startMS
 
 # Test some of the basics of [clock format]
 
