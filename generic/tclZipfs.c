@@ -247,6 +247,9 @@ enum ZipCompressionMethods {
 #define ZIP_MAX_FILE_SIZE		INT_MAX
 #define DEFAULT_WRITE_MAX_SIZE		ZIP_MAX_FILE_SIZE
 
+// Size of buffers used for copying files. A power of two.
+#define COPY_BUFFER_SIZE		4096
+
 /*
  * Mutex to protect localtime(3) when no reentrant version available.
  */
@@ -2986,7 +2989,7 @@ ZipAddFile(
     long long headerStartOffset, dataStartOffset, dataEndOffset;
     int mtime = 0, isNew, compMeth;
     unsigned long keys[3], keys0[3];
-    char obuf[4096];
+    char obuf[COPY_BUFFER_SIZE];
 
     /*
      * Trim leading '/' characters. If this results in an empty string, we've
@@ -3478,7 +3481,7 @@ ZipFSMkZipOrImg(
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
     Tcl_HashTable fileHash;
-    char *strip = NULL, *pw = NULL, passBuf[264], buf[4096];
+    char *strip = NULL, *pw = NULL, passBuf[264], buf[COPY_BUFFER_SIZE];
     unsigned char *start = (unsigned char *) buf;
     unsigned char *end = start + sizeof(buf);
 
@@ -3767,7 +3770,7 @@ CopyImageFile(
     Tcl_WideInt i, k;
     Tcl_Size m, n;
     Tcl_Channel in;
-    char buf[4096];
+    char buf[COPY_BUFFER_SIZE];
     const char *errMsg;
 
     Tcl_ResetResult(interp);
