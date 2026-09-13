@@ -36289,6 +36289,18 @@ test clock-33.8a {clock test, microsecond timing test} {
     }
     expr {($end > $start) && (($end - $start) <= 60000)}
 } {1}
+test clock-33.8m {clock test, monotonic timing test} {
+    # This test can fail on a system that is so heavily loaded that
+    # the test takes >60 ms to run.
+    if {[lindex [timerate {
+        set start [clock monotonic]
+        timerate {} 10; # short but precise busy wait
+        set end [clock monotonic]
+    } 1 1] 0] > 60000} {
+        ::tcltest::Skip "timing issue"
+    }
+    expr {($end > $start) && (($end - $start) <= 60000)}
+} {1}
 
 foreach {suf} {{} -noncmpl} {
   test clock-33.9$suf {clock clicks test, millis align with seconds} {
@@ -36314,6 +36326,15 @@ foreach {suf} {{} -noncmpl} {
   test clock-33.11a$suf {clock test, millis align with micros} {
     lassign [::testClock::aligned-times$suf milliseconds microseconds] t1 t2
     expr { $t2 / 1000 == $t1 }
+  } {1}
+  test clock-33.12$suf {clock test, monotonic ticks in sync with millis} {
+    # calc alignment to milliseconds, which would have tolerance 1ms due
+    # to two different microseconds parts of milliseconds base and monotonic base;
+    # also it'd help to avoid possible failures by time drifts
+    lassign [::testClock::aligned-times milliseconds monotonic] t1 t2
+    set time [expr {$t1 - $t2 / 1000}]; # alignment (~ 1ms precise)
+    lassign [::testClock::aligned-times$suf milliseconds monotonic] t1 t2
+    expr { abs($t2 / 1000 + $time - $t1) <= 1 }
   } {1}
 }
 
@@ -38760,8 +38781,9 @@ test clock-68.2 {Leap second, "24:00", regression test (validity check)} -constr
 } -result {}
 
 test clock-69.1 {clock monotonic syntax} -body {
-    clock monotonic
-} -returnCodes ok -match glob -result *
+    string is entier [expr {[clock monotonic] + 0}]
+    list [string is entier [set time [expr {[clock monotonic] + 0}]]] $time
+} -match glob -result {1 *}
 
 test clock-69.2 {clock monotonic syntax} -body {
     clock monotonic junk
@@ -38769,10 +38791,10 @@ test clock-69.2 {clock monotonic syntax} -body {
 
 test clock-69.3 {clock monotonic syntax byte compiled} -body {
     proc clockmonotonic {} {clock monotonic}
-    clockmonotonic
+    list [string is entier [set time [expr {[clockmonotonic] + 0}]]] $time
 } -cleanup {
     rename clockmonotonic {}
-} -returnCodes ok -match glob -result *
+} -match glob -result {1 *}
 
 test clock-69.4 {clock monotonic syntax byte compiled} -body {
     proc clockmonotonic {} {clock monotonic junk}
