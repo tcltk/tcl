@@ -6459,7 +6459,7 @@ TclZipfsInitInterp(
 	"    } on error {} {\n"
 	"        return $result\n"
 	"    }\n"
-	"    foreach file [concat $normal $hidden] {\n"
+	"    foreach file [::list {*}$normal {*}$hidden] {\n"
 	"        if {[file tail $file] in {. ..}} {\n"
 	"            continue\n"
 	"        }\n"
