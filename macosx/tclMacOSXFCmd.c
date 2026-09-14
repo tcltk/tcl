@@ -410,6 +410,14 @@ TclMacOSXCopyFileAttributes(
     const Tcl_StatBuf *statBufPtr)
 				/* Stat info for source file */
 {
+    /*
+     * FIFOs do not have attributes, moreover calling copyfile() 
+     * could cause a blocking deadlock in the macOS VFS layer,
+     * see [7b4a819535231639].
+     */
+    if (S_ISFIFO(statBufPtr->st_mode)) {
+	return TCL_OK;
+    }
     if (MayUseCopyFile()) {
 #ifdef HAVE_COPYFILE
 	if (0 == copyfile(src, dst, NULL, (S_ISLNK(statBufPtr->st_mode)
