@@ -1268,11 +1268,15 @@ test winFCmd-16.8 {Windows file normalization} -constraints {win} -body {
 test winFCmd-16.9 {Windows file normalization} -constraints {win} -body {
     file norm /bar/foo
 } -result "${d}:/bar/foo"
-if {$d eq "C"} { set dd "D" } else { set dd "C" }
 test winFCmd-16.10 {Windows file normalization} -constraints {
-    win notInCIenv
+    win notInCIenv nonPortable
 } -setup {
-    cd ${dd}:
+    apply {d {
+	# Try to find a native volume that isn't the current one.
+	# NB: This can still fail; it's a proper wild west out there.
+	if {$d eq "C"} { set dd "D" } else { set dd "C" }
+	cd ${dd}:
+    }} $d
 } -cleanup {
     cd $pwd
 } -body {
