@@ -1408,7 +1408,7 @@ test winFCmd-17.1 {Windows bad permissions cd} -constraints win -body {
 } -result "permission denied"
 
 cd $pwd
-unset d dd pwd
+unset d pwd
 
 test winFCmd-18.1 {Windows reserved path names} -constraints win -body {
     file pathtype com1
