@@ -1237,15 +1237,10 @@ proc tcltest::DefineConstraintInitializers {} {
     # are not documented.  They have been replaced with equivalent 'win'
     # constraints.
 
-    ConstraintInitializer unixOnly {expr {
-	    [string equal $::tcl_platform(platform) unix] &&
-		![string equal $::tcl_platform(os) Darwin]
-	}}
-    ConstraintInitializer macOnly {expr {
-	    [string equal $::tcl_platform(platform) macintosh] ||
-	    ([string equal $::tcl_platform(platform) unix] &&
-		[string equal $::tcl_platform(os) Darwin])
-	}}
+    ConstraintInitializer unixOnly \
+	    {string equal $::tcl_platform(platform) unix}
+    ConstraintInitializer macOnly \
+	    {string equal $::tcl_platform(platform) macintosh}
     ConstraintInitializer pcOnly \
 	    {string equal $::tcl_platform(platform) windows}
     ConstraintInitializer winOnly \

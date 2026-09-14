@@ -399,6 +399,17 @@ TclMacOSXCopyFileAttributes(
     const Tcl_StatBuf *statBufPtr)
 				/* Stat info for source file */
 {
+    /*
+     * copyfile() only handles regular files, directories and links (ENOTSUP
+     * otherwise), but recent macOS versions first open() dst, which never
+     * returns if dst is a fifo. [7b4a819535]
+     */
+
+    if (!S_ISREG(statBufPtr->st_mode) && !S_ISDIR(statBufPtr->st_mode)
+	    && !S_ISLNK(statBufPtr->st_mode)) {
+	return TCL_OK;
+    }
+
     if (MayUseCopyFile()) {
 #ifdef HAVE_COPYFILE
 	if (0 == copyfile(src, dst, NULL, (S_ISLNK(statBufPtr->st_mode)
