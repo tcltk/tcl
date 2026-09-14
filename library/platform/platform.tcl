@@ -243,6 +243,12 @@ proc ::platform::patterns {id} {
 		}
 	    }
 	}
+	linux*-* {
+	    if {[regexp {linux-(.*)-(.*)} $id -> c cpu]
+		    && ($c ne "unknown")} {
+		lappend res linux-unknown-${cpu}
+	    }
+	}
 	macosx-powerpc {
 	    lappend res macosx-universal
 	}
