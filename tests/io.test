@@ -2932,7 +2932,7 @@ test io-29.33b {TIP#398, no implicit flush of nonblocking on exit} {exec} {
 	close $ff
 	expr {($t2-$t1)/2000 ? $t2-$t1 : 0}
 } 0
-test io-29.34 {Tcl_Close, async flush on close, using sockets} {socket tempNotMac fileevent} {
+test io-29.34 {Tcl_Close, async flush on close, using sockets} {socket fileevent} {
     variable c 0
     variable x running
     set l abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz
@@ -2969,7 +2969,7 @@ test io-29.34 {Tcl_Close, async flush on close, using sockets} {socket tempNotMa
     vwait [namespace which -variable x]
     set c
 } 9000
-test io-29.35 {Tcl_Close vs fileevent vs multiple interpreters} {socket tempNotMac fileevent} {
+test io-29.35 {Tcl_Close vs fileevent vs multiple interpreters} {socket fileevent} {
     # On Mac, this test screws up sockets such that subsequent tests using port 2828
     # either cause errors or panic().
 
@@ -3012,7 +3012,7 @@ test io-29.35 {Tcl_Close vs fileevent vs multiple interpreters} {socket tempNotM
 } ""
 
 test io-29.36.1 {gets on translation auto with "\r" in QA communication mode, possible regression, bug [b3977d199b]} -constraints {
-    socket tempNotMac fileevent
+    socket fileevent
 } -setup {
     set s [open "|[list [interpreter] << {
     proc accept {so args} {
@@ -3057,7 +3057,7 @@ test io-29.36.1 {gets on translation auto with "\r" in QA communication mode, po
     unset -nocomplain s c port t q
 } -result [list {cr lf} "really client?" yes {auto lf} "really client?" yes]
 test io-29.36.2 {gets on translation auto with "\r\n" in different buffers, bug [b3977d199b]} -constraints {
-    socket tempNotMac fileevent
+    socket fileevent
 } -setup {
     set s [socket -server [namespace code accept] -myaddr 127.0.0.1 0]
     set c {}

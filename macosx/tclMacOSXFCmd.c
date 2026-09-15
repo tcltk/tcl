@@ -4,7 +4,7 @@
  *	This file implements the MacOSX specific portion of file manipulation
  *	subcommands of the "file" command.
  *
- * Copyright (c) 2003-2007 Daniel A. Steffen <das@users.sourceforge.net>
+ * Copyright © 2003-2007 Daniel A. Steffen <das@users.sourceforge.net>
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -84,11 +84,11 @@ static int		SetOSTypeFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
 static void		UpdateStringOfOSType(Tcl_Obj *objPtr);
 
 static const Tcl_ObjType tclOSTypeType = {
-    "osType",			/* name */
-    NULL,			/* freeIntRepProc */
-    NULL,			/* dupIntRepProc */
-    UpdateStringOfOSType,	/* updateStringProc */
-    SetOSTypeFromAny		/* setFromAnyProc */
+    "osType",
+    NULL,			// FreeIntRep
+    NULL,			// DupIntRep
+    UpdateStringOfOSType,
+    SetOSTypeFromAny
 };
 
 enum {
@@ -97,7 +97,7 @@ enum {
 
 #define kFinfoIsInvisible	(OSSwapHostToBigConstInt16(kIsInvisible))
 
-typedef	struct finderinfo {
+typedef struct finderinfo {
     u_int32_t type;
     u_int32_t creator;
     u_int16_t fdFlags;
