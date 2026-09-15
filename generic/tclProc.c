@@ -2164,7 +2164,7 @@ TclProcCleanupProc(
 	localPtr = nextPtr;
     }
 
-    if ( procPtr->cmdPtr && (procPtr->flags & PROC_CMD_OWNED)
+    if ( (procPtr->flags & PROC_CMD_OWNED) && procPtr->cmdPtr
       && procPtr->cmdPtr->refCount-- <= 1
     ) {
 	/* cmdPtr owned by procPtr (lambda) */
