@@ -17,6 +17,7 @@ to the userbase.
  - [Windows: busy loop when conhost process is killed](https://core.tcl-lang.org/tcl/tktview/f10d91)
  - [glob -dir . returns corrupted entries in zipfs](https://core.tcl-lang.org/tcl/tktview/4676f5)
  - [--without-tzdata on windows](https://core.tcl-lang.org/tcl/tktview/4bd630)
+ - [hang in fcopy on macOS](https://core.tcl-lang.org/tcl/tktview/7b4a81)
 
 # Updated bundled packages, libraries, standards, data
  - platform 1.1.1
