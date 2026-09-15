@@ -264,6 +264,7 @@ namespace eval tcltests::ucd {
 		lappend graphemeBreaksData $record
 	    }
 	}
+	close $fd
     }
 
     # Returns the test vectors for graphemes as a list of triples comprising
