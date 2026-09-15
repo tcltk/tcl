@@ -546,9 +546,9 @@ test event-11.5 {Tcl_VwaitCmd procedure: round robin scheduling, 2 sources} -set
 	puts $s foobar
 	close $s
     }
-    set s1 [socket -server accept -myaddr 127.0.0.1 0]
+    set s1 [socket -server accept -myaddr $::tcltest_ipv4 0]
     after 1000
-    set s2 [socket 127.0.0.1 [lindex [fconfigure $s1 -sockname] 2]]
+    set s2 [socket $::tcltest_ipv4 [lindex [fconfigure $s1 -sockname] 2]]
     close $s1
     set x 0
     set y 0

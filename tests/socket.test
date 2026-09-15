@@ -131,7 +131,7 @@ set lat1 [expr {($t2-$t1)*2}]; # doubled as a safety margin
 # additional [after]s in some tests that are not needed on systems that fail
 # immediately.
 set t1 [clock milliseconds]
-catch {socket 127.0.0.1 [randport]}
+catch {socket $::tcltest_ipv4 [randport]}
 set t2 [clock milliseconds]
 set lat2 [expr {($t2-$t1)*3}]
 
@@ -167,10 +167,10 @@ if 0 {
     }
 }
 
-foreach {af localhost} {
-    inet 127.0.0.1
-    inet6 ::1
-} {
+foreach {af localhost} [list \
+    inet $::tcltest_ipv4 \
+    inet6 $::tcltest_ipv6 1 \
+] {
     # Check if the family is supported and set the constraint accordingly
     testConstraint supported_$af [expr {![catch {socket -server foo -myaddr $localhost 0} sock]}]
     catch {close $sock}
@@ -179,15 +179,15 @@ foreach {af localhost} {
 set sock [socket -server foo -myaddr localhost 0]
 set sockname [fconfigure $sock -sockname]
 close $sock
-testConstraint localhost_v4 [expr {"127.0.0.1" in $sockname}]
-testConstraint localhost_v6 [expr {"::1" in $sockname}]
+testConstraint localhost_v4 [expr {"$::tcltest_ipv4" in $sockname}]
+testConstraint localhost_v6 [expr {"$::tcltest_ipv6" in $sockname}]
 
 
-foreach {af localhost} {
-    any 127.0.0.1
-    inet 127.0.0.1
-    inet6 ::1
-} {
+foreach {af localhost} [list \
+    any $::tcltest_ipv4 \
+    inet $::tcltest_ipv4 \
+    inet6 $::tcltest_ipv6 \
+] {
     if {![testConstraint supported_$af]} {
 	continue
     }
@@ -1060,7 +1060,7 @@ test socket_$af-7.2 {testing socket specific options} -setup {
     set p [fconfigure $s -sockname]
     close $s
     list [llength $p] \
-	    [regexp {^(127\.0\.0\.1|0\.0\.0\.0|::1)$} [lindex $p 0]] \
+	    [string match $localhost [lindex $p 0]] \
 	    [expr {[lindex $p 2] == $listen}]
 } -cleanup {
     close $f
@@ -2060,7 +2060,7 @@ test socket-14.0.0 {[socket -async] when server only listens on IPv4} \
 	    close $s
 	    set x ok
 	}
-	set server [socket -server accept -myaddr 127.0.0.1 0]
+	set server [socket -server accept -myaddr $::tcltest_ipv4 0]
 	set port [lindex [fconfigure $server -sockname] 2]
     } -body {
 	set client [socket -async localhost $port]
@@ -2082,7 +2082,7 @@ test socket-14.0.1 {[socket -async] when server only listens on IPv6} \
 	    close $s
 	    set x ok
 	}
-	set server [socket -server accept -myaddr ::1 0]
+	set server [socket -server accept -myaddr $::tcltest_ipv6 0]
 	set port [lindex [fconfigure $server -sockname] 2]
     } -body {
 	set client [socket -async localhost $port]
@@ -2147,7 +2147,7 @@ test socket-14.3 {[socket -async] when server only listens on IPv6} \
 	    close $s
 	    set x ok
 	}
-	set server [socket -server accept -myaddr ::1 0]
+	set server [socket -server accept -myaddr $::tcltest_ipv6 0]
 	set port [lindex [fconfigure $server -sockname] 2]
     } -body {
 	set client [socket -async localhost $port]
@@ -2193,7 +2193,7 @@ test socket-14.5 {[socket -async] which fails before any connect() can be made} 
     -constraints {socket supported_inet notWine} \
     -body {
 	# address from rfc5737
-	socket -async -myaddr 192.0.2.42 127.0.0.1 [randport]
+	socket -async -myaddr 192.0.2.42 $::tcltest_ipv4 [randport]
     } \
     -returnCodes 1 \
     -result {couldn't open socket: cannot assign requested address}
@@ -2206,7 +2206,7 @@ test socket-14.6.0 {[socket -async] with no event loop and server listening on I
 	    close $s
 	    set x ok
 	}
-	set server [socket -server accept -myaddr 127.0.0.1 0]
+	set server [socket -server accept -myaddr $::tcltest_ipv4 0]
 	set port [lindex [fconfigure $server -sockname] 2]
 	set x ""
     } \
@@ -2237,7 +2237,7 @@ test socket-14.6.1 {[socket -async] with no event loop and server listening on I
 	    close $s
 	    set x ok
 	}
-	set server [socket -server accept -myaddr ::1 0]
+	set server [socket -server accept -myaddr $::tcltest_ipv6 0]
 	set port [lindex [fconfigure $server -sockname] 2]
 	set x ""
     } \
@@ -2262,14 +2262,14 @@ test socket-14.6.1 {[socket -async] with no event loop and server listening on I
 test socket-14.7.0 {pending [socket -async] and blocking [gets], server is IPv4} \
     -constraints {socket supported_inet localhost_v4} \
     -setup {
-	makeFile {
+	makeFile [string map [list @@TCLTEST_IPV4@@ $::tcltest_ipv4] {
 	    fileevent stdin readable exit
-	    set server [socket -server accept -myaddr 127.0.0.1 0]
+	    set server [socket -server accept -myaddr @@TCLTEST_IPV4@@ 0]
 	    proc accept {s h p} {puts $s ok; close $s; set ::x 1}
 	    puts [lindex [fconfigure $server -sockname] 2]
 	    flush stdout
 	    vwait x
-	} script
+	}] script
 	set fd [open |[list [interpreter] script] RDWR]
 	set port [gets $fd]
     } -body {
@@ -2283,14 +2283,14 @@ test socket-14.7.0 {pending [socket -async] and blocking [gets], server is IPv4}
 test socket-14.7.1 {pending [socket -async] and blocking [gets], server is IPv6} \
     -constraints {socket supported_inet6 localhost_v6} \
     -setup {
-	makeFile {
+	makeFile [string map [list @@TCLTEST_IPV6@@ $::tcltest_ipv6] {
 	    fileevent stdin readable exit
-	    set server [socket -server accept -myaddr ::1 0]
+	    set server [socket -server accept -myaddr @@TCLTEST_IPV6@@ 0]
 	    proc accept {s h p} {puts $s ok; close $s; set ::x 1}
 	    puts [lindex [fconfigure $server -sockname] 2]
 	    flush stdout
 	    vwait x
-	} script
+	}] script
 	set fd [open |[list [interpreter] script] RDWR]
 	set port [gets $fd]
     } -body {
@@ -2313,14 +2313,14 @@ test socket-14.7.2 {pending [socket -async] and blocking [gets], no listener} \
 test socket-14.8.0 {pending [socket -async] and nonblocking [gets], server is IPv4} \
     -constraints {socket supported_inet localhost_v4} \
     -setup {
-	makeFile {
+	makeFile [string map [list @@TCLTEST_IPV4@@ $::tcltest_ipv4] {
 	    fileevent stdin readable exit
-	    set server [socket -server accept -myaddr 127.0.0.1 0]
+	    set server [socket -server accept -myaddr @@TCLTEST_IPV4@@ 0]
 	    proc accept {s h p} {puts $s ok; close $s; set ::x 1}
 	    puts [lindex [fconfigure $server -sockname] 2]
 	    flush stdout
 	    vwait x
-	} script
+	}] script
 	set fd [open |[list [interpreter] script] RDWR]
 	set port [gets $fd]
     } -body {
@@ -2339,14 +2339,14 @@ test socket-14.8.0 {pending [socket -async] and nonblocking [gets], server is IP
 test socket-14.8.1 {pending [socket -async] and nonblocking [gets], server is IPv6} \
     -constraints {socket supported_inet6 localhost_v6} \
     -setup {
-	makeFile {
+	makeFile [string map [list @@TCLTEST_IPV6@@ $::tcltest_ipv6] {
 	    fileevent stdin readable exit
-	    set server [socket -server accept -myaddr ::1 0]
+	    set server [socket -server accept -myaddr @@TCLTEST_IPV6@@ 0]
 	    proc accept {s h p} {puts $s ok; close $s; set ::x 1}
 	    puts [lindex [fconfigure $server -sockname] 2]
 	    flush stdout
 	    vwait x
-	} script
+	}] script
 	set fd [open |[list [interpreter] script] RDWR]
 	set port [gets $fd]
     } -body {
@@ -2378,15 +2378,15 @@ test socket-14.8.2 {pending [socket -async] and nonblocking [gets], no listener}
 test socket-14.9.0 {pending [socket -async] and blocking [puts], server is IPv4} \
     -constraints {socket supported_inet localhost_v4} \
     -setup {
-	makeFile {
+	makeFile [string map [list @@TCLTEST_IPV4@@ $::tcltest_ipv4] {
 	    fileevent stdin readable exit
-	    set server [socket -server accept -myaddr 127.0.0.1 0]
+	    set server [socket -server accept -myaddr @@TCLTEST_IPV4@@ 0]
 	    proc accept {s h p} {set ::x $s}
 	    puts [lindex [fconfigure $server -sockname] 2]
 	    flush stdout
 	    vwait x
 	    puts [gets $x]
-	} script
+	}] script
 	set fd [open |[list [interpreter] script] RDWR]
 	set port [gets $fd]
     } -body {
@@ -2402,15 +2402,15 @@ test socket-14.9.0 {pending [socket -async] and blocking [puts], server is IPv4}
 test socket-14.9.1 {pending [socket -async] and blocking [puts], server is IPv6} \
     -constraints {socket supported_inet6 localhost_v6} \
     -setup {
-	makeFile {
+	makeFile [string map [list @@TCLTEST_IPV6@@ $::tcltest_ipv6] {
 	    fileevent stdin readable exit
-	    set server [socket -server accept -myaddr ::1 0]
+	    set server [socket -server accept -myaddr @@TCLTEST_IPV6@@ 0]
 	    proc accept {s h p} {set ::x $s}
 	    puts [lindex [fconfigure $server -sockname] 2]
 	    flush stdout
 	    vwait x
 	    puts [gets $x]
-	} script
+	}] script
 	set fd [open |[list [interpreter] script] RDWR]
 	set port [gets $fd]
     } -body {
@@ -2426,15 +2426,15 @@ test socket-14.9.1 {pending [socket -async] and blocking [puts], server is IPv6}
 test socket-14.10.0 {pending [socket -async] and nonblocking [puts], server is IPv4} \
     -constraints {socket supported_inet localhost_v4} \
     -setup {
-	makeFile {
+	makeFile [string map [list @@TCLTEST_IPV4@@ $::tcltest_ipv4] {
 	    fileevent stdin readable exit
-	    set server [socket -server accept -myaddr 127.0.0.1 0]
+	    set server [socket -server accept -myaddr @@TCLTEST_IPV4@@ 0]
 	    proc accept {s h p} {set ::x $s}
 	    puts [lindex [fconfigure $server -sockname] 2]
 	    flush stdout
 	    vwait x
 	    puts [gets $x]
-	} script
+	}] script
 	set fd [open |[list [interpreter] script] RDWR]
 	set port [gets $fd]
     } -body {
@@ -2453,15 +2453,15 @@ test socket-14.10.0 {pending [socket -async] and nonblocking [puts], server is I
 test socket-14.10.1 {pending [socket -async] and nonblocking [puts], server is IPv6} \
     -constraints {socket supported_inet6 localhost_v6} \
     -setup {
-	makeFile {
+	makeFile [string map [list @@TCLTEST_IPV6@@ $::tcltest_ipv6] {
 	    fileevent stdin readable exit
-	    set server [socket -server accept -myaddr ::1 0]
+	    set server [socket -server accept -myaddr @@TCLTEST_IPV6@@ 0]
 	    proc accept {s h p} {set ::x $s}
 	    puts [lindex [fconfigure $server -sockname] 2]
 	    flush stdout
 	    vwait x
 	    puts [gets $x]
-	} script
+	}] script
 	set fd [open |[list [interpreter] script] RDWR]
 	set port [gets $fd]
     } -body {
@@ -2623,7 +2623,7 @@ test socket-14.19 {tip 456 -- introduce the -reuseport option} \
 
 set num 0
 
-set x {localhost {socket} 127.0.0.1 {supported_inet} ::1 {supported_inet6}}
+set x [list localhost {socket} $::tcltest_ipv4 {supported_inet} $::tcltest_ipv6 {supported_inet6}]
 set resultok {-result "sock*" -match glob}
 set resulterr {
     -result {couldn't open socket: connection refused}
@@ -2634,19 +2634,16 @@ foreach {servip sc} $x {
 	set constraints socket
 	lappend constraints $sc $cc
 	set result $resulterr
-	switch -- [lsort -unique [list $servip $cliip]] {
-	    localhost - 127.0.0.1 - ::1 {
+	set combination [lsort -unique [list $servip $cliip]]
+	if {[llength $combination] == 1} {
+	    set result $resultok
+	} elseif {$combination == [lsort [list $::tcltest_ipv4 "localhost"]]} {
+	    if {[testConstraint localhost_v4]} {
 		set result $resultok
 	    }
-	    {127.0.0.1 localhost} {
-		if {[testConstraint localhost_v4]} {
-		    set result $resultok
-		}
-	    }
-	    {::1 localhost} {
-		if {[testConstraint localhost_v6]} {
-		    set result $resultok
-		}
+	} elseif {$combination == [lsort [list $::tcltest_ipv6 localhost]]} {
+	    if {[testConstraint localhost_v6]} {
+		set result $resultok
 	    }
 	}
 	test socket-15.1.$num "Connect to $servip from $cliip" \

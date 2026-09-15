@@ -20,6 +20,31 @@ if {[singleProcess]} {
     interp debug {} -frame 1
 }
 
+configure -load {
+    catch {
+        set s [socket -server {} 0]
+        foreach {host addr port} [chan configure $s -sockname] {
+            if {[string match "*::*" $addr]} {
+                set ::tcltest_ipv6 $addr
+            } else {
+                set ::tcltest_ipv4 $addr
+            }
+        }
+        chan close $s
+    }
+
+    foreach {var key def} {::tcltest_ipv4 TCLTEST_IPV4 "127.0.0.1"
+                           ::tcltest_ipv6 TCLTEST_IPV6 "::1"} {
+        if {![info exists $var]} {
+            if {[info exists ::env($key)]} {
+                set $var $::env($key)
+            } else {
+                set $var $def
+            }
+        }
+    }
+}
+
 set ErrorOnFailures [info exists env(ERROR_ON_FAILURES)]
 unset -nocomplain env(ERROR_ON_FAILURES)
 if {[runAllTests] && $ErrorOnFailures} {exit 1}
