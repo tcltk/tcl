@@ -1848,9 +1848,9 @@ TclGetInt4AtPtr(
 {
     return (int) (
 	(TclGetUInt1AtPtr(p) << 24) |
-	(p[1] << 16) |
-	(p[2] <<  8) |
-	(p[3]      ));
+	((unsigned int)p[1] << 16) |
+	((unsigned int)p[2] <<  8) |
+	((unsigned int)p[3]      ));
 }
 
 static inline unsigned
@@ -1858,10 +1858,10 @@ TclGetUInt4AtPtr(
     const unsigned char *p)
 {
     return (unsigned) (
-	(p[0] << 24) |
-	(p[1] << 16) |
-	(p[2] <<  8) |
-	(p[3]      ));
+	((unsigned int)p[0] << 24) |
+	((unsigned int)p[1] << 16) |
+	((unsigned int)p[2] <<  8) |
+	((unsigned int)p[3]      ));
 }
 
 /*
