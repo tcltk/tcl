@@ -2806,7 +2806,7 @@ test chan-io-29.34 {Tcl_Chan Close, async flush on chan close, using sockets} -s
 	    chan puts $s $l
 	}
     }
-} -constraints {socket tempNotMac fileevent notWinCI} -body {
+} -constraints {socket fileevent notWinCI} -body {
     proc accept {s a p} {
 	variable x
 	chan event $s readable [namespace code [list readit $s]]
@@ -2837,7 +2837,7 @@ test chan-io-29.34 {Tcl_Chan Close, async flush on chan close, using sockets} -s
 test chan-io-29.35 {Tcl_Chan Close vs chan event vs multiple interpreters} -setup {
     catch {interp delete x}
     catch {interp delete y}
-} -constraints {socket tempNotMac fileevent} -body {
+} -constraints {socket fileevent} -body {
     # On Mac, this test screws up sockets such that subsequent tests using
     # port 2828 either cause errors or panic().
     interp create x
