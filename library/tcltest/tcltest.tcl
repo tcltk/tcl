@@ -3529,70 +3529,74 @@ proc tcltest::threadReap {} {
 
 # tcltest::DiscoverLocalAddresses --
 #
-# 	Find the localhost addresses for the IPv4 and IPv6 families.
+#	Find the localhost addresses for the IPv4 and IPv6 families.
 #
-# 	We use the following heuristics to try to determine the best address
-# 	
-# 	1. contents of the TCLTEST_IPV4 and TCLTEST_IPV6 environment variables
-# 	2. addresses on a server socket opened without a -myaddr parameter
-# 	3. 127.0.0.1 and ::1
+#	We use the following heuristics to try to determine the best address
+#
+#	1. contents of the TCLTEST_IPV4 and TCLTEST_IPV6 environment variables
+#	2. addresses on a server socket opened with -myaddr localhost
+#	3. addresses on a server socket opened without a -myaddr parameter
+#          (can resolve to 0.0.0.0 and ::, which may be affected by firewalls
+#	    more aggressively than 127.0.0.1 and ::1)
+# 	4. 127.0.0.1 and ::1
 #
 # Arguments:
-# 	none.
+#	none.
 #
 # Results:
-# 	none.
+#	none.
 #
 # Side Effects:
-# 	Sets the namespace variables ipv4Address and ipv6Address on the first
-# 	call
+#	Rewrites localIPv4Address and localIPv6Address on the first call.
 #
 
 proc tcltest::DiscoverLocalAddresses {} {
-    variable ipv4Address
-    variable ipv6Address
-
-    if {[info exists ipv4Address] && [info exists ipv6Address]} {
-	return
-    }
-
+    # phase 1:
     if {[info exists ::env(TCLTEST_IPV4)]} {
-	set ipv4Address $::env(TCLTEST_IPV4)
+	set ipv4 $::env(TCLTEST_IPV4)
     }
-
     if {[info exists ::env(TCLTEST_IPV6)]} {
-	set ipv6Address $::env(TCLTEST_IPV6)
+	set ipv6 $::env(TCLTEST_IPV6)
     }
-
-    if {![info exists ipv4Address] || ![info exists ipv6Address]} {
-	catch {
-	    set s [socket -server {} 0]
-	    foreach {host addr port} [chan configure $s -sockname] {
-		if {[string match "*::*" $addr]} {
-		    if {![info exists ipv6Address]} {
-			set ipv6Address $addr
-		    }
-		} else {
-		    if {![info exists ipv4Address]} {
-			set ipv4Address $addr
+    if {![info exists ipv4] || ![info exists ipv6]} {
+    	# phase 2 & 3:
+	foreach opts {
+	    {-myaddr localhost}
+	    {}
+	} {
+	    catch {
+		set s [socket {*}$opts -server {} 0]
+		foreach {addr host port} [chan configure $s -sockname] {
+		    if {[string match "*:*" $addr]} {
+			if {![info exists ipv6]} {
+			    set ipv6 $addr
+			}
+		    } else {
+			if {![info exists ipv4]} {
+			    set ipv4 $addr
+			}
 		    }
 		}
+		chan close $s
 	    }
-	    chan close $s
+	    if {[info exists ipv4] && [info exists ipv6]} break
 	}
-
-	if {![info exists ipv4Address]} {
-	    set ipv4Address {127.0.0.1}
+	# fallback to phase 4:
+	if {![info exists ipv4]} {
+	    set ipv4 {127.0.0.1}
 	}
-	if {![info exists ipv6Address]} {
-	    set ipv6Address {::1}
+	if {![info exists ipv6]} {
+	    set ipv6 {::1}
 	}
     }
+    # set constants to procs:
+    proc localIPv4Address {} [list return $ipv4]
+    proc localIPv6Address {} [list return $ipv6]
 }
 
 # tcltest::localIPv4Address --
 #
-# 	Get the local address for the IPv4 family
+#	Get the local address for the IPv4 family
 #
 # Arguments:
 #	none.
@@ -3601,21 +3605,16 @@ proc tcltest::DiscoverLocalAddresses {} {
 #	The address
 #
 # Side Effects:
-# 	Sets the namespace variables ipv4Address and ipv6Address on the first
-# 	call
+#	May increase compiler epoch after first call.
 #
 proc tcltest::localIPv4Address {} {
-    variable ipv4Address
-    
-    if {![info exists ipv4Address]} {
-	DiscoverLocalAddresses
-    }
-    return $ipv4Address
+    DiscoverLocalAddresses
+    localIPv4Address
 }
 
 # tcltest::localIPv6Address --
 #
-# 	Get the local address for the IPv6 family
+#	Get the local address for the IPv6 family
 #
 # Arguments:
 #	none.
@@ -3624,16 +3623,11 @@ proc tcltest::localIPv4Address {} {
 #	The address
 #
 # Side Effects:
-# 	Sets the namespace variables ipv4Address and ipv6Address on the first
-# 	call
+#	May increase compiler epoch after first call.
 #
 proc tcltest::localIPv6Address {} {
-    variable ipv6Address
-    
-    if {![info exists ipv6Address]} {
-	DiscoverLocalAddresses
-    }
-    return $ipv6Address
+    DiscoverLocalAddresses
+    localIPv6Address
 }
 
 # Initialize the constraints and set up command line arguments
