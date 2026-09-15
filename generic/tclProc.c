@@ -467,6 +467,7 @@ TclCreateProc(
 	procPtr = (Proc *)Tcl_Alloc(sizeof(Proc));
 	procPtr->iPtr = iPtr;
 	procPtr->refCount = 1;
+	procPtr->cmdPtr = NULL;
 	procPtr->bodyPtr = bodyPtr;
 	procPtr->numArgs = 0;	/* Actual argument count is set below. */
 	procPtr->numCompiledLocals = 0;
@@ -2187,7 +2188,7 @@ TclProcCleanupProc(
 	localPtr = nextPtr;
     }
 
-    if ( procPtr->cmdPtr && (procPtr->flags & PROC_CMD_OWNED)
+    if ( (procPtr->flags & PROC_CMD_OWNED) && procPtr->cmdPtr
       && procPtr->cmdPtr->refCount-- <= 1
     ) {
 	/* cmdPtr owned by procPtr (lambda) */
