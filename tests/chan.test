@@ -10,7 +10,6 @@
 if {"::tcltest" ni [namespace children]} {
     package require tcltest 2.5
     namespace import -force ::tcltest::*
-    loadTestedCommands
 }
 source [file join [file dirname [info script]] tcltests.tcl]
 
@@ -203,8 +202,8 @@ test chan-16.9 {chan command: pending input subcommand} -setup {
 	chan flush $::client
     }
 
-    set ::server [socket -server chan-16.9-accept -myaddr $::tcltest_ipv4 0]
-    set ::client [socket $::tcltest_ipv4 [lindex [fconfigure $::server -sockname] 2]]
+    set ::server [socket -server chan-16.9-accept -myaddr [localIPv4Address] 0]
+    set ::client [socket [localIPv4Address] [lindex [fconfigure $::server -sockname] 2]]
     set ::chan-16.9-data [list]
     set ::chan-16.9-done 0
 } -body {

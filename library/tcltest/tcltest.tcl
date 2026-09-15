@@ -35,8 +35,9 @@ namespace eval tcltest {
 ##### Export the public tcltest procs; several categories
     #
     # Export the main functional commands that do useful things
-    namespace export cleanupTests loadTestedCommands makeDirectory \
-	makeFile removeDirectory removeFile runAllTests test
+    namespace export cleanupTests localIPv4Address localIPv6Address \
+	loadTestedCommands makeDirectory makeFile removeDirectory removeFile \
+	runAllTests test
 
     # Export configuration commands that control the functional commands
     namespace export configure customMatch errorChannel interpreter \
@@ -3524,6 +3525,115 @@ proc tcltest::threadReap {} {
 	return 1
     }
     return 0
+}
+
+# tcltest::DiscoverLocalAddresses --
+#
+# 	Find the localhost addresses for the IPv4 and IPv6 families.
+#
+# 	We use the following heuristics to try to determine the best address
+# 	
+# 	1. contents of the TCLTEST_IPV4 and TCLTEST_IPV6 environment variables
+# 	2. addresses on a server socket opened without a -myaddr parameter
+# 	3. 127.0.0.1 and ::1
+#
+# Arguments:
+# 	none.
+#
+# Results:
+# 	none.
+#
+# Side Effects:
+# 	Sets the namespace variables ipv4Address and ipv6Address on the first
+# 	call
+#
+
+proc tcltest::DiscoverLocalAddresses {} {
+    variable ipv4Address
+    variable ipv6Address
+
+    if {[info exists ipv4Address] && [info exists ipv6Address]} {
+	return
+    }
+
+    if {[info exists ::env(TCLTEST_IPV4)]} {
+	set ipv4Address $::env(TCLTEST_IPV4)
+    }
+
+    if {[info exists ::env(TCLTEST_IPV6)]} {
+	set ipv6Address $::env(TCLTEST_IPV6)
+    }
+
+    if {![info exists ipv4Address] || ![info exists ipv6Address]} {
+	catch {
+	    set s [socket -server {} 0]
+	    foreach {host addr port} [chan configure $s -sockname] {
+		if {[string match "*::*" $addr]} {
+		    if {![info exists ipv6Address]} {
+			set ipv6Address $addr
+		    }
+		} else {
+		    if {![info exists ipv4Address]} {
+			set ipv4Address $addr
+		    }
+		}
+	    }
+	    chan close $s
+	}
+
+	if {![info exists ipv4Address]} {
+	    set ipv4Address {127.0.0.1}
+	}
+	if {![info exists ipv6Address]} {
+	    set ipv6Address {::1}
+	}
+    }
+}
+
+# tcltest::localIPv4Address --
+#
+# 	Get the local address for the IPv4 family
+#
+# Arguments:
+#	none.
+#
+# Results:
+#	The address
+#
+# Side Effects:
+# 	Sets the namespace variables ipv4Address and ipv6Address on the first
+# 	call
+#
+proc tcltest::localIPv4Address {} {
+    variable ipv4Address
+    
+    if {![info exists ipv4Address]} {
+	DiscoverLocalAddresses
+    }
+    return $ipv4Address
+}
+
+# tcltest::localIPv6Address --
+#
+# 	Get the local address for the IPv6 family
+#
+# Arguments:
+#	none.
+#
+# Results:
+#	The address
+#
+# Side Effects:
+# 	Sets the namespace variables ipv4Address and ipv6Address on the first
+# 	call
+#
+proc tcltest::localIPv6Address {} {
+    variable ipv6Address
+    
+    if {![info exists ipv6Address]} {
+	DiscoverLocalAddresses
+    }
+    return $ipv6Address
 }
 
 # Initialize the constraints and set up command line arguments

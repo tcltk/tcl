@@ -121,7 +121,7 @@ proc echoPut {c sock} {
 #fileevent stdin readable {exit ;#cut}
 
 # main
-socket -server newconn -myaddr $::tcltest_ipv4 $port
+socket -server newconn -myaddr [localIPv4Address] $port
 vwait forever
 } __echo_srv__.tcl]
 

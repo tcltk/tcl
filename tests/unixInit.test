@@ -14,9 +14,6 @@ if {"::tcltest" ni [namespace children]} {
     package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
-
-loadTestedCommands
-
 unset -nocomplain path
 catch {set oldlang $env(LANG)}
 set env(LANG) C
@@ -47,7 +44,7 @@ test unixInit-1.2 {initialisation: standard channel type deduction} {unix stdio}
     # and delivers a constant string to the first client to connect to that
     # port before exiting.
     set pipe1 [open "|[list [interpreter]]" r+]
-    puts $pipe1 [string map [list @@TCLTEST_IPV4@@ $::tcltest_ipv4] {
+    puts $pipe1 [string map [list @@TCLTEST_IPV4@@ [localIPv4Address]] {
 	proc accept {channel host port} {
 	    puts $channel {puts [chan configure stdin -peername]; exit}
 	    close $channel
@@ -78,11 +75,11 @@ test unixInit-1.2 {initialisation: standard channel type deduction} {unix stdio}
     # Can't use normal comparison, as hostname varies due to some
     # installations having a messed up /etc/hosts file.
     if {
-	$::tcltest_ipv4 eq [lindex $result 0] && $port == [lindex $result 2]
+	[localIPv4Address] eq [lindex $result 0] && $port == [lindex $result 2]
     } then {
 	subst "OK"
     } else {
-	subst "Expected: `[list $::tcltest_ipv4 localhost $port]', Got `$result'"
+	subst "Expected: `[list [localIPv4Address] localhost $port]', Got `$result'"
     }
 } {OK}
 
