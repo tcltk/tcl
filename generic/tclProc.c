@@ -427,6 +427,7 @@ TclCreateProc(
 	procPtr = (Proc *)ckalloc(sizeof(Proc));
 	procPtr->iPtr = iPtr;
 	procPtr->refCount = 1;
+	procPtr->cmdPtr = NULL;
 	procPtr->bodyPtr = bodyPtr;
 	procPtr->numArgs = 0;	/* Actual argument count is set below. */
 	procPtr->numCompiledLocals = 0;
