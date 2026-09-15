@@ -9471,3 +9471,5 @@ Many code fixes to avoid overflow or undefined behavior.  Thanks chrstphrchvz.
 2026-08-28 Missing libtcl?.?.dll.a in Cygwin (nijtmans)
 
 2026-09-11 (new) Unicode version 18 (nijtmans)
+
+2026-09-15 tzdata updated to Olson's tzdata2026c (nijtmans)
