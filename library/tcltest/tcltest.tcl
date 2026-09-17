@@ -36,7 +36,7 @@ namespace eval tcltest {
     #
     # Export the main functional commands that do useful things
     namespace export cleanupTests loadTestedCommands makeDirectory \
-        makeFile removeDirectory removeFile runAllTests test
+	    makeFile removeDirectory removeFile runAllTests test
 
     # Export configuration commands that control the functional commands
     namespace export configure customMatch errorChannel interpreter \

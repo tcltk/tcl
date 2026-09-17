@@ -59,8 +59,6 @@ tcltest \- Test harness support code and utilities
 \fBtcltest::verbose \fR?\fIlevel\fR?
 
 \fBtcltest::test \fIname description optionList\fR
-\fBtcltest::localIPv4Address
-\fBtcltest::localIPv6Address
 \fBtcltest::normalizeMsg \fImsg\fR
 \fBtcltest::normalizePath \fIpathVar\fR
 \fBtcltest::workingDirectory \fR?\fIdir\fR?
@@ -443,19 +441,6 @@ Sets or returns the current working directory when the test suite is
 running.  The default value for workingDirectory is the directory in
 which the test suite was launched.  The Tcl commands \fBcd\fR and
 \fBpwd\fR are sufficient replacements.
-.\" COMMAND: localIPv4Address
-.TP
-\fBlocalIPv4Address\fR
-.
-Returns the IPv4 address of the local interface. This can be overridden by
-the environment variable \fB::env(TCLTEST_IPV4)\fR.
-.\" COMMAND: localIPv6Address
-.TP
-\fBlocalIPv6Address\fR
-.
-Returns the IPv6 address of the local interface. This can be overridden by
-the environment variable \fB::env(TCLTEST_IPV6)\fR.
-\fB
 .\" COMMAND: normalizeMsg
 .TP
 \fBnormalizeMsg \fImsg\fR
