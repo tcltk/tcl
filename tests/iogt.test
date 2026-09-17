@@ -20,6 +20,7 @@ catch [list package require -exact tcl::test [info patchlevel]]
 
 namespace eval ::tcl::test::iogt {
     namespace import ::tcltest::*
+    source [file join [file dirname [info script]] tcltests.tcl]
 
 testConstraint testchannel [llength [info commands testchannel]]
 
@@ -121,7 +122,7 @@ proc echoPut {c sock} {
 #fileevent stdin readable {exit ;#cut}
 
 # main
-socket -server newconn -myaddr [localIPv4Address] $port
+socket -server newconn -myaddr [tcltests::localIPv4Address] $port
 vwait forever
 } __echo_srv__.tcl]
 

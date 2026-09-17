@@ -17,6 +17,8 @@ if {"::tcltest" ni [namespace children]} {
     namespace import -force ::tcltest::*
 }
 
+source [file join [file dirname [info script]] tcltests.tcl]
+
 package require http 2.10
 
 # To write a separate summary for each value of ThreadLevel, set constraint ThreadLevelSummary.
@@ -157,14 +159,14 @@ if {[testConstraint needsTclTls]} {
 #   constraints needsSquidNoAuth, needsSquidAuth when testing.
 
 # Instance of Squid that does not need authentication.
-set n4host [localIPv4Address]
-set n6host [localIPv6Address]
+set n4host [tcltests::localIPv4Address]
+set n6host [tcltests::localIPv6Address]
 set n4port 3128
 set n6port 3130
 
 # Instance of Squid that needs authentication.
-set a4host [localIPv4Address]
-set a6host [localIPv6Address]
+set a4host [tcltests::localIPv4Address]
+set a6host [tcltests::localIPv6Address]
 set a4port 3129
 set a6port 3131
 

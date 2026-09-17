@@ -65,6 +65,8 @@ if {"::tcltest" ni [namespace children]} {
     namespace import -force ::tcltest::*
 }
 
+source [file join [file dirname [info script]] tcltests.tcl]
+
 ::tcltest::loadTestedCommands
 catch [list package require -exact tcl::test [info patchlevel]]
 ::tcltest::loadTestedCommands
@@ -131,7 +133,7 @@ set lat1 [expr {($t2-$t1)*2}]; # doubled as a safety margin
 # additional [after]s in some tests that are not needed on systems that fail
 # immediately.
 set t1 [clock milliseconds]
-catch {socket [localIPv4Address] [randport]}
+catch {socket [tcltests::localIPv4Address] [randport]}
 set t2 [clock milliseconds]
 set lat2 [expr {($t2-$t1)*3}]
 
@@ -168,8 +170,8 @@ if 0 {
 }
 
 foreach {af localhost} [list \
-    inet [localIPv4Address] \
-    inet6 [localIPv6Address] 1 \
+    inet [tcltests::localIPv4Address] \
+    inet6 [tcltests::localIPv6Address] 1 \
 ] {
     # Check if the family is supported and set the constraint accordingly
     testConstraint supported_$af [expr {![catch {socket -server foo -myaddr $localhost 0} sock]}]
@@ -179,14 +181,14 @@ foreach {af localhost} [list \
 set sock [socket -server foo -myaddr localhost 0]
 set sockname [fconfigure $sock -sockname]
 close $sock
-testConstraint localhost_v4 [expr {"[localIPv4Address]" in $sockname}]
-testConstraint localhost_v6 [expr {"[localIPv6Address]" in $sockname}]
+testConstraint localhost_v4 [expr {"[tcltests::localIPv4Address]" in $sockname}]
+testConstraint localhost_v6 [expr {"[tcltests::localIPv6Address]" in $sockname}]
 
 
 foreach {af localhost} [list \
-    any [localIPv4Address] \
-    inet [localIPv4Address] \
-    inet6 [localIPv6Address] \
+    any [tcltests::localIPv4Address] \
+    inet [tcltests::localIPv4Address] \
+    inet6 [tcltests::localIPv6Address] \
 ] {
     if {![testConstraint supported_$af]} {
 	continue
@@ -2060,7 +2062,7 @@ test socket-14.0.0 {[socket -async] when server only listens on IPv4} \
 	    close $s
 	    set x ok
 	}
-	set server [socket -server accept -myaddr [localIPv4Address] 0]
+	set server [socket -server accept -myaddr [tcltests::localIPv4Address] 0]
 	set port [lindex [fconfigure $server -sockname] 2]
     } -body {
 	set client [socket -async localhost $port]
@@ -2082,7 +2084,7 @@ test socket-14.0.1 {[socket -async] when server only listens on IPv6} \
 	    close $s
 	    set x ok
 	}
-	set server [socket -server accept -myaddr [localIPv6Address] 0]
+	set server [socket -server accept -myaddr [tcltests::localIPv6Address] 0]
 	set port [lindex [fconfigure $server -sockname] 2]
     } -body {
 	set client [socket -async localhost $port]
@@ -2147,7 +2149,7 @@ test socket-14.3 {[socket -async] when server only listens on IPv6} \
 	    close $s
 	    set x ok
 	}
-	set server [socket -server accept -myaddr [localIPv6Address] 0]
+	set server [socket -server accept -myaddr [tcltests::localIPv6Address] 0]
 	set port [lindex [fconfigure $server -sockname] 2]
     } -body {
 	set client [socket -async localhost $port]
@@ -2193,7 +2195,7 @@ test socket-14.5 {[socket -async] which fails before any connect() can be made} 
     -constraints {socket supported_inet notWine} \
     -body {
 	# address from rfc5737
-	socket -async -myaddr 192.0.2.42 [localIPv4Address] [randport]
+	socket -async -myaddr 192.0.2.42 [tcltests::localIPv4Address] [randport]
     } \
     -returnCodes 1 \
     -result {couldn't open socket: cannot assign requested address}
@@ -2206,7 +2208,7 @@ test socket-14.6.0 {[socket -async] with no event loop and server listening on I
 	    close $s
 	    set x ok
 	}
-	set server [socket -server accept -myaddr [localIPv4Address] 0]
+	set server [socket -server accept -myaddr [tcltests::localIPv4Address] 0]
 	set port [lindex [fconfigure $server -sockname] 2]
 	set x ""
     } \
@@ -2237,7 +2239,7 @@ test socket-14.6.1 {[socket -async] with no event loop and server listening on I
 	    close $s
 	    set x ok
 	}
-	set server [socket -server accept -myaddr [localIPv6Address] 0]
+	set server [socket -server accept -myaddr [tcltests::localIPv6Address] 0]
 	set port [lindex [fconfigure $server -sockname] 2]
 	set x ""
     } \
@@ -2262,7 +2264,7 @@ test socket-14.6.1 {[socket -async] with no event loop and server listening on I
 test socket-14.7.0 {pending [socket -async] and blocking [gets], server is IPv4} \
     -constraints {socket supported_inet localhost_v4} \
     -setup {
-	makeFile [string map [list @@TCLTEST_IPV4@@ [localIPv4Address]] {
+	makeFile [string map [list @@TCLTEST_IPV4@@ [tcltests::localIPv4Address]] {
 	    fileevent stdin readable exit
 	    set server [socket -server accept -myaddr @@TCLTEST_IPV4@@ 0]
 	    proc accept {s h p} {puts $s ok; close $s; set ::x 1}
@@ -2283,7 +2285,7 @@ test socket-14.7.0 {pending [socket -async] and blocking [gets], server is IPv4}
 test socket-14.7.1 {pending [socket -async] and blocking [gets], server is IPv6} \
     -constraints {socket supported_inet6 localhost_v6} \
     -setup {
-	makeFile [string map [list @@TCLTEST_IPV6@@ [localIPv6Address]] {
+	makeFile [string map [list @@TCLTEST_IPV6@@ [tcltests::localIPv6Address]] {
 	    fileevent stdin readable exit
 	    set server [socket -server accept -myaddr @@TCLTEST_IPV6@@ 0]
 	    proc accept {s h p} {puts $s ok; close $s; set ::x 1}
@@ -2313,7 +2315,7 @@ test socket-14.7.2 {pending [socket -async] and blocking [gets], no listener} \
 test socket-14.8.0 {pending [socket -async] and nonblocking [gets], server is IPv4} \
     -constraints {socket supported_inet localhost_v4} \
     -setup {
-	makeFile [string map [list @@TCLTEST_IPV4@@ [localIPv4Address]] {
+	makeFile [string map [list @@TCLTEST_IPV4@@ [tcltests::localIPv4Address]] {
 	    fileevent stdin readable exit
 	    set server [socket -server accept -myaddr @@TCLTEST_IPV4@@ 0]
 	    proc accept {s h p} {puts $s ok; close $s; set ::x 1}
@@ -2339,7 +2341,7 @@ test socket-14.8.0 {pending [socket -async] and nonblocking [gets], server is IP
 test socket-14.8.1 {pending [socket -async] and nonblocking [gets], server is IPv6} \
     -constraints {socket supported_inet6 localhost_v6} \
     -setup {
-	makeFile [string map [list @@TCLTEST_IPV6@@ [localIPv6Address]] {
+	makeFile [string map [list @@TCLTEST_IPV6@@ [tcltests::localIPv6Address]] {
 	    fileevent stdin readable exit
 	    set server [socket -server accept -myaddr @@TCLTEST_IPV6@@ 0]
 	    proc accept {s h p} {puts $s ok; close $s; set ::x 1}
@@ -2378,7 +2380,7 @@ test socket-14.8.2 {pending [socket -async] and nonblocking [gets], no listener}
 test socket-14.9.0 {pending [socket -async] and blocking [puts], server is IPv4} \
     -constraints {socket supported_inet localhost_v4} \
     -setup {
-	makeFile [string map [list @@TCLTEST_IPV4@@ [localIPv4Address]] {
+	makeFile [string map [list @@TCLTEST_IPV4@@ [tcltests::localIPv4Address]] {
 	    fileevent stdin readable exit
 	    set server [socket -server accept -myaddr @@TCLTEST_IPV4@@ 0]
 	    proc accept {s h p} {set ::x $s}
@@ -2402,7 +2404,7 @@ test socket-14.9.0 {pending [socket -async] and blocking [puts], server is IPv4}
 test socket-14.9.1 {pending [socket -async] and blocking [puts], server is IPv6} \
     -constraints {socket supported_inet6 localhost_v6} \
     -setup {
-	makeFile [string map [list @@TCLTEST_IPV6@@ [localIPv6Address]] {
+	makeFile [string map [list @@TCLTEST_IPV6@@ [tcltests::localIPv6Address]] {
 	    fileevent stdin readable exit
 	    set server [socket -server accept -myaddr @@TCLTEST_IPV6@@ 0]
 	    proc accept {s h p} {set ::x $s}
@@ -2426,7 +2428,7 @@ test socket-14.9.1 {pending [socket -async] and blocking [puts], server is IPv6}
 test socket-14.10.0 {pending [socket -async] and nonblocking [puts], server is IPv4} \
     -constraints {socket supported_inet localhost_v4} \
     -setup {
-	makeFile [string map [list @@TCLTEST_IPV4@@ [localIPv4Address]] {
+	makeFile [string map [list @@TCLTEST_IPV4@@ [tcltests::localIPv4Address]] {
 	    fileevent stdin readable exit
 	    set server [socket -server accept -myaddr @@TCLTEST_IPV4@@ 0]
 	    proc accept {s h p} {set ::x $s}
@@ -2453,7 +2455,7 @@ test socket-14.10.0 {pending [socket -async] and nonblocking [puts], server is I
 test socket-14.10.1 {pending [socket -async] and nonblocking [puts], server is IPv6} \
     -constraints {socket supported_inet6 localhost_v6} \
     -setup {
-	makeFile [string map [list @@TCLTEST_IPV6@@ [localIPv6Address]] {
+	makeFile [string map [list @@TCLTEST_IPV6@@ [tcltests::localIPv6Address]] {
 	    fileevent stdin readable exit
 	    set server [socket -server accept -myaddr @@TCLTEST_IPV6@@ 0]
 	    proc accept {s h p} {set ::x $s}
@@ -2623,7 +2625,7 @@ test socket-14.19 {tip 456 -- introduce the -reuseport option} \
 
 set num 0
 
-set x [list localhost {socket} [localIPv4Address] {supported_inet} [localIPv6Address] {supported_inet6}]
+set x [list localhost {socket} [tcltests::localIPv4Address] {supported_inet} [tcltests::localIPv6Address] {supported_inet6}]
 set resultok {-result "sock*" -match glob}
 set resulterr {
     -result {couldn't open socket: connection refused}
@@ -2637,11 +2639,11 @@ foreach {servip sc} $x {
 	set combination [lsort -unique [list $servip $cliip]]
 	if {[llength $combination] == 1} {
 	    set result $resultok
-	} elseif {$combination == [lsort [list [localIPv4Address] "localhost"]]} {
+	} elseif {$combination == [lsort [list [tcltests::localIPv4Address] "localhost"]]} {
 	    if {[testConstraint localhost_v4]} {
 		set result $resultok
 	    }
-	} elseif {$combination == [lsort [list [localIPv6Address] localhost]]} {
+	} elseif {$combination == [lsort [list [tcltests::localIPv6Address] localhost]]} {
 	    if {[testConstraint localhost_v6]} {
 		set result $resultok
 	    }

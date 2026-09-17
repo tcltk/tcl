@@ -20,6 +20,10 @@ if {[singleProcess]} {
     interp debug {} -frame 1
 }
 
+configure -load {
+
+}
+
 set ErrorOnFailures [info exists env(ERROR_ON_FAILURES)]
 unset -nocomplain env(ERROR_ON_FAILURES)
 if {[runAllTests] && $ErrorOnFailures} {exit 1}

@@ -18,6 +18,7 @@ catch {
     set ::tcltestlib [info loaded {} Tcltest]
 }
 
+source [file join [file dirname [info script]] tcltests.tcl]
 
 testConstraint testfilehandler [llength [info commands testfilehandler]]
 testConstraint testexithandler [llength [info commands testexithandler]]
@@ -546,9 +547,9 @@ test event-11.5 {Tcl_VwaitCmd procedure: round robin scheduling, 2 sources} -set
 	puts $s foobar
 	close $s
     }
-    set s1 [socket -server accept -myaddr [localIPv4Address] 0]
+    set s1 [socket -server accept -myaddr [tcltests::localIPv4Address] 0]
     after 1000
-    set s2 [socket [localIPv4Address] [lindex [fconfigure $s1 -sockname] 2]]
+    set s2 [socket [tcltests::localIPv4Address] [lindex [fconfigure $s1 -sockname] 2]]
     close $s1
     set x 0
     set y 0

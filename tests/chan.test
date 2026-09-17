@@ -202,8 +202,8 @@ test chan-16.9 {chan command: pending input subcommand} -setup {
 	chan flush $::client
     }
 
-    set ::server [socket -server chan-16.9-accept -myaddr [localIPv4Address] 0]
-    set ::client [socket [localIPv4Address] [lindex [fconfigure $::server -sockname] 2]]
+    set ::server [socket -server chan-16.9-accept -myaddr [tcltests::localIPv4Address] 0]
+    set ::client [socket [tcltests::localIPv4Address] [lindex [fconfigure $::server -sockname] 2]]
     set ::chan-16.9-data [list]
     set ::chan-16.9-done 0
 } -body {

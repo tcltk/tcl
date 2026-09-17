@@ -18,6 +18,8 @@ unset -nocomplain path
 catch {set oldlang $env(LANG)}
 set env(LANG) C
 
+source [file join [file dirname [info script]] tcltests.tcl]
+
 test unixInit-1.1 {TclpInitPlatform: ignore SIGPIPE} {unix stdio} {
     set x {}
     # Watch out for a race condition here.  If tcltest is too slow to start
@@ -44,7 +46,7 @@ test unixInit-1.2 {initialisation: standard channel type deduction} {unix stdio}
     # and delivers a constant string to the first client to connect to that
     # port before exiting.
     set pipe1 [open "|[list [interpreter]]" r+]
-    puts $pipe1 [string map [list @@TCLTEST_IPV4@@ [localIPv4Address]] {
+    puts $pipe1 [string map [list @@TCLTEST_IPV4@@ [tcltests::localIPv4Address]] {
 	proc accept {channel host port} {
 	    puts $channel {puts [chan configure stdin -peername]; exit}
 	    close $channel
@@ -75,11 +77,11 @@ test unixInit-1.2 {initialisation: standard channel type deduction} {unix stdio}
     # Can't use normal comparison, as hostname varies due to some
     # installations having a messed up /etc/hosts file.
     if {
-	[localIPv4Address] eq [lindex $result 0] && $port == [lindex $result 2]
+	[tcltests::localIPv4Address] eq [lindex $result 0] && $port == [lindex $result 2]
     } then {
 	subst "OK"
     } else {
-	subst "Expected: `[list [localIPv4Address] localhost $port]', Got `$result'"
+	subst "Expected: `[list [tcltests::localIPv4Address] localhost $port]', Got `$result'"
     }
 } {OK}
 
