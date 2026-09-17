@@ -25,6 +25,8 @@ testConstraint fileevent     [llength [info commands fileevent]]
 testConstraint thread        [expr {![catch {package require Thread 2.7-}]}]
 testConstraint notValgrind   [expr {![testConstraint valgrind]}]
 
+if {[file dirname [info script]] ni $::auto_path} { lappend ::auto_path [file dirname [info script]] }
+
 namespace eval ::tcltests {
     variable TCL_SIZE_MAX [expr {(2**(8*$::tcl_platform(pointerSize)-1))-1}]
 

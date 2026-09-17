@@ -17,6 +17,8 @@ if {"::tcltest" ni [namespace children]} {
     package require tcltest 2.5
 }
 
+if {[file dirname [info script]] ni $::auto_path} { lappend ::auto_path [file dirname [info script]] }
+
 namespace eval ::tcl::test::io {
     namespace import ::tcltest::*
 

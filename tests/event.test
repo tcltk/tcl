@@ -18,6 +18,7 @@ catch {
     set ::tcltestlib [info loaded {} Tcltest]
 }
 
+if {[file dirname [info script]] ni $::auto_path} { lappend ::auto_path [file dirname [info script]] }
 
 testConstraint testfilehandler [llength [info commands testfilehandler]]
 testConstraint testexithandler [llength [info commands testexithandler]]

@@ -1,0 +1,3 @@
+# Tcl autoload index file, version 2.0
+set ::auto_index(localIPv4Address) [list source [file join $dir network.tcl]]
+set ::auto_index(localIPv6Address) $::auto_index(localIPv4Address)

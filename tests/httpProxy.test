@@ -17,6 +17,8 @@ if {"::tcltest" ni [namespace children]} {
     namespace import -force ::tcltest::*
 }
 
+if {[file dirname [info script]] ni $::auto_path} { lappend ::auto_path [file dirname [info script]] }
+
 package require http 2.10
 
 # To write a separate summary for each value of ThreadLevel, set constraint ThreadLevelSummary.

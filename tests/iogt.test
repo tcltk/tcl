@@ -18,6 +18,8 @@ if {"::tcltest" ni [namespace children]} {
 ::tcltest::loadTestedCommands
 catch [list package require -exact tcl::test [info patchlevel]]
 
+if {[file dirname [info script]] ni $::auto_path} { lappend ::auto_path [file dirname [info script]] }
+
 namespace eval ::tcl::test::iogt {
     namespace import ::tcltest::*
 

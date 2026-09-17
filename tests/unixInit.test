@@ -18,6 +18,7 @@ unset -nocomplain path
 catch {set oldlang $env(LANG)}
 set env(LANG) C
 
+if {[file dirname [info script]] ni $::auto_path} { lappend ::auto_path [file dirname [info script]] }
 test unixInit-1.1 {TclpInitPlatform: ignore SIGPIPE} {unix stdio} {
     set x {}
     # Watch out for a race condition here.  If tcltest is too slow to start

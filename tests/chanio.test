@@ -17,6 +17,7 @@ if {"::tcltest" ni [namespace children]} {
     package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
+if {[file dirname [info script]] ni $::auto_path} { lappend ::auto_path [file dirname [info script]] }
 
 testConstraint testchancreate [expr {
     [llength [info commands testchancreate]] != 0

@@ -69,6 +69,8 @@ if {"::tcltest" ni [namespace children]} {
 catch [list package require -exact tcl::test [info patchlevel]]
 ::tcltest::loadTestedCommands
 
+if {[file dirname [info script]] ni $::auto_path} { lappend ::auto_path [file dirname [info script]] }
+
 # A bad interaction between socket creation, macOS, and unattended CI
 # environments make this whole file impractical to run; too many weird hangs.
 if {[info exists ::env(MAC_CI)]} {
