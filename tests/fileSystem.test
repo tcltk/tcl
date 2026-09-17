@@ -70,6 +70,7 @@ apply {{} {
 	    foreach vol [file volumes] {
 		if {![catch {cd $vol}]} {
 		    lappend drives $vol
+		    if {[llength $drives] > 1} break; # lets stop on 2nd drive
 		}
 	    }
 	    testConstraint moreThanOneDrive [expr {[llength $drives] > 1}]
