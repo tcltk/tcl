@@ -29,7 +29,20 @@ if {[testConstraint win]} {
 	testConstraint linkDirectory 0
     }
     testConstraint symbolicLinkFile 0
-    testConstraint sharedCdrive [expr {![catch {cd //[info hostname]/c}]}]
+    # Don't test sharedCdrive by default, because access of non-existsing
+    # folder may be extremely slow on windows, since Continuous Availability
+    # feature, client does not know the share type until it has connected to
+    # it, even using localhost or loopback IP address. See
+    # https://support.microsoft.com/en-us/servicing/os/windows-server/2021/01/delayed-error-message-when-you-try-to-access-a-shared-folder-that-no-longer-exists-in-windows
+    if {[testConstraint sharedCdrive]} {
+	if {![catch {apply {{} {
+	    set tmp [pwd]
+	    cd //localhost/c
+	    cd $tmp
+	}}}]} {
+	    testConstraint sharedCdrive 1
+	}
+    }
 }
 # This match compares the first two words of the result. If the wanted result
 # is "equal", then this is successful if the words are equal. If the wanted
@@ -1453,14 +1466,14 @@ test filename-16.11 {windows specific globbing} {win} {
 } {c:/globTest/x1.BAT c:/globTest/y1.Bat c:/globTest/z1.bat}
 # some tests require a shared C drive
 test filename-16.12 {windows specific globbing} {win sharedCdrive} {
-    cd //[info hostname]/c
-    glob //[info hostname]/c/*Test
-} //[info hostname]/c/globTest
+    cd //localhost/c
+    glob //localhost/c/*Test
+} //localhost/c/globTest
 test filename-16.13 {windows specific globbing} {win sharedCdrive} {
-    cd //[info hostname]/c
-    glob "\\\\\\\\[info hostname]\\\\c\\\\*Test"
-} //[info hostname]/c/globTest
-test filename-16.14 {windows specific globbing} {win sharedCdrive} {
+    cd //localhost/c
+    glob "\\\\\\\\localhost\\\\c\\\\*Test"
+} //localhost/c/globTest
+test filename-16.14 {windows specific globbing} {win} {
     cd [lindex [glob -types d -dir C:/ *] 0]
     expr {".." in [glob {{.,*}*}]}
 } {1}
