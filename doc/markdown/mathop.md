@@ -46,10 +46,10 @@ mathop - Mathematical operators as Tcl commands
 [::tcl::mathop::>]{.cmd} [arg]{.optdot}
 [::tcl::mathop::eq]{.cmd} [arg]{.optdot}
 [::tcl::mathop::ne]{.cmd} [arg]{.arg} [arg]{.arg}
-[::tcl::mathop::lt]{.cmd} [arg]{.optdot}
-[::tcl::mathop::le]{.cmd} [arg]{.optdot}
-[::tcl::mathop::gt]{.cmd} [arg]{.optdot}
-[::tcl::mathop::ge]{.cmd} [arg]{.optdot}
+[::tcl::mathop::lt]{.cmd version="TIP461"} [arg]{.optdot}
+[::tcl::mathop::le]{.cmd version="TIP461"} [arg]{.optdot}
+[::tcl::mathop::gt]{.cmd version="TIP461"} [arg]{.optdot}
+[::tcl::mathop::ge]{.cmd version="TIP461"} [arg]{.optdot}
 [::tcl::mathop::in]{.cmd} [arg]{.arg} [list]{.arg}
 [::tcl::mathop::ni]{.cmd} [arg]{.arg} [list]{.arg}
 :::

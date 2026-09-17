@@ -40,9 +40,9 @@ auto\_execok, auto\_import, auto\_load, auto\_mkindex, auto\_qualify, auto\_rese
 [tcl\_startOfPreviousWord]{.cmd} [str]{.arg} [start]{.arg}
 [tcl\_wordBreakAfter]{.cmd} [str]{.arg} [start]{.arg}
 [tcl\_wordBreakBefore]{.cmd} [str]{.arg} [start]{.arg}
-[foreachLine]{.cmd} [filename]{.arg} [varName]{.arg} [body]{.arg}
-[readFile]{.cmd} [filename]{.arg} [text|binary]{.optlit}
-[writeFile]{.cmd} [filename]{.arg} [text|binary]{.optlit} [contents]{.arg}
+[foreachLine]{.cmd version="TIP670"} [filename]{.arg} [varName]{.arg} [body]{.arg}
+[readFile]{.cmd version="TIP670"} [filename]{.arg} [text|binary]{.optlit}
+[writeFile]{.cmd version="TIP670"} [filename]{.arg} [text|binary]{.optlit} [contents]{.arg}
 :::
 
 # Introduction

@@ -25,10 +25,10 @@ Tcl\_Init - find and source initialization script
 **#include <tcl.h>**
 [int]{.ret} [Tcl\_Init]{.ccmd}[interp]{.cargs}
 [const char \*]{.ret} [Tcl\_SetPreInitScript]{.ccmd}[scriptPtr]{.cargs}
-[typedef int]{.ret} [Tcl\_PostInitProc]{.ccmd}[Tcl\_Interp \*interp, void \*clientData]{.cargs}
-[int]{.ret} [Tcl\_RegisterPostInitProc]{.ccmd}[postInitProc, clientData]{.cargs}
-[int]{.ret} [Tcl\_UnregisterPostInitProc]{.ccmd}[postInitProc, clientData]{.cargs}
-[int]{.ret} [Tcl\_ClearPostInitProcs]{.ccmd}[void]{.cargs}
+[typedef int]{.ret} [Tcl\_PostInitProc]{.ccmd version="TIP755"}[Tcl\_Interp \*interp, void \*clientData]{.cargs}
+[int]{.ret} [Tcl\_RegisterPostInitProc]{.ccmd version="TIP755"}[postInitProc, clientData]{.cargs}
+[int]{.ret} [Tcl\_UnregisterPostInitProc]{.ccmd version="TIP755"}[postInitProc, clientData]{.cargs}
+[int]{.ret} [Tcl\_ClearPostInitProcs]{.ccmd version="TIP755"}[void]{.cargs}
 :::
 
 # Arguments

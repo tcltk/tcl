@@ -29,8 +29,8 @@ coroutine, yield, yieldto, coroinject, coroprobe - Create and produce values fro
 [yieldto]{.cmd} [command]{.arg} [arg]{.optdot}
 [name]{.ins} [value]{.optdot}
 
-[coroinject]{.cmd} [coroName]{.arg} [command]{.arg} [arg]{.optdot}
-[coroprobe]{.cmd} [coroName]{.arg} [command]{.arg} [arg]{.optdot}
+[coroinject]{.cmd version="TIP383"} [coroName]{.arg} [command]{.arg} [arg]{.optdot}
+[coroprobe]{.cmd version="TIP383"} [coroName]{.arg} [command]{.arg} [arg]{.optdot}
 :::
 
 # Description

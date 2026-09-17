@@ -38,9 +38,9 @@ msgcat - Tcl message catalog
 [::msgcat::mc]{.cmd} [src-string]{.arg} [arg]{.optdot}
 [::msgcat::mcmax]{.cmd} [src-string]{.optdot}
 [::msgcat::mcexists]{.cmd} [-exactnamespace]{.optlit} [-exactlocale]{.optlit} [src-string]{.arg}
-[::msgcat::mcpackagenamespaceget]{.cmd}
+[::msgcat::mcpackagenamespaceget]{.cmd version="TIP490"}
 [::msgcat::mclocale]{.cmd} [newLocale]{.optarg}
-[::msgcat::mcpreferences]{.cmd} [locale preference]{.optdot}
+[::msgcat::mcpreferences]{.cmd version="TIP499"} [locale preference]{.optdot}
 [::msgcat::mcloadedlocales]{.cmd} [subcommand]{.sub}
 [::msgcat::mcload]{.cmd} [dirname]{.arg}
 [::msgcat::mcset]{.cmd} [locale]{.arg} [src-string]{.arg} [translate-string]{.optarg}
@@ -51,7 +51,7 @@ msgcat - Tcl message catalog
 [::msgcat::mcpackagelocale]{.cmd} [subcommand]{.sub} [locale]{.optarg}
 [::msgcat::mcpackageconfig]{.cmd} [subcommand]{.sub} [option]{.arg} [value]{.optarg}
 [::msgcat::mcforgetpackage]{.cmd}
-[::msgcat::mcutil]{.cmd} [subcommand]{.sub} [locale]{.optarg}
+[::msgcat::mcutil]{.cmd version="TIP499"} [subcommand]{.sub} [locale]{.optarg}
 :::
 
 # Description

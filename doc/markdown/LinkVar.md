@@ -29,7 +29,7 @@ Tcl\_LinkArray, Tcl\_LinkVar, Tcl\_UnlinkVar, Tcl\_UpdateLinkedVar - link Tcl va
 ::: {.synopsis} :::
 **#include <tcl.h>**
 [int]{.ret} [Tcl\_LinkVar]{.ccmd}[interp, varName, addr, type]{.cargs}
-[int]{.ret} [Tcl\_LinkArray]{.ccmd}[interp, varName, addr, type, size]{.cargs}
+[int]{.ret} [Tcl\_LinkArray]{.ccmd version="TIP312"}[interp, varName, addr, type, size]{.cargs}
 [Tcl\_UnlinkVar]{.ccmd}[interp, varName]{.cargs}
 [Tcl\_UpdateLinkedVar]{.ccmd}[interp, varName]{.cargs}
 :::
@@ -45,13 +45,13 @@ Tcl\_LinkArray, Tcl\_LinkVar, Tcl\_UnlinkVar, Tcl\_UpdateLinkedVar - link Tcl va
 : Name of global variable.
 
 [\*addr]{.carg .in type="void"}
-: Address of C variable that is to be linked to *varName*. .sp .VS TIP312 In **Tcl\_LinkArray**, may be NULL to tell Tcl to create the storage for the array in the variable. .VE TIP312
+: Address of C variable that is to be linked to *varName*. [In **Tcl\_LinkArray**, may be NULL to tell Tcl to create the storage for the array in the variable.]{version="TIP312"}
 
 [type]{.carg .in type="int"}
-: Type of C variable for **Tcl\_LinkVar** or type of array element for **Tcl\_LinkArray**.  Must be one of **TCL\_LINK\_INT**, **TCL\_LINK\_UINT**, **TCL\_LINK\_CHAR**, **TCL\_LINK\_UCHAR**, **TCL\_LINK\_SHORT**, **TCL\_LINK\_USHORT**, **TCL\_LINK\_LONG**, **TCL\_LINK\_ULONG**, **TCL\_LINK\_WIDE\_INT**, **TCL\_LINK\_WIDE\_UINT**, **TCL\_LINK\_FLOAT**, **TCL\_LINK\_DOUBLE**, **TCL\_LINK\_BOOLEAN**, or one of the extra ones listed below. .sp In **Tcl\_LinkVar**, the additional linked type **TCL\_LINK\_STRING** may be used. .sp .VS TIP312 In **Tcl\_LinkArray**, the additional linked types **TCL\_LINK\_CHARS** and **TCL\_LINK\_BINARY** may be used. .VE TIP312 .sp All the above for both functions may be optionally OR'ed with **TCL\_LINK\_READ\_ONLY** to make the Tcl variable read-only.
+: Type of C variable for **Tcl\_LinkVar** or type of array element for **Tcl\_LinkArray**.  Must be one of **TCL\_LINK\_INT**, **TCL\_LINK\_UINT**, **TCL\_LINK\_CHAR**, **TCL\_LINK\_UCHAR**, **TCL\_LINK\_SHORT**, **TCL\_LINK\_USHORT**, **TCL\_LINK\_LONG**, **TCL\_LINK\_ULONG**, **TCL\_LINK\_WIDE\_INT**, **TCL\_LINK\_WIDE\_UINT**, **TCL\_LINK\_FLOAT**, **TCL\_LINK\_DOUBLE**, **TCL\_LINK\_BOOLEAN**, or one of the extra ones listed below. In **Tcl\_LinkVar**, the additional linked type **TCL\_LINK\_STRING** may be used. [In **Tcl\_LinkArray**, the additional linked types **TCL\_LINK\_CHARS** and **TCL\_LINK\_BINARY** may be used.]{version="TIP312"} All the above for both functions may be optionally OR'ed with **TCL\_LINK\_READ\_ONLY** to make the Tcl variable read-only.
 
 [size]{.carg .in type="Tcl_Size"}
-: .VS TIP312 The number of elements in the C array. Must be greater than zero. .VE TIP312
+: [The number of elements in the C array. Must be greater than zero.]{version="TIP312"}
 
 
 :::

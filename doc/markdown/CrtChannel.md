@@ -37,7 +37,7 @@ Tcl\_CreateChannel, Tcl\_GetChannelInstanceData, Tcl\_GetChannelType, Tcl\_GetCh
 [int]{.ret} [Tcl\_GetChannelHandle]{.ccmd}[channel, direction, handlePtr]{.cargs}
 [Tcl\_ThreadId]{.ret} [Tcl\_GetChannelThread]{.ccmd}[channel]{.cargs}
 [int]{.ret} [Tcl\_GetChannelMode]{.ccmd}[channel]{.cargs}
-[int]{.ret} [Tcl\_RemoveChannelMode]{.ccmd}[interp, channel, mode]{.cargs}
+[int]{.ret} [Tcl\_RemoveChannelMode]{.ccmd version="TIP220"}[interp, channel, mode]{.cargs}
 [int]{.ret} [Tcl\_GetChannelBufferSize]{.ccmd}[channel]{.cargs}
 [Tcl\_SetChannelBufferSize]{.ccmd}[channel, size]{.cargs}
 [Tcl\_NotifyChannel]{.ccmd}[channel, mask]{.cargs}

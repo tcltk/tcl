@@ -1271,8 +1271,15 @@ proc ::ndoc::parseBlock {parent manContent} {
 						# with one command per line
 						set contentList [list]
 						set lineCount 0
+						# synVersion tracks whether the command line currently being read is inside a
+						# .VS/.VE pair, so its TIP marker can be attached to the command's own Span:
+						set synVersion {}
 						while {$cmd ne ".SH"} {
-							if {! [string match ".*" $cmd]} {
+							if {$cmd eq ".VS"} {
+								lassign $line - synVersion
+							} elseif {$cmd eq ".VE"} {
+								set synVersion {}
+							} elseif {! [string match ".*" $cmd]} {
 								# in the synopsis of section 3 pages there are lines of their own with
 								# the return type of the Tcl API function. We want to get them onto the same
 								# line as the command for processing. Only do this when the line is truly
@@ -1284,7 +1291,7 @@ proc ::ndoc::parseBlock {parent manContent} {
 									incr lineCount
 									append line [lindex $manContent $lineCount]
 								}
-								lappend contentList [list Syntax {} [parseCommand -ast $line]]
+								lappend contentList [list Syntax {} [parseCommand -ast $line $synVersion]]
 							}
 							# go to next line:
 							incr lineCount
@@ -1319,27 +1326,43 @@ proc ::ndoc::parseBlock {parent manContent} {
 						set dlistContent [list]
 						set lineCount 0
 						set argName ""
+						# argRuns collects the explanation text of the current .AP as a list of
+						# {version lines} pairs (version == "" outside any .VS/.VE), so a TIP marker
+						# wrapping part of the explanation ends up as its own inline Span:
+						set argRuns [list]
+						set curVersion {}
+						set curText [list]
 						while {$cmd ne ".SH"} {
 							if {$cmd eq ".AP"} {
 								# finish previous carg:
 								if {$argName ne ""} {
+									if {[llength $curText]} {lappend argRuns [list $curVersion $curText]}
 									set cargTerm [list Span ".carg .$argDirection type=\"$argType\"" [list [list Text {} $argName]]]
-									set cargExplanation [lindex [parseInline Inline {} [string trim $argExplanation]] 2]
+									set cargExplanation [wrapVersionedRuns $argRuns]
 									lappend dlistContent [list DlistItem [list -definition [list $cargTerm]] \
 										[list [list Paragraph {} $cargExplanation]]]
 								}
 								# new carg:
 								lassign $line - argType argName argDirection
 								if {$argDirection eq ""} {set argDirection inout}
-								set argExplanation ""
-							} elseif {$cmd in {.AS .BS .BE}} {
-								# .AS = max size hint for tab stops; .BS .BE = box enclosure: can be ignored
+								set argRuns [list]
+								set curVersion {}
+								set curText [list]
+							} elseif {$cmd in {.AS .BS .BE .sp}} {
+								# .AS = max size hint for tab stops; .BS .BE = box enclosure;
+								# .sp = vertical space: all of these can be ignored
+							} elseif {$cmd eq ".VS"} {
+								if {[llength $curText]} {lappend argRuns [list $curVersion $curText]; set curText [list]}
+								lassign $line - curVersion
+							} elseif {$cmd eq ".VE"} {
+								if {[llength $curText]} {lappend argRuns [list $curVersion $curText]; set curText [list]}
+								set curVersion {}
 							} elseif {$cmd in {.QW .PQ .QR}} {
 								# inline quoting:
-								append argExplanation [parseQuoting $line] { }
+								lappend curText [parseQuoting $line]
 							} else {
 								# explanatory text:
-								append argExplanation $line { }
+								lappend curText $line
 							}
 							# next line:
 							incr lineCount
@@ -1348,8 +1371,9 @@ proc ::ndoc::parseBlock {parent manContent} {
 						}
 						# finish last carg:
 						if {$argName ne ""} {
+							if {[llength $curText]} {lappend argRuns [list $curVersion $curText]}
 							set cargTerm [list Span ".carg .$argDirection type=\"$argType\"" [list [list Text {} $argName]]]
-							set cargExplanation [lindex [parseInline Inline {} [string trim $argExplanation]] 2]
+							set cargExplanation [wrapVersionedRuns $argRuns]
 							lappend dlistContent [list DlistItem [list -definition [list $cargTerm]] \
 								[list [list Paragraph {} $cargExplanation]]]
 						}
@@ -1443,7 +1467,7 @@ proc ::ndoc::parseBlock {parent manContent} {
 				switch $markup {
 					.VS {
 						lassign $line - info
-						set blockAttributes [list version $info]
+						set blockAttributes [list -vs $info]
 					}
 					.DS {
 						set blockAttributes [list DISPLAY yes]
@@ -1477,17 +1501,23 @@ proc ::ndoc::parseBlock {parent manContent} {
 }
 
 
-proc ::ndoc::parseCommand {mode line} {
+proc ::ndoc::parseCommand {mode line {version {}}} {
 	#
 	# reads a line of the nroff containing a Tcl syntax (from the SYNOPSIS etc.)
 	# and returns a list of AST Span elements representing this syntax
 	#
-	# mode - the operation mode; '-ast' returns the AST block list, '-internal' returns the internal representation for easier parsing
-	# line - the complete Tcl command in nroff syntax 
+	# mode    - the operation mode; '-ast' returns the AST block list, '-internal' returns the internal representation for easier parsing
+	# line    - the complete Tcl command in nroff syntax
+	# version - if the command line was wrapped in a .VS/.VE pair, the TIP/version marker
+	#           given to .VS; attached to the command's own Span (.cmd/.ccmd) as a dashed
+	#           '-vs' AST attribute (see dashedAttrLabel/formatSpanAttributes), so it shows
+	#           up as e.g. [Tcl_LinkArray]{.ccmd version="TIP312"}
 	#
 	# Note: the Span elements are alread fully expanded with appropriate AST "Text" elements
 	#
 	set DEBUG 0
+	set verAttr {}
+	if {$version ne ""} {set verAttr " -vs $version"}
 	set line [BIRPclean $line]
 	# make life a bit easier for parsing by replacing nroff syntax with something simpler,
 	# so this is the internal representation:
@@ -1575,12 +1605,12 @@ proc ::ndoc::parseCommand {mode line} {
 					} else {
 						set cmdType cmd
 					}
-					lappend spanList [list Span .$cmdType [string range $word 1 end-1]]
+					lappend spanList [list Span ".$cmdType$verAttr" [string range $word 1 end-1]]
 					if $DEBUG {puts "single .cmd: $spanList"}
 				}
 				{^§.+[^=]$} {
 					# a cmd with a subcommand and possibly more elements:
-					lappend spanList [list Span .cmd [string range $word 1 end]]
+					lappend spanList [list Span ".cmd$verAttr" [string range $word 1 end]]
 					# there must be a second word = subcommand,
 					# sometimes also more words and these are then literals
 					while 1 {
@@ -1873,6 +1903,79 @@ proc ::ndoc::parseInline {keyword attributes content} {
 }
 
 
+proc ::ndoc::dashedAttrLabel {key} {
+	#
+	# maps an internal dashed AST attribute name (e.g. '-vs', as used for Header's
+	# -level, Dlist's -definition etc.) to the attribute name it is given when
+	# formatted into markdown (e.g. 'version'). This lets the AST keep a short,
+	# stable internal name for an attribute while the rendered output uses a
+	# more descriptive one; a key with no explicit mapping below is rendered
+	# under its own name, with the leading dash(es) stripped.
+	#
+	set label [string trimleft $key -]
+	switch -- $label {
+		vs {return version}
+		default {return $label}
+	}
+}
+
+
+proc ::ndoc::formatSpanAttributes {attributes} {
+	#
+	# formats a Span's 'attributes' string for markdown output.
+	#
+	# A Span's attributes are normally just a literal, pre-built string of Pandoc
+	# classes and already-formatted key="value" pairs (e.g. '.carg .in type="Tcl_Interp"',
+	# '.ccmd') that is used as-is and MUST NOT be touched here.
+	#
+	# On top of that literal class string, a Span may also carry one or more dashed
+	# AST attributes appended to it (e.g. '.ccmd -vs TIP312'), using the same
+	# '-key value' convention used elsewhere in the AST (see dashedAttrLabel). Those
+	# are extracted here and rendered into markdown attribute syntax; everything
+	# else in the string (the dotted classes) passes through unchanged.
+	#
+	set extra {}
+	foreach {- key val} [regexp -all -inline -- {-([A-Za-z][A-Za-z0-9]*)\s+(\S+)} $attributes] {
+		append extra { } [dashedAttrLabel -$key] = \x22 $val \x22
+	}
+	set classes [string trim [regsub -all -- {-([A-Za-z][A-Za-z0-9]*)\s+(\S+)} $attributes {}]]
+	return [string trim "$classes$extra"]
+}
+
+
+proc ::ndoc::wrapVersionedRuns {runs} {
+	#
+	# converts a list of "runs" of raw nroff text into a list of AST inline elements,
+	# wrapping any run that carries a TIP/version marker (as set by a .VS/.VE pair)
+	# in a Span so it shows up inline as e.g. [some text]{version="TIP312"},
+	# instead of the text being dropped or forcing a whole new block.
+	# This is the general way a .VS/.VE region occurring inside a paragraph or
+	# other inline text is rendered (a .VS/.VE pair wrapping a *whole* top-level
+	# paragraph or command is handled elsewhere, e.g. by tagging the enclosing
+	# Paragraph/Span node directly).
+	#
+	# runs - a list of {version lines} pairs, in document order, where "lines" is
+	#        a list of raw (backslash/quote-processed) nroff text fragments that
+	#        belong to one contiguous run of the same version marker
+	#        ("version" is the empty string for text outside any .VS/.VE)
+	#
+	set contentList [list]
+	foreach run $runs {
+		lassign $run version lines
+		set text [string trim [join $lines { }]]
+		if {$text eq ""} continue
+		set inlineContent [lindex [parseInline Inline {} $text] 2]
+		if {[llength $contentList]} {lappend contentList [list Space {} {}]}
+		if {$version ne ""} {
+			lappend contentList [list Span "-vs $version" $inlineContent]
+		} else {
+			lappend contentList {*}$inlineContent
+		}
+	}
+	return $contentList
+}
+
+
 proc ::ndoc::AST2Markdown {} {
 	#
 	# converts an AST into markdown
@@ -1940,8 +2043,9 @@ proc ::ndoc::AST2Markdown_Element {parentType indent ASTelement} {
 					if {[dict size $attributes]} {
 						# put attributes into fenced div:
 						append output ::: { } \{ .info
-						# \x22 is the quote character
-						dict for {k v} $attributes {append output { } $k=\x22$v\x22}
+						# \x22 is the quote character; dashed AST attribute names (e.g. -vs)
+						# are mapped to their markdown attribute name (e.g. version):
+						dict for {k v} $attributes {append output { } [dashedAttrLabel $k]=\x22$v\x22}
 						append output \} \n
 					}
 				}
@@ -2018,7 +2122,7 @@ proc ::ndoc::AST2Markdown_Element {parentType indent ASTelement} {
 			append output \[
 			foreach item $content {append output [AST2Markdown_Element $type 0 $item]}
 			append output \]
-			append output \{ $attributes \}
+			append output \{ [formatSpanAttributes $attributes] \}
 		}
 		Div {
 			foreach item $content {append output [AST2Markdown_Element $type $indent $item]\n}

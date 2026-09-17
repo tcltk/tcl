@@ -30,60 +30,60 @@ mathfunc - Mathematical functions for Tcl expressions
 
 [::tcl::mathfunc::abs]{.cmd} [arg]{.arg}
 [::tcl::mathfunc::acos]{.cmd} [arg]{.arg}
-[::tcl::mathfunc::acosh]{.cmd} [arg]{.arg}
+[::tcl::mathfunc::acosh]{.cmd version="TIP745"} [arg]{.arg}
 [::tcl::mathfunc::asin]{.cmd} [arg]{.arg}
-[::tcl::mathfunc::asin]{.cmd} [arg]{.arg}
+[::tcl::mathfunc::asin]{.cmd version="TIP745"} [arg]{.arg}
 [::tcl::mathfunc::atan]{.cmd} [arg]{.arg}
 [::tcl::mathfunc::atan2]{.cmd} [y]{.arg} [x]{.arg}
-[::tcl::mathfunc::atan]{.cmd} [arg]{.arg}
+[::tcl::mathfunc::atan]{.cmd version="TIP745"} [arg]{.arg}
 [::tcl::mathfunc::bool]{.cmd} [arg]{.arg}
-[::tcl::mathfunc::cbrt]{.cmd} [arg]{.arg}
+[::tcl::mathfunc::cbrt]{.cmd version="TIP745"} [arg]{.arg}
 [::tcl::mathfunc::ceil]{.cmd} [arg]{.arg}
-[::tcl::mathfunc::copysign]{.cmd} [x]{.arg} [y]{.arg}
+[::tcl::mathfunc::copysign]{.cmd version="TIP745"} [x]{.arg} [y]{.arg}
 [::tcl::mathfunc::cos]{.cmd} [arg]{.arg}
 [::tcl::mathfunc::cosh]{.cmd} [arg]{.arg}
-[::tcl::mathfunc::dim]{.cmd} [x]{.arg} [y]{.arg}
+[::tcl::mathfunc::dim]{.cmd version="TIP745"} [x]{.arg} [y]{.arg}
 [::tcl::mathfunc::double]{.cmd} [arg]{.arg}
 [::tcl::mathfunc::entier]{.cmd} [arg]{.arg}
-[::tcl::mathfunc::erf]{.cmd} [arg]{.arg}
-[::tcl::mathfunc::erfc]{.cmd} [arg]{.arg}
+[::tcl::mathfunc::erf]{.cmd version="TIP745"} [arg]{.arg}
+[::tcl::mathfunc::erfc]{.cmd version="TIP745"} [arg]{.arg}
 [::tcl::mathfunc::exp]{.cmd} [arg]{.arg}
-[::tcl::mathfunc::exp2]{.cmd} [arg]{.arg}
-[::tcl::mathfunc::expm1]{.cmd} [arg]{.arg}
+[::tcl::mathfunc::exp2]{.cmd version="TIP745"} [arg]{.arg}
+[::tcl::mathfunc::expm1]{.cmd version="TIP745"} [arg]{.arg}
 [::tcl::mathfunc::floor]{.cmd} [arg]{.arg}
-[::tcl::mathfunc::fma]{.cmd} [x]{.arg} [y]{.arg} [z]{.arg}
+[::tcl::mathfunc::fma]{.cmd version="TIP745"} [x]{.arg} [y]{.arg} [z]{.arg}
 [::tcl::mathfunc::fmod]{.cmd} [x]{.arg} [y]{.arg}
 [::tcl::mathfunc::hypot]{.cmd} [x]{.arg} [y]{.arg}
 [::tcl::mathfunc::int]{.cmd} [arg]{.arg}
-[::tcl::mathfunc::isfinite]{.cmd} [arg]{.arg}
-[::tcl::mathfunc::isinf]{.cmd} [arg]{.arg}
-[::tcl::mathfunc::isnan]{.cmd} [arg]{.arg}
-[::tcl::mathfunc::isnormal]{.cmd} [arg]{.arg}
+[::tcl::mathfunc::isfinite]{.cmd version="TIP521"} [arg]{.arg}
+[::tcl::mathfunc::isinf]{.cmd version="TIP521"} [arg]{.arg}
+[::tcl::mathfunc::isnan]{.cmd version="TIP521"} [arg]{.arg}
+[::tcl::mathfunc::isnormal]{.cmd version="TIP521"} [arg]{.arg}
 [::tcl::mathfunc::isqrt]{.cmd} [arg]{.arg}
-[::tcl::mathfunc::issubnormal]{.cmd} [arg]{.arg}
-[::tcl::mathfunc::isunordered]{.cmd} [x]{.arg} [y]{.arg}
-[::tcl::mathfunc::lgamma]{.cmd} [arg]{.arg}
+[::tcl::mathfunc::issubnormal]{.cmd version="TIP521"} [arg]{.arg}
+[::tcl::mathfunc::isunordered]{.cmd version="TIP521"} [x]{.arg} [y]{.arg}
+[::tcl::mathfunc::lgamma]{.cmd version="TIP745"} [arg]{.arg}
 [::tcl::mathfunc::log]{.cmd} [arg]{.arg}
 [::tcl::mathfunc::log10]{.cmd} [arg]{.arg}
-[::tcl::mathfunc::log1p]{.cmd} [arg]{.arg}
-[::tcl::mathfunc::log2]{.cmd} [arg]{.arg}
-[::tcl::mathfunc::logb]{.cmd} [arg]{.arg}
+[::tcl::mathfunc::log1p]{.cmd version="TIP745"} [arg]{.arg}
+[::tcl::mathfunc::log2]{.cmd version="TIP745"} [arg]{.arg}
+[::tcl::mathfunc::logb]{.cmd version="TIP745"} [arg]{.arg}
 [::tcl::mathfunc::max]{.cmd} [arg]{.arg} [arg]{.optdot}
 [::tcl::mathfunc::min]{.cmd} [arg]{.arg} [arg]{.optdot}
-[::tcl::mathfunc::nextafter]{.cmd} [x]{.arg} [y]{.arg}
+[::tcl::mathfunc::nextafter]{.cmd version="TIP745"} [x]{.arg} [y]{.arg}
 [::tcl::mathfunc::pow]{.cmd} [x]{.arg} [y]{.arg}
 [::tcl::mathfunc::rand]{.cmd}
-[::tcl::mathfunc::remainder]{.cmd} [x]{.arg} [y]{.arg}
+[::tcl::mathfunc::remainder]{.cmd version="TIP745"} [x]{.arg} [y]{.arg}
 [::tcl::mathfunc::round]{.cmd} [arg]{.arg}
-[::tcl::mathfunc::signbit]{.cmd} [arg]{.arg}
+[::tcl::mathfunc::signbit]{.cmd version="TIP745"} [arg]{.arg}
 [::tcl::mathfunc::sin]{.cmd} [arg]{.arg}
 [::tcl::mathfunc::sinh]{.cmd} [arg]{.arg}
 [::tcl::mathfunc::sqrt]{.cmd} [arg]{.arg}
 [::tcl::mathfunc::srand]{.cmd} [arg]{.arg}
 [::tcl::mathfunc::tan]{.cmd} [arg]{.arg}
 [::tcl::mathfunc::tanh]{.cmd} [arg]{.arg}
-[::tcl::mathfunc::gamma]{.cmd} [arg]{.arg}
-[::tcl::mathfunc::trunc]{.cmd} [arg]{.arg}
+[::tcl::mathfunc::gamma]{.cmd version="TIP745"} [arg]{.arg}
+[::tcl::mathfunc::trunc]{.cmd version="TIP745"} [arg]{.arg}
 [::tcl::mathfunc::wide]{.cmd} [arg]{.arg}
 :::
 

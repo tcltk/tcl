@@ -35,7 +35,7 @@ Tcl\_ClassSetConstructor, Tcl\_ClassSetDestructor, Tcl\_MethodDeclarerClass, Tcl
 [Tcl\_Class]{.ret} [Tcl\_MethodDeclarerClass]{.ccmd}[method]{.cargs}
 [Tcl\_Object]{.ret} [Tcl\_MethodDeclarerObject]{.ccmd}[method]{.cargs}
 [Tcl\_Obj \*]{.ret} [Tcl\_MethodName]{.ccmd}[method]{.cargs}
-[int]{.ret} [Tcl\_MethodIsPublic]{.ccmd}[method]{.cargs}
+[int]{.ret} [Tcl\_MethodIsPublic]{.ccmd version="TIP500"}[method]{.cargs}
 [int]{.ret} [Tcl\_MethodIsPrivate]{.ccmd}[method]{.cargs}
 [int]{.ret} [Tcl\_MethodIsType]{.ccmd}[method, methodTypePtr, clientDataPtr]{.cargs}
 [int]{.ret} [Tcl\_MethodIsType2]{.ccmd}[method, methodType2Ptr, clientDataPtr]{.cargs}
@@ -63,7 +63,7 @@ Tcl\_ClassSetConstructor, Tcl\_ClassSetDestructor, Tcl\_MethodDeclarerClass, Tcl
 : The name of the method to create. Should not be NULL unless creating constructors or destructors.
 
 [flags]{.carg .in type="int"}
-: A flag saying (currently) what the visibility of the method is. The supported public values of this flag are **TCL\_OO\_METHOD\_PUBLIC** (which is fixed at 1 for backward compatibility) for an exported method, **TCL\_OO\_METHOD\_UNEXPORTED** (which is fixed at 0 for backward compatibility) for a non-exported method, .VS TIP500 and **TCL\_OO\_METHOD\_PRIVATE** for a private method. .VE TIP500
+: A flag saying (currently) what the visibility of the method is. The supported public values of this flag are **TCL\_OO\_METHOD\_PUBLIC** (which is fixed at 1 for backward compatibility) for an exported method, **TCL\_OO\_METHOD\_UNEXPORTED** (which is fixed at 0 for backward compatibility) for a non-exported method, [and **TCL\_OO\_METHOD\_PRIVATE** for a private method.]{version="TIP500"}
 
 [\*methodTypePtr]{.carg .in type="Tcl_MethodType"}
 : A description of the type of the method to create, or the type of method to compare against.

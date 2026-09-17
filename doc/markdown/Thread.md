@@ -50,7 +50,7 @@ Tcl\_ConditionNotify, Tcl\_ConditionWait, Tcl\_ConditionFinalize, Tcl\_GetThread
 : A condition variable, which must be associated with a mutex lock.
 
 [\*mutexPtr]{.carg .in type="Tcl_Mutex"}
-: .VS TIP509 A recursive mutex lock. .VE TIP509
+: [A recursive mutex lock.]{version="TIP509"}
 
 [\*timePtr]{.carg .in type="const Tcl_Time"}
 : A time limit on the condition wait.  NULL to wait forever. Note that a polling value of 0 seconds does not make much sense.
