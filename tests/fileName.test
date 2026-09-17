@@ -34,7 +34,7 @@ if {[testConstraint win]} {
     # feature, client does not know the share type until it has connected to
     # it, even using localhost or loopback IP address. See
     # https://support.microsoft.com/en-us/servicing/os/windows-server/2021/01/delayed-error-message-when-you-try-to-access-a-shared-folder-that-no-longer-exists-in-windows
-    if {[testConstraint sharedCdrive]} {
+    if {[testConstraint extensive]} {
 	if {![catch {apply {{} {
 	    set tmp [pwd]
 	    cd //localhost/c
