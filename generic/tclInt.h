@@ -2999,9 +2999,7 @@ enum TclParseNumberFlags {
  *----------------------------------------------------------------------
  */
 
-enum EncodingProfileMask {
-    ENCODING_PROFILE_MASK = 0xFF000000
-};
+#define ENCODING_PROFILE_MASK     0xFF000000
 #define ENCODING_PROFILE_GET(flags_) \
     ((flags_) & ENCODING_PROFILE_MASK)
 #define ENCODING_PROFILE_SET(flags_, profile_) \
