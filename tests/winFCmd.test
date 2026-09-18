@@ -144,9 +144,16 @@ proc parseSddlAcl {acl} {
 }
 
 if {[testConstraint testvolumetype]} {
-    foreach p {d e f g h i j k l m n o p q r s t u v w x y z} {
-	if {![catch {testvolumetype ${p}:} result] && $result in {CDFS UDF}} {
-	    set cdrom ${p}:
+    foreach p [file volumes] {
+	# normally don't test after error - the volumes behind are either not accessible too,
+	# or the user missed permissions to get drive info from scratch (even for such like C:),
+	# because otherwise it may be extremely slow if there are some temporary unavailable network drives:
+	if {[catch {testvolumetype $p} result]} {
+	    if {![testConstraint extensive]} break
+	    continue
+	}
+	if {$result in {CDFS UDF}} {
+	    set cdrom [regsub {/?$} $p {}]
 	    set cdfile [findfile $cdrom]
 	    testConstraint cdrom 1
 	    break
@@ -2071,36 +2078,6 @@ namespace eval testwinerror {
 
 }
 namespace delete testwinerror
-
-
-################################################################
-
-# This block of code used to occur after the "return" call, so I'm
-# commenting it out and assuming that this code is still under construction.
-#foreach source {tef ted tnf tnd "" nul com1} {
-#    foreach chmodsrc {000 755} {
-#        foreach dest "tfn tfe tdn tdempty tdfull td1/td2 $p $p/td1 {} nul" {
-#	    foreach chmoddst {000 755} {
-#		puts hi
-#		cleanup
-#		file delete -force ted tef
-#		file mkdir ted
-#		createfile tef
-#		createfile tfe
-#		file mkdir tdempty
-#		file mkdir tdfull/td1/td2
-#
-#		catch {testchmod $chmodsrc $source}
-#		catch {testchmod $chmoddst $dest}
-#
-#		if [catch {file rename $source $dest} msg] {
-#		    puts "file rename $source ($chmodsrc) $dest ($chmoddst)"
-#		    puts $msg
-#		}
-#	    }
-#	}
-#    }
-#}
 
 cleanup
 ::tcltest::cleanupTests
