@@ -73,12 +73,11 @@ apply {{} {
 
 	set dir [pwd]
 	try {
-	    set drives [lmap vol [file volumes] {
-		if {$vol eq [zipfs root] || [catch {cd $vol}]} {
-		    continue
-		}
-		set vol
-	    }]
+	    foreach vol [file volumes] {
+		if {$vol eq [zipfs root] || [catch {cd $vol}]} continue
+		lappend drives $vol
+		if {[llength $drives] > 1} break; # lets stop on 2nd drive
+	    }
 	    testConstraint moreThanOneDrive [expr {[llength $drives] > 1}]
 	} finally {
 	    cd $dir
