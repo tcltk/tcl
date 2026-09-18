@@ -510,7 +510,14 @@ Get-Content $hb -Tail 3
     tcltest::removeFile $tclScript
     tcltest::removeFile $psScript
 } -body {
-    exec {*}[auto_execok powershell] -File $psScript
+    if {[catch {exec {*}[auto_execok powershell] -File $psScript} result opts]} {
+	# firstly check error in order to skip test if running unsigned scripts
+	# is disabled on this system completely or for some folders by policies:
+	if {[regexp {\mCategoryInfo\s*:\s*SecurityError\M|\mFullyQualifiedErrorId\s*:\s*UnauthorizedAccess\M} $result]} {
+	    ::tcltest::Skip "policy/security issue"
+	}
+    }
+    return {*}$opts $result
 } -result {*tclsh terminated*readable fired*exiting*} -match glob -returnCodes error
 
 ::tcltest::cleanupTests
