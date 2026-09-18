@@ -23,7 +23,7 @@ Tcl\_ParseArgsObjv - parse arguments according to a tabular description
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[int]{.ret} [Tcl\_ParseArgsObjv]{.ccmd}[interp, argTable, objcPtr, objv, remObjv]{.cargs}
+[int]{.ret} [Tcl\_ParseArgsObjv]{.ccmd} [interp, argTable, objcPtr, objv, remObjv]{.cargs}
 :::
 
 # Arguments

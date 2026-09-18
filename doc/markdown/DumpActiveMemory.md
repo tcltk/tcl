@@ -23,9 +23,9 @@ Tcl\_DumpActiveMemory, Tcl\_InitMemory, Tcl\_ValidateAllMemory - Validated memor
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[int]{.ret} [Tcl\_DumpActiveMemory]{.ccmd}[fileName]{.cargs}
-[Tcl\_InitMemory]{.ccmd}[interp]{.cargs}
-[Tcl\_ValidateAllMemory]{.ccmd}[fileName, line]{.cargs}
+[int]{.ret} [Tcl\_DumpActiveMemory]{.ccmd} [fileName]{.cargs}
+[Tcl\_InitMemory]{.ccmd} [interp]{.cargs}
+[Tcl\_ValidateAllMemory]{.ccmd} [fileName, line]{.cargs}
 :::
 
 # Arguments

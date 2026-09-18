@@ -23,10 +23,10 @@ TclZipfs\_AppHook, TclZipfs\_Mount, TclZipfs\_MountBuffer, TclZipfs\_Unmount - h
 # Synopsis
 
 ::: {.synopsis} :::
-[const char \*]{.ret} [TclZipfs\_AppHook]{.ccmd}[argcPtr, argvPtr]{.cargs}
-[int]{.ret} [TclZipfs\_Mount]{.ccmd}[interp, zipname, mountpoint, password]{.cargs}
-[int]{.ret} [TclZipfs\_MountBuffer]{.ccmd}[interp, data, dataLen, mountpoint, copy]{.cargs}
-[int]{.ret} [TclZipfs\_Unmount]{.ccmd}[interp, mountpoint]{.cargs}
+[const char \*]{.ret} [TclZipfs\_AppHook]{.ccmd} [argcPtr, argvPtr]{.cargs}
+[int]{.ret} [TclZipfs\_Mount]{.ccmd} [interp, zipname, mountpoint, password]{.cargs}
+[int]{.ret} [TclZipfs\_MountBuffer]{.ccmd} [interp, data, dataLen, mountpoint, copy]{.cargs}
+[int]{.ret} [TclZipfs\_Unmount]{.ccmd} [interp, mountpoint]{.cargs}
 :::
 
 # Arguments

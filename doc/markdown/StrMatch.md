@@ -21,8 +21,8 @@ Tcl\_StringMatch, Tcl\_StringCaseMatch - test whether a string matches a pattern
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[int]{.ret} [Tcl\_StringMatch]{.ccmd}[str, pattern]{.cargs}
-[int]{.ret} [Tcl\_StringCaseMatch]{.ccmd}[str, pattern, flags]{.cargs}
+[int]{.ret} [Tcl\_StringMatch]{.ccmd} [str, pattern]{.cargs}
+[int]{.ret} [Tcl\_StringCaseMatch]{.ccmd} [str, pattern, flags]{.cargs}
 :::
 
 # Arguments
@@ -33,7 +33,7 @@ Tcl\_StringMatch, Tcl\_StringCaseMatch - test whether a string matches a pattern
 : String to test.
 
 [\*pattern]{.carg .in type="const char"}
-: Pattern to match against string.  May contain special characters from the set \*?\\[].
+: Pattern to match against string.  May contain special characters from the set \*?\\\[\].
 
 [flags]{.carg .in type="int"}
 : OR-ed combination of match flags, currently only **TCL\_MATCH\_NOCASE**. 0 specifies a case-sensitive search.

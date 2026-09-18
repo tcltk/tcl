@@ -24,10 +24,10 @@ Tcl\_SetChannelError, Tcl\_SetChannelErrorInterp, Tcl\_GetChannelError, Tcl\_Get
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[Tcl\_SetChannelError]{.ccmd}[chan, msg]{.cargs}
-[Tcl\_SetChannelErrorInterp]{.ccmd}[interp, msg]{.cargs}
-[Tcl\_GetChannelError]{.ccmd}[chan, msgPtr]{.cargs}
-[Tcl\_GetChannelErrorInterp]{.ccmd}[interp, msgPtr]{.cargs}
+[Tcl\_SetChannelError]{.ccmd} [chan, msg]{.cargs}
+[Tcl\_SetChannelErrorInterp]{.ccmd} [interp, msg]{.cargs}
+[Tcl\_GetChannelError]{.ccmd} [chan, msgPtr]{.cargs}
+[Tcl\_GetChannelErrorInterp]{.ccmd} [interp, msgPtr]{.cargs}
 :::
 
 # Arguments

@@ -33,25 +33,25 @@ Tcl\_CreateEventSource, Tcl\_DeleteEventSource, Tcl\_SetMaxBlockTime, Tcl\_Queue
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[Tcl\_CreateEventSource]{.ccmd}[setupProc, checkProc, clientData]{.cargs}
-[Tcl\_DeleteEventSource]{.ccmd}[setupProc, checkProc, clientData]{.cargs}
-[Tcl\_SetMaxBlockTime]{.ccmd}[timePtr]{.cargs}
-[Tcl\_QueueEvent]{.ccmd}[evPtr, position]{.cargs}
-[Tcl\_ThreadQueueEvent]{.ccmd}[threadId, evPtr, position]{.cargs}
-[Tcl\_ThreadAlert]{.ccmd}[threadId]{.cargs}
-[Tcl\_ThreadId]{.ret} [Tcl\_GetCurrentThread]{.ccmd}[]{.cargs}
-[Tcl\_DeleteEvents]{.ccmd}[deleteProc, clientData]{.cargs}
-[void \*]{.ret} [Tcl\_InitNotifier]{.ccmd}[]{.cargs}
-[Tcl\_FinalizeNotifier]{.ccmd}[clientData]{.cargs}
-[int]{.ret} [Tcl\_WaitForEvent]{.ccmd}[timePtr]{.cargs}
-[Tcl\_AlertNotifier]{.ccmd}[clientData]{.cargs}
-[Tcl\_SetTimer]{.ccmd}[timePtr]{.cargs}
-[int]{.ret} [Tcl\_ServiceAll]{.ccmd}[]{.cargs}
-[int]{.ret} [Tcl\_ServiceEvent]{.ccmd}[flags]{.cargs}
-[int]{.ret} [Tcl\_GetServiceMode]{.ccmd}[]{.cargs}
-[int]{.ret} [Tcl\_SetServiceMode]{.ccmd}[mode]{.cargs}
-[Tcl\_ServiceModeHook]{.ccmd}[mode]{.cargs}
-[Tcl\_SetNotifier]{.ccmd}[notifierProcPtr]{.cargs}
+[Tcl\_CreateEventSource]{.ccmd} [setupProc, checkProc, clientData]{.cargs}
+[Tcl\_DeleteEventSource]{.ccmd} [setupProc, checkProc, clientData]{.cargs}
+[Tcl\_SetMaxBlockTime]{.ccmd} [timePtr]{.cargs}
+[Tcl\_QueueEvent]{.ccmd} [evPtr, position]{.cargs}
+[Tcl\_ThreadQueueEvent]{.ccmd} [threadId, evPtr, position]{.cargs}
+[Tcl\_ThreadAlert]{.ccmd} [threadId]{.cargs}
+[Tcl\_ThreadId]{.ret} [Tcl\_GetCurrentThread]{.ccmd} []{.cargs}
+[Tcl\_DeleteEvents]{.ccmd} [deleteProc, clientData]{.cargs}
+[void \*]{.ret} [Tcl\_InitNotifier]{.ccmd} []{.cargs}
+[Tcl\_FinalizeNotifier]{.ccmd} [clientData]{.cargs}
+[int]{.ret} [Tcl\_WaitForEvent]{.ccmd} [timePtr]{.cargs}
+[Tcl\_AlertNotifier]{.ccmd} [clientData]{.cargs}
+[Tcl\_SetTimer]{.ccmd} [timePtr]{.cargs}
+[int]{.ret} [Tcl\_ServiceAll]{.ccmd} []{.cargs}
+[int]{.ret} [Tcl\_ServiceEvent]{.ccmd} [flags]{.cargs}
+[int]{.ret} [Tcl\_GetServiceMode]{.ccmd} []{.cargs}
+[int]{.ret} [Tcl\_SetServiceMode]{.ccmd} [mode]{.cargs}
+[Tcl\_ServiceModeHook]{.ccmd} [mode]{.cargs}
+[Tcl\_SetNotifier]{.ccmd} [notifierProcPtr]{.cargs}
 :::
 
 # Arguments
@@ -125,7 +125,7 @@ The easiest way to understand how the notifier works is to consider what happens
 
 6. See if there are idle callbacks pending. If so, invoke all of them and return.
 
-7. Either return 0 to indicate that no events were ready, or go back to step [2] if blocking was requested by the caller.
+7. Either return 0 to indicate that no events were ready, or go back to step \[2\] if blocking was requested by the caller.
 
 
 # Creating a new event source

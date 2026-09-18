@@ -22,7 +22,7 @@ Tcl\_Concat - concatenate a collection of strings
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[const char \*]{.ret} [Tcl\_Concat]{.ccmd}[argc, argv]{.cargs}
+[const char \*]{.ret} [Tcl\_Concat]{.ccmd} [argc, argv]{.cargs}
 :::
 
 # Arguments

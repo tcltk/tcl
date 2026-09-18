@@ -20,7 +20,7 @@ Tcl\_SetRecursionLimit - set maximum allowable nesting depth in interpreter
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[Tcl\_Size]{.ret} [Tcl\_SetRecursionLimit]{.ccmd}[interp, depth]{.cargs}
+[Tcl\_Size]{.ret} [Tcl\_SetRecursionLimit]{.ccmd} [interp, depth]{.cargs}
 :::
 
 # Arguments

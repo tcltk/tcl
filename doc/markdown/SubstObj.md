@@ -22,7 +22,7 @@ Tcl\_SubstObj - perform substitutions on Tcl values
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[Tcl\_Obj \*]{.ret} [Tcl\_SubstObj]{.ccmd}[interp, objPtr, flags]{.cargs}
+[Tcl\_Obj \*]{.ret} [Tcl\_SubstObj]{.ccmd} [interp, objPtr, flags]{.cargs}
 :::
 
 # Arguments

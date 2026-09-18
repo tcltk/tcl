@@ -29,12 +29,12 @@ Tcl\_Main, Tcl\_MainEx, Tcl\_MainExW, Tcl\_SetStartupScript, Tcl\_GetStartupScri
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[Tcl\_Main]{.ccmd}[argc, argv, appInitProc]{.cargs}
-[Tcl\_MainEx]{.ccmd}[argc, charargv, appInitProc, interp]{.cargs}
-[Tcl\_MainExW]{.ccmd}[argc, wideargv, appInitProc, interp]{.cargs}
-[Tcl\_SetStartupScript]{.ccmd}[path, encoding]{.cargs}
-[Tcl\_Obj \*]{.ret} [Tcl\_GetStartupScript]{.ccmd}[encodingPtr]{.cargs}
-[Tcl\_SetMainLoop]{.ccmd}[mainLoopProc]{.cargs}
+[Tcl\_Main]{.ccmd} [argc, argv, appInitProc]{.cargs}
+[Tcl\_MainEx]{.ccmd} [argc, charargv, appInitProc, interp]{.cargs}
+[Tcl\_MainExW]{.ccmd} [argc, wideargv, appInitProc, interp]{.cargs}
+[Tcl\_SetStartupScript]{.ccmd} [path, encoding]{.cargs}
+[Tcl\_Obj \*]{.ret} [Tcl\_GetStartupScript]{.ccmd} [encodingPtr]{.cargs}
+[Tcl\_SetMainLoop]{.ccmd} [mainLoopProc]{.cargs}
 :::
 
 # Arguments

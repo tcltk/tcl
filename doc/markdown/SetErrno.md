@@ -20,11 +20,11 @@ Tcl\_SetErrno, Tcl\_GetErrno, Tcl\_ErrnoId, Tcl\_ErrnoMsg, Tcl\_WinConvertError 
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[void]{.ret} [Tcl\_SetErrno]{.ccmd}[errorCode]{.cargs}
-[int]{.ret} [Tcl\_GetErrno]{.ccmd}[]{.cargs}
-[const char \*]{.ret} [Tcl\_ErrnoId]{.ccmd}[]{.cargs}
-[const char \*]{.ret} [Tcl\_ErrnoMsg]{.ccmd}[errorCode]{.cargs}
-[void]{.ret} [Tcl\_WinConvertError]{.ccmd}[winErrorCode]{.cargs}
+[void]{.ret} [Tcl\_SetErrno]{.ccmd} [errorCode]{.cargs}
+[int]{.ret} [Tcl\_GetErrno]{.ccmd} []{.cargs}
+[const char \*]{.ret} [Tcl\_ErrnoId]{.ccmd} []{.cargs}
+[const char \*]{.ret} [Tcl\_ErrnoMsg]{.ccmd} [errorCode]{.cargs}
+[void]{.ret} [Tcl\_WinConvertError]{.ccmd} [winErrorCode]{.cargs}
 :::
 
 # Arguments

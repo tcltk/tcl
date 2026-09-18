@@ -27,11 +27,11 @@ Tcl\_NewByteArrayObj, Tcl\_SetByteArrayObj, Tcl\_GetBytesFromObj, Tcl\_GetByteAr
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[Tcl\_Obj \*]{.ret} [Tcl\_NewByteArrayObj]{.ccmd}[bytes, numBytes]{.cargs}
-[Tcl\_SetByteArrayObj]{.ccmd}[objPtr, bytes, numBytes]{.cargs}
-[unsigned char \*]{.ret} [Tcl\_GetBytesFromObj]{.ccmd version="TIP568"}[interp, objPtr, numBytesPtr]{.cargs}
-[unsigned char \*]{.ret} [Tcl\_GetByteArrayFromObj]{.ccmd}[objPtr, numBytesPtr]{.cargs}
-[unsigned char \*]{.ret} [Tcl\_SetByteArrayLength]{.ccmd}[objPtr, numBytes]{.cargs}
+[Tcl\_Obj \*]{.ret} [Tcl\_NewByteArrayObj]{.ccmd} [bytes, numBytes]{.cargs}
+[Tcl\_SetByteArrayObj]{.ccmd} [objPtr, bytes, numBytes]{.cargs}
+[unsigned char \*]{.ret} [Tcl\_GetBytesFromObj]{.ccmd version="TIP568"} [interp, objPtr, numBytesPtr]{.cargs}
+[unsigned char \*]{.ret} [Tcl\_GetByteArrayFromObj]{.ccmd} [objPtr, numBytesPtr]{.cargs}
+[unsigned char \*]{.ret} [Tcl\_SetByteArrayLength]{.ccmd} [objPtr, numBytes]{.cargs}
 :::
 
 # Arguments

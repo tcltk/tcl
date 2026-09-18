@@ -32,63 +32,63 @@ Tcl\_FSRegister, Tcl\_FSUnregister, Tcl\_FSData, Tcl\_FSMountsChanged, Tcl\_FSGe
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[int]{.ret} [Tcl\_FSRegister]{.ccmd}[clientData, fsPtr]{.cargs}
-[int]{.ret} [Tcl\_FSUnregister]{.ccmd}[fsPtr]{.cargs}
-[void \*]{.ret} [Tcl\_FSData]{.ccmd}[fsPtr]{.cargs}
-[Tcl\_FSMountsChanged]{.ccmd}[fsPtr]{.cargs}
-[const Tcl\_Filesystem \*]{.ret} [Tcl\_FSGetFileSystemForPath]{.ccmd}[pathPtr]{.cargs}
-[Tcl\_PathType]{.ret} [Tcl\_FSGetPathType]{.ccmd}[pathPtr]{.cargs}
-[int]{.ret} [Tcl\_FSCopyFile]{.ccmd}[srcPathPtr, destPathPtr]{.cargs}
-[int]{.ret} [Tcl\_FSCopyDirectory]{.ccmd}[srcPathPtr, destPathPtr, errorPtr]{.cargs}
-[int]{.ret} [Tcl\_FSCreateDirectory]{.ccmd}[pathPtr]{.cargs}
-[int]{.ret} [Tcl\_FSDeleteFile]{.ccmd}[pathPtr]{.cargs}
-[int]{.ret} [Tcl\_FSRemoveDirectory]{.ccmd}[pathPtr, recursive, errorPtr]{.cargs}
-[int]{.ret} [Tcl\_FSRenameFile]{.ccmd}[srcPathPtr, destPathPtr]{.cargs}
-[Tcl\_Obj \*]{.ret} [Tcl\_FSListVolumes]{.ccmd}[void]{.cargs}
-[int]{.ret} [Tcl\_FSEvalFileEx]{.ccmd}[interp, pathPtr, encodingName]{.cargs}
-[int]{.ret} [Tcl\_FSEvalFile]{.ccmd}[interp, pathPtr]{.cargs}
-[int]{.ret} [Tcl\_FSLoadFile]{.ccmd}[interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr, loadHandlePtr, unloadProcPtr]{.cargs}
-[int]{.ret} [Tcl\_FSUnloadFile]{.ccmd}[interp, loadHandle]{.cargs}
-[int]{.ret} [Tcl\_FSMatchInDirectory]{.ccmd}[interp, resultPtr, pathPtr, pattern, types]{.cargs}
-[Tcl\_Obj \*]{.ret} [Tcl\_FSLink]{.ccmd}[linkNamePtr, toPtr, linkAction]{.cargs}
-[int]{.ret} [Tcl\_FSLstat]{.ccmd}[pathPtr, statPtr]{.cargs}
-[int]{.ret} [Tcl\_FSUtime]{.ccmd}[pathPtr, tval]{.cargs}
-[int]{.ret} [Tcl\_FSFileAttrsGet]{.ccmd}[interp, index, pathPtr, objPtrRef]{.cargs}
-[int]{.ret} [Tcl\_FSFileAttrsSet]{.ccmd}[interp, index, pathPtr, objPtr]{.cargs}
-[const char \*const \*]{.ret} [Tcl\_FSFileAttrStrings]{.ccmd}[pathPtr, objPtrRef]{.cargs}
-[int]{.ret} [Tcl\_FSStat]{.ccmd}[pathPtr, statPtr]{.cargs}
-[int]{.ret} [Tcl\_FSAccess]{.ccmd}[pathPtr, mode]{.cargs}
-[Tcl\_Channel]{.ret} [Tcl\_FSOpenFileChannel]{.ccmd}[interp, pathPtr, modeString, permissions]{.cargs}
-[Tcl\_Obj \*]{.ret} [Tcl\_FSGetCwd]{.ccmd}[interp]{.cargs}
-[int]{.ret} [Tcl\_FSChdir]{.ccmd}[pathPtr]{.cargs}
-[Tcl\_Obj \*]{.ret} [Tcl\_FSPathSeparator]{.ccmd}[pathPtr]{.cargs}
-[Tcl\_Obj \*]{.ret} [Tcl\_FSJoinPath]{.ccmd}[listObj, elements]{.cargs}
-[Tcl\_Obj \*]{.ret} [Tcl\_FSSplitPath]{.ccmd}[pathPtr, lenPtr]{.cargs}
-[int]{.ret} [Tcl\_FSEqualPaths]{.ccmd}[firstPtr, secondPtr]{.cargs}
-[Tcl\_Obj \*]{.ret} [Tcl\_FSGetNormalizedPath]{.ccmd}[interp, pathPtr]{.cargs}
-[Tcl\_Obj \*]{.ret} [Tcl\_FSJoinToPath]{.ccmd}[basePtr, objc, objv]{.cargs}
-[int]{.ret} [Tcl\_FSConvertToPathType]{.ccmd}[interp, pathPtr]{.cargs}
-[void \*]{.ret} [Tcl\_FSGetInternalRep]{.ccmd}[pathPtr, fsPtr]{.cargs}
-[Tcl\_Obj \*]{.ret} [Tcl\_FSGetTranslatedPath]{.ccmd}[interp, pathPtr]{.cargs}
-[const char \*]{.ret} [Tcl\_FSGetTranslatedStringPath]{.ccmd}[interp, pathPtr]{.cargs}
-[Tcl\_Obj \*]{.ret} [Tcl\_FSNewNativePath]{.ccmd}[fsPtr, clientData]{.cargs}
-[const void \*]{.ret} [Tcl\_FSGetNativePath]{.ccmd}[pathPtr]{.cargs}
-[Tcl\_Obj \*]{.ret} [Tcl\_FSFileSystemInfo]{.ccmd}[pathPtr]{.cargs}
-[int]{.ret} [Tcl\_FSTildeExpand]{.ccmd}[interp, pathStr, dsPtr]{.cargs}
-[Tcl\_StatBuf \*]{.ret} [Tcl\_AllocStatBuf]{.ccmd}[]{.cargs}
-[long long]{.ret} [Tcl\_GetAccessTimeFromStat]{.ccmd}[statPtr]{.cargs}
-[unsigned]{.ret} [Tcl\_GetBlockSizeFromStat]{.ccmd}[statPtr]{.cargs}
-[unsigned long long]{.ret} [Tcl\_GetBlocksFromStat]{.ccmd}[statPtr]{.cargs}
-[long long]{.ret} [Tcl\_GetChangeTimeFromStat]{.ccmd}[statPtr]{.cargs}
-[int]{.ret} [Tcl\_GetDeviceTypeFromStat]{.ccmd}[statPtr]{.cargs}
-[unsigned]{.ret} [Tcl\_GetFSDeviceFromStat]{.ccmd}[statPtr]{.cargs}
-[unsigned]{.ret} [Tcl\_GetFSInodeFromStat]{.ccmd}[statPtr]{.cargs}
-[int]{.ret} [Tcl\_GetGroupIdFromStat]{.ccmd}[statPtr]{.cargs}
-[int]{.ret} [Tcl\_GetLinkCountFromStat]{.ccmd}[statPtr]{.cargs}
-[unsigned]{.ret} [Tcl\_GetModeFromStat]{.ccmd}[statPtr]{.cargs}
-[long long]{.ret} [Tcl\_GetModificationTimeFromStat]{.ccmd}[statPtr]{.cargs}
-[unsigned long long]{.ret} [Tcl\_GetSizeFromStat]{.ccmd}[statPtr]{.cargs}
-[int]{.ret} [Tcl\_GetUserIdFromStat]{.ccmd}[statPtr]{.cargs}
+[int]{.ret} [Tcl\_FSRegister]{.ccmd} [clientData, fsPtr]{.cargs}
+[int]{.ret} [Tcl\_FSUnregister]{.ccmd} [fsPtr]{.cargs}
+[void \*]{.ret} [Tcl\_FSData]{.ccmd} [fsPtr]{.cargs}
+[Tcl\_FSMountsChanged]{.ccmd} [fsPtr]{.cargs}
+[const Tcl\_Filesystem \*]{.ret} [Tcl\_FSGetFileSystemForPath]{.ccmd} [pathPtr]{.cargs}
+[Tcl\_PathType]{.ret} [Tcl\_FSGetPathType]{.ccmd} [pathPtr]{.cargs}
+[int]{.ret} [Tcl\_FSCopyFile]{.ccmd} [srcPathPtr, destPathPtr]{.cargs}
+[int]{.ret} [Tcl\_FSCopyDirectory]{.ccmd} [srcPathPtr, destPathPtr, errorPtr]{.cargs}
+[int]{.ret} [Tcl\_FSCreateDirectory]{.ccmd} [pathPtr]{.cargs}
+[int]{.ret} [Tcl\_FSDeleteFile]{.ccmd} [pathPtr]{.cargs}
+[int]{.ret} [Tcl\_FSRemoveDirectory]{.ccmd} [pathPtr, recursive, errorPtr]{.cargs}
+[int]{.ret} [Tcl\_FSRenameFile]{.ccmd} [srcPathPtr, destPathPtr]{.cargs}
+[Tcl\_Obj \*]{.ret} [Tcl\_FSListVolumes]{.ccmd} [void]{.cargs}
+[int]{.ret} [Tcl\_FSEvalFileEx]{.ccmd} [interp, pathPtr, encodingName]{.cargs}
+[int]{.ret} [Tcl\_FSEvalFile]{.ccmd} [interp, pathPtr]{.cargs}
+[int]{.ret} [Tcl\_FSLoadFile]{.ccmd} [interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr, loadHandlePtr, unloadProcPtr]{.cargs}
+[int]{.ret} [Tcl\_FSUnloadFile]{.ccmd} [interp, loadHandle]{.cargs}
+[int]{.ret} [Tcl\_FSMatchInDirectory]{.ccmd} [interp, resultPtr, pathPtr, pattern, types]{.cargs}
+[Tcl\_Obj \*]{.ret} [Tcl\_FSLink]{.ccmd} [linkNamePtr, toPtr, linkAction]{.cargs}
+[int]{.ret} [Tcl\_FSLstat]{.ccmd} [pathPtr, statPtr]{.cargs}
+[int]{.ret} [Tcl\_FSUtime]{.ccmd} [pathPtr, tval]{.cargs}
+[int]{.ret} [Tcl\_FSFileAttrsGet]{.ccmd} [interp, index, pathPtr, objPtrRef]{.cargs}
+[int]{.ret} [Tcl\_FSFileAttrsSet]{.ccmd} [interp, index, pathPtr, objPtr]{.cargs}
+[const char \*const \*]{.ret} [Tcl\_FSFileAttrStrings]{.ccmd} [pathPtr, objPtrRef]{.cargs}
+[int]{.ret} [Tcl\_FSStat]{.ccmd} [pathPtr, statPtr]{.cargs}
+[int]{.ret} [Tcl\_FSAccess]{.ccmd} [pathPtr, mode]{.cargs}
+[Tcl\_Channel]{.ret} [Tcl\_FSOpenFileChannel]{.ccmd} [interp, pathPtr, modeString, permissions]{.cargs}
+[Tcl\_Obj \*]{.ret} [Tcl\_FSGetCwd]{.ccmd} [interp]{.cargs}
+[int]{.ret} [Tcl\_FSChdir]{.ccmd} [pathPtr]{.cargs}
+[Tcl\_Obj \*]{.ret} [Tcl\_FSPathSeparator]{.ccmd} [pathPtr]{.cargs}
+[Tcl\_Obj \*]{.ret} [Tcl\_FSJoinPath]{.ccmd} [listObj, elements]{.cargs}
+[Tcl\_Obj \*]{.ret} [Tcl\_FSSplitPath]{.ccmd} [pathPtr, lenPtr]{.cargs}
+[int]{.ret} [Tcl\_FSEqualPaths]{.ccmd} [firstPtr, secondPtr]{.cargs}
+[Tcl\_Obj \*]{.ret} [Tcl\_FSGetNormalizedPath]{.ccmd} [interp, pathPtr]{.cargs}
+[Tcl\_Obj \*]{.ret} [Tcl\_FSJoinToPath]{.ccmd} [basePtr, objc, objv]{.cargs}
+[int]{.ret} [Tcl\_FSConvertToPathType]{.ccmd} [interp, pathPtr]{.cargs}
+[void \*]{.ret} [Tcl\_FSGetInternalRep]{.ccmd} [pathPtr, fsPtr]{.cargs}
+[Tcl\_Obj \*]{.ret} [Tcl\_FSGetTranslatedPath]{.ccmd} [interp, pathPtr]{.cargs}
+[const char \*]{.ret} [Tcl\_FSGetTranslatedStringPath]{.ccmd} [interp, pathPtr]{.cargs}
+[Tcl\_Obj \*]{.ret} [Tcl\_FSNewNativePath]{.ccmd} [fsPtr, clientData]{.cargs}
+[const void \*]{.ret} [Tcl\_FSGetNativePath]{.ccmd} [pathPtr]{.cargs}
+[Tcl\_Obj \*]{.ret} [Tcl\_FSFileSystemInfo]{.ccmd} [pathPtr]{.cargs}
+[int]{.ret} [Tcl\_FSTildeExpand]{.ccmd} [interp, pathStr, dsPtr]{.cargs}
+[Tcl\_StatBuf \*]{.ret} [Tcl\_AllocStatBuf]{.ccmd} []{.cargs}
+[long long]{.ret} [Tcl\_GetAccessTimeFromStat]{.ccmd} [statPtr]{.cargs}
+[unsigned]{.ret} [Tcl\_GetBlockSizeFromStat]{.ccmd} [statPtr]{.cargs}
+[unsigned long long]{.ret} [Tcl\_GetBlocksFromStat]{.ccmd} [statPtr]{.cargs}
+[long long]{.ret} [Tcl\_GetChangeTimeFromStat]{.ccmd} [statPtr]{.cargs}
+[int]{.ret} [Tcl\_GetDeviceTypeFromStat]{.ccmd} [statPtr]{.cargs}
+[unsigned]{.ret} [Tcl\_GetFSDeviceFromStat]{.ccmd} [statPtr]{.cargs}
+[unsigned]{.ret} [Tcl\_GetFSInodeFromStat]{.ccmd} [statPtr]{.cargs}
+[int]{.ret} [Tcl\_GetGroupIdFromStat]{.ccmd} [statPtr]{.cargs}
+[int]{.ret} [Tcl\_GetLinkCountFromStat]{.ccmd} [statPtr]{.cargs}
+[unsigned]{.ret} [Tcl\_GetModeFromStat]{.ccmd} [statPtr]{.cargs}
+[long long]{.ret} [Tcl\_GetModificationTimeFromStat]{.ccmd} [statPtr]{.cargs}
+[unsigned long long]{.ret} [Tcl\_GetSizeFromStat]{.ccmd} [statPtr]{.cargs}
+[int]{.ret} [Tcl\_GetUserIdFromStat]{.ccmd} [statPtr]{.cargs}
 :::
 
 # Arguments

@@ -122,7 +122,7 @@ fcopy $in $out -size $chunk \
 vwait done
 ```
 
-The fourth example starts an asynchronous, bidirectional fcopy between two sockets. Those could also be pipes from two `open "|hal 9000" r+` (though their conversation would remain secret to the script, since all four fileevent slots are busy).
+The fourth example starts an asynchronous, bidirectional fcopy between two sockets. Those could also be pipes from two \[open "|hal 9000" r+\] (though their conversation would remain secret to the script, since all four fileevent slots are busy).
 
 ```
 set flows 2

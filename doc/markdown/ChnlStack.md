@@ -24,10 +24,10 @@ Tcl\_StackChannel, Tcl\_UnstackChannel, Tcl\_GetStackedChannel, Tcl\_GetTopChann
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[Tcl\_Channel]{.ret} [Tcl\_StackChannel]{.ccmd}[interp, typePtr, clientData, mask, channel]{.cargs}
-[int]{.ret} [Tcl\_UnstackChannel]{.ccmd}[interp, channel]{.cargs}
-[Tcl\_Channel]{.ret} [Tcl\_GetStackedChannel]{.ccmd}[channel]{.cargs}
-[Tcl\_Channel]{.ret} [Tcl\_GetTopChannel]{.ccmd}[channel]{.cargs}
+[Tcl\_Channel]{.ret} [Tcl\_StackChannel]{.ccmd} [interp, typePtr, clientData, mask, channel]{.cargs}
+[int]{.ret} [Tcl\_UnstackChannel]{.ccmd} [interp, channel]{.cargs}
+[Tcl\_Channel]{.ret} [Tcl\_GetStackedChannel]{.ccmd} [channel]{.cargs}
+[Tcl\_Channel]{.ret} [Tcl\_GetTopChannel]{.ccmd} [channel]{.cargs}
 :::
 
 # Arguments

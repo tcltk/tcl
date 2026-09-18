@@ -19,7 +19,7 @@ Tcl\_InitSubsystems - initialize the Tcl library.
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[const char \*]{.ret} [Tcl\_InitSubsystems]{.ccmd}[]{.cargs}
+[const char \*]{.ret} [Tcl\_InitSubsystems]{.ccmd} []{.cargs}
 :::
 
 # Description

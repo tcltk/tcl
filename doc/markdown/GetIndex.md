@@ -24,8 +24,8 @@ Tcl\_GetIndexFromObj, Tcl\_GetIndexFromObjStruct - lookup string in table of key
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[int]{.ret} [Tcl\_GetIndexFromObj]{.ccmd}[interp, objPtr, tablePtr, msg, flags, indexPtr]{.cargs}
-[int]{.ret} [Tcl\_GetIndexFromObjStruct]{.ccmd}[interp, objPtr, structTablePtr, offset, msg, flags, indexPtr]{.cargs}
+[int]{.ret} [Tcl\_GetIndexFromObj]{.ccmd} [interp, objPtr, tablePtr, msg, flags, indexPtr]{.cargs}
+[int]{.ret} [Tcl\_GetIndexFromObjStruct]{.ccmd} [interp, objPtr, structTablePtr, offset, msg, flags, indexPtr]{.cargs}
 :::
 
 # Arguments

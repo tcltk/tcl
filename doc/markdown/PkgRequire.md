@@ -25,13 +25,13 @@ Tcl\_PkgRequire, Tcl\_PkgRequireEx, Tcl\_PkgRequireProc, Tcl\_PkgPresent, Tcl\_P
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[const char \*]{.ret} [Tcl\_PkgRequire]{.ccmd}[interp, name, version, exact]{.cargs}
-[const char \*]{.ret} [Tcl\_PkgRequireEx]{.ccmd}[interp, name, version, exact, clientDataPtr]{.cargs}
-[int]{.ret} [Tcl\_PkgRequireProc]{.ccmd}[interp, name, objc, objv, clientDataPtr]{.cargs}
-[const char \*]{.ret} [Tcl\_PkgPresent]{.ccmd}[interp, name, version, exact]{.cargs}
-[const char \*]{.ret} [Tcl\_PkgPresentEx]{.ccmd}[interp, name, version, exact, clientDataPtr]{.cargs}
-[int]{.ret} [Tcl\_PkgProvide]{.ccmd}[interp, name, version]{.cargs}
-[int]{.ret} [Tcl\_PkgProvideEx]{.ccmd}[interp, name, version, clientData]{.cargs}
+[const char \*]{.ret} [Tcl\_PkgRequire]{.ccmd} [interp, name, version, exact]{.cargs}
+[const char \*]{.ret} [Tcl\_PkgRequireEx]{.ccmd} [interp, name, version, exact, clientDataPtr]{.cargs}
+[int]{.ret} [Tcl\_PkgRequireProc]{.ccmd} [interp, name, objc, objv, clientDataPtr]{.cargs}
+[const char \*]{.ret} [Tcl\_PkgPresent]{.ccmd} [interp, name, version, exact]{.cargs}
+[const char \*]{.ret} [Tcl\_PkgPresentEx]{.ccmd} [interp, name, version, exact, clientDataPtr]{.cargs}
+[int]{.ret} [Tcl\_PkgProvide]{.ccmd} [interp, name, version]{.cargs}
+[int]{.ret} [Tcl\_PkgProvideEx]{.ccmd} [interp, name, version, clientData]{.cargs}
 :::
 
 # Arguments

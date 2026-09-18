@@ -30,16 +30,16 @@ Tcl\_SetVar2Ex, Tcl\_SetVar, Tcl\_SetVar2, Tcl\_ObjSetVar2, Tcl\_GetVar2Ex, Tcl\
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[Tcl\_Obj \*]{.ret} [Tcl\_SetVar2Ex]{.ccmd}[interp, name1, name2, newValuePtr, flags]{.cargs}
-[const char \*]{.ret} [Tcl\_SetVar]{.ccmd}[interp, varName, newValue, flags]{.cargs}
-[const char \*]{.ret} [Tcl\_SetVar2]{.ccmd}[interp, name1, name2, newValue, flags]{.cargs}
-[Tcl\_Obj \*]{.ret} [Tcl\_ObjSetVar2]{.ccmd}[interp, part1Ptr, part2Ptr, newValuePtr, flags]{.cargs}
-[Tcl\_Obj \*]{.ret} [Tcl\_GetVar2Ex]{.ccmd}[interp, name1, name2, flags]{.cargs}
-[const char \*]{.ret} [Tcl\_GetVar]{.ccmd}[interp, varName, flags]{.cargs}
-[const char \*]{.ret} [Tcl\_GetVar2]{.ccmd}[interp, name1, name2, flags]{.cargs}
-[Tcl\_Obj \*]{.ret} [Tcl\_ObjGetVar2]{.ccmd}[interp, part1Ptr, part2Ptr, flags]{.cargs}
-[int]{.ret} [Tcl\_UnsetVar]{.ccmd}[interp, varName, flags]{.cargs}
-[int]{.ret} [Tcl\_UnsetVar2]{.ccmd}[interp, name1, name2, flags]{.cargs}
+[Tcl\_Obj \*]{.ret} [Tcl\_SetVar2Ex]{.ccmd} [interp, name1, name2, newValuePtr, flags]{.cargs}
+[const char \*]{.ret} [Tcl\_SetVar]{.ccmd} [interp, varName, newValue, flags]{.cargs}
+[const char \*]{.ret} [Tcl\_SetVar2]{.ccmd} [interp, name1, name2, newValue, flags]{.cargs}
+[Tcl\_Obj \*]{.ret} [Tcl\_ObjSetVar2]{.ccmd} [interp, part1Ptr, part2Ptr, newValuePtr, flags]{.cargs}
+[Tcl\_Obj \*]{.ret} [Tcl\_GetVar2Ex]{.ccmd} [interp, name1, name2, flags]{.cargs}
+[const char \*]{.ret} [Tcl\_GetVar]{.ccmd} [interp, varName, flags]{.cargs}
+[const char \*]{.ret} [Tcl\_GetVar2]{.ccmd} [interp, name1, name2, flags]{.cargs}
+[Tcl\_Obj \*]{.ret} [Tcl\_ObjGetVar2]{.ccmd} [interp, part1Ptr, part2Ptr, flags]{.cargs}
+[int]{.ret} [Tcl\_UnsetVar]{.ccmd} [interp, varName, flags]{.cargs}
+[int]{.ret} [Tcl\_UnsetVar2]{.ccmd} [interp, name1, name2, flags]{.cargs}
 :::
 
 # Arguments
@@ -92,7 +92,7 @@ The name of a variable may be specified to these procedures in four ways:
 
 2. If the *name1* and *name2* arguments are provided and *name2* is non-NULL, then an array element is specified and the array name and index have already been separated by the caller: *name1* contains the name and *name2* contains the index.  An error is generated if *name1*  contains an open parenthesis and ends with a close parenthesis (array element) and *name2* is non-NULL.
 
-3. If *name2* is NULL, *name1* is treated just like *varName* in case [1] above (it can be either a scalar or an array element variable name).
+3. If *name2* is NULL, *name1* is treated just like *varName* in case \[1\] above (it can be either a scalar or an array element variable name).
 
 
 The *flags* argument may be used to specify any of several options to the procedures. It consists of an OR-ed combination of the following bits.

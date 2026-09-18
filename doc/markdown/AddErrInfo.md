@@ -32,17 +32,17 @@ Tcl\_GetReturnOptions, Tcl\_SetReturnOptions, Tcl\_AddErrorInfo, Tcl\_AppendObjT
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[Tcl\_Obj \*]{.ret} [Tcl\_GetReturnOptions]{.ccmd}[interp, code]{.cargs}
-[int]{.ret} [Tcl\_SetReturnOptions]{.ccmd}[interp, options]{.cargs}
-[Tcl\_AddErrorInfo]{.ccmd}[interp, message]{.cargs}
-[Tcl\_AppendObjToErrorInfo]{.ccmd}[interp, objPtr]{.cargs}
-[Tcl\_AddObjErrorInfo]{.ccmd}[interp, message, length]{.cargs}
-[Tcl\_SetObjErrorCode]{.ccmd}[interp, errorObjPtr]{.cargs}
-[Tcl\_SetErrorCode]{.ccmd}[interp, element, element, ... (char \*)NULL]{.cargs}
-[int]{.ret} [Tcl\_GetErrorLine]{.ccmd}[interp]{.cargs}
-[Tcl\_SetErrorLine]{.ccmd}[interp, lineNum]{.cargs}
-[const char \*]{.ret} [Tcl\_PosixError]{.ccmd}[interp]{.cargs}
-[Tcl\_LogCommandInfo]{.ccmd}[interp, script, command, commandLength]{.cargs}
+[Tcl\_Obj \*]{.ret} [Tcl\_GetReturnOptions]{.ccmd} [interp, code]{.cargs}
+[int]{.ret} [Tcl\_SetReturnOptions]{.ccmd} [interp, options]{.cargs}
+[Tcl\_AddErrorInfo]{.ccmd} [interp, message]{.cargs}
+[Tcl\_AppendObjToErrorInfo]{.ccmd} [interp, objPtr]{.cargs}
+[Tcl\_AddObjErrorInfo]{.ccmd} [interp, message, length]{.cargs}
+[Tcl\_SetObjErrorCode]{.ccmd} [interp, errorObjPtr]{.cargs}
+[Tcl\_SetErrorCode]{.ccmd} [interp, element, element, ... (char \*)NULL]{.cargs}
+[int]{.ret} [Tcl\_GetErrorLine]{.ccmd} [interp]{.cargs}
+[Tcl\_SetErrorLine]{.ccmd} [interp, lineNum]{.cargs}
+[const char \*]{.ret} [Tcl\_PosixError]{.ccmd} [interp]{.cargs}
+[Tcl\_LogCommandInfo]{.ccmd} [interp, script, command, commandLength]{.cargs}
 :::
 
 # Arguments

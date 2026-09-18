@@ -28,14 +28,14 @@ Tcl\_RegExpMatch, Tcl\_RegExpCompile, Tcl\_RegExpExec, Tcl\_RegExpRange, Tcl\_Ge
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[int]{.ret} [Tcl\_RegExpMatchObj]{.ccmd}[interp, textObj, patObj]{.cargs}
-[int]{.ret} [Tcl\_RegExpMatch]{.ccmd}[interp, text, pattern]{.cargs}
-[Tcl\_RegExp]{.ret} [Tcl\_RegExpCompile]{.ccmd}[interp, pattern]{.cargs}
-[int]{.ret} [Tcl\_RegExpExec]{.ccmd}[interp, regexp, text, start]{.cargs}
-[Tcl\_RegExpRange]{.ccmd}[regexp, index, startPtr, endPtr]{.cargs}
-[Tcl\_RegExp]{.ret} [Tcl\_GetRegExpFromObj]{.ccmd}[interp, patObj, cflags]{.cargs}
-[int]{.ret} [Tcl\_RegExpExecObj]{.ccmd}[interp, regexp, textObj, offset, nmatches, eflags]{.cargs}
-[Tcl\_RegExpGetInfo]{.ccmd}[regexp, infoPtr]{.cargs}
+[int]{.ret} [Tcl\_RegExpMatchObj]{.ccmd} [interp, textObj, patObj]{.cargs}
+[int]{.ret} [Tcl\_RegExpMatch]{.ccmd} [interp, text, pattern]{.cargs}
+[Tcl\_RegExp]{.ret} [Tcl\_RegExpCompile]{.ccmd} [interp, pattern]{.cargs}
+[int]{.ret} [Tcl\_RegExpExec]{.ccmd} [interp, regexp, text, start]{.cargs}
+[Tcl\_RegExpRange]{.ccmd} [regexp, index, startPtr, endPtr]{.cargs}
+[Tcl\_RegExp]{.ret} [Tcl\_GetRegExpFromObj]{.ccmd} [interp, patObj, cflags]{.cargs}
+[int]{.ret} [Tcl\_RegExpExecObj]{.ccmd} [interp, regexp, textObj, offset, nmatches, eflags]{.cargs}
+[Tcl\_RegExpGetInfo]{.ccmd} [regexp, infoPtr]{.cargs}
 :::
 
 # Arguments
@@ -123,13 +123,13 @@ Tcl\_RegExpMatch, Tcl\_RegExpCompile, Tcl\_RegExpExec, Tcl\_RegExpRange, Tcl\_Ge
 : Compile for matching that ignores upper/lower case distinctions.
 
 **TCL\_REG\_NEWLINE**
-: Compile for newline-sensitive matching.  By default, newline is a completely ordinary character with no special meaning in either regular expressions or strings.  With this flag, "[^" bracket expressions and "." never match newline, "^" matches an empty string after any newline in addition to its normal function, and "$" matches an empty string before any newline in addition to its normal function. **REG\_NEWLINE** is the bit-wise OR of **REG\_NLSTOP** and **REG\_NLANCH**.
+: Compile for newline-sensitive matching.  By default, newline is a completely ordinary character with no special meaning in either regular expressions or strings.  With this flag, "\[^" bracket expressions and "." never match newline, "^" matches an empty string after any newline in addition to its normal function, and "$" matches an empty string before any newline in addition to its normal function. **REG\_NEWLINE** is the bit-wise OR of **REG\_NLSTOP** and **REG\_NLANCH**.
 
 **TCL\_REG\_NLSTOP**
-: Compile for partial newline-sensitive matching, with the behavior of "[^" bracket expressions and "." affected, but not the behavior of "^" and "$". In this mode, "[^" bracket expressions and "." never match newline.
+: Compile for partial newline-sensitive matching, with the behavior of "\[^" bracket expressions and "." affected, but not the behavior of "^" and "$". In this mode, "\[^" bracket expressions and "." never match newline.
 
 **TCL\_REG\_NLANCH**
-: Compile for inverse partial newline-sensitive matching, with the behavior of "^" and "$" (the "anchors") affected, but not the behavior of "[^" bracket expressions and ".". In this mode "^" matches an empty string after any newline in addition to its normal function, and "$" matches an empty string before any newline in addition to its normal function.
+: Compile for inverse partial newline-sensitive matching, with the behavior of "^" and "$" (the "anchors") affected, but not the behavior of "\[^" bracket expressions and ".". In this mode "^" matches an empty string after any newline in addition to its normal function, and "$" matches an empty string before any newline in addition to its normal function.
 
 **TCL\_REG\_NOSUB**
 : Compile for matching that reports only success or failure, not what was matched.  This reduces compile overhead and may improve performance.  Subsequent calls to **Tcl\_RegExpGetInfo** or **Tcl\_RegExpRange** will not report any match information.

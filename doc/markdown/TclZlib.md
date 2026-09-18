@@ -25,19 +25,19 @@ Tcl\_ZlibAdler32, Tcl\_ZlibCRC32, Tcl\_ZlibDeflate, Tcl\_ZlibInflate, Tcl\_ZlibS
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[int]{.ret} [Tcl\_ZlibDeflate]{.ccmd}[interp, format, dataObj, level, dictObj]{.cargs}
-[int]{.ret} [Tcl\_ZlibInflate]{.ccmd}[interp, format, dataObj, bufferSize, dictObj]{.cargs}
-[unsigned]{.ret} [Tcl\_ZlibCRC32]{.ccmd}[initValue, bytes, length]{.cargs}
-[unsigned]{.ret} [Tcl\_ZlibAdler32]{.ccmd}[initValue, bytes, length]{.cargs}
-[int]{.ret} [Tcl\_ZlibStreamInit]{.ccmd}[interp, mode, format, level, dictObj, zshandlePtr]{.cargs}
-[Tcl\_Obj \*]{.ret} [Tcl\_ZlibStreamGetCommandName]{.ccmd}[zshandle]{.cargs}
-[int]{.ret} [Tcl\_ZlibStreamEof]{.ccmd}[zshandle]{.cargs}
-[int]{.ret} [Tcl\_ZlibStreamClose]{.ccmd}[zshandle]{.cargs}
-[int]{.ret} [Tcl\_ZlibStreamReset]{.ccmd}[zshandle]{.cargs}
-[int]{.ret} [Tcl\_ZlibStreamChecksum]{.ccmd}[zshandle]{.cargs}
-[int]{.ret} [Tcl\_ZlibStreamPut]{.ccmd}[zshandle, dataObj, flush]{.cargs}
-[int]{.ret} [Tcl\_ZlibStreamGet]{.ccmd}[zshandle, dataObj, count]{.cargs}
-[Tcl\_ZlibStreamSetCompressionDictionary]{.ccmd}[zshandle, compDict]{.cargs}
+[int]{.ret} [Tcl\_ZlibDeflate]{.ccmd} [interp, format, dataObj, level, dictObj]{.cargs}
+[int]{.ret} [Tcl\_ZlibInflate]{.ccmd} [interp, format, dataObj, bufferSize, dictObj]{.cargs}
+[unsigned]{.ret} [Tcl\_ZlibCRC32]{.ccmd} [initValue, bytes, length]{.cargs}
+[unsigned]{.ret} [Tcl\_ZlibAdler32]{.ccmd} [initValue, bytes, length]{.cargs}
+[int]{.ret} [Tcl\_ZlibStreamInit]{.ccmd} [interp, mode, format, level, dictObj, zshandlePtr]{.cargs}
+[Tcl\_Obj \*]{.ret} [Tcl\_ZlibStreamGetCommandName]{.ccmd} [zshandle]{.cargs}
+[int]{.ret} [Tcl\_ZlibStreamEof]{.ccmd} [zshandle]{.cargs}
+[int]{.ret} [Tcl\_ZlibStreamClose]{.ccmd} [zshandle]{.cargs}
+[int]{.ret} [Tcl\_ZlibStreamReset]{.ccmd} [zshandle]{.cargs}
+[int]{.ret} [Tcl\_ZlibStreamChecksum]{.ccmd} [zshandle]{.cargs}
+[int]{.ret} [Tcl\_ZlibStreamPut]{.ccmd} [zshandle, dataObj, flush]{.cargs}
+[int]{.ret} [Tcl\_ZlibStreamGet]{.ccmd} [zshandle, dataObj, count]{.cargs}
+[Tcl\_ZlibStreamSetCompressionDictionary]{.ccmd} [zshandle, compDict]{.cargs}
 :::
 
 # Arguments

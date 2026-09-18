@@ -25,7 +25,7 @@ Tcl\_AppInit - perform application-specific initialization
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[int]{.ret} [Tcl\_AppInit]{.ccmd}[interp]{.cargs}
+[int]{.ret} [Tcl\_AppInit]{.ccmd} [interp]{.cargs}
 :::
 
 # Arguments

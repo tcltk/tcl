@@ -31,11 +31,7 @@ incr - Increment the value of a variable
 
 Increments the value stored in the variable whose name is *varName*. The value of the variable must be an integer. If *increment* is supplied then its value (which must be an integer) is added to the value of variable *varName*;  otherwise 1 is added to *varName*. The new value is stored as a decimal string in variable *varName* and also returned as result.
 
-Starting with the Tcl 8.5 release, the variable *varName* passed to **incr** may be unset, and in that case, it will be set to the value *increment* or to the default increment value of **1**.
-
-::: {.info version="TIP508"}
-If *varName* indicate an element that does not exist of an array that has a default value set, the sum of the default value and the *increment* (or 1) will be stored in the array element.
-:::
+Starting with the Tcl 8.5 release, the variable *varName* passed to **incr** may be unset, and in that case, it will be set to the value *increment* or to the default increment value of **1**. [If *varName* indicate an element that does not exist of an array that has a default value set, the sum of the default value and the *increment* (or 1) will be stored in the array element.]{version="TIP508"}
 
 # Examples
 

@@ -25,20 +25,20 @@ Tcl\_InitHashTable, Tcl\_InitCustomHashTable, Tcl\_InitObjHashTable, Tcl\_Delete
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[Tcl\_InitHashTable]{.ccmd}[tablePtr, keyType]{.cargs}
-[Tcl\_InitCustomHashTable]{.ccmd}[tablePtr, keyType, typePtr]{.cargs}
-[Tcl\_InitObjHashTable]{.ccmd}[tablePtr]{.cargs}
-[Tcl\_DeleteHashTable]{.ccmd}[tablePtr]{.cargs}
-[Tcl\_HashEntry \*]{.ret} [Tcl\_CreateHashEntry]{.ccmd}[tablePtr, key, newPtr]{.cargs}
-[Tcl\_HashEntry \*]{.ret} [Tcl\_AttemptCreateHashEntry]{.ccmd}[tablePtr, key, newPtr]{.cargs}
-[Tcl\_DeleteHashEntry]{.ccmd}[entryPtr]{.cargs}
-[Tcl\_HashEntry \*]{.ret} [Tcl\_FindHashEntry]{.ccmd}[tablePtr, key]{.cargs}
-[void \*]{.ret} [Tcl\_GetHashValue]{.ccmd}[entryPtr]{.cargs}
-[Tcl\_SetHashValue]{.ccmd}[entryPtr, value]{.cargs}
-[void \*]{.ret} [Tcl\_GetHashKey]{.ccmd}[tablePtr, entryPtr]{.cargs}
-[Tcl\_HashEntry \*]{.ret} [Tcl\_FirstHashEntry]{.ccmd}[tablePtr, searchPtr]{.cargs}
-[Tcl\_HashEntry \*]{.ret} [Tcl\_NextHashEntry]{.ccmd}[searchPtr]{.cargs}
-[char \*]{.ret} [Tcl\_HashStats]{.ccmd}[tablePtr]{.cargs}
+[Tcl\_InitHashTable]{.ccmd} [tablePtr, keyType]{.cargs}
+[Tcl\_InitCustomHashTable]{.ccmd} [tablePtr, keyType, typePtr]{.cargs}
+[Tcl\_InitObjHashTable]{.ccmd} [tablePtr]{.cargs}
+[Tcl\_DeleteHashTable]{.ccmd} [tablePtr]{.cargs}
+[Tcl\_HashEntry \*]{.ret} [Tcl\_CreateHashEntry]{.ccmd} [tablePtr, key, newPtr]{.cargs}
+[Tcl\_HashEntry \*]{.ret} [Tcl\_AttemptCreateHashEntry]{.ccmd} [tablePtr, key, newPtr]{.cargs}
+[Tcl\_DeleteHashEntry]{.ccmd} [entryPtr]{.cargs}
+[Tcl\_HashEntry \*]{.ret} [Tcl\_FindHashEntry]{.ccmd} [tablePtr, key]{.cargs}
+[void \*]{.ret} [Tcl\_GetHashValue]{.ccmd} [entryPtr]{.cargs}
+[Tcl\_SetHashValue]{.ccmd} [entryPtr, value]{.cargs}
+[void \*]{.ret} [Tcl\_GetHashKey]{.ccmd} [tablePtr, entryPtr]{.cargs}
+[Tcl\_HashEntry \*]{.ret} [Tcl\_FirstHashEntry]{.ccmd} [tablePtr, searchPtr]{.cargs}
+[Tcl\_HashEntry \*]{.ret} [Tcl\_NextHashEntry]{.ccmd} [searchPtr]{.cargs}
+[char \*]{.ret} [Tcl\_HashStats]{.ccmd} [tablePtr]{.cargs}
 :::
 
 # Arguments

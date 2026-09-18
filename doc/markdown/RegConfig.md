@@ -20,7 +20,7 @@ Tcl\_RegisterConfig - procedures to register embedded configuration information
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[Tcl\_RegisterConfig]{.ccmd}[interp, pkgName, configuration, valEncoding]{.cargs}
+[Tcl\_RegisterConfig]{.ccmd} [interp, pkgName, configuration, valEncoding]{.cargs}
 :::
 
 # Arguments

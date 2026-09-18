@@ -30,40 +30,40 @@ Tcl\_CreateChannel, Tcl\_GetChannelInstanceData, Tcl\_GetChannelType, Tcl\_GetCh
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[Tcl\_Channel]{.ret} [Tcl\_CreateChannel]{.ccmd}[typePtr, channelName, instanceData, mask]{.cargs}
-[void \*]{.ret} [Tcl\_GetChannelInstanceData]{.ccmd}[channel]{.cargs}
-[const Tcl\_ChannelType \*]{.ret} [Tcl\_GetChannelType]{.ccmd}[channel]{.cargs}
-[const char \*]{.ret} [Tcl\_GetChannelName]{.ccmd}[channel]{.cargs}
-[int]{.ret} [Tcl\_GetChannelHandle]{.ccmd}[channel, direction, handlePtr]{.cargs}
-[Tcl\_ThreadId]{.ret} [Tcl\_GetChannelThread]{.ccmd}[channel]{.cargs}
-[int]{.ret} [Tcl\_GetChannelMode]{.ccmd}[channel]{.cargs}
-[int]{.ret} [Tcl\_RemoveChannelMode]{.ccmd version="TIP220"}[interp, channel, mode]{.cargs}
-[int]{.ret} [Tcl\_GetChannelBufferSize]{.ccmd}[channel]{.cargs}
-[Tcl\_SetChannelBufferSize]{.ccmd}[channel, size]{.cargs}
-[Tcl\_NotifyChannel]{.ccmd}[channel, mask]{.cargs}
-[int]{.ret} [Tcl\_BadChannelOption]{.ccmd}[interp, optionName, optionList]{.cargs}
-[int]{.ret} [Tcl\_IsChannelShared]{.ccmd}[channel]{.cargs}
-[int]{.ret} [Tcl\_IsChannelRegistered]{.ccmd}[interp, channel]{.cargs}
-[int]{.ret} [Tcl\_IsChannelExisting]{.ccmd}[channelName]{.cargs}
-[Tcl\_CutChannel]{.ccmd}[channel]{.cargs}
-[Tcl\_SpliceChannel]{.ccmd}[channel]{.cargs}
-[Tcl\_ClearChannelHandlers]{.ccmd}[channel]{.cargs}
-[int]{.ret} [Tcl\_ChannelBuffered]{.ccmd}[channel]{.cargs}
-[const char \*]{.ret} [Tcl\_ChannelName]{.ccmd}[typePtr]{.cargs}
-[Tcl\_ChannelTypeVersion]{.ret} [Tcl\_ChannelVersion]{.ccmd}[typePtr]{.cargs}
-[Tcl\_DriverBlockModeProc \*]{.ret} [Tcl\_ChannelBlockModeProc]{.ccmd}[typePtr]{.cargs}
-[Tcl\_DriverClose2Proc \*]{.ret} [Tcl\_ChannelClose2Proc]{.ccmd}[typePtr]{.cargs}
-[Tcl\_DriverInputProc \*]{.ret} [Tcl\_ChannelInputProc]{.ccmd}[typePtr]{.cargs}
-[Tcl\_DriverOutputProc \*]{.ret} [Tcl\_ChannelOutputProc]{.ccmd}[typePtr]{.cargs}
-[Tcl\_DriverWideSeekProc \*]{.ret} [Tcl\_ChannelWideSeekProc]{.ccmd}[typePtr]{.cargs}
-[Tcl\_DriverThreadActionProc \*]{.ret} [Tcl\_ChannelThreadActionProc]{.ccmd}[typePtr]{.cargs}
-[Tcl\_DriverTruncateProc \*]{.ret} [Tcl\_ChannelTruncateProc]{.ccmd}[typePtr]{.cargs}
-[Tcl\_DriverSetOptionProc \*]{.ret} [Tcl\_ChannelSetOptionProc]{.ccmd}[typePtr]{.cargs}
-[Tcl\_DriverGetOptionProc \*]{.ret} [Tcl\_ChannelGetOptionProc]{.ccmd}[typePtr]{.cargs}
-[Tcl\_DriverWatchProc \*]{.ret} [Tcl\_ChannelWatchProc]{.ccmd}[typePtr]{.cargs}
-[Tcl\_DriverGetHandleProc \*]{.ret} [Tcl\_ChannelGetHandleProc]{.ccmd}[typePtr]{.cargs}
-[Tcl\_DriverFlushProc \*]{.ret} [Tcl\_ChannelFlushProc]{.ccmd}[typePtr]{.cargs}
-[Tcl\_DriverHandlerProc \*]{.ret} [Tcl\_ChannelHandlerProc]{.ccmd}[typePtr]{.cargs}
+[Tcl\_Channel]{.ret} [Tcl\_CreateChannel]{.ccmd} [typePtr, channelName, instanceData, mask]{.cargs}
+[void \*]{.ret} [Tcl\_GetChannelInstanceData]{.ccmd} [channel]{.cargs}
+[const Tcl\_ChannelType \*]{.ret} [Tcl\_GetChannelType]{.ccmd} [channel]{.cargs}
+[const char \*]{.ret} [Tcl\_GetChannelName]{.ccmd} [channel]{.cargs}
+[int]{.ret} [Tcl\_GetChannelHandle]{.ccmd} [channel, direction, handlePtr]{.cargs}
+[Tcl\_ThreadId]{.ret} [Tcl\_GetChannelThread]{.ccmd} [channel]{.cargs}
+[int]{.ret} [Tcl\_GetChannelMode]{.ccmd} [channel]{.cargs}
+[int]{.ret} [Tcl\_RemoveChannelMode]{.ccmd version="TIP220"} [interp, channel, mode]{.cargs}
+[int]{.ret} [Tcl\_GetChannelBufferSize]{.ccmd} [channel]{.cargs}
+[Tcl\_SetChannelBufferSize]{.ccmd} [channel, size]{.cargs}
+[Tcl\_NotifyChannel]{.ccmd} [channel, mask]{.cargs}
+[int]{.ret} [Tcl\_BadChannelOption]{.ccmd} [interp, optionName, optionList]{.cargs}
+[int]{.ret} [Tcl\_IsChannelShared]{.ccmd} [channel]{.cargs}
+[int]{.ret} [Tcl\_IsChannelRegistered]{.ccmd} [interp, channel]{.cargs}
+[int]{.ret} [Tcl\_IsChannelExisting]{.ccmd} [channelName]{.cargs}
+[Tcl\_CutChannel]{.ccmd} [channel]{.cargs}
+[Tcl\_SpliceChannel]{.ccmd} [channel]{.cargs}
+[Tcl\_ClearChannelHandlers]{.ccmd} [channel]{.cargs}
+[int]{.ret} [Tcl\_ChannelBuffered]{.ccmd} [channel]{.cargs}
+[const char \*]{.ret} [Tcl\_ChannelName]{.ccmd} [typePtr]{.cargs}
+[Tcl\_ChannelTypeVersion]{.ret} [Tcl\_ChannelVersion]{.ccmd} [typePtr]{.cargs}
+[Tcl\_DriverBlockModeProc \*]{.ret} [Tcl\_ChannelBlockModeProc]{.ccmd} [typePtr]{.cargs}
+[Tcl\_DriverClose2Proc \*]{.ret} [Tcl\_ChannelClose2Proc]{.ccmd} [typePtr]{.cargs}
+[Tcl\_DriverInputProc \*]{.ret} [Tcl\_ChannelInputProc]{.ccmd} [typePtr]{.cargs}
+[Tcl\_DriverOutputProc \*]{.ret} [Tcl\_ChannelOutputProc]{.ccmd} [typePtr]{.cargs}
+[Tcl\_DriverWideSeekProc \*]{.ret} [Tcl\_ChannelWideSeekProc]{.ccmd} [typePtr]{.cargs}
+[Tcl\_DriverThreadActionProc \*]{.ret} [Tcl\_ChannelThreadActionProc]{.ccmd} [typePtr]{.cargs}
+[Tcl\_DriverTruncateProc \*]{.ret} [Tcl\_ChannelTruncateProc]{.ccmd} [typePtr]{.cargs}
+[Tcl\_DriverSetOptionProc \*]{.ret} [Tcl\_ChannelSetOptionProc]{.ccmd} [typePtr]{.cargs}
+[Tcl\_DriverGetOptionProc \*]{.ret} [Tcl\_ChannelGetOptionProc]{.ccmd} [typePtr]{.cargs}
+[Tcl\_DriverWatchProc \*]{.ret} [Tcl\_ChannelWatchProc]{.ccmd} [typePtr]{.cargs}
+[Tcl\_DriverGetHandleProc \*]{.ret} [Tcl\_ChannelGetHandleProc]{.ccmd} [typePtr]{.cargs}
+[Tcl\_DriverFlushProc \*]{.ret} [Tcl\_ChannelFlushProc]{.ccmd} [typePtr]{.cargs}
+[Tcl\_DriverHandlerProc \*]{.ret} [Tcl\_ChannelHandlerProc]{.ccmd} [typePtr]{.cargs}
 :::
 
 # Arguments
@@ -138,6 +138,8 @@ To add a new type of channel you must implement a C API or a Tcl command that op
 **Tcl\_GetChannelThread** returns the id of the thread currently managing the specified *channel*. This allows channel drivers to send their file events to the correct event queue even for a multi-threaded core.
 
 **Tcl\_GetChannelMode** returns an OR-ed combination of **TCL\_READABLE** and **TCL\_WRITABLE**, indicating whether the channel is open for input and output.
+
+[]{version="TIP220"}
 
 **Tcl\_RemoveChannelMode** removes an access privilege from the channel, either **TCL\_READABLE** or **TCL\_WRITABLE**, and returns a regular Tcl result code, [TCL\_OK][catch], or [TCL\_ERROR][catch]. The function throws an error if either an invalid mode is specified or the result of the removal would be an inaccessible channel. In that case an error message is left in the interp argument, if not NULL.
 

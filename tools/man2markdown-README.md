@@ -35,7 +35,7 @@ The tcl/doc directory contains 248 manual pages which are divided as follows:
 section | number of documents | initial conversion | final conversion
 --------|---------------------|--------------------|-----------------
 1       | 1                   | 1                  | 0
-3       | 108                 | 108                | 56
+3       | 108                 | 108                | 60
 n       | 140                 | 140                | 140
 
 Final conversion of these files in the n section is currently done:
@@ -238,6 +238,10 @@ Now the 3 section:
 54. InitSubSyst
 55. IntObj
 56. Limit
+57. LinkVar
+58. ListObj
+59. Load3
+60. Method
 
 
 

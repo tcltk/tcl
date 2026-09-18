@@ -29,9 +29,9 @@ Tcl\_NewDoubleObj, Tcl\_SetDoubleObj, Tcl\_GetDoubleFromObj - manipulate Tcl val
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[Tcl\_Obj \*]{.ret} [Tcl\_NewDoubleObj]{.ccmd}[doubleValue]{.cargs}
-[Tcl\_SetDoubleObj]{.ccmd}[objPtr, doubleValue]{.cargs}
-[int]{.ret} [Tcl\_GetDoubleFromObj]{.ccmd}[interp, objPtr, doublePtr]{.cargs}
+[Tcl\_Obj \*]{.ret} [Tcl\_NewDoubleObj]{.ccmd} [doubleValue]{.cargs}
+[Tcl\_SetDoubleObj]{.ccmd} [objPtr, doubleValue]{.cargs}
+[int]{.ret} [Tcl\_GetDoubleFromObj]{.ccmd} [interp, objPtr, doublePtr]{.cargs}
 :::
 
 # Arguments

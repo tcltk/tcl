@@ -23,18 +23,18 @@ Tcl\_AppendExportList, Tcl\_CreateNamespace, Tcl\_DeleteNamespace, Tcl\_Export, 
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[Tcl\_Namespace \*]{.ret} [Tcl\_CreateNamespace]{.ccmd}[interp, name, clientData, deleteProc]{.cargs}
-[Tcl\_DeleteNamespace]{.ccmd}[nsPtr]{.cargs}
-[int]{.ret} [Tcl\_AppendExportList]{.ccmd}[interp, nsPtr, objPtr]{.cargs}
-[int]{.ret} [Tcl\_Export]{.ccmd}[interp, nsPtr, pattern, resetListFirst]{.cargs}
-[int]{.ret} [Tcl\_Import]{.ccmd}[interp, nsPtr, pattern, allowOverwrite]{.cargs}
-[int]{.ret} [Tcl\_ForgetImport]{.ccmd}[interp, nsPtr, pattern]{.cargs}
-[Tcl\_Namespace \*]{.ret} [Tcl\_GetCurrentNamespace]{.ccmd}[interp]{.cargs}
-[Tcl\_Namespace \*]{.ret} [Tcl\_GetGlobalNamespace]{.ccmd}[interp]{.cargs}
-[Tcl\_Namespace \*]{.ret} [Tcl\_FindNamespace]{.ccmd}[interp, name, contextNsPtr, flags]{.cargs}
-[Tcl\_Command]{.ret} [Tcl\_FindCommand]{.ccmd}[interp, name, contextNsPtr, flags]{.cargs}
-[Tcl\_Obj \*]{.ret} [Tcl\_GetNamespaceUnknownHandler]{.ccmd}[interp, nsPtr]{.cargs}
-[int]{.ret} [Tcl\_SetNamespaceUnknownHandler]{.ccmd}[interp, nsPtr, handlerPtr]{.cargs}
+[Tcl\_Namespace \*]{.ret} [Tcl\_CreateNamespace]{.ccmd} [interp, name, clientData, deleteProc]{.cargs}
+[Tcl\_DeleteNamespace]{.ccmd} [nsPtr]{.cargs}
+[int]{.ret} [Tcl\_AppendExportList]{.ccmd} [interp, nsPtr, objPtr]{.cargs}
+[int]{.ret} [Tcl\_Export]{.ccmd} [interp, nsPtr, pattern, resetListFirst]{.cargs}
+[int]{.ret} [Tcl\_Import]{.ccmd} [interp, nsPtr, pattern, allowOverwrite]{.cargs}
+[int]{.ret} [Tcl\_ForgetImport]{.ccmd} [interp, nsPtr, pattern]{.cargs}
+[Tcl\_Namespace \*]{.ret} [Tcl\_GetCurrentNamespace]{.ccmd} [interp]{.cargs}
+[Tcl\_Namespace \*]{.ret} [Tcl\_GetGlobalNamespace]{.ccmd} [interp]{.cargs}
+[Tcl\_Namespace \*]{.ret} [Tcl\_FindNamespace]{.ccmd} [interp, name, contextNsPtr, flags]{.cargs}
+[Tcl\_Command]{.ret} [Tcl\_FindCommand]{.ccmd} [interp, name, contextNsPtr, flags]{.cargs}
+[Tcl\_Obj \*]{.ret} [Tcl\_GetNamespaceUnknownHandler]{.ccmd} [interp, nsPtr]{.cargs}
+[int]{.ret} [Tcl\_SetNamespaceUnknownHandler]{.ccmd} [interp, nsPtr, handlerPtr]{.cargs}
 :::
 
 # Arguments

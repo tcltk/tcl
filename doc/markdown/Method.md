@@ -26,24 +26,24 @@ Tcl\_ClassSetConstructor, Tcl\_ClassSetDestructor, Tcl\_MethodDeclarerClass, Tcl
 
 ::: {.synopsis} :::
 **#include <tclOO.h>**
-[Tcl\_Method]{.ret} [Tcl\_NewMethod]{.ccmd}[interp, class, nameObj, flags, methodTypePtr, clientData]{.cargs}
-[Tcl\_Method]{.ret} [Tcl\_NewMethod2]{.ccmd}[interp, class, nameObj, flags, methodType2Ptr, clientData]{.cargs}
-[Tcl\_Method]{.ret} [Tcl\_NewInstanceMethod]{.ccmd}[interp, object, nameObj, flags, methodTypePtr, clientData]{.cargs}
-[Tcl\_Method]{.ret} [Tcl\_NewInstanceMethod2]{.ccmd}[interp, object, nameObj, flags, methodType2Ptr, clientData]{.cargs}
-[Tcl\_ClassSetConstructor]{.ccmd}[interp, class, method]{.cargs}
-[Tcl\_ClassSetDestructor]{.ccmd}[interp, class, method]{.cargs}
-[Tcl\_Class]{.ret} [Tcl\_MethodDeclarerClass]{.ccmd}[method]{.cargs}
-[Tcl\_Object]{.ret} [Tcl\_MethodDeclarerObject]{.ccmd}[method]{.cargs}
-[Tcl\_Obj \*]{.ret} [Tcl\_MethodName]{.ccmd}[method]{.cargs}
-[int]{.ret} [Tcl\_MethodIsPublic]{.ccmd version="TIP500"}[method]{.cargs}
-[int]{.ret} [Tcl\_MethodIsPrivate]{.ccmd}[method]{.cargs}
-[int]{.ret} [Tcl\_MethodIsType]{.ccmd}[method, methodTypePtr, clientDataPtr]{.cargs}
-[int]{.ret} [Tcl\_MethodIsType2]{.ccmd}[method, methodType2Ptr, clientDataPtr]{.cargs}
-[int]{.ret} [Tcl\_ObjectContextInvokeNext]{.ccmd}[interp, context, objc, objv, skip]{.cargs}
-[int]{.ret} [Tcl\_ObjectContextIsFiltering]{.ccmd}[context]{.cargs}
-[Tcl\_Method]{.ret} [Tcl\_ObjectContextMethod]{.ccmd}[context]{.cargs}
-[Tcl\_Object]{.ret} [Tcl\_ObjectContextObject]{.ccmd}[context]{.cargs}
-[Tcl\_Size]{.ret} [Tcl\_ObjectContextSkippedArgs]{.ccmd}[context]{.cargs}
+[Tcl\_Method]{.ret} [Tcl\_NewMethod]{.ccmd} [interp, class, nameObj, flags, methodTypePtr, clientData]{.cargs}
+[Tcl\_Method]{.ret} [Tcl\_NewMethod2]{.ccmd} [interp, class, nameObj, flags, methodType2Ptr, clientData]{.cargs}
+[Tcl\_Method]{.ret} [Tcl\_NewInstanceMethod]{.ccmd} [interp, object, nameObj, flags, methodTypePtr, clientData]{.cargs}
+[Tcl\_Method]{.ret} [Tcl\_NewInstanceMethod2]{.ccmd} [interp, object, nameObj, flags, methodType2Ptr, clientData]{.cargs}
+[Tcl\_ClassSetConstructor]{.ccmd} [interp, class, method]{.cargs}
+[Tcl\_ClassSetDestructor]{.ccmd} [interp, class, method]{.cargs}
+[Tcl\_Class]{.ret} [Tcl\_MethodDeclarerClass]{.ccmd} [method]{.cargs}
+[Tcl\_Object]{.ret} [Tcl\_MethodDeclarerObject]{.ccmd} [method]{.cargs}
+[Tcl\_Obj \*]{.ret} [Tcl\_MethodName]{.ccmd} [method]{.cargs}
+[int]{.ret} [Tcl\_MethodIsPublic]{.ccmd version="TIP500"} [method]{.cargs}
+[int]{.ret} [Tcl\_MethodIsPrivate]{.ccmd} [method]{.cargs}
+[int]{.ret} [Tcl\_MethodIsType]{.ccmd} [method, methodTypePtr, clientDataPtr]{.cargs}
+[int]{.ret} [Tcl\_MethodIsType2]{.ccmd} [method, methodType2Ptr, clientDataPtr]{.cargs}
+[int]{.ret} [Tcl\_ObjectContextInvokeNext]{.ccmd} [interp, context, objc, objv, skip]{.cargs}
+[int]{.ret} [Tcl\_ObjectContextIsFiltering]{.ccmd} [context]{.cargs}
+[Tcl\_Method]{.ret} [Tcl\_ObjectContextMethod]{.ccmd} [context]{.cargs}
+[Tcl\_Object]{.ret} [Tcl\_ObjectContextObject]{.ccmd} [context]{.cargs}
+[Tcl\_Size]{.ret} [Tcl\_ObjectContextSkippedArgs]{.ccmd} [context]{.cargs}
 :::
 
 # Arguments
@@ -99,23 +99,11 @@ Tcl\_ClassSetConstructor, Tcl\_ClassSetDestructor, Tcl\_MethodDeclarerClass, Tcl
 
 A method is an operation carried out on an object that is associated with the object. Every method must be attached to either an object or a class; methods attached to a class are associated with all instances (direct and indirect) of that class.
 
-Given a method, the entity that declared it can be found using **Tcl\_MethodDeclarerClass** which returns the class that the method is attached to (or NULL if the method is not attached to any class) and **Tcl\_MethodDeclarerObject** which returns the object that the method is attached to (or NULL if the method is not attached to an object). The name of the method can be retrieved with **Tcl\_MethodName**, whether the method is exported is retrieved with **Tcl\_MethodIsPublic**,
-
-::: {.info version="TIP500"}
-and whether the method is private is retrieved with **Tcl\_MethodIsPrivate**.
-:::
-
-The type of the method can also be introspected upon to a limited degree; the function **Tcl\_MethodIsType** returns whether a method is of a particular type, assigning the per-method *clientData* to the variable pointed to by *clientDataPtr* if (that is non-NULL) if the type is matched. **Tcl\_MethodIsType2** does the same for TCL\_OO\_METHOD\_VERSION\_2.
+Given a method, the entity that declared it can be found using **Tcl\_MethodDeclarerClass** which returns the class that the method is attached to (or NULL if the method is not attached to any class) and **Tcl\_MethodDeclarerObject** which returns the object that the method is attached to (or NULL if the method is not attached to an object). The name of the method can be retrieved with **Tcl\_MethodName**, whether the method is exported is retrieved with **Tcl\_MethodIsPublic**, [and whether the method is private is retrieved with **Tcl\_MethodIsPrivate**.]{version="TIP500"} The type of the method can also be introspected upon to a limited degree; the function **Tcl\_MethodIsType** returns whether a method is of a particular type, assigning the per-method *clientData* to the variable pointed to by *clientDataPtr* if (that is non-NULL) if the type is matched. **Tcl\_MethodIsType2** does the same for TCL\_OO\_METHOD\_VERSION\_2.
 
 ## Method creation
 
-Methods are created by **Tcl\_NewMethod** and **Tcl\_NewInstanceMethod**, or by **Tcl\_NewMethod2** and **Tcl\_NewInstanceMethod2** which create a method attached to a class or an object respectively. In both cases, the *nameObj* argument gives the name of the method to create, the *flags* argument states whether the method should be exported initially
-
-::: {.info version="TIP500"}
-or be marked as a private method,
-:::
-
-the *methodTypePtr* or *methodType2Ptr* (for TCL\_OO\_METHOD\_VERSION\_2) argument describes the implementation of the method (see the [Method types] section below) and the *clientData* argument gives some implementation-specific data that is passed on to the implementation of the method when it is called.
+Methods are created by **Tcl\_NewMethod** and **Tcl\_NewInstanceMethod**, or by **Tcl\_NewMethod2** and **Tcl\_NewInstanceMethod2** which create a method attached to a class or an object respectively. In both cases, the *nameObj* argument gives the name of the method to create, the *flags* argument states whether the method should be exported initially [or be marked as a private method,]{version="TIP500"} the *methodTypePtr* or *methodType2Ptr* (for TCL\_OO\_METHOD\_VERSION\_2) argument describes the implementation of the method (see the [Method types] section below) and the *clientData* argument gives some implementation-specific data that is passed on to the implementation of the method when it is called.
 
 When the *nameObj* argument to **Tcl\_NewMethod** or **Tcl\_NewMethod2** is NULL, an unnamed method is created, which is used for constructors and destructors. Constructors should be installed into their class using the **Tcl\_ClassSetConstructor** function, and destructors (which must not require any arguments) should be installed into their class using the **Tcl\_ClassSetDestructor** function. Unnamed methods should not be used for any other purpose, and named methods should not be used as either constructors or destructors. Also note that a NULL *methodTypePtr* or *methodType2Ptr* is used to provide internal signaling, and should not be used in client code.
 

@@ -18,7 +18,7 @@ Tcl\_GetHostName - get the name of the local host
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[const char \*]{.ret} [Tcl\_GetHostName]{.ccmd}[]{.cargs}
+[const char \*]{.ret} [Tcl\_GetHostName]{.ccmd} []{.cargs}
 :::
 
 # Description

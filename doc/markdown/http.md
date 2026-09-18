@@ -340,7 +340,7 @@ A registry of valid status codes is maintained at <https://www.iana.org/assignme
 
     Argument *socketCmdVarName* is the name of a variable provided by the transport, whose value is the command used by the transport to open a socket.  Its default value is set by the transport and is "::socket", but if the name of the variable is supplied to **::http::register**, then **http** will set a new value in order to make optional facilities available.  These facilities are enabled by the optional arguments *useSockThread*, *endToEndProxy*, which take boolean values with default value *false*.
 
-    If argument *useSockThread* is supplied and is boolean *true*, then if permitted by the value [**http::config** *-threadlevel*] and by the availability of package **Thread**, sockets created for the transport will be opened in a different thread so that a slow DNS lookup will not cause the script to block.
+    If argument *useSockThread* is supplied and is boolean *true*, then if permitted by the value \[**http::config** *-threadlevel*\] and by the availability of package **Thread**, sockets created for the transport will be opened in a different thread so that a slow DNS lookup will not cause the script to block.
 
     If argument *endToEndProxy* is supplied and is boolean *true*, then when **http::geturl** accesses a server via a proxy, it will open a channel by sending a CONNECT request to the proxy, and it will then make its request over this channel.  This allows end-to-end encryption for HTTPS requests made through a proxy.
 
@@ -672,7 +672,7 @@ Option **-pipeline**, if boolean **true**, will pipeline GET and HEAD requests m
 
 Option **-postfresh**, if boolean **true**, will override the **http::geturl** option **-keepalive**, and always open a fresh connection for a POST request.
 
-Option **-repost**, if **true**, permits automatic retry of a POST request that fails because it uses a persistent connection that the server has half-closed (an "asynchronous close event"). Subsequent GET and HEAD requests in a failed pipeline will also be retried. *The* **-repost** *option should be used only if the application understands that the retry is appropriate* - specifically, the application must know that if the failed POST successfully modified the state of the server, a repeat POST would have no adverse effect.
+Option **-repost**, if **true**, permits automatic retry of a POST request that fails because it uses a persistent connection that the server has half-closed (an "asynchronous close event"). Subsequent GET and HEAD requests in a failed pipeline will also be retried. *The* **-repost** *option should be used only if the application understands that the retry is appropriate* - specifically, the application must know that if the failed POST successfully modified the state of the server, a repeat POST would have no adverse effect. []{version="TIP406"}
 
 # Cookie jar protocol
 

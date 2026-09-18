@@ -31,8 +31,8 @@ Tcl\_GetNumber, Tcl\_GetNumberFromObj - get numeric value from Tcl value
 ::: {.synopsis} :::
 **#include <tcl.h>**
 **#include <tclTomMath.h>**
-[int]{.ret} [Tcl\_GetNumber]{.ccmd}[interp, bytes, numBytes, clientDataPtr, typePtr]{.cargs}
-[int]{.ret} [Tcl\_GetNumberFromObj]{.ccmd}[interp, objPtr, clientDataPtr, typePtr]{.cargs}
+[int]{.ret} [Tcl\_GetNumber]{.ccmd} [interp, bytes, numBytes, clientDataPtr, typePtr]{.cargs}
+[int]{.ret} [Tcl\_GetNumberFromObj]{.ccmd} [interp, objPtr, clientDataPtr, typePtr]{.cargs}
 :::
 
 # Arguments

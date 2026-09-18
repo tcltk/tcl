@@ -32,15 +32,15 @@ Tcl\_NRCreateCommand, Tcl\_NRCreateCommand2, Tcl\_NRCallObjProc, Tcl\_NRCallObjP
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[Tcl\_Command]{.ret} [Tcl\_NRCreateCommand]{.ccmd}[interp, cmdName, proc, nreProc, clientData, deleteProc]{.cargs}
-[Tcl\_Command]{.ret} [Tcl\_NRCreateCommand2]{.ccmd}[interp, cmdName, proc2, nreProc2, clientData, deleteProc]{.cargs}
-[int]{.ret} [Tcl\_NRCallObjProc]{.ccmd}[interp, nreProc, clientData, objc, objv]{.cargs}
-[int]{.ret} [Tcl\_NRCallObjProc2]{.ccmd}[interp, nreProc2, clientData, objc, objv]{.cargs}
-[int]{.ret} [Tcl\_NREvalObj]{.ccmd}[interp, objPtr, flags]{.cargs}
-[int]{.ret} [Tcl\_NREvalObjv]{.ccmd}[interp, objc, objv, flags]{.cargs}
-[int]{.ret} [Tcl\_NRCmdSwap]{.ccmd}[interp, cmd, objc, objv, flags]{.cargs}
-[int]{.ret} [Tcl\_NRExprObj]{.ccmd}[interp, objPtr, resultPtr]{.cargs}
-[Tcl\_NRAddCallback]{.ccmd}[interp, postProcPtr, data0, data1, data2, data3]{.cargs}
+[Tcl\_Command]{.ret} [Tcl\_NRCreateCommand]{.ccmd} [interp, cmdName, proc, nreProc, clientData, deleteProc]{.cargs}
+[Tcl\_Command]{.ret} [Tcl\_NRCreateCommand2]{.ccmd} [interp, cmdName, proc2, nreProc2, clientData, deleteProc]{.cargs}
+[int]{.ret} [Tcl\_NRCallObjProc]{.ccmd} [interp, nreProc, clientData, objc, objv]{.cargs}
+[int]{.ret} [Tcl\_NRCallObjProc2]{.ccmd} [interp, nreProc2, clientData, objc, objv]{.cargs}
+[int]{.ret} [Tcl\_NREvalObj]{.ccmd} [interp, objPtr, flags]{.cargs}
+[int]{.ret} [Tcl\_NREvalObjv]{.ccmd} [interp, objc, objv, flags]{.cargs}
+[int]{.ret} [Tcl\_NRCmdSwap]{.ccmd} [interp, cmd, objc, objv, flags]{.cargs}
+[int]{.ret} [Tcl\_NRExprObj]{.ccmd} [interp, objPtr, resultPtr]{.cargs}
+[Tcl\_NRAddCallback]{.ccmd} [interp, postProcPtr, data0, data1, data2, data3]{.cargs}
 :::
 
 # Arguments
@@ -121,7 +121,7 @@ These functions provide an interface to the function stack that an interpreter i
 
 **Tcl\_NREvalObjv** pushes a function that is like [Tcl\_EvalObjv][Eval3] but consumes no space on the C stack.
 
-**Tcl\_NRCmdSwap** is like **Tcl\_NREvalObjv**, but uses *cmd*, a token previously returned by [Tcl\_CreateObjCommand][CrtObjCmd] or [Tcl\_GetCommandFromObj][CrtObjCmd], instead of resolving the first word of *objv*. .  The name of this command must be the same as *objv[0]*.
+**Tcl\_NRCmdSwap** is like **Tcl\_NREvalObjv**, but uses *cmd*, a token previously returned by [Tcl\_CreateObjCommand][CrtObjCmd] or [Tcl\_GetCommandFromObj][CrtObjCmd], instead of resolving the first word of *objv*. .  The name of this command must be the same as *objv\[0\]*.
 
 **Tcl\_NRExprObj** pushes a function that evaluates *objPtr* as an expression in the same manner as [Tcl\_ExprObj][ExprLongObj] but without consuming space on the C stack.
 

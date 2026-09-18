@@ -21,7 +21,7 @@ Tcl\_InitStubs - initialize the Tcl stubs mechanism
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[const char \*]{.ret} [Tcl\_InitStubs]{.ccmd}[interp, version, exact]{.cargs}
+[const char \*]{.ret} [Tcl\_InitStubs]{.ccmd} [interp, version, exact]{.cargs}
 :::
 
 # Arguments

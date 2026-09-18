@@ -23,7 +23,7 @@ Tcl\_GetOpenFile - Return a FILE\* for a channel registered in the given interpr
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[int]{.ret} [Tcl\_GetOpenFile]{.ccmd}[interp, chanID, write, checkUsage, filePtr]{.cargs}
+[int]{.ret} [Tcl\_GetOpenFile]{.ccmd} [interp, chanID, write, checkUsage, filePtr]{.cargs}
 :::
 
 # Arguments

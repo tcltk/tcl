@@ -22,8 +22,8 @@ Tcl\_CancelEval, Tcl\_Canceled - cancel Tcl scripts
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[int]{.ret} [Tcl\_CancelEval]{.ccmd}[interp, resultObjPtr, clientData, flags]{.cargs}
-[int]{.ret} [Tcl\_Canceled]{.ccmd}[interp, flags]{.cargs}
+[int]{.ret} [Tcl\_CancelEval]{.ccmd} [interp, resultObjPtr, clientData, flags]{.cargs}
+[int]{.ret} [Tcl\_Canceled]{.ccmd} [interp, flags]{.cargs}
 :::
 
 # Arguments

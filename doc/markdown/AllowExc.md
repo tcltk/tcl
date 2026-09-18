@@ -22,7 +22,7 @@ Tcl\_AllowExceptions - allow all exceptions in next script evaluation
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[Tcl\_AllowExceptions]{.ccmd}[interp]{.cargs}
+[Tcl\_AllowExceptions]{.ccmd} [interp]{.cargs}
 :::
 
 # Arguments

@@ -29,26 +29,26 @@ Tcl\_NewIntObj, Tcl\_NewLongObj, Tcl\_NewWideIntObj, Tcl\_NewWideUIntObj, Tcl\_S
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[Tcl\_Obj \*]{.ret} [Tcl\_NewIntObj]{.ccmd}[intValue]{.cargs}
-[Tcl\_Obj \*]{.ret} [Tcl\_NewLongObj]{.ccmd}[longValue]{.cargs}
-[Tcl\_Obj \*]{.ret} [Tcl\_NewWideIntObj]{.ccmd}[wideValue]{.cargs}
-[Tcl\_Obj \*]{.ret} [Tcl\_NewWideUIntObj]{.ccmd}[uwideValue]{.cargs}
-[Tcl\_SetIntObj]{.ccmd}[objPtr, intValue]{.cargs}
-[Tcl\_SetLongObj]{.ccmd}[objPtr, longValue]{.cargs}
-[Tcl\_SetWideIntObj]{.ccmd}[objPtr, wideValue]{.cargs}
-[Tcl\_SetWideUIntObj]{.ccmd}[objPtr, uwideValue]{.cargs}
-[int]{.ret} [Tcl\_GetIntFromObj]{.ccmd}[interp, objPtr, intPtr]{.cargs}
-[int]{.ret} [Tcl\_GetIntForIndex]{.ccmd}[interp, objPtr, endValue, indexPtr]{.cargs}
-[int]{.ret} [Tcl\_GetLongFromObj]{.ccmd}[interp, objPtr, longPtr]{.cargs}
-[int]{.ret} [Tcl\_GetWideIntFromObj]{.ccmd}[interp, objPtr, widePtr]{.cargs}
-[int]{.ret} [Tcl\_GetWideUIntFromObj]{.ccmd}[interp, objPtr, uwidePtr]{.cargs}
-[int]{.ret} [Tcl\_GetSizeIntFromObj]{.ccmd}[interp, objPtr, sizePtr]{.cargs}
+[Tcl\_Obj \*]{.ret} [Tcl\_NewIntObj]{.ccmd} [intValue]{.cargs}
+[Tcl\_Obj \*]{.ret} [Tcl\_NewLongObj]{.ccmd} [longValue]{.cargs}
+[Tcl\_Obj \*]{.ret} [Tcl\_NewWideIntObj]{.ccmd} [wideValue]{.cargs}
+[Tcl\_Obj \*]{.ret} [Tcl\_NewWideUIntObj]{.ccmd} [uwideValue]{.cargs}
+[Tcl\_SetIntObj]{.ccmd} [objPtr, intValue]{.cargs}
+[Tcl\_SetLongObj]{.ccmd} [objPtr, longValue]{.cargs}
+[Tcl\_SetWideIntObj]{.ccmd} [objPtr, wideValue]{.cargs}
+[Tcl\_SetWideUIntObj]{.ccmd} [objPtr, uwideValue]{.cargs}
+[int]{.ret} [Tcl\_GetIntFromObj]{.ccmd} [interp, objPtr, intPtr]{.cargs}
+[int]{.ret} [Tcl\_GetIntForIndex]{.ccmd} [interp, objPtr, endValue, indexPtr]{.cargs}
+[int]{.ret} [Tcl\_GetLongFromObj]{.ccmd} [interp, objPtr, longPtr]{.cargs}
+[int]{.ret} [Tcl\_GetWideIntFromObj]{.ccmd} [interp, objPtr, widePtr]{.cargs}
+[int]{.ret} [Tcl\_GetWideUIntFromObj]{.ccmd} [interp, objPtr, uwidePtr]{.cargs}
+[int]{.ret} [Tcl\_GetSizeIntFromObj]{.ccmd} [interp, objPtr, sizePtr]{.cargs}
 **#include <tclTomMath.h>**
-[Tcl\_Obj \*]{.ret} [Tcl\_NewBignumObj]{.ccmd}[bigValue]{.cargs}
-[Tcl\_SetBignumObj]{.ccmd}[objPtr, bigValue]{.cargs}
-[int]{.ret} [Tcl\_GetBignumFromObj]{.ccmd}[interp, objPtr, bigValue]{.cargs}
-[int]{.ret} [Tcl\_TakeBignumFromObj]{.ccmd}[interp, objPtr, bigValue]{.cargs}
-[int]{.ret} [Tcl\_InitBignumFromDouble]{.ccmd}[interp, doubleValue, bigValue]{.cargs}
+[Tcl\_Obj \*]{.ret} [Tcl\_NewBignumObj]{.ccmd} [bigValue]{.cargs}
+[Tcl\_SetBignumObj]{.ccmd} [objPtr, bigValue]{.cargs}
+[int]{.ret} [Tcl\_GetBignumFromObj]{.ccmd} [interp, objPtr, bigValue]{.cargs}
+[int]{.ret} [Tcl\_TakeBignumFromObj]{.ccmd} [interp, objPtr, bigValue]{.cargs}
+[int]{.ret} [Tcl\_InitBignumFromDouble]{.ccmd} [interp, doubleValue, bigValue]{.cargs}
 :::
 
 # Arguments

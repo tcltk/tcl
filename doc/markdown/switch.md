@@ -117,9 +117,7 @@ switch -regexp -matchvar foo -- $bar {
 }
 ```
 
-::: {.info version="9.1"}
-Deciding what to do with a procedure based on the number of arguments:
-:::
+[Deciding what to do with a procedure based on the number of arguments:]{version="9.1"}
 
 ```
 proc example args {

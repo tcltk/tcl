@@ -26,8 +26,8 @@ Tcl\_GetStdChannel, Tcl\_SetStdChannel - procedures for retrieving and replacing
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[Tcl\_Channel]{.ret} [Tcl\_GetStdChannel]{.ccmd}[type]{.cargs}
-[Tcl\_SetStdChannel]{.ccmd}[channel, type]{.cargs}
+[Tcl\_Channel]{.ret} [Tcl\_GetStdChannel]{.ccmd} [type]{.cargs}
+[Tcl\_SetStdChannel]{.ccmd} [channel, type]{.cargs}
 :::
 
 # Arguments

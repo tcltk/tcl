@@ -103,7 +103,7 @@ The legal *option*s (which may be abbreviated) are:
     : Any proper dict structure, with optional surrounding whitespace. In case of improper dict structure, 0 is returned and the *varname* will contain the index of the "element" where the dict parsing fails, or -1 if this cannot be determined.
 
     **digit**
-    : Any Unicode digit character.  Note that this includes characters outside of the [0-9] range.
+    : Any Unicode digit character.  Note that this includes characters outside of the \[0-9\] range.
 
     **double**
     : Any of the forms allowed to [Tcl\_GetDoubleFromObj][DoubleObj].

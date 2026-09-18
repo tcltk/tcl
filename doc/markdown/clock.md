@@ -428,7 +428,7 @@ When the **clock** command is processing a local time, it has several possible s
 6. The C library's idea of the local time zone, as defined by the **mktime** and **localtime** functions.
 
 
-In case [1] *only,* the string is tested to see if it is one of the strings:
+In case \[1\] *only,* the string is tested to see if it is one of the strings:
 
 ```
  gmt     ut      utc     bst     wet     wat     at
@@ -444,7 +444,7 @@ In case [1] *only,* the string is tested to see if it is one of the strings:
 
 If it is a string in the above list, it designates a known time zone, and is interpreted as such.
 
-For time zones in case [1] that do not match any of the above strings, and always for cases [2]-[6], the following rules apply.
+For time zones in case \[1\] that do not match any of the above strings, and always for cases \[2\]-\[6\], the following rules apply.
 
 If the time zone begins with a colon, it is one of a standardized list of names like **:America/New\_York** that give the rules for various locales.  A complete list of the location names is too lengthy to be listed here. On most Tcl installations, the definitions of the locations are to be found in named files in the directory "*/no\_backup/tools/lib/tcl9.0/clock/tzdata*". On some Unix systems, these files are omitted, and the definitions are instead obtained from system files in "*/usr/share/zoneinfo*", "*/usr/share/lib/zoneinfo*" or "*/usr/local/etc/zoneinfo*". As a special case, the name **:localtime** refers to the local time zone as defined by the C library.
 

@@ -23,10 +23,10 @@ Tcl\_NewBooleanObj, Tcl\_SetBooleanObj, Tcl\_GetBooleanFromObj, Tcl\_GetBoolFrom
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[Tcl\_Obj \*]{.ret} [Tcl\_NewBooleanObj]{.ccmd}[intValue]{.cargs}
-[Tcl\_SetBooleanObj]{.ccmd}[objPtr, intValue]{.cargs}
-[int]{.ret} [Tcl\_GetBooleanFromObj]{.ccmd}[interp, objPtr, boolPtr]{.cargs}
-[int]{.ret} [Tcl\_GetBoolFromObj]{.ccmd}[interp, objPtr, flags, charPtr]{.cargs}
+[Tcl\_Obj \*]{.ret} [Tcl\_NewBooleanObj]{.ccmd} [intValue]{.cargs}
+[Tcl\_SetBooleanObj]{.ccmd} [objPtr, intValue]{.cargs}
+[int]{.ret} [Tcl\_GetBooleanFromObj]{.ccmd} [interp, objPtr, boolPtr]{.cargs}
+[int]{.ret} [Tcl\_GetBoolFromObj]{.ccmd} [interp, objPtr, flags, charPtr]{.cargs}
 :::
 
 # Arguments

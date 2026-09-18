@@ -23,9 +23,9 @@ Tcl\_DetachPids, Tcl\_ReapDetachedProcs, Tcl\_WaitPid - manage child processes i
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[Tcl\_DetachPids]{.ccmd}[numPids, pidPtr]{.cargs}
-[Tcl\_ReapDetachedProcs]{.ccmd}[]{.cargs}
-[Tcl\_Pid]{.ret} [Tcl\_WaitPid]{.ccmd}[pid, statusPtr, options]{.cargs}
+[Tcl\_DetachPids]{.ccmd} [numPids, pidPtr]{.cargs}
+[Tcl\_ReapDetachedProcs]{.ccmd} []{.cargs}
+[Tcl\_Pid]{.ret} [Tcl\_WaitPid]{.ccmd} [pid, statusPtr, options]{.cargs}
 :::
 
 # Arguments

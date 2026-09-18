@@ -30,10 +30,10 @@ Tcl\_ExprLong, Tcl\_ExprDouble, Tcl\_ExprBoolean, Tcl\_ExprString - evaluate an 
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[int]{.ret} [Tcl\_ExprLong]{.ccmd}[interp, expr, longPtr]{.cargs}
-[int]{.ret} [Tcl\_ExprDouble]{.ccmd}[interp, expr, doublePtr]{.cargs}
-[int]{.ret} [Tcl\_ExprBoolean]{.ccmd}[interp, expr, booleanPtr]{.cargs}
-[int]{.ret} [Tcl\_ExprString]{.ccmd}[interp, expr]{.cargs}
+[int]{.ret} [Tcl\_ExprLong]{.ccmd} [interp, expr, longPtr]{.cargs}
+[int]{.ret} [Tcl\_ExprDouble]{.ccmd} [interp, expr, doublePtr]{.cargs}
+[int]{.ret} [Tcl\_ExprBoolean]{.ccmd} [interp, expr, booleanPtr]{.cargs}
+[int]{.ret} [Tcl\_ExprString]{.ccmd} [interp, expr]{.cargs}
 :::
 
 # Arguments

@@ -23,12 +23,12 @@ Tcl\_TraceVar, Tcl\_TraceVar2, Tcl\_UntraceVar, Tcl\_UntraceVar2, Tcl\_VarTraceI
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[int]{.ret} [Tcl\_TraceVar]{.ccmd}[interp, varName, flags, proc, clientData]{.cargs}
-[int]{.ret} [Tcl\_TraceVar2]{.ccmd}[interp, name1, name2, flags, proc, clientData]{.cargs}
-[Tcl\_UntraceVar]{.ccmd}[interp, varName, flags, proc, clientData]{.cargs}
-[Tcl\_UntraceVar2]{.ccmd}[interp, name1, name2, flags, proc, clientData]{.cargs}
-[void \*]{.ret} [Tcl\_VarTraceInfo]{.ccmd}[interp, varName, flags, proc, prevClientData]{.cargs}
-[void \*]{.ret} [Tcl\_VarTraceInfo2]{.ccmd}[interp, name1, name2, flags, proc, prevClientData]{.cargs}
+[int]{.ret} [Tcl\_TraceVar]{.ccmd} [interp, varName, flags, proc, clientData]{.cargs}
+[int]{.ret} [Tcl\_TraceVar2]{.ccmd} [interp, name1, name2, flags, proc, clientData]{.cargs}
+[Tcl\_UntraceVar]{.ccmd} [interp, varName, flags, proc, clientData]{.cargs}
+[Tcl\_UntraceVar2]{.ccmd} [interp, name1, name2, flags, proc, clientData]{.cargs}
+[void \*]{.ret} [Tcl\_VarTraceInfo]{.ccmd} [interp, varName, flags, proc, prevClientData]{.cargs}
+[void \*]{.ret} [Tcl\_VarTraceInfo2]{.ccmd} [interp, name1, name2, flags, proc, prevClientData]{.cargs}
 :::
 
 # Arguments

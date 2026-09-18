@@ -22,8 +22,8 @@ Tcl\_BackgroundException, Tcl\_BackgroundError - report Tcl exception that occur
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[Tcl\_BackgroundException]{.ccmd}[interp, code]{.cargs}
-[Tcl\_BackgroundError]{.ccmd}[interp]{.cargs}
+[Tcl\_BackgroundException]{.ccmd} [interp, code]{.cargs}
+[Tcl\_BackgroundError]{.ccmd} [interp]{.cargs}
 :::
 
 # Arguments

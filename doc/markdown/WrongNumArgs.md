@@ -22,7 +22,7 @@ Tcl\_WrongNumArgs - generate standard error message for wrong number of argument
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[Tcl\_WrongNumArgs]{.ccmd}[interp, objc, objv, message]{.cargs}
+[Tcl\_WrongNumArgs]{.ccmd} [interp, objc, objv, message]{.cargs}
 :::
 
 # Arguments

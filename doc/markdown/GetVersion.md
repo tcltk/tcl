@@ -24,7 +24,7 @@ Tcl\_GetVersion - get the version of the library at runtime
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[Tcl\_GetVersion]{.ccmd}[major, minor, patchLevel, type]{.cargs}
+[Tcl\_GetVersion]{.ccmd} [major, minor, patchLevel, type]{.cargs}
 :::
 
 # Arguments

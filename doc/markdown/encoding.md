@@ -64,16 +64,14 @@ Performs one of several encoding related operations, depending on *option*.  The
 
 # Profiles
 
-::: {.info version="TIP656"}
-Operations involving encoding transforms may encounter several types of errors such as invalid sequences in the source data, characters that cannot be encoded in the target encoding and so on. A *profile* prescribes the strategy for dealing with such errors in one of two ways:
-:::
+[Operations involving encoding transforms may encounter several types of errors such as invalid sequences in the source data, characters that cannot be encoded in the target encoding and so on. A *profile* prescribes the strategy for dealing with such errors in one of two ways:]{version="TIP656"}
 
 - Terminating further processing of the source data. The profile does not determine how this premature termination is conveyed to the caller. By default, this is signalled by raising an exception. If the **-failindex** option is specified, errors are reported through that mechanism.
 
 - Continue further processing of the source data using a fallback strategy such as replacing or discarding the offending bytes in a profile-defined manner.
 
 
-The following profiles are currently implemented with **strict** being the default if the **-profile** is not specified.
+The following profiles are currently implemented with **strict** being the default if the **-profile** is not specified. []{version="TIP656"}
 
 **strict**
 : The **strict** profile always stops processing when an conversion error is encountered. The error is signalled via an exception or the **-failindex** option mechanism. The **strict** profile implements a Unicode standard conformant behavior.
@@ -102,7 +100,7 @@ Example 1: convert a byte sequence in Japanese euc-jp encoding to a TCL string:
 U+00306F
 ```
 
-The result is the unicode codepoint "\\u306F", which is the Hiragana letter HA.
+The result is the unicode codepoint "\\u306F", which is the Hiragana letter HA. []{TIP656 version="TIP607,"}
 
 Example 2: Error handling based on profiles:
 

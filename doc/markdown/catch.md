@@ -44,7 +44,7 @@ If the *optionsVarName* argument is given, then the variable it names is set to 
 
 When the return code from evaluation of *script* is **TCL\_ERROR**, four additional entries are defined in the dictionary of return options stored in *optionsVarName*: **-errorinfo**, **-errorcode**, **-errorline**, and **-errorstack**. The value of the **-errorinfo** entry is a formatted stack trace containing more information about the context in which the error happened.  The formatted stack trace is meant to be read by a person.  The value of the **-errorcode** entry is additional information about the error stored as a list.  The **-errorcode** value is meant to be further processed by programs, and may not be particularly readable by people.  The value of the **-errorline** entry is an integer indicating which line of *script* was being evaluated when the error occurred. The value of the **-errorstack** entry is an even-sized list made of token-parameter pairs accumulated while unwinding the stack. The token may be "**CALL**", in which case the parameter is a list made of the proc name and arguments at the corresponding level; or it may be "**UP**", in which case the parameter is the relative level (as in [uplevel]) of the previous **CALL**. The salient differences with respect to **-errorinfo** are that:
 
-1. it is a machine-readable form that is amenable to processing with [[foreach] {tok prm} ...],
+1. it is a machine-readable form that is amenable to processing with \[[foreach] {tok prm} ...\],
 
 2. it contains the true (substituted) values passed to the functions, instead of the static text of the calling sites, and
 

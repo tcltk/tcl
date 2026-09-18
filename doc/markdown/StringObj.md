@@ -33,30 +33,30 @@ Tcl\_NewStringObj, Tcl\_NewUnicodeObj, Tcl\_SetStringObj, Tcl\_SetUnicodeObj, Tc
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[Tcl\_Obj \*]{.ret} [Tcl\_NewStringObj]{.ccmd}[bytes, length]{.cargs}
-[Tcl\_Obj \*]{.ret} [Tcl\_NewUnicodeObj]{.ccmd}[unicode, numChars]{.cargs}
-[void]{.ret} [Tcl\_SetStringObj]{.ccmd}[objPtr, bytes, length]{.cargs}
-[void]{.ret} [Tcl\_SetUnicodeObj]{.ccmd}[objPtr, unicode, numChars]{.cargs}
-[char \*]{.ret} [Tcl\_GetStringFromObj]{.ccmd}[objPtr, lengthPtr]{.cargs}
-[char \*]{.ret} [Tcl\_GetString]{.ccmd}[objPtr]{.cargs}
-[Tcl\_UniChar \*]{.ret} [Tcl\_GetUnicodeFromObj]{.ccmd}[objPtr, lengthPtr]{.cargs}
-[Tcl\_UniChar \*]{.ret} [Tcl\_GetUnicode]{.ccmd}[objPtr]{.cargs}
-[int]{.ret} [Tcl\_GetUniChar]{.ccmd}[objPtr, index]{.cargs}
-[Tcl\_Size]{.ret} [Tcl\_GetCharLength]{.ccmd}[objPtr]{.cargs}
-[Tcl\_Obj \*]{.ret} [Tcl\_GetRange]{.ccmd}[objPtr, first, last]{.cargs}
-[void]{.ret} [Tcl\_AppendToObj]{.ccmd}[objPtr, bytes, length]{.cargs}
-[void]{.ret} [Tcl\_AppendUnicodeToObj]{.ccmd}[objPtr, unicode, numChars]{.cargs}
-[void]{.ret} [Tcl\_AppendObjToObj]{.ccmd}[objPtr, appendObjPtr]{.cargs}
-[void]{.ret} [Tcl\_AppendStringsToObj]{.ccmd}[objPtr, string, string, ... (char \*)NULL]{.cargs}
-[void]{.ret} [Tcl\_AppendLimitedToObj]{.ccmd}[objPtr, bytes, length, limit, ellipsis]{.cargs}
-[Tcl\_Obj \*]{.ret} [Tcl\_Format]{.ccmd}[interp, format, objc, objv]{.cargs}
-[int]{.ret} [Tcl\_AppendFormatToObj]{.ccmd}[interp, objPtr, format, objc, objv]{.cargs}
-[Tcl\_Obj \*]{.ret} [Tcl\_ObjPrintf]{.ccmd}[format, ...]{.cargs}
-[void]{.ret} [Tcl\_AppendPrintfToObj]{.ccmd}[objPtr, format, ...]{.cargs}
-[void]{.ret} [Tcl\_SetObjLength]{.ccmd}[objPtr, newLength]{.cargs}
-[int]{.ret} [Tcl\_AttemptSetObjLength]{.ccmd}[objPtr, newLength]{.cargs}
-[Tcl\_Obj \*]{.ret} [Tcl\_ConcatObj]{.ccmd}[objc, objv]{.cargs}
-[int]{.ret} [Tcl\_IsEmpty]{.ccmd}[fIobjPtr]{.cargs}
+[Tcl\_Obj \*]{.ret} [Tcl\_NewStringObj]{.ccmd} [bytes, length]{.cargs}
+[Tcl\_Obj \*]{.ret} [Tcl\_NewUnicodeObj]{.ccmd} [unicode, numChars]{.cargs}
+[void]{.ret} [Tcl\_SetStringObj]{.ccmd} [objPtr, bytes, length]{.cargs}
+[void]{.ret} [Tcl\_SetUnicodeObj]{.ccmd} [objPtr, unicode, numChars]{.cargs}
+[char \*]{.ret} [Tcl\_GetStringFromObj]{.ccmd} [objPtr, lengthPtr]{.cargs}
+[char \*]{.ret} [Tcl\_GetString]{.ccmd} [objPtr]{.cargs}
+[Tcl\_UniChar \*]{.ret} [Tcl\_GetUnicodeFromObj]{.ccmd} [objPtr, lengthPtr]{.cargs}
+[Tcl\_UniChar \*]{.ret} [Tcl\_GetUnicode]{.ccmd} [objPtr]{.cargs}
+[int]{.ret} [Tcl\_GetUniChar]{.ccmd} [objPtr, index]{.cargs}
+[Tcl\_Size]{.ret} [Tcl\_GetCharLength]{.ccmd} [objPtr]{.cargs}
+[Tcl\_Obj \*]{.ret} [Tcl\_GetRange]{.ccmd} [objPtr, first, last]{.cargs}
+[void]{.ret} [Tcl\_AppendToObj]{.ccmd} [objPtr, bytes, length]{.cargs}
+[void]{.ret} [Tcl\_AppendUnicodeToObj]{.ccmd} [objPtr, unicode, numChars]{.cargs}
+[void]{.ret} [Tcl\_AppendObjToObj]{.ccmd} [objPtr, appendObjPtr]{.cargs}
+[void]{.ret} [Tcl\_AppendStringsToObj]{.ccmd} [objPtr, string, string, ... (char \*)NULL]{.cargs}
+[void]{.ret} [Tcl\_AppendLimitedToObj]{.ccmd} [objPtr, bytes, length, limit, ellipsis]{.cargs}
+[Tcl\_Obj \*]{.ret} [Tcl\_Format]{.ccmd} [interp, format, objc, objv]{.cargs}
+[int]{.ret} [Tcl\_AppendFormatToObj]{.ccmd} [interp, objPtr, format, objc, objv]{.cargs}
+[Tcl\_Obj \*]{.ret} [Tcl\_ObjPrintf]{.ccmd} [format, ...]{.cargs}
+[void]{.ret} [Tcl\_AppendPrintfToObj]{.ccmd} [objPtr, format, ...]{.cargs}
+[void]{.ret} [Tcl\_SetObjLength]{.ccmd} [objPtr, newLength]{.cargs}
+[int]{.ret} [Tcl\_AttemptSetObjLength]{.ccmd} [objPtr, newLength]{.cargs}
+[Tcl\_Obj \*]{.ret} [Tcl\_ConcatObj]{.ccmd} [objc, objv]{.cargs}
+[int]{.ret} [Tcl\_IsEmpty]{.ccmd} [fIobjPtr]{.cargs}
 :::
 
 # Arguments
@@ -171,7 +171,7 @@ sprintf(buf, format, ...);
 Tcl_NewStringObj(buf, -1);
 ```
 
-but with greater convenience and no need to determine **SOME\_SUITABLE\_LENGTH**. The formatting is done with the same core formatting engine used by **Tcl\_Format**.  This means the set of supported conversion specifiers is that of the [format] command but the behavior is as similar as possible to **sprintf**. The "hh" and (Microsoft-specific) "w" format specifiers are not supported. The "L" format specifier means that an "mp\_int \*" argument is expected (or a "long double" in combination with **[aAeEgGaA]**). When a conversion specifier passed to **Tcl\_ObjPrintf** includes a precision, the value is taken as a number of bytes, as **sprintf** does, and not as a number of characters, as [format] does.  This is done on the assumption that C code is more likely to know how many bytes it is passing around than the number of encoded characters those bytes happen to represent.  The variable number of arguments passed in should be of the types that would be suitable for passing to **sprintf**.  Note in this example usage, *x* is of type **int**.
+but with greater convenience and no need to determine **SOME\_SUITABLE\_LENGTH**. The formatting is done with the same core formatting engine used by **Tcl\_Format**.  This means the set of supported conversion specifiers is that of the [format] command but the behavior is as similar as possible to **sprintf**. The "hh" and (Microsoft-specific) "w" format specifiers are not supported. The "L" format specifier means that an "mp\_int \*" argument is expected (or a "long double" in combination with **\[aAeEgGaA\]**). When a conversion specifier passed to **Tcl\_ObjPrintf** includes a precision, the value is taken as a number of bytes, as **sprintf** does, and not as a number of characters, as [format] does.  This is done on the assumption that C code is more likely to know how many bytes it is passing around than the number of encoded characters those bytes happen to represent.  The variable number of arguments passed in should be of the types that would be suitable for passing to **sprintf**.  Note in this example usage, *x* is of type **int**.
 
 ```
 int x = 5;
@@ -199,7 +199,7 @@ Tcl_Obj *wideObj = Tcl_ObjPrintf("wide = %" TCL_LL_MODIFIER "d", wide);
 Tcl_Obj *lenObj = Tcl_ObjPrintf("len = %" TCL_SIZE_MODIFIER "d", len);
 ```
 
-The **Tcl\_SetObjLength** procedure changes the length of the string value of its *objPtr* argument.  If the *newLength* argument is greater than the space allocated for the value's string, then the string space is reallocated and the old value is copied to the new space; the bytes between the old length of the string and the new length may have arbitrary values. If the *newLength* argument is less than the current length of the value's string, with *objPtr->length* is reduced without reallocating the string space; the original allocated size for the string is recorded in the value, so that the string length can be enlarged in a subsequent call to **Tcl\_SetObjLength** without reallocating storage.  In all cases **Tcl\_SetObjLength** leaves a null character at *objPtr->bytes[newLength]*.
+The **Tcl\_SetObjLength** procedure changes the length of the string value of its *objPtr* argument.  If the *newLength* argument is greater than the space allocated for the value's string, then the string space is reallocated and the old value is copied to the new space; the bytes between the old length of the string and the new length may have arbitrary values. If the *newLength* argument is less than the current length of the value's string, with *objPtr->length* is reduced without reallocating the string space; the original allocated size for the string is recorded in the value, so that the string length can be enlarged in a subsequent call to **Tcl\_SetObjLength** without reallocating storage.  In all cases **Tcl\_SetObjLength** leaves a null character at *objPtr->bytes\[newLength\]*.
 
 **Tcl\_AttemptSetObjLength** is identical in function to **Tcl\_SetObjLength** except that if sufficient memory to satisfy the request cannot be allocated, it does not cause the Tcl interpreter to **panic**.  Thus, if *newLength* is greater than the space allocated for the value's string, and there is not enough memory available to satisfy the request, **Tcl\_AttemptSetObjLength** will take no action and return 0 to indicate failure.  If there is enough memory to satisfy the request, **Tcl\_AttemptSetObjLength** behaves just like **Tcl\_SetObjLength** and returns 1 to indicate success.
 

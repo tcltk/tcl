@@ -26,10 +26,10 @@ Tcl\_CreateTrace, Tcl\_CreateObjTrace, Tcl\_CreateObjTrace2, Tcl\_DeleteTrace - 
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[Tcl\_Trace]{.ret} [Tcl\_CreateTrace]{.ccmd}[interp, level, proc, clientData]{.cargs}
-[Tcl\_Trace]{.ret} [Tcl\_CreateObjTrace]{.ccmd}[interp, level, flags, objProc, clientData, deleteProc]{.cargs}
-[Tcl\_Trace]{.ret} [Tcl\_CreateObjTrace2]{.ccmd}[interp, level, flags, objProc2, clientData, deleteProc]{.cargs}
-[Tcl\_DeleteTrace]{.ccmd}[interp, trace]{.cargs}
+[Tcl\_Trace]{.ret} [Tcl\_CreateTrace]{.ccmd} [interp, level, proc, clientData]{.cargs}
+[Tcl\_Trace]{.ret} [Tcl\_CreateObjTrace]{.ccmd} [interp, level, flags, objProc, clientData, deleteProc]{.cargs}
+[Tcl\_Trace]{.ret} [Tcl\_CreateObjTrace2]{.ccmd} [interp, level, flags, objProc2, clientData, deleteProc]{.cargs}
+[Tcl\_DeleteTrace]{.ccmd} [interp, trace]{.cargs}
 :::
 
 # Arguments

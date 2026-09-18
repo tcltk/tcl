@@ -128,10 +128,10 @@ where "*min*" and "*max*" are valid version numbers. The legacy syntax is a spec
 
 2. A version satisfies a "bounded" requirement when
 
-[a]
+\[a\]
 : For *min* equal to the *max* if, and only if the *version* is equal to the *min*.
 
-[b]
+\[b\]
 : Otherwise if, and only if the *version* is greater than or equal to the *min*, and less than the *max*, where both *min* and *max* have been padded internally with "a0". Note that while the comparison to *min* is inclusive, the comparison to *max* is exclusive.
 
 

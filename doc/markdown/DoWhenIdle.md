@@ -25,8 +25,8 @@ Tcl\_DoWhenIdle, Tcl\_CancelIdleCall - invoke a procedure when there are no pend
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[Tcl\_DoWhenIdle]{.ccmd}[proc, clientData]{.cargs}
-[Tcl\_CancelIdleCall]{.ccmd}[proc, clientData]{.cargs}
+[Tcl\_DoWhenIdle]{.ccmd} [proc, clientData]{.cargs}
+[Tcl\_CancelIdleCall]{.ccmd} [proc, clientData]{.cargs}
 :::
 
 # Arguments

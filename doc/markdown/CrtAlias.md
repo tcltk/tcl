@@ -27,16 +27,16 @@ Tcl\_IsSafe, Tcl\_CreateChild, Tcl\_GetChild, Tcl\_GetParent, Tcl\_GetInterpPath
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[int]{.ret} [Tcl\_IsSafe]{.ccmd}[interp]{.cargs}
-[Tcl\_Interp \*]{.ret} [Tcl\_CreateChild]{.ccmd}[interp, name, isSafe]{.cargs}
-[Tcl\_Interp \*]{.ret} [Tcl\_GetChild]{.ccmd}[interp, name]{.cargs}
-[Tcl\_Interp \*]{.ret} [Tcl\_GetParent]{.ccmd}[interp]{.cargs}
-[int]{.ret} [Tcl\_GetInterpPath]{.ccmd}[interp, childInterp]{.cargs}
-[int]{.ret} [Tcl\_CreateAlias]{.ccmd}[childInterp, childCmd, targetInterp, targetCmd, argc, argv]{.cargs}
-[int]{.ret} [Tcl\_CreateAliasObj]{.ccmd}[childInterp, childCmd, targetInterp, targetCmd, objc, objv]{.cargs}
-[int]{.ret} [Tcl\_GetAliasObj]{.ccmd}[interp, childCmd, targetInterpPtr, targetCmdPtr, objcPtr, objvPtr]{.cargs}
-[int]{.ret} [Tcl\_ExposeCommand]{.ccmd}[interp, hiddenCmdName, cmdName]{.cargs}
-[int]{.ret} [Tcl\_HideCommand]{.ccmd}[interp, cmdName, hiddenCmdName]{.cargs}
+[int]{.ret} [Tcl\_IsSafe]{.ccmd} [interp]{.cargs}
+[Tcl\_Interp \*]{.ret} [Tcl\_CreateChild]{.ccmd} [interp, name, isSafe]{.cargs}
+[Tcl\_Interp \*]{.ret} [Tcl\_GetChild]{.ccmd} [interp, name]{.cargs}
+[Tcl\_Interp \*]{.ret} [Tcl\_GetParent]{.ccmd} [interp]{.cargs}
+[int]{.ret} [Tcl\_GetInterpPath]{.ccmd} [interp, childInterp]{.cargs}
+[int]{.ret} [Tcl\_CreateAlias]{.ccmd} [childInterp, childCmd, targetInterp, targetCmd, argc, argv]{.cargs}
+[int]{.ret} [Tcl\_CreateAliasObj]{.ccmd} [childInterp, childCmd, targetInterp, targetCmd, objc, objv]{.cargs}
+[int]{.ret} [Tcl\_GetAliasObj]{.ccmd} [interp, childCmd, targetInterpPtr, targetCmdPtr, objcPtr, objvPtr]{.cargs}
+[int]{.ret} [Tcl\_ExposeCommand]{.ccmd} [interp, hiddenCmdName, cmdName]{.cargs}
+[int]{.ret} [Tcl\_HideCommand]{.ccmd} [interp, cmdName, hiddenCmdName]{.cargs}
 :::
 
 # Arguments

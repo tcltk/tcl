@@ -23,8 +23,8 @@ Tcl\_CreateCloseHandler, Tcl\_DeleteCloseHandler - arrange for callbacks when ch
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[Tcl\_CreateCloseHandler]{.ccmd}[channel, proc, clientData]{.cargs}
-[Tcl\_DeleteCloseHandler]{.ccmd}[channel, proc, clientData]{.cargs}
+[Tcl\_CreateCloseHandler]{.ccmd} [channel, proc, clientData]{.cargs}
+[Tcl\_DeleteCloseHandler]{.ccmd} [channel, proc, clientData]{.cargs}
 :::
 
 # Arguments

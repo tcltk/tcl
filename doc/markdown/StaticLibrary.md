@@ -24,8 +24,8 @@ Tcl\_StaticLibrary, Tcl\_StaticPackage - make a statically linked library availa
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[Tcl\_StaticLibrary]{.ccmd}[interp, prefix, initProc, safeInitProc]{.cargs}
-[Tcl\_StaticPackage]{.ccmd}[interp, prefix, initProc, safeInitProc]{.cargs}
+[Tcl\_StaticLibrary]{.ccmd} [interp, prefix, initProc, safeInitProc]{.cargs}
+[Tcl\_StaticPackage]{.ccmd} [interp, prefix, initProc, safeInitProc]{.cargs}
 :::
 
 # Arguments

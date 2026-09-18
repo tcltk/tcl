@@ -23,9 +23,9 @@ Tcl\_SplitPath, Tcl\_JoinPath, Tcl\_GetPathType - manipulate platform-dependent 
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[Tcl\_SplitPath]{.ccmd}[path, argcPtr, argvPtr]{.cargs}
-[char \*]{.ret} [Tcl\_JoinPath]{.ccmd}[argc, argv, resultPtr]{.cargs}
-[Tcl\_PathType]{.ret} [Tcl\_GetPathType]{.ccmd}[path]{.cargs}
+[Tcl\_SplitPath]{.ccmd} [path, argcPtr, argvPtr]{.cargs}
+[char \*]{.ret} [Tcl\_JoinPath]{.ccmd} [argc, argv, resultPtr]{.cargs}
+[Tcl\_PathType]{.ret} [Tcl\_GetPathType]{.ccmd} [path]{.cargs}
 :::
 
 # Arguments

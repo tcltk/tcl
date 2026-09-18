@@ -64,9 +64,7 @@ A *locale* is a specification string describing a user language like **de\_ch** 
 
 The global locale may be changed on demand, for example by a user initiated language change or within a multi user application like a web server.
 
-::: {.info version="TIP490"}
-Object oriented programming is supported by the use of a package namespace.
-:::
+[Object oriented programming is supported by the use of a package namespace.]{version="TIP490"}
 
 # Commands
 
@@ -121,7 +119,7 @@ Object oriented programming is supported by the use of a package namespace.
 
     If the new locale is set to *newLocale*, the corresponding preferences are calculated and set. For example, if the current locale is en\_US\_funky, then **::msgcat::mcpreferences** returns **{en\_us\_funky en\_us en {}}**.
 
-    The same result may be achieved by `::msgcat::mcpreferences** {*}[::msgcat::mcutil getpreferences newLocale]`.
+    The same result may be achieved by **::msgcat::mcpreferences** {\*}\[**::msgcat::mcutil getpreferences** *newLocale*\].
 
     The current locale is always the first element of the list returned by **mcpreferences**.
 
@@ -175,6 +173,8 @@ Object oriented programming is supported by the use of a package namespace.
 **::msgcat::mcforgetpackage**
 : The calling package clears all its state within the **msgcat** package including all settings and translations.
 
+
+[]{version="TIP499"}
 
 [::msgcat::mcutil]{.cmd} [getpreferences]{.sub} [locale]{.arg}
 : Return the preferences list of the given locale as described in the section [Locale specification]. An example is the composition of a preference list for the bilingual region "Biel/Bienne" as a concatenation of swiss german and swiss french:
@@ -345,9 +345,7 @@ This command may cause the load of locales.
 : With no parameters, return the package private preferences or the global preferences, if no package private locale is set. The package locale state (set or not) is not changed (in contrast to the command **::msgcat::mcpackagelocale set**).
 
 
-::: {.info version="TIP499"}
-If a set of locale preferences is given, it is set as package locale preference list. The package locale is set to the first element of the preference list. A package locale is activated, if it was not set so far.
-:::
+[If a set of locale preferences is given, it is set as package locale preference list. The package locale is set to the first element of the preference list. A package locale is activated, if it was not set so far.]{version="TIP499"}
 
 Locale preferences are loaded now for the package, if not yet loaded.
 
@@ -432,6 +430,8 @@ Callbacks are invoked, if:
 3. the registering namespace exists.
 
 If a called routine fails with an error, the [bgerror] routine for the interpreter is invoked after command completion. Only exception is the callback **unknowncmd**, where an error causes the invoking **mc**-command to fail with that error.
+
+[]{version="TIP490"}
 
 # Object oriented programming
 

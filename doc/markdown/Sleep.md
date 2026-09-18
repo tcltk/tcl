@@ -21,8 +21,8 @@ Tcl\_Sleep - delay execution for a given number of milliseconds
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[Tcl\_Sleep]{.ccmd}[ms]{.cargs}
-[Tcl\_SleepMicroSeconds]{.ccmd}[us]{.cargs}
+[Tcl\_Sleep]{.ccmd} [ms]{.cargs}
+[Tcl\_SleepMicroSeconds]{.ccmd} [us]{.cargs}
 :::
 
 # Arguments

@@ -26,8 +26,8 @@ Tcl\_LoadFile, Tcl\_FindSymbol - platform-independent dynamic library loading
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[int]{.ret} [Tcl\_LoadFile]{.ccmd}[interp, pathPtr, symbols, flags, procPtrs, loadHandlePtr]{.cargs}
-[void \*]{.ret} [Tcl\_FindSymbol]{.ccmd}[interp, loadHandle, symbol]{.cargs}
+[int]{.ret} [Tcl\_LoadFile]{.ccmd} [interp, pathPtr, symbols, flags, procPtrs, loadHandlePtr]{.cargs}
+[void \*]{.ret} [Tcl\_FindSymbol]{.ccmd} [interp, loadHandle, symbol]{.cargs}
 :::
 
 # Arguments
@@ -40,7 +40,7 @@ Tcl\_LoadFile, Tcl\_FindSymbol - platform-independent dynamic library loading
 [\*pathPtr]{.carg .in type="Tcl_Obj"}
 : The name of the file to load. If it is a single name, the library search path of the current environment will be used to resolve it.
 
-[symbols[]]{.carg .in type="const char *const"}
+[symbols\[\]]{.carg .in type="const char *const"}
 : Array of names of symbols to be resolved during the load of the library, or NULL if no symbols are to be resolved. If an array is given, the last entry in the array must be NULL.
 
 [flags]{.carg .in type="int"}

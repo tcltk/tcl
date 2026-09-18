@@ -24,14 +24,14 @@ Tcl\_ParseCommand, Tcl\_ParseExpr, Tcl\_ParseBraces, Tcl\_ParseQuotedString, Tcl
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[int]{.ret} [Tcl\_ParseCommand]{.ccmd}[interp, start, numBytes, nested, parsePtr]{.cargs}
-[int]{.ret} [Tcl\_ParseExpr]{.ccmd}[interp, start, numBytes, parsePtr]{.cargs}
-[int]{.ret} [Tcl\_ParseBraces]{.ccmd}[interp, start, numBytes, parsePtr, append, termPtr]{.cargs}
-[int]{.ret} [Tcl\_ParseQuotedString]{.ccmd}[interp, start, numBytes, parsePtr, append, termPtr]{.cargs}
-[int]{.ret} [Tcl\_ParseVarName]{.ccmd}[interp, start, numBytes, parsePtr, append]{.cargs}
-[const char \*]{.ret} [Tcl\_ParseVar]{.ccmd}[interp, start, termPtr]{.cargs}
-[Tcl\_FreeParse]{.ccmd}[usedParsePtr]{.cargs}
-[int]{.ret} [Tcl\_EvalTokensStandard]{.ccmd}[interp, tokenPtr, numTokens]{.cargs}
+[int]{.ret} [Tcl\_ParseCommand]{.ccmd} [interp, start, numBytes, nested, parsePtr]{.cargs}
+[int]{.ret} [Tcl\_ParseExpr]{.ccmd} [interp, start, numBytes, parsePtr]{.cargs}
+[int]{.ret} [Tcl\_ParseBraces]{.ccmd} [interp, start, numBytes, parsePtr, append, termPtr]{.cargs}
+[int]{.ret} [Tcl\_ParseQuotedString]{.ccmd} [interp, start, numBytes, parsePtr, append, termPtr]{.cargs}
+[int]{.ret} [Tcl\_ParseVarName]{.ccmd} [interp, start, numBytes, parsePtr, append]{.cargs}
+[const char \*]{.ret} [Tcl\_ParseVar]{.ccmd} [interp, start, termPtr]{.cargs}
+[Tcl\_FreeParse]{.ccmd} [usedParsePtr]{.cargs}
+[int]{.ret} [Tcl\_EvalTokensStandard]{.ccmd} [interp, tokenPtr, numTokens]{.cargs}
 :::
 
 # Arguments
@@ -75,11 +75,11 @@ These procedures parse Tcl commands or portions of Tcl commands such as expressi
 
 **Tcl\_ParseBraces** parses a string or command argument enclosed in braces such as **{hello}** or **{string \\t with \\t tabs}** from the beginning of its argument *start*. The first character of *start* must be **{**. If the braced string was parsed successfully, **Tcl\_ParseBraces** returns [TCL\_OK][catch], fills in the structure pointed to by *parsePtr* with information about the structure of the string (see below for details), and stores a pointer to the character just after the terminating **}** in the location given by *\*termPtr*. If an error occurs while parsing the string then [TCL\_ERROR][catch] is returned, an error message is left in *interp*'s result, and no information is left at *\*parsePtr* or *\*termPtr*.
 
-**Tcl\_ParseQuotedString** parses a double-quoted string such as **"sum is [expr {$a+$b}]"** from the beginning of the argument *start*. The first character of *start* must be **\\"**. If the double-quoted string was parsed successfully, **Tcl\_ParseQuotedString** returns [TCL\_OK][catch], fills in the structure pointed to by *parsePtr* with information about the structure of the string (see below for details), and stores a pointer to the character just after the terminating **\\"** in the location given by *\*termPtr*. If an error occurs while parsing the string then [TCL\_ERROR][catch] is returned, an error message is left in *interp*'s result, and no information is left at *\*parsePtr* or *\*termPtr*.
+**Tcl\_ParseQuotedString** parses a double-quoted string such as **"sum is \[expr {$a+$b}\]"** from the beginning of the argument *start*. The first character of *start* must be **\\"**. If the double-quoted string was parsed successfully, **Tcl\_ParseQuotedString** returns [TCL\_OK][catch], fills in the structure pointed to by *parsePtr* with information about the structure of the string (see below for details), and stores a pointer to the character just after the terminating **\\"** in the location given by *\*termPtr*. If an error occurs while parsing the string then [TCL\_ERROR][catch] is returned, an error message is left in *interp*'s result, and no information is left at *\*parsePtr* or *\*termPtr*.
 
-**Tcl\_ParseVarName** parses a Tcl variable reference such as **$abc** or **$x([expr {$index + 1}])** from the beginning of its *start* argument. The first character of *start* must be **$**. If a variable name was parsed successfully, **Tcl\_ParseVarName** returns [TCL\_OK][catch] and fills in the structure pointed to by *parsePtr* with information about the structure of the variable name (see below for details).  If an error occurs while parsing the command then [TCL\_ERROR][catch] is returned, an error message is left in *interp*'s result (if *interp* is not NULL), and no information is left at *\*parsePtr*.
+**Tcl\_ParseVarName** parses a Tcl variable reference such as **$abc** or **$x(\[expr {$index + 1}\])** from the beginning of its *start* argument. The first character of *start* must be **$**. If a variable name was parsed successfully, **Tcl\_ParseVarName** returns [TCL\_OK][catch] and fills in the structure pointed to by *parsePtr* with information about the structure of the variable name (see below for details).  If an error occurs while parsing the command then [TCL\_ERROR][catch] is returned, an error message is left in *interp*'s result (if *interp* is not NULL), and no information is left at *\*parsePtr*.
 
-**Tcl\_ParseVar** parses a Tcl variable reference such as **$abc** or **$x([expr {$index + 1}])** from the beginning of its *start* argument.  The first character of *start* must be **$**.  If the variable name is parsed successfully, **Tcl\_ParseVar** returns a pointer to the string value of the variable.  If an error occurs while parsing, then NULL is returned and an error message is left in *interp*'s result.
+**Tcl\_ParseVar** parses a Tcl variable reference such as **$abc** or **$x(\[expr {$index + 1}\])** from the beginning of its *start* argument.  The first character of *start* must be **$**.  If the variable name is parsed successfully, **Tcl\_ParseVar** returns a pointer to the string value of the variable.  If an error occurs while parsing, then NULL is returned and an error message is left in *interp*'s result.
 
 The information left at *\*parsePtr* by **Tcl\_ParseCommand**, **Tcl\_ParseExpr**, **Tcl\_ParseBraces**, **Tcl\_ParseQuotedString**, and **Tcl\_ParseVarName** may include dynamically allocated memory. If these five parsing procedures return [TCL\_OK][catch] then the caller must invoke **Tcl\_FreeParse** to release the storage at *\*parsePtr*. These procedures ignore any existing information in *\*parsePtr* (unless *append* is non-zero), so if repeated calls are being made to any of them then **Tcl\_FreeParse** must be invoked once after each call.
 

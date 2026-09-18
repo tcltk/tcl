@@ -23,12 +23,12 @@ Tcl\_UniCharToUpper, Tcl\_UniCharToLower, Tcl\_UniCharToTitle, Tcl\_UtfToUpper, 
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[int]{.ret} [Tcl\_UniCharToUpper]{.ccmd}[ch]{.cargs}
-[int]{.ret} [Tcl\_UniCharToLower]{.ccmd}[ch]{.cargs}
-[int]{.ret} [Tcl\_UniCharToTitle]{.ccmd}[ch]{.cargs}
-[Tcl\_Size]{.ret} [Tcl\_UtfToUpper]{.ccmd}[str]{.cargs}
-[Tcl\_Size]{.ret} [Tcl\_UtfToLower]{.ccmd}[str]{.cargs}
-[Tcl\_Size]{.ret} [Tcl\_UtfToTitle]{.ccmd}[str]{.cargs}
+[int]{.ret} [Tcl\_UniCharToUpper]{.ccmd} [ch]{.cargs}
+[int]{.ret} [Tcl\_UniCharToLower]{.ccmd} [ch]{.cargs}
+[int]{.ret} [Tcl\_UniCharToTitle]{.ccmd} [ch]{.cargs}
+[Tcl\_Size]{.ret} [Tcl\_UtfToUpper]{.ccmd} [str]{.cargs}
+[Tcl\_Size]{.ret} [Tcl\_UtfToLower]{.ccmd} [str]{.cargs}
+[Tcl\_Size]{.ret} [Tcl\_UtfToTitle]{.ccmd} [str]{.cargs}
 :::
 
 # Arguments

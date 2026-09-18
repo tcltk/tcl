@@ -21,7 +21,7 @@ Tcl\_PutEnv - procedures to manipulate the environment
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[int]{.ret} [Tcl\_PutEnv]{.ccmd}[assignment]{.cargs}
+[int]{.ret} [Tcl\_PutEnv]{.ccmd} [assignment]{.cargs}
 :::
 
 # Arguments

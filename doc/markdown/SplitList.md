@@ -27,12 +27,12 @@ Tcl\_SplitList, Tcl\_Merge, Tcl\_ScanElement, Tcl\_ConvertElement, Tcl\_ScanCoun
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[int]{.ret} [Tcl\_SplitList]{.ccmd}[interp, list, argcPtr, argvPtr]{.cargs}
-[char \*]{.ret} [Tcl\_Merge]{.ccmd}[argc, argv]{.cargs}
-[Tcl\_Size]{.ret} [Tcl\_ScanElement]{.ccmd}[src, flagsPtr]{.cargs}
-[Tcl\_Size]{.ret} [Tcl\_ScanCountedElement]{.ccmd}[src, length, flagsPtr]{.cargs}
-[Tcl\_Size]{.ret} [Tcl\_ConvertElement]{.ccmd}[src, dst, flags]{.cargs}
-[Tcl\_Size]{.ret} [Tcl\_ConvertCountedElement]{.ccmd}[src, length, dst, flags]{.cargs}
+[int]{.ret} [Tcl\_SplitList]{.ccmd} [interp, list, argcPtr, argvPtr]{.cargs}
+[char \*]{.ret} [Tcl\_Merge]{.ccmd} [argc, argv]{.cargs}
+[Tcl\_Size]{.ret} [Tcl\_ScanElement]{.ccmd} [src, flagsPtr]{.cargs}
+[Tcl\_Size]{.ret} [Tcl\_ScanCountedElement]{.ccmd} [src, length, flagsPtr]{.cargs}
+[Tcl\_Size]{.ret} [Tcl\_ConvertElement]{.ccmd} [src, dst, flags]{.cargs}
+[Tcl\_Size]{.ret} [Tcl\_ConvertCountedElement]{.ccmd} [src, length, dst, flags]{.cargs}
 :::
 
 # Arguments

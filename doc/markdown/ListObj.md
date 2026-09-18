@@ -34,17 +34,17 @@ Tcl\_ListObjAppendList, Tcl\_ListObjAppendElement, Tcl\_NewListObj, Tcl\_SetList
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[int]{.ret} [Tcl\_ListObjAppendList]{.ccmd}[interp, listPtr, elemListPtr]{.cargs}
-[int]{.ret} [Tcl\_ListObjAppendElement]{.ccmd}[interp, listPtr, objPtr]{.cargs}
-[Tcl\_Obj \*]{.ret} [Tcl\_NewListObj]{.ccmd}[objc, objv]{.cargs}
-[Tcl\_SetListObj]{.ccmd}[objPtr, objc, objv]{.cargs}
-[int]{.ret} [Tcl\_ListObjGetElements]{.ccmd}[interp, listPtr, objcPtr, objvPtr]{.cargs}
-[int]{.ret} [Tcl\_ListObjLength]{.ccmd}[interp, listPtr, lengthPtr]{.cargs}
-[int]{.ret} [Tcl\_ListObjIndex]{.ccmd}[interp, listPtr, index, objPtrPtr]{.cargs}
-[int]{.ret} [Tcl\_ListObjReplace]{.ccmd}[interp, listPtr, first, count, objc, objv]{.cargs}
-[int]{.ret} [Tcl\_ListObjRange]{.ccmd}[interp, listPtr, first, last, objPtrPtr]{.cargs}
-[int]{.ret} [Tcl\_ListObjRepeat]{.ccmd}[interp, count, objc, objv, objPtrPtr]{.cargs}
-[int]{.ret} [Tcl\_ListObjReverse]{.ccmd}[interp, listPtr, objPtrPtr]{.cargs}
+[int]{.ret} [Tcl\_ListObjAppendList]{.ccmd} [interp, listPtr, elemListPtr]{.cargs}
+[int]{.ret} [Tcl\_ListObjAppendElement]{.ccmd} [interp, listPtr, objPtr]{.cargs}
+[Tcl\_Obj \*]{.ret} [Tcl\_NewListObj]{.ccmd} [objc, objv]{.cargs}
+[Tcl\_SetListObj]{.ccmd} [objPtr, objc, objv]{.cargs}
+[int]{.ret} [Tcl\_ListObjGetElements]{.ccmd} [interp, listPtr, objcPtr, objvPtr]{.cargs}
+[int]{.ret} [Tcl\_ListObjLength]{.ccmd} [interp, listPtr, lengthPtr]{.cargs}
+[int]{.ret} [Tcl\_ListObjIndex]{.ccmd} [interp, listPtr, index, objPtrPtr]{.cargs}
+[int]{.ret} [Tcl\_ListObjReplace]{.ccmd} [interp, listPtr, first, count, objc, objv]{.cargs}
+[int]{.ret} [Tcl\_ListObjRange]{.ccmd} [interp, listPtr, first, last, objPtrPtr]{.cargs}
+[int]{.ret} [Tcl\_ListObjRepeat]{.ccmd} [interp, count, objc, objv, objPtrPtr]{.cargs}
+[int]{.ret} [Tcl\_ListObjReverse]{.ccmd} [interp, listPtr, objPtrPtr]{.cargs}
 :::
 
 # Arguments

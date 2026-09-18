@@ -1007,17 +1007,31 @@ proc ::ndoc::parseBlock {parent manContent} {
 	set blockType {}
 	# the content of the current block:
 	set blockContent {}
-	# a set of attributes for the block (options of an AST element)
+	# a set of attributes for the block (options of an AST element):
 	set blockAttributes [list]
 	# a flag, whether a new block starts, so we can finalise the current one.
 	# when this flag is set, the currently read line is kept and a block is finalised
-	# before digesting the current line (in a repeated run of the while loop)
+	# before digesting the current line (in a repeated run of the while loop):
 	set doCloseBlock 0
+	# whether a ‡-marked (.VS) region is still open within the CURRENT block's content
+	# (see the .VS/.VE case below); tracked explicitly since a block can carry over an unrelated, already-closed ¤ from
+	# an earlier .VS/.VE pair that ran past its own block boundary (see below):
+	set vsOpen 0
 	while {[llength $manContent] > 0} {
 		if {$doCloseBlock} {
 			if {$blockContent ne ""} {
 				# sometimes .PP is directly followed by .CS, producing empty paragraphs
 				# which we want to ignore
+				if {$vsOpen} {
+					# a .VS region was still open when this block ended without a matching
+					# .VE (it runs on into a later block, e.g. across an intervening .PP or
+					# a .CS/.CE code block) - close it off here so this block's content stays
+					# well-formed. We do NOT carry it over into whatever
+					# block comes next (that would also wrongly re-open it inside a Code block).
+					# the marking is dropped (still better than corrupted output)
+					append blockContent ¤
+					set vsOpen 0
+				}
 				lappend blockList [list $blockType $blockAttributes $blockContent]
 				if {$verbose} {puts "... closed block: [lindex $blockList end]"}
 			}
@@ -1438,9 +1452,8 @@ proc ::ndoc::parseBlock {parent manContent} {
 				set blockType Code
 				set manContent [lrange $manContent 1 end]
 			} 
-			.CE - .VE - .DE {
+			.CE - .DE {
 				# .CE = code end
-				# .VE = end of sidebar
 				# .DE = end of display section
 				set doCloseBlock 1
 				set manContent [lrange $manContent 1 end]
@@ -1458,21 +1471,38 @@ proc ::ndoc::parseBlock {parent manContent} {
 				if {$blockContent eq ""} {append blockContent $myText} else {append blockContent { } $myText}
 				set manContent [lrange $manContent 1 end]
 			}
-			.VS - .DS {
-				# .VS = sidebar; for marking newly-changed parts of manual pages
-				# .DS = display section
-				# We just interpret these as a new paragraphs:
+			.VS {
+				# .VS/.VE mark a region "new in this version" (a TIP number as $info).
+				# It commonly occurs *inside* an already-running paragraph
+				# so it must not split that paragraph into its own block;
+				# instead it stays part of the same block's content and is turned into an
+				# inline Span later (see the matching §-style handling in parseInline),
+				# just like .QW's quoted text above. This also covers the case where .VS
+				# opens the very first sentence of a fresh paragraph.
+				if {$blockType eq ""} {set blockType Paragraph}
+				lassign $line - info
+				set myText ‡$info:
+				if {$blockContent eq ""} {append blockContent $myText} else {append blockContent { } $myText}
+				set vsOpen 1
+				set manContent [lrange $manContent 1 end]
+			}
+			.VE {
+				# closes the inline region opened by .VS above, but only if one is actually
+				# still open in THIS block: a .VS that ran on past its own block boundary
+				# already got auto-closed there (see the doCloseBlock handling above) and
+				# does not carry forward, so a .VE reaching us here with vsOpen false is a
+				# leftover from such a region - ignore it rather than emit a stray, unmatched ¤:
+				if {$vsOpen} {
+					append blockContent ¤
+					set vsOpen 0
+				}
+				set manContent [lrange $manContent 1 end]
+			}
+			.DS {
+				# .DS = display section: still treated as a whole new (attributed) paragraph:
 				if {$blockType ne ""} {set doCloseBlock 1; continue}
 				set blockType Paragraph
-				switch $markup {
-					.VS {
-						lassign $line - info
-						set blockAttributes [list -vs $info]
-					}
-					.DS {
-						set blockAttributes [list DISPLAY yes]
-					}
-				}
+				set blockAttributes [list DISPLAY yes]
 				set manContent [lrange $manContent 1 end]
 			}
 			.MT {
@@ -1495,7 +1525,10 @@ proc ::ndoc::parseBlock {parent manContent} {
 		}
 	}
 	# also process the last still open block:
-	if {$blockContent ne ""} {lappend blockList [list $blockType $blockAttributes $blockContent]}
+	if {$blockContent ne ""} {
+		if {$vsOpen} {append blockContent ¤}
+		lappend blockList [list $blockType $blockAttributes $blockContent]
+	}
 	if {$verbose} {puts "... produced [lindex $blockList end]"}
 	return $blockList
 }
@@ -1675,7 +1708,7 @@ proc ::ndoc::parseCommand {mode line {version {}}} {
 				# all bold/italic/reset markers here:
 				set cargsText [string map {§ {} + {} = {}} $word]
 				if $DEBUG {puts "API arguments: $cargsText"}
-				lappend spanList [list Span .cargs [list [list Text {} $cargsText]]]
+				lappend spanList [list Space {} {}] [list Span .cargs [list [list Text {} $cargsText]]]
 				continue
 			}
 			switch -regexp $word {
@@ -1876,17 +1909,33 @@ proc ::ndoc::parseInline {keyword attributes content} {
 			if {$endMark == -1} {return -code error "parseInline: unbalanced quote (no end marker found)"}
 			lappend inlineAST [parseInline Quoted {} [string range $content 2 $endMark-1]]
 			set content [string range $content $endMark+2 end]
+		} elseif {$char eq "‡"} {
+			# a .VS/.VE region (starts with ‡<info>: and ends with ¤, see parseBlock):
+			# recurse so any markup inside the region (bold, quotes, ...) still works,
+			# then wrap the result in a Span carrying the version as a -vs attribute:
+			if {$verbose || $DEBUG} {puts VERSIONED}
+			set infoEnd [string first : $content 1]
+			if {$infoEnd == -1} {return -code error "parseInline: unbalanced .VS marker (no info separator found)"}
+			set info [string range $content 1 $infoEnd-1]
+			set endMark [string first ¤ $content $infoEnd+1]
+			if {$endMark == -1} {return -code error "parseInline: unbalanced .VS marker (no matching .VE found)"}
+			# trim: the join-separator before the first line inside the region ends up
+			# right after the ':', since that line is appended like any other content line:
+			set inner [lindex [parseInline Inline {} [string trim [string range $content $infoEnd+1 $endMark-1]]] 2]
+			lappend inlineAST [list Span "-vs $info" $inner]
+			set content [string range $content $endMark+1 end]
 		} else {
-			# normal text, digest it until 
+			# normal text, digest it until
 			# - a known backslash sequence comes (\fI, \fB, ...)
 			# - a quoted text comes
+			# - a .VS/.VE region starts
 			# - or until the end of the content if nothing of the above is found
 			if {$verbose || $DEBUG} {puts DEFAULT}
-			# put the first index where an '\f' or a quote was found into 'endMark'
+			# put the first index where an '\f', a quote or a .VS marker was found into 'endMark'
 			# (note that 'endMark' is a list of two indices)
 			# \x22 is the quote character
-			set found [regexp -indices {(\\f)[BIRP]|(§\x22)} $content endMark]
-			# 
+			set found [regexp -indices {(\\f)[BIRP]|(§\x22)|‡} $content endMark]
+			#
 			if {$found} {
 				set endMark [lindex $endMark 0]
 			} else {
@@ -2102,7 +2151,7 @@ proc ::ndoc::AST2Markdown_Element {parentType indent ASTelement} {
 		Text {
 			# just output the text, but escape some characters with special meaning in markdown:
 			# \u005c = backslash
-			append output [string  map {* \u005c* \u005c \u005c\u005c _ \u005c_} $content]
+			append output [string  map {* \u005c* \u005c \u005c\u005c _ \u005c_ [ \u005c[ ] \u005c]} $content]
 		}
 		Code {
 			foreach codeLine [split $content \n] {append output [string repeat { } $indent] $codeLine \n}
@@ -2534,6 +2583,14 @@ proc ::ndoc::mdExceptions {md} {
 		Tcl_LimitCheck {
 			set md [string map {
 				{# Limit checking api} {# Limit checking API}
+			} $md]
+		}
+		Tcl_Method {
+			set md [string map {
+				{## Tcl\_methodcallproc function signature} {## Tcl\_MethodCallProc function signature}
+				{## Tcl\_methoddeleteproc function signature} {## Tcl\_MethodDeleteProc function signature}
+				{## Tcl\_cloneproc function signature} {## Tcl\_CloneProc function signature}
+				{} {}
 			} $md]
 		}
 	}

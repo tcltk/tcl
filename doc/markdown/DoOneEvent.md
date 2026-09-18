@@ -23,7 +23,7 @@ Tcl\_DoOneEvent - wait for events and invoke event handlers
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[int]{.ret} [Tcl\_DoOneEvent]{.ccmd}[flags]{.cargs}
+[int]{.ret} [Tcl\_DoOneEvent]{.ccmd} [flags]{.cargs}
 :::
 
 # Arguments

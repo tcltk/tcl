@@ -20,9 +20,9 @@ Tcl\_CommandTraceInfo, Tcl\_TraceCommand, Tcl\_UntraceCommand - monitor renames 
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[void \*]{.ret} [Tcl\_CommandTraceInfo]{.ccmd}[interp, cmdName, flags, proc, prevClientData]{.cargs}
-[int]{.ret} [Tcl\_TraceCommand]{.ccmd}[interp, cmdName, flags, proc, clientData]{.cargs}
-[Tcl\_UntraceCommand]{.ccmd}[interp, cmdName, flags, proc, clientData]{.cargs}
+[void \*]{.ret} [Tcl\_CommandTraceInfo]{.ccmd} [interp, cmdName, flags, proc, prevClientData]{.cargs}
+[int]{.ret} [Tcl\_TraceCommand]{.ccmd} [interp, cmdName, flags, proc, clientData]{.cargs}
+[Tcl\_UntraceCommand]{.ccmd} [interp, cmdName, flags, proc, clientData]{.cargs}
 :::
 
 # Arguments

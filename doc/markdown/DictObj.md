@@ -29,16 +29,16 @@ Tcl\_NewDictObj, Tcl\_DictObjPut, Tcl\_DictObjGet, Tcl\_DictObjRemove, Tcl\_Dict
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[Tcl\_Obj \*]{.ret} [Tcl\_NewDictObj]{.ccmd}[]{.cargs}
-[int]{.ret} [Tcl\_DictObjGet]{.ccmd}[interp, dictPtr, keyPtr, valuePtrPtr]{.cargs}
-[int]{.ret} [Tcl\_DictObjPut]{.ccmd}[interp, dictPtr, keyPtr, valuePtr]{.cargs}
-[int]{.ret} [Tcl\_DictObjRemove]{.ccmd}[interp, dictPtr, keyPtr]{.cargs}
-[int]{.ret} [Tcl\_DictObjSize]{.ccmd}[interp, dictPtr, sizePtr]{.cargs}
-[int]{.ret} [Tcl\_DictObjFirst]{.ccmd}[interp, dictPtr, searchPtr, keyPtrPtr, valuePtrPtr, donePtr]{.cargs}
-[Tcl\_DictObjNext]{.ccmd}[searchPtr, keyPtrPtr, valuePtrPtr, donePtr]{.cargs}
-[Tcl\_DictObjDone]{.ccmd}[searchPtr]{.cargs}
-[int]{.ret} [Tcl\_DictObjPutKeyList]{.ccmd}[interp, dictPtr, keyc, keyv, valuePtr]{.cargs}
-[int]{.ret} [Tcl\_DictObjRemoveKeyList]{.ccmd}[interp, dictPtr, keyc, keyv]{.cargs}
+[Tcl\_Obj \*]{.ret} [Tcl\_NewDictObj]{.ccmd} []{.cargs}
+[int]{.ret} [Tcl\_DictObjGet]{.ccmd} [interp, dictPtr, keyPtr, valuePtrPtr]{.cargs}
+[int]{.ret} [Tcl\_DictObjPut]{.ccmd} [interp, dictPtr, keyPtr, valuePtr]{.cargs}
+[int]{.ret} [Tcl\_DictObjRemove]{.ccmd} [interp, dictPtr, keyPtr]{.cargs}
+[int]{.ret} [Tcl\_DictObjSize]{.ccmd} [interp, dictPtr, sizePtr]{.cargs}
+[int]{.ret} [Tcl\_DictObjFirst]{.ccmd} [interp, dictPtr, searchPtr, keyPtrPtr, valuePtrPtr, donePtr]{.cargs}
+[Tcl\_DictObjNext]{.ccmd} [searchPtr, keyPtrPtr, valuePtrPtr, donePtr]{.cargs}
+[Tcl\_DictObjDone]{.ccmd} [searchPtr]{.cargs}
+[int]{.ret} [Tcl\_DictObjPutKeyList]{.ccmd} [interp, dictPtr, keyc, keyv, valuePtr]{.cargs}
+[int]{.ret} [Tcl\_DictObjRemoveKeyList]{.ccmd} [interp, dictPtr, keyc, keyv]{.cargs}
 :::
 
 # Arguments

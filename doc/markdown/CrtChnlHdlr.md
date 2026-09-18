@@ -28,8 +28,8 @@ Tcl\_CreateChannelHandler, Tcl\_DeleteChannelHandler - call a procedure when a c
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[Tcl\_CreateChannelHandler]{.ccmd}[channel, mask, proc, clientData]{.cargs}
-[Tcl\_DeleteChannelHandler]{.ccmd}[channel, proc, clientData]{.cargs}
+[Tcl\_CreateChannelHandler]{.ccmd} [channel, mask, proc, clientData]{.cargs}
+[Tcl\_DeleteChannelHandler]{.ccmd} [channel, proc, clientData]{.cargs}
 :::
 
 # Arguments

@@ -36,38 +36,38 @@ Tcl\_OpenFileChannel, Tcl\_OpenCommandChannel, Tcl\_MakeFileChannel, Tcl\_GetCha
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[Tcl\_Channel]{.ret} [Tcl\_OpenFileChannel]{.ccmd}[interp, fileName, mode, permissions]{.cargs}
-[Tcl\_Channel]{.ret} [Tcl\_OpenCommandChannel]{.ccmd}[interp, argc, argv, flags]{.cargs}
-[Tcl\_Channel]{.ret} [Tcl\_MakeFileChannel]{.ccmd}[handle, readOrWrite]{.cargs}
-[Tcl\_Channel]{.ret} [Tcl\_GetChannel]{.ccmd}[interp, channelName, modePtr]{.cargs}
-[int]{.ret} [Tcl\_GetChannelNames]{.ccmd}[interp]{.cargs}
-[int]{.ret} [Tcl\_GetChannelNamesEx]{.ccmd}[interp, pattern]{.cargs}
-[Tcl\_RegisterChannel]{.ccmd}[interp, channel]{.cargs}
-[int]{.ret} [Tcl\_UnregisterChannel]{.ccmd}[interp, channel]{.cargs}
-[int]{.ret} [Tcl\_DetachChannel]{.ccmd}[interp, channel]{.cargs}
-[int]{.ret} [Tcl\_IsStandardChannel]{.ccmd}[channel]{.cargs}
-[int]{.ret} [Tcl\_Close]{.ccmd}[interp, channel]{.cargs}
-[int]{.ret} [Tcl\_CloseEx]{.ccmd}[interp, channel, closeFlags]{.cargs}
-[Tcl\_Size]{.ret} [Tcl\_ReadChars]{.ccmd}[channel, readObjPtr, charsToRead, appendFlag]{.cargs}
-[Tcl\_Size]{.ret} [Tcl\_Read]{.ccmd}[channel, readBuf, bytesToRead]{.cargs}
-[Tcl\_Size]{.ret} [Tcl\_GetsObj]{.ccmd}[channel, lineObjPtr]{.cargs}
-[Tcl\_Size]{.ret} [Tcl\_Gets]{.ccmd}[channel, lineRead]{.cargs}
-[Tcl\_Size]{.ret} [Tcl\_Ungets]{.ccmd}[channel, input, inputLen, addAtEnd]{.cargs}
-[Tcl\_Size]{.ret} [Tcl\_WriteObj]{.ccmd}[channel, writeObjPtr]{.cargs}
-[Tcl\_Size]{.ret} [Tcl\_WriteChars]{.ccmd}[channel, charBuf, bytesToWrite]{.cargs}
-[Tcl\_Size]{.ret} [Tcl\_Write]{.ccmd}[channel, byteBuf, bytesToWrite]{.cargs}
-[Tcl\_Size]{.ret} [Tcl\_ReadRaw]{.ccmd}[channel, readBuf, bytesToRead]{.cargs}
-[Tcl\_Size]{.ret} [Tcl\_WriteRaw]{.ccmd}[channel, byteBuf, bytesToWrite]{.cargs}
-[int]{.ret} [Tcl\_Eof]{.ccmd}[channel]{.cargs}
-[int]{.ret} [Tcl\_Flush]{.ccmd}[channel]{.cargs}
-[int]{.ret} [Tcl\_InputBlocked]{.ccmd}[channel]{.cargs}
-[int]{.ret} [Tcl\_InputBuffered]{.ccmd}[channel]{.cargs}
-[int]{.ret} [Tcl\_OutputBuffered]{.ccmd}[channel]{.cargs}
-[long long]{.ret} [Tcl\_Seek]{.ccmd}[channel, offset, seekMode]{.cargs}
-[long long]{.ret} [Tcl\_Tell]{.ccmd}[channel]{.cargs}
-[int]{.ret} [Tcl\_TruncateChannel]{.ccmd}[channel, length]{.cargs}
-[int]{.ret} [Tcl\_GetChannelOption]{.ccmd}[interp, channel, optionName, optionValue]{.cargs}
-[int]{.ret} [Tcl\_SetChannelOption]{.ccmd}[interp, channel, optionName, newValue]{.cargs}
+[Tcl\_Channel]{.ret} [Tcl\_OpenFileChannel]{.ccmd} [interp, fileName, mode, permissions]{.cargs}
+[Tcl\_Channel]{.ret} [Tcl\_OpenCommandChannel]{.ccmd} [interp, argc, argv, flags]{.cargs}
+[Tcl\_Channel]{.ret} [Tcl\_MakeFileChannel]{.ccmd} [handle, readOrWrite]{.cargs}
+[Tcl\_Channel]{.ret} [Tcl\_GetChannel]{.ccmd} [interp, channelName, modePtr]{.cargs}
+[int]{.ret} [Tcl\_GetChannelNames]{.ccmd} [interp]{.cargs}
+[int]{.ret} [Tcl\_GetChannelNamesEx]{.ccmd} [interp, pattern]{.cargs}
+[Tcl\_RegisterChannel]{.ccmd} [interp, channel]{.cargs}
+[int]{.ret} [Tcl\_UnregisterChannel]{.ccmd} [interp, channel]{.cargs}
+[int]{.ret} [Tcl\_DetachChannel]{.ccmd} [interp, channel]{.cargs}
+[int]{.ret} [Tcl\_IsStandardChannel]{.ccmd} [channel]{.cargs}
+[int]{.ret} [Tcl\_Close]{.ccmd} [interp, channel]{.cargs}
+[int]{.ret} [Tcl\_CloseEx]{.ccmd} [interp, channel, closeFlags]{.cargs}
+[Tcl\_Size]{.ret} [Tcl\_ReadChars]{.ccmd} [channel, readObjPtr, charsToRead, appendFlag]{.cargs}
+[Tcl\_Size]{.ret} [Tcl\_Read]{.ccmd} [channel, readBuf, bytesToRead]{.cargs}
+[Tcl\_Size]{.ret} [Tcl\_GetsObj]{.ccmd} [channel, lineObjPtr]{.cargs}
+[Tcl\_Size]{.ret} [Tcl\_Gets]{.ccmd} [channel, lineRead]{.cargs}
+[Tcl\_Size]{.ret} [Tcl\_Ungets]{.ccmd} [channel, input, inputLen, addAtEnd]{.cargs}
+[Tcl\_Size]{.ret} [Tcl\_WriteObj]{.ccmd} [channel, writeObjPtr]{.cargs}
+[Tcl\_Size]{.ret} [Tcl\_WriteChars]{.ccmd} [channel, charBuf, bytesToWrite]{.cargs}
+[Tcl\_Size]{.ret} [Tcl\_Write]{.ccmd} [channel, byteBuf, bytesToWrite]{.cargs}
+[Tcl\_Size]{.ret} [Tcl\_ReadRaw]{.ccmd} [channel, readBuf, bytesToRead]{.cargs}
+[Tcl\_Size]{.ret} [Tcl\_WriteRaw]{.ccmd} [channel, byteBuf, bytesToWrite]{.cargs}
+[int]{.ret} [Tcl\_Eof]{.ccmd} [channel]{.cargs}
+[int]{.ret} [Tcl\_Flush]{.ccmd} [channel]{.cargs}
+[int]{.ret} [Tcl\_InputBlocked]{.ccmd} [channel]{.cargs}
+[int]{.ret} [Tcl\_InputBuffered]{.ccmd} [channel]{.cargs}
+[int]{.ret} [Tcl\_OutputBuffered]{.ccmd} [channel]{.cargs}
+[long long]{.ret} [Tcl\_Seek]{.ccmd} [channel, offset, seekMode]{.cargs}
+[long long]{.ret} [Tcl\_Tell]{.ccmd} [channel]{.cargs}
+[int]{.ret} [Tcl\_TruncateChannel]{.ccmd} [channel, length]{.cargs}
+[int]{.ret} [Tcl\_GetChannelOption]{.ccmd} [interp, channel, optionName, optionValue]{.cargs}
+[int]{.ret} [Tcl\_SetChannelOption]{.ccmd} [interp, channel, optionName, newValue]{.cargs}
 :::
 
 # Arguments

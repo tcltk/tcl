@@ -105,9 +105,7 @@ In the second form, *access* consists of a list of any of the following flags, m
 
 If a new file is created as part of opening it, *permissions* (an integer) is used to set the permissions for the new file in conjunction with the process's file mode creation mask. *Permissions* defaults to 0666.
 
-::: {.info version="TIP603"}
-When the file opened is an ordinary disk file, the [chan configure][chan] and [fconfigure] commands can be used to query this additional configuration option:
-:::
+[When the file opened is an ordinary disk file, the [chan configure][chan] and [fconfigure] commands can be used to query this additional configuration option:]{version="TIP603"}
 
 [-stat]{.lit}
 : This option, when read, returns a dictionary of values much as is obtained from the [file stat][file] command, where that stat information relates to the real opened file. Keys in the dictionary may include **atime**, **ctime**, **dev**, **gid**, **ino**, **mode**, **mtime**, **nlink**, **size**, **type**, and **uid** among others; the **mtime**, **size** and **type** fields are guaranteed to be present and meaningful on all platforms; other keys may be present too.
@@ -271,9 +269,7 @@ See the [Portability issues] section of the [exec] command for additional inform
 
 # Console channels
 
-::: {.info version="TIP160"}
-On Windows only, console channels (usually **stdin** or **stdout**) support the following options:
-:::
+[On Windows only, console channels (usually **stdin** or **stdout**) support the following options:]{version="TIP160"}
 
 [-inputmode]{.lit} [inputMode]{.arg}
 : This option is used to query or change the input mode of the console channel, which controls how interactive input from users is handled. The following values for *inputMode* are supported:
@@ -324,7 +320,7 @@ if {[catch {close $fl} err]} {
 }
 ```
 
-Open a command pipeline and read binary data from it. Note the unusual form with "|[list" that handles non-trivial edge cases with arguments that potentially have spaces in.
+Open a command pipeline and read binary data from it. Note the unusual form with "|\[list" that handles non-trivial edge cases with arguments that potentially have spaces in.
 
 ```
 set fl [open |[list create_image_data $input] "rb"]
@@ -332,9 +328,7 @@ set binData [read $fl]
 close $fl
 ```
 
-::: {.info version="TIP160"}
-Read a password securely from the user (assuming that the script is being run interactively):
-:::
+[Read a password securely from the user (assuming that the script is being run interactively):]{version="TIP160"}
 
 ```
 chan configure stdin -inputmode password

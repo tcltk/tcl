@@ -24,9 +24,9 @@ Tcl\_Preserve, Tcl\_Release, Tcl\_EventuallyFree - avoid freeing storage while i
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[Tcl\_Preserve]{.ccmd}[clientData]{.cargs}
-[Tcl\_Release]{.ccmd}[clientData]{.cargs}
-[Tcl\_EventuallyFree]{.ccmd}[clientData, freeProc]{.cargs}
+[Tcl\_Preserve]{.ccmd} [clientData]{.cargs}
+[Tcl\_Release]{.ccmd} [clientData]{.cargs}
+[Tcl\_EventuallyFree]{.ccmd} [clientData, freeProc]{.cargs}
 :::
 
 # Arguments

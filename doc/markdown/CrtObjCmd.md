@@ -27,17 +27,17 @@ Tcl\_CreateObjCommand, Tcl\_CreateObjCommand2, Tcl\_DeleteCommand, Tcl\_DeleteCo
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[Tcl\_Command]{.ret} [Tcl\_CreateObjCommand]{.ccmd}[interp, cmdName, proc, clientData, deleteProc]{.cargs}
-[Tcl\_Command]{.ret} [Tcl\_CreateObjCommand2]{.ccmd}[interp, cmdName, proc2, clientData, deleteProc]{.cargs}
-[int]{.ret} [Tcl\_DeleteCommand]{.ccmd}[interp, cmdName]{.cargs}
-[int]{.ret} [Tcl\_DeleteCommandFromToken]{.ccmd}[interp, token]{.cargs}
-[int]{.ret} [Tcl\_GetCommandInfo]{.ccmd}[interp, cmdName, infoPtr]{.cargs}
-[int]{.ret} [Tcl\_SetCommandInfo]{.ccmd}[interp, cmdName, infoPtr]{.cargs}
-[int]{.ret} [Tcl\_GetCommandInfoFromToken]{.ccmd}[token, infoPtr]{.cargs}
-[int]{.ret} [Tcl\_SetCommandInfoFromToken]{.ccmd}[token, infoPtr]{.cargs}
-[const char \*]{.ret} [Tcl\_GetCommandName]{.ccmd}[interp, token]{.cargs}
-[Tcl\_GetCommandFullName]{.ccmd}[interp, token, objPtr]{.cargs}
-[Tcl\_Command]{.ret} [Tcl\_GetCommandFromObj]{.ccmd}[interp, objPtr]{.cargs}
+[Tcl\_Command]{.ret} [Tcl\_CreateObjCommand]{.ccmd} [interp, cmdName, proc, clientData, deleteProc]{.cargs}
+[Tcl\_Command]{.ret} [Tcl\_CreateObjCommand2]{.ccmd} [interp, cmdName, proc2, clientData, deleteProc]{.cargs}
+[int]{.ret} [Tcl\_DeleteCommand]{.ccmd} [interp, cmdName]{.cargs}
+[int]{.ret} [Tcl\_DeleteCommandFromToken]{.ccmd} [interp, token]{.cargs}
+[int]{.ret} [Tcl\_GetCommandInfo]{.ccmd} [interp, cmdName, infoPtr]{.cargs}
+[int]{.ret} [Tcl\_SetCommandInfo]{.ccmd} [interp, cmdName, infoPtr]{.cargs}
+[int]{.ret} [Tcl\_GetCommandInfoFromToken]{.ccmd} [token, infoPtr]{.cargs}
+[int]{.ret} [Tcl\_SetCommandInfoFromToken]{.ccmd} [token, infoPtr]{.cargs}
+[const char \*]{.ret} [Tcl\_GetCommandName]{.ccmd} [interp, token]{.cargs}
+[Tcl\_GetCommandFullName]{.ccmd} [interp, token, objPtr]{.cargs}
+[Tcl\_Command]{.ret} [Tcl\_GetCommandFromObj]{.ccmd} [interp, objPtr]{.cargs}
 :::
 
 # Arguments
@@ -91,9 +91,9 @@ typedef int Tcl_ObjCmdProc(
         Tcl_Obj *const objv[]);
 ```
 
-When *proc* is invoked, the *clientData* and *interp* parameters will be copies of the *clientData* and *interp* arguments given to **Tcl\_CreateObjCommand**.  Typically, *clientData* points to an application-specific data structure that describes what to do when the command procedure is invoked. *Objc* and *objv* describe the arguments to the command, *objc* giving the number of argument values (including the command name) and *objv* giving the values of the arguments.  The *objv* array will contain *objc* values, pointing to the argument values.  Unlike *argv*[*argv*] used in a string-based command procedure, *objv*[*objc*] will not contain NULL.
+When *proc* is invoked, the *clientData* and *interp* parameters will be copies of the *clientData* and *interp* arguments given to **Tcl\_CreateObjCommand**.  Typically, *clientData* points to an application-specific data structure that describes what to do when the command procedure is invoked. *Objc* and *objv* describe the arguments to the command, *objc* giving the number of argument values (including the command name) and *objv* giving the values of the arguments.  The *objv* array will contain *objc* values, pointing to the argument values.  Unlike *argv*\[*argv*\] used in a string-based command procedure, *objv*\[*objc*\] will not contain NULL.
 
-Additionally, when *proc* is invoked, it must not modify the contents of the *objv* array by assigning new pointer values to any element of the array (for example, *objv*[**2**] = **NULL**) because this will cause memory to be lost and the runtime stack to be corrupted.  The [const] in the declaration of *objv* will cause ANSI-compliant compilers to report any such attempted assignment as an error.  However, it is acceptable to modify the internal representation of any individual value argument.  For instance, the user may call [Tcl\_GetIntFromObj][IntObj] on *objv*[**2**] to obtain the integer representation of that value; that call may change the type of the value that *objv*[**2**] points at, but will not change where *objv*[**2**] points.
+Additionally, when *proc* is invoked, it must not modify the contents of the *objv* array by assigning new pointer values to any element of the array (for example, *objv*\[**2**\] = **NULL**) because this will cause memory to be lost and the runtime stack to be corrupted.  The [const] in the declaration of *objv* will cause ANSI-compliant compilers to report any such attempted assignment as an error.  However, it is acceptable to modify the internal representation of any individual value argument.  For instance, the user may call [Tcl\_GetIntFromObj][IntObj] on *objv*\[**2**\] to obtain the integer representation of that value; that call may change the type of the value that *objv*\[**2**\] points at, but will not change where *objv*\[**2**\] points.
 
 *proc* must return an integer code that is either [TCL\_OK][catch], [TCL\_ERROR][catch], [TCL\_RETURN][catch], [TCL\_BREAK][catch], or [TCL\_CONTINUE][catch]. See the [return] man page for details on what these codes mean and the use of extended values for an extension's private use. Most normal commands will only return [TCL\_OK][catch] or [TCL\_ERROR][catch].
 

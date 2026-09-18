@@ -31,13 +31,13 @@ Tcl\_NewObj, Tcl\_DuplicateObj, Tcl\_IncrRefCount, Tcl\_DecrRefCount, Tcl\_Bounc
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[Tcl\_Obj \*]{.ret} [Tcl\_NewObj]{.ccmd}[]{.cargs}
-[Tcl\_Obj \*]{.ret} [Tcl\_DuplicateObj]{.ccmd}[objPtr]{.cargs}
-[Tcl\_IncrRefCount]{.ccmd}[objPtr]{.cargs}
-[Tcl\_DecrRefCount]{.ccmd}[objPtr]{.cargs}
-[Tcl\_BounceRefCount]{.ccmd}[objPtr]{.cargs}
-[int]{.ret} [Tcl\_IsShared]{.ccmd}[objPtr]{.cargs}
-[Tcl\_InvalidateStringRep]{.ccmd}[objPtr]{.cargs}
+[Tcl\_Obj \*]{.ret} [Tcl\_NewObj]{.ccmd} []{.cargs}
+[Tcl\_Obj \*]{.ret} [Tcl\_DuplicateObj]{.ccmd} [objPtr]{.cargs}
+[Tcl\_IncrRefCount]{.ccmd} [objPtr]{.cargs}
+[Tcl\_DecrRefCount]{.ccmd} [objPtr]{.cargs}
+[Tcl\_BounceRefCount]{.ccmd} [objPtr]{.cargs}
+[int]{.ret} [Tcl\_IsShared]{.ccmd} [objPtr]{.cargs}
+[Tcl\_InvalidateStringRep]{.ccmd} [objPtr]{.cargs}
 :::
 
 # Arguments
@@ -147,7 +147,7 @@ As an example, the bytecode interpreter shares argument values between calling a
 
 Most command procedures have not been concerned about reference counting since they use a value immediately and do not retain a pointer to the value after they return.  However, there are some procedures that may return a new value, with a refCount of 0. In this situation, it is the caller's responsibility to free the value before the procedure returns.  One way to cover this is to always call **Tcl\_IncrRefCount** before using the value, then call **Tcl\_DecrRefCount** before returning. The other way is to use **Tcl\_BounceRefCount** after the value is no longer needed or referenced. This macro will free the value if there are no other references to the value. When retaining a pointer to a value in a data structure the procedure must be careful to increment its reference count since the retained pointer is a new reference. Examples of procedures that return new values are [Tcl\_NewIntObj][IntObj], and commands like [lseq], which creates an Abstract List, and an lindex on this list may return a new Obj with a refCount of 0. 
 
-Command procedures that directly modify values such as those for [lappend] and [linsert] must be careful to copy a shared value before changing it. They must first check whether the value is shared by calling **Tcl\_IsShared**. If the value is shared they must copy the value by using **Tcl\_DuplicateObj**; this returns a new duplicate of the original value that has *refCount* 0. If the value is not shared, the command procedure "owns" the value and can safely modify it directly. For example, the following code appears in the command procedure that implements [linsert]. This procedure modifies the list value passed to it in *objv[1]* by inserting *objc-3* new elements before *index*.
+Command procedures that directly modify values such as those for [lappend] and [linsert] must be careful to copy a shared value before changing it. They must first check whether the value is shared by calling **Tcl\_IsShared**. If the value is shared they must copy the value by using **Tcl\_DuplicateObj**; this returns a new duplicate of the original value that has *refCount* 0. If the value is not shared, the command procedure "owns" the value and can safely modify it directly. For example, the following code appears in the command procedure that implements [linsert]. This procedure modifies the list value passed to it in *objv\[1\]* by inserting *objc-3* new elements before *index*.
 
 ```
 listPtr = objv[1];

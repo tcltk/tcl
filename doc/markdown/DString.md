@@ -22,18 +22,18 @@ Tcl\_DStringInit, Tcl\_DStringAppend, Tcl\_DStringAppendElement, Tcl\_DStringSta
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[Tcl\_DStringInit]{.ccmd}[dsPtr]{.cargs}
-[char \*]{.ret} [Tcl\_DStringAppend]{.ccmd}[dsPtr, bytes, length]{.cargs}
-[char \*]{.ret} [Tcl\_DStringAppendElement]{.ccmd}[dsPtr, element]{.cargs}
-[Tcl\_DStringStartSublist]{.ccmd}[dsPtr]{.cargs}
-[Tcl\_DStringEndSublist]{.ccmd}[dsPtr]{.cargs}
-[Tcl\_Size]{.ret} [Tcl\_DStringLength]{.ccmd}[dsPtr]{.cargs}
-[char \*]{.ret} [Tcl\_DStringValue]{.ccmd}[dsPtr]{.cargs}
-[Tcl\_DStringSetLength]{.ccmd}[dsPtr, newLength]{.cargs}
-[Tcl\_DStringFree]{.ccmd}[dsPtr]{.cargs}
-[Tcl\_DStringResult]{.ccmd}[interp, dsPtr]{.cargs}
-[Tcl\_DStringGetResult]{.ccmd}[interp, dsPtr]{.cargs}
-[Tcl\_Obj \*]{.ret} [Tcl\_DStringToObj]{.ccmd}[dsPtr]{.cargs}
+[Tcl\_DStringInit]{.ccmd} [dsPtr]{.cargs}
+[char \*]{.ret} [Tcl\_DStringAppend]{.ccmd} [dsPtr, bytes, length]{.cargs}
+[char \*]{.ret} [Tcl\_DStringAppendElement]{.ccmd} [dsPtr, element]{.cargs}
+[Tcl\_DStringStartSublist]{.ccmd} [dsPtr]{.cargs}
+[Tcl\_DStringEndSublist]{.ccmd} [dsPtr]{.cargs}
+[Tcl\_Size]{.ret} [Tcl\_DStringLength]{.ccmd} [dsPtr]{.cargs}
+[char \*]{.ret} [Tcl\_DStringValue]{.ccmd} [dsPtr]{.cargs}
+[Tcl\_DStringSetLength]{.ccmd} [dsPtr, newLength]{.cargs}
+[Tcl\_DStringFree]{.ccmd} [dsPtr]{.cargs}
+[Tcl\_DStringResult]{.ccmd} [interp, dsPtr]{.cargs}
+[Tcl\_DStringGetResult]{.ccmd} [interp, dsPtr]{.cargs}
+[Tcl\_Obj \*]{.ret} [Tcl\_DStringToObj]{.ccmd} [dsPtr]{.cargs}
 :::
 
 # Arguments

@@ -605,7 +605,7 @@ chan copy $in $out -size $chunk \
 vwait done
 ```
 
-The fourth example starts an asynchronous, bidirectional copy between two sockets. Those could also be pipes from two bidirectional pipelines (e.g., *[open "|hal 9000" r+]*); the conversation will remain essentially secret to the script, since all four **chan event** slots are busy, though any transforms that are **chan push**ed on the channels will be able to observe the passing traffic.
+The fourth example starts an asynchronous, bidirectional copy between two sockets. Those could also be pipes from two bidirectional pipelines (e.g., *\[open "|hal 9000" r+\]*); the conversation will remain essentially secret to the script, since all four **chan event** slots are busy, though any transforms that are **chan push**ed on the channels will be able to observe the passing traffic.
 
 ```
 proc Done {dir args} {

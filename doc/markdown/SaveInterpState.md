@@ -20,9 +20,9 @@ Tcl\_SaveInterpState, Tcl\_RestoreInterpState, Tcl\_DiscardInterpState - save an
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[Tcl\_InterpState]{.ret} [Tcl\_SaveInterpState]{.ccmd}[interp, status]{.cargs}
-[int]{.ret} [Tcl\_RestoreInterpState]{.ccmd}[interp, state]{.cargs}
-[Tcl\_DiscardInterpState]{.ccmd}[state]{.cargs}
+[Tcl\_InterpState]{.ret} [Tcl\_SaveInterpState]{.ccmd} [interp, status]{.cargs}
+[int]{.ret} [Tcl\_RestoreInterpState]{.ccmd} [interp, state]{.cargs}
+[Tcl\_DiscardInterpState]{.ccmd} [state]{.cargs}
 :::
 
 # Arguments

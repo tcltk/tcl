@@ -19,8 +19,8 @@ Tcl\_SignalId, Tcl\_SignalMsg - Convert signal codes
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[const char \*]{.ret} [Tcl\_SignalId]{.ccmd}[sig]{.cargs}
-[const char \*]{.ret} [Tcl\_SignalMsg]{.ccmd}[sig]{.cargs}
+[const char \*]{.ret} [Tcl\_SignalId]{.ccmd} [sig]{.cargs}
+[const char \*]{.ret} [Tcl\_SignalMsg]{.ccmd} [sig]{.cargs}
 :::
 
 # Arguments

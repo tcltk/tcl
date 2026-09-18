@@ -26,10 +26,10 @@ Tcl\_OpenTcpClient, Tcl\_MakeTcpClientChannel, Tcl\_OpenTcpServer, Tcl\_OpenTcpS
 
 ::: {.synopsis} :::
 **#include <tcl.h>=**
-[Tcl\_Channel]{.ret} [Tcl\_OpenTcpClient]{.ccmd}[interp, port, host, myaddr, myport, async]{.cargs}
-[Tcl\_Channel]{.ret} [Tcl\_MakeTcpClientChannel]{.ccmd}[sock]{.cargs}
-[Tcl\_Channel]{.ret} [Tcl\_OpenTcpServer]{.ccmd}[interp, port, myaddr, proc, clientData]{.cargs}
-[Tcl\_Channel]{.ret} [Tcl\_OpenTcpServerEx]{.ccmd}[interp, service, myaddr, flags, backlog, proc, clientData]{.cargs}
+[Tcl\_Channel]{.ret} [Tcl\_OpenTcpClient]{.ccmd} [interp, port, host, myaddr, myport, async]{.cargs}
+[Tcl\_Channel]{.ret} [Tcl\_MakeTcpClientChannel]{.ccmd} [sock]{.cargs}
+[Tcl\_Channel]{.ret} [Tcl\_OpenTcpServer]{.ccmd} [interp, port, myaddr, proc, clientData]{.cargs}
+[Tcl\_Channel]{.ret} [Tcl\_OpenTcpServerEx]{.ccmd} [interp, service, myaddr, flags, backlog, proc, clientData]{.cargs}
 :::
 
 # Arguments

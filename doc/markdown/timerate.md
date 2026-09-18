@@ -42,13 +42,13 @@ It will then return a canonical Tcl-list of the form:
 
 which indicates:
 
-- the average amount of time required per iteration, in microseconds ([**lindex** $result 0])
+- the average amount of time required per iteration, in microseconds (\[**lindex** $result 0\])
 
-- the count how many times it was executed ([**lindex** $result 2])
+- the count how many times it was executed (\[**lindex** $result 2\])
 
-- the estimated rate per second ([**lindex** $result 4])
+- the estimated rate per second (\[**lindex** $result 4\])
 
-- the estimated real execution time without measurement overhead ([**lindex** $result 6])
+- the estimated real execution time without measurement overhead (\[**lindex** $result 6\])
 
 
 The following options may be supplied to the **timerate** command:

@@ -22,20 +22,20 @@ Tcl\_CreateEnsemble, Tcl\_FindEnsemble, Tcl\_GetEnsembleFlags, Tcl\_GetEnsembleM
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[Tcl\_Command]{.ret} [Tcl\_CreateEnsemble]{.ccmd}[interp, name, namespacePtr, ensFlags]{.cargs}
-[Tcl\_Command]{.ret} [Tcl\_FindEnsemble]{.ccmd}[interp, cmdNameObj, flags]{.cargs}
-[int]{.ret} [Tcl\_IsEnsemble]{.ccmd}[token]{.cargs}
-[int]{.ret} [Tcl\_GetEnsembleFlags]{.ccmd}[interp, token, ensFlagsPtr]{.cargs}
-[int]{.ret} [Tcl\_SetEnsembleFlags]{.ccmd}[interp, token, ensFlags]{.cargs}
-[int]{.ret} [Tcl\_GetEnsembleMappingDict]{.ccmd}[interp, token, dictObjPtr]{.cargs}
-[int]{.ret} [Tcl\_SetEnsembleMappingDict]{.ccmd}[interp, token, dictObj]{.cargs}
-[int]{.ret} [Tcl\_GetEnsembleParameterList]{.ccmd}[interp, token, listObjPtr]{.cargs}
-[int]{.ret} [Tcl\_SetEnsembleParameterList]{.ccmd}[interp, token, listObj]{.cargs}
-[int]{.ret} [Tcl\_GetEnsembleSubcommandList]{.ccmd}[interp, token, listObjPtr]{.cargs}
-[int]{.ret} [Tcl\_SetEnsembleSubcommandList]{.ccmd}[interp, token, listObj]{.cargs}
-[int]{.ret} [Tcl\_GetEnsembleUnknownHandler]{.ccmd}[interp, token, listObjPtr]{.cargs}
-[int]{.ret} [Tcl\_SetEnsembleUnknownHandler]{.ccmd}[interp, token, listObj]{.cargs}
-[int]{.ret} [Tcl\_GetEnsembleNamespace]{.ccmd}[interp, token, namespacePtrPtr]{.cargs}
+[Tcl\_Command]{.ret} [Tcl\_CreateEnsemble]{.ccmd} [interp, name, namespacePtr, ensFlags]{.cargs}
+[Tcl\_Command]{.ret} [Tcl\_FindEnsemble]{.ccmd} [interp, cmdNameObj, flags]{.cargs}
+[int]{.ret} [Tcl\_IsEnsemble]{.ccmd} [token]{.cargs}
+[int]{.ret} [Tcl\_GetEnsembleFlags]{.ccmd} [interp, token, ensFlagsPtr]{.cargs}
+[int]{.ret} [Tcl\_SetEnsembleFlags]{.ccmd} [interp, token, ensFlags]{.cargs}
+[int]{.ret} [Tcl\_GetEnsembleMappingDict]{.ccmd} [interp, token, dictObjPtr]{.cargs}
+[int]{.ret} [Tcl\_SetEnsembleMappingDict]{.ccmd} [interp, token, dictObj]{.cargs}
+[int]{.ret} [Tcl\_GetEnsembleParameterList]{.ccmd} [interp, token, listObjPtr]{.cargs}
+[int]{.ret} [Tcl\_SetEnsembleParameterList]{.ccmd} [interp, token, listObj]{.cargs}
+[int]{.ret} [Tcl\_GetEnsembleSubcommandList]{.ccmd} [interp, token, listObjPtr]{.cargs}
+[int]{.ret} [Tcl\_SetEnsembleSubcommandList]{.ccmd} [interp, token, listObj]{.cargs}
+[int]{.ret} [Tcl\_GetEnsembleUnknownHandler]{.ccmd} [interp, token, listObjPtr]{.cargs}
+[int]{.ret} [Tcl\_SetEnsembleUnknownHandler]{.ccmd} [interp, token, listObj]{.cargs}
+[int]{.ret} [Tcl\_GetEnsembleNamespace]{.ccmd} [interp, token, namespacePtrPtr]{.cargs}
 :::
 
 # Arguments

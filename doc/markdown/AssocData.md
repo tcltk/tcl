@@ -22,9 +22,9 @@ Tcl\_GetAssocData, Tcl\_SetAssocData, Tcl\_DeleteAssocData - manage associations
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[void \*]{.ret} [Tcl\_GetAssocData]{.ccmd}[interp, key, delProcPtr]{.cargs}
-[Tcl\_SetAssocData]{.ccmd}[interp, key, delProc, clientData]{.cargs}
-[Tcl\_DeleteAssocData]{.ccmd}[interp, key]{.cargs}
+[void \*]{.ret} [Tcl\_GetAssocData]{.ccmd} [interp, key, delProcPtr]{.cargs}
+[Tcl\_SetAssocData]{.ccmd} [interp, key, delProc, clientData]{.cargs}
+[Tcl\_DeleteAssocData]{.ccmd} [interp, key]{.cargs}
 :::
 
 # Arguments

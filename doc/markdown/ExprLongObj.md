@@ -30,10 +30,10 @@ Tcl\_ExprLongObj, Tcl\_ExprDoubleObj, Tcl\_ExprBooleanObj, Tcl\_ExprObj - evalua
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[int]{.ret} [Tcl\_ExprLongObj]{.ccmd}[interp, objPtr, longPtr]{.cargs}
-[int]{.ret} [Tcl\_ExprDoubleObj]{.ccmd}[interp, objPtr, doublePtr]{.cargs}
-[int]{.ret} [Tcl\_ExprBooleanObj]{.ccmd}[interp, objPtr, booleanPtr]{.cargs}
-[int]{.ret} [Tcl\_ExprObj]{.ccmd}[interp, objPtr, resultPtrPtr]{.cargs}
+[int]{.ret} [Tcl\_ExprLongObj]{.ccmd} [interp, objPtr, longPtr]{.cargs}
+[int]{.ret} [Tcl\_ExprDoubleObj]{.ccmd} [interp, objPtr, doublePtr]{.cargs}
+[int]{.ret} [Tcl\_ExprBooleanObj]{.ccmd} [interp, objPtr, booleanPtr]{.cargs}
+[int]{.ret} [Tcl\_ExprObj]{.ccmd} [interp, objPtr, resultPtrPtr]{.cargs}
 :::
 
 # Arguments

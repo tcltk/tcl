@@ -132,7 +132,7 @@ The paths are added in the order as they are listed below, and for lists of path
 
 ## System specific paths
 
-**file normalize [info library]/../tcl***X***/***X***.***y*
+**file normalize \[info library\]/../tcl***X***/***X***.***y*
 : In other words, the interpreter will look into a directory specified by its major version and whose minor versions are less than or equal to the minor version of the interpreter.
 
     For example for Tcl 8.4 the paths searched are:
@@ -148,14 +148,14 @@ The paths are added in the order as they are listed below, and for lists of path
     This definition assumes that a package defined for Tcl *X***.***y* can also be used by all interpreters which have the same major number *X* and a minor number greater than *y*.
 
 **file normalize EXEC/tcl***X***/***X***.***y*
-: Where **EXEC** is **file normalize [info nameofexecutable]/../lib** or **file normalize [::tcl::pkgconfig get libdir,runtime]**
+: Where **EXEC** is **file normalize \[info nameofexecutable\]/../lib** or **file normalize \[::tcl::pkgconfig get libdir,runtime\]**
 
     This sets of paths is handled equivalently to the set coming before, except that it is anchored in **EXEC\_PREFIX**. For a build with **PREFIX** = **EXEC\_PREFIX** the two sets are identical.
 
 
 ## Site specific paths
 
-**file normalize [info library]/../tcl***X***/site-tcl**
+**file normalize \[info library\]/../tcl***X***/site-tcl**
 : Note that this is always a single entry because *X* is always a specific value (the current major version of Tcl).
 
 

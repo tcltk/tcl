@@ -26,9 +26,9 @@ Tcl\_CreateTimerHandler, TclCreateTimerHandlerMicroSeconds, Tcl\_DeleteTimerHand
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[Tcl\_TimerToken]{.ret} [Tcl\_CreateTimerHandler]{.ccmd}[milliseconds, proc, clientData]{.cargs}
-[Tcl\_TimerToken]{.ret} [Tcl\_CreateTimerHandlerMicroSeconds]{.ccmd}[microseconds, proc, clientData]{.cargs}
-[Tcl\_DeleteTimerHandler]{.ccmd}[token]{.cargs}
+[Tcl\_TimerToken]{.ret} [Tcl\_CreateTimerHandler]{.ccmd} [milliseconds, proc, clientData]{.cargs}
+[Tcl\_TimerToken]{.ret} [Tcl\_CreateTimerHandlerMicroSeconds]{.ccmd} [microseconds, proc, clientData]{.cargs}
+[Tcl\_DeleteTimerHandler]{.ccmd} [token]{.cargs}
 :::
 
 # Arguments

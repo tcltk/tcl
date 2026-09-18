@@ -25,19 +25,25 @@ unicode - Unicode character transforms
 
 # Description
 
-The command performs one of several Unicode character transformations, depending on *function* which may take the values described below.
+The command performs one of several Unicode character transformations, depending on *function* which may take the values described below. []{version="TIP726"}
 
 [unicode]{.cmd} [tonfc]{.sub} [[-profile]{.lit} [profile]{.arg}]{.optarg} [string]{.arg}
 : Returns *string* normalized as per Unicode **Normalization Form C** (NFC).
 
 
+[]{version="TIP726"}
+
 [unicode]{.cmd} [tonfd]{.sub} [[-profile]{.lit} [profile]{.arg}]{.optarg} [string]{.arg}
 : Returns *string* normalized as per Unicode **Normalization Form D** (NFD).
 
 
+[]{version="TIP726"}
+
 [unicode]{.cmd} [tonfkc]{.sub} [[-profile]{.lit} [profile]{.arg}]{.optarg} [string]{.arg}
 : Returns *string* normalized as per Unicode **Normalization Form KC** (NFKC).
 
+
+[]{version="TIP726"}
 
 [unicode]{.cmd} [tonfkd]{.sub} [[-profile]{.lit} [profile]{.arg}]{.optarg} [string]{.arg}
 : Returns *string* normalized as per Unicode **Normalization Form KD** (NFKD).

@@ -19,17 +19,17 @@ Tcl\_UniCharIsAlnum, Tcl\_UniCharIsAlpha, Tcl\_UniCharIsControl, Tcl\_UniCharIsD
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[int]{.ret} [Tcl\_UniCharIsAlnum]{.ccmd}[ch]{.cargs}
-[int]{.ret} [Tcl\_UniCharIsAlpha]{.ccmd}[ch]{.cargs}
-[int]{.ret} [Tcl\_UniCharIsControl]{.ccmd}[ch]{.cargs}
-[int]{.ret} [Tcl\_UniCharIsDigit]{.ccmd}[ch]{.cargs}
-[int]{.ret} [Tcl\_UniCharIsGraph]{.ccmd}[ch]{.cargs}
-[int]{.ret} [Tcl\_UniCharIsLower]{.ccmd}[ch]{.cargs}
-[int]{.ret} [Tcl\_UniCharIsPrint]{.ccmd}[ch]{.cargs}
-[int]{.ret} [Tcl\_UniCharIsPunct]{.ccmd}[ch]{.cargs}
-[int]{.ret} [Tcl\_UniCharIsSpace]{.ccmd}[ch]{.cargs}
-[int]{.ret} [Tcl\_UniCharIsUpper]{.ccmd}[ch]{.cargs}
-[int]{.ret} [Tcl\_UniCharIsWordChar]{.ccmd}[ch]{.cargs}
+[int]{.ret} [Tcl\_UniCharIsAlnum]{.ccmd} [ch]{.cargs}
+[int]{.ret} [Tcl\_UniCharIsAlpha]{.ccmd} [ch]{.cargs}
+[int]{.ret} [Tcl\_UniCharIsControl]{.ccmd} [ch]{.cargs}
+[int]{.ret} [Tcl\_UniCharIsDigit]{.ccmd} [ch]{.cargs}
+[int]{.ret} [Tcl\_UniCharIsGraph]{.ccmd} [ch]{.cargs}
+[int]{.ret} [Tcl\_UniCharIsLower]{.ccmd} [ch]{.cargs}
+[int]{.ret} [Tcl\_UniCharIsPrint]{.ccmd} [ch]{.cargs}
+[int]{.ret} [Tcl\_UniCharIsPunct]{.ccmd} [ch]{.cargs}
+[int]{.ret} [Tcl\_UniCharIsSpace]{.ccmd} [ch]{.cargs}
+[int]{.ret} [Tcl\_UniCharIsUpper]{.ccmd} [ch]{.cargs}
+[int]{.ret} [Tcl\_UniCharIsWordChar]{.ccmd} [ch]{.cargs}
 :::
 
 # Arguments

@@ -22,10 +22,10 @@ Tcl\_GetMonotonicTime, Tcl\_GetTime, Tcl\_SetTimeProc, Tcl\_QueryTimeProc - get 
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[long long]{.ret} [Tcl\_GetMonotonicTime]{.ccmd}[]{.cargs}
-[Tcl\_GetTime]{.ccmd}[timePtr]{.cargs}
-[Tcl\_SetTimeProc]{.ccmd}[getProc, scaleProc, clientData]{.cargs}
-[Tcl\_QueryTimeProc]{.ccmd}[getProcPtr, scaleProcPtr, clientDataPtr]{.cargs}
+[long long]{.ret} [Tcl\_GetMonotonicTime]{.ccmd} []{.cargs}
+[Tcl\_GetTime]{.ccmd} [timePtr]{.cargs}
+[Tcl\_SetTimeProc]{.ccmd} [getProc, scaleProc, clientData]{.cargs}
+[Tcl\_QueryTimeProc]{.ccmd} [getProcPtr, scaleProcPtr, clientDataPtr]{.cargs}
 :::
 
 # Arguments

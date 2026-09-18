@@ -20,7 +20,7 @@ Tcl\_CommandComplete - Check for unmatched braces in a Tcl command
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[int]{.ret} [Tcl\_CommandComplete]{.ccmd}[cmd]{.cargs}
+[int]{.ret} [Tcl\_CommandComplete]{.ccmd} [cmd]{.cargs}
 :::
 
 # Arguments

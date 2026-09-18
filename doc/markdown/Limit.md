@@ -23,21 +23,21 @@ Tcl\_LimitAddHandler, Tcl\_LimitCheck, Tcl\_LimitExceeded, Tcl\_LimitGetCommands
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[int]{.ret} [Tcl\_LimitCheck]{.ccmd}[interp]{.cargs}
-[int]{.ret} [Tcl\_LimitReady]{.ccmd}[interp]{.cargs}
-[int]{.ret} [Tcl\_LimitExceeded]{.ccmd}[interp]{.cargs}
-[int]{.ret} [Tcl\_LimitTypeExceeded]{.ccmd}[interp, type]{.cargs}
-[int]{.ret} [Tcl\_LimitTypeEnabled]{.ccmd}[interp, type]{.cargs}
-[Tcl\_LimitTypeSet]{.ccmd}[interp, type]{.cargs}
-[Tcl\_LimitTypeReset]{.ccmd}[interp, type]{.cargs}
-[Tcl\_Size]{.ret} [Tcl\_LimitGetCommands]{.ccmd}[interp]{.cargs}
-[Tcl\_LimitSetCommands]{.ccmd}[interp, commandLimit]{.cargs}
-[Tcl\_LimitGetTime]{.ccmd}[interp, timeLimitPtr]{.cargs}
-[Tcl\_LimitSetTime]{.ccmd}[interp, timeLimitPtr]{.cargs}
-[int]{.ret} [Tcl\_LimitGetGranularity]{.ccmd}[interp, type]{.cargs}
-[Tcl\_LimitSetGranularity]{.ccmd}[interp, type, granularity]{.cargs}
-[Tcl\_LimitAddHandler]{.ccmd}[interp, type, handlerProc, clientData, deleteProc]{.cargs}
-[Tcl\_LimitRemoveHandler]{.ccmd}[interp, type, handlerProc, clientData]{.cargs}
+[int]{.ret} [Tcl\_LimitCheck]{.ccmd} [interp]{.cargs}
+[int]{.ret} [Tcl\_LimitReady]{.ccmd} [interp]{.cargs}
+[int]{.ret} [Tcl\_LimitExceeded]{.ccmd} [interp]{.cargs}
+[int]{.ret} [Tcl\_LimitTypeExceeded]{.ccmd} [interp, type]{.cargs}
+[int]{.ret} [Tcl\_LimitTypeEnabled]{.ccmd} [interp, type]{.cargs}
+[Tcl\_LimitTypeSet]{.ccmd} [interp, type]{.cargs}
+[Tcl\_LimitTypeReset]{.ccmd} [interp, type]{.cargs}
+[Tcl\_Size]{.ret} [Tcl\_LimitGetCommands]{.ccmd} [interp]{.cargs}
+[Tcl\_LimitSetCommands]{.ccmd} [interp, commandLimit]{.cargs}
+[Tcl\_LimitGetTime]{.ccmd} [interp, timeLimitPtr]{.cargs}
+[Tcl\_LimitSetTime]{.ccmd} [interp, timeLimitPtr]{.cargs}
+[int]{.ret} [Tcl\_LimitGetGranularity]{.ccmd} [interp, type]{.cargs}
+[Tcl\_LimitSetGranularity]{.ccmd} [interp, type, granularity]{.cargs}
+[Tcl\_LimitAddHandler]{.ccmd} [interp, type, handlerProc, clientData, deleteProc]{.cargs}
+[Tcl\_LimitRemoveHandler]{.ccmd} [interp, type, handlerProc, clientData]{.cargs}
 :::
 
 # Arguments

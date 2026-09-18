@@ -22,7 +22,7 @@ Tcl\_PrintDouble - Convert floating value to string
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[Tcl\_PrintDouble]{.ccmd}[interp, value, dst]{.cargs}
+[Tcl\_PrintDouble]{.ccmd} [interp, value, dst]{.cargs}
 :::
 
 # Arguments

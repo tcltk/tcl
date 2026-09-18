@@ -31,15 +31,15 @@ Tcl\_ConditionNotify, Tcl\_ConditionWait, Tcl\_ConditionFinalize, Tcl\_GetThread
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[Tcl\_ConditionNotify]{.ccmd}[condPtr]{.cargs}
-[Tcl\_ConditionWait]{.ccmd}[condPtr, mutexPtr, timePtr]{.cargs}
-[Tcl\_ConditionFinalize]{.ccmd}[condPtr]{.cargs}
-[void \*]{.ret} [Tcl\_GetThreadData]{.ccmd}[keyPtr, size]{.cargs}
-[Tcl\_MutexLock]{.ccmd}[mutexPtr]{.cargs}
-[Tcl\_MutexUnlock]{.ccmd}[mutexPtr]{.cargs}
-[Tcl\_MutexFinalize]{.ccmd}[mutexPtr]{.cargs}
-[int]{.ret} [Tcl\_CreateThread]{.ccmd}[idPtr, proc, clientData, stackSize, flags]{.cargs}
-[int]{.ret} [Tcl\_JoinThread]{.ccmd}[id, result]{.cargs}
+[Tcl\_ConditionNotify]{.ccmd} [condPtr]{.cargs}
+[Tcl\_ConditionWait]{.ccmd} [condPtr, mutexPtr, timePtr]{.cargs}
+[Tcl\_ConditionFinalize]{.ccmd} [condPtr]{.cargs}
+[void \*]{.ret} [Tcl\_GetThreadData]{.ccmd} [keyPtr, size]{.cargs}
+[Tcl\_MutexLock]{.ccmd} [mutexPtr]{.cargs}
+[Tcl\_MutexUnlock]{.ccmd} [mutexPtr]{.cargs}
+[Tcl\_MutexFinalize]{.ccmd} [mutexPtr]{.cargs}
+[int]{.ret} [Tcl\_CreateThread]{.ccmd} [idPtr, proc, clientData, stackSize, flags]{.cargs}
+[int]{.ret} [Tcl\_JoinThread]{.ccmd} [id, result]{.cargs}
 :::
 
 # Arguments
@@ -109,13 +109,7 @@ The **Tcl\_GetThreadData** call returns a pointer to a block of thread-private d
 
 Tcl provides [Tcl\_ThreadQueueEvent][Notifier] and [Tcl\_ThreadAlert][Notifier] for handling event queuing in multithreaded applications.  See the **Notifier** manual page for more information on these procedures.
 
-A mutex is a lock that is used to serialize all threads through a piece of code by calling **Tcl\_MutexLock** and **Tcl\_MutexUnlock**. If one thread holds a mutex, any other thread calling **Tcl\_MutexLock** will block until **Tcl\_MutexUnlock** is called. A mutex can be destroyed after its use by calling **Tcl\_MutexFinalize**.
-
-::: {.info version="TIP509"}
-Mutexes are reentrant: they can be locked several times from the same thread. However there must be exactly one call to **Tcl\_MutexUnlock** for each call to **Tcl\_MutexLock** in order for a thread to release a mutex completely.
-:::
-
-The **Tcl\_MutexLock**, **Tcl\_MutexUnlock** and **Tcl\_MutexFinalize** procedures are defined as empty macros if not compiling with threads enabled. For declaration of mutexes the **TCL\_DECLARE\_MUTEX** macro should be used. This macro assures correct mutex handling even when the core is compiled without threads enabled.
+A mutex is a lock that is used to serialize all threads through a piece of code by calling **Tcl\_MutexLock** and **Tcl\_MutexUnlock**. If one thread holds a mutex, any other thread calling **Tcl\_MutexLock** will block until **Tcl\_MutexUnlock** is called. A mutex can be destroyed after its use by calling **Tcl\_MutexFinalize**. [Mutexes are reentrant: they can be locked several times from the same thread. However there must be exactly one call to **Tcl\_MutexUnlock** for each call to **Tcl\_MutexLock** in order for a thread to release a mutex completely.]{version="TIP509"} The **Tcl\_MutexLock**, **Tcl\_MutexUnlock** and **Tcl\_MutexFinalize** procedures are defined as empty macros if not compiling with threads enabled. For declaration of mutexes the **TCL\_DECLARE\_MUTEX** macro should be used. This macro assures correct mutex handling even when the core is compiled without threads enabled.
 
 A condition variable is used as a signaling mechanism: a thread can lock a mutex and then wait on a condition variable with **Tcl\_ConditionWait**.  This atomically releases the mutex lock and blocks the waiting thread until another thread calls **Tcl\_ConditionNotify**.  The caller of **Tcl\_ConditionNotify** should have the associated mutex held by previously calling **Tcl\_MutexLock**, but this is not enforced.  Notifying the condition variable unblocks all threads waiting on the condition variable, but they do not proceed until the mutex is released with **Tcl\_MutexUnlock**. The implementation of **Tcl\_ConditionWait** automatically locks the mutex before returning.
 

@@ -27,7 +27,7 @@ Tcl\_RecordAndEvalObj - save command on history list before evaluating
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[int]{.ret} [Tcl\_RecordAndEvalObj]{.ccmd}[interp, cmdPtr, flags]{.cargs}
+[int]{.ret} [Tcl\_RecordAndEvalObj]{.ccmd} [interp, cmdPtr, flags]{.cargs}
 :::
 
 # Arguments

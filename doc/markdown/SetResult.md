@@ -32,14 +32,14 @@ Tcl\_SetObjResult, Tcl\_GetObjResult, Tcl\_SetResult, Tcl\_GetStringResult, Tcl\
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[Tcl\_SetObjResult]{.ccmd}[interp, objPtr]{.cargs}
-[Tcl\_Obj \*]{.ret} [Tcl\_GetObjResult]{.ccmd}[interp]{.cargs}
-[Tcl\_SetResult]{.ccmd}[interp, result, freeProc]{.cargs}
-[const char \*]{.ret} [Tcl\_GetStringResult]{.ccmd}[interp]{.cargs}
-[Tcl\_AppendResult]{.ccmd}[interp, result, result, ... , (char \*)NULL]{.cargs}
-[Tcl\_ResetResult]{.ccmd}[interp]{.cargs}
-[Tcl\_TransferResult]{.ccmd}[sourceInterp, code, targetInterp]{.cargs}
-[Tcl\_AppendElement]{.ccmd}[interp, element]{.cargs}
+[Tcl\_SetObjResult]{.ccmd} [interp, objPtr]{.cargs}
+[Tcl\_Obj \*]{.ret} [Tcl\_GetObjResult]{.ccmd} [interp]{.cargs}
+[Tcl\_SetResult]{.ccmd} [interp, result, freeProc]{.cargs}
+[const char \*]{.ret} [Tcl\_GetStringResult]{.ccmd} [interp]{.cargs}
+[Tcl\_AppendResult]{.ccmd} [interp, result, result, ... , (char \*)NULL]{.cargs}
+[Tcl\_ResetResult]{.ccmd} [interp]{.cargs}
+[Tcl\_TransferResult]{.ccmd} [sourceInterp, code, targetInterp]{.cargs}
+[Tcl\_AppendElement]{.ccmd} [interp, element]{.cargs}
 :::
 
 # Arguments

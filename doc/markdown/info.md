@@ -125,7 +125,7 @@ Available commands:
 
     If *depth* is greater than **0** it is the frame at that depth.  Otherwise it is the number of frames up from the current frame.
 
-    As with **info level** and error traces, for nested commands like `foo [bar [x]]`, only "x" is seen by **info frame** invoked within "x".
+    As with **info level** and error traces, for nested commands like "foo \[bar \[x\]\]", only "x" is seen by **info frame** invoked within "x".
 
     The dictionary may contain the following keys:
 

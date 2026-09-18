@@ -25,8 +25,8 @@ Tcl\_CreateFileHandler, Tcl\_DeleteFileHandler - associate procedure callbacks w
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[Tcl\_CreateFileHandler]{.ccmd}[fd, mask, proc, clientData]{.cargs}
-[Tcl\_DeleteFileHandler]{.ccmd}[fd]{.cargs}
+[Tcl\_CreateFileHandler]{.ccmd} [fd, mask, proc, clientData]{.cargs}
+[Tcl\_DeleteFileHandler]{.ccmd} [fd]{.cargs}
 :::
 
 # Arguments

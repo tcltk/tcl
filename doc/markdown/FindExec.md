@@ -19,8 +19,8 @@ Tcl\_FindExecutable, Tcl\_GetNameOfExecutable - identify or return the name of t
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[const char \*]{.ret} [Tcl\_FindExecutable]{.ccmd}[argv0]{.cargs}
-[const char \*]{.ret} [Tcl\_GetNameOfExecutable]{.ccmd}[]{.cargs}
+[const char \*]{.ret} [Tcl\_FindExecutable]{.ccmd} [argv0]{.cargs}
+[const char \*]{.ret} [Tcl\_GetNameOfExecutable]{.ccmd} []{.cargs}
 :::
 
 # Arguments
@@ -37,9 +37,9 @@ Tcl\_FindExecutable, Tcl\_GetNameOfExecutable - identify or return the name of t
 
 **Tcl\_FindExecutable** is one of two functions, [TclZipfs\_AppHook][zipfs] being the other, that must be called by an application to initialize Tcl prior to any other calls into Tcl. Applications that wish to use ZipFS-based builds should call [TclZipfs\_AppHook][zipfs] in preference to this function.
 
-On UNIX platforms, the function should be passed *argv[0]* as its argument. It is important not to change the working directory before this invocation. **Tcl\_FindExecutable** uses *argv0* together with the **PATH** environment variable to locate the application's executable, if possible. If it fails to find the binary, subsequent calls to [info nameofexecutable][info] will return an empty string.
+On UNIX platforms, the function should be passed *argv\[0\]* as its argument. It is important not to change the working directory before this invocation. **Tcl\_FindExecutable** uses *argv0* together with the **PATH** environment variable to locate the application's executable, if possible. If it fails to find the binary, subsequent calls to [info nameofexecutable][info] will return an empty string.
 
-On Windows platforms, the *argv[0]* argument is used only to indicate whether the executable has a standard error channel (any non-null value) or not (the value null). If [Tcl\_SetPanicProc][Panic] is never called and no debugger is running, this setting determines whether a panic message is sent to standard error or displayed in a system dialog.
+On Windows platforms, the *argv\[0\]* argument is used only to indicate whether the executable has a standard error channel (any non-null value) or not (the value null). If [Tcl\_SetPanicProc][Panic] is never called and no debugger is running, this setting determines whether a panic message is sent to standard error or displayed in a system dialog.
 
 As part of its initialization sequence, **Tcl\_FindExecutable** computes the full path name of the executable file from which the application was invoked. This result is saved for Tcl's internal use and is returned by the [info nameofexecutable][info] command.
 

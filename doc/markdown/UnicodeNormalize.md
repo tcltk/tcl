@@ -22,8 +22,8 @@ Tcl\_UtfToNormalized, Tcl\_UtfToNormalizedDString - procedures for Unicode norma
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[int]{.ret} [Tcl\_UtfToNormalized]{.ccmd}[interp, src, numBytes, normForm, profile, dst, dstLen, dstWrotePtr]{.cargs}
-[int]{.ret} [Tcl\_UtfToNormalizedDString]{.ccmd}[interp, src, numBytes, normForm, profile, dstPtr]{.cargs}
+[int]{.ret} [Tcl\_UtfToNormalized]{.ccmd} [interp, src, numBytes, normForm, profile, dst, dstLen, dstWrotePtr]{.cargs}
+[int]{.ret} [Tcl\_UtfToNormalizedDString]{.ccmd} [interp, src, numBytes, normForm, profile, dstPtr]{.cargs}
 :::
 
 # Arguments

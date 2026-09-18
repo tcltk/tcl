@@ -27,15 +27,15 @@ Tcl\_Exit, Tcl\_Finalize, Tcl\_CreateExitHandler, Tcl\_DeleteExitHandler, Tcl\_E
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[Tcl\_Exit]{.ccmd}[status]{.cargs}
-[Tcl\_Finalize]{.ccmd}[]{.cargs}
-[Tcl\_CreateExitHandler]{.ccmd}[proc, clientData]{.cargs}
-[Tcl\_DeleteExitHandler]{.ccmd}[proc, clientData]{.cargs}
-[Tcl\_ExitThread]{.ccmd}[status]{.cargs}
-[Tcl\_FinalizeThread]{.ccmd}[]{.cargs}
-[Tcl\_CreateThreadExitHandler]{.ccmd}[proc, clientData]{.cargs}
-[Tcl\_DeleteThreadExitHandler]{.ccmd}[proc, clientData]{.cargs}
-[Tcl\_ExitProc \*]{.ret} [Tcl\_SetExitProc]{.ccmd}[proc]{.cargs}
+[Tcl\_Exit]{.ccmd} [status]{.cargs}
+[Tcl\_Finalize]{.ccmd} []{.cargs}
+[Tcl\_CreateExitHandler]{.ccmd} [proc, clientData]{.cargs}
+[Tcl\_DeleteExitHandler]{.ccmd} [proc, clientData]{.cargs}
+[Tcl\_ExitThread]{.ccmd} [status]{.cargs}
+[Tcl\_FinalizeThread]{.ccmd} []{.cargs}
+[Tcl\_CreateThreadExitHandler]{.ccmd} [proc, clientData]{.cargs}
+[Tcl\_DeleteThreadExitHandler]{.ccmd} [proc, clientData]{.cargs}
+[Tcl\_ExitProc \*]{.ret} [Tcl\_SetExitProc]{.ccmd} [proc]{.cargs}
 :::
 
 # Arguments

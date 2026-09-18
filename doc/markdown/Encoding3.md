@@ -22,26 +22,26 @@ Tcl\_GetEncoding, Tcl\_FreeEncoding, Tcl\_GetEncodingFromObj, Tcl\_ExternalToUtf
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[Tcl\_Encoding]{.ret} [Tcl\_GetEncoding]{.ccmd}[interp, name]{.cargs}
-[Tcl\_FreeEncoding]{.ccmd}[encoding]{.cargs}
-[int]{.ret} [Tcl\_GetEncodingFromObj]{.ccmd}[interp, objPtr, encodingPtr]{.cargs}
-[char \*]{.ret} [Tcl\_ExternalToUtfDString]{.ccmd}[encoding, src, srcLen, dstPtr]{.cargs}
-[int]{.ret} [Tcl\_ExternalToUtfDStringEx]{.ccmd}[interp, encoding, src, srcLen, flags, dstPtr, errorIdxPtr]{.cargs}
-[char \*]{.ret} [Tcl\_UtfToExternalDString]{.ccmd}[encoding, src, srcLen, dstPtr]{.cargs}
-[int]{.ret} [Tcl\_UtfToExternalDStringEx]{.ccmd}[interp, encoding, src, srcLen, flags, dstPtr, errorIdxPtr]{.cargs}
-[int]{.ret} [Tcl\_ExternalToUtfEx]{.ccmd}[interp, encoding, src, srcLen, flags, statePtr, dst, dstLen, srcReadPtr, dstWrotePtr, dstCharsPtr]{.cargs}
-[int]{.ret} [Tcl\_ExternalToUtf]{.ccmd}[interp, encoding, src, srcLen, flags, statePtr, dst, dstLen, srcReadIntPtr, dstWroteIntPtr, dstCharsIntPtr]{.cargs}
-[int]{.ret} [Tcl\_UtfToExternalEx]{.ccmd}[interp, encoding, src, srcLen, flags, statePtr, dst, dstLen, srcReadPtr, dstWrotePtr, dstCharsPtr]{.cargs}
-[int]{.ret} [Tcl\_UtfToExternal]{.ccmd}[interp, encoding, src, srcLen, flags, statePtr, dst, dstLen, srcReadIntPtr, dstWroteIntPtr, dstCharsIntPtr]{.cargs}
-[const char \*]{.ret} [Tcl\_GetEncodingName]{.ccmd}[encoding]{.cargs}
-[Tcl\_Size]{.ret} [Tcl\_GetEncodingNulLength]{.ccmd}[encoding]{.cargs}
-[int]{.ret} [Tcl\_SetSystemEncoding]{.ccmd}[interp, name]{.cargs}
-[const char \*]{.ret} [Tcl\_GetEncodingNameFromEnvironment]{.ccmd}[bufPtr]{.cargs}
-[const char \*]{.ret} [Tcl\_GetEncodingNameForUser]{.ccmd}[bufPtr]{.cargs}
-[Tcl\_GetEncodingNames]{.ccmd}[interp]{.cargs}
-[Tcl\_Encoding]{.ret} [Tcl\_CreateEncoding]{.ccmd}[typePtr]{.cargs}
-[Tcl\_Obj \*]{.ret} [Tcl\_GetEncodingSearchPath]{.ccmd}[]{.cargs}
-[int]{.ret} [Tcl\_SetEncodingSearchPath]{.ccmd}[searchPath]{.cargs}
+[Tcl\_Encoding]{.ret} [Tcl\_GetEncoding]{.ccmd} [interp, name]{.cargs}
+[Tcl\_FreeEncoding]{.ccmd} [encoding]{.cargs}
+[int]{.ret} [Tcl\_GetEncodingFromObj]{.ccmd} [interp, objPtr, encodingPtr]{.cargs}
+[char \*]{.ret} [Tcl\_ExternalToUtfDString]{.ccmd} [encoding, src, srcLen, dstPtr]{.cargs}
+[int]{.ret} [Tcl\_ExternalToUtfDStringEx]{.ccmd} [interp, encoding, src, srcLen, flags, dstPtr, errorIdxPtr]{.cargs}
+[char \*]{.ret} [Tcl\_UtfToExternalDString]{.ccmd} [encoding, src, srcLen, dstPtr]{.cargs}
+[int]{.ret} [Tcl\_UtfToExternalDStringEx]{.ccmd} [interp, encoding, src, srcLen, flags, dstPtr, errorIdxPtr]{.cargs}
+[int]{.ret} [Tcl\_ExternalToUtfEx]{.ccmd} [interp, encoding, src, srcLen, flags, statePtr, dst, dstLen, srcReadPtr, dstWrotePtr, dstCharsPtr]{.cargs}
+[int]{.ret} [Tcl\_ExternalToUtf]{.ccmd} [interp, encoding, src, srcLen, flags, statePtr, dst, dstLen, srcReadIntPtr, dstWroteIntPtr, dstCharsIntPtr]{.cargs}
+[int]{.ret} [Tcl\_UtfToExternalEx]{.ccmd} [interp, encoding, src, srcLen, flags, statePtr, dst, dstLen, srcReadPtr, dstWrotePtr, dstCharsPtr]{.cargs}
+[int]{.ret} [Tcl\_UtfToExternal]{.ccmd} [interp, encoding, src, srcLen, flags, statePtr, dst, dstLen, srcReadIntPtr, dstWroteIntPtr, dstCharsIntPtr]{.cargs}
+[const char \*]{.ret} [Tcl\_GetEncodingName]{.ccmd} [encoding]{.cargs}
+[Tcl\_Size]{.ret} [Tcl\_GetEncodingNulLength]{.ccmd} [encoding]{.cargs}
+[int]{.ret} [Tcl\_SetSystemEncoding]{.ccmd} [interp, name]{.cargs}
+[const char \*]{.ret} [Tcl\_GetEncodingNameFromEnvironment]{.ccmd} [bufPtr]{.cargs}
+[const char \*]{.ret} [Tcl\_GetEncodingNameForUser]{.ccmd} [bufPtr]{.cargs}
+[Tcl\_GetEncodingNames]{.ccmd} [interp]{.cargs}
+[Tcl\_Encoding]{.ret} [Tcl\_CreateEncoding]{.ccmd} [typePtr]{.cargs}
+[Tcl\_Obj \*]{.ret} [Tcl\_GetEncodingSearchPath]{.ccmd} []{.cargs}
+[int]{.ret} [Tcl\_SetEncodingSearchPath]{.ccmd} [searchPath]{.cargs}
 :::
 
 # Arguments
@@ -269,22 +269,22 @@ Space would prohibit precompiling into Tcl every possible encoding algorithm, so
 
 Each dynamically-loadable encoding is represented as a text file.  The initial line of the file, beginning with a "#" symbol, is a comment that provides a human-readable description of the file.  The next line identifies the type of encoding file.  It can be one of the following letters:
 
-[1] **S**
+\[1\] **S**
 : A single-byte encoding, where one character is always one byte long in the encoding.  An example is **iso8859-1**, used by many European languages.
 
-[2] **D**
+\[2\] **D**
 : A double-byte encoding, where one character is always two bytes long in the encoding.  An example is **big5**, used for Chinese text.
 
-[3] **M**
+\[3\] **M**
 : A multi-byte encoding, where one character may be either one or two bytes long. Certain bytes are lead bytes, indicating that another byte must follow and that together the two bytes represent one character.  Other bytes are not lead bytes and represent themselves.  An example is **shiftjis**, used by many Japanese computers.
 
-[4] **E**
+\[4\] **E**
 : An escape-sequence encoding, specifying that certain sequences of bytes do not represent characters, but commands that describe how following bytes should be interpreted.
 
 
 The rest of the lines in the file depend on the type.
 
-Cases [1], [2], and [3] are collectively referred to as table-based encoding files.  The lines in a table-based encoding file are in the same format as this example taken from the **shiftjis** encoding (this is not the complete file):
+Cases \[1\], \[2\], and \[3\] are collectively referred to as table-based encoding files.  The lines in a table-based encoding file are in the same format as this example taken from the **shiftjis** encoding (this is not the complete file):
 
 ```
 # Encoding file: shiftjis, multi-byte
@@ -332,7 +332,7 @@ Subsequent lines in the example above are pages that describe how to map from th
 
 Following the first page will be all the other pages, each in the same format as the first: one number identifying the page followed by 256 double-byte Unicode characters.  If a character in the encoding maps to the Unicode character 0000, it means that the character does not actually exist. If all characters on a page would map to 0000, that page can be omitted.
 
-Case [4] is the escape-sequence encoding file.  The lines in an this type of file are in the same format as this example taken from the **iso2022-jp** encoding:
+Case \[4\] is the escape-sequence encoding file.  The lines in an this type of file are in the same format as this example taken from the **iso2022-jp** encoding:
 
 ```
 # Encoding file: iso2022-jp, escape-driven

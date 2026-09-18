@@ -20,30 +20,30 @@ Tcl\_UniChar, Tcl\_UniCharToUtf, Tcl\_UtfToUniChar, Tcl\_UtfToChar16, Tcl\_UtfTo
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[Tcl\_Size]{.ret} [Tcl\_UniCharToUtf]{.ccmd}[ch, buf]{.cargs}
-[Tcl\_Size]{.ret} [Tcl\_UtfToUniChar]{.ccmd}[src, chPtr]{.cargs}
-[Tcl\_Size]{.ret} [Tcl\_UtfToChar16]{.ccmd}[src, uPtr]{.cargs}
-[Tcl\_Size]{.ret} [Tcl\_UtfToWChar]{.ccmd}[src, wPtr]{.cargs}
-[char \*]{.ret} [Tcl\_UniCharToUtfDString]{.ccmd}[uniStr, numUniChars, dsPtr]{.cargs}
-[char \*]{.ret} [Tcl\_Char16ToUtfDString]{.ccmd}[utf16, numUtf16, dsPtr]{.cargs}
-[char \*]{.ret} [Tcl\_WCharToUtfDString]{.ccmd}[wcharStr, numWChars, dsPtr]{.cargs}
-[Tcl\_UniChar \*]{.ret} [Tcl\_UtfToUniCharDString]{.ccmd}[src, numBytes, dsPtr]{.cargs}
-[unsigned short \*]{.ret} [Tcl\_UtfToChar16DString]{.ccmd}[src, numBytes, dsPtr]{.cargs}
-[wchar\_t \*]{.ret} [Tcl\_UtfToWCharDString]{.ccmd}[src, numBytes, dsPtr]{.cargs}
-[Tcl\_Size]{.ret} [Tcl\_Char16Len]{.ccmd}[utf16]{.cargs}
-[Tcl\_Size]{.ret} [Tcl\_WCharLen]{.ccmd}[wcharStr]{.cargs}
-[Tcl\_Size]{.ret} [Tcl\_UniCharLen]{.ccmd}[uniStr]{.cargs}
-[int]{.ret} [Tcl\_UtfNcmp]{.ccmd}[cs, ct, length]{.cargs}
-[int]{.ret} [Tcl\_UtfNcasecmp]{.ccmd}[cs, ct, length]{.cargs}
-[int]{.ret} [Tcl\_UtfCharComplete]{.ccmd}[src, numBytes]{.cargs}
-[Tcl\_Size]{.ret} [Tcl\_NumUtfChars]{.ccmd}[src, numBytes]{.cargs}
-[const char \*]{.ret} [Tcl\_UtfFindFirst]{.ccmd}[src, ch]{.cargs}
-[const char \*]{.ret} [Tcl\_UtfFindLast]{.ccmd}[src, ch]{.cargs}
-[const char \*]{.ret} [Tcl\_UtfNext]{.ccmd}[src]{.cargs}
-[const char \*]{.ret} [Tcl\_UtfPrev]{.ccmd}[src, start]{.cargs}
-[int]{.ret} [Tcl\_UniCharAtIndex]{.ccmd}[src, index]{.cargs}
-[const char \*]{.ret} [Tcl\_UtfAtIndex]{.ccmd}[src, index]{.cargs}
-[Tcl\_Size]{.ret} [Tcl\_UtfBackslash]{.ccmd}[src, readPtr, dst]{.cargs}
+[Tcl\_Size]{.ret} [Tcl\_UniCharToUtf]{.ccmd} [ch, buf]{.cargs}
+[Tcl\_Size]{.ret} [Tcl\_UtfToUniChar]{.ccmd} [src, chPtr]{.cargs}
+[Tcl\_Size]{.ret} [Tcl\_UtfToChar16]{.ccmd} [src, uPtr]{.cargs}
+[Tcl\_Size]{.ret} [Tcl\_UtfToWChar]{.ccmd} [src, wPtr]{.cargs}
+[char \*]{.ret} [Tcl\_UniCharToUtfDString]{.ccmd} [uniStr, numUniChars, dsPtr]{.cargs}
+[char \*]{.ret} [Tcl\_Char16ToUtfDString]{.ccmd} [utf16, numUtf16, dsPtr]{.cargs}
+[char \*]{.ret} [Tcl\_WCharToUtfDString]{.ccmd} [wcharStr, numWChars, dsPtr]{.cargs}
+[Tcl\_UniChar \*]{.ret} [Tcl\_UtfToUniCharDString]{.ccmd} [src, numBytes, dsPtr]{.cargs}
+[unsigned short \*]{.ret} [Tcl\_UtfToChar16DString]{.ccmd} [src, numBytes, dsPtr]{.cargs}
+[wchar\_t \*]{.ret} [Tcl\_UtfToWCharDString]{.ccmd} [src, numBytes, dsPtr]{.cargs}
+[Tcl\_Size]{.ret} [Tcl\_Char16Len]{.ccmd} [utf16]{.cargs}
+[Tcl\_Size]{.ret} [Tcl\_WCharLen]{.ccmd} [wcharStr]{.cargs}
+[Tcl\_Size]{.ret} [Tcl\_UniCharLen]{.ccmd} [uniStr]{.cargs}
+[int]{.ret} [Tcl\_UtfNcmp]{.ccmd} [cs, ct, length]{.cargs}
+[int]{.ret} [Tcl\_UtfNcasecmp]{.ccmd} [cs, ct, length]{.cargs}
+[int]{.ret} [Tcl\_UtfCharComplete]{.ccmd} [src, numBytes]{.cargs}
+[Tcl\_Size]{.ret} [Tcl\_NumUtfChars]{.ccmd} [src, numBytes]{.cargs}
+[const char \*]{.ret} [Tcl\_UtfFindFirst]{.ccmd} [src, ch]{.cargs}
+[const char \*]{.ret} [Tcl\_UtfFindLast]{.ccmd} [src, ch]{.cargs}
+[const char \*]{.ret} [Tcl\_UtfNext]{.ccmd} [src]{.cargs}
+[const char \*]{.ret} [Tcl\_UtfPrev]{.ccmd} [src, start]{.cargs}
+[int]{.ret} [Tcl\_UniCharAtIndex]{.ccmd} [src, index]{.cargs}
+[const char \*]{.ret} [Tcl\_UtfAtIndex]{.ccmd} [src, index]{.cargs}
+[Tcl\_Size]{.ret} [Tcl\_UtfBackslash]{.ccmd} [src, readPtr, dst]{.cargs}
 :::
 
 # Arguments
@@ -167,7 +167,7 @@ Given *src*, a pointer to some location in a TUTF-8 byte sequence, **Tcl\_UtfNex
 
 **Tcl\_UtfPrev** is used to step backward through but not beyond the TUTF-8 byte sequence that begins at *start*. If the byte sequence is made up entirely of complete and well-formed characters, and *src* points to the lead byte of one of those characters (or to the location one byte past the end of the string), then repeated calls of **Tcl\_UtfPrev** will return pointers to the lead bytes of each character in the string, one character at a time, terminating when it returns *start*.
 
-When the conditions of completeness and well-formedness may not be satisfied, a more precise description of the function of **Tcl\_UtfPrev** is necessary. It always returns a pointer greater than or equal to *start*; that is, always a pointer to a location in the string. It always returns a pointer to a byte that begins a character when scanning for characters beginning from *start*. When *src* is greater than *start*, it always returns a pointer less than *src* and greater than or equal to (*src* - 4).  The character that begins at the returned pointer is the first one that either includes the byte *src[-1]*, or might include it if the right trail bytes are present at *src* and greater. **Tcl\_UtfPrev** never reads the byte *src[0]* nor the byte *start[-1]* nor the byte *src[-5]*.
+When the conditions of completeness and well-formedness may not be satisfied, a more precise description of the function of **Tcl\_UtfPrev** is necessary. It always returns a pointer greater than or equal to *start*; that is, always a pointer to a location in the string. It always returns a pointer to a byte that begins a character when scanning for characters beginning from *start*. When *src* is greater than *start*, it always returns a pointer less than *src* and greater than or equal to (*src* - 4).  The character that begins at the returned pointer is the first one that either includes the byte *src\[-1\]*, or might include it if the right trail bytes are present at *src* and greater. **Tcl\_UtfPrev** never reads the byte *src\[0\]* nor the byte *start\[-1\]* nor the byte *src\[-5\]*.
 
 **Tcl\_UniCharAtIndex** corresponds to a C string array dereference or the Pascal Ord() function.  It returns the Unicode code point represented at the specified character (not byte) *index* in the TUTF-8 byte sequence *src*.  The source string must contain at least *index* characters.  If *index* is negative it returns -1.
 

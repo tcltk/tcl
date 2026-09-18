@@ -86,7 +86,7 @@ An atom is one of:
 **(?:)**
 : matches an empty string, without reporting
 
-**[***chars***]**
+**\[***chars***\]**
 : a *bracket expression*, matching any one of the *chars* (see [Bracket expressions] for more detail)
 
 **.**
@@ -132,15 +132,15 @@ An RE may not end with "**\\**".
 
 # Bracket expressions
 
-A *bracket expression* is a list of characters enclosed in "**[]**". It normally matches any single character from the list (but see below). If the list begins with "**^**", it matches any single character (but see below) *not* from the rest of the list.
+A *bracket expression* is a list of characters enclosed in "**\[\]**". It normally matches any single character from the list (but see below). If the list begins with "**^**", it matches any single character (but see below) *not* from the rest of the list.
 
-If two characters in the list are separated by "**-**", this is shorthand for the full *range* of characters between those two (inclusive) in the collating sequence, e.g. "**[0-9]**" in Unicode matches any conventional decimal digit. Two ranges may not share an endpoint, so e.g. "**a-c-e**" is illegal. Ranges in Tcl always use the Unicode collating sequence, but other programs may use other collating sequences and this can be a source of incompatibility between programs.
+If two characters in the list are separated by "**-**", this is shorthand for the full *range* of characters between those two (inclusive) in the collating sequence, e.g. "**\[0-9\]**" in Unicode matches any conventional decimal digit. Two ranges may not share an endpoint, so e.g. "**a-c-e**" is illegal. Ranges in Tcl always use the Unicode collating sequence, but other programs may use other collating sequences and this can be a source of incompatibility between programs.
 
-To include a literal **]** or **-** in the list, the simplest method is to enclose it in **[.** and **.]** to make it a collating element (see below). Alternatively, make it the first character (following a possible "**^**"), or (AREs only) precede it with "**\\**". Alternatively, for "**-**", make it the last character, or the second endpoint of a range. To use a literal **-** as the first endpoint of a range, make it a collating element or (AREs only) precede it with "**\\**". With the exception of these, some combinations using **[** (see next paragraphs), and escapes, all other special characters lose their special significance within a bracket expression.
+To include a literal **\]** or **-** in the list, the simplest method is to enclose it in **\[.** and **.\]** to make it a collating element (see below). Alternatively, make it the first character (following a possible "**^**"), or (AREs only) precede it with "**\\**". Alternatively, for "**-**", make it the last character, or the second endpoint of a range. To use a literal **-** as the first endpoint of a range, make it a collating element or (AREs only) precede it with "**\\**". With the exception of these, some combinations using **\[** (see next paragraphs), and escapes, all other special characters lose their special significance within a bracket expression.
 
 ## Character classes
 
-Within a bracket expression, the name of a *character class* enclosed in **[:** and **:]** stands for the list of all characters (not all collating elements!) belonging to that class. Standard character classes are:
+Within a bracket expression, the name of a *character class* enclosed in **\[:** and **:\]** stands for the list of all characters (not all collating elements!) belonging to that class. Standard character classes are:
 
 **alpha**
 : A letter.
@@ -185,19 +185,19 @@ A locale may provide others. A character class may not be used as an endpoint of
 
 ## Bracketed constraints
 
-There are two special cases of bracket expressions: the bracket expressions "**[[:<:]]**" and "**[[:>:]]**" are constraints, matching empty strings at the beginning and end of a word respectively. A word is defined as a sequence of word characters that is neither preceded nor followed by word characters. A word character is an *alnum* character or an underscore ("**\_**"). These special bracket expressions are deprecated; users of AREs should use constraint escapes instead (see below).
+There are two special cases of bracket expressions: the bracket expressions "**\[\[:<:\]\]**" and "**\[\[:>:\]\]**" are constraints, matching empty strings at the beginning and end of a word respectively. A word is defined as a sequence of word characters that is neither preceded nor followed by word characters. A word character is an *alnum* character or an underscore ("**\_**"). These special bracket expressions are deprecated; users of AREs should use constraint escapes instead (see below).
 
 ## Collating elements
 
-Within a bracket expression, a collating element (a character, a multi-character sequence that collates as if it were a single character, or a collating-sequence name for either) enclosed in **[.** and **.]** stands for the sequence of characters of that collating element. The sequence is a single element of the bracket expression's list. A bracket expression in a locale that has multi-character collating elements can thus match more than one character. So (insidiously), a bracket expression that starts with **^** can match multi-character collating elements even if none of them appear in the bracket expression!
+Within a bracket expression, a collating element (a character, a multi-character sequence that collates as if it were a single character, or a collating-sequence name for either) enclosed in **\[.** and **.\]** stands for the sequence of characters of that collating element. The sequence is a single element of the bracket expression's list. A bracket expression in a locale that has multi-character collating elements can thus match more than one character. So (insidiously), a bracket expression that starts with **^** can match multi-character collating elements even if none of them appear in the bracket expression!
 
 (*Note:* Tcl has no multi-character collating elements. This information is only for illustration.)
 
-For example, assume the collating sequence includes a **ch** multi-character collating element. Then the RE "**[[.ch.]]\*c**" (zero or more "**ch**s" followed by "**c**") matches the first five characters of "**chchcc**". Also, the RE "**[^c]b**" matches all of "**chb**" (because "**[^c]**" matches the multi-character "**ch**").
+For example, assume the collating sequence includes a **ch** multi-character collating element. Then the RE "**\[\[.ch.\]\]\*c**" (zero or more "**ch**s" followed by "**c**") matches the first five characters of "**chchcc**". Also, the RE "**\[^c\]b**" matches all of "**chb**" (because "**\[^c\]**" matches the multi-character "**ch**").
 
 ## Equivalence classes
 
-Within a bracket expression, a collating element enclosed in **[=** and **=]** is an equivalence class, standing for the sequences of characters of all collating elements equivalent to that one, including itself. (If there are no other equivalent collating elements, the treatment is as if the enclosing delimiters were "**[.**" and "**.]**".) For example, if **o** and **\\(^o** are the members of an equivalence class, then "**[[=o=]]**", "**[[=\\(^o=]]**", and "**[o\\(^o]**" are all synonymous. An equivalence class may not be an endpoint of a range.
+Within a bracket expression, a collating element enclosed in **\[=** and **=\]** is an equivalence class, standing for the sequences of characters of all collating elements equivalent to that one, including itself. (If there are no other equivalent collating elements, the treatment is as if the enclosing delimiters were "**\[.**" and "**.\]**".) For example, if **o** and **\\(^o** are the members of an equivalence class, then "**\[\[=o=\]\]**", "**\[\[=\\(^o=\]\]**", and "**\[o\\(^o\]**" are all synonymous. An equivalence class may not be an endpoint of a range.
 
 (*Note:* Tcl implements only the Unicode locale. It does not define any equivalence classes. The examples above are just illustrations.)
 
@@ -260,32 +260,32 @@ Character-entry escapes (AREs only) exist to make it easier to specify non-print
 
 Hexadecimal digits are "**0**-**9**", "**a**-**f**", and "**A**-**F**". Octal digits are "**0**-**7**".
 
-The character-entry escapes are always taken as ordinary characters. For example, **\\135** is **]** in Unicode, but **\\135** does not terminate a bracket expression. Beware, however, that some applications (e.g., C compilers and the Tcl interpreter if the regular expression is not quoted with braces) interpret such sequences themselves before the regular-expression package gets to see them, which may require doubling (quadrupling, etc.) the "**\\**".
+The character-entry escapes are always taken as ordinary characters. For example, **\\135** is **\]** in Unicode, but **\\135** does not terminate a bracket expression. Beware, however, that some applications (e.g., C compilers and the Tcl interpreter if the regular expression is not quoted with braces) interpret such sequences themselves before the regular-expression package gets to see them, which may require doubling (quadrupling, etc.) the "**\\**".
 
 ## Class-shorthand escapes
 
 Class-shorthand escapes (AREs only) provide shorthands for certain commonly-used character classes:
 
 **\\d**
-: **[[:digit:]]**
+: **\[\[:digit:\]\]**
 
 **\\s**
-: **[[:space:]]**
+: **\[\[:space:\]\]**
 
 **\\w**
-: **[[:alnum:]\_\\u203F\\u2040\\u2054\\uFE33\\uFE34\\uFE4D\\uFE4E\\uFE4F\\uFF3F]** (including punctuation connector characters)
+: **\[\[:alnum:\]\_\\u203F\\u2040\\u2054\\uFE33\\uFE34\\uFE4D\\uFE4E\\uFE4F\\uFF3F\]** (including punctuation connector characters)
 
 **\\D**
-: **[^[:digit:]]**
+: **\[^\[:digit:\]\]**
 
 **\\S**
-: **[^[:space:]]**
+: **\[^\[:space:\]\]**
 
 **\\W**
-: **[^[:alnum:]\_\\u203F\\u2040\\u2054\\uFE33\\uFE34\\uFE4D\\uFE4E\\uFE4F\\uFF3F]** (including punctuation connector characters)
+: **\[^\[:alnum:\]\_\\u203F\\u2040\\u2054\\uFE33\\uFE34\\uFE4D\\uFE4E\\uFE4F\\uFF3F\]** (including punctuation connector characters)
 
 
-Within bracket expressions, "**\\d**", "**\\s**", and "**\\w**" lose their outer brackets, and "**\\D**", "**\\S**", and "**\\W**" are illegal. (So, for example, "**[a-c\\d]**" is equivalent to "**[a-c[:digit:]]**". Also, "**[a-c\\D]**", which is equivalent to "**[a-c^[:digit:]]**", is illegal.)
+Within bracket expressions, "**\\d**", "**\\s**", and "**\\w**" lose their outer brackets, and "**\\D**", "**\\S**", and "**\\W**" are illegal. (So, for example, "**\[a-c\\d\]**" is equivalent to "**\[a-c\[:digit:\]\]**". Also, "**\[a-c\\D\]**", which is equivalent to "**\[a-c^\[:digit:\]\]**", is illegal.)
 
 ## Constraint escapes
 
@@ -316,11 +316,11 @@ A constraint escape (AREs only) is a constraint, matching the empty string if sp
 : (where *m* is a nonzero digit, and *nn* is some more digits, and the decimal value *mnn* is not greater than the number of closing capturing parentheses seen so far) a *back reference*, see below
 
 
-A word is defined as in the specification of "**[[:<:]]**" and "**[[:>:]]**" above. Constraint escapes are illegal within bracket expressions.
+A word is defined as in the specification of "**\[\[:<:\]\]**" and "**\[\[:>:\]\]**" above. Constraint escapes are illegal within bracket expressions.
 
 ## Back references
 
-A back reference (AREs only) matches the same string matched by the parenthesized subexpression specified by the number, so that (e.g.) "**([bc])\\1**" matches "**bb**" or "**cc**" but not "**bc**". The subexpression must entirely precede the back reference in the RE. Subexpressions are numbered in the order of their leading parentheses. Non-capturing parentheses do not define subexpressions.
+A back reference (AREs only) matches the same string matched by the parenthesized subexpression specified by the number, so that (e.g.) "**(\[bc\])\\1**" matches "**bb**" or "**cc**" but not "**bc**". The subexpression must entirely precede the back reference in the RE. Subexpressions are numbered in the order of their leading parentheses. Non-capturing parentheses do not define subexpressions.
 
 There is an inherent historical ambiguity between octal character-entry escapes and back references, which is resolved by heuristics, as hinted at above. A leading zero always indicates an octal escape. A single non-zero digit, not followed by another digit, is always taken as a back reference. A multi-digit sequence not starting with a zero is taken as a back reference if it comes after a suitable subexpression (i.e. the number is in the legal range for a back reference), and otherwise is taken as octal.
 
@@ -408,7 +408,7 @@ The atom "**a**" has no greediness preference, we explicitly give one for "**b**
 
 Match lengths are measured in characters, not collating elements. An empty string is considered longer than no match at all. For example, "**bb\***" matches the three middle characters of "**abbbc**", "**(week|wee)(night|knights)**" matches all ten characters of "**weeknights**", when "**(.\*).\***" is matched against "**abc**" the parenthesized subexpression matches all three characters, and when "**(a\*)\***" is matched against "**bc**" both the whole RE and the parenthesized subexpression match an empty string.
 
-If case-independent matching is specified, the effect is much as if all case distinctions had vanished from the alphabet. When an alphabetic that exists in multiple cases appears as an ordinary character outside a bracket expression, it is effectively transformed into a bracket expression containing both cases, so that **x** becomes "**[xX]**". When it appears inside a bracket expression, all case counterparts of it are added to the bracket expression, so that "**[x]**" becomes "**[xX]**" and "**[^x]**" becomes "**[^xX]**".
+If case-independent matching is specified, the effect is much as if all case distinctions had vanished from the alphabet. When an alphabetic that exists in multiple cases appears as an ordinary character outside a bracket expression, it is effectively transformed into a bracket expression containing both cases, so that **x** becomes "**\[xX\]**". When it appears inside a bracket expression, all case counterparts of it are added to the bracket expression, so that "**\[x\]**" becomes "**\[xX\]**" and "**\[^x\]**" becomes "**\[^xX\]**".
 
 If newline-sensitive matching is specified, **.** and bracket expressions using **^** will never match the newline character (so that matches will never cross newlines unless the RE explicitly arranges it) and **^** and **$** will match the empty string after and before a newline respectively, in addition to matching at beginning and end of string respectively. ARE **\\A** and **\\Z** continue to match beginning or end of string *only*.
 
@@ -432,12 +432,12 @@ Henry Spencer's original 1986 *regexp* package, still in widespread use (e.g., i
 
 - **{** followed by a digit in an ARE is the beginning of a bound, while in RREs, **{** was always an ordinary character. Such sequences should be rare, and will often result in an error because following characters will not look like a valid bound.
 
-- In AREs, **\\** remains a special character within "**[]**", so a literal **\\** within **[]** must be written "**\\\\**". **\\\\** also gives a literal **\\** within **[]** in RREs, but only truly paranoid programmers routinely doubled the backslash.
+- In AREs, **\\** remains a special character within "**\[\]**", so a literal **\\** within **\[\]** must be written "**\\\\**". **\\\\** also gives a literal **\\** within **\[\]** in RREs, but only truly paranoid programmers routinely doubled the backslash.
 
 - AREs report the longest/shortest match for the RE, rather than the first found in a specified search order. This may affect some RREs which were written in the expectation that the first match would be reported. (The careful crafting of RREs to optimize the search order for fast matching is obsolete (AREs examine all possible matches in parallel, and their performance is largely insensitive to their complexity) but cases where the search order was exploited to deliberately find a match which was *not* the longest/shortest will need rewriting.)
 
 
 # Basic regular expressions
 
-BREs differ from EREs in several respects. "**|**", "**+**", and **?** are ordinary characters and there is no equivalent for their functionality. The delimiters for bounds are **\\{** and "**\\}**", with **{** and **}** by themselves ordinary characters. The parentheses for nested subexpressions are **\\(** and "**\\)**", with **(** and **)** by themselves ordinary characters. **^** is an ordinary character except at the beginning of the RE or the beginning of a parenthesized subexpression, **$** is an ordinary character except at the end of the RE or the end of a parenthesized subexpression, and **\*** is an ordinary character if it appears at the beginning of the RE or the beginning of a parenthesized subexpression (after a possible leading "**^**"). Finally, single-digit back references are available, and **\\<** and **\\>** are synonyms for "**[[:<:]]**" and "**[[:>:]]**" respectively; no other escapes are available.
+BREs differ from EREs in several respects. "**|**", "**+**", and **?** are ordinary characters and there is no equivalent for their functionality. The delimiters for bounds are **\\{** and "**\\}**", with **{** and **}** by themselves ordinary characters. The parentheses for nested subexpressions are **\\(** and "**\\)**", with **(** and **)** by themselves ordinary characters. **^** is an ordinary character except at the beginning of the RE or the beginning of a parenthesized subexpression, **$** is an ordinary character except at the end of the RE or the end of a parenthesized subexpression, and **\*** is an ordinary character if it appears at the beginning of the RE or the beginning of a parenthesized subexpression (after a possible leading "**^**"). Finally, single-digit back references are available, and **\\<** and **\\>** are synonyms for "**\[\[:<:\]\]**" and "**\[\[:>:\]\]**" respectively; no other escapes are available.
 

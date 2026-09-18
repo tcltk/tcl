@@ -21,8 +21,8 @@ Tcl\_UpVar, Tcl\_UpVar2 - link one variable to another
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[int]{.ret} [Tcl\_UpVar]{.ccmd}[interp, frameName, sourceName, destName, flags]{.cargs}
-[int]{.ret} [Tcl\_UpVar2]{.ccmd}[interp, frameName, name1, name2, destName, flags]{.cargs}
+[int]{.ret} [Tcl\_UpVar]{.ccmd} [interp, frameName, sourceName, destName, flags]{.cargs}
+[int]{.ret} [Tcl\_UpVar2]{.ccmd} [interp, frameName, name1, name2, destName, flags]{.cargs}
 :::
 
 # Arguments

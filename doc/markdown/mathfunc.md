@@ -89,7 +89,7 @@ mathfunc - Mathematical functions for Tcl expressions
 
 # Description
 
-The [expr] command handles mathematical functions of the form **sin($x)** or **atan2($y,$x)** by converting them to calls of the form `[tcl::mathfunc::sin [expr {$x}]]` or `[tcl::mathfunc::atan2 [expr {$y}] [expr {$x}]]`. A number of math functions are available by default within the namespace **::tcl::mathfunc**; these functions are also available for code apart from [expr], by invoking the given commands directly.
+The [expr] command handles mathematical functions of the form **sin($x)** or **atan2($y,$x)** by converting them to calls of the form **\[tcl::mathfunc::sin \[expr {$x}\]\]** or **\[tcl::mathfunc::atan2 \[expr {$y}\] \[expr {$x}\]\]**. A number of math functions are available by default within the namespace **::tcl::mathfunc**; these functions are also available for code apart from [expr], by invoking the given commands directly.
 
 Tcl supports the following mathematical functions in expressions, all of which work solely with floating-point numbers unless otherwise noted:
 
@@ -120,7 +120,7 @@ In addition to these predefined functions, applications may define additional fu
 : Returns the arc tangent of *arg*, in the range \[*-pi/2*,*pi/2*\] radians.
 
 **atan2** *y x*
-: Returns the arc tangent of *y*/*x*, in the range \[*-pi*,*pi*\] radians.  *x* and *y* cannot both be 0.  If *x* is greater than *0*, this is equivalent to `atan [expr {y/x}]`.
+: Returns the arc tangent of *y*/*x*, in the range \[*-pi*,*pi*\] radians.  *x* and *y* cannot both be 0.  If *x* is greater than *0*, this is equivalent to "**atan** \[[expr] {*y***/***x*}\]".
 
 **atanh** *arg*
 : Returns the arc hyperbolic tangent of *arg*, in the range \[*-inf*,*inf*\]. *Arg* should be in the range \[*-1*,*1*\].
@@ -180,7 +180,7 @@ In addition to these predefined functions, applications may define additional fu
 : Returns the absolute value of the gamma function of *arg* (a generalized factorial). If the result would cause an overflow, an error is returned.
 
 **hypot** *x y*
-: Computes the length of the hypotenuse of a right-angled triangle, approximately `sqrt [expr {x*x+y*y}]` except for being more numerically stable when the two arguments have substantially different magnitudes.
+: Computes the length of the hypotenuse of a right-angled triangle, approximately "**sqrt** \[[expr] {*x***\****x***+***y***\****y*}\]" except for being more numerically stable when the two arguments have substantially different magnitudes.
 
 **int** *arg*
 : The argument may be any numeric value.  The integer part of *arg* is determined, and then the low order bits of that integer value up to the machine word size are returned as an integer value.  For reference, the number of bytes in the machine word are stored in the **wordSize** element of the [tcl\_platform][tclvars] array.

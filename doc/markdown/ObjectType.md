@@ -27,15 +27,15 @@ Tcl\_RegisterObjType, Tcl\_GetObjType, Tcl\_AppendAllObjTypes, Tcl\_ConvertToTyp
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[Tcl\_RegisterObjType]{.ccmd}[typePtr]{.cargs}
-[const Tcl\_ObjType \*]{.ret} [Tcl\_GetObjType]{.ccmd}[typeName]{.cargs}
-[int]{.ret} [Tcl\_AppendAllObjTypes]{.ccmd}[interp, objPtr]{.cargs}
-[int]{.ret} [Tcl\_ConvertToType]{.ccmd}[interp, objPtr, typePtr]{.cargs}
-[void]{.ret} [Tcl\_FreeInternalRep]{.ccmd}[objPtr]{.cargs}
-[char \*]{.ret} [Tcl\_InitStringRep]{.ccmd}[objPtr, bytes, numBytes]{.cargs}
-[int]{.ret} [Tcl\_HasStringRep]{.ccmd}[objPtr]{.cargs}
-[void]{.ret} [Tcl\_StoreInternalRep]{.ccmd}[objPtr, typePtr, irPtr]{.cargs}
-[Tcl\_ObjInternalRep \*]{.ret} [Tcl\_FetchInternalRep]{.ccmd}[objPtr, typePtr]{.cargs}
+[Tcl\_RegisterObjType]{.ccmd} [typePtr]{.cargs}
+[const Tcl\_ObjType \*]{.ret} [Tcl\_GetObjType]{.ccmd} [typeName]{.cargs}
+[int]{.ret} [Tcl\_AppendAllObjTypes]{.ccmd} [interp, objPtr]{.cargs}
+[int]{.ret} [Tcl\_ConvertToType]{.ccmd} [interp, objPtr, typePtr]{.cargs}
+[void]{.ret} [Tcl\_FreeInternalRep]{.ccmd} [objPtr]{.cargs}
+[char \*]{.ret} [Tcl\_InitStringRep]{.ccmd} [objPtr, bytes, numBytes]{.cargs}
+[int]{.ret} [Tcl\_HasStringRep]{.ccmd} [objPtr]{.cargs}
+[void]{.ret} [Tcl\_StoreInternalRep]{.ccmd} [objPtr, typePtr, irPtr]{.cargs}
+[Tcl\_ObjInternalRep \*]{.ret} [Tcl\_FetchInternalRep]{.ccmd} [objPtr, typePtr]{.cargs}
 :::
 
 # Arguments

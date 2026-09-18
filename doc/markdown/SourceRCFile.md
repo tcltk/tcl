@@ -20,7 +20,7 @@ Tcl\_SourceRCFile - source the Tcl rc file
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[Tcl\_SourceRCFile]{.ccmd}[interp]{.cargs}
+[Tcl\_SourceRCFile]{.ccmd} [interp]{.cargs}
 :::
 
 # Arguments

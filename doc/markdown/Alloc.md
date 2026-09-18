@@ -24,12 +24,12 @@ Tcl\_Alloc, Tcl\_Free, Tcl\_Realloc, Tcl\_AttemptAlloc, Tcl\_AttemptRealloc, Tcl
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[void \*]{.ret} [Tcl\_Alloc]{.ccmd}[size]{.cargs}
-[Tcl\_Free]{.ccmd}[ptr]{.cargs}
-[void \*]{.ret} [Tcl\_Realloc]{.ccmd}[ptr, size]{.cargs}
-[void \*]{.ret} [Tcl\_AttemptAlloc]{.ccmd}[size]{.cargs}
-[void \*]{.ret} [Tcl\_AttemptRealloc]{.ccmd}[ptr, size]{.cargs}
-[Tcl\_GetMemoryInfo]{.ccmd}[dsPtr]{.cargs}
+[void \*]{.ret} [Tcl\_Alloc]{.ccmd} [size]{.cargs}
+[Tcl\_Free]{.ccmd} [ptr]{.cargs}
+[void \*]{.ret} [Tcl\_Realloc]{.ccmd} [ptr, size]{.cargs}
+[void \*]{.ret} [Tcl\_AttemptAlloc]{.ccmd} [size]{.cargs}
+[void \*]{.ret} [Tcl\_AttemptRealloc]{.ccmd} [ptr, size]{.cargs}
+[Tcl\_GetMemoryInfo]{.ccmd} [dsPtr]{.cargs}
 :::
 
 # Arguments

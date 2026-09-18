@@ -26,23 +26,23 @@ Tcl\_ClassGetMetadata, Tcl\_ClassSetMetadata, Tcl\_CopyObjectInstance, Tcl\_GetC
 
 ::: {.synopsis} :::
 **#include <tclOO.h>**
-[Tcl\_Object]{.ret} [Tcl\_GetObjectFromObj]{.ccmd}[interp, objPtr]{.cargs}
-[Tcl\_Object]{.ret} [Tcl\_GetClassAsObject]{.ccmd}[class]{.cargs}
-[Tcl\_Class]{.ret} [Tcl\_GetObjectAsClass]{.ccmd}[object]{.cargs}
-[Tcl\_Obj \*]{.ret} [Tcl\_GetObjectName]{.ccmd}[interp, object]{.cargs}
-[Tcl\_Command]{.ret} [Tcl\_GetObjectCommand]{.ccmd}[object]{.cargs}
-[Tcl\_Namespace \*]{.ret} [Tcl\_GetObjectNamespace]{.ccmd}[object]{.cargs}
-[Tcl\_Object]{.ret} [Tcl\_NewObjectInstance]{.ccmd}[interp, class, name, nsName, objc, objv, skip]{.cargs}
-[Tcl\_Object]{.ret} [Tcl\_CopyObjectInstance]{.ccmd}[interp, object, name, nsName]{.cargs}
-[int]{.ret} [Tcl\_ObjectDeleted]{.ccmd}[object]{.cargs}
-[void \*]{.ret} [Tcl\_ObjectGetMetadata]{.ccmd}[object, metaTypePtr]{.cargs}
-[Tcl\_ObjectSetMetadata]{.ccmd}[object, metaTypePtr, metadata]{.cargs}
-[void \*]{.ret} [Tcl\_ClassGetMetadata]{.ccmd}[class, metaTypePtr]{.cargs}
-[Tcl\_ClassSetMetadata]{.ccmd}[class, metaTypePtr, metadata]{.cargs}
-[Tcl\_ObjectMapMethodNameProc]{.ret} [Tcl\_ObjectGetMethodNameMapper]{.ccmd}[object]{.cargs}
-[Tcl\_ObjectSetMethodNameMapper]{.ccmd}[object, methodNameMapper]{.cargs}
-[Tcl\_Class]{.ret} [Tcl\_GetClassOfObject]{.ccmd version="TIP605"}[object]{.cargs}
-[Tcl\_Obj \*]{.ret} [Tcl\_GetObjectClassName]{.ccmd version="TIP605"}[interp, object]{.cargs}
+[Tcl\_Object]{.ret} [Tcl\_GetObjectFromObj]{.ccmd} [interp, objPtr]{.cargs}
+[Tcl\_Object]{.ret} [Tcl\_GetClassAsObject]{.ccmd} [class]{.cargs}
+[Tcl\_Class]{.ret} [Tcl\_GetObjectAsClass]{.ccmd} [object]{.cargs}
+[Tcl\_Obj \*]{.ret} [Tcl\_GetObjectName]{.ccmd} [interp, object]{.cargs}
+[Tcl\_Command]{.ret} [Tcl\_GetObjectCommand]{.ccmd} [object]{.cargs}
+[Tcl\_Namespace \*]{.ret} [Tcl\_GetObjectNamespace]{.ccmd} [object]{.cargs}
+[Tcl\_Object]{.ret} [Tcl\_NewObjectInstance]{.ccmd} [interp, class, name, nsName, objc, objv, skip]{.cargs}
+[Tcl\_Object]{.ret} [Tcl\_CopyObjectInstance]{.ccmd} [interp, object, name, nsName]{.cargs}
+[int]{.ret} [Tcl\_ObjectDeleted]{.ccmd} [object]{.cargs}
+[void \*]{.ret} [Tcl\_ObjectGetMetadata]{.ccmd} [object, metaTypePtr]{.cargs}
+[Tcl\_ObjectSetMetadata]{.ccmd} [object, metaTypePtr, metadata]{.cargs}
+[void \*]{.ret} [Tcl\_ClassGetMetadata]{.ccmd} [class, metaTypePtr]{.cargs}
+[Tcl\_ClassSetMetadata]{.ccmd} [class, metaTypePtr, metadata]{.cargs}
+[Tcl\_ObjectMapMethodNameProc]{.ret} [Tcl\_ObjectGetMethodNameMapper]{.ccmd} [object]{.cargs}
+[Tcl\_ObjectSetMethodNameMapper]{.ccmd} [object, methodNameMapper]{.cargs}
+[Tcl\_Class]{.ret} [Tcl\_GetClassOfObject]{.ccmd version="TIP605"} [object]{.cargs}
+[Tcl\_Obj \*]{.ret} [Tcl\_GetObjectClassName]{.ccmd version="TIP605"} [interp, object]{.cargs}
 :::
 
 # Arguments
@@ -92,11 +92,7 @@ Tcl\_ClassGetMetadata, Tcl\_ClassSetMetadata, Tcl\_CopyObjectInstance, Tcl\_GetC
 
 Objects are typed entities that have a set of operations ("methods") associated with them. Classes are objects that can manufacture objects. Each class can be viewed as an object itself; the object view can be retrieved using **Tcl\_GetClassAsObject** which always returns the object when applied to a non-destroyed class, and an object can be viewed as a class with the aid of the **Tcl\_GetObjectAsClass** (which either returns the class, or NULL if the object is not a class). An object may be looked up using the **Tcl\_GetObjectFromObj** function, which either returns an object or NULL (with an error message in the interpreter result) if the object cannot be found. The correct way to look up a class by name is to look up the object with that name, and then to use **Tcl\_GetObjectAsClass**.
 
-Every object has its own command and namespace associated with it. The command may be retrieved using the **Tcl\_GetObjectCommand** function, the name of the object (and hence the name of the command) with **Tcl\_GetObjectName**, and the namespace may be retrieved using the **Tcl\_GetObjectNamespace** function. Note that the [Tcl\_Obj][Object3] reference returned by **Tcl\_GetObjectName** is a shared reference. You can also get whether the object has been marked for deletion with **Tcl\_ObjectDeleted** (it returns true if deletion of the object has begun); this can be useful during the processing of methods.
-
-::: {.info version="TIP605"}
-The class of an object can be retrieved with **Tcl\_GetClassOfObject**, and the name of the class of an object with **Tcl\_GetObjectClassName**; note that these two *may* return NULL during deletion of an object (this is transient, and only occurs when the object is a long way through being deleted).
-:::
+Every object has its own command and namespace associated with it. The command may be retrieved using the **Tcl\_GetObjectCommand** function, the name of the object (and hence the name of the command) with **Tcl\_GetObjectName**, and the namespace may be retrieved using the **Tcl\_GetObjectNamespace** function. Note that the [Tcl\_Obj][Object3] reference returned by **Tcl\_GetObjectName** is a shared reference. You can also get whether the object has been marked for deletion with **Tcl\_ObjectDeleted** (it returns true if deletion of the object has begun); this can be useful during the processing of methods. [The class of an object can be retrieved with **Tcl\_GetClassOfObject**, and the name of the class of an object with **Tcl\_GetObjectClassName**; note that these two *may* return NULL during deletion of an object (this is transient, and only occurs when the object is a long way through being deleted).]{version="TIP605"}
 
 Instances of classes are created using **Tcl\_NewObjectInstance**, which creates an object from any class (and which is internally called by both the **create** and **new** methods of the [oo::class][class] class). It takes parameters that optionally give the name of the object and namespace to create, and which describe the arguments to pass to the class's constructor (if any). The result of the function will be either a reference to the newly created object, or NULL if the creation failed (when an error message will be left in the interpreter result). In addition, objects may be copied by using **Tcl\_CopyObjectInstance** which creates a copy of an object without running any constructors.
 

@@ -25,10 +25,10 @@ Tcl\_CreateInterp, Tcl\_DeleteInterp, Tcl\_InterpActive, Tcl\_InterpDeleted - cr
 
 ::: {.synopsis} :::
 **#include <tcl.h>**
-[Tcl\_Interp \*]{.ret} [Tcl\_CreateInterp]{.ccmd}[]{.cargs}
-[Tcl\_DeleteInterp]{.ccmd}[interp]{.cargs}
-[int]{.ret} [Tcl\_InterpDeleted]{.ccmd}[interp]{.cargs}
-[int]{.ret} [Tcl\_InterpActive]{.ccmd}[interp]{.cargs}
+[Tcl\_Interp \*]{.ret} [Tcl\_CreateInterp]{.ccmd} []{.cargs}
+[Tcl\_DeleteInterp]{.ccmd} [interp]{.cargs}
+[int]{.ret} [Tcl\_InterpDeleted]{.ccmd} [interp]{.cargs}
+[int]{.ret} [Tcl\_InterpActive]{.ccmd} [interp]{.cargs}
 :::
 
 # Arguments

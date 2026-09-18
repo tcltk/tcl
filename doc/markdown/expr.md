@@ -50,9 +50,7 @@ evaluates to 14.2. Expressions differ from C expressions in the way that operand
 
 When the result of expression is an integer, it is in decimal form, and when the result is a floating-point number, it is in the form produced by the **%g** format specifier of [format].
 
-::: {.info version="TIP582"}
-At any point in the expression except within double quotes or braces, **#** is the beginning of a comment, which lasts to the end of the line or the end of the expression, whichever comes first.
-:::
+[At any point in the expression except within double quotes or braces, **#** is the beginning of a comment, which lasts to the end of the line or the end of the expression, whichever comes first.]{version="TIP582"}
 
 ## Operands
 
@@ -184,7 +182,7 @@ As in C, **&&**, **||**, and **?:** feature "lazy evaluation", which means that 
 expr {$v?[a]:[b]}
 ```
 
-only one of **[a]** or **[b]** is evaluated, depending on the value of **$v**.  This is not true of the normal Tcl parser, so it is normally recommended to enclose the arguments to **expr** in braces. Without braces, as in **expr** $v ? [a] : [b] both **[a]** and **[b]** are evaluated before **expr** is even called.
+only one of **\[a\]** or **\[b\]** is evaluated, depending on the value of **$v**.  This is not true of the normal Tcl parser, so it is normally recommended to enclose the arguments to **expr** in braces. Without braces, as in **expr** $v ? \[a\] : \[b\] both **\[a\]** and **\[b\]** are evaluated before **expr** is even called.
 
 For more details on the results produced by each operator, see the documentation for C.
 
@@ -208,7 +206,7 @@ which in turn is the same as the evaluation of
 ::tcl::mathfunc::sin [expr {$x+$y}]
 ```
 
-**::tcl::mathfunc::sin** is resolved as described in **NAMESPACE RESOLUTION** in the [namespace] (n) documentation.  Given the default value of [namespace path][namespace], **[namespace current]::tcl::mathfunc::sin** or **::tcl::mathfunc::sin** are the typical resolutions.
+**::tcl::mathfunc::sin** is resolved as described in **NAMESPACE RESOLUTION** in the [namespace] (n) documentation.  Given the default value of [namespace path][namespace], **\[namespace current\]::tcl::mathfunc::sin** or **::tcl::mathfunc::sin** are the typical resolutions.
 
 As in C, a mathematical function may accept multiple arguments separated by commas. Thus,
 
@@ -291,9 +289,7 @@ A string comparison whose result is 1:
 expr {"0y" > "0x12"}
 ```
 
-::: {.info version="TIP461"}
-A forced string comparison whose result is 0:
-:::
+[A forced string comparison whose result is 0:]{version="TIP461"}
 
 ```
 expr {"0x03" gt "2"}

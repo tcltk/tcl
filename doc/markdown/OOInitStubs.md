@@ -20,7 +20,7 @@ Tcl\_OOInitStubs - initialize library access to TclOO functionality
 
 ::: {.synopsis} :::
 **#include <tclOO.h>**
-[const char \*]{.ret} [Tcl\_OOInitStubs]{.ccmd}[interp]{.cargs}
+[const char \*]{.ret} [Tcl\_OOInitStubs]{.ccmd} [interp]{.cargs}
 :::
 
 # Arguments
