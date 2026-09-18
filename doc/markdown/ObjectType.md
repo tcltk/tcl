@@ -148,7 +148,7 @@ Do not release *objPtr*'s old internal representation unless you replace it with
 
 The *setFromAnyProc* member may be set to NULL, if the routines making use of the internal representation have no need to derive that internal representation from an arbitrary string value.  However, in this case, passing a pointer to the type to **Tcl\_ConvertToType** will lead to a panic, so to avoid this possibility, the type should *not* be registered.
 
-## The updatestringproc field
+## The updateStringProc field
 
 The *updateStringProc* member contains the address of a function called to create a valid string representation from a value's internal representation.
 
@@ -163,7 +163,7 @@ The *updateStringProc* for Tcl's built-in double type, for example, calls [Tcl\_
 
 The *updateStringProc* member may be set to NULL, if the routines making use of the internal representation are written so that the string representation is never invalidated.  Failure to meet this obligation will lead to panics or crashes when [Tcl\_GetStringFromObj][StringObj] or other similar routines ask for the string representation.
 
-## The dupintrepproc field
+## The dupIntRepProc field
 
 The *dupIntRepProc* member contains the address of a function called to copy an internal representation from one value to another.
 
@@ -177,7 +177,7 @@ typedef void Tcl_DupInternalRepProc(
 
 For example, the *dupIntRepProc* for the Tcl integer type simply copies an integer. The built-in list type's *dupIntRepProc* uses a far more sophisticated scheme to continue sharing storage as much as it reasonably can.
 
-## The freeintrepproc field
+## The freeIntRepProc field
 
 The *freeIntRepProc* member contains the address of a function that is called when a value is freed.
 
@@ -210,7 +210,7 @@ For a custom value type that is scalar or atomic in nature, i.e., not a divisibl
 
 Version 2, **TCL\_OBJTYPE\_V2**, allows full List support when the functions described below are provided.  This allows for script level use of the List commands without causing the type of the [Tcl\_Obj][Object3] value to be converted to a list.  Unless specified otherwise, all functions specific to Version 2 should return [TCL\_OK][catch] on success and [TCL\_ERROR][catch] on failure.  In the case that a [Tcl\_Obj \][Object3]* is also returned, the reference count of the returned [Tcl\_Obj][Object3] should not be incremented so, for example, if a new [Tcl\_Obj][Object3] value is returned it should have a reference count of zero.  The functions should not assume that any [Tcl\_Obj][Object3] passed in is unshared. 
 
-## The lengthproc field
+## The lengthProc field
 
 The **LengthProc** function correlates with the [Tcl\_ListObjLength][ListObj] C API. The function returns the number of elements in the list. It is used in every List operation and is required for all Abstract List implementations.
 
@@ -219,7 +219,7 @@ typedef Tcl_Size
 (Tcl_ObjTypeLengthProc) (Tcl_Obj *listPtr);
 ```
 
-## The indexproc field
+## The indexProc field
 
 The **IndexProc** function correlates with with the [Tcl\_ListObjIndex][ListObj] C API. The function should store a pointer to the element at the specified **index** in **\*elemObj**. Indices that are out of bounds should not be treated as errors; rather, the function should store a null pointer and return [TCL\_OK][catch].
 
@@ -231,7 +231,7 @@ typedef int (Tcl_ObjTypeIndexProc) (
     Tcl_Obj **elemObj);
 ```
 
-## The sliceproc field
+## The sliceProc field
 
 The **SliceProc** correlates with the [lrange] command, returning a new List or Abstract List for the portion of the original list specified.
 
@@ -244,7 +244,7 @@ typedef int (Tcl_ObjTypeSliceProc) (
     Tcl_Obj **newObjPtr);
 ```
 
-## The reverseproc field
+## The reverseProc field
 
 The **ReverseProc** correlates with the [lreverse] command, returning a List or Abstract List that has the same elements as the input Abstract List, but in reverse order.
 
@@ -255,7 +255,7 @@ typedef int (Tcl_ObjTypeReverseProc) (
     Tcl_Obj **newObjPtr);
 ```
 
-## The getelements field
+## The getElements field
 
 The **GetElements** function returns a count and a pointer to an array of [Tcl\_Obj][Object3] values for the entire Abstract List. This correlates to the [Tcl\_ListObjGetElements][ListObj] C API call.
 
@@ -267,7 +267,7 @@ typedef int (Tcl_ObjTypeGetElements) (
     Tcl_Obj ***objvptr);
 ```
 
-## The setelement field
+## The setElement field
 
 The **SetElement** function replaces the element within the specified list at the give index. This function correlates to the [lset] command.
 
@@ -280,7 +280,7 @@ typedef Tcl_Obj *(Tcl_ObjTypeSetElement) (
     Tcl_Obj *valueObj);
 ```
 
-## Replaceproc field
+## ReplaceProc field
 
 The **ReplaceProc** returns a new list after modifying the list replacing the elements to be deleted, and adding the elements to be inserted. This function correlates to the [Tcl\_ListObjReplace][ListObj] C API.
 
@@ -294,7 +294,7 @@ typedef int (Tcl_ObjTypeReplaceProc) (
     Tcl_Obj *const insertObjs[]);
 ```
 
-## The inoperproc field
+## The InOperProc field
 
 The **InOperProc** function determines whether the value is present in the given list, according to equivalent string comparison of elements. The **boolResult** is set to 1 (true) if the value is present, and 0 (false) if it is not present. This function implements the "in" and "ni" math operators for an abstract list.
 

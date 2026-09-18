@@ -64,7 +64,7 @@ Values are allocated on the heap and are referenced using a pointer to their **T
 
 Tcl values are typed. A value's internal representation is controlled by its type. Several types are predefined in the Tcl core including integer, double, list, and bytecode. Extension writers can extend the set of types by defining their own **Tcl\_ObjType** structs.
 
-# The tcl\_obj structure
+# The Tcl\_Obj structure
 
 Each Tcl value is represented by a **Tcl\_Obj** structure which is defined as follows.
 

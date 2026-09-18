@@ -242,6 +242,13 @@ Now the 3 section:
 58. ListObj
 59. Load3
 60. Method
+61. NRE
+62. Namespace
+63. Notifier
+64. Number
+65. OOInitStubs.md
+66. Object3
+67. ObjectType
 
 
 

@@ -127,7 +127,7 @@ consumes no space on the C stack.
 \fBTcl_NRCmdSwap\fR is like \fBTcl_NREvalObjv\fR, but uses \fIcmd\fR, a token
 previously returned by \fBTcl_CreateObjCommand\fR or
 \fBTcl_GetCommandFromObj\fR, instead of resolving the first word of \fIobjv\fR.
-.  The name of this command must be the same as \fIobjv[0]\fR.
+The name of this command must be the same as \fIobjv[0]\fR.
 .PP
 \fBTcl_NRExprObj\fR pushes a function that evaluates \fIobjPtr\fR as an
 expression in the same manner as \fBTcl_ExprObj\fR but without consuming space
@@ -258,12 +258,7 @@ object.
 Use \fBTcl_NRAddCallback\fR to schedule any required final decrementing of the
 reference counts of arguments to any of the other functions on this page, as
 with any other post-processing step in the non-recursive execution engine.
-.PP
-The
 .SH "SEE ALSO"
 Tcl_CreateCommand(3), Tcl_CreateObjCommand(3), Tcl_EvalObjEx(3), Tcl_GetCommandFromObj(3), Tcl_ExprObj(3)
 .SH KEYWORDS
 stackless, nonrecursive, execute, command, global, value, result, script
-.SH COPYRIGHT
-Copyright \(co 2008 Kevin B. Kenny.
-Copyright \(co 2018 Nathan Coulter.

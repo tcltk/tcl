@@ -92,16 +92,7 @@ Tcl\_NRCreateCommand, Tcl\_NRCreateCommand2, Tcl\_NRCallObjProc, Tcl\_NRCallObjP
 [\*postProcPtr]{.carg .in type="Tcl_NRPostProc"}
 : A function to push.
 
-[\*data0]{.carg .in type="void"}
-: 
-
-[\*data1]{.carg .in type="void"}
-: 
-
-[\*data2]{.carg .in type="void"}
-: 
-
-[\*data3]{.carg .in type="void"}
+[\*data0]{.carg .in type="void"}, [\*data1]{.carg .in type="void"}, [\*data2]{.carg .in type="void"}, [\*data3]{.carg .in type="void"}
 : *data0* through *data3* are four one-word values that will be passed to the function designated by *postProcPtr* when it is invoked.
 
 
@@ -121,7 +112,7 @@ These functions provide an interface to the function stack that an interpreter i
 
 **Tcl\_NREvalObjv** pushes a function that is like [Tcl\_EvalObjv][Eval3] but consumes no space on the C stack.
 
-**Tcl\_NRCmdSwap** is like **Tcl\_NREvalObjv**, but uses *cmd*, a token previously returned by [Tcl\_CreateObjCommand][CrtObjCmd] or [Tcl\_GetCommandFromObj][CrtObjCmd], instead of resolving the first word of *objv*. .  The name of this command must be the same as *objv\[0\]*.
+**Tcl\_NRCmdSwap** is like **Tcl\_NREvalObjv**, but uses *cmd*, a token previously returned by [Tcl\_CreateObjCommand][CrtObjCmd] or [Tcl\_GetCommandFromObj][CrtObjCmd], instead of resolving the first word of *objv*. The name of this command must be the same as *objv\[0\]*.
 
 **Tcl\_NRExprObj** pushes a function that evaluates *objPtr* as an expression in the same manner as [Tcl\_ExprObj][ExprLongObj] but without consuming space on the C stack.
 
@@ -229,12 +220,6 @@ The *objPtr* argument to **Tcl\_NREvalObj** and **Tcl\_NRExprObj** should have a
 The *resultObj* argument to **Tcl\_NRExprObj** should be an unshared object.
 
 Use **Tcl\_NRAddCallback** to schedule any required final decrementing of the reference counts of arguments to any of the other functions on this page, as with any other post-processing step in the non-recursive execution engine.
-
-The
-
-# Copyright
-
-Copyright \\(co 2008 Kevin B. Kenny. Copyright \\(co 2018 Nathan Coulter. 
 
 
 [catch]: catch.md

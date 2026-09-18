@@ -2590,7 +2590,40 @@ proc ::ndoc::mdExceptions {md} {
 				{## Tcl\_methodcallproc function signature} {## Tcl\_MethodCallProc function signature}
 				{## Tcl\_methoddeleteproc function signature} {## Tcl\_MethodDeleteProc function signature}
 				{## Tcl\_cloneproc function signature} {## Tcl\_CloneProc function signature}
-				{} {}
+			} $md]
+		}
+		NRE {
+			set md [string map {
+				{[\*data0]{.carg .in type="void"}
+: 
+
+[\*data1]{.carg .in type="void"}
+: 
+
+[\*data2]{.carg .in type="void"}
+: 
+
+[\*data3]{.carg .in type="void"}} {[\*data0]{.carg .in type="void"}, [\*data1]{.carg .in type="void"}, [\*data2]{.carg .in type="void"}, [\*data3]{.carg .in type="void"}}
+			} $md]
+		}
+		Tcl_Obj {
+			set md [string map {
+				{# The tcl\_obj structure} {# The Tcl\_Obj structure}
+			} $md]
+		}
+		Tcl_ObjType {
+			set md [string map {
+				{## The updatestringproc field} {## The updateStringProc field}
+				{## The dupintrepproc field} {## The dupIntRepProc field}
+				{## The freeintrepproc field} {## The freeIntRepProc field}
+				{## The lengthproc field} {## The lengthProc field}
+				{## The indexproc field} {## The indexProc field}
+				{## The sliceproc field} {## The sliceProc field}
+				{## The reverseproc field} {## The reverseProc field}
+				{## The getelements field} {## The getElements field}
+				{## The setelement field} {## The setElement field}
+				{## The replaceproc field} {## ReplaceProc field}
+				{## The inoperproc field} {## The InOperProc field}
 			} $md]
 		}
 	}

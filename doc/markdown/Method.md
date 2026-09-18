@@ -145,7 +145,7 @@ The *deleteProc* field gives a function that is used to delete a particular meth
 
 The *cloneProc* field is either a function that is used to copy a method's *clientData* (as part of [Tcl\_CopyObjectInstance][Class3]) or NULL to indicate that the *clientData* can just be copied directly.
 
-## Tcl\_methodcallproc function signature
+## Tcl\_MethodCallProc function signature
 
 Functions matching this signature are called when the method is invoked.
 
@@ -167,7 +167,7 @@ typedef int Tcl_MethodCallProc2(
 
 The *clientData* argument to a Tcl\_MethodCallProc is the value that was given when the method was created, the *interp* is a place in which to execute scripts and access variables as well as being where to put the result of the method, and the *objc* and *objv* fields give the parameter objects to the method. The calling context of the method can be discovered through the *objectContext* argument, and the return value from a Tcl\_MethodCallProc is any Tcl return code (e.g. [TCL\_OK][catch], [TCL\_ERROR][catch]).
 
-## Tcl\_methoddeleteproc function signature
+## Tcl\_MethodDeleteProc function signature
 
 Functions matching this signature are used when a method is deleted, whether through a new method being created or because the object or class is deleted.
 
@@ -178,7 +178,7 @@ typedef void Tcl_MethodDeleteProc(
 
 The *clientData* argument to a Tcl\_MethodDeleteProc will be the same as the value passed to the *clientData* argument to **Tcl\_NewMethod** or **Tcl\_NewInstanceMethod** when the method was created.
 
-## Tcl\_cloneproc function signature
+## Tcl\_CloneProc function signature
 
 Functions matching this signature are used to copy a method when the object or class is copied using [Tcl\_CopyObjectInstance][Class3] (or **oo::copy**).
 
