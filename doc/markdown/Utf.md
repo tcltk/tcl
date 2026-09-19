@@ -121,8 +121,6 @@ Tcl\_UniChar, Tcl\_UniCharToUtf, Tcl\_UtfToUniChar, Tcl\_UtfToChar16, Tcl\_UtfTo
 
 [nocase]{.carg .in type="int"}
 : Specifies whether the match should be done case-sensitive (0) or case-insensitive (1).
-
-
 :::
 
 # Description

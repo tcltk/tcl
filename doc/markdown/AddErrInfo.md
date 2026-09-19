@@ -84,8 +84,6 @@ Tcl\_GetReturnOptions, Tcl\_SetReturnOptions, Tcl\_AddErrorInfo, Tcl\_AppendObjT
 
 [commandLength]{.carg .in type="Tcl_Size"}
 : Number of bytes in command; a negative value means use all bytes up to the first null byte.
-
-
 :::
 
 # Description

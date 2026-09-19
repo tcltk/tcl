@@ -38,8 +38,6 @@ Tcl\_RegisterConfig - procedures to register embedded configuration information
 
 [\*valEncoding]{.carg .in type="const char"}
 : Contains the name of the encoding used to store the configuration values as ASCII string. This means that this information is in UTF-8 too. Must not be NULL.
-
-
 :::
 
 # Description
@@ -70,7 +68,7 @@ The command **pkgconfig** will provide two subcommands, [list] and **get**:
 : Returns the configuration value associated with the specified *key*.
 
 
-# Tcl\_config
+# Tcl\_Config
 
 The **Tcl\_Config** structure contains the following fields:
 

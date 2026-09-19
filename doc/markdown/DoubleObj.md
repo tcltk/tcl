@@ -49,8 +49,6 @@ Tcl\_NewDoubleObj, Tcl\_SetDoubleObj, Tcl\_GetDoubleFromObj - manipulate Tcl val
 
 [\*doublePtr]{.carg .out type="double"}
 : Points to place to store the double value obtained from *objPtr*.
-
-
 :::
 
 # Description

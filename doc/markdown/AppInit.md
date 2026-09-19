@@ -34,8 +34,6 @@ Tcl\_AppInit - perform application-specific initialization
 
 [\*interp]{.carg .in type="Tcl_Interp"}
 : Interpreter for the application.
-
-
 :::
 
 # Description

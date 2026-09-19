@@ -36,8 +36,6 @@ Tcl\_SetErrno, Tcl\_GetErrno, Tcl\_ErrnoId, Tcl\_ErrnoMsg, Tcl\_WinConvertError 
 
 [winErrorCode]{.carg .in type="DWORD"}
 : A Windows or Winsock error code such as **ERROR\_FILE\_NOT\_FOUND**.
-
-
 :::
 
 # Description

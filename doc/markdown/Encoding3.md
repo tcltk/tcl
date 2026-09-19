@@ -119,8 +119,6 @@ Tcl\_GetEncoding, Tcl\_FreeEncoding, Tcl\_GetEncodingFromObj, Tcl\_ExternalToUtf
 
 [\*path]{.carg .in type="const char"}
 : A path to the location of the encoding file.
-
-
 :::
 
 # Introduction

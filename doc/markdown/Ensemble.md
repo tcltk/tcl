@@ -80,8 +80,6 @@ Tcl\_CreateEnsemble, Tcl\_FindEnsemble, Tcl\_GetEnsembleFlags, Tcl\_GetEnsembleM
 
 [\*\*namespacePtrPtr]{.carg .out type="Tcl_Namespace"}
 : Pointer to a variable into which to write the handle of the namespace to which the ensemble is bound.
-
-
 :::
 
 # Description

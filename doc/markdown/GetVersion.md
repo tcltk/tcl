@@ -42,8 +42,6 @@ Tcl\_GetVersion - get the version of the library at runtime
 
 [\*type]{.carg .out type="int"}
 : The type of release, also indicates the type of patch level. Can be one of **TCL\_ALPHA\_RELEASE**, **TCL\_BETA\_RELEASE**, or **TCL\_FINAL\_RELEASE**.
-
-
 :::
 
 # Description

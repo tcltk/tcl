@@ -71,15 +71,13 @@ Tcl\_OpenTcpClient, Tcl\_MakeTcpClientChannel, Tcl\_OpenTcpServer, Tcl\_OpenTcpS
 
 [\*clientData]{.carg .in type="void"}
 : Arbitrary one-word value to pass to *proc*.
-
-
 :::
 
 # Description
 
 These functions are convenience procedures for creating channels that communicate over TCP sockets. The operations on a channel are described in the manual entry for [Tcl\_OpenFileChannel][OpenFileChnl].
 
-## Tcl\_opentcpclient
+## Tcl\_OpenTcpClient
 
 **Tcl\_OpenTcpClient** opens a client TCP socket connected to a *port* on a specific *host*, and returns a channel that can be used to communicate with the server. The host to connect to can be specified either as a domain name style name (e.g. **www.sunlabs.com**), or as a string containing the alphanumeric representation of its four-byte address (e.g. **127.0.0.1**). Use the string **localhost** to connect to a TCP socket on the host on which the function is invoked.
 
@@ -91,13 +89,13 @@ The returned channel is opened for reading and writing. If an error occurs in op
 
 The newly created channel is not registered in the supplied interpreter; to register it, use [Tcl\_RegisterChannel][OpenFileChnl]. If one of the standard channels, **stdin**, **stdout** or **stderr** was previously closed, the act of creating the new channel also assigns it as a replacement for the standard channel.
 
-## Tcl\_maketcpclientchannel
+## Tcl\_MakeTcpClientChannel
 
 **Tcl\_MakeTcpClientChannel** creates a **Tcl\_Channel** around an existing, platform specific, handle for a client TCP socket.
 
 The newly created channel is not registered in the supplied interpreter; to register it, use [Tcl\_RegisterChannel][OpenFileChnl]. If one of the standard channels, **stdin**, **stdout** or **stderr** was previously closed, the act of creating the new channel also assigns it as a replacement for the standard channel.
 
-## Tcl\_opentcpserver
+## Tcl\_OpenTcpServer
 
 **Tcl\_OpenTcpServer** opens a TCP socket on the local host on a specified *port* and uses the Tcl event mechanism to accept requests from clients to connect to it. The *myaddr* argument specifies the network interface. If *myaddr* is NULL the special address INADDR\_ANY should be used to allow connections from any network interface. Each time a client connects to this socket, Tcl creates a channel for the new connection and invokes *proc* with information about the channel. *Proc* must match the following prototype:
 
@@ -119,7 +117,7 @@ TCP server channels operate correctly only in applications that dispatch events 
 
 The newly created channel is not registered in the supplied interpreter; to register it, use [Tcl\_RegisterChannel][OpenFileChnl]. If one of the standard channels, **stdin**, **stdout** or **stderr** was previously closed, the act of creating the new channel also assigns it as a replacement for the standard channel.
 
-## Tcl\_opentcpserverex
+## Tcl\_OpenTcpServerEx
 
 **Tcl\_OpenTcpServerEx** behaviour is identical to **Tcl\_OpenTcpServer** but gives more flexibility to the user by providing a mean to further customize some aspects of the socket via the *flags* parameter. Available flags (dependent on platform) are *TCL\_TCPSERVER\_REUSEADDR* *TCL\_TCPSERVER\_REUSEPORT*
 

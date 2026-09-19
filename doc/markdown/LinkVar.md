@@ -52,8 +52,6 @@ Tcl\_LinkArray, Tcl\_LinkVar, Tcl\_UnlinkVar, Tcl\_UpdateLinkedVar - link Tcl va
 
 [size]{.carg .in type="Tcl_Size"}
 : [The number of elements in the C array. Must be greater than zero.]{version="TIP312"}
-
-
 :::
 
 # Description

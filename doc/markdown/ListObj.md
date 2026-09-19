@@ -92,8 +92,6 @@ Tcl\_ListObjAppendList, Tcl\_ListObjAppendElement, Tcl\_NewListObj, Tcl\_SetList
 
 [count]{.carg .in type="Tcl_Size"}
 : The number of elements to be operated on or a repetition count.
-
-
 :::
 
 # Description

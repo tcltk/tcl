@@ -52,8 +52,6 @@ Tcl\_AsyncCreate, Tcl\_AsyncMark, Tcl\_AsyncMarkFromSignal, Tcl\_AsyncInvoke, Tc
 
 [code]{.carg .in type="int"}
 : Completion code from command that just completed in *interp*, or 0 if *interp* is NULL.
-
-
 :::
 
 # Description

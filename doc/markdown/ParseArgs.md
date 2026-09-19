@@ -44,8 +44,6 @@ Tcl\_ParseArgsObjv - parse arguments according to a tabular description
 
 [\*\*\*remObjv]{.carg .out type="Tcl_Obj"}
 : Pointer to a variable that will hold the array of unprocessed arguments. Should be NULL if no return of unprocessed arguments is required. If *objcPtr* is updated to a non-zero value, the array returned through this must be deallocated using [Tcl\_Free][Alloc].
-
-
 :::
 
 # Description

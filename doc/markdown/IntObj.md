@@ -99,8 +99,6 @@ Tcl\_NewIntObj, Tcl\_NewLongObj, Tcl\_NewWideIntObj, Tcl\_NewWideUIntObj, Tcl\_S
 
 [doubleValue]{.carg .in type="double"}
 : Double value from which the integer part is determined and used to initialize a multi-precision integer value.
-
-
 :::
 
 # Description

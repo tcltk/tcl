@@ -46,8 +46,6 @@ Tcl\_Init - find and source initialization script
 
 [\*clientData]{.carg .in type="void"}
 : Arbitrary one-word value to pass to **postInitProc**.
-
-
 :::
 
 # Description

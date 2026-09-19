@@ -38,8 +38,6 @@ Tcl\_Access, Tcl\_Stat - check file permissions and other attributes
 
 [\*statPtr]{.carg .out type="struct stat"}
 : The structure that contains the result.
-
-
 :::
 
 # Description

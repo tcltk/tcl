@@ -34,9 +34,7 @@ oo::object - The root class of the class hierarchy
 
 ```
 oo::object
-```
-
-:::
+```:::
 
 # Description
 

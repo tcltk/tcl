@@ -217,8 +217,6 @@ Tcl\_FSRegister, Tcl\_FSUnregister, Tcl\_FSData, Tcl\_FSMountsChanged, Tcl\_FSGe
 
 [\*dsPtr]{.carg .out type="Tcl_DString"}
 : Pointer to a [Tcl\_DString][DString] to hold an output string result.
-
-
 :::
 
 # Description

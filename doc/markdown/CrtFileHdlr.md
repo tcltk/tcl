@@ -44,8 +44,6 @@ Tcl\_CreateFileHandler, Tcl\_DeleteFileHandler - associate procedure callbacks w
 
 [\*clientData]{.carg .in type="void"}
 : Arbitrary one-word value to pass to *proc*.
-
-
 :::
 
 # Description

@@ -40,8 +40,6 @@ Tcl\_DumpActiveMemory, Tcl\_InitMemory, Tcl\_ValidateAllMemory - Validated memor
 
 [line]{.carg .in type="int"}
 : Line number at which the call to **Tcl\_ValidateAllMemory** is made (normally **\_\_LINE\_\_**).
-
-
 :::
 
 # Description

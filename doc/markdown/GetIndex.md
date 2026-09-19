@@ -55,8 +55,6 @@ Tcl\_GetIndexFromObj, Tcl\_GetIndexFromObjStruct - lookup string in table of key
 
 [\*indexPtr]{.carg .out type="enum|char|short|int|long"}
 : If not (int \*)NULL, the index of the string in *tablePtr* that matches the value of *objPtr* is returned here. The variable can be any integer type, signed or unsigned, char, short, long or long long. It can also be an enum.
-
-
 :::
 
 # Description

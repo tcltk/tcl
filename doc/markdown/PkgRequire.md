@@ -61,8 +61,6 @@ Tcl\_PkgRequire, Tcl\_PkgRequireEx, Tcl\_PkgRequireProc, Tcl\_PkgPresent, Tcl\_P
 
 [\*\*objv]{.carg .in type="Tcl_Obj"}
 : Array of requirements.
-
-
 :::
 
 # Description

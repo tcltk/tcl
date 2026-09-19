@@ -57,8 +57,6 @@ Tcl\_ExprLongObj, Tcl\_ExprDoubleObj, Tcl\_ExprBooleanObj, Tcl\_ExprObj - evalua
 
 [\*\*resultPtrPtr]{.carg .out type="Tcl_Obj"}
 : Pointer to location in which to store a pointer to the value that is the result of the expression.
-
-
 :::
 
 # Description

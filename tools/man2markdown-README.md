@@ -35,7 +35,7 @@ The tcl/doc directory contains 248 manual pages which are divided as follows:
 section | number of documents | initial conversion | final conversion
 --------|---------------------|--------------------|-----------------
 1       | 1                   | 1                  | 0
-3       | 108                 | 108                | 60
+3       | 108                 | 108                | 91
 n       | 140                 | 140                | 140
 
 Final conversion of these files in the n section is currently done:
@@ -249,6 +249,30 @@ Now the 3 section:
 65. OOInitStubs.md
 66. Object3
 67. ObjectType
+68. OpenFileChnl
+69. OpenTcp
+70. Panic
+71. ParseArgs
+72. ParseCmd
+73. PkgRequire
+74. Preserve
+75. PrintDbl
+76. RecEvalObj
+77. RecordEval
+78. RegConfig
+79. RegExp3
+80. SaveInterpState
+81. SetChanErr
+82. SetErrno
+83. SetRectLmt
+84. SetResult
+85. SetVar
+86. Signal
+87. Sleep
+88. SourceRCFile
+89. SplitList
+90. SplitPath
+91. StaticLibrary
 
 
 
@@ -326,3 +350,4 @@ After the final round of conversion from nroff to Markdown, some manual work nee
 - find all instances of .VS/.VE macros to add the 'version="TIPxxx"' attribute to the corresponding elements (e.g. they are not caught inside the synopsis section)
 - subdivide certain manual pages (the nroff files only have sections and subsection, in the markdown version, also subsubsections are needed in some pages)
 - find all pages where nested definition lists occur (e.g. Tcl.md) and consider using subsections instead
+- look at the sections marked as '{.info DISPLAY="yes"}' as these need a proper visual representation

@@ -105,8 +105,6 @@ Tcl\_CreateChannel, Tcl\_GetChannelInstanceData, Tcl\_GetChannelType, Tcl\_GetCh
 
 [\*optionList]{.carg .in type="const char"}
 : Specific options list (space separated words, without "-") to append to the standard generic options list. Can be NULL for generic options error message only.
-
-
 :::
 
 # Description

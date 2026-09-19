@@ -50,8 +50,6 @@ Tcl\_Exit, Tcl\_Finalize, Tcl\_CreateExitHandler, Tcl\_DeleteExitHandler, Tcl\_E
 
 [\*clientData]{.carg .in type="void"}
 : Arbitrary one-word value to pass to *proc*.
-
-
 :::
 
 # Description

@@ -61,8 +61,6 @@ Tcl\_ParseCommand, Tcl\_ParseExpr, Tcl\_ParseBraces, Tcl\_ParseQuotedString, Tcl
 
 [\*usedParsePtr]{.carg .in type="Tcl_Parse"}
 : Points to structure that was filled in by a previous call to **Tcl\_ParseCommand**, **Tcl\_ParseExpr**, **Tcl\_ParseVarName**, etc.
-
-
 :::
 
 # Description

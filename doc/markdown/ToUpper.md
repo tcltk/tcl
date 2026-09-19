@@ -40,8 +40,6 @@ Tcl\_UniCharToUpper, Tcl\_UniCharToLower, Tcl\_UniCharToTitle, Tcl\_UtfToUpper, 
 
 [\*str]{.carg .in/out type="char"}
 : Pointer to the TUTF-8 byte sequence to be converted in place.
-
-
 :::
 
 # Description

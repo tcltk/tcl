@@ -38,8 +38,6 @@ Tcl\_Preserve, Tcl\_Release, Tcl\_EventuallyFree - avoid freeing storage while i
 
 [\*freeProc]{.carg .in type="Tcl_FreeProc"}
 : Procedure to invoke to free *clientData*.
-
-
 :::
 
 # Description

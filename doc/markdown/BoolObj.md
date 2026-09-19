@@ -50,8 +50,6 @@ Tcl\_NewBooleanObj, Tcl\_SetBooleanObj, Tcl\_GetBooleanFromObj, Tcl\_GetBoolFrom
 
 [flags]{.carg .in type="int"}
 : 0 or TCL\_NULL\_OK. If TCL\_NULL\_OK is used, then the empty string or NULL will result in **Tcl\_GetBoolFromObj** return [TCL\_OK][catch], the \*charPtr filled with the value **'\\xFF'**;
-
-
 :::
 
 # Description

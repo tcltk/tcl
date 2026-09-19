@@ -36,8 +36,6 @@ Tcl\_InitStubs - initialize the Tcl stubs mechanism
 
 [exact]{.carg .in type="int"}
 : 1 means that only the particular version specified by *version* is accepted. 0 means that versions newer than *version* are also accepted. If the*version* ends with **-**, higher major versions are accepted as well, otherwise the major version must be the same as in *version*. Other bits have no effect.
-
-
 :::
 
 # Introduction

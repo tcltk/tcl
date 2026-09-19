@@ -36,9 +36,7 @@ oo::abstract - A class that does not allow direct instances of itself
 oo::object
    → oo::class
        → oo::abstract
-```
-
-:::
+```:::
 
 # Description
 

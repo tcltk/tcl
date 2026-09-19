@@ -72,8 +72,6 @@ Tcl\_SetVar2Ex, Tcl\_SetVar, Tcl\_SetVar2, Tcl\_ObjSetVar2, Tcl\_GetVar2Ex, Tcl\
 
 [\*part2Ptr]{.carg .in type="Tcl_Obj"}
 : If non-NULL, points to a value containing the name of an element within an array and *part1Ptr* must refer to an array variable.
-
-
 :::
 
 # Description

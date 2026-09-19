@@ -86,8 +86,6 @@ Tcl\_RegExpMatch, Tcl\_RegExpCompile, Tcl\_RegExpExec, Tcl\_RegExpRange, Tcl\_Ge
 
 [\*infoPtr]{.carg .out type="Tcl_RegExpInfo"}
 : The address of the location where information about a previous match should be stored by **Tcl\_RegExpGetInfo**.
-
-
 :::
 
 # Description

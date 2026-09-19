@@ -69,8 +69,6 @@ Tcl\_SetObjResult, Tcl\_GetObjResult, Tcl\_SetResult, Tcl\_GetStringResult, Tcl\
 
 [code]{.carg .in type="int"}
 : Return code value that controls transfer of return options.
-
-
 :::
 
 # Description

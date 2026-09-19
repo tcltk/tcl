@@ -42,9 +42,7 @@ oo::define, oo::objdefine, oo::Slot - Define and configure classes and objects
 ```
 oo::object
    → oo::Slot
-```
-
-:::
+```:::
 
 # Description
 

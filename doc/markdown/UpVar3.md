@@ -49,8 +49,6 @@ Tcl\_UpVar, Tcl\_UpVar2 - link one variable to another
 
 [\*name2]{.carg .in type="const char"}
 : If source variable is an element of an array, gives the index of the element. For scalar source variables, is NULL.
-
-
 :::
 
 # Description

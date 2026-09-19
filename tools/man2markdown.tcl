@@ -2626,8 +2626,54 @@ proc ::ndoc::mdExceptions {md} {
 				{## The inoperproc field} {## The InOperProc field}
 			} $md]
 		}
+		Tcl_OpenFileChannel {
+			set md [string map {
+				{# Tcl\_openfilechannel} {# Tcl\_OpenFileChannel}
+				{# Tcl\_opencommandchannel} {# Tcl\_OpenCommandChannel}
+				{# Tcl\_makefilechannel} {# Tcl\_MakeFileChannel}
+				{# Tcl\_getchanneloption} {# Tcl\_GetChannelOption}
+				{# Tcl\_getchannel} {# Tcl\_GetChannel}
+				{# Tcl\_registerchannel} {# Tcl\_RegisterChannel}
+				{# Tcl\_unregisterchannel} {# Tcl\_UnregisterChannel}
+				{# Tcl\_detachchannel} {# Tcl\_DetachChannel}
+				{# Tcl\_isstandardchannel} {# Tcl\_IsStandardChannel}
+				{# Tcl\_close and tcl\_closeex} {# Tcl\_Close and Tcl\_CloseEx}
+				{# Tcl\_readchars and tcl\_read} {# Tcl\_ReadChars and Tcl\_Read}
+				{# Tcl\_getsobj and tcl\_gets} {# Tcl\_GetsObj and Tcl\_Gets}
+				{# Tcl\_ungets} {# Tcl\_Ungets}
+				{# Tcl\_writechars, tcl\_writeobj, and tcl\_write} {# Tcl\_WriteChars, Tcl\_WriteObj, and Tcl\_Write}
+				{# Tcl\_flush} {# Tcl\_Flush}
+				{# Tcl\_seek} {# Tcl\_Seek}
+				{# Tcl\_tell} {# Tcl\_Tell}
+				{# Tcl\_truncatechannel} {# Tcl\_TruncateChannel}
+				{# Tcl\_setchanneloption} {# Tcl\_SetChannelOption}
+				{# Tcl\_eof} {# Tcl\_Eof}
+				{# Tcl\_inputblocked} {# Tcl\_InputBlocked}
+				{# Tcl\_inputbuffered} {# Tcl\_InputBuffered}
+				{# Tcl\_outputbuffered} {# Tcl\_OutputBuffered}
+			} $md]
+		}
+		Tcl_OpenTcpClient {
+			set md [string map {
+				{## Tcl\_opentcpclient} {## Tcl\_OpenTcpClient}
+				{## Tcl\_maketcpclientchannel} {## Tcl\_MakeTcpClientChannel}
+				{## Tcl\_opentcpserverex} {## Tcl\_OpenTcpServerEx}
+				{## Tcl\_opentcpserver} {## Tcl\_OpenTcpServer}
+			} $md]
+		}
+		Tcl_RegisterConfig {
+			set md [string map {
+				{# Tcl\_config} {# Tcl\_Config}
+			} $md]
+		}
+		TclSetResult {
+			set md [string map {
+				{# The tcl\_freeproc argument to tcl\_setresult} {# The Tcl\_FreeProc argument to Tcl\_SetResult}
+			} $md]
+		}
 	}
 	regsub {\s+$} $md \n md
+	set md [string map  [list "\n\n:::\n" ":::\n"] $md]
 	return $md
 }
 

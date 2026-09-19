@@ -34,9 +34,7 @@ oo::class - The class of all classes
 ```
 oo::object
    → oo::class
-```
-
-:::
+```:::
 
 # Description
 

@@ -77,8 +77,6 @@ Tcl\_NewDictObj, Tcl\_DictObjPut, Tcl\_DictObjGet, Tcl\_DictObjRemove, Tcl\_Dict
 
 [\*keyv]{.carg .in type="Tcl_Obj *const"}
 : Array of *keyc* pointers to values that **Tcl\_DictObjPutKeyList** and **Tcl\_DictObjRemoveKeyList** will use to locate the key/value pair to manipulate within the sub-dictionaries of the main dictionary value passed to them.
-
-
 :::
 
 # Description

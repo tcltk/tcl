@@ -81,8 +81,6 @@ Tcl\_ConditionNotify, Tcl\_ConditionWait, Tcl\_ConditionFinalize, Tcl\_GetThread
 
 [\*result]{.carg .out type="int"}
 : The referred storage is used to place the exit code of the thread waited upon into it.
-
-
 :::
 
 # Introduction

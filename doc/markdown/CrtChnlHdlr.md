@@ -47,8 +47,6 @@ Tcl\_CreateChannelHandler, Tcl\_DeleteChannelHandler - call a procedure when a c
 
 [\*clientData]{.carg .in type="void"}
 : Arbitrary one-word value to pass to *proc*.
-
-
 :::
 
 # Description

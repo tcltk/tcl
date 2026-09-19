@@ -34,8 +34,6 @@ Tcl\_Concat - concatenate a collection of strings
 
 [\*argv]{.carg .in type="const char *const"}
 : Array of strings to concatenate.  Must have *argc* entries.
-
-
 :::
 
 # Description

@@ -50,8 +50,6 @@ Tcl\_GetInt, Tcl\_GetDouble, Tcl\_GetBoolean - convert from string to integer, d
 
 [flags]{.carg .in type="int"}
 : 0 or TCL\_NULL\_OK. If TCL\_NULL\_OK is used, then the empty string or NULL will result in **Tcl\_GetBool** return [TCL\_OK][catch], the \*charPtr filled with the value **'\\xFF'**;
-
-
 :::
 
 # Description

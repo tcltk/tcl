@@ -32,8 +32,6 @@ Tcl\_SetRecursionLimit - set maximum allowable nesting depth in interpreter
 
 [depth]{.carg .in type="Tcl_Size"}
 : New limit for nested calls to [Tcl\_Eval][Eval3] for *interp*.
-
-
 :::
 
 # Description

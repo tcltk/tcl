@@ -56,8 +56,6 @@ Tcl\_UtfToNormalized, Tcl\_UtfToNormalizedDString - procedures for Unicode norma
 
 [\*dstPtr]{.carg .out type="Tcl_DString"}
 : Pointer to an uninitialized or free [Tcl\_DString][DString] in which the converted result, which is also encoded in Tcl's internal UTF-8 encoding, will be stored. The function initializes the storage and caller must call [Tcl\_DStringFree][DString] on success.
-
-
 :::
 
 # Description

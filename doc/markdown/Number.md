@@ -56,8 +56,6 @@ Tcl\_GetNumber, Tcl\_GetNumberFromObj - get numeric value from Tcl value
 
 [\*objPtr]{.carg .in type="Tcl_Obj"}
 : A Tcl value to be examined.
-
-
 :::
 
 # Description
