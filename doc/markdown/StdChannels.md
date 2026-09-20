@@ -37,7 +37,7 @@ Tcl generalizes this concept in a cross-platform way and exposes standard channe
 
 The public API procedures dealing directly with standard channels are [Tcl\_GetStdChannel][GetStdChan] and [Tcl\_SetStdChannel][GetStdChan]. Additional public APIs to consider are [Tcl\_RegisterChannel][OpenFileChnl], [Tcl\_CreateChannel][CrtChannel] and [Tcl\_GetChannel][OpenFileChnl].
 
-# Initialization of tcl standard channels
+# Initialization of Tcl standard channels
 
 Standard channels are initialized by the Tcl library in three cases: when explicitly requested, when implicitly required before returning channel information, or when implicitly required during registration of a new channel.
 
@@ -61,7 +61,7 @@ In case of missing platform-specific standard channels, the Tcl standard channel
 
 In case of unavailable platform-specific standard channels the channel whose creation caused the initialization of the Tcl standard channels is made a normal channel.  The next three Tcl channels opened by the application are designated as the Tcl standard channels.  In other words, of the first four Tcl channels opened by the application the second to fourth are designated as the Tcl standard channels.
 
-# Re-initialization of tcl standard channels
+# Re-initialization of Tcl standard channels
 
 Once a Tcl standard channel is initialized through one of the methods above, closing this Tcl standard channel will cause the next call to [Tcl\_CreateChannel][CrtChannel] to make the new channel the new standard channel, too. If more than one Tcl standard channel was closed [Tcl\_CreateChannel][CrtChannel] will fill the empty slots in the order **stdin**, **stdout** and **stderr**.
 

@@ -86,7 +86,7 @@ During rename traces, the command being renamed is visible with both names simul
 
 It is possible for multiple traces to exist on the same command. When this happens, all of the trace procedures will be invoked on each access, in order from most-recently-created to least-recently-created. Attempts to delete the command during a delete trace will fail silently, since the command is already scheduled for deletion anyway. If the command being renamed is renamed by one of its rename traces, that renaming takes precedence over the one that triggered the trace and the collection of traces will not be reexecuted; if several traces rename the command, the last renaming takes precedence.
 
-# Tcl\_trace\_destroyed flag
+# TCL\_TRACE\_DESTROYED flag
 
 In a delete callback to *proc*, the **TCL\_TRACE\_DESTROYED** bit is set in *flags*.
 

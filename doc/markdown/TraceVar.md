@@ -152,7 +152,7 @@ A trace procedure can be called at any time, even when there are partially forme
 
 It is legal to set a trace on an undefined variable. The variable will still appear to be undefined until the first time its value is set. If an undefined variable is traced and then unset, the unset will fail with an error ("no such variable"), but the trace procedure will still be invoked.
 
-# Tcl\_trace\_destroyed flag
+# TCL\_TRACE\_DESTROYED flag
 
 In an unset callback to *proc*, the **TCL\_TRACE\_DESTROYED** bit is set in *flags* if the trace is being removed as part of the deletion. Traces on a variable are always removed whenever the variable is deleted;  the only time **TCL\_TRACE\_DESTROYED** is not set is for a whole-array trace invoked when only a single element of an array is unset.
 

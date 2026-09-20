@@ -137,7 +137,7 @@ The following fields in the dictionary value are understood. All other fields ar
 **size**
 : The size of the uncompressed data. This is ignored on compression; the size of the data compressed depends on how much data is supplied to the compression engine.
 
-[time]
+**time**
 : The time field from the header if non-zero, expected to be the time that the file named by the **filename** field was modified. Suitable for use with [clock format][clock]. On creation, the right value to use is that from [clock seconds][clock] or [file mtime][file].
 
 **type**
@@ -170,5 +170,4 @@ These functions will fail gracefully if Tcl is not linked with the zlib library.
 [error]: error.md
 [file]: file.md
 [Object3]: Object3.md
-[time]: time.md
 

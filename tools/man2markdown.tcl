@@ -595,7 +595,7 @@ namespace eval ::ndoc {
 		ttk_spinbox	{format}
 		ttk_treeview	{text open focus selection}
 		ttk_widget	{image text variable}
-		TclZlib		{binary flush filename text}
+		TclZlib		{binary flush filename text time}
 	}]
 }
 
@@ -2447,6 +2447,12 @@ proc ::ndoc::mdExceptions {md} {
 				{returns "**[b] c**", not "**[b] tricky**".} {returns "**\[b\] c**", not "**\[b\] tricky**".}
 			} $md]
 		}
+		Tcl {
+			set md [string map {
+				{double-quote ("\\"") then the word} {double-quote ('\"') then the word}
+			} $md]
+			## " (make my Geany editor syntaxhighlight happy again)
+		}
 		tcltest {
 			set md [string map {
 				{are **exact**, [glob], and [regexp].} {are **exact**, **glob**, and **regexp**.}
@@ -2671,6 +2677,18 @@ proc ::ndoc::mdExceptions {md} {
 				{# The tcl\_freeproc argument to tcl\_setresult} {# The Tcl\_FreeProc argument to Tcl\_SetResult}
 			} $md]
 		}
+		"Standard Channels" {
+			set md [string map {
+				{# Initialization of tcl standard channels} {# Initialization of Tcl standard channels}
+				{# Re-initialization of tcl standard channels} {# Re-initialization of Tcl standard channels}
+			} $md]
+		}
+		Tcl_TraceCommand - Tcl_TraceVar {
+			set md [string map {
+				{# Tcl\_trace\_destroyed flag} {# TCL\_TRACE\_DESTROYED flag}
+			} $md]
+		}
+		
 	}
 	regsub {\s+$} $md \n md
 	set md [string map  [list "\n\n:::\n" ":::\n"] $md]

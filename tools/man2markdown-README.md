@@ -34,8 +34,8 @@ The tcl/doc directory contains 248 manual pages which are divided as follows:
 
 section | number of documents | initial conversion | final conversion
 --------|---------------------|--------------------|-----------------
-1       | 1                   | 1                  | 0
-3       | 108                 | 108                | 91
+1       | 1                   | 1                  | 1
+3       | 108                 | 108                | 108
 n       | 140                 | 140                | 140
 
 Final conversion of these files in the n section is currently done:
@@ -273,7 +273,27 @@ Now the 3 section:
 89. SplitList
 90. SplitPath
 91. StaticLibrary
+92. StdChannels (needs manula adjustment of the numbered list)
+93. StrMatch
+94. StringObj
+95. SubstObj
+96. TCL_MEM_DEBUG
+97. TclZlib
+98. Tcl_Main
+99. Thread
+100. ToUpper
+101. TraceCmd
+102. TraceVar
+103. Translate
+104. UniCharIsAlpha
+105. UnicodeNormalize
+106. UpVar3
+107. Utf
+108. WrongNumArgs
 
+Now the 1 section:
+
+1. tclsh
 
 
 The tk/doc directory comes next, after finishing Tcl.
