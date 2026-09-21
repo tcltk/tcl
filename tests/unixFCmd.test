@@ -54,7 +54,15 @@ testConstraint readonlyAttr 0
 if {[testConstraint unix]} {
     set f [makeFile "whatever" probe]
     catch {
-	file attributes $f -readonly
+	if {$::tcl_platform(os) eq {FreeBSD}} {
+	    # The UF_IMMUTABLE flag is not supported by ZFS on FreeBSD.
+	    # However, trying to *unset* the flag like it's done on the else
+	    # branch works and erroneously sets the readonlyAttr constraint.
+	    exec chflags uchg $f
+	    exec chflags nouchg $f
+	} else {
+	    file attributes $f -readonly
+	}
 	testConstraint readonlyAttr 1
     }
     removeFile probe
