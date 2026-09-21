@@ -345,7 +345,7 @@ UnloadFile(
 #ifdef TCL_LOAD_FROM_MEMORY
 MODULE_SCOPE void *
 TclpLoadMemoryGetBuffer(
-    size_t size)			/* Size of desired buffer. */
+    size_t size)		/* Size of desired buffer. */
 {
     void *buffer = NULL;
 
@@ -466,7 +466,7 @@ TclpLoadMemory(
 	    ms = codeSize;
 	}
 	if (ms && !(ms >= mh_size && mh->magic == mh_magic &&
-		 mh->filetype == MH_BUNDLE)) {
+		mh->filetype == MH_BUNDLE)) {
 	    err = NSObjectFileImageInappropriateFile;
 	}
 	if (err == NSObjectFileImageSuccess) {

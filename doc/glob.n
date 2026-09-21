@@ -93,7 +93,7 @@ the Unix find command:
 \fIl\fR (symbolic link),
 \fIp\fR (named pipe),
 or \fIs\fR (socket), where multiple types may be specified in the list.
-\fBGlob\fR will return all files which match at least one of the types given.
+\fBglob\fR will return all files which match at least one of the types given.
 Note that symbolic links will be returned both if \fB\-types l\fR is given,
 or if the target of a link matches the requested type. So, a link to
 a directory will be returned if \fB\-types d\fR was specified.

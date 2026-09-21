@@ -14,7 +14,7 @@ if {"::tcltest" ni [namespace children]} {
     package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
-
+set existingGlobals [info globals]
 
 ::tcltest::loadTestedCommands
 catch [list package require -exact tcl::test [info patchlevel]]
@@ -30,7 +30,20 @@ if {[testConstraint win]} {
 	testConstraint linkDirectory 0
     }
     testConstraint symbolicLinkFile 0
-    testConstraint sharedCdrive [expr {![catch {cd //[info hostname]/c}]}]
+    # Don't test sharedCdrive by default, because access of non-existsing
+    # folder may be extremely slow on windows, since Continuous Availability
+    # feature, client does not know the share type until it has connected to
+    # it, even using localhost or loopback IP address. See
+    # https://support.microsoft.com/en-us/servicing/os/windows-server/2021/01/delayed-error-message-when-you-try-to-access-a-shared-folder-that-no-longer-exists-in-windows
+    if {[testConstraint extensive]} {
+	if {![catch {apply {{} {
+	    set tmp [pwd]
+	    cd //localhost/c
+	    cd $tmp
+	}}}]} {
+	    testConstraint sharedCdrive 1
+	}
+    }
 }
 testConstraint notWine [expr {![info exists ::env(CI_USING_WINE)]}]
 # This match compares the first two words of the result. If the wanted result
@@ -444,7 +457,8 @@ test filename-7.18 {Tcl_JoinPath: unix} {testsetplatform} {
     testsetplatform unix
     file join /// a b
 } "/a/b"
-test filename-7.19 {[Bug f34cf83dd0]} {
+test filename-7.19 {[Bug f34cf83dd0]} {testsetplatform} {
+    testsetplatform unix
     file join foo //bar
 } //bar
 
@@ -575,6 +589,31 @@ test filename-9.24 {Tcl_JoinPath: unix} {testsetplatform} {
 	[file join /x /x {foo/bar}]
     string map [list /x ""] $res
 } {foo/bar /foo/bar /foo/bar}
+test filename-9.25.1 {
+    Bug 1215dc - Inconsistent file join with volume relative arguments: unix
+} -constraints testsetplatform -body {
+   testsetplatform unix
+   file join //zipfs:/foo c:bar
+} -result "//zipfs:/foo/c:bar"
+test filename-9.25.2 {
+    Bug 1215dc - Inconsistent file join with volume relative arguments: win
+} -constraints testsetplatform -body {
+   testsetplatform win
+   file join //zipfs:/foo c:bar
+} -result "c:bar"
+test filename-9.25.3 {
+    Bug 1215dc - Inconsistent file join with volume relative arguments: unix,zipfs
+} -constraints testsetplatform -body {
+   testsetplatform unix
+   file join / //zipfs:foo
+} -result "//zipfs:foo"
+test filename-9.25.4 {
+    Bug 1215dc - Inconsistent file join with volume relative arguments: win,zipfs
+} -constraints testsetplatform -body {
+   testsetplatform win
+   file join C:\\ //zipfs:foo
+} -result "//zipfs:foo"
+
 
 test filename-10.1 {Tcl_TranslateFileName} -body {
     testsetplatform unix
@@ -1063,12 +1102,23 @@ test filename-11.45 {Tcl_GlobCmd on root volume} -setup {
     set res1 ""
     set res2 ""
     set tmpd [pwd]
+    set secdrive [apply {{} {
+	set drives {}
+	foreach vol [file volumes] {
+	    if {![catch {cd $vol}]} {
+		lappend drives $vol
+		if {[llength $drives] > 1} break; # lets stop on 2nd drive
+	    }
+	}
+	lindex $drives end
+    }}]
+    cd $tmpd
 } -body {
     catch {
-	set res1 [glob -dir [lindex [file volumes] end] -tails *]
+	set res1 [glob -dir $secdrive -tails *]
     }
     catch {
-	cd [lindex [file volumes] end]
+	cd $secdrive
 	set res2 [glob *]
     }
     list $res1 $res2
@@ -1273,12 +1323,17 @@ test filename-14.22 {asterisks, question marks, and brackets} -body {
 test filename-14.23 {slash globbing} {unix} {
     glob /
 } /
+
+# NOTE: [The string index x/ 1] construction is a workaround for the
+# testsetplatform calls above interacting with normalized path caching
+# in -singleproc 1 runs. See ticket [8c63606802].
 test filename-14.23.2 {slash globbing} {win} {
     glob /
-} [file norm /]
+} [file normalize [string index x/ 1]]
 test filename-14.24 {slash globbing} {win} {
     glob {\\}
-} [file norm /]
+} [file normalize [string index x/ 1]]
+
 test filename-14.25 {type specific globbing} {unix} {
     lsort [glob -dir globTest -types f *]
 } [lsort [list \
@@ -1436,13 +1491,13 @@ test filename-16.11 {windows specific globbing} {win} {
 } {c:/globTest/x1.BAT c:/globTest/y1.Bat c:/globTest/z1.bat}
 # some tests require a shared C drive
 test filename-16.12 {windows specific globbing} {win sharedCdrive} {
-    cd //[info hostname]/c
-    glob //[info hostname]/c/*Test
-} //[info hostname]/c/globTest
+    cd //localhost/c
+    glob //localhost/c/*Test
+} //localhost/c/globTest
 test filename-16.13 {windows specific globbing} {win sharedCdrive} {
-    cd //[info hostname]/c
-    glob "\\\\\\\\[info hostname]\\\\c\\\\*Test"
-} //[info hostname]/c/globTest
+    cd //localhost/c
+    glob "\\\\\\\\localhost\\\\c\\\\*Test"
+} //localhost/c/globTest
 test filename-16.14 {windows specific globbing} {win} {
     cd [lindex [glob -types d -dir C:/ *] 0]
     expr {".." in [glob {{.,*}*}]}
@@ -1461,6 +1516,28 @@ test filename-16.17 {windows specific globbing} -constraints {win} -body {
     list [glob -nocomplain -tails -dir C:/ *] \
 	[glob -nocomplain -tails -dir C: *]
 } -match compareWords -result equal
+test filename-16.18.1 {
+    Bug e860418c2d - glob -dir $dir -tail has leading / if $dir ends in a \
+} -constraints win -setup {
+    lassign [file split $::env(WINDIR)] drv fn
+    set drv [file nativename $drv]
+} -body {
+    string equal -nocase \
+	[lindex [glob -dir ${drv} -tails $fn] 0] \
+	[file tail $::env(WINDIR)]
+} -cleanup {
+    unset -nocomplain drv fn
+} -result 1
+test filename-16.18.2 {
+    Bug e860418c2d - glob -dir $dir has extra separator if $dir ends in \
+} -constraints win -setup {
+    lassign [file split $::env(WINDIR)] drv fn
+    set drv [file nativename $drv]
+} -body {
+    string equal [lindex [glob -dir ${drv} $fn] 0] $::env(WINDIR)
+} -cleanup {
+    unset -nocomplain drv fn
+} -result 1
 
 # Put the working directory back now that we're done with globbing in C:/
 if {[testConstraint win]} {
@@ -1609,7 +1686,7 @@ test fileName-20.10 {globbing for special chars} -setup {
     removeDirectory isolate
     removeFile fileName-20.10 $s
     removeDirectory sub [file home]
-} -result [file home]/sub/fileName-20.10
+} -result [list [file home]/sub/fileName-20.10]
 test fileName-20.11 {glob dir with undecodable file names} -setup {
     # Specifically use /tmp as on WSL [temporaryDirectory]
     # on NTFS prevents creation of arbitrary byte sequences in names.
@@ -1697,7 +1774,11 @@ if {[testConstraint testsetplatform]} {
     testsetplatform $platform
     catch {unset platform}
 }
-catch {unset oldhome temp result globPreResult}
+unset -nocomplain {*}[lmap x [info globals] {
+    if {$x in $existingGlobals} {continue}
+    set x
+}]
+
 ::tcltest::cleanupTests
 return
 

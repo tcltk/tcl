@@ -11,7 +11,7 @@
 package require Tcl 8.6-
 # Keep this in sync with pkgIndex.tcl and with the install directories in
 # Makefiles
-package provide http 2.10.0
+package provide http 2.10.2
 
 namespace eval http {
     # Allow resourcing to not clobber existing data
@@ -491,7 +491,6 @@ proc http::Finish {token {errormsg ""} {skipCB 0}} {
 	    # Test http-4.11 may come here.
 	    thread::release $state(tid)
 	    set state(tid) {}
-	} else {
 	}
     } elseif {$upgradeResponse} {
 	# Special handling for an upgrade request/response.
@@ -800,19 +799,16 @@ proc http::CloseSocket {s {token {}}} {
 	Log "Closing connection $connId (sock $socketMapping($connId))"
 	if {[catch {close $socketMapping($connId)} err]} {
 	    Log "Error closing connection: $err"
-	} else {
 	}
 	if {$token eq {}} {
 	    # Cases with a non-empty token are handled by Finish, so the tokens
 	    # are finished in connection order.
 	    http::CloseQueuedQueries $connId
-	} else {
 	}
     } else {
 	Log "Closing socket $s (no connection info)"
 	if {[catch {close $s} err]} {
 	    Log "Error closing socket: $err"
-	} else {
 	}
     }
     return
@@ -1493,7 +1489,6 @@ proc http::CreateToken {url args} {
 		if {[SockIsPlaceHolder $sock]} {
 		    set state(ReusingPlaceholder) 1
 		    lappend socketPhQueue($sock) $token
-		} else {
 		}
 		Log "reusing open socket $sock for $state(socketinfo) - token $token"
 	    }
@@ -1523,7 +1518,6 @@ proc http::CreateToken {url args} {
     return $token
 }
 
-
 # ------------------------------------------------------------------------------
 #  Proc ::http::SockIsPlaceHolder
 # ------------------------------------------------------------------------------
@@ -1540,7 +1534,6 @@ proc http::CreateToken {url args} {
 proc http::SockIsPlaceHolder {sock} {
     expr {[string range $sock 0 16] eq {HTTP_PLACEHOLDER_}}
 }
-
 
 # ------------------------------------------------------------------------------
 # state(reusing)
@@ -1560,7 +1553,6 @@ proc http::SockIsPlaceHolder {sock} {
 #   - Event       - if (not reusing) and pipelined, send the next pipelined
 #                   write.
 # ------------------------------------------------------------------------------
-
 
 # ------------------------------------------------------------------------------
 #  Proc http::AsyncTransaction
@@ -1636,7 +1628,6 @@ proc http::AsyncTransaction {token} {
 
     return
 }
-
 
 # ------------------------------------------------------------------------------
 #  Proc http::PreparePersistentConnection
@@ -1832,7 +1823,6 @@ proc http::OpenSocket {token DoLater} {
     return
 }
 
-
 # ------------------------------------------------------------------------------
 #  Proc ::http::ConfigureNewSocket
 # ------------------------------------------------------------------------------
@@ -1948,7 +1938,6 @@ proc http::ConfigureNewSocket {token sockOld DoLater} {
     return
 }
 
-
 # ------------------------------------------------------------------------------
 # The values of array variables socketMapping etc.
 # ------------------------------------------------------------------------------
@@ -1980,7 +1969,6 @@ proc http::ConfigureNewSocket {token sockOld DoLater} {
 #                        is to set the value of state() for caller information.
 # ------------------------------------------------------------------------------
 
-
 # ------------------------------------------------------------------------------
 # Using socketWrState(*), socketWrQueue(*), socketRdState(*), socketRdQueue(*)
 # ------------------------------------------------------------------------------
@@ -2003,7 +1991,6 @@ proc http::ConfigureNewSocket {token sockOld DoLater} {
 # there is one.  The value Rready is not found when the interpreter is in
 # the event loop unless the socket is idle.
 # ------------------------------------------------------------------------------
-
 
 # ------------------------------------------------------------------------------
 #  Proc http::ScheduleRequest
@@ -2097,7 +2084,6 @@ proc http::ScheduleRequest {token} {
 	    #Log new, init for nonpipeline, GRANT r/w access to $token in geturl
 	    set socketRdState($state(socketinfo)) $token
 	    set socketWrState($state(socketinfo)) $token
-	} else {
 	}
 
 	# Process the request now.
@@ -2128,7 +2114,6 @@ proc http::ScheduleRequest {token} {
 
     return
 }
-
 
 # ------------------------------------------------------------------------------
 #  Proc http::SendHeader
@@ -2351,7 +2336,6 @@ proc http::Connected {token proto phost srvurl} {
 	    SendHeader $token Accept-Encoding gzip,deflate
 	} elseif {!$accept_encoding_seen} {
 	    SendHeader $token Accept-Encoding identity
-	} else {
 	}
 	if {!$connection_seen} {
 	    SendHeader $token Connection $ConnVal
@@ -2461,7 +2445,7 @@ proc http::Connected {token proto phost srvurl} {
 	    # be discarded.
 	} elseif {$state(status) eq ""} {
 	    # https handshake errors come here, for
-	    # Tcl 8.7 without http::SecureProxyConnect, and for Tcl 8.6.
+	    # Tcl 9.0 without http::SecureProxyConnect, and for Tcl 8.6.
 	    set msg [registerError $sock]
 	    registerError $sock {}
 	    if {$msg eq {}} {
@@ -2612,7 +2596,6 @@ proc http::ReceiveResponse {token} {
     return
 }
 
-
 # http::EventGateway
 #
 #	Bug [c2dc1da315].
@@ -2647,7 +2630,6 @@ proc http::EventGateway {sock token} {
     # If there was an error, re-throw it.
     return -options $opts $res
 }
-
 
 # http::NextPipelinedWrite
 #
@@ -2942,7 +2924,6 @@ proc http::ReplayIfDead {token doing} {
     lappend newQueue {*}$socketRdQueue($state(socketinfo))
     lappend newQueue {*}$InFlightW
     lappend newQueue {*}$socketWrQueue($state(socketinfo))
-
 
     # 2. Tidy up token.  This is a cut-down form of Finish/CloseSocket.
     #    Do not change state(status).
@@ -3264,7 +3245,6 @@ proc http::Meta {token who args} {
     }
 }
 
-
 # ------------------------------------------------------------------------------
 #  Proc http::responseInfo
 # ------------------------------------------------------------------------------
@@ -3583,14 +3563,11 @@ proc http::Event {sock token} {
 		if {[set d [read $sock]] ne ""} {
 		    Log "WARNING: additional data left on closed socket\
 			    - token $token"
-		} else {
 		}
-	    } else {
 	    }
 	    Log ^X$tk end of response (token error) - token $token
 	    CloseSocket $sock
 	    return
-	} else {
 	}
 	if {$state(state) eq "connecting"} {
 	    ##Log - connecting - token $token
@@ -3601,7 +3578,6 @@ proc http::Event {sock token} {
 	    } {
 		set state(after) [after $state(-timeout) \
 			[list http::reset $token timeout]]
-	    } else {
 	    }
 
 	    if {[catch {gets $sock state(http)} nsl]} {
@@ -3613,7 +3589,6 @@ proc http::Event {sock token} {
 
 		    if {[TestForReplay $token read $nsl c]} {
 			return
-		    } else {
 		    }
 		    # else:
 		    # This is NOT a persistent socket that has been closed since
@@ -3622,7 +3597,7 @@ proc http::Event {sock token} {
 		    # they will be discarded.
 		} else {
 		    # https handshake errors come here, for
-		    # Tcl 8.7 with http::SecureProxyConnect.
+		    # Tcl 9.0 with http::SecureProxyConnect.
 		    set msg [registerError $sock]
 		    registerError $sock {}
 		    if {$msg eq {}} {
@@ -3645,7 +3620,6 @@ proc http::Event {sock token} {
 
 		if {[TestForReplay $token read {} d]} {
 		    return
-		} else {
 		}
 
 		# else:
@@ -3653,7 +3627,6 @@ proc http::Event {sock token} {
 		# last use.
 		# If any other requests are in flight or pipelined/queued, they
 		# will be discarded.
-	    } else {
 	    }
 	} elseif {$state(state) eq "header"} {
 	    if {[catch {gets $sock line} nhl]} {
@@ -3666,13 +3639,12 @@ proc http::Event {sock token} {
 		Log ^E$tk end of response headers - token $token
 		# We have now read all headers
 		# We ignore HTTP/1.1 100 Continue returns. RFC2616 sec 8.2.3
-		if {    ($state(http) == "")
+		if {    ($state(http) eq "")
 		     || ([regexp {^\S+\s(\d+)} $state(http) {} x] && $x == 100)
 		} {
 		    set state(state) "connecting"
 		    continue
 		    # This was a "return" in the pre-coroutine code.
-		} else {
 		}
 
 		# We have $state(http) so let's split it into its components.
@@ -3701,7 +3673,6 @@ proc http::Event {sock token} {
 		    # Previous value is $token. It cannot be "pending".
 		    set socketWrState($state(socketinfo)) Wready
 		    http::NextPipelinedWrite $token
-		} else {
 		}
 
 		# Once a "close" has been signaled, the client MUST NOT send any
@@ -3732,7 +3703,6 @@ proc http::Event {sock token} {
 			    Log Move $tok from socketCoEvent to socketWrQueue and cancel its after idle coro
 			}
 			set socketCoEvent($state(socketinfo)) {}
-		    } else {
 		    }
 
 		    if {    ($socketRdQueue($state(socketinfo)) ne {})
@@ -3761,7 +3731,6 @@ proc http::Event {sock token} {
 			    if {[info exists ${tokenVal}(after)]} {
 				after cancel [set ${tokenVal}(after)]
 				unset ${tokenVal}(after)
-			    } else {
 			    }
 			    # Tokens in the read queue have no (socketcoro) to
 			    # cancel.
@@ -3774,7 +3743,6 @@ proc http::Event {sock token} {
 		    # Do not allow further connections on this socket (but
 		    # geturl can add new requests to the replay).
 		    set socketClosing($state(socketinfo)) 1
-		} else {
 		}
 
 		set state(state) body
@@ -3790,7 +3758,6 @@ proc http::Event {sock token} {
 		    && ("keep-alive" ni $state(connection))
 		} {
 		    lappend state(connection) "keep-alive"
-		} else {
 		}
 
 		# If doing a HEAD, then we won't get any body
@@ -3838,7 +3805,6 @@ proc http::Event {sock token} {
 			}
 		    }
 		    return
-		} else {
 		}
 
 		# - For non-chunked transfer we may have no body - in this case
@@ -3869,7 +3835,6 @@ proc http::Event {sock token} {
 		    set state(state) complete
 		    Eot $token
 		    return
-		} else {
 		}
 
 		# We have to use binary translation to count bytes properly.
@@ -3881,12 +3846,10 @@ proc http::Event {sock token} {
 		} {
 		    # Turn off conversions for non-text data.
 		    set state(binary) 1
-		} else {
 		}
 		if {[info exists state(-channel)]} {
 		    if {$state(binary) || [llength [ContentEncoding $token]]} {
 			fconfigure $state(-channel) -translation binary
-		    } else {
 		    }
 		    if {![info exists state(-handler)]} {
 			# Initiate a sequence of background fcopies.
@@ -3894,9 +3857,7 @@ proc http::Event {sock token} {
 			rename ${token}--EventCoroutine {}
 			CopyStart $sock $token
 			return
-		    } else {
 		    }
-		} else {
 		}
 	    } elseif {$nhl > 0} {
 		# Process header lines.
@@ -3946,14 +3907,11 @@ proc http::Event {sock token} {
 			set-cookie {
 			    if {$http(-cookiejar) ne ""} {
 				ParseCookie $token [string trim $value]
-			    } else {
 			    }
 			}
 		    }
 		    lappend state(meta) $key [string trim $value]
-		} else {
 		}
-	    } else {
 	    }
 	} else {
 	    # Now reading body
@@ -3969,7 +3927,6 @@ proc http::Event {sock token} {
 			# We know the transfer is complete only when the server
 			# closes the connection - i.e. eof is not an error.
 			set state(state) complete
-		    } else {
 		    }
 		    if {![string is integer -strict $n]} {
 			if 1 {
@@ -3999,7 +3956,6 @@ proc http::Event {sock token} {
 			    set n 0
 			    set state(state) complete
 			}
-		    } else {
 		    }
 		} elseif {[info exists state(transfer_final)]} {
 		    # This code forgives EOF in place of the final CRLF.
@@ -4039,7 +3995,6 @@ proc http::Event {sock token} {
 				incr state(log_size) [string length $chunk]
 				##Log chunk $n cumul $state(log_size) -\
 					token $token
-			    } else {
 			    }
 			    if {$size != [string length $chunk]} {
 				Log "WARNING: mis-sized chunk:\
@@ -4052,7 +4007,6 @@ proc http::Event {sock token} {
 				set msg {error in chunked encoding - fetch\
 					terminated}
 				Eot $token $msg
-			    } else {
 			    }
 			    # CRLF that follows chunk.
 			    # If eof, this is handled at the end of this proc.
@@ -4100,7 +4054,6 @@ proc http::Event {sock token} {
 			append state(body) $block
 			##Log non-chunk [string length $state(body)] -\
 				token $token
-		    } else {
 		    }
 		}
 		# This calculation uses n from the -handler, chunked, or
@@ -4112,7 +4065,6 @@ proc http::Event {sock token} {
 			set t $state(totalsize)
 			##Log another $n currentsize $c totalsize $t -\
 				token $token
-		    } else {
 		    }
 		    # If Content-Length - check for end of data.
 		    if {
@@ -4123,9 +4075,7 @@ proc http::Event {sock token} {
 				token $token
 			set state(state) complete
 			Eot $token
-		    } else {
 		    }
-		} else {
 		}
 	    } err]} {
 		Log ^X$tk end of response (error ${err}) - token $token
@@ -4135,7 +4085,6 @@ proc http::Event {sock token} {
 		if {[info exists state(-progress)]} {
 		    namespace eval :: $state(-progress) \
 			[list $token $state(totalsize) $state(currentsize)]
-		} else {
 		}
 	    }
 	}
@@ -4610,7 +4559,6 @@ proc http::Eot {token {reason {}}} {
     return
 }
 
-
 # ------------------------------------------------------------------------------
 #  Proc http::GuessType
 # ------------------------------------------------------------------------------
@@ -4690,7 +4638,6 @@ proc http::GuessType {token} {
     set state(charset) $res
     return 1
 }
-
 
 # http::wait --
 #
@@ -4844,7 +4791,6 @@ proc http::CharsetToEncoding {charset} {
     }
 }
 
-
 # ------------------------------------------------------------------------------
 #  Proc http::ContentEncoding
 # ------------------------------------------------------------------------------
@@ -4939,7 +4885,6 @@ proc http::SplitCommaSeparatedFieldValue {fieldValue} {
     return $r
 }
 
-
 # http::GetFieldValue --
 #	Return the value of a header field.
 #
@@ -4981,7 +4926,6 @@ interp alias {} http::mapReply {} http::quoteString
 interp alias {} http::meta {} http::responseHeaders
 interp alias {} http::metaValue {} http::responseHeaderValue
 interp alias {} http::ncode {} http::responseCode
-
 
 # ------------------------------------------------------------------------------
 #  Proc http::socketAsCallback
@@ -5036,7 +4980,6 @@ proc http::socketAsCallback {args} {
     }
     return $sock
 }
-
 
 # ------------------------------------------------------------------------------
 #  Proc http::SecureProxyConnect
@@ -5211,7 +5154,6 @@ proc http::SecureProxyConnect {args} {
 	} elseif {($code == 401)} {
 	    set msg "the proxy server responded to the HTTP request with an\
 		    inappropriate 401 request for target-host credentials"
-	} else {
 	}
     } else {
 	set msg "connection to proxy failed with status code $code"
@@ -5228,7 +5170,6 @@ proc http::AllDone {varName args} {
     set $varName done
     return
 }
-
 
 # ------------------------------------------------------------------------------
 #  Proc http::AltSocket
@@ -5371,7 +5312,6 @@ proc http::LoadThreadIfNeeded {} {
     return
 }
 
-
 # ------------------------------------------------------------------------------
 #  Proc http::SockInThread
 # ------------------------------------------------------------------------------
@@ -5396,7 +5336,6 @@ proc http::SockInThread {caller defcmd sockargs} {
     }
     return [list $catchCode $errdict $sock]
 }
-
 
 # ------------------------------------------------------------------------------
 #  Proc http::cwaiter::cwait
@@ -5453,7 +5392,6 @@ proc http::cwaiter::cwait {
     return
 }
 
-
 # ------------------------------------------------------------------------------
 #  Proc http::cwaiter::CwaitHelper
 # ------------------------------------------------------------------------------
@@ -5475,7 +5413,6 @@ proc http::cwaiter::CwaitHelper {varName coroName toe args} {
     after 0 $coroName
     return
 }
-
 
 # ------------------------------------------------------------------------------
 #  Proc http::cwaiter::LogInit

@@ -15,12 +15,10 @@ Tcl_NRCreateCommand, Tcl_NRCreateCommand2, Tcl_NRCallObjProc, Tcl_NRCallObjProc2
 \fB#include <tcl.h>\fR
 .sp
 Tcl_Command
-\fBTcl_NRCreateCommand\fR(\fIinterp, cmdName, proc, nreProc, clientData,
-                    deleteProc\fR)
+\fBTcl_NRCreateCommand\fR(\fIinterp, cmdName, proc, nreProc, clientData, deleteProc\fR)
 .sp
 Tcl_Command
-\fBTcl_NRCreateCommand2\fR(\fIinterp, cmdName, proc2, nreProc2, clientData,
-                    deleteProc\fR)
+\fBTcl_NRCreateCommand2\fR(\fIinterp, cmdName, proc2, nreProc2, clientData, deleteProc\fR)
 .sp
 int
 \fBTcl_NRCallObjProc\fR(\fIinterp, nreProc, clientData, objc, objv\fR)
@@ -82,7 +80,7 @@ Token to use instead of one derived from the first word of \fIobjv\fR in order
 to evaluate a command.
 .AP Tcl_Obj *resultPtr out
 Pointer to an unshared Tcl_Obj where the result of the evaluation is stored if
-the return code is TCL_OK.
+the return code is \fBTCL_OK\fR.
 .AP Tcl_NRPostProc *postProcPtr in
 A function to push.
 .AP void *data0 in
@@ -164,8 +162,8 @@ int
 \fITheCmdOldObjProc\fR(
     void *clientData,
     Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const objv[])
+    Tcl_Size objc,
+    Tcl_Obj *const *objv)
 {
     int result;
     Tcl_Obj *objPtr;
@@ -178,7 +176,7 @@ int
 
     return result;
 }
-\fBTcl_CreateObjCommand\fR(interp, "theCommand",
+\fBTcl_CreateObjCommand2\fR(interp, "theCommand",
         \fITheCmdOldObjProc\fR, clientData, TheCmdDeleteProc);
 .CE
 .PP
@@ -195,10 +193,10 @@ int
 \fITheCmdOldObjProc\fR(
     void *clientData,
     Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const objv[])
+    Tcl_Size objc,
+    Tcl_Obj *const *objv)
 {
-    return \fBTcl_NRCallObjProc\fR(interp, \fITheCmdNRObjProc\fR,
+    return \fBTcl_NRCallObjProc2\fR(interp, \fITheCmdNRObjProc\fR,
             clientData, objc, objv);
 }
 .CE
@@ -208,8 +206,8 @@ int
 \fITheCmdNRObjProc\fR
     void *clientData,
     Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const objv[])
+    Tcl_Size objc,
+    Tcl_Obj *const *objv)
 {
     Tcl_Obj *objPtr;
 

@@ -441,8 +441,13 @@ AC_DEFUN([SC_PROG_TCLSH], [
 		    `ls -r $dir/tclsh* 2> /dev/null` ; do
 		if test x"$ac_cv_path_tclsh" = x ; then
 		    if test -f "$j" ; then
-			ac_cv_path_tclsh=$j
-			break
+			if ! echo '[if {![package vsatisfies [info tclversion] 8.6-]} { exit 1 }]' | $j; then
+			    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: rejected $j - insufficient version, 8.6 or later is required." >&5
+			      printf %s "rejected $j - insufficient version, 8.6 or later is required. " >&6; }
+			else
+			    ac_cv_path_tclsh=$j
+			    break
+			fi
 		    fi
 		fi
 	    done
@@ -733,7 +738,7 @@ AC_DEFUN([SC_CONFIG_MANPAGES], [
 	AC_MSG_CHECKING([for compressed file suffix])
 	touch TeST
 	$enableval TeST
-	Z=`ls TeST* | sed 's/^....//'`
+	Z=`ls TeST.* | sed 's/^....//'`
 	rm -f TeST*
 	MAN_FLAGS="$MAN_FLAGS --extension $Z"
 	AC_MSG_RESULT([$Z])
@@ -1862,8 +1867,6 @@ dnl # preprocessing tests use only CPPFLAGS.
 	CFLAGS="$CFLAGS -finput-charset=UTF-8"
     fi
 
-    AC_CHECK_HEADER(stdbool.h, [AC_DEFINE(HAVE_STDBOOL_H, 1, [Do we have <stdbool.h>?])],)
-
     # Check for vfork, posix_spawnp() and friends unconditionally
     AC_CHECK_FUNCS(vfork posix_spawnp posix_spawn_file_actions_adddup2 posix_spawnattr_setflags)
 
@@ -2178,6 +2181,7 @@ AC_DEFUN([SC_TCL_LINK_LIBS], [
     #--------------------------------------------------------------------
 
     AC_CHECK_LIB(inet, main, [LIBS="$LIBS -linet"])
+    AC_CHECK_LIB(rt, clock_gettime, [LIBS="$LIBS -lrt"])
     AC_CHECK_HEADER(net/errno.h, [
 	AC_DEFINE(HAVE_NET_ERRNO_H, 1, [Do we have <net/errno.h>?])])
 
@@ -2256,11 +2260,8 @@ AC_DEFUN([SC_TCL_LINK_LIBS], [
 
     ac_saved_libs=$LIBS
     LIBS="$LIBS $THREADS_LIBS"
-    AC_CHECK_FUNCS(pthread_attr_setstacksize pthread_atfork)
+    AC_CHECK_FUNCS(pthread_attr_setstacksize pthread_atfork clock_gettime)
     LIBS=$ac_saved_libs
-
-    # TIP #509
-    AC_CHECK_DECLS([PTHREAD_MUTEX_RECURSIVE],tcl_ok=yes,tcl_ok=no, [[#include <pthread.h>]])
 ])
 
 #--------------------------------------------------------------------
@@ -3001,7 +3002,8 @@ AC_DEFUN([SC_ZIPFS_SUPPORT], [
     if test -f "$ac_cv_path_macher" ; then
 	MACHER_PROG="$ac_cv_path_macher"
 	AC_MSG_RESULT([$MACHER_PROG])
-	AC_MSG_RESULT([Found macher in environment])
+    else
+	AC_MSG_RESULT([Macher not found])
     fi
     AC_MSG_CHECKING([for zip])
     AC_CACHE_VAL(ac_cv_path_zip, [
@@ -3023,7 +3025,6 @@ AC_DEFUN([SC_ZIPFS_SUPPORT], [
 	AC_MSG_RESULT([$ZIP_PROG])
 	ZIP_PROG_OPTIONS="-rq"
 	ZIP_PROG_VFSSEARCH="*"
-	AC_MSG_RESULT([Found INFO Zip in environment])
 	# Use standard arguments for zip
     else
 	# It is not an error if an installed version of Zip can't be located.

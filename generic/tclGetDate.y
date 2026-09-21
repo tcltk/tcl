@@ -15,8 +15,8 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
-%parse-param {DateInfo* info}
-%lex-param {DateInfo* info}
+%parse-param {DateInfo *info}
+%lex-param {DateInfo *info}
 %define api.pure
  /* %error-verbose would be nice, but our token names are meaningless */
 %locations
@@ -45,7 +45,9 @@
 
 #ifdef _MSC_VER
 #pragma warning( disable : 4102 )
-#elif defined (__clang__) || ((__GNUC__)  && ((__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ > 5))))
+#elif defined (__clang__) && (__clang_major__ > 14)
+#pragma clang diagnostic ignored "-Wunused-but-set-variable"
+#elif (__GNUC__)  && ((__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ > 5)))
 #pragma GCC diagnostic ignored "-Wunused-but-set-variable"
 #endif
 
@@ -61,7 +63,7 @@
 #include "tclDate.h"
 
 #define YYMALLOC	Tcl_Alloc
-#define YYFREE(x)	(Tcl_Free((void*) (x)))
+#define YYFREE(x)	(Tcl_Free((void *) (x)))
 
 #define EPOCH		1970
 #define START_OF_TIME	1902
@@ -106,7 +108,7 @@ typedef enum _DSTMODE {
 
 %union {
     Tcl_WideInt Number;
-    enum _MERIDIAN Meridian;
+    MERIDIAN Meridian;
 }
 
 %{
@@ -115,12 +117,12 @@ typedef enum _DSTMODE {
  * Prototypes of internal functions.
  */
 
-static int		LookupWord(YYSTYPE* yylvalPtr, char *buff);
-static void		TclDateerror(YYLTYPE* location,
-				     DateInfo* info, const char *s);
-static int		TclDatelex(YYSTYPE* yylvalPtr, YYLTYPE* location,
-				   DateInfo* info);
-MODULE_SCOPE int	yyparse(DateInfo*);
+static int		LookupWord(YYSTYPE *yylvalPtr, char *buff);
+static void		TclDateerror(YYLTYPE *location,
+				     DateInfo *info, const char *s);
+static int		TclDatelex(YYSTYPE *yylvalPtr, YYLTYPE *location,
+				   DateInfo *info);
+MODULE_SCOPE int	yyparse(DateInfo *);
 
 %}
 
@@ -130,9 +132,10 @@ MODULE_SCOPE int	yyparse(DateInfo*);
 %token	tID
 %token	tMERIDIAN
 %token	tMONTH
-%token	tMONTH_UNIT
+%token	tRMONTH_UNIT
 %token	tSTARDATE
 %token	tSEC_UNIT
+%token	tRSEC_UNIT
 %token	tUNUMBER
 %token	tZONE
 %token	tZONEwO4
@@ -143,15 +146,17 @@ MODULE_SCOPE int	yyparse(DateInfo*);
 %token	tISOBAS6
 %token	tISOBASL
 %token	tDAY_UNIT
+%token	tRDAY_UNIT
 %token	tNEXT
 %token	SP
 
 %type	<Number>	tDAY
 %type	<Number>	tDAYZONE
 %type	<Number>	tMONTH
-%type	<Number>	tMONTH_UNIT
+%type	<Number>	tRMONTH_UNIT
 %type	<Number>	tDST
 %type	<Number>	tSEC_UNIT
+%type	<Number>	tRSEC_UNIT
 %type	<Number>	tUNUMBER
 %type	<Number>	INTNUM
 %type	<Number>	tZONE
@@ -161,6 +166,8 @@ MODULE_SCOPE int	yyparse(DateInfo*);
 %type	<Number>	tISOBAS6
 %type	<Number>	tISOBASL
 %type	<Number>	tDAY_UNIT
+%type	<Number>	tRDAY_UNIT
+%type	<Number>	runit
 %type	<Number>	unit
 %type	<Number>	sign
 %type	<Number>	tNEXT
@@ -194,6 +201,9 @@ item	: time {
 	}
 	| relspec {
 	    info->flags |= CLF_RELCONV;
+	}
+	| nmzone {
+	    yyIncrFlags(CLF_ZONE);
 	}
 	| iso {
 	    yyIncrFlags(CLF_TIME|CLF_HAVEDATE);
@@ -240,15 +250,20 @@ zone	: tZONE tDST {
 	    yyDSTmode = DSTon;
 	}
 	| tZONEwO4 sign INTNUM { /* GMT+0100, GMT-1000, etc. */
-	    yyTimezone = $1 - $2*($3 % 100 + ($3 / 100) * 60);
+	    yyTimezone = $1 - $2 * ($3 % 100 + ($3 / 100) * 60);
 	    yyDSTmode = DSToff;
 	}
 	| tZONEwO2 sign INTNUM { /* GMT+1, GMT-10, etc. */
-	    yyTimezone = $1 - $2*($3 * 60);
+	    yyTimezone = $1 - $2 * ($3 * 60);
 	    yyDSTmode = DSToff;
 	}
-	| sign INTNUM { /* +0100, -0100 */
-	    yyTimezone = -$1*($2 % 100 + ($2 / 100) * 60);
+	;
+nmzone	: sign tUNUMBER %?{ yyDigitCount == 4 || yyDigitCount <= 2 } {
+	    if (yyDigitCount == 4) { /* +0100, -0100 */
+		yyTimezone = -$1 * ($2 % 100 + ($2 / 100) * 60);
+	    } else { /* +01, -01, +1, -1 */
+		yyTimezone = -$1 * ($2 * 60);
+	    }
 	    yyDSTmode = DSToff;
 	}
 	;
@@ -403,19 +418,19 @@ relspec : relunits tAGO {
 	| relunits
 	;
 
-relunits : sign SP INTNUM unit {
+relunits : sign SP INTNUM runit {
 	    *yyRelPointer += $1 * $3 * $4;
 	}
-	| sign INTNUM unit {
+	| sign INTNUM runit {
 	    *yyRelPointer += $1 * $2 * $3;
 	}
-	| INTNUM unit {
+	| INTNUM runit {
 	    *yyRelPointer += $1 * $2;
 	}
-	| tNEXT unit {
+	| tNEXT runit {
 	    *yyRelPointer += $2;
 	}
-	| tNEXT INTNUM unit {
+	| tNEXT INTNUM runit {
 	    *yyRelPointer += $2 * $3;
 	}
 	| unit {
@@ -431,6 +446,23 @@ sign	: '-' {
 	}
 	;
 
+runit	: tRSEC_UNIT {
+	    $$ = $1;
+	    yyRelPointer = &yyRelSeconds;
+	    /* no flag CLF_RELCONV needed by seconds */
+	}
+	| tRDAY_UNIT {
+	    $$ = $1;
+	    yyRelPointer = &yyRelDay;
+	    info->flags |= CLF_RELCONV;
+	}
+	| tRMONTH_UNIT {
+	    $$ = $1;
+	    yyRelPointer = &yyRelMonth;
+	    info->flags |= CLF_RELCONV;
+	}
+	;
+
 unit	: tSEC_UNIT {
 	    $$ = $1;
 	    yyRelPointer = &yyRelSeconds;
@@ -439,11 +471,6 @@ unit	: tSEC_UNIT {
 	| tDAY_UNIT {
 	    $$ = $1;
 	    yyRelPointer = &yyRelDay;
-	    info->flags |= CLF_RELCONV;
-	}
-	| tMONTH_UNIT {
-	    $$ = $1;
-	    yyRelPointer = &yyRelMonth;
 	    info->flags |= CLF_RELCONV;
 	}
 	;
@@ -523,16 +550,16 @@ static const TABLE MonthDayTable[] = {
  */
 
 static const TABLE UnitsTable[] = {
-    { "year",		tMONTH_UNIT,	12 },
-    { "month",		tMONTH_UNIT,	 1 },
-    { "fortnight",	tDAY_UNIT,	14 },
-    { "week",		tDAY_UNIT,	 7 },
-    { "day",		tDAY_UNIT,	 1 },
-    { "hour",		tSEC_UNIT, 60 * 60 },
-    { "minute",		tSEC_UNIT,	60 },
-    { "min",		tSEC_UNIT,	60 },
-    { "second",		tSEC_UNIT,	 1 },
-    { "sec",		tSEC_UNIT,	 1 },
+    { "year",		tRMONTH_UNIT,	12 },
+    { "month",		tRMONTH_UNIT,	 1 },
+    { "fortnight",	tRDAY_UNIT,	14 },
+    { "week",		tRDAY_UNIT,	 7 },
+    { "day",		tRDAY_UNIT,	 1 },
+    { "hour",		tRSEC_UNIT, 60 * 60 },
+    { "minute",		tRSEC_UNIT,	60 },
+    { "min",		tRSEC_UNIT,	60 },
+    { "second",		tRSEC_UNIT,	 1 },
+    { "sec",		tRSEC_UNIT,	 1 },
     { NULL, 0, 0 }
 };
 
@@ -691,11 +718,11 @@ bypassSpaces(
 
 static void
 TclDateerror(
-    YYLTYPE* location,
-    DateInfo* infoPtr,
+    YYLTYPE *location,
+    DateInfo *infoPtr,
     const char *s)
 {
-    Tcl_Obj* t;
+    Tcl_Obj *t;
     if (!infoPtr->messages) {
 	TclNewObj(infoPtr->messages);
     }
@@ -716,7 +743,7 @@ TclDateerror(
 }
 
 int
-ToSeconds(
+TclToSeconds(
     int Hours,
     int Minutes,
     int Seconds,
@@ -735,7 +762,7 @@ ToSeconds(
 
 static int
 LookupWord(
-    YYSTYPE* yylvalPtr,
+    YYSTYPE *yylvalPtr,
     char *buff)
 {
     char *p;
@@ -859,8 +886,8 @@ LookupWord(
 
 static int
 TclDatelex(
-    YYSTYPE* yylvalPtr,
-    YYLTYPE* location,
+    YYSTYPE *yylvalPtr,
+    YYLTYPE *location,
     DateInfo *info)
 {
     char c;
@@ -899,7 +926,7 @@ TclDatelex(
 		 * (8 chars is isodate) */
 		p = (char *)yyInput+8;
 		if (TclAtoWIe(&yylvalPtr->Number, yyInput, p, 1) != TCL_OK) {
-		    return tID; /* overflow*/
+		    return tID; /* overflow */
 		}
 		yyDigitCount = 8;
 		yyInput = p;
@@ -910,7 +937,7 @@ TclDatelex(
 	     * Convert the string into a number
 	     */
 	    if (TclAtoWIe(&yylvalPtr->Number, yyInput, p, 1) != TCL_OK) {
-		return tID; /* overflow*/
+		return tID; /* overflow */
 	    }
 	    yyInput = p;
 	    /*

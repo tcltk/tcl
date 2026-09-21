@@ -47,11 +47,14 @@ Interpreter to use for error reporting.
 Points to space where the number of bytes in the array may be written.
 May be (Tcl_Size *)NULL when not used. If it points to a variable which
 type is not \fBTcl_Size\fR, a compiler warning will be generated.
-If your extensions is compiled with -DTCL_8_API, this function will return
+If your extensions is compiled with \fB-DTCL_8_API\fR, this function will return
 NULL for byte arrays larger than INT_MAX (which should
 trigger proper error-handling), otherwise expect it to crash.
 .BE
 .SH DESCRIPTION
+.PP
+N.B. Refer to the \fBTcl_UniChar\fR documentation page for a description of the
+\fITUTF-8\fR encoding and related terms referenced here.
 .PP
 These routines are used to create, modify, store, transfer, and retrieve
 arbitrary binary data in Tcl values.  Specifically, data that can be
@@ -74,8 +77,7 @@ of \fIN\fR bytes is transformed into the corresponding sequence
 of \fIN\fR characters, where each byte value transforms to the same
 character codepoint value in the range (U+0000 - U+00FF).  Obtaining the
 string representation of a byte-array value (by calling
-\fBTcl_GetStringFromObj\fR) produces this string in Tcl's usual
-Modified UTF-8 encoding.
+\fBTcl_GetStringFromObj\fR) produces this string in TUTF-8 encoding.
 .PP
 \fBTcl_NewByteArrayObj\fR and \fBTcl_SetByteArrayObj\fR
 create a new value or overwrite an existing unshared value, respectively,

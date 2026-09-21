@@ -9,10 +9,10 @@
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
-oo::define, oo::objdefine, oo::Slot \- define and configure classes and objects
+oo::define, oo::objdefine, oo::Slot \- Define and configure classes and objects
 .SH SYNOPSIS
 .nf
-package require tcl::oo
+\fBpackage require tcl::oo\fR
 
 \fBoo::define\fI class defScript\fR
 \fBoo::define\fI class subcommand arg\fR ?\fIarg ...\fR?
@@ -201,9 +201,9 @@ defined (see \fBCONFIGURING OBJECTS\fR below for a description of the
 supported values of \fIsubcommand\fR). It follows the same general pattern of
 argument handling as the \fBoo::define\fR and \fBoo::objdefine\fR commands,
 and
-.QW "\fBoo::define \fIcls \fBself \fIsubcommand ...\fR"
+.QW "\fBoo::define \fIclass \fBself \fIsubcommand ...\fR"
 operates identically to
-.QW "\fBoo::objdefine \fIcls subcommand ...\fR" .
+.QW "\fBoo::objdefine \fIclass subcommand ...\fR" .
 .RS
 .PP
 .VS TIP470
@@ -279,7 +279,7 @@ and \fBoo::objdefine\fR commands to look up the definition commands they
 use. When any object has a definition operation applied to it, \fIthe class that
 it is an instance of\fR (and its superclasses and mixins) is consulted for
 what definition namespace to use. \fBoo::define\fR gets the class definition
-namespace, and \fB::oo::objdefine\fR gets the instance definition namespace,
+namespace, and \fBoo::objdefine\fR gets the instance definition namespace,
 but both otherwise use the identical lookup operation.
 .RS
 .PP
@@ -292,8 +292,8 @@ whether the namespace for use with \fBoo::define\fR or \fBoo::objdefine\fR
 respectively is being set.
 .PP
 The class \fBoo::object\fR has its instance namespace locked to
-\fB::oo::objdefine\fR, and the class \fBoo::class\fR has its class namespace
-locked to \fB::oo::define\fR. A consequence of this is that effective use of
+\fBoo::objdefine\fR, and the class \fBoo::class\fR has its class namespace
+locked to \fBoo::define\fR. A consequence of this is that effective use of
 this feature for classes requires the definition of a metaclass.
 .RE
 .VE TIP524
@@ -467,7 +467,7 @@ class's constructors are not called when this is done, and so the object may
 well be in an inconsistent state unless additional configuration work is done.
 .\" METHOD: deletemethod
 .TP
-\fBdeletemethod\fI name\fR ?\fIname ...\fR
+\fBdeletemethod\fI name\fR ?\fIname ...\fR?
 .
 This deletes each of the methods called \fIname\fR from an object. The methods
 must have previously existed in that object (e.g., because it was created
@@ -607,19 +607,11 @@ require that values are resolvable to work).
 .RS
 .PP
 Implementations \fIshould not\fR enforce uniqueness and ordering constraints
-in this method; that is the responsibility of the \fBSet\fR method.
+in this method; that is the responsibility of the \fBSet\fR method. A default
+implementation of this method (that just returns its \fIslotElement\fR
+argument) is provided in the \fBoo::Slot\fR class.
 .RE
 .VE TIP516
-.\" METHOD: Resolve
-.TP
-\fIslot\fR \fBResolve \fIelement\fR
-.VS
-This converts an element of the slotted collection into its resolved form; for
-a simple value, it could just return the value, but for a slot that contains
-references to commands or classes it should convert those into their
-fully-qualified forms (so they can be compared with \fBstring equals\fR): that
-could be done by forwarding to \fBnamespace which\fR or similar.
-.VE
 .\" METHOD: Set
 .TP
 \fIslot\fR \fBSet \fIelementList\fR

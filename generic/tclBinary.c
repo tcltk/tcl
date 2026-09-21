@@ -15,22 +15,23 @@
 #include "tclTomMath.h"
 
 #include <math.h>
-#include <assert.h>
 
 /*
  * The following constants are used by GetFormatSpec to indicate various
  * special conditions in the parsing of a format specifier.
  */
-
-#define BINARY_ALL -1		/* Use all elements in the argument. */
-#define BINARY_NOCOUNT -2	/* No count was specified in format. */
+enum GetFormatSpecSpecialCounts {
+    BINARY_ALL = -1,		/* Use all elements in the argument. */
+    BINARY_NOCOUNT = -2		/* No count was specified in format. */
+};
 
 /*
  * The following flags may be OR'ed together and returned by GetFormatSpec
  */
-
-#define BINARY_SIGNED 0		/* Field to be read as signed data */
-#define BINARY_UNSIGNED 1	/* Field to be read as unsigned data */
+enum GetFormatSpecFlags {
+    BINARY_SIGNED = 0,		/* Field to be read as signed data */
+    BINARY_UNSIGNED = 1		/* Field to be read as unsigned data */
+};
 
 /*
  * The following defines the maximum number of different (integer) numbers
@@ -72,15 +73,15 @@ static int		NeedReversing(int format);
 static void		CopyNumber(const void *from, void *to,
 			    size_t length, int type);
 /* Binary ensemble commands */
-static Tcl_ObjCmdProc	BinaryFormatCmd;
-static Tcl_ObjCmdProc	BinaryScanCmd;
+static Tcl_ObjCmdProc2	BinaryFormatCmd;
+static Tcl_ObjCmdProc2	BinaryScanCmd;
 /* Binary encoding sub-ensemble commands */
-static Tcl_ObjCmdProc	BinaryEncodeHex;
-static Tcl_ObjCmdProc	BinaryDecodeHex;
-static Tcl_ObjCmdProc	BinaryEncode64;
-static Tcl_ObjCmdProc	BinaryDecode64;
-static Tcl_ObjCmdProc	BinaryEncodeUu;
-static Tcl_ObjCmdProc	BinaryDecodeUu;
+static Tcl_ObjCmdProc2	BinaryEncodeHex;
+static Tcl_ObjCmdProc2	BinaryDecodeHex;
+static Tcl_ObjCmdProc2	BinaryEncode64;
+static Tcl_ObjCmdProc2	BinaryDecode64;
+static Tcl_ObjCmdProc2	BinaryEncodeUu;
+static Tcl_ObjCmdProc2	BinaryDecodeUu;
 
 /*
  * The following tables are used by the binary encoders
@@ -119,20 +120,20 @@ static const char B64Digits[65] = {
  * How to construct the ensembles.
  */
 
-static const EnsembleImplMap binaryMap[] = {
+const EnsembleImplMap tclBinaryImplMap[] = {
     { "format", BinaryFormatCmd, TclCompileBasicMin1ArgCmd, NULL, NULL, 0 },
-    { "scan",   BinaryScanCmd, TclCompileBasicMin2ArgCmd, NULL, NULL, 0 },
+    { "scan",   BinaryScanCmd, TclCompileBasicMin2ArgCmd, NULL, NULL, 0 }, // TODO: compile?
     { "encode", NULL, NULL, NULL, NULL, 0 },
     { "decode", NULL, NULL, NULL, NULL, 0 },
     { NULL, NULL, NULL, NULL, NULL, 0 }
 };
-static const EnsembleImplMap encodeMap[] = {
+const EnsembleImplMap tclBinaryEncodeImplMap[] = {
     { "hex",      BinaryEncodeHex, TclCompileBasic1ArgCmd, NULL, NULL, 0 },
     { "uuencode", BinaryEncodeUu,  NULL, NULL, NULL, 0 },
     { "base64",   BinaryEncode64,  NULL, NULL, NULL, 0 },
     { NULL, NULL, NULL, NULL, NULL, 0 }
 };
-static const EnsembleImplMap decodeMap[] = {
+const EnsembleImplMap tclBinaryDecodeImplMap[] = {
     { "hex",      BinaryDecodeHex, TclCompileBasic1Or2ArgCmd, NULL, NULL, 0 },
     { "uuencode", BinaryDecodeUu,  TclCompileBasic1Or2ArgCmd, NULL, NULL, 0 },
     { "base64",   BinaryDecode64,  TclCompileBasic1Or2ArgCmd, NULL, NULL, 0 },
@@ -162,7 +163,7 @@ static const Tcl_ObjType properByteArrayType = {
     FreeProperByteArrayInternalRep,
     DupProperByteArrayInternalRep,
     UpdateStringOfByteArray,
-    NULL,
+    NULL,			// SetFromAny
     TCL_OBJTYPE_V0
 };
 
@@ -493,12 +494,12 @@ Tcl_SetByteArrayLength(
  *----------------------------------------------------------------------
  */
 
-static int
+static bool
 MakeByteArray(
     Tcl_Interp *interp,
     Tcl_Obj *objPtr,
     Tcl_Size limit,
-    int demandProper,
+    bool demandProper,
     ByteArray **byteArrayPtrPtr)
 {
     Tcl_Size length;
@@ -508,20 +509,20 @@ MakeByteArray(
     unsigned char *dst = byteArrayPtr->bytes;
     unsigned char *dstEnd = dst + numBytes;
     const char *srcEnd = src + length;
-    int proper = 1;
+    bool proper = true;
 
     for (; src < srcEnd && dst < dstEnd; ) {
 	int ch;
 	Tcl_Size count = TclUtfToUniChar(src, &ch);
 
 	if (ch > 255) {
-	    proper = 0;
+	    proper = false;
 	    if (demandProper) {
 		if (interp) {
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			    "expected byte sequence but character %"
-			    TCL_Z_MODIFIER "u was '%1s' (U+%06X)",
-			    dst - byteArrayPtr->bytes, src, ch));
+			    "expected code point values below 0xff but value at byte offset %"
+			    TCL_Z_MODIFIER "u was 0x%x",
+			    dst - byteArrayPtr->bytes, ch));
 		    Tcl_SetErrorCode(interp, "TCL", "VALUE", "BYTES", (char *)NULL);
 		}
 		Tcl_Free(byteArrayPtr);
@@ -547,7 +548,7 @@ TclNarrowToBytes(
 	Tcl_ObjInternalRep ir;
 	ByteArray *byteArrayPtr;
 
-	if (0 == MakeByteArray(NULL, objPtr, TCL_INDEX_NONE, 0, &byteArrayPtr)) {
+	if (!MakeByteArray(NULL, objPtr, TCL_INDEX_NONE, 0, &byteArrayPtr)) {
 	    TclNewObj(objPtr);
 	    TclInvalidateStringRep(objPtr);
 	}
@@ -583,7 +584,7 @@ SetByteArrayFromAny(
     ByteArray *byteArrayPtr;
     Tcl_ObjInternalRep ir;
 
-    if (0 == MakeByteArray(interp, objPtr, limit, 1, &byteArrayPtr)) {
+    if (!MakeByteArray(interp, objPtr, limit, 1, &byteArrayPtr)) {
 	return TCL_ERROR;
     }
 
@@ -770,12 +771,9 @@ TclAppendBytesToByteArray(
     needed = byteArrayPtr->used + len;
     if (needed > byteArrayPtr->allocated) {
 	Tcl_Size newCapacity;
-	byteArrayPtr =
-	    (ByteArray *)TclReallocElemsEx(byteArrayPtr,
-					   needed,
-					   1,
-					   offsetof(ByteArray, bytes),
-					   &newCapacity);
+	byteArrayPtr = (ByteArray *)
+		TclReallocElemsEx(byteArrayPtr, needed, 1,
+		offsetof(ByteArray, bytes), &newCapacity);
 	byteArrayPtr->allocated = newCapacity;
 	SET_BYTEARRAY(irPtr, byteArrayPtr);
     }
@@ -785,35 +783,6 @@ TclAppendBytesToByteArray(
     }
     byteArrayPtr->used += len;
     TclInvalidateStringRep(objPtr);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclInitBinaryCmd --
- *
- *	This function is called to create the "binary" Tcl command. See the
- *	user documentation for details on what it does.
- *
- * Results:
- *	A command token for the new command.
- *
- * Side effects:
- *	Creates a new binary command as a mapped ensemble.
- *
- *----------------------------------------------------------------------
- */
-
-Tcl_Command
-TclInitBinaryCmd(
-    Tcl_Interp *interp)
-{
-    Tcl_Command binaryEnsemble;
-
-    binaryEnsemble = TclMakeEnsemble(interp, "binary", binaryMap);
-    TclMakeEnsemble(interp, "binary encode", encodeMap);
-    TclMakeEnsemble(interp, "binary decode", decodeMap);
-    return binaryEnsemble;
 }
 
 /*
@@ -836,10 +805,10 @@ static int
 BinaryFormatCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
+    Tcl_Size objc,		/* Number of arguments. */
+    Tcl_Obj *const *objv)	/* Argument objects. */
 {
-    int arg;			/* Index of next argument to consume. */
+    Tcl_Size arg;		/* Index of next argument to consume. */
     int value = 0;		/* Current integer value to be packed.
 				 * Initialized to avoid compiler warning. */
     char cmd;			/* Current format character. */
@@ -1296,22 +1265,22 @@ BinaryFormatCmd(
     Tcl_SetObjResult(interp, resultPtr);
     return TCL_OK;
 
- badValue:
+  badValue:
     Tcl_ResetResult(interp);
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 	    "expected %s string but got \"%s\" instead",
 	    errorString, errorValue));
     return TCL_ERROR;
 
- badCount:
+  badCount:
     errorString = "missing count for \"@\" field specifier";
     goto error;
 
- badIndex:
+  badIndex:
     errorString = "not enough arguments for all format specifiers";
     goto error;
 
- badField:
+  badField:
     {
 	Tcl_UniChar ch = 0;
 	char buf[5] = "";
@@ -1323,7 +1292,7 @@ BinaryFormatCmd(
 	return TCL_ERROR;
     }
 
- error:
+  error:
     Tcl_SetObjResult(interp, Tcl_NewStringObj(errorString, -1));
     return TCL_ERROR;
 }
@@ -1348,10 +1317,10 @@ static int
 BinaryScanCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
+    Tcl_Size objc,		/* Number of arguments. */
+    Tcl_Obj *const *objv)	/* Argument objects. */
 {
-    int arg;			/* Index of next argument to consume. */
+    Tcl_Size arg;		/* Index of next argument to consume. */
     int value = 0;		/* Current integer value to be packed.
 				 * Initialized to avoid compiler warning. */
     char cmd;			/* Current format character. */
@@ -1678,21 +1647,21 @@ BinaryScanCmd(
      * Set the result to the last position of the cursor.
      */
 
- done:
+  done:
     Tcl_SetObjResult(interp, Tcl_NewWideIntObj(arg - 3));
     DeleteScanNumberCache(numberCachePtr);
 
     return TCL_OK;
 
- badCount:
+  badCount:
     errorString = "missing count for \"@\" field specifier";
     goto error;
 
- badIndex:
+  badIndex:
     errorString = "not enough arguments for all format specifiers";
     goto error;
 
- badField:
+  badField:
     {
 	Tcl_UniChar ch = 0;
 	char buf[5] = "";
@@ -1704,7 +1673,7 @@ BinaryScanCmd(
 	return TCL_ERROR;
     }
 
- error:
+  error:
     Tcl_SetObjResult(interp, Tcl_NewStringObj(errorString, -1));
     return TCL_ERROR;
 }
@@ -2040,7 +2009,7 @@ FormatNumber(
 	    if (fabs(dvalue) > (FLT_MAX + pow(2, (FLT_MAX_EXP - FLT_MANT_DIG - 1)))) {
 		fvalue = (dvalue >= 0.0) ? INFINITY : -INFINITY;	// c99
 	    } else {
-	    fvalue = (dvalue >= 0.0) ? FLT_MAX : -FLT_MAX;
+		fvalue = (dvalue >= 0.0) ? FLT_MAX : -FLT_MAX;
 	    }
 	} else {
 	    fvalue = (float) dvalue;
@@ -2432,8 +2401,8 @@ static int
 BinaryEncodeHex(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const objv[])
+    Tcl_Size objc,
+    Tcl_Obj *const *objv)
 {
     Tcl_Obj *resultObj = NULL;
     unsigned char *data = NULL;
@@ -2480,14 +2449,14 @@ static int
 BinaryDecodeHex(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const objv[])
+    Tcl_Size objc,
+    Tcl_Obj *const *objv)
 {
     Tcl_Obj *resultObj = NULL;
     unsigned char *data, *datastart, *dataend;
     unsigned char *begin, *cursor, c;
-    int i, index, value, pure = 1, strict = 0;
-    Tcl_Size size, cut = 0, count = 0;
+    int index, value, pure = 1, strict = 0;
+    Tcl_Size i, size, cut = 0, count = 0;
     int ucs4;
     enum {OPT_STRICT };
     static const char *const optStrings[] = { "-strict", NULL };
@@ -2505,6 +2474,8 @@ BinaryDecodeHex(
 	case OPT_STRICT:
 	    strict = 1;
 	    break;
+	default:
+	    TCL_UNREACHABLE();
 	}
     }
 
@@ -2605,16 +2576,16 @@ static int
 BinaryEncode64(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const objv[])
+    Tcl_Size objc,
+    Tcl_Obj *const *objv)
 {
     Tcl_Obj *resultObj;
     unsigned char *data, *limit;
     Tcl_WideInt maxlen = 0;
     const char *wrapchar = "\n";
-    Tcl_Size wrapcharlen = 1;
+    Tcl_Size i, wrapcharlen = 1;
     int index, purewrap = 1;
-    Tcl_Size i, offset, size, outindex = 0, count = 0;
+    Tcl_Size offset, size, outindex = 0, count = 0;
     enum { OPT_MAXLEN, OPT_WRAPCHAR };
     static const char *const optStrings[] = { "-maxlen", "-wrapchar", NULL };
 
@@ -2649,6 +2620,8 @@ BinaryEncode64(
 		wrapchar = TclGetStringFromObj(objv[i + 1], &wrapcharlen);
 	    }
 	    break;
+	default:
+	    TCL_UNREACHABLE();
 	}
     }
     if (wrapcharlen == 0) {
@@ -2731,18 +2704,17 @@ static int
 BinaryEncodeUu(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const objv[])
+    Tcl_Size objc,
+    Tcl_Obj *const *objv)
 {
     Tcl_Obj *resultObj;
     unsigned char *data, *start, *cursor;
-    int i, bits, index;
-    unsigned int n;
-    int lineLength = 61;
+    int bits, lineLength = 61;
+    Tcl_Size rawLength;
     const unsigned char SingleNewline[] = { UCHAR('\n') };
     const unsigned char *wrapchar = SingleNewline;
-    Tcl_Size j, rawLength, offset, count = 0, wrapcharlen = sizeof(SingleNewline);
-    enum { OPT_MAXLEN, OPT_WRAPCHAR };
+    Tcl_Size n, i, j, offset, count = 0, wrapcharlen = sizeof(SingleNewline);
+    enum { OPT_MAXLEN, OPT_WRAPCHAR } index;
     static const char *const optStrings[] = { "-maxlen", "-wrapchar", NULL };
 
     if (objc < 2 || objc % 2 != 0) {
@@ -2773,34 +2745,32 @@ BinaryEncodeUu(
 	case OPT_WRAPCHAR:
 	    wrapchar = (const unsigned char *)TclGetStringFromObj(
 		    objv[i + 1], &wrapcharlen);
-	    {
-		const unsigned char *p = wrapchar;
-		Tcl_Size numBytes = wrapcharlen;
+	    const unsigned char *p = wrapchar;
+	    Tcl_Size numBytes = wrapcharlen;
 
-		while (numBytes) {
-		    switch (*p) {
-			case '\t':
-			case '\v':
-			case '\f':
-			case '\r':
-			    p++; numBytes--;
-			    continue;
-			case '\n':
-			    numBytes--;
-			    break;
-			default:
-			badwrap:
-			    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-				    "invalid wrapchar; will defeat decoding",
-				    -1));
-			    Tcl_SetErrorCode(interp, "TCL", "BINARY",
-				    "ENCODE", "WRAPCHAR", (char *)NULL);
-			    return TCL_ERROR;
-		    }
-		}
-		if (numBytes) {
+	    while (numBytes) {
+		switch (*p) {
+		case '\t':
+		case '\v':
+		case '\f':
+		case '\r':
+		    p++;
+		    numBytes--;
+		    continue;
+		case '\n':
+		    numBytes--;
+		    break;
+		default:
 		    goto badwrap;
 		}
+	    }
+	    if (numBytes) {
+	    badwrap:
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			"invalid wrapchar; will defeat decoding", -1));
+		Tcl_SetErrorCode(interp, "TCL", "BINARY",
+			"ENCODE", "WRAPCHAR", (char *)NULL);
+		return TCL_ERROR;
 	    }
 	    break;
 	}
@@ -2838,14 +2808,16 @@ BinaryEncodeUu(
 	}
 	*cursor++ = UueDigits[lineLen];
 	for (i = 0 ; i < lineLen ; i++) {
-	    n <<= 8;
+	    /* Left shift cast to unsigned type to prevent UB on overflow */
+	    n = (Tcl_Size)((size_t)n << 8);
 	    n |= data[offset++];
 	    for (bits += 8; bits > 6 ; bits -= 6) {
 		*cursor++ = UueDigits[(n >> (bits - 6)) & 0x3F];
 	    }
 	}
 	if (bits > 0) {
-	    n <<= 8;
+	    /* Left shift cast to unsigned type to prevent UB on overflow */
+	    n = (Tcl_Size)((size_t)n << 8);
 	    *cursor++ = UueDigits[(n >> (bits + 2)) & 0x3F];
 	    bits = 0;
 	}
@@ -2883,14 +2855,14 @@ static int
 BinaryDecodeUu(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const objv[])
+    Tcl_Size objc,
+    Tcl_Obj *const *objv)
 {
     Tcl_Obj *resultObj = NULL;
     unsigned char *data, *datastart, *dataend;
     unsigned char *begin, *cursor;
-    int i, index, pure = 1, strict = 0, lineLen;
-    Tcl_Size size, count = 0;
+    int index, pure = 1, strict = 0, lineLen;
+    Tcl_Size i, size, count = 0;
     unsigned char c;
     int ucs4;
     enum { OPT_STRICT };
@@ -2909,6 +2881,8 @@ BinaryDecodeUu(
 	case OPT_STRICT:
 	    strict = 1;
 	    break;
+	default:
+	    TCL_UNREACHABLE();
 	}
     }
 
@@ -3057,16 +3031,16 @@ static int
 BinaryDecode64(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const objv[])
+    Tcl_Size objc,
+    Tcl_Obj *const *objv)
 {
     Tcl_Obj *resultObj = NULL;
     unsigned char *data, *datastart, *dataend, c = '\0';
     unsigned char *begin = NULL;
     unsigned char *cursor = NULL;
     int pure = 1, strict = 0;
-    int i, index, cut = 0;
-    Tcl_Size size, count = 0;
+    int index, cut = 0;
+    Tcl_Size i, size, count = 0;
     int ucs4;
     enum { OPT_STRICT };
     static const char *const optStrings[] = { "-strict", NULL };
@@ -3084,6 +3058,8 @@ BinaryDecode64(
 	case OPT_STRICT:
 	    strict = 1;
 	    break;
+	default:
+	    TCL_UNREACHABLE();
 	}
     }
 

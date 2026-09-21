@@ -10,7 +10,6 @@
  */
 
 #include "tclInt.h"
-#include <assert.h>
 
 /*
  * Indices of the standard return options dictionary keys.
@@ -212,6 +211,7 @@ Tcl_DiscardInterpState(
  *----------------------------------------------------------------------
  *
  * Tcl_SetObjResult --
+ *
  *	Makes objPtr the interpreter's result value.
  *
  * Results:
@@ -551,7 +551,7 @@ Tcl_SetObjErrorCode(
  *
  * Tcl_GetErrorLine --
  *
- *      Returns the line number associated with the current error.
+ *	Returns the line number associated with the current error.
  *
  *----------------------------------------------------------------------
  */
@@ -568,7 +568,7 @@ Tcl_GetErrorLine(
  *
  * Tcl_SetErrorLine --
  *
- *      Sets the line number associated with the current error.
+ *	Sets the line number associated with the current error.
  *
  *----------------------------------------------------------------------
  */
@@ -793,6 +793,9 @@ TclProcessReturn(
  *
  *	Parses, checks, and stores the options to the [return] command.
  *
+ *	The number of arguments (objc) must be even, with the corresponding
+ *	objv holding values to be processed as key value .... key value.
+ *
  * Results:
  *	Returns TCL_ERROR if any of the option values are invalid. Otherwise,
  *	returns TCL_OK, and writes the returnOpts, code, and level values to
@@ -804,11 +807,54 @@ TclProcessReturn(
  *----------------------------------------------------------------------
  */
 
+static int
+ExpandedOptions(
+    Tcl_Interp *interp,		/* Current interpreter. */
+    Tcl_Obj **keys,		/* Built-in keys (per thread) */
+    Tcl_Obj *returnOpts,	/* Options dict we are building */
+    Tcl_Size objc,		/* Number of arguments. */
+    Tcl_Obj *const *objv)	/* Argument objects. */
+{
+    for (;  objc > 1;  objv += 2, objc -= 2) {
+	const char *opt = TclGetString(objv[0]);
+	const char *compare = TclGetString(keys[KEY_OPTIONS]);
+
+	if ((objv[0]->length == keys[KEY_OPTIONS]->length)
+		&& (memcmp(opt, compare, objv[0]->length) == 0)) {
+	    /* Process the -options switch to emulate {*} expansion.
+	     *
+	     * Use lists so duplicate keys are not lost.
+	     */
+
+	    Tcl_Size nestc;
+	    Tcl_Obj **nestv;
+
+	    if (TCL_ERROR == TclListObjGetElements(interp, objv[1],
+		    &nestc, &nestv) || (nestc % 2)) {
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"bad -options value: expected dictionary but got"
+			" \"%s\"", TclGetString(objv[1])));
+		Tcl_SetErrorCode(interp, "TCL", "RESULT", "ILLEGAL_OPTIONS",
+			(char *)NULL);
+		return TCL_ERROR;
+	    }
+
+	    if (TCL_ERROR ==
+		    ExpandedOptions(interp, keys, returnOpts, nestc, nestv)) {
+		return TCL_ERROR;
+	    }
+	} else {
+	    Tcl_DictObjPut(NULL, returnOpts, objv[0], objv[1]);
+	}
+    }
+    return TCL_OK;
+}
+
 int
 TclMergeReturnOptions(
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,		/* Number of arguments. */
-    Tcl_Obj *const objv[],	/* Argument objects. */
+    Tcl_Obj *const *objv,	/* Argument objects. */
     Tcl_Obj **optionsPtrPtr,	/* If not NULL, points to space for a (Tcl_Obj
 				 * *) where the pointer to the merged return
 				 * options dictionary should be written. */
@@ -823,48 +869,11 @@ TclMergeReturnOptions(
     Tcl_Obj *returnOpts;
     Tcl_Obj **keys = GetKeys();
 
+    /* All callers are expected to pass an even value for objc. */
+
     TclNewObj(returnOpts);
-    for (;  objc > 1;  objv += 2, objc -= 2) {
-	const char *opt = TclGetString(objv[0]);
-	const char *compare = TclGetString(keys[KEY_OPTIONS]);
-
-	if ((objv[0]->length == keys[KEY_OPTIONS]->length)
-		&& (memcmp(opt, compare, objv[0]->length) == 0)) {
-	    Tcl_DictSearch search;
-	    int done = 0;
-	    Tcl_Obj *keyPtr;
-	    Tcl_Obj *dict = objv[1];
-
-	nestedOptions:
-	    if (TCL_ERROR == Tcl_DictObjFirst(NULL, dict, &search,
-		    &keyPtr, &valuePtr, &done)) {
-		/*
-		 * Value is not a legal dictionary.
-		 */
-
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"bad %s value: expected dictionary but got \"%s\"",
-			compare, TclGetString(objv[1])));
-		Tcl_SetErrorCode(interp, "TCL", "RESULT", "ILLEGAL_OPTIONS",
-			(char *)NULL);
-		goto error;
-	    }
-
-	    while (!done) {
-		Tcl_DictObjPut(NULL, returnOpts, keyPtr, valuePtr);
-		Tcl_DictObjNext(&search, &keyPtr, &valuePtr, &done);
-	    }
-
-	    Tcl_DictObjGet(NULL, returnOpts, keys[KEY_OPTIONS], &valuePtr);
-	    if (valuePtr != NULL) {
-		dict = valuePtr;
-		Tcl_DictObjRemove(NULL, returnOpts, keys[KEY_OPTIONS]);
-		goto nestedOptions;
-	    }
-
-	} else {
-	    Tcl_DictObjPut(NULL, returnOpts, objv[0], objv[1]);
-	}
+    if (TCL_ERROR == ExpandedOptions(interp, keys, returnOpts, objc, objv)) {
+	goto error;
     }
 
     /*
@@ -909,7 +918,7 @@ TclMergeReturnOptions(
     if (valuePtr != NULL) {
 	Tcl_Size length;
 
-	if (TCL_ERROR == TclListObjLength(NULL, valuePtr, &length )) {
+	if (TCL_ERROR == TclListObjLength(NULL, valuePtr, &length)) {
 	    /*
 	     * Value is not a list, which is illegal for -errorcode.
 	     */
@@ -1188,9 +1197,8 @@ Tcl_TransferResult(
 	 * yet at end of the stack (e. g. proc etc), to avoid double reporting
 	 */
 	if (tiPtr->errorLine > 1 && tiPtr->errorInfo &&
-	    tiPtr->errorInfo->length &&
-	    tiPtr->errorInfo->bytes[tiPtr->errorInfo->length-1] != ')'
-	) {
+		tiPtr->errorInfo->length &&
+		tiPtr->errorInfo->bytes[tiPtr->errorInfo->length-1] != ')') {
 	    Tcl_AppendObjToErrorInfo(targetInterp, Tcl_ObjPrintf(
 		    "\n    (\"interp eval\" body line %d)", tiPtr->errorLine));
 	}
@@ -1198,6 +1206,63 @@ Tcl_TransferResult(
     }
     Tcl_SetObjResult(targetInterp, Tcl_GetObjResult(sourceInterp));
     Tcl_ResetResult(sourceInterp);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclSafeCatchCmd --
+ *
+ *	Same as "::catch" command but avoids overwriting of interp state.
+ *
+ *	See [554117edde] for more info (and proper solution).
+ *
+ *----------------------------------------------------------------------
+ */
+int
+TclSafeCatchCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,
+    Tcl_Size objc,
+    Tcl_Obj *const *objv)
+{
+    Interp *iPtr = (Interp *)interp;
+    int ret, flags = 0;
+    InterpState *statePtr;
+
+    if (objc == 1) {
+	/* wrong # args : */
+	return Tcl_CatchObjCmd(NULL, interp, objc, objv);
+    }
+
+    statePtr = (InterpState *)Tcl_SaveInterpState(interp, 0);
+    if (!statePtr->errorInfo) {
+	/* todo: avoid traced get of errorInfo here */
+	TclInitObjRef(statePtr->errorInfo,
+		Tcl_ObjGetVar2(interp, iPtr->eiVar, NULL, 0));
+	flags |= ERR_LEGACY_COPY;
+    }
+    if (!statePtr->errorCode) {
+	/* todo: avoid traced get of errorCode here */
+	TclInitObjRef(statePtr->errorCode,
+		Tcl_ObjGetVar2(interp, iPtr->ecVar, NULL, 0));
+	flags |= ERR_LEGACY_COPY;
+    }
+
+    /* original catch */
+    ret = Tcl_CatchObjCmd(NULL, interp, objc, objv);
+
+    if (ret == TCL_ERROR) {
+	Tcl_DiscardInterpState((Tcl_InterpState)statePtr);
+	return TCL_ERROR;
+    }
+    /* overwrite result in state with catch result */
+    TclSetObjRef(statePtr->objResult, Tcl_GetObjResult(interp));
+    /* set result (together with restore state) to interpreter */
+    (void) Tcl_RestoreInterpState(interp, (Tcl_InterpState)statePtr);
+    /* todo: unless ERR_LEGACY_COPY not set in restore (branch [bug-554117edde] not merged yet) */
+    iPtr->flags |= (flags & ERR_LEGACY_COPY);
+    return ret;
 }
 
 /*

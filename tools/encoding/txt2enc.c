@@ -5,7 +5,7 @@
  *	came with "The Unicode Standard, Version 2.0" into a form that can
  *	be quickly loaded into Tcl.
  *
- * Copyright (c) 1997 Sun Microsystems, Inc.
+ * Copyright © 1997 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.

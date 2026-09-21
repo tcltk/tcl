@@ -253,7 +253,7 @@ Tcl_Release(
  *	None.
  *
  * Side effects:
- *	Ptr may be released by calling free().
+ *	Ptr may be released by calling Tcl_Free().
  *
  *----------------------------------------------------------------------
  */

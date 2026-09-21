@@ -17,7 +17,9 @@ if {"::tcltest" ni [namespace children]} {
 unset -nocomplain path
 catch {set oldlang $env(LANG)}
 set env(LANG) C
-
+
+source [file join [file dirname [info script]] tcltests.tcl]
+
 test unixInit-1.1 {TclpInitPlatform: ignore SIGPIPE} {unix stdio} {
     set x {}
     # Watch out for a race condition here.  If tcltest is too slow to start
@@ -44,15 +46,15 @@ test unixInit-1.2 {initialisation: standard channel type deduction} {unix stdio}
     # and delivers a constant string to the first client to connect to that
     # port before exiting.
     set pipe1 [open "|[list [interpreter]]" r+]
-    puts $pipe1 {
+    puts $pipe1 [string map [list @@TCLTEST_IPV4@@ [tcltests::localIPv4Address]] {
 	proc accept {channel host port} {
 	    puts $channel {puts [chan configure stdin -peername]; exit}
 	    close $channel
 	    exit
 	}
-	puts [chan configure [socket -server accept -myaddr 127.0.0.1 0] -sockname]
+	puts [chan configure [socket -server accept -myaddr @@TCLTEST_IPV4@@ 0] -sockname]
 	vwait forever \
-	    }
+	    }]
     # Note the backslash above; this is important to make sure that the whole
     # string is read before an [exit] can happen...
     flush $pipe1
@@ -75,11 +77,11 @@ test unixInit-1.2 {initialisation: standard channel type deduction} {unix stdio}
     # Can't use normal comparison, as hostname varies due to some
     # installations having a messed up /etc/hosts file.
     if {
-	"127.0.0.1" eq [lindex $result 0] && $port == [lindex $result 2]
+	[tcltests::localIPv4Address] eq [lindex $result 0] && $port == [lindex $result 2]
     } then {
 	subst "OK"
     } else {
-	subst "Expected: `[list 127.0.0.1 localhost $port]', Got `$result'"
+	subst "Expected: `[list [tcltests::localIPv4Address] localhost $port]', Got `$result'"
     }
 } {OK}
 
@@ -97,16 +99,16 @@ test unixInit-3.1 {TclpSetInitialEncodings} -constraints {
     unset -nocomplain env(LANG)
 } -match regexp -result {^(iso8859-15?|utf-8)$}
 
-# unixInit-3.2 depends on the *spawned* [interpreter] being able to locate
-# tcl_library without setting of TCL_LIBRARY env. This in turn depends on
-# Tcl's "library" directory being under the parent or grandparent of the
-# executable directory (the initScript search path in tclInterp.c).
-# Thus this constraint. On GiuHub CI, the only time this is not true
-# is for the XCode builds.
-if {[string match [zipfs root]* [info library]] ||
-    [file isfile [file normalize [file join [info nameofexecutable] .. .. library init.tcl]]] ||
-    [file isfile [file normalize [file join [info nameofexecutable] .. .. .. library init.tcl]]]
-} {
+# This test is fundamentally flawed as noted in the core mailing list at
+# https://sourceforge.net/p/tcl/mailman/message/59255593/. Basically, it
+# assumes (for non-zipfs) builds to run under the source directory and TIP 732
+# no longer includes ....library in its search path. Therefore only run it on
+# zipfs builds though even there it is superfluous since the test suite does
+# not set TCL_LIBRARY for zipfs builds anyways so unsetting it has no
+# effect. To really test Tcl's search paths, a better test is needed where
+# the shell is spawned after installation and not the one in the build
+# directory.
+if {[string match [zipfs root]* [info library]]} {
     tcltest::testConstraint enableUnixInit32 1
 } else {
     tcltest::testConstraint enableUnixInit32 0
@@ -123,18 +125,12 @@ test unixInit-3.2 {TclpSetInitialEncodings} -setup {
     puts $f {puts [encoding system]; exit}
     set enc [gets $f]
     close $f
-    set validEncodings [list euc-jp]
-    if {[string match HP-UX $tcl_platform(os)]} {
-	# Some older HP-UX systems need us to accept this as valid Bug 453883
-	# reports that newer HP-UX systems report euc-jp like everybody else.
-	lappend validEncodings shiftjis
-    }
-    expr {$enc ni $validEncodings}
+    set enc
 } -cleanup {
     unset -nocomplain env(LANG) env(LC_ALL)
     catch {set env(LC_ALL) $oldlc_all}
     catch {set env(TCL_LIBRARY) $oldtcl_library}
-} -result 0
+} -result {^(euc-jp|shiftjis)$} -match regexp
 
 test unixInit-4.1 {TclpSetVariables} {unix} {
     # just make sure they exist

@@ -22,9 +22,37 @@ static int		CopyRenameOneFile(Tcl_Interp *interp,
 			    int copyFlag, int force);
 static Tcl_Obj *	FileBasename(Tcl_Interp *interp, Tcl_Obj *pathPtr);
 static int		FileCopyRename(Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[], int copyFlag);
-static int		FileForceOption(Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[], int *forcePtr);
+			    Tcl_Size objc, Tcl_Obj *const *objv, int copyFlag);
+static size_t		FileForceOption(Tcl_Interp *interp,
+			    Tcl_Size objc, Tcl_Obj *const *objv, int *forcePtr);
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * CheckFilenameEncodable
+ *
+ *	This checks if a filename can be encoded on the target platform,
+ *	disallowing things like naked surrogates, etc.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	May update the interpreter result with an error message on failure.
+ *
+ *---------------------------------------------------------------------------
+ */
+static inline int
+CheckFilenameEncodable(
+    Tcl_Interp *interp,
+    Tcl_Obj *fileName)
+{
+    Tcl_DString ds;
+    int code = Tcl_UtfToExternalDStringEx(interp, TCLFSENCODING,
+	    TclGetString(fileName), TCL_INDEX_NONE, 0, &ds, NULL);
+    Tcl_DStringFree(&ds);
+    return code == TCL_OK ? TCL_OK : TCL_ERROR;
+}
 
 /*
  *---------------------------------------------------------------------------
@@ -50,8 +78,8 @@ TclFileRenameCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Interp for error reporting or recursive
 				 * calls in the case of a tricky rename. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument strings passed to Tcl_FileCmd. */
+    Tcl_Size objc,		/* Number of arguments. */
+    Tcl_Obj *const *objv)	/* Argument strings passed to Tcl_FileCmd. */
 {
     return FileCopyRename(interp, objc, objv, 0);
 }
@@ -79,8 +107,8 @@ TclFileCopyCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Used for error reporting or recursive calls
 				 * in the case of a tricky copy. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument strings passed to Tcl_FileCmd. */
+    Tcl_Size objc,		/* Number of arguments. */
+    Tcl_Obj *const *objv)	/* Argument strings passed to Tcl_FileCmd. */
 {
     return FileCopyRename(interp, objc, objv, 1);
 }
@@ -105,18 +133,18 @@ TclFileCopyCmd(
 static int
 FileCopyRename(
     Tcl_Interp *interp,		/* Used for error reporting. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[],	/* Argument strings passed to Tcl_FileCmd. */
+    Tcl_Size objc,		/* Number of arguments. */
+    Tcl_Obj *const *objv,	/* Argument strings passed to Tcl_FileCmd. */
     int copyFlag)		/* If non-zero, copy source(s). Otherwise,
 				 * rename them. */
 {
-    int i, result, force;
+    int result, force;
+    Tcl_Size i;
     Tcl_StatBuf statBuf;
     Tcl_Obj *target;
-    Tcl_DString ds;
 
     i = FileForceOption(interp, objc - 1, objv + 1, &force);
-    if (i < 0) {
+    if (i == TCL_INDEX_NONE) {
 	return TCL_ERROR;
     }
     i++;
@@ -135,12 +163,9 @@ FileCopyRename(
     if (Tcl_FSConvertToPathType(interp, target) != TCL_OK) {
 	return TCL_ERROR;
     }
-    if (Tcl_UtfToExternalDStringEx(interp, TCLFSENCODING, TclGetString(target),
-	    TCL_INDEX_NONE, 0, &ds, NULL) != TCL_OK) {
-	Tcl_DStringFree(&ds);
+    if (CheckFilenameEncodable(interp, target) != TCL_OK) {
 	return TCL_ERROR;
     }
-    Tcl_DStringFree(&ds);
 
     result = TCL_OK;
 
@@ -187,7 +212,7 @@ FileCopyRename(
 	}
 	jargv[0] = objv[objc - 1];
 	jargv[1] = source;
-	newFileName = TclJoinPath(2, jargv, 1);
+	newFileName = TclJoinPath(2, jargv, true);
 	Tcl_IncrRefCount(newFileName);
 	result = CopyRenameOneFile(interp, objv[i], newFileName, copyFlag,
 		force);
@@ -223,16 +248,15 @@ int
 TclFileMakeDirsCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Used for error reporting. */
-    int objc,			/* Number of arguments */
-    Tcl_Obj *const objv[])	/* Argument strings passed to Tcl_FileCmd. */
+    Tcl_Size objc,		/* Number of arguments */
+    Tcl_Obj *const *objv)	/* Argument strings passed to Tcl_FileCmd. */
 {
     Tcl_Obj *errfile = NULL;
-    int result, i;
-    Tcl_Size j, pobjc;
+    int result;
+    Tcl_Size i, j, pobjc;
     Tcl_Obj *split = NULL;
     Tcl_Obj *target = NULL;
     Tcl_StatBuf statBuf;
-    Tcl_DString ds;
 
     result = TCL_OK;
     for (i = 1; i < objc; i++) {
@@ -240,13 +264,10 @@ TclFileMakeDirsCmd(
 	    result = TCL_ERROR;
 	    break;
 	}
-	if (Tcl_UtfToExternalDStringEx(interp, TCLFSENCODING, TclGetString(objv[i]),
-		TCL_INDEX_NONE, 0, &ds, NULL) != TCL_OK) {
-	    Tcl_DStringFree(&ds);
+	if (CheckFilenameEncodable(interp, objv[i]) != TCL_OK) {
 	    result = TCL_ERROR;
 	    break;
 	}
-	Tcl_DStringFree(&ds);
 
 	split = Tcl_FSSplitPath(objv[i], &pobjc);
 	Tcl_IncrRefCount(split);
@@ -356,16 +377,16 @@ int
 TclFileDeleteCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Used for error reporting */
-    int objc,			/* Number of arguments */
-    Tcl_Obj *const objv[])	/* Argument strings passed to Tcl_FileCmd. */
+    Tcl_Size objc,		/* Number of arguments */
+    Tcl_Obj *const *objv)	/* Argument strings passed to Tcl_FileCmd. */
 {
-    int i, force, result;
+    int force, result;
+    Tcl_Size i;
     Tcl_Obj *errfile;
     Tcl_Obj *errorBuffer = NULL;
-    Tcl_DString ds;
 
     i = FileForceOption(interp, objc - 1, objv + 1, &force);
-    if (i < 0) {
+    if (i == TCL_INDEX_NONE) {
 	return TCL_ERROR;
     }
 
@@ -380,13 +401,10 @@ TclFileDeleteCmd(
 	    result = TCL_ERROR;
 	    goto done;
 	}
-	if (Tcl_UtfToExternalDStringEx(interp, TCLFSENCODING, TclGetString(objv[i]),
-		TCL_INDEX_NONE, 0, &ds, NULL) != TCL_OK) {
-	    Tcl_DStringFree(&ds);
+	if (CheckFilenameEncodable(interp, objv[i]) != TCL_OK) {
 	    result = TCL_ERROR;
 	    goto done;
 	}
-	Tcl_DStringFree(&ds);
 
 	/*
 	 * Call lstat() to get info so can delete symbolic link itself.
@@ -429,7 +447,6 @@ TclFileDeleteCmd(
 	}
 
 	if (result != TCL_OK) {
-
 	    /*
 	     * Avoid possible race condition (file/directory deleted after call
 	     * of lstat), so bypass ENOENT because not an error, just a no-op
@@ -506,26 +523,19 @@ CopyRenameOneFile(
     Tcl_Obj *actualSource=NULL;	/* If source is a link, then this is the real
 				 * file/directory. */
     Tcl_StatBuf sourceStatBuf, targetStatBuf;
-    Tcl_DString ds;
 
     if (Tcl_FSConvertToPathType(interp, source) != TCL_OK) {
 	return TCL_ERROR;
     }
-    if (Tcl_UtfToExternalDStringEx(interp, TCLFSENCODING, TclGetString(source),
-	    TCL_INDEX_NONE, 0, &ds, NULL) != TCL_OK) {
-	Tcl_DStringFree(&ds);
+    if (CheckFilenameEncodable(interp, source) != TCL_OK) {
 	return TCL_ERROR;
     }
-    Tcl_DStringFree(&ds);
     if (Tcl_FSConvertToPathType(interp, target) != TCL_OK) {
 	return TCL_ERROR;
     }
-    if (Tcl_UtfToExternalDStringEx(interp, TCLFSENCODING, TclGetString(target),
-	    TCL_INDEX_NONE, 0, &ds, NULL) != TCL_OK) {
-	Tcl_DStringFree(&ds);
+    if (CheckFilenameEncodable(interp, target) != TCL_OK) {
 	return TCL_ERROR;
     }
-    Tcl_DStringFree(&ds);
 
     errfile = NULL;
     errorBuffer = NULL;
@@ -603,7 +613,7 @@ CopyRenameOneFile(
 
 	{
 	    Tcl_Obj *perm;
-	    Tcl_Size index;
+	    int index;
 
 	    TclNewLiteralStringObj(perm, "u+w");
 	    Tcl_IncrRefCount(perm);
@@ -729,23 +739,17 @@ CopyRenameOneFile(
 		 * cross-filesystem copy. We do this through our Tcl library.
 		 */
 
-		Tcl_Obj *copyCommand, *cmdObj, *opObj;
-
-		TclNewObj(copyCommand);
-		TclNewLiteralStringObj(cmdObj, "::tcl::CopyDirectory");
-		Tcl_ListObjAppendElement(interp, copyCommand, cmdObj);
-		if (copyFlag) {
-		    TclNewLiteralStringObj(opObj, "copying");
-		} else {
-		    TclNewLiteralStringObj(opObj, "renaming");
-		}
-		Tcl_ListObjAppendElement(interp, copyCommand, opObj);
-		Tcl_ListObjAppendElement(interp, copyCommand, source);
-		Tcl_ListObjAppendElement(interp, copyCommand, target);
-		Tcl_IncrRefCount(copyCommand);
-		result = Tcl_EvalObjEx(interp, copyCommand,
-			TCL_EVAL_GLOBAL | TCL_EVAL_DIRECT);
-		Tcl_DecrRefCount(copyCommand);
+		Tcl_Obj *copyDirectoryArgs[4] = {
+		    Tcl_NewStringObj("::tcl::CopyDirectory", -1),
+		    Tcl_NewStringObj(copyFlag ? "copying" : "renaming", -1),
+		    source,
+		    target
+		};
+		Tcl_IncrRefCount(copyDirectoryArgs[0]);
+		Tcl_IncrRefCount(copyDirectoryArgs[1]);
+		result = Tcl_EvalObjv(interp, 4, copyDirectoryArgs, 0);
+		Tcl_DecrRefCount(copyDirectoryArgs[0]);
+		Tcl_DecrRefCount(copyDirectoryArgs[1]);
 		if (result != TCL_OK) {
 		    /*
 		     * There was an error in the Tcl-level copy. We will pass
@@ -852,16 +856,17 @@ CopyRenameOneFile(
  *---------------------------------------------------------------------------
  */
 
-static int
+static size_t
 FileForceOption(
     Tcl_Interp *interp,		/* Interp, for error return. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[],	/* Argument strings.  First command line
+    Tcl_Size objc,		/* Number of arguments. */
+    Tcl_Obj *const *objv,	/* Argument strings.  First command line
 				 * option, if it exists, begins at 0. */
     int *forcePtr)		/* If the "-force" was specified, *forcePtr is
 				 * filled with 1, otherwise with 0. */
 {
-    int force, i, idx;
+    int force, idx;
+    Tcl_Size i;
     static const char *const options[] = {
 	"-force", "--", NULL
     };
@@ -873,7 +878,7 @@ FileForceOption(
 	}
 	if (Tcl_GetIndexFromObj(interp, objv[i], options, "option", TCL_EXACT,
 		&idx) != TCL_OK) {
-	    return -1;
+	    return TCL_INDEX_NONE;
 	}
 	if (idx == 0 /* -force */) {
 	    force = 1;
@@ -976,8 +981,8 @@ int
 TclFileAttrsCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* The interpreter for error reporting. */
-    int objc,			/* Number of command line arguments. */
-    Tcl_Obj *const objv[])	/* The command line objects. */
+    Tcl_Size objc,		/* Number of command line arguments. */
+    Tcl_Obj *const *objv)	/* The command line objects. */
 {
     int result;
     const char *const *attributeStrings;
@@ -985,7 +990,6 @@ TclFileAttrsCmd(
     Tcl_Obj *objStrings = NULL;
     Tcl_Size numObjStrings = TCL_INDEX_NONE;
     Tcl_Obj *filePtr;
-    Tcl_DString ds;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "name ?-option value ...?");
@@ -996,12 +1000,9 @@ TclFileAttrsCmd(
     if (Tcl_FSConvertToPathType(interp, filePtr) != TCL_OK) {
 	return TCL_ERROR;
     }
-    if (Tcl_UtfToExternalDStringEx(interp, TCLFSENCODING, TclGetString(filePtr),
-	    TCL_INDEX_NONE, 0, &ds, NULL) != TCL_OK) {
-	Tcl_DStringFree(&ds);
+    if (CheckFilenameEncodable(interp, filePtr) != TCL_OK) {
 	return TCL_ERROR;
     }
-    Tcl_DStringFree(&ds);
 
     objc -= 2;
     objv += 2;
@@ -1133,7 +1134,8 @@ TclFileAttrsCmd(
 	 * Set option/value pairs.
 	 */
 
-	int i, index;
+	Tcl_Size i;
+	int index;
 
 	if (numObjStrings == 0) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -1199,12 +1201,11 @@ int
 TclFileLinkCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const objv[])
+    Tcl_Size objc,
+    Tcl_Obj *const *objv)
 {
     Tcl_Obj *contents;
     int index;
-    Tcl_DString ds;
 
     if (objc < 2 || objc > 4) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?-linktype? linkname ?target?");
@@ -1247,12 +1248,9 @@ TclFileLinkCmd(
 	if (Tcl_FSConvertToPathType(interp, objv[index]) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	if (Tcl_UtfToExternalDStringEx(interp, TCLFSENCODING, TclGetString(objv[index]),
-		TCL_INDEX_NONE, 0, &ds, NULL) != TCL_OK) {
-	    Tcl_DStringFree(&ds);
+	if (CheckFilenameEncodable(interp, objv[index]) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	Tcl_DStringFree(&ds);
 
 	/*
 	 * Create link from source to target.
@@ -1310,12 +1308,9 @@ TclFileLinkCmd(
 	if (Tcl_FSConvertToPathType(interp, objv[index]) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	if (Tcl_UtfToExternalDStringEx(interp, TCLFSENCODING, TclGetString(objv[index]),
-		TCL_INDEX_NONE, 0, &ds, NULL) != TCL_OK) {
-	    Tcl_DStringFree(&ds);
+	if (CheckFilenameEncodable(interp, objv[index]) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	Tcl_DStringFree(&ds);
 
 	/*
 	 * Read link
@@ -1363,11 +1358,10 @@ int
 TclFileReadLinkCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const objv[])
+    Tcl_Size objc,
+    Tcl_Obj *const *objv)
 {
     Tcl_Obj *contents;
-    Tcl_DString ds;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "name");
@@ -1377,12 +1371,9 @@ TclFileReadLinkCmd(
     if (Tcl_FSConvertToPathType(interp, objv[1]) != TCL_OK) {
 	return TCL_ERROR;
     }
-    if (Tcl_UtfToExternalDStringEx(interp, TCLFSENCODING, TclGetString(objv[1]),
-	    TCL_INDEX_NONE, 0, &ds, NULL) != TCL_OK) {
-	Tcl_DStringFree(&ds);
+    if (CheckFilenameEncodable(interp, objv[1]) != TCL_OK) {
 	return TCL_ERROR;
     }
-    Tcl_DStringFree(&ds);
 
     contents = Tcl_FSLink(objv[1], NULL, 0);
 
@@ -1421,8 +1412,8 @@ int
 TclFileTemporaryCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const objv[])
+    Tcl_Size objc,
+    Tcl_Obj *const *objv)
 {
     Tcl_Obj *nameVarObj = NULL;	/* Variable to store the name of the temporary
 				 * file in. */
@@ -1580,8 +1571,8 @@ int
 TclFileTempDirCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const objv[])
+    Tcl_Size objc,
+    Tcl_Obj *const *objv)
 {
     Tcl_Obj *dirNameObj;	/* Object that will contain the directory
 				 * name. */
@@ -1725,8 +1716,8 @@ int
 TclFileHomeCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const objv[])
+    Tcl_Size objc,
+    Tcl_Obj *const *objv)
 {
     Tcl_Obj *homeDirObj;
 
@@ -1763,8 +1754,8 @@ int
 TclFileTildeExpandCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const objv[])
+    Tcl_Size objc,
+    Tcl_Obj *const *objv)
 {
     Tcl_Obj *expandedPathObj;
 

@@ -4,11 +4,11 @@
  *	This header file describes the externally-visible facilities of the
  *	Tcl interpreter.
  *
- * Copyright (c) 1987-1994 The Regents of the University of California.
- * Copyright (c) 1993-1996 Lucent Technologies.
- * Copyright (c) 1994-1998 Sun Microsystems, Inc.
- * Copyright (c) 1998-2000 by Scriptics Corporation.
- * Copyright (c) 2002 by Kevin B. Kenny.  All rights reserved.
+ * Copyright © 1987-1994 The Regents of the University of California.
+ * Copyright © 1993-1996 Lucent Technologies.
+ * Copyright © 1994-1998 Sun Microsystems, Inc.
+ * Copyright © 1998-2000 by Scriptics Corporation.
+ * Copyright © 2002 by Kevin B. Kenny.  All rights reserved.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -53,11 +53,11 @@ extern "C" {
 #   error "This header-file is for Tcl 9 only"
 #endif
 #define TCL_MINOR_VERSION   1
-#define TCL_RELEASE_LEVEL   TCL_ALPHA_RELEASE
-#define TCL_RELEASE_SERIAL  0
+#define TCL_RELEASE_LEVEL   TCL_BETA_RELEASE
+#define TCL_RELEASE_SERIAL  1
 
 #define TCL_VERSION	    "9.1"
-#define TCL_PATCH_LEVEL	    "9.1a0"
+#define TCL_PATCH_LEVEL	    "9.1b1"
 
 #if defined(RC_INVOKED)
 /*
@@ -503,7 +503,7 @@ typedef struct stat *Tcl_OldStat_;
 #define TCL_BREAK		3
 #define TCL_CONTINUE		4
 #define TCL_CODE_USER_MIN	5
-#define TCL_CODE_USER_MAX	0x3fffffff /*  1073741823 */
+#define TCL_CODE_USER_MAX	0x3fffffff /* 1073741823 */
 
 /*
  *----------------------------------------------------------------------------
@@ -534,13 +534,15 @@ typedef void (Tcl_ChannelProc) (void *clientData, int mask);
 typedef void (Tcl_CloseProc) (void *data);
 typedef void (Tcl_CmdDeleteProc) (void *clientData);
 typedef int (Tcl_CmdProc) (void *clientData, Tcl_Interp *interp,
-	int argc, const char *argv[]);
+	int argc, const char **argv);
+#ifndef TCL_NO_DEPRECATED
 typedef void (Tcl_CmdTraceProc) (void *clientData, Tcl_Interp *interp,
 	int level, char *command, Tcl_CmdProc *proc,
-	void *cmdClientData, int argc, const char *argv[]);
+	void *cmdClientData, int argc, const char **argv);
 typedef int (Tcl_CmdObjTraceProc) (void *clientData, Tcl_Interp *interp,
 	int level, const char *command, Tcl_Command commandInfo, int objc,
 	struct Tcl_Obj *const *objv);
+#endif /* TCL_NO_DEPRECATED */
 typedef void (Tcl_CmdObjTraceDeleteProc) (void *clientData);
 typedef void (Tcl_DupInternalRepProc) (struct Tcl_Obj *srcPtr,
 	struct Tcl_Obj *dupPtr);
@@ -560,8 +562,10 @@ typedef void (Tcl_IdleProc) (void *clientData);
 typedef void (Tcl_InterpDeleteProc) (void *clientData,
 	Tcl_Interp *interp);
 typedef void (Tcl_NamespaceDeleteProc) (void *clientData);
+#if !defined(TCL_NO_DEPRECATED) || !defined(BUILD_tcl)
 typedef int (Tcl_ObjCmdProc) (void *clientData, Tcl_Interp *interp,
 	int objc, struct Tcl_Obj *const *objv);
+#endif /* TCL_NO_DEPRECATED */
 typedef int (Tcl_ObjCmdProc2) (void *clientData, Tcl_Interp *interp,
 	Tcl_Size objc, struct Tcl_Obj *const *objv);
 typedef int (Tcl_CmdObjTraceProc2) (void *clientData, Tcl_Interp *interp,
@@ -574,7 +578,8 @@ typedef void (Tcl_FreeProc) (void *blockPtr);
 #define Tcl_EncodingFreeProc Tcl_FreeProc
 typedef int (Tcl_LibraryInitProc) (Tcl_Interp *interp);
 typedef int (Tcl_LibraryUnloadProc) (Tcl_Interp *interp, int flags);
-typedef void (Tcl_PanicProc) (const char *format, ...);
+typedef void (Tcl_PanicProc) (const char *format, ...) TCL_FORMAT_PRINTF(1, 2);
+typedef int (Tcl_PostInitProc) (Tcl_Interp *interp, void *clientData);
 typedef void (Tcl_TcpAcceptProc) (void *callbackData, Tcl_Channel chan,
 	char *address, int port);
 typedef void (Tcl_TimerProc) (void *clientData);
@@ -596,14 +601,14 @@ typedef void (Tcl_MainLoopProc) (void);
 /* Abstract List functions */
 typedef Tcl_Size (Tcl_ObjTypeLengthProc) (struct Tcl_Obj *listPtr);
 typedef int (Tcl_ObjTypeIndexProc) (Tcl_Interp *interp, struct Tcl_Obj *listPtr,
-	Tcl_Size index, struct Tcl_Obj** elemObj);
+	Tcl_Size index, struct Tcl_Obj **elemObj);
 typedef int (Tcl_ObjTypeSliceProc) (Tcl_Interp *interp, struct Tcl_Obj *listPtr,
 	Tcl_Size fromIdx, Tcl_Size toIdx, struct Tcl_Obj **newObjPtr);
 typedef int (Tcl_ObjTypeReverseProc) (Tcl_Interp *interp,
 	struct Tcl_Obj *listPtr, struct Tcl_Obj **newObjPtr);
 typedef int (Tcl_ObjTypeGetElements) (Tcl_Interp *interp,
 	struct Tcl_Obj *listPtr, Tcl_Size *objcptr, struct Tcl_Obj ***objvptr);
-typedef	struct Tcl_Obj *(Tcl_ObjTypeSetElement) (Tcl_Interp *interp,
+typedef struct Tcl_Obj *(Tcl_ObjTypeSetElement) (Tcl_Interp *interp,
 	struct Tcl_Obj *listPtr, Tcl_Size indexCount,
 	struct Tcl_Obj *const indexArray[], struct Tcl_Obj *valueObj);
 typedef int (Tcl_ObjTypeReplaceProc) (Tcl_Interp *interp,
@@ -813,8 +818,13 @@ typedef struct {
 				 * Tcl_CreateObjCommand; 2 if objProc was registered by
 				 * a call to Tcl_CreateObjCommand2; 0 otherwise.
 				 * Tcl_SetCmdInfo does not modify this field. */
+#ifdef TCL_NO_DEPRECATED
+    void *objProcNotUsed;	/* Command's object-based function. */
+    void *objClientDataNotUsed;	/* ClientData for object proc. */
+#else
     Tcl_ObjCmdProc *objProc;	/* Command's object-based function. */
     void *objClientData;	/* ClientData for object proc. */
+#endif
     Tcl_CmdProc *proc;		/* Command's string-based function. */
     void *clientData;		/* ClientData for string proc. */
     Tcl_CmdDeleteProc *deleteProc;
@@ -880,10 +890,10 @@ typedef struct Tcl_DString {
  *	TCL_NUMBER_NAN		Value is NaN.
  */
 
-#define TCL_NUMBER_INT          2
-#define TCL_NUMBER_BIG          3
-#define TCL_NUMBER_DOUBLE       4
-#define TCL_NUMBER_NAN          5
+#define TCL_NUMBER_INT		2
+#define TCL_NUMBER_BIG		3
+#define TCL_NUMBER_DOUBLE	4
+#define TCL_NUMBER_NAN		5
 
 /*
  * Flag values passed to Tcl_ConvertElement.
@@ -944,7 +954,7 @@ typedef struct Tcl_DString {
 #define TCL_EVAL_DIRECT		0x040000
 #define TCL_EVAL_INVOKE		0x080000
 #define TCL_CANCEL_UNWIND	0x100000
-#define TCL_EVAL_NOERR          0x200000
+#define TCL_EVAL_NOERR		0x200000
 
 /*
  * Special freeProc values that may be passed to Tcl_SetResult (see the man
@@ -1020,7 +1030,7 @@ typedef struct Tcl_DString {
  * Forward declarations of Tcl_HashTable and related types.
  */
 
-#ifndef TCL_HASH_TYPE
+#if !defined(TCL_HASH_TYPE) && !defined (TCL_NO_DEPRECATED)
 #   define TCL_HASH_TYPE size_t
 #endif
 
@@ -1215,7 +1225,7 @@ typedef struct Tcl_HashSearch {
 typedef struct {
     void *next;			/* Search position for underlying hash
 				 * table. */
-    size_t epoch;	/* Epoch marker for dictionary being searched,
+    size_t epoch;		/* Epoch marker for dictionary being searched,
 				 * or 0 if search has terminated. */
     Tcl_Dict dictionaryPtr;	/* Reference to dictionary being searched. */
 } Tcl_DictSearch;
@@ -1284,10 +1294,19 @@ typedef int (Tcl_WaitForEventProc) (const Tcl_Time *timePtr);
 
 /*
  * TIP #233 (Virtualized Time)
+ * WARNING: functionality removed, calls Tcl_Panic
  */
 
+#ifndef TCL_NO_DEPRECATED
 typedef void (Tcl_GetTimeProc)   (Tcl_Time *timebuf, void *clientData);
 typedef void (Tcl_ScaleTimeProc) (Tcl_Time *timebuf, void *clientData);
+#endif /* TCL_NO_DEPRECATED */
+
+/*
+ * TIP #723 (Monotonic Time)
+ */
+
+typedef long long (Tcl_GetMonotonicTimeProc)   (void *clientData);
 
 /*
  *----------------------------------------------------------------------------
@@ -1621,11 +1640,11 @@ typedef struct Tcl_Filesystem {
 				 * if the filesystem does not support glob or
 				 * recursive copy. */
     Tcl_FSUtimeProc *utimeProc;	/* Called by 'Tcl_FSUtime()', by 'file
-				 *  mtime' to set (not read) times, 'file
-				 *  atime', and the open-r/open-w/fcopy variant
-				 *  of 'file copy'. */
+				 * mtime' to set (not read) times, 'file
+				 * atime', and the open-r/open-w/fcopy variant
+				 * of 'file copy'. */
     Tcl_FSLinkProc *linkProc;	/* Called by 'Tcl_FSLink()'. NULL if reading or
-				 *  creating links is not supported. */
+				 * creating links is not supported. */
     Tcl_FSListVolumesProc *listVolumesProc;
 				/* Lists filesystem volumes added by this
 				 * filesystem. NULL if the filesystem does not
@@ -2046,6 +2065,13 @@ typedef unsigned short Tcl_UniChar;
 #else
 #   error "This TCL_UTF_MAX value is not supported"
 #endif
+
+/*
+ * Specifiers for Unicode normalization forms.
+ */
+typedef enum {
+    TCL_NFC, TCL_NFD, TCL_NFKC, TCL_NFKD
+} Tcl_UnicodeNormalizationForm;
 
 /*
  *----------------------------------------------------------------------------
@@ -2223,8 +2249,7 @@ typedef Tcl_Size (Tcl_ArgvGenFuncProc)(void *clientData, Tcl_Interp *interp,
  * Single public declaration for NRE.
  */
 
-typedef int (Tcl_NRPostProc) (void *data[], Tcl_Interp *interp,
-				int result);
+typedef int (Tcl_NRPostProc) (void *data[], Tcl_Interp *interp, int result);
 
 /*
  *----------------------------------------------------------------------------
@@ -2290,16 +2315,16 @@ EXTERN void		Tcl_StaticLibrary(Tcl_Interp *interp,
 #endif
 EXTERN Tcl_ExitProc *	Tcl_SetExitProc(Tcl_ExitProc *proc);
 #ifdef _WIN32
-EXTERN const char *TclZipfs_AppHook(int *argc, wchar_t ***argv);
+EXTERN const char *	TclZipfs_AppHook(int *argc, unsigned short ***argv);
 #else
-EXTERN const char *TclZipfs_AppHook(int *argc, char ***argv);
+EXTERN const char *	TclZipfs_AppHook(int *argc, char ***argv);
 #endif
 #if defined(_WIN32) && defined(UNICODE)
 #ifndef USE_TCL_STUBS
 #   define Tcl_FindExecutable(arg) ((Tcl_FindExecutable)((const char *)(arg)))
 #endif
 #   define Tcl_MainEx Tcl_MainExW
-    EXTERN TCL_NORETURN void Tcl_MainExW(Tcl_Size argc, wchar_t **argv,
+    EXTERN TCL_NORETURN void Tcl_MainExW(Tcl_Size argc, unsigned short **argv,
 	    Tcl_AppInitProc *appInitProc, Tcl_Interp *interp);
 #endif
 #if defined(USE_TCL_STUBS)
@@ -2336,7 +2361,7 @@ EXTERN const char *TclZipfs_AppHook(int *argc, char ***argv);
  * table.
  */
 
-#include "tclDecls.h"
+#include "tclDecls.h"  /* IWYU pragma: export */
 
 /*
  * Include platform specific public function declarations that are accessible
@@ -2349,7 +2374,7 @@ EXTERN const char *TclZipfs_AppHook(int *argc, char ***argv);
 #   define TCLAPI MODULE_SCOPE
 #endif
 
-#include "tclPlatDecls.h"
+#include "tclPlatDecls.h"  /* IWYU pragma: export */
 
 /*
  *----------------------------------------------------------------------------
@@ -2412,13 +2437,13 @@ EXTERN const char *TclZipfs_AppHook(int *argc, char ***argv);
 
 static inline void
 TclBounceRefCount(
-    Tcl_Obj* objPtr,
-    const char* fn,
+    Tcl_Obj *objPtr,
+    const char *file,
     int line)
 {
     if (objPtr) {
 	if ((objPtr)->refCount == 0) {
-	    Tcl_DbDecrRefCount(objPtr, fn, line);
+	    Tcl_DbDecrRefCount(objPtr, file, line);
 	}
     }
 }
@@ -2451,7 +2476,7 @@ TclBounceRefCount(
 
 static inline void
 TclBounceRefCount(
-    Tcl_Obj* objPtr)
+    Tcl_Obj *objPtr)
 {
     if (objPtr) {
 	if ((objPtr)->refCount == 0) {

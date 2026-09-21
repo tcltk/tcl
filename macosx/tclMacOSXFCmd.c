@@ -25,9 +25,11 @@
 #else /* HAVE_COPYFILE_H */
 int			copyfile(const char *from, const char *to,
 			    void *state, uint32_t flags);
-#define COPYFILE_ACL		(1<<0)
-#define COPYFILE_XATTR		(1<<2)
-#define COPYFILE_NOFOLLOW_SRC	(1<<18)
+enum TclCopyfileFlags {
+    COPYFILE_ACL = (1<<0),
+    COPYFILE_XATTR = (1<<2),
+    COPYFILE_NOFOLLOW_SRC = (1<<18)
+};
 #endif /* HAVE_COPYFILE_H */
 #endif /* HAVE_COPYFILE */
 
@@ -46,7 +48,7 @@ int			copyfile(const char *from, const char *to,
  * tclUnixFCmd.c !
  */
 
-enum {
+enum TclMacosFCmdAttributes {
     UNIX_GROUP_ATTRIBUTE,
     UNIX_OWNER_ATTRIBUTE,
     UNIX_PERMISSIONS_ATTRIBUTE,
@@ -70,11 +72,11 @@ static int		SetOSTypeFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
 static void		UpdateStringOfOSType(Tcl_Obj *objPtr);
 
 static const Tcl_ObjType tclOSTypeType = {
-    "osType",			/* name */
-    NULL,			/* freeIntRepProc */
-    NULL,			/* dupIntRepProc */
-    UpdateStringOfOSType,	/* updateStringProc */
-    SetOSTypeFromAny,		/* setFromAnyProc */
+    "osType",
+    NULL,			// FreeIntRep
+    NULL,			// DupIntRep
+    UpdateStringOfOSType,
+    SetOSTypeFromAny,
     TCL_OBJTYPE_V0
 };
 
@@ -84,7 +86,7 @@ enum {
 
 #define kFinfoIsInvisible	(OSSwapHostToBigConstInt16(kIsInvisible))
 
-typedef	struct finderinfo {
+typedef struct finderinfo {
     u_int32_t type;
     u_int32_t creator;
     u_int16_t fdFlags;
@@ -94,6 +96,8 @@ typedef	struct finderinfo {
 } __attribute__ ((__packed__)) finderinfo;
 
 typedef struct {
+    u_int64_t reserved1; /* Make sure data is 8-byte aligned */
+    u_int32_t reserved2; /* See [992f94d847] */
     u_int32_t info_length;
     u_int32_t data[8];
 } fileinfobuf;
@@ -160,7 +164,8 @@ TclMacOSXGetFileAttribute(
 	alist.commonattr = ATTR_CMN_FNDRINFO;
     }
     native = (const char *)Tcl_FSGetNativePath(fileName);
-    result = getattrlist(native, &alist, &finfo, sizeof(fileinfobuf), 0);
+    result = getattrlist(native, &alist, &finfo.info_length,
+	    sizeof(fileinfobuf) - offsetof(fileinfobuf, info_length), 0);
 
     if (result != 0) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -256,7 +261,8 @@ TclMacOSXSetFileAttribute(
 	alist.commonattr = ATTR_CMN_FNDRINFO;
     }
     native = (const char *)Tcl_FSGetNativePath(fileName);
-    result = getattrlist(native, &alist, &finfo, sizeof(fileinfobuf), 0);
+    result = getattrlist(native, &alist, &finfo.info_length,
+	    sizeof(fileinfobuf) - offsetof(fileinfobuf, info_length), 0);
 
     if (result != 0) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -393,6 +399,14 @@ TclMacOSXCopyFileAttributes(
     const Tcl_StatBuf *statBufPtr)
 				/* Stat info for source file */
 {
+    /*
+     * FIFOs do not have attributes, moreover calling copyfile() 
+     * could cause a blocking deadlock in the macOS VFS layer,
+     * see [7b4a819535231639].
+     */
+    if (S_ISFIFO(statBufPtr->st_mode)) {
+	return TCL_OK;
+    }
     if (MayUseCopyFile()) {
 #ifdef HAVE_COPYFILE
 	if (0 == copyfile(src, dst, NULL, (S_ISLNK(statBufPtr->st_mode)
@@ -413,7 +427,8 @@ TclMacOSXCopyFileAttributes(
 	alist.bitmapcount = ATTR_BIT_MAP_COUNT;
 	alist.commonattr = ATTR_CMN_FNDRINFO;
 
-	if (getattrlist(src, &alist, &finfo, sizeof(fileinfobuf), 0)) {
+	if (getattrlist(src, &alist, &finfo.info_length,
+		sizeof(fileinfobuf) - offsetof(fileinfobuf, info_length), 0)) {
 	    return TCL_ERROR;
 	}
 	if (setattrlist(dst, &alist, &finfo.data, sizeof(finfo.data), 0)) {
@@ -435,7 +450,8 @@ TclMacOSXCopyFileAttributes(
 
 	alist.commonattr = 0;
 	alist.fileattr = ATTR_FILE_RSRCLENGTH;
-	if (getattrlist(src, &alist, &finfo, sizeof(fileinfobuf), 0)) {
+	if (getattrlist(src, &alist, &finfo.info_length,
+		sizeof(fileinfobuf) - offsetof(fileinfobuf, info_length), 0)) {
 	    return TCL_ERROR;
 	} else if (*rsrcForkSize == 0) {
 	    return TCL_OK;
@@ -504,7 +520,8 @@ TclMacOSXMatchType(
     bzero(&alist, sizeof(struct attrlist));
     alist.bitmapcount = ATTR_BIT_MAP_COUNT;
     alist.commonattr = ATTR_CMN_FNDRINFO;
-    if (getattrlist(pathName, &alist, &finfo, sizeof(fileinfobuf), 0) != 0) {
+    if (getattrlist(pathName, &alist, &finfo.info_length,
+	    sizeof(fileinfobuf) - offsetof(fileinfobuf, info_length), 0)) {
 	return 0;
     }
     if ((types->perm & TCL_GLOB_PERM_HIDDEN) &&
@@ -629,7 +646,8 @@ SetOSTypeFromAny(
     Tcl_Size length;
 
     string = TclGetStringFromObj(objPtr, &length);
-    Tcl_UtfToExternalDStringEx(NULL, encoding, string, length, TCL_ENCODING_PROFILE_TCL8, &ds, NULL);
+    Tcl_UtfToExternalDStringEx(NULL, encoding, string, length,
+	    TCL_ENCODING_PROFILE_TCL8, &ds, NULL);
 
     if (Tcl_DStringLength(&ds) > 4) {
 	if (interp) {
@@ -644,9 +662,9 @@ SetOSTypeFromAny(
 
 	memcpy(bytes, Tcl_DStringValue(&ds), Tcl_DStringLength(&ds));
 	osType = (OSType) bytes[0] << 24 |
-		 (OSType) bytes[1] << 16 |
-		 (OSType) bytes[2] <<  8 |
-		 (OSType) bytes[3];
+		(OSType) bytes[1] << 16 |
+		(OSType) bytes[2] <<  8 |
+		(OSType) bytes[3];
 	TclFreeInternalRep(objPtr);
 	objPtr->internalRep.wideValue = (Tcl_WideInt) osType;
 	objPtr->typePtr = &tclOSTypeType;
@@ -677,7 +695,7 @@ SetOSTypeFromAny(
 
 static void
 UpdateStringOfOSType(
-    Tcl_Obj *objPtr)	/* OSType object whose string rep to
+    Tcl_Obj *objPtr)		/* OSType object whose string rep to
 				 * update. */
 {
     const size_t size = TCL_UTF_MAX * 4;

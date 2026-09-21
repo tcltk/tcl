@@ -2,9 +2,9 @@
  * tclStrIdxTree.h --
  *
  *	Declarations of string index tries and other primitives currently
- *  back-ported from tclSE.
+ *	back-ported from tclSE.
  *
- * Copyright (c) 2016 Serg G. Brester (aka sebres)
+ * Copyright © 2016 Serg G. Brester (aka sebres)
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -138,36 +138,6 @@ TclUtfFindEqualNCInLwr(
     } while ((ret = cs) < cse && cin < cine);
     return ret;
 }
-
-/*
- * Primitives to safe set, reset and free references.
- */
-
-#define TclUnsetObjRef(obj) \
-    do {								\
-	if (obj != NULL) {						\
-	    Tcl_DecrRefCount(obj);					\
-	    obj = NULL;							\
-	}								\
-    } while (0)
-#define TclInitObjRef(obj, val) \
-    do {								\
-	obj = (val);							\
-	if (obj) {							\
-	    Tcl_IncrRefCount(obj);					\
-	}								\
-    } while (0)
-#define TclSetObjRef(obj, val) \
-    do {								\
-	Tcl_Obj *nval = (val);						\
-	if (obj != nval) {						\
-	    Tcl_Obj *prev = obj;					\
-	    TclInitObjRef(obj, nval);					\
-	    if (prev != NULL) {						\
-		Tcl_DecrRefCount(prev);					\
-	    }								\
-	}								\
-    } while (0)
 
 /*
  * Prototypes of module functions.
@@ -183,7 +153,7 @@ MODULE_SCOPE TclStrIdxTree*TclStrIdxTreeGetFromObj(Tcl_Obj *objPtr);
 
 #ifdef TEST_STR_IDX_TREE
 /* currently unused, debug resp. test purposes only */
-MODULE_SCOPE Tcl_ObjCmdProc TclStrIdxTreeTestObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclStrIdxTreeTestObjCmd;
 #endif
 
 #endif /* _TCLSTRIDXTREE_H */

@@ -11,6 +11,10 @@
  */
 
 #include "tclInt.h"
+#if defined (__clang__) && (__clang_major__ > 20)
+#pragma clang diagnostic ignored "-Wc++-keyword"
+#endif
+
 /*
  * The following table contains the mapping from Win32 errors to errno errors.
  */
@@ -177,7 +181,7 @@ static const unsigned char errorTable[] = {
     EACCES,	/* ERROR_NOT_LOCKED		158 */
     EINVAL,	/* 159 */
     EINVAL,	/* 160 */
-    ENOENT,	/* ERROR_BAD_PATHNAME	        161 */
+    ENOENT,	/* ERROR_BAD_PATHNAME		161 */
     EINVAL,	/* 162 */
     EINVAL,	/* 163 */
     EINVAL,	/* 164 */
@@ -414,7 +418,82 @@ tclWinDebugPanic(
 	fflush(stderr);
     }
 }
-#endif
+#endif /* __CYGWIN__ */
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclWinAppendSystemError --
+ *
+ *	Formats a Windows system error message and places it into
+ *	the interpreter result.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Modifies the interpreter result and sets the error code.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TclWinAppendSystemError(
+    Tcl_Interp *interp,		/* Current interpreter. */
+    unsigned error)		/* Result code from error. */
+{
+    Tcl_Size length;
+    wchar_t *tMsgPtr;
+    const char *msg;
+    char id[TCL_INTEGER_SPACE], msgBuf[24 + TCL_INTEGER_SPACE];
+    Tcl_DString ds;
+    Tcl_Obj *resultPtr = Tcl_GetObjResult(interp);
+
+    if (Tcl_IsShared(resultPtr)) {
+	resultPtr = Tcl_DuplicateObj(resultPtr);
+    }
+    length = FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM
+	    | FORMAT_MESSAGE_ALLOCATE_BUFFER, NULL, error,
+	    MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (WCHAR *)&tMsgPtr,
+	    0, NULL);
+    if (length == 0) {
+	snprintf(msgBuf, sizeof(msgBuf), "unknown error: %d", error);
+	msg = msgBuf;
+    } else {
+	char *msgPtr;
+
+	Tcl_DStringInit(&ds);
+	Tcl_WCharToUtfDString(tMsgPtr, -1, &ds);
+	LocalFree(tMsgPtr);
+
+	msgPtr = Tcl_DStringValue(&ds);
+	length = Tcl_DStringLength(&ds);
+
+	/*
+	 * Trim the trailing CR/LF from the system message.
+	 */
+
+	if (msgPtr[length-1] == '\n') {
+	    --length;
+	}
+	if (msgPtr[length-1] == '\r') {
+	    --length;
+	}
+	msgPtr[length] = 0;
+	msg = msgPtr;
+    }
+
+    snprintf(id, sizeof(id), "%d", error);
+    Tcl_SetErrorCode(interp, "WINDOWS", id, msg, (char *)NULL);
+    Tcl_AppendToObj(resultPtr, msg, length);
+    Tcl_SetObjResult(interp, resultPtr);
+
+    if (length != 0) {
+	Tcl_DStringFree(&ds);
+    }
+}
+
 /*
  * Local Variables:
  * mode: c

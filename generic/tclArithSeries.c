@@ -11,7 +11,6 @@
  */
 
 #include "tclInt.h"
-#include <assert.h>
 #include <math.h>
 
 /*
@@ -48,27 +47,30 @@
  */
 
 typedef struct {
-    Tcl_Size len;
-    Tcl_Obj **elements;
-    int isDouble;
-    Tcl_Size refCount;
+    Tcl_Size len;		// Number of elements.
+    Tcl_Obj **elements;		// Allocated element cache; can be NULL.
+    bool isDouble;		// Which subtype; Dbl or Int.
+    Tcl_Size refCount;		// Internal reference count.
 } ArithSeries;
 
 typedef struct {
     ArithSeries base;
-    Tcl_WideInt start;
-    Tcl_WideInt step;
+    Tcl_WideInt start;		// Start of sequence.
+    Tcl_WideInt step;		// Step of sequence.
 } ArithSeriesInt;
 
 typedef struct {
     ArithSeries base;
-    double start;
-    double step;
-    unsigned precision;		/* Number of decimal places to render. */
+    double start;		// Start of sequence.
+    double step;		// Step of sequence.
+    unsigned precision;		// Number of decimal places to render.
 } ArithSeriesDbl;
 
 /* Forward declarations. */
 
+static int		ExtractNumber(Tcl_Interp *interp, bool useDoubles,
+			    Tcl_WideInt *intNumberPtr, double *dblNumberPtr,
+			    Tcl_Obj *numberObj);
 static int		TclArithSeriesObjIndex(TCL_UNUSED(Tcl_Interp *),
 			    Tcl_Obj *arithSeriesObj, Tcl_Size index,
 			    Tcl_Obj **elemObj);
@@ -85,8 +87,6 @@ static void		DupArithSeriesInternalRep(Tcl_Obj *srcPtr,
 			    Tcl_Obj *copyPtr);
 static void		FreeArithSeriesInternalRep(Tcl_Obj *arithSeriesObjPtr);
 static void		UpdateStringOfArithSeries(Tcl_Obj *arithSeriesObjPtr);
-static int		SetArithSeriesFromAny(Tcl_Interp *interp,
-			    Tcl_Obj *objPtr);
 static int		ArithSeriesInOperation(Tcl_Interp *interp,
 			    Tcl_Obj *valueObj, Tcl_Obj *arithSeriesObj,
 			    int *boolResult);
@@ -94,20 +94,20 @@ static int		ArithSeriesInOperation(Tcl_Interp *interp,
 /* ------------------------ ArithSeries object type -------------------------- */
 
 static const Tcl_ObjType arithSeriesType = {
-    "arithseries",			/* name */
-    FreeArithSeriesInternalRep,		/* freeIntRepProc */
-    DupArithSeriesInternalRep,		/* dupIntRepProc */
-    UpdateStringOfArithSeries,		/* updateStringProc */
-    SetArithSeriesFromAny,		/* setFromAnyProc */
+    "arithseries",
+    FreeArithSeriesInternalRep,
+    DupArithSeriesInternalRep,
+    UpdateStringOfArithSeries,
+    NULL,			// SetFromAny
     TCL_OBJTYPE_V2(
-    ArithSeriesObjLength,
-    TclArithSeriesObjIndex,
-    TclArithSeriesObjRange,
-    TclArithSeriesObjReverse,
-    TclArithSeriesGetElements,
-    NULL, // SetElement
-    NULL, // Replace
-    ArithSeriesInOperation) // "in" operator
+	ArithSeriesObjLength,
+	TclArithSeriesObjIndex,
+	TclArithSeriesObjRange,
+	TclArithSeriesObjReverse,
+	TclArithSeriesGetElements,
+	NULL,			// SetElement
+	NULL,			// Replace
+	ArithSeriesInOperation)
 };
 
 /*
@@ -168,7 +168,7 @@ ArithSeriesEndDbl(
     if (!dblRepPtr->base.len) {
 	return dblRepPtr->start;
     }
-    d = dblRepPtr->start + ((double)(dblRepPtr->base.len-1) * dblRepPtr->step);
+    d = dblRepPtr->start + ((double)(dblRepPtr->base.len - 1) * dblRepPtr->step);
     return ArithRound(d, dblRepPtr->precision);
 }
 
@@ -179,7 +179,7 @@ ArithSeriesEndInt(
     if (!intRepPtr->base.len) {
 	return intRepPtr->start;
     }
-    return intRepPtr->start + ((intRepPtr->base.len-1) * intRepPtr->step);
+    return intRepPtr->start + ((intRepPtr->base.len - 1) * intRepPtr->step);
 }
 
 static inline double
@@ -191,7 +191,7 @@ ArithSeriesIndexDbl(
     assert(arithSeriesRepPtr->isDouble);
     double d = dblRepPtr->start;
     if (index) {
-	d += ((double)index * dblRepPtr->step);
+	d += (double)index * dblRepPtr->step;
     }
 
     return ArithRound(d, dblRepPtr->precision);
@@ -217,7 +217,7 @@ ArithSeriesGetInternalRep(
 }
 
 /*
- * Compute number of significant fractional digits
+ * Compute number of significant fractional digits.
  */
 static inline unsigned
 ObjPrecision(
@@ -228,8 +228,7 @@ ObjPrecision(
 
     if (TclHasInternalRep(numObj, &tclDoubleType) || (
 	    Tcl_GetNumberFromObj(NULL, numObj, &ptr, &type) == TCL_OK
-	    && type == TCL_NUMBER_DOUBLE)
-    ) { /* TCL_NUMBER_DOUBLE */
+	    && type == TCL_NUMBER_DOUBLE)) {
 	const char *str = TclGetString(numObj);
 
 	if (strchr(str, 'e') == NULL && strchr(str, 'E') == NULL) {
@@ -238,7 +237,7 @@ ObjPrecision(
 	}
 	/* don't calculate precision for e-notation */
     }
-    /* no fraction for TCL_NUMBER_NAN, TCL_NUMBER_INT, TCL_NUMBER_BIG */
+    // no fraction for TCL_NUMBER_NAN, TCL_NUMBER_INT, TCL_NUMBER_BIG
     return 0;
 }
 
@@ -292,6 +291,13 @@ maxObjPrecision(
  *----------------------------------------------------------------------
  */
 static Tcl_WideInt
+ArithSeriesLenDbl(
+    double start,
+    double end,
+    double step,
+    unsigned precision);
+
+static Tcl_WideInt
 ArithSeriesLenInt(
     Tcl_WideInt start,
     Tcl_WideInt end,
@@ -299,13 +305,21 @@ ArithSeriesLenInt(
 {
     Tcl_WideInt len;
 
+    // Check for opposite sequence directions
+    if ((step < 0 && (end-start) > 0)
+	    || (step > 0 && (end-start) < 0)) {
+	return 0;
+    }
     if (step == 0) {
-	return 0;
+	// Sequence consists of a single value
+	return 1;
     }
-    len = (end - start) / step + 1;
+
+    len = ((end - start) / step) + 1;
     if (len < 0) {
-	return 0;
+	len = 0;
     }
+
     return len;
 }
 
@@ -323,7 +337,7 @@ ArithSeriesLenDbl(
 			  * with and w/o FPU_INLINE_ASM, _CONTROLFP, etc) */
 
     if (step == 0) {
-	return 0;
+	return 1;
     }
     if (precision) {
 	scaleFactor = power10(precision);
@@ -333,6 +347,7 @@ ArithSeriesLenDbl(
     }
     /* distance */
     end -= start;
+
     /*
      * To improve numerical stability use wide arithmetic instead of IEEE-754
      * when distance and step do not exceed wide-integers.
@@ -342,7 +357,8 @@ ArithSeriesLenDbl(
 	Tcl_WideInt iend = end < 0 ? end - 0.5 : end + 0.5;
 	Tcl_WideInt istep = step < 0 ? step - 0.5 : step + 0.5;
 	if (istep) { /* avoid div by zero, steps like 0.1, precision 0 */
-	    return (iend / istep) + 1;
+	    Tcl_WideInt ilen = (iend / istep) + 1;
+	    return (ilen < 0 ? 0 : ilen);
 	}
     }
     /*
@@ -351,10 +367,10 @@ ArithSeriesLenDbl(
      */
     len = (end / step) + 1;
     if (len >= (double)TCL_SIZE_MAX) {
-	return TCL_SIZE_MAX;
+	len = (double)TCL_SIZE_MAX;
     }
-    if (len < 0) {
-	return 0;
+    if (len <= 0) {
+	len = 1;
     }
     return (Tcl_WideInt)len;
 }
@@ -434,17 +450,17 @@ FreeArithSeriesInternalRep(
 	Tcl_Free((void *)arithSeriesRepPtr);
     }
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
  * NewArithSeriesInt --
  *
- *	Creates a new ArithSeries object. The returned object has
- *	refcount = 0.
+ *	Creates a new ArithSeries object.
  *
  * Results:
- *	A Tcl_Obj pointer to the created ArithSeries object.
+ *	A Tcl_Obj pointer to the created ArithSeries object. The returned
+ *	object has refcount = 0.
  *	A NULL pointer of the range is invalid.
  *
  * Side Effects:
@@ -456,38 +472,83 @@ static Tcl_Obj *
 NewArithSeriesInt(
     Tcl_WideInt start,
     Tcl_WideInt step,
-    Tcl_WideInt len)
+    Tcl_WideInt length)
 {
-    Tcl_WideInt length;
-    Tcl_Obj *arithSeriesObj;
+    Tcl_Obj *arithSeriesObj = NULL;
     ArithSeriesInt *arithSeriesRepPtr;
-
-    length = len>=0 ? len : -1;
-    if (length < 0) {
-	length = -1;
-    }
 
     TclNewObj(arithSeriesObj);
 
-    if (length <= 0) {
+    if (length < 0) {
+	// Negative length implies the step direction is opposite to the
+	// start/end direction. In mathmatical terms, an infinite length.
+	// Map this to an empty list (length of 0). An empty set is a vaild
+	// sequence.
 	return arithSeriesObj;
+    } else if (length >= 1) {
+	/* Check for numeric overflow. Not needed for single element lists */
+	Tcl_WideUInt absoluteStep;
+	Tcl_WideInt numIntervals = length - 1;
+	/*
+	 * The checks below can probably be condensed but it is very easy to
+	 * either inadvertently use undefined C behavior or unintended type
+	 * promotion. Separating the cases helps me think more clearly.
+	 */
+	if (step >= 0) {
+	    absoluteStep = step;
+	} else if (step == WIDE_MIN) {
+	    /* -step and abs(step) are both undefined behavior */
+	    absoluteStep = 1 + (Tcl_WideUInt)WIDE_MAX;
+	} else {
+	    absoluteStep = -step;
+	}
+	/* First, step*number of intervals should not overflow */
+	if (absoluteStep && (UWIDE_MAX / absoluteStep) < (Tcl_WideUInt) numIntervals) {
+	    goto invalidRange;
+	}
+	if (step > 0) {
+	    /*
+	     * Because of check above and UWIDE_MAX=2*WIDE_MAX+1,
+	     * second term will not underflow a Tcl_WideInt
+	     */
+	    if (start > (WIDE_MAX - (step * numIntervals))) {
+		goto invalidRange;
+	    }
+	} else if (step == WIDE_MIN) {
+	    if (numIntervals > 0 || start < 0) {
+		goto invalidRange;
+	    }
+	} else if (step < 0) {
+	    /*
+	     * Because of check above and UWIDE_MAX=2*WIDE_MAX+1 and
+	     * step != WIDE_MIN second term will not underflow a Tcl_WideInt.
+	     * DON'T use absoluteStep here because of unsigned type promotion
+	     */
+	    if (start < (WIDE_MIN + ((-step) * numIntervals))) {
+		goto invalidRange;
+	    }
+	} else /* step == 0 */ {
+	    /* TODO - step == 0 && length > 1 should be error? */
+	}
     }
 
     arithSeriesRepPtr = (ArithSeriesInt *) Tcl_Alloc(sizeof(ArithSeriesInt));
     arithSeriesRepPtr->base.len = length;
     arithSeriesRepPtr->base.elements = NULL;
-    arithSeriesRepPtr->base.isDouble = 0;
+    arithSeriesRepPtr->base.isDouble = false;
     arithSeriesRepPtr->base.refCount = 1;
     arithSeriesRepPtr->start = start;
     arithSeriesRepPtr->step = step;
     arithSeriesObj->internalRep.twoPtrValue.ptr1 = arithSeriesRepPtr;
     arithSeriesObj->internalRep.twoPtrValue.ptr2 = NULL;
     arithSeriesObj->typePtr = &arithSeriesType;
-    if (length > 0) {
-	Tcl_InvalidateStringRep(arithSeriesObj);
-    }
+    Tcl_InvalidateStringRep(arithSeriesObj);
 
     return arithSeriesObj;
+
+  invalidRange:
+    Tcl_BounceRefCount(arithSeriesObj);
+    return NULL;
 }
 
 /*
@@ -495,15 +556,16 @@ NewArithSeriesInt(
  *
  * NewArithSeriesDbl --
  *
- *	Creates a new ArithSeries object with doubles. The returned object has
- *	refcount = 0.
+ *	Creates a new ArithSeries object with doubles.
  *
  * Results:
- *	A Tcl_Obj pointer to the created ArithSeries object.
+ *	A Tcl_Obj pointer to the created ArithSeries object. The returned
+ *	object has refcount = 0.
  *	A NULL pointer of the range is invalid.
  *
  * Side Effects:
  *	None.
+ *
  *----------------------------------------------------------------------
  */
 static Tcl_Obj *
@@ -531,7 +593,7 @@ NewArithSeriesDbl(
     arithSeriesRepPtr = (ArithSeriesDbl *) Tcl_Alloc(sizeof(ArithSeriesDbl));
     arithSeriesRepPtr->base.len = length;
     arithSeriesRepPtr->base.elements = NULL;
-    arithSeriesRepPtr->base.isDouble = 1;
+    arithSeriesRepPtr->base.isDouble = true;
     arithSeriesRepPtr->base.refCount = 1;
     arithSeriesRepPtr->start = start;
     arithSeriesRepPtr->step = step;
@@ -550,26 +612,28 @@ NewArithSeriesDbl(
 /*
  *----------------------------------------------------------------------
  *
- * assignNumber --
+ * ExtractNumber --
  *
- *	Create the appropriate Tcl_Obj value for the given numeric values.
- *      Used locally only for decoding [lseq] numeric arguments.
- *	refcount = 0.
+ *	Extract the number from a Tcl_Obj value given the type of number
+ *	expected at that point. Used locally only for decoding [lseq]
+ *	numeric arguments.
  *
  * Results:
- *	A Tcl_Obj pointer.  No assignment on error.
+ *	A Tcl result code, with OUT parameters assigned on success.
+ *	No assignment on error.
  *
  * Side Effects:
- *	None.
+ *	May alter the Tcl_Obj's type. May set the interpreter result.
+ *
  *----------------------------------------------------------------------
  */
 static int
-assignNumber(
-    Tcl_Interp *interp,
-    int useDoubles,
-    Tcl_WideInt *intNumberPtr,
-    double *dblNumberPtr,
-    Tcl_Obj *numberObj)
+ExtractNumber(
+    Tcl_Interp *interp,		// Where to report errors.
+    bool useDoubles,		// Whether we're looking for doubles.
+    Tcl_WideInt *intNumberPtr,	// Where to write the integer value.
+    double *dblNumberPtr,	// Where to write the double value.
+    Tcl_Obj *numberObj)		// The Tcl value to read the number from.
 {
     void *ptr;
     int type;
@@ -614,7 +678,7 @@ assignNumber(
  *
  *	Creates a new ArithSeries object. Some arguments may be NULL and will
  *	be computed based on the other given arguments.
- *      refcount = 0.
+ *	refcount = 0.
  *
  * Results:
  *	A Tcl_Obj pointer to the created ArithSeries object.
@@ -622,12 +686,13 @@ assignNumber(
  *
  * Side Effects:
  *	None.
+ *
  *----------------------------------------------------------------------
  */
 Tcl_Obj *
 TclNewArithSeriesObj(
     Tcl_Interp *interp,		/* For error reporting */
-    int useDoubles,		/* Flag indicates values start,
+    bool useDoubles,		/* Flag indicates values start,
 				 * end, step, are treated as doubles */
     Tcl_Obj *startObj,		/* Starting value */
     Tcl_Obj *endObj,		/* Ending limit */
@@ -636,34 +701,48 @@ TclNewArithSeriesObj(
 {
     double dstart, dend, dstep = 1.0;
     Tcl_WideInt start, end, step = 1;
-    Tcl_WideInt len = -1;
+    Tcl_WideInt len;
     Tcl_Obj *objPtr;
     unsigned precision = (unsigned)-1; /* unknown precision */
+    const char *description;
+    char tmp[TCL_DOUBLE_SPACE + 2] = {0};
 
-    if (startObj) {
-	if (assignNumber(interp, useDoubles, &start, &dstart, startObj) != TCL_OK) {
+    if (lenObj) {
+	if (Tcl_GetWideIntFromObj(interp, lenObj, &len) != TCL_OK) {
 	    return NULL;
 	}
     } else {
-	start = 0;
-	dstart = 0.0;
+	// Default
+	len = -1;
     }
+
     if (stepObj) {
-	if (assignNumber(interp, useDoubles, &step, &dstep, stepObj) != TCL_OK) {
+	if (ExtractNumber(interp, useDoubles, &step, &dstep, stepObj) != TCL_OK) {
 	    return NULL;
 	}
-	if (!useDoubles ? !step : !dstep) {
-	    TclNewObj(objPtr);
-	    return objPtr;
+    } else {
+	// Default
+	step = 1;
+	dstep = (double)step;
+    }
+
+    if (startObj) {
+	if (ExtractNumber(interp, useDoubles, &start, &dstart, startObj) != TCL_OK) {
+	    return NULL;
+	}
+    } else {
+	// Default
+	start = 0;
+	dstart = (double)start;
+    }
+
+    if (endObj) {
+	if (ExtractNumber(interp, useDoubles, &end, &dend, endObj) != TCL_OK) {
+	    return NULL;
 	}
     }
     if (endObj) {
-	if (assignNumber(interp, useDoubles, &end, &dend, endObj) != TCL_OK) {
-	    return NULL;
-	}
-    }
-    if (lenObj) {
-	if (Tcl_GetWideIntFromObj(interp, lenObj, &len) != TCL_OK) {
+	if (ExtractNumber(interp, useDoubles, &end, &dend, endObj) != TCL_OK) {
 	    return NULL;
 	}
     }
@@ -672,34 +751,23 @@ TclNewArithSeriesObj(
 	if (!stepObj) {
 	    if (useDoubles) {
 		if (dstart > dend) {
-		    dstep = -1.0;
 		    step = -1;
+		    dstep = (double)step;
 		}
 	    } else {
 		if (start > end) {
 		    step = -1;
-		    dstep = -1.0;
+		    dstep = (double)step;
 		}
 	    }
 	}
-	assert(dstep!=0);
+
 	if (!lenObj) {
 	    if (useDoubles) {
 		if (isinf(dstart) || isinf(dend)) {
 		    goto exceeded;
-		}
-		if (isnan(dstart) || isnan(dend)) {
-		    const char *description = "non-numeric floating-point value";
-		    char tmp[TCL_DOUBLE_SPACE + 2];
-
-		    tmp[0] = '\0';
-		    Tcl_PrintDouble(NULL, isnan(dstart)?dstart:dend, tmp);
-		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"cannot use %s \"%s\" to estimate length of arith-series",
-			description, tmp));
-		    Tcl_SetErrorCode(interp, "ARITH", "DOMAIN", description,
-			(char *)NULL);
-		    return NULL;
+		} else if (isnan(dstart) || isnan(dend)) {
+		    goto notANumber;
 		}
 		precision = maxObjPrecision(startObj, endObj, stepObj);
 		len = ArithSeriesLenDbl(dstart, dend, dstep, precision);
@@ -707,32 +775,30 @@ TclNewArithSeriesObj(
 		len = ArithSeriesLenInt(start, end, step);
 	    }
 	}
-    } else {
-	if (useDoubles) {
-	    // Compute precision based on given command argument values
-	    precision = maxObjPrecision(startObj, NULL, stepObj);
+    } else if (useDoubles) {
+	// Compute precision based on given command argument values
+	precision = maxObjPrecision(startObj, NULL, stepObj);
 
-	    dend = dstart + (dstep * (double)(len-1));
-	    // Make computed end value match argument(s) precision
-	    dend = ArithRound(dend, precision);
-	    end = dend;
-	} else {
-	    end = start + (step * (len - 1));
-	    dend = (double)end;
-	}
+	dend = dstart + (dstep * (double)(len-1));
+	// Make computed end value match argument(s) precision
+	dend = ArithRound(dend, precision);
+	end = dend;
     }
 
     /*
      * todo: check whether the boundary must be rather LIST_MAX, to be more
-     * similar to plain lists, otherwise it'd generare an error or panic later
+     * similar to plain lists, otherwise it'd generate an error or panic later
      * (0x0ffffffffffffffa instead of 0x7fffffffffffffff by 64bit)
      */
+    /*
+     * Comment for future reference: The size concern would only be triggered
+     * via a shimmer or getElements of the abstract list. Otherwise, the
+     * abstract list is only limited by the max index value. Even then,
+     * indexing with a bignum is theoretically possible. This is because
+     * individual values are not stored. They are created upon request.
+     */
     if (len > TCL_SIZE_MAX) {
-      exceeded:
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"max length of a Tcl list exceeded", TCL_AUTO_LENGTH));
-	Tcl_SetErrorCode(interp, "TCL", "MEMORY", (char *)NULL);
-	return NULL;
+	goto exceeded;
     }
 
     if (useDoubles) {
@@ -740,10 +806,8 @@ TclNewArithSeriesObj(
 	 * so simply check the end of it and behave like [expr {Inf - Inf}] */
 	double d = dstart + (double)(len - 1) * dstep;
 	if (isnan(d)) {
-	    const char *s = "domain error: argument not in valid range";
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(s, -1));
-	    Tcl_SetErrorCode(interp, "ARITH", "DOMAIN", s, (char *)NULL);
-	    return NULL;
+	    description = "domain error: argument not in valid range";
+	    goto domain;
 	}
 
 	if (precision == (unsigned)-1) {
@@ -755,7 +819,31 @@ TclNewArithSeriesObj(
 	objPtr = NewArithSeriesInt(start, step, len);
     }
 
+    if (objPtr == NULL && interp) {
+	description = "invalid arithmetic series parameter values";
+	goto domain;
+    }
     return objPtr;
+
+  exceeded:
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+	    "max length of a Tcl list exceeded", TCL_AUTO_LENGTH));
+    Tcl_SetErrorCode(interp, "TCL", "MEMORY", (char *)NULL);
+    return NULL;
+
+  domain:
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(description, TCL_AUTO_LENGTH));
+    Tcl_SetErrorCode(interp, "ARITH", "DOMAIN", description, (char *)NULL);
+    return NULL;
+
+  notANumber:
+    description = "non-numeric floating-point value";
+    Tcl_PrintDouble(NULL, isnan(dstart) ? dstart : dend, tmp);
+    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    "cannot use %s \"%s\" to estimate length of arith-series",
+	    description, tmp));
+    Tcl_SetErrorCode(interp, "ARITH", "DOMAIN", description, (char *)NULL);
+    return NULL;
 }
 
 /*
@@ -826,43 +914,16 @@ ArithSeriesObjLength(
 }
 
 /*
- * SetArithSeriesFromAny --
- *
- *	The Arithmetic Series object is just an way to optimize
- *	Lists space complexity, so no one should try to convert
- *	a string to an Arithmetic Series object.
- *
- *	This function is here just to populate the Type structure.
- *
- * Results:
- *	The result is always TCL_ERROR. But see Side Effects.
- *
- * Side effects:
- *	Tcl Panic if called.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-SetArithSeriesFromAny(
-    TCL_UNUSED(Tcl_Interp *),		/* Used for error reporting if not NULL. */
-    TCL_UNUSED(Tcl_Obj *))		/* The object to convert. */
-{
-    Tcl_Panic("SetArithSeriesFromAny: should never be called");
-    return TCL_ERROR;
-}
-
-/*
  *----------------------------------------------------------------------
  *
  * TclArithSeriesObjRange --
  *
  *	Makes a slice of an ArithSeries value.
- *      *arithSeriesObj must be known to be a valid list.
+ *	*arithSeriesObj must be known to be a valid list.
  *
  * Results:
  *	Returns a pointer to the sliced series.
- *      This may be a new object or the same object if not shared.
+ *	This may be a new object or the same object if not shared.
  *
  * Side effects:
  *	?The possible conversion of the object referenced by listPtr?
@@ -912,10 +973,10 @@ TclArithSeriesObjRange(
 	ArithSeriesDbl *dblRepPtr = (ArithSeriesDbl *)arithSeriesRepPtr;
 	double dstart = ArithSeriesIndexDbl(arithSeriesRepPtr, fromIdx);
 
-	if (Tcl_IsShared(arithSeriesObj) || ((arithSeriesRepPtr->refCount > 1))) {
+	if (Tcl_IsShared(arithSeriesObj) || (arithSeriesRepPtr->refCount > 1)) {
 	    /* as new object */
 	    *newObjPtr = NewArithSeriesDbl(dstart, dblRepPtr->step, len,
-		dblRepPtr->precision);
+		    dblRepPtr->precision);
 	} else {
 	    /* in-place is possible */
 	    *newObjPtr = arithSeriesObj;
@@ -934,7 +995,7 @@ TclArithSeriesObjRange(
 	ArithSeriesInt *intRepPtr = (ArithSeriesInt *) arithSeriesRepPtr;
 	Tcl_WideInt start = ArithSeriesIndexInt(arithSeriesRepPtr, fromIdx);
 
-	if (Tcl_IsShared(arithSeriesObj) || ((arithSeriesRepPtr->refCount > 1))) {
+	if (Tcl_IsShared(arithSeriesObj) || (arithSeriesRepPtr->refCount > 1)) {
 	    /* as new object */
 	    *newObjPtr = NewArithSeriesInt(start, intRepPtr->step, len);
 	} else {
@@ -1006,7 +1067,7 @@ TclArithSeriesGetElements(
 		objv = arithSeriesRepPtr->elements;
 	    } else {
 		/* Construct the elements array */
-		objv = (Tcl_Obj **) Tcl_Alloc(sizeof(Tcl_Obj*) * objc);
+		objv = (Tcl_Obj **) Tcl_Alloc(sizeof(Tcl_Obj *) * objc);
 		if (objv == NULL) {
 		    if (interp) {
 			Tcl_SetObjResult(interp, Tcl_NewStringObj(
@@ -1054,10 +1115,10 @@ TclArithSeriesGetElements(
  *	values appropriately swapped and the Step value sign is changed.
  *
  * Results:
- *      The result will be an ArithSeries in the reverse order.
+ *	The result will be an ArithSeries in the reverse order.
  *
  * Side effects:
- *      The ogiginal obj will be modified and returned if it is not Shared.
+ *	The ogiginal obj will be modified and returned if it is not Shared.
  *
  *----------------------------------------------------------------------
  */
@@ -1080,11 +1141,12 @@ TclArithSeriesObjReverse(
 	if (arithSeriesRepPtr->isDouble) {
 	    ArithSeriesDbl *dblRepPtr = (ArithSeriesDbl *)arithSeriesRepPtr;
 	    resultObj = NewArithSeriesDbl(ArithSeriesEndDbl(dblRepPtr),
-		-dblRepPtr->step, arithSeriesRepPtr->len, dblRepPtr->precision);
+		    -dblRepPtr->step, arithSeriesRepPtr->len,
+		    dblRepPtr->precision);
 	} else {
 	    ArithSeriesInt *intRepPtr = (ArithSeriesInt *)arithSeriesRepPtr;
 	    resultObj = NewArithSeriesInt(ArithSeriesEndInt(intRepPtr),
-		-intRepPtr->step, arithSeriesRepPtr->len);
+		    -intRepPtr->step, arithSeriesRepPtr->len);
 	}
     } else {
 	/*
@@ -1172,11 +1234,12 @@ UpdateStringOfArithSeries(
 	    Tcl_Size elen;
 
 	    tmp[0] = '\0';
-	    Tcl_PrintDouble(NULL,d,tmp);
+	    Tcl_PrintDouble(NULL, d, tmp);
 	    elen = strlen(tmp);
 	    if (bytlen > TCL_SIZE_MAX - elen) {
-		/* overflow, todo: check we could use some representation instead of the panic
-		 * to signal it is too large for string representation, because too heavy */
+		/* overflow, todo: check we could use some representation
+		 * instead of the panic to signal it is too large for string
+		 * representation, because too heavy */
 		Tcl_Panic("UpdateStringOfArithSeries: too large to represent");
 	    }
 	    bytlen += elen;
@@ -1203,7 +1266,7 @@ UpdateStringOfArithSeries(
 	    double d = ArithSeriesIndexDbl(arithSeriesRepPtr, i);
 
 	    *p = '\0';
-	    Tcl_PrintDouble(NULL,d,p);
+	    Tcl_PrintDouble(NULL, d, p);
 	    p += strlen(p);
 	    assert(p - arithSeriesObjPtr->bytes <= bytlen);
 	    *p++ = ' ';
@@ -1219,14 +1282,14 @@ UpdateStringOfArithSeries(
  *
  *	Evaluate the "in" operation for expr
  *
- *      This can be done more efficiently in the Arith Series relative to
- *      doing a linear search as implemented in expr.
+ *	This can be done more efficiently in the Arith Series relative to
+ *	doing a linear search as implemented in expr.
  *
  * Results:
  *	Boolean true or false (1/0)
  *
  * Side effects:
- *      None
+ *	None
  *
  *----------------------------------------------------------------------
  */
@@ -1246,12 +1309,12 @@ ArithSeriesInOperation(
     if (repPtr->isDouble) {
 	ArithSeriesDbl *dblRepPtr = (ArithSeriesDbl *) repPtr;
 	double y;
-	int test = 0;
+	bool test = false;
 
 	incr = 0; // Check index+incr where incr is 0 and 1
 	status = Tcl_GetDoubleFromObj(interp, valueObj, &y);
 	if (status != TCL_OK) {
-	    test = 0;
+	    test = false;
 	} else {
 	    const char *vstr = TclGetStringFromObj(valueObj, &vlen);
 	    index = (y - dblRepPtr->start) / dblRepPtr->step;
@@ -1264,7 +1327,7 @@ ArithSeriesInOperation(
 		const char *estr = elemObj ? TclGetStringFromObj(elemObj, &elen) : "";
 
 		/* "in" operation defined as a string compare */
-		test = (elen == vlen) ? (memcmp(estr, vstr, elen) == 0) : 0;
+		test = (elen == vlen) && (memcmp(estr, vstr, elen) == 0);
 		Tcl_BounceRefCount(elemObj);
 		/* Stop if we have a match */
 		if (test) {
@@ -1274,7 +1337,7 @@ ArithSeriesInOperation(
 	    }
 	}
 	if (boolResult) {
-	    *boolResult = test;
+	    *boolResult = test != 0;
 	}
     } else {
 	ArithSeriesInt *intRepPtr = (ArithSeriesInt *) repPtr;

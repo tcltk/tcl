@@ -86,17 +86,23 @@ typedef struct InterpLibrary {
 } InterpLibrary;
 
 /*
+ * Associated data key used to look up the linked list of libraries registered
+ * in the interpreter.
+ */
+#define ASSOC_KEY "tclLoad"
+
+/*
  * Prototypes for functions that are private to this file:
  */
 
 static void	LoadCleanupProc(void *clientData,
 		    Tcl_Interp *interp);
-static int	IsStatic(LoadedLibrary *libraryPtr);
+static bool	IsStatic(LoadedLibrary *libraryPtr);
 static int	UnloadLibrary(Tcl_Interp *interp, Tcl_Interp *target,
-		    LoadedLibrary *library, int keepLibrary,
-		    const char *fullFileName, int interpExiting);
+		    LoadedLibrary *library, const char *fullFileName,
+		    bool keepLibrary, bool interpExiting);
 
-static int
+static bool
 IsStatic(
     LoadedLibrary *libraryPtr)
 {
@@ -124,15 +130,16 @@ int
 Tcl_LoadObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
+    Tcl_Size objc,		/* Number of arguments. */
+    Tcl_Obj *const *objv)	/* Argument objects. */
 {
     Tcl_Interp *target;
     LoadedLibrary *libraryPtr, *defaultPtr;
     Tcl_DString pfx, tmp, initName, safeInitName;
     Tcl_DString unloadName, safeUnloadName;
     InterpLibrary *ipFirstPtr, *ipPtr;
-    int code, namesMatch, filesMatch;
+    int code;
+    bool namesMatch, filesMatch;
     Tcl_Size offset;
     const char *symbols[2];
     Tcl_LibraryInitProc *initProc;
@@ -157,13 +164,14 @@ Tcl_LoadObjCmd(
 		&index) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	++objv; --objc;
+	++objv;
+	--objc;
 	if (LOAD_GLOBAL == index) {
 	    flags |= TCL_LOAD_GLOBAL;
 	} else if (LOAD_LAZY == index) {
 	    flags |= TCL_LOAD_LAZY;
 	} else {
-		break;
+	    break;
 	}
     }
     if ((objc < 2) || (objc > 4)) {
@@ -229,7 +237,7 @@ Tcl_LoadObjCmd(
     defaultPtr = NULL;
     for (libraryPtr = firstLibraryPtr; libraryPtr != NULL; libraryPtr = libraryPtr->nextPtr) {
 	if (prefix == NULL) {
-	    namesMatch = 0;
+	    namesMatch = false;
 	} else {
 	    TclDStringClear(&pfx);
 	    Tcl_DStringAppend(&pfx, prefix, -1);
@@ -237,9 +245,9 @@ Tcl_LoadObjCmd(
 	    Tcl_DStringAppend(&tmp, libraryPtr->prefix, -1);
 	    if (strcmp(Tcl_DStringValue(&tmp),
 		    Tcl_DStringValue(&pfx)) == 0) {
-		namesMatch = 1;
+		namesMatch = true;
 	    } else {
-		namesMatch = 0;
+		namesMatch = false;
 	    }
 	}
 	TclDStringClear(&pfx);
@@ -278,7 +286,7 @@ Tcl_LoadObjCmd(
      */
 
     if (libraryPtr != NULL) {
-	ipFirstPtr = (InterpLibrary *)Tcl_GetAssocData(target, "tclLoad", NULL);
+	ipFirstPtr = (InterpLibrary *)Tcl_GetAssocData(target, ASSOC_KEY, NULL);
 	for (ipPtr = ipFirstPtr; ipPtr != NULL; ipPtr = ipPtr->nextPtr) {
 	    if (ipPtr->libraryPtr == libraryPtr) {
 		code = TCL_OK;
@@ -514,11 +522,11 @@ Tcl_LoadObjCmd(
      * static libraries at the head of the linked list!
      */
 
-    ipFirstPtr = (InterpLibrary *)Tcl_GetAssocData(target, "tclLoad", NULL);
+    ipFirstPtr = (InterpLibrary *)Tcl_GetAssocData(target, ASSOC_KEY, NULL);
     ipPtr = (InterpLibrary *)Tcl_Alloc(sizeof(InterpLibrary));
     ipPtr->libraryPtr = libraryPtr;
     ipPtr->nextPtr = ipFirstPtr;
-    Tcl_SetAssocData(target, "tclLoad", LoadCleanupProc, ipPtr);
+    Tcl_SetAssocData(target, ASSOC_KEY, LoadCleanupProc, ipPtr);
 
   done:
     Tcl_DStringFree(&pfx);
@@ -551,14 +559,16 @@ int
 Tcl_UnloadObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
+    Tcl_Size objc,		/* Number of arguments. */
+    Tcl_Obj *const *objv)	/* Argument objects. */
 {
     Tcl_Interp *target;		/* Which interpreter to unload from. */
     LoadedLibrary *libraryPtr;
     Tcl_DString pfx, tmp;
     InterpLibrary *ipFirstPtr, *ipPtr;
-    int i, code, complain = 1, keepLibrary = 0;
+    Tcl_Size i;
+    int code;
+    bool keepLibrary = false, complain = true;
     const char *fullFileName = "";
     const char *prefix;
     static const char *const options[] = {
@@ -591,14 +601,16 @@ Tcl_UnloadObjCmd(
 	}
 	switch (index) {
 	case UNLOAD_NOCOMPLAIN:		/* -nocomplain */
-	    complain = 0;
+	    complain = false;
 	    break;
 	case UNLOAD_KEEPLIB:		/* -keeplibrary */
-	    keepLibrary = 1;
+	    keepLibrary = true;
 	    break;
 	case UNLOAD_LAST:		/* -- */
 	    i++;
 	    goto endOfForLoop;
+	default:
+	    TCL_UNREACHABLE();
 	}
     }
   endOfForLoop:
@@ -658,10 +670,10 @@ Tcl_UnloadObjCmd(
     Tcl_MutexLock(&libraryMutex);
 
     for (libraryPtr = firstLibraryPtr; libraryPtr != NULL; libraryPtr = libraryPtr->nextPtr) {
-	int namesMatch, filesMatch;
+	bool namesMatch, filesMatch;
 
 	if (prefix == NULL) {
-	    namesMatch = 0;
+	    namesMatch = false;
 	} else {
 	    TclDStringClear(&pfx);
 	    Tcl_DStringAppend(&pfx, prefix, -1);
@@ -669,9 +681,9 @@ Tcl_UnloadObjCmd(
 	    Tcl_DStringAppend(&tmp, libraryPtr->prefix, -1);
 	    if (strcmp(Tcl_DStringValue(&tmp),
 		    Tcl_DStringValue(&pfx)) == 0) {
-		namesMatch = 1;
+		namesMatch = true;
 	    } else {
-		namesMatch = 0;
+		namesMatch = false;
 	    }
 	}
 	TclDStringClear(&pfx);
@@ -719,7 +731,7 @@ Tcl_UnloadObjCmd(
 
     code = TCL_ERROR;
     if (libraryPtr != NULL) {
-	ipFirstPtr = (InterpLibrary *)Tcl_GetAssocData(target, "tclLoad", NULL);
+	ipFirstPtr = (InterpLibrary *)Tcl_GetAssocData(target, ASSOC_KEY, NULL);
 	for (ipPtr = ipFirstPtr; ipPtr != NULL; ipPtr = ipPtr->nextPtr) {
 	    if (ipPtr->libraryPtr == libraryPtr) {
 		code = TCL_OK;
@@ -741,7 +753,7 @@ Tcl_UnloadObjCmd(
 	goto done;
     }
 
-    code = UnloadLibrary(interp, target, libraryPtr, keepLibrary, fullFileName, 0);
+    code = UnloadLibrary(interp, target, libraryPtr, fullFileName, keepLibrary, false);
 
   done:
     Tcl_DStringFree(&pfx);
@@ -774,9 +786,9 @@ UnloadLibrary(
     Tcl_Interp *interp,
     Tcl_Interp *target,
     LoadedLibrary *libraryPtr,
-    int keepLibrary,
     const char *fullFileName,
-    int interpExiting)
+    bool keepLibrary,
+    bool interpExiting)
 {
     int code;
     InterpLibrary *ipFirstPtr, *ipPtr;
@@ -861,7 +873,7 @@ UnloadLibrary(
      */
 
     if (!interpExiting) {
-	ipFirstPtr = (InterpLibrary *)Tcl_GetAssocData(target, "tclLoad", NULL);
+	ipFirstPtr = (InterpLibrary *)Tcl_GetAssocData(target, ASSOC_KEY, NULL);
 	if (ipFirstPtr) {
 	    ipPtr = ipFirstPtr;
 	    if (ipPtr->libraryPtr == libraryPtr) {
@@ -878,7 +890,7 @@ UnloadLibrary(
 		}
 	    }
 	    Tcl_Free(ipPtr);
-	    Tcl_SetAssocData(target, "tclLoad", LoadCleanupProc, ipFirstPtr);
+	    Tcl_SetAssocData(target, ASSOC_KEY, LoadCleanupProc, ipFirstPtr);
 	}
     }
 
@@ -997,7 +1009,7 @@ Tcl_StaticLibrary(
 				 * already been loaded into the given
 				 * interpreter by calling the appropriate init
 				 * proc. */
-    const char *prefix,	/* Prefix. */
+    const char *prefix,		/* Prefix. */
     Tcl_LibraryInitProc *initProc,
 				/* Function to call to incorporate this
 				 * library into a trusted interpreter. */
@@ -1039,11 +1051,11 @@ Tcl_StaticLibrary(
 	strcpy(libraryPtr->prefix, prefix);
 	libraryPtr->loadHandle	= NULL;
 	libraryPtr->initProc	= initProc;
-	libraryPtr->safeInitProc	= safeInitProc;
+	libraryPtr->safeInitProc= safeInitProc;
 	libraryPtr->unloadProc = NULL;
 	libraryPtr->safeUnloadProc = NULL;
 	Tcl_MutexLock(&libraryMutex);
-	libraryPtr->nextPtr		= firstLibraryPtr;
+	libraryPtr->nextPtr	= firstLibraryPtr;
 	firstLibraryPtr		= libraryPtr;
 	Tcl_MutexUnlock(&libraryMutex);
     }
@@ -1055,7 +1067,7 @@ Tcl_StaticLibrary(
 	 * it's already loaded.
 	 */
 
-	ipFirstPtr = (InterpLibrary *)Tcl_GetAssocData(interp, "tclLoad", NULL);
+	ipFirstPtr = (InterpLibrary *)Tcl_GetAssocData(interp, ASSOC_KEY, NULL);
 	for (ipPtr = ipFirstPtr; ipPtr != NULL; ipPtr = ipPtr->nextPtr) {
 	    if (ipPtr->libraryPtr == libraryPtr) {
 		return;
@@ -1070,7 +1082,7 @@ Tcl_StaticLibrary(
 	ipPtr = (InterpLibrary *)Tcl_Alloc(sizeof(InterpLibrary));
 	ipPtr->libraryPtr = libraryPtr;
 	ipPtr->nextPtr = ipFirstPtr;
-	Tcl_SetAssocData(interp, "tclLoad", LoadCleanupProc, ipPtr);
+	Tcl_SetAssocData(interp, ASSOC_KEY, LoadCleanupProc, ipPtr);
     }
 }
 
@@ -1130,7 +1142,7 @@ TclGetLoadedLibraries(
     if (target == NULL) {
 	return TCL_ERROR;
     }
-    ipPtr = (InterpLibrary *)Tcl_GetAssocData(target, "tclLoad", NULL);
+    ipPtr = (InterpLibrary *)Tcl_GetAssocData(target, ASSOC_KEY, NULL);
 
     /*
      * Return information about all of the available libraries.
@@ -1198,7 +1210,7 @@ LoadCleanupProc(
 
     while (ipPtr) {
 	libraryPtr = ipPtr->libraryPtr;
-	UnloadLibrary(interp, interp, libraryPtr, 0, "", 1);
+	UnloadLibrary(interp, interp, libraryPtr, "", false, true);
 	/* UnloadLibrary doesn't free it by interp delete, so do it here and
 	 * repeat for next. */
 	nextPtr = ipPtr->nextPtr;

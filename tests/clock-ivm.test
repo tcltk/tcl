@@ -6,3 +6,4 @@
 
 ::tcl::unsupported::clock::configure -valid [expr {![::tcl::unsupported::clock::configure -valid]}]
 source [file join [file dirname [info script]] clock.test]
+::tcl::unsupported::clock::configure -valid [expr {![::tcl::unsupported::clock::configure -valid]}]; # ensure switched back (e. g. for possible -singleproc invocation)

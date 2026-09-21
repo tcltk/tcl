@@ -104,6 +104,14 @@ Returns a list of the names of encoding profiles. See \fBPROFILES\fR below.
 Set the system encoding to \fIencoding\fR. If \fIencoding\fR is
 omitted then the command returns the current system encoding.  The
 system encoding is used whenever Tcl passes strings to system calls.
+.TP
+\fBencoding user\fR
+.VS TIP716
+Returns the name of encoding as per the user's preferences. On Windows
+systems, this is based on the user's code page settings in the registry.
+On other platforms, the returned value is the same as returned by
+\fBencoding system\fR.
+.VE TIP716
 .\" Do not put .VS on whole section as that messes up the bullet list alignment
 .SH PROFILES
 .PP

@@ -11,6 +11,9 @@
  */
 
 #include "tclWinInt.h"
+#if defined (__clang__) && (__clang_major__ > 20)
+#pragma clang diagnostic ignored "-Wc++-keyword"
+#endif
 
 /*
  * The following variable is used to tell whether this module has been
@@ -28,22 +31,13 @@ static int initialized = 0;
 TCL_DECLARE_MUTEX(pipeMutex)
 
 /*
- * The following defines identify the various types of applications that run
- * under windows. There is special case code for the various types.
- */
-
-#define APPL_NONE	0
-#define APPL_DOS	1
-#define APPL_WIN3X	2
-#define APPL_WIN32	3
-
-/*
  * The following constants and structures are used to encapsulate the state of
  * various types of files used in a pipeline. This used to have a 1 && 2 that
  * supported Win32s.
  */
-
-#define WIN_FILE	3	/* Basic Win32 file. */
+enum PipeStageIds {
+    WIN_FILE = 3		/* Basic Win32 file. */
+};
 
 /*
  * This structure encapsulates the common state associated with all file types
@@ -68,18 +62,14 @@ typedef struct ProcInfo {
 static ProcInfo *procList;
 
 /*
- * Bit masks used in the flags field of the PipeInfo structure below.
+ * Bit masks used in the flags/readFlags fields of the PipeInfo structure below.
  */
-
-#define PIPE_PENDING	(1<<0)	/* Message is pending in the queue. */
-#define PIPE_ASYNC	(1<<1)	/* Channel is non-blocking. */
-
-/*
- * Bit masks used in the sharedFlags field of the PipeInfo structure below.
- */
-
-#define PIPE_EOF	(1<<2)	/* Pipe has reached EOF. */
-#define PIPE_EXTRABYTE	(1<<3)	/* The reader thread has consumed one byte. */
+enum TclWinPipeInfoFlags {
+    PIPE_PENDING = 1<<0,	/* Message is pending in the queue. */
+    PIPE_ASYNC = 1<<1,		/* Channel is non-blocking. */
+    PIPE_EOF = 1<<2,		/* Pipe has reached EOF. */
+    PIPE_EXTRABYTE = 1<<3	/* The reader thread has consumed one byte. */
+};
 
 /*
  * TODO: It appears the whole EXTRABYTE machinery is in place to support
@@ -169,8 +159,8 @@ typedef struct {
  * Declarations for functions used only in this file.
  */
 
-static int		ApplicationType(Tcl_Interp *interp,
-			    const char *fileName, char *fullName);
+static TclWinExecutableType ApplicationType(Tcl_Interp *interp,
+				 const char *fileName, Tcl_DString *);
 static void		BuildCommandLine(const char *executable, size_t argc,
 			    const char **argv, Tcl_DString *linePtr);
 static BOOL		HasConsole(void);
@@ -308,13 +298,12 @@ TclpFinalizePipes(void)
  *----------------------------------------------------------------------
  */
 
-void
+static void
 PipeSetupProc(
     TCL_UNUSED(void *),
     int flags)			/* Event flags as passed to Tcl_DoOneEvent. */
 {
     PipeInfo *infoPtr;
-    Tcl_Time blockTime = { 0, 0 };
     int block = 1;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
@@ -340,7 +329,7 @@ PipeSetupProc(
 	}
     }
     if (!block) {
-	Tcl_SetMaxBlockTime(&blockTime);
+	Tcl_SetMaxBlockTime2(0);
     }
 }
 
@@ -680,8 +669,9 @@ TclpCreateTempFile(
 	 * Convert the contents from UTF to native encoding
 	 */
 
-	if (Tcl_UtfToExternalDStringEx(NULL, NULL, contents, TCL_INDEX_NONE, 0, &dstring, NULL) != TCL_OK) {
-	   goto error;
+	if (Tcl_UtfToExternalDStringEx(NULL, NULL, contents, TCL_INDEX_NONE, 0,
+		&dstring, NULL) != TCL_OK) {
+	    goto error;
 	}
 	native = Tcl_DStringValue(&dstring);
 
@@ -739,7 +729,7 @@ TclpCreateTempFile(
  *	This function returns a unique filename.
  *
  * Results:
- *	Returns a valid Tcl_Obj* with refCount 0, or NULL on failure.
+ *	Returns a valid Tcl_Obj * with refCount 0, or NULL on failure.
  *
  * Side effects:
  *	None.
@@ -947,13 +937,16 @@ TclpCreateProcess(
     PROCESS_INFORMATION procInfo;
     SECURITY_ATTRIBUTES secAtts;
     HANDLE hProcess, h, inputHandle, outputHandle, errorHandle;
-    char execPath[MAX_PATH * 3];
+    Tcl_DString execPath;
     WinFile *filePtr;
 
     PipeInit();
 
-    applType = ApplicationType(interp, argv[0], execPath);
-    if (applType == APPL_NONE) {
+    applType = ApplicationType(interp, argv[0], &execPath);
+    /* execPath initialized no matter return value */
+
+    if (applType == APPL_NONE || applType == APPL_DLL) {
+	Tcl_DStringFree(&execPath);
 	return TCL_ERROR;
     }
 
@@ -969,9 +962,9 @@ TclpCreateProcess(
 
     ZeroMemory(&startInfo, sizeof(startInfo));
     startInfo.cb = sizeof(startInfo);
-    startInfo.dwFlags	= STARTF_USESTDHANDLES;
-    startInfo.hStdInput	= INVALID_HANDLE_VALUE;
-    startInfo.hStdOutput= INVALID_HANDLE_VALUE;
+    startInfo.dwFlags = STARTF_USESTDHANDLES;
+    startInfo.hStdInput = INVALID_HANDLE_VALUE;
+    startInfo.hStdOutput = INVALID_HANDLE_VALUE;
     startInfo.hStdError = INVALID_HANDLE_VALUE;
 
     secAtts.nLength = sizeof(SECURITY_ATTRIBUTES);
@@ -1138,7 +1131,7 @@ TclpCreateProcess(
      * ab~1.def instead of "a b.default").
      */
 
-    BuildCommandLine(execPath, argc, argv, &cmdLine);
+    BuildCommandLine(Tcl_DStringValue(&execPath), argc, argv, &cmdLine);
 
     if (CreateProcessW(NULL, (WCHAR *) Tcl_DStringValue(&cmdLine),
 	    NULL, NULL, TRUE, (DWORD) createFlags, NULL, NULL, &startInfo,
@@ -1176,6 +1169,7 @@ TclpCreateProcess(
     result = TCL_OK;
 
   end:
+    Tcl_DStringFree(&execPath);
     Tcl_DStringFree(&cmdLine);
     if (startInfo.hStdInput != INVALID_HANDLE_VALUE) {
 	CloseHandle(startInfo.hStdInput);
@@ -1222,12 +1216,149 @@ HasConsole(void)
 }
 
 /*
+ *----------------------------------------------------------------------
+ *
+ * TclWinGetExecutableType --
+ *
+ *	Determines the type of the specified executable file.
+ *
+ * Results:
+ *	The return value is one of APPL_DOS, APPL_WIN3X, or APPL_WIN32 if the
+ *	filename referred to the corresponding application type. If the file
+ *	name could not be found or did not refer to any known application
+ *	type, APPL_NONE is returned.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+TclWinExecutableType
+TclWinGetExecutableType(
+    const WCHAR *nativePath)
+{
+    /* Ignore matches on directories */
+    DWORD attr = GetFileAttributesW(nativePath);
+    if ((attr == 0xFFFFFFFF) || (attr & FILE_ATTRIBUTE_DIRECTORY)) {
+	return APPL_NONE;
+    }
+
+    /*
+     * Cannot assume type purely on extension since even exe's may have
+     * .bat or .cmd extension (in theory). So first try to decipher file
+     * content.
+     */
+
+    HANDLE hFile;
+    hFile = CreateFileW(nativePath, GENERIC_READ, FILE_SHARE_READ, NULL,
+	OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OPEN_REPARSE_POINT,
+	NULL);
+    if (hFile == INVALID_HANDLE_VALUE) {
+	return APPL_NONE;
+    }
+
+    if (attr & FILE_ATTRIBUTE_REPARSE_POINT) {
+	/*
+	 * But [4f0b5767ac]. Attempt to ReadFile below will fail.
+	 * We assume that if it is an executable, and it is a reparse
+	 * point, it is an App Execution Alias.
+	 */
+	CloseHandle(hFile);
+	return APPL_WIN32;
+    }
+
+    /*
+     * Note: We don't use the GetBinaryTypeW Win32 function because that
+     * returns SCS_DOS_BINARY even for .exe's that contain junk.
+     */
+
+    IMAGE_DOS_HEADER header;
+    DWORD numRead;
+    header.e_magic = 0;
+    if (!ReadFile(hFile, (void *)&header, sizeof(header), &numRead, NULL) ||
+	numRead < sizeof(header) ||
+	header.e_magic != IMAGE_DOS_SIGNATURE) {
+	goto checkExtension;
+    }
+
+    if (header.e_lfarlc != sizeof(header)) {
+	/*
+	 * All Windows 3.X and Win32 and some DOS programs have this
+	 * value set here.  If it doesn't, assume that since it
+	 * already had the other magic number it was a DOS application.
+	 */
+
+	CloseHandle(hFile);
+	return APPL_DOS;
+    }
+
+    /*
+     * header.e_lfanew points to yet another magic number.
+     *  PE for Win32. IMAGE_FILE_HEADER starts 2 bytes after the PE signature.
+     *  NE for Windows 3.X
+     */
+
+    char buf[4];
+    buf[0] = '\0';
+    SetFilePointer(hFile, header.e_lfanew, NULL, FILE_BEGIN);
+    if (ReadFile(hFile, (void *)buf, 4, &numRead, NULL) && numRead == 4) {
+	if ((buf[0] == 'P') && (buf[1] == 'E')) {
+	    IMAGE_FILE_HEADER imageHeader;
+	    if (ReadFile(hFile, (void *)&imageHeader, sizeof(imageHeader),
+		    &numRead, NULL) &&
+		numRead == sizeof(imageHeader)) {
+		CloseHandle(hFile);
+		return imageHeader.Characteristics & IMAGE_FILE_DLL
+			? APPL_DLL
+			: APPL_WIN32;
+	    }
+	    goto checkExtension;
+	}
+	CloseHandle(hFile);
+	if ((buf[0] == 'N') && (buf[1] == 'E')) {
+	    /*
+	     * TODO - if running on 64-bit Windows (even as a 32-bit process)
+	     * should return APPL_NONE here as Windows 64 does not have NTVDM
+	     * and cannot run 16-bit processes.
+	     */
+	    return APPL_WIN3X;
+	} else {
+	    /*
+	     * Strictly speaking, there should be a test that there is
+	     * an 'L' and 'E' at buf[0..1], to identify the type as DOS,
+	     * but of course we ran into a DOS executable that _doesn't_
+	     * have the magic number - specifically, one compiled using
+	     * the Lahey Fortran90 compiler.
+	     */
+
+	    return APPL_DOS;
+	}
+    }
+
+  checkExtension: /* hFile should be open handle at this point */
+    /*
+     * Could not identify based on content. Check the extension.
+     * Not clear why .cmd and .bat which are actually run by cmd.exe are
+     * marked as APPL_DOS but preserve for historical reasons.
+     */
+    CloseHandle(hFile);
+    WCHAR *ext = wcsrchr(nativePath, L'.');
+    if ((ext != NULL) &&
+	    (_wcsicmp(ext, L".cmd") == 0 ||
+	    _wcsicmp(ext, L".bat") == 0 ||
+	    _wcsicmp(ext, L".com") == 0)) {
+	return APPL_DOS;
+    }
+    return APPL_NONE;
+}
+
+/*
  *--------------------------------------------------------------------
  *
  * ApplicationType --
  *
  *	Search for the specified program and identify if it refers to a DOS,
- *	Windows 3.X, or Win32 program.	Used to determine how to invoke a
+ *	Windows 3.X, or Win32 program. Used to determine how to invoke a
  *	program, or if it can even be invoked.
  *
  *	It is possible to almost positively identify DOS and Windows
@@ -1244,7 +1375,8 @@ HasConsole(void)
  *	win95, so I won't feel bad about reimplementing functionality.
  *
  * Results:
- *	The return value is one of APPL_DOS, APPL_WIN3X, or APPL_WIN32 if the
+ *
+ *	One of APPL_DOS, APPL_WIN3X, APPL_DLL or APPL_WIN32 if the
  *	filename referred to the corresponding application type. If the file
  *	name could not be found or did not refer to any known application
  *	type, APPL_NONE is returned and an error message is left in interp.
@@ -1256,162 +1388,249 @@ HasConsole(void)
  *----------------------------------------------------------------------
  */
 
-static int
+static TclWinExecutableType
 ApplicationType(
     Tcl_Interp *interp,		/* Interp, for error message. */
-    const char *originalName,	/* Name of the application to find. */
-    char fullName[])		/* Filled with complete path to
-				 * application. */
+    const char *originalName,	/* Name of the application to find in native
+				   format (must use \ not / separator).
+				   Must not point into dsFullNamePtr */
+    Tcl_DString *dsFullNamePtr)	/* Filled with complete path to application.
+				 * Must always be Tcl_DStringFree'd */
 {
-    int applType, i, found;
-    Tcl_Size nameLen;
-    HANDLE hFile;
-    WCHAR *rest;
-    char *ext;
-    char buf[2];
-    DWORD attr, read;
-    IMAGE_DOS_HEADER header;
-    Tcl_DString nameBuf, ds;
-    const WCHAR *nativeName;
-    WCHAR nativeFullPath[MAX_PATH];
-    static const char extensions[][5] = {"", ".com", ".exe", ".bat", ".cmd"};
+    Tcl_DString nameBuf;
+    TclWinPath winPath;
+    DWORD winPathCapacity = 0;
+    WCHAR *fullNativePath;
+    DWORD winError = 0;
+    Tcl_Size numBytesInName;
+    Tcl_DString dsSearchDirs;
+    WCHAR *dirStart, *dirEnd;
+    TclWinExecutableType applType = APPL_NONE;
+    TclWinPath envPath;
+    WCHAR *envPathPtr;
+    /*
+     * TODO - If no extension is present in originalName, should we skip
+     * searching PATH without an extension? Or move it last for efficiency?
+    */
+    static const WCHAR extensions[][5] = {L"", L".com", L".exe", L".bat",
+	L".cmd"};
+
+    Tcl_DStringInit(dsFullNamePtr);
+    Tcl_DStringInit(&nameBuf);
+    Tcl_UtfToWCharDString(originalName, TCL_INDEX_NONE, &nameBuf);
+    numBytesInName = Tcl_DStringLength(&nameBuf);
+    fullNativePath = TclWinPathInit(&winPath, &winPathCapacity);
 
     /*
-     * Look for the program as an external program. First try the name as it
-     * is, then try adding .com, .exe, .bat and .cmd, in that order, to the name,
-     * looking for an executable.
+     * Look for the program as an external program along a search path.
+     * First try the name as it is, then try adding .com, .exe, .bat and
+     * .cmd, in that order, to the name, looking for an executable.
      *
-     * Using the raw SearchPathW() function doesn't do quite what is necessary.
-     * If the name of the executable already contains a '.' character, it will
-     * not try appending the specified extension when searching (in other
-     * words, SearchPath will not find the program "a.b.exe" if the arguments
-     * specified "a.b" and ".exe"). So, first look for the file as it is
-     * named. Then manually append the extensions, looking for a match.
+     * The search path depends on whether the passed name includes directory
+     * separators. If so, the search path is only the current working directory.
+     * Otherwise, the search path includes
+     *    - the directory of the current executable,
+     *    - the current working directory, if permitted (see below)
+     *    - the Windows system directory,
+     *    - the Windows directory, and
+     *    - the directories in the PATH environment variable.
+     *
+     * Microsoft has two independent mechanisms for controlling whether
+     * the current directory should be included in the search path. We
+     * choose the newer one based on the NeedCurrentDirectoryForExePathW()
+     * function. See TIP 753.
+     *
+     * The code below explicitly iterates through the search path.
+     * Using the raw SearchPathW() function by itself doesn't suffice:
+     *
+     * - First, if the name of the executable already contains a '.' character,
+     * it will not try appending the specified extension when searching (in
+     * other words, SearchPath will not find the program "a.b.exe" if the
+     * arguments specified "a.b" and ".exe"). So, first look for the file as it
+     * is named. Then manually append the extensions, looking for a match.
+     *
+     * - Second, using it to search the entire PATH at once for each extension
+     * will result in a .com being found even when it occurs later in the
+     * path than an exe (for example). Bug [596936dd2d]
+     *
+     * We have to therefore do the work manually by explicitly iterating
+     * through each directory in the PATH and looking for each extension in
+     * that directory.
      */
 
-    applType = APPL_NONE;
-    Tcl_DStringInit(&nameBuf);
-    Tcl_DStringAppend(&nameBuf, originalName, TCL_INDEX_NONE);
-    nameLen = Tcl_DStringLength(&nameBuf);
+    Tcl_DStringInit(&dsSearchDirs);
 
-    for (i = 0; i < (int) (sizeof(extensions) / sizeof(extensions[0])); i++) {
-	Tcl_DStringSetLength(&nameBuf, nameLen);
-	Tcl_DStringAppend(&nameBuf, extensions[i], TCL_INDEX_NONE);
-	Tcl_DStringInit(&ds);
-	nativeName = Tcl_UtfToWCharDString(Tcl_DStringValue(&nameBuf),
-		Tcl_DStringLength(&nameBuf), &ds);
-	found = SearchPathW(NULL, nativeName, NULL, MAX_PATH,
-		nativeFullPath, &rest);
-	Tcl_DStringFree(&ds);
-	if (found == 0) {
-	    continue;
-	}
-
+    if (strchr(originalName, '\\') != NULL) {
 	/*
-	 * Ignore matches on directories or data files, return if identified a
-	 * known type.
+	 * Name has directory separators, only search current directory.
+	 * Note: mimicing Win32 NeedCurrentDirectoryForExePathW() behavior
+	 * here, drive relative paths without directory separators (e.g.
+	 * "c:prog.exe") are handled as in the else clause. This does not
+	 * make entire sense to me, but consistent with Need*ExecPathW.
 	 */
 
-	attr = GetFileAttributesW(nativeFullPath);
-	if ((attr == 0xFFFFFFFF) || (attr & FILE_ATTRIBUTE_DIRECTORY)) {
-	    continue;
-	}
-	Tcl_DStringInit(&ds);
-	strcpy(fullName, Tcl_WCharToUtfDString(nativeFullPath, TCL_INDEX_NONE, &ds));
-	Tcl_DStringFree(&ds);
-
-	ext = strrchr(fullName, '.');
-	if ((ext != NULL) &&
-		(strcasecmp(ext, ".cmd") == 0 || strcasecmp(ext, ".bat") == 0)) {
-	    applType = APPL_DOS;
-	    break;
-	}
-
-	hFile = CreateFileW(nativeFullPath,
-		GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING,
-		FILE_ATTRIBUTE_NORMAL|FILE_FLAG_OPEN_REPARSE_POINT, NULL);
-	if (hFile == INVALID_HANDLE_VALUE) {
-	    continue;
-	}
-
-	if (attr & FILE_ATTRIBUTE_REPARSE_POINT) {
-	    /*
-	     * But [4f0b5767ac]. Likely a App Execution Alias. This can only
-	     * be a Win32 APP. Attempt to ReadFile below will fail. We assume
-	     * that if it is on the PATH, and it is a reparse point, it is an
-	     * App Execution Alias.
-	     */
-	    CloseHandle(hFile);
-	    applType = APPL_WIN32;
-	    break;
-	}
-
-	header.e_magic = 0;
-	ReadFile(hFile, (void *)&header, sizeof(header), &read, NULL);
-	if (header.e_magic != IMAGE_DOS_SIGNATURE) {
-	    /*
-	     * Doesn't have the magic number for relocatable executables. If
-	     * filename ends with .com, assume it's a DOS application anyhow.
-	     * Note that we didn't make this assumption at first, because some
-	     * supposed .com files are really 32-bit executables with all the
-	     * magic numbers and everything.
-	     */
-
-	    CloseHandle(hFile);
-	    if ((ext != NULL) && (strcasecmp(ext, ".com") == 0)) {
-		applType = APPL_DOS;
-		break;
+	Tcl_DStringAppend(&dsSearchDirs, (char *)L".", sizeof(WCHAR));
+    } else {
+	/*
+	 * No directory separators. Add directories as per above comment.
+	 * First, the directory containing the current executable...
+	 */
+	fullNativePath = TclWinGetModuleFileName(NULL, &winPath);
+	if (fullNativePath != NULL) {
+	    /* This is code is NOT a general "file dirname"! */
+	    WCHAR *lastSep = wcsrchr(fullNativePath, L'\\');
+	    if (lastSep != NULL) {
+		if (lastSep == fullNativePath || *(lastSep - 1) == L':') {
+		    /* Root or drive root. */
+		    *(lastSep + 1) = L'\0';
+		} else {
+		    *lastSep = L'\0';
+		}
+		size_t numBytes = (char *)lastSep - (char *)fullNativePath;
+		Tcl_DStringAppend(&dsSearchDirs, (char *)fullNativePath,
+			numBytes);
 	    }
-	    continue;
+	    fullNativePath = TclWinPathReset(&winPath, &winPathCapacity);
 	}
-	if (header.e_lfarlc != sizeof(header)) {
-	    /*
-	     * All Windows 3.X and Win32 and some DOS programs have this value
-	     * set here. If it doesn't, assume that since it already had the
-	     * other magic number it was a DOS application.
-	     */
 
-	    CloseHandle(hFile);
-	    applType = APPL_DOS;
-	    break;
-	}
+	/* If above failed, extraneous leading ";" below. No matter, ignored. */
 
 	/*
-	 * The DWORD at header.e_lfanew points to yet another magic number.
+	 * Microsoft has two independent mechanisms for controlling whether
+	 * the current directory should be included in the search path. We
+	 * choose the newer one below. See TIP 753.
 	 */
-
-	buf[0] = '\0';
-	SetFilePointer(hFile, header.e_lfanew, NULL, FILE_BEGIN);
-	ReadFile(hFile, (void *)buf, 2, &read, NULL);
-	CloseHandle(hFile);
-
-	if ((buf[0] == 'N') && (buf[1] == 'E')) {
-	    applType = APPL_WIN3X;
-	} else if ((buf[0] == 'P') && (buf[1] == 'E')) {
-	    applType = APPL_WIN32;
-	} else {
-	    /*
-	     * Strictly speaking, there should be a test that there is an 'L'
-	     * and 'E' at buf[0..1], to identify the type as DOS, but of
-	     * course we ran into a DOS executable that _doesn't_ have the
-	     * magic number - specifically, one compiled using the Lahey
-	     * Fortran90 compiler.
-	     */
-
-	    applType = APPL_DOS;
+	if (NeedCurrentDirectoryForExePathW(
+		(WCHAR *)Tcl_DStringValue(&nameBuf))) {
+	    /* Add the current directory */
+	    Tcl_DStringAppend(&dsSearchDirs, (char *)L";", sizeof(WCHAR));
+	    Tcl_DStringAppend(&dsSearchDirs, (char *)L".", sizeof(WCHAR));
 	}
+
+	/* Add system32 directory */
+	fullNativePath = TclWinGetSystemDirectory(&winPath);
+	if (fullNativePath != NULL) {
+	    if (fullNativePath[0] != L'\0') {
+		Tcl_DStringAppend(&dsSearchDirs, (char *)L";", sizeof(WCHAR));
+		Tcl_DStringAppend(&dsSearchDirs, (char *)fullNativePath,
+			wcslen(fullNativePath) * sizeof(WCHAR));
+	    }
+	    fullNativePath = TclWinPathReset(&winPath, &winPathCapacity);
+	}
+
+	/* Add Windows directory */
+	fullNativePath = TclWinGetWindowsDirectory(&winPath);
+	if (fullNativePath != NULL) {
+	    if (fullNativePath[0] != L'\0') {
+		Tcl_DStringAppend(&dsSearchDirs, (char *)L";", sizeof(WCHAR));
+		Tcl_DStringAppend(&dsSearchDirs, (char *)fullNativePath,
+			wcslen(fullNativePath) * sizeof(WCHAR));
+	    }
+	    fullNativePath = TclWinPathReset(&winPath, &winPathCapacity);
+	}
+
+	/* Finally add PATH env */
+	envPathPtr = TclWinGetEnvironmentVariable(L"PATH", &envPath);
+	if (envPathPtr != NULL) {
+	    if (envPathPtr[0] != L'\0') {
+		Tcl_DStringAppend(&dsSearchDirs, (char *)L";", sizeof(WCHAR));
+		Tcl_DStringAppend(&dsSearchDirs, (char *)envPathPtr,
+			wcslen(envPathPtr) * sizeof(WCHAR));
+	    }
+	    TclWinPathFree(&envPath);
+	}
+    }
+
+    /*
+     * Tcl_DStringAppend's above only append one \0 byte, make sure we have
+     * two. Note Tcl_DStringLength now will include the terminating L'\0'
+     */
+    Tcl_DStringAppend(&dsSearchDirs, (char *)L"", sizeof(WCHAR));
+
+    /*
+     * Iterate through search path directories.
+     */
+    dirStart = (WCHAR *)Tcl_DStringValue(&dsSearchDirs);
+    while (1) {
+	size_t i;
+	WCHAR *rest;
+
+	/*
+	 * At top of loop dirStart is next PATH component to check.
+	 */
+	while (*dirStart == L';') {
+	    dirStart++; /* Skip empty components */
+	}
+	if (*dirStart == L'\0') {
+	    break; /* End of PATH */
+	}
+
+	/* Terminate the current path component */
+	dirEnd = wcschr(dirStart, L';');
+	if (dirEnd != NULL) {
+	    *dirEnd = L'\0';
+	}
+
+	/* Try each extension within this one directory. */
+	for (i = 0; i < (sizeof(extensions) / sizeof(extensions[0])); i++) {
+	    const WCHAR *nativeName;
+	    DWORD numChars;
+
+	    /* Overwrite previous extension including trailing L'\0' */
+	    Tcl_DStringSetLength(&nameBuf, numBytesInName);
+	    Tcl_DStringAppend(&nameBuf, (char *)extensions[i],
+		sizeof(WCHAR) * (wcslen(extensions[i]) + 1));
+
+	    /*
+	     * TODO - could we check for existence of dirStart\nativeName here
+	     * instead of SearchPathW? Would it be functionally the same and
+	     * be more efficient?
+	     */
+	    nativeName = (WCHAR *)Tcl_DStringValue(&nameBuf);
+	    numChars = SearchPathW(dirStart, (WCHAR *)nativeName, NULL,
+		winPathCapacity, fullNativePath, &rest);
+	    if (numChars == 0) {
+		winError = GetLastError(); /* Save for loop termination  */
+		continue;
+	    }
+
+	    if (numChars >= winPathCapacity) {
+		/* Buffer too small; try again. */
+		winPathCapacity = numChars;
+		fullNativePath = TclWinPathResize(&winPath, winPathCapacity);
+		numChars = SearchPathW(dirStart, (WCHAR *)nativeName, NULL,
+			winPathCapacity, fullNativePath, &rest);
+		if (numChars == 0 || numChars >= winPathCapacity) {
+		    continue; /* Give up on this dir+ext combination. */
+		}
+	    }
+
+	    applType = TclWinGetExecutableType(fullNativePath);
+	    if (applType != APPL_NONE) {
+		Tcl_WCharToUtfDString(fullNativePath, TCL_AUTO_LENGTH,
+			dsFullNamePtr);
+		goto resolved;
+	    }
+	} /* end inner loop for extensions within a dir */
+
+	if (dirEnd == NULL) {
+	    break; /* End of PATH */
+	}
+	dirStart = dirEnd + 1;
+    } /* end outer loop over PATH directories */
+
+resolved:
+    switch (applType) {
+    case APPL_NONE:
+	Tcl_WinConvertError(winError ? winError : ERROR_FILE_NOT_FOUND);
+	if (interp) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "couldn't execute \"%s\": %s", originalName,
+		    Tcl_PosixError(interp)));
+	}
+	Tcl_DStringFree(dsFullNamePtr);
 	break;
-    }
-    Tcl_DStringFree(&nameBuf);
-
-    if (applType == APPL_NONE) {
-	Tcl_WinConvertError(GetLastError());
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf("couldn't execute \"%s\": %s",
-		originalName, Tcl_PosixError(interp)));
-	return APPL_NONE;
-    }
-
-    if (applType == APPL_WIN3X) {
+    case APPL_WIN3X:
 	/*
 	 * Replace long path name of executable with short path name for
 	 * 16-bit applications. Otherwise the application may not be able to
@@ -1419,11 +1638,17 @@ ApplicationType(
 	 * application name from the arguments.
 	 */
 
-	GetShortPathNameW(nativeFullPath, nativeFullPath, MAX_PATH);
-	Tcl_DStringInit(&ds);
-	strcpy(fullName, Tcl_WCharToUtfDString(nativeFullPath, TCL_INDEX_NONE, &ds));
-	Tcl_DStringFree(&ds);
+	GetShortPathNameW(fullNativePath, fullNativePath, MAX_PATH);
+	Tcl_DStringSetLength(dsFullNamePtr, 0);
+	Tcl_WCharToUtfDString(fullNativePath, TCL_INDEX_NONE, dsFullNamePtr);
+	break;
+    default:
+	break;
     }
+
+    Tcl_DStringFree(&dsSearchDirs);
+    Tcl_DStringFree(&nameBuf);
+    TclWinPathFree(&winPath);
     return applType;
 }
 
@@ -1819,8 +2044,7 @@ TclpCreateCommandChannel(
 
 	infoPtr->readable = CreateEventW(NULL, TRUE, TRUE, NULL);
 	infoPtr->readThread = CreateThread(NULL, 256, PipeReaderThread,
-	    TclPipeThreadCreateTI(&infoPtr->readTI, infoPtr, infoPtr->readable),
-	    0, NULL);
+		TclPipeThreadCreateTI(&infoPtr->readTI, infoPtr), 0, NULL);
 	SetThreadPriority(infoPtr->readThread, THREAD_PRIORITY_HIGHEST);
 	infoPtr->validMask |= TCL_READABLE;
     } else {
@@ -1834,8 +2058,7 @@ TclpCreateCommandChannel(
 
 	infoPtr->writable = CreateEventW(NULL, TRUE, TRUE, NULL);
 	infoPtr->writeThread = CreateThread(NULL, 256, PipeWriterThread,
-	    TclPipeThreadCreateTI(&infoPtr->writeTI, infoPtr, infoPtr->writable),
-	    0, NULL);
+		TclPipeThreadCreateTI(&infoPtr->writeTI, infoPtr), 0, NULL);
 	SetThreadPriority(infoPtr->writeThread, THREAD_PRIORITY_HIGHEST);
 	infoPtr->validMask |= TCL_WRITABLE;
     } else {
@@ -2019,7 +2242,7 @@ PipeClose2Proc(
     int errorCode, result;
     PipeInfo *infoPtr, **nextPtrPtr;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-    int inExit = (TclInExit() || TclInThreadExit());
+    bool inExit = (TclInExit() || TclInThreadExit());
 
     errorCode = 0;
     result = 0;
@@ -2032,7 +2255,6 @@ PipeClose2Proc(
 	 */
 
 	if (pipePtr->readThread) {
-
 	    TclPipeThreadStop(&pipePtr->readTI, pipePtr->readThread);
 	    CloseHandle(pipePtr->readThread);
 	    CloseHandle(pipePtr->readable);
@@ -2046,7 +2268,6 @@ PipeClose2Proc(
     }
     if ((!flags || flags & TCL_CLOSE_WRITE) && (pipePtr->writeFile != NULL)) {
 	if (pipePtr->writeThread) {
-
 	    /*
 	     * Wait for the  writer thread to finish the  current buffer, then
 	     * terminate the thread  and close the handles. If  the channel is
@@ -2054,18 +2275,14 @@ PipeClose2Proc(
 	     * thread is not interruptible and we want TIP#398-fast-exit.
 	     */
 	    if ((pipePtr->flags & PIPE_ASYNC) && inExit) {
-
 		/* give it a chance to leave honorably */
-		TclPipeThreadStopSignal(&pipePtr->writeTI, pipePtr->writable);
+		TclPipeThreadStopSignal(&pipePtr->writeTI);
 
 		if (WaitForSingleObject(pipePtr->writable, 20) == WAIT_TIMEOUT) {
 		    return EWOULDBLOCK;
 		}
-
 	    } else {
-
 		WaitForSingleObject(pipePtr->writable, inExit ? 5000 : INFINITE);
-
 	    }
 
 	    TclPipeThreadStop(&pipePtr->writeTI, pipePtr->writeThread);
@@ -2473,13 +2690,12 @@ PipeWatchProc(
 
     infoPtr->watchMask = mask & infoPtr->validMask;
     if (infoPtr->watchMask) {
-	Tcl_Time blockTime = { 0, 0 };
 
 	if (!oldMask) {
 	    infoPtr->nextPtr = tsdPtr->firstPipePtr;
 	    tsdPtr->firstPipePtr = infoPtr;
 	}
-	Tcl_SetMaxBlockTime(&blockTime);
+	Tcl_SetMaxBlockTime2(0);
     } else {
 	if (oldMask) {
 	    /*
@@ -2586,7 +2802,7 @@ Tcl_WaitPid(
     prevPtrPtr = &procList;
     for (infoPtr = procList; infoPtr != NULL;
 	    prevPtrPtr = &infoPtr->nextPtr, infoPtr = infoPtr->nextPtr) {
-	 if (infoPtr->dwProcessId == (Tcl_Size)pid) {
+	if (infoPtr->dwProcessId == (Tcl_Size)pid) {
 	    *prevPtrPtr = infoPtr->nextPtr;
 	    break;
 	}
@@ -2765,7 +2981,7 @@ int
 Tcl_PidObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const *objv)	/* Argument strings. */
 {
     Tcl_Channel chan;
@@ -3302,8 +3518,7 @@ TclpOpenTemporaryFile(
 TclPipeThreadInfo *
 TclPipeThreadCreateTI(
     TclPipeThreadInfo **pipeTIPtr,
-    void *clientData,
-    HANDLE wakeEvent)
+    void *clientData)
 {
     TclPipeThreadInfo *pipeTI;
 #ifndef _PTI_USE_CKALLOC
@@ -3314,7 +3529,6 @@ TclPipeThreadCreateTI(
     pipeTI->evControl = CreateEventW(NULL, FALSE, FALSE, NULL);
     pipeTI->state = PTI_STATE_IDLE;
     pipeTI->clientData = clientData;
-    pipeTI->evWakeUp = wakeEvent;
     return (*pipeTIPtr = pipeTI);
 }
 
@@ -3342,13 +3556,10 @@ TclPipeThreadWaitForSignal(
     TclPipeThreadInfo *pipeTI = *pipeTIPtr;
     LONG state;
     DWORD waitResult;
-    HANDLE wakeEvent;
 
     if (!pipeTI) {
 	return 0;
     }
-
-    wakeEvent = pipeTI->evWakeUp;
 
     /*
      * Wait for the main thread to signal before attempting to do the work.
@@ -3409,11 +3620,6 @@ TclPipeThreadWaitForSignal(
 
     if (state != PTI_STATE_STOP) {
 	*pipeTIPtr = NULL;
-    } else {
-	pipeTI->evWakeUp = NULL;
-    }
-    if (wakeEvent) {
-	SetEvent(wakeEvent);
     }
     return 0;
 }
@@ -3436,8 +3642,7 @@ TclPipeThreadWaitForSignal(
 
 int
 TclPipeThreadStopSignal(
-    TclPipeThreadInfo **pipeTIPtr,
-    HANDLE wakeEvent)
+    TclPipeThreadInfo **pipeTIPtr)
 {
     TclPipeThreadInfo *pipeTI = *pipeTIPtr;
     HANDLE evControl;
@@ -3447,7 +3652,6 @@ TclPipeThreadStopSignal(
 	return 1;
     }
     evControl = pipeTI->evControl;
-    pipeTI->evWakeUp = wakeEvent;
     state = InterlockedCompareExchange(&pipeTI->state, PTI_STATE_STOP,
 	    PTI_STATE_IDLE);
     switch (state) {
@@ -3458,7 +3662,7 @@ TclPipeThreadStopSignal(
 
 	SetEvent(evControl);
 	*pipeTIPtr = NULL;
-	/* FALLTHRU */
+	TCL_FALLTHROUGH();
     case PTI_STATE_DOWN:
 	return 1;
 
@@ -3511,7 +3715,6 @@ TclPipeThreadStop(
     }
     pipeTI = *pipeTIPtr;
     evControl = pipeTI->evControl;
-    pipeTI->evWakeUp = NULL;
 
     /*
      * Try to sane stop the pipe worker, corresponding its current state
@@ -3583,7 +3786,7 @@ TclPipeThreadStop(
 	GetExitCodeThread(hThread, &exitCode);
 
 	if (exitCode == STILL_ACTIVE) {
-	    int inExit = (TclInExit() || TclInThreadExit());
+	    bool inExit = (TclInExit() || TclInThreadExit());
 
 	    /*
 	     * Set the stop event so that if the pipe thread is blocked
@@ -3663,9 +3866,6 @@ TclPipeThreadStop(
 
     *pipeTIPtr = NULL;
     if (pipeTI) {
-	if (pipeTI->evWakeUp) {
-	    SetEvent(pipeTI->evWakeUp);
-	}
 	CloseHandle(pipeTI->evControl);
 #ifndef _PTI_USE_CKALLOC
 	free(pipeTI);
@@ -3714,9 +3914,6 @@ TclPipeThreadExit(
     state = InterlockedExchange(&pipeTI->state, PTI_STATE_DOWN);
     if (state == PTI_STATE_STOP) {
 	CloseHandle(pipeTI->evControl);
-	if (pipeTI->evWakeUp) {
-	    SetEvent(pipeTI->evWakeUp);
-	}
 #ifndef _PTI_USE_CKALLOC
 	free(pipeTI);
 #else

@@ -15,6 +15,9 @@
 /*
  * On Windows, we need to do proper Unicode->UTF-8 conversion.
  */
+ #if defined (__clang__) && (__clang_major__ > 20)
+#pragma clang diagnostic ignored "-Wc++-keyword"
+#endif
 
 typedef struct {
     int initialized;
@@ -126,7 +129,7 @@ TclSockMinimumBuffers(
 {
     int current;
     socklen_t len;
-    int size = size1;
+    int size = (int)size1;
 
     if (size != size1) {
 	return TCL_ERROR;
@@ -191,7 +194,7 @@ TclCreateSocketAddress(
     if (host != NULL) {
 	if (Tcl_UtfToExternalDStringEx(interp, NULL, host, -1, 0, &ds,
 		NULL) != TCL_OK) {
-		Tcl_DStringFree(&ds);
+	    Tcl_DStringFree(&ds);
 	    return 0;
 	}
 	native = Tcl_DStringValue(&ds);
@@ -335,6 +338,25 @@ Tcl_OpenTcpServer(
     return Tcl_OpenTcpServerEx(interp, portbuf, host, TCL_TCPSERVER_REUSEADDR,
 	    -1, acceptProc, callbackData);
 }
+
+#ifdef TCL_SOCK_PRINTF_DEBUGGING
+/* printf debugging */
+void
+printaddrinfo(
+    struct addrinfo *addrlist,
+    char *prefix)
+{
+    char host[NI_MAXHOST], port[NI_MAXSERV];
+    struct addrinfo *ai;
+
+    for (ai = addrlist; ai != NULL; ai = ai->ai_next) {
+	getnameinfo(ai->ai_addr, ai->ai_addrlen,
+		host, sizeof(host), port, sizeof(port),
+		NI_NUMERICHOST|NI_NUMERICSERV);
+	fprintf(stderr,"%s: %s:%s\n", prefix, host, port);
+    }
+}
+#endif
 
 /*
  * Local Variables:

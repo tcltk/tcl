@@ -4,7 +4,7 @@
  *	This file contains the public API definitions and some of the function
  *	declarations for the object-system (NB: not Tcl_Obj, but ::oo).
  *
- * Copyright (c) 2006-2010 by Donal K. Fellows
+ * Copyright © 2006-2010 by Donal K. Fellows
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -20,12 +20,13 @@
  *
  * tests/oo.test
  * tests/ooNext2.test
+ * tests/ooUtil.test
  * unix/tclooConfig.sh
  * win/tclooConfig.sh
  */
 
 #define TCLOO_VERSION "1.3"
-#define TCLOO_PATCHLEVEL TCLOO_VERSION ".0"
+#define TCLOO_PATCHLEVEL TCLOO_VERSION ".1"
 
 #include "tcl.h"
 
@@ -60,8 +61,10 @@ typedef struct Tcl_ObjectContext_ *Tcl_ObjectContext;
  * and to allow the attachment of arbitrary data to objects and classes.
  */
 
+#ifndef TCL_NO_DEPRECATED
 typedef int (Tcl_MethodCallProc)(void *clientData, Tcl_Interp *interp,
 	Tcl_ObjectContext objectContext, int objc, Tcl_Obj *const *objv);
+#endif /* TCL_NO_DEPRECATED */
 typedef int (Tcl_MethodCallProc2)(void *clientData, Tcl_Interp *interp,
 	Tcl_ObjectContext objectContext, Tcl_Size objc, Tcl_Obj *const *objv);
 typedef void (Tcl_MethodDeleteProc)(void *clientData);
@@ -77,6 +80,7 @@ typedef int (Tcl_ObjectMapMethodNameProc)(Tcl_Interp *interp,
  * how to create a clone of it (when the object or class is copied).
  */
 
+#ifndef TCL_NO_DEPRECATED
 typedef struct Tcl_MethodType {
     int version;		/* Structure version field. Always to be equal
 				 * to TCL_OO_METHOD_VERSION_(1|CURRENT) in
@@ -93,6 +97,7 @@ typedef struct Tcl_MethodType {
 				 * data, or NULL if the type-specific data can
 				 * be copied directly. */
 } Tcl_MethodType;
+#endif /* TCL_NO_DEPRECATED */
 
 typedef struct Tcl_MethodType2 {
     int version;		/* Structure version field. Always to be equal
@@ -117,10 +122,12 @@ typedef struct Tcl_MethodType2 {
  * binary compatibility.
  */
 enum TclOOMethodVersion {
+#ifndef TCL_NO_DEPRECATED
+    TCL_OO_METHOD_VERSION_CURRENT = 1,
     TCL_OO_METHOD_VERSION_1 = 1,
+#endif /* TCL_NO_DEPRECATED */
     TCL_OO_METHOD_VERSION_2 = 2
 };
-#define TCL_OO_METHOD_VERSION_CURRENT TCL_OO_METHOD_VERSION_1
 
 /*
  * Visibility constants for the flags parameter to Tcl_NewMethod and
@@ -158,15 +165,15 @@ typedef struct Tcl_ObjectMetadataType {
  */
 
 enum TclOOMetadataVersion {
+    TCL_OO_METADATA_VERSION_CURRENT = 1,
     TCL_OO_METADATA_VERSION_1 = 1
 };
-#define TCL_OO_METADATA_VERSION_CURRENT TCL_OO_METADATA_VERSION_1
 
 /*
  * Include all the public API, generated from tclOO.decls.
  */
 
-#include "tclOODecls.h"
+#include "tclOODecls.h"  /* IWYU pragma: export */
 
 #ifdef __cplusplus
 }

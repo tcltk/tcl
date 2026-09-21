@@ -323,7 +323,7 @@ test cmdAH-4.1.1 {encoding} -returnCodes error -body {
 } -result {wrong # args: should be "encoding subcommand ?arg ...?"}
 test cmdAH-4.1.2 {Tcl_EncodingObjCmd} -returnCodes error -body {
     encoding foo
-} -result {unknown or ambiguous subcommand "foo": must be convertfrom, convertto, dirs, names, profiles, or system}
+} -result {unknown or ambiguous subcommand "foo": must be convertfrom, convertto, dirs, names, profiles, system, or user}
 
 #
 # encoding system 4.2.*

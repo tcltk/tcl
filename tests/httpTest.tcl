@@ -98,7 +98,6 @@ proc httpTest::LogRecord {txt} {
     return
 }
 
-
 # ------------------------------------------------------------------------------
 # Commands for analysing the logs recorded when calling http::geturl.
 # ------------------------------------------------------------------------------

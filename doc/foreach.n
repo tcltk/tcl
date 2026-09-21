@@ -46,7 +46,7 @@ empty values are used for the missing elements.
 .PP
 The \fBbreak\fR and \fBcontinue\fR statements may be
 invoked inside \fIbody\fR, with the same effect as in the \fBfor\fR
-command.  \fBForeach\fR returns an empty string.
+command.  \fBforeach\fR returns an empty string.
 .SH EXAMPLES
 .PP
 This loop prints every value in a list together with the square and

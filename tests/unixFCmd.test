@@ -30,10 +30,10 @@ cd [temporaryDirectory]
 set user {}
 if {[testConstraint unix]} {
     catch {set user [exec whoami]}
-    if {$user == ""} {
+    if {$user eq ""} {
 	catch {regexp {^[^(]*\(([^)]*)\)} [exec id] dummy user}
     }
-    if {$user == ""} {
+    if {$user eq ""} {
 	set user "root"
     }
 }
@@ -54,7 +54,15 @@ testConstraint readonlyAttr 0
 if {[testConstraint unix]} {
     set f [makeFile "whatever" probe]
     catch {
-	file attributes $f -readonly
+	if {$::tcl_platform(os) eq {FreeBSD}} {
+	    # The UF_IMMUTABLE flag is not supported by ZFS on FreeBSD.
+	    # However, trying to *unset* the flag like it's done on the else
+	    # branch works and erroneously sets the readonlyAttr constraint.
+	    exec chflags uchg $f
+	    exec chflags nouchg $f
+	} else {
+	    file attributes $f -readonly
+	}
 	testConstraint readonlyAttr 1
     }
     removeFile probe
@@ -212,7 +220,7 @@ test unixFCmd-2.3 {TclpCopyFile: src is block} -setup {
 } -result {}
 test unixFCmd-2.4 {TclpCopyFile: src is fifo} -setup {
     cleanup
-} -constraints {unix notRoot execMknod} -body {
+} -constraints {unix notRoot execMknod tempNotMac} -body { # tempNotMac -- see bug [7b4a819535231639]
     exec mknod tf1 p
     file copy tf1 tf2
     list [file type tf1] [file type tf2]

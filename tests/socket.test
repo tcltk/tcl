@@ -65,6 +65,8 @@ if {"::tcltest" ni [namespace children]} {
     namespace import -force ::tcltest::*
 }
 
+source [file join [file dirname [info script]] tcltests.tcl]
+
 ::tcltest::loadTestedCommands
 catch [list package require -exact tcl::test [info patchlevel]]
 ::tcltest::loadTestedCommands
@@ -131,7 +133,7 @@ set lat1 [expr {($t2-$t1)*2}]; # doubled as a safety margin
 # additional [after]s in some tests that are not needed on systems that fail
 # immediately.
 set t1 [clock milliseconds]
-catch {socket 127.0.0.1 [randport]}
+catch {socket [tcltests::localIPv4Address] [randport]}
 set t2 [clock milliseconds]
 set lat2 [expr {($t2-$t1)*3}]
 
@@ -167,10 +169,10 @@ if 0 {
     }
 }
 
-foreach {af localhost} {
-    inet 127.0.0.1
-    inet6 ::1
-} {
+foreach {af localhost} [list \
+    inet [tcltests::localIPv4Address] \
+    inet6 [tcltests::localIPv6Address] 1 \
+] {
     # Check if the family is supported and set the constraint accordingly
     testConstraint supported_$af [expr {![catch {socket -server foo -myaddr $localhost 0} sock]}]
     catch {close $sock}
@@ -179,15 +181,15 @@ foreach {af localhost} {
 set sock [socket -server foo -myaddr localhost 0]
 set sockname [fconfigure $sock -sockname]
 close $sock
-testConstraint localhost_v4 [expr {"127.0.0.1" in $sockname}]
-testConstraint localhost_v6 [expr {"::1" in $sockname}]
+testConstraint localhost_v4 [expr {"[tcltests::localIPv4Address]" in $sockname}]
+testConstraint localhost_v6 [expr {"[tcltests::localIPv6Address]" in $sockname}]
 
 
-foreach {af localhost} {
-    any 127.0.0.1
-    inet 127.0.0.1
-    inet6 ::1
-} {
+foreach {af localhost} [list \
+    any [tcltests::localIPv4Address] \
+    inet [tcltests::localIPv4Address] \
+    inet6 [tcltests::localIPv6Address] \
+] {
     if {![testConstraint supported_$af]} {
 	continue
     }
@@ -367,7 +369,7 @@ test socket_$af-1.20 {arg parsing for socket command} -constraints [list socket 
 set path(script) [makeFile {} script]
 
 test socket_$af-2.1 {tcp connection} -constraints [list socket supported_$af stdio] -setup {
-    file delete $path(script)
+    catch {file delete $path(script)}
     set f [open $path(script) w]
     puts $f {
 	set timer [after 10000 "set x timed_out"]
@@ -399,7 +401,7 @@ test socket_$af-2.1 {tcp connection} -constraints [list socket supported_$af std
 } -result {ready done {}}
 test socket_$af-2.2 {tcp connection with client port specified} -setup {
     set port [randport]
-    file delete $path(script)
+    catch {file delete $path(script)}
     set f [open $path(script) w]
     puts $f {
 	set timer [after 10000 "set x timeout"]
@@ -433,7 +435,7 @@ test socket_$af-2.2 {tcp connection with client port specified} -setup {
     close $f
 } -result {ready 1}
 test socket_$af-2.3 {tcp connection with client interface specified} -setup {
-    file delete $path(script)
+    catch {file delete $path(script)}
     set f [open $path(script) w]
     puts $f {
 	set timer [after 2000 "set x done"]
@@ -466,7 +468,7 @@ test socket_$af-2.3 {tcp connection with client interface specified} -setup {
     close $f
 } -result [list ready [list hello $localhost]]
 test socket_$af-2.4 {tcp connection with server interface specified} -setup {
-    file delete $path(script)
+    catch {file delete $path(script)}
     set f [open $path(script) w]
     puts $f [list set localhost $localhost]
     puts $f {
@@ -500,7 +502,7 @@ test socket_$af-2.4 {tcp connection with server interface specified} -setup {
     close $f
 } -result {ready hello}
 test socket_$af-2.5 {tcp connection with redundant server port} -setup {
-    file delete $path(script)
+    catch {file delete $path(script)}
     set f [open $path(script) w]
     puts $f {
 	set timer [after 10000 "set x timeout"]
@@ -543,7 +545,7 @@ test socket_$af-2.6 {tcp connection} -constraints [list socket supported_$af] -b
     set status
 } -result ok
 test socket_$af-2.7 {echo server, one line} -constraints [list socket supported_$af stdio] -setup {
-    file delete $path(script)
+    catch {file delete $path(script)}
     set f [open $path(script) w]
     puts $f {
 	set timer [after 10000 "set x timeout"]
@@ -634,7 +636,7 @@ test socket_$af-2.8 {echo server, loop 50 times, single connection} -setup {
 set path(script) [makeFile {} script]
 test socket_$af-2.9 {socket conflict} -constraints [list socket supported_$af stdio] -body {
     set s [socket -server accept 0]
-    file delete $path(script)
+    catch {file delete $path(script)}
     set f [open $path(script) w]
     puts $f [list set ::tcl::unsupported::socketAF $::tcl::unsupported::socketAF]
     puts $f "socket -server accept [lindex [fconfigure $s -sockname] 2]"
@@ -701,8 +703,8 @@ test socket_$af-2.11 {detecting new data} -constraints [list socket supported_$a
     close $s
     close $sock
 } -result {a:one b: c:two}
-test socket_$af-2.12 {} [list socket stdio supported_$af] {
-    file delete $path(script)
+test socket_$af-2.12 {Bug 1758a0b603?} [list socket stdio supported_$af] {
+    catch {file delete $path(script)}
     set f [open $path(script) w]
     puts $f {
 	set server [socket -server accept_client 0]
@@ -741,7 +743,7 @@ test socket_$af-2.12 {} [list socket stdio supported_$af] {
     set ::done
 } 0
 test socket_$af-2.13 {Bug 1758a0b603} {socket stdio notWine} {
-    file delete $path(script)
+    catch {file delete $path(script)}
     set f [open $path(script) w]
     puts $f {
 	set server [socket -server accept 0]
@@ -783,7 +785,7 @@ test socket_$af-2.13 {Bug 1758a0b603} {socket stdio notWine} {
 } write
 
 test socket_$af-3.1 {socket conflict} -constraints [list socket supported_$af stdio] -setup {
-    file delete $path(script)
+    catch {file delete $path(script)}
     set f [open $path(script) w]
     puts $f [list set localhost $localhost]
     puts $f {
@@ -804,7 +806,7 @@ test socket_$af-3.1 {socket conflict} -constraints [list socket supported_$af st
     close $f
 } -returnCodes error -result {couldn't open socket: address already in use}
 test socket_$af-3.2 {server with several clients} -setup {
-    file delete $path(script)
+    catch {file delete $path(script)}
     set f [open $path(script) w]
     puts $f [list set localhost $localhost]
     puts $f {
@@ -867,7 +869,7 @@ test socket_$af-3.2 {server with several clients} -setup {
 } -result {ready done}
 
 test socket_$af-4.1 {server with several clients} -setup {
-    file delete $path(script)
+    catch {file delete $path(script)}
     set f [open $path(script) w]
     puts $f [list set localhost $localhost]
     puts $f {
@@ -964,7 +966,7 @@ test socket_$af-6.1 {accept callback error} -constraints [list socket supported_
     }
     set handler [interp bgerror {}]
     interp bgerror {} [namespace which myHandler]
-    file delete $path(script)
+    catch {file delete $path(script)}
 } -body {
     set f [open $path(script) w]
     puts $f [list set localhost $localhost]
@@ -1006,7 +1008,7 @@ test socket_$af-6.3 {writable fileevent on server socket} -setup {
 } -returnCodes 1 -result "channel is not writable"
 
 test socket_$af-7.1 {testing socket specific options} -setup {
-    file delete $path(script)
+    catch {file delete $path(script)}
     set f [open $path(script) w]
     puts $f {
 	set ss [socket -server accept 0]
@@ -1036,7 +1038,7 @@ test socket_$af-7.1 {testing socket specific options} -setup {
     close $f
 } -result {0 0 3}
 test socket_$af-7.2 {testing socket specific options} -setup {
-    file delete $path(script)
+    catch {file delete $path(script)}
     set f [open $path(script) w]
     puts $f [list set ::tcl::unsupported::socketAF $::tcl::unsupported::socketAF]
     puts $f {
@@ -1060,7 +1062,7 @@ test socket_$af-7.2 {testing socket specific options} -setup {
     set p [fconfigure $s -sockname]
     close $s
     list [llength $p] \
-	    [regexp {^(127\.0\.0\.1|0\.0\.0\.0|::1)$} [lindex $p 0]] \
+	    [string match $localhost [lindex $p 0]] \
 	    [expr {[lindex $p 2] == $listen}]
 } -cleanup {
     close $f
@@ -1664,8 +1666,8 @@ set path(script1) [makeFile {} script1]
 set path(script2) [makeFile {} script2]
 
 test socket_$af-12.1 {testing inheritance of server sockets} -setup {
-    file delete $path(script1)
-    file delete $path(script2)
+    catch {file delete $path(script1)}
+    catch {file delete $path(script2)}
     # Script1 is just a 10 second delay. If the server socket is inherited, it
     # will be held open for 10 seconds
     set f [open $path(script1) w]
@@ -1706,8 +1708,8 @@ test socket_$af-12.1 {testing inheritance of server sockets} -setup {
     catch {close $p}
 } -result {server socket was not inherited}
 test socket_$af-12.2 {testing inheritance of client sockets} -setup {
-    file delete $path(script1)
-    file delete $path(script2)
+    catch {file delete $path(script1)}
+    catch {file delete $path(script2)}
     # Script1 is just a 20 second delay. If the server socket is inherited, it
     # will be held open for 20 seconds
     set f [open $path(script1) w]
@@ -1775,12 +1777,76 @@ test socket_$af-12.2 {testing inheritance of client sockets} -setup {
     close $p
 } -result {client socket was not inherited}
 test socket_$af-12.3 {testing inheritance of accepted sockets} -setup {
-    file delete $path(script1)
-    file delete $path(script2)
+    catch {file delete $path(script1)}
+    catch {file delete $path(script2)}
     set f [open $path(script1) w]
+    # SEGVs on Windows, but works when changed to as in *-12.4 below
     puts $f {
 	fileevent stdin readable exit
 	after 10000 exit
+	vwait forever
+    }
+    close $f
+    set f [open $path(script2) w]
+    puts $f [list set tcltest [interpreter]]
+    puts $f [list set delay $path(script1)]
+    puts $f [list set localhost $localhost]
+    puts $f {
+	set server [socket -server accept -myaddr $localhost 0]
+	proc accept { file host port } {
+	    global tcltest delay
+	    puts $file {test data on socket}
+	    exec $tcltest $delay &
+	    after idle exit
+	}
+	puts stdout [lindex [fconfigure $server -sockname] 2]
+	vwait forever
+    }
+    close $f
+} -constraints [list socket supported_$af stdio exec] -body {
+    # Launch the script2 process and connect to it. See how long the socket
+    # stays open
+    ## exec [interpreter] script2 &
+    set p [open "|[list [interpreter] $path(script2)]" r]
+    gets $p listen
+    set f [socket $localhost $listen]
+    fconfigure $f -buffering full -blocking 0
+    fileevent $f readable [list getdata $f]
+    # If the socket is still open after 5 seconds, the script1 process must
+    # have inherited the accepted socket.
+    set failed 0
+    set after [after 5000 [list set x "accepted socket was inherited"]]
+    proc getdata { file } {
+	# Read handler on the client socket.
+	global x
+	global failed
+	set status [catch {read $file} data]
+	if {$status != 0} {
+	    set x "read failed, error was $data"
+	} elseif {[string compare {} $data]} {
+	} elseif {[fblocked $file]} {
+	} elseif {[eof $file]} {
+	    set x "accepted socket was not inherited"
+	} else {
+	    set x "impossible case"
+	}
+	return
+    }
+    vwait x
+    set x
+} -cleanup {
+    fconfigure $f -blocking 1
+    close $f
+    after cancel $after
+    close $p
+} -result {accepted socket was not inherited}
+test socket_$af-12.4 {testing inheritance of accepted sockets} -setup {
+    catch {file delete $path(script1)}
+    catch {file delete $path(script2)}
+    set f [open $path(script1) w]
+    puts $f {
+	fileevent stdin readable {set forever 0}
+	after 10000 {set forever 1}
 	vwait forever
     }
     close $f
@@ -1996,7 +2062,7 @@ test socket-14.0.0 {[socket -async] when server only listens on IPv4} \
 	    close $s
 	    set x ok
 	}
-	set server [socket -server accept -myaddr 127.0.0.1 0]
+	set server [socket -server accept -myaddr [tcltests::localIPv4Address] 0]
 	set port [lindex [fconfigure $server -sockname] 2]
     } -body {
 	set client [socket -async localhost $port]
@@ -2018,7 +2084,7 @@ test socket-14.0.1 {[socket -async] when server only listens on IPv6} \
 	    close $s
 	    set x ok
 	}
-	set server [socket -server accept -myaddr ::1 0]
+	set server [socket -server accept -myaddr [tcltests::localIPv6Address] 0]
 	set port [lindex [fconfigure $server -sockname] 2]
     } -body {
 	set client [socket -async localhost $port]
@@ -2083,7 +2149,7 @@ test socket-14.3 {[socket -async] when server only listens on IPv6} \
 	    close $s
 	    set x ok
 	}
-	set server [socket -server accept -myaddr ::1 0]
+	set server [socket -server accept -myaddr [tcltests::localIPv6Address] 0]
 	set port [lindex [fconfigure $server -sockname] 2]
     } -body {
 	set client [socket -async localhost $port]
@@ -2129,7 +2195,7 @@ test socket-14.5 {[socket -async] which fails before any connect() can be made} 
     -constraints {socket supported_inet notWine} \
     -body {
 	# address from rfc5737
-	socket -async -myaddr 192.0.2.42 127.0.0.1 [randport]
+	socket -async -myaddr 192.0.2.42 [tcltests::localIPv4Address] [randport]
     } \
     -returnCodes 1 \
     -result {couldn't open socket: cannot assign requested address}
@@ -2142,7 +2208,7 @@ test socket-14.6.0 {[socket -async] with no event loop and server listening on I
 	    close $s
 	    set x ok
 	}
-	set server [socket -server accept -myaddr 127.0.0.1 0]
+	set server [socket -server accept -myaddr [tcltests::localIPv4Address] 0]
 	set port [lindex [fconfigure $server -sockname] 2]
 	set x ""
     } \
@@ -2173,7 +2239,7 @@ test socket-14.6.1 {[socket -async] with no event loop and server listening on I
 	    close $s
 	    set x ok
 	}
-	set server [socket -server accept -myaddr ::1 0]
+	set server [socket -server accept -myaddr [tcltests::localIPv6Address] 0]
 	set port [lindex [fconfigure $server -sockname] 2]
 	set x ""
     } \
@@ -2198,14 +2264,14 @@ test socket-14.6.1 {[socket -async] with no event loop and server listening on I
 test socket-14.7.0 {pending [socket -async] and blocking [gets], server is IPv4} \
     -constraints {socket supported_inet localhost_v4} \
     -setup {
-	makeFile {
+	makeFile [string map [list @@TCLTEST_IPV4@@ [tcltests::localIPv4Address]] {
 	    fileevent stdin readable exit
-	    set server [socket -server accept -myaddr 127.0.0.1 0]
+	    set server [socket -server accept -myaddr @@TCLTEST_IPV4@@ 0]
 	    proc accept {s h p} {puts $s ok; close $s; set ::x 1}
 	    puts [lindex [fconfigure $server -sockname] 2]
 	    flush stdout
 	    vwait x
-	} script
+	}] script
 	set fd [open |[list [interpreter] script] RDWR]
 	set port [gets $fd]
     } -body {
@@ -2219,14 +2285,14 @@ test socket-14.7.0 {pending [socket -async] and blocking [gets], server is IPv4}
 test socket-14.7.1 {pending [socket -async] and blocking [gets], server is IPv6} \
     -constraints {socket supported_inet6 localhost_v6} \
     -setup {
-	makeFile {
+	makeFile [string map [list @@TCLTEST_IPV6@@ [tcltests::localIPv6Address]] {
 	    fileevent stdin readable exit
-	    set server [socket -server accept -myaddr ::1 0]
+	    set server [socket -server accept -myaddr @@TCLTEST_IPV6@@ 0]
 	    proc accept {s h p} {puts $s ok; close $s; set ::x 1}
 	    puts [lindex [fconfigure $server -sockname] 2]
 	    flush stdout
 	    vwait x
-	} script
+	}] script
 	set fd [open |[list [interpreter] script] RDWR]
 	set port [gets $fd]
     } -body {
@@ -2249,14 +2315,14 @@ test socket-14.7.2 {pending [socket -async] and blocking [gets], no listener} \
 test socket-14.8.0 {pending [socket -async] and nonblocking [gets], server is IPv4} \
     -constraints {socket supported_inet localhost_v4} \
     -setup {
-	makeFile {
+	makeFile [string map [list @@TCLTEST_IPV4@@ [tcltests::localIPv4Address]] {
 	    fileevent stdin readable exit
-	    set server [socket -server accept -myaddr 127.0.0.1 0]
+	    set server [socket -server accept -myaddr @@TCLTEST_IPV4@@ 0]
 	    proc accept {s h p} {puts $s ok; close $s; set ::x 1}
 	    puts [lindex [fconfigure $server -sockname] 2]
 	    flush stdout
 	    vwait x
-	} script
+	}] script
 	set fd [open |[list [interpreter] script] RDWR]
 	set port [gets $fd]
     } -body {
@@ -2275,14 +2341,14 @@ test socket-14.8.0 {pending [socket -async] and nonblocking [gets], server is IP
 test socket-14.8.1 {pending [socket -async] and nonblocking [gets], server is IPv6} \
     -constraints {socket supported_inet6 localhost_v6} \
     -setup {
-	makeFile {
+	makeFile [string map [list @@TCLTEST_IPV6@@ [tcltests::localIPv6Address]] {
 	    fileevent stdin readable exit
-	    set server [socket -server accept -myaddr ::1 0]
+	    set server [socket -server accept -myaddr @@TCLTEST_IPV6@@ 0]
 	    proc accept {s h p} {puts $s ok; close $s; set ::x 1}
 	    puts [lindex [fconfigure $server -sockname] 2]
 	    flush stdout
 	    vwait x
-	} script
+	}] script
 	set fd [open |[list [interpreter] script] RDWR]
 	set port [gets $fd]
     } -body {
@@ -2314,15 +2380,15 @@ test socket-14.8.2 {pending [socket -async] and nonblocking [gets], no listener}
 test socket-14.9.0 {pending [socket -async] and blocking [puts], server is IPv4} \
     -constraints {socket supported_inet localhost_v4} \
     -setup {
-	makeFile {
+	makeFile [string map [list @@TCLTEST_IPV4@@ [tcltests::localIPv4Address]] {
 	    fileevent stdin readable exit
-	    set server [socket -server accept -myaddr 127.0.0.1 0]
+	    set server [socket -server accept -myaddr @@TCLTEST_IPV4@@ 0]
 	    proc accept {s h p} {set ::x $s}
 	    puts [lindex [fconfigure $server -sockname] 2]
 	    flush stdout
 	    vwait x
 	    puts [gets $x]
-	} script
+	}] script
 	set fd [open |[list [interpreter] script] RDWR]
 	set port [gets $fd]
     } -body {
@@ -2338,15 +2404,15 @@ test socket-14.9.0 {pending [socket -async] and blocking [puts], server is IPv4}
 test socket-14.9.1 {pending [socket -async] and blocking [puts], server is IPv6} \
     -constraints {socket supported_inet6 localhost_v6} \
     -setup {
-	makeFile {
+	makeFile [string map [list @@TCLTEST_IPV6@@ [tcltests::localIPv6Address]] {
 	    fileevent stdin readable exit
-	    set server [socket -server accept -myaddr ::1 0]
+	    set server [socket -server accept -myaddr @@TCLTEST_IPV6@@ 0]
 	    proc accept {s h p} {set ::x $s}
 	    puts [lindex [fconfigure $server -sockname] 2]
 	    flush stdout
 	    vwait x
 	    puts [gets $x]
-	} script
+	}] script
 	set fd [open |[list [interpreter] script] RDWR]
 	set port [gets $fd]
     } -body {
@@ -2362,15 +2428,15 @@ test socket-14.9.1 {pending [socket -async] and blocking [puts], server is IPv6}
 test socket-14.10.0 {pending [socket -async] and nonblocking [puts], server is IPv4} \
     -constraints {socket supported_inet localhost_v4} \
     -setup {
-	makeFile {
+	makeFile [string map [list @@TCLTEST_IPV4@@ [tcltests::localIPv4Address]] {
 	    fileevent stdin readable exit
-	    set server [socket -server accept -myaddr 127.0.0.1 0]
+	    set server [socket -server accept -myaddr @@TCLTEST_IPV4@@ 0]
 	    proc accept {s h p} {set ::x $s}
 	    puts [lindex [fconfigure $server -sockname] 2]
 	    flush stdout
 	    vwait x
 	    puts [gets $x]
-	} script
+	}] script
 	set fd [open |[list [interpreter] script] RDWR]
 	set port [gets $fd]
     } -body {
@@ -2389,15 +2455,15 @@ test socket-14.10.0 {pending [socket -async] and nonblocking [puts], server is I
 test socket-14.10.1 {pending [socket -async] and nonblocking [puts], server is IPv6} \
     -constraints {socket supported_inet6 localhost_v6} \
     -setup {
-	makeFile {
+	makeFile [string map [list @@TCLTEST_IPV6@@ [tcltests::localIPv6Address]] {
 	    fileevent stdin readable exit
-	    set server [socket -server accept -myaddr ::1 0]
+	    set server [socket -server accept -myaddr @@TCLTEST_IPV6@@ 0]
 	    proc accept {s h p} {set ::x $s}
 	    puts [lindex [fconfigure $server -sockname] 2]
 	    flush stdout
 	    vwait x
 	    puts [gets $x]
-	} script
+	}] script
 	set fd [open |[list [interpreter] script] RDWR]
 	set port [gets $fd]
     } -body {
@@ -2451,7 +2517,7 @@ test socket-14.12 {[socket -async] background progress triggered by [fconfigure 
 	set s [socket -async localhost [randport]]
 	for {set i 0} {$i < 50} {incr i} {
 	    set x [fconfigure $s -error]
-	    if {$x != ""} break
+	    if {$x ne ""} break
 	    after 200
 	}
 	set x
@@ -2559,7 +2625,7 @@ test socket-14.19 {tip 456 -- introduce the -reuseport option} \
 
 set num 0
 
-set x {localhost {socket} 127.0.0.1 {supported_inet} ::1 {supported_inet6}}
+set x [list localhost {socket} [tcltests::localIPv4Address] {supported_inet} [tcltests::localIPv6Address] {supported_inet6}]
 set resultok {-result "sock*" -match glob}
 set resulterr {
     -result {couldn't open socket: connection refused}
@@ -2570,19 +2636,16 @@ foreach {servip sc} $x {
 	set constraints socket
 	lappend constraints $sc $cc
 	set result $resulterr
-	switch -- [lsort -unique [list $servip $cliip]] {
-	    localhost - 127.0.0.1 - ::1 {
+	set combination [lsort -unique [list $servip $cliip]]
+	if {[llength $combination] == 1} {
+	    set result $resultok
+	} elseif {$combination == [lsort [list [tcltests::localIPv4Address] "localhost"]]} {
+	    if {[testConstraint localhost_v4]} {
 		set result $resultok
 	    }
-	    {127.0.0.1 localhost} {
-		if {[testConstraint localhost_v4]} {
-		    set result $resultok
-		}
-	    }
-	    {::1 localhost} {
-		if {[testConstraint localhost_v6]} {
-		    set result $resultok
-		}
+	} elseif {$combination == [lsort [list [tcltests::localIPv6Address] localhost]]} {
+	    if {[testConstraint localhost_v6]} {
+		set result $resultok
 	    }
 	}
 	test socket-15.1.$num "Connect to $servip from $cliip" \

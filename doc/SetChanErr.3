@@ -26,13 +26,13 @@ Tcl_SetChannelError, Tcl_SetChannelErrorInterp, Tcl_GetChannelError, Tcl_GetChan
 .AS Tcl_Channel chan
 .AP Tcl_Channel chan in
 Refers to the Tcl channel whose bypass area is accessed.
-.AP Tcl_Interp* interp in
+.AP Tcl_Interp *interp in
 Refers to the Tcl interpreter whose bypass area is accessed.
-.AP Tcl_Obj* msg in
+.AP Tcl_Obj *msg in
 Error message put into a bypass area. A list of return options and values,
 followed by a string message. Both message and the option/value information
 are optional. This \fImust\fR be a well-formed list.
-.AP Tcl_Obj** msgPtr out
+.AP Tcl_Obj **msgPtr out
 Reference to a place where the message stored in the accessed bypass area can
 be stored in.
 .BE

@@ -49,6 +49,9 @@
  */
 
 #include "tclWinInt.h"
+#if defined (__clang__) && (__clang_major__ > 20)
+#pragma clang diagnostic ignored "-Wc++-keyword"
+#endif
 
 #ifdef _MSC_VER
 #   pragma comment (lib, "ws2_32")
@@ -318,35 +321,6 @@ SendSelectMessage(
 }
 
 /*
- * Address print debug functions
- */
-#if 0
-static inline void
-printaddrinfo(
-    struct addrinfo *ai,
-    char *prefix)
-{
-    char host[NI_MAXHOST], port[NI_MAXSERV];
-
-    getnameinfo(ai->ai_addr, ai->ai_addrlen,
-	    host, sizeof(host), port, sizeof(port),
-	    NI_NUMERICHOST | NI_NUMERICSERV);
-}
-
-static void
-printaddrinfolist(
-    struct addrinfo *addrlist,
-    char *prefix)
-{
-    struct addrinfo *ai;
-
-    for (ai = addrlist; ai != NULL; ai = ai->ai_next) {
-	printaddrinfo(ai, prefix);
-    }
-}
-#endif
-
-/*
  *----------------------------------------------------------------------
  *
  * InitializeHostName --
@@ -360,7 +334,7 @@ printaddrinfolist(
  *----------------------------------------------------------------------
  */
 
-void
+static void
 InitializeHostName(
     char **valuePtr,
     size_t *lengthPtr,
@@ -546,7 +520,7 @@ TclpFinalizeSockets(void)
 	     * completely cleaned up before we leave this function.
 	     */
 
-	    WaitForSingleObject(tsdPtr->readyEvent, INFINITE);
+	    WaitForSingleObject(tsdPtr->socketThread, INFINITE);
 	    tsdPtr->hwnd = NULL;
 	}
 	CloseHandle(tsdPtr->socketThread);
@@ -987,9 +961,8 @@ TcpOutputProc(
 	     */
 
 	    if (GOT_BITS(statePtr->watchEvents, FD_WRITE)) {
-		Tcl_Time blockTime = { 0, 0 };
 
-		Tcl_SetMaxBlockTime(&blockTime);
+		Tcl_SetMaxBlockTime2(0);
 	    }
 	    break;
 	}
@@ -1595,9 +1568,8 @@ TcpWatchProc(
 	 */
 
 	if (statePtr->readyEvents & statePtr->watchEvents) {
-	    Tcl_Time blockTime = { 0, 0 };
 
-	    Tcl_SetMaxBlockTime(&blockTime);
+	    Tcl_SetMaxBlockTime2(0);
 	}
     }
 }
@@ -2221,6 +2193,7 @@ Tcl_OpenTcpServerEx(
 		(socklen_t)addrPtr->ai_addrlen) == SOCKET_ERROR) {
 	    Tcl_WinConvertError((DWORD) WSAGetLastError());
 	    closesocket(sock);
+	    sock = INVALID_SOCKET; /* Bug [40b1814b93] */
 	    continue;
 	}
 	if (port == 0 && chosenport == 0) {
@@ -2249,6 +2222,7 @@ Tcl_OpenTcpServerEx(
 	if (listen(sock, backlog) == SOCKET_ERROR) {
 	    Tcl_WinConvertError((DWORD) WSAGetLastError());
 	    closesocket(sock);
+	    sock = INVALID_SOCKET; /* Bug [40b1814b93] */
 	    continue;
 	}
 
@@ -2314,7 +2288,8 @@ Tcl_OpenTcpServerEx(
  *----------------------------------------------------------------------
  *
  * TcpAccept --
- *	Accept a TCP socket connection.	 This is called by the event loop.
+ *
+ *	Accept a TCP socket connection. This is called by the event loop.
  *
  * Results:
  *	None.
@@ -2496,13 +2471,12 @@ SocketExitHandler(
  *----------------------------------------------------------------------
  */
 
-void
+static void
 SocketSetupProc(
     TCL_UNUSED(void *),
     int flags)			/* Event flags as passed to Tcl_DoOneEvent. */
 {
     TcpState *statePtr;
-    Tcl_Time blockTime = { 0, 0 };
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
     if (!GOT_BITS(flags, TCL_FILE_EVENTS)) {
@@ -2510,14 +2484,14 @@ SocketSetupProc(
     }
 
     /*
-     * Check to see if there is a ready socket.	 If so, poll.
+     * Check to see if there is a ready socket. If so, poll.
      */
     WaitForSingleObject(tsdPtr->socketListLock, INFINITE);
     for (statePtr = tsdPtr->socketList; statePtr != NULL;
 	    statePtr = statePtr->nextPtr) {
 	if (GOT_BITS(statePtr->readyEvents,
 		statePtr->watchEvents | FD_CONNECT | FD_ACCEPT)) {
-	    Tcl_SetMaxBlockTime(&blockTime);
+	    Tcl_SetMaxBlockTime2(0);
 	    break;
 	}
     }
@@ -2756,9 +2730,7 @@ SocketEventProc(
 	 * trying to do unwind protection.
 	 */
 
-	Tcl_Time blockTime = { 0, 0 };
-
-	Tcl_SetMaxBlockTime(&blockTime);
+	Tcl_SetMaxBlockTime2(0);
 	SET_BITS(mask, TCL_READABLE | TCL_WRITABLE);
     } else if (GOT_BITS(events, FD_READ)) {
 	/*

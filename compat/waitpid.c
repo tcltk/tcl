@@ -5,8 +5,8 @@
  *	that don't have waitpid but do have wait3. This code is based on a
  *	prototype version written by Mark Diekhans and Karl Lehenbauer.
  *
- * Copyright (c) 1993 The Regents of the University of California.
- * Copyright (c) 1994 Sun Microsystems, Inc.
+ * Copyright © 1993 The Regents of the University of California.
+ * Copyright © 1994 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.

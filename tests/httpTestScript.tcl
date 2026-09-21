@@ -337,7 +337,6 @@ proc httpTestScript::POST {uriCode args} {
     return
 }
 
-
 proc httpTestScript::RequestAfter {uriCode validate query args} {
     variable CountRequestedSoFar
     variable Delay
@@ -475,7 +474,6 @@ URL      $state(url)
     return
 }
 
-
 proc httpTestScript::runHttpTestScript {scr} {
     variable TimeOutDone
     variable RequestsWhenStopped
@@ -491,7 +489,6 @@ proc httpTestScript::runHttpTestScript {scr} {
 
     return $RequestsWhenStopped
 }
-
 
 proc httpTestScript::cleanupHttpTestScript {} {
     variable TimeOutDone

@@ -17,10 +17,14 @@ string \- Manipulate strings
 .SH DESCRIPTION
 .PP
 Performs one of several string operations, depending on \fIoption\fR.
+.PP
+\fBFollowing common usage, the command descriptions below use the
+term \fIcharacter\fB in place of the more accurate term \fIcode point\fR.
+.PP
 The legal \fIoption\fRs (which may be abbreviated) are:
 .\" METHOD: cat
 .TP
-\fBstring cat\fR ?\fIstring1\fR? ?\fIstring2...\fR?
+\fBstring cat\fR ?\fIstring ...\fR?
 .
 Concatenate the given \fIstring\fRs just like placing them directly
 next to each other and return the resulting compound string.  If no
@@ -348,8 +352,9 @@ characters in the reverse order.
 Returns a value equal to \fIstring\fR except that all upper (or title)
 case letters have been converted to lower case.  If \fIfirst\fR is
 specified, it refers to the first char index in the string to start
-modifying.  If \fIlast\fR is specified, it refers to the char index in
-the string to stop at (inclusive).  \fIfirst\fR and \fIlast\fR may be
+modifying.  If \fIlast\fR is not specified, only the character at position
+\fIfirst\fR is converted, otherwise \fIlast\fR refers to the char index
+in the string to stop at (inclusive).  \fIfirst\fR and \fIlast\fR may be
 specified using the forms described in \fBSTRING INDICES\fR.
 .\" METHOD: totitle
 .TP
@@ -360,9 +365,10 @@ in \fIstring\fR is converted to its Unicode title case variant (or
 upper case if there is no title case variant) and the rest of the
 string is converted to lower case.  If \fIfirst\fR is specified, it
 refers to the first char index in the string to start modifying.  If
-\fIlast\fR is specified, it refers to the char index in the string to
-stop at (inclusive).  \fIfirst\fR and \fIlast\fR may be specified
-using the forms described in \fBSTRING INDICES\fR.
+\fIlast\fR is not specified, only the character at position \fIfirst\fR
+is converted, otherwise \fIlast\fR refers to the char index in
+the string to stop at (inclusive).  \fIfirst\fR and \fIlast\fR may be
+specified using the forms described in \fBSTRING INDICES\fR.
 .\" METHOD: toupper
 .TP
 \fBstring toupper \fIstring\fR ?\fIfirst\fR? ?\fIlast\fR?
@@ -370,8 +376,9 @@ using the forms described in \fBSTRING INDICES\fR.
 Returns a value equal to \fIstring\fR except that all lower (or title)
 case letters have been converted to upper case.  If \fIfirst\fR is
 specified, it refers to the first char index in the string to start
-modifying.  If \fIlast\fR is specified, it refers to the char index in
-the string to stop at (inclusive).  \fIfirst\fR and \fIlast\fR may be
+modifying.  If \fIlast\fR is not specified, only the character at position
+\fIfirst\fR is converted, otherwise \fIlast\fR refers to the char index
+in the string to stop at (inclusive).  \fIfirst\fR and \fIlast\fR may be
 specified using the forms described in \fBSTRING INDICES\fR.
 .\" METHOD: trim
 .TP

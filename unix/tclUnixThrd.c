@@ -61,55 +61,27 @@
  *----------------------------------------------------------------------
  */
 
-#ifndef HAVE_DECL_PTHREAD_MUTEX_RECURSIVE
-#define HAVE_DECL_PTHREAD_MUTEX_RECURSIVE 0
+/*
+ * No correct native support for reentrant mutexes. Emulate them with a counter.
+ */
+
+#ifndef PTHREAD_NULL
+#   define PTHREAD_NULL (pthread_t)0
 #endif
-
-#if HAVE_DECL_PTHREAD_MUTEX_RECURSIVE
-/*
- * Pthread has native reentrant (AKA recursive) mutexes. Use them for
- * Tcl_Mutex.
- */
-
-typedef pthread_mutex_t PMutex;
-
-static void
-PMutexInit(
-    PMutex *pmutexPtr)
-{
-    pthread_mutexattr_t attr;
-
-    pthread_mutexattr_init(&attr);
-    pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
-    pthread_mutex_init(pmutexPtr, &attr);
-}
-
-#define PMutexDestroy	pthread_mutex_destroy
-#define PMutexLock	pthread_mutex_lock
-#define PMutexUnlock	pthread_mutex_unlock
-#define PCondWait	pthread_cond_wait
-#define PCondTimedWait	pthread_cond_timedwait
-
-#else /* !HAVE_PTHREAD_MUTEX_RECURSIVE */
-
-/*
- * No native support for reentrant mutexes. Emulate them with regular mutexes
- * and thread-local counters.
- */
 
 typedef struct PMutex {
     pthread_mutex_t mutex;
-    pthread_t thread;
-    int counter;
+    volatile pthread_t thread;
+    int counter; // Number of additional locks in the same thread.
 } PMutex;
 
 static void
 PMutexInit(
     PMutex *pmutexPtr)
 {
-    pthread_mutex_init(&pmutexPtr->mutex, NULL);
-    pmutexPtr->thread = 0;
+    pmutexPtr->thread = PTHREAD_NULL;
     pmutexPtr->counter = 0;
+    pthread_mutex_init(&pmutexPtr->mutex, NULL);
 }
 
 static void
@@ -117,27 +89,35 @@ PMutexDestroy(
     PMutex *pmutexPtr)
 {
     pthread_mutex_destroy(&pmutexPtr->mutex);
+    assert(PTHREAD_NULL == pmutexPtr->thread && !pmutexPtr->counter);
 }
 
 static void
 PMutexLock(
     PMutex *pmutexPtr)
 {
-    if (pmutexPtr->thread != pthread_self() || pmutexPtr->counter == 0) {
+    pthread_t mythread = pthread_self();
+
+    if (PTHREAD_NULL != pmutexPtr->thread && pthread_equal(pmutexPtr->thread, mythread)) {
+	// We own the lock already, so it's recursive.
+	pmutexPtr->counter++;
+    } else {
+	// We don't owns the lock, so we have to lock it. Then we own it.
 	pthread_mutex_lock(&pmutexPtr->mutex);
-	pmutexPtr->thread = pthread_self();
-	pmutexPtr->counter = 0;
+	pmutexPtr->thread = mythread;
     }
-    pmutexPtr->counter++;
 }
 
 static void
 PMutexUnlock(
     PMutex *pmutexPtr)
 {
-    pmutexPtr->counter--;
-    if (pmutexPtr->counter == 0) {
-	pmutexPtr->thread = 0;
+    assert(PTHREAD_NULL != pmutexPtr->thread && pthread_equal(pmutexPtr->thread, pthread_self()));
+    if (pmutexPtr->counter) {
+	// It's recursive
+	pmutexPtr->counter--;
+    } else {
+	pmutexPtr->thread = PTHREAD_NULL;
 	pthread_mutex_unlock(&pmutexPtr->mutex);
     }
 }
@@ -147,7 +127,15 @@ PCondWait(
     pthread_cond_t *pcondPtr,
     PMutex *pmutexPtr)
 {
+    pthread_t mythread = pthread_self();
+
+    assert(PTHREAD_NULL != pmutexPtr->thread && pthread_equal(pmutexPtr->thread, mythread));
+    int counter = pmutexPtr->counter;
+    pmutexPtr->counter = 0;
+    pmutexPtr->thread = PTHREAD_NULL;
     pthread_cond_wait(pcondPtr, &pmutexPtr->mutex);
+    pmutexPtr->thread = mythread;
+    pmutexPtr->counter = counter;
 }
 
 static void
@@ -156,10 +144,17 @@ PCondTimedWait(
     PMutex *pmutexPtr,
     struct timespec *ptime)
 {
+    pthread_t mythread = pthread_self();
+
+    assert(PTHREAD_NULL != pmutexPtr->thread && pthread_equal(pmutexPtr->thread, mythread));
+    int counter = pmutexPtr->counter;
+    pmutexPtr->counter = 0;
+    pmutexPtr->thread = PTHREAD_NULL;
     pthread_cond_timedwait(pcondPtr, &pmutexPtr->mutex, ptime);
+    pmutexPtr->thread = mythread;
+    pmutexPtr->counter = counter;
 }
-#endif /* HAVE_PTHREAD_MUTEX_RECURSIVE */
-
+
 /*
  * globalLock is used to serialize creation of mutexes, condition variables,
  * and thread local storage. This is the only place that can count on the
@@ -532,10 +527,8 @@ Tcl_Mutex *
 Tcl_GetAllocMutex(void)
 {
 #if TCL_THREADS
-    PMutex **allocLockPtrPtr = &allocLockPtr;
-
     pthread_once(&allocLockInitOnce, allocLockInit);
-    return (Tcl_Mutex *) allocLockPtrPtr;
+    return (Tcl_Mutex *) &allocLockPtr;
 #else
     return NULL;
 #endif
@@ -637,7 +630,7 @@ void
 TclpFinalizeMutex(
     Tcl_Mutex *mutexPtr)
 {
-    PMutex *pmutexPtr = *(PMutex **) mutexPtr;
+    PMutex *pmutexPtr = *(PMutex **)mutexPtr;
 
     if (pmutexPtr != NULL) {
 	PMutexDestroy(pmutexPtr);
@@ -649,7 +642,7 @@ TclpFinalizeMutex(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_ConditionWait --
+ * Tcl_ConditionWait2 --
  *
  *	This procedure is invoked to wait on a condition variable. The mutex
  *	is automically released as part of the wait, and automatically grabbed
@@ -669,10 +662,10 @@ TclpFinalizeMutex(
  */
 
 void
-Tcl_ConditionWait(
+Tcl_ConditionWait2(
     Tcl_Condition *condPtr,	/* Really (pthread_cond_t **) */
     Tcl_Mutex *mutexPtr,	/* Really (PMutex **) */
-    const Tcl_Time *timePtr)	/* Timeout on waiting period */
+    long long time)		/* Timeout on waiting period */
 {
     pthread_cond_t *pcondPtr;
     PMutex *pmutexPtr;
@@ -696,20 +689,19 @@ Tcl_ConditionWait(
     }
     pmutexPtr = *((PMutex **)mutexPtr);
     pcondPtr = *((pthread_cond_t **)condPtr);
-    if (timePtr == NULL) {
+    if (time < 0) {
 	PCondWait(pcondPtr, pmutexPtr);
     } else {
-	Tcl_Time now;
+	long long now;
 
 	/*
 	 * Make sure to take into account the microsecond component of the
 	 * current time, including possible overflow situations. [Bug #411603]
 	 */
 
-	Tcl_GetTime(&now);
-	ptime.tv_sec = timePtr->sec + now.sec +
-	    (timePtr->usec + now.usec) / 1000000;
-	ptime.tv_nsec = 1000 * ((timePtr->usec + now.usec) % 1000000);
+	now = Tcl_GetDayTime();
+	ptime.tv_sec = (time + now) / 1000000;
+	ptime.tv_nsec = 1000 * ((time + now) % 1000000);
 	PCondTimedWait(pcondPtr, pmutexPtr, &ptime);
     }
 }
@@ -839,7 +831,6 @@ TclpFreeAllocCache(
 
 	TclFreeAllocCache(ptr);
 	pthread_setspecific(key, NULL);
-
     } else {
 	/*
 	 * Called by TclFinalizeThreadAlloc() during the process

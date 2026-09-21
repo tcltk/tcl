@@ -185,7 +185,6 @@ proc parse_command_line {} {
 	puts "using Tcl source directory [file join $tcltkdir $tcldir]"
     }
 
-
     if {$build_tk} {
 	# Find Tk (firstly using glob pattern / backwards compatible way)
 	set tkdir [lindex [lsort [glob -nocomplain -tails -type d \
@@ -644,17 +643,20 @@ array set exclude_refs_map {
     bind.n		{button destroy option}
     clock.n		{next}
     history.n		{exec}
-    next.n		{unknown}
+    next.n		{unknown destroy}
     zlib.n		{binary close filename text}
     canvas.n		{bitmap text}
+    chan.n		{read}
     console.n		{eval}
     checkbutton.n	{image}
     clipboard.n		{string}
+    cookiejar.n		{destroy configure info error set}
     entry.n		{string}
     event.n		{return}
     font.n		{menu}
     getOpenFile.n	{file open text}
     grab.n		{global}
+    http		{error}
     interp.n		{time}
     menu.n		{checkbutton radiobutton}
     messageBox.n	{error info}
@@ -786,7 +788,9 @@ try {
 		    if {[string trim $line] eq ""} continue
 		    if {[string match #* $line]} continue
 		    lassign $line dir name
-		    lappend packageDirNameMap $dir $name
+		    dict append packageDirNameMap [string tolower $dir] $name
+		    dict append packageDirNameMap [string toupper $dir] $name
+		    dict append packageDirNameMap [string totitle $dir] $name
 		}
 	    } finally {
 		close $f

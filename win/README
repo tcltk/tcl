@@ -7,10 +7,6 @@ This is the directory where you configure and compile the Windows
 version of Tcl.  This directory also contains source files for Tcl
 that are specific to Microsoft Windows.
 
-The information in this file is maintained on the web at:
-
-	https://www.tcl-lang.org/doc/howto/compile.html#win
-
 2. Compiling Tcl
 ----------------
 
@@ -48,18 +44,12 @@ In order to compile Tcl for Windows, you need the following:
 	    (win32 or win64, IX86, AMD64 or ARM64)
 
 
-In practice, this release is built with Visual C++ 6.0 and the TEA
-Makefile.
-
 If you are building with Visual C++, in the "win" subdirectory of the
 source release, you will find "makefile.vc".  This is the makefile for the
 Visual C++ compiler and uses the stock NMAKE tool.  Detailed directions for
 using it, are in the comments of "makefile.vc".  A quick example would be:
 
 	C:\tcl_source\win\>nmake -f makefile.vc
-
-There is also a Developer Studio workspace and project file, too, if you
-would like to use them.
 
 If you are building with Linux, Cygwin or Msys, you can use the configure
 script that lives in the win subdirectory. The Linux/Cygwin/Msys based
@@ -80,13 +70,11 @@ Use the Makefile "install" target to install Tcl.  It will install it
 according to the prefix options you provided in the correct directory
 structure.
 
-Note that in order to run tclsh90.exe, you must ensure that tcl90.dll,
+Note that in order to run tclsh90.exe, you must ensure that tcl91.dll,
 libtommath.dll and zlib1.dll are on your path, in the system
-directory, or in the directory containing tclsh90.exe.
+directory, or in the directory containing tclsh91.exe.
 
-Note: Tcl no longer provides support for systems earlier than Windows 7.
-You will also need the Windows Universal C runtime (UCRT):
-      [https://support.microsoft.com/en-us/topic/update-for-universal-c-runtime-in-windows-c0514201-7fe6-95a3-b0a5-287930f3560c]
+Note: Tcl 9.1 does not support systems earlier than Windows 10.
 
 3. Test suite
 -------------

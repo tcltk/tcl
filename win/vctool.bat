@@ -55,6 +55,7 @@ if "%1" == "test" goto targets
 if "%1" == "install" goto targets
 if "%1" == "runshell" goto targets
 if "%1" == "debug" goto debug
+if "%~x1" == ".test" goto testpat
 goto help
 
 :debug
@@ -95,6 +96,11 @@ set TARGETS=%TARGETS% %1
 shift
 goto options
 
+:testpat
+set TESTPAT=%1
+shift
+goto options
+
 REM The makefile.vc compilation target is called "release"
 :compile
 set TARGETS=%TARGETS% release
@@ -126,17 +132,23 @@ endlocal
 exit /b 0
 
 :error
+echo ERROR Build failed!
 endlocal
 exit /b 1
 
 :: call :runmake dir opts
 :runmake
 if "%debug%" == "" (
-    nmake /s /f makefile.vc OUT_DIR=%currentDir%\vc-%ARCH%-%1 TMP_DIR=%currentDir%\vc-%ARCH%-%1\objs OPTS=pdbs,%2 INSTALLDIR=%INSTROOT%-%1 %TARGETS% && goto error
+    set "outDir=%currentDir%\vc-%ARCH%-%1"
+    set "debugOpts="
 ) else (
-    nmake /s /f makefile.vc OUT_DIR=%currentDir%\vc-%ARCH%-%1-debug TMP_DIR=%currentDir%\vc-%ARCH%-%1-debug\objs OPTS=pdbs,%2 cdebug="-Zi -Od" INSTALLDIR=%INSTROOT%-%1-debug %TARGETS% && goto error
+    set "outDir=%currentDir%\vc-%ARCH%-%1-debug"
+    set "debugOpts=-Zi -Od"
 )
-goto eof
+
+nmake /s /nologo /f makefile.vc OUT_DIR=%outDir% TMP_DIR=outDir%\objs OPTS=pdbs,%2 cdebug="%debugOpts%" INSTALLDIR=%INSTROOT%-%1 %TARGETS% || goto error
+echo Build binaries in %outDir%
+goto :eof
 
 :help
 echo.

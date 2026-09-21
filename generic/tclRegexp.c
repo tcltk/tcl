@@ -14,7 +14,6 @@
 #include "tclInt.h"
 #include "tclRegexp.h"
 #include "tclTomMath.h"
-#include <assert.h>
 
 /*
  *----------------------------------------------------------------------
@@ -74,7 +73,7 @@ typedef struct {
     size_t patLengths[NUM_REGEXPS];/* Number of non-null characters in
 				 * corresponding entry in patterns. -1 means
 				 * entry isn't used. */
-    struct TclRegexp *regexps[NUM_REGEXPS];
+    TclRegexp *regexps[NUM_REGEXPS];
 				/* Compiled forms of above strings. Also
 				 * malloc-ed, or NULL if not in use yet. */
 } ThreadSpecificData;
@@ -103,11 +102,11 @@ static int		SetRegexpFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
  */
 
 const Tcl_ObjType tclRegexpType = {
-    "regexp",			/* name */
-    FreeRegexpInternalRep,	/* freeIntRepProc */
-    DupRegexpInternalRep,	/* dupIntRepProc */
-    NULL,			/* updateStringProc */
-    SetRegexpFromAny,		/* setFromAnyProc */
+    "regexp",
+    FreeRegexpInternalRep,
+    DupRegexpInternalRep,
+    NULL,			// UpdateString
+    SetRegexpFromAny,
     TCL_OBJTYPE_V0
 };
 
@@ -936,7 +935,7 @@ CompileRegexp(
      */
 
     regexpPtr->flags = flags;
-    status = TclReComp(&regexpPtr->re, uniString, (size_t) numChars, flags);
+    status = TclReComp(&regexpPtr->re, uniString, (size_t)numChars, flags);
     Tcl_DStringFree(&stringBuf);
 
     if (status != REG_OKAY) {

@@ -247,7 +247,7 @@ must in order to determine its result.
 .TP 20
 \fIx \fB?\fI y \fB:\fI z\fR
 .
-If-then-else, as in C.  If \fIx\fR is false , the result is the value of
+If-then-else, as in C.  If \fIx\fR is true , the result is the value of
 \fIy\fR.  Otherwise the result is the value of \fIz\fR.
 This operator evaluates lazily; it evaluates only one of \fIy\fR or \fIz\fR.
 .PP

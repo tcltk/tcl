@@ -10,7 +10,6 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
-#undef STATIC_BUILD
 #include "tcl.h"
 
 static int TraceProc2 (
@@ -56,7 +55,7 @@ Pkgt_EqObjCmd2(
     void *dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
+    Tcl_Obj *const *objv)	/* Argument objects. */
 {
     Tcl_WideInt result;
     const char *str1, *str2;
@@ -105,7 +104,7 @@ Pkgt_Init(
 {
     int code;
 
-    if (Tcl_InitStubs(interp, "8.7-", 0) == NULL) {
+    if (Tcl_InitStubs(interp, "9.0-", 0) == NULL) {
 	return TCL_ERROR;
     }
     code = Tcl_PkgProvide(interp, "pkgt", "1.0");

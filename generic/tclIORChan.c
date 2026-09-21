@@ -18,7 +18,6 @@
 
 #include "tclInt.h"
 #include "tclIO.h"
-#include <assert.h>
 
 #ifndef EINVAL
 #define EINVAL	9
@@ -44,7 +43,7 @@ static void		ReflectThread(void *clientData, int action);
 static int		ReflectEventRun(Tcl_Event *ev, int flags);
 static int		ReflectEventDelete(Tcl_Event *ev, void *cd);
 #endif
-static long long	 ReflectSeekWide(void *clientData,
+static long long	ReflectSeekWide(void *clientData,
 			    long long offset, int mode, int *errorCodePtr);
 static int		ReflectGetOption(void *clientData,
 			    Tcl_Interp *interp, const char *optionName,
@@ -386,31 +385,42 @@ TCL_DECLARE_MUTEX(rcForwardMutex)
  */
 
 static void		ForwardOpToHandlerThread(ReflectedChannel *rcPtr,
-			    ForwardedOperation op, const void *param);
+			    ForwardedOperation op, void *param);
 static int		ForwardProc(Tcl_Event *evPtr, int mask);
 static void		SrcExitProc(void *clientData);
 
 #define FreeReceivedError(p) \
-	if ((p)->base.mustFree) {                               \
-	    Tcl_Free((p)->base.msgStr);                           \
-	}
-#define PassReceivedErrorInterp(i,p) \
-	if ((i) != NULL) {                                      \
-	    Tcl_SetChannelErrorInterp((i),                      \
-		    Tcl_NewStringObj((p)->base.msgStr, -1));    \
-	}                                                       \
-	FreeReceivedError(p)
-#define PassReceivedError(c,p) \
-	Tcl_SetChannelError((c), Tcl_NewStringObj((p)->base.msgStr, -1)); \
-	FreeReceivedError(p)
-#define ForwardSetStaticError(p,emsg) \
-	(p)->base.code = TCL_ERROR;                             \
-	(p)->base.mustFree = 0;                                 \
-	(p)->base.msgStr = (char *) (emsg)
-#define ForwardSetDynamicError(p,emsg) \
-	(p)->base.code = TCL_ERROR;                             \
-	(p)->base.mustFree = 1;                                 \
-	(p)->base.msgStr = (char *) (emsg)
+    do {							\
+	if ((p)->base.mustFree) {				\
+	    Tcl_Free((p)->base.msgStr);				\
+	}							\
+    } while (0)
+#define PassReceivedErrorInterp(interp, p) \
+    do {							\
+	if ((interp) != NULL) {					\
+	    Tcl_SetChannelErrorInterp((interp),			\
+		    Tcl_NewStringObj((p)->base.msgStr, -1));	\
+	}							\
+	FreeReceivedError(p);					\
+    } while (0)
+#define PassReceivedError(chan, p) \
+    do {							\
+	Tcl_SetChannelError((chan),				\
+		Tcl_NewStringObj((p)->base.msgStr, -1));	\
+	FreeReceivedError(p);					\
+    } while (0)
+#define ForwardSetStaticError(p, emsg) \
+    do {							\
+	(p)->base.code = TCL_ERROR;				\
+	(p)->base.mustFree = 0;					\
+	(p)->base.msgStr = (char *) (emsg);			\
+    } while (0)
+#define ForwardSetDynamicError(p, emsg) \
+    do {							\
+	(p)->base.code = TCL_ERROR;				\
+	(p)->base.mustFree = 1;					\
+	(p)->base.msgStr = (char *) (emsg);			\
+    } while (0)
 
 static void		ForwardSetObjError(ForwardParam *p, Tcl_Obj *objPtr);
 
@@ -461,8 +471,9 @@ static const char *msg_seek_beforestart = "{Tried to seek before origin}";
 #if TCL_THREADS
 static const char *msg_send_originlost = "{Channel thread lost}";
 #endif /* TCL_THREADS */
-static const char *msg_send_dstlost    = "{Owner lost}";
-static const char *msg_dstlost    = "-code 1 -level 0 -errorcode NONE -errorinfo {} -errorline 1 {Owner lost}";
+static const char *msg_send_dstlost = "{Owner lost}";
+static const char *msg_dstlost =
+	"-code 1 -level 0 -errorcode NONE -errorinfo {} -errorline 1 {Owner lost}";
 
 /*
  * Main methods to plug into the 'chan' ensemble'. ==================
@@ -490,7 +501,7 @@ int
 TclChanCreateObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj *const *objv)
 {
     ReflectedChannel *rcPtr;	/* Instance data of the new channel */
@@ -810,7 +821,7 @@ int
 TclChanPostEventObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
+    Tcl_Size objc,
     Tcl_Obj *const *objv)
 {
     /*
@@ -913,8 +924,8 @@ TclChanPostEventObjCmd(
 	return TCL_ERROR;
     }
     if (events == 0) {
-	Tcl_SetObjResult(interp,
-		Tcl_NewStringObj("bad event list: is empty", -1));
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"bad event list: is empty", -1));
 	return TCL_ERROR;
     }
 
@@ -1310,7 +1321,7 @@ ReflectInput(
 	    *errorCodePtr = EOK;
 	}
 
-	return p.input.toRead;
+	return (int)p.input.toRead;
     }
 #endif
 
@@ -1350,14 +1361,14 @@ ReflectInput(
 	memcpy(buf, bytev, bytec);
     }
 
- stop:
+  stop:
     Tcl_DecrRefCount(toReadObj);
     Tcl_DecrRefCount(resObj);		/* Remove reference held from invoke */
     Tcl_Release(rcPtr);
-    return bytec;
- invalid:
+    return (int)bytec;
+  invalid:
     *errorCodePtr = EINVAL;
- error:
+  error:
     bytec = -1;
     goto stop;
 }
@@ -1419,7 +1430,7 @@ ReflectOutput(
 	    *errorCodePtr = EOK;
 	}
 
-	return p.output.toWrite;
+	return (int)p.output.toWrite;
     }
 #endif
 
@@ -1478,15 +1489,15 @@ ReflectOutput(
     }
 
     *errorCodePtr = EOK;
- stop:
+  stop:
     Tcl_DecrRefCount(bufObj);
     Tcl_DecrRefCount(resObj);		/* Remove reference held from invoke */
     Tcl_Release(rcPtr->interp);
     Tcl_Release(rcPtr);
     return written;
- invalid:
+  invalid:
     *errorCodePtr = EINVAL;
- error:
+  error:
     written = -1;
     goto stop;
 }
@@ -1571,13 +1582,13 @@ ReflectSeekWide(
     }
 
     *errorCodePtr = EOK;
- stop:
+  stop:
     Tcl_DecrRefCount(offObj);
     Tcl_DecrRefCount(baseObj);
     Tcl_DecrRefCount(resObj);		/* Remove reference held from invoke */
     Tcl_Release(rcPtr);
     return newLoc;
- invalid:
+  invalid:
     *errorCodePtr = EINVAL;
     newLoc = -1;
     goto stop;
@@ -1971,16 +1982,16 @@ ReflectGetOption(
 	goto ok;
     }
 
- ok:
+  ok:
     result = TCL_OK;
- stop:
+  stop:
     if (optionObj) {
 	Tcl_DecrRefCount(optionObj);
     }
     Tcl_DecrRefCount(resObj);	/* Remove reference held from invoke */
     Tcl_Release(rcPtr);
     return result;
- error:
+  error:
     result = TCL_ERROR;
     goto stop;
 }
@@ -2108,6 +2119,8 @@ EncodeEventMask(
 	case EVENT_WRITE:
 	    events |= TCL_WRITABLE;
 	    break;
+	default:
+	    TCL_UNREACHABLE();
 	}
 	listc --;
     }
@@ -2846,7 +2859,7 @@ static void
 ForwardOpToHandlerThread(
     ReflectedChannel *rcPtr,	/* Channel instance */
     ForwardedOperation op,	/* Forwarded driver operation */
-    const void *param)		/* Arguments */
+    void *param)		/* Arguments */
 {
     /*
      * Core of the communication from OWNER to HANDLER thread. The receiver is
@@ -2937,7 +2950,7 @@ ForwardOpToHandlerThread(
 	 * immediately after.
 	 */
 
-	Tcl_ConditionWait(&resultPtr->done, &rcForwardMutex, NULL);
+	Tcl_ConditionWait2(&resultPtr->done, &rcForwardMutex, -1);
     }
 
     /*

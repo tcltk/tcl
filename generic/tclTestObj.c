@@ -27,26 +27,26 @@
 #endif
 #include "tclStringRep.h"
 
-#include <assert.h>
-
 /*
  * Forward declarations for functions defined later in this file:
  */
 
-static int		CheckIfVarUnset(Tcl_Interp *interp, Tcl_Obj **varPtr, Tcl_Size varIndex);
+static bool		CheckIfVarUnset(Tcl_Interp *interp, Tcl_Obj **varPtr,
+			    Tcl_Size varIndex);
 static int		GetVariableIndex(Tcl_Interp *interp,
 			    Tcl_Obj *obj, Tcl_Size *indexPtr);
-static void		SetVarToObj(Tcl_Obj **varPtr, Tcl_Size varIndex, Tcl_Obj *objPtr);
-static Tcl_ObjCmdProc	TestbignumobjCmd;
-static Tcl_ObjCmdProc	TestbooleanobjCmd;
-static Tcl_ObjCmdProc	TestdoubleobjCmd;
-static Tcl_ObjCmdProc	TestindexobjCmd;
-static Tcl_ObjCmdProc	TestintobjCmd;
-static Tcl_ObjCmdProc	TestlistobjCmd;
-static Tcl_ObjCmdProc	TestobjCmd;
-static Tcl_ObjCmdProc	TeststringobjCmd;
-static Tcl_ObjCmdProc	TestbigdataCmd;
-static Tcl_ObjCmdProc	TestisemptyCmd;
+static void		SetVarToObj(Tcl_Obj **varPtr, Tcl_Size varIndex,
+			    Tcl_Obj *objPtr);
+static Tcl_ObjCmdProc2	TestbignumobjCmd;
+static Tcl_ObjCmdProc2	TestbooleanobjCmd;
+static Tcl_ObjCmdProc2	TestdoubleobjCmd;
+static Tcl_ObjCmdProc2	TestindexobjCmd;
+static Tcl_ObjCmdProc2	TestintobjCmd;
+static Tcl_ObjCmdProc2	TestlistobjCmd;
+static Tcl_ObjCmdProc2	TestobjCmd;
+static Tcl_ObjCmdProc2	TeststringobjCmd;
+static Tcl_ObjCmdProc2	TestbigdataCmd;
+static Tcl_ObjCmdProc2	TestisemptyCmd;
 
 #define VARPTR_KEY "TCLOBJTEST_VARPTR"
 #define NUMBER_OF_OBJECT_VARS 20
@@ -106,7 +106,7 @@ TclObjTest_Init(
     Tcl_Obj **varPtr;
 
 #ifndef TCL_WITH_EXTERNAL_TOMMATH
-    if (Tcl_TomMath_InitStubs(interp, "8.7-") == NULL) {
+    if (Tcl_TomMath_InitStubs(interp, "9.0-") == NULL) {
 	return TCL_ERROR;
     }
 #endif
@@ -119,25 +119,25 @@ TclObjTest_Init(
 	varPtr[i] = NULL;
     }
 
-    Tcl_CreateObjCommand(interp, "testbignumobj", TestbignumobjCmd,
+    Tcl_CreateObjCommand2(interp, "testbignumobj", TestbignumobjCmd,
 	    NULL, NULL);
-    Tcl_CreateObjCommand(interp, "testbooleanobj", TestbooleanobjCmd,
+    Tcl_CreateObjCommand2(interp, "testbooleanobj", TestbooleanobjCmd,
 	    NULL, NULL);
-    Tcl_CreateObjCommand(interp, "testdoubleobj", TestdoubleobjCmd,
+    Tcl_CreateObjCommand2(interp, "testdoubleobj", TestdoubleobjCmd,
 	    NULL, NULL);
-    Tcl_CreateObjCommand(interp, "testintobj", TestintobjCmd,
+    Tcl_CreateObjCommand2(interp, "testintobj", TestintobjCmd,
 	    NULL, NULL);
-    Tcl_CreateObjCommand(interp, "testindexobj", TestindexobjCmd,
+    Tcl_CreateObjCommand2(interp, "testindexobj", TestindexobjCmd,
 	    NULL, NULL);
-    Tcl_CreateObjCommand(interp, "testlistobj", TestlistobjCmd,
+    Tcl_CreateObjCommand2(interp, "testlistobj", TestlistobjCmd,
 	    NULL, NULL);
-    Tcl_CreateObjCommand(interp, "testobj", TestobjCmd, NULL, NULL);
-    Tcl_CreateObjCommand(interp, "teststringobj", TeststringobjCmd,
+    Tcl_CreateObjCommand2(interp, "testobj", TestobjCmd, NULL, NULL);
+    Tcl_CreateObjCommand2(interp, "teststringobj", TeststringobjCmd,
 	    NULL, NULL);
-    Tcl_CreateObjCommand(interp, "testisempty", TestisemptyCmd,
+    Tcl_CreateObjCommand2(interp, "testisempty", TestisemptyCmd,
 	    NULL, NULL);
     if (sizeof(Tcl_Size) == sizeof(Tcl_WideInt)) {
-	Tcl_CreateObjCommand(interp, "testbigdata", TestbigdataCmd,
+	Tcl_CreateObjCommand2(interp, "testbigdata", TestbigdataCmd,
 		NULL, NULL);
     }
     return TCL_OK;
@@ -165,8 +165,8 @@ static int
 TestbignumobjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Tcl interpreter */
-    int objc,			/* Argument count */
-    Tcl_Obj *const objv[])	/* Argument vector */
+    Tcl_Size objc,		/* Argument count */
+    Tcl_Obj *const *objv)	/* Argument vector */
 {
     static const char *const subcmds[] = {
 	"set", "get", "mult10", "div10", "iseven", "radixsize", NULL
@@ -202,14 +202,14 @@ TestbignumobjCmd(
 	}
 	string = Tcl_GetString(objv[3]);
 	if (mp_init(&bignumValue) != MP_OKAY) {
-	    Tcl_SetObjResult(interp,
-		    Tcl_NewStringObj("error in mp_init", -1));
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "error in mp_init", -1));
 	    return TCL_ERROR;
 	}
 	if (mp_read_radix(&bignumValue, string, 10) != MP_OKAY) {
 	    mp_clear(&bignumValue);
-	    Tcl_SetObjResult(interp,
-		    Tcl_NewStringObj("error in mp_read_radix", -1));
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "error in mp_read_radix", -1));
 	    return TCL_ERROR;
 	}
 
@@ -252,8 +252,8 @@ TestbignumobjCmd(
 	}
 	if (mp_mul_d(&bignumValue, 10, &bignumValue) != MP_OKAY) {
 	    mp_clear(&bignumValue);
-	    Tcl_SetObjResult(interp,
-		    Tcl_NewStringObj("error in mp_mul_d", -1));
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "error in mp_mul_d", -1));
 	    return TCL_ERROR;
 	}
 	if (!Tcl_IsShared(varPtr[varIndex])) {
@@ -277,8 +277,8 @@ TestbignumobjCmd(
 	}
 	if (mp_div_d(&bignumValue, 10, &bignumValue, NULL) != MP_OKAY) {
 	    mp_clear(&bignumValue);
-	    Tcl_SetObjResult(interp,
-		    Tcl_NewStringObj("error in mp_div_d", -1));
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "error in mp_div_d", -1));
 	    return TCL_ERROR;
 	}
 	if (!Tcl_IsShared(varPtr[varIndex])) {
@@ -302,8 +302,8 @@ TestbignumobjCmd(
 	}
 	if (mp_mod_2d(&bignumValue, 1, &bignumValue) != MP_OKAY) {
 	    mp_clear(&bignumValue);
-	    Tcl_SetObjResult(interp,
-		    Tcl_NewStringObj("error in mp_mod_2d", -1));
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "error in mp_mod_2d", -1));
 	    return TCL_ERROR;
 	}
 	if (!Tcl_IsShared(varPtr[varIndex])) {
@@ -364,11 +364,11 @@ static int
 TestbooleanobjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
+    Tcl_Size objc,		/* Number of arguments. */
+    Tcl_Obj *const *objv)	/* Argument objects. */
 {
     Tcl_Size varIndex;
-    int boolValue;
+    bool boolValue;
     const char *subCmd;
     Tcl_Obj **varPtr;
 
@@ -464,8 +464,8 @@ static int
 TestdoubleobjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
+    Tcl_Size objc,		/* Number of arguments. */
+    Tcl_Obj *const *objv)	/* Argument objects. */
 {
     Tcl_Size varIndex;
     double doubleValue;
@@ -580,10 +580,12 @@ static int
 TestindexobjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
+    Tcl_Size objc,		/* Number of arguments. */
+    Tcl_Obj *const *objv)	/* Argument objects. */
 {
-    int allowAbbrev, index, setError, i, result;
+    bool allowAbbrev, setError;
+    int index, result;
+    Tcl_Size i;
     Tcl_Size index2;
     const char **argv;
     static const char *const tablePtr[] = {"a", "b", "check", NULL};
@@ -670,8 +672,8 @@ static int
 TestintobjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
+    Tcl_Size objc,		/* Number of arguments. */
+    Tcl_Obj *const *objv)	/* Argument objects. */
 {
     Tcl_Size varIndex;
 #if (INT_MAX != LONG_MAX)   /* int is not the same size as long */
@@ -856,34 +858,33 @@ TestintobjCmd(
  *	test a few possible corner cases in list object manipulation from
  *	C code that cannot occur at the Tcl level.
  *
- *      Following new commands are added for 8.7 as regression tests for
- *      memory leaks and use-after-free. Unlike 8.6, 8.7 has multiple internal
- *      representations for lists.  It has to be ensured that corresponding
- *      implementations obey the invariants of the C list API. The script
- *      level tests do not suffice as Tcl list commands do not execute
- *      the same exact code path as the exported C API.
+ *	Following new commands are added for 9.0 as regression tests for
+ *	memory leaks and use-after-free. Unlike 8.6, 9.0 has multiple internal
+ *	representations for lists.  It has to be ensured that corresponding
+ *	implementations obey the invariants of the C list API. The script
+ *	level tests do not suffice as Tcl list commands do not execute
+ *	the same exact code path as the exported C API.
  *
- *      Note these new commands are only useful when Tcl is compiled with
- *      TCL_MEM_DEBUG defined.
+ *	Note these new commands are only useful when Tcl is compiled with
+ *	TCL_MEM_DEBUG defined.
  *
  *	indexmemcheck - loops calling Tcl_ListObjIndex on each element. This
  *	is to test that abstract lists returning elements do not depend
  *	on caller to free them. The test case should check allocated counts
- *      with the following sequence:
- *            set before <get memory counts>
- *            testobj set VARINDEX [list a b c] (or lseq etc.)
- *            testlistobj indexnoop VARINDEX
- *            testobj unset VARINDEX
- *            set after <get memory counts>
- *      after calling this command AND freeing the passed list. The targeted
- *      bug is if Tcl_LOI returns a ephemeral Tcl_Obj with no other reference
- *      resulting in a memory leak. Conversely, the command also checks
- *      that the Tcl_Obj returned by Tcl_LOI does not have a zero reference
- *      count since it is supposed to have at least one reference held
- *      by the list implementation. Returns a message in interp otherwise.
+ *	with the following sequence:
+ *	      set before <get memory counts>
+ *	      testobj set VARINDEX [list a b c] (or lseq etc.)
+ *	      testlistobj indexnoop VARINDEX
+ *	      testobj unset VARINDEX
+ *	      set after <get memory counts>
+ *	after calling this command AND freeing the passed list. The targeted
+ *	bug is if Tcl_LOI returns a ephemeral Tcl_Obj with no other reference
+ *	resulting in a memory leak. Conversely, the command also checks
+ *	that the Tcl_Obj returned by Tcl_LOI does not have a zero reference
+ *	count since it is supposed to have at least one reference held
+ *	by the list implementation. Returns a message in interp otherwise.
  *
- *      getelementsmemcheck - as above but for Tcl_ListObjGetElements
-
+ *	getelementsmemcheck - as above but for Tcl_ListObjGetElements
  *
  * Results:
  *	A standard Tcl object result.
@@ -898,11 +899,11 @@ static int
 TestlistobjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Tcl interpreter */
-    int objc,			/* Number of arguments */
-    Tcl_Obj *const objv[])	/* Argument objects */
+    Tcl_Size objc,		/* Number of arguments */
+    Tcl_Obj *const *objv)	/* Argument objects */
 {
     /* Subcommands supported by this command */
-    static const char* const subcommands[] = {
+    static const char *const subcommands[] = {
 	"set",
 	"get",
 	"replace",
@@ -935,7 +936,7 @@ TestlistobjCmd(
 	return TCL_ERROR;
     }
     if (Tcl_GetIndexFromObj(interp, objv[1], subcommands, "command",
-			    0, &cmdIndex) != TCL_OK) {
+	    0, &cmdIndex) != TCL_OK) {
 	return TCL_ERROR;
     }
     switch(cmdIndex) {
@@ -966,7 +967,7 @@ TestlistobjCmd(
 	    return TCL_ERROR;
 	}
 	if (Tcl_GetIntForIndex(interp, objv[3], TCL_INDEX_NONE, &first) != TCL_OK
-	    || Tcl_GetIntForIndex(interp, objv[4], TCL_INDEX_NONE, &count) != TCL_OK) {
+		|| Tcl_GetIntForIndex(interp, objv[4], TCL_INDEX_NONE, &count) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	if (Tcl_IsShared(varPtr[varIndex])) {
@@ -990,7 +991,7 @@ TestlistobjCmd(
 	for (i = 0; i < len; ++i) {
 	    Tcl_Obj *objP;
 	    if (Tcl_ListObjIndex(interp, varPtr[varIndex], i, &objP)
-		!= TCL_OK) {
+		    != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    if (objP->refCount < 0) {
@@ -1013,7 +1014,7 @@ TestlistobjCmd(
 	} else {
 	    Tcl_Obj **elems;
 	    if (Tcl_ListObjGetElements(interp, varPtr[varIndex], &len, &elems)
-		!= TCL_OK) {
+		    != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    for (i = 0; i < len; ++i) {
@@ -1066,11 +1067,15 @@ TestlistobjCmd(
  *----------------------------------------------------------------------
  */
 
-static Tcl_Size V1TestListObjLength(TCL_UNUSED(Tcl_Obj *)) {
+static Tcl_Size
+V1TestListObjLength(
+    TCL_UNUSED(Tcl_Obj *))
+{
     return 100;
 }
 
-static int V1TestListObjIndex(
+static int
+V1TestListObjIndex(
     TCL_UNUSED(Tcl_Interp *),
     TCL_UNUSED(Tcl_Obj *),
     TCL_UNUSED(Tcl_Size),
@@ -1081,24 +1086,41 @@ static int V1TestListObjIndex(
 }
 
 static const Tcl_ObjType v1TestListType = {
-    "testlist",			/* name */
-    NULL,			/* freeIntRepProc */
-    NULL,			/* dupIntRepProc */
-    NULL,			/* updateStringProc */
-    NULL,			/* setFromAnyProc */
-    offsetof(Tcl_ObjType, indexProc), /* This is a V1 objType, which doesn't have an indexProc */
-    V1TestListObjLength,	/* always return 100, doesn't really matter */
-    V1TestListObjIndex,		/* should never be accessed, because this objType = V1*/
+    "testlist",
+    NULL,			// FreeIntRep
+    NULL,			// DupIntRep
+    NULL,			// UpdateString
+    NULL,			// SetFromAny
+    offsetof(Tcl_ObjType, indexProc), // This is a V1 objType, which doesn't have an indexProc
+    V1TestListObjLength,	// always returns 100, doesn't really matter
+    V1TestListObjIndex,		// should never be accessed, because this objType = V1
     NULL, NULL, NULL, NULL, NULL, NULL
 };
 
+static void
+HugeUpdateString(
+    TCL_UNUSED(Tcl_Obj *))
+{
+    /* Always returns NULL, as an indication that
+     * room for its string representation cannot be allocated */
+	return;
+}
 
+static const Tcl_ObjType hugeType = {
+    "huge",
+    NULL,			// FreeIntRep
+    NULL,			// DupIntRep
+    HugeUpdateString,
+    NULL,			// SetFromAny
+    TCL_OBJTYPE_V0
+};
+
 static int
 TestobjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
+    Tcl_Size objc,		/* Number of arguments. */
+    Tcl_Obj *const *objv)	/* Argument objects. */
 {
     Tcl_Size varIndex, destIndex;
     int i;
@@ -1107,14 +1129,16 @@ TestobjCmd(
     static const char *const subcommands[] = {
 	"freeallvars", "bug3598580", "buge58d7e19e9",
 	"types", "objtype", "newobj", "set",
-	"assign", "convert", "duplicate",
+	"objrefcount",
+	"assign", "convert", "duplicate", "huge",
 	"invalidateStringRep", "refcount", "type",
 	NULL
     };
     enum testobjCmdIndex {
 	TESTOBJ_FREEALLVARS, TESTOBJ_BUG3598580, TESTOBJ_BUGE58D7E19E9,
 	TESTOBJ_TYPES, TESTOBJ_OBJTYPE, TESTOBJ_NEWOBJ, TESTOBJ_SET,
-	TESTOBJ_ASSIGN, TESTOBJ_CONVERT, TESTOBJ_DUPLICATE,
+	TESTOBJ_OBJREFCOUNT,
+	TESTOBJ_ASSIGN, TESTOBJ_CONVERT, TESTOBJ_DUPLICATE, TESTOBJ_HUGE,
 	TESTOBJ_INVALIDATESTRINGREP, TESTOBJ_REFCOUNT, TESTOBJ_TYPE,
     } cmdIndex;
 
@@ -1125,9 +1149,8 @@ TestobjCmd(
     }
 
     varPtr = GetVarPtr(interp);
-    if (Tcl_GetIndexFromObj(
-	    interp, objv[1], subcommands, "command", 0, &cmdIndex)
-	!= TCL_OK) {
+    if (Tcl_GetIndexFromObj(interp, objv[1], subcommands, "command", 0,
+	    &cmdIndex) != TCL_OK) {
 	return TCL_ERROR;
     }
     switch (cmdIndex) {
@@ -1188,7 +1211,7 @@ TestobjCmd(
 		Tcl_SetObjResult(interp, Tcl_NewStringObj("none", -1));
 	    } else {
 		typeName = objv[2]->typePtr->name;
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(typeName, -1));
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(typeName, -1));
 	    }
 	}
 	return TCL_OK;
@@ -1211,7 +1234,24 @@ TestobjCmd(
 	}
 	SetVarToObj(varPtr, varIndex, objv[3]);
 	return TCL_OK;
-
+    case TESTOBJ_OBJREFCOUNT:
+	if (objc != 3) {
+	    goto wrongNumArgs;
+	} else {
+	    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(objv[2]->refCount));
+	}
+	return TCL_OK;
+    case TESTOBJ_HUGE:
+	if (objc != 2) {
+	    goto wrongNumArgs;
+	} else {
+	    Tcl_Obj *hugeObjPtr = Tcl_NewObj();
+	    hugeObjPtr->typePtr = &hugeType;
+	    hugeObjPtr->length = INT_MAX - 1;
+	    hugeObjPtr->bytes = NULL;
+	    Tcl_SetObjResult(interp, hugeObjPtr);
+	}
+	return TCL_OK;
     default:
 	break;
     }
@@ -1317,12 +1357,12 @@ static int
 TeststringobjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
+    Tcl_Size objc,		/* Number of arguments. */
+    Tcl_Obj *const *objv)	/* Argument objects. */
 {
     Tcl_UniChar *unicode;
-    Tcl_Size size, varIndex;
-    int option, i;
+    Tcl_Size size, varIndex, i;
+    int option;
     Tcl_Size length;
 #define MAX_STRINGS 11
     const char *string, *strings[MAX_STRINGS+1];
@@ -1594,34 +1634,34 @@ TeststringobjCmd(
  *
  * TestbigdataCmd --
  *
- *    Implements the Tcl command testbigdata
- *	testbigdata string ?LEN? ?SPLIT? - returns 01234567890123...
- *      testbigdata bytearray ?LEN? ?SPLIT? - returns {0 1 2 3 4 5 6 7 8 9 0 1 ...}
- *      testbigdata dict ?SIZE? - returns dict mapping integers to themselves
- *    If no arguments given, returns the pattern used to generate strings.
- *    If SPLIT is specified, the character at that position is set to "X".
+ *	Implements the Tcl command testbigdata
+ *	  testbigdata string ?LEN? ?SPLIT? - returns 01234567890123...
+ *	  testbigdata bytearray ?LEN? ?SPLIT? - returns {0 1 2 3 4 5 6 7 8 9 0 1 ...}
+ *	  testbigdata dict ?SIZE? - returns dict mapping integers to themselves
+ *	If no arguments given, returns the pattern used to generate strings.
+ *	If SPLIT is specified, the character at that position is set to "X".
  *
  * Results:
- *    TCL_OK    - Success.
- *    TCL_ERROR - Error.
+ *	TCL_OK    - Success.
+ *	TCL_ERROR - Error.
  *
  * Side effects:
- *    Interpreter result holds result or error message.
+ *	Interpreter result holds result or error message.
  *
  *------------------------------------------------------------------------
  */
 static int
-TestbigdataCmd (
+TestbigdataCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
+    Tcl_Size objc,		/* Number of arguments. */
+    Tcl_Obj *const *objv)	/* Argument objects. */
 {
     static const char *const subcmds[] = {
-	   "string", "bytearray", "list", "dict", NULL
+	"string", "bytearray", "list", "dict", NULL
     };
     enum options {
-	   BIGDATA_STRING, BIGDATA_BYTEARRAY, BIGDATA_LIST, BIGDATA_DICT
+	BIGDATA_STRING, BIGDATA_BYTEARRAY, BIGDATA_LIST, BIGDATA_DICT
     } idx;
     char *s;
     unsigned char *p;
@@ -1697,8 +1737,8 @@ TestbigdataCmd (
 	}
 	objPtr = Tcl_NewListObj(len, NULL);
 	for (i = 0; i < len; ++i) {
-	    Tcl_ListObjAppendElement(
-		interp, objPtr, patternObjs[i % PATTERN_LEN]);
+	    Tcl_ListObjAppendElement(interp,
+		    objPtr, patternObjs[i % PATTERN_LEN]);
 	}
 	if (split >= 0) {
 	    assert(split < len);
@@ -1722,14 +1762,14 @@ TestbigdataCmd (
     }
     return TCL_OK;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
  * SetVarToObj --
  *
- *	Utility routine to assign a Tcl_Obj* to a test variable. The
- *	Tcl_Obj* can be NULL.
+ *	Utility routine to assign a Tcl_Obj * to a test variable. The
+ *	Tcl_Obj * can be NULL.
  *
  * Results:
  *	None.
@@ -1814,7 +1854,7 @@ GetVariableIndex(
  *----------------------------------------------------------------------
  */
 
-static int
+static bool
 CheckIfVarUnset(
     Tcl_Interp *interp,		/* Interpreter for error reporting. */
     Tcl_Obj ** varPtr,
@@ -1832,29 +1872,29 @@ CheckIfVarUnset(
 }
 
 static int
-TestisemptyCmd (
+TestisemptyCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
+    Tcl_Size objc,		/* Number of arguments. */
+    Tcl_Obj *const *objv)	/* Argument objects. */
 {
     Tcl_Obj *result;
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "value");
 	return TCL_ERROR;
     }
-    result = Tcl_NewIntObj(Tcl_IsEmpty(objv[1]));
+    result = Tcl_NewBooleanObj(Tcl_IsEmpty(objv[1]));
     if (!objv[1]->bytes) {
-    Tcl_AppendToObj(result, " pure", TCL_INDEX_NONE);
+	Tcl_AppendToObj(result, " pure", TCL_INDEX_NONE);
     }
     if (objv[1]->typePtr) {
-    Tcl_AppendToObj(result, " ", TCL_INDEX_NONE);
-    Tcl_AppendToObj(result, objv[1]->typePtr->name, TCL_INDEX_NONE);
+	Tcl_AppendToObj(result, " ", TCL_INDEX_NONE);
+	Tcl_AppendToObj(result, objv[1]->typePtr->name, TCL_INDEX_NONE);
     }
     Tcl_SetObjResult(interp, result);
     return TCL_OK;
 }
-
+
 /*
  * Local Variables:
  * mode: c

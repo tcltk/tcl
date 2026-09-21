@@ -205,7 +205,7 @@ static const double pow_10_2_n[] = {	/* Inexact higher powers of ten. */
     1.0e+256
 };
 
-static int n770_fp;		/* Flag is 1 on Nokia N770 floating point.
+static bool n770_fp;		/* Flag is true on Nokia N770 floating point.
 				 * Nokia's floating point has the words
 				 * reversed: if big-endian is 7654 3210,
 				 * and little-endian is       0123 4567,
@@ -236,7 +236,7 @@ static const double tens[] = {
     1e20, 1e21, 1e22
 };
 
-static const int itens [] = {
+static const int itens[] = {
     1,
     10,
     100,
@@ -547,19 +547,15 @@ TclParseNumber(
      */
 
     if (bytes == NULL) {
-	if (interp == NULL && endPtrPtr == NULL) {
-	    if (TclHasInternalRep(objPtr, &tclDictType)) {
-		/* A dict can never be a (single) number */
-		return TCL_ERROR;
-	    }
-	    if (TclHasInternalRep(objPtr, &tclListType)) {
-		Tcl_Size length;
-		/* A list can only be a (single) number if its length == 1 */
-		TclListObjLength(NULL, objPtr, &length);
-		if (length != 1) {
-		    return TCL_ERROR;
-		}
-	    }
+	if (TclHasInternalRep(objPtr, &tclDictType)) {
+	    /* A dict can never be a (single) number */
+	    status = TCL_ERROR;
+	    goto formaterr;
+	}
+	Tcl_ObjTypeLengthProc *lengthProc = TclObjTypeHasProc(objPtr, lengthProc);
+	if (lengthProc && lengthProc(objPtr) > 1) {
+	    status = TCL_ERROR;
+	    goto formaterr;
 	}
 	bytes = TclGetString(objPtr);
     }
@@ -592,11 +588,11 @@ TclParseNumber(
 	     *   example: 5___6
 	     */
 	    for (before = (p - 1);
-		 (before && *before == '_');
-		 before = (before > p ? (before - 1) : NULL));
+		    (before && *before == '_');
+		    before = (before > p ? (before - 1) : NULL));
 	    for (after = (p + 1);
-		 (after && *after && *after == '_');
-		 after = (*after && *after == '_') ? (after + 1) : NULL);
+		    (after && *after && *after == '_');
+		    after = (*after && *after == '_') ? (after + 1) : NULL);
 
 	    switch (state) {
 	    case ZERO_B:
@@ -672,7 +668,7 @@ TclParseNumber(
 		state = SIGNUM;
 		break;
 	    }
-	    /* FALLTHROUGH */
+	    TCL_FALLTHROUGH();
 
 	case SIGNUM:
 	    /*
@@ -768,7 +764,7 @@ TclParseNumber(
 	    acceptState = state;
 	    acceptPoint = p;
 	    acceptLen = len;
-	    /* FALLTHROUGH */
+	    TCL_FALLTHROUGH();
 	case ZERO_O:
 	zeroo:
 	    if (c == '0') {
@@ -847,7 +843,7 @@ TclParseNumber(
 	    acceptState = state;
 	    acceptPoint = p;
 	    acceptLen = len;
-	    /* FALLTHROUGH */
+	    TCL_FALLTHROUGH();
 
 	case ZERO_X:
 	zerox:
@@ -877,8 +873,7 @@ TclParseNumber(
 			    ((size_t)shift >= CHAR_BIT*sizeof(Tcl_WideUInt) ||
 			    significandWide > (UWIDE_MAX >> shift))) {
 			significandOverflow = 1;
-			err = mp_init_u64(&significandBig,
-				significandWide);
+			err = mp_init_u64(&significandBig, significandWide);
 		    }
 		}
 		if (!significandOverflow) {
@@ -911,7 +906,7 @@ TclParseNumber(
 	    acceptState = state;
 	    acceptPoint = p;
 	    acceptLen = len;
-	    /* FALLTHRU */
+	    TCL_FALLTHROUGH();
 	case ZERO_B:
 	zerob:
 	    if (c == '0') {
@@ -934,8 +929,7 @@ TclParseNumber(
 			    ((size_t)shift >= CHAR_BIT*sizeof(Tcl_WideUInt) ||
 			    significandWide > (UWIDE_MAX >> shift))) {
 			significandOverflow = 1;
-			err = mp_init_u64(&significandBig,
-				significandWide);
+			err = mp_init_u64(&significandBig, significandWide);
 		    }
 		}
 		if (!significandOverflow) {
@@ -972,7 +966,7 @@ TclParseNumber(
 	    }
 	    state = DECIMAL;
 	    flags |= TCL_PARSE_INTEGER_ONLY;
-	    /* FALLTHROUGH */
+	    TCL_FALLTHROUGH();
 
 	case DECIMAL:
 	    /*
@@ -1024,7 +1018,7 @@ TclParseNumber(
 		state = EXPONENT_START;
 		break;
 	    }
-	    /* FALLTHROUGH */
+	    TCL_FALLTHROUGH();
 
 	case LEADING_RADIX_POINT:
 	    if (c == '0') {
@@ -1066,7 +1060,7 @@ TclParseNumber(
 		state = EXPONENT_SIGNUM;
 		break;
 	    }
-	    /* FALLTHROUGH */
+	    TCL_FALLTHROUGH();
 
 	case EXPONENT_SIGNUM:
 	    /*
@@ -1186,7 +1180,7 @@ TclParseNumber(
 		state = sNANFINISH;
 		break;
 	    }
-	    /* FALLTHROUGH */
+	    TCL_FALLTHROUGH();
 	case sNANPAREN:
 	    if (TclIsSpaceProcM(c)) {
 		break;
@@ -1515,7 +1509,7 @@ TclParseNumber(
 #endif
 	case INITIAL:
 	    /* This case only to silence compiler warning. */
-	    Tcl_Panic("TclParseNumber: state INITIAL can't happen here");
+	    TCL_UNREACHABLE();
 	}
     }
 
@@ -1523,15 +1517,18 @@ TclParseNumber(
      * Format an error message when an invalid number is encountered.
      */
 
+formaterr:
     if (status != TCL_OK) {
 	if (interp != NULL) {
 	    Tcl_Obj *msg = Tcl_ObjPrintf("expected %s but got ",
 		    expected);
 	    Tcl_Size argc;
-	    const char **argv;
-	    if ((TclMaxListLength(bytes, TCL_INDEX_NONE, NULL) > 1)
-		    && Tcl_SplitList(NULL, bytes, &argc, &argv) == TCL_OK) {
-		Tcl_Free(argv);
+	    const char **argv = NULL;
+	    if (!bytes || ((TclMaxListLength(bytes, TCL_INDEX_NONE, NULL) > 1)
+		    && Tcl_SplitList(NULL, bytes, &argc, &argv) == TCL_OK)) {
+		if (argv) {
+		    Tcl_Free(argv);
+		}
 		Tcl_AppendToObj(msg, "a list", -1);
 	    } else {
 		Tcl_AppendToObj(msg, "\"", -1);
@@ -1877,7 +1874,6 @@ MakeHighPrecisionDouble(
      * Very high numbers are returned, if this is not handled
      */
 
-
     if (exponent < -511) {
 	if (mp_init_copy(&bntmp, significand) != MP_OKAY) {
 	    Tcl_Panic("initialization failure in MakeHighPrecisionDouble");
@@ -2058,7 +2054,7 @@ RefineApproximation(
      * The approximate result is significand * 2**binExponent
      * If exponent<0, we need to multiply the exact value by 10**-exponent
      * to make it an integer, plus another factor of 2 to decide on rounding.
-     *  Similarly if binExponent<FP_PRECISION, we need
+     * Similarly if binExponent<FP_PRECISION, we need
      * to multiply by 2**FP_PRECISION to make the approximate value an integer.
      *
      * Let M = 2**M2 * 5**M5 be the least common multiple of these two
@@ -2312,22 +2308,28 @@ NormalizeRightward(
     Tcl_WideUInt w = *wPtr;
 
     if (!(w & (Tcl_WideUInt) 0xFFFFFFFF)) {
-	w >>= 32; rv += 32;
+	w >>= 32;
+	rv += 32;
     }
     if (!(w & (Tcl_WideUInt) 0xFFFF)) {
-	w >>= 16; rv += 16;
+	w >>= 16;
+	rv += 16;
     }
     if (!(w & (Tcl_WideUInt) 0xFF)) {
-	w >>= 8; rv += 8;
+	w >>= 8;
+	rv += 8;
     }
     if (!(w & (Tcl_WideUInt) 0xF)) {
-	w >>= 4; rv += 4;
+	w >>= 4;
+	rv += 4;
     }
     if (!(w & 0x3)) {
-	w >>= 2; rv += 2;
+	w >>= 2;
+	rv += 2;
     }
     if (!(w & 0x1)) {
-	w >>= 1; ++rv;
+	w >>= 1;
+	++rv;
     }
     *wPtr = w;
     return rv;
@@ -3175,7 +3177,9 @@ ShorteningInt64Conversion(
 
     if (b < S) {
 	b = 10 * b;
-	++m2plus; ++m2minus; ++m5;
+	++m2plus;
+	++m2minus;
+	++m5;
 	ilim = ilim1;
 	--k;
     }
@@ -3554,7 +3558,9 @@ ShorteningBignumConversionPowD(
 
     if ((err == MP_OKAY) && (b.used <= sd)) {
 	err = mp_mul_d(&b, 10, &b);
-	++m2plus; ++m2minus; ++m5;
+	++m2plus;
+	++m2minus;
+	++m5;
 	ilim = ilim1;
 	--k;
     }
@@ -3594,7 +3600,8 @@ ShorteningBignumConversionPowD(
 	    if (b.used > sd+1 || digit >= 10) {
 		Tcl_Panic("wrong digit!");
 	    }
-	    --b.used; mp_clamp(&b);
+	    --b.used;
+	    mp_clamp(&b);
 	}
 
 	/*
@@ -4570,9 +4577,11 @@ TclDoubleDigits(
 	 */
 
 	if (b2 >= s2 && s2 > 0) {
-	    b2 -= s2; s2 = 0;
+	    b2 -= s2;
+	    s2 = 0;
 	} else if (s2 >= b2 && b2 > 0) {
-	    s2 -= b2; b2 = 0;
+	    s2 -= b2;
+	    b2 = 0;
 	}
 
 	if (s5+1 < N_LOG2POW5 && s2+1 + log2pow5[s5+1] < 64) {
@@ -4744,9 +4753,9 @@ TclInitDoubleConversion(void)
     bitwhack.dv = 1.000000238418579;
 				/* 3ff0 0000 4000 0000 */
     if ((bitwhack.iv >> 32) == 0x3FF00000) {
-	n770_fp = 0;
+	n770_fp = false;
     } else if ((bitwhack.iv & 0xFFFFFFFF) == 0x3FF00000) {
-	n770_fp = 1;
+	n770_fp = true;
     } else {
 	Tcl_Panic("unknown floating point word order on this machine");
     }
@@ -4910,7 +4919,6 @@ TclBignumToDouble(
     } else if (shift < 0) {
 	lsb = mp_cnt_lsb(a);
 	if (lsb == -1-shift) {
-
 	    /*
 	     * Round to even
 	     */
@@ -4924,7 +4932,6 @@ TclBignumToDouble(
 		}
 	    }
 	} else {
-
 	    /*
 	     * Ordinary rounding
 	     */
@@ -5342,7 +5349,7 @@ Nokia770Twiddle(
  *----------------------------------------------------------------------
  */
 
-int
+bool
 TclNokia770Doubles(void)
 {
     return n770_fp;

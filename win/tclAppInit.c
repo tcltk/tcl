@@ -6,9 +6,9 @@
  *	Note that this program must be built in Win32 console mode to work
  *	properly.
  *
- * Copyright (c) 1993 The Regents of the University of California.
- * Copyright (c) 1994-1997 Sun Microsystems, Inc.
- * Copyright (c) 1998-1999 Scriptics Corporation.
+ * Copyright © 1993 The Regents of the University of California.
+ * Copyright © 1994-1997 Sun Microsystems, Inc.
+ * Copyright © 1998-1999 Scriptics Corporation.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -16,25 +16,24 @@
 
 #include "tcl.h"
 #if TCL_MAJOR_VERSION < 9
-#  if defined(USE_TCL_STUBS)
+#   if defined(USE_TCL_STUBS)
 #	error "Don't build with USE_TCL_STUBS!"
-#  endif
-#  if TCL_MINOR_VERSION < 7
+#   endif
 #   define Tcl_LibraryInitProc Tcl_PackageInitProc
 #   define Tcl_StaticLibrary Tcl_StaticPackage
-#  endif
 #endif
 
 #ifdef TCL_TEST
+#ifdef __cplusplus
+extern "C" {
+#endif
+extern Tcl_PostInitProc    TcltestStaticInit;
 extern Tcl_LibraryInitProc Tcltest_Init;
 extern Tcl_LibraryInitProc Tcltest_SafeInit;
-#endif /* TCL_TEST */
-
-#if defined(STATIC_BUILD)
-extern Tcl_LibraryInitProc Registry_Init;
-extern Tcl_LibraryInitProc Dde_Init;
-extern Tcl_LibraryInitProc Dde_SafeInit;
+#ifdef __cplusplus
+}
 #endif
+#endif /* TCL_TEST */
 
 #define WIN32_LEAN_AND_MEAN
 #define STRICT			/* See MSDN Article Q83456 */
@@ -44,12 +43,9 @@ extern Tcl_LibraryInitProc Dde_SafeInit;
 #include <locale.h>
 #include <stdlib.h>
 #include <tchar.h>
-#if defined(__GNUC__) || defined(TCL_BROKEN_MAINARGS)
+#if defined(__GNUC__)
 int _CRT_glob = 0;
-#endif /* __GNUC__ || TCL_BROKEN_MAINARGS */
-#ifdef TCL_BROKEN_MAINARGS
-static void setargv(int *argcPtr, TCHAR ***argvPtr);
-#endif /* TCL_BROKEN_MAINARGS */
+#endif /* __GNUC__ */
 
 /*
  * The following #if block allows you to change the AppInit function by using
@@ -66,6 +62,13 @@ static void setargv(int *argcPtr, TCHAR ***argvPtr);
 MODULE_SCOPE int TCL_LOCAL_APPINIT(Tcl_Interp *);
 
 /*
+ * The following allows changing of the script file read at startup.
+ */
+#ifndef TCL_RC_FILE
+#define TCL_RC_FILE "~/tclshrc.tcl"
+#endif
+
+/*
  * The following #if block allows you to change how Tcl finds the startup
  * script, prime the library or encoding paths, fiddle with the argv, etc.,
  * without needing to rewrite Tcl_Main()
@@ -74,6 +77,44 @@ MODULE_SCOPE int TCL_LOCAL_APPINIT(Tcl_Interp *);
 #ifdef TCL_LOCAL_MAIN_HOOK
 MODULE_SCOPE int TCL_LOCAL_MAIN_HOOK(int *argc, TCHAR ***argv);
 #endif
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclSetRcFilePath --
+ *
+ *	Sets the path of the Tcl startup file (usually ".tclshrc"). Will
+ *	do tilde expansion and normalization of the passed path and set
+ *	the tclRcFilePath variable to the result
+ *
+ * Results:
+ *	A Tcl result code.
+ *
+ * Side effects:
+ *	Sets the tclRcFilePath variable.
+ *
+ * TODO - this function is duplicated in the Unix version of tclAppInit.c.
+ * Consider adding it to Tcl library and callable via the stubs table.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+TclSetRcFilePath(
+    Tcl_Interp *interp,
+    const char *path)
+{
+    Tcl_DString ds;
+    if (Tcl_FSTildeExpand(interp, path, &ds) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    Tcl_Obj *rcPathObj = Tcl_DStringToObj(&ds);
+    /* Reminder: don't worry about rcPathObj ref count on success/failure */
+    if (Tcl_SetVar2Ex(interp, "tcl_rcFileName", NULL, rcPathObj,
+	    TCL_GLOBAL_ONLY) == NULL) {
+	return TCL_ERROR;
+    }
+    return TCL_OK;
+}
 
 /*
  *----------------------------------------------------------------------
@@ -92,37 +133,12 @@ MODULE_SCOPE int TCL_LOCAL_MAIN_HOOK(int *argc, TCHAR ***argv);
  *----------------------------------------------------------------------
  */
 
-#ifdef TCL_BROKEN_MAINARGS
-int
-main(
-    int argc,			/* Number of command-line arguments. */
-    char **argv1)		/* Not used. */
-{
-    TCHAR **argv;
-#else
 int
 _tmain(
     int argc,			/* Number of command-line arguments. */
     TCHAR *argv[])		/* Values of command-line arguments. */
 {
-#endif
     TCHAR *p;
-
-    /*
-     * Set up the default locale to be standard "C" locale so parsing is
-     * performed correctly.
-     */
-
-    setlocale(LC_ALL, "C");
-
-#ifdef TCL_BROKEN_MAINARGS
-    /*
-     * Get our args from the c-runtime. Ignore command line.
-     */
-
-    (void)argv1;
-    setargv(&argc, &argv);
-#endif
 
     /*
      * Forward slashes substituted for backslashes.
@@ -136,9 +152,13 @@ _tmain(
 
 #ifdef TCL_LOCAL_MAIN_HOOK
     TCL_LOCAL_MAIN_HOOK(&argc, &argv);
-#elif (TCL_MAJOR_VERSION > 8 || TCL_MINOR_VERSION > 6) && (!defined(_WIN32) || defined(UNICODE))
-    /* New in Tcl 8.7. This doesn't work on Windows without UNICODE */
+#elif TCL_MAJOR_VERSION > 8 && (!defined(_WIN32) || defined(UNICODE))
+    /* New in Tcl 9.0. This doesn't work on Windows without UNICODE */
     TclZipfs_AppHook(&argc, &argv);
+#endif
+
+#if defined(TCL_TEST)
+    Tcl_RegisterPostInitProc(TcltestStaticInit, NULL);
 #endif
 
     Tcl_Main(argc, argv, TCL_LOCAL_APPINIT);
@@ -172,25 +192,6 @@ Tcl_AppInit(
 	return TCL_ERROR;
     }
 
-#if defined(STATIC_BUILD)
-    if (Registry_Init(interp) == TCL_ERROR) {
-	return TCL_ERROR;
-    }
-    Tcl_StaticLibrary(interp, "Registry", Registry_Init, NULL);
-
-    if (Dde_Init(interp) == TCL_ERROR) {
-	return TCL_ERROR;
-    }
-    Tcl_StaticLibrary(interp, "Dde", Dde_Init, Dde_SafeInit);
-#endif
-
-#ifdef TCL_TEST
-    if (Tcltest_Init(interp) == TCL_ERROR) {
-	return TCL_ERROR;
-    }
-    Tcl_StaticLibrary(interp, "Tcltest", Tcltest_Init, Tcltest_SafeInit);
-#endif /* TCL_TEST */
-
     /*
      * Call the init procedures for included packages. Each call should look
      * like this:
@@ -213,137 +214,13 @@ Tcl_AppInit(
      * run interactively. Typically the startup file is "~/.apprc" where "app"
      * is the name of the application. If this line is deleted then no
      * user-specific startup file will be run under any conditions.
+     * In keeping with the historical behavior, errors setting the name
+     * for example, if the home directory cannot be found, are ignored.
      */
-
-    (void)Tcl_EvalEx(interp,
-	    "set tcl_rcFileName [file tildeexpand ~/tclshrc.tcl]",
-	    TCL_AUTO_LENGTH, TCL_EVAL_GLOBAL);
-
+    (void) TclSetRcFilePath(interp, TCL_RC_FILE);
+    Tcl_ResetResult(interp);
     return TCL_OK;
 }
-
-/*
- *-------------------------------------------------------------------------
- *
- * setargv --
- *
- *	Parse the Windows command line string into argc/argv. Done here
- *	because we don't trust the builtin argument parser in crt0. Windows
- *	applications are responsible for breaking their command line into
- *	arguments.
- *
- *	2N backslashes + quote -> N backslashes + begin quoted string
- *	2N + 1 backslashes + quote -> literal
- *	N backslashes + non-quote -> literal
- *	quote + quote in a quoted string -> single quote
- *	quote + quote not in quoted string -> empty string
- *	quote -> begin quoted string
- *
- * Results:
- *	Fills argcPtr with the number of arguments and argvPtr with the array
- *	of arguments.
- *
- * Side effects:
- *	Memory allocated.
- *
- *--------------------------------------------------------------------------
- */
-
-#ifdef TCL_BROKEN_MAINARGS
-static void
-setargv(
-    int *argcPtr,		/* Filled with number of argument strings. */
-    TCHAR ***argvPtr)		/* Filled with argument strings (malloc'd). */
-{
-    TCHAR *cmdLine, *p, *arg, *argSpace;
-    TCHAR **argv;
-    int argc, size, inquote, copy, slashes;
-
-    cmdLine = GetCommandLine();
-
-    /*
-     * Precompute an overly pessimistic guess at the number of arguments in
-     * the command line by counting non-space spans.
-     */
-
-    size = 2;
-    for (p = cmdLine; *p != '\0'; p++) {
-	if ((*p == ' ') || (*p == '\t')) {	/* INTL: ISO space. */
-	    size++;
-	    while ((*p == ' ') || (*p == '\t')) { /* INTL: ISO space. */
-		p++;
-	    }
-	    if (*p == '\0') {
-		break;
-	    }
-	}
-    }
-
-    /* Make sure we don't call Tcl_Alloc through the (not yet initialized) stub table */
-#   undef Tcl_Alloc
-
-    argSpace = (TCHAR *)Tcl_Alloc(size * sizeof(char *)
-	    + (_tcslen(cmdLine) * sizeof(TCHAR)) + sizeof(TCHAR));
-    argv = (TCHAR **) argSpace;
-    argSpace += size * (sizeof(char *)/sizeof(TCHAR));
-    size--;
-
-    p = cmdLine;
-    for (argc = 0; argc < size; argc++) {
-	argv[argc] = arg = argSpace;
-	while ((*p == ' ') || (*p == '\t')) {	/* INTL: ISO space. */
-	    p++;
-	}
-	if (*p == '\0') {
-	    break;
-	}
-
-	inquote = 0;
-	slashes = 0;
-	while (1) {
-	    copy = 1;
-	    while (*p == '\\') {
-		slashes++;
-		p++;
-	    }
-	    if (*p == '"') {
-		if ((slashes & 1) == 0) {
-		    copy = 0;
-		    if ((inquote) && (p[1] == '"')) {
-			p++;
-			copy = 1;
-		    } else {
-			inquote = !inquote;
-		    }
-		}
-		slashes >>= 1;
-	    }
-
-	    while (slashes) {
-		*arg = '\\';
-		arg++;
-		slashes--;
-	    }
-
-	    if ((*p == '\0') || (!inquote &&
-		    ((*p == ' ') || (*p == '\t')))) {	/* INTL: ISO space. */
-		break;
-	    }
-	    if (copy != 0) {
-		*arg = *p;
-		arg++;
-	    }
-	    p++;
-	}
-	*arg = '\0';
-	argSpace = arg + 1;
-    }
-    argv[argc] = NULL;
-
-    *argcPtr = argc;
-    *argvPtr = argv;
-}
-#endif /* TCL_BROKEN_MAINARGS */
 
 /*
  * Local Variables:

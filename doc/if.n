@@ -12,7 +12,7 @@
 .SH NAME
 if \- Execute scripts conditionally
 .SH SYNOPSIS
-\fBif \fIexpr1 \fR?\fBthen\fR? \fIbody1 \fBelseif \fIexpr2 \fR?\fBthen\fR? \fIbody2\fR \fBelseif\fR ... ?\fBelse\fR? ?\fIbodyN\fR?
+\fBif \fIexpr1 \fR?\fBthen\fR? \fIbody1 \fBelseif \fIexpr2 \fR?\fBthen\fR? \fIbody2\fR \fBelseif ...\fR ?\fBelse\fR? ?\fIbodyN\fR?
 .BE
 .SH DESCRIPTION
 .PP

@@ -4,7 +4,7 @@
  *	This file contains the common definitions and prototypes for use by
  *	Tcl's filesystem and path handling layers.
  *
- * Copyright (c) 2003 Vince Darley.
+ * Copyright © 2003 Vince Darley.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -23,8 +23,8 @@
  */
 
 MODULE_SCOPE int	TclFSCwdPointerEquals(Tcl_Obj **pathPtrPtr);
-MODULE_SCOPE int	TclFSNormalizeToUniquePath(Tcl_Interp *interp,
-			    Tcl_Obj *pathPtr, int startAt);
+MODULE_SCOPE Tcl_Size	TclFSNormalizeToUniquePath(Tcl_Interp *interp,
+			    Tcl_Obj *pathPtr, Tcl_Size startAt);
 MODULE_SCOPE Tcl_Obj *	TclFSMakePathRelative(Tcl_Interp *interp,
 			    Tcl_Obj *pathPtr, Tcl_Obj *cwdPtr);
 MODULE_SCOPE int	TclFSEnsureEpochOk(Tcl_Obj *pathPtr,
@@ -64,7 +64,7 @@ MODULE_SCOPE Tcl_FSPathInFilesystemProc TclNativePathInFilesystem;
 MODULE_SCOPE Tcl_FSCreateInternalRepProc TclNativeCreateNativeRep;
 
 #endif /* _TCLFILESYSTEM */
-
+
 /*
  * Local Variables:
  * mode: c

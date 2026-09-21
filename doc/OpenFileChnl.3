@@ -9,7 +9,7 @@
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
-Tcl_OpenFileChannel, Tcl_OpenCommandChannel, Tcl_MakeFileChannel, Tcl_GetChannel, Tcl_GetChannelNames, Tcl_GetChannelNamesEx, Tcl_RegisterChannel, Tcl_UnregisterChannel, Tcl_DetachChannel, Tcl_IsStandardChannel, Tcl_Close, Tcl_ReadChars, Tcl_Read, Tcl_GetsObj, Tcl_Gets, Tcl_WriteObj, Tcl_WriteChars, Tcl_Write, Tcl_Flush, Tcl_Seek, Tcl_Tell, Tcl_TruncateChannel, Tcl_GetChannelOption, Tcl_SetChannelOption, Tcl_Eof, Tcl_InputBlocked, Tcl_InputBuffered, Tcl_OutputBuffered, Tcl_Ungets, Tcl_ReadRaw, Tcl_WriteRaw \- buffered I/O facilities using channels
+Tcl_OpenFileChannel, Tcl_OpenCommandChannel, Tcl_MakeFileChannel, Tcl_GetChannel, Tcl_GetChannelNames, Tcl_GetChannelNamesEx, Tcl_RegisterChannel, Tcl_UnregisterChannel, Tcl_DetachChannel, Tcl_IsStandardChannel, Tcl_Close, Tcl_CloseEx, Tcl_ReadChars, Tcl_Read, Tcl_GetsObj, Tcl_Gets, Tcl_WriteObj, Tcl_WriteChars, Tcl_Write, Tcl_Flush, Tcl_Seek, Tcl_Tell, Tcl_TruncateChannel, Tcl_GetChannelOption, Tcl_SetChannelOption, Tcl_Eof, Tcl_InputBlocked, Tcl_InputBuffered, Tcl_OutputBuffered, Tcl_Ungets, Tcl_ReadRaw, Tcl_WriteRaw \- buffered I/O facilities using channels
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -45,6 +45,9 @@ int
 .sp
 int
 \fBTcl_Close\fR(\fIinterp, channel\fR)
+.sp
+int
+\fBTcl_CloseEx\fR(\fIinterp, channel, closeFlags\fR)
 .sp
 Tcl_Size
 \fBTcl_ReadChars\fR(\fIchannel, readObjPtr, charsToRead, appendFlag\fR)
@@ -157,6 +160,10 @@ channel.
 The number of characters to read from the channel.  If the channel's encoding
 is \fBbinary\fR, this is equivalent to the number of bytes to read from the
 channel.
+.AP int closeFlags in
+If \fB0\fR, the channel is closed in both directions. If \fBTCL_CLOSE_READ\fR,
+the channel is only closed for reading. If \fBTCL_CLOSE_WRITE\fR, the channel
+is only closed for writing. These flags must not be combined.
 .AP int appendFlag in
 If non-zero, data read from the channel will be appended to the value.
 Otherwise, the data will replace the existing contents of the value.
@@ -209,6 +216,9 @@ values. Must have been initialized by the caller.
 New value for the option given by \fIoptionName\fR.
 .BE
 .SH DESCRIPTION
+.PP
+N.B. Refer to the \fBTcl_UniChar\fR documentation page for a description of the
+\fITUTF-8\fR encoding and related terms referenced here.
 .PP
 The Tcl channel mechanism provides a device-independent and
 platform-independent mechanism for performing buffered input
@@ -369,7 +379,7 @@ If so, it returns 1, otherwise 0.
 .PP
 No attempt is made to check whether the given channel or the standard
 channels are initialized or otherwise valid.
-.SH TCL_CLOSE
+.SH "TCL_CLOSE AND TCL_CLOSEEX"
 .PP
 \fBTcl_Close\fR destroys the channel \fIchannel\fR, which must denote a
 currently open channel. The channel should not be registered in any
@@ -383,16 +393,23 @@ immediately; output is flushed in the background and the channel will be
 closed once all of the buffered data has been output.  In this case errors
 during flushing are not reported.
 .PP
-If the channel was closed successfully, \fBTcl_Close\fR returns \fBTCL_OK\fR.
-If an error occurs, \fBTcl_Close\fR returns \fBTCL_ERROR\fR and records a
-POSIX error code that can be retrieved with \fBTcl_GetErrno\fR.
+\fBTcl_CloseEx\fR allows for both full closing and half-closing of channels
+depending on its \fBcloseFlags\fR parameter. See the description of the
+parameter above. It is an error to attempt to close the channel for
+a direction for which it is not open. The channel is destroyed only when
+it has been closed for both reading and writing. Only socket and command
+pipe channels support half-closing.
+.PP
+If the channel was closed successfully, \fBTcl_Close\fR and \fBTcl_CloseEx\fR
+return \fBTCL_OK\fR. If an error occurs, they return \fBTCL_ERROR\fR and record
+a POSIX error code that can be retrieved with \fBTcl_GetErrno\fR.
 If the channel is being closed synchronously and an error occurs during
 closing of the channel and \fIinterp\fR is not NULL, an error message is
 left in the interpreter's result.
 .PP
-Note that it is not safe to call \fBTcl_Close\fR on a channel that has been
-registered using \fBTcl_RegisterChannel\fR; see the documentation for
-\fBTcl_RegisterChannel\fR, above, for details. If the channel has ever
+Note that it is not safe to call the channel closing functions on a channel
+that has been registered using \fBTcl_RegisterChannel\fR; see the documentation
+for \fBTcl_RegisterChannel\fR, above, for details. If the channel has ever
 been given as the \fBchan\fR argument in a call to
 \fBTcl_RegisterChannel\fR, you should instead use
 \fBTcl_UnregisterChannel\fR, which will internally call \fBTcl_Close\fR
@@ -401,7 +418,7 @@ corresponding calls to \fBTcl_UnregisterChannel\fR.
 .SH "TCL_READCHARS AND TCL_READ"
 .PP
 \fBTcl_ReadChars\fR consumes bytes from \fIchannel\fR, converting the bytes
-to UTF-8 based on the channel's encoding and storing the produced data in
+to TUTF-8 based on the channel's encoding and storing the produced data in
 \fIreadObjPtr\fR's string representation.  The return value of
 \fBTcl_ReadChars\fR is the number of characters, up to \fIcharsToRead\fR,
 that were stored in \fIreadObjPtr\fR.  If an error occurs while reading, the
@@ -434,14 +451,14 @@ platform-specific modes are described in the manual entry for the Tcl
 \fBfconfigure\fR command.
 .PP
 As a performance optimization, when reading from a channel with the encoding
-\fBbinary\fR, the bytes are not converted to UTF-8 as they are read.
+\fBbinary\fR, the bytes are not converted to TUTF-8 as they are read.
 Instead, they are stored in \fIreadObjPtr\fR's internal representation as a
 byte-array value.  The string representation of this value will only be
 constructed if it is needed (e.g., because of a call to
 \fBTcl_GetStringFromObj\fR).  In this way, byte-oriented data can be read
 from a channel, manipulated by calling \fBTcl_GetByteArrayFromObj\fR and
 related functions, and then written to a channel without the expense of ever
-converting to or from UTF-8.
+converting to or from TUTF-8.
 .PP
 \fBTcl_Read\fR is similar to \fBTcl_ReadChars\fR, except that it does not do
 encoding conversions, regardless of the channel's encoding.  It is deprecated
@@ -462,8 +479,8 @@ channel drivers, i.e. drivers used in the middle of a stack of
 channels, to move data from the channel below into the transformation.
 .SH "TCL_GETSOBJ AND TCL_GETS"
 .PP
-\fBTcl_GetsObj\fR consumes bytes from \fIchannel\fR, converting the bytes to
-UTF-8 based on the channel's encoding, until a full line of input has been
+\fBTcl_GetsObj\fR consumes bytes from \fIchannel\fR,
+based on the channel's encoding, until a full line of input has been
 seen.  If the channel's encoding is \fBbinary\fR, each byte read from the
 channel is treated as an individual Unicode character.  All of the
 characters of the line except for the terminating end-of-line character(s)
@@ -483,9 +500,9 @@ end-of-line character.  When -1 is returned, the \fBTcl_InputBlocked\fR
 procedure may be invoked to determine if the channel is blocked because
 of input unavailability.
 .PP
-\fBTcl_Gets\fR is the same as \fBTcl_GetsObj\fR except the resulting
-characters are appended to the dynamic string given by
-\fIlineRead\fR rather than a Tcl value.
+\fBTcl_Gets\fR works similarly to \fBTcl_GetsObj\fR except the read bytes
+are are appended as a TUTF-8 encoded byte sequence to the dynamic string
+given by \fIlineRead\fR rather than a Tcl value.
 .SH "TCL_UNGETS"
 .PP
 \fBTcl_Ungets\fR is used to add data to the input queue of a channel,
@@ -501,7 +518,7 @@ added to the input queue.  \fBTcl_Ungets\fR returns \fIinputLen\fR or
 .SH "TCL_WRITECHARS, TCL_WRITEOBJ, AND TCL_WRITE"
 .PP
 \fBTcl_WriteChars\fR accepts \fIbytesToWrite\fR bytes of character data at
-\fIcharBuf\fR.  The UTF-8 characters in the buffer are converted to the
+\fIcharBuf\fR.  The TUTF-8 encoded bytes in the buffer are converted to the
 channel's encoding and queued for output to \fIchannel\fR.  If
 \fIbytesToWrite\fR is negative, \fBTcl_WriteChars\fR expects \fIcharBuf\fR
 to be null-terminated and it outputs everything up to the null.
@@ -525,16 +542,16 @@ channel.  This is done even if the channel has no encoding.
 .PP
 \fBTcl_WriteObj\fR is similar to \fBTcl_WriteChars\fR except it
 accepts a Tcl value whose contents will be output to the channel.  The
-UTF-8 characters in \fIwriteObjPtr\fR's string representation are converted
+characters in \fIwriteObjPtr\fR's string representation are converted
 to the channel's encoding and queued for output to \fIchannel\fR.
 As a performance optimization, when writing to a channel with the encoding
-\fBbinary\fR, UTF-8 characters are not converted as they are written.
+\fBbinary\fR, characters are not converted as they are written.
 Instead, the bytes in \fIwriteObjPtr\fR's internal representation as a
 byte-array value are written to the channel.  The byte-array representation
 of the value will be constructed if it is needed.  In this way,
 byte-oriented data can be read from a channel, manipulated by calling
 \fBTcl_GetByteArrayFromObj\fR and related functions, and then written to a
-channel without the expense of ever converting to or from UTF-8.
+channel without the expense of encoding conversion.
 .PP
 \fBTcl_Write\fR is similar to \fBTcl_WriteChars\fR except that it does not do
 encoding conversions, regardless of the channel's encoding.  It is

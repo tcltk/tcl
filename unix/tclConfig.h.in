@@ -19,6 +19,9 @@
 /* Define to 1 if you have the 'chflags' function. */
 #undef HAVE_CHFLAGS
 
+/* Define to 1 if you have the 'clock_gettime' function. */
+#undef HAVE_CLOCK_GETTIME
+
 /* Define to 1 if you have the 'copyfile' function. */
 #undef HAVE_COPYFILE
 
@@ -38,10 +41,6 @@
 /* Define to 1 if you have the declaration of 'gethostbyname_r', and to 0 if
    you don't. */
 #undef HAVE_DECL_GETHOSTBYNAME_R
-
-/* Define to 1 if you have the declaration of 'PTHREAD_MUTEX_RECURSIVE', and
-   to 0 if you don't. */
-#undef HAVE_DECL_PTHREAD_MUTEX_RECURSIVE
 
 /* Is 'DIR64' in <sys/types.h>? */
 #undef HAVE_DIR64
@@ -195,9 +194,6 @@
 
 /* Are characters signed? */
 #undef HAVE_SIGNED_CHAR
-
-/* Do we have <stdbool.h>? */
-#undef HAVE_STDBOOL_H
 
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H

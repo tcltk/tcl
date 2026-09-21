@@ -16,7 +16,7 @@ for \- 'For' loop
 .BE
 .SH DESCRIPTION
 .PP
-\fBFor\fR is a looping command, similar in structure to the C
+\fBfor\fR is a looping command, similar in structure to the C
 \fBfor\fR statement.  The \fIstart\fR, \fInext\fR, and
 \fIbody\fR arguments must be Tcl command strings, and \fItest\fR
 is an expression string.

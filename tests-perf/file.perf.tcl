@@ -9,17 +9,15 @@
 #
 # ------------------------------------------------------------------------
 #
-# Copyright (c) 2024 Serg G. Brester (aka sebres)
+# Copyright © 2024 Serg G. Brester (aka sebres)
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file.
 #
 
-
 if {![namespace exists ::tclTestPerf]} {
   source -encoding utf-8 [file join [file dirname [info script]] test-performance.tcl]
 }
-
 
 namespace eval ::tclTestPerf-File {
 

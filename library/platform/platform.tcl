@@ -99,7 +99,7 @@ proc ::platform::generic {} {
 
     switch -glob -- $plat {
 	windows {
-	    if {$tcl_platform(platform) == "unix"} {
+	    if {$tcl_platform(platform) eq "unix"} {
 		set plat cygwin
 	    } else {
 		set plat win32
@@ -123,7 +123,12 @@ proc ::platform::generic {} {
 	    }
 	}
 	darwin {
-	    set plat macosx
+	    set major [lindex [split $tcl_platform(osVersion) .] 0]
+	    if {$major > 19} {
+		set plat macos
+	    } else {
+		set plat macosx
+	    }
 	    # Correctly identify the cpu when running as a 64bit
 	    # process on a machine with a 32bit kernel
 	    if {$cpu eq "ix86"} {
@@ -171,122 +176,40 @@ proc ::platform::identify {} {
     set id [generic]
     regexp {^([^-]+)-([^-]+)$} $id -> plat cpu
 
-    switch -- $plat {
+    switch -glob -- $plat {
 	solaris {
 	    regsub {^5} $tcl_platform(osVersion) 2 text
 	    append plat $text
 	    return "${plat}-${cpu}"
 	}
-	macosx {
+	macos* {
 	    set major [lindex [split $tcl_platform(osVersion) .] 0]
 	    if {$major > 19} {
-		set minor [lindex [split $tcl_platform(osVersion) .] 1]
-		incr major -9
-		append plat $major.[expr {$minor - 1}]
+		incr major
+		if {$major < 26} {
+		    incr major -10
+		}
+		append plat $major
 	    } else {
 		incr major -4
 		append plat 10.$major
-		return "${plat}-${cpu}"
 	    }
 	    return "${plat}-${cpu}"
 	}
 	linux {
-	    # Look for the libc*.so and determine its version
-	    # (libc5/6, libc6 further glibc 2.X)
-
+	    catch {exec ldd --version} vdata
+	    set vdata [lindex [split $vdata \n] 0]
 	    set v unknown
-
-	    # Determine in which directory to look. /lib, or /lib64.
-	    # For that we use the tcl_platform(wordSize).
-	    #
-	    # We could use the 'cpu' info, per the equivalence below,
-	    # that however would be restricted to intel. And this may
-	    # be a arm, mips, etc. system. The wordsize is more
-	    # fundamental.
-	    #
-	    # ix86   <=> (wordSize == 4) <=> 32 bit ==> /lib
-	    # x86_64 <=> (wordSize == 8) <=> 64 bit ==> /lib64
-	    #
-	    # Do not look into /lib64 even if present, if the cpu
-	    # doesn't fit.
-
-	    # TODO: Determine the prefixes (i386, x86_64, ...) for
-	    # other cpus.  The path after the generic one is utterly
-	    # specific to intel right now.  Ok, on Ubuntu, possibly
-	    # other Debian systems we may apparently be able to query
-	    # the necessary CPU code. If we can't we simply use the
-	    # hardwired fallback.
-
-	    switch -exact -- $tcl_platform(wordSize) {
-		4 {
-		    lappend bases /lib
-		    if {[catch {
-			exec dpkg-architecture -qDEB_HOST_MULTIARCH
-		    } res]} {
-			lappend bases /lib/i386-linux-gnu
-		    } else {
-			# dpkg-arch returns the full tripled, not just cpu.
-			lappend bases /lib/$res
-		    }
-		}
-		8 {
-		    lappend bases /lib64
-		    if {[catch {
-			exec dpkg-architecture -qDEB_HOST_MULTIARCH
-		    } res]} {
-			lappend bases /lib/x86_64-linux-gnu
-		    } else {
-			# dpkg-arch returns the full tripled, not just cpu.
-			lappend bases /lib/$res
-		    }
-		}
-		default {
-		    return -code error "Bad wordSize $tcl_platform(wordSize), expected 4 or 8"
-		}
+	    if {[string match -nocase *GLIBC* $vdata] || [string match -nocase "*GNU libc*" $vdata]} {
+		set v glibc
+	    } elseif {[string match -nocase *MUSL* $vdata]} {
+		set v musl
 	    }
-
-	    foreach base $bases {
-		if {[LibcVersion $base -> v]} break
-	    }
-
-	    append plat -$v
-	    return "${plat}-${cpu}"
+	    return "${plat}-${v}-${cpu}"
 	}
     }
 
     return $id
-}
-
-proc ::platform::LibcVersion {base _->_ vv} {
-    upvar 1 $vv v
-    set libclist [lsort [glob -nocomplain -directory $base libc*]]
-
-    if {![llength $libclist]} { return 0 }
-
-    set libc [lindex $libclist 0]
-
-    # Try executing the library first. This should succeed
-    # for a glibc library, and return the version
-    # information.
-
-    if {![catch {
-	set vdata [lindex [split [exec $libc] \n] 0]
-    }]} {
-	regexp {version ([0-9]+(\.[0-9]+)*)} $vdata -> v
-	foreach {major minor} [split $v .] break
-	set v glibc${major}.${minor}
-	return 1
-    } else {
-	# We had trouble executing the library. We are now
-	# inspecting its name to determine the version
-	# number. This code by Larry McVoy.
-
-	if {[regexp -- {libc-([0-9]+)\.([0-9]+)} $libc -> major minor]} {
-	    set v glibc${major}.${minor}
-	    return 1
-	}
-    }
-    return 0
 }
 
 # -- platform::patterns
@@ -313,7 +236,7 @@ proc ::platform::patterns {id} {
 	solaris*-* {
 	    if {[regexp {solaris([^-]*)-(.*)} $id -> v cpu]} {
 		if {$v eq ""} {return $id}
-		foreach {major minor} [split $v .] break
+		lassign [split $v .] major minor
 		incr minor -1
 		for {set j $minor} {$j >= 6} {incr j -1} {
 		    lappend res solaris${major}.${j}-${cpu}
@@ -321,12 +244,9 @@ proc ::platform::patterns {id} {
 	    }
 	}
 	linux*-* {
-	    if {[regexp {linux-glibc([^-]*)-(.*)} $id -> v cpu]} {
-		foreach {major minor} [split $v .] break
-		incr minor -1
-		for {set j $minor} {$j >= 0} {incr j -1} {
-		    lappend res linux-glibc${major}.${j}-${cpu}
-		}
+	    if {[regexp {linux-(.*)-(.*)} $id -> c cpu]
+		    && ($c ne "unknown")} {
+		lappend res linux-unknown-${cpu}
 	    }
 	}
 	macosx-powerpc {
@@ -338,17 +258,18 @@ proc ::platform::patterns {id} {
 	macosx-ix86 {
 	    lappend res macosx-universal macosx-i386-x86_64
 	}
-	macosx*-*    {
+	macos*-*    {
 	    # 10.5+,11.0+
-	    if {[regexp {macosx([^-]*)-(.*)} $id -> v cpu]} {
+	    if {[regexp {macosx?([^-]*)-(.*)} $id -> v cpu]} {
 
+		lassign [split $v.15 .] major minor
 		switch -exact -- $cpu {
 		    ix86    {
 			lappend alt i386-x86_64
 			lappend alt universal
 		    }
 		    x86_64  {
-			if {[lindex [split $::tcl_platform(osVersion) .] 0] < 19} {
+			if {$major < 11 && $minor < 15} {
 			    set alt i386-x86_64
 			} else {
 			    set alt {}
@@ -361,56 +282,45 @@ proc ::platform::patterns {id} {
 		}
 
 		if {$v ne ""} {
-		    foreach {major minor} [split $v .] break
-
 		    set res {}
-		    if {$major eq 13} {
-			# Add 13.0 to 13.minor to patterns.
-			for {set j $minor} {$j >= 0} {incr j -1} {
-			    lappend res macosx${major}.${j}-${cpu}
-			    foreach a $alt {
-				lappend res macosx${major}.${j}-$a
-			    }
+		    while {$major > 10} {
+			# Add $major to patterns.
+			lappend res macos${major}-${cpu}
+			foreach a $alt {
+			    lappend res macos${major}-$a
 			}
-			set major 12
-			set minor 5
-		    }
-		    if {$major eq 12} {
-			# Add 12.0 to 12.minor to patterns.
-			for {set j $minor} {$j >= 0} {incr j -1} {
-			    lappend res macosx${major}.${j}-${cpu}
-			    foreach a $alt {
-				lappend res macosx${major}.${j}-$a
-			    }
+			incr major -1
+			if {$major == 25} {
+			    set major 15
 			}
-			set major 11
-			set minor 5
 		    }
-		    if {$major eq 11} {
-			# Add 11.0 to 11.minor to patterns.
-			for {set j $minor} {$j >= 0} {incr j -1} {
-			    lappend res macosx${major}.${j}-${cpu}
-			    foreach a $alt {
-				lappend res macosx${major}.${j}-$a
-			    }
-			}
-			set major 10
-			set minor 15
-		    }
-		    # Add 10.5 to 10.minor to patterns.
-		    for {set j $minor} {$j >= 5} {incr j -1} {
+		    # Add 10.9 to 10.minor to patterns.
+		    for {set j $minor} {$j >= 9} {incr j -1} {
 			if {$cpu ne "arm"} {
 			    lappend res macosx${major}.${j}-${cpu}
+			}
+			if {($cpu eq "x86_64") && ($j == 14) && ![package vsatisfies [package provide Tcl] 9.0-]} {
+			    set alt i386-x86_64
 			}
 			foreach a $alt {
 			    lappend res macosx${major}.${j}-$a
 			}
 		    }
-
-		    # Add unversioned patterns for 10.3/10.4 builds.
-		    lappend res macosx-${cpu}
-		    foreach a $alt {
-			lappend res macosx-$a
+		    if {![package vsatisfies [package provide Tcl] 9.0-]} {
+			# Continue up to 10.5.
+			for {} {$j >= 5} {incr j -1} {
+			    if {$cpu ne "arm"} {
+				lappend res macosx${major}.${j}-${cpu}
+			    }
+			    foreach a $alt {
+				lappend res macosx${major}.${j}-$a
+			    }
+			}
+			# Add unversioned patterns for 10.3/10.4 builds.
+			lappend res macosx-${cpu}
+			foreach a $alt {
+			    lappend res macosx-$a
+			}
 		    }
 		} else {
 		    # No version, just do unversioned patterns.
@@ -427,11 +337,10 @@ proc ::platform::patterns {id} {
     return $res
 }
 
-
 # ### ### ### ######### ######### #########
 ## Ready
 
-package provide platform 1.0.19
+package provide platform 1.2b1
 
 # ### ### ### ######### ######### #########
 ## Demo application

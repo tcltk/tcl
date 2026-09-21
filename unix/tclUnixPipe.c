@@ -213,7 +213,8 @@ TclpCreateTempFile(
 	Tcl_DString dstring;
 	char *native;
 
-	if (Tcl_UtfToExternalDStringEx(NULL, NULL, contents, TCL_INDEX_NONE, 0, &dstring, NULL) != TCL_OK) {
+	if (Tcl_UtfToExternalDStringEx(NULL, NULL, contents, TCL_INDEX_NONE,
+		0, &dstring, NULL) != TCL_OK) {
 	    close(fd);
 	    Tcl_DStringFree(&dstring);
 	    return NULL;
@@ -238,7 +239,7 @@ TclpCreateTempFile(
  *	This function returns unique filename.
  *
  * Results:
- *	Returns a valid Tcl_Obj* with refCount 0, or NULL on failure.
+ *	Returns a valid Tcl_Obj * with refCount 0, or NULL on failure.
  *
  * Side effects:
  *	None.
@@ -356,7 +357,7 @@ TclpCreatePipe(
 
 int
 TclpCloseFile(
-    TclFile file)	/* The file to close. */
+    TclFile file)		/* The file to close. */
 {
     int fd = GetFd(file);
 
@@ -462,7 +463,8 @@ TclpCreateProcess(
     newArgv = (char **)TclStackAlloc(interp, (argc+1) * sizeof(char *));
     newArgv[argc] = NULL;
     for (i = 0; i < argc; i++) {
-	if (Tcl_UtfToExternalDStringEx(interp, NULL, argv[i], TCL_INDEX_NONE, 0, &dsArray[i], NULL) != TCL_OK) {
+	if (Tcl_UtfToExternalDStringEx(interp, NULL, argv[i], TCL_INDEX_NONE,
+		0, &dsArray[i], NULL) != TCL_OK) {
 	    while (i-- > 0) {
 		Tcl_DStringFree(&dsArray[i]);
 	    }
@@ -578,7 +580,7 @@ TclpCreateProcess(
 		    "%dforked process couldn't set up input/output", errno);
 	    len = strlen(errSpace);
 	    if (len != (size_t) write(fd, errSpace, len)) {
-		    Tcl_Panic("TclpCreateProcess: unable to write to errPipeOut");
+		Tcl_Panic("TclpCreateProcess: unable to write to errPipeOut");
 	    }
 	    _exit(1);
 	}
@@ -1221,6 +1223,25 @@ PipeOutputProc(
 /*
  *----------------------------------------------------------------------
  *
+ * PipeWatchNotifyChannelWrapper --
+ *
+ *	Workaround for Bug ad5a57f2f271: Tcl_NotifyChannel is not a
+ *	Tcl_FileProc, so do not pass it to directly to Tcl_CreateFileHandler.
+ *	Instead, pass a wrapper which is a Tcl_FileProc.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+PipeWatchNotifyChannelWrapper(
+    void *clientData,
+    int mask)
+{
+    Tcl_NotifyChannel((Tcl_Channel)clientData, mask);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * PipeWatchProc --
  *
  *	Initialize the notifier to watch the fds from this channel.
@@ -1234,22 +1255,6 @@ PipeOutputProc(
  *
  *----------------------------------------------------------------------
  */
-
-/*
- * Bug ad5a57f2f271: Tcl_NotifyChannel is not a Tcl_FileProc,
- * so do not pass it to directly to Tcl_CreateFileHandler.
- * Instead, pass a wrapper which is a Tcl_FileProc.
- */
-
-static void
-PipeWatchNotifyChannelWrapper(
-    void *clientData,
-    int mask)
-{
-    Tcl_Channel channel = (Tcl_Channel)clientData;
-
-    Tcl_NotifyChannel(channel, mask);
-}
 
 static void
 PipeWatchProc(
@@ -1372,7 +1377,7 @@ int
 Tcl_PidObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const *objv)	/* Argument strings. */
 {
     Tcl_Channel chan;

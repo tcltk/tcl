@@ -39,7 +39,7 @@ static SyncObjRecord condRecord = {0, 0, NULL};
 static void		ForgetSyncObject(void *objPtr, SyncObjRecord *recPtr);
 static void		RememberSyncObject(void *objPtr,
 			    SyncObjRecord *recPtr);
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -338,7 +338,8 @@ Tcl_ConditionFinalize(
  */
 
 void
-TclFinalizeThreadData(int quick)
+TclFinalizeThreadData(
+    int quick)
 {
     TclFinalizeThreadDataThread();
 #if TCL_THREADS && defined(USE_THREAD_ALLOC)

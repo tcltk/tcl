@@ -20,11 +20,11 @@
 
 #define SET_BITS(var, bits)	((var) |= (bits))
 #define CLEAR_BITS(var, bits)	((var) &= ~(bits))
-#define GOT_BITS(var, bits)     (((var) & (bits)) != 0)
+#define GOT_BITS(var, bits)	(((var) & (bits)) != 0)
 
 /* "sock" + a pointer in hex + \0 */
-#define SOCK_CHAN_LENGTH        (4 + sizeof(void *) * 2 + 1)
-#define SOCK_TEMPLATE           "sock%" TCL_Z_MODIFIER "x"
+#define SOCK_CHAN_LENGTH	(4 + sizeof(void *) * 2 + 1)
+#define SOCK_TEMPLATE		"sock%" TCL_Z_MODIFIER "x"
 
 #undef SOCKET   /* Possible conflict with win32 SOCKET */
 
@@ -84,18 +84,18 @@ struct TcpState {
  * These bits may be OR'ed together into the "flags" field of a TcpState
  * structure.
  */
+enum TcpStateFlags {
+    TCP_NONBLOCKING = 1<<0,	/* Socket with non-blocking I/O */
+    TCP_ASYNC_CONNECT = 1<<1,	/* Async connect in progress. */
+    TCP_ASYNC_PENDING = 1<<4,	/* TcpConnect was called to process an async
+				 * connect. This flag indicates that reentry
+				 * is still pending */
+    TCP_ASYNC_FAILED = 1<<5,	/* An async connect finally failed. */
 
-#define TCP_NONBLOCKING		(1<<0)	/* Socket with non-blocking I/O */
-#define TCP_ASYNC_CONNECT	(1<<1)	/* Async connect in progress. */
-#define TCP_ASYNC_PENDING	(1<<4)	/* TcpConnect was called to
-					 * process an async connect. This
-					 * flag indicates that reentry is
-					 * still pending */
-#define TCP_ASYNC_FAILED	(1<<5)	/* An async connect finally failed */
-
-#define TCP_ASYNC_TEST_MODE	(1<<8)	/* Async testing activated.  Do not
-					 * automatically continue connection
-					 * process. */
+    TCP_ASYNC_TEST_MODE = 1<<8	/* Async testing activated.  Do not
+				 * automatically continue connection
+				 * process. */
+};
 
 /*
  * The following defines the maximum length of the listen queue. This is the
@@ -180,24 +180,6 @@ static TclInitProcessGlobalValueProc InitializeHostName;
 static ProcessGlobalValue hostName =
 	{0, 0, NULL, NULL, InitializeHostName, NULL, NULL};
 
-#if 0
-/* printf debugging */
-void
-printaddrinfo(
-    struct addrinfo *addrlist,
-    char *prefix)
-{
-    char host[NI_MAXHOST], port[NI_MAXSERV];
-    struct addrinfo *ai;
-
-    for (ai = addrlist; ai != NULL; ai = ai->ai_next) {
-	getnameinfo(ai->ai_addr, ai->ai_addrlen,
-		host, sizeof(host), port, sizeof(port),
-		NI_NUMERICHOST|NI_NUMERICSERV);
-	fprintf(stderr,"%s: %s:%s\n", prefix, host, port);
-    }
-}
-#endif
 /*
  * ----------------------------------------------------------------------
  *
@@ -616,7 +598,6 @@ TcpCloseProc(
 	if (close(fds->fd) < 0) {
 	    errorCode = errno;
 	}
-
     }
     fds = statePtr->fds.next;
     while (fds != NULL) {
@@ -1107,15 +1088,15 @@ TcpThreadActionProc(
 	 * so the callback will run in the correct thread, bug [f583715154].
 	 */
 	switch (action) {
-	  case TCL_CHANNEL_THREAD_REMOVE:
+	case TCL_CHANNEL_THREAD_REMOVE:
 	    CLEAR_BITS(statePtr->flags, TCP_ASYNC_PENDING);
 	    Tcl_DeleteFileHandler(statePtr->fds.fd);
-	  break;
-	  case TCL_CHANNEL_THREAD_INSERT:
+	    break;
+	case TCL_CHANNEL_THREAD_INSERT:
 	    Tcl_CreateFileHandler(statePtr->fds.fd,
-		TCL_WRITABLE | TCL_EXCEPTION, TcpAsyncCallback, statePtr);
+		    TCL_WRITABLE | TCL_EXCEPTION, TcpAsyncCallback, statePtr);
 	    SET_BITS(statePtr->flags, TCP_ASYNC_PENDING);
-	  break;
+	    break;
 	}
     }
 }
@@ -1193,7 +1174,6 @@ TcpWatchProc(
 
 	statePtr->filehandlers = mask;
     } else if (mask) {
-
 	/*
 	 * Whether it is a bug or feature or otherwise, it is a fact of life
 	 * that on at least some Linux kernels select() fails to report that a
@@ -1279,9 +1259,9 @@ TcpAsyncCallback(
  *	This function opens a new socket in client mode.
  *
  * Results:
- *      TCL_OK, if the socket was successfully connected or an asynchronous
- *      connection is in progress. If an error occurs, TCL_ERROR is returned
- *      and an error message is left in interp.
+ *	TCL_OK, if the socket was successfully connected or an asynchronous
+ *	connection is in progress. If an error occurs, TCL_ERROR is returned
+ *	and an error message is left in interp.
  *
  * Side effects:
  *	Opens a socket.
@@ -1392,7 +1372,7 @@ TcpConnect(
 	     */
 
 	    ret = connect(statePtr->fds.fd, statePtr->addr->ai_addr,
-			statePtr->addr->ai_addrlen);
+		    statePtr->addr->ai_addrlen);
 	    if (ret < 0) {
 		error = errno;
 	    }
@@ -1681,7 +1661,7 @@ Tcl_OpenTcpServerEx(
     int retry = 0;
 #define MAXRETRY 10
 
- repeat:
+  repeat:
     if (retry > 0) {
 	if (statePtr != NULL) {
 	    TcpCloseProc(statePtr, NULL);
@@ -1885,7 +1865,8 @@ Tcl_OpenTcpServerEx(
  *----------------------------------------------------------------------
  *
  * TcpAccept --
- *	Accept a TCP socket connection.	 This is called by the event loop.
+ *
+ *	Accept a TCP socket connection. This is called by the event loop.
  *
  * Results:
  *	None.

@@ -29,16 +29,13 @@ int
 \fBTcl_GetInterpPath\fR(\fIinterp, childInterp\fR)
 .sp
 int
-\fBTcl_CreateAlias\fR(\fIchildInterp, childCmd, targetInterp, targetCmd,
-                argc, argv\fR)
+\fBTcl_CreateAlias\fR(\fIchildInterp, childCmd, targetInterp, targetCmd, argc, argv\fR)
 .sp
 int
-\fBTcl_CreateAliasObj\fR(\fIchildInterp, childCmd, targetInterp, targetCmd,
-                   objc, objv\fR)
+\fBTcl_CreateAliasObj\fR(\fIchildInterp, childCmd, targetInterp, targetCmd, objc, objv\fR)
 .sp
 int
-\fBTcl_GetAliasObj\fR(\fIinterp, childCmd, targetInterpPtr, targetCmdPtr,
-                objcPtr, objvPtr\fR)
+\fBTcl_GetAliasObj\fR(\fIinterp, childCmd, targetInterpPtr, targetCmdPtr, objcPtr, objvPtr\fR)
 .sp
 int
 \fBTcl_ExposeCommand\fR(\fIinterp, hiddenCmdName, cmdName\fR)
@@ -87,8 +84,8 @@ for an alias.
 Pointer to location to store count of additional value arguments to be
 passed to the alias. The location is in storage owned by the caller.
 If it points to a variable which type is not \fBTcl_Size\fR, a compiler
-warning will be generated. If your extensions is compiled with -DTCL_8_API,
-this function will return TCL_ERROR for aliases with more than INT_MAX
+warning will be generated. If your extensions is compiled with \fB-DTCL_8_API\fR,
+this function will return \fBTCL_ERROR\fR for aliases with more than INT_MAX
 value arguments, otherwise expect it to crash
 .AP Tcl_Obj ***objvPtr out
 Pointer to location to store a vector of Tcl_Obj structures, the additional

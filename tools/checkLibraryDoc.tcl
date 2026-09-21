@@ -19,7 +19,6 @@
 # Copyright © 1998-1999 Scriptics Corporation.
 # All rights reserved.
 
-
 lappend auto_path "c:/program\ files/tclpro1.2/win32-ix86/bin"
 #lappend auto_path "/home/surles/cvs/tclx8.0/tcl/unix"
 if {[catch {package require Tclx}]} {

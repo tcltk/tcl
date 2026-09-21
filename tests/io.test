@@ -45,6 +45,7 @@ testConstraint testchannelevent [llength [info commands testchannelevent]]
 testConstraint testmainthread   [llength [info commands testmainthread]]
 testConstraint testobj		[llength [info commands testobj]]
 testConstraint testservicemode  [llength [info commands testservicemode]]
+testConstraint notInCIenv           [expr {![info exists ::env(CI)]}]
 # Some things fail under Windows in Continuous Integration systems for subtle
 # reasons such as CI often running with elevated privileges in a container.
 testConstraint notWinCI [expr {
@@ -78,7 +79,7 @@ close $f
 
 set path(cat) [makeFile {
     set f stdin
-    if {$argv != ""} {
+    if {$argv ne ""} {
 	set f [open [lindex $argv 0]]
     }
     fconfigure $f -translation binary -blocking 0 -eofchar \x1A
@@ -1887,7 +1888,7 @@ test io-13.14 {Translation crlf: \r followed by encoding error after buffer boun
 # Tcl_SetStdChannel and Tcl_GetStdChannel. Incidentally we are
 # also testing channel table management.
 
-if {[info commands testchannel] != ""} {
+if {[info commands testchannel] ne ""} {
     set consoleFileNames [lsort [testchannel open]]
 } else {
     # just to avoid an error
@@ -2932,7 +2933,7 @@ test io-29.25 {Implicit flush with Tcl_Flush to command pipelines} {stdio fileev
     close $f
     set x
 } "Line 1\nLine 2\n"
-test io-29.26 {Tcl_Flush, Tcl_Write on bidirectional pipelines} {stdio unixExecs} {
+test io-29.26 {Tcl_Flush, Tcl_Write on bidirectional pipelines} {stdio unixExecs notInCIenv} {
     set f [open "|[list cat -u]" r+]
     puts $f "Line1"
     flush $f
@@ -3110,7 +3111,7 @@ test io-29.33b {TIP#398, no implicit flush of nonblocking on exit} {exec} {
 	close $ff
 	expr {($t2-$t1)/2000 ? $t2-$t1 : 0}
 } 0
-test io-29.34 {Tcl_Close, async flush on close, using sockets} {socket tempNotMac fileevent} {
+test io-29.34 {Tcl_Close, async flush on close, using sockets} {socket fileevent} {
     variable c 0
     variable x running
     set l abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz
@@ -3137,8 +3138,8 @@ test io-29.34 {Tcl_Close, async flush on close, using sockets} {socket tempNotMa
 	    incr c
 	}
     }
-    set ss [socket -server [namespace code accept] -myaddr 127.0.0.1 0]
-    set cs [socket 127.0.0.1 [lindex [fconfigure $ss -sockname] 2]]
+    set ss [socket -server [namespace code accept] -myaddr [tcltests::localIPv4Address] 0]
+    set cs [socket [tcltests::localIPv4Address] [lindex [fconfigure $ss -sockname] 2]]
     vwait [namespace which -variable x]
     fconfigure $cs -blocking off
     writelots $cs $l
@@ -3147,7 +3148,7 @@ test io-29.34 {Tcl_Close, async flush on close, using sockets} {socket tempNotMa
     vwait [namespace which -variable x]
     set c
 } 9000
-test io-29.35 {Tcl_Close vs fileevent vs multiple interpreters} {socket tempNotMac fileevent} {
+test io-29.35 {Tcl_Close vs fileevent vs multiple interpreters} {socket fileevent} {
     # On Mac, this test screws up sockets such that subsequent tests using port 2828
     # either cause errors or panic().
 
@@ -3155,12 +3156,12 @@ test io-29.35 {Tcl_Close vs fileevent vs multiple interpreters} {socket tempNotM
     catch {interp delete y}
     interp create x
     interp create y
-    set s [socket -server [namespace code accept] -myaddr 127.0.0.1 0]
+    set s [socket -server [namespace code accept] -myaddr [tcltests::localIPv4Address] 0]
     proc accept {s a p} {
 	puts $s hello
 	close $s
     }
-    set c [socket 127.0.0.1 [lindex [fconfigure $s -sockname] 2]]
+    set c [socket [tcltests::localIPv4Address] [lindex [fconfigure $s -sockname] 2]]
     interp share {} $c x
     interp share {} $c y
     close $c
@@ -3190,9 +3191,9 @@ test io-29.35 {Tcl_Close vs fileevent vs multiple interpreters} {socket tempNotM
 } ""
 
 test io-29.36.1 {gets on translation auto with "\r" in QA communication mode, possible regression, bug [b3977d199b]} -constraints {
-    socket tempNotMac fileevent
+    socket fileevent
 } -setup {
-    set s [open "|[list [interpreter] << {
+    set s [open "|[list [interpreter] << [string map [list @@TCLTEST_IPV4@@ [tcltests::localIPv4Address]] {
     proc accept {so args} {
 	fconfigure $so -translation binary
 	puts -nonewline $so "who are you?\r"; flush $so
@@ -3202,19 +3203,19 @@ test io-29.36.1 {gets on translation auto with "\r" in QA communication mode, po
 	close $so
 	set ::done $a
     }
-    set s [socket -server [namespace code accept] -myaddr 127.0.0.1 0]
+    set s [socket -server [namespace code accept] -myaddr @@TCLTEST_IPV4@@ 0]
     puts [lindex [fconfigure $s -sockname] 2]
     foreach c {1 2} {
 	vwait ::done
 	puts $::done
     }
-    }]" r]
+    }]]" r]
     set c {}
     set result {}
 } -body {
     set port [gets $s]
     foreach t {{cr lf} {auto lf}} {
-	set c [socket 127.0.0.1 $port]
+	set c [socket [tcltests::localIPv4Address] $port]
 	fconfigure $c -buffering line -translation $t
 	lappend result $t
 	while {1} {
@@ -3235,9 +3236,9 @@ test io-29.36.1 {gets on translation auto with "\r" in QA communication mode, po
     unset -nocomplain s c port t q
 } -result [list {cr lf} "really client?" yes {auto lf} "really client?" yes]
 test io-29.36.2 {gets on translation auto with "\r\n" in different buffers, bug [b3977d199b]} -constraints {
-    socket tempNotMac fileevent
+    socket fileevent
 } -setup {
-    set s [socket -server [namespace code accept] -myaddr 127.0.0.1 0]
+    set s [socket -server [namespace code accept] -myaddr [tcltests::localIPv4Address] 0]
     set c {}
 } -body {
     set ::cnt 0
@@ -3263,7 +3264,7 @@ test io-29.36.2 {gets on translation auto with "\r\n" in different buffers, bug 
 	close $so
     }
     while {$::cnt < 6} { incr ::cnt
-	set c [socket 127.0.0.1 [lindex [fconfigure $s -sockname] 2]]
+	set c [socket [tcltests::localIPv4Address] [lindex [fconfigure $s -sockname] 2]]
 	fconfigure $c -blocking 0 -buffering line -translation auto
 	fileevent $c readable [list apply {c {
 	    if {[gets $c line] >= 0} {
@@ -5826,9 +5827,9 @@ test io-39.17 {Tcl_SetChannelOption: -encoding, clearing CHANNEL_NEED_MORE_DATA}
 test io-39.18 {Tcl_SetChannelOption, setting read mode independently} \
 	{socket} {
     proc accept {s a p} {close $s}
-    set s1 [socket -server [namespace code accept] -myaddr 127.0.0.1 0]
+    set s1 [socket -server [namespace code accept] -myaddr [tcltests::localIPv4Address] 0]
     set port [lindex [fconfigure $s1 -sockname] 2]
-    set s2 [socket 127.0.0.1 $port]
+    set s2 [socket [tcltests::localIPv4Address] $port]
     update
     fconfigure $s2 -translation {auto lf}
     set modes [fconfigure $s2 -translation]
@@ -5839,9 +5840,9 @@ test io-39.18 {Tcl_SetChannelOption, setting read mode independently} \
 test io-39.19 {Tcl_SetChannelOption, setting read mode independently} \
 	{socket} {
     proc accept {s a p} {close $s}
-    set s1 [socket -server [namespace code accept] -myaddr 127.0.0.1 0]
+    set s1 [socket -server [namespace code accept] -myaddr [tcltests::localIPv4Address] 0]
     set port [lindex [fconfigure $s1 -sockname] 2]
-    set s2 [socket 127.0.0.1 $port]
+    set s2 [socket [tcltests::localIPv4Address] $port]
     update
     fconfigure $s2 -translation {auto crlf}
     set modes [fconfigure $s2 -translation]
@@ -5852,9 +5853,9 @@ test io-39.19 {Tcl_SetChannelOption, setting read mode independently} \
 test io-39.20 {Tcl_SetChannelOption, setting read mode independently} \
 	{socket} {
     proc accept {s a p} {close $s}
-    set s1 [socket -server [namespace code accept] -myaddr 127.0.0.1 0]
+    set s1 [socket -server [namespace code accept] -myaddr [tcltests::localIPv4Address] 0]
     set port [lindex [fconfigure $s1 -sockname] 2]
-    set s2 [socket 127.0.0.1 $port]
+    set s2 [socket [tcltests::localIPv4Address] $port]
     update
     fconfigure $s2 -translation {auto cr}
     set modes [fconfigure $s2 -translation]
@@ -5865,9 +5866,9 @@ test io-39.20 {Tcl_SetChannelOption, setting read mode independently} \
 test io-39.21 {Tcl_SetChannelOption, setting read mode independently} \
 	{socket} {
     proc accept {s a p} {close $s}
-    set s1 [socket -server [namespace code accept] -myaddr 127.0.0.1 0]
+    set s1 [socket -server [namespace code accept] -myaddr [tcltests::localIPv4Address] 0]
     set port [lindex [fconfigure $s1 -sockname] 2]
-    set s2 [socket 127.0.0.1 $port]
+    set s2 [socket [tcltests::localIPv4Address] $port]
     update
     fconfigure $s2 -translation {auto auto}
     set modes [fconfigure $s2 -translation]
@@ -5902,7 +5903,7 @@ test io-39.22a {Tcl_SetChannelOption, invariance} -constraints deprecated -body 
 test io-39.23 {Tcl_GetChannelOption, server socket is not readable or
 	writable, it should still have valid -eofchar and -translation options } {
     set l [list]
-    set sock [socket -server [namespace code accept] -myaddr 127.0.0.1 0]
+    set sock [socket -server [namespace code accept] -myaddr [tcltests::localIPv4Address] 0]
     lappend l [fconfigure $sock -eofchar] [fconfigure $sock -translation]
     close $sock
     set l
@@ -5910,7 +5911,7 @@ test io-39.23 {Tcl_GetChannelOption, server socket is not readable or
 test io-39.24 {Tcl_SetChannelOption, server socket is not readable or
 	writable so we can't change -eofchar or -translation } {
     set l [list]
-    set sock [socket -server [namespace code accept] -myaddr 127.0.0.1 0]
+    set sock [socket -server [namespace code accept] -myaddr [tcltests::localIPv4Address] 0]
     fconfigure $sock -eofchar D -translation lf
     lappend l [fconfigure $sock -eofchar] [fconfigure $sock -translation]
     close $sock
@@ -7367,29 +7368,29 @@ test io-51.1 {Test old socket deletion on Macintosh} {socket} {
 	close $s
 	set wait done
     }
-    set ss [socket -server [namespace code accept] -myaddr 127.0.0.1 0]
+    set ss [socket -server [namespace code accept] -myaddr [tcltests::localIPv4Address] 0]
     set port [lindex [fconfigure $ss -sockname] 2]
 
     variable wait ""
-    set cs [socket 127.0.0.1 $port]
+    set cs [socket [tcltests::localIPv4Address] $port]
     vwait [namespace which -variable wait]
     lappend result [gets $cs]
     close $cs
 
     set wait ""
-    set cs [socket 127.0.0.1 $port]
+    set cs [socket [tcltests::localIPv4Address] $port]
     vwait [namespace which -variable wait]
     lappend result [gets $cs]
     close $cs
 
     set wait ""
-    set cs [socket 127.0.0.1 $port]
+    set cs [socket [tcltests::localIPv4Address] $port]
     vwait [namespace which -variable wait]
     lappend result [gets $cs]
     close $cs
 
     set wait ""
-    set cs [socket 127.0.0.1 $port]
+    set cs [socket [tcltests::localIPv4Address] $port]
     vwait [namespace which -variable wait]
     lappend result [gets $cs]
     close $cs
@@ -8104,9 +8105,9 @@ proc FcopyTestDone {bytes {error {}}} {
 }
 test io-53.5 {CopyData: error during fcopy} {socket fcopy} {
     variable fcopyTestDone
-    set listen [socket -server [namespace code FcopyTestAccept] -myaddr 127.0.0.1 0]
+    set listen [socket -server [namespace code FcopyTestAccept] -myaddr [tcltests::localIPv4Address] 0]
     set in [open $thisScript]	;# 126 K
-    set out [socket 127.0.0.1 [lindex [fconfigure $listen -sockname] 2]]
+    set out [socket [tcltests::localIPv4Address] [lindex [fconfigure $listen -sockname] 2]]
     catch {unset fcopyTestDone}
     close $listen	;# This means the socket open never really succeeds
     fconfigure $in -encoding utf-8
@@ -8364,7 +8365,7 @@ test io-53.10 {Bug 1350564, multi-directional fcopy} -setup {
     set err [makeFile {} err]
     set pipe [open "|[list [info nameofexecutable] 2> $err]" r+]
     fconfigure $pipe -translation binary -buffering line
-    puts $pipe {
+    puts $pipe [string map [list @@TCLTEST_IPV4@@ [tcltests::localIPv4Address]] {
 	fconfigure stderr -buffering line
 	# Kill server when pipe closed by invoker.
 	proc bye args {
@@ -8393,13 +8394,13 @@ test io-53.10 {Bug 1350564, multi-directional fcopy} -setup {
 	}
 	puts stderr SRV
 	set l {}
-	set srv [socket -server new -myaddr 127.0.0.1 0]
+	set srv [socket -server new -myaddr @@TCLTEST_IPV4@@ 0]
 	set port [lindex [fconfigure $srv -sockname] 2]
 	puts stderr WAITING
 	fileevent stdin readable bye
 	puts "OK $port"
 	vwait forever
-    }
+    }]
     # wait for OK from server.
     lassign [gets $pipe] ok port
     # Now the two clients.
@@ -8408,8 +8409,8 @@ test io-53.10 {Bug 1350564, multi-directional fcopy} -setup {
 	lappend ::forever [gets $sock]
 	return
     }
-    set a [socket 127.0.0.1 $port]
-    set b [socket 127.0.0.1 $port]
+    set a [socket [tcltests::localIPv4Address] $port]
+    set b [socket [tcltests::localIPv4Address] $port]
     fconfigure $a -translation binary -buffering none
     fconfigure $b -translation binary -buffering none
     fileevent  $a readable [list ::done $a]
@@ -8715,14 +8716,14 @@ test io-54.1 {Recursive channel events} {socket fileevent notWinCI} {
 	}
 	incr x
     }
-    set ss [socket -server [namespace code accept] -myaddr 127.0.0.1 0]
+    set ss [socket -server [namespace code accept] -myaddr [tcltests::localIPv4Address] 0]
 
     # We need to delay on some systems until the creation of the
     # server socket completes.
 
     set done 0
     for {set i 0} {$i < 10} {incr i} {
-	if {![catch {set cs [socket 127.0.0.1 [lindex [fconfigure $ss -sockname] 2]]}]} {
+	if {![catch {set cs [socket [tcltests::localIPv4Address] [lindex [fconfigure $ss -sockname] 2]]}]} {
 	    set done 1
 	    break
 	}
@@ -8751,7 +8752,7 @@ test io-54.1 {Recursive channel events} {socket fileevent notWinCI} {
 test io-54.2 {Testing for busy-wait in recursive channel events} {socket fileevent} {
     set accept {}
     set after {}
-    variable s [socket -server [namespace code accept] -myaddr 127.0.0.1 0]
+    variable s [socket -server [namespace code accept] -myaddr [tcltests::localIPv4Address] 0]
     proc accept {s a p} {
 	variable counter
 	variable accept
@@ -8767,7 +8768,7 @@ test io-54.2 {Testing for busy-wait in recursive channel events} {socket fileeve
 
 	incr counter
 	set l [gets $s]
-	if {"$l" == ""} {
+	if {"$l" eq ""} {
 	    fileevent $s readable [namespace code "doit1 $s"]
 	    set after [after 1000 [namespace code newline]]
 	}
@@ -8785,7 +8786,7 @@ test io-54.2 {Testing for busy-wait in recursive channel events} {socket fileeve
 	variable s
 	variable writer
 
-	set writer [socket 127.0.0.1 [lindex [fconfigure $s -sockname] 2]]
+	set writer [socket [tcltests::localIPv4Address] [lindex [fconfigure $s -sockname] 2]]
 	fconfigure $writer -buffering line
 	puts -nonewline $writer hello
 	flush $writer
@@ -8861,8 +8862,8 @@ test io-57.1 {buffered data and file events, gets} {fileevent} {
 	variable s2
 	set s2 $sock
     }
-    set server [socket -server [namespace code accept] -myaddr 127.0.0.1 0]
-    set s [socket 127.0.0.1 [lindex [fconfigure $server -sockname] 2]]
+    set server [socket -server [namespace code accept] -myaddr [tcltests::localIPv4Address] 0]
+    set s [socket [tcltests::localIPv4Address] [lindex [fconfigure $server -sockname] 2]]
     variable s2
     vwait [namespace which -variable s2]
     update
@@ -8884,8 +8885,8 @@ test io-57.2 {buffered data and file events, read} {fileevent} {
 	variable s2
 	set s2 $sock
     }
-    set server [socket -server [namespace code accept] -myaddr 127.0.0.1 0]
-    set s [socket 127.0.0.1 [lindex [fconfigure $server -sockname] 2]]
+    set server [socket -server [namespace code accept] -myaddr [tcltests::localIPv4Address] 0]
+    set s [socket [tcltests::localIPv4Address] [lindex [fconfigure $server -sockname] 2]]
     variable s2
     vwait [namespace which -variable s2]
     update

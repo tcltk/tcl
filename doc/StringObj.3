@@ -88,11 +88,12 @@ int
 .SH ARGUMENTS
 .AS "const Tcl_UniChar" *appendObjPtr in/out
 .AP "const char" *bytes in
-Points to the first byte of an array of UTF-8-encoded bytes
-used to set or append to a string value.
+Points to a TUTF-8 (Tcl's internal modified UTF-8 encoding)
+byte sequence bytes used to set or append to a string value.
 This byte array may contain embedded null characters
 unless \fInumChars\fR is negative.  (Applications needing null bytes
-should represent them as the two-byte sequence \fI\e300\e200\fR, use
+should represent them as the two-byte sequence \fI0xC0 0x80\fR used
+in TUTF-8 to represent a null byte, use
 \fBTcl_ExternalToUtf\fR to convert, or \fBTcl_NewByteArrayObj\fR if
 the string is a collection of uninterpreted bytes.)
 .AP Tcl_Size length in
@@ -127,7 +128,7 @@ The location where \fBTcl_GetStringFromObj\fR will store the length
 of a value's string representation.
 May be (Tcl_Size *)NULL when not used. If it points to a variable which
 type is not \fBTcl_Size\fR, a compiler warning will be generated.
-If your extensions is compiled with -DTCL_8_API, this function will
+If your extensions is compiled with \fB-DTCL_8_API\fR, this function will
 panic for strings with more than INT_MAX bytes/characters, otherwise
 expect it to crash.
 .AP "const char" *string in
@@ -143,7 +144,7 @@ is used.
 Format control string including % conversion specifiers.
 .AP Tcl_Size objc in
 The number of elements to format or concatenate.
-.AP Tcl_Obj *objv[] in
+.AP Tcl_Obj **objv in
 The array of values to format or concatenate.
 .AP Tcl_Size newLength in
 New length for the string value of \fIobjPtr\fR, not including the

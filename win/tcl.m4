@@ -579,7 +579,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 
     if test "${GCC}" = "yes" ; then
 	extra_cflags="-pipe"
-	extra_ldflags="-pipe -static-libgcc"
+	extra_ldflags="-pipe -static-libgcc -municode"
 	AC_CACHE_CHECK(for mingw32 version of gcc,
 	    ac_cv_win32,
 	    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
@@ -597,22 +597,6 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    extra_cflags="$extra_cflags -DHAVE_CPUID=1"
 	fi
 
-	hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -mwindows -municode -Dmain=xxmain"
-	AC_CACHE_CHECK(for working -municode linker flag,
-	    ac_cv_municode,
-	AC_LINK_IFELSE([AC_LANG_PROGRAM([[
-	#include <windows.h>
-	int APIENTRY wWinMain(HINSTANCE a, HINSTANCE b, LPWSTR c, int d) {return 0;}
-	]], [[]])],
-	    [ac_cv_municode=yes],
-	    [ac_cv_municode=no])
-	)
-	CFLAGS=$hold_cflags
-	if test "$ac_cv_municode" = "yes" ; then
-	    extra_ldflags="$extra_ldflags -municode"
-	else
-	    extra_cflags="$extra_cflags -DTCL_BROKEN_MAINARGS"
-	fi
 	hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -fno-lto"
 	AC_CACHE_CHECK(for working -fno-lto,
 	    ac_cv_nolto,
@@ -626,6 +610,16 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	else
 	    CFLAGS_NOLTO=""
 	fi
+
+	AC_CACHE_CHECK([if the linker understands --disable-high-entropy-va],
+	    tcl_cv_ld_high_entropy, [
+	    hold_cflags=$CFLAGS; CFLAGS="$CFLAGS  -Wl,--disable-high-entropy-va"
+	    AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[]])],[tcl_cv_ld_high_entropy=yes],[tcl_cv_ld_high_entropy=no])
+	    CFLAGS=$hold_cflags])
+	if test $tcl_cv_ld_high_entropy = yes; then
+	    extra_ldflags="$extra_ldflags -Wl,--disable-high-entropy-va"
+	fi
+
 	AC_CACHE_CHECK([if the compiler understands -finput-charset],
 	    tcl_cv_cc_input_charset, [
 	    hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -finput-charset=UTF-8"
@@ -639,7 +633,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
     hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -Wl,--enable-auto-image-base"
     AC_CACHE_CHECK(for working --enable-auto-image-base,
 	ac_cv_enable_auto_image_base,
-    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([])],
+    AC_LINK_IFELSE([AC_LANG_PROGRAM([])],
 	[ac_cv_enable_auto_image_base=yes],
 	[ac_cv_enable_auto_image_base=no])
     )
@@ -654,7 +648,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	SHLIB_LD_LIBS='${LIBS}'
 	LIBS="-lnetapi32 -lkernel32 -luser32 -ladvapi32 -luserenv -lws2_32"
 	# mingw needs to link ole32 and oleaut32 for [send], but MSVC doesn't
-	LIBS_GUI="-lgdi32 -lcomdlg32 -limm32 -lcomctl32 -lshell32 -luuid -lole32 -loleaut32 -lwinspool"
+	LIBS_GUI="-lgdi32 -lcomdlg32 -limm32 -lcomctl32 -lshell32 -luuid -loleacc -lole32 -loleaut32 -lwinspool -luxtheme -lusp10 -ldwmapi -lmsimg32 -luiautomationcore"
 	STLIB_LD='${AR} cr'
 	RC_OUT=-o
 	RC_TYPE=
@@ -843,7 +837,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    LINKBIN="link"
 	fi
 
-	LIBS_GUI="gdi32.lib comdlg32.lib imm32.lib comctl32.lib shell32.lib uuid.lib winspool.lib"
+	LIBS_GUI="gdi32.lib comdlg32.lib imm32.lib comctl32.lib shell32.lib uuid.lib winspool.lib uxtheme.lib oleacc.lib ole32.lib usp10.lib ldwmapi.lib msimg32.lib uiautomationcore.lib"
 
 	SHLIB_LD="${LINKBIN} -dll -incremental:no ${lflags}"
 	SHLIB_LD_LIBS='${LIBS}'
@@ -888,33 +882,6 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
     fi
 
     if test "${GCC}" = "yes" ; then
-	AC_CACHE_CHECK(for SEH support in compiler,
-	    tcl_cv_seh,
-	AC_RUN_IFELSE([AC_LANG_SOURCE([[
-	    #define WIN32_LEAN_AND_MEAN
-	    #include <windows.h>
-	    #undef WIN32_LEAN_AND_MEAN
-
-	    int main(int argc, char** argv) {
-		int a, b = 0;
-		__try {
-		    a = 666 / b;
-		}
-		__except (EXCEPTION_EXECUTE_HANDLER) {
-		    return 0;
-		}
-		return 1;
-	    }
-	]])],
-	    [tcl_cv_seh=yes],
-	    [tcl_cv_seh=no],
-	    [tcl_cv_seh=no])
-	)
-	if test "$tcl_cv_seh" = "no" ; then
-	    AC_DEFINE(HAVE_NO_SEH, 1,
-		    [Defined when mingw does not support SEH])
-	fi
-
 	#
 	# Check to see if the excpt.h include file provided contains the
 	# definition for EXCEPTION_DISPOSITION; if not, which is the case
@@ -937,8 +904,6 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	AC_DEFINE(EXCEPTION_DISPOSITION, int,
 		[Defined when cygwin/mingw does not support EXCEPTION DISPOSITION])
 	fi
-
-	AC_CHECK_HEADER(stdbool.h, [AC_DEFINE(HAVE_STDBOOL_H, 1, [Do we have <stdbool.h>?])],)
 
 	# See if the compiler supports casting to a union type.
 	# This is used to stop gcc from printing a compiler
@@ -991,7 +956,7 @@ AC_DEFUN([SC_WITH_TCL], [
 	TCL_BIN_DEFAULT=../../tcl9.1/win
     fi
 
-    AC_ARG_WITH(tcl, [  --with-tcl=DIR          use Tcl 9.1 binaries from DIR],
+    AC_ARG_WITH(tcl, [  --with-tcl=DIR          use Tcl 9.x binaries from DIR],
 	    TCL_BIN_DIR=$withval, TCL_BIN_DIR=`cd $TCL_BIN_DEFAULT; pwd`)
     if test ! -d $TCL_BIN_DIR; then
 	AC_MSG_ERROR(Tcl directory $TCL_BIN_DIR does not exist)
@@ -1102,58 +1067,6 @@ AC_DEFUN([SC_TCL_CFG_ENCODING], [
     else
 	AC_DEFINE(TCL_CFGVAL_ENCODING,"utf-8")
     fi
-])
-
-#--------------------------------------------------------------------
-# SC_EMBED_MANIFEST
-#
-#	Figure out if we can embed the manifest where necessary
-#
-# Arguments:
-#	An optional manifest to merge into DLL/EXE.
-#
-# Results:
-#	Will define the following vars:
-#		VC_MANIFEST_EMBED_DLL
-#		VC_MANIFEST_EMBED_EXE
-#
-#--------------------------------------------------------------------
-
-AC_DEFUN([SC_EMBED_MANIFEST], [
-    AC_MSG_CHECKING(whether to embed manifest)
-    AC_ARG_ENABLE(embedded-manifest,
-	AS_HELP_STRING([--enable-embedded-manifest],
-		[embed manifest if possible (default: yes)]),
-	[embed_ok=$enableval], [embed_ok=yes])
-
-    VC_MANIFEST_EMBED_DLL=
-    VC_MANIFEST_EMBED_EXE=
-    result=no
-    if test "$embed_ok" = "yes" -a "${SHARED_BUILD}" = "1" \
-       -a "$GCC" != "yes" ; then
-	# Add the magic to embed the manifest into the dll/exe
-	AC_EGREP_CPP([manifest needed], [
-#if defined(_MSC_VER) && _MSC_VER >= 1400
-print("manifest needed")
-#endif
-	], [
-	# Could do a CHECK_PROG for mt, but should always be with MSVC8+
-	# Could add 'if test -f' check, but manifest should be created
-	# in this compiler case
-	# Add in a manifest argument that may be specified
-	# XXX Needs improvement so that the test for existence accounts
-	# XXX for a provided (known) manifest
-	VC_MANIFEST_EMBED_DLL="if test -f \[$]@.manifest ; then mt.exe -nologo -manifest \[$]@.manifest $1 -outputresource:\[$]@\;2 ; fi"
-	VC_MANIFEST_EMBED_EXE="if test -f \[$]@.manifest ; then mt.exe -nologo -manifest \[$]@.manifest $1 -outputresource:\[$]@\;1 ; fi"
-	result=yes
-	if test "x$1" != x ; then
-	    result="yes ($1)"
-	fi
-	])
-    fi
-    AC_MSG_RESULT([$result])
-    AC_SUBST(VC_MANIFEST_EMBED_DLL)
-    AC_SUBST(VC_MANIFEST_EMBED_EXE)
 ])
 
 #------------------------------------------------------------------------

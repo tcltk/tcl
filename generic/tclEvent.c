@@ -36,6 +36,13 @@ typedef struct BgError {
 } BgError;
 
 /*
+ * The assoc data key used in this file. The data associated with it is a
+ * reference to an ErrAssocData structure, and will be deallocated with
+ * BgErrorDeleteProc at the appropriate time.
+ */
+#define ASSOC_KEY "tclBgError"
+
+/*
  * One of the structures below is associated with the "tclBgError" assoc data
  * for each interpreter. It keeps track of the head and tail of the list of
  * pending background errors for the interpreter.
@@ -58,8 +65,8 @@ typedef struct {
  */
 
 typedef struct {
-    int *donePtr;		/* Pointer to flag to signal or NULL. */
-    int sequence;		/* Order of occurrence. */
+    Tcl_Size *donePtr;		/* Pointer to flag to signal or NULL. */
+    Tcl_Size sequence;		/* Order of occurrence. */
     int mask;			/* 0, or TCL_READABLE/TCL_WRITABLE. */
     Tcl_Obj *sourceObj;		/* Name of the event source, either a
 				 * variable name or channel name. */
@@ -96,9 +103,9 @@ TCL_DECLARE_MUTEX(exitMutex)
  * in closing of files and pipes.
  */
 
-static int inExit = 0;
+static bool inExit = false;
 
-static int subsystemsInitialized = 0;
+static bool subsystemsInitialized = false;
 
 static const char ENCODING_ERROR[] = "\n\t(encoding error in stderr)";
 
@@ -113,7 +120,7 @@ static Tcl_ExitProc *appExitPtr = NULL;
 typedef struct ThreadSpecificData {
     ExitHandler *firstExitPtr;	/* First in list of all exit handlers for this
 				 * thread. */
-    int inExit;			/* True when this thread is exiting. This is
+    bool inExit;			/* True when this thread is exiting. This is
 				 * used as a hack to decide to close the
 				 * standard channels. */
 } ThreadSpecificData;
@@ -182,7 +189,7 @@ Tcl_BackgroundException(
     errPtr->nextPtr = NULL;
 
     (void) TclGetBgErrorHandler(interp);
-    assocPtr = (ErrAssocData *)Tcl_GetAssocData(interp, "tclBgError", NULL);
+    assocPtr = (ErrAssocData *)Tcl_GetAssocData(interp, ASSOC_KEY, NULL);
     if (assocPtr->firstBgPtr == NULL) {
 	assocPtr->firstBgPtr = errPtr;
 	Tcl_DoWhenIdle(HandleBgErrors, assocPtr);
@@ -242,7 +249,7 @@ HandleBgErrors(
 	errPtr = assocPtr->firstBgPtr;
 
 	TclListObjGetElements(NULL, copyObj, &prefixObjc, &prefixObjv);
-	tempObjv = (Tcl_Obj**)Tcl_Alloc((prefixObjc+2) * sizeof(Tcl_Obj *));
+	tempObjv = (Tcl_Obj **)Tcl_Alloc((prefixObjc+2) * sizeof(Tcl_Obj *));
 	memcpy(tempObjv, prefixObjv, prefixObjc*sizeof(Tcl_Obj *));
 	tempObjv[prefixObjc] = errPtr->errorMsg;
 	tempObjv[prefixObjc+1] = errPtr->returnOpts;
@@ -325,8 +332,8 @@ int
 TclDefaultBgErrorHandlerObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
+    Tcl_Size objc,		/* Number of arguments. */
+    Tcl_Obj *const *objv)	/* Argument objects. */
 {
     Tcl_Obj *valuePtr;
     Tcl_Obj *tempObjv[2];
@@ -454,7 +461,7 @@ TclDefaultBgErrorHandlerObjCmd(
 
 	if (Tcl_IsSafe(interp)) {
 	    Tcl_RestoreInterpState(interp, saved);
-	    TclObjInvoke(interp, 2, tempObjv, TCL_INVOKE_HIDDEN);
+	    Tcl_NRCallObjProc2(interp, TclNRInvoke, NULL, 2, tempObjv);
 	} else {
 	    Tcl_Channel errChannel = Tcl_GetStdChannel(TCL_STDERR);
 
@@ -522,7 +529,7 @@ TclSetBgErrorHandler(
     Tcl_Interp *interp,
     Tcl_Obj *cmdPrefix)
 {
-    ErrAssocData *assocPtr = (ErrAssocData *)Tcl_GetAssocData(interp, "tclBgError", NULL);
+    ErrAssocData *assocPtr = (ErrAssocData *)Tcl_GetAssocData(interp, ASSOC_KEY, NULL);
 
     if (cmdPrefix == NULL) {
 	Tcl_Panic("TclSetBgErrorHandler: NULL cmdPrefix argument");
@@ -537,7 +544,7 @@ TclSetBgErrorHandler(
 	assocPtr->cmdPrefix = NULL;
 	assocPtr->firstBgPtr = NULL;
 	assocPtr->lastBgPtr = NULL;
-	Tcl_SetAssocData(interp, "tclBgError", BgErrorDeleteProc, assocPtr);
+	Tcl_SetAssocData(interp, ASSOC_KEY, BgErrorDeleteProc, assocPtr);
     }
     if (assocPtr->cmdPrefix) {
 	Tcl_DecrRefCount(assocPtr->cmdPrefix);
@@ -567,14 +574,14 @@ Tcl_Obj *
 TclGetBgErrorHandler(
     Tcl_Interp *interp)
 {
-    ErrAssocData *assocPtr = (ErrAssocData *)Tcl_GetAssocData(interp, "tclBgError", NULL);
+    ErrAssocData *assocPtr = (ErrAssocData *)Tcl_GetAssocData(interp, ASSOC_KEY, NULL);
 
     if (assocPtr == NULL) {
 	Tcl_Obj *bgerrorObj;
 
 	TclNewLiteralStringObj(bgerrorObj, "::tcl::Bgerror");
 	TclSetBgErrorHandler(interp, bgerrorObj);
-	assocPtr = (ErrAssocData *)Tcl_GetAssocData(interp, "tclBgError", NULL);
+	assocPtr = (ErrAssocData *)Tcl_GetAssocData(interp, ASSOC_KEY, NULL);
     }
     return assocPtr->cmdPrefix;
 }
@@ -886,14 +893,14 @@ Tcl_SetExitProc(
  *
  * InvokeExitHandlers --
  *
- *      Call the registered exit handlers.
+ *	Call the registered exit handlers.
  *
  * Results:
  *	None.
  *
  * Side effects:
  *	The exit handlers are invoked, and the ExitHandler struct is
- *      freed.
+ *	freed.
  *
  *----------------------------------------------------------------------
  */
@@ -903,7 +910,7 @@ InvokeExitHandlers(void)
     ExitHandler *exitPtr;
 
     Tcl_MutexLock(&exitMutex);
-    inExit = 1;
+    inExit = true;
 
     for (exitPtr = firstExitPtr; exitPtr != NULL; exitPtr = firstExitPtr) {
 	/*
@@ -959,21 +966,15 @@ Tcl_Exit(
      */
 
     if (currentAppExitPtr) {
-
 	currentAppExitPtr(INT2PTR(status));
-
     } else if (subsystemsInitialized) {
-
 	if (TclFullFinalizationRequested()) {
-
 	    /*
 	     * Thorough finalization for Valgrind et al.
 	     */
 
 	    Tcl_Finalize();
-
 	} else {
-
 	    /*
 	     * Fast and deterministic exit (default behavior)
 	     */
@@ -1102,6 +1103,9 @@ static const struct {
 #ifdef STATIC_BUILD
 	    ".static"
 #endif
+#if (defined(__MSVCRT__) || defined(_UCRT)) && (!defined(__USE_MINGW_ANSI_STDIO) || __USE_MINGW_ANSI_STDIO)
+	    ".stdio-mingw"
+#endif
 #ifndef TCL_WITH_EXTERNAL_TOMMATH
 	    ".tommath-0103"
 #endif
@@ -1118,23 +1122,31 @@ static const struct {
 #endif // TCL_WITH_INTERNAL_ZLIB
 }};
 
+/*
+ * Wrapper to retrieve version+build to other modules.
+ */
+const char *
+TclGetBuildInfo(void)
+{
+    return stubInfo.version;
+}
+
 const char *
 Tcl_InitSubsystems(void)
 {
-    if (inExit != 0) {
+    if (inExit) {
 	Tcl_Panic("Tcl_InitSubsystems called while exiting");
     }
 
-    if (subsystemsInitialized == 0) {
+    if (!subsystemsInitialized) {
 	/*
 	 * Double check inside the mutex. There are definitely calls back into
 	 * this routine from some of the functions below.
 	 */
 
 	TclpInitLock();
-	if (subsystemsInitialized == 0) {
-
-		/*
+	if (!subsystemsInitialized) {
+	    /*
 	     * Initialize locks used by the memory allocators before anything
 	     * interesting happens so we can use the allocators in the
 	     * implementation of self-initializing locks.
@@ -1153,6 +1165,27 @@ Tcl_InitSubsystems(void)
 #endif
 
 	    TclpInitPlatform();		/* Creates signal handler(s) */
+
+	    /*
+	     * Initialize the C library's locale subsystem. This is required for input
+	     * methods to work properly on X11. We only do this for LC_CTYPE because
+	     * that's the necessary one, and we don't want to affect LC_TIME here.
+	     * The side effect of setting the default locale should be to load any
+	     * locale specific modules that are needed by X. [BUG: 5422 3345 4236 2522
+	     * 2521].
+	     */
+
+	    setlocale(LC_CTYPE, "");
+
+	    /*
+	     * In case the initial locale is not "C", ensure that the numeric
+	     * processing is done in "C" locale regardless. This is needed because Tcl
+	     * relies on routines like strtol/strtoul, but should not have locale dependent
+	     * behavior.
+	     */
+
+	    setlocale(LC_NUMERIC, "C");
+
 	    TclInitDoubleConversion();	/* Initializes constants for
 					 * converting to/from double. */
 	    TclInitObjSubsystem();	/* Register obj types, create
@@ -1160,12 +1193,13 @@ Tcl_InitSubsystems(void)
 	    TclInitIOSubsystem();	/* Inits a tsd key (noop). */
 	    TclInitEncodingSubsystem();	/* Process wide encoding init. */
 	    TclInitNamespaceSubsystem();/* Register ns obj type (mutexed). */
-	    subsystemsInitialized = 1;
+	    TclZipfsInit();		/* Initialize zipfs subsystem. */
+	    subsystemsInitialized = true;
 	}
 	TclpInitUnlock();
     }
     TclInitNotifier();
-    return stubInfo.version;
+    return TclGetBuildInfo();
 }
 
 /*
@@ -1198,10 +1232,10 @@ Tcl_Finalize(void)
     InvokeExitHandlers();
 
     TclpInitLock();
-    if (subsystemsInitialized == 0) {
+    if (!subsystemsInitialized) {
 	goto alreadyFinalized;
     }
-    subsystemsInitialized = 0;
+    subsystemsInitialized = false;
 
     /*
      * Ensure the thread-specific data is initialised as it is used in
@@ -1313,11 +1347,18 @@ Tcl_Finalize(void)
     TclFinalizePreserve();
 
     /*
+     * Clear memory used for PostInit registrations. Call before shutting
+     * down synchronization objects and memory allocators.
+     */
+    Tcl_ClearPostInitProcs();
+
+    /*
      * Free synchronization objects. There really should only be one thread
      * alive at this moment.
      */
 
     TclFinalizeSynchronization();
+
 
     /*
      * Close down the thread-specific object allocator.
@@ -1378,7 +1419,7 @@ Tcl_FinalizeThread(void)
     FinalizeThread(/* quick */ 0);
 }
 
-void
+static void
 FinalizeThread(
     int quick)
 {
@@ -1393,7 +1434,7 @@ FinalizeThread(
 
     tsdPtr = (ThreadSpecificData*)TclThreadDataKeyGet(&dataKey);
     if (tsdPtr != NULL) {
-	tsdPtr->inExit = 1;
+	tsdPtr->inExit = true;
 
 	for (exitPtr = tsdPtr->firstExitPtr; exitPtr != NULL;
 		exitPtr = tsdPtr->firstExitPtr) {
@@ -1441,7 +1482,7 @@ FinalizeThread(
  *----------------------------------------------------------------------
  */
 
-int
+bool
 TclInExit(void)
 {
     return inExit;
@@ -1463,13 +1504,13 @@ TclInExit(void)
  *----------------------------------------------------------------------
  */
 
-int
+bool
 TclInThreadExit(void)
 {
     ThreadSpecificData *tsdPtr = (ThreadSpecificData *)TclThreadDataKeyGet(&dataKey);
 
     if (tsdPtr == NULL) {
-	return 0;
+	return false;
     }
     return tsdPtr->inExit;
 }
@@ -1495,14 +1536,15 @@ int
 Tcl_VwaitObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
+    Tcl_Size objc,		/* Number of arguments. */
+    Tcl_Obj *const *objv)	/* Argument objects. */
 {
-    int i, done = 0, timedOut = 0, foundEvent, any = 1, timeout = 0;
-    int numItems = 0, extended = 0, result, mode, mask = TCL_ALL_EVENTS;
+    Tcl_Size i, done = 0, numItems = 0, timedOut = 0;
+    int foundEvent, any = 1, timeout = 0;
+    int extended = 0, result, mode, mask = TCL_ALL_EVENTS;
     Tcl_InterpState saved = NULL;
     Tcl_TimerToken timer = NULL;
-    Tcl_Time before, after;
+    long long before = -1, after;
     Tcl_Channel chan;
     Tcl_WideInt diff = -1;
     VwaitItem localItems[32], *vwaitItems = localItems;
@@ -1597,7 +1639,7 @@ Tcl_VwaitObjCmd(
 		goto done;
 	    }
 	    vwaitItems[numItems].donePtr = &done;
-	    vwaitItems[numItems].sequence = -1;
+	    vwaitItems[numItems].sequence = TCL_INDEX_NONE;
 	    vwaitItems[numItems].mask = 0;
 	    vwaitItems[numItems].sourceObj = objv[i];
 	    numItems++;
@@ -1621,7 +1663,7 @@ Tcl_VwaitObjCmd(
 	    Tcl_CreateChannelHandler(chan, TCL_READABLE,
 		    VwaitChannelReadProc, &vwaitItems[numItems]);
 	    vwaitItems[numItems].donePtr = &done;
-	    vwaitItems[numItems].sequence = -1;
+	    vwaitItems[numItems].sequence = TCL_INDEX_NONE;
 	    vwaitItems[numItems].mask = TCL_READABLE;
 	    vwaitItems[numItems].sourceObj = objv[i];
 	    numItems++;
@@ -1645,11 +1687,13 @@ Tcl_VwaitObjCmd(
 	    Tcl_CreateChannelHandler(chan, TCL_WRITABLE,
 		    VwaitChannelWriteProc, &vwaitItems[numItems]);
 	    vwaitItems[numItems].donePtr = &done;
-	    vwaitItems[numItems].sequence = -1;
+	    vwaitItems[numItems].sequence = TCL_INDEX_NONE;
 	    vwaitItems[numItems].mask = TCL_WRITABLE;
 	    vwaitItems[numItems].sourceObj = objv[i];
 	    numItems++;
 	    break;
+	default:
+	    TCL_UNREACHABLE();
 	}
     }
 
@@ -1679,7 +1723,7 @@ Tcl_VwaitObjCmd(
 	    break;
 	}
 	vwaitItems[numItems].donePtr = &done;
-	vwaitItems[numItems].sequence = -1;
+	vwaitItems[numItems].sequence = TCL_INDEX_NONE;
 	vwaitItems[numItems].mask = 0;
 	vwaitItems[numItems].sourceObj = objv[i];
 	numItems++;
@@ -1703,12 +1747,12 @@ Tcl_VwaitObjCmd(
 
     if (timeout > 0) {
 	vwaitItems[numItems].donePtr = &timedOut;
-	vwaitItems[numItems].sequence = -1;
+	vwaitItems[numItems].sequence = TCL_INDEX_NONE;
 	vwaitItems[numItems].mask = 0;
 	vwaitItems[numItems].sourceObj = NULL;
 	timer = Tcl_CreateTimerHandler(timeout, VwaitTimeoutProc,
 		&vwaitItems[numItems]);
-	Tcl_GetTime(&before);
+	before = Tcl_GetDayTime();
     } else {
 	timeout = 0;
     }
@@ -1725,7 +1769,7 @@ Tcl_VwaitObjCmd(
 
     foundEvent = 1;
     while (!timedOut && foundEvent &&
-	   ((!any && (done < numItems)) || (any && !done))) {
+	    ((!any && (done < numItems)) || (any && !done))) {
 	foundEvent = Tcl_DoOneEvent(mask);
 	if (Tcl_Canceled(interp, TCL_LEAVE_ERR_MSG) == TCL_ERROR) {
 	    break;
@@ -1783,9 +1827,9 @@ Tcl_VwaitObjCmd(
     if (timedOut) {
 	diff = -1;
     } else {
-	Tcl_GetTime(&after);
-	diff = after.sec * 1000 + after.usec / 1000;
-	diff -= before.sec * 1000 + before.usec / 1000;
+	after = Tcl_GetDayTime();
+	diff = after / 1000;
+	diff -= before / 1000;
 	diff = timeout - diff;
 	if (diff < 0) {
 	    diff = 0;
@@ -1821,7 +1865,7 @@ Tcl_VwaitObjCmd(
 
     if (result == TCL_OK) {
 	if (extended) {
-	    int k;
+	    Tcl_Size k;
 	    Tcl_Obj *listObj, *keyObj;
 
 	    TclNewObj(listObj);
@@ -1948,8 +1992,8 @@ int
 Tcl_UpdateObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
+    Tcl_Size objc,		/* Number of arguments. */
+    Tcl_Obj *const *objv)	/* Argument objects. */
 {
     int flags = 0;		/* Initialized to avoid compiler warning. */
     static const char *const updateOptions[] = {"idletasks", NULL};
@@ -1967,7 +2011,7 @@ Tcl_UpdateObjCmd(
 	    flags = TCL_IDLE_EVENTS|TCL_DONT_WAIT;
 	    break;
 	default:
-	    Tcl_Panic("Tcl_UpdateObjCmd: bad option index to UpdateOptions");
+	    TCL_UNREACHABLE();
 	}
     } else {
 	Tcl_WrongNumArgs(interp, 1, objv, "?idletasks?");
@@ -2053,7 +2097,7 @@ Tcl_CreateThread(
     Tcl_ThreadId *idPtr,	/* Return, the ID of the thread */
     Tcl_ThreadCreateProc *proc,	/* Main() function of the thread */
     void *clientData,		/* The one argument to Main() */
-    size_t stackSize,	/* Size of stack for the new thread */
+    size_t stackSize,		/* Size of stack for the new thread */
     int flags)			/* Flags controlling behaviour of the new
 				 * thread. */
 {

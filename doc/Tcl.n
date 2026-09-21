@@ -14,6 +14,7 @@ Tcl \- Tool Command Language
 Summary of Tcl language syntax.
 .BE
 .SH DESCRIPTION
+.SS "SYNTAX"
 .PP
 The following rules define the syntax and semantics of the Tcl language:
 .IP "[1] \fBCommands.\fR"
@@ -267,6 +268,38 @@ except for argument expansion as specified in rule [5].
 For example, during variable substitution the entire value of
 the variable becomes part of a single word, even if the variable's
 value contains spaces.
+.PP
+.SS "TCL VALUES"
+.PP
+Conceptually, all values in Tcl are strings, or to be precise, sequences of
+Unicode code points. This characteristic of all values being strings is
+commonly referred to as the \fIEverything Is A String (EIAS)\fR principle.
+.PP
+For the most part, Tcl strings can be thought of as strings of characters
+instead of sequences of code points and following common usage, command
+descriptions refer to them as such. However, the distinction is to be noted as
+some characters may have multiple representations as Unicode code point
+sequences and in operations like comparisons, Tcl compares individual
+code points and not individual abstract characters.
+.PP
+While all values are strings, individual commands may treat or
+expect their arguments to be representations of data of a particular type.
+For example, the \fBincr\fR command expects its operands to be integers.
+.PP
+The most important consequence of the EIAS principle is that all commands must
+treat arguments that have a particular string representation exactly the same
+irrespective of how that value was produced. Thus the \fBincr\fR command
+must treat \fB100\fR produced by appending \fB0\fR to \fB10\fR exactly the
+same as \fB100\fR produced by multiplying 10 by itself.
+.PP
+Note this EIAS principle is only true at a conceptual level and for reasons of
+efficiency the implementation may choose different internal representations
+for a value depending on its usage. For example, arithmetic operations on
+integers may internally store the value as a native machine word. Similarly, a
+\fIbinary string\fR is a sequence of Unicode code points in the range U+0000
+to U+00FF and may be stored as an array of bytes. In all cases this internal
+representation is irrelevant at the Tcl language level but exposed in the Tcl
+C API.
 .SH KEYWORDS
 backslash, command, comment, script, substitution, variable
 '\" Local Variables:

@@ -60,17 +60,17 @@ namespace eval ::tcl::idna {
 	return [join $parts .]
     }
 
-    variable digits [split "abcdefghijklmnopqrstuvwxyz0123456789" ""]
+    const digits [split "abcdefghijklmnopqrstuvwxyz0123456789" ""]
     # Bootstring parameters for Punycode
-    variable base 36
-    variable tmin 1
-    variable tmax 26
-    variable skew 38
-    variable damp 700
-    variable initial_bias 72
-    variable initial_n 0x80
+    const base 36
+    const tmin 1
+    const tmax 26
+    const skew 38
+    const damp 700
+    const initial_bias 72
+    const initial_n 0x80
 
-    variable max_codepoint 0x10FFFF
+    const max_codepoint 0x10FFFF
 
     proc adapt {delta first numchars} {
 	variable base

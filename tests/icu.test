@@ -7,9 +7,14 @@ if {"::tcltest" ni [namespace children]} {
     namespace import -force ::tcltest::*
 }
 
-# Force late loading of ICU if present
-catch {::tcl::unsupported::icu}
-testConstraint icu [llength [info commands ::tcl::unsupported::icu::detect]]
+# Disable ICU tests in the presence of valgrind since the dl_load
+# allocations interfere with valgrind output and icu is anyways an
+# unsupported component.
+if {![testConstraint valgrind]} {
+    # Force late loading of ICU if present
+    catch {::tcl::unsupported::icu}
+    testConstraint icu [llength [info commands ::tcl::unsupported::icu::detect]]
+}
 
 namespace eval icu {
     namespace path {::tcl::unsupported ::tcl::mathop}

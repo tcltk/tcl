@@ -13,7 +13,10 @@
 .SH NAME
 subst \- Perform backslash, command, and variable substitutions
 .SH SYNOPSIS
+.nf
 \fBsubst \fR?\fB\-nobackslashes\fR? ?\fB\-nocommands\fR? ?\fB\-novariables\fR? \fIstring\fR
+\fBsubst \fR?\fB\-backslashes\fR? ?\fB\-commands\fR? ?\fB\-variables\fR? \fIstring\fR
+.fi
 .BE
 .SH DESCRIPTION
 .PP
@@ -32,6 +35,18 @@ are not performed.
 For example, if \fB\-nocommands\fR is specified, command substitution
 is not performed:  open and close brackets are treated as ordinary characters
 with no special interpretation.
+.PP
+If any of the \fB\-backslashes\fR, \fB\-commands\fR, or
+\fB\-variables\fR are specified, then only the corresponding
+substitutions are performed. This means that the following lines are
+equivalent:
+.PP
+.CS
+\fBsubst\fR -nobackslashes -nocommands $string
+\fBsubst\fR -variables $string
+.CE
+.PP
+It is not allowed to combine positive and negated options.
 .PP
 Note that the substitution of one kind can include substitution of
 other kinds.  For example, even when the \fB\-novariables\fR option

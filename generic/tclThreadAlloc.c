@@ -786,7 +786,7 @@ Block2Ptr(
     void *ptr;
 
     blockPtr->magicNum1 = blockPtr->magicNum2 = MAGIC;
-    blockPtr->sourceBucket = bucket;
+    blockPtr->sourceBucket = (unsigned char)bucket;
     blockPtr->blockReqSize = reqSize;
     ptr = ((void *) (blockPtr + 1));
 #if RCHECK
@@ -946,7 +946,6 @@ GetBlocks(
     if (cachePtr != sharedPtr && sharedPtr->buckets[bucket].numFree > 0) {
 	LockBucket(cachePtr, bucket);
 	if (sharedPtr->buckets[bucket].numFree > 0) {
-
 	    /*
 	     * Either move the entire list or walk the list to find the last
 	     * block to move.
@@ -1028,14 +1027,14 @@ GetBlocks(
     }
     return 1;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
  * TclInitThreadAlloc --
  *
  *	Initializes the allocator cache-maintenance structures.
- *      It is done early and protected during the Tcl_InitSubsystems().
+ *	It is done early and protected during the Tcl_InitSubsystems().
  *
  * Results:
  *	None.

@@ -23,7 +23,7 @@ int
 \fBTcl_GetBooleanFromObj\fR(\fIinterp, objPtr, boolPtr\fR)
 .sp
 int
-\fBTcl_GetBoolFromObj\fR(\fIinterp, objPtr, flags. charPtr\fR)
+\fBTcl_GetBoolFromObj\fR(\fIinterp, objPtr, flags, charPtr\fR)
 .fi
 .SH ARGUMENTS
 .AS Tcl_Interp intValue in/out
@@ -45,7 +45,7 @@ stores the boolean value (0 or 1) obtained from \fIobjPtr\fR.
 .AP int flags in
 0 or TCL_NULL_OK. If TCL_NULL_OK
 is used, then the empty string or NULL will result in \fBTcl_GetBoolFromObj\fR
-return TCL_OK, the *charPtr filled with the value \fB'\exFF'\fR;
+return \fBTCL_OK\fR, the *charPtr filled with the value \fB'\exFF'\fR;
 .BE
 
 .SH DESCRIPTION

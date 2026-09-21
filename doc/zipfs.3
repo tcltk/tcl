@@ -55,31 +55,22 @@ before mounting, allowing the data buffer to be disposed once
 buffer will be valid to read from for the duration of the mount.
 .BE
 .SH DESCRIPTION
-\fBTclZipfs_AppHook\fR is a utility function to perform standard application
-initialization procedures, taking into account available ZIP archives as
+\fBTclZipfs_AppHook\fR performs all functions required to initialize Tcl
+for use in an application, taking into account available ZIP archives as
 follows:
 .IP [1]
-If the current application has a mountable ZIP archive, that archive is
-mounted under \fIZIPFS_VOLUME\fB/app\fR as a read-only Tcl virtual file
-system (VFS). The value of \fIZIPFS_VOLUME\fR can be retrieved using the
-Tcl command \fBzipfs root\fR.
+If the current application executable has a mountable ZIP archive, that archive
+is mounted under \fIZIPFS_VOLUME\fB/app\fR as a read-only Tcl virtual file
+system (VFS). If the Tcl shared library has a mountable ZIP archive, that
+archive mounted under \fIZIPFS_VOLUME\fB/lib/tcl\fR as a read-only Tcl VFS. The
+value of \fIZIPFS_VOLUME\fR can be retrieved using the Tcl command \fBzipfs
+root\fR. Both are included in the search path for locating Tcl support scripts as
+described in the \fBtcl_library\fR global variable documentation.
 .IP [2]
 If a file named \fBmain.tcl\fR is located in the root directory of that file
 system (i.e., at \fIZIPFS_VOLUME\fB/app/main.tcl\fR after the ZIP archive is
 mounted as described above) it is treated as the startup script for the
 process.
-.IP [3]
-If the file \fIZIPFS_VOLUME\fB/app/tcl_library/init.tcl\fR is present, the
-\fBtcl_library\fR global variable in the initial Tcl interpreter is set to
-\fIZIPFS_VOLUME\fB/app/tcl_library\fR.
-.IP [4]
-If the directory \fBtcl_library\fR was not found in the main application
-mount, the system will then search for it as either a VFS attached to the
-application dynamic library, or as a zip archive named
-\fBlibtcl_\fImajor\fB_\fIminor\fB_\fIpatchlevel\fB.zip\fR either in the
-present working directory or in the standard Tcl install location. (For
-example, the Tcl 9.0.2 release would be searched for in a file
-\fBlibtcl_9_0_2.zip\fR.) That archive, if located, is also mounted read-only.
 .PP
 On Windows, \fBTclZipfs_AppHook\fR has a slightly different signature, since
 it uses WCHAR instead of char. As a result, it requires the application to

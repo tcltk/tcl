@@ -25,11 +25,18 @@ static int		GetIndexFromObjList(Tcl_Interp *interp,
 static void		UpdateStringOfIndex(Tcl_Obj *objPtr);
 static void		DupIndex(Tcl_Obj *srcPtr, Tcl_Obj *dupPtr);
 static void		FreeIndex(Tcl_Obj *objPtr);
-static Tcl_ObjCmdProc PrefixAllObjCmd;
-static Tcl_ObjCmdProc PrefixLongestObjCmd;
-static Tcl_ObjCmdProc PrefixMatchObjCmd;
+static Tcl_ObjCmdProc2 PrefixAllObjCmd;
+static Tcl_ObjCmdProc2 PrefixLongestObjCmd;
+static Tcl_ObjCmdProc2 PrefixMatchObjCmd;
 static void		PrintUsage(Tcl_Interp *interp,
 			    const Tcl_ArgvInfo *argTable);
+
+const EnsembleImplMap tclPrefixImplMap[] = {
+    {"all",	PrefixAllObjCmd,	TclCompileBasic2ArgCmd,    NULL, NULL, 0},
+    {"longest",	PrefixLongestObjCmd,	TclCompileBasic2ArgCmd,    NULL, NULL, 0},
+    {"match",	PrefixMatchObjCmd,	TclCompileBasicMin2ArgCmd, NULL, NULL, 0},
+    {NULL, NULL, NULL, NULL, NULL, 0}
+};
 
 /*
  * The structure below defines the index Tcl object type by means of functions
@@ -37,11 +44,11 @@ static void		PrintUsage(Tcl_Interp *interp,
  */
 
 const Tcl_ObjType tclIndexType = {
-    "index",			/* name */
-    FreeIndex,			/* freeIntRepProc */
-    DupIndex,			/* dupIntRepProc */
-    UpdateStringOfIndex,	/* updateStringProc */
-    NULL,			/* setFromAnyProc */
+    "index",
+    FreeIndex,
+    DupIndex,
+    UpdateStringOfIndex,
+    NULL,			// SetFromAny
     TCL_OBJTYPE_V0
 };
 
@@ -68,7 +75,9 @@ typedef struct {
 #define NEXT_ENTRY(table, offset) \
 	(&(STRING_AT(table, offset)))
 #define EXPAND_OF(indexRep) \
-	(((indexRep)->index != TCL_INDEX_NONE) ? STRING_AT((indexRep)->tablePtr, (indexRep)->offset*(indexRep)->index) : "")
+	(((indexRep)->index != TCL_INDEX_NONE) ?			\
+		STRING_AT((indexRep)->tablePtr, (indexRep)->offset*(indexRep)->index) : \
+		"")
 
 /*
  *----------------------------------------------------------------------
@@ -95,7 +104,7 @@ typedef struct {
  *----------------------------------------------------------------------
  */
 
-int
+static int
 GetIndexFromObjList(
     Tcl_Interp *interp,		/* Used for error reporting if not NULL. */
     Tcl_Obj *objPtr,		/* Object containing the string to lookup. */
@@ -283,19 +292,19 @@ Tcl_GetIndexFromObjStruct(
      */
 
     if (objPtr && (index != TCL_INDEX_NONE) && !(flags & TCL_INDEX_TEMP_TABLE)) {
-    irPtr = TclFetchInternalRep(objPtr, &tclIndexType);
-    if (irPtr) {
-	indexRep = (IndexRep *)irPtr->twoPtrValue.ptr1;
-    } else {
-	Tcl_ObjInternalRep ir;
+	irPtr = TclFetchInternalRep(objPtr, &tclIndexType);
+	if (irPtr) {
+	    indexRep = (IndexRep *)irPtr->twoPtrValue.ptr1;
+	} else {
+	    Tcl_ObjInternalRep ir;
 
-	indexRep = (IndexRep*)Tcl_Alloc(sizeof(IndexRep));
-	ir.twoPtrValue.ptr1 = indexRep;
-	Tcl_StoreInternalRep(objPtr, &tclIndexType, &ir);
-    }
-    indexRep->tablePtr = (void *) tablePtr;
-    indexRep->offset = offset;
-    indexRep->index = index;
+	    indexRep = (IndexRep*)Tcl_Alloc(sizeof(IndexRep));
+	    ir.twoPtrValue.ptr1 = indexRep;
+	    Tcl_StoreInternalRep(objPtr, &tclIndexType, &ir);
+	}
+	indexRep->tablePtr = (void *) tablePtr;
+	indexRep->offset = offset;
+	indexRep->index = index;
     }
 
   uncachedDone:
@@ -363,7 +372,8 @@ Tcl_GetIndexFromObjStruct(
 }
 /* #define again, needed below */
 #define Tcl_GetIndexFromObjStruct(interp, objPtr, tablePtr, offset, msg, flags, indexPtr) \
-	((Tcl_GetIndexFromObjStruct)((interp), (objPtr), (tablePtr), (offset), (msg), (flags)|(int)(sizeof(*(indexPtr))<<1), (indexPtr)))
+	((Tcl_GetIndexFromObjStruct)((interp), (objPtr), (tablePtr), (offset), \
+		(msg), (flags)|(int)(sizeof(*(indexPtr))<<1), (indexPtr)))
 
 /*
  *----------------------------------------------------------------------
@@ -386,7 +396,8 @@ static void
 UpdateStringOfIndex(
     Tcl_Obj *objPtr)
 {
-    IndexRep *indexRep = (IndexRep *)TclFetchInternalRep(objPtr, &tclIndexType)->twoPtrValue.ptr1;
+    IndexRep *indexRep = (IndexRep *)
+	    TclFetchInternalRep(objPtr, &tclIndexType)->twoPtrValue.ptr1;
     const char *indexStr = EXPAND_OF(indexRep);
     size_t len = strlen(indexStr);
 
@@ -454,13 +465,13 @@ FreeIndex(
 /*
  *----------------------------------------------------------------------
  *
- * TclInitPrefixCmd --
+ * TclSetUpPrefixCmd --
  *
- *	This procedure creates the "prefix" Tcl command. See the user
+ *	This procedure sets up the "prefix" Tcl command. See the user
  *	documentation for details on what it does.
  *
  * Results:
- *	A standard Tcl result.
+ *	Tcl result code.
  *
  * Side effects:
  *	See the user documentation.
@@ -468,22 +479,13 @@ FreeIndex(
  *----------------------------------------------------------------------
  */
 
-Tcl_Command
-TclInitPrefixCmd(
-    Tcl_Interp *interp)		/* Current interpreter. */
+int
+TclSetUpPrefixCmd(
+    Tcl_Interp *interp,		/* Current interpreter. */
+    Tcl_Command ensemble)	/* The prefix ensemble. */
 {
-    static const EnsembleImplMap prefixImplMap[] = {
-	{"all",	    PrefixAllObjCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 0},
-	{"longest", PrefixLongestObjCmd,TclCompileBasic2ArgCmd, NULL, NULL, 0},
-	{"match",   PrefixMatchObjCmd,	TclCompileBasicMin2ArgCmd, NULL, NULL, 0},
-	{NULL, NULL, NULL, NULL, NULL, 0}
-    };
-    Tcl_Command prefixCmd;
-
-    prefixCmd = TclMakeEnsemble(interp, "::tcl::prefix", prefixImplMap);
-    Tcl_Export(interp, Tcl_FindNamespace(interp, "::tcl", NULL, 0),
+    return Tcl_Export(interp, (Tcl_Namespace*)((Command *)ensemble)->nsPtr,
 	    "prefix", 0);
-    return prefixCmd;
 }
 
 /*----------------------------------------------------------------------
@@ -506,8 +508,8 @@ static int
 PrefixMatchObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
+    Tcl_Size objc,		/* Number of arguments. */
+    Tcl_Obj *const *objv)	/* Argument objects. */
 {
     int flags = 0, result;
     Tcl_Size errorLength, i;
@@ -630,8 +632,8 @@ static int
 PrefixAllObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
+    Tcl_Size objc,		/* Number of arguments. */
+    Tcl_Obj *const *objv)	/* Argument objects. */
 {
     int result;
     Tcl_Size length, elemLength, tableObjc, t;
@@ -688,8 +690,8 @@ static int
 PrefixLongestObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
+    Tcl_Size objc,		/* Number of arguments. */
+    Tcl_Obj *const *objv)	/* Argument objects. */
 {
     int result;
     Tcl_Size i, length, elemLength, resultLength, tableObjc, t;
@@ -808,7 +810,7 @@ void
 Tcl_WrongNumArgs(
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,		/* Number of arguments to print from objv. */
-    Tcl_Obj *const objv[],	/* Initial argument objects, which should be
+    Tcl_Obj *const *objv,	/* Initial argument objects, which should be
 				 * included in the error message. */
     const char *message)	/* Error message to print after the leading
 				 * objects in objv. The message may be
@@ -1175,11 +1177,6 @@ Tcl_ParseArgsObjv(
 	}
 	case TCL_ARGV_GENFUNC: {
 
-	    if (objc > INT_MAX) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"too many (%" TCL_SIZE_MODIFIER "d) arguments for TCL_ARGV_GENFUNC", objc));
-		goto error;
-	    }
 	    Tcl_ArgvGenFuncProc *handlerProc = (Tcl_ArgvGenFuncProc *)
 		    infoPtr->srcPtr;
 

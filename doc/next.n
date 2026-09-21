@@ -9,10 +9,10 @@
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
-next, nextto \- invoke superclass method implementations
+next, nextto \- Invoke superclass method implementations
 .SH SYNOPSIS
 .nf
-package require tcl::oo
+\fBpackage require tcl::oo\fR
 
 \fBnext\fR ?\fIarg ...\fR?
 \fBnextto\fI class\fR ?\fIarg ...\fR?

@@ -25,9 +25,8 @@ testConstraint fileevent     [llength [info commands fileevent]]
 testConstraint thread        [expr {![catch {package require Thread 2.7-}]}]
 testConstraint notValgrind   [expr {![testConstraint valgrind]}]
 
-
 namespace eval ::tcltests {
-
+    variable TCL_SIZE_MAX [expr {(2**(8*$::tcl_platform(pointerSize)-1))-1}]
 
     proc init {} {
 	if {[namespace which ::tcl::file::tempdir] eq {}} {
@@ -37,7 +36,6 @@ namespace eval ::tcltests {
 	    interp alias {} [namespace current]::tempdir {} ::tcl::file::tempdir
 	}
     }
-
 
     # Stolen from dict.test
     proc scriptmemcheck script {
@@ -49,7 +47,6 @@ namespace eval ::tcltests {
 	}
 	expr {$end - $tmp}
     }
-
 
     proc tempdir_alternate {} {
 	close [file tempfile tempfile]
@@ -116,6 +113,93 @@ namespace eval ::tcltests {
 		-result $message -returnCodes error \
 		{*}$args
 	}
+
+	# Return Windows version as FULLVERSION MAJOR MINOR BUILD REVISION
+	if {$::tcl_platform(platform) eq "windows"} {
+	    proc windowsversion {} {
+		set ver [regexp -inline {(\d+).(\d+).(\d+).(\d+)} [exec {*}[auto_execok ver]]]
+		proc windowsversion {} [list return $ver]
+		return [windowsversion]
+	    }
+	    proc windowsbuildnumber {} {
+		return [lindex [windowsversion] 3]
+	    }
+	    proc windowscodepage {} {
+		# Note we cannot use result of chcp because that returns OEM code page.
+		set cp [tcl::registry get HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Nls\\CodePage ACP]
+		if {$cp eq "65001"} {
+		    proc windowscodepage {} "return utf-8"
+		} else {
+		    proc windowscodepage {} "return cp$cp"
+		}
+		return [windowscodepage]
+	    }
+	}
+
+    }
+
+    #	Find the localhost addresses for the IPv4 and IPv6 families.
+    #
+    #	We use the following heuristics to try to determine the best address
+    #
+    #	1. contents of the TCLTEST_IPV4 and TCLTEST_IPV6 environment variables
+    #	2. addresses on a server socket opened with -myaddr localhost
+    #	3. addresses on a server socket opened without a -myaddr parameter
+    #          (can resolve to 0.0.0.0 and ::, which may be affected by firewalls
+    #	    more aggressively than 127.0.0.1 and ::1)
+    # 	4. 127.0.0.1 and ::1
+    proc DiscoverLocalAddresses {} {
+        # phase 1:
+        if {[info exists ::env(TCLTEST_IPV4)]} {
+            set ipv4 $::env(TCLTEST_IPV4)
+        }
+        if {[info exists ::env(TCLTEST_IPV6)]} {
+            set ipv6 $::env(TCLTEST_IPV6)
+        }
+        if {![info exists ipv4] || ![info exists ipv6]} {
+            # phase 2 & 3:
+            foreach opts {
+                {-myaddr localhost}
+                {}
+            } {
+                catch {
+                    set s [socket {*}$opts -server {} 0]
+                    foreach {addr host port} [chan configure $s -sockname] {
+                        if {[string match "*:*" $addr]} {
+                            if {![info exists ipv6]} {
+                                set ipv6 $addr
+                            }
+                        } else {
+                            if {![info exists ipv4]} {
+                                set ipv4 $addr
+                            }
+                        }
+                    }
+                    chan close $s
+                }
+                if {[info exists ipv4] && [info exists ipv6]} break
+            }
+            # fallback to phase 4:
+            if {![info exists ipv4]} {
+                set ipv4 {127.0.0.1}
+            }
+            if {![info exists ipv6]} {
+                set ipv6 {::1}
+            }
+        }
+        # set constants to procs:
+        proc localIPv4Address {} [list return $ipv4]
+        proc localIPv6Address {} [list return $ipv6]
+    }
+
+    proc localIPv4Address {} {
+        DiscoverLocalAddresses
+        localIPv4Address
+    }
+
+    proc localIPv6Address {} {
+        DiscoverLocalAddresses
+        localIPv6Address
     }
 
     init
