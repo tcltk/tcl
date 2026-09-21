@@ -17,7 +17,7 @@ writing Tcl scripts.
 - [New `timer` command, switch to monotonic clock and microsecond resolution](https://core.tcl-lang.org/tips/doc/trunk/tip/723.md)
 - [Remove `expr` behavior from `lseq`](https://core.tcl-lang.org/tips/doc/trunk/tip/746.md) *Incompatibility*
 - [File paths are now treated as case-insensitive on MacOS](https://core.tcl-lang.org/tcl/tktview/e6ca0b1b) *Incompatibility*
-- New command `tcl::registry` as a synonym for the `registry` command without needing
+- New command `tcl::registry` as replacement for the `registry` command without needing
 the registry package to be loaded. The registry module is now part of the core
 Tcl DLL in all build configurations.
 - [New `lfilter` command for selecting items from a list](https://core.tcl-lang.org/tips/doc/trunk/tip/735.md)
@@ -25,6 +25,7 @@ Tcl DLL in all build configurations.
 - [New `switch` option `-integer` to compare values as integers](https://core.tcl-lang.org/tips/doc/trunk/tip/730.md)
 - [Reading and writing of child interpreter variables](https://core.tcl-lang.org/tips/doc/trunk/tip/728.md)
 - [Updated Tcl Bytecode opcodes](https://core.tcl-lang.org/tips/doc/trunk/tip/720.md)
+- [Add support for `\z` in regex as end-of-string anchor](https://core.tcl-lang.org/tcl/info/fbc56b259e)
 
 - New `tcltest::configure` option `-iterations` to control number of iterations of each test.
 
@@ -65,5 +66,5 @@ for list operations on large lists.
 - [Crash on use-after-free in Windows socket thread.](https://core.tcl-lang.org/tcl/tktview/06f19cc4)
 
 # Updated bundled packages, libraries, standards, data
- - Unicode 18.0.0 (draft)
- - platorm 1.2.0
+ - Unicode 18.0.0
+ - platorm 1.2.0: Add support for musl C runtime
