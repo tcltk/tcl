@@ -3668,6 +3668,7 @@ MODULE_SCOPE void	TclPkgFileSeen(Tcl_Interp *interp,
 MODULE_SCOPE void *	TclInitPkgFiles(Tcl_Interp *interp);
 MODULE_SCOPE Tcl_Obj *	TclPathPart(Tcl_Interp *interp, Tcl_Obj *pathPtr,
 			    Tcl_PathPart portion);
+MODULE_SCOPE double	TclRand(Interp *iPtr);
 MODULE_SCOPE char *	TclpReadlink(const char *fileName,
 			    Tcl_DString *linkPtr);
 MODULE_SCOPE void	TclpSetVariables(Tcl_Interp *interp);

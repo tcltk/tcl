@@ -2903,50 +2903,6 @@ ZipFSMkKeyObjCmd(
 /*
  *-------------------------------------------------------------------------
  *
- * RandomChar --
- *
- *	Worker for ZipAddFile().  Picks a random character (range: 0..255)
- *	using Tcl's standard PRNG.
- *
- * Returns:
- *	Tcl result code. Updates chPtr with random character on success.
- *
- * Side effects:
- *	Advances the PRNG state. May reenter the Tcl interpreter if the user
- *	has replaced the PRNG.
- *
- *-------------------------------------------------------------------------
- */
-
-static int
-RandomChar(
-    Tcl_Interp *interp,
-    int step,
-    int *chPtr)
-{
-    double r;
-    Tcl_Obj *ret;
-
-    if (Tcl_EvalEx(interp, "::tcl::mathfunc::rand", TCL_INDEX_NONE, 0) != TCL_OK) {
-	goto failed;
-    }
-    ret = Tcl_GetObjResult(interp);
-    if (Tcl_GetDoubleFromObj(interp, ret, &r) != TCL_OK) {
-	goto failed;
-    }
-    *chPtr = (int) (r * 256);
-    return TCL_OK;
-
-  failed:
-    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-	    "\n    (evaluating PRNG step %d for password encoding)",
-	    step));
-    return TCL_ERROR;
-}
-
-/*
- *-------------------------------------------------------------------------
- *
  * ZipAddFile --
  *
  *	This procedure is used by ZipFSMkZipOrImg() to add a single file to
@@ -3135,15 +3091,13 @@ ZipAddFile(
      */
 
     if (passwd) {
-	int i, ch, tmp;
+	int i, tmp;
 	unsigned char kvbuf[2*ZIP_CRYPT_HDR_LEN];
 
 	init_keys(passwd, keys, crc32tab);
 	for (i = 0; i < ZIP_CRYPT_HDR_LEN - 2; i++) {
-	    if (RandomChar(interp, i, &ch) != TCL_OK) {
-		Tcl_Close(interp, in);
-		return TCL_ERROR;
-	    }
+	    double r = TclRand((Interp *) interp);
+	    int ch = (int) (r * 256);
 	    kvbuf[i + ZIP_CRYPT_HDR_LEN] = UCHAR(zencode(keys, crc32tab, ch, tmp));
 	}
 	Tcl_ResetResult(interp);
