@@ -340,7 +340,7 @@ proc ::platform::patterns {id} {
 # ### ### ### ######### ######### #########
 ## Ready
 
-package provide platform 1.2b1
+package provide platform 1.2.0
 
 # ### ### ### ######### ######### #########
 ## Demo application

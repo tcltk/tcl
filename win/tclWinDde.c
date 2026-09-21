@@ -82,7 +82,7 @@ static HSZ ddeServiceGlobal = 0;
 static DWORD ddeInstance;	/* The application instance handle given to us
 				 * by DdeInitialize. */
 
-#define TCL_DDE_VERSION		"1.5b1"
+#define TCL_DDE_VERSION		"1.5.0"
 #define TCL_DDE_PACKAGE_NAME	"dde"
 #define TCL_DDE_SERVICE_NAME	L"TclEval"
 #define TCL_DDE_EXECUTE_RESULT	L"$TCLEVAL$EXECUTE$RESULT"
