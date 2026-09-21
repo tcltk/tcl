@@ -20,7 +20,7 @@ to the userbase.
  - [hang in fcopy on macOS](https://core.tcl-lang.org/tcl/tktview/7b4a81)
 
 # Updated bundled packages, libraries, standards, data
- - platform 1.1.1
+ - platform 1.1.2
  - tzdata 2026d
  - Unicode 18.0.0
 

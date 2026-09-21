@@ -330,7 +330,11 @@ proc ::platform::patterns {id} {
 		for {set j $minor} {$j >= 0} {incr j -1} {
 		    lappend res linux-glibc${major}.${j}-${cpu}
 		}
+		lappend res linux-glibc-${cpu}
+	    } else {
+		regexp {linux.*-([^-]*)$} $id -> cpu
 	    }
+	    lappend res linux-unknown-${cpu}
 	}
 	macosx-powerpc {
 	    lappend res macosx-universal
@@ -424,7 +428,7 @@ proc ::platform::patterns {id} {
 # ### ### ### ######### ######### #########
 ## Ready
 
-package provide platform 1.1.1
+package provide platform 1.1.2
 
 # ### ### ### ######### ######### #########
 ## Demo application
