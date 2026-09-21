@@ -395,14 +395,6 @@ static struct {
 	    {0,{0,0,0,0},0,0,0,0,0,0,0,0,0}
 };
 
-/*
- * For password rotation.
- */
-
-static const char pwrot[17] =
-    "\x00\x80\x40\xC0\x20\xA0\x60\xE0"
-    "\x10\x90\x50\xD0\x30\xB0\x70\xF0";
-
 static int zipfs_tcl_library_init = 0;
 static const char *zipfs_literal_tcl_library = NULL;
 
@@ -925,6 +917,28 @@ IsCryptHeaderValid(
 /*
  *------------------------------------------------------------------------
  *
+ * RotatePasswordByte --
+ *
+ *	Handles one byte for password rotation.
+ *
+ * Results:
+ *	The rotated byte.
+ *
+ *------------------------------------------------------------------------
+ */
+static inline int
+RotatePasswordByte(
+    int byte)			// Byte to rotate.
+{
+    static const char pwrot[] =
+	    "\x00\x80\x40\xC0\x20\xA0\x60\xE0"
+	    "\x10\x90\x50\xD0\x30\xB0\x70\xF0";
+    return (byte & 0x0f) | pwrot[(byte >> 4) & 0x0f];
+}
+
+/*
+ *------------------------------------------------------------------------
+ *
  * DecodeCryptHeader --
  *
  *	Decodes the crypt header and validates it.
@@ -948,13 +962,11 @@ DecodeCryptHeader(
 				/* From zip file content */
 {
     int i;
-    int ch;
     int len = z->zipFilePtr->passBuf[0] & 0xFF;
     char passBuf[260];
 
     for (i = 0; i < len; i++) {
-	ch = z->zipFilePtr->passBuf[len - i];
-	passBuf[i] = (ch & 0x0f) | pwrot[(ch >> 4) & 0x0f];
+	passBuf[i] = RotatePasswordByte(z->zipFilePtr->passBuf[len - i]);
     }
     passBuf[i] = '\0';
     init_keys(passBuf, keys, crc32tab);
@@ -962,7 +974,7 @@ DecodeCryptHeader(
     unsigned char encheader[ZIP_CRYPT_HDR_LEN];
     memcpy(encheader, cryptHeader, ZIP_CRYPT_HDR_LEN);
     for (i = 0; i < ZIP_CRYPT_HDR_LEN; i++) {
-	ch = cryptHeader[i];
+	int ch = cryptHeader[i];
 	ch ^= decrypt_byte(keys, crc32tab);
 	encheader[i] = ch;
 	update_keys(keys, crc32tab, ch);
@@ -2038,8 +2050,7 @@ ZipFSCatalogFilesystem(
 
 	zf->passBuf[k++] = pwlen;
 	for (i = pwlen; i-- > 0 ;) {
-	    zf->passBuf[k++] = (passwd[i] & 0x0f)
-		    | pwrot[(passwd[i] >> 4) & 0x0f];
+	    zf->passBuf[k++] = RotatePasswordByte(passwd[i]);
 	}
 	zf->passBuf[k] = '\0';
     }
@@ -2879,10 +2890,7 @@ ZipFSMkKeyObjCmd(
     passObj = Tcl_NewByteArrayObj(NULL, 264);
     passBuf = Tcl_GetBytesFromObj(NULL, passObj, (Tcl_Size *)NULL);
     while (len > 0) {
-	int ch = pw[len - 1];
-
-	passBuf[i++] = (ch & 0x0f) | pwrot[(ch >> 4) & 0x0f];
-	len--;
+	passBuf[i++] = RotatePasswordByte(pw[--len]);
     }
     passBuf[i] = i;
     i++;
@@ -3549,10 +3557,7 @@ ZipFSMkZipOrImg(
 	if (pwlen) {
 	    i = 0;
 	    for (len = pwlen; len-- > 0;) {
-		int ch = pw[len];
-
-		passBuf[i] = (ch & 0x0f) | pwrot[(ch >> 4) & 0x0f];
-		i++;
+		passBuf[i++] = RotatePasswordByte(pw[len]);
 	    }
 	    passBuf[i] = i;
 	    ++i;
