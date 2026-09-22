@@ -76,7 +76,7 @@ The global locale may be changed on demand, for example by a user initiated lang
     **::msgcat::mc** is the main function used to localize an application.  Instead of using an English string directly, an application can pass the English string through **::msgcat::mc** and use the result.  If an application is written for a single language in this fashion, then it is easy to add support for additional languages later simply by defining new message catalog entries.
 
 **::msgcat::mcn** *namespace src-string* ?*arg arg ...*?
-: Like **::msgcat::mc**, but with the message namespace specified as first argument.
+: [Like **::msgcat::mc**, but with the message namespace specified as first argument.]{version="TIP490"}
 
     **mcn** may be used for cases where the package namespace is not the namespace of the caller. An example is shown within the description of the command **::msgcat::mcpackagenamespaceget** below.
 
@@ -90,11 +90,11 @@ The global locale may be changed on demand, for example by a user initiated lang
 
     It may also be limited by the option **-exactlocale** to only check the first prefered locale (e.g. first element returned by **::msgcat::mcpreferences** if global locale is used).
 
-    An explicit package namespace may be specified by the option **-namespace**. The namespace of the caller is used if not explicitly specified.
+    [An explicit package namespace may be specified by the option **-namespace**. The namespace of the caller is used if not explicitly specified.]{version="TIP490"}
 
 
 [::msgcat::mcpackagenamespaceget]{.cmd}
-: Return the package namespace of the caller. This command handles all cases described in section [Object oriented programming].
+: [Return the package namespace of the caller. This command handles all cases described in section [Object oriented programming].]{version="TIP490"}
 
     Example usage is a tooltip package, which saves the caller package namespace to update the translation each time the tooltip is shown:
 
@@ -142,7 +142,7 @@ The global locale may be changed on demand, for example by a user initiated lang
 
 
 [::msgcat::mcloadedlocales]{.cmd} [subcommand]{.sub}
-: This group of commands manage the list of loaded locales for packages not setting a package locale.
+: [This group of commands manage the list of loaded locales for packages not setting a package locale.]{version="TIP499"}
 
     The subcommand **loaded** returns the list of currently loaded locales.
 
@@ -174,18 +174,16 @@ The global locale may be changed on demand, for example by a user initiated lang
 : The calling package clears all its state within the **msgcat** package including all settings and translations.
 
 
-[]{version="TIP499"}
-
-[::msgcat::mcutil]{.cmd} [getpreferences]{.sub} [locale]{.arg}
-: Return the preferences list of the given locale as described in the section [Locale specification]. An example is the composition of a preference list for the bilingual region "Biel/Bienne" as a concatenation of swiss german and swiss french:
+[::msgcat::mcutil]{.cmd version="TIP499"} [getpreferences]{.sub} [locale]{.arg}
+: [Return the preferences list of the given locale as described in the section [Locale specification]. An example is the composition of a preference list for the bilingual region "Biel/Bienne" as a concatenation of swiss german and swiss french:]{version="TIP499"}
 
     ```
     % concat [lrange [msgcat::mcutil getpreferences fr_CH] 0 end-1] [msgcat::mcutil getpreferences de_CH]
     fr_ch fr de_ch de {}
     ```
 
-**::msgcat::mcutil getsystemlocale**
-: The system locale is returned as described by the section [Locale specification].
+[**::msgcat::mcutil getsystemlocale**]{version="TIP499"}
+: [The system locale is returned as described by the section [Locale specification].]{version="TIP499"}
 
 
 # Locale specification
@@ -430,8 +428,6 @@ Callbacks are invoked, if:
 3. the registering namespace exists.
 
 If a called routine fails with an error, the [bgerror] routine for the interpreter is invoked after command completion. Only exception is the callback **unknowncmd**, where an error causes the invoking **mc**-command to fail with that error.
-
-[]{version="TIP490"}
 
 # Object oriented programming
 

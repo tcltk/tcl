@@ -117,7 +117,7 @@ This command provides several operations on a file's name or attributes.  The *n
 : Returns all of the characters in *name* after and including the last dot in the last element of *name*.  If there is no dot in the last element of *name* then returns the empty string.
 
 **file home** ?*username*?
-: If no argument is specified, the command returns the home directory of the current user. This is generally the value of the **$HOME** environment variable except that on Windows platforms backslashes in the path are replaced by forward slashes. An error is raised if the **$HOME** environment variable is not set.
+: [If no argument is specified, the command returns the home directory of the current user. This is generally the value of the **$HOME** environment variable except that on Windows platforms backslashes in the path are replaced by forward slashes. An error is raised if the **$HOME** environment variable is not set.]{version="TIP602"}
 
     If *username* is specified, the command returns the home directory configured in the system for the specified user. Note this may be different than the value of the **$HOME** environment variable even when *username* corresponds to the current user. An error is raised if the *username* does not correspond to a user account on the system.
 
@@ -202,7 +202,7 @@ This command provides several operations on a file's name or attributes.  The *n
 : Returns all of the characters in the last filesystem component of *name*.  Any trailing directory separator in *name* is ignored. If *name* contains no separators then returns *name*.  So, **file tail a/b**, **file tail a/b/** and **file tail b** all return **b**.
 
 **file tempdir** ?*template*?
-: Creates a temporary directory (guaranteed to be newly created and writable by the current script) and returns its name. If *template* is given, it specifies one of or both of the existing directory (on a filesystem controlled by the operating system) to contain the temporary directory, and the base part of the directory name; it is considered to have the location of the directory if there is a directory separator in the name, and the base part is everything after the last directory separator (if non-empty).  The default containing directory is determined by system-specific operations, and the default base name prefix is "**tcl**".
+: [Creates a temporary directory (guaranteed to be newly created and writable by the current script) and returns its name. If *template* is given, it specifies one of or both of the existing directory (on a filesystem controlled by the operating system) to contain the temporary directory, and the base part of the directory name; it is considered to have the location of the directory if there is a directory separator in the name, and the base part is everything after the last directory separator (if non-empty).  The default containing directory is determined by system-specific operations, and the default base name prefix is "**tcl**".]{version="TIP431"}
 
     The following output is typical and illustrative; the actual output will vary between platforms:
 
@@ -223,7 +223,7 @@ This command provides several operations on a file's name or attributes.  The *n
     Note that temporary files are *only* ever created on the native filesystem. As such, they can be relied upon to be used with operating-system native APIs and external programs that require a filename.
 
 **file tildeexpand** *name*
-: Returns the result of performing tilde substitution on *name*. If the name begins with a tilde, then the file name will be interpreted as if the first element is replaced with the location of the home directory for the given user. If the tilde is followed immediately by a path separator, the **$HOME** environment variable is substituted.  Otherwise the characters between the tilde and the next separator are taken as a user name, which is used to retrieve the user's home directory for substitution.  An error is raised if the **$HOME** environment variable or user does not exist.
+: [Returns the result of performing tilde substitution on *name*. If the name begins with a tilde, then the file name will be interpreted as if the first element is replaced with the location of the home directory for the given user. If the tilde is followed immediately by a path separator, the **$HOME** environment variable is substituted.  Otherwise the characters between the tilde and the next separator are taken as a user name, which is used to retrieve the user's home directory for substitution.  An error is raised if the **$HOME** environment variable or user does not exist.]{version="TIP602"}
 
     If the file name does not begin with a tilde, it is returned unmodified.
 

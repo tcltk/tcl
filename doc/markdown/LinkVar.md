@@ -52,6 +52,7 @@ Tcl\_LinkArray, Tcl\_LinkVar, Tcl\_UnlinkVar, Tcl\_UpdateLinkedVar - link Tcl va
 
 [size]{.carg .in type="Tcl_Size"}
 : [The number of elements in the C array. Must be greater than zero.]{version="TIP312"}
+
 :::
 
 # Description
@@ -71,18 +72,18 @@ The *type* argument specifies the type of the C variable, or the type of the ele
 **TCL\_LINK\_CHAR**
 : The C variable, or each element of the C array, is of type **char**. Any value written into the Tcl variable must have a proper integer form acceptable to [Tcl\_GetIntFromObj][IntObj] and be in the range of the **char** datatype; attempts to write non-integer or out-of-range values into *varName* will be rejected with Tcl errors. Incomplete integer representations (like the empty string, '+', '-' or the hex/octal/decimal/binary prefix) are accepted as if they are valid too.
 
-    If using an array of these, consider using **TCL\_LINK\_CHARS** instead.
+    [If using an array of these, consider using **TCL\_LINK\_CHARS** instead.]{version="TIP312"}
 
 **TCL\_LINK\_CHARS**
-: The C array is of type **char \*** and is mapped into Tcl as a string. Any value written into the Tcl variable must have the same length as the underlying storage. Only supported with **Tcl\_LinkArray**.
+: [The C array is of type **char \*** and is mapped into Tcl as a string. Any value written into the Tcl variable must have the same length as the underlying storage. Only supported with **Tcl\_LinkArray**.]{version="TIP312"}
 
 **TCL\_LINK\_UCHAR**
 : The C variable, or each element of the C array, is of type **unsigned char**. Any value written into the Tcl variable must have a proper unsigned integer form acceptable to [Tcl\_GetIntFromObj][IntObj] and in the platform's defined range for the **unsigned char** type; attempts to write non-integer values (or values outside the range) into *varName* will be rejected with Tcl errors. Incomplete integer representations (like the empty string, '+', '-' or the hex/octal/decimal/binary prefix) are accepted as if they are valid too.
 
-    If using an array of these, consider using **TCL\_LINK\_BINARY** instead.
+    [If using an array of these, consider using **TCL\_LINK\_BINARY** instead.]{version="TIP312"}
 
 **TCL\_LINK\_BINARY**
-: The C array is of type **unsigned char \*** and is mapped into Tcl as a bytearray. Any value written into the Tcl variable must have the same length as the underlying storage. Only supported with **Tcl\_LinkArray**.
+: [The C array is of type **unsigned char \*** and is mapped into Tcl as a bytearray. Any value written into the Tcl variable must have the same length as the underlying storage. Only supported with **Tcl\_LinkArray**.]{version="TIP312"}
 
 **TCL\_LINK\_SHORT**
 : The C variable, or each element of the C array, is of type **short**. Any value written into the Tcl variable must have a proper integer form acceptable to [Tcl\_GetIntFromObj][IntObj] and be in the range of the **short** datatype; attempts to write non-integer or out-of-range values into *varName* will be rejected with Tcl errors. Incomplete integer representations (like the empty string, '+', '-' or the hex/octal/decimal/binary prefix) are accepted as if they are valid too.

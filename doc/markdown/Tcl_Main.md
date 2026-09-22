@@ -70,6 +70,7 @@ Tcl\_Main, Tcl\_MainEx, Tcl\_MainExW, Tcl\_SetStartupScript, Tcl\_GetStartupScri
 
 [\*interp]{.carg .in type="Tcl_Interp"}
 : Already created Tcl Interpreter.
+
 :::
 
 # Description

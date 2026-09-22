@@ -67,6 +67,7 @@ Tcl\_LimitAddHandler, Tcl\_LimitCheck, Tcl\_LimitExceeded, Tcl\_LimitGetCommands
 
 [\*deleteProc]{.carg .in type="Tcl_LimitHandlerDeleteProc"}
 : Function to call whenever a handler is deleted.  May be NULL if the *clientData* requires no deletion.
+
 :::
 
 # Description

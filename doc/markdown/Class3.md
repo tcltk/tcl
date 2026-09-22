@@ -84,6 +84,7 @@ Tcl\_ClassGetMetadata, Tcl\_ClassSetMetadata, Tcl\_CopyObjectInstance, Tcl\_GetC
 
 [methodNameMapper]{.carg .in type="Tcl_ObjectMapMethodNameProc"}
 : A pointer to a function to call to adjust the mapping of objects and method names to implementations, or NULL when no such mapping is required.
+
 :::
 
 # Description

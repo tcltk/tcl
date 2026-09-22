@@ -57,6 +57,7 @@ Tcl\_LoadFile, Tcl\_FindSymbol - platform-independent dynamic library loading
 
 [\*symbol]{.carg .in type="const char"}
 : The name of the symbol to look up.
+
 :::
 
 # Description

@@ -39,6 +39,7 @@ Tcl\_GetStdChannel, Tcl\_SetStdChannel - procedures for retrieving and replacing
 
 [channel]{.carg .in type="Tcl_Channel"}
 : The channel to use as the new value for the specified standard channel.
+
 :::
 
 # Description

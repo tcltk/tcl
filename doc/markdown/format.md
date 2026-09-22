@@ -107,13 +107,13 @@ The last thing in a conversion specifier is an alphabetic character that determi
 : Convert number to signed decimal string of the form *xx.yyy*, where the number of *y*'s is determined by the precision (default: 6). If the precision is 0 then no decimal point is output.
 
 **e** or **E**
-: Convert number to scientific notation in the form *x.yyy***e\\(+-***zz*, where the number of *y*'s is determined by the precision (default: 6). If the precision is 0 then no decimal point is output. If the **E** form is used then **E** is printed instead of **e**.
+: Convert number to scientific notation in the form *x.yyy***e±***zz*, where the number of *y*'s is determined by the precision (default: 6). If the precision is 0 then no decimal point is output. If the **E** form is used then **E** is printed instead of **e**.
 
 **g** or **G**
 : If the exponent is less than -4 or greater than or equal to the precision, then convert number as for **%e** or **%E**. Otherwise convert as for **%f**. Trailing zeroes and a trailing decimal point are omitted.
 
 **a** or **A**
-: Convert double to hexadecimal notation in the form *0x1.yyy***p\\(+-***zz*, where the number of *y*'s is determined by the precision (default: 13). If the **A** form is used then the hex characters are printed in uppercase.
+: Convert double to hexadecimal notation in the form *0x1.yyy***p±***zz*, where the number of *y*'s is determined by the precision (default: 13). If the **A** form is used then the hex characters are printed in uppercase.
 
 **%**
 : No conversion: just insert **%**.

@@ -52,6 +52,7 @@ Tcl\_NewByteArrayObj, Tcl\_SetByteArrayObj, Tcl\_GetBytesFromObj, Tcl\_GetByteAr
 
 [\*numBytesPtr]{.carg .out type="Tcl_Size &| int"}
 : Points to space where the number of bytes in the array may be written. May be (Tcl\_Size \*)NULL when not used. If it points to a variable which type is not **Tcl\_Size**, a compiler warning will be generated. If your extensions is compiled with **-DTCL\_8\_API**, this function will return NULL for byte arrays larger than INT\_MAX (which should trigger proper error-handling), otherwise expect it to crash.
+
 :::
 
 # Description

@@ -93,6 +93,7 @@ Tcl\_IsSafe, Tcl\_CreateChild, Tcl\_GetChild, Tcl\_GetParent, Tcl\_GetInterpPath
 
 [\*hiddenCmdName]{.carg .in type="const char"}
 : Name under which a hidden command is stored and with which it can be exposed or invoked.
+
 :::
 
 # Description

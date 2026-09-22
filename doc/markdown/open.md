@@ -151,7 +151,7 @@ The [chan configure][chan] and [fconfigure] commands can be used to query and se
 : (Windows and Unix). This option is used to query or change the software handshake characters. *charList* is a list of two elements. The first is the character for XON, the second element the one for XOFF. Normally the operating system default should be DC1 (0x11) and DC3 (0x13) representing the ASCII standard XON and XOFF characters.
 
 **-closemode** *closeMode*
-: (Windows and Unix). This option is used to query or change the close mode of the serial channel, which defines how pending output in operating system buffers is handled when the channel is closed. The following values for *closeMode* are supported:
+: [(Windows and Unix). This option is used to query or change the close mode of the serial channel, which defines how pending output in operating system buffers is handled when the channel is closed. The following values for *closeMode* are supported:]{version="TIP160"}
 
     **default**
     : indicates that a system default operation should be used; all serial channels default to this.
@@ -164,7 +164,7 @@ The [chan configure][chan] and [fconfigure] commands can be used to query and se
 
 
 **-inputmode** *inputMode*
-: (Unix only; Windows has the equivalent option on console channels). This option is used to query or change the input mode of the serial channel under the assumption that it is talking to a terminal, which controls how interactive input from users is handled. The following values for *inputMode* are supported:
+: [(Unix only; Windows has the equivalent option on console channels). This option is used to query or change the input mode of the serial channel under the assumption that it is talking to a terminal, which controls how interactive input from users is handled. The following values for *inputMode* are supported:]{version="TIP160"}
 
     **normal**
     : indicates that normal line-oriented input should be used, with standard terminal editing capabilities enabled.
@@ -181,8 +181,8 @@ The [chan configure][chan] and [fconfigure] commands can be used to query and se
 
     Note that setting this option (technically, anything that changes the terminal state from its initial value *via this option*) will cause the channel to turn on an automatic reset of the terminal when the channel is closed.
 
-**-winsize**
-: (Unix only; Windows has the equivalent option on console channels). This option is query only. It retrieves a two-element list with the the current width and height of the terminal.
+[**-winsize**]{version="TIP160"}
+: [(Unix only; Windows has the equivalent option on console channels). This option is query only. It retrieves a two-element list with the the current width and height of the terminal.]{version="TIP160"}
 
 **-pollinterval** *msec*
 : (Windows only). This option is used to set the maximum time between polling for fileevents. This affects the time interval between checking for events throughout the Tcl interpreter (the smallest value always wins).  Use this option only if you want to poll the serial port more or less often than 10 msec (the default).

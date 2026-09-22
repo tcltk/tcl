@@ -44,6 +44,7 @@ Tcl\_GetOpenFile - Return a FILE\* for a channel registered in the given interpr
 
 [\*\*filePtr]{.carg .out type="void"}
 : Points to word in which to store pointer to FILE structure for the file given by *chanID*.
+
 :::
 
 # Description

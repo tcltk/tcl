@@ -41,6 +41,7 @@ Tcl\_CallWhenDeleted, Tcl\_DontCallWhenDeleted - Arrange for callback when inter
 
 [\*clientData]{.carg .in type="void"}
 : Arbitrary one-word value to pass to *proc*.
+
 :::
 
 # Description

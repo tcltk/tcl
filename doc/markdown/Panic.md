@@ -41,6 +41,7 @@ Tcl\_Panic, Tcl\_SetPanicProc, Tcl\_ConsolePanic - report fatal error and abort
 
 [\*panicProc]{.carg .in type="Tcl_PanicProc"}
 : Procedure to report fatal error message and abort.
+
 :::
 
 # Description

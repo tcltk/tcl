@@ -91,6 +91,7 @@ Tcl\_ClassSetConstructor, Tcl\_ClassSetDestructor, Tcl\_MethodDeclarerClass, Tcl
 
 [skip]{.carg .in type="Tcl_Size"}
 : The number of arguments passed to the method implementation that do not represent "real" arguments.
+
 :::
 
 # Description

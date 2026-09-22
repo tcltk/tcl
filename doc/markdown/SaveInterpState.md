@@ -37,6 +37,7 @@ Tcl\_SaveInterpState, Tcl\_RestoreInterpState, Tcl\_DiscardInterpState - save an
 
 [state]{.carg .in type="Tcl_InterpState"}
 : Saved state token to be restored or discarded.
+
 :::
 
 # Description

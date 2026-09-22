@@ -55,7 +55,8 @@ oo::object
 oo::object
    → oo::class
        → oo::configurablesupport::configurable
-```:::
+```
+:::
 
 # Description
 

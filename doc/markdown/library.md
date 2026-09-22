@@ -175,13 +175,13 @@ These procedures are mainly used internally by Tk.
 ## File access helpers
 
 [foreachLine]{.cmd} [varName]{.arg} [filename]{.arg} [body]{.arg}
-: This reads in the text file named *filename* one line at a time (using system defaults for reading text files). It writes that line to the variable named by *varName* and then executes *body* for that line. The result value of *body* is ignored, but [error], [return], [break] and [continue] may be used within it to produce an error, return from the calling context, stop the loop, or go to the next line respectively. The overall result of **foreachLine** is the empty string (assuming no errors from I/O or from evaluating the body of the loop); the file will be closed prior to the procedure returning.
+: [This reads in the text file named *filename* one line at a time (using system defaults for reading text files). It writes that line to the variable named by *varName* and then executes *body* for that line. The result value of *body* is ignored, but [error], [return], [break] and [continue] may be used within it to produce an error, return from the calling context, stop the loop, or go to the next line respectively. The overall result of **foreachLine** is the empty string (assuming no errors from I/O or from evaluating the body of the loop); the file will be closed prior to the procedure returning.]{version="TIP670"}
 
 **readFile** *filename* ?**text**|[binary]?
-: Reads in the file named in *filename* and returns its contents. The second argument says how to read in the file, either as **text** (using the system defaults for reading text files) or as [binary] (as uninterpreted bytes). The default is **text**. When read as text, this will include any trailing newline. The file will be closed prior to the procedure returning.
+: [Reads in the file named in *filename* and returns its contents. The second argument says how to read in the file, either as **text** (using the system defaults for reading text files) or as [binary] (as uninterpreted bytes). The default is **text**. When read as text, this will include any trailing newline. The file will be closed prior to the procedure returning.]{version="TIP670"}
 
 **writeFile** *filename* ?**text**|[binary]? *contents*
-: Writes the *contents* to the file named in *filename*. The optional second argument says how to write to the file, either as **text** (using the system defaults for writing text files) or as [binary] (as uninterpreted bytes). The default is **text**. If a trailing newline is required, it will need to be provided in *contents*. The result of this command is the empty string; the file will be closed prior to the procedure returning.
+: [Writes the *contents* to the file named in *filename*. The optional second argument says how to write to the file, either as **text** (using the system defaults for writing text files) or as [binary] (as uninterpreted bytes). The default is **text**. If a trailing newline is required, it will need to be provided in *contents*. The result of this command is the empty string; the file will be closed prior to the procedure returning.]{version="TIP670"}
 
 
 # Variables

@@ -43,7 +43,7 @@ If the initial arguments to **switch** start with **-** then they are treated as
 : When matching *value* to the patterns, use glob-style matching (i.e. the same as implemented by the [string match][string] command).
 
 **-integer**
-: When matching *value* to the patterns, use integer comparisons. Note that this makes using a non-integer *value* or *pattern* (other than a final **default**) into an error.
+: [When matching *value* to the patterns, use integer comparisons. Note that this makes using a non-integer *value* or *pattern* (other than a final **default**) into an error.]{version="9.1"}
 
 **-regexp**
 : When matching *value* to the patterns, use regular expression matching (as described in the [re\_syntax][re_syntax] reference page).

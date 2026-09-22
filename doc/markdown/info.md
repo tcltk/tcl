@@ -59,7 +59,7 @@ Available commands:
 : Returns the total number of commands evaluated in this interpreter.
 
 **info cmdtype** *commandName*
-: Returns a the type of the command named *commandName*. Built-in types are:
+: [Returns a the type of the command named *commandName*. Built-in types are:]{version="TIP426"}
 
     **alias**
     : *commandName* was created by [interp alias][interp]. In a safe interpreter an alias is only visible if both the alias and the target are visible.
@@ -99,10 +99,10 @@ Available commands:
 : Returns 1 if *command* is a complete command, and **0** otherwise. Typically used in line-oriented input environments to allow users to type in commands that span multiple lines.
 
 **info constant** *varName*
-: Returns 1 if *varName* is a constant variable (see [const]) and 0 otherwise.
+: [Returns 1 if *varName* is a constant variable (see [const]) and 0 otherwise.]{version="TIP677"}
 
 **info consts** ?*pattern*?
-: Returns the list of constant variables (see [const]) in the current scope, or the list of constant variables matching *pattern* (if that is provided) in a manner similar to **info vars**.
+: [Returns the list of constant variables (see [const]) in the current scope, or the list of constant variables matching *pattern* (if that is provided) in a manner similar to **info vars**.]{version="TIP677"}
 
 **info coroutine**
 : Returns the name of the current **coroutine**, or the empty string if there is no current coroutine or the current coroutine has been deleted.
@@ -227,9 +227,9 @@ The syntactic form **{\*}** is handled like [eval]. I.e. if it is given a litera
 The following *subcommand* values are supported by **info class**:
 
 [info]{.cmd} [class]{.sub} [call]{.lit} [class]{.arg} [method]{.arg}
-: Returns a description of the method implementations that are used to provide a stereotypical instance of *class*'s implementation of *method* (stereotypical instances being objects instantiated by a class without having any object-specific definitions added). This consists of a list of lists of four elements, where each sublist consists of a word that describes the general type of method implementation (being one of **method** for an ordinary method, **filter** for an applied filter, **private** for a private method, and [unknown] for a method that is invoked as part of unknown method handling), a word giving the name of the particular method invoked (which is always the same as *method* for the **method** type, and "[unknown]" for the [unknown] type), a word giving the fully qualified name of the class that defined the method, and a word describing the type of method implementation (see **info class methodtype**).
+: Returns a description of the method implementations that are used to provide a stereotypical instance of *class*'s implementation of *method* (stereotypical instances being objects instantiated by a class without having any object-specific definitions added). This consists of a list of lists of four elements, where each sublist consists of a word that describes the general type of method implementation (being one of **method** for an ordinary method, **filter** for an applied filter, [**private** for a private method,]{version="TIP500"} and [unknown] for a method that is invoked as part of unknown method handling), a word giving the name of the particular method invoked (which is always the same as *method* for the **method** type, and "[unknown]" for the [unknown] type), a word giving the fully qualified name of the class that defined the method, and a word describing the type of method implementation (see **info class methodtype**).
 
-    Note that there is no inspection of whether the method implementations actually use [next] to transfer control along the call chain, and the call chains that this command files do not actually contain private methods.
+    Note that there is no inspection of whether the method implementations actually use [next] to transfer control along the call chain, [and the call chains that this command files do not actually contain private methods.]{version="TIP500"}
 
 **info class constructor** *class*
 : This subcommand returns a description of the definition of the constructor of class *class*. The definition is described as a two element list; the first element is the list of arguments to the constructor in a form suitable for passing to another call to **proc** or a method definition, and the second element is the body of the constructor. If no constructor is present, this returns the empty list.
@@ -238,7 +238,7 @@ The following *subcommand* values are supported by **info class**:
 : This subcommand returns a description of the definition of the method named *method* of class *class*. The definition is described as a two element list; the first element is the list of arguments to the method in a form suitable for passing to another call to **proc** or a method definition, and the second element is the body of the method.
 
 **info class definitionnamespace** *class* ?*kind*?
-: This subcommand returns the definition namespace for *kind* definitions of the class *class*; the definition namespace only affects the instances of *class*, not *class* itself. The *kind* can be either **-class** to return the definition namespace used for [oo::define][define], or **-instance** to return the definition namespace used for [oo::objdefine][objdefine]; the **-class** kind is default (though this is only actually useful on classes that are subclasses of [oo::class][class]).
+: [This subcommand returns the definition namespace for *kind* definitions of the class *class*; the definition namespace only affects the instances of *class*, not *class* itself. The *kind* can be either **-class** to return the definition namespace used for [oo::define][define], or **-instance** to return the definition namespace used for [oo::objdefine][objdefine]; the **-class** kind is default (though this is only actually useful on classes that are subclasses of [oo::class][class]).]{version="TIP524"}
 
     If *class* does not provide a definition namespace of the given kind, this command returns the empty string. In those circumstances, the [oo::define][define] and [oo::objdefine][objdefine] commands look up which definition namespace to use using the class inheritance hierarchy.
 
@@ -258,22 +258,22 @@ The following *subcommand* values are supported by **info class**:
 : This subcommand returns a list of all public (i.e. exported) methods of the class called *class*. Any of the following *option*s may be given, controlling exactly which method names are returned:
 
     **-all**
-    : If the **-all** flag is given, and the **-scope** flag is not given, the list of methods will include those methods defined not just by the class, but also by the class's superclasses and mixins.
+    : If the **-all** flag is given, [and the **-scope** flag is not given,]{version="TIP500"} the list of methods will include those methods defined not just by the class, but also by the class's superclasses and mixins.
 
     **-private**
-    : If the **-private** flag is given, and the **-scope** flag is not given, the list of methods will also include the non-exported methods of the class (and superclasses and mixins, if **-all** is also given). Note that this naming is an unfortunate clash with true private methods; this option name is retained for backward compatibility.
+    : If the **-private** flag is given, [and the **-scope** flag is not given,]{version="TIP500"} the list of methods will also include the non-exported methods of the class (and superclasses and mixins, if **-all** is also given). [Note that this naming is an unfortunate clash with true private methods; this option name is retained for backward compatibility.]{version="TIP500"}
 
     **-scope** *scope*
-    : Returns a list of all methods on *class* that have the given visibility *scope*.  When this option is supplied, both the **-all** and **-private** options are ignored. The valid values for *scope* are:
+    : [Returns a list of all methods on *class* that have the given visibility *scope*.  When this option is supplied, both the **-all** and **-private** options are ignored. The valid values for *scope* are:]{version="TIP500"}
 
-    **public**
-    : Only methods with *public* scope (i.e., callable from anywhere by any instance of this class) are to be returned.
+    [**public**]{version="TIP500"}
+    : [Only methods with *public* scope (i.e., callable from anywhere by any instance of this class) are to be returned.]{version="TIP500"}
 
-    **unexported**
-    : Only methods with *unexported* scope (i.e., only callable via [my]) are to be returned.
+    [**unexported**]{version="TIP500"}
+    : [Only methods with *unexported* scope (i.e., only callable via [my]) are to be returned.]{version="TIP500"}
 
-    **private**
-    : Only methods with *private* scope (i.e., only callable from within this class's methods) are to be returned.
+    [**private**]{version="TIP500"}
+    : [Only methods with *private* scope (i.e., only callable from within this class's methods) are to be returned.]{version="TIP500"}
 
 
 **info class methodtype** *class method*
@@ -283,7 +283,7 @@ The following *subcommand* values are supported by **info class**:
 : This subcommand returns a list of all classes that have been mixed into the class named *class*.
 
 **info class properties** *class* ?*options ...*?
-: This subcommand returns a sorted list of properties defined on the class named *class*. The *options* define exactly which properties are returned:
+: [This subcommand returns a sorted list of properties defined on the class named *class*. The *options* define exactly which properties are returned:]{version="TIP558"}
 
     **-all**
     : With this option, the properties from the superclasses and mixins of the class are also returned.
@@ -302,7 +302,7 @@ The following *subcommand* values are supported by **info class**:
 : This subcommand returns a list of direct superclasses of class *class* in inheritance precedence order.
 
 **info class variables** *class* ?**-private**?
-: This subcommand returns a list of all variables that have been declared for the class named *class* (i.e. that are automatically present in the class's methods, constructor and destructor). If the **-private** option is given, this lists the private variables declared instead.
+: This subcommand returns a list of all variables that have been declared for the class named *class* (i.e. that are automatically present in the class's methods, constructor and destructor). [If the **-private** option is given, this lists the private variables declared instead.]{version="TIP500"}
 
 
 ## Object introspection
@@ -310,15 +310,15 @@ The following *subcommand* values are supported by **info class**:
 The following *subcommand* values are supported by **info object**:
 
 [info]{.cmd} [object]{.sub} [call]{.lit} [object]{.arg} [method]{.arg}
-: Returns a description of the method implementations that are used to provide *object*'s implementation of *method*.  This consists of a list of lists of four elements, where each sublist consists of a word that describes the general type of method implementation (being one of **method** for an ordinary method, **filter** for an applied filter, **private** for a private method, and [unknown] for a method that is invoked as part of unknown method handling), a word giving the name of the particular method invoked (which is always the same as *method* for the **method** type, and "[unknown]" for the [unknown] type), a word giving what defined the method (the fully qualified name of the class, or the literal string **object** if the method implementation is on an instance), and a word describing the type of method implementation (see **info object methodtype**).
+: Returns a description of the method implementations that are used to provide *object*'s implementation of *method*.  This consists of a list of lists of four elements, where each sublist consists of a word that describes the general type of method implementation (being one of **method** for an ordinary method, **filter** for an applied filter, [**private** for a private method,]{version="TIP500"} and [unknown] for a method that is invoked as part of unknown method handling), a word giving the name of the particular method invoked (which is always the same as *method* for the **method** type, and "[unknown]" for the [unknown] type), a word giving what defined the method (the fully qualified name of the class, or the literal string **object** if the method implementation is on an instance), and a word describing the type of method implementation (see **info object methodtype**).
 
-    Note that there is no inspection of whether the method implementations actually use [next] to transfer control along the call chain, and the call chains that this command files do not actually contain private methods.
+    Note that there is no inspection of whether the method implementations actually use [next] to transfer control along the call chain, [and the call chains that this command files do not actually contain private methods.]{version="TIP500"}
 
 **info object class** *object* ?*className*?
 : If *className* is not given, this subcommand returns class of the *object* object. If *className* is present, this subcommand returns a boolean value indicating whether the *object* is of that class.
 
 **info object creationid** *object*
-: Returns the unique creation identifier for the *object* object. This creation identifier is unique to the object (within a Tcl interpreter) and cannot be controlled at object creation time or altered afterwards.
+: [Returns the unique creation identifier for the *object* object. This creation identifier is unique to the object (within a Tcl interpreter) and cannot be controlled at object creation time or altered afterwards.]{version="TIP500"}
 
     *Implementation note:* the creation identifier is used to generate unique identifiers associated with the object, especially for private variables.
 
@@ -354,22 +354,22 @@ The following *subcommand* values are supported by **info object**:
 : This subcommand returns a list of all public (i.e. exported) methods of the object called *object*. Any of the following *option*s may be given, controlling exactly which method names are returned:
 
     **-all**
-    : If the **-all** flag is given, and the **-scope** flag is not given, the list of methods will include those methods defined not just by the object, but also by the object's class and mixins, plus the superclasses of those classes.
+    : If the **-all** flag is given, [and the **-scope** flag is not given,]{version="TIP500"} the list of methods will include those methods defined not just by the object, but also by the object's class and mixins, plus the superclasses of those classes.
 
     **-private**
-    : If the **-private** flag is given, and the **-scope** flag is not given, the list of methods will also include the non-exported methods of the object (and classes, if **-all** is also given). Note that this naming is an unfortunate clash with true private methods; this option name is retained for backward compatibility.
+    : If the **-private** flag is given, [and the **-scope** flag is not given,]{version="TIP500"} the list of methods will also include the non-exported methods of the object (and classes, if **-all** is also given). [Note that this naming is an unfortunate clash with true private methods; this option name is retained for backward compatibility.]{version="TIP500"}
 
     **-scope** *scope*
-    : Returns a list of all methods on *object* that have the given visibility *scope*.  When this option is supplied, both the **-all** and **-private** options are ignored. The valid values for *scope* are:
+    : [Returns a list of all methods on *object* that have the given visibility *scope*.  When this option is supplied, both the **-all** and **-private** options are ignored. The valid values for *scope* are:]{version="TIP500"}
 
-    **public**
-    : Only methods with *public* scope (i.e., callable from anywhere) are to be returned.
+    [**public**]{version="TIP500"}
+    : [Only methods with *public* scope (i.e., callable from anywhere) are to be returned.]{version="TIP500"}
 
-    **unexported**
-    : Only methods with *unexported* scope (i.e., only callable via [my]) are to be returned.
+    [**unexported**]{version="TIP500"}
+    : [Only methods with *unexported* scope (i.e., only callable via [my]) are to be returned.]{version="TIP500"}
 
-    **private**
-    : Only methods with *private* scope (i.e., only callable from within this object's instance methods) are to be returned.
+    [**private**]{version="TIP500"}
+    : [Only methods with *private* scope (i.e., only callable from within this object's instance methods) are to be returned.]{version="TIP500"}
 
 
 **info object methodtype** *object method*
@@ -382,7 +382,7 @@ The following *subcommand* values are supported by **info object**:
 : This subcommand returns the name of the internal namespace of the object named *object*.
 
 **info object properties** *object* ?*options...*?
-: This subcommand returns a sorted list of properties defined on the object named *object*. The *options* define exactly which properties are returned:
+: [This subcommand returns a sorted list of properties defined on the object named *object*. The *options* define exactly which properties are returned:]{version="TIP558"}
 
     **-all**
     : With this option, the properties from the class, superclasses and mixins of the object are also returned.
@@ -395,7 +395,7 @@ The following *subcommand* values are supported by **info object**:
 
 
 **info object variables** *object* ?**-private**?
-: This subcommand returns a list of all variables that have been declared for the object named *object* (i.e. that are automatically present in the object's methods). If the **-private** option is given, this lists the private variables declared instead.
+: This subcommand returns a list of all variables that have been declared for the object named *object* (i.e. that are automatically present in the object's methods). [If the **-private** option is given, this lists the private variables declared instead.]{version="TIP500"}
 
 **info object vars** *object* ?*pattern*?
 : This subcommand returns a list of all variables in the private namespace of the object named *object*. If the optional *pattern* argument is given, it is a filter (in the syntax of a [string match][string] glob pattern) that constrains the list of variables returned. Note that this is different from the list returned by **info object variables**; that can include variables that are currently unset, whereas this can include variables that are not automatically included by any of *object*'s methods (or those of its class, superclasses or mixins).

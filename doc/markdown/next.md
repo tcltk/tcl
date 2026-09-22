@@ -27,7 +27,8 @@ next, nextto - Invoke superclass method implementations
 [package]{.cmd} [require]{.sub} [tcl::oo]{.lit}
 
 [next]{.cmd} [arg]{.optdot}
-[nextto]{.cmd} [class]{.arg} [arg]{.optdot}:::
+[nextto]{.cmd} [class]{.arg} [arg]{.optdot}
+:::
 
 # Description
 

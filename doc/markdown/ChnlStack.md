@@ -48,6 +48,7 @@ Tcl\_StackChannel, Tcl\_UnstackChannel, Tcl\_GetStackedChannel, Tcl\_GetTopChann
 
 [channel]{.carg .in type="Tcl_Channel"}
 : An existing Tcl channel such as returned by [Tcl\_CreateChannel][CrtChannel].
+
 :::
 
 # Description

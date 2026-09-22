@@ -42,7 +42,8 @@ oo::define, oo::objdefine, oo::Slot - Define and configure classes and objects
 ```
 oo::object
    → oo::Slot
-```:::
+```
+:::
 
 # Description
 
@@ -55,7 +56,7 @@ Note that the constructor for [oo::class][class] will call [oo::define][define] 
 The following commands are supported in the *defScript* for [oo::define][define], each of which may also be used in the *subcommand* form:
 
 [classmethod]{.cmd} [name]{.arg} [argList bodyScrip]{.optarg}
-: This creates a class method, or (if *argList* and *bodyScript* are omitted) promotes an existing method on the class object to be a class method. The *name*, *argList* and *bodyScript* arguments are as in the **method** definition, below.
+: [This creates a class method, or (if *argList* and *bodyScript* are omitted) promotes an existing method on the class object to be a class method. The *name*, *argList* and *bodyScript* arguments are as in the **method** definition, below.]{version="TIP478"}
 
     Class methods can be called on either the class itself or on the instances of that class. When they are called, the current object (see the **sel** and [my] commands) is the class on which they are called or the class of the instance on which they are called, depending on whether they are called on the class or an instance of the class, respectively. If called on a subclass or instance of the subclass, the current object is the subclass.
 
@@ -75,24 +76,24 @@ The following commands are supported in the *defScript* for [oo::define][define]
 **forward** *name cmdName* ?*arg ...*?
 : This creates or updates a forwarded method called *name*. The method is defined be forwarded to the command called *cmdName*, with additional arguments, *arg* etc., added before those arguments specified by the caller of the method. The *cmdName* will always be resolved using the rules of the invoking objects' namespaces, i.e., when *cmdName* is not fully-qualified, the command will be searched for in each object's namespace, using the instances' namespace's path, or by looking in the global namespace. The method will be exported if *name* starts with a lower-case letter, and non-exported otherwise.
 
-    If in a private definition context (see the **private** definition command, below), this command creates private forwarded methods.
+    [If in a private definition context (see the **private** definition command, below), this command creates private forwarded methods.]{version="TIP500"}
 
 **initialise** *script*
 : see below ...
 
 **initialize** *script*
-: This evaluates *script* in a context which supports local variables and where the current namespace is the instance namespace of the class object itself. This is useful for setting up, e.g., class-scoped variables.
+: [This evaluates *script* in a context which supports local variables and where the current namespace is the instance namespace of the class object itself. This is useful for setting up, e.g., class-scoped variables.]{version="TIP478"}
 
 **method** *name* ?*option*? *argList bodyScript*
-: This creates or updates a method that is implemented as a procedure-like script. The name of the method is *name*, the formal arguments to the method (defined using the same format as for the Tcl [proc] command) will be *argList*, and the body of the method will be *bodyScript*. When the body of the method is evaluated, the current namespace of the method will be a namespace that is unique to the current object. The method will be exported if *name* starts with a lower-case letter, and non-exported otherwise; this behavior can be overridden via **export** and **unexport** or by specifying **-export**, **-private** or **-unexport** in the optional parameter *option*.
+: This creates or updates a method that is implemented as a procedure-like script. The name of the method is *name*, the formal arguments to the method (defined using the same format as for the Tcl [proc] command) will be *argList*, and the body of the method will be *bodyScript*. When the body of the method is evaluated, the current namespace of the method will be a namespace that is unique to the current object. The method will be exported if *name* starts with a lower-case letter, and non-exported otherwise; this behavior can be overridden via **export** and **unexport** [or by specifying **-export**, **-private** or **-unexport** in the optional parameter *option*.]{version="TIP519"}
 
-    If in a private definition context (see the **private** definition command, below) or if the **-private** flag is given for *option*, this command creates private procedure-like methods.
+    [If in a private definition context (see the **private** definition command, below) or if the **-private** flag is given for *option*, this command creates private procedure-like methods.]{version="TIP500"}
 
 **private** *cmd arg...*
 : see below ...
 
 **private** *script*
-: This evaluates the *script* (or the list of command and arguments given by *cmd* and *arg*s) in a context where the definitions made on the current class will be private definitions.
+: [This evaluates the *script* (or the list of command and arguments given by *cmd* and *arg*s) in a context where the definitions made on the current class will be private definitions.]{version="TIP500"}
 
     The following class definition commands are affected by **private**: **forward**, **method**, **self**, and **variable**. Nesting **private** inside **private** has no cumulative effect; the innermost definition context is just a private definition context. All other definition commands have no difference in behavior when used in a private definition context.
 
@@ -105,7 +106,7 @@ The following commands are supported in the *defScript* for [oo::define][define]
 **self**
 : This command is equivalent to calling [oo::objdefine][objdefine] on the class being defined (see [Configuring objects] below for a description of the supported values of *subcommand*). It follows the same general pattern of argument handling as the [oo::define][define] and [oo::objdefine][objdefine] commands, and "[oo::define][define] *class* **self** *subcommand ...*" operates identically to "[oo::objdefine][objdefine] *class subcommand ...*".
 
-    If no arguments at all are used, this gives the name of the class currently being configured. If in a private definition context (see the **private** definition command, below), the definitions on the class object will also be made in a private definition context.
+    [If no arguments at all are used, this gives the name of the class currently being configured.]{version="TIP470"} [If in a private definition context (see the **private** definition command, below), the definitions on the class object will also be made in a private definition context.]{version="TIP500"}
 
 **superclass** ?*-slotOperation*? ?*className ...*?
 : This slot (see [Slotted definitions] below) allows the alteration of the superclasses of the class being defined. Each *className* argument names one class that is to be a superclass of the defined class. Note that objects must not be changed from being classes to being non-classes or vice-versa, that an empty parent class is equivalent to [oo::object][object], and that the parent classes of [oo::object][object] and [oo::class][class] may not be modified. By default, this slot works by replacement.
@@ -116,7 +117,7 @@ The following commands are supported in the *defScript* for [oo::define][define]
 **variable** ?*-slotOperation*? ?*name ...*?
 : This slot (see [Slotted definitions] below) arranges for each of the named variables to be automatically made available in the methods, constructor and destructor declared by the class being defined. Each variable name must not have any namespace separators and must not look like an array access. All variables will be actually present in the namespace of the instance object on which the method is executed. Note that the variable lists declared by a superclass or subclass are completely disjoint, as are variable lists declared by instances; the list of variable names is just for methods (and constructors and destructors) declared by this class. By default, this slot works by appending.
 
-    If in a private definition context (see the **private** definition command, below), this slot manipulates the list of private variable bindings for this class. In a private variable binding, the name of the variable within the instance object is different to the name given in the definition; the name used in the definition is the name that you use to access the variable within the methods of this class, and the name of the variable in the instance namespace has a unique prefix that makes accidental use from other classes extremely unlikely.
+    [If in a private definition context (see the **private** definition command, below), this slot manipulates the list of private variable bindings for this class. In a private variable binding, the name of the variable within the instance object is different to the name given in the definition; the name used in the definition is the name that you use to access the variable within the methods of this class, and the name of the variable in the instance namespace has a unique prefix that makes accidental use from other classes extremely unlikely.]{version="TIP500"}
 
 
 ## Advanced class configuration options
@@ -124,7 +125,7 @@ The following commands are supported in the *defScript* for [oo::define][define]
 The following definitions are also supported, but are not required in simple programs:
 
 [definitionnamespace]{.cmd} [kind]{.optarg} [namespaceName]{.arg}
-: This allows control over what namespace will be used by the [oo::define][define] and [oo::objdefine][objdefine] commands to look up the definition commands they use. When any object has a definition operation applied to it, *the class that it is an instance of* (and its superclasses and mixins) is consulted for what definition namespace to use. [oo::define][define] gets the class definition namespace, and [oo::objdefine][objdefine] gets the instance definition namespace, but both otherwise use the identical lookup operation.
+: [This allows control over what namespace will be used by the [oo::define][define] and [oo::objdefine][objdefine] commands to look up the definition commands they use. When any object has a definition operation applied to it, *the class that it is an instance of* (and its superclasses and mixins) is consulted for what definition namespace to use. [oo::define][define] gets the class definition namespace, and [oo::objdefine][objdefine] gets the instance definition namespace, but both otherwise use the identical lookup operation.]{version="TIP524"}
 
     This sets the definition namespace of kind *kind* provided by the current class to *namespaceName*. The *namespaceName* must refer to a currently existing namespace, or must be the empty string (to stop the current class from having such a namespace connected). The *kind*, if supplied, must be either **-class** (the default) or **-instance** to specify the whether the namespace for use with [oo::define][define] or [oo::objdefine][objdefine] respectively is being set.
 
@@ -153,12 +154,12 @@ The following commands are supported in the *defScript* for [oo::objdefine][objd
 **forward** *name cmdName* ?*arg ...*?
 : This creates or updates a forwarded object method called *name*. The method is defined be forwarded to the command called *cmdName*, with additional arguments, *arg* etc., added before those arguments specified by the caller of the method. Forwarded methods should be deleted using the **method** subcommand. The method will be exported if *name* starts with a lower-case letter, and non-exported otherwise.
 
-    If in a private definition context (see the **private** definition command, below), this command creates private forwarded methods.
+    [If in a private definition context (see the **private** definition command, below), this command creates private forwarded methods.]{version="TIP500"}
 
 **method** *name* ?*option*? *argList bodyScript*
-: This creates, updates or deletes an object method. The name of the method is *name*, the formal arguments to the method (defined using the same format as for the Tcl [proc] command) will be *argList*, and the body of the method will be *bodyScript*. When the body of the method is evaluated, the current namespace of the method will be a namespace that is unique to the object. The method will be exported if *name* starts with a lower-case letter, and non-exported otherwise; this can be overridden by specifying **-export**, **-private** or **-unexport** in the optional parameter *option*, or via the **export** and **unexport** definitions.
+: This creates, updates or deletes an object method. The name of the method is *name*, the formal arguments to the method (defined using the same format as for the Tcl [proc] command) will be *argList*, and the body of the method will be *bodyScript*. When the body of the method is evaluated, the current namespace of the method will be a namespace that is unique to the object. The method will be exported if *name* starts with a lower-case letter, and non-exported otherwise; [this can be overridden by specifying **-export**, **-private** or **-unexport** in the optional parameter *option*, or via the **export** and **unexport** definitions.]{version="TIP519"}
 
-    If in a private definition context (see the **private** definition command, below) or if the **-private** flag is given for *option*, this command creates private procedure-like methods.
+    [If in a private definition context (see the **private** definition command, below) or if the **-private** flag is given for *option*, this command creates private procedure-like methods.]{version="TIP500"}
 
 **mixin** ?*-slotOperation*? ?*className ...*?
 : This slot (see [Slotted definitions] below) sets or updates a per-object list of additional classes that are to be mixed into the object. Each argument, *className*, names a single class that is to be mixed in. By default, this slot works by replacement.
@@ -167,7 +168,7 @@ The following commands are supported in the *defScript* for [oo::objdefine][objd
 : see below ...
 
 **private** *script*
-: This evaluates the *script* (or the list of command and arguments given by *cmd* and *arg*s) in a context where the definitions made on the current object will be private definitions.
+: [This evaluates the *script* (or the list of command and arguments given by *cmd* and *arg*s) in a context where the definitions made on the current object will be private definitions.]{version="TIP500"}
 
     The following class definition commands are affected by **private**: **forward**, **method**, and **variable**. Nesting **private** inside **private** has no cumulative effect; the innermost definition context is just a private definition context. All other definition commands have no difference in behavior when used in a private definition context.
 
@@ -177,7 +178,7 @@ The following commands are supported in the *defScript* for [oo::objdefine][objd
 **variable** ?*-slotOperation*? ?*name ...*?
 : This slot (see [Slotted definitions] below) arranges for each of the named variables to be automatically made available in the methods declared by the object being defined.  Each variable name must not have any namespace separators and must not look like an array access. All variables will be actually present in the namespace of the object on which the method is executed. Note that the variable lists declared by the classes and mixins of which the object is an instance are completely disjoint; the list of variable names is just for methods declared by this object. By default, this slot works by appending.
 
-    If in a private definition context (see the **private** definition command, below), this slot manipulates the list of private variable bindings for this object.  In a private variable binding, the name of the variable within the instance object is different to the name given in the definition; the name used in the definition is the name that you use to access the variable within the methods of this instance object, and the name of the variable in the instance namespace has a unique prefix that makes accidental use from superclass methods extremely unlikely.
+    [If in a private definition context (see the **private** definition command, below), this slot manipulates the list of private variable bindings for this object.  In a private variable binding, the name of the variable within the instance object is different to the name given in the definition; the name used in the definition is the name that you use to access the variable within the methods of this instance object, and the name of the variable in the instance namespace has a unique prefix that makes accidental use from superclass methods extremely unlikely.]{version="TIP500"}
 
 
 ## Advanced object configuration options
@@ -197,7 +198,7 @@ The following definitions are also supported, but are not required in simple pro
 : This renames the method called *fromName* in an object to *toName*. The method must have previously existed in the object, and *toName* must not previously refer to a method in that object. Does not affect the classes that the object is an instance of and cannot rename in an instance object the methods provided by those classes (though a [oo::objdefine forward][objdefine]ed method may provide an equivalent capability). Does not change the export status of the method; if it was exported before, it will be afterwards.
 
 **self** 
-: This gives the name of the object currently being configured.
+: [This gives the name of the object currently being configured.]{version="TIP470"}
 
 
 # Private methods
@@ -214,16 +215,16 @@ The [oo::Slot][Slot] class defines six operations (as methods) that may be done 
 : This appends the given *member* elements to the slot definition.
 
 *slot* **-appendifnew** ?*member ...*?
-: This appends the given *member* elements to the slot definition if they do not already exist.
+: [This appends the given *member* elements to the slot definition if they do not already exist.]{version="TIP558"}
 
 *slot* **-clear**
 : This sets the slot definition to the empty list.
 
 *slot* **-prepend** ?*member ...*?
-: This prepends the given *member* elements to the slot definition.
+: [This prepends the given *member* elements to the slot definition.]{version="TIP516"}
 
 *slot* **-remove** ?*member ...*?
-: This removes the given *member* elements from the slot definition.
+: [This removes the given *member* elements from the slot definition.]{version="TIP516"}
 
 *slot* **-set** ?*member ...*?
 : This replaces the slot definition with the given *member* elements.
@@ -240,10 +241,10 @@ Internally, slot objects also define a method **--default-operation** which is f
 [slot]{.ins} [Get]{.sub}
 : Returns a list that is the current contents of the slot, but does not modify the slot. This method must always be called from a stack frame created by a call to [oo::define][define] or [oo::objdefine][objdefine]. This method *should not* return an error unless it is called from outside a definition context or with the wrong number of arguments.
 
-    The elements of the list should be fully resolved, if that is a meaningful concept to the slot.
+    [The elements of the list should be fully resolved, if that is a meaningful concept to the slot.]{version="TIP516"}
 
 *slot* **Resolve** *slotElement*
-: Returns *slotElement* with a resolution operation applied to it, but does not modify the slot. For slots of simple strings, this is an operation that does nothing, whereas for slots of classes, this maps a class name to its fully-qualified class name.  This method must always be called from a stack frame created by a call to [oo::define][define] or [oo::objdefine][objdefine].  This method *should not* return an error unless it is called from outside a definition context or with the wrong number of arguments; unresolvable arguments should be returned as is (as not all slot operations strictly require that values are resolvable to work).
+: [Returns *slotElement* with a resolution operation applied to it, but does not modify the slot. For slots of simple strings, this is an operation that does nothing, whereas for slots of classes, this maps a class name to its fully-qualified class name.  This method must always be called from a stack frame created by a call to [oo::define][define] or [oo::objdefine][objdefine].  This method *should not* return an error unless it is called from outside a definition context or with the wrong number of arguments; unresolvable arguments should be returned as is (as not all slot operations strictly require that values are resolvable to work).]{version="TIP516"}
 
     Implementations *should not* enforce uniqueness and ordering constraints in this method; that is the responsibility of the **Set** method. A default implementation of this method (that just returns its *slotElement* argument) is provided in the [oo::Slot][Slot] class.
 

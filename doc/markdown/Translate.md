@@ -39,6 +39,7 @@ Tcl\_TranslateFileName - convert file name to native form
 
 [\*bufferPtr]{.carg .in/out type="Tcl_DString"}
 : If needed, this dynamic string is used to store the new file name. At the time of the call it should be uninitialized or free.  The caller must eventually call [Tcl\_DStringFree][DString] to free up anything stored here.
+
 :::
 
 # Description

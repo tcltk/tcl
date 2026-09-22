@@ -37,7 +37,7 @@ The parameter *max-count* could additionally impose a further restriction by the
 It will then return a canonical Tcl-list of the form:
 
 ```
-0.095977 \(mcs/# 52095836 # 10419167 #/sec 5000.000 net-ms
+0.095977 µs/# 52095836 # 10419167 #/sec 5000.000 net-ms
 ```
 
 which indicates:

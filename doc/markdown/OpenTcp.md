@@ -71,6 +71,7 @@ Tcl\_OpenTcpClient, Tcl\_MakeTcpClientChannel, Tcl\_OpenTcpServer, Tcl\_OpenTcpS
 
 [\*clientData]{.carg .in type="void"}
 : Arbitrary one-word value to pass to *proc*.
+
 :::
 
 # Description

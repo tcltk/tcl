@@ -175,6 +175,7 @@ Tcl\_OpenFileChannel, Tcl\_OpenCommandChannel, Tcl\_MakeFileChannel, Tcl\_GetCha
 
 [\*newValue]{.carg .in type="const char"}
 : New value for the option given by *optionName*.
+
 :::
 
 # Description

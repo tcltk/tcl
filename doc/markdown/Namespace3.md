@@ -76,6 +76,7 @@ Tcl\_AppendExportList, Tcl\_CreateNamespace, Tcl\_DeleteNamespace, Tcl\_Export, 
 
 [\*handlerPtr]{.carg .in type="Tcl_Obj"}
 : A script fragment to be installed as the unknown command handler for the namespace, or NULL to reset the handler to its default.
+
 :::
 
 # Description

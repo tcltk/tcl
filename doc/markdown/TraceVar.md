@@ -58,6 +58,7 @@ Tcl\_TraceVar, Tcl\_TraceVar2, Tcl\_UntraceVar, Tcl\_UntraceVar2, Tcl\_VarTraceI
 
 [\*prevClientData]{.carg .in type="void"}
 : If non-NULL, gives last value returned by **Tcl\_VarTraceInfo** or **Tcl\_VarTraceInfo2**, so this call will return information about next trace.  If NULL, this call will return information about first trace.
+
 :::
 
 # Description

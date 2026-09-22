@@ -37,6 +37,7 @@ Tcl\_SubstObj - perform substitutions on Tcl values
 
 [flags]{.carg .in type="int"}
 : OR'ed combination of flag bits that specify which substitutions to perform.  The flags **TCL\_SUBST\_COMMANDS**, **TCL\_SUBST\_VARIABLES** and **TCL\_SUBST\_BACKSLASHES** are currently supported, and **TCL\_SUBST\_ALL** is provided as a convenience for the common case where all substitutions are desired.
+
 :::
 
 # Description

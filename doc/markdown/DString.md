@@ -57,6 +57,7 @@ Tcl\_DStringInit, Tcl\_DStringAppend, Tcl\_DStringAppendElement, Tcl\_DStringSta
 
 [\*interp]{.carg .in/out type="Tcl_Interp"}
 : Interpreter whose result is to be set from or moved to the dynamic string.
+
 :::
 
 # Description

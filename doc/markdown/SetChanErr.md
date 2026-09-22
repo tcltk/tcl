@@ -45,6 +45,7 @@ Tcl\_SetChannelError, Tcl\_SetChannelErrorInterp, Tcl\_GetChannelError, Tcl\_Get
 
 [\*\*msgPtr]{.carg .out type="Tcl_Obj"}
 : Reference to a place where the message stored in the accessed bypass area can be stored in.
+
 :::
 
 # Description

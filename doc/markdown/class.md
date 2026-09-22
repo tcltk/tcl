@@ -34,7 +34,8 @@ oo::class - The class of all classes
 ```
 oo::object
    → oo::class
-```:::
+```
+:::
 
 # Description
 
@@ -66,7 +67,7 @@ The **oo::class** class does not define an explicit destructor. However, when a 
 The **oo::class** class supports the following non-exported methods:
 
 [cls]{.ins} [createWithNamespace]{.sub} [name]{.arg} [nsName]{.arg} [arg]{.optdot}
-: This creates a new instance of the class *cls* called *name* (which is resolved within the calling context's namespace if not fully qualified), passing the arguments, *arg ...*, to the constructor, and (if that returns a successful result) returning the fully qualified name of the created object (the result of the constructor is ignored). The name of the instance's internal namespace will be *nsName*; it is an error if that namespace cannot be created. If the constructor fails (i.e., returns a non-OK result) then the object is destroyed and the error message is the result of this method call.
+: This creates a new instance of the class *cls* called *name* (which is resolved within the calling context's namespace if not fully qualified), passing the arguments, *arg ...*, to the constructor, and (if that returns a successful result) returning the fully qualified name of the created object (the result of the constructor is ignored). The name of the instance's internal namespace will be *nsName*; [it is an error if that namespace cannot be created.]{version=""} If the constructor fails (i.e., returns a non-OK result) then the object is destroyed and the error message is the result of this method call.
 
 
 # Examples

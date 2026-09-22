@@ -39,6 +39,7 @@ Tcl\_CreateCloseHandler, Tcl\_DeleteCloseHandler - arrange for callbacks when ch
 
 [\*clientData]{.carg .in type="void"}
 : Arbitrary one-word value to pass to *proc*.
+
 :::
 
 # Description

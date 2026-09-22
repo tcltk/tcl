@@ -59,6 +59,7 @@ TclZipfs\_AppHook, TclZipfs\_Mount, TclZipfs\_MountBuffer, TclZipfs\_Unmount - h
 
 [copy]{.carg .in type="int"}
 : If non-zero, the ZIP archive in the data buffer will be internally copied before mounting, allowing the data buffer to be disposed once [TclZipfs\_MountBuffer][zipfs] returns. If zero, the caller guarantees that the buffer will be valid to read from for the duration of the mount.
+
 :::
 
 # Description

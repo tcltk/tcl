@@ -44,6 +44,7 @@ Tcl\_Alloc, Tcl\_Free, Tcl\_Realloc, Tcl\_AttemptAlloc, Tcl\_AttemptRealloc, Tcl
 
 [\*dsPtr]{.carg .in type="Tcl_DString"}
 : Initialized DString pointer.
+
 :::
 
 # Description

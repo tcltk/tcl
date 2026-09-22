@@ -105,6 +105,7 @@ Tcl\_CreateChannel, Tcl\_GetChannelInstanceData, Tcl\_GetChannelType, Tcl\_GetCh
 
 [\*optionList]{.carg .in type="const char"}
 : Specific options list (space separated words, without "-") to append to the standard generic options list. Can be NULL for generic options error message only.
+
 :::
 
 # Description
@@ -137,9 +138,7 @@ To add a new type of channel you must implement a C API or a Tcl command that op
 
 **Tcl\_GetChannelMode** returns an OR-ed combination of **TCL\_READABLE** and **TCL\_WRITABLE**, indicating whether the channel is open for input and output.
 
-[]{version="TIP220"}
-
-**Tcl\_RemoveChannelMode** removes an access privilege from the channel, either **TCL\_READABLE** or **TCL\_WRITABLE**, and returns a regular Tcl result code, [TCL\_OK][catch], or [TCL\_ERROR][catch]. The function throws an error if either an invalid mode is specified or the result of the removal would be an inaccessible channel. In that case an error message is left in the interp argument, if not NULL.
+[**Tcl\_RemoveChannelMode** removes an access privilege from the channel, either **TCL\_READABLE** or **TCL\_WRITABLE**, and returns a regular Tcl result code, [TCL\_OK][catch], or [TCL\_ERROR][catch]. The function throws an error if either an invalid mode is specified or the result of the removal would be an inaccessible channel. In that case an error message is left in the interp argument, if not NULL.]{version="TIP220"}
 
 **Tcl\_GetChannelBufferSize** returns the size, in bytes, of buffers allocated to store input or output in *channel*. If the value was not set by a previous call to **Tcl\_SetChannelBufferSize**, described below, then the default value of 4096 is returned.
 

@@ -57,11 +57,11 @@ At the point when *command* is called, the current namespace will be the global 
 
 Similarly, the [coroinject] command may be used to place a command to be run inside a suspended coroutine (when it is resumed) to process arguments, with quite a bit of similarity to [coroprobe]. However, with [coroinject] there are several key differences:
 
-- The coroutine is not immediately resumed after the injection has been done.  A consequence of this is that multiple injections may be done before the coroutine is resumed. The injected commands are performed in *reverse order of definition* (that is, they are internally stored on a stack).
+- [The coroutine is not immediately resumed after the injection has been done.  A consequence of this is that multiple injections may be done before the coroutine is resumed. The injected commands are performed in *reverse order of definition* (that is, they are internally stored on a stack).]{version="TIP383"}
 
-- An additional two arguments are appended to the list of arguments to be run (that is, the *command* and its *args* are extended by two elements). The first is the name of the command that suspended the coroutine ([yield] or [yieldto]), and the second is the argument (or list of arguments, in the case of [yieldto]) that is the current resumption value.
+- [An additional two arguments are appended to the list of arguments to be run (that is, the *command* and its *args* are extended by two elements). The first is the name of the command that suspended the coroutine ([yield] or [yieldto]), and the second is the argument (or list of arguments, in the case of [yieldto]) that is the current resumption value.]{version="TIP383"}
 
-- The result of the injected command is used as the result of the [yield] or [yieldto] that caused the coroutine to become suspended. Where there are multiple injected commands, the result of one becomes the resumption value processed by the next.
+- [The result of the injected command is used as the result of the [yield] or [yieldto] that caused the coroutine to become suspended. Where there are multiple injected commands, the result of one becomes the resumption value processed by the next.]{version="TIP383"}
 
 
 The injection is a one-off. It is not retained once it has been executed. It may [yield] or [yieldto] as part of its execution.

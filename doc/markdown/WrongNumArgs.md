@@ -40,6 +40,7 @@ Tcl\_WrongNumArgs - generate standard error message for wrong number of argument
 
 [\*message]{.carg .in type="const char"}
 : Additional error information to print after leading arguments from *objv*.  This typically gives the acceptable syntax of the command.  This argument may be NULL.
+
 :::
 
 # Description

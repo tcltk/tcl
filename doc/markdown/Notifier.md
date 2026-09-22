@@ -90,6 +90,7 @@ Tcl\_CreateEventSource, Tcl\_DeleteEventSource, Tcl\_SetMaxBlockTime, Tcl\_Queue
 
 [Tcl\_NotifierProcs\*]{.carg .notifierProcPtr type="const"}
 : Structure of function pointers describing notifier procedures that are to replace the ones installed in the executable.  See [Replacing the notifier] for details.
+
 :::
 
 # Introduction

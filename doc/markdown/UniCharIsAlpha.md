@@ -38,6 +38,7 @@ Tcl\_UniCharIsAlnum, Tcl\_UniCharIsAlpha, Tcl\_UniCharIsControl, Tcl\_UniCharIsD
 
 [ch]{.carg .in type="int"}
 : The Unicode character to be examined.
+
 :::
 
 # Description

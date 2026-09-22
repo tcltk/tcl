@@ -37,21 +37,21 @@ This command performs one of several operations on the variable given by *arrayN
 : Returns 1 if there are any more elements left to be processed in an array search, 0 if all elements have already been returned. *SearchId* indicates which search on *arrayName* to check, and must have been the return value from a previous invocation of **array startsearch**. This option is particularly useful if an array has an element with an empty name, since the return value from **array nextelement** will not indicate whether the search has been completed.
 
 **array default** *subcommand arrayName* ?*arg*?
-: Manages the default value of the array. Arrays initially have no default value, but this command allows you to set one; the default value will be returned when reading from an element of the array *arrayName* if the read would otherwise result in an error. Note that this may cause the [append], [dict], [incr] and [lappend] commands to change their behavior in relation to non-existing array elements.
+: [Manages the default value of the array. Arrays initially have no default value, but this command allows you to set one; the default value will be returned when reading from an element of the array *arrayName* if the read would otherwise result in an error. Note that this may cause the [append], [dict], [incr] and [lappend] commands to change their behavior in relation to non-existing array elements.]{version="TIP508"}
 
     The *subcommand* argument controls what exact operation will be performed on the default value of *arrayName*. Supported *subcommand*s are:
 
     **array default exists** *arrayName*
-    : This returns a boolean value indicating whether a default value has been set for the array *arrayName*. Returns a false value if *arrayName* does not exist. Raises an error if *arrayName* is an existing variable that is not an array.
+    : [This returns a boolean value indicating whether a default value has been set for the array *arrayName*. Returns a false value if *arrayName* does not exist. Raises an error if *arrayName* is an existing variable that is not an array.]{version="TIP508"}
 
     **array default get** *arrayName*
-    : This returns the current default value for the array *arrayName*.  Raises an error if *arrayName* is an existing variable that is not an array, or if *arrayName* is an array without a default value.
+    : [This returns the current default value for the array *arrayName*.  Raises an error if *arrayName* is an existing variable that is not an array, or if *arrayName* is an array without a default value.]{version="TIP508"}
 
     **array default set** *arrayName value*
-    : This sets the default value for the array *arrayName* to *value*. Returns the empty string. Raises an error if *arrayName* is an existing variable that is not an array, or if *arrayName* is an illegal name for an array. If *arrayName* does not currently exist, it is created as an empty array as well as having its default value set.
+    : [This sets the default value for the array *arrayName* to *value*. Returns the empty string. Raises an error if *arrayName* is an existing variable that is not an array, or if *arrayName* is an illegal name for an array. If *arrayName* does not currently exist, it is created as an empty array as well as having its default value set.]{version="TIP508"}
 
     **array default unset** *arrayName*
-    : This removes the default value for the array *arrayName* and returns the empty string. Does nothing if *arrayName* does not have a default value. Raises an error if *arrayName* is an existing variable that is not an array.
+    : [This removes the default value for the array *arrayName* and returns the empty string. Does nothing if *arrayName* does not have a default value. Raises an error if *arrayName* is an existing variable that is not an array.]{version="TIP508"}
 
 
 **array donesearch** *arrayName searchId*

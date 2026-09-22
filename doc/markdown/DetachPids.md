@@ -46,6 +46,7 @@ Tcl\_DetachPids, Tcl\_ReapDetachedProcs, Tcl\_WaitPid - manage child processes i
 
 [options]{.carg .in type="int"}
 : The options controlling the wait. WNOHANG specifies not to wait when checking the process.
+
 :::
 
 # Description

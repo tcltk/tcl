@@ -37,14 +37,14 @@ Performs one of several encoding related operations, depending on *option*.  The
 [encoding]{.cmd} [convertfrom]{.sub} [encoding]{.optarg} [data]{.arg}
 : see below ...
 
-**encoding convertfrom** ?**-profile** *profile*? ?**-failindex** *varName*? *encoding data*
-: Converts *data*, which should be a binary string encoded as per *encoding*, to a Tcl string. In the first form of the command, if *encoding* is not specified, the current system encoding is used. In the second form, the **-profile** option determines the command behavior in the presence of conversion errors. See the [Profiles] section below for details. Any premature termination of processing due to errors is reported through an exception if the **-failindex** option is not specified. If the **-failindex** is specified, instead of an exception being raised on premature termination, the result of the conversion up to the point of the error is returned as the result of the command. In addition, the index of the source byte triggering the error is stored in the variable specified by *varName*. If no errors are encountered, the entire result of the conversion is returned and the value **-1** is stored in *varName*.
+[**encoding convertfrom** ?**-profile** *profile*? ?**-failindex** *varName*? *encoding data*]{version="TIP607, TIP656"}
+:  Converts *data*, which should be a binary string encoded as per *encoding*, to a Tcl string. In the first form of the command, if *encoding* is not specified, the current system encoding is used. [In the second form, the **-profile** option determines the command behavior in the presence of conversion errors. See the [Profiles] section below for details. Any premature termination of processing due to errors is reported through an exception if the **-failindex** option is not specified. If the **-failindex** is specified, instead of an exception being raised on premature termination, the result of the conversion up to the point of the error is returned as the result of the command. In addition, the index of the source byte triggering the error is stored in the variable specified by *varName*. If no errors are encountered, the entire result of the conversion is returned and the value **-1** is stored in *varName*.]{version="TIP607, TIP656"}
 
 **encoding convertto** ?*encoding*? *data*
 : see below ...
 
 **encoding convertto** ?**-profile** *profile*? ?**-failindex** *varName*? *encoding data*
-: Converts *data* to the specified *encoding*. The result is a Tcl binary string that contains the sequence of bytes representing the converted string in the specified encoding. In the first form of the command, if *encoding* is not specified, the current system encoding is used. In the second form of the command, the **-profile** and **-failindex** options have the same effect as described for the **encoding convertfrom** command.
+: Converts *data* to the specified *encoding*. The result is a Tcl binary string that contains the sequence of bytes representing the converted string in the specified encoding. In the first form of the command, if *encoding* is not specified, the current system encoding is used. [In the second form of the command, the **-profile** and **-failindex** options have the same effect as described for the **encoding convertfrom** command.]{version="TIP607, TIP656"}
 
 **encoding dirs** ?*directoryList*?
 : Tcl can load encoding data files from the file system that describe additional encodings for it to work with. This command sets the search path for **\*.enc** encoding data files to the list of directories *directoryList*. If *directoryList* is omitted then the command returns the current list of directories that make up the search path. It is an error for *directoryList* to not be a valid list. If, when a search for an encoding data file is happening, an element in *directoryList* does not refer to a readable, searchable directory, that element is ignored.
@@ -53,34 +53,34 @@ Performs one of several encoding related operations, depending on *option*.  The
 : Returns a list containing the names of all of the encodings that are currently available. The encodings "utf-8" and "iso8859-1" are guaranteed to be present in the list.
 
 **encoding profiles**
-: Returns a list of the names of encoding profiles. See [Profiles] below.
+: [Returns a list of the names of encoding profiles. See [Profiles] below.]{version="TIP656"}
 
 **encoding system** ?*encoding*?
 : Set the system encoding to *encoding*. If *encoding* is omitted then the command returns the current system encoding.  The system encoding is used whenever Tcl passes strings to system calls.
 
 **encoding user**
-: Returns the name of encoding as per the user's preferences. On Windows systems, this is based on the user's code page settings in the registry. On other platforms, the returned value is the same as returned by **encoding system**.
+: [Returns the name of encoding as per the user's preferences. On Windows systems, this is based on the user's code page settings in the registry. On other platforms, the returned value is the same as returned by **encoding system**.]{version="TIP716"}
 
 
 # Profiles
 
 [Operations involving encoding transforms may encounter several types of errors such as invalid sequences in the source data, characters that cannot be encoded in the target encoding and so on. A *profile* prescribes the strategy for dealing with such errors in one of two ways:]{version="TIP656"}
 
-- Terminating further processing of the source data. The profile does not determine how this premature termination is conveyed to the caller. By default, this is signalled by raising an exception. If the **-failindex** option is specified, errors are reported through that mechanism.
+- [Terminating further processing of the source data. The profile does not determine how this premature termination is conveyed to the caller. By default, this is signalled by raising an exception. If the **-failindex** option is specified, errors are reported through that mechanism.]{version="TIP656"}
 
-- Continue further processing of the source data using a fallback strategy such as replacing or discarding the offending bytes in a profile-defined manner.
+- [Continue further processing of the source data using a fallback strategy such as replacing or discarding the offending bytes in a profile-defined manner.]{version="TIP656"}
 
 
-The following profiles are currently implemented with **strict** being the default if the **-profile** is not specified. []{version="TIP656"}
+The following profiles are currently implemented with **strict** being the default if the **-profile** is not specified.
 
-**strict**
-: The **strict** profile always stops processing when an conversion error is encountered. The error is signalled via an exception or the **-failindex** option mechanism. The **strict** profile implements a Unicode standard conformant behavior.
+[**strict**]{version="TIP656"}
+: [The **strict** profile always stops processing when an conversion error is encountered. The error is signalled via an exception or the **-failindex** option mechanism. The **strict** profile implements a Unicode standard conformant behavior.]{version="TIP656"}
 
-**tcl8**
-: The **tcl8** profile always follows the first strategy above and corresponds to the behavior of encoding transforms in Tcl 8.6. When converting from an external encoding **other than utf-8** to Tcl strings with the **encoding convertfrom** command, invalid bytes are mapped to their numerically equivalent code points. For example, the byte 0x80 which is invalid in ASCII would be mapped to code point U+0080. When converting from **utf-8**, invalid bytes that are defined in CP1252 are mapped to their Unicode equivalents while those that are not fall back to the numerical equivalents. For example, byte 0x80 is defined by CP1252 and is therefore mapped to its Unicode equivalent U+20AC while byte 0x81 which is not defined by CP1252 is mapped to U+0081. As an additional special case, the sequence 0xC0 0x80 is mapped to U+0000.  When converting from Tcl strings to an external encoding format using **encoding convertto**, characters that cannot be represented in the target encoding are replaced by an encoding-dependent character, usually the question mark **?**.
+[**tcl8**]{version="TIP656"}
+: [The **tcl8** profile always follows the first strategy above and corresponds to the behavior of encoding transforms in Tcl 8.6. When converting from an external encoding **other than utf-8** to Tcl strings with the **encoding convertfrom** command, invalid bytes are mapped to their numerically equivalent code points. For example, the byte 0x80 which is invalid in ASCII would be mapped to code point U+0080. When converting from **utf-8**, invalid bytes that are defined in CP1252 are mapped to their Unicode equivalents while those that are not fall back to the numerical equivalents. For example, byte 0x80 is defined by CP1252 and is therefore mapped to its Unicode equivalent U+20AC while byte 0x81 which is not defined by CP1252 is mapped to U+0081. As an additional special case, the sequence 0xC0 0x80 is mapped to U+0000.  When converting from Tcl strings to an external encoding format using **encoding convertto**, characters that cannot be represented in the target encoding are replaced by an encoding-dependent character, usually the question mark **?**.]{version="TIP656"}
 
-**replace**
-: Like the **tcl8** profile, the **replace** profile always continues processing on conversion errors but follows a Unicode standard conformant method for substitution of invalid source data.  When converting an encoded byte sequence to a Tcl string using **encoding convertfrom**, invalid bytes are replaced by the U+FFFD REPLACEMENT CHARACTER code point.  When encoding a Tcl string with **encoding convertto**, code points that cannot be represented in the target encoding are transformed to an encoding-specific fallback character, U+FFFD REPLACEMENT CHARACTER for UTF targets and generally `?` for other encodings.
+[**replace**]{version="TIP656"}
+: [Like the **tcl8** profile, the **replace** profile always continues processing on conversion errors but follows a Unicode standard conformant method for substitution of invalid source data.  When converting an encoded byte sequence to a Tcl string using **encoding convertfrom**, invalid bytes are replaced by the U+FFFD REPLACEMENT CHARACTER code point.  When encoding a Tcl string with **encoding convertto**, code points that cannot be represented in the target encoding are transformed to an encoding-specific fallback character, U+FFFD REPLACEMENT CHARACTER for UTF targets and generally `?` for other encodings.]{version="TIP656"}
 
 
 # Examples
@@ -100,7 +100,7 @@ Example 1: convert a byte sequence in Japanese euc-jp encoding to a TCL string:
 U+00306F
 ```
 
-The result is the unicode codepoint "\\u306F", which is the Hiragana letter HA. []{TIP656 version="TIP607,"}
+The result is the unicode codepoint "\\u306F", which is the Hiragana letter HA.
 
 Example 2: Error handling based on profiles:
 

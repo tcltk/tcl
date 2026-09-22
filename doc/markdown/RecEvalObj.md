@@ -42,6 +42,7 @@ Tcl\_RecordAndEvalObj - save command on history list before evaluating
 
 [flags]{.carg .in type="int"}
 : An OR'ed combination of flag bits.  **TCL\_NO\_EVAL** means record the command but do not evaluate it.  **TCL\_EVAL\_GLOBAL** means evaluate the command at global level instead of the current stack level.
+
 :::
 
 # Description

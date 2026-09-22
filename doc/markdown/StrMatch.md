@@ -37,6 +37,7 @@ Tcl\_StringMatch, Tcl\_StringCaseMatch - test whether a string matches a pattern
 
 [flags]{.carg .in type="int"}
 : OR-ed combination of match flags, currently only **TCL\_MATCH\_NOCASE**. 0 specifies a case-sensitive search.
+
 :::
 
 # Description

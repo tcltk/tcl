@@ -37,6 +37,7 @@ Tcl\_PrintDouble - Convert floating value to string
 
 [\*dst]{.carg .out type="char"}
 : Where to store the string representing *value*.  Must have at least **TCL\_DOUBLE\_SPACE** characters of storage.
+
 :::
 
 # Description

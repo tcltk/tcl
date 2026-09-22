@@ -46,6 +46,7 @@ Tcl\_CommandTraceInfo, Tcl\_TraceCommand, Tcl\_UntraceCommand - monitor renames 
 
 [\*prevClientData]{.carg .in type="void"}
 : If non-NULL, gives last value returned by **Tcl\_CommandTraceInfo**, so this call will return information about next trace.  If NULL, this call will return information about first trace.
+
 :::
 
 # Description

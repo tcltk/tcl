@@ -19,13 +19,22 @@ tclsh man2markdown.tcl ../doc ../markdown
 
 The last invocation can be used to check what changed with respect to the last `fossil commit`. Any change reported by fossil (before committing) is a change that might have issues compared to teh previous version, so it should be checked before the commit and amended before the commit!
 
-# Usage of Pandoc to convert generated markdown to nroff
+# Usage of Pandoc to convert generated markdown
 
-...
+We use Pandoc to convert the markdown sources to both nroff and HTML as long as no converter exists in Tcl which can handle this well. As the dollar sign is often used in the manual pages to mark variables and we do not need TeX math, we disable the tex_math_dollars extension in Pandoc.
 
-# Usage of Pandoc to convert generated markdown to HTML
+## Conversion to nroff
 
-....
+```
+pandoc -f markdown-tex_math_dollars -t man mypage.md -o mypage.n
+```
+
+## Conversion to HTML
+
+```
+pandoc -f markdown-tex_math_dollars -t html mypage.md -o mypage.html
+```
+
 
 # Status of conversion process
 
@@ -118,7 +127,7 @@ Final conversion of these files in the n section is currently done:
 77. mathfunc (list of functions needs other formatting, the math function syntax should perhaps not use {.cmd})
 78. mathop (list of operators needs other formatting, the math operator syntax should perhaps not use {.cmd
 79. memory
-80. msgcat
+80. msgcat (check the TIP499 marker)
 81. my
 82. namespace
 83. next
@@ -166,7 +175,7 @@ Final conversion of these files in the n section is currently done:
 125. trace
 126. transchan
 127. try
-128. unicode
+128. unicode (check the TIP726 markers)
 129. unknown
 130. unload
 131. unset
@@ -367,7 +376,6 @@ AST element "Paragraph" is not yet treated properly (the content field of the AS
 
 After the final round of conversion from nroff to Markdown, some manual work needs to be done that is not covered by the conversion script
 
-- find all instances of .VS/.VE macros to add the 'version="TIPxxx"' attribute to the corresponding elements (e.g. they are not caught inside the synopsis section)
 - subdivide certain manual pages (the nroff files only have sections and subsection, in the markdown version, also subsubsections are needed in some pages)
 - find all pages where nested definition lists occur (e.g. Tcl.md) and consider using subsections instead
 - look at the sections marked as '{.info DISPLAY="yes"}' as these need a proper visual representation

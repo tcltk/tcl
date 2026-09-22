@@ -52,6 +52,7 @@ Tcl\_CreateCommand - implement new commands in C
 
 [\*deleteProc]{.carg .in type="Tcl_CmdDeleteProc"}
 : Procedure to call before *cmdName* is deleted from the interpreter; allows for command-specific cleanup.  If NULL, then no procedure is called before the command is deleted.
+
 :::
 
 # Description

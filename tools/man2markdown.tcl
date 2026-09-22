@@ -105,7 +105,6 @@ namespace eval ::ndoc {
 		| ListItem     |               |
 		| Dlist        |               | a definition list
 		| DlistItem    | -definition   | the definition text making up the 'label' of the item (this is an Inline AST element!)
-		|              | -vs           | value of a .VS macro for that DlistItem > not possible to use in markdown
 		| Emphasis     |               |
 		| Strong       |               | text with strong emphasis, typically rendered as bold |
 		| Quoted       | -type         | text enclosed in quotes of a specific type (-type single|double)
@@ -877,6 +876,9 @@ proc ::ndoc::parseBackslash {text} {
 	# \\|            = {}      ->   zero-width narrow space (1/6 em)
 	# \\0            = { }     ->   digit-width space (a space that is exactly the same width as a digit (0–9) in the current font)
 	# \\&            = {}       ->   zero-width non-printing character (often followed by a literal dot to prevent interpretations as a macro command when located at the beginning of a line)
+	# \\(+-          = \(+-    ->   ± (plus-or-minus, used e.g. in format(n)/scan(n))
+	# \\(^o          = \(^o    ->   ô (o with circumflex, used e.g. in re_syntax(n))
+	# \\(mc          = \(mc    ->   µ (micro sign, used e.g. in timerate(n))
 	#
 	# Note: this procedure does not handle the \f... sequences
 	# (\fB, \fI and \fR are handled by BIRPclean, BIRPstrip and parseInline)
@@ -895,6 +897,9 @@ proc ::ndoc::parseBackslash {text} {
 		\\0 { }
 		\\& {}
 		\\(fm '
+		\\(+- \u00b1
+		\\(^o \u00f4
+		\\(mc \u00b5
 	} $text]
 	return $text
 }
@@ -956,12 +961,25 @@ proc ::ndoc::blocksExpand {blockList} {
 			ListItem - DlistItem {
 				if {$blockType eq "DlistItem"} {
 					set content [dict get $blockAttributes -definition]
+					# a .VS region that tightly wraps just this item's title (nothing of
+					# its own body in between, e.g. unicode.n's TIP726) has no text left
+					# to tag once its body closes (see parseBlock), so it is tagged here
+					# on the title/term itself instead - see the -vs itemAttr set in
+					# parseBlock's .TP/.IP handling:
+					set titleVs {}
+					if {[dict exists $blockAttributes -vs]} {
+						set titleVs [dict get $blockAttributes -vs]
+						dict unset blockAttributes -vs
+					}
 					if {[string range $content 0 5] in {METHOD OPTION COMMAN}} {
 						# a Tcl syntax element to convert to proper custom AST
 						set startIndex [string first "_" $content]
 						incr startIndex
 						set content [string range $content $startIndex end]
-						dict set blockAttributes -definition [parseCommand -ast $content]
+						dict set blockAttributes -definition [parseCommand -ast $content $titleVs]
+					} elseif {$titleVs ne ""} {
+						dict set blockAttributes -definition \
+							[list [list Span "-vs {$titleVs}" [lindex [parseInline Inline {} $content] 2]]]
 					} else {
 						dict set blockAttributes -definition [list [parseInline Inline {} $content]]
 					}
@@ -1017,6 +1035,20 @@ proc ::ndoc::parseBlock {parent manContent} {
 	# (see the .VS/.VE case below); tracked explicitly since a block can carry over an unrelated, already-closed ¤ from
 	# an earlier .VS/.VE pair that ran past its own block boundary (see below):
 	set vsOpen 0
+	# the TIP/version info of the currently open .VS region, kept alongside vsOpen so
+	# it can be handed off (see pendingVsInfo below) if the region turns out to have
+	# no real text in it once its block closes:
+	set vsInfo {}
+	# when a .VS region closes (auto- or otherwise) with no real text of its own -
+	# either because it is literally all the block had (e.g. CrtChannel.3's
+	# '.PP'/'.VS TIPxxx'/'.PP') or because it trails at the very end of an otherwise
+	# non-empty block (e.g. unicode.n's TIP726, which opens after real prose but right
+	# before a .TP with nothing of its own in between) - AND that close was triggered
+	# by an upcoming .TP/.IP, the info is stashed here so the new .TP/.IP list can pick
+	# it up and mark its first item instead of losing it entirely; consumed (and
+	# cleared) by the .TP/.IP case below, and cleared here too on any close that is NOT
+	# such a hand-off, so it never leaks forward into some unrelated, later .TP/.IP:
+	set pendingVsInfo {}
 	while {[llength $manContent] > 0} {
 		if {$doCloseBlock} {
 			if {$blockContent ne ""} {
@@ -1028,12 +1060,28 @@ proc ::ndoc::parseBlock {parent manContent} {
 					# a .CS/.CE code block) - close it off here so this block's content stays
 					# well-formed. We do NOT carry it over into whatever
 					# block comes next (that would also wrongly re-open it inside a Code block).
-					# the marking is dropped (still better than corrupted output)
 					append blockContent ¤
 					set vsOpen 0
 				}
-				lappend blockList [list $blockType $blockAttributes $blockContent]
-				if {$verbose} {puts "... closed block: [lindex $blockList end]"}
+				set pendingVsInfo {}
+				if {[regexp {‡([^:]*):¤$} $blockContent -> trailingInfo]} {
+					# the region that just closed (auto- or for real) has nothing in it
+					# and sits right at the end of the block - strip it out (it would
+					# otherwise render as a stray empty '[]{version="..."}') and, if an
+					# upcoming .TP/.IP is what closed this block, hand its info off to
+					# that new list instead of just losing it (see pendingVsInfo above):
+					set blockContent [string trimright [regsub {‡[^:]*:¤$} $blockContent {}]]
+					if {$markup in {.TP .IP}} {set pendingVsInfo $trailingInfo}
+				}
+				if {[string trim [regsub -all {‡[^:]*:|¤} $blockContent {}]] eq ""} {
+					# nothing real left at all - drop the block entirely rather than
+					# emitting an empty one:
+				} else {
+					lappend blockList [list $blockType $blockAttributes $blockContent]
+					if {$verbose} {puts "... closed block: [lindex $blockList end]"}
+				}
+			} else {
+				set pendingVsInfo {}
 			}
 			set doCloseBlock 0
 			set blockType {}
@@ -1119,8 +1167,21 @@ proc ::ndoc::parseBlock {parent manContent} {
 				# - if a .TP item has more than one paragraph or a code block, then it is wrapped into a pair of .RS/.RE
 				# - the list ends at the next unwrapped .PP or .LP or at .SH/.SS
 				set itemTitle {}
+				# the .VS info (if any) that was open when itemTitle was set - see the
+				# .TP/.IP case below:
+				set itemTitleVs {}
 				set itemContent {}
-				set itemVS [list]
+				# the TIP/version marker of a .VS region that is still open when the
+				# CURRENT item finishes (no matching .VE seen yet within it) - carried
+				# forward so it gets re-opened at the start of the NEXT item's content
+				# too (a .VS/.VE pair can span a .TP/.IP boundary, e.g. chan.n's
+				# TIP656 which starts at the end of one option's description and ends
+				# at the end of the next option's); empty when no region is open.
+				# Also seeded from a .VS that was still open (with nothing but the
+				# .TP/.IP right after it) when THIS list started - see pendingVsInfo -
+				# so its first item picks up the marking instead of losing it entirely:
+				set dlistVsInfo $pendingVsInfo
+				set pendingVsInfo {}
 				set dlistContent [list]
 				set finishDlist 0
 				# the following tells us whether we are in a normal paragraph of an item (dlistState = empty string)
@@ -1164,10 +1225,13 @@ proc ::ndoc::parseBlock {parent manContent} {
 								if {$itemTitle ne ""} {
 									if {$itemContent eq ""} {set itemContent "see below ..."}
 									if $verbose {puts "finish ${blockType} item:\n+++\n$itemContent\n+++\n"}
-									if {$blockType eq "Dlist"} {set itemAttr [list -definition $itemTitle]} else {set itemAttr [list]}
-									if {[llength $itemVS]} {lappend itemAttr {*}$itemVS}
-									set itemVS [list]
-									lappend dlistContent [list ${blockType}Item $itemAttr [parseBlock ${blockType}Item $itemContent]]
+									if {$blockType eq "Dlist"} {
+										set itemAttr [list -definition $itemTitle]
+										if {$itemTitleVs ne ""} {lappend itemAttr -vs $itemTitleVs}
+									} else {
+										set itemAttr [list]
+									}
+									lappend dlistContent [list ${blockType}Item $itemAttr [parseDlistItemContent $blockType $itemContent]]
 									if $verbose {puts "dlistContent: $dlistContent"}
 								}
 								# !! subType can change in the middle of a .TP list !!
@@ -1194,7 +1258,19 @@ proc ::ndoc::parseBlock {parent manContent} {
 								# must not leak into a later, unlabeled .TP/.IP (which would otherwise be
 								# misidentified as Tcl syntax and mishandled by parseCommand):
 								dict set manual lastComment {}
-								set itemContent {}
+								# snapshot whatever .VS region is open right now as belonging to THIS
+								# item's title too (e.g. unicode.n's TIP726, which wraps a .TP's title
+								# tightly with nothing else in between) - used when this item is finished
+								# (see the itemAttr construction above/below), independently of whatever
+								# .VS/.VE this item's own body might additionally open/close:
+								set itemTitleVs $dlistVsInfo
+								if {$dlistVsInfo ne ""} {
+									# a .VS region was still open when the PREVIOUS item finished -
+									# re-open it here so it keeps marking into this new item too:
+									set itemContent [list ".VS $dlistVsInfo"]
+								} else {
+									set itemContent {}
+								}
 							}
 						}
 						. - .\\\" {
@@ -1203,12 +1279,17 @@ proc ::ndoc::parseBlock {parent manContent} {
 							# ignore
 						}
 						.VS {
-							lassign $line - info
-							set itemVS [list -vs $info]
+							# .VS/.VE are handled generically like any other inline text by the
+							# recursive parseBlock call below on this item's content (see the
+							# .VS/.VE case in the main switch), so just collect the line like any
+							# other; dlistVsInfo only tracks whether the region is still open once
+							# this item's content ends, so it can be carried into the next item:
+							lassign $line - dlistVsInfo
+							lappend itemContent $line
 						}
 						.VE {
-							# we assume that VS does not span more than one TP/IP
-							# so we automatically reset this info when the next TP/IP starts
+							set dlistVsInfo {}
+							lappend itemContent $line
 						}
 						default {
 							# just collect item material
@@ -1232,9 +1313,13 @@ proc ::ndoc::parseBlock {parent manContent} {
 				if {$itemContent eq ""} {set itemContent "see below ..."}
 				# as the content of the DlistItem block is itself some blocks, we need to parse it again here:
 				if $verbose {puts "finish last dlist item:\n+++\n$itemContent\n+++\n"}
-				if {$blockType eq "Dlist"} {set itemAttr [list -definition $itemTitle]} else {set itemAttr [list]}
-				if {[llength $itemVS]} {lappend itemAttr {*}$itemVS}
-				lappend dlistContent [list ${blockType}Item $itemAttr [parseBlock ${blockType}Item $itemContent]]
+				if {$blockType eq "Dlist"} {
+					set itemAttr [list -definition $itemTitle]
+					if {$itemTitleVs ne ""} {lappend itemAttr -vs $itemTitleVs}
+				} else {
+					set itemAttr [list]
+				}
+				lappend dlistContent [list ${blockType}Item $itemAttr [parseDlistItemContent $blockType $itemContent]]
 				if $verbose {puts "dlistContent: $dlistContent"}
 				set blockContent $dlistContent
 				set doCloseBlock 1
@@ -1484,6 +1569,7 @@ proc ::ndoc::parseBlock {parent manContent} {
 				set myText ‡$info:
 				if {$blockContent eq ""} {append blockContent $myText} else {append blockContent { } $myText}
 				set vsOpen 1
+				set vsInfo $info
 				set manContent [lrange $manContent 1 end]
 			}
 			.VE {
@@ -1527,10 +1613,31 @@ proc ::ndoc::parseBlock {parent manContent} {
 	# also process the last still open block:
 	if {$blockContent ne ""} {
 		if {$vsOpen} {append blockContent ¤}
-		lappend blockList [list $blockType $blockAttributes $blockContent]
+		if {[string trim [regsub -all {‡[^:]*:|¤} $blockContent {}]] ne ""} {
+			lappend blockList [list $blockType $blockAttributes $blockContent]
+		}
 	}
 	if {$verbose} {puts "... produced [lindex $blockList end]"}
 	return $blockList
+}
+
+
+proc ::ndoc::parseDlistItemContent {blockType itemContent} {
+	#
+	# parses a .TP/.IP item's raw content the same way parseBlock's callers already
+	# do, but also covers the case where the raw text was non-empty (so the earlier
+	# 'set itemContent "see below ..."' fallback never kicked in) yet still parses
+	# down to nothing at all - e.g. a .VS/.VE pair that turns out to wrap no real
+	# text (see parseBlock), which can leave content that is ONLY that marker pair.
+	# Without this, the item would render as a bare, dangling "Term\n: " with
+	# nothing after the colon instead of the same "see below ..." placeholder used
+	# for a genuinely empty item.
+	#
+	set parsed [parseBlock ${blockType}Item $itemContent]
+	if {![llength $parsed]} {
+		set parsed [parseBlock ${blockType}Item {{see below ...}}]
+	}
+	return $parsed
 }
 
 
@@ -1550,7 +1657,7 @@ proc ::ndoc::parseCommand {mode line {version {}}} {
 	#
 	set DEBUG 0
 	set verAttr {}
-	if {$version ne ""} {set verAttr " -vs $version"}
+	if {$version ne ""} {set verAttr " -vs {$version}"}
 	set line [BIRPclean $line]
 	# make life a bit easier for parsing by replacing nroff syntax with something simpler,
 	# so this is the internal representation:
@@ -1921,8 +2028,13 @@ proc ::ndoc::parseInline {keyword attributes content} {
 			if {$endMark == -1} {return -code error "parseInline: unbalanced .VS marker (no matching .VE found)"}
 			# trim: the join-separator before the first line inside the region ends up
 			# right after the ':', since that line is appended like any other content line:
-			set inner [lindex [parseInline Inline {} [string trim [string range $content $infoEnd+1 $endMark-1]]] 2]
-			lappend inlineAST [list Span "-vs $info" $inner]
+			set innerText [string trim [string range $content $infoEnd+1 $endMark-1]]
+			if {$innerText ne ""} {
+				# a region with no real text (e.g. .VS sitting right at the end of a
+				# .TP item, its .VE only closing much further along) has nothing to
+				# tag - emitting an empty '[]{version="..."}' would just be noise:
+				lappend inlineAST [list Span "-vs {$info}" [lindex [parseInline Inline {} $innerText] 2]]
+			}
 			set content [string range $content $endMark+1 end]
 		} else {
 			# normal text, digest it until
@@ -1978,16 +2090,18 @@ proc ::ndoc::formatSpanAttributes {attributes} {
 	# '.ccmd') that is used as-is and MUST NOT be touched here.
 	#
 	# On top of that literal class string, a Span may also carry one or more dashed
-	# AST attributes appended to it (e.g. '.ccmd -vs TIP312'), using the same
-	# '-key value' convention used elsewhere in the AST (see dashedAttrLabel). Those
+	# AST attributes appended to it (e.g. '.ccmd -vs {TIP312}'), using the same
+	# '-key {value}' convention used elsewhere in the AST (see dashedAttrLabel). The
+	# value is brace-quoted (rather than a bare \S+) because a .VS marker's info can
+	# itself contain whitespace, e.g. .VS "TIP607, TIP656" or .VS "TIP 551". Those
 	# are extracted here and rendered into markdown attribute syntax; everything
 	# else in the string (the dotted classes) passes through unchanged.
 	#
 	set extra {}
-	foreach {- key val} [regexp -all -inline -- {-([A-Za-z][A-Za-z0-9]*)\s+(\S+)} $attributes] {
+	foreach {- key val} [regexp -all -inline -- {-([A-Za-z][A-Za-z0-9]*)\s+\{([^\}]*)\}} $attributes] {
 		append extra { } [dashedAttrLabel -$key] = \x22 $val \x22
 	}
-	set classes [string trim [regsub -all -- {-([A-Za-z][A-Za-z0-9]*)\s+(\S+)} $attributes {}]]
+	set classes [string trim [regsub -all -- {-([A-Za-z][A-Za-z0-9]*)\s+\{([^\}]*)\}} $attributes {}]]
 	return [string trim "$classes$extra"]
 }
 
@@ -2016,7 +2130,7 @@ proc ::ndoc::wrapVersionedRuns {runs} {
 		set inlineContent [lindex [parseInline Inline {} $text] 2]
 		if {[llength $contentList]} {lappend contentList [list Space {} {}]}
 		if {$version ne ""} {
-			lappend contentList [list Span "-vs $version" $inlineContent]
+			lappend contentList [list Span "-vs {$version}" $inlineContent]
 		} else {
 			lappend contentList {*}$inlineContent
 		}
@@ -2160,11 +2274,18 @@ proc ::ndoc::AST2Markdown_Element {parentType indent ASTelement} {
 			append output { }
 		}
 		DlistItem {
-			append output [AST2Markdown_Element $type 0 [lindex $content 0]]
-			foreach item [lrange $content 1 end] {
-				lassign $item subtype
-				if {$subtype eq "Paragraph"} {append output \n}
-				append output [AST2Markdown_Element $type 4 $item]
+			# a DlistItem can legitimately have no body at all (e.g. two .TP's in a
+			# row describing alternate call signatures, where only the second one
+			# carries the description; or a .VS/.VE pair that turned out to wrap no
+			# real text and was dropped - see parseBlock/parseInline), so guard
+			# against an empty content list instead of assuming a first element:
+			if {[llength $content]} {
+				append output [AST2Markdown_Element $type 0 [lindex $content 0]]
+				foreach item [lrange $content 1 end] {
+					lassign $item subtype
+					if {$subtype eq "Paragraph"} {append output \n}
+					append output [AST2Markdown_Element $type 4 $item]
+				}
 			}
 		}
 		Span {
@@ -2691,7 +2812,8 @@ proc ::ndoc::mdExceptions {md} {
 		
 	}
 	regsub {\s+$} $md \n md
-	set md [string map  [list "\n\n:::\n" ":::\n"] $md]
+	# tidy up a blank lines at divs:
+	set md [string map  [list "\n\n:::\n" "\n:::\n"] $md]
 	return $md
 }
 

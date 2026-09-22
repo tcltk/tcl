@@ -43,6 +43,7 @@ Tcl\_StaticLibrary, Tcl\_StaticPackage - make a statically linked library availa
 
 [\*safeInitProc]{.carg .in type="Tcl_LibraryInitProc"}
 : Procedure to call to incorporate this library into a safe interpreter (one that will execute untrusted scripts).  NULL means the library cannot be used in safe interpreters.
+
 :::
 
 # Description

@@ -49,6 +49,7 @@ Tcl\_CreateTimerHandler, TclCreateTimerHandlerMicroSeconds, Tcl\_DeleteTimerHand
 
 [token]{.carg .in type="Tcl_TimerToken"}
 : Token for previously created timer handler (the return value from some previous call to **Tcl\_CreateTimerHandler**).
+
 :::
 
 # Description

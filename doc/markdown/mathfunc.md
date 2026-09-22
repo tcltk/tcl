@@ -108,13 +108,13 @@ In addition to these predefined functions, applications may define additional fu
 : Returns the arc cosine of *arg*, in the range \[*0*,*pi*\] radians. *Arg* should be in the range \[*-1*,*1*\].
 
 **acosh** *arg*
-: Returns the arc hyperbolic cosine of *arg*, in the range \[*0*,*inf*\] radians. *Arg* should be in the range \[*1*,*inf*\].
+: [Returns the arc hyperbolic cosine of *arg*, in the range \[*0*,*inf*\] radians. *Arg* should be in the range \[*1*,*inf*\].]{version="TIP745"}
 
 **asin** *arg*
 : Returns the arc sine of *arg*, in the range \[*-pi/2*,*pi/2*\] radians.  *Arg* should be in the range \[*-1*,*1*\].
 
 **asinh** *arg*
-: Returns the arc hyperbolic sine of *arg*, in the range \[*-inf*,*inf*\].
+: [Returns the arc hyperbolic sine of *arg*, in the range \[*-inf*,*inf*\].]{version="TIP745"}
 
 **atan** *arg*
 : Returns the arc tangent of *arg*, in the range \[*-pi/2*,*pi/2*\] radians.
@@ -123,19 +123,19 @@ In addition to these predefined functions, applications may define additional fu
 : Returns the arc tangent of *y*/*x*, in the range \[*-pi*,*pi*\] radians.  *x* and *y* cannot both be 0.  If *x* is greater than *0*, this is equivalent to "**atan** \[[expr] {*y***/***x*}\]".
 
 **atanh** *arg*
-: Returns the arc hyperbolic tangent of *arg*, in the range \[*-inf*,*inf*\]. *Arg* should be in the range \[*-1*,*1*\].
+: [Returns the arc hyperbolic tangent of *arg*, in the range \[*-inf*,*inf*\]. *Arg* should be in the range \[*-1*,*1*\].]{version="TIP745"}
 
 **bool** *arg*
 : Accepts any numeric value, or any string acceptable to [string is boolean][string], and returns the corresponding boolean value **0** or **1**.  Non-zero numbers are true. Other numbers are false.  Non-numeric strings produce boolean value in agreement with [string is true][string] and [string is false][string].
 
 **cbrt** *arg*
-: The argument may be any numeric value.  Returns a floating-point value that is the cube root of *arg*.  May return **Inf** when the argument is a numeric value that exceeds the cube of the maximum value of the floating-point range.
+: [The argument may be any numeric value.  Returns a floating-point value that is the cube root of *arg*.  May return **Inf** when the argument is a numeric value that exceeds the cube of the maximum value of the floating-point range.]{version="TIP745"}
 
 **ceil** *arg*
 : Returns the smallest integral floating-point value (i.e. with a zero fractional part) not less than *arg*.  The argument may be any numeric value.
 
 **copysign** *x y*
-: Returns the floating-point value with the magnitude of *x* and sign of *y*.
+: [Returns the floating-point value with the magnitude of *x* and sign of *y*.]{version="TIP745"}
 
 **cos** *arg*
 : Returns the cosine of *arg*, measured in radians.
@@ -144,7 +144,7 @@ In addition to these predefined functions, applications may define additional fu
 : Returns the hyperbolic cosine of *arg*.  If the result would cause an overflow, an error is returned.
 
 **dim** *x y*
-: Returns the floating-point value that is the maximum of 0 and *x*-*y*.
+: [Returns the floating-point value that is the maximum of 0 and *x*-*y*.]{version="TIP745"}
 
 **double** *arg*
 : The argument may be any numeric value, If *arg* is a floating-point value, returns *arg*, otherwise converts *arg* to floating-point and returns the converted value.  May return **Inf** or **-Inf** when the argument is a numeric value that exceeds the floating-point range.
@@ -153,31 +153,31 @@ In addition to these predefined functions, applications may define additional fu
 : The argument may be any numeric value.  The integer part of *arg* is determined and returned.  The integer range returned by this function is unlimited, unlike **int** and **wide** which truncate their range to fit in particular storage widths.
 
 **erf** *arg*
-: Computes the Gauss error function of the numeric value *arg*.
+: [Computes the Gauss error function of the numeric value *arg*.]{version="TIP745"}
 
 **erfc** *arg*
-: Computes the complementary error function of the numeric value *arg*.
+: [Computes the complementary error function of the numeric value *arg*.]{version="TIP745"}
 
 **exp** *arg*
 : Returns the exponential of *arg*, defined as *e*\*\**arg*. If the result would cause an overflow, an error is returned.
 
 **exp2** *arg*
-: Returns the 2 to the power of *arg*, defined as **2**\*\**arg*. The result is always a floating point number except if it would cause an overflow, when an error is returned.
+: [Returns the 2 to the power of *arg*, defined as **2**\*\**arg*. The result is always a floating point number except if it would cause an overflow, when an error is returned.]{version="TIP745"}
 
 **expm1** *arg*
-: Returns the exponential of *arg*, minus 1, defined as *e*\*\**arg*-**1**. If the result would cause an overflow, an error is returned. Use of this function can be numerically preferable to of **exp** for values close to 1, and is matched with **log1p**.
+: [Returns the exponential of *arg*, minus 1, defined as *e*\*\**arg*-**1**. If the result would cause an overflow, an error is returned. Use of this function can be numerically preferable to of **exp** for values close to 1, and is matched with **log1p**.]{version="TIP745"}
 
 **floor** *arg*
 : Returns the largest integral floating-point value (i.e. with a zero fractional part) not greater than *arg*.  The argument may be any numeric value.
 
 **fma** *x y z*
-: Returns the floating-point value that is the sum of the product of *x* and *y*, and *z*, without unnecessarily losing intermediate accuracy.
+: [Returns the floating-point value that is the sum of the product of *x* and *y*, and *z*, without unnecessarily losing intermediate accuracy.]{version="TIP745"}
 
 **fmod** *x y*
 : Returns the floating-point remainder of the division of *x* by *y*.  If *y* is 0, an error is returned.
 
 **gamma** *arg*
-: Returns the absolute value of the gamma function of *arg* (a generalized factorial). If the result would cause an overflow, an error is returned.
+: [Returns the absolute value of the gamma function of *arg* (a generalized factorial). If the result would cause an overflow, an error is returned.]{version="TIP745"}
 
 **hypot** *x y*
 : Computes the length of the hypotenuse of a right-angled triangle, approximately "**sqrt** \[[expr] {*x***\****x***+***y***\****y*}\]" except for being more numerically stable when the two arguments have substantially different magnitudes.
@@ -186,31 +186,31 @@ In addition to these predefined functions, applications may define additional fu
 : The argument may be any numeric value.  The integer part of *arg* is determined, and then the low order bits of that integer value up to the machine word size are returned as an integer value.  For reference, the number of bytes in the machine word are stored in the **wordSize** element of the [tcl\_platform][tclvars] array.
 
 **isfinite** *arg*
-: Returns 1 if the floating-point number *arg* is finite. That is, if it is zero, subnormal, or normal. Returns 0 if the number is infinite or NaN. Throws an error if *arg* cannot be promoted to a floating-point value.
+: [Returns 1 if the floating-point number *arg* is finite. That is, if it is zero, subnormal, or normal. Returns 0 if the number is infinite or NaN. Throws an error if *arg* cannot be promoted to a floating-point value.]{version="TIP521"}
 
 **isinf** *arg*
-: Returns 1 if the floating-point number *arg* is infinite. Returns 0 if the number is finite or NaN. Throws an error if *arg* cannot be promoted to a floating-point value.
+: [Returns 1 if the floating-point number *arg* is infinite. Returns 0 if the number is finite or NaN. Throws an error if *arg* cannot be promoted to a floating-point value.]{version="TIP521"}
 
 **isnan** *arg*
-: Returns 1 if the floating-point number *arg* is Not-a-Number. Returns 0 if the number is finite or infinite. Throws an error if *arg* cannot be promoted to a floating-point value.
+: [Returns 1 if the floating-point number *arg* is Not-a-Number. Returns 0 if the number is finite or infinite. Throws an error if *arg* cannot be promoted to a floating-point value.]{version="TIP521"}
 
 **isnormal** *arg*
-: Returns 1 if the floating-point number *arg* is normal. Returns 0 if the number is zero, subnormal, infinite or NaN. Throws an error if *arg* cannot be promoted to a floating-point value.
+: [Returns 1 if the floating-point number *arg* is normal. Returns 0 if the number is zero, subnormal, infinite or NaN. Throws an error if *arg* cannot be promoted to a floating-point value.]{version="TIP521"}
 
 **isqrt** *arg*
 : Computes the integer part of the square root of *arg*.  *Arg* must be a positive value, either an integer or a floating point number. Unlike **sqrt**, which is limited to the precision of a floating point number, *isqrt* will return a result of arbitrary precision.
 
 **issubnormal** *arg*
-: Returns 1 if the floating-point number *arg* is subnormal, i.e., the result of gradual underflow. Returns 0 if the number is zero, normal, infinite or NaN. Throws an error if *arg* cannot be promoted to a floating-point value.
+: [Returns 1 if the floating-point number *arg* is subnormal, i.e., the result of gradual underflow. Returns 0 if the number is zero, normal, infinite or NaN. Throws an error if *arg* cannot be promoted to a floating-point value.]{version="TIP521"}
 
 **isunordered** *x y*
-: Returns 1 if *x* and *y* cannot be compared for ordering, that is, if either one is NaN. Returns 0 if both values can be ordered, that is, if they are both chosen from among the set of zero, subnormal, normal and infinite values. Throws an error if either *x* or *y* cannot be promoted to a floating-point value.
+: [Returns 1 if *x* and *y* cannot be compared for ordering, that is, if either one is NaN. Returns 0 if both values can be ordered, that is, if they are both chosen from among the set of zero, subnormal, normal and infinite values. Throws an error if either *x* or *y* cannot be promoted to a floating-point value.]{version="TIP521"}
 
 **ldexp** *x y*
-: Multiplies a floating-point value *x* by the number 2 raised to the *y* power.
+: [Multiplies a floating-point value *x* by the number 2 raised to the *y* power.]{version="TIP745"}
 
 **lgamma** *arg*
-: Returns the natural logarithm of the absolute value of the gamma function of *arg*. If the result would cause an overflow, an error is returned.
+: [Returns the natural logarithm of the absolute value of the gamma function of *arg*. If the result would cause an overflow, an error is returned.]{version="TIP745"}
 
 **log** *arg*
 : Returns the natural logarithm of *arg*.  *Arg* must be a positive value.
@@ -219,13 +219,13 @@ In addition to these predefined functions, applications may define additional fu
 : Returns the base 10 logarithm of *arg*.  *Arg* must be a positive value.
 
 **log1p** *arg*
-: Returns the natural logarithm of *arg*+**1**.  *Arg* must be a value greater than -1. This function is numerically preferable to **log** for values very close to 1, and is matched with **expm1**.
+: [Returns the natural logarithm of *arg*+**1**.  *Arg* must be a value greater than -1. This function is numerically preferable to **log** for values very close to 1, and is matched with **expm1**.]{version="TIP745"}
 
 **log2** *arg*
-: Returns the base 2 logarithm of *arg*.  *Arg* must be a positive value.
+: [Returns the base 2 logarithm of *arg*.  *Arg* must be a positive value.]{version="TIP745"}
 
 **logb** *arg*
-: Returns the value of the unbiased radix-independent exponent from the floating-point argument *arg*.
+: [Returns the value of the unbiased radix-independent exponent from the floating-point argument *arg*.]{version="TIP745"}
 
 **max** *arg* ?*arg ...*?
 : Accepts one or more numeric arguments.  Returns the one argument with the greatest value.
@@ -234,7 +234,7 @@ In addition to these predefined functions, applications may define additional fu
 : Accepts one or more numeric arguments.  Returns the one argument with the least value.
 
 **nextafter** *x y*
-: Returns the next floating-point value after (or before) *x* in the direction of *y*. If *x* and *y* are equal, returns *y*.
+: [Returns the next floating-point value after (or before) *x* in the direction of *y*. If *x* and *y* are equal, returns *y*.]{version="TIP745"}
 
 **pow** *x y*
 : Computes the value of *x* raised to the power *y*.  If *x* is negative, *y* must be an integer value.
@@ -243,13 +243,13 @@ In addition to these predefined functions, applications may define additional fu
 : Returns a pseudo-random floating-point value in the range (*0*,*1*). The generator algorithm is a simple linear congruential generator that is not cryptographically secure.  Each result from **rand** completely determines all future results from subsequent calls to **rand**, so **rand** should not be used to generate a sequence of secrets, such as one-time passwords.  The seed of the generator is initialized from the internal clock of the machine or may be set with the **srand** function.
 
 **remainder** *x y*
-: Computes the IEEE remainder of the floating point division operation *x*/*y*.
+: [Computes the IEEE remainder of the floating point division operation *x*/*y*.]{version="TIP745"}
 
 **round** *arg*
 : If *arg* is an integer value, returns *arg*, otherwise converts *arg* to integer by rounding and returns the converted value.
 
 **signbit** *arg*
-: Get the sign bit of the numeric value, *arg*, as 0 (positive) or 1 (negative).
+: [Get the sign bit of the numeric value, *arg*, as 0 (positive) or 1 (negative).]{version="TIP745"}
 
 **sin** *arg*
 : Returns the sine of *arg*, measured in radians.
@@ -270,7 +270,7 @@ In addition to these predefined functions, applications may define additional fu
 : Returns the hyperbolic tangent of *arg*.
 
 **trunc** *arg*
-: Returns the nearest integer not greater in magnitude than *arg*.
+: [Returns the nearest integer not greater in magnitude than *arg*.]{version="TIP745"}
 
 **wide** *arg*
 : The argument may be any numeric value.  The integer part of *arg* is determined, and then the low order 64 bits of that integer value are returned as an integer value.

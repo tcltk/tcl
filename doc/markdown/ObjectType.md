@@ -65,6 +65,7 @@ Tcl\_RegisterObjType, Tcl\_GetObjType, Tcl\_AppendAllObjTypes, Tcl\_ConvertToTyp
 
 [\*typePtr]{.carg .in type="const Tcl_ObjType"}
 : Requested internal representation type.
+
 :::
 
 # Description

@@ -52,6 +52,7 @@ Tcl\_GetMonotonicTime, Tcl\_GetTime, Tcl\_SetTimeProc, Tcl\_QueryTimeProc - get 
 
 [\*\*clientDataPtr]{.carg .out type="void"}
 : Pointer to place the currently registered pass-through value into.
+
 :::
 
 # Description

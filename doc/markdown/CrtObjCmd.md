@@ -73,6 +73,7 @@ Tcl\_CreateObjCommand, Tcl\_CreateObjCommand2, Tcl\_DeleteCommand, Tcl\_DeleteCo
 
 [\*typeName]{.carg .in type="const char"}
 : Indicates the name of the type of command implementation associated with a particular *proc*, or NULL to break the association.
+
 :::
 
 # Description

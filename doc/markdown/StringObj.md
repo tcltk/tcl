@@ -113,6 +113,7 @@ Tcl\_NewStringObj, Tcl\_NewUnicodeObj, Tcl\_SetStringObj, Tcl\_SetUnicodeObj, Tc
 
 [newLength]{.carg .in type="Tcl_Size"}
 : New length for the string value of *objPtr*, not including the final null character.
+
 :::
 
 # Description

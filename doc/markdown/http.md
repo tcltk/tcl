@@ -86,7 +86,7 @@ When the HTTP server has replied to the request, call the command **::http::resp
     : The Accept header of the request.  The default is \*/\*, which means that all types of documents are accepted.  Otherwise you can supply a comma-separated list of mime type patterns that you are willing to receive.  For example, "image/gif, image/jpeg, text/\*".
 
     **-cookiejar** *command*
-    : The cookie store for the package to use to manage HTTP cookies. *command* is a command prefix list; if the empty list (the default value) is used, no cookies will be sent by requests or stored from responses. The command indicated by *command*, if supplied, must obey the [Cookie jar protocol] described below.
+    : [The cookie store for the package to use to manage HTTP cookies. *command* is a command prefix list; if the empty list (the default value) is used, no cookies will be sent by requests or stored from responses. The command indicated by *command*, if supplied, must obey the [Cookie jar protocol] described below.]{version="TIP406"}
 
     **-pipeline** *boolean*
     : Specifies whether HTTP/1.1 transactions on a persistent socket will be pipelined.  See the [Persistent connections] section for details. The default is 1.
@@ -672,7 +672,7 @@ Option **-pipeline**, if boolean **true**, will pipeline GET and HEAD requests m
 
 Option **-postfresh**, if boolean **true**, will override the **http::geturl** option **-keepalive**, and always open a fresh connection for a POST request.
 
-Option **-repost**, if **true**, permits automatic retry of a POST request that fails because it uses a persistent connection that the server has half-closed (an "asynchronous close event"). Subsequent GET and HEAD requests in a failed pipeline will also be retried. *The* **-repost** *option should be used only if the application understands that the retry is appropriate* - specifically, the application must know that if the failed POST successfully modified the state of the server, a repeat POST would have no adverse effect. []{version="TIP406"}
+Option **-repost**, if **true**, permits automatic retry of a POST request that fails because it uses a persistent connection that the server has half-closed (an "asynchronous close event"). Subsequent GET and HEAD requests in a failed pipeline will also be retried. *The* **-repost** *option should be used only if the application understands that the retry is appropriate* - specifically, the application must know that if the failed POST successfully modified the state of the server, a repeat POST would have no adverse effect.
 
 # Cookie jar protocol
 

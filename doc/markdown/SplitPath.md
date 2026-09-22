@@ -49,6 +49,7 @@ Tcl\_SplitPath, Tcl\_JoinPath, Tcl\_GetPathType - manipulate platform-dependent 
 
 [\*resultPtr]{.carg .in/out type="Tcl_DString"}
 : A pointer to an initialized [Tcl\_DString][DString] to which the result of **Tcl\_JoinPath** will be appended.
+
 :::
 
 # Description

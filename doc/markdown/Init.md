@@ -46,6 +46,7 @@ Tcl\_Init - find and source initialization script
 
 [\*clientData]{.carg .in type="void"}
 : Arbitrary one-word value to pass to **postInitProc**.
+
 :::
 
 # Description
@@ -54,7 +55,7 @@ Tcl\_Init - find and source initialization script
 
 **Tcl\_Init** is typically called from [Tcl\_AppInit][AppInit] procedures.
 
-**Tcl\_SetPreInitScript** registers the pre-initialization script and returns the former (now replaced) script pointer. A value of *NULL* may be passed to not register any script. The pre-initialization script is executed by **Tcl\_Init** before accessing the file system. The purpose is to typically prepare a custom file system (like an embedded zip-file) to be activated before the search. []{version="TIP755"}
+**Tcl\_SetPreInitScript** registers the pre-initialization script and returns the former (now replaced) script pointer. A value of *NULL* may be passed to not register any script. The pre-initialization script is executed by **Tcl\_Init** before accessing the file system. The purpose is to typically prepare a custom file system (like an embedded zip-file) to be activated before the search.
 
 **Tcl\_RegisterPostInitProc** registers a callback that should be invoked by **Tcl\_Init** at the end of initialization of subsequently created interpreters except safe interpreters. The function returns a Tcl return code.
 

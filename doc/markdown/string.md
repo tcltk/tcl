@@ -75,7 +75,7 @@ The legal *option*s (which may be abbreviated) are:
     If *charIndex* is less than 0 or greater than or equal to the length of the string then this command returns an empty string.
 
 **string insert** *string index insertString*
-: Returns a copy of *string* with *insertString* inserted at the *index*'th character.  The *index* may be specified as described in the [String indices] section.
+: [Returns a copy of *string* with *insertString* inserted at the *index*'th character.  The *index* may be specified as described in the [String indices] section.]{version="TIP504"}
 
     If *index* is start-relative, the first character inserted in the returned string will be at the specified index.  If *index* is end-relative, the last character inserted in the returned string will be at the specified index.
 
@@ -100,7 +100,7 @@ The legal *option*s (which may be abbreviated) are:
     : Any Unicode control character.
 
     [dict]
-    : Any proper dict structure, with optional surrounding whitespace. In case of improper dict structure, 0 is returned and the *varname* will contain the index of the "element" where the dict parsing fails, or -1 if this cannot be determined.
+    : [Any proper dict structure, with optional surrounding whitespace. In case of improper dict structure, 0 is returned and the *varname* will contain the index of the "element" where the dict parsing fails, or -1 if this cannot be determined.]{version="TIP501"}
 
     **digit**
     : Any Unicode digit character.  Note that this includes characters outside of the \[0-9\] range.

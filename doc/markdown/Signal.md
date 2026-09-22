@@ -29,6 +29,7 @@ Tcl\_SignalId, Tcl\_SignalMsg - Convert signal codes
 
 [sig]{.carg .in type="int"}
 : A POSIX signal number such as **SIGPIPE**.
+
 :::
 
 # Description

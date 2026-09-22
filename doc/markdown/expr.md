@@ -132,7 +132,7 @@ Unless otherwise specified, operators accept non-numeric operands.  The value of
 : Boolean numeric-preferring comparisons: less than, greater than, less than or equal, and greater than or equal. If either argument is not numeric, the comparison is done using UNICODE string comparison, as with the string comparison operators below, which have the same precedence.
 
 **lt  gt  le  ge**
-: Boolean string comparisons: less than, greater than, less than or equal, and greater than or equal. These always compare values using their UNICODE strings (also see [string compare][string]), unlike with the numeric-preferring comparisons above, which have the same precedence.
+: [Boolean string comparisons: less than, greater than, less than or equal, and greater than or equal. These always compare values using their UNICODE strings (also see [string compare][string]), unlike with the numeric-preferring comparisons above, which have the same precedence.]{version="TIP461"}
 
 **==  !=**
 : Boolean equal and not equal.

@@ -29,6 +29,7 @@ Tcl\_CommandComplete - Check for unmatched braces in a Tcl command
 
 [\*cmd]{.carg .in type="const char"}
 : Command string to test for completeness.
+
 :::
 
 # Description

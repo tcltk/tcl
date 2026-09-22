@@ -62,6 +62,7 @@ Tcl\_CreateTrace, Tcl\_CreateObjTrace, Tcl\_CreateObjTrace2, Tcl\_DeleteTrace - 
 
 [trace]{.carg .in type="Tcl_Trace"}
 : Token for trace to be removed (return value from previous call to **Tcl\_CreateTrace**).
+
 :::
 
 # Description

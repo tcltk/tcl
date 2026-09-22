@@ -25,28 +25,22 @@ unicode - Unicode character transforms
 
 # Description
 
-The command performs one of several Unicode character transformations, depending on *function* which may take the values described below. []{version="TIP726"}
+The command performs one of several Unicode character transformations, depending on *function* which may take the values described below.
 
-[unicode]{.cmd} [tonfc]{.sub} [[-profile]{.lit} [profile]{.arg}]{.optarg} [string]{.arg}
-: Returns *string* normalized as per Unicode **Normalization Form C** (NFC).
-
-
-[]{version="TIP726"}
-
-[unicode]{.cmd} [tonfd]{.sub} [[-profile]{.lit} [profile]{.arg}]{.optarg} [string]{.arg}
-: Returns *string* normalized as per Unicode **Normalization Form D** (NFD).
+[unicode]{.cmd version="TIP726"} [tonfc]{.sub} [[-profile]{.lit} [profile]{.arg}]{.optarg} [string]{.arg}
+:  Returns *string* normalized as per Unicode **Normalization Form C** (NFC).
 
 
-[]{version="TIP726"}
-
-[unicode]{.cmd} [tonfkc]{.sub} [[-profile]{.lit} [profile]{.arg}]{.optarg} [string]{.arg}
-: Returns *string* normalized as per Unicode **Normalization Form KC** (NFKC).
+[unicode]{.cmd version="TIP726"} [tonfd]{.sub} [[-profile]{.lit} [profile]{.arg}]{.optarg} [string]{.arg}
+:  Returns *string* normalized as per Unicode **Normalization Form D** (NFD).
 
 
-[]{version="TIP726"}
+[unicode]{.cmd version="TIP726"} [tonfkc]{.sub} [[-profile]{.lit} [profile]{.arg}]{.optarg} [string]{.arg}
+:  Returns *string* normalized as per Unicode **Normalization Form KC** (NFKC).
 
-[unicode]{.cmd} [tonfkd]{.sub} [[-profile]{.lit} [profile]{.arg}]{.optarg} [string]{.arg}
-: Returns *string* normalized as per Unicode **Normalization Form KD** (NFKD).
+
+[unicode]{.cmd version="TIP726"} [tonfkd]{.sub} [[-profile]{.lit} [profile]{.arg}]{.optarg} [string]{.arg}
+:  Returns *string* normalized as per Unicode **Normalization Form KD** (NFKD).
 
 
 The normalization forms NFC, NFD, NFKC and NFKD referenced above are defined in **Section 3.11** of the Unicode standard (see <https://www.unicode.org/versions/Unicode16.0.0/core-spec/chapter-3/>).

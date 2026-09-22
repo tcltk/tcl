@@ -88,6 +88,7 @@ Tcl\_ZlibAdler32, Tcl\_ZlibCRC32, Tcl\_ZlibDeflate, Tcl\_ZlibInflate, Tcl\_ZlibS
 
 [\*compDict]{.carg .in type="Tcl_Obj"}
 : A byte array value that is the compression dictionary to use with the stream. Note that this is *not a Tcl dictionary*, and it is recommended that this only ever be used with streams that were created with their *format* set to **TCL\_ZLIB\_FORMAT\_ZLIB** because the other formats have no mechanism to indicate whether a compression dictionary was present other than to fail on decompression.
+
 :::
 
 # Description

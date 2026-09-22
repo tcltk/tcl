@@ -68,6 +68,7 @@ Tcl\_InitHashTable, Tcl\_InitCustomHashTable, Tcl\_InitObjHashTable, Tcl\_Delete
 
 [\*searchPtr]{.carg .in type="Tcl_HashSearch"}
 : Pointer to record to use to keep track of progress in enumerating all the entries in a hash table.
+
 :::
 
 # Description

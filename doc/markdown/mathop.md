@@ -127,16 +127,16 @@ The behaviors of the comparison operator commands (most of which operate prefere
 : Returns whether the arbitrarily-many arguments are ordered, with each argument after the first having to be equal to or less than the one preceding it. Comparisons are performed preferentially on the numeric values, and are otherwise performed using UNICODE string comparison. If fewer than two arguments are present, this operation always returns a true value. When the arguments are numeric but should be compared as strings, the **ge** operator or the [string compare][string] command should be used instead.
 
 **lt** ?*arg ...*?
-: Returns whether the arbitrarily-many arguments are ordered, with each argument after the first having to be strictly more than the one preceding it. Comparisons are performed using UNICODE string comparison. If fewer than two arguments are present, this operation always returns a true value.
+: [Returns whether the arbitrarily-many arguments are ordered, with each argument after the first having to be strictly more than the one preceding it. Comparisons are performed using UNICODE string comparison. If fewer than two arguments are present, this operation always returns a true value.]{version="TIP461"}
 
 **le** ?*arg ...*?
-: Returns whether the arbitrarily-many arguments are ordered, with each argument after the first having to be equal to or strictly more than the one preceding it. Comparisons are performed using UNICODE string comparison. If fewer than two arguments are present, this operation always returns a true value.
+: [Returns whether the arbitrarily-many arguments are ordered, with each argument after the first having to be equal to or strictly more than the one preceding it. Comparisons are performed using UNICODE string comparison. If fewer than two arguments are present, this operation always returns a true value.]{version="TIP461"}
 
 **gt** ?*arg ...*?
-: Returns whether the arbitrarily-many arguments are ordered, with each argument after the first having to be strictly less than the one preceding it. Comparisons are performed using UNICODE string comparison. If fewer than two arguments are present, this operation always returns a true value.
+: [Returns whether the arbitrarily-many arguments are ordered, with each argument after the first having to be strictly less than the one preceding it. Comparisons are performed using UNICODE string comparison. If fewer than two arguments are present, this operation always returns a true value.]{version="TIP461"}
 
 **ge** ?*arg ...*?
-: Returns whether the arbitrarily-many arguments are ordered, with each argument after the first having to be equal to or strictly less than the one preceding it. Comparisons are performed using UNICODE string comparison. If fewer than two arguments are present, this operation always returns a true value.
+: [Returns whether the arbitrarily-many arguments are ordered, with each argument after the first having to be equal to or strictly less than the one preceding it. Comparisons are performed using UNICODE string comparison. If fewer than two arguments are present, this operation always returns a true value.]{version="TIP461"}
 
 
 ## Bit-wise operators

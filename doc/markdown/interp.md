@@ -141,7 +141,7 @@ The **interp** command is used to create, delete, and manipulate child interpret
     The command sets the maximum size of the Tcl call stack only. It cannot by itself prevent stack overflows on the C stack being used by the application. If your machine has a limit on the size of the C stack, you may get stack overflows before reaching the limit set by the command. If this happens, see if there is a mechanism in your system for increasing the maximum size of the C stack.
 
 **interp set** *path varName* ?*value*?
-: Writes to, or reads from, the variable *varName* in the interpreter specifed by *path*. If *value* is given, writes to the variable and returns its new value; if *value* is omitted, reads from the variable. As with the [set] command, traces may affect what the value of the variable is.
+: [Writes to, or reads from, the variable *varName* in the interpreter specifed by *path*. If *value* is given, writes to the variable and returns its new value; if *value* is omitted, reads from the variable. As with the [set] command, traces may affect what the value of the variable is.]{version="9.1"}
 
 **interp share** *srcPath channel destPath*
 : Causes the IO channel identified by *channel* to become shared between the interpreter identified by *srcPath* and the interpreter identified by *destPath*. Both interpreters have the same permissions on the IO channel. Both interpreters must close it to close the underlying IO channel; IO channels accessible in an interpreter are automatically closed when an interpreter is destroyed.
@@ -214,7 +214,7 @@ child command ?arg arg ...?
     The command sets the maximum size of the Tcl call stack only. It cannot by itself prevent stack overflows on the C stack being used by the application. If your machine has a limit on the size of the C stack, you may get stack overflows before reaching the limit set by the command. If this happens, see if there is a mechanism in your system for increasing the maximum size of the C stack.
 
 *child* [set] *varName* ?*value*?
-: Writes to, or reads from, the variable *varName* in the *child* interpreter. If *value* is given, writes to the variable and returns its new value; if *value* is omitted, reads from the variable. As with the [set] command, traces may affect what the value of the variable is.
+: [Writes to, or reads from, the variable *varName* in the *child* interpreter. If *value* is given, writes to the variable and returns its new value; if *value* is omitted, reads from the variable. As with the [set] command, traces may affect what the value of the variable is.]{version="9.1"}
 
 
 # Safe interpreters
