@@ -1106,7 +1106,7 @@ proc ::ndoc::parseBlock {parent manContent} {
 				dict set manual lastComment [lindex $line 1]
 				set manContent [lrange $manContent 1 end]
 			}
-			.so - .BS - .BE - .AS - .ta - .RS - .RE - .nf - .fi - .ta {
+			.so - .BS - .BE - .AS - .ta - .RS - .RE - .nf - .fi - .ta - .sp {
 				# can be ignored
 				# .so = include files
 				# .BS .BE = start and end of box enclosure
@@ -1115,6 +1115,10 @@ proc ::ndoc::parseBlock {parent manContent} {
 				# .RS .RE = relative inset, i.e. indentation
 				# .nf .fi = turn off/on filling of lines
 				# .ta = tabulator settings
+				# .sp = vertical space: markdown prose has no equivalent mid-paragraph
+				#       gap, so it is just dropped and the surrounding lines flow
+				#       together with the usual single-space line join (matching how
+				#       .sp is already treated inside the ARGUMENTS .AP loop)
 				if $verbose {puts "IGNORED ($markup)"}
 				set manContent [lrange $manContent 1 end]
 			}
@@ -2372,7 +2376,7 @@ proc ::ndoc::mdExceptions {md} {
 		}
 		clock {
 			set md [string map [list \
-				{.sp **clock format now -f %a; # current day of the week** .sp **clock add now 1 month; # next month**} \
+				{**clock format now -f %a; # current day of the week** **clock add now 1 month; # next month**} \
 				"\n\n    ```\n    clock format now -f %a; # current day of the week\n    clock add now 1 month; # next month\n    ```" \
 				\
 				"1.     the environment variable **TCL\\_TZ**.\n" \

@@ -17,7 +17,7 @@ When run with two directory names, it will convert all nroff files in the (exist
 tclsh man2markdown.tcl ../doc ../markdown
 ```
 
-The last invocation can be used to check what changed with respect to the last `fossil commit`. Any change reported by fossil (before committing) is a change that might have issues compared to teh previous version, so it should be checked before the commit and amended before the commit!
+The last invocation can be used to check what changed with respect to the last `fossil commit`. Any change reported by fossil (before committing) is a change that might have issues compared to the previous version, so it should be checked before the commit and amended before the commit!
 
 # Usage of Pandoc to convert generated markdown
 
@@ -25,9 +25,12 @@ We use Pandoc to convert the markdown sources to both nroff and HTML as long as 
 
 ## Conversion to nroff
 
+Basically, you can use this to generate nroff which renders most of what you will need.
 ```
 pandoc -f markdown-tex_math_dollars -t man mypage.md -o mypage.n
 ```
+
+For a closer representation use the markdown2nroff.tcl script.
 
 ## Conversion to HTML
 

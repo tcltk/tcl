@@ -491,7 +491,7 @@ The actual date is calculated according to the following steps.
 
 First, any absolute date and/or time is processed and converted. Using that time as the base, day-of-week specifications are added. Next, relative specifications are used.  If a date or day is specified, and no absolute or relative time is given, midnight is used.  Finally, a correction is applied so that the correct hour of the day is produced after allowing for daylight savings time differences and the correct date is given when going from the end of a long month to a short month.
 
-The precedence of the applying of single tokens resp. which sequence will be used by calculating of the time is complex, e. g. heavily dependent on the precision of type of the token. .sp In example below the second date-string contains "next January", therefore it results in next year but in January. And third date-string besides "January" contains also additionally "Fri", so it results in the nearest Friday. Thus both win before "385 days" resp. make it more precise, because of higher precision of this token types.
+The precedence of the applying of single tokens resp. which sequence will be used by calculating of the time is complex, e. g. heavily dependent on the precision of type of the token. In example below the second date-string contains "next January", therefore it results in next year but in January. And third date-string besides "January" contains also additionally "Fri", so it results in the nearest Friday. Thus both win before "385 days" resp. make it more precise, because of higher precision of this token types.
 
 ```
 % clock format [clock scan "5 years 18 months 385 days" -base 0 -gmt 1] -gmt 1
