@@ -590,7 +590,7 @@ TclUnixWaitForFile(
      * become ready or a timeout to occur.
      */
 
-    do {
+    while (1) {
 	if (timeout > 0) {
 	    blockTime.tv_sec = (abortTime - now) / 1000000;
 	    blockTime.tv_usec = (abortTime - now) % 1000000;
@@ -642,7 +642,10 @@ TclUnixWaitForFile(
 	 */
 
 	now = Tcl_GetDayTime();
-    } while (abortTime > now);
+	if (abortTime <= now) {
+	    break;
+	}
+    }
     return result;
 }
 #endif /* !HAVE_COREFOUNDATION */
