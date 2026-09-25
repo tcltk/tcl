@@ -44,6 +44,7 @@ catch [list package require -exact tcl::test [info patchlevel]]
 source [file join [file dirname [info script]] tcltests.tcl]
 
 testConstraint testobj [llength [info commands testobj]]
+testConstraint testlistapi [llength [info commands testlistapi]]
 testConstraint testlistobj [llength [info commands testobj]]
 testConstraint memory [llength [info commands memory]]
 
@@ -217,12 +218,12 @@ namespace eval listtype {
     foreach ltype $listTypes {
 	test ltype-verify-unshared-makeList-$ltype "Verify makeList is unshared" -body {
 	    regexp {refcount of 1,} [tcl::unsupported::representation [makeList $ltype]]
-	} -result 1
+	} -constraints testobj -result 1
     }
     foreach ltype1 $nestableTypes {
 	foreach ltype2 $nestableTypes {
 	    foreach ltype3 $listTypes {
-		test ltype-verify-makeNestedList-$ltype1-$ltype2-$ltype3 "Verify makeNestedList" -body {
+		test ltype-verify-makeNestedList-$ltype1-$ltype2-$ltype3 "Verify makeNestedList" -constraints testlistapi -body {
 		    set l [makeNestedList $ltype1 $ltype2 $ltype3]
 		    list [getListType $l] [getListType [lindex $l 0]] [getListType [lindex $l 0 0]]
 		} -result [list $ltype1 $ltype2 $ltype3]
@@ -376,7 +377,7 @@ namespace eval listtype {
 	    set l [makeList $ltype]
 	    testobj set 1 $l
 	    set len [llength $l]
-	} -body {
+	} -constraints testobj -body {
 	    list [lindex $l -1] [lindex $l $len] \
 		[testlistobj index 1 -1] [testlistobj index 1 $len]
 	} -cleanup {
@@ -429,6 +430,11 @@ namespace eval listtype {
     #  - a spanlist (large operand lengths)
     #  - arithseries (for arithseries operand)
     #  - lrangeType (for operands other than lists, spanlists and arithseries)
+    #
+    # Note that when the "testobj" constraint is not active, the command
+    # [makeList] fails, and this whole section needs skipping.
+    if {[testConstraint testobj]} {
+
     foreach ltype $listTypes {
 	lassign [getFirstAndLast $ltype] first last
 	switch $ltype {
@@ -455,12 +461,14 @@ namespace eval listtype {
 	    list [getListType $l] $l $x
 	} -result [list [expr {$ltype eq "arithseries" ? "arithseries" : "list"}] [lrange [makeList $ltype 100] 1 end] [lindex [makeList $ltype 100] 0]]
     }
+    }
 
     ################################################################
     # ledit tests
     # Any modification operation will result in a shimmer to a list or spanlist.
     # General variations of ledit operations on lists and spanlists are tested
     # in lreplace.test.
+    if {[testConstraint testobj]} {
     foreach ltype $listTypes {
 	# prepend an element
 	set expected [list X {*}[makeList $ltype]]
@@ -512,12 +520,14 @@ namespace eval listtype {
 	} -result [list $expected 0 $expected $ltype [makeList $ltype]]
 
     }
+    }
 
     ################################################################
     # lreplace tests
     # Any modification operation will result in a shimmer to a list or spanlist.
     # General variations of lreplace operations on lists and spanlists are tested
     # in lreplace.test.
+    if {[testConstraint testobj]} {
     foreach ltype $listTypes {
 	# prepend an element
 	set expected [list X {*}[makeList $ltype]]
@@ -570,11 +580,13 @@ namespace eval listtype {
 	} -result [list 0 $expected $ltype [makeList $ltype]]
 
     }
+    }
 
     ################################################################
     # linsert tests
     # Any modification operation will result in a shimmer to a list or spanlist.
     # These are then covered in linsert.test and listRep.test
+    if {[testConstraint testobj]} {
     foreach ltype $listTypes {
 	# linsert at 0
 	set expected [list X {*}[makeList $ltype]]
@@ -613,6 +625,7 @@ namespace eval listtype {
 	    list [isAbstractList $l] $l [getListType $l2] $l2
 	} -result [list 0 $expected $ltype [makeList $ltype]]
     }
+    }
 
     ################################################################
     # lsearch tests
@@ -630,6 +643,7 @@ namespace eval listtype {
     ################################################################
     # lset tests
     # Any modification operation will result in a shimmer to a list or spanlist.
+    if {[testConstraint testobj]} {
     foreach ltype $listTypes {
 	set expected [makeNonAbstract [makeList $ltype]]
 	set expected [list {*}[lrange $expected 0 9] X {*}[lrange $expected 11 end]]
@@ -656,6 +670,7 @@ namespace eval listtype {
 	    list [lset l end+1 X] [isAbstractList $l] $l2 [getListType $l2]
 	} -result [list $expected 0 [makeList $ltype] $ltype]
 
+    }
     }
     # lset - nested indices
     foreach ltype1 $nestableTypes {
@@ -695,6 +710,7 @@ namespace eval listtype {
     # lsort tests
     # Test not correctness but rather that sorts same as non-abstract sort
     # which is presumably correct.
+    if {[testConstraint testobj]} {
     foreach ltype $listTypes {
 	testdef lsort-$ltype-unshared "lsort unshared $ltype" -body {
 	    set l [lsort [makeList $ltype]]
@@ -721,9 +737,11 @@ namespace eval listtype {
 	    list [isAbstractList $l] $l $l2
 	} -result [list 0 [lsort -decreasing [makeNonAbstract [makeList $ltype]]] [makeList $ltype]]
     }
+    }
 
     ################################################################
     # foreach tests
+    if {[testConstraint testobj]} {
     foreach ltype $listTypes {
 	testdef foreach-$ltype-unshared "foreach unshared $ltype" -body {
 	    set l {}
@@ -748,10 +766,12 @@ namespace eval listtype {
 	    set l
 	} -result [list {*}[makeList $ltype] {*}[lrepeat [expr (7-$largeListLength%7)] {}]]
     }
+    }
 
     ################################################################
     # lmap tests
     # Aside from correct results, should not shimmer original
+    if {[testConstraint testobj]} {
     foreach ltype $listTypes {
 	testdef lmap-$ltype-unshared "lmap unshared $ltype" -body {
 	    lmap v [makeList $ltype] {
@@ -772,12 +792,14 @@ namespace eval listtype {
 	} -result [list {*}[makeList $ltype] {*}[lrepeat [expr (7-$largeListLength%7)] {}]]
 
     }
+    }
 
     ################################################################
     # concat tests
     # TODO - the concat command shimmers all args except first because it calls
     # Tcl_ListObjAppendList under the covers. Should fix to not shimmer and then
     # add a check in test below for that.
+    if {[testConstraint testobj]} {
     foreach ltype1 $listTypes {
 	foreach ltype2 $listTypes {
 	    testdef concat-$ltype1-$ltype2 "concat $ltype1 $ltype2" -body {
@@ -789,19 +811,23 @@ namespace eval listtype {
 	    } -result [list [concat [getNonAbstract $ltype1] [getNonAbstract $ltype2]] $ltype1]
 	}
     }
+    }
 
     ################################################################
     # join tests
+    if {[testConstraint testobj]} {
     foreach ltype $listTypes {
 	    testdef join-$ltype "join $ltype" -body {
 		set l [makeList $ltype]
 		list [join $l ,] [getListType $l]
 	    } -result [list [join [getNonAbstract $ltype] ,] $ltype]
     }
+    }
 
     ################################################################
     # lpop tests
     # Always shimmers to non-abstract list.
+    if {[testConstraint testobj]} {
     foreach ltype $listTypes {
 	lassign [getFirstAndLast $ltype] first last
 	testdef lpop-$ltype-noargs "lpop $ltype" -body {
@@ -822,9 +848,11 @@ namespace eval listtype {
 			    {*}[lrange [getNonAbstract $ltype] 0 9] \
 			    {*}[lrange [getNonAbstract $ltype] 11 end]]]
     }
+    }
 
     # lpop - nested indices
     # Only two levels. Three levels takes too long with memdbg or valgrind
+    if {[testConstraint testobj]} {
     foreach ltype1 $nestableTypes {
 	foreach ltype2 $listTypes {
 	    lassign [getFirstAndLast $ltype2] first last
@@ -845,11 +873,13 @@ namespace eval listtype {
 	    }
 	}
     }
+    }
 
     ################################################################
     # lremove tests
     # First, last and middle are tested separately as they have
     # different code paths.
+    if {[testConstraint testobj]} {
     foreach ltype $listTypes {
 	# Remove first
 	set expected [makeNonAbstract [lrange [makeList $ltype] 1 end]]
@@ -903,6 +933,7 @@ namespace eval listtype {
 	    list [isAbstractList $l] $l [getListType $l2] $l2
 	} -result [list 0 $expected $ltype [makeList $ltype]]
     }
+    }
 
     ################################################################
     # expr in/ni operators
@@ -954,11 +985,14 @@ namespace eval listtype {
 		set expectedType reversedList
 	    }
 	}
+	if {[testConstraint testobj]} {
 	testdef lreverse-$ltype "lreverse $ltype" -body {
 	    set l [lreverse [makeList $ltype]]
 	    list [getListType $l] [lindex $l 0] [lindex $l end] $l
 	} -result [list $expectedType $last $first [doReverse [makeList $ltype]]]
+	}
     }
+  if {[testConstraint testobj]} {
     testdef lreverse-small-list "lreverse of small non-abstract list is a non-abstract list" -body {
 	set l [lreverse [makeList list $smallListLength]]
 	list [getListType $l] $l
@@ -968,16 +1002,19 @@ namespace eval listtype {
 	set l [lreverse [makeList spanlist $smallListLength]]
 	list [getListType $l] $l
     } -result [list list [doReverse [makeList list $smallListLength]]]
+  }
 
     testdef lreverse-hashchar "Verify string representation of lreverse when first char is #" -body {
 	set l [lreverse [lrepeat $largeListLength #]]
 	list [getListType $l] $l
     } -result [list reversedList [string cat "{#}" [string repeat " #" [expr {$largeListLength-1}]]]]
 
+  if {[testConstraint testobj]} {
     testdef lreverse-brace "Verify string representation of lreverse when first char is brace" -body {
 	set l [lreverse [lrepeat $largeListLength \{]]
 	list [getListType $l] $l
     } -result [list reversedList [lreverse [makeNonAbstract [lrepeat $largeListLength \{]]]]
+  }
 
     ################################################################
     # lrepeat tests
@@ -1038,6 +1075,7 @@ namespace eval listtype {
     # These tests depend on correct operation of lrange on non-abstract lists
     # (tested elsewhere)
 
+    if {[testConstraint testobj]} {
     foreach ltype $listTypes {
 	switch $ltype {
 	    list - spanlist {set ltype2 spanlist}
@@ -1067,6 +1105,7 @@ namespace eval listtype {
 		       [expr {$ltype eq "arithseries" ? "arithseries" : "list"}] \
 		       [lrange [getNonAbstract $ltype] 1 10]]
     }
+    }
 
     ################################################################
     # Raw C API tests
@@ -1081,7 +1120,7 @@ namespace eval listtype {
 
     test Tcl_ListObjRepeat-repeat0-noargs {
 	Tcl_ListObjRepeat 0
-    } -body {
+    } -constraints testlistapi -body {
 	set apiresult [testlistapi Tcl_ListObjRepeat 0]
 	dict with apiresult {}
 	list $status $resultRefCount $resultType $result
@@ -1091,7 +1130,7 @@ namespace eval listtype {
 
     test Tcl_ListObjRepeat-repeat0-withargs {
 	Tcl_ListObjRepeat 0 x y
-    } -body {
+    } -constraints testlistapi -body {
 	set apiresult [testlistapi Tcl_ListObjRepeat 0 x y]
 	dict with apiresult {}
 	list $status $resultRefCount $resultType $result
@@ -1101,7 +1140,7 @@ namespace eval listtype {
 
     test Tcl_ListObjRepeat-repeatN-noargs {
 	Tcl_ListObjRepeat 10
-    } -body {
+    } -constraints testlistapi -body {
 	set apiresult [testlistapi Tcl_ListObjRepeat 10]
 	dict with apiresult {}
 	list $status $resultRefCount $resultType $result
@@ -1111,7 +1150,7 @@ namespace eval listtype {
 
     test Tcl_ListObjRepeat-repeat-large {
 	Tcl_ListObjRepeat with total elements above threshold
-    } -body {
+    } -constraints testlistapi -body {
 	set apiresult [testlistapi Tcl_ListObjRepeat 20 a b c d e f g h i j]
 	dict with apiresult {}
 	list $status $resultRefCount $resultType [join $result ""]
@@ -1121,7 +1160,7 @@ namespace eval listtype {
 
     test Tcl_ListObjRepeat-repeat-small {
 	Tcl_ListObjRepeat with total elements below threshold
-    } -body {
+    } -constraints testlistapi -body {
 	set apiresult [testlistapi Tcl_ListObjRepeat 2 a b c d e f g h i j]
 	dict with apiresult {}
 	list $status $resultRefCount $resultType [join $result ""]
@@ -1131,7 +1170,7 @@ namespace eval listtype {
 
     test Tcl_ListObjRepeat-invalid-repeatcount {
 	Invalid count should return NULL in resultPtr
-    } -body {
+    } -constraints testlistapi -body {
 	set apiresult [testlistapi Tcl_ListObjRepeat -1 x]
 	dict with apiresult {}
 	list $status $result $resultPtr
@@ -1141,7 +1180,7 @@ namespace eval listtype {
 
     test Tcl_ListObjRepeat-toolarge-repeatcount {
 	Too large a count should return NULL in resultPtr
-    } -body {
+    } -constraints testlistapi -body {
 	set apiresult [testlistapi Tcl_ListObjRepeat \
 			   [expr {$::tcltests::TCL_SIZE_MAX/2}] x y]
 	dict with apiresult {}
@@ -1167,6 +1206,7 @@ namespace eval listtype {
     # This may change in a future implementation, in which case the tests
     # will have to be modified.
 
+  if {[testConstraint testobj]} {
     foreach ltype $listTypes {
 	switch $ltype {
 	    list - spanlist {
@@ -1213,10 +1253,11 @@ namespace eval listtype {
 			   1]
 	}
     }
+  }
     foreach nrefs {0 1 2} {
 	test Tcl_ListObjRange-invalid-list-$nrefs {
 	    Invalid list should return NULL in resultPtr
-	} -body {
+	} -constraints testlistapi -body {
 	    set apiresult [testlistapi Tcl_ListObjRange $nrefs \{ 0 0]
 	    dict with apiresult {}; # Explode apiresult into status, srcRefCount ...
 	    list $status $srcRefCount $result $resultPtr
@@ -1253,6 +1294,7 @@ namespace eval listtype {
 	    default {set ltype2 reversedList}
 	}
 	# Check normal operation with unshared (0, 1) and shared objects
+      if {[testConstraint testobj]} {
 	foreach nrefs {0 1 2} {
 	    test Tcl_ListObjReverse-$ltype-nrefs$nrefs \
 		"Tcl_ListObjReverse for $ltype list" -body {
@@ -1289,11 +1331,12 @@ namespace eval listtype {
 				   1]
 	    }
 	}
+      }
     }
     foreach nrefs {0 1 2} {
 	test Tcl_ListObjReverse-invalid-list-$nrefs {
 	    Invalid list should return NULL in resultPtr
-	} -body {
+	} -constraints testlistapi -body {
 	    set apiresult [testlistapi Tcl_ListObjReverse $nrefs \{]
 	    dict with apiresult {}
 	    list $status $srcRefCount $result $resultPtr

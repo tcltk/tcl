@@ -144,9 +144,7 @@ namespace eval ::tcltests {
     #
     #	1. contents of the TCLTEST_IPV4 and TCLTEST_IPV6 environment variables
     #	2. addresses on a server socket opened with -myaddr localhost
-    #	3. addresses on a server socket opened without a -myaddr parameter
-    #          (can resolve to 0.0.0.0 and ::, which may be affected by firewalls
-    #	    more aggressively than 127.0.0.1 and ::1)
+    #	3. addresses on a server socket opened with -myaddr localhost6
     # 	4. 127.0.0.1 and ::1
     proc DiscoverLocalAddresses {} {
         # phase 1:
@@ -157,28 +155,24 @@ namespace eval ::tcltests {
             set ipv6 $::env(TCLTEST_IPV6)
         }
         if {![info exists ipv4] || ![info exists ipv6]} {
-            # phase 2 & 3:
-            foreach opts {
-                {-myaddr localhost}
-                {}
-            } {
-                catch {
-                    set s [socket {*}$opts -server {} 0]
-                    foreach {addr host port} [chan configure $s -sockname] {
-                        if {[string match "*:*" $addr]} {
-                            if {![info exists ipv6]} {
-                                set ipv6 $addr
-                            }
-                        } else {
-                            if {![info exists ipv4]} {
-                                set ipv4 $addr
-                            }
-                        }
-                    }
-                    chan close $s
-                }
-                if {[info exists ipv4] && [info exists ipv6]} break
-            }
+            # phase 2 and 3:
+	    foreach myaddr {localhost localhost6} {
+		catch {
+		    set s [socket -myaddr $myaddr -server {} 0]
+		    foreach {addr host port} [chan configure $s -sockname] {
+			if {[string match "*:*" $addr]} {
+			    if {![info exists ipv6]} {
+				set ipv6 $addr
+			    }
+			} else {
+			    if {![info exists ipv4]} {
+				set ipv4 $addr
+			    }
+			}
+		    }
+		    chan close $s
+		}
+	    }
             # fallback to phase 4:
             if {![info exists ipv4]} {
                 set ipv4 {127.0.0.1}

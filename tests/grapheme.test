@@ -10,7 +10,6 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 
 }
 tcltest::loadTestedCommands
-package require tcl::test
 
 source [file join [file dirname [info script]] tcltests.tcl]
 source [file join [file dirname [info script]] ucdUtils.tcl]

@@ -171,7 +171,7 @@ if 0 {
 
 foreach {af localhost} [list \
     inet [tcltests::localIPv4Address] \
-    inet6 [tcltests::localIPv6Address] 1 \
+    inet6 [tcltests::localIPv6Address] \
 ] {
     # Check if the family is supported and set the constraint accordingly
     testConstraint supported_$af [expr {![catch {socket -server foo -myaddr $localhost 0} sock]}]
