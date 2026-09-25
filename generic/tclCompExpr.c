@@ -174,11 +174,12 @@ enum LexemeCodes {
     SCRIPT = LEAF | 2,		/* Script substitution; [foo] */
     BOOL_LIT = LEAF | BAREWORD,	/* For literal booleans */
     BRACED = LEAF | 4,		/* Braced string; {foo bar} */
-    VARIABLE = LEAF | 5,	/* Variable substitution; $x */
+    VARIABLE = LEAF | 5,	             /* Variable substitution; $x */
     QUOTED = LEAF | 6,		/* Quoted string; "foo $bar [soom]" */
     EMPTY = LEAF | 7,		/* Used only for an empty argument list to a
 				 * function. Represents the empty string
 				 * within parens in the expression: rand() */
+    COMMAND = LEAF | 8,              /* TIP 759 raw commands without bracket */
 
     /* Unary operator lexemes */
 
@@ -971,24 +972,37 @@ ParseExpr(
 		scanned = tokenPtr->size;
 		break;
 
+	    case COMMAND:
 	    case SCRIPT: {
+		int nestMode; // TIP759 raw commands
+		
 		Tcl_Parse *nestedPtr = (Tcl_Parse *)
 			TclStackAlloc(interp, sizeof(Tcl_Parse));
 
 		tokenPtr = parsePtr->tokenPtr + parsePtr->numTokens;
+		tokenPtr->start = start;
+		tokenPtr->numComponents = 0;
+		end = start + numBytes;
 		
 		if (numBytes > 1 && start[1] == '(') {
 		    // TIP759 Nested ARITHMETIC Subexpression
+		    nestMode = 1;
+		    start++; //skip the bracket
 		    tokenPtr->type = TCL_TOKEN_SUB_EXPR;
-		} else {  tokenPtr->type = TCL_TOKEN_COMMAND; }
+		} else {
+		    if (lexeme == COMMAND) {
+			nestMode = 0; // TCL_NESTED_CMD_IN_EXPR;
+			tokenPtr->type = TCL_TOKEN_CMD_IN_EXPR;
+		    }
+		    if (lexeme == SCRIPT) {
+			nestMode = 1;
+			start++; //skip the bracket
+			tokenPtr->type = TCL_TOKEN_COMMAND;
+		    }
+		}
 		
-		tokenPtr->start = start;
-		tokenPtr->numComponents = 0;
-
-		end = start + numBytes;
-		start++;
 		while (1) {
-		    code = Tcl_ParseCommand(interp, start, end - start, 1,
+		    code = Tcl_ParseCommand(interp, start, end - start, nestMode,
 			    nestedPtr);
 		    if (code != TCL_OK) {
 			parsePtr->term = nestedPtr->term;
@@ -998,13 +1012,16 @@ ParseExpr(
 		    }
 		    start = nestedPtr->commandStart + nestedPtr->commandSize;
 		    Tcl_FreeParse(nestedPtr);
-		    if ((nestedPtr->term < end) && (nestedPtr->term[0] == ']')
-			    && !nestedPtr->incomplete) {
-			break;
+		    if (nestedPtr->term < end && !nestedPtr->incomplete) {
+			if (lexeme == SCRIPT && nestedPtr->term[0] == ']' ) break;
+			if (lexeme == COMMAND && nestedPtr->term[0] == ';' ) break;
 		    }
-
 		    if (start == end) {
-			TclNewLiteralStringObj(msg, "missing close-bracket");
+			if (lexeme == SCRIPT) {
+			    TclNewLiteralStringObj(msg, "missing close-bracket");
+			} else if (lexeme == COMMAND) {
+			    TclNewLiteralStringObj(msg, "missing semi-colon");
+			}
 			parsePtr->term = tokenPtr->start;
 			parsePtr->errorType = TCL_PARSE_MISSING_BRACKET;
 			parsePtr->incomplete = 1;
@@ -1014,7 +1031,12 @@ ParseExpr(
 		    }
 		}
 		TclStackFree(interp, nestedPtr);
-		end = start;
+		if (lexeme == COMMAND) {
+		    // TIP 759 : we are keeping the ";" as an operator
+		    end = start-1;
+		} else if (lexeme == SCRIPT) {
+		    end = start;
+		}
 		start = tokenPtr->start;
 		scanned = end - start;
 		tokenPtr->size = scanned;
@@ -2046,6 +2068,42 @@ ParseLexeme(
 	*lexemePtr = END;
 	return 0;
     }
+
+    // TIP759 raw command
+    if (numBytes >= 9 &&
+	( memcmp(start, "dict map ", 9)  == 0 || memcmp(start, "dict for ", 9))  == 0) {
+	*lexemePtr = COMMAND;
+	return 0;
+    }
+    if (numBytes >= 8 && memcmp(start, "foreach ", 8) == 0) {
+           *lexemePtr = COMMAND;
+           return 0;
+    }
+    if (numBytes >= 7 && memcmp(start, "switch ", 7) == 0) {
+           *lexemePtr = COMMAND;
+           return 0;
+    }
+    if (numBytes >= 7 && memcmp(start, "return ", 7) == 0) {
+	*lexemePtr = COMMAND;
+	return 0;
+    }
+    if (numBytes >= 6 && memcmp(start, "while ", 6) == 0) {
+	*lexemePtr = COMMAND;
+	return 0;
+    }
+    if (numBytes >= 5 && memcmp(start, "lmap ", 5) == 0) {
+	*lexemePtr = COMMAND;
+	return 0;
+    }
+    if (numBytes >= 4 && memcmp(start, "for ", 4) == 0) {
+	*lexemePtr = COMMAND;
+	return 0;
+    }
+    if (numBytes >= 3 && memcmp(start, "if ", 3) == 0) {
+	*lexemePtr = COMMAND;
+	return 0;
+    }
+    
     byte = UCHAR(*start);
     if (byte < sizeof(Lexeme) && Lexeme[byte] != 0) {
 	*lexemePtr = Lexeme[byte];

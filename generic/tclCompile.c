@@ -2553,6 +2553,32 @@ TclCompileTokens(
 	    envPtr->line -= adjust;
 	    numObjsToConcat++;
 	    break;
+	    
+	case TCL_TOKEN_CMD_IN_EXPR:
+	    /*
+	     * Push any accumulated chars appearing before the command.
+	     */
+
+	    if (Tcl_DStringLength(&textBuffer) > 0) {
+		int literal = TclRegisterDStringLiteral(envPtr, &textBuffer);
+
+		TclEmitPush(literal, envPtr);
+		numObjsToConcat++;
+		Tcl_DStringFree(&textBuffer);
+
+		if (numCL) {
+		    TclContinuationsEnter(TclFetchLiteral(envPtr, literal),
+			    numCL, clPosition);
+		}
+		numCL = 0;
+	    }
+
+	    envPtr->line += adjust;
+	    TclCompileScript(interp, tokenPtr->start,
+		    tokenPtr->size, envPtr);
+	    envPtr->line -= adjust;
+	    numObjsToConcat++;
+	    break;
 
 	case TCL_TOKEN_SUB_EXPR :
 	    /* TIP759 ARITHMETIC SCRIPT support*/
