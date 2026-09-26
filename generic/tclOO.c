@@ -435,6 +435,7 @@ InitFoundation(
     TclNewLiteralStringObj(fPtr->slotSetName, "Set");
     TclNewLiteralStringObj(fPtr->slotResolveName, "Resolve");
     TclNewLiteralStringObj(fPtr->slotDefOpName, "--default-operation");
+    TclNewLiteralStringObj(fPtr->singletonInstName, "::oo::SingletonInstance");
     Tcl_IncrRefCount(fPtr->unknownMethodNameObj);
     Tcl_IncrRefCount(fPtr->constructorName);
     Tcl_IncrRefCount(fPtr->destructorName);
@@ -445,6 +446,7 @@ InitFoundation(
     Tcl_IncrRefCount(fPtr->slotSetName);
     Tcl_IncrRefCount(fPtr->slotResolveName);
     Tcl_IncrRefCount(fPtr->slotDefOpName);
+    Tcl_IncrRefCount(fPtr->singletonInstName);
 
     TclCreateObjCommandInNs(interp, "UnknownDefinition", fPtr->ooNs,
 	    TclOOUnknownDefinition, NULL, NULL);
@@ -676,7 +678,7 @@ MakeAdditionalClasses(
     // A mixin used to make an object so it won't be destroyed or cloned (or
     // at least not easily).
     Object *singletonInst = (Object *) Tcl_NewObjectInstance(interp,
-	    (Tcl_Class) fPtr->classCls, "::oo::SingletonInstance",
+	    (Tcl_Class) fPtr->classCls, TclGetString(fPtr->singletonInstName),
 	    NULL, TCL_INDEX_NONE, NULL, 0);
     TclOODefineBasicMethods(singletonInst->classPtr, singletonInstanceMethods);
 
@@ -815,6 +817,7 @@ KillFoundation(
     TclDecrRefCount(fPtr->slotSetName);
     TclDecrRefCount(fPtr->slotResolveName);
     TclDecrRefCount(fPtr->slotDefOpName);
+    TclDecrRefCount(fPtr->singletonInstName);
     TclOODecrRefCount(fPtr->objectCls->thisPtr);
     TclOODecrRefCount(fPtr->classCls->thisPtr);
 
@@ -2035,8 +2038,9 @@ TclNRNewObjectInstance(
     }
 
     /*
-     * Run constructors, except when objc == TCL_INDEX_NONE (a special flag case used for
-     * object cloning only). If there aren't any constructors, we do nothing.
+     * Run constructors, except when objc == TCL_INDEX_NONE (a special flag
+     * case used for object cloning only). If there aren't any constructors,
+     * we do nothing.
      */
 
     if (objc < 0) {
