@@ -1397,7 +1397,7 @@ TclInfoFrame(
 	    Tcl_GetCommandFullName(interp, (Tcl_Command) cmdPtr,
 		    procNameObj);
 	    ADD_PAIR("proc", procNameObj);
-	} else if ((procPtr->flags && PROC_CMD_OWNED) && !cmdPtr->objProc &&
+	} else if ((procPtr->flags & PROC_CMD_OWNED) && !cmdPtr->objProc &&
 		   cmdPtr->objClientData
 	) {
 	    ADD_PAIR("lambda", (Tcl_Obj *)cmdPtr->objClientData);
