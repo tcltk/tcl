@@ -1,5 +1,6 @@
 ---
 CommandName: Tcl_TranslateFileName
+title: Tcl_TranslateFileName
 ManualSection: 3
 Version: 8.1
 TclPart: Tcl

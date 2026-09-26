@@ -1,5 +1,6 @@
 ---
 CommandName: Tcl_GetInt
+title: Tcl_GetInt
 ManualSection: 3
 Version: unknown
 TclPart: Tcl

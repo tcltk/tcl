@@ -1,5 +1,6 @@
 ---
 CommandName: Tcl_CreateChannel
+title: Tcl_CreateChannel
 ManualSection: 3
 Version: 8.4
 TclPart: Tcl

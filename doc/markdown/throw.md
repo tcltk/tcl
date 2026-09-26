@@ -1,5 +1,6 @@
 ---
 CommandName: throw
+title: throw
 ManualSection: n
 Version: 8.6
 TclPart: Tcl

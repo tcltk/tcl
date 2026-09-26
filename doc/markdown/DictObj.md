@@ -1,5 +1,6 @@
 ---
 CommandName: Tcl_DictObj
+title: Tcl_DictObj
 ManualSection: 3
 Version: 8.5
 TclPart: Tcl

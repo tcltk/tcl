@@ -1,5 +1,6 @@
 ---
 CommandName: Tcl_Eval
+title: Tcl_Eval
 ManualSection: 3
 Version: 8.1
 TclPart: Tcl

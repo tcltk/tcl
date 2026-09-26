@@ -1,5 +1,6 @@
 ---
 CommandName: tclsh
+title: tclsh
 ManualSection: 1
 Version: unknown
 TclPart: Tcl

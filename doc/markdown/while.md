@@ -1,5 +1,6 @@
 ---
 CommandName: while
+title: while
 ManualSection: n
 Version: unknown
 TclPart: Tcl

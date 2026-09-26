@@ -1,5 +1,6 @@
 ---
 CommandName: lreverse
+title: lreverse
 ManualSection: n
 Version: 8.5
 TclPart: Tcl

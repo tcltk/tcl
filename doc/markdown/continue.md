@@ -1,5 +1,6 @@
 ---
 CommandName: continue
+title: continue
 ManualSection: n
 Version: unknown
 TclPart: Tcl

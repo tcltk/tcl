@@ -1,5 +1,6 @@
 ---
 CommandName: TclZlib
+title: TclZlib
 ManualSection: 3
 Version: 8.6
 TclPart: Tcl

@@ -1,5 +1,6 @@
 ---
 CommandName: tm
+title: tm
 ManualSection: n
 Version: 8.5
 TclPart: Tcl
@@ -40,13 +41,13 @@ This document describes the facilities for locating and loading Tcl Modules (see
 
     Paths are searched later in the order of their appearance in the list. As they are added to the front of the list they are searched in reverse order of addition. In other words, the paths added last are looked at first.
 
-**::tcl::tm::path remove** ?*path ...*?
+[::tcl::tm::path]{.cmd} [remove]{.sub} [path]{.optdot}
 : Removes the paths from the list of module paths. The command silently ignores all paths which are not on the list.
 
-**::tcl::tm::path list**
+[::tcl::tm::path]{.cmd} [list]{.sub}
 : Returns a list containing all registered module paths, in the order that they are searched for modules.
 
-**::tcl::tm::roots** *paths*
+[::tcl::tm::roots]{.cmd} [paths]{.arg}
 : Similar to **path add**, and layered on top of it. This command takes a single argument containing a list of paths, extends each with "**tcl**_X_**/site-tcl**", and "**tcl**_X_**/**_X_**.**_y_", for major version *X* of the Tcl interpreter and minor version *y* less than or equal to the minor version of the interpreter, and adds the resulting set of paths to the list of paths to search.
 
     This command is used internally by the system to set up the system-specific default paths.

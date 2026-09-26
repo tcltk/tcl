@@ -1,5 +1,6 @@
 ---
 CommandName: Tcl_CreateCommand
+title: Tcl_CreateCommand
 ManualSection: 3
 Version: unknown
 TclPart: Tcl

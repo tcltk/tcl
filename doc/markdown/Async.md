@@ -1,5 +1,6 @@
 ---
 CommandName: Tcl_AsyncCreate
+title: Tcl_AsyncCreate
 ManualSection: 3
 Version: 7.0
 TclPart: Tcl

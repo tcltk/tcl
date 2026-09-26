@@ -1,5 +1,6 @@
 ---
 CommandName: Tcl_ParseCommand
+title: Tcl_ParseCommand
 ManualSection: 3
 Version: 8.3
 TclPart: Tcl

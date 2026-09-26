@@ -1,5 +1,6 @@
 ---
 CommandName: time
+title: time
 ManualSection: n
 Version: unknown
 TclPart: Tcl

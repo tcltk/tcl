@@ -1,5 +1,6 @@
 ---
 CommandName: Tcl
+title: Tcl
 ManualSection: n
 Version: 8.6
 TclPart: Tcl

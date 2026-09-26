@@ -1,5 +1,6 @@
 ---
 CommandName: Notifier
+title: Notifier
 ManualSection: 3
 Version: 8.1
 TclPart: Tcl

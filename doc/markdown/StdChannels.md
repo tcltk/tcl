@@ -1,5 +1,6 @@
 ---
 CommandName: Standard Channels
+title: Standard Channels
 ManualSection: 3
 Version: 7.5
 TclPart: Tcl

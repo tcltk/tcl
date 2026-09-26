@@ -1,5 +1,6 @@
 ---
 CommandName: tailcall
+title: tailcall
 ManualSection: n
 Version: 8.6
 TclPart: Tcl

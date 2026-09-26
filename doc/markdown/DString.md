@@ -1,5 +1,6 @@
 ---
 CommandName: Tcl_DString
+title: Tcl_DString
 ManualSection: 3
 Version: 7.4
 TclPart: Tcl

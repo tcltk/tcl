@@ -1,5 +1,6 @@
 ---
 CommandName: Tcl_Access
+title: Tcl_Access
 ManualSection: 3
 Version: 8.1
 TclPart: Tcl

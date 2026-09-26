@@ -1,5 +1,6 @@
 ---
 CommandName: update
+title: update
 ManualSection: n
 Version: 7.5
 TclPart: Tcl

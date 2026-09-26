@@ -1,5 +1,6 @@
 ---
 CommandName: lrange
+title: lrange
 ManualSection: n
 Version: 7.4
 TclPart: Tcl

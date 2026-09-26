@@ -1,5 +1,6 @@
 ---
 CommandName: Tcl_Hash
+title: Tcl_Hash
 ManualSection: 3
 Version: unknown
 TclPart: Tcl

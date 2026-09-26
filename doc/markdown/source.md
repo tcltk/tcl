@@ -1,5 +1,6 @@
 ---
 CommandName: source
+title: source
 ManualSection: n
 Version: unknown
 TclPart: Tcl

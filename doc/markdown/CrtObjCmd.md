@@ -1,5 +1,6 @@
 ---
 CommandName: Tcl_CreateObjCommand
+title: Tcl_CreateObjCommand
 ManualSection: 3
 Version: 8.0
 TclPart: Tcl

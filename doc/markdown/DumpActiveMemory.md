@@ -1,5 +1,6 @@
 ---
 CommandName: Tcl_DumpActiveMemory
+title: Tcl_DumpActiveMemory
 ManualSection: 3
 Version: 8.1
 TclPart: Tcl

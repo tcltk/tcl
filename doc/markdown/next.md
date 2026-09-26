@@ -1,5 +1,6 @@
 ---
 CommandName: next
+title: next
 ManualSection: n
 Version: 0.1
 TclPart: TclOO

@@ -1,5 +1,6 @@
 ---
 CommandName: exit
+title: exit
 ManualSection: n
 Version: unknown
 TclPart: Tcl

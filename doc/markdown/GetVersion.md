@@ -1,5 +1,6 @@
 ---
 CommandName: Tcl_GetVersion
+title: Tcl_GetVersion
 ManualSection: 3
 Version: 7.5
 TclPart: Tcl

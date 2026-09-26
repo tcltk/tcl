@@ -1,5 +1,6 @@
 ---
 CommandName: Tcl_Obj
+title: Tcl_Obj
 ManualSection: 3
 Version: 8.5
 TclPart: Tcl

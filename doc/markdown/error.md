@@ -1,5 +1,6 @@
 ---
 CommandName: error
+title: error
 ManualSection: n
 Version: unknown
 TclPart: Tcl

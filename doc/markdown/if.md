@@ -1,5 +1,6 @@
 ---
 CommandName: if
+title: if
 ManualSection: n
 Version: unknown
 TclPart: Tcl

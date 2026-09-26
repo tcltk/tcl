@@ -1,5 +1,6 @@
 ---
 CommandName: trace
+title: trace
 ManualSection: n
 Version: 8.4
 TclPart: Tcl
@@ -110,7 +111,7 @@ This command causes Tcl commands to be executed whenever certain operations are 
 
     *Ops* indicates which operations are of interest, and is a list of one or more of the following items:
 
-    [array]
+    [array]{.cmd}
     : Invoke *commandPrefix* whenever the variable is accessed or modified via the [array] command, provided that *name* is not a scalar variable at the time that the [array] command is invoked.  If *name* is a scalar variable, the access via the [array] command will not trigger the trace.
 
     **read**
@@ -148,7 +149,7 @@ This command causes Tcl commands to be executed whenever certain operations are 
 **trace remove** *type name opList commandPrefix*
 : Where *type* is either **command**, **execution** or **variable**.
 
-    **trace remove command** *name opList commandPrefix*
+    [trace]{.cmd} [remove]{.sub} [command]{.lit} [name]{.arg} [opList]{.arg} [commandPrefix]{.arg}
     : If there is a trace set on command *name* with the operations and command given by *opList* and *commandPrefix*, then the trace is removed, so that *commandPrefix* will never again be invoked.  Returns an empty string.   If *name* does not exist, the command will throw an error.
 
     **trace remove execution** *name opList commandPrefix*

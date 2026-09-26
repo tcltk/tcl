@@ -1,5 +1,6 @@
 ---
 CommandName: const
+title: const
 ManualSection: n
 Version: 9.0
 TclPart: Tcl

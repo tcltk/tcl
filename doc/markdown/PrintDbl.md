@@ -1,5 +1,6 @@
 ---
 CommandName: Tcl_PrintDouble
+title: Tcl_PrintDouble
 ManualSection: 3
 Version: 8.0
 TclPart: Tcl

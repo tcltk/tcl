@@ -1,5 +1,6 @@
 ---
 CommandName: tclvars
+title: tclvars
 ManualSection: n
 Version: 9.1
 TclPart: Tcl

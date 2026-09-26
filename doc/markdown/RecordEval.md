@@ -1,5 +1,6 @@
 ---
 CommandName: Tcl_RecordAndEval
+title: Tcl_RecordAndEval
 ManualSection: 3
 Version: 7.4
 TclPart: Tcl

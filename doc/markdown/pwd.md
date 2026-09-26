@@ -1,5 +1,6 @@
 ---
 CommandName: pwd
+title: pwd
 ManualSection: n
 Version: unknown
 TclPart: Tcl

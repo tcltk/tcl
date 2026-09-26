@@ -1,5 +1,6 @@
 ---
 CommandName: Tcl_LimitCheck
+title: Tcl_LimitCheck
 ManualSection: 3
 Version: 8.5
 TclPart: Tcl

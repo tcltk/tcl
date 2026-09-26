@@ -1,5 +1,6 @@
 ---
 CommandName: read
+title: read
 ManualSection: n
 Version: 8.1
 TclPart: Tcl

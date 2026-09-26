@@ -1,5 +1,6 @@
 ---
 CommandName: Tcl_SubstObj
+title: Tcl_SubstObj
 ManualSection: 3
 Version: 8.4
 TclPart: Tcl

@@ -1,5 +1,6 @@
 ---
 CommandName: expr
+title: expr
 ManualSection: n
 Version: 8.5
 TclPart: Tcl

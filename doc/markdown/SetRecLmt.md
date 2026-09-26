@@ -1,5 +1,6 @@
 ---
 CommandName: Tcl_SetRecursionLimit
+title: Tcl_SetRecursionLimit
 ManualSection: 3
 Version: 7.0
 TclPart: Tcl

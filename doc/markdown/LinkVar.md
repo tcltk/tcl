@@ -1,5 +1,6 @@
 ---
 CommandName: Tcl_LinkVar
+title: Tcl_LinkVar
 ManualSection: 3
 Version: 7.5
 TclPart: Tcl

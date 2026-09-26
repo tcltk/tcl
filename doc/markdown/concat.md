@@ -1,5 +1,6 @@
 ---
 CommandName: concat
+title: concat
 ManualSection: n
 Version: 8.3
 TclPart: Tcl

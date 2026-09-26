@@ -1,5 +1,6 @@
 ---
 CommandName: Tcl_PutEnv
+title: Tcl_PutEnv
 ManualSection: 3
 Version: 7.5
 TclPart: Tcl

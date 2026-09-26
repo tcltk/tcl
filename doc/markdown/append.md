@@ -1,5 +1,6 @@
 ---
 CommandName: append
+title: append
 ManualSection: n
 Version: unknown
 TclPart: Tcl

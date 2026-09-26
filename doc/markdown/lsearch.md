@@ -1,5 +1,6 @@
 ---
 CommandName: lsearch
+title: lsearch
 ManualSection: n
 Version: 8.6
 TclPart: Tcl
@@ -61,13 +62,13 @@ If all matching style options are omitted, the default matching style is **-glob
 [-exact]{.lit}
 : *pattern* is a literal string that is compared for exact equality against each list element.
 
-**-glob**
+[-glob]{.lit}
 : *pattern* is a glob-style pattern which is matched against each list element using the same rules as the [string match][string] command.
 
-**-regexp**
+[-regexp]{.lit}
 : *pattern* is treated as a regular expression and matched against each list element using the rules described in the [re\_syntax][re_syntax] reference page.
 
-**-sorted**
+[-sorted]{.lit}
 : The list elements are in sorted order.  If this option is specified, **lsearch** will use a more efficient searching algorithm to search *list*.  If no other options are specified, *list* is assumed to be sorted in increasing order, and to contain ASCII strings.  This option is mutually exclusive with **-glob** and **-regexp**, and is treated exactly like **-exact** when either **-all** or **-not** are specified.
 
 
@@ -78,13 +79,13 @@ These options may be given with all matching styles.
 [-all]{.lit}
 : Changes the result to be the list of all matching indices (or all matching values if **-inline** is specified as well.) If indices are returned, the indices will be in ascending numeric order. If values are returned, the order of the values will be the order of those values within the input *list*.
 
-**-inline**
+[-inline]{.lit}
 : The matching value is returned instead of its index (or an empty string if no value matches.)  If **-all** is also specified, then the result of the command is the list of all values that matched.
 
-**-not**
+[-not]{.lit}
 : This negates the sense of the match, returning the index of the first non-matching value in the list.
 
-**-start** *index*
+[-start]{.lit} [index]{.arg}
 : The list is searched starting at position *index*. The interpretation of the *index* value is the same as for the command [string index][string], supporting simple index arithmetic and indices relative to the end of the list.
 
 
@@ -95,16 +96,16 @@ These options describe how to interpret the items in the list being searched.  T
 [-ascii]{.lit}
 : The list elements are to be examined as Tcl strings (i.e. sequences of Unicode code points; the name is for backward-compatibility reasons.)
 
-**-dictionary**
+[-dictionary]{.lit}
 : The list elements are to be compared using dictionary-style comparisons (see [lsort] for a fuller description). Note that this only makes a meaningful difference from the **-ascii** option when the **-sorted** option is given, because values are only dictionary-equal when exactly equal.
 
-**-integer**
+[-integer]{.lit}
 : The list elements are to be compared as integers.
 
-**-nocase**
+[-nocase]{.lit}
 : Causes comparisons to be handled in a case-insensitive manner.  Has no effect if combined with the **-dictionary**, **-integer**, or **-real** options.
 
-**-real**
+[-real]{.lit}
 : The list elements are to be compared as floating-point values.
 
 
@@ -115,10 +116,10 @@ These options (only meaningful with the **-sorted** option) specify how the list
 [-decreasing]{.lit}
 : The list elements are sorted in decreasing order.  This option is only meaningful when used with **-sorted**.
 
-**-increasing**
+[-increasing]{.lit}
 : The list elements are sorted in increasing order.  This option is only meaningful when used with **-sorted**.
 
-**-bisect**
+[-bisect]{.lit}
 : Inexact search when the list elements are in sorted order. For an increasing list the last index where the element is less than or equal to the pattern is returned. For a decreasing list the last index where the element is greater than or equal to the pattern is returned. If the pattern is before the first element or the list is empty, -1 is returned. This option implies **-sorted** and cannot be used with either **-all** or **-not**.
 
 
@@ -135,7 +136,7 @@ The list length must be an integer multiple of *strideLength*, which in turn mus
 [-index]{.lit} [indexList]{.arg}
 : This option is designed for use when searching within nested lists. The *indexList* argument gives a path of indices (much as might be used with the [lindex] or [lset] commands) within each element to allow the location of the term being matched against.
 
-**-subindices**
+[-subindices]{.lit}
 : If this option is given, the index result from this command (or every index result when **-all** is also specified) will be a complete path (suitable for use with [lindex] or [lset]) within the overall list to the term found.  This option has no effect unless the **-index** is also specified, and is just a convenience short-cut.
 
 

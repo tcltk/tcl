@@ -1,5 +1,6 @@
 ---
 CommandName: Tcl_ParseArgsObjv
+title: Tcl_ParseArgsObjv
 ManualSection: 3
 Version: 8.6
 TclPart: Tcl

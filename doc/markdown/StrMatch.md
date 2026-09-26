@@ -1,5 +1,6 @@
 ---
 CommandName: Tcl_StringMatch
+title: Tcl_StringMatch
 ManualSection: 3
 Version: 8.5
 TclPart: Tcl

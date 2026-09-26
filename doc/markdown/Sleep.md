@@ -1,5 +1,6 @@
 ---
 CommandName: Tcl_Sleep
+title: Tcl_Sleep
 ManualSection: 3
 Version: 7.5
 TclPart: Tcl

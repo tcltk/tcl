@@ -1,5 +1,6 @@
 ---
 CommandName: eof
+title: eof
 ManualSection: n
 Version: 7.5
 TclPart: Tcl

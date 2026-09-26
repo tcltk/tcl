@@ -1,5 +1,6 @@
 ---
 CommandName: lsort
+title: lsort
 ManualSection: n
 Version: 8.5
 TclPart: Tcl
@@ -53,28 +54,28 @@ By default ASCII sorting is used with the result returned in increasing order.  
 [-ascii]{.lit}
 : Use string comparison with Unicode code-point collation order (the name is for backward-compatibility reasons.)  This is the default.
 
-**-dictionary**
+[-dictionary]{.lit}
 : Use dictionary-style comparison.  This is the same as **-ascii** except (a) case is ignored except as a tie-breaker and (b) if two strings contain embedded numbers, the numbers compare as integers, not characters.  For example, in **-dictionary** mode, **bigBoy** sorts between **bigbang** and **bigboy**, and **x10y** sorts between **x9y** and **x11y**. Overrides the **-nocase** option.
 
-**-integer**
+[-integer]{.lit}
 : Convert list elements to integers and use integer comparison.
 
-**-real**
+[-real]{.lit}
 : Convert list elements to floating-point values and use floating comparison.
 
-**-command** *command*
+[-command]{.lit} [command]{.arg}
 : Use *command* as a comparison command. To compare two elements, evaluate a Tcl script consisting of *command* with the two elements appended as additional arguments.  The script should return an integer less than, equal to, or greater than zero if the first element is to be considered less than, equal to, or greater than the second, respectively.
 
-**-increasing**
+[-increasing]{.lit}
 : Sort the list in increasing order ("smallest"items first). This is the default.
 
-**-decreasing**
+[-decreasing]{.lit}
 : Sort the list in decreasing order ("largest"items first).
 
-**-indices**
+[-indices]{.lit}
 : Return a list of indices into *list* in sorted order instead of the values themselves.
 
-**-index** *indexList*
+[-index]{.lit} [indexList]{.arg}
 : If this option is specified, each of the elements of *list* must itself be a proper Tcl sublist (unless **-stride** is used). Instead of sorting based on whole sublists, **lsort** will extract the *indexList*'th element from each sublist (as if the overall element and the *indexList* were passed to [lindex]) and sort based on the given element. For example,
 
     ```
@@ -101,7 +102,7 @@ By default ASCII sorting is used with the result returned in increasing order.  
 
     returns **{{d e m o} 34512} {{b i g} 12345} {{c o d e} 54321}** (because **e** sorts before **i** which sorts before **o**.) This option is much more efficient than using **-command** to achieve the same effect.
 
-**-stride** *strideLength*
+[-stride]{.lit} [strideLength]{.arg}
 : If this option is specified, the list is treated as consisting of groups of *strideLength* elements and the groups are sorted by either their first element or, if the **-index** option is used, by the element within each group given by the first index passed to **-index** (which is then ignored by **-index**). Elements always remain in the same position within their group.
 
     The list length must be an integer multiple of *strideLength*, which in turn must be at least 2.
@@ -120,10 +121,10 @@ By default ASCII sorting is used with the result returned in increasing order.  
 
     returns "carrot 10 banana 25 apple 50".
 
-**-nocase**
+[-nocase]{.lit}
 : Causes comparisons to be handled in a case-insensitive manner.  Has no effect if combined with the **-dictionary**, **-integer**, or **-real** options.
 
-**-unique**
+[-unique]{.lit}
 : If this option is specified, then only the last set of duplicate elements found in the list will be retained.  Note that duplicates are determined relative to the comparison used in the sort.  Thus if **-index 0** is used, **{1 a}** and **{1 b}** would be considered duplicates and only the second element, **{1 b}**, would be retained.
 
 

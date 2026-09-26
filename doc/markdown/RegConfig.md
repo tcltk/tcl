@@ -1,5 +1,6 @@
 ---
 CommandName: Tcl_RegisterConfig
+title: Tcl_RegisterConfig
 ManualSection: 3
 Version: 8.4
 TclPart: Tcl

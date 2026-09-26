@@ -1,5 +1,6 @@
 ---
 CommandName: Tcl_SplitPath
+title: Tcl_SplitPath
 ManualSection: 3
 Version: 7.5
 TclPart: Tcl

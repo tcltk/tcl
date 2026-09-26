@@ -1,5 +1,6 @@
 ---
 CommandName: prefix
+title: prefix
 ManualSection: n
 Version: 8.6
 TclPart: Tcl
@@ -35,13 +36,13 @@ This document describes commands looking up a prefix in a list of strings. The f
 [::tcl::prefix]{.cmd} [all]{.sub} [table]{.arg} [string]{.arg}
 : Returns a list of all elements in *table* that begin with the prefix *string*.
 
-**::tcl::prefix longest** *table string*
+[::tcl::prefix]{.cmd} [longest]{.sub} [table]{.arg} [string]{.arg}
 : Returns the longest common prefix of all elements in *table* that begin with the prefix *string*.
 
-**::tcl::prefix match** ?*option ...*? *table string*
+[::tcl::prefix]{.cmd} [match]{.sub} [option]{.optdot} [table]{.arg} [string]{.arg}
 : If *string* equals one element in *table* or is a prefix to exactly one element, the matched element is returned. If not, the result depends on the **-error** option. (It is recommended that the *table* be sorted before use with this subcommand, so that the list of matches presented in the error message also becomes sorted, though this is not strictly necessary for the operation of this subcommand itself.) The following options are supported:
 
-    **-exact**
+    [-exact]{.lit}
     : Accept only exact matches.
 
     **-message** *string*

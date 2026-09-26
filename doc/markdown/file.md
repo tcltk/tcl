@@ -1,5 +1,6 @@
 ---
 CommandName: file
+title: file
 ManualSection: n
 Version: 8.3
 TclPart: Tcl
@@ -47,7 +48,7 @@ This command provides several operations on a file's name or attributes.  The *n
 [file]{.cmd} [atime]{.sub} [name]{.arg} [time]{.optarg}
 : Returns a decimal string giving the time at which file *name* was last accessed.  If *time* is specified, it is an access time to set for the file.  The time is measured in the standard POSIX fashion as seconds from a fixed starting time (often January 1, 1970).  If the file does not exist or its access time cannot be queried or set then an error is generated.  On Windows, FAT file systems do not support access time. On [zipfs] file systems, access time is mapped to the modification time.
 
-**file attributes** *name*
+[file]{.cmd} [attributes]{.sub} [name]{.arg}
 : see below ...
 
 **file attributes** *name* ?*option*?
@@ -64,7 +65,7 @@ This command provides several operations on a file's name or attributes.  The *n
 
     On all platforms, files in [zipfs] mounted archives return the following attributes. These are all read-only and cannot be directly set.
 
-    **-archive**
+    [-archive]{.lit}
     : The path of the mounted ZIP archive containing the file.
 
     **-compsize**
@@ -89,16 +90,16 @@ This command provides several operations on a file's name or attributes.  The *n
 [file]{.cmd} [channels]{.sub} [pattern]{.optarg}
 : If *pattern* is not specified, returns a list of names of all registered open channels in this interpreter.  If *pattern* is specified, only those names matching *pattern* are returned.  Matching is determined using the same rules as for [string match][string].
 
-**file copy** ?**-force**? ?**--**? *source target*
+[file]{.cmd} [copy]{.sub} [-force]{.optlit} [--]{.optlit} [source]{.arg} [target]{.arg}
 : see below ...
 
 **file copy** ?**-force**? ?**--**? *source* ?*source ...*? *targetDir*
 : The first form makes a copy of the file or directory *source* under the pathname *target*. If *target* is an existing directory, then the second form is used.  The second form makes a copy inside *targetDir* of each *source* file listed.  If a directory is specified as a *source*, then the contents of the directory will be recursively copied into *targetDir*. Existing files will not be overwritten unless the **-force** option is specified (when Tcl will also attempt to adjust permissions on the destination file or directory if that is necessary to allow the copy to proceed).  When copying within a single filesystem, *file copy* will copy soft links (i.e. the links themselves are copied, not the things they point to).  Trying to overwrite a non-empty directory, overwrite a directory with a file, or overwrite a file with a directory will all result in errors even if **-force** was specified.  Arguments are processed in the order specified, halting at the first error, if any.  A **--** marks the end of switches; the argument following the **--** will be treated as a *source* even if it starts with a **-**.
 
-**file delete** ?**-force**? ?**--**? ?*pathname ...*?
+[file]{.cmd} [delete]{.sub} [-force]{.optlit} [--]{.optlit} [pathname]{.optdot}
 : Removes the file or directory specified by each *pathname* argument.  Non-empty directories will be removed only if the **-force** option is specified.  When operating on symbolic links, the links themselves will be deleted, not the objects they point to. Trying to delete a non-existent file is not considered an error. Trying to delete a read-only file will cause the file to be deleted, even if the **-force** flags is not specified.  If the **-force** option is specified on a directory, Tcl will attempt both to change permissions and move the current directory "pwd" out of the given path if that is necessary to allow the deletion to proceed.  Arguments are processed in the order specified, halting at the first error, if any. A **--** marks the end of switches; the argument following the **--** will be treated as a *pathname* even if it starts with a **-**.
 
-**file dirname** *name*
+[file]{.cmd} [dirname]{.sub} [name]{.arg}
 : Returns a name comprised of all of the path components in *name* excluding the last element.  If *name* is a relative file name and only contains one path element, then returns "**.**". If *name* refers to a root directory, then the root directory is returned.  For example,
 
     ```
@@ -107,27 +108,27 @@ This command provides several operations on a file's name or attributes.  The *n
 
     returns **c:/**.
 
-**file executable** *name*
+[file]{.cmd} [executable]{.sub} [name]{.arg}
 : Returns **1** if file *name* is executable by the current user, **0** otherwise. On Windows, which does not have an executable attribute, the command treats all directories and any files with extensions **exe**, **com**, **cmd** or **bat** as executable.
 
-**file exists** *name*
+[file]{.cmd} [exists]{.sub} [name]{.arg}
 : Returns **1** if file *name* exists and the current user has search privileges for the directories leading to it, **0** otherwise.
 
-**file extension** *name*
+[file]{.cmd} [extension]{.sub} [name]{.arg}
 : Returns all of the characters in *name* after and including the last dot in the last element of *name*.  If there is no dot in the last element of *name* then returns the empty string.
 
-**file home** ?*username*?
+[file]{.cmd} [home]{.sub} [username]{.optarg}
 : [If no argument is specified, the command returns the home directory of the current user. This is generally the value of the **$HOME** environment variable except that on Windows platforms backslashes in the path are replaced by forward slashes. An error is raised if the **$HOME** environment variable is not set.]{version="TIP602"}
 
     If *username* is specified, the command returns the home directory configured in the system for the specified user. Note this may be different than the value of the **$HOME** environment variable even when *username* corresponds to the current user. An error is raised if the *username* does not correspond to a user account on the system.
 
-**file isdirectory** *name*
+[file]{.cmd} [isdirectory]{.sub} [name]{.arg}
 : Returns **1** if file *name* is a directory, **0** otherwise.
 
-**file isfile** *name*
+[file]{.cmd} [isfile]{.sub} [name]{.arg}
 : Returns **1** if file *name* is a regular file, **0** otherwise.
 
-**file join** *name* ?*name ...*?
+[file]{.cmd} [join]{.sub} [name]{.arg} [name]{.optdot}
 : Takes one or more file names and combines them, using the correct path separator for the current platform.  If a particular *name* is relative, then it will be joined to the previous file name argument. Otherwise, any earlier arguments will be discarded, and joining will proceed from the current argument.  For example,
 
     ```
@@ -138,7 +139,7 @@ This command provides several operations on a file's name or attributes.  The *n
 
     Note that any of the names can contain separators, and that the result is always canonical for the current platform: **/** for Unix and Windows.
 
-**file link** ?*-linktype*? *linkName* ?*target*?
+[file]{.cmd} [link]{.sub} [-linktype]{.optarg} [linkName]{.arg} [target]{.optarg}
 : If only one argument is given, that argument is assumed to be *linkName*, and this command returns the value of the link given by *linkName* (i.e. the name of the file it points to).  If *linkName* is not a link or its value cannot be read (as, for example, seems to be the case with hard links, which look just like ordinary files), then an error is returned.
 
     If 2 arguments are given, then these are assumed to be *linkName* and *target*. If *linkName* already exists, or if *target* does not exist, an error will be returned.  Otherwise, Tcl creates a new link called *linkName* which points to the existing filesystem object at *target* (which is also the returned value), where the type of the link is platform-specific (on Unix a symbolic link will be the default).  This is useful for the case where the user wishes to create a link in a cross-platform way, and does not care what type of link is created.
@@ -147,61 +148,61 @@ This command provides several operations on a file's name or attributes.  The *n
 
     On Unix, symbolic links can be made to relative paths, and those paths must be relative to the actual *linkName*'s location (not to the cwd), but on all other platforms where relative links are not supported, target paths will always be converted to absolute, normalized form before the link is created (and therefore relative paths are interpreted as relative to the cwd). When creating links on filesystems that either do not support any links, or do not support the specific type requested, an error message will be returned.  Most Unix platforms support both symbolic and hard links (the latter for files only). Windows supports symbolic directory links and hard file links on NTFS drives.
 
-**file lstat** *name* ?*varName*?
+[file]{.cmd} [lstat]{.sub} [name]{.arg} [varName]{.optarg}
 : Same as **stat** option (see below) except uses the *lstat* kernel call instead of *stat*.  This means that if *name* refers to a symbolic link the information returned is for the link rather than the file it refers to.  On systems that do not support symbolic links this option behaves exactly the same as the **stat** option.
 
-**file mkdir** ?*dir ...*?
+[file]{.cmd} [mkdir]{.sub} [dir]{.optdot}
 : Creates each directory specified.  For each pathname *dir* specified, this command will create all non-existing parent directories as well as *dir* itself.  If an existing directory is specified, then no action is taken and no error is returned.  Trying to overwrite an existing file with a directory will result in an error.  Arguments are processed in the order specified, halting at the first error, if any.
 
-**file mtime** *name* ?*time*?
+[file]{.cmd} [mtime]{.sub} [name]{.arg} [time]{.optarg}
 : Returns a decimal string giving the time at which file *name* was last modified.  If *time* is specified, it is a modification time to set for the file (equivalent to Unix **touch**).  The time is measured in the standard POSIX fashion as seconds from a fixed starting time (often January 1, 1970).  If the file does not exist or its modified time cannot be queried or set then an error is generated. On [zipfs] file systems, modification time cannot be explicitly set.
 
-**file nativename** *name*
+[file]{.cmd} [nativename]{.sub} [name]{.arg}
 : Returns the platform-specific name of the file. This is useful if the filename is needed to pass to a platform-specific call, such as to a subprocess via [exec] under Windows (see [Examples] below).
 
-**file normalize** *name*
+[file]{.cmd} [normalize]{.sub} [name]{.arg}
 : Returns a unique normalized path representation for the file-system object (file, directory, link, etc), whose string value can be used as a unique identifier for it.  A normalized path is an absolute path which has all "../" and "./" removed.  Also it is one which is in the "standard" format for the native platform.  On Unix, this means the segments leading up to the path must be free of symbolic links/aliases (but the very last path component may be a symbolic link), and on Windows it also means we want the long form with that form's case-dependence (which gives us a unique, case-dependent path).  The one exception concerning the last link in the path is necessary, because Tcl or the user may wish to operate on the actual symbolic link itself (for example **file delete**, **file rename**, **file copy** are defined to operate on symbolic links, not on the things that they point to).
 
-**file owned** *name*
+[file]{.cmd} [owned]{.sub} [name]{.arg}
 : Returns **1** if file *name* is owned by the current user, **0** otherwise.
 
-**file pathtype** *name*
+[file]{.cmd} [pathtype]{.sub} [name]{.arg}
 : Returns one of **absolute**, **relative**, **volumerelative**. If *name* refers to a specific file on a specific volume, the path type will be **absolute**. If *name* refers to a file relative to the current working directory, then the path type will be **relative**. If *name* refers to a file relative to the current working directory on a specified volume, or to a specific file on the current working volume, then the path type is **volumerelative**.
 
-**file readable** *name*
+[file]{.cmd} [readable]{.sub} [name]{.arg}
 : Returns **1** if file *name* is readable by the current user, **0** otherwise.
 
-**file readlink** *name*
+[file]{.cmd} [readlink]{.sub} [name]{.arg}
 : Returns the value of the symbolic link given by *name* (i.e. the name of the file it points to).  If *name* is not a symbolic link or its value cannot be read, then an error is returned.  On systems that do not support symbolic links this option is undefined.
 
-**file rename** ?**-force**? ?**--**? *source target*
+[file]{.cmd} [rename]{.sub} [-force]{.optlit} [--]{.optlit} [source]{.arg} [target]{.arg}
 : see below ...
 
 **file rename** ?**-force**? ?**--**? *source* ?*source ...*? *targetDir*
 : The first form takes the file or directory specified by pathname *source* and renames it to *target*, moving the file if the pathname *target* specifies a name in a different directory.  If *target* is an existing directory, then the second form is used. The second form moves each *source* file or directory into the directory *targetDir*. Existing files will not be overwritten unless the **-force** option is specified.  When operating inside a single filesystem, Tcl will rename symbolic links rather than the things that they point to.  Trying to overwrite a non-empty directory, overwrite a directory with a file, or a file with a directory will all result in errors. There is no guarantee that metadata such as attributes or access control lists are preserved by the command. Arguments are processed in the order specified, halting at the first error, if any.  A **--** marks the end of switches; the argument following the **--** will be treated as a *source* even if it starts with a **-**.
 
-**file rootname** *name*
+[file]{.cmd} [rootname]{.sub} [name]{.arg}
 : Returns all of the characters in *name* up to but not including the last "." character in the last component of name.  If the last component of *name* does not contain a dot, then returns *name*.
 
-**file separator** ?*name*?
+[file]{.cmd} [separator]{.sub} [name]{.optarg}
 : If no argument is given, returns the character which is used to separate path segments for native files on this platform.  If a path is given, the filesystem responsible for that path is asked to return its separator character.  If no file system accepts *name*, an error is generated.
 
-**file size** *name*
+[file]{.cmd} [size]{.sub} [name]{.arg}
 : Returns a decimal string giving the size of file *name* in bytes.  If the file does not exist or its size cannot be queried then an error is generated.
 
-**file split** *name*
+[file]{.cmd} [split]{.sub} [name]{.arg}
 : Returns a list whose elements are the path components in *name*.  The first element of the list will have the same path type as *name*. All other elements will be relative.  Path separators will be discarded unless they are needed to ensure that an element is unambiguously relative.
 
-**file stat** *name* ?*varName*?
+[file]{.cmd} [stat]{.sub} [name]{.arg} [varName]{.optarg}
 : Invokes the **stat** kernel call on *name*, and returns a dictionary with the information returned from the kernel call. If *varName* is given, it uses the variable to hold the information. *VarName* is treated as an array variable, and in such case the command returns the empty string. The following elements are set: **atime**, **ctime**, **dev**, **gid**, **ino**, **mode**, **mtime**, **nlink**, **size**, **type**, **uid**.  Each element except **type** is a decimal string with the value of the corresponding field from the **stat** return structure; see the manual entry for **stat** for details on the meanings of the values.  The **type** element gives the type of the file in the same form returned by the command **file type**.
 
-**file system** *name*
+[file]{.cmd} [system]{.sub} [name]{.arg}
 : Returns a list of one or two elements, the first of which is the name of the filesystem to use for the file, and the second, if given, an arbitrary string representing the filesystem-specific nature or type of the location within that filesystem.  If a filesystem only supports one type of file, the second element may not be supplied.  For example the native files have a first element "native", and a second element which when given is a platform-specific type name for the file's system (e.g. "NTFS", "FAT", on Windows).  A generic virtual file system might return the list "vfs ftp" to represent a file on a remote ftp site mounted as a virtual filesystem through an extension called "vfs". If the file does not belong to any filesystem, an error is generated.
 
-**file tail** *name*
+[file]{.cmd} [tail]{.sub} [name]{.arg}
 : Returns all of the characters in the last filesystem component of *name*.  Any trailing directory separator in *name* is ignored. If *name* contains no separators then returns *name*.  So, **file tail a/b**, **file tail a/b/** and **file tail b** all return **b**.
 
-**file tempdir** ?*template*?
+[file]{.cmd} [tempdir]{.sub} [template]{.optarg}
 : [Creates a temporary directory (guaranteed to be newly created and writable by the current script) and returns its name. If *template* is given, it specifies one of or both of the existing directory (on a filesystem controlled by the operating system) to contain the temporary directory, and the base part of the directory name; it is considered to have the location of the directory if there is a directory separator in the name, and the base part is everything after the last directory separator (if non-empty).  The default containing directory is determined by system-specific operations, and the default base name prefix is "**tcl**".]{version="TIP431"}
 
     The following output is typical and illustrative; the actual output will vary between platforms:
@@ -217,23 +218,23 @@ This command provides several operations on a file's name or attributes.  The *n
     /var/tmp/myapp_0ihS0n
     ```
 
-**file tempfile** ?*nameVar*? ?*template*?
+[file]{.cmd} [tempfile]{.sub} [nameVar]{.optarg} [template]{.optarg}
 : Creates a temporary file and returns a read-write channel opened on that file. If the *nameVar* is given, it specifies a variable that the name of the temporary file will be written into; if absent, Tcl will attempt to arrange for the temporary file to be deleted once it is no longer required. If the *template* is present, it specifies parts of the template of the filename to use when creating it (such as the directory, base-name or extension) though some platforms may ignore some or all of these parts and use a built-in default instead.
 
     Note that temporary files are *only* ever created on the native filesystem. As such, they can be relied upon to be used with operating-system native APIs and external programs that require a filename.
 
-**file tildeexpand** *name*
+[file]{.cmd} [tildeexpand]{.sub} [name]{.arg}
 : [Returns the result of performing tilde substitution on *name*. If the name begins with a tilde, then the file name will be interpreted as if the first element is replaced with the location of the home directory for the given user. If the tilde is followed immediately by a path separator, the **$HOME** environment variable is substituted.  Otherwise the characters between the tilde and the next separator are taken as a user name, which is used to retrieve the user's home directory for substitution.  An error is raised if the **$HOME** environment variable or user does not exist.]{version="TIP602"}
 
     If the file name does not begin with a tilde, it is returned unmodified.
 
-**file type** *name*
+[file]{.cmd} [type]{.sub} [name]{.arg}
 : Returns a string giving the type of file *name*, which will be one of **file**, **directory**, **characterSpecial**, **blockSpecial**, **fifo**, **link**, or **socket**.
 
-**file volumes**
+[file]{.cmd} [volumes]{.sub}
 : Returns the absolute paths to the volumes mounted on the system, as a proper Tcl list.  Without any additional virtual filesystems mounted as root volumes, on UNIX, the command will return "//zipfs:/"/, or "/", (in case of a --disable-zipfs build), since all filesystems are locally mounted. On Windows, it will return a list of the available local drives (e.g. "//zipfs:/ C:/"). If any virtual filesystem has mounted additional volumes, they will be in the returned list too.
 
-**file writable** *name*
+[file]{.cmd} [writable]{.sub} [name]{.arg}
 : Returns **1** if file *name* is writable by the current user, **0** otherwise.
 
 

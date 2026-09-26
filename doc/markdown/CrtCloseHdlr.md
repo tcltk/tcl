@@ -1,5 +1,6 @@
 ---
 CommandName: Tcl_CreateCloseHandler
+title: Tcl_CreateCloseHandler
 ManualSection: 3
 Version: 7.5
 TclPart: Tcl

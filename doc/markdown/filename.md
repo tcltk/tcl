@@ -1,5 +1,6 @@
 ---
 CommandName: filename
+title: filename
 ManualSection: n
 Version: 7.5
 TclPart: Tcl

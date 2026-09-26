@@ -1,5 +1,6 @@
 ---
 CommandName: Tcl_DoWhenIdle
+title: Tcl_DoWhenIdle
 ManualSection: 3
 Version: 7.5
 TclPart: Tcl

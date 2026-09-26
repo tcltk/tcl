@@ -1,5 +1,6 @@
 ---
 CommandName: classvariable
+title: classvariable
 ManualSection: n
 Version: 0.3
 TclPart: TclOO

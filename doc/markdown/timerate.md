@@ -1,5 +1,6 @@
 ---
 CommandName: timerate
+title: timerate
 ManualSection: n
 Version: unknown
 TclPart: Tcl
@@ -58,10 +59,10 @@ The following options may be supplied to the **timerate** command:
 
     Note that the calibration process is not thread safe in the current implementation.
 
-**-overhead** *estimate*
+[-overhead]{.lit} [estimate]{.arg}
 : The **-overhead** parameter supplies an estimate (in microseconds, which may be a floating point number) of the measurement overhead of each iteration of the tested script. The passed value overrides, for the current invocation of **timerate**, the overhead estimated by a previous calibration. Overrides may themselves be measured using **timerate** as illustrated by a later example.
 
-**-direct**
+[-direct]{.lit}
 : The **-direct** option causes direct execution of the supplied script, without compilation, in a manner similar to the [time] command. It can be used to measure the cost of [Tcl\_EvalObjEx][Eval3], of the invocation of canonical lists, and of the uncompiled versions of bytecoded commands.
 
 

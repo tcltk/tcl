@@ -1,5 +1,6 @@
 ---
 CommandName: Tcl_PkgRequire
+title: Tcl_PkgRequire
 ManualSection: 3
 Version: 7.5
 TclPart: Tcl

@@ -1,5 +1,6 @@
 ---
 CommandName: lrepeat
+title: lrepeat
 ManualSection: n
 Version: 8.5
 TclPart: Tcl

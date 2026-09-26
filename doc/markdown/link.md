@@ -1,5 +1,6 @@
 ---
 CommandName: link
+title: link
 ManualSection: n
 Version: 0.3
 TclPart: TclOO

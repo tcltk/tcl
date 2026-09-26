@@ -1,5 +1,6 @@
 ---
 CommandName: linsert
+title: linsert
 ManualSection: n
 Version: 8.2
 TclPart: Tcl

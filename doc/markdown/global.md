@@ -1,5 +1,6 @@
 ---
 CommandName: global
+title: global
 ManualSection: n
 Version: unknown
 TclPart: Tcl

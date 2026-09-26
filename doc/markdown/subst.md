@@ -1,5 +1,6 @@
 ---
 CommandName: subst
+title: subst
 ManualSection: n
 Version: 7.4
 TclPart: Tcl

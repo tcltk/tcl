@@ -1,5 +1,6 @@
 ---
 CommandName: rename
+title: rename
 ManualSection: n
 Version: unknown
 TclPart: Tcl

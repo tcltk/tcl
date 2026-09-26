@@ -1,5 +1,6 @@
 ---
 CommandName: callback
+title: callback
 ManualSection: n
 Version: 0.3
 TclPart: TclOO

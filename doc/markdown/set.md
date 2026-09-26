@@ -1,5 +1,6 @@
 ---
 CommandName: set
+title: set
 ManualSection: n
 Version: unknown
 TclPart: Tcl

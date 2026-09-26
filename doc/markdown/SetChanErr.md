@@ -1,5 +1,6 @@
 ---
 CommandName: Tcl_SetChannelError
+title: Tcl_SetChannelError
 ManualSection: 3
 Version: 8.5
 TclPart: Tcl

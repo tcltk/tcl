@@ -1,5 +1,6 @@
 ---
 CommandName: Tcl_OpenFileChannel
+title: Tcl_OpenFileChannel
 ManualSection: 3
 Version: 8.3
 TclPart: Tcl

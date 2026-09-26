@@ -1,5 +1,6 @@
 ---
 CommandName: Tcl_UtfToNormalized
+title: Tcl_UtfToNormalized
 ManualSection: 3
 Version: 9.1
 TclPart: Tcl

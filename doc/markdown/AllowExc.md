@@ -1,5 +1,6 @@
 ---
 CommandName: Tcl_AllowExceptions
+title: Tcl_AllowExceptions
 ManualSection: 3
 Version: 7.4
 TclPart: Tcl

@@ -1,5 +1,6 @@
 ---
 CommandName: scan
+title: scan
 ManualSection: n
 Version: 8.4
 TclPart: Tcl

@@ -1,5 +1,6 @@
 ---
 CommandName: foreach
+title: foreach
 ManualSection: n
 Version: unknown
 TclPart: Tcl

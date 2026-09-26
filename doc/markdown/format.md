@@ -1,5 +1,6 @@
 ---
 CommandName: format
+title: format
 ManualSection: n
 Version: 8.1
 TclPart: Tcl

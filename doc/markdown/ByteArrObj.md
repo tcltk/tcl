@@ -1,5 +1,6 @@
 ---
 CommandName: Tcl_ByteArrayObj
+title: Tcl_ByteArrayObj
 ManualSection: 3
 Version: 9.0
 TclPart: Tcl

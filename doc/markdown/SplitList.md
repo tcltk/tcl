@@ -1,5 +1,6 @@
 ---
 CommandName: Tcl_SplitList
+title: Tcl_SplitList
 ManualSection: 3
 Version: 8.0
 TclPart: Tcl

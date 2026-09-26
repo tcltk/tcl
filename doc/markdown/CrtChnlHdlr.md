@@ -1,5 +1,6 @@
 ---
 CommandName: Tcl_CreateChannelHandler
+title: Tcl_CreateChannelHandler
 ManualSection: 3
 Version: 7.5
 TclPart: Tcl

@@ -1,5 +1,6 @@
 ---
 CommandName: Tcl_GetIndexFromObj
+title: Tcl_GetIndexFromObj
 ManualSection: 3
 Version: 8.1
 TclPart: Tcl

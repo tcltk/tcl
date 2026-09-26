@@ -1,5 +1,6 @@
 ---
 CommandName: Tcl_SaveInterpState
+title: Tcl_SaveInterpState
 ManualSection: 3
 Version: 8.1
 TclPart: Tcl

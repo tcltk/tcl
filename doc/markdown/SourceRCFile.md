@@ -1,5 +1,6 @@
 ---
 CommandName: Tcl_SourceRCFile
+title: Tcl_SourceRCFile
 ManualSection: 3
 Version: 8.3
 TclPart: Tcl

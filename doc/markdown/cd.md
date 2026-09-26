@@ -1,5 +1,6 @@
 ---
 CommandName: cd
+title: cd
 ManualSection: n
 Version: unknown
 TclPart: Tcl

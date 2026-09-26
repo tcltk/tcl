@@ -1,5 +1,6 @@
 ---
 CommandName: fblocked
+title: fblocked
 ManualSection: n
 Version: 7.5
 TclPart: Tcl

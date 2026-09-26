@@ -1,5 +1,6 @@
 ---
 CommandName: TCL_MEM_DEBUG
+title: TCL_MEM_DEBUG
 ManualSection: 3
 Version: 8.1
 TclPart: Tcl

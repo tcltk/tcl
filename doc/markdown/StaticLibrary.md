@@ -1,5 +1,6 @@
 ---
 CommandName: Tcl_StaticLibrary
+title: Tcl_StaticLibrary
 ManualSection: 3
 Version: 7.5
 TclPart: Tcl

@@ -1,5 +1,6 @@
 ---
 CommandName: lpop
+title: lpop
 ManualSection: n
 Version: 9.0
 TclPart: Tcl

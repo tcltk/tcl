@@ -1,5 +1,6 @@
 ---
 CommandName: Tcl_Alloc
+title: Tcl_Alloc
 ManualSection: 3
 Version: 9.0
 TclPart: Tcl

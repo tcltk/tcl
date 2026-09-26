@@ -1,5 +1,6 @@
 ---
 CommandName: Tcl_CreateTrace
+title: Tcl_CreateTrace
 ManualSection: 3
 Version: unknown
 TclPart: Tcl

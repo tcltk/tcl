@@ -1,5 +1,6 @@
 ---
 CommandName: Tcl_OpenTcpClient
+title: Tcl_OpenTcpClient
 ManualSection: 3
 Version: 9.0
 TclPart: Tcl

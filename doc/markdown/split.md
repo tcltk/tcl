@@ -1,5 +1,6 @@
 ---
 CommandName: split
+title: split
 ManualSection: n
 Version: unknown
 TclPart: Tcl

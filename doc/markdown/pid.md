@@ -1,5 +1,6 @@
 ---
 CommandName: pid
+title: pid
 ManualSection: n
 Version: 7.0
 TclPart: Tcl

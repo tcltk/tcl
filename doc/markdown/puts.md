@@ -1,5 +1,6 @@
 ---
 CommandName: puts
+title: puts
 ManualSection: n
 Version: 7.5
 TclPart: Tcl

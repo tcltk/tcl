@@ -1,5 +1,6 @@
 ---
 CommandName: Tcl_WrongNumArgs
+title: Tcl_WrongNumArgs
 ManualSection: 3
 Version: 8.0
 TclPart: Tcl

@@ -1,5 +1,6 @@
 ---
 CommandName: Tcl_CreateAlias
+title: Tcl_CreateAlias
 ManualSection: 3
 Version: 7.6
 TclPart: Tcl

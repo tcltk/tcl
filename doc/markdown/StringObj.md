@@ -1,5 +1,6 @@
 ---
 CommandName: Tcl_StringObj
+title: Tcl_StringObj
 ManualSection: 3
 Version: 8.1
 TclPart: Tcl

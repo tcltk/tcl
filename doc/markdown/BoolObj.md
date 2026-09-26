@@ -1,5 +1,6 @@
 ---
 CommandName: Tcl_BooleanObj
+title: Tcl_BooleanObj
 ManualSection: 3
 Version: 8.5
 TclPart: Tcl

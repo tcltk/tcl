@@ -1,5 +1,6 @@
 ---
 CommandName: Tcl_UtfToUpper
+title: Tcl_UtfToUpper
 ManualSection: 3
 Version: 8.1
 TclPart: Tcl

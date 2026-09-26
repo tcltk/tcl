@@ -1,5 +1,6 @@
 ---
 CommandName: tell
+title: tell
 ManualSection: n
 Version: 8.1
 TclPart: Tcl

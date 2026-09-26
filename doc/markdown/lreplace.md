@@ -1,5 +1,6 @@
 ---
 CommandName: lreplace
+title: lreplace
 ManualSection: n
 Version: 7.4
 TclPart: Tcl

@@ -1,5 +1,6 @@
 ---
 CommandName: try
+title: try
 ManualSection: n
 Version: 8.6
 TclPart: Tcl

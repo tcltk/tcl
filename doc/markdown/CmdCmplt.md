@@ -1,5 +1,6 @@
 ---
 CommandName: Tcl_CommandComplete
+title: Tcl_CommandComplete
 ManualSection: 3
 Version: unknown
 TclPart: Tcl

@@ -1,5 +1,6 @@
 ---
 CommandName: Tclzipfs
+title: Tclzipfs
 ManualSection: 3
 Version: 9.0
 TclPart: Tcl

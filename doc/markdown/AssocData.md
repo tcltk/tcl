@@ -1,5 +1,6 @@
 ---
 CommandName: Tcl_SetAssocData
+title: Tcl_SetAssocData
 ManualSection: 3
 Version: 7.5
 TclPart: Tcl

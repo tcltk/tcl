@@ -1,5 +1,6 @@
 ---
 CommandName: refchan
+title: refchan
 ManualSection: n
 Version: 8.5
 TclPart: Tcl
@@ -59,7 +60,7 @@ Of all the possible subcommands, the handler *must* support **initialize**, **fi
 
     The subcommand must throw an error if the chosen mode is not supported by the *cmdPrefix*.
 
-*cmdPrefix* **finalize** *channel*
+[cmdPrefix]{.ins} [finalize]{.sub} [channel]{.arg}
 : An invocation of this subcommand will be the last call the *cmdPrefix* will receive for the specified *channel*. It will be generated just before the destruction of the data structures of the channel held by the Tcl core. The command handler *must not* access the *channel* anymore in no way. Upon this subcommand being called, any internal resources allocated to this channel must be cleaned up.
 
     The return value of this subcommand is ignored.
@@ -68,7 +69,7 @@ Of all the possible subcommands, the handler *must* support **initialize**, **fi
 
     This subcommand is not invoked if the creation of the channel was aborted during **initialize** (See above).
 
-*cmdPrefix* **watch** *channel eventspec*
+[cmdPrefix]{.ins} [watch]{.sub} [channel]{.arg} [eventspec]{.arg}
 : This subcommand notifies the *cmdPrefix* that the specified *channel* is interested in the events listed in the *eventspec*. This argument is a list containing any of **read** and **write**. The list may be empty, which signals that the channel does not wish to be notified of any events. In that situation, the handler should disable event generation completely.
 
     **Warning:** Any return value of the subcommand is ignored. This includes all errors thrown by the subcommand, [break], [continue], and custom return codes.
@@ -115,7 +116,7 @@ Of all the possible subcommands, the handler *must* support **initialize**, **fi
 
     If the subcommand throws any other error, the command which caused its invocation (usually [gets], or [read]) will appear to have thrown this error. Any exception beyond [error], (e.ge.g., [break], etc.) is treated as and converted to an error.
 
-*cmdPrefix* **write** *channel data*
+[cmdPrefix]{.ins} [write]{.sub} [channel]{.arg} [data]{.arg}
 : This *optional* subcommand is called when the user writes data to the channel *channel*. The *data* argument contains *bytes*, not characters. Any type of transformation (EOL, encoding) configured for the channel has already been applied at this point. If this subcommand is not supported then it is not possible to write to the channel handled by the command.
 
     The return value of the subcommand is taken as the number of bytes written by the channel. Anything non-numeric will cause an error to be signaled and later thrown by the command which performed the write. A negative value implies that the write failed. Returning a value greater than the number of bytes given to the handler, or zero, is forbidden and will cause the Tcl core to throw an error.
@@ -152,7 +153,7 @@ Of all the possible subcommands, the handler *must* support **initialize**, **fi
 
     If the subcommand throws any other error the command which caused its invocation (usually [puts]) will appear to have thrown this error. Any exception beyond [error] (e.ge.g., [break], etc.) is treated as and converted to an error.
 
-*cmdPrefix* [seek] *channel offset base*
+[cmdPrefix]{.ins} [seek]{.sub} [channel]{.arg} [offset]{.arg} [base]{.arg}
 : This *optional* subcommand is responsible for the handling of [chan seek][chan] and [chan tell][chan] requests on the channel *channel*. If it is not supported then seeking will not be possible for the channel.
 
     The *base* argument is the same as the equivalent argument of the builtin [chan seek][chan], namely:
@@ -173,7 +174,7 @@ Of all the possible subcommands, the handler *must* support **initialize**, **fi
 
     The offset/base combination of 0/**current** signals a [chan tell][chan] request, i.ee.g., seek nothing relative to the current location, making the new location identical to the current one, which is then returned.
 
-*cmdPrefix* **configure** *channel option value*
+[cmdPrefix]{.ins} [configure]{.sub} [channel]{.arg} [option]{.arg} [value]{.arg}
 : This *optional* subcommand is for setting the type-specific options of channel *channel*. The *option* argument indicates the option to be written, and the *value* argument indicates the value to set the option to.
 
     This subcommand will never try to update more than one option at a time; that is behavior implemented in the Tcl channel core.
@@ -182,28 +183,28 @@ Of all the possible subcommands, the handler *must* support **initialize**, **fi
 
     If the subcommand throws an error the command which performed the (re)configuration or query (usually [fconfigure] or [chan configure][chan]) will appear to have thrown this error. Any exception beyond [error] (e.ge.g., [break], etc.) is treated as and converted to an error.
 
-*cmdPrefix* **cget** *channel option*
+[cmdPrefix]{.ins} [cget]{.sub} [channel]{.arg} [option]{.arg}
 : This *optional* subcommand is used when reading a single type-specific option of channel *channel*. If this subcommand is supported then the subcommand **cgetall** must be supported as well.
 
     The subcommand should return the value of the specified *option*.
 
     If the subcommand throws an error, the command which performed the (re)configuration or query (usually [fconfigure] or [chan configure][chan]) will appear to have thrown this error. Any exception beyond *error* (e.ge.g., [break], etc.) is treated as and converted to an error.
 
-*cmdPrefix* **cgetall** *channel*
+[cmdPrefix]{.ins} [cgetall]{.sub} [channel]{.arg}
 : This *optional* subcommand is used for reading all type-specific options of channel *channel*. If this subcommand is supported then the subcommand **cget** has to be supported as well.
 
     The subcommand should return a list of all options and their values. This list must have an even number of elements.
 
     If the subcommand throws an error the command which performed the (re)configuration or query (usually [fconfigure] or [chan configure][chan]) will appear to have thrown this error. Any exception beyond [error] (e.ge.g., [break], etc.) is treated as and converted to an error.
 
-*cmdPrefix* **blocking** *channel mode*
+[cmdPrefix]{.ins} [blocking]{.sub} [channel]{.arg} [mode]{.arg}
 : This *optional* subcommand handles changes to the blocking mode of the channel *channel*. The *mode* is a boolean flag. A true value means that the channel has to be set to blocking, and a false value means that the channel should be non-blocking.
 
     The return value of the subcommand is ignored.
 
     If the subcommand throws an error the command which caused its invocation (usually [fconfigure] or [chan configure][chan]) will appear to have thrown this error. Any exception beyond [error] (e.ge.g., [break], etc.) is treated as and converted to an error.
 
-*cmdPrefix* **truncate** *channel length*
+[cmdPrefix]{.ins} [truncate]{.sub} [channel]{.arg} [length]{.arg}
 : This *optional* subcommand handles changing the length of the underlying data stream for the channel *channel*. Its length gets set to *length*.
 
     If the subcommand throws an error the command which caused its invocation (usually [chan truncate][chan]) will appear to have thrown this error. Any exception beyond [error] (e.ge.g., [break], etc.) is treated as and converted to an error.
@@ -293,6 +294,5 @@ puts [read $ch];   # Prints just the last word
 [namespace]: namespace.md
 [puts]: puts.md
 [read]: read.md
-[seek]: seek.md
 [SetChanErr]: SetChanErr.md
 

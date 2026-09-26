@@ -1,5 +1,6 @@
 ---
 CommandName: Tcl_CreateTimerHandler
+title: Tcl_CreateTimerHandler
 ManualSection: 3
 Version: 7.5
 TclPart: Tcl

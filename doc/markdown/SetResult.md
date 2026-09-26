@@ -1,5 +1,6 @@
 ---
 CommandName: Tcl_SetResult
+title: Tcl_SetResult
 ManualSection: 3
 Version: 9.0
 TclPart: Tcl

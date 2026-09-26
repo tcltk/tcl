@@ -1,5 +1,6 @@
 ---
 CommandName: Tcl_SetVar
+title: Tcl_SetVar
 ManualSection: 3
 Version: 8.1
 TclPart: Tcl

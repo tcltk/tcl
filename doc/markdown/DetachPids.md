@@ -1,5 +1,6 @@
 ---
 CommandName: Tcl_DetachPids
+title: Tcl_DetachPids
 ManualSection: 3
 Version: unknown
 TclPart: Tcl

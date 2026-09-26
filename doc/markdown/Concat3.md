@@ -1,5 +1,6 @@
 ---
 CommandName: Tcl_Concat
+title: Tcl_Concat
 ManualSection: 3
 Version: 7.5
 TclPart: Tcl

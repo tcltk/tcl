@@ -1,5 +1,6 @@
 ---
 CommandName: abstract
+title: abstract
 ManualSection: n
 Version: 0.3
 TclPart: TclOO

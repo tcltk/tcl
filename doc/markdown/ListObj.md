@@ -1,5 +1,6 @@
 ---
 CommandName: Tcl_ListObj
+title: Tcl_ListObj
 ManualSection: 3
 Version: 9.1
 TclPart: Tcl

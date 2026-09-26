@@ -1,5 +1,6 @@
 ---
 CommandName: Load
+title: Load
 ManualSection: 3
 Version: 8.6
 TclPart: Tcl

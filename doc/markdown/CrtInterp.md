@@ -1,5 +1,6 @@
 ---
 CommandName: Tcl_CreateInterp
+title: Tcl_CreateInterp
 ManualSection: 3
 Version: 7.5
 TclPart: Tcl

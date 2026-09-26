@@ -1,5 +1,6 @@
 ---
 CommandName: Tcl_Preserve
+title: Tcl_Preserve
 ManualSection: 3
 Version: 7.5
 TclPart: Tcl

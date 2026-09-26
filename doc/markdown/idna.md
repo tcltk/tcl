@@ -1,5 +1,6 @@
 ---
 CommandName: idna
+title: idna
 ManualSection: n
 Version: 0.1
 TclPart: http
@@ -37,13 +38,13 @@ This package provides an implementation of the punycode scheme used in Internati
 [tcl::idna]{.cmd} [decode]{.sub} [hostname]{.arg}
 : This command takes the name of a host that potentially contains punycode-encoded character sequences, *hostname*, and returns the hostname as might be displayed to the user. Note that there are often UNICODE characters that have extremely similar glyphs, so care should be taken with displaying hostnames to users.
 
-**tcl::idna encode** *hostname*
+[tcl::idna]{.cmd} [encode]{.sub} [hostname]{.arg}
 : This command takes the name of a host as might be displayed to the user, *hostname*, and returns the version of the hostname with characters not permitted in basic hostnames encoded with punycode.
 
-**tcl::idna puny** *subcommand ...*
+[tcl::idna]{.cmd} [puny]{.sub} [subcommand]{.arg} [...]{.arg}
 : This command provides direct access to the basic punycode encoder and decoder. It supports two *subcommand*s:
 
-    **tcl::idna puny decode** *string* ?*case*?
+    [tcl::idna]{.cmd} [puny]{.sub} [decode]{.lit} [string]{.arg} [case]{.optarg}
     : This command decodes the punycode-encoded string, *string*, and returns the result. If *case* is provided, it is a boolean to make the case be folded to upper case (if *case* is true) or lower case (if *case* is false) during the decoding process; if omitted, no case transformation is applied.
 
     **tcl::idna puny encode** *string* ?*case*?

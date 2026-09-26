@@ -1,5 +1,6 @@
 ---
 CommandName: Tcl_StackChannel
+title: Tcl_StackChannel
 ManualSection: 3
 Version: 8.3
 TclPart: Tcl

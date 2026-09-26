@@ -1,5 +1,6 @@
 ---
 CommandName: cookiejar
+title: cookiejar
 ManualSection: n
 Version: 0.1
 TclPart: http
@@ -48,7 +49,7 @@ The database management policy can be controlled at the package level by the **c
 
     Supported options are:
 
-    **-domainfile** *filename*
+    [-domainfile]{.lit} [filename]{.arg}
     : A file (defaulting to within the cookiejar package) with a description of the list of top-level domains (e.g., **.com** or **.co.jp**). Such domains *must not* accept cookies set upon them. Note that the list of such domains is both security-sensitive and *not* constant and should be periodically refetched. Cookie jars maintain their own cache of the domain list.
 
     **-domainlist** *url*
@@ -87,13 +88,13 @@ The following methods are supported on the instances:
 [cookiejar]{.ins} [destroy]{.sub}
 : This is the standard TclOO destruction method. It does *not* delete the SQLite database if it is written to disk. Callers are responsible for ensuring that the cookie jar is not in use by the http package at the time of destruction.
 
-*cookiejar* **forceLoadDomainData**
+[cookiejar]{.ins} [forceLoadDomainData]{.sub}
 : This method causes the cookie jar to immediately load (and cache) the domain list data. The domain list will be loaded from the **-domainlist** configured a the package level if that is enabled, and otherwise will be obtained from the **-domainfile** configured at the package level.
 
-*cookiejar* **getCookies** *protocol host path*
+[cookiejar]{.ins} [getCookies]{.sub} [protocol]{.arg} [host]{.arg} [path]{.arg}
 : This method obtains the cookies for a particular HTTP request. *This implements the http cookie jar protocol.*
 
-*cookiejar* **policyAllow** *operation domain path*
+[cookiejar]{.ins} [policyAllow]{.sub} [operation]{.arg} [domain]{.arg} [path]{.arg}
 : This method is called by the **storeCookie** method to get a decision on whether to allow *operation* to be performed for the *domain* and *path*. This is checked immediately before the database is updated but after the built-in security checks are done, and should return a boolean value; if the value is false, the operation is rejected and the database is not modified. The supported *operation*s are:
 
     **delete**
@@ -108,10 +109,10 @@ The following methods are supported on the instances:
 
     The default implementation of this method just returns true, but subclasses of this class may impose their own rules.
 
-*cookiejar* **storeCookie** *options*
+[cookiejar]{.ins} [storeCookie]{.sub} [options]{.arg}
 : This method stores a single cookie from a particular HTTP response. Cookies that fail security checks are ignored. *This implements the http cookie jar protocol.*
 
-*cookiejar* **lookup** ?*host*? ?*key*?
+[cookiejar]{.ins} [lookup]{.sub} [host]{.optarg} [key]{.optarg}
 : This method looks a cookie by exact host (or domain) matching. If neither *host* nor *key* are supplied, the list of hosts for which a cookie is stored is returned. If just *host* (which may be a hostname or a domain name) is supplied, the list of cookie keys stored for that host is returned. If both *host* and *key* are supplied, the value for that key is returned; it is an error if no such host or key match exactly.
 
 

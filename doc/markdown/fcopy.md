@@ -1,5 +1,6 @@
 ---
 CommandName: fcopy
+title: fcopy
 ManualSection: n
 Version: 8.0
 TclPart: Tcl

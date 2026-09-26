@@ -1,5 +1,6 @@
 ---
 CommandName: Tcl_DoubleObj
+title: Tcl_DoubleObj
 ManualSection: 3
 Version: 8.0
 TclPart: Tcl

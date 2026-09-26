@@ -1,5 +1,6 @@
 ---
 CommandName: upvar
+title: upvar
 ManualSection: n
 Version: unknown
 TclPart: Tcl

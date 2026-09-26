@@ -1,5 +1,6 @@
 ---
 CommandName: load
+title: load
 ManualSection: n
 Version: 7.5
 TclPart: Tcl

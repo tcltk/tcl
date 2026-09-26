@@ -1,5 +1,6 @@
 ---
 CommandName: Tcl_SignalId
+title: Tcl_SignalId
 ManualSection: 3
 Version: 8.3
 TclPart: Tcl

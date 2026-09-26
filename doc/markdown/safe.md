@@ -1,5 +1,6 @@
 ---
 CommandName: Safe Tcl
+title: Safe Tcl
 ManualSection: n
 Version: 8.0
 TclPart: Tcl
@@ -65,10 +66,10 @@ The following commands are provided in the parent interpreter:
 
     The interpreter name *child* may include namespace separators, but may not have leading or trailing namespace separators, or excess colon characters in namespace separators.  The interpreter name is qualified relative to the global namespace ::, not the namespace in which the **::safe::interpCreate** command is evaluated.
 
-**::safe::interpInit** *child* ?*options ...*?
+[::safe::interpInit]{.cmd} [child]{.arg} [options]{.optdot}
 : This command is similar to **interpCreate** except it that does not create the safe interpreter. *child* must have been created by some other means, like [interp create][interp] **-safe**.  The interpreter name *child* may include namespace separators, subject to the same restrictions as for **interpCreate**.
 
-**::safe::interpConfigure** *child* ?*options ...*?
+[::safe::interpConfigure]{.cmd} [child]{.arg} [options]{.optdot}
 : If no *options* are given, returns the settings for all options for the named safe interpreter as a list of options and their current values for that *child*. If a single additional argument is provided, it will return a list of 2 elements *name* and *value* where *name* is the full name of that option and *value* the current value for that option and the *child*. If more than two additional arguments are provided, it will reconfigure the safe interpreter and change each and only the provided options. See the section on [Options] below for options description. Example of use:
 
     ```
@@ -83,10 +84,10 @@ The following commands are provided in the parent interpreter:
     safe::interpConfigure $i0  -delete {foo bar} -statics 0
     ```
 
-**::safe::interpDelete** *child*
+[::safe::interpDelete]{.cmd} [child]{.arg}
 : Deletes the safe interpreter and cleans up the corresponding parent interpreter data structures. If a *deleteHook* script was specified for this interpreter it is evaluated before the interpreter is deleted, with the name of the interpreter as an additional argument.
 
-**::safe::interpFindInAccessPath** *child directory*
+[::safe::interpFindInAccessPath]{.cmd} [child]{.arg} [directory]{.arg}
 : This command finds and returns the token for the real directory *directory* in the safe interpreter's current virtual access path. It generates an error if the directory is not found. Example of use:
 
     ```
@@ -94,7 +95,7 @@ The following commands are provided in the parent interpreter:
           [::safe::interpFindInAccessPath $name $tk_library]]
     ```
 
-**::safe::interpAddToAccessPath** *child directory*
+[::safe::interpAddToAccessPath]{.cmd} [child]{.arg} [directory]{.arg}
 : This command adds *directory* to the virtual path maintained for the safe interpreter in the parent, and returns the token that can be used in the safe interpreter to obtain access to files in that directory. If the directory is already in the virtual path, it only returns the token without adding the directory to the virtual path again. Example of use:
 
     ```
@@ -102,10 +103,10 @@ The following commands are provided in the parent interpreter:
           [::safe::interpAddToAccessPath $name $tk_library]]
     ```
 
-**::safe::setSyncMode** ?*newValue*?
+[::safe::setSyncMode]{.cmd} [newValue]{.optarg}
 : This command is used to get or set the "Sync Mode" of the Safe Base. When an argument is supplied, the command returns an error if the argument is not a boolean value, or if any Safe Base interpreters exist.  Typically the value will be set as part of initialization - boolean true for "Sync Mode" on (the default), false for "Sync Mode" off.  With "Sync Mode" on, the Safe Base keeps each child interpreter's ::auto\_path synchronized with its access path.  See the section [Sync mode] below for details.
 
-**::safe::setLogCmd** ?*cmd arg ...*?
+[::safe::setLogCmd]{.cmd} [cmd arg]{.optdot}
 : This command installs a script that will be called when interesting life cycle events occur for a safe interpreter. When called with no arguments, it returns the currently installed script. When called with one argument, an empty string, the currently installed script is removed and logging is turned off. The script will be invoked with one additional argument, a string describing the event of interest. The main purpose is to help in debugging safe interpreters. Using this facility you can get complete error messages while the safe interpreter gets only generic error messages. This prevents a safe interpreter from seeing messages about failures and other events that might contain sensitive information such as real directory names.
 
     Example of use:
@@ -131,22 +132,22 @@ The following options are common to **::safe::interpCreate**, **::safe::interpIn
 [-accessPath]{.lit} [directoryList]{.arg}
 : This option sets the list of directories from which the safe interpreter can [source] and [load] files. If this option is not specified, or if it is given as the empty list, the safe interpreter will use the same directories as its parent for auto-loading. See the section [Security] below for more detail about virtual paths, tokens and access control.
 
-**-autoPath** *directoryList*
+[-autoPath]{.lit} [directoryList]{.arg}
 : This option sets the list of directories in the safe interpreter's ::auto\_path.  The option is undefined if the Safe Base has "Sync Mode" on - in that case the safe interpreter's ::auto\_path is managed by the Safe Base and is a tokenized form of its access path. See the section [Sync mode] below for details.
 
-**-statics** *boolean*
+[-statics]{.lit} [boolean]{.arg}
 : This option specifies if the safe interpreter will be allowed to load statically linked packages (like **load {} Tk**). The default value is **true** : safe interpreters are allowed to load statically linked packages.
 
-**-noStatics**
+[-noStatics]{.lit}
 : This option is a convenience shortcut for **-statics false** and thus specifies that the safe interpreter will not be allowed to load statically linked packages.
 
-**-nested** *boolean*
+[-nested]{.lit} [boolean]{.arg}
 : This option specifies if the safe interpreter will be allowed to load packages into its own sub-interpreters. The default value is **false** : safe interpreters are not allowed to load packages into their own sub-interpreters.
 
-**-nestedLoadOk**
+[-nestedLoadOk]{.lit}
 : This option is a convenience shortcut for **-nested true** and thus specifies the safe interpreter will be allowed to load packages into its own sub-interpreters.
 
-**-deleteHook** *script*
+[-deleteHook]{.lit} [script]{.arg}
 : When this option is given a non-empty *script*, it will be evaluated in the parent with the name of the safe interpreter as an additional argument just before actually deleting the safe interpreter. Giving an empty value removes any currently installed deletion hook script for that safe interpreter. The default value (**{}**) is not to have any deletion call back.
 
 

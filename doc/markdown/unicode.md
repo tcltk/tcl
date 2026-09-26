@@ -1,5 +1,6 @@
 ---
 CommandName: unicode
+title: unicode
 ManualSection: n
 Version: 9.1
 TclPart: Tcl

@@ -1243,7 +1243,16 @@ proc ::ndoc::parseBlock {parent manContent} {
 								# start new item
 								if $verbose {puts "start new dlist item"}
 								if {$subType eq "IP"} {
-									# itemTitle is on the same line
+									# itemTitle is on the same line - this is always a same-line-title
+									# item such as a nested character-class/pattern-sequence sub-list
+									# (e.g. "string is"'s alnum/alpha/... or "string match"'s */?/[chars]),
+									# never a METHOD:/OPTION:/COMMAND:-tagged entry, so lastComment is
+									# neither consulted nor touched here - touching it would clobber a
+									# value set by a ".\" METHOD: xxx" comment that was already consumed
+									# for the *enclosing* list's next .TP item (whose own "start new
+									# item" handling below only runs once this nested sub-list's
+									# recursive parse - triggered by parseDlistItemContent finishing the
+									# enclosing item - has fully returned):
 									lassign [parseArgs $line] itemTitle
 									set itemTitle [parseBackslash [BIRPclean $itemTitle]]
 								} else {
@@ -1257,11 +1266,11 @@ proc ::ndoc::parseBlock {parent manContent} {
 									if {[dict get $manual lastComment] in {OPTION: METHOD: COMMAND: OPTION METHOD COMMAND} && [dict get $manual fileName] ne "RegConfig"} {
 										set itemTitle [dict get $manual lastComment]_$itemTitle
 									}
+									# the comment only ever labels the single .TP directly below it, so it
+									# must not leak into a later, unlabeled .TP (which would otherwise be
+									# misidentified as Tcl syntax and mishandled by parseCommand):
+									dict set manual lastComment {}
 								}
-								# the comment only ever labels the single .TP/.IP directly below it, so it
-								# must not leak into a later, unlabeled .TP/.IP (which would otherwise be
-								# misidentified as Tcl syntax and mishandled by parseCommand):
-								dict set manual lastComment {}
 								# snapshot whatever .VS region is open right now as belonging to THIS
 								# item's title too (e.g. unicode.n's TIP726, which wraps a .TP's title
 								# tightly with nothing else in between) - used when this item is finished
@@ -1277,10 +1286,17 @@ proc ::ndoc::parseBlock {parent manContent} {
 								}
 							}
 						}
-						. - .\\\" {
-							# make broken ctags happy: "
+						. {
 							if $verbose {puts "ignore"}
 							# ignore
+						}
+						{.\"} - {'\"} {
+							# remember the wording for the *next* .TP/.IP title, same as
+							# the top-level switch does - otherwise every comment inside
+							# an already-open .TP/.IP list is silently dropped, and only
+							# the list's first item ever gets tagged as METHOD:/OPTION:/COMMAND:
+							dict set manual lastComment [lindex $line 1]
+							if $verbose {puts "comment (lastComment=[dict get $manual lastComment])"}
 						}
 						.VS {
 							# .VS/.VE are handled generically like any other inline text by the
@@ -2158,6 +2174,7 @@ proc ::ndoc::AST2Markdown {} {
 			}
 			default {
 				append output $key : { } $value \n
+				if {$key eq "CommandName"} {append output "title: $value" \n}
 			}
 		}
 	}

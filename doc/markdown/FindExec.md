@@ -1,5 +1,6 @@
 ---
 CommandName: Tcl_FindExecutable
+title: Tcl_FindExecutable
 ManualSection: 3
 Version: 9.1
 TclPart: Tcl

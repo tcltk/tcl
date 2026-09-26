@@ -1,5 +1,6 @@
 ---
 CommandName: seek
+title: seek
 ManualSection: n
 Version: 8.1
 TclPart: Tcl

@@ -1,5 +1,6 @@
 ---
 CommandName: lappend
+title: lappend
 ManualSection: n
 Version: unknown
 TclPart: Tcl

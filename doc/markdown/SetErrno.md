@@ -1,5 +1,6 @@
 ---
 CommandName: Tcl_SetErrno
+title: Tcl_SetErrno
 ManualSection: 3
 Version: 8.3
 TclPart: Tcl

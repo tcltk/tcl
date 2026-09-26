@@ -1,5 +1,6 @@
 ---
 CommandName: my
+title: my
 ManualSection: n
 Version: 0.1
 TclPart: TclOO

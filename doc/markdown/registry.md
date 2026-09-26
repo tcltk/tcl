@@ -1,5 +1,6 @@
 ---
 CommandName: registry
+title: registry
 ManualSection: n
 Version: 1.1
 TclPart: registry
@@ -60,25 +61,25 @@ The optional *-mode* argument indicates which registry to work with; when it is 
     registry broadcast "Environment"
     ```
 
-**registry delete** *keyName* ?*valueName*?
+[registry]{.cmd} [delete]{.sub} [keyName]{.arg} [valueName]{.optarg}
 : If the optional *valueName* argument is present, the specified value under *keyName* will be deleted from the registry.  If the optional *valueName* is omitted, the specified key and any subkeys or values beneath it in the registry hierarchy will be deleted.  If the key could not be deleted then an error is generated.  If the key did not exist, the command has no effect.
 
-**registry get** *keyName valueName*
+[registry]{.cmd} [get]{.sub} [keyName]{.arg} [valueName]{.arg}
 : Returns the data associated with the value *valueName* under the key *keyName*.  If either the key or the value does not exist, then an error is generated.  For more details on the format of the returned data, see [Supported types], below.
 
-**registry keys** *keyName* ?*pattern*?
+[registry]{.cmd} [keys]{.sub} [keyName]{.arg} [pattern]{.optarg}
 : If *pattern* is not specified, returns a list of names of all the subkeys of *keyName*.  If *pattern* is specified, only those names matching *pattern* are returned.  Matching is determined using the same rules as for [string match][string].  If the specified *keyName* does not exist, then an error is generated.
 
-**registry set** *keyName* ?*valueName data*?
+[registry]{.cmd} [set]{.sub} [keyName]{.arg} [valueName data]{.optarg}
 : see below ...
 
 **registry set** *keyName* ?*valueName data type*?
 : If *valueName* is not specified, creates the key *keyName* if it does not already exist.  If *valueName* is specified, creates the key *keyName* and value *valueName* if necessary.  The contents of *valueName* are set to *data* with the type indicated by *type*.  If *type* is not specified, the type **sz** is assumed.  For more details on the data and type arguments, see [Supported types] below.
 
-**registry type** *keyName valueName*
+[registry]{.cmd} [type]{.sub} [keyName]{.arg} [valueName]{.arg}
 : Returns the type of the value *valueName* in the key *keyName*.  For more information on the possible types, see [Supported types], below.
 
-**registry values** *keyName* ?*pattern*?
+[registry]{.cmd} [values]{.sub} [keyName]{.arg} [pattern]{.optarg}
 : If *pattern* is not specified, returns a list of names of all the values of *keyName*.  If *pattern* is specified, only those names matching *pattern* are returned.  Matching is determined using the same rules as for [string match][string].
 
 

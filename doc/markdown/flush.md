@@ -1,5 +1,6 @@
 ---
 CommandName: flush
+title: flush
 ManualSection: n
 Version: 7.5
 TclPart: Tcl

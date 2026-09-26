@@ -1,5 +1,6 @@
 ---
 CommandName: lmap
+title: lmap
 ManualSection: n
 Version: unknown
 TclPart: Tcl

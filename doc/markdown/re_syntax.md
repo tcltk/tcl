@@ -1,5 +1,6 @@
 ---
 CommandName: re_syntax
+title: re_syntax
 ManualSection: n
 Version: 8.1
 TclPart: Tcl

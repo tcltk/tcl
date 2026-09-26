@@ -1,5 +1,6 @@
 ---
 CommandName: Tcl_Main
+title: Tcl_Main
 ManualSection: 3
 Version: 9.0
 TclPart: Tcl

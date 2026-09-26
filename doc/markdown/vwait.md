@@ -1,5 +1,6 @@
 ---
 CommandName: vwait
+title: vwait
 ManualSection: n
 Version: 8.0
 TclPart: Tcl
@@ -36,34 +37,34 @@ In the second more complex command form *options* allow for finer control of the
 [--]{.lit}
 : Marks the end of options. All following arguments are handled as variable names.
 
-**-all**
+[-all]{.lit}
 : All conditions for the wait operation must be met to complete the wait operation. Otherwise (the default) the first event completes the wait.
 
-**-extended**
+[-extended]{.lit}
 : An extended result in list form is returned, see below for explanation.
 
-**-nofileevents**
+[-nofileevents]{.lit}
 : File events are not handled in the wait operation.
 
-**-noidleevents**
+[-noidleevents]{.lit}
 : Idle handlers are not invoked during the wait operation.
 
-**-notimerevents**
+[-notimerevents]{.lit}
 : Timer handlers are not serviced during the wait operation.
 
-**-nowindowevents**
+[-nowindowevents]{.lit}
 : Events of the windowing system are not handled during the wait operation.
 
-**-readable** *channel*
+[-readable]{.lit} [channel]{.arg}
 : *Channel* must name a Tcl channel open for reading. If *channel* is or becomes readable the wait operation completes.
 
-**-timeout** *milliseconds*
+[-timeout]{.lit} [milliseconds]{.arg}
 : The wait operation is constrained to *milliseconds*. A monotonic clock is used if available.
 
-**-variable** *varName*
+[-variable]{.lit} [varName]{.arg}
 : *VarName* must be the name of a global variable. Writing or unsetting this variable completes the wait operation.
 
-**-writable** *channel*
+[-writable]{.lit} [channel]{.arg}
 : *Channel* must name a Tcl channel open for writing. If *channel* is or becomes writable the wait operation completes.
 
 

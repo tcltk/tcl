@@ -1,5 +1,6 @@
 ---
 CommandName: incr
+title: incr
 ManualSection: n
 Version: unknown
 TclPart: Tcl

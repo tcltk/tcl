@@ -1,5 +1,6 @@
 ---
 CommandName: proc
+title: proc
 ManualSection: n
 Version: unknown
 TclPart: Tcl

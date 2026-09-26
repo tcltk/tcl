@@ -1,5 +1,6 @@
 ---
 CommandName: for
+title: for
 ManualSection: n
 Version: unknown
 TclPart: Tcl

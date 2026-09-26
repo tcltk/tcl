@@ -1,5 +1,6 @@
 ---
 CommandName: Tcl_DoOneEvent
+title: Tcl_DoOneEvent
 ManualSection: 3
 Version: 7.5
 TclPart: Tcl

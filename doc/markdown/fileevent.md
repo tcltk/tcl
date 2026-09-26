@@ -1,5 +1,6 @@
 ---
 CommandName: fileevent
+title: fileevent
 ManualSection: n
 Version: 7.5
 TclPart: Tcl

@@ -1,5 +1,6 @@
 ---
 CommandName: Tcl_BackgroundError
+title: Tcl_BackgroundError
 ManualSection: 3
 Version: 7.5
 TclPart: Tcl

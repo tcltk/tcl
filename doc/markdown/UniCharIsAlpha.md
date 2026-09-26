@@ -1,5 +1,6 @@
 ---
 CommandName: Tcl_UniCharIsAlpha
+title: Tcl_UniCharIsAlpha
 ManualSection: 3
 Version: 8.1
 TclPart: Tcl

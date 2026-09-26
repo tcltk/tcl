@@ -1,5 +1,6 @@
 ---
 CommandName: Utf
+title: Utf
 ManualSection: 3
 Version: 8.1
 TclPart: Tcl

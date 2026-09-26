@@ -1,5 +1,6 @@
 ---
 CommandName: break
+title: break
 ManualSection: n
 Version: unknown
 TclPart: Tcl

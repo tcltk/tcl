@@ -1,5 +1,6 @@
 ---
 CommandName: Tcl_GetNumber
+title: Tcl_GetNumber
 ManualSection: 3
 Version: 9.0
 TclPart: Tcl

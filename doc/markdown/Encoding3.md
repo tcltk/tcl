@@ -1,5 +1,6 @@
 ---
 CommandName: Tcl_GetEncoding
+title: Tcl_GetEncoding
 ManualSection: 3
 Version: 8.1
 TclPart: Tcl

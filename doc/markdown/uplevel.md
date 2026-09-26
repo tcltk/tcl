@@ -1,5 +1,6 @@
 ---
 CommandName: uplevel
+title: uplevel
 ManualSection: n
 Version: unknown
 TclPart: Tcl

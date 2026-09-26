@@ -1,5 +1,6 @@
 ---
 CommandName: eval
+title: eval
 ManualSection: n
 Version: unknown
 TclPart: Tcl

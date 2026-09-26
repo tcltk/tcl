@@ -1,5 +1,6 @@
 ---
 CommandName: Tcl_Namespace
+title: Tcl_Namespace
 ManualSection: 3
 Version: 8.5
 TclPart: Tcl

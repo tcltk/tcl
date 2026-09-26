@@ -1,5 +1,6 @@
 ---
 CommandName: llength
+title: llength
 ManualSection: n
 Version: unknown
 TclPart: Tcl

@@ -1,0 +1,436 @@
+/* ── Tcl Reference Manual — Documentation Stylesheet ─────────────────────────
+ *
+ * Designed for HTML pages generated from the Tcl Pandoc Markdown sources.
+ * Markdown span/div attributes map to CSS classes:
+ *
+ *   Tcl command syntax
+ *     .synopsis      fenced div wrapping the whole synopsis block
+ *     .cmd           Tcl command name            [string]{.cmd}
+ *     .sub           subcommand                  [cat]{.sub}
+ *     .arg           required argument           [string]{.arg}
+ *     .optarg        optional argument           [string1]{.optarg}
+ *     .optdot        repeating / trailing arg    [arg]{.optdot}
+ *     .lit           literal keyword             [-length]{.lit}
+ *     .optlit        optional literal            [-nocase]{.optlit}
+ *
+ *   C API syntax
+ *     .ret           return type                 [void *]{.ret}
+ *     .ccmd          C function name             [Tcl_Alloc]{.ccmd}
+ *     .cargs         C argument list             [size]{.cargs}
+ *     .ins           in / out / in-out tag
+ *
+ *   Structural
+ *     .classhierarchy  OO class tree block
+ * ────────────────────────────────────────────────────────────────────────── */
+
+/* ── Design tokens ────────────────────────────────────────────── */
+
+:root {
+    --font-sans:  system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --font-mono:  "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+
+    --bg:         #ffffff;
+    --surface:    #f6f8fa;
+    --border:     #d0d7de;
+    --text:       #1f2328;
+    --muted:      #656d76;
+
+    --link:       #0969da;
+    --link-hover: #0550ae;
+
+    /* Syntax palette — light mode */
+    --cmd:        #b91c1c;   /* command name      — red    */
+    --sub:        #9a3412;   /* subcommand        — rust   */
+    --arg:        #1d4ed8;   /* argument          — blue   */
+    --lit:        #047857;   /* literal flag      — green  */
+    --ret:        #7c3aed;   /* C return type     — violet */
+    --ccmd:       #b91c1c;   /* C function name   — red    */
+    --cargs:      #1d4ed8;   /* C arg list        — blue   */
+
+    /* Synopsis box */
+    --syn-bg:     #161b22;
+    --syn-fg:     #e6edf3;
+
+    --radius:     6px;
+    --max-width:  65ch;
+}
+
+/* ── Reset ────────────────────────────────────────────────────── */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+/* ── Base ─────────────────────────────────────────────────────── */
+
+html {
+    font-size: 16px;
+    scroll-behavior: smooth;
+}
+
+body {
+    font-family: var(--font-sans);
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    max-width: var(--max-width);
+    margin: 0 auto;
+    padding: 2.2rem 2rem 5rem;
+}
+
+/* ── Top bar ──────────────────────────────────────────────────── */
+
+body > nav, .topbar {
+    background: var(--syn-bg);
+    color: #8b949e;
+    font-size: 0.82rem;
+    padding: 0.55rem 2rem;
+    display: flex;
+    align-items: center;
+    gap: 1.4rem;
+    letter-spacing: 0.03em;
+}
+
+body > nav a, .topbar a {
+    color: #79c0ff;
+    text-decoration: none;
+}
+body > nav a:hover, .topbar a:hover { text-decoration: underline; }
+
+/* ── Page content wrapper ─────────────────────────────────────── */
+
+main, article, .content {
+    max-width: var(--max-width);
+    margin: 0 auto;
+    padding: 2.2rem 2rem 5rem;
+}
+
+/* ── Headings ─────────────────────────────────────────────────── */
+
+h1, h2, h3, h4 {
+    font-weight: 600;
+    line-height: 1.25;
+    margin: 2rem 0 0.5rem;
+}
+
+h1 {
+    font-size: 1.9rem;
+    border-bottom: 2px solid var(--border);
+    padding-bottom: 0.35rem;
+    margin-top: 1.2rem;
+}
+
+h2 {
+    font-size: 1.3rem;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 0.2rem;
+    margin-top: 2.4rem;
+}
+
+h3 { font-size: 1.1rem; }
+h4 { font-size: 0.97rem; color: var(--muted); }
+
+/* ── Paragraphs ───────────────────────────────────────────────── */
+
+p { margin: 0.75rem 0; }
+
+/* ── Links ────────────────────────────────────────────────────── */
+
+a { color: var(--link); text-decoration: none; }
+a:hover { color: var(--link-hover); text-decoration: underline; }
+
+/* ── ════════════════════════════════════════════
+   SYNOPSIS BLOCK
+   Pandoc converts  ::: {.synopsis}  to  <div class="synopsis">
+   ═══════════════════════════════════════════ */
+
+div.synopsis {
+    background: var(--syn-bg);
+    color: var(--syn-fg);
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+    line-height: 2;
+    padding: 1.1rem 1.5rem;
+    border-radius: var(--radius);
+    margin: 1rem 0 1.8rem;
+    overflow-x: auto;
+}
+
+/* Span colours inside the dark synopsis box */
+div.synopsis .cmd,
+div.synopsis .ccmd  { color: #ff7b72; }
+
+div.synopsis .sub   { color: #ffa657; }
+
+div.synopsis .arg   { color: #79c0ff; font-style: italic; }
+
+div.synopsis .optarg {
+    color: #79c0ff;
+    font-style: italic;
+}
+div.synopsis .optarg::before { content: "?"; color: #8b949e; }
+div.synopsis .optarg::after  { content: "?"; color: #8b949e; }
+
+div.synopsis .lit   { color: #7ee787; font-weight: 600; }
+
+div.synopsis .optlit {
+    color: #7ee787;
+    font-weight: 600;
+}
+div.synopsis .optlit::before { content: "?"; color: #8b949e; }
+div.synopsis .optlit::after  { content: "?"; color: #8b949e; }
+
+div.synopsis .optdot {
+    color: #8b949e;
+    font-style: italic;
+}
+div.synopsis .optdot::after { content: " \2026"; } /* … */
+
+div.synopsis .ret   { color: #d2a8ff; font-style: italic; }
+div.synopsis .ret::after { content: " "; }
+
+div.synopsis .cargs {
+    color: #79c0ff;
+    font-style: italic;
+}
+div.synopsis .cargs::before { content: "("; color: #8b949e; }
+div.synopsis .cargs::after  { content: ")"; color: #8b949e; }
+
+/* ── ════════════════════════════════════════════
+   INLINE SYNTAX SPANS  (body text & definition terms)
+   ═══════════════════════════════════════════ */
+
+/* Command name */
+span.cmd {
+    font-family: var(--font-mono);
+    font-weight: 700;
+    color: var(--cmd);
+}
+
+/* Subcommand */
+span.sub {
+    font-family: var(--font-mono);
+    font-weight: 600;
+    color: var(--sub);
+}
+
+/* Required argument */
+span.arg {
+    font-family: var(--font-mono);
+    font-style: italic;
+    color: var(--arg);
+}
+
+/* Optional argument — wrapped in Tcl's ?…? convention */
+span.optarg {
+    font-family: var(--font-mono);
+    font-style: italic;
+    color: var(--arg);
+}
+span.optarg::before { content: "?"; color: var(--muted); font-style: normal; }
+span.optarg::after  { content: "?"; color: var(--muted); font-style: normal; }
+
+/* Repeating / ellipsis placeholder */
+span.optdot {
+    font-family: var(--font-mono);
+    font-style: italic;
+    color: var(--muted);
+}
+span.optdot::after { content: " \2026"; }
+
+/* Literal keyword that must appear verbatim, e.g. -length */
+span.lit {
+    font-family: var(--font-mono);
+    font-weight: 600;
+    color: var(--lit);
+}
+
+/* Optional literal, e.g. -nocase */
+span.optlit {
+    font-family: var(--font-mono);
+    font-weight: 600;
+    color: var(--lit);
+}
+span.optlit::before { content: "?"; color: var(--muted); font-weight: normal; }
+span.optlit::after  { content: "?"; color: var(--muted); font-weight: normal; }
+
+/* ── C API spans ──────────────────────────────────────────────── */
+
+/* Return type */
+span.ret {
+    font-family: var(--font-mono);
+    font-style: italic;
+    color: var(--ret);
+}
+span.ret::after { content: "\00a0"; } /* non-breaking space */
+
+/* C function name */
+span.ccmd {
+    font-family: var(--font-mono);
+    font-weight: 700;
+    color: var(--ccmd);
+}
+
+/* C argument list */
+span.cargs {
+    font-family: var(--font-mono);
+    font-style: italic;
+    color: var(--cargs);
+}
+span.cargs::before { content: "("; color: var(--muted); font-style: normal; }
+span.cargs::after  { content: ")"; color: var(--muted); font-style: normal; }
+
+/* in / out / in-out annotation in argument tables */
+span.ins {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 0.71rem;
+    font-style: italic;
+    color: var(--muted);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 0 0.3em;
+    vertical-align: middle;
+    margin: 0 0.15em;
+    line-height: 1.4;
+}
+
+/* ── Class hierarchy ──────────────────────────────────────────── */
+
+div.classhierarchy,
+span.classhierarchy {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 0.88rem;
+    background: var(--surface);
+    border-left: 3px solid var(--border);
+    padding: 0.8rem 1.2rem;
+    margin: 1rem 0;
+    white-space: pre;
+    overflow-x: auto;
+    border-radius: 0 var(--radius) var(--radius) 0;
+}
+
+/* ── Definition lists  (option / argument descriptions) ────────── */
+
+dl { margin: 0.8rem 0; }
+
+dt {
+    font-family: var(--font-mono);
+    font-size: 0.93rem;
+    font-weight: 600;
+    margin-top: 1.2rem;
+    padding: 0.35rem 0.6rem;
+    background: var(--surface);
+    border-left: 3px solid var(--border);
+    border-radius: 0 var(--radius) var(--radius) 0;
+    line-height: 1.6;
+}
+
+dd {
+    margin: 0.3rem 0 0.8rem 1.4rem;
+}
+
+dd > p:first-child { margin-top: 0.25rem; }
+dd > p:last-child  { margin-bottom: 0; }
+
+/* ── Inline code & code blocks ────────────────────────────────── */
+
+code {
+    font-family: var(--font-mono);
+    font-size: 0.87em;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 0.1em 0.35em;
+}
+
+pre {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1rem 1.2rem;
+    overflow-x: auto;
+    font-family: var(--font-mono);
+    font-size: 0.87rem;
+    line-height: 1.6;
+    margin: 0.9rem 0;
+}
+
+pre code {
+    background: none;
+    border: none;
+    padding: 0;
+    font-size: inherit;
+}
+
+/* ── Blockquotes / notes ──────────────────────────────────────── */
+
+blockquote {
+    border-left: 3px solid var(--link);
+    background: #dbeafe22;
+    margin: 1rem 0;
+    padding: 0.4rem 1rem;
+    border-radius: 0 var(--radius) var(--radius) 0;
+}
+
+/* ── Tables ───────────────────────────────────────────────────── */
+
+table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 1.2rem 0;
+    font-size: 0.92rem;
+}
+
+th, td {
+    border: 1px solid var(--border);
+    padding: 0.45rem 0.8rem;
+    text-align: left;
+    vertical-align: top;
+}
+
+thead th {
+    background: var(--surface);
+    font-weight: 600;
+}
+
+tbody tr:nth-child(even) td { background: #fafbfc; }
+
+/* ── Horizontal rule ──────────────────────────────────────────── */
+
+hr {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 2rem 0;
+}
+
+/* ── Footer ───────────────────────────────────────────────────── */
+
+footer {
+    margin-top: 3rem;
+    padding: 1.2rem 2rem;
+    font-size: 0.8rem;
+    color: var(--muted);
+    border-top: 1px solid var(--border);
+    text-align: center;
+}
+
+/* ── Responsive ───────────────────────────────────────────────── */
+
+@media (max-width: 640px) {
+    body { padding: 1rem 1rem 3rem; }
+    main, article, .content { padding: 1rem 1rem 3rem; }
+    h1 { font-size: 1.45rem; }
+    h2 { font-size: 1.15rem; }
+    div.synopsis { font-size: 0.78rem; padding: 0.8rem 1rem; }
+}
+
+/* ── Print ────────────────────────────────────────────────────── */
+
+@media print {
+    body { font-size: 11pt; }
+    div.synopsis { background: #111; color: #eee; -webkit-print-color-adjust: exact; }
+    a { color: inherit; text-decoration: underline; }
+    pre, blockquote, dt { break-inside: avoid; }
+    body > nav { display: none; }
+}

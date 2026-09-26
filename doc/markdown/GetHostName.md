@@ -1,5 +1,6 @@
 ---
 CommandName: Tcl_GetHostName
+title: Tcl_GetHostName
 ManualSection: 3
 Version: 8.3
 TclPart: Tcl

@@ -1,5 +1,6 @@
 ---
 CommandName: Tcl_Init
+title: Tcl_Init
 ManualSection: 3
 Version: 9.0
 TclPart: Tcl

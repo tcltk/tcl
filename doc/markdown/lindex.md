@@ -1,5 +1,6 @@
 ---
 CommandName: lindex
+title: lindex
 ManualSection: n
 Version: 8.4
 TclPart: Tcl

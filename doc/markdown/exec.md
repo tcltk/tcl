@@ -1,5 +1,6 @@
 ---
 CommandName: exec
+title: exec
 ManualSection: n
 Version: 8.5
 TclPart: Tcl
@@ -38,13 +39,13 @@ If the initial arguments to **exec** start with **-** then they are treated as c
 [-encoding]{.lit} [encodingName]{.arg}
 : Specifies the name of the encoding to use to decode the result of the command when not run in the background. Defaults to that returned by the [encoding system][encoding] command.
 
-**-ignorestderr**
+[-ignorestderr]{.lit}
 : Stops the **exec** command from treating the output of messages to the pipeline's standard error channel as an error case.
 
-**-keepnewline**
+[-keepnewline]{.lit}
 : Retains a trailing newline in the pipeline's output. Normally a trailing newline will be deleted.
 
-**--**
+[--]{.lit}
 : Marks the end of switches.  The argument following this one will be treated as the first *arg* even if it starts with a **-**.
 
 

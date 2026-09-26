@@ -1,5 +1,6 @@
 ---
 CommandName: Tcl_UpVar
+title: Tcl_UpVar
 ManualSection: 3
 Version: 7.4
 TclPart: Tcl

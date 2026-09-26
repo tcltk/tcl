@@ -1,5 +1,6 @@
 ---
 CommandName: lset
+title: lset
 ManualSection: n
 Version: 8.4
 TclPart: Tcl

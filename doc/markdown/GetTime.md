@@ -1,5 +1,6 @@
 ---
 CommandName: Tcl_GetTime
+title: Tcl_GetTime
 ManualSection: 3
 Version: 8.4
 TclPart: Tcl

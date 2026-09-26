@@ -1,5 +1,6 @@
 ---
 CommandName: join
+title: join
 ManualSection: n
 Version: unknown
 TclPart: Tcl

@@ -1,5 +1,6 @@
 ---
 CommandName: Tcl_TraceCommand
+title: Tcl_TraceCommand
 ManualSection: 3
 Version: 7.4
 TclPart: Tcl

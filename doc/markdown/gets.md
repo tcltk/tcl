@@ -1,5 +1,6 @@
 ---
 CommandName: gets
+title: gets
 ManualSection: n
 Version: 7.5
 TclPart: Tcl

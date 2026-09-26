@@ -1,5 +1,6 @@
 ---
 CommandName: apply
+title: apply
 ManualSection: n
 Version: unknown
 TclPart: Tcl

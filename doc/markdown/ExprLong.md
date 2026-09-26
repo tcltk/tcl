@@ -1,5 +1,6 @@
 ---
 CommandName: Tcl_ExprLong
+title: Tcl_ExprLong
 ManualSection: 3
 Version: 7.0
 TclPart: Tcl

@@ -1,5 +1,6 @@
 ---
 CommandName: Tcl_RecordAndEvalObj
+title: Tcl_RecordAndEvalObj
 ManualSection: 3
 Version: 8.0
 TclPart: Tcl

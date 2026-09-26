@@ -1,5 +1,6 @@
 ---
 CommandName: Tcl_CallWhenDeleted
+title: Tcl_CallWhenDeleted
 ManualSection: 3
 Version: 7.0
 TclPart: Tcl

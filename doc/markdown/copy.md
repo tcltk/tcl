@@ -1,5 +1,6 @@
 ---
 CommandName: copy
+title: copy
 ManualSection: n
 Version: 0.1
 TclPart: TclOO

@@ -1,5 +1,6 @@
 ---
 CommandName: list
+title: list
 ManualSection: n
 Version: unknown
 TclPart: Tcl

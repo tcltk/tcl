@@ -1,5 +1,6 @@
 ---
 CommandName: Tcl_Ensemble
+title: Tcl_Ensemble
 ManualSection: 3
 Version: 8.5
 TclPart: Tcl

@@ -1,5 +1,6 @@
 ---
 CommandName: Tcl_GetCwd
+title: Tcl_GetCwd
 ManualSection: 3
 Version: 8.1
 TclPart: Tcl

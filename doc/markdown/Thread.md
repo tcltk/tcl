@@ -1,5 +1,6 @@
 ---
 CommandName: Threads
+title: Threads
 ManualSection: 3
 Version: 8.1
 TclPart: Tcl

@@ -1,5 +1,6 @@
 ---
 CommandName: fconfigure
+title: fconfigure
 ManualSection: n
 Version: 8.3
 TclPart: Tcl

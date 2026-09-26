@@ -1,5 +1,6 @@
 ---
 CommandName: Tcl_GetOpenFile
+title: Tcl_GetOpenFile
 ManualSection: 3
 Version: 8.0
 TclPart: Tcl

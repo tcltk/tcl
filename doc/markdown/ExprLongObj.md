@@ -1,5 +1,6 @@
 ---
 CommandName: Tcl_ExprLongObj
+title: Tcl_ExprLongObj
 ManualSection: 3
 Version: 8.0
 TclPart: Tcl

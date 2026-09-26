@@ -1,5 +1,6 @@
 ---
 CommandName: Tcl_Exit
+title: Tcl_Exit
 ManualSection: 3
 Version: 8.5
 TclPart: Tcl

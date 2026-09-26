@@ -1,5 +1,6 @@
 ---
 CommandName: binary
+title: binary
 ManualSection: n
 Version: 8.0
 TclPart: Tcl
@@ -47,7 +48,7 @@ When encoding binary data as a readable string, the starting binary data is pass
 
     During encoding, the following options are supported:
 
-    **-maxlen** *length*
+    [-maxlen]{.lit} [length]{.arg}
     : Indicates that the output should be split into lines of no more than *length* characters. By default, lines are not split.
 
     **-wrapchar** *character*
@@ -65,7 +66,7 @@ When encoding binary data as a readable string, the starting binary data is pass
 
     No options are supported during encoding. During decoding, the following options are supported:
 
-    **-strict**
+    [-strict]{.lit}
     : Instructs the decoder to throw an error if it encounters whitespace characters. Otherwise it ignores them.
 
 
@@ -74,7 +75,7 @@ When encoding binary data as a readable string, the starting binary data is pass
 
     During encoding, the following options are supported (though changing them may produce files that other implementations of decoders cannot process):
 
-    **-maxlen** *length*
+    [-maxlen]{.lit} [length]{.arg}
     : Indicates the maximum number of characters to produce for each encoded line. The valid range is 5 to 85. Line lengths outside that range cannot be accommodated by the encoding format. The default value is 61.
 
     **-wrapchar** *character*

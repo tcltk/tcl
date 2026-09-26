@@ -1,5 +1,6 @@
 ---
 CommandName: Tcl_TraceVar
+title: Tcl_TraceVar
 ManualSection: 3
 Version: 9.0
 TclPart: Tcl

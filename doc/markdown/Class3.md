@@ -1,5 +1,6 @@
 ---
 CommandName: Tcl_Class
+title: Tcl_Class
 ManualSection: 3
 Version: 0.1
 TclPart: TclOO

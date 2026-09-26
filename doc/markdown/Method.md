@@ -1,5 +1,6 @@
 ---
 CommandName: Tcl_Method
+title: Tcl_Method
 ManualSection: 3
 Version: 0.1
 TclPart: TclOO
