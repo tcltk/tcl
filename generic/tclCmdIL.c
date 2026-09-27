@@ -1258,7 +1258,7 @@ TclInfoFrame(
 {
     Interp *iPtr = (Interp *) interp;
     Tcl_Obj *tmpObj;
-    Tcl_Obj *lv[20] = {NULL};		/* Keep uptodate when more keys are added to
+    Tcl_Obj *lv[20] = {NULL};	/* Keep uptodate when more keys are added to
 				 * the dict. */
     int lc = 0;
     /*
@@ -1398,8 +1398,7 @@ TclInfoFrame(
 		    procNameObj);
 	    ADD_PAIR("proc", procNameObj);
 	} else if ((procPtr->flags & PROC_CMD_OWNED) && !cmdPtr->objProc &&
-		   cmdPtr->objClientData
-	) {
+		cmdPtr->objClientData) {
 	    ADD_PAIR("lambda", (Tcl_Obj *)cmdPtr->objClientData);
 	} else if (cmdPtr->clientData) {
 	    ExtraFrameInfo *efiPtr = (ExtraFrameInfo *)cmdPtr->clientData;
@@ -1448,6 +1447,7 @@ TclInfoFrame(
 	Tcl_DecrRefCount(lv[needsFree]);
     }
     return tmpObj;
+#undef ADD_PAIR
 }
 
 /*
