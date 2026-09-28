@@ -31,6 +31,7 @@ static const struct StdCommands {
     {"objdefine",	TclOOObjDefObjCmd, NULL, NULL, 0},
     {"copy",		TclOOCopyObjectCmd, NULL, NULL, 0},
     {"DelegateName",	TclOODelegateNameObjCmd, NULL, NULL, 0},
+    {"UnknownDefinition",TclOOUnknownDefinition, NULL, NULL, 0},
     {NULL, NULL, NULL, NULL, 0}
 }, helpCmds[] = {
     {"callback",	TclOOCallbackObjCmd, NULL, NULL, 0},
@@ -456,8 +457,6 @@ InitFoundation(
     Tcl_IncrRefCount(fPtr->slotDefOpName);
     Tcl_IncrRefCount(fPtr->singletonInstName);
 
-    TclCreateObjCommandInNs(interp, "UnknownDefinition", fPtr->ooNs,
-	    TclOOUnknownDefinition, NULL, NULL);
     TclNewLiteralStringObj(namePtr, "::oo::UnknownDefinition");
     Tcl_SetNamespaceUnknownHandler(interp, define, namePtr);
     Tcl_SetNamespaceUnknownHandler(interp, objdef, namePtr);
