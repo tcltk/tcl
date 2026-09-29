@@ -4,22 +4,27 @@ changes to the Tcl source code at
 
 > [Tcl Source Code](https://core.tcl-lang.org/tcl/timeline)
 
-Release Tcl 9.1b1 arises from the check-in with tag `core-9-1-b1`.
+Release Tcl 9.1.0 arises from the check-in with tag `core-9-1-0`.
 
 Highlighted differences between Tcl 9.1 and Tcl 9.0 are summarized below,
 with focus on changes important to programmers using the Tcl library and
 writing Tcl scripts.
+
+# Incompatibilities
+
+- [Remove `expr` behavior from `lseq`](https://core.tcl-lang.org/tips/doc/trunk/tip/746.md) *Incompatibility*
+- [File paths are now treated as case-insensitive on MacOS](https://core.tcl-lang.org/tcl/tktview/e6ca0b1b) *Incompatibility*
+- New command `tcl::registry` as replacement for the `registry` command without needing
+the registry package to be loaded. The registry module is now part of the core
+Tcl DLL in all build configurations.
+- [Custom applications must call Tcl\_FindExecutable or TclZipfs_AppHook to initialize Tcl](https://core.tcl-lang.org/tips/doc/trunk/tip/732.md) *Potential incompatibility*
+- [Search path for locating Tcl core script and encodings is changed](https://core.tcl-lang.org/tips/doc/trunk/tip/732.md) *Potential incompatibility*
 
 # New commands and options
 
 - [New options `-backslashes`, `-commands` and `-variables` for `subst` command](https://core.tcl-lang.org/tips/doc/trunk/tip/712.md)
 - [New command `unicode` for Unicode normalization](https://core.tcl-lang.org/tips/doc/trunk/tip/726.md)
 - [New `timer` command, switch to monotonic clock and microsecond resolution](https://core.tcl-lang.org/tips/doc/trunk/tip/723.md)
-- [Remove `expr` behavior from `lseq`](https://core.tcl-lang.org/tips/doc/trunk/tip/746.md) *Incompatibility*
-- [File paths are now treated as case-insensitive on MacOS](https://core.tcl-lang.org/tcl/tktview/e6ca0b1b) *Incompatibility*
-- New command `tcl::registry` as replacement for the `registry` command without needing
-the registry package to be loaded. The registry module is now part of the core
-Tcl DLL in all build configurations.
 - [New `lfilter` command for selecting items from a list](https://core.tcl-lang.org/tips/doc/trunk/tip/735.md)
 - [Many new functions from C99](https://core.tcl-lang.org/tips/doc/trunk/tip/745.md), specifically: `acosh()`, `asinh()`, `atanh()`, `cbrt()`, `copysign()`, `dim()`,  `erf()`, `erfc()`, `exp2()`, `expm1()`, `fma()`, `gamma()`, `ldexp()`, `lgamma()`, `log1p()`, `log2()`, `logb()`, `nextafter()`, `remainder()`, `signbit()`, and `trunc()`, and (for functions that return multiple values in their C99 API) the commands: `divmod`, `frexp`, `modf`, and `remquo`. (See [this page](https://en.cppreference.com/w/c/numeric/math.html) for more information about these functions; the Tcl functions are _intentionally_ only thin wrappers around the functions in the C99 standard.)
 - [New `switch` option `-integer` to compare values as integers](https://core.tcl-lang.org/tips/doc/trunk/tip/730.md)
@@ -40,13 +45,7 @@ Tcl DLL in all build configurations.
 - [New API for monotonic clock and microseconds resolution](https://core.tcl-lang.org/tips/doc/trunk/tip/723.md)
 - [Windows `auto_execok` enhancements and `exec` search reform](https://core.tcl-lang.org/tips/doc/trunk/tip/753.md)
 - [New timer API using long long in stead of Tcl_Time](https://core.tcl-lang.org/tips/doc/trunk/tip/752.md)
-
-# Changes in interpreter initialization
-
-- [Custom applications must call Tcl\_FindExecutable or TclZipfs_AppHook to initialize Tcl](https://core.tcl-lang.org/tips/doc/trunk/tip/732.md) *Potential incompatibility*
-- [Search path for locating Tcl core script and encodings is changed](https://core.tcl-lang.org/tips/doc/trunk/tip/732.md) *Potential incompatibility*
 - [`Tcl_RegisterPostInitProc` callback for post-initialization of interpreters](https://core.tcl-lang.org/tips/doc/trunk/tip/755.md)
-
 
 # Performance
 
