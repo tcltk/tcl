@@ -461,9 +461,13 @@ proc msgcat::mcpackagelocale {subcommand {locale ""}} {
 		    \"[lrange [info level 0] 0 1]\""
 	}
 	set locale [string tolower $locale]
-	if {$locale ne [file tail $locale]} {
-	    return -code error "invalid locale value \"$locale\":\
-		    could be path to unsafe code."
+	# Since an unsafe interp uses the command from parent, this code
+	# is security sensitive. Make sure that the path name cannot escape
+	# the msgcat directory.
+	if { [regexp {^[/\\]|^[a-z]+:|(?:^|[/\\])\.\.} $locale] } {
+	    return -code error \
+		-errorcode [list MSGCAT badLocale $locale] \
+		"locale \"$locale\" not valid"
 	}
     }
     set ns [uplevel 1 {::namespace current}]

@@ -320,14 +320,29 @@ test clock-1.5 "clock format - bad timezone (not found)" -body {
     clock format 0 -format "%s" -timezone :NOWHERE
 } -returnCodes 1 -result {time zone ":NOWHERE" not found} -errorCode {CLOCK badTimeZone :NOWHERE}
 foreach tz [list {*}{
-  ../UNSAFEPATH/NOWHERE UNSAFEPATH/../GMT //UNSAFEPATH/NOWHERE
-  zipfs:/UNSAFEPATH/NOWHERE C:/UNSAFEPATH/NOWHERE
+    ../UNSAFEPATH/NOWHERE UNSAFEPATH/../GMT //UNSAFEPATH/NOWHERE
+    zipfs:/UNSAFEPATH/NOWHERE C:/UNSAFEPATH/NOWHERE
   } [list $::tcl::clock::DataDir/GMT]
 ] {
-test clock-1.5.1.$tz "clock format - bad timezone (not valid - unsafe path)" -body {
-    clock format 0 -format "%s" -timezone $tz
-} -returnCodes 1 -result "time zone \":$tz\" not valid" -errorCode [list CLOCK badTimeZone :$tz]
+  foreach tz [list $tz [string map {/ \\} $tz]] {
+    test clock-1.5.1.$tz "clock format - bad timezone (not valid - unsafe path)" -body {
+	clock format 0 -format "%s" -timezone $tz
+    } -returnCodes 1 -result "time zone \":$tz\" not valid" -errorCode {CLOCK badTimeZone *}
+  }
 }
+foreach l [list {*}{
+    ../UNSAFEPATH/NOWHERE UNSAFEPATH/../EN //UNSAFEPATH/NOWHERE
+    zipfs:/UNSAFEPATH/NOWHERE C:/UNSAFEPATH/NOWHERE
+  } [list [file join [info library] msgs]]
+] {
+  set l [string tolower $l]
+  foreach l [list $l [string map {/ \\} $l]] {
+    test clock-1.5.2-$l "clock format - bad locale (not valid - unsafe path)" -body {
+      clock format 0 -locale $l
+    } -returnCodes 1 -result "locale \"$l\" not valid" -errorCode {MSGCAT badLocale *}
+  }
+}
+unset l
 
 test clock-1.6 "clock format - gmt + timezone" {
     list [catch {clock format 0 -timezone :GMT -gmt true} msg] $msg $::errorCode

@@ -922,9 +922,19 @@ namespace eval ::msgcat::test {
 	    list [mcpackagelocale present foo] [mcpackagelocale present bar]
 	} -result {0 1}
 
-	test msgcat-12.11 {mcpackagelocale set (invalid locale)} -body {
-	    mcpackagelocale set foo/bar
-	} -returnCodes 1 -result {invalid locale value "foo/bar": could be path to unsafe code.}
+	foreach l [list {*}{
+	    ../UNSAFEPATH/NOWHERE UNSAFEPATH/../EN //UNSAFEPATH/NOWHERE
+	    zipfs:/UNSAFEPATH/NOWHERE C:/UNSAFEPATH/NOWHERE
+	  } [list [file join [info library] msgs]]
+	] {
+	  set l [string tolower $l]
+	  foreach l [list $l [string map {/ \\} $l]] {
+	    test msgcat-12.11-$l "mcpackagelocale set - bad locale (not valid - unsafe path)" -body {
+	      mcpackagelocale set $l
+	    } -returnCodes 1 -result "locale \"$l\" not valid" -errorCode {MSGCAT badLocale *}
+	  }
+	}
+	unset l
 
     # Tests msgcat-13.*: [mcpackageconfig subcmds]
 
