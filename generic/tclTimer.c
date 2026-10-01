@@ -1816,8 +1816,7 @@ TimeTooFarError(
     Tcl_Interp *interp)		/* Current interpreter. */
 {
     if (interp != NULL) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"time too far away", -1));
+	Tcl_PrintfResult(interp, "time too far away");
 	Tcl_SetErrorCode(interp, "TCL","TIME","OVERFLOW", (char *)NULL);
     }
 }

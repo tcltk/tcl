@@ -320,9 +320,9 @@ TraceExecutionObjCmd(
 	    return result;
 	}
 	if (listLen == 0) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "bad operation list \"\": must be one or more of"
-		    " enter, leave, enterstep, or leavestep", -1));
+	    Tcl_PrintfResult(interp,
+		    "bad operation list \"\": must be one or more of %s",
+		    "enter, leave, enterstep, or leavestep");
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "TRACE", "NOOPS",
 		    (char *)NULL);
 	    return TCL_ERROR;
@@ -566,9 +566,9 @@ TraceCommandObjCmd(
 	    return result;
 	}
 	if (listLen == 0) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "bad operation list \"\": must be one or more of"
-		    " delete or rename", -1));
+	    Tcl_PrintfResult(interp,
+		    "bad operation list \"\": must be one or more of %s",
+		    "delete or rename");
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "TRACE", "NOOPS",
 		    (char *)NULL);
 	    return TCL_ERROR;
