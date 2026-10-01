@@ -1123,7 +1123,9 @@ Tcl_AfterObjCmd(
 		AfterProc, afterPtr, true);
 	afterPtr->nextPtr = assocPtr->firstAfterPtr;
 	assocPtr->firstAfterPtr = afterPtr;
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf("after#%d", afterPtr->id));
+	char buffer[TCL_INTEGER_SPACE + 6];
+	sprintf(buffer, "after#%d", afterPtr->id);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(buffer, -1));
 	return TCL_OK;
     }
     case AFTER_CANCEL:
@@ -1791,7 +1793,9 @@ TimerAtCmd(
 	    AfterProc, afterPtr, false);
     afterPtr->nextPtr = assocPtr->firstAfterPtr;
     assocPtr->firstAfterPtr = afterPtr;
-    Tcl_SetObjResult(interp, Tcl_ObjPrintf("after#%d", afterPtr->id));
+    char buffer[TCL_INTEGER_SPACE + 6];
+    sprintf(buffer, "after#%d", afterPtr->id);
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(buffer, -1));
     return TCL_OK;
 }
 
@@ -1900,7 +1904,9 @@ TimerInCmd(
 	    AfterProc, afterPtr, true);
     afterPtr->nextPtr = assocPtr->firstAfterPtr;
     assocPtr->firstAfterPtr = afterPtr;
-    Tcl_SetObjResult(interp, Tcl_ObjPrintf("after#%d", afterPtr->id));
+    char buffer[TCL_INTEGER_SPACE + 6];
+    sprintf(buffer, "after#%d", afterPtr->id);
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(buffer, -1));
     return TCL_OK;
 }
 
@@ -2226,7 +2232,9 @@ TimerIdleDo(
     afterPtr->nextPtr = assocPtr->firstAfterPtr;
     assocPtr->firstAfterPtr = afterPtr;
     Tcl_DoWhenIdle(AfterProc, afterPtr);
-    Tcl_SetObjResult(interp, Tcl_ObjPrintf("after#%d", afterPtr->id));
+    char buffer[TCL_INTEGER_SPACE + 6];
+    sprintf(buffer, "after#%d", afterPtr->id);
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(buffer, -1));
     return TCL_OK;
 }
 

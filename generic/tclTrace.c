@@ -769,9 +769,9 @@ TraceVariableObjCmd(
 	    return result;
 	}
 	if (listLen == 0) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "bad operation list \"\": must be one or more of"
-		    " array, read, unset, or write", -1));
+	    Tcl_PrintfResult(interp,
+		    "bad operation list \"\": must be one or more of %s",
+		    "array, read, unset, or write");
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "TRACE", "NOOPS",
 		    (char *)NULL);
 	    return TCL_ERROR;
