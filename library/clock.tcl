@@ -739,7 +739,7 @@ proc ::tcl::clock::ParseClockFormatFormat2 {format locale procName} {
     set didLocaleNumerals 0
     set preFormatCode \
 	[string map [list @GREGORIAN_CHANGE_DATE@ \
-				       [mc GREGORIAN_CHANGE_DATE]] \
+				       [list [mc GREGORIAN_CHANGE_DATE]]] \
 	     {
 		 variable TZData
 		 set date [GetDateFields $clockval \
