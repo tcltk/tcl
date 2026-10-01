@@ -14,7 +14,7 @@
 package require Tcl 8.5-
 # When the version number changes, be sure to update the pkgIndex.tcl file,
 # and the installation directory in the Makefiles.
-package provide msgcat 1.6.1
+package provide msgcat 1.6.2
 
 namespace eval msgcat {
     namespace export mc mcexists mcload mclocale mcmax mcmset mcpreferences mcset\
@@ -461,6 +461,10 @@ proc msgcat::mcpackagelocale {subcommand {locale ""}} {
 		    \"[lrange [info level 0] 0 1]\""
 	}
 	set locale [string tolower $locale]
+	if {$locale ne [file tail $locale]} {
+	    return -code error "invalid locale value \"$locale\":\
+		    could be path to unsafe code."
+	}
     }
     set ns [uplevel 1 {::namespace current}]
 

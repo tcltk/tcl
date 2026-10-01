@@ -922,6 +922,10 @@ namespace eval ::msgcat::test {
 	    list [mcpackagelocale present foo] [mcpackagelocale present bar]
 	} -result {0 1}
 
+	test msgcat-12.11 {mcpackagelocale set (invalid locale)} -body {
+	    mcpackagelocale set foo/bar
+	} -returnCodes 1 -result {invalid locale value "foo/bar": could be path to unsafe code.}
+
     # Tests msgcat-13.*: [mcpackageconfig subcmds]
 
 	test msgcat-13.1 {mcpackageconfig no subcommand} -body {
