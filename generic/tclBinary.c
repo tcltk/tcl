@@ -2654,7 +2654,7 @@ BinaryEncodeUu(
 			    continue;
 			case '\n':
 			    numBytes--;
-			    break;
+			    goto end_check_loop;
 			default:
 			badwrap:
 			    Tcl_SetObjResult(interp, Tcl_NewStringObj(
@@ -2665,6 +2665,7 @@ BinaryEncodeUu(
 			    return TCL_ERROR;
 		    }
 		}
+		end_check_loop:
 		if (numBytes) {
 		    goto badwrap;
 		}
