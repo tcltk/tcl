@@ -469,7 +469,7 @@ TclFinalizeEvaluation(void)
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_CreateInterp --
+ * Tcl_CreateInterp --, TclCreateInterp --
  *
  *	Create a new TCL command interpreter.
  *
@@ -485,7 +485,8 @@ TclFinalizeEvaluation(void)
  */
 
 Tcl_Interp *
-Tcl_CreateInterp(void)
+TclCreateInterp(
+    int flags)		/* Flags of interp to create (currently SAFE_INTERP only) */
 {
     Interp *iPtr;
     Tcl_Interp *interp;
@@ -634,7 +635,7 @@ Tcl_CreateInterp(void)
     iPtr->resolverPtr = NULL;
     iPtr->evalFlags = 0;
     iPtr->scriptFile = NULL;
-    iPtr->flags = 0;
+    iPtr->flags = flags;
     iPtr->tracePtr = NULL;
     iPtr->tracesForbiddingInline = 0;
     iPtr->activeCmdTracePtr = NULL;
@@ -1041,6 +1042,11 @@ Tcl_CreateInterp(void)
 
     TOP_CB(iPtr) = NULL;
     return interp;
+}
+Tcl_Interp *
+Tcl_CreateInterp(void)
+{
+    return TclCreateInterp(0);
 }
 
 static void

@@ -2352,7 +2352,7 @@ ChildCreate(
 	return NULL;
     }
 
-    childInterp = Tcl_CreateInterp();
+    childInterp = TclCreateInterp(safe ? SAFE_INTERP : 0);
     childPtr = &((InterpInfo *) ((Interp *) childInterp)->interpInfo)->child;
     childPtr->parentInterp = parentInterp;
     childPtr->childEntryPtr = hPtr;
