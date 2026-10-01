@@ -2609,6 +2609,7 @@ BinaryEncodeUu(
     const unsigned char SingleNewline[] = { UCHAR('\n') };
     const unsigned char *wrapchar = SingleNewline;
     int j, rawLength, offset, count, wrapcharlen = sizeof(SingleNewline);
+    Tcl_WideUInt resLength;
     enum { OPT_MAXLEN, OPT_WRAPCHAR };
     static const char *const optStrings[] = { "-maxlen", "-wrapchar", NULL };
 
@@ -2674,6 +2675,17 @@ BinaryEncodeUu(
 	}
     }
 
+    data = Tcl_GetByteArrayFromObj(objv[objc - 1], &count);
+    rawLength = (lineLength - 1) * 3 / 4;
+    resLength = (Tcl_WideUInt)(lineLength + wrapcharlen) *
+	    (Tcl_WideUInt)((count + (rawLength - 1)) / rawLength);
+    if (resLength > INT_MAX) {
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    "max size for a Tcl value (%u bytes) exceeded", INT_MAX));
+	Tcl_SetErrorCode(interp, "TCL", "MEMORY", (char *)NULL);
+	return TCL_ERROR;
+    }
+
     /*
      * Allocate the buffer. This is a little bit too long, but is "good
      * enough".
@@ -2681,11 +2693,7 @@ BinaryEncodeUu(
 
     TclNewObj(resultObj);
     offset = 0;
-    data = Tcl_GetByteArrayFromObj(objv[objc - 1], &count);
-    rawLength = (lineLength - 1) * 3 / 4;
-    start = cursor = Tcl_SetByteArrayLength(resultObj,
-	    (lineLength + wrapcharlen) *
-	    ((count + (rawLength - 1)) / rawLength));
+    start = cursor = Tcl_SetByteArrayLength(resultObj, (int)resLength);
     n = bits = 0;
 
     /*
