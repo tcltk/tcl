@@ -1084,6 +1084,7 @@ TclHideUnsafeCommands(
     }
     TclMakeEncodingCommandSafe(interp); /* Ugh! */
     TclMakeFileCommandSafe(interp);     /* Ugh! */
+    TclMakeUnsupportedCommandSafe(interp);     /* Ugh! */
     return TCL_OK;
 }
 

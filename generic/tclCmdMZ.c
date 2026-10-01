@@ -5540,6 +5540,106 @@ TclListLines(
 }
 
 /*
+ *----------------------------------------------------------------------
+ *
+ * BadUnsupportedSubcommand --
+ *
+ *	Command used to act as a backstop implementation when subcommands of
+ *	"unsupported" are unsafe (the real implementations of the subcommands are
+ *	hidden). The clientData is always the full official subcommand name.
+ *
+ * Results:
+ *	A standard Tcl result (always a TCL_ERROR).
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+BadUnsupportedSubcommand(
+    void *clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    const char *subcommandName = (const char *) clientData;
+
+    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    "not allowed to invoke subcommand %s of unsupported", subcommandName));
+    Tcl_SetErrorCode(interp, "TCL", "SAFE", "SUBCOMMAND", (char *)NULL);
+    return TCL_ERROR;
+}
+
+/*
+ *-----------------------------------------------------------------------------
+ *
+ * TclMakeUnsupportedCommandSafe --
+ *
+ *	This function hides the unsafe subcommands of
+ *	the "unsupported" Tcl command ensemble. It must be called only from
+ *	TclHideUnsafeCommands.
+ *
+ * Results:
+ *	A standard Tcl result
+ *
+ * Side effects:
+ *	Adds commands to the table of hidden commands.
+ *
+ *-----------------------------------------------------------------------------
+ */
+
+int
+TclMakeUnsupportedCommandSafe(
+    Tcl_Interp* interp)		/* Tcl interpreter */
+{
+    static const struct {
+	const char *cmdName;
+	int unsafe;
+    } unsafeInfo[] = {
+	{"assemble",    1},
+	{"corotype",    1},
+	{"disassemble", 1},
+	{"getbytecode", 1},
+	{"inject",      1},
+	{"representation", 1},
+	{"timerate",    1},
+	{NULL,          0}
+    };
+
+    int i;
+    Tcl_DString oldBuf, newBuf;
+
+    Tcl_DStringInit(&oldBuf);
+    TclDStringAppendLiteral(&oldBuf, "::tcl::unsupported::");
+    Tcl_DStringInit(&newBuf);
+    TclDStringAppendLiteral(&newBuf, "tcl:unsupported:");
+    for (i=0 ; unsafeInfo[i].cmdName != NULL ; i++) {
+	if (unsafeInfo[i].unsafe) {
+	    const char *oldName, *newName;
+
+	    Tcl_DStringSetLength(&oldBuf, 20);
+	    oldName = Tcl_DStringAppend(&oldBuf, unsafeInfo[i].cmdName, -1);
+	    Tcl_DStringSetLength(&newBuf, 16);
+	    newName = Tcl_DStringAppend(&newBuf, unsafeInfo[i].cmdName, -1);
+	    if (TclRenameCommand(interp, oldName, "___tmp") != TCL_OK
+		    || Tcl_HideCommand(interp, "___tmp", newName) != TCL_OK) {
+		Tcl_Panic("problem making 'unsupported %s' safe: %s",
+			unsafeInfo[i].cmdName,
+			Tcl_GetString(Tcl_GetObjResult(interp)));
+	    }
+	    Tcl_CreateObjCommand(interp, oldName, BadUnsupportedSubcommand,
+		    (ClientData) unsafeInfo[i].cmdName, NULL);
+	}
+    }
+    Tcl_DStringFree(&oldBuf);
+    Tcl_DStringFree(&newBuf);
+    return TCL_OK;
+}
+
+
+/*
  * Local Variables:
  * mode: c
  * c-basic-offset: 4

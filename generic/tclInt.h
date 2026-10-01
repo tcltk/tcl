@@ -3010,6 +3010,7 @@ MODULE_SCOPE void	TclInitEmbeddedConfigurationInformation(
 MODULE_SCOPE void	TclInitEncodingSubsystem(void);
 MODULE_SCOPE void	TclInitIOSubsystem(void);
 MODULE_SCOPE void	TclInitLimitSupport(Tcl_Interp *interp);
+MODULE_SCOPE int	TclMakeUnsupportedCommandSafe(Tcl_Interp *interp);
 MODULE_SCOPE void	TclInitNamespaceSubsystem(void);
 MODULE_SCOPE void	TclInitNotifier(void);
 MODULE_SCOPE void	TclInitObjSubsystem(void);

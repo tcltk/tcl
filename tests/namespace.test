@@ -3294,7 +3294,9 @@ test namespace-55.1 {compiled ensembles inside compiled ensembles: Bug 6d2f249a0
     info class [format %s constructor] oo::object
 } ""
 
-test namespace-55.2 {compiled ensembles inside safe interpreters (for safe sub-commands), bug [1095bf7f756f9aed]} -setup {
+test namespace-55.2 {compiled ensembles inside safe interpreters (for safe sub-commands), bug [1095bf7f756f9aed]} -constraints {
+    nonPortable
+} -setup {# This testcase doesn't run any more because ::tcl::unsupported::disassemble cannot be used in a safe interpreter
     interp create -safe si
     set code {
 	proc test_comp_dict d { dict for {k v} $d {expr $v} }
