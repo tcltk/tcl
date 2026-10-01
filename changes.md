@@ -4,6 +4,15 @@ changes to the Tcl source code at
 
 > [Tcl Source Code](https://core.tcl-lang.org/tcl/timeline)
 
+Release Tcl 9.1.1 arises from the check-in with tag `core-9-1-1`.
+
+Tcl patch releases have the primary purpose of delivering bug fixes
+to the userbase.
+
+# Bug fixes
+
+# Updated bundled packages, libraries, standards, data
+
 Release Tcl 9.1.0 arises from the check-in with tag `core-9-1-0`.
 
 Highlighted differences between Tcl 9.1 and Tcl 9.0 are summarized below,
