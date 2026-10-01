@@ -299,9 +299,13 @@ proc msgcat::mclocale {args} {
 
     if {$len == 1} {
 	set newLocale [string tolower [lindex $args 0]]
-	if {$newLocale ne [file tail $newLocale]} {
-	    return -code error "invalid newLocale value \"$newLocale\":\
-		    could be path to unsafe code."
+	# Since an unsafe interp uses the command from parent, this code
+	# is security sensitive. Make sure that the path name cannot escape
+	# the msgcat directory.
+	if { [regexp {^[/\\]|^[a-z]+:|(?:^|[/\\])\.\.} $newLocale] } {
+	    return -code error \
+		-errorcode [list MSGCAT badLocale $newLocale] \
+		"locale \"$newLocale\" not valid"
 	}
 	if {[lindex $Loclist 0] ne $newLocale} {
 	    set Loclist [GetPreferences $newLocale]

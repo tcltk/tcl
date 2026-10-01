@@ -184,7 +184,7 @@ namespace eval ::msgcat::test {
 	mclocale $locale
     } -body {
 	mclocale /path/to/evil/code
-    } -returnCodes error -match glob -result {invalid newLocale value *}
+    } -returnCodes error -match glob -result {locale "*" not valid} -errorCode {MSGCAT badLocale *}
 
     test msgcat-1.13 {mclocale set, reject evil input} -setup {
 	variable locale [mclocale]
@@ -192,7 +192,7 @@ namespace eval ::msgcat::test {
 	mclocale $locale
     } -body {
 	mclocale looks/ok/../../../../but/is/path/to/evil/code
-    } -returnCodes error -match glob -result {invalid newLocale value *}
+    } -returnCodes error -match glob -result {locale "*" not valid} -errorCode {MSGCAT badLocale *}
 
     # Tests msgcat-2.*: [mcset], [mcmset], namespace partitioning
 
