@@ -1049,7 +1049,11 @@ typedef struct Proc {
     CompiledLocal *lastLocalPtr;/* Pointer to the last allocated local
 				 * variable or NULL if none. This has frame
 				 * index (numCompiledLocals-1). */
+    int flags;			/* Miscellaneous bits of proc. */
 } Proc;
+
+#define PROC_CMD_OWNED		0x80
+
 
 /*
  * The type of functions called to process errors found during the execution
@@ -2995,9 +2999,7 @@ enum TclParseNumberFlags {
  *----------------------------------------------------------------------
  */
 
-enum EncodingProfileMask {
-    ENCODING_PROFILE_MASK = 0xFF000000
-};
+#define ENCODING_PROFILE_MASK     0xFF000000
 #define ENCODING_PROFILE_GET(flags_) \
     ((flags_) & ENCODING_PROFILE_MASK)
 #define ENCODING_PROFILE_SET(flags_, profile_) \
@@ -3666,6 +3668,7 @@ MODULE_SCOPE void	TclPkgFileSeen(Tcl_Interp *interp,
 MODULE_SCOPE void *	TclInitPkgFiles(Tcl_Interp *interp);
 MODULE_SCOPE Tcl_Obj *	TclPathPart(Tcl_Interp *interp, Tcl_Obj *pathPtr,
 			    Tcl_PathPart portion);
+MODULE_SCOPE double	TclRand(Interp *iPtr);
 MODULE_SCOPE char *	TclpReadlink(const char *fileName,
 			    Tcl_DString *linkPtr);
 MODULE_SCOPE void	TclpSetVariables(Tcl_Interp *interp);

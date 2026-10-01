@@ -876,6 +876,72 @@ test ooProp-4.8 {TIP 558: properties: error details} -setup {
 } -result {1 {bad property "-gorp": must be -x
     while executing
 "pt configure -gorp blarg"} {TCL LOOKUP INDEX property -gorp}}
+
+# These are misfeatures that we might want to fix...
+test ooProp-5.1 {OO properties: setter and yield: wrote-one path} -setup {
+    oo::class create parent
+} -body {
+    oo::configurable create Point {
+	superclass parent
+	property x -set {
+	    yield
+	    return ok
+	}
+    }
+    coroutine gorp eval {
+	[Point new] configure -x 123
+    }
+} -cleanup {
+    parent destroy
+} -returnCodes error -result {cannot yield: C stack busy}
+test ooProp-5.2 {OO properties: setter and yield: write-many path} -setup {
+    oo::class create parent
+} -body {
+    oo::configurable create Point {
+	superclass parent
+	property x -set {
+	    yield
+	    return ok
+	}
+    }
+    coroutine gorp eval {
+	[Point new] configure -x 123 -x 234
+    }
+} -cleanup {
+    parent destroy
+} -returnCodes error -result {cannot yield: C stack busy}
+test ooProp-5.3 {OO properties: getter and yield: read-one path} -setup {
+    oo::class create parent
+} -body {
+    oo::configurable create Point {
+	superclass parent
+	property x -get {
+	    yield
+	    return ok
+	}
+    }
+    coroutine gorp eval {
+	[Point new] configure -x
+    }
+} -cleanup {
+    parent destroy
+} -returnCodes error -result {cannot yield: C stack busy}
+test ooProp-5.4 {OO properties: getter and yield: read-many path} -setup {
+    oo::class create parent
+} -body {
+    oo::configurable create Point {
+	superclass parent
+	property x -get {
+	    yield
+	    return ok
+	}
+    }
+    coroutine gorp eval {
+	[Point new] configure
+    }
+} -cleanup {
+    parent destroy
+} -returnCodes error -result {cannot yield: C stack busy}
 
 cleanupTests
 return

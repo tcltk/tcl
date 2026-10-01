@@ -789,7 +789,6 @@ UnloadLibrary(
 {
     int code;
     InterpLibrary *ipFirstPtr, *ipPtr;
-    LoadedLibrary *iterLibraryPtr;
     int trustedRefCount = -1, safeRefCount = -1;
     Tcl_LibraryUnloadProc *unloadProc = NULL;
 
@@ -947,7 +946,7 @@ UnloadLibrary(
 		 * Remove this library from the loaded library cache.
 		 */
 
-		iterLibraryPtr = libraryPtr;
+		LoadedLibrary *iterLibraryPtr = libraryPtr;
 		if (iterLibraryPtr == firstLibraryPtr) {
 		    firstLibraryPtr = libraryPtr->nextPtr;
 		} else {

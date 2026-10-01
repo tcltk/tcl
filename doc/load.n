@@ -155,7 +155,7 @@ static int fooCmd(void *clientData,
     return TCL_OK;
 }
 int Foo_Init(Tcl_Interp *interp) {
-    if (Tcl_InitStubs(interp, "8.1", 0) == NULL) {
+    if (Tcl_InitStubs(interp, "8.6-", 0) == NULL) {
 	return TCL_ERROR;
     }
     printf("creating foo command");

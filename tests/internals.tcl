@@ -13,7 +13,7 @@ if {[namespace which -command ::tcltest::internals::scriptpath] eq ""} {namespac
 
 namespace path ::tcltest
 
-::tcltest::ConstraintInitializer testWithLimit { expr {[testConstraint macOrUnix] && ![catch { exec prlimit --version }]} }
+::tcltest::ConstraintInitializer testWithLimit { expr {[testConstraint unixOnly] && ![catch { exec prlimit --version }]} }
 
 # test-with-limit --
 #

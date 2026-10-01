@@ -512,9 +512,10 @@ expectMatch	9.38 eE		{a[\]]b}	"a\\]b"	"a\\]b"
 expectMatch	9.39 EP		{a[\\]b}	"a\\b"	"a\\b"
 expectMatch	9.40 eE		{a[\\]b}	"a\\b"	"a\\b"
 expectMatch	9.41 bE		{a[\\]b}	"a\\b"	"a\\b"
-expectError	9.42 -		{a[\Z]b}	EESCAPE
-expectMatch	9.43 &		{a[[b]c}	"a\[c"	"a\[c"
-expectMatch	9.44 EMP*	{a[\xFE-\u0507][\xFF-\u0300]b} \
+expectError	9.42 -		{a[\z]b}	EESCAPE
+expectError	9.43 -		{a[\Z]b}	EESCAPE
+expectMatch	9.44 &		{a[[b]c}	"a\[c"	"a\[c"
+expectMatch	9.45 EMP*	{a[\xFE-\u0507][\xFF-\u0300]b} \
 	"a\u0102\u02FFb"	"a\u0102\u02FFb"
 
 
@@ -544,13 +545,17 @@ expectMatch	10.22 b		{$^}	"\$^"	"\$^"
 expectMatch	10.23 P		{\Aa}	a	a
 expectMatch	10.24 ^P	{\Aa}	a	a
 expectNomatch	10.25 ^nP	{\Aa}	"b\na"
-expectMatch	10.26 P		{a\Z}	a	a
-expectMatch	10.27 \$P	{a\Z}	a	a
-expectNomatch	10.28 \$nP	{a\Z}	"a\nb"
-expectError	10.29 -		^*	BADRPT
-expectError	10.30 -		{$*}	BADRPT
-expectError	10.31 -		{\A*}	BADRPT
-expectError	10.32 -		{\Z*}	BADRPT
+expectMatch	10.26 P		{a\z}	a	a
+expectMatch	10.27 \$P	{a\z}	a	a
+expectNomatch	10.28 \$nP	{a\z}	"a\nb"
+expectMatch	10.29 P		{a\Z}	a	a
+expectMatch	10.30 \$P	{a\Z}	a	a
+expectNomatch	10.31 \$nP	{a\Z}	"a\nb"
+expectError	10.32 -		^*	BADRPT
+expectError	10.33 -		{$*}	BADRPT
+expectError	10.34 -		{\A*}	BADRPT
+expectError	10.35 -		{\z*}	BADRPT
+expectError	10.36 -		{\Z*}	BADRPT
 
 
 doing 11 "boundary constraints"
@@ -635,16 +640,15 @@ expectMatch	13.21 P		"a\\vb"		"a\vb"	"a\vb"
 expectMatch	13.22 MP	"a\\x08x"	"a\bx"	"a\bx"
 expectError	13.23 -		{a\xq}		EESCAPE
 expectMatch	13.24 MP	"a\\x08x"	"a\bx"	"a\bx"
-expectError	13.25 -		{a\z}		EESCAPE
-expectMatch	13.26 MP	"a\\010b"	"a\bb"	"a\bb"
-expectMatch	13.27 P		"a\\U00001234x"	"a\u1234x"	"a\u1234x"
-expectMatch	13.28 P		{a\U00001234x}	"a\u1234x"	"a\u1234x"
-expectMatch	13.29 P		"a\\U0001234x"	"a\u1234x"	"a\u1234x"
-expectMatch	13.30 P		{a\U0001234x}	"a\u1234x"	"a\u1234x"
-expectMatch	13.31 P		"a\\U000012345x"	"a\u12345x"	"a\u12345x"
-expectMatch	13.32 P		{a\U000012345x}	"a\u12345x"	"a\u12345x"
-expectMatch	13.33 P		"a\\U100000x"	"a\U100000x"	"a\U100000x"
-expectMatch	13.34 P		{a\U100000x}	"a\U100000x"	"a\U100000x"
+expectMatch	13.25 MP	"a\\010b"	"a\bb"	"a\bb"
+expectMatch	13.26 P		"a\\U00001234x"	"a\u1234x"	"a\u1234x"
+expectMatch	13.27 P		{a\U00001234x}	"a\u1234x"	"a\u1234x"
+expectMatch	13.28 P		"a\\U0001234x"	"a\u1234x"	"a\u1234x"
+expectMatch	13.39 P		{a\U0001234x}	"a\u1234x"	"a\u1234x"
+expectMatch	13.30 P		"a\\U000012345x"	"a\u12345x"	"a\u12345x"
+expectMatch	13.31 P		{a\U000012345x}	"a\u12345x"	"a\u12345x"
+expectMatch	13.32 P		"a\\U100000x"	"a\U100000x"	"a\U100000x"
+expectMatch	13.33 P		{a\U100000x}	"a\U100000x"	"a\U100000x"
 
 
 doing 14 "back references"
@@ -984,6 +988,13 @@ test reg-32.3 {canmatch functionality -- not last char} testregexp {
     lappend res $resvar
 } {0 7}
 test reg-32.3.1 {canmatch functionality -- no match} testregexp {
+    set pat {\zx}
+    set line "asd asd"
+    # can match the last char, if followed by x
+    set res [testregexp -xflags -- c $pat $line resvar]
+    lappend res $resvar
+} {0 -1}
+test reg-32.3.2 {canmatch functionality -- no match} testregexp {
     set pat {\Zx}
     set line "asd asd"
     # can match the last char, if followed by x

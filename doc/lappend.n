@@ -13,7 +13,7 @@
 .SH NAME
 lappend \- Append list elements onto a variable
 .SH SYNOPSIS
-\fBlappend \fIvarName \fR?\fIvalue value value ...\fR?
+\fBlappend \fIvarName \fR?\fIvalue ...\fR?
 .BE
 .SH DESCRIPTION
 .PP

@@ -88,7 +88,7 @@ const EnsembleImplMap tclGraphemeImplMap[] = {
 typedef struct GraphemeListRep {
     Tcl_Obj *objPtr;		/* The target string */
     Tcl_Size refCount;		/* Shared amongst Tcl_Obj's */
-    Tcl_Size graphemeIndex;     /* Cached grapheme index */
+    Tcl_Size graphemeIndex;	/* Cached grapheme index */
     Tcl_Size graphemeOffset;	/* Corresponding Tcl_UniChar offset */
 } GraphemeListRep;
 
@@ -96,7 +96,7 @@ static Tcl_DupInternalRepProc	GraphemeListDupProc;
 static Tcl_FreeInternalRepProc	GraphemeListFreeProc;
 static Tcl_ObjTypeLengthProc	GraphemeListLengthProc;
 static Tcl_ObjTypeIndexProc	GraphemeListIndexProc;
-const Tcl_ObjType tclGraphemeListType = {
+static const Tcl_ObjType tclGraphemeListType = {
     "graphemeList",
     GraphemeListFreeProc,
     GraphemeListDupProc,
@@ -131,7 +131,7 @@ const Tcl_ObjType tclGraphemeListType = {
  *------------------------------------------------------------------------
  */
 static inline bool
-IsPossibleContinuation (
+IsPossibleContinuation(
     Tcl_UniChar cp)		/* Unicode code point */
 {
     /*
@@ -174,11 +174,11 @@ IsPossibleContinuation (
  *------------------------------------------------------------------------
  */
 static inline bool
-IsPossiblePrefix (
+IsPossiblePrefix(
     Tcl_UniChar cp)		/* Unicode code point */
 {
-    const utf8proc_property_t *propPtr;
-    propPtr = utf8proc_get_property(cp);
+    const utf8proc_property_t *propPtr = utf8proc_get_property(cp);
+
     return propPtr->boundclass == UTF8PROC_BOUNDCLASS_PREPEND
 	|| propPtr->boundclass == UTF8PROC_BOUNDCLASS_ZWJ
 	|| propPtr->boundclass == UTF8PROC_BOUNDCLASS_REGIONAL_INDICATOR
@@ -253,8 +253,9 @@ GraphemePrev(
     const Tcl_UniChar *uniStartPtr = uniEndPtr - uniLen;
     const Tcl_UniChar *uniPtr = uniEndPtr - 1;
     while (uniPtr > uniStartPtr
-	    && ((*uniPtr == '\n' && uniPtr[-1] == '\r') ||
-		IsPossibleContinuation(*uniPtr) || IsPossiblePrefix(uniPtr[-1]))) {
+	    && ((*uniPtr == '\n' && uniPtr[-1] == '\r')
+		|| IsPossibleContinuation(*uniPtr)
+		|| IsPossiblePrefix(uniPtr[-1]))) {
 	uniPtr--;
     }
 
@@ -281,7 +282,7 @@ GraphemePrev(
  *------------------------------------------------------------------------
  */
 static Tcl_Size
-GraphemeLength (
+GraphemeLength(
     const Tcl_UniChar *uniPtr,	/* Tcl_UniChar string */
     Tcl_Size uniLen)		/* Number of Tcl_UniChar's in string. -1 if
 				 * nul terminated */
@@ -364,14 +365,14 @@ GraphemeIndex(
  *------------------------------------------------------------------------
  */
 static int
-GraphemeNextCmd (
+GraphemeNextCmd(
     TCL_UNUSED(void *),
-    Tcl_Interp *interp,	/* Current interpreter. */
+    Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     if (objc != 3) {
-	Tcl_WrongNumArgs(interp, 1, objv, "string strIndex");
+	Tcl_WrongNumArgs(interp, 1, objv, "string indexVar");
 	return TCL_ERROR;
     }
 
@@ -420,14 +421,14 @@ GraphemeNextCmd (
  *------------------------------------------------------------------------
  */
 static int
-GraphemePrevCmd (
+GraphemePrevCmd(
     TCL_UNUSED(void *),
-    Tcl_Interp *interp,	/* Current interpreter. */
+    Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     if (objc != 3) {
-	Tcl_WrongNumArgs(interp, 1, objv, "string strIndex");
+	Tcl_WrongNumArgs(interp, 1, objv, "string indexVar");
 	return TCL_ERROR;
     }
 
@@ -462,8 +463,9 @@ GraphemePrevCmd (
     const Tcl_UniChar *uniPtr = uniEndPtr - 1;
 
     while (uniPtr > uniStartPtr
-	    && ((*uniPtr == '\n' && uniPtr[-1] == '\r') ||
-		IsPossibleContinuation(*uniPtr) || IsPossiblePrefix(uniPtr[-1]))) {
+	    && ((*uniPtr == '\n' && uniPtr[-1] == '\r')
+		|| IsPossibleContinuation(*uniPtr)
+		|| IsPossiblePrefix(uniPtr[-1]))) {
 	uniPtr--;
     }
 
@@ -501,9 +503,9 @@ GraphemePrevCmd (
  *------------------------------------------------------------------------
  */
 static int
-GraphemeLengthCmd (
+GraphemeLengthCmd(
     TCL_UNUSED(void *),
-    Tcl_Interp *interp,	/* Current interpreter. */
+    Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
@@ -535,7 +537,7 @@ GraphemeLengthCmd (
  *------------------------------------------------------------------------
  */
 static int
-GraphemeIndexCmd (
+GraphemeIndexCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,		/* Number of arguments. */
@@ -581,7 +583,7 @@ GraphemeIndexCmd (
  *------------------------------------------------------------------------
  */
 static int
-GraphemeOffsetCmd (
+GraphemeOffsetCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,		/* Number of arguments. */
@@ -628,9 +630,9 @@ GraphemeOffsetCmd (
  *------------------------------------------------------------------------
  */
 static int
-GraphemeRangeCmd (
+GraphemeRangeCmd(
     TCL_UNUSED(void *),
-    Tcl_Interp *interp,	/* Current interpreter. */
+    Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
@@ -668,7 +670,7 @@ GraphemeRangeCmd (
     assert(rangeLastPtr);
 
     resultObj = Tcl_NewUnicodeObj(rangeFirstPtr,
-			rangeLastPtr - rangeFirstPtr + lastWidth);
+	    rangeLastPtr - rangeFirstPtr + lastWidth);
     Tcl_SetObjResult(interp, resultObj);
     return TCL_OK;
 }
@@ -690,9 +692,9 @@ GraphemeRangeCmd (
  *------------------------------------------------------------------------
  */
 static int
-GraphemeReverseCmd (
+GraphemeReverseCmd(
     TCL_UNUSED(void *),
-    Tcl_Interp *interp,	/* Current interpreter. */
+    Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
@@ -716,13 +718,12 @@ GraphemeReverseCmd (
 	return TCL_OK;
     }
     const Tcl_UniChar *uniEndPtr = uniPtr + uniLen;
-    Tcl_UniChar *tempBufPtr
-	    = (Tcl_UniChar *)Tcl_Alloc(uniLen * sizeof(*tempBufPtr));
+    Tcl_UniChar *tempBufPtr = (Tcl_UniChar *)
+	    Tcl_Alloc(uniLen * sizeof(*tempBufPtr));
     Tcl_UniChar *tempPtr = tempBufPtr + uniLen;
     for (const Tcl_UniChar *grPtr = uniPtr; uniPtr < uniEndPtr; ) {
-	Tcl_Size grWidth;
 	uniPtr = GraphemeNext(uniPtr, uniEndPtr - uniPtr);
-	grWidth = uniPtr - grPtr;
+	Tcl_Size grWidth = uniPtr - grPtr;
 	tempPtr -= grWidth;
 	assert(tempPtr >= tempBufPtr);
 	memcpy(tempPtr, grPtr, sizeof(Tcl_UniChar) * grWidth);
@@ -775,7 +776,8 @@ GraphemeListRepNew(
  *------------------------------------------------------------------------
  */
 static inline void
-GraphemeListRepDecrRefs(GraphemeListRep *glrPtr)
+GraphemeListRepDecrRefs(
+    GraphemeListRep *glrPtr)
 {
     if (glrPtr->refCount <= 1) {
 	if (glrPtr->objPtr != NULL) {
@@ -790,23 +792,64 @@ GraphemeListRepDecrRefs(GraphemeListRep *glrPtr)
 /*
  *----------------------------------------------------------------------
  *
+ * GetGraphemeListRep --
+ *
+ *	Get the internal representation of a grapheme list from a Tcl_Obj.
+ *	Assumes that the object is of the right type already.
+ *
+ * Results:
+ *	The internal representation.
+ *
+ *----------------------------------------------------------------------
+ */
+static inline GraphemeListRep *
+GetGraphemeListRep(
+    Tcl_Obj *objPtr)
+{
+    return (GraphemeListRep *) objPtr->internalRep.otherValuePtr;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SetGraphemeListRep --
+ *
+ *	Set the type and internal representation of a Tcl_Obj to a grapheme
+ *	list. Doesn't manipulate the reference count of the internal rep or
+ *	clear any old internal representation from the Tcl_Obj.
+ *
+ * Results:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+static inline void
+SetGraphemeListRep(
+    Tcl_Obj *objPtr,
+    GraphemeListRep *glrPtr)
+{
+    objPtr->internalRep.otherValuePtr = glrPtr;
+    objPtr->typePtr = &tclGraphemeListType;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * GraphemeListFreeProc --
  *
- *      Frees resources associated with a GraphemeList object's
- *      internal representation.
+ *	Frees resources associated with a GraphemeList object's
+ *	internal representation.
  *
  * Results:
  *	None
  *
  *----------------------------------------------------------------------
  */
-
 static void
 GraphemeListFreeProc(
     Tcl_Obj *objPtr)
 {
-    GraphemeListRepDecrRefs(
-	    (GraphemeListRep *)objPtr->internalRep.otherValuePtr);
+    GraphemeListRepDecrRefs(GetGraphemeListRep(objPtr));
 }
 
 /*
@@ -833,11 +876,10 @@ GraphemeListDupProc(
     Tcl_Obj *copyPtr)		/* Object with internal rep to set. Must not
 				 * currently have an internal rep.*/
 {
-    copyPtr->internalRep.otherValuePtr = srcPtr->internalRep.otherValuePtr;
-    ((GraphemeListRep *)srcPtr->internalRep.otherValuePtr)->refCount++;
-    copyPtr->typePtr = srcPtr->typePtr;
+    SetGraphemeListRep(copyPtr, GetGraphemeListRep(srcPtr));
+    GetGraphemeListRep(srcPtr)->refCount++;
 }
-
+
 /*
  *------------------------------------------------------------------------
  *
@@ -854,11 +896,10 @@ GraphemeListDupProc(
  *------------------------------------------------------------------------
  */
 Tcl_Size
-GraphemeListLengthProc (
-    Tcl_Obj *objPtr
-)
+GraphemeListLengthProc(
+    Tcl_Obj *objPtr)
 {
-    GraphemeListRep *glrPtr = (GraphemeListRep *) objPtr->internalRep.otherValuePtr;
+    GraphemeListRep *glrPtr = GetGraphemeListRep(objPtr);
     Tcl_Size uniLen;
     Tcl_UniChar *uniPtr = Tcl_GetUnicodeFromObj(glrPtr->objPtr, &uniLen);
     return GraphemeLength(uniPtr, uniLen);
@@ -880,13 +921,13 @@ GraphemeListLengthProc (
  *------------------------------------------------------------------------
  */
 int
-GraphemeListIndexProc (
+GraphemeListIndexProc(
     TCL_UNUSED(Tcl_Interp *),
     Tcl_Obj *objPtr,		/* Source list */
     Tcl_Size index,		/* Element index */
     Tcl_Obj **elemPtrPtr)	/* Returned element */
 {
-    GraphemeListRep *glrPtr = (GraphemeListRep *) objPtr->internalRep.otherValuePtr;
+    GraphemeListRep *glrPtr = GetGraphemeListRep(objPtr);
     Tcl_Size uniLen;
     const Tcl_UniChar *uniStartPtr = Tcl_GetUnicodeFromObj(glrPtr->objPtr, &uniLen);
     const Tcl_UniChar *grPtr = NULL;
@@ -959,7 +1000,7 @@ GraphemeListIndexProc (
  *------------------------------------------------------------------------
  */
 int
-GraphemeSplitCmd (
+GraphemeSplitCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Size objc,		/* Number of arguments. */
@@ -972,15 +1013,14 @@ GraphemeSplitCmd (
 
     Tcl_Obj *objPtr;
     TclNewObj(objPtr);
-    objPtr->typePtr = &tclGraphemeListType;
     GraphemeListRep *glrPtr = GraphemeListRepNew(objv[1]);
     glrPtr->refCount = 1;
-    objPtr->internalRep.otherValuePtr = glrPtr;
+    SetGraphemeListRep(objPtr, glrPtr);
     Tcl_InvalidateStringRep(objPtr);
     Tcl_SetObjResult(interp, objPtr);
     return TCL_OK;
 }
-
+
 /*
  * Local Variables:
  * mode: c

@@ -143,6 +143,7 @@ VER			= @TCL_MAJOR_VERSION@@TCL_MINOR_VERSION@
 DOTVER			= @TCL_MAJOR_VERSION@.@TCL_MINOR_VERSION@
 DDEVER			= @TCL_DDE_MAJOR_VERSION@@TCL_DDE_MINOR_VERSION@
 DDEDOTVER		= @TCL_DDE_MAJOR_VERSION@.@TCL_DDE_MINOR_VERSION@
+REGDOTVER		= @TCL_REG_MAJOR_VERSION@.@TCL_REG_MINOR_VERSION@
 
 TCL_ZIP_FILE		= @TCL_ZIP_FILE@
 TCL_VFS_PATH		= libtcl.vfs/tcl_library
@@ -158,7 +159,7 @@ TEST_DLL_FILE		= tcltest$(VER)${DLLSUFFIX}
 TEST_EXE_FILE		= tcltest${EXESUFFIX}
 TEST_LIB_FILE		= @LIBPREFIX@tcltest$(VER)${DLLSUFFIX}${LIBSUFFIX}
 TEST_LOAD_PRMS		= lappend ::auto_path {$(ROOT_DIR_WIN_NATIVE)/tests};\
-			  package ifneeded dde 1.5b1 [list load ${DDE_DLL_FILE}]
+			  package ifneeded dde 1.5.0 [list load ${DDE_DLL_FILE}]
 TEST_LOAD_FACILITIES	= package ifneeded tcl::test ${VERSION}@TCL_PATCH_LEVEL@ [list load ${TEST_DLL_FILE} Tcltest];\
 			  $(TEST_LOAD_PRMS)
 EXECTESTAPP		= execTestApp$(EXEEXT)
@@ -239,6 +240,7 @@ ZIP_PROG_VFSSEARCH  = @ZIP_PROG_VFSSEARCH@
 SHARED_BUILD		= @SHARED_BUILD@
 INSTALL_MSGS            = @INSTALL_MSGS@
 INSTALL_LIBRARIES       = @INSTALL_LIBRARIES@
+INSTALL_TZDATA          = @INSTALL_TZDATA@
 
 # Fully qualify library path so that `make test`
 # does not depend on the current directory.
@@ -894,7 +896,7 @@ install-binaries: binaries
 	@$(INSTALL_DATA_DIR) "$(LIB_INSTALL_DIR)/pkgconfig"
 	@$(INSTALL_DATA) tcl.pc "$(LIB_INSTALL_DIR)/pkgconfig/tcl.pc"
 
-install-libraries: libraries install-tzdata install-msgs
+install-libraries: libraries
 	@for i in "$(prefix)/lib" "$(INCLUDE_INSTALL_DIR)" \
 		"$(SCRIPT_INSTALL_DIR)" "$(MODULE_INSTALL_DIR)"; \
 	    do \
@@ -924,6 +926,18 @@ install-libraries: libraries install-tzdata install-msgs
 	@for i in $(ROOT_DIR)/library/*.tcl $(ROOT_DIR)/library/tclIndex; do \
 	    $(COPY) "$$i" "$(SCRIPT_INSTALL_DIR)"; \
 	    done;
+ifeq ($(ZIPFS_BUILD), 0)
+	@for i in registry${REGDOTVER}; \
+	    do \
+	    if [ ! -d "$(LIB_INSTALL_DIR)/$$i" ] ; then \
+		echo "Making directory $(LIB_INSTALL_DIR)/$$i"; \
+		$(MKDIR) "$(LIB_INSTALL_DIR)/$$i"; \
+		else true; \
+		fi; \
+	    $(COPY) $(ROOT_DIR)/library/registry/pkgIndex.tcl \
+		"$(LIB_INSTALL_DIR)/registry${REGDOTVER}"; \
+	    done;
+endif
 	@echo "Installing package cookiejar 0.2"
 	@for j in $(ROOT_DIR)/library/cookiejar/*.tcl \
 		  $(ROOT_DIR)/library/cookiejar/*.gz; do \
@@ -939,8 +953,8 @@ install-libraries: libraries install-tzdata install-msgs
 	@$(COPY) $(ROOT_DIR)/library/msgcat/msgcat.tcl "$(MODULE_INSTALL_DIR)/9.0/msgcat-1.7.1.tm";
 	@echo "Installing package tcltest 2.6.0 as a Tcl Module";
 	@$(COPY) $(ROOT_DIR)/library/tcltest/tcltest.tcl "$(MODULE_INSTALL_DIR)/9.0/tcltest-2.6.0.tm";
-	@echo "Installing package platform 1.2b1 as a Tcl Module";
-	@$(COPY) $(ROOT_DIR)/library/platform/platform.tcl "$(MODULE_INSTALL_DIR)/9.0/platform-1.2b1.tm";
+	@echo "Installing package platform 1.2.0 as a Tcl Module";
+	@$(COPY) $(ROOT_DIR)/library/platform/platform.tcl "$(MODULE_INSTALL_DIR)/9.0/platform-1.2.0.tm";
 	@echo "Installing package platform::shell 1.1.4 as a Tcl Module";
 	@$(COPY) $(ROOT_DIR)/library/platform/shell.tcl "$(MODULE_INSTALL_DIR)/9.0/platform/shell-1.1.4.tm";
 	@echo "Installing encodings";

@@ -53,11 +53,11 @@ extern "C" {
 #   error "This header-file is for Tcl 9 only"
 #endif
 #define TCL_MINOR_VERSION   1
-#define TCL_RELEASE_LEVEL   TCL_BETA_RELEASE
-#define TCL_RELEASE_SERIAL  1
+#define TCL_RELEASE_LEVEL   TCL_FINAL_RELEASE
+#define TCL_RELEASE_SERIAL  0
 
 #define TCL_VERSION	    "9.1"
-#define TCL_PATCH_LEVEL	    "9.1b1"
+#define TCL_PATCH_LEVEL	    "9.1.0"
 
 #if defined(RC_INVOKED)
 /*

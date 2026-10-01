@@ -6,12 +6,13 @@ on:
     - "core-9-1-branch"
     tags:
     - "core-*"
+  workflow_dispatch:
 permissions:
   contents: read
 jobs:
   linux:
     name: Linux
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     defaults:
       run:
         shell: bash
@@ -54,7 +55,7 @@ jobs:
       url: ${{ steps.upload.outputs.artifact-url }}
   macos:
     name: macOS
-    runs-on: macos-15-intel
+    runs-on: macos-26
     defaults:
       run:
         shell: bash
@@ -180,7 +181,7 @@ jobs:
       - macos
       - win
     name: Combine Artifacts (prototype)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     defaults:
       run:
         shell: bash
@@ -205,7 +206,7 @@ jobs:
         working-directory: data
       - name: Transfer built files
         # https://github.com/marketplace/actions/rsync-deployments-action
-        uses: burnett01/rsync-deployments@9.0.0
+        uses: burnett01/rsync-deployments@9.0.1
         id: rsync
         if: false  # Disabled... for now
         with:

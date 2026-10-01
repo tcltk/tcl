@@ -24,7 +24,7 @@ after \- Execute a command after a time delay
 .SH DESCRIPTION
 .PP
 This command is used to delay execution of the program or to execute
-a command in background sometime in the future.
+a command in the background sometime in the future.
 This command uses a monotonic clock if available.
 It has several forms, depending on the first argument to the command:
 .\" METHOD: <none>
@@ -119,7 +119,7 @@ and \fBupdate\fR commands.
 .SH "TIME MAXIMUM VALUE"
 The argument \fIdelay\fR is bound to a resulting 63 bit monotonic clock value
 (in unit microseconds).
-Any higher value (which is after year 294441) will result in a \fBtime to far\fR error.
+Any higher value (which is after year 294441) will result in a \fBtime too far away\fR error.
 .SH "EXAMPLES"
 This defines a command to make Tcl do nothing at all for \fIN\fR
 seconds:

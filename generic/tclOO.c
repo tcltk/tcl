@@ -31,6 +31,7 @@ static const struct StdCommands {
     {"objdefine",	TclOOObjDefObjCmd, NULL, NULL, 0},
     {"copy",		TclOOCopyObjectCmd, NULL, NULL, 0},
     {"DelegateName",	TclOODelegateNameObjCmd, NULL, NULL, 0},
+    {"UnknownDefinition",TclOOUnknownDefinition, NULL, NULL, 0},
     {NULL, NULL, NULL, NULL, 0}
 }, helpCmds[] = {
     {"callback",	TclOOCallbackObjCmd, NULL, NULL, 0},
@@ -44,39 +45,47 @@ static const struct StdCommands {
 };
 
 /*
+ * Flags used in tables of definitions: defineCmds and objdefCmds.
+ */
+typedef enum DefineCommandsFlags {
+    CLASS_DEFINE = 0,		// Mark this as operating on a class
+    INSTANCE_DEFINE = 1		// Mark this as operating on an instance
+} DefineCommandsFlags;
+
+/*
  * Commands in oo::define and oo::objdefine.
  */
 
 static const struct DefineCommands {
-    const char *name;
-    Tcl_ObjCmdProc2 *objProc;
-    int flag;
+    const char *name;		// Definition command name
+    Tcl_ObjCmdProc2 *objProc;	// Implementation function
+    int flag;			// Distinguishes what to operate upon
 } defineCmds[] = {
-    {"classmethod",	TclOODefineClassMethodObjCmd, 0},
-    {"constructor",	TclOODefineConstructorObjCmd, 0},
-    {"definitionnamespace", TclOODefineDefnNsObjCmd, 0},
-    {"deletemethod",	TclOODefineDeleteMethodObjCmd, 0},
-    {"destructor",	TclOODefineDestructorObjCmd, 0},
-    {"export",		TclOODefineExportObjCmd, 0},
-    {"forward",		TclOODefineForwardObjCmd, 0},
-    {"initialise",	TclOODefineInitialiseObjCmd, 0},
-    {"initialize",	TclOODefineInitialiseObjCmd, 0},
-    {"method",		TclOODefineMethodObjCmd, 0},
-    {"private",		TclOODefinePrivateObjCmd, 0},
-    {"renamemethod",	TclOODefineRenameMethodObjCmd, 0},
-    {"self",		TclOODefineSelfObjCmd, 0},
-    {"unexport",	TclOODefineUnexportObjCmd, 0},
+    {"classmethod",	TclOODefineClassMethodObjCmd,  0},
+    {"constructor",	TclOODefineConstructorObjCmd,  0},
+    {"definitionnamespace", TclOODefineDefnNsObjCmd,   0},
+    {"deletemethod",	TclOODefineDeleteMethodObjCmd, CLASS_DEFINE},
+    {"destructor",	TclOODefineDestructorObjCmd,   0},
+    {"export",		TclOODefineExportObjCmd,       CLASS_DEFINE},
+    {"forward",		TclOODefineForwardObjCmd,      CLASS_DEFINE},
+    {"initialise",	TclOODefineInitialiseObjCmd,   0},
+    {"initialize",	TclOODefineInitialiseObjCmd,   0},
+    {"method",		TclOODefineMethodObjCmd,       CLASS_DEFINE},
+    {"private",		TclOODefinePrivateObjCmd,      CLASS_DEFINE},
+    {"renamemethod",	TclOODefineRenameMethodObjCmd, CLASS_DEFINE},
+    {"self",		TclOODefineSelfObjCmd,         0},
+    {"unexport",	TclOODefineUnexportObjCmd,     CLASS_DEFINE},
     {NULL, NULL, 0}
 }, objdefCmds[] = {
-    {"class",		TclOODefineClassObjCmd, 1},
-    {"deletemethod",	TclOODefineDeleteMethodObjCmd, 1},
-    {"export",		TclOODefineExportObjCmd, 1},
-    {"forward",		TclOODefineForwardObjCmd, 1},
-    {"method",		TclOODefineMethodObjCmd, 1},
-    {"private",		TclOODefinePrivateObjCmd, 1},
-    {"renamemethod",	TclOODefineRenameMethodObjCmd, 1},
-    {"self",		TclOODefineObjSelfObjCmd, 0},
-    {"unexport",	TclOODefineUnexportObjCmd, 1},
+    {"class",		TclOODefineClassObjCmd,        0},
+    {"deletemethod",	TclOODefineDeleteMethodObjCmd, INSTANCE_DEFINE},
+    {"export",		TclOODefineExportObjCmd,       INSTANCE_DEFINE},
+    {"forward",		TclOODefineForwardObjCmd,      INSTANCE_DEFINE},
+    {"method",		TclOODefineMethodObjCmd,       INSTANCE_DEFINE},
+    {"private",		TclOODefinePrivateObjCmd,      INSTANCE_DEFINE},
+    {"renamemethod",	TclOODefineRenameMethodObjCmd, INSTANCE_DEFINE},
+    {"self",		TclOODefineObjSelfObjCmd,      0},
+    {"unexport",	TclOODefineUnexportObjCmd,     INSTANCE_DEFINE},
     {NULL, NULL, 0}
 };
 
@@ -435,6 +444,7 @@ InitFoundation(
     TclNewLiteralStringObj(fPtr->slotSetName, "Set");
     TclNewLiteralStringObj(fPtr->slotResolveName, "Resolve");
     TclNewLiteralStringObj(fPtr->slotDefOpName, "--default-operation");
+    TclNewLiteralStringObj(fPtr->singletonInstName, "::oo::SingletonInstance");
     Tcl_IncrRefCount(fPtr->unknownMethodNameObj);
     Tcl_IncrRefCount(fPtr->constructorName);
     Tcl_IncrRefCount(fPtr->destructorName);
@@ -445,9 +455,8 @@ InitFoundation(
     Tcl_IncrRefCount(fPtr->slotSetName);
     Tcl_IncrRefCount(fPtr->slotResolveName);
     Tcl_IncrRefCount(fPtr->slotDefOpName);
+    Tcl_IncrRefCount(fPtr->singletonInstName);
 
-    TclCreateObjCommandInNs(interp, "UnknownDefinition", fPtr->ooNs,
-	    TclOOUnknownDefinition, NULL, NULL);
     TclNewLiteralStringObj(namePtr, "::oo::UnknownDefinition");
     Tcl_SetNamespaceUnknownHandler(interp, define, namePtr);
     Tcl_SetNamespaceUnknownHandler(interp, objdef, namePtr);
@@ -459,11 +468,13 @@ InitFoundation(
 
     for (i = 0 ; defineCmds[i].name ; i++) {
 	TclCreateObjCommandInNs(interp, defineCmds[i].name, define,
-		defineCmds[i].objProc, INT2PTR(defineCmds[i].flag), NULL);
+		defineCmds[i].objProc,
+		INT2PTR(defineCmds[i].flag & INSTANCE_DEFINE), NULL);
     }
     for (i = 0 ; objdefCmds[i].name ; i++) {
 	TclCreateObjCommandInNs(interp, objdefCmds[i].name, objdef,
-		objdefCmds[i].objProc, INT2PTR(objdefCmds[i].flag), NULL);
+		objdefCmds[i].objProc,
+		INT2PTR(objdefCmds[i].flag & INSTANCE_DEFINE), NULL);
     }
 
     Tcl_CallWhenDeleted(interp, KillFoundation, NULL);
@@ -676,7 +687,7 @@ MakeAdditionalClasses(
     // A mixin used to make an object so it won't be destroyed or cloned (or
     // at least not easily).
     Object *singletonInst = (Object *) Tcl_NewObjectInstance(interp,
-	    (Tcl_Class) fPtr->classCls, "::oo::SingletonInstance",
+	    (Tcl_Class) fPtr->classCls, TclGetString(fPtr->singletonInstName),
 	    NULL, TCL_INDEX_NONE, NULL, 0);
     TclOODefineBasicMethods(singletonInst->classPtr, singletonInstanceMethods);
 
@@ -815,6 +826,7 @@ KillFoundation(
     TclDecrRefCount(fPtr->slotSetName);
     TclDecrRefCount(fPtr->slotResolveName);
     TclDecrRefCount(fPtr->slotDefOpName);
+    TclDecrRefCount(fPtr->singletonInstName);
     TclOODecrRefCount(fPtr->objectCls->thisPtr);
     TclOODecrRefCount(fPtr->classCls->thisPtr);
 
@@ -2035,8 +2047,9 @@ TclNRNewObjectInstance(
     }
 
     /*
-     * Run constructors, except when objc == TCL_INDEX_NONE (a special flag case used for
-     * object cloning only). If there aren't any constructors, we do nothing.
+     * Run constructors, except when objc == TCL_INDEX_NONE (a special flag
+     * case used for object cloning only). If there aren't any constructors,
+     * we do nothing.
      */
 
     if (objc < 0) {

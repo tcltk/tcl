@@ -18,6 +18,7 @@ if {"::tcltest" ni [namespace children]} {
 catch {package require twapi} ;# Only to bring window to foreground. Not critical
 ::tcltest::ConstraintInitializer haveThread { expr {![catch {package require Thread}]} }
 tcltest::testConstraint havePowershell [tcl::mathop::ne [auto_execok powershell] ""]
+tcltest::testConstraint pointerIs64bit [expr {$tcl_platform(pointerSize) >= 8}]
 
 # Prompt user for a yes/no response
 proc yesno {question {default "Y"}} {
@@ -431,9 +432,10 @@ test console-thread-output-1.0 {Output from thread} -constraints {
 
 # Bug f10d91c2 - dead console busy loop
 # Test script courtesy @JulianNoble
+# Only run on 64-bit Windows as on 32-bits powershell cannot locate conhost.
 test console-bug-f10d91c2 {
     Test termination of console process with extreme prejudice
-} -constraints {win havePowershell} -setup {
+} -constraints {win pointerIs64bit havePowershell} -setup {
     set tclScript [tcltest::makeFile {
 	#stdin fileevent + 1s heartbeat. Optional argv 0: heartbeat file path.
 	if {[llength $argv]} {
@@ -510,7 +512,14 @@ Get-Content $hb -Tail 3
     tcltest::removeFile $tclScript
     tcltest::removeFile $psScript
 } -body {
-    exec {*}[auto_execok powershell] -File $psScript
+    if {[catch {exec {*}[auto_execok powershell] -File $psScript} result opts]} {
+	# firstly check error in order to skip test if running unsigned scripts
+	# is disabled on this system completely or for some folders by policies:
+	if {[regexp {\mCategoryInfo\s*:\s*SecurityError\M|\mFullyQualifiedErrorId\s*:\s*UnauthorizedAccess\M} $result]} {
+	    ::tcltest::Skip "policy/security issue"
+	}
+    }
+    return {*}$opts $result
 } -result {*tclsh terminated*readable fired*exiting*} -match glob -returnCodes error
 
 ::tcltest::cleanupTests

@@ -76,7 +76,7 @@ on:
 jobs:
   windows:
     if: ${{ github.event.inputs.platform == 'windows' || github.event.inputs.platform == 'all' }}
-    runs-on: windows-latest
+    runs-on: windows-2025-vs2026
     strategy:
       matrix:
         arch: ${{ fromJSON(github.event.inputs.windows_architectures) }}
@@ -180,7 +180,7 @@ jobs:
 
   linux:
     if: ${{ github.event.inputs.platform == 'linux' || github.event.inputs.platform == 'all' }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
@@ -216,7 +216,7 @@ jobs:
 
   macos:
     if: ${{ github.event.inputs.platform == 'macos' || github.event.inputs.platform == 'all' }}
-    runs-on: macos-latest
+    runs-on: macos-26
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
