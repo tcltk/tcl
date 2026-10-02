@@ -20,8 +20,11 @@ to the userbase.
  - [hang in fcopy on macOS](https://core.tcl-lang.org/tcl/tktview/7b4a81)
 
 # Updated bundled packages, libraries, standards, data
+ - msgcat 1.7.2
  - platform 1.1.2
- - tzdata 2026d
+ - sqlite3 3.53.4
+ - Thread 3.0.7
+ - tzdata 2026e
  - Unicode 18.0.0
 
 Release Tcl 9.0.4 arises from the check-in with tag `core-9-0-4`.
