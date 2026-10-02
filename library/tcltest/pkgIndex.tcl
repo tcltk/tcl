@@ -9,4 +9,4 @@
 # full path name of this file's directory.
 
 if {![package vsatisfies [package provide Tcl] 8.5-]} {return}
-package ifneeded tcltest 2.5.11 [list source -encoding utf-8 [file join $dir tcltest.tcl]]
+package ifneeded tcltest 2.6.0 [list source -encoding utf-8 [file join $dir tcltest.tcl]]

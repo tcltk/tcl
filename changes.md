@@ -23,6 +23,7 @@ to the userbase.
  - msgcat 1.7.2
  - platform 1.1.2
  - sqlite3 3.53.4
+ - tcltest 2.6.0
  - Thread 3.0.7
  - tzdata 2026e
  - Unicode 18.0.0

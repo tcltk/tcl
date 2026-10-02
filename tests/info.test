@@ -735,17 +735,17 @@ proc etrace {} {
 
 test info-22.0 {info frame, levels} {!singleTestInterp} {
     info frame
-} 7
+} 9
 test info-22.1 {info frame, bad level relative} {!singleTestInterp} {
-    # catch is another level!, i.e. we have 8, not 7
-    catch {info frame -8} msg
+    # catch is another level!, i.e. we have 10, not 9
+    catch {info frame -10} msg
     set msg
-} {bad level "-8"}
+} {bad level "-10"}
 test info-22.2 {info frame, bad level absolute} {!singleTestInterp} {
     # catch is another level!, i.e. we have 8, not 7
-    catch {info frame 9} msg
+    catch {info frame 11} msg
     set msg
-} {bad level "9"}
+} {bad level "11"}
 test info-22.3 {info frame, current, relative} -match glob -body {
     info frame 0
 } -result {type source line 750 file */info.test cmd {info frame 0} proc ::tcltest::RunTest}
@@ -753,10 +753,10 @@ test info-22.4 {info frame, current, relative, nested} -match glob -body {
     set res [info frame 0]
 } -result {type source line 753 file */info.test cmd {info frame 0} proc ::tcltest::RunTest} -cleanup {unset res}
 test info-22.5 {info frame, current, absolute} -constraints {!singleTestInterp} -match glob -body {
-    reduce [info frame 7]
-} -result {type source line 756 file info.test cmd {info frame 7} proc ::tcltest::RunTest}
+    reduce [info frame 9]
+} -result {type source line 756 file info.test cmd {info frame 9} proc ::tcltest::RunTest}
 test info-22.6 {info frame, global, relative} {!singleTestInterp} {
-    reduce [info frame -6]
+    reduce [info frame -8]
 } {type source line 758 file info.test cmd test\ info-22.6\ \{info\ frame,\ global,\ relative\}\ \{!singleTestInter level 0}
 test info-22.7 {info frame, global, absolute} {!singleTestInterp} {
     reduce [info frame 1]
