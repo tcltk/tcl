@@ -2811,6 +2811,9 @@ BinaryEncodeUu(
     }
 
     data = Tcl_GetByteArrayFromObj(objv[objc - 1], &count);
+    if (data == NULL) {
+	return TCL_ERROR;
+    }
     rawLength = (lineLength - 1) * 3 / 4;
     resLength = (Tcl_WideUInt)(lineLength + wrapcharlen) *
 	    (Tcl_WideUInt)((count + (rawLength - 1)) / rawLength);
@@ -2826,10 +2829,6 @@ BinaryEncodeUu(
      * enough".
      */
 
-    data = Tcl_GetBytesFromObj(interp, objv[objc - 1], &count);
-    if (data == NULL) {
-	return TCL_ERROR;
-    }
     TclNewObj(resultObj);
     offset = 0;
     start = cursor = Tcl_SetByteArrayLength(resultObj, resLength);
