@@ -2817,9 +2817,10 @@ BinaryEncodeUu(
     rawLength = (lineLength - 1) * 3 / 4;
     resLength = (Tcl_WideUInt)(lineLength + wrapcharlen) *
 	    (Tcl_WideUInt)((count + (rawLength - 1)) / rawLength);
-    if (resLength > INT_MAX) {
+    if (resLength > TCL_SIZE_MAX) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-	    "max size for a Tcl value (%u bytes) exceeded", INT_MAX));
+	    "max size for a Tcl value (%" TCL_SIZE_MODIFIER "u bytes) exceeded",
+	    TCL_SIZE_MAX));
 	Tcl_SetErrorCode(interp, "TCL", "MEMORY", (char *)NULL);
 	return TCL_ERROR;
     }

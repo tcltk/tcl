@@ -2900,10 +2900,11 @@ test binary-74.14 {binary encode uuencode} -returnCodes error -body {
 test binary-74.15 {binary encode uuencode} -body {
     binary encode uuencode -maxlen 5 -wrapchar [string repeat "\n" 10] test
 } -returnCodes error -result {invalid wrapchar; will defeat decoding}
-test binary-74.16 {binary encode uuencode (no segfault exceeding max size for a Tcl value)} -body {
+# following 2 tests are 32-bit only (wouldn't trigger max size exceeding error and might require excessive memory for 64-bit executable):
+test binary-74.16 {binary encode uuencode (no segfault exceeding max size for a Tcl value)} -constraints {!pointerIs64bit} -body {
     binary encode uuencode -maxlen 5 -wrapchar [string repeat "\t" 50000] [string repeat "A" 128837]
 } -returnCodes error -match glob -result {max size for a Tcl value (* bytes) exceeded}
-test binary-74.17 {binary encode uuencode (no segfault exceeding max size for a Tcl value)} -body {
+test binary-74.17 {binary encode uuencode (no segfault exceeding max size for a Tcl value)} -constraints {!pointerIs64bit} -body {
     binary encode uuencode -maxlen 5 -wrapchar [set s [string repeat "\f" 650000]] $s
 } -returnCodes error -match glob -result {max size for a Tcl value (* bytes) exceeded}
 
