@@ -3040,17 +3040,23 @@ ClockGetenvObjCmd(
     const WCHAR *varValue;
     Tcl_DString ds;
 #else
-    const char *varName;
     const char *varValue;
 #endif
+    const char *argv1 = TclGetString(objv[1]);
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "name");
 	return TCL_ERROR;
     }
+    if (!strcmp(argv1, "TZ") && !strcmp(argv1, "TCL_TZ")) {
+    	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+    		"the only allowed argument is either TZ or TCL_TZ", TCL_AUTO_LENGTH));
+    	Tcl_SetErrorCode(interp, "CLOCK", "invalidEnvArgument", (char *)NULL);
+	return TCL_ERROR;
+    }
 #ifdef _WIN32
     Tcl_DStringInit(&ds);
-    varName = Tcl_UtfToWCharDString(TclGetString(objv[1]), -1, &ds);
+    varName = Tcl_UtfToWCharDString(argv1, -1, &ds);
     varValue = _wgetenv(varName);
     if (varValue == NULL) {
 	Tcl_DStringFree(&ds);
@@ -3060,8 +3066,7 @@ ClockGetenvObjCmd(
 	Tcl_DStringResult(interp, &ds);
     }
 #else
-    varName = TclGetString(objv[1]);
-    varValue = getenv(varName);
+    varValue = getenv(argv1);
     if (varValue != NULL) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		varValue, TCL_AUTO_LENGTH));
