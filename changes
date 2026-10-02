@@ -9467,10 +9467,10 @@ Many code fixes to avoid overflow or undefined behavior.  Thanks chrstphrchvz.
 
 2026-09-11 (new) Unicode version 18 (nijtmans)
 
-2026-09-15 tzdata updated to Olson's tzdata2026d (nijtmans)
-
 2026-09-21 platform::identify broken on Red Hat Linux (nijtmans)
 	=> platform 1.1.2
 
 2026-10-01 (bug) Protect mcpackagelocale against invalid locale (nijtmans,sebres)
 	=> msgcat 1.6.2
+
+2026-10-02 tzdata updated to Olson's tzdata2026e (nijtmans)
