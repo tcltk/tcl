@@ -2298,6 +2298,7 @@ TimerInfoDo(
 
     if (objc == 1) {
 	Tcl_Obj *resultObj;
+	char buffer[TCL_INTEGER_SPACE + 6];
 
 	/*
 	 * Return the list of the IDs
@@ -2307,8 +2308,9 @@ TimerInfoDo(
 	for (afterPtr = assocPtr->firstAfterPtr; afterPtr != NULL;
 		afterPtr = afterPtr->nextPtr) {
 	    if (assocPtr->interp == interp) {
-		Tcl_ListObjAppendElement(NULL, resultObj, Tcl_ObjPrintf(
-			"after#%d", afterPtr->id));
+		sprintf(buffer, "after#%d", afterPtr->id);
+		Tcl_ListObjAppendElement(NULL, resultObj,
+			Tcl_NewStringObj(buffer, -1));
 	    }
 	}
 	Tcl_SetObjResult(interp, resultObj);
