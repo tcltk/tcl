@@ -1197,10 +1197,10 @@ Tcl_CreateInterp(void)
     }
 
     /*
-     * Create the "array", "binary", "chan", "clock", "dict", "encoding",
-     * "file", "info", "namespace" and "string" ensembles. Note that all these
+     * Create the "array", "binary", "chan", "dict", "encoding", "file",
+     * "info", "namespace" and "string" ensembles. Note that all these
      * commands (and their subcommands that are not present in the global
-     * namespace) are wholly safe *except* for "clock", "encoding" and "file".
+     * namespace) are wholly safe *except* for "encoding" and "file".
      */
 
     TclInitArrayCmd(interp);
@@ -1214,14 +1214,6 @@ Tcl_CreateInterp(void)
     TclInitStringCmd(interp);
     TclInitPrefixCmd(interp);
     TclInitProcessCmd(interp);
-
-    /*
-     * Register "clock" subcommands. These *do* go through
-     * Tcl_CreateObjCommand, since they aren't in the global namespace and
-     * involve ensembles.
-     */
-
-    TclClockInit(interp);
 
     /*
      * Register the built-in functions. This is empty now that they are

@@ -353,6 +353,14 @@ Tcl_Init(
     PkgName **names = (PkgName **) TclInitPkgFiles(interp);
     int result = TCL_ERROR;
 
+    /*
+     * Register "clock" subcommands. These *do* go through
+     * Tcl_CreateObjCommand, since they aren't in the global namespace and
+     * involve ensembles.
+     */
+
+    TclClockInit(interp);
+
     pkgName.nextPtr = *names;
     *names = &pkgName;
     if (tclPreInitScript != NULL) {

@@ -487,6 +487,24 @@ test clock-1.10 {clock format: text with token (bug [a858d95f4bfddafb])} {
     clock format 0 -format text(%d) -gmt 1
 } {text(01)}
 
+test clock-1.11 "clock in safe interp - no info disclosure (no unsafe internals)" -setup {
+    set intlst [list [interp create] [interp create -safe]]
+    set result {}
+} -body {
+    foreach child [list {} {*}$intlst] {
+	# warm-up and check the clock command is there:
+	interp eval $child { clock format [clock seconds] -locale en -gmt 1 -format "%s" }
+	# no unsafe clock internals in safe interp (even after possible lazy load):
+	lappend result [list [interp issafe $child] [interp eval $child {
+	    list [catch {::tcl::clock::getenv HOME}] [expr {[namespace which -command ::tcl::clock::getenv] ne ""}]
+	}]]
+    }
+    set result
+} -cleanup {
+    foreach child $intlst { interp delete $child }
+    unset -nocomplain intlst
+} -result {{0 {0 1}} {0 {0 1}} {1 {1 0}}}
+
 # BEGIN testcases2
 
 # Test formatting of Gregorian year, month, day, all formats
