@@ -2714,6 +2714,7 @@ BinaryEncodeUu(
     const unsigned char SingleNewline[] = { UCHAR('\n') };
     const unsigned char *wrapchar = SingleNewline;
     Tcl_Size n, i, j, offset, count = 0, wrapcharlen = sizeof(SingleNewline);
+    Tcl_WideUInt resLength;
     enum { OPT_MAXLEN, OPT_WRAPCHAR } index;
     static const char *const optStrings[] = { "-maxlen", "-wrapchar", NULL };
 
@@ -2759,21 +2760,34 @@ BinaryEncodeUu(
 		    continue;
 		case '\n':
 		    numBytes--;
-		    break;
+		    goto end_check_loop;
 		default:
-		    goto badwrap;
+		badwrap:
+			Tcl_SetObjResult(interp, Tcl_NewStringObj(
+				"invalid wrapchar; will defeat decoding",
+				-1));
+			Tcl_SetErrorCode(interp, "TCL", "BINARY",
+				"ENCODE", "WRAPCHAR", (char *)NULL);
+			return TCL_ERROR;
 		}
 	    }
+	    end_check_loop:
 	    if (numBytes) {
-	    badwrap:
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"invalid wrapchar; will defeat decoding", -1));
-		Tcl_SetErrorCode(interp, "TCL", "BINARY",
-			"ENCODE", "WRAPCHAR", (char *)NULL);
-		return TCL_ERROR;
+		goto badwrap;
 	    }
 	    break;
 	}
+    }
+
+    data = Tcl_GetByteArrayFromObj(objv[objc - 1], &count);
+    rawLength = (lineLength - 1) * 3 / 4;
+    resLength = (Tcl_WideUInt)(lineLength + wrapcharlen) *
+	    (Tcl_WideUInt)((count + (rawLength - 1)) / rawLength);
+    if (resLength > INT_MAX) {
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    "max size for a Tcl value (%u bytes) exceeded", INT_MAX));
+	Tcl_SetErrorCode(interp, "TCL", "MEMORY", (char *)NULL);
+	return TCL_ERROR;
     }
 
     /*
@@ -2781,16 +2795,13 @@ BinaryEncodeUu(
      * enough".
      */
 
-    offset = 0;
     data = Tcl_GetBytesFromObj(interp, objv[objc - 1], &count);
     if (data == NULL) {
 	return TCL_ERROR;
     }
     TclNewObj(resultObj);
-    rawLength = (lineLength - 1) * 3 / 4;
-    start = cursor = Tcl_SetByteArrayLength(resultObj,
-	    (lineLength + wrapcharlen) *
-	    ((count + (rawLength - 1)) / rawLength));
+    offset = 0;
+    start = cursor = Tcl_SetByteArrayLength(resultObj, resLength);
     n = bits = 0;
 
     /*
