@@ -9474,3 +9474,5 @@ Many code fixes to avoid overflow or undefined behavior.  Thanks chrstphrchvz.
 	=> msgcat 1.6.2
 
 2026-10-02 tzdata updated to Olson's tzdata2026e (nijtmans)
+
+2026-10-02 tcltest => 2.6.0 (nijtmans)
