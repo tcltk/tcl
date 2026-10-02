@@ -15,7 +15,7 @@
 package require Tcl 9.0-
 # When the version number changes, be sure to update the pkgIndex.tcl file,
 # and the installation directory in the Makefiles.
-package provide msgcat 1.7.1
+package provide msgcat 1.7.2
 
 namespace eval msgcat {
     namespace export mc mcn mcexists mcload mclocale mcmax\
@@ -334,12 +334,7 @@ proc msgcat::mclocale {args} {
     }
 
     if {$len == 1} {
-	set newLocale [string tolower [lindex $args 0]]
-	if {$newLocale ne [file tail $newLocale]} {
-	    return -code error "invalid newLocale value \"$newLocale\":\
-		    could be path to unsafe code."
-	}
-	mcpreferences {*}[mcutil getpreferences $newLocale]
+	mcpreferences {*}[mcutil getpreferences [lindex $args 0]]
     }
     return [lindex $Loclist 0]
 }
@@ -361,6 +356,14 @@ proc msgcat::mclocale {args} {
 
 proc msgcat::mcutil::getpreferences {locale} {
     set locale [string tolower $locale]
+    # Since an unsafe interp uses the command from parent, this code
+    # is security sensitive. Make sure that the path name cannot escape
+    # the msgcat directory.
+    if { [regexp {^[/\\]|^[a-z]+:|(?:^|[/\\])\.\.} $locale] } {
+	return -code error \
+		-errorcode [list MSGCAT badLocale $locale] \
+		"locale \"$locale\" not valid"
+    }
     set result [list {}]
     set el {}
     foreach e [split $locale _] {

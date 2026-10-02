@@ -12,6 +12,10 @@ to the userbase.
 # Bug fixes
 
 # Updated bundled packages, libraries, standards, data
+ - msgcat 1.7.2
+ - tzcode 2026e
+
+# Updated bundled packages, libraries, standards, data
 
 Release Tcl 9.1.0 arises from the check-in with tag `core-9-1-0`.
 
