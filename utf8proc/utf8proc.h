@@ -212,7 +212,7 @@ typedef enum {
   /**
    * Strip unassigned codepoints.
    */
-  UTF8PROC_STRIPNA    = (1<<14),
+  UTF8PROC_STRIPNA    = (1<<14)
 } utf8proc_option_t;
 
 /** @name Error codes
@@ -350,7 +350,7 @@ typedef enum {
   UTF8PROC_CATEGORY_CC = 26, /**< Other, control */
   UTF8PROC_CATEGORY_CF = 27, /**< Other, format */
   UTF8PROC_CATEGORY_CS = 28, /**< Other, surrogate */
-  UTF8PROC_CATEGORY_CO = 29, /**< Other, private use */
+  UTF8PROC_CATEGORY_CO = 29  /**< Other, private use */
 } utf8proc_category_t;
 
 /** Bidirectional character classes. */
@@ -377,7 +377,7 @@ typedef enum {
   UTF8PROC_BIDI_CLASS_LRI  = 20, /**< Left-to-Right Isolate */
   UTF8PROC_BIDI_CLASS_RLI  = 21, /**< Right-to-Left Isolate */
   UTF8PROC_BIDI_CLASS_FSI  = 22, /**< First Strong Isolate */
-  UTF8PROC_BIDI_CLASS_PDI  = 23, /**< Pop Directional Isolate */
+  UTF8PROC_BIDI_CLASS_PDI  = 23  /**< Pop Directional Isolate */
 } utf8proc_bidi_class_t;
 
 /** Decomposition type. */
@@ -397,7 +397,7 @@ typedef enum {
   UTF8PROC_DECOMP_TYPE_SMALL    = 13, /**< Small */
   UTF8PROC_DECOMP_TYPE_SQUARE   = 14, /**< Square */
   UTF8PROC_DECOMP_TYPE_FRACTION = 15, /**< Fraction */
-  UTF8PROC_DECOMP_TYPE_COMPAT   = 16, /**< Compat */
+  UTF8PROC_DECOMP_TYPE_COMPAT   = 16  /**< Compat */
 } utf8proc_decomp_type_t;
 
 /** Boundclass property. (TR29) */
@@ -428,7 +428,7 @@ typedef enum {
   /* the Extended_Pictographic property is used in the Unicode 11
      grapheme-boundary rules, so we store it in the boundclass field */
   UTF8PROC_BOUNDCLASS_EXTENDED_PICTOGRAPHIC = 19,
-  UTF8PROC_BOUNDCLASS_E_ZWG = 20, /* UTF8PROC_BOUNDCLASS_EXTENDED_PICTOGRAPHIC + ZWJ */
+  UTF8PROC_BOUNDCLASS_E_ZWG = 20  /* UTF8PROC_BOUNDCLASS_EXTENDED_PICTOGRAPHIC + ZWJ */
 } utf8proc_boundclass_t;
 
 /** Indic_Conjunct_Break property. (TR44) */
@@ -436,7 +436,7 @@ typedef enum {
   UTF8PROC_INDIC_CONJUNCT_BREAK_NONE = 0,
   UTF8PROC_INDIC_CONJUNCT_BREAK_LINKER = 1,
   UTF8PROC_INDIC_CONJUNCT_BREAK_CONSONANT = 2,
-  UTF8PROC_INDIC_CONJUNCT_BREAK_EXTEND = 3,
+  UTF8PROC_INDIC_CONJUNCT_BREAK_EXTEND = 3
 } utf8proc_indic_conjunct_break_t;
 
 /**
@@ -551,7 +551,7 @@ UTF8PROC_DLLEXPORT const utf8proc_property_t *utf8proc_get_property(utf8proc_int
  */
 UTF8PROC_DLLEXPORT utf8proc_ssize_t utf8proc_decompose_char(
   utf8proc_int32_t codepoint, utf8proc_int32_t *dst, utf8proc_ssize_t bufsize,
-  unsigned int options, int *last_boundclass
+  unsigned int options, utf8proc_int32_t *last_boundclass
 );
 
 /**
@@ -607,9 +607,6 @@ UTF8PROC_DLLEXPORT utf8proc_ssize_t utf8proc_decompose_custom(
  * @return
  * In case of success, the length (in codepoints) of the normalized UTF-32 string is
  * returned; otherwise, a negative error code is returned (utf8proc_errmsg()).
- *
- * @warning The entries of the array pointed to by `str` have to be in the
- *          range `0x0000` to `0x10FFFF`. Otherwise, the program might crash!
  */
 UTF8PROC_DLLEXPORT utf8proc_ssize_t utf8proc_normalize_utf32(utf8proc_int32_t *buffer, utf8proc_ssize_t length, unsigned int options);
 
