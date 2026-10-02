@@ -2897,6 +2897,15 @@ test binary-74.13 {binary encode uuencode} -body {
 test binary-74.14 {binary encode uuencode} -returnCodes error -body {
     binary encode uuencode -maxlen 86 abcabcabc
 } -result {line length out of range}
+test binary-74.15 {binary encode uuencode} -body {
+    binary encode uuencode -maxlen 5 -wrapchar [string repeat "\n" 10] test
+} -returnCodes error -result {invalid wrapchar; will defeat decoding}
+test binary-74.16 {binary encode uuencode (no segfault exceeding max size for a Tcl value)} -body {
+    binary encode uuencode -maxlen 5 -wrapchar [string repeat "\t" 50000] [string repeat "A" 128837]
+} -returnCodes error -match glob -result {max size for a Tcl value (* bytes) exceeded}
+test binary-74.17 {binary encode uuencode (no segfault exceeding max size for a Tcl value)} -body {
+    binary encode uuencode -maxlen 5 -wrapchar [set s [string repeat "\f" 650000]] $s
+} -returnCodes error -match glob -result {max size for a Tcl value (* bytes) exceeded}
 
 test binary-75.1 {binary decode uuencode} -body {
     binary decode uuencode
