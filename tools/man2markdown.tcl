@@ -2570,9 +2570,9 @@ proc ::ndoc::mdExceptions {md} {
 			} $md]
 		}
 		singleton {
-			set md {string map {
+			set md [string map {
 				{**<cloned>**} {**\<cloned\>**}
-			} $md}
+			} $md]
 		}
 		string {
 			set md [string map {
