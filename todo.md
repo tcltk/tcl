@@ -39,3 +39,7 @@
     * func ParseToken :
       * decide if, after a ParseExpr error, we fall back to COMMAND case.
   * in tclCompExpr.c
+
+* Expr language :
+  * ?? Accept a sequence like : **test** `?` **expr**  `;`
+  * 

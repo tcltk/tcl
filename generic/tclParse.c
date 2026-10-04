@@ -38,7 +38,7 @@
  * TYPE_BRACE -		Character is a curly brace (either left or right).
  */
 
-const unsigned char tclCharTypeTable[] = {
+const int tclCharTypeTable[] = {
 
     /*
      * Positive character values, from 0-127:
@@ -52,14 +52,14 @@ const unsigned char tclCharTypeTable[] = {
     TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
     TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
     TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
-    TYPE_SPACE,       TYPE_NORMAL,      TYPE_QUOTE,       TYPE_NORMAL,
-    TYPE_SUBS,        TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
-    TYPE_OPEN_PAREN,  TYPE_CLOSE_PAREN, TYPE_NORMAL,      TYPE_NORMAL,
+    TYPE_SPACE,       TYPE_OP,          TYPE_QUOTE,       TYPE_NORMAL,
+    TYPE_SUBS,        TYPE_OP,          TYPE_OP,          TYPE_NORMAL,
+    TYPE_OPEN_PAREN,  TYPE_CLOSE_PAREN, TYPE_OP,          TYPE_OP,
+    TYPE_OP,          TYPE_OP,          TYPE_NORMAL,      TYPE_OP,
     TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
     TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
-    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
-    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_COMMAND_END,
-    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
+    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_OP,          TYPE_COMMAND_END,
+    TYPE_OP,          TYPE_OP,          TYPE_OP,          TYPE_OP,
     TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
     TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
     TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
@@ -67,7 +67,7 @@ const unsigned char tclCharTypeTable[] = {
     TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
     TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
     TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_SUBS,
-    TYPE_SUBS,        TYPE_CLOSE_BRACK, TYPE_NORMAL,      TYPE_NORMAL,
+    TYPE_SUBS,        TYPE_CLOSE_BRACK, TYPE_OP,          TYPE_NORMAL,
     TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
     TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
     TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
@@ -75,7 +75,7 @@ const unsigned char tclCharTypeTable[] = {
     TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
     TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
     TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_BRACE,
-    TYPE_NORMAL,      TYPE_BRACE,       TYPE_NORMAL,      TYPE_NORMAL,
+    TYPE_OP,          TYPE_BRACE,       TYPE_OP,          TYPE_NORMAL,
 
     /*
      * Large unsigned character values, from 128-255:
@@ -125,7 +125,7 @@ static Tcl_Size		ParseComment(const char *src, Tcl_Size numBytes,
 static int		ParseTokens(const char *src, Tcl_Size numBytes, int mask,
 			    int flags, Tcl_Parse *parsePtr);
 static Tcl_Size		ParseWhiteSpace(const char *src, Tcl_Size numBytes,
-			    int *incompletePtr, char *typePtr);
+			    int *incompletePtr, int *typePtr);
 static Tcl_Size		ParseAllWhiteSpace(const char *src, Tcl_Size numBytes,
 			    int *incompletePtr);
 static int		ParseHex(const char *src, Tcl_Size numBytes,
@@ -211,7 +211,7 @@ Tcl_ParseCommand(
 {
     const char *src;		/* Points to current character in the
 				 * command. */
-    char type;			/* Result returned by CHAR_TYPE(*src). */
+    int type;			/* Result returned by CHAR_TYPE(*src). */
     Tcl_Token *tokenPtr;	/* Pointer to token being filled in. */
     Tcl_Size wordIndex;		/* Index of word token for current word. */
     int terminators;		/* CHAR_TYPE bits that indicate the end of a
@@ -268,8 +268,10 @@ Tcl_ParseCommand(
 	}
     }
 	
-    if (nested != 0) {
+    if (nested == TCL_CMD_NESTED_IN_CMD) {
 	terminators = TYPE_COMMAND_END | TYPE_CLOSE_BRACK;
+    } else if (nested == TCL_CMD_NESTED_IN_EXPR) {
+	terminators = TYPE_COMMAND_END | TYPE_OP | TYPE_CLOSE_PAREN ;
     } else {
 	terminators = TYPE_COMMAND_END;
     }
@@ -660,10 +662,10 @@ ParseWhiteSpace(
     Tcl_Size numBytes,		/* Max number of bytes to scan. */
     int *incompletePtr,		/* Set this boolean memory to true if parsing
 				 * indicates an incomplete command. */
-    char *typePtr)		/* Points to location to store character type
+    int *typePtr)		/* Points to location to store character type
 				 * of character that ends run of whitespace */
 {
-    char type = TYPE_NORMAL;
+    int type = TYPE_NORMAL;
     const char *p = src;
 
     while (1) {
@@ -714,7 +716,7 @@ ParseAllWhiteSpace(
     Tcl_Size numBytes,		/* Max number of byes to scan */
     int *incompletePtr)		/* Set true if parse is incomplete. */
 {
-    char type;
+    int type;
     const char *p = src;
 
     do {
@@ -1085,7 +1087,7 @@ ParseTokens(
 				 * Updated with additional tokens and
 				 * termination information. */
 {
-    char type;
+    int type;
     Tcl_Size originalTokens;
     int noSubstCmds = !(flags & TCL_SUBST_COMMANDS);
     int noSubstVars = !(flags & TCL_SUBST_VARIABLES);
@@ -1159,8 +1161,8 @@ ParseTokens(
 	    tokenPtr->start = src;
 	    tokenPtr->size = exprParsePtr->commandSize+2;    
 	    parsePtr->numTokens++;
-	    src+=exprParsePtr->commandSize+2;
-	    numBytes-=exprParsePtr->commandSize+2;
+	    src += exprParsePtr->commandSize+2;
+	    numBytes -= exprParsePtr->commandSize+2;
 	    TclStackFree(parsePtr->interp, exprParsePtr);
 	} else if (*src == '[') {
 	    Tcl_Parse *nestedPtr;

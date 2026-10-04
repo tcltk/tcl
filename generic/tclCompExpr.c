@@ -13,6 +13,7 @@
 
 #include "tclInt.h"
 #include "tclCompile.h"		/* CompileEnv */
+#include "tclParse.h"
 
 /*
  * Expression parsing takes place in the routine ParseExpr(). It takes a
@@ -365,8 +366,8 @@ static const unsigned char prec[] = {
     PREC_COMPARE,	/* STR_LEQ */
     PREC_COMPARE,	/* STR_GEQ */
     PREC_END,		/* END */
-    PREC_SEPARATOR,      /* SEPARATOR */
-    PREC_ASSIGN,             /* ASSIGN */
+    PREC_SEPARATOR,     /* SEPARATOR */
+    PREC_ASSIGN,        /* ASSIGN */
     /* Expansion room for more binary operators */
     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
@@ -378,7 +379,7 @@ static const unsigned char prec[] = {
     PREC_OPEN_PAREN,	/* OPEN_PAREN */
     PREC_UNARY,		/* NOT*/
     PREC_UNARY,		/* BIT_NOT*/
-    PREC_UNARY               /* NULL_FUNC */
+    PREC_UNARY          /* NULL_FUNC */
 };
 
 /*
@@ -425,8 +426,8 @@ static const unsigned char instruction[] = {
     INST_STR_LE,	/* STR_LEQ */
     INST_STR_GE,	/* STR_GEQ */
     0,			/* END */
-    0,                               /* SEPARATOR */
-    0,                               /* ASSIGN */
+    0,                  /* SEPARATOR */
+    0,                  /* ASSIGN */
     /* Expansion room for more binary operators */
     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
@@ -991,11 +992,11 @@ ParseExpr(
 		    tokenPtr->type = TCL_TOKEN_SUB_EXPR;
 		} else {
 		    if (lexeme == COMMAND) {
-			nestMode = 0; // TCL_NESTED_CMD_IN_EXPR;
+			nestMode = TCL_CMD_NESTED_IN_EXPR; // TCL_NESTED_CMD_IN_EXPR;
 			tokenPtr->type = TCL_TOKEN_CMD_IN_EXPR;
 		    }
 		    if (lexeme == SCRIPT) {
-			nestMode = 1;
+			nestMode = TCL_CMD_NESTED_IN_CMD;
 			start++; //skip the bracket
 			tokenPtr->type = TCL_TOKEN_COMMAND;
 		    }
@@ -1014,26 +1015,33 @@ ParseExpr(
 		    Tcl_FreeParse(nestedPtr);
 		    if (nestedPtr->term < end && !nestedPtr->incomplete) {
 			if (lexeme == SCRIPT && nestedPtr->term[0] == ']' ) break;
-			if (lexeme == COMMAND && nestedPtr->term[0] == ';' ) break;
+			if (lexeme == COMMAND
+			    && (nestedPtr->term[0] == ';'
+				|| CHAR_TYPE(nestedPtr->term[0]) == TYPE_OP
+				|| CHAR_TYPE(nestedPtr->term[0]) == TYPE_CLOSE_PAREN)
+			    ) break;
 		    }
 		    if (start == end) {
+			if (lexeme == COMMAND) break;
 			if (lexeme == SCRIPT) {
 			    TclNewLiteralStringObj(msg, "missing close-bracket");
-			} else if (lexeme == COMMAND) {
-			    TclNewLiteralStringObj(msg, "missing semi-colon");
+			    parsePtr->term = tokenPtr->start;
+			    parsePtr->errorType = TCL_PARSE_MISSING_BRACKET;
+			    parsePtr->incomplete = 1;
+			    code = TCL_ERROR;
+			    errCode = "UNBALANCED";
+			    break;
 			}
-			parsePtr->term = tokenPtr->start;
-			parsePtr->errorType = TCL_PARSE_MISSING_BRACKET;
-			parsePtr->incomplete = 1;
-			code = TCL_ERROR;
-			errCode = "UNBALANCED";
-			break;
 		    }
 		}
 		TclStackFree(interp, nestedPtr);
 		if (lexeme == COMMAND) {
-		    // TIP 759 : we are keeping the ";" as an operator
-		    end = start-1;
+		    // TIP 759b : if we came back on an operator, we want to parse it again
+		    if (CHAR_TYPE(nestedPtr->term[0]) == TYPE_OP
+			|| CHAR_TYPE(nestedPtr->term[0]) == TYPE_CLOSE_PAREN
+			|| nestedPtr->term[0] == ';') {
+			end = start-1;
+		    }
 		} else if (lexeme == SCRIPT) {
 		    end = start;
 		}
@@ -2070,31 +2078,55 @@ ParseLexeme(
     }
 
     // TIP759 raw command
-    if (numBytes >= 9 &&
-	( memcmp(start, "dict map ", 9)  == 0 || memcmp(start, "dict for ", 9))  == 0) {
-	*lexemePtr = COMMAND;
-	return 0;
+    if (numBytes >= 5) {
+	if (memcmp(start, "dict ", 5)  == 0
+	    || memcmp(start, "incr ", 5) == 0
+	    || memcmp(start, "lmap ", 5) == 0
+	    || memcmp(start, "lset ", 5) == 0 ) {
+	    *lexemePtr = COMMAND;
+	    return 0;
+	}
     }
-    if (numBytes >= 8 && memcmp(start, "foreach ", 8) == 0) {
-           *lexemePtr = COMMAND;
-           return 0;
+    if (numBytes >= 10) {
+	if (memcmp(start, "namespace ", 10) == 0) {
+	    *lexemePtr = COMMAND;
+	    return 0;
+	}
     }
-    if (numBytes >= 7 && memcmp(start, "switch ", 7) == 0) {
-           *lexemePtr = COMMAND;
-           return 0;
+    if (numBytes >= 9) {
+	if (memcmp(start, "variable ", 9) == 0) {
+	    *lexemePtr = COMMAND;
+	    return 0;
+	}
     }
-    if (numBytes >= 7 && memcmp(start, "return ", 7) == 0) {
-	*lexemePtr = COMMAND;
-	return 0;
+    if (numBytes >= 8) {
+	if (memcmp(start, "foreach ", 8) == 0
+	    || memcmp(start, "lappend ", 8) == 0
+	    || memcmp(start, "llength ", 8) == 0
+	    || memcmp(start, "lassign ", 8) == 0) {
+	    *lexemePtr = COMMAND;
+	    return 0;
+	}
     }
-    if (numBytes >= 6 && memcmp(start, "while ", 6) == 0) {
-	*lexemePtr = COMMAND;
-	return 0;
+    if (numBytes >= 7) {
+	if (memcmp(start, "switch ", 7) == 0
+	    || memcmp(start, "return ", 7) == 0
+	    || memcmp(start, "string ", 7) == 0
+	    || memcmp(start, "lindex ", 7) == 0
+	    || memcmp(start, "lrange ", 7) == 0
+	    || memcmp(start, "concat ", 7) == 0 ) {
+	    *lexemePtr = COMMAND;
+	    return 0;
+	}
     }
-    if (numBytes >= 5 && memcmp(start, "lmap ", 5) == 0) {
-	*lexemePtr = COMMAND;
-	return 0;
+    if (numBytes >= 6) {
+	if (memcmp(start, "while ", 6) == 0
+	    || memcmp(start, "upvar ", 6) == 0) {
+	    *lexemePtr = COMMAND;
+	    return 0;
+	}
     }
+
     if (numBytes >= 4 && memcmp(start, "for ", 4) == 0) {
 	*lexemePtr = COMMAND;
 	return 0;

@@ -13,10 +13,16 @@ enum ParseTypeFlags {
     TYPE_CLOSE_BRACK = 0x20,
     TYPE_BRACE = 0x40,
     TYPE_OPEN_PAREN = 0x80,
+    TYPE_OP = 0x100,
     TYPE_BAD_ARRAY_INDEX = (
 	TYPE_OPEN_PAREN | TYPE_CLOSE_PAREN | TYPE_QUOTE | TYPE_BRACE)
 };
 
 #define CHAR_TYPE(c) tclCharTypeTable[(unsigned char)(c)]
 
-MODULE_SCOPE const unsigned char tclCharTypeTable[];
+MODULE_SCOPE const int tclCharTypeTable[];
+
+#define TCL_CMD_NOT_NESTED 0
+#define TCL_CMD_NESTED_IN_CMD 1
+#define TCL_CMD_NESTED_IN_EXPR 2
+
