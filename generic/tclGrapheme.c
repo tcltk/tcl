@@ -186,6 +186,7 @@ IsPossiblePrefix(
 	|| propPtr->category == UTF8PROC_CATEGORY_MC
 	|| propPtr->category == UTF8PROC_CATEGORY_ME
 	|| propPtr->indic_conjunct_break == UTF8PROC_INDIC_CONJUNCT_BREAK_LINKER
+	|| propPtr->indic_conjunct_break == UTF8PROC_INDIC_CONJUNCT_BREAK_EXTEND
 	;
 }
 
