@@ -28,8 +28,11 @@ package require Tcl 9
 #
 # ```
 # # (from the tools directory)
-# tclsh man2markdown.tcl ../doc ../doc/markdown
+# tclsh man2markdown.tcl ../doc/nroff-original ../doc/markdown
 # ```
+#
+# Note that the second directory is a base directory. The actual files will be placed
+# into subdirectories under the base directory (called Tcl, TclCAPI, Tk TkCAPI)
 #
 # The last invocation can be used to check what changed with respect to the last `fossil commit`.
 # Any change reported by fossil (before committing) is a change that might have issues
@@ -233,7 +236,7 @@ namespace eval ::ndoc {
 	# dictionary mapping every documented Tcl C API function (Tcl_...) to the
 	# manual page (file root) that documents it:
 	set tclCApiFileMap [dict create {*}{
-		Tcl_Obj Object3
+		Tcl_Obj Object
 		Tcl_DString DString
 		Tcl_Access Access Tcl_AddErrorInfo AddErrInfo Tcl_AddObjErrorInfo AddErrInfo Tcl_AlertNotifier Notifier
 		Tcl_Alloc Alloc Tcl_AllocStatBuf FileSystem Tcl_AllowExceptions AllowExc Tcl_AppInit AppInit
@@ -3046,20 +3049,9 @@ proc ::ndoc::main {} {
 	if {[lindex $argv 0] eq ""} {
 		#### main testing code follows (prints to stdout) ####
 		set myDir [file dirname [info script]]
-		set tclManDir [file join $myDir .. doc]
-		set tkManDir [file join $myDir .. doc]
-	
+		set tclManDir [file join $myDir .. doc nroff-original]
+		set tkManDir [file join $myDir .. doc]	
 		set myFile [file join $tclManDir string.n]
-		#set myFile [file join $tclManDir clock.n]
-		#set myFile [file join $tclManDir Dstring.3]
-		#set myFile [file join $tclManDir exec.n]
-		#set myFile [file join $tclManDir filename.n]
-		#set myFile [file join $tclManDir SetResult.3]
-		#set myFile [file join $tclManDir SetVar.3]
-		#set myFile [file join $tclManDir subst.n]
-		#set myFile [file join $tkManDir bind.n]
-		#set myFile [file join $tclManDir filename.n]
-		#set myFile [file join $tkManDir scrollbar.n]
 		puts [man2markdown [readFile $myFile]]
 	} elseif {[llength $argv] == 2} {
 		# convert whole directory:
@@ -3073,7 +3065,7 @@ proc ::ndoc::main {} {
 			file mkdir $outDir
 		}
 		# first the files in section "n", then in section "1", finally in section "3":
-		foreach section {n 1 3} {
+		foreach section {n 1 3} MDdir {Tcl Tcl TclCAPI}  {
 			foreach file [lsort -dictionary [glob [file join $inDir *.$section]]] {
 				puts "converting $file ..."
 				set sectionTitles [list]
@@ -3083,8 +3075,9 @@ proc ::ndoc::main {} {
 				# files from the 3 section having the same name
 				# (was no problem previously as they had different
 				# file extensions):
-				if {$section ne "n" && $stem in {Class Concat Encoding Eval Exit Load Namespace Object RegExp UpVar zipfs}} {append stem $section}
-				set fh [open [file join $outDir ${stem}.md] w]
+				#if {$section ne "n" && $stem in {Class Concat Encoding Eval Exit Load Namespace Object RegExp UpVar zipfs}} {append stem $section}
+				file mkdir [file join $outDir $MDdir]
+				set fh [open [file join $outDir $MDdir $stem.md] w]
 				puts $fh $md
 				close $fh
 			}
