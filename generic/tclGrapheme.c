@@ -184,7 +184,9 @@ IsPossiblePrefix(
 	|| propPtr->boundclass == UTF8PROC_BOUNDCLASS_REGIONAL_INDICATOR
 	|| propPtr->category == UTF8PROC_CATEGORY_MN
 	|| propPtr->category == UTF8PROC_CATEGORY_MC
-	|| propPtr->category == UTF8PROC_CATEGORY_ME;
+	|| propPtr->category == UTF8PROC_CATEGORY_ME
+	|| propPtr->indic_conjunct_break == UTF8PROC_INDIC_CONJUNCT_BREAK_LINKER
+	;
 }
 
 /*
