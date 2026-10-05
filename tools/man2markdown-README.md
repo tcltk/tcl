@@ -48,7 +48,7 @@ section | number of documents | initial conversion | final conversion
 --------|---------------------|--------------------|-----------------
 1       | 1                   | 1                  | 1
 3       | 108                 | 108                | 108
-n       | 140                 | 140                | 140
+n       | 145                 | 145                | 145
 
 Final conversion of these files in the n section is currently done:
 1. after
@@ -190,7 +190,15 @@ Final conversion of these files in the n section is currently done:
 137. while
 138. zipfs
 139. zlib (will need some manual adjustments)
-140. timer (new in Tcl 9.1)
+
+New in Tcl 9.1:
+140. divmod
+141. frexp
+142. lfilter
+143. modf
+144. remquo
+145. timer
+
 
 Now the 3 section:
 

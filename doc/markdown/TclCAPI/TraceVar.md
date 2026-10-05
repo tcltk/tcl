@@ -90,7 +90,7 @@ The *flags* argument to **Tcl\_TraceVar** indicates when the trace procedure is 
 : The result of invoking the *proc* is a dynamically allocated string that will be released by the Tcl library via a call to [Tcl\_Free][Alloc].  Must not be specified at the same time as **TCL\_TRACE\_RESULT\_OBJECT**.
 
 **TCL\_TRACE\_RESULT\_OBJECT**
-: The result of invoking the *proc* is a [Tcl\_Obj][Object3] \* (cast to a char \*) with a reference count of at least one.  The ownership of that reference will be transferred to the Tcl core for release (when the core has finished with it) via a call to [Tcl\_DecrRefCount][Object3].  Must not be specified at the same time as **TCL\_TRACE\_RESULT\_DYNAMIC**.
+: The result of invoking the *proc* is a [Tcl\_Obj][Object] \* (cast to a char \*) with a reference count of at least one.  The ownership of that reference will be transferred to the Tcl core for release (when the core has finished with it) via a call to [Tcl\_DecrRefCount][Object3].  Must not be specified at the same time as **TCL\_TRACE\_RESULT\_DYNAMIC**.
 
 
 Whenever one of the specified operations occurs on the variable, *proc* will be invoked. It should have arguments and result that match the type **Tcl\_VarTraceProc**:
@@ -140,7 +140,7 @@ It is possible for multiple traces to exist on the same variable. When this happ
 
 # Error returns
 
-Under normal conditions trace procedures should return NULL, indicating successful completion. If *proc* returns a non-NULL value it signifies that an error occurred. The return value must be a pointer to a static character string containing an error message, unless (*exactly* one of) the **TCL\_TRACE\_RESULT\_DYNAMIC** and **TCL\_TRACE\_RESULT\_OBJECT** flags is set, which specify that the result is either a dynamic string (to be released with [Tcl\_Free][Alloc]) or a [Tcl\_Obj][Object3] \* (cast to char \* and to be released with [Tcl\_DecrRefCount][Object3]) containing the error message. If a trace procedure returns an error, no further traces are invoked for the access and the traced access aborts with the given message. Trace procedures can use this facility to make variables read-only, for example (but note that the value of the variable will already have been modified before the trace procedure is called, so the trace procedure will have to restore the correct value).
+Under normal conditions trace procedures should return NULL, indicating successful completion. If *proc* returns a non-NULL value it signifies that an error occurred. The return value must be a pointer to a static character string containing an error message, unless (*exactly* one of) the **TCL\_TRACE\_RESULT\_DYNAMIC** and **TCL\_TRACE\_RESULT\_OBJECT** flags is set, which specify that the result is either a dynamic string (to be released with [Tcl\_Free][Alloc]) or a [Tcl\_Obj][Object] \* (cast to char \* and to be released with [Tcl\_DecrRefCount][Object3]) containing the error message. If a trace procedure returns an error, no further traces are invoked for the access and the traced access aborts with the given message. Trace procedures can use this facility to make variables read-only, for example (but note that the value of the variable will already have been modified before the trace procedure is called, so the trace procedure will have to restore the correct value).
 
 The return value from *proc* is only used during read and write tracing. During unset traces, the return value is ignored and all relevant trace procedures will always be invoked.
 
@@ -160,7 +160,7 @@ In an unset callback to *proc*, the **TCL\_TRACE\_DESTROYED** bit is set in *fla
 
 # Reference count management
 
-When a *proc* callback is invoked, and that callback was installed with the **TCL\_TRACE\_RESULT\_OBJECT** flag, the result of the callback is a [Tcl\_Obj][Object3] reference when there is an error. The result will have its reference count decremented once when no longer needed, or may have additional references made to it (e.g., by setting it as the interpreter result with [Tcl\_SetObjResult][SetResult]).
+When a *proc* callback is invoked, and that callback was installed with the **TCL\_TRACE\_RESULT\_OBJECT** flag, the result of the callback is a [Tcl\_Obj][Object] reference when there is an error. The result will have its reference count decremented once when no longer needed, or may have additional references made to it (e.g., by setting it as the interpreter result with [Tcl\_SetObjResult][SetResult]).
 
 # Bugs
 
@@ -172,6 +172,7 @@ Array traces are not yet integrated with the Tcl [info exists][info] command, no
 [CrtInterp]: CrtInterp.md
 [Eval3]: Eval3.md
 [info]: info.md
+[Object]: Object.md
 [Object3]: Object3.md
 [SaveInterpState]: SaveInterpState.md
 [scan]: scan.md

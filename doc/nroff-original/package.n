@@ -16,6 +16,7 @@ package \- Facilities for package loading and version control
 \fBpackage forget\fR ?\fIpackage ...\fR?
 \fBpackage ifneeded \fIpackage version\fR ?\fIscript\fR?
 \fBpackage names\fR
+\fBpackage prefer \fR?\fBlatest\fR|\fBstable\fR?
 \fBpackage present \fIpackage \fR?\fIrequirement ...\fR?
 \fBpackage present \-exact \fIpackage version\fR
 \fBpackage provide \fIpackage \fR?\fIversion\fR?
@@ -25,7 +26,6 @@ package \- Facilities for package loading and version control
 \fBpackage vcompare \fIversion1 version2\fR
 \fBpackage versions \fIpackage\fR
 \fBpackage vsatisfies \fIversion requirement\fR ?\fIrequirement ...\fR?
-\fBpackage prefer \fR?\fBlatest\fR|\fBstable\fR?
 .fi
 .BE
 .SH DESCRIPTION
@@ -90,6 +90,44 @@ interpreter for which a version has been provided (via
 \fBpackage provide\fR) or for which a \fBpackage ifneeded\fR
 script is available.
 The order of elements in the list is arbitrary.
+.\" METHOD: prefer
+.TP
+\fBpackage prefer \fR?\fBlatest\fR|\fBstable\fR?
+.
+With no arguments, the commands returns either
+.QW latest
+or
+.QW stable ,
+whichever describes the current mode of selection logic used by
+\fBpackage require\fR.
+.RS
+.PP
+When passed the argument
+.QW latest ,
+it sets the selection logic mode to
+.QW latest .
+.PP
+When passed the argument
+.QW stable ,
+if the mode is already
+.QW stable ,
+that value is kept.  If the mode is already
+.QW latest ,
+then the attempt to set it back to
+.QW stable
+is ineffective and the mode value remains
+.QW latest .
+.PP
+When passed any other value as an argument, raise an invalid argument
+error.
+.PP
+When an interpreter is created, its initial selection mode value is set to
+.QW stable
+unless the environment variable \fBTCL_PKG_PREFER_LATEST\fR is set
+(to any value) or the Tcl package itself is unstable. Otherwise
+the initial (and permanent) selection mode value is set to
+.QW latest .
+.RE
 .\" METHOD: present
 .TP
 \fBpackage present\fR ?\fB\-exact\fR? \fIpackage\fR ?\fIrequirement ...\fR?
@@ -206,44 +244,6 @@ commands.
 .
 Returns 1 if the \fIversion\fR satisfies at least one of the given
 requirements, and 0 otherwise. \fIrequirements\fR are defined in the \fBREQUIREMENT\fR section below.
-.\" METHOD: prefer
-.TP
-\fBpackage prefer \fR?\fBlatest\fR|\fBstable\fR?
-.
-With no arguments, the commands returns either
-.QW latest
-or
-.QW stable ,
-whichever describes the current mode of selection logic used by
-\fBpackage require\fR.
-.RS
-.PP
-When passed the argument
-.QW latest ,
-it sets the selection logic mode to
-.QW latest .
-.PP
-When passed the argument
-.QW stable ,
-if the mode is already
-.QW stable ,
-that value is kept.  If the mode is already
-.QW latest ,
-then the attempt to set it back to
-.QW stable
-is ineffective and the mode value remains
-.QW latest .
-.PP
-When passed any other value as an argument, raise an invalid argument
-error.
-.PP
-When an interpreter is created, its initial selection mode value is set to
-.QW stable
-unless the environment variable \fBTCL_PKG_PREFER_LATEST\fR is set
-(to any value) or the Tcl package itself is unstable. Otherwise
-the initial (and permanent) selection mode value is set to
-.QW latest .
-.RE
 .SH "VERSION NUMBERS"
 .PP
 Version numbers consist of one or more decimal numbers separated

@@ -75,7 +75,7 @@ Tcl\_IsSafe, Tcl\_CreateChild, Tcl\_GetChild, Tcl\_GetParent, Tcl\_GetInterpPath
 : Count of additional value arguments to pass to the aliased command.
 
 [\*\*objv]{.carg .in type="Tcl_Obj"}
-: Vector of [Tcl\_Obj][Object3] structures, the additional value arguments to pass to the aliased command. This storage is owned by the caller.
+: Vector of [Tcl\_Obj][Object] structures, the additional value arguments to pass to the aliased command. This storage is owned by the caller.
 
 [\*\*targetInterpPtr]{.carg .in type="Tcl_Interp"}
 : Pointer to location to store the address of the interpreter where a target command is defined for an alias.
@@ -87,7 +87,7 @@ Tcl\_IsSafe, Tcl\_CreateChild, Tcl\_GetChild, Tcl\_GetParent, Tcl\_GetInterpPath
 : Pointer to location to store count of additional value arguments to be passed to the alias. The location is in storage owned by the caller. If it points to a variable which type is not **Tcl\_Size**, a compiler warning will be generated. If your extensions is compiled with **-DTCL\_8\_API**, this function will return [TCL\_ERROR][catch] for aliases with more than INT\_MAX value arguments, otherwise expect it to crash
 
 [\*\*\*objvPtr]{.carg .out type="Tcl_Obj"}
-: Pointer to location to store a vector of [Tcl\_Obj][Object3] structures, the additional arguments to pass to an alias command. The location is in storage owned by the caller, the vector of [Tcl\_Obj][Object3] structures is owned by the called function.
+: Pointer to location to store a vector of [Tcl\_Obj][Object] structures, the additional arguments to pass to an alias command. The location is in storage owned by the caller, the vector of [Tcl\_Obj][Object] structures is owned by the called function.
 
 [\*cmdName]{.carg .in type="const char"}
 : Name of an exposed command to hide or create.
@@ -115,7 +115,7 @@ These procedures are intended for access to the multiple interpreter facility fr
 
 **Tcl\_CreateAliasObj** is similar to **Tcl\_CreateAlias** except that it takes a vector of values to pass as additional arguments instead of a vector of strings.
 
-**Tcl\_GetAliasObj** returns information in the form of a pointer to a vector of [Tcl\_Obj][Object3] structures about an alias *aliasName* in *interp*. Any of the result fields can be **NULL**, in which case the corresponding datum is not returned. If a result field is non-**NULL**, the address indicated is set to the corresponding datum. For example, if *targetCmdPtr* is non-**NULL** it is set to a pointer to the string containing the name of the target command.
+**Tcl\_GetAliasObj** returns information in the form of a pointer to a vector of [Tcl\_Obj][Object] structures about an alias *aliasName* in *interp*. Any of the result fields can be **NULL**, in which case the corresponding datum is not returned. If a result field is non-**NULL**, the address indicated is set to the corresponding datum. For example, if *targetCmdPtr* is non-**NULL** it is set to a pointer to the string containing the name of the target command.
 
 **Tcl\_ExposeCommand** moves the command named *hiddenCmdName* from the set of hidden commands to the set of exposed commands, putting it under the name *cmdName*. *HiddenCmdName* must be the name of an existing hidden command, or the operation will return [TCL\_ERROR][catch] and leave an error message as the result of *interp*. If an exposed command named *cmdName* already exists, the operation returns [TCL\_ERROR][catch] and leaves an error message as the result of *interp*. If the operation succeeds, it returns [TCL\_OK][catch]. After executing this command, attempts to use *cmdName* in any script evaluation mechanism will again succeed.
 
@@ -132,5 +132,5 @@ For a description of the Tcl interface to multiple interpreters, see *interp(n)*
 
 [catch]: catch.md
 [interp]: interp.md
-[Object3]: Object3.md
+[Object]: Object.md
 

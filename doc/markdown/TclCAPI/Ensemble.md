@@ -123,10 +123,10 @@ Every ensemble has four read-write properties and a read-only property. The prop
 
 The ensemble property getters (**Tcl\_GetEnsembleMappingDict**, **Tcl\_GetEnsembleParameterList**, **Tcl\_GetEnsembleSubcommandList**, and **Tcl\_GetEnsembleUnknownHandler**) do not manipulate the reference count of the values they provide out; if those are non-NULL, they will have a reference count of at least 1.  Note that these functions may set the interpreter result.
 
-The ensemble property setters (**Tcl\_SetEnsembleMappingDict**, **Tcl\_SetEnsembleParameterList**, **Tcl\_SetEnsembleSubcommandList**, and **Tcl\_SetEnsembleUnknownHandler**) will increment the reference count of the new value of the property they are given if they succeed (and decrement the reference count of the old value of the property, if relevant). If the property setters return [TCL\_ERROR][catch], the reference count of the [Tcl\_Obj][Object3] argument is left unchanged.
+The ensemble property setters (**Tcl\_SetEnsembleMappingDict**, **Tcl\_SetEnsembleParameterList**, **Tcl\_SetEnsembleSubcommandList**, and **Tcl\_SetEnsembleUnknownHandler**) will increment the reference count of the new value of the property they are given if they succeed (and decrement the reference count of the old value of the property, if relevant). If the property setters return [TCL\_ERROR][catch], the reference count of the [Tcl\_Obj][Object] argument is left unchanged.
 
 
 [catch]: catch.md
 [namespace]: namespace.md
-[Object3]: Object3.md
+[Object]: Object.md
 

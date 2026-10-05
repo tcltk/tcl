@@ -88,7 +88,7 @@ Tcl\_NRCreateCommand, Tcl\_NRCreateCommand2, Tcl\_NRCallObjProc, Tcl\_NRCallObjP
 : Token to use instead of one derived from the first word of *objv* in order to evaluate a command.
 
 [\*resultPtr]{.carg .out type="Tcl_Obj"}
-: Pointer to an unshared [Tcl\_Obj][Object3] where the result of the evaluation is stored if the return code is [TCL\_OK][catch].
+: Pointer to an unshared [Tcl\_Obj][Object] where the result of the evaluation is stored if the return code is [TCL\_OK][catch].
 
 [\*postProcPtr]{.carg .in type="Tcl_NRPostProc"}
 : A function to push.
@@ -226,5 +226,5 @@ Use **Tcl\_NRAddCallback** to schedule any required final decrementing of the re
 [CrtObjCmd]: CrtObjCmd.md
 [Eval3]: Eval3.md
 [ExprLongObj]: ExprLongObj.md
-[Object3]: Object3.md
+[Object]: Object.md
 

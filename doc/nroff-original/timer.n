@@ -99,7 +99,7 @@ events.
 .
 Cancels the execution of a delayed command that
 was previously scheduled.
-\fIId\fR indicates which command should be canceled;  it must have
+\fIid\fR indicates which command should be canceled;  it must have
 been the return value from a previous \fBtimer\fR or \fBafter\fR command.
 If the command given by \fIid\fR has already been executed then
 the \fBtimer cancel\fR command has no effect.

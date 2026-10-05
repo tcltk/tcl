@@ -99,7 +99,7 @@ This returns a public type
 typedef union Tcl_ObjInternalRep {...} Tcl_ObjInternalRep
 ```
 
-where the contents are exactly the existing contents of the union in the *internalRep* field of the *[Tcl\_Obj][Object3]* struct. This definition permits us to pass internal representations and pointers to them as arguments and results in public routines.
+where the contents are exactly the existing contents of the union in the *internalRep* field of the *[Tcl\_Obj][Object]* struct. This definition permits us to pass internal representations and pointers to them as arguments and results in public routines.
 
 # The tcl\_objtype structure
 
@@ -208,7 +208,7 @@ For a custom value type that is scalar or atomic in nature, i.e., not a divisibl
 
 ## Version 2: abstract lists
 
-Version 2, **TCL\_OBJTYPE\_V2**, allows full List support when the functions described below are provided.  This allows for script level use of the List commands without causing the type of the [Tcl\_Obj][Object3] value to be converted to a list.  Unless specified otherwise, all functions specific to Version 2 should return [TCL\_OK][catch] on success and [TCL\_ERROR][catch] on failure.  In the case that a [Tcl\_Obj \][Object3]* is also returned, the reference count of the returned [Tcl\_Obj][Object3] should not be incremented so, for example, if a new [Tcl\_Obj][Object3] value is returned it should have a reference count of zero.  The functions should not assume that any [Tcl\_Obj][Object3] passed in is unshared. 
+Version 2, **TCL\_OBJTYPE\_V2**, allows full List support when the functions described below are provided.  This allows for script level use of the List commands without causing the type of the [Tcl\_Obj][Object] value to be converted to a list.  Unless specified otherwise, all functions specific to Version 2 should return [TCL\_OK][catch] on success and [TCL\_ERROR][catch] on failure.  In the case that a [Tcl\_Obj \][Object]* is also returned, the reference count of the returned [Tcl\_Obj][Object] should not be incremented so, for example, if a new [Tcl\_Obj][Object] value is returned it should have a reference count of zero.  The functions should not assume that any [Tcl\_Obj][Object] passed in is unshared. 
 
 ## The lengthProc field
 
@@ -257,7 +257,7 @@ typedef int (Tcl_ObjTypeReverseProc) (
 
 ## The getElements field
 
-The **GetElements** function returns a count and a pointer to an array of [Tcl\_Obj][Object3] values for the entire Abstract List. This correlates to the [Tcl\_ListObjGetElements][ListObj] C API call.
+The **GetElements** function returns a count and a pointer to an array of [Tcl\_Obj][Object] values for the entire Abstract List. This correlates to the [Tcl\_ListObjGetElements][ListObj] C API call.
 
 ```
 typedef int (Tcl_ObjTypeGetElements) (
@@ -321,6 +321,7 @@ None of the callback functions in the **Tcl\_ObjType** structure should modify t
 [lrange]: lrange.md
 [lreverse]: lreverse.md
 [lset]: lset.md
+[Object]: Object.md
 [Object3]: Object3.md
 [PrintDbl]: PrintDbl.md
 [StringObj]: StringObj.md

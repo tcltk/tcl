@@ -46,7 +46,7 @@ The **memory** command gives the Tcl developer control of Tcl's memory debugging
 : Turn on or off the preinitialization of all allocated memory with bogus bytes.  Useful for detecting the use of uninitialized values.
 
 [memory]{.cmd} [objs]{.sub} [file]{.arg}
-: Causes a list of all allocated [Tcl\_Obj][Object3] values to be written to the specified *file* immediately, together with where they were allocated.  Useful for checking for leaks of values.
+: Causes a list of all allocated [Tcl\_Obj][Object] values to be written to the specified *file* immediately, together with where they were allocated.  Useful for checking for leaks of values.
 
 [memory]{.cmd} [onexit]{.sub} [file]{.arg}
 : Causes a list of all allocated memory to be written to the specified *file* during the finalization of Tcl's memory subsystem.  Useful for checking that memory is properly cleaned up during process exit.
@@ -73,5 +73,5 @@ The **memory** command gives the Tcl developer control of Tcl's memory debugging
 
 [Alloc]: Alloc.md
 [DumpActiveMemory]: DumpActiveMemory.md
-[Object3]: Object3.md
+[Object]: Object.md
 

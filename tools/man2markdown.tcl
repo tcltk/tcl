@@ -3071,11 +3071,6 @@ proc ::ndoc::main {} {
 				set sectionTitles [list]
 				set md [man2markdown [readFile $file]]
 				set stem [file rootname [file tail $file]]
-				# make sure not to overwrite files in the n section with
-				# files from the 3 section having the same name
-				# (was no problem previously as they had different
-				# file extensions):
-				#if {$section ne "n" && $stem in {Class Concat Encoding Eval Exit Load Namespace Object RegExp UpVar zipfs}} {append stem $section}
 				file mkdir [file join $outDir $MDdir]
 				set fh [open [file join $outDir $MDdir $stem.md] w]
 				puts $fh $md

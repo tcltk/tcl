@@ -27,6 +27,7 @@ package - Facilities for package loading and version control
 [package]{.cmd} [forget]{.sub} [package]{.optdot}
 [package]{.cmd} [ifneeded]{.sub} [package]{.arg} [version]{.arg} [script]{.optarg}
 [package]{.cmd} [names]{.sub}
+[package]{.cmd} [prefer]{.sub} [latest|stable]{.optlit}
 [package]{.cmd} [present]{.sub} [package]{.arg} [requirement]{.optdot}
 [package]{.cmd} [present]{.sub} [-exact]{.lit} [package]{.arg} [version]{.arg}
 [package]{.cmd} [provide]{.sub} [package]{.arg} [version]{.optarg}
@@ -36,7 +37,6 @@ package - Facilities for package loading and version control
 [package]{.cmd} [vcompare]{.sub} [version1]{.arg} [version2]{.arg}
 [package]{.cmd} [versions]{.sub} [package]{.arg}
 [package]{.cmd} [vsatisfies]{.sub} [version]{.arg} [requirement]{.arg} [requirement]{.optdot}
-[package]{.cmd} [prefer]{.sub} [latest|stable]{.optlit}
 :::
 
 # Description
@@ -56,6 +56,17 @@ The behavior of the **package** command is determined by its first argument. The
 
 [package]{.cmd} [names]{.sub}
 : Returns a list of the names of all packages in the interpreter for which a version has been provided (via **package provide**) or for which a **package ifneeded** script is available. The order of elements in the list is arbitrary.
+
+[package]{.cmd} [prefer]{.sub} [latest|stable]{.optlit}
+: With no arguments, the commands returns either "latest" or "stable", whichever describes the current mode of selection logic used by **package require**.
+
+    When passed the argument "latest", it sets the selection logic mode to "latest".
+
+    When passed the argument "stable", if the mode is already "stable", that value is kept.  If the mode is already "latest", then the attempt to set it back to "stable" is ineffective and the mode value remains "latest".
+
+    When passed any other value as an argument, raise an invalid argument error.
+
+    When an interpreter is created, its initial selection mode value is set to "stable" unless the environment variable **TCL\_PKG\_PREFER\_LATEST** is set (to any value) or the Tcl package itself is unstable. Otherwise the initial (and permanent) selection mode value is set to "latest".
 
 [package]{.cmd} [present]{.sub} [-exact]{.optlit} [package]{.arg} [requirement]{.optdot}
 : This command is equivalent to **package require** except that it does not try and load the package if it is not already loaded.
@@ -86,17 +97,6 @@ The behavior of the **package** command is determined by its first argument. The
 
 [package]{.cmd} [vsatisfies]{.sub} [version]{.arg} [requirement]{.arg} [requirement]{.optdot}
 : Returns 1 if the *version* satisfies at least one of the given requirements, and 0 otherwise. *requirements* are defined in the [Requirement] section below.
-
-[package]{.cmd} [prefer]{.sub} [latest|stable]{.optlit}
-: With no arguments, the commands returns either "latest" or "stable", whichever describes the current mode of selection logic used by **package require**.
-
-    When passed the argument "latest", it sets the selection logic mode to "latest".
-
-    When passed the argument "stable", if the mode is already "stable", that value is kept.  If the mode is already "latest", then the attempt to set it back to "stable" is ineffective and the mode value remains "latest".
-
-    When passed any other value as an argument, raise an invalid argument error.
-
-    When an interpreter is created, its initial selection mode value is set to "stable" unless the environment variable **TCL\_PKG\_PREFER\_LATEST** is set (to any value) or the Tcl package itself is unstable. Otherwise the initial (and permanent) selection mode value is set to "latest".
 
 
 # Version numbers
