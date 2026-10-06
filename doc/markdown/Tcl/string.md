@@ -288,9 +288,9 @@ if {$length == 0} {
 
 [array]: array.md
 [dict]: dict.md
-[DoubleObj]: DoubleObj.md
-[GetInt]: GetInt.md
-[IntObj]: IntObj.md
+[DoubleObj]: ../TclCAPI/DoubleObj.md
+[GetInt]: ../TclCAPI/GetInt.md
+[IntObj]: ../TclCAPI/IntObj.md
 [join]: join.md
 [list]: list.md
 [return]: return.md

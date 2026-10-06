@@ -97,13 +97,13 @@ Tcl provides **Tcl\_CreateThread** for creating threads. The caller can determin
 
 Restrictions: On some UNIX systems the pthread-library does not contain the functionality to specify the stack size of a thread. The specified value for the stack size is ignored on these systems.
 
-Tcl provides the [Tcl\_ExitThread][Exit3] and [Tcl\_FinalizeThread][Exit3] functions for terminating threads and invoking optional per-thread exit handlers.  See the [Tcl\_Exit][Exit3] page for more information on these procedures.
+Tcl provides the [Tcl\_ExitThread][Exit] and [Tcl\_FinalizeThread][Exit] functions for terminating threads and invoking optional per-thread exit handlers.  See the [Tcl\_Exit][Exit] page for more information on these procedures.
 
 The **Tcl\_JoinThread** function is provided to allow threads to wait upon the exit of another thread, which must have been marked as joinable through usage of the **TCL\_THREAD\_JOINABLE**-flag during its creation via **Tcl\_CreateThread**.
 
 Trying to wait for the exit of a non-joinable thread or a thread which is already waited upon will result in an error. Waiting for a joinable thread which already exited is possible, the system will retain the necessary information until after the call to **Tcl\_JoinThread**. This means that not calling **Tcl\_JoinThread** for a joinable thread will cause a memory leak.
 
-The **Tcl\_GetThreadData** call returns a pointer to a block of thread-private data.  Its argument is a key that is shared by all threads and a size for the block of storage.  The storage is automatically allocated and initialized to all zeros the first time each thread asks for it. The storage is automatically deallocated by [Tcl\_FinalizeThread][Exit3].
+The **Tcl\_GetThreadData** call returns a pointer to a block of thread-private data.  Its argument is a key that is shared by all threads and a size for the block of storage.  The storage is automatically allocated and initialized to all zeros the first time each thread asks for it. The storage is automatically deallocated by [Tcl\_FinalizeThread][Exit].
 
 ## Synchronization and communication
 
@@ -121,7 +121,7 @@ The **Tcl\_ConditionNotify**, **Tcl\_ConditionWait** and **Tcl\_ConditionFinaliz
 
 ## Initialization
 
-All of these synchronization objects are self-initializing. They are implemented as opaque pointers that should be NULL upon first use. The mutexes and condition variables are either cleaned up by process exit handlers (if living that long) or explicitly by calls to **Tcl\_MutexFinalize** or **Tcl\_ConditionFinalize**. Thread local storage is reclaimed during [Tcl\_FinalizeThread][Exit3].
+All of these synchronization objects are self-initializing. They are implemented as opaque pointers that should be NULL upon first use. The mutexes and condition variables are either cleaned up by process exit handlers (if living that long) or explicitly by calls to **Tcl\_MutexFinalize** or **Tcl\_ConditionFinalize**. Thread local storage is reclaimed during [Tcl\_FinalizeThread][Exit].
 
 # Script-level access to threads
 
@@ -173,6 +173,6 @@ if (Tcl_JoinThread(id, &result) != TCL_OK) {
 ```
 
 
-[Exit3]: Exit3.md
+[Exit]: Exit.md
 [Notifier]: Notifier.md
 

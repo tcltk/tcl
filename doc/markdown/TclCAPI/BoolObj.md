@@ -70,15 +70,14 @@ Note that the routines **Tcl\_GetBooleanFromObj** and [Tcl\_GetBoolean][GetInt] 
 
 # Reference count management
 
-**Tcl\_NewBooleanObj** always returns a zero-reference object, much like [Tcl\_NewObj][Object3].
+**Tcl\_NewBooleanObj** always returns a zero-reference object, much like [Tcl\_NewObj][Object].
 
 **Tcl\_SetBooleanObj** does not modify the reference count of its *objPtr* argument, but does require that the object be unshared.
 
 **Tcl\_GetBooleanFromObj** does not modify the reference count of its *objPtr* argument; it only reads. Note however that this function may set the interpreter result; if that is the only place that is holding a reference to the object, it will be deleted.
 
 
-[catch]: catch.md
+[catch]: ../Tcl/catch.md
 [GetInt]: GetInt.md
-[Object]: Object.md
-[Object3]: Object3.md
+[Object]: ../Tcl/Object.md
 

@@ -72,5 +72,5 @@ The *objv* argument to **Tcl\_WrongNumArgs** should be the exact arguments passe
 
 
 [GetIndex]: GetIndex.md
-[string]: string.md
+[string]: ../Tcl/string.md
 

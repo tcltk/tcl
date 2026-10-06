@@ -62,6 +62,6 @@ Both procedures return either [TCL\_OK][catch] or [TCL\_ERROR][catch], and they 
 As with the [upvar] command, the source variable need not exist; if it does exist, unsetting it later does not destroy the link.  The destination variable may exist at the time of the call, but if so it must exist as a linked variable. 
 
 
-[catch]: catch.md
-[upvar]: upvar.md
+[catch]: ../Tcl/catch.md
+[upvar]: ../Tcl/upvar.md
 

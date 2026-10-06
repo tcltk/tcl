@@ -75,16 +75,16 @@ If the expression is successfully evaluated, then its value is returned in one o
 
 **Tcl\_ExprBooleanObj** stores a 0/1 integer value at *\*booleanPtr*. If the expression's actual value is an integer or floating-point number, then they store 0 at *\*booleanPtr* if the value was zero and 1 otherwise. If the expression's actual value is a non-numeric string then it must be one of the values accepted by [Tcl\_GetBoolean][GetInt] such as "yes" or "no", or else an error occurs.
 
-If **Tcl\_ExprObj** successfully evaluates the expression, it stores a pointer to the Tcl value containing the expression's value at *\*resultPtrPtr*. In this case, the caller is responsible for calling [Tcl\_DecrRefCount][Object3] to decrement the value's reference count when it is finished with the value.
+If **Tcl\_ExprObj** successfully evaluates the expression, it stores a pointer to the Tcl value containing the expression's value at *\*resultPtrPtr*. In this case, the caller is responsible for calling [Tcl\_DecrRefCount][Object] to decrement the value's reference count when it is finished with the value.
 
 # Reference count management
 
 **Tcl\_ExprLongObj**, **Tcl\_ExprDoubleObj**, **Tcl\_ExprBooleanObj**, and **Tcl\_ExprObj** all increment and decrement the reference count of their *objPtr* arguments; you must not pass them any value with a reference count of zero. They also manipulate the interpreter result; you must not count on the interpreter result to hold the reference count of any value over these calls. 
 
 
-[catch]: catch.md
-[expr]: expr.md
+[catch]: ../Tcl/catch.md
+[expr]: ../Tcl/expr.md
 [GetInt]: GetInt.md
-[Object3]: Object3.md
+[Object]: Object.md
 [SetResult]: SetResult.md
 

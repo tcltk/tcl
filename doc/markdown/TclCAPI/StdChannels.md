@@ -80,8 +80,8 @@ The windowing shell (or rather the function **Tk\_MainEx**, which forms the core
 
 
 [CrtChannel]: CrtChannel.md
-[CrtConsoleChan]: CrtConsoleChan.md
-[file]: file.md
+[CrtConsoleChan]: ../TkCAPI/CrtConsoleChan.md
+[file]: ../Tcl/file.md
 [GetStdChan]: GetStdChan.md
 [OpenFileChnl]: OpenFileChnl.md
 [Tcl_Main]: Tcl_Main.md

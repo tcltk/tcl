@@ -74,5 +74,5 @@ If the **TCL\_INDEX\_TEMP\_TABLE** was not specified, when **Tcl\_GetIndexFromOb
 **Tcl\_GetIndexFromObj** and **Tcl\_GetIndexFromObjStruct** do not modify the reference count of their *objPtr* arguments; they only read. Note however that these functions may set the interpreter result; if that is the only place that is holding a reference to the object, it will be deleted.
 
 
-[catch]: catch.md
+[catch]: ../Tcl/catch.md
 

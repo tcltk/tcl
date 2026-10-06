@@ -55,6 +55,6 @@ Tcl\_GetOpenFile - Return a FILE\* for a channel registered in the given interpr
 Note that this interface is only supported on the Unix platform. 
 
 
-[catch]: catch.md
-[open]: open.md
+[catch]: ../Tcl/catch.md
+[open]: ../Tcl/open.md
 

@@ -126,7 +126,7 @@ exec command1 1 2 3 &
 
 
 [catch]: catch.md
-[DetachPids]: DetachPids.md
+[DetachPids]: ../TclCAPI/DetachPids.md
 [exec]: exec.md
 [open]: open.md
 

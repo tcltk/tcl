@@ -64,9 +64,9 @@ Tcl_Main(argc, argv, Tcl_AppInit);
 The third argument to [Tcl\_Main][Tcl_Main] gives the address of the application-specific initialization procedure to invoke. This means that you do not have to use the name **Tcl\_AppInit** for the procedure, but in practice the name is nearly always **Tcl\_AppInit** (in versions before Tcl 7.4 the name **Tcl\_AppInit** was implicit;  there was no way to specify the procedure explicitly). The best way to get started is to make a copy of the file **tclAppInit.c** from the Tcl library or source directory. It already contains a **main** procedure and a template for **Tcl\_AppInit** that you can modify for your application. 
 
 
-[catch]: catch.md
+[catch]: ../Tcl/catch.md
 [Tcl_Main]: Tcl_Main.md
-[tclsh]: tclsh.md
-[Tk_Main]: Tk_Main.md
-[wish]: wish.md
+[tclsh]: ../Tcl/tclsh.md
+[Tk_Main]: ../TkCAPI/Tk_Main.md
+[wish]: ../Tcl/wish.md
 

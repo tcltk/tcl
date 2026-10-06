@@ -158,6 +158,6 @@ All of the character pointers in the Tcl\_Parse and Tcl\_Token structures refer 
 There are additional fields in the Tcl\_Parse structure after the *numTokens* field, but these are for the private use of **Tcl\_ParseCommand**, **Tcl\_ParseExpr**, **Tcl\_ParseBraces**, **Tcl\_ParseQuotedString**, and **Tcl\_ParseVarName**; they should not be referenced by code outside of these procedures.
 
 
-[catch]: catch.md
+[catch]: ../Tcl/catch.md
 [SetResult]: SetResult.md
 

@@ -124,7 +124,7 @@ The *objPtr* argument to **Tcl\_AppendExportList** should be an unshared object,
 The *handlerPtr* argument to **Tcl\_SetNamespaceUnknownHandler** will have its reference count incremented if it is a non-empty list.
 
 
-[catch]: catch.md
-[namespace]: namespace.md
+[catch]: ../Tcl/catch.md
+[namespace]: ../Tcl/namespace.md
 [StrMatch]: StrMatch.md
 

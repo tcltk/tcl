@@ -117,6 +117,6 @@ foo
 
 [catch]: catch.md
 [interp]: interp.md
-[StaticLibrary]: StaticLibrary.md
+[StaticLibrary]: ../TclCAPI/StaticLibrary.md
 [unload]: unload.md
 

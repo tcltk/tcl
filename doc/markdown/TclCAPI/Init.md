@@ -77,6 +77,6 @@ When used in stub-enabled embedders, the stubs table must be first initialized u
 [FindExec]: FindExec.md
 [InitSubSyst]: InitSubSyst.md
 [Panic]: Panic.md
-[source]: source.md
+[source]: ../Tcl/source.md
 [zipfs]: zipfs.md
 

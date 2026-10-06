@@ -143,7 +143,7 @@ The *callProc* field gives a function that is called when the method is invoked;
 
 The *deleteProc* field gives a function that is used to delete a particular method, and is called when the method is replaced or removed; if the field is NULL, it is assumed that the method's *clientData* needs no special action to delete.
 
-The *cloneProc* field is either a function that is used to copy a method's *clientData* (as part of [Tcl\_CopyObjectInstance][Class3]) or NULL to indicate that the *clientData* can just be copied directly.
+The *cloneProc* field is either a function that is used to copy a method's *clientData* (as part of [Tcl\_CopyObjectInstance][Class]) or NULL to indicate that the *clientData* can just be copied directly.
 
 ## Tcl\_MethodCallProc function signature
 
@@ -180,7 +180,7 @@ The *clientData* argument to a Tcl\_MethodDeleteProc will be the same as the val
 
 ## Tcl\_CloneProc function signature
 
-Functions matching this signature are used to copy a method when the object or class is copied using [Tcl\_CopyObjectInstance][Class3] (or **oo::copy**).
+Functions matching this signature are used to copy a method when the object or class is copied using [Tcl\_CopyObjectInstance][Class] (or **oo::copy**).
 
 ```
 typedef int Tcl_CloneProc(
@@ -195,17 +195,17 @@ The *interp* argument gives a place to write an error message when the attempt t
 
 The *nameObj* argument to **Tcl\_NewMethod** and **Tcl\_NewInstanceMethod** (when non-NULL) will have its reference count incremented if there is no existing method with that name in that class/object.
 
-The result of **Tcl\_MethodName** is a value with a reference count of at least one. It should not be modified without first duplicating it (with [Tcl\_DuplicateObj][Object3]).
+The result of **Tcl\_MethodName** is a value with a reference count of at least one. It should not be modified without first duplicating it (with [Tcl\_DuplicateObj][Object]).
 
 The values in the first *objc* values of the *objv* argument to **Tcl\_ObjectContextInvokeNext** are assumed to have a reference count of at least 1; the containing array is assumed to endure until the next method implementation (see [next]) returns. Be aware that methods may [yield]; if any post-call actions are desired (e.g., decrementing the reference count of values passed in here), they must be scheduled with [Tcl\_NRAddCallback][NRE].
 
 The *callProc* of the **Tcl\_MethodType** structure takes values of at least reference count 1 in its *objv* argument. It may add its own references, but must not decrement the reference count below that level; the caller of the method will decrement the reference count once the method returns properly (and the reference will be held if the method [yield]s).
 
 
-[catch]: catch.md
-[Class3]: Class3.md
-[next]: next.md
+[catch]: ../Tcl/catch.md
+[Class]: Class.md
+[next]: ../Tcl/next.md
 [NRE]: NRE.md
-[Object3]: Object3.md
-[yield]: yield.md
+[Object]: Object.md
+[yield]: ../Tcl/yield.md
 

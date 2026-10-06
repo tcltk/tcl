@@ -83,6 +83,6 @@ Future releases of Tcl might expand or revise the recognition of values as numbe
 When callers of these routines read numeric values through the reported storage pointer, they are accessing memory that belongs to the Tcl library.  The Tcl library has the power to overwrite or free this memory.  The storage pointer reported by a call to **Tcl\_GetNumber** or **Tcl\_GetNumberFromObj** should not be used after the same thread has possibly returned control to the Tcl library.  If longer term access to the numeric value is needed, it should be copied into memory controlled by the caller.  Callers must not attempt to write through or free the storage pointer.
 
 
-[catch]: catch.md
+[catch]: ../Tcl/catch.md
 [DoubleObj]: DoubleObj.md
 

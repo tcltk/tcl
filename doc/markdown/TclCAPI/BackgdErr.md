@@ -54,7 +54,7 @@ Tcl_BackgroundException(interp, TCL_ERROR);
 ```
 
 
-[bgerror]: bgerror.md
-[catch]: catch.md
-[interp]: interp.md
+[bgerror]: ../Tcl/bgerror.md
+[catch]: ../Tcl/catch.md
+[interp]: ../Tcl/interp.md
 

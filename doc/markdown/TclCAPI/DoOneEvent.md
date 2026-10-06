@@ -71,6 +71,6 @@ The **TCL\_DONT\_WAIT** flag causes **Tcl\_DoOneEvent** not to put the process t
 [CrtFileHdlr]: CrtFileHdlr.md
 [CrtTimerHdlr]: CrtTimerHdlr.md
 [DoWhenIdle]: DoWhenIdle.md
-[EventHndlr]: EventHndlr.md
+[EventHndlr]: ../TkCAPI/EventHndlr.md
 [Notifier]: Notifier.md
 

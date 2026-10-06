@@ -227,7 +227,7 @@ The *clientData* argument will be the same as the *clientData* argument to **Tcl
 
 The notifier consists of all the procedures described in this manual entry, plus [Tcl\_DoOneEvent][DoOneEvent] and [Tcl\_Sleep][Sleep], which are available on all platforms, and [Tcl\_CreateFileHandler][CrtFileHdlr] and [Tcl\_DeleteFileHandler][CrtFileHdlr], which are Unix-specific.  Most of these procedures are generic, in that they are the same for all notifiers. However, none of the procedures are notifier-dependent: **Tcl\_InitNotifier**, **Tcl\_AlertNotifier**, **Tcl\_FinalizeNotifier**, **Tcl\_SetTimer**, [Tcl\_Sleep][Sleep], **Tcl\_WaitForEvent**, [Tcl\_CreateFileHandler][CrtFileHdlr], [Tcl\_DeleteFileHandler][CrtFileHdlr] and **Tcl\_ServiceModeHook**.  To support a new platform or to integrate Tcl with an application-specific event loop, you must write new versions of these procedures.
 
-**Tcl\_InitNotifier** initializes the notifier state and returns a handle to the notifier state.  Tcl calls this procedure when initializing a Tcl interpreter.  Similarly, **Tcl\_FinalizeNotifier** shuts down the notifier, and is called by [Tcl\_Finalize][Exit3] when shutting down a Tcl interpreter.
+**Tcl\_InitNotifier** initializes the notifier state and returns a handle to the notifier state.  Tcl calls this procedure when initializing a Tcl interpreter.  Similarly, **Tcl\_FinalizeNotifier** shuts down the notifier, and is called by [Tcl\_Finalize][Exit] when shutting down a Tcl interpreter.
 
 **Tcl\_WaitForEvent** is the lowest-level procedure in the notifier; it is responsible for waiting for an "interesting" event to occur or for a given time to elapse.  Before **Tcl\_WaitForEvent** is invoked, each of the event sources' setup procedure will have been invoked. The *timePtr* argument to **Tcl\_WaitForEvent** gives the maximum time to block for an event, based on calls to **Tcl\_SetMaxBlockTime** made by setup procedures and on other information (such as the **TCL\_DONT\_WAIT** bit in *flags*).
 
@@ -279,14 +279,14 @@ As a side effect of processing events detected in the main external event loop, 
 In some cases, however, it may be necessary for **Tcl\_ServiceAll** to service events even when it has been invoked from [Tcl\_DoOneEvent][DoOneEvent].  This happens when there is yet another recursive event loop invoked via an event handler called by [Tcl\_DoOneEvent][DoOneEvent] (such as one that is part of a native widget).  In this case, [Tcl\_DoOneEvent][DoOneEvent] may not have a chance to service events so **Tcl\_ServiceAll** must service them all.  Any recursive event loop that calls an external event loop rather than [Tcl\_DoOneEvent][DoOneEvent] must reset the service mode so that all events get processed in **Tcl\_ServiceAll**.  This is done by invoking the **Tcl\_SetServiceMode** procedure.  If **Tcl\_SetServiceMode** is passed **TCL\_SERVICE\_NONE**, then calls to **Tcl\_ServiceAll** will return immediately without processing any events.  If **Tcl\_SetServiceMode** is passed **TCL\_SERVICE\_ALL**, then calls to **Tcl\_ServiceAll** will behave normally. **Tcl\_SetServiceMode** returns the previous value of the service mode, which should be restored when the recursive loop exits. **Tcl\_GetServiceMode** returns the current value of the service mode.
 
 
-[after]: after.md
+[after]: ../Tcl/after.md
 [Alloc]: Alloc.md
 [CrtFileHdlr]: CrtFileHdlr.md
 [CrtTimerHdlr]: CrtTimerHdlr.md
 [DoOneEvent]: DoOneEvent.md
-[Exit3]: Exit3.md
-[RestrictEv]: RestrictEv.md
+[Exit]: Exit.md
+[RestrictEv]: ../TkCAPI/RestrictEv.md
 [Sleep]: Sleep.md
-[update]: update.md
-[vwait]: vwait.md
+[update]: ../Tcl/update.md
+[vwait]: ../Tcl/vwait.md
 

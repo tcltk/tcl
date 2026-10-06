@@ -294,5 +294,5 @@ puts [read $ch];   # Prints just the last word
 [namespace]: namespace.md
 [puts]: puts.md
 [read]: read.md
-[SetChanErr]: SetChanErr.md
+[SetChanErr]: ../TclCAPI/SetChanErr.md
 

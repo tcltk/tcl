@@ -72,6 +72,6 @@ The **memory** command gives the Tcl developer control of Tcl's memory debugging
 
 
 [Alloc]: Alloc.md
-[DumpActiveMemory]: DumpActiveMemory.md
+[DumpActiveMemory]: ../TclCAPI/DumpActiveMemory.md
 [Object]: Object.md
 

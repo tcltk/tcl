@@ -275,7 +275,7 @@ puts $foo
 [continue]: continue.md
 [error]: error.md
 [foreach]: foreach.md
-[Hash]: Hash.md
+[Hash]: ../TclCAPI/Hash.md
 [lmap]: lmap.md
 [proc]: proc.md
 [string]: string.md

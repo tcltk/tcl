@@ -73,5 +73,5 @@ Note that these interfaces are only supported by the Unix implementation of the 
 
 [DoOneEvent]: DoOneEvent.md
 [OpenFileChnl]: OpenFileChnl.md
-[vwait]: vwait.md
+[vwait]: ../Tcl/vwait.md
 

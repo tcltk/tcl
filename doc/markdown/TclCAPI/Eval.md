@@ -81,7 +81,7 @@ The return value from **Tcl\_EvalObjEx** (and all the other procedures described
 
 **Tcl\_EvalObjv** executes a single preparsed command instead of a script.  The *objc* and *objv* arguments contain the values of the words for the Tcl command, one word in each value in *objv*.  **Tcl\_EvalObjv** evaluates the command and returns a completion code and result just like **Tcl\_EvalObjEx**. The caller of **Tcl\_EvalObjv** has to manage the reference count of the elements of *objv*, insuring that the values are valid until **Tcl\_EvalObjv** returns.
 
-**Tcl\_Eval** is similar to **Tcl\_EvalObjEx** except that the script to be executed is supplied as a string instead of a value and no compilation occurs.  The string should be a proper TUTF-8 byte sequence as converted by [Tcl\_ExternalToUtfDString][Encoding3] or [Tcl\_ExternalToUtf][Encoding3] when it is known to possibly contain upper ASCII characters whose possible combinations might be a UTF-8 special code.  The string is parsed and executed directly (using **Tcl\_EvalObjv**) instead of compiling it and executing the bytecodes.  In situations where it is known that the script will never be executed again, **Tcl\_Eval** may be faster than **Tcl\_EvalObjEx**.  **Tcl\_Eval** returns a completion code and result just like **Tcl\_EvalObjEx**.
+**Tcl\_Eval** is similar to **Tcl\_EvalObjEx** except that the script to be executed is supplied as a string instead of a value and no compilation occurs.  The string should be a proper TUTF-8 byte sequence as converted by [Tcl\_ExternalToUtfDString][Encoding] or [Tcl\_ExternalToUtf][Encoding] when it is known to possibly contain upper ASCII characters whose possible combinations might be a UTF-8 special code.  The string is parsed and executed directly (using **Tcl\_EvalObjv**) instead of compiling it and executing the bytecodes.  In situations where it is known that the script will never be executed again, **Tcl\_Eval** may be faster than **Tcl\_EvalObjEx**.  **Tcl\_Eval** returns a completion code and result just like **Tcl\_EvalObjEx**.
 
 **Tcl\_EvalEx** is an extended version of **Tcl\_Eval** that takes additional arguments *numBytes* and *flags*.
 
@@ -113,12 +113,12 @@ During the processing of a Tcl command it is legal to make nested calls to evalu
 **Tcl\_EvalObjv** may increment and decrement the reference count of any value passed via its *objv* argument; you must not pass any value with a reference count of zero. This function also manipulates the interpreter result; you must not count on the interpreter result to hold the reference count of any value over this call. 
 
 
-[break]: break.md
-[catch]: catch.md
-[continue]: continue.md
-[Encoding3]: Encoding3.md
-[for]: for.md
-[return]: return.md
+[break]: ../Tcl/break.md
+[catch]: ../Tcl/catch.md
+[continue]: ../Tcl/continue.md
+[Encoding]: Encoding.md
+[for]: ../Tcl/for.md
+[return]: ../Tcl/return.md
 [SetResult]: SetResult.md
 [Utf]: Utf.md
 

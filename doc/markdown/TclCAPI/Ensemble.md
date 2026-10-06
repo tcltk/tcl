@@ -126,7 +126,7 @@ The ensemble property getters (**Tcl\_GetEnsembleMappingDict**, **Tcl\_GetEnsemb
 The ensemble property setters (**Tcl\_SetEnsembleMappingDict**, **Tcl\_SetEnsembleParameterList**, **Tcl\_SetEnsembleSubcommandList**, and **Tcl\_SetEnsembleUnknownHandler**) will increment the reference count of the new value of the property they are given if they succeed (and decrement the reference count of the old value of the property, if relevant). If the property setters return [TCL\_ERROR][catch], the reference count of the [Tcl\_Obj][Object] argument is left unchanged.
 
 
-[catch]: catch.md
-[namespace]: namespace.md
-[Object]: Object.md
+[catch]: ../Tcl/catch.md
+[namespace]: ../Tcl/namespace.md
+[Object]: ../Tcl/Object.md
 

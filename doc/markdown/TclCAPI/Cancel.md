@@ -67,6 +67,6 @@ Any OR'ed combination of the following values may be used for the *flags* argume
 **Tcl\_CancelEval** always decrements the reference count of its *resultObjPtr* argument (if that is non-NULL). It is expected to be usually called with an object with zero reference count. If the object is shared with some other location (including the Tcl evaluation stack) it should have its reference count incremented before calling this function.
 
 
-[catch]: catch.md
+[catch]: ../Tcl/catch.md
 [SetResult]: SetResult.md
 

@@ -627,7 +627,7 @@ vwait done
 
 [binary]: binary.md
 [close]: close.md
-[DoOneEvent]: DoOneEvent.md
+[DoOneEvent]: ../TclCAPI/DoOneEvent.md
 [encoding]: encoding.md
 [exec]: exec.md
 [file]: file.md

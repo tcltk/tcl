@@ -129,7 +129,7 @@ Note that, as with any call to a Tcl interpreter, **Tcl\_UpdateLinkedVar** must 
 [Alloc]: Alloc.md
 [Async]: Async.md
 [BoolObj]: BoolObj.md
-[catch]: catch.md
+[catch]: ../Tcl/catch.md
 [DoubleObj]: DoubleObj.md
 [IntObj]: IntObj.md
 [Notifier]: Notifier.md

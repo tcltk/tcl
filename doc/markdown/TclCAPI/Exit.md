@@ -22,7 +22,7 @@ Copyright:
 
 # Name
 
-Tcl\_Exit, Tcl\_Finalize, Tcl\_CreateExitHandler, Tcl\_DeleteExitHandler, Tcl\_ExitThread, Tcl\_FinalizeThread, Tcl\_CreateThreadExitHandler, Tcl\_DeleteThreadExitHandler, Tcl\_SetExitProc - end the application or thread (and invoke exit handlers)
+Tcl\_Exit, Tcl\_Finalize, Tcl\_CreateExitHandler, Tcl\_DeleteExitHandler, Tcl\_ExitThread, Tcl\_FinalizeThread, Tcl\_CreateThreadExitHandler, [Tcl\_DeleteThreadExitHandler][Exit3], Tcl\_SetExitProc - end the application or thread (and invoke exit handlers)
 
 # Synopsis
 
@@ -73,7 +73,7 @@ typedef void Tcl_ExitProc(
 
 The *clientData* parameter to *proc* is a copy of the *clientData* argument given to **Tcl\_CreateExitHandler** or **Tcl\_CreateThreadExitHandler** when the callback was created.  Typically, *clientData* points to a data structure containing application-specific information about what to do in *proc*.
 
-**Tcl\_DeleteExitHandler** and **Tcl\_DeleteThreadExitHandler** may be called to delete a previously-created exit handler.  It removes the handler indicated by *proc* and *clientData* so that no call to *proc* will be made.  If no such handler exists then **Tcl\_DeleteExitHandler** or **Tcl\_DeleteThreadExitHandler** does nothing.
+**Tcl\_DeleteExitHandler** and [Tcl\_DeleteThreadExitHandler][Exit3] may be called to delete a previously-created exit handler.  It removes the handler indicated by *proc* and *clientData* so that no call to *proc* will be made.  If no such handler exists then **Tcl\_DeleteExitHandler** or [Tcl\_DeleteThreadExitHandler][Exit3] does nothing.
 
 **Tcl\_Finalize** and **Tcl\_Exit** execute all registered exit handlers, in reverse order from the order in which they were registered. This matches the natural order in which extensions are loaded and unloaded; if extension **A** loads extension **B**, it usually unloads **B** before it itself is unloaded. If extension **A** registers its exit handlers before loading extension **B**, this ensures that any exit handlers for **B** will be executed before the exit handlers for **A**.
 
@@ -84,6 +84,7 @@ The *clientData* parameter to *proc* is a copy of the *clientData* argument give
 **Tcl\_SetExitProc** can not be used in stub-enabled extensions.
 
 
-[exit]: exit.md
-[Tcl]: Tcl.md
+[exit]: ../Tcl/exit.md
+[Exit3]: ../Tcl/Exit3.md
+[Tcl]: ../Tcl/Tcl.md
 

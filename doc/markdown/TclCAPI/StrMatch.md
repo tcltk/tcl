@@ -48,5 +48,5 @@ This utility procedure determines whether a string matches a given pattern.  If 
 In **Tcl\_StringCaseMatch**, the algorithm is the same, but you have the option to make the matching case-insensitive. If you choose this (by passing **TCL\_MATCH\_NOCASE**), then the string and pattern are essentially matched in the lower case. 
 
 
-[string]: string.md
+[string]: ../Tcl/string.md
 

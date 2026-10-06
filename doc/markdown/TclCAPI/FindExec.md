@@ -50,7 +50,7 @@ The result of **Tcl\_FindExecutable** is the full Tcl version string, including 
 **Tcl\_FindExecutable** can not be used in stub-enabled extensions.
 
 
-[info]: info.md
+[info]: ../Tcl/info.md
 [Panic]: Panic.md
 [zipfs]: zipfs.md
 

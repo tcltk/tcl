@@ -93,6 +93,6 @@ It is possible for multiple traces to exist on the same command. When this happe
 In a delete callback to *proc*, the **TCL\_TRACE\_DESTROYED** bit is set in *flags*.
 
 
-[catch]: catch.md
+[catch]: ../Tcl/catch.md
 [CrtInterp]: CrtInterp.md
 

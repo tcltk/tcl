@@ -451,5 +451,5 @@ for {set x 0} {$x <= 4} {incr x} {
 [objdefine]: objdefine.md
 [object]: object.md
 [proc]: proc.md
-[Slot]: Slot.md
+[Slot]: ../TclCAPI/Slot.md
 

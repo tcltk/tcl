@@ -79,7 +79,7 @@ The procedures described here are utilities for manipulating the result value in
 
 **Tcl\_SetObjResult** arranges for *objPtr* to be the result for *interp*, replacing any existing result. The result is left pointing to the value referenced by *objPtr*. *objPtr*'s reference count is incremented since there is now a new reference to it from *interp*. The reference count for any old result value is decremented and the old result value is freed if no references to it remain.
 
-**Tcl\_GetObjResult** returns the result for *interp* as a value. The value's reference count is not incremented; if the caller needs to retain a long-term pointer to the value they should use [Tcl\_IncrRefCount][Object3] to increment its reference count in order to keep it from being freed too early or accidentally changed.
+**Tcl\_GetObjResult** returns the result for *interp* as a value. The value's reference count is not incremented; if the caller needs to retain a long-term pointer to the value they should use [Tcl\_IncrRefCount][Object] to increment its reference count in order to keep it from being freed too early or accidentally changed.
 
 **Tcl\_SetResult** arranges for *result* to be the result for the current Tcl command in *interp*, replacing any existing result. The *freeProc* argument specifies how to manage the storage for the *result* argument; it is discussed in the section **THE TCL\_FREEPROC ARGUMENT TO TCL\_SETRESULT** below. If *result* is **NULL**, then *freeProc* is ignored and **Tcl\_SetResult** re-initializes *interp*'s result to point to an empty string.
 
@@ -103,7 +103,7 @@ Use of the following procedures is deprecated since they manipulate the Tcl resu
 
 **Tcl\_SetResult**'s *freeProc* argument specifies how the Tcl system is to manage the storage for the *result* argument. If **Tcl\_SetResult** or **Tcl\_SetObjResult** are called at a time when *interp* holds a string result, they do whatever is necessary to dispose of the old string result (see the **Tcl\_Interp** manual entry for details on this).
 
-If *freeProc* is **TCL\_STATIC** it means that *result* refers to an area of static storage that is guaranteed not to be modified until at least the next call to [Tcl\_Eval][Eval3]. If *freeProc* is **TCL\_DYNAMIC** it means that *result* was allocated with a call to [Tcl\_Alloc][Alloc] and is now the property of the Tcl system. **Tcl\_SetResult** will arrange for the string's storage to be released by calling [Tcl\_Free][Alloc] when it is no longer needed. If *freeProc* is **TCL\_VOLATILE** it means that *result* points to an area of memory that is likely to be overwritten when **Tcl\_SetResult** returns (e.g. it points to something in a stack frame). In this case **Tcl\_SetResult** will make a copy of the string in dynamically allocated storage and arrange for the copy to be the result for the current Tcl command.
+If *freeProc* is **TCL\_STATIC** it means that *result* refers to an area of static storage that is guaranteed not to be modified until at least the next call to [Tcl\_Eval][Eval]. If *freeProc* is **TCL\_DYNAMIC** it means that *result* was allocated with a call to [Tcl\_Alloc][Alloc] and is now the property of the Tcl system. **Tcl\_SetResult** will arrange for the string's storage to be released by calling [Tcl\_Free][Alloc] when it is no longer needed. If *freeProc* is **TCL\_VOLATILE** it means that *result* points to an area of memory that is likely to be overwritten when **Tcl\_SetResult** returns (e.g. it points to something in a stack frame). In this case **Tcl\_SetResult** will make a copy of the string in dynamically allocated storage and arrange for the copy to be the result for the current Tcl command.
 
 If *freeProc* is not one of the values **TCL\_STATIC**, **TCL\_DYNAMIC**, and **TCL\_VOLATILE**, then it is the address of a procedure that Tcl should call to free the string. This allows applications to use non-standard storage allocators. When Tcl no longer needs the storage for the string, it will call *freeProc*. *FreeProc* should have arguments and result that match the type **Tcl\_FreeProc**:
 
@@ -118,7 +118,7 @@ When *freeProc* is called, its *blockPtr* will be set to the value of *result* p
 
 The interpreter result is one of the main places that owns references to values, along with the bytecode execution stack, argument lists, variables, and the list and dictionary collection values.
 
-**Tcl\_SetObjResult** takes a value with an arbitrary reference count *(specifically including zero)* and guarantees to increment the reference count. If code wishes to continue using the value after setting it as the result, it should add its own reference to it with [Tcl\_IncrRefCount][Object3].
+**Tcl\_SetObjResult** takes a value with an arbitrary reference count *(specifically including zero)* and guarantees to increment the reference count. If code wishes to continue using the value after setting it as the result, it should add its own reference to it with [Tcl\_IncrRefCount][Object].
 
 **Tcl\_GetObjResult** returns the current interpreter result value. This will have a reference count of at least 1. If the caller wishes to keep the interpreter result value, it should increment its reference count.
 
@@ -129,6 +129,6 @@ The interpreter result is one of the main places that owns references to values,
 
 [AddErrInfo]: AddErrInfo.md
 [Alloc]: Alloc.md
-[Eval3]: Eval3.md
-[Object3]: Object3.md
+[Eval]: Eval.md
+[Object]: Object.md
 

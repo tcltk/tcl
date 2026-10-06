@@ -460,14 +460,14 @@ when called with *optionList* equal to "peername sockname"
 "blah" is the *optionName* argument and "\<specific options\>" is a space separated list of specific option words. The function takes good care of inserting minus signs before each option, commas after, and an "or" before the last option.
 
 
-[catch]: catch.md
-[file]: file.md
+[catch]: ../Tcl/catch.md
+[file]: ../Tcl/file.md
 [GetStdChan]: GetStdChan.md
 [Notifier]: Notifier.md
-[open]: open.md
+[open]: ../Tcl/open.md
 [OpenFileChnl]: OpenFileChnl.md
 [OpenTcp]: OpenTcp.md
 [SetErrno]: SetErrno.md
-[socket]: socket.md
+[socket]: ../Tcl/socket.md
 [StdChannels]: StdChannels.md
 

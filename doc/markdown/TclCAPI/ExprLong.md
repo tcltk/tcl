@@ -75,8 +75,8 @@ If the expression is successfully evaluated, then its value is returned in one o
 **Tcl\_ExprString** returns the value of the expression as a string stored in the interpreter's result. 
 
 
-[catch]: catch.md
-[expr]: expr.md
+[catch]: ../Tcl/catch.md
+[expr]: ../Tcl/expr.md
 [ExprLongObj]: ExprLongObj.md
 [GetInt]: GetInt.md
 

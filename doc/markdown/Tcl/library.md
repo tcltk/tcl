@@ -230,7 +230,7 @@ These variables are only used in the **tcl\_endOfWord**, **tcl\_startOfNextWord*
 
 
 
-[AppInit]: AppInit.md
+[AppInit]: ../TclCAPI/AppInit.md
 [binary]: binary.md
 [break]: break.md
 [continue]: continue.md
@@ -238,7 +238,7 @@ These variables are only used in the **tcl\_endOfWord**, **tcl\_startOfNextWord*
 [exec]: exec.md
 [glob]: glob.md
 [info]: info.md
-[Init]: Init.md
+[Init]: ../TclCAPI/Init.md
 [interp]: interp.md
 [namespace]: namespace.md
 [package]: package.md

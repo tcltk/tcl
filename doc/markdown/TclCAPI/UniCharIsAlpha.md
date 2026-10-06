@@ -71,5 +71,5 @@ All of the routines described examine Unicode characters and return a boolean va
 **Tcl\_UniCharIsWordChar** tests if the character is alphanumeric or a connector punctuation mark. 
 
 
-[Utf]: Utf.md
+[Utf]: ../Tcl/Utf.md
 

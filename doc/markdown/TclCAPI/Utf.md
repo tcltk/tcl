@@ -177,5 +177,5 @@ When the conditions of completeness and well-formedness may not be satisfied, a 
 
 
 [DString]: DString.md
-[Tcl]: Tcl.md
+[Tcl]: ../Tcl/Tcl.md
 

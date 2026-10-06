@@ -197,5 +197,5 @@ Custom hash tables that use a [Tcl\_Obj][Object] \* as key will generally need t
 
 
 [Alloc]: Alloc.md
-[Object]: Object.md
+[Object]: ../Tcl/Object.md
 

@@ -82,7 +82,7 @@ lfilter word $usernames {
 ```
 
 
-[BoolObj]: BoolObj.md
+[BoolObj]: ../TclCAPI/BoolObj.md
 [break]: break.md
 [continue]: continue.md
 [for]: for.md

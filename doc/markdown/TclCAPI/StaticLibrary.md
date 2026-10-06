@@ -66,6 +66,6 @@ The *interp* argument identifies the interpreter in which the library is to be i
 
 
 [AppInit]: AppInit.md
-[catch]: catch.md
-[load]: load.md
+[catch]: ../Tcl/catch.md
+[load]: ../Tcl/load.md
 

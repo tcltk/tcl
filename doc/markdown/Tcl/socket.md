@@ -152,7 +152,7 @@ puts "That is [lindex $line2 0]s since the server started"
 
 
 [chan]: chan.md
-[DoOneEvent]: DoOneEvent.md
+[DoOneEvent]: ../TclCAPI/DoOneEvent.md
 [encoding]: encoding.md
 [fblocked]: fblocked.md
 [flush]: flush.md

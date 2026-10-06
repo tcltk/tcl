@@ -347,29 +347,29 @@ The handles returned from [Tcl\_GetChannelHandle][CrtChannel] depend on the plat
 
 # Reference count management
 
-The *readObjPtr* argument to **Tcl\_ReadChars** must be an unshared value; it will be modified by this function.  Using the interpreter result for this purpose is *strongly* not recommended; the preferred pattern is to use a new value from [Tcl\_NewObj][Object3] to receive the data and only to pass it to [Tcl\_SetObjResult][SetResult] if this function succeeds.
+The *readObjPtr* argument to **Tcl\_ReadChars** must be an unshared value; it will be modified by this function.  Using the interpreter result for this purpose is *strongly* not recommended; the preferred pattern is to use a new value from [Tcl\_NewObj][Object] to receive the data and only to pass it to [Tcl\_SetObjResult][SetResult] if this function succeeds.
 
-The *lineObjPtr* argument to **Tcl\_GetsObj** must be an unshared value; it will be modified by this function.  Using the interpreter result for this purpose is *strongly* not recommended; the preferred pattern is to use a new value from [Tcl\_NewObj][Object3] to receive the data and only to pass it to [Tcl\_SetObjResult][SetResult] if this function succeeds.
+The *lineObjPtr* argument to **Tcl\_GetsObj** must be an unshared value; it will be modified by this function.  Using the interpreter result for this purpose is *strongly* not recommended; the preferred pattern is to use a new value from [Tcl\_NewObj][Object] to receive the data and only to pass it to [Tcl\_SetObjResult][SetResult] if this function succeeds.
 
 The *writeObjPtr* argument to **Tcl\_WriteObj** should be a value with any reference count. This function will not modify the reference count. Using the interpreter result without adding an additional reference to it is not recommended.
 
 
-[binary]: binary.md
+[binary]: ../Tcl/binary.md
 [ByteArrObj]: ByteArrObj.md
-[catch]: catch.md
-[chan]: chan.md
+[catch]: ../Tcl/catch.md
+[chan]: ../Tcl/chan.md
 [CrtChannel]: CrtChannel.md
 [DString]: DString.md
-[exec]: exec.md
-[fconfigure]: fconfigure.md
+[exec]: ../Tcl/exec.md
+[fconfigure]: ../Tcl/fconfigure.md
 [FileSystem]: FileSystem.md
-[Object3]: Object3.md
-[open]: open.md
+[Object]: Object.md
+[open]: ../Tcl/open.md
 [SetErrno]: SetErrno.md
 [SetResult]: SetResult.md
-[socket]: socket.md
+[socket]: ../Tcl/socket.md
 [StdChannels]: StdChannels.md
 [StringObj]: StringObj.md
-[StrMatch]: StrMatch.md
+[StrMatch]: ../Tcl/StrMatch.md
 [Utf]: Utf.md
 

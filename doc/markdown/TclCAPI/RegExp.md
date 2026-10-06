@@ -181,6 +181,6 @@ The *patObj* argument to **Tcl\_GetRegExpFromObj** must have a reference count o
 The *textObj* argument to **Tcl\_RegExpExecObj** must have a reference count of at least 1.  Note however that this function may set the interpreter result; the argument should not be the direct interpreter result without an additional reference being taken.
 
 
-[regexp]: regexp.md
-[regsub]: regsub.md
+[regexp]: ../Tcl/regexp.md
+[regsub]: ../Tcl/regsub.md
 

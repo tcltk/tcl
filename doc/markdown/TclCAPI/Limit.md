@@ -119,7 +119,7 @@ A limit handler may be deleted using **Tcl\_LimitRemoveHandler**; the handler re
 
 [Alloc]: Alloc.md
 [Async]: Async.md
-[catch]: catch.md
-[info]: info.md
-[while]: while.md
+[catch]: ../Tcl/catch.md
+[info]: ../Tcl/info.md
+[while]: ../Tcl/while.md
 

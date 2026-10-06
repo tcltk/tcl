@@ -130,7 +130,7 @@ For a description of the Tcl interface to multiple interpreters, see *interp(n)*
 **Tcl\_GetAliasObj** returns (via its *objvPtr* argument) a pointer to values that it holds a reference to.
 
 
-[catch]: catch.md
-[interp]: interp.md
-[Object]: Object.md
+[catch]: ../Tcl/catch.md
+[interp]: ../Tcl/interp.md
+[Object]: ../Tcl/Object.md
 

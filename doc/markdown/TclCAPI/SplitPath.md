@@ -83,5 +83,5 @@ If the result of **Tcl\_SplitPath** is passed to **Tcl\_JoinPath**, the result w
 
 
 [DString]: DString.md
-[file]: file.md
+[file]: ../Tcl/file.md
 

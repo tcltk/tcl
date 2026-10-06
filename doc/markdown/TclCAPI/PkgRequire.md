@@ -86,6 +86,6 @@ If **Tcl\_PkgPresent** or **Tcl\_PkgRequire** complete successfully they return 
 The requirements values given (in the *objv* argument) to **Tcl\_PkgRequireProc** must have non-zero reference counts.
 
 
-[catch]: catch.md
-[package]: package.md
+[catch]: ../Tcl/catch.md
+[package]: ../Tcl/package.md
 

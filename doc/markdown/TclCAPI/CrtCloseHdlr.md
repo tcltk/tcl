@@ -57,6 +57,6 @@ The *clientData* is the same as the value provided in the call to **Tcl\_CreateC
 **Tcl\_DeleteCloseHandler** removes a close callback for *channel*. The *proc* and *clientData* identify which close callback to remove; **Tcl\_DeleteCloseHandler** does nothing if its *proc* and *clientData* arguments do not match the *proc* and *clientData* for a  close handler for *channel*.
 
 
-[close]: close.md
+[close]: ../Tcl/close.md
 [OpenFileChnl]: OpenFileChnl.md
 

@@ -131,6 +131,6 @@ On Unix platforms, the socket handle is a Unix file descriptor as returned by th
 [DoOneEvent]: DoOneEvent.md
 [OpenFileChnl]: OpenFileChnl.md
 [SetErrno]: SetErrno.md
-[socket]: socket.md
-[vwait]: vwait.md
+[socket]: ../Tcl/socket.md
+[vwait]: ../Tcl/vwait.md
 

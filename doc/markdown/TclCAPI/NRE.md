@@ -82,7 +82,7 @@ Tcl\_NRCreateCommand, Tcl\_NRCreateCommand2, Tcl\_NRCallObjProc, Tcl\_NRCallObjP
 : A script or expression to evaluate.
 
 [flags]{.carg .in type="int"}
-: As described for *[Tcl\_EvalObjv][Eval3]*. .PP
+: As described for *[Tcl\_EvalObjv][Eval]*. .PP
 
 [cmd]{.carg .in type="Tcl_Command"}
 : Token to use instead of one derived from the first word of *objv* in order to evaluate a command.
@@ -108,9 +108,9 @@ These functions provide an interface to the function stack that an interpreter i
 
 **Tcl\_NRCreateCommand2**, is an alternative to **Tcl\_NRCreateCommand** in the same way as [Tcl\_CreateObjCommand2][CrtObjCmd].
 
-**Tcl\_NREvalObj** pushes a function that is like [Tcl\_EvalObjEx][Eval3] but consumes no space on the C stack.
+**Tcl\_NREvalObj** pushes a function that is like [Tcl\_EvalObjEx][Eval] but consumes no space on the C stack.
 
-**Tcl\_NREvalObjv** pushes a function that is like [Tcl\_EvalObjv][Eval3] but consumes no space on the C stack.
+**Tcl\_NREvalObjv** pushes a function that is like [Tcl\_EvalObjv][Eval] but consumes no space on the C stack.
 
 **Tcl\_NRCmdSwap** is like **Tcl\_NREvalObjv**, but uses *cmd*, a token previously returned by [Tcl\_CreateObjCommand][CrtObjCmd] or [Tcl\_GetCommandFromObj][CrtObjCmd], instead of resolving the first word of *objv*. The name of this command must be the same as *objv\[0\]*.
 
@@ -132,7 +132,7 @@ Tcl_NRPostProc(
 
 # Example
 
-The following command uses [Tcl\_EvalObjEx][Eval3], which consumes space on the C stack, to evaluate a script:
+The following command uses [Tcl\_EvalObjEx][Eval], which consumes space on the C stack, to evaluate a script:
 
 ```
 int
@@ -157,7 +157,7 @@ Tcl_CreateObjCommand2(interp, "theCommand",
         TheCmdOldObjProc, clientData, TheCmdDeleteProc);
 ```
 
-To avoid consuming space on the C stack, *TheCmdOldObjProc* is renamed to *TheCmdNRObjProc* and the postprocessing step is split into a separate function, *TheCmdPostProc*, which is pushed onto the function stack. *[Tcl\_EvalObjEx][Eval3]* is replaced with *Tcl\_NREvalObj*, which uses a trampoline instead of consuming space on the C stack.  A new version of *TheCmdOldObjProc* is just a a wrapper that uses **Tcl\_NRCallObjProc** to call *TheCmdNRObjProc*:
+To avoid consuming space on the C stack, *TheCmdOldObjProc* is renamed to *TheCmdNRObjProc* and the postprocessing step is split into a separate function, *TheCmdPostProc*, which is pushed onto the function stack. *[Tcl\_EvalObjEx][Eval]* is replaced with *Tcl\_NREvalObj*, which uses a trampoline instead of consuming space on the C stack.  A new version of *TheCmdOldObjProc* is just a a wrapper that uses **Tcl\_NRCallObjProc** to call *TheCmdNRObjProc*:
 
 ```
 int
@@ -222,9 +222,9 @@ The *resultObj* argument to **Tcl\_NRExprObj** should be an unshared object.
 Use **Tcl\_NRAddCallback** to schedule any required final decrementing of the reference counts of arguments to any of the other functions on this page, as with any other post-processing step in the non-recursive execution engine.
 
 
-[catch]: catch.md
+[catch]: ../Tcl/catch.md
 [CrtObjCmd]: CrtObjCmd.md
-[Eval3]: Eval3.md
+[Eval]: ../Tcl/Eval.md
 [ExprLongObj]: ExprLongObj.md
-[Object]: Object.md
+[Object]: ../Tcl/Object.md
 

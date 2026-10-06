@@ -67,11 +67,11 @@ See [Tcl\_StandardChannels][StdChannels] for a general treatise about standard c
 
 
 [CrtChannel]: CrtChannel.md
-[exec]: exec.md
-[gets]: gets.md
-[open]: open.md
+[exec]: ../Tcl/exec.md
+[gets]: ../Tcl/gets.md
+[open]: ../Tcl/open.md
 [OpenFileChnl]: OpenFileChnl.md
-[puts]: puts.md
-[read]: read.md
+[puts]: ../Tcl/puts.md
+[read]: ../Tcl/read.md
 [StdChannels]: StdChannels.md
 

@@ -139,7 +139,7 @@ The values in the *objv* argument to **Tcl\_ParseArgsObjv** will not have their 
 
 
 [Alloc]: Alloc.md
-[catch]: catch.md
+[catch]: ../Tcl/catch.md
 [DoubleObj]: DoubleObj.md
 [IntObj]: IntObj.md
 

@@ -365,10 +365,10 @@ Encoding profiles define the manner in which errors in the encoding transforms a
 For details about profiles, see the [Profiles] section in the documentation of the [encoding] command.
 
 
-[binary]: binary.md
-[catch]: catch.md
-[DString]: DString.md
-[encoding]: encoding.md
-[interp]: interp.md
+[binary]: ../Tcl/binary.md
+[catch]: ../Tcl/catch.md
+[DString]: ../Tcl/DString.md
+[encoding]: ../Tcl/encoding.md
+[interp]: ../Tcl/interp.md
 [Utf]: Utf.md
 

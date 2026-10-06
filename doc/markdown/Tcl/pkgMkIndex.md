@@ -92,7 +92,7 @@ If you have a package that is split across scripts and a binary file, then you s
 [info]: info.md
 [load]: load.md
 [package]: package.md
-[PkgRequire]: PkgRequire.md
+[PkgRequire]: ../TclCAPI/PkgRequire.md
 [tclLog]: tclLog.md
 [unknown]: unknown.md
 

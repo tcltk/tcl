@@ -485,7 +485,7 @@ proc getDef {obj method} {
 [catch]: catch.md
 [class]: class.md
 [const]: const.md
-[CrtObjCmd]: CrtObjCmd.md
+[CrtObjCmd]: ../TclCAPI/CrtObjCmd.md
 [define]: define.md
 [eval]: eval.md
 [file]: file.md

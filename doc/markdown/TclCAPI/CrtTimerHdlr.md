@@ -72,5 +72,5 @@ Both functions return a **token**. In case of **Tcl\_CreateTimerHandlerMicroSeco
 
 
 [DoOneEvent]: DoOneEvent.md
-[vwait]: vwait.md
+[vwait]: ../Tcl/vwait.md
 

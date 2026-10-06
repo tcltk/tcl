@@ -82,5 +82,5 @@ typedef struct {
 ```
 
 
-[list]: list.md
+[list]: ../Tcl/list.md
 

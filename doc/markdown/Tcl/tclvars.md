@@ -212,7 +212,7 @@ if {$::argv0 eq [info script]} {
 ```
 
 
-[AddErrInfo]: AddErrInfo.md
+[AddErrInfo]: ../TclCAPI/AddErrInfo.md
 [clock]: clock.md
 [exec]: exec.md
 [expr]: expr.md

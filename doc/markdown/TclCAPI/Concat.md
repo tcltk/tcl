@@ -48,6 +48,6 @@ The result string is dynamically allocated using [Tcl\_Alloc][Alloc];  the calle
 
 
 [Alloc]: Alloc.md
-[concat]: concat.md
+[concat]: ../Tcl/concat.md
 [SplitList]: SplitList.md
 

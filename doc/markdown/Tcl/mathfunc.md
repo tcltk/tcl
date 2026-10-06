@@ -278,7 +278,7 @@ In addition to these predefined functions, applications may define additional fu
 
 
 
-[CrtObjCmd]: CrtObjCmd.md
+[CrtObjCmd]: ../TclCAPI/CrtObjCmd.md
 [expr]: expr.md
 [interp]: interp.md
 [proc]: proc.md

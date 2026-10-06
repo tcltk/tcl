@@ -58,7 +58,7 @@ Tcl\_CreateCommand - implement new commands in C
 
 # Description
 
-**Tcl\_CreateCommand** defines a new command in *interp* and associates it with procedure *proc* such that whenever *cmdName* is invoked as a Tcl command (via a call to [Tcl\_Eval][Eval3]) the Tcl interpreter will call *proc* to process the command. It differs from [Tcl\_CreateObjCommand][CrtObjCmd] in that a new string-based command is defined; that is, a command procedure is defined that takes an array of argument strings instead of values. The value-based command procedures registered by [Tcl\_CreateObjCommand][CrtObjCmd] can execute significantly faster than the string-based command procedures defined by **Tcl\_CreateCommand**. This is because they take Tcl values as arguments and those values can retain an internal representation that can be manipulated more efficiently. Also, Tcl's interpreter now uses values internally. In order to invoke a string-based command procedure registered by **Tcl\_CreateCommand**, it must generate and fetch a string representation from each argument value before the call. New commands should be defined using [Tcl\_CreateObjCommand][CrtObjCmd]. We support **Tcl\_CreateCommand** for backwards compatibility.
+**Tcl\_CreateCommand** defines a new command in *interp* and associates it with procedure *proc* such that whenever *cmdName* is invoked as a Tcl command (via a call to [Tcl\_Eval][Eval]) the Tcl interpreter will call *proc* to process the command. It differs from [Tcl\_CreateObjCommand][CrtObjCmd] in that a new string-based command is defined; that is, a command procedure is defined that takes an array of argument strings instead of values. The value-based command procedures registered by [Tcl\_CreateObjCommand][CrtObjCmd] can execute significantly faster than the string-based command procedures defined by **Tcl\_CreateCommand**. This is because they take Tcl values as arguments and those values can retain an internal representation that can be manipulated more efficiently. Also, Tcl's interpreter now uses values internally. In order to invoke a string-based command procedure registered by **Tcl\_CreateCommand**, it must generate and fetch a string representation from each argument value before the call. New commands should be defined using [Tcl\_CreateObjCommand][CrtObjCmd]. We support **Tcl\_CreateCommand** for backwards compatibility.
 
 The procedures [Tcl\_DeleteCommand][CrtObjCmd], [Tcl\_GetCommandInfo][CrtObjCmd], and [Tcl\_SetCommandInfo][CrtObjCmd] are used in conjunction with **Tcl\_CreateCommand**.
 
@@ -78,7 +78,7 @@ Note that the argument strings should not be modified as they may point to const
 
 *Proc* must return an integer code that is expected to be one of [TCL\_OK][catch], [TCL\_ERROR][catch], [TCL\_RETURN][catch], [TCL\_BREAK][catch], or [TCL\_CONTINUE][catch]. See the [return] man page for details on what these codes mean and the use of extended values for an extension's private use. Most normal commands will only return [TCL\_OK][catch] or [TCL\_ERROR][catch].
 
-In addition, *proc* must set the interpreter result; in the case of a [TCL\_OK][catch] return code this gives the result of the command, and in the case of [TCL\_ERROR][catch] it gives an error message. The [Tcl\_SetResult][SetResult] procedure provides an easy interface for setting the return value;  for complete details on how the interpreter result field is managed, see the **Tcl\_Interp** man page. Before invoking a command procedure, [Tcl\_Eval][Eval3] sets the interpreter result to point to an empty string, so simple commands can return an empty result by doing nothing at all.
+In addition, *proc* must set the interpreter result; in the case of a [TCL\_OK][catch] return code this gives the result of the command, and in the case of [TCL\_ERROR][catch] it gives an error message. The [Tcl\_SetResult][SetResult] procedure provides an easy interface for setting the return value;  for complete details on how the interpreter result field is managed, see the **Tcl\_Interp** man page. Before invoking a command procedure, [Tcl\_Eval][Eval] sets the interpreter result to point to an empty string, so simple commands can return an empty result by doing nothing at all.
 
 The contents of the *argv* array belong to Tcl and are not guaranteed to persist once *proc* returns:  *proc* should not modify them, nor should it set the interpreter result to point anywhere within the *argv* values. Call [Tcl\_SetResult][SetResult] with status **TCL\_VOLATILE** if you want to return something from the *argv* array.
 
@@ -92,10 +92,10 @@ typedef void Tcl_CmdDeleteProc(
 The *clientData* argument will be the same as the *clientData* argument passed to **Tcl\_CreateCommand**.
 
 
-[catch]: catch.md
+[catch]: ../Tcl/catch.md
 [CrtInterp]: CrtInterp.md
 [CrtObjCmd]: CrtObjCmd.md
-[Eval3]: Eval3.md
-[return]: return.md
+[Eval]: Eval.md
+[return]: ../Tcl/return.md
 [SetResult]: SetResult.md
 

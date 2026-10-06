@@ -67,5 +67,5 @@ These procedures convert from strings to integers or double-precision floating-p
 **Tcl\_GetBool** functions almost the same as **Tcl\_GetBoolean**, but it has an additional parameter **flags**, which can be used to specify whether the empty string or NULL is accepted as valid. 
 
 
-[catch]: catch.md
+[catch]: ../Tcl/catch.md
 

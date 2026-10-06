@@ -90,7 +90,7 @@ The *flags* argument to **Tcl\_TraceVar** indicates when the trace procedure is 
 : The result of invoking the *proc* is a dynamically allocated string that will be released by the Tcl library via a call to [Tcl\_Free][Alloc].  Must not be specified at the same time as **TCL\_TRACE\_RESULT\_OBJECT**.
 
 **TCL\_TRACE\_RESULT\_OBJECT**
-: The result of invoking the *proc* is a [Tcl\_Obj][Object] \* (cast to a char \*) with a reference count of at least one.  The ownership of that reference will be transferred to the Tcl core for release (when the core has finished with it) via a call to [Tcl\_DecrRefCount][Object3].  Must not be specified at the same time as **TCL\_TRACE\_RESULT\_DYNAMIC**.
+: The result of invoking the *proc* is a [Tcl\_Obj][Object] \* (cast to a char \*) with a reference count of at least one.  The ownership of that reference will be transferred to the Tcl core for release (when the core has finished with it) via a call to [Tcl\_DecrRefCount][Object].  Must not be specified at the same time as **TCL\_TRACE\_RESULT\_DYNAMIC**.
 
 
 Whenever one of the specified operations occurs on the variable, *proc* will be invoked. It should have arguments and result that match the type **Tcl\_VarTraceProc**:
@@ -140,7 +140,7 @@ It is possible for multiple traces to exist on the same variable. When this happ
 
 # Error returns
 
-Under normal conditions trace procedures should return NULL, indicating successful completion. If *proc* returns a non-NULL value it signifies that an error occurred. The return value must be a pointer to a static character string containing an error message, unless (*exactly* one of) the **TCL\_TRACE\_RESULT\_DYNAMIC** and **TCL\_TRACE\_RESULT\_OBJECT** flags is set, which specify that the result is either a dynamic string (to be released with [Tcl\_Free][Alloc]) or a [Tcl\_Obj][Object] \* (cast to char \* and to be released with [Tcl\_DecrRefCount][Object3]) containing the error message. If a trace procedure returns an error, no further traces are invoked for the access and the traced access aborts with the given message. Trace procedures can use this facility to make variables read-only, for example (but note that the value of the variable will already have been modified before the trace procedure is called, so the trace procedure will have to restore the correct value).
+Under normal conditions trace procedures should return NULL, indicating successful completion. If *proc* returns a non-NULL value it signifies that an error occurred. The return value must be a pointer to a static character string containing an error message, unless (*exactly* one of) the **TCL\_TRACE\_RESULT\_DYNAMIC** and **TCL\_TRACE\_RESULT\_OBJECT** flags is set, which specify that the result is either a dynamic string (to be released with [Tcl\_Free][Alloc]) or a [Tcl\_Obj][Object] \* (cast to char \* and to be released with [Tcl\_DecrRefCount][Object]) containing the error message. If a trace procedure returns an error, no further traces are invoked for the access and the traced access aborts with the given message. Trace procedures can use this facility to make variables read-only, for example (but note that the value of the variable will already have been modified before the trace procedure is called, so the trace procedure will have to restore the correct value).
 
 The return value from *proc* is only used during read and write tracing. During unset traces, the return value is ignored and all relevant trace procedures will always be invoked.
 
@@ -148,7 +148,7 @@ The return value from *proc* is only used during read and write tracing. During 
 
 Because operations on variables may take place as part of the deletion of the interp that contains them, *proc* must be careful about checking what the *interp* parameter can be used to do. The routine [Tcl\_InterpDeleted][CrtInterp] is an important tool for this. When [Tcl\_InterpDeleted][CrtInterp] returns 1, *proc* will not be able to invoke any scripts in *interp*. You may encounter old code using a deprecated flag value **TCL\_INTERP\_DESTROYED** to signal this condition, but Tcl 9 no longer supports this. Any supported code must be converted to stop using it.
 
-A trace procedure can be called at any time, even when there are partially formed results stored in the interpreter.  If the trace procedure does anything that could damage this result (such as calling [Tcl\_Eval][Eval3]) then it must use the [Tcl\_SaveInterpState][SaveInterpState] and related routines to save and restore the original state of the interpreter before it returns.
+A trace procedure can be called at any time, even when there are partially formed results stored in the interpreter.  If the trace procedure does anything that could damage this result (such as calling [Tcl\_Eval][Eval]) then it must use the [Tcl\_SaveInterpState][SaveInterpState] and related routines to save and restore the original state of the interpreter before it returns.
 
 # Undefined variables
 
@@ -168,17 +168,16 @@ Array traces are not yet integrated with the Tcl [info exists][info] command, no
 
 
 [Alloc]: Alloc.md
-[catch]: catch.md
+[catch]: ../Tcl/catch.md
 [CrtInterp]: CrtInterp.md
-[Eval3]: Eval3.md
-[info]: info.md
-[Object]: Object.md
-[Object3]: Object3.md
+[Eval]: Eval.md
+[info]: ../Tcl/info.md
+[Object]: ../Tcl/Object.md
 [SaveInterpState]: SaveInterpState.md
-[scan]: scan.md
-[set]: set.md
+[scan]: ../Tcl/scan.md
+[set]: ../Tcl/set.md
 [SetResult]: SetResult.md
 [SetVar]: SetVar.md
-[unset]: unset.md
-[upvar]: upvar.md
+[unset]: ../Tcl/unset.md
+[upvar]: ../Tcl/upvar.md
 

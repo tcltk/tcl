@@ -47,6 +47,6 @@ These procedures may be used to manipulate the current working directory for the
 **Tcl\_Chdir** changes the applications current working directory to the value specified in *dirName*.  The format of the passed in string must be UTF-8.  The function returns -1 on error or 0 on success. 
 
 
-[DString]: DString.md
-[pwd]: pwd.md
+[DString]: ../Tcl/DString.md
+[pwd]: ../Tcl/pwd.md
 

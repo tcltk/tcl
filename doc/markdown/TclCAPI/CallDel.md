@@ -59,9 +59,9 @@ The *clientData* and *interp* parameters are copies of the *clientData* and *int
 
 **Tcl\_DontCallWhenDeleted** cancels a previous call to **Tcl\_CallWhenDeleted** with the same arguments, so that *proc* will not be called after all when *interp* is deleted. If there is no deletion callback that matches *interp*, *proc*, and *clientData* then the call to **Tcl\_DontCallWhenDeleted** has no effect.
 
-Note that if the callback is being used to delete a resource that *must* be released on exit, [Tcl\_CreateExitHandler][Exit3] should be used to ensure that a callback is received even if the application terminates without deleting the interpreter.
+Note that if the callback is being used to delete a resource that *must* be released on exit, [Tcl\_CreateExitHandler][Exit] should be used to ensure that a callback is received even if the application terminates without deleting the interpreter.
 
 
 [CrtInterp]: CrtInterp.md
-[Exit3]: Exit3.md
+[Exit]: Exit.md
 

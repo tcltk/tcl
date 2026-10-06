@@ -61,5 +61,5 @@ Tcl\_DetachPids, Tcl\_ReapDetachedProcs, Tcl\_WaitPid - manage child processes i
 **Tcl\_WaitPid** is a thin wrapper around the facilities provided by the operating system to wait on the end of a spawned process and to check a whether spawned process is still running. It is used by **Tcl\_ReapDetachedProcs** and the channel system to portably access the operating system. 
 
 
-[exec]: exec.md
+[exec]: ../Tcl/exec.md
 

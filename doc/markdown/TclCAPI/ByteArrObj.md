@@ -80,16 +80,15 @@ On success, both **Tcl\_GetBytesFromObj** and **Tcl\_GetByteArrayFromObj** write
 
 # Reference count management
 
-**Tcl\_NewByteArrayObj** always returns a zero-reference object, much like [Tcl\_NewObj][Object3].
+**Tcl\_NewByteArrayObj** always returns a zero-reference object, much like [Tcl\_NewObj][Object].
 
 **Tcl\_SetByteArrayObj** and **Tcl\_SetByteArrayLength** do not modify the reference count of their *objPtr* arguments, but do require that the object be unshared.
 
 **Tcl\_GetBytesFromObj** and **Tcl\_GetByteArrayFromObj** do not modify the reference count of *objPtr*; they only read. 
 
 
-[binary]: binary.md
+[binary]: ../Tcl/binary.md
 [Object]: Object.md
-[Object3]: Object3.md
 [StringObj]: StringObj.md
 [Utf]: Utf.md
 

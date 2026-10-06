@@ -174,9 +174,9 @@ The first *objc* values in the *objv* argument to **Tcl\_NewObjectInstance** are
 The *methodNameObj* argument to a Tcl\_ObjectMapMethodNameProc implementation will be a value with a reference count of at least 1 where at least one reference is not held by the interpreter result. It is expected that method name mappers will only read their *methodNameObj* arguments.
 
 
-[catch]: catch.md
-[class]: class.md
-[next]: next.md
-[Object]: Object.md
+[catch]: ../Tcl/catch.md
+[class]: ../Tcl/class.md
+[next]: ../Tcl/next.md
+[Object]: ../Tcl/Object.md
 [Preserve]: Preserve.md
 

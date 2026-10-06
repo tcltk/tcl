@@ -56,5 +56,5 @@ When the **TCL\_SUBST\_COMMANDS** bit is set in *flags*, sequences that look lik
 The *objPtr* argument to **Tcl\_SubstObj** must not have a reference count of zero. This function modifies the interpreter result, both on success and on failure; the result of this function on success is exactly the current interpreter result. Successful results should have their reference count incremented if they are to be retained.
 
 
-[subst]: subst.md
+[subst]: ../Tcl/subst.md
 

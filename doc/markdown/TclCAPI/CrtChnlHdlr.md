@@ -71,5 +71,5 @@ Channel handlers are invoked via the Tcl event mechanism, so they are only usefu
 
 
 [CrtChannel]: CrtChannel.md
-[fileevent]: fileevent.md
+[fileevent]: ../Tcl/fileevent.md
 

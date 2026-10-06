@@ -72,7 +72,7 @@ The typical use of **Tcl\_SetPanicProc** arranges for the error message to be di
 Although the primary callers of **Tcl\_Panic** are the procedures of the Tcl library, **Tcl\_Panic** is a public function and may be called by any extension or application that wishes to abort the process and have a panic message displayed the same way that panic messages from Tcl will be displayed.
 
 
-[format]: format.md
+[format]: ../Tcl/format.md
 [Tcl_Main]: Tcl_Main.md
-[Tk_Main]: Tk_Main.md
+[Tk_Main]: ../TkCAPI/Tk_Main.md
 

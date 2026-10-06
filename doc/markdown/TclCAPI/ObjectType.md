@@ -53,7 +53,7 @@ Tcl\_RegisterObjType, Tcl\_GetObjType, Tcl\_AppendAllObjTypes, Tcl\_ConvertToTyp
 : Interpreter to use for error reporting.
 
 [\*objPtr]{.carg .in type="Tcl_Obj"}
-: For **Tcl\_AppendAllObjTypes**, this points to the value onto which it appends the name of each value type as a list element. For **Tcl\_ConvertToType**, this points to a value that must have been the result of a previous call to [Tcl\_NewObj][Object3].
+: For **Tcl\_AppendAllObjTypes**, this points to the value onto which it appends the name of each value type as a list element. For **Tcl\_ConvertToType**, this points to a value that must have been the result of a previous call to [Tcl\_NewObj][Object].
 
 [\*bytes]{.carg .in type="const char"}
 : String representation.
@@ -192,7 +192,7 @@ For example, the list type's *freeIntRepProc* respects the storage sharing schem
 
 The *freeIntRepProc* member can be set to NULL to indicate that the internal representation does not require freeing. The *freeIntRepProc* implementation must not access the *bytes* member of the value, since Tcl makes its own internal uses of that field during value deletion.  The defined tasks for the *freeIntRepProc* have no need to consult the *bytes* member.
 
-Note that if a subsidiary value has its reference count reduced to zero during the running of a *freeIntRepProc*, that value may be not freed immediately, in order to limit stack usage. However, the value will be freed before the outermost current [Tcl\_DecrRefCount][Object3] returns.
+Note that if a subsidiary value has its reference count reduced to zero during the running of a *freeIntRepProc*, that value may be not freed immediately, in order to limit stack usage. However, the value will be freed before the outermost current [Tcl\_DecrRefCount][Object] returns.
 
 ## The version field
 
@@ -316,13 +316,12 @@ None of the callback functions in the **Tcl\_ObjType** structure should modify t
 
 
 [Alloc]: Alloc.md
-[catch]: catch.md
+[catch]: ../Tcl/catch.md
 [ListObj]: ListObj.md
-[lrange]: lrange.md
-[lreverse]: lreverse.md
-[lset]: lset.md
-[Object]: Object.md
-[Object3]: Object3.md
-[PrintDbl]: PrintDbl.md
+[lrange]: ../Tcl/lrange.md
+[lreverse]: ../Tcl/lreverse.md
+[lset]: ../Tcl/lset.md
+[Object]: ../Tcl/Object.md
+[PrintDbl]: ../Tcl/PrintDbl.md
 [StringObj]: StringObj.md
 

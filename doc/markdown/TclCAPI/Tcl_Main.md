@@ -131,12 +131,12 @@ The difference between Tcl\_MainEx and Tcl\_MainExW is that the arguments are pa
 
 
 [AppInit]: AppInit.md
-[exit]: exit.md
+[exit]: ../Tcl/exit.md
 [FindExec]: FindExec.md
 [GetStdChan]: GetStdChan.md
 [InitSubSyst]: InitSubSyst.md
 [Panic]: Panic.md
 [StdChannels]: StdChannels.md
-[tclsh]: tclsh.md
+[tclsh]: ../Tcl/tclsh.md
 [zipfs]: zipfs.md
 

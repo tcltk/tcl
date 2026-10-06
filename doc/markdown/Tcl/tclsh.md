@@ -107,6 +107,6 @@ Only one zipfile can be concatenated to the end of executable image (tclsh, or w
 [exit]: exit.md
 [format]: format.md
 [source]: source.md
-[StdChannels]: StdChannels.md
+[StdChannels]: ../TclCAPI/StdChannels.md
 [zipfs]: zipfs.md
 

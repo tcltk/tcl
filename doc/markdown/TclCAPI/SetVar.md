@@ -128,7 +128,7 @@ The *part1Ptr* argument to **Tcl\_ObjSetVar2** and **Tcl\_ObjGetVar2** can have 
 The *part2Ptr* argument to **Tcl\_ObjSetVar2** and **Tcl\_ObjGetVar2**, if non-NULL, should not have a zero reference count as these functions may retain a reference to it, particularly when it is used to create an array element that did not previously exist, and decrementing the reference count later would leave them pointing to a freed [Tcl\_Obj][Object]. 
 
 
-[catch]: catch.md
-[Object]: Object.md
+[catch]: ../Tcl/catch.md
+[Object]: ../Tcl/Object.md
 [SetResult]: SetResult.md
 
