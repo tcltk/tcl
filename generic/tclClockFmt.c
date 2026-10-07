@@ -3446,7 +3446,7 @@ TclClockFormat(
 		    dateFmt->output = Clock_itoaw(
 			    dateFmt->output, val, *map->tostr, map->width);
 		} else {
-		    dateFmt->output += sprintf(dateFmt->output, map->tostr, val);
+		    dateFmt->output += snprintf(dateFmt->output, dateFmt->resEnd - dateFmt->output, map->tostr, val);
 		}
 	    } else {
 		const char *s;
@@ -3477,7 +3477,7 @@ TclClockFormat(
 	    if (map->width) {
 		dateFmt->output = Clock_witoaw(dateFmt->output, val, *map->tostr, map->width);
 	    } else {
-		dateFmt->output += sprintf(dateFmt->output, map->tostr, val);
+		dateFmt->output += snprintf(dateFmt->output, dateFmt->resEnd - dateFmt->output, map->tostr, val);
 	    }
 	    break;
 	}
