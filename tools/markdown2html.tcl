@@ -1,3 +1,5 @@
+# markdown2html.tcl --
+#
 # this script takes the manual pages in markdown format,
 # converts them into html and builds a website structure to viwe the content
 # in a web browser
@@ -199,7 +201,7 @@ foreach {
 	AllowExc         Tcl_AllowExceptions                Tcl {Tcl C API}
 	ObjectType       Tcl_AppendAllObjTypes              Tcl {Tcl C API}
 	SetResult        Tcl_AppendElement                  Tcl {Tcl C API}
-	Namespace3       Tcl_AppendExportList               Tcl {Tcl C API}
+	Namespace        Tcl_AppendExportList               Tcl {Tcl C API}
 	StringObj        Tcl_AppendFormatToObj              Tcl {Tcl C API}
 	StringObj        Tcl_AppendLimitedToObj             Tcl {Tcl C API}
 	AddErrInfo       Tcl_AppendObjToErrorInfo           Tcl {Tcl C API}
@@ -223,7 +225,7 @@ foreach {
 	BackgdErr        Tcl_BackgroundError                Tcl {Tcl C API}
 	BackgdErr        Tcl_BackgroundException            Tcl {Tcl C API}
 	CrtChannel       Tcl_BadChannelOption               Tcl {Tcl C API}
-	Object3          Tcl_BounceRefCount                 Tcl {Tcl C API}
+	Object           Tcl_BounceRefCount                 Tcl {Tcl C API}
 	CallDel          Tcl_CallWhenDeleted                Tcl {Tcl C API}
 	Cancel           Tcl_Canceled                       Tcl {Tcl C API}
 	Cancel           Tcl_CancelEval                     Tcl {Tcl C API}
@@ -247,16 +249,16 @@ foreach {
 	Utf              Tcl_Char16Len                      Tcl {Tcl C API}
 	Utf              Tcl_Char16ToUtfDString             Tcl {Tcl C API}
 	GetCwd           Tcl_Chdir                          Tcl {Tcl C API}
-	Class3           Tcl_ClassGetMetadata               Tcl {TclOO C API}           
+	Class            Tcl_ClassGetMetadata               Tcl {TclOO C API}           
 	Method           Tcl_ClassSetConstructor            Tcl {TclOO C API}           
 	Method           Tcl_ClassSetDestructor             Tcl {TclOO C API}           
-	Class3           Tcl_ClassSetMetadata               Tcl {TclOO C API}           
+	Class            Tcl_ClassSetMetadata               Tcl {TclOO C API}           
 	CrtChannel       Tcl_ClearChannelHandlers           Tcl {Tcl C API}
 	OpenFileChnl     Tcl_Close                          Tcl {Tcl C API}
 	OpenFileChnl     Tcl_CloseEx                        Tcl {Tcl C API}
 	CmdCmplt         Tcl_CommandComplete                Tcl {Tcl C API}
 	TraceCmd         Tcl_CommandTraceInfo               Tcl {Tcl C API}
-	Concat3          Tcl_Concat                         Tcl {Tcl C API}
+	Concat           Tcl_Concat                         Tcl {Tcl C API}
 	StringObj        Tcl_ConcatObj                      Tcl {Tcl C API}
 	Thread           Tcl_ConditionFinalize              Tcl {Tcl C API}
 	Thread           Tcl_ConditionNotify                Tcl {Tcl C API}
@@ -265,7 +267,7 @@ foreach {
 	SplitList        Tcl_ConvertCountedElement          Tcl {Tcl C API}
 	SplitList        Tcl_ConvertElement                 Tcl {Tcl C API}
 	ObjectType       Tcl_ConvertToType                  Tcl {Tcl C API}
-	Class3           Tcl_CopyObjectInstance             Tcl {TclOO C API}
+	Class            Tcl_CopyObjectInstance             Tcl {TclOO C API}
 	CrtAlias         Tcl_CreateAlias                    Tcl {Tcl C API}
 	CrtAlias         Tcl_CreateAliasObj                 Tcl {Tcl C API}
 	CrtChannel       Tcl_CreateChannel                  Tcl {Tcl C API}
@@ -273,24 +275,24 @@ foreach {
 	CrtAlias         Tcl_CreateChild                    Tcl {Tcl C API}
 	CrtCloseHdlr     Tcl_CreateCloseHandler             Tcl {Tcl C API}
 	CrtCommand       Tcl_CreateCommand                  Tcl {Tcl C API}
-	Encoding3        Tcl_CreateEncoding                 Tcl {Tcl C API}
+	Encoding         Tcl_CreateEncoding                 Tcl {Tcl C API}
 	Ensemble         Tcl_CreateEnsemble                 Tcl {Tcl C API}
 	Notifier         Tcl_CreateEventSource              Tcl {Tcl C API}
-	Exit3            Tcl_CreateExitHandler              Tcl {Tcl C API}
+	Exit             Tcl_CreateExitHandler              Tcl {Tcl C API}
 	CrtFileHdlr      Tcl_CreateFileHandler              Tcl {Tcl C API}
 	Hash             Tcl_CreateHashEntry                Tcl {Tcl C API}
 	CrtInterp        Tcl_CreateInterp                   Tcl {Tcl C API}
-	Namespace3       Tcl_CreateNamespace                Tcl {Tcl C API}
+	Namespace        Tcl_CreateNamespace                Tcl {Tcl C API}
 	CrtObjCmd        Tcl_CreateObjCommand               Tcl {Tcl C API}
 	CrtObjCmd        Tcl_CreateObjCommand2              Tcl {Tcl C API}
 	CrtTrace         Tcl_CreateObjTrace                 Tcl {Tcl C API}
 	CrtTrace         Tcl_CreateObjTrace2                Tcl {Tcl C API}
 	Thread           Tcl_CreateThread                   Tcl {Tcl C API}
-	Exit3            Tcl_CreateThreadExitHandler        Tcl {Tcl C API}
+	Exit             Tcl_CreateThreadExitHandler        Tcl {Tcl C API}
 	CrtTimerHdlr     Tcl_CreateTimerHandler             Tcl {Tcl C API}
 	CrtTrace         Tcl_CreateTrace                    Tcl {Tcl C API}
 	CrtChannel       Tcl_CutChannel                     Tcl {Tcl C API}
-	Object3          Tcl_DecrRefCount                   Tcl {Tcl C API}
+	Object           Tcl_DecrRefCount                   Tcl {Tcl C API}
 	AssocData        Tcl_DeleteAssocData                Tcl {Tcl C API}
 	CrtChnlHdlr      Tcl_DeleteChannelHandler           Tcl {Tcl C API}
 	CrtCloseHdlr     Tcl_DeleteCloseHandler             Tcl {Tcl C API}
@@ -298,13 +300,13 @@ foreach {
 	CrtObjCmd        Tcl_DeleteCommandFromToken         Tcl {Tcl C API}
 	Notifier         Tcl_DeleteEvents                   Tcl {Tcl C API}
 	Notifier         Tcl_DeleteEventSource              Tcl {Tcl C API}
-	Exit3            Tcl_DeleteExitHandler              Tcl {Tcl C API}
+	Exit             Tcl_DeleteExitHandler              Tcl {Tcl C API}
 	CrtFileHdlr      Tcl_DeleteFileHandler              Tcl {Tcl C API}
 	Hash             Tcl_DeleteHashEntry                Tcl {Tcl C API}
 	Hash             Tcl_DeleteHashTable                Tcl {Tcl C API}
 	CrtInterp        Tcl_DeleteInterp                   Tcl {Tcl C API}
-	Namespace3       Tcl_DeleteNamespace                Tcl {Tcl C API}
-	Exit3            Tcl_DeleteThreadExitHandler        Tcl {Tcl C API}
+	Namespace        Tcl_DeleteNamespace                Tcl {Tcl C API}
+	Exit             Tcl_DeleteThreadExitHandler        Tcl {Tcl C API}
 	CrtTimerHdlr     Tcl_DeleteTimerHandler             Tcl {Tcl C API}
 	CrtTrace         Tcl_DeleteTrace                    Tcl {Tcl C API}
 	OpenFileChnl     Tcl_DetachChannel                  Tcl {Tcl C API}
@@ -335,20 +337,20 @@ foreach {
 	DString          Tcl_DStringToObj                   Tcl {Tcl C API}
 	DString          Tcl_DStringValue                   Tcl {Tcl C API}
 	DumpActiveMemory Tcl_DumpActiveMemory               Tcl {Tcl C API}
-	Object3          Tcl_DuplicateObj                   Tcl {Tcl C API}
+	Object           Tcl_DuplicateObj                   Tcl {Tcl C API}
 	OpenFileChnl     Tcl_Eof                            Tcl {Tcl C API}
 	SetErrno         Tcl_ErrnoId                        Tcl {Tcl C API}
 	SetErrno         Tcl_ErrnoMsg                       Tcl {Tcl C API}
-	Eval3            Tcl_Eval                           Tcl {Tcl C API}
-	Eval3            Tcl_EvalEx                         Tcl {Tcl C API}
-	Eval3            Tcl_EvalFile                       Tcl {Tcl C API}
-	Eval3            Tcl_EvalObjEx                      Tcl {Tcl C API}
-	Eval3            Tcl_EvalObjv                       Tcl {Tcl C API}
+	Eval             Tcl_Eval                           Tcl {Tcl C API}
+	Eval             Tcl_EvalEx                         Tcl {Tcl C API}
+	Eval             Tcl_EvalFile                       Tcl {Tcl C API}
+	Eval             Tcl_EvalObjEx                      Tcl {Tcl C API}
+	Eval             Tcl_EvalObjv                       Tcl {Tcl C API}
 	ParseCmd         Tcl_EvalTokensStandard             Tcl {Tcl C API}
 	Preserve         Tcl_EventuallyFree                 Tcl {Tcl C API}
-	Exit3            Tcl_Exit                           Tcl {Tcl C API}
-	Exit3            Tcl_ExitThread                     Tcl {Tcl C API}
-	Namespace3       Tcl_Export                         Tcl {Tcl C API}
+	Exit             Tcl_Exit                           Tcl {Tcl C API}
+	Exit             Tcl_ExitThread                     Tcl {Tcl C API}
+	Namespace        Tcl_Export                         Tcl {Tcl C API}
 	CrtAlias         Tcl_ExposeCommand                  Tcl {Tcl C API}
 	ExprLong         Tcl_ExprBoolean                    Tcl {Tcl C API}
 	ExprLongObj      Tcl_ExprBooleanObj                 Tcl {Tcl C API}
@@ -358,26 +360,26 @@ foreach {
 	ExprLongObj      Tcl_ExprLongObj                    Tcl {Tcl C API}
 	ExprLongObj      Tcl_ExprObj                        Tcl {Tcl C API}
 	ExprLong         Tcl_ExprString                     Tcl {Tcl C API}
-	Encoding3        Tcl_ExternalToUtf                  Tcl {Tcl C API}
-	Encoding3        Tcl_ExternalToUtfDString           Tcl {Tcl C API}
-	Encoding3        Tcl_ExternalToUtfDStringEx         Tcl {Tcl C API}
-	Encoding3        Tcl_ExternalToUtfEx                Tcl {Tcl C API}
+	Encoding         Tcl_ExternalToUtf                  Tcl {Tcl C API}
+	Encoding         Tcl_ExternalToUtfDString           Tcl {Tcl C API}
+	Encoding         Tcl_ExternalToUtfDStringEx         Tcl {Tcl C API}
+	Encoding         Tcl_ExternalToUtfEx                Tcl {Tcl C API}
 	ObjectType       Tcl_FetchInternalRep               Tcl {Tcl C API}
-	Exit3            Tcl_Finalize                       Tcl {Tcl C API}
+	Exit             Tcl_Finalize                       Tcl {Tcl C API}
 	Notifier         Tcl_FinalizeNotifier               Tcl {Tcl C API}
-	Exit3            Tcl_FinalizeThread                 Tcl {Tcl C API}
-	Namespace3       Tcl_FindCommand                    Tcl {Tcl C API}
+	Exit             Tcl_FinalizeThread                 Tcl {Tcl C API}
+	Namespace        Tcl_FindCommand                    Tcl {Tcl C API}
 	Ensemble         Tcl_FindEnsemble                   Tcl {Tcl C API}
 	FindExec         Tcl_FindExecutable                 Tcl {Tcl C API}
 	Hash             Tcl_FindHashEntry                  Tcl {Tcl C API}
-	Namespace3       Tcl_FindNamespace                  Tcl {Tcl C API}
-	Load3            Tcl_FindSymbol                     Tcl {Tcl C API}
+	Namespace        Tcl_FindNamespace                  Tcl {Tcl C API}
+	Load             Tcl_FindSymbol                     Tcl {Tcl C API}
 	Hash             Tcl_FirstHashEntry                 Tcl {Tcl C API}
 	OpenFileChnl     Tcl_Flush                          Tcl {Tcl C API}
-	Namespace3       Tcl_ForgetImport                   Tcl {Tcl C API}
+	Namespace        Tcl_ForgetImport                   Tcl {Tcl C API}
 	StringObj        Tcl_Format                         Tcl {Tcl C API}
 	Alloc            Tcl_Free                           Tcl {Tcl C API}
-	Encoding3        Tcl_FreeEncoding                   Tcl {Tcl C API}
+	Encoding         Tcl_FreeEncoding                   Tcl {Tcl C API}
 	ObjectType       Tcl_FreeInternalRep                Tcl {Tcl C API}
 	ParseCmd         Tcl_FreeParse                      Tcl {Tcl C API}
 	FileSystem       Tcl_FSAccess                       Tcl {Tcl C API}
@@ -450,25 +452,25 @@ foreach {
 	CrtChannel       Tcl_GetChannelType                 Tcl {Tcl C API}
 	StringObj        Tcl_GetCharLength                  Tcl {Tcl C API}
 	CrtAlias         Tcl_GetChild                       Tcl {Tcl C API}
-	Class3           Tcl_GetClassAsObject               Tcl {TclOO C API}
+	Class            Tcl_GetClassAsObject               Tcl {TclOO C API}
 	CrtObjCmd        Tcl_GetCommandFromObj              Tcl {Tcl C API}
 	CrtObjCmd        Tcl_GetCommandFullName             Tcl {Tcl C API}
 	CrtObjCmd        Tcl_GetCommandInfo                 Tcl {Tcl C API}
 	CrtObjCmd        Tcl_GetCommandInfoFromToken        Tcl {Tcl C API}
 	CrtObjCmd        Tcl_GetCommandName                 Tcl {Tcl C API}
-	Namespace3       Tcl_GetCurrentNamespace            Tcl {Tcl C API}
+	Namespace        Tcl_GetCurrentNamespace            Tcl {Tcl C API}
 	Notifier         Tcl_GetCurrentThread               Tcl {Tcl C API}
 	GetCwd           Tcl_GetCwd                         Tcl {Tcl C API}
 	FileSystem       Tcl_GetDeviceTypeFromStat          Tcl {Tcl C API}
 	GetInt           Tcl_GetDouble                      Tcl {Tcl C API}
 	DoubleObj        Tcl_GetDoubleFromObj               Tcl {Tcl C API}
-	Encoding3        Tcl_GetEncoding                    Tcl {Tcl C API}
-	Encoding3        Tcl_GetEncodingFromObj             Tcl {Tcl C API}
-	Encoding3        Tcl_GetEncodingName                Tcl {Tcl C API}
-	Encoding3        Tcl_GetEncodingNameForUser         Tcl {Tcl C API}
-	Encoding3        Tcl_GetEncodingNameFromEnvironment Tcl {Tcl C API}
-	Encoding3        Tcl_GetEncodingNames               Tcl {Tcl C API}
-	Encoding3        Tcl_GetEncodingSearchPath          Tcl {Tcl C API}
+	Encoding         Tcl_GetEncoding                    Tcl {Tcl C API}
+	Encoding         Tcl_GetEncodingFromObj             Tcl {Tcl C API}
+	Encoding         Tcl_GetEncodingName                Tcl {Tcl C API}
+	Encoding         Tcl_GetEncodingNameForUser         Tcl {Tcl C API}
+	Encoding         Tcl_GetEncodingNameFromEnvironment Tcl {Tcl C API}
+	Encoding         Tcl_GetEncodingNames               Tcl {Tcl C API}
+	Encoding         Tcl_GetEncodingSearchPath          Tcl {Tcl C API}
 	Ensemble         Tcl_GetEnsembleFlags               Tcl {Tcl C API}
 	Ensemble         Tcl_GetEnsembleMappingDict         Tcl {Tcl C API}
 	Ensemble         Tcl_GetEnsembleNamespace           Tcl {Tcl C API}
@@ -479,7 +481,7 @@ foreach {
 	AddErrInfo       Tcl_GetErrorLine                   Tcl {Tcl C API}
 	FileSystem       Tcl_GetFSDeviceFromStat            Tcl {Tcl C API}
 	FileSystem       Tcl_GetFSInodeFromStat             Tcl {Tcl C API}
-	Namespace3       Tcl_GetGlobalNamespace             Tcl {Tcl C API}
+	Namespace        Tcl_GetGlobalNamespace             Tcl {Tcl C API}
 	FileSystem       Tcl_GetGroupIdFromStat             Tcl {Tcl C API}
 	Hash             Tcl_GetHashKey                     Tcl {Tcl C API}
 	Hash             Tcl_GetHashValue                   Tcl {Tcl C API}
@@ -497,21 +499,21 @@ foreach {
 	FileSystem       Tcl_GetModificationTimeFromStat    Tcl {Tcl C API}
 	GetTime          Tcl_GetMonotonicTime               Tcl {Tcl C API}
 	FindExec         Tcl_GetNameOfExecutable            Tcl {Tcl C API}
-	Namespace3       Tcl_GetNamespaceUnknownHandler     Tcl {Tcl C API}
+	Namespace        Tcl_GetNamespaceUnknownHandler     Tcl {Tcl C API}
 	Number           Tcl_GetNumber                      Tcl {Tcl C API}
 	Number           Tcl_GetNumberFromObj               Tcl {Tcl C API}
-	Class3           Tcl_GetObjectAsClass               Tcl {TclOO C API}         
-	Class3           Tcl_GetObjectCommand               Tcl {TclOO C API}         
-	Class3           Tcl_GetObjectFromObj               Tcl {TclOO C API}         
-	Class3           Tcl_GetObjectName                  Tcl {TclOO C API}         
-	Class3           Tcl_GetObjectNamespace             Tcl {TclOO C API}         
+	Class            Tcl_GetObjectAsClass               Tcl {TclOO C API}         
+	Class            Tcl_GetObjectCommand               Tcl {TclOO C API}         
+	Class            Tcl_GetObjectFromObj               Tcl {TclOO C API}         
+	Class            Tcl_GetObjectName                  Tcl {TclOO C API}         
+	Class            Tcl_GetObjectNamespace             Tcl {TclOO C API}         
 	SetResult        Tcl_GetObjResult                   Tcl {Tcl C API}
 	ObjectType       Tcl_GetObjType                     Tcl {Tcl C API}
 	GetOpnFl         Tcl_GetOpenFile                    Tcl {Tcl C API}
 	CrtAlias         Tcl_GetParent                      Tcl {Tcl C API}
 	SplitPath        Tcl_GetPathType                    Tcl {Tcl C API}
 	StringObj        Tcl_GetRange                       Tcl {Tcl C API}
-	RegExp3          Tcl_GetRegExpFromObj               Tcl {Tcl C API}
+	RegExp           Tcl_GetRegExpFromObj               Tcl {Tcl C API}
 	AddErrInfo       Tcl_GetReturnOptions               Tcl {Tcl C API}
 	OpenFileChnl     Tcl_Gets                           Tcl {Tcl C API}
 	Notifier         Tcl_GetServiceMode                 Tcl {Tcl C API}
@@ -537,13 +539,13 @@ foreach {
 	GetVersion       Tcl_GetVersion                     Tcl {Tcl C API}
 	IntObj           Tcl_GetWideIntFromObj              Tcl {Tcl C API}
 	IntObj           Tcl_GetWideUIntFromObj             Tcl {Tcl C API}
-	Eval3            Tcl_GlobalEval                     Tcl {Tcl C API}
-	Eval3            Tcl_GlobalEvalObj                  Tcl {Tcl C API}
+	Eval             Tcl_GlobalEval                     Tcl {Tcl C API}
+	Eval             Tcl_GlobalEvalObj                  Tcl {Tcl C API}
 	Hash             Tcl_HashStats                      Tcl {Tcl C API}
 	ObjectType       Tcl_HasStringRep                   Tcl {Tcl C API}
 	CrtAlias         Tcl_HideCommand                    Tcl {Tcl C API}
-	Namespace3       Tcl_Import                         Tcl {Tcl C API}
-	Object3          Tcl_IncrRefCount                   Tcl {Tcl C API}
+	Namespace        Tcl_Import                         Tcl {Tcl C API}
+	Object           Tcl_IncrRefCount                   Tcl {Tcl C API}
 	Init             Tcl_Init                           Tcl {Tcl C API}
 	Hash             Tcl_InitCustomHashTable            Tcl {Tcl C API}
 	Hash             Tcl_InitHashTable                  Tcl {Tcl C API}
@@ -557,14 +559,14 @@ foreach {
 	OpenFileChnl     Tcl_InputBuffered                  Tcl {Tcl C API}
 	CrtInterp        Tcl_InterpActive                   Tcl {Tcl C API}
 	CrtInterp        Tcl_InterpDeleted                  Tcl {Tcl C API}
-	Object3          Tcl_InvalidateStringRep            Tcl {Tcl C API}
+	Object           Tcl_InvalidateStringRep            Tcl {Tcl C API}
 	CrtChannel       Tcl_IsChannelExisting              Tcl {Tcl C API}
 	CrtChannel       Tcl_IsChannelRegistered            Tcl {Tcl C API}
 	CrtChannel       Tcl_IsChannelShared                Tcl {Tcl C API}
 	StringObj        Tcl_IsEmpty                        Tcl {Tcl C API}
 	Ensemble         Tcl_IsEnsemble                     Tcl {Tcl C API}
 	CrtAlias         Tcl_IsSafe                         Tcl {Tcl C API}
-	Object3          Tcl_IsShared                       Tcl {Tcl C API}
+	Object           Tcl_IsShared                       Tcl {Tcl C API}
 	OpenFileChnl     Tcl_IsStandardChannel              Tcl {Tcl C API}
 	SplitPath        Tcl_JoinPath                       Tcl {Tcl C API}
 	Thread           Tcl_JoinThread                     Tcl {Tcl C API}
@@ -594,7 +596,7 @@ foreach {
 	ListObj          Tcl_ListObjRepeat                  Tcl {Tcl C API}
 	ListObj          Tcl_ListObjReplace                 Tcl {Tcl C API}
 	ListObj          Tcl_ListObjReverse                 Tcl {Tcl C API}
-	Load3            Tcl_LoadFile                       Tcl {Tcl C API}
+	Load             Tcl_LoadFile                       Tcl {Tcl C API}
 	AddErrInfo       Tcl_LogCommandInfo                 Tcl {Tcl C API}
 	Tcl_Main         Tcl_Main                           Tcl {Tcl C API}
 	Tcl_Main         Tcl_MainEx                         Tcl {Tcl C API}
@@ -625,8 +627,8 @@ foreach {
 	IntObj           Tcl_NewLongObj                     Tcl {Tcl C API}
 	Method           Tcl_NewMethod                      Tcl {TclOO C API}
 	Method           Tcl_NewMethod2                     Tcl {TclOO C API}
-	Object3          Tcl_NewObj                         Tcl {Tcl C API}
-	Class3           Tcl_NewObjectInstance              Tcl {TclOO C API}
+	Object           Tcl_NewObj                         Tcl {Tcl C API}
+	Class            Tcl_NewObjectInstance              Tcl {TclOO C API}
 	StringObj        Tcl_NewStringObj                   Tcl {Tcl C API}
 	StringObj        Tcl_NewUnicodeObj                  Tcl {Tcl C API}
 	IntObj           Tcl_NewWideIntObj                  Tcl {Tcl C API}
@@ -648,11 +650,11 @@ foreach {
 	Method           Tcl_ObjectContextMethod            Tcl {TclOO C API}
 	Method           Tcl_ObjectContextObject            Tcl {TclOO C API}
 	Method           Tcl_ObjectContextSkippedArgs       Tcl {TclOO C API}
-	Class3           Tcl_ObjectDeleted                  Tcl {TclOO C API}
-	Class3           Tcl_ObjectGetMetadata              Tcl {TclOO C API}
-	Class3           Tcl_ObjectGetMethodNameMapper      Tcl {TclOO C API}
-	Class3           Tcl_ObjectSetMetadata              Tcl {TclOO C API}
-	Class3           Tcl_ObjectSetMethodNameMapper      Tcl {TclOO C API}
+	Class            Tcl_ObjectDeleted                  Tcl {TclOO C API}
+	Class            Tcl_ObjectGetMetadata              Tcl {TclOO C API}
+	Class            Tcl_ObjectGetMethodNameMapper      Tcl {TclOO C API}
+	Class            Tcl_ObjectSetMetadata              Tcl {TclOO C API}
+	Class            Tcl_ObjectSetMethodNameMapper      Tcl {TclOO C API}
 	SetVar           Tcl_ObjGetVar2                     Tcl {Tcl C API}
 	StringObj        Tcl_ObjPrintf                      Tcl {Tcl C API}
 	SetVar           Tcl_ObjSetVar2                     Tcl {Tcl C API}
@@ -691,13 +693,13 @@ foreach {
 	DetachPids       Tcl_ReapDetachedProcs              Tcl {Tcl C API}
 	RecordEval       Tcl_RecordAndEval                  Tcl {Tcl C API}
 	RecEvalObj       Tcl_RecordAndEvalObj               Tcl {Tcl C API}
-	RegExp3          Tcl_RegExpCompile                  Tcl {Tcl C API}
-	RegExp3          Tcl_RegExpExec                     Tcl {Tcl C API}
-	RegExp3          Tcl_RegExpExecObj                  Tcl {Tcl C API}
-	RegExp3          Tcl_RegExpGetInfo                  Tcl {Tcl C API}
-	RegExp3          Tcl_RegExpMatch                    Tcl {Tcl C API}
-	RegExp3          Tcl_RegExpMatchObj                 Tcl {Tcl C API}
-	RegExp3          Tcl_RegExpRange                    Tcl {Tcl C API}
+	RegExp           Tcl_RegExpCompile                  Tcl {Tcl C API}
+	RegExp           Tcl_RegExpExec                     Tcl {Tcl C API}
+	RegExp           Tcl_RegExpExecObj                  Tcl {Tcl C API}
+	RegExp           Tcl_RegExpGetInfo                  Tcl {Tcl C API}
+	RegExp           Tcl_RegExpMatch                    Tcl {Tcl C API}
+	RegExp           Tcl_RegExpMatchObj                 Tcl {Tcl C API}
+	RegExp           Tcl_RegExpRange                    Tcl {Tcl C API}
 	OpenFileChnl     Tcl_RegisterChannel                Tcl {Tcl C API}
 	RegConfig        Tcl_RegisterConfig                 Tcl {Tcl C API}
 	ObjectType       Tcl_RegisterObjType                Tcl {Tcl C API}
@@ -723,7 +725,7 @@ foreach {
 	CrtObjCmd        Tcl_SetCommandInfo                 Tcl {Tcl C API}
 	CrtObjCmd        Tcl_SetCommandInfoFromToken        Tcl {Tcl C API}
 	DoubleObj        Tcl_SetDoubleObj                   Tcl {Tcl C API}
-	Encoding3        Tcl_SetEncodingSearchPath          Tcl {Tcl C API}
+	Encoding         Tcl_SetEncodingSearchPath          Tcl {Tcl C API}
 	Ensemble         Tcl_SetEnsembleFlags               Tcl {Tcl C API}
 	Ensemble         Tcl_SetEnsembleMappingDict         Tcl {Tcl C API}
 	Ensemble         Tcl_SetEnsembleParameterList       Tcl {Tcl C API}
@@ -732,14 +734,14 @@ foreach {
 	SetErrno         Tcl_SetErrno                       Tcl {Tcl C API}
 	AddErrInfo       Tcl_SetErrorCode                   Tcl {Tcl C API}
 	AddErrInfo       Tcl_SetErrorLine                   Tcl {Tcl C API}
-	Exit3            Tcl_SetExitProc                    Tcl {Tcl C API}
+	Exit             Tcl_SetExitProc                    Tcl {Tcl C API}
 	Hash             Tcl_SetHashValue                   Tcl {Tcl C API}
 	IntObj           Tcl_SetIntObj                      Tcl {Tcl C API}
 	ListObj          Tcl_SetListObj                     Tcl {Tcl C API}
 	IntObj           Tcl_SetLongObj                     Tcl {Tcl C API}
 	Tcl_Main         Tcl_SetMainLoop                    Tcl {Tcl C API}
 	Notifier         Tcl_SetMaxBlockTime                Tcl {Tcl C API}
-	Namespace3       Tcl_SetNamespaceUnknownHandler     Tcl {Tcl C API}
+	Namespace        Tcl_SetNamespaceUnknownHandler     Tcl {Tcl C API}
 	Notifier         Tcl_SetNotifier                    Tcl {Tcl C API}
 	AddErrInfo       Tcl_SetObjErrorCode                Tcl {Tcl C API}
 	StringObj        Tcl_SetObjLength                   Tcl {Tcl C API}
@@ -752,7 +754,7 @@ foreach {
 	Tcl_Main         Tcl_SetStartupScript               Tcl {Tcl C API}
 	GetStdChan       Tcl_SetStdChannel                  Tcl {Tcl C API}
 	StringObj        Tcl_SetStringObj                   Tcl {Tcl C API}
-	Encoding3        Tcl_SetSystemEncoding              Tcl {Tcl C API}
+	Encoding         Tcl_SetSystemEncoding              Tcl {Tcl C API}
 	GetTime          Tcl_SetTimeProc                    Tcl {Tcl C API}
 	Notifier         Tcl_SetTimer                       Tcl {Tcl C API}
 	StringObj        Tcl_SetUnicodeObj                  Tcl {Tcl C API}
@@ -816,8 +818,8 @@ foreach {
 	TraceVar         Tcl_UntraceVar                     Tcl {Tcl C API}
 	TraceVar         Tcl_UntraceVar2                    Tcl {Tcl C API}
 	LinkVar          Tcl_UpdateLinkedVar                Tcl {Tcl C API}
-	UpVar3           Tcl_UpVar                          Tcl {Tcl C API}
-	UpVar3           Tcl_UpVar2                         Tcl {Tcl C API}
+	UpVar            Tcl_UpVar                          Tcl {Tcl C API}
+	UpVar            Tcl_UpVar2                         Tcl {Tcl C API}
 	Utf              Tcl_UtfAtIndex                     Tcl {Tcl C API}
 	Utf              Tcl_UtfBackslash                   Tcl {Tcl C API}
 	Utf              Tcl_UtfCharComplete                Tcl {Tcl C API}
@@ -829,10 +831,10 @@ foreach {
 	Utf              Tcl_UtfPrev                        Tcl {Tcl C API}
 	Utf              Tcl_UtfToChar16                    Tcl {Tcl C API}
 	Utf              Tcl_UtfToChar16DString             Tcl {Tcl C API}
-	Encoding3        Tcl_UtfToExternal                  Tcl {Tcl C API}
-	Encoding3        Tcl_UtfToExternalDString           Tcl {Tcl C API}
-	Encoding3        Tcl_UtfToExternalDStringEx         Tcl {Tcl C API}
-	Encoding3        Tcl_UtfToExternalEx                Tcl {Tcl C API}
+	Encoding         Tcl_UtfToExternal                  Tcl {Tcl C API}
+	Encoding         Tcl_UtfToExternalDString           Tcl {Tcl C API}
+	Encoding         Tcl_UtfToExternalDStringEx         Tcl {Tcl C API}
+	Encoding         Tcl_UtfToExternalEx                Tcl {Tcl C API}
 	ToUpper          Tcl_UtfToLower                     Tcl {Tcl C API}
 	UnicodeNormalize Tcl_UtfToNormalized                Tcl {Tcl C API}
 	UnicodeNormalize Tcl_UtfToNormalizedDString         Tcl {Tcl C API}
@@ -843,7 +845,7 @@ foreach {
 	Utf              Tcl_UtfToWChar                     Tcl {Tcl C API}
 	Utf              Tcl_UtfToWCharDString              Tcl {Tcl C API}
 	DumpActiveMemory Tcl_ValidateAllMemory              Tcl {Tcl C API}
-	Eval3            Tcl_VarEval                        Tcl {Tcl C API}
+	Eval             Tcl_VarEval                        Tcl {Tcl C API}
 	TraceVar         Tcl_VarTraceInfo                   Tcl {Tcl C API}
 	TraceVar         Tcl_VarTraceInfo2                  Tcl {Tcl C API}
 	Notifier         Tcl_WaitForEvent                   Tcl {Tcl C API}
@@ -867,10 +869,10 @@ foreach {
 	TclZlib          Tcl_ZlibStreamGetCommandName       Tcl {Tcl C API}
 	TclZlib          Tcl_ZlibStreamInit                 Tcl {Tcl C API}
 	TclZlib          Tcl_ZlibStreamPut                  Tcl {Tcl C API}
-	zipfs3           TclZipfs_AppHook                   Tcl {Tcl C API}
-	zipfs3           TclZipfs_Mount                     Tcl {Tcl C API}
-	zipfs3           TclZipfs_MountBuffer               Tcl {Tcl C API}
-	zipfs3           TclZipfs_Unmount                   Tcl {Tcl C API}
+	Zipfs            TclZipfs_AppHook                   Tcl {Tcl C API}
+	Zipfs            TclZipfs_Mount                     Tcl {Tcl C API}
+	Zipfs            TclZipfs_MountBuffer               Tcl {Tcl C API}
+	Zipfs            TclZipfs_Unmount                   Tcl {Tcl C API}
 } {
 	# code here to build the left panel of the webpage for navigation:
 	# a page may appear several times (e.g. one entry per C API function documented on it)
@@ -907,6 +909,10 @@ foreach entry [dict keys $manFiles] {
 		}
 	}
 	if {$myFolder eq ""} {return -code error "no folder for file '$myFile'.md"}
+	puts "$myFile.md -> $myFile.html"
 	exec pandoc -f markdown-tex_math_dollars-smart -t html \
-		-s -c [file join .. tcl-docs.css] -o [file join .. doc html $myFolder $myFile.html] [file join .. doc markdown $myFile.md]
+		--lua-filter markdown2html.lua \
+		-s -c [file join .. tcl-docs.css] \
+		-o [file join .. doc html $myFolder $myFile.html] \
+		[file join .. doc markdown $myFolder $myFile.md]
 }

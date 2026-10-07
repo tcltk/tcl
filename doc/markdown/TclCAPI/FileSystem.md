@@ -259,7 +259,7 @@ is wrong, and may cause memory errors. The *path* must have its reference count 
 
 Both the above functions return a standard Tcl completion code. If an error occurs, an error message is left in the *interp*'s result.
 
-The token provided via the variable indicated by *loadHandlePtr* may be used with [Tcl\_FindSymbol][Load].
+The token provided via the variable indicated by *loadHandlePtr* may be used with [Tcl\_FindSymbol][Load3].
 
 **Tcl\_FSMatchInDirectory** is used by the globbing code to search a directory for all files which match a given pattern. The appropriate function for the filesystem to which *pathPtr* belongs will be called.
 
@@ -973,7 +973,7 @@ For all virtual filesystem implementation functions, any *pathPtr* arguments sho
 [interp]: ../Tcl/interp.md
 [join]: ../Tcl/join.md
 [ListObj]: ListObj.md
-[Load]: Load.md
+[Load3]: Load.md
 [load]: ../Tcl/load.md
 [Object]: ../Tcl/Object.md
 [open]: ../Tcl/open.md

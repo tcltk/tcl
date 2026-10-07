@@ -1,5 +1,5 @@
-package require Tcl 9
-
+# man2markdown.tcl --
+#
 # This script parses an nroff formatted Tcl/Tk manual page,
 # converts it into some AST (Abstract Syntax Tree)
 # and then writes it out again as a markdown file.
@@ -41,6 +41,8 @@ package require Tcl 9
 #
 # This script is part of the implementation of TIP 700 <https://core.tcl-lang.org/tips/doc/trunk/tip/700.md>
 #
+
+package require Tcl 9
 
 namespace eval ::ndoc {
 	
@@ -2464,6 +2466,13 @@ proc ::ndoc::mdExceptions {md} {
 				{like "foo [bar [x]]"} {like `foo [bar [x]]`}
 			} $md]
 		}
+		interp {
+			# the page has links to both Eval.3 and to eval.n, which Pandoc will normalize into the same reference.
+			# So, we need to rename one of them:
+			set md [string map {
+				{[Eval]} {[Eval3]}
+			} $md]
+		}
 		lappend {
 			set md [string map {
 				{"**lappend a $b**" is} {`lappend a $b` is}
@@ -2513,6 +2522,7 @@ proc ::ndoc::mdExceptions {md} {
 				{as the command **::namespace eval ::a::b {foo bar x y}**} {as the command `::namespace eval ::a::b {foo bar x y}`}
 				{The command **namespace upvar $ns a b** has the same behaviour as **upvar 0 ${ns}::a b**} {The command `namespace upvar $ns a b` has the same behaviour as `upvar 0 ${ns}::a b`}
 				{same behaviour as **upvar 0 ${ns}::a b**} {same behaviour as `upvar 0 ${ns}::a b`}
+				{[Eval]} {[Eval3]}
 			} $md]
 		}
 		open {
@@ -2719,6 +2729,7 @@ proc ::ndoc::mdExceptions {md} {
 				{## Getcwdproc} {## getCwdProc}
 				{## Chdirproc} {## chdirProc}
 				{## Public api calls} {## Public API calls}
+				{[Load]} {[Load3]}
 			} $md]
 		}
 		Tcl_GetIndexFromObj {
@@ -2820,6 +2831,11 @@ proc ::ndoc::mdExceptions {md} {
 		TclSetResult {
 			set md [string map {
 				{# The tcl\_freeproc argument to tcl\_setresult} {# The Tcl\_FreeProc argument to Tcl\_SetResult}
+			} $md]
+		}
+		Tcl_SplitList {
+			set md [string map {
+				{[Eval]} {[Eval3]}
 			} $md]
 		}
 		"Standard Channels" {

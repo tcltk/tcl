@@ -1,7 +1,7 @@
 -- Lua filter that makes Pandoc's `man` writer produce nroff that renders
 -- like the Tcl/Tk doc/*.n pages.
 --
--- Usage: see markdown2nroff.tcl.
+-- Used from markdown2nroff.tcl
 --
 -- The only nroff macros this pipeline depends on (aren't
 -- built in) are .BS/.BE and .CS/.CE -> see MAN_MACROS
