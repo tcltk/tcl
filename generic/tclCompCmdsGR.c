@@ -1350,32 +1350,39 @@ TclCompileLrangeCmd(
     CompileEnv *envPtr)		/* Holds the resulting instructions. */
 {
     DefineLineInformation;	/* TIP #280 */
-    Tcl_Token *tokenPtr, *listTokenPtr;
+    Tcl_Token *firstTokenPtr, *lastTokenPtr, *listTokenPtr;
     int idx1, idx2;
 
     if (parsePtr->numWords != 4) {
 	return TCL_ERROR;
     }
     listTokenPtr = TokenAfter(parsePtr->tokenPtr);
+    firstTokenPtr = TokenAfter(listTokenPtr);
+    lastTokenPtr = TokenAfter(firstTokenPtr);
 
-    tokenPtr = TokenAfter(listTokenPtr);
-    if ((TclGetIndexFromToken(tokenPtr, TCL_INDEX_START, TCL_INDEX_NONE,
-	    &idx1) != TCL_OK) || (idx1 == (int)TCL_INDEX_NONE)) {
-	return TCL_ERROR;
-    }
-    /*
-     * Token was an index value, and we treat all "first" indices
-     * before the list same as the start of the list.
-     */
+    if ((TclGetIndexFromToken(firstTokenPtr, TCL_INDEX_START,
+	    TCL_INDEX_NONE, &idx1) != TCL_OK) || (idx1 == (int)TCL_INDEX_NONE)
+	    || (TclGetIndexFromToken(lastTokenPtr, TCL_INDEX_NONE,
+	    TCL_INDEX_END, &idx2) != TCL_OK)) {
+	/*
+	 * At least one index is not a literal that can be encoded in the
+	 * instruction (a variable or other substitution, or something that
+	 * is not a valid literal index and so needs the run time error). Push
+	 * all three arguments and let the instruction do the same job as the
+	 * command, with the same error messages.
+	 */
 
-    tokenPtr = TokenAfter(tokenPtr);
-    if (TclGetIndexFromToken(tokenPtr, TCL_INDEX_NONE, TCL_INDEX_END,
-	    &idx2) != TCL_OK) {
-	return TCL_ERROR;
+	PUSH_TOKEN(		listTokenPtr, 1);
+	PUSH_TOKEN(		firstTokenPtr, 2);
+	PUSH_TOKEN(		lastTokenPtr, 3);
+	OP(			LIST_RANGE);
+	return TCL_OK;
     }
+
     /*
-     * Token was an index value, and we treat all "last" indices
-     * after the list same as the end of the list.
+     * Both tokens were index values. We treat all "first" indices before the
+     * list same as the start of the list, and all "last" indices after the
+     * list same as the end of the list.
      */
 
     /*

@@ -805,6 +805,44 @@ test assemble-7.46 {nop} {
     }
     -result x
 }
+test assemble-7.47 {listRange} {
+    -body {
+	assemble {
+	    push {a b c d e}; push 1; push 3; listRange
+	}
+    }
+    -result {b c d}
+}
+test assemble-7.48 {listRange - end-relative and out of range indices} {
+    -body {
+	assemble {
+	    push {a b c d e}; push 2; push end-1; listRange
+	    push {a b c d e}; push -5; push 100; listRange
+	    push {a b c d e}; push 3; push 1; listRange
+	    list 3
+	}
+    }
+    -result {{c d} {a b c d e} {}}
+}
+test assemble-7.49 {listRange - bad index} {
+    -body {
+	assemble {
+	    push {a b c d e}; push rubbish; push 3; listRange
+	}
+    }
+    -returnCodes error
+    -match glob
+    -result {bad index "rubbish"*}
+}
+test assemble-7.50 {listRange - not a list} {
+    -body {
+	assemble {
+	    push "a \{ b"; push 0; push 1; listRange
+	}
+    }
+    -returnCodes error
+    -result {unmatched open brace in list}
+}
 
 # assemble-8 ASSEM_LVT and FindLocalVar
 

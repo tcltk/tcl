@@ -974,6 +974,7 @@ enum TclInstruction {
     INST_ARITH_SERIES,
     INST_UPLEVEL,
     INST_FOREACH_INDEX,
+    INST_LIST_RANGE,
 
     /* The last opcode */
     LAST_INST_OPCODE

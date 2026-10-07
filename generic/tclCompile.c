@@ -994,6 +994,13 @@ InstructionDesc const tclInstructionTable[] = {
 	 * Stack: ... listObjs... iterTracker info =>
 	 *			... listObjs... iterTracker info stepIdx */
 
+    TCL_INSTRUCTION_ENTRY(
+	"listRange",		-2),
+	/* Implements [lrange] when either index is not known at compile
+	 * time; the indices are index values as accepted by [lrange], not
+	 * encoded as for listRangeImm.
+	 * Stack: ... list first last => ... [lrange list first last] */
+
     {NULL, 0, 0, 0, {OPERAND_NONE}}
 };
 

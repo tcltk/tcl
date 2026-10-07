@@ -1113,6 +1113,44 @@ test compile-21.4 {stack balance management} {
     }} P Q R S T
 } {1 2 3 4 5 6 7 8 9 10}
 
+test compile-22.1 {lrange with non-literal index compiles to listRange} -body {
+    proc lrcomp {l i j} {lrange $l $i $j}
+    tcl::unsupported::disassemble proc lrcomp
+} -cleanup {
+    rename lrcomp {}
+} -match glob -result {*listRange *}
+test compile-22.2 {lrange with non-literal index does not call the command} -body {
+    proc lrcomp {l i j} {lrange $l $i $j}
+    string match *invokeStk* [tcl::unsupported::disassemble proc lrcomp]
+} -cleanup {
+    rename lrcomp {}
+} -result 0
+test compile-22.3 {lrange with literal indices still uses listRangeImm} -body {
+    proc lrcomp {l} {lrange $l 1 end-1}
+    tcl::unsupported::disassemble proc lrcomp
+} -cleanup {
+    rename lrcomp {}
+} -match glob -result {*listRangeImm 1 end-1*}
+test compile-22.4 {listRange is described by getbytecode} -body {
+    proc lrcomp {l i j} {lrange $l $i $j}
+    set insts [dict get [tcl::unsupported::getbytecode proc lrcomp] instructions]
+    lmap {pc inst} $insts {lindex $inst 0}
+} -cleanup {
+    rename lrcomp {}
+} -result {loadScalar loadScalar loadScalar listRange done}
+test compile-22.5 {listRange from assembled code is described by getbytecode} -body {
+    proc lrcomp {} {
+	tcl::unsupported::assemble {
+	    push {a b c d}; push 1; push end; listRange
+	}
+    }
+    lrcomp
+    set insts [dict get [tcl::unsupported::getbytecode proc lrcomp] instructions]
+    lmap {pc inst} $insts {lindex $inst 0}
+} -cleanup {
+    rename lrcomp {}
+} -result {push push push listRange done}
+
 # TODO sometime - check that bytecode from tbcload is *not* disassembled.
 
 # cleanup

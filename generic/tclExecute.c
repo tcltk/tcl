@@ -5353,6 +5353,40 @@ TEBCresume(
 	TRACE_APPEND_OBJ(objResultPtr);
 	NEXT_INST_F(9, 1, 1);
 
+    case INST_LIST_RANGE: {	/* lrange with objc==4 and at least one index
+				 * not known at compile time */
+	Tcl_Size listLen, first, last;
+
+	/*
+	 * Stack: ... list first last. Mirrors Tcl_LrangeObjCmd, including the
+	 * order in which arguments are validated, so that error messages are
+	 * the same as for the uncompiled command.
+	 */
+
+	valuePtr = OBJ_AT_DEPTH(2);
+	value2Ptr = OBJ_UNDER_TOS;
+	tmpPtr = OBJ_AT_TOS;
+	TRACE("\"%.30s\" \"%.30s\" \"%.30s\" => ",
+		O2S(valuePtr), O2S(value2Ptr), O2S(tmpPtr));
+
+	DECACHE_STACK_INFO();
+	if (TclListObjLength(interp, valuePtr, &listLen) != TCL_OK
+		|| TclGetIntForIndexM(interp, value2Ptr, listLen - 1,
+			&first) != TCL_OK
+		|| TclGetIntForIndexM(interp, tmpPtr, listLen - 1,
+			&last) != TCL_OK
+		|| Tcl_ListObjRange(interp, valuePtr, first, last,
+			&objResultPtr) != TCL_OK) {
+	    CACHE_STACK_INFO();
+	    TRACE_ERROR(interp);
+	    goto gotError;
+	}
+	CACHE_STACK_INFO();
+
+	TRACE_APPEND_OBJ(objResultPtr);
+	NEXT_INST_V(1, 3, 1);
+    }
+
     case INST_LIST_IN:
     case INST_LIST_NOT_IN:	/* Basic list containment operators. */
 	value2Ptr = OBJ_AT_TOS;
