@@ -880,6 +880,23 @@ foreach {
 }
 
 
+## ordering of the pages:
+set pageOrder {
+	{Tcl syntax}
+	{Tcl applications}
+	{Tcl commands}
+	{TclOO commands}
+	{Tcl variables}
+	{Tcl math functions}
+	{Tcl math operators}
+	{Tcl filename conventions}
+	{Tcl regular expression syntax}
+	{Tcl library procedures}
+	{Tcl C API}
+	{TclOO C API}
+}
+
+
 # convert the markdown-formatted manual pages
 # (as produced by man2markdown.tcl) into HTML-formatted manual pages,
 # using Pandoc.
@@ -892,23 +909,47 @@ file mkdir \
 	../doc/html/TclCAPI \
 	../doc/html/TkCAPI
 
+
 set converted [dict create]
 
+
+proc group2Folder {group2} {
+	#
+	# determines into which folder a specific manual page needs to go
+	#
+	switch $group2 {
+		{Tcl C API} - {TclOO C API} {return TclCAPI}
+		{Tk C API}  {return TkCAPI}
+		default {
+			if {[string match Tcl* $group2]} {return Tcl}
+			if {[string match Tk* $group2]}  {return Tk}
+		}
+	}
+	return -code error "no folder for file '$myFile'.md"
+}
+
+
+proc esc {s} {
+	#
+	# convert specific characters to HTML equivalent
+	#
+	string map {
+		&   &amp;
+		<   &lt;
+		>   &gt;
+	} $s
+}
+
+
+#
+# convert each individual markdown document
+#
 foreach entry [dict keys $manFiles] {
 	set myFile [dict get $manFiles $entry file]
 	if {[dict exists $converted $myFile]} continue
 	dict set converted $myFile 1
 	set myFolder {}
-	set g [dict get $manFiles $entry group2]
-	switch $g {
-		{Tcl C API} - {TclOO C API} {set myFolder TclCAPI}
-		{Tk C API}  {set myFolder TkCAPI}
-		default {
-			if {[string match Tcl* $g]} {set myFolder Tcl}
-			if {[string match Tk* $g]}  {set myFolder Tk}
-		}
-	}
-	if {$myFolder eq ""} {return -code error "no folder for file '$myFile'.md"}
+	set myFolder [group2Folder [dict get $manFiles $entry group2]]
 	puts "$myFile.md -> $myFile.html"
 	exec pandoc -f markdown-tex_math_dollars-smart -t html \
 		--lua-filter markdown2html.lua \
@@ -916,3 +957,57 @@ foreach entry [dict keys $manFiles] {
 		-o [file join .. doc html $myFolder $myFile.html] \
 		[file join .. doc markdown $myFolder $myFile.md]
 }
+
+
+#
+# now create the index.html file with all links to the individual pages
+#
+puts "\ncreate index.html\n"
+foreach entry [dict keys $manFiles] {
+	dict with manFiles $entry {
+		dict lappend tree $group2 [list $title [group2Folder $group2]/$file.html]
+	}
+}
+
+
+set nav {<ul class="outline">}
+append nav \n
+
+foreach g $pageOrder {
+	if {![dict exists $tree $g]} continue
+	append nav {<li><details><summary>} [esc $g] {</summary>} \n {<ul>} \n
+	foreach item [dict get $tree $g] {
+		lassign $item title href
+		append nav "<li><a href=\"$href\" target=\"content\">[esc $title]</a></li>\n"
+	}
+	append nav {</ul></details></li>} \n
+}
+append nav {</ul>}
+
+set fh [open [file join .. doc html index.html] w]
+
+puts $fh [subst -nocommands {<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<title>Tcl/Tk Manual</title>
+<link rel="stylesheet" href="tcl-docs.css">
+<link rel="stylesheet" href="index.css">
+</head><body class="manual-shell">
+<div class="layout">
+<nav>
+<input id="filter" type="search" placeholder="Filter..." autocomplete="off">
+$nav
+</nav>
+<iframe name="content" src="Tcl/Tcl.html" title="Manual page"></iframe>
+</div>
+<script>
+document.getElementById('filter').addEventListener('input', e => {
+  const q = e.target.value.toLowerCase();
+  document.querySelectorAll('nav li li').forEach(li => {
+    li.hidden = q && !li.textContent.toLowerCase().includes(q);
+  });
+  document.querySelectorAll('nav details').forEach(d => d.open = !!q);
+});
+</script>
+</body></html>}]
+
+close $fh
