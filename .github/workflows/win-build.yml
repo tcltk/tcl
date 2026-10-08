@@ -113,7 +113,7 @@ jobs:
       - name: Install MSYS2
         uses: msys2/setup-msys2@v2
         with:
-          msystem: MINGW64
+          msystem: UCRT64
           install: git mingw-w64-x86_64-toolchain make
         timeout-minutes: 10
       - name: Checkout
