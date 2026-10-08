@@ -178,11 +178,11 @@ foreach {af localhost} [list \
     catch {close $sock}
 }
 
-set sock [socket -server foo -myaddr localhost 0]
+set sock [socket -server foo -myaddr [tcltests::localDualStackAddress] 0]
 set sockname [fconfigure $sock -sockname]
 close $sock
-testConstraint localhost_v4 [expr {"[tcltests::localIPv4Address]" in $sockname}]
-testConstraint localhost_v6 [expr {"[tcltests::localIPv6Address]" in $sockname}]
+testConstraint localhost_v4 [expr {[tcltests::localIPv4Address] in $sockname}]
+testConstraint localhost_v6 [expr {[tcltests::localIPv6Address] in $sockname}]
 
 
 foreach {af localhost} [list \
@@ -2065,7 +2065,7 @@ test socket-14.0.0 {[socket -async] when server only listens on IPv4} \
 	set server [socket -server accept -myaddr [tcltests::localIPv4Address] 0]
 	set port [lindex [fconfigure $server -sockname] 2]
     } -body {
-	set client [socket -async localhost $port]
+	set client [socket -async [tcltests::localIPv4Address] $port]
 	set after [after $latency {set x [fconfigure $client -error]}]
 	vwait x
 	set x
@@ -2087,7 +2087,7 @@ test socket-14.0.1 {[socket -async] when server only listens on IPv6} \
 	set server [socket -server accept -myaddr [tcltests::localIPv6Address] 0]
 	set port [lindex [fconfigure $server -sockname] 2]
     } -body {
-	set client [socket -async localhost $port]
+	set client [socket -async [tcltests::localIPv6Address] $port]
 	set after [after $latency {set x [fconfigure $client -error]}]
 	vwait x
 	set x
@@ -2152,7 +2152,7 @@ test socket-14.3 {[socket -async] when server only listens on IPv6} \
 	set server [socket -server accept -myaddr [tcltests::localIPv6Address] 0]
 	set port [lindex [fconfigure $server -sockname] 2]
     } -body {
-	set client [socket -async localhost $port]
+	set client [socket -async [tcltests::localIPv6Address] $port]
 	set after [after $latency {set x [fconfigure $client -error]}]
 	vwait x
 	set x
@@ -2213,7 +2213,7 @@ test socket-14.6.0 {[socket -async] with no event loop and server listening on I
 	set x ""
     } \
     -body {
-	set client [socket -async localhost $port]
+	set client [socket -async [tcltests::localIPv4Address] $port]
 	for {set i 0} {$i < 50} {incr i } {
 	    update
 	    if {$x ne ""} {
@@ -2244,7 +2244,7 @@ test socket-14.6.1 {[socket -async] with no event loop and server listening on I
 	set x ""
     } \
     -body {
-	set client [socket -async localhost $port]
+	set client [socket -async [tcltests::localIPv6Address] $port]
 	for {set i 0} {$i < 50} {incr i } {
 	    update
 	    if {$x ne ""} {
@@ -2275,7 +2275,7 @@ test socket-14.7.0 {pending [socket -async] and blocking [gets], server is IPv4}
 	set fd [open |[list [interpreter] script] RDWR]
 	set port [gets $fd]
     } -body {
-	set sock [socket -async localhost $port]
+	set sock [socket -async [tcltests::localIPv4Address] $port]
 	list [fconfigure $sock -error] [gets $sock] [fconfigure $sock -error]
     } -cleanup {
 	close $fd
@@ -2296,7 +2296,7 @@ test socket-14.7.1 {pending [socket -async] and blocking [gets], server is IPv6}
 	set fd [open |[list [interpreter] script] RDWR]
 	set port [gets $fd]
     } -body {
-	set sock [socket -async localhost $port]
+	set sock [socket -async [tcltests::localIPv6Address] $port]
 	list [fconfigure $sock -error] [gets $sock] [fconfigure $sock -error]
     } -cleanup {
 	close $fd
@@ -2326,7 +2326,7 @@ test socket-14.8.0 {pending [socket -async] and nonblocking [gets], server is IP
 	set fd [open |[list [interpreter] script] RDWR]
 	set port [gets $fd]
     } -body {
-	set sock [socket -async localhost $port]
+	set sock [socket -async [tcltests::localIPv4Address] $port]
 	fconfigure $sock -blocking 0
 	for {set i 0} {$i < 50} {incr i } {
 	    if {[catch {gets $sock} x] || $x ne "" || ![fblocked $sock]} break
@@ -2352,7 +2352,7 @@ test socket-14.8.1 {pending [socket -async] and nonblocking [gets], server is IP
 	set fd [open |[list [interpreter] script] RDWR]
 	set port [gets $fd]
     } -body {
-	set sock [socket -async localhost $port]
+	set sock [socket -async [tcltests::localIPv6Address] $port]
 	fconfigure $sock -blocking 0
 	for {set i 0} {$i < 50} {incr i } {
 	    if {[catch {gets $sock} x] || $x ne "" || ![fblocked $sock]} break
@@ -2392,7 +2392,7 @@ test socket-14.9.0 {pending [socket -async] and blocking [puts], server is IPv4}
 	set fd [open |[list [interpreter] script] RDWR]
 	set port [gets $fd]
     } -body {
-	set sock [socket -async localhost $port]
+	set sock [socket -async [tcltests::localIPv4Address] $port]
 	puts $sock ok
 	flush $sock
 	list [fconfigure $sock -error] [gets $fd]
@@ -2416,7 +2416,7 @@ test socket-14.9.1 {pending [socket -async] and blocking [puts], server is IPv6}
 	set fd [open |[list [interpreter] script] RDWR]
 	set port [gets $fd]
     } -body {
-	set sock [socket -async localhost $port]
+	set sock [socket -async [tcltests::localIPv6Address] $port]
 	puts $sock ok
 	flush $sock
 	list [fconfigure $sock -error] [gets $fd]
@@ -2440,7 +2440,7 @@ test socket-14.10.0 {pending [socket -async] and nonblocking [puts], server is I
 	set fd [open |[list [interpreter] script] RDWR]
 	set port [gets $fd]
     } -body {
-	set sock [socket -async localhost $port]
+	set sock [socket -async [tcltests::localIPv4Address] $port]
 	fconfigure $sock -blocking 0
 	puts $sock ok
 	flush $sock
@@ -2467,7 +2467,7 @@ test socket-14.10.1 {pending [socket -async] and nonblocking [puts], server is I
 	set fd [open |[list [interpreter] script] RDWR]
 	set port [gets $fd]
     } -body {
-	set sock [socket -async localhost $port]
+	set sock [socket -async [tcltests::localIPv6Address] $port]
 	fconfigure $sock -blocking 0
 	puts $sock ok
 	flush $sock
@@ -2575,7 +2575,7 @@ test socket-14.15 {blocking read on async socket should not trigger event handle
 test socket-14.16 {empty -peername while [socket -async] connecting} \
     -constraints {socket localhost_v4 localhost_v6} \
     -body {
-	set client [socket -async localhost [randport]]
+	set client [socket -async [tcltests::localDualStackAddress] [randport]]
 	fconfigure $client -peername
     } -cleanup {
 	catch {close $client}
@@ -2586,7 +2586,7 @@ test socket-14.16 {empty -peername while [socket -async] connecting} \
 test socket-14.17 {empty -sockname while [socket -async] connecting} \
     -constraints {socket localhost_v4 localhost_v6} \
     -body {
-	set client [socket -async localhost [randport]]
+	set client [socket -async [tcltests::localDualStackAddress] [randport]]
 	fconfigure $client -sockname
     } -cleanup {
 	catch {close $client}
@@ -2625,7 +2625,7 @@ test socket-14.19 {tip 456 -- introduce the -reuseport option} \
 
 set num 0
 
-set x [list localhost {socket} [tcltests::localIPv4Address] {supported_inet} [tcltests::localIPv6Address] {supported_inet6}]
+set x [list [tcltests::localDualStackAddress] {socket} [tcltests::localIPv4Address] {supported_inet} [tcltests::localIPv6Address] {supported_inet6}]
 set resultok {-result "sock*" -match glob}
 set resulterr {
     -result {couldn't open socket: connection refused}
@@ -2639,11 +2639,11 @@ foreach {servip sc} $x {
 	set combination [lsort -unique [list $servip $cliip]]
 	if {[llength $combination] == 1} {
 	    set result $resultok
-	} elseif {$combination == [lsort [list [tcltests::localIPv4Address] "localhost"]]} {
+	} elseif {$combination == [lsort [list [tcltests::localIPv4Address] [tcltests::localDualStackAddress]]]} {
 	    if {[testConstraint localhost_v4]} {
 		set result $resultok
 	    }
-	} elseif {$combination == [lsort [list [tcltests::localIPv6Address] localhost]]} {
+	} elseif {$combination == [lsort [list [tcltests::localIPv6Address] [tcltests::localDualStackAddress]]]} {
 	    if {[testConstraint localhost_v6]} {
 		set result $resultok
 	    }
