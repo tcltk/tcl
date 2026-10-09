@@ -126,7 +126,7 @@ jobs:
         working-directory: generic
       - name: Configure ${{ matrix.config }}
         run: |
-          ./configure ${CFGOPT} "--prefix=$HOME/install dir" || (cat config.log && exit 1)
+          ./configure --host=x86_64-w64-ucrt-mingw32 ${CFGOPT} "--prefix=$HOME/install dir" || (cat config.log && exit 1)
         env:
           CFGOPT: --enable-64bit ${{ matrix.config }}
         timeout-minutes: 5

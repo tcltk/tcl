@@ -148,7 +148,7 @@ jobs:
           mkdir 1dist
         working-directory: .
       - name: Configure
-        run: ./configure $CFGOPT
+        run: ./configure --host=x86_64-w64-ucrt-mingw32 $CFGOPT
         working-directory: win
       - name: Build
         run: |
