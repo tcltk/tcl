@@ -8657,7 +8657,7 @@ ExecuteExtendedBinaryMathOp(
 	BIG_RESULT(&bigResult);
     }
 
-    Tcl_Panic("unexpected opcode");
+    Tcl_Panic("unexpected opcode in ExecuteExtendedBinaryMathOp\n");
     return NULL;
 }
 
@@ -8715,7 +8715,7 @@ ExecuteExtendedUnaryMathOp(
 	BIG_RESULT(&big);
     }
 
-    Tcl_Panic("unexpected opcode");
+    Tcl_Panic("unexpected opcode in ExecuteExtendedUnaryMathOp\n");
     return NULL;
 }
 #undef WIDE_RESULT

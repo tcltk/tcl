@@ -215,6 +215,7 @@ enum LexemeCodes {
     NOT = UNARY | 6,
     BIT_NOT = UNARY | 7,
     NULL_FUNC = UNARY | 8,          /* Ambigous : can result in no_func or list function */
+    LIST = UNARY | 9,
 
     /* Binary operator lexemes */
 
@@ -317,7 +318,7 @@ enum Precedence {
     PREC_ADD,		/* "+", "-" */
     PREC_MULT,		/* "*", "/", "%" */
     PREC_EXPON,		/* "**" */
-    PREC_UNARY		/* "+", "-", FUNCTION, "!", "~", NULL_FUNC */
+    PREC_UNARY		/* "+", "-", FUNCTION, "!", "~", NULL_FUNC , "LIST"*/
 };
 
 /*
@@ -379,7 +380,8 @@ static const unsigned char prec[] = {
     PREC_OPEN_PAREN,	/* OPEN_PAREN */
     PREC_UNARY,		/* NOT*/
     PREC_UNARY,		/* BIT_NOT*/
-    PREC_UNARY          /* NULL_FUNC */
+    PREC_UNARY,         /* NULL_FUNC */
+    PREC_UNARY          /* LIST */
 };
 
 /*
@@ -439,7 +441,8 @@ static const unsigned char instruction[] = {
     0,			/* OPEN_PAREN */
     INST_LNOT,		/* NOT*/
     INST_BITNOT,	/* BIT_NOT*/
-    0                   /* NULL_FUNC */
+    0,                  /* NULL_FUNC */
+    0                   /* LIST */
 };
 
 /*
@@ -641,8 +644,6 @@ ParseExpr(
 	start++; //skip the open bracket '[', keep the parenthese
 	numBytes--;
     }
-     /* create the list func name object */
-    Tcl_Obj *listName; TclNewLiteralStringObj(listName, "list");
 
     TclParseInit(interp, start, numBytes, parsePtr);
 
@@ -1134,14 +1135,13 @@ ParseExpr(
 	    if (lexeme == OPEN_PAREN && nodePtr[-1].lexeme != FUNCTION ) {
 		/* Native list handling */
 		/* we don't know yet if there will be a "comma outside func error", 
-		   but we have to create a room to add list func in case */
+		   but we have to create a room to add LIST LEXEM in case */
 		nodePtr->lexeme = NULL_FUNC;
 		nodePtr->precedence = prec[NULL_FUNC];
 		nodePtr->mark = MARK_RIGHT;
 		nodePtr->constant = 0; 
 		nodePtr->p.prev = incomplete;
 		incomplete = lastParsed = nodesUsed;
-		Tcl_ListObjAppendElement(NULL, funcList, listName); 
 		nodesUsed++;
 		nodePtr = nodes + nodesUsed;
 	    }
@@ -1464,11 +1464,11 @@ ParseExpr(
 	    /* Commas must appear only in function argument lists. */
 	    if (lexeme == COMMA) {
 		if  ((incompletePtr->lexeme != OPEN_PAREN)
-			|| (incompletePtr[-1].lexeme != FUNCTION)) {
-		    
+			|| !(incompletePtr[-1].lexeme == FUNCTION
+			    || incompletePtr[-1].lexeme == LIST)) {
 		     if (incompletePtr[-1].lexeme == NULL_FUNC) {
 			// Native list handling : using the room we created before in UNARY Branch.
-			incompletePtr[-1].lexeme = FUNCTION;
+			incompletePtr[-1].lexeme = LIST;
 		    } else {
 			 TclNewLiteralStringObj(msg, "unexpected \",\" outside function argument list");
 			 errCode = "SURPRISE";
@@ -2112,6 +2112,7 @@ ParseLexeme(
 	if (memcmp(start, "switch ", 7) == 0
 	    || memcmp(start, "return ", 7) == 0
 	    || memcmp(start, "string ", 7) == 0
+	    || memcmp(start, "global ", 7) == 0
 	    || memcmp(start, "lindex ", 7) == 0
 	    || memcmp(start, "lrange ", 7) == 0
 	    || memcmp(start, "concat ", 7) == 0 ) {
@@ -2572,6 +2573,16 @@ CompileExprTree(
 		numWords = 2;	/* Command plus one argument */
 		break;
 	    }
+	    case LIST:
+		/*
+		 * Start a count of the number of words in this list
+		 * command invocation. In case there's already a count in
+		 * progress (nested functions), save it in our unused "left"
+		 * field for restoring later.
+		 */
+		nodePtr->left = numWords;
+		numWords = 1;	
+		break;
 	    case NULL_FUNC:
 		funcObjv++;
 		break;
@@ -2646,6 +2657,11 @@ CompileExprTree(
 		} else {
 		    convert = 1;
 		}
+		break;
+	    case LIST:
+		TclEmitInstInt4(INST_LIST, numWords, envPtr);
+		numWords = nodePtr->left;
+		convert = 0;
 		break;
 	    case COMMA:
 		/*
