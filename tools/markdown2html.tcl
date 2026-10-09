@@ -970,6 +970,12 @@ foreach entry [dict keys $manFiles] {
 }
 
 
+# title shown in the fixed header bar and as page title:
+set manualTitle {Tcl/Tk manual, version 9.1}
+
+# the logo shown in the header bar must sit next to index.html:
+file copy -force Tcl9Logo.svg [file join .. doc html Tcl9Logo.svg]
+
 set nav {<ul class="outline">}
 append nav \n
 
@@ -988,10 +994,11 @@ set fh [open [file join .. doc html index.html] w]
 
 puts $fh [subst -nocommands {<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
-<title>Tcl/Tk Manual</title>
+<title>$manualTitle</title>
 <link rel="stylesheet" href="tcl-docs.css">
 <link rel="stylesheet" href="index.css">
 </head><body class="manual-shell">
+<header class="topbar manual-header"><img src="Tcl9Logo.svg" alt="Tcl 9 logo"><span>$manualTitle</span></header>
 <div class="layout">
 <nav>
 <input id="filter" type="search" placeholder="Filter..." autocomplete="off">
@@ -1000,12 +1007,35 @@ $nav
 <iframe name="content" src="Tcl/Tcl.html" title="Manual page"></iframe>
 </div>
 <script>
+const frame = document.querySelector('iframe[name=content]');
+const links = [...document.querySelectorAll('nav a')];
+function mark(a) {
+  links.forEach(l => l.classList.remove('current'));
+  if (!a) return;
+  a.classList.add('current');
+  const d = a.closest('details');
+  if (d) d.open = true;
+  a.scrollIntoView({block: 'nearest'});
+}
+links.forEach(a => a.addEventListener('click', () => mark(a)));
+// follow links clicked inside the content frame (works where the browser allows access to the frame's location):
+frame.addEventListener('load', () => {
+  try {
+    const p = frame.contentWindow.location.pathname;
+    const cur = document.querySelector('nav a.current');
+    if (cur && cur.pathname === p) return;
+    const m = links.find(l => l.pathname === p);
+    if (m) mark(m);
+  } catch (e) {}
+});
+mark(links.find(a => a.getAttribute('href') === frame.getAttribute('src')));
 document.getElementById('filter').addEventListener('input', e => {
   const q = e.target.value.toLowerCase();
   document.querySelectorAll('nav li li').forEach(li => {
     li.hidden = q && !li.textContent.toLowerCase().includes(q);
   });
-  document.querySelectorAll('nav details').forEach(d => d.open = !!q);
+  const cur = document.querySelector('nav a.current');
+  document.querySelectorAll('nav details').forEach(d => d.open = !!q || d.contains(cur));
 });
 </script>
 </body></html>}]

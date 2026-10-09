@@ -143,8 +143,9 @@ a:hover { color: var(--link-hover); text-decoration: underline; }
    ═══════════════════════════════════════════ */
 
 div.synopsis {
-    background: var(--syn-bg);
-    color: var(--syn-fg);
+    background: #eceff1;
+    color: var(--text);
+    border: 1px solid var(--border);
     font-family: var(--font-mono);
     font-size: 0.9rem;
     line-height: 2;
@@ -154,45 +155,50 @@ div.synopsis {
     overflow-x: auto;
 }
 
-/* Span colours inside the dark synopsis box */
+/* one row per synopsis line (see markdown2html.lua) */
+div.synopsis p { margin: 0 0 .9rem; line-height: 1.6; }
+div.synopsis p:last-child { margin-bottom: 0; }
+
+/* Span colours inside the light gray synopsis box */
 div.synopsis .cmd,
-div.synopsis .ccmd  { color: #ff7b72; }
+div.synopsis .ccmd  { color: var(--cmd); }
 
-div.synopsis .sub   { color: #ffa657; }
+div.synopsis .sub   { color: var(--sub); }
 
-div.synopsis .arg   { color: #79c0ff; font-style: italic; }
+div.synopsis .arg   { color: var(--arg); font-style: italic; }
 
 div.synopsis .optarg {
-    color: #79c0ff;
+    color: var(--arg);
     font-style: italic;
 }
-div.synopsis .optarg::before { content: "?"; color: #8b949e; }
-div.synopsis .optarg::after  { content: "?"; color: #8b949e; }
+div.synopsis .optarg::before { content: "?"; color: var(--muted); }
+div.synopsis .optarg::after  { content: "?"; color: var(--muted); }
 
-div.synopsis .lit   { color: #7ee787; font-weight: 600; }
+div.synopsis .lit   { color: var(--lit); font-weight: 600; }
 
 div.synopsis .optlit {
-    color: #7ee787;
+    color: var(--lit);
     font-weight: 600;
 }
-div.synopsis .optlit::before { content: "?"; color: #8b949e; }
-div.synopsis .optlit::after  { content: "?"; color: #8b949e; }
+div.synopsis .optlit::before { content: "?"; color: var(--muted); }
+div.synopsis .optlit::after  { content: "?"; color: var(--muted); }
 
 div.synopsis .optdot {
-    color: #8b949e;
+    color: var(--muted);
     font-style: italic;
 }
-div.synopsis .optdot::after { content: " \2026"; } /* … */
+div.synopsis .optdot::before { content: "?"; color: var(--muted); font-style: normal; }
+div.synopsis .optdot::after  { content: " \2026?"; color: var(--muted); font-style: normal; } /* …? */
 
-div.synopsis .ret   { color: #d2a8ff; font-style: italic; }
+div.synopsis .ret   { color: var(--ret); font-style: italic; }
 div.synopsis .ret::after { content: " "; }
 
 div.synopsis .cargs {
-    color: #79c0ff;
+    color: var(--arg);
     font-style: italic;
 }
-div.synopsis .cargs::before { content: "("; color: #8b949e; }
-div.synopsis .cargs::after  { content: ")"; color: #8b949e; }
+div.synopsis .cargs::before { content: "("; color: var(--muted); }
+div.synopsis .cargs::after  { content: ")"; color: var(--muted); }
 
 /* ── ════════════════════════════════════════════
    INLINE SYNTAX SPANS  (body text & definition terms)
@@ -234,7 +240,8 @@ span.optdot {
     font-style: italic;
     color: var(--muted);
 }
-span.optdot::after { content: " \2026"; }
+span.optdot::before { content: "?"; color: var(--muted); font-style: normal; }
+span.optdot::after  { content: " \2026?"; color: var(--muted); font-style: normal; }
 
 /* Literal keyword that must appear verbatim, e.g. -length */
 span.lit {

@@ -1,10 +1,21 @@
 html, body.manual-shell { margin: 0; height: 100%; }
 /* undo the page-column limits of tcl-docs.css, which would squeeze the layout to 65ch */
-body.manual-shell { max-width: none; padding: 0; }
-.layout { display: grid; grid-template-columns: 22rem 1fr; height: 100vh; }
+body.manual-shell { max-width: none; padding: 0; display: flex; flex-direction: column; }
+.manual-header { flex: 0 0 auto; gap: 1rem; padding: .3rem 1rem; background: #eef0f2; color: #3b3b3b;
+	border-bottom: 4px solid #BADA55; font-size: 1.4rem; font-weight: 600; letter-spacing: 0; }
+.manual-header img { height: 3.2rem; width: auto; display: block; }
+.layout { display: grid; grid-template-columns: 22rem 1fr; flex: 1 1 auto; min-height: 0; }
 .layout nav { overflow-y: auto; padding: .5rem .75rem; border-right: 1px solid #ccc; }
 .layout iframe { width: 100%; height: 100%; border: 0; }
-nav input { width: 100%; box-sizing: border-box; margin-bottom: .5rem; }
+nav input { width: 100%; box-sizing: border-box; margin-bottom: .75rem; padding: .6rem .7rem; font-size: 1.1rem;
+	-webkit-appearance: none; appearance: none; border: 1px solid #888; border-radius: .5rem; }
 nav ul { list-style: none; padding-left: 1rem; margin: 0; }
 nav li { margin: .1rem 0; }
 @media (max-width: 40rem) { .layout { grid-template-columns: 1fr; grid-template-rows: 40vh 1fr; } }
+nav a.current { background: #BADA55; color: #222; font-weight: 600; border-radius: .25rem; padding: .05rem .4rem; margin-left: -.4rem; }
+
+/* larger outline triangles: replace the native marker */
+nav summary { cursor: pointer; list-style: none; }
+nav summary::-webkit-details-marker { display: none; }
+nav summary::before { content: "\25B8"; display: inline-block; width: 2.2rem; font-size: 2.2rem; line-height: 1; vertical-align: -.2rem; color: #696969; }
+nav details[open] > summary::before { content: "\25BE"; }
