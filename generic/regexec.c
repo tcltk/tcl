@@ -104,6 +104,7 @@ struct vars {
     regmatch_t *pmatch;
     rm_detail_t *details;
     chr *start;			/* start of string */
+    chr *search_start;		/* where the search starts */
     chr *stop;			/* just past end of string */
     int err;			/* error code if any (0 none) */
     struct dfa **subdfas;	/* per-subre DFAs */
@@ -124,7 +125,7 @@ struct vars {
 /* =====^!^===== begin forwards =====^!^===== */
 /* automatically gathered by fwd; do not hand-edit */
 /* === regexec.c === */
-int exec(regex_t *, const chr *, size_t, rm_detail_t *, size_t, regmatch_t [], int);
+int exec(regex_t *, const chr *, size_t, size_t, rm_detail_t *, size_t, regmatch_t [], int);
 static struct dfa *getsubdfa(struct vars *, struct subre *);
 static int simpleFind(struct vars *const, struct cnfa *const, struct colormap *const);
 static int complicatedFind(struct vars *const, struct cnfa *const, struct colormap *const);
@@ -156,7 +157,7 @@ static struct sset *pickNextSS(struct vars *const, struct dfa *const, chr *const
 
 /*
  - exec - match regular expression
- ^ int exec(regex_t *, const chr *, size_t, rm_detail_t *,
+ ^ int exec(regex_t *, const chr *, size_t, size_t, rm_detail_t *,
  ^					size_t, regmatch_t [], int);
  */
 int
@@ -164,6 +165,9 @@ exec(
     regex_t *re,
     const chr *string,
     size_t len,
+    size_t search_start,	/* Offset in string at which to start the
+				 * search; the characters before it are still
+				 * seen by constraints such as \A, ^ and \m */
     rm_detail_t *details,
     size_t nmatch,
     regmatch_t pmatch[],
@@ -185,6 +189,10 @@ exec(
     if (re == NULL || string == NULL || re->re_magic != REMAGIC) {
 	FreeVars(v);
 	return REG_INVARG;
+    }
+    if (search_start > len) {
+	FreeVars(v);
+	return REG_NOMATCH;
     }
 
     /*
@@ -228,6 +236,7 @@ exec(
     }
     v->details = details;
     v->start = (chr *)string;
+    v->search_start = (chr *)string + search_start;
     v->stop = (chr *)string + len;
     v->err = 0;
     n = v->g->ntree;
@@ -330,9 +339,9 @@ simpleFind(
     s = newDFA(v, &v->g->search, cm, &v->dfa1);
     assert(!(ISERR() && s != NULL));
     NOERR();
-    MDEBUG(("\nsearch at %" TCL_Z_MODIFIER "u\n", LOFF(v->start)));
+    MDEBUG(("\nsearch at %" TCL_Z_MODIFIER "u\n", LOFF(v->search_start)));
     cold = NULL;
-    close = shortest(v, s, v->start, v->start, v->stop, &cold, NULL);
+    close = shortest(v, s, v->search_start, v->search_start, v->stop, &cold, NULL);
     freeDFA(s);
     NOERR();
     if (v->g->cflags&REG_EXPECT) {
@@ -472,7 +481,7 @@ complicatedFindLoop(
 
     assert(d != NULL && s != NULL);
     cold = NULL;
-    close = v->start;
+    close = v->search_start;
     do {
 	MDEBUG(("\ncsearch at %" TCL_Z_MODIFIER "u\n", LOFF(close)));
 	close = shortest(v, s, close, close, v->stop, &cold, NULL);
