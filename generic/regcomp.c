@@ -1207,9 +1207,13 @@ parseqatom(
 	atom->flags |= (char)COMBINE(qprefer, atom->flags);
 	/* rest of branch can be strung starting from atom->end */
 	s2 = atom->end;
-    } else if (m == 1 && n == 1) {
+    } else if (m == 1 && n == 1 && (qprefer == 0 ||
+	    (atom->flags & (LONGER | SHORTER | MIXED)) == 0 ||
+	    qprefer == (atom->flags & (LONGER | SHORTER | MIXED)))) {
 	/*
-	 * No/vacuous quantifier: done.
+	 * No/vacuous quantifier: done. A {1,1} quantifier that asks for a
+	 * different greediness than the atom has is not vacuous.
+	 * [Bug 524b35a8b5]
 	 */
 
 	EMPTYARC(s, atom->begin);	/* empty prefix */
