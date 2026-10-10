@@ -10,6 +10,7 @@ Tcl patch releases have the primary purpose of delivering bug fixes
 to the userbase.
 
 # Bug fixes
+ - [regexp sometimes allows an invalid backref to be matched](https://core.tcl-lang.org/tcl/tktview/75c9d9)
 
 # Updated bundled packages, libraries, standards, data
  - msgcat 1.7.2
