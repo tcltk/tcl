@@ -1097,10 +1097,9 @@ test reg-33.12 {Bug 1810264 - bad read} {
 test reg-33.13 {Bug 1810264 - infinite loop} {
     regexp {($|^)*} {x}
 } 1
-# Some environments have small default stack sizes. [Bug 1905562]
-test reg-33.14 {Bug 1810264 - super-expensive expression} nonPortable {
+test reg-33.14 {Bug 1810264 - super-expensive expression} -body {
     regexp {(x{200}){200}$y} {x}
-} 0
+} -returnCodes error -match regexp -result {too complex|out of memory}
 
 test reg-33.15.1 {Bug 3603557 - an "in the wild" RE} {
     lindex [regexp -expanded -about {
@@ -1235,6 +1234,20 @@ test reg-33.30 {Bug 1080042} {
 test reg-33.31 {Bug 7c64aa5e1a} {
     regexp -inline {(?b).\{1,10\}} {abcdef}
 } abcdef
+# The limits are measured in bytes of stack, so they depend on the build;
+# keep the depths below far from them.  [Bug 7d47ba7d94]
+test reg-33.32 {deeply nested parentheses are too complex} -body {
+    regexp [string repeat ( 100000]a[string repeat ) 100000] a
+} -returnCodes error -match glob -result {*too complex}
+test reg-33.33 {deeply nested lookahead constraints are too complex} -body {
+    regexp [string repeat (?= 100000]a[string repeat ) 100000] a
+} -returnCodes error -match glob -result {*too complex}
+test reg-33.34 {nested lookahead constraints} {
+    regexp [string repeat (?= 500]a[string repeat ) 500] a
+} 1
+test reg-33.35 {nested parentheses} {
+    regexp [string repeat ( 500]a[string repeat ) 500] a
+} 1
 
 
 # cleanup

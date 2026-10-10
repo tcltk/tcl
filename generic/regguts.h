@@ -416,6 +416,31 @@ struct guts {
 #ifndef FreeVars
 #define FreeVars(vPtr) ((void) 0)
 #endif
+
+/*
+ * Protection of the recursive functions against stack overflow.  Tcl is a
+ * library and does not know how much stack is left in the current thread,
+ * so instead we limit the stack used by one compile or execution, measured
+ * from a local variable of compile() or exec().  [Bug 7d47ba7d94]
+ */
+
+#ifndef REG_MAX_STACK_DEPTH
+#define REG_MAX_STACK_DEPTH	((size_t) 1024 * 1024)
+#endif
+
+static inline int
+stacktoodeep(
+    const char *base)		/* address of a local variable at entry */
+{
+    char here;
+    size_t depth = ((uintptr_t) base > (uintptr_t) &here)
+	    ? (size_t) ((uintptr_t) base - (uintptr_t) &here)
+	    : (size_t) ((uintptr_t) &here - (uintptr_t) base);
+
+    return depth > REG_MAX_STACK_DEPTH;
+}
+
+#define STACK_TOO_DEEP(vv)	stacktoodeep((vv)->stackbase)
 
 /*
  * Local Variables:
