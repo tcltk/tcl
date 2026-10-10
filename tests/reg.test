@@ -682,6 +682,12 @@ expectNomatch	14.26 LRP	{^(\w+)( \1)+$}	{abc abc abd}
 expectMatch	14.27 RP	{^(.+)( \1)+$}	{abc abc abc} {abc abc abc} abc { abc}
 expectNomatch	14.28 RP	{^(.+)( \1)+$}	{abc abd abc}
 expectNomatch	14.29 RP	{^(.+)( \1)+$}	{abc abc abd}
+# possible empty match that fails must not loop forever [Bug a6029ee505]
+expectMatch	14.32 RPN	{(b*)a\1|\1}	ba	a	""
+expectNomatch	14.33 RPSN	{$()|^\1}	a
+expectNomatch	14.34 RPSN	{.. ()|\1}	a
+expectMatch	14.35 RPSN	{()*\1}	a	""	""
+expectMatch	14.36 RPSN	{()+\1}	a	""	""
 
 
 doing 15 "octal escapes vs back references"

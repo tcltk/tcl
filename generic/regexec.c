@@ -531,6 +531,13 @@ complicatedFindLoop(
 		}
 	    }
 	}
+
+	/*
+	 * No match starts at or before "close", so search again beyond it.
+	 * [Bug a6029ee505]
+	 */
+
+	close++;
     } while (close < v->stop);
 
     *coldp = cold;
@@ -1006,15 +1013,13 @@ citerdissect(struct vars * v,
     assert(begin <= end);
 
     /*
-     * If zero matches are allowed, and target string is empty, just declare
-     * victory.  OTOH, if target string isn't empty, zero matches can't work
-     * so we pretend the min is 1.
+     * Assume at least one match for now.  If zero matches are allowed and the
+     * target string is empty, we could succeed right away, but we prefer one
+     * real match so that capturing parens get set (e.g. in "()*\1").  The
+     * zero-matches case is handled at the bottom.
      */
     min_matches = t->min;
     if (min_matches <= 0) {
-	if (begin == end) {
-	    return REG_OKAY;
-	}
 	min_matches = 1;
     }
 
@@ -1153,8 +1158,15 @@ citerdissect(struct vars * v,
     }
 
     /* all possibilities exhausted */
-    MDEBUG(("%d failed\n", t->id));
     FREE(endpts);
+
+    /* Match an empty string by zero repetitions. */
+    if (t->min == 0 && begin == end) {
+	MDEBUG(("%d allowing zero matches\n", t->id));
+	return REG_OKAY;
+    }
+
+    MDEBUG(("%d failed\n", t->id));
     return REG_NOMATCH;
 }
 
