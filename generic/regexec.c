@@ -533,7 +533,9 @@ complicatedFindLoop(
 	}
 
 	/*
-	 * No match starts at or before "close", so search again beyond it.
+	 * If we get here, there is no possible match starting at or before
+	 * "close", so consider matches beyond that.  We'll do a fresh search
+	 * with the search RE to find a new promising match range.
 	 * [Bug a6029ee505]
 	 */
 
@@ -1013,10 +1015,13 @@ citerdissect(struct vars * v,
     assert(begin <= end);
 
     /*
-     * Assume at least one match for now.  If zero matches are allowed and the
-     * target string is empty, we could succeed right away, but we prefer one
-     * real match so that capturing parens get set (e.g. in "()*\1").  The
-     * zero-matches case is handled at the bottom.
+     * For the moment, assume the minimum number of matches is 1.  If zero
+     * matches are allowed, and the target string is empty, we are allowed to
+     * match regardless of the contents of the iter node --- but we would
+     * prefer to match once, so that capturing parens get set.  (An example of
+     * the concern here is a pattern like "()*\1", which historically this
+     * code has allowed to succeed.)  Therefore, we deal with the zero-matches
+     * case at the bottom, after failing to find any other way to match.
      */
     min_matches = t->min;
     if (min_matches <= 0) {
@@ -1160,7 +1165,10 @@ citerdissect(struct vars * v,
     /* all possibilities exhausted */
     FREE(endpts);
 
-    /* Match an empty string by zero repetitions. */
+    /*
+     * Now consider the possibility that we can match to a zero-length string
+     * by using zero repetitions.
+     */
     if (t->min == 0 && begin == end) {
 	MDEBUG(("%d allowing zero matches\n", t->id));
 	return REG_OKAY;
