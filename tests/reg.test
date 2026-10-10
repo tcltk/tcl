@@ -682,6 +682,9 @@ expectNomatch	14.26 LRP	{^(\w+)( \1)+$}	{abc abc abd}
 expectMatch	14.27 RP	{^(.+)( \1)+$}	{abc abc abc} {abc abc abc} abc { abc}
 expectNomatch	14.28 RP	{^(.+)( \1)+$}	{abc abd abc}
 expectNomatch	14.29 RP	{^(.+)( \1)+$}	{abc abc abd}
+# backref to a capture in a failed alternative must not match [Bug 75c9d9cece]
+expectNomatch	14.30 RP	{^(.)\1|\1.}	abcdef
+expectNomatch	14.31 RP	{^((.)\2|..)\2}	abadef
 
 
 doing 15 "octal escapes vs back references"

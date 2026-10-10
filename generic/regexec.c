@@ -613,8 +613,19 @@ subset(
  * DFA and found that the proposed substring satisfies the DFA.  (We make
  * the caller do that because in concatenation and iteration nodes, it's
  * much faster to check all the substrings against the child DFAs before we
- * recurse.)  Also, caller must have cleared subexpression match data via
- * zaptreesubs (or zapallsubs at the top level).
+ * recurse.)
+ *
+ * A successful match saves the match locations of capturing subexpressions
+ * in v->pmatch[], following these rules:
+ * 1. Before the initial entry, all match data is clear (zapallsubs).
+ * 2. Before any recursive entry, the match data of that subtree is clear
+ *    (zaptreesubs).
+ * 3. On REG_OKAY, each level has saved its match locations.
+ * 4. On REG_NOMATCH, each level has cleared its match locations again.
+ * 5. On other result codes, nothing is guaranteed.
+ * 6. A level that abandons a successful sub-match clears that subtree
+ *    before trying anything that could backreference it, that is, that
+ *    subtree or any subtree to its right.  [Bug 75c9d9cece]
  ^ static int cdissect(struct vars *, struct subre *, chr *, chr *);
  */
 static int			/* regexec return code */
@@ -738,6 +749,9 @@ ccondissect(
 		    MDEBUG(("successful\n"));
 		    return REG_OKAY;
 		}
+
+		/* Right has cleared its matches; clear left's too. */
+		zaptreesubs(v, t->left);
 	    }
 	    if (er != REG_NOMATCH) {
 		return er;
@@ -829,6 +843,9 @@ crevcondissect(
 		    MDEBUG(("successful\n"));
 		    return REG_OKAY;
 		}
+
+		/* Right has cleared its matches; clear left's too. */
+		zaptreesubs(v, t->left);
 	    }
 	    if (er != REG_NOMATCH) {
 		return er;
