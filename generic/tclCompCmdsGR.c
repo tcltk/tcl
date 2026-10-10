@@ -2453,19 +2453,31 @@ TclCompileRegexpCmd(
 
     varTokenPtr = TokenAfter(varTokenPtr);
 
+    /*
+     * If it starts with '-', it could be an incorrectly formed regexp command;
+     * leave it to [regexp] to report.  Check the value of the word, so that
+     * words with backslashes like \- are handled too.  [Bug 697b1bbfe3]
+     */
+
+    if (!sawLast) {
+	Tcl_Obj *patternObj;
+	int dash = 0;
+
+	TclNewObj(patternObj);
+	if (TclWordKnownAtCompileTime(varTokenPtr, patternObj)) {
+	    dash = (TclGetString(patternObj)[0] == '-');
+	}
+	Tcl_BounceRefCount(patternObj);
+	if (dash) {
+	    return TCL_ERROR;
+	}
+    }
+
     if (varTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
 	Tcl_DString ds;
 
 	str = varTokenPtr[1].start;
 	len = varTokenPtr[1].size;
-
-	/*
-	 * If it has a '-', it could be an incorrectly formed regexp command.
-	 */
-
-	if ((*str == '-') && !sawLast) {
-	    return TCL_ERROR;
-	}
 
 	/*
 	 * Note: do not optimize for len == 0, as error should be generated

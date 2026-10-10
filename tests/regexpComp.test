@@ -987,6 +987,26 @@ test regexpComp-24.11 {regexp command compiling tests} {
 	regexp -- $re $text
     }
 } 1
+test regexpComp-24.12 {regexp command compiling tests: pattern with backslash looks like option, bug 697b1bbfe3} {
+    evalInProc {
+	regexp \- a-z
+    }
+} {bad option "-": must be -all, -about, -indices, -inline, -expanded, -line, -linestop, -lineanchor, -nocase, -start, or --}
+test regexpComp-24.13 {regexp command compiling tests: pattern with backslash looks like option, bug 697b1bbfe3} {
+    evalInProc {
+	regexp -\\ a-z
+    }
+} {bad option "-\": must be -all, -about, -indices, -inline, -expanded, -line, -linestop, -lineanchor, -nocase, -start, or --}
+test regexpComp-24.14 {regexp command compiling tests: pattern with backslash after --, bug 697b1bbfe3} {
+    evalInProc {
+	regexp -- \- a-z
+    }
+} 1
+test regexpComp-24.15 {regexp command compiling tests: pattern with backslash, bug 697b1bbfe3} {
+    evalInProc {
+	regexp \x41 xAx
+    }
+} 1
 
 # cleanup
 ::tcltest::cleanupTests
