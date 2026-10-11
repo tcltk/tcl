@@ -558,6 +558,7 @@ Tcl_RegsubObjCmd(
     Tcl_Obj *const *objv)	/* Argument objects. */
 {
     int result, cflags, all, match, command;
+    Tcl_Size nmatches;
     Tcl_Size idx, wlen, wsublen = 0, offset, numMatches, numParts;
     Tcl_Size start, end, subStart, subEnd;
     Tcl_RegExp regExpr;
@@ -793,6 +794,27 @@ Tcl_RegsubObjCmd(
      * empty.
      */
 
+    /*
+     * Ask the regexp engine only for the submatches that subSpec refers to:
+     * finding the submatch boundaries can be much more expensive than
+     * finding the match.  [Bug 446565]
+     */
+
+    nmatches = 10;
+    if (!command) {
+	Tcl_UniChar *p;
+
+	nmatches = 1;
+	for (p = wsubspec; p < wsubspec + wsublen; p++) {
+	    if (*p == '\\' && p + 1 < wsubspec + wsublen) {
+		p++;
+		if (*p >= '0' && *p <= '9' && *p - '0' + 1 > nmatches) {
+		    nmatches = *p - '0' + 1;
+		}
+	    }
+	}
+    }
+
     numMatches = 0;
     for ( ; offset <= wlen; ) {
 
@@ -802,7 +824,7 @@ Tcl_RegsubObjCmd(
 	 */
 
 	match = Tcl_RegExpExecObj(interp, regExpr, objPtr, offset,
-		10 /* matches */, ((offset > 0 &&
+		nmatches, ((offset > 0 &&
 		(wstring[offset-1] != (Tcl_UniChar)'\n'))
 		? TCL_REG_NOTBOL : 0));
 

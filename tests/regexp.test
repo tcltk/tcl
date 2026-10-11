@@ -1204,6 +1204,30 @@ test regexp-28.1 {bug cb03e57a7b} -returnCodes error -body {
 	regexp {} $nosuchvar
 } -result {can't read "nosuchvar": no such variable}
 
+# regsub asks the engine only for the submatches used in subSpec [Bug 446565]
+test regexp-31.1 {regsub: subSpec without references} -body {
+    list [regsub -all {(a)(b)} xabyab Z] [regsub -all {(a)(b)} xabyab {[&]}] \
+	    [regsub -all {(a)(b)} xabyab {<\0>}]
+} -result [list xZyZ {x[ab]y[ab]} x<ab>y<ab>]
+test regexp-31.2 {regsub: subSpec references} {
+    list [regsub -all {(a)(b)} xabyab {\2\1}] [regsub {(a)(b)(c)} abc {\3}] \
+	    [regsub {(a)(b)} ab {[\9]}]
+} {xbayba c {[]}}
+test regexp-31.3 {regsub: escaped references} -body {
+    list [regsub {(a)(b)} ab {\\1}] [regsub {(a)(b)} ab {\&\\\2}] \
+	    [regsub {(a)(b)} ab {\x\1}] [regsub {(a)(b)} ab "x\\"]
+} -result [list "\\1" "&\\b" "\\xa" "x\\"]
+test regexp-31.4 {regsub: submatches after a regsub that needed none} {
+    set re {(a)(b)}
+    list [regsub $re ab Z] [regsub $re ab {\2\1}] [regsub $re xy {\2\1}] \
+	    [regsub $re ab Z]
+} {Z ba xy Z}
+test regexp-31.5 {regsub: capturing parens in a slow RE, bug 446565} {
+    set text "<script>[string repeat x 200] spylog [string repeat y 200]</script>"
+    regsub -all -nocase {<script(.(?!</script>))*?(doubleclick|flycast|burstnet|spylog)+?.*?</script>} \
+	    "a${text}b" trash
+} atrashb
+
 
 # cleanup
 ::tcltest::cleanupTests
