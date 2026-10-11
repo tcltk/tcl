@@ -41,6 +41,10 @@ typedef struct TclRegexp {
 				 * compiled regexp. */
 } TclRegexp;
 
+MODULE_SCOPE int	TclRegExpExecObjEx(Tcl_Interp *interp, Tcl_RegExp re,
+			    Tcl_Obj *textObj, Tcl_Size start, Tcl_Size offset,
+			    Tcl_Size nmatches, int flags);
+
 #endif /* _TCLREGEXP */
 
 /*

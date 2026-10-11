@@ -705,7 +705,7 @@ test regexpComp-16.4 {regsub -start, \A behavior} -body {
     set out {}
     lappend out [regsub -start 0 -all {\A(\w)} {abcde} {/\1} x] $x
     lappend out [regsub -start 2 -all {\A(\w)} {abcde} {/\1} x] $x
-} -result {5 /a/b/c/d/e 3 ab/c/d/e}
+} -result {1 /abcde 1 ab/cde}
 
 test regexpComp-17.1 {regexp -inline} -body {
     regexp -inline b ababa
