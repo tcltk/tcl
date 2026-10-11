@@ -987,6 +987,66 @@ test regexpComp-24.11 {regexp command compiling tests} {
 	regexp -- $re $text
     }
 } 1
+
+# A RE not known at compile time can be a switch [Bug 1902890]
+test regexpComp-25.1 {regexp compiled: RE value is a switch} {
+    evalInProc {
+	set re --
+	regexp $re ----
+    }
+} {wrong # args: should be "regexp ?-option ...? exp string ?matchVar? ?subMatchVar ...?"}
+test regexpComp-25.2 {regexp compiled: RE value is -about} {
+    evalInProc {
+	set re -about
+	regexp $re foo
+    }
+} {0 {}}
+test regexpComp-25.3 {regexp compiled: RE value is a bad switch} {
+    evalInProc {
+	set re -x
+	regexp $re foo
+    }
+} {bad option "-x": must be -all, -about, -indices, -inline, -expanded, -line, -linestop, -lineanchor, -nocase, -start, or --}
+test regexpComp-25.4 {regexp compiled: RE value is a switch after -nocase} {
+    evalInProc {
+	lmap re {-nocase -- -about -start -x} {
+	    catch {regexp -nocase $re foo} msg
+	    set msg
+	}
+    }
+} {{wrong # args: should be "regexp ?-option ...? exp string ?matchVar? ?subMatchVar ...?"} {wrong # args: should be "regexp ?-option ...? exp string ?matchVar? ?subMatchVar ...?"} {0 {}} {bad index "foo": must be integer?[+-]integer? or end?[+-]integer?} {bad option "-x": must be -all, -about, -indices, -inline, -expanded, -line, -linestop, -lineanchor, -nocase, -start, or --}}
+test regexpComp-25.5 {regexp compiled: RE value starting with - after --} {
+    evalInProc {
+	set re {-[0-9]+}
+	list [regexp -- $re a-42] [regexp -nocase -- $re A-42]
+    }
+} {1 1}
+test regexpComp-25.6 {regexp compiled: RE value not starting with -} {
+    evalInProc {
+	set re {^-?[0-9]+$}
+	set n 0
+	foreach s {-42 42 x} {
+	    if {[regexp $re $s]} {incr n}
+	}
+	set n
+    }
+} 2
+test regexpComp-25.7 {regexp compiled: switches in variables} {
+    evalInProc {
+	set re A
+	set o -nocase
+	set r [regexp $o $re xay]
+	set re a
+	set o -all
+	lappend r [regexp $o $re aXaa]
+	set re {-[0-9]+}
+	set o --
+	lappend r [regexp $o $re a-42]
+	set re -A
+	set o -nocase
+	lappend r [regexp $o -- $re x-a]
+    }
+} {1 3 1 1}
 
 # cleanup
 ::tcltest::cleanupTests
