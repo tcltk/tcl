@@ -198,6 +198,7 @@ static int casecmp(const chr *, const chr *, size_t);
 struct vars {
     regex_t *re;
     const char *stackbase;	/* for STACK_TOO_DEEP() */
+    size_t stackmax;		/* for STACK_TOO_DEEP() */
     const chr *now;		/* scan pointer into string */
     const chr *stop;		/* end of string */
     const chr *savenow;		/* saved now and stop for "subroutine call" */
@@ -316,6 +317,7 @@ compile(
 
     v->re = re;
     v->stackbase = &stackmarker;
+    v->stackmax = 0;
     v->now = string;
     v->stop = v->now + len;
     v->savenow = v->savestop = NULL;

@@ -99,6 +99,7 @@ struct smalldfa {
 struct vars {
     regex_t *re;
     const char *stackbase;	/* for STACK_TOO_DEEP() */
+    size_t stackmax;		/* for STACK_TOO_DEEP() */
     struct guts *g;
     int eflags;			/* copies of arguments */
     size_t nmatch;
@@ -197,6 +198,7 @@ exec(
 
     v->re = re;
     v->stackbase = &stackmarker;
+    v->stackmax = 0;
     v->g = (struct guts *)re->re_guts;
     if ((v->g->cflags&REG_EXPECT) && details == NULL) {
 	FreeVars(v);
