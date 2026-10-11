@@ -15,6 +15,7 @@ to the userbase.
  - [regexp/regsub -all restarted matching on the substring after the previous match](https://core.tcl-lang.org/tcl/tktview/471101)
  - [with REG_BOSONLY only the first alternative was anchored at the beginning of the string](https://core.tcl-lang.org/tcl/tktview/117854)
  - [TclUnixWaitForFile: infinite wait may return early](https://core.tcl-lang.org/tcl/tktview/49538c)
+ - [lsearch -regexp released the pattern when matching failed](https://core.tcl-lang.org/tcl/tktview/359576)
 
 # Updated bundled packages, libraries, standards, data
  - msgcat 1.7.2
