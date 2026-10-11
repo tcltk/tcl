@@ -23,6 +23,7 @@ source [file join [file dirname [info script]] tcltests.tcl]
 testConstraint testfilehandler [llength [info commands testfilehandler]]
 testConstraint testexithandler [llength [info commands testexithandler]]
 testConstraint testfilewait [llength [info commands testfilewait]]
+testConstraint testalarm [llength [info commands testalarm]]
 testConstraint exec [llength [info commands exec]]
 testConstraint notOSX [expr {$::tcl_platform(os) ne "Darwin"}]
 
@@ -795,6 +796,16 @@ test event-13.8 {Tcl_WaitForFile procedure, waiting indefinitely} testfilewait {
     close $f
     return $result
 } {{} readable}
+test event-13.9 {Tcl_WaitForFile procedure, waiting indefinitely, interrupted by a signal} -constraints {
+    testfilewait testalarm unix
+} -body {
+    set f [open "|sleep 2" r]
+    testalarm 1
+    set result [testfilewait $f readable -1]
+    list $result [testgotsig]
+} -cleanup {
+    close $f
+} -result {readable 1}
 
 test event-14.1 {Tcl_WaitForFile procedure, readable, big fd} -setup {
     set chanList {}
