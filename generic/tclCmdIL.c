@@ -3743,7 +3743,6 @@ Tcl_LsearchObjCmd(
 	    case REGEXP:
 		match = Tcl_RegExpExecObj(interp, regexp, itemPtr, 0, 0, 0);
 		if (match < 0) {
-		    Tcl_DecrRefCount(patObj);
 		    if (listPtr != NULL) {
 			Tcl_DecrRefCount(listPtr);
 		    }
