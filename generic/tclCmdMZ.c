@@ -819,7 +819,7 @@ Tcl_RegsubObjCmd(
 	    (wstring[offset-1] != (Tcl_UniChar)'\n')) ? TCL_REG_NOTBOL : 0;
     for ( ; offset <= wlen; ) {
 	match = TclRegExpExecObjEx(interp, regExpr, objPtr, startOffset,
-		offset, 10 /* matches */, eflags);
+		offset, command ? -1 : 10 /* matches */, eflags);
 
 	if (match < 0) {
 	    result = TCL_ERROR;
