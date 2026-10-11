@@ -217,19 +217,23 @@ exec(
 	 * Need work area.
 	 */
 
-	if (v->g->nsub + 1 <= LOCALMAT) {
+	v->nmatch = v->g->nsub + 1;
+	if (v->nmatch <= LOCALMAT) {
 	    v->pmatch = mat;
 	} else {
 	    v->pmatch = (regmatch_t *)
-		    MALLOC((v->g->nsub + 1) * sizeof(regmatch_t));
+		    MALLOC(v->nmatch * sizeof(regmatch_t));
 	}
 	if (v->pmatch == NULL) {
 	    FreeVars(v);
 	    return REG_ESPACE;
 	}
-	v->nmatch = v->g->nsub + 1;
+	zapallsubs(v->pmatch, v->nmatch);
     } else {
 	v->pmatch = pmatch;
+	if (nmatch > 0) {
+	    zapallsubs(pmatch, nmatch);
+	}
     }
     v->details = details;
     v->start = (chr *)string;
@@ -408,7 +412,6 @@ simpleFind(
      * Find submatches.
      */
 
-    zapallsubs(v->pmatch, v->nmatch);
     return cdissect(v, v->g->tree, begin, end);
 }
 
@@ -503,7 +506,6 @@ complicatedFindLoop(
 		}
 
 		MDEBUG(("tentative end %ld\n", LOFF(end)));
-		zapallsubs(v->pmatch, v->nmatch);
 		er = cdissect(v, v->g->tree, begin, end);
 		if (er == REG_OKAY) {
 		    if (v->nmatch > 0) {
@@ -541,6 +543,7 @@ complicatedFindLoop(
 
 /*
  - zapallsubs - initialize all subexpression matches to "no match"
+ * Note that p[0], the overall-match location, is not touched.
  ^ static void zapallsubs(regmatch_t *, size_t);
  */
 static void
@@ -615,8 +618,26 @@ subset(
  * DFA and found that the proposed substring satisfies the DFA.  (We make
  * the caller do that because in concatenation and iteration nodes, it's
  * much faster to check all the substrings against the child DFAs before we
- * recurse.)  Also, caller must have cleared subexpression match data via
- * zaptreesubs (or zapallsubs at the top level).
+ * recurse.)
+ *
+ * A side-effect of a successful match is to save match locations for
+ * capturing subexpressions in v->pmatch[].  This is a little bit tricky,
+ * so we make the following rules:
+ * 1. Before initial entry to cdissect, all match data must have been
+ *    cleared (this is seen to by zapallsubs).
+ * 2. Before any recursive entry to cdissect, the match data for that
+ *    subexpression tree must be guaranteed clear (see zaptreesubs).
+ * 3. When returning REG_OKAY, each level of cdissect will have saved
+ *    any relevant match locations.
+ * 4. When returning REG_NOMATCH, each level of cdissect will guarantee
+ *    that its subexpression match locations are again clear.
+ * 5. No guarantees are made for error cases (i.e., other result codes).
+ * 6. When a level of cdissect abandons a successful sub-match, it will
+ *    clear that subtree's match locations with zaptreesubs before trying
+ *    any new DFA match or cdissect call for that subtree or any subtree
+ *    to its right (that is, any subtree that could have a backref into the
+ *    abandoned match).
+ * [Bug 75c9d9cece]
  ^ static int cdissect(struct vars *, struct subre *, chr *, chr *);
  */
 static int			/* regexec return code */
@@ -740,6 +761,9 @@ ccondissect(
 		    MDEBUG(("successful\n"));
 		    return REG_OKAY;
 		}
+
+		/* Reset left's matches (right should have done so itself) */
+		zaptreesubs(v, t->left);
 	    }
 	    if (er != REG_NOMATCH) {
 		return er;
@@ -768,8 +792,6 @@ ccondissect(
 	    return REG_NOMATCH;
 	}
 	MDEBUG(("%d: new midpoint %ld\n", t->id, LOFF(mid)));
-	zaptreesubs(v, t->left);
-	zaptreesubs(v, t->right);
     }
 }
 
@@ -831,6 +853,9 @@ crevcondissect(
 		    MDEBUG(("successful\n"));
 		    return REG_OKAY;
 		}
+
+		/* Reset left's matches (right should have done so itself) */
+		zaptreesubs(v, t->left);
 	    }
 	    if (er != REG_NOMATCH) {
 		return er;
@@ -859,8 +884,6 @@ crevcondissect(
 	    return REG_NOMATCH;
 	}
 	MDEBUG(("%d: new midpoint %ld\n", t->id, LOFF(mid)));
-	zaptreesubs(v, t->left);
-	zaptreesubs(v, t->right);
     }
 }
 
@@ -1103,6 +1126,7 @@ citerdissect(struct vars * v,
 	MDEBUG(("%d: verifying %d..%d\n", t->id, nverified + 1, k));
 
 	for (i = nverified + 1; i <= k; i++) {
+	    /* zap any match data from a non-last iteration */
 	    zaptreesubs(v, t->left);
 	    er = cdissect(v, t->left, endpts[i - 1], endpts[i]);
 	    if (er == REG_OKAY) {
@@ -1282,6 +1306,7 @@ creviterdissect(struct vars * v,
 	MDEBUG(("%d: verifying %d..%d\n", t->id, nverified + 1, k));
 
 	for (i = nverified + 1; i <= k; i++) {
+	    /* zap any match data from a non-last iteration */
 	    zaptreesubs(v, t->left);
 	    er = cdissect(v, t->left, endpts[i - 1], endpts[i]);
 	    if (er == REG_OKAY) {
