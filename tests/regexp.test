@@ -1204,6 +1204,15 @@ test regexp-28.1 {bug cb03e57a7b} -returnCodes error -body {
 	regexp {} $nosuchvar
 } -result {can't read "nosuchvar": no such variable}
 
+test regexp-32.1 {regsub -command with more than 9 groups, bug 41bc9a8298} {
+    regsub -command {(a)(b)(c)(d)(e)(f)(g)(h)(i)(j)(k)(l)} xabcdefghijkly list
+} {xabcdefghijkl a b c d e f g h i j k ly}
+test regexp-32.2 {regsub -command -all with more than 9 groups, bug 41bc9a8298} {
+    regsub -all -command {(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)} abcdefghijkABCDEFGHIJK {apply {args {
+	lindex $args end
+    }}}
+} kK
+
 
 # cleanup
 ::tcltest::cleanupTests

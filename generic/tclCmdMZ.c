@@ -802,7 +802,7 @@ Tcl_RegsubObjCmd(
 	 */
 
 	match = Tcl_RegExpExecObj(interp, regExpr, objPtr, offset,
-		10 /* matches */, ((offset > 0 &&
+		command ? -1 : 10 /* matches */, ((offset > 0 &&
 		(wstring[offset-1] != (Tcl_UniChar)'\n'))
 		? TCL_REG_NOTBOL : 0));
 
