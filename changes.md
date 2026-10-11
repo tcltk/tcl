@@ -11,6 +11,7 @@ to the userbase.
 
 # Bug fixes
  - [regexp sometimes allows an invalid backref to be matched](https://core.tcl-lang.org/tcl/tktview/75c9d9)
+ - [regexp -all did not try to match at the end of the string](https://core.tcl-lang.org/tcl/tktview/b73f12)
 
 # Updated bundled packages, libraries, standards, data
  - msgcat 1.7.2

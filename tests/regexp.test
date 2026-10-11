@@ -727,26 +727,30 @@ test regexp-18.7 {regexp -all -inline} {
 test regexp-18.8 {regexp -all} {
     # This should not cause an infinite loop
     regexp -all -inline {a*} a
-} {a}
+} {a {}}
 test regexp-18.9 {regexp -all} {
-    # Yes, the expected result is {a {}}.  Here's why:
+    # Yes, the expected result is {a {} {}}.  Here's why:
     # Start at index 0; a* matches the "a" there then stops.
     # Go to index 1; a* matches the lambda (or {}) there then stops.  Recall
     #   that a* matches zero or more "a"'s; thus it matches the string "b", as
     #   there are zero or more "a"'s there.
-    # Go to index 2; this is past the end of the string, so stop.
+    # Go to index 2; this is the end of the string, a* matches the lambda
+    #   there too.
+    # Go to index 3; this is past the end of the string, so stop.
     regexp -all -inline {a*} ab
-} {a {}}
+} {a {} {}}
 test regexp-18.10 {regexp -all} {
-    # Yes, the expected result is {a {} a}.  Here's why:
+    # Yes, the expected result is {a {} a {}}.  Here's why:
     # Start at index 0; a* matches the "a" there then stops.
     # Go to index 1; a* matches the lambda (or {}) there then stops.   Recall
     #   that a* matches zero or more "a"'s; thus it matches the string "b", as
     #   there are zero or more "a"'s there.
     # Go to index 2; a* matches the "a" there then stops.
-    # Go to index 3; this is past the end of the string, so stop.
+    # Go to index 3; this is the end of the string, a* matches the lambda
+    #   there too.
+    # Go to index 4; this is past the end of the string, so stop.
     regexp -all -inline {a*} aba
-} {a {} a}
+} {a {} a {}}
 test regexp-18.11 {regexp -all} {
     regexp -all -inline {^a} aaaa
 } {a}
@@ -919,14 +923,14 @@ test regexp-23.2 {regexp -all and -line} {
 	[regexp -all -inline -indices -line -- {^} $string] \
 	[regexp -all -inline -indices -line -- {^$} $string] \
 	[regexp -all -inline -indices -line -- {$} $string]
-} {{{0 -1}} {{0 -1}} {{0 -1}}}
+} {{{0 -1} {1 0}} {{0 -1} {1 0}} {{0 -1} {1 0}}}
 test regexp-23.3 {regexp -all and -line} {
     set string "\n\n"
     list \
 	[regexp -all -inline -indices -line -- {^} $string] \
 	[regexp -all -inline -indices -line -- {^$} $string] \
 	[regexp -all -inline -indices -line -- {$} $string]
-} {{{0 -1} {1 0}} {{0 -1} {1 0}} {{0 -1} {1 0}}}
+} {{{0 -1} {1 0} {2 1}} {{0 -1} {1 0} {2 1}} {{0 -1} {1 0} {2 1}}}
 test regexp-23.4 {regexp -all and -line} {
     set string "a"
     list \
@@ -934,7 +938,7 @@ test regexp-23.4 {regexp -all and -line} {
 	[regexp -all -inline -indices -line -- {^.*$} $string] \
 	[regexp -all -inline -indices -line -- {$} $string]
 } {{{0 -1}} {{0 0}} {{1 0}}}
-test regexp-23.5 {regexp -all and -line} {knownBug} {
+test regexp-23.5 {regexp -all and -line} {
     set string "a\n"
     list \
 	[regexp -all -inline -indices -line -- {^} $string] \
@@ -948,7 +952,7 @@ test regexp-23.6 {regexp -all and -line} {
 	[regexp -all -inline -indices -line -- {^.*$} $string] \
 	[regexp -all -inline -indices -line -- {$} $string]
 } {{{0 -1} {1 0}} {{0 -1} {1 1}} {{0 -1} {2 1}}}
-test regexp-23.7 {regexp -all and -line} {knownBug} {
+test regexp-23.7 {regexp -all and -line} {
     set string "ab\n"
     list \
 	[regexp -all -inline -indices -line -- {^} $string] \
@@ -962,7 +966,7 @@ test regexp-23.8 {regexp -all and -line} {
 	[regexp -all -inline -indices -line -- {^.*$} $string] \
 	[regexp -all -inline -indices -line -- {$} $string]
 } {{{0 -1} {2 1}} {{0 0} {2 2}} {{1 0} {3 2}}}
-test regexp-23.9 {regexp -all and -line} {knownBug} {
+test regexp-23.9 {regexp -all and -line} {
     set string "a\nb\n"
     list \
 	[regexp -all -inline -indices -line -- {^} $string] \
@@ -1138,16 +1142,16 @@ test regexp-26.9 {Tcl bug 2826551: diff regexp with embedded -line option} {
 } [list "@1\n2\n+3\n" "@4\n-5\n+6\n7\n" "@8\n9\n"]
 test regexp-26.10 {regexp with -line option} {
     regexp -all -inline -line -- {a*} "a\n"
-} {a {}}
+} {a {} {}}
 test regexp-26.11 {regexp without -line option} {
     regexp -all -inline -- {a*} "a\n"
-} {a {}}
+} {a {} {}}
 test regexp-26.12 {regexp with -line option} {
     regexp -all -inline -line -- {a*} "b\n"
-} {{} {}}
+} {{} {} {}}
 test regexp-26.13 {regexp without -line option} {
     regexp -all -inline -- {a*} "b\n"
-} {{} {}}
+} {{} {} {}}
 
 test regexp-27.1 {regsub -command} {
     regsub -command {.x.} {abcxdef} {string length}
