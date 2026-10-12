@@ -21,6 +21,7 @@ to the userbase.
  - [regexp sometimes allows an invalid backref to be matched](https://core.tcl-lang.org/tcl/tktview/75c9d9)
  - [regexp -all did not try to match at the end of the string](https://core.tcl-lang.org/tcl/tktview/b73f12)
  - [regexp/regsub -all restarted matching on the substring after the previous match](https://core.tcl-lang.org/tcl/tktview/471101)
+ - [with REG_BOSONLY only the first alternative was anchored at the beginning of the string](https://core.tcl-lang.org/tcl/tktview/117854)
 
 # Updated bundled packages, libraries, standards, data
  - msgcat 1.7.2

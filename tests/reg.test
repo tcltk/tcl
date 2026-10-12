@@ -945,11 +945,12 @@ expectMatch	30.4 &		a*b	aab	aab
 expectMatch	30.5 &		^a*b	aaaab	aaaab
 expectMatch	30.6 &M		{[0-6][1-2][0-3][0-6][1-6][0-6]} \
 	"010010" 010010
-# temporary REG_BOSONLY kludge
+# REG_BOSONLY (kludge for Expect, not really public otherwise)
 expectMatch	30.7 s		abc	abcd	abc
 expectNomatch	30.8 s		abc	xabcd
+expectNomatch	30.9 s		abc|def	xdef
 # back to normal stuff
-expectMatch	30.9 HLP	{(?n)^(?![t#])\S+} \
+expectMatch	30.10 HLP	{(?n)^(?![t#])\S+} \
 	"tk\n\n#\n#\nit0"	it0
 
 

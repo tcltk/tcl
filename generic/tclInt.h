@@ -1544,8 +1544,8 @@ typedef void **TclHandle;
  *----------------------------------------------------------------
  */
 
-#define TCL_REG_BOSONLY 002000	/* Prepend \A to pattern so it only matches at
-				 * the beginning of the string. */
+#define TCL_REG_BOSONLY 002000	/* Allow pattern to match only at the
+				 * beginning of the string (implicit \A). */
 
 /*
  * These are a thin layer over TclpThreadKeyDataGet and TclpThreadKeyDataSet

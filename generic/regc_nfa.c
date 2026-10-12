@@ -74,9 +74,26 @@ newnfa(
 	freenfa(nfa);
 	return NULL;
     }
-    rainbow(nfa, nfa->cm, PLAIN, COLORLESS, nfa->pre, nfa->init);
+
+    /*
+     * pre to init arcs match the character before the match proper.
+     * Ordinarily that can be anything including BOS/BOL.  (If the regexp
+     * constrains the preceding character, we'll discover that and remove arcs
+     * as appropriate during NFA optimization.)  However, REG_BOSONLY tells us
+     * to only allow BOS/BOL, if this is the top level NFA.
+     */
+    if (parent == NULL && (v->cflags & REG_BOSONLY)) {
+	/* BOSONLY, do not insert rainbow */
+    } else {
+	rainbow(nfa, nfa->cm, PLAIN, COLORLESS, nfa->pre, nfa->init);
+    }
     newarc(nfa, '^', 1, nfa->pre, nfa->init);
     newarc(nfa, '^', 0, nfa->pre, nfa->init);
+
+    /*
+     * Similarly, final to post arcs match the character after the match
+     * proper, and initially that can be any character or EOS/EOL.
+     */
     rainbow(nfa, nfa->cm, PLAIN, COLORLESS, nfa->final, nfa->post);
     newarc(nfa, '$', 1, nfa->final, nfa->post);
     newarc(nfa, '$', 0, nfa->final, nfa->post);
