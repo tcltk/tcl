@@ -110,6 +110,14 @@ testConstraint testsocket_testflags [expr {![catch {
 	close $h
     }]}]
 
+# Some systems (e.g. illumos) refuse a connection to a local port without a
+# listener at once, so an async connect to it is never pending.
+testConstraint asyncConnectPending [expr {![catch {
+	set h [socket -async localhost [randport]]
+	set pending [fconfigure $h -connecting]
+	close $h
+    }] && $pending}]
+
 
 # Test the latency of tcp connections over the loopback interface. Some OSes
 # (e.g. NetBSD) seem to use the Nagle algorithm and delayed ACKs, so it takes
@@ -2493,7 +2501,7 @@ test socket-14.11.0 {pending [socket -async] and nonblocking [puts], no listener
 	unset x
     } -result {transport endpoint is not connected} -returnCodes 1
 test socket-14.11.1 {pending [socket -async] and nonblocking [puts], no listener, flush} \
-    -constraints {socket testsocket_testflags} \
+    -constraints {socket testsocket_testflags asyncConnectPending} \
     -body {
 	set sock [socket -async localhost [randport]]
 	# Set the socket in async test mode.
@@ -2573,7 +2581,7 @@ test socket-14.15 {blocking read on async socket should not trigger event handle
 # v4 and v6 is required to prevent that the async connect does not terminate
 # before the fconfigure command. There is always an additional ip to try.
 test socket-14.16 {empty -peername while [socket -async] connecting} \
-    -constraints {socket localhost_v4 localhost_v6} \
+    -constraints {socket localhost_v4 localhost_v6 asyncConnectPending} \
     -body {
 	set client [socket -async [tcltests::localDualStackAddress] [randport]]
 	fconfigure $client -peername
@@ -2584,7 +2592,7 @@ test socket-14.16 {empty -peername while [socket -async] connecting} \
 # v4 and v6 is required to prevent that the async connect does not terminate
 # before the fconfigure command. There is always an additional ip to try.
 test socket-14.17 {empty -sockname while [socket -async] connecting} \
-    -constraints {socket localhost_v4 localhost_v6} \
+    -constraints {socket localhost_v4 localhost_v6 asyncConnectPending} \
     -body {
 	set client [socket -async [tcltests::localDualStackAddress] [randport]]
 	fconfigure $client -sockname
