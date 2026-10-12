@@ -93,7 +93,7 @@ static void		FreeRegexp(TclRegexp *regexpPtr);
 static void		FreeRegexpInternalRep(Tcl_Obj *objPtr);
 static int		RegExpExecUniChar(Tcl_Interp *interp, Tcl_RegExp re,
 			    const Tcl_UniChar *uniString, size_t numChars,
-			    size_t nmatches, int flags);
+			    size_t searchStart, size_t nmatches, int flags);
 static int		SetRegexpFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
 
 /*
@@ -221,7 +221,7 @@ Tcl_RegExpExec(
     Tcl_DStringInit(&ds);
     ustr = Tcl_UtfToUniCharDString(text, TCL_INDEX_NONE, &ds);
     numChars = Tcl_DStringLength(&ds) / sizeof(Tcl_UniChar);
-    result = RegExpExecUniChar(interp, re, ustr, numChars,
+    result = RegExpExecUniChar(interp, re, ustr, numChars, 0,
 	    TCL_INDEX_NONE /* nmatches */, flags);
     Tcl_DStringFree(&ds);
 
@@ -285,6 +285,10 @@ Tcl_RegExpRange(
  *	Execute the regular expression matcher using a compiled form of a
  *	regular expression and save information about any match that is found.
  *
+ *	The search starts at searchStart, but the characters before it are
+ *	still seen by constraints such as \A, ^ and \m. The saved match
+ *	indices are relative to searchStart.
+ *
  * Results:
  *	If an error occurs during the matching operation then -1 is returned
  *	and an error message is left in interp's result. Otherwise the return
@@ -304,6 +308,8 @@ RegExpExecUniChar(
 				 * previous call to Tcl_GetRegExpFromObj */
     const Tcl_UniChar *wString,	/* String against which to match re. */
     size_t numChars,		/* Length of Tcl_UniChar string. */
+    size_t searchStart,		/* Index in wString at which to start the
+				 * search. */
     size_t nm,			/* How many subexpression matches (counting
 				 * the whole match as subexpression 0) are of
 				 * interest. -1 means "don't know". */
@@ -317,7 +323,7 @@ RegExpExecUniChar(
 	nm = last;
     }
 
-    status = TclReExec(&regexpPtr->re, wString, numChars,
+    status = TclReExec(&regexpPtr->re, wString, numChars, searchStart,
 	    &regexpPtr->details, nm, regexpPtr->matches, flags);
 
     /*
@@ -333,6 +339,25 @@ RegExpExecUniChar(
 		    status);
 	}
 	return -1;
+    }
+
+    /*
+     * Make the match indices relative to the search start.
+     */
+
+    if (searchStart > 0) {
+	size_t i;
+
+	for (i = 0; i < nm; i++) {
+	    if (regexpPtr->matches[i].rm_so != (size_t) -1) {
+		regexpPtr->matches[i].rm_so -= searchStart;
+		regexpPtr->matches[i].rm_eo -= searchStart;
+	    }
+	}
+	if (regexpPtr->flags & REG_EXPECT) {
+	    regexpPtr->details.rm_extend.rm_so -= searchStart;
+	    regexpPtr->details.rm_extend.rm_eo -= searchStart;
+	}
     }
     return 1;
 }
@@ -419,9 +444,16 @@ Tcl_RegExpMatch(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_RegExpExecObj --
+ * Tcl_RegExpExecObj, TclRegExpExecObjEx --
  *
  *	Execute a precompiled regexp against the given object.
+ *
+ *	TclRegExpExecObjEx treats the character at index start as the
+ *	beginning of the string (for \A, and for ^ unless TCL_REG_NOTBOL is
+ *	given), but starts the search at index offset, so that \A, ^ and \m
+ *	see the characters between start and offset. This is used to find
+ *	successive matches with [regexp -all] and [regsub -all]. The match
+ *	indices are relative to offset.
  *
  * Results:
  *	If an error occurs during the matching operation then -1 is returned
@@ -448,6 +480,26 @@ Tcl_RegExpExecObj(
 				 * interest. -1 means all of them. */
     int flags)			/* Regular expression execution flags. */
 {
+    return TclRegExpExecObjEx(interp, re, textObj, offset, offset, nmatches,
+	    flags);
+}
+
+int
+TclRegExpExecObjEx(
+    Tcl_Interp *interp,		/* Interpreter to use for error reporting. */
+    Tcl_RegExp re,		/* Compiled regular expression; must have been
+				 * returned by previous call to
+				 * Tcl_GetRegExpFromObj. */
+    Tcl_Obj *textObj,		/* Text against which to match re. */
+    Tcl_Size start,		/* Character index that is treated as the
+				 * beginning of the string. */
+    Tcl_Size offset,		/* Character index that marks where matching
+				 * should begin; not less than start. */
+    Tcl_Size nmatches,		/* How many subexpression matches (counting
+				 * the whole match as subexpression 0) are of
+				 * interest. -1 means all of them. */
+    int flags)			/* Regular expression execution flags. */
+{
     TclRegexp *regexpPtr = (TclRegexp *) re;
     Tcl_UniChar *udata;
     Tcl_Size length;
@@ -460,7 +512,7 @@ Tcl_RegExpExecObj(
      * This is possible based only on the right mix of incoming flags (0)
      * and regexp compile flags.
      */
-    if ((offset == 0) && (nmatches == 0) && (flags == 0)
+    if ((start == 0) && (offset == 0) && (nmatches == 0) && (flags == 0)
 	    && !(reflags & ~TCL_REG_GLOBOK_FLAGS)
 	    && (regexpPtr->globObjPtr != NULL)) {
 	int nocase = (reflags & TCL_REG_NOCASE) ? TCL_MATCH_NOCASE : 0;
@@ -486,10 +538,14 @@ Tcl_RegExpExecObj(
     if (offset > length) {
 	offset = length;
     }
-    udata += offset;
-    length -= offset;
+    if (start > offset) {
+	start = offset;
+    }
+    udata += start;
+    length -= start;
 
-    return RegExpExecUniChar(interp, re, udata, length, nmatches, flags);
+    return RegExpExecUniChar(interp, re, udata, length, offset - start,
+	    nmatches, flags);
 }
 
 /*

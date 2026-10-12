@@ -20,6 +20,7 @@ to the userbase.
  - [hang in fcopy on macOS](https://core.tcl-lang.org/tcl/tktview/7b4a81)
  - [regexp sometimes allows an invalid backref to be matched](https://core.tcl-lang.org/tcl/tktview/75c9d9)
  - [regexp -all did not try to match at the end of the string](https://core.tcl-lang.org/tcl/tktview/b73f12)
+ - [regexp/regsub -all restarted matching on the substring after the previous match](https://core.tcl-lang.org/tcl/tktview/471101)
 
 # Updated bundled packages, libraries, standards, data
  - msgcat 1.7.2
