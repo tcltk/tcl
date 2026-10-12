@@ -243,7 +243,7 @@ TclpServiceModeHook(
     int mode)			/* Either TCL_SERVICE_ALL, or
 				 * TCL_SERVICE_NONE. */
 {
-    if (mode == TCL_SERVICE_ALL) {
+    if ((mode & TCL_SERVICE_ALL) != 0) {
 #ifdef NOTIFIER_SELECT
 #if TCL_THREADS
 	StartNotifierThread("Tcl_ServiceModeHook");
@@ -595,7 +595,7 @@ TclUnixWaitForFile(
      * become ready or a timeout to occur.
      */
 
-    do {
+    while (1) {
 	if (timeout > 0) {
 	    blockTime.tv_sec = abortTime.sec - now.sec;
 	    blockTime.tv_usec = abortTime.usec - now.usec;
@@ -651,8 +651,11 @@ TclUnixWaitForFile(
 	 */
 
 	Tcl_GetTime(&now);
-    } while ((abortTime.sec > now.sec)
-	    || (abortTime.sec == now.sec && abortTime.usec > now.usec));
+	if ((abortTime.sec < now.sec)
+	    || (abortTime.sec == now.sec && abortTime.usec <= now.usec)) {
+	    break;
+	}
+    }
     return result;
 }
 #endif /* !HAVE_COREFOUNDATION */
