@@ -30,6 +30,7 @@ testConstraint notInCIenv [expr {![info exists ::env(CI)] || !$::env(CI)}]
 
 # File permissions broken on wsl without some "exotic" wsl configuration
 testConstraint notWsl [expr {[llength [array names ::env *WSL*]] == 0}]
+testConstraint notWine [expr {![info exists ::env(CI_USING_WINE)]}]
 
 set tmpspace /tmp;# default value
 # Find a group that exists on this Unix system, or else skip tests that
@@ -57,12 +58,14 @@ if {[testConstraint win] && $::tcl_platform(osVersion) < 10.0} {
     testConstraint winLessThan10 1
 }
 
-testConstraint darwin9 [expr {
-    [testConstraint unix]
-    && $tcl_platform(os) eq "Darwin"
-    && [package vsatisfies 1.$::tcl_platform(osVersion) 1.9]
+# POSIX allows rename() to require write permission for a directory being
+# renamed, and OpenBSD and macOS 10.5 do. [Bug 219158]
+testConstraint renameNeedsDirWrite [expr {
+    [testConstraint unix] && ($tcl_platform(os) eq "OpenBSD"
+    || ($tcl_platform(os) eq "Darwin"
+	&& [package vsatisfies 1.$::tcl_platform(osVersion) 1.9]))
 }]
-testConstraint notDarwin9 [expr {![testConstraint darwin9]}]
+testConstraint notRenameNeedsDirWrite [expr {![testConstraint renameNeedsDirWrite]}]
 testConstraint notContinuousIntegration [expr {![info exists ::env(CI)]}]
 
 testConstraint fileSharing 0
@@ -537,7 +540,7 @@ test fCmd-5.4 {TclFileDeleteCmd: multiple files} -constraints notRoot -setup {
 } -cleanup {cleanup} -result {1 1 1 0 0 0}
 test fCmd-5.5 {TclFileDeleteCmd: stop at first error} -setup {
     cleanup
-} -constraints {notRoot unixOrWin notWine} -body {
+} -constraints {notRoot unixOrWin} -body {
     createfile tf1
     createfile tf2
     file mkdir td1
@@ -632,7 +635,7 @@ test fCmd-6.6 {CopyRenameOneFile: errno != ENOENT} -setup {
 } -result {error renaming "tf1" to "td1/tf1": permission denied}
 test fCmd-6.9 {CopyRenameOneFile: errno == ENOENT} -setup {
     cleanup
-} -constraints {unix notRoot} -body {
+} -constraints {notRoot} -body {
     createfile tf1
     file rename tf1 tf2
     glob tf*
@@ -685,7 +688,7 @@ test fCmd-6.15 {CopyRenameOneFile: TclpRenameFile succeeds} -setup {
 } -result 1
 test fCmd-6.16 {CopyRenameOneFile: TclpCopyRenameOneFile fails} -setup {
     cleanup
-} -constraints {notRoot notWine} -body {
+} -constraints {notRoot} -body {
     file mkdir [file join td1 td2]
     createfile [file join td1 td2 tf1]
     file mkdir td2
@@ -694,12 +697,12 @@ test fCmd-6.16 {CopyRenameOneFile: TclpCopyRenameOneFile fails} -setup {
     [subst {error renaming "td2" to "[file join td1 td2]": file *}]
 test fCmd-6.17 {CopyRenameOneFile: errno == EINVAL} -setup {
     cleanup
-} -constraints {notRoot notWine} -returnCodes error -body {
+} -constraints {notRoot} -returnCodes error -body {
     file rename -force $root tf1
 } -result [subst {error renaming "$root" to "tf1": trying to rename a volume or move a directory into itself}]
 test fCmd-6.18 {CopyRenameOneFile: errno != EXDEV} -setup {
     cleanup
-} -constraints {notRoot notWine} -body {
+} -constraints {notRoot} -body {
     file mkdir [file join td1 td2]
     createfile [file join td1 td2 tf1]
     file mkdir td2
@@ -866,7 +869,7 @@ test fCmd-7.5 {FileForceOption: multiple times through loop} -setup {
 } -result {}
 
 test fCmd-8.1 {FileBasename: basename of ~user: argc == 1 && *path == ~} \
-    -constraints {unix notRoot knownBug tildeexpansion} -body {
+    -constraints {notRoot knownBug tildeexpansion} -body {
     # Labeled knownBug because it is dangerous [Bug: 3881]
     file mkdir td1
     file attr td1 -perm 0o40000
@@ -875,7 +878,7 @@ test fCmd-8.1 {FileBasename: basename of ~user: argc == 1 && *path == ~} \
     file delete -force td1
 } -result "error renaming \"~$user\" to \"td1/[file tail ~$user]\": permission denied"
 test fCmd-8.2 {FileBasename: basename of ~user: argc == 1 && *path == ~} \
-	-constraints {unix notRoot} -body {
+	-constraints {notRoot} -body {
     string equal [file tail ~$user] ~$user
 } -result 1
 test fCmd-8.3 {file copy and path translation: ensure correct error} -body {
@@ -909,20 +912,37 @@ test fCmd-9.3 {file rename: comprehensive: file to new name} -setup {
     file rename tf2 tf4
     list [lsort [glob tf*]] [file writable tf3] [file writable tf4]
 } -result {{tf3 tf4} 1 0}
-test fCmd-9.4 {file rename: comprehensive: dir to new name} -setup {
+test fCmd-9.4 {file rename: comprehensive: writable dir to new name} -setup {
     cleanup
-} -constraints {unix notRoot testchmod notDarwin9 notWsl} -body {
-    file mkdir td1 td2
-    testchmod 0o555 td2
+} -body {
+    file mkdir td1
     file rename td1 td3
-    file rename td2 td4
-    list [lsort [glob td*]] [file writable td3] [file writable td4]
+    list [lsort [glob td*]] [file writable td3]
 } -cleanup {
     cleanup
-} -result {{td3 td4} 1 0}
+} -result {td3 1}
+test fCmd-9.4.1 {file rename: comprehensive: read-only dir to new name} -setup {
+    cleanup
+} -constraints {notRoot testchmod notRenameNeedsDirWrite notWine} -body {
+    file mkdir td2
+    testchmod 0o555 td2
+    file rename td2 td4
+    list [lsort [glob td*]] [file writable td4]
+} -cleanup {
+    cleanup
+} -result {td4 0}
+test fCmd-9.4.2 {file rename: comprehensive: read-only dir to new name, rename() needs write permission} -setup {
+    cleanup
+} -constraints {notRoot testchmod renameNeedsDirWrite} -body {
+    file mkdir td2
+    testchmod 0o555 td2
+    list [catch {file rename td2 td4} msg] $msg [lsort [glob td*]]
+} -cleanup {
+    cleanup
+} -result {1 {error renaming "td2" to "td4": permission denied} td2}
 test fCmd-9.5 {file rename: comprehensive: file to self} -setup {
     cleanup
-} -constraints {notRoot testchmod notWine} -body {
+} -constraints {notRoot testchmod} -body {
     createfile tf1 tf1
     createfile tf2 tf2
     testchmod 0o444 tf2
@@ -942,7 +962,7 @@ test fCmd-9.6 {file rename: comprehensive: dir to self} -setup {
 } -result {{td1 td2} 1 0}
 test fCmd-9.7 {file rename: comprehensive: file to existing file} -setup {
     cleanup
-} -constraints {notRoot testchmod notWine} -body {
+} -constraints {unix notRoot testchmod} -body {
     createfile tf1
     createfile tf2
     createfile tfs1
@@ -1003,7 +1023,7 @@ test fCmd-9.8 {file rename: comprehensive: dir to empty dir} -setup {
 # Test can hit EEXIST or EBUSY, depending on underlying filesystem
 test fCmd-9.9 {file rename: comprehensive: dir to non-empty dir} -setup {
     cleanup
-} -constraints {notRoot testchmod notWine} -body {
+} -constraints {notRoot testchmod} -body {
     file mkdir tds1
     file mkdir tds2
     file mkdir [file join tdd1 tds1 xxx]
@@ -1053,14 +1073,14 @@ test fCmd-9.12 {file rename: comprehensive: target exists} -setup {
 # Test can hit EEXIST or EBUSY, depending on underlying filesystem
 test fCmd-9.13 {file rename: comprehensive: can't overwrite target} -setup {
     cleanup
-} -constraints {notRoot notWine} -body {
+} -constraints {notRoot} -body {
     file mkdir [file join td1 td2] [file join td2 td1 td4]
     file rename -force td1 td2
 } -returnCodes error -match glob -result \
     [subst {error renaming "td1" to "[file join td2 td1]": file *}]
 test fCmd-9.14 {file rename: comprehensive: dir into self} -setup {
     cleanup
-} -constraints {notRoot notWine} -body {
+} -constraints {notRoot} -body {
     file mkdir td1
     list [glob td*] [list [catch {file rename td1 td1} msg] $msg]
 } -result [subst {td1 {1 {error renaming "td1" to "[file join td1 td1]": trying to rename a volume or move a directory into itself}}}]
@@ -1156,7 +1176,7 @@ test fCmd-10.3.1 {file copy: comprehensive: dir to new name} -setup {
 } -result [list {td1 td2 td3 td4} [file join td3 tdx] [file join td4 tdy] 1 1]
 test fCmd-10.4 {file copy: comprehensive: file to existing file} -setup {
     cleanup
-} -constraints {notRoot testchmod notWine} -body {
+} -constraints {notRoot testchmod} -body {
     createfile tf1
     createfile tf2
     createfile tfs1
@@ -1893,7 +1913,7 @@ test fCmd-18.5 {TclFileRenameCmd: attempt to replace dir with non-dir} -setup {
 #
 test fCmd-18.6 {TclFileRenameCmd: rename a file to itself} -setup {
     catch {file delete -force -- tfa}
-} -constraints {unix notRoot} -body {
+} -constraints {notRoot} -body {
     set s [createfile tfa]
     list [catch {file rename tfa tfa}] [checkcontent tfa $s]
 } -cleanup {
@@ -2046,7 +2066,7 @@ test fCmd-20.1 {TraverseUnixTree : failure opening a subdirectory directory} -se
 } -result 1
 test fCmd-20.2 {TraverseUnixTree : recursive delete of large directory: Bug 1034337} -setup {
     catch {file delete -force -- tfa}
-} -constraints {unix notRoot} -body {
+} -constraints {notRoot} -body {
     file mkdir tfa
     for {set i 1} {$i <= 300} {incr i} {
 	createfile tfa/testfile_$i
@@ -2123,7 +2143,7 @@ test fCmd-21.6 {copy: mixed dirs and files into directory} -setup {
 } -result {1 1 1 1}
 test fCmd-21.7.1 {TclCopyFilesCmd: copy a dangling link} -setup {
     catch {file delete -force tfad1 tfalink tfalink2}
-} -constraints {unix notRoot dontCopyLinks} -body {
+} -constraints {notRoot dontCopyLinks} -body {
     file mkdir tfad1
     file link -symbolic tfalink tfad1
     file delete tfad1
@@ -2144,7 +2164,7 @@ test fCmd-21.7.2 {TclCopyFilesCmd: copy a dangling link} -setup {
 } -result link
 test fCmd-21.8.1 {TclCopyFilesCmd: copy a link} -setup {
     catch {file delete -force tfad1 tfalink tfalink2}
-} -constraints {unix notRoot dontCopyLinks} -body {
+} -constraints {notRoot dontCopyLinks} -body {
     file mkdir tfad1
     file link -symbolic tfalink tfad1
     file copy tfalink tfalink2
@@ -2215,7 +2235,7 @@ test fCmd-22.1 {TclpRenameFile: rename and overwrite in a single dir} -setup {
 } -result {1 1}
 test fCmd-22.2 {TclpRenameFile: attempt to overwrite itself} -setup {
     catch {file delete -force -- tfa1}
-} -constraints {unix notRoot} -body {
+} -constraints {notRoot} -body {
     set s [createfile tfa1]
     file rename -force tfa1 tfa1
     checkcontent tfa1 $s
