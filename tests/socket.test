@@ -84,6 +84,11 @@ testConstraint exec [llength [info commands exec]]
 testConstraint notWinCI [expr {
      $tcl_platform(platform) ne "windows" || ![info exists ::env(CI)]}]
 
+# SO_REUSEPORT is not available everywhere, e.g. on illumos.
+testConstraint reuseport [expr {![catch {
+	close [socket -server {} -reuseport yes 0]
+    }]}]
+
 # Produce a random port number in the Dynamic/Private range
 # from 49152 through 65535.
 proc randport {} {
@@ -2611,7 +2616,7 @@ test socket-14.18 {bug c6ed4acfd8: running async socket connect made other conne
     } -result {}
 
 test socket-14.19 {tip 456 -- introduce the -reuseport option} \
-    -constraints {socket notWine} \
+    -constraints {socket notWine reuseport} \
     -body {
 	proc accept {channel address port} {}
 	set port [randport]
