@@ -353,6 +353,9 @@ typedef struct ZipChannel {
     int isEncrypted;		/* True if data is encrypted */
     int mode;			/* O_WRITE, O_APPEND, O_TRUNC etc.*/
     unsigned long keys[3];	/* Key for decryption */
+    Tcl_Channel chan;		/* The channel wrapping this ZipChannel */
+    Tcl_TimerToken timer;	/* Timer for synthetic file events */
+    int watchMask;		/* Events of interest */
 } ZipChannel;
 
 static inline int
@@ -465,6 +468,9 @@ static int		ZipChannelRead(void *instanceData, char *buf,
 			    int toRead, int *errloc);
 static long long	ZipChannelWideSeek(void *instanceData,
 			    long long offset, int mode, int *errloc);
+static void		ZipChannelThreadAction(void *instanceData,
+			    int action);
+static void		ZipChannelTimerRun(void *clientData);
 static void		ZipChannelWatchChannel(void *instanceData,
 			    int mask);
 static int		ZipChannelWrite(void *instanceData,
@@ -544,7 +550,7 @@ static const Tcl_ChannelType zipChannelType = {
     NULL,			/* Function to flush channel. */
     NULL,			/* Function to handle bubbled events. */
     ZipChannelWideSeek,
-    NULL,			/* Thread action function. */
+    ZipChannelThreadAction,	/* Thread action function. */
     NULL,			/* Truncate function. */
 };
 
@@ -4570,6 +4576,10 @@ ZipChannelClose(
 	return EINVAL;
     }
 
+    if (info->timer) {
+	Tcl_DeleteTimerHandler(info->timer);
+	info->timer = NULL;
+    }
     if (info->isEncrypted) {
 	info->isEncrypted = 0;
 	memset(info->keys, 0, sizeof(info->keys));
@@ -4855,24 +4865,65 @@ ZipChannelWideSeek(
  *
  * ZipChannelWatchChannel --
  *
- *	This function is called for event notifications on channel. Does
- *	nothing.
+ *	This function is called for event notifications on channel. The
+ *	channel is always ready, so a timer is used to generate the events.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	None.
+ *	Creates or deletes the timer.
  *
  *-------------------------------------------------------------------------
  */
 
 static void
 ZipChannelWatchChannel(
-    TCL_UNUSED(void *),
-    TCL_UNUSED(int) /*mask*/)
+    void *instanceData,
+    int mask)
 {
-    return;
+    ZipChannel *info = (ZipChannel *) instanceData;
+
+    mask &= TCL_READABLE | TCL_WRITABLE;
+    if (!ZipChannelWritable(info)) {
+	mask &= ~TCL_WRITABLE;
+    }
+    info->watchMask = mask;
+    if (!mask) {
+	if (info->timer) {
+	    Tcl_DeleteTimerHandler(info->timer);
+	    info->timer = NULL;
+	}
+    } else if (!info->timer) {
+	info->timer = Tcl_CreateTimerHandler(0, ZipChannelTimerRun, info);
+    }
+}
+
+static void
+ZipChannelThreadAction(
+    void *instanceData,
+    int action)
+{
+    ZipChannel *info = (ZipChannel *) instanceData;
+
+    /*
+     * The timer belongs to the thread which loses the channel.
+     */
+
+    if (action == TCL_CHANNEL_THREAD_REMOVE && info->timer) {
+	Tcl_DeleteTimerHandler(info->timer);
+	info->timer = NULL;
+    }
+}
+
+static void
+ZipChannelTimerRun(
+    void *clientData)
+{
+    ZipChannel *info = (ZipChannel *) clientData;
+
+    info->timer = NULL;
+    Tcl_NotifyChannel(info->chan, info->watchMask);
 }
 
 /*
@@ -5085,7 +5136,8 @@ ZipChannelOpen(
 	    ZipFS.idCount++);
     z->zipFilePtr->numOpen++;
     Unlock();
-    return Tcl_CreateChannel(&zipChannelType, cname, info, flags);
+    info->chan = Tcl_CreateChannel(&zipChannelType, cname, info, flags);
+    return info->chan;
 
   error:
     Unlock();
