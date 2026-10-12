@@ -345,6 +345,9 @@ It is impossible however to provide runtime protection against
 mismatches between the format and any subsequent arguments.
 Compile-time protection may be provided by some compilers.
 .PP
+Note that \fBTcl_ObjPrintf\fR is rather slower than using sprintf() due to
+the additional internal safety checks.
+.PP
 \fBTcl_AppendPrintfToObj\fR is an appending alternative form
 of \fBTcl_ObjPrintf\fR with functionality equivalent to
 .PP

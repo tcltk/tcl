@@ -9,7 +9,7 @@
 .so man.macros
 .BS
 .SH NAME
-Tcl_SetObjResult, Tcl_GetObjResult, Tcl_SetResult, Tcl_GetStringResult, Tcl_AppendResult, Tcl_AppendElement, Tcl_ResetResult, Tcl_TransferResult \- manipulate Tcl result
+Tcl_SetObjResult, Tcl_GetObjResult, Tcl_SetResult, Tcl_GetStringResult, Tcl_PrintfResult, Tcl_AppendResult, Tcl_AppendElement, Tcl_AppendPrintfResult, Tcl_ResetResult, Tcl_TransferResult \- manipulate Tcl result
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -21,10 +21,14 @@ Tcl_Obj *
 .sp
 \fBTcl_SetResult\fR(\fIinterp, result, freeProc\fR)
 .sp
+\fBTcl_PrintfResult\fR(\fIinterp, format, ...\fR)
+.sp
 const char *
 \fBTcl_GetStringResult\fR(\fIinterp\fR)
 .sp
 \fBTcl_AppendResult\fR(\fIinterp, result, result, ... , \fB(char *)NULL\fR)
+.sp
+\fBTcl_AppendPrintfResult\fR(\fIinterp, format, ...\fR)
 .sp
 \fBTcl_ResetResult\fR(\fIinterp\fR)
 .sp
@@ -48,6 +52,11 @@ to the existing result of \fIinterp\fR.
 Address of procedure to call to release storage at
 \fIresult\fR, or \fBTCL_STATIC\fR, \fBTCL_DYNAMIC\fR, or
 \fBTCL_VOLATILE\fR.
+.AP "const char" *format in
+A format string used to produce a string to use as or append to the result.
+\fB%\fR sequences in the format string are processed using subsequent
+arguments. It is \fIrecommended\fR that this format string always be a C
+literal.
 .AP Tcl_Interp *sourceInterp in
 Interpreter that the result and return options should be transferred from.
 .AP Tcl_Interp *targetInterp in
@@ -99,6 +108,16 @@ If \fIresult\fR is \fBNULL\fR, then \fIfreeProc\fR is ignored
 and \fBTcl_SetResult\fR
 re-initializes \fIinterp\fR's result to point to an empty string.
 .PP
+.VS 9.2,TIP757
+\fBTcl_PrintfResult\fR acts as a combination of \fBTcl_SetObjResult\fR
+and \fBTcl_ObjPrintf\fR, setting the result of \fIinterp\fR to the value
+produced by processing the \fIformat\fR string with the given remaining
+arguments. It has the exact same performance concerns as \fBTcl_ObjPrintf\fR.
+It is particularly intended for the generation of error messages, and
+\fIstrongly\fR recommended that the \fIformat\fR should always be a literal
+C string.
+.VE 9.2,TIP757
+.PP
 \fBTcl_GetStringResult\fR returns the result for \fIinterp\fR as a string.
 If the result was set to a value by a \fBTcl_SetObjResult\fR call,
 the value form will be converted to a string and returned.
@@ -136,6 +155,13 @@ It also manages conversion to and from the \fIresult\fR field of the
 extensions.
 Any number of \fIresult\fR arguments may be passed in a single
 call; the last argument in the list must be (char *)NULL.
+.PP
+.VS 9.2,TIP757
+\fBTcl_AppendPrintfResult\fR appends a formatted string produced from
+\fIformat\fR and the following arguments (as in \fBTcl_ObjPrintf\fR) to
+the result in the interpreter \fIinterp\fR. All the notes about
+\fBTcl_PrintfResult\fR also apply to \fBTcl_AppendPrintfResult\fR.
+.VE 9.2,TIP757
 .PP
 \fBTcl_TransferResult\fR transfers interpreter state from \fIsourceInterp\fR
 to \fItargetInterp\fR. The two interpreters must have been created in the
