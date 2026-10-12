@@ -36264,6 +36264,13 @@ test clock-33.6 {clock clicks, milli with too much abbreviation} {
 test clock-33.7 {clock clicks, milli with too much abbreviation} {
     list [catch { clock clicks - } msg] $msg
 } {1 {ambiguous option "-": must be -milliseconds or -microseconds}}
+test clock-33.7.1 {clock clicks, ambiguous abbreviation} {
+    set cmd [list clock clicks -mi]
+    list [catch {{*}$cmd} msg] $msg
+} {1 {ambiguous option "-mi": must be -milliseconds or -microseconds}}
+test clock-33.7.2 {clock clicks, ambiguous abbreviation, compiled} {
+    list [catch {apply {{} {clock clicks -mi}}} msg] $msg
+} {1 {ambiguous option "-mi": must be -milliseconds or -microseconds}}
 
 test clock-33.8 {clock clicks test, microsecond timing test} {
     # This test can fail on a system that is so heavily loaded that
