@@ -1246,12 +1246,6 @@ test regexp-30.2 {regexp: abbreviated -nocase, bug 3069454} -body {
     set cmd [list regexp -noc -indices -- A a m]
     list [{*}$cmd] $m
 } -result {1 {0 0}}
-test regexp-30.3 {regexp: no other abbreviations, bug 3069454} -body {
-    lmap opt {- -nocasex -ind -l} {
-	list [catch {regexp $opt -- A a} msg] \
-		[string match "bad option \"$opt\": must be *" $msg]
-    }
-} -result {{1 1} {1 1} {1 1} {1 1}}
 
 # cleanup
 ::tcltest::cleanupTests

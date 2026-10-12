@@ -222,26 +222,14 @@ Tcl_RegexpObjCmd(
 
     for (i = 1; i < objc; i++) {
 	const char *name;
-	Tcl_Size len;
 
-	name = TclGetStringFromObj(objv[i], &len);
+	name = TclGetString(objv[i]);
 	if (name[0] != '-') {
 	    break;
 	}
-	if (Tcl_GetIndexFromObj(NULL, objv[i], options, "option", TCL_EXACT,
+	if (Tcl_GetIndexFromObj(interp, objv[i], options, "option", 0,
 		&index) != TCL_OK) {
-	    /*
-	     * Like [string match], [switch] and the bytecode compiler for
-	     * [regexp], accept abbreviations of -nocase. [Bug 3069454]
-	     */
-
-	    if (len >= 2 && len <= 7 && strncmp(name, "-nocase", len) == 0) {
-		index = REGEXP_NOCASE;
-	    } else {
-		Tcl_GetIndexFromObj(interp, objv[i], options, "option",
-			TCL_EXACT, &index);
-		goto optionError;
-	    }
+	    goto optionError;
 	}
 	switch (index) {
 	case REGEXP_ALL:
