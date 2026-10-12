@@ -753,26 +753,30 @@ test regexpComp-18.7 {regexp -all -inline} {
 test regexpComp-18.8 {regexp -all} {
     # This should not cause an infinite loop
     regexp -all -inline {a*} a
-} {a}
+} {a {}}
 test regexpComp-18.9 {regexp -all} {
-    # Yes, the expected result is {a {}}.  Here's why:
+    # Yes, the expected result is {a {} {}}.  Here's why:
     # Start at index 0; a* matches the "a" there then stops.
     # Go to index 1; a* matches the lambda (or {}) there then stops.  Recall
     #   that a* matches zero or more "a"'s; thus it matches the string "b", as
     #   there are zero or more "a"'s there.
-    # Go to index 2; this is past the end of the string, so stop.
+    # Go to index 2; this is the end of the string, a* matches the lambda
+    #   there too.
+    # Go to index 3; this is past the end of the string, so stop.
     regexp -all -inline {a*} ab
-} {a {}}
+} {a {} {}}
 test regexpComp-18.10 {regexp -all} {
-    # Yes, the expected result is {a {} a}.  Here's why:
+    # Yes, the expected result is {a {} a {}}.  Here's why:
     # Start at index 0; a* matches the "a" there then stops.
     # Go to index 1; a* matches the lambda (or {}) there then stops.   Recall
     #   that a* matches zero or more "a"'s; thus it matches the string "b", as
     #   there are zero or more "a"'s there.
     # Go to index 2; a* matches the "a" there then stops.
-    # Go to index 3; this is past the end of the string, so stop.
+    # Go to index 3; this is the end of the string, a* matches the lambda
+    #   there too.
+    # Go to index 4; this is past the end of the string, so stop.
     regexp -all -inline {a*} aba
-} {a {} a}
+} {a {} a {}}
 test regexpComp-18.11 {regexp -all} {
     evalInProc {
 	regexp -all -inline {^a} aaaa
