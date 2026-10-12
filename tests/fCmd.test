@@ -32,6 +32,16 @@ testConstraint notInCIenv [expr {![info exists ::env(CI)] || !$::env(CI)}]
 testConstraint notWsl [expr {[llength [array names ::env *WSL*]] == 0}]
 testConstraint notWine [expr {![info exists ::env(CI_USING_WINE)]}]
 
+# Page files in use on Windows, e.g. {\??\C:\pagefile.sys}.
+set pagefiles {}
+if {[testConstraint win]} {
+    catch {
+	package require registry
+	set pagefiles [registry get {HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management} ExistingPageFiles]
+    }
+}
+testConstraint pagefile [expr {[llength $pagefiles] > 0}]
+
 set tmpspace /tmp;# default value
 # Find a group that exists on this Unix system, or else skip tests that
 # require Unix groups.
@@ -1233,7 +1243,7 @@ test fCmd-10.5 {file copy: comprehensive: dir to empty dir} -setup {
 } -result [subst {{td1 td2 tdd1 tdd2 tdd3 tdd4 tds1 tds2 tds3 tds4} {1 {error copying "td1" to "[file join td2 td1]": file exists}} {1 {error copying "tds1" to "[file join tdd1 tds1]": file exists}} 1 1 1}]
 test fCmd-10.6 {file copy: comprehensive: dir to non-empty dir} -setup {
     cleanup
-} -constraints {notRoot unixOrWin testchmod notWsl} -body {
+} -constraints {notRoot unixOrWin testchmod notWsl notWine} -body {
     file mkdir tds1
     file mkdir tds2
     file mkdir [file join tdd1 tds1 xxx]
@@ -2704,16 +2714,12 @@ test fCmd-30.2 {file readable on 'NTUSER.DAT'} -constraints {win notWine} -body 
 } -result 1
 # At least one CI environment (GitHub Actions) is set up with the page file in
 # an unusual location; skip the test if that is so.
-test fCmd-30.3 {file readable on 'pagefile.sys'} -constraints {win notInCIenv} -body {
-    set r {}
-    if {[info exists env(SystemDrive)]} {
-	set path $env(SystemDrive)/pagefile.sys
-	lappend r exists [file exists $path]
-	lappend r readable [file readable $path]
-	lappend r stat [catch {file stat $path a} e] $e
-	unset -nocomplain path
-    }
-    return $r
+test fCmd-30.3 {file readable on 'pagefile.sys'} -constraints {win pagefile notInCIenv} -body {
+    regsub {^\\\?\?\\} [lindex $pagefiles 0] {} path
+    list exists [file exists $path] readable [file readable $path] \
+	    stat [catch {file stat $path a} e] $e
+} -cleanup {
+    unset -nocomplain path a e
 } -result {exists 1 readable 0 stat 0 {}}
 
 test fCmd-31.1 {file home} -body {
