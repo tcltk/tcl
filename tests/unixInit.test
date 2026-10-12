@@ -84,6 +84,31 @@ test unixInit-1.2 {initialisation: standard channel type deduction} {unix stdio}
 	subst "Expected: `[list [tcltests::localIPv4Address] localhost $port]', Got `$result'"
     }
 } {OK}
+test unixInit-1.3 {TclpInitPlatform: ignore SIGXFSZ} -constraints {
+    unix stdio
+} -setup {
+    set out [makeFile {} xfsz.out]
+} -body {
+    exec sh -c {ulimit -f 4; exec "$0"} [interpreter] << [string map [list @OUT@ [list $out]] {
+	set f [open @OUT@ w]
+	catch {puts -nonewline $f [string repeat x 100000]; close $f} msg
+	puts $msg
+    }]
+} -cleanup {
+    removeFile xfsz.out
+} -match glob -result {error writing "file*": file too large}
+test unixInit-1.4 {RestoreSignals: default SIGXFSZ in child processes} -constraints {
+    unix stdio
+} -setup {
+    set out [makeFile {} xfsz.out]
+} -body {
+    exec sh -c {ulimit -f 4; exec "$0"} [interpreter] << [string map [list @OUT@ [list $out]] {
+	catch {exec dd if=/dev/zero of=@OUT@ bs=1024 count=100 2>/dev/null} msg opts
+	puts [lindex [dict get $opts -errorcode] 2]
+    }]
+} -cleanup {
+    removeFile xfsz.out
+} -result SIGXFSZ
 
 test unixInit-3.1 {TclpSetInitialEncodings} -constraints {
 	unix stdio
