@@ -7,6 +7,7 @@
 # currently, this script must be executed from the tools directory!
 
 package require Tcl 9
+package require json   ;# from tcllib
 
 
 # all pages with metadata determining how they will occur in the HTML outline:
@@ -910,12 +911,25 @@ file mkdir \
 	../doc/html/TkCAPI
 
 
+# template file for pandoc that outputs just the front matter as JSON
+# (equivalent to --template=<(echo '$meta-json$') ).
+# This is used to extract the YAML frontmatter from the markdown files
+# and retrieve "Keywords" and "Links":
+set metaTemplate {}
+set fh [file tempfile metaTemplate]
+puts -nonewline $fh {$meta-json$}
+close $fh
+
+
 set converted [dict create]
 
 
 proc group2Folder {group2} {
 	#
 	# determines into which folder a specific manual page needs to go
+	#
+	# group2 - the subgroup from the classification of Tcl commands
+	#          (see the manFiles dict)
 	#
 	switch $group2 {
 		{Tcl C API} - {TclOO C API} {return TclCAPI}
@@ -933,11 +947,106 @@ proc esc {s} {
 	#
 	# convert specific characters to HTML equivalent
 	#
+	# s - the characters to convert
+	#
 	string map {
 		&   &amp;
 		<   &lt;
 		>   &gt;
 	} $s
+}
+
+
+proc attr {s} {
+	#
+	# escape a string for use inside of a double-quoted HTML attribute
+	#
+	# s - the string to escape
+	#
+	string map {& &amp; < &lt; > &gt; \" &quot;} $s
+}
+
+
+proc resolveLink {link} {
+	#
+	# find the page for an entry of "Links" in the YAML front matter (e.g. "concat(n)" or "Tcl_Alloc"),
+	# returns {folder file}, or an empty string if nothing is found
+	#
+	# link - link entry
+	#
+	global linkTarget
+	if {[regexp {^(.+)\((\w+)\)$} $link -> name section]} {
+		if {$section eq "3"} {set kinds "api"} else {set kinds "cmd"}
+	} else {
+		set name $link
+		set kinds {cmd api}
+	}
+	foreach kind $kinds {
+		if {[dict exists $linkTarget $kind $name]} {
+			return [dict get $linkTarget $kind $name]
+		}
+	}
+	return {}
+}
+
+
+proc readMeta {mdFile} {
+	#
+	# returns the front matter (yaml) of a markdown file as a dict
+	# using the template "metaTemplate" written above
+	#
+	# mdFile - a markdown-formatted manual page
+	#
+	global metaTemplate
+	json::json2dict [exec pandoc -f markdown-tex_math_dollars-smart -t markdown \
+		--template=$metaTemplate $mdFile]
+}
+
+
+proc seeAlsoHtml {folder myFile links} {
+	#
+	# html for the "See also" block at the bottom of a page
+	#
+	# folder - folder of this page
+	# myFile - file name of this page
+	# links  - "Links" from the YAML front matter
+	#
+	set items {}
+	set seen {}
+	foreach link $links {
+		if {$link in $seen} {continue}
+		lappend seen $link
+		set target [resolveLink $link]
+		if {$target eq ""} {
+			lappend items "<li>[esc $link]</li>"
+			continue
+		}
+		lassign $target targetFolder targetFile
+		if {$targetFolder eq $folder && $targetFile eq $myFile} {continue}
+		set href [expr {$targetFolder eq $folder ? "$targetFile.html" : "../$targetFolder/$targetFile.html"}]
+		lappend items "<li><a href=\"[attr $href]\">[esc $link]</a></li>"
+	}
+	if {![llength $items]} {return {}}
+	return "<footer class=\"see-also\">\n<h2>See also</h2>\n<ul>\n[join $items \n]\n</ul>\n</footer>\n"
+}
+
+
+#
+# lookup of the pages that the "Links" of the front matter can point to:
+# linkTarget <kind> <name> -> {folder file}
+# with kind = cmd (commands, applications, concepts) or api (C API);
+# the page titles are tried first, the file names are the fallback
+#
+set linkTarget [dict create]
+foreach by {title file} {
+	foreach entry [dict keys $manFiles] {
+		set group2 [dict get $manFiles $entry group2]
+		set kind [expr {[string match {* C API} $group2] ? "api" : "cmd"}]
+		set name [dict get $manFiles $entry $by]
+		if {![dict exists $linkTarget $kind $name]} {
+			dict set linkTarget $kind $name [list [group2Folder $group2] [dict get $manFiles $entry file]]
+		}
+	}
 }
 
 
@@ -951,12 +1060,29 @@ foreach entry [dict keys $manFiles] {
 	set myFolder {}
 	set myFolder [group2Folder [dict get $manFiles $entry group2]]
 	puts "$myFile.md -> $myFile.html"
+	set meta [readMeta [file join .. doc markdown $myFolder $myFile.md]]
+	# the keywords go into the search index (see below):
+	dict set fileKeywords $myFile [dict getdef $meta Keywords {}]
+	dict set fileTitle $myFile [dict getdef $meta title $myFile]
+	dict set fileHref $myFile $myFolder/$myFile.html
+	# the links go to the bottom of the page:
+	set seeAlso {}
+	set seeAlsoHtml [seeAlsoHtml $myFolder $myFile [dict getdef $meta Links {}]]
+	if {$seeAlsoHtml ne ""} {
+		set fh [file tempfile seeAlsoFile]
+		puts -nonewline $fh $seeAlsoHtml
+		close $fh
+		set seeAlso [list --include-after-body $seeAlsoFile]
+	}
 	exec pandoc -f markdown-tex_math_dollars-smart -t html \
 		--lua-filter markdown2html.lua \
+		{*}$seeAlso \
 		-s -c [file join .. tcl-docs.css] \
 		-o [file join .. doc html $myFolder $myFile.html] \
 		[file join .. doc markdown $myFolder $myFile.md]
+	if {$seeAlso ne ""} {file delete $seeAlsoFile}
 }
+file delete $metaTemplate
 
 
 #
@@ -965,7 +1091,7 @@ foreach entry [dict keys $manFiles] {
 puts "\ncreate index.html\n"
 foreach entry [dict keys $manFiles] {
 	dict with manFiles $entry {
-		dict lappend tree $group2 [list $title [group2Folder $group2]/$file.html]
+		dict lappend tree $group2 [list $title [group2Folder $group2]/$file.html [dict getdef $fileKeywords $file {}]]
 	}
 }
 
@@ -983,8 +1109,30 @@ foreach g $pageOrder {
 	if {![dict exists $tree $g]} continue
 	append nav {<li><details><summary>} [esc $g] {</summary>} \n {<ul>} \n
 	foreach item [dict get $tree $g] {
-		lassign $item title href
-		append nav "<li><a href=\"$href\" target=\"content\">[esc $title]</a></li>\n"
+		lassign $item title href keywords
+		set keywordAttr [attr [string tolower [join $keywords |]]]
+		append nav "<li data-keywords=\"$keywordAttr\"><a href=\"$href\" target=\"content\">[esc $title]</a></li>\n"
+	}
+	append nav {</ul></details></li>} \n
+}
+
+# the keywords of the manual pages as a group of their own after the last group:
+# one entry per keyword, containing the pages that have this keyword
+foreach myFile [dict keys $fileKeywords] {
+	foreach keyword [dict get $fileKeywords $myFile] {
+		dict lappend keywordPages $keyword [list [dict get $fileTitle $myFile] [dict get $fileHref $myFile]]
+	}
+}
+if {[info exists keywordPages]} {
+	append nav {<li><details><summary>Keywords</summary>} \n {<ul>} \n
+	foreach keyword [lsort -dictionary [dict keys $keywordPages]] {
+		append nav "<li><details><summary>[esc $keyword]</summary>\n<ul>\n"
+		set keywordAttr [attr [string tolower $keyword]]
+		foreach item [lsort -dictionary -index 0 -unique [dict get $keywordPages $keyword]] {
+			lassign $item title href
+			append nav "<li data-keywords=\"$keywordAttr\"><a href=\"$href\" target=\"content\">[esc $title]</a></li>\n"
+		}
+		append nav {</ul></details></li>} \n
 	}
 	append nav {</ul></details></li>} \n
 }
@@ -1013,8 +1161,7 @@ function mark(a) {
   links.forEach(l => l.classList.remove('current'));
   if (!a) return;
   a.classList.add('current');
-  const d = a.closest('details');
-  if (d) d.open = true;
+  for (let d = a.closest('details'); d; d = d.parentElement.closest('details')) d.open = true;
   a.scrollIntoView({block: 'nearest'});
 }
 links.forEach(a => a.addEventListener('click', () => mark(a)));
@@ -1031,8 +1178,13 @@ frame.addEventListener('load', () => {
 mark(links.find(a => a.getAttribute('href') === frame.getAttribute('src')));
 document.getElementById('filter').addEventListener('input', e => {
   const q = e.target.value.toLowerCase();
-  document.querySelectorAll('nav li li').forEach(li => {
-    li.hidden = q && !li.textContent.toLowerCase().includes(q);
+  document.querySelectorAll('nav li > a').forEach(a => {
+    const li = a.parentElement;
+    li.hidden = q && !(li.textContent.toLowerCase().includes(q) || (li.dataset.keywords || '').includes(q));
+  });
+  // hide groups (and keywords) without any visible entry, innermost first:
+  [...document.querySelectorAll('nav details')].reverse().forEach(d => {
+    d.parentElement.hidden = q && !d.querySelector('li:not([hidden]) > a');
   });
   const cur = document.querySelector('nav a.current');
   document.querySelectorAll('nav details').forEach(d => d.open = !!q || d.contains(cur));

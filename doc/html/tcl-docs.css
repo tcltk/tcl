@@ -441,3 +441,18 @@ footer {
     pre, blockquote, dt { break-inside: avoid; }
     body > nav { display: none; }
 }
+
+
+/* ── "See also" block at the bottom of a page (from the Links of the YAML front matter) ── */
+
+footer.see-also {
+    margin-top: 2.5rem;
+    padding-top: 0.8rem;
+    border-top: 1px solid var(--border);
+    font-size: 0.9rem;
+}
+footer.see-also h2 { margin: 0 0 0.5rem; padding: 0; border: 0; font-size: 1rem; }
+footer.see-also ul {
+    list-style: none; margin: 0; padding: 0;
+    display: flex; flex-wrap: wrap; gap: 0.3rem 1.2rem;
+}
