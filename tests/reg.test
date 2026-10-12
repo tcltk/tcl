@@ -682,6 +682,9 @@ expectNomatch	14.26 LRP	{^(\w+)( \1)+$}	{abc abc abd}
 expectMatch	14.27 RP	{^(.+)( \1)+$}	{abc abc abc} {abc abc abc} abc { abc}
 expectNomatch	14.28 RP	{^(.+)( \1)+$}	{abc abd abc}
 expectNomatch	14.29 RP	{^(.+)( \1)+$}	{abc abc abd}
+# backref to a capture in a failed alternative must not match [Bug 75c9d9cece]
+expectNomatch	14.30 RP	{^(.)\1|\1.}	abcdef
+expectNomatch	14.31 RP	{^((.)\2|..)\2}	abadef
 
 
 doing 15 "octal escapes vs back references"
@@ -946,11 +949,12 @@ expectMatch	30.4 &		a*b	aab	aab
 expectMatch	30.5 &		^a*b	aaaab	aaaab
 expectMatch	30.6 &M		{[0-6][1-2][0-3][0-6][1-6][0-6]} \
 	"010010" 010010
-# temporary REG_BOSONLY kludge
+# REG_BOSONLY (kludge for Expect, not really public otherwise)
 expectMatch	30.7 s		abc	abcd	abc
 expectNomatch	30.8 s		abc	xabcd
+expectNomatch	30.9 s		abc|def	xdef
 # back to normal stuff
-expectMatch	30.9 HLP	{(?n)^(?![t#])\S+} \
+expectMatch	30.10 HLP	{(?n)^(?![t#])\S+} \
 	"tk\n\n#\n#\nit0"	it0
 
 

@@ -1530,8 +1530,8 @@ typedef void **TclHandle;
  *----------------------------------------------------------------
  */
 enum ExperimentalRegExpFlags {
-    TCL_REG_BOSONLY = 002000	/* Prepend \A to pattern so it only matches at
-				 * the beginning of the string. */
+    TCL_REG_BOSONLY = 002000	/* Allow pattern to match only at the
+				 * beginning of the string (implicit \A). */
 };
 
 /*

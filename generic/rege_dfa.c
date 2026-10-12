@@ -295,7 +295,7 @@ lastCold(
     size_t i;
 
     if (nopr == NULL) {
-	nopr = v->start;
+	nopr = v->search_start;
     }
     for (ss = d->ssets, i = d->nssused; i > 0; ss++, i--) {
 	if ((ss->flags&NOPROGRESS) && nopr < ss->lastseen) {
