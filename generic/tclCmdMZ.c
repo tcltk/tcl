@@ -449,7 +449,13 @@ Tcl_RegexpObjCmd(
 	    offset++;
 	}
 	all++;
-	if (offset >= stringLength) {
+
+	/*
+	 * Also try at the end of the string: an RE like {$} or {a*} can still
+	 * match the empty string there.  [regsub -all] does the same.
+	 */
+
+	if (offset > stringLength) {
 	    break;
 	}
     }
