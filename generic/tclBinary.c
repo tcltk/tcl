@@ -2707,6 +2707,7 @@ BinaryEncodeUu(
     const unsigned char SingleNewline[] = { UCHAR('\n') };
     const unsigned char *wrapchar = SingleNewline;
     Tcl_Size n, i, j, offset, count = 0, wrapcharlen = sizeof(SingleNewline);
+    Tcl_WideUInt resLength;
     enum { OPT_MAXLEN, OPT_WRAPCHAR } index;
     static const char *const optStrings[] = { "-maxlen", "-wrapchar", NULL };
 
@@ -2751,20 +2752,32 @@ BinaryEncodeUu(
 		    continue;
 		case '\n':
 		    numBytes--;
-		    break;
+		    goto end_check_loop;
 		default:
 		    goto badwrap;
 		}
 	    }
+	    end_check_loop:
 	    if (numBytes) {
-	    badwrap:
-		Tcl_PrintfResult(interp, "invalid wrapchar; will defeat decoding");
-		Tcl_SetErrorCode(interp, "TCL", "BINARY",
-			"ENCODE", "WRAPCHAR", (char *)NULL);
-		return TCL_ERROR;
+		goto badwrap;
 	    }
 	    break;
 	}
+    }
+
+    data = Tcl_GetByteArrayFromObj(objv[objc - 1], &count);
+    if (data == NULL) {
+	return TCL_ERROR;
+    }
+    rawLength = (lineLength - 1) * 3 / 4;
+    resLength = (Tcl_WideUInt)(lineLength + wrapcharlen) *
+	    (Tcl_WideUInt)((count + (rawLength - 1)) / rawLength);
+    if (resLength > TCL_SIZE_MAX) {
+	Tcl_PrintfResult(interp,
+	    "max size for a Tcl value (%" TCL_SIZE_MODIFIER "u bytes) exceeded",
+	    TCL_SIZE_MAX);
+	Tcl_SetErrorCode(interp, "TCL", "MEMORY", (char *)NULL);
+	return TCL_ERROR;
     }
 
     /*
@@ -2772,16 +2785,9 @@ BinaryEncodeUu(
      * enough".
      */
 
-    offset = 0;
-    data = Tcl_GetBytesFromObj(interp, objv[objc - 1], &count);
-    if (data == NULL) {
-	return TCL_ERROR;
-    }
     TclNewObj(resultObj);
-    rawLength = (lineLength - 1) * 3 / 4;
-    start = cursor = Tcl_SetByteArrayLength(resultObj,
-	    (lineLength + wrapcharlen) *
-	    ((count + (rawLength - 1)) / rawLength));
+    offset = 0;
+    start = cursor = Tcl_SetByteArrayLength(resultObj, resLength);
     n = bits = 0;
 
     /*
@@ -2824,6 +2830,11 @@ BinaryEncodeUu(
     Tcl_SetByteArrayLength(resultObj, cursor - start);
     Tcl_SetObjResult(interp, resultObj);
     return TCL_OK;
+
+  badwrap:
+    Tcl_PrintfResult(interp, "invalid wrapchar; will defeat decoding");
+    Tcl_SetErrorCode(interp, "TCL", "BINARY", "ENCODE", "WRAPCHAR", (char *)NULL);
+    return TCL_ERROR;
 }
 
 /*
