@@ -26,8 +26,6 @@ testConstraint winLessThan10 0
 # Don't know how to determine this constraint correctly
 testConstraint notNetworkFilesystem 0
 
-testConstraint notInCIenv [expr {![info exists ::env(CI)] || !$::env(CI)}]
-
 # File permissions broken on wsl without some "exotic" wsl configuration
 testConstraint notWsl [expr {[llength [array names ::env *WSL*]] == 0}]
 testConstraint notWine [expr {![info exists ::env(CI_USING_WINE)]}]
@@ -2712,9 +2710,7 @@ test fCmd-30.2 {file readable on 'NTUSER.DAT'} -constraints {win notWine} -body 
 	  && [file exists $env(USERPROFILE)/NTUSER.DAT]
 	  && [file readable $env(USERPROFILE)/NTUSER.DAT]}
 } -result 1
-# At least one CI environment (GitHub Actions) is set up with the page file in
-# an unusual location; skip the test if that is so.
-test fCmd-30.3 {file readable on 'pagefile.sys'} -constraints {win pagefile notInCIenv} -body {
+test fCmd-30.3 {file readable on 'pagefile.sys'} -constraints {win pagefile} -body {
     regsub {^\\\?\?\\} [lindex $pagefiles 0] {} path
     list exists [file exists $path] readable [file readable $path] \
 	    stat [catch {file stat $path a} e] $e
