@@ -17,6 +17,7 @@
 
 #include "tclInt.h"
 #include "tclCompile.h"
+#include "tclTypes.h"
 #include "tclOOInt.h"
 #include "tclTomMath.h"
 #include <math.h>
@@ -1737,6 +1738,25 @@ TclIncrObj(
 	Tcl_Panic("%s called with shared object", "TclIncrObj");
     }
 
+    /*
+     * An annotated value is incremented on a private copy of its content,
+     * and the result is revalidated against the type and put back, so the
+     * annotation survives (and an int-typed value never becomes a double).
+     */
+
+    if (TCL_ANNOT_P(valuePtr)) {
+	Tcl_Obj *workPtr = Tcl_DuplicateObj(TCL_ANNOT_CONTENT(valuePtr));
+	int code;
+
+	Tcl_IncrRefCount(workPtr);
+	code = TclIncrObj(interp, workPtr, incrPtr);
+	if (code == TCL_OK) {
+	    code = TclAnnotSetContent(interp, valuePtr, workPtr);
+	}
+	Tcl_DecrRefCount(workPtr);
+	return code;
+    }
+
     if (GetNumberFromObj(NULL, valuePtr, &ptr1, &type1) != TCL_OK) {
 	/*
 	 * Produce error message (reparse?!)
@@ -2953,6 +2973,20 @@ TEBCresume(
 		NEXT_INST_F(pcAdjustment, 1, 1);
 	    }
 	}
+	if (!TclIsVarArray(arrayPtr) && (arrayPtr->flags & VAR_TYPED)) {
+	    int trc;
+
+	    DECACHE_STACK_INFO();
+	    trc = TclTypedVarGetElementVar(interp, arrayPtr, part2Ptr,
+		    &objResultPtr);
+	    CACHE_STACK_INFO();
+	    if (trc == TCL_OK) {
+		NEXT_INST_F(pcAdjustment, 1, 1);
+	    } else if (trc == TCL_ERROR) {
+		TRACE_ERROR(interp);
+		goto gotError;
+	    }
+	}
 	varPtr = TclLookupArrayElement(interp, part1Ptr, part2Ptr,
 		TCL_LEAVE_ERR_MSG, "read", 0, 1, arrayPtr, opnd);
 	if (varPtr == NULL) {
@@ -2982,6 +3016,17 @@ TEBCresume(
 		TCL_LEAVE_ERR_MSG, "read", /*createPart1*/0, /*createPart2*/1,
 		&arrayPtr);
 	if (!varPtr) {
+	    if (part2Ptr != NULL) {
+		int trc;
+
+		DECACHE_STACK_INFO();
+		trc = TclTypedVarGetElement(interp, part1Ptr, part2Ptr,
+			&objResultPtr);
+		CACHE_STACK_INFO();
+		if (trc == TCL_OK) {
+		    NEXT_INST_V(1, cleanup, 1);
+		}
+	    }
 	    TRACE_ERROR(interp);
 	    goto gotError;
 	}
@@ -3159,6 +3204,17 @@ TEBCresume(
 	varPtr = TclObjLookupVarEx(interp, objPtr, part2Ptr, TCL_LEAVE_ERR_MSG,
 		"set", /*createPart1*/ 1, /*createPart2*/ 1, &arrayPtr);
 	if (!varPtr) {
+	    if (part2Ptr != NULL && storeFlags == TCL_LEAVE_ERR_MSG) {
+		int trc;
+
+		DECACHE_STACK_INFO();
+		trc = TclTypedVarSetElement(interp, part1Ptr, part2Ptr,
+			valuePtr, &objResultPtr);
+		CACHE_STACK_INFO();
+		if (trc == TCL_OK) {
+		    NEXT_INST_V(1, 3, 1);
+		}
+	    }
 	    TRACE_ERROR(interp);
 	    goto gotError;
 	}
@@ -3206,6 +3262,21 @@ TEBCresume(
 	part1Ptr = NULL;
 
     doStoreArrayDirectFailed:
+	if (storeFlags == TCL_LEAVE_ERR_MSG && !TclIsVarArray(arrayPtr)
+		&& (arrayPtr->flags & VAR_TYPED)) {
+	    int trc;
+
+	    DECACHE_STACK_INFO();
+	    trc = TclTypedVarSetElementVar(interp, arrayPtr, NULL, (int) opnd,
+		    part2Ptr, valuePtr, &objResultPtr);
+	    CACHE_STACK_INFO();
+	    if (trc == TCL_OK) {
+		NEXT_INST_V(pcAdjustment, cleanup, 1);
+	    } else if (trc == TCL_ERROR) {
+		TRACE_ERROR(interp);
+		goto gotError;
+	    }
+	}
 	varPtr = TclLookupArrayElement(interp, part1Ptr, part2Ptr,
 		TCL_LEAVE_ERR_MSG, "set", 1, 1, arrayPtr, opnd);
 	if (!varPtr) {

@@ -14,6 +14,7 @@
  */
 
 #include "tclInt.h"
+#include "tclTypes.h"
 #include "tclParse.h"
 
 /*
@@ -300,6 +301,7 @@ Tcl_ParseCommand(
     scanned = 1;	/* Can't have missing whitepsace before first word. */
     while (1) {
 	int expandWord = 0;
+	int annotWord = 0;	/* {type}word : see TCL_TOKEN_ANNOT */
 
 	/* Are we at command termination? */
 
@@ -391,6 +393,24 @@ Tcl_ParseCommand(
 		    /* Non-whitespace follows */) {
 		expandWord = 1;
 		parsePtr->numTokens--;
+		goto parseWord;
+	    }
+
+	    /*
+	     * A brace group immediately followed by more word text is a type
+	     * annotation, {int}x or {list.int}$name: the braces become a
+	     * TCL_TOKEN_ANNOT token (the type text, literal) and the rest of
+	     * the word is parsed as usual.
+	     */
+
+	    if ((0 == expandWord) && (0 == annotWord)
+		    && (expIdx + 1 == parsePtr->numTokens)
+		    && (expPtr->type == TCL_TOKEN_TEXT)
+		    && (numBytes > 0) && (0 == ParseWhiteSpace(termPtr,
+			    numBytes, &parsePtr->incomplete, &type))
+		    && (type != TYPE_COMMAND_END)) {
+		annotWord = 1;
+		expPtr->type = TCL_TOKEN_ANNOT;
 		goto parseWord;
 	    }
 	} else {
@@ -1092,11 +1112,12 @@ ParseTokens(
     int noSubstCmds = !(flags & TCL_SUBST_COMMANDS);
     int noSubstVars = !(flags & TCL_SUBST_VARIABLES);
     int noSubstBS = !(flags & TCL_SUBST_BACKSLASHES);
+    int noSubstExpr = !(flags & TCL_SUBST_EXPR);
     Tcl_Token *tokenPtr;
 
     /*
      * Each iteration through the following loop adds one token of type
-     * TCL_TOKEN_TEXT, TCL_TOKEN_BS, TCL_TOKEN_COMMAND, or TCL_TOKEN_VARIABLE
+     * TCL_TOKEN_TEXT, TCL_TOKEN_BS, TCL_TOKEN_COMMAND, TCL_TOKEN_SUB_EXPR or TCL_TOKEN_VARIABLE
      * to parsePtr. For TCL_TOKEN_VARIABLE tokens, additional tokens are added
      * for the parsed variable name.
      */
@@ -1147,6 +1168,16 @@ ParseTokens(
 	    numBytes -= parsePtr->tokenPtr[varToken].size;
 	} else if (numBytes>=2 && src[0] == '[' && src[1] == '(') {
  	    /* TIP 759 ARITHMETIC inline SUBSTITUTION context */
+	    
+	    if (noSubstExpr) {
+		tokenPtr->type = TCL_TOKEN_TEXT;
+		tokenPtr->size = 1;
+		parsePtr->numTokens++;
+		src++;
+		numBytes--;
+		continue;
+	    }
+	    
 	    Tcl_Parse *exprParsePtr;
 	    
 	    exprParsePtr =(Tcl_Parse *)TclStackAlloc(parsePtr->interp, sizeof(Tcl_Parse));
@@ -1165,8 +1196,7 @@ ParseTokens(
 	    numBytes -= exprParsePtr->commandSize+2;
 	    TclStackFree(parsePtr->interp, exprParsePtr);
 	} else if (*src == '[') {
-	    Tcl_Parse *nestedPtr;
-
+	    
 	    if (noSubstCmds) {
 		tokenPtr->type = TCL_TOKEN_TEXT;
 		tokenPtr->size = 1;
@@ -1175,7 +1205,8 @@ ParseTokens(
 		numBytes--;
 		continue;
 	    }
-
+	    
+	    Tcl_Parse *nestedPtr;
 	    /*
 	     * Command substitution. Call Tcl_ParseCommand recursively (and
 	     * repeatedly) to parse the nested command(s), then throw away the
@@ -2187,6 +2218,34 @@ TclSubstTokens(
     Tcl_Size *clPosition = NULL;
     Interp *iPtr = (Interp *) interp;
     int inFile = iPtr->evalFlags & TCL_EVAL_FILE;
+
+    /*
+     * An annotated word, {type}word: substitute the rest of the word, then
+     * annotate its value (tclAnnotObj.c).
+     */
+
+    if (tokenPtr->type == TCL_TOKEN_ANNOT) {
+	Tcl_Obj *typeText = Tcl_NewStringObj(tokenPtr->start, tokenPtr->size);
+	Tcl_Obj *annotated = NULL;
+
+	Tcl_IncrRefCount(typeText);
+	code = TclSubstTokens(interp, tokenPtr + 1, count - 1, tokensLeftPtr,
+		line, clNextOuter, outerScript);
+	if (code == TCL_OK) {
+	    if (TclAnnotSuffixIsLiteral(tokenPtr + 1, count - 1)) {
+		annotated = TclNewRawAnnotation(typeText,
+			Tcl_GetObjResult(interp));	/* {int}5 : brute */
+	    } else {
+		code = TclAnnotateValue(interp, typeText,
+			Tcl_GetObjResult(interp), &annotated);
+	    }
+	    if (code == TCL_OK) {
+		Tcl_SetObjResult(interp, annotated);
+	    }
+	}
+	Tcl_DecrRefCount(typeText);
+	return code;
+    }
 
     /*
      * Each pass through this loop will substitute one token, and its

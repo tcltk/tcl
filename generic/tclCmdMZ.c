@@ -3345,10 +3345,10 @@ TclSubstOptions(
     int *flagPtr)
 {
     static const char *const substOptions[] = {
-	"-nobackslashes", "-nocommands", "-novariables", NULL
+       "-nobackslashes", "-nocommands", "-noexpr", "-novariables", NULL
     };
     static const int optionFlags[] = {
-	TCL_SUBST_BACKSLASHES, TCL_SUBST_COMMANDS, TCL_SUBST_VARIABLES
+	TCL_SUBST_BACKSLASHES, TCL_SUBST_COMMANDS, TCL_SUBST_EXPR, TCL_SUBST_VARIABLES
     };
     int flags = TCL_SUBST_ALL;
 
@@ -3386,7 +3386,7 @@ TclNRSubstObjCmd(
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv,
-		"?-nobackslashes? ?-nocommands? ?-novariables? string");
+		"?-nobackslashes? ?-nocommands? ?-noexpr? ?-novariables? string");
 	return TCL_ERROR;
     }
 

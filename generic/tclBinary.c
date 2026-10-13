@@ -13,6 +13,7 @@
 
 #include "tclInt.h"
 #include "tclTomMath.h"
+#include "tclTypes.h"
 
 #include <math.h>
 
@@ -366,8 +367,10 @@ Tcl_GetBytesFromObj(
 				 * in the array here */
 {
     ByteArray *baPtr;
-    const Tcl_ObjInternalRep *irPtr
-	    = TclFetchInternalRep(objPtr, &properByteArrayType);
+    const Tcl_ObjInternalRep *irPtr;
+
+    objPtr = TCL_ANNOT_CONTENT(objPtr);
+    irPtr = TclFetchInternalRep(objPtr, &properByteArrayType);
 
     if (irPtr == NULL) {
 	if (TCL_ERROR == SetByteArrayFromAny(interp, TCL_INDEX_NONE, objPtr)) {

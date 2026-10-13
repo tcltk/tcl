@@ -376,6 +376,13 @@ GENERIC_OBJS = \
 	tclStrToD.$(OBJEXT) \
 	tclStubInit.$(OBJEXT) \
 	tclThread.$(OBJEXT) \
+	tclTypes.$(OBJEXT) \
+	tclTypeParse.$(OBJEXT) \
+	tclTypeGeneric.$(OBJEXT) \
+	tclAnnotObj.$(OBJEXT) \
+	tclTypedVar.$(OBJEXT) \
+	tclTypePath.$(OBJEXT) \
+	tclVarRef.$(OBJEXT) \
 	tclThreadAlloc.$(OBJEXT) \
 	tclThreadJoin.$(OBJEXT) \
 	tclThreadStorage.$(OBJEXT) \

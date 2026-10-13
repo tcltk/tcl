@@ -18,6 +18,7 @@
  */
 
 #include "tclInt.h"
+#include "tclTypes.h"
 #include "tclOOInt.h"
 
 /*
@@ -1309,6 +1310,13 @@ Tcl_ObjGetVar2(
     varPtr = TclObjLookupVarEx(interp, part1Ptr, part2Ptr, flags, "read",
 	    /*createPart1*/ 0, /*createPart2*/ 1, &arrayPtr);
     if (varPtr == NULL) {
+	Tcl_Obj *tres;
+
+	if (part2Ptr != NULL
+		&& TclTypedVarGetElement(interp, part1Ptr, part2Ptr,
+		&tres) == TCL_OK) {
+	    return tres;
+	}
 	return NULL;
     }
 
@@ -1502,6 +1510,18 @@ Tcl_SetObjCmd(
 {
     Tcl_Obj *varValueObj;
 
+    if (objc >= 2) {
+	/* typed values: set {type}x ... ; and paths: set x(a.b) ... */
+	int rc;
+
+	if (TclIsAnnotated(objv[1])) {
+	    return TclSetAnnotatedCmd(interp, objc, objv);
+	}
+	rc = TclSetPathCmd(interp, objc, objv);
+	if (rc != TCL_CONTINUE) {
+	    return rc;
+	}
+    }
     if (objc == 2) {
 	varValueObj = Tcl_ObjGetVar2(interp, objv[1], NULL,TCL_LEAVE_ERR_MSG);
 	if (varValueObj == NULL) {
@@ -1696,6 +1716,16 @@ Tcl_ObjSetVar2(
     varPtr = TclObjLookupVarEx(interp, part1Ptr, part2Ptr, flags, "set",
 	    /*createPart1*/ 1, /*createPart2*/ 1, &arrayPtr);
     if (varPtr == NULL) {
+	Tcl_Obj *tres;
+
+	if (part2Ptr != NULL && !(flags & (TCL_APPEND_VALUE|TCL_LIST_ELEMENT))
+		&& TclTypedVarSetElement(interp, part1Ptr, part2Ptr,
+		newValuePtr, &tres) == TCL_OK) {
+	    if (newValuePtr->refCount == 0) {
+		Tcl_BounceRefCount(newValuePtr);
+	    }
+	    return tres;
+	}
 	if (newValuePtr->refCount == 0) {
 	    Tcl_DecrRefCount(newValuePtr);
 	}
@@ -1931,6 +1961,7 @@ TclPtrSetVarIdx(
     Interp *iPtr = (Interp *) interp;
     Tcl_Obj *oldValuePtr;
     Tcl_Obj *resultPtr = NULL;
+    Tcl_Obj *typedTmp = NULL;
     int result;
     int cleanupOnEarlyError = (newValuePtr->refCount == 0);
 
@@ -2006,6 +2037,19 @@ TclPtrSetVarIdx(
      * otherwise we must create a new copy to modify: this is "copy on write".
      */
 
+    /*
+     * Typed variables (tclTypedVar.c): check the new value against the
+     * variable's type contract, or let an untyped variable adopt a typed
+     * value. typedTmp holds the converted value until it is stored.
+     */
+
+    if ((varPtr->flags & VAR_TYPED) || TclIsAnnotated(newValuePtr)) {
+	if (TclTypedVarPrepareWrite(interp, varPtr, &newValuePtr, &flags,
+		&typedTmp) != TCL_OK) {
+	    goto earlyError;
+	}
+    }
+
     oldValuePtr = varPtr->value.objPtr;
     if (flags & TCL_LIST_ELEMENT && !(flags & TCL_APPEND_VALUE)) {
 	varPtr->value.objPtr = NULL;
@@ -2031,6 +2075,11 @@ TclPtrSetVarIdx(
 	if (oldValuePtr != NULL) {
 	    TclDecrRefCount(oldValuePtr);	/* Discard old value. */
 	}
+    }
+    TclTypedVarAfterStore(varPtr);		/* VAR_TYPED follows the value */
+    if (typedTmp != NULL) {
+	Tcl_DecrRefCount(typedTmp);
+	typedTmp = NULL;
     }
 
     /*

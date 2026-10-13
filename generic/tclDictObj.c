@@ -12,6 +12,7 @@
 
 #include "tclInt.h"
 #include "tclTomMath.h"
+#include "tclTypes.h"
 
 /*
  * Forward declaration.
@@ -725,6 +726,35 @@ SetDictFromAny(
     return TCL_ERROR;
 }
 
+/*
+ * Annotated (typed) dictionaries. Dict commands used to convert the shared
+ * annotated object in place, which silently dropped its type. Readers now
+ * work on the content, and commands that write a dictionary back into a
+ * variable work on a private plain copy of it: the store then goes through
+ * the typed variable, which revalidates the result (and rolls back on error).
+ */
+
+static Tcl_Obj *
+DictCopyForWrite(
+    Tcl_Interp *interp,
+    Tcl_Obj *dictPtr)
+{
+    if (TCL_ANNOT_P(dictPtr)) {
+	Tcl_Obj *content;
+
+	if (TclAnnotUnwrap(interp, dictPtr, TCLWANT_DICT, &content)
+		!= TCL_OK) {
+	    return NULL;
+	}
+	return Tcl_DuplicateObj(content);
+    }
+    return Tcl_DuplicateObj(dictPtr);
+}
+
+#define DictNeedsCopy(dictPtr) \
+    (Tcl_IsShared(dictPtr) || TCL_ANNOT_P(dictPtr))
+
+
 static Dict *
 GetDictFromObj(
     Tcl_Interp *interp,
@@ -732,6 +762,15 @@ GetDictFromObj(
 {
     Dict *dict;
 
+    if (TCL_ANNOT_P(dictPtr)) {
+	Tcl_Obj *content;
+
+	if (TclAnnotUnwrap(interp, dictPtr, TCLWANT_DICT, &content)
+		!= TCL_OK) {
+	    return NULL;
+	}
+	dictPtr = content;
+    }
     DictGetInternalRep(dictPtr, dict);
     if (dict == NULL) {
 	if (SetDictFromAny(interp, dictPtr) != TCL_OK) {
@@ -785,6 +824,15 @@ TclTraceDictPath(
     Dict *dict, *newDict;
     Tcl_Size i;
 
+    if (TCL_ANNOT_P(dictPtr)) {
+	Tcl_Obj *content;
+
+	if (TclAnnotUnwrap(interp, dictPtr, TCLWANT_DICT, &content)
+		!= TCL_OK) {
+	    return NULL;
+	}
+	dictPtr = content;
+    }
     DictGetInternalRep(dictPtr, dict);
     if (dict == NULL) {
 	if (SetDictFromAny(interp, dictPtr) != TCL_OK) {
@@ -1881,8 +1929,11 @@ DictReplaceCmd(
     if (GetDictFromObj(interp, dictPtr) == NULL) {
 	return TCL_ERROR;
     }
-    if (Tcl_IsShared(dictPtr)) {
-	dictPtr = Tcl_DuplicateObj(dictPtr);
+    if (DictNeedsCopy(dictPtr)) {
+	dictPtr = DictCopyForWrite(interp, dictPtr);
+	if (dictPtr == NULL) {
+	    return TCL_ERROR;
+	}
     }
     TclInvalidateStringRep(dictPtr);
     for (i=2 ; i<objc ; i+=2) {
@@ -1929,8 +1980,11 @@ DictRemoveCmd(
     if (GetDictFromObj(interp, dictPtr) == NULL) {
 	return TCL_ERROR;
     }
-    if (Tcl_IsShared(dictPtr)) {
-	dictPtr = Tcl_DuplicateObj(dictPtr);
+    if (DictNeedsCopy(dictPtr)) {
+	dictPtr = DictCopyForWrite(interp, dictPtr);
+	if (dictPtr == NULL) {
+	    return TCL_ERROR;
+	}
     }
     TclInvalidateStringRep(dictPtr);
     for (i=2 ; i<objc ; i++) {
@@ -2000,8 +2054,11 @@ DictMergeCmd(
      * Normal behaviour: combining two (or more) dictionaries.
      */
 
-    if (Tcl_IsShared(targetObj)) {
-	targetObj = Tcl_DuplicateObj(targetObj);
+    if (DictNeedsCopy(targetObj)) {
+	targetObj = DictCopyForWrite(interp, targetObj);
+	if (targetObj == NULL) {
+	    return TCL_ERROR;
+	}
 	allocatedDict = 1;
     }
     for (i=2 ; i<objc ; i++) {
@@ -2243,6 +2300,15 @@ TclDictObjSmartRef(
     Tcl_Obj *result;
     Dict    *dict;
 
+    if (TCL_ANNOT_P(dictPtr)) {
+	Tcl_Obj *content;
+
+	if (TclAnnotUnwrap(interp, dictPtr, TCLWANT_DICT, &content)
+		!= TCL_OK) {
+	    return NULL;
+	}
+	dictPtr = content;
+    }
     if (!TclHasInternalRep(dictPtr, &tclDictType)
 	    && SetDictFromAny(interp, dictPtr) != TCL_OK) {
 	return NULL;
@@ -2392,7 +2458,12 @@ DictIncrCmd(
 
 	return TCL_ERROR;
     }
-    if (Tcl_IsShared(dictPtr)) {
+    if (TCL_ANNOT_P(dictPtr)) {
+	dictPtr = DictCopyForWrite(interp, dictPtr);
+	if (dictPtr == NULL) {
+	    return TCL_ERROR;
+	}
+    } else if (Tcl_IsShared(dictPtr)) {
 	/*
 	 * A little internals surgery to avoid copying a string rep that will
 	 * soon be no good.
@@ -2503,9 +2574,12 @@ DictLappendCmd(
     if (dictPtr == NULL) {
 	allocatedDict = 1;
 	dictPtr = Tcl_NewDictObj();
-    } else if (Tcl_IsShared(dictPtr)) {
+    } else if (DictNeedsCopy(dictPtr)) {
 	allocatedDict = 1;
-	dictPtr = Tcl_DuplicateObj(dictPtr);
+	dictPtr = DictCopyForWrite(interp, dictPtr);
+	if (dictPtr == NULL) {
+	    return TCL_ERROR;
+	}
     }
 
     if (Tcl_DictObjGet(interp, dictPtr, objv[2], &valuePtr) != TCL_OK) {
@@ -2590,9 +2664,12 @@ DictAppendCmd(
     if (dictPtr == NULL) {
 	allocatedDict = 1;
 	dictPtr = Tcl_NewDictObj();
-    } else if (Tcl_IsShared(dictPtr)) {
+    } else if (DictNeedsCopy(dictPtr)) {
 	allocatedDict = 1;
-	dictPtr = Tcl_DuplicateObj(dictPtr);
+	dictPtr = DictCopyForWrite(interp, dictPtr);
+	if (dictPtr == NULL) {
+	    return TCL_ERROR;
+	}
     }
 
     if (Tcl_DictObjGet(interp, dictPtr, objv[2], &valuePtr) != TCL_OK) {
@@ -3101,9 +3178,12 @@ DictSetCmd(
     if (dictPtr == NULL) {
 	allocatedDict = 1;
 	dictPtr = Tcl_NewDictObj();
-    } else if (Tcl_IsShared(dictPtr)) {
+    } else if (DictNeedsCopy(dictPtr)) {
 	allocatedDict = 1;
-	dictPtr = Tcl_DuplicateObj(dictPtr);
+	dictPtr = DictCopyForWrite(interp, dictPtr);
+	if (dictPtr == NULL) {
+	    return TCL_ERROR;
+	}
     }
 
     result = Tcl_DictObjPutKeyList(interp, dictPtr, objc-3, objv+2,
@@ -3161,9 +3241,12 @@ DictUnsetCmd(
     if (dictPtr == NULL) {
 	allocatedDict = 1;
 	dictPtr = Tcl_NewDictObj();
-    } else if (Tcl_IsShared(dictPtr)) {
+    } else if (DictNeedsCopy(dictPtr)) {
 	allocatedDict = 1;
-	dictPtr = Tcl_DuplicateObj(dictPtr);
+	dictPtr = DictCopyForWrite(interp, dictPtr);
+	if (dictPtr == NULL) {
+	    return TCL_ERROR;
+	}
     }
 
     result = Tcl_DictObjRemoveKeyList(interp, dictPtr, objc-2, objv+2);
@@ -3584,8 +3667,11 @@ FinalizeDictUpdate(
 	return TCL_ERROR;
     }
 
-    if (Tcl_IsShared(dictPtr)) {
-	dictPtr = Tcl_DuplicateObj(dictPtr);
+    if (DictNeedsCopy(dictPtr)) {
+	dictPtr = DictCopyForWrite(interp, dictPtr);
+	if (dictPtr == NULL) {
+	    return TCL_ERROR;
+	}
     }
 
     /*
@@ -3884,8 +3970,11 @@ TclDictWithFinish(
 	return TCL_ERROR;
     }
 
-    if (Tcl_IsShared(dictPtr)) {
-	dictPtr = Tcl_DuplicateObj(dictPtr);
+    if (DictNeedsCopy(dictPtr)) {
+	dictPtr = DictCopyForWrite(interp, dictPtr);
+	if (dictPtr == NULL) {
+	    return TCL_ERROR;
+	}
 	allocdict = 1;
     } else {
 	allocdict = 0;

@@ -16,6 +16,7 @@
 
 #include "tclInt.h"
 #include "tclTomMath.h"
+#include "tclTypes.h"
 #include <math.h>
 
 /*
@@ -2018,6 +2019,15 @@ Tcl_GetBoolFromObj(
 	}
 	return TCL_ERROR;
     }
+    if (TCL_ANNOT_P(objPtr)) {
+	Tcl_Obj *annotContent;
+
+	if (TclAnnotUnwrap(interp, objPtr, TCLWANT_BOOL, &annotContent)
+		!= TCL_OK) {
+	    return TCL_ERROR;
+	}
+	objPtr = annotContent;
+    }
     do {
 	if (TclHasInternalRep(objPtr, &tclIntType) || TclHasInternalRep(objPtr, &tclBooleanType)) {
 	    result = (objPtr->internalRep.wideValue != 0);
@@ -2441,6 +2451,7 @@ Tcl_GetDoubleFromObj(
     Tcl_Obj *objPtr,	/* The object from which to get a double. */
     double *dblPtr)	/* Place to store resulting double. */
 {
+    TCL_ANNOT_UNWRAP(interp, objPtr, TCLWANT_DOUBLE);
     do {
 	if (TclHasInternalRep(objPtr, &tclDoubleType)) {
 	    if (isnan(objPtr->internalRep.doubleValue)) {
@@ -2670,6 +2681,7 @@ Tcl_GetLongFromObj(
     Tcl_Obj *objPtr,	/* The object from which to get a long. */
     long *longPtr)	/* Place to store resulting long. */
 {
+    TCL_ANNOT_UNWRAP(interp, objPtr, TCLWANT_INT);
     do {
 #ifdef TCL_WIDE_INT_IS_LONG
 	if (TclHasInternalRep(objPtr, &tclIntType)) {
@@ -2999,6 +3011,7 @@ Tcl_GetWideIntFromObj(
     Tcl_WideInt *wideIntPtr)
 				/* Place to store resulting long. */
 {
+    TCL_ANNOT_UNWRAP(interp, objPtr, TCLWANT_INT);
     do {
 	if (TclHasInternalRep(objPtr, &tclIntType)) {
 	    *wideIntPtr = objPtr->internalRep.wideValue;
@@ -3464,6 +3477,10 @@ GetBignumFromObj(
     int copy,			/* Whether to copy the returned bignum value */
     mp_int *bignumValue)	/* Returned bignum value. */
 {
+    if (TCL_ANNOT_P(objPtr)) {
+	copy = 1;		/* le contenu V appartient à l'objet annoté */
+    }
+    TCL_ANNOT_UNWRAP(interp, objPtr, TCLWANT_INT);
     do {
 	if (TclHasInternalRep(objPtr, &tclBignumType)) {
 	    if (copy || Tcl_IsShared(objPtr)) {
@@ -3699,6 +3716,7 @@ Tcl_GetNumberFromObj(
     void **clientDataPtr,
     int *typePtr)
 {
+    TCL_ANNOT_UNWRAP(interp, objPtr, TCLWANT_NUMBER);
     do {
 	if (TclHasInternalRep(objPtr, &tclDoubleType)) {
 	    if (isnan(objPtr->internalRep.doubleValue)) {

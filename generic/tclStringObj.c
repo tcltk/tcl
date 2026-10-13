@@ -35,6 +35,7 @@
 #include "tclInt.h"
 #include "tclTomMath.h"
 #include "tclStringRep.h"
+#include "tclTypes.h"
 
 /*
  * Prototypes for functions defined later in this file:
@@ -411,6 +412,7 @@ Tcl_GetCharLength(
      * OK, need to work with the object as a string.
      */
 
+    objPtr = TCL_ANNOT_CONTENT(objPtr);
     SetStringFromAny(NULL, objPtr);
     stringPtr = GET_STRING(objPtr);
     numChars = stringPtr->numChars;
@@ -560,6 +562,7 @@ Tcl_GetUniChar(
      * OK, need to work with the object as a string.
      */
 
+    objPtr = TCL_ANNOT_CONTENT(objPtr);
     SetStringFromAny(NULL, objPtr);
     stringPtr = GET_STRING(objPtr);
 
@@ -656,6 +659,7 @@ TclGetUnicodeFromObj(
 {
     String *stringPtr;
 
+    objPtr = TCL_ANNOT_CONTENT(objPtr);
     SetStringFromAny(NULL, objPtr);
     stringPtr = GET_STRING(objPtr);
 
@@ -685,6 +689,7 @@ Tcl_GetUnicodeFromObj(
 {
     String *stringPtr;
 
+    objPtr = TCL_ANNOT_CONTENT(objPtr);
     SetStringFromAny(NULL, objPtr);
     stringPtr = GET_STRING(objPtr);
 
@@ -758,6 +763,7 @@ Tcl_GetRange(
      * OK, need to work with the object as a string.
      */
 
+    objPtr = TCL_ANNOT_CONTENT(objPtr);
     SetStringFromAny(NULL, objPtr);
     stringPtr = GET_STRING(objPtr);
 
@@ -4075,6 +4081,7 @@ TclStringReverse(
 	return objPtr;
     }
 
+    objPtr = TCL_ANNOT_CONTENT(objPtr);
     SetStringFromAny(NULL, objPtr);
     stringPtr = GET_STRING(objPtr);
 

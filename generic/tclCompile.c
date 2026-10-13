@@ -13,6 +13,7 @@
  */
 
 #include "tclInt.h"
+#include "tclTypes.h"
 #include "tclCompile.h"
 
 /*
@@ -2451,6 +2452,27 @@ TclCompileTokens(
     Tcl_Size maxNumCL, numCL;
     Tcl_Size *clPosition = NULL;
     int depth = TclGetStackDepth(envPtr);
+
+    /*
+     * An annotated word, {type}word: call ::tcl::annotate with the type text
+     * and the value of the rest of the word (no new instruction needed).
+     */
+
+    if (tokenPtr->type == TCL_TOKEN_ANNOT) {
+	if (TclAnnotSuffixIsLiteral(tokenPtr + 1, count - 1)) {
+	    TclEmitPush(TclRegisterLiteral(envPtr, "::tcl::annotraw", 15, 0),
+		    envPtr);			/* {int}5 : annotation brute */
+	} else {
+	    TclEmitPush(TclRegisterLiteral(envPtr, "::tcl::annotate", 15, 0),
+		    envPtr);
+	}
+	TclEmitPush(TclRegisterLiteral(envPtr, tokenPtr->start,
+		tokenPtr->size, 0), envPtr);
+	TclCompileTokens(interp, tokenPtr + 1, count - 1, envPtr);
+	TclEmitInvoke(envPtr, INST_INVOKE_STK1, 3);
+	TclCheckStackDepth(depth+1, envPtr);
+	return;
+    }
 
     /*
      * If this is actually a literal, handle continuation lines by

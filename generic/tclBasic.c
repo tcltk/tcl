@@ -18,6 +18,7 @@
  */
 
 #include "tclInt.h"
+#include "tclTypes.h"
 #include "tclOOInt.h"
 #include "tclCompile.h"
 #include "tclTomMath.h"
@@ -1309,6 +1310,7 @@ Tcl_CreateInterp(void)
 
     TclInterpInit(interp);
     TclSetupEnv(interp);
+    TclTypesInit(interp);
 
     /*
      * TIP #59: Make embedded configuration information available.

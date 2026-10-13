@@ -537,7 +537,8 @@ typedef struct stat *Tcl_OldStat_;
 #define TCL_SUBST_COMMANDS	001
 #define TCL_SUBST_VARIABLES	002
 #define TCL_SUBST_BACKSLASHES	004
-#define TCL_SUBST_ALL		007
+#define TCL_SUBST_EXPR          010
+#define TCL_SUBST_ALL		017
 
 /*
  * Forward declaration of Tcl_Obj to prevent an error when the forward
@@ -1882,6 +1883,8 @@ typedef struct Tcl_Token {
 #define TCL_TOKEN_CMD_IN_EXPR    80
 #define TCL_TOKEN_OPERATOR	128
 #define TCL_TOKEN_EXPAND_WORD	256
+#define TCL_TOKEN_ANNOT		512	/* type annotation {type}word: the text of
+				 * the braces; the rest of the word follows */
 
 /*
  * Parsing error types. On any parsing error, one of these values will be

@@ -325,6 +325,13 @@ COREOBJS = \
 	$(TMP_DIR)\tclStrToD.obj \
 	$(TMP_DIR)\tclStubInit.obj \
 	$(TMP_DIR)\tclThread.obj \
+	$(TMP_DIR)\tclTypes.obj \
+	$(TMP_DIR)\tclTypeParse.obj \
+	$(TMP_DIR)\tclTypeGeneric.obj \
+	$(TMP_DIR)\tclAnnotObj.obj \
+	$(TMP_DIR)\tclTypedVar.obj \
+	$(TMP_DIR)\tclTypePath.obj \
+	$(TMP_DIR)\tclVarRef.obj \
 	$(TMP_DIR)\tclThreadAlloc.obj \
 	$(TMP_DIR)\tclThreadJoin.obj \
 	$(TMP_DIR)\tclThreadStorage.obj \

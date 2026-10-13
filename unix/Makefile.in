@@ -318,6 +318,8 @@ GENERIC_OBJS = regcomp.o regexec.o regfree.o regerror.o tclAlloc.o \
 	tclStrToD.o tclThread.o \
 	tclThreadAlloc.o tclThreadJoin.o tclThreadStorage.o tclStubInit.o \
 	tclTimer.o tclTrace.o tclUtf.o tclUtil.o tclVar.o tclZlib.o \
+	tclTypes.o tclTypeParse.o tclTypeGeneric.o tclAnnotObj.o tclTypedVar.o \
+	tclTypePath.o tclVarRef.o \
 	tclTomMathInterface.o tclZipfs.o
 
 OO_OBJS = tclOO.o tclOOBasic.o tclOOCall.o tclOODefineCmds.o tclOOInfo.o \
@@ -1570,6 +1572,27 @@ tclUtil.o: $(GENERIC_DIR)/tclUtil.c $(PARSEHDR) $(TRIMHDR)
 
 tclUtf.o: $(GENERIC_DIR)/tclUtf.c $(GENERIC_DIR)/tclUniData.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclUtf.c
+
+tclTypes.o: $(GENERIC_DIR)/tclTypes.c $(GENERIC_DIR)/tclTypes.h $(GENERIC_DIR)/tclTypesInt.h
+	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclTypes.c
+
+tclTypeParse.o: $(GENERIC_DIR)/tclTypeParse.c $(GENERIC_DIR)/tclTypes.h $(GENERIC_DIR)/tclTypesInt.h
+	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclTypeParse.c
+
+tclTypeGeneric.o: $(GENERIC_DIR)/tclTypeGeneric.c $(GENERIC_DIR)/tclTypes.h $(GENERIC_DIR)/tclTypesInt.h
+	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclTypeGeneric.c
+
+tclAnnotObj.o: $(GENERIC_DIR)/tclAnnotObj.c $(GENERIC_DIR)/tclTypes.h $(GENERIC_DIR)/tclTypesInt.h
+	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclAnnotObj.c
+
+tclTypedVar.o: $(GENERIC_DIR)/tclTypedVar.c $(GENERIC_DIR)/tclTypes.h $(GENERIC_DIR)/tclTypesInt.h
+	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclTypedVar.c
+
+tclTypePath.o: $(GENERIC_DIR)/tclTypePath.c $(GENERIC_DIR)/tclTypes.h $(GENERIC_DIR)/tclTypesInt.h
+	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclTypePath.c
+
+tclVarRef.o: $(GENERIC_DIR)/tclVarRef.c $(GENERIC_DIR)/tclTypes.h $(GENERIC_DIR)/tclTypesInt.h
+	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclVarRef.c
 
 tclVar.o: $(GENERIC_DIR)/tclVar.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclVar.c

@@ -16,6 +16,7 @@
  */
 
 #include "tclInt.h"
+#include "tclTypes.h"
 #include "tclCompile.h"
 #include "tclStringTrim.h"
 
@@ -134,6 +135,9 @@ TclCompileSetCmd(
 
     numWords = parsePtr->numWords;
     if ((numWords != 2) && (numWords != 3)) {
+	return TCL_ERROR;
+    }
+    if (TclHasAnnotatedWord(parsePtr)) {	/* set {type}x ... : at run time */
 	return TCL_ERROR;
     }
     isAssignment = (numWords == 3);

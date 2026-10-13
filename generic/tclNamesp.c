@@ -24,6 +24,7 @@
  */
 
 #include "tclInt.h"
+#include "tclTypes.h"
 #include "tclCompile.h" /* for TclLogCommandInfo visibility */
 
 /*
@@ -494,6 +495,8 @@ Tcl_PopCallFrame(
     Interp *iPtr = (Interp *) interp;
     CallFrame *framePtr = iPtr->framePtr;
     Namespace *nsPtr;
+
+    TclVarRefFrameGone(interp, framePtr);	/* typed links to its locals */
 
     /*
      * It's important to remove the call frame from the interpreter's stack of
