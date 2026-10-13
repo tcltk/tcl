@@ -91,21 +91,27 @@ int
 TclObjTest_Init(
     Tcl_Interp *interp)
 {
-    int i;
     /*
-     * An array of Tcl_Obj pointers used in the commands that operate on or get
-     * the values of Tcl object-valued variables. varPtr[i] is the i-th variable's
-     * Tcl_Obj *.
+     * Keep the variables if Tcltest is initialized twice.
      */
-    Tcl_Obj **varPtr;
 
-    varPtr = (Tcl_Obj **) ckalloc(NUMBER_OF_OBJECT_VARS *sizeof(varPtr[0]));
-    if (!varPtr) {
-	return TCL_ERROR;
-    }
-    Tcl_SetAssocData(interp, VARPTR_KEY, VarPtrDeleteProc, varPtr);
-    for (i = 0;  i < NUMBER_OF_OBJECT_VARS;  i++) {
-	varPtr[i] = NULL;
+    if (GetVarPtr(interp) == NULL) {
+	int i;
+	/*
+	 * An array of Tcl_Obj pointers used in the commands that operate on or get
+	 * the values of Tcl object-valued variables. varPtr[i] is the i-th variable's
+	 * Tcl_Obj *.
+	 */
+	Tcl_Obj **varPtr;
+
+	varPtr = (Tcl_Obj **) ckalloc(NUMBER_OF_OBJECT_VARS *sizeof(varPtr[0]));
+	if (!varPtr) {
+	    return TCL_ERROR;
+	}
+	Tcl_SetAssocData(interp, VARPTR_KEY, VarPtrDeleteProc, varPtr);
+	for (i = 0;  i < NUMBER_OF_OBJECT_VARS;  i++) {
+	    varPtr[i] = NULL;
+	}
     }
 
     Tcl_CreateObjCommand(interp, "testbignumobj", TestbignumobjCmd,
