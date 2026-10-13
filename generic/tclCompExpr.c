@@ -500,6 +500,8 @@ static const unsigned char Lexeme[] = {
  * Keeping a stack permits the CompileExprTree() routine to be non-recursive.
  */
 
+#define TUPLE_MAX_DEPTH 32	/* nesting limit of (a,(b,c)) = list */
+
 typedef struct JumpList {
     JumpFixup jump;		/* Pass this argument to matching calls of
 				 * TclEmitForwardJump() and
@@ -515,6 +517,10 @@ static void		CompileExprTree(Tcl_Interp *interp, OpNode *nodes,
 			    int index, Tcl_Obj *const **litObjvPtr,
 			    Tcl_Obj *const *funcObjv, Tcl_Token *tokenPtr,
 			    CompileEnv *envPtr, int optimize);
+static const char *	FindTupleTarget(const char *start, Tcl_Size numBytes);
+static void		EmitTupleStores(CompileEnv *envPtr, OpNode *nodes,
+			    int index, int *path, int depth, int *counter,
+			    int root);
 static void		ConvertTreeToTokens(const char *start, Tcl_Size numBytes,
 			    OpNode *nodes, Tcl_Token *tokenPtr,
 			    Tcl_Parse *parsePtr);
@@ -527,6 +533,157 @@ static int		ParseExpr(Tcl_Interp *interp, const char *start,
 static Tcl_Size		ParseLexeme(const char *start, Tcl_Size numBytes,
 			    unsigned char *lexemePtr, Tcl_Obj **literalPtr);
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * EmitTupleStores --
+ *
+ *	Walks the (already compiled) target tree of a destructuring
+ *	assignment and emits, for every leaf name, the code storing the
+ *	matching element of the value. The stack holds [names value]; the
+ *	names are the nested list built by INST_LIST, and PATH is the
+ *	sequence of list indices leading to the leaf in both lists.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+EmitTupleStores(
+    CompileEnv *envPtr,
+    OpNode *nodes,
+    int index,			/* Node, or OT_LITERAL for a leaf name. */
+    int *path,
+    int depth,
+    int *counter,		/* Next element number at this depth. */
+    int root)			/* Index is the outermost LIST node. */
+{
+    int k;
+
+    if (index == OT_LITERAL) {
+	path[depth] = (*counter)++;
+	TclEmitInstInt4(INST_OVER, 1, envPtr);
+	for (k = 0; k <= depth; k++) {
+	    TclEmitInstInt4(INST_LIST_INDEX_IMM, path[k], envPtr);
+	}
+	TclEmitInstInt4(INST_OVER, 1, envPtr);
+	for (k = 0; k <= depth; k++) {
+	    TclEmitInstInt4(INST_LIST_INDEX_IMM, path[k], envPtr);
+	}
+	TclEmitOpcode(INST_STORE_STK, envPtr);
+	TclEmitOpcode(INST_POP, envPtr);
+	return;
+    }
+    if (index < 0) {
+	return;			/* Not a name: ignored. */
+    }
+    switch (nodes[index].lexeme) {
+    case COMMA:
+	EmitTupleStores(envPtr, nodes, nodes[index].left, path, depth,
+		counter, 0);
+	EmitTupleStores(envPtr, nodes, nodes[index].right, path, depth,
+		counter, 0);
+	break;
+    case OPEN_PAREN:
+	EmitTupleStores(envPtr, nodes, nodes[index].right, path, depth,
+		counter, 0);
+	break;
+    case LIST:
+    case NULL_FUNC:
+	if (root) {
+	    EmitTupleStores(envPtr, nodes, nodes[index].right, path, depth,
+		    counter, 0);
+	} else if (depth + 1 < TUPLE_MAX_DEPTH) {
+	    int inner = 0;
+
+	    path[depth] = (*counter)++;
+	    EmitTupleStores(envPtr, nodes, nodes[index].right, path,
+		    depth + 1, &inner, 0);
+	}
+	break;
+    default:
+	break;
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FindTupleTarget --
+ *
+ *	Destructuring assignment "(a,b,c) = $list". START points at an open
+ *	parenthesis. Scan forward to the matching close parenthesis and
+ *	check that it is followed by a single "=" (not "=="). Strings, braces
+ *	and brackets inside are skipped.
+ *
+ * Results:
+ *	A pointer to the matching ')' when the parenthesized group is the
+ *	target of an assignment, NULL otherwise.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static const char *
+FindTupleTarget(
+    const char *start,
+    Tcl_Size numBytes)
+{
+    const char *p = start, *end = start + numBytes;
+    int depth = 0;
+
+    while (p < end) {
+	switch (*p) {
+	case '\\':
+	    p++;
+	    break;
+	case '"':
+	    p++;
+	    while (p < end && *p != '"') {
+		if (*p == '\\') {
+		    p++;
+		}
+		p++;
+	    }
+	    break;
+	case '{': case '[': {
+	    char open = *p, close = (open == '{') ? '}' : ']';
+	    int d = 1;
+
+	    p++;
+	    while (p < end && d > 0) {
+		if (*p == '\\') {
+		    p++;
+		} else if (*p == open) {
+		    d++;
+		} else if (*p == close) {
+		    d--;
+		}
+		p++;
+	    }
+	    p--;
+	    break;
+	}
+	case '(':
+	    depth++;
+	    break;
+	case ')':
+	    if (--depth == 0) {
+		const char *q = p + 1;
+
+		while (q < end && (*q == ' ' || *q == '\t' || *q == '\n')) {
+		    q++;
+		}
+		if (q < end && *q == '=' && (q + 1 >= end || q[1] != '=')) {
+		    return p;
+		}
+		return NULL;
+	    }
+	    break;
+	}
+	p++;
+    }
+    return NULL;
+}
+
 /*
  *----------------------------------------------------------------------
  *
@@ -636,6 +793,7 @@ ParseExpr(
 				 * limit on the substring size we extract. */
     int nb_paren=0; // TIP759
     int substExpressionContext=0;
+    const char *tupleEnd = NULL; /* matching ')' of a destructuring assignment target */
     Tcl_Size originalLength=numBytes;
     
     if(start[0] == '[' && start[1] == '(' ) {
@@ -760,6 +918,14 @@ ParseExpr(
 		     */
 
 		    Tcl_ListObjAppendElement(NULL, funcList, literal);
+		} else if (literal && tupleEnd != NULL && start < tupleEnd) {
+		    /* Name inside the target of a destructuring assignment:
+		     * (a,b,c) = $list */
+		    Tcl_ListObjAppendElement(NULL, litList, literal);
+		    complete = lastParsed = OT_LITERAL;
+		    start += scanned;
+		    numBytes -= scanned;
+		    continue;
 		} else if (Tcl_GetBooleanFromObj(NULL,literal,&b) == TCL_OK) {
 		    lexeme = BOOL_LIT;
 		}  else if (literal && start[scanned+TclParseAllWhiteSpace(
@@ -1134,6 +1300,9 @@ ParseExpr(
 
 	    if (lexeme == OPEN_PAREN && nodePtr[-1].lexeme != FUNCTION ) {
 		/* Native list handling */
+		if (tupleEnd == NULL || start > tupleEnd) {
+		    tupleEnd = FindTupleTarget(start, numBytes);
+		}
 		/* we don't know yet if there will be a "comma outside func error", 
 		   but we have to create a room to add LIST LEXEM in case */
 		nodePtr->lexeme = NULL_FUNC;
@@ -2626,7 +2795,23 @@ CompileExprTree(
 		}
 		break;
 	    case ASSIGN:
-		TclEmitOpcode(INST_STORE_STK, envPtr);
+		if (nodes[nodePtr->left].lexeme == LIST) {
+		    /*
+		     * Destructuring assignment "(a,(b,c),d) = value": the stack holds
+		     * the (nested) list of names and the value. Store each leaf
+		     * (lindex semantics: a missing element gives "") and leave the
+		     * value as result.
+		     */
+
+		    int path[TUPLE_MAX_DEPTH], counter = 0;
+
+		    EmitTupleStores(envPtr, nodes, nodePtr->left, path, 0,
+			    &counter, 1);
+		    TclEmitInstInt4(INST_REVERSE, 2, envPtr);
+		    TclEmitOpcode(INST_POP, envPtr);
+		} else {
+		    TclEmitOpcode(INST_STORE_STK, envPtr);
+		}
 		break;
 	    case NULL_FUNC:
 	    case OPEN_PAREN:
