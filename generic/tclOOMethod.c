@@ -1140,13 +1140,18 @@ GetRealVarName(
     return NULL;
 }
 
-// Get or allocate a variable in an object.
+// Get or allocate a variable in an object. Returns NULL if the namespace of
+// the object has already been deleted.
 static inline Tcl_Var
 GetObjectVar(
     Object *oPtr,
     Tcl_Obj *variableObj)
 {
     int isNew;
+
+    if (oPtr->namespacePtr == NULL) {
+	return NULL;
+    }
     Tcl_HashEntry *hPtr = Tcl_CreateHashEntry(
 	    TclVarTable(oPtr->namespacePtr), variableObj, &isNew);
     Tcl_Var var = TclVarHashGetValue(hPtr);
@@ -1205,7 +1210,7 @@ ProcedureMethodCompiledVarConnect(
      */
 
     Tcl_Var var = GetObjectVar(contextPtr->oPtr, variableObj);
-    if (cacheIt) {
+    if (var && cacheIt) {
 	infoPtr->cachedObjectVar = var;
 
 	/*
