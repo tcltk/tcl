@@ -734,6 +734,9 @@ RestoreSignals(void)
 #ifdef SIGTTOU
     signal(SIGTTOU, SIG_DFL);
 #endif
+#ifdef SIGXFSZ
+    signal(SIGXFSZ, SIG_DFL);
+#endif
 }
 
 /*
