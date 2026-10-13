@@ -5337,11 +5337,13 @@ TclEvalEx(
 
 	    if (norm == NULL) {
 		/*
-		 * Error message in the interp result.
+		 * The path cannot be normalized, e.g. because the current
+		 * directory was deleted. It is only used for the location
+		 * information, so use it as is. [4d3f213029]
 		 */
 
-		code = TCL_ERROR;
-		goto error;
+		Tcl_ResetResult(interp);
+		norm = iPtr->scriptFile;
 	    }
 	    eeFramePtr->data.eval.path = norm;
 	} else {
