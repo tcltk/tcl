@@ -100,6 +100,46 @@ static const Tcl_ChannelType pipeChannelType = {
 /*
  *----------------------------------------------------------------------
  *
+ * CloseOnExecAboveStdio --
+ *
+ *	Sets the close-on-exec flag of a file descriptor created for a
+ *	pipeline, first moving it above 2 if it is a standard descriptor.
+ *	TclpCloseFile() never closes 0, 1 and 2, so a pipe or file which got
+ *	one of them because stdin, stdout or stderr was closed would never be
+ *	closed in the parent. [21dbc600ae]
+ *
+ * Results:
+ *	The file descriptor to use.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+CloseOnExecAboveStdio(
+    int fd)
+{
+    if (fd >= 0 && fd <= 2) {
+#ifdef F_DUPFD_CLOEXEC
+	int newFd = fcntl(fd, F_DUPFD_CLOEXEC, 3);
+#else
+	int newFd = fcntl(fd, F_DUPFD, 3);
+#endif
+
+	if (newFd != -1) {
+	    close(fd);
+	    fd = newFd;
+#ifdef F_DUPFD_CLOEXEC
+	    return fd;
+#endif
+	}
+    }
+    fcntl(fd, F_SETFD, FD_CLOEXEC);
+    return fd;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TclpMakeFile --
  *
  *	Make a TclFile from a channel.
@@ -160,7 +200,7 @@ TclpOpenFile(
     fd = TclOSopen(native, mode, 0666);			/* INTL: Native. */
     Tcl_DStringFree(&ds);
     if (fd != -1) {
-	fcntl(fd, F_SETFD, FD_CLOEXEC);
+	fd = CloseOnExecAboveStdio(fd);
 
 	/*
 	 * If the file is being opened for writing, seek to the end so we can
@@ -208,7 +248,7 @@ TclpCreateTempFile(
     if (fd == -1) {
 	return NULL;
     }
-    fcntl(fd, F_SETFD, FD_CLOEXEC);
+    fd = CloseOnExecAboveStdio(fd);
     if (contents != NULL) {
 	Tcl_DString dstring;
 	char *native;
@@ -331,8 +371,8 @@ TclpCreatePipe(
 	return 0;
     }
 
-    fcntl(pipeIds[0], F_SETFD, FD_CLOEXEC);
-    fcntl(pipeIds[1], F_SETFD, FD_CLOEXEC);
+    pipeIds[0] = CloseOnExecAboveStdio(pipeIds[0]);
+    pipeIds[1] = CloseOnExecAboveStdio(pipeIds[1]);
 
     *readPipe = MakeFile(pipeIds[0]);
     *writePipe = MakeFile(pipeIds[1]);
