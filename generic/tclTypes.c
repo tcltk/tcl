@@ -1760,6 +1760,138 @@ TclTypesCheckNewName(Tcl_Interp *interp, TypeData *d, const char *name)
     return CheckNewName(interp, d, name);
 }
 
+/*
+ * L'opérateur "is" de expr :   expr {z is Complex}
+ *
+ * ::tcl::mathop::is nom type. Le NOM est celui d'une variable (visible
+ * depuis l'appelant). Vrai si
+ *  - la variable est typée et son type déclaré est inclus dans TYPE (une
+ *    variable {int}n est un int, un double, ... un number si défini) ;
+ *  - la variable n'est pas typée, existe, et sa valeur est valide pour TYPE.
+ * Une variable inexistante donne faux ; un type inconnu est une erreur.
+ */
+
+/*
+ * "nom is cmd" : NOM est une commande Tcl (cherchée depuis l'espace de noms
+ * courant puis le global). Si elle existe, elle devient appelable comme
+ * fonction de expr : un alias ::tcl::mathfunc::<queue du nom> la désigne
+ * (sauf si une fonction de ce nom existe déjà). Résultat : 1 si la commande
+ * existe, 0 sinon.
+ */
+
+static int
+IsCmdOp(Tcl_Interp *interp, Tcl_Obj *nameObj)
+{
+    Tcl_Command cmd = Tcl_FindCommand(interp, Tcl_GetString(nameObj), NULL, 0);
+    int found = (cmd != NULL);
+
+    if (found) {
+	Tcl_Obj *full = Tcl_NewObj(), *alias;
+	const char *fullName, *tail, *p;
+
+	Tcl_GetCommandFullName(interp, cmd, full);
+	Tcl_IncrRefCount(full);
+	fullName = Tcl_GetString(full);
+	tail = fullName;
+	for (p = fullName; *p != '\0'; p++) {
+	    if (p[0] == ':' && p[1] == ':') {
+		tail = p + 2;
+	    }
+	}
+	alias = Tcl_ObjPrintf("::tcl::mathfunc::%s", tail);
+	Tcl_IncrRefCount(alias);
+	if (Tcl_FindCommand(interp, Tcl_GetString(alias), NULL,
+		TCL_GLOBAL_ONLY) == NULL) {
+	    if (Tcl_CreateAlias(interp, Tcl_GetString(alias), interp,
+		    fullName, 0, NULL) != TCL_OK) {
+		Tcl_DecrRefCount(alias);
+		Tcl_DecrRefCount(full);
+		return TCL_ERROR;
+	    }
+	}
+	Tcl_DecrRefCount(alias);
+	Tcl_DecrRefCount(full);
+    }
+    Tcl_ResetResult(interp);
+    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(found));
+    return TCL_OK;
+}
+
+static int
+IsOpObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
+	Tcl_Obj *const objv[])
+{
+    TclType *want, *have;
+    Tcl_Obj *canon = NULL, *value = NULL, *content;
+    const char *typeText;
+    Tcl_Size typeLen;
+    int result = 0;
+    (void) clientData;
+
+    if (objc != 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "varName type");
+	return TCL_ERROR;
+    }
+    typeText = Tcl_GetStringFromObj(objv[2], &typeLen);
+    if (typeLen == 3 && memcmp(typeText, "cmd", 3) == 0) {
+	return IsCmdOp(interp, objv[1]);
+    }
+    want = TclTypeParse(interp, typeText, typeLen);
+    if (want == NULL) {
+	return TCL_ERROR;
+    }
+    if (TclVarRefCanon(interp, objv[1], &canon) != TCL_OK) {
+	Tcl_ResetResult(interp);
+	Tcl_SetObjResult(interp, Tcl_NewBooleanObj(0));
+	return TCL_OK;
+    }
+    Tcl_IncrRefCount(canon);
+    have = TclVarRefType(interp, Tcl_GetString(canon));
+    if (have != NULL) {
+	result = TclTypeIncludes(want, have);
+    } else if (TclVarRefGet(interp, Tcl_GetString(canon), &value) == TCL_OK) {
+	Tcl_IncrRefCount(value);
+	content = TCL_ANNOT_CONTENT(value);
+	result = (TclTypeValidate(interp, want, content, -1, NULL) == TCL_OK);
+	Tcl_DecrRefCount(value);
+    }
+    Tcl_DecrRefCount(canon);
+    Tcl_ResetResult(interp);
+    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(result));
+    return TCL_OK;
+}
+
+/*
+ * "z is T = valeur" dans expr : ::tcl::unsupported::declare nom type valeur
+ * déclare la variable NOM de type TYPE (comme set {T}nom valeur) et lui
+ * affecte VALEUR (validée). Le résultat est la valeur typée.
+ */
+
+static int
+DeclareObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
+	Tcl_Obj *const objv[])
+{
+    Tcl_Obj *typed = NULL, *res;
+    (void) clientData;
+
+    if (objc != 4) {
+	Tcl_WrongNumArgs(interp, 1, objv, "varName type value");
+	return TCL_ERROR;
+    }
+    if (TclAnnotateValue(interp, objv[2], objv[3], &typed) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    Tcl_IncrRefCount(typed);
+    res = Tcl_ObjSetVar2(interp, objv[1], NULL, typed, TCL_LEAVE_ERR_MSG);
+    if (res == NULL) {
+	Tcl_DecrRefCount(typed);
+	return TCL_ERROR;
+    }
+    Tcl_SetObjResult(interp, typed);
+    Tcl_DecrRefCount(typed);
+    return TCL_OK;
+}
+
 void
 TclTypesInit(Tcl_Interp *interp)
 {
@@ -1786,5 +1918,8 @@ TclTypesInit(Tcl_Interp *interp)
     Tcl_SetHashValue(Tcl_CreateHashEntry(&d->names, "array", &isNew), NULL);
     Tcl_SetAssocData(interp, "tclTypes", DeleteData, d);
     Tcl_CreateObjCommand2(interp, "type", TypeObjCmd, d, NULL);
+    Tcl_CreateObjCommand2(interp, "::tcl::mathop::is", IsOpObjCmd, NULL, NULL);
+    Tcl_CreateObjCommand2(interp, "::tcl::unsupported::declare", DeclareObjCmd,
+	    NULL, NULL);
     TclAnnotInit(interp);
 }

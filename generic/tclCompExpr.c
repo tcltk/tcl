@@ -285,8 +285,9 @@ enum LexemeCodes {
 				 * START, in the same way that CLOSE_PAREN
 				 * pairs with OPEN_PAREN. */
     SEPARATOR = BINARY | 33,       /* TIP 282 / TIP 759 */
-    ASSIGN = BINARY | 34               /* ASSIGN, like EXPON is right associative, 
+    ASSIGN = BINARY | 34,              /* ASSIGN, like EXPON is right associative, 
                                                       * and this distinction is coded directly in ParseExpr */
+    IS_TYPE = BINARY | 35              /* "var is type": type test of a variable */
 };
 
 /*
@@ -369,8 +370,9 @@ static const unsigned char prec[] = {
     PREC_END,		/* END */
     PREC_SEPARATOR,     /* SEPARATOR */
     PREC_ASSIGN,        /* ASSIGN */
+    PREC_EQUAL,         /* IS_TYPE */
     /* Expansion room for more binary operators */
-    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
     /* Unary operator lexemes */
     PREC_UNARY,		/* UNARY_PLUS */
@@ -430,8 +432,9 @@ static const unsigned char instruction[] = {
     0,			/* END */
     0,                  /* SEPARATOR */
     0,                  /* ASSIGN */
+    0,                  /* IS_TYPE */
     /* Expansion room for more binary operators */
-    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
     /* Unary operator lexemes */
     INST_UPLUS,		/* UNARY_PLUS */
@@ -518,6 +521,8 @@ static void		CompileExprTree(Tcl_Interp *interp, OpNode *nodes,
 			    Tcl_Obj *const *funcObjv, Tcl_Token *tokenPtr,
 			    CompileEnv *envPtr, int optimize);
 static const char *	FindTupleTarget(const char *start, Tcl_Size numBytes);
+static int		IsTypeAhead(const char *start, Tcl_Size numBytes);
+static Tcl_Size		ElementTargetLen(const char *start, Tcl_Size numBytes);
 static void		EmitTupleStores(CompileEnv *envPtr, OpNode *nodes,
 			    int index, int *path, int depth, int *counter,
 			    int root);
@@ -603,6 +608,76 @@ EmitTupleStores(
     default:
 	break;
     }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * IsTypeAhead --
+ *
+ *	Does the text at START (after a bareword) continue with the "is"
+ *	operator? Used to accept a bareword as a variable name in
+ *	"var is type".
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+IsTypeAhead(
+    const char *start,
+    Tcl_Size numBytes)
+{
+    Tcl_Size n = TclParseAllWhiteSpace(start, numBytes);
+
+    start += n;
+    numBytes -= n;
+    return (numBytes >= 2 && start[0] == 'i' && start[1] == 's'
+	    && (numBytes == 2 || UCHAR(start[2]) & 0x80
+		    || !(isalnum(UCHAR(start[2])) || start[2] == '_')));
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ElementTargetLen --
+ *
+ *	START points at the '(' directly following a bareword. If the
+ *	parenthesized text is followed by a single "=" or by the "is"
+ *	operator, return its length (so that "z(re)" is a variable name),
+ *	else 0.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static Tcl_Size
+ElementTargetLen(
+    const char *start,
+    Tcl_Size numBytes)
+{
+    Tcl_Size i = 0, n;
+    int depth = 0;
+
+    while (i < numBytes) {
+	if (start[i] == '(') {
+	    depth++;
+	} else if (start[i] == ')' && --depth == 0) {
+	    i++;
+	    break;
+	}
+	i++;
+    }
+    if (depth != 0) {
+	return 0;
+    }
+    n = TclParseAllWhiteSpace(start + i, numBytes - i);
+    if (i + n < numBytes && start[i + n] == '='
+	    && (i + n + 1 >= numBytes || start[i + n + 1] != '=')) {
+	return i;
+    }
+    if (IsTypeAhead(start + i, numBytes - i)) {
+	return i;
+    }
+    return 0;
 }
 
 /*
@@ -873,6 +948,42 @@ ParseExpr(
 	start += scanned;
 	numBytes -= scanned;
 
+	if (lastParsed == incomplete && nodes[incomplete].lexeme == IS_TYPE
+		&& numBytes > 0 && (isalpha(UCHAR(*start)) || *start == '_'
+			|| *start == ':')) {
+	    /*
+	     * Right operand of "is": a type name (int, list.int, ::ns::t,
+	     * tree(int) ...) taken literally.
+	     */
+
+	    const char *q = start, *qe = start + numBytes;
+	    Tcl_Obj *typeName;
+
+	    while (q < qe && (isalnum(UCHAR(*q)) || *q == '_' || *q == ':'
+		    || *q == '.')) {
+		q++;
+	    }
+	    if (q < qe && *q == '(') {
+		int d = 0;
+
+		while (q < qe) {
+		    if (*q == '(') {
+			d++;
+		    } else if (*q == ')' && --d == 0) {
+			q++;
+			break;
+		    }
+		    q++;
+		}
+	    }
+	    typeName = Tcl_NewStringObj(start, q - start);
+	    Tcl_ListObjAppendElement(NULL, litList, typeName);
+	    complete = lastParsed = OT_LITERAL;
+	    numBytes -= q - start;
+	    start = q;
+	    continue;
+	}
+
 	scanned = ParseLexeme(start, numBytes, &lexeme, &literal);
 
 	/*
@@ -906,7 +1017,21 @@ ParseExpr(
 		 * is a legal literal boolean value, we accept that as well.
 		 */
 
-		if (start[scanned+TclParseAllWhiteSpace(
+		if (literal && start[scanned] == '(' && ElementTargetLen(
+			start + scanned, numBytes - scanned) > 0) {
+		    /* "z(re) = value", "a(1) is int": array element or field
+		     * name used as a variable name. */
+		    Tcl_Size total = scanned + ElementTargetLen(
+			    start + scanned, numBytes - scanned);
+
+		    Tcl_DecrRefCount(literal);
+		    literal = Tcl_NewStringObj(start, total);
+		    Tcl_ListObjAppendElement(NULL, litList, literal);
+		    complete = lastParsed = OT_LITERAL;
+		    start += total;
+		    numBytes -= total;
+		    continue;
+		} else if (start[scanned+TclParseAllWhiteSpace(
 			start+scanned, numBytes-scanned)] == '(') {
 		    lexeme = FUNCTION;
 
@@ -918,6 +1043,14 @@ ParseExpr(
 		     */
 
 		    Tcl_ListObjAppendElement(NULL, funcList, literal);
+		} else if (literal && IsTypeAhead(start + scanned,
+			numBytes - scanned)) {
+		    /* "var is type": the bareword names a variable. */
+		    Tcl_ListObjAppendElement(NULL, litList, literal);
+		    complete = lastParsed = OT_LITERAL;
+		    start += scanned;
+		    numBytes -= scanned;
+		    continue;
 		} else if (literal && tupleEnd != NULL && start < tupleEnd) {
 		    /* Name inside the target of a destructuring assignment:
 		     * (a,b,c) = $list */
@@ -1590,7 +1723,10 @@ ParseExpr(
 		 * expressions because we do not want to optimize their
 		 * variable-setting side effects out of existence.
 		 */
-		if (incompletePtr->lexeme == ASSIGN) { incompletePtr->constant = 0; }
+		if (incompletePtr->lexeme == ASSIGN
+			|| incompletePtr->lexeme == IS_TYPE) {
+		    incompletePtr->constant = 0;
+		}
 		
 		if (incompletePtr->lexeme == START) {
 		    /*
@@ -2394,6 +2530,12 @@ ParseLexeme(
 	return 1;
 
     case 'i':
+	if ((numBytes > 1) && (start[1] == 's')
+		&& ((numBytes == 2) || start[2] & 0x80
+			|| !(isalnum(UCHAR(start[2])) || start[2] == '_'))) {
+	    *lexemePtr = IS_TYPE;	/* "var is type" */
+	    return 2;
+	}
 	if ((numBytes > 1) && (start[1] == 'n')
 		&& ((numBytes == 2) || start[2] & 0x80 || !isalpha(UCHAR(start[2])))) {
 	    /*
@@ -2794,8 +2936,44 @@ CompileExprTree(
 		    TclEmitOpcode(INST_TRY_CVT_TO_NUMERIC, envPtr);
 		}
 		break;
+	    case IS_TYPE:
+		if (nodes[nodePtr->p.parent].lexeme == ASSIGN
+			&& nodes[nodePtr->p.parent].left == (int) (nodePtr - nodes)) {
+		    /*
+		     * "var is type = value": leave [name type] on the stack; the
+		     * ASSIGN declares and sets the variable.
+		     */
+
+		    convert = 0;
+		    break;
+		}
+
+		/*
+		 * "var is type": the stack holds [name type]. Invoke
+		 * ::tcl::mathop::is name type.
+		 */
+
+		TclEmitPush(TclRegisterLiteral(envPtr, "::tcl::mathop::is", 17,
+			LITERAL_CMD_NAME), envPtr);
+		TclEmitInstInt4(INST_REVERSE, 3, envPtr);
+		TclEmitInstInt4(INST_REVERSE, 2, envPtr);
+		TclEmitInvoke(envPtr, INST_INVOKE_STK1, 3);
+		convert = 0;
+		break;
 	    case ASSIGN:
-		if (nodes[nodePtr->left].lexeme == LIST) {
+		if (nodes[nodePtr->left].lexeme == IS_TYPE) {
+		    /*
+		     * "var is type = value": the stack holds [name type value].
+		     * Invoke ::tcl::unsupported::declare name type value.
+		     */
+
+		    TclEmitPush(TclRegisterLiteral(envPtr,
+			    "::tcl::unsupported::declare", 27, LITERAL_CMD_NAME),
+			    envPtr);
+		    TclEmitInstInt4(INST_REVERSE, 4, envPtr);
+		    TclEmitInstInt4(INST_REVERSE, 3, envPtr);
+		    TclEmitInvoke(envPtr, INST_INVOKE_STK1, 4);
+		} else if (nodes[nodePtr->left].lexeme == LIST) {
 		    /*
 		     * Destructuring assignment "(a,(b,c),d) = value": the stack holds
 		     * the (nested) list of names and the value. Store each leaf

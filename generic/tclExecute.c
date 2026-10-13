@@ -3215,6 +3215,36 @@ TEBCresume(
 		    NEXT_INST_V(1, 3, 1);
 		}
 	    }
+	    if (part2Ptr == NULL && storeFlags == TCL_LEAVE_ERR_MSG) {
+		/*
+		 * Name written "z(field)" in one word (expr {z(re) = 3}):
+		 * split it and retry as a typed-variable element write.
+		 */
+
+		Tcl_Size nameLen;
+		const char *nm = Tcl_GetStringFromObj(part1Ptr, &nameLen);
+		const char *open = (nameLen > 2 && nm[nameLen - 1] == ')')
+			? strchr(nm, '(') : NULL;
+
+		if (open != NULL && open > nm) {
+		    Tcl_Obj *p1 = Tcl_NewStringObj(nm, open - nm);
+		    Tcl_Obj *p2 = Tcl_NewStringObj(open + 1,
+			    (nm + nameLen - 1) - (open + 1));
+		    int trc;
+
+		    Tcl_IncrRefCount(p1);
+		    Tcl_IncrRefCount(p2);
+		    DECACHE_STACK_INFO();
+		    trc = TclTypedVarSetElement(interp, p1, p2, valuePtr,
+			    &objResultPtr);
+		    CACHE_STACK_INFO();
+		    Tcl_DecrRefCount(p1);
+		    Tcl_DecrRefCount(p2);
+		    if (trc == TCL_OK) {
+			NEXT_INST_V(1, 2, 1);
+		    }
+		}
+	    }
 	    TRACE_ERROR(interp);
 	    goto gotError;
 	}
