@@ -17,6 +17,7 @@ to the userbase.
  - [TclUnixWaitForFile: infinite wait may return early](https://core.tcl-lang.org/tcl/tktview/49538c)
  - [lsearch -regexp released the pattern when matching failed](https://core.tcl-lang.org/tcl/tktview/359576)
  - [restore the blocking mode when "socket -async" connects at once](https://core.tcl-lang.org/tcl/tktview/d22dc7)
+ - [compiled [clock clicks -mi] should give "ambiguous option" error](https://core.tcl-lang.org/tcl/tktview/1ae976)
 
 # Updated bundled packages, libraries, standards, data
  - msgcat 1.7.2
