@@ -1448,6 +1448,29 @@ test thread-8.1 {threaded fork stress} -constraints {thread} -setup {
     unset -nocomplain ::threadCount ::execCount ::threads ::thread
 } -result {}
 
+# A race: without the fix the child process panics in about a third of
+# the runs.
+test thread-9.1 {transfer of a channel from its own file event handler} -constraints {
+    thread stdio
+} -body {
+    exec [interpreter] << {
+	package require Thread
+	set handler {
+	    proc handle {chan} {
+		thread::transfer $::other $chan
+		thread::send $::other [list fileevent $chan writable [list handle $chan]]
+	    }
+	}
+	eval $handler
+	set other [thread::create]
+	thread::send $other [list set other [thread::id]]
+	thread::send $other $handler
+	handle [open [expr {$tcl_platform(platform) eq "windows" ? "NUL" : "/dev/null"}] w]
+	after 3000 {puts ok; exit}
+	vwait forever
+    }
+} -result ok
+
 # cleanup
 ::tcltest::cleanupTests
 return
