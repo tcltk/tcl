@@ -1092,11 +1092,12 @@ ParseTokens(
     int noSubstCmds = !(flags & TCL_SUBST_COMMANDS);
     int noSubstVars = !(flags & TCL_SUBST_VARIABLES);
     int noSubstBS = !(flags & TCL_SUBST_BACKSLASHES);
+    int noSubstExpr = !(flags & TCL_SUBST_EXPR);
     Tcl_Token *tokenPtr;
 
     /*
      * Each iteration through the following loop adds one token of type
-     * TCL_TOKEN_TEXT, TCL_TOKEN_BS, TCL_TOKEN_COMMAND, or TCL_TOKEN_VARIABLE
+     * TCL_TOKEN_TEXT, TCL_TOKEN_BS, TCL_TOKEN_COMMAND, TCL_TOKEN_SUB_EXPR or TCL_TOKEN_VARIABLE
      * to parsePtr. For TCL_TOKEN_VARIABLE tokens, additional tokens are added
      * for the parsed variable name.
      */
@@ -1147,6 +1148,16 @@ ParseTokens(
 	    numBytes -= parsePtr->tokenPtr[varToken].size;
 	} else if (numBytes>=2 && src[0] == '[' && src[1] == '(') {
  	    /* TIP 759 ARITHMETIC inline SUBSTITUTION context */
+	    
+	    if (noSubstExpr) {
+		tokenPtr->type = TCL_TOKEN_TEXT;
+		tokenPtr->size = 1;
+		parsePtr->numTokens++;
+		src++;
+		numBytes--;
+		continue;
+	    }
+	    
 	    Tcl_Parse *exprParsePtr;
 	    
 	    exprParsePtr =(Tcl_Parse *)TclStackAlloc(parsePtr->interp, sizeof(Tcl_Parse));
@@ -1165,8 +1176,7 @@ ParseTokens(
 	    numBytes -= exprParsePtr->commandSize+2;
 	    TclStackFree(parsePtr->interp, exprParsePtr);
 	} else if (*src == '[') {
-	    Tcl_Parse *nestedPtr;
-
+	    
 	    if (noSubstCmds) {
 		tokenPtr->type = TCL_TOKEN_TEXT;
 		tokenPtr->size = 1;
@@ -1175,7 +1185,8 @@ ParseTokens(
 		numBytes--;
 		continue;
 	    }
-
+	    
+	    Tcl_Parse *nestedPtr;
 	    /*
 	     * Command substitution. Call Tcl_ParseCommand recursively (and
 	     * repeatedly) to parse the nested command(s), then throw away the

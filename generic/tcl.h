@@ -537,7 +537,8 @@ typedef struct stat *Tcl_OldStat_;
 #define TCL_SUBST_COMMANDS	001
 #define TCL_SUBST_VARIABLES	002
 #define TCL_SUBST_BACKSLASHES	004
-#define TCL_SUBST_ALL		007
+#define TCL_SUBST_EXPR          010
+#define TCL_SUBST_ALL		017
 
 /*
  * Forward declaration of Tcl_Obj to prevent an error when the forward

@@ -2584,7 +2584,6 @@ CompileExprTree(
 		numWords = 1;	
 		break;
 	    case NULL_FUNC:
-		funcObjv++;
 		break;
 	    case QUESTION:
 		newJump = (JumpList *)TclStackAlloc(interp, sizeof(JumpList));
