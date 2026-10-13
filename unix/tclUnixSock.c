@@ -1337,6 +1337,14 @@ TcpConnect(
 	if (statePtr->cachedBlocking == TCL_MODE_NONBLOCKING) {
 	    Tcl_NotifyChannel(statePtr->channel, TCL_WRITABLE);
 	}
+    } else if (async) {
+	/*
+	 * An async connect finished at once, e.g. because some systems
+	 * connect to a local listener without returning EINPROGRESS first.
+	 * Restore the blocking mode, as when it finishes in the background.
+	 */
+
+	TclUnixSetBlockingMode(statePtr->fds.fd, statePtr->cachedBlocking);
     }
     if (error != 0) {
 	/*

@@ -9486,3 +9486,5 @@ Many code fixes to avoid overflow or undefined behavior.  Thanks chrstphrchvz.
 2026-10-13 with REG_BOSONLY only the first alternative was anchored at the beginning of the string (lane)
 
 2026-10-13 lsearch -regexp released the pattern when matching failed (storchaka)
+
+2026-10-13 restore the blocking mode when [socket -async] connects at once (storchaka)
