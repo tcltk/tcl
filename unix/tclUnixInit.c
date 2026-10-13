@@ -390,6 +390,15 @@ TclpInitPlatform(void)
     (void) signal(SIGPIPE, SIG_IGN);
 #endif /* SIGPIPE */
 
+    /*
+     * Ignore SIGXFSZ too, so that writing a file beyond the file size limit
+     * (ulimit -f) fails with an error instead of killing the process.
+     */
+
+#ifdef SIGXFSZ
+    (void) signal(SIGXFSZ, SIG_IGN);
+#endif /* SIGXFSZ */
+
 #if defined(__FreeBSD__) && defined(__GNUC__)
     /*
      * Adjust the rounding mode to be more conventional. Note that FreeBSD
