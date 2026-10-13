@@ -207,7 +207,7 @@ typedef struct {
  ^ int regexec(regex_t *, const char *, size_t, regmatch_t [], int);
  ^ #endif
  ^ #ifdef __REG_WIDE_T
- ^ int __REG_WIDE_EXEC(regex_t *, const __REG_WIDE_T *, size_t,
+ ^ int __REG_WIDE_EXEC(regex_t *, const __REG_WIDE_T *, size_t, size_t,
  ^				rm_detail_t *, size_t, regmatch_t [], int);
  ^ #endif
  */
@@ -280,7 +280,7 @@ int re_exec(regex_t *, const char *, size_t, rm_detail_t *, size_t, regmatch_t [
 int regexec(regex_t *, const char *, size_t, regmatch_t [], int);
 #endif
 #ifdef __REG_WIDE_T
-MODULE_SCOPE int __REG_WIDE_EXEC(regex_t *, const __REG_WIDE_T *, size_t, rm_detail_t *, size_t, regmatch_t [], int);
+MODULE_SCOPE int __REG_WIDE_EXEC(regex_t *, const __REG_WIDE_T *, size_t, size_t, rm_detail_t *, size_t, regmatch_t [], int);
 #endif
 MODULE_SCOPE void regfree(regex_t *);
 MODULE_SCOPE size_t regerror(int, char *, size_t);

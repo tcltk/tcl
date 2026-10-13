@@ -9479,4 +9479,6 @@ Many code fixes to avoid overflow or undefined behavior.  Thanks chrstphrchvz.
 
 2026-10-11 regexp sometimes allows an invalid backref to be matched (lane)
 
-2026-10-11 regexp -all did not try to match at the end of the string (storchaka
+2026-10-11 regexp -all did not try to match at the end of the string (storchaka)
+
+2026-10-13 regexp/regsub -all restarted matching on the substring after the previous match (storchaka)

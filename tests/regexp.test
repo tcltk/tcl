@@ -597,7 +597,7 @@ test regexp-16.4 {regsub -start, \A behavior} {
     set out {}
     lappend out [regsub -start 0 -all {\A(\w)} {abcde} {/\1} x] $x
     lappend out [regsub -start 2 -all {\A(\w)} {abcde} {/\1} x] $x
-} {5 /a/b/c/d/e 3 ab/c/d/e}
+} {1 /abcde 1 ab/cde}
 test regexp-16.5 {regsub -start, double option} {
     list [regsub -start 2 -start 0 a abc c x] $x
 } {1 cbc}
@@ -1142,6 +1142,35 @@ test regexp-26.13 {regexp without -line option} {
 test regexp-28.1 {bug cb03e57a7b} -returnCodes error -body {
 	regexp {} $nosuchvar
 } -result {can't read "nosuchvar": no such variable}
+
+test regexp-29.1 {regexp -all: \A matches only at string start, bug 471101} {
+    regexp -all -inline -indices {\Aa} aabbcc
+} {{0 0}}
+test regexp-29.2 {regsub -all: \A matches only at string start, bug 471101} {
+    list [regsub -all {\Aa} aabbcc b x] $x \
+	    [regsub -all {(\Aa|c\Z)} aabbcc b x] $x
+} {1 babbcc 2 babbcb}
+test regexp-29.3 {regexp -all: \A with -start, bug 471101} {
+    regexp -all -inline -indices -start 2 {\A\w} abcde
+} {{2 2}}
+test regexp-29.4 {regexp -all: ^ after newline without -lineanchor, bug 884d0ac78c} {
+    regexp -all -inline -indices "^|\n" "foo\nbar"
+} {{0 -1} {3 3}}
+test regexp-29.5 {regsub -all: ^ after newline without -lineanchor, bug 884d0ac78c} {
+    regsub -all "^|\n" "foo\nbar" "\nXX"
+} "\nXXfoo\nXXbar"
+test regexp-29.6 {regexp -all: ^ after newline with -lineanchor} {
+    regexp -all -inline -indices -lineanchor "^|\n" "foo\nbar"
+} {{0 -1} {3 3} {4 3}}
+test regexp-29.7 {regexp -all: ^ after newline with -start and -lineanchor} {
+    regexp -all -inline -indices -start 4 -lineanchor "^b|\n" "foo\nbar\nb"
+} {{4 4} {7 7} {8 8}}
+test regexp-29.8 {regexp -all: word constraints see the previous match} {
+    list [regexp -all -inline {\m\w} "ab cd"] \
+	    [regexp -all -inline {\w\M} "ab cd"] \
+	    [regexp -all {\Y} aabbcc] \
+	    [regsub -all {\y} "ab cd" |]
+} {{a c} {b d} 5 {|ab| |cd|}}
 
 
 # cleanup
