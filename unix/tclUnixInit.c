@@ -593,25 +593,43 @@ Tcl_GetEncodingNameFromEnvironment(
      */
 
 #ifdef HAVE_LANGINFO
-    if (
-#ifdef WEAK_IMPORT_NL_LANGINFO
-	    nl_langinfo != NULL &&
-#endif
-	    setlocale(LC_CTYPE, "") != NULL) {
+    {
 	Tcl_DString ds;
-
-	/*
-	 * Use a DString so we can modify case.
-	 */
+	int haveLocale;
 
 	Tcl_DStringInit(&ds);
-	encoding = Tcl_DStringAppend(&ds, nl_langinfo(CODESET), TCL_INDEX_NONE);
-	Tcl_UtfToLower(Tcl_DStringValue(&ds));
-	knownEncoding = SearchKnownEncodings(encoding);
-	if (knownEncoding != NULL) {
-	    Tcl_DStringAppend(bufPtr, knownEncoding, TCL_INDEX_NONE);
-	} else if (NULL != Tcl_GetEncoding(NULL, encoding)) {
-	    Tcl_DStringAppend(bufPtr, encoding, TCL_INDEX_NONE);
+
+	/*
+	 * setlocale() changes process-global state and need not be thread-safe.
+	 * Use the initialization lock, which also protects the initial locale
+	 * setup in Tcl_InitSubsystems(). Copy the codeset while holding the
+	 * lock, since nl_langinfo() can return storage owned by libc.
+	 */
+
+	TclpInitLock();
+	haveLocale =
+#ifdef WEAK_IMPORT_NL_LANGINFO
+		nl_langinfo != NULL &&
+#endif
+		setlocale(LC_CTYPE, "") != NULL;
+	if (haveLocale) {
+	    Tcl_DStringAppend(&ds, nl_langinfo(CODESET), TCL_INDEX_NONE);
+	}
+	TclpInitUnlock();
+
+	/*
+	 * Resolve the copied encoding name after releasing the locale lock.
+	 */
+
+	if (haveLocale) {
+	    encoding = Tcl_DStringValue(&ds);
+	    Tcl_UtfToLower(Tcl_DStringValue(&ds));
+	    knownEncoding = SearchKnownEncodings(encoding);
+	    if (knownEncoding != NULL) {
+		Tcl_DStringAppend(bufPtr, knownEncoding, TCL_INDEX_NONE);
+	    } else if (NULL != Tcl_GetEncoding(NULL, encoding)) {
+		Tcl_DStringAppend(bufPtr, encoding, TCL_INDEX_NONE);
+	    }
 	}
 	Tcl_DStringFree(&ds);
 	if (Tcl_DStringLength(bufPtr)) {
