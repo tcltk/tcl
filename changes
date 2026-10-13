@@ -9482,3 +9482,5 @@ Many code fixes to avoid overflow or undefined behavior.  Thanks chrstphrchvz.
 2026-10-11 regexp -all did not try to match at the end of the string (storchaka)
 
 2026-10-13 regexp/regsub -all restarted matching on the substring after the previous match (storchaka)
+
+2026-10-13 with REG_BOSONLY only the first alternative was anchored at the beginning of the string (lane)
