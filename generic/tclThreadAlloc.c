@@ -129,6 +129,10 @@ static struct {
  */
 
 static Cache *	GetCache(void);
+#ifdef HAVE_PTHREAD_ATFORK
+static void	AtForkPrepare(void);
+static void	AtForkRelease(void);
+#endif
 static void	LockBucket(Cache *cachePtr, int bucket);
 static void	UnlockBucket(Cache *cachePtr, int bucket);
 static void	PutBlocks(Cache *cachePtr, int bucket, size_t numMove);
@@ -1060,7 +1064,48 @@ TclInitThreadAlloc(void)
 	bucketInfo[i].lockPtr = TclpNewAllocMutex();
     }
     TclpInitAllocCache();
+#ifdef HAVE_PTHREAD_ATFORK
+    pthread_atfork(AtForkPrepare, AtForkRelease, AtForkRelease);
+#endif
 }
+
+#ifdef HAVE_PTHREAD_ATFORK
+/*
+ *----------------------------------------------------------------------
+ *
+ * AtForkPrepare, AtForkRelease --
+ *
+ *	Hold all locks of the allocator across fork(), so that the child
+ *	process does not inherit a lock held by another thread, which would
+ *	never be released. [be38540b32]
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+AtForkPrepare(void)
+{
+    unsigned int i;
+
+    Tcl_MutexLock(listLockPtr);
+    Tcl_MutexLock(objLockPtr);
+    for (i = 0; i < NBUCKETS; ++i) {
+	Tcl_MutexLock(bucketInfo[i].lockPtr);
+    }
+}
+
+static void
+AtForkRelease(void)
+{
+    unsigned int i;
+
+    for (i = NBUCKETS; i-- > 0; ) {
+	Tcl_MutexUnlock(bucketInfo[i].lockPtr);
+    }
+    Tcl_MutexUnlock(objLockPtr);
+    Tcl_MutexUnlock(listLockPtr);
+}
+#endif /* HAVE_PTHREAD_ATFORK */
 
 /*
  *----------------------------------------------------------------------
