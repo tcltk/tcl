@@ -18,6 +18,7 @@ if {"::tcltest" ni [namespace children]} {
 # When run in a Tk shell, these tests hang.
 testConstraint noTk [expr {0 != [catch {package present Tk}]}]
 testConstraint thread [expr {0 == [catch {package require Thread 2.7-}]}]
+testConstraint testeventloop [expr {[info commands testeventloop] ne {}}]
 
 # The next two tests will hang if threads are enabled because the notifier
 # will not necessarily wait for ever in this case, so it does not generate
@@ -91,6 +92,48 @@ test unixNotfy-2.2 {Tcl_DeleteFileHandler} \
 	catch { removeFile foo }
 	catch { removeFile foo2 }
     }
+# Xt event loop integration
+test unixNotify-3.1 {NotifierProc: non-modal normal timer} {unix testeventloop} {
+    update
+    set x 0
+    foreach i [after info] {
+	after cancel $i
+    }
+    after 500 { incr x; testeventloop done }
+    testeventloop wait
+    set x
+} 1
+test unixNotify-3.2 {NotifierProc: non-modal normal timer, rescheduled} {unix testeventloop} {
+    update
+    set x 0
+    foreach i [after info] {
+	after cancel $i
+    }
+    after 500 { incr x; after 100 {incr x; testeventloop done }}
+    testeventloop wait
+    set x
+} 2
+test unixNotify-3.5 {NotifierProc: non-modal idle timer} {unix testeventloop} {
+    update
+    set x 0
+    foreach i [after info] {
+	after cancel $i
+    }
+    after idle { incr x; testeventloop done }
+    testeventloop wait
+    set x
+} 1
+test unixNotify-3.6 {NotifierProc: non-modal idle timer, rescheduled} {unix testeventloop} {
+    update
+    set x 0
+    foreach i [after info] {
+	after cancel $i
+    }
+    after idle { incr x; after idle {incr x; testeventloop done }}
+    testeventloop wait
+    set x
+} 2
+
 
 # cleanup
 ::tcltest::cleanupTests
