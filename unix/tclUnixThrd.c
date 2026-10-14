@@ -561,23 +561,23 @@ void
 Tcl_MutexLock(
     Tcl_Mutex *mutexPtr)	/* Really (PMutex **) */
 {
-    PMutex *pmutexPtr;
+    PMutex *pmutexPtr = (PMutex *) TclLoadPtrAcquire(mutexPtr);
 
-    if (*mutexPtr == NULL) {
+    if (pmutexPtr == NULL) {
 	pthread_mutex_lock(&globalLock);
-	if (*mutexPtr == NULL) {
+	pmutexPtr = *((PMutex **) mutexPtr);
+	if (pmutexPtr == NULL) {
 	    /*
 	     * Double inside global lock check to avoid a race condition.
 	     */
 
 	    pmutexPtr = (PMutex *)Tcl_Alloc(sizeof(PMutex));
 	    PMutexInit(pmutexPtr);
-	    *mutexPtr = (Tcl_Mutex) pmutexPtr;
+	    TclStorePtrRelease(mutexPtr, pmutexPtr);
 	    TclRememberMutex(mutexPtr);
 	}
 	pthread_mutex_unlock(&globalLock);
     }
-    pmutexPtr = *((PMutex **) mutexPtr);
     PMutexLock(pmutexPtr);
 }
 
@@ -671,7 +671,8 @@ Tcl_ConditionWait2(
     PMutex *pmutexPtr;
     struct timespec ptime;
 
-    if (*condPtr == NULL) {
+    pcondPtr = (pthread_cond_t *) TclLoadPtrAcquire(condPtr);
+    if (pcondPtr == NULL) {
 	pthread_mutex_lock(&globalLock);
 
 	/*
@@ -679,16 +680,16 @@ Tcl_ConditionWait2(
 	 * variable if necessary.
 	 */
 
-	if (*condPtr == NULL) {
+	pcondPtr = *((pthread_cond_t **)condPtr);
+	if (pcondPtr == NULL) {
 	    pcondPtr = (pthread_cond_t *)Tcl_Alloc(sizeof(pthread_cond_t));
 	    pthread_cond_init(pcondPtr, NULL);
-	    *condPtr = (Tcl_Condition) pcondPtr;
+	    TclStorePtrRelease(condPtr, pcondPtr);
 	    TclRememberCondition(condPtr);
 	}
 	pthread_mutex_unlock(&globalLock);
     }
     pmutexPtr = *((PMutex **)mutexPtr);
-    pcondPtr = *((pthread_cond_t **)condPtr);
     if (time < 0) {
 	PCondWait(pcondPtr, pmutexPtr);
     } else {

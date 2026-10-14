@@ -236,11 +236,11 @@ PipeInit(void)
      * is a speed enhancement.
      */
 
-    if (!initialized) {
+    if (!TclLoadIntAcquire(&initialized)) {
 	Tcl_MutexLock(&pipeMutex);
 	if (!initialized) {
-	    initialized = 1;
 	    procList = NULL;
+	    TclStoreIntRelease(&initialized, 1);
 	}
 	Tcl_MutexUnlock(&pipeMutex);
     }
