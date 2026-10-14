@@ -22,6 +22,7 @@ to the userbase.
  - [Incorrect argument handling by [regexp]](https://core.tcl-lang.org/tcl/tktview/697b1b)
  - [compiled regexp behaves differently](https://core.tcl-lang.org/tcl/tktview/190289)
  - [a {1,1} quantifier was always dropped as vacuous](https://core.tcl-lang.org/tcl/tktview/524b35)
+ - [regexp with backreferences could loop forever](https://core.tcl-lang.org/tcl/tktview/a6029e)
 
 # Updated bundled packages, libraries, standards, data
  - msgcat 1.7.2

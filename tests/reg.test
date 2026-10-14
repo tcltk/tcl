@@ -685,7 +685,12 @@ expectNomatch	14.29 RP	{^(.+)( \1)+$}	{abc abc abd}
 # backref to a capture in a failed alternative must not match [Bug 75c9d9cece]
 expectNomatch	14.30 RP	{^(.)\1|\1.}	abcdef
 expectNomatch	14.31 RP	{^((.)\2|..)\2}	abadef
-
+# possible empty match that fails must not loop forever [Bug a6029ee505]
+expectMatch	14.32 RPN	{(b*)a\1|\1}	ba	a	""
+expectNomatch	14.33 RPSN	{$()|^\1}	a
+expectNomatch	14.34 RPSN	{.. ()|\1}	a
+expectMatch	14.35 RPSN	{()*\1}	a	""	""
+expectMatch	14.36 RPSN	{()+\1}	a	""	""
 
 doing 15 "octal escapes vs back references"
 # initial zero is always octal
