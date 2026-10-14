@@ -2065,10 +2065,12 @@ test chan-io-27.5 {FlushChannel, implicit flush when buffer fills and on chan cl
 } -result {0 60 72}
 set path(pipe)   [makeFile {} pipe]
 set path(output) [makeFile {} output]
+set path(done)   [makeFile {} done]
 test chan-io-27.6 {FlushChannel, async flushing, async chan close} -setup {
     file delete $path(pipe)
     file delete $path(output)
-} -constraints {stdio asyncPipeChan Close} -body {
+    file delete $path(done)
+} -constraints {stdio asyncPipeClose} -body {
     set f [open $path(pipe) w]
     chan puts $f "set f \[[list open $path(output) w]]"
     chan puts $f {
@@ -2079,6 +2081,8 @@ test chan-io-27.6 {FlushChannel, async flushing, async chan close} -setup {
 	}
 	chan close $f
     }
+    # Signal that the output file is closed.
+    chan puts $f "chan close \[[list open $path(done) w]]"
     chan close $f
     set x 01234567890123456789012345678901
     for {set i 0} {$i < 11} {incr i} {
@@ -2091,11 +2095,13 @@ test chan-io-27.6 {FlushChannel, async flushing, async chan close} -setup {
     chan puts -nonewline $f $x
     chan close $f
     set counter 0
-    while {([file size $path(output)] < 65536) && ($counter < 1000)} {
+    # Wait until the child closes the output file, otherwise deleting it in
+    # the following test fails on Windows.
+    while {![file exists $path(done)] && ($counter < 1000)} {
 	after 20 [list incr [namespace which -variable counter]]
 	vwait [namespace which -variable counter]
     }
-    if {$counter == 1000} {
+    if {[file size $path(output)] < 65536} {
 	set result "file size only [file size $path(output)]"
     } else {
 	set result ok
@@ -2138,7 +2144,7 @@ test chan-io-28.2 {Chan CloseChannel called when all references are dropped} -se
 test chan-io-28.3 {Chan CloseChannel, not called before output queue is empty} -setup {
     file delete $path(pipe)
     file delete $path(output)
-} -constraints {stdio asyncPipeChan Close nonPortable} -body {
+} -constraints {stdio asyncPipeClose nonPortable} -body {
     set f [open $path(pipe) w]
     chan puts $f {
 	set f [open $path(output) w]
@@ -2751,7 +2757,8 @@ test chan-io-29.31 {Tcl_WriteChars, background flush} -setup {
 test chan-io-29.32 {Tcl_WriteChars, background flush to slow reader} -setup {
     file delete $path(pipe)
     file delete $path(output)
-} -constraints {stdio asyncPipeChan Close} -body {
+    file delete $path(done)
+} -constraints {stdio asyncPipeClose} -body {
     set f [open $path(pipe) w]
     chan puts $f "set f \[[list open $path(output) w]]"
     chan puts $f {chan configure $f -translation lf}
@@ -2763,6 +2770,8 @@ test chan-io-29.32 {Tcl_WriteChars, background flush to slow reader} -setup {
     chan puts $f {  chan flush $f}
     chan puts $f "\}"
     chan puts $f {chan close $f}
+    # Signal that the output file is closed.
+    chan puts $f "chan close \[[list open $path(done) w]]"
     chan close $f
     set x 01234567890123456789012345678901
     for {set i 0} {$i < 11} {incr i} {
@@ -2775,11 +2784,13 @@ test chan-io-29.32 {Tcl_WriteChars, background flush to slow reader} -setup {
     chan puts -nonewline $f $x
     chan close $f
     set counter 0
-    while {([file size $path(output)] < 65536) && ($counter < 1000)} {
+    # Wait until the child closes the output file, otherwise deleting it in
+    # the following test fails on Windows.
+    while {![file exists $path(done)] && ($counter < 1000)} {
 	after 20 [list incr [namespace which -variable counter]]
 	vwait [namespace which -variable counter]
     }
-    if {$counter == 1000} {
+    if {[file size $path(output)] < 65536} {
 	set result "file size only [file size $path(output)]"
     } else {
 	set result ok
