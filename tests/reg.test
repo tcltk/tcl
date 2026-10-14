@@ -873,6 +873,13 @@ doing 25 "mixed quantifiers"
 expectMatch	25.1 PNT	{^(.*?)(a*)$}	"xyza"	xyza	xyz	a
 expectMatch	25.2 PNT	{^(.*?)(a*)$}	"xyzaa"	xyzaa	xyz	aa
 expectMatch	25.3 PNT	{^(.*?)(a*)$}	"xyz"	xyz	xyz	""
+# {m,m}? prefers shortest and {m,m} longest even for m == 1 [Bug 524b35a8b5]
+expectMatch	25.4 PQNT	{^(l*){1,1}?(.*)(f*)$}	llmmmfff	llmmmfff	""	llmmmfff	""
+expectMatch	25.5 PQN	{^(l*){1}?(.*)(f*)$}	llmmmfff	llmmmfff	ll	mmmfff	""
+expectMatch	25.6 PQN	{^(l*?){1,1}(.*)(f*)$}	llmmmfff	llmmmfff	ll	mmmfff	""
+expectMatch	25.7 PQ		{(a+?){1,1}(a*)}	aaaa	aaaa	aaaa	""
+expectMatch	25.8 PQN	{(.*?){1,1}(.*)}	abc	abc	abc	""
+expectMatch	25.9 PQT	{x(a*){1,1}?(a*)y}	xaaay	xaaay	""	aaa
 
 
 doing 26 "tricky cases"

@@ -21,6 +21,7 @@ to the userbase.
  - [writing a file beyond the file size limit (ulimit -f) killed the process](https://core.tcl-lang.org/tcl/tktview/386563)
  - [Incorrect argument handling by [regexp]](https://core.tcl-lang.org/tcl/tktview/697b1b)
  - [compiled regexp behaves differently](https://core.tcl-lang.org/tcl/tktview/190289)
+ - [a {1,1} quantifier was always dropped as vacuous](https://core.tcl-lang.org/tcl/tktview/524b35)
 
 # Updated bundled packages, libraries, standards, data
  - msgcat 1.7.2
