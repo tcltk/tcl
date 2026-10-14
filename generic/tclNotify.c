@@ -873,7 +873,7 @@ Tcl_SetMaxBlockTime(
      */
 
     if (!tsdPtr->inTraversal) {
-	TclpSetTimer(tsdPtr->blockTime);
+	Tcl_SetTimer2(tsdPtr->blockTime);
     }
 }
 
@@ -896,7 +896,7 @@ Tcl_SetMaxBlockTime2(
      */
 
     if (!tsdPtr->inTraversal) {
-	TclpSetTimer(tsdPtr->blockTime);
+	Tcl_SetTimer2(tsdPtr->blockTime);
     }
 }
 
@@ -1181,9 +1181,9 @@ Tcl_ServiceAll(void)
     }
 
     if (!tsdPtr->blockTimeSet) {
-	TclpSetTimer(-1);
+	Tcl_SetTimer2(-1);
     } else {
-	TclpSetTimer(tsdPtr->blockTime);
+	Tcl_SetTimer2(tsdPtr->blockTime);
     }
     tsdPtr->inTraversal = false;
     tsdPtr->serviceMode = TCL_SERVICE_ALL;
