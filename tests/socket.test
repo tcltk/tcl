@@ -714,7 +714,12 @@ test socket_$af-2.12 {Bug 1758a0b603?} [list socket stdio supported_$af] {
 	    write_line $client
 	}
 	proc write_line client {
-	    if { [catch { chan puts $client [string repeat . 720000]}] } {
+	    if {[chan pending output $client] > 0} {
+		# Do not queue more data in memory while the previous line is
+		# not sent: the write error after the client closed the
+		# connection can come with a delay (seconds on OpenBSD).
+		after 10 write_line $client
+	    } elseif { [catch { chan puts $client [string repeat . 720000]}] } {
 		puts [catch {chan close $client}]
 	    } else {
 		puts signal1
