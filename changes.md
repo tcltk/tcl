@@ -19,6 +19,8 @@ to the userbase.
  - [restore the blocking mode when "socket -async" connects at once](https://core.tcl-lang.org/tcl/tktview/d22dc7)
  - [compiled [clock clicks -mi] should give "ambiguous option" error](https://core.tcl-lang.org/tcl/tktview/1ae976)
  - [writing a file beyond the file size limit (ulimit -f) killed the process](https://core.tcl-lang.org/tcl/tktview/386563)
+ - [Incorrect argument handling by [regexp]](https://core.tcl-lang.org/tcl/tktview/697b1b)
+ - [compiled regexp behaves differently](https://core.tcl-lang.org/tcl/tktview/190289)
 
 # Updated bundled packages, libraries, standards, data
  - msgcat 1.7.2

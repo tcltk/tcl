@@ -966,7 +966,7 @@ namespace import -force ::tcltest::test
 test reg-31.1 {[[:xdigit:]] behaves correctly when followed by [[:space:]]} {
     set str {2:::DebugWin32}
     set re {([[:xdigit:]])([[:space:]]*)}
-    list [regexp $re $str match xdigit spaces] $match $xdigit $spaces
+    list [regexp -- $re $str match xdigit spaces] $match $xdigit $spaces
     # Code used to produce {1 2:::DebugWin32 2 :::DebugWin32} !!!
 } {1 2 2 {}}
 
@@ -1230,7 +1230,7 @@ test reg-33.28 {constraint edge cases} {
 } 1
 test reg-33.29 {constraint edge cases} {
     # This is near the limits of the RE engine
-    regexp [string repeat x*y*z* 480] x
+    regexp -- [string repeat x*y*z* 480] x
 } 1
 
 test reg-33.30 {Bug 1080042} {

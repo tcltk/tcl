@@ -364,7 +364,7 @@ proc http::config {args} {
     set pat ^-(?:[join $options |])$
     if {[llength $args] == 1} {
 	set flag [lindex $args 0]
-	if {![regexp -- $pat $flag]} {
+	if {![regexp $pat $flag]} {
 	    return -code error "Unknown option $flag, must be: $usage"
 	}
 	return $http($flag)
@@ -4215,7 +4215,7 @@ proc http::ParseCookie {token value} {
     variable $token
     upvar 0 $token state
 
-    if {![regexp $CookieRE $value -> cookiename cookieval opts]} {
+    if {![regexp -- $CookieRE $value -> cookiename cookieval opts]} {
 	# Bad cookie! No biscuit!
 	return
     }
