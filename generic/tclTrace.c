@@ -1421,7 +1421,7 @@ TclCheckInterpTraces(
     Tcl_Obj *const *objv)	/* Pointers to Tcl_Obj of each argument. */
 {
     Interp *iPtr = (Interp *) interp;
-    Trace *tracePtr, *lastTracePtr;
+    Trace *tracePtr, *prevPtr;
     ActiveInterpTrace active;
     Tcl_Size curLevel;
     int traceCode = TCL_OK;
@@ -1437,29 +1437,32 @@ TclCheckInterpTraces(
     active.nextPtr = iPtr->activeInterpTracePtr;
     iPtr->activeInterpTracePtr = &active;
 
-    lastTracePtr = NULL;
-    for (tracePtr = iPtr->tracePtr;
-	    (traceCode == TCL_OK) && (tracePtr != NULL);
+    /*
+     * Execute the trace command in reverse order of creation for "enterstep"
+     * operation. The order is changed for "enterstep" instead of for
+     * "leavestep" as was done in TclCheckExecutionTraces because for step
+     * traces, Tcl_CreateObjTrace creates one more linked list of traces which
+     * results in one more reversal of trace invocation. So start with the
+     * last trace in the list and proceed to the previous one, which is kept
+     * in active.nextTracePtr: Tcl_DeleteTrace updates it if that trace is
+     * deleted. The current trace can be deleted by the trace command, so the
+     * previous trace must be found before it is executed. [0e3f777ed5]
+     */
+
+    tracePtr = iPtr->tracePtr;
+    if (traceFlags & TCL_TRACE_ENTER_EXEC) {
+	while (tracePtr->nextPtr != NULL) {
+	    tracePtr = tracePtr->nextPtr;
+	}
+    }
+    for (; (traceCode == TCL_OK) && (tracePtr != NULL);
 	    tracePtr = active.nextTracePtr) {
 	if (traceFlags & TCL_TRACE_ENTER_EXEC) {
-	    /*
-	     * Execute the trace command in reverse order of creation for
-	     * "enterstep" operation. The order is changed for "enterstep"
-	     * instead of for "leavestep" as was done in
-	     * TclCheckExecutionTraces because for step traces,
-	     * Tcl_CreateObjTrace creates one more linked list of traces which
-	     * results in one more reversal of trace invocation.
-	     */
-
 	    active.reverseScan = true;
 	    active.nextTracePtr = NULL;
-	    tracePtr = iPtr->tracePtr;
-	    while (tracePtr->nextPtr != lastTracePtr) {
-		active.nextTracePtr = tracePtr;
-		tracePtr = tracePtr->nextPtr;
-	    }
-	    if (active.nextTracePtr) {
-		lastTracePtr = active.nextTracePtr->nextPtr;
+	    for (prevPtr = iPtr->tracePtr; prevPtr != tracePtr;
+		    prevPtr = prevPtr->nextPtr) {
+		active.nextTracePtr = prevPtr;
 	    }
 	} else {
 	    active.reverseScan = false;
