@@ -13,7 +13,7 @@
 #   define USE_TCL_STUBS
 #endif
 #include <X11/Intrinsic.h>
-#include "tcl.h"
+#include "tclInt.h"
 
 static Tcl_ObjCmdProc TesteventloopCmd;
 
@@ -22,7 +22,7 @@ static Tcl_ObjCmdProc TesteventloopCmd;
  */
 
 extern void		InitNotifier(void);
-extern XtAppContext	TclSetAppContext(XtAppContext ctx);
+MODULE_SCOPE XtAppContext	TclSetAppContext(XtAppContext ctx);
 
 /*
  *----------------------------------------------------------------------
@@ -80,7 +80,7 @@ TesteventloopCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
+    Tcl_Obj *const *objv)	/* Argument objects. */
 {
     static int *framePtr = NULL;/* Pointer to integer on stack frame of
 				 * innermost invocation of the "wait"
