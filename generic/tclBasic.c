@@ -8542,6 +8542,12 @@ Tcl_NRCallObjProc(
 {
     NRE_callback *rootPtr = TOP_CB(interp);
 
+    /*
+     * The command may be called directly, without a TclNREvalObjv below,
+     * so provide the spot for a [tailcall] in it. [4955f5d8a4]
+     */
+
+    TclPushTailcallPoint(interp);
     TclNRAddCallback(interp, Dispatch, objProc, clientData,
 	    INT2PTR(objc), objv);
     return TclNRRunCallbacks(interp, TCL_OK, rootPtr);
@@ -8582,6 +8588,7 @@ Tcl_NRCallObjProc2(
     info->clientData = clientData;
     info->proc = objProc;
 
+    TclPushTailcallPoint(interp);
     TclNRAddCallback(interp, Dispatch, WrapperNRObjProc, info,
 	    INT2PTR(objc), objv);
     return TclNRRunCallbacks(interp, TCL_OK, rootPtr);

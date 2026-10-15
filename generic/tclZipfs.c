@@ -5905,7 +5905,7 @@ ZipFSMatchInDirectoryProc(
 		const char *end = strchr(tail, '/');
 		Tcl_DStringAppend(&ds, zf->mountPoint + strip,
 			end ? (Tcl_Size)(end - tail + len - strip) : -1);
- 		const char *matchedPath = Tcl_DStringValue(&ds);
+		const char *matchedPath = Tcl_DStringValue(&ds);
 		(void)Tcl_CreateHashEntry(
 		    &duplicates, matchedPath, &notDuplicate);
 		if (notDuplicate) {
