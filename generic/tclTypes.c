@@ -670,6 +670,16 @@ ValidateG(Tcl_Interp *interp, const TclType *tp, Tcl_Obj *value,
     ValGuard me;
     const ValGuard *g;
 
+    if (variantHint < 0 && tp->kind == TCLT_SUM) {
+	/* Un élément déjà balisé ({tEXt}...) garde sa variante. */
+	TclType *ownTp = NULL;
+	int ownVariant = -1;
+
+	if (TclAnnotInfo(value, NULL, &ownTp, &ownVariant, NULL) == 1
+		&& ownTp == tp && ownVariant >= 0) {
+	    variantHint = ownVariant;
+	}
+    }
     value = TCL_ANNOT_CONTENT(value);	/* une valeur annotée : son contenu */
     me.tp = tp;
     me.value = value;

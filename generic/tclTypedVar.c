@@ -138,9 +138,14 @@ TclTypedVarPrepareWrite(Tcl_Interp *interp, Var *varPtr,
 	}
 	if (status != TCLA_PLAIN
 		&& !(contract->kind == TCLT_LIST && contract->elem != NULL
-			&& TclTypeIsAny(contract->elem)
-			&& (*flagsPtr & TCL_LIST_ELEMENT))) {
-	    add = content;	/* lappend à list.any : l'annotation est gardée */
+			&& (*flagsPtr & TCL_LIST_ELEMENT)
+			&& (TclTypeIsAny(contract->elem)
+			    || (contract->elem->kind == TCLT_SUM
+				&& status == TCLA_TYPED
+				&& at == contract->elem)))) {
+	    /* lappend à list.any ou à une liste de sommes : l'annotation
+	     * (donc la variante) de l'élément est gardée. */
+	    add = content;
 	}
 	sum = Tcl_DuplicateObj(curContent);
 	if (*flagsPtr & TCL_LIST_ELEMENT) {
@@ -254,7 +259,10 @@ TclTypedConform(Tcl_Interp *interp, TclType *tp, Tcl_Obj *arg)
     if (TclTypeIsAny(tp)) {
 	return copy;
     }
-    if (TclTypeComplete(interp, tp, copy, -1, NULL) != TCL_OK) {
+    /* Balise explicite d'une somme ({tEXt}...) : elle fixe la variante. */
+    if (TclTypeComplete(interp, tp, copy,
+	    ((status == TCLA_TYPED || status == TCLA_RAW) && at == tp
+		    && tp->kind == TCLT_SUM) ? variant : -1, NULL) != TCL_OK) {
 	TclDiscard(copy);
 	return NULL;
     }
