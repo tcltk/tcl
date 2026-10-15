@@ -2961,7 +2961,8 @@ CompileExprTree(
 		convert = 0;
 		break;
 	    case ASSIGN:
-		if (nodes[nodePtr->left].lexeme == IS_TYPE) {
+		if (nodePtr->left >= 0
+			&& nodes[nodePtr->left].lexeme == IS_TYPE) {
 		    /*
 		     * "var is type = value": the stack holds [name type value].
 		     * Invoke ::tcl::unsupported::declare name type value.
@@ -2973,7 +2974,8 @@ CompileExprTree(
 		    TclEmitInstInt4(INST_REVERSE, 4, envPtr);
 		    TclEmitInstInt4(INST_REVERSE, 3, envPtr);
 		    TclEmitInvoke(envPtr, INST_INVOKE_STK1, 4);
-		} else if (nodes[nodePtr->left].lexeme == LIST) {
+		} else if (nodePtr->left >= 0
+			&& nodes[nodePtr->left].lexeme == LIST) {
 		    /*
 		     * Destructuring assignment "(a,(b,c),d) = value": the stack holds
 		     * the (nested) list of names and the value. Store each leaf

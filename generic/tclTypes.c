@@ -621,6 +621,171 @@ IsIntegerValue(Tcl_Obj *v)
     return type == TCL_NUMBER_INT || type == TCL_NUMBER_BIG;
 }
 
+/* --------------------------------------------------------------------
+ * bitarray(n, ordre) : lecture et écriture de bits dans un entier
+ * (positions comptées depuis le poids faible, 0 = bit de droite).
+ * -------------------------------------------------------------------- */
+
+/* Les opérations mp_* échouent seulement faute de mémoire. */
+#define MPOK(call) \
+    do { \
+	if ((call) != MP_OKAY) { \
+	    Tcl_Panic("out of memory in bitarray operation"); \
+	} \
+    } while (0)
+
+/* (value >> lo) mod 2^len, entier non négatif. */
+int
+TclBitsGet(
+    Tcl_Interp *interp,
+    Tcl_Obj *value,
+    Tcl_Size lo,
+    Tcl_Size len,
+    Tcl_Obj **resultPtr)
+{
+    mp_int big, q, r;
+
+    if (Tcl_GetBignumFromObj(interp, TCL_ANNOT_CONTENT(value), &big)
+	    != TCL_OK) {
+	return TCL_ERROR;
+    }
+    MPOK(mp_init(&q));
+    MPOK(mp_init(&r));
+    MPOK(mp_div_2d(&big, (int) lo, &q, NULL));
+    MPOK(mp_mod_2d(&q, (int) len, &r));
+    mp_clear(&big);
+    mp_clear(&q);
+    *resultPtr = Tcl_NewBignumObj(&r);	/* r est repris */
+    return TCL_OK;
+}
+
+/* value avec les len bits à partir de lo remplacés par bits (0 <= bits <
+ * 2^len, sinon erreur). */
+int
+TclBitsPut(
+    Tcl_Interp *interp,
+    Tcl_Obj *value,
+    Tcl_Size lo,
+    Tcl_Size len,
+    Tcl_Obj *bits,
+    Tcl_Obj **resultPtr)
+{
+    mp_int big, nb, cur, tmp, res;
+    int fits;
+
+    if (Tcl_GetBignumFromObj(interp, TCL_ANNOT_CONTENT(value), &big)
+	    != TCL_OK) {
+	return TCL_ERROR;
+    }
+    if (Tcl_GetBignumFromObj(interp, TCL_ANNOT_CONTENT(bits), &nb)
+	    != TCL_OK) {
+	mp_clear(&big);
+	return TCL_ERROR;
+    }
+    fits = !mp_isneg(&nb) && (Tcl_Size) mp_count_bits(&nb) <= len;
+    if (!fits) {
+	ERR(interp, "BITS", "value \"%s\" does not fit in %" TCL_SIZE_MODIFIER
+		"d bit%s", Tcl_GetString(bits), len, (len == 1) ? "" : "s");
+	mp_clear(&big);
+	mp_clear(&nb);
+	return TCL_ERROR;
+    }
+    MPOK(mp_init(&cur));
+    MPOK(mp_init(&tmp));
+    MPOK(mp_init(&res));
+    MPOK(mp_div_2d(&big, (int) lo, &tmp, NULL));
+    MPOK(mp_mod_2d(&tmp, (int) len, &cur));		/* anciens bits */
+    MPOK(mp_mul_2d(&cur, (int) lo, &tmp));		/* ... à leur place */
+    MPOK(mp_sub(&big, &tmp, &res));			/* effacés */
+    MPOK(mp_mul_2d(&nb, (int) lo, &tmp));		/* nouveaux bits à leur place */
+    MPOK(mp_add(&res, &tmp, &cur));
+    mp_clear(&big);
+    mp_clear(&nb);
+    mp_clear(&tmp);
+    mp_clear(&res);
+    *resultPtr = Tcl_NewBignumObj(&cur);	/* cur est repris */
+    return TCL_OK;
+}
+
+/* popcount(x) : nombre de bits à 1 d'un entier >= 0. */
+static int
+PopcountCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,
+    Tcl_Size objc,
+    Tcl_Obj *const objv[])
+{
+    mp_int big, q;
+    Tcl_WideInt count = 0;
+
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "value");
+	return TCL_ERROR;
+    }
+    if (Tcl_GetBignumFromObj(interp, TCL_ANNOT_CONTENT(objv[1]), &big)
+	    != TCL_OK) {
+	return TCL_ERROR;
+    }
+    if (mp_isneg(&big)) {
+	mp_clear(&big);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"popcount needs a non-negative integer", TCL_AUTO_LENGTH));
+	Tcl_SetErrorCode(interp, "TCL", "TYPE", "BITS", (char *) NULL);
+	return TCL_ERROR;
+    }
+    MPOK(mp_init(&q));
+    while (!mp_iszero(&big)) {
+	mp_int r;
+	Tcl_WideUInt w;
+
+	MPOK(mp_init(&r));
+	MPOK(mp_mod_2d(&big, 64, &r));
+	w = mp_get_mag_u64(&r);
+	mp_clear(&r);
+	while (w != 0) {
+	    w &= w - 1;
+	    count++;
+	}
+	MPOK(mp_div_2d(&big, 64, &q, NULL));
+	mp_exch(&big, &q);
+    }
+    mp_clear(&big);
+    mp_clear(&q);
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(count));
+    return TCL_OK;
+}
+
+/* bitlen(x) : largeur d'un bitarray, sinon nombre de bits de |x|. */
+static int
+BitlenCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,
+    Tcl_Size objc,
+    Tcl_Obj *const objv[])
+{
+    mp_int big;
+    TclType *tp = NULL;
+    Tcl_WideInt n;
+
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "value");
+	return TCL_ERROR;
+    }
+    if (TclAnnotInfo(objv[1], NULL, &tp, NULL, NULL) == 1
+	    && tp->bitWidth > 0) {
+	Tcl_SetObjResult(interp, Tcl_NewWideIntObj(tp->bitWidth));
+	return TCL_OK;
+    }
+    if (Tcl_GetBignumFromObj(interp, TCL_ANNOT_CONTENT(objv[1]), &big)
+	    != TCL_OK) {
+	return TCL_ERROR;
+    }
+    n = mp_count_bits(&big);
+    mp_clear(&big);
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(n));
+    return TCL_OK;
+}
+
 /*
  * Garde contre la régression infinie : avec un type récursif comme
  * {int}leaf, {list.tree}node, la valeur "x" est une liste d'UN élément, qui
@@ -711,6 +876,23 @@ ValidateG(Tcl_Interp *interp, const TclType *tp, Tcl_Obj *value,
 	    ERR(interp, "INT", "expected integer but got \"%s\"",
 		    Tcl_GetString(value));
 	    return TCL_ERROR;
+	}
+	if (tp->bitWidth > 0) {
+	    mp_int big;
+	    int fits;
+
+	    if (Tcl_GetBignumFromObj(NULL, value, &big) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    fits = !mp_isneg(&big)
+		    && (Tcl_Size) mp_count_bits(&big) <= tp->bitWidth;
+	    mp_clear(&big);
+	    if (!fits) {
+		ERR(interp, "BITS", "value \"%s\" does not fit in %s (%"
+			TCL_SIZE_MODIFIER "d bits)", Tcl_GetString(value),
+			tp->name, tp->bitWidth);
+		return TCL_ERROR;
+	    }
 	}
 	return TCL_OK;
     case TCLT_DOUBLE:
@@ -1556,6 +1738,8 @@ CopyInto(TclType *into, const TclType *res)
     into->arity = res->arity;
     into->keyed = res->keyed;
     into->varTyped = res->varTyped;
+    into->bitWidth = res->bitWidth;
+    into->bitMsb0 = res->bitMsb0;
     if (res->nkeys > 0) {
 	into->keys = (TclDictKey *) Tcl_Alloc(res->nkeys * sizeof(TclDictKey));
 	into->nkeys = res->nkeys;
@@ -2027,5 +2211,17 @@ TclTypesInit(Tcl_Interp *interp)
     Tcl_CreateObjCommand2(interp, "::tcl::mathop::is", IsOpObjCmd, NULL, NULL);
     Tcl_CreateObjCommand2(interp, "::tcl::unsupported::declare", DeclareObjCmd,
 	    NULL, NULL);
+    Tcl_CreateObjCommand2(interp, "::tcl::mathfunc::popcount", PopcountCmd,
+	    NULL, NULL);
+    Tcl_CreateObjCommand2(interp, "::tcl::mathfunc::bitlen", BitlenCmd,
+	    NULL, NULL);
+    /* bitarray(n, ordre) : type paramétré prédéfini. Le corps n'est que
+     * "int" (le commentaire nomme les paramètres) ; la largeur et l'ordre
+     * sont posés par l'instanciation (tclTypeGeneric.c). */
+    if (TclTypesDefineGeneric(NULL, d, "bitarray({int}n, {string}ord = lsb0)",
+	    (Tcl_Size) strlen("bitarray({int}n, {string}ord = lsb0)"),
+	    "int # n ord", 11) == TCL_OK) {
+	TclTypesMarkBits(d, "bitarray");
+    }
     TclAnnotInit(interp);
 }

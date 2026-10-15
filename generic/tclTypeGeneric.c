@@ -210,6 +210,16 @@ FreeGeneric(TypeGeneric *g)
 }
 
 void
+TclTypesMarkBits(TypeData *d, const char *name)
+{
+    Tcl_HashEntry *hPtr = Tcl_FindHashEntry(&d->generics, name);
+
+    if (hPtr != NULL) {
+	((TypeGeneric *) Tcl_GetHashValue(hPtr))->bits = 1;
+    }
+}
+
+void
 TclTypesFreeGenerics(TypeData *d)
 {
     Tcl_HashSearch search;
@@ -394,15 +404,15 @@ ParseParamDecl(
 	} else if (!pp->isType && !pp->isCmd && memchr(p, '$', b - p) == NULL) {
 	    /* Défaut littéral : on le valide tout de suite. */
 
-	    const char *q = p;
+	    const char *qp = p;
 	    Tcl_Obj *val = NULL;
 	    int bad;
 
-	    if (TclTypeParseWord(interp, NULL, &q, b, 1, &val) != TCL_OK) {
+	    if (TclTypeParseWord(interp, NULL, &qp, b, 1, &val) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    Tcl_IncrRefCount(val);
-	    bad = (SkipWs(q, b) != b)
+	    bad = (SkipWs(qp, b) != b)
 		    || TclTypeValidate(NULL, pp->type, val, -1, NULL) != TCL_OK;
 	    if (bad) {
 		ERR(interp, "PARAM", "the default \"%.*s\" of parameter \"%s\" "
@@ -676,7 +686,7 @@ Rollback(TypeData *d, Tcl_Size from)
 
 	    for (hPtr = Tcl_FirstHashEntry(&d->canon, &search); hPtr != NULL;
 		    hPtr = Tcl_NextHashEntry(&search)) {
-		const char *k = Tcl_GetHashKey(&d->canon, hPtr);
+		const char *k = (const char *) Tcl_GetHashKey(&d->canon, hPtr);
 
 		if (MentionsName(k, dead->name, nlen)) {
 		    if (nk == capk) {
@@ -863,6 +873,28 @@ TclTypesInstantiate(
     }
     if (res != inst) {
 	TclTypesCopyInto(inst, res);
+    }
+    if (g->bits) {
+	/* bitarray(n, ordre) : largeur et sens des indices */
+
+	Tcl_WideInt w = 0;
+	const char *ord = Tcl_GetString(bound.p[1].value);
+
+	if (Tcl_GetWideIntFromObj(NULL, bound.p[0].value, &w) != TCL_OK
+		|| w < 1 || w > 1000000) {
+	    ERR(interp, "PARAM", "bitarray needs a width between 1 and "
+		    "1000000, not \"%s\"", Tcl_GetString(bound.p[0].value));
+	    goto fail;
+	}
+	if (strcmp(ord, "lsb0") != 0 && strcmp(ord, "msb0") != 0) {
+	    ERR(interp, "PARAM", "bitarray order must be lsb0 (index 0 is the "
+		    "rightmost bit) or msb0 (index 0 is the leftmost bit), "
+		    "not \"%s\"", ord);
+	    goto fail;
+	}
+	inst->kind = TCLT_INT;
+	inst->bitWidth = (Tcl_Size) w;
+	inst->bitMsb0 = (strcmp(ord, "msb0") == 0);
     }
     if (!TclTypesInhabited(inst, stack, 0)) {
 	ERR(interp, "RECURSIVE", "type \"%s\" has no finite value: every "

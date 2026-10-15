@@ -1145,6 +1145,61 @@ ListIndex(Tcl_Interp *interp, const char *name, Tcl_Size n, Tcl_Size *idxPtr)
     return rc;
 }
 
+/*
+ * bitarray(n, ordre) : un indice i désigne un bit ; lsb0 : i = 0 est le bit
+ * de droite, msb0 : i = 0 est le bit de gauche. BitsPos rend la position
+ * correspondante depuis le poids faible ; BitsSlice transforme i:j en
+ * (lo, len) depuis le poids faible.
+ */
+static int
+BitsPos(Tcl_Interp *interp, const TclType *tp, const char *name,
+	Tcl_Size *loPtr)
+{
+    Tcl_Size i;
+
+    if (ListIndex(interp, name, tp->bitWidth, &i) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    if (i < 0 || i >= tp->bitWidth) {
+	PathErr(interp, "bit index \"%s\" out of range for %s", name,
+		tp->name);
+	return TCL_ERROR;
+    }
+    *loPtr = tp->bitMsb0 ? tp->bitWidth - 1 - i : i;
+    return TCL_OK;
+}
+
+static int
+BitsSlice(Tcl_Interp *interp, const TclType *tp, const char *from,
+	const char *to, Tcl_Size *loPtr, Tcl_Size *lenPtr)
+{
+    Tcl_Size i, j;
+
+    if (ListIndex(interp, from, tp->bitWidth, &i) != TCL_OK
+	    || ListIndex(interp, to, tp->bitWidth, &j) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    if (i < 0 || j >= tp->bitWidth || i > j) {
+	PathErr(interp, "bit range \"%s:%s\" is empty or out of range",
+		from, to);
+	return TCL_ERROR;
+    }
+    *loPtr = tp->bitMsb0 ? tp->bitWidth - 1 - j : i;
+    *lenPtr = j - i + 1;
+    return TCL_OK;
+}
+
+/* Le type d'une tranche de len bits du même sens que tp. */
+static TclType *
+BitsSliceType(Tcl_Interp *interp, const TclType *tp, Tcl_Size len)
+{
+    char text[64];
+
+    snprintf(text, sizeof(text), "bitarray(%lld,%s)", (long long) len,
+	    tp->bitMsb0 ? "msb0" : "lsb0");
+    return TclTypeParse(interp, text, (Tcl_Size) strlen(text));
+}
+
 /* --------------------------------------------------------------------
  * Liens var : une case de type var.T contient le NOM d'une variable. La
  * lecture traverse le lien (la variable est lue à chaque fois : la valeur
@@ -1309,6 +1364,28 @@ Step(Tcl_Interp *interp, Tcl_Obj *a, const char *name, int quoted)
 	}
 	return res;
     }
+    case TCLT_INT:
+	if (tp->bitWidth > 0) {
+	    /* un bit : un entier 0 ou 1 */
+
+	    Tcl_Obj *bit;
+	    Tcl_Size lo;
+
+	    if (quoted) {
+		PathErr(interp, "a bitarray can't be indexed with the key "
+			"'%s'%s", name, "");
+		return NULL;
+	    }
+	    if (BitsPos(interp, tp, name, &lo) != TCL_OK
+		    || TclBitsGet(interp, v, lo, 1, &bit) != TCL_OK) {
+		return NULL;
+	    }
+	    elem = TclNewAnnotated(interp, TclTypeParse(interp, "int", 3), -1,
+		    bit);
+	    TclDiscard(bit);
+	    return elem;
+	}
+	/* FALLTHRU */
     default:
 	PathErr(interp, "can't index a value of type %s with \"%s\"",
 		tp->name, name);
@@ -1320,6 +1397,7 @@ Step(Tcl_Interp *interp, Tcl_Obj *a, const char *name, int quoted)
 typedef struct Items {
     TclObjVec vec;
     int multi;
+    int bitSlice;		/* a:b sur un bitarray : UN entier, pas une liste */
 } Items;
 
 static void
@@ -1339,6 +1417,26 @@ StepRange(Tcl_Interp *interp, Tcl_Obj *a, const char *from, const char *to,
     int variant;
     Tcl_Size n, i, lo, hi;
 
+    if (TclAnnotInfo(a, &v, &tp, &variant, NULL) == 1
+	    && tp->kind == TCLT_INT && tp->bitWidth > 0) {
+	/* tranche de bits b(i:j) : un bitarray de j-i+1 bits */
+
+	Tcl_Obj *bits, *w;
+	Tcl_Size blo, blen;
+
+	if (BitsSlice(interp, tp, from, to, &blo, &blen) != TCL_OK
+		|| TclBitsGet(interp, v, blo, blen, &bits) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	w = TclNewAnnotated(interp, BitsSliceType(interp, tp, blen), -1, bits);
+	TclDiscard(bits);
+	if (w == NULL) {
+	    return TCL_ERROR;
+	}
+	TclVecAdd(&out->vec, w);
+	out->bitSlice = 1;
+	return TCL_OK;
+    }
     if (TclAnnotInfo(a, &v, &tp, &variant, NULL) != 1
 	    || tp->kind != TCLT_LIST) {
 	PathErr(interp, "a range needs a list value, not \"%s\"%s",
@@ -1412,6 +1510,9 @@ ReadSteps(Tcl_Interp *interp, Tcl_Obj *a, const IndexPath *p, Tcl_Size i,
 	    return TCL_ERROR;
 	}
 	rc = TCL_OK;
+	if (part.bitSlice) {
+	    out->bitSlice = 1;
+	}
 	for (k = 0; k < part.vec.n && rc == TCL_OK; k++) {
 	    rc = ReadSteps(interp, part.vec.v[k], p, i + 1, out);
 	}
@@ -1472,7 +1573,7 @@ TclTypePathRead(Tcl_Interp *interp, Tcl_Obj *containerPtr, const char *path,
 	    out.vec.v[k] = target;
 	}
     }
-    if (!out.multi && out.vec.n == 1) {
+    if ((!out.multi || out.bitSlice) && out.vec.n == 1) {
 	*resultPtr = out.vec.v[0];
 	Tcl_IncrRefCount(*resultPtr);
     } else {
@@ -1549,6 +1650,40 @@ SetIn(Tcl_Interp *interp, Tcl_Obj *a, const IndexPath *chain, Tcl_Size i,
 	QueueWrite(pw, v, nct);
 	TclDiscard(nc);
 	return TclNewAnnotated(interp, tp, variant, v);
+    }
+
+    /* bitarray : écriture d'un bit b(i) ou d'une tranche b(i:j) */
+    if (tp->kind == TCLT_INT && tp->bitWidth > 0) {
+	Tcl_Obj *nv;
+	Tcl_Size lo, len;
+
+	if (!last || step->kind == IS_KEY || step->kind == IS_TAG) {
+	    PathErr(interp, "can't assign into a bit of %s with \"%s\"",
+		    tp->name, name);
+	    return NULL;
+	}
+	if (step->kind == IS_RANGE) {
+	    if (BitsSlice(interp, tp, name, Tcl_GetString(step->b), &lo, &len)
+		    != TCL_OK) {
+		return NULL;
+	    }
+	} else {
+	    len = 1;
+	    if (BitsPos(interp, tp, name, &lo) != TCL_OK) {
+		return NULL;
+	    }
+	}
+	if (TclBitsPut(interp, v, lo, len, val, &nv) != TCL_OK) {
+	    return NULL;
+	}
+	res = TclNewAnnotated(interp, tp, -1, nv);
+	TclDiscard(nv);
+	return res;
+    }
+    if (step->kind == IS_RANGE) {
+	PathErr(interp, "only simple names can be assigned, not ranges or "
+		"tags%s%s", "", "");
+	return NULL;
     }
 
     /* 1. Repérer la case. */
@@ -1750,6 +1885,12 @@ TclTypePathWrite(Tcl_Interp *interp, Tcl_Obj *containerPtr, const char *path,
     }
     for (i = 0; i < set.n; i++) {
 	for (j = 0; j < set.path[i].n; j++) {
+	    /* une tranche a:b est admise en dernier pas : elle vise un
+	     * bitarray (SetIn refuse les autres conteneurs) */
+	    if (set.path[i].step[j].kind == IS_RANGE
+		    && j == set.path[i].n - 1) {
+		continue;
+	    }
 	    if (set.path[i].step[j].kind > IS_KEY) {
 		PathErr(interp, "only simple names can be assigned, not "
 			"ranges or tags%s%s", "", "");

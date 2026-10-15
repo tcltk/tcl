@@ -73,6 +73,10 @@ struct TclType {
     TclTypeField *fields;
     int varTyped;		/* VAR : la variable visée doit être typée,
 				 * var(typed).T ; elem est T (string si omis) */
+    Tcl_Size bitWidth;		/* INT : bitarray(n, ordre) a n > 0 bits, sinon
+				 * 0 */
+    int bitMsb0;		/* bitarray : 1 si l'indice 0 est le bit de
+				 * gauche (msb0), 0 si de droite (lsb0) */
 };
 
 /* Les descripteurs vivent autant que l'interpréteur (pas de comptage). */
@@ -198,6 +202,13 @@ int	TclTypeRunDefault(Tcl_Interp *interp, const char *what,
 	    Tcl_Obj *script, Tcl_Obj **resultPtr);
 int	TclTypeIsPlainString(const TclType *tp);
 int	TclTypeIsAny(const TclType *tp);
+/* bitarray(n, ordre) : entier de n bits dont on lit/écrit les bits.
+ * Les positions (lo, len) sont toujours celles du poids faible (0 = bit de
+ * droite) ; la conversion depuis l'indice msb0 est faite par l'appelant. */
+int	TclBitsGet(Tcl_Interp *interp, Tcl_Obj *value, Tcl_Size lo,
+	    Tcl_Size len, Tcl_Obj **resultPtr);
+int	TclBitsPut(Tcl_Interp *interp, Tcl_Obj *value, Tcl_Size lo,
+	    Tcl_Size len, Tcl_Obj *bits, Tcl_Obj **resultPtr);
 int	TclTypeDictKeyAllowed(const TclType *tp, const char *key);
 /* Valide content puis ajoute les valeurs par défaut des clés manquantes
  * (dict(x?=0)). content est un objet PRIVÉ, modifié en place. */

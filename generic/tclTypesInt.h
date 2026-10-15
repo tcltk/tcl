@@ -42,6 +42,8 @@ typedef struct TypeGeneric {
     TypeParam *params;
     char *body;			/* texte du type, avec les paramètres libres */
     Tcl_Size bodyLen;
+    int bits;			/* 1 : bitarray, l'instance reçoit bitWidth et
+				 * bitMsb0 */
 } TypeGeneric;
 
 typedef struct TypeData {
@@ -107,6 +109,8 @@ int	TclTypesDefineGeneric(Tcl_Interp *interp, TypeData *d,
 	    const char *spec, Tcl_Size specLen, const char *body,
 	    Tcl_Size bodyLen);
 void	TclTypesFreeGenerics(TypeData *d);
+/* Marque le type paramétré NAME comme bitarray. */
+void	TclTypesMarkBits(TypeData *d, const char *name);
 
 /* tclTypes.c : services utilisés par le compilateur de types */
 TclType *TclTypesNewType(TypeData *d, TclTypeKind kind, const char *name);
