@@ -32,8 +32,8 @@ contain the characters that matched the next parenthesized
 subexpression to the right in \fIexp\fR, and so on.
 .PP
 If the initial arguments to \fBregexp\fR start with \fB\-\fR then
-they are treated as switches.  The following switches are
-currently supported:
+they are treated as switches.  The following switches (which may be
+abbreviated) are currently supported:
 .\" OPTION: -about
 .TP 15
 \fB\-about\fR

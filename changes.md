@@ -29,6 +29,7 @@ to the userbase.
  - [remove empty directories from the zipfs VFS with POSIX find options](https://core.tcl-lang.org/tcl/tktview/9336f1)
  - [tailcall panicked in a command called directly by its objProc](https://core.tcl-lang.org/tcl/tktview/4955f5)
  - [compiled [self n] should be ambiguous](https://core.tcl-lang.org/tcl/tktview/8ab06e)
+ - [difference between bcc'ed and eval'ed regexp](https://core.tcl-lang.org/tcl/tktview/306945)
 
 # Updated bundled packages, libraries, standards, data
  - msgcat 1.7.2
