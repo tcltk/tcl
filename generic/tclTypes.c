@@ -127,6 +127,7 @@ DeleteData(void *clientData, Tcl_Interp *interp)
     Tcl_DeleteHashTable(&d->names);
     Tcl_DeleteHashTable(&d->canon);
     Tcl_DeleteHashTable(&d->converts);
+    Tcl_DeleteHashTable(&d->derefs);
     Tcl_Free(d);
 }
 
@@ -1724,6 +1725,196 @@ TclTypeCast(Tcl_Interp *interp, Tcl_Obj *src, TclType *target,
 }
 
 /* --------------------------------------------------------------------
+ * type deref : le type d'une valeur dont les liens ont été suivis
+ * -------------------------------------------------------------------- */
+
+static int
+HasLinkG(const TclType *tp, const TclType **stack, int depth)
+{
+    Tcl_Size i;
+
+    if (tp == NULL) {
+	return 0;
+    }
+    if (tp->kind == TCLT_VAR) {
+	return 1;
+    }
+    for (i = 0; i < depth; i++) {
+	if (stack[i] == tp) {
+	    return 0;			/* type récursif : déjà en cours */
+	}
+    }
+    if (depth >= 63) {
+	return 0;
+    }
+    stack[depth] = tp;
+    switch (tp->kind) {
+    case TCLT_LIST:
+    case TCLT_DICT:
+	return HasLinkG(tp->elem, stack, depth + 1);
+    case TCLT_PRODUCT:
+    case TCLT_SUM:
+	for (i = 0; i < tp->nfields; i++) {
+	    if (HasLinkG(tp->fields[i].type, stack, depth + 1)) {
+		return 1;
+	    }
+	}
+	return 0;
+    default:
+	return 0;
+    }
+}
+
+int
+TclTypeHasLink(const TclType *tp)
+{
+    const TclType *stack[64];
+
+    return HasLinkG(tp, stack, 0);
+}
+
+static TclType *
+DerefTypeG(Tcl_Interp *interp, TypeData *d, TclType *tp, const TclType **stack,
+	int depth)
+{
+    Tcl_Size i;
+    TclType *e;
+
+    if (!TclTypeHasLink(tp)) {
+	return tp;
+    }
+    if (tp->kind == TCLT_VAR) {
+	return tp->elem;		/* var.T donne T (var seul : string) */
+    }
+    /* Produits et sommes récursifs : le descripteur en cours est retrouvé
+     * dans d->derefs. Une collection récursive sans produit ni somme n'a
+     * pas de sens ici. */
+    if (tp->kind == TCLT_LIST || tp->kind == TCLT_DICT) {
+	for (i = 0; i < depth; i++) {
+	    if (stack[i] == tp) {
+		ERR(interp, "DEREF", "type deref: the recursive type %s "
+			"contains links", tp->name);
+		return NULL;
+	    }
+	}
+    }
+    stack[depth] = tp;
+    switch (tp->kind) {
+    case TCLT_LIST:
+	e = DerefTypeG(interp, d, tp->elem, stack, depth + 1);
+	if (e == NULL) {
+	    return NULL;
+	}
+	return (tp->arity >= 0) ? TclTypesMakeListN(d, e, tp->arity)
+		: TclTypesMakeList(d, e);
+    case TCLT_DICT: {
+	TclDictKey *keys = NULL;
+
+	e = DerefTypeG(interp, d, tp->elem, stack, depth + 1);
+	if (e == NULL) {
+	    return NULL;
+	}
+	if (tp->keyed) {
+	    keys = (TclDictKey *) Tcl_Alloc(tp->nkeys * sizeof(TclDictKey));
+	    for (i = 0; i < tp->nkeys; i++) {
+		keys[i] = tp->keys[i];
+		Tcl_IncrRefCount(keys[i].name);
+		if (keys[i].defval != NULL) {
+		    Tcl_IncrRefCount(keys[i].defval);
+		}
+		if (keys[i].defcmd != NULL) {
+		    Tcl_IncrRefCount(keys[i].defcmd);
+		}
+	    }
+	}
+	return TclTypesMakeDict(d, e, tp->keyed, keys, tp->nkeys);
+    }
+    case TCLT_PRODUCT:
+    case TCLT_SUM: {
+	/*
+	 * Le type est enregistré AVANT son contenu : un type récursif
+	 * (tree(var) contient list.tree(var)) retombe alors sur ce même
+	 * descripteur au lieu de boucler.
+	 */
+
+	Tcl_HashEntry *hPtr;
+	TclType *nt;
+	TclTypeField *f;
+	char name[300];
+	int isNew;
+
+	hPtr = Tcl_CreateHashEntry(&d->derefs, (const char *) tp, &isNew);
+	if (!isNew) {
+	    return (TclType *) Tcl_GetHashValue(hPtr);
+	}
+	snprintf(name, sizeof(name), "deref(%.280s)", tp->name);
+	nt = NewType(d, tp->kind, name);
+	Tcl_SetHashValue(hPtr, nt);
+	f = (TclTypeField *) Tcl_Alloc(tp->nfields * sizeof(TclTypeField));
+	memset(f, 0, tp->nfields * sizeof(TclTypeField));
+	for (i = 0; i < tp->nfields; i++) {
+	    f[i] = tp->fields[i];
+	    if (f[i].type != NULL) {
+		f[i].type = DerefTypeG(interp, d, f[i].type, stack, depth + 1);
+		if (f[i].type == NULL) {
+		    Tcl_DeleteHashEntry(hPtr);
+		    Tcl_Free(f);
+		    return NULL;
+		}
+	    }
+	}
+	for (i = 0; i < tp->nfields; i++) {
+	    if (f[i].name != NULL) {
+		Tcl_IncrRefCount(f[i].name);
+	    }
+	    if (f[i].literal != NULL) {
+		Tcl_IncrRefCount(f[i].literal);
+	    }
+	    if (f[i].defval != NULL) {
+		Tcl_IncrRefCount(f[i].defval);
+	    }
+	    if (f[i].defcmd != NULL) {
+		Tcl_IncrRefCount(f[i].defcmd);
+	    }
+	}
+	if (tp->kind == TCLT_SUM) {
+	    SortVariants(f, tp->nfields);
+	}
+	nt->fields = f;
+	nt->nfields = tp->nfields;
+	return nt;
+    }
+    default:
+	return tp;
+    }
+}
+
+TclType *
+TclTypeDerefType(Tcl_Interp *interp, TclType *tp)
+{
+    const TclType *stack[64];
+
+    return DerefTypeG(interp, GetData(interp), tp, stack, 0);
+}
+
+static int
+TypeDerefCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
+{
+    Tcl_Obj *res = NULL;
+
+    if (objc != 3) {
+	Tcl_WrongNumArgs(interp, 2, objv, "value");
+	return TCL_ERROR;
+    }
+    if (TclValueDeref(interp, objv[2], &res) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    Tcl_SetObjResult(interp, res);
+    Tcl_DecrRefCount(res);
+    return TCL_OK;
+}
+
+/* --------------------------------------------------------------------
  * La commande "type" : def, alias, convert
  * -------------------------------------------------------------------- */
 
@@ -2018,8 +2209,11 @@ TypeObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
     if (strcmp(sub, "get") == 0) {
 	return TypeGetCmd(interp, objc, objv);
     }
+    if (strcmp(sub, "deref") == 0) {
+	return TypeDerefCmd(interp, objc, objv);
+    }
     ERR(interp, "SUBCMD", "bad subcommand \"%s\": must be def, alias, "
-	    "convert or get", sub);
+	    "convert, deref or get", sub);
     return TCL_ERROR;
 }
 
@@ -2193,6 +2387,7 @@ TclTypesInit(Tcl_Interp *interp)
     Tcl_InitHashTable(&d->instances, TCL_STRING_KEYS);
     Tcl_InitHashTable(&d->canon, TCL_STRING_KEYS);
     Tcl_InitHashTable(&d->converts, TCL_STRING_KEYS);
+    Tcl_InitHashTable(&d->derefs, TCL_ONE_WORD_KEYS);
     d->tInt = Builtin(d, TCLT_INT, "int");
     d->tDouble = Builtin(d, TCLT_DOUBLE, "double");
     d->tString = Builtin(d, TCLT_STRING, "string");

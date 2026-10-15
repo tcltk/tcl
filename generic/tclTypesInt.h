@@ -56,6 +56,8 @@ typedef struct TypeData {
     int instDepth;
     Tcl_HashTable canon;	/* nom canonique -> type anonyme interné */
     Tcl_HashTable converts;	/* "De\1Vers" -> lambda (Tcl_Obj*, compté) */
+    Tcl_HashTable derefs;	/* type deref : TclType* -> son type sans liens
+				 * (produits et sommes, y compris récursifs) */
     TclType **all;
     Tcl_Size nAll, capAll;
     TclType *tInt, *tDouble, *tString, *tList, *tDict, *tVar;

@@ -202,6 +202,14 @@ int	TclTypeRunDefault(Tcl_Interp *interp, const char *what,
 	    Tcl_Obj *script, Tcl_Obj **resultPtr);
 int	TclTypeIsPlainString(const TclType *tp);
 int	TclTypeIsAny(const TclType *tp);
+/* type deref : TclTypeHasLink dit si un lien var se trouve dans tp ;
+ * TclTypeDerefType rend le type où chaque var.T est remplacé par T (NULL et
+ * message si impossible). TclValueDeref remplace chaque lien d'une valeur
+ * typée par la valeur actuelle de la variable visée. */
+int	TclTypeHasLink(const TclType *tp);
+TclType *TclTypeDerefType(Tcl_Interp *interp, TclType *tp);
+int	TclValueDeref(Tcl_Interp *interp, Tcl_Obj *value,
+	    Tcl_Obj **resultPtr);
 /* bitarray(n, ordre) : entier de n bits dont on lit/écrit les bits.
  * Les positions (lo, len) sont toujours celles du poids faible (0 = bit de
  * droite) ; la conversion depuis l'indice msb0 est faite par l'appelant. */

@@ -1237,6 +1237,217 @@ DerefSlot(Tcl_Interp *interp, TclType *vt, Tcl_Obj *name)
     return TclNewAnnotated(interp, vt->elem, variant, val);
 }
 
+/*
+ * type deref : remplace chaque lien var d'une valeur typée par la valeur
+ * actuelle de la variable visée. Tout ou rien : la valeur d'origine n'est
+ * jamais modifiée, et une variable manquante arrête tout avec un message
+ * qui nomme la case. On ne suit pas les liens que contient la valeur d'une
+ * variable visée (un second type deref le fait).
+ */
+static void
+DerefWhere(Tcl_DString *path, Tcl_Size keep, const char *sep, const char *name)
+{
+    Tcl_DStringSetLength(path, keep);
+    if (keep > 0) {
+	Tcl_DStringAppend(path, sep, 1);
+    }
+    Tcl_DStringAppend(path, name, TCL_AUTO_LENGTH);
+}
+
+static Tcl_Obj *
+DerefWalk(Tcl_Interp *interp, Tcl_Obj *a, Tcl_DString *path)
+{
+    Tcl_Obj *v, *newV = NULL, *res, *child, *r, *c;
+    TclType *tp, *rt, *rtp;
+    int variant;
+    Tcl_Size n, i, keep = Tcl_DStringLength(path);
+    char num[32];
+
+    if (TclAnnotInfo(a, &v, &tp, &variant, NULL) != 1) {
+	PathErr(interp, "type deref needs a typed value%s%s", "", "");
+	return NULL;
+    }
+    if (!TclTypeHasLink(tp)) {
+	return TclNewAnnotated(interp, tp, variant, v);
+    }
+    if (tp->kind == TCLT_VAR) {
+	res = DerefSlot(interp, tp, v);
+	if (res == NULL) {
+	    /* ajoute la case au message de DerefSlot / TclVarRefGet */
+
+	    Tcl_Obj *msg = Tcl_GetObjResult(interp), *full;
+
+	    Tcl_IncrRefCount(msg);
+	    full = Tcl_ObjPrintf("type deref: %s%s%s", keep > 0 ? "at " : "",
+		    keep > 0 ? Tcl_DStringValue(path) : "",
+		    keep > 0 ? ": " : "");
+	    Tcl_AppendObjToObj(full, msg);
+	    Tcl_DecrRefCount(msg);
+	    Tcl_SetObjResult(interp, full);
+	    Tcl_SetErrorCode(interp, "TCL", "TYPE", "DEREF", (char *) NULL);
+	}
+	return res;
+    }
+    rt = TclTypeDerefType(interp, tp);
+    if (rt == NULL) {
+	return NULL;
+    }
+    if (tp->kind == TCLT_SUM) {
+	/* le contenu est celui de la variante en cours, dans le nouveau
+	 * type : l'ordre des variantes a pu changer */
+
+	TclType *ft;
+	Tcl_Size j = -1;
+
+	if (variant < 0 || variant >= tp->nfields) {
+	    PathErr(interp, "type deref: the value of %s has no variant%s",
+		    tp->name, "");
+	    return NULL;
+	}
+	ft = tp->fields[variant].type;
+	if (tp->fields[variant].name != NULL) {
+	    j = TclTypeFieldIndex(rt, Tcl_GetString(tp->fields[variant].name));
+	} else {
+	    TclType *want = (ft != NULL) ? TclTypeDerefType(interp, ft) : NULL;
+
+	    for (i = 0; i < rt->nfields; i++) {
+		if (rt->fields[i].name == NULL && rt->fields[i].type == want
+			&& (want != NULL || strcmp(
+			Tcl_GetString(rt->fields[i].literal),
+			Tcl_GetString(tp->fields[variant].literal)) == 0)) {
+		    j = i;
+		    break;
+		}
+	    }
+	}
+	if (j < 0) {
+	    PathErr(interp, "type deref: can't find the variant of %s "
+		    "after following the links%s", tp->name, "");
+	    return NULL;
+	}
+	if (ft == NULL) {			/* variante littérale */
+	    return TclNewAnnotated(interp, rt, (int) j, v);
+	}
+	DerefWhere(path, keep, ".", tp->fields[variant].name != NULL
+		? Tcl_GetString(tp->fields[variant].name) : "?");
+	child = WrapSlot(interp, ft, v);
+	if (child == NULL) {
+	    return NULL;
+	}
+	r = DerefWalk(interp, child, path);
+	TclDiscard(child);
+	Tcl_DStringSetLength(path, keep);
+	if (r == NULL) {
+	    return NULL;
+	}
+	TclAnnotInfo(r, &c, NULL, NULL, NULL);
+	res = TclNewAnnotated(interp, rt, (int) j, c);
+	TclDiscard(r);
+	return res;
+    }
+    newV = (tp->kind == TCLT_DICT) ? Tcl_NewDictObj() : Tcl_NewListObj(0, NULL);
+    switch (tp->kind) {
+    case TCLT_LIST:
+    case TCLT_PRODUCT: {
+	Tcl_Obj **elems;
+
+	if (Tcl_ListObjGetElements(interp, v, &n, &elems) != TCL_OK) {
+	    goto fail;
+	}
+	for (i = 0; i < n; i++) {
+	    TclType *slot;
+
+	    if (tp->kind == TCLT_PRODUCT) {
+		slot = tp->fields[i].type;
+		if (tp->fields[i].name != NULL) {
+		    snprintf(num, sizeof(num), "%.30s",
+			    Tcl_GetString(tp->fields[i].name));
+		} else {
+		    snprintf(num, sizeof(num), "%lld", (long long) i);
+		}
+	    } else {
+		slot = tp->elem;
+		snprintf(num, sizeof(num), "%lld", (long long) i);
+	    }
+	    DerefWhere(path, keep, ".", num);
+	    child = WrapSlot(interp, slot, elems[i]);
+	    if (child == NULL) {
+		goto fail;
+	    }
+	    r = DerefWalk(interp, child, path);
+	    TclDiscard(child);
+	    if (r == NULL) {
+		goto fail;
+	    }
+	    TclAnnotInfo(r, &c, &rtp, NULL, NULL);
+	    /* un élément de type somme garde son annotation (sa variante) */
+	    Tcl_ListObjAppendElement(NULL, newV,
+		    (rtp->kind == TCLT_SUM) ? r : c);
+	    TclDiscard(r);
+	}
+	break;
+    }
+    case TCLT_DICT: {
+	Tcl_DictSearch search;
+	Tcl_Obj *k, *val;
+	int done;
+
+	if (Tcl_DictObjFirst(interp, v, &search, &k, &val, &done) != TCL_OK) {
+	    goto fail;
+	}
+	for (; !done; Tcl_DictObjNext(&search, &k, &val, &done)) {
+	    DerefWhere(path, keep, ".", Tcl_GetString(k));
+	    child = WrapSlot(interp, tp->elem, val);
+	    if (child == NULL) {
+		Tcl_DictObjDone(&search);
+		goto fail;
+	    }
+	    r = DerefWalk(interp, child, path);
+	    TclDiscard(child);
+	    if (r == NULL) {
+		Tcl_DictObjDone(&search);
+		goto fail;
+	    }
+	    TclAnnotInfo(r, &c, &rtp, NULL, NULL);
+	    Tcl_DictObjPut(NULL, newV, k, (rtp->kind == TCLT_SUM) ? r : c);
+	    TclDiscard(r);
+	}
+	Tcl_DictObjDone(&search);
+	break;
+    }
+    default:
+	PathErr(interp, "type deref: can't follow links inside %s%s",
+		tp->name, "");
+	goto fail;
+    }
+    Tcl_DStringSetLength(path, keep);
+    res = TclNewAnnotated(interp, rt, variant, newV);
+    TclDiscard(newV);
+    return res;
+
+  fail:
+    Tcl_DStringSetLength(path, keep);
+    TclDiscard(newV);
+    return NULL;
+}
+
+int
+TclValueDeref(Tcl_Interp *interp, Tcl_Obj *value, Tcl_Obj **resultPtr)
+{
+    Tcl_DString path;
+    Tcl_Obj *r;
+
+    Tcl_DStringInit(&path);
+    r = DerefWalk(interp, value, &path);
+    Tcl_DStringFree(&path);
+    if (r == NULL) {
+	return TCL_ERROR;
+    }
+    Tcl_IncrRefCount(r);
+    *resultPtr = r;
+    return TCL_OK;
+}
+
 /* Un lien ne se traverse (pas supplémentaire dans le chemin) que si sa case
  * est typée : var.T avec T autre que string, ou var(typed). Un var brut se
  * lit au bout d'un chemin mais ne se traverse pas. */
