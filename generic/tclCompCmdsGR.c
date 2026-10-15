@@ -1536,11 +1536,7 @@ TclCompileLsetCmd(
      */
 
     if (localIndex < 0) {
-	if (isScalar) {
-	    tempDepth = parsePtr->numWords - 2;
-	} else {
-	    tempDepth = parsePtr->numWords - 1;
-	}
+	tempDepth = numWords - (isScalar ? 2 : 1);
 	TclEmitInstInt4(	INST_OVER, tempDepth,		envPtr);
     }
 
@@ -1549,11 +1545,7 @@ TclCompileLsetCmd(
      */
 
     if (!isScalar) {
-	if (localIndex < 0) {
-	    tempDepth = parsePtr->numWords - 1;
-	} else {
-	    tempDepth = parsePtr->numWords - 2;
-	}
+	tempDepth = numWords - (localIndex >= 0 ? 2 : 1);
 	TclEmitInstInt4(	INST_OVER, tempDepth,		envPtr);
     }
 
@@ -2841,15 +2833,16 @@ TclCompileObjectSelfCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     /*
-     * We only handle [self] and [self object] (which is the same operation).
-     * These are the only very common operations on [self] for which
-     * bytecoding is at all reasonable.
+     * We only handle [self], [self object] (which is the same operation) and
+     * [self namespace]. These are the only very common operations on [self]
+     * for which bytecoding is at all reasonable, with [self namespace] being
+     * just because it is convenient with ops we already have.
      */
 
     if (parsePtr->numWords == 1) {
 	goto compileSelfObject;
     } else if (parsePtr->numWords == 2) {
-	Tcl_Token *tokenPtr = TokenAfter(parsePtr->tokenPtr), *subcmd;
+	const Tcl_Token *tokenPtr = TokenAfter(parsePtr->tokenPtr), *subcmd;
 
 	if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD || tokenPtr[1].size==0) {
 	    return TCL_ERROR;
@@ -2858,7 +2851,7 @@ TclCompileObjectSelfCmd(
 	subcmd = tokenPtr + 1;
 	if (strncmp(subcmd->start, "object", subcmd->size) == 0) {
 	    goto compileSelfObject;
-	} else if (strncmp(subcmd->start, "namespace", subcmd->size) == 0) {
+	} else if ((subcmd->size > 1) && strncmp(subcmd->start, "namespace", subcmd->size) == 0) {
 	    goto compileSelfNamespace;
 	}
     }

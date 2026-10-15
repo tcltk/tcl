@@ -28,6 +28,7 @@ to the userbase.
  - [writing a file beyond the file size limit (ulimit -f) killed the process](https://core.tcl-lang.org/tcl/tktview/386563)
  - [remove empty directories from the zipfs VFS with POSIX find options](https://core.tcl-lang.org/tcl/tktview/9336f1)
  - [tailcall panicked in a command called directly by its objProc](https://core.tcl-lang.org/tcl/tktview/4955f5)
+ - [compiled [self n] should be ambiguous](https://core.tcl-lang.org/tcl/tktview/8ab06e)
 
 # Updated bundled packages, libraries, standards, data
  - msgcat 1.7.2
