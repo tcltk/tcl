@@ -25,6 +25,7 @@ to the userbase.
  - [regexp with backreferences could loop forever](https://core.tcl-lang.org/tcl/tktview/a6029e)
  - [remove empty directories from the zipfs VFS with POSIX find options](https://core.tcl-lang.org/tcl/tktview/9336f1)
  - [tailcall panicked in a command called directly by its objProc](https://core.tcl-lang.org/tcl/tktview/4955f5)
+ - [compiled [self n] should be ambiguous](https://core.tcl-lang.org/tcl/tktview/8ab06e)
 
 # Updated bundled packages, libraries, standards, data
  - msgcat 1.7.2

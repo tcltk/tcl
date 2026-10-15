@@ -3460,7 +3460,7 @@ TclCompileObjectSelfCmd(
 
 	if (IS_TOKEN_PREFIX(tokenPtr, 1, "object")) {
 	    goto compileSelfObject;
-	} else if (IS_TOKEN_PREFIX(tokenPtr, 1, "namespace")) {
+	} else if (IS_TOKEN_PREFIX(tokenPtr, 2, "namespace")) {
 	    goto compileSelfNamespace;
 	}
     }
