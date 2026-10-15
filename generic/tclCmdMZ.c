@@ -227,7 +227,7 @@ Tcl_RegexpObjCmd(
 	if (name[0] != '-') {
 	    break;
 	}
-	if (Tcl_GetIndexFromObj(interp, objv[i], options, "option", TCL_EXACT,
+	if (Tcl_GetIndexFromObj(interp, objv[i], options, "option", 0,
 		&index) != TCL_OK) {
 	    goto optionError;
 	}
