@@ -236,13 +236,15 @@ TclpCreateTempFile(
  *
  * TclpTempFileName --
  *
- *	This function returns unique filename.
+ *	This function creates a new empty temporary file with a unique name.
  *
  * Results:
- *	Returns a valid Tcl_Obj * with refCount 0, or NULL on failure.
+ *	Returns the file name as a valid Tcl_Obj * with refCount 0, or NULL on
+ *	failure.
  *
  * Side effects:
- *	None.
+ *	Creates the file, accessible only by the current user. The caller
+ *	writes into this file and deletes it (the same as on Windows).
  *
  *----------------------------------------------------------------------
  */
@@ -261,8 +263,6 @@ TclpTempFileName(void)
 	return NULL;
     }
 
-    fcntl(fd, F_SETFD, FD_CLOEXEC);
-    TclpObjDeleteFile(nameObj);
     close(fd);
     retVal = Tcl_DuplicateObj(nameObj);
     Tcl_DecrRefCount(nameObj);
