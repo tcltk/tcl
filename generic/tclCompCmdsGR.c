@@ -1536,7 +1536,7 @@ TclCompileLsetCmd(
      */
 
     if (localIndex < 0) {
-	tempDepth = numWords - (isScalar ? 2 : 1);
+	tempDepth = parsePtr->numWords - (isScalar ? 2 : 1);
 	TclEmitInstInt4(	INST_OVER, tempDepth,		envPtr);
     }
 
@@ -1545,7 +1545,7 @@ TclCompileLsetCmd(
      */
 
     if (!isScalar) {
-	tempDepth = numWords - (localIndex >= 0 ? 2 : 1);
+	tempDepth = parsePtr->numWords - (localIndex >= 0 ? 2 : 1);
 	TclEmitInstInt4(	INST_OVER, tempDepth,		envPtr);
     }
 
