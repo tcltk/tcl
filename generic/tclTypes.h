@@ -185,6 +185,7 @@ TclType *TclTypeParse(Tcl_Interp *interp, const char *text, Tcl_Size len);
 int	TclTypeValidate(Tcl_Interp *interp, const TclType *tp, Tcl_Obj *value,
 	    int variantHint, int *variantOut);
 int	TclTypeIncludes(const TclType *a, const TclType *b);
+int	TclTypeSame(const TclType *a, const TclType *b);
 TclType *TclTypeListOf(Tcl_Interp *interp, TclType *elem);
 TclType *TclTypeCommon(Tcl_Interp *interp, TclType *a, TclType *b);
 int	TclTypeCast(Tcl_Interp *interp, Tcl_Obj *src, TclType *target,
@@ -196,6 +197,7 @@ Tcl_Size TclTypeFieldIndex(const TclType *tp, const char *name);
 int	TclTypeRunDefault(Tcl_Interp *interp, const char *what,
 	    Tcl_Obj *script, Tcl_Obj **resultPtr);
 int	TclTypeIsPlainString(const TclType *tp);
+int	TclTypeIsAny(const TclType *tp);
 int	TclTypeDictKeyAllowed(const TclType *tp, const char *key);
 /* Valide content puis ajoute les valeurs par défaut des clés manquantes
  * (dict(x?=0)). content est un objet PRIVÉ, modifié en place. */
@@ -206,6 +208,8 @@ int	TclTypeComplete(Tcl_Interp *interp, const TclType *tp, Tcl_Obj *content,
 int	TclTypedVarPrepareWrite(Tcl_Interp *interp, Var *varPtr,
 	    Tcl_Obj **valuePtrPtr, int *flagsPtr, Tcl_Obj **tmpPtrPtr);
 void	TclTypedVarAfterStore(Var *varPtr);
+void	TclTypedVarForget(Var *varPtr);
+void	TclTypedVarForgetByName(Tcl_Interp *interp, Tcl_Obj *nameObj);
 Tcl_Obj *TclTypedConform(Tcl_Interp *interp, TclType *tp, Tcl_Obj *arg);
 int	TclSetAnnotatedCmd(Tcl_Interp *interp, Tcl_Size objc,
 	    Tcl_Obj *const objv[]);

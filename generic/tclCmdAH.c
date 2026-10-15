@@ -14,6 +14,7 @@
 #include "tclInt.h"
 #include "tclIO.h"
 #include "tclTomMath.h"
+#include "tclTypes.h"
 #ifdef _WIN32
 #   include "tclWinInt.h"
 #endif
@@ -2876,6 +2877,14 @@ EachloopCmd(
 		result = TCL_ERROR;
 		goto done;
 	    }
+	    /*
+	     * The copy is itself released by ForeachCleanup. A reference is
+	     * needed because the index proc of an abstract list may hand the
+	     * copy (or something it owns) back as an element, which a loop
+	     * variable then holds: without it the final TclDecrRefCount
+	     * frees an object that the variable still references.
+	     */
+	    Tcl_IncrRefCount(statePtr->aCopyList[i]);
 	    /* Don't compute values here, wait until the last moment */
 	    statePtr->argcList[i] = TclObjTypeLength(statePtr->aCopyList[i]);
 	} else {
@@ -3040,6 +3049,7 @@ ForeachAssignments(
 		TclNewObj(valuePtr);	/* Empty string */
 	    }
 
+	    TclTypedVarForgetByName(interp, statePtr->varvList[i][v]);
 	    varValuePtr = Tcl_ObjSetVar2(interp, statePtr->varvList[i][v],
 		    NULL, valuePtr, TCL_LEAVE_ERR_MSG);
 

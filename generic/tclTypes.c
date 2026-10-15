@@ -105,6 +105,7 @@ DeleteData(void *clientData, Tcl_Interp *interp)
     Tcl_HashEntry *hPtr;
     Tcl_Size i;
 
+    (void) interp;
     for (hPtr = Tcl_FirstHashEntry(&d->converts, &search); hPtr != NULL;
 	    hPtr = Tcl_NextHashEntry(&search)) {
 	Tcl_DecrRefCount((Tcl_Obj *) Tcl_GetHashValue(hPtr));
@@ -175,10 +176,19 @@ TclTypeFieldIndex(const TclType *tp, const char *name)
     return -1;
 }
 
+/* "any" : type prédéfini des éléments d'une liste hétérogène (list.any).
+ * Chaque élément y conserve sa propre annotation. */
+int
+TclTypeIsAny(const TclType *tp)
+{
+    return tp->kind == TCLT_STRING && tp->reserved
+	    && strcmp(tp->name, "any") == 0;
+}
+
 int
 TclTypeIsPlainString(const TclType *tp)
 {
-    return tp->kind == TCLT_STRING && !tp->nominal;
+    return tp->kind == TCLT_STRING && !tp->nominal && !TclTypeIsAny(tp);
 }
 
 /* --------------------------------------------------------------------
@@ -223,6 +233,43 @@ TclType *
 TclTypesMakeList(TypeData *d, TclType *elem)
 {
     return TclTypesMakeListN(d, elem, -1);
+}
+
+/*
+ * list.T écrit explicitement. Pour T = string c'est "list<string>", type
+ * distinct de la liste nue "list" : ses éléments sont atomiques (enveloppés
+ * à la lecture, un élément n'est pas redécoupé en mots), alors que ceux de
+ * "list" restent du texte Tcl ordinaire. Les deux se contiennent mutuellement.
+ */
+TclType *
+TclTypesMakeListExplicit(TypeData *d, TclType *elem)
+{
+    Tcl_DString ds;
+    TclType *tp;
+    int isNew;
+
+    if (elem != d->tString) {
+	return TclTypesMakeListN(d, elem, -1);
+    }
+    Tcl_DStringInit(&ds);
+    Tcl_DStringAppend(&ds, "list<string>", TCL_AUTO_LENGTH);
+    tp = Intern(d, &ds, TCLT_LIST, elem, &isNew);
+    if (isNew) {
+	tp->arity = -1;
+    }
+    Tcl_DStringFree(&ds);
+    return tp;
+}
+
+/* Deux types « identiques » pour les contrôles d'affectation : le même
+ * descripteur, ou list et list<string>. */
+int
+TclTypeSame(const TclType *a, const TclType *b)
+{
+    return a == b || (a->kind == TCLT_LIST && b->kind == TCLT_LIST
+	    && a->arity < 0 && b->arity < 0 && !a->nominal && !b->nominal
+	    && a->elem == b->elem && a->elem->kind == TCLT_STRING
+	    && !a->elem->nominal);
 }
 
 /* list(N).elem : exactement N éléments. arity < 0 : liste ordinaire,
@@ -623,6 +670,7 @@ ValidateG(Tcl_Interp *interp, const TclType *tp, Tcl_Obj *value,
     ValGuard me;
     const ValGuard *g;
 
+    value = TCL_ANNOT_CONTENT(value);	/* une valeur annotée : son contenu */
     me.tp = tp;
     me.value = value;
     me.up = up;
@@ -1548,6 +1596,7 @@ DefinitionText(Tcl_Interp *interp, Tcl_Obj *obj, Tcl_DString *ds)
     Tcl_Obj *content, *raw;
     int kind = TclAnnotInfo(obj, &content, NULL, NULL, &raw);
 
+    (void) interp;
     Tcl_DStringInit(ds);
     if (kind == 2) {
 	Tcl_DStringAppend(ds, "{", 1);
@@ -1701,6 +1750,49 @@ TypeConvertCmd(Tcl_Interp *interp, TypeData *d, Tcl_Obj *fromObj,
     return TCL_OK;
 }
 
+/*
+ * "type get valeur" : le type d'une valeur (donc d'une variable : type get
+ * $L). Le résultat est le nom du type ({int}n -> int, {list<int>}L ->
+ * list<int>, {Complex}z -> Complex). Pour une somme, la variante suit :
+ * Val.i. Une valeur sans annotation n'a pas de
+ * type : le résultat est la chaîne vide ; une annotation brute {texte}
+ * rend son texte. Pour tester le type d'une variable par son nom, utiliser
+ * l'opérateur "is" de expr.
+ */
+
+static int
+TypeGetCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
+{
+    TclType *tp = NULL;
+    Tcl_Obj *raw = NULL, *res;
+    int variant = -1;
+
+    if (objc != 3) {
+	Tcl_WrongNumArgs(interp, 2, objv, "value");
+	return TCL_ERROR;
+    }
+    switch (TclAnnotInfo(objv[2], NULL, &tp, &variant, &raw)) {
+    case 1:
+	res = Tcl_NewStringObj(tp->name, TCL_AUTO_LENGTH);
+	if (tp->kind == TCLT_SUM && variant >= 0
+		&& variant < (int) tp->nfields
+		&& tp->fields[variant].name != NULL) {
+	    /* Une somme : le type puis la variante, Val.i */
+	    Tcl_AppendToObj(res, ".", 1);
+	    Tcl_AppendObjToObj(res, tp->fields[variant].name);
+	}
+	Tcl_SetObjResult(interp, res);
+	break;
+    case 2:
+	Tcl_SetObjResult(interp, raw);
+	break;
+    default:
+	Tcl_ResetResult(interp);
+	break;
+    }
+    return TCL_OK;
+}
+
 static int
 TypeObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
 	Tcl_Obj *const objv[])
@@ -1729,8 +1821,11 @@ TypeObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
 	}
 	return TypeConvertCmd(interp, d, objv[2], objv[3], objv[4]);
     }
-    ERR(interp, "SUBCMD", "bad subcommand \"%s\": must be def, alias or "
-	    "convert", sub);
+    if (strcmp(sub, "get") == 0) {
+	return TypeGetCmd(interp, objc, objv);
+    }
+    ERR(interp, "SUBCMD", "bad subcommand \"%s\": must be def, alias, "
+	    "convert or get", sub);
     return TCL_ERROR;
 }
 
@@ -1907,6 +2002,7 @@ TclTypesInit(Tcl_Interp *interp)
     d->tInt = Builtin(d, TCLT_INT, "int");
     d->tDouble = Builtin(d, TCLT_DOUBLE, "double");
     d->tString = Builtin(d, TCLT_STRING, "string");
+    Builtin(d, TCLT_STRING, "any");		/* éléments de list.any */
     d->tList = Builtin(d, TCLT_LIST, "list");
     d->tList->arity = -1;			/* liste extensible */
     d->tList->elem = d->tString;

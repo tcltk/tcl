@@ -3122,7 +3122,7 @@ TEBCresume(
 	while (TclIsVarLink(varPtr)) {
 	    varPtr = varPtr->value.linkPtr;
 	}
-	if (!TclIsVarDirectWritable(varPtr)) {
+	if (!TclIsVarDirectWritable(varPtr) || TclIsAnnotated(valuePtr)) {
 	    storeFlags = TCL_LEAVE_ERR_MSG;
 	    part1Ptr = NULL;
 	    goto doStoreScalar;
@@ -6694,7 +6694,11 @@ TEBCresume(
 		    while (TclIsVarLink(varPtr)) {
 			varPtr = varPtr->value.linkPtr;
 		    }
-		    if (TclIsVarDirectWritable(varPtr)) {
+		    if (varPtr->flags & VAR_TYPED) {
+			TclTypedVarForget(varPtr);
+		    }
+		    if (TclIsVarDirectWritable(varPtr)
+			    && !TclIsAnnotated(valuePtr)) {
 			value2Ptr = varPtr->value.objPtr;
 			if (valuePtr != value2Ptr) {
 			    if (value2Ptr != NULL) {
@@ -7270,6 +7274,18 @@ TEBCresume(
 	 */
 
 	JUMP_PEEPHOLE_F(done, 5, 0);
+
+    case INST_TYPE_FORGET:
+	opnd = TclGetUInt4AtPtr(pc + 1);
+	TRACE(("%u\n", opnd));
+	varPtr = LOCAL(opnd);
+	while (TclIsVarLink(varPtr)) {
+	    varPtr = varPtr->value.linkPtr;
+	}
+	if (varPtr->flags & VAR_TYPED) {
+	    TclTypedVarForget(varPtr);
+	}
+	NEXT_INST_F(5, 0, 0);
 
     case INST_DICT_UPDATE_START:
 	opnd = TclGetUInt4AtPtr(pc + 1);

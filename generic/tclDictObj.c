@@ -2814,12 +2814,14 @@ DictForNRCmd(
      */
 
     Tcl_IncrRefCount(valueObj);
+    TclTypedVarForgetByName(interp, keyVarObj);
     if (Tcl_ObjSetVar2(interp, keyVarObj, NULL, keyObj,
 	    TCL_LEAVE_ERR_MSG) == NULL) {
 	TclDecrRefCount(valueObj);
 	goto error;
     }
     TclDecrRefCount(valueObj);
+    TclTypedVarForgetByName(interp, valueVarObj);
     if (Tcl_ObjSetVar2(interp, valueVarObj, NULL, valueObj,
 	    TCL_LEAVE_ERR_MSG) == NULL) {
 	goto error;
@@ -2894,6 +2896,7 @@ DictForLoopCallback(
      */
 
     Tcl_IncrRefCount(valueObj);
+    TclTypedVarForgetByName(interp, keyVarObj);
     if (Tcl_ObjSetVar2(interp, keyVarObj, NULL, keyObj,
 	    TCL_LEAVE_ERR_MSG) == NULL) {
 	TclDecrRefCount(valueObj);
@@ -2901,6 +2904,7 @@ DictForLoopCallback(
 	goto done;
     }
     TclDecrRefCount(valueObj);
+    TclTypedVarForgetByName(interp, valueVarObj);
     if (Tcl_ObjSetVar2(interp, valueVarObj, NULL, valueObj,
 	    TCL_LEAVE_ERR_MSG) == NULL) {
 	result = TCL_ERROR;
@@ -3017,11 +3021,13 @@ DictMapNRCmd(
      */
 
     Tcl_IncrRefCount(valueObj);
+    TclTypedVarForgetByName(interp, storagePtr->keyVarObj);
     if (Tcl_ObjSetVar2(interp, storagePtr->keyVarObj, NULL, keyObj,
 	    TCL_LEAVE_ERR_MSG) == NULL) {
 	TclDecrRefCount(valueObj);
 	goto error;
     }
+    TclTypedVarForgetByName(interp, storagePtr->valueVarObj);
     if (Tcl_ObjSetVar2(interp, storagePtr->valueVarObj, NULL, valueObj,
 	    TCL_LEAVE_ERR_MSG) == NULL) {
 	TclDecrRefCount(valueObj);
@@ -3105,12 +3111,14 @@ DictMapLoopCallback(
      */
 
     Tcl_IncrRefCount(valueObj);
+    TclTypedVarForgetByName(interp, storagePtr->keyVarObj);
     if (Tcl_ObjSetVar2(interp, storagePtr->keyVarObj, NULL, keyObj,
 	    TCL_LEAVE_ERR_MSG) == NULL) {
 	TclDecrRefCount(valueObj);
 	result = TCL_ERROR;
 	goto done;
     }
+    TclTypedVarForgetByName(interp, storagePtr->valueVarObj);
     if (Tcl_ObjSetVar2(interp, storagePtr->valueVarObj, NULL, valueObj,
 	    TCL_LEAVE_ERR_MSG) == NULL) {
 	TclDecrRefCount(valueObj);
@@ -3458,6 +3466,7 @@ DictFilterCmd(
 
 	    Tcl_IncrRefCount(keyObj);
 	    Tcl_IncrRefCount(valueObj);
+	    TclTypedVarForgetByName(interp, keyVarObj);
 	    if (Tcl_ObjSetVar2(interp, keyVarObj, NULL, keyObj,
 		    TCL_LEAVE_ERR_MSG) == NULL) {
 		Tcl_AddErrorInfo(interp,
@@ -3465,6 +3474,7 @@ DictFilterCmd(
 		result = TCL_ERROR;
 		goto abnormalResult;
 	    }
+	    TclTypedVarForgetByName(interp, valueVarObj);
 	    if (Tcl_ObjSetVar2(interp, valueVarObj, NULL, valueObj,
 		    TCL_LEAVE_ERR_MSG) == NULL) {
 		Tcl_AddErrorInfo(interp,

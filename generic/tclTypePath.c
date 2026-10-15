@@ -1099,8 +1099,22 @@ PathErr(Tcl_Interp *interp, const char *fmt, const char *a, const char *b)
 static Tcl_Obj *
 WrapSlot(Tcl_Interp *interp, TclType *tp, Tcl_Obj *content)
 {
-    int variant = -1;
+    int variant = -1, ownVariant = -1;
+    TclType *ownType = NULL;
+    Tcl_Obj *inner = NULL;
 
+    /* list.any : l'élément garde sa propre annotation. */
+    if (TclTypeIsAny(tp)
+	    && TclAnnotInfo(content, &inner, &ownType, &ownVariant, NULL) == 1) {
+	return TclNewAnnotated(interp, ownType, ownVariant, inner);
+    }
+    /* Un élément déjà annoté de ce type (balise explicite {i}5) garde sa
+     * variante. */
+    if (tp->kind == TCLT_SUM
+	    && TclAnnotInfo(content, &inner, &ownType, &ownVariant, NULL) == 1
+	    && ownType == tp && ownVariant >= 0) {
+	return TclNewAnnotated(interp, tp, ownVariant, inner);
+    }
     if (tp->kind == TCLT_SUM
 	    && TclTypeValidate(interp, tp, content, -1, &variant) != TCL_OK) {
 	return NULL;

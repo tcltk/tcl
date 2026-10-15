@@ -843,6 +843,9 @@ enum TclInstruction {
     INST_CONST_IMM,
     INST_CONST_STK,
 
+    /* Typed loop variables: drop the type before assignment */
+    INST_TYPE_FORGET,
+
     /* The last opcode */
     LAST_INST_OPCODE
 };

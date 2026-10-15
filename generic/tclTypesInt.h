@@ -117,6 +117,7 @@ TclType *TclTypesResolve(Tcl_Interp *interp, TypeData *d,
 	    const char *selfName, TclType *self, const char *w, Tcl_Size len);
 /* list.T : liste de T, extensible. */
 TclType *TclTypesMakeList(TypeData *d, TclType *elem);
+TclType *TclTypesMakeListExplicit(TypeData *d, TclType *elem);
 /* list(N).T : exactement N éléments (arity >= 0) ; arity < 0 : extensible. */
 TclType *TclTypesMakeListN(TypeData *d, TclType *elem, Tcl_Size arity);
 /* var.T : nom d'une variable dont la valeur est un T ; typed != 0 exige

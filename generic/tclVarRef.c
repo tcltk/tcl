@@ -128,7 +128,7 @@ SplitIndex(const char *s, Tcl_Size len, Tcl_Size *baseLen, const char **idx,
     *baseLen = len;
     *idx = NULL;
     *idxLen = 0;
-    if (len > 2 && s[len - 1] == ')' && (lp = memchr(s, '(', len)) != NULL
+    if (len > 2 && s[len - 1] == ')' && (lp = (const char *)memchr(s, '(', len)) != NULL
 	    && lp > s) {
 	*baseLen = lp - s;
 	*idx = lp + 1;

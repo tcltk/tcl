@@ -47,14 +47,14 @@ MakeTyped(Tcl_Interp *interp, TclType *tp, Tcl_Obj *arg)
 	return NULL;
     }
     if (status == TCLA_TYPED) {
-	if (at != tp) {
+	if (!TclTypeSame(at, tp)) {
 	    Mismatch(interp, tp, at);
 	    return NULL;
 	}
 	return Tcl_DuplicateObj(arg);
     }
     if (status == TCLA_RAW) {
-	if (at != tp) {
+	if (!TclTypeSame(at, tp)) {
 	    Mismatch(interp, tp, at);
 	    return NULL;
 	}
@@ -136,8 +136,11 @@ TclTypedVarPrepareWrite(Tcl_Interp *interp, Var *varPtr,
 		&content) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	if (status != TCLA_PLAIN) {
-	    add = content;
+	if (status != TCLA_PLAIN
+		&& !(contract->kind == TCLT_LIST && contract->elem != NULL
+			&& TclTypeIsAny(contract->elem)
+			&& (*flagsPtr & TCL_LIST_ELEMENT))) {
+	    add = content;	/* lappend à list.any : l'annotation est gardée */
 	}
 	sum = Tcl_DuplicateObj(curContent);
 	if (*flagsPtr & TCL_LIST_ELEMENT) {
@@ -182,6 +185,47 @@ TclTypedVarAfterStore(Var *varPtr)
 }
 
 /* --------------------------------------------------------------------
+ * Variable de boucle : on retire le type avant l'affectation, puisque la
+ * variable va recevoir une nouvelle valeur. varPtr doit être résolu
+ * (liens suivis). La valeur courante est remplacée par son contenu brut.
+ * -------------------------------------------------------------------- */
+
+void
+TclTypedVarForget(Var *varPtr)
+{
+    Tcl_Obj *cur, *content = NULL;
+
+    if (varPtr == NULL || !(varPtr->flags & VAR_TYPED)
+	    || TclIsVarArray(varPtr)) {
+	return;
+    }
+    cur = varPtr->value.objPtr;
+    if (cur != NULL && TclAnnotInfo(cur, &content, NULL, NULL, NULL) == 1
+	    && content != NULL) {
+	Tcl_IncrRefCount(content);
+	varPtr->value.objPtr = content;
+	Tcl_DecrRefCount(cur);
+    }
+    varPtr->flags &= ~VAR_TYPED;
+}
+
+void
+TclTypedVarForgetByName(Tcl_Interp *interp, Tcl_Obj *nameObj)
+{
+    Var *varPtr, *arrayPtr;
+
+    varPtr = TclObjLookupVarEx(interp, nameObj, NULL, 0, "set", 0, 0,
+	    &arrayPtr);
+    if (varPtr == NULL || arrayPtr != NULL) {
+	return;
+    }
+    while (TclIsVarLink(varPtr)) {
+	varPtr = varPtr->value.linkPtr;
+    }
+    TclTypedVarForget(varPtr);
+}
+
+/* --------------------------------------------------------------------
  * Construction de la valeur d'un "set" annoté
  * -------------------------------------------------------------------- */
 
@@ -193,20 +237,23 @@ TclTypedConform(Tcl_Interp *interp, TclType *tp, Tcl_Obj *arg)
     TclType *at;
     Tcl_Obj *content, *copy;
 
-    if (TclAnnotResolve(interp, arg, NULL, &status, &at, &variant, &content)
+    if (TclAnnotResolve(interp, arg, tp, &status, &at, &variant, &content)
 	    != TCL_OK) {
 	return NULL;
     }
     if (status == TCLA_RAW
-	    && TclTypeValidate(interp, at, content, -1, NULL) != TCL_OK) {
+	    && TclTypeValidate(interp, at, content, variant, NULL) != TCL_OK) {
 	return NULL;
     }
-    if ((status == TCLA_TYPED || status == TCLA_RAW) && at != tp
-	    && !TclTypeIsPlainString(tp)) {
+    if ((status == TCLA_TYPED || status == TCLA_RAW) && !TclTypeSame(at, tp)
+	    && !TclTypeIsPlainString(tp) && !TclTypeIsAny(tp)) {
 	Mismatch(interp, tp, at);
 	return NULL;
     }
     copy = Tcl_DuplicateObj(content);
+    if (TclTypeIsAny(tp)) {
+	return copy;
+    }
     if (TclTypeComplete(interp, tp, copy, -1, NULL) != TCL_OK) {
 	TclDiscard(copy);
 	return NULL;
@@ -232,14 +279,35 @@ BuildList(Tcl_Interp *interp, TclType *tp, Tcl_Size n, Tcl_Obj *const a[],
 {
     TclObjVec vec = {NULL, 0, 0};
     Tcl_Size i, j, m;
-    Tcl_Obj **e, *content, *c;
+    Tcl_Obj **e, *content, *c, *e0;
     TclType *at;
     int status, variant, rc = TCL_ERROR;
 
     for (i = 0; i < n; i++) {
-	if (TclAnnotResolve(interp, a[i], NULL, &status, &at, &variant,
+	if (TclAnnotResolve(interp, a[i], tp->elem, &status, &at, &variant,
 		&content) != TCL_OK) {
 	    goto done;
+	}
+	if (TclTypeIsAny(tp->elem)) {
+	    /* list.any : l'élément garde son annotation, sans dépliage. */
+	    if (status == TCLA_TYPED || status == TCLA_RAW) {
+		if (status == TCLA_RAW
+			&& TclTypeValidate(interp, at, content, variant, NULL)
+				!= TCL_OK) {
+		    goto done;
+		}
+		c = Tcl_DuplicateObj(content);
+		e0 = TclNewAnnotated(interp, at, variant, c);
+		TclDiscard(c);
+		if (e0 == NULL) {
+		    goto done;
+		}
+		TclVecAdd(&vec, e0);
+	    } else {
+		TclVecAdd(&vec, Tcl_DuplicateObj(
+			status == TCLA_EMPTY ? content : a[i]));
+	    }
+	    continue;
 	}
 	if ((status == TCLA_TYPED || status == TCLA_RAW)
 		&& at->kind == TCLT_LIST && at != tp->elem) {
@@ -263,6 +331,14 @@ BuildList(Tcl_Interp *interp, TclType *tp, Tcl_Size n, Tcl_Obj *const a[],
 	    c = TclTypedConform(interp, tp->elem, a[i]);
 	    if (c == NULL) {
 		goto done;
+	    }
+	    if (status == TCLA_RAW && at == tp->elem && variant >= 0
+		    && tp->elem->kind == TCLT_SUM) {
+		/* {i}5 dans une liste de sommes : la balise est conservée. */
+		Tcl_Obj *w = TclNewAnnotated(interp, tp->elem, variant, c);
+
+		TclDiscard(c);
+		c = w;
 	    }
 	    TclVecAdd(&vec, c);
 	}
@@ -587,6 +663,9 @@ TclSetAnnotatedCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 	    }
 	    baseObj = Tcl_NewStringObj(name, open - name);
 	}
+    }
+    if (forced < 0 && status == TCLA_RAW && tp->kind == TCLT_SUM && avar >= 0) {
+	forced = avar;			/* set {Val.s}x 7 */
     }
     if (baseObj == NULL) {
 	baseObj = Tcl_NewStringObj(name, TCL_AUTO_LENGTH);

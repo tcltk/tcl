@@ -671,6 +671,9 @@ InstructionDesc const tclInstructionTable[] = {
     {"constStk",	  1,   -2,	   0,	{OPERAND_NONE}},
 	/* Create constant. Variable name and value on stack.
 	 * Stack: ... varName value => ... */
+    {"typeForget",	  5,    0,	   1,	{OPERAND_LVT4}},
+	/* Loop variable: remove its type before it is assigned.
+	 * Stack: ... => ... */
 
     {NULL, 0, 0, 0, {OPERAND_NONE}}
 };

@@ -1715,6 +1715,8 @@ CompileDictEachCmd(
      */
 
     bodyTargetOffset = CurrentOffset(envPtr);
+    TclEmitInstInt4(	INST_TYPE_FORGET, keyVarIndex,		envPtr);
+    TclEmitInstInt4(	INST_TYPE_FORGET, valueVarIndex,	envPtr);
     Emit14Inst(		INST_STORE_SCALAR, keyVarIndex,		envPtr);
     TclEmitOpcode(	INST_POP,				envPtr);
     Emit14Inst(		INST_STORE_SCALAR, valueVarIndex,	envPtr);

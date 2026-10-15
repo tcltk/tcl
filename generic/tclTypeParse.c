@@ -1897,7 +1897,7 @@ BuildNest(Tcl_Interp *interp, TypeEnv *envPtr)
 	    goto done;
 	}
     } else if ((l.kind == SK_TYPE) && (l.type == d->tList)) {
-	tp = TclTypesMakeList(d, r.type);
+	tp = TclTypesMakeListExplicit(d, r.type);
     } else if ((l.kind == SK_TYPE) && (l.type == d->tDict)) {
 	tp = TclTypesMakeDict(d, r.type, 0, NULL, 0);
     } else if ((l.kind == SK_TYPE) && (l.type == d->tVar)) {

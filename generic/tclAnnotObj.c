@@ -97,6 +97,7 @@ UpdateStringOfTypeRef(Tcl_Obj *objPtr)
 static int
 SetTypeRefFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr)
 {
+    (void)objPtr;
     if (interp != NULL) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"type references cannot be created from strings",
@@ -118,6 +119,7 @@ DeleteRefData(void *clientData, Tcl_Interp *interp)
     Tcl_HashSearch search;
     Tcl_HashEntry *hPtr;
 
+    (void) interp;
     for (hPtr = Tcl_FirstHashEntry(&rd->refs, &search); hPtr != NULL;
 	    hPtr = Tcl_NextHashEntry(&search)) {
 	Tcl_DecrRefCount((Tcl_Obj *) Tcl_GetHashValue(hPtr));
@@ -169,6 +171,7 @@ TypeRefObj(Tcl_Interp *interp, TclType *tp, int variant)
  * -------------------------------------------------------------------- */
 
 static Tcl_FreeInternalRepProc	FreeAnnotated;
+static void FreeAnnotatedReps(Tcl_Obj *objPtr);
 static Tcl_DupInternalRepProc	DupAnnotated;
 static Tcl_UpdateStringProc	UpdateStringOfAnnotated;
 static Tcl_SetFromAnyProc	SetAnnotatedFromAny;
@@ -217,8 +220,70 @@ static const Tcl_ObjType annotatedObjType = {
 
 const Tcl_ObjType *const TclAnnotatedObjTypePtr = &annotatedObjType;
 
+/*
+ * Un scalaire annoté (string, int, un élément atomique...) est une liste
+ * d'UN élément, qui est lui-même : foreach f $e rend e, annotation
+ * comprise, et l'atomicité se conserve à tous les niveaux d'imbrication.
+ * getElementsProc doit rendre un tableau qui vive autant que l'objet : une
+ * case (Tcl_Obj *) par objet, dans une table propre au thread, libérée
+ * avec l'objet.
+ */
+
+typedef struct {
+    int init;
+    Tcl_HashTable cells;		/* Tcl_Obj* -> Tcl_Obj ** (1 case) */
+} SelfCells;
+
+static Tcl_ThreadDataKey selfCellsKey;
+
+static SelfCells *
+GetSelfCells(void)
+{
+    SelfCells *sc = (SelfCells *) Tcl_GetThreadData(&selfCellsKey,
+	    sizeof(SelfCells));
+
+    if (!sc->init) {
+	Tcl_InitHashTable(&sc->cells, TCL_ONE_WORD_KEYS);
+	sc->init = 1;
+    }
+    return sc;
+}
+
+static Tcl_Obj **
+SelfCell(Tcl_Obj *aPtr)
+{
+    SelfCells *sc = GetSelfCells();
+    int isNew;
+    Tcl_HashEntry *hPtr = Tcl_CreateHashEntry(&sc->cells, aPtr, &isNew);
+    Tcl_Obj **cell;
+
+    if (isNew) {
+	cell = (Tcl_Obj **) Tcl_Alloc(sizeof(Tcl_Obj *));
+	*cell = aPtr;			/* pas de référence : aPtr survit */
+	Tcl_SetHashValue(hPtr, cell);
+    }
+    return (Tcl_Obj **) Tcl_GetHashValue(hPtr);
+}
+
 static void
 FreeAnnotated(Tcl_Obj *objPtr)
+{
+    SelfCells *sc = (SelfCells *) Tcl_GetThreadData(&selfCellsKey,
+	    sizeof(SelfCells));
+
+    if (sc->init && sc->cells.numEntries > 0) {
+	Tcl_HashEntry *hPtr = Tcl_FindHashEntry(&sc->cells, objPtr);
+
+	if (hPtr != NULL) {
+	    Tcl_Free(Tcl_GetHashValue(hPtr));
+	    Tcl_DeleteHashEntry(hPtr);
+	}
+    }
+    FreeAnnotatedReps(objPtr);
+}
+
+static void
+FreeAnnotatedReps(Tcl_Obj *objPtr)
 {
     Tcl_DecrRefCount((Tcl_Obj *) objPtr->internalRep.twoPtrValue.ptr1);
     Tcl_DecrRefCount((Tcl_Obj *) objPtr->internalRep.twoPtrValue.ptr2);
@@ -259,6 +324,7 @@ UpdateStringOfAnnotated(Tcl_Obj *objPtr)
 static int
 SetAnnotatedFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr)
 {
+    (void) objPtr;
     if (interp != NULL) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"annotated values can only be created by the parser or by "
@@ -281,6 +347,7 @@ AnnotListView(Tcl_Interp *interp, Tcl_Obj *aPtr, Tcl_Obj **contentPtr)
     Tcl_Obj *content;
     TclTypeKind kind;
 
+    (void) interp;
     if (TclAnnotResolve(NULL, aPtr, NULL, &status, &tp, &variant,
 	    &content) != TCL_OK) {
 	*contentPtr = (Tcl_Obj *) aPtr->internalRep.twoPtrValue.ptr1;
@@ -298,6 +365,103 @@ AnnotListView(Tcl_Interp *interp, Tcl_Obj *aPtr, Tcl_Obj **contentPtr)
     }
     kind = EffectiveKind(tp, variant, content);
     return kind == TCLT_LIST || kind == TCLT_DICT || kind == TCLT_PRODUCT;
+}
+
+/*
+ * Éléments typés d'une liste annotée. Les éléments d'une liste de type
+ * list.T sont stockés dans V sans annotation ; à la lecture par la vue
+ * liste (lindex, foreach, lmap, lrange...) ils sont enveloppés, une fois
+ * pour toutes, dans le type T des éléments (dans V même, à la place de
+ * l'élément nu : la chaîne ne change pas). Un élément déjà annoté (balise
+ * explicite {i}5 d'une somme) est laissé tel quel.
+ */
+
+static TclType *
+AnnotListElemType(Tcl_Obj *aPtr)
+{
+    int status, variant = -1;
+    TclType *tp = NULL, *lt;
+    Tcl_Obj *content;
+
+    if (TclAnnotResolve(NULL, aPtr, NULL, &status, &tp, &variant,
+	    &content) != TCL_OK) {
+	return NULL;
+    }
+    if (status == TCLA_PLAIN || status == TCLA_EMPTY) {
+	return NULL;
+    }
+    if (status == TCLA_RAW) {
+	variant = -1;
+	if (TclTypeValidate(NULL, tp, content, -1, &variant) != TCL_OK) {
+	    return NULL;
+	}
+    }
+    lt = tp;
+    if (tp->kind == TCLT_SUM) {
+	if (variant < 0 || variant >= (int) tp->nfields
+		|| tp->fields[variant].type == NULL) {
+	    return NULL;
+	}
+	lt = tp->fields[variant].type;
+    }
+    if (lt->kind != TCLT_LIST || lt->elem == NULL
+	    || (TclTypeIsPlainString(lt->elem) && strcmp(lt->name, "list") == 0)) {
+	/* La liste nue {list} : ses éléments restent du texte Tcl ordinaire,
+	 * qui peut être lui-même une liste ({a b {c d}}, lindex $L 2 1) ; pas
+	 * d'enveloppe. Le type d'un tel élément se lit par $L(i). Avec
+	 * list.string (ou tout autre type d'éléments), l'élément est atomique :
+	 * une valeur annotée est UN SEUL élément pour les commandes de liste. */
+	return NULL;
+    }
+    return lt->elem;
+}
+
+/* Comme TypeRefObj, sans l'interpréteur (les procédures de liste n'en ont
+ * pas toujours) et sans la table : objet neuf, refcount 0. */
+static Tcl_Obj *
+NewTypeRefNoCache(TclType *tp, int variant)
+{
+    Tcl_Obj *tPtr = Tcl_NewObj();
+    Tcl_ObjInternalRep ir;
+
+    ir.twoPtrValue.ptr1 = tp;
+    ir.twoPtrValue.ptr2 = (void *) (intptr_t) (variant + 1);
+    Tcl_StoreInternalRep(tPtr, &typeRefObjType, &ir);
+    TclInvalidateStringRep(tPtr);
+    return tPtr;
+}
+
+static void
+AnnotWrapElems(Tcl_Obj *aPtr, Tcl_Obj *v, Tcl_Size from, Tcl_Size to)
+{
+    TclType *et = AnnotListElemType(aPtr);
+    Tcl_Size n, i;
+    Tcl_Obj *e, *w;
+    int variant;
+
+    if (et == NULL || Tcl_IsShared(v)
+	    || Tcl_ListObjLength(NULL, v, &n) != TCL_OK) {
+	return;
+    }
+    if (from < 0) {
+	from = 0;
+    }
+    if (to >= n) {
+	to = n - 1;
+    }
+    for (i = from; i <= to; i++) {
+	if (Tcl_ListObjIndex(NULL, v, i, &e) != TCL_OK || e == NULL
+		|| TCL_ANNOT_P(e)) {
+	    continue;
+	}
+	variant = -1;
+	if (et->kind == TCLT_SUM
+		&& TclTypeValidate(NULL, et, e, -1, &variant) != TCL_OK) {
+	    continue;
+	}
+	w = MakeAnnotated(Tcl_DuplicateObj(e), NewTypeRefNoCache(et, variant));
+	Tcl_ListObjReplace(NULL, v, i, 1, 1, &w);
+    }
 }
 
 static Tcl_Size
@@ -319,9 +483,10 @@ AnnotListIndex(Tcl_Interp *interp, Tcl_Obj *aPtr, Tcl_Size index,
     Tcl_Obj *v;
 
     if (AnnotListView(interp, aPtr, &v)) {
+	AnnotWrapElems(aPtr, v, index, index);
 	return Tcl_ListObjIndex(interp, v, index, elemPtr);
     }
-    *elemPtr = (index == 0) ? v : NULL;
+    *elemPtr = (index == 0) ? aPtr : NULL;	/* le scalaire est son élément */
     return TCL_OK;
 }
 
@@ -332,12 +497,12 @@ AnnotListGetElements(Tcl_Interp *interp, Tcl_Obj *aPtr, Tcl_Size *objcPtr,
     Tcl_Obj *v;
 
     if (AnnotListView(interp, aPtr, &v)) {
+	AnnotWrapElems(aPtr, v, 0, TCL_SIZE_MAX);
 	return Tcl_ListObjGetElements(interp, v, objcPtr, objvPtr);
     }
-    /* Un seul élément : ptr1 de la représentation est justement un Tcl_Obj*
-     * qui vit autant que A. */
+    /* Un seul élément : A lui-même (annotation comprise). */
     *objcPtr = 1;
-    *objvPtr = (Tcl_Obj **) &aPtr->internalRep.twoPtrValue.ptr1;
+    *objvPtr = SelfCell(aPtr);
     return TCL_OK;
 }
 
@@ -620,6 +785,35 @@ TclAnnotResolve(Tcl_Interp *interp, Tcl_Obj *objPtr, const TclType *ctx,
 	    *tpPtr = (TclType *) ctx;
 	    *variantPtr = (int) idx;
 	    return TCL_OK;
+	}
+    }
+    /* Val.i : le type somme Val, variante i (comme {Val}{i}). */
+    {
+	const char *dot = (const char *) memchr(text, '.', len);
+
+	if (interp != NULL && dot != NULL && dot > text && dot + 1 < text + len) {
+	    Tcl_Obj *saved = Tcl_GetObjResult(interp);
+	    TclType *sum;
+
+	    Tcl_IncrRefCount(saved);
+	    sum = TclTypeParse(interp, text, dot - text);
+	    Tcl_SetObjResult(interp, saved);	/* l'échec éventuel n'est pas une erreur */
+	    Tcl_DecrRefCount(saved);
+
+	    if (sum != NULL && sum->kind == TCLT_SUM) {
+		char *vname = (char *) Tcl_Alloc(len - (dot - text));
+
+		memcpy(vname, dot + 1, len - (dot - text) - 1);
+		vname[len - (dot - text) - 1] = '\0';
+		idx = TclTypeFieldIndex(sum, vname);
+		Tcl_Free(vname);
+		if (idx >= 0 && sum->fields[idx].type != NULL) {
+		    *statusPtr = TCLA_RAW;
+		    *tpPtr = sum;
+		    *variantPtr = (int) idx;
+		    return TCL_OK;
+		}
+	    }
 	}
     }
     tp = TclTypeParse(interp, text, len);
