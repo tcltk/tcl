@@ -429,6 +429,127 @@ BuildDict(Tcl_Interp *interp, TclType *tp, Tcl_Size n, Tcl_Obj *const a[],
     return TCL_ERROR;
 }
 
+/*
+ * Deux lectures possibles pour n == nf arguments (n pair) : positionnelle
+ * (une valeur par champ) ou nom/valeur (n/2 couples, champs omis par
+ * défaut). On essaie les deux SANS rien modifier ni laisser de message :
+ * si une seule est valide on la choisit ; si les deux le sont, c'est une
+ * ambiguïté réelle ; si aucune, on garde la lecture positionnelle (son
+ * message d'erreur est celui d'avant).
+ */
+static int
+ProductTryPositional(Tcl_Interp *interp, TclType *tp, Tcl_Size n,
+	Tcl_Obj *const a[])
+{
+    Tcl_Size i;
+    Tcl_InterpState st = Tcl_SaveInterpState(interp, TCL_OK);
+    int ok = 1;
+
+    for (i = 0; i < n && ok; i++) {
+	Tcl_Obj *c = TclTypedConform(interp, tp->fields[i].type, a[i]);
+
+	if (c == NULL) {
+	    ok = 0;
+	} else {
+	    TclDiscard(c);
+	}
+    }
+    (void) Tcl_RestoreInterpState(interp, st);
+    return ok;
+}
+
+static int
+ProductTryNameValue(Tcl_Interp *interp, TclType *tp, Tcl_Size n,
+	Tcl_Obj *const a[])
+{
+    Tcl_Size nf = tp->nfields, i, idx;
+    Tcl_InterpState st = Tcl_SaveInterpState(interp, TCL_OK);
+    int ok = 1;
+    char seen[256];
+
+    if (nf > (Tcl_Size) sizeof(seen)) {
+	(void) Tcl_RestoreInterpState(interp, st);
+	return 0;
+    }
+    memset(seen, 0, sizeof(seen));
+    for (i = 0; i < n / 2 && ok; i++) {
+	Tcl_Obj *c;
+
+	idx = TclTypeFieldIndex(tp, Tcl_GetString(a[2 * i]));
+	if (idx < 0 || seen[idx]) {
+	    ok = 0;
+	    break;
+	}
+	seen[idx] = 1;
+	c = TclTypedConform(interp, tp->fields[idx].type, a[2 * i + 1]);
+	if (c == NULL) {
+	    ok = 0;
+	} else {
+	    TclDiscard(c);
+	}
+    }
+    for (i = 0; i < nf && ok; i++) {
+	if (!seen[i] && tp->fields[i].defcmd == NULL
+		&& tp->fields[i].defval == NULL) {
+	    ok = 0;			/* champ omis sans valeur par défaut */
+	}
+    }
+    (void) Tcl_RestoreInterpState(interp, st);
+    return ok;
+}
+
+/*
+ * {T.champ}valeur : un seul champ d'un produit, les autres prenant leur
+ * défaut -- même écriture que {Val.i}5 pour la variante d'une somme.
+ * Rend 1 (idx et *valuePtr remplis), 0 (ce n'est pas cette écriture) ou -1
+ * (T.champ désigne un champ inexistant de T : message dans l'interp).
+ */
+static int
+ProductFieldTag(Tcl_Interp *interp, TclType *tp, Tcl_Obj *arg,
+	Tcl_Obj **valuePtr, Tcl_Size *idxPtr)
+{
+    Tcl_Obj *content, *raw = NULL;
+    const char *text, *dot, *p;
+    Tcl_Size len, idx;
+    TclType *named;
+
+    if (TclAnnotInfo(arg, &content, NULL, NULL, &raw) != 2 || raw == NULL) {
+	return 0;
+    }
+    text = Tcl_GetStringFromObj(raw, &len);
+    dot = NULL;
+    for (p = text; p < text + len; p++) {
+	if (*p == '.') {
+	    dot = p;			/* dernier point : le nom du champ */
+	}
+    }
+    if (dot == NULL || dot == text || dot + 1 >= text + len) {
+	return 0;
+    }
+    if ((Tcl_Size) strlen(tp->name) == dot - text
+	    && memcmp(text, tp->name, dot - text) == 0) {
+	named = tp;
+    } else {
+	Tcl_InterpState st = Tcl_SaveInterpState(interp, TCL_OK);
+
+	named = TclTypeParse(interp, text, dot - text);
+	(void) Tcl_RestoreInterpState(interp, st);
+    }
+    if (named != tp) {
+	return 0;
+    }
+    idx = TclTypeFieldIndex(tp, dot + 1);
+    if (idx < 0) {
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"unknown field \"%s\" in %s", dot + 1, tp->name));
+	Tcl_SetErrorCode(interp, "TCL", "TYPE", "FIELD", (char *) NULL);
+	return -1;
+    }
+    *idxPtr = idx;
+    *valuePtr = content;
+    return 1;
+}
+
 static int
 BuildProduct(Tcl_Interp *interp, TclType *tp, Tcl_Size n, Tcl_Obj *const a[],
 	Tcl_Obj **contentPtr)
@@ -436,7 +557,8 @@ BuildProduct(Tcl_Interp *interp, TclType *tp, Tcl_Size n, Tcl_Obj *const a[],
     Tcl_Size nf = tp->nfields, i, idx;
     Tcl_Obj **slot, *content;
     TclType *at;
-    int status, variant, rc = TCL_ERROR;
+    int status, variant, rc = TCL_ERROR, forceNameValue = 0;
+    Tcl_Obj *tagArgs[2] = {NULL, NULL};
 
     slot = (Tcl_Obj **) Tcl_Alloc((nf ? nf : 1) * sizeof(Tcl_Obj *));
     memset(slot, 0, (nf ? nf : 1) * sizeof(Tcl_Obj *));
@@ -447,7 +569,41 @@ BuildProduct(Tcl_Interp *interp, TclType *tp, Tcl_Size n, Tcl_Obj *const a[],
 	rc = TCL_OK;
 	goto done;
     }
-    if (n == nf) {
+    if (n == 1 && tp->kind == TCLT_PRODUCT) {
+	Tcl_Size fidx;
+	Tcl_Obj *fval;
+	int ft = ProductFieldTag(interp, tp, a[0], &fval, &fidx);
+
+	if (ft < 0) {
+	    goto done;
+	}
+	if (ft > 0) {
+	    /* {T.champ}valeur : lu comme "champ valeur", le reste par défaut. */
+	    tagArgs[0] = Tcl_NewStringObj(Tcl_GetString(tp->fields[fidx].name),
+		    TCL_AUTO_LENGTH);
+	    tagArgs[1] = fval;
+	    Tcl_IncrRefCount(tagArgs[0]);
+	    a = tagArgs;
+	    n = 2;
+	    forceNameValue = 1;
+	}
+    }
+    if (n == nf && n >= 2 && n % 2 == 0 && !forceNameValue) {
+	int pos = ProductTryPositional(interp, tp, n, a);
+	int nv = ProductTryNameValue(interp, tp, n, a);
+
+	if (pos && nv) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "ambiguous arguments for %s: they read both as %"
+		    TCL_SIZE_MODIFIER "d positional values and as name/value "
+		    "pairs; name every field (name value ...) or change the "
+		    "first value", tp->name, nf));
+	    Tcl_SetErrorCode(interp, "TCL", "TYPE", "AMBIGUOUS", (char *) NULL);
+	    goto done;
+	}
+	forceNameValue = (!pos && nv);
+    }
+    if (n == nf && !forceNameValue) {
 	for (i = 0; i < nf; i++) {
 	    slot[i] = TclTypedConform(interp, tp->fields[i].type, a[i]);
 	    if (slot[i] == NULL) {
@@ -530,6 +686,9 @@ BuildProduct(Tcl_Interp *interp, TclType *tp, Tcl_Size n, Tcl_Obj *const a[],
 	}
     }
     Tcl_Free(slot);
+    if (tagArgs[0] != NULL) {
+	Tcl_DecrRefCount(tagArgs[0]);
+    }
     return rc;
 }
 

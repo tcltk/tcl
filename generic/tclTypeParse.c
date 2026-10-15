@@ -409,6 +409,13 @@ ParseTypeLexeme(
 	 * l'opérande manquant. */
     }
 
+    if (byte == '?' && numBytes > 1 && start[1] == '=') {
+	/* "?=" : synonyme de "=" (même écriture que pour dict(z?=0)) */
+
+	*lexemePtr = ASSIGN;
+	return 2;
+    }
+
     if (!IsParamRef(start, numBytes) && (byte < sizeof(Lexeme))
 	    && (Lexeme[byte] != 0)) {
 	*lexemePtr = Lexeme[byte];
