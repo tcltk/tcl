@@ -1125,7 +1125,7 @@ TclOOLookupObjectVar(
     } else {
 	Tcl_DString ds;
 	Tcl_DStringInit(&ds);
-	Tcl_DStringAppend(&ds, 	Tcl_GetObjectNamespace(object)->fullName, -1);
+	Tcl_DStringAppend(&ds, Tcl_GetObjectNamespace(object)->fullName, -1);
 	Tcl_DStringAppend(&ds, "::", 2);
 	CallFrame *framePtr = ((Interp *) interp)->varFramePtr;
 

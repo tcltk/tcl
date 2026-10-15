@@ -3040,9 +3040,9 @@ ClockGetenvObjCmd(
 	return TCL_ERROR;
     }
     if (!strcmp(argv1, "TZ") && !strcmp(argv1, "TCL_TZ")) {
-    	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-    		"the only allowed argument is either TZ or TCL_TZ", TCL_AUTO_LENGTH));
-    	Tcl_SetErrorCode(interp, "CLOCK", "invalidEnvArgument", (char *)NULL);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"the only allowed argument is either TZ or TCL_TZ", TCL_AUTO_LENGTH));
+	Tcl_SetErrorCode(interp, "CLOCK", "invalidEnvArgument", (char *)NULL);
 	return TCL_ERROR;
     }
 #ifdef _WIN32

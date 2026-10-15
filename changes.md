@@ -24,6 +24,7 @@ to the userbase.
  - [a {1,1} quantifier was always dropped as vacuous](https://core.tcl-lang.org/tcl/tktview/524b35)
  - [regexp with backreferences could loop forever](https://core.tcl-lang.org/tcl/tktview/a6029e)
  - [remove empty directories from the zipfs VFS with POSIX find options](https://core.tcl-lang.org/tcl/tktview/9336f1)
+ - [tailcall panicked in a command called directly by its objProc](https://core.tcl-lang.org/tcl/tktview/4955f5)
 
 # Updated bundled packages, libraries, standards, data
  - msgcat 1.7.2

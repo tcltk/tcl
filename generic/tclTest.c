@@ -1152,15 +1152,15 @@ TestcmdinfoCmd(
     Tcl_Obj *const *objv)	/* Argument objects. */
 {
     static const char *const subcmds[] = {
-	"create", "delete", "get", "modify", NULL
+	"call", "create", "delete", "get", "modify", NULL
     };
     enum options {
-	CMDINFO_CREATE,
+	CMDINFO_CALL, CMDINFO_CREATE,
 	CMDINFO_DELETE, CMDINFO_GET, CMDINFO_MODIFY
     } idx;
     Tcl_CmdInfo info;
 
-    if (objc != 3) {
+    if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "command arg");
 	return TCL_ERROR;
     }
@@ -1168,7 +1168,41 @@ TestcmdinfoCmd(
 	    &idx) != TCL_OK) {
 	return TCL_ERROR;
     }
+    if (idx != CMDINFO_CALL && objc != 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "command arg");
+	return TCL_ERROR;
+    }
     switch (idx) {
+    case CMDINFO_CALL: {
+	/*
+	 * testcmdinfo call interp cmdName ?arg ...?
+	 *
+	 * Call the objProc of the command in the given (child) interpreter
+	 * directly, without the evaluation machinery, as some extensions do.
+	 * The child interpreter has no evaluation in progress.
+	 */
+
+	Tcl_Interp *childInterp;
+	int code;
+
+	if (objc < 4) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "interp cmdName ?arg ...?");
+	    return TCL_ERROR;
+	}
+	childInterp = Tcl_GetChild(interp, Tcl_GetString(objv[2]));
+	if (childInterp == NULL) {
+	    return TCL_ERROR;
+	}
+	if (Tcl_GetCommandInfo(childInterp, Tcl_GetString(objv[3]), &info) == 0) {
+	    Tcl_AppendResult(interp, "unknown command \"",
+		    Tcl_GetString(objv[3]), "\"", (char *)NULL);
+	    return TCL_ERROR;
+	}
+	code = info.objProc2(info.objClientData2, childInterp, objc - 3,
+		objv + 3);
+	Tcl_SetObjResult(interp, Tcl_GetObjResult(childInterp));
+	return code;
+    }
     case CMDINFO_CREATE:
 	Tcl_CreateObjCommand2(interp, Tcl_GetString(objv[2]), CmdProc1,
 		(void *)"original", CmdDelProc1);
