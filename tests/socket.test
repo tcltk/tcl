@@ -2623,6 +2623,45 @@ test socket-14.19 {tip 456 -- introduce the -reuseport option} \
     catch {close $ssock2}
     } -result ok
 
+test socket-14.20 {close of [socket -async] still connecting loses data} -constraints {
+    socket unix
+} -setup {
+    # Server in a child process that starts accepting only after a delay,
+    # with a short listen queue, so that the client connect stays pending.
+    set f [makeFile {
+	proc accept {s a p} {
+	    fconfigure $s -blocking 0
+	    fileevent $s readable [list rd $s]
+	}
+	proc rd {s} {
+	    if {[gets $s line] > 0} {puts $line; flush stdout}
+	    if {[eof $s]} {close $s}
+	}
+	set srv [socket -server accept -backlog 1 -myaddr 127.0.0.1 0]
+	puts [lindex [fconfigure $srv -sockname] 2]
+	flush stdout
+	after 1000
+	after 10000 exit
+	vwait forever
+    } socket-14.20.tcl]
+    set pipe [open |[list [interpreter] $f] r]
+    set port [gets $pipe]
+    set fill {}
+} -body {
+    for {set i 0} {$i < 4} {incr i} {
+	lappend fill [socket -async 127.0.0.1 $port]
+    }
+    set sock [socket -async 127.0.0.1 $port]
+    puts $sock hello
+    set r [catch {close $sock} msg]
+    list $r $msg [gets $pipe]
+} -cleanup {
+    foreach s $fill {catch {close $s}}
+    catch {exec kill [pid $pipe]}
+    catch {close $pipe}
+    removeFile socket-14.20.tcl
+} -result {0 {} hello}
+
 set num 0
 
 set x [list [tcltests::localDualStackAddress] {socket} [tcltests::localIPv4Address] {supported_inet} [tcltests::localIPv6Address] {supported_inet6}]

@@ -649,7 +649,16 @@ TcpClose2Proc(
     if ((flags & (TCL_CLOSE_READ|TCL_CLOSE_WRITE)) == 0) {
 	return TcpCloseProc(instanceData, NULL);
     }
-    if ((flags & TCL_CLOSE_READ) && (shutdown(statePtr->fds.fd, SHUT_RD) < 0)) {
+
+    /*
+     * Don't shut down the read side while an async connect is in progress:
+     * on Linux this aborts the connection attempt, and Tcl_Close() does it
+     * before flushing the pending output. Nothing can have been read yet.
+     */
+
+    if ((flags & TCL_CLOSE_READ)
+	    && !GOT_BITS(statePtr->flags, TCP_ASYNC_PENDING)
+	    && (shutdown(statePtr->fds.fd, SHUT_RD) < 0)) {
 	readError = errno;
     }
     if ((flags & TCL_CLOSE_WRITE) && (shutdown(statePtr->fds.fd, SHUT_WR) < 0)) {
