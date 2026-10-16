@@ -205,6 +205,34 @@ test iocmd-7.5 {close command} -setup {
 } -cleanup {
     close $chan
 } -returnCodes error -result "Half-close of write-side not possible, side not opened or already closed"
+test iocmd-7.6 {close write side with pending non-blocking output} -constraints {
+    stdio fileevent
+} -setup {
+    set child [makeFile {
+	after 500
+	fconfigure stdin -translation binary
+	puts -nonewline [string length [read stdin]]
+    } iocmd76.tcl]
+    set chan [open |[list [interpreter] $child] r+]
+    fconfigure $chan -blocking 0 -translation binary
+    set data {}
+} -body {
+    puts -nonewline $chan [string repeat a 1000000]
+    chan close $chan write
+    set res [list [catch {puts $chan more} msg] [string map [list $chan CHAN] $msg]]
+    lappend res [catch {chan close $chan write} msg] $msg
+    fileevent $chan readable {
+	append data [read $chan]
+	if {[eof $chan]} {set done 1}
+    }
+    set timer [after 10000 {set done timeout}]
+    vwait done
+    after cancel $timer
+    lappend res $done $data
+} -cleanup {
+    close $chan
+    removeFile iocmd76.tcl
+} -result {1 {channel "CHAN" wasn't opened for writing} 1 {Half-close of write-side not possible, side not opened or already closed} 1 1000000}
 
 proc expectedOpts {got extra} {
     set basicOpts {
