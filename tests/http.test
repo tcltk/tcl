@@ -731,6 +731,36 @@ test http-4.18.$ThreadLevel {reset while the socket command runs the event loop}
     resetWhileOpening 0
 } -result {reset reset {} {}}
 
+test http-4.19.$ThreadLevel {keepalive socket closed by the server before reuse (bug [05b158ed56])} -setup {
+    # The server announces keep-alive, but closes the connection after each
+    # response, as if the idle connection timed out.
+    proc closingServer {ch args} {
+	fconfigure $ch -blocking 0 -translation {crlf binary}
+	fileevent $ch readable [list apply {{ch} {
+	    if {[catch {gets $ch line} n] || [eof $ch]} {
+		catch {close $ch}
+	    } elseif {$n == 0} {
+		puts -nonewline $ch "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 2\r\nConnection: keep-alive\r\n\r\nok"
+		catch {close $ch}
+	    }
+	}} $ch]
+    }
+    set srv [socket -server closingServer -myaddr 127.0.0.1 0]
+    set srvurl http://127.0.0.1:[lindex [fconfigure $srv -sockname] 2]/
+} -body {
+    set result {}
+    for {set i 0} {$i < 3} {incr i} {
+	set token [http::geturl $srvurl -keepalive 1 -timeout 5000]
+	lappend result [http::status $token] [http::data $token]
+	http::cleanup $token
+    }
+    set result
+} -cleanup {
+    close $srv
+    rename closingServer {}
+    unset -nocomplain srv srvurl result i token
+} -result {ok ok ok ok ok ok}
+
 test http-5.1.$ThreadLevel {http::formatQuery} {
     http::formatQuery name1 value1 name2 "value two"
 } {name1=value1&name2=value%20two}

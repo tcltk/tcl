@@ -1750,6 +1750,23 @@ proc http::OpenSocket {token DoLater} {
     dict unset socketCoEvent($state(socketinfo)) $token
     unset -nocomplain state(socketcoro)
 
+    if {$state(reusing) && ![info exists socketMapping($state(socketinfo))]} {
+	# The persistent socket that geturl decided to reuse has been closed
+	# since then (e.g. by CheckEof when the server timed out the idle
+	# connection).  Open a new connection instead.
+	variable TmpSockCounter
+	Log "persistent socket $sockOld for $state(socketinfo) was closed\
+		- open a new one - token $token"
+	set state(reusing) 0
+	set sockOld HTTP_PLACEHOLDER_[incr TmpSockCounter]
+	set state(sock) $sockOld
+	if {$state(-timeout) > 0} {
+	    set state(after) [after $state(-timeout) \
+		    [list http::reset $token timeout]]
+	}
+	set DoLater [PreparePersistentConnection $token]
+    }
+
     # The [return] in the script below results in code 2, which is not an
     # error.
     if {[catch {
@@ -3621,7 +3638,10 @@ proc http::Event {sock token} {
 		    Finish $token $msg
 		    return
 		}
-	    } elseif {$nsl >= 0} {
+	    } elseif {$nsl > 0} {
+		# An empty line is ignored here: it can be the CRLF left over
+		# from the previous chunked response on a persistent socket.
+		# If eof follows, the request must still be replayed.
 		##Log - connecting 1 - token $token
 		set state(state) "header"
 	    } elseif {    ([catch {eof $sock} tmp] || $tmp)
