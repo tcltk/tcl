@@ -32,8 +32,10 @@ to the userbase.
  - [difference between bcc'ed and eval'ed regexp](https://core.tcl-lang.org/tcl/tktview/306945)
  - [on Windows a joinable thread which exits before it is joined leaked](https://core.tcl-lang.org/tcl/tktview/338137)
  - [on Unix, Tcl_JoinThread() should not call pthread_join() for detached threads](https://core.tcl-lang.org/tcl/tktview/5974ff)
+ - [Problem with ::http::OpenSocket](https://core.tcl-lang.org/tcl/tktview/0c1e91)
 
 # Updated bundled packages, libraries, standards, data
+ - http 2.10.3
  - msgcat 1.7.2
  - platform 1.1.2
  - sqlite3 3.53.4
