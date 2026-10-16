@@ -32,6 +32,8 @@ to the userbase.
  - [Problem with ::http::OpenSocket](https://core.tcl-lang.org/tcl/tktview/0c1e91)
  - [on Windows a joinable thread which exits before it is joined leaked](https://core.tcl-lang.org/tcl/tktview/338137)
  - [on Unix, Tcl_JoinThread() should not call pthread_join() for detached threads](https://core.tcl-lang.org/tcl/tktview/5974ff)
+ - [socket-2.12 failed on OpenBSD](https://core.tcl-lang.org/tcl/tktview/e99187)
+ - [do not throw from [socket -async] when the connect fails at once](https://core.tcl-lang.org/tcl/tktview/59e7e7)
 
 # Updated bundled packages, libraries, standards, data
  - http 2.10.3
