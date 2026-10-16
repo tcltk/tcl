@@ -1674,10 +1674,105 @@ ParseDictKeys(Tcl_Interp *interp, const TypeEnv *envPtr, const char *text,
 }
 
 /*
+ * ParseOrigin --
+ *
+ *	ORIGINE d'un lien. Formes : "//" et "file://" (les données de l'appel),
+ *	"//NOM/" et "file://NOM/" (le référentiel enregistré sous NOM),
+ *	"memory://NOM/" (une zone mémoire enregistrée sous NOM), "./", "../"
+ *	("../../"...) et ".". Les formes "file" sont ramenées à "//" et "//NOM/".
+ */
+
+static int
+IsSpaceNameChar(int c)
+{
+    return isalnum(UCHAR(c)) || c == '_' || c == '-' || c == '.' || c == ':';
+}
+
+static int
+ParseOrigin(
+    Tcl_Interp *interp,
+    TypeData *d,
+    const char *a,
+    Tcl_Size alen,
+    const char *s,
+    Tcl_Size len,
+    TclBinLink *lk)
+{
+    Tcl_Size k;
+    const char *rest = NULL;
+    Tcl_Size rl = 0;
+    int memory = 0;
+    Tcl_DString ds;
+
+    if (len >= 7 && memcmp(s, "file://", 7) == 0) {
+	rest = s + 7;
+	rl = len - 7;
+    } else if (len >= 9 && memcmp(s, "memory://", 9) == 0) {
+	rest = s + 9;
+	rl = len - 9;
+	memory = 1;
+    } else if (len >= 2 && memcmp(s, "//", 2) == 0) {
+	rest = s + 2;
+	rl = len - 2;
+    }
+    if (rest != NULL) {
+	if (rl == 0) {
+	    if (memory) {
+		ERR(interp, "ARITY", "*(%.*s): memory:// needs the name of a "
+			"registered space, as in memory://proc1/", (int) alen, a);
+		return TCL_ERROR;
+	    }
+	    lk->origin = TclTypesKeepText(d, "//", 2);
+	    return TCL_OK;
+	}
+	if (rl < 2 || rest[rl - 1] != '/') {
+	    ERR(interp, "ARITY", "*(%.*s): a space is written //name/ (the "
+		    "final / is required), not \"%.*s\"", (int) alen, a,
+		    (int) len, s);
+	    return TCL_ERROR;
+	}
+	for (k = 0; k < rl - 1; k++) {
+	    if (!IsSpaceNameChar(rest[k])) {
+		ERR(interp, "ARITY", "*(%.*s): the space name may use letters, "
+			"digits and _ - . : only", (int) alen, a);
+		return TCL_ERROR;
+	    }
+	}
+	Tcl_DStringInit(&ds);
+	Tcl_DStringAppend(&ds, memory ? "memory://" : "//", memory ? 9 : 2);
+	Tcl_DStringAppend(&ds, rest, rl);
+	lk->origin = TclTypesKeepText(d, Tcl_DStringValue(&ds),
+		Tcl_DStringLength(&ds));
+	Tcl_DStringFree(&ds);
+	return TCL_OK;
+    }
+    if (!((len == 2 && memcmp(s, "./", 2) == 0) || (len == 1 && s[0] == '.'))) {
+	/* ../ ou ../../ ... */
+
+	int ok = (len >= 3 && len % 3 == 0);
+
+	for (k = 0; ok && k < len; k += 3) {
+	    if (memcmp(s + k, "../", 3) != 0) {
+		ok = 0;
+	    }
+	}
+	if (!ok) {
+	    ERR(interp, "ARITY", "*(%.*s): the origin must be //, //name/, "
+		    "file://, memory://name/, ./, ../ (or ../../...) or . (the "
+		    "field), not \"%.*s\"", (int) alen, a, (int) len, s);
+	    return TCL_ERROR;
+	}
+    }
+    lk->origin = TclTypesKeepText(d, s, len);
+    return TCL_OK;
+}
+
+/*
  * ParseLinkArgs --
  *
  *	Grammaire propre à *(...) :   ORIGINE , REPR ?, option ...?
- *	ORIGINE : "//" ou "file://" (début des données), "./" (début de la
+ *	ORIGINE : "//" ou "file://" (début des données), "//NOM/",
+ *	"memory://NOM/" (un référentiel enregistré), "./" (début de la
  *	structure englobante), "../" (et "../../"...), "." (le champ lui-même).
  *	REPR    : un type entier (u32le, int(s,32,le)...).
  *	option  : null  |  null=VALEUR   (0 si omise)
@@ -1724,38 +1819,9 @@ ParseLinkArgs(
 	    return TCL_ERROR;
 	}
 	if (index == 0) {
-	    Tcl_Size k;
-	    const char *o = s;
-	    Tcl_Size ol = len;
-
-	    if (len >= 7 && memcmp(s, "file://", 7) == 0 && len == 7) {
-		o = "//";
-		ol = 2;
-	    } else if (len >= 9 && memcmp(s, "memory://", 9) == 0) {
-		ERR(interp, "ARITY", "*(%.*s): memory:// is not implemented "
-			"yet", (int) len, s);
+	    if (ParseOrigin(interp, d, a, alen, s, len, lk) != TCL_OK) {
 		return TCL_ERROR;
 	    }
-	    if (!((ol == 2 && memcmp(o, "//", 2) == 0)
-		    || (ol == 2 && memcmp(o, "./", 2) == 0)
-		    || (ol == 1 && o[0] == '.'))) {
-		/* ../ ou ../../ ... */
-
-		int ok = (ol >= 3 && ol % 3 == 0);
-
-		for (k = 0; ok && k < ol; k += 3) {
-		    if (memcmp(o + k, "../", 3) != 0) {
-			ok = 0;
-		    }
-		}
-		if (!ok) {
-		    ERR(interp, "ARITY", "*(%.*s): the origin must be //, "
-			    "file://, ./, ../ (or ../../...) or . (the "
-			    "field), not \"%.*s\"", (int) alen, a, (int) len, s);
-		    return TCL_ERROR;
-		}
-	    }
-	    lk->origin = TclTypesKeepText(d, o, ol);
 	} else if (index == 1) {
 	    TclType *rt;
 	    const char *par = (const char *) memchr(s, '(', len);
