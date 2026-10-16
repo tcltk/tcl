@@ -29,6 +29,7 @@ to the userbase.
  - [difference between bcc'ed and eval'ed regexp](https://core.tcl-lang.org/tcl/tktview/306945)
  - [regsub always asked the regexp engine for 10 submatches](https://core.tcl-lang.org/tcl/tktview/446565)
  - [regsub -command panics with more than 9 capturing groups](https://core.tcl-lang.org/tcl/tktview/41bc9a)
+ - [restrictions of lookahead constraints were not applied nested](https://core.tcl-lang.org/tcl/tktview/5ea71f)
 
 # Updated bundled packages, libraries, standards, data
  - msgcat 1.7.2
