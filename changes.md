@@ -29,8 +29,10 @@ to the userbase.
  - [difference between bcc'ed and eval'ed regexp](https://core.tcl-lang.org/tcl/tktview/306945)
  - [regsub always asked the regexp engine for 10 submatches](https://core.tcl-lang.org/tcl/tktview/446565)
  - [regsub -command panics with more than 9 capturing groups](https://core.tcl-lang.org/tcl/tktview/41bc9a)
+ - [Problem with ::http::OpenSocket](https://core.tcl-lang.org/tcl/tktview/0c1e91)
 
 # Updated bundled packages, libraries, standards, data
+ - http 2.10.3
  - msgcat 1.7.2
  - tzcode 2026e
 

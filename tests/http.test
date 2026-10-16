@@ -689,6 +689,48 @@ test http-4.16.$ThreadLevel {Leak with Close vs Keepalive (bug [6ca52aec14]} -se
     rename list-difference {}
 } -result {}
 
+# The socket command enters the event loop, and the request is reset by an
+# event handler meanwhile. [0c1e91d072]
+proc waitingSocket {args} {
+    after 100 {set ::waitingSocketDone 1}
+    vwait ::waitingSocketDone
+    socket {*}$args
+}
+proc resetWhileOpening {cleanup} {
+    set before [chan names]
+    set oldbgerror [interp bgerror {}]
+    set ::bgerrors {}
+    set ::callbacks {}
+    interp bgerror {} {apply {{msg opts} {lappend ::bgerrors $msg}}}
+    http::register xhttp $::port waitingSocket
+    try {
+	set token [http::geturl xhttp:$::url \
+		-command {apply {{token} {lappend ::callbacks [http::status $token]}}}]
+	after 20 [list apply {{token cleanup} {
+	    http::reset $token
+	    if {$cleanup} {
+		http::cleanup $token
+	    }
+	}} $token $cleanup]
+	after 300 {set ::waitingSocketTestDone 1}
+	vwait ::waitingSocketTestDone
+	set status [expr {[info exists $token] ? [http::status $token] : "-"}]
+	catch {http::cleanup $token}
+	update
+	list $status $::callbacks $::bgerrors \
+		[lmap ch [chan names] {if {$ch in $before} continue; set ch}]
+    } finally {
+	http::unregister xhttp
+	interp bgerror {} $oldbgerror
+    }
+}
+test http-4.17.$ThreadLevel {reset and cleanup while the socket command runs the event loop} -body {
+    resetWhileOpening 1
+} -result {- reset {} {}}
+test http-4.18.$ThreadLevel {reset while the socket command runs the event loop} -body {
+    resetWhileOpening 0
+} -result {reset reset {} {}}
+
 test http-5.1.$ThreadLevel {http::formatQuery} {
     http::formatQuery name1 value1 name2 "value two"
 } {name1=value1&name2=value%20two}
