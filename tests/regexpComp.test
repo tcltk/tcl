@@ -995,7 +995,7 @@ test regexpComp-24.12 {regexp command compiling tests: pattern with backslash lo
     evalInProc {
 	regexp \- a-z
     }
-} {bad option "-": must be -all, -about, -indices, -inline, -expanded, -line, -linestop, -lineanchor, -nocase, -start, or --}
+} {ambiguous option "-": must be -all, -about, -indices, -inline, -expanded, -line, -linestop, -lineanchor, -nocase, -start, or --}
 test regexpComp-24.13 {regexp command compiling tests: pattern with backslash looks like option, bug 697b1bbfe3} {
     evalInProc {
 	regexp -\\ a-z
