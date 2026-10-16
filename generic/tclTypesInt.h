@@ -143,7 +143,7 @@ char	*TclTypesKeepText(TypeData *d, const char *s, Tcl_Size len);
 TclType *TclTypesMakeListDyn(TypeData *d, TclType *elem, TclBinDyn *dyn);
 TclType *TclTypesMakeAt(TypeData *d, TclType *elem, const char *expr);
 TclType *TclTypesMakeTagged(Tcl_Interp *interp, TypeData *d, TclType *sum,
-	    const char *field);
+	    const char *field, int isConst);
 /* list.T : liste de T, extensible. */
 TclType *TclTypesMakeList(TypeData *d, TclType *elem);
 TclType *TclTypesMakeListExplicit(TypeData *d, TclType *elem);

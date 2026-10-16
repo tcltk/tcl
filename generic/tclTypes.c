@@ -457,7 +457,7 @@ TclTypesMakeAt(TypeData *d, TclType *elem, const char *expr)
  * dont le nom égale la valeur du champ ({int}1, {string}2 : étiquettes 1, 2). */
 TclType *
 TclTypesMakeTagged(Tcl_Interp *interp, TypeData *d, TclType *sum,
-	const char *field)
+	const char *field, int isConst)
 {
     Tcl_DString ds;
     Tcl_HashEntry *hPtr;
@@ -480,7 +480,7 @@ TclTypesMakeTagged(Tcl_Interp *interp, TypeData *d, TclType *sum,
     }
     Tcl_DStringInit(&ds);
     Tcl_DStringAppend(&ds, sum->name, TCL_AUTO_LENGTH);
-    Tcl_DStringAppend(&ds, "($", 2);
+    Tcl_DStringAppend(&ds, isConst ? "(" : "($", isConst ? 1 : 2);
     Tcl_DStringAppend(&ds, field, TCL_AUTO_LENGTH);
     Tcl_DStringAppend(&ds, ")", 1);
     hPtr = Tcl_CreateHashEntry(&d->canon, Tcl_DStringValue(&ds), &isNew);
@@ -488,7 +488,20 @@ TclTypesMakeTagged(Tcl_Interp *interp, TypeData *d, TclType *sum,
 	tp = NewType(d, TCLT_SUM, Tcl_DStringValue(&ds));
 	tp->nominal = sum->nominal;
 	CopyInto(tp, sum);
-	tp->binTag = TclTypesKeepText(d, field, (Tcl_Size) strlen(field));
+	if (isConst) {
+	    /* binTag "=nom" : sélecteur constant (paramètre de type) */
+
+	    Tcl_DString tag;
+
+	    Tcl_DStringInit(&tag);
+	    Tcl_DStringAppend(&tag, "=", 1);
+	    Tcl_DStringAppend(&tag, field, TCL_AUTO_LENGTH);
+	    tp->binTag = TclTypesKeepText(d, Tcl_DStringValue(&tag),
+		    (Tcl_Size) Tcl_DStringLength(&tag));
+	    Tcl_DStringFree(&tag);
+	} else {
+	    tp->binTag = TclTypesKeepText(d, field, (Tcl_Size) strlen(field));
+	}
 	tp->binBase = (sum->binBase != NULL) ? sum->binBase : sum;
 	Tcl_SetHashValue(hPtr, tp);
     } else {
@@ -1305,6 +1318,17 @@ ValidateG(Tcl_Interp *interp, const TclType *tp, Tcl_Obj *value,
     case TCLT_SUM: {
 	int first = -1;
 
+	if (variantHint < 0 && tp->binTag != NULL && tp->binTag[0] == '=') {
+	    /* S(nom) : la variante est CHOISIE, il n'y a rien à deviner */
+
+	    for (i = 0; i < tp->nfields; i++) {
+		if (strcmp(Tcl_GetString(tp->fields[i].name),
+			tp->binTag + 1) == 0) {
+		    variantHint = (int) i;
+		    break;
+		}
+	    }
+	}
 	if (variantHint >= 0) {
 	    if (variantHint >= tp->nfields
 		    || !VariantAccepts(&tp->fields[variantHint], value, &me)) {
@@ -2684,8 +2708,10 @@ BinReprBody(
 	    int rc;
 
 	    Tcl_DStringInit(&ref);
-	    Tcl_DStringAppend(&ref, "$", 1);
-	    Tcl_DStringAppend(&ref, tp->binTag, TCL_AUTO_LENGTH);
+	    if (tp->binTag[0] != '=') {
+		Tcl_DStringAppend(&ref, "$", 1);
+		Tcl_DStringAppend(&ref, tp->binTag, TCL_AUTO_LENGTH);
+	    }
 	    rc = CheckRefs(interp, tp->name, Tcl_DStringValue(&ref), vis);
 	    Tcl_DStringFree(&ref);
 	    if (rc != TCL_OK) {

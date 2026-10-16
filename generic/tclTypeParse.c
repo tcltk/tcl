@@ -2269,6 +2269,7 @@ TclCompileTypeTree(
 
 		const char *q = a, *qe = a + alen;
 		char *field;
+		int isConst;
 
 		while (q < qe && isspace(UCHAR(*q))) {
 		    q++;
@@ -2276,13 +2277,58 @@ TclCompileTypeTree(
 		while (qe > q && isspace(UCHAR(qe[-1]))) {
 		    qe--;
 		}
+		if (q < qe && *q != '$') {
+		    /* S(nom) : variante CHOISIE (sélecteur constant) */
+
+		    Tcl_Size vi;
+
+		    isConst = 0;
+		    for (vi = 0; vi < tp->nfields; vi++) {
+			const char *vn = Tcl_GetString(tp->fields[vi].name);
+
+			if (strlen(vn) == (size_t) (qe - q)
+				&& memcmp(vn, q, qe - q) == 0) {
+			    isConst = 1;
+			    break;
+			}
+		    }
+		    if (isConst) {
+			field = TclTypesKeepText(envPtr->d, q, qe - q);
+			tp = TclTypesMakeTagged(interp, envPtr->d, tp, field, 1);
+			if (tp == NULL) {
+			    return TCL_ERROR;
+			}
+			PushItem(envPtr, SK_TYPE)->type = tp;
+			break;
+		    }
+		}
 		if (q >= qe || *q != '$' || qe - q < 2) {
 		    ERR(interp, "ARITY", "\"%s\" is a sum: write %s($field) to "
 			    "choose its variant by the value of a field", w, w);
 		    return TCL_ERROR;
 		}
 		field = TclTypesKeepText(envPtr->d, q + 1, qe - q - 1);
-		tp = TclTypesMakeTagged(interp, envPtr->d, tp, field);
+		isConst = 0;
+		if (envPtr->params != NULL) {
+		    /* S($k) où k est un paramètre de valeur lié : le
+		     * sélecteur est alors CONSTANT (le nom de la variante). */
+
+		    Tcl_Size pi;
+
+		    for (pi = 0; pi < envPtr->params->n; pi++) {
+			const TypeParam *pp = &envPtr->params->p[pi];
+
+			if (!pp->isType && !pp->isCmd && pp->value != NULL
+				&& strcmp(Tcl_GetString(pp->name), field) == 0) {
+			    field = TclTypesKeepText(envPtr->d,
+				    Tcl_GetString(pp->value),
+				    (Tcl_Size) strlen(Tcl_GetString(pp->value)));
+			    isConst = 1;
+			    break;
+			}
+		    }
+		}
+		tp = TclTypesMakeTagged(interp, envPtr->d, tp, field, isConst);
 		if (tp == NULL) {
 		    return TCL_ERROR;
 		}
