@@ -34,6 +34,7 @@ to the userbase.
  - [on Unix, Tcl_JoinThread() should not call pthread_join() for detached threads](https://core.tcl-lang.org/tcl/tktview/5974ff)
  - [socket-2.12 failed on OpenBSD](https://core.tcl-lang.org/tcl/tktview/e99187)
  - [do not throw from [socket -async] when the connect fails at once](https://core.tcl-lang.org/tcl/tktview/59e7e7)
+ - [test portability for illumos: skip socket-14.19 where SO_REUSEPORT is not supported](https://core.tcl-lang.org/tcl/tktview/dbf988)
 
 # Updated bundled packages, libraries, standards, data
  - http 2.10.3
