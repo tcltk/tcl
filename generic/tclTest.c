@@ -981,6 +981,46 @@ TestcmdinfoCmd(
     Tcl_CmdInfo info;
     (void)dummy;
 
+    if (argc >= 2 && strcmp(argv[1], "call") == 0) {
+	/*
+	 * testcmdinfo call interp cmdName ?arg ...?
+	 *
+	 * Call the objProc of the command in the given (child) interpreter
+	 * directly, without the evaluation machinery, as some extensions do.
+	 * The child interpreter has no evaluation in progress.
+	 */
+
+	Tcl_Interp *childInterp;
+	Tcl_Obj **objv;
+	int i, code;
+
+	if (argc < 4) {
+	    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
+		    " call interp cmdName ?arg ...?\"", NULL);
+	    return TCL_ERROR;
+	}
+	childInterp = Tcl_GetChild(interp, argv[2]);
+	if (childInterp == NULL) {
+	    return TCL_ERROR;
+	}
+	if (Tcl_GetCommandInfo(childInterp, argv[3], &info) == 0) {
+	    Tcl_AppendResult(interp, "unknown command \"", argv[3], "\"",
+		    NULL);
+	    return TCL_ERROR;
+	}
+	objv = (Tcl_Obj **)ckalloc((argc - 3) * sizeof(Tcl_Obj *));
+	for (i = 0; i < argc - 3; i++) {
+	    objv[i] = Tcl_NewStringObj(argv[i + 3], -1);
+	    Tcl_IncrRefCount(objv[i]);
+	}
+	code = info.objProc(info.objClientData, childInterp, argc - 3, objv);
+	for (i = 0; i < argc - 3; i++) {
+	    Tcl_DecrRefCount(objv[i]);
+	}
+	ckfree(objv);
+	Tcl_SetObjResult(interp, Tcl_GetObjResult(childInterp));
+	return code;
+    }
     if (argc != 3) {
 	Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
 		" option cmdName\"", NULL);
