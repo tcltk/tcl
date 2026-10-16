@@ -45,6 +45,8 @@ NewType(TypeData *d, TclTypeKind kind, const char *name)
     return tp;
 }
 
+static void CopyInto(TclType *into, const TclType *res);
+
 static TclType *
 Builtin(TypeData *d, TclTypeKind kind, const char *name)
 {
@@ -271,6 +273,86 @@ TclTypeSame(const TclType *a, const TclType *b)
 	    && a->arity < 0 && b->arity < 0 && !a->nominal && !b->nominal
 	    && a->elem == b->elem && a->elem->kind == TCLT_STRING
 	    && !a->elem->nominal);
+}
+
+/*
+ * Ensemble de valeurs d'un type numérique : classe (1 non signé, 2 signé,
+ * 3 flottant) et largeur en bits (0 : non bornée, int et double). Rend 0 si
+ * le type n'est pas numérique à représentation connue.
+ */
+
+static int
+ValueSet(const TclType *tp, int builtinInt, int builtinDouble, int *bitsPtr)
+{
+    if (tp->binKind == TCLBIN_UINT || tp->binKind == TCLBIN_SINT
+	    || tp->binKind == TCLBIN_FLOAT) {
+	*bitsPtr = (int) (tp->binSize * 8);
+	return tp->binKind == TCLBIN_UINT ? 1 : tp->binKind == TCLBIN_SINT
+		? 2 : 3;
+    }
+    if (tp->kind == TCLT_INT && tp->bitWidth > 0) {
+	*bitsPtr = (int) tp->bitWidth;
+	return 1;
+    }
+    if (builtinInt) {
+	*bitsPtr = 0;
+	return 2;
+    }
+    if (builtinDouble) {
+	*bitsPtr = 0;
+	return 3;
+    }
+    return 0;
+}
+
+/*
+ * TclTypeAssignable --
+ *
+ *	Même type, ou ÉLARGISSEMENT automatique. Seuls les raffinements
+ *	(int(s,n), int(u,n), double(n), bitarray(n)) élargissent : ce
+ *	sont les mêmes valeurs qu'un int ou un double, vues dans une plage. Un
+ *	type défini par `type def` reste nominal : il élargit vers int, double
+ *	ou un raffinement, mais rien d'autre n'entre dans lui.
+ */
+
+int
+TclTypeAssignable(const TclType *expected, const TclType *got)
+{
+    int ek, gk, eb, gb;
+
+    if (TclTypeSame(expected, got)) {
+	return 1;
+    }
+    ek = ValueSet(expected, expected->reserved
+	    && strcmp(expected->name, "int") == 0, expected->reserved
+	    && strcmp(expected->name, "double") == 0, &eb);
+    gk = ValueSet(got, got->reserved && strcmp(got->name, "int") == 0,
+	    got->reserved && strcmp(got->name, "double") == 0, &gb);
+    if (ek == 0 || gk == 0) {
+	return 0;
+    }
+    if (!expected->reserved && !expected->refine) {
+	return 0;			/* nominal : rien d'autre n'y entre */
+    }
+    if (expected->bitWidth > 0 && got->bitWidth > 0
+	    && expected->bitMsb0 != got->bitMsb0) {
+	return 0;			/* l'indice 0 changerait de sens */
+    }
+    if (eb == 0) {
+	/* int accepte tout entier ; double tout nombre */
+	return ek == 2 ? (gk == 1 || gk == 2) : 1;
+    }
+    if (gb == 0) {
+	return 0;			/* rétrécissement */
+    }
+    switch (ek) {
+    case 1:
+	return gk == 1 && gb <= eb;
+    case 2:
+	return (gk == 2 && gb <= eb) || (gk == 1 && gb < eb);
+    default:
+	return gk == 3 && gb <= eb;
+    }
 }
 
 /* list(N).elem : exactement N éléments. arity < 0 : liste ordinaire,
@@ -610,6 +692,107 @@ TclTypeCommon(Tcl_Interp *interp, TclType *a, TclType *b)
  * Validation
  * -------------------------------------------------------------------- */
 
+/*
+ * Types int(u,n), int(s,n) : l'entier tient-il sur bits bits ?
+ */
+
+static int
+BinIntFits(
+    mp_int *big,
+    int bits,
+    int isSigned)
+{
+    mp_int lim;
+    int ok = 0;
+
+    if (!isSigned) {
+	return !mp_isneg(big) && mp_count_bits(big) <= bits;
+    }
+    if (!mp_isneg(big)) {
+	return mp_count_bits(big) <= bits - 1;
+    }
+    /* négatif : |v| <= 2^(bits-1) */
+    if (mp_init_u64(&lim, 1) != MP_OKAY) {
+	return 0;
+    }
+    if (mp_mul_2d(&lim, bits - 1, &lim) == MP_OKAY) {
+	ok = (mp_cmp_mag(big, &lim) != MP_GT);
+    }
+    mp_clear(&lim);
+    return ok;
+}
+
+/*
+ * Types string(enc,N), string(enc,z), string(raw,N) : contrôle d'une chaîne.
+ * Le texte doit s'encoder sans perte dans l'encodage du type (ni caractère
+ * inexistant, ni NUL) et tenir dans N octets pour une taille fixe.
+ */
+
+static int
+BinStringValid(
+    Tcl_Interp *interp,
+    const TclType *tp,
+    Tcl_Obj *value)
+{
+    Tcl_Size len, i, nchars;
+    const char *s = Tcl_GetStringFromObj(value, &len);
+
+    if (strstr(s, "\xC0\x80") != NULL && tp->binKind != TCLBIN_BYTES) {
+	ERR(interp, "BIN", "value for %s cannot contain a NUL character",
+		tp->name);
+	return TCL_ERROR;
+    }
+    if (tp->binKind == TCLBIN_BYTES) {
+	nchars = Tcl_GetCharLength(value);
+	if (nchars != tp->binSize) {
+	    ERR(interp, "BIN", "%s needs exactly %" TCL_SIZE_MODIFIER "d "
+		    "bytes but got %" TCL_SIZE_MODIFIER "d", tp->name,
+		    tp->binSize, nchars);
+	    return TCL_ERROR;
+	}
+	for (i = 0; i < len; ) {
+	    int ch;
+
+	    i += Tcl_UtfToUniChar(s + i, &ch);
+	    if (ch > 255) {
+		ERR(interp, "BIN", "%s holds bytes: character U+%04X is "
+			"above 255", tp->name, ch);
+		return TCL_ERROR;
+	    }
+	}
+    } else if (tp->binEnc != NULL) {
+	Tcl_Encoding enc = Tcl_GetEncoding(NULL, tp->binEnc);
+	Tcl_DString ds;
+	Tcl_Size loc = 0, size;
+	int rc;
+
+	if (enc == NULL) {
+	    ERR(interp, "BIN", "encoding \"%s\" is not available",
+		    tp->binEnc);
+	    return TCL_ERROR;
+	}
+	Tcl_DStringInit(&ds);
+	rc = Tcl_UtfToExternalDStringEx(NULL, enc, s, len,
+		TCL_ENCODING_PROFILE_STRICT, &ds, &loc);
+	size = Tcl_DStringLength(&ds);
+	Tcl_DStringFree(&ds);
+	Tcl_FreeEncoding(enc);
+	if (rc != TCL_OK) {
+	    ERR(interp, "BIN", "text for %s cannot be encoded in %s (byte "
+		    "%" TCL_SIZE_MODIFIER "d of its UTF-8 form)", tp->name,
+		    tp->binEnc, loc);
+	    return TCL_ERROR;
+	}
+	if (tp->binKind == TCLBIN_STR && size > tp->binSize) {
+	    ERR(interp, "BIN", "text for %s is %" TCL_SIZE_MODIFIER "d bytes "
+		    "long in %s, the limit is %" TCL_SIZE_MODIFIER "d",
+		    tp->name, size, tp->binEnc, tp->binSize);
+	    return TCL_ERROR;
+	}
+    }
+    return TCL_OK;
+}
+
 static int
 IsIntegerValue(Tcl_Obj *v)
 {
@@ -871,6 +1054,9 @@ ValidateG(Tcl_Interp *interp, const TclType *tp, Tcl_Obj *value,
     }
     switch (tp->kind) {
     case TCLT_STRING:
+	if (tp->binKind != TCLBIN_NONE) {
+	    return BinStringValid(interp, tp, value);
+	}
 	return TCL_OK;
     case TCLT_INT:
 	if (!IsIntegerValue(value)) {
@@ -892,6 +1078,22 @@ ValidateG(Tcl_Interp *interp, const TclType *tp, Tcl_Obj *value,
 		ERR(interp, "BITS", "value \"%s\" does not fit in %s (%"
 			TCL_SIZE_MODIFIER "d bits)", Tcl_GetString(value),
 			tp->name, tp->bitWidth);
+		return TCL_ERROR;
+	    }
+	}
+	if (tp->binKind == TCLBIN_UINT || tp->binKind == TCLBIN_SINT) {
+	    mp_int big;
+	    int fits;
+
+	    if (Tcl_GetBignumFromObj(NULL, value, &big) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    fits = BinIntFits(&big, (int) (tp->binSize * 8),
+		    tp->binKind == TCLBIN_SINT);
+	    mp_clear(&big);
+	    if (!fits) {
+		ERR(interp, "BIN", "value \"%s\" does not fit in %s",
+			Tcl_GetString(value), tp->name);
 		return TCL_ERROR;
 	    }
 	}
@@ -1931,6 +2133,10 @@ CopyInto(TclType *into, const TclType *res)
     into->varTyped = res->varTyped;
     into->bitWidth = res->bitWidth;
     into->bitMsb0 = res->bitMsb0;
+    into->binKind = res->binKind;
+    into->binSize = res->binSize;
+    into->binEnd = res->binEnd;
+    into->binEnc = res->binEnc;
     if (res->nkeys > 0) {
 	into->keys = (TclDictKey *) Tcl_Alloc(res->nkeys * sizeof(TclDictKey));
 	into->nkeys = res->nkeys;
@@ -2178,6 +2384,180 @@ TypeGetCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
     return TCL_OK;
 }
 
+/*
+ * BinRepr --
+ *
+ *	Représentation binaire d'un type, sous forme de liste Tcl :
+ *	    uint SIZE END | sint SIZE END | float SIZE END    (octets)
+ *	    bits SIZE        bitarray(n), n multiple de 8
+ *	    bytes N | str N ENC | cstring ENC       (ENC : nom d'encodage Tcl)
+ *	    lit N            somme de littéraux de même longueur
+ *	    array N REPR     list(N).T
+ *	    product NAME {FIELD REPR HASDEFAULT ...}
+ *	Rend 0 et laisse *objPtr à NULL si le type n'en a pas.
+ */
+
+static int
+BinRepr(
+    Tcl_Interp *interp,
+    TclType *tp,
+    int depth,
+    Tcl_Obj **objPtr)
+{
+    static const char *const endName[] = {"auto", "le", "be"};
+    Tcl_Obj *r = NULL, *sub;
+    Tcl_Size i, len;
+
+    *objPtr = NULL;
+    if (depth > 32) {
+	ERR(interp, "BIN", "type %s is too deeply nested (or recursive) for "
+		"a binary layout", tp->name);
+	return TCL_ERROR;
+    }
+    switch (tp->binKind) {
+    case TCLBIN_UINT: case TCLBIN_SINT: case TCLBIN_FLOAT:
+	r = Tcl_NewListObj(0, NULL);
+	Tcl_ListObjAppendElement(NULL, r, Tcl_NewStringObj(
+		tp->binKind == TCLBIN_UINT ? "uint"
+		: tp->binKind == TCLBIN_SINT ? "sint" : "float", -1));
+	Tcl_ListObjAppendElement(NULL, r, Tcl_NewWideIntObj(tp->binSize));
+	Tcl_ListObjAppendElement(NULL, r, Tcl_NewStringObj(
+		endName[tp->binEnd], -1));
+	*objPtr = r;
+	return TCL_OK;
+    case TCLBIN_BYTES: case TCLBIN_STR:
+	r = Tcl_NewListObj(0, NULL);
+	Tcl_ListObjAppendElement(NULL, r, Tcl_NewStringObj(
+		tp->binKind == TCLBIN_BYTES ? "bytes" : "str", -1));
+	Tcl_ListObjAppendElement(NULL, r, Tcl_NewWideIntObj(tp->binSize));
+	if (tp->binKind == TCLBIN_STR) {
+	    Tcl_ListObjAppendElement(NULL, r,
+		    Tcl_NewStringObj(tp->binEnc, -1));
+	}
+	*objPtr = r;
+	return TCL_OK;
+    case TCLBIN_CSTRING:
+	r = Tcl_NewListObj(0, NULL);
+	Tcl_ListObjAppendElement(NULL, r, Tcl_NewStringObj("cstring", -1));
+	Tcl_ListObjAppendElement(NULL, r, Tcl_NewStringObj(tp->binEnc, -1));
+	*objPtr = r;
+	return TCL_OK;
+    default:
+	break;
+    }
+    if (tp->kind == TCLT_INT && tp->bitWidth > 0) {
+	if (tp->bitWidth % 8 == 0) {
+	    r = Tcl_NewListObj(0, NULL);
+	    Tcl_ListObjAppendElement(NULL, r, Tcl_NewStringObj("bits", -1));
+	    Tcl_ListObjAppendElement(NULL, r,
+		    Tcl_NewWideIntObj(tp->bitWidth / 8));
+	    Tcl_ListObjAppendElement(NULL, r, Tcl_NewStringObj(
+		    endName[tp->binEnd], -1));
+	    *objPtr = r;
+	}
+	return TCL_OK;
+    }
+    switch (tp->kind) {
+    case TCLT_SUM:
+	/* Somme de littéraux de même longueur (une constante, "MZ") */
+	len = -1;
+	for (i = 0; i < tp->nfields; i++) {
+	    Tcl_Size l;
+
+	    if (tp->fields[i].type != NULL || tp->fields[i].literal == NULL) {
+		return TCL_OK;
+	    }
+	    l = Tcl_GetCharLength(tp->fields[i].literal);
+	    if (len >= 0 && l != len) {
+		return TCL_OK;
+	    }
+	    len = l;
+	}
+	if (len > 0) {
+	    r = Tcl_NewListObj(0, NULL);
+	    Tcl_ListObjAppendElement(NULL, r, Tcl_NewStringObj("lit", -1));
+	    Tcl_ListObjAppendElement(NULL, r, Tcl_NewWideIntObj(len));
+	    *objPtr = r;
+	}
+	return TCL_OK;
+    case TCLT_LIST:
+	if (tp->arity >= 0) {
+	    if (BinRepr(interp, tp->elem, depth + 1, &sub) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    if (sub != NULL) {
+		r = Tcl_NewListObj(0, NULL);
+		Tcl_ListObjAppendElement(NULL, r, Tcl_NewStringObj("array", -1));
+		Tcl_ListObjAppendElement(NULL, r, Tcl_NewWideIntObj(tp->arity));
+		Tcl_ListObjAppendElement(NULL, r, sub);
+		*objPtr = r;
+	    }
+	}
+	return TCL_OK;
+    case TCLT_PRODUCT: {
+	Tcl_Obj *flds = Tcl_NewListObj(0, NULL);
+
+	for (i = 0; i < tp->nfields; i++) {
+	    Tcl_Obj *fr, *item;
+	    const TclTypeField *f = &tp->fields[i];
+
+	    fr = NULL;
+	    if (f->type != NULL
+		    && BinRepr(interp, f->type, depth + 1, &fr) != TCL_OK) {
+		Tcl_DecrRefCount(flds);
+		return TCL_ERROR;
+	    }
+	    item = Tcl_NewListObj(0, NULL);
+	    Tcl_ListObjAppendElement(NULL, item, f->name != NULL ? f->name
+		    : Tcl_NewObj());
+	    Tcl_ListObjAppendElement(NULL, item,
+		    fr != NULL ? fr : Tcl_NewStringObj("none", -1));
+	    Tcl_ListObjAppendElement(NULL, item, Tcl_NewIntObj(
+		    f->defval != NULL || f->defcmd != NULL));
+	    Tcl_ListObjAppendElement(NULL, flds, item);
+	}
+	r = Tcl_NewListObj(0, NULL);
+	Tcl_ListObjAppendElement(NULL, r, Tcl_NewStringObj("product", -1));
+	Tcl_ListObjAppendElement(NULL, r, Tcl_NewStringObj(tp->name, -1));
+	Tcl_ListObjAppendElement(NULL, r, flds);
+	*objPtr = r;
+	return TCL_OK;
+    }
+    default:
+	return TCL_OK;
+    }
+}
+
+static int
+TypeBinaryCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
+{
+    TclType *tp;
+    Tcl_Obj *r;
+    Tcl_Size len;
+    const char *text;
+
+    if (objc != 3) {
+	Tcl_WrongNumArgs(interp, 2, objv, "type");
+	return TCL_ERROR;
+    }
+    text = Tcl_GetStringFromObj(objv[2], &len);
+    tp = TclTypeParse(interp, text, len);
+    if (tp == NULL) {
+	return TCL_ERROR;
+    }
+    if (BinRepr(interp, tp, 0, &r) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    if (r == NULL) {
+	ERR(interp, "BIN", "type \"%s\" has no binary representation (use "
+		"int(u|s,n), double(n), string(enc,N|z), bitarray(n), a "
+		"literal sum, list(N).T or a product of these)", tp->name);
+	return TCL_ERROR;
+    }
+    Tcl_SetObjResult(interp, r);
+    return TCL_OK;
+}
+
 static int
 TypeObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
 	Tcl_Obj *const objv[])
@@ -2212,8 +2592,11 @@ TypeObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
     if (strcmp(sub, "deref") == 0) {
 	return TypeDerefCmd(interp, objc, objv);
     }
+    if (strcmp(sub, "binary") == 0) {
+	return TypeBinaryCmd(interp, objc, objv);
+    }
     ERR(interp, "SUBCMD", "bad subcommand \"%s\": must be def, alias, "
-	    "convert, deref or get", sub);
+	    "convert, deref, get or binary", sub);
     return TCL_ERROR;
 }
 
@@ -2410,13 +2793,19 @@ TclTypesInit(Tcl_Interp *interp)
 	    NULL, NULL);
     Tcl_CreateObjCommand2(interp, "::tcl::mathfunc::bitlen", BitlenCmd,
 	    NULL, NULL);
-    /* bitarray(n, ordre) : type paramétré prédéfini. Le corps n'est que
-     * "int" (le commentaire nomme les paramètres) ; la largeur et l'ordre
-     * sont posés par l'instanciation (tclTypeGeneric.c). */
-    if (TclTypesDefineGeneric(NULL, d, "bitarray({int}n, {string}ord = lsb0)",
-	    (Tcl_Size) strlen("bitarray({int}n, {string}ord = lsb0)"),
-	    "int # n ord", 11) == TCL_OK) {
-	TclTypesMarkBits(d, "bitarray");
+    /* bitarray(n, ordre, boutisme) : type paramétré prédéfini. Le corps n'est
+     * que "int" (le commentaire nomme les paramètres) ; la largeur, l'ordre
+     * et le boutisme sont posés par l'instanciation (tclTypeGeneric.c).
+     * Les autres types binaires, int(u,16,be), double(32,le) et
+     * string(utf-8,8), sont construits par TclTypesBinaryType. */
+    {
+	static const char spec[] = "bitarray({int}n, {string}ord = lsb0, "
+		"{string}e = auto)";
+
+	if (TclTypesDefineGeneric(NULL, d, spec, (Tcl_Size) strlen(spec),
+		"int # n ord e", 13) == TCL_OK) {
+	    TclTypesMarkBits(d, "bitarray", 1);
+	}
     }
     TclAnnotInit(interp);
 }

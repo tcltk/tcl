@@ -45,6 +45,18 @@ typedef enum {
     TCLT_LIST, TCLT_DICT, TCLT_PRODUCT, TCLT_SUM, TCLT_VAR
 } TclTypeKind;
 
+/* Représentation binaire d'un type (int(u|s,n), double(n), string(enc,N|z),
+ * bitarray(n)) : ce que `type binary` décrit et que `file binary` lit/écrit. */
+enum {
+    TCLBIN_NONE = 0, TCLBIN_UINT, TCLBIN_SINT, TCLBIN_FLOAT, TCLBIN_BYTES,
+    TCLBIN_STR, TCLBIN_CSTRING
+};
+/* Boutisme d'un type binaire (TclType.binEnd). */
+enum {
+    TCLBIN_AUTO = 0,		/* celui de l'appel (option -endian) */
+    TCLBIN_LE, TCLBIN_BE
+};
+
 typedef struct TclTypeField {
     Tcl_Obj *name;		/* champ ou variante ; NULL si sans nom */
     TclType *type;		/* NULL pour une variante littérale */
@@ -77,6 +89,15 @@ struct TclType {
 				 * 0 */
     int bitMsb0;		/* bitarray : 1 si l'indice 0 est le bit de
 				 * gauche (msb0), 0 si de droite (lsb0) */
+    int binKind;		/* TCLBIN_* : représentation binaire, ou 0 */
+    Tcl_Size binSize;		/* octets : entier, flottant, chaîne de taille
+				 * fixe */
+    const char *binEnc;		/* chaîne : nom d'encodage Tcl (statique), NULL
+				 * pour des octets bruts (raw) */
+    int binEnd;			/* TCLBIN_AUTO, TCLBIN_LE ou TCLBIN_BE */
+    int refine;			/* 1 : raffinement d'int ou de double (instance
+				 * de int(s,n), double(n), bitarray(n)) : voir
+				 * TclTypeAssignable */
 };
 
 /* Les descripteurs vivent autant que l'interpréteur (pas de comptage). */
@@ -189,6 +210,11 @@ TclType *TclTypeParse(Tcl_Interp *interp, const char *text, Tcl_Size len);
 int	TclTypeValidate(Tcl_Interp *interp, const TclType *tp, Tcl_Obj *value,
 	    int variantHint, int *variantOut);
 int	TclTypeIncludes(const TclType *a, const TclType *b);
+/* Une valeur de type got peut-elle être rangée dans une variable (ou un
+ * champ) de type expected ? Même type, ou élargissement automatique : un
+ * raffinement (int(u,8), int(s,16,be), bitarray(12)) entre dans int, double
+ * ou un raffinement plus large. L'inverse (rétrécissement) reste refusé. */
+int	TclTypeAssignable(const TclType *expected, const TclType *got);
 int	TclTypeSame(const TclType *a, const TclType *b);
 TclType *TclTypeListOf(Tcl_Interp *interp, TclType *elem);
 TclType *TclTypeCommon(Tcl_Interp *interp, TclType *a, TclType *b);

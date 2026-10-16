@@ -1910,7 +1910,8 @@ BuildNest(Tcl_Interp *interp, TypeEnv *envPtr)
     } else if ((l.kind == SK_TYPE) && (l.type == d->tVar)) {
 	tp = TclTypesMakeVar(d, r.type, 0);
     } else {
-	ERR(interp, "NEST", "only list, dict and var can be nested with \".\"");
+	ERR(interp, "NEST", "only list, dict and var can be nested "
+		"with \".\"");
 	goto done;
     }
     PushItem(envPtr, SK_TYPE)->type = tp;
@@ -2181,6 +2182,19 @@ TclCompileTypeTree(
 		ERR(interp, "PARAM", "\"%s\" is a parameter: it takes no "
 			"arguments", w);
 		return TCL_ERROR;
+	    }
+	    if ((len == 3 && memcmp(w, "int", 3) == 0)
+		    || (len == 6 && (memcmp(w, "double", 6) == 0
+		    || memcmp(w, "string", 6) == 0))) {
+		/* int(u,16,be), double(32,le), string(utf-8,8) : le type de
+		 * base avec sa représentation binaire (tclTypeGeneric.c) */
+
+		tp = TclTypesBinaryType(interp, envPtr->d, w, len, a, alen);
+		if (tp == NULL) {
+		    return TCL_ERROR;
+		}
+		PushItem(envPtr, SK_TYPE)->type = tp;
+		break;
 	    }
 	    if ((g = TclTypesFindGeneric(envPtr->d, w, len)) != NULL) {
 		tp = TclTypesInstantiate(interp, envPtr->d, g, a, alen, envPtr);

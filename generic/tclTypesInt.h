@@ -43,7 +43,7 @@ typedef struct TypeGeneric {
     char *body;			/* texte du type, avec les paramètres libres */
     Tcl_Size bodyLen;
     int bits;			/* 1 : bitarray, l'instance reçoit bitWidth et
-				 * bitMsb0 */
+				 * bitMsb0 et binEnd */
 } TypeGeneric;
 
 typedef struct TypeData {
@@ -111,8 +111,10 @@ int	TclTypesDefineGeneric(Tcl_Interp *interp, TypeData *d,
 	    const char *spec, Tcl_Size specLen, const char *body,
 	    Tcl_Size bodyLen);
 void	TclTypesFreeGenerics(TypeData *d);
-/* Marque le type paramétré NAME comme bitarray. */
-void	TclTypesMarkBits(TypeData *d, const char *name);
+/* Marque le type paramétré NAME : 1 bitarray. */
+void	TclTypesMarkBits(TypeData *d, const char *name, int code);
+/* Octets du terminateur NUL de string(enc,z) pour un encodage Tcl. */
+int	TclTypesNulWidth(const char *tclName);
 
 /* tclTypes.c : services utilisés par le compilateur de types */
 TclType *TclTypesNewType(TypeData *d, TclTypeKind kind, const char *name);
@@ -121,6 +123,10 @@ void	TclTypesCopyInto(TclType *into, const TclType *res);
 int	TclTypesCheckNewName(Tcl_Interp *interp, TypeData *d, const char *name);
 TclType *TclTypesResolve(Tcl_Interp *interp, TypeData *d,
 	    const char *selfName, TclType *self, const char *w, Tcl_Size len);
+/* int(u,16,be), double(32,le), string(utf-8,8) : le type de base (int,
+ * double, string) avec sa représentation binaire. */
+TclType *TclTypesBinaryType(Tcl_Interp *interp, TypeData *d, const char *base,
+	    Tcl_Size baseLen, const char *argText, Tcl_Size argLen);
 /* list.T : liste de T, extensible. */
 TclType *TclTypesMakeList(TypeData *d, TclType *elem);
 TclType *TclTypesMakeListExplicit(TypeData *d, TclType *elem);

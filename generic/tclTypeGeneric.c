@@ -210,13 +210,267 @@ FreeGeneric(TypeGeneric *g)
 }
 
 void
-TclTypesMarkBits(TypeData *d, const char *name)
+TclTypesMarkBits(TypeData *d, const char *name, int code)
 {
     Tcl_HashEntry *hPtr = Tcl_FindHashEntry(&d->generics, name);
 
     if (hPtr != NULL) {
-	((TypeGeneric *) Tcl_GetHashValue(hPtr))->bits = 1;
+	((TypeGeneric *) Tcl_GetHashValue(hPtr))->bits = code;
     }
+}
+
+/*
+ * Boutisme d'un argument "be" ou "le" ; TCLBIN_AUTO si le mot n'en est pas
+ * un. Rend -1 pour un autre mot.
+ */
+
+static int
+EndianWord(const char *s, Tcl_Size len)
+{
+    if (len == 2 && s[0] == 'b' && s[1] == 'e') {
+	return TCLBIN_BE;
+    } else if (len == 2 && s[0] == 'l' && s[1] == 'e') {
+	return TCLBIN_LE;
+    }
+    return -1;
+}
+
+/* Entier décimal strict d'un argument ; 0 si le texte n'en est pas un. */
+
+static int
+SpanWide(const ArgSpan *sp, Tcl_WideInt *wPtr)
+{
+    char buf[32], *e;
+
+    if (sp->len <= 0 || sp->len >= (Tcl_Size) sizeof(buf)) {
+	return 0;
+    }
+    memcpy(buf, sp->start, sp->len);
+    buf[sp->len] = '\0';
+    *wPtr = strtoll(buf, &e, 10);
+    return *e == '\0';
+}
+
+/* Encodages des chaînes binaires : mot-clé, nom d'encodage Tcl (NULL pour
+ * des octets bruts), nombre d'octets du terminateur NUL de string(enc,z). */
+
+static const struct {
+    const char *word, *tclName;
+    int nul;
+} encodings[] = {
+    {"raw", NULL, 1},
+    {"ascii", "ascii", 1},
+    {"latin1", "iso8859-1", 1},
+    {"utf-8", "utf-8", 1},
+    {"utf-16le", "utf-16le", 2},
+    {"utf-16be", "utf-16be", 2},
+    {"ucs-2le", "ucs-2le", 2},
+    {"ucs-2be", "ucs-2be", 2}
+};
+#define NENCODINGS ((int) (sizeof(encodings) / sizeof(encodings[0])))
+
+/*
+ * TclTypesBinaryType --
+ *
+ *	int(u|s, n ?, be|le?)    entier de n bits (multiple de 8, de 8 à 1024)
+ *	double(32|64 ?, be|le?)  flottant IEEE
+ *	string(enc, N)           N octets, enc : raw ascii latin1 utf-8
+ *	                         utf-16le utf-16be ucs-2le ucs-2be
+ *	string(enc, z)           terminé par un NUL (2 octets pour utf-16, ucs-2)
+ *
+ *	L'instance est un type nominal interné par son nom d'affichage ; elle
+ *	a les mêmes valeurs qu'int, double ou string, dans la plage de sa
+ *	représentation (voir TclTypeAssignable pour l'élargissement).
+ */
+
+TclType *
+TclTypesBinaryType(
+    Tcl_Interp *interp,
+    TypeData *d,
+    const char *base,
+    Tcl_Size baseLen,
+    const char *argText,
+    Tcl_Size argLen)
+{
+    ArgSpan *sp;
+    Tcl_Size n = 0, i;
+    Tcl_DString key;
+    Tcl_HashEntry *hPtr;
+    TclType *inst = NULL, *under;
+    int isNew, kind, endian = TCLBIN_AUTO, signd = 0, enc = 0, cstr = 0;
+    Tcl_WideInt w = 0;
+    int isInt = (baseLen == 3), isDouble = (baseLen == 6 && base[0] == 'd');
+
+    sp = SplitArgs(argText, argLen, &n);
+    for (i = 0; i < n; i++) {
+	if (sp[i].len == 0) {
+	    ERR(interp, "PARAM", "empty argument in %.*s(...)", (int) baseLen,
+		    base);
+	    goto fail;
+	}
+    }
+    under = isInt ? d->tInt : isDouble ? d->tDouble : d->tString;
+    kind = isInt ? TCLT_INT : isDouble ? TCLT_DOUBLE : TCLT_STRING;
+
+    if (isInt) {
+	/* int(u|s, n ?, be|le?) */
+
+	if (n < 2 || n > 3) {
+	    ERR(interp, "PARAM", "int takes (u|s, bits ?, be|le?), for "
+		    "example int(u,16,be)");
+	    goto fail;
+	}
+	if (sp[0].len == 1 && (sp[0].start[0] == 'u'
+		|| sp[0].start[0] == 's')) {
+	    signd = (sp[0].start[0] == 's');
+	} else {
+	    ERR(interp, "PARAM", "int: the first argument must be u "
+		    "(unsigned) or s (signed), not \"%.*s\"", (int) sp[0].len,
+		    sp[0].start);
+	    goto fail;
+	}
+	if (!SpanWide(&sp[1], &w) || w < 8 || w > 1024 || w % 8) {
+	    ERR(interp, "PARAM", "int: the width in bits must be a multiple "
+		    "of 8 between 8 and 1024, not \"%.*s\"", (int) sp[1].len,
+		    sp[1].start);
+	    goto fail;
+	}
+	if (n == 3 && (endian = EndianWord(sp[2].start, sp[2].len)) < 0) {
+	    ERR(interp, "PARAM", "int: the byte order must be be or le, not "
+		    "\"%.*s\"", (int) sp[2].len, sp[2].start);
+	    goto fail;
+	}
+    } else if (isDouble) {
+	/* double(32|64 ?, be|le?) */
+
+	if (n < 1 || n > 2) {
+	    ERR(interp, "PARAM", "double takes (32|64 ?, be|le?), for "
+		    "example double(64,le)");
+	    goto fail;
+	}
+	if (!SpanWide(&sp[0], &w) || (w != 32 && w != 64)) {
+	    ERR(interp, "PARAM", "double: the width in bits must be 32 or "
+		    "64, not \"%.*s\"", (int) sp[0].len, sp[0].start);
+	    goto fail;
+	}
+	if (n == 2 && (endian = EndianWord(sp[1].start, sp[1].len)) < 0) {
+	    ERR(interp, "PARAM", "double: the byte order must be be or le, "
+		    "not \"%.*s\"", (int) sp[1].len, sp[1].start);
+	    goto fail;
+	}
+    } else {
+	/* string(enc, N|z) */
+
+	if (n != 2) {
+	    ERR(interp, "PARAM", "string takes (encoding, size|z), for "
+		    "example string(utf-8,8) or string(utf-8,z)");
+	    goto fail;
+	}
+	for (enc = 0; enc < NENCODINGS; enc++) {
+	    if ((Tcl_Size) strlen(encodings[enc].word) == sp[0].len
+		    && memcmp(encodings[enc].word, sp[0].start, sp[0].len)
+		    == 0) {
+		break;
+	    }
+	}
+	if (enc == NENCODINGS) {
+	    ERR(interp, "PARAM", "string: unknown encoding \"%.*s\" (raw, "
+		    "ascii, latin1, utf-8, utf-16le, utf-16be, ucs-2le, "
+		    "ucs-2be)", (int) sp[0].len, sp[0].start);
+	    goto fail;
+	}
+	if (sp[1].len == 1 && sp[1].start[0] == 'z') {
+	    cstr = 1;
+	    if (enc == 0) {
+		ERR(interp, "PARAM", "string(raw,z): raw bytes cannot be "
+			"NUL-terminated, use a text encoding");
+		goto fail;
+	    }
+	} else {
+	    if (!SpanWide(&sp[1], &w) || w < 1 || w > 1000000) {
+		ERR(interp, "PARAM", "string: the size in bytes must be "
+			"between 1 and 1000000 or z, not \"%.*s\"",
+			(int) sp[1].len, sp[1].start);
+		goto fail;
+	    }
+	}
+    }
+
+    /* nom canonique et intern */
+
+    Tcl_DStringInit(&key);
+    Tcl_DStringAppend(&key, base, baseLen);
+    Tcl_DStringAppend(&key, "(", 1);
+    if (isInt) {
+	Tcl_DStringAppend(&key, signd ? "s," : "u,", 2);
+    } else if (!isDouble) {
+	Tcl_DStringAppend(&key, encodings[enc].word, TCL_AUTO_LENGTH);
+	Tcl_DStringAppend(&key, ",", 1);
+    }
+    if (cstr) {
+	Tcl_DStringAppend(&key, "z", 1);
+    } else {
+	char num[24];
+
+	snprintf(num, sizeof(num), "%lld", (long long) w);
+	Tcl_DStringAppend(&key, num, TCL_AUTO_LENGTH);
+    }
+    if (endian != TCLBIN_AUTO) {
+	Tcl_DStringAppend(&key, endian == TCLBIN_BE ? ",be" : ",le", 3);
+    }
+    Tcl_DStringAppend(&key, ")", 1);
+    hPtr = Tcl_CreateHashEntry(&d->instances, Tcl_DStringValue(&key), &isNew);
+    if (!isNew) {
+	inst = (TclType *) Tcl_GetHashValue(hPtr);
+    } else {
+	inst = TclTypesNewType(d, (TclTypeKind) kind, Tcl_DStringValue(&key));
+	inst->nominal = 1;
+	TclTypesCopyInto(inst, under);
+	if (isInt) {
+	    inst->binKind = signd ? TCLBIN_SINT : TCLBIN_UINT;
+	    inst->binSize = (Tcl_Size) (w / 8);
+	    inst->refine = 1;
+	} else if (isDouble) {
+	    inst->binKind = TCLBIN_FLOAT;
+	    inst->binSize = (Tcl_Size) (w / 8);
+	    inst->refine = 1;
+	} else if (cstr) {
+	    inst->binKind = TCLBIN_CSTRING;
+	    inst->binEnc = encodings[enc].tclName;
+	} else if (enc == 0) {
+	    inst->binKind = TCLBIN_BYTES;
+	    inst->binSize = (Tcl_Size) w;
+	} else {
+	    inst->binKind = TCLBIN_STR;
+	    inst->binSize = (Tcl_Size) w;
+	    inst->binEnc = encodings[enc].tclName;
+	}
+	inst->binEnd = endian;
+	Tcl_SetHashValue(hPtr, inst);
+    }
+    Tcl_DStringFree(&key);
+    Tcl_Free(sp);
+    return inst;
+
+  fail:
+    Tcl_Free(sp);
+    return NULL;
+}
+
+/* Octets du terminateur NUL d'un string(enc,z) : 2 pour utf-16, ucs-2. */
+
+int
+TclTypesNulWidth(const char *tclName)
+{
+    int i;
+
+    for (i = 0; i < NENCODINGS; i++) {
+	if (encodings[i].tclName != NULL && tclName != NULL
+		&& strcmp(encodings[i].tclName, tclName) == 0) {
+	    return encodings[i].nul;
+	}
+    }
+    return 1;
 }
 
 void
@@ -826,6 +1080,10 @@ TclTypesInstantiate(
 	Tcl_DStringAppend(&key, "\1", 1);
 	Tcl_DStringAppend(&key, Tcl_GetString(bound.p[i].value),
 		TCL_AUTO_LENGTH);
+	if (g->bits == 1 && i == 2
+		&& strcmp(Tcl_GetString(bound.p[i].value), "auto") == 0) {
+	    continue;			/* bitarray(16,msb0), pas (16,msb0,auto) */
+	}
 	if (i > 0) {
 	    Tcl_DStringAppend(&display, ",", 1);
 	}
@@ -874,11 +1132,12 @@ TclTypesInstantiate(
     if (res != inst) {
 	TclTypesCopyInto(inst, res);
     }
-    if (g->bits) {
+    if (g->bits == 1) {
 	/* bitarray(n, ordre) : largeur et sens des indices */
 
 	Tcl_WideInt w = 0;
 	const char *ord = Tcl_GetString(bound.p[1].value);
+	const char *endw = Tcl_GetString(bound.p[2].value);
 
 	if (Tcl_GetWideIntFromObj(NULL, bound.p[0].value, &w) != TCL_OK
 		|| w < 1 || w > 1000000) {
@@ -895,6 +1154,16 @@ TclTypesInstantiate(
 	inst->kind = TCLT_INT;
 	inst->bitWidth = (Tcl_Size) w;
 	inst->bitMsb0 = (strcmp(ord, "msb0") == 0);
+	inst->refine = 1;
+	if (strcmp(endw, "be") == 0) {
+	    inst->binEnd = TCLBIN_BE;
+	} else if (strcmp(endw, "le") == 0) {
+	    inst->binEnd = TCLBIN_LE;
+	} else if (strcmp(endw, "auto") != 0) {
+	    ERR(interp, "PARAM", "bitarray byte order must be be or le, not "
+		    "\"%s\"", endw);
+	    goto fail;
+	}
     }
     if (!TclTypesInhabited(inst, stack, 0)) {
 	ERR(interp, "RECURSIVE", "type \"%s\" has no finite value: every "

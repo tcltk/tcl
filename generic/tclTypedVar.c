@@ -47,14 +47,17 @@ MakeTyped(Tcl_Interp *interp, TclType *tp, Tcl_Obj *arg)
 	return NULL;
     }
     if (status == TCLA_TYPED) {
-	if (!TclTypeSame(at, tp)) {
+	if (TclTypeSame(at, tp)) {
+	    return Tcl_DuplicateObj(arg);
+	}
+	if (!TclTypeAssignable(tp, at)) {
 	    Mismatch(interp, tp, at);
 	    return NULL;
 	}
-	return Tcl_DuplicateObj(arg);
+	/* Élargissement (int(u,8) -> int) : même contenu, type de la cible. */
     }
     if (status == TCLA_RAW) {
-	if (!TclTypeSame(at, tp)) {
+	if (!TclTypeAssignable(tp, at)) {
 	    Mismatch(interp, tp, at);
 	    return NULL;
 	}
@@ -250,7 +253,8 @@ TclTypedConform(Tcl_Interp *interp, TclType *tp, Tcl_Obj *arg)
 	    && TclTypeValidate(interp, at, content, variant, NULL) != TCL_OK) {
 	return NULL;
     }
-    if ((status == TCLA_TYPED || status == TCLA_RAW) && !TclTypeSame(at, tp)
+    if ((status == TCLA_TYPED || status == TCLA_RAW)
+	    && !TclTypeAssignable(tp, at)
 	    && !TclTypeIsPlainString(tp) && !TclTypeIsAny(tp)) {
 	Mismatch(interp, tp, at);
 	return NULL;
@@ -322,6 +326,15 @@ BuildList(Tcl_Interp *interp, TclType *tp, Tcl_Size n, Tcl_Obj *const a[],
 	    if (status == TCLA_RAW
 		    && TclTypeValidate(interp, at, content, -1, NULL)
 			    != TCL_OK) {
+		goto done;
+	    }
+	    if (status == TCLA_TYPED && at->elem != NULL
+		    && (tp->elem->kind == TCLT_INT || tp->elem->kind == TCLT_DOUBLE)
+		    && at->elem->kind == tp->elem->kind
+		    && !TclTypeAssignable(tp->elem, at->elem)) {
+		/* Pas de rétrécissement caché : list<int> n'entre pas dans
+		 * list.int(u,8), comme int n'entre pas dans int(u,8). */
+		Mismatch(interp, tp, at);
 		goto done;
 	    }
 	    if (Tcl_ListObjGetElements(interp, content, &m, &e) != TCL_OK) {
