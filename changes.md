@@ -33,6 +33,7 @@ to the userbase.
  - [on Windows a joinable thread which exits before it is joined leaked](https://core.tcl-lang.org/tcl/tktview/338137)
  - [on Unix, Tcl_JoinThread() should not call pthread_join() for detached threads](https://core.tcl-lang.org/tcl/tktview/5974ff)
  - [zlib-8.3 and zlib-9.3 connected to localhost](https://core.tcl-lang.org/tcl/tktview/81cb2b)
+ - [zipfs channels never generated file events](https://core.tcl-lang.org/tcl/tktview/0654ce)
 
 # Updated bundled packages, libraries, standards, data
  - http 2.10.3
