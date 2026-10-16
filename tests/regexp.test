@@ -1270,6 +1270,15 @@ test regexp-30.2 {regexp: abbreviated -nocase, bug 3069454} -body {
     set cmd [list regexp -noc -indices -- A a m]
     list [{*}$cmd] $m
 } -result {1 {0 0}}
+
+test regexp-32.1 {regsub -command with more than 9 groups, bug 41bc9a8298} {
+    regsub -command {(a)(b)(c)(d)(e)(f)(g)(h)(i)(j)(k)(l)} xabcdefghijkly list
+} {xabcdefghijkl a b c d e f g h i j k ly}
+test regexp-32.2 {regsub -command -all with more than 9 groups, bug 41bc9a8298} {
+    regsub -all -command {(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)} abcdefghijkABCDEFGHIJK {apply {args {
+	lindex $args end
+    }}}
+} kK
 
 # cleanup
 ::tcltest::cleanupTests

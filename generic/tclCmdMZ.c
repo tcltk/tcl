@@ -820,7 +820,7 @@ Tcl_RegsubObjCmd(
      * finding the match.  [Bug 446565]
      */
 
-    nmatches = 10;
+    nmatches = -1;
     if (!command) {
 	Tcl_UniChar *p;
 
