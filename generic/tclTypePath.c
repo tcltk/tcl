@@ -1108,6 +1108,12 @@ WrapSlot(Tcl_Interp *interp, TclType *tp, Tcl_Obj *content)
 	    && TclAnnotInfo(content, &inner, &ownType, &ownVariant, NULL) == 1) {
 	return TclNewAnnotated(interp, ownType, ownVariant, inner);
     }
+    /* Un lien de frontière : l'adresse de la cible garde son annotation. */
+    if (tp->binLink != NULL && tp->binLink->ref != NULL
+	    && TclAnnotInfo(content, &inner, &ownType, &ownVariant, NULL) == 1
+	    && ownType == tp->binLink->ref) {
+	return TclNewAnnotated(interp, ownType, ownVariant, inner);
+    }
     /* Un élément déjà annoté de ce type (balise explicite {i}5) garde sa
      * variante. */
     if (tp->kind == TCLT_SUM

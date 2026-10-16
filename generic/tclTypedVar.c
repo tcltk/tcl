@@ -259,6 +259,11 @@ TclTypedConform(Tcl_Interp *interp, TclType *tp, Tcl_Obj *arg)
 	Mismatch(interp, tp, at);
 	return NULL;
     }
+    if (status == TCLA_TYPED && tp->binLink != NULL
+	    && tp->binLink->ref != NULL && at == tp->binLink->ref) {
+	/* L'adresse d'un lien de frontière garde son annotation. */
+	return Tcl_DuplicateObj(arg);
+    }
     copy = Tcl_DuplicateObj(content);
     if (TclTypeIsAny(tp)) {
 	return copy;

@@ -327,6 +327,9 @@ TclTypeAssignable(const TclType *expected, const TclType *got)
     if (TclTypeSame(expected, got)) {
 	return 1;
     }
+    if (expected->binLink != NULL && expected->binLink->ref == got) {
+	return 1;			/* l'adresse d'un lien de frontière */
+    }
     if (expected->binBase != NULL || got->binBase != NULL) {
 	/* at(..).T, S($champ), list($n).T : les mêmes valeurs que leur base */
 	return TclTypeAssignable(expected->binBase ? expected->binBase : expected,
@@ -489,6 +492,33 @@ TclTypesMakeLink(Tcl_Interp *interp, TypeData *d, TclType *elem,
 	tp->binLink = link;
 	tp->binBase = (elem->binBase != NULL) ? elem->binBase : elem;
 	Tcl_SetHashValue(hPtr, tp);
+	{
+	    /* FR : l'adresse d'un lien de frontière (file binary -linkdepth) :
+	     *      la position absolue de la cible, annotée par ce type.
+	     * EN : the address of a frontier link (file binary -linkdepth):
+	     *      the target's absolute position, annotated with this type. */
+
+	    Tcl_DString rs;
+	    Tcl_HashEntry *rh;
+	    int rNew;
+	    TclType *rt;
+
+	    Tcl_DStringInit(&rs);
+	    Tcl_DStringAppend(&rs, "&", 1);
+	    Tcl_DStringAppend(&rs, Tcl_DStringValue(&ds), TCL_AUTO_LENGTH);
+	    rh = Tcl_CreateHashEntry(&d->canon, Tcl_DStringValue(&rs), &rNew);
+	    if (rNew) {
+		rt = NewType(d, TCLT_INT, Tcl_DStringValue(&rs));
+		rt->nominal = 1;
+		rt->under = d->tInt;
+		rt->refOf = tp;
+		Tcl_SetHashValue(rh, rt);
+	    } else {
+		rt = (TclType *) Tcl_GetHashValue(rh);
+	    }
+	    Tcl_DStringFree(&rs);
+	    link->ref = rt;
+	}
     } else {
 	tp = (TclType *) Tcl_GetHashValue(hPtr);
     }
@@ -1190,6 +1220,19 @@ ValidateG(Tcl_Interp *interp, const TclType *tp, Tcl_Obj *value,
     ValGuard me;
     const ValGuard *g;
 
+    if (tp->binLink != NULL && tp->binLink->ref != NULL) {
+	/* Un lien de frontière : l'adresse de la cible, pas la cible. */
+
+	TclType *refTp = NULL;
+
+	if (TclAnnotInfo(value, NULL, &refTp, NULL, NULL) == 1
+		&& refTp == tp->binLink->ref) {
+	    if (variantOut != NULL) {
+		*variantOut = -1;
+	    }
+	    return TCL_OK;
+	}
+    }
     if (variantHint < 0 && tp->kind == TCLT_SUM) {
 	/* Un élément déjà balisé ({tEXt}...) garde sa variante. */
 	TclType *ownTp = NULL;
@@ -1938,7 +1981,8 @@ TclTypeParse(Tcl_Interp *interp, const char *text, Tcl_Size len)
 
     memset(&env, 0, sizeof(env));
     env.d = GetData(interp);
-    if (len > 2 && text[0] == '*' && text[1] == '(') {
+    if ((len > 2 && text[0] == '*' && text[1] == '(')
+	    || (len > 3 && text[0] == '&' && text[1] == '*' && text[2] == '(')) {
 	/* Le nom d'un lien déjà construit (il peut contenir un nom canonique
 	 * anonyme, list($n)<sec>, qui ne s'écrit pas) : on le retrouve tel quel. */
 
@@ -2615,8 +2659,47 @@ static int BinReprBody(Tcl_Interp *interp, TclType *tp, int depth,
  *	(sinon OPT est vide).
  */
 
+static int LinkReprBody(Tcl_Interp *interp, TclType *tp, int depth,
+	Tcl_Obj *vis, Tcl_Obj **objPtr);
+
+/* Un lien qui se retrouve lui-même dans sa propre cible (liste chaînée,
+ * arbre) : la seconde occurrence est la représentation {linkref NOM}, que
+ * file binary développe à la demande. */
+
 static int
 LinkRepr(
+    Tcl_Interp *interp,
+    TclType *tp,
+    int depth,
+    Tcl_Obj *vis,
+    Tcl_Obj **objPtr)
+{
+    TypeData *d = GetData(interp);
+    int i, rc;
+    Tcl_Obj *r;
+
+    for (i = 0; i < d->nLinkStack; i++) {
+	if (d->linkStack[i] == tp) {
+	    r = Tcl_NewListObj(0, NULL);
+	    Tcl_ListObjAppendElement(NULL, r, Tcl_NewStringObj("linkref", -1));
+	    Tcl_ListObjAppendElement(NULL, r, Tcl_NewStringObj(tp->name, -1));
+	    *objPtr = r;
+	    return TCL_OK;
+	}
+    }
+    if (d->nLinkStack >= 32) {
+	ERR(interp, "BIN", "type %s is too deeply nested for a binary layout",
+		tp->name);
+	return TCL_ERROR;
+    }
+    d->linkStack[d->nLinkStack++] = tp;
+    rc = LinkReprBody(interp, tp, depth, vis, objPtr);
+    d->nLinkStack--;
+    return rc;
+}
+
+static int
+LinkReprBody(
     Tcl_Interp *interp,
     TclType *tp,
     int depth,
@@ -2695,6 +2778,9 @@ LinkRepr(
 	    nullText != NULL ? nullText : "none", -1));
     Tcl_ListObjAppendElement(NULL, r, targR);
     Tcl_ListObjAppendElement(NULL, r, Tcl_NewStringObj(optName, -1));
+    Tcl_ListObjAppendElement(NULL, r, Tcl_NewStringObj(
+	    lk->ref != NULL ? lk->ref->name : "", -1));
+    Tcl_ListObjAppendElement(NULL, r, Tcl_NewStringObj(target->name, -1));
     *objPtr = r;
     return TCL_OK;
 }

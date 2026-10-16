@@ -79,6 +79,8 @@ typedef struct TclBinLink {
     struct TclType *repr;	/* type entier de l'adresse stockée */
     char *nullVal;		/* texte de la valeur nulle, ou NULL */
     int opaque;			/* réservé : la valeur reste l'entier */
+    struct TclType *ref;	/* type de l'adresse de frontière (-linkdepth) :
+				 * un entier nominal "&" + nom du lien */
     struct TclType *target;	/* le type désigné (peut être lui-même un lien) */
 } TclBinLink;
 
@@ -123,6 +125,8 @@ struct TclType {
     TclBinDyn *binDyn;		/* chaîne ou liste : taille / nombre dynamique */
     char *binAt;		/* at(EXPR).T : position de la valeur (texte) */
     TclBinLink *binLink;	/* *(...).T : la valeur est désignée par un entier */
+    struct TclType *refOf;	/* type adresse de frontière : le lien dont il est
+				 * l'adresse (position absolue de la cible) */
     char *binTag;		/* S($champ) : champ dont la valeur choisit la
 				 * variante de la somme S */
     struct TclType *binBase;	/* type sans ces décorations (at, $champ, liste
