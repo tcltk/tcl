@@ -1132,12 +1132,42 @@ TestcmdinfoCmd(
     Tcl_Obj **cmdObjv;
     Tcl_Size cmdObjc;
 
-    if (objc != 3) {
+    if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "command arg");
 	return TCL_ERROR;
     }
     if (Tcl_GetIndexFromObj(interp, objv[1], subcmds, "option", 0,
 	    &idx) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    if (idx == CMDINFO_CALL && objc > 3) {
+	/*
+	 * testcmdinfo call interp cmdName ?arg ...?
+	 *
+	 * Call the objProc of the command in the given (child) interpreter
+	 * directly, without the evaluation machinery, as some extensions do.
+	 * The child interpreter has no evaluation in progress.
+	 */
+
+	Tcl_Interp *childInterp;
+	int code;
+
+	childInterp = Tcl_GetChild(interp, Tcl_GetString(objv[2]));
+	if (childInterp == NULL) {
+	    return TCL_ERROR;
+	}
+	if (Tcl_GetCommandInfo(childInterp, Tcl_GetString(objv[3]), &info) == 0) {
+	    Tcl_AppendResult(interp, "unknown command \"",
+		    Tcl_GetString(objv[3]), "\"", (char *)NULL);
+	    return TCL_ERROR;
+	}
+	code = info.objProc2(info.objClientData2, childInterp, objc - 3,
+		objv + 3);
+	Tcl_SetObjResult(interp, Tcl_GetObjResult(childInterp));
+	return code;
+    }
+    if (objc != 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "command arg");
 	return TCL_ERROR;
     }
     switch (idx) {
