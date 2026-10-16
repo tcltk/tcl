@@ -61,6 +61,10 @@ typedef struct TypeData {
     TclType **all;
     Tcl_Size nAll, capAll;
     TclType *tInt, *tDouble, *tString, *tList, *tDict, *tVar;
+    TclType *tAt;		/* constructeur at(EXPR).T (caché : pas un nom) */
+    void **blobs;		/* décorations binaires (TclBinDyn, textes),
+				 * partagées par les types, libérées à la fin */
+    Tcl_Size nBlobs, capBlobs;
 } TypeData;
 
 #define ERR(interp, code, ...) \
@@ -126,7 +130,20 @@ TclType *TclTypesResolve(Tcl_Interp *interp, TypeData *d,
 /* int(u,16,be), double(32,le), string(utf-8,8) : le type de base (int,
  * double, string) avec sa représentation binaire. */
 TclType *TclTypesBinaryType(Tcl_Interp *interp, TypeData *d, const char *base,
-	    Tcl_Size baseLen, const char *argText, Tcl_Size argLen);
+	    Tcl_Size baseLen, const char *argText, Tcl_Size argLen,
+	    const TypeParams *params);
+/* Argument de taille, de nombre ou de position : N, z, un préfixe (type
+ * entier non signé) ou une expression avec $champ. */
+int	TclTypesParseSize(Tcl_Interp *interp, TypeData *d, const char *what,
+	    const char *text, Tcl_Size len, int allowZ, const TypeParams *params,
+	    Tcl_WideInt *nPtr, int *zPtr, TclBinDyn **dynPtr);
+void	*TclTypesKeep(TypeData *d, void *blob);
+char	*TclTypesKeepText(TypeData *d, const char *s, Tcl_Size len);
+/* list(PRÉFIXE|$expr).T, at(EXPR).T, S($champ) : types décorés. */
+TclType *TclTypesMakeListDyn(TypeData *d, TclType *elem, TclBinDyn *dyn);
+TclType *TclTypesMakeAt(TypeData *d, TclType *elem, const char *expr);
+TclType *TclTypesMakeTagged(Tcl_Interp *interp, TypeData *d, TclType *sum,
+	    const char *field);
 /* list.T : liste de T, extensible. */
 TclType *TclTypesMakeList(TypeData *d, TclType *elem);
 TclType *TclTypesMakeListExplicit(TypeData *d, TclType *elem);

@@ -251,6 +251,179 @@ SpanWide(const ArgSpan *sp, Tcl_WideInt *wPtr)
     return *e == '\0';
 }
 
+/* Décorations binaires : allouées une fois, partagées par les types qui les
+ * portent, libérées avec les données du module (jamais individuellement). */
+
+void *
+TclTypesKeep(TypeData *d, void *blob)
+{
+    if (d->nBlobs == d->capBlobs) {
+	d->capBlobs = d->capBlobs ? 2 * d->capBlobs : 16;
+	d->blobs = (void **) Tcl_Realloc(d->blobs, d->capBlobs * sizeof(void *));
+    }
+    d->blobs[d->nBlobs++] = blob;
+    return blob;
+}
+
+char *
+TclTypesKeepText(TypeData *d, const char *s, Tcl_Size len)
+{
+    return (char *) TclTypesKeep(d, DupText(s, len));
+}
+
+/* "$nom" ou "${nom}" : un nom de champ à la position p (après le $). Rend la
+ * longueur du nom, 0 si ce n'en est pas un. */
+
+static Tcl_Size
+FieldRefLen(const char *p, const char *end)
+{
+    const char *q = p;
+
+    while (q < end && TclTypeIsNameChar(*q)) {
+	q++;
+    }
+    return q - p;
+}
+
+/*
+ * TclTypesParseSize --
+ *
+ *	L'argument qui donne la taille d'une chaîne, le nombre d'éléments d'une
+ *	liste ou la position d'une valeur :
+ *	    N                 un naturel : *nPtr
+ *	    z                 (allowZ) terminée par un NUL : *zPtr
+ *	    $n                un paramètre entier du type en cours de
+ *	                      définition : sa valeur, un naturel
+ *	    int(u,16,be)      un PRÉFIXE : le type entier non signé lu juste
+ *	                      avant : *dynPtr
+ *	    $len - 4          une EXPRESSION Tcl sur les champs déjà lus : *dynPtr
+ */
+
+int
+TclTypesParseSize(
+    Tcl_Interp *interp,
+    TypeData *d,
+    const char *what,
+    const char *text,
+    Tcl_Size len,
+    int allowZ,
+    const TypeParams *params,
+    Tcl_WideInt *nPtr,
+    int *zPtr,
+    TclBinDyn **dynPtr)
+{
+    const char *p = SkipWs(text, text + len), *end = TrimEnd(p, text + len);
+    char buf[40];
+    Tcl_Size n = end - p, i;
+    Tcl_WideInt w;
+    TclBinDyn *dyn;
+    int hasDollar = 0;
+
+    *nPtr = -1;
+    *zPtr = 0;
+    *dynPtr = NULL;
+    if (n == 0) {
+	ERR(interp, "PARAM", "%s: empty size", what);
+	return TCL_ERROR;
+    }
+    if (n < (Tcl_Size) sizeof(buf)) {
+	char *e;
+
+	memcpy(buf, p, n);
+	buf[n] = '\0';
+	w = strtoll(buf, &e, 10);
+	if (*e == '\0' && isdigit(UCHAR(buf[0]))) {
+	    *nPtr = w;
+	    return TCL_OK;
+	}
+    }
+    if (allowZ && n == 1 && *p == 'z') {
+	*zPtr = 1;
+	return TCL_OK;
+    }
+    for (i = 0; i < n; i++) {
+	if (p[i] == '$') {
+	    hasDollar = 1;
+	}
+    }
+    if (hasDollar) {
+	/* $param seul : la valeur du paramètre entier du type en cours */
+
+	if (p[0] == '$' && FieldRefLen(p + 1, end) == n - 1 && params != NULL) {
+	    const TypeParam *prm = TclTypeFindParam(params, p + 1, n - 1);
+
+	    if (prm != NULL) {
+		const char *v;
+
+		if (prm->isType || prm->type->kind != TCLT_INT) {
+		    ERR(interp, "PARAM", "%s: parameter \"%s\" is not an int",
+			    what, Tcl_GetString(prm->name));
+		    return TCL_ERROR;
+		}
+		v = Tcl_GetString(prm->value);
+		w = strtoll(v, NULL, 10);
+		if (w < 0) {
+		    ERR(interp, "PARAM", "%s: a size cannot be negative", what);
+		    return TCL_ERROR;
+		}
+		*nPtr = w;
+		return TCL_OK;
+	    }
+	}
+	for (i = 0; i < n; i++) {
+	    if (p[i] == '$' && (i + 1 >= n || (FieldRefLen(p + i + 1, end) == 0
+		    && p[i + 1] != '{'))) {
+		ERR(interp, "PARAM", "%s: \"$\" must be followed by a field "
+			"name in \"%.*s\"", what, (int) n, p);
+		return TCL_ERROR;
+	    }
+	}
+	dyn = (TclBinDyn *) TclTypesKeep(d, Tcl_Alloc(sizeof(TclBinDyn)));
+	memset(dyn, 0, sizeof(*dyn));
+	dyn->kind = TCLDYN_EXPR;
+	dyn->expr = TclTypesKeepText(d, p, n);
+	*dynPtr = dyn;
+	return TCL_OK;
+    }
+    /* sinon : un type entier non signé (préfixe) */
+    {
+	Tcl_Obj *saved = (interp != NULL) ? Tcl_GetObjResult(interp) : NULL;
+	TclType *pre;
+
+	if (saved != NULL) {
+	    Tcl_IncrRefCount(saved);
+	}
+	pre = TclTypeParse(interp, p, n);
+	if (pre == NULL) {
+	    if (interp != NULL) {
+		const char *m = Tcl_GetString(Tcl_GetObjResult(interp));
+
+		ERR(interp, "PARAM", "%s: bad size \"%.*s\": expected a number, "
+			"%sa prefix type such as int(u,16,be) or an expression "
+			"with $field (%s)", what, (int) n, p, allowZ ? "z, " : "",
+			m);
+		Tcl_DecrRefCount(saved);
+	    }
+	    return TCL_ERROR;
+	}
+	if (saved != NULL) {
+	    Tcl_SetObjResult(interp, saved);
+	    Tcl_DecrRefCount(saved);
+	}
+	if (pre->binKind != TCLBIN_UINT) {
+	    ERR(interp, "PARAM", "%s: a prefix must be an unsigned integer "
+		    "type, not %s", what, pre->name);
+	    return TCL_ERROR;
+	}
+	dyn = (TclBinDyn *) TclTypesKeep(d, Tcl_Alloc(sizeof(TclBinDyn)));
+	memset(dyn, 0, sizeof(*dyn));
+	dyn->kind = TCLDYN_PREFIX;
+	dyn->pre = pre;
+	*dynPtr = dyn;
+    }
+    return TCL_OK;
+}
+
 /* Encodages des chaînes binaires : mot-clé, nom d'encodage Tcl (NULL pour
  * des octets bruts), nombre d'octets du terminateur NUL de string(enc,z). */
 
@@ -290,7 +463,8 @@ TclTypesBinaryType(
     const char *base,
     Tcl_Size baseLen,
     const char *argText,
-    Tcl_Size argLen)
+    Tcl_Size argLen,
+    const TypeParams *params)
 {
     ArgSpan *sp;
     Tcl_Size n = 0, i;
@@ -298,6 +472,8 @@ TclTypesBinaryType(
     Tcl_HashEntry *hPtr;
     TclType *inst = NULL, *under;
     int isNew, kind, endian = TCLBIN_AUTO, signd = 0, enc = 0, cstr = 0;
+    TclBinDyn *dyn = NULL;
+    const char *dynText = NULL;
     Tcl_WideInt w = 0;
     int isInt = (baseLen == 3), isDouble = (baseLen == 6 && base[0] == 'd');
 
@@ -359,7 +535,7 @@ TclTypesBinaryType(
 	    goto fail;
 	}
     } else {
-	/* string(enc, N|z) */
+	/* string(enc, N|z|préfixe|$expr) */
 
 	if (n != 2) {
 	    ERR(interp, "PARAM", "string takes (encoding, size|z), for "
@@ -379,20 +555,23 @@ TclTypesBinaryType(
 		    "ucs-2be)", (int) sp[0].len, sp[0].start);
 	    goto fail;
 	}
-	if (sp[1].len == 1 && sp[1].start[0] == 'z') {
-	    cstr = 1;
-	    if (enc == 0) {
-		ERR(interp, "PARAM", "string(raw,z): raw bytes cannot be "
-			"NUL-terminated, use a text encoding");
-		goto fail;
-	    }
-	} else {
-	    if (!SpanWide(&sp[1], &w) || w < 1 || w > 1000000) {
-		ERR(interp, "PARAM", "string: the size in bytes must be "
-			"between 1 and 1000000 or z, not \"%.*s\"",
-			(int) sp[1].len, sp[1].start);
-		goto fail;
-	    }
+	if (TclTypesParseSize(interp, d, "string", sp[1].start, sp[1].len, 1,
+		params, &w, &cstr, &dyn) != TCL_OK) {
+	    goto fail;
+	}
+	if (cstr && enc == 0) {
+	    ERR(interp, "PARAM", "string(raw,z): raw bytes cannot be "
+		    "NUL-terminated, use a text encoding");
+	    goto fail;
+	}
+	if (dyn == NULL && !cstr && (w < 1 || w > 1000000)) {
+	    ERR(interp, "PARAM", "string: the size in bytes must be "
+		    "between 1 and 1000000 or z, not \"%.*s\"",
+		    (int) sp[1].len, sp[1].start);
+	    goto fail;
+	}
+	if (dyn != NULL) {
+	    dynText = (dyn->kind == TCLDYN_PREFIX) ? dyn->pre->name : dyn->expr;
 	}
     }
 
@@ -409,6 +588,8 @@ TclTypesBinaryType(
     }
     if (cstr) {
 	Tcl_DStringAppend(&key, "z", 1);
+    } else if (dyn != NULL) {
+	Tcl_DStringAppend(&key, dynText, TCL_AUTO_LENGTH);
     } else {
 	char num[24];
 
@@ -439,12 +620,13 @@ TclTypesBinaryType(
 	    inst->binEnc = encodings[enc].tclName;
 	} else if (enc == 0) {
 	    inst->binKind = TCLBIN_BYTES;
-	    inst->binSize = (Tcl_Size) w;
+	    inst->binSize = (dyn != NULL) ? 0 : (Tcl_Size) w;
 	} else {
 	    inst->binKind = TCLBIN_STR;
-	    inst->binSize = (Tcl_Size) w;
+	    inst->binSize = (dyn != NULL) ? 0 : (Tcl_Size) w;
 	    inst->binEnc = encodings[enc].tclName;
 	}
+	inst->binDyn = dyn;
 	inst->binEnd = endian;
 	Tcl_SetHashValue(hPtr, inst);
     }

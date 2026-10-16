@@ -57,6 +57,19 @@ enum {
     TCLBIN_LE, TCLBIN_BE
 };
 
+/* Taille, nombre ou position qui dépend de la valeur lue ailleurs (niveau 2 de
+ * `file binary`) : un préfixe, ou une expression Tcl avec des $champ. */
+enum {
+    TCLDYN_PREFIX = 1,		/* string(utf-8,int(u,16,be)), list(int(u,8)).T */
+    TCLDYN_EXPR			/* string(raw,$len), list($n).T, at($off).T */
+};
+
+typedef struct TclBinDyn {
+    int kind;			/* TCLDYN_PREFIX ou TCLDYN_EXPR */
+    struct TclType *pre;	/* PREFIX : type entier non signé du préfixe */
+    char *expr;			/* EXPR : expression Tcl (texte) */
+} TclBinDyn;
+
 typedef struct TclTypeField {
     Tcl_Obj *name;		/* champ ou variante ; NULL si sans nom */
     TclType *type;		/* NULL pour une variante littérale */
@@ -95,6 +108,12 @@ struct TclType {
     const char *binEnc;		/* chaîne : nom d'encodage Tcl (statique), NULL
 				 * pour des octets bruts (raw) */
     int binEnd;			/* TCLBIN_AUTO, TCLBIN_LE ou TCLBIN_BE */
+    TclBinDyn *binDyn;		/* chaîne ou liste : taille / nombre dynamique */
+    char *binAt;		/* at(EXPR).T : position de la valeur (texte) */
+    char *binTag;		/* S($champ) : champ dont la valeur choisit la
+				 * variante de la somme S */
+    struct TclType *binBase;	/* type sans ces décorations (at, $champ, liste
+				 * dynamique), pour TclTypeAssignable */
     int refine;			/* 1 : raffinement d'int ou de double (instance
 				 * de int(s,n), double(n), bitarray(n)) : voir
 				 * TclTypeAssignable */

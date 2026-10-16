@@ -740,7 +740,8 @@ BuildSum(Tcl_Interp *interp, TclType *tp, int forced, Tcl_Size n,
 	*contentPtr = c;
 	return TCL_OK;
     }
-    if (status == TCLA_TYPED && at == tp) {		/* copie d'une somme */
+    if (status == TCLA_TYPED && (at == tp || (at->kind == TCLT_SUM
+	    && TclTypeAssignable(tp, at)))) {	/* copie d'une somme */
 	*variantPtr = variant;
 	*contentPtr = c;
 	return TCL_OK;

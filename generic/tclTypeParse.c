@@ -1166,6 +1166,8 @@ typedef struct TypeItem {
     Tcl_Size arity;		/* SK_CTOR liste : nombre d'éléments */
     TclDictKey *dkeys;		/* SK_CTOR dict : clés admises */
     Tcl_Size nd;
+    TclBinDyn *dyn;		/* SK_CTOR list : nombre lu dans le fichier */
+    const char *atExpr;		/* SK_CTOR at : position (partagée) */
 } TypeItem;
 
 #define ITEMS(env)	((TypeItem *) (env)->stack)
@@ -1345,7 +1347,7 @@ ParseNatural(const char *text, Tcl_Size len, Tcl_Size *valuePtr)
 
 static int
 ParseListArity(Tcl_Interp *interp, const TypeEnv *envPtr, const char *text,
-	Tcl_Size len, Tcl_Size *arityPtr)
+	Tcl_Size len, Tcl_Size *arityPtr, TclBinDyn **dynPtr)
 {
     const char *p = SkipSpace(text, text + len), *end = text + len;
     const char *name = NULL;
@@ -1361,6 +1363,16 @@ ParseListArity(Tcl_Interp *interp, const TypeEnv *envPtr, const char *text,
     if (*p == '$') {
 	name = p + 1;
 	nameLen = end - name;
+    }
+    if (name != NULL
+	    && TclTypeFindParam(envPtr->params, name, nameLen) == NULL) {
+	/* $champ, $champ - 1 ... : le nombre est lu dans le fichier */
+
+	Tcl_WideInt n;
+	int z;
+
+	return TclTypesParseSize(interp, envPtr->d, "list", p, end - p, 0, NULL,
+		&n, &z, dynPtr);
     }
     if (name != NULL) {
 	const TypeParam *prm = TclTypeFindParam(envPtr->params, name, nameLen);
@@ -1396,9 +1408,14 @@ ParseListArity(Tcl_Interp *interp, const TypeEnv *envPtr, const char *text,
 		    (int) (end - p), p);
 	    return TCL_ERROR;
 	}
-	ERR(interp, "ARITY", "bad list size \"%.*s\": expected a number of "
-		"elements, as in list(2) or list($n)", (int) (end - p), p);
-	return TCL_ERROR;
+	/* un préfixe : list(int(u,16,be)).T */
+	{
+	    Tcl_WideInt n;
+	    int z;
+
+	    return TclTypesParseSize(interp, envPtr->d, "list", p, end - p, 0,
+		    NULL, &n, &z, dynPtr);
+	}
     }
     return TCL_OK;
 }
@@ -1650,8 +1667,16 @@ MakeCtorType(Tcl_Interp *interp, TypeEnv *envPtr, TypeItem *ctor,
     TypeData *d = envPtr->d;
     Tcl_Size i;
 
+    if (ctor->type == d->tAt) {
+	*tpPtr = TclTypesMakeAt(d, elem, ctor->atExpr);
+	return TCL_OK;
+    }
     if (ctor->type == d->tList) {
-	*tpPtr = TclTypesMakeListN(d, elem, ctor->arity);
+	if (ctor->dyn != NULL) {
+	    *tpPtr = TclTypesMakeListDyn(d, elem, ctor->dyn);
+	} else {
+	    *tpPtr = TclTypesMakeListN(d, elem, ctor->arity);
+	}
 	return TCL_OK;
     }
     if (ctor->type == d->tVar) {
@@ -1687,6 +1712,11 @@ ResolveCtor(Tcl_Interp *interp, TypeEnv *envPtr, TypeItem *it)
 
     if (it->kind != SK_CTOR) {
 	return TCL_OK;
+    }
+    if (it->type == envPtr->d->tAt) {
+	ERR(interp, "NEST", "at(...) needs the type of the value: write "
+		"at(%s).T", it->atExpr);
+	return TCL_ERROR;
     }
     if (MakeCtorType(interp, envPtr, it, envPtr->d->tString, &tp) != TCL_OK) {
 	return TCL_ERROR;
@@ -2189,7 +2219,8 @@ TclCompileTypeTree(
 		/* int(u,16,be), double(32,le), string(utf-8,8) : le type de
 		 * base avec sa représentation binaire (tclTypeGeneric.c) */
 
-		tp = TclTypesBinaryType(interp, envPtr->d, w, len, a, alen);
+		tp = TclTypesBinaryType(interp, envPtr->d, w, len, a, alen,
+			envPtr->params);
 		if (tp == NULL) {
 		    return TCL_ERROR;
 		}
@@ -2204,10 +2235,59 @@ TclCompileTypeTree(
 		PushItem(envPtr, SK_TYPE)->type = tp;
 		break;
 	    }
+	    if (len == 2 && w[0] == 'a' && w[1] == 't') {
+		/* at(EXPR).T : la valeur est à la position EXPR du fichier */
+
+		Tcl_WideInt n;
+		int z;
+		TclBinDyn *dyn = NULL;
+
+		if (TclTypesParseSize(interp, envPtr->d, "at", a, alen, 0, NULL,
+			&n, &z, &dyn) != TCL_OK) {
+		    return TCL_ERROR;
+		}
+		it = PushItem(envPtr, SK_CTOR);
+		it->type = envPtr->d->tAt;
+		if (dyn != NULL && dyn->kind == TCLDYN_EXPR) {
+		    it->atExpr = dyn->expr;
+		} else if (dyn == NULL) {
+		    it->atExpr = TclTypesKeepText(envPtr->d, a, alen);
+		} else {
+		    ERR(interp, "ARITY", "at: a position is a number or an "
+			    "expression with $field, not a type");
+		    return TCL_ERROR;
+		}
+		break;
+	    }
 	    tp = TclTypesResolve(interp, envPtr->d, envPtr->selfName,
 		    envPtr->self, w, len);
 	    if (tp == NULL) {
 		return TCL_ERROR;
+	    }
+	    if (tp->kind == TCLT_SUM) {
+		/* S($champ) : la variante est choisie par ce champ */
+
+		const char *q = a, *qe = a + alen;
+		char *field;
+
+		while (q < qe && isspace(UCHAR(*q))) {
+		    q++;
+		}
+		while (qe > q && isspace(UCHAR(qe[-1]))) {
+		    qe--;
+		}
+		if (q >= qe || *q != '$' || qe - q < 2) {
+		    ERR(interp, "ARITY", "\"%s\" is a sum: write %s($field) to "
+			    "choose its variant by the value of a field", w, w);
+		    return TCL_ERROR;
+		}
+		field = TclTypesKeepText(envPtr->d, q + 1, qe - q - 1);
+		tp = TclTypesMakeTagged(interp, envPtr->d, tp, field);
+		if (tp == NULL) {
+		    return TCL_ERROR;
+		}
+		PushItem(envPtr, SK_TYPE)->type = tp;
+		break;
 	    }
 	    if ((tp != envPtr->d->tList) && (tp != envPtr->d->tDict)
 		    && (tp != envPtr->d->tVar)) {
@@ -2222,8 +2302,8 @@ TclCompileTypeTree(
 		    return TCL_ERROR;
 		}
 	    } else if (tp == envPtr->d->tList) {
-		if (ParseListArity(interp, envPtr, a, alen, &it->arity)
-			!= TCL_OK) {
+		if (ParseListArity(interp, envPtr, a, alen, &it->arity,
+			&it->dyn) != TCL_OK) {
 		    return TCL_ERROR;
 		}
 	    } else if (ParseDictKeys(interp, envPtr, a, alen, &it->dkeys,
