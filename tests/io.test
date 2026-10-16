@@ -10040,6 +10040,25 @@ test io-bug-73bb43fb-4 {
     if {$f ne ""} {close $f}
 } -result "0 START-\u30B3-DONE 0 {}"
 
+test io-78.1 {writable event on pipe whose reader has exited} -setup {
+    set script [makeFile {exit} io78script]
+    set f [open "|[list [interpreter] $script]" w]
+    set w {}
+} -constraints {stdio fileevent} -body {
+    fconfigure $f -blocking 0 -buffering full
+    puts -nonewline $f [string repeat x 300000]
+    catch {flush $f}
+    after 100
+    chan event $f writable [list set [namespace which -variable w] writable]
+    set timer [after 5000 [list set [namespace which -variable w] timeout]]
+    vwait [namespace which -variable w]
+    after cancel $timer
+    list $w [catch {close $f} msg] $msg
+} -cleanup {
+    removeFile io78script
+    unset -nocomplain w f script timer msg
+} -result {writable 1 {broken pipe}}
+
 rename read_blocked {}
 
 # cleanup
