@@ -197,6 +197,8 @@ static int casecmp(const chr *, const chr *, size_t);
 /* internal variables, bundled for easy passing around */
 struct vars {
     regex_t *re;
+    const char *stackbase;	/* for STACK_TOO_DEEP() */
+    size_t stackmax;		/* for STACK_TOO_DEEP() */
     const chr *now;		/* scan pointer into string */
     const chr *stop;		/* end of string */
     const chr *savenow;		/* saved now and stop for "subroutine call" */
@@ -286,6 +288,7 @@ compile(
     int flags)
 {
     AllocVars(v);
+    char stackmarker;
     struct guts *g;
     size_t i, j;
     FILE *debug = (flags&REG_PROGRESS) ? stdout : NULL;
@@ -313,6 +316,8 @@ compile(
      */
 
     v->re = re;
+    v->stackbase = &stackmarker;
+    v->stackmax = 0;
     v->now = string;
     v->stop = v->now + len;
     v->savenow = v->savestop = NULL;
@@ -1733,6 +1738,12 @@ sub_re(
     struct state *end)
 {
     struct subre *ret = v->treefree;
+
+    /* Since this is called recursively from parse(), check the stack */
+    if (STACK_TOO_DEEP(v)) {
+	ERR(REG_ETOOBIG);
+	return NULL;
+    }
 
     if (ret != NULL) {
 	v->treefree = ret->left;
