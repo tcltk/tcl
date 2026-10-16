@@ -875,7 +875,8 @@ TclTypesDefineGeneric(
     const char *spec,
     Tcl_Size specLen,
     const char *body,
-    Tcl_Size bodyLen)
+    Tcl_Size bodyLen,
+    int alias)
 {
     const char *open = (const char *) memchr(spec, '(', specLen);
     const char *end = spec + specLen, *close, *p;
@@ -911,6 +912,7 @@ TclTypesDefineGeneric(
     memset(g->params, 0, n * sizeof(TypeParam));
     g->body = DupText(body, bodyLen);
     g->bodyLen = bodyLen;
+    g->alias = alias;
 
     for (i = 0; i < n; i++) {
 	if (ParseParamDecl(interp, d, spans[i].start, spans[i].len, baseName,
@@ -1310,6 +1312,13 @@ TclTypesInstantiate(
 	ERR(interp, "SYNTAX", "type \"%s\" cannot be defined as itself",
 		inst->name);
 	goto fail;
+    }
+    if (g->alias && res != inst) {
+	/* alias paramétré : l'instance EST le type du corps (structurel) */
+
+	Tcl_SetHashValue(hPtr, res);
+	inst = res;
+	goto done;
     }
     if (res != inst) {
 	TclTypesCopyInto(inst, res);

@@ -417,7 +417,8 @@ ParseTypeLexeme(
     }
 
     if (!IsParamRef(start, numBytes) && (byte < sizeof(Lexeme))
-	    && (Lexeme[byte] != 0)) {
+	    && (Lexeme[byte] != 0)
+	    && !(byte == '*' && numBytes > 1 && start[1] == '(')) {
 	*lexemePtr = Lexeme[byte];
 	if (*lexemePtr == CLOSE_BRACE) {
 	    /* Le nom, s'il y en a un, est COLLÉ à l'accolade fermante. */
@@ -442,6 +443,25 @@ ParseTypeLexeme(
 	}
 	*lexemePtr = COMMENT;
 	return size;
+    }
+
+    if (byte == '*' && numBytes > 1 && start[1] == '(') {
+	/* *(ORIGINE,REPR,options) : le constructeur de lien */
+
+	const char *close = TclTypeFindArgsEnd(start + 2, start + numBytes);
+
+	*lexemePtr = BAREWORD;
+	if (literalPtr != NULL) {
+	    *literalPtr = Tcl_NewStringObj("*", 1);
+	}
+	if (close == NULL) {
+	    *lexemePtr = UNCLOSED;
+	    return 2;
+	}
+	if (argsPtr != NULL) {
+	    *argsPtr = Tcl_NewStringObj(start + 2, close - start - 2);
+	}
+	return close + 1 - start;
     }
 
     if (TclTypeIsNameChar(byte) || IsParamRef(start, numBytes)) {
@@ -1168,6 +1188,7 @@ typedef struct TypeItem {
     Tcl_Size nd;
     TclBinDyn *dyn;		/* SK_CTOR list : nombre lu dans le fichier */
     const char *atExpr;		/* SK_CTOR at : position (partagée) */
+    TclBinLink *link;		/* SK_CTOR * : le lien (partagé) */
 } TypeItem;
 
 #define ITEMS(env)	((TypeItem *) (env)->stack)
@@ -1653,6 +1674,157 @@ ParseDictKeys(Tcl_Interp *interp, const TypeEnv *envPtr, const char *text,
 }
 
 /*
+ * ParseLinkArgs --
+ *
+ *	Grammaire propre à *(...) :   ORIGINE , REPR ?, option ...?
+ *	ORIGINE : "//" ou "file://" (début des données), "./" (début de la
+ *	structure englobante), "../" (et "../../"...), "." (le champ lui-même).
+ *	REPR    : un type entier (u32le, int(s,32,le)...).
+ *	option  : null  |  null=VALEUR   (0 si omise)
+ */
+
+static int
+ParseLinkArgs(
+    Tcl_Interp *interp,
+    TypeEnv *envPtr,
+    const char *a,
+    Tcl_Size alen,
+    TclBinLink **linkPtr)
+{
+    TypeData *d = envPtr->d;
+    const char *p = a, *end = a + alen;
+    Tcl_Size index = 0;
+    TclBinLink *lk = (TclBinLink *) TclTypesKeep(d, Tcl_Alloc(sizeof(*lk)));
+
+    memset(lk, 0, sizeof(*lk));
+    while (p <= end) {
+	const char *q = p, *s, *e;
+	int depth = 0;
+	Tcl_Size len;
+
+	while (q < end && !(depth == 0 && *q == ',')) {
+	    if (*q == '(') {
+		depth++;
+	    } else if (*q == ')') {
+		depth--;
+	    }
+	    q++;
+	}
+	s = p;
+	e = q;
+	while (s < e && isspace(UCHAR(*s))) {
+	    s++;
+	}
+	while (e > s && isspace(UCHAR(e[-1]))) {
+	    e--;
+	}
+	len = e - s;
+	if (len == 0) {
+	    ERR(interp, "ARITY", "*(%.*s): empty argument", (int) alen, a);
+	    return TCL_ERROR;
+	}
+	if (index == 0) {
+	    Tcl_Size k;
+	    const char *o = s;
+	    Tcl_Size ol = len;
+
+	    if (len >= 7 && memcmp(s, "file://", 7) == 0 && len == 7) {
+		o = "//";
+		ol = 2;
+	    } else if (len >= 9 && memcmp(s, "memory://", 9) == 0) {
+		ERR(interp, "ARITY", "*(%.*s): memory:// is not implemented "
+			"yet", (int) len, s);
+		return TCL_ERROR;
+	    }
+	    if (!((ol == 2 && memcmp(o, "//", 2) == 0)
+		    || (ol == 2 && memcmp(o, "./", 2) == 0)
+		    || (ol == 1 && o[0] == '.'))) {
+		/* ../ ou ../../ ... */
+
+		int ok = (ol >= 3 && ol % 3 == 0);
+
+		for (k = 0; ok && k < ol; k += 3) {
+		    if (memcmp(o + k, "../", 3) != 0) {
+			ok = 0;
+		    }
+		}
+		if (!ok) {
+		    ERR(interp, "ARITY", "*(%.*s): the origin must be //, "
+			    "file://, ./, ../ (or ../../...) or . (the "
+			    "field), not \"%.*s\"", (int) alen, a, (int) len, s);
+		    return TCL_ERROR;
+		}
+	    }
+	    lk->origin = TclTypesKeepText(d, o, ol);
+	} else if (index == 1) {
+	    TclType *rt;
+	    const char *par = (const char *) memchr(s, '(', len);
+
+	    if (par != NULL && par > s && s[len - 1] == ')'
+		    && ((par - s == 3 && memcmp(s, "int", 3) == 0)
+		    || (par - s == 6 && memcmp(s, "double", 6) == 0))) {
+		/* int(u,32,le) en toutes lettres */
+
+		rt = TclTypesBinaryType(interp, d, s, par - s, par + 1,
+			len - (par - s) - 2, envPtr->params);
+	    } else {
+		rt = TclTypesResolve(interp, d, envPtr->selfName,
+			envPtr->self, s, len);
+	    }
+	    if (rt == NULL) {
+		return TCL_ERROR;
+	    }
+	    if (rt->kind != TCLT_INT || (rt->binKind != TCLBIN_UINT
+		    && rt->binKind != TCLBIN_SINT)) {
+		ERR(interp, "ARITY", "*(...): the address is stored in an "
+			"integer type with a binary form (u32le, "
+			"int(s,32,le)...), not \"%.*s\"", (int) len, s);
+		return TCL_ERROR;
+	    }
+	    lk->repr = rt;
+	} else if (len == 4 && memcmp(s, "null", 4) == 0) {
+	    lk->nullVal = TclTypesKeepText(d, "0", 1);
+	} else if (len > 5 && memcmp(s, "null=", 5) == 0) {
+	    Tcl_Size k;
+	    char *endp;
+
+	    (void) strtoll(s + 5, &endp, 0);
+	    for (k = 5; k < len; k++) {
+		if (s[k] == ' ') {
+		    break;
+		}
+	    }
+	    if (endp != e) {
+		ERR(interp, "ARITY", "*(...): null= needs an integer, not "
+			"\"%.*s\"", (int) (len - 5), s + 5);
+		return TCL_ERROR;
+	    }
+	    lk->nullVal = TclTypesKeepText(d, s + 5, len - 5);
+	} else if (len == 6 && memcmp(s, "opaque", 6) == 0) {
+	    ERR(interp, "ARITY", "*(...): the opaque option is not "
+		    "implemented yet");
+	    return TCL_ERROR;
+	} else {
+	    ERR(interp, "ARITY", "*(...): unknown option \"%.*s\" (null, "
+		    "null=VALUE)", (int) len, s);
+	    return TCL_ERROR;
+	}
+	index++;
+	if (q >= end) {
+	    break;
+	}
+	p = q + 1;
+    }
+    if (index < 2) {
+	ERR(interp, "ARITY", "*(%.*s): write *(origin,repr).T, as in "
+		"*(//,u32le).pe", (int) alen, a);
+	return TCL_ERROR;
+    }
+    *linkPtr = lk;
+    return TCL_OK;
+}
+
+/*
  * Construit le type d'une collection à partir de son constructeur
  * (list(...) ou dict(...)) et du type de ses éléments. Les valeurs par
  * défaut sont validées ICI, contre le type des valeurs du dictionnaire : un
@@ -1670,6 +1842,10 @@ MakeCtorType(Tcl_Interp *interp, TypeEnv *envPtr, TypeItem *ctor,
     if (ctor->type == d->tAt) {
 	*tpPtr = TclTypesMakeAt(d, elem, ctor->atExpr);
 	return TCL_OK;
+    }
+    if (ctor->type == d->tLink) {
+	*tpPtr = TclTypesMakeLink(interp, d, elem, ctor->link);
+	return (*tpPtr != NULL) ? TCL_OK : TCL_ERROR;
     }
     if (ctor->type == d->tList) {
 	if (ctor->dyn != NULL) {
@@ -1716,6 +1892,11 @@ ResolveCtor(Tcl_Interp *interp, TypeEnv *envPtr, TypeItem *it)
     if (it->type == envPtr->d->tAt) {
 	ERR(interp, "NEST", "at(...) needs the type of the value: write "
 		"at(%s).T", it->atExpr);
+	return TCL_ERROR;
+    }
+    if (it->type == envPtr->d->tLink) {
+	ERR(interp, "NEST", "*(...) needs the type of the target: write "
+		"*(%s,...).T", it->link->origin);
 	return TCL_ERROR;
     }
     if (MakeCtorType(interp, envPtr, it, envPtr->d->tString, &tp) != TCL_OK) {
@@ -2233,6 +2414,19 @@ TclCompileTypeTree(
 		    return TCL_ERROR;
 		}
 		PushItem(envPtr, SK_TYPE)->type = tp;
+		break;
+	    }
+	    if (len == 1 && w[0] == '*') {
+		/* *(ORIGINE,REPR,options).T : un lien vers un T */
+
+		TclBinLink *lk = NULL;
+
+		if (ParseLinkArgs(interp, envPtr, a, alen, &lk) != TCL_OK) {
+		    return TCL_ERROR;
+		}
+		it = PushItem(envPtr, SK_CTOR);
+		it->type = envPtr->d->tLink;
+		it->link = lk;
 		break;
 	    }
 	    if (len == 2 && w[0] == 'a' && w[1] == 't') {

@@ -452,6 +452,50 @@ TclTypesMakeAt(TypeData *d, TclType *elem, const char *expr)
     return tp;
 }
 
+/* *(ORIGINE,REPR ?,null=V?).T : la valeur de type T est désignée par l'entier
+ * REPR, compté depuis ORIGINE. Mêmes valeurs que T (binBase). Si T est une
+ * somme {T}some, {unit}none, un lien nul vaut none. */
+TclType *
+TclTypesMakeLink(Tcl_Interp *interp, TypeData *d, TclType *elem,
+	TclBinLink *link)
+{
+    Tcl_DString ds;
+    Tcl_HashEntry *hPtr;
+    TclType *tp;
+    int isNew;
+
+    (void) interp;
+    link->target = elem;
+    Tcl_DStringInit(&ds);
+    Tcl_DStringAppend(&ds, "*(", 2);
+    Tcl_DStringAppend(&ds, link->origin, TCL_AUTO_LENGTH);
+    Tcl_DStringAppend(&ds, ",", 1);
+    Tcl_DStringAppend(&ds, link->repr->name, TCL_AUTO_LENGTH);
+    if (link->nullVal != NULL) {
+	Tcl_DStringAppend(&ds, ",null=", 6);
+	Tcl_DStringAppend(&ds, link->nullVal, TCL_AUTO_LENGTH);
+    }
+    if (link->opaque) {
+	Tcl_DStringAppend(&ds, ",opaque", 7);
+    }
+    Tcl_DStringAppend(&ds, ").", 2);
+    Tcl_DStringAppend(&ds, elem->name, TCL_AUTO_LENGTH);
+    hPtr = Tcl_CreateHashEntry(&d->canon, Tcl_DStringValue(&ds), &isNew);
+    if (isNew) {
+	tp = NewType(d, elem->kind, Tcl_DStringValue(&ds));
+	tp->nominal = elem->nominal;
+	CopyInto(tp, elem);
+	tp->refine = elem->refine;
+	tp->binLink = link;
+	tp->binBase = (elem->binBase != NULL) ? elem->binBase : elem;
+	Tcl_SetHashValue(hPtr, tp);
+    } else {
+	tp = (TclType *) Tcl_GetHashValue(hPtr);
+    }
+    Tcl_DStringFree(&ds);
+    return tp;
+}
+
 /* S($champ) : la somme S dont la variante est choisie par la valeur du champ
  * (déjà lu) du même produit ou d'un produit englobant. La variante est celle
  * dont le nom égale la valeur du champ ({int}1, {string}2 : étiquettes 1, 2). */
@@ -1894,6 +1938,21 @@ TclTypeParse(Tcl_Interp *interp, const char *text, Tcl_Size len)
 
     memset(&env, 0, sizeof(env));
     env.d = GetData(interp);
+    if (len > 2 && text[0] == '*' && text[1] == '(') {
+	/* Le nom d'un lien déjà construit (il peut contenir un nom canonique
+	 * anonyme, list($n)<sec>, qui ne s'écrit pas) : on le retrouve tel quel. */
+
+	Tcl_DString ds;
+	Tcl_HashEntry *hPtr;
+
+	Tcl_DStringInit(&ds);
+	Tcl_DStringAppend(&ds, text, len);
+	hPtr = Tcl_FindHashEntry(&env.d->canon, Tcl_DStringValue(&ds));
+	Tcl_DStringFree(&ds);
+	if (hPtr != NULL) {
+	    return (TclType *) Tcl_GetHashValue(hPtr);
+	}
+    }
     if (TclCompileType(interp, text, len, &env) != TCL_OK) {
 	return NULL;
     }
@@ -2277,6 +2336,7 @@ CopyInto(TclType *into, const TclType *res)
     into->binEnc = res->binEnc;
     into->binDyn = res->binDyn;
     into->binAt = res->binAt;
+    into->binLink = res->binLink;
     into->binTag = res->binTag;
     if (res->nkeys > 0) {
 	into->keys = (TclDictKey *) Tcl_Alloc(res->nkeys * sizeof(TclDictKey));
@@ -2402,13 +2462,9 @@ TypeDefine(Tcl_Interp *interp, TypeData *d, Tcl_Obj *nameObj, Tcl_Obj *defObj,
 
 	int rc;
 
-	if (alias) {
-	    ERR(interp, "NAME", "an alias cannot have parameters");
-	    return TCL_ERROR;
-	}
 	text = DefinitionText(interp, defObj, &ds);
 	rc = TclTypesDefineGeneric(interp, d, name, (Tcl_Size) strlen(name),
-		text, Tcl_DStringLength(&ds));
+		text, Tcl_DStringLength(&ds), alias);
 	Tcl_DStringFree(&ds);
 	return rc;
     }
@@ -2546,6 +2602,102 @@ TypeGetCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 
 static int BinRepr(Tcl_Interp *interp, TclType *tp, int depth, Tcl_Obj *vis,
 	Tcl_Obj **objPtr);
+static int BinReprBody(Tcl_Interp *interp, TclType *tp, int depth,
+	Tcl_Obj *vis, Tcl_Obj **objPtr);
+
+/*
+ * LinkRepr --
+ *
+ *	link ORIGINE REPR NULL CIBLE OPT   pour *(...).T. REPR est la
+ *	représentation de l'entier ; NULL le texte de la valeur nulle, ou
+ *	"none" ; CIBLE la représentation de T. Si T est une somme
+ *	{U}some, {unit}none, CIBLE est celle de U et OPT le nom de la somme
+ *	(sinon OPT est vide).
+ */
+
+static int
+LinkRepr(
+    Tcl_Interp *interp,
+    TclType *tp,
+    int depth,
+    Tcl_Obj *vis,
+    Tcl_Obj **objPtr)
+{
+    TclBinLink *lk = tp->binLink;
+    TclType *target = lk->target;
+    Tcl_Obj *reprR = NULL, *targR = NULL, *r;
+    const char *optName = "";
+    const char *nullText = lk->nullVal;
+    Tcl_Size i;
+
+    if (BinRepr(interp, lk->repr, depth + 1, vis, &reprR) != TCL_OK
+	    || reprR == NULL) {
+	ERR(interp, "BIN", "%s: the address type %s has no binary "
+		"representation", tp->name, lk->repr->name);
+	return TCL_ERROR;
+    }
+    if (target->kind == TCLT_SUM && target->binTag == NULL
+	    && target->binLink == NULL && target->nfields == 2) {
+	TclType *some = NULL;
+	int hasNone = 0;
+
+	for (i = 0; i < target->nfields; i++) {
+	    const char *nm = Tcl_GetString(target->fields[i].name);
+
+	    if (strcmp(nm, "some") == 0) {
+		some = target->fields[i].type;
+	    } else if (strcmp(nm, "none") == 0) {
+		hasNone = 1;
+	    }
+	}
+	if (some == NULL || !hasNone) {
+	    Tcl_DecrRefCount(reprR);
+	    ERR(interp, "BIN", "%s: a link to a sum needs the variants "
+		    "{T}some and {unit}none", tp->name);
+	    return TCL_ERROR;
+	}
+	optName = tp->name;
+	if (nullText == NULL) {
+	    nullText = "0";
+	}
+	if (BinRepr(interp, some, depth + 1, vis, &targR) != TCL_OK) {
+	    Tcl_DecrRefCount(reprR);
+	    return TCL_ERROR;
+	}
+    } else {
+	/* la cible, avec sa propre décoration (un lien, at...) */
+
+	Tcl_Obj *vis2 = vis;
+
+	if (target->binLink != NULL || target->binAt != NULL
+		|| target->binTag != NULL) {
+	    if (BinRepr(interp, target, depth + 1, vis2, &targR) != TCL_OK) {
+		Tcl_DecrRefCount(reprR);
+		return TCL_ERROR;
+	    }
+	} else if (BinReprBody(interp, target, depth + 1, vis2, &targR)
+		!= TCL_OK) {
+	    Tcl_DecrRefCount(reprR);
+	    return TCL_ERROR;
+	}
+    }
+    if (targR == NULL) {
+	Tcl_DecrRefCount(reprR);
+	ERR(interp, "BIN", "%s: the target %s has no binary representation",
+		tp->name, target->name);
+	return TCL_ERROR;
+    }
+    r = Tcl_NewListObj(0, NULL);
+    Tcl_ListObjAppendElement(NULL, r, Tcl_NewStringObj("link", -1));
+    Tcl_ListObjAppendElement(NULL, r, Tcl_NewStringObj(lk->origin, -1));
+    Tcl_ListObjAppendElement(NULL, r, reprR);
+    Tcl_ListObjAppendElement(NULL, r, Tcl_NewStringObj(
+	    nullText != NULL ? nullText : "none", -1));
+    Tcl_ListObjAppendElement(NULL, r, targR);
+    Tcl_ListObjAppendElement(NULL, r, Tcl_NewStringObj(optName, -1));
+    *objPtr = r;
+    return TCL_OK;
+}
 
 /* Les noms $x et ${x} cités par EXPR sont-ils tous dans vis ? */
 
@@ -2761,7 +2913,9 @@ BinReprBody(
 	    }
 	    len = l;
 	}
-	if (len > 0) {
+	if (len >= 0) {
+	    /* len == 0 : le littéral vide {""} occupe 0 octet (« unit ») */
+
 	    r = Tcl_NewListObj(0, NULL);
 	    Tcl_ListObjAppendElement(NULL, r, Tcl_NewStringObj("lit", -1));
 	    Tcl_ListObjAppendElement(NULL, r, Tcl_NewWideIntObj(len));
@@ -2798,7 +2952,28 @@ BinReprBody(
 	    const TclTypeField *f = &tp->fields[i];
 
 	    fr = NULL;
-	    if (f->type != NULL
+	    if (f->type != NULL && f->type->binLink != NULL) {
+		/* La cible d'un lien est lue après tous les champs du produit :
+		 * elle peut citer ceux qui suivent. */
+
+		Tcl_Obj *visAll = Tcl_DuplicateObj(vis2);
+		Tcl_Size j;
+		int rc;
+
+		for (j = i + 1; j < tp->nfields; j++) {
+		    if (tp->fields[j].name != NULL) {
+			Tcl_ListObjAppendElement(NULL, visAll,
+				tp->fields[j].name);
+		    }
+		}
+		rc = BinRepr(interp, f->type, depth + 1, visAll, &fr);
+		Tcl_DecrRefCount(visAll);
+		if (rc != TCL_OK) {
+		    Tcl_DecrRefCount(flds);
+		    Tcl_DecrRefCount(vis2);
+		    return TCL_ERROR;
+		}
+	    } else if (f->type != NULL
 		    && BinRepr(interp, f->type, depth + 1, vis2, &fr)
 		    != TCL_OK) {
 		Tcl_DecrRefCount(flds);
@@ -2845,6 +3020,9 @@ BinRepr(
 	ERR(interp, "BIN", "type %s is too deeply nested (or recursive) for "
 		"a binary layout", tp->name);
 	return TCL_ERROR;
+    }
+    if (tp->binLink != NULL) {
+	return LinkRepr(interp, tp, depth, vis, objPtr);
     }
     if (BinReprBody(interp, tp, depth, vis, &inner) != TCL_OK) {
 	return TCL_ERROR;
@@ -3124,6 +3302,8 @@ TclTypesInit(Tcl_Interp *interp)
     d->tVar->elem = d->tString;
     /* at(EXPR).T : constructeur sans nom de type (voir tclTypeParse.c) */
     d->tAt = NewType(d, TCLT_LIST, "at");
+    /* *(...).T : idem */
+    d->tLink = NewType(d, TCLT_LIST, "*");
     /* "array" est réservé sans sémantique : entrée à valeur NULL. */
     Tcl_SetHashValue(Tcl_CreateHashEntry(&d->names, "array", &isNew), NULL);
     Tcl_SetAssocData(interp, "tclTypes", DeleteData, d);
@@ -3145,7 +3325,7 @@ TclTypesInit(Tcl_Interp *interp)
 		"{string}e = auto)";
 
 	if (TclTypesDefineGeneric(NULL, d, spec, (Tcl_Size) strlen(spec),
-		"int # n ord e", 13) == TCL_OK) {
+		"int # n ord e", 13, 0) == TCL_OK) {
 	    TclTypesMarkBits(d, "bitarray", 1);
 	}
     }

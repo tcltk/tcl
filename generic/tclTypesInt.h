@@ -42,6 +42,9 @@ typedef struct TypeGeneric {
     TypeParam *params;
     char *body;			/* texte du type, avec les paramètres libres */
     Tcl_Size bodyLen;
+    int alias;			/* 1 : type alias paramétré : l'instance est le type
+				 * du corps lui-même (structurel), pas un type
+				 * nominal de plus */
     int bits;			/* 1 : bitarray, l'instance reçoit bitWidth et
 				 * bitMsb0 et binEnd */
 } TypeGeneric;
@@ -62,6 +65,7 @@ typedef struct TypeData {
     Tcl_Size nAll, capAll;
     TclType *tInt, *tDouble, *tString, *tList, *tDict, *tVar;
     TclType *tAt;		/* constructeur at(EXPR).T (caché : pas un nom) */
+    TclType *tLink;		/* constructeur *(...).T (caché : pas un nom) */
     void **blobs;		/* décorations binaires (TclBinDyn, textes),
 				 * partagées par les types, libérées à la fin */
     Tcl_Size nBlobs, capBlobs;
@@ -113,7 +117,7 @@ TclType *TclTypesInstantiate(Tcl_Interp *interp, TypeData *d, TypeGeneric *g,
 	    const char *argText, Tcl_Size argLen, const TypeEnv *parent);
 int	TclTypesDefineGeneric(Tcl_Interp *interp, TypeData *d,
 	    const char *spec, Tcl_Size specLen, const char *body,
-	    Tcl_Size bodyLen);
+	    Tcl_Size bodyLen, int alias);
 void	TclTypesFreeGenerics(TypeData *d);
 /* Marque le type paramétré NAME : 1 bitarray. */
 void	TclTypesMarkBits(TypeData *d, const char *name, int code);
@@ -142,6 +146,8 @@ char	*TclTypesKeepText(TypeData *d, const char *s, Tcl_Size len);
 /* list(PRÉFIXE|$expr).T, at(EXPR).T, S($champ) : types décorés. */
 TclType *TclTypesMakeListDyn(TypeData *d, TclType *elem, TclBinDyn *dyn);
 TclType *TclTypesMakeAt(TypeData *d, TclType *elem, const char *expr);
+TclType *TclTypesMakeLink(Tcl_Interp *interp, TypeData *d, TclType *elem,
+	    TclBinLink *link);
 TclType *TclTypesMakeTagged(Tcl_Interp *interp, TypeData *d, TclType *sum,
 	    const char *field, int isConst);
 /* list.T : liste de T, extensible. */

@@ -70,6 +70,18 @@ typedef struct TclBinDyn {
     char *expr;			/* EXPR : expression Tcl (texte) */
 } TclBinDyn;
 
+/* *(ORIGINE, REPR ?, options?).T : un lien, c'est-à-dire un entier REPR qui
+ * désigne, depuis ORIGINE, la valeur de type T (voir CONCEPTION-lien.md). */
+typedef struct TclBinLink {
+    char *origin;		/* "//" (début des données), "./" (début de la
+				 * structure englobante), "../", "../../"...,
+				 * "." (le champ lui-même) */
+    struct TclType *repr;	/* type entier de l'adresse stockée */
+    char *nullVal;		/* texte de la valeur nulle, ou NULL */
+    int opaque;			/* réservé : la valeur reste l'entier */
+    struct TclType *target;	/* le type désigné (peut être lui-même un lien) */
+} TclBinLink;
+
 typedef struct TclTypeField {
     Tcl_Obj *name;		/* champ ou variante ; NULL si sans nom */
     TclType *type;		/* NULL pour une variante littérale */
@@ -110,6 +122,7 @@ struct TclType {
     int binEnd;			/* TCLBIN_AUTO, TCLBIN_LE ou TCLBIN_BE */
     TclBinDyn *binDyn;		/* chaîne ou liste : taille / nombre dynamique */
     char *binAt;		/* at(EXPR).T : position de la valeur (texte) */
+    TclBinLink *binLink;	/* *(...).T : la valeur est désignée par un entier */
     char *binTag;		/* S($champ) : champ dont la valeur choisit la
 				 * variante de la somme S */
     struct TclType *binBase;	/* type sans ces décorations (at, $champ, liste
