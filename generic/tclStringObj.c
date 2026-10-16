@@ -2558,11 +2558,19 @@ Tcl_AppendFormatToObj(
 		goto errorMsg;
 	    }
 	    if (ch == 'A') {
-		char *q = TclGetString(segment) + 1;
-		*q = 'x';
-		q = strchr(q, 'P');
+		/*
+		 * Lowercase the "0X" prefix and the "P" exponent marker. The
+		 * prefix may follow padding or a sign, and is absent for Inf.
+		 */
+
+		char *q = strstr(TclGetString(segment), "0X");
+
 		if (q) {
-		    *q = 'p';
+		    q[1] = 'x';
+		    q = strchr(q, 'P');
+		    if (q) {
+			*q = 'p';
+		    }
 		}
 	    }
 	    break;
