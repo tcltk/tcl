@@ -147,6 +147,7 @@ to the userbase.
 
 # Incompatibilities
  - [The ActiveCodePage element has been removed from the Windows executable manifest for tclsh](https://core.tcl-lang.org/tips/doc/trunk/tip/716.md)
+ - [on Windows a joinable thread which exits before it is joined leaked](https://core.tcl-lang.org/tcl/tktview/338137)
 
 # Updated bundled packages, libraries, standards, data
  - Itcl 4.3.3
