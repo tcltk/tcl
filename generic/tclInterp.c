@@ -783,6 +783,26 @@ InitAutoPathObjCmd(
 
     /* tcl_pkgPath. Errors ignored like original. Note no tildeexpand */
     (void) AddPathsInVarToList(interp, "tcl_pkgPath", NULL, autoPathPtr, 0);
+
+    /* tcl_library/encoding to the encoding search path. [Bug 75ecc0e6cb] */
+    objPtr = Tcl_GetVar2Ex(interp, "tcl_library", NULL, TCL_GLOBAL_ONLY);
+    if (objPtr) {
+	Tcl_Obj *encObj = Tcl_NewStringObj("encoding", 8);
+	Tcl_Obj *searchPathObj = Tcl_DuplicateObj(Tcl_GetEncodingSearchPath());
+	Tcl_Size oldLen = 0, newLen = 0;
+
+	Tcl_IncrRefCount(encObj);
+	Tcl_IncrRefCount(searchPathObj);
+	TclListObjLength(NULL, searchPathObj, &oldLen);
+	(void) TclListObjInsertIfAbsent(NULL, searchPathObj,
+		Tcl_FSJoinToPath(objPtr, 1, &encObj), TCL_SIZE_MAX);
+	TclListObjLength(NULL, searchPathObj, &newLen);
+	if (newLen > oldLen) {
+	    Tcl_SetEncodingSearchPath(searchPathObj);
+	}
+	Tcl_DecrRefCount(searchPathObj);
+	Tcl_DecrRefCount(encObj);
+    }
     autoPathPtr = Tcl_SetVar2Ex(interp, "auto_path", NULL, autoPathPtr,
 	    TCL_GLOBAL_ONLY);
     if (autoPathPtr) {

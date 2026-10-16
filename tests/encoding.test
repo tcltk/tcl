@@ -1052,6 +1052,16 @@ test encoding-26.0 {Tcl_GetEncodingSearchPath} -setup {
 } -cleanup {
     encoding dirs $origPath
 } -result slappy
+test encoding-26.1 {init adds tcl_library/encoding to search path} -setup {
+    set origPath [encoding dirs]
+    encoding dirs slappy
+} -body {
+    interp delete [interp create]
+    list [lindex [encoding dirs] 0] \
+	    [expr {[file join $::tcl_library encoding] in [encoding dirs]}]
+} -cleanup {
+    encoding dirs $origPath
+} -result {slappy 1}
 
 file delete {*}[glob -directory [temporaryDirectory] *.chars *.tcltestout]
 # ===> Cut here <===
