@@ -30,6 +30,7 @@ to the userbase.
  - [regsub always asked the regexp engine for 10 submatches](https://core.tcl-lang.org/tcl/tktview/446565)
  - [regsub -command panics with more than 9 capturing groups](https://core.tcl-lang.org/tcl/tktview/41bc9a)
  - [Problem with ::http::OpenSocket](https://core.tcl-lang.org/tcl/tktview/0c1e91)
+ - [on Windows a joinable thread which exits before it is joined leaked](https://core.tcl-lang.org/tcl/tktview/338137)
 
 # Updated bundled packages, libraries, standards, data
  - http 2.10.3
