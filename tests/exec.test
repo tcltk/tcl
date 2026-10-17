@@ -799,6 +799,16 @@ test exec-22.1 {exec -encoding invalid encoding} -body {
     exec -encoding nosuchencoding -- [interpreter] $path(echobin) abc
 } -result {unknown encoding "nosuchencoding"} -returnCodes error
 
+test exec-23.1 {command word starting with 2 [Bug 2339907]} -constraints {exec} -body {
+    exec [interpreter] $path(echo) a | 2nosuchcommand
+} -returnCodes error -result {couldn't execute "2nosuchcommand": no such file or directory}
+test exec-23.2 {arguments starting with | [Bug 1862356]} -constraints {exec} -body {
+    exec [interpreter] $path(echo) |foo |&bar
+} -result {|foo |&bar}
+test exec-23.3 {command word starting with | [Bug 1862356]} -constraints {exec} -body {
+    exec [interpreter] $path(echo) a | |nosuchcommand
+} -returnCodes error -result {couldn't execute "|nosuchcommand": no such file or directory}
+
 # ----------------------------------------------------------------------
 # Tests specific to Windows which has more varied application types and
 # search mechanism.
