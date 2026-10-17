@@ -4888,7 +4888,7 @@ TEOV_Error(
 	Tcl_LogCommandInfo(interp, cmdString, cmdString, cmdLen);
 	Tcl_DecrRefCount(listPtr);
     }
-    iPtr->flags &= ~ERR_ALREADY_LOGGED;
+    iPtr->flags &= ~(ERR_ALREADY_LOGGED | ERR_STACK_LOGGED);
     return result;
 }
 
@@ -5059,7 +5059,7 @@ TEOV_RunEnterTraces(
 	    Tcl_AppendLimitedToObj(info, command, length, 55, "...");
 	    Tcl_AppendToObj(info, "\")", 2);
 	    Tcl_AppendObjToErrorInfo(interp, info);
-	    iPtr->flags |= ERR_ALREADY_LOGGED;
+	    iPtr->flags |= ERR_STACK_LOGGED;
 	}
 	return traceCode;
     }
@@ -5111,7 +5111,7 @@ TEOV_RunLeaveTraces(
 	    Tcl_AppendLimitedToObj(info, command, length, 55, "...");
 	    Tcl_AppendToObj(info, "\")", 2);
 	    Tcl_AppendObjToErrorInfo(interp, info);
-	    iPtr->flags |= ERR_ALREADY_LOGGED;
+	    iPtr->flags |= ERR_STACK_LOGGED;
 	}
 	result = traceCode;
     }
@@ -5626,7 +5626,7 @@ TclEvalEx(
 		commandLength);
     }
   posterror:
-    iPtr->flags &= ~ERR_ALREADY_LOGGED;
+    iPtr->flags &= ~(ERR_ALREADY_LOGGED | ERR_STACK_LOGGED);
 
     /*
      * Then free resources that had been allocated to the command.

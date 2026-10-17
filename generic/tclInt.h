@@ -2453,7 +2453,7 @@ enum InterpFlags {
 				 * replacing and uses different intermediate
 				 * text. */
     ERR_LEGACY_COPY = 0x800,
-    CANCELED = 0x1000		/* The script in progress should be canceled
+    CANCELED = 0x1000,	/* The script in progress should be canceled
 				 * as soon as possible. This can be checked by
 				 * extensions (and the core itself) by calling
 				 * Tcl_Canceled and checking if TCL_ERROR is
@@ -2464,6 +2464,10 @@ enum InterpFlags {
 				 * that the script in progress has been
 				 * canceled thereby allowing the evaluation
 				 * stack for the interp to be fully unwound. */
+    ERR_STACK_LOGGED = 0x2000	/* The errorStack already describes the
+				 * current command (an error in its execution
+				 * trace), so TclLogCommandInfo only adds to
+				 * errorInfo. */
 };
 
 /*

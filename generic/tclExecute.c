@@ -7968,7 +7968,7 @@ TEBCresume(
 		    bytes ? xxx1length : 0, pcBeg, tosPtr);
 	    CACHE_STACK_INFO();
 	}
-	iPtr->flags &= ~ERR_ALREADY_LOGGED;
+	iPtr->flags &= ~(ERR_ALREADY_LOGGED | ERR_STACK_LOGGED);
 
 	/*
 	 * Clear all expansions that may have started after the last

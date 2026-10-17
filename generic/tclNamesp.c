@@ -5071,6 +5071,16 @@ TclLogCommandInfo(
 	}
     }
 
+    if (iPtr->flags & ERR_STACK_LOGGED) {
+	/*
+	 * An execution trace of this command failed and its error already
+	 * added the current level to the errorStack. [Bug 010f4162ef]
+	 * [Bug afa8c9f5bb]
+	 */
+
+	return;
+    }
+
     /*
      * TIP #348
      */

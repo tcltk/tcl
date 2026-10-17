@@ -2653,6 +2653,50 @@ test trace-40.1 {execution trace errors become command errors} {
     catch foo m
     return -level 0 $m[unset m]
 } bar
+test trace-bug-afa8c9f5bb-1 {error in leave trace: errorInfo of the traced command} -setup {
+    proc foo args {}
+    proc goo {} {
+	set x 1
+	foo
+    }
+    trace add execution foo leave {error bar;#}
+} -body {
+    catch goo m o
+    dict get $o -errorinfo
+} -cleanup {
+    rename goo {}; rename foo {}
+    unset -nocomplain m o
+} -result {bar
+    while executing
+"error bar"
+    (leave trace on "foo")
+    invoked from within
+"foo"
+    (procedure "goo" line 3)
+    invoked from within
+"goo"}
+test trace-bug-afa8c9f5bb-2 {error in enter trace: errorInfo and errorstack} -setup {
+    proc foo args {}
+    proc goo {} {
+	set x 1
+	foo
+    }
+    trace add execution foo enter {error bar;#}
+} -body {
+    catch goo m o
+    list [dict get $o -errorinfo] [dict get $o -errorstack]
+} -cleanup {
+    rename goo {}; rename foo {}
+    unset -nocomplain m o
+} -result {{bar
+    while executing
+"error bar"
+    (enter trace on "foo")
+    invoked from within
+"foo"
+    (procedure "goo" line 3)
+    invoked from within
+"goo"} {INNER {error bar} CALL goo UP 1}}
 
 # Delete procedures when done, so we don't clash with other tests
 # (e.g. foobar will clash with 'unknown' tests).
