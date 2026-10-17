@@ -4,4 +4,4 @@ win/coffbase.txt
 win/makefile.vc
 win/rules.vc
 win/tcl.dsp
-win/tcl.dsw
+win/tcl.dswtypeparse/tests_tclsh/*.out
