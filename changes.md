@@ -36,6 +36,7 @@ to the userbase.
  - [Windows: after and Tcl_Sleep can sleep about 72 minutes](https://core.tcl-lang.org/tcl/tktview/858404)
  - [interp create resets the system encoding set by encoding system](https://core.tcl-lang.org/tcl/tktview/63941f)
  - [traceback using clock format with locale of he_IL](https://core.tcl-lang.org/tcl/tktview/301613)
+ - [he locale: BCE and CE era names are swapped](https://core.tcl-lang.org/tcl/tktview/58bae8)
 
 # Updated bundled packages, libraries, standards, data
  - http 2.10.3

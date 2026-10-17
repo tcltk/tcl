@@ -38860,6 +38860,10 @@ test clock-71.1 {he locale era names with a quote load, bug [3016135]} -body {
     list [string match {*"*} [clock format 0 -gmt 1 -locale he -format %EE]] \
 	[string match {*"*} [clock format -62200000000 -gmt 1 -locale he -format %EE]]
 } -result {1 1}
+test clock-71.2 {he locale era names are not swapped} -body {
+    list [clock format 0 -gmt 1 -locale he -format %EE] \
+	[clock format -62200000000 -gmt 1 -locale he -format %EE]
+} -result [list "\u05dc\u05e1\u05d4\"\u05e0" "\u05dc\u05e4\u05e1\u05d4\"\u05e0"]
 
 # cleanup
 
