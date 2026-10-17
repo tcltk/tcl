@@ -584,3 +584,13 @@ contient les deux. Côté Tcl, remplacer `layout/filebinary.tcl` (sélecteur `=n
   développement (type récursif), `{linkref NOM}` (pile `TypeData.linkStack`).
 * `layout/filebinary.tcl` 0.6 : option `-linkdepth`, `file binary deref`, `unref`.
 
+
+## Annotations locales (patch types-binaires-annotations-locales)
+
+* `tclAnnotObj.c` : `TclAnnotResolve` traite comme valeur ordinaire (`TCLA_PLAIN`) une
+  annotation brute que l'analyse des types rejette pour un caractère invalide (`BADCHAR`),
+  p. ex. `{-v}$mot`, `{what?}$mot`. Le résultat de l'interpréteur est sauvé autour de l'analyse
+  (il peut être la valeur à ranger). Nom inconnu, parenthèse non fermée : erreurs inchangées.
+* `tclTypedVar.c` : `TclTypedVarPrepareWrite` range le contenu seul pour `TCLA_PLAIN` (variable
+  non typée) et ne conserve pas l'annotation dans `append`/`lappend` sur variable typée.
+* Test : `t45_annotations_locales.tcl`. Conception : `CONCEPTION-annotations.md`.

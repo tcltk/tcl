@@ -1,20 +1,20 @@
 === 1. octet packed d'un GIF ===
   0xF7 = 11110111
     table globale : oui
-    résolution    : 8 bit(s) par couleur primaire
-    palette triée : non
+    rÃ©solution    : 8 bit(s) par couleur primaire
+    palette triÃ©e : non
     couleurs      : 256
   0x80 = 10000000
     table globale : oui
-    résolution    : 1 bit(s) par couleur primaire
-    palette triée : non
+    rÃ©solution    : 1 bit(s) par couleur primaire
+    palette triÃ©e : non
     couleurs      : 2
   construit : 0xD3
   lsb0 : l'indicateur de table globale est l(7)=1, la taille l(0:2)=7
 
 === 2. drapeaux TCP ===
   mot construit : 0x5012  offset=5  drapeaux=ACK+SYN
-  relu : offset=5 drapeaux=ACK+SYN  (bits à 1 : 4)
+  relu : offset=5 drapeaux=ACK+SYN  (bits Ã  1 : 4)
   syn       0x5002  SYN
   synack    0x5012  ACK+SYN
   fin_ack   0x5011  ACK+FIN
@@ -23,7 +23,7 @@
   lsb0 <- msb0 : type mismatch: expected bitarray(16,lsb0) but got bitarray(16,msb0) (use an explicit cast)
 
 === 3. permissions Unix ===
-  0o755 -> rwxr-xr-x  (octal 755, 7 droits accordés)
+  0o755 -> rwxr-xr-x  (octal 755, 7 droits accordÃ©s)
   g+w    -> rwxrwxr-x  775
   o=     -> rwxrwx---  770
   u=rw   -> rw-rwx---  670

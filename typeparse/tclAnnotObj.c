@@ -744,6 +744,39 @@ TclAnnotInfo(Tcl_Obj *objPtr, Tcl_Obj **contentPtr, TclType **tpPtr,
 }
 
 /*
+ * Vrai si le dernier échec de TclTypeParse vient d'un caractère invalide
+ * (code d'erreur TCL PARSE TYPE BADCHAR) : le texte ne peut pas être un
+ * type, c'est une annotation locale. Un nom inconnu, une parenthèse non
+ * fermée, etc. restent des erreurs (faute de frappe sur un type ou une
+ * variante).
+ */
+static int
+RawIsLocal(Tcl_Interp *interp)
+{
+    Tcl_Obj *opts, *key, *code = NULL, *last = NULL;
+    Tcl_Size n;
+    int isLocal = 0;
+
+    if (interp == NULL) {
+	return 0;
+    }
+    opts = Tcl_GetReturnOptions(interp, TCL_ERROR);
+    Tcl_IncrRefCount(opts);
+    key = Tcl_NewStringObj("-errorcode", -1);
+    Tcl_IncrRefCount(key);
+    if (Tcl_DictObjGet(NULL, opts, key, &code)
+	    == TCL_OK && code != NULL
+	    && Tcl_ListObjLength(NULL, code, &n) == TCL_OK && n > 0
+	    && Tcl_ListObjIndex(NULL, code, n - 1, &last) == TCL_OK
+	    && last != NULL) {
+	isLocal = (strcmp(Tcl_GetString(last), "BADCHAR") == 0);
+    }
+    Tcl_DecrRefCount(key);
+    Tcl_DecrRefCount(opts);
+    return isLocal;
+}
+
+/*
  * Résout un argument. Quand la cible est une somme (ctx), une annotation
  * brute {nom} est d'abord lue comme un NOM DE VARIANTE (spéc. §12 : {d}5),
  * puis comme un type. Le contenu d'une annotation brute n'est pas validé.
@@ -816,7 +849,38 @@ TclAnnotResolve(Tcl_Interp *interp, Tcl_Obj *objPtr, const TclType *ctx,
 	    }
 	}
     }
-    tp = TclTypeParse(interp, text, len);
+    {
+	/*
+	 * L'appelant peut tenir la valeur à ranger dans le résultat de
+	 * l'interpréteur (catch, set x [cmd]) : l'échec de l'analyse y écrit
+	 * son message, et on ne le laisse pas écraser ce résultat tant qu'on
+	 * ne sait pas si c'est une vraie erreur.
+	 */
+
+	Tcl_Obj *saved = NULL;
+
+	if (interp != NULL) {
+	    saved = Tcl_GetObjResult(interp);
+	    Tcl_IncrRefCount(saved);
+	}
+	tp = TclTypeParse(interp, text, len);
+	if (tp == NULL && saved != NULL && RawIsLocal(interp)) {
+	    /*
+	     * Annotation LOCALE ({-v}, {what?}) : un caractère que la grammaire
+	     * des types refuse, donc jamais un type ni un nom de variante. Elle
+	     * s'adresse à la commande appelée, pas à la variable qui rangera la
+	     * valeur : on la laisse de côté et on garde le contenu.
+	     */
+
+	    Tcl_SetObjResult(interp, saved);
+	    Tcl_DecrRefCount(saved);
+	    *statusPtr = TCLA_PLAIN;
+	    return TCL_OK;
+	}
+	if (saved != NULL) {
+	    Tcl_DecrRefCount(saved);
+	}
+    }
     if (tp == NULL) {
 	return TCL_ERROR;
     }

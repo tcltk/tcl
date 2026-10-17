@@ -115,8 +115,10 @@ TclTypedVarPrepareWrite(Tcl_Interp *interp, Var *varPtr,
 	if (status == TCLA_TYPED) {
 	    return TCL_OK;			/* stockée telle quelle */
 	}
-	if (status == TCLA_EMPTY) {
-	    res = Tcl_DuplicateObj(content);	/* {}$x : on retire le type */
+	if (status == TCLA_EMPTY || status == TCLA_PLAIN) {
+	    /* {}$x : on retire le type. PLAIN : annotation locale ({-v}), qui
+	     * s'adressait à la commande appelée : on range le contenu seul. */
+	    res = Tcl_DuplicateObj(content);
 	} else {
 	    res = MakeTyped(interp, at, value);
 	    if (res == NULL) {
@@ -139,8 +141,9 @@ TclTypedVarPrepareWrite(Tcl_Interp *interp, Var *varPtr,
 		&content) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	if (status != TCLA_PLAIN
-		&& !(contract->kind == TCLT_LIST && contract->elem != NULL
+	if (status == TCLA_PLAIN) {
+	    add = content;		/* valeur ordinaire, ou annotation locale */
+	} else if (!(contract->kind == TCLT_LIST && contract->elem != NULL
 			&& (*flagsPtr & TCL_LIST_ELEMENT)
 			&& (TclTypeIsAny(contract->elem)
 			    || (contract->elem->kind == TCLT_SUM

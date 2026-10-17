@@ -23,11 +23,11 @@ taille en place: 5
 1: file binary: the target of field r of S is at -14, before the start of the data
 1: file binary: data truncated at offset 129 reading field a of rec (needs 1 bytes, got 0)
 1: *(...): the address is stored in an integer type with a binary form (u32le, int(s,32,le)...), not "string"
-1: *(?,u8): the origin must be //, file://, ./, ../ (or ../../...) or . (the field), not "?"
+1: *(?,u8): the origin must be //, //name/, file://, memory://name/, ./, ../ (or ../../...) or . (the field), not "?"
 1: *(//): write *(origin,repr).T, as in *(//,u32le).pe
 1: *(...) needs the type of the target: write *(//,...).T
 1: *(...): the opaque option is not implemented yet
-1: *(memory://): memory:// is not implemented yet
+1: *(memory://,u64le): memory:// needs the name of a registered space, as in memory://proc1/
 1: *(...): unknown option "blabla" (null, null=VALUE)
 1 {{1 11} {2 12}} 2
 010302010b020c
