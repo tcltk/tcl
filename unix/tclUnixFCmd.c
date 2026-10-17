@@ -216,15 +216,23 @@ static int		DoCopyFile(const char *srcPtr, const char *dstPtr,
 static int		DoCreateDirectory(const char *pathPtr);
 static int		DoRemoveDirectory(Tcl_DString *pathPtr,
 			    int recursive, Tcl_DString *errorPtr);
+#if defined(AT_FDCWD) && defined(AT_REMOVEDIR) && defined(AT_SYMLINK_NOFOLLOW) \
+	&& defined(O_DIRECTORY) && defined(O_NOFOLLOW)
+#define USE_DELETE_AT 1
+static int		DeleteTreeAt(Tcl_DString *pathPtr,
+			    Tcl_DString *errorPtr);
+#endif
 static int		DoRenameFile(const char *src, const char *dst);
 static int		TraversalCopy(Tcl_DString *srcPtr,
 			    Tcl_DString *dstPtr,
 			    const Tcl_StatBuf *statBufPtr, int type,
 			    Tcl_DString *errorPtr);
+#ifndef USE_DELETE_AT
 static int		TraversalDelete(Tcl_DString *srcPtr,
 			    Tcl_DString *dstPtr,
 			    const Tcl_StatBuf *statBufPtr, int type,
 			    Tcl_DString *errorPtr);
+#endif
 static int		TraverseUnixTree(TraversalProc *traversalProc,
 			    Tcl_DString *sourcePtr, Tcl_DString *destPtr,
 			    Tcl_DString *errorPtr, int doRewind);
@@ -889,7 +897,11 @@ DoRemoveDirectory(
      */
 
     if (result == TCL_OK) {
+#ifdef USE_DELETE_AT
+	result = DeleteTreeAt(pathPtr, errorPtr);
+#else
 	result = TraverseUnixTree(TraversalDelete, pathPtr, NULL, errorPtr, 1);
+#endif
     }
 
     if ((result != TCL_OK) && (recursive != 0)) {
@@ -902,6 +914,188 @@ DoRemoveDirectory(
     return result;
 }
 
+#ifdef USE_DELETE_AT
+/*
+ *---------------------------------------------------------------------------
+ *
+ * DeleteTreeAt --
+ *
+ *	Removes the directory pathPtr with all its contents. Unlike
+ *	TraverseUnixTree, works relative to directory descriptors, so that it
+ *	can delete trees whose paths are longer than PATH_MAX. [Bug daba77ae1d]
+ *	Only two descriptors are open at a time: the parent of a directory is
+ *	reopened through "..", and checked to be the same directory.
+ *
+ * Results:
+ *	Standard Tcl result. On error, errno is set and errorPtr (if not NULL)
+ *	is filled with the UTF-8 name of the file causing the error.
+ *
+ * Side effects:
+ *	Files and directories are deleted.
+ *
+ *---------------------------------------------------------------------------
+ */
+
+typedef struct {
+    Tcl_Size nameOffset;	/* Offset of the directory name in the path. */
+    dev_t dev;			/* Device and inode of the directory. */
+    ino_t ino;
+} DeleteLevel;
+
+static int
+DeleteTreeAt(
+    Tcl_DString *pathPtr,	/* Pathname of the directory (native). */
+    Tcl_DString *errorPtr)	/* If non-NULL, uninitialized or free DString
+				 * filled with UTF-8 name of file causing
+				 * error. */
+{
+    DeleteLevel *levels;
+    Tcl_Size depth = 0, maxDepth = 16;
+    Tcl_Size baseLen = Tcl_DStringLength(pathPtr);
+    DIR *dirPtr = NULL;
+    struct dirent *entPtr;
+    struct stat st;
+    int fd, parentFd, removed, saveErrno;
+    const int openFlags = O_RDONLY | O_DIRECTORY | O_NOFOLLOW
+#ifdef O_CLOEXEC
+	    | O_CLOEXEC
+#endif
+	    ;
+
+    levels = (DeleteLevel *)Tcl_Alloc(maxDepth * sizeof(DeleteLevel));
+    fd = open(Tcl_DStringValue(pathPtr), openFlags);
+    if (fd < 0 || fstat(fd, &st) != 0) {
+	goto error;
+    }
+    levels[0].nameOffset = 0;
+    levels[0].dev = st.st_dev;
+    levels[0].ino = st.st_ino;
+
+    while (1) {
+	dirPtr = fdopendir(fd);
+	if (dirPtr == NULL) {
+	    goto error;
+	}
+	fd = -1;
+
+	/*
+	 * Remove everything but subdirectories. Rescan until a pass removes
+	 * nothing, since readdir may skip entries while the directory is
+	 * being changed.
+	 */
+
+	do {
+	    removed = 0;
+	    rewinddir(dirPtr);
+	    while ((entPtr = readdir(dirPtr)) != NULL) {
+		const char *name = entPtr->d_name;
+
+		if (name[0] == '.' && (name[1] == '\0'
+			|| (name[1] == '.' && name[2] == '\0'))) {
+		    continue;
+		}
+		if (fstatat(dirfd(dirPtr), name, &st,
+			AT_SYMLINK_NOFOLLOW) != 0) {
+		    TclDStringAppendLiteral(pathPtr, "/");
+		    Tcl_DStringAppend(pathPtr, name, TCL_INDEX_NONE);
+		    goto error;
+		}
+		if (S_ISDIR(st.st_mode)) {
+		    break;
+		}
+		if (unlinkat(dirfd(dirPtr), name, 0) != 0) {
+		    TclDStringAppendLiteral(pathPtr, "/");
+		    Tcl_DStringAppend(pathPtr, name, TCL_INDEX_NONE);
+		    goto error;
+		}
+		removed = 1;
+	    }
+	} while (entPtr == NULL && removed);
+
+	if (entPtr != NULL) {
+	    /*
+	     * Descend into the subdirectory.
+	     */
+
+	    if (++depth == maxDepth) {
+		maxDepth *= 2;
+		levels = (DeleteLevel *)Tcl_Realloc(levels,
+			maxDepth * sizeof(DeleteLevel));
+	    }
+	    TclDStringAppendLiteral(pathPtr, "/");
+	    levels[depth].nameOffset = Tcl_DStringLength(pathPtr);
+	    Tcl_DStringAppend(pathPtr, entPtr->d_name, TCL_INDEX_NONE);
+	    fd = openat(dirfd(dirPtr), entPtr->d_name, openFlags);
+	    if (fd < 0 || fstat(fd, &st) != 0) {
+		goto error;
+	    }
+	    levels[depth].dev = st.st_dev;
+	    levels[depth].ino = st.st_ino;
+	    closedir(dirPtr);
+	    dirPtr = NULL;
+	    continue;
+	}
+
+	/*
+	 * The directory is empty.
+	 */
+
+	if (depth == 0) {
+	    closedir(dirPtr);
+	    dirPtr = NULL;
+	    if (rmdir(Tcl_DStringValue(pathPtr)) != 0) {
+		goto error;
+	    }
+	    break;
+	}
+	parentFd = openat(dirfd(dirPtr), "..", openFlags);
+	if (parentFd < 0) {
+	    goto error;
+	}
+	closedir(dirPtr);
+	dirPtr = NULL;
+	fd = parentFd;
+	if (fstat(fd, &st) != 0) {
+	    goto error;
+	}
+	if (st.st_dev != levels[depth-1].dev
+		|| st.st_ino != levels[depth-1].ino) {
+	    /*
+	     * The tree was moved while we were deleting it.
+	     */
+
+	    errno = EBUSY;
+	    goto error;
+	}
+	if (unlinkat(fd, Tcl_DStringValue(pathPtr) + levels[depth].nameOffset,
+		AT_REMOVEDIR) != 0) {
+	    goto error;
+	}
+	Tcl_DStringSetLength(pathPtr, levels[depth].nameOffset - 1);
+	depth--;
+    }
+    Tcl_Free(levels);
+    return TCL_OK;
+
+  error:
+    saveErrno = errno;
+    if (errorPtr != NULL) {
+	Tcl_ExternalToUtfDStringEx(NULL, NULL, Tcl_DStringValue(pathPtr),
+		Tcl_DStringLength(pathPtr), 0, errorPtr, NULL);
+    }
+    if (dirPtr != NULL) {
+	closedir(dirPtr);
+    }
+    if (fd >= 0) {
+	close(fd);
+    }
+    Tcl_DStringSetLength(pathPtr, baseLen);
+    Tcl_Free(levels);
+    errno = saveErrno;
+    return TCL_ERROR;
+}
+#endif /* USE_DELETE_AT */
+
 /*
  *---------------------------------------------------------------------------
  *
@@ -1203,6 +1397,7 @@ TraversalCopy(
     return TCL_ERROR;
 }
 
+#ifndef USE_DELETE_AT
 /*
  *---------------------------------------------------------------------------
  *
@@ -1252,6 +1447,7 @@ TraversalDelete(
     }
     return TCL_ERROR;
 }
+#endif /* !USE_DELETE_AT */
 
 /*
  *---------------------------------------------------------------------------
