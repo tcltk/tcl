@@ -2176,5 +2176,26 @@ test iortrans-ea69b0258a9833cb {
     close $chan
 } -result {line one}
 
+test iortrans-bug-0ef291c1c2 {transform handler re-entered via trace} -setup {
+    set path [makeFile {} iortrans-0ef291c1c2]
+    set f [open $path w]
+    proc foo {} {puts $::f okay}
+} -body {
+    proc trans args {list initialize finalize write}
+    chan push $f trans
+    proc trans {cmd args} {
+	if {$cmd eq "write"} {return [lindex $args end]}
+    }
+    chan configure $f -buffering none
+    trace add execution foo enterstep {puts $::f X; list}
+    foo
+    close $f
+    string match *okay* [viewFile iortrans-0ef291c1c2]
+} -cleanup {
+    rename foo {}
+    rename trans {}
+    removeFile iortrans-0ef291c1c2
+} -result 1
+
 cleanupTests
 return

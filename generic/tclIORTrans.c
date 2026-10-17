@@ -1915,6 +1915,7 @@ InvokeTclMethod(
     Tcl_InterpState sr;		/* State of handler interp */
     int result;			/* Result code of method invocation */
     Tcl_Obj *resObj = NULL;	/* Result of method invocation. */
+    Tcl_Obj **argv;		/* Words of the handler command */
 
     if (rtPtr->dead) {
 	/*
@@ -1938,13 +1939,16 @@ InvokeTclMethod(
      */
 
     /*
-     * Insert method into the preallocated area, after the command prefix,
-     * before the channel id.
+     * Copy the preallocated command words, since the handler can re-enter
+     * this function for the same transform. [Bug 0ef291c1c2] Insert the
+     * method after the command prefix, before the channel id.
      */
 
+    argv = (Tcl_Obj **)Tcl_Alloc(sizeof(Tcl_Obj *) * (rtPtr->argc + 2));
+    memcpy(argv, rtPtr->argv, sizeof(Tcl_Obj *) * rtPtr->argc);
     methObj = Tcl_NewStringObj(method, -1);
     Tcl_IncrRefCount(methObj);
-    rtPtr->argv[rtPtr->argc - 2] = methObj;
+    argv[rtPtr->argc - 2] = methObj;
 
     /*
      * Append the additional argument containing method specific details
@@ -1956,10 +1960,10 @@ InvokeTclMethod(
 
     cmdc = rtPtr->argc;
     if (argOneObj) {
-	rtPtr->argv[cmdc] = argOneObj;
+	argv[cmdc] = argOneObj;
 	cmdc++;
 	if (argTwoObj) {
-	    rtPtr->argv[cmdc] = argTwoObj;
+	    argv[cmdc] = argTwoObj;
 	    cmdc++;
 	}
     }
@@ -1972,7 +1976,7 @@ InvokeTclMethod(
     sr = Tcl_SaveInterpState(rtPtr->interp, 0 /* Dummy */);
     Tcl_Preserve(rtPtr);
     Tcl_Preserve(rtPtr->interp);
-    result = Tcl_EvalObjv(rtPtr->interp, cmdc, rtPtr->argv, TCL_EVAL_GLOBAL);
+    result = Tcl_EvalObjv(rtPtr->interp, cmdc, argv, TCL_EVAL_GLOBAL);
 
     /*
      * We do not try to extract the result information if the caller has no
@@ -1997,7 +2001,7 @@ InvokeTclMethod(
 	     * if we only added support for a TCL_FORBID_EXCEPTIONS flag.
 	     */
 	    if (result != TCL_ERROR) {
-		Tcl_Obj *cmd = Tcl_NewListObj(cmdc, rtPtr->argv);
+		Tcl_Obj *cmd = Tcl_NewListObj(cmdc, argv);
 		Tcl_Size cmdLen;
 		const char *cmdString = TclGetStringFromObj(cmd, &cmdLen);
 
@@ -2028,6 +2032,7 @@ InvokeTclMethod(
      */
 
     Tcl_DecrRefCount(methObj);
+    Tcl_Free(argv);
 
     /*
      * The resObj has a ref count of 1 at this location. This means that the
