@@ -21,6 +21,7 @@ catch [list package require -exact tcl::test [info patchlevel]]
 
 # Custom constraints used in this file
 testConstraint testchannel [llength [info commands testchannel]]
+testConstraint exec [llength [info commands exec]]
 testConstraint thread [expr {0 == [catch {package require Thread 2.7-}]}]
 
 # testchannel cut|splice  Both needed to test the reflection in threads.
@@ -2175,6 +2176,43 @@ test iortrans-ea69b0258a9833cb {
     catch {unset read}
     close $chan
 } -result {line one}
+
+test iortrans-bug-6141c15186 {writing must not discard input on a non-seekable channel} -constraints {
+    exec
+} -setup {
+    set path [makeFile {
+	fconfigure stdout -buffering line
+	puts a; puts b; puts c; gets stdin; puts d
+    } iortrans-6141c15186]
+    set f [open |[list [interpreter] $path] r+]
+    proc trans {cmd ch args} {
+	switch -- $cmd {
+	    initialize {return {initialize finalize read write}}
+	    read - write {return [lindex $args 0]}
+	}
+    }
+} -body {
+    chan push $f trans
+    fconfigure $f -buffering line -blocking 0
+    set r {}
+    proc readit {f} {
+	while {[gets $f line] >= 0} {
+	    lappend ::r $line
+	    if {$line eq "a"} {puts $f go}
+	}
+	if {[eof $f]} {set ::done 1}
+    }
+    fileevent $f readable [list readit $f]
+    set t [after 5000 {set ::done timeout}]
+    vwait ::done
+    after cancel $t
+    set r
+} -cleanup {
+    rename readit {}
+    catch {close $f}
+    rename trans {}
+    removeFile iortrans-6141c15186
+} -result {a b c d}
 
 cleanupTests
 return

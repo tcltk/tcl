@@ -4309,8 +4309,15 @@ WillWrite(
 	    && ((inputBuffered = Tcl_InputBuffered((Tcl_Channel) chanPtr)) > 0)){
 	int ignore;
 
-	DiscardInputQueued(chanPtr->state, 0);
-	ChanSeek(chanPtr, -inputBuffered, SEEK_CUR, &ignore);
+	/*
+	 * Only discard the buffered input if the seek back succeeded: a
+	 * transform has a seek proc even when the channel below it cannot
+	 * seek (e.g. a socket). [Bug 6141c15186]
+	 */
+
+	if (ChanSeek(chanPtr, -inputBuffered, SEEK_CUR, &ignore) != -1) {
+	    DiscardInputQueued(chanPtr->state, 0);
+	}
     }
 }
 

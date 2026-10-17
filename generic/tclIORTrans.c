@@ -1331,6 +1331,17 @@ ReflectSeekWide(
      * request down and the result back up unchanged.
      */
 
+    if (Tcl_ChannelWideSeekProc(parent->typePtr) == NULL) {
+	/*
+	 * The channel below cannot seek; fail before clearing or flushing
+	 * the transformation. [Bug 6141c15186]
+	 */
+
+	Tcl_SetErrno(EINVAL);
+	*errorCodePtr = EOK;
+	return -1;
+    }
+
     Tcl_Preserve(rtPtr);
 
     if (((seekMode != SEEK_CUR) || (offset != 0))
@@ -1367,13 +1378,8 @@ ReflectSeekWide(
      * non-NULL...
      */
 
-    if (Tcl_ChannelWideSeekProc(parent->typePtr) == NULL) {
-	*errorCodePtr = EINVAL;
-	curPos = -1;
-    } else {
-	curPos = Tcl_ChannelWideSeekProc(parent->typePtr)(parent->instanceData, offset,
-		seekMode, errorCodePtr);
-    }
+    curPos = Tcl_ChannelWideSeekProc(parent->typePtr)(parent->instanceData,
+	    offset, seekMode, errorCodePtr);
     if (curPos == -1) {
 	Tcl_SetErrno(*errorCodePtr);
     }
