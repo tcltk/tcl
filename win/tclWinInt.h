@@ -107,7 +107,7 @@ MODULE_SCOPE int	TclWinSymLinkDelete(const WCHAR *LinkOriginal,
 			    int linkOnly);
 MODULE_SCOPE int	TclWinFileOwned(Tcl_Obj *);
 MODULE_SCOPE void	TclWinGenerateChannelName(char channelName[],
-			    const char *channelTypeName, void *channelImpl);
+			    const char *channelTypeName);
 MODULE_SCOPE const char*TclpGetUserName(Tcl_DString *bufferPtr);
 
 MODULE_SCOPE void	TclWinAppendSystemError(Tcl_Interp *, unsigned error);

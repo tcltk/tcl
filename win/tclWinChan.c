@@ -163,13 +163,22 @@ static const Tcl_ChannelType fileChannelType = {
 void
 TclWinGenerateChannelName(
     char channelName[],		/* Buffer to accept the name. */
-    const char *channelTypeName,/* Name of type of channel. */
-    void *channelImpl)		/* Pointer to channel implementation
-				 * structure, used to generate a unique
-				 * ID. */
+    const char *channelTypeName)/* Name of type of channel. */
 {
+    /*
+     * Use a counter rather than an address, which would be visible to safe
+     * interpreters. [Bug d6c1d2f78e]
+     */
+
+    TCL_DECLARE_MUTEX(channelCounterMutex)
+    static size_t channelCounter = 0;
+    size_t number;
+
+    Tcl_MutexLock(&channelCounterMutex);
+    number = channelCounter++;
+    Tcl_MutexUnlock(&channelCounterMutex);
     snprintf(channelName, 16 + TCL_INTEGER_SPACE, "%s%" TCL_Z_MODIFIER "x",
-	    channelTypeName, (size_t) channelImpl);
+	    channelTypeName, number);
 }
 
 /*
@@ -1441,7 +1450,7 @@ OpenFileChannel(
     infoPtr->flags = appendMode;
     infoPtr->handle = handle;
     infoPtr->dirty = 0;
-    TclWinGenerateChannelName(channelName, "file", infoPtr);
+    TclWinGenerateChannelName(channelName, "file");
     infoPtr->channel = Tcl_CreateChannel(&fileChannelType, channelName,
 	    infoPtr, permissions);
 

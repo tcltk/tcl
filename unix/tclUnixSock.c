@@ -22,8 +22,8 @@
 #define CLEAR_BITS(var, bits)	((var) &= ~(bits))
 #define GOT_BITS(var, bits)	(((var) & (bits)) != 0)
 
-/* "sock" + a pointer in hex + \0 */
-#define SOCK_CHAN_LENGTH	(4 + sizeof(void *) * 2 + 1)
+/* "sock" + a number in hex + \0 */
+#define SOCK_CHAN_LENGTH	(4 + sizeof(size_t) * 2 + 1)
 #define SOCK_TEMPLATE		"sock%" TCL_Z_MODIFIER "x"
 
 #undef SOCKET   /* Possible conflict with win32 SOCKET */
@@ -145,6 +145,7 @@ static int		TcpSetOptionProc(void *instanceData,
 static void		TcpThreadActionProc(void *instanceData, int action);
 static void		TcpWatchProc(void *instanceData, int mask);
 static int		WaitForConnect(TcpState *statePtr, int *errorCodePtr);
+static size_t		NextSocketNumber(void);
 static Tcl_FileProc	WrapNotify;
 
 /*
@@ -1463,6 +1464,37 @@ TcpConnect(
 /*
  *----------------------------------------------------------------------
  *
+ * NextSocketNumber --
+ *
+ *	Returns a new number for a socket channel name. Channel names do not
+ *	contain addresses, which would be visible to safe interpreters.
+ *	[Bug d6c1d2f78e]
+ *
+ * Results:
+ *	A number unique in the process.
+ *
+ * Side effects:
+ *	Increments the counter.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static size_t
+NextSocketNumber(void)
+{
+    TCL_DECLARE_MUTEX(sockCounterMutex)
+    static size_t sockCounter = 0;
+    size_t number;
+
+    Tcl_MutexLock(&sockCounterMutex);
+    number = sockCounter++;
+    Tcl_MutexUnlock(&sockCounterMutex);
+    return number;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Tcl_OpenTcpClient --
  *
  *	Opens a TCP client socket and creates a channel around it.
@@ -1531,7 +1563,7 @@ Tcl_OpenTcpClient(
 	return NULL;
     }
 
-    snprintf(channelName, sizeof(channelName), SOCK_TEMPLATE, PTR2INT(statePtr));
+    snprintf(channelName, sizeof(channelName), SOCK_TEMPLATE, NextSocketNumber());
 
     statePtr->channel = Tcl_CreateChannel(&tcpChannelType, channelName,
 	    statePtr, TCL_READABLE | TCL_WRITABLE);
@@ -1598,7 +1630,7 @@ TclpMakeTcpClientChannelMode(
     statePtr->fds.fd = (int)PTR2INT(sock);
     statePtr->flags = 0;
 
-    snprintf(channelName, sizeof(channelName), SOCK_TEMPLATE, PTR2INT(statePtr));
+    snprintf(channelName, sizeof(channelName), SOCK_TEMPLATE, NextSocketNumber());
 
     statePtr->channel = Tcl_CreateChannel(&tcpChannelType, channelName,
 	    statePtr, mode);
@@ -1824,7 +1856,7 @@ Tcl_OpenTcpServerEx(
 	    memset(statePtr, 0, sizeof(TcpState));
 	    statePtr->acceptProc = acceptProc;
 	    statePtr->acceptProcData = acceptProcData;
-	    snprintf(channelName, sizeof(channelName), SOCK_TEMPLATE, PTR2INT(statePtr));
+	    snprintf(channelName, sizeof(channelName), SOCK_TEMPLATE, NextSocketNumber());
 	    newfds = &statePtr->fds;
 	} else {
 	    newfds = (TcpFdList *)Tcl_Alloc(sizeof(TcpFdList));
@@ -1917,7 +1949,7 @@ TcpAccept(
     newSockState->flags = 0;
     newSockState->fds.fd = newsock;
 
-    snprintf(channelName, sizeof(channelName), SOCK_TEMPLATE, PTR2INT(newSockState));
+    snprintf(channelName, sizeof(channelName), SOCK_TEMPLATE, NextSocketNumber());
     newSockState->channel = Tcl_CreateChannel(&tcpChannelType, channelName,
 	    newSockState, TCL_READABLE | TCL_WRITABLE);
 

@@ -67,7 +67,7 @@
 #define CLEAR_BITS(var, bits)	((var) &= ~(bits))
 #define GOT_BITS(var, bits)	(((var) & (bits)) != 0)
 
-/* "sock" + a pointer in hex + \0 */
+/* "sock" + a number in hex + \0 */
 #define SOCK_CHAN_LENGTH	(16 + TCL_INTEGER_SPACE)
 
 /*
@@ -2017,7 +2017,7 @@ Tcl_OpenTcpClient(
 	return NULL;
     }
 
-    TclWinGenerateChannelName(channelName, "sock", statePtr);
+    TclWinGenerateChannelName(channelName, "sock");
     statePtr->channel = Tcl_CreateChannel(&tcpChannelType, channelName,
 	    statePtr, (TCL_READABLE | TCL_WRITABLE));
     if (TCL_ERROR == Tcl_SetChannelOption(NULL, statePtr->channel,
@@ -2073,7 +2073,7 @@ Tcl_MakeTcpClientChannel(
     SendSelectMessage(tsdPtr, SELECT, statePtr);
 
     char channelName[SOCK_CHAN_LENGTH];
-    TclWinGenerateChannelName(channelName, "sock", statePtr);
+    TclWinGenerateChannelName(channelName, "sock");
     statePtr->channel = Tcl_CreateChannel(&tcpChannelType, channelName,
 	    statePtr, (TCL_READABLE | TCL_WRITABLE));
     Tcl_SetChannelOption(NULL, statePtr->channel, "-translation", "auto crlf");
@@ -2248,7 +2248,7 @@ Tcl_OpenTcpServerEx(
 
 	statePtr->acceptProc = acceptProc;
 	statePtr->acceptProcData = acceptProcData;
-	TclWinGenerateChannelName(channelName, "sock", statePtr);
+	TclWinGenerateChannelName(channelName, "sock");
 	statePtr->channel = Tcl_CreateChannel(&tcpChannelType, channelName,
 		statePtr, 0);
 	/*
@@ -2335,7 +2335,7 @@ TcpAccept(
     newInfoPtr->selectEvents = (FD_READ | FD_WRITE | FD_CLOSE);
     SendSelectMessage(tsdPtr, SELECT, newInfoPtr);
 
-    TclWinGenerateChannelName(channelName, "sock", newInfoPtr);
+    TclWinGenerateChannelName(channelName, "sock");
     newInfoPtr->channel = Tcl_CreateChannel(&tcpChannelType, channelName,
 	    newInfoPtr, (TCL_READABLE | TCL_WRITABLE));
     if (Tcl_SetChannelOption(NULL, newInfoPtr->channel, "-translation",

@@ -2137,7 +2137,7 @@ TclWinOpenConsoleChannel(
      * for instance).
      */
 
-    TclWinGenerateChannelName(channelName, "file", chanInfoPtr);
+    TclWinGenerateChannelName(channelName, "file");
 
     if (permissions & TCL_READABLE) {
 	/*

@@ -2069,11 +2069,11 @@ TclpCreateCommandChannel(
     /*
      * For backward compatibility with previous versions of Tcl, we use
      * "file%d" as the base name for pipes even though it would be more
-     * natural to use "pipe%d". Use the pointer to keep the channel names
-     * unique, in case channels share handles (stdin/stdout).
+     * natural to use "pipe%d". The number keeps the channel names unique,
+     * also in case channels share handles (stdin/stdout).
      */
 
-    TclWinGenerateChannelName(channelName, "file", infoPtr);
+    TclWinGenerateChannelName(channelName, "file");
     infoPtr->channel = Tcl_CreateChannel(&pipeChannelType, channelName,
 	    infoPtr, infoPtr->validMask);
 

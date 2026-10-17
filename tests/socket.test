@@ -2671,6 +2671,25 @@ test socket-bug-31fc36fe47 "Crash listening in multiple threads" \
 	thread::release $tid
     } -result 0
 
+test socket-bug-d6c1d2f78e "Socket channel names do not contain addresses" \
+    -constraints {socket supported_inet} -setup {
+	set server [socket -server {apply {{s h p} {close $s}}} -myaddr 127.0.0.1 0]
+	set port [lindex [chan configure $server -sockname] 2]
+    } -body {
+	set c [socket 127.0.0.1 $port]
+	set name1 $c
+	close $c
+	set c [socket 127.0.0.1 $port]
+	set name2 $c
+	list [expr {$name1 ne $name2}] \
+	    [expr {[scan $name1 sock%x] < 0x100000}] \
+	    [expr {[scan $name2 sock%x] < 0x100000}]
+    } -cleanup {
+	close $c
+	close $server
+	unset -nocomplain c server port name1 name2
+    } -result {1 1 1}
+
 ::tcltest::cleanupTests
 flush stdout
 return
