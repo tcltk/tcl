@@ -2653,7 +2653,7 @@ test trace-40.1 {execution trace errors become command errors} {
     catch foo m
     return -level 0 $m[unset m]
 } bar
-test trace-bug-afa8c9f5bb-1 {error in leave trace: errorInfo of the traced command} -setup {
+test trace-43.1 {error in leave trace: errorInfo of the traced command, bug [afa8c9f5bb]} -setup {
     proc foo args {}
     proc goo {} {
 	set x 1
@@ -2675,7 +2675,7 @@ test trace-bug-afa8c9f5bb-1 {error in leave trace: errorInfo of the traced comma
     (procedure "goo" line 3)
     invoked from within
 "goo"}
-test trace-bug-afa8c9f5bb-2 {error in enter trace: errorInfo and errorstack} -setup {
+test trace-43.2 {error in enter trace: errorInfo and errorstack, bug [afa8c9f5bb]} -setup {
     proc foo args {}
     proc goo {} {
 	set x 1
