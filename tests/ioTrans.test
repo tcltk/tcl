@@ -2177,7 +2177,7 @@ test iortrans-ea69b0258a9833cb {
     close $chan
 } -result {line one}
 
-test iortrans-bug-6141c15186 {writing must not discard input on a non-seekable channel} -constraints {
+test iortrans-13.1 {writing must not discard input on a non-seekable channel, bug [6141c15186]} -constraints {
     exec
 } -setup {
     set path [makeFile {
