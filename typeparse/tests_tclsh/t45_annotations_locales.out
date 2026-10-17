@@ -1,0 +1,20 @@
+list: toto toto
+string: 4
+expr: 5
+r1: toto
+r2: toto
+r3: toto
+r4: totox
+r5: k toto
+r6: toto
+r7: toto
+r8: toto
+retour: toto
+conteneur: toto
+catch: toto
+non_typee: toto {}
+typee_ok: toto
+typee_refus: ERREUR expected integer but got "toto"
+cast_refus: ERREUR value "300" does not fit in int(u,8)
+cast_ok: 300
+nom_inconnu: ERREUR unknown type "inconnu"

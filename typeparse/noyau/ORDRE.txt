@@ -1,0 +1,8 @@
+# Patchs C à appliquer sur l'arbre, dans cet ordre (un par ligne, # = commentaire).
+# maj.sh détecte seul ceux qui sont déjà appliqués. Les nouveaux patchs s'ajoutent à la fin.
+# C patches to apply to the tree, in this order. maj.sh detects the ones already applied.
+types-binaires-linkdepth.patch
+types-binaires-referentiel.patch
+types-binaires-taille-dynamique.patch
+types-binaires-annotations-locales.patch
+types-binaires-type-binary-annote.patch

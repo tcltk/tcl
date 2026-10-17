@@ -1,0 +1,193 @@
+#!/bin/bash
+# maj.sh -- met à jour typeparse/ depuis typeparse.zip, applique les patchs, recompile, teste.
+#           updates typeparse/ from typeparse.zip, applies patches, rebuilds, tests.
+#
+# À lancer depuis la RACINE de l'arbre Tcl, sous MinGW64 :
+#   bash typeparse/maj.sh [options] [typeparse.zip]
+#
+# Options :
+#   -n, --dry-run   ne change rien : montre ce qui serait fait
+#   -y, --yes       ne pose aucune question
+#       --no-build  ne recompile pas
+#       --no-test   ne lance pas les tests
+#       --commit "message"   après des tests réussis, commite les seuls fichiers touchés
+#                            (fossil commit sur la liste nommée) puis propose le push
+# Variables : TCLSH (défaut app/bin/tclsh90.exe), TCLWIN (dossier de build, défaut win),
+#             JOBS (défaut 4)
+#
+# Étapes : 1. extrait l'archive dans un dossier temporaire et ne remplace dans typeparse/ que
+#             les fichiers qui DIFFÈRENT (cmp) ; liste ce qui est nouveau/modifié/absent de l'archive
+#          2. patchs de typeparse/noyau/ORDRE.txt : déjà appliqué (patch -R --dry-run passe) -> ignoré ;
+#             applicable (--dry-run passe) -> appliqué ; sinon -> arrêt avec le détail
+#          3. si un patch C vient d'être appliqué (ou --build) : make clean, make, make install-binaries
+#          4. tests : chaque typeparse/tests_tclsh/tNN_*.tcl comparé à son .out
+#          5. (--commit) fossil commit sur les fichiers touchés, puis question avant fossil push
+
+main() {
+    local DRY=0 YES=0 BUILD=auto TEST=1 MSG="" ZIP="" FORCEBUILD=0
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            -n|--dry-run) DRY=1 ;;
+            -y|--yes) YES=1 ;;
+            --no-build) BUILD=0 ;;
+            --build) FORCEBUILD=1 ;;
+            --no-test) TEST=0 ;;
+            --commit) shift; MSG="$1" ;;
+            -h|--help) sed -n '2,25p' "$0"; return 0 ;;
+            *) ZIP="$1" ;;
+        esac
+        shift
+    done
+    ZIP="${ZIP:-typeparse.zip}"
+    local TCLSH="${TCLSH:-app/bin/tclsh90.exe}" BUILDDIR="${TCLWIN:-win}" JOBS="${JOBS:-4}"
+    local ROOT; ROOT="$(pwd)"
+    case "$TCLSH" in /*|[A-Za-z]:*) TCLABS="$TCLSH" ;; *) TCLABS="$ROOT/$TCLSH" ;; esac
+    [ -f "$ZIP" ] || { echo "Archive introuvable : $ZIP (à lancer depuis la racine de l'arbre)"; return 1; }
+    [ -d generic ] || { echo "Pas de dossier generic/ ici : lancer depuis la racine de l'arbre Tcl"; return 1; }
+    local missing=""
+    for c in unzip patch find sed grep tr sort mktemp; do
+        command -v "$c" >/dev/null 2>&1 || missing="$missing $c"
+    done
+    if [ -n "$missing" ]; then
+        echo "Outils manquants :$missing"
+        echo "  pacman -S unzip patch findutils sed grep coreutils   (selon ce qui manque)"
+        return 1
+    fi
+    # comparaison de fichiers : cmp (diffutils) si présent, sinon md5sum
+    if command -v cmp >/dev/null 2>&1; then
+        same() { cmp -s "$1" "$2"; }
+    elif command -v md5sum >/dev/null 2>&1; then
+        same() { [ "$(md5sum < "$1")" = "$(md5sum < "$2")" ]; }
+    else
+        echo "Ni cmp ni md5sum : pacman -S diffutils"; return 1
+    fi
+
+    ask() { [ "$YES" = 1 ] && return 0; read -r -p "$1 [o/N] " a; [ "$a" = o ] || [ "$a" = O ] || [ "$a" = y ]; }
+    local TOUCHED; TOUCHED="$(mktemp)"
+
+    echo "== 1. Archive $ZIP"
+    local TMP; TMP="$(mktemp -d)"
+    unzip -q "$ZIP" -d "$TMP" || return 1
+    [ -d "$TMP/typeparse" ] || { echo "L'archive ne contient pas de dossier typeparse/"; return 1; }
+    local nnew=0 nmod=0 f rel
+    while IFS= read -r -d '' f; do
+        rel="${f#$TMP/}"
+        case "$rel" in *.so|*.dll|*.o|*.exe) continue ;; esac
+        if [ ! -e "$rel" ]; then
+            echo "   nouveau   $rel"; nnew=$((nnew+1))
+        elif ! same "$f" "$rel"; then
+            echo "   modifié   $rel"; nmod=$((nmod+1))
+        else
+            continue
+        fi
+        if [ "$DRY" = 0 ]; then mkdir -p "$(dirname "$rel")"; cp "$f" "$rel"; echo "$rel" >> "$TOUCHED"; fi
+    done < <(find "$TMP/typeparse" -type f -print0)
+    # fichiers présents chez vous mais plus dans l'archive : signalés, jamais supprimés
+    while IFS= read -r -d '' f; do
+        rel="${f#./}"
+        [ -e "$TMP/$rel" ] || case "$rel" in *.so|*.dll|*.o|*.exe|*.orig|*.rej) ;; *) echo "   absent de l'archive (conservé) $rel" ;; esac
+    done < <(find typeparse -type f -print0 2>/dev/null)
+    echo "   $nnew nouveau(x), $nmod modifié(s)"
+    rm -rf "$TMP"
+
+    echo "== 2. Patchs C"
+    local applied_now=0 p line
+    if [ -f typeparse/noyau/ORDRE.txt ]; then
+        while IFS= read -r line; do
+            p="${line%%#*}"; p="${p//$'\r'/}"
+            p="${p#"${p%%[![:space:]]*}"}"; p="${p%"${p##*[![:space:]]}"}"
+            [ -n "$p" ] || continue
+            if [ ! -f "typeparse/noyau/$p" ]; then echo "   MANQUE   $p"; return 1; fi
+            # fichiers cibles : tous doivent exister (sinon patch poserait une question)
+            local missing=""
+            for f in $(grep -E '^\+\+\+ ' "typeparse/noyau/$p" | sed -E 's/^\+\+\+ [ab]\///; s/[[:space:]].*//'); do
+                [ -f "$f" ] || missing="$missing $f"
+            done
+            if [ -n "$missing" ]; then
+                echo "   CONFLIT         $p : fichier(s) absent(s) de l'arbre :$missing"
+                return 1
+            fi
+            # -N : un patch déjà appliqué est ignoré (rc 1 + message), pas ré-appliqué
+            local out rc
+            out="$(patch -p1 -N --dry-run < "typeparse/noyau/$p" 2>&1)"; rc=$?
+            if [ $rc = 0 ]; then
+                echo "   à appliquer     $p"
+                if [ "$DRY" = 0 ]; then
+                    patch -p1 -N -s < "typeparse/noyau/$p" || { echo "ÉCHEC patch $p"; return 1; }
+                    # fichiers modifiés par le patch : lignes '+++ b/...'
+                    grep -E '^\+\+\+ ' "typeparse/noyau/$p" | sed -E 's/^\+\+\+ [ab]\///; s/[[:space:]].*//' >> "$TOUCHED"
+                    applied_now=1
+                fi
+            elif echo "$out" | grep -q "Reversed (or previously applied)" ; then
+                echo "   déjà appliqué   $p"
+            else
+                echo "   CONFLIT         $p (ni appliqué ni applicable) :"
+                echo "$out" | sed 's/^/      /'
+                return 1
+            fi
+        done < typeparse/noyau/ORDRE.txt
+    else
+        echo "   (pas de typeparse/noyau/ORDRE.txt)"
+    fi
+
+    if [ "$DRY" = 1 ]; then echo "== (dry-run) arrêt avant compilation et tests"; return 0; fi
+
+    echo "== 3. Compilation"
+    if [ "$BUILD" = 0 ]; then echo "   ignorée (--no-build)"
+    elif [ "$applied_now" = 1 ] || [ "$FORCEBUILD" = 1 ]; then
+        # garde-fou : le dossier de build doit être sous l'arbre et contenir un Makefile Tcl
+        case "$BUILDDIR" in /*|[A-Za-z]:*|*..*) echo "   TCLWIN doit être un dossier relatif à la racine de l'arbre : $BUILDDIR"; return 1 ;; esac
+        if [ ! -f "$BUILDDIR/Makefile" ] || [ ! -f "$BUILDDIR/../generic/tcl.h" ]; then
+            echo "   $BUILDDIR n'est pas un dossier de build Tcl (Makefile ou ../generic/tcl.h absent)"; return 1
+        fi
+        ask "   make clean && make && make install-binaries dans $BUILDDIR ?" && {
+            ( cd "$BUILDDIR" && make clean >/dev/null 2>&1 && make -j"$JOBS" && make install-binaries ) \
+                || { echo "ÉCHEC de la compilation"; return 1; }
+        }
+    else
+        echo "   rien de C à recompiler (--build pour forcer)"
+    fi
+
+    local fails=0
+    echo "== 4. Tests"
+    if [ "$TEST" = 0 ]; then echo "   ignorés (--no-test)"
+    elif [ ! -x "$TCLSH" ] && [ ! -f "$TCLSH" ]; then echo "   $TCLSH introuvable : définir TCLSH"; fails=1
+    else
+        local t o n=0 fo fe
+        fo="$(mktemp)"; fe="$(mktemp)"
+        for t in typeparse/tests_tclsh/t*.tcl; do
+            o="${t%.tcl}.out"; [ -f "$o" ] || o="$t.out"; [ -f "$o" ] || continue
+            ( cd typeparse/tests_tclsh && "$TCLABS" "$(basename "$t")" 2>&1 ) | tr -d '\r' > "$fo"
+            tr -d '\r' < "$o" > "$fe"
+            if same "$fo" "$fe"; then
+                n=$((n+1))
+            else
+                echo "   ECHEC $(basename "$t")"; fails=$((fails+1))
+                if command -v diff >/dev/null 2>&1; then
+                    diff "$fe" "$fo" | head -6 | sed 's/^/        /'
+                fi
+            fi
+        done
+        rm -f "$fo" "$fe"
+        echo "   $n test(s) OK, $fails échec(s)"
+    fi
+
+    echo "== 5. Fossil"
+    sort -u "$TOUCHED" -o "$TOUCHED"
+    echo "   fichiers touchés par ce script :"; sed 's/^/     /' "$TOUCHED"
+    if [ -n "$MSG" ]; then
+        [ "$fails" = 0 ] || { echo "   tests en échec : pas de commit"; return 1; }
+        ask "   fossil commit -m \"$MSG\" sur ces fichiers ?" && {
+            fossil add $(cat "$TOUCHED") 2>/dev/null
+            fossil commit -m "$MSG" $(cat "$TOUCHED") || return 1
+            ask "   fossil push ?" && fossil push
+        }
+    else
+        echo "   (pas de --commit : à faire à la main, en nommant les fichiers ci-dessus)"
+    fi
+    rm -f "$TOUCHED"
+    return "$fails"
+}
+
+main "$@"
+exit $?

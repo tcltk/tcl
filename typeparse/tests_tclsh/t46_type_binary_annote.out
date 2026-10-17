@@ -1,0 +1,38 @@
+-- la représentation
+nue: 0: uint 2 be
+what_lit: 0: uint 2 be
+what_var: 0: product entete {{magic {uint 2 be} 0} {version {uint 2 le} 0} {taille {uint 4 le} 0}}
+what_extra: 1: wrong # args: should be "type binary type"
+-- la taille
+sizeof: 0: 8
+sizeof_al: 0: 8
+sizeof_var: 1: file binary sizeof: variable size (string(...,z))
+-- la validité des octets
+is_ok: 0: 1
+is_court: 0: 0
+is_prefixe: 0: 1
+is_exact: 0: 0
+is_exact_ok: 0: 1
+is_offset: 0: 1
+is_badopt: 1: bad option "-bogus": must be -offset, -endian, -align, -strictpad, -linkdepth
+is_nodata: 1: wrong # args: should be "type binary {is?}type data ?options?"
+is_pas_type: 1: unknown type "inconnu"
+-- annotations inconnues
+question: 1: unknown question "oups?": must be is?, sizeof? or what?
+option: 0: uint 2 be
+nom: 0: uint 2 be
+-- les verbes
+encode: 0: 0102
+decode: 0: 258
+consumed: 0: 4
+space: 0: 
+alias: 0: 8
+-- un type qui porte le nom d'un verbe
+nom_verbe: 0: uint 2 be
+verbe_reste: 0: 258
+-- l'annotation ne suit pas la valeur
+fuite: 0: entete
+rangee: 0: 85
+-- sans la couche Tcl
+sans_couche: 1: type binary: the binary layer is not loaded (source layout/filebinary.tcl)
+nue_ok: 0: uint 1 auto
