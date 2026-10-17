@@ -610,7 +610,7 @@ Tcl_Sleep(
      */
 
     TclScaleTime(&vdelay);
-    sleepTime = (DWORD)vdelay.sec * 1000 + (unsigned long)vdelay.usec / 1000;
+    sleepTime = (DWORD)(vdelay.sec * 1000 + vdelay.usec / 1000);
 
     for (;;) {
 	SleepEx(sleepTime, TRUE);
@@ -625,7 +625,7 @@ Tcl_Sleep(
 	vdelay.usec = desired.usec - now.usec;
 
 	TclScaleTime(&vdelay);
-	sleepTime = (DWORD)vdelay.sec * 1000 + (unsigned long)vdelay.usec / 1000;
+	sleepTime = (DWORD)(vdelay.sec * 1000 + vdelay.usec / 1000);
     }
 }
 

@@ -33,6 +33,7 @@ to the userbase.
  - [on Windows a joinable thread which exits before it is joined leaked](https://core.tcl-lang.org/tcl/tktview/338137)
  - [on Unix, Tcl_JoinThread() should not call pthread_join() for detached threads](https://core.tcl-lang.org/tcl/tktview/5974ff)
  - [Problem with ::http::OpenSocket](https://core.tcl-lang.org/tcl/tktview/0c1e91)
+ - [Windows: after and Tcl_Sleep can sleep about 72 minutes](https://core.tcl-lang.org/tcl/tktview/858404)
 
 # Updated bundled packages, libraries, standards, data
  - http 2.10.3
