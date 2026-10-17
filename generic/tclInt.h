@@ -3532,6 +3532,7 @@ MODULE_SCOPE void	TclInitNotifier(void);
 MODULE_SCOPE void	TclInitObjSubsystem(void);
 MODULE_SCOPE int	TclInitStaticPackages(Tcl_Interp *interp, void *);
 MODULE_SCOPE int	TclInterpReady(Tcl_Interp *interp);
+MODULE_SCOPE void	TclInterpInfoDelete(Tcl_Interp *interp);
 MODULE_SCOPE bool	TclIsBareword(int byte);
 MODULE_SCOPE Tcl_Obj *	TclJoinPath(Tcl_Size elements, Tcl_Obj * const *objv,
 			    bool forceRelative);
