@@ -1,0 +1,1621 @@
+diff -u -r a/generic/tclTypeGeneric.c b/generic/tclTypeGeneric.c
+--- a/generic/tclTypeGeneric.c	2026-10-16 12:50:41.431027956 +0200
++++ b/generic/tclTypeGeneric.c	2026-10-16 12:50:41.440775579 +0200
+@@ -220,67 +220,441 @@
+ }
+ 
+ /*
+- * BinInstantiate --
+- *
+- *	Pose la représentation binaire d'une instance de uint(n, e), sint(n, e),
+- *	float(n, e), bytes(n) ou str(n). Les largeurs de uint, sint et float
+- *	sont en bits (multiples de 8), celles de bytes et str en octets.
++ * Boutisme d'un argument "be" ou "le" ; TCLBIN_AUTO si le mot n'en est pas
++ * un. Rend -1 pour un autre mot.
+  */
+ 
+ static int
+-BinInstantiate(
+-    Tcl_Interp *interp,
+-    const TypeGeneric *g,
+-    const TypeParams *bound,
+-    TclType *inst)
++EndianWord(const char *s, Tcl_Size len)
+ {
+-    Tcl_WideInt w = 0;
+-    const char *what[] = {"", "", "uint", "sint", "float", "bytes", "str"};
++    if (len == 2 && s[0] == 'b' && s[1] == 'e') {
++	return TCLBIN_BE;
++    } else if (len == 2 && s[0] == 'l' && s[1] == 'e') {
++	return TCLBIN_LE;
++    }
++    return -1;
++}
++
++/* Entier décimal strict d'un argument ; 0 si le texte n'en est pas un. */
++
++static int
++SpanWide(const ArgSpan *sp, Tcl_WideInt *wPtr)
++{
++    char buf[32], *e;
++
++    if (sp->len <= 0 || sp->len >= (Tcl_Size) sizeof(buf)) {
++	return 0;
++    }
++    memcpy(buf, sp->start, sp->len);
++    buf[sp->len] = '\0';
++    *wPtr = strtoll(buf, &e, 10);
++    return *e == '\0';
++}
++
++/* Décorations binaires : allouées une fois, partagées par les types qui les
++ * portent, libérées avec les données du module (jamais individuellement). */
++
++void *
++TclTypesKeep(TypeData *d, void *blob)
++{
++    if (d->nBlobs == d->capBlobs) {
++	d->capBlobs = d->capBlobs ? 2 * d->capBlobs : 16;
++	d->blobs = (void **) Tcl_Realloc(d->blobs, d->capBlobs * sizeof(void *));
++    }
++    d->blobs[d->nBlobs++] = blob;
++    return blob;
++}
+ 
+-    if (Tcl_GetWideIntFromObj(NULL, bound->p[0].value, &w) != TCL_OK) {
+-	ERR(interp, "PARAM", "%s needs an integer width, not \"%s\"",
+-		what[g->bits], Tcl_GetString(bound->p[0].value));
++char *
++TclTypesKeepText(TypeData *d, const char *s, Tcl_Size len)
++{
++    return (char *) TclTypesKeep(d, DupText(s, len));
++}
++
++/* "$nom" ou "${nom}" : un nom de champ à la position p (après le $). Rend la
++ * longueur du nom, 0 si ce n'en est pas un. */
++
++static Tcl_Size
++FieldRefLen(const char *p, const char *end)
++{
++    const char *q = p;
++
++    while (q < end && TclTypeIsNameChar(*q)) {
++	q++;
++    }
++    return q - p;
++}
++
++/*
++ * TclTypesParseSize --
++ *
++ *	L'argument qui donne la taille d'une chaîne, le nombre d'éléments d'une
++ *	liste ou la position d'une valeur :
++ *	    N                 un naturel : *nPtr
++ *	    z                 (allowZ) terminée par un NUL : *zPtr
++ *	    $n                un paramètre entier du type en cours de
++ *	                      définition : sa valeur, un naturel
++ *	    int(u,16,be)      un PRÉFIXE : le type entier non signé lu juste
++ *	                      avant : *dynPtr
++ *	    $len - 4          une EXPRESSION Tcl sur les champs déjà lus : *dynPtr
++ */
++
++int
++TclTypesParseSize(
++    Tcl_Interp *interp,
++    TypeData *d,
++    const char *what,
++    const char *text,
++    Tcl_Size len,
++    int allowZ,
++    const TypeParams *params,
++    Tcl_WideInt *nPtr,
++    int *zPtr,
++    TclBinDyn **dynPtr)
++{
++    const char *p = SkipWs(text, text + len), *end = TrimEnd(p, text + len);
++    char buf[40];
++    Tcl_Size n = end - p, i;
++    Tcl_WideInt w;
++    TclBinDyn *dyn;
++    int hasDollar = 0;
++
++    *nPtr = -1;
++    *zPtr = 0;
++    *dynPtr = NULL;
++    if (n == 0) {
++	ERR(interp, "PARAM", "%s: empty size", what);
+ 	return TCL_ERROR;
+     }
+-    switch (g->bits) {
+-    case 2: case 3:
+-	if (w < 8 || w > 1024 || w % 8) {
+-	    ERR(interp, "PARAM", "%s needs a width in bits that is a multiple "
+-		    "of 8 between 8 and 1024, not \"%s\"", what[g->bits],
+-		    Tcl_GetString(bound->p[0].value));
+-	    return TCL_ERROR;
++    if (n < (Tcl_Size) sizeof(buf)) {
++	char *e;
++
++	memcpy(buf, p, n);
++	buf[n] = '\0';
++	w = strtoll(buf, &e, 10);
++	if (*e == '\0' && isdigit(UCHAR(buf[0]))) {
++	    *nPtr = w;
++	    return TCL_OK;
+ 	}
+-	inst->kind = TCLT_INT;
+-	inst->binKind = (g->bits == 2) ? TCLBIN_UINT : TCLBIN_SINT;
+-	inst->binSize = (Tcl_Size) (w / 8);
+-	inst->refine = 1;
+-	break;
+-    case 4:
+-	if (w != 32 && w != 64) {
+-	    ERR(interp, "PARAM", "float needs a width of 32 or 64 bits, not "
+-		    "\"%s\"", Tcl_GetString(bound->p[0].value));
++    }
++    if (allowZ && n == 1 && *p == 'z') {
++	*zPtr = 1;
++	return TCL_OK;
++    }
++    for (i = 0; i < n; i++) {
++	if (p[i] == '$') {
++	    hasDollar = 1;
++	}
++    }
++    if (hasDollar) {
++	/* $param seul : la valeur du paramètre entier du type en cours */
++
++	if (p[0] == '$' && FieldRefLen(p + 1, end) == n - 1 && params != NULL) {
++	    const TypeParam *prm = TclTypeFindParam(params, p + 1, n - 1);
++
++	    if (prm != NULL) {
++		const char *v;
++
++		if (prm->isType || prm->type->kind != TCLT_INT) {
++		    ERR(interp, "PARAM", "%s: parameter \"%s\" is not an int",
++			    what, Tcl_GetString(prm->name));
++		    return TCL_ERROR;
++		}
++		v = Tcl_GetString(prm->value);
++		w = strtoll(v, NULL, 10);
++		if (w < 0) {
++		    ERR(interp, "PARAM", "%s: a size cannot be negative", what);
++		    return TCL_ERROR;
++		}
++		*nPtr = w;
++		return TCL_OK;
++	    }
++	}
++	for (i = 0; i < n; i++) {
++	    if (p[i] == '$' && (i + 1 >= n || (FieldRefLen(p + i + 1, end) == 0
++		    && p[i + 1] != '{'))) {
++		ERR(interp, "PARAM", "%s: \"$\" must be followed by a field "
++			"name in \"%.*s\"", what, (int) n, p);
++		return TCL_ERROR;
++	    }
++	}
++	dyn = (TclBinDyn *) TclTypesKeep(d, Tcl_Alloc(sizeof(TclBinDyn)));
++	memset(dyn, 0, sizeof(*dyn));
++	dyn->kind = TCLDYN_EXPR;
++	dyn->expr = TclTypesKeepText(d, p, n);
++	*dynPtr = dyn;
++	return TCL_OK;
++    }
++    /* sinon : un type entier non signé (préfixe) */
++    {
++	Tcl_Obj *saved = (interp != NULL) ? Tcl_GetObjResult(interp) : NULL;
++	TclType *pre;
++
++	if (saved != NULL) {
++	    Tcl_IncrRefCount(saved);
++	}
++	pre = TclTypeParse(interp, p, n);
++	if (pre == NULL) {
++	    if (interp != NULL) {
++		const char *m = Tcl_GetString(Tcl_GetObjResult(interp));
++
++		ERR(interp, "PARAM", "%s: bad size \"%.*s\": expected a number, "
++			"%sa prefix type such as int(u,16,be) or an expression "
++			"with $field (%s)", what, (int) n, p, allowZ ? "z, " : "",
++			m);
++		Tcl_DecrRefCount(saved);
++	    }
+ 	    return TCL_ERROR;
+ 	}
+-	inst->kind = TCLT_DOUBLE;
+-	inst->binKind = TCLBIN_FLOAT;
+-	inst->binSize = (Tcl_Size) (w / 8);
+-	inst->refine = 1;
+-	break;
+-    default:
+-	if (w < 1 || w > 1000000) {
+-	    ERR(interp, "PARAM", "%s needs a size in bytes between 1 and "
+-		    "1000000, not \"%s\"", what[g->bits],
+-		    Tcl_GetString(bound->p[0].value));
++	if (saved != NULL) {
++	    Tcl_SetObjResult(interp, saved);
++	    Tcl_DecrRefCount(saved);
++	}
++	if (pre->binKind != TCLBIN_UINT) {
++	    ERR(interp, "PARAM", "%s: a prefix must be an unsigned integer "
++		    "type, not %s", what, pre->name);
+ 	    return TCL_ERROR;
+ 	}
+-	inst->kind = TCLT_STRING;
+-	inst->binKind = (g->bits == 5) ? TCLBIN_BYTES : TCLBIN_STR;
+-	inst->binSize = (Tcl_Size) w;
+-	break;
++	dyn = (TclBinDyn *) TclTypesKeep(d, Tcl_Alloc(sizeof(TclBinDyn)));
++	memset(dyn, 0, sizeof(*dyn));
++	dyn->kind = TCLDYN_PREFIX;
++	dyn->pre = pre;
++	*dynPtr = dyn;
+     }
+     return TCL_OK;
+ }
+ 
++/* Encodages des chaînes binaires : mot-clé, nom d'encodage Tcl (NULL pour
++ * des octets bruts), nombre d'octets du terminateur NUL de string(enc,z). */
++
++static const struct {
++    const char *word, *tclName;
++    int nul;
++} encodings[] = {
++    {"raw", NULL, 1},
++    {"ascii", "ascii", 1},
++    {"latin1", "iso8859-1", 1},
++    {"utf-8", "utf-8", 1},
++    {"utf-16le", "utf-16le", 2},
++    {"utf-16be", "utf-16be", 2},
++    {"ucs-2le", "ucs-2le", 2},
++    {"ucs-2be", "ucs-2be", 2}
++};
++#define NENCODINGS ((int) (sizeof(encodings) / sizeof(encodings[0])))
++
++/*
++ * TclTypesBinaryType --
++ *
++ *	int(u|s, n ?, be|le?)    entier de n bits (multiple de 8, de 8 à 1024)
++ *	double(32|64 ?, be|le?)  flottant IEEE
++ *	string(enc, N)           N octets, enc : raw ascii latin1 utf-8
++ *	                         utf-16le utf-16be ucs-2le ucs-2be
++ *	string(enc, z)           terminé par un NUL (2 octets pour utf-16, ucs-2)
++ *
++ *	L'instance est un type nominal interné par son nom d'affichage ; elle
++ *	a les mêmes valeurs qu'int, double ou string, dans la plage de sa
++ *	représentation (voir TclTypeAssignable pour l'élargissement).
++ */
++
++TclType *
++TclTypesBinaryType(
++    Tcl_Interp *interp,
++    TypeData *d,
++    const char *base,
++    Tcl_Size baseLen,
++    const char *argText,
++    Tcl_Size argLen,
++    const TypeParams *params)
++{
++    ArgSpan *sp;
++    Tcl_Size n = 0, i;
++    Tcl_DString key;
++    Tcl_HashEntry *hPtr;
++    TclType *inst = NULL, *under;
++    int isNew, kind, endian = TCLBIN_AUTO, signd = 0, enc = 0, cstr = 0;
++    TclBinDyn *dyn = NULL;
++    const char *dynText = NULL;
++    Tcl_WideInt w = 0;
++    int isInt = (baseLen == 3), isDouble = (baseLen == 6 && base[0] == 'd');
++
++    sp = SplitArgs(argText, argLen, &n);
++    for (i = 0; i < n; i++) {
++	if (sp[i].len == 0) {
++	    ERR(interp, "PARAM", "empty argument in %.*s(...)", (int) baseLen,
++		    base);
++	    goto fail;
++	}
++    }
++    under = isInt ? d->tInt : isDouble ? d->tDouble : d->tString;
++    kind = isInt ? TCLT_INT : isDouble ? TCLT_DOUBLE : TCLT_STRING;
++
++    if (isInt) {
++	/* int(u|s, n ?, be|le?) */
++
++	if (n < 2 || n > 3) {
++	    ERR(interp, "PARAM", "int takes (u|s, bits ?, be|le?), for "
++		    "example int(u,16,be)");
++	    goto fail;
++	}
++	if (sp[0].len == 1 && (sp[0].start[0] == 'u'
++		|| sp[0].start[0] == 's')) {
++	    signd = (sp[0].start[0] == 's');
++	} else {
++	    ERR(interp, "PARAM", "int: the first argument must be u "
++		    "(unsigned) or s (signed), not \"%.*s\"", (int) sp[0].len,
++		    sp[0].start);
++	    goto fail;
++	}
++	if (!SpanWide(&sp[1], &w) || w < 8 || w > 1024 || w % 8) {
++	    ERR(interp, "PARAM", "int: the width in bits must be a multiple "
++		    "of 8 between 8 and 1024, not \"%.*s\"", (int) sp[1].len,
++		    sp[1].start);
++	    goto fail;
++	}
++	if (n == 3 && (endian = EndianWord(sp[2].start, sp[2].len)) < 0) {
++	    ERR(interp, "PARAM", "int: the byte order must be be or le, not "
++		    "\"%.*s\"", (int) sp[2].len, sp[2].start);
++	    goto fail;
++	}
++    } else if (isDouble) {
++	/* double(32|64 ?, be|le?) */
++
++	if (n < 1 || n > 2) {
++	    ERR(interp, "PARAM", "double takes (32|64 ?, be|le?), for "
++		    "example double(64,le)");
++	    goto fail;
++	}
++	if (!SpanWide(&sp[0], &w) || (w != 32 && w != 64)) {
++	    ERR(interp, "PARAM", "double: the width in bits must be 32 or "
++		    "64, not \"%.*s\"", (int) sp[0].len, sp[0].start);
++	    goto fail;
++	}
++	if (n == 2 && (endian = EndianWord(sp[1].start, sp[1].len)) < 0) {
++	    ERR(interp, "PARAM", "double: the byte order must be be or le, "
++		    "not \"%.*s\"", (int) sp[1].len, sp[1].start);
++	    goto fail;
++	}
++    } else {
++	/* string(enc, N|z|préfixe|$expr) */
++
++	if (n != 2) {
++	    ERR(interp, "PARAM", "string takes (encoding, size|z), for "
++		    "example string(utf-8,8) or string(utf-8,z)");
++	    goto fail;
++	}
++	for (enc = 0; enc < NENCODINGS; enc++) {
++	    if ((Tcl_Size) strlen(encodings[enc].word) == sp[0].len
++		    && memcmp(encodings[enc].word, sp[0].start, sp[0].len)
++		    == 0) {
++		break;
++	    }
++	}
++	if (enc == NENCODINGS) {
++	    ERR(interp, "PARAM", "string: unknown encoding \"%.*s\" (raw, "
++		    "ascii, latin1, utf-8, utf-16le, utf-16be, ucs-2le, "
++		    "ucs-2be)", (int) sp[0].len, sp[0].start);
++	    goto fail;
++	}
++	if (TclTypesParseSize(interp, d, "string", sp[1].start, sp[1].len, 1,
++		params, &w, &cstr, &dyn) != TCL_OK) {
++	    goto fail;
++	}
++	if (cstr && enc == 0) {
++	    ERR(interp, "PARAM", "string(raw,z): raw bytes cannot be "
++		    "NUL-terminated, use a text encoding");
++	    goto fail;
++	}
++	if (dyn == NULL && !cstr && (w < 1 || w > 1000000)) {
++	    ERR(interp, "PARAM", "string: the size in bytes must be "
++		    "between 1 and 1000000 or z, not \"%.*s\"",
++		    (int) sp[1].len, sp[1].start);
++	    goto fail;
++	}
++	if (dyn != NULL) {
++	    dynText = (dyn->kind == TCLDYN_PREFIX) ? dyn->pre->name : dyn->expr;
++	}
++    }
++
++    /* nom canonique et intern */
++
++    Tcl_DStringInit(&key);
++    Tcl_DStringAppend(&key, base, baseLen);
++    Tcl_DStringAppend(&key, "(", 1);
++    if (isInt) {
++	Tcl_DStringAppend(&key, signd ? "s," : "u,", 2);
++    } else if (!isDouble) {
++	Tcl_DStringAppend(&key, encodings[enc].word, TCL_AUTO_LENGTH);
++	Tcl_DStringAppend(&key, ",", 1);
++    }
++    if (cstr) {
++	Tcl_DStringAppend(&key, "z", 1);
++    } else if (dyn != NULL) {
++	Tcl_DStringAppend(&key, dynText, TCL_AUTO_LENGTH);
++    } else {
++	char num[24];
++
++	snprintf(num, sizeof(num), "%lld", (long long) w);
++	Tcl_DStringAppend(&key, num, TCL_AUTO_LENGTH);
++    }
++    if (endian != TCLBIN_AUTO) {
++	Tcl_DStringAppend(&key, endian == TCLBIN_BE ? ",be" : ",le", 3);
++    }
++    Tcl_DStringAppend(&key, ")", 1);
++    hPtr = Tcl_CreateHashEntry(&d->instances, Tcl_DStringValue(&key), &isNew);
++    if (!isNew) {
++	inst = (TclType *) Tcl_GetHashValue(hPtr);
++    } else {
++	inst = TclTypesNewType(d, (TclTypeKind) kind, Tcl_DStringValue(&key));
++	inst->nominal = 1;
++	TclTypesCopyInto(inst, under);
++	if (isInt) {
++	    inst->binKind = signd ? TCLBIN_SINT : TCLBIN_UINT;
++	    inst->binSize = (Tcl_Size) (w / 8);
++	    inst->refine = 1;
++	} else if (isDouble) {
++	    inst->binKind = TCLBIN_FLOAT;
++	    inst->binSize = (Tcl_Size) (w / 8);
++	    inst->refine = 1;
++	} else if (cstr) {
++	    inst->binKind = TCLBIN_CSTRING;
++	    inst->binEnc = encodings[enc].tclName;
++	} else if (enc == 0) {
++	    inst->binKind = TCLBIN_BYTES;
++	    inst->binSize = (dyn != NULL) ? 0 : (Tcl_Size) w;
++	} else {
++	    inst->binKind = TCLBIN_STR;
++	    inst->binSize = (dyn != NULL) ? 0 : (Tcl_Size) w;
++	    inst->binEnc = encodings[enc].tclName;
++	}
++	inst->binDyn = dyn;
++	inst->binEnd = endian;
++	Tcl_SetHashValue(hPtr, inst);
++    }
++    Tcl_DStringFree(&key);
++    Tcl_Free(sp);
++    return inst;
++
++  fail:
++    Tcl_Free(sp);
++    return NULL;
++}
++
++/* Octets du terminateur NUL d'un string(enc,z) : 2 pour utf-16, ucs-2. */
++
++int
++TclTypesNulWidth(const char *tclName)
++{
++    int i;
++
++    for (i = 0; i < NENCODINGS; i++) {
++	if (encodings[i].tclName != NULL && tclName != NULL
++		&& strcmp(encodings[i].tclName, tclName) == 0) {
++	    return encodings[i].nul;
++	}
++    }
++    return 1;
++}
++
+ void
+ TclTypesFreeGenerics(TypeData *d)
+ {
+@@ -888,6 +1262,10 @@
+ 	Tcl_DStringAppend(&key, "\1", 1);
+ 	Tcl_DStringAppend(&key, Tcl_GetString(bound.p[i].value),
+ 		TCL_AUTO_LENGTH);
++	if (g->bits == 1 && i == 2
++		&& strcmp(Tcl_GetString(bound.p[i].value), "auto") == 0) {
++	    continue;			/* bitarray(16,msb0), pas (16,msb0,auto) */
++	}
+ 	if (i > 0) {
+ 	    Tcl_DStringAppend(&display, ",", 1);
+ 	}
+@@ -936,14 +1314,12 @@
+     if (res != inst) {
+ 	TclTypesCopyInto(inst, res);
+     }
+-    if (g->bits >= 2 && BinInstantiate(interp, g, &bound, inst) != TCL_OK) {
+-	goto fail;
+-    }
+     if (g->bits == 1) {
+ 	/* bitarray(n, ordre) : largeur et sens des indices */
+ 
+ 	Tcl_WideInt w = 0;
+ 	const char *ord = Tcl_GetString(bound.p[1].value);
++	const char *endw = Tcl_GetString(bound.p[2].value);
+ 
+ 	if (Tcl_GetWideIntFromObj(NULL, bound.p[0].value, &w) != TCL_OK
+ 		|| w < 1 || w > 1000000) {
+@@ -961,6 +1337,15 @@
+ 	inst->bitWidth = (Tcl_Size) w;
+ 	inst->bitMsb0 = (strcmp(ord, "msb0") == 0);
+ 	inst->refine = 1;
++	if (strcmp(endw, "be") == 0) {
++	    inst->binEnd = TCLBIN_BE;
++	} else if (strcmp(endw, "le") == 0) {
++	    inst->binEnd = TCLBIN_LE;
++	} else if (strcmp(endw, "auto") != 0) {
++	    ERR(interp, "PARAM", "bitarray byte order must be be or le, not "
++		    "\"%s\"", endw);
++	    goto fail;
++	}
+     }
+     if (!TclTypesInhabited(inst, stack, 0)) {
+ 	ERR(interp, "RECURSIVE", "type \"%s\" has no finite value: every "
+diff -u -r a/generic/tclTypeParse.c b/generic/tclTypeParse.c
+--- a/generic/tclTypeParse.c	2026-10-16 12:50:41.433950327 +0200
++++ b/generic/tclTypeParse.c	2026-10-16 12:50:41.447128058 +0200
+@@ -1166,6 +1166,8 @@
+     Tcl_Size arity;		/* SK_CTOR liste : nombre d'éléments */
+     TclDictKey *dkeys;		/* SK_CTOR dict : clés admises */
+     Tcl_Size nd;
++    TclBinDyn *dyn;		/* SK_CTOR list : nombre lu dans le fichier */
++    const char *atExpr;		/* SK_CTOR at : position (partagée) */
+ } TypeItem;
+ 
+ #define ITEMS(env)	((TypeItem *) (env)->stack)
+@@ -1345,7 +1347,7 @@
+ 
+ static int
+ ParseListArity(Tcl_Interp *interp, const TypeEnv *envPtr, const char *text,
+-	Tcl_Size len, Tcl_Size *arityPtr)
++	Tcl_Size len, Tcl_Size *arityPtr, TclBinDyn **dynPtr)
+ {
+     const char *p = SkipSpace(text, text + len), *end = text + len;
+     const char *name = NULL;
+@@ -1362,6 +1364,16 @@
+ 	name = p + 1;
+ 	nameLen = end - name;
+     }
++    if (name != NULL
++	    && TclTypeFindParam(envPtr->params, name, nameLen) == NULL) {
++	/* $champ, $champ - 1 ... : le nombre est lu dans le fichier */
++
++	Tcl_WideInt n;
++	int z;
++
++	return TclTypesParseSize(interp, envPtr->d, "list", p, end - p, 0, NULL,
++		&n, &z, dynPtr);
++    }
+     if (name != NULL) {
+ 	const TypeParam *prm = TclTypeFindParam(envPtr->params, name, nameLen);
+ 	Tcl_Size i;
+@@ -1396,9 +1408,14 @@
+ 		    (int) (end - p), p);
+ 	    return TCL_ERROR;
+ 	}
+-	ERR(interp, "ARITY", "bad list size \"%.*s\": expected a number of "
+-		"elements, as in list(2) or list($n)", (int) (end - p), p);
+-	return TCL_ERROR;
++	/* un préfixe : list(int(u,16,be)).T */
++	{
++	    Tcl_WideInt n;
++	    int z;
++
++	    return TclTypesParseSize(interp, envPtr->d, "list", p, end - p, 0,
++		    NULL, &n, &z, dynPtr);
++	}
+     }
+     return TCL_OK;
+ }
+@@ -1650,8 +1667,16 @@
+     TypeData *d = envPtr->d;
+     Tcl_Size i;
+ 
++    if (ctor->type == d->tAt) {
++	*tpPtr = TclTypesMakeAt(d, elem, ctor->atExpr);
++	return TCL_OK;
++    }
+     if (ctor->type == d->tList) {
+-	*tpPtr = TclTypesMakeListN(d, elem, ctor->arity);
++	if (ctor->dyn != NULL) {
++	    *tpPtr = TclTypesMakeListDyn(d, elem, ctor->dyn);
++	} else {
++	    *tpPtr = TclTypesMakeListN(d, elem, ctor->arity);
++	}
+ 	return TCL_OK;
+     }
+     if (ctor->type == d->tVar) {
+@@ -1688,6 +1713,11 @@
+     if (it->kind != SK_CTOR) {
+ 	return TCL_OK;
+     }
++    if (it->type == envPtr->d->tAt) {
++	ERR(interp, "NEST", "at(...) needs the type of the value: write "
++		"at(%s).T", it->atExpr);
++	return TCL_ERROR;
++    }
+     if (MakeCtorType(interp, envPtr, it, envPtr->d->tString, &tp) != TCL_OK) {
+ 	return TCL_ERROR;
+     }
+@@ -1909,15 +1939,8 @@
+ 	tp = TclTypesMakeDict(d, r.type, 0, NULL, 0);
+     } else if ((l.kind == SK_TYPE) && (l.type == d->tVar)) {
+ 	tp = TclTypesMakeVar(d, r.type, 0);
+-    } else if ((l.kind == SK_TYPE)
+-	    && (l.type == d->tBe || l.type == d->tLe)) {
+-	tp = TclTypesQualify(interp, d, r.type,
+-		l.type == d->tBe ? TCLBIN_BE : TCLBIN_LE);
+-	if (tp == NULL) {
+-	    goto done;
+-	}
+     } else {
+-	ERR(interp, "NEST", "only list, dict, var, be and le can be nested "
++	ERR(interp, "NEST", "only list, dict and var can be nested "
+ 		"with \".\"");
+ 	goto done;
+     }
+@@ -2190,6 +2213,20 @@
+ 			"arguments", w);
+ 		return TCL_ERROR;
+ 	    }
++	    if ((len == 3 && memcmp(w, "int", 3) == 0)
++		    || (len == 6 && (memcmp(w, "double", 6) == 0
++		    || memcmp(w, "string", 6) == 0))) {
++		/* int(u,16,be), double(32,le), string(utf-8,8) : le type de
++		 * base avec sa représentation binaire (tclTypeGeneric.c) */
++
++		tp = TclTypesBinaryType(interp, envPtr->d, w, len, a, alen,
++			envPtr->params);
++		if (tp == NULL) {
++		    return TCL_ERROR;
++		}
++		PushItem(envPtr, SK_TYPE)->type = tp;
++		break;
++	    }
+ 	    if ((g = TclTypesFindGeneric(envPtr->d, w, len)) != NULL) {
+ 		tp = TclTypesInstantiate(interp, envPtr->d, g, a, alen, envPtr);
+ 		if (tp == NULL) {
+@@ -2198,11 +2235,60 @@
+ 		PushItem(envPtr, SK_TYPE)->type = tp;
+ 		break;
+ 	    }
++	    if (len == 2 && w[0] == 'a' && w[1] == 't') {
++		/* at(EXPR).T : la valeur est à la position EXPR du fichier */
++
++		Tcl_WideInt n;
++		int z;
++		TclBinDyn *dyn = NULL;
++
++		if (TclTypesParseSize(interp, envPtr->d, "at", a, alen, 0, NULL,
++			&n, &z, &dyn) != TCL_OK) {
++		    return TCL_ERROR;
++		}
++		it = PushItem(envPtr, SK_CTOR);
++		it->type = envPtr->d->tAt;
++		if (dyn != NULL && dyn->kind == TCLDYN_EXPR) {
++		    it->atExpr = dyn->expr;
++		} else if (dyn == NULL) {
++		    it->atExpr = TclTypesKeepText(envPtr->d, a, alen);
++		} else {
++		    ERR(interp, "ARITY", "at: a position is a number or an "
++			    "expression with $field, not a type");
++		    return TCL_ERROR;
++		}
++		break;
++	    }
+ 	    tp = TclTypesResolve(interp, envPtr->d, envPtr->selfName,
+ 		    envPtr->self, w, len);
+ 	    if (tp == NULL) {
+ 		return TCL_ERROR;
+ 	    }
++	    if (tp->kind == TCLT_SUM) {
++		/* S($champ) : la variante est choisie par ce champ */
++
++		const char *q = a, *qe = a + alen;
++		char *field;
++
++		while (q < qe && isspace(UCHAR(*q))) {
++		    q++;
++		}
++		while (qe > q && isspace(UCHAR(qe[-1]))) {
++		    qe--;
++		}
++		if (q >= qe || *q != '$' || qe - q < 2) {
++		    ERR(interp, "ARITY", "\"%s\" is a sum: write %s($field) to "
++			    "choose its variant by the value of a field", w, w);
++		    return TCL_ERROR;
++		}
++		field = TclTypesKeepText(envPtr->d, q + 1, qe - q - 1);
++		tp = TclTypesMakeTagged(interp, envPtr->d, tp, field);
++		if (tp == NULL) {
++		    return TCL_ERROR;
++		}
++		PushItem(envPtr, SK_TYPE)->type = tp;
++		break;
++	    }
+ 	    if ((tp != envPtr->d->tList) && (tp != envPtr->d->tDict)
+ 		    && (tp != envPtr->d->tVar)) {
+ 		ERR(interp, "ARITY", "\"%s\": only list, dict, var and "
+@@ -2216,8 +2302,8 @@
+ 		    return TCL_ERROR;
+ 		}
+ 	    } else if (tp == envPtr->d->tList) {
+-		if (ParseListArity(interp, envPtr, a, alen, &it->arity)
+-			!= TCL_OK) {
++		if (ParseListArity(interp, envPtr, a, alen, &it->arity,
++			&it->dyn) != TCL_OK) {
+ 		    return TCL_ERROR;
+ 		}
+ 	    } else if (ParseDictKeys(interp, envPtr, a, alen, &it->dkeys,
+diff -u -r a/generic/tclTypedVar.c b/generic/tclTypedVar.c
+--- a/generic/tclTypedVar.c	2026-10-16 12:50:41.434055513 +0200
++++ b/generic/tclTypedVar.c	2026-10-16 12:50:41.445670035 +0200
+@@ -54,7 +54,7 @@
+ 	    Mismatch(interp, tp, at);
+ 	    return NULL;
+ 	}
+-	/* Élargissement (uint(8) -> int) : même contenu, type de la cible. */
++	/* Élargissement (int(u,8) -> int) : même contenu, type de la cible. */
+     }
+     if (status == TCLA_RAW) {
+ 	if (!TclTypeAssignable(tp, at)) {
+@@ -328,6 +328,15 @@
+ 			    != TCL_OK) {
+ 		goto done;
+ 	    }
++	    if (status == TCLA_TYPED && at->elem != NULL
++		    && (tp->elem->kind == TCLT_INT || tp->elem->kind == TCLT_DOUBLE)
++		    && at->elem->kind == tp->elem->kind
++		    && !TclTypeAssignable(tp->elem, at->elem)) {
++		/* Pas de rétrécissement caché : list<int> n'entre pas dans
++		 * list.int(u,8), comme int n'entre pas dans int(u,8). */
++		Mismatch(interp, tp, at);
++		goto done;
++	    }
+ 	    if (Tcl_ListObjGetElements(interp, content, &m, &e) != TCL_OK) {
+ 		goto done;
+ 	    }
+@@ -731,7 +740,8 @@
+ 	*contentPtr = c;
+ 	return TCL_OK;
+     }
+-    if (status == TCLA_TYPED && at == tp) {		/* copie d'une somme */
++    if (status == TCLA_TYPED && (at == tp || (at->kind == TCLT_SUM
++	    && TclTypeAssignable(tp, at)))) {	/* copie d'une somme */
+ 	*variantPtr = variant;
+ 	*contentPtr = c;
+ 	return TCL_OK;
+diff -u -r a/generic/tclTypes.c b/generic/tclTypes.c
+--- a/generic/tclTypes.c	2026-10-16 12:50:41.434378305 +0200
++++ b/generic/tclTypes.c	2026-10-16 12:50:41.436153589 +0200
+@@ -123,6 +123,10 @@
+ 	Tcl_Free(d->all[i]);
+     }
+     Tcl_Free(d->all);
++    for (i = 0; i < d->nBlobs; i++) {
++	Tcl_Free(d->blobs[i]);
++    }
++    Tcl_Free(d->blobs);
+     TclTypesFreeGenerics(d);
+     Tcl_DeleteHashTable(&d->generics);
+     Tcl_DeleteHashTable(&d->instances);
+@@ -309,7 +313,7 @@
+  * TclTypeAssignable --
+  *
+  *	Même type, ou ÉLARGISSEMENT automatique. Seuls les raffinements
+- *	(uint, sint, float, bitarray, avec ou sans be. / le.) élargissent : ce
++ *	(int(s,n), int(u,n), double(n), bitarray(n)) élargissent : ce
+  *	sont les mêmes valeurs qu'un int ou un double, vues dans une plage. Un
+  *	type défini par `type def` reste nominal : il élargit vers int, double
+  *	ou un raffinement, mais rien d'autre n'entre dans lui.
+@@ -323,6 +327,11 @@
+     if (TclTypeSame(expected, got)) {
+ 	return 1;
+     }
++    if (expected->binBase != NULL || got->binBase != NULL) {
++	/* at(..).T, S($champ), list($n).T : les mêmes valeurs que leur base */
++	return TclTypeAssignable(expected->binBase ? expected->binBase : expected,
++		got->binBase ? got->binBase : got);
++    }
+     ek = ValueSet(expected, expected->reserved
+ 	    && strcmp(expected->name, "int") == 0, expected->reserved
+ 	    && strcmp(expected->name, "double") == 0, &eb);
+@@ -355,44 +364,86 @@
+     }
+ }
+ 
+-/*
+- * TclTypesQualify --
+- *
+- *	be.T et le.T : T avec un boutisme fixé pour sa représentation binaire.
+- *	T doit être un uint, sint, float ou bitarray. Le type obtenu a les
+- *	mêmes valeurs que T (TclTypeAssignable les confond).
+- */
+-
++/* list(N).elem : exactement N éléments. arity < 0 : liste ordinaire,
++ * extensible. */
+ TclType *
+-TclTypesQualify(Tcl_Interp *interp, TypeData *d, TclType *elem, int endian)
++TclTypesMakeListN(TypeData *d, TclType *elem, Tcl_Size arity)
+ {
+     Tcl_DString ds;
+-    Tcl_HashEntry *hPtr;
+     TclType *tp;
+     int isNew;
+ 
+-    if (!elem->refine
+-	    || (elem->binKind == TCLBIN_NONE && elem->bitWidth == 0)) {
+-	ERR(interp, "QUALIFY", "%s. applies to uint(n), sint(n), float(n) "
+-		"or bitarray(n), not to %s", endian == TCLBIN_BE ? "be" : "le",
+-		elem->name);
+-	return NULL;
++    if (arity < 0 && elem == d->tString) {
++	return d->tList;
+     }
+-    if (elem->binEnd != TCLBIN_AUTO) {
+-	ERR(interp, "QUALIFY", "%s already has a byte order", elem->name);
+-	return NULL;
++    Tcl_DStringInit(&ds);
++    Tcl_DStringAppend(&ds, "list", TCL_AUTO_LENGTH);
++    if (arity >= 0) {
++	Tcl_DStringAppend(&ds, "(", 1);
++	AppendSize(&ds, arity);
++	Tcl_DStringAppend(&ds, ")", 1);
++    }
++    Tcl_DStringAppend(&ds, "<", 1);
++    Tcl_DStringAppend(&ds, elem->name, TCL_AUTO_LENGTH);
++    Tcl_DStringAppend(&ds, ">", 1);
++    tp = Intern(d, &ds, TCLT_LIST, elem, &isNew);
++    if (isNew) {
++	tp->arity = arity;
+     }
++    Tcl_DStringFree(&ds);
++    return tp;
++}
++
++/* list(PRÉFIXE).T, list($expr).T : une liste ordinaire dont le nombre
++ * d'éléments est lu dans le fichier. Mêmes valeurs que list.T (binBase). */
++TclType *
++TclTypesMakeListDyn(TypeData *d, TclType *elem, TclBinDyn *dyn)
++{
++    Tcl_DString ds;
++    TclType *tp, *base = TclTypesMakeListN(d, elem, -1);
++    int isNew;
++
+     Tcl_DStringInit(&ds);
+-    Tcl_DStringAppend(&ds, endian == TCLBIN_BE ? "be." : "le.",
+-	    TCL_AUTO_LENGTH);
++    Tcl_DStringAppend(&ds, "list(", TCL_AUTO_LENGTH);
++    Tcl_DStringAppend(&ds, dyn->kind == TCLDYN_PREFIX ? dyn->pre->name
++	    : dyn->expr, TCL_AUTO_LENGTH);
++    Tcl_DStringAppend(&ds, ")<", 2);
++    Tcl_DStringAppend(&ds, elem->name, TCL_AUTO_LENGTH);
++    Tcl_DStringAppend(&ds, ">", 1);
++    tp = Intern(d, &ds, TCLT_LIST, elem, &isNew);
++    if (isNew) {
++	tp->arity = -1;
++	tp->binDyn = dyn;
++	tp->binBase = base;
++    }
++    Tcl_DStringFree(&ds);
++    return tp;
++}
++
++/* at(EXPR).T : la valeur de type T est située à la position EXPR du fichier
++ * (depuis le début de la valeur lue), et non à la suite du champ précédent.
++ * Mêmes valeurs que T (binBase). */
++TclType *
++TclTypesMakeAt(TypeData *d, TclType *elem, const char *expr)
++{
++    Tcl_DString ds;
++    Tcl_HashEntry *hPtr;
++    TclType *tp;
++    int isNew;
++
++    Tcl_DStringInit(&ds);
++    Tcl_DStringAppend(&ds, "at(", 3);
++    Tcl_DStringAppend(&ds, expr, TCL_AUTO_LENGTH);
++    Tcl_DStringAppend(&ds, ").", 2);
+     Tcl_DStringAppend(&ds, elem->name, TCL_AUTO_LENGTH);
+     hPtr = Tcl_CreateHashEntry(&d->canon, Tcl_DStringValue(&ds), &isNew);
+     if (isNew) {
+ 	tp = NewType(d, elem->kind, Tcl_DStringValue(&ds));
+ 	tp->nominal = elem->nominal;
+ 	CopyInto(tp, elem);
+-	tp->refine = 1;
+-	tp->binEnd = endian;
++	tp->refine = elem->refine;
++	tp->binAt = TclTypesKeepText(d, expr, (Tcl_Size) strlen(expr));
++	tp->binBase = (elem->binBase != NULL) ? elem->binBase : elem;
+ 	Tcl_SetHashValue(hPtr, tp);
+     } else {
+ 	tp = (TclType *) Tcl_GetHashValue(hPtr);
+@@ -401,31 +452,47 @@
+     return tp;
+ }
+ 
+-/* list(N).elem : exactement N éléments. arity < 0 : liste ordinaire,
+- * extensible. */
++/* S($champ) : la somme S dont la variante est choisie par la valeur du champ
++ * (déjà lu) du même produit ou d'un produit englobant. La variante est celle
++ * dont le nom égale la valeur du champ ({int}1, {string}2 : étiquettes 1, 2). */
+ TclType *
+-TclTypesMakeListN(TypeData *d, TclType *elem, Tcl_Size arity)
++TclTypesMakeTagged(Tcl_Interp *interp, TypeData *d, TclType *sum,
++	const char *field)
+ {
+     Tcl_DString ds;
++    Tcl_HashEntry *hPtr;
+     TclType *tp;
++    Tcl_Size i;
+     int isNew;
+ 
+-    if (arity < 0 && elem == d->tString) {
+-	return d->tList;
++    if (sum->kind != TCLT_SUM || sum->nfields == 0) {
++	ERR(interp, "ARITY", "\"%s\": only a sum type can be chosen by a "
++		"field value, as in %s($tag)", sum->name, sum->name);
++	return NULL;
+     }
+-    Tcl_DStringInit(&ds);
+-    Tcl_DStringAppend(&ds, "list", TCL_AUTO_LENGTH);
+-    if (arity >= 0) {
+-	Tcl_DStringAppend(&ds, "(", 1);
+-	AppendSize(&ds, arity);
+-	Tcl_DStringAppend(&ds, ")", 1);
++    for (i = 0; i < sum->nfields; i++) {
++	if (sum->fields[i].type == NULL) {
++	    ERR(interp, "ARITY", "\"%s\" has a literal alternative: only a "
++		    "sum whose variants all carry a value can be chosen by "
++		    "a field", sum->name);
++	    return NULL;
++	}
+     }
+-    Tcl_DStringAppend(&ds, "<", 1);
+-    Tcl_DStringAppend(&ds, elem->name, TCL_AUTO_LENGTH);
+-    Tcl_DStringAppend(&ds, ">", 1);
+-    tp = Intern(d, &ds, TCLT_LIST, elem, &isNew);
++    Tcl_DStringInit(&ds);
++    Tcl_DStringAppend(&ds, sum->name, TCL_AUTO_LENGTH);
++    Tcl_DStringAppend(&ds, "($", 2);
++    Tcl_DStringAppend(&ds, field, TCL_AUTO_LENGTH);
++    Tcl_DStringAppend(&ds, ")", 1);
++    hPtr = Tcl_CreateHashEntry(&d->canon, Tcl_DStringValue(&ds), &isNew);
+     if (isNew) {
+-	tp->arity = arity;
++	tp = NewType(d, TCLT_SUM, Tcl_DStringValue(&ds));
++	tp->nominal = sum->nominal;
++	CopyInto(tp, sum);
++	tp->binTag = TclTypesKeepText(d, field, (Tcl_Size) strlen(field));
++	tp->binBase = (sum->binBase != NULL) ? sum->binBase : sum;
++	Tcl_SetHashValue(hPtr, tp);
++    } else {
++	tp = (TclType *) Tcl_GetHashValue(hPtr);
+     }
+     Tcl_DStringFree(&ds);
+     return tp;
+@@ -739,7 +806,7 @@
+  * -------------------------------------------------------------------- */
+ 
+ /*
+- * Types binaires uint(n), sint(n) : l'entier tient-il sur bits bits ?
++ * Types int(u,n), int(s,n) : l'entier tient-il sur bits bits ?
+  */
+ 
+ static int
+@@ -769,7 +836,9 @@
+ }
+ 
+ /*
+- * Types bytes(n), str(n), cstring : contrôle d'une chaîne.
++ * Types string(enc,N), string(enc,z), string(raw,N) : contrôle d'une chaîne.
++ * Le texte doit s'encoder sans perte dans l'encodage du type (ni caractère
++ * inexistant, ni NUL) et tenir dans N octets pour une taille fixe.
+  */
+ 
+ static int
+@@ -786,10 +855,9 @@
+ 		tp->name);
+ 	return TCL_ERROR;
+     }
+-    switch (tp->binKind) {
+-    case TCLBIN_BYTES:
++    if (tp->binKind == TCLBIN_BYTES) {
+ 	nchars = Tcl_GetCharLength(value);
+-	if (nchars != tp->binSize) {
++	if (tp->binDyn == NULL && nchars != tp->binSize) {
+ 	    ERR(interp, "BIN", "%s needs exactly %" TCL_SIZE_MODIFIER "d "
+ 		    "bytes but got %" TCL_SIZE_MODIFIER "d", tp->name,
+ 		    tp->binSize, nchars);
+@@ -805,17 +873,36 @@
+ 		return TCL_ERROR;
+ 	    }
+ 	}
+-	break;
+-    case TCLBIN_STR:
+-	if (len > tp->binSize) {
++    } else if (tp->binEnc != NULL) {
++	Tcl_Encoding enc = Tcl_GetEncoding(NULL, tp->binEnc);
++	Tcl_DString ds;
++	Tcl_Size loc = 0, size;
++	int rc;
++
++	if (enc == NULL) {
++	    ERR(interp, "BIN", "encoding \"%s\" is not available",
++		    tp->binEnc);
++	    return TCL_ERROR;
++	}
++	Tcl_DStringInit(&ds);
++	rc = Tcl_UtfToExternalDStringEx(NULL, enc, s, len,
++		TCL_ENCODING_PROFILE_STRICT, &ds, &loc);
++	size = Tcl_DStringLength(&ds);
++	Tcl_DStringFree(&ds);
++	Tcl_FreeEncoding(enc);
++	if (rc != TCL_OK) {
++	    ERR(interp, "BIN", "text for %s cannot be encoded in %s (byte "
++		    "%" TCL_SIZE_MODIFIER "d of its UTF-8 form)", tp->name,
++		    tp->binEnc, loc);
++	    return TCL_ERROR;
++	}
++	if (tp->binKind == TCLBIN_STR && tp->binDyn == NULL
++		&& size > tp->binSize) {
+ 	    ERR(interp, "BIN", "text for %s is %" TCL_SIZE_MODIFIER "d bytes "
+-		    "long in UTF-8, the limit is %" TCL_SIZE_MODIFIER "d",
+-		    tp->name, len, tp->binSize);
++		    "long in %s, the limit is %" TCL_SIZE_MODIFIER "d",
++		    tp->name, size, tp->binEnc, tp->binSize);
+ 	    return TCL_ERROR;
+ 	}
+-	break;
+-    default:
+-	break;
+     }
+     return TCL_OK;
+ }
+@@ -2163,6 +2250,10 @@
+     into->binKind = res->binKind;
+     into->binSize = res->binSize;
+     into->binEnd = res->binEnd;
++    into->binEnc = res->binEnc;
++    into->binDyn = res->binDyn;
++    into->binAt = res->binAt;
++    into->binTag = res->binTag;
+     if (res->nkeys > 0) {
+ 	into->keys = (TclDictKey *) Tcl_Alloc(res->nkeys * sizeof(TclDictKey));
+ 	into->nkeys = res->nkeys;
+@@ -2415,31 +2506,129 @@
+  *
+  *	Représentation binaire d'un type, sous forme de liste Tcl :
+  *	    uint SIZE END | sint SIZE END | float SIZE END    (octets)
+- *	    bits SIZE        bitarray(n), n multiple de 8
+- *	    bytes N | str N | cstring
++ *	    bits SIZE END    bitarray(n), n multiple de 8
++ *	    bytes N | str N ENC | cstring ENC       (ENC : nom d'encodage Tcl)
+  *	    lit N            somme de littéraux de même longueur
+- *	    array N REPR     list(N).T
+- *	    product NAME {FIELD REPR HASDEFAULT ...}
++ *	    array N R        list(N).T
++ *	    product NAME {{FIELD R HASDEFAULT} ...}
++ *	    tagged FIELD {{VARIANT R} ...}           S($champ)
++ *	    at EXPR R        at(EXPR).T
++ *	où N (taille, nombre) est un entier, {prefix R} (lu juste avant) ou
++ *	{expr TEXTE} (calculé sur des champs déjà lus). `vis` liste les champs
++ *	déjà lus et visibles (le produit courant, puis les englobants) : une
++ *	expression ne peut citer qu'eux.
+  *	Rend 0 et laisse *objPtr à NULL si le type n'en a pas.
+  */
+ 
++static int BinRepr(Tcl_Interp *interp, TclType *tp, int depth, Tcl_Obj *vis,
++	Tcl_Obj **objPtr);
++
++/* Les noms $x et ${x} cités par EXPR sont-ils tous dans vis ? */
++
+ static int
+-BinRepr(
++CheckRefs(
++    Tcl_Interp *interp,
++    const char *what,
++    const char *expr,
++    Tcl_Obj *vis)
++{
++    const char *p;
++
++    for (p = expr; *p != '\0'; p++) {
++	const char *q;
++	Tcl_Size len, n, i, found = 0;
++	Tcl_Obj **v;
++
++	if (*p != '$') {
++	    continue;
++	}
++	q = p + 1;
++	if (*q == '{') {
++	    const char *close = strchr(q, '}');
++
++	    q++;
++	    len = (close != NULL) ? close - q : 0;
++	} else {
++	    for (len = 0; TclTypeIsNameChar(q[len]); len++) {
++		/* vide */
++	    }
++	}
++	if (len == 0) {
++	    continue;
++	}
++	Tcl_ListObjGetElements(NULL, vis, &n, &v);
++	for (i = 0; i < n; i++) {
++	    Tcl_Size l;
++	    const char *nm = Tcl_GetStringFromObj(v[i], &l);
++
++	    if (l == len && memcmp(nm, q, len) == 0) {
++		found = 1;
++		break;
++	    }
++	}
++	if (!found) {
++	    ERR(interp, "BIN", "%s uses $%.*s, which is not a field read "
++		    "before it (in this product or an enclosing one)", what,
++		    (int) len, q);
++	    return TCL_ERROR;
++	}
++	p = q + len - 1;
++    }
++    return TCL_OK;
++}
++
++/* Taille ou nombre : entier, {prefix R} ou {expr TEXTE}. */
++
++static int
++SizeSpec(
++    Tcl_Interp *interp,
++    TclType *tp,
++    Tcl_Size fixed,
++    int depth,
++    Tcl_Obj *vis,
++    Tcl_Obj **specPtr)
++{
++    Tcl_Obj *spec, *sub;
++
++    if (tp->binDyn == NULL) {
++	*specPtr = Tcl_NewWideIntObj(fixed);
++	return TCL_OK;
++    }
++    spec = Tcl_NewListObj(0, NULL);
++    if (tp->binDyn->kind == TCLDYN_PREFIX) {
++	if (BinRepr(interp, tp->binDyn->pre, depth + 1, vis, &sub) != TCL_OK
++		|| sub == NULL) {
++	    Tcl_DecrRefCount(spec);
++	    return TCL_ERROR;
++	}
++	Tcl_ListObjAppendElement(NULL, spec, Tcl_NewStringObj("prefix", -1));
++	Tcl_ListObjAppendElement(NULL, spec, sub);
++    } else {
++	if (CheckRefs(interp, tp->name, tp->binDyn->expr, vis) != TCL_OK) {
++	    Tcl_DecrRefCount(spec);
++	    return TCL_ERROR;
++	}
++	Tcl_ListObjAppendElement(NULL, spec, Tcl_NewStringObj("expr", -1));
++	Tcl_ListObjAppendElement(NULL, spec,
++		Tcl_NewStringObj(tp->binDyn->expr, -1));
++    }
++    *specPtr = spec;
++    return TCL_OK;
++}
++
++static int
++BinReprBody(
+     Tcl_Interp *interp,
+     TclType *tp,
+     int depth,
++    Tcl_Obj *vis,
+     Tcl_Obj **objPtr)
+ {
+     static const char *const endName[] = {"auto", "le", "be"};
+-    Tcl_Obj *r = NULL, *sub;
++    Tcl_Obj *r = NULL, *sub, *spec;
+     Tcl_Size i, len;
+ 
+     *objPtr = NULL;
+-    if (depth > 32) {
+-	ERR(interp, "BIN", "type %s is too deeply nested (or recursive) for "
+-		"a binary layout", tp->name);
+-	return TCL_ERROR;
+-    }
+     switch (tp->binKind) {
+     case TCLBIN_UINT: case TCLBIN_SINT: case TCLBIN_FLOAT:
+ 	r = Tcl_NewListObj(0, NULL);
+@@ -2452,14 +2641,24 @@
+ 	*objPtr = r;
+ 	return TCL_OK;
+     case TCLBIN_BYTES: case TCLBIN_STR:
++	if (SizeSpec(interp, tp, tp->binSize, depth, vis, &spec) != TCL_OK) {
++	    return TCL_ERROR;
++	}
+ 	r = Tcl_NewListObj(0, NULL);
+ 	Tcl_ListObjAppendElement(NULL, r, Tcl_NewStringObj(
+ 		tp->binKind == TCLBIN_BYTES ? "bytes" : "str", -1));
+-	Tcl_ListObjAppendElement(NULL, r, Tcl_NewWideIntObj(tp->binSize));
++	Tcl_ListObjAppendElement(NULL, r, spec);
++	if (tp->binKind == TCLBIN_STR) {
++	    Tcl_ListObjAppendElement(NULL, r,
++		    Tcl_NewStringObj(tp->binEnc, -1));
++	}
+ 	*objPtr = r;
+ 	return TCL_OK;
+     case TCLBIN_CSTRING:
+-	*objPtr = Tcl_NewStringObj("cstring", -1);
++	r = Tcl_NewListObj(0, NULL);
++	Tcl_ListObjAppendElement(NULL, r, Tcl_NewStringObj("cstring", -1));
++	Tcl_ListObjAppendElement(NULL, r, Tcl_NewStringObj(tp->binEnc, -1));
++	*objPtr = r;
+ 	return TCL_OK;
+     default:
+ 	break;
+@@ -2478,6 +2677,50 @@
+     }
+     switch (tp->kind) {
+     case TCLT_SUM:
++	if (tp->binTag != NULL) {
++	    Tcl_Obj *vs = Tcl_NewListObj(0, NULL);
++
++	    Tcl_DString ref;
++	    int rc;
++
++	    Tcl_DStringInit(&ref);
++	    Tcl_DStringAppend(&ref, "$", 1);
++	    Tcl_DStringAppend(&ref, tp->binTag, TCL_AUTO_LENGTH);
++	    rc = CheckRefs(interp, tp->name, Tcl_DStringValue(&ref), vis);
++	    Tcl_DStringFree(&ref);
++	    if (rc != TCL_OK) {
++		Tcl_DecrRefCount(vs);
++		return TCL_ERROR;
++	    }
++	    for (i = 0; i < tp->nfields; i++) {
++		Tcl_Obj *item = Tcl_NewListObj(0, NULL);
++
++		if (BinRepr(interp, tp->fields[i].type, depth + 1, vis, &sub)
++			!= TCL_OK) {
++		    Tcl_DecrRefCount(item);
++		    Tcl_DecrRefCount(vs);
++		    return TCL_ERROR;
++		}
++		if (sub == NULL) {
++		    ERR(interp, "BIN", "variant %s of %s has no binary "
++			    "representation", Tcl_GetString(tp->fields[i].name),
++			    tp->name);
++		    Tcl_DecrRefCount(item);
++		    Tcl_DecrRefCount(vs);
++		    return TCL_ERROR;
++		}
++		Tcl_ListObjAppendElement(NULL, item, tp->fields[i].name);
++		Tcl_ListObjAppendElement(NULL, item, sub);
++		Tcl_ListObjAppendElement(NULL, vs, item);
++	    }
++	    r = Tcl_NewListObj(0, NULL);
++	    Tcl_ListObjAppendElement(NULL, r, Tcl_NewStringObj("tagged", -1));
++	    Tcl_ListObjAppendElement(NULL, r, Tcl_NewStringObj(tp->binTag, -1));
++	    Tcl_ListObjAppendElement(NULL, r, vs);
++	    Tcl_ListObjAppendElement(NULL, r, Tcl_NewStringObj(tp->name, -1));
++	    *objPtr = r;
++	    return TCL_OK;
++	}
+ 	/* Somme de littéraux de même longueur (une constante, "MZ") */
+ 	len = -1;
+ 	for (i = 0; i < tp->nfields; i++) {
+@@ -2500,21 +2743,29 @@
+ 	}
+ 	return TCL_OK;
+     case TCLT_LIST:
+-	if (tp->arity >= 0) {
+-	    if (BinRepr(interp, tp->elem, depth + 1, &sub) != TCL_OK) {
++	if (tp->arity >= 0 || tp->binDyn != NULL) {
++	    if (SizeSpec(interp, tp, tp->arity, depth, vis, &spec)
++		    != TCL_OK) {
++		return TCL_ERROR;
++	    }
++	    if (BinRepr(interp, tp->elem, depth + 1, vis, &sub) != TCL_OK) {
++		Tcl_DecrRefCount(spec);
+ 		return TCL_ERROR;
+ 	    }
+ 	    if (sub != NULL) {
+ 		r = Tcl_NewListObj(0, NULL);
+ 		Tcl_ListObjAppendElement(NULL, r, Tcl_NewStringObj("array", -1));
+-		Tcl_ListObjAppendElement(NULL, r, Tcl_NewWideIntObj(tp->arity));
++		Tcl_ListObjAppendElement(NULL, r, spec);
+ 		Tcl_ListObjAppendElement(NULL, r, sub);
+ 		*objPtr = r;
++	    } else {
++		Tcl_DecrRefCount(spec);
+ 	    }
+ 	}
+ 	return TCL_OK;
+     case TCLT_PRODUCT: {
+ 	Tcl_Obj *flds = Tcl_NewListObj(0, NULL);
++	Tcl_Obj *vis2 = Tcl_DuplicateObj(vis);
+ 
+ 	for (i = 0; i < tp->nfields; i++) {
+ 	    Tcl_Obj *fr, *item;
+@@ -2522,8 +2773,10 @@
+ 
+ 	    fr = NULL;
+ 	    if (f->type != NULL
+-		    && BinRepr(interp, f->type, depth + 1, &fr) != TCL_OK) {
++		    && BinRepr(interp, f->type, depth + 1, vis2, &fr)
++		    != TCL_OK) {
+ 		Tcl_DecrRefCount(flds);
++		Tcl_DecrRefCount(vis2);
+ 		return TCL_ERROR;
+ 	    }
+ 	    item = Tcl_NewListObj(0, NULL);
+@@ -2534,7 +2787,11 @@
+ 	    Tcl_ListObjAppendElement(NULL, item, Tcl_NewIntObj(
+ 		    f->defval != NULL || f->defcmd != NULL));
+ 	    Tcl_ListObjAppendElement(NULL, flds, item);
++	    if (f->name != NULL) {
++		Tcl_ListObjAppendElement(NULL, vis2, f->name);
++	    }
+ 	}
++	Tcl_DecrRefCount(vis2);
+ 	r = Tcl_NewListObj(0, NULL);
+ 	Tcl_ListObjAppendElement(NULL, r, Tcl_NewStringObj("product", -1));
+ 	Tcl_ListObjAppendElement(NULL, r, Tcl_NewStringObj(tp->name, -1));
+@@ -2548,10 +2805,44 @@
+ }
+ 
+ static int
++BinRepr(
++    Tcl_Interp *interp,
++    TclType *tp,
++    int depth,
++    Tcl_Obj *vis,
++    Tcl_Obj **objPtr)
++{
++    Tcl_Obj *inner, *r;
++
++    *objPtr = NULL;
++    if (depth > 32) {
++	ERR(interp, "BIN", "type %s is too deeply nested (or recursive) for "
++		"a binary layout", tp->name);
++	return TCL_ERROR;
++    }
++    if (BinReprBody(interp, tp, depth, vis, &inner) != TCL_OK) {
++	return TCL_ERROR;
++    }
++    if (tp->binAt != NULL && inner != NULL) {
++	if (CheckRefs(interp, tp->name, tp->binAt, vis) != TCL_OK) {
++	    Tcl_DecrRefCount(inner);
++	    return TCL_ERROR;
++	}
++	r = Tcl_NewListObj(0, NULL);
++	Tcl_ListObjAppendElement(NULL, r, Tcl_NewStringObj("at", -1));
++	Tcl_ListObjAppendElement(NULL, r, Tcl_NewStringObj(tp->binAt, -1));
++	Tcl_ListObjAppendElement(NULL, r, inner);
++	inner = r;
++    }
++    *objPtr = inner;
++    return TCL_OK;
++}
++
++static int
+ TypeBinaryCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
+ {
+     TclType *tp;
+-    Tcl_Obj *r;
++    Tcl_Obj *r, *vis;
+     Tcl_Size len;
+     const char *text;
+ 
+@@ -2564,14 +2855,17 @@
+     if (tp == NULL) {
+ 	return TCL_ERROR;
+     }
+-    if (BinRepr(interp, tp, 0, &r) != TCL_OK) {
++    vis = Tcl_NewListObj(0, NULL);
++    Tcl_IncrRefCount(vis);
++    if (BinRepr(interp, tp, 0, vis, &r) != TCL_OK) {
++	Tcl_DecrRefCount(vis);
+ 	return TCL_ERROR;
+     }
++    Tcl_DecrRefCount(vis);
+     if (r == NULL) {
+ 	ERR(interp, "BIN", "type \"%s\" has no binary representation (use "
+-		"uint(n), sint(n), float(n), bytes(n), str(n), cstring, "
+-		"bitarray(n), optionally qualified be. or le., a literal sum, "
+-		"list(N).T or a product of these)", tp->name);
++		"int(u|s,n), double(n), string(enc,N|z), bitarray(n), a "
++		"literal sum, list(N).T or a product of these)", tp->name);
+ 	return TCL_ERROR;
+     }
+     Tcl_SetObjResult(interp, r);
+@@ -2794,16 +3088,6 @@
+     d->tInt = Builtin(d, TCLT_INT, "int");
+     d->tDouble = Builtin(d, TCLT_DOUBLE, "double");
+     d->tString = Builtin(d, TCLT_STRING, "string");
+-    /* be. et le. : qualificatifs de représentation (voir BuildNest) */
+-    d->tBe = Builtin(d, TCLT_STRING, "be");
+-    d->tLe = Builtin(d, TCLT_STRING, "le");
+-    /* cstring : texte terminé par un NUL dans un fichier binaire */
+-    {
+-	TclType *cs = Builtin(d, TCLT_STRING, "cstring");
+-
+-	cs->nominal = 1;
+-	cs->binKind = TCLBIN_CSTRING;
+-    }
+     Builtin(d, TCLT_STRING, "any");		/* éléments de list.any */
+     d->tList = Builtin(d, TCLT_LIST, "list");
+     d->tList->arity = -1;			/* liste extensible */
+@@ -2812,6 +3096,8 @@
+     d->tDict->key = d->tDict->elem = d->tString;
+     d->tVar = Builtin(d, TCLT_VAR, "var");
+     d->tVar->elem = d->tString;
++    /* at(EXPR).T : constructeur sans nom de type (voir tclTypeParse.c) */
++    d->tAt = NewType(d, TCLT_LIST, "at");
+     /* "array" est réservé sans sémantique : entrée à valeur NULL. */
+     Tcl_SetHashValue(Tcl_CreateHashEntry(&d->names, "array", &isNew), NULL);
+     Tcl_SetAssocData(interp, "tclTypes", DeleteData, d);
+@@ -2823,41 +3109,18 @@
+ 	    NULL, NULL);
+     Tcl_CreateObjCommand2(interp, "::tcl::mathfunc::bitlen", BitlenCmd,
+ 	    NULL, NULL);
+-    /* bitarray(n, ordre) : type paramétré prédéfini. Le corps n'est que
+-     * "int" (le commentaire nomme les paramètres) ; la largeur et l'ordre
+-     * sont posés par l'instanciation (tclTypeGeneric.c). */
+-    if (TclTypesDefineGeneric(NULL, d, "bitarray({int}n, {string}ord = lsb0)",
+-	    (Tcl_Size) strlen("bitarray({int}n, {string}ord = lsb0)"),
+-	    "int # n ord", 11) == TCL_OK) {
+-	TclTypesMarkBits(d, "bitarray", 1);
+-    }
+-    /* Types à représentation binaire : uint, sint, float (largeur en bits),
+-     * bytes et str (taille en octets). Le boutisme est un qualificatif :
+-     * be.uint(16), le.float(64). */
++    /* bitarray(n, ordre, boutisme) : type paramétré prédéfini. Le corps n'est
++     * que "int" (le commentaire nomme les paramètres) ; la largeur, l'ordre
++     * et le boutisme sont posés par l'instanciation (tclTypeGeneric.c).
++     * Les autres types binaires, int(u,16,be), double(32,le) et
++     * string(utf-8,8), sont construits par TclTypesBinaryType. */
+     {
+-	static const struct {
+-	    const char *spec, *body;
+-	    int code;
+-	} bin[] = {
+-	    {"uint({int}n)", "int # n", 2},
+-	    {"sint({int}n)", "int # n", 3},
+-	    {"float({int}n)", "double # n", 4},
+-	    {"bytes({int}n)", "string # n", 5},
+-	    {"str({int}n)", "string # n", 6}
+-	};
+-	size_t k;
+-	char nm[8];
+-
+-	for (k = 0; k < sizeof(bin) / sizeof(bin[0]); k++) {
+-	    if (TclTypesDefineGeneric(NULL, d, bin[k].spec,
+-		    (Tcl_Size) strlen(bin[k].spec), bin[k].body,
+-		    (Tcl_Size) strlen(bin[k].body)) == TCL_OK) {
+-		size_t l = strcspn(bin[k].spec, "(");
+-
+-		memcpy(nm, bin[k].spec, l);
+-		nm[l] = '\0';
+-		TclTypesMarkBits(d, nm, bin[k].code);
+-	    }
++	static const char spec[] = "bitarray({int}n, {string}ord = lsb0, "
++		"{string}e = auto)";
++
++	if (TclTypesDefineGeneric(NULL, d, spec, (Tcl_Size) strlen(spec),
++		"int # n ord e", 13) == TCL_OK) {
++	    TclTypesMarkBits(d, "bitarray", 1);
+ 	}
+     }
+     TclAnnotInit(interp);
+diff -u -r a/generic/tclTypes.h b/generic/tclTypes.h
+--- a/generic/tclTypes.h	2026-10-16 12:50:41.434544018 +0200
++++ b/generic/tclTypes.h	2026-10-16 12:50:41.437777311 +0200
+@@ -45,8 +45,8 @@
+     TCLT_LIST, TCLT_DICT, TCLT_PRODUCT, TCLT_SUM, TCLT_VAR
+ } TclTypeKind;
+ 
+-/* Représentation binaire d'un type (types uint, sint, float, bytes, str,
+- * cstring) : ce que `type binary` décrit et que `file binary` lit/écrit. */
++/* Représentation binaire d'un type (int(u|s,n), double(n), string(enc,N|z),
++ * bitarray(n)) : ce que `type binary` décrit et que `file binary` lit/écrit. */
+ enum {
+     TCLBIN_NONE = 0, TCLBIN_UINT, TCLBIN_SINT, TCLBIN_FLOAT, TCLBIN_BYTES,
+     TCLBIN_STR, TCLBIN_CSTRING
+@@ -57,6 +57,19 @@
+     TCLBIN_LE, TCLBIN_BE
+ };
+ 
++/* Taille, nombre ou position qui dépend de la valeur lue ailleurs (niveau 2 de
++ * `file binary`) : un préfixe, ou une expression Tcl avec des $champ. */
++enum {
++    TCLDYN_PREFIX = 1,		/* string(utf-8,int(u,16,be)), list(int(u,8)).T */
++    TCLDYN_EXPR			/* string(raw,$len), list($n).T, at($off).T */
++};
++
++typedef struct TclBinDyn {
++    int kind;			/* TCLDYN_PREFIX ou TCLDYN_EXPR */
++    struct TclType *pre;	/* PREFIX : type entier non signé du préfixe */
++    char *expr;			/* EXPR : expression Tcl (texte) */
++} TclBinDyn;
++
+ typedef struct TclTypeField {
+     Tcl_Obj *name;		/* champ ou variante ; NULL si sans nom */
+     TclType *type;		/* NULL pour une variante littérale */
+@@ -90,11 +103,20 @@
+     int bitMsb0;		/* bitarray : 1 si l'indice 0 est le bit de
+ 				 * gauche (msb0), 0 si de droite (lsb0) */
+     int binKind;		/* TCLBIN_* : représentation binaire, ou 0 */
+-    Tcl_Size binSize;		/* octets : uint, sint, float, bytes, str */
++    Tcl_Size binSize;		/* octets : entier, flottant, chaîne de taille
++				 * fixe */
++    const char *binEnc;		/* chaîne : nom d'encodage Tcl (statique), NULL
++				 * pour des octets bruts (raw) */
+     int binEnd;			/* TCLBIN_AUTO, TCLBIN_LE ou TCLBIN_BE */
++    TclBinDyn *binDyn;		/* chaîne ou liste : taille / nombre dynamique */
++    char *binAt;		/* at(EXPR).T : position de la valeur (texte) */
++    char *binTag;		/* S($champ) : champ dont la valeur choisit la
++				 * variante de la somme S */
++    struct TclType *binBase;	/* type sans ces décorations (at, $champ, liste
++				 * dynamique), pour TclTypeAssignable */
+     int refine;			/* 1 : raffinement d'int ou de double (instance
+-				 * de uint, sint, float, bitarray, éventuellement
+-				 * qualifiée be. / le.) : voir TclTypeAssignable */
++				 * de int(s,n), double(n), bitarray(n)) : voir
++				 * TclTypeAssignable */
+ };
+ 
+ /* Les descripteurs vivent autant que l'interpréteur (pas de comptage). */
+@@ -209,7 +231,7 @@
+ int	TclTypeIncludes(const TclType *a, const TclType *b);
+ /* Une valeur de type got peut-elle être rangée dans une variable (ou un
+  * champ) de type expected ? Même type, ou élargissement automatique : un
+- * raffinement (uint(8), be.sint(16), bitarray(12)) entre dans int, double
++ * raffinement (int(u,8), int(s,16,be), bitarray(12)) entre dans int, double
+  * ou un raffinement plus large. L'inverse (rétrécissement) reste refusé. */
+ int	TclTypeAssignable(const TclType *expected, const TclType *got);
+ int	TclTypeSame(const TclType *a, const TclType *b);
+diff -u -r a/generic/tclTypesInt.h b/generic/tclTypesInt.h
+--- a/generic/tclTypesInt.h	2026-10-16 12:50:41.434609349 +0200
++++ b/generic/tclTypesInt.h	2026-10-16 12:50:41.439281323 +0200
+@@ -43,8 +43,7 @@
+     char *body;			/* texte du type, avec les paramètres libres */
+     Tcl_Size bodyLen;
+     int bits;			/* 1 : bitarray, l'instance reçoit bitWidth et
+-				 * bitMsb0 ; 2..6 : uint, sint, float, bytes, str
+-				 * (représentation binaire, voir TCLBIN_*) */
++				 * bitMsb0 et binEnd */
+ } TypeGeneric;
+ 
+ typedef struct TypeData {
+@@ -62,8 +61,10 @@
+     TclType **all;
+     Tcl_Size nAll, capAll;
+     TclType *tInt, *tDouble, *tString, *tList, *tDict, *tVar;
+-    TclType *tBe, *tLe;		/* qualificatifs be. et le. (uint, sint, float,
+-				 * bitarray) */
++    TclType *tAt;		/* constructeur at(EXPR).T (caché : pas un nom) */
++    void **blobs;		/* décorations binaires (TclBinDyn, textes),
++				 * partagées par les types, libérées à la fin */
++    Tcl_Size nBlobs, capBlobs;
+ } TypeData;
+ 
+ #define ERR(interp, code, ...) \
+@@ -114,9 +115,10 @@
+ 	    const char *spec, Tcl_Size specLen, const char *body,
+ 	    Tcl_Size bodyLen);
+ void	TclTypesFreeGenerics(TypeData *d);
+-/* Marque le type paramétré NAME : 1 bitarray, 2 uint, 3 sint, 4 float,
+- * 5 bytes, 6 str. */
++/* Marque le type paramétré NAME : 1 bitarray. */
+ void	TclTypesMarkBits(TypeData *d, const char *name, int code);
++/* Octets du terminateur NUL de string(enc,z) pour un encodage Tcl. */
++int	TclTypesNulWidth(const char *tclName);
+ 
+ /* tclTypes.c : services utilisés par le compilateur de types */
+ TclType *TclTypesNewType(TypeData *d, TclTypeKind kind, const char *name);
+@@ -125,9 +127,23 @@
+ int	TclTypesCheckNewName(Tcl_Interp *interp, TypeData *d, const char *name);
+ TclType *TclTypesResolve(Tcl_Interp *interp, TypeData *d,
+ 	    const char *selfName, TclType *self, const char *w, Tcl_Size len);
+-/* be.T / le.T : T (uint, sint, float, bitarray) avec un boutisme fixé. */
+-TclType *TclTypesQualify(Tcl_Interp *interp, TypeData *d, TclType *elem,
+-	    int endian);
++/* int(u,16,be), double(32,le), string(utf-8,8) : le type de base (int,
++ * double, string) avec sa représentation binaire. */
++TclType *TclTypesBinaryType(Tcl_Interp *interp, TypeData *d, const char *base,
++	    Tcl_Size baseLen, const char *argText, Tcl_Size argLen,
++	    const TypeParams *params);
++/* Argument de taille, de nombre ou de position : N, z, un préfixe (type
++ * entier non signé) ou une expression avec $champ. */
++int	TclTypesParseSize(Tcl_Interp *interp, TypeData *d, const char *what,
++	    const char *text, Tcl_Size len, int allowZ, const TypeParams *params,
++	    Tcl_WideInt *nPtr, int *zPtr, TclBinDyn **dynPtr);
++void	*TclTypesKeep(TypeData *d, void *blob);
++char	*TclTypesKeepText(TypeData *d, const char *s, Tcl_Size len);
++/* list(PRÉFIXE|$expr).T, at(EXPR).T, S($champ) : types décorés. */
++TclType *TclTypesMakeListDyn(TypeData *d, TclType *elem, TclBinDyn *dyn);
++TclType *TclTypesMakeAt(TypeData *d, TclType *elem, const char *expr);
++TclType *TclTypesMakeTagged(Tcl_Interp *interp, TypeData *d, TclType *sum,
++	    const char *field);
+ /* list.T : liste de T, extensible. */
+ TclType *TclTypesMakeList(TypeData *d, TclType *elem);
+ TclType *TclTypesMakeListExplicit(TypeData *d, TclType *elem);

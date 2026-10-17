@@ -1,0 +1,56 @@
+packed  16
+natural 32
+align4  24
+01020000000300040000000000000005
+0100000002000000030000000000000004000000000000000500000000000000
+010000000200000003000000040000000000000005000000
+1 2 3 4 5 consumed=32
+1 2 3 4 5
+1: file binary: non-zero padding at offset 1 before field b of cs
+1: bad alignment "3": must be packed, natural or a power of two
+1: bad alignment "wide": must be packed, natural or a power of two
+outer packed 8 natural 12
+010002000300000004000000
+1 {2 3} 4
+tab packed 15 natural 24
+1 2 3 4 5
+str 8 utf-8
+cstring utf-16le
+bytes 4
+6800e900e90065e5672c0000e9e00000706c61696e00
+héé 日本 éà plain
+1: text for string(ascii,3) cannot be encoded in ascii (byte 0 of its UTF-8 form)
+1: text for string(latin1,3) cannot be encoded in iso8859-1 (byte 0 of its UTF-8 form)
+1: text for string(utf-8,2) is 3 bytes long in utf-8, the limit is 2
+1: text for string(utf-16le,4) is 6 bytes long in utf-16le, the limit is 4
+1: value for string(utf-8,z) cannot contain a NUL character
+1: string(raw,z): raw bytes cannot be NUL-terminated, use a text encoding
+1: string: unknown encoding "klingon" (raw, ascii, latin1, utf-8, utf-16le, utf-16be, ucs-2le, ucs-2be)
+1: string takes (encoding, size|z), for example string(utf-8,8) or string(utf-8,z)
+1: string: the size in bytes must be between 1 and 1000000 or z, not "0"
+1: file binary: unterminated string at offset 0 reading string(utf-8,z)
+1: file binary: unterminated string at offset 0 reading string(utf-16le,z)
+ab
+used=6
+6
+float 4 le
+1: double: the width in bits must be 32 or 64, not "16"
+1: double: the byte order must be be or le, not "mid"
+3fc00000
+0.1
+1: int takes (u|s, bits ?, be|le?), for example int(u,16,be)
+1: int: the first argument must be u (unsigned) or s (signed), not "x"
+1: int: the width in bits must be a multiple of 8 between 8 and 1024, not "9"
+1: int: the width in bits must be a multiple of 8 between 8 and 1024, not "2048"
+1: int takes (u|s, bits ?, be|le?), for example int(u,16,be)
+1: int: the byte order must be be or le, not "wide"
+1: type "int" has no binary representation (use int(u|s,n), double(n), string(enc,N|z), bitarray(n), a literal sum, list(N).T or a product of these)
+1: type mismatch: expected list<int(u,8)> but got list<int> (use an explicit cast)
+list<int>
+0: 
+list<int(s,16)>
+0: 
+list<int(u,16,be)>
+0: 
+1: value "300" does not fit in int(u,8)
+0: 1 2

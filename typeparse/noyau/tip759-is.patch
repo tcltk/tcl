@@ -1,0 +1,179 @@
+--- a/generic/tclCompExpr.c	2026-10-13 14:08:22.054596843 +0200
++++ b/generic/tclCompExpr.c	2026-10-13 14:08:22.056388661 +0200
+@@ -285,8 +285,9 @@
+ 				 * START, in the same way that CLOSE_PAREN
+ 				 * pairs with OPEN_PAREN. */
+     SEPARATOR = BINARY | 33,       /* TIP 282 / TIP 759 */
+-    ASSIGN = BINARY | 34               /* ASSIGN, like EXPON is right associative, 
++    ASSIGN = BINARY | 34,              /* ASSIGN, like EXPON is right associative, 
+                                                       * and this distinction is coded directly in ParseExpr */
++    IS_TYPE = BINARY | 35              /* "var is type": type test of a variable */
+ };
+ 
+ /*
+@@ -369,8 +370,9 @@
+     PREC_END,		/* END */
+     PREC_SEPARATOR,     /* SEPARATOR */
+     PREC_ASSIGN,        /* ASSIGN */
++    PREC_EQUAL,         /* IS_TYPE */
+     /* Expansion room for more binary operators */
+-    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
++    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+     /* Unary operator lexemes */
+     PREC_UNARY,		/* UNARY_PLUS */
+@@ -430,8 +432,9 @@
+     0,			/* END */
+     0,                  /* SEPARATOR */
+     0,                  /* ASSIGN */
++    0,                  /* IS_TYPE */
+     /* Expansion room for more binary operators */
+-    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
++    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+     /* Unary operator lexemes */
+     INST_UPLUS,		/* UNARY_PLUS */
+@@ -518,6 +521,7 @@
+ 			    Tcl_Obj *const *funcObjv, Tcl_Token *tokenPtr,
+ 			    CompileEnv *envPtr, int optimize);
+ static const char *	FindTupleTarget(const char *start, Tcl_Size numBytes);
++static int		IsTypeAhead(const char *start, Tcl_Size numBytes);
+ static void		EmitTupleStores(CompileEnv *envPtr, OpNode *nodes,
+ 			    int index, int *path, int depth, int *counter,
+ 			    int root);
+@@ -608,6 +612,32 @@
+ /*
+  *----------------------------------------------------------------------
+  *
++ * IsTypeAhead --
++ *
++ *	Does the text at START (after a bareword) continue with the "is"
++ *	operator? Used to accept a bareword as a variable name in
++ *	"var is type".
++ *
++ *----------------------------------------------------------------------
++ */
++
++static int
++IsTypeAhead(
++    const char *start,
++    Tcl_Size numBytes)
++{
++    Tcl_Size n = TclParseAllWhiteSpace(start, numBytes);
++
++    start += n;
++    numBytes -= n;
++    return (numBytes >= 2 && start[0] == 'i' && start[1] == 's'
++	    && (numBytes == 2 || UCHAR(start[2]) & 0x80
++		    || !(isalnum(UCHAR(start[2])) || start[2] == '_')));
++}
++
++/*
++ *----------------------------------------------------------------------
++ *
+  * FindTupleTarget --
+  *
+  *	Destructuring assignment "(a,b,c) = $list". START points at an open
+@@ -873,6 +903,42 @@
+ 	start += scanned;
+ 	numBytes -= scanned;
+ 
++	if (lastParsed == incomplete && nodes[incomplete].lexeme == IS_TYPE
++		&& numBytes > 0 && (isalpha(UCHAR(*start)) || *start == '_'
++			|| *start == ':')) {
++	    /*
++	     * Right operand of "is": a type name (int, list.int, ::ns::t,
++	     * tree(int) ...) taken literally.
++	     */
++
++	    const char *q = start, *qe = start + numBytes;
++	    Tcl_Obj *typeName;
++
++	    while (q < qe && (isalnum(UCHAR(*q)) || *q == '_' || *q == ':'
++		    || *q == '.')) {
++		q++;
++	    }
++	    if (q < qe && *q == '(') {
++		int d = 0;
++
++		while (q < qe) {
++		    if (*q == '(') {
++			d++;
++		    } else if (*q == ')' && --d == 0) {
++			q++;
++			break;
++		    }
++		    q++;
++		}
++	    }
++	    typeName = Tcl_NewStringObj(start, q - start);
++	    Tcl_ListObjAppendElement(NULL, litList, typeName);
++	    complete = lastParsed = OT_LITERAL;
++	    numBytes -= q - start;
++	    start = q;
++	    continue;
++	}
++
+ 	scanned = ParseLexeme(start, numBytes, &lexeme, &literal);
+ 
+ 	/*
+@@ -918,6 +984,14 @@
+ 		     */
+ 
+ 		    Tcl_ListObjAppendElement(NULL, funcList, literal);
++		} else if (literal && IsTypeAhead(start + scanned,
++			numBytes - scanned)) {
++		    /* "var is type": the bareword names a variable. */
++		    Tcl_ListObjAppendElement(NULL, litList, literal);
++		    complete = lastParsed = OT_LITERAL;
++		    start += scanned;
++		    numBytes -= scanned;
++		    continue;
+ 		} else if (literal && tupleEnd != NULL && start < tupleEnd) {
+ 		    /* Name inside the target of a destructuring assignment:
+ 		     * (a,b,c) = $list */
+@@ -1590,7 +1664,10 @@
+ 		 * expressions because we do not want to optimize their
+ 		 * variable-setting side effects out of existence.
+ 		 */
+-		if (incompletePtr->lexeme == ASSIGN) { incompletePtr->constant = 0; }
++		if (incompletePtr->lexeme == ASSIGN
++			|| incompletePtr->lexeme == IS_TYPE) {
++		    incompletePtr->constant = 0;
++		}
+ 		
+ 		if (incompletePtr->lexeme == START) {
+ 		    /*
+@@ -2394,6 +2471,12 @@
+ 	return 1;
+ 
+     case 'i':
++	if ((numBytes > 1) && (start[1] == 's')
++		&& ((numBytes == 2) || start[2] & 0x80
++			|| !(isalnum(UCHAR(start[2])) || start[2] == '_'))) {
++	    *lexemePtr = IS_TYPE;	/* "var is type" */
++	    return 2;
++	}
+ 	if ((numBytes > 1) && (start[1] == 'n')
+ 		&& ((numBytes == 2) || start[2] & 0x80 || !isalpha(UCHAR(start[2])))) {
+ 	    /*
+@@ -2795,6 +2878,19 @@
+ 		    TclEmitOpcode(INST_TRY_CVT_TO_NUMERIC, envPtr);
+ 		}
+ 		break;
++	    case IS_TYPE:
++		/*
++		 * "var is type": the stack holds [name type]. Invoke
++		 * ::tcl::mathop::is name type.
++		 */
++
++		TclEmitPush(TclRegisterLiteral(envPtr, "::tcl::mathop::is", 17,
++			LITERAL_CMD_NAME), envPtr);
++		TclEmitInstInt4(INST_REVERSE, 3, envPtr);
++		TclEmitInstInt4(INST_REVERSE, 2, envPtr);
++		TclEmitInvoke(envPtr, INST_INVOKE_STK1, 3);
++		convert = 0;
++		break;
+ 	    case ASSIGN:
+ 		if (nodes[nodePtr->left].lexeme == LIST) {
+ 		    /*

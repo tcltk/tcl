@@ -1,0 +1,15 @@
+# Banc de test sur la VRAIE bibliothèque Tcl 9.0 : make -f Makefile.real TCL=<racine des sources> BUILD=<dossier de construction>
+TCL   ?= /tmp/tclsrc/tcl-core-9-0-branch
+BUILD ?= /tmp/tclsrc/build
+CFLAGS = -std=gnu11 -g -fsanitize=address,undefined -Wall -Wextra -Wno-unused-parameter -Wno-unused-function \
+         -I../work -I$(TCL)/generic -I$(TCL)/unix -I$(TCL)/libtommath -DMODULE_SCOPE=extern -DPACKAGE_VERSION=\"9.0\"
+LIBS   = $(BUILD)/libtcl9.0.a -lz -lpthread -ldl -lm
+CORE   = realtcl.c mockvars.c ../work/tclTypes.c ../work/tclTypeParse.c ../work/tclTypeGeneric.c ../work/tclAnnotObj.c ../work/tclTypePath.c
+export ASAN_OPTIONS = detect_leaks=0
+
+all: types var cmd unwrap
+
+types:  ; gcc $(CFLAGS) test_types.c  $(CORE) $(LIBS) -o real_types  && ./real_types
+var:    ; gcc $(CFLAGS) test_var.c    $(CORE) $(LIBS) -o real_var    && ./real_var
+cmd:    ; gcc $(CFLAGS) test_cmd.c    $(CORE) $(LIBS) -o real_cmd    && ./real_cmd
+unwrap: ; gcc $(CFLAGS) test_unwrap.c $(filter-out ../work/tclTypePath.c,$(CORE)) $(LIBS) -o real_unwrap && ./real_unwrap

@@ -1,0 +1,226 @@
+--- a/generic/tclDictObj.c
++++ b/generic/tclDictObj.c
+@@ -2814,12 +2814,14 @@
+      */
+ 
+     Tcl_IncrRefCount(valueObj);
++    TclTypedVarForgetByName(interp, keyVarObj);
+     if (Tcl_ObjSetVar2(interp, keyVarObj, NULL, keyObj,
+ 	    TCL_LEAVE_ERR_MSG) == NULL) {
+ 	TclDecrRefCount(valueObj);
+ 	goto error;
+     }
+     TclDecrRefCount(valueObj);
++    TclTypedVarForgetByName(interp, valueVarObj);
+     if (Tcl_ObjSetVar2(interp, valueVarObj, NULL, valueObj,
+ 	    TCL_LEAVE_ERR_MSG) == NULL) {
+ 	goto error;
+@@ -2894,6 +2896,7 @@
+      */
+ 
+     Tcl_IncrRefCount(valueObj);
++    TclTypedVarForgetByName(interp, keyVarObj);
+     if (Tcl_ObjSetVar2(interp, keyVarObj, NULL, keyObj,
+ 	    TCL_LEAVE_ERR_MSG) == NULL) {
+ 	TclDecrRefCount(valueObj);
+@@ -2901,6 +2904,7 @@
+ 	goto done;
+     }
+     TclDecrRefCount(valueObj);
++    TclTypedVarForgetByName(interp, valueVarObj);
+     if (Tcl_ObjSetVar2(interp, valueVarObj, NULL, valueObj,
+ 	    TCL_LEAVE_ERR_MSG) == NULL) {
+ 	result = TCL_ERROR;
+@@ -3017,11 +3021,13 @@
+      */
+ 
+     Tcl_IncrRefCount(valueObj);
++    TclTypedVarForgetByName(interp, storagePtr->keyVarObj);
+     if (Tcl_ObjSetVar2(interp, storagePtr->keyVarObj, NULL, keyObj,
+ 	    TCL_LEAVE_ERR_MSG) == NULL) {
+ 	TclDecrRefCount(valueObj);
+ 	goto error;
+     }
++    TclTypedVarForgetByName(interp, storagePtr->valueVarObj);
+     if (Tcl_ObjSetVar2(interp, storagePtr->valueVarObj, NULL, valueObj,
+ 	    TCL_LEAVE_ERR_MSG) == NULL) {
+ 	TclDecrRefCount(valueObj);
+@@ -3105,12 +3111,14 @@
+      */
+ 
+     Tcl_IncrRefCount(valueObj);
++    TclTypedVarForgetByName(interp, storagePtr->keyVarObj);
+     if (Tcl_ObjSetVar2(interp, storagePtr->keyVarObj, NULL, keyObj,
+ 	    TCL_LEAVE_ERR_MSG) == NULL) {
+ 	TclDecrRefCount(valueObj);
+ 	result = TCL_ERROR;
+ 	goto done;
+     }
++    TclTypedVarForgetByName(interp, storagePtr->valueVarObj);
+     if (Tcl_ObjSetVar2(interp, storagePtr->valueVarObj, NULL, valueObj,
+ 	    TCL_LEAVE_ERR_MSG) == NULL) {
+ 	TclDecrRefCount(valueObj);
+@@ -3458,6 +3466,7 @@
+ 
+ 	    Tcl_IncrRefCount(keyObj);
+ 	    Tcl_IncrRefCount(valueObj);
++	    TclTypedVarForgetByName(interp, keyVarObj);
+ 	    if (Tcl_ObjSetVar2(interp, keyVarObj, NULL, keyObj,
+ 		    TCL_LEAVE_ERR_MSG) == NULL) {
+ 		Tcl_AddErrorInfo(interp,
+@@ -3465,6 +3474,7 @@
+ 		result = TCL_ERROR;
+ 		goto abnormalResult;
+ 	    }
++	    TclTypedVarForgetByName(interp, valueVarObj);
+ 	    if (Tcl_ObjSetVar2(interp, valueVarObj, NULL, valueObj,
+ 		    TCL_LEAVE_ERR_MSG) == NULL) {
+ 		Tcl_AddErrorInfo(interp,
+--- a/generic/tclCmdAH.c
++++ b/generic/tclCmdAH.c
+@@ -14,6 +14,7 @@
+ #include "tclInt.h"
+ #include "tclIO.h"
+ #include "tclTomMath.h"
++#include "tclTypes.h"
+ #ifdef _WIN32
+ #   include "tclWinInt.h"
+ #endif
+@@ -3048,6 +3049,7 @@
+ 		TclNewObj(valuePtr);	/* Empty string */
+ 	    }
+ 
++	    TclTypedVarForgetByName(interp, statePtr->varvList[i][v]);
+ 	    varValuePtr = Tcl_ObjSetVar2(interp, statePtr->varvList[i][v],
+ 		    NULL, valuePtr, TCL_LEAVE_ERR_MSG);
+ 
+--- a/generic/tclExecute.c
++++ b/generic/tclExecute.c
+@@ -6694,7 +6694,11 @@
+ 		    while (TclIsVarLink(varPtr)) {
+ 			varPtr = varPtr->value.linkPtr;
+ 		    }
+-		    if (TclIsVarDirectWritable(varPtr)) {
++		    if (varPtr->flags & VAR_TYPED) {
++			TclTypedVarForget(varPtr);
++		    }
++		    if (TclIsVarDirectWritable(varPtr)
++			    && !TclIsAnnotated(valuePtr)) {
+ 			value2Ptr = varPtr->value.objPtr;
+ 			if (valuePtr != value2Ptr) {
+ 			    if (value2Ptr != NULL) {
+@@ -7271,6 +7275,18 @@
+ 
+ 	JUMP_PEEPHOLE_F(done, 5, 0);
+ 
++    case INST_TYPE_FORGET:
++	opnd = TclGetUInt4AtPtr(pc + 1);
++	TRACE(("%u\n", opnd));
++	varPtr = LOCAL(opnd);
++	while (TclIsVarLink(varPtr)) {
++	    varPtr = varPtr->value.linkPtr;
++	}
++	if (varPtr->flags & VAR_TYPED) {
++	    TclTypedVarForget(varPtr);
++	}
++	NEXT_INST_F(5, 0, 0);
++
+     case INST_DICT_UPDATE_START:
+ 	opnd = TclGetUInt4AtPtr(pc + 1);
+ 	opnd2 = TclGetUInt4AtPtr(pc + 5);
+--- a/generic/tclCompile.c
++++ b/generic/tclCompile.c
+@@ -671,6 +671,9 @@
+     {"constStk",	  1,   -2,	   0,	{OPERAND_NONE}},
+ 	/* Create constant. Variable name and value on stack.
+ 	 * Stack: ... varName value => ... */
++    {"typeForget",	  5,    0,	   1,	{OPERAND_LVT4}},
++	/* Loop variable: remove its type before it is assigned.
++	 * Stack: ... => ... */
+ 
+     {NULL, 0, 0, 0, {OPERAND_NONE}}
+ };
+--- a/generic/tclCompile.h
++++ b/generic/tclCompile.h
+@@ -843,6 +843,9 @@
+     INST_CONST_IMM,
+     INST_CONST_STK,
+ 
++    /* Typed loop variables: drop the type before assignment */
++    INST_TYPE_FORGET,
++
+     /* The last opcode */
+     LAST_INST_OPCODE
+ };
+--- a/generic/tclCompCmds.c
++++ b/generic/tclCompCmds.c
+@@ -1715,6 +1715,8 @@
+      */
+ 
+     bodyTargetOffset = CurrentOffset(envPtr);
++    TclEmitInstInt4(	INST_TYPE_FORGET, keyVarIndex,		envPtr);
++    TclEmitInstInt4(	INST_TYPE_FORGET, valueVarIndex,	envPtr);
+     Emit14Inst(		INST_STORE_SCALAR, keyVarIndex,		envPtr);
+     TclEmitOpcode(	INST_POP,				envPtr);
+     Emit14Inst(		INST_STORE_SCALAR, valueVarIndex,	envPtr);
+--- a/generic/tclTypedVar.c
++++ b/generic/tclTypedVar.c
+@@ -182,6 +182,47 @@
+ }
+ 
+ /* --------------------------------------------------------------------
++ * Variable de boucle : on retire le type avant l'affectation, puisque la
++ * variable va recevoir une nouvelle valeur. varPtr doit être résolu
++ * (liens suivis). La valeur courante est remplacée par son contenu brut.
++ * -------------------------------------------------------------------- */
++
++void
++TclTypedVarForget(Var *varPtr)
++{
++    Tcl_Obj *cur, *content = NULL;
++
++    if (varPtr == NULL || !(varPtr->flags & VAR_TYPED)
++	    || TclIsVarArray(varPtr)) {
++	return;
++    }
++    cur = varPtr->value.objPtr;
++    if (cur != NULL && TclAnnotInfo(cur, &content, NULL, NULL, NULL) == 1
++	    && content != NULL) {
++	Tcl_IncrRefCount(content);
++	varPtr->value.objPtr = content;
++	Tcl_DecrRefCount(cur);
++    }
++    varPtr->flags &= ~VAR_TYPED;
++}
++
++void
++TclTypedVarForgetByName(Tcl_Interp *interp, Tcl_Obj *nameObj)
++{
++    Var *varPtr, *arrayPtr;
++
++    varPtr = TclObjLookupVarEx(interp, nameObj, NULL, 0, "set", 0, 0,
++	    &arrayPtr);
++    if (varPtr == NULL || arrayPtr != NULL) {
++	return;
++    }
++    while (TclIsVarLink(varPtr)) {
++	varPtr = varPtr->value.linkPtr;
++    }
++    TclTypedVarForget(varPtr);
++}
++
++/* --------------------------------------------------------------------
+  * Construction de la valeur d'un "set" annoté
+  * -------------------------------------------------------------------- */
+ 
+--- a/generic/tclTypes.h
++++ b/generic/tclTypes.h
+@@ -207,6 +207,8 @@
+ int	TclTypedVarPrepareWrite(Tcl_Interp *interp, Var *varPtr,
+ 	    Tcl_Obj **valuePtrPtr, int *flagsPtr, Tcl_Obj **tmpPtrPtr);
+ void	TclTypedVarAfterStore(Var *varPtr);
++void	TclTypedVarForget(Var *varPtr);
++void	TclTypedVarForgetByName(Tcl_Interp *interp, Tcl_Obj *nameObj);
+ Tcl_Obj *TclTypedConform(Tcl_Interp *interp, TclType *tp, Tcl_Obj *arg);
+ int	TclSetAnnotatedCmd(Tcl_Interp *interp, Tcl_Size objc,
+ 	    Tcl_Obj *const objv[]);

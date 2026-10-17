@@ -1,0 +1,21 @@
+--- a/generic/tclListObj.c	2026-10-13 07:45:36.288926802 +0200
++++ b/generic/tclListObj.c	2026-10-13 07:45:36.291083370 +0200
+@@ -1777,6 +1777,18 @@
+ 	Tcl_Panic("%s called with shared object", "TclListObjAppendElements");
+     }
+ 
++    /*
++     * Abstract lists with a replaceProc (e.g. annotated values) append
++     * through it instead of being converted to an ordinary list, which
++     * would silently drop their type.
++     */
++
++    if (elemCount > 0 && TclObjTypeHasProc(toObj, replaceProc)
++	    && TclObjTypeHasProc(toObj, lengthProc)) {
++	return TclObjTypeReplace(interp, toObj, TclObjTypeLength(toObj), 0,
++		elemCount, elemObjv);
++    }
++
+     if (TclListObjGetRep(interp, toObj, &listRep) != TCL_OK) {
+ 	/* Cannot be converted to a list */
+ 	return TCL_ERROR;

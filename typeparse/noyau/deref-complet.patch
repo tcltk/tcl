@@ -1,0 +1,224 @@
+diff -u a/generic/tclTypePath.c b/generic/tclTypePath.c
+--- a/generic/tclTypePath.c	2026-10-15 18:11:13.046586302 +0200
++++ b/generic/tclTypePath.c	2026-10-15 18:11:13.048343154 +0200
+@@ -1258,7 +1258,7 @@
+ DerefWalk(Tcl_Interp *interp, Tcl_Obj *a, Tcl_DString *path)
+ {
+     Tcl_Obj *v, *newV = NULL, *res, *child, *r, *c;
+-    TclType *tp, *rt;
++    TclType *tp, *rt, *rtp;
+     int variant;
+     Tcl_Size n, i, keep = Tcl_DStringLength(path);
+     char num[32];
+@@ -1292,6 +1292,59 @@
+     if (rt == NULL) {
+ 	return NULL;
+     }
++    if (tp->kind == TCLT_SUM) {
++	/* le contenu est celui de la variante en cours, dans le nouveau
++	 * type : l'ordre des variantes a pu changer */
++
++	TclType *ft;
++	Tcl_Size j = -1;
++
++	if (variant < 0 || variant >= tp->nfields) {
++	    PathErr(interp, "type deref: the value of %s has no variant%s",
++		    tp->name, "");
++	    return NULL;
++	}
++	ft = tp->fields[variant].type;
++	if (tp->fields[variant].name != NULL) {
++	    j = TclTypeFieldIndex(rt, Tcl_GetString(tp->fields[variant].name));
++	} else {
++	    TclType *want = (ft != NULL) ? TclTypeDerefType(interp, ft) : NULL;
++
++	    for (i = 0; i < rt->nfields; i++) {
++		if (rt->fields[i].name == NULL && rt->fields[i].type == want
++			&& (want != NULL || strcmp(
++			Tcl_GetString(rt->fields[i].literal),
++			Tcl_GetString(tp->fields[variant].literal)) == 0)) {
++		    j = i;
++		    break;
++		}
++	    }
++	}
++	if (j < 0) {
++	    PathErr(interp, "type deref: can't find the variant of %s "
++		    "after following the links%s", tp->name, "");
++	    return NULL;
++	}
++	if (ft == NULL) {			/* variante littérale */
++	    return TclNewAnnotated(interp, rt, (int) j, v);
++	}
++	DerefWhere(path, keep, ".", tp->fields[variant].name != NULL
++		? Tcl_GetString(tp->fields[variant].name) : "?");
++	child = WrapSlot(interp, ft, v);
++	if (child == NULL) {
++	    return NULL;
++	}
++	r = DerefWalk(interp, child, path);
++	TclDiscard(child);
++	Tcl_DStringSetLength(path, keep);
++	if (r == NULL) {
++	    return NULL;
++	}
++	TclAnnotInfo(r, &c, NULL, NULL, NULL);
++	res = TclNewAnnotated(interp, rt, (int) j, c);
++	TclDiscard(r);
++	return res;
++    }
+     newV = (tp->kind == TCLT_DICT) ? Tcl_NewDictObj() : Tcl_NewListObj(0, NULL);
+     switch (tp->kind) {
+     case TCLT_LIST:
+@@ -1326,8 +1379,10 @@
+ 	    if (r == NULL) {
+ 		goto fail;
+ 	    }
+-	    TclAnnotInfo(r, &c, NULL, NULL, NULL);
+-	    Tcl_ListObjAppendElement(NULL, newV, c);
++	    TclAnnotInfo(r, &c, &rtp, NULL, NULL);
++	    /* un élément de type somme garde son annotation (sa variante) */
++	    Tcl_ListObjAppendElement(NULL, newV,
++		    (rtp->kind == TCLT_SUM) ? r : c);
+ 	    TclDiscard(r);
+ 	}
+ 	break;
+@@ -1353,8 +1408,8 @@
+ 		Tcl_DictObjDone(&search);
+ 		goto fail;
+ 	    }
+-	    TclAnnotInfo(r, &c, NULL, NULL, NULL);
+-	    Tcl_DictObjPut(NULL, newV, k, c);
++	    TclAnnotInfo(r, &c, &rtp, NULL, NULL);
++	    Tcl_DictObjPut(NULL, newV, k, (rtp->kind == TCLT_SUM) ? r : c);
+ 	    TclDiscard(r);
+ 	}
+ 	Tcl_DictObjDone(&search);
+diff -u a/generic/tclTypes.c b/generic/tclTypes.c
+--- a/generic/tclTypes.c	2026-10-15 18:11:13.031601032 +0200
++++ b/generic/tclTypes.c	2026-10-15 18:11:13.034270132 +0200
+@@ -127,6 +127,7 @@
+     Tcl_DeleteHashTable(&d->names);
+     Tcl_DeleteHashTable(&d->canon);
+     Tcl_DeleteHashTable(&d->converts);
++    Tcl_DeleteHashTable(&d->derefs);
+     Tcl_Free(d);
+ }
+ 
+@@ -1785,11 +1786,16 @@
+     if (tp->kind == TCLT_VAR) {
+ 	return tp->elem;		/* var.T donne T (var seul : string) */
+     }
+-    for (i = 0; i < depth; i++) {
+-	if (stack[i] == tp) {
+-	    ERR(interp, "DEREF", "type deref: the recursive type %s contains "
+-		    "links", tp->name);
+-	    return NULL;
++    /* Produits et sommes récursifs : le descripteur en cours est retrouvé
++     * dans d->derefs. Une collection récursive sans produit ni somme n'a
++     * pas de sens ici. */
++    if (tp->kind == TCLT_LIST || tp->kind == TCLT_DICT) {
++	for (i = 0; i < depth; i++) {
++	    if (stack[i] == tp) {
++		ERR(interp, "DEREF", "type deref: the recursive type %s "
++			"contains links", tp->name);
++		return NULL;
++	    }
+ 	}
+     }
+     stack[depth] = tp;
+@@ -1823,12 +1829,41 @@
+ 	}
+ 	return TclTypesMakeDict(d, e, tp->keyed, keys, tp->nkeys);
+     }
+-    case TCLT_PRODUCT: {
+-	TclTypeField *f = (TclTypeField *) Tcl_Alloc(
+-		tp->nfields * sizeof(TclTypeField));
+-
++    case TCLT_PRODUCT:
++    case TCLT_SUM: {
++	/*
++	 * Le type est enregistré AVANT son contenu : un type récursif
++	 * (tree(var) contient list.tree(var)) retombe alors sur ce même
++	 * descripteur au lieu de boucler.
++	 */
++
++	Tcl_HashEntry *hPtr;
++	TclType *nt;
++	TclTypeField *f;
++	char name[300];
++	int isNew;
++
++	hPtr = Tcl_CreateHashEntry(&d->derefs, (const char *) tp, &isNew);
++	if (!isNew) {
++	    return (TclType *) Tcl_GetHashValue(hPtr);
++	}
++	snprintf(name, sizeof(name), "deref(%.280s)", tp->name);
++	nt = NewType(d, tp->kind, name);
++	Tcl_SetHashValue(hPtr, nt);
++	f = (TclTypeField *) Tcl_Alloc(tp->nfields * sizeof(TclTypeField));
++	memset(f, 0, tp->nfields * sizeof(TclTypeField));
+ 	for (i = 0; i < tp->nfields; i++) {
+ 	    f[i] = tp->fields[i];
++	    if (f[i].type != NULL) {
++		f[i].type = DerefTypeG(interp, d, f[i].type, stack, depth + 1);
++		if (f[i].type == NULL) {
++		    Tcl_DeleteHashEntry(hPtr);
++		    Tcl_Free(f);
++		    return NULL;
++		}
++	    }
++	}
++	for (i = 0; i < tp->nfields; i++) {
+ 	    if (f[i].name != NULL) {
+ 		Tcl_IncrRefCount(f[i].name);
+ 	    }
+@@ -1841,21 +1876,16 @@
+ 	    if (f[i].defcmd != NULL) {
+ 		Tcl_IncrRefCount(f[i].defcmd);
+ 	    }
+-	    if (f[i].type != NULL) {
+-		f[i].type = DerefTypeG(interp, d, f[i].type, stack, depth + 1);
+-		if (f[i].type == NULL) {
+-		    TclTypesFreeFields(f, tp->nfields);
+-		    return NULL;
+-		}
+-	    }
+ 	}
+-	return TclTypesFinish(interp, d, NULL, TCLT_PRODUCT, f, tp->nfields,
+-		NULL);
++	if (tp->kind == TCLT_SUM) {
++	    SortVariants(f, tp->nfields);
++	}
++	nt->fields = f;
++	nt->nfields = tp->nfields;
++	return nt;
+     }
+     default:
+-	ERR(interp, "DEREF", "type deref: %s contains links inside a sum "
+-		"type, which is not supported", tp->name);
+-	return NULL;
++	return tp;
+     }
+ }
+ 
+@@ -2357,6 +2387,7 @@
+     Tcl_InitHashTable(&d->instances, TCL_STRING_KEYS);
+     Tcl_InitHashTable(&d->canon, TCL_STRING_KEYS);
+     Tcl_InitHashTable(&d->converts, TCL_STRING_KEYS);
++    Tcl_InitHashTable(&d->derefs, TCL_ONE_WORD_KEYS);
+     d->tInt = Builtin(d, TCLT_INT, "int");
+     d->tDouble = Builtin(d, TCLT_DOUBLE, "double");
+     d->tString = Builtin(d, TCLT_STRING, "string");
+diff -u a/generic/tclTypesInt.h b/generic/tclTypesInt.h
+--- a/generic/tclTypesInt.h	2026-10-15 18:11:13.040594283 +0200
++++ b/generic/tclTypesInt.h	2026-10-15 18:11:13.042427093 +0200
+@@ -56,6 +56,8 @@
+     int instDepth;
+     Tcl_HashTable canon;	/* nom canonique -> type anonyme interné */
+     Tcl_HashTable converts;	/* "De\1Vers" -> lambda (Tcl_Obj*, compté) */
++    Tcl_HashTable derefs;	/* type deref : TclType* -> son type sans liens
++				 * (produits et sommes, y compris récursifs) */
+     TclType **all;
+     Tcl_Size nAll, capAll;
+     TclType *tInt, *tDouble, *tString, *tList, *tDict, *tVar;

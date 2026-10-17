@@ -1,0 +1,16 @@
+--- a/generic/tclTypeParse.c	2026-10-15 12:30:41.927962615 +0200
++++ b/generic/tclTypeParse.c	2026-10-15 12:30:41.929490885 +0200
+@@ -409,6 +409,13 @@
+ 	 * l'opérande manquant. */
+     }
+ 
++    if (byte == '?' && numBytes > 1 && start[1] == '=') {
++	/* "?=" : synonyme de "=" (même écriture que pour dict(z?=0)) */
++
++	*lexemePtr = ASSIGN;
++	return 2;
++    }
++
+     if (!IsParamRef(start, numBytes) && (byte < sizeof(Lexeme))
+ 	    && (Lexeme[byte] != 0)) {
+ 	*lexemePtr = Lexeme[byte];

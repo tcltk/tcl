@@ -1,0 +1,16 @@
+# Banc de test pour MSYS2 / MinGW-w64 (shell "MSYS2 MINGW64").
+# Pas d'ASan/UBSan (indisponibles sous mingw) ; pas de -ldl/-lpthread.
+# Usage : cd test && make -f Makefile.mingw
+CC      ?= gcc
+CFLAGS   = -std=gnu11 -g -Wall -Wextra -Wno-unused-parameter -Wno-unused-function \
+           -D__USE_MINGW_ANSI_STDIO=1 -Istub -I..
+CORE     = mocktcl.c mockvars.c ../tclTypes.c ../tclTypeParse.c ../tclTypeGeneric.c ../tclAnnotObj.c
+EXE      = .exe
+
+all: types stress unwrap var cmd
+
+types:  ; $(CC) $(CFLAGS) test_types.c  $(CORE) ../tclTypePath.c -o test_types$(EXE)  -lm && ./test_types$(EXE)
+stress: ; $(CC) $(CFLAGS) stress.c       $(CORE) -o stress$(EXE) -lm && ./stress$(EXE)
+unwrap: ; $(CC) $(CFLAGS) test_unwrap.c  $(CORE) -o test_unwrap$(EXE) -lm && ./test_unwrap$(EXE)
+var:    ; $(CC) $(CFLAGS) test_var.c     $(CORE) ../tclTypePath.c -o test_var$(EXE)  -lm && ./test_var$(EXE)
+cmd:    ; $(CC) $(CFLAGS) test_cmd.c     $(CORE) ../tclTypePath.c -o test_cmd$(EXE)  -lm && ./test_cmd$(EXE)

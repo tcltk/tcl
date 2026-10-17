@@ -1,0 +1,125 @@
+--- a/generic/tclTypes.c
++++ b/generic/tclTypes.c
+@@ -226,6 +226,43 @@
+     return TclTypesMakeListN(d, elem, -1);
+ }
+ 
++/*
++ * list.T écrit explicitement. Pour T = string c'est "list<string>", type
++ * distinct de la liste nue "list" : ses éléments sont atomiques (enveloppés
++ * à la lecture, un élément n'est pas redécoupé en mots), alors que ceux de
++ * "list" restent du texte Tcl ordinaire. Les deux se contiennent mutuellement.
++ */
++TclType *
++TclTypesMakeListExplicit(TypeData *d, TclType *elem)
++{
++    Tcl_DString ds;
++    TclType *tp;
++    int isNew;
++
++    if (elem != d->tString) {
++	return TclTypesMakeListN(d, elem, -1);
++    }
++    Tcl_DStringInit(&ds);
++    Tcl_DStringAppend(&ds, "list<string>", TCL_AUTO_LENGTH);
++    tp = Intern(d, &ds, TCLT_LIST, elem, &isNew);
++    if (isNew) {
++	tp->arity = -1;
++    }
++    Tcl_DStringFree(&ds);
++    return tp;
++}
++
++/* Deux types « identiques » pour les contrôles d'affectation : le même
++ * descripteur, ou list et list<string>. */
++int
++TclTypeSame(const TclType *a, const TclType *b)
++{
++    return a == b || (a->kind == TCLT_LIST && b->kind == TCLT_LIST
++	    && a->arity < 0 && b->arity < 0 && !a->nominal && !b->nominal
++	    && a->elem == b->elem && a->elem->kind == TCLT_STRING
++	    && !a->elem->nominal);
++}
++
+ /* list(N).elem : exactement N éléments. arity < 0 : liste ordinaire,
+  * extensible. */
+ TclType *
+--- a/generic/tclTypes.h
++++ b/generic/tclTypes.h
+@@ -185,6 +185,7 @@
+ int	TclTypeValidate(Tcl_Interp *interp, const TclType *tp, Tcl_Obj *value,
+ 	    int variantHint, int *variantOut);
+ int	TclTypeIncludes(const TclType *a, const TclType *b);
++int	TclTypeSame(const TclType *a, const TclType *b);
+ TclType *TclTypeListOf(Tcl_Interp *interp, TclType *elem);
+ TclType *TclTypeCommon(Tcl_Interp *interp, TclType *a, TclType *b);
+ int	TclTypeCast(Tcl_Interp *interp, Tcl_Obj *src, TclType *target,
+--- a/generic/tclTypesInt.h
++++ b/generic/tclTypesInt.h
+@@ -117,6 +117,7 @@
+ 	    const char *selfName, TclType *self, const char *w, Tcl_Size len);
+ /* list.T : liste de T, extensible. */
+ TclType *TclTypesMakeList(TypeData *d, TclType *elem);
++TclType *TclTypesMakeListExplicit(TypeData *d, TclType *elem);
+ /* list(N).T : exactement N éléments (arity >= 0) ; arity < 0 : extensible. */
+ TclType *TclTypesMakeListN(TypeData *d, TclType *elem, Tcl_Size arity);
+ /* var.T : nom d'une variable dont la valeur est un T ; typed != 0 exige
+--- a/generic/tclTypeParse.c
++++ b/generic/tclTypeParse.c
+@@ -1897,7 +1897,7 @@
+ 	    goto done;
+ 	}
+     } else if ((l.kind == SK_TYPE) && (l.type == d->tList)) {
+-	tp = TclTypesMakeList(d, r.type);
++	tp = TclTypesMakeListExplicit(d, r.type);
+     } else if ((l.kind == SK_TYPE) && (l.type == d->tDict)) {
+ 	tp = TclTypesMakeDict(d, r.type, 0, NULL, 0);
+     } else if ((l.kind == SK_TYPE) && (l.type == d->tVar)) {
+--- a/generic/tclTypedVar.c
++++ b/generic/tclTypedVar.c
+@@ -47,14 +47,14 @@
+ 	return NULL;
+     }
+     if (status == TCLA_TYPED) {
+-	if (at != tp) {
++	if (!TclTypeSame(at, tp)) {
+ 	    Mismatch(interp, tp, at);
+ 	    return NULL;
+ 	}
+ 	return Tcl_DuplicateObj(arg);
+     }
+     if (status == TCLA_RAW) {
+-	if (at != tp) {
++	if (!TclTypeSame(at, tp)) {
+ 	    Mismatch(interp, tp, at);
+ 	    return NULL;
+ 	}
+@@ -201,7 +201,7 @@
+ 	    && TclTypeValidate(interp, at, content, variant, NULL) != TCL_OK) {
+ 	return NULL;
+     }
+-    if ((status == TCLA_TYPED || status == TCLA_RAW) && at != tp
++    if ((status == TCLA_TYPED || status == TCLA_RAW) && !TclTypeSame(at, tp)
+ 	    && !TclTypeIsPlainString(tp)) {
+ 	Mismatch(interp, tp, at);
+ 	return NULL;
+--- a/generic/tclAnnotObj.c
++++ b/generic/tclAnnotObj.c
+@@ -342,11 +342,12 @@
+ 	lt = tp->fields[variant].type;
+     }
+     if (lt->kind != TCLT_LIST || lt->elem == NULL
+-	    || TclTypeIsPlainString(lt->elem)) {
+-	/* Éléments string : pas d'enveloppe. Une valeur string est UN SEUL
+-	 * élément pour les commandes de liste, alors qu'un élément d'une
+-	 * liste de strings peut être lui-même une liste ({a b {c d}}, lindex
+-	 * $L 2 1). Le type d'un tel élément se lit par $L(i). */
++	    || (TclTypeIsPlainString(lt->elem) && strcmp(lt->name, "list") == 0)) {
++	/* La liste nue {list} : ses éléments restent du texte Tcl ordinaire,
++	 * qui peut être lui-même une liste ({a b {c d}}, lindex $L 2 1) ; pas
++	 * d'enveloppe. Le type d'un tel élément se lit par $L(i). Avec
++	 * list.string (ou tout autre type d'éléments), l'élément est atomique :
++	 * une valeur annotée est UN SEUL élément pour les commandes de liste. */
+ 	return NULL;
+     }
+     return lt->elem;

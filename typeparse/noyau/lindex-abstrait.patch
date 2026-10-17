@@ -1,0 +1,30 @@
+--- a/generic/tclListObj.c
++++ b/generic/tclListObj.c
+@@ -2812,7 +2812,26 @@
+ 		Tcl_IncrRefCount(listObj);
+ 	    } else {
+ 		Tcl_Obj *itemObj;
+-		/* TODO - this will cause shimmering of inner abstract lists! */
++
++		if (TclObjTypeHasProc(listObj, indexProc)) {
++		    /*
++		     * Liste abstraite (valeur annotée, suite arithmétique...) :
++		     * on passe par sa procédure d'index. La convertir en liste
++		     * ordinaire détruirait sa représentation (l'annotation).
++		     */
++		    if (TclObjTypeIndex(interp, listObj, index, &itemObj)
++			    != TCL_OK) {
++			Tcl_DecrRefCount(listObj);
++			return NULL;
++		    }
++		    if (itemObj == NULL) {
++			TclNewObj(itemObj);
++		    }
++		    Tcl_IncrRefCount(itemObj);
++		    Tcl_DecrRefCount(listObj);
++		    listObj = itemObj;
++		    continue;
++		}
+ 		/*
+ 		 * Must set the internal rep again because it may have been
+ 		 * changed by TclGetIntForIndexM. See test lindex-8.4.

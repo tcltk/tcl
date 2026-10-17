@@ -1,0 +1,23 @@
+--- création : valeur annotée de type space, enregistrée / creation: registered space value
+space lib 0 lib
+space1 lib space1
+1: file binary: space "lib" already exists (use "file binary space delete lib")
+1: file binary space delete: unknown space "nope"
+--- lien nommé / named link
+1 {7 8}
+1 2 &*(//lib/,int(u,8),null=0).rec
+--- deref sans DATA / without DATA
+7 8
+--- réécriture de l'adresse / rewrite the address
+0102
+--- écrire une vraie cible : erreur / writing a real target: error
+1: file binary: cannot write the target of field r of H2 into the space lib: leave the link unfollowed (-linkdepth 0) to rewrite its address
+--- memory:// : adresses virtuelles et segments / virtual addresses and segments
+{7 8}
+1: file binary: unmapped address 0x2000 in space "mem" (field p of M)
+1: file binary: space "mem" is a memory area: write memory://mem/ (field p of Mx)
+--- référentiel inconnu / unknown space
+1: file binary: unknown space "zzz" (field p of Z)
+--- lien anonyme sans DATA / anonymous link without DATA
+1: file binary deref: the link "&*(//,int(u,8),null=0).rec" is anonymous: DATA is required
+7 8

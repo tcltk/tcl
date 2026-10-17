@@ -1,0 +1,17 @@
+--- a/generic/tclCmdAH.c
++++ b/generic/tclCmdAH.c
+@@ -2876,6 +2876,14 @@
+ 		result = TCL_ERROR;
+ 		goto done;
+ 	    }
++	    /*
++	     * The copy is itself released by ForeachCleanup. A reference is
++	     * needed because the index proc of an abstract list may hand the
++	     * copy (or something it owns) back as an element, which a loop
++	     * variable then holds: without it the final TclDecrRefCount
++	     * frees an object that the variable still references.
++	     */
++	    Tcl_IncrRefCount(statePtr->aCopyList[i]);
+ 	    /* Don't compute values here, wait until the last moment */
+ 	    statePtr->argcList[i] = TclObjTypeLength(statePtr->aCopyList[i]);
+ 	} else {

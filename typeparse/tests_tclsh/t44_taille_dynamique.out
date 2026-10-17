@@ -1,0 +1,19 @@
+--- cohérent / consistent
+2 {{1 2.5 0} {2 3.5 1}}
+0 {}
+--- incohérent : refusé à la construction / inconsistent: refused when built
+1: field "items" of Batch holds 1 elements, but its size says 3 ($n)
+1: field "items" of Batch holds 2 elements, but its size says 1 ($n)
+--- forme positionnelle / positional form
+1: field "items" of Batch holds 1 elements, but its size says 2 ($n)
+2 {{1 1.0 0} {2 2.0 1}}
+--- expression : n - 1 éléments / expression: n - 1 elements
+3 {7 8}
+1: field "rest" of Chain holds 3 elements, but its size says 2 ($n - 1)
+--- champs omis : le défaut compte / omitted fields: the default counts
+2 {1 2}
+1: field "xs" of Pair holds 2 elements, but its size says 3 ($n)
+--- copie et lecture binaire / copy and binary read
+2 {{1 2.5 0} {2 3.5 1}}
+--- la modification champ par champ n'est pas contrôlée (état intermédiaire légitime) mais l'encodage la vérifie
+1: file binary: field items of Batch holds 2, but the field it depends on says 3 ($n)

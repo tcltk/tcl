@@ -1,0 +1,277 @@
+--- a/generic/tclTypes.c
++++ b/generic/tclTypes.c
+@@ -624,6 +624,7 @@
+     ValGuard me;
+     const ValGuard *g;
+ 
++    value = TCL_ANNOT_CONTENT(value);	/* une valeur annotée : son contenu */
+     me.tp = tp;
+     me.value = value;
+     me.up = up;
+@@ -1706,7 +1707,8 @@
+ /*
+  * "type get valeur" : le type d'une valeur (donc d'une variable : type get
+  * $L). Le résultat est le nom du type ({int}n -> int, {list<int>}L ->
+- * list<int>, {Complex}z -> Complex). Une valeur sans annotation n'a pas de
++ * list<int>, {Complex}z -> Complex). Pour une somme, la variante suit :
++ * Val.i. Une valeur sans annotation n'a pas de
+  * type : le résultat est la chaîne vide ; une annotation brute {texte}
+  * rend son texte. Pour tester le type d'une variable par son nom, utiliser
+  * l'opérateur "is" de expr.
+@@ -1716,15 +1718,24 @@
+ TypeGetCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
+ {
+     TclType *tp = NULL;
+-    Tcl_Obj *raw = NULL;
++    Tcl_Obj *raw = NULL, *res;
++    int variant = -1;
+ 
+     if (objc != 3) {
+ 	Tcl_WrongNumArgs(interp, 2, objv, "value");
+ 	return TCL_ERROR;
+     }
+-    switch (TclAnnotInfo(objv[2], NULL, &tp, NULL, &raw)) {
++    switch (TclAnnotInfo(objv[2], NULL, &tp, &variant, &raw)) {
+     case 1:
+-	Tcl_SetObjResult(interp, Tcl_NewStringObj(tp->name, TCL_AUTO_LENGTH));
++	res = Tcl_NewStringObj(tp->name, TCL_AUTO_LENGTH);
++	if (tp->kind == TCLT_SUM && variant >= 0
++		&& variant < (int) tp->nfields
++		&& tp->fields[variant].name != NULL) {
++	    /* Une somme : le type puis la variante, Val.i */
++	    Tcl_AppendToObj(res, ".", 1);
++	    Tcl_AppendObjToObj(res, tp->fields[variant].name);
++	}
++	Tcl_SetObjResult(interp, res);
+ 	break;
+     case 2:
+ 	Tcl_SetObjResult(interp, raw);
+--- a/generic/tclAnnotObj.c
++++ b/generic/tclAnnotObj.c
+@@ -304,6 +304,102 @@
+     return kind == TCLT_LIST || kind == TCLT_DICT || kind == TCLT_PRODUCT;
+ }
+ 
++/*
++ * Éléments typés d'une liste annotée. Les éléments d'une liste de type
++ * list.T sont stockés dans V sans annotation ; à la lecture par la vue
++ * liste (lindex, foreach, lmap, lrange...) ils sont enveloppés, une fois
++ * pour toutes, dans le type T des éléments (dans V même, à la place de
++ * l'élément nu : la chaîne ne change pas). Un élément déjà annoté (balise
++ * explicite {i}5 d'une somme) est laissé tel quel.
++ */
++
++static TclType *
++AnnotListElemType(Tcl_Obj *aPtr)
++{
++    int status, variant = -1;
++    TclType *tp = NULL, *lt;
++    Tcl_Obj *content;
++
++    if (TclAnnotResolve(NULL, aPtr, NULL, &status, &tp, &variant,
++	    &content) != TCL_OK) {
++	return NULL;
++    }
++    if (status == TCLA_PLAIN || status == TCLA_EMPTY) {
++	return NULL;
++    }
++    if (status == TCLA_RAW) {
++	variant = -1;
++	if (TclTypeValidate(NULL, tp, content, -1, &variant) != TCL_OK) {
++	    return NULL;
++	}
++    }
++    lt = tp;
++    if (tp->kind == TCLT_SUM) {
++	if (variant < 0 || variant >= (int) tp->nfields
++		|| tp->fields[variant].type == NULL) {
++	    return NULL;
++	}
++	lt = tp->fields[variant].type;
++    }
++    if (lt->kind != TCLT_LIST || lt->elem == NULL
++	    || TclTypeIsPlainString(lt->elem)) {
++	/* Éléments string : pas d'enveloppe. Une valeur string est UN SEUL
++	 * élément pour les commandes de liste, alors qu'un élément d'une
++	 * liste de strings peut être lui-même une liste ({a b {c d}}, lindex
++	 * $L 2 1). Le type d'un tel élément se lit par $L(i). */
++	return NULL;
++    }
++    return lt->elem;
++}
++
++/* Comme TypeRefObj, sans l'interpréteur (les procédures de liste n'en ont
++ * pas toujours) et sans la table : objet neuf, refcount 0. */
++static Tcl_Obj *
++NewTypeRefNoCache(TclType *tp, int variant)
++{
++    Tcl_Obj *tPtr = Tcl_NewObj();
++    Tcl_ObjInternalRep ir;
++
++    ir.twoPtrValue.ptr1 = tp;
++    ir.twoPtrValue.ptr2 = (void *) (intptr_t) (variant + 1);
++    Tcl_StoreInternalRep(tPtr, &typeRefObjType, &ir);
++    TclInvalidateStringRep(tPtr);
++    return tPtr;
++}
++
++static void
++AnnotWrapElems(Tcl_Obj *aPtr, Tcl_Obj *v, Tcl_Size from, Tcl_Size to)
++{
++    TclType *et = AnnotListElemType(aPtr);
++    Tcl_Size n, i;
++    Tcl_Obj *e, *w;
++    int variant;
++
++    if (et == NULL || Tcl_IsShared(v)
++	    || Tcl_ListObjLength(NULL, v, &n) != TCL_OK) {
++	return;
++    }
++    if (from < 0) {
++	from = 0;
++    }
++    if (to >= n) {
++	to = n - 1;
++    }
++    for (i = from; i <= to; i++) {
++	if (Tcl_ListObjIndex(NULL, v, i, &e) != TCL_OK || e == NULL
++		|| TCL_ANNOT_P(e)) {
++	    continue;
++	}
++	variant = -1;
++	if (et->kind == TCLT_SUM
++		&& TclTypeValidate(NULL, et, e, -1, &variant) != TCL_OK) {
++	    continue;
++	}
++	w = MakeAnnotated(Tcl_DuplicateObj(e), NewTypeRefNoCache(et, variant));
++	Tcl_ListObjReplace(NULL, v, i, 1, 1, &w);
++    }
++}
++
+ static Tcl_Size
+ AnnotListLength(Tcl_Obj *aPtr)
+ {
+@@ -323,6 +419,7 @@
+     Tcl_Obj *v;
+ 
+     if (AnnotListView(interp, aPtr, &v)) {
++	AnnotWrapElems(aPtr, v, index, index);
+ 	return Tcl_ListObjIndex(interp, v, index, elemPtr);
+     }
+     *elemPtr = (index == 0) ? v : NULL;
+@@ -336,6 +433,7 @@
+     Tcl_Obj *v;
+ 
+     if (AnnotListView(interp, aPtr, &v)) {
++	AnnotWrapElems(aPtr, v, 0, TCL_SIZE_MAX);
+ 	return Tcl_ListObjGetElements(interp, v, objcPtr, objvPtr);
+     }
+     /* Un seul élément : ptr1 de la représentation est justement un Tcl_Obj*
+@@ -626,6 +724,35 @@
+ 	    return TCL_OK;
+ 	}
+     }
++    /* Val.i : le type somme Val, variante i (comme {Val}{i}). */
++    {
++	const char *dot = (const char *) memchr(text, '.', len);
++
++	if (interp != NULL && dot != NULL && dot > text && dot + 1 < text + len) {
++	    Tcl_Obj *saved = Tcl_GetObjResult(interp);
++	    TclType *sum;
++
++	    Tcl_IncrRefCount(saved);
++	    sum = TclTypeParse(interp, text, dot - text);
++	    Tcl_SetObjResult(interp, saved);	/* l'échec éventuel n'est pas une erreur */
++	    Tcl_DecrRefCount(saved);
++
++	    if (sum != NULL && sum->kind == TCLT_SUM) {
++		char *vname = (char *) Tcl_Alloc(len - (dot - text));
++
++		memcpy(vname, dot + 1, len - (dot - text) - 1);
++		vname[len - (dot - text) - 1] = '\0';
++		idx = TclTypeFieldIndex(sum, vname);
++		Tcl_Free(vname);
++		if (idx >= 0 && sum->fields[idx].type != NULL) {
++		    *statusPtr = TCLA_RAW;
++		    *tpPtr = sum;
++		    *variantPtr = (int) idx;
++		    return TCL_OK;
++		}
++	    }
++	}
++    }
+     tp = TclTypeParse(interp, text, len);
+     if (tp == NULL) {
+ 	return TCL_ERROR;
+--- a/generic/tclTypedVar.c
++++ b/generic/tclTypedVar.c
+@@ -193,12 +193,12 @@
+     TclType *at;
+     Tcl_Obj *content, *copy;
+ 
+-    if (TclAnnotResolve(interp, arg, NULL, &status, &at, &variant, &content)
++    if (TclAnnotResolve(interp, arg, tp, &status, &at, &variant, &content)
+ 	    != TCL_OK) {
+ 	return NULL;
+     }
+     if (status == TCLA_RAW
+-	    && TclTypeValidate(interp, at, content, -1, NULL) != TCL_OK) {
++	    && TclTypeValidate(interp, at, content, variant, NULL) != TCL_OK) {
+ 	return NULL;
+     }
+     if ((status == TCLA_TYPED || status == TCLA_RAW) && at != tp
+@@ -237,7 +237,7 @@
+     int status, variant, rc = TCL_ERROR;
+ 
+     for (i = 0; i < n; i++) {
+-	if (TclAnnotResolve(interp, a[i], NULL, &status, &at, &variant,
++	if (TclAnnotResolve(interp, a[i], tp->elem, &status, &at, &variant,
+ 		&content) != TCL_OK) {
+ 	    goto done;
+ 	}
+@@ -264,6 +264,14 @@
+ 	    if (c == NULL) {
+ 		goto done;
+ 	    }
++	    if (status == TCLA_RAW && at == tp->elem && variant >= 0
++		    && tp->elem->kind == TCLT_SUM) {
++		/* {i}5 dans une liste de sommes : la balise est conservée. */
++		Tcl_Obj *w = TclNewAnnotated(interp, tp->elem, variant, c);
++
++		TclDiscard(c);
++		c = w;
++	    }
+ 	    TclVecAdd(&vec, c);
+ 	}
+     }
+@@ -588,6 +596,9 @@
+ 	    baseObj = Tcl_NewStringObj(name, open - name);
+ 	}
+     }
++    if (forced < 0 && status == TCLA_RAW && tp->kind == TCLT_SUM && avar >= 0) {
++	forced = avar;			/* set {Val.s}x 7 */
++    }
+     if (baseObj == NULL) {
+ 	baseObj = Tcl_NewStringObj(name, TCL_AUTO_LENGTH);
+     }
+--- a/generic/tclTypePath.c
++++ b/generic/tclTypePath.c
+@@ -1099,8 +1099,17 @@
+ static Tcl_Obj *
+ WrapSlot(Tcl_Interp *interp, TclType *tp, Tcl_Obj *content)
+ {
+-    int variant = -1;
++    int variant = -1, ownVariant = -1;
++    TclType *ownType = NULL;
++    Tcl_Obj *inner = NULL;
+ 
++    /* Un élément déjà annoté de ce type (balise explicite {i}5) garde sa
++     * variante. */
++    if (tp->kind == TCLT_SUM
++	    && TclAnnotInfo(content, &inner, &ownType, &ownVariant, NULL) == 1
++	    && ownType == tp && ownVariant >= 0) {
++	return TclNewAnnotated(interp, tp, ownVariant, inner);
++    }
+     if (tp->kind == TCLT_SUM
+ 	    && TclTypeValidate(interp, tp, content, -1, &variant) != TCL_OK) {
+ 	return NULL;

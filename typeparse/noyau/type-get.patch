@@ -1,0 +1,56 @@
+--- a/generic/tclTypes.c
++++ b/generic/tclTypes.c
+@@ -1701,6 +1701,39 @@
+     return TCL_OK;
+ }
+ 
++/*
++ * "type get valeur" : le type d'une valeur (donc d'une variable : type get
++ * $L). Le résultat est le nom du type ({int}n -> int, {list<int>}L ->
++ * list<int>, {Complex}z -> Complex). Une valeur sans annotation n'a pas de
++ * type : le résultat est la chaîne vide ; une annotation brute {texte}
++ * rend son texte. Pour tester le type d'une variable par son nom, utiliser
++ * l'opérateur "is" de expr.
++ */
++
++static int
++TypeGetCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
++{
++    TclType *tp = NULL;
++    Tcl_Obj *raw = NULL;
++
++    if (objc != 3) {
++	Tcl_WrongNumArgs(interp, 2, objv, "value");
++	return TCL_ERROR;
++    }
++    switch (TclAnnotInfo(objv[2], NULL, &tp, NULL, &raw)) {
++    case 1:
++	Tcl_SetObjResult(interp, Tcl_NewStringObj(tp->name, TCL_AUTO_LENGTH));
++	break;
++    case 2:
++	Tcl_SetObjResult(interp, raw);
++	break;
++    default:
++	Tcl_ResetResult(interp);
++	break;
++    }
++    return TCL_OK;
++}
++
+ static int
+ TypeObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
+ 	Tcl_Obj *const objv[])
+@@ -1729,8 +1762,11 @@
+ 	}
+ 	return TypeConvertCmd(interp, d, objv[2], objv[3], objv[4]);
+     }
+-    ERR(interp, "SUBCMD", "bad subcommand \"%s\": must be def, alias or "
+-	    "convert", sub);
++    if (strcmp(sub, "get") == 0) {
++	return TypeGetCmd(interp, objc, objv);
++    }
++    ERR(interp, "SUBCMD", "bad subcommand \"%s\": must be def, alias, "
++	    "convert or get", sub);
+     return TCL_ERROR;
+ }
+ 

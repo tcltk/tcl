@@ -1,0 +1,144 @@
+--- a/generic/tclTypedVar.c	2026-10-17 10:05:08.918342522 +0200
++++ b/generic/tclTypedVar.c	2026-10-17 10:05:08.920275269 +0200
+@@ -568,6 +568,131 @@
+     return 1;
+ }
+ 
++/*
++ * CheckDynCounts --
++ *
++ *	Un champ liste dont le nombre d'éléments est une expression sur d'autres
++ *	champs (list($n).T) porte une contrainte entre champs : la valeur du
++ *	produit doit la respecter dès sa construction, sans attendre l'encodage
++ *	binaire. L'expression est évaluée avec les valeurs des champs
++ *	qu'elle cite ($n...). Les affectations ultérieures champ par champ ne sont
++ *	pas contrôlées (un état intermédiaire est légitime) : file binary vérifie
++ *	à nouveau à l'écriture.
++ *
++ *	A list field whose element count is an expression over other fields
++ *	(list($n).T) carries a constraint between fields: the product value must
++ *	satisfy it as soon as it is built, without waiting for the binary
++ *	encoding. Later field-by-field assignments are not checked (an intermediate
++ *	state is legitimate); file binary checks again when writing.
++ */
++
++static int
++CheckDynCounts(Tcl_Interp *interp, TclType *tp, Tcl_Obj **slot)
++{
++    Tcl_Size i, j, k, len, nn;
++    Tcl_Obj *params, *lambda, *call[10], *refs[8];
++    Tcl_WideInt want;
++    const char *e, *q;
++    char buf[128];
++
++    for (i = 0; i < tp->nfields; i++) {
++	TclType *ft = tp->fields[i].type;
++	int ok = 1;
++
++	if (ft->kind != TCLT_LIST || ft->binDyn == NULL
++		|| ft->binDyn->kind != TCLDYN_EXPR || ft->binDyn->expr == NULL
++		|| slot[i] == NULL) {
++	    continue;
++	}
++
++	/* Les champs cités ($nom) : paramètres d'un apply, valeurs = champs. */
++	nn = 0;
++	params = Tcl_NewListObj(0, NULL);
++	Tcl_IncrRefCount(params);
++	for (e = ft->binDyn->expr; *e != '\0' && ok; e++) {
++	    Tcl_Size nl, fi;
++
++	    if (*e != '$') {
++		continue;
++	    }
++	    for (q = e + 1; *q != '\0' && (isalnum(UCHAR(*q)) || *q == '_'); q++) {
++		/* vide */
++	    }
++	    nl = q - e - 1;
++	    if (nl <= 0 || nl >= (Tcl_Size) sizeof(buf)) {
++		continue;
++	    }
++	    memcpy(buf, e + 1, nl);
++	    buf[nl] = '\0';
++	    e = q - 1;
++	    fi = TclTypeFieldIndex(tp, buf);
++	    if (fi < 0 || slot[fi] == NULL) {
++		ok = 0;			/* pas un champ de ce produit */
++		break;
++	    }
++	    for (k = 0; k < nn; k++) {
++		Tcl_Obj *nm;
++
++		Tcl_ListObjIndex(NULL, params, k, &nm);
++		if (strcmp(Tcl_GetString(nm), buf) == 0) {
++		    break;
++		}
++	    }
++	    if (k < nn) {
++		continue;
++	    }
++	    if (nn >= 8) {
++		ok = 0;
++		break;
++	    }
++	    Tcl_ListObjAppendElement(NULL, params, Tcl_NewStringObj(buf, nl));
++	    refs[nn++] = slot[fi];
++	}
++	if (!ok || nn == 0) {
++	    Tcl_DecrRefCount(params);
++	    continue;			/* non contrôlable ici */
++	}
++
++	lambda = Tcl_NewListObj(0, NULL);
++	Tcl_ListObjAppendElement(NULL, lambda, params);
++	Tcl_ListObjAppendElement(NULL, lambda,
++		Tcl_ObjPrintf("expr {%s}", ft->binDyn->expr));
++	Tcl_DecrRefCount(params);
++	call[0] = Tcl_NewStringObj("apply", -1);
++	call[1] = lambda;
++	for (j = 0; j < nn; j++) {
++	    /* valeur nue : sans l'annotation du champ */
++	    call[2 + j] = Tcl_NewStringObj(Tcl_GetString(refs[j]), -1);
++	}
++	len = 2 + nn;
++	for (j = 0; j < len; j++) {
++	    Tcl_IncrRefCount(call[j]);
++	}
++	k = Tcl_EvalObjv(interp, len, call, 0);
++	for (j = 0; j < len; j++) {
++	    Tcl_DecrRefCount(call[j]);
++	}
++	if (k != TCL_OK || Tcl_GetWideIntFromObj(NULL,
++		Tcl_GetObjResult(interp), &want) != TCL_OK) {
++	    Tcl_ResetResult(interp);	/* file binary jugera à l'écriture */
++	    continue;
++	}
++	Tcl_ResetResult(interp);
++	if (Tcl_ListObjLength(NULL, slot[i], &len) == TCL_OK
++		&& (Tcl_WideInt) len != want) {
++	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
++		    "field \"%s\" of %s holds %" TCL_SIZE_MODIFIER "d "
++		    "elements, but its size says %" TCL_LL_MODIFIER "d (%s)",
++		    Tcl_GetString(tp->fields[i].name), tp->name, len,
++		    (Tcl_WideInt) want, ft->binDyn->expr));
++	    Tcl_SetErrorCode(interp, "TCL", "TYPE", "FIELD", "SIZE",
++		    (char *) NULL);
++	    return TCL_ERROR;
++	}
++    }
++    return TCL_OK;
++}
++
+ static int
+ BuildProduct(Tcl_Interp *interp, TclType *tp, Tcl_Size n, Tcl_Obj *const a[],
+ 	Tcl_Obj **contentPtr)
+@@ -693,6 +818,9 @@
+ 	Tcl_SetErrorCode(interp, "TCL", "WRONGARGS", (char *) NULL);
+ 	goto done;
+     }
++    if (CheckDynCounts(interp, tp, slot) != TCL_OK) {
++	goto done;
++    }
+     *contentPtr = Tcl_NewListObj(nf, slot);
+     memset(slot, 0, nf * sizeof(Tcl_Obj *));	/* la liste en est propriétaire */
+     rc = TCL_OK;

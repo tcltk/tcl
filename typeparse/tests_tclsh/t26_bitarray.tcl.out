@@ -1,0 +1,28 @@
+bitarray(8,lsb0)
+lsb0 : 0 1 0 0 1 1 0 1
+msb0 : 1 0 1 1 0 0 1 0
+1
+b(1:4)=9 bitarray(4,lsb0) ; c(0:3)=11 bitarray(4,msb0)
+end : 1 0 2
+c apres c(0)=0 : 50
+c apres c(4:7)=15 : 63
+c apres c(0:1)=3 : 255
+r=5 0x8001  flags(2)=1  addr(0)=1 addr(15)=1
+r=133 0x8001
+L=1 2 15  L(2)=15 type bitarray(4,lsb0) bit L(2.3)=1
+1 value "256" does not fit in bitarray(8,lsb0) (8 bits)
+1 value "-1" does not fit in bitarray(8,lsb0) (8 bits)
+1 expected integer but got "abc"
+1 bit index "8" out of range for bitarray(8,lsb0)
+1 bit range "3:1" is empty or out of range
+1 value "4" does not fit in 2 bits
+1 value "2" does not fit in 1 bit
+1 type mismatch: expected bitarray(8,msb0) but got bitarray(8,lsb0) (use an explicit cast)
+1 in the instance bitarray(0,lsb0): bitarray needs a width between 1 and 1000000, not "0"
+1 in the instance bitarray(8,xx): bitarray order must be lsb0 (index 0 is the rightmost bit) or msb0 (index 0 is the leftmost bit), not "xx"
+8,4,8,8
+1 popcount needs a non-negative integer
+w=680564733841876926926749214863536422913 pop=2 w(129)=1 w(0:1)=1
+7
+m=255 bitarray(8,lsb0)
+1 value "510" does not fit in bitarray(8,lsb0) (8 bits)

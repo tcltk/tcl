@@ -1,0 +1,368 @@
+diff -u a/generic/tclTypePath.c b/generic/tclTypePath.c
+--- a/generic/tclTypePath.c	2026-10-15 17:52:47.479474156 +0200
++++ b/generic/tclTypePath.c	2026-10-15 17:52:47.482673494 +0200
+@@ -1237,6 +1237,162 @@
+     return TclNewAnnotated(interp, vt->elem, variant, val);
+ }
+ 
++/*
++ * type deref : remplace chaque lien var d'une valeur typée par la valeur
++ * actuelle de la variable visée. Tout ou rien : la valeur d'origine n'est
++ * jamais modifiée, et une variable manquante arrête tout avec un message
++ * qui nomme la case. On ne suit pas les liens que contient la valeur d'une
++ * variable visée (un second type deref le fait).
++ */
++static void
++DerefWhere(Tcl_DString *path, Tcl_Size keep, const char *sep, const char *name)
++{
++    Tcl_DStringSetLength(path, keep);
++    if (keep > 0) {
++	Tcl_DStringAppend(path, sep, 1);
++    }
++    Tcl_DStringAppend(path, name, TCL_AUTO_LENGTH);
++}
++
++static Tcl_Obj *
++DerefWalk(Tcl_Interp *interp, Tcl_Obj *a, Tcl_DString *path)
++{
++    Tcl_Obj *v, *newV = NULL, *res, *child, *r, *c;
++    TclType *tp, *rt;
++    int variant;
++    Tcl_Size n, i, keep = Tcl_DStringLength(path);
++    char num[32];
++
++    if (TclAnnotInfo(a, &v, &tp, &variant, NULL) != 1) {
++	PathErr(interp, "type deref needs a typed value%s%s", "", "");
++	return NULL;
++    }
++    if (!TclTypeHasLink(tp)) {
++	return TclNewAnnotated(interp, tp, variant, v);
++    }
++    if (tp->kind == TCLT_VAR) {
++	res = DerefSlot(interp, tp, v);
++	if (res == NULL) {
++	    /* ajoute la case au message de DerefSlot / TclVarRefGet */
++
++	    Tcl_Obj *msg = Tcl_GetObjResult(interp), *full;
++
++	    Tcl_IncrRefCount(msg);
++	    full = Tcl_ObjPrintf("type deref: %s%s%s", keep > 0 ? "at " : "",
++		    keep > 0 ? Tcl_DStringValue(path) : "",
++		    keep > 0 ? ": " : "");
++	    Tcl_AppendObjToObj(full, msg);
++	    Tcl_DecrRefCount(msg);
++	    Tcl_SetObjResult(interp, full);
++	    Tcl_SetErrorCode(interp, "TCL", "TYPE", "DEREF", (char *) NULL);
++	}
++	return res;
++    }
++    rt = TclTypeDerefType(interp, tp);
++    if (rt == NULL) {
++	return NULL;
++    }
++    newV = (tp->kind == TCLT_DICT) ? Tcl_NewDictObj() : Tcl_NewListObj(0, NULL);
++    switch (tp->kind) {
++    case TCLT_LIST:
++    case TCLT_PRODUCT: {
++	Tcl_Obj **elems;
++
++	if (Tcl_ListObjGetElements(interp, v, &n, &elems) != TCL_OK) {
++	    goto fail;
++	}
++	for (i = 0; i < n; i++) {
++	    TclType *slot;
++
++	    if (tp->kind == TCLT_PRODUCT) {
++		slot = tp->fields[i].type;
++		if (tp->fields[i].name != NULL) {
++		    snprintf(num, sizeof(num), "%.30s",
++			    Tcl_GetString(tp->fields[i].name));
++		} else {
++		    snprintf(num, sizeof(num), "%lld", (long long) i);
++		}
++	    } else {
++		slot = tp->elem;
++		snprintf(num, sizeof(num), "%lld", (long long) i);
++	    }
++	    DerefWhere(path, keep, ".", num);
++	    child = WrapSlot(interp, slot, elems[i]);
++	    if (child == NULL) {
++		goto fail;
++	    }
++	    r = DerefWalk(interp, child, path);
++	    TclDiscard(child);
++	    if (r == NULL) {
++		goto fail;
++	    }
++	    TclAnnotInfo(r, &c, NULL, NULL, NULL);
++	    Tcl_ListObjAppendElement(NULL, newV, c);
++	    TclDiscard(r);
++	}
++	break;
++    }
++    case TCLT_DICT: {
++	Tcl_DictSearch search;
++	Tcl_Obj *k, *val;
++	int done;
++
++	if (Tcl_DictObjFirst(interp, v, &search, &k, &val, &done) != TCL_OK) {
++	    goto fail;
++	}
++	for (; !done; Tcl_DictObjNext(&search, &k, &val, &done)) {
++	    DerefWhere(path, keep, ".", Tcl_GetString(k));
++	    child = WrapSlot(interp, tp->elem, val);
++	    if (child == NULL) {
++		Tcl_DictObjDone(&search);
++		goto fail;
++	    }
++	    r = DerefWalk(interp, child, path);
++	    TclDiscard(child);
++	    if (r == NULL) {
++		Tcl_DictObjDone(&search);
++		goto fail;
++	    }
++	    TclAnnotInfo(r, &c, NULL, NULL, NULL);
++	    Tcl_DictObjPut(NULL, newV, k, c);
++	    TclDiscard(r);
++	}
++	Tcl_DictObjDone(&search);
++	break;
++    }
++    default:
++	PathErr(interp, "type deref: can't follow links inside %s%s",
++		tp->name, "");
++	goto fail;
++    }
++    Tcl_DStringSetLength(path, keep);
++    res = TclNewAnnotated(interp, rt, variant, newV);
++    TclDiscard(newV);
++    return res;
++
++  fail:
++    Tcl_DStringSetLength(path, keep);
++    TclDiscard(newV);
++    return NULL;
++}
++
++int
++TclValueDeref(Tcl_Interp *interp, Tcl_Obj *value, Tcl_Obj **resultPtr)
++{
++    Tcl_DString path;
++    Tcl_Obj *r;
++
++    Tcl_DStringInit(&path);
++    r = DerefWalk(interp, value, &path);
++    Tcl_DStringFree(&path);
++    if (r == NULL) {
++	return TCL_ERROR;
++    }
++    Tcl_IncrRefCount(r);
++    *resultPtr = r;
++    return TCL_OK;
++}
++
+ /* Un lien ne se traverse (pas supplémentaire dans le chemin) que si sa case
+  * est typée : var.T avec T autre que string, ou var(typed). Un var brut se
+  * lit au bout d'un chemin mais ne se traverse pas. */
+diff -u a/generic/tclTypes.c b/generic/tclTypes.c
+--- a/generic/tclTypes.c	2026-10-15 17:52:47.457072927 +0200
++++ b/generic/tclTypes.c	2026-10-15 17:52:47.460164427 +0200
+@@ -1724,6 +1724,167 @@
+ }
+ 
+ /* --------------------------------------------------------------------
++ * type deref : le type d'une valeur dont les liens ont été suivis
++ * -------------------------------------------------------------------- */
++
++static int
++HasLinkG(const TclType *tp, const TclType **stack, int depth)
++{
++    Tcl_Size i;
++
++    if (tp == NULL) {
++	return 0;
++    }
++    if (tp->kind == TCLT_VAR) {
++	return 1;
++    }
++    for (i = 0; i < depth; i++) {
++	if (stack[i] == tp) {
++	    return 0;			/* type récursif : déjà en cours */
++	}
++    }
++    if (depth >= 63) {
++	return 0;
++    }
++    stack[depth] = tp;
++    switch (tp->kind) {
++    case TCLT_LIST:
++    case TCLT_DICT:
++	return HasLinkG(tp->elem, stack, depth + 1);
++    case TCLT_PRODUCT:
++    case TCLT_SUM:
++	for (i = 0; i < tp->nfields; i++) {
++	    if (HasLinkG(tp->fields[i].type, stack, depth + 1)) {
++		return 1;
++	    }
++	}
++	return 0;
++    default:
++	return 0;
++    }
++}
++
++int
++TclTypeHasLink(const TclType *tp)
++{
++    const TclType *stack[64];
++
++    return HasLinkG(tp, stack, 0);
++}
++
++static TclType *
++DerefTypeG(Tcl_Interp *interp, TypeData *d, TclType *tp, const TclType **stack,
++	int depth)
++{
++    Tcl_Size i;
++    TclType *e;
++
++    if (!TclTypeHasLink(tp)) {
++	return tp;
++    }
++    if (tp->kind == TCLT_VAR) {
++	return tp->elem;		/* var.T donne T (var seul : string) */
++    }
++    for (i = 0; i < depth; i++) {
++	if (stack[i] == tp) {
++	    ERR(interp, "DEREF", "type deref: the recursive type %s contains "
++		    "links", tp->name);
++	    return NULL;
++	}
++    }
++    stack[depth] = tp;
++    switch (tp->kind) {
++    case TCLT_LIST:
++	e = DerefTypeG(interp, d, tp->elem, stack, depth + 1);
++	if (e == NULL) {
++	    return NULL;
++	}
++	return (tp->arity >= 0) ? TclTypesMakeListN(d, e, tp->arity)
++		: TclTypesMakeList(d, e);
++    case TCLT_DICT: {
++	TclDictKey *keys = NULL;
++
++	e = DerefTypeG(interp, d, tp->elem, stack, depth + 1);
++	if (e == NULL) {
++	    return NULL;
++	}
++	if (tp->keyed) {
++	    keys = (TclDictKey *) Tcl_Alloc(tp->nkeys * sizeof(TclDictKey));
++	    for (i = 0; i < tp->nkeys; i++) {
++		keys[i] = tp->keys[i];
++		Tcl_IncrRefCount(keys[i].name);
++		if (keys[i].defval != NULL) {
++		    Tcl_IncrRefCount(keys[i].defval);
++		}
++		if (keys[i].defcmd != NULL) {
++		    Tcl_IncrRefCount(keys[i].defcmd);
++		}
++	    }
++	}
++	return TclTypesMakeDict(d, e, tp->keyed, keys, tp->nkeys);
++    }
++    case TCLT_PRODUCT: {
++	TclTypeField *f = (TclTypeField *) Tcl_Alloc(
++		tp->nfields * sizeof(TclTypeField));
++
++	for (i = 0; i < tp->nfields; i++) {
++	    f[i] = tp->fields[i];
++	    if (f[i].name != NULL) {
++		Tcl_IncrRefCount(f[i].name);
++	    }
++	    if (f[i].literal != NULL) {
++		Tcl_IncrRefCount(f[i].literal);
++	    }
++	    if (f[i].defval != NULL) {
++		Tcl_IncrRefCount(f[i].defval);
++	    }
++	    if (f[i].defcmd != NULL) {
++		Tcl_IncrRefCount(f[i].defcmd);
++	    }
++	    if (f[i].type != NULL) {
++		f[i].type = DerefTypeG(interp, d, f[i].type, stack, depth + 1);
++		if (f[i].type == NULL) {
++		    TclTypesFreeFields(f, tp->nfields);
++		    return NULL;
++		}
++	    }
++	}
++	return TclTypesFinish(interp, d, NULL, TCLT_PRODUCT, f, tp->nfields,
++		NULL);
++    }
++    default:
++	ERR(interp, "DEREF", "type deref: %s contains links inside a sum "
++		"type, which is not supported", tp->name);
++	return NULL;
++    }
++}
++
++TclType *
++TclTypeDerefType(Tcl_Interp *interp, TclType *tp)
++{
++    const TclType *stack[64];
++
++    return DerefTypeG(interp, GetData(interp), tp, stack, 0);
++}
++
++static int
++TypeDerefCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
++{
++    Tcl_Obj *res = NULL;
++
++    if (objc != 3) {
++	Tcl_WrongNumArgs(interp, 2, objv, "value");
++	return TCL_ERROR;
++    }
++    if (TclValueDeref(interp, objv[2], &res) != TCL_OK) {
++	return TCL_ERROR;
++    }
++    Tcl_SetObjResult(interp, res);
++    Tcl_DecrRefCount(res);
++    return TCL_OK;
++}
++
++/* --------------------------------------------------------------------
+  * La commande "type" : def, alias, convert
+  * -------------------------------------------------------------------- */
+ 
+@@ -2018,8 +2179,11 @@
+     if (strcmp(sub, "get") == 0) {
+ 	return TypeGetCmd(interp, objc, objv);
+     }
++    if (strcmp(sub, "deref") == 0) {
++	return TypeDerefCmd(interp, objc, objv);
++    }
+     ERR(interp, "SUBCMD", "bad subcommand \"%s\": must be def, alias, "
+-	    "convert or get", sub);
++	    "convert, deref or get", sub);
+     return TCL_ERROR;
+ }
+ 
+diff -u a/generic/tclTypes.h b/generic/tclTypes.h
+--- a/generic/tclTypes.h	2026-10-15 17:52:47.467643685 +0200
++++ b/generic/tclTypes.h	2026-10-15 17:52:47.470853089 +0200
+@@ -202,6 +202,14 @@
+ 	    Tcl_Obj *script, Tcl_Obj **resultPtr);
+ int	TclTypeIsPlainString(const TclType *tp);
+ int	TclTypeIsAny(const TclType *tp);
++/* type deref : TclTypeHasLink dit si un lien var se trouve dans tp ;
++ * TclTypeDerefType rend le type où chaque var.T est remplacé par T (NULL et
++ * message si impossible). TclValueDeref remplace chaque lien d'une valeur
++ * typée par la valeur actuelle de la variable visée. */
++int	TclTypeHasLink(const TclType *tp);
++TclType *TclTypeDerefType(Tcl_Interp *interp, TclType *tp);
++int	TclValueDeref(Tcl_Interp *interp, Tcl_Obj *value,
++	    Tcl_Obj **resultPtr);
+ /* bitarray(n, ordre) : entier de n bits dont on lit/écrit les bits.
+  * Les positions (lo, len) sont toujours celles du poids faible (0 = bit de
+  * droite) ; la conversion depuis l'indice msb0 est faite par l'appelant. */

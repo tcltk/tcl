@@ -1,0 +1,41 @@
+--- a/generic/tclProc.c
++++ b/generic/tclProc.c
+@@ -15,6 +15,7 @@
+ 
+ #include "tclInt.h"
+ #include "tclCompile.h"
++#include "tclTypes.h"
+ 
+ /*
+  * Variables that are part of the [apply] command implementation and which
+@@ -1423,6 +1424,9 @@
+ 	varPtr->flags = 0;
+ 	varPtr->value.objPtr = objPtr;
+ 	Tcl_IncrRefCount(objPtr);	/* Local var is a reference. */
++	if (TclIsAnnotated(objPtr)) {
++	    TclTypedVarAfterStore(varPtr);	/* l'argument typé reste typé */
++	}
+     }
+     for (; i < numArgs-1; i++, varPtr++, defPtr ? defPtr++ : defPtr) {
+ 	/*
+@@ -1456,6 +1460,9 @@
+ 
+ 	varPtr->value.objPtr = objPtr;
+ 	Tcl_IncrRefCount(objPtr);	/* Local var is a reference. */
++	if (TclIsAnnotated(objPtr)) {
++	    TclTypedVarAfterStore(varPtr);
++	}
+     } else if ((argCt < numArgs) && defPtr && defPtr->value.objPtr) {
+ 	Tcl_Obj *objPtr = defPtr->value.objPtr;
+ 
+--- a/generic/tclExecute.c
++++ b/generic/tclExecute.c
+@@ -3122,7 +3122,7 @@
+ 	while (TclIsVarLink(varPtr)) {
+ 	    varPtr = varPtr->value.linkPtr;
+ 	}
+-	if (!TclIsVarDirectWritable(varPtr)) {
++	if (!TclIsVarDirectWritable(varPtr) || TclIsAnnotated(valuePtr)) {
+ 	    storeFlags = TCL_LEAVE_ERR_MSG;
+ 	    part1Ptr = NULL;
+ 	    goto doStoreScalar;

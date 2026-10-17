@@ -1,0 +1,21 @@
+--- a/generic/tclTypeGeneric.c
++++ b/generic/tclTypeGeneric.c
+@@ -394,15 +394,15 @@
+ 	} else if (!pp->isType && !pp->isCmd && memchr(p, '$', b - p) == NULL) {
+ 	    /* Défaut littéral : on le valide tout de suite. */
+ 
+-	    const char *q = p;
++	    const char *qp = p;
+ 	    Tcl_Obj *val = NULL;
+ 	    int bad;
+ 
+-	    if (TclTypeParseWord(interp, NULL, &q, b, 1, &val) != TCL_OK) {
++	    if (TclTypeParseWord(interp, NULL, &qp, b, 1, &val) != TCL_OK) {
+ 		return TCL_ERROR;
+ 	    }
+ 	    Tcl_IncrRefCount(val);
+-	    bad = (SkipWs(q, b) != b)
++	    bad = (SkipWs(qp, b) != b)
+ 		    || TclTypeValidate(NULL, pp->type, val, -1, NULL) != TCL_OK;
+ 	    if (bad) {
+ 		ERR(interp, "PARAM", "the default \"%.*s\" of parameter \"%s\" "

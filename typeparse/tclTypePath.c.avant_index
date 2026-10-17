@@ -1,0 +1,1180 @@
+/*
+ * tclTypePath.c --
+ *
+ *	Accès aux champs des valeurs typées : $P(x), $poly(0:end.x),
+ *	set P(x) 5, set L(1,2) a b (spécification §10).
+ *
+ *	Le langage reprend celui de la page « A better way to do
+ *	indexation » :
+ *	  atom := ( alt ) | NOM | NOM:NOM       (NOM : mot nu ou 'cle')
+ *	  seq  := atom { . atom }               imbrication
+ *	  alt  := seq { , seq }                 collecte
+ *
+ *	Le type du CONTENEUR résout l'ambiguïté : produit -> nom de champ,
+ *	liste -> index (end, end-1, ...), dict -> clé, somme -> nom de
+ *	variante.
+ *
+ *	Limites de cette version : les résultats multiples sont aplatis
+ *	(pas de niveaux imbriqués) ; les étiquettes "..." ne sont pas
+ *	gérées ; l'écriture accepte des chaînes de noms simples et des
+ *	groupes séparés par des virgules, mais ni intervalles ni
+ *	parenthèses ; pas de cache en ligne du vecteur de positions (la
+ *	recherche d'un champ est linéaire).
+ */
+
+#include "tclTypes.h"
+#include <stdlib.h>
+
+#ifndef TCL_CONTINUE
+#define TCL_CONTINUE 4
+#endif
+
+/* --------------------------------------------------------------------
+ * Arbre du chemin
+ * -------------------------------------------------------------------- */
+
+typedef enum { PN_NAME, PN_RANGE, PN_SEQ, PN_ALT } PNKind;
+
+typedef struct PNode {
+    PNKind kind;
+    char *a, *b;		/* nom ; b : fin d'un intervalle */
+    int quoted;
+    struct PNode **kid;
+    Tcl_Size n, cap;
+} PNode;
+
+typedef struct PP {
+    Tcl_Interp *interp;
+    const char *s;
+} PP;
+
+static PNode *
+PNew(PNKind kind)
+{
+    PNode *nd = (PNode *) Tcl_Alloc(sizeof(PNode));
+
+    memset(nd, 0, sizeof(PNode));
+    nd->kind = kind;
+    return nd;
+}
+
+static void
+PFree(PNode *nd)
+{
+    Tcl_Size i;
+
+    if (nd == NULL) {
+	return;
+    }
+    for (i = 0; i < nd->n; i++) {
+	PFree(nd->kid[i]);
+    }
+    if (nd->kid != NULL) {
+	Tcl_Free(nd->kid);
+    }
+    if (nd->a != NULL) {
+	Tcl_Free(nd->a);
+    }
+    if (nd->b != NULL) {
+	Tcl_Free(nd->b);
+    }
+    Tcl_Free(nd);
+}
+
+static void
+PAdd(PNode *nd, PNode *kid)
+{
+    if (nd->n == nd->cap) {
+	nd->cap = nd->cap ? 2 * nd->cap : 4;
+	nd->kid = (PNode **) Tcl_Realloc(nd->kid, nd->cap * sizeof(PNode *));
+    }
+    nd->kid[nd->n++] = kid;
+}
+
+static void
+PErr(PP *pp, const char *msg)
+{
+    Tcl_SetObjResult(pp->interp, Tcl_ObjPrintf("bad path: %s", msg));
+    Tcl_SetErrorCode(pp->interp, "TCL", "TYPE", "PATH", (char *) NULL);
+}
+
+static void
+SkipWs(PP *pp)
+{
+    while (*pp->s == ' ' || *pp->s == '\t') {
+	pp->s++;
+    }
+}
+
+static char *
+ReadName(PP *pp, int *quoted)
+{
+    const char *start;
+    char *r;
+    size_t len;
+
+    SkipWs(pp);
+    *quoted = 0;
+    if (*pp->s == '\'') {
+	start = ++pp->s;
+	while (*pp->s != '\0' && *pp->s != '\'') {
+	    pp->s++;
+	}
+	if (*pp->s == '\0') {
+	    PErr(pp, "unterminated quote");
+	    return NULL;
+	}
+	*quoted = 1;
+	len = pp->s - start;
+	pp->s++;
+    } else {
+	start = pp->s;
+	while (*pp->s != '\0' && strchr(".,:() \t'\"", *pp->s) == NULL) {
+	    pp->s++;
+	}
+	len = pp->s - start;
+	if (len == 0) {
+	    PErr(pp, "name expected");
+	    return NULL;
+	}
+    }
+    r = (char *) Tcl_Alloc(len + 1);
+    memcpy(r, start, len);
+    r[len] = '\0';
+    return r;
+}
+
+static PNode *ParseAlt(PP *pp);
+
+static PNode *
+ParseAtom(PP *pp)
+{
+    PNode *nd;
+    int q;
+
+    SkipWs(pp);
+    if (*pp->s == '(') {
+	pp->s++;
+	nd = ParseAlt(pp);
+	if (nd == NULL) {
+	    return NULL;
+	}
+	SkipWs(pp);
+	if (*pp->s != ')') {
+	    PErr(pp, "missing ')'");
+	    PFree(nd);
+	    return NULL;
+	}
+	pp->s++;
+	return nd;
+    }
+    nd = PNew(PN_NAME);
+    nd->a = ReadName(pp, &nd->quoted);
+    if (nd->a == NULL) {
+	PFree(nd);
+	return NULL;
+    }
+    SkipWs(pp);
+    if (*pp->s == ':') {
+	pp->s++;
+	nd->kind = PN_RANGE;
+	nd->b = ReadName(pp, &q);
+	if (nd->b == NULL) {
+	    PFree(nd);
+	    return NULL;
+	}
+    }
+    return nd;
+}
+
+static PNode *
+ParseSeq(PP *pp)
+{
+    PNode *first = ParseAtom(pp), *seq, *next;
+
+    if (first == NULL) {
+	return NULL;
+    }
+    SkipWs(pp);
+    if (*pp->s != '.') {
+	return first;
+    }
+    seq = PNew(PN_SEQ);
+    PAdd(seq, first);
+    while (*pp->s == '.') {
+	pp->s++;
+	next = ParseAtom(pp);
+	if (next == NULL) {
+	    PFree(seq);
+	    return NULL;
+	}
+	PAdd(seq, next);
+	SkipWs(pp);
+    }
+    return seq;
+}
+
+static PNode *
+ParseAlt(PP *pp)
+{
+    PNode *first = ParseSeq(pp), *alt, *next;
+
+    if (first == NULL) {
+	return NULL;
+    }
+    SkipWs(pp);
+    if (*pp->s != ',') {
+	return first;
+    }
+    alt = PNew(PN_ALT);
+    PAdd(alt, first);
+    while (*pp->s == ',') {
+	pp->s++;
+	next = ParseSeq(pp);
+	if (next == NULL) {
+	    PFree(alt);
+	    return NULL;
+	}
+	PAdd(alt, next);
+	SkipWs(pp);
+    }
+    return alt;
+}
+
+static PNode *
+ParsePath(Tcl_Interp *interp, const char *path)
+{
+    PP pp;
+    PNode *root;
+
+    pp.interp = interp;
+    pp.s = path;
+    root = ParseAlt(&pp);
+    if (root == NULL) {
+	return NULL;
+    }
+    SkipWs(&pp);
+    if (*pp.s != '\0') {
+	PErr(&pp, "unexpected text after path");
+	PFree(root);
+	return NULL;
+    }
+    return root;
+}
+
+/* --------------------------------------------------------------------
+ * Un pas dans une valeur typée
+ * -------------------------------------------------------------------- */
+
+static void
+PathErr(Tcl_Interp *interp, const char *fmt, const char *a, const char *b)
+{
+    Tcl_SetObjResult(interp, Tcl_ObjPrintf(fmt, a, b));
+    Tcl_SetErrorCode(interp, "TCL", "TYPE", "PATH", (char *) NULL);
+}
+
+/* Enveloppe le contenu d'une case dans son type (somme : variante déduite
+ * par revalidation, la balise d'un élément imbriqué n'est pas conservée). */
+static Tcl_Obj *
+WrapSlot(Tcl_Interp *interp, TclType *tp, Tcl_Obj *content)
+{
+    int variant = -1;
+
+    if (tp->kind == TCLT_SUM
+	    && TclTypeValidate(interp, tp, content, -1, &variant) != TCL_OK) {
+	return NULL;
+    }
+    return TclNewAnnotated(interp, tp, variant, content);
+}
+
+static int
+IsIntegerName(const char *s)
+{
+    char *end;
+
+    if (*s == '\0') {
+	return 0;
+    }
+    (void) strtol(s, &end, 10);
+    return *end == '\0';
+}
+
+/* Index de liste ou de produit (entier, end, end-N). */
+static int
+ListIndex(Tcl_Interp *interp, const char *name, Tcl_Size n, Tcl_Size *idxPtr)
+{
+    Tcl_Obj *nameObj = Tcl_NewStringObj(name, TCL_AUTO_LENGTH);
+    int rc = TclGetIntForIndexM(interp, nameObj, n - 1, idxPtr);
+
+    TclDiscard(nameObj);
+    return rc;
+}
+
+/* --------------------------------------------------------------------
+ * Liens var : une case de type var.T contient le NOM d'une variable. La
+ * lecture traverse le lien (la variable est lue à chaque fois : la valeur
+ * n'est jamais copiée dans le conteneur) ; l'écriture modifie la variable
+ * et laisse le conteneur inchangé.
+ * -------------------------------------------------------------------- */
+
+/* Valeur courante de la variable visée, annotée de son type (celui de la
+ * variable si elle est typée, sinon T après validation). Objet neuf. */
+static Tcl_Obj *
+DerefSlot(Tcl_Interp *interp, TclType *vt, Tcl_Obj *name)
+{
+    Tcl_Obj *val, *content;
+    TclType *tp;
+    int variant = -1;
+
+    if (TclVarRefGet(interp, Tcl_GetString(name), &val) != TCL_OK) {
+	return NULL;
+    }
+    if (TclAnnotInfo(val, &content, &tp, &variant, NULL) == 1) {
+	if (!TclTypeIncludes(tp, vt->elem)) {
+	    char msg[300];
+
+	    snprintf(msg, sizeof(msg), "variable \"%s\" holds a %s, which is "
+		    "not included in %s", Tcl_GetString(name), tp->name,
+		    vt->elem->name);
+	    PathErr(interp, "%s%s", msg, "");
+	    return NULL;
+	}
+	return TclNewAnnotated(interp, tp, variant, content);
+    }
+    if (TclTypeValidate(interp, vt->elem, val, -1, &variant) != TCL_OK) {
+	return NULL;
+    }
+    return TclNewAnnotated(interp, vt->elem, variant, val);
+}
+
+/* Un lien ne se traverse (pas supplémentaire dans le chemin) que si sa case
+ * est typée : var.T avec T autre que string, ou var(typed). Un var brut se
+ * lit au bout d'un chemin mais ne se traverse pas. */
+static int
+LinkTraversable(Tcl_Interp *interp, TclType *vt, const char *name)
+{
+    TclType *s = TclTypeParse(interp, "string", 6);
+
+    if (vt->varTyped || vt->elem != s) {
+	return 1;
+    }
+    PathErr(interp, "can't go through the untyped link %s with \"%s\": "
+	    "declare var.T or var(typed)", vt->name, name);
+    return 0;
+}
+
+/* Affectations de variables différées : l'écriture par chemin est « tout
+ * ou rien » pour le conteneur, puis on applique les liens. */
+typedef struct PendingWrites {
+    TclObjVec names, values;
+} PendingWrites;
+
+static int
+QueueWrite(PendingWrites *pw, Tcl_Obj *name, Tcl_Obj *value)
+{
+    TclVecAdd(&pw->names, name);
+    TclVecAdd(&pw->values, value);
+    return TCL_OK;
+}
+
+static Tcl_Obj *
+Step(Tcl_Interp *interp, Tcl_Obj *a, const char *name, int quoted)
+{
+    Tcl_Obj *v, *elem = NULL, *keyObj;
+    TclType *tp;
+    int variant;
+    Tcl_Size idx, n;
+
+    if (TclAnnotInfo(a, &v, &tp, &variant, NULL) != 1) {
+	PathErr(interp, "can't index an untyped value with \"%s\"%s", name, "");
+	return NULL;
+    }
+    if (tp->kind == TCLT_VAR) {
+	/* le lien est transparent : on indexe la valeur de la variable */
+
+	Tcl_Obj *target, *r;
+
+	if (!LinkTraversable(interp, tp, name)) {
+	    return NULL;
+	}
+	target = DerefSlot(interp, tp, v);
+	if (target == NULL) {
+	    return NULL;
+	}
+	r = Step(interp, target, name, quoted);
+	TclDiscard(target);
+	return r;
+    }
+    switch (tp->kind) {
+    case TCLT_PRODUCT:
+	idx = TclTypeFieldIndex(tp, name);
+	if (idx < 0 && !quoted && IsIntegerName(name)) {
+	    idx = atol(name);
+	}
+	if (idx < 0 || idx >= tp->nfields) {
+	    PathErr(interp, "%s has no field \"%s\"", tp->name, name);
+	    return NULL;
+	}
+	if (Tcl_ListObjIndex(interp, v, idx, &elem) != TCL_OK) {
+	    return NULL;
+	}
+	return WrapSlot(interp, tp->fields[idx].type, elem);
+    case TCLT_LIST:
+	if (Tcl_ListObjLength(interp, v, &n) != TCL_OK
+		|| ListIndex(interp, name, n, &idx) != TCL_OK) {
+	    return NULL;
+	}
+	if (idx < 0 || idx >= n) {
+	    PathErr(interp, "list index \"%s\" out of range%s", name, "");
+	    return NULL;
+	}
+	if (Tcl_ListObjIndex(interp, v, idx, &elem) != TCL_OK) {
+	    return NULL;
+	}
+	return WrapSlot(interp, tp->elem, elem);
+    case TCLT_DICT:
+	keyObj = Tcl_NewStringObj(name, TCL_AUTO_LENGTH);
+	if (TclTypeValidate(interp, tp->key, keyObj, -1, NULL) != TCL_OK
+		|| Tcl_DictObjGet(interp, v, keyObj, &elem) != TCL_OK) {
+	    TclDiscard(keyObj);
+	    return NULL;
+	}
+	TclDiscard(keyObj);
+	if (elem == NULL) {
+	    PathErr(interp, "key \"%s\" not known in dictionary%s", name, "");
+	    return NULL;
+	}
+	return WrapSlot(interp, tp->elem, elem);
+    case TCLT_SUM: {
+	TclType *ft;
+	Tcl_Obj *res;
+
+	idx = TclTypeFieldIndex(tp, name);
+	if (idx < 0 || tp->fields[idx].type == NULL) {
+	    PathErr(interp, "%s has no variant \"%s\"", tp->name, name);
+	    return NULL;
+	}
+	ft = tp->fields[idx].type;
+	if (idx == variant) {
+	    return TclNewAnnotated(interp, ft, -1, v);
+	}
+	/* Autre variante : le nom demandé vaut cast explicite (§10). */
+	if (TclTypeCast(interp, a, ft, &res) != TCL_OK) {
+	    return NULL;
+	}
+	return res;
+    }
+    default:
+	PathErr(interp, "can't index a value of type %s with \"%s\"",
+		tp->name, name);
+	return NULL;
+    }
+}
+
+/* --------------------------------------------------------------------
+ * Évaluation de l'arbre (lecture)
+ * -------------------------------------------------------------------- */
+
+typedef struct Items {
+    TclObjVec vec;
+    int multi;
+} Items;
+
+static void
+ItemsInit(Items *it)
+{
+    memset(it, 0, sizeof(*it));
+}
+
+static void
+ItemsCopy(Items *dst, const Items *src)
+{
+    Tcl_Size i;
+
+    ItemsInit(dst);
+    dst->multi = src->multi;
+    for (i = 0; i < src->vec.n; i++) {
+	TclVecAdd(&dst->vec, src->vec.v[i]);
+    }
+}
+
+static int
+StepRange(Tcl_Interp *interp, Tcl_Obj *a, const char *from, const char *to,
+	Items *out)
+{
+    Tcl_Obj *v, *elem;
+    TclType *tp;
+    int variant;
+    Tcl_Size n, i, lo, hi;
+
+    if (TclAnnotInfo(a, &v, &tp, &variant, NULL) != 1
+	    || tp->kind != TCLT_LIST) {
+	PathErr(interp, "a range needs a list value, not \"%s\"%s",
+		(TclAnnotInfo(a, NULL, &tp, NULL, NULL) == 1) ? tp->name
+		: "an untyped value", "");
+	return TCL_ERROR;
+    }
+    if (Tcl_ListObjLength(interp, v, &n) != TCL_OK
+	    || ListIndex(interp, from, n, &lo) != TCL_OK
+	    || ListIndex(interp, to, n, &hi) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    if (lo < 0) {
+	lo = 0;
+    }
+    if (hi >= n) {
+	hi = n - 1;
+    }
+    for (i = lo; i <= hi; i++) {
+	Tcl_Obj *w;
+
+	Tcl_ListObjIndex(interp, v, i, &elem);
+	w = WrapSlot(interp, tp->elem, elem);
+	if (w == NULL) {
+	    return TCL_ERROR;
+	}
+	TclVecAdd(&out->vec, w);
+    }
+    return TCL_OK;
+}
+
+static int
+EvalNode(Tcl_Interp *interp, PNode *nd, Items *in, Items *out)
+{
+    Tcl_Size i, j;
+    Items cur, next, part;
+    Tcl_Obj *r;
+
+    switch (nd->kind) {
+    case PN_NAME:
+	for (i = 0; i < in->vec.n; i++) {
+	    r = Step(interp, in->vec.v[i], nd->a, nd->quoted);
+	    if (r == NULL) {
+		return TCL_ERROR;
+	    }
+	    TclVecAdd(&out->vec, r);
+	}
+	out->multi = in->multi;
+	return TCL_OK;
+    case PN_RANGE:
+	for (i = 0; i < in->vec.n; i++) {
+	    if (StepRange(interp, in->vec.v[i], nd->a, nd->b, out) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	}
+	out->multi = 1;
+	return TCL_OK;
+    case PN_SEQ:
+	ItemsCopy(&cur, in);
+	for (i = 0; i < nd->n; i++) {
+	    ItemsInit(&next);
+	    if (EvalNode(interp, nd->kid[i], &cur, &next) != TCL_OK) {
+		TclVecFree(&next.vec);
+		TclVecFree(&cur.vec);
+		return TCL_ERROR;
+	    }
+	    TclVecFree(&cur.vec);
+	    cur = next;
+	}
+	for (j = 0; j < cur.vec.n; j++) {
+	    TclVecAdd(&out->vec, cur.vec.v[j]);
+	}
+	out->multi = cur.multi;
+	TclVecFree(&cur.vec);
+	return TCL_OK;
+    case PN_ALT:
+	for (i = 0; i < nd->n; i++) {
+	    ItemsInit(&part);
+	    if (EvalNode(interp, nd->kid[i], in, &part) != TCL_OK) {
+		TclVecFree(&part.vec);
+		return TCL_ERROR;
+	    }
+	    for (j = 0; j < part.vec.n; j++) {
+		TclVecAdd(&out->vec, part.vec.v[j]);
+	    }
+	    TclVecFree(&part.vec);
+	}
+	out->multi = in->multi || nd->n > 1;
+	return TCL_OK;
+    }
+    return TCL_ERROR;
+}
+
+/*
+ * Lecture : *resultPtr reçoit une valeur typée, avec une référence de
+ * plus que l'appelant doit rendre (Tcl_DecrRefCount). Un résultat unique
+ * garde le type du champ ; une collecte donne une liste {list}T, T étant
+ * le type commun des éléments (§10).
+ */
+int
+TclTypePathRead(Tcl_Interp *interp, Tcl_Obj *containerPtr, const char *path,
+	Tcl_Obj **resultPtr)
+{
+    PNode *root = ParsePath(interp, path);
+    Items in, out;
+    int rc = TCL_ERROR;
+
+    if (root == NULL) {
+	return TCL_ERROR;
+    }
+    ItemsInit(&in);
+    ItemsInit(&out);
+    TclVecAdd(&in.vec, containerPtr);
+    if (EvalNode(interp, root, &in, &out) != TCL_OK) {
+	goto done;
+    }
+    /* Une case var en fin de chemin se lit à travers son lien. */
+    {
+	Tcl_Size k;
+
+	for (k = 0; k < out.vec.n; k++) {
+	    Tcl_Obj *content, *target;
+	    TclType *vt;
+
+	    if (TclAnnotInfo(out.vec.v[k], &content, &vt, NULL, NULL) == 1
+		    && vt->kind == TCLT_VAR) {
+		target = DerefSlot(interp, vt, content);
+		if (target == NULL) {
+		    goto done;
+		}
+		Tcl_IncrRefCount(target);
+		Tcl_DecrRefCount(out.vec.v[k]);
+		out.vec.v[k] = target;
+	    }
+	}
+    }
+    if (!out.multi && out.vec.n == 1) {
+	*resultPtr = out.vec.v[0];
+	Tcl_IncrRefCount(*resultPtr);
+    } else {
+	TclObjVec contents = {NULL, 0, 0};
+	TclType *common = NULL, *tp;
+	Tcl_Obj *content, *list, *a;
+	Tcl_Size i;
+
+	for (i = 0; i < out.vec.n; i++) {
+	    TclAnnotInfo(out.vec.v[i], &content, &tp, NULL, NULL);
+	    common = (common == NULL) ? tp : TclTypeCommon(interp, common, tp);
+	    TclVecAdd(&contents, content);
+	}
+	if (common == NULL) {
+	    TclType *s = TclTypeParse(interp, "string", 6);
+
+	    common = s;
+	}
+	list = Tcl_NewListObj(contents.n, contents.v);
+	TclVecFree(&contents);
+	a = TclNewAnnotated(interp, TclTypeListOf(interp, common), -1, list);
+	TclDiscard(list);
+	Tcl_IncrRefCount(a);
+	*resultPtr = a;
+    }
+    rc = TCL_OK;
+
+  done:
+    TclVecFree(&in.vec);
+    TclVecFree(&out.vec);
+    PFree(root);
+    return rc;
+}
+
+/* --------------------------------------------------------------------
+ * Écriture : reconstruit les objets le long du chemin (valeurs
+ * immuables), le reste est partagé.
+ * -------------------------------------------------------------------- */
+
+static int
+IsChain(const PNode *nd)
+{
+    Tcl_Size i;
+
+    if (nd->kind == PN_NAME) {
+	return 1;
+    }
+    if (nd->kind != PN_SEQ) {
+	return 0;
+    }
+    for (i = 0; i < nd->n; i++) {
+	if (nd->kid[i]->kind != PN_NAME) {
+	    return 0;
+	}
+    }
+    return 1;
+}
+
+static Tcl_Size
+ChainLen(const PNode *nd)
+{
+    return (nd->kind == PN_NAME) ? 1 : nd->n;
+}
+
+static const PNode *
+ChainAt(const PNode *nd, Tcl_Size i)
+{
+    return (nd->kind == PN_NAME) ? nd : nd->kid[i];
+}
+
+static Tcl_Obj *
+SetIn(Tcl_Interp *interp, Tcl_Obj *a, const PNode *chain, Tcl_Size i,
+	Tcl_Obj *val, PendingWrites *pw)
+{
+    const PNode *step = ChainAt(chain, i);
+    int last = (i == ChainLen(chain) - 1);
+    const char *name = step->a;
+    Tcl_Obj *v, *child = NULL, *childContent = NULL, *newV, *res = NULL;
+    Tcl_Obj **elems;
+    TclType *tp, *slotType = NULL;
+    int variant;
+    Tcl_Size idx = -1, n;
+
+    if (TclAnnotInfo(a, &v, &tp, &variant, NULL) != 1) {
+	PathErr(interp, "can't assign into an untyped value with \"%s\"%s",
+		name, "");
+	return NULL;
+    }
+
+    /* Un lien est transparent : le pas s'applique à la variable visée, que
+     * l'on réaffecte ensuite ; le conteneur ne change pas. */
+    if (tp->kind == TCLT_VAR) {
+	Tcl_Obj *target, *nc, *nct;
+
+	if (!LinkTraversable(interp, tp, name)) {
+	    return NULL;
+	}
+	target = DerefSlot(interp, tp, v);
+	if (target == NULL) {
+	    return NULL;
+	}
+	nc = SetIn(interp, target, chain, i, val, pw);
+	TclDiscard(target);
+	if (nc == NULL) {
+	    return NULL;
+	}
+	TclAnnotInfo(nc, &nct, NULL, NULL, NULL);
+	QueueWrite(pw, v, nct);
+	TclDiscard(nc);
+	return TclNewAnnotated(interp, tp, variant, v);
+    }
+
+    /* 1. Repérer la case. */
+    switch (tp->kind) {
+    case TCLT_PRODUCT:
+	idx = TclTypeFieldIndex(tp, name);
+	if (idx < 0 && !step->quoted && IsIntegerName(name)) {
+	    idx = atol(name);
+	}
+	if (idx < 0 || idx >= tp->nfields) {
+	    PathErr(interp, "%s has no field \"%s\"", tp->name, name);
+	    return NULL;
+	}
+	slotType = tp->fields[idx].type;
+	if (Tcl_ListObjGetElements(interp, v, &n, &elems) != TCL_OK) {
+	    return NULL;
+	}
+	break;
+    case TCLT_LIST:
+	if (Tcl_ListObjGetElements(interp, v, &n, &elems) != TCL_OK
+		|| ListIndex(interp, name, n, &idx) != TCL_OK) {
+	    return NULL;
+	}
+	if (idx < 0 || idx > n || (idx == n && !last)) {
+	    PathErr(interp, "list index \"%s\" out of range%s", name, "");
+	    return NULL;
+	}
+	/* Arité : ajouter à la fin d'une liste pleine, list(2), est refusé. */
+	if (idx == n && tp->arity >= 0 && n + 1 > tp->arity) {
+	    char num[32];
+
+	    snprintf(num, sizeof(num), "%" TCL_SIZE_MODIFIER "d", tp->arity);
+	    PathErr(interp, "%s cannot grow beyond %s elements", tp->name, num);
+	    return NULL;
+	}
+	slotType = tp->elem;
+	break;
+    case TCLT_DICT:
+	/* Clés : dict(x, y) n'admet que x et y. */
+	if (!TclTypeDictKeyAllowed(tp, name)) {
+	    PathErr(interp, "key \"%s\" is not allowed in %s", name, tp->name);
+	    return NULL;
+	}
+	slotType = tp->elem;
+	break;
+    case TCLT_SUM:
+	idx = TclTypeFieldIndex(tp, name);
+	if (idx < 0 || tp->fields[idx].type == NULL) {
+	    PathErr(interp, "%s has no variant \"%s\"", tp->name, name);
+	    return NULL;
+	}
+	slotType = tp->fields[idx].type;
+	break;
+    default:
+	PathErr(interp, "can't assign into a value of type %s with \"%s\"",
+		tp->name, name);
+	return NULL;
+    }
+
+    /* 2. Nouveau contenu de la case. */
+    if (last && slotType->kind == TCLT_VAR) {
+	/* Affectation à travers un lien : on écrit dans la variable. */
+
+	Tcl_Obj *old = NULL, *c;
+
+	if (tp->kind == TCLT_SUM) {
+	    if (idx != variant) {
+		PathErr(interp, "the current variant of %s is not \"%s\"",
+			tp->name, name);
+		return NULL;
+	    }
+	    old = v;
+	} else if (tp->kind == TCLT_DICT) {
+	    Tcl_Obj *key = Tcl_NewStringObj(name, TCL_AUTO_LENGTH);
+
+	    if (Tcl_DictObjGet(interp, v, key, &old) != TCL_OK) {
+		TclDiscard(key);
+		return NULL;
+	    }
+	    TclDiscard(key);
+	} else if (idx < n) {
+	    old = elems[idx];
+	}
+	if (old == NULL) {
+	    PathErr(interp, "no variable is linked at \"%s\"%s", name, "");
+	    return NULL;
+	}
+	c = TclTypedConform(interp, slotType->elem, val);
+	if (c == NULL) {
+	    return NULL;
+	}
+	QueueWrite(pw, old, c);
+	TclDiscard(c);
+	childContent = Tcl_DuplicateObj(old);
+    } else if (last) {
+	childContent = TclTypedConform(interp, slotType, val);
+	if (childContent == NULL) {
+	    return NULL;
+	}
+    } else {
+	Tcl_Obj *old = NULL, *nc;
+
+	if (tp->kind == TCLT_SUM) {
+	    if (idx != variant) {
+		PathErr(interp, "the current variant of %s is not \"%s\"",
+			tp->name, name);
+		return NULL;
+	    }
+	    old = v;
+	} else if (tp->kind == TCLT_DICT) {
+	    Tcl_Obj *key = Tcl_NewStringObj(name, TCL_AUTO_LENGTH);
+
+	    if (Tcl_DictObjGet(interp, v, key, &old) != TCL_OK || old == NULL) {
+		TclDiscard(key);
+		PathErr(interp, "key \"%s\" not known in dictionary%s", name,
+			"");
+		return NULL;
+	    }
+	    TclDiscard(key);
+	} else {
+	    old = elems[idx];
+	}
+	child = WrapSlot(interp, slotType, old);
+	if (child == NULL) {
+	    return NULL;
+	}
+	nc = SetIn(interp, child, chain, i + 1, val, pw);
+	TclDiscard(child);
+	if (nc == NULL) {
+	    return NULL;
+	}
+	TclAnnotInfo(nc, &childContent, NULL, NULL, NULL);
+	childContent = Tcl_DuplicateObj(childContent);
+	TclDiscard(nc);
+    }
+
+    /* 3. Reconstruire le conteneur. */
+    switch (tp->kind) {
+    case TCLT_SUM:
+	res = TclNewAnnotated(interp, tp, (int) idx, childContent);
+	break;
+    case TCLT_DICT: {
+	Tcl_Obj *key = Tcl_NewStringObj(name, TCL_AUTO_LENGTH);
+
+	newV = Tcl_DuplicateObj(v);
+	if (TclTypeValidate(interp, tp->key, key, -1, NULL) != TCL_OK
+		|| Tcl_DictObjPut(interp, newV, key, childContent)
+			!= TCL_OK) {
+	    TclDiscard(newV);
+	    TclDiscard(key);
+	    TclDiscard(childContent);
+	    return NULL;
+	}
+	res = TclNewAnnotated(interp, tp, variant, newV);
+	TclDiscard(newV);
+	break;
+    }
+    default:				/* produit, liste */
+	newV = Tcl_DuplicateObj(v);
+	if (Tcl_ListObjReplace(interp, newV, idx, (idx < n) ? 1 : 0, 1,
+		&childContent) != TCL_OK) {
+	    TclDiscard(newV);
+	    TclDiscard(childContent);
+	    return NULL;
+	}
+	res = TclNewAnnotated(interp, tp, variant, newV);
+	TclDiscard(newV);
+	break;
+    }
+    TclDiscard(childContent);
+    return res;
+}
+
+/*
+ * Écriture : une cible par valeur (set L(1,2) a b). Toutes les cibles
+ * s'appliquent sur le même conteneur, qui n'est remplacé qu'à la fin :
+ * tout ou rien. *newPtr porte une référence de plus que l'appelant rend.
+ */
+int
+TclTypePathWrite(Tcl_Interp *interp, Tcl_Obj *containerPtr, const char *path,
+	Tcl_Size nvals, Tcl_Obj *const vals[], Tcl_Obj **newPtr)
+{
+    PNode *root = ParsePath(interp, path);
+    Tcl_Size ntargets, i;
+    Tcl_Obj *cur, *next;
+    PendingWrites pw;
+    int rc = TCL_ERROR;
+
+    if (root == NULL) {
+	return TCL_ERROR;
+    }
+    memset(&pw, 0, sizeof(pw));
+    ntargets = (root->kind == PN_ALT) ? root->n : 1;
+    if (ntargets != nvals) {
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf("wrong # args: %"
+		TCL_SIZE_MODIFIER "d targets but %" TCL_SIZE_MODIFIER
+		"d values", ntargets, nvals));
+	Tcl_SetErrorCode(interp, "TCL", "WRONGARGS", (char *) NULL);
+	goto done;
+    }
+    cur = containerPtr;
+    Tcl_IncrRefCount(cur);
+    for (i = 0; i < ntargets; i++) {
+	const PNode *target = (root->kind == PN_ALT) ? root->kid[i] : root;
+
+	if (!IsChain(target)) {
+	    PathErr(interp, "only name chains can be assigned%s%s", "", "");
+	    Tcl_DecrRefCount(cur);
+	    goto done;
+	}
+	next = SetIn(interp, cur, target, 0, vals[i], &pw);
+	Tcl_DecrRefCount(cur);
+	if (next == NULL) {
+	    goto done;
+	}
+	cur = next;
+	Tcl_IncrRefCount(cur);
+    }
+    /* Le conteneur est prêt : on applique les affectations de variables. */
+
+    for (i = 0; i < pw.names.n; i++) {
+	if (TclVarRefSet(interp, Tcl_GetString(pw.names.v[i]),
+		pw.values.v[i]) != TCL_OK) {
+	    Tcl_DecrRefCount(cur);
+	    goto done;
+	}
+    }
+    *newPtr = cur;			/* référence conservée pour l'appelant */
+    rc = TCL_OK;
+
+  done:
+    TclVecFree(&pw.names);
+    TclVecFree(&pw.values);
+    PFree(root);
+    return rc;
+}
+
+/*
+ * Appelée en tête de Tcl_SetObjCmd quand objv[1] ressemble à nom(chemin) :
+ *	set P(x)          lecture ;  set P(x) v      écriture
+ *	set L(1,2) a b    écriture groupée
+ * Renvoie TCL_CONTINUE si la variable n'existe pas, n'est pas scalaire ou
+ * n'est pas typée : le comportement habituel de Tcl est alors conservé
+ * (set a(1,2) x reste l'idiome du tableau à deux dimensions).
+ */
+int
+TclSetPathCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
+{
+    const char *name = Tcl_GetString(objv[1]);
+    const char *open = strchr(name, '(');
+    size_t len = strlen(name);
+    Tcl_Obj *baseObj, *cur, *res = NULL, *newA = NULL;
+    char *path;
+    Var *varPtr, *arrayPtr = NULL;
+    int rc;
+
+    if (open == NULL || len == 0 || name[len - 1] != ')' || open == name) {
+	return TCL_CONTINUE;
+    }
+    baseObj = Tcl_NewStringObj(name, open - name);
+    Tcl_IncrRefCount(baseObj);
+    varPtr = TclObjLookupVarEx(interp, baseObj, NULL, 0, "set", 0, 0,
+	    &arrayPtr);
+    if (varPtr != NULL) {
+	while (TclIsVarLink(varPtr)) {
+	    varPtr = varPtr->value.linkPtr;
+	}
+    }
+    if (varPtr == NULL || arrayPtr != NULL || TclIsVarArray(varPtr)
+	    || !(varPtr->flags & VAR_TYPED) || varPtr->value.objPtr == NULL) {
+	Tcl_DecrRefCount(baseObj);
+	return TCL_CONTINUE;
+    }
+    cur = varPtr->value.objPtr;
+    path = (char *) Tcl_Alloc(len);
+    memcpy(path, open + 1, len - (open - name) - 2);
+    path[len - (open - name) - 2] = '\0';
+
+    if (objc == 2) {
+	rc = TclTypePathRead(interp, cur, path, &res);
+	if (rc == TCL_OK) {
+	    Tcl_SetObjResult(interp, res);
+	    Tcl_DecrRefCount(res);
+	}
+    } else {
+	rc = TclTypePathWrite(interp, cur, path, objc - 2, objv + 2, &newA);
+	if (rc == TCL_OK) {
+	    /* Le stockage repasse par le chemin d'écriture typé : même type,
+	     * donc le contrat est respecté. */
+	    res = Tcl_ObjSetVar2(interp, baseObj, NULL, newA,
+		    TCL_LEAVE_ERR_MSG);
+	    Tcl_DecrRefCount(newA);
+	    if (res == NULL) {
+		rc = TCL_ERROR;
+	    } else {
+		Tcl_SetObjResult(interp, res);
+	    }
+	}
+    }
+    Tcl_Free(path);
+    Tcl_DecrRefCount(baseObj);
+    return rc;
+}
+
+/*
+ * Lecture $x(chemin) quand x est une variable scalaire typée (spécification
+ * §10). À appeler là où Tcl lèverait "variable isn't array" :
+ *   - Tcl_ObjGetVar2 (chemin non compilé, TclSubstTokens),
+ *   - INST_LOAD_ARRAY1/4 et INST_LOAD_ARRAY_STK (bytecode), avant
+ *     TclLookupArrayElement.
+ *
+ * Renvoie TCL_CONTINUE si le cas ne s'applique pas (variable absente,
+ * tableau, non typée) : l'appelant poursuit son chemin habituel.
+ * TCL_OK : *resultPtr est la valeur, que le résultat de l'interpréteur
+ * garde en vie (les appelants qui la conservent doivent l'incrémenter,
+ * comme avec le résultat d'une commande). TCL_ERROR : message dans interp.
+ */
+int
+TclTypedVarGetElement(Tcl_Interp *interp, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr,
+	Tcl_Obj **resultPtr)
+{
+    Var *varPtr, *arrayPtr = NULL;
+    Tcl_Obj *res = NULL;
+    int rc;
+
+    varPtr = TclObjLookupVarEx(interp, part1Ptr, NULL, 0, "read", 0, 0,
+	    &arrayPtr);
+    if (varPtr == NULL) {
+	return TCL_CONTINUE;
+    }
+    while (TclIsVarLink(varPtr)) {
+	varPtr = varPtr->value.linkPtr;
+    }
+    if (arrayPtr != NULL || TclIsVarArray(varPtr)
+	    || !(varPtr->flags & VAR_TYPED) || varPtr->value.objPtr == NULL) {
+	return TCL_CONTINUE;
+    }
+    rc = TclTypePathRead(interp, varPtr->value.objPtr,
+	    Tcl_GetString(part2Ptr), &res);
+    if (rc != TCL_OK) {
+	return TCL_ERROR;
+    }
+    Tcl_SetObjResult(interp, res);	/* l'interpréteur garde une référence */
+    Tcl_DecrRefCount(res);
+    *resultPtr = res;
+    return TCL_OK;
+}
+
+/*
+ * Variantes qui travaillent sur un Var déjà résolu (exécuteur : variables
+ * locales compilées, résolues sans nom).
+ */
+int
+TclTypedVarGetElementVar(Tcl_Interp *interp, Var *varPtr, Tcl_Obj *part2Ptr,
+	Tcl_Obj **resultPtr)
+{
+    Tcl_Obj *res = NULL;
+
+    while (varPtr != NULL && TclIsVarLink(varPtr)) {
+	varPtr = varPtr->value.linkPtr;
+    }
+    if (varPtr == NULL || TclIsVarArray(varPtr)
+	    || !(varPtr->flags & VAR_TYPED) || varPtr->value.objPtr == NULL) {
+	return TCL_CONTINUE;
+    }
+    if (TclTypePathRead(interp, varPtr->value.objPtr,
+	    Tcl_GetString(part2Ptr), &res) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    Tcl_SetObjResult(interp, res);
+    Tcl_DecrRefCount(res);
+    *resultPtr = res;
+    return TCL_OK;
+}
+
+/*
+ * Écriture P(chemin) = valeur sur une variable scalaire typée. index >= 0
+ * pour une variable locale compilée (part1Ptr peut alors être NULL), -1
+ * sinon. Le résultat (la valeur écrite) est gardé en vie par le résultat de
+ * l'interpréteur.
+ */
+int
+TclTypedVarSetElementVar(Tcl_Interp *interp, Var *varPtr, Tcl_Obj *part1Ptr,
+	int index, Tcl_Obj *part2Ptr, Tcl_Obj *valuePtr, Tcl_Obj **resultPtr)
+{
+    Tcl_Obj *newA = NULL, *stored;
+
+    while (varPtr != NULL && TclIsVarLink(varPtr)) {
+	varPtr = varPtr->value.linkPtr;
+    }
+    if (varPtr == NULL || TclIsVarArray(varPtr)
+	    || !(varPtr->flags & VAR_TYPED) || varPtr->value.objPtr == NULL) {
+	return TCL_CONTINUE;
+    }
+    if (TclTypePathWrite(interp, varPtr->value.objPtr,
+	    Tcl_GetString(part2Ptr), 1, &valuePtr, &newA) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    stored = TclPtrSetVarIdx(interp, varPtr, NULL, part1Ptr, NULL, newA,
+	    TCL_LEAVE_ERR_MSG, index);
+    Tcl_DecrRefCount(newA);
+    if (stored == NULL) {
+	return TCL_ERROR;
+    }
+    Tcl_SetObjResult(interp, valuePtr);
+    *resultPtr = valuePtr;
+    return TCL_OK;
+}
+
+/* Variante par nom (chemins non compilés : Tcl_ObjSetVar2 etc.). */
+int
+TclTypedVarSetElement(Tcl_Interp *interp, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr,
+	Tcl_Obj *valuePtr, Tcl_Obj **resultPtr)
+{
+    Var *varPtr, *arrayPtr = NULL;
+
+    varPtr = TclObjLookupVarEx(interp, part1Ptr, NULL, 0, "set", 0, 0,
+	    &arrayPtr);
+    if (varPtr == NULL || arrayPtr != NULL) {
+	return TCL_CONTINUE;
+    }
+    return TclTypedVarSetElementVar(interp, varPtr, part1Ptr, -1, part2Ptr,
+	    valuePtr, resultPtr);
+}

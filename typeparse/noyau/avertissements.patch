@@ -1,0 +1,63 @@
+--- a/generic/tclTypes.c
++++ b/generic/tclTypes.c
+@@ -105,6 +105,7 @@
+     Tcl_HashEntry *hPtr;
+     Tcl_Size i;
+ 
++    (void) interp;
+     for (hPtr = Tcl_FirstHashEntry(&d->converts, &search); hPtr != NULL;
+ 	    hPtr = Tcl_NextHashEntry(&search)) {
+ 	Tcl_DecrRefCount((Tcl_Obj *) Tcl_GetHashValue(hPtr));
+@@ -1548,6 +1549,7 @@
+     Tcl_Obj *content, *raw;
+     int kind = TclAnnotInfo(obj, &content, NULL, NULL, &raw);
+ 
++    (void) interp;
+     Tcl_DStringInit(ds);
+     if (kind == 2) {
+ 	Tcl_DStringAppend(ds, "{", 1);
+--- a/generic/tclVarRef.c
++++ b/generic/tclVarRef.c
+@@ -128,7 +128,7 @@
+     *baseLen = len;
+     *idx = NULL;
+     *idxLen = 0;
+-    if (len > 2 && s[len - 1] == ')' && (lp = memchr(s, '(', len)) != NULL
++    if (len > 2 && s[len - 1] == ')' && (lp = (const char *)memchr(s, '(', len)) != NULL
+ 	    && lp > s) {
+ 	*baseLen = lp - s;
+ 	*idx = lp + 1;
+--- a/generic/tclAnnotObj.c
++++ b/generic/tclAnnotObj.c
+@@ -97,6 +97,7 @@
+ static int
+ SetTypeRefFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr)
+ {
++    (void)objPtr;
+     if (interp != NULL) {
+ 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+ 		"type references cannot be created from strings",
+@@ -118,6 +119,7 @@
+     Tcl_HashSearch search;
+     Tcl_HashEntry *hPtr;
+ 
++    (void) interp;
+     for (hPtr = Tcl_FirstHashEntry(&rd->refs, &search); hPtr != NULL;
+ 	    hPtr = Tcl_NextHashEntry(&search)) {
+ 	Tcl_DecrRefCount((Tcl_Obj *) Tcl_GetHashValue(hPtr));
+@@ -259,6 +261,7 @@
+ static int
+ SetAnnotatedFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr)
+ {
++    (void) objPtr;
+     if (interp != NULL) {
+ 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+ 		"annotated values can only be created by the parser or by "
+@@ -281,6 +284,7 @@
+     Tcl_Obj *content;
+     TclTypeKind kind;
+ 
++    (void) interp;
+     if (TclAnnotResolve(NULL, aPtr, NULL, &status, &tp, &variant,
+ 	    &content) != TCL_OK) {
+ 	*contentPtr = (Tcl_Obj *) aPtr->internalRep.twoPtrValue.ptr1;

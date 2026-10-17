@@ -1,0 +1,14 @@
+--- sans -dedupe : trois cibles / without: three targets
+030507070807080909
+--- avec -dedupe : x et y partagent la cible / x and y share the target
+03030507080909
+--- relecture identique / reading gives the same value
+{7 8} {7 8} {9 9}
+1
+--- une cible qui contient un lien n'est pas dédupliquée / a target holding a link is not deduped
+{10 {11 {}}} {10 {11 {}}}
+02040a060a080b000b00
+02040a060a060b00
+1
+--- -dedupe 0 explicite / explicit -dedupe 0
+030507070807080909

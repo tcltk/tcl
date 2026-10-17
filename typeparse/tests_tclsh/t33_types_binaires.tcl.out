@@ -1,0 +1,26 @@
+uint 2 be
+sint 4 le
+float 8 be
+bits 2 be
+uint 2 auto
+unknown type "be"
+int takes (u|s, bits ?, be|le?), for example int(u,16,be)
+type "string" has no binary representation (use int(u|s,n), double(n), string(enc,N|z), bitarray(n), a literal sum, list(N).T or a product of these)
+03
+n=3 int
+03
+x=3 double
+05
+05
+02
+p=2 int(u,16,be)
+1type mismatch: expected int(u,8) but got int (use an explicit cast)
+1type mismatch: expected int(u,8) but got int(s,32) (use an explicit cast)
+1type mismatch: expected int but got age (use an explicit cast)
+080
+1type mismatch: expected port but got int(u,16) (use an explicit cast)
+04
+1type mismatch: expected bitarray(16,msb0) but got bitarray(16,lsb0) (use an explicit cast)
+05
+bb=9 1 bitarray(16,lsb0,be) bits 2 be
+1 3 product pr {{a {uint 2 be} 0} {b none 0}}

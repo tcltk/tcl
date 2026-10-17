@@ -1,0 +1,107 @@
+--- a/generic/tclTypedVar.c	2026-10-15 12:13:21.096172462 +0200
++++ b/generic/tclTypedVar.c	2026-10-15 12:13:21.098412938 +0200
+@@ -498,6 +498,58 @@
+     return ok;
+ }
+ 
++/*
++ * {T.champ}valeur : un seul champ d'un produit, les autres prenant leur
++ * défaut -- même écriture que {Val.i}5 pour la variante d'une somme.
++ * Rend 1 (idx et *valuePtr remplis), 0 (ce n'est pas cette écriture) ou -1
++ * (T.champ désigne un champ inexistant de T : message dans l'interp).
++ */
++static int
++ProductFieldTag(Tcl_Interp *interp, TclType *tp, Tcl_Obj *arg,
++	Tcl_Obj **valuePtr, Tcl_Size *idxPtr)
++{
++    Tcl_Obj *content, *raw = NULL;
++    const char *text, *dot, *p;
++    Tcl_Size len, idx;
++    TclType *named;
++
++    if (TclAnnotInfo(arg, &content, NULL, NULL, &raw) != 2 || raw == NULL) {
++	return 0;
++    }
++    text = Tcl_GetStringFromObj(raw, &len);
++    dot = NULL;
++    for (p = text; p < text + len; p++) {
++	if (*p == '.') {
++	    dot = p;			/* dernier point : le nom du champ */
++	}
++    }
++    if (dot == NULL || dot == text || dot + 1 >= text + len) {
++	return 0;
++    }
++    if ((Tcl_Size) strlen(tp->name) == dot - text
++	    && memcmp(text, tp->name, dot - text) == 0) {
++	named = tp;
++    } else {
++	Tcl_InterpState st = Tcl_SaveInterpState(interp, TCL_OK);
++
++	named = TclTypeParse(interp, text, dot - text);
++	(void) Tcl_RestoreInterpState(interp, st);
++    }
++    if (named != tp) {
++	return 0;
++    }
++    idx = TclTypeFieldIndex(tp, dot + 1);
++    if (idx < 0) {
++	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
++		"unknown field \"%s\" in %s", dot + 1, tp->name));
++	Tcl_SetErrorCode(interp, "TCL", "TYPE", "FIELD", (char *) NULL);
++	return -1;
++    }
++    *idxPtr = idx;
++    *valuePtr = content;
++    return 1;
++}
++
+ static int
+ BuildProduct(Tcl_Interp *interp, TclType *tp, Tcl_Size n, Tcl_Obj *const a[],
+ 	Tcl_Obj **contentPtr)
+@@ -506,6 +558,7 @@
+     Tcl_Obj **slot, *content;
+     TclType *at;
+     int status, variant, rc = TCL_ERROR, forceNameValue = 0;
++    Tcl_Obj *tagArgs[2] = {NULL, NULL};
+ 
+     slot = (Tcl_Obj **) Tcl_Alloc((nf ? nf : 1) * sizeof(Tcl_Obj *));
+     memset(slot, 0, (nf ? nf : 1) * sizeof(Tcl_Obj *));
+@@ -516,7 +569,26 @@
+ 	rc = TCL_OK;
+ 	goto done;
+     }
+-    if (n == nf && n >= 2 && n % 2 == 0) {
++    if (n == 1 && tp->kind == TCLT_PRODUCT) {
++	Tcl_Size fidx;
++	Tcl_Obj *fval;
++	int ft = ProductFieldTag(interp, tp, a[0], &fval, &fidx);
++
++	if (ft < 0) {
++	    goto done;
++	}
++	if (ft > 0) {
++	    /* {T.champ}valeur : lu comme "champ valeur", le reste par défaut. */
++	    tagArgs[0] = Tcl_NewStringObj(Tcl_GetString(tp->fields[fidx].name),
++		    TCL_AUTO_LENGTH);
++	    tagArgs[1] = fval;
++	    Tcl_IncrRefCount(tagArgs[0]);
++	    a = tagArgs;
++	    n = 2;
++	    forceNameValue = 1;
++	}
++    }
++    if (n == nf && n >= 2 && n % 2 == 0 && !forceNameValue) {
+ 	int pos = ProductTryPositional(interp, tp, n, a);
+ 	int nv = ProductTryNameValue(interp, tp, n, a);
+ 
+@@ -614,6 +686,9 @@
+ 	}
+     }
+     Tcl_Free(slot);
++    if (tagArgs[0] != NULL) {
++	Tcl_DecrRefCount(tagArgs[0]);
++    }
+     return rc;
+ }
+ 

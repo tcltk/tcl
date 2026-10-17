@@ -1,0 +1,32 @@
+--- a/win/Makefile.in	2026-10-13 09:24:24.815293279 +0200
++++ b/win/Makefile.in	2026-10-13 09:24:24.878592369 +0200
+@@ -376,6 +376,13 @@
+ 	tclStrToD.$(OBJEXT) \
+ 	tclStubInit.$(OBJEXT) \
+ 	tclThread.$(OBJEXT) \
++	tclTypes.$(OBJEXT) \
++	tclTypeParse.$(OBJEXT) \
++	tclTypeGeneric.$(OBJEXT) \
++	tclAnnotObj.$(OBJEXT) \
++	tclTypedVar.$(OBJEXT) \
++	tclTypePath.$(OBJEXT) \
++	tclVarRef.$(OBJEXT) \
+ 	tclThreadAlloc.$(OBJEXT) \
+ 	tclThreadJoin.$(OBJEXT) \
+ 	tclThreadStorage.$(OBJEXT) \
+--- a/win/makefile.vc	2026-10-13 09:24:24.815573143 +0200
++++ b/win/makefile.vc	2026-10-13 09:24:24.878821219 +0200
+@@ -325,6 +325,13 @@
+ 	$(TMP_DIR)\tclStrToD.obj \
+ 	$(TMP_DIR)\tclStubInit.obj \
+ 	$(TMP_DIR)\tclThread.obj \
++	$(TMP_DIR)\tclTypes.obj \
++	$(TMP_DIR)\tclTypeParse.obj \
++	$(TMP_DIR)\tclTypeGeneric.obj \
++	$(TMP_DIR)\tclAnnotObj.obj \
++	$(TMP_DIR)\tclTypedVar.obj \
++	$(TMP_DIR)\tclTypePath.obj \
++	$(TMP_DIR)\tclVarRef.obj \
+ 	$(TMP_DIR)\tclThreadAlloc.obj \
+ 	$(TMP_DIR)\tclThreadJoin.obj \
+ 	$(TMP_DIR)\tclThreadStorage.obj \

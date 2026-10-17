@@ -1,0 +1,11 @@
+{1 2} S(y).y 2
+0102
+2
+1: file binary: data truncated at offset 1 reading field d of pb (needs 1 bytes, got 0)
+x: 7 {1 2} 3 S(x).x
+070102
+y: 7 {1 2} 3 S(y).y
+070102
+1: file binary: tag zz of field s of R(zz) matches no variant of S(zz)
+1: file binary: field s of R(y) is a S(x).x, not a S(y)
+1: file binary sizeof: the size depends on the data (tagged)

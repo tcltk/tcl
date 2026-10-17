@@ -1,0 +1,416 @@
+--- a/generic/tclObj.c	2026-10-13 07:58:00.417661490 +0200
++++ b/generic/tclObj.c	2026-10-13 07:58:00.497663342 +0200
+@@ -16,6 +16,7 @@
+ 
+ #include "tclInt.h"
+ #include "tclTomMath.h"
++#include "tclTypes.h"
+ #include <math.h>
+ 
+ /*
+@@ -2018,6 +2019,15 @@
+ 	}
+ 	return TCL_ERROR;
+     }
++    if (TCL_ANNOT_P(objPtr)) {
++	Tcl_Obj *annotContent;
++
++	if (TclAnnotUnwrap(interp, objPtr, TCLWANT_BOOL, &annotContent)
++		!= TCL_OK) {
++	    return TCL_ERROR;
++	}
++	objPtr = annotContent;
++    }
+     do {
+ 	if (TclHasInternalRep(objPtr, &tclIntType) || TclHasInternalRep(objPtr, &tclBooleanType)) {
+ 	    result = (objPtr->internalRep.wideValue != 0);
+@@ -2441,6 +2451,7 @@
+     Tcl_Obj *objPtr,	/* The object from which to get a double. */
+     double *dblPtr)	/* Place to store resulting double. */
+ {
++    TCL_ANNOT_UNWRAP(interp, objPtr, TCLWANT_DOUBLE);
+     do {
+ 	if (TclHasInternalRep(objPtr, &tclDoubleType)) {
+ 	    if (isnan(objPtr->internalRep.doubleValue)) {
+@@ -2670,6 +2681,7 @@
+     Tcl_Obj *objPtr,	/* The object from which to get a long. */
+     long *longPtr)	/* Place to store resulting long. */
+ {
++    TCL_ANNOT_UNWRAP(interp, objPtr, TCLWANT_INT);
+     do {
+ #ifdef TCL_WIDE_INT_IS_LONG
+ 	if (TclHasInternalRep(objPtr, &tclIntType)) {
+@@ -2999,6 +3011,7 @@
+     Tcl_WideInt *wideIntPtr)
+ 				/* Place to store resulting long. */
+ {
++    TCL_ANNOT_UNWRAP(interp, objPtr, TCLWANT_INT);
+     do {
+ 	if (TclHasInternalRep(objPtr, &tclIntType)) {
+ 	    *wideIntPtr = objPtr->internalRep.wideValue;
+@@ -3464,6 +3477,10 @@
+     int copy,			/* Whether to copy the returned bignum value */
+     mp_int *bignumValue)	/* Returned bignum value. */
+ {
++    if (TCL_ANNOT_P(objPtr)) {
++	copy = 1;		/* le contenu V appartient à l'objet annoté */
++    }
++    TCL_ANNOT_UNWRAP(interp, objPtr, TCLWANT_INT);
+     do {
+ 	if (TclHasInternalRep(objPtr, &tclBignumType)) {
+ 	    if (copy || Tcl_IsShared(objPtr)) {
+@@ -3699,6 +3716,7 @@
+     void **clientDataPtr,
+     int *typePtr)
+ {
++    TCL_ANNOT_UNWRAP(interp, objPtr, TCLWANT_NUMBER);
+     do {
+ 	if (TclHasInternalRep(objPtr, &tclDoubleType)) {
+ 	    if (isnan(objPtr->internalRep.doubleValue)) {
+--- a/generic/tclStringObj.c	2026-10-13 07:58:00.419844529 +0200
++++ b/generic/tclStringObj.c	2026-10-13 07:58:00.499561521 +0200
+@@ -35,6 +35,7 @@
+ #include "tclInt.h"
+ #include "tclTomMath.h"
+ #include "tclStringRep.h"
++#include "tclTypes.h"
+ 
+ /*
+  * Prototypes for functions defined later in this file:
+@@ -411,6 +412,7 @@
+      * OK, need to work with the object as a string.
+      */
+ 
++    objPtr = TCL_ANNOT_CONTENT(objPtr);
+     SetStringFromAny(NULL, objPtr);
+     stringPtr = GET_STRING(objPtr);
+     numChars = stringPtr->numChars;
+@@ -560,6 +562,7 @@
+      * OK, need to work with the object as a string.
+      */
+ 
++    objPtr = TCL_ANNOT_CONTENT(objPtr);
+     SetStringFromAny(NULL, objPtr);
+     stringPtr = GET_STRING(objPtr);
+ 
+@@ -656,6 +659,7 @@
+ {
+     String *stringPtr;
+ 
++    objPtr = TCL_ANNOT_CONTENT(objPtr);
+     SetStringFromAny(NULL, objPtr);
+     stringPtr = GET_STRING(objPtr);
+ 
+@@ -685,6 +689,7 @@
+ {
+     String *stringPtr;
+ 
++    objPtr = TCL_ANNOT_CONTENT(objPtr);
+     SetStringFromAny(NULL, objPtr);
+     stringPtr = GET_STRING(objPtr);
+ 
+@@ -758,6 +763,7 @@
+      * OK, need to work with the object as a string.
+      */
+ 
++    objPtr = TCL_ANNOT_CONTENT(objPtr);
+     SetStringFromAny(NULL, objPtr);
+     stringPtr = GET_STRING(objPtr);
+ 
+@@ -4075,6 +4081,7 @@
+ 	return objPtr;
+     }
+ 
++    objPtr = TCL_ANNOT_CONTENT(objPtr);
+     SetStringFromAny(NULL, objPtr);
+     stringPtr = GET_STRING(objPtr);
+ 
+--- a/generic/tclBinary.c	2026-10-13 07:58:00.419989008 +0200
++++ b/generic/tclBinary.c	2026-10-13 07:58:00.501283265 +0200
+@@ -13,6 +13,7 @@
+ 
+ #include "tclInt.h"
+ #include "tclTomMath.h"
++#include "tclTypes.h"
+ 
+ #include <math.h>
+ 
+@@ -366,8 +367,10 @@
+ 				 * in the array here */
+ {
+     ByteArray *baPtr;
+-    const Tcl_ObjInternalRep *irPtr
+-	    = TclFetchInternalRep(objPtr, &properByteArrayType);
++    const Tcl_ObjInternalRep *irPtr;
++
++    objPtr = TCL_ANNOT_CONTENT(objPtr);
++    irPtr = TclFetchInternalRep(objPtr, &properByteArrayType);
+ 
+     if (irPtr == NULL) {
+ 	if (TCL_ERROR == SetByteArrayFromAny(interp, TCL_INDEX_NONE, objPtr)) {
+--- a/generic/tclDictObj.c	2026-10-13 07:58:00.489661489 +0200
++++ b/generic/tclDictObj.c	2026-10-13 07:58:00.502951755 +0200
+@@ -12,6 +12,7 @@
+ 
+ #include "tclInt.h"
+ #include "tclTomMath.h"
++#include "tclTypes.h"
+ 
+ /*
+  * Forward declaration.
+@@ -725,6 +726,35 @@
+     return TCL_ERROR;
+ }
+ 
++/*
++ * Annotated (typed) dictionaries. Dict commands used to convert the shared
++ * annotated object in place, which silently dropped its type. Readers now
++ * work on the content, and commands that write a dictionary back into a
++ * variable work on a private plain copy of it: the store then goes through
++ * the typed variable, which revalidates the result (and rolls back on error).
++ */
++
++static Tcl_Obj *
++DictCopyForWrite(
++    Tcl_Interp *interp,
++    Tcl_Obj *dictPtr)
++{
++    if (TCL_ANNOT_P(dictPtr)) {
++	Tcl_Obj *content;
++
++	if (TclAnnotUnwrap(interp, dictPtr, TCLWANT_DICT, &content)
++		!= TCL_OK) {
++	    return NULL;
++	}
++	return Tcl_DuplicateObj(content);
++    }
++    return Tcl_DuplicateObj(dictPtr);
++}
++
++#define DictNeedsCopy(dictPtr) \
++    (Tcl_IsShared(dictPtr) || TCL_ANNOT_P(dictPtr))
++
++
+ static Dict *
+ GetDictFromObj(
+     Tcl_Interp *interp,
+@@ -732,6 +762,15 @@
+ {
+     Dict *dict;
+ 
++    if (TCL_ANNOT_P(dictPtr)) {
++	Tcl_Obj *content;
++
++	if (TclAnnotUnwrap(interp, dictPtr, TCLWANT_DICT, &content)
++		!= TCL_OK) {
++	    return NULL;
++	}
++	dictPtr = content;
++    }
+     DictGetInternalRep(dictPtr, dict);
+     if (dict == NULL) {
+ 	if (SetDictFromAny(interp, dictPtr) != TCL_OK) {
+@@ -785,6 +824,15 @@
+     Dict *dict, *newDict;
+     Tcl_Size i;
+ 
++    if (TCL_ANNOT_P(dictPtr)) {
++	Tcl_Obj *content;
++
++	if (TclAnnotUnwrap(interp, dictPtr, TCLWANT_DICT, &content)
++		!= TCL_OK) {
++	    return NULL;
++	}
++	dictPtr = content;
++    }
+     DictGetInternalRep(dictPtr, dict);
+     if (dict == NULL) {
+ 	if (SetDictFromAny(interp, dictPtr) != TCL_OK) {
+@@ -1881,8 +1929,11 @@
+     if (GetDictFromObj(interp, dictPtr) == NULL) {
+ 	return TCL_ERROR;
+     }
+-    if (Tcl_IsShared(dictPtr)) {
+-	dictPtr = Tcl_DuplicateObj(dictPtr);
++    if (DictNeedsCopy(dictPtr)) {
++	dictPtr = DictCopyForWrite(interp, dictPtr);
++	if (dictPtr == NULL) {
++	    return TCL_ERROR;
++	}
+     }
+     TclInvalidateStringRep(dictPtr);
+     for (i=2 ; i<objc ; i+=2) {
+@@ -1929,8 +1980,11 @@
+     if (GetDictFromObj(interp, dictPtr) == NULL) {
+ 	return TCL_ERROR;
+     }
+-    if (Tcl_IsShared(dictPtr)) {
+-	dictPtr = Tcl_DuplicateObj(dictPtr);
++    if (DictNeedsCopy(dictPtr)) {
++	dictPtr = DictCopyForWrite(interp, dictPtr);
++	if (dictPtr == NULL) {
++	    return TCL_ERROR;
++	}
+     }
+     TclInvalidateStringRep(dictPtr);
+     for (i=2 ; i<objc ; i++) {
+@@ -2000,8 +2054,11 @@
+      * Normal behaviour: combining two (or more) dictionaries.
+      */
+ 
+-    if (Tcl_IsShared(targetObj)) {
+-	targetObj = Tcl_DuplicateObj(targetObj);
++    if (DictNeedsCopy(targetObj)) {
++	targetObj = DictCopyForWrite(interp, targetObj);
++	if (targetObj == NULL) {
++	    return TCL_ERROR;
++	}
+ 	allocatedDict = 1;
+     }
+     for (i=2 ; i<objc ; i++) {
+@@ -2243,6 +2300,15 @@
+     Tcl_Obj *result;
+     Dict    *dict;
+ 
++    if (TCL_ANNOT_P(dictPtr)) {
++	Tcl_Obj *content;
++
++	if (TclAnnotUnwrap(interp, dictPtr, TCLWANT_DICT, &content)
++		!= TCL_OK) {
++	    return NULL;
++	}
++	dictPtr = content;
++    }
+     if (!TclHasInternalRep(dictPtr, &tclDictType)
+ 	    && SetDictFromAny(interp, dictPtr) != TCL_OK) {
+ 	return NULL;
+@@ -2392,7 +2458,12 @@
+ 
+ 	return TCL_ERROR;
+     }
+-    if (Tcl_IsShared(dictPtr)) {
++    if (TCL_ANNOT_P(dictPtr)) {
++	dictPtr = DictCopyForWrite(interp, dictPtr);
++	if (dictPtr == NULL) {
++	    return TCL_ERROR;
++	}
++    } else if (Tcl_IsShared(dictPtr)) {
+ 	/*
+ 	 * A little internals surgery to avoid copying a string rep that will
+ 	 * soon be no good.
+@@ -2503,9 +2574,12 @@
+     if (dictPtr == NULL) {
+ 	allocatedDict = 1;
+ 	dictPtr = Tcl_NewDictObj();
+-    } else if (Tcl_IsShared(dictPtr)) {
++    } else if (DictNeedsCopy(dictPtr)) {
+ 	allocatedDict = 1;
+-	dictPtr = Tcl_DuplicateObj(dictPtr);
++	dictPtr = DictCopyForWrite(interp, dictPtr);
++	if (dictPtr == NULL) {
++	    return TCL_ERROR;
++	}
+     }
+ 
+     if (Tcl_DictObjGet(interp, dictPtr, objv[2], &valuePtr) != TCL_OK) {
+@@ -2590,9 +2664,12 @@
+     if (dictPtr == NULL) {
+ 	allocatedDict = 1;
+ 	dictPtr = Tcl_NewDictObj();
+-    } else if (Tcl_IsShared(dictPtr)) {
++    } else if (DictNeedsCopy(dictPtr)) {
+ 	allocatedDict = 1;
+-	dictPtr = Tcl_DuplicateObj(dictPtr);
++	dictPtr = DictCopyForWrite(interp, dictPtr);
++	if (dictPtr == NULL) {
++	    return TCL_ERROR;
++	}
+     }
+ 
+     if (Tcl_DictObjGet(interp, dictPtr, objv[2], &valuePtr) != TCL_OK) {
+@@ -3101,9 +3178,12 @@
+     if (dictPtr == NULL) {
+ 	allocatedDict = 1;
+ 	dictPtr = Tcl_NewDictObj();
+-    } else if (Tcl_IsShared(dictPtr)) {
++    } else if (DictNeedsCopy(dictPtr)) {
+ 	allocatedDict = 1;
+-	dictPtr = Tcl_DuplicateObj(dictPtr);
++	dictPtr = DictCopyForWrite(interp, dictPtr);
++	if (dictPtr == NULL) {
++	    return TCL_ERROR;
++	}
+     }
+ 
+     result = Tcl_DictObjPutKeyList(interp, dictPtr, objc-3, objv+2,
+@@ -3161,9 +3241,12 @@
+     if (dictPtr == NULL) {
+ 	allocatedDict = 1;
+ 	dictPtr = Tcl_NewDictObj();
+-    } else if (Tcl_IsShared(dictPtr)) {
++    } else if (DictNeedsCopy(dictPtr)) {
+ 	allocatedDict = 1;
+-	dictPtr = Tcl_DuplicateObj(dictPtr);
++	dictPtr = DictCopyForWrite(interp, dictPtr);
++	if (dictPtr == NULL) {
++	    return TCL_ERROR;
++	}
+     }
+ 
+     result = Tcl_DictObjRemoveKeyList(interp, dictPtr, objc-2, objv+2);
+@@ -3584,8 +3667,11 @@
+ 	return TCL_ERROR;
+     }
+ 
+-    if (Tcl_IsShared(dictPtr)) {
+-	dictPtr = Tcl_DuplicateObj(dictPtr);
++    if (DictNeedsCopy(dictPtr)) {
++	dictPtr = DictCopyForWrite(interp, dictPtr);
++	if (dictPtr == NULL) {
++	    return TCL_ERROR;
++	}
+     }
+ 
+     /*
+@@ -3884,8 +3970,11 @@
+ 	return TCL_ERROR;
+     }
+ 
+-    if (Tcl_IsShared(dictPtr)) {
+-	dictPtr = Tcl_DuplicateObj(dictPtr);
++    if (DictNeedsCopy(dictPtr)) {
++	dictPtr = DictCopyForWrite(interp, dictPtr);
++	if (dictPtr == NULL) {
++	    return TCL_ERROR;
++	}
+ 	allocdict = 1;
+     } else {
+ 	allocdict = 0;
+--- a/generic/tclExecute.c	2026-10-13 07:58:00.495520492 +0200
++++ b/generic/tclExecute.c	2026-10-13 07:58:00.504744678 +0200
+@@ -1738,6 +1738,25 @@
+ 	Tcl_Panic("%s called with shared object", "TclIncrObj");
+     }
+ 
++    /*
++     * An annotated value is incremented on a private copy of its content,
++     * and the result is revalidated against the type and put back, so the
++     * annotation survives (and an int-typed value never becomes a double).
++     */
++
++    if (TCL_ANNOT_P(valuePtr)) {
++	Tcl_Obj *workPtr = Tcl_DuplicateObj(TCL_ANNOT_CONTENT(valuePtr));
++	int code;
++
++	Tcl_IncrRefCount(workPtr);
++	code = TclIncrObj(interp, workPtr, incrPtr);
++	if (code == TCL_OK) {
++	    code = TclAnnotSetContent(interp, valuePtr, workPtr);
++	}
++	Tcl_DecrRefCount(workPtr);
++	return code;
++    }
++
+     if (GetNumberFromObj(NULL, valuePtr, &ptr1, &type1) != TCL_OK) {
+ 	/*
+ 	 * Produce error message (reparse?!)

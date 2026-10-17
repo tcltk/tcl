@@ -1,0 +1,22 @@
+liens   : ::A ::B ::C
+valeurs : 1 2 3  (list<int>)
+le lien suit B (20), l'instantane reste fige : 1 2 3
+nouvel instantane : 1 20 3
+1
+type deref: at 2: can't read "::C": no such variable
+refs inchange : ::A ::B ::C
+dict    : x 1 y 20  (dict<int>)
+imbrique: {1 20} {20 1}  (list<list<int>>)
+produit : 1 hello  (deref(lien))
+sans lien : 1 2  (list<int>)
+var brut : 1
+un niveau : ::A
+deux fois : 1
+1
+type deref: at 0: can't access "frame:1:local": the procedure call that owned this variable has returned
+1
+type deref needs a typed value
+1
+wrong # args: should be "type deref value"
+1
+bad subcommand "zz": must be def, alias, convert, deref, get or binary

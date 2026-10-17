@@ -1,0 +1,51 @@
+=== B. analyse avec des masques de bits ===
+type : hg(5)
+
+Articles
+  article 0 : alice, bob, carol      taille 3
+  article 1 : carol, dave            taille 2
+  article 2 : dave, erin             taille 2
+  article 3 : alice, bob             taille 2
+
+Chaque bit se lit directement : carol a-t-elle écrit l'article 0 ? 1
+
+Articles qui partagent des auteurs (intersection non vide)
+  0 et 1 : carol
+  0 et 3 : alice, bob
+  1 et 2 : dave
+
+Degré de chaque sommet (nombre d'articles)
+  alice  2
+  bob    2
+  carol  2
+  dave   2
+  erin   1
+
+Co-auteurs de carol (union de ses articles, sans elle)
+  alice, bob, dave
+
+Dual : les hyperarêtes sont les auteurs
+  alice  a écrit : art0, art3
+  bob    a écrit : art0, art3
+  carol  a écrit : art0, art1
+  dave   a écrit : art1, art2
+  erin   a écrit : art2
+
+Garanties du typage
+  1 value "0b100000" does not fit in bitarray(5,lsb0) (5 bits)
+  1 list(5)<string> needs exactly 5 elements but got 3
+
+=== A. données vivantes avec des liens ===
+pa = {Types et liens} {::alice ::bob ::carol}
+apres publication : alice=1 carol=2 dave=1
+carol vue par pa : Carol Dupont ; vue par pb : Carol Dupont
+instantané avant : 1 1 2
+instantané après : 2 2 3   (nombre d'articles de chacun)
+type : deref(papier)
+
+auteur supprimé : 1 type deref: at auteurs.1: can't read "::bob": no such variable
+variable non typée : 1 variable "::intrus" must be a typed variable (declared with set {type}name ...)
+
+=== A vers B ===
+pa -> 0111   pb -> 1100
+carol est dans les deux : intersection = carol

@@ -1,0 +1,459 @@
+diff -ruN -x '*.rej' -x 'tclTypes*' -x tclAnnotObj.c -x tclTypedVar.c -x tclTypePath.c -x tclVarRef.c -x tclTypeParse.c -x tclTypeGeneric.c tip759/tcl-9-0-expr-cmd/generic/tcl.h t759/generic/tcl.h
+--- a/generic/tcl.h	2026-10-10 07:45:32.000000000 +0200
++++ b/generic/tcl.h	2026-10-13 05:14:48.678566411 +0200
+@@ -1883,6 +1883,8 @@
+ #define TCL_TOKEN_CMD_IN_EXPR    80
+ #define TCL_TOKEN_OPERATOR	128
+ #define TCL_TOKEN_EXPAND_WORD	256
++#define TCL_TOKEN_ANNOT		512	/* type annotation {type}word: the text of
++				 * the braces; the rest of the word follows */
+ 
+ /*
+  * Parsing error types. On any parsing error, one of these values will be
+diff -ruN -x '*.rej' -x 'tclTypes*' -x tclAnnotObj.c -x tclTypedVar.c -x tclTypePath.c -x tclVarRef.c -x tclTypeParse.c -x tclTypeGeneric.c tip759/tcl-9-0-expr-cmd/generic/tclBasic.c t759/generic/tclBasic.c
+--- a/generic/tclBasic.c	2026-10-09 06:47:04.000000000 +0200
++++ b/generic/tclBasic.c	2026-10-13 05:14:48.679335036 +0200
+@@ -18,6 +18,7 @@
+  */
+ 
+ #include "tclInt.h"
++#include "tclTypes.h"
+ #include "tclOOInt.h"
+ #include "tclCompile.h"
+ #include "tclTomMath.h"
+@@ -1309,6 +1310,7 @@
+ 
+     TclInterpInit(interp);
+     TclSetupEnv(interp);
++    TclTypesInit(interp);
+ 
+     /*
+      * TIP #59: Make embedded configuration information available.
+diff -ruN -x '*.rej' -x 'tclTypes*' -x tclAnnotObj.c -x tclTypedVar.c -x tclTypePath.c -x tclVarRef.c -x tclTypeParse.c -x tclTypeGeneric.c tip759/tcl-9-0-expr-cmd/generic/tclCompCmdsSZ.c t759/generic/tclCompCmdsSZ.c
+--- a/generic/tclCompCmdsSZ.c	2026-08-20 07:47:58.000000000 +0200
++++ b/generic/tclCompCmdsSZ.c	2026-10-13 05:14:48.680303728 +0200
+@@ -16,6 +16,7 @@
+  */
+ 
+ #include "tclInt.h"
++#include "tclTypes.h"
+ #include "tclCompile.h"
+ #include "tclStringTrim.h"
+ 
+@@ -136,6 +137,9 @@
+     if ((numWords != 2) && (numWords != 3)) {
+ 	return TCL_ERROR;
+     }
++    if (TclHasAnnotatedWord(parsePtr)) {	/* set {type}x ... : at run time */
++	return TCL_ERROR;
++    }
+     isAssignment = (numWords == 3);
+ 
+     /*
+diff -ruN -x '*.rej' -x 'tclTypes*' -x tclAnnotObj.c -x tclTypedVar.c -x tclTypePath.c -x tclVarRef.c -x tclTypeParse.c -x tclTypeGeneric.c tip759/tcl-9-0-expr-cmd/generic/tclCompile.c t759/generic/tclCompile.c
+--- a/generic/tclCompile.c	2026-09-23 23:53:28.000000000 +0200
++++ b/generic/tclCompile.c	2026-10-13 05:14:48.680981790 +0200
+@@ -13,6 +13,7 @@
+  */
+ 
+ #include "tclInt.h"
++#include "tclTypes.h"
+ #include "tclCompile.h"
+ 
+ /*
+@@ -2453,6 +2454,27 @@
+     int depth = TclGetStackDepth(envPtr);
+ 
+     /*
++     * An annotated word, {type}word: call ::tcl::annotate with the type text
++     * and the value of the rest of the word (no new instruction needed).
++     */
++
++    if (tokenPtr->type == TCL_TOKEN_ANNOT) {
++	if (TclAnnotSuffixIsLiteral(tokenPtr + 1, count - 1)) {
++	    TclEmitPush(TclRegisterLiteral(envPtr, "::tcl::annotraw", 15, 0),
++		    envPtr);			/* {int}5 : annotation brute */
++	} else {
++	    TclEmitPush(TclRegisterLiteral(envPtr, "::tcl::annotate", 15, 0),
++		    envPtr);
++	}
++	TclEmitPush(TclRegisterLiteral(envPtr, tokenPtr->start,
++		tokenPtr->size, 0), envPtr);
++	TclCompileTokens(interp, tokenPtr + 1, count - 1, envPtr);
++	TclEmitInvoke(envPtr, INST_INVOKE_STK1, 3);
++	TclCheckStackDepth(depth+1, envPtr);
++	return;
++    }
++
++    /*
+      * If this is actually a literal, handle continuation lines by
+      * preallocating a small table to store the locations of any continuation
+      * lines found in this literal.  The table is extended if needed.
+diff -ruN -x '*.rej' -x 'tclTypes*' -x tclAnnotObj.c -x tclTypedVar.c -x tclTypePath.c -x tclVarRef.c -x tclTypeParse.c -x tclTypeGeneric.c tip759/tcl-9-0-expr-cmd/generic/tclExecute.c t759/generic/tclExecute.c
+--- a/generic/tclExecute.c	2026-10-08 14:37:46.000000000 +0200
++++ b/generic/tclExecute.c	2026-10-13 05:14:48.681831361 +0200
+@@ -17,6 +17,7 @@
+ 
+ #include "tclInt.h"
+ #include "tclCompile.h"
++#include "tclTypes.h"
+ #include "tclOOInt.h"
+ #include "tclTomMath.h"
+ #include <math.h>
+@@ -2953,6 +2954,20 @@
+ 		NEXT_INST_F(pcAdjustment, 1, 1);
+ 	    }
+ 	}
++	if (!TclIsVarArray(arrayPtr) && (arrayPtr->flags & VAR_TYPED)) {
++	    int trc;
++
++	    DECACHE_STACK_INFO();
++	    trc = TclTypedVarGetElementVar(interp, arrayPtr, part2Ptr,
++		    &objResultPtr);
++	    CACHE_STACK_INFO();
++	    if (trc == TCL_OK) {
++		NEXT_INST_F(pcAdjustment, 1, 1);
++	    } else if (trc == TCL_ERROR) {
++		TRACE_ERROR(interp);
++		goto gotError;
++	    }
++	}
+ 	varPtr = TclLookupArrayElement(interp, part1Ptr, part2Ptr,
+ 		TCL_LEAVE_ERR_MSG, "read", 0, 1, arrayPtr, opnd);
+ 	if (varPtr == NULL) {
+@@ -2982,6 +2997,17 @@
+ 		TCL_LEAVE_ERR_MSG, "read", /*createPart1*/0, /*createPart2*/1,
+ 		&arrayPtr);
+ 	if (!varPtr) {
++	    if (part2Ptr != NULL) {
++		int trc;
++
++		DECACHE_STACK_INFO();
++		trc = TclTypedVarGetElement(interp, part1Ptr, part2Ptr,
++			&objResultPtr);
++		CACHE_STACK_INFO();
++		if (trc == TCL_OK) {
++		    NEXT_INST_V(1, cleanup, 1);
++		}
++	    }
+ 	    TRACE_ERROR(interp);
+ 	    goto gotError;
+ 	}
+@@ -3159,6 +3185,17 @@
+ 	varPtr = TclObjLookupVarEx(interp, objPtr, part2Ptr, TCL_LEAVE_ERR_MSG,
+ 		"set", /*createPart1*/ 1, /*createPart2*/ 1, &arrayPtr);
+ 	if (!varPtr) {
++	    if (part2Ptr != NULL && storeFlags == TCL_LEAVE_ERR_MSG) {
++		int trc;
++
++		DECACHE_STACK_INFO();
++		trc = TclTypedVarSetElement(interp, part1Ptr, part2Ptr,
++			valuePtr, &objResultPtr);
++		CACHE_STACK_INFO();
++		if (trc == TCL_OK) {
++		    NEXT_INST_V(1, 3, 1);
++		}
++	    }
+ 	    TRACE_ERROR(interp);
+ 	    goto gotError;
+ 	}
+@@ -3206,6 +3243,21 @@
+ 	part1Ptr = NULL;
+ 
+     doStoreArrayDirectFailed:
++	if (storeFlags == TCL_LEAVE_ERR_MSG && !TclIsVarArray(arrayPtr)
++		&& (arrayPtr->flags & VAR_TYPED)) {
++	    int trc;
++
++	    DECACHE_STACK_INFO();
++	    trc = TclTypedVarSetElementVar(interp, arrayPtr, NULL, (int) opnd,
++		    part2Ptr, valuePtr, &objResultPtr);
++	    CACHE_STACK_INFO();
++	    if (trc == TCL_OK) {
++		NEXT_INST_V(pcAdjustment, cleanup, 1);
++	    } else if (trc == TCL_ERROR) {
++		TRACE_ERROR(interp);
++		goto gotError;
++	    }
++	}
+ 	varPtr = TclLookupArrayElement(interp, part1Ptr, part2Ptr,
+ 		TCL_LEAVE_ERR_MSG, "set", 1, 1, arrayPtr, opnd);
+ 	if (!varPtr) {
+diff -ruN -x '*.rej' -x 'tclTypes*' -x tclAnnotObj.c -x tclTypedVar.c -x tclTypePath.c -x tclVarRef.c -x tclTypeParse.c -x tclTypeGeneric.c tip759/tcl-9-0-expr-cmd/generic/tclInt.h t759/generic/tclInt.h
+--- a/generic/tclInt.h	2026-08-19 21:07:22.000000000 +0200
++++ b/generic/tclInt.h	2026-10-13 05:14:48.682731470 +0200
+@@ -761,6 +761,9 @@
+ #define VAR_ARRAY		0x1
+ #define VAR_LINK		0x2
+ #define VAR_CONSTANT		0x10000
++#define VAR_TYPED		0x20000	/* typed variable: the value carries an
++				 * annotation (type contract), see
++				 * tclTypedVar.c */
+ #define VAR_TYPE \
+ 	(VAR_ARRAY | VAR_LINK | VAR_CONSTANT)
+ 
+@@ -821,7 +824,7 @@
+     (varPtr)->flags = ((varPtr)->flags & ~VAR_ARRAY) | VAR_ARRAY_ELEMENT
+ 
+ #define TclSetVarUndefined(varPtr) \
+-    (varPtr)->flags &= ~(VAR_ARRAY|VAR_LINK|VAR_CONSTANT);\
++    (varPtr)->flags &= ~(VAR_ARRAY|VAR_LINK|VAR_CONSTANT|VAR_TYPED);\
+     (varPtr)->value.objPtr = NULL
+ 
+ #define TclClearVarUndefined(varPtr)
+@@ -943,13 +946,13 @@
+ 	&& (varPtr)->value.objPtr)
+ 
+ #define TclIsVarDirectWritable(varPtr) \
+-    (!TclIsVarTricky(varPtr,VAR_TRACED_WRITE|VAR_DEAD_HASH|VAR_CONSTANT))
++    (!TclIsVarTricky(varPtr,VAR_TRACED_WRITE|VAR_DEAD_HASH|VAR_CONSTANT|VAR_TYPED))
+ 
+ #define TclIsVarDirectUnsettable(varPtr) \
+-    (!TclIsVarTricky(varPtr,VAR_TRACED_READ|VAR_TRACED_WRITE|VAR_TRACED_UNSET|VAR_DEAD_HASH|VAR_CONSTANT))
++    (!TclIsVarTricky(varPtr,VAR_TRACED_READ|VAR_TRACED_WRITE|VAR_TRACED_UNSET|VAR_DEAD_HASH|VAR_CONSTANT|VAR_TYPED))
+ 
+ #define TclIsVarDirectModifyable(varPtr) \
+-    (   (!TclIsVarTricky(varPtr,VAR_TRACED_READ|VAR_TRACED_WRITE|VAR_CONSTANT))	\
++    (   (!TclIsVarTricky(varPtr,VAR_TRACED_READ|VAR_TRACED_WRITE|VAR_CONSTANT|VAR_TYPED))	\
+ 	&&  (varPtr)->value.objPtr)
+ 
+ #define TclIsVarDirectReadable2(varPtr, arrayPtr) \
+diff -ruN -x '*.rej' -x 'tclTypes*' -x tclAnnotObj.c -x tclTypedVar.c -x tclTypePath.c -x tclVarRef.c -x tclTypeParse.c -x tclTypeGeneric.c tip759/tcl-9-0-expr-cmd/generic/tclNamesp.c t759/generic/tclNamesp.c
+--- a/generic/tclNamesp.c	2026-08-19 21:07:22.000000000 +0200
++++ b/generic/tclNamesp.c	2026-10-13 05:14:48.683250593 +0200
+@@ -24,6 +24,7 @@
+  */
+ 
+ #include "tclInt.h"
++#include "tclTypes.h"
+ #include "tclCompile.h" /* for TclLogCommandInfo visibility */
+ 
+ /*
+@@ -495,6 +496,8 @@
+     CallFrame *framePtr = iPtr->framePtr;
+     Namespace *nsPtr;
+ 
++    TclVarRefFrameGone(interp, framePtr);	/* typed links to its locals */
++
+     /*
+      * It's important to remove the call frame from the interpreter's stack of
+      * call frames before deleting local variables, so that traces invoked by
+diff -ruN -x '*.rej' -x 'tclTypes*' -x tclAnnotObj.c -x tclTypedVar.c -x tclTypePath.c -x tclVarRef.c -x tclTypeParse.c -x tclTypeGeneric.c tip759/tcl-9-0-expr-cmd/generic/tclParse.c t759/generic/tclParse.c
+--- a/generic/tclParse.c	2026-10-10 07:35:08.000000000 +0200
++++ b/generic/tclParse.c	2026-10-13 05:14:48.683686861 +0200
+@@ -14,6 +14,7 @@
+  */
+ 
+ #include "tclInt.h"
++#include "tclTypes.h"
+ #include "tclParse.h"
+ 
+ /*
+@@ -300,6 +301,7 @@
+     scanned = 1;	/* Can't have missing whitepsace before first word. */
+     while (1) {
+ 	int expandWord = 0;
++	int annotWord = 0;	/* {type}word : see TCL_TOKEN_ANNOT */
+ 
+ 	/* Are we at command termination? */
+ 
+@@ -393,6 +395,24 @@
+ 		parsePtr->numTokens--;
+ 		goto parseWord;
+ 	    }
++
++	    /*
++	     * A brace group immediately followed by more word text is a type
++	     * annotation, {int}x or {list.int}$name: the braces become a
++	     * TCL_TOKEN_ANNOT token (the type text, literal) and the rest of
++	     * the word is parsed as usual.
++	     */
++
++	    if ((0 == expandWord) && (0 == annotWord)
++		    && (expIdx + 1 == parsePtr->numTokens)
++		    && (expPtr->type == TCL_TOKEN_TEXT)
++		    && (numBytes > 0) && (0 == ParseWhiteSpace(termPtr,
++			    numBytes, &parsePtr->incomplete, &type))
++		    && (type != TYPE_COMMAND_END)) {
++		annotWord = 1;
++		expPtr->type = TCL_TOKEN_ANNOT;
++		goto parseWord;
++	    }
+ 	} else {
+ 	    /*
+ 	     * This is an unquoted word. Call ParseTokens and let it do all of
+@@ -2200,6 +2220,34 @@
+     int inFile = iPtr->evalFlags & TCL_EVAL_FILE;
+ 
+     /*
++     * An annotated word, {type}word: substitute the rest of the word, then
++     * annotate its value (tclAnnotObj.c).
++     */
++
++    if (tokenPtr->type == TCL_TOKEN_ANNOT) {
++	Tcl_Obj *typeText = Tcl_NewStringObj(tokenPtr->start, tokenPtr->size);
++	Tcl_Obj *annotated = NULL;
++
++	Tcl_IncrRefCount(typeText);
++	code = TclSubstTokens(interp, tokenPtr + 1, count - 1, tokensLeftPtr,
++		line, clNextOuter, outerScript);
++	if (code == TCL_OK) {
++	    if (TclAnnotSuffixIsLiteral(tokenPtr + 1, count - 1)) {
++		annotated = TclNewRawAnnotation(typeText,
++			Tcl_GetObjResult(interp));	/* {int}5 : brute */
++	    } else {
++		code = TclAnnotateValue(interp, typeText,
++			Tcl_GetObjResult(interp), &annotated);
++	    }
++	    if (code == TCL_OK) {
++		Tcl_SetObjResult(interp, annotated);
++	    }
++	}
++	Tcl_DecrRefCount(typeText);
++	return code;
++    }
++
++    /*
+      * Each pass through this loop will substitute one token, and its
+      * components, if any. The only thing tricky here is that we go to some
+      * effort to pass Tcl_Obj's through untouched, to avoid string copying and
+diff -ruN -x '*.rej' -x 'tclTypes*' -x tclAnnotObj.c -x tclTypedVar.c -x tclTypePath.c -x tclVarRef.c -x tclTypeParse.c -x tclTypeGeneric.c tip759/tcl-9-0-expr-cmd/generic/tclVar.c t759/generic/tclVar.c
+--- a/generic/tclVar.c	2026-08-19 21:07:22.000000000 +0200
++++ b/generic/tclVar.c	2026-10-13 05:14:48.684238726 +0200
+@@ -18,6 +18,7 @@
+  */
+ 
+ #include "tclInt.h"
++#include "tclTypes.h"
+ #include "tclOOInt.h"
+ 
+ /*
+@@ -1309,6 +1310,13 @@
+     varPtr = TclObjLookupVarEx(interp, part1Ptr, part2Ptr, flags, "read",
+ 	    /*createPart1*/ 0, /*createPart2*/ 1, &arrayPtr);
+     if (varPtr == NULL) {
++	Tcl_Obj *tres;
++
++	if (part2Ptr != NULL
++		&& TclTypedVarGetElement(interp, part1Ptr, part2Ptr,
++		&tres) == TCL_OK) {
++	    return tres;
++	}
+ 	return NULL;
+     }
+ 
+@@ -1502,6 +1510,18 @@
+ {
+     Tcl_Obj *varValueObj;
+ 
++    if (objc >= 2) {
++	/* typed values: set {type}x ... ; and paths: set x(a.b) ... */
++	int rc;
++
++	if (TclIsAnnotated(objv[1])) {
++	    return TclSetAnnotatedCmd(interp, objc, objv);
++	}
++	rc = TclSetPathCmd(interp, objc, objv);
++	if (rc != TCL_CONTINUE) {
++	    return rc;
++	}
++    }
+     if (objc == 2) {
+ 	varValueObj = Tcl_ObjGetVar2(interp, objv[1], NULL,TCL_LEAVE_ERR_MSG);
+ 	if (varValueObj == NULL) {
+@@ -1696,6 +1716,16 @@
+     varPtr = TclObjLookupVarEx(interp, part1Ptr, part2Ptr, flags, "set",
+ 	    /*createPart1*/ 1, /*createPart2*/ 1, &arrayPtr);
+     if (varPtr == NULL) {
++	Tcl_Obj *tres;
++
++	if (part2Ptr != NULL && !(flags & (TCL_APPEND_VALUE|TCL_LIST_ELEMENT))
++		&& TclTypedVarSetElement(interp, part1Ptr, part2Ptr,
++		newValuePtr, &tres) == TCL_OK) {
++	    if (newValuePtr->refCount == 0) {
++		Tcl_BounceRefCount(newValuePtr);
++	    }
++	    return tres;
++	}
+ 	if (newValuePtr->refCount == 0) {
+ 	    Tcl_DecrRefCount(newValuePtr);
+ 	}
+@@ -1931,6 +1961,7 @@
+     Interp *iPtr = (Interp *) interp;
+     Tcl_Obj *oldValuePtr;
+     Tcl_Obj *resultPtr = NULL;
++    Tcl_Obj *typedTmp = NULL;
+     int result;
+     int cleanupOnEarlyError = (newValuePtr->refCount == 0);
+ 
+@@ -2006,6 +2037,19 @@
+      * otherwise we must create a new copy to modify: this is "copy on write".
+      */
+ 
++    /*
++     * Typed variables (tclTypedVar.c): check the new value against the
++     * variable's type contract, or let an untyped variable adopt a typed
++     * value. typedTmp holds the converted value until it is stored.
++     */
++
++    if ((varPtr->flags & VAR_TYPED) || TclIsAnnotated(newValuePtr)) {
++	if (TclTypedVarPrepareWrite(interp, varPtr, &newValuePtr, &flags,
++		&typedTmp) != TCL_OK) {
++	    goto earlyError;
++	}
++    }
++
+     oldValuePtr = varPtr->value.objPtr;
+     if (flags & TCL_LIST_ELEMENT && !(flags & TCL_APPEND_VALUE)) {
+ 	varPtr->value.objPtr = NULL;
+@@ -2032,6 +2076,11 @@
+ 	    TclDecrRefCount(oldValuePtr);	/* Discard old value. */
+ 	}
+     }
++    TclTypedVarAfterStore(varPtr);		/* VAR_TYPED follows the value */
++    if (typedTmp != NULL) {
++	Tcl_DecrRefCount(typedTmp);
++	typedTmp = NULL;
++    }
+ 
+     /*
+      * Invoke any write traces for the variable.
+--- a/unix/Makefile.in
++++ b/unix/Makefile.in
+@@ -318,6 +318,8 @@
+ 	tclStrToD.o tclThread.o \
+ 	tclThreadAlloc.o tclThreadJoin.o tclThreadStorage.o tclStubInit.o \
+ 	tclTimer.o tclTrace.o tclUtf.o tclUtil.o tclVar.o tclZlib.o \
++	tclTypes.o tclTypeParse.o tclTypeGeneric.o tclAnnotObj.o tclTypedVar.o \
++	tclTypePath.o tclVarRef.o \
+ 	tclTomMathInterface.o tclZipfs.o
+ 
+ OO_OBJS = tclOO.o tclOOBasic.o tclOOCall.o tclOODefineCmds.o tclOOInfo.o \
+@@ -1571,6 +1573,27 @@
+ tclUtf.o: $(GENERIC_DIR)/tclUtf.c $(GENERIC_DIR)/tclUniData.c
+ 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclUtf.c
+ 
++tclTypes.o: $(GENERIC_DIR)/tclTypes.c $(GENERIC_DIR)/tclTypes.h $(GENERIC_DIR)/tclTypesInt.h
++	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclTypes.c
++
++tclTypeParse.o: $(GENERIC_DIR)/tclTypeParse.c $(GENERIC_DIR)/tclTypes.h $(GENERIC_DIR)/tclTypesInt.h
++	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclTypeParse.c
++
++tclTypeGeneric.o: $(GENERIC_DIR)/tclTypeGeneric.c $(GENERIC_DIR)/tclTypes.h $(GENERIC_DIR)/tclTypesInt.h
++	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclTypeGeneric.c
++
++tclAnnotObj.o: $(GENERIC_DIR)/tclAnnotObj.c $(GENERIC_DIR)/tclTypes.h $(GENERIC_DIR)/tclTypesInt.h
++	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclAnnotObj.c
++
++tclTypedVar.o: $(GENERIC_DIR)/tclTypedVar.c $(GENERIC_DIR)/tclTypes.h $(GENERIC_DIR)/tclTypesInt.h
++	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclTypedVar.c
++
++tclTypePath.o: $(GENERIC_DIR)/tclTypePath.c $(GENERIC_DIR)/tclTypes.h $(GENERIC_DIR)/tclTypesInt.h
++	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclTypePath.c
++
++tclVarRef.o: $(GENERIC_DIR)/tclVarRef.c $(GENERIC_DIR)/tclTypes.h $(GENERIC_DIR)/tclTypesInt.h
++	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclVarRef.c
++
+ tclVar.o: $(GENERIC_DIR)/tclVar.c
+ 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclVar.c
+ 

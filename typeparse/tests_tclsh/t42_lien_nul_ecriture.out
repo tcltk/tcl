@@ -1,0 +1,11 @@
+--- lecture : adresse nulle -> défaut / read: null address -> default
+1 {0 0}
+--- écriture : défaut -> adresse nulle / write: default -> null address
+0100
+0300
+--- écriture : autre valeur -> cible écrite / other value -> target written
+02020708
+--- aller-retour / round trip
+2 {7 8}
+--- sans défaut : lecture d'un lien nul = erreur / without default: reading a null link is an error
+1: file binary: field r of G is a null link (give the field a default value, or make the target an opt(...))

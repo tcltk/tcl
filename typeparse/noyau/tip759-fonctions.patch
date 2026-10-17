@@ -1,0 +1,11 @@
+--- a/generic/tclCompExpr.c	2026-10-13 11:37:36.124538759 +0200
++++ b/generic/tclCompExpr.c	2026-10-13 11:37:36.137731731 +0200
+@@ -2584,7 +2584,7 @@
+ 		numWords = 1;	
+ 		break;
+ 	    case NULL_FUNC:
+-		funcObjv++;
++		/* no entry in funcList for a list/parenthesis node */
+ 		break;
+ 	    case QUESTION:
+ 		newJump = (JumpList *)TclStackAlloc(interp, sizeof(JumpList));

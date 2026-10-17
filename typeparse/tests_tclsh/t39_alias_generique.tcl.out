@@ -1,0 +1,6 @@
+link // {uint 4 le} none {product rec {{a {uint 1 auto} 0} {b {uint 1 auto} 0}}} {} &*(//,int(u,32,le)).rec rec
+1 {7 8}
+1 {1 0}
+{7 8}
+{7 8}
+1: parameter "U" is never used in the definition of q32

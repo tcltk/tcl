@@ -1,0 +1,124 @@
+--- a/generic/tclTypes.c
++++ b/generic/tclTypes.c
+@@ -176,10 +176,19 @@
+     return -1;
+ }
+ 
++/* "any" : type prédéfini des éléments d'une liste hétérogène (list.any).
++ * Chaque élément y conserve sa propre annotation. */
++int
++TclTypeIsAny(const TclType *tp)
++{
++    return tp->kind == TCLT_STRING && tp->reserved
++	    && strcmp(tp->name, "any") == 0;
++}
++
+ int
+ TclTypeIsPlainString(const TclType *tp)
+ {
+-    return tp->kind == TCLT_STRING && !tp->nominal;
++    return tp->kind == TCLT_STRING && !tp->nominal && !TclTypeIsAny(tp);
+ }
+ 
+ /* --------------------------------------------------------------------
+@@ -1993,6 +2002,7 @@
+     d->tInt = Builtin(d, TCLT_INT, "int");
+     d->tDouble = Builtin(d, TCLT_DOUBLE, "double");
+     d->tString = Builtin(d, TCLT_STRING, "string");
++    Builtin(d, TCLT_STRING, "any");		/* éléments de list.any */
+     d->tList = Builtin(d, TCLT_LIST, "list");
+     d->tList->arity = -1;			/* liste extensible */
+     d->tList->elem = d->tString;
+--- a/generic/tclTypes.h
++++ b/generic/tclTypes.h
+@@ -197,6 +197,7 @@
+ int	TclTypeRunDefault(Tcl_Interp *interp, const char *what,
+ 	    Tcl_Obj *script, Tcl_Obj **resultPtr);
+ int	TclTypeIsPlainString(const TclType *tp);
++int	TclTypeIsAny(const TclType *tp);
+ int	TclTypeDictKeyAllowed(const TclType *tp, const char *key);
+ /* Valide content puis ajoute les valeurs par défaut des clés manquantes
+  * (dict(x?=0)). content est un objet PRIVÉ, modifié en place. */
+--- a/generic/tclTypedVar.c
++++ b/generic/tclTypedVar.c
+@@ -136,8 +136,11 @@
+ 		&content) != TCL_OK) {
+ 	    return TCL_ERROR;
+ 	}
+-	if (status != TCLA_PLAIN) {
+-	    add = content;
++	if (status != TCLA_PLAIN
++		&& !(contract->kind == TCLT_LIST && contract->elem != NULL
++			&& TclTypeIsAny(contract->elem)
++			&& (*flagsPtr & TCL_LIST_ELEMENT))) {
++	    add = content;	/* lappend à list.any : l'annotation est gardée */
+ 	}
+ 	sum = Tcl_DuplicateObj(curContent);
+ 	if (*flagsPtr & TCL_LIST_ELEMENT) {
+@@ -243,11 +246,14 @@
+ 	return NULL;
+     }
+     if ((status == TCLA_TYPED || status == TCLA_RAW) && !TclTypeSame(at, tp)
+-	    && !TclTypeIsPlainString(tp)) {
++	    && !TclTypeIsPlainString(tp) && !TclTypeIsAny(tp)) {
+ 	Mismatch(interp, tp, at);
+ 	return NULL;
+     }
+     copy = Tcl_DuplicateObj(content);
++    if (TclTypeIsAny(tp)) {
++	return copy;
++    }
+     if (TclTypeComplete(interp, tp, copy, -1, NULL) != TCL_OK) {
+ 	TclDiscard(copy);
+ 	return NULL;
+@@ -273,7 +279,7 @@
+ {
+     TclObjVec vec = {NULL, 0, 0};
+     Tcl_Size i, j, m;
+-    Tcl_Obj **e, *content, *c;
++    Tcl_Obj **e, *content, *c, *e0;
+     TclType *at;
+     int status, variant, rc = TCL_ERROR;
+ 
+@@ -282,6 +288,27 @@
+ 		&content) != TCL_OK) {
+ 	    goto done;
+ 	}
++	if (TclTypeIsAny(tp->elem)) {
++	    /* list.any : l'élément garde son annotation, sans dépliage. */
++	    if (status == TCLA_TYPED || status == TCLA_RAW) {
++		if (status == TCLA_RAW
++			&& TclTypeValidate(interp, at, content, variant, NULL)
++				!= TCL_OK) {
++		    goto done;
++		}
++		c = Tcl_DuplicateObj(content);
++		e0 = TclNewAnnotated(interp, at, variant, c);
++		TclDiscard(c);
++		if (e0 == NULL) {
++		    goto done;
++		}
++		TclVecAdd(&vec, e0);
++	    } else {
++		TclVecAdd(&vec, Tcl_DuplicateObj(
++			status == TCLA_EMPTY ? content : a[i]));
++	    }
++	    continue;
++	}
+ 	if ((status == TCLA_TYPED || status == TCLA_RAW)
+ 		&& at->kind == TCLT_LIST && at != tp->elem) {
+ 	    if (status == TCLA_RAW
+--- a/generic/tclTypePath.c
++++ b/generic/tclTypePath.c
+@@ -1103,6 +1103,11 @@
+     TclType *ownType = NULL;
+     Tcl_Obj *inner = NULL;
+ 
++    /* list.any : l'élément garde sa propre annotation. */
++    if (TclTypeIsAny(tp)
++	    && TclAnnotInfo(content, &inner, &ownType, &ownVariant, NULL) == 1) {
++	return TclNewAnnotated(interp, ownType, ownVariant, inner);
++    }
+     /* Un élément déjà annoté de ce type (balise explicite {i}5) garde sa
+      * variante. */
+     if (tp->kind == TCLT_SUM

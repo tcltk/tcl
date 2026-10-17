@@ -1,0 +1,11 @@
+--- a/generic/tclTypeGeneric.c	2026-10-15 16:01:28.506321273 +0200
++++ b/generic/tclTypeGeneric.c	2026-10-15 16:01:28.514349991 +0200
+@@ -686,7 +686,7 @@
+ 
+ 	    for (hPtr = Tcl_FirstHashEntry(&d->canon, &search); hPtr != NULL;
+ 		    hPtr = Tcl_NextHashEntry(&search)) {
+-		const char *k = Tcl_GetHashKey(&d->canon, hPtr);
++		const char *k = (const char *) Tcl_GetHashKey(&d->canon, hPtr);
+ 
+ 		if (MentionsName(k, dead->name, nlen)) {
+ 		    if (nk == capk) {
