@@ -688,18 +688,14 @@ static int
 DoCreateDirectory(
     const char *path)		/* Pathname of directory to create (native). */
 {
-    mode_t mode;
-
-    mode = umask(0);
-    umask(mode);
-
     /*
-     * umask return value is actually the inverse of the permissions.
+     * Leave applying the umask to mkdir(). Masking the mode here as well
+     * made it override a default ACL of the parent directory [Bug 623585],
+     * and umask(0) + umask(mode) changed the umask for the whole process,
+     * so that threads could leave it at 0 [Bug cd609219f5].
      */
 
-    mode = (0777 & ~mode) | S_IRUSR | S_IWUSR | S_IXUSR;
-
-    if (mkdir(path, mode) != 0) {			/* INTL: Native. */
+    if (mkdir(path, 0777) != 0) {			/* INTL: Native. */
 	return TCL_ERROR;
     }
     return TCL_OK;
