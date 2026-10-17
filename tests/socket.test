@@ -2671,7 +2671,7 @@ test socket-bug-31fc36fe47 "Crash listening in multiple threads" \
 	thread::release $tid
     } -result 0
 
-test socket-bug-d6c1d2f78e "Socket channel names do not contain addresses" \
+test socket-15.1 {Socket channel names do not contain addresses, bug [d6c1d2f78e]} \
     -constraints {socket supported_inet} -setup {
 	set server [socket -server {apply {{s h p} {close $s}}} -myaddr 127.0.0.1 0]
 	set port [lindex [chan configure $server -sockname] 2]
