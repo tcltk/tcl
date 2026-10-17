@@ -2654,6 +2654,27 @@ test trace-40.1 {execution trace errors become command errors} {
     return -level 0 $m[unset m]
 } bar
 
+test trace-40.2 {Bug 2811381: each leave trace gets the command result} -setup {
+    set res {}
+    proc foo {} {return hello}
+    proc foo2 {} {set x inner}
+} -body {
+    trace add execution foo leave {apply {{c code r op} {
+	lappend ::res first:$r; return first}}}
+    trace add execution foo leave {apply {{c code r op} {
+	lappend ::res second:$r; return second}}}
+    lappend res [foo]
+    trace add execution foo2 leavestep {apply {{c code r op} {
+	lappend ::res s1:$r; return s1}}}
+    trace add execution foo2 leavestep {apply {{c code r op} {
+	lappend ::res s2:$r; return s2}}}
+    lappend res [foo2]
+} -cleanup {
+    rename foo {}
+    rename foo2 {}
+    unset res
+} -result {first:hello second:hello hello s1:inner s2:inner inner}
+
 # Delete procedures when done, so we don't clash with other tests
 # (e.g. foobar will clash with 'unknown' tests).
 catch {rename foobar {}}

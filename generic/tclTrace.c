@@ -1363,6 +1363,15 @@ TclCheckExecutionTraces(
 		}
 		traceCode = TraceExecutionProc(tcmdPtr, interp, curLevel,
 			command, (Tcl_Command) cmdPtr, objc, objv);
+		if (traceCode == TCL_OK) {
+		    /*
+		     * Each trace sees the result of the traced command, not
+		     * that of the previous trace. [Bug 2811381]
+		     */
+
+		    (void) Tcl_RestoreInterpState(interp, state);
+		    state = NULL;
+		}
 		if (tcmdPtr->refCount-- <= 1) {
 		    Tcl_Free(tcmdPtr);
 		}
@@ -1501,6 +1510,11 @@ TclCheckInterpTraces(
 		    traceCode = tracePtr->proc(tracePtr->clientData, interp,
 			    curLevel, command, (Tcl_Command) cmdPtr, objc,
 			    objv);
+		    if (traceCode == TCL_OK) {
+			/* Don't pass this result to the next trace. */
+			Tcl_RestoreInterpState(interp, state);
+			state = NULL;
+		    }
 		}
 	    } else {
 		/*
