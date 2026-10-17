@@ -440,7 +440,7 @@ test unixFCmd-20.2 {SetReadOnlyAttribute} -setup {
     file attributes foo.test -readonly 1
 } -result {could not read "foo.test": no such file or directory}
 
-test unixFCmd-bug-daba77ae1d {TclpObjRemoveDirectory: tree deeper than PATH_MAX} -setup {
+test unixFCmd-22.1 {TclpObjRemoveDirectory: tree deeper than PATH_MAX, bug [daba77ae1d]} -setup {
     catch {file delete -force -- deep}
     # 25 levels of 200-character names; Tcl itself cannot create such a tree.
     exec sh -c {mkdir deep && cd deep && i=0 && while [ $i -lt 25 ]; do
