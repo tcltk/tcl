@@ -303,6 +303,24 @@ Tcl_MainEx(
 
     Tcl_InitMemory(interp);
 
+#if !defined(_WIN32) && defined(SIGCHLD)
+    /*
+     * If SIGCHLD is ignored (inherited from the parent process), terminated
+     * children are reaped automatically and [exec] cannot get their exit
+     * status. Restore the default handling in that case only. This is not
+     * done for applications which embed Tcl, they may ignore it on purpose.
+     */
+
+    {
+	struct sigaction sa;
+
+	if (sigaction(SIGCHLD, NULL, &sa) == 0 && !(sa.sa_flags & SA_SIGINFO)
+		&& sa.sa_handler == SIG_IGN) {
+	    (void) signal(SIGCHLD, SIG_DFL);
+	}
+    }
+#endif /* !_WIN32 && SIGCHLD */
+
     is.interp = interp;
     is.prompt = PROMPT_START;
     TclNewObj(is.commandPtr);

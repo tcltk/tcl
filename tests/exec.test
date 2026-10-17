@@ -799,6 +799,21 @@ test exec-22.1 {exec -encoding invalid encoding} -body {
     exec -encoding nosuchencoding -- [interpreter] $path(echobin) abc
 } -result {unknown encoding "nosuchencoding"} -returnCodes error
 
+# Bug 2982713fff: SIGCHLD ignored by the parent process
+testConstraint haveBash [expr {[testConstraint unix] && [llength [auto_execok bash]]}]
+test exec-24.1 {exec when SIGCHLD is inherited as ignored} -constraints {
+    exec unix haveBash
+} -setup {
+    set script [makeFile {
+	catch {exec /bin/sh -c {exit 3}} -> opts
+	puts [lrange [dict get $opts -errorcode] 0 0][lindex [dict get $opts -errorcode] 2]
+    } exec-24.1.tcl]
+} -body {
+    exec bash -c {trap '' CHLD; exec "$@"} bash [interpreter] $script
+} -cleanup {
+    removeFile $script
+} -result CHILDSTATUS3
+
 # ----------------------------------------------------------------------
 # Tests specific to Windows which has more varied application types and
 # search mechanism.
