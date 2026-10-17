@@ -1380,7 +1380,7 @@ test safe-10.1.1 {testing statics loading} -constraints tcl::test -setup {
     unset -nocomplain m o
     safe::interpDelete $i
 } -result {load of library for prefix Safepfx1 failed: cannot use library in a safe interpreter: no Safepfx1_SafeInit procedure
-    invoked from within
+    while executing
 "load {} Safepfx1"
     invoked from within
 "interp eval $i {load {} Safepfx1}"}
@@ -1411,7 +1411,7 @@ test safe-10.4.1 {testing nested statics loading / -nestedloadok} -constraints t
     unset -nocomplain m o
     safe::interpDelete $i
 } -result {load of library for prefix Safepfx1 failed: cannot use library in a safe interpreter: no Safepfx1_SafeInit procedure
-    invoked from within
+    while executing
 "load {} Safepfx1 x"
     invoked from within
 "interp eval $i {interp create x; load {} Safepfx1 x}"}
@@ -1486,8 +1486,6 @@ test safe-11.7.1 {testing safe encoding} -setup {
     while executing
 "encoding convertfrom"
     invoked from within
-"encoding convertfrom"
-    invoked from within
 "interp eval $i encoding convertfrom"}
 test safe-11.8 {testing safe encoding} -setup {
     set i [safe::interpCreate]
@@ -1506,8 +1504,6 @@ test safe-11.8.1 {testing safe encoding} -setup {
     safe::interpDelete $i
 } -result {wrong # args: should be "encoding convertto ?-profile profile? ?-failindex var? encoding data" or "encoding convertto data"
     while executing
-"encoding convertto"
-    invoked from within
 "encoding convertto"
     invoked from within
 "interp eval $i encoding convertto"}
