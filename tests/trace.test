@@ -2654,6 +2654,61 @@ test trace-40.1 {execution trace errors become command errors} {
     return -level 0 $m[unset m]
 } bar
 
+proc traceLeaveNoise args {
+    catch {error inner innerInfo {INNER CODE}}
+    return -options {-code ok -custom inner} noise
+}
+test trace-42.1 {leave trace preserves error result and options, bug 1030133} -setup {
+    proc foo {} {return -code error -errorcode {FOO BAR} fooerr}
+    trace add execution foo leave traceLeaveNoise
+} -body {
+    list [catch foo m o] $m [dict get $o -errorcode] \
+	[string match "fooerr\n*" [dict get $o -errorinfo]] $::errorCode
+} -cleanup {
+    rename foo {}
+    unset -nocomplain m o
+} -result {1 fooerr {FOO BAR} 1 {FOO BAR}}
+test trace-42.2 {leave trace preserves custom return options, bug 1030133} -setup {
+    proc foo {} {return -code 5 -custom outer fooval}
+    trace add execution foo leave traceLeaveNoise
+} -body {
+    list [catch foo m o] $m [dict get $o -custom]
+} -cleanup {
+    rename foo {}
+    unset -nocomplain m o
+} -result {5 fooval outer}
+test trace-42.3 {leave trace preserves the result, bug 1030133} -setup {
+    proc foo {} {return fooval}
+    trace add execution foo leave traceLeaveNoise
+} -body {
+    list [foo] [catch foo m o] $m [dict exists $o -custom]
+} -cleanup {
+    rename foo {}
+    unset -nocomplain m o
+} -result {fooval 0 fooval 0}
+test trace-42.4 {leavestep trace preserves error result and options, bug 1030133} -setup {
+    proc foo {} {return -code error -errorcode {FOO BAR} fooerr}
+    trace add execution foo leavestep traceLeaveNoise
+} -body {
+    list [catch foo m o] $m [dict get $o -errorcode] \
+	[string match "fooerr\n*" [dict get $o -errorinfo]]
+} -cleanup {
+    rename foo {}
+    unset -nocomplain m o
+} -result {1 fooerr {FOO BAR} 1}
+test trace-42.5 {command leave trace via interp trace, bug 1030133} -setup {
+    proc foo {} {return -code error -errorcode {FOO BAR} fooerr}
+    proc bar {} {foo}
+    trace add execution bar leavestep traceLeaveNoise
+} -body {
+    list [catch bar m o] $m [dict get $o -errorcode]
+} -cleanup {
+    rename foo {}
+    rename bar {}
+    unset -nocomplain m o
+} -result {1 fooerr {FOO BAR}}
+rename traceLeaveNoise {}
+
 # Delete procedures when done, so we don't clash with other tests
 # (e.g. foobar will clash with 'unknown' tests).
 catch {rename foobar {}}
