@@ -2176,9 +2176,7 @@ test iortrans-ea69b0258a9833cb {
     close $chan
 } -result {line one}
 
-test iortrans-bug-d48728e10b {
-    Blocking read does not read the parent again once it has data
-} -setup {
+test iortrans-14.1 {blocking read does not read the parent again once it has data, bug [d48728e10b]} -setup {
     set ::nread 0
     proc parentchan {cmd chan args} {
 	switch -- $cmd {
