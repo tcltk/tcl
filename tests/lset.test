@@ -470,6 +470,19 @@ test lset-16.8 {lset - append to inner list} testevalex {
     testevalex {lset x end end end+1 4}
 } {test {1 2 {3 4}}}
 
+test lset-17.1 {lset - failed append leaves list unchanged, bug 3019348} testevalex {
+    set x [list [list x x] [list x x]]
+    list [catch {testevalex {lset x 2 1 x}} msg] $msg [llength $x] $x
+} {1 {index "1" out of range} 2 {{x x} {x x}}}
+test lset-17.2 {lset - failed append leaves list unchanged, bug 3019348} testevalex {
+    set x [list [list x x] [list x x]]
+    list [catch {testevalex {lset x end+1 bogus x}}] [llength $x] $x
+} {1 2 {{x x} {x x}}}
+test lset-17.3 {lset - failed append leaves list unchanged, bug 3019348} testevalex {
+    set x [list a [list b]]
+    list [catch {testevalex {lset x 1 end+1 0 1 x}}] [llength [lindex $x 1]] $x
+} {1 1 {a b}}
+
 catch {unset noRead}
 catch {unset noWrite}
 catch {rename failTrace {}}

@@ -2979,6 +2979,9 @@ TclLsetFlat(
     Tcl_Obj *pendingInvalidates[10];
     Tcl_Obj **pendingInvalidatesPtr = pendingInvalidates;
     Tcl_Size numPendingInvalidates = 0;
+    Tcl_Obj *appendedTo = NULL;	/* List to which an empty sublist was
+				 * appended, to undo on error. */
+    Tcl_Size appendedIndex = 0;
 
     /*
      * If there are no indices, simply return the new value.  (Without
@@ -3104,6 +3107,10 @@ TclLsetFlat(
 
 	    if (index == elemCount) {
 		Tcl_ListObjAppendElement(NULL, parentList, subListObj);
+		if (appendedTo == NULL) {
+		    appendedTo = parentList;
+		    appendedIndex = index;
+		}
 	    } else {
 		TclListObjSetElement(NULL, parentList, index, subListObj);
 	    }
@@ -3138,6 +3145,14 @@ TclLsetFlat(
      * the string representations of intermediate lists whose contained
      * list element would have changed.
      */
+    if (result != TCL_OK && appendedTo != NULL) {
+	/*
+	 * Remove the empty sublist appended above, so that a failed [lset]
+	 * leaves the list unchanged. [Bug 3019348]
+	 */
+
+	Tcl_ListObjReplace(NULL, appendedTo, appendedIndex, 1, 0, NULL);
+    }
     if (result == TCL_OK) {
 	while (numPendingInvalidates > 0) {
 	    Tcl_Obj *objPtr;
