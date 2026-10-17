@@ -595,6 +595,18 @@ test fCmd-5.12 {TclFileDeleteCmd: TclpRemoveDirectory with bad perms} -setup {
     lappend res [file exists td1] $msg
 } -result {0 0 {}}
 
+test fCmd-5.14 {TclFileDeleteCmd: path ending in "..", bug 1827008} -setup {
+    cleanup
+} -constraints {unix notRoot} -body {
+    file mkdir [file join td1 td2 td3] [file join td1 td2 td4]
+    createfile [file join td1 td2 tf1]
+    list [catch {file delete -force [file join td1 td2 td3 ..]} msg] $msg \
+	[lsort [glob -directory [file join td1 td2] -tails *]] \
+	[catch {file delete -force [file join td1 td2 .]}] \
+	[file exists [file join td1 td2 tf1]]
+} -cleanup {
+    cleanup
+} -result {1 {error deleting "td1/td2/td3/..": invalid argument} {td3 td4 tf1} 1 1}
 test fCmd-6.1 {CopyRenameOneFile: bad source} {notRoot emptyTest} {
     # can't test this, because it's caught by FileCopyRename
 } {}

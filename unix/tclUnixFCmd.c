@@ -812,6 +812,30 @@ TclpObjRemoveDirectory(
     int ret;
     Tcl_Obj *transPtr = Tcl_FSGetTranslatedPath(NULL, pathPtr);
 
+    if (transPtr != NULL) {
+	/*
+	 * Refuse to remove a path ending in "." or "..", as rm(1) does.
+	 * On POSIX, "a/b/.." is not always "a". [Bug 1827008]
+	 */
+
+	Tcl_Size len;
+	const char *str = TclGetStringFromObj(transPtr, &len);
+
+	while (len > 1 && str[len - 1] == '/') {
+	    len--;
+	}
+	if ((len >= 1 && str[len - 1] == '.'
+		&& (len == 1 || str[len - 2] == '/'))
+		|| (len >= 2 && str[len - 1] == '.' && str[len - 2] == '.'
+		&& (len == 2 || str[len - 3] == '/'))) {
+	    Tcl_DecrRefCount(transPtr);
+	    Tcl_SetErrno(EINVAL);
+	    *errorPtr = pathPtr;
+	    Tcl_IncrRefCount(*errorPtr);
+	    return TCL_ERROR;
+	}
+    }
+
     ret = Tcl_UtfToExternalDStringEx(NULL, NULL,
 	    (transPtr != NULL ? TclGetString(transPtr) : NULL),
 	    -1, TCL_ENCODING_PROFILE_TCL8, &pathString, NULL);
