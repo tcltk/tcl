@@ -7460,6 +7460,33 @@ test expr-bug-8dd2807066 {Bug 8dd2807066} {
     expr {max(abs(-668336881543038127783364011867))}
 } 668336881543038127783364011867
 
+test expr-bug-1e66ba3d49-1 {function names starting with a word operator} -setup {
+    proc tcl::mathfunc::in_range {x lo hi} {expr {$lo <= $x && $x <= $hi}}
+    proc tcl::mathfunc::eq {x} {expr {$x + 100}}
+    proc tcl::mathfunc::ni1 {x} {expr {$x + 200}}
+    proc tcl::mathfunc::lt_x {x} {expr {$x + 300}}
+} -body {
+    list [expr {in_range(5, 1, 10)}] [expr {eq(1)}] [expr {eq (1)}] \
+	[expr {-eq(1)}] [expr {2*ni1(1)}] [expr {lt_x(1)}]
+} -cleanup {
+    rename tcl::mathfunc::in_range {}
+    rename tcl::mathfunc::eq {}
+    rename tcl::mathfunc::ni1 {}
+    rename tcl::mathfunc::lt_x {}
+} -result {1 101 101 -101 402 301}
+test expr-bug-1e66ba3d49-2 {word operators after an operand are not function names} -setup {
+    proc tcl::mathfunc::eq1 {x} {return 0}
+    proc tcl::mathfunc::ne {x} {return 0}
+    set a 1
+} -body {
+    list [expr {$a eq1}] [expr {1eq1}] [expr {$a ne(1)}] [expr {$a eq (1)}] \
+	[catch {expr {eq}}]
+} -cleanup {
+    rename tcl::mathfunc::eq1 {}
+    rename tcl::mathfunc::ne {}
+    unset a
+} -result {1 1 0 1 1}
+
 test expr-bug-8dd2807066-1 {Bug 8dd2807066, more elaborate} {
     expr {max(abs(-668336881543038127783364011867),0)}
 } 668336881543038127783364011867

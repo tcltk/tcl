@@ -691,6 +691,28 @@ ParseExpr(
 	scanned = ParseLexeme(start, numBytes, &lexeme, &literal);
 
 	/*
+	 * A word operator where an operand is expected can only be the start
+	 * of a function name, like "eq(" or "in_range(". [Bug 1e66ba3d49]
+	 */
+
+	if (IsOperator(lastParsed) && (lexeme == STREQ || lexeme == STRNEQ
+		|| lexeme == IN_LIST || lexeme == NOT_IN_LIST
+		|| lexeme == STR_LT || lexeme == STR_LEQ
+		|| lexeme == STR_GT || lexeme == STR_GEQ)) {
+	    Tcl_Size len = scanned, paren;
+
+	    while (len < numBytes && TclIsBareword(start[len])) {
+		len++;
+	    }
+	    paren = len + TclParseAllWhiteSpace(start + len, numBytes - len);
+	    if (paren < numBytes && start[paren] == '(') {
+		lexeme = BAREWORD;
+		literal = Tcl_NewStringObj(start, len);
+		scanned = len;
+	    }
+	}
+
+	/*
 	 * Use context to categorize the lexemes that are ambiguous.
 	 */
 
