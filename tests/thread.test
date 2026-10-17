@@ -1463,6 +1463,31 @@ test thread-8.1 {threaded fork stress} -constraints {thread} -setup {
     unset -nocomplain ::threadCount ::execCount ::threads ::thread
 } -result {}
 
+test thread-9.1 {system encoding changed while used in another thread, bug f2ff05fc84} -constraints {thread} -setup {
+    set origEnc [encoding system]
+    catch {tsv::unset bugf2ff}
+} -body {
+    set t [thread::create -joinable {
+	set long [string repeat a/ 100000]
+	set n 0
+	while {![tsv::exists bugf2ff stop]} {
+	    file exists [string cat $long [incr n]]
+	}
+    }]
+    set t0 [clock milliseconds]
+    set k 0
+    set encs {iso8859-2 koi8-u cp1250 cp1252}
+    while {[clock milliseconds] - $t0 < 1000} {
+	encoding system [lindex $encs [expr {[incr k] % 4}]]
+    }
+    tsv::set bugf2ff stop 1
+    thread::join $t
+} -cleanup {
+    encoding system $origEnc
+    catch {tsv::unset bugf2ff}
+    unset -nocomplain origEnc t t0 k encs
+} -result 0
+
 # cleanup
 ::tcltest::cleanupTests
 return

@@ -188,6 +188,16 @@ TCL_DECLARE_MUTEX(encodingMutex)
 
 static Tcl_Encoding defaultEncoding = NULL;
 static Tcl_Encoding systemEncoding = NULL;
+
+/*
+ * Encodings that were the system encoding. They are kept until finalization,
+ * because a conversion in another thread may still be using one of them
+ * (the conversion routines read systemEncoding without taking a reference).
+ * Each encoding is kept only once, so the list stays short. [Bug f2ff05fc84]
+ */
+
+static Tcl_Encoding *retiredSystemEncodings = NULL;
+static size_t numRetiredSystemEncodings = 0;
 Tcl_Encoding tclIdentityEncoding = NULL;
 Tcl_Encoding tclUtf8Encoding = NULL;
 
@@ -236,6 +246,7 @@ static Tcl_EncodingConvertProc	EscapeFromUtfProc;
 static Tcl_EncodingConvertProc	EscapeToUtfProc;
 static void			FillEncodingFileMap(void);
 static void			FreeEncoding(Tcl_Encoding encoding);
+static void			RetireSystemEncoding(Tcl_Encoding encoding);
 static Tcl_FreeInternalRepProc	FreeEncodingInternalRep;
 static Encoding *		GetTableEncoding(EscapeEncodingData *dataPtr,
 				    int state);
@@ -692,6 +703,11 @@ TclFinalizeEncodingSubsystem(void)
     encodingsInitialized = 0;
     FreeEncoding(systemEncoding);
     systemEncoding = NULL;
+    while (numRetiredSystemEncodings > 0) {
+	FreeEncoding(retiredSystemEncodings[--numRetiredSystemEncodings]);
+    }
+    Tcl_Free(retiredSystemEncodings);
+    retiredSystemEncodings = NULL;
     defaultEncoding = NULL;
     FreeEncoding(tclIdentityEncoding);
     tclIdentityEncoding = NULL;
@@ -749,7 +765,7 @@ Tcl_GetEncoding(
 	encodingPtr = (Encoding *) systemEncoding;
 	encodingPtr->refCount++;
 	Tcl_MutexUnlock(&encodingMutex);
-	return systemEncoding;
+	return (Tcl_Encoding) encodingPtr;
     }
 
     hPtr = Tcl_FindHashEntry(&encodingTable, name);
@@ -833,6 +849,45 @@ FreeEncoding(
     }
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * RetireSystemEncoding --
+ *
+ *	Keeps the reference to an encoding which is no longer the system
+ *	encoding until finalization, see retiredSystemEncodings. Must be
+ *	called with encodingMutex held.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	May grow retiredSystemEncodings.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+RetireSystemEncoding(
+    Tcl_Encoding encoding)
+{
+    size_t i;
+
+    if (encoding == NULL) {
+	return;
+    }
+    for (i = 0; i < numRetiredSystemEncodings; i++) {
+	if (retiredSystemEncodings[i] == encoding) {
+	    FreeEncoding(encoding);	/* Already kept by the list. */
+	    return;
+	}
+    }
+    retiredSystemEncodings = (Tcl_Encoding *)Tcl_Realloc(
+	    retiredSystemEncodings,
+	    (numRetiredSystemEncodings + 1) * sizeof(Tcl_Encoding));
+    retiredSystemEncodings[numRetiredSystemEncodings++] = encoding;
+}
+
 /*
  *-------------------------------------------------------------------------
  *
@@ -978,8 +1033,8 @@ Tcl_GetEncodingNulLength(
  * Side effects:
  *	If the passed encoding is the same as the current system
  *	encoding, the call is effectively a no-op. Otherwise, the reference
- *	count of the new system encoding is incremented. The reference count
- *	of the old system encoding is decremented and it may be freed. All
+ *	count of the new system encoding is incremented. The old system
+ *	encoding is kept until finalization (see retiredSystemEncodings). All
  *	VFS cached information is invalidated.
  *
  *------------------------------------------------------------------------
@@ -1016,7 +1071,7 @@ Tcl_SetSystemEncoding(
 	((Encoding *)encoding)->refCount++;
     }
 
-    FreeEncoding(systemEncoding);
+    RetireSystemEncoding(systemEncoding);
     systemEncoding = encoding;
     Tcl_MutexUnlock(&encodingMutex);
 

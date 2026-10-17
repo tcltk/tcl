@@ -79,13 +79,15 @@ test encoding-2.2 {Tcl_FreeEncoding: refcount != 0} -setup {
     set x [encoding convertto shiftjis 乎]	;# old one found
     encoding system iso8859-1
     llength shiftjis		;# Shimmer away any cache of Tcl_Encoding
+    # A former system encoding is kept, another thread may still use it.
+    # [Bug f2ff05fc84]
     lappend x [catch {encoding convertto shiftjis 乎} msg] $msg
 } -cleanup {
     encoding system iso8859-1
     encoding dirs $path
     encoding system $system
     unset -nocomplain path
-} -result "\x8C\xC1 1 {unknown encoding \"shiftjis\"}"
+} -result "\x8C\xC1 0 \x8C\xC1"
 
 test encoding-3.1 {Tcl_GetEncodingName, NULL} -setup {
     set old [encoding system]
@@ -235,13 +237,13 @@ test encoding-11.1 {LoadEncodingFile: unknown encoding} {testencoding} {
     set path [encoding dirs]
     encoding system iso8859-1
     encoding dirs {}
-    llength jis0208	;# Shimmer any cached Tcl_Encoding in shared literal
-    set x [list [catch {encoding convertto jis0208 乎} msg] $msg]
+    llength big5	;# Shimmer any cached Tcl_Encoding in shared literal
+    set x [list [catch {encoding convertto big5 中} msg] $msg]
     encoding dirs $path
     unset -nocomplain path
     encoding system $system
-    lappend x [encoding convertto jis0208 乎]
-} {1 {unknown encoding "jis0208"} 8C}
+    lappend x [encoding convertto big5 中]
+} "1 {unknown encoding \"big5\"} \xA4\xA4"
 test encoding-11.2 {LoadEncodingFile: single-byte} {
     encoding convertfrom jis0201 \xA1
 } ｡
