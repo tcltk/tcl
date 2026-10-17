@@ -3504,6 +3504,32 @@ test interp-34.14 {[Bug e3f4a8b78d]: interp limit and interp eval} -setup {
     interp delete $i
 } -result [lrepeat 6 1 {command count limit exceeded}]
 
+test interp-34.15 {time limit callback entering the event loop: Bug 3027822, 3048170} -setup {
+    proc cb1 {i} {
+	after 50 {set ::done 1}
+	vwait ::done
+	$i limit time {*}[_ms_limit_args 10000]
+    }
+    set i [interp create]
+    set ::result {}
+    interp alias $i bgerr {} lappend ::result
+    $i eval {interp bgerror {} bgerr}
+} -body {
+    $i limit time {*}[_ms_limit_args 20] -granularity 1 -command [list cb1 $i]
+    lappend ::result [catch {
+	$i eval {
+	    set t [expr {[clock milliseconds] + 100}]
+	    for {set n 0} {[clock milliseconds] < $t} {incr n} {
+		set r [expr {cos($n) * sin($n)}]
+	    }
+	    string is double -strict $r
+	}
+    } msg] $msg
+} -cleanup {
+    interp delete $i
+    rename cb1 {}
+} -result {0 1}
+
 test interp-35.1 {interp limit syntax} -body {
     interp limit
 } -returnCodes error -result {wrong # args: should be "interp limit path limitType ?-option value ...?"}
