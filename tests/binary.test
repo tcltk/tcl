@@ -3085,6 +3085,28 @@ test binary-80.5 {Tcl_GetBytesFromObj} -constraints {
     unset -nocomplain opt ret dssz
 } -returnCodes 1 -result "byte sequence length exceeds INT_MAX"
 
+test binary-81.1 {Binary format: huge count, bug 2788582} -body {
+    binary format a99999999999999999999 A
+} -returnCodes 1 -match glob -result {max size for a Tcl value (* bytes) exceeded}
+test binary-81.2 {Binary format: huge count, bug 2788582} -body {
+    binary format x9223372036854775807
+} -returnCodes 1 -match glob -result {max size for a Tcl value (* bytes) exceeded}
+test binary-81.3 {Binary format: offset overflow, bug 2788582} -body {
+    binary format x9223372036854775000x9000
+} -returnCodes 1 -match glob -result {max size for a Tcl value (* bytes) exceeded}
+test binary-81.4 {Binary format: huge @ offset, bug 2788582} -body {
+    list [catch {binary format @9223372036854775807} msg] $msg $::errorCode
+} -match glob -result {1 {max size for a Tcl value (* bytes) exceeded} {TCL MEMORY}}
+test binary-81.5 {Binary format: huge @ offset, bug 2788582} -body {
+    binary format @9223372036854775807a1 A
+} -returnCodes 1 -match glob -result {max size for a Tcl value (* bytes) exceeded}
+test binary-81.6 {Binary format: size overflow, bug ce4483c2cb} -constraints pointerIs64bit -body {
+    binary format x4611686018427387904x4611686018427387904
+} -returnCodes 1 -match glob -result {max size for a Tcl value (* bytes) exceeded}
+test binary-81.7 {Binary format: size overflow, bug ce4483c2cb} -constraints pointerIs64bit -body {
+    binary format a4611686018427387904a4611686018427387904 x y
+} -returnCodes 1 -match glob -result {max size for a Tcl value (* bytes) exceeded}
+
 # ----------------------------------------------------------------------
 # cleanup
 
