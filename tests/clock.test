@@ -37534,6 +37534,11 @@ test clock-70.6 {POSIX TZ string, Jn form, J59 is 28 February in a leap year} {
 	     -format {%Y-%m-%d %H:%M:%S %z %Z}]
 } {{2032-02-28 01:59:59 -0500 EST} {2032-02-28 03:00:00 -0400 EDT} {2033-02-28 01:59:59 -0500 EST} {2033-02-28 03:00:00 -0400 EDT}}
 
+test clock-71.2 {he locale era names are not swapped} -body {
+    list [clock format 0 -gmt 1 -locale he -format %EE] \
+	[clock format -62200000000 -gmt 1 -locale he -format %EE]
+} -result [list "\u05dc\u05e1\u05d4\"\u05e0" "\u05dc\u05e4\u05e1\u05d4\"\u05e0"]
+
 # cleanup
 
 ::testClock::_cleanupAltTZDir

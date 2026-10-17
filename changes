@@ -9494,3 +9494,5 @@ Many code fixes to avoid overflow or undefined behavior.  Thanks chrstphrchvz.
 2026-10-16 tailcall panicked in a command called directly by its objProc (storchaka)
 
 2026-10-16  on Windows a joinable thread which exits before it is joined leaked (storchaka)
+
+2026-10-17 he locale: BCE and CE era names were swapped (storchaka)
