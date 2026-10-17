@@ -7460,7 +7460,7 @@ test expr-bug-8dd2807066 {Bug 8dd2807066} {
     expr {max(abs(-668336881543038127783364011867))}
 } 668336881543038127783364011867
 
-test expr-bug-1e66ba3d49-1 {function names starting with a word operator} -setup {
+test expr-63.1 {function names starting with a word operator, bug [1e66ba3d49]} -setup {
     proc tcl::mathfunc::in_range {x lo hi} {expr {$lo <= $x && $x <= $hi}}
     proc tcl::mathfunc::eq {x} {expr {$x + 100}}
     proc tcl::mathfunc::ni1 {x} {expr {$x + 200}}
@@ -7474,7 +7474,7 @@ test expr-bug-1e66ba3d49-1 {function names starting with a word operator} -setup
     rename tcl::mathfunc::ni1 {}
     rename tcl::mathfunc::lt_x {}
 } -result {1 101 101 -101 402 301}
-test expr-bug-1e66ba3d49-2 {word operators after an operand are not function names} -setup {
+test expr-63.2 {word operators after an operand are not function names, bug [1e66ba3d49]} -setup {
     proc tcl::mathfunc::eq1 {x} {return 0}
     proc tcl::mathfunc::ne {x} {return 0}
     set a 1
