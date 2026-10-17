@@ -2176,5 +2176,35 @@ test iortrans-ea69b0258a9833cb {
     close $chan
 } -result {line one}
 
+test iortrans-bug-d48728e10b {
+    Blocking read does not read the parent again once it has data
+} -setup {
+    set ::nread 0
+    proc parentchan {cmd chan args} {
+	switch -- $cmd {
+	    initialize {return {initialize finalize watch read}}
+	    read {
+		set data "line [incr ::nread]\n"
+		return [string range $data 0 [lindex $args 0]-1]
+	    }
+	}
+    }
+    proc identity {cmd handle args} {
+	switch -- $cmd {
+	    initialize {return {initialize finalize read write}}
+	    read - write {return [lindex $args 0]}
+	}
+    }
+    set chan [chan create read parentchan]
+    chan push $chan identity
+} -body {
+    list [gets $chan] $::nread
+} -cleanup {
+    close $chan
+    rename parentchan {}
+    rename identity {}
+    unset ::nread
+} -result {{line 1} 1}
+
 cleanupTests
 return
