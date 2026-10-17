@@ -451,6 +451,29 @@ test unixFCmd-22.1 {TclpObjRemoveDirectory: tree deeper than PATH_MAX, bug [daba
 } -cleanup {
     catch {exec rm -rf deep}
 } -result {0 {} 0}
+test unixFCmd-22.2 {TclpObjRemoveDirectory: subtrees deleted concurrently} -setup {
+    catch {file delete -force -- td1}
+    set dirs {}
+    for {set d 0} {$d < 20} {incr d} {
+	file mkdir td1/d$d/x/y/z
+	for {set f 0} {$f < 20} {incr f} {
+	    close [open td1/d$d/x/y/z/f$f w]
+	}
+	lappend dirs [file join [pwd] td1 d$d]
+    }
+} -constraints {unix stdio} -body {
+    # The child deletes the same subtrees in reverse order.
+    set chan [open |[list [interpreter]] r+]
+    puts $chan [list set dirs [lreverse $dirs]]
+    puts $chan {puts ready; flush stdout; foreach d $dirs {catch {file delete -force $d}}; exit}
+    flush $chan
+    gets $chan
+    list [catch {file delete -force -- td1} msg] $msg [file exists td1]
+} -cleanup {
+    close $chan
+    catch {file delete -force -- td1}
+    unset -nocomplain dirs chan msg
+} -result {0 {} 0}
 
 # cleanup
 cleanup

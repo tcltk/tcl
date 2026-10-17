@@ -942,6 +942,61 @@ typedef struct {
     ino_t ino;
 } DeleteLevel;
 
+/*
+ * Opens the directory of the given level of the tree being deleted, walking
+ * down from the top and checking every level. Returns the descriptor, or -1
+ * with errno set.
+ */
+
+static int
+ReopenDeleteLevel(
+    Tcl_DString *pathPtr,
+    const DeleteLevel *levels,
+    Tcl_Size level,
+    int openFlags)
+{
+    const char *path = Tcl_DStringValue(pathPtr);
+    Tcl_DString name;
+    struct stat st;
+    Tcl_Size i;
+    int fd, childFd;
+
+    /*
+     * The path of the top directory ends where the name of level 1 starts.
+     */
+
+    Tcl_DStringInit(&name);
+    Tcl_DStringAppend(&name, path, levels[1].nameOffset - 1);
+    fd = open(Tcl_DStringValue(&name), openFlags);
+    for (i = 0; fd >= 0; i++) {
+	if (fstat(fd, &st) != 0) {
+	    break;
+	}
+	if (st.st_dev != levels[i].dev || st.st_ino != levels[i].ino) {
+	    errno = EBUSY;
+	    break;
+	}
+	if (i == level) {
+	    Tcl_DStringFree(&name);
+	    return fd;
+	}
+	Tcl_DStringSetLength(&name, 0);
+	Tcl_DStringAppend(&name, path + levels[i+1].nameOffset,
+		levels[i+2].nameOffset - 1 - levels[i+1].nameOffset);
+	childFd = openat(fd, Tcl_DStringValue(&name), openFlags);
+	close(fd);
+	fd = childFd;
+    }
+    if (fd >= 0) {
+	int saveErrno = errno;
+
+	close(fd);
+	errno = saveErrno;
+    }
+    Tcl_DStringFree(&name);
+    return -1;
+}
+
 static int
 DeleteTreeAt(
     Tcl_DString *pathPtr,	/* Pathname of the directory (native). */
@@ -972,11 +1027,13 @@ DeleteTreeAt(
     levels[0].ino = st.st_ino;
 
     while (1) {
-	dirPtr = fdopendir(fd);
 	if (dirPtr == NULL) {
-	    goto error;
+	    dirPtr = fdopendir(fd);
+	    if (dirPtr == NULL) {
+		goto error;
+	    }
+	    fd = -1;
 	}
-	fd = -1;
 
 	/*
 	 * Remove everything but subdirectories. Rescan until a pass removes
@@ -996,6 +1053,13 @@ DeleteTreeAt(
 		}
 		if (fstatat(dirfd(dirPtr), name, &st,
 			AT_SYMLINK_NOFOLLOW) != 0) {
+		    if (errno == ENOENT) {
+			/*
+			 * Deleted by someone else meanwhile.
+			 */
+
+			continue;
+		    }
 		    TclDStringAppendLiteral(pathPtr, "/");
 		    Tcl_DStringAppend(pathPtr, name, TCL_INDEX_NONE);
 		    goto error;
@@ -1003,7 +1067,7 @@ DeleteTreeAt(
 		if (S_ISDIR(st.st_mode)) {
 		    break;
 		}
-		if (unlinkat(dirfd(dirPtr), name, 0) != 0) {
+		if (unlinkat(dirfd(dirPtr), name, 0) != 0 && errno != ENOENT) {
 		    TclDStringAppendLiteral(pathPtr, "/");
 		    Tcl_DStringAppend(pathPtr, name, TCL_INDEX_NONE);
 		    goto error;
@@ -1026,6 +1090,16 @@ DeleteTreeAt(
 	    levels[depth].nameOffset = Tcl_DStringLength(pathPtr);
 	    Tcl_DStringAppend(pathPtr, entPtr->d_name, TCL_INDEX_NONE);
 	    fd = openat(dirfd(dirPtr), entPtr->d_name, openFlags);
+	    if (fd < 0 && errno == ENOENT) {
+		/*
+		 * Deleted by someone else meanwhile: go on with this
+		 * directory.
+		 */
+
+		Tcl_DStringSetLength(pathPtr, levels[depth].nameOffset - 1);
+		depth--;
+		continue;
+	    }
 	    if (fd < 0 || fstat(fd, &st) != 0) {
 		goto error;
 	    }
@@ -1043,12 +1117,20 @@ DeleteTreeAt(
 	if (depth == 0) {
 	    closedir(dirPtr);
 	    dirPtr = NULL;
-	    if (rmdir(Tcl_DStringValue(pathPtr)) != 0) {
+	    if (rmdir(Tcl_DStringValue(pathPtr)) != 0 && errno != ENOENT) {
 		goto error;
 	    }
 	    break;
 	}
 	parentFd = openat(dirfd(dirPtr), "..", openFlags);
+	if (parentFd < 0 && errno == ENOENT) {
+	    /*
+	     * This (empty) directory was deleted by someone else, so ".." no
+	     * longer leads to the parent. Reopen it from the top.
+	     */
+
+	    parentFd = ReopenDeleteLevel(pathPtr, levels, depth - 1, openFlags);
+	}
 	if (parentFd < 0) {
 	    goto error;
 	}
@@ -1068,7 +1150,7 @@ DeleteTreeAt(
 	    goto error;
 	}
 	if (unlinkat(fd, Tcl_DStringValue(pathPtr) + levels[depth].nameOffset,
-		AT_REMOVEDIR) != 0) {
+		AT_REMOVEDIR) != 0 && errno != ENOENT) {
 	    goto error;
 	}
 	Tcl_DStringSetLength(pathPtr, levels[depth].nameOffset - 1);
@@ -1157,6 +1239,13 @@ TraverseUnixTree(
 
     source = Tcl_DStringValue(sourcePtr);
     if (TclOSlstat(source, &statBuf) != 0) {		/* INTL: Native. */
+	if (doRewind && errno == ENOENT) {
+	    /*
+	     * Deleted by someone else meanwhile.
+	     */
+
+	    return TCL_OK;
+	}
 	errfile = source;
 	goto end;
     }
@@ -1171,6 +1260,10 @@ TraverseUnixTree(
 #ifndef HAVE_FTS
     dirPtr = TclOSopendir(source);			/* INTL: Native. */
     if (dirPtr == NULL) {
+	if (doRewind && errno == ENOENT) {
+	    return TCL_OK;
+	}
+
 	/*
 	 * Can't read directory
 	 */
@@ -1277,6 +1370,13 @@ TraverseUnixTree(
 	Tcl_StatBuf *statBufPtr = NULL;
 
 	if (info == FTS_DNR || info == FTS_ERR || info == FTS_NS) {
+	    if (doRewind && ent->fts_errno == ENOENT) {
+		/*
+		 * Deleted by someone else meanwhile.
+		 */
+
+		continue;
+	    }
 	    errfile = ent->fts_path;
 	    break;
 	}
@@ -1440,6 +1540,13 @@ TraversalDelete(
 	    return TCL_OK;
 	}
 	break;
+    }
+    if (errno == ENOENT) {
+	/*
+	 * Deleted by someone else meanwhile.
+	 */
+
+	return TCL_OK;
     }
     if (errorPtr != NULL) {
 	Tcl_ExternalToUtfDStringEx(NULL, NULL, Tcl_DStringValue(srcPtr),
