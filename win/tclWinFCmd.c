@@ -861,6 +861,16 @@ DoRemoveJustDirectory(
 	if (TclWinSymLinkDelete(nativePath, 0) == 0) {
 	    return TCL_OK;
 	}
+
+	/*
+	 * TclWinSymLinkDelete only handles junctions. RemoveDirectoryW
+	 * removes other links to directories too, but not their targets.
+	 * [Bug 08203e40e3]
+	 */
+
+	if (RemoveDirectoryW(nativePath) != FALSE) {
+	    return TCL_OK;
+	}
     } else {
 	/*
 	 * Ordinary directory.
@@ -1255,11 +1265,24 @@ TraversalDelete(
 	    return TCL_OK;
 	}
 	break;
-    case DOTREE_LINK:
-	if (DoRemoveJustDirectory(nativeSrc, 0, NULL) == TCL_OK) {
+    case DOTREE_LINK: {
+	DWORD attr = GetFileAttributesW(nativeSrc);
+
+	if (attr != INVALID_FILE_ATTRIBUTES
+		&& !(attr & FILE_ATTRIBUTE_DIRECTORY)) {
+	    /*
+	     * A symbolic link to a file: remove the link like a file.
+	     * [Bug 08203e40e3]
+	     */
+
+	    if (TclpDeleteFile(nativeSrc) == TCL_OK) {
+		return TCL_OK;
+	    }
+	} else if (DoRemoveJustDirectory(nativeSrc, 0, NULL) == TCL_OK) {
 	    return TCL_OK;
 	}
 	break;
+    }
     case DOTREE_PRED:
 	return TCL_OK;
     case DOTREE_POSTD:
