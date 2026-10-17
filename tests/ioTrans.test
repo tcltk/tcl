@@ -2176,7 +2176,7 @@ test iortrans-ea69b0258a9833cb {
     close $chan
 } -result {line one}
 
-test iortrans-bug-0ef291c1c2 {transform handler re-entered via trace} -setup {
+test iortrans-12.1 {transform handler re-entered via trace, bug [0ef291c1c2]} -setup {
     set path [makeFile {} iortrans-0ef291c1c2]
     set f [open $path w]
     proc foo {} {puts $::f okay}
