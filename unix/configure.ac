@@ -460,22 +460,6 @@ if test $tcl_cv_grep_gettimeofday = missing ; then
 fi
 
 #--------------------------------------------------------------------
-#	The following code checks to see whether it is possible to get
-#	signed chars on this platform.  This is needed in order to
-#	properly generate sign-extended ints from character values.
-#--------------------------------------------------------------------
-
-AC_C_CHAR_UNSIGNED
-AC_CACHE_CHECK([signed char declarations], tcl_cv_char_signed, [
-    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
-	signed char *p;
-	p = 0;
-	]])],[tcl_cv_char_signed=yes],[tcl_cv_char_signed=no])])
-if test $tcl_cv_char_signed = yes; then
-    AC_DEFINE(HAVE_SIGNED_CHAR, 1, [Are characters signed?])
-fi
-
-#--------------------------------------------------------------------
 #  Does putenv() copy or not?  We need to know to avoid memory leaks.
 #--------------------------------------------------------------------
 

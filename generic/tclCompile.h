@@ -1826,13 +1826,7 @@ static inline int
 TclGetInt1AtPtr(
     const unsigned char *p)
 {
-#ifndef __CHAR_UNSIGNED__
-    return (int) *((char *) p);
-#elif defined(HAVE_SIGNED_CHAR)
     return (int) *((signed char *) p);
-#else
-    return (int) ((*((char *) p)) | ((*(p) & 0200) ? (-256) : 0));
-#endif
 }
 
 static inline unsigned int
