@@ -2116,7 +2116,8 @@ InvokeImportedNRCmd(
     Command *realCmdPtr = dataPtr->realCmdPtr;
 
     TclSkipTailcall(interp);
-    return TclNREvalObjv(interp, objc, objv, TCL_EVAL_NOERR, realCmdPtr);
+    return TclNREvalObjv(interp, objc, objv,
+	    TCL_EVAL_NOERR | TCL_EVAL_NO_INTERP_TRACES, realCmdPtr);
 }
 
 int

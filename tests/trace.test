@@ -2654,6 +2654,46 @@ test trace-40.1 {execution trace errors become command errors} {
     return -level 0 $m[unset m]
 } bar
 
+test trace-41.1 {step traces see an imported command once, bug fc88534d38} -setup {
+    namespace eval ns41 {
+	namespace export cmd
+	proc cmd {} {return}
+    }
+    namespace eval ns41b {
+	namespace import ::ns41::cmd
+	proc main {} {cmd; ::ns41::cmd}
+    }
+    set ::r {}
+    proc tracer41 {args} {lappend ::r [lrange $args 0 end-1]}
+} -body {
+    trace add execution ns41b::main {enterstep leavestep} tracer41
+    ns41b::main
+    set ::r
+} -cleanup {
+    namespace delete ns41 ns41b
+    rename tracer41 {}
+    unset -nocomplain ::r
+} -result {cmd return {return 2 {}} {cmd 0 {}} ::ns41::cmd return {return 2 {}} {::ns41::cmd 0 {}}}
+test trace-41.2 {execution traces on the original command of an import} -setup {
+    namespace eval ns41 {
+	namespace export cmd
+	proc cmd {} {return}
+    }
+    namespace eval ns41b {
+	namespace import ::ns41::cmd
+    }
+    set ::r {}
+    proc tracer41 {args} {lappend ::r [lrange $args 0 end-1]}
+} -body {
+    trace add execution ::ns41::cmd {enter leave} tracer41
+    ns41b::cmd
+    set ::r
+} -cleanup {
+    namespace delete ns41 ns41b
+    rename tracer41 {}
+    unset -nocomplain ::r
+} -result {ns41b::cmd {ns41b::cmd 0 {}}}
+
 # Delete procedures when done, so we don't clash with other tests
 # (e.g. foobar will clash with 'unknown' tests).
 catch {rename foobar {}}

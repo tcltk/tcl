@@ -2411,7 +2411,11 @@ enum InterpEvalFlags {
     TCL_EVAL_FILE = 0x02,
     TCL_EVAL_SOURCE_IN_FRAME = 0x10,
     TCL_EVAL_NORESOLVE = 0x20,
-    TCL_EVAL_DISCARD_RESULT = 0x40
+    TCL_EVAL_DISCARD_RESULT = 0x40,
+    TCL_EVAL_NO_INTERP_TRACES = 0x80
+				/* Don't run interpreter-wide (step) traces:
+				 * the command was already traced under its
+				 * imported name. */
 };
 
 /*

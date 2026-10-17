@@ -233,7 +233,7 @@ static int		TEOV_NotFound(Tcl_Interp *interp, Tcl_Size objc,
 			    Tcl_Obj *const *objv, Namespace *lookupNsPtr);
 static int		TEOV_RunEnterTraces(Tcl_Interp *interp,
 			    Command **cmdPtrPtr, Tcl_Obj *commandPtr, Tcl_Size objc,
-			    Tcl_Obj *const *objv);
+			    Tcl_Obj *const *objv, int flags);
 static Tcl_NRPostProc	RewindCoroutineCallback;
 static Tcl_NRPostProc	TEOEx_ByteCodeCallback;
 static Tcl_NRPostProc	TEOEx_ListCallback;
@@ -242,6 +242,9 @@ static Tcl_NRPostProc	TEOV_Exception;
 static Tcl_NRPostProc	TEOV_NotFoundCallback;
 static Tcl_NRPostProc	TEOV_RestoreVarFrame;
 static Tcl_NRPostProc	TEOV_RunLeaveTraces;
+static Tcl_NRPostProc	TEOV_RunLeaveCmdTraces;
+static int		RunLeaveTraces(void *data[], Tcl_Interp *interp,
+			    int result, int interpTraces);
 static Tcl_NRPostProc	EvalObjvCore;
 static Tcl_NRPostProc	Dispatch;
 
@@ -4600,7 +4603,8 @@ EvalObjvCore(
 	}
     }
 
-    if (enterTracesDone || iPtr->tracePtr
+    if (enterTracesDone
+	    || (iPtr->tracePtr && !(flags & TCL_EVAL_NO_INTERP_TRACES))
 	    || (cmdPtr->flags & CMD_HAS_EXEC_TRACES)) {
 	Tcl_Obj *commandPtr = TclGetSourceFromFrame(
 		flags & TCL_EVAL_SOURCE_IN_FRAME ? iPtr->cmdFramePtr : NULL,
@@ -4609,7 +4613,7 @@ EvalObjvCore(
 	Tcl_IncrRefCount(commandPtr);
 	if (!enterTracesDone) {
 	    int code = TEOV_RunEnterTraces(interp, &cmdPtr, commandPtr,
-		    objc, objv);
+		    objc, objv, flags);
 
 	    /*
 	     * Send any exception from enter traces back as an exception
@@ -4645,7 +4649,8 @@ EvalObjvCore(
 	 */
 
 	cmdPtr->refCount++;
-	TclNRAddCallback(interp, TEOV_RunLeaveTraces, INT2PTR(objc),
+	TclNRAddCallback(interp, (flags & TCL_EVAL_NO_INTERP_TRACES)
+		? TEOV_RunLeaveCmdTraces : TEOV_RunLeaveTraces, INT2PTR(objc),
 		commandPtr, cmdPtr, objv);
     }
 
@@ -5024,7 +5029,8 @@ TEOV_RunEnterTraces(
     Command **cmdPtrPtr,
     Tcl_Obj *commandPtr,
     Tcl_Size objc,
-    Tcl_Obj *const *objv)
+    Tcl_Obj *const *objv,
+    int flags)
 {
     Interp *iPtr = (Interp *) interp;
     Command *cmdPtr = *cmdPtrPtr;
@@ -5040,7 +5046,7 @@ TEOV_RunEnterTraces(
      */
 
     cmdPtr->refCount++;
-    if (iPtr->tracePtr) {
+    if (iPtr->tracePtr && !(flags & TCL_EVAL_NO_INTERP_TRACES)) {
 	traceCode = TclCheckInterpTraces(interp, command, length,
 		cmdPtr, TCL_OK, TCL_TRACE_ENTER_EXEC, objc, objv);
     }
@@ -5075,6 +5081,25 @@ TEOV_RunLeaveTraces(
     Tcl_Interp *interp,
     int result)
 {
+    return RunLeaveTraces(data, interp, result, 1);
+}
+
+static int
+TEOV_RunLeaveCmdTraces(
+    void *data[],
+    Tcl_Interp *interp,
+    int result)
+{
+    return RunLeaveTraces(data, interp, result, 0);
+}
+
+static int
+RunLeaveTraces(
+    void *data[],
+    Tcl_Interp *interp,
+    int result,
+    int interpTraces)		/* Also run interpreter-wide traces. */
+{
     Interp *iPtr = (Interp *) interp;
     int traceCode = TCL_OK;
     Tcl_Size objc = PTR2INT(data[0]);
@@ -5089,7 +5114,7 @@ TEOV_RunLeaveTraces(
 	    traceCode = TclCheckExecutionTraces(interp, command, length,
 		    cmdPtr, result, TCL_TRACE_LEAVE_EXEC, objc, objv);
 	}
-	if (iPtr->tracePtr != NULL && traceCode == TCL_OK) {
+	if (interpTraces && iPtr->tracePtr != NULL && traceCode == TCL_OK) {
 	    traceCode = TclCheckInterpTraces(interp, command, length,
 		    cmdPtr, result, TCL_TRACE_LEAVE_EXEC, objc, objv);
 	}
