@@ -470,6 +470,30 @@ test lset-16.8 {lset - append to inner list} testevalex {
     testevalex {lset x end end end+1 4}
 } {test {1 2 {3 4}}}
 
+test lset-18.1 {lset - huge index on empty list, bug 13d3c0d764} -body {
+    set x {}
+    lset x 0x7fffffffffffffff X
+} -returnCodes error -result {index "0x7fffffffffffffff" out of range}
+test lset-18.2 {lset - huge index on empty list, bug 13d3c0d764} -body {
+    set x {}
+    lset x 0x10000000000000000 X
+} -returnCodes error -result {index "0x10000000000000000" out of range}
+test lset-18.3 {lset - huge index on empty sublist, bug 13d3c0d764} -body {
+    set x {a {}}
+    lset x 1 0x7fffffffffffffff X
+} -returnCodes error -result {index "0x7fffffffffffffff" out of range}
+test lset-18.4 {lset - end+1 on empty list} -body {
+    set x {}
+    lset x end+1 X
+    lset x end+1 Y
+    set y {}
+    lset y end--1 Z
+    list $x $y
+} -result {{X Y} Z}
+test lset-18.5 {lset - huge index on empty list, compiled} -body {
+    apply {{} {set x {}; lset x 0x7fffffffffffffff X}}
+} -returnCodes error -result {index "0x7fffffffffffffff" out of range}
+
 catch {unset noRead}
 catch {unset noWrite}
 catch {rename failTrace {}}

@@ -3056,12 +3056,18 @@ TclLsetFlat(
 	indexArray++;
 
 	/*
-	 * Special case 0-length lists. The Tcl indexing function treat
-	 * will return any value beyond length as TCL_SIZE_MAX for this
-	 * case.
+	 * Special case 0-length lists. The Tcl indexing function returns
+	 * TCL_SIZE_MAX both for "end+1" and for huge indices in this case.
+	 * Only the former is valid; tell them apart by re-evaluating the
+	 * index as if the list had one element.
 	 */
 	if ((index == TCL_SIZE_MAX) && (elemCount == 0)) {
-	    index = 0;
+	    Tcl_Size index1;
+
+	    if ((TclGetIntForIndexM(NULL, indexArray[-1], 0,
+		    &index1) == TCL_OK) && (index1 == 1)) {
+		index = 0;
+	    }
 	}
 	if (index < 0 || index > elemCount
 		|| (valueObj == NULL && index >= elemCount)) {
