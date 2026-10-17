@@ -34,6 +34,7 @@ to the userbase.
  - [on Unix, Tcl_JoinThread() should not call pthread_join() for detached threads](https://core.tcl-lang.org/tcl/tktview/5974ff)
  - [Problem with ::http::OpenSocket](https://core.tcl-lang.org/tcl/tktview/0c1e91)
  - [Windows: after and Tcl_Sleep can sleep about 72 minutes](https://core.tcl-lang.org/tcl/tktview/858404)
+ - [interp create resets the system encoding set by encoding system](https://core.tcl-lang.org/tcl/tktview/63941f)
 
 # Updated bundled packages, libraries, standards, data
  - http 2.10.3
