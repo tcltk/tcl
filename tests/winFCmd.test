@@ -1014,6 +1014,39 @@ test winFCmd-9.4 {TraversalDelete: DOTREE_POSTD} -setup {
     file mkdir td1/td1/td3/td4/td5
     testfile rmdir -force td1
 } -result {}
+test winFCmd-9.5 {TraversalDelete: tree deeper than MAX_PATH, bug [076ed602e1]} -setup {
+    cleanup
+} -constraints {win} -body {
+    set long [file join [pwd] td1 {*}[lrepeat 4 [string repeat X 200]]]
+    file mkdir $long
+    close [open $long/tf1 w]
+    list [catch {file delete -force td1} msg] $msg [file exists td1]
+} -cleanup {
+    cleanup
+} -result {0 {} 0}
+test winFCmd-9.6 {TraversalDelete: entries deleted concurrently, bug [076ed602e1]} -setup {
+    cleanup
+    set files {}
+    for {set d 0} {$d < 20} {incr d} {
+	file mkdir td1/d$d
+	for {set f 0} {$f < 20} {incr f} {
+	    close [open td1/d$d/f$f w]
+	    lappend files [file join [pwd] td1 d$d f$f]
+	}
+    }
+} -constraints {win stdio} -body {
+    # The child deletes the same files in reverse order.
+    set chan [open |[list [interpreter]] r+]
+    puts $chan [list set files [lreverse $files]]
+    puts $chan {puts ready; flush stdout; foreach f $files {catch {file delete $f}}; exit}
+    flush $chan
+    gets $chan
+    list [catch {file delete -force td1} msg] $msg [file exists td1]
+} -cleanup {
+    close $chan
+    unset -nocomplain files chan msg
+    cleanup
+} -result {0 {} 0}
 
 test winFCmd-10.1 {AttributesPosixError - get} -constraints {win} -setup {
     cleanup

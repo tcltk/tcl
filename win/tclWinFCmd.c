@@ -110,6 +110,8 @@ static int		DoRenameFile(const WCHAR *nativeSrc,
 			    const WCHAR *dstPtr);
 static int		TraversalCopy(const WCHAR *srcPtr, const WCHAR *dstPtr,
 			    int type, Tcl_DString *errorPtr);
+static void		InitVanishedCheck(void);
+static int		IsVanished(DWORD winError);
 static int		TraversalDelete(const WCHAR *srcPtr,
 			    const WCHAR *dstPtr, int type,
 			    Tcl_DString *errorPtr);
@@ -532,7 +534,7 @@ int
 TclpDeleteFile(
     const void *nativePath)	/* Pathname of file to be removed (native). */
 {
-    DWORD attr;
+    DWORD attr, lastError;
     const WCHAR *path = (const WCHAR *)nativePath;
 
     /*
@@ -545,10 +547,20 @@ TclpDeleteFile(
 	return TCL_ERROR;
     }
 
+    InitVanishedCheck();
     if (DeleteFileW(path) != FALSE) {
 	return TCL_OK;
     }
-    Tcl_WinConvertError(GetLastError());
+    lastError = GetLastError();
+    if (IsVanished(lastError)) {
+	/*
+	 * Already deleted, or being deleted, by someone else.
+	 */
+
+	Tcl_SetErrno(ENOENT);
+	return TCL_ERROR;
+    }
+    Tcl_WinConvertError(lastError);
 
     if (Tcl_GetErrno() == EACCES) {
 	attr = GetFileAttributesW(path);
@@ -589,11 +601,21 @@ TclpDeleteFile(
 		    }
 		    winError = GetLastError();
 		}
+		if (IsVanished(winError)) {
+		    Tcl_SetErrno(ENOENT);
+		    return TCL_ERROR;
+		}
 		Tcl_WinConvertError(winError);
 		if (fileAttrChanged != 0) {
 		    SetFileAttributesW(path, attr);
 		}
 	    }
+	} else if (IsVanished(GetLastError())) {
+	    /*
+	     * Deleted by someone else meanwhile.
+	     */
+
+	    Tcl_SetErrno(ENOENT);
 	}
     } else if (Tcl_GetErrno() == ENOENT) {
 	attr = GetFileAttributesW(path);
@@ -777,6 +799,79 @@ TclpObjCopyDirectory(
  *----------------------------------------------------------------------
  */
 
+/*
+ * Removes the extended path prefix from the UTF-8 name of a file in an
+ * error, and uses forward slashes.
+ */
+
+/*
+ * IsVanished tells whether a Windows API call failed because the file or
+ * directory no longer exists, or is being deleted by someone else (then the
+ * call fails with ERROR_ACCESS_DENIED, and the NT status is
+ * STATUS_DELETE_PENDING). It must be called right after the failed call, with
+ * its GetLastError() value, and InitVanishedCheck must be called before the
+ * failed call, since it calls other API functions.
+ */
+
+typedef LONG (WINAPI *GetLastNtStatusProc)(void);
+static GetLastNtStatusProc getLastNtStatus = NULL;
+static int vanishedCheckInitialized = 0;
+
+static void
+InitVanishedCheck(void)
+{
+    if (!vanishedCheckInitialized) {
+	HMODULE ntdll = GetModuleHandleW(L"ntdll.dll");
+
+	if (ntdll != NULL) {
+	    getLastNtStatus = (GetLastNtStatusProc)(void *)
+		    GetProcAddress(ntdll, "RtlGetLastNtStatus");
+	}
+	vanishedCheckInitialized = 1;
+    }
+}
+
+static int
+IsVanished(
+    DWORD winError)
+{
+    if (winError == ERROR_FILE_NOT_FOUND || winError == ERROR_PATH_NOT_FOUND) {
+	return 1;
+    }
+    return winError == ERROR_ACCESS_DENIED && getLastNtStatus != NULL
+	    && getLastNtStatus() == (LONG) 0xC0000056L; /* STATUS_DELETE_PENDING */
+}
+
+static void
+StripLongPathPrefix(
+    Tcl_DString *dsPtr)
+{
+    char *p = Tcl_DStringValue(dsPtr);
+    Tcl_Size len = Tcl_DStringLength(dsPtr);
+
+#define IS_SEP(c) ((c) == '\\' || (c) == '/')
+    if (len >= 4 && IS_SEP(p[0]) && IS_SEP(p[1]) && p[2] == '?'
+	    && IS_SEP(p[3])) {
+	if (len >= 8 && (p[4] == 'U' || p[4] == 'u')
+		&& (p[5] == 'N' || p[5] == 'n') && (p[6] == 'C' || p[6] == 'c')
+		&& IS_SEP(p[7])) {
+	    memmove(p + 2, p + 8, len - 8);
+	    len -= 6;
+	} else {
+	    memmove(p, p + 4, len - 4);
+	    len -= 4;
+	}
+	Tcl_DStringSetLength(dsPtr, len);
+	p = Tcl_DStringValue(dsPtr);
+    }
+#undef IS_SEP
+    for (; *p; p++) {
+	if (*p == '\\') {
+	    *p = '/';
+	}
+    }
+}
+
 int
 TclpObjRemoveDirectory(
     Tcl_Obj *pathPtr,
@@ -795,6 +890,8 @@ TclpObjRemoveDirectory(
 	 */
 
 	Tcl_DString native;
+	const WCHAR *nativePath;
+
 	normPtr = Tcl_FSGetNormalizedPath(NULL, pathPtr);
 	if (normPtr == NULL) {
 	    return TCL_ERROR;
@@ -802,10 +899,40 @@ TclpObjRemoveDirectory(
 	if (normPtr != pathPtr) {
 	    Tcl_IncrRefCount(normPtr);
 	}
+	nativePath = (const WCHAR *)Tcl_FSGetNativePath(normPtr);
+	if (nativePath == NULL) {
+	    if (normPtr != pathPtr) {
+		Tcl_DecrRefCount(normPtr);
+	    }
+	    return TCL_ERROR;
+	}
 	Tcl_DStringInit(&native);
-	Tcl_UtfToWCharDString(TclGetString(normPtr), TCL_INDEX_NONE, &native);
+
+	/*
+	 * The paths of the files inside can be much longer than the path of
+	 * the directory, so use the extended path prefix. [Bug 076ed602e1]
+	 */
+
+	if (!TclpLongPathSupported() && wcsncmp(nativePath, L"\\\\?\\", 4)
+		&& wcsncmp(nativePath, L"\\\\.\\", 4)) {
+	    if (nativePath[0] == '\\' && nativePath[1] == '\\') {
+		Tcl_DStringAppend(&native, (char *) L"\\\\?\\UNC",
+			7 * sizeof(WCHAR));
+		nativePath++;
+	    } else if (nativePath[0] != '\0' && nativePath[1] == ':'
+		    && nativePath[2] == '\\') {
+		Tcl_DStringAppend(&native, (char *) L"\\\\?\\",
+			4 * sizeof(WCHAR));
+	    }
+	}
+	Tcl_DStringAppend(&native, (char *) nativePath,
+		wcslen(nativePath) * sizeof(WCHAR) + 1);
+	Tcl_DStringSetLength(&native, Tcl_DStringLength(&native) - 1);
 	ret = DoRemoveDirectory(&native, recursive, &ds);
 	Tcl_DStringFree(&native);
+	if (ret != TCL_OK) {
+	    StripLongPathPrefix(&ds);
+	}
     } else {
 	ret = DoRemoveJustDirectory((const WCHAR *)Tcl_FSGetNativePath(pathPtr), 0, &ds);
     }
@@ -839,7 +966,7 @@ DoRemoveJustDirectory(
 				 * filled with UTF-8 name of file causing
 				 * error. */
 {
-    DWORD attr;
+    DWORD attr, lastError;
 
     /*
      * The RemoveDirectory API acts differently under Win95/98 and NT WRT NULL
@@ -852,6 +979,7 @@ DoRemoveJustDirectory(
 	return TCL_ERROR;
     }
 
+    InitVanishedCheck();
     attr = GetFileAttributesW(nativePath);
 
     if (attr & FILE_ATTRIBUTE_REPARSE_POINT) {
@@ -861,6 +989,7 @@ DoRemoveJustDirectory(
 	if (TclWinSymLinkDelete(nativePath, 0) == 0) {
 	    return TCL_OK;
 	}
+	lastError = GetLastError();
     } else {
 	/*
 	 * Ordinary directory.
@@ -869,9 +998,18 @@ DoRemoveJustDirectory(
 	if (RemoveDirectoryW(nativePath) != FALSE) {
 	    return TCL_OK;
 	}
+	lastError = GetLastError();
+	if (IsVanished(lastError)) {
+	    /*
+	     * Already deleted, or being deleted, by someone else.
+	     */
+
+	    Tcl_SetErrno(ENOENT);
+	    goto end;
+	}
     }
 
-    Tcl_WinConvertError(GetLastError());
+    Tcl_WinConvertError(lastError);
 
     if (Tcl_GetErrno() == EACCES) {
 	attr = GetFileAttributesW(nativePath);
@@ -1020,8 +1158,18 @@ TraverseWinTree(
 	    (targetPtr == NULL ? NULL : Tcl_DStringValue(targetPtr));
 
     oldSourceLen = Tcl_DStringLength(sourcePtr);
+    InitVanishedCheck();
     sourceAttr = GetFileAttributesW(nativeSource);
     if (sourceAttr == 0xFFFFFFFF) {
+	DWORD lastError = GetLastError();
+
+	if (traverseProc == TraversalDelete && IsVanished(lastError)) {
+	    /*
+	     * Deleted by someone else meanwhile, nothing to do.
+	     */
+
+	    return TCL_OK;
+	}
 	nativeErrfile = nativeSource;
 	goto end;
     }
@@ -1049,11 +1197,23 @@ TraverseWinTree(
     nativeSource = (WCHAR *) Tcl_DStringValue(sourcePtr);
     handle = FindFirstFileW(nativeSource, &data);
     if (handle == INVALID_HANDLE_VALUE) {
+	DWORD winError = GetLastError();
+
+	if (traverseProc == TraversalDelete && IsVanished(winError)) {
+	    /*
+	     * The directory was deleted by someone else meanwhile.
+	     */
+
+	    Tcl_DStringSetLength(sourcePtr, oldSourceLen + 1);
+	    Tcl_DStringSetLength(sourcePtr, oldSourceLen);
+	    return TCL_OK;
+	}
+
 	/*
 	 * Can't read directory.
 	 */
 
-	Tcl_WinConvertError(GetLastError());
+	Tcl_WinConvertError(winError);
 	nativeErrfile = nativeSource;
 	goto end;
     }
@@ -1269,6 +1429,14 @@ TraversalDelete(
 	break;
     }
 
+    if (Tcl_GetErrno() == ENOENT) {
+	/*
+	 * Deleted by someone else meanwhile, which is fine: go on with the
+	 * rest of the tree.
+	 */
+
+	return TCL_OK;
+    }
     if (errorPtr != NULL) {
 	Tcl_DStringInit(errorPtr);
 	Tcl_WCharToUtfDString(nativeSrc, TCL_INDEX_NONE, errorPtr);
