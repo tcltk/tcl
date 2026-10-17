@@ -239,6 +239,28 @@ sauf `-strictpad 1`.
 `file binary` est écrit en Tcl (`layout/filebinary.tcl`) au-dessus de `type binary` ; la
 même table de sous-commandes pourra servir à `chan binary`.
 
+**`type binary`, interrogations et verbes.** Les questions sur un type s'écrivent par une
+annotation locale sur l'argument de type (le `?` final la distingue de tout nom de type) ;
+les actions sur des octets restent des verbes :
+
+    type binary entete                          ;# la représentation (forme nue)
+    type binary {what?}$T                       ;# idem
+    type binary {sizeof?}$T ?-align A?          ;# taille en octets (erreur si variable)
+    type binary {is?}$T $octets ?-exact 1?      ;# 1 si $octets est décodable en T, sinon 0
+    type binary decode T $octets ...            ;# comme « file binary decode »
+    type binary encode T $valeur ...            ;# idem encode
+    type binary deref ...                       ;# idem deref
+    type binary space ...                       ;# idem space (référentiels nommés)
+
+`{is?}` accepte par défaut un préfixe valide (reconnaître un en-tête) ; `-exact 1` exige que
+les octets soient tous consommés. Une option invalide, un type inconnu ou sans représentation
+binaire restent des erreurs : seul l'échec du décodage donne 0. Une annotation inconnue qui se
+termine par `?` est une erreur (`unknown question "oups?"`) ; toute autre annotation est
+ignorée. Un type qui porte le nom d'un verbe (`type def decode ...`) reste décrit par
+`type binary decode`, tant qu'aucun autre argument ne suit. `decode`, `encode`, `deref` et
+`space` demandent que `layout/filebinary.tcl` soit chargé (sinon : `the binary layer is not
+loaded`). `file binary` reste disponible comme alias pendant la transition.
+
 **Alias courts.** `layout/binaliases.tcl` donne des noms brefs aux représentations usuelles
 (convention de Rust et de Zig) : `u8 u16 u32 u64`, `i8 i16 i32 i64`, `f32 f64`, avec les
 suffixes `be`/`le` (`u16be`, `i32le`, `f64be`), et `cstring`, `wstringz`, `latin1z`. Ce sont des

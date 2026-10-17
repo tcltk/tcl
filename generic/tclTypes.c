@@ -3128,14 +3128,128 @@ BinRepr(
     return TCL_OK;
 }
 
+/*
+ * type binary : la représentation binaire d'un type, et la porte d'entrée de
+ * la couche Tcl (layout/filebinary.tcl) qui lit et écrit des octets.
+ *
+ *   type binary T                     la représentation de T (forme nue)
+ *   type binary {what?}T              idem
+ *   type binary {sizeof?}T ?opts?     la taille en octets de T
+ *   type binary {is?}T DATA ?opts?    DATA est-elle valide pour T ? (0 ou 1)
+ *   type binary decode|encode|deref|space ...
+ *
+ * Les interrogations sont des annotations LOCALES (voir CONCEPTION-
+ * annotations.md) : un texte terminé par "?" n'est jamais un nom de type, donc
+ * jamais un cast. Elles s'adressent à cette commande seule, qui lit
+ * l'annotation brute de son argument. Une annotation inconnue qui se termine
+ * par "?" est une erreur (faute de frappe probable) ; toute autre est ignorée.
+ * Les verbes d'action passent à la couche Tcl (::fb::filebinary), qui doit
+ * être chargée.
+ */
+
+static const char *const binVerbs[] = {
+    "decode", "encode", "deref", "space", NULL
+};
+
+static int
+BinCallFb(Tcl_Interp *interp, const char *cmd, Tcl_Obj *typeObj,
+	Tcl_Size nrest, Tcl_Obj *const *rest, const char *verb)
+{
+    Tcl_Obj **argv;
+    Tcl_Size n = 0, i;
+    int rc;
+
+    if (Tcl_FindCommand(interp, cmd, NULL, 0) == NULL) {
+	ERR(interp, "BIN", "type binary: the binary layer is not loaded "
+		"(source layout/filebinary.tcl)");
+	return TCL_ERROR;
+    }
+    argv = (Tcl_Obj **) Tcl_Alloc((size_t) (nrest + 3) * sizeof(Tcl_Obj *));
+    argv[n++] = Tcl_NewStringObj(cmd, -1);
+    if (verb != NULL) {
+	argv[n++] = Tcl_NewStringObj(verb, -1);
+    }
+    if (typeObj != NULL) {
+	argv[n++] = typeObj;
+    }
+    for (i = 0; i < nrest; i++) {
+	argv[n++] = rest[i];
+    }
+    for (i = 0; i < n; i++) {
+	Tcl_IncrRefCount(argv[i]);
+    }
+    rc = Tcl_EvalObjv(interp, n, argv, 0);
+    for (i = 0; i < n; i++) {
+	Tcl_DecrRefCount(argv[i]);
+    }
+    Tcl_Free(argv);
+    return rc;
+}
+
 static int
 TypeBinaryCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 {
     TclType *tp;
-    Tcl_Obj *r, *vis;
+    Tcl_Obj *r, *vis, *content = NULL, *raw = NULL;
     Tcl_Size len;
     const char *text;
+    int kind;
 
+    if (objc < 3) {
+	Tcl_WrongNumArgs(interp, 2, objv, "type");
+	return TCL_ERROR;
+    }
+
+    /* Un verbe d'action (decode, encode, deref, space), sauf si c'est le nom
+     * d'un type et qu'il n'y a pas d'autre argument. */
+    if (!TclIsAnnotated(objv[2])) {
+	int i;
+
+	text = Tcl_GetStringFromObj(objv[2], &len);
+	for (i = 0; binVerbs[i] != NULL; i++) {
+	    if (strcmp(text, binVerbs[i]) == 0) {
+		int isType = 0;
+
+		if (objc == 3) {
+		    Tcl_Obj *saved = Tcl_GetObjResult(interp);
+
+		    Tcl_IncrRefCount(saved);
+		    isType = (TclTypeParse(interp, text, len) != NULL);
+		    Tcl_SetObjResult(interp, saved);
+		    Tcl_DecrRefCount(saved);
+		}
+		if (!isType) {
+		    return BinCallFb(interp, "::fb::filebinary", NULL,
+			    objc - 3, objv + 3, binVerbs[i]);
+		}
+	    }
+	}
+    }
+
+    /* Une interrogation : annotation locale sur l'argument de type. */
+    kind = TclAnnotInfo(objv[2], &content, NULL, NULL, &raw);
+    if (kind == 2 && raw != NULL) {
+	const char *q = Tcl_GetString(raw);
+	size_t ql = strlen(q);
+
+	if (strcmp(q, "sizeof?") == 0) {
+	    return BinCallFb(interp, "::fb::sizeof", content, objc - 3,
+		    objv + 3, NULL);
+	}
+	if (strcmp(q, "is?") == 0) {
+	    if (objc < 4) {
+		Tcl_WrongNumArgs(interp, 2, objv, "{is?}type data ?options?");
+		return TCL_ERROR;
+	    }
+	    return BinCallFb(interp, "::fb::isvalid", content, objc - 3,
+		    objv + 3, NULL);
+	}
+	if (strcmp(q, "what?") != 0 && ql > 0 && q[ql - 1] == '?') {
+	    ERR(interp, "BIN", "unknown question \"%s\": must be is?, sizeof? "
+		    "or what?", q);
+	    return TCL_ERROR;
+	}
+    }
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 2, objv, "type");
 	return TCL_ERROR;

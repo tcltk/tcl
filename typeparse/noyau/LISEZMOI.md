@@ -594,3 +594,14 @@ contient les deux. Côté Tcl, remplacer `layout/filebinary.tcl` (sélecteur `=n
 * `tclTypedVar.c` : `TclTypedVarPrepareWrite` range le contenu seul pour `TCLA_PLAIN` (variable
   non typée) et ne conserve pas l'annotation dans `append`/`lappend` sur variable typée.
 * Test : `t45_annotations_locales.tcl`. Conception : `CONCEPTION-annotations.md`.
+
+## type binary annoté (patch types-binaires-type-binary-annote)
+
+* `tclTypes.c` : `TypeBinaryCmd` lit l'annotation brute de son argument de type
+  (`TclAnnotInfo`) : `{what?}` décrit, `{sizeof?}` appelle `::fb::sizeof`, `{is?}` appelle
+  `::fb::isvalid`. Une annotation inconnue terminée par `?` est une erreur ; les autres sont
+  ignorées. Les verbes `decode`, `encode`, `deref`, `space` passent à `::fb::filebinary` (couche
+  Tcl, qui doit être chargée) ; un type nommé comme un verbe reste décrit tant qu'aucun autre
+  argument ne suit.
+* `layout/filebinary.tcl` : `::fb::isvalid` (décodage à blanc, `-exact`).
+* Test : `t46_type_binary_annote.tcl`. `file binary` reste en alias.

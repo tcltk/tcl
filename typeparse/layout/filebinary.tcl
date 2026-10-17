@@ -1273,6 +1273,41 @@ proc ::fb::sizeof {type args} {
     return [sizeAt [repr $type] 0 [dict get $o ctx]]
 }
 
+# FR : DATA est-elle valide pour TYPE ? 1 ou 0, sans produire la valeur.
+#      Par défaut un préfixe valide suffit (on peut reconnaître un en-tête) ;
+#      -exact 1 exige en plus que DATA soit entièrement consommée. Une option
+#      invalide ou un type sans représentation binaire reste une erreur : seul
+#      l'échec du décodage donne 0.
+#      Appelée par « type binary {is?}TYPE DATA ».
+# EN : is DATA valid for TYPE? 1 or 0, without producing the value. By
+#      default a valid prefix is enough (to recognise a header); -exact 1 also
+#      requires DATA to be fully consumed. A bad option or a type without binary
+#      representation is still an error: only a decoding failure gives 0.
+#      Called by "type binary {is?}TYPE DATA".
+proc ::fb::isvalid {type data args} {
+    set exact 0
+    set rest {}
+    foreach {k v} $args {
+	if {$k eq "-exact"} {
+	    set exact [string is true -strict $v]
+	} else {
+	    lappend rest $k $v
+	}
+    }
+    if {[llength $args] % 2} {
+	error "wrong # args: options must be -name value pairs"
+    }
+    set o [options $rest {-offset -endian -align -strictpad -linkdepth}]
+    repr $type
+    if {[catch {decode $type $data {*}$rest -consumed used}]} {
+	return 0
+    }
+    if {$exact && $used != [string length $data]} {
+	return 0
+    }
+    return 1
+}
+
 # FR : « file binary » est un sous-ensemble de « file » ; la même table
 #      servira plus tard à « chan binary » (read/write sur les canaux).
 # EN : "file binary" is a subensemble of "file"; the same table will later
