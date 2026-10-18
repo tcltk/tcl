@@ -519,6 +519,35 @@ testConstraint [format "%sShimmer" [string totitle $not]] 1
 
 }
 
+test abstractlist-5.1 {lpop with setElementProc, bug [409a4e5f28]} -constraints lstring -body {
+    set l [lstring abcd]
+    lpop l 1
+    set r [list $l]
+    set l 5
+    lappend r x
+} -cleanup {
+    unset -nocomplain l r
+} -result {{a c d} x}
+test abstractlist-5.2 {join one element without indexProc, bug [409a4e5f28]} -constraints lstring -body {
+    join [lstring -not INDEX a] :
+} -result a
+test abstractlist-5.3 {lindex with a negative index, bug [409a4e5f28]} -constraints lstring -setup {
+    proc idx {l i} {lindex $l $i}
+} -body {
+    set l [lstring abcde]
+    list [string length [idx $l -1]] [string length [lindex $l {*}-1]]
+} -cleanup {
+    rename idx {}
+    unset -nocomplain l
+} -result {0 0}
+test abstractlist-5.4 {lset without indices, bug [409a4e5f28]} -constraints lstring -body {
+    set l [lstring abc]
+    lset l {*}{} X
+    list $l [apply {{} {set l [lstring abc]; lset l Y; return $l}}]
+} -cleanup {
+    unset -nocomplain l
+} -result {X Y}
+
 #
 # Test fix for bug in TEBC for STR CONCAT, and LIST INDEX
 # instructions.

@@ -5215,10 +5215,13 @@ TEBCresume(
 	 */
 
 	DECACHE_STACK_INFO();
-	if (TclObjTypeHasProc(valuePtr, setElementProc)) {
+	if (numIndices > 0 && TclObjTypeHasProc(valuePtr, setElementProc)) {
 	    objResultPtr = TclObjTypeSetElement(interp,
 		    valuePtr, numIndices,
 		    &OBJ_AT_DEPTH(numIndices), OBJ_AT_TOS);
+	    if (objResultPtr) {
+		Tcl_IncrRefCount(objResultPtr);
+	    }
 	} else {
 	    objResultPtr = TclLsetFlat(interp, valuePtr, numIndices,
 		    &OBJ_AT_DEPTH(numIndices), OBJ_AT_TOS);
