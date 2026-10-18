@@ -239,3 +239,34 @@ Pas fait : `{@}$x`, note par élément d'une liste typée (la note est sur la li
 effacement des notes par un `set {T}a` sur variable typée (elles sont perdues, comme
 `port` → `int`), uniformisation « un nominal s'efface toujours vers sa base » (6.5).
 Seule la note la plus récente est lue comme nom à la consommation.
+
+## 7. Le cast appartient aux constructeurs (décisions du 18 octobre)
+
+Un **type** est une annotation résolue dans la typologie connue, et seul un **constructeur de
+variable** résout. Patch : types-binaires-cast-constructeur ; test t49.
+
+1. Le nom d'une variable attend un type : `{zz}y` (inconnu) et `{-v}y` (locale) sont des erreurs.
+2. Hors constructeur, `{A}$x` empile `A`, même si `A` est un type connu.
+3. Le constructeur dépile depuis le sommet tant que l'annotation se résout ; la première qui ne
+   se résout pas arrête tout (`set z {px}$y`, `y = @mm.stop` → `z = px@mm.stop`).
+4. Les annotations dépilées doivent être cohérentes (la plus récente entre dans chacune des
+   autres), sinon erreur.
+5. Le cast vers la plus récente : `type convert` spécifique, chaîne des bases, puis règle entre
+   génériques ; sinon `unknown way to cast the value from T to R`.
+6. Le contrat de la variable fait le dernier contrôle. Un nominal défini s'efface devant sa base
+   (`px` dans `{int}Position` donne `int`, sans trace ; `dist` entre dans `mm`). Deux nominaux
+   sans lien de chaîne ne sont jamais équivalents (`mm` et `kg`) : un type nominal sert justement
+   à distinguer des unités. Une annotation non résolue reste sur la pile (`int@px`).
+7. `{}` : en constructeur, sur la valeur, retire le type et garde la pile ; sur le nom, lève le
+   contrat et ne résout rien ; hors constructeur, efface type et pile. L'objet `x` n'est jamais
+   modifié : le partage ne pose pas de problème.
+8. `type cast T v` : le résolveur sans variable.
+9. Paramètres fantômes : une famille `type def {grandeur({string}dim, {double}f = 1.0,
+   {double}o = 0.0)} double` donne des unités (`mm = grandeur(L, 0.001)`) dont la valeur reste
+   un `double`. Dimension = paramètre `dim`, unité = `f` et `o`, nature = le nominal
+   (`couple` et `energie` ont la même instance mais restent distincts). Une règle de conversion
+   vaut pour toute une famille (`type convert grandeur grandeur {{x de vers} ...}`, paramètres
+   passés comme produits, `return -code continue` pour « non applicable ») ; elle ne relie que
+   des instances différentes. Les conversions restent explicites (patch convert-famille, t50).
+
+Ouvert : les annotations sur les éléments (`lappend L {px}$x`), qui font des listes annotées.

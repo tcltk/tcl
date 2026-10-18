@@ -1,0 +1,14 @@
+règle de famille                   ok: 
+mm -> m                            ok: m 1.5
+mm -> km                           ok: km 0.0015
+K -> degC                          ok: degC 26.850000000000023
+degC -> K                          ok: K 298.15
+mm -> kg (continue)                ERREUR: unknown way to cast the value from mm to kg
+couple -> energie                  ERREUR: unknown way to cast the value from couple to energie
+instance directe                   ok: m 0.12
+type cast                          ok: 0.0015
+contrat reste explicite            ERREUR: type mismatch: expected m but got mm (use an explicit cast)
+de est un produit                  ERREUR: {prod<dim:string;f:double;o:double;>} L 0.001 0.0
+règle qui échoue                   ERREUR: pas de masse pour L
+spécifique prioritaire             ok: 1.5
+inconnu                            ERREUR: type convert needs two defined types or type families, not "zz"

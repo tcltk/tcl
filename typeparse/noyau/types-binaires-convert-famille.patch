@@ -1,0 +1,331 @@
+diff -ruN a/generic/tclTypeGeneric.c b/generic/tclTypeGeneric.c
+--- a/generic/tclTypeGeneric.c	2026-10-18 19:01:49.355128647 +0200
++++ b/generic/tclTypeGeneric.c	2026-10-18 19:01:49.356711803 +0200
+@@ -1363,6 +1363,25 @@
+ 	    goto fail;
+ 	}
+     }
++    if (!g->bits) {
++	/* Famille et paramètres liés : les règles « type convert famille
++	 * famille » les passent à leur lambda. Une instance appartient à SA
++	 * famille, même si son corps est l'instance d'une autre. */
++	Tcl_Obj *args = Tcl_NewListObj(0, NULL);
++	Tcl_Size k;
++
++	if (inst->familyArgs != NULL) {
++	    Tcl_DecrRefCount(inst->familyArgs);
++	}
++
++	for (k = 0; k < g->nparams; k++) {
++	    Tcl_ListObjAppendElement(NULL, args, bound.p[k].value != NULL
++		    ? Tcl_DuplicateObj(bound.p[k].value) : Tcl_NewObj());
++	}
++	inst->family = g;
++	inst->familyArgs = args;
++	Tcl_IncrRefCount(args);
++    }
+     if (!TclTypesInhabited(inst, stack, 0)) {
+ 	ERR(interp, "RECURSIVE", "type \"%s\" has no finite value: every "
+ 		"recursive reference must go through a sum variant or a "
+diff -ruN a/generic/tclTypes.c b/generic/tclTypes.c
+--- a/generic/tclTypes.c	2026-10-18 19:01:49.348267080 +0200
++++ b/generic/tclTypes.c	2026-10-18 19:01:49.349921182 +0200
+@@ -119,6 +119,9 @@
+ 	if (d->all[i]->keys != NULL) {
+ 	    TclTypesFreeKeys(d->all[i]->keys, d->all[i]->nkeys);
+ 	}
++	if (d->all[i]->familyArgs != NULL) {
++	    Tcl_DecrRefCount(d->all[i]->familyArgs);
++	}
+ 	Tcl_Free(d->all[i]->name);
+ 	Tcl_Free(d->all[i]);
+     }
+@@ -2113,6 +2116,136 @@
+     return res;
+ }
+ 
++/* --------------------------------------------------------------------
++ * Règles de famille : type convert grandeur grandeur {{x de vers} ...}
++ * -------------------------------------------------------------------- */
++
++/* Le premier type de la chaîne de bases qui appartient à une famille. */
++static TclType *
++FamilyOf(TclType *tp)
++{
++    int depth;
++
++    for (depth = 0; tp != NULL && depth < 64; tp = tp->under, depth++) {
++	if (tp->family != NULL) {
++	    return tp;
++	}
++    }
++    return NULL;
++}
++
++/* Même famille et mêmes paramètres : la même instance (couple et energie
++ * sur grandeur(M.L2.T-2)) ; ce n'est pas un changement d'unité. */
++static int
++SameInstance(TclType *a, TclType *b)
++{
++    return a->family == b->family && strcmp(Tcl_GetString(a->familyArgs),
++	    Tcl_GetString(b->familyArgs)) == 0;
++}
++
++/*
++ * Les paramètres de l'instance fi, comme valeur du produit anonyme de sa
++ * famille : {string}dim, {double}f = 1.0 donne {{string}dim; {double}f}.
++ * Un paramètre {type}T ou {cmd}c est un champ string (son nom canonique) ;
++ * les autres gardent leur type s'il est int, double ou string.
++ */
++static Tcl_Obj *
++FamilyParams(Tcl_Interp *interp, TclType *fi)
++{
++    TypeGeneric *g = fi->family;
++    Tcl_Obj *copy, *res;
++    int variant = -1;
++    Tcl_Size i;
++
++    if (g->paramsType == NULL) {
++	Tcl_DString ds;
++
++	Tcl_DStringInit(&ds);
++	Tcl_DStringAppend(&ds, "{", 1);
++	for (i = 0; i < g->nparams; i++) {
++	    const TypeParam *pp = &g->params[i];
++	    const char *tn = "string";
++
++	    if (!pp->isType && !pp->isCmd && pp->type != NULL
++		    && pp->type->reserved && (strcmp(pp->type->name, "int") == 0
++		    || strcmp(pp->type->name, "double") == 0)) {
++		tn = pp->type->name;
++	    }
++	    Tcl_DStringAppend(&ds, i > 0 ? "; {" : "{", TCL_AUTO_LENGTH);
++	    Tcl_DStringAppend(&ds, tn, TCL_AUTO_LENGTH);
++	    Tcl_DStringAppend(&ds, "}", 1);
++	    Tcl_DStringAppend(&ds, Tcl_GetString(pp->name), TCL_AUTO_LENGTH);
++	}
++	Tcl_DStringAppend(&ds, "}", 1);
++	g->paramsType = TclTypeParse(interp, Tcl_DStringValue(&ds),
++		Tcl_DStringLength(&ds));
++	Tcl_DStringFree(&ds);
++	if (g->paramsType == NULL) {
++	    return NULL;
++	}
++    }
++    copy = Tcl_DuplicateObj(fi->familyArgs);
++    Tcl_IncrRefCount(copy);
++    if (TclTypeComplete(interp, g->paramsType, copy, -1, &variant)
++	    != TCL_OK) {
++	Tcl_DecrRefCount(copy);
++	return NULL;
++    }
++    res = TclNewAnnotated(interp, g->paramsType, variant, copy);
++    Tcl_DecrRefCount(copy);
++    return res;
++}
++
++/*
++ * Appelle la règle : apply lambda contenu ?de? ?vers?. Rend TCL_OK
++ * (*resPtr, objet neuf), TCL_CONTINUE (« règle non applicable ») ou
++ * TCL_ERROR.
++ */
++static int
++ApplyFamily(Tcl_Interp *interp, Tcl_Obj *lambda, Tcl_Obj *content,
++	TclType *fi, TclType *ti, Tcl_Obj **resPtr)
++{
++    Tcl_Obj *argv[5];
++    int argc = 0, i, rc;
++
++    argv[argc++] = Tcl_NewStringObj("apply", 5);
++    argv[argc++] = lambda;
++    argv[argc++] = content;
++    if (fi != NULL) {
++	if ((argv[argc] = FamilyParams(interp, fi)) == NULL) {
++	    TclDiscard(argv[0]);
++	    return TCL_ERROR;
++	}
++	argc++;
++    }
++    if (ti != NULL) {
++	if ((argv[argc] = FamilyParams(interp, ti)) == NULL) {
++	    for (i = 3; i < argc; i++) {
++		TclDiscard(argv[i]);
++	    }
++	    TclDiscard(argv[0]);
++	    return TCL_ERROR;
++	}
++	argc++;
++    }
++    for (i = 0; i < argc; i++) {
++	Tcl_IncrRefCount(argv[i]);
++    }
++    rc = Tcl_EvalObjv(interp, argc, argv, 0);
++    for (i = 0; i < argc; i++) {
++	Tcl_DecrRefCount(argv[i]);
++    }
++    if (rc == TCL_OK) {
++	*resPtr = Tcl_DuplicateObj(Tcl_GetObjResult(interp));
++	return TCL_OK;
++    }
++    if (rc == TCL_CONTINUE) {
++	Tcl_ResetResult(interp);
++	return TCL_CONTINUE;
++    }
++    return TCL_ERROR;
++}
++
+ /*
+  * Cast de "src" (valeur typée, ou chaîne ordinaire) vers "target".
+  * Ordre : même type ; conversion déclarée ; nominal <-> sous-jacent ;
+@@ -2188,6 +2321,61 @@
+ 	}
+     }
+     /*
++     * Règle de FAMILLE (type convert grandeur grandeur ...), entre deux
++     * instances différentes : un changement d'unité. Deux nominaux sur la
++     * même instance (couple, energie) ne relèvent pas de la règle.
++     */
++    if (from != NULL) {
++	TclType *fi = FamilyOf(from), *ti = FamilyOf(target);
++
++	if ((fi != NULL || ti != NULL)
++		&& !(fi != NULL && ti != NULL && SameInstance(fi, ti))) {
++	    char fk[3][160], tk[3][160];
++	    int nf = 0, nt = 0, a, b, frc;
++	    Tcl_DString fkey;
++
++	    if (fi != NULL) {
++		snprintf(fk[nf++], sizeof(fk[0]), "@%s", fi->family->name);
++	    }
++	    snprintf(fk[nf++], sizeof(fk[0]), "%s", from->name);
++	    snprintf(fk[nf++], sizeof(fk[0]), "%s",
++		    TclTypeGenericOf(from)->name);
++	    if (ti != NULL) {
++		snprintf(tk[nt++], sizeof(tk[0]), "@%s", ti->family->name);
++	    }
++	    snprintf(tk[nt++], sizeof(tk[0]), "%s", target->name);
++	    snprintf(tk[nt++], sizeof(tk[0]), "%s",
++		    TclTypeGenericOf(target)->name);
++	    for (a = 0; a < nf; a++) {
++		for (b = 0; b < nt; b++) {
++		    if (fk[a][0] != '@' && tk[b][0] != '@') {
++			continue;	/* pas une règle de famille */
++		    }
++		    Tcl_DStringInit(&fkey);
++		    Tcl_DStringAppend(&fkey, fk[a], TCL_AUTO_LENGTH);
++		    Tcl_DStringAppend(&fkey, "\1", 1);
++		    Tcl_DStringAppend(&fkey, tk[b], TCL_AUTO_LENGTH);
++		    hPtr = Tcl_FindHashEntry(&d->converts,
++			    Tcl_DStringValue(&fkey));
++		    Tcl_DStringFree(&fkey);
++		    if (hPtr == NULL) {
++			continue;
++		    }
++		    frc = ApplyFamily(interp, (Tcl_Obj *) Tcl_GetHashValue(hPtr),
++			    content, fk[a][0] == '@' ? fi : NULL,
++			    tk[b][0] == '@' ? ti : NULL, &res);
++		    if (frc == TCL_OK) {
++			goto validate;
++		    }
++		    if (frc == TCL_ERROR) {
++			return TCL_ERROR;
++		    }
++		}
++	    }
++	}
++    }
++
++    /*
+      * Pas de règle spécifique : on se ramène aux types GÉNÉRIQUES. D'abord
+      * une conversion déclarée entre eux, puis les conversions intégrées
+      * entre scalaires.
+@@ -2477,6 +2665,13 @@
+     into->binAt = res->binAt;
+     into->binLink = res->binLink;
+     into->binTag = res->binTag;
++    if (into->family == NULL && res->family != NULL) {
++	/* type def mm {grandeur(L, 0.001)} : mm hérite de la famille et des
++	 * paramètres de l'instance (règles de famille de type convert). */
++	into->family = res->family;
++	into->familyArgs = res->familyArgs;
++	Tcl_IncrRefCount(into->familyArgs);
++    }
+     if (res->nkeys > 0) {
+ 	into->keys = (TclDictKey *) Tcl_Alloc(res->nkeys * sizeof(TclDictKey));
+ 	into->nkeys = res->nkeys;
+@@ -2652,21 +2847,35 @@
+ TypeConvertCmd(Tcl_Interp *interp, TypeData *d, Tcl_Obj *fromObj,
+ 	Tcl_Obj *toObj, Tcl_Obj *lambda)
+ {
+-    Tcl_HashEntry *hf = Tcl_FindHashEntry(&d->names, Tcl_GetString(fromObj));
+-    Tcl_HashEntry *ht = Tcl_FindHashEntry(&d->names, Tcl_GetString(toObj));
+-    TclType *from, *to;
+-    char key[256];
+-    int isNew;
++    char key[2 * 128 + 2], side[2][128];
++    int isNew, i;
+     Tcl_HashEntry *hPtr;
++    Tcl_Obj *objs[2];
+ 
+-    if (hf == NULL || ht == NULL || Tcl_GetHashValue(hf) == NULL
+-	    || Tcl_GetHashValue(ht) == NULL) {
+-	ERR(interp, "UNKNOWN", "type convert needs two defined types");
+-	return TCL_ERROR;
++    /*
++     * Chaque côté est un type défini, ou une FAMILLE (type def paramétré,
++     * « grandeur » pour grandeur(L, 0.001)) : la règle vaut alors pour
++     * toutes ses instances, et sa lambda reçoit en plus les paramètres
++     * de l'instance (un produit) : {x de vers}, {x de} ou {x vers}.
++     */
++    objs[0] = fromObj;
++    objs[1] = toObj;
++    for (i = 0; i < 2; i++) {
++	const char *nm = Tcl_GetString(objs[i]);
++	Tcl_HashEntry *h = Tcl_FindHashEntry(&d->names, nm);
++
++	if (h != NULL && Tcl_GetHashValue(h) != NULL) {
++	    snprintf(side[i], sizeof(side[i]), "%s",
++		    ((TclType *) Tcl_GetHashValue(h))->name);
++	} else if (Tcl_FindHashEntry(&d->generics, nm) != NULL) {
++	    snprintf(side[i], sizeof(side[i]), "@%s", nm);
++	} else {
++	    ERR(interp, "UNKNOWN", "type convert needs two defined types or "
++		    "type families, not \"%s\"", nm);
++	    return TCL_ERROR;
++	}
+     }
+-    from = (TclType *) Tcl_GetHashValue(hf);
+-    to = (TclType *) Tcl_GetHashValue(ht);
+-    snprintf(key, sizeof(key), "%s\1%s", from->name, to->name);
++    snprintf(key, sizeof(key), "%s\1%s", side[0], side[1]);
+     hPtr = Tcl_CreateHashEntry(&d->converts, key, &isNew);
+     if (!isNew) {
+ 	Tcl_DecrRefCount((Tcl_Obj *) Tcl_GetHashValue(hPtr));
+diff -ruN a/generic/tclTypes.h b/generic/tclTypes.h
+--- a/generic/tclTypes.h	2026-10-18 19:01:49.365242516 +0200
++++ b/generic/tclTypes.h	2026-10-18 19:01:49.366736984 +0200
+@@ -134,6 +134,12 @@
+     int refine;			/* 1 : raffinement d'int ou de double (instance
+ 				 * de int(s,n), double(n), bitarray(n)) : voir
+ 				 * TclTypeAssignable */
++    struct TypeGeneric *family;	/* instance d'un type def paramétré (grandeur(L,
++				 * 0.001)), ou nominal défini sur elle : la
++				 * famille, pour les règles « type convert
++				 * famille famille » ; NULL sinon */
++    Tcl_Obj *familyArgs;	/* liste des valeurs liées des paramètres, dans
++				 * l'ordre de la déclaration (défauts compris) */
+ };
+ 
+ /* Les descripteurs vivent autant que l'interpréteur (pas de comptage). */
+diff -ruN a/generic/tclTypesInt.h b/generic/tclTypesInt.h
+--- a/generic/tclTypesInt.h	2026-10-18 19:01:49.369798690 +0200
++++ b/generic/tclTypesInt.h	2026-10-18 19:01:49.371382717 +0200
+@@ -47,6 +47,8 @@
+ 				 * nominal de plus */
+     int bits;			/* 1 : bitarray, l'instance reçoit bitWidth et
+ 				 * bitMsb0 et binEnd */
++    TclType *paramsType;	/* produit anonyme des paramètres, construit à la
++				 * première règle de famille qui en a besoin */
+ } TypeGeneric;
+ 
+ typedef struct TypeData {

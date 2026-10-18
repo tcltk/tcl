@@ -134,6 +134,12 @@ struct TclType {
     int refine;			/* 1 : raffinement d'int ou de double (instance
 				 * de int(s,n), double(n), bitarray(n)) : voir
 				 * TclTypeAssignable */
+    struct TypeGeneric *family;	/* instance d'un type def paramétré (grandeur(L,
+				 * 0.001)), ou nominal défini sur elle : la
+				 * famille, pour les règles « type convert
+				 * famille famille » ; NULL sinon */
+    Tcl_Obj *familyArgs;	/* liste des valeurs liées des paramètres, dans
+				 * l'ordre de la déclaration (défauts compris) */
 };
 
 /* Les descripteurs vivent autant que l'interpréteur (pas de comptage). */
@@ -212,6 +218,30 @@ Tcl_Obj	*TclAnnotDisplay(Tcl_Interp *interp, Tcl_Obj *objPtr, int withNotes);
 int	TclAnnotSuffixIsLiteral(struct Tcl_Token *tokenPtr, Tcl_Size count);
 int	TclAnnotateValue(Tcl_Interp *interp, Tcl_Obj *typeText, Tcl_Obj *value,
 	    Tcl_Obj **resultPtr);
+/*
+ * Le résolveur des constructeurs (patch cast-constructeur). Hors d'un
+ * constructeur, {A}$x ne fait qu'empiler A (TclAnnotPush) ; un constructeur
+ * appelle TclAnnotSettle sur la valeur qu'il range : les annotations sont
+ * dépilées depuis la plus récente tant qu'elles se résolvent (type connu),
+ * la première qui ne se résout pas arrête tout, celles dépilées doivent
+ * être cohérentes, et la plus récente donne le cast. ctx : le contrat de la
+ * cible (une somme : ses noms de variantes restent à la cible). Le
+ * résultat (*resultPtr, sans référence propre, éventuellement objPtr
+ * lui-même) a un type résolu ou aucun, et la pile restante.
+ * TCLA_SETTLE_KEEP : ne rien résoudre (set {}y $x), seulement retirer le
+ * type résolu et les annotations locales.
+ */
+#define TCLA_SETTLE_KEEP	1
+Tcl_Obj	*TclAnnotPush(Tcl_Obj *value, Tcl_Obj *typeText);
+int	TclAnnotSettle(Tcl_Interp *interp, Tcl_Obj *objPtr, const TclType *ctx,
+	    int flags, Tcl_Obj **resultPtr);
+/* La pile d'annotations non résolues (liste neuve, de la plus ancienne à la
+ * plus récente), vide pour une valeur dont le type a été effacé par {}. */
+Tcl_Obj	*TclAnnotPending(Tcl_Obj *objPtr);
+Tcl_Obj	*TclAnnotWithPending(Tcl_Obj *res, Tcl_Obj *pending);
+/* Vrai si la valeur porte la marque {} (type vide) posée hors constructeur. */
+int	TclAnnotIsCleared(Tcl_Obj *objPtr);
+int	TclAnnotErrorCodeIs(Tcl_Interp *interp, const char *what);
 
 /* tclCompAnnot.c */
 struct Tcl_Parse;
@@ -257,6 +287,11 @@ int	TclTypeIncludes(const TclType *a, const TclType *b);
  * ou un raffinement plus large. L'inverse (rétrécissement) reste refusé. */
 int	TclTypeAssignable(const TclType *expected, const TclType *got);
 int	TclTypeSame(const TclType *a, const TclType *b);
+/* Générique d'un nominal scalaire (chaîne des bases), et règle du contrat :
+ * got entre dans expected s'il y est assignable, ou si un type de sa chaîne
+ * de bases l'est ; deux nominaux sans lien ne sont jamais équivalents. */
+const TclType *TclTypeGenericOf(const TclType *tp);
+int	TclTypeEnters(const TclType *expected, const TclType *got);
 TclType *TclTypeListOf(Tcl_Interp *interp, TclType *elem);
 TclType *TclTypeCommon(Tcl_Interp *interp, TclType *a, TclType *b);
 int	TclTypeCast(Tcl_Interp *interp, Tcl_Obj *src, TclType *target,
@@ -294,6 +329,7 @@ int	TclTypeComplete(Tcl_Interp *interp, const TclType *tp, Tcl_Obj *content,
 int	TclTypedVarPrepareWrite(Tcl_Interp *interp, Var *varPtr,
 	    Tcl_Obj **valuePtrPtr, int *flagsPtr, Tcl_Obj **tmpPtrPtr);
 void	TclTypedVarAfterStore(Var *varPtr);
+int	TclTypedVarBindArg(Tcl_Interp *interp, Var *varPtr);
 void	TclTypedVarForget(Var *varPtr);
 void	TclTypedVarForgetByName(Tcl_Interp *interp, Tcl_Obj *nameObj);
 Tcl_Obj *TclTypedConform(Tcl_Interp *interp, TclType *tp, Tcl_Obj *arg);

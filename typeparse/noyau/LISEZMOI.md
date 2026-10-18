@@ -711,3 +711,40 @@ résumé dans CONCEPTION-annotations.md §7.
 * Réparer un arbre où l'ancien `maj.sh` a doublé le patch : extraire d'abord le nouveau script,
   `unzip -o typeparse.zip typeparse/maj.sh`, puis `bash typeparse/maj.sh` ; il recopie
   `generic/tclTypedVar.c` et voit `tclProc.c` comme déjà patché.
+
+## Règles de conversion de famille (patch types-binaires-convert-famille)
+
+Après `types-binaires-cast-constructeur`. Ne touche que des sources de types (`tclTypes.c`,
+`tclTypes.h`, `tclTypesInt.h`, `tclTypeGeneric.c`) : `maj.sh` les copie, le patch sert
+d'historique. Test : `t50_convert_famille.tcl`.
+
+    type def {grandeur({string}dim, {double}f = 1.0, {double}o = 0.0)} double
+    type def mm   {grandeur(L, 0.001)}
+    type def m    {grandeur(L)}
+    type def degC {grandeur(Θ, 1.0, 273.15)}
+    type convert grandeur grandeur {{x de vers} {
+        if {$de(dim) ne $vers(dim)} {return -code continue}
+        expr {($x * $de(f) + $de(o) - $vers(o)) / $vers(f)}
+    }}
+    set {mm}a 1500 ; set b {m}$a          ;# 1.5
+    set c {kg}$a                          ;# unknown way to cast the value from mm to kg
+
+* `type convert FROM TO lambda` : FROM et TO sont des types définis ou des FAMILLES (le nom
+  d'un `type def` paramétré). Côté famille, la lambda reçoit en plus les paramètres de
+  l'instance : `{x de vers}` (famille → famille), `{x de}` (famille → type), `{x vers}`
+  (type → famille).
+* Les paramètres sont une valeur d'un produit anonyme construit d'après la déclaration
+  (`{{string}dim; {double}f; {double}o}`) : `$de(f)`, `type get $de`. Un paramètre `{type}T` ou
+  `{cmd}c` y est un champ `string` ; un paramètre d'un autre type qu'int, double ou string aussi.
+* `return -code continue` : la règle ne s'applique pas, la recherche continue (et finit, faute
+  de mieux, par `unknown way`). Une erreur de la lambda remonte telle quelle.
+* Ordre dans `TclTypeCast` : même type ; règle spécifique ; chaîne des bases ; variante ;
+  **règle de famille, seulement entre deux instances différentes** (deux nominaux sur la même
+  instance, `couple` et `energie`, n'en relèvent pas) ; conversion entre génériques ;
+  conversions intégrées si un côté est structurel ; sinon `unknown way`.
+* `TclType.family` / `familyArgs` : posés à l'instanciation d'un `type def` paramétré (pas d'un
+  `type alias`, pas de `bitarray`), hérités par un nominal défini sur l'instance
+  (`type def mm {grandeur(L, 0.001)}`). `TypeGeneric.paramsType` : le produit, construit à la
+  première règle qui en a besoin.
+* Les conversions restent explicites : `set {m}b $a` (a : mm) est refusé ; `set b {m}$a` ou
+  `type cast m $a` convertissent.

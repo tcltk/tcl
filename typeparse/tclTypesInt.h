@@ -47,6 +47,8 @@ typedef struct TypeGeneric {
 				 * nominal de plus */
     int bits;			/* 1 : bitarray, l'instance reçoit bitWidth et
 				 * bitMsb0 et binEnd */
+    TclType *paramsType;	/* produit anonyme des paramètres, construit à la
+				 * première règle de famille qui en a besoin */
 } TypeGeneric;
 
 typedef struct TypeData {

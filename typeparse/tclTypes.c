@@ -119,6 +119,9 @@ DeleteData(void *clientData, Tcl_Interp *interp)
 	if (d->all[i]->keys != NULL) {
 	    TclTypesFreeKeys(d->all[i]->keys, d->all[i]->nkeys);
 	}
+	if (d->all[i]->familyArgs != NULL) {
+	    Tcl_DecrRefCount(d->all[i]->familyArgs);
+	}
 	Tcl_Free(d->all[i]->name);
 	Tcl_Free(d->all[i]);
     }
@@ -365,6 +368,52 @@ TclTypeAssignable(const TclType *expected, const TclType *got)
     default:
 	return gk == 3 && gb <= eb;
     }
+}
+
+/*
+ * Type GÉNÉRIQUE d'un nominal scalaire : on suit la chaîne des bases
+ * (dist -> mm -> double ; port -> int(u,16)). Un type structurel, un
+ * raffinement, ou un nominal composé (produit, liste...), est son propre
+ * générique.
+ */
+const TclType *
+TclTypeGenericOf(const TclType *tp)
+{
+    int depth;
+
+    /* Un raffinement (int(u,8), bitarray(8)) est une contrainte de plage,
+     * pas un nominal d'auteur : la chaîne s'y arrête. */
+    for (depth = 0; tp != NULL && tp->nominal && !tp->refine
+	    && tp->under != NULL && depth < 64; depth++) {
+	tp = tp->under;
+    }
+    return tp;
+}
+
+/*
+ * Un type GOT entre-t-il dans le contrat EXPECTED ? Oui s'il y est
+ * assignable (même type, élargissement d'un raffinement), ou si l'un des
+ * types de sa chaîne de bases l'est : un nominal s'efface devant sa base
+ * (dist -> mm -> double, px -> int, port -> int(u,16) -> int). Deux
+ * nominaux sans lien de chaîne ne sont jamais équivalents, même s'ils ont
+ * le même générique (mm et kg) : il faut une conversion déclarée.
+ */
+int
+TclTypeEnters(const TclType *expected, const TclType *got)
+{
+    const TclType *b;
+    int depth;
+
+    for (b = got, depth = 0; b != NULL && depth < 64; b = b->under,
+	    depth++) {
+	if (TclTypeAssignable(expected, b)) {
+	    return 1;
+	}
+	if (!b->nominal || b->refine) {
+	    break;		/* fin de la chaîne : un type structurel */
+	}
+    }
+    return 0;
 }
 
 /* list(N).elem : exactement N éléments. arity < 0 : liste ordinaire,
@@ -2067,6 +2116,136 @@ ApplyConvert(Tcl_Interp *interp, Tcl_Obj *lambda, Tcl_Obj *content)
     return res;
 }
 
+/* --------------------------------------------------------------------
+ * Règles de famille : type convert grandeur grandeur {{x de vers} ...}
+ * -------------------------------------------------------------------- */
+
+/* Le premier type de la chaîne de bases qui appartient à une famille. */
+static TclType *
+FamilyOf(TclType *tp)
+{
+    int depth;
+
+    for (depth = 0; tp != NULL && depth < 64; tp = tp->under, depth++) {
+	if (tp->family != NULL) {
+	    return tp;
+	}
+    }
+    return NULL;
+}
+
+/* Même famille et mêmes paramètres : la même instance (couple et energie
+ * sur grandeur(M.L2.T-2)) ; ce n'est pas un changement d'unité. */
+static int
+SameInstance(TclType *a, TclType *b)
+{
+    return a->family == b->family && strcmp(Tcl_GetString(a->familyArgs),
+	    Tcl_GetString(b->familyArgs)) == 0;
+}
+
+/*
+ * Les paramètres de l'instance fi, comme valeur du produit anonyme de sa
+ * famille : {string}dim, {double}f = 1.0 donne {{string}dim; {double}f}.
+ * Un paramètre {type}T ou {cmd}c est un champ string (son nom canonique) ;
+ * les autres gardent leur type s'il est int, double ou string.
+ */
+static Tcl_Obj *
+FamilyParams(Tcl_Interp *interp, TclType *fi)
+{
+    TypeGeneric *g = fi->family;
+    Tcl_Obj *copy, *res;
+    int variant = -1;
+    Tcl_Size i;
+
+    if (g->paramsType == NULL) {
+	Tcl_DString ds;
+
+	Tcl_DStringInit(&ds);
+	Tcl_DStringAppend(&ds, "{", 1);
+	for (i = 0; i < g->nparams; i++) {
+	    const TypeParam *pp = &g->params[i];
+	    const char *tn = "string";
+
+	    if (!pp->isType && !pp->isCmd && pp->type != NULL
+		    && pp->type->reserved && (strcmp(pp->type->name, "int") == 0
+		    || strcmp(pp->type->name, "double") == 0)) {
+		tn = pp->type->name;
+	    }
+	    Tcl_DStringAppend(&ds, i > 0 ? "; {" : "{", TCL_AUTO_LENGTH);
+	    Tcl_DStringAppend(&ds, tn, TCL_AUTO_LENGTH);
+	    Tcl_DStringAppend(&ds, "}", 1);
+	    Tcl_DStringAppend(&ds, Tcl_GetString(pp->name), TCL_AUTO_LENGTH);
+	}
+	Tcl_DStringAppend(&ds, "}", 1);
+	g->paramsType = TclTypeParse(interp, Tcl_DStringValue(&ds),
+		Tcl_DStringLength(&ds));
+	Tcl_DStringFree(&ds);
+	if (g->paramsType == NULL) {
+	    return NULL;
+	}
+    }
+    copy = Tcl_DuplicateObj(fi->familyArgs);
+    Tcl_IncrRefCount(copy);
+    if (TclTypeComplete(interp, g->paramsType, copy, -1, &variant)
+	    != TCL_OK) {
+	Tcl_DecrRefCount(copy);
+	return NULL;
+    }
+    res = TclNewAnnotated(interp, g->paramsType, variant, copy);
+    Tcl_DecrRefCount(copy);
+    return res;
+}
+
+/*
+ * Appelle la règle : apply lambda contenu ?de? ?vers?. Rend TCL_OK
+ * (*resPtr, objet neuf), TCL_CONTINUE (« règle non applicable ») ou
+ * TCL_ERROR.
+ */
+static int
+ApplyFamily(Tcl_Interp *interp, Tcl_Obj *lambda, Tcl_Obj *content,
+	TclType *fi, TclType *ti, Tcl_Obj **resPtr)
+{
+    Tcl_Obj *argv[5];
+    int argc = 0, i, rc;
+
+    argv[argc++] = Tcl_NewStringObj("apply", 5);
+    argv[argc++] = lambda;
+    argv[argc++] = content;
+    if (fi != NULL) {
+	if ((argv[argc] = FamilyParams(interp, fi)) == NULL) {
+	    TclDiscard(argv[0]);
+	    return TCL_ERROR;
+	}
+	argc++;
+    }
+    if (ti != NULL) {
+	if ((argv[argc] = FamilyParams(interp, ti)) == NULL) {
+	    for (i = 3; i < argc; i++) {
+		TclDiscard(argv[i]);
+	    }
+	    TclDiscard(argv[0]);
+	    return TCL_ERROR;
+	}
+	argc++;
+    }
+    for (i = 0; i < argc; i++) {
+	Tcl_IncrRefCount(argv[i]);
+    }
+    rc = Tcl_EvalObjv(interp, argc, argv, 0);
+    for (i = 0; i < argc; i++) {
+	Tcl_DecrRefCount(argv[i]);
+    }
+    if (rc == TCL_OK) {
+	*resPtr = Tcl_DuplicateObj(Tcl_GetObjResult(interp));
+	return TCL_OK;
+    }
+    if (rc == TCL_CONTINUE) {
+	Tcl_ResetResult(interp);
+	return TCL_CONTINUE;
+    }
+    return TCL_ERROR;
+}
+
 /*
  * Cast de "src" (valeur typée, ou chaîne ordinaire) vers "target".
  * Ordre : même type ; conversion déclarée ; nominal <-> sous-jacent ;
@@ -2107,10 +2286,29 @@ TclTypeCast(Tcl_Interp *interp, Tcl_Obj *src, TclType *target,
 	    goto validate;
 	}
     }
-    /* Nominal <-> sous-jacent : même représentation. */
-    if (from != NULL && (target->under == from || from->under == target)) {
-	res = Tcl_DuplicateObj(content);
-	goto validate;
+    /* Nominal <-> une de ses bases (toute la chaîne) : même représentation. */
+    if (from != NULL) {
+	const TclType *b;
+	int depth;
+
+	for (b = from, depth = 0; b != NULL && depth < 64; b = b->under,
+		depth++) {
+	    if (b == target) {
+		break;
+	    }
+	}
+	if (b == NULL) {
+	    for (b = target, depth = 0; b != NULL && depth < 64;
+		    b = b->under, depth++) {
+		if (b == from) {
+		    break;
+		}
+	    }
+	}
+	if (b != NULL) {
+	    res = Tcl_DuplicateObj(content);
+	    goto validate;
+	}
     }
     /* Variante d'une somme dont le type est exactement celui de la source. */
     if (target->kind == TCLT_SUM && from != NULL) {
@@ -2121,6 +2319,91 @@ TclTypeCast(Tcl_Interp *interp, Tcl_Obj *src, TclType *target,
 		goto validate;
 	    }
 	}
+    }
+    /*
+     * Règle de FAMILLE (type convert grandeur grandeur ...), entre deux
+     * instances différentes : un changement d'unité. Deux nominaux sur la
+     * même instance (couple, energie) ne relèvent pas de la règle.
+     */
+    if (from != NULL) {
+	TclType *fi = FamilyOf(from), *ti = FamilyOf(target);
+
+	if ((fi != NULL || ti != NULL)
+		&& !(fi != NULL && ti != NULL && SameInstance(fi, ti))) {
+	    char fk[3][160], tk[3][160];
+	    int nf = 0, nt = 0, a, b, frc;
+	    Tcl_DString fkey;
+
+	    if (fi != NULL) {
+		snprintf(fk[nf++], sizeof(fk[0]), "@%s", fi->family->name);
+	    }
+	    snprintf(fk[nf++], sizeof(fk[0]), "%s", from->name);
+	    snprintf(fk[nf++], sizeof(fk[0]), "%s",
+		    TclTypeGenericOf(from)->name);
+	    if (ti != NULL) {
+		snprintf(tk[nt++], sizeof(tk[0]), "@%s", ti->family->name);
+	    }
+	    snprintf(tk[nt++], sizeof(tk[0]), "%s", target->name);
+	    snprintf(tk[nt++], sizeof(tk[0]), "%s",
+		    TclTypeGenericOf(target)->name);
+	    for (a = 0; a < nf; a++) {
+		for (b = 0; b < nt; b++) {
+		    if (fk[a][0] != '@' && tk[b][0] != '@') {
+			continue;	/* pas une règle de famille */
+		    }
+		    Tcl_DStringInit(&fkey);
+		    Tcl_DStringAppend(&fkey, fk[a], TCL_AUTO_LENGTH);
+		    Tcl_DStringAppend(&fkey, "\1", 1);
+		    Tcl_DStringAppend(&fkey, tk[b], TCL_AUTO_LENGTH);
+		    hPtr = Tcl_FindHashEntry(&d->converts,
+			    Tcl_DStringValue(&fkey));
+		    Tcl_DStringFree(&fkey);
+		    if (hPtr == NULL) {
+			continue;
+		    }
+		    frc = ApplyFamily(interp, (Tcl_Obj *) Tcl_GetHashValue(hPtr),
+			    content, fk[a][0] == '@' ? fi : NULL,
+			    tk[b][0] == '@' ? ti : NULL, &res);
+		    if (frc == TCL_OK) {
+			goto validate;
+		    }
+		    if (frc == TCL_ERROR) {
+			return TCL_ERROR;
+		    }
+		}
+	    }
+	}
+    }
+
+    /*
+     * Pas de règle spécifique : on se ramène aux types GÉNÉRIQUES. D'abord
+     * une conversion déclarée entre eux, puis les conversions intégrées
+     * entre scalaires.
+     */
+    if (from != NULL) {
+	const TclType *gf = TclTypeGenericOf(from);
+	const TclType *gt = TclTypeGenericOf(target);
+
+	if (gf != from || gt != target) {
+	    snprintf(key, sizeof(key), "%s\1%s", gf->name, gt->name);
+	    hPtr = Tcl_FindHashEntry(&d->converts, key);
+	    if (hPtr != NULL) {
+		res = ApplyConvert(interp,
+			(Tcl_Obj *) Tcl_GetHashValue(hPtr), content);
+		goto validate;
+	    }
+	}
+    }
+    /*
+     * Deux nominaux d'auteur sans lien (mm et kg, mm et px) : seule une
+     * conversion déclarée les relie. Les conversions intégrées ne valent
+     * que si l'un des deux côtés est structurel (mm -> int, double -> mm).
+     */
+    if (from != NULL && from->nominal && !from->refine && target->nominal
+	    && !target->refine) {
+	ERR(interp, "CAST", "unknown way to cast the value from %s to %s",
+		from->name, target->name);
+	return TCL_ERROR;
     }
     /* Conversions intégrées entre scalaires. */
     {
@@ -2149,8 +2432,8 @@ TclTypeCast(Tcl_Interp *interp, Tcl_Obj *src, TclType *target,
 	    goto validate;
 	}
     }
-    ERR(interp, "CAST", "can't cast %s to %s", from ? from->name : "string",
-	    target->name);
+    ERR(interp, "CAST", "unknown way to cast the value from %s to %s",
+	    from ? from->name : "string", target->name);
     return TCL_ERROR;
 
   validate:
@@ -2382,6 +2665,13 @@ CopyInto(TclType *into, const TclType *res)
     into->binAt = res->binAt;
     into->binLink = res->binLink;
     into->binTag = res->binTag;
+    if (into->family == NULL && res->family != NULL) {
+	/* type def mm {grandeur(L, 0.001)} : mm hérite de la famille et des
+	 * paramètres de l'instance (règles de famille de type convert). */
+	into->family = res->family;
+	into->familyArgs = res->familyArgs;
+	Tcl_IncrRefCount(into->familyArgs);
+    }
     if (res->nkeys > 0) {
 	into->keys = (TclDictKey *) Tcl_Alloc(res->nkeys * sizeof(TclDictKey));
 	into->nkeys = res->nkeys;
@@ -2557,21 +2847,35 @@ static int
 TypeConvertCmd(Tcl_Interp *interp, TypeData *d, Tcl_Obj *fromObj,
 	Tcl_Obj *toObj, Tcl_Obj *lambda)
 {
-    Tcl_HashEntry *hf = Tcl_FindHashEntry(&d->names, Tcl_GetString(fromObj));
-    Tcl_HashEntry *ht = Tcl_FindHashEntry(&d->names, Tcl_GetString(toObj));
-    TclType *from, *to;
-    char key[256];
-    int isNew;
+    char key[2 * 128 + 2], side[2][128];
+    int isNew, i;
     Tcl_HashEntry *hPtr;
+    Tcl_Obj *objs[2];
 
-    if (hf == NULL || ht == NULL || Tcl_GetHashValue(hf) == NULL
-	    || Tcl_GetHashValue(ht) == NULL) {
-	ERR(interp, "UNKNOWN", "type convert needs two defined types");
-	return TCL_ERROR;
+    /*
+     * Chaque côté est un type défini, ou une FAMILLE (type def paramétré,
+     * « grandeur » pour grandeur(L, 0.001)) : la règle vaut alors pour
+     * toutes ses instances, et sa lambda reçoit en plus les paramètres
+     * de l'instance (un produit) : {x de vers}, {x de} ou {x vers}.
+     */
+    objs[0] = fromObj;
+    objs[1] = toObj;
+    for (i = 0; i < 2; i++) {
+	const char *nm = Tcl_GetString(objs[i]);
+	Tcl_HashEntry *h = Tcl_FindHashEntry(&d->names, nm);
+
+	if (h != NULL && Tcl_GetHashValue(h) != NULL) {
+	    snprintf(side[i], sizeof(side[i]), "%s",
+		    ((TclType *) Tcl_GetHashValue(h))->name);
+	} else if (Tcl_FindHashEntry(&d->generics, nm) != NULL) {
+	    snprintf(side[i], sizeof(side[i]), "@%s", nm);
+	} else {
+	    ERR(interp, "UNKNOWN", "type convert needs two defined types or "
+		    "type families, not \"%s\"", nm);
+	    return TCL_ERROR;
+	}
     }
-    from = (TclType *) Tcl_GetHashValue(hf);
-    to = (TclType *) Tcl_GetHashValue(ht);
-    snprintf(key, sizeof(key), "%s\1%s", from->name, to->name);
+    snprintf(key, sizeof(key), "%s\1%s", side[0], side[1]);
     hPtr = Tcl_CreateHashEntry(&d->converts, key, &isNew);
     if (!isNew) {
 	Tcl_DecrRefCount((Tcl_Obj *) Tcl_GetHashValue(hPtr));
@@ -3286,6 +3590,36 @@ TypeObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
     if (strcmp(sub, "get") == 0) {
 	return TypeGetCmd(interp, objc, objv);
     }
+    if (strcmp(sub, "cast") == 0) {
+	/*
+	 * type cast T valeur : le résolveur d'un constructeur, sans
+	 * variable. T est empilé sur la valeur, puis la pile est résolue
+	 * comme dans "set y {T}$valeur".
+	 */
+	Tcl_Obj *pushed, *res = NULL;
+	int rc;
+
+	if (objc != 4) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "type value");
+	    return TCL_ERROR;
+	}
+	{
+	    Tcl_Size tl;
+	    const char *tt = Tcl_GetStringFromObj(objv[2], &tl);
+
+	    if (TclTypeParse(interp, tt, tl) == NULL) {
+		return TCL_ERROR;
+	    }
+	}
+	pushed = TclAnnotPush(objv[3], objv[2]);
+	Tcl_IncrRefCount(pushed);
+	rc = TclAnnotSettle(interp, pushed, NULL, 0, &res);
+	if (rc == TCL_OK) {
+	    Tcl_SetObjResult(interp, res);
+	}
+	Tcl_DecrRefCount(pushed);
+	return rc;
+    }
     if (strcmp(sub, "deref") == 0) {
 	return TypeDerefCmd(interp, objc, objv);
     }
@@ -3293,7 +3627,7 @@ TypeObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
 	return TypeBinaryCmd(interp, objc, objv);
     }
     ERR(interp, "SUBCMD", "bad subcommand \"%s\": must be def, alias, "
-	    "convert, deref, get or binary", sub);
+	    "cast, convert, deref, get or binary", sub);
     return TCL_ERROR;
 }
 
@@ -3450,7 +3784,7 @@ DeclareObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
 	Tcl_DecrRefCount(typed);
 	return TCL_ERROR;
     }
-    Tcl_SetObjResult(interp, typed);
+    Tcl_SetObjResult(interp, res);	/* la valeur rangée, résolue */
     Tcl_DecrRefCount(typed);
     return TCL_OK;
 }
