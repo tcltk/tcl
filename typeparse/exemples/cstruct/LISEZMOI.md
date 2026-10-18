@@ -78,3 +78,17 @@ Diagnostic : le codec de `type binary` est écrit en Tcl (`layout/filebinary.tcl
 la description du type champ par champ : 260 à 340 commandes Tcl par mesure, contre 1 à 6 en
 classique. Le correctif de `putPad` (des octets, plus des chaînes) supprime un coût quadratique
 dû à Tcl lui-même (mélange tableau d'octets / chaîne suivi de `string length`).
+
+### Avec le codec C de `type binary encode` (patch types-binaires-codec-c)
+
+Les dispositions fixes de `cstruct` sont maintenant encodées en C (voir `noyau/LISEZMOI.md`).
+Mêmes 1000 mesures, même machine pour les trois colonnes (µs) :
+
+| Étape | couche Tcl | codec C | classique |
+|---|---|---|---|
+| Encodage | 31 000 | 80 | 330 (nu) |
+| Chaîne complète `cs::stats` | ≈ 31 000 | 120 à 140 | 335 à 400 nue ; 690 à 720 contrôlée |
+
+La chaîne annotée complète (encodage contrôlé + C + résumé) passe devant le Tcl classique, nu
+ou contrôlé. Le décodage passe encore par la couche Tcl (48 ms). `set ::tcl_typebinaryc 0`
+revient à la couche Tcl pour comparer.

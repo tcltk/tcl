@@ -757,3 +757,41 @@ tableau d'octets et une chaîne dans `append`, puis appeler `string length`, fai
 la sortie par Tcl 9 (y compris un tclsh d'origine) : l'encodage devenait quadratique (cstruct,
 1000 mesures : 222 ms, 33 ms après correction ; 2000 mesures : 786 ms, 98 ms). Octets produits
 inchangés ; tests et exemples identiques. Mesures complètes : `exemples/cstruct/LISEZMOI.md`.
+
+## Codec C pour `type binary encode` (patch types-binaires-codec-c)
+
+Après `types-binaires-convert-famille`. Ne touche que `tclTypes.c` (copié par `maj.sh` ; le
+patch sert d'historique). Prototype : une voie rapide en C, essayée avant la couche Tcl
+(`layout/filebinary.tcl`) ; dès qu'un cas sort de son domaine, elle rend la main
+(`TCL_CONTINUE`) et la couche Tcl fait le travail et produit les messages d'erreur, comme avant.
+
+Domaine couvert (les dispositions fixes, celles de `cstruct`) :
+
+* scalaires entiers signés ou non de 1, 2, 4, 8 octets ; flottants de 4 et 8 octets ;
+  boutisme du type ou de `-endian little|big` ;
+* produits (remplissage avant chaque champ et en fin de produit, selon `-align
+  packed|natural|2^k`) ;
+* listes de taille fixe `list(3).T`, et `list($n).T` où `n` est un champ déjà écrit du produit
+  englobant (la valeur de `n` doit valoir le nombre d'éléments, sinon couche Tcl et son message).
+
+Hors domaine, donc couche Tcl : champs de bits, `at(...)`, liens, sommes balisées, chaînes,
+tailles calculées par une expression, `-dedupe` et toute autre option, u64 au-delà de 2^63,
+valeur non annotée ou annotée d'un autre type que celui demandé. `set ::tcl_typebinaryc 0`
+désactive la voie C (comparaison, mise au point).
+
+Vérifications : octets identiques à la couche Tcl en `natural`, `packed`, `-endian big -align
+4` et `-align 2`, et identiques aux octets écrits par `cstruct.c` ; tests 27 OK (et les tests
+sans `.out` inchangés) ; exemples identiques ; `cstruct/test.tcl` identique sous
+AddressSanitizer, sans erreur.
+
+Mesures (cstruct, `-align natural`, µs par encodage) :
+
+| n | couche Tcl | codec C | rapport |
+|---|---|---|---|
+| 1 000 | 31 000 | 80 | × 380 |
+| 10 000 | 333 000 | 1 300 | × 250 |
+
+`binary format` écrit à la main (Tcl classique, sans contrôle) : 330 µs pour 1 000 mesures ; le
+codec C, qui contrôle en plus le type, est 4 × plus rapide. Restent à faire : le décodage en C
+(même domaine), mettre en cache le type analysé par `TclTypeParse` (refait à chaque appel) et
+éviter `Tcl_ListObjGetElements` sur les listes abstraites annotées.

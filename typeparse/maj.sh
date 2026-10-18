@@ -17,11 +17,17 @@
 #
 # Étapes : 1. extrait l'archive dans un dossier temporaire et ne remplace dans typeparse/ que
 #             les fichiers qui DIFFÈRENT (cmp) ; liste ce qui est nouveau/modifié/absent de l'archive
-#          2. patchs de typeparse/noyau/ORDRE.txt : déjà appliqué (patch -R --dry-run passe) -> ignoré ;
-#             applicable (--dry-run passe) -> appliqué ; sinon -> arrêt avec le détail
-#          3. si un patch C vient d'être appliqué (ou --build) : make clean, make, make install-binaries
-#          4. tests : chaque typeparse/tests_tclsh/tNN_*.tcl comparé à son .out
-#          5. (--commit) fossil commit sur les fichiers touchés, puis question avant fossil push
+#          2. sources de types (tclTypes*.{c,h}, tclAnnotObj.c, tclTypedVar.c, tclTypePath.c,
+#             tclTypeGeneric.c, tclTypeParse.c, tclVarRef.c) : livrées ENTIÈRES dans typeparse/,
+#             copiées dans generic/ quand elles diffèrent ; elles ne sont jamais patchées
+#          3. patchs de typeparse/noyau/ORDRE.txt, partie NOYAU seulement (les sections qui visent
+#             les sources de types sont ignorées), sans fuzz (-F0) : déjà appliqué (patch -R
+#             --dry-run passe) -> ignoré ; applicable -> appliqué ; sinon -> arrêt avec le détail.
+#             Sans -F0, un patch qui n'ajoute que des lignes pouvait se réappliquer ailleurs
+#             avec du fuzz (taille-dynamique, 18 octobre : CheckDynCounts en double)
+#          4. si un fichier C vient de changer (ou --build) : make clean, make, make install-binaries
+#          5. tests : chaque typeparse/tests_tclsh/tNN_*.tcl comparé à son .out
+#          6. (--commit) fossil commit sur les fichiers touchés, puis question avant fossil push
 
 main() {
     local DRY=0 YES=0 BUILD=auto TEST=1 MSG="" ZIP="" FORCEBUILD=0
@@ -33,7 +39,7 @@ main() {
             --build) FORCEBUILD=1 ;;
             --no-test) TEST=0 ;;
             --commit) shift; MSG="$1" ;;
-            -h|--help) sed -n '2,25p' "$0"; return 0 ;;
+            -h|--help) sed -n '2,31p' "$0"; return 0 ;;
             *) ZIP="$1" ;;
         esac
         shift
@@ -90,50 +96,98 @@ main() {
     echo "   $nnew nouveau(x), $nmod modifié(s)"
     rm -rf "$TMP"
 
-    echo "== 2. Patchs C"
+    echo "== 2. Sources de types -> generic/"
     local applied_now=0 p line
+    local TYPEFILES="tclAnnotObj.c tclTypes.c tclTypeParse.c tclTypeGeneric.c tclTypedVar.c tclTypePath.c tclVarRef.c tclTypes.h tclTypesInt.h"
+    for f in $TYPEFILES; do
+        [ -f "typeparse/$f" ] || { echo "   MANQUE   typeparse/$f"; return 1; }
+        if [ ! -f "generic/$f" ] || ! same "typeparse/$f" "generic/$f"; then
+            echo "   copié           generic/$f"
+            if [ "$DRY" = 0 ]; then
+                cp "typeparse/$f" "generic/$f"; echo "generic/$f" >> "$TOUCHED"; applied_now=1
+            fi
+        fi
+    done
+
+    # Partie NOYAU d'un patch : les sections dont le fichier n'est pas une source de types.
+    # Une section commence à « diff ... » ou à une ligne « --- » suivie de « +++ ».
+    corepart() {
+        awk -v skip=" $TYPEFILES " '
+            function keepfor(l,   a, n) {
+                sub(/^\+\+\+ /, "", l); sub(/[ \t].*/, "", l)
+                n = split(l, a, "/"); return index(skip, " " a[n] " ") == 0
+            }
+            { L[NR] = $0; sub(/\r$/, "", L[NR]) }
+            END {
+                keep = 0
+                for (i = 1; i <= NR; i++) {
+                    if (L[i] ~ /^diff /) {
+                        for (j = i + 1; j <= NR && L[j] !~ /^\+\+\+ /; j++) ;
+                        keep = (j <= NR) ? keepfor(L[j]) : 0
+                    } else if (L[i] ~ /^--- / && i < NR && L[i+1] ~ /^\+\+\+ / \
+                            && (i == 1 || L[i-1] !~ /^diff /)) {
+                        keep = keepfor(L[i+1])
+                    }
+                    if (keep) print L[i]
+                }
+            }' "$1"
+    }
+
+    echo "== 3. Patchs C (partie noyau, sans fuzz)"
     if [ -f typeparse/noyau/ORDRE.txt ]; then
+        local CORE; CORE="$(mktemp)"
         while IFS= read -r line; do
             p="${line%%#*}"; p="${p//$'\r'/}"
             p="${p#"${p%%[![:space:]]*}"}"; p="${p%"${p##*[![:space:]]}"}"
             [ -n "$p" ] || continue
             if [ ! -f "typeparse/noyau/$p" ]; then echo "   MANQUE   $p"; return 1; fi
+            corepart "typeparse/noyau/$p" > "$CORE"
+            if [ ! -s "$CORE" ]; then
+                echo "   types seuls     $p (sources copiées à l'étape 2)"
+                continue
+            fi
             # fichiers cibles : tous doivent exister (sinon patch poserait une question)
             local missing=""
-            for f in $(grep -E '^\+\+\+ ' "typeparse/noyau/$p" | sed -E 's/^\+\+\+ [ab]\///; s/[[:space:]].*//'); do
+            for f in $(grep -E '^\+\+\+ ' "$CORE" | sed -E 's/^\+\+\+ [ab]\///; s/[[:space:]].*//'); do
                 [ -f "$f" ] || missing="$missing $f"
             done
             if [ -n "$missing" ]; then
                 echo "   CONFLIT         $p : fichier(s) absent(s) de l'arbre :$missing"
-                return 1
+                rm -f "$CORE"; return 1
             fi
-            # -N : un patch déjà appliqué est ignoré (rc 1 + message), pas ré-appliqué
-            local out rc
-            out="$(patch -p1 -N --dry-run < "typeparse/noyau/$p" 2>&1)"; rc=$?
-            if [ $rc = 0 ]; then
+            local out
+            if patch -p1 -R --dry-run -F0 -s < "$CORE" >/dev/null 2>&1; then
+                echo "   déjà appliqué   $p"
+            elif out="$(patch -p1 -N --dry-run -F0 < "$CORE" 2>&1)"; then
                 echo "   à appliquer     $p"
                 if [ "$DRY" = 0 ]; then
-                    patch -p1 -N -s < "typeparse/noyau/$p" || { echo "ÉCHEC patch $p"; return 1; }
-                    # fichiers modifiés par le patch : lignes '+++ b/...'
-                    grep -E '^\+\+\+ ' "typeparse/noyau/$p" | sed -E 's/^\+\+\+ [ab]\///; s/[[:space:]].*//' >> "$TOUCHED"
+                    patch -p1 -N -F0 -s < "$CORE" || { echo "ÉCHEC patch $p"; rm -f "$CORE"; return 1; }
+                    grep -E '^\+\+\+ ' "$CORE" | sed -E 's/^\+\+\+ [ab]\///; s/[[:space:]].*//' >> "$TOUCHED"
                     applied_now=1
                 fi
-            elif echo "$out" | grep -q "Reversed (or previously applied)" ; then
-                echo "   déjà appliqué   $p"
             else
-                echo "   CONFLIT         $p (ni appliqué ni applicable) :"
+                echo "   CONFLIT         $p (ni appliqué ni applicable sans fuzz) :"
                 echo "$out" | sed 's/^/      /'
-                return 1
+                rm -f "$CORE"; return 1
             fi
         done < typeparse/noyau/ORDRE.txt
+        rm -f "$CORE"
     else
         echo "   (pas de typeparse/noyau/ORDRE.txt)"
     fi
 
     if [ "$DRY" = 1 ]; then echo "== (dry-run) arrêt avant compilation et tests"; return 0; fi
 
-    echo "== 3. Compilation"
+    echo "== 4. Compilation"
     if [ "$BUILD" = 0 ]; then echo "   ignorée (--no-build)"
+    elif [ "$applied_now" = 0 ] && [ "$FORCEBUILD" = 0 ] && [ -f "$TCLSH" ] \
+            && [ -n "$(find generic -name '*.[ch]' -newer "$TCLSH" 2>/dev/null | head -1)" ]; then
+        # FR : rien de copié cette fois, mais une source de generic/ est plus récente que le
+        #      tclsh installé (compilation précédente sautée ou interrompue) : on recompile.
+        echo "   $(find generic -name '*.[ch]' -newer "$TCLSH" | head -1) est plus récent que $TCLSH"
+        FORCEBUILD=1
+    fi
+    if [ "$BUILD" = 0 ]; then :
     elif [ "$applied_now" = 1 ] || [ "$FORCEBUILD" = 1 ]; then
         # garde-fou : le dossier de build doit être sous l'arbre et contenir un Makefile Tcl
         case "$BUILDDIR" in /*|[A-Za-z]:*|*..*) echo "   TCLWIN doit être un dossier relatif à la racine de l'arbre : $BUILDDIR"; return 1 ;; esac
@@ -149,7 +203,7 @@ main() {
     fi
 
     local fails=0
-    echo "== 4. Tests"
+    echo "== 5. Tests"
     if [ "$TEST" = 0 ]; then echo "   ignorés (--no-test)"
     elif [ ! -x "$TCLSH" ] && [ ! -f "$TCLSH" ]; then echo "   $TCLSH introuvable : définir TCLSH"; fails=1
     else
@@ -172,7 +226,7 @@ main() {
         echo "   $n test(s) OK, $fails échec(s)"
     fi
 
-    echo "== 5. Fossil"
+    echo "== 6. Fossil"
     sort -u "$TOUCHED" -o "$TOUCHED"
     echo "   fichiers touchés par ce script :"; sed 's/^/     /' "$TOUCHED"
     if [ -n "$MSG" ]; then
@@ -189,5 +243,6 @@ main() {
     return "$fails"
 }
 
-main "$@"
-exit $?
+# Appel et sortie sur UNE ligne : bash la lit d'un coup, puis sort, sans relire ce fichier
+# que l'étape 1 vient peut-être de remplacer (sinon : « syntax error » sur la fin du nouveau).
+main "$@"; exit $?
