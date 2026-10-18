@@ -340,13 +340,9 @@ typedef struct ResolvedCmdName {
 
 #ifdef TCL_MEM_DEBUG
 /*
- * Filler matches the value used for filling freed memory in tclCkalloc.
- * On 32-bit systems, the ref counts do not cross 0x7fffffff. On 64-bit
- * implementations, ref counts will never reach this value (unless explicitly
- * incremented without actual references!)
+ * The reference count of an object freed by Tcl_DbCkfree.
  */
-#define FREEDREFCOUNTFILLER \
-    (Tcl_Size)(sizeof(objPtr->refCount) == 4 ? 0xe8e8e8e8 : 0xe8e8e8e8e8e8e8e8)
+#define FREEDREFCOUNTFILLER ((Tcl_Size)TCL_FREED_REFCOUNT)
 #endif
 
 /*

@@ -4442,6 +4442,16 @@ MODULE_SCOPE Tcl_Mutex	tclObjMutex;
 MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 			    int line);
 
+/*
+ * Tcl_DbCkfree fills freed memory with TCL_FREED_BYTE, so the reference count
+ * of a freed structure reads as TCL_FREED_REFCOUNT, that byte repeated over
+ * the width of size_t. A real reference count never gets that high. The high
+ * bit makes it negative as a signed count. [Bug 7e3f26c748]
+ */
+
+# define TCL_FREED_BYTE 0xE8
+# define TCL_FREED_REFCOUNT ((size_t)-1 / 0xFF * TCL_FREED_BYTE)
+
 # define TclDbNewObj(objPtr, file, line) \
     do { \
 	TclIncrObjsAllocated();						\

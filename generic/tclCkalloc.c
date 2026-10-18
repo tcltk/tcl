@@ -71,7 +71,7 @@ struct mem_header {
 
 static struct mem_header *allocHead = NULL;  /* List of allocated structures */
 
-#define GUARD_VALUE  0x61
+#define GUARD_VALUE  TCL_FREED_BYTE
 
 /*
  * The following macro determines the amount of guard space *above* each chunk
