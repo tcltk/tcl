@@ -646,3 +646,68 @@ contient les deux. Côté Tcl, remplacer `layout/filebinary.tcl` (sélecteur `=n
 * Petit patch après `types-binaires-notes` : `TclAnnotDisplay(interp, v, withNotes)` ; `type get`
   l'appelle avec `withNotes = 0` (`list<int>`, vide pour une note seule). Les notes se lisent
   avec `note get`. Test `t48_notes` mis à jour (procédure `show` = type@notes).
+
+## Le cast se fait dans les constructeurs (patch types-binaires-cast-constructeur)
+
+À appliquer après `types-binaires-notes-typeget`. Touche `tclAnnotObj.c`, `tclTypedVar.c`,
+`tclTypes.c`, `tclTypes.h` et, côté noyau, `tclProc.c` (liaison des arguments). Règles et
+tableau complet des cas : doc « Constructeurs de variables : annotations, types et casts »,
+résumé dans CONCEPTION-annotations.md §7.
+
+* **Hors constructeur**, `{A}$x` ne valide ni ne caste plus rien : `A` est empilé
+  (`AnnotateCore` → `TclAnnotPush`). `list {px}$x` avec `x = abc` ne lève plus d'erreur.
+* **Constructeurs** (`set`, liaison des arguments de `proc`, `lassign`, `foreach`, `x = v` et
+  `x is T = v` dans `expr`) : `TclAnnotSettle` dépile depuis la plus récente tant que
+  l'annotation se résout, s'arrête à la première qui ne se résout pas, vérifie la cohérence
+  (`contradictory annotations px and qq`), caste vers la plus récente. Une note posée avant son
+  `type def` est donc résolue par le constructeur suivant.
+* **Contrat** (`TclTypeEnters`) : un type entre s'il est assignable (élargissement d'un
+  raffinement), ou si un type de sa chaîne de bases l'est : un nominal s'efface devant sa base
+  (`dist` → `mm` → `double`, `px` → `int`). Deux nominaux sans lien de chaîne ne sont jamais
+  équivalents, même de même générique (`mm` et `kg`, `couple` et `energie`). La chaîne s'arrête
+  aux raffinements (`int(u,8)`, `bitarray(8)`), qui restent stricts. Une annotation non résolue
+  n'empêche plus l'écriture dans une variable typée : `set {int}Position {px}100`, `px` inconnu,
+  donne `int@px`.
+* **Casts** (`TclTypeCast`) : `type convert` spécifique, chaîne des bases (tous niveaux),
+  variante, conversion déclarée entre les génériques, puis conversions intégrées entre
+  scalaires si l'un des deux côtés est structurel (`mm` → `int`, `double` → `mm`). Entre deux
+  nominaux sans lien, seule une conversion déclarée vaut : sinon `unknown way to cast the value
+  from mm to kg` (plus de troncature implicite `mm` → `px`).
+* **Paramètres fantômes** (`tclTypeGeneric.c`) : un paramètre de `type def` absent du corps est
+  permis ; il distingue les instances, qui sont des nominaux différents. Exemple d'unités :
+  `type def {grandeur({string}dim, {double}f = 1.0, {double}o = 0.0)} double`, puis
+  `type def mm {grandeur(L, 0.001)}` ; `mm` → `m` demande une conversion. Un `type alias`
+  paramétré garde l'erreur `parameter "u" is never used` (son instance est le corps lui-même).
+* **`{}`** : sur une valeur en constructeur, retire le type résolu et garde la pile ; sur le
+  nom (`set {}y $x`), lève le contrat et range la pile sans rien résoudre ; hors constructeur,
+  le lecteur voit le contenu nu (type et pile effacés).
+* **Nom de variable** : `set {zz}y 5` → `unknown type "zz"` ; `set {-v}y 5` → `local annotation
+  {-v} cannot declare a variable` (plantage corrigé : `tp` NULL dans `TclSetAnnotatedCmd`).
+* **`type cast T v`** : le résolveur d'un constructeur, sans variable.
+* `type get` ne montre que le type résolu ; un type connu pas encore résolu est dans la pile
+  (`note get {px}$x` → `px`). `TclAnnotResolve` lit une note de nom inconnu comme son contenu,
+  et sans interpréteur (`Tcl_GetNumberFromObj(NULL, ...)`) toute annotation en attente (avant :
+  plantage dans `TclTypeParse`).
+* Tests : `t49_cast_constructeur.tcl` (dont les unités à paramètres fantômes). Sorties
+  changées, voulues : t28 et t33 (liste des sous-commandes, `age` → `int`), t45 (`cast_refus` : plus de validation
+  hors constructeur), t48 (`typee` : la note reste sur la pile ; `local` : une locale n'est ni
+  type ni note).
+* Limite : la marque `{}` posée hors constructeur voyage avec la valeur ; si celle-ci est rangée
+  dans une liste puis relue par un constructeur, la pile réapparaît.
+
+## maj.sh : sources de types copiées, patchs du noyau sans fuzz (18 octobre)
+
+* Incident : `types-binaires-taille-dynamique.patch` n'ajoute que des lignes. Une fois
+  `tclTypedVar.c` modifié par les patchs suivants, `patch -N --dry-run` le trouvait applicable
+  avec du fuzz (décalage de 142 lignes) au lieu de « déjà appliqué », et l'appliquait une seconde
+  fois : `CheckDynCounts` en double, compilation en échec (`redefinition`).
+* Désormais les sources de types (`tclTypes*.{c,h}`, `tclAnnotObj.c`, `tclTypedVar.c`,
+  `tclTypePath.c`, `tclTypeGeneric.c`, `tclTypeParse.c`, `tclVarRef.c`), livrées entières dans
+  `typeparse/`, sont COPIÉES dans `generic/` (étape 2). Des patchs, seule la partie qui vise les
+  fichiers du noyau est appliquée (étape 3), sans fuzz (`-F0`), « déjà appliqué » étant testé en
+  premier (`patch -R --dry-run -F0`). Les patchs restent livrés entiers, pour l'historique.
+* `maj.sh` se remplace lui-même à l'étape 1 : la dernière ligne (`main "$@"; exit $?`) est lue
+  d'un coup, bash ne relit donc pas le nouveau fichier.
+* Réparer un arbre où l'ancien `maj.sh` a doublé le patch : extraire d'abord le nouveau script,
+  `unzip -o typeparse.zip typeparse/maj.sh`, puis `bash typeparse/maj.sh` ; il recopie
+  `generic/tclTypedVar.c` et voit `tclProc.c` comme déjà patché.
