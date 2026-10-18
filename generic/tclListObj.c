@@ -3101,11 +3101,14 @@ TclLsetFlat(
 	     * and make and store another copy.
 	     */
 
+	    /* It may be held only by a cache that is freed. [Bug 526b01c0b9] */
+	    Tcl_IncrRefCount(subListObj);
 	    if (index == elemCount) {
 		Tcl_ListObjAppendElement(NULL, parentList, subListObj);
 	    } else {
 		TclListObjSetElement(NULL, parentList, index, subListObj);
 	    }
+	    Tcl_DecrRefCount(subListObj);
 	    if (Tcl_IsShared(subListObj)) {
 		subListObj = Tcl_DuplicateObj(subListObj);
 		TclListObjSetElement(NULL, parentList, index, subListObj);

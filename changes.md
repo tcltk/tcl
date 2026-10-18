@@ -41,6 +41,7 @@ to the userbase.
  - [socket-2.12 failed on OpenBSD](https://core.tcl-lang.org/tcl/tktview/e99187)
  - [do not throw from [socket -async] when the connect fails at once](https://core.tcl-lang.org/tcl/tktview/59e7e7)
  - [test portability for illumos: skip socket-14.19 where SO_REUSEPORT is not supported](https://core.tcl-lang.org/tcl/tktview/dbf988)
+ - [lset with several indices on an abstract list (lseq) used a freed sublist](https://core.tcl-lang.org/tcl/tktview/526b01)
 
 # Updated bundled packages, libraries, standards, data
  - http 2.10.3
