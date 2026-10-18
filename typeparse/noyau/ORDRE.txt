@@ -13,3 +13,4 @@ types-binaires-notes-typeget.patch
 types-binaires-cast-constructeur.patch
 types-binaires-convert-famille.patch
 types-binaires-codec-c.patch
+types-binaires-codec-c-decode.patch

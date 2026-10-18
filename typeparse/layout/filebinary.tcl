@@ -1167,8 +1167,18 @@ proc ::fb::options {argv known} {
 # FR : le résultat d'un type non produit est lui aussi une valeur typée
 # EN : the result of a non-product type is a typed value too
 proc ::fb::typed {type v} {
-    if {[lindex [repr $type] 0] eq "product"} {return $v}
-    eval "set {$type}V [list $v]"
+    set k [lindex [repr $type] 0]
+    if {$k eq "product"} {return $v}
+    # FR : la valeur passe par variable (une chaîne perdrait le type des
+    #      éléments) ; une liste est donnée élément par élément, comme le veut
+    #      set {T}V e1 e2 ... (un argument seul serait UN élément).
+    # EN : the value goes through a variable (a string would lose the
+    #      elements' types); a list is given element by element.
+    if {$k eq "array"} {
+	eval "set {$type}V {*}\$v"
+    } else {
+	eval "set {$type}V \$v"
+    }
     return $V
 }
 

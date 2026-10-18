@@ -119,6 +119,9 @@ DeleteData(void *clientData, Tcl_Interp *interp)
 	if (d->all[i]->keys != NULL) {
 	    TclTypesFreeKeys(d->all[i]->keys, d->all[i]->nkeys);
 	}
+	if (d->all[i]->familyArgs != NULL) {
+	    Tcl_DecrRefCount(d->all[i]->familyArgs);
+	}
 	Tcl_Free(d->all[i]->name);
 	Tcl_Free(d->all[i]);
     }
@@ -365,6 +368,52 @@ TclTypeAssignable(const TclType *expected, const TclType *got)
     default:
 	return gk == 3 && gb <= eb;
     }
+}
+
+/*
+ * Type GÉNÉRIQUE d'un nominal scalaire : on suit la chaîne des bases
+ * (dist -> mm -> double ; port -> int(u,16)). Un type structurel, un
+ * raffinement, ou un nominal composé (produit, liste...), est son propre
+ * générique.
+ */
+const TclType *
+TclTypeGenericOf(const TclType *tp)
+{
+    int depth;
+
+    /* Un raffinement (int(u,8), bitarray(8)) est une contrainte de plage,
+     * pas un nominal d'auteur : la chaîne s'y arrête. */
+    for (depth = 0; tp != NULL && tp->nominal && !tp->refine
+	    && tp->under != NULL && depth < 64; depth++) {
+	tp = tp->under;
+    }
+    return tp;
+}
+
+/*
+ * Un type GOT entre-t-il dans le contrat EXPECTED ? Oui s'il y est
+ * assignable (même type, élargissement d'un raffinement), ou si l'un des
+ * types de sa chaîne de bases l'est : un nominal s'efface devant sa base
+ * (dist -> mm -> double, px -> int, port -> int(u,16) -> int). Deux
+ * nominaux sans lien de chaîne ne sont jamais équivalents, même s'ils ont
+ * le même générique (mm et kg) : il faut une conversion déclarée.
+ */
+int
+TclTypeEnters(const TclType *expected, const TclType *got)
+{
+    const TclType *b;
+    int depth;
+
+    for (b = got, depth = 0; b != NULL && depth < 64; b = b->under,
+	    depth++) {
+	if (TclTypeAssignable(expected, b)) {
+	    return 1;
+	}
+	if (!b->nominal || b->refine) {
+	    break;		/* fin de la chaîne : un type structurel */
+	}
+    }
+    return 0;
 }
 
 /* list(N).elem : exactement N éléments. arity < 0 : liste ordinaire,
@@ -2067,6 +2116,136 @@ ApplyConvert(Tcl_Interp *interp, Tcl_Obj *lambda, Tcl_Obj *content)
     return res;
 }
 
+/* --------------------------------------------------------------------
+ * Règles de famille : type convert grandeur grandeur {{x de vers} ...}
+ * -------------------------------------------------------------------- */
+
+/* Le premier type de la chaîne de bases qui appartient à une famille. */
+static TclType *
+FamilyOf(TclType *tp)
+{
+    int depth;
+
+    for (depth = 0; tp != NULL && depth < 64; tp = tp->under, depth++) {
+	if (tp->family != NULL) {
+	    return tp;
+	}
+    }
+    return NULL;
+}
+
+/* Même famille et mêmes paramètres : la même instance (couple et energie
+ * sur grandeur(M.L2.T-2)) ; ce n'est pas un changement d'unité. */
+static int
+SameInstance(TclType *a, TclType *b)
+{
+    return a->family == b->family && strcmp(Tcl_GetString(a->familyArgs),
+	    Tcl_GetString(b->familyArgs)) == 0;
+}
+
+/*
+ * Les paramètres de l'instance fi, comme valeur du produit anonyme de sa
+ * famille : {string}dim, {double}f = 1.0 donne {{string}dim; {double}f}.
+ * Un paramètre {type}T ou {cmd}c est un champ string (son nom canonique) ;
+ * les autres gardent leur type s'il est int, double ou string.
+ */
+static Tcl_Obj *
+FamilyParams(Tcl_Interp *interp, TclType *fi)
+{
+    TypeGeneric *g = fi->family;
+    Tcl_Obj *copy, *res;
+    int variant = -1;
+    Tcl_Size i;
+
+    if (g->paramsType == NULL) {
+	Tcl_DString ds;
+
+	Tcl_DStringInit(&ds);
+	Tcl_DStringAppend(&ds, "{", 1);
+	for (i = 0; i < g->nparams; i++) {
+	    const TypeParam *pp = &g->params[i];
+	    const char *tn = "string";
+
+	    if (!pp->isType && !pp->isCmd && pp->type != NULL
+		    && pp->type->reserved && (strcmp(pp->type->name, "int") == 0
+		    || strcmp(pp->type->name, "double") == 0)) {
+		tn = pp->type->name;
+	    }
+	    Tcl_DStringAppend(&ds, i > 0 ? "; {" : "{", TCL_AUTO_LENGTH);
+	    Tcl_DStringAppend(&ds, tn, TCL_AUTO_LENGTH);
+	    Tcl_DStringAppend(&ds, "}", 1);
+	    Tcl_DStringAppend(&ds, Tcl_GetString(pp->name), TCL_AUTO_LENGTH);
+	}
+	Tcl_DStringAppend(&ds, "}", 1);
+	g->paramsType = TclTypeParse(interp, Tcl_DStringValue(&ds),
+		Tcl_DStringLength(&ds));
+	Tcl_DStringFree(&ds);
+	if (g->paramsType == NULL) {
+	    return NULL;
+	}
+    }
+    copy = Tcl_DuplicateObj(fi->familyArgs);
+    Tcl_IncrRefCount(copy);
+    if (TclTypeComplete(interp, g->paramsType, copy, -1, &variant)
+	    != TCL_OK) {
+	Tcl_DecrRefCount(copy);
+	return NULL;
+    }
+    res = TclNewAnnotated(interp, g->paramsType, variant, copy);
+    Tcl_DecrRefCount(copy);
+    return res;
+}
+
+/*
+ * Appelle la règle : apply lambda contenu ?de? ?vers?. Rend TCL_OK
+ * (*resPtr, objet neuf), TCL_CONTINUE (« règle non applicable ») ou
+ * TCL_ERROR.
+ */
+static int
+ApplyFamily(Tcl_Interp *interp, Tcl_Obj *lambda, Tcl_Obj *content,
+	TclType *fi, TclType *ti, Tcl_Obj **resPtr)
+{
+    Tcl_Obj *argv[5];
+    int argc = 0, i, rc;
+
+    argv[argc++] = Tcl_NewStringObj("apply", 5);
+    argv[argc++] = lambda;
+    argv[argc++] = content;
+    if (fi != NULL) {
+	if ((argv[argc] = FamilyParams(interp, fi)) == NULL) {
+	    TclDiscard(argv[0]);
+	    return TCL_ERROR;
+	}
+	argc++;
+    }
+    if (ti != NULL) {
+	if ((argv[argc] = FamilyParams(interp, ti)) == NULL) {
+	    for (i = 3; i < argc; i++) {
+		TclDiscard(argv[i]);
+	    }
+	    TclDiscard(argv[0]);
+	    return TCL_ERROR;
+	}
+	argc++;
+    }
+    for (i = 0; i < argc; i++) {
+	Tcl_IncrRefCount(argv[i]);
+    }
+    rc = Tcl_EvalObjv(interp, argc, argv, 0);
+    for (i = 0; i < argc; i++) {
+	Tcl_DecrRefCount(argv[i]);
+    }
+    if (rc == TCL_OK) {
+	*resPtr = Tcl_DuplicateObj(Tcl_GetObjResult(interp));
+	return TCL_OK;
+    }
+    if (rc == TCL_CONTINUE) {
+	Tcl_ResetResult(interp);
+	return TCL_CONTINUE;
+    }
+    return TCL_ERROR;
+}
+
 /*
  * Cast de "src" (valeur typée, ou chaîne ordinaire) vers "target".
  * Ordre : même type ; conversion déclarée ; nominal <-> sous-jacent ;
@@ -2107,10 +2286,29 @@ TclTypeCast(Tcl_Interp *interp, Tcl_Obj *src, TclType *target,
 	    goto validate;
 	}
     }
-    /* Nominal <-> sous-jacent : même représentation. */
-    if (from != NULL && (target->under == from || from->under == target)) {
-	res = Tcl_DuplicateObj(content);
-	goto validate;
+    /* Nominal <-> une de ses bases (toute la chaîne) : même représentation. */
+    if (from != NULL) {
+	const TclType *b;
+	int depth;
+
+	for (b = from, depth = 0; b != NULL && depth < 64; b = b->under,
+		depth++) {
+	    if (b == target) {
+		break;
+	    }
+	}
+	if (b == NULL) {
+	    for (b = target, depth = 0; b != NULL && depth < 64;
+		    b = b->under, depth++) {
+		if (b == from) {
+		    break;
+		}
+	    }
+	}
+	if (b != NULL) {
+	    res = Tcl_DuplicateObj(content);
+	    goto validate;
+	}
     }
     /* Variante d'une somme dont le type est exactement celui de la source. */
     if (target->kind == TCLT_SUM && from != NULL) {
@@ -2121,6 +2319,91 @@ TclTypeCast(Tcl_Interp *interp, Tcl_Obj *src, TclType *target,
 		goto validate;
 	    }
 	}
+    }
+    /*
+     * Règle de FAMILLE (type convert grandeur grandeur ...), entre deux
+     * instances différentes : un changement d'unité. Deux nominaux sur la
+     * même instance (couple, energie) ne relèvent pas de la règle.
+     */
+    if (from != NULL) {
+	TclType *fi = FamilyOf(from), *ti = FamilyOf(target);
+
+	if ((fi != NULL || ti != NULL)
+		&& !(fi != NULL && ti != NULL && SameInstance(fi, ti))) {
+	    char fk[3][160], tk[3][160];
+	    int nf = 0, nt = 0, a, b, frc;
+	    Tcl_DString fkey;
+
+	    if (fi != NULL) {
+		snprintf(fk[nf++], sizeof(fk[0]), "@%s", fi->family->name);
+	    }
+	    snprintf(fk[nf++], sizeof(fk[0]), "%s", from->name);
+	    snprintf(fk[nf++], sizeof(fk[0]), "%s",
+		    TclTypeGenericOf(from)->name);
+	    if (ti != NULL) {
+		snprintf(tk[nt++], sizeof(tk[0]), "@%s", ti->family->name);
+	    }
+	    snprintf(tk[nt++], sizeof(tk[0]), "%s", target->name);
+	    snprintf(tk[nt++], sizeof(tk[0]), "%s",
+		    TclTypeGenericOf(target)->name);
+	    for (a = 0; a < nf; a++) {
+		for (b = 0; b < nt; b++) {
+		    if (fk[a][0] != '@' && tk[b][0] != '@') {
+			continue;	/* pas une règle de famille */
+		    }
+		    Tcl_DStringInit(&fkey);
+		    Tcl_DStringAppend(&fkey, fk[a], TCL_AUTO_LENGTH);
+		    Tcl_DStringAppend(&fkey, "\1", 1);
+		    Tcl_DStringAppend(&fkey, tk[b], TCL_AUTO_LENGTH);
+		    hPtr = Tcl_FindHashEntry(&d->converts,
+			    Tcl_DStringValue(&fkey));
+		    Tcl_DStringFree(&fkey);
+		    if (hPtr == NULL) {
+			continue;
+		    }
+		    frc = ApplyFamily(interp, (Tcl_Obj *) Tcl_GetHashValue(hPtr),
+			    content, fk[a][0] == '@' ? fi : NULL,
+			    tk[b][0] == '@' ? ti : NULL, &res);
+		    if (frc == TCL_OK) {
+			goto validate;
+		    }
+		    if (frc == TCL_ERROR) {
+			return TCL_ERROR;
+		    }
+		}
+	    }
+	}
+    }
+
+    /*
+     * Pas de règle spécifique : on se ramène aux types GÉNÉRIQUES. D'abord
+     * une conversion déclarée entre eux, puis les conversions intégrées
+     * entre scalaires.
+     */
+    if (from != NULL) {
+	const TclType *gf = TclTypeGenericOf(from);
+	const TclType *gt = TclTypeGenericOf(target);
+
+	if (gf != from || gt != target) {
+	    snprintf(key, sizeof(key), "%s\1%s", gf->name, gt->name);
+	    hPtr = Tcl_FindHashEntry(&d->converts, key);
+	    if (hPtr != NULL) {
+		res = ApplyConvert(interp,
+			(Tcl_Obj *) Tcl_GetHashValue(hPtr), content);
+		goto validate;
+	    }
+	}
+    }
+    /*
+     * Deux nominaux d'auteur sans lien (mm et kg, mm et px) : seule une
+     * conversion déclarée les relie. Les conversions intégrées ne valent
+     * que si l'un des deux côtés est structurel (mm -> int, double -> mm).
+     */
+    if (from != NULL && from->nominal && !from->refine && target->nominal
+	    && !target->refine) {
+	ERR(interp, "CAST", "unknown way to cast the value from %s to %s",
+		from->name, target->name);
+	return TCL_ERROR;
     }
     /* Conversions intégrées entre scalaires. */
     {
@@ -2149,8 +2432,8 @@ TclTypeCast(Tcl_Interp *interp, Tcl_Obj *src, TclType *target,
 	    goto validate;
 	}
     }
-    ERR(interp, "CAST", "can't cast %s to %s", from ? from->name : "string",
-	    target->name);
+    ERR(interp, "CAST", "unknown way to cast the value from %s to %s",
+	    from ? from->name : "string", target->name);
     return TCL_ERROR;
 
   validate:
@@ -2382,6 +2665,13 @@ CopyInto(TclType *into, const TclType *res)
     into->binAt = res->binAt;
     into->binLink = res->binLink;
     into->binTag = res->binTag;
+    if (into->family == NULL && res->family != NULL) {
+	/* type def mm {grandeur(L, 0.001)} : mm hérite de la famille et des
+	 * paramètres de l'instance (règles de famille de type convert). */
+	into->family = res->family;
+	into->familyArgs = res->familyArgs;
+	Tcl_IncrRefCount(into->familyArgs);
+    }
     if (res->nkeys > 0) {
 	into->keys = (TclDictKey *) Tcl_Alloc(res->nkeys * sizeof(TclDictKey));
 	into->nkeys = res->nkeys;
@@ -2557,21 +2847,35 @@ static int
 TypeConvertCmd(Tcl_Interp *interp, TypeData *d, Tcl_Obj *fromObj,
 	Tcl_Obj *toObj, Tcl_Obj *lambda)
 {
-    Tcl_HashEntry *hf = Tcl_FindHashEntry(&d->names, Tcl_GetString(fromObj));
-    Tcl_HashEntry *ht = Tcl_FindHashEntry(&d->names, Tcl_GetString(toObj));
-    TclType *from, *to;
-    char key[256];
-    int isNew;
+    char key[2 * 128 + 2], side[2][128];
+    int isNew, i;
     Tcl_HashEntry *hPtr;
+    Tcl_Obj *objs[2];
 
-    if (hf == NULL || ht == NULL || Tcl_GetHashValue(hf) == NULL
-	    || Tcl_GetHashValue(ht) == NULL) {
-	ERR(interp, "UNKNOWN", "type convert needs two defined types");
-	return TCL_ERROR;
+    /*
+     * Chaque côté est un type défini, ou une FAMILLE (type def paramétré,
+     * « grandeur » pour grandeur(L, 0.001)) : la règle vaut alors pour
+     * toutes ses instances, et sa lambda reçoit en plus les paramètres
+     * de l'instance (un produit) : {x de vers}, {x de} ou {x vers}.
+     */
+    objs[0] = fromObj;
+    objs[1] = toObj;
+    for (i = 0; i < 2; i++) {
+	const char *nm = Tcl_GetString(objs[i]);
+	Tcl_HashEntry *h = Tcl_FindHashEntry(&d->names, nm);
+
+	if (h != NULL && Tcl_GetHashValue(h) != NULL) {
+	    snprintf(side[i], sizeof(side[i]), "%s",
+		    ((TclType *) Tcl_GetHashValue(h))->name);
+	} else if (Tcl_FindHashEntry(&d->generics, nm) != NULL) {
+	    snprintf(side[i], sizeof(side[i]), "@%s", nm);
+	} else {
+	    ERR(interp, "UNKNOWN", "type convert needs two defined types or "
+		    "type families, not \"%s\"", nm);
+	    return TCL_ERROR;
+	}
     }
-    from = (TclType *) Tcl_GetHashValue(hf);
-    to = (TclType *) Tcl_GetHashValue(ht);
-    snprintf(key, sizeof(key), "%s\1%s", from->name, to->name);
+    snprintf(key, sizeof(key), "%s\1%s", side[0], side[1]);
     hPtr = Tcl_CreateHashEntry(&d->converts, key, &isNew);
     if (!isNew) {
 	Tcl_DecrRefCount((Tcl_Obj *) Tcl_GetHashValue(hPtr));
@@ -3165,6 +3469,648 @@ BinCallFb(Tcl_Interp *interp, const char *cmd, Tcl_Obj *typeObj,
     return rc;
 }
 
+/* --------------------------------------------------------------------
+ * Codec C de « type binary encode » pour les dispositions FIXES
+ * --------------------------------------------------------------------
+ *
+ * Entiers u/s de 1, 2, 4 ou 8 octets, flottants de 4 ou 8 octets, produits
+ * de ces types, listes de taille fixe (list(N).T) ou donnée par un champ
+ * déjà écrit du même produit (list($n).T). Même disposition que la couche
+ * Tcl (layout/filebinary.tcl) : remplissage avant chaque champ jusqu'à son
+ * alignement, et à la fin d'un produit jusqu'au sien ; alignement d'un
+ * scalaire = la plus grande puissance de 2 <= sa taille, plafonnée par
+ * -align. Tout le reste (chaînes, sommes, liens, at(...), préfixes de
+ * taille, bitarray, -dedupe, valeur non typée, incohérence n / éléments)
+ * rend TCL_CONTINUE : la couche Tcl s'en charge, avec ses messages.
+ * La variable globale tcl_typebinaryc = 0 désactive le codec (comparaisons).
+ */
+
+typedef struct {
+    unsigned char *p;
+    size_t len, cap;
+} BinBuf;
+
+static void
+BinBufPut(BinBuf *b, const void *src, size_t n)
+{
+    if (b->len + n > b->cap) {
+	size_t nc = b->cap ? b->cap : 256;
+
+	while (nc < b->len + n) {
+	    nc *= 2;
+	}
+	b->p = (unsigned char *) Tcl_Realloc(b->p, nc);
+	b->cap = nc;
+    }
+    if (src != NULL) {
+	memcpy(b->p + b->len, src, n);
+    } else {
+	memset(b->p + b->len, 0, n);
+    }
+    b->len += n;
+}
+
+static void
+BinBufPad(BinBuf *b, size_t al)
+{
+    if (al > 1 && b->len % al != 0) {
+	BinBufPut(b, NULL, al - b->len % al);
+    }
+}
+
+/* Le contenu d'une valeur, sous toutes ses couches d'annotation. */
+static Tcl_Obj *
+BinContent(Tcl_Obj *v)
+{
+    int depth;
+
+    for (depth = 0; TCL_ANNOT_P(v) && depth < 16; depth++) {
+	v = TCL_ANNOT_CONTENT(v);
+    }
+    return v;
+}
+
+static int
+BinFastScalar(const TclType *tp)
+{
+    if (tp->bitWidth > 0 || tp->binDyn != NULL || tp->binAt != NULL
+	    || tp->binLink != NULL || tp->binTag != NULL) {
+	return 0;
+    }
+    if ((tp->binKind == TCLBIN_UINT || tp->binKind == TCLBIN_SINT)
+	    && (tp->binSize == 1 || tp->binSize == 2 || tp->binSize == 4
+	    || tp->binSize == 8)) {
+	return 1;
+    }
+    return tp->binKind == TCLBIN_FLOAT && (tp->binSize == 4
+	    || tp->binSize == 8);
+}
+
+/* Contexte d'un encodage : options et mémo des alignements par type. */
+#define BIN_MEMO 16
+typedef struct {
+    size_t cap;
+    int bigDefault, hostBig, nmemo;
+    BinBuf *out;
+    const TclType *memoT[BIN_MEMO];
+    size_t memoA[BIN_MEMO];
+} BinCtx;
+
+static size_t BinFastAlign(const TclType *tp, size_t cap, int depth);
+
+static size_t
+BinAlignOf(BinCtx *c, const TclType *tp, int depth)
+{
+    int k;
+    size_t a;
+
+    for (k = 0; k < c->nmemo; k++) {
+	if (c->memoT[k] == tp) {
+	    return c->memoA[k];
+	}
+    }
+    a = BinFastAlign(tp, c->cap, depth);
+    if (c->nmemo < BIN_MEMO) {
+	c->memoT[c->nmemo] = tp;
+	c->memoA[c->nmemo++] = a;
+    }
+    return a;
+}
+
+/* Alignement d'un type couvert ; 0 si le type n'est pas couvert. */
+static size_t
+BinFastAlign(const TclType *tp, size_t cap, int depth)
+{
+    Tcl_Size i;
+    size_t m = 1, a;
+
+    if (depth > 32) {
+	return 0;
+    }
+    if (BinFastScalar(tp)) {
+	size_t p = 1;
+
+	while (p * 2 <= (size_t) tp->binSize) {
+	    p *= 2;
+	}
+	return (cap <= 1) ? 1 : (p < cap ? p : cap);
+    }
+    if (tp->binAt != NULL || tp->binLink != NULL || tp->binTag != NULL) {
+	return 0;
+    }
+    if (tp->kind == TCLT_LIST && tp->elem != NULL) {
+	if (tp->binDyn != NULL && (tp->binDyn->kind != TCLDYN_EXPR
+		|| tp->binDyn->expr == NULL || tp->binDyn->expr[0] != '$')) {
+	    return 0;
+	}
+	if (tp->binDyn == NULL && tp->arity < 0) {
+	    return 0;			/* liste sans taille : pas binaire */
+	}
+	return BinFastAlign(tp->elem, cap, depth + 1);
+    }
+    if (tp->kind == TCLT_PRODUCT && tp->nfields > 0) {
+	for (i = 0; i < tp->nfields; i++) {
+	    if (tp->fields[i].type == NULL) {
+		return 0;
+	    }
+	    a = BinFastAlign(tp->fields[i].type, cap, depth + 1);
+	    if (a == 0) {
+		return 0;
+	    }
+	    if (a > m) {
+		m = a;
+	    }
+	}
+	return (cap <= 1) ? 1 : m;
+    }
+    return 0;
+}
+
+static int
+BinFastEnc(BinCtx *c, const TclType *tp, Tcl_Obj *v, const TclType *encl,
+	Tcl_Obj **vals, Tcl_Size nvals, int depth)
+{
+    BinBuf *out = c->out;
+    int bigDefault = c->bigDefault, hostBig = c->hostBig;
+    Tcl_Obj **elv;
+    Tcl_Size n, i;
+
+    v = BinContent(v);
+    if (BinFastScalar(tp)) {
+	unsigned char buf[8], tmp;
+	int big = tp->binEnd == TCLBIN_BE
+		|| (tp->binEnd == TCLBIN_AUTO && bigDefault);
+	size_t sz = (size_t) tp->binSize, k;
+
+	if (tp->binKind == TCLBIN_FLOAT) {
+	    double d;
+
+	    if (Tcl_GetDoubleFromObj(NULL, v, &d) != TCL_OK) {
+		return TCL_CONTINUE;
+	    }
+	    if (sz == 4) {
+		float f = (float) d;
+
+		memcpy(buf, &f, 4);
+	    } else {
+		memcpy(buf, &d, 8);
+	    }
+	    if (big != hostBig) {
+		for (k = 0; k < sz / 2; k++) {
+		    tmp = buf[k];
+		    buf[k] = buf[sz - 1 - k];
+		    buf[sz - 1 - k] = tmp;
+		}
+	    }
+	} else {
+	    Tcl_WideInt w;
+	    unsigned long long u;
+
+	    if (Tcl_GetWideIntFromObj(NULL, v, &w) != TCL_OK) {
+		return TCL_CONTINUE;	/* u64 > 2^63, texte... : la couche Tcl */
+	    }
+	    u = (unsigned long long) w;
+	    for (k = 0; k < sz; k++) {	/* octet de poids faible d'abord */
+		buf[big ? sz - 1 - k : k] = (unsigned char) (u >> (8 * k));
+	    }
+	}
+	BinBufPut(out, buf, sz);
+	return TCL_OK;
+    }
+    if (Tcl_ListObjGetElements(NULL, v, &n, &elv) != TCL_OK) {
+	return TCL_CONTINUE;
+    }
+    if (tp->kind == TCLT_LIST) {
+	if (tp->binDyn != NULL) {
+	    /* list($n).T : n est un champ déjà écrit du produit englobant */
+	    const char *name = tp->binDyn->expr + 1;
+	    Tcl_Size f;
+	    Tcl_WideInt want;
+
+	    if (encl == NULL) {
+		return TCL_CONTINUE;
+	    }
+	    for (f = 0; f < nvals; f++) {
+		if (encl->fields[f].name != NULL
+			&& strcmp(Tcl_GetString(encl->fields[f].name), name) == 0) {
+		    break;
+		}
+	    }
+	    if (f == nvals || Tcl_GetWideIntFromObj(NULL, BinContent(vals[f]),
+		    &want) != TCL_OK || want != (Tcl_WideInt) n) {
+		return TCL_CONTINUE;	/* le message d'erreur : couche Tcl */
+	    }
+	} else if (n != tp->arity) {
+	    return TCL_CONTINUE;
+	}
+	for (i = 0; i < n; i++) {
+	    int rc = BinFastEnc(c, tp->elem, elv[i], NULL, NULL, 0, depth + 1);
+
+	    if (rc != TCL_OK) {
+		return rc;
+	    }
+	}
+	return TCL_OK;
+    }
+    /* produit : les champs, dans l'ordre du type */
+    if (n != tp->nfields) {
+	return TCL_CONTINUE;
+    }
+    for (i = 0; i < n; i++) {
+	const TclType *ft = tp->fields[i].type;
+	int rc;
+
+	BinBufPad(out, BinAlignOf(c, ft, depth + 1));
+	rc = BinFastEnc(c, ft, elv[i], tp, elv, i, depth + 1);
+	if (rc != TCL_OK) {
+	    return rc;
+	}
+    }
+    BinBufPad(out, BinAlignOf(c, tp, depth));
+    return TCL_OK;
+}
+
+/* type binary encode TYPE VALUE ?-endian E? ?-align A? : TCL_OK (résultat
+ * posé), TCL_ERROR, ou TCL_CONTINUE (la couche Tcl prend le relais). */
+static int
+BinEncodeFast(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
+{
+    const char *flag = Tcl_GetVar2(interp, "tcl_typebinaryc", NULL,
+	    TCL_GLOBAL_ONLY);
+    TclType *tp, *vt = NULL;
+    size_t cap = 1;
+    int bigDefault = 0, hostBig, rc;
+    union { unsigned short s; unsigned char c[2]; } probe;
+    Tcl_Size i, len;
+    const char *text;
+    BinBuf out = {NULL, 0, 0};
+    BinCtx ctx;
+
+    if ((flag != NULL && strcmp(flag, "0") == 0) || objc < 2 || objc % 2) {
+	return TCL_CONTINUE;
+    }
+    for (i = 2; i < objc; i += 2) {
+	const char *o = Tcl_GetString(objv[i]), *a = Tcl_GetString(objv[i + 1]);
+
+	if (strcmp(o, "-endian") == 0 && strcmp(a, "little") == 0) {
+	    bigDefault = 0;
+	} else if (strcmp(o, "-endian") == 0 && strcmp(a, "big") == 0) {
+	    bigDefault = 1;
+	} else if (strcmp(o, "-align") == 0 && strcmp(a, "packed") == 0) {
+	    cap = 1;
+	} else if (strcmp(o, "-align") == 0 && strcmp(a, "natural") == 0) {
+	    cap = 8;
+	} else if (strcmp(o, "-align") == 0) {
+	    Tcl_WideInt w;
+
+	    if (Tcl_GetWideIntFromObj(NULL, objv[i + 1], &w) != TCL_OK
+		    || w < 1 || (w & (w - 1)) != 0) {
+		return TCL_CONTINUE;
+	    }
+	    cap = (size_t) w;
+	} else {
+	    return TCL_CONTINUE;	/* -dedupe, option inconnue : couche Tcl */
+	}
+    }
+    if (TclIsAnnotated(objv[0])) {
+	return TCL_CONTINUE;
+    }
+    text = Tcl_GetStringFromObj(objv[0], &len);
+    {
+	Tcl_Obj *saved = Tcl_GetObjResult(interp);
+
+	Tcl_IncrRefCount(saved);
+	tp = TclTypeParse(interp, text, len);
+	Tcl_SetObjResult(interp, saved);
+	Tcl_DecrRefCount(saved);
+    }
+    /* la valeur doit être typée du type demandé, comme pour la couche Tcl
+     * (qui lit ses champs par $x(champ)) */
+    if (tp == NULL || TclAnnotInfo(objv[1], NULL, &vt, NULL, NULL) != 1
+	    || !TclTypeSame(vt, tp) || BinFastAlign(tp, cap, 0) == 0) {
+	return TCL_CONTINUE;
+    }
+    probe.s = 1;
+    hostBig = (probe.c[0] == 0);
+    ctx.cap = cap;
+    ctx.bigDefault = bigDefault;
+    ctx.hostBig = hostBig;
+    ctx.nmemo = 0;
+    ctx.out = &out;
+    rc = BinFastEnc(&ctx, tp, objv[1], NULL, NULL, 0, 0);
+    if (rc == TCL_OK) {
+	Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(out.p, (Tcl_Size) out.len));
+    }
+    if (out.p != NULL) {
+	Tcl_Free(out.p);
+    }
+    return rc;
+}
+
+
+/* --------------------------------------------------------------------
+ * Décodage en C, même domaine que l'encodage : dispositions fixes.
+ *
+ * La valeur rendue a la forme de celle de la couche Tcl (vérifiée par
+ * comparaison des représentations internes) :
+ *   - scalaires : entiers et doubles nus ;
+ *   - liste : liste nue de ses éléments ;
+ *   - produit : liste de ses champs, ANNOTÉE de son type, sauf quand il est
+ *     lui-même la valeur d'un champ (le constructeur retire l'annotation
+ *     d'un champ, set {T}V champ $v ...).
+ * Le décodage n'a d'effet qu'en cas de succès (-consumed compris).
+ * -------------------------------------------------------------------- */
+
+typedef struct {
+    BinCtx b;
+    Tcl_Interp *interp;
+    const unsigned char *p;
+    size_t len, pos, base;
+    int strict;
+    const TclType *refT[BIN_MEMO];
+    Tcl_Obj *refO[BIN_MEMO];
+    int nref;
+} BinDec;
+
+static Tcl_Obj *
+BinDecRef(BinDec *d, const TclType *tp)
+{
+    int k;
+
+    for (k = 0; k < d->nref; k++) {
+	if (d->refT[k] == tp) {
+	    return d->refO[k];
+	}
+    }
+    if (d->nref < BIN_MEMO) {
+	d->refT[d->nref] = tp;
+	d->refO[d->nref] = TclTypeRefFor(d->interp, (TclType *) tp, -1);
+	return d->refO[d->nref++];
+    }
+    return TclTypeRefFor(d->interp, (TclType *) tp, -1);
+}
+
+static int
+BinDecPad(BinDec *d, size_t al)
+{
+    size_t rel = d->pos - d->base, n, k;
+
+    if (al <= 1 || rel % al == 0) {
+	return TCL_OK;
+    }
+    n = al - rel % al;
+    if (d->pos + n > d->len) {
+	return TCL_CONTINUE;
+    }
+    if (d->strict) {
+	for (k = 0; k < n; k++) {
+	    if (d->p[d->pos + k] != 0) {
+		return TCL_CONTINUE;	/* le message : couche Tcl */
+	    }
+	}
+    }
+    d->pos += n;
+    return TCL_OK;
+}
+
+/* asField : la valeur est celle d'un champ (produit rendu sans annotation) */
+static int
+BinFastDec(BinDec *d, const TclType *tp, int asField, Tcl_Obj **vals,
+	const TclType *encl, Tcl_Size nvals, int depth, Tcl_Obj **resPtr)
+{
+    Tcl_Size i, n;
+    Tcl_Obj **elv, *lst;
+    int rc;
+
+    if (depth > 32) {
+	return TCL_CONTINUE;
+    }
+    if (BinFastScalar(tp)) {
+	size_t sz = (size_t) tp->binSize, k;
+	const unsigned char *q = d->p + d->pos;
+	int big = tp->binEnd == TCLBIN_BE
+		|| (tp->binEnd == TCLBIN_AUTO && d->b.bigDefault);
+	unsigned char buf[8];
+
+	if (d->pos + sz > d->len) {
+	    return TCL_CONTINUE;
+	}
+	d->pos += sz;
+	if (tp->binKind == TCLBIN_FLOAT) {
+	    for (k = 0; k < sz; k++) {
+		buf[k] = q[(big != d->b.hostBig) ? sz - 1 - k : k];
+	    }
+	    if (sz == 4) {
+		float f;
+
+		memcpy(&f, buf, 4);
+		*resPtr = Tcl_NewDoubleObj((double) f);
+	    } else {
+		double x;
+
+		memcpy(&x, buf, 8);
+		*resPtr = Tcl_NewDoubleObj(x);
+	    }
+	} else {
+	    unsigned long long u = 0;
+
+	    for (k = 0; k < sz; k++) {
+		u |= (unsigned long long) q[big ? sz - 1 - k : k] << (8 * k);
+	    }
+	    if (tp->binKind == TCLBIN_SINT) {
+		if (sz < 8 && (u >> (8 * sz - 1)) & 1) {
+		    u |= ~0ULL << (8 * sz);	/* extension du signe */
+		}
+		*resPtr = Tcl_NewWideIntObj((Tcl_WideInt) u);
+	    } else if (sz == 8) {
+		*resPtr = Tcl_NewWideUIntObj((Tcl_WideUInt) u);
+	    } else {
+		*resPtr = Tcl_NewWideIntObj((Tcl_WideInt) u);
+	    }
+	}
+	return TCL_OK;
+    }
+    if (tp->kind == TCLT_LIST) {
+	Tcl_WideInt want;
+
+	if (tp->binDyn != NULL) {
+	    const char *name = tp->binDyn->expr + 1;
+	    Tcl_Size f;
+
+	    if (encl == NULL) {
+		return TCL_CONTINUE;
+	    }
+	    for (f = 0; f < nvals; f++) {
+		if (encl->fields[f].name != NULL
+			&& strcmp(Tcl_GetString(encl->fields[f].name), name) == 0) {
+		    break;
+		}
+	    }
+	    if (f == nvals || Tcl_GetWideIntFromObj(NULL, vals[f], &want)
+		    != TCL_OK) {
+		return TCL_CONTINUE;
+	    }
+	} else {
+	    want = tp->arity;
+	}
+	if (want < 0 || (size_t) want > d->len - d->pos) {
+	    return TCL_CONTINUE;	/* taille absurde : couche Tcl */
+	}
+	n = (Tcl_Size) want;
+	lst = Tcl_NewListObj(n, NULL);
+	for (i = 0; i < n; i++) {
+	    Tcl_Obj *e;
+
+	    rc = BinFastDec(d, tp->elem, 0, NULL, NULL, 0, depth + 1, &e);
+	    if (rc != TCL_OK) {
+		TclDiscard(lst);
+		return rc;
+	    }
+	    Tcl_ListObjAppendElement(NULL, lst, e);
+	}
+	*resPtr = lst;
+	return TCL_OK;
+    }
+    /* produit */
+    n = tp->nfields;
+    elv = (Tcl_Obj **) Tcl_Alloc((n ? n : 1) * sizeof(Tcl_Obj *));
+    for (i = 0; i < n; i++) {
+	const TclType *ft = tp->fields[i].type;
+
+	rc = BinDecPad(d, BinAlignOf(&d->b, ft, depth + 1));
+	if (rc == TCL_OK) {
+	    rc = BinFastDec(d, ft, 1, elv, tp, i, depth + 1, &elv[i]);
+	}
+	if (rc != TCL_OK) {
+	    Tcl_Size j;
+
+	    for (j = 0; j < i; j++) {
+		TclDiscard(elv[j]);
+	    }
+	    Tcl_Free(elv);
+	    return rc;
+	}
+	Tcl_IncrRefCount(elv[i]);
+    }
+    rc = BinDecPad(d, BinAlignOf(&d->b, tp, depth));
+    if (rc != TCL_OK) {
+	for (i = 0; i < n; i++) {
+	    TclDiscard(elv[i]);
+	}
+	Tcl_Free(elv);
+	return rc;
+    }
+    lst = Tcl_NewListObj(n, elv);
+    for (i = 0; i < n; i++) {
+	Tcl_DecrRefCount(elv[i]);
+    }
+    Tcl_Free(elv);
+    *resPtr = asField ? lst : TclNewAnnotatedOwn(lst, BinDecRef(d, tp));
+    return TCL_OK;
+}
+
+/* type binary decode TYPE DATA ?-offset N? ?-endian E? ?-align A?
+ * ?-strictpad B? ?-linkdepth D? ?-consumed VAR? */
+static int
+BinDecodeFast(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
+{
+    const char *flag = Tcl_GetVar2(interp, "tcl_typebinaryc", NULL,
+	    TCL_GLOBAL_ONLY);
+    TclType *tp;
+    BinDec d;
+    union { unsigned short s; unsigned char c[2]; } probe;
+    Tcl_Size i, len;
+    Tcl_WideInt off = 0;
+    Tcl_Obj *consumed = NULL, *res = NULL;
+    const char *text;
+    unsigned char *bytes;
+    int rc;
+
+    if ((flag != NULL && strcmp(flag, "0") == 0) || objc < 2 || objc % 2) {
+	return TCL_CONTINUE;
+    }
+    memset(&d, 0, sizeof(d));
+    d.b.cap = 1;
+    for (i = 2; i < objc; i += 2) {
+	const char *o = Tcl_GetString(objv[i]), *a = Tcl_GetString(objv[i + 1]);
+	Tcl_WideInt w;
+
+	if (strcmp(o, "-endian") == 0 && strcmp(a, "little") == 0) {
+	    d.b.bigDefault = 0;
+	} else if (strcmp(o, "-endian") == 0 && strcmp(a, "big") == 0) {
+	    d.b.bigDefault = 1;
+	} else if (strcmp(o, "-align") == 0 && strcmp(a, "packed") == 0) {
+	    d.b.cap = 1;
+	} else if (strcmp(o, "-align") == 0 && strcmp(a, "natural") == 0) {
+	    d.b.cap = 8;
+	} else if (strcmp(o, "-align") == 0) {
+	    if (Tcl_GetWideIntFromObj(NULL, objv[i + 1], &w) != TCL_OK
+		    || w < 1 || (w & (w - 1)) != 0) {
+		return TCL_CONTINUE;
+	    }
+	    d.b.cap = (size_t) w;
+	} else if (strcmp(o, "-offset") == 0) {
+	    if (Tcl_GetWideIntFromObj(NULL, objv[i + 1], &off) != TCL_OK
+		    || off < 0) {
+		return TCL_CONTINUE;
+	    }
+	} else if (strcmp(o, "-strictpad") == 0) {
+	    if (Tcl_GetBooleanFromObj(NULL, objv[i + 1], &d.strict) != TCL_OK) {
+		d.strict = 0;		/* string is true -strict : faux */
+	    }
+	} else if (strcmp(o, "-linkdepth") == 0) {
+	    /* sans lien, la profondeur ne joue pas ; une valeur fausse donne
+	     * son message par la couche Tcl */
+	    if (strcmp(a, "Inf") != 0 && (Tcl_GetWideIntFromObj(NULL,
+		    objv[i + 1], &w) != TCL_OK || w < 0)) {
+		return TCL_CONTINUE;
+	    }
+	} else if (strcmp(o, "-consumed") == 0) {
+	    consumed = (a[0] != '\0') ? objv[i + 1] : NULL;
+	} else {
+	    return TCL_CONTINUE;
+	}
+    }
+    if (TclIsAnnotated(objv[0])) {
+	return TCL_CONTINUE;
+    }
+    bytes = Tcl_GetBytesFromObj(NULL, objv[1], &len);
+    if (bytes == NULL || (Tcl_WideInt) len < off) {
+	return TCL_CONTINUE;
+    }
+    text = Tcl_GetStringFromObj(objv[0], &i);
+    {
+	Tcl_Obj *saved = Tcl_GetObjResult(interp);
+
+	Tcl_IncrRefCount(saved);
+	tp = TclTypeParse(interp, text, i);
+	Tcl_SetObjResult(interp, saved);
+	Tcl_DecrRefCount(saved);
+    }
+    /* un résultat produit seulement : les autres passent par set {T}V */
+    if (tp == NULL || tp->kind != TCLT_PRODUCT
+	    || BinFastAlign(tp, d.b.cap, 0) == 0) {
+	return TCL_CONTINUE;
+    }
+    probe.s = 1;
+    d.b.hostBig = (probe.c[0] == 0);
+    d.interp = interp;
+    d.p = bytes;
+    d.len = (size_t) len;
+    d.pos = d.base = (size_t) off;
+    rc = BinFastDec(&d, tp, 0, NULL, NULL, 0, 0, &res);
+    if (rc != TCL_OK) {
+	return rc;
+    }
+    if (consumed != NULL && Tcl_ObjSetVar2(interp, consumed, NULL,
+	    Tcl_NewWideIntObj((Tcl_WideInt) d.pos), TCL_LEAVE_ERR_MSG) == NULL) {
+	TclDiscard(res);
+	return TCL_ERROR;
+    }
+    Tcl_SetObjResult(interp, res);
+    return TCL_OK;
+}
+
 static int
 TypeBinaryCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 {
@@ -3198,6 +4144,20 @@ TypeBinaryCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 		    Tcl_DecrRefCount(saved);
 		}
 		if (!isType) {
+		    if (strcmp(binVerbs[i], "encode") == 0) {
+			int frc = BinEncodeFast(interp, objc - 3, objv + 3);
+
+			if (frc != TCL_CONTINUE) {
+			    return frc;
+			}
+		    }
+		    if (strcmp(binVerbs[i], "decode") == 0) {
+			int frc = BinDecodeFast(interp, objc - 3, objv + 3);
+
+			if (frc != TCL_CONTINUE) {
+			    return frc;
+			}
+		    }
 		    return BinCallFb(interp, "::fb::filebinary", NULL,
 			    objc - 3, objv + 3, binVerbs[i]);
 		}
@@ -3286,6 +4246,36 @@ TypeObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
     if (strcmp(sub, "get") == 0) {
 	return TypeGetCmd(interp, objc, objv);
     }
+    if (strcmp(sub, "cast") == 0) {
+	/*
+	 * type cast T valeur : le résolveur d'un constructeur, sans
+	 * variable. T est empilé sur la valeur, puis la pile est résolue
+	 * comme dans "set y {T}$valeur".
+	 */
+	Tcl_Obj *pushed, *res = NULL;
+	int rc;
+
+	if (objc != 4) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "type value");
+	    return TCL_ERROR;
+	}
+	{
+	    Tcl_Size tl;
+	    const char *tt = Tcl_GetStringFromObj(objv[2], &tl);
+
+	    if (TclTypeParse(interp, tt, tl) == NULL) {
+		return TCL_ERROR;
+	    }
+	}
+	pushed = TclAnnotPush(objv[3], objv[2]);
+	Tcl_IncrRefCount(pushed);
+	rc = TclAnnotSettle(interp, pushed, NULL, 0, &res);
+	if (rc == TCL_OK) {
+	    Tcl_SetObjResult(interp, res);
+	}
+	Tcl_DecrRefCount(pushed);
+	return rc;
+    }
     if (strcmp(sub, "deref") == 0) {
 	return TypeDerefCmd(interp, objc, objv);
     }
@@ -3293,7 +4283,7 @@ TypeObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
 	return TypeBinaryCmd(interp, objc, objv);
     }
     ERR(interp, "SUBCMD", "bad subcommand \"%s\": must be def, alias, "
-	    "convert, deref, get or binary", sub);
+	    "cast, convert, deref, get or binary", sub);
     return TCL_ERROR;
 }
 
@@ -3450,7 +4440,7 @@ DeclareObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
 	Tcl_DecrRefCount(typed);
 	return TCL_ERROR;
     }
-    Tcl_SetObjResult(interp, typed);
+    Tcl_SetObjResult(interp, res);	/* la valeur rangée, résolue */
     Tcl_DecrRefCount(typed);
     return TCL_OK;
 }

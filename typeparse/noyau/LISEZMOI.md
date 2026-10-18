@@ -795,3 +795,40 @@ Mesures (cstruct, `-align natural`, µs par encodage) :
 codec C, qui contrôle en plus le type, est 4 × plus rapide. Restent à faire : le décodage en C
 (même domaine), mettre en cache le type analysé par `TclTypeParse` (refait à chaque appel) et
 éviter `Tcl_ListObjGetElements` sur les listes abstraites annotées.
+
+## Codec C pour `type binary decode` (patch types-binaires-codec-c-decode)
+
+Après `types-binaires-codec-c`. Touche `tclTypes.c`, `tclTypes.h`, `tclAnnotObj.c` (sources de
+types, copiées par `maj.sh`). Même domaine que l'encodeur (dispositions fixes), avec un
+résultat de type produit ; options `-offset`, `-endian`, `-align`, `-strictpad`,
+`-linkdepth` (sans effet sans lien) et `-consumed`. Tout le reste, et toute erreur (données
+tronquées, remplissage non nul sous `-strictpad`, taille absurde), passe à la couche Tcl, qui
+donne ses messages. Le décodage n'a d'effet qu'en cas de succès (`-consumed` compris).
+
+La valeur produite a exactement la forme de celle de la couche Tcl (comparée par ses
+représentations internes, pas seulement son texte) : scalaires nus, listes nues, produits
+annotés de leur type, sauf un produit valeur d'un champ, rendu nu comme le fait le
+constructeur. Deux fonctions sont ajoutées dans `tclAnnotObj.c` : `TclTypeRefFor` (référence
+de type, gardée pour toute une série de valeurs) et `TclNewAnnotatedOwn` (valeur typée qui
+prend son contenu, sans copie).
+
+Test : `t51_codec_c.tcl` fait chaque cas deux fois (couche Tcl, voie C) et compare octets,
+valeur, types des parties, `-consumed` et messages d'erreur. Tests, exemples et
+`cstruct/test.tcl` identiques avec et sans la voie C ; sous AddressSanitizer, sans erreur ;
+mémoire stable sur 200 décodages de 10 000 mesures.
+
+Mesures (cstruct, 10 000 mesures, `-align natural`) : décodage 3,0 à 3,7 ms en C, contre
+485 ms par la couche Tcl (× 130 à 160) et 7,3 à 10,5 ms par `binary scan` écrit à la main.
+
+Profil du décodage : 40 % du temps est la libération du résultat précédent ;
+`FreeAnnotated` y cherche chaque valeur annotée dans la table des cellules « soi-même »
+(`SelfCell`), dès que cette table n'est pas vide. Un drapeau sur la valeur éviterait cette
+recherche, pour toutes les valeurs annotées et pas seulement ici.
+
+### layout/filebinary.tcl : `typed` (résultat d'un type non produit)
+
+`type binary decode {list(2).u8} ...` échouait (`expected integer but got "1 2"`) : `typed`
+passait la liste en UN argument à `set {T}V`, qui en faisait un seul élément, et par son
+texte, ce qui perdait le type des éléments. La liste est maintenant passée élément par
+élément, par variable. Seule la sortie de `t51` (cas ajoutés) en dépend ; tests et exemples
+identiques.

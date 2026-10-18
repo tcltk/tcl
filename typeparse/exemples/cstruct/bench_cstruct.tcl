@@ -1,11 +1,15 @@
-# bench_cstruct.tcl annote|classique ?typeparse?
-# FR : mesure, sur un lot de 1000 mesures, chaque étape de l'exemple cstruct,
-#      en version annotée et en version Tcl classique. Résultat : µs par opération.
+# bench_cstruct.tcl annote|annote-tcl|classique ?typeparse? ?N?
+# FR : mesure, sur un lot de N mesures (10000 par défaut), chaque étape de
+#      l'exemple cstruct, en version annotée et en version Tcl classique.
+#      Résultat : µs par opération. annote-tcl : codecs en Tcl seulement
+#      (set ::tcl_typebinaryc 0), pour comparer avec le codec C.
 #      La version classique tourne aussi sur un tclsh 9.0 d'origine (sans patch).
 #   tclsh bench_cstruct.tcl annote ; tclsh bench_cstruct.tcl classique
 set here [file dirname [file normalize [info script]]]
-lassign $argv mode tp
+lassign $argv mode tp N
 if {$tp eq ""} {set tp [file join $here .. ..]}
+if {$N eq ""} {set N 10000}
+if {$mode eq "annote-tcl"} {set ::tcl_typebinaryc 0; set mode annote}
 source [file join $here cstruct_classique.tcl]
 if {$mode eq "annote"} {
     source [file join $tp layout filebinary.tcl]
@@ -15,12 +19,13 @@ if {$mode eq "annote"} {
 } else {
     csc::init [file join $here cstruct.so]
 }
-set N 1000
 set bytes [cs::generate $N 42]
 set C [csc::decode $bytes]
 set items [lindex $C 1]
 
+# reps : répétitions pour 1000 mesures, ramenées à la taille du lot
 proc mesure {label reps script} {
+    set reps [expr {max(3, $reps * 1000 / $::N)}]
     uplevel 1 $script                     ;# échauffement (compilation, caches)
     set t [lindex [uplevel 1 [list time $script $reps]] 0]
     puts [format "%-34s %10.1f" $label $t]
@@ -56,12 +61,12 @@ if {$mode eq "annote"} {
         list $cnt $mn $mx
     }
     mesure "1 construction (set {Batch})"     200 {p_build $N $items}
-    mesure "2 encodage (type binary encode)"  20  {p_encode $A}
+    mesure "2 encodage (type binary encode)"  200 {p_encode $A}
     mesure "3 C stats_raw sur les octets"     2000 {cs::stats_raw $bytes}
-    mesure "4 décodage (type binary decode)"  20  {p_decode $bytes}
+    mesure "4 décodage (type binary decode)"  200 {p_decode $bytes}
     mesure "5 calcul Tcl, \$it(champ)"         200 {p_compute $A}
     mesure "5b calcul Tcl, lassign"           200 {p_compute_lassign $A}
-    mesure "6 chaîne complète (cs::stats)"    20  {p_stats $A}
+    mesure "6 chaîne complète (cs::stats)"    200 {p_stats $A}
     mesure "7 voie objet (cs::stats_obj)"     200 {p_statsobj $A}
 } else {
     proc p_build {n items} {list $n $items}

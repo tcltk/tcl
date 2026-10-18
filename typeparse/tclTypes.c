@@ -3807,6 +3807,310 @@ BinEncodeFast(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
     return rc;
 }
 
+
+/* --------------------------------------------------------------------
+ * Décodage en C, même domaine que l'encodage : dispositions fixes.
+ *
+ * La valeur rendue a la forme de celle de la couche Tcl (vérifiée par
+ * comparaison des représentations internes) :
+ *   - scalaires : entiers et doubles nus ;
+ *   - liste : liste nue de ses éléments ;
+ *   - produit : liste de ses champs, ANNOTÉE de son type, sauf quand il est
+ *     lui-même la valeur d'un champ (le constructeur retire l'annotation
+ *     d'un champ, set {T}V champ $v ...).
+ * Le décodage n'a d'effet qu'en cas de succès (-consumed compris).
+ * -------------------------------------------------------------------- */
+
+typedef struct {
+    BinCtx b;
+    Tcl_Interp *interp;
+    const unsigned char *p;
+    size_t len, pos, base;
+    int strict;
+    const TclType *refT[BIN_MEMO];
+    Tcl_Obj *refO[BIN_MEMO];
+    int nref;
+} BinDec;
+
+static Tcl_Obj *
+BinDecRef(BinDec *d, const TclType *tp)
+{
+    int k;
+
+    for (k = 0; k < d->nref; k++) {
+	if (d->refT[k] == tp) {
+	    return d->refO[k];
+	}
+    }
+    if (d->nref < BIN_MEMO) {
+	d->refT[d->nref] = tp;
+	d->refO[d->nref] = TclTypeRefFor(d->interp, (TclType *) tp, -1);
+	return d->refO[d->nref++];
+    }
+    return TclTypeRefFor(d->interp, (TclType *) tp, -1);
+}
+
+static int
+BinDecPad(BinDec *d, size_t al)
+{
+    size_t rel = d->pos - d->base, n, k;
+
+    if (al <= 1 || rel % al == 0) {
+	return TCL_OK;
+    }
+    n = al - rel % al;
+    if (d->pos + n > d->len) {
+	return TCL_CONTINUE;
+    }
+    if (d->strict) {
+	for (k = 0; k < n; k++) {
+	    if (d->p[d->pos + k] != 0) {
+		return TCL_CONTINUE;	/* le message : couche Tcl */
+	    }
+	}
+    }
+    d->pos += n;
+    return TCL_OK;
+}
+
+/* asField : la valeur est celle d'un champ (produit rendu sans annotation) */
+static int
+BinFastDec(BinDec *d, const TclType *tp, int asField, Tcl_Obj **vals,
+	const TclType *encl, Tcl_Size nvals, int depth, Tcl_Obj **resPtr)
+{
+    Tcl_Size i, n;
+    Tcl_Obj **elv, *lst;
+    int rc;
+
+    if (depth > 32) {
+	return TCL_CONTINUE;
+    }
+    if (BinFastScalar(tp)) {
+	size_t sz = (size_t) tp->binSize, k;
+	const unsigned char *q = d->p + d->pos;
+	int big = tp->binEnd == TCLBIN_BE
+		|| (tp->binEnd == TCLBIN_AUTO && d->b.bigDefault);
+	unsigned char buf[8];
+
+	if (d->pos + sz > d->len) {
+	    return TCL_CONTINUE;
+	}
+	d->pos += sz;
+	if (tp->binKind == TCLBIN_FLOAT) {
+	    for (k = 0; k < sz; k++) {
+		buf[k] = q[(big != d->b.hostBig) ? sz - 1 - k : k];
+	    }
+	    if (sz == 4) {
+		float f;
+
+		memcpy(&f, buf, 4);
+		*resPtr = Tcl_NewDoubleObj((double) f);
+	    } else {
+		double x;
+
+		memcpy(&x, buf, 8);
+		*resPtr = Tcl_NewDoubleObj(x);
+	    }
+	} else {
+	    unsigned long long u = 0;
+
+	    for (k = 0; k < sz; k++) {
+		u |= (unsigned long long) q[big ? sz - 1 - k : k] << (8 * k);
+	    }
+	    if (tp->binKind == TCLBIN_SINT) {
+		if (sz < 8 && (u >> (8 * sz - 1)) & 1) {
+		    u |= ~0ULL << (8 * sz);	/* extension du signe */
+		}
+		*resPtr = Tcl_NewWideIntObj((Tcl_WideInt) u);
+	    } else if (sz == 8) {
+		*resPtr = Tcl_NewWideUIntObj((Tcl_WideUInt) u);
+	    } else {
+		*resPtr = Tcl_NewWideIntObj((Tcl_WideInt) u);
+	    }
+	}
+	return TCL_OK;
+    }
+    if (tp->kind == TCLT_LIST) {
+	Tcl_WideInt want;
+
+	if (tp->binDyn != NULL) {
+	    const char *name = tp->binDyn->expr + 1;
+	    Tcl_Size f;
+
+	    if (encl == NULL) {
+		return TCL_CONTINUE;
+	    }
+	    for (f = 0; f < nvals; f++) {
+		if (encl->fields[f].name != NULL
+			&& strcmp(Tcl_GetString(encl->fields[f].name), name) == 0) {
+		    break;
+		}
+	    }
+	    if (f == nvals || Tcl_GetWideIntFromObj(NULL, vals[f], &want)
+		    != TCL_OK) {
+		return TCL_CONTINUE;
+	    }
+	} else {
+	    want = tp->arity;
+	}
+	if (want < 0 || (size_t) want > d->len - d->pos) {
+	    return TCL_CONTINUE;	/* taille absurde : couche Tcl */
+	}
+	n = (Tcl_Size) want;
+	lst = Tcl_NewListObj(n, NULL);
+	for (i = 0; i < n; i++) {
+	    Tcl_Obj *e;
+
+	    rc = BinFastDec(d, tp->elem, 0, NULL, NULL, 0, depth + 1, &e);
+	    if (rc != TCL_OK) {
+		TclDiscard(lst);
+		return rc;
+	    }
+	    Tcl_ListObjAppendElement(NULL, lst, e);
+	}
+	*resPtr = lst;
+	return TCL_OK;
+    }
+    /* produit */
+    n = tp->nfields;
+    elv = (Tcl_Obj **) Tcl_Alloc((n ? n : 1) * sizeof(Tcl_Obj *));
+    for (i = 0; i < n; i++) {
+	const TclType *ft = tp->fields[i].type;
+
+	rc = BinDecPad(d, BinAlignOf(&d->b, ft, depth + 1));
+	if (rc == TCL_OK) {
+	    rc = BinFastDec(d, ft, 1, elv, tp, i, depth + 1, &elv[i]);
+	}
+	if (rc != TCL_OK) {
+	    Tcl_Size j;
+
+	    for (j = 0; j < i; j++) {
+		TclDiscard(elv[j]);
+	    }
+	    Tcl_Free(elv);
+	    return rc;
+	}
+	Tcl_IncrRefCount(elv[i]);
+    }
+    rc = BinDecPad(d, BinAlignOf(&d->b, tp, depth));
+    if (rc != TCL_OK) {
+	for (i = 0; i < n; i++) {
+	    TclDiscard(elv[i]);
+	}
+	Tcl_Free(elv);
+	return rc;
+    }
+    lst = Tcl_NewListObj(n, elv);
+    for (i = 0; i < n; i++) {
+	Tcl_DecrRefCount(elv[i]);
+    }
+    Tcl_Free(elv);
+    *resPtr = asField ? lst : TclNewAnnotatedOwn(lst, BinDecRef(d, tp));
+    return TCL_OK;
+}
+
+/* type binary decode TYPE DATA ?-offset N? ?-endian E? ?-align A?
+ * ?-strictpad B? ?-linkdepth D? ?-consumed VAR? */
+static int
+BinDecodeFast(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
+{
+    const char *flag = Tcl_GetVar2(interp, "tcl_typebinaryc", NULL,
+	    TCL_GLOBAL_ONLY);
+    TclType *tp;
+    BinDec d;
+    union { unsigned short s; unsigned char c[2]; } probe;
+    Tcl_Size i, len;
+    Tcl_WideInt off = 0;
+    Tcl_Obj *consumed = NULL, *res = NULL;
+    const char *text;
+    unsigned char *bytes;
+    int rc;
+
+    if ((flag != NULL && strcmp(flag, "0") == 0) || objc < 2 || objc % 2) {
+	return TCL_CONTINUE;
+    }
+    memset(&d, 0, sizeof(d));
+    d.b.cap = 1;
+    for (i = 2; i < objc; i += 2) {
+	const char *o = Tcl_GetString(objv[i]), *a = Tcl_GetString(objv[i + 1]);
+	Tcl_WideInt w;
+
+	if (strcmp(o, "-endian") == 0 && strcmp(a, "little") == 0) {
+	    d.b.bigDefault = 0;
+	} else if (strcmp(o, "-endian") == 0 && strcmp(a, "big") == 0) {
+	    d.b.bigDefault = 1;
+	} else if (strcmp(o, "-align") == 0 && strcmp(a, "packed") == 0) {
+	    d.b.cap = 1;
+	} else if (strcmp(o, "-align") == 0 && strcmp(a, "natural") == 0) {
+	    d.b.cap = 8;
+	} else if (strcmp(o, "-align") == 0) {
+	    if (Tcl_GetWideIntFromObj(NULL, objv[i + 1], &w) != TCL_OK
+		    || w < 1 || (w & (w - 1)) != 0) {
+		return TCL_CONTINUE;
+	    }
+	    d.b.cap = (size_t) w;
+	} else if (strcmp(o, "-offset") == 0) {
+	    if (Tcl_GetWideIntFromObj(NULL, objv[i + 1], &off) != TCL_OK
+		    || off < 0) {
+		return TCL_CONTINUE;
+	    }
+	} else if (strcmp(o, "-strictpad") == 0) {
+	    if (Tcl_GetBooleanFromObj(NULL, objv[i + 1], &d.strict) != TCL_OK) {
+		d.strict = 0;		/* string is true -strict : faux */
+	    }
+	} else if (strcmp(o, "-linkdepth") == 0) {
+	    /* sans lien, la profondeur ne joue pas ; une valeur fausse donne
+	     * son message par la couche Tcl */
+	    if (strcmp(a, "Inf") != 0 && (Tcl_GetWideIntFromObj(NULL,
+		    objv[i + 1], &w) != TCL_OK || w < 0)) {
+		return TCL_CONTINUE;
+	    }
+	} else if (strcmp(o, "-consumed") == 0) {
+	    consumed = (a[0] != '\0') ? objv[i + 1] : NULL;
+	} else {
+	    return TCL_CONTINUE;
+	}
+    }
+    if (TclIsAnnotated(objv[0])) {
+	return TCL_CONTINUE;
+    }
+    bytes = Tcl_GetBytesFromObj(NULL, objv[1], &len);
+    if (bytes == NULL || (Tcl_WideInt) len < off) {
+	return TCL_CONTINUE;
+    }
+    text = Tcl_GetStringFromObj(objv[0], &i);
+    {
+	Tcl_Obj *saved = Tcl_GetObjResult(interp);
+
+	Tcl_IncrRefCount(saved);
+	tp = TclTypeParse(interp, text, i);
+	Tcl_SetObjResult(interp, saved);
+	Tcl_DecrRefCount(saved);
+    }
+    /* un résultat produit seulement : les autres passent par set {T}V */
+    if (tp == NULL || tp->kind != TCLT_PRODUCT
+	    || BinFastAlign(tp, d.b.cap, 0) == 0) {
+	return TCL_CONTINUE;
+    }
+    probe.s = 1;
+    d.b.hostBig = (probe.c[0] == 0);
+    d.interp = interp;
+    d.p = bytes;
+    d.len = (size_t) len;
+    d.pos = d.base = (size_t) off;
+    rc = BinFastDec(&d, tp, 0, NULL, NULL, 0, 0, &res);
+    if (rc != TCL_OK) {
+	return rc;
+    }
+    if (consumed != NULL && Tcl_ObjSetVar2(interp, consumed, NULL,
+	    Tcl_NewWideIntObj((Tcl_WideInt) d.pos), TCL_LEAVE_ERR_MSG) == NULL) {
+	TclDiscard(res);
+	return TCL_ERROR;
+    }
+    Tcl_SetObjResult(interp, res);
+    return TCL_OK;
+}
+
 static int
 TypeBinaryCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 {
@@ -3842,6 +4146,13 @@ TypeBinaryCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 		if (!isType) {
 		    if (strcmp(binVerbs[i], "encode") == 0) {
 			int frc = BinEncodeFast(interp, objc - 3, objv + 3);
+
+			if (frc != TCL_CONTINUE) {
+			    return frc;
+			}
+		    }
+		    if (strcmp(binVerbs[i], "decode") == 0) {
+			int frc = BinDecodeFast(interp, objc - 3, objv + 3);
 
 			if (frc != TCL_CONTINUE) {
 			    return frc;

@@ -173,6 +173,8 @@ typedef struct TclObjVec {
 Tcl_Obj *TclNewAnnotated(Tcl_Interp *interp, TclType *tp, int variant,
 	Tcl_Obj *content);
 Tcl_Obj *TclNewRawAnnotation(Tcl_Obj *typeText, Tcl_Obj *content);
+Tcl_Obj *TclTypeRefFor(Tcl_Interp *interp, TclType *tp, int variant);
+Tcl_Obj *TclNewAnnotatedOwn(Tcl_Obj *content, Tcl_Obj *typeRef);
 int	TclIsAnnotated(Tcl_Obj *objPtr);
 int	TclAnnotInfo(Tcl_Obj *objPtr, Tcl_Obj **contentPtr, TclType **tpPtr,
 	    int *variantPtr, Tcl_Obj **rawTypePtr);

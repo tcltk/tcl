@@ -79,16 +79,29 @@ la description du type champ par champ : 260 à 340 commandes Tcl par mesure, co
 classique. Le correctif de `putPad` (des octets, plus des chaînes) supprime un coût quadratique
 dû à Tcl lui-même (mélange tableau d'octets / chaîne suivi de `string length`).
 
-### Avec le codec C de `type binary encode` (patch types-binaires-codec-c)
+### Avec les codecs C de `type binary` (patchs types-binaires-codec-c et -decode)
 
-Les dispositions fixes de `cstruct` sont maintenant encodées en C (voir `noyau/LISEZMOI.md`).
-Mêmes 1000 mesures, même machine pour les trois colonnes (µs) :
+Les dispositions fixes de `cstruct` sont maintenant encodées et décodées en C (voir
+`noyau/LISEZMOI.md`). `bench_cstruct.tcl` prend la taille du lot en 3e argument (10 000 par
+défaut) et le mode `annote-tcl` (codecs en Tcl seulement, `set ::tcl_typebinaryc 0`) :
 
-| Étape | couche Tcl | codec C | classique |
+    tclsh bench_cstruct.tcl annote|annote-tcl|classique ?typeparse? ?N?
+
+Lot de 10 000 mesures, µs par opération, même machine pour les trois colonnes (fourchette
+de trois tours) :
+
+| Étape | annoté, couche Tcl | annoté, codec C | Tcl classique |
 |---|---|---|---|
-| Encodage | 31 000 | 80 | 330 (nu) |
-| Chaîne complète `cs::stats` | ≈ 31 000 | 120 à 140 | 335 à 400 nue ; 690 à 720 contrôlée |
+| Construction | 870 à 1 200 (contrôlée) | idem | 0,4 nue ; 3 700 à 4 400 contrôlée |
+| Encodage | 330 000 | 950 à 1 200 | 3 600 à 4 000 (nu) |
+| C sur les octets | 15 | 15 | 16 à 20 |
+| Décodage | 485 000 | 3 000 à 3 700 | 7 300 à 10 500 |
+| Calcul Tcl `$it(champ)` / `lassign` | 25 000 / 7 000 à 8 700 | idem | 2 600 à 3 000 (`lassign`) |
+| Chaîne complète `cs::stats` | 338 000 | 850 à 900 | 3 600 nue ; 7 400 contrôlée |
+| Voie objet `cs::stats_obj` | 440 à 570 | idem | — |
 
-La chaîne annotée complète (encodage contrôlé + C + résumé) passe devant le Tcl classique, nu
-ou contrôlé. Le décodage passe encore par la couche Tcl (48 ms). `set ::tcl_typebinaryc 0`
-revient à la couche Tcl pour comparer.
+Avec les codecs C, la version annotée, qui contrôle tout, va plus vite que le Tcl classique
+qui ne contrôle rien : 4 × pour l'encodage, 2 à 3 × pour le décodage, 4 × pour la chaîne
+complète (8 × face au classique contrôlé). Le coût restant est côté Tcl : lire un champ par
+`$it(champ)` (25 ms pour 10 000 mesures) reste 3 × plus lent que `lassign`, et 10 × plus lent
+que le `lassign` classique.
