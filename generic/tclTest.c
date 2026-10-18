@@ -158,6 +158,18 @@ typedef struct {
 } TestEvent;
 
 /*
+ * State of "testevent deletesource": a source that deletes itself and
+ * another source from its setup or check proc.
+ */
+
+typedef struct {
+    int inCheck;		/* Delete from the check proc, not setup. */
+    int deleted;		/* The sources have been deleted. */
+    int callsAfter;		/* Calls of the other source's procs after
+				 * it was deleted. */
+} TestEventSource;
+
+/*
  * Simple detach/attach facility for testchannel cut|splice. Allow testing of
  * channel transfer in core testsuite.
  */
@@ -236,6 +248,12 @@ static Tcl_ObjCmdProc2	TesteventCmd;
 static int		TesteventProc(Tcl_Event *event, int flags);
 static int		TesteventDeleteProc(Tcl_Event *event,
 			    void *clientData);
+static void		TestEventSourceVictimProc(void *clientData,
+			    int flags);
+static void		TestEventSourceSetupProc(void *clientData,
+			    int flags);
+static void		TestEventSourceCheckProc(void *clientData,
+			    int flags);
 static Tcl_ObjCmdProc2	TestexithandlerCmd;
 static Tcl_ObjCmdProc2	TestexprlongCmd;
 static Tcl_ObjCmdProc2	TestexprlongobjCmd;
@@ -2742,6 +2760,11 @@ TestevalobjvCmd(
  *	- testevent delete name
  *		Deletes any events associated with the given name from
  *		the queue.
+ *	- testevent deletesource setup|check ?serviceall?
+ *		Creates two event sources; the setup or check proc of the
+ *		first one deletes both. Runs one pass of Tcl_DoOneEvent
+ *		(or Tcl_ServiceAll) and returns the number of times the
+ *		procs of the second source were called after its deletion.
  *
  * Return value:
  *	Returns a standard Tcl result.
@@ -2760,7 +2783,7 @@ TesteventCmd(
     Tcl_Obj *const *objv)	/* Parameter vector */
 {
     static const char *const subcommands[] = { /* Possible subcommands */
-	"queue", "delete", NULL
+	"queue", "delete", "deletesource", NULL
     };
     int subCmdIndex;		/* Index of the chosen subcommand */
     static const char *const positions[] = { /* Possible queue positions */
@@ -2811,9 +2834,100 @@ TesteventCmd(
 	}
 	Tcl_DeleteEvents(TesteventDeleteProc, objv[2]);
 	break;
+
+    case 2: {			/* deletesource */
+	static const char *const whens[] = {"setup", "check", NULL};
+	TestEventSource src = {0, 0, 0};
+
+	if (objc < 3 || objc > 4 || (objc == 4
+		&& strcmp(Tcl_GetString(objv[3]), "serviceall") != 0)) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "setup|check ?serviceall?");
+	    return TCL_ERROR;
+	}
+	if (Tcl_GetIndexFromObj(interp, objv[2], whens, "proc", TCL_EXACT,
+		&src.inCheck) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+
+	/*
+	 * New sources go to the head of the list, so the deleting source
+	 * comes first.
+	 */
+
+	Tcl_CreateEventSource(TestEventSourceVictimProc,
+		TestEventSourceVictimProc, &src);
+	Tcl_CreateEventSource(TestEventSourceSetupProc,
+		TestEventSourceCheckProc, &src);
+	if (objc == 4) {
+	    int oldMode = Tcl_SetServiceMode(TCL_SERVICE_ALL);
+
+	    Tcl_ServiceAll();
+	    Tcl_SetServiceMode(oldMode);
+	} else {
+	    Tcl_DoOneEvent(TCL_ALL_EVENTS | TCL_DONT_WAIT);
+	}
+	Tcl_DeleteEventSource(TestEventSourceVictimProc,
+		TestEventSourceVictimProc, &src);
+	Tcl_DeleteEventSource(TestEventSourceSetupProc,
+		TestEventSourceCheckProc, &src);
+	if (!src.deleted) {
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "the event source was not called", -1));
+	    return TCL_ERROR;
+	}
+	Tcl_SetObjResult(interp, Tcl_NewIntObj(src.callsAfter));
+	break;
+    }
     }
 
     return TCL_OK;
+}
+
+static void
+TestEventSourceDelete(
+    TestEventSource *srcPtr)
+{
+    srcPtr->deleted = 1;
+    Tcl_DeleteEventSource(TestEventSourceSetupProc,
+	    TestEventSourceCheckProc, srcPtr);
+    Tcl_DeleteEventSource(TestEventSourceVictimProc,
+	    TestEventSourceVictimProc, srcPtr);
+}
+
+static void
+TestEventSourceSetupProc(
+    void *clientData,
+    TCL_UNUSED(int) /*flags*/)
+{
+    TestEventSource *srcPtr = (TestEventSource *)clientData;
+
+    if (!srcPtr->inCheck && !srcPtr->deleted) {
+	TestEventSourceDelete(srcPtr);
+    }
+}
+
+static void
+TestEventSourceCheckProc(
+    void *clientData,
+    TCL_UNUSED(int) /*flags*/)
+{
+    TestEventSource *srcPtr = (TestEventSource *)clientData;
+
+    if (srcPtr->inCheck && !srcPtr->deleted) {
+	TestEventSourceDelete(srcPtr);
+    }
+}
+
+static void
+TestEventSourceVictimProc(
+    void *clientData,
+    TCL_UNUSED(int) /*flags*/)
+{
+    TestEventSource *srcPtr = (TestEventSource *)clientData;
+
+    if (srcPtr->deleted) {
+	srcPtr->callsAfter++;
+    }
 }
 
 /*
