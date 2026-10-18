@@ -195,13 +195,27 @@ proc parse_command_line {} {
 		lassign [getversion [file join $tcltkdir $tkdir generic tk.h]] major minor
 	    }
 	} else {
-	    lassign [findversion $tcltkdir tk $useversion] tcltkdir tkdir major minor
+	    lassign [findversion $tcltkdir tk $useversion] \
+		    tkprefix tkdir tkmajor tkminor
+	    if {$tkdir ne "" && $build_tcl && $tkprefix ne $tcltkdir} {
+		# Tcl and Tk must be in the same directory.
+		set tkdir ""
+	    } elseif {$tkdir ne ""} {
+		set tcltkdir $tkprefix
+		set major $tkmajor
+		set minor $tkminor
+	    }
 	}
-	if {$tkdir eq "" && $opt_build_tk} {
-	    puts stderr "tcltk-man-html: couldn't find Tk below $tcltkdir"
-	    exit 1
+	if {$tkdir eq ""} {
+	    if {$opt_build_tk} {
+		puts stderr "tcltk-man-html: couldn't find Tk below $tcltkdir"
+		exit 1
+	    }
+	    puts "tcltk-man-html: no Tk below $tcltkdir, building Tcl help only"
+	    set build_tk 0
+	} else {
+	    puts "using Tk source directory [file join $tcltkdir $tkdir]"
 	}
-	puts "using Tk source directory [file join $tcltkdir $tkdir]"
     }
 
     puts "verbose messages are [expr {$verbose ? {on} : {off}}]"
