@@ -1094,6 +1094,53 @@ TclHasAnnotatedWord(Tcl_Parse *parsePtr)
     return 0;
 }
 
+/* Le mot (TCL_TOKEN_WORD) est-il de la forme {texte}mot où texte est une annotation
+ * LOCALE (un caractère que la grammaire des types refuse) ? Renvoie son texte (objet
+ * à libérer par l'appelant) ou NULL. Sert à TclCompileSetCmd. */
+Tcl_Obj *
+TclAnnotLocalWordText(Tcl_Interp *interp, Tcl_Token *wordTokenPtr)
+{
+    Tcl_Obj *saved, *text;
+    int local;
+
+    if (wordTokenPtr->type != TCL_TOKEN_WORD || wordTokenPtr->numComponents < 1
+	    || wordTokenPtr[1].type != TCL_TOKEN_ANNOT) {
+	return NULL;
+    }
+    saved = Tcl_GetObjResult(interp);
+    Tcl_IncrRefCount(saved);
+    text = Tcl_NewStringObj(wordTokenPtr[1].start, wordTokenPtr[1].size);
+    Tcl_IncrRefCount(text);
+    local = (TclTypeParse(interp, wordTokenPtr[1].start,
+	    wordTokenPtr[1].size) == NULL) && RawIsLocal(interp);
+    Tcl_SetObjResult(interp, saved);
+    Tcl_DecrRefCount(saved);
+    if (!local) {
+	Tcl_DecrRefCount(text);
+	return NULL;
+    }
+    return text;		/* refCount 1 : à libérer */
+}
+
+/* ::tcl::annotlocal text : émis par TclCompileSetCmd pour « set x {-v}mot » :
+ * une annotation locale ne s'adresse qu'à l'appelé, pas à une variable. */
+static int
+AnnotLocalObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
+	Tcl_Obj *const objv[])
+{
+    (void) clientData;
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "text");
+	return TCL_ERROR;
+    }
+    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    "local annotation {%s} cannot be stored by \"set\": it only "
+	    "applies between a caller and the command it calls",
+	    Tcl_GetString(objv[1])));
+    Tcl_SetErrorCode(interp, "TCL", "TYPE", "LOCALANNOT", (char *)NULL);
+    return TCL_ERROR;
+}
+
 /* ::tcl::annotate type value : l'équivalent exécutable de {type}valeur,
  * appelé par le code compilé et par TclSubstTokens. */
 static int
@@ -1136,6 +1183,8 @@ TclAnnotInit(Tcl_Interp *interp)
     Tcl_CreateObjCommand2(interp, "::tcl::annotate", AnnotateObjCmd, NULL,
 	    NULL);
     Tcl_CreateObjCommand2(interp, "::tcl::annotraw", AnnotRawObjCmd, NULL,
+	    NULL);
+    Tcl_CreateObjCommand2(interp, "::tcl::annotlocal", AnnotLocalObjCmd, NULL,
 	    NULL);
 }
 
