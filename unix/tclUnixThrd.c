@@ -51,6 +51,63 @@ static pthread_mutex_t *allocLockPtr = &allocLock;
 #define GLOBAL_LOCK	pthread_mutex_lock(&globalLock)
 #define GLOBAL_UNLOCK	pthread_mutex_unlock(&globalLock)
 
+/*
+ * The list of threads created joinable and not joined yet. Calling
+ * pthread_join() for a detached thread is undefined behaviour (it hangs on
+ * musl and can "succeed" on glibc), so Tcl_JoinThread() only joins threads
+ * from this list. [5974ff814c]
+ */
+
+typedef struct JoinableThread {
+    pthread_t thread;
+    struct JoinableThread *nextPtr;
+} JoinableThread;
+
+static JoinableThread *joinableList = NULL;
+static pthread_mutex_t joinableLock = PTHREAD_MUTEX_INITIALIZER;
+
+/*
+ * Add the thread to the list of joinable threads.
+ */
+
+static void
+RememberJoinable(
+    pthread_t thread)
+{
+    JoinableThread *jPtr = (JoinableThread *) Tcl_Alloc(sizeof(JoinableThread));
+
+    jPtr->thread = thread;
+    pthread_mutex_lock(&joinableLock);
+    jPtr->nextPtr = joinableList;
+    joinableList = jPtr;
+    pthread_mutex_unlock(&joinableLock);
+}
+
+/*
+ * Remove the thread from the list of joinable threads. Returns 1 if it was in
+ * the list, 0 otherwise.
+ */
+
+static int
+ForgetJoinable(
+    pthread_t thread)
+{
+    JoinableThread **jPtrPtr, *jPtr;
+
+    pthread_mutex_lock(&joinableLock);
+    for (jPtrPtr = &joinableList; (jPtr = *jPtrPtr) != NULL;
+	    jPtrPtr = &jPtr->nextPtr) {
+	if (pthread_equal(jPtr->thread, thread)) {
+	    *jPtrPtr = jPtr->nextPtr;
+	    pthread_mutex_unlock(&joinableLock);
+	    Tcl_Free(jPtr);
+	    return 1;
+	}
+    }
+    pthread_mutex_unlock(&joinableLock);
+    return 0;
+}
+
 #endif /* TCL_THREADS */
 
 /*
@@ -125,6 +182,9 @@ TclpThreadCreate(
 	result = TCL_ERROR;
     } else {
 	*idPtr = (Tcl_ThreadId)theThread;
+	if (flags & TCL_THREAD_JOINABLE) {
+	    RememberJoinable(theThread);
+	}
 	result = TCL_OK;
     }
     pthread_attr_destroy(&attr);
@@ -161,11 +221,24 @@ Tcl_JoinThread(
     int result;
     unsigned long retcode, *retcodePtr = &retcode;
 
+    /*
+     * Only join a thread created joinable, and only once. The thread is
+     * removed from the list before joining, so that concurrent calls do not
+     * join it twice.
+     */
+
+    if (!ForgetJoinable((pthread_t) threadId)) {
+	return TCL_ERROR;
+    }
     result = pthread_join((pthread_t) threadId, (void**) retcodePtr);
+    if (result != 0) {
+	RememberJoinable((pthread_t) threadId);
+	return TCL_ERROR;
+    }
     if (state) {
 	*state = (int) retcode;
     }
-    return (result == 0) ? TCL_OK : TCL_ERROR;
+    return TCL_OK;
 #else
     return TCL_ERROR;
 #endif

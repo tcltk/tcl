@@ -238,6 +238,21 @@ test thread-5.2 {Try to join a detached thread} {thread} {
     }
     lrange $msg 0 2
 } {cannot join thread}
+test thread-5.3 {Join a running detached thread, bug 5974ff814c} -constraints testthread -body {
+    set id [testthread create {after 200}]
+    list [catch {testthread join $id} msg] [lrange $msg 0 2]
+} -cleanup {
+    after 300
+} -result {1 {cannot join thread}}
+test thread-5.4 {Join an exited detached thread, bug 5974ff814c} -constraints testthread -body {
+    set id [testthread create {}]
+    after 200
+    list [catch {testthread join $id} msg] [lrange $msg 0 2]
+} -result {1 {cannot join thread}}
+test thread-5.5 {Join a joinable thread only once, bug 5974ff814c} -constraints testthread -body {
+    set id [testthread create -joinable {}]
+    list [catch {testthread join $id}] [catch {testthread join $id}]
+} -result {0 1}
 
 test thread-6.1 {freeing very large object trees in a thread} thread {
     # conceptual duplicate of obj-32.1
