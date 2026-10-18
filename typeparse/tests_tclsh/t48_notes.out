@@ -42,3 +42,7 @@ usage1: 1 wrong # args: should be "note get|has|delete value ?name?"
 usage2: 1 wrong # args: should be "note get|has|delete value ?name?"
 usage3: 1 wrong # args: should be "note get|has|delete value ?name?"
 local: 0 -v
+-- type get ne rend que le type résolu
+tg_note: 0 list<int>
+tg_seule: 0 
+tg_vide: 0 

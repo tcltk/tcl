@@ -9,3 +9,4 @@ types-binaires-type-binary-annote.patch
 types-binaires-nom-type-binary.patch
 types-binaires-set-annotation-locale.patch
 types-binaires-notes.patch
+types-binaires-notes-typeget.patch

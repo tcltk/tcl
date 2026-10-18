@@ -2599,8 +2599,8 @@ TypeGetCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 	Tcl_WrongNumArgs(interp, 2, objv, "value");
 	return TCL_ERROR;
     }
-    /* Le type résolu, puis « @ » et les notes : list.int@mm.hello */
-    Tcl_SetObjResult(interp, TclAnnotDisplay(interp, objv[2]));
+    /* Le type résolu seul ; les notes se lisent avec « note get ». */
+    Tcl_SetObjResult(interp, TclAnnotDisplay(interp, objv[2], 0));
     return TCL_OK;
 }
 

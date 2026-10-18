@@ -231,8 +231,9 @@ Fait :
   somme cible garde son rôle (`{d}$v`).
 * **Commandes** : `note get V` (notes jointes par « . », de la plus ancienne à la plus récente),
   `note has V nom`, `note delete V ?nom?` (rend la valeur sans la note, ou sans aucune).
-* **Affichage** : `type get V` rend `list<int>@mm.hello` (type résolu, `@`, notes) ; sans note
-  il rend le type seul comme avant ; sans type, `@mm`.
+* **Lecture** : `type get V` ne rend que le type résolu (`list<int>`, vide pour une note seule) ;
+  `note get V` rend les notes. L'affichage symétrique `list<int>@mm.hello` se compose des deux
+  (le test t48 le fait avec une petite procédure `show`).
 
 Pas fait : `{@}$x`, note par élément d'une liste typée (la note est sur la liste entière),
 effacement des notes par un `set {T}a` sur variable typée (elles sont perdues, comme

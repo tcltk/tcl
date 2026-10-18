@@ -1522,13 +1522,13 @@ TclAnnotIsNoteOnly(Tcl_Obj *objPtr)
 }
 
 /*
- * Affichage symétrique autour de « @ » : le type résolu de l'extérieur vers
+ * Affichage symétrique autour de « @ » (withNotes) : le type résolu de l'extérieur vers
  * l'intérieur, puis les notes de la plus ancienne (intérieure) à la plus
  * récente (extérieure) : list.int@mm.hello. Sans note : list.int. Sans type
  * résolu : @mm. Valeur non annotée : chaîne vide. Rend un objet neuf.
  */
 Tcl_Obj *
-TclAnnotDisplay(Tcl_Interp *interp, Tcl_Obj *objPtr)
+TclAnnotDisplay(Tcl_Interp *interp, Tcl_Obj *objPtr, int withNotes)
 {
     Tcl_Obj *norm, *res = Tcl_NewObj(), *raw = NULL, *content, *notes, *j;
     TclType *tp = NULL;
@@ -1554,7 +1554,7 @@ TclAnnotDisplay(Tcl_Interp *interp, Tcl_Obj *objPtr)
 	    Tcl_AppendObjToObj(res, raw);
 	}
 	notes = n;
-	if (notes != NULL) {
+	if (withNotes && notes != NULL) {
 	    j = NotesJoined(notes);
 	    Tcl_AppendToObj(res, "@", 1);
 	    Tcl_AppendObjToObj(res, j);

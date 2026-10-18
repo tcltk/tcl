@@ -73,3 +73,4 @@ win/tcl.hpj
 win/nmakehlp.out
 win/nmhlp-out.txt
 typeparse.zip
+app/avertissements.patch app/bin app/complex.tcl app/complex.tcl~ app/include app/lib app/share app/tests app/wish90.exe - Raccourci.lnk

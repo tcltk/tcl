@@ -635,7 +635,14 @@ contient les deux. Côté Tcl, remplacer `layout/filebinary.tcl` (sélecteur `=n
   `TclAnnotateValue` pose une note quand le nom ne se résout pas, garde les notes lors d'un
   cast ; `TclAnnotInfo` lit la note la plus récente quand il n'y a pas de type résolu.
 * `tclTypedVar.c` : une variable non typée adopte une note seule.
-* `tclTypes.c` : `type get` rend `type@notes` ; commande `note get|has|delete`.
+* `tclTypes.c` : `type get` ne rend que le type résolu ; commande `note get|has|delete`
+  pour les notes.
 * Test : `t48_notes.tcl` ; `t45` (`nom_inconnu`) et `t47` (`nominal`) changent : un nom
   inconnu rangé dans une variable non typée est désormais gardé comme note, plus une erreur.
 * Pas d'empilage `{a}{b}$x` ; `{#}` reste à part. Détail et limites : CONCEPTION-annotations.md §6.7.
+
+## type get ne rend que le type résolu (patch types-binaires-notes-typeget)
+
+* Petit patch après `types-binaires-notes` : `TclAnnotDisplay(interp, v, withNotes)` ; `type get`
+  l'appelle avec `withNotes = 0` (`list<int>`, vide pour une note seule). Les notes se lisent
+  avec `note get`. Test `t48_notes` mis à jour (procédure `show` = type@notes).
