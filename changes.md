@@ -38,6 +38,9 @@ to the userbase.
  - [traceback using clock format with locale of he_IL](https://core.tcl-lang.org/tcl/tktview/301613)
  - [he locale: BCE and CE era names are swapped](https://core.tcl-lang.org/tcl/tktview/58bae8)
  - [format %A garbles negative, padded and infinite values](https://core.tcl-lang.org/tcl/tktview/2dff98)
+ - [socket-2.12 failed on OpenBSD](https://core.tcl-lang.org/tcl/tktview/e99187)
+ - [do not throw from [socket -async] when the connect fails at once](https://core.tcl-lang.org/tcl/tktview/59e7e7)
+ - [test portability for illumos: skip socket-14.19 where SO_REUSEPORT is not supported](https://core.tcl-lang.org/tcl/tktview/dbf988)
 
 # Updated bundled packages, libraries, standards, data
  - http 2.10.3
