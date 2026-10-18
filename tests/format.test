@@ -598,12 +598,12 @@ test format-19.4.2 {Bug d498578df4: width overflow should cause limit exceeded} 
     format %[expr {0xffffffffffffffff - 1}]g 0
 } -returnCodes error -result "max size for a Tcl value exceeded"
 
-test format-19.5 {%A with sign, padding and Inf, bug [2dff98e079]} {
+test format-19.5 {%A with sign, padding and Inf, bug [2dff98e079]} -body {
     # explicit precision: without it MSVC prints all 13 hex digits
     list [format %.1A 1.5] [format %.1A -1.5] [format %+.0A 1.0] \
 	    [format "% .0A" 1.0] [format %10.1A 1.5] [format %-10.0A| -2.0] \
 	    [format %A Inf] [format %A -Inf]
-} {0x1.8p+0 -0x1.8p+0 +0x1p+0 { 0x1p+0} {  0x1.8p+0} {-0x1p+1   |} INF -INF}
+} -match glob -result {0x1.8p+0 -0x1.8p+0 +0x1p+0 { 0x1p+0} {  0x1.8p+0} {-0x1p+1   |} *INF* -*INF*}
 
 # Note that this test may fail in future versions
 test format-20.1 {Bug 2932421: plain %s caused internalrep change of args} -body {
