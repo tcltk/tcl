@@ -53,3 +53,28 @@ vérifiés à l'exécution par `cs::layout`, pas seulement documentés.
 Windows (MinGW64, non testé ici) : `gcc -shared -O2 -DUSE_TCL_STUBS -I<src>/generic -I<src>/win
 -o cstruct.dll cstruct.c <build>/libtclstub*.a`, puis `tclsh test.tcl cstruct.dll`. Avec MSVC,
 `_Alignof` et les membres flexibles demandent C11 : préférer MinGW.
+
+## Performances : version annotée et Tcl classique (18 octobre)
+
+`cstruct_classique.tcl` fait la même chose en Tcl 9.0 classique : un `Batch` est la liste
+`{n items}`, la disposition C est écrite à la main (`binary format ix4qcx7`). Deux variantes :
+nue (aucun contrôle) et contrôlée (les contrôles du type `Batch` : u32, double, u8, `n` = nombre
+d'éléments). `bench_cstruct.tcl annote|classique` mesure chaque étape sur 1000 mesures (µs par
+opération ; Linux, `-O2`) :
+
+| Étape | Annoté | Classique | Rapport |
+|---|---|---|---|
+| Construction | 120 (`set {Batch}`, contrôlée) | 0,4 nue ; 405 contrôlée | annoté 3,4 × plus rapide que le classique contrôlé |
+| Encodage | 33 400 (222 000 avant le correctif de `putPad`) | 350 | × 95 |
+| C sur les octets | 1,8 | 1,8 | = |
+| Décodage | 48 800 | 790 | × 62 |
+| Calcul en Tcl : `$it(champ)` / `lassign` | 2 530 / 830 | 300 (`lassign`) | × 8 / × 2,8 |
+| Voie objet `cs::stats_obj` (C lit la valeur annotée) | 111 | — (chaîne classique complète : 350) | annoté 3 × plus rapide |
+
+Le Tcl classique tourne à la même vitesse sur un tclsh d'origine et sur le tclsh patché (écarts de
+0 à 10 %, de l'ordre du bruit entre deux tours).
+
+Diagnostic : le codec de `type binary` est écrit en Tcl (`layout/filebinary.tcl`) et interprète
+la description du type champ par champ : 260 à 340 commandes Tcl par mesure, contre 1 à 6 en
+classique. Le correctif de `putPad` (des octets, plus des chaînes) supprime un coût quadratique
+dû à Tcl lui-même (mélange tableau d'octets / chaîne suivi de `string length`).

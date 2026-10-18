@@ -748,3 +748,12 @@ d'historique. Test : `t50_convert_famille.tcl`.
   première règle qui en a besoin.
 * Les conversions restent explicites : `set {m}b $a` (a : mm) est refusé ; `set b {m}$a` ou
   `type cast m $a` convertissent.
+
+## layout/filebinary.tcl : remplissage en octets (18 octobre)
+
+`putPad`, le remplissage des chaînes de taille fixe, le terminateur NUL et le comblement avant
+`at(...)` ajoutent maintenant `binary format x$n` au lieu de `string repeat \x00 $n`. Mêler un
+tableau d'octets et une chaîne dans `append`, puis appeler `string length`, fait reconvertir toute
+la sortie par Tcl 9 (y compris un tclsh d'origine) : l'encodage devenait quadratique (cstruct,
+1000 mesures : 222 ms, 33 ms après correction ; 2000 mesures : 786 ms, 98 ms). Octets produits
+inchangés ; tests et exemples identiques. Mesures complètes : `exemples/cstruct/LISEZMOI.md`.

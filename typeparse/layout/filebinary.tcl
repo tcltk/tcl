@@ -237,7 +237,13 @@ proc ::fb::skipPad {sName al ctx what} {
 proc ::fb::putPad {outName al} {
     upvar 1 $outName out
     if {$al <= 1} return
-    append out [string repeat \x00 [padFor [string length $out] $al]]
+    # FR : des OCTETS (binary format x), pas une chaîne (string repeat) : mêler
+    #      les deux fait reconvertir toute la sortie au string length suivant, et
+    #      l'encodage devenait quadratique (cstruct, 18 octobre : 1000 mesures en
+    #      222 ms au lieu de 33).
+    # EN : BYTES (binary format x), not a string (string repeat): mixing both
+    #      makes the next string length convert the whole output again.
+    append out [binary format x[padFor [string length $out] $al]]
 }
 
 # FR : octets du terminateur NUL d'un encodage
@@ -915,7 +921,7 @@ proc ::fb::enc {r value ctx what outName} {
 	str {
 	    set bs [encoding convertto $b $value]
 	    if {[isFixed $a]} {
-		append out $bs [string repeat \x00 [expr {$a - [string length $bs]}]]
+		append out $bs [binary format x[expr {$a - [string length $bs]}]]
 	    } else {
 		writeSize $a [string length $bs] $ctx $what out
 		append out $bs
@@ -923,7 +929,7 @@ proc ::fb::enc {r value ctx what outName} {
 	}
 	cstring {
 	    append out [encoding convertto $a $value] \
-		    [string repeat \x00 [nulWidth $a]]
+		    [binary format x[nulWidth $a]]
 	}
 	array {
 	    if {![isFixed $a]} {writeSize $a [llength $value] $ctx $what out}
@@ -1234,7 +1240,7 @@ proc ::fb::encodeValue {type value ctx} {
     flushLinks out $ctx
     foreach {off sub} $late {
 	if {$off > [string length $out]} {
-	    append out [string repeat \x00 [expr {$off - [string length $out]}]]
+	    append out [binary format x[expr {$off - [string length $out]}]]
 	}
 	set out [string range $out 0 [expr {$off - 1}]]$sub[string range $out [expr {$off + [string length $sub]}] end]
     }
