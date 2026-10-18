@@ -3,7 +3,7 @@
 # FR : Le type lien *(origine,repr).T : un entier du fichier qui désigne une autre
 #      valeur. Même exemples que niveau2.tcl (PE et ELF), mais SANS calculer les
 #      offsets à la main : à la lecture, le lien est suivi ; à l'écriture,
-#      `file binary` place la cible et reporte l'offset.
+#      `type binary` place la cible et reporte l'offset.
 #        *(//,u32le).pe      offset depuis le début des données
 #        *(./,u16le).T       depuis le début de la structure englobante
 #        *(../,u16le).T      depuis la structure au-dessus
@@ -13,7 +13,7 @@
 # EN : The link type *(origin,repr).T: an integer in the file that designates
 #      another value. Same examples as niveau2.tcl (PE and ELF), but WITHOUT
 #      computing the offsets by hand: when reading, the link is followed; when
-#      writing, `file binary` places the target and patches the offset.
+#      writing, `type binary` places the target and patches the offset.
 #
 #   usage : tclsh lien.tcl ?executable?     (default: the running tclsh)
 
@@ -47,7 +47,7 @@ if {[string range $debut 0 1] eq "MZ"} {
 	{mz}magic = MZ; {string(raw,58)}stub = [string repeat \x00 58];
 	{ptr32(pe)}nt
     }
-    set x [file binary read $f exe]
+    set x [chan binary read $f exe]
     set nt $x(nt)
     puts [format "machine 0x%x, %d sections" $nt(machine) $nt(nsec)]
     foreach s $nt(sections) {
@@ -55,8 +55,8 @@ if {[string range $debut 0 1] eq "MZ"} {
     }
     # FR : réécriture : le pe est placé à la suite (offset 64), le lien est recalculé
     # EN : rewriting: the pe is placed right after (offset 64), the link is recomputed
-    set neuf [file binary encode exe $x]
-    set y [file binary decode exe $neuf]
+    set neuf [type binary encode exe $x]
+    set y [type binary decode exe $neuf]
     puts "pe réécrit à l'offset [expr {[binary scan $neuf @60i lf] ? $lf : -1}] ; relu identique : [expr {$y eq $x}]"
 } elseif {$debut eq "\x7fELF"} {
     puts "=== ELF : [file tail $chemin] ==="
@@ -84,7 +84,7 @@ if {[string range $debut 0 1] eq "MZ"} {
 	{u32}flags; {u16}ehsize; {u16}phentsize; {u16}phnum;
 	{u16}shentsize; {u16}shnum; {u16}shstrndx
     }
-    set e [file binary read $f elf]
+    set e [chan binary read $f elf]
     puts "segments : [type get $e(segments)]"
     puts "sections : [type get $e(sections)]"
     if {$e(shnum) > 0} {
@@ -93,7 +93,7 @@ if {[string range $debut 0 1] eq "MZ"} {
 	set tout [::read $f [file size $chemin]]
 	set n 0
 	foreach s $e(sections.some) {
-	    set nom [file binary decode string(utf-8,z) $tout -offset [expr {$strsec(offset) + $s(nom)}]]
+	    set nom [type binary decode string(utf-8,z) $tout -offset [expr {$strsec(offset) + $s(nom)}]]
 	    if {[incr n] <= 6} {
 		puts [format "  %-16s type=%-2d offset=0x%06x" $nom $s(genre) $s(offset)]
 	    }

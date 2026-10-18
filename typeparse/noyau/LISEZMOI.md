@@ -552,7 +552,7 @@ non signé qui sert de PRÉFIXE.
   APRÈS `types-binaires-niveau2.patch` ; `types-binaires-niveau2.patch` complet l'inclut déjà) : `S(nom)`, ou `S($p)` avec `p` paramètre de
   valeur lié, donne un type d'une seule variante. `binTag` vaut alors `=nom` : pas de champ
   sélecteur, taille connue, et `ValidateG` n'a rien à deviner (variantes de même forme).
-  `file binary` lit `tagged =nom`.
+  `type binary` lit `tagged =nom`.
 
 Tests : `t35_niveau2.tcl`, `t36_somme_choisie.tcl`. Vérifié : valgrind propre (build PURIFY),
 `-Wshadow` `-Wc++-compat` sans avertissement.
@@ -582,7 +582,7 @@ contient les deux. Côté Tcl, remplacer `layout/filebinary.tcl` (sélecteur `=n
   et `WrapSlot` (tclTypePath.c) acceptent cette adresse à la place de la cible et gardent son annotation.
 * `LinkRepr` rend `link ORIGINE REPR NUL CIBLE OPT REF NOMCIBLE` et, pour un lien déjà en cours de
   développement (type récursif), `{linkref NOM}` (pile `TypeData.linkStack`).
-* `layout/filebinary.tcl` 0.6 : option `-linkdepth`, `file binary deref`, `unref`.
+* `layout/filebinary.tcl` 0.6 : option `-linkdepth`, `type binary deref`, `unref`.
 
 
 ## Annotations locales (patch types-binaires-annotations-locales)
@@ -605,3 +605,37 @@ contient les deux. Côté Tcl, remplacer `layout/filebinary.tcl` (sélecteur `=n
   argument ne suit.
 * `layout/filebinary.tcl` : `::fb::isvalid` (décodage à blanc, `-exact`).
 * Test : `t46_type_binary_annote.tcl`. `file binary` reste en alias.
+
+## Nom type binary / chan binary (patch types-binaires-nom-type-binary)
+
+* Commentaires seulement côté C : la commande s'appelle `type binary` (les sources ne sont plus
+  seulement des fichiers : chaînes d'octets, canaux, espaces mémoire).
+* `layout/filebinary.tcl` 0.8 : ensembles `::fb::filebinary` (read write decode encode sizeof
+  deref space) et `::fb::chanbinary` (read write), fusionnés dans les maps de `file` et `chan` :
+  `chan binary read/write` sur un canal ; `file binary ...` reste en alias.
+
+## set refuse une annotation locale écrite (patch types-binaires-set-annotation-locale)
+
+* `set x {-v}$mot` (ou `{what?}`, ou `set {int}n {-v}5`) est refusé à la compilation de `set` :
+  `TclCompileSetCmd` émet un appel à `::tcl::annotlocal`, qui lève
+  `local annotation {-v} cannot be stored by "set": it only applies between a caller and the
+  command it calls` (errorCode `TCL TYPE LOCALANNOT`). Le test se fait sur le texte du mot
+  (`TclAnnotLocalWordText` : le texte est refusé par la grammaire des types avec BADCHAR).
+* Une annotation locale reçue par un argument (`set b $a`) n'est pas écrite par `set` : elle
+  reste tolérée et ignorée par la variable (t45). Les annotations de nom (`{mm}$x`) restent
+  des casts ; un type valide fonctionne comme avant.
+* Limite : la vérification se fait dans le code compilé (corps de proc, scripts, `eval`),
+  pas dans un `Tcl_EvalEx` C direct.
+* Test : `t47_set_annotation_locale.tcl` ; `t45` adapté (la valeur arrive par un argument).
+
+## Notes : l'objet à deux listes (patch types-binaires-notes)
+
+* `tclAnnotObj.c` : état `{T, N}` (objet « annotstate », immuable, partagé) derrière `ptr2` ;
+  `TclAnnotNotes`, `TclAnnotNormalize`, `TclAnnotIsNoteOnly`, `TclAnnotDisplay` ;
+  `TclAnnotateValue` pose une note quand le nom ne se résout pas, garde les notes lors d'un
+  cast ; `TclAnnotInfo` lit la note la plus récente quand il n'y a pas de type résolu.
+* `tclTypedVar.c` : une variable non typée adopte une note seule.
+* `tclTypes.c` : `type get` rend `type@notes` ; commande `note get|has|delete`.
+* Test : `t48_notes.tcl` ; `t45` (`nom_inconnu`) et `t47` (`nominal`) changent : un nom
+  inconnu rangé dans une variable non typée est désormais gardé comme note, plus une erreur.
+* Pas d'empilage `{a}{b}$x` ; `{#}` reste à part. Détail et limites : CONCEPTION-annotations.md §6.7.

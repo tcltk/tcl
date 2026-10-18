@@ -26,7 +26,7 @@
  *
  *      Deux façons de passer le produit à C, sur la même donnée :
  *
- *        cs::stats_raw  OCTETS   le produit est ENCODÉ par `file binary encode
+ *        cs::stats_raw  OCTETS   le produit est ENCODÉ par `type binary encode
  *                                -align natural` ; C reçoit les octets et les lit
  *                                à travers un (const Batch *) : zéro copie champ
  *                                par champ, c'est la voie rapide.
@@ -40,7 +40,7 @@
  *
  *        cs::generate N SEED     C fabrique un Batch (struct) et le rend en octets ;
  *                                Tcl le relit en produit annoté avec
- *                                `file binary decode Batch ... -align natural`.
+ *                                `type binary decode Batch ... -align natural`.
  *
  *      La statistique : count / min / max / moyenne des valeurs, en ignorant les
  *      mesures dont le bit 0 de flags est levé (capteur invalide).
@@ -269,7 +269,7 @@ GenerateCmd(void *cd, Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
     }
     size = sizeof(Batch) + (size_t) n * sizeof(Sample);
     b = (Batch *) Tcl_Alloc(size);
-    memset(b, 0, size);			/* remplissage à zéro, comme file binary */
+    memset(b, 0, size);			/* remplissage à zéro, comme type binary */
     b->n = (uint32_t) n;
     x = (uint64_t) seed * 6364136223846793005ULL + 1442695040888963407ULL;
     for (i = 0; i < b->n; i++) {

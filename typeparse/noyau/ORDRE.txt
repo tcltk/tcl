@@ -6,3 +6,6 @@ types-binaires-referentiel.patch
 types-binaires-taille-dynamique.patch
 types-binaires-annotations-locales.patch
 types-binaires-type-binary-annote.patch
+types-binaires-nom-type-binary.patch
+types-binaires-set-annotation-locale.patch
+types-binaires-notes.patch

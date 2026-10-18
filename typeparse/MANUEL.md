@@ -180,7 +180,7 @@ Un défaut de champ (`= {}`) ne distingue pas les deux dernières. Une somme ave
 sans valeur (`{{T}some, {}none}`) les distingue. Ce n'est pas encore implémenté, voir la note
 de conception.
 
-## Types binaires et `file binary` : lire et écrire des fichiers
+## Types binaires : lire et écrire des octets (`type binary`, `chan binary`)
 
 Un champ dit, par son TYPE, comment il s'écrit en octets. Rien d'autre à apprendre :
 c'est le principe de `bitarray(16)`, qui porte déjà sa largeur. Le `.` ne sert qu'à
@@ -230,14 +230,15 @@ produit est arrondie à son alignement. Remplissage à zéro à l'écriture, ign
 sauf `-strictpad 1`.
 
     type binary entete                           ;# la représentation, vue du noyau
-    file binary decode entete $octets ?-offset N? ?-endian E? ?-consumed VAR? ?-align A?
-    file binary encode entete $valeur ?-endian E? ?-align A?
-    file binary read  $canal entete ?-endian E? ?-align A?   ;# le canal avance
-    file binary write $canal entete $valeur ?-endian E? ?-align A?
-    file binary sizeof entete ?-align A?
+    type binary decode entete $octets ?-offset N? ?-endian E? ?-consumed VAR? ?-align A?
+    type binary encode entete $valeur ?-endian E? ?-align A?
+    chan binary read  $canal entete ?-endian E? ?-align A?   ;# le canal avance
+    chan binary write $canal entete $valeur ?-endian E? ?-align A?
+    type binary {sizeof?}entete ?-align A?
 
-`file binary` est écrit en Tcl (`layout/filebinary.tcl`) au-dessus de `type binary` ; la
-même table de sous-commandes pourra servir à `chan binary`.
+La lecture et l'écriture sont écrites en Tcl (`layout/filebinary.tcl`) au-dessus du noyau : `type binary`
+décrit, décode et encode des octets en mémoire, `chan binary` lit et écrit sur un canal. Le nom
+`file binary` (l'ancien) reste disponible comme alias.
 
 **`type binary`, interrogations et verbes.** Les questions sur un type s'écrivent par une
 annotation locale sur l'argument de type (le `?` final la distingue de tout nom de type) ;
@@ -247,7 +248,7 @@ les actions sur des octets restent des verbes :
     type binary {what?}$T                       ;# idem
     type binary {sizeof?}$T ?-align A?          ;# taille en octets (erreur si variable)
     type binary {is?}$T $octets ?-exact 1?      ;# 1 si $octets est décodable en T, sinon 0
-    type binary decode T $octets ...            ;# comme « file binary decode »
+    type binary decode T $octets ...            ;# lit les octets en mémoire
     type binary encode T $valeur ...            ;# idem encode
     type binary deref ...                       ;# idem deref
     type binary space ...                       ;# idem space (référentiels nommés)
@@ -259,7 +260,7 @@ termine par `?` est une erreur (`unknown question "oups?"`) ; toute autre annota
 ignorée. Un type qui porte le nom d'un verbe (`type def decode ...`) reste décrit par
 `type binary decode`, tant qu'aucun autre argument ne suit. `decode`, `encode`, `deref` et
 `space` demandent que `layout/filebinary.tcl` soit chargé (sinon : `the binary layer is not
-loaded`). `file binary` reste disponible comme alias pendant la transition.
+loaded`).
 
 **Alias courts.** `layout/binaliases.tcl` donne des noms brefs aux représentations usuelles
 (convention de Rust et de Zig) : `u8 u16 u32 u64`, `i8 i16 i32 i64`, `f32 f64`, avec les
@@ -292,7 +293,7 @@ types paramétrés, ou un type entier non signé qui sert de préfixe.
 Règles : un `$champ` doit désigner un champ **déjà lu** du produit courant ou d'un produit
 englobant (`type binary` le vérifie) ; un champ produit se lit `$h(off)`. À l'écriture, une
 taille ou un nombre qui ne correspond pas au champ dont il dépend est une erreur, et
-l'étiquette doit être celle de la variante. `file binary sizeof` refuse un type dont la
+l'étiquette doit être celle de la variante. `type binary {sizeof?}` refuse un type dont la
 taille dépend des données. Exemple complet (PE, ELF, messages) : `exemples/niveau2.tcl`.
 
 Exemples : `exemples/layout_plat.tcl`, `exemples/niveau2.tcl`. Limites : pas d'unions ni de
@@ -309,10 +310,10 @@ type def U {{rep_long}l, {rep_twoPtr}tp}
 
 type def Q {{U(tp)}s}               ;# la variante tp, écrite en toutes lettres
 type def {R({string}v)} {{u8}k; {U($v)}s}   ;# ou donnée par un paramètre
-file binary decode {R(tp)} $octets
+type binary decode {R(tp)} $octets
 ```
 
-`U(tp)` est un type d'une seule variante : sa taille est connue (`file binary sizeof`),
+`U(tp)` est un type d'une seule variante : sa taille est connue (`type binary {sizeof?}`),
 la valeur lue est `U(tp).tp` et il n'y a rien à deviner, même si plusieurs variantes
 ont la même forme (ce qui rendait la valeur ambiguë avant). `U($champ)`, lui, garde son
 sens : variante choisie par un champ déjà lu. Si `$v` est un paramètre lié du type, c'est
@@ -342,10 +343,10 @@ structure* ; `.` repère *le champ lui-même* (l'endroit où l'adresse est écri
 décalages « à partir d'ici », fréquents dans les formats à décalages relatifs (`rel32`) :
 
     type def H {{u8}m; {u8}pad; {*(.,u8,null).rec}r}   ;# le champ r est à l'offset 2
-    file binary decode H "\x01\x00\x01\x07\x08"        ;# 1 0 {7 8} : 2 + 1 = 3
+    type binary decode H "\x01\x00\x01\x07\x08"        ;# 1 0 {7 8} : 2 + 1 = 3
 
     type def I {{u8}m; {u8}pad; {*(./,u8,null).rec}r}  ;# même résultat, mais avec ./
-    file binary decode I "\x01\x00\x03\x07\x08"        ;# 1 0 {7 8} : 0 + 3 = 3
+    type binary decode I "\x01\x00\x03\x07\x08"        ;# 1 0 {7 8} : 0 + 3 = 3
 
 Mémo : `//` début des données · `./` début de la structure · `../` début de la structure parente ·
 `.` position du champ. La notation `.` reste volontairement courte ; un nom plus parlant n'est
@@ -357,9 +358,9 @@ Un lien peut être suivi tout de suite ou laissé en l'état. L'option d'appel `
 nombre de liens suivis (comme la portée d'un rayonnement : un rayon gamma traverse tout, un rayon
 peu pénétrant s'arrête à la peau) :
 
-    file binary decode H $d                   ;# 1 {7 8}   Inf, le défaut : tout suivre
-    file binary decode H $d -linkdepth 1      ;# 1 {7 8}   un niveau de liens
-    set h [file binary decode H $d -linkdepth 0]
+    type binary decode H $d                   ;# 1 {7 8}   Inf, le défaut : tout suivre
+    type binary decode H $d -linkdepth 1      ;# 1 {7 8}   un niveau de liens
+    set h [type binary decode H $d -linkdepth 0]
     puts "$h(m) $h(r)"                        ;# 1 5      aucun lien suivi
     type get $h(r)                            ;# &*(//,int(u,32,le),null=0).rec
 
@@ -367,11 +368,11 @@ Un lien non suivi est un entier annoté (position absolue de la cible dans les d
 `lindex` et `string cat` gardent l'annotation ; un calcul la perd, et le résultat ne peut plus être
 suivi. On suit un lien à la demande, un pas à la fois :
 
-    file binary deref $h(r) $d                ;# 7 8   (-linkdepth 0 par défaut : un seul pas)
+    type binary deref $h(r) $d                ;# 7 8   (-linkdepth 0 par défaut : un seul pas)
 
 Ce qu'on en tire : lire seulement l'en-tête d'un gros fichier ; parcourir une liste chaînée ou un
 arbre (le type peut être récursif : `type def N {{u8}x; {*(//,u8,null).opt(N)}next}`) ; localiser un
-lien abîmé ; modifier un champ sur place, car `file binary encode` réécrit une adresse non suivie
+lien abîmé ; modifier un champ sur place, car `type binary encode` réécrit une adresse non suivie
 telle quelle au lieu de réorganiser le fichier. Un cycle n'est une erreur qu'avec `Inf`.
 
 
@@ -380,12 +381,12 @@ telle quelle au lieu de réorganiser le fichier. Un cycle n'est une erreur qu'av
 FR : un lien peut désigner un référentiel enregistré par son nom plutôt que les données de l'appel.
 
 ```tcl
-set sp [file binary space file $octets -name lib]          ;# valeur annotée de type space
-file binary space memory $octets {{4096 4 2}} -name mem    ;# segments {adresse offset taille}
+set sp [type binary space file $octets -name lib]          ;# valeur annotée de type space
+type binary space memory $octets {{4096 4 2}} -name mem    ;# segments {adresse offset taille}
 type def H {{u8}m; {*(//lib/,u8,null).rec}r}               ;# file://lib/ est équivalent
 type def M {{*(memory://mem/,u32le,null).rec}p}
-file binary deref $h0(r)                                    ;# pas de DATA : le référentiel suffit
-file binary space list | get NOM | delete NOM
+type binary deref $h0(r)                                    ;# pas de DATA : le référentiel suffit
+type binary space list | get NOM | delete NOM
 ```
 
 Le nom par défaut est calculé (`space1`, …) ; la commande de création enregistre le référentiel ; un nom déjà pris est une erreur. `//nom/` exige un référentiel sans segments, `memory://nom/` un référentiel avec segments ; une adresse hors segments est une erreur. On ne peut pas écrire une vraie cible dans un référentiel nommé : seule l'adresse de frontière (`-linkdepth 0`) se réécrit.
@@ -400,7 +401,7 @@ EN: a link field with a default whose value equals that default is written as a 
 
 ## -dedupe : partager les cibles identiques / sharing identical targets
 
-FR : `file binary encode TYPE VALEUR -dedupe 1` (aussi `write`) n'écrit qu'une fois les cibles de liens dont les octets sont identiques ; les liens concernés reçoivent la même adresse. Par défaut (`-dedupe 0`) chaque cible est écrite. Seules les cibles sans lien imbriqué sont mises en commun (les adresses internes d'une cible dépendent de sa position) ; la relecture donne la même valeur.
+FR : `type binary encode TYPE VALEUR -dedupe 1` (aussi `write`) n'écrit qu'une fois les cibles de liens dont les octets sont identiques ; les liens concernés reçoivent la même adresse. Par défaut (`-dedupe 0`) chaque cible est écrite. Seules les cibles sans lien imbriqué sont mises en commun (les adresses internes d'une cible dépendent de sa position) ; la relecture donne la même valeur.
 
 EN: `-dedupe 1` writes link targets with identical bytes once and gives the links the same address. Default is off. Only targets holding no nested link are shared; reading back gives the same value.
 
@@ -410,10 +411,10 @@ FR : une liste dont le nombre d'éléments est une expression sur d'autres champ
 `list($n - 1).u8`) est contrôlée dès la construction du produit : `set {Batch}b n 3 items {{1 1.0 0}}`
 est refusé (`field "items" of Batch holds 1 elements, but its size says 3 ($n)`). Les champs omis
 comptent avec leur valeur par défaut. Le contrôle ne couvre pas les affectations champ par champ
-(`set b(n) 3` : un état intermédiaire est légitime) ; `file binary encode` revérifie à l'écriture.
+(`set b(n) 3` : un état intermédiaire est légitime) ; `type binary encode` revérifie à l'écriture.
 Les tailles de chaîne en octets (`string(raw,$len)`) ne sont pas contrôlées à la construction.
 
 EN: a list whose element count is an expression over other fields is checked as soon as the product
 is built; omitted fields count with their default. Field-by-field assignments are not checked
-(an intermediate state is legitimate); `file binary encode` checks again when writing. Byte sizes of
+(an intermediate state is legitimate); `type binary encode` checks again when writing. Byte sizes of
 strings (`string(raw,$len)`) are not checked at construction.

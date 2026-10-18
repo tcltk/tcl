@@ -12,14 +12,14 @@ type def rec {{u8}a; {u8}b}
 type def H {{u8}m; {*(//,u8,null).rec}r = {0 0}}
 
 puts "--- lecture : adresse nulle -> défaut / read: null address -> default"
-puts [file binary decode H "\x01\x00"]
+puts [type binary decode H "\x01\x00"]
 puts "--- écriture : défaut -> adresse nulle / write: default -> null address"
-puts [hex [file binary encode H [file binary decode H "\x01\x00"]]]
-puts [hex [file binary encode H [set {H}a m 3]]]
+puts [hex [type binary encode H [type binary decode H "\x01\x00"]]]
+puts [hex [type binary encode H [set {H}a m 3]]]
 puts "--- écriture : autre valeur -> cible écrite / other value -> target written"
-puts [hex [file binary encode H [set {H}b m 2 r {7 8}]]]
+puts [hex [type binary encode H [set {H}b m 2 r {7 8}]]]
 puts "--- aller-retour / round trip"
-puts [file binary decode H [file binary encode H [set {H}c m 2 r {7 8}]]]
+puts [type binary decode H [type binary encode H [set {H}c m 2 r {7 8}]]]
 puts "--- sans défaut : lecture d'un lien nul = erreur / without default: reading a null link is an error"
 type def G {{u8}m; {*(//,u8,null).rec}r}
-attempt {file binary decode G "\x01\x00"}
+attempt {type binary decode G "\x01\x00"}

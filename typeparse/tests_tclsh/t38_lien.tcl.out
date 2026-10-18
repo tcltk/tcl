@@ -5,8 +5,8 @@ taille en place: 5
 09030505060708
 0 {7 8}
 0 {0 {10 11}}
-1: file binary: field z of inner uses the origin ../, but it is not nested that deep
-1: file binary: field z of top uses the origin ../, but it is not nested that deep
+1: type binary: field z of inner uses the origin ../, but it is not nested that deep
+1: type binary: field z of top uses the origin ../, but it is not nested that deep
 2 {{1 2} {3 4}}
 1
 {5 6}
@@ -18,10 +18,10 @@ taille en place: 5
 0: 
 1 {9 9}
 1 {3 4}
-1: file binary: field r of D2 is a null link (give the field a default value, or make the target an opt(...))
+1: type binary: field r of D2 is a null link (give the field a default value, or make the target an opt(...))
 1 2 {1 2}
-1: file binary: the target of field r of S is at -14, before the start of the data
-1: file binary: data truncated at offset 129 reading field a of rec (needs 1 bytes, got 0)
+1: type binary: the target of field r of S is at -14, before the start of the data
+1: type binary: data truncated at offset 129 reading field a of rec (needs 1 bytes, got 0)
 1: *(...): the address is stored in an integer type with a binary form (u32le, int(s,32,le)...), not "string"
 1: *(?,u8): the origin must be //, //name/, file://, memory://name/, ./, ../ (or ../../...) or . (the field), not "?"
 1: *(//): write *(origin,repr).T, as in *(//,u32le).pe

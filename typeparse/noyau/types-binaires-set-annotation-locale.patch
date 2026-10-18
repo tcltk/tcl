@@ -1,0 +1,99 @@
+--- a/generic/tclAnnotObj.c
++++ b/generic/tclAnnotObj.c
+@@ -1094,6 +1094,53 @@
+     return 0;
+ }
+ 
++/* Le mot (TCL_TOKEN_WORD) est-il de la forme {texte}mot où texte est une annotation
++ * LOCALE (un caractère que la grammaire des types refuse) ? Renvoie son texte (objet
++ * à libérer par l'appelant) ou NULL. Sert à TclCompileSetCmd. */
++Tcl_Obj *
++TclAnnotLocalWordText(Tcl_Interp *interp, Tcl_Token *wordTokenPtr)
++{
++    Tcl_Obj *saved, *text;
++    int local;
++
++    if (wordTokenPtr->type != TCL_TOKEN_WORD || wordTokenPtr->numComponents < 1
++	    || wordTokenPtr[1].type != TCL_TOKEN_ANNOT) {
++	return NULL;
++    }
++    saved = Tcl_GetObjResult(interp);
++    Tcl_IncrRefCount(saved);
++    text = Tcl_NewStringObj(wordTokenPtr[1].start, wordTokenPtr[1].size);
++    Tcl_IncrRefCount(text);
++    local = (TclTypeParse(interp, wordTokenPtr[1].start,
++	    wordTokenPtr[1].size) == NULL) && RawIsLocal(interp);
++    Tcl_SetObjResult(interp, saved);
++    Tcl_DecrRefCount(saved);
++    if (!local) {
++	Tcl_DecrRefCount(text);
++	return NULL;
++    }
++    return text;		/* refCount 1 : à libérer */
++}
++
++/* ::tcl::annotlocal text : émis par TclCompileSetCmd pour « set x {-v}mot » :
++ * une annotation locale ne s'adresse qu'à l'appelé, pas à une variable. */
++static int
++AnnotLocalObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
++	Tcl_Obj *const objv[])
++{
++    (void) clientData;
++    if (objc != 2) {
++	Tcl_WrongNumArgs(interp, 1, objv, "text");
++	return TCL_ERROR;
++    }
++    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
++	    "local annotation {%s} cannot be stored by \"set\": it only "
++	    "applies between a caller and the command it calls",
++	    Tcl_GetString(objv[1])));
++    Tcl_SetErrorCode(interp, "TCL", "TYPE", "LOCALANNOT", (char *)NULL);
++    return TCL_ERROR;
++}
++
+ /* ::tcl::annotate type value : l'équivalent exécutable de {type}valeur,
+  * appelé par le code compilé et par TclSubstTokens. */
+ static int
+@@ -1137,6 +1184,8 @@
+ 	    NULL);
+     Tcl_CreateObjCommand2(interp, "::tcl::annotraw", AnnotRawObjCmd, NULL,
+ 	    NULL);
++    Tcl_CreateObjCommand2(interp, "::tcl::annotlocal", AnnotLocalObjCmd, NULL,
++	    NULL);
+ }
+ 
+ /* Le suffixe d'un mot annoté est-il littéral (que du texte) ? */
+--- a/generic/tclCompCmdsSZ.c
++++ b/generic/tclCompCmdsSZ.c
+@@ -138,6 +138,21 @@
+ 	return TCL_ERROR;
+     }
+     if (TclHasAnnotatedWord(parsePtr)) {	/* set {type}x ... : at run time */
++	if (numWords == 3) {
++	    /* set x {-v}$mot : annotation locale écrite sur la valeur */
++	    Tcl_Obj *lt = TclAnnotLocalWordText(interp,
++		    TokenAfter(TokenAfter(parsePtr->tokenPtr)));
++
++	    if (lt != NULL) {
++		TclEmitPush(TclRegisterLiteral(envPtr, "::tcl::annotlocal",
++			17, 0), envPtr);
++		TclEmitPush(TclRegisterLiteral(envPtr, Tcl_GetString(lt),
++			strlen(Tcl_GetString(lt)), 0), envPtr);
++		TclEmitInvoke(envPtr, INST_INVOKE_STK1, 2);
++		Tcl_DecrRefCount(lt);
++		return TCL_OK;
++	    }
++	}
+ 	return TCL_ERROR;
+     }
+     isAssignment = (numWords == 3);
+--- a/generic/tclTypes.h
++++ b/generic/tclTypes.h
+@@ -212,6 +212,7 @@
+ /* tclCompAnnot.c */
+ struct Tcl_Parse;
+ int	TclHasAnnotatedWord(Tcl_Parse *parsePtr);
++Tcl_Obj *TclAnnotLocalWordText(Tcl_Interp *interp, struct Tcl_Token *wordTokenPtr);
+ void	TclVecAdd(TclObjVec *vec, Tcl_Obj *objPtr);
+ void	TclVecFree(TclObjVec *vec);
+ void	TclDiscard(Tcl_Obj *objPtr);

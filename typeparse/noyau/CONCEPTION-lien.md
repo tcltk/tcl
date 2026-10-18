@@ -6,9 +6,9 @@ est proposé, et ce qui reste ouvert, pour pouvoir y revenir.*
 ## 1. Pourquoi
 
 Aujourd'hui, un offset lu dans un fichier est un entier ordinaire, et la cible se lit avec
-`at($off).T` (niveau 2 de `file binary`). La lecture est complète. L'écriture oblige à calculer
+`at($off).T` (niveau 2 de `type binary`). La lecture est complète. L'écriture oblige à calculer
 les offsets soi-même. Un type lien met l'adresse et la cible dans le même type, pour que
-`file binary` calcule les offsets à l'écriture.
+`type binary` calcule les offsets à l'écriture.
 
 ## 2. Notation (décidée)
 
@@ -47,7 +47,7 @@ de formats). La différence avec « avant » n'existe que si le parent n'aligne 
 nulle ; 0 par défaut si `null` est donné). Elles viennent après la représentation, dans
 n'importe quel ordre.
 
-## 3. Options d'appel de `file binary` (proposées)
+## 3. Options d'appel de `type binary` (proposées)
 
 * `-space TABLE` : table de traduction `{{vaddr offset taille} ...}` pour `memory://`.
 * `-dedupe on|off` (écriture) : deux liens vers des valeurs égales donnent une copie ou deux.
@@ -91,7 +91,7 @@ type def {opt({type}T)} {{$T}some, {}none}
 * Une cible placée avant l'origine est une erreur avec un entier non signé.
 * Un élément de liste est sa propre structure englobante.
 * `//` est le début des données décodées, déplacé par `-offset`.
-* `file binary sizeof` d'un type contenant un lien donne la taille en place (celle de l'entier),
+* `type binary {sizeof?}` d'un type contenant un lien donne la taille en place (celle de l'entier),
   pas celle de la cible.
 
 ## 6. Hors sujet, tranché
@@ -118,7 +118,7 @@ type def {opt({type}T)} {{$T}some, {}none}
 Faits : `//`, `file://`, `./`, `../`, `.` ; `null`/`null=V` ; `opt` ; cibles lues après tous les champs
 du produit, écrites à la fin (alignées) avec correction de l'adresse ; cycles, cibles avant l'origine
 refusés ; alias génériques (`ptr32`, `ptr64`, `rel32`, `sub32`) ; tests t36 à t39.
-Faits aussi : `-linkdepth` (decode, read), `file binary deref`, types récursifs par `{linkref NOM}`,
+Faits aussi : `-linkdepth` (decode, read), `type binary deref`, types récursifs par `{linkref NOM}`,
 adresse de frontière = entier annoté `&*(...).T` (position absolue de la cible), test t40.
 Non faits : référentiels nommés `//nom/`, `memory://` et `-space`, `-dedupe`, types récursifs
 (listes chaînées) dans la représentation binaire, écriture d'un lien nul vers une cible non `opt`.
@@ -128,7 +128,7 @@ Non faits : référentiels nommés `//nom/`, `memory://` et `-space`, `-dedupe`,
 *Transparent* et *opaque* qualifient un milieu ; ici le milieu (fichier, mémoire) ne change pas, c'est
 la sonde qui change. On remplace donc l'option de type `opaque` par une **option d'appel** :
 
-    file binary decode ?-linkdepth N? TYPE DATA        ;# N = 0, 1, 2, ... ou Inf (défaut)
+    type binary decode ?-linkdepth N? TYPE DATA        ;# N = 0, 1, 2, ... ou Inf (défaut)
 
 * `0` : aucun lien suivi (surface) ; `1` : un seul niveau ; `Inf` : jusqu'au bout (l'ancien transparent).
 * Un lien situé à la frontière reste un **entier annoté** par le type lien (origine, représentation,
@@ -154,4 +154,4 @@ la sonde qui change. On remplace donc l'option de type `opaque` par une **option
 
 ## 7quater. Référentiels nommés / Named spaces
 
-Produit `space {name, data, base, segments}` ; registre `::fb::spaces`, alimenté par `file binary space file|memory`. Analyse C : `ParseOrigin` normalise `file://nom/`→`//nom/`. Lecture : `linkRead` calcule la position via `spaceTarget` ; `linkFollow` échange temporairement l'état de lecture (données, base) puis le restaure ; la clé de cycle est `nom@position`. Écriture : adresse de frontière via `spaceAddress` ; cible réelle = erreur. Tests : t41.
+Produit `space {name, data, base, segments}` ; registre `::fb::spaces`, alimenté par `type binary space file|memory`. Analyse C : `ParseOrigin` normalise `file://nom/`→`//nom/`. Lecture : `linkRead` calcule la position via `spaceTarget` ; `linkFollow` échange temporairement l'état de lecture (données, base) puis le restaure ; la clé de cycle est `nom@position`. Écriture : adresse de frontière via `spaceAddress` ; cible réelle = erreur. Tests : t41.

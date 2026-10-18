@@ -6,7 +6,7 @@ align4  24
 010000000200000003000000040000000000000005000000
 1 2 3 4 5 consumed=32
 1 2 3 4 5
-1: file binary: non-zero padding at offset 1 before field b of cs
+1: type binary: non-zero padding at offset 1 before field b of cs
 1: bad alignment "3": must be packed, natural or a power of two
 1: bad alignment "wide": must be packed, natural or a power of two
 outer packed 8 natural 12
@@ -28,8 +28,8 @@ héé 日本 éà plain
 1: string: unknown encoding "klingon" (raw, ascii, latin1, utf-8, utf-16le, utf-16be, ucs-2le, ucs-2be)
 1: string takes (encoding, size|z), for example string(utf-8,8) or string(utf-8,z)
 1: string: the size in bytes must be between 1 and 1000000 or z, not "0"
-1: file binary: unterminated string at offset 0 reading string(utf-8,z)
-1: file binary: unterminated string at offset 0 reading string(utf-16le,z)
+1: type binary: unterminated string at offset 0 reading string(utf-8,z)
+1: type binary: unterminated string at offset 0 reading string(utf-16le,z)
 ab
 used=6
 6

@@ -7,22 +7,22 @@ type def hdr {
 puts [type binary hdr]
 set bytes MAGI
 append bytes \x02 \x80\x01 abc\x00\x00\x00 \x00\x01\x00\x02\x00\x03 hi\x00 \x00\x00 [binary format i -5] [binary format Q 1.5] \x01\x02\x03
-set h [file binary decode hdr $bytes -consumed used]
+set h [type binary decode hdr $bytes -consumed used]
 puts "$h used=$used"
 puts "[type get $h] $h(calc) $h(flags.15) $h(t24) $h(magic)"
-puts [expr {[file binary encode hdr $h] eq $bytes}]
-catch {file binary decode hdr [string range $bytes 0 9]} m; puts $m
-catch {file binary decode hdr "XXXX[string range $bytes 4 end]"} m2; puts $m2
-catch {file binary sizeof hdr} m3; puts $m3
-puts [file binary sizeof {list(3).int(u,16)}]
+puts [expr {[type binary encode hdr $h] eq $bytes}]
+catch {type binary decode hdr [string range $bytes 0 9]} m; puts $m
+catch {type binary decode hdr "XXXX[string range $bytes 4 end]"} m2; puts $m2
+catch {type binary {sizeof?}hdr} m3; puts $m3
+puts [type binary {sizeof?}{list(3).int(u,16)}]
 set f [file tempfile tmp]
 chan configure $f -translation binary
-file binary write $f hdr $h
+chan binary write $f hdr $h
 close $f
 set f [open $tmp rb]
-set h2 [file binary read $f hdr]
+set h2 [chan binary read $f hdr]
 puts "from channel: $h2 at [tell $f]"
 close $f
 file delete $tmp
-set v [file binary decode int(u,16,be) "\x01\x02"]
+set v [type binary decode int(u,16,be) "\x01\x02"]
 puts "$v [type get $v]"

@@ -1,0 +1,647 @@
+--- a/generic/tclAnnotObj.c
++++ b/generic/tclAnnotObj.c
+@@ -220,6 +220,269 @@
+ 
+ const Tcl_ObjType *const TclAnnotatedObjTypePtr = &annotatedObjType;
+ 
++/* --------------------------------------------------------------------
++ * État {T, N} : le T résolu et les NOTES (nominaux en attente)
++ * --------------------------------------------------------------------
++ *
++ * ptr2 d'une valeur annotée est soit T seul (typeref, ou texte brut du
++ * parseur) quand il n'y a pas de note, soit un objet "annotstate" IMMUABLE
++ * et partagé {T, N} : T peut être NULL (note seule, « @mm »), N est une
++ * liste Tcl de noms, de la plus ancienne à la plus récente.
++ */
++
++static int RawIsLocal(Tcl_Interp *interp);
++static Tcl_FreeInternalRepProc	FreeAnnotState;
++static Tcl_DupInternalRepProc	DupAnnotState;
++static Tcl_UpdateStringProc	UpdateStringOfAnnotState;
++static Tcl_SetFromAnyProc	SetAnnotStateFromAny;
++
++static const Tcl_ObjType annotStateObjType = {
++    "annotstate", FreeAnnotState, DupAnnotState, UpdateStringOfAnnotState,
++    SetAnnotStateFromAny, TCL_OBJTYPE_V0
++};
++
++static void
++FreeAnnotState(Tcl_Obj *objPtr)
++{
++    Tcl_Obj *t = (Tcl_Obj *) objPtr->internalRep.twoPtrValue.ptr1;
++    Tcl_Obj *n = (Tcl_Obj *) objPtr->internalRep.twoPtrValue.ptr2;
++
++    if (t != NULL) {
++	Tcl_DecrRefCount(t);
++    }
++    if (n != NULL) {
++	Tcl_DecrRefCount(n);
++    }
++}
++
++static void
++DupAnnotState(Tcl_Obj *srcPtr, Tcl_Obj *dupPtr)
++{
++    Tcl_ObjInternalRep ir;
++
++    ir.twoPtrValue.ptr1 = srcPtr->internalRep.twoPtrValue.ptr1;
++    ir.twoPtrValue.ptr2 = srcPtr->internalRep.twoPtrValue.ptr2;
++    if (ir.twoPtrValue.ptr1 != NULL) {
++	Tcl_IncrRefCount((Tcl_Obj *) ir.twoPtrValue.ptr1);
++    }
++    if (ir.twoPtrValue.ptr2 != NULL) {
++	Tcl_IncrRefCount((Tcl_Obj *) ir.twoPtrValue.ptr2);
++    }
++    Tcl_StoreInternalRep(dupPtr, &annotStateObjType, &ir);
++}
++
++/* Notes jointes par « . », de la plus ancienne à la plus récente. */
++static Tcl_Obj *
++NotesJoined(Tcl_Obj *notes)
++{
++    Tcl_Obj **elv;
++    Tcl_Size n, i;
++    Tcl_Obj *res = Tcl_NewObj();
++
++    if (notes != NULL && Tcl_ListObjGetElements(NULL, notes, &n, &elv)
++	    == TCL_OK) {
++	for (i = 0; i < n; i++) {
++	    if (i > 0) {
++		Tcl_AppendToObj(res, ".", 1);
++	    }
++	    Tcl_AppendObjToObj(res, elv[i]);
++	}
++    }
++    return res;
++}
++
++static void
++UpdateStringOfAnnotState(Tcl_Obj *objPtr)
++{
++    Tcl_Obj *j = NotesJoined((Tcl_Obj *) objPtr->internalRep.twoPtrValue.ptr2);
++    Tcl_Size len;
++    const char *b;
++
++    Tcl_IncrRefCount(j);
++    b = Tcl_GetStringFromObj(j, &len);
++    Tcl_InitStringRep(objPtr, "@", 1);
++    Tcl_AppendToObj(objPtr, b, len);
++    Tcl_DecrRefCount(j);
++}
++
++static int
++SetAnnotStateFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr)
++{
++    (void) objPtr;
++    if (interp != NULL) {
++	Tcl_SetObjResult(interp, Tcl_NewStringObj(
++		"annotation states cannot be created from strings", -1));
++    }
++    return TCL_ERROR;
++}
++
++static int
++IsTypeRef(Tcl_Obj *tPtr)
++{
++    return tPtr != NULL && Tcl_FetchInternalRep(tPtr, &typeRefObjType) != NULL;
++}
++
++/* ptr2 -> (T, N) ; N reste NULL sans note. */
++static void
++SplitT(Tcl_Obj *p2, Tcl_Obj **tPtrPtr, Tcl_Obj **nPtrPtr)
++{
++    Tcl_ObjInternalRep *ir = Tcl_FetchInternalRep(p2, &annotStateObjType);
++
++    if (ir != NULL) {
++	*tPtrPtr = (Tcl_Obj *) ir->twoPtrValue.ptr1;
++	*nPtrPtr = (Tcl_Obj *) ir->twoPtrValue.ptr2;
++    } else {
++	*tPtrPtr = p2;
++	*nPtrPtr = NULL;
++    }
++}
++
++/* Construit le ptr2 pour (T, N) : T seul sans note ; NULL si rien du tout.
++ * Le résultat n'a pas de référence propre (l'appelant l'attache). */
++static Tcl_Obj *
++StateObj(Tcl_Obj *tPtr, Tcl_Obj *nPtr)
++{
++    Tcl_Size n = 0;
++    Tcl_Obj *st;
++    Tcl_ObjInternalRep ir;
++
++    if (nPtr != NULL) {
++	Tcl_ListObjLength(NULL, nPtr, &n);
++    }
++    if (n == 0) {
++	return tPtr;
++    }
++    st = Tcl_NewObj();
++    if (tPtr != NULL) {
++	Tcl_IncrRefCount(tPtr);
++    }
++    Tcl_IncrRefCount(nPtr);
++    ir.twoPtrValue.ptr1 = tPtr;
++    ir.twoPtrValue.ptr2 = nPtr;
++    Tcl_StoreInternalRep(st, &annotStateObjType, &ir);
++    TclInvalidateStringRep(st);
++    return st;
++}
++
++/* Les notes d'une valeur (liste, non possédée), ou NULL. */
++Tcl_Obj *
++TclAnnotNotes(Tcl_Obj *objPtr)
++{
++    Tcl_ObjInternalRep *ir = Tcl_FetchInternalRep(objPtr, &annotatedObjType);
++    Tcl_Obj *t, *n;
++
++    if (ir == NULL) {
++	return NULL;
++    }
++    SplitT((Tcl_Obj *) ir->twoPtrValue.ptr2, &t, &n);
++    return n;
++}
++
++/* Valeur A' = A avec le nom ajouté comme note la plus récente. Le type
++ * résolu est gardé ; un texte brut non vide (annotation littérale) devient
++ * la plus ancienne des notes. */
++static Tcl_Obj *
++AnnotAddNote(Tcl_Obj *src, Tcl_Obj *nameObj)
++{
++    Tcl_ObjInternalRep *ir = Tcl_FetchInternalRep(src, &annotatedObjType);
++    Tcl_Obj *content = src, *t = NULL, *n = NULL, *newN, *raw = NULL, *p2;
++    Tcl_Obj *res;
++    Tcl_Size len;
++
++    if (ir != NULL) {
++	content = (Tcl_Obj *) ir->twoPtrValue.ptr1;
++	SplitT((Tcl_Obj *) ir->twoPtrValue.ptr2, &t, &n);
++	if (t != NULL && !IsTypeRef(t)) {
++	    Tcl_GetStringFromObj(t, &len);
++	    if (len > 0) {
++		raw = t;
++		t = NULL;
++	    }
++	}
++    }
++    newN = (n != NULL) ? Tcl_DuplicateObj(n) : Tcl_NewListObj(0, NULL);
++    if (raw != NULL) {
++	Tcl_ListObjAppendElement(NULL, newN, Tcl_DuplicateObj(raw));
++    }
++    if (nameObj != NULL) {
++	Tcl_ListObjAppendElement(NULL, newN, Tcl_DuplicateObj(nameObj));
++    }
++    p2 = StateObj(t, newN);
++    res = MakeAnnotated(Tcl_DuplicateObj(content), p2);
++    return res;
++}
++
++/* A' = A avec T remplacé par le type vide {} (les notes restent). */
++static Tcl_Obj *
++AnnotClearType(Tcl_Obj *src)
++{
++    Tcl_ObjInternalRep *ir = Tcl_FetchInternalRep(src, &annotatedObjType);
++    Tcl_Obj *content = src, *t, *n = NULL;
++
++    if (ir != NULL) {
++	content = (Tcl_Obj *) ir->twoPtrValue.ptr1;
++	SplitT((Tcl_Obj *) ir->twoPtrValue.ptr2, &t, &n);
++    }
++    return MakeAnnotated(Tcl_DuplicateObj(content), StateObj(
++	    Tcl_NewStringObj("", 0), n));
++}
++
++/* res (fraîche) + les notes d'une autre valeur. */
++static Tcl_Obj *
++AnnotWithNotes(Tcl_Obj *res, Tcl_Obj *notes)
++{
++    Tcl_ObjInternalRep *ir = Tcl_FetchInternalRep(res, &annotatedObjType);
++    Tcl_Obj *t, *n;
++
++    if (ir == NULL || notes == NULL) {
++	return res;
++    }
++    SplitT((Tcl_Obj *) ir->twoPtrValue.ptr2, &t, &n);
++    if (n != NULL) {
++	return res;
++    }
++    return MakeAnnotated(Tcl_DuplicateObj(
++	    (Tcl_Obj *) ir->twoPtrValue.ptr1), StateObj(t, notes));
++}
++
++/*
++ * Une annotation littérale {mm}5 dont le nom ne se résout pas (ni type, ni
++ * caractère local) est une NOTE : on la range dans N. Rend A lui-même si
++ * rien ne change, sinon une valeur neuve (sans référence).
++ */
++Tcl_Obj *
++TclAnnotNormalize(Tcl_Interp *interp, Tcl_Obj *objPtr)
++{
++    Tcl_ObjInternalRep *ir = Tcl_FetchInternalRep(objPtr, &annotatedObjType);
++    Tcl_Obj *t, *n, *saved, *res = objPtr;
++    Tcl_Size len;
++    const char *text;
++    int pending;
++
++    if (ir == NULL) {
++	return objPtr;
++    }
++    SplitT((Tcl_Obj *) ir->twoPtrValue.ptr2, &t, &n);
++    if (t == NULL || IsTypeRef(t)) {
++	return objPtr;
++    }
++    text = Tcl_GetStringFromObj(t, &len);
++    if (len == 0) {
++	return objPtr;
++    }
++    saved = Tcl_GetObjResult(interp);
++    Tcl_IncrRefCount(saved);
++    pending = (TclTypeParse(interp, text, len) == NULL)
++	    && !RawIsLocal(interp);
++    Tcl_SetObjResult(interp, saved);
++    Tcl_DecrRefCount(saved);
++    if (pending) {
++	res = AnnotAddNote(objPtr, NULL);
++    }
++    return res;
++}
++
++
+ /*
+  * Un scalaire annoté (string, int, un élément atomique...) est une liste
+  * d'UN élément, qui est lui-même : foreach f $e rend e, annotation
+@@ -555,7 +818,7 @@
+ {
+     int status, variant = -1;
+     TclType *tp = NULL;
+-    Tcl_Obj *content, *nPtr, *oldV, *oldT, *newV, *newT;
++    Tcl_Obj *content, *nPtr, *oldV, *oldT, *newV, *newT, *keepNotes = NULL;
+ 
+     if (TclAnnotResolve(interp, aPtr, NULL, &status, &tp, &variant,
+ 	    &content) != TCL_OK) {
+@@ -567,12 +830,23 @@
+ 	    return TCL_ERROR;
+ 	}
+ 	nPtr = TclNewAnnotated(interp, tp, variant, wPtr);
++	{
++	    Tcl_Obj *ot, *on;
++
++	    SplitT((Tcl_Obj *) aPtr->internalRep.twoPtrValue.ptr2, &ot, &on);
++	    if (on != NULL) {
++		keepNotes = on;
++	    }
++	}
+     } else {
+ 	nPtr = MakeAnnotated(Tcl_DuplicateObj(wPtr),
+ 		(Tcl_Obj *) aPtr->internalRep.twoPtrValue.ptr2);
+     }
+     newV = (Tcl_Obj *) nPtr->internalRep.twoPtrValue.ptr1;
+     newT = (Tcl_Obj *) nPtr->internalRep.twoPtrValue.ptr2;
++    if (keepNotes != NULL) {
++	newT = StateObj(newT, keepNotes);	/* les notes suivent la valeur */
++    }
+     oldV = (Tcl_Obj *) aPtr->internalRep.twoPtrValue.ptr1;
+     oldT = (Tcl_Obj *) aPtr->internalRep.twoPtrValue.ptr2;
+     Tcl_IncrRefCount(newV);
+@@ -717,16 +991,23 @@
+ {
+     Tcl_ObjInternalRep *ir = Tcl_FetchInternalRep(objPtr, &annotatedObjType);
+     Tcl_ObjInternalRep *tir;
+-    Tcl_Obj *vPtr, *tPtr;
++    Tcl_Obj *vPtr, *tPtr, *nPtr;
+ 
+     if (ir == NULL) {
+ 	return 0;
+     }
+     vPtr = (Tcl_Obj *) ir->twoPtrValue.ptr1;
+-    tPtr = (Tcl_Obj *) ir->twoPtrValue.ptr2;
++    SplitT((Tcl_Obj *) ir->twoPtrValue.ptr2, &tPtr, &nPtr);
+     if (contentPtr != NULL) {
+ 	*contentPtr = vPtr;
+     }
++    if (tPtr == NULL) {
++	/* Note seule : la plus récente est lue comme un nom à la consommation. */
++	Tcl_Size nn = 0;
++
++	Tcl_ListObjLength(NULL, nPtr, &nn);
++	Tcl_ListObjIndex(NULL, nPtr, nn - 1, &tPtr);
++    }
+     tir = Tcl_FetchInternalRep(tPtr, &typeRefObjType);
+     if (tir != NULL) {
+ 	if (tpPtr != NULL) {
+@@ -800,6 +1081,23 @@
+ 	return TCL_OK;
+     }
+     *contentPtr = vPtr;
++    if (kind == 1 && ctx != NULL && ctx->kind == TCLT_SUM
++	    && TclAnnotNotes(objPtr) != NULL) {
++	/* {d}$v : une note qui nomme une variante de la somme cible. */
++	Tcl_Obj *nl = TclAnnotNotes(objPtr), *last = NULL;
++	Tcl_Size nn = 0;
++
++	Tcl_ListObjLength(NULL, nl, &nn);
++	if (nn > 0 && Tcl_ListObjIndex(NULL, nl, nn - 1, &last) == TCL_OK) {
++	    idx = TclTypeFieldIndex(ctx, Tcl_GetString(last));
++	    if (idx >= 0 && ctx->fields[idx].type != NULL) {
++		*statusPtr = TCLA_RAW;
++		*tpPtr = (TclType *) ctx;
++		*variantPtr = (int) idx;
++		return TCL_OK;
++	    }
++	}
++    }
+     if (kind == 1) {
+ 	*statusPtr = TCLA_TYPED;
+ 	*tpPtr = tp;
+@@ -1027,10 +1325,35 @@
+  * fabriquée à la compilation, toujours brute (les types peuvent ne pas
+  * exister encore).
+  */
++static int AnnotateCore(Tcl_Interp *interp, Tcl_Obj *typeText,
++	Tcl_Obj *value, Tcl_Obj **resultPtr);
++
+ int
+ TclAnnotateValue(Tcl_Interp *interp, Tcl_Obj *typeText, Tcl_Obj *value,
+ 	Tcl_Obj **resultPtr)
+ {
++    Tcl_Obj *notes = TclAnnotNotes(value);
++
++    if (AnnotateCore(interp, typeText, value, resultPtr) != TCL_OK) {
++	return TCL_ERROR;
++    }
++    if (notes != NULL && *resultPtr != value
++	    && TclAnnotNotes(*resultPtr) == NULL) {
++	/* Le cast ne touche pas aux notes. */
++	Tcl_Obj *r2 = AnnotWithNotes(*resultPtr, notes);
++
++	if (r2 != *resultPtr) {
++	    TclDiscard(*resultPtr);
++	    *resultPtr = r2;
++	}
++    }
++    return TCL_OK;
++}
++
++static int
++AnnotateCore(Tcl_Interp *interp, Tcl_Obj *typeText, Tcl_Obj *value,
++	Tcl_Obj **resultPtr)
++{
+     Tcl_Size len;
+     const char *text = Tcl_GetStringFromObj(typeText, &len);
+     TclType *tp, *vtp = NULL;
+@@ -1041,14 +1364,20 @@
+     if (kind == 0) {
+ 	vcontent = value;
+     }
+-    if (len == 0) {				/* {}$x : retire le type */
+-	*resultPtr = TclNewRawAnnotation(typeText, vcontent);
++    if (len == 0) {				/* {}$x : retire le type, garde les notes */
++	*resultPtr = AnnotClearType(value);
+ 	return TCL_OK;
+     }
+     tp = TclTypeParse(interp, text, len);
+-    if (tp == NULL) {				/* nom de variante, type futur */
++    if (tp == NULL) {
++	int local = RawIsLocal(interp);
++
+ 	Tcl_ResetResult(interp);
+-	*resultPtr = TclNewRawAnnotation(typeText, vcontent);
++	if (local) {				/* {-v} : locale, éphémère */
++	    *resultPtr = TclNewRawAnnotation(typeText, vcontent);
++	} else {				/* nom inconnu : une NOTE */
++	    *resultPtr = AnnotAddNote(value, typeText);
++	}
+ 	return TCL_OK;
+     }
+     if (kind == 1) {				/* valeur typée : cast */
+@@ -1177,9 +1506,156 @@
+     return TCL_OK;
+ }
+ 
++
++/* Vrai si la valeur n'a que des notes (aucun type résolu ni brut). */
++int
++TclAnnotIsNoteOnly(Tcl_Obj *objPtr)
++{
++    Tcl_ObjInternalRep *ir = Tcl_FetchInternalRep(objPtr, &annotatedObjType);
++    Tcl_Obj *t, *n;
++
++    if (ir == NULL) {
++	return 0;
++    }
++    SplitT((Tcl_Obj *) ir->twoPtrValue.ptr2, &t, &n);
++    return t == NULL && n != NULL;
++}
++
++/*
++ * Affichage symétrique autour de « @ » : le type résolu de l'extérieur vers
++ * l'intérieur, puis les notes de la plus ancienne (intérieure) à la plus
++ * récente (extérieure) : list.int@mm.hello. Sans note : list.int. Sans type
++ * résolu : @mm. Valeur non annotée : chaîne vide. Rend un objet neuf.
++ */
++Tcl_Obj *
++TclAnnotDisplay(Tcl_Interp *interp, Tcl_Obj *objPtr)
++{
++    Tcl_Obj *norm, *res = Tcl_NewObj(), *raw = NULL, *content, *notes, *j;
++    TclType *tp = NULL;
++    int variant = -1, kind;
++    Tcl_ObjInternalRep *ir;
++    Tcl_Obj *t, *n;
++
++    norm = TclAnnotNormalize(interp, objPtr);
++    Tcl_IncrRefCount(norm);
++    ir = Tcl_FetchInternalRep(norm, &annotatedObjType);
++    if (ir != NULL) {
++	SplitT((Tcl_Obj *) ir->twoPtrValue.ptr2, &t, &n);
++	kind = TclAnnotInfo(norm, &content, &tp, &variant, &raw);
++	if (kind == 1) {
++	    Tcl_AppendToObj(res, tp->name, TCL_AUTO_LENGTH);
++	    if (tp->kind == TCLT_SUM && variant >= 0
++		    && variant < (int) tp->nfields
++		    && tp->fields[variant].name != NULL) {
++		Tcl_AppendToObj(res, ".", 1);
++		Tcl_AppendObjToObj(res, tp->fields[variant].name);
++	    }
++	} else if (kind == 2 && t != NULL) {
++	    Tcl_AppendObjToObj(res, raw);
++	}
++	notes = n;
++	if (notes != NULL) {
++	    j = NotesJoined(notes);
++	    Tcl_AppendToObj(res, "@", 1);
++	    Tcl_AppendObjToObj(res, j);
++	    TclDiscard(j);
++	}
++    }
++    Tcl_DecrRefCount(norm);
++    return res;
++}
++
++/*
++ * note get VALUE | note has VALUE NAME | note delete VALUE ?NAME?
++ *
++ * Les valeurs sont immuables : delete RENVOIE la valeur sans la note (ou
++ * sans aucune note), contenu et type résolu inchangés.
++ */
++static int
++NoteObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
++	Tcl_Obj *const objv[])
++{
++    const char *sub;
++    Tcl_Obj *norm, *notes, **elv;
++    Tcl_Size n, i;
++    int rc = TCL_OK;
++
++    (void) clientData;
++    if (objc < 3) {
++	Tcl_WrongNumArgs(interp, 1, objv, "get|has|delete value ?name?");
++	return TCL_ERROR;
++    }
++    sub = Tcl_GetString(objv[1]);
++    norm = TclAnnotNormalize(interp, objv[2]);
++    Tcl_IncrRefCount(norm);
++    notes = TclAnnotNotes(norm);
++    if (strcmp(sub, "get") == 0 && objc == 3) {
++	Tcl_Obj *j = NotesJoined(notes);
++
++	Tcl_SetObjResult(interp, j);
++    } else if (strcmp(sub, "has") == 0 && objc == 4) {
++	int found = 0;
++
++	if (notes != NULL && Tcl_ListObjGetElements(NULL, notes, &n, &elv)
++		== TCL_OK) {
++	    for (i = 0; i < n; i++) {
++		if (strcmp(Tcl_GetString(elv[i]), Tcl_GetString(objv[3]))
++			== 0) {
++		    found = 1;
++		    break;
++		}
++	    }
++	}
++	Tcl_SetObjResult(interp, Tcl_NewBooleanObj(found));
++    } else if (strcmp(sub, "delete") == 0 && (objc == 3 || objc == 4)) {
++	Tcl_ObjInternalRep *ir = Tcl_FetchInternalRep(norm, &annotatedObjType);
++	Tcl_Obj *t, *nl, *newN, *content, *res;
++
++	if (ir == NULL || notes == NULL) {
++	    Tcl_SetObjResult(interp, objv[2]);	/* rien à retirer */
++	} else {
++	    SplitT((Tcl_Obj *) ir->twoPtrValue.ptr2, &t, &nl);
++	    content = (Tcl_Obj *) ir->twoPtrValue.ptr1;
++	    newN = Tcl_NewListObj(0, NULL);
++	    if (objc == 4) {
++		Tcl_ListObjGetElements(NULL, nl, &n, &elv);
++		for (i = 0; i < n; i++) {
++		    if (strcmp(Tcl_GetString(elv[i]),
++			    Tcl_GetString(objv[3])) != 0) {
++			Tcl_ListObjAppendElement(NULL, newN,
++				Tcl_DuplicateObj(elv[i]));
++		    }
++		}
++	    }
++	    if (t == NULL) {
++		Tcl_Size k = 0;
++
++		Tcl_ListObjLength(NULL, newN, &k);
++		if (k == 0) {			/* plus rien : valeur ordinaire */
++		    res = Tcl_DuplicateObj(content);
++		} else {
++		    res = MakeAnnotated(Tcl_DuplicateObj(content),
++			    StateObj(NULL, newN));
++		}
++	    } else {
++		res = MakeAnnotated(Tcl_DuplicateObj(content),
++			StateObj(t, newN));
++	    }
++	    TclDiscard(newN);
++	    Tcl_SetObjResult(interp, res);
++	}
++    } else {
++	Tcl_WrongNumArgs(interp, 1, objv, "get|has|delete value ?name?");
++	rc = TCL_ERROR;
++    }
++    Tcl_DecrRefCount(norm);
++    return rc;
++}
++
+ void
+ TclAnnotInit(Tcl_Interp *interp)
+ {
++    Tcl_CreateObjCommand2(interp, "note", NoteObjCmd, NULL, NULL);
+     Tcl_CreateObjCommand2(interp, "::tcl::annotate", AnnotateObjCmd, NULL,
+ 	    NULL);
+     Tcl_CreateObjCommand2(interp, "::tcl::annotraw", AnnotRawObjCmd, NULL,
+--- a/generic/tclTypes.c
++++ b/generic/tclTypes.c
+@@ -2595,33 +2595,12 @@
+ static int
+ TypeGetCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
+ {
+-    TclType *tp = NULL;
+-    Tcl_Obj *raw = NULL, *res;
+-    int variant = -1;
+-
+     if (objc != 3) {
+ 	Tcl_WrongNumArgs(interp, 2, objv, "value");
+ 	return TCL_ERROR;
+     }
+-    switch (TclAnnotInfo(objv[2], NULL, &tp, &variant, &raw)) {
+-    case 1:
+-	res = Tcl_NewStringObj(tp->name, TCL_AUTO_LENGTH);
+-	if (tp->kind == TCLT_SUM && variant >= 0
+-		&& variant < (int) tp->nfields
+-		&& tp->fields[variant].name != NULL) {
+-	    /* Une somme : le type puis la variante, Val.i */
+-	    Tcl_AppendToObj(res, ".", 1);
+-	    Tcl_AppendObjToObj(res, tp->fields[variant].name);
+-	}
+-	Tcl_SetObjResult(interp, res);
+-	break;
+-    case 2:
+-	Tcl_SetObjResult(interp, raw);
+-	break;
+-    default:
+-	Tcl_ResetResult(interp);
+-	break;
+-    }
++    /* Le type résolu, puis « @ » et les notes : list.int@mm.hello */
++    Tcl_SetObjResult(interp, TclAnnotDisplay(interp, objv[2]));
+     return TCL_OK;
+ }
+ 
+--- a/generic/tclTypes.h
++++ b/generic/tclTypes.h
+@@ -205,6 +205,10 @@
+ int	TclAnnotSetContent(Tcl_Interp *interp, Tcl_Obj *aPtr, Tcl_Obj *wPtr);
+ 
+ struct Tcl_Token;
++Tcl_Obj	*TclAnnotNotes(Tcl_Obj *objPtr);
++Tcl_Obj	*TclAnnotNormalize(Tcl_Interp *interp, Tcl_Obj *objPtr);
++int	TclAnnotIsNoteOnly(Tcl_Obj *objPtr);
++Tcl_Obj	*TclAnnotDisplay(Tcl_Interp *interp, Tcl_Obj *objPtr);
+ int	TclAnnotSuffixIsLiteral(struct Tcl_Token *tokenPtr, Tcl_Size count);
+ int	TclAnnotateValue(Tcl_Interp *interp, Tcl_Obj *typeText, Tcl_Obj *value,
+ 	    Tcl_Obj **resultPtr);
+--- a/generic/tclTypedVar.c
++++ b/generic/tclTypedVar.c
+@@ -108,6 +108,20 @@
+ 	if (!TclIsAnnotated(value)) {
+ 	    return TCL_OK;
+ 	}
++	{
++	    /* Un nom qui ne se résout pas est une NOTE : la variable la garde. */
++	    Tcl_Obj *norm = TclAnnotNormalize(interp, value);
++
++	    if (TclAnnotIsNoteOnly(norm)) {
++		if (norm != value) {
++		    Tcl_IncrRefCount(norm);
++		    *valuePtrPtr = norm;
++		    *tmpPtrPtr = norm;
++		}
++		return TCL_OK;
++	    }
++	    TclDiscard(norm == value ? NULL : norm);
++	}
+ 	if (TclAnnotResolve(interp, value, NULL, &status, &at, &avar, &content)
+ 		!= TCL_OK) {
+ 	    return TCL_ERROR;

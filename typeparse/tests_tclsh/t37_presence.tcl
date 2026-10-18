@@ -17,25 +17,25 @@ type def opt01 {{u8}1, {unit}0}
 # 1. sélection par un champ 0/1 / by a 0/1 field
 type def A {{u8}present; {opt01($present)}x}
 foreach b {"\x01\x07" "\x00"} {
-    set v [file binary decode A $b]
+    set v [type binary decode A $b]
     puts "$v [type get $v(x)]"
     unset v
 }
-puts [hex [file binary encode A [file binary decode A "\x01\x07"]]]
-puts [hex [file binary encode A [file binary decode A "\x00"]]]
+puts [hex [type binary encode A [type binary decode A "\x01\x07"]]]
+puts [hex [type binary encode A [type binary decode A "\x00"]]]
 
 # 2. sélecteur-expression / selector expression
 type def B {{u8}off; {opt01($off != 0)}x}
-puts [file binary decode B "\x05\x09"]
-puts [file binary decode B "\x00"]
+puts [type binary decode B "\x05\x09"]
+puts [type binary decode B "\x00"]
 type def C {{u8}f; {u8}g; {opt01($f + $g > 1)}x}
-puts [file binary decode C "\x01\x01\x09"]
-puts [file binary decode C "\x00\x01"]
-attempt {file binary decode C "\x01\x01"}
+puts [type binary decode C "\x01\x01\x09"]
+puts [type binary decode C "\x00\x01"]
+attempt {type binary decode C "\x01\x01"}
 
 # 3. incohérence à l'écriture / mismatch on write
-attempt {file binary encode A [set {A}bad present 0 x {1}9]}
-attempt {file binary encode A [set {A}bad2 present 1 x {0}{}]}
+attempt {type binary encode A [set {A}bad present 0 x {1}9]}
+attempt {type binary encode A [set {A}bad2 present 1 x {0}{}]}
 
 # 4. champ cité non encore lu / field not yet read
-attempt {type def D {{opt01($zz != 0)}x; {u8}zz}; file binary decode D "\x01"}
+attempt {type def D {{opt01($zz != 0)}x; {u8}zz}; type binary decode D "\x01"}

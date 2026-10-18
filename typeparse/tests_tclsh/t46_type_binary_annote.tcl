@@ -50,7 +50,9 @@ attempt encode     {binary encode hex [type binary encode u16be 258]}
 attempt decode     {type binary decode u16be [binary decode hex 0102]}
 attempt consumed   {type binary decode u32le [binary decode hex 01000000ff] -consumed n; set n}
 attempt space      {type binary space list}
-attempt alias      {file binary sizeof $T}
+attempt alias_sz   {file binary sizeof $T}
+attempt alias_enc  {binary encode hex [file binary encode u16be 258]}
+attempt chan_bin   {set f [file tempfile p]; fconfigure $f -translation binary; chan binary write $f u16be 258; seek $f 0; set v [chan binary read $f u16be]; close $f; file delete $p; set v}
 
 puts "-- un type qui porte le nom d'un verbe"
 type def decode u16be

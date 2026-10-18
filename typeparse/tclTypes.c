@@ -493,9 +493,9 @@ TclTypesMakeLink(Tcl_Interp *interp, TypeData *d, TclType *elem,
 	tp->binBase = (elem->binBase != NULL) ? elem->binBase : elem;
 	Tcl_SetHashValue(hPtr, tp);
 	{
-	    /* FR : l'adresse d'un lien de frontière (file binary -linkdepth) :
+	    /* FR : l'adresse d'un lien de frontière (type binary -linkdepth) :
 	     *      la position absolue de la cible, annotée par ce type.
-	     * EN : the address of a frontier link (file binary -linkdepth):
+	     * EN : the address of a frontier link (type binary -linkdepth):
 	     *      the target's absolute position, annotated with this type. */
 
 	    Tcl_DString rs;
@@ -2595,33 +2595,12 @@ TypeConvertCmd(Tcl_Interp *interp, TypeData *d, Tcl_Obj *fromObj,
 static int
 TypeGetCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 {
-    TclType *tp = NULL;
-    Tcl_Obj *raw = NULL, *res;
-    int variant = -1;
-
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 2, objv, "value");
 	return TCL_ERROR;
     }
-    switch (TclAnnotInfo(objv[2], NULL, &tp, &variant, &raw)) {
-    case 1:
-	res = Tcl_NewStringObj(tp->name, TCL_AUTO_LENGTH);
-	if (tp->kind == TCLT_SUM && variant >= 0
-		&& variant < (int) tp->nfields
-		&& tp->fields[variant].name != NULL) {
-	    /* Une somme : le type puis la variante, Val.i */
-	    Tcl_AppendToObj(res, ".", 1);
-	    Tcl_AppendObjToObj(res, tp->fields[variant].name);
-	}
-	Tcl_SetObjResult(interp, res);
-	break;
-    case 2:
-	Tcl_SetObjResult(interp, raw);
-	break;
-    default:
-	Tcl_ResetResult(interp);
-	break;
-    }
+    /* Le type résolu, puis « @ » et les notes : list.int@mm.hello */
+    Tcl_SetObjResult(interp, TclAnnotDisplay(interp, objv[2]));
     return TCL_OK;
 }
 
@@ -2664,7 +2643,7 @@ static int LinkReprBody(Tcl_Interp *interp, TclType *tp, int depth,
 
 /* Un lien qui se retrouve lui-même dans sa propre cible (liste chaînée,
  * arbre) : la seconde occurrence est la représentation {linkref NOM}, que
- * file binary développe à la demande. */
+ * type binary développe à la demande. */
 
 static int
 LinkRepr(

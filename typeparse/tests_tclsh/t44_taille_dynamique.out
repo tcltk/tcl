@@ -16,4 +16,4 @@
 --- copie et lecture binaire / copy and binary read
 2 {{1 2.5 0} {2 3.5 1}}
 --- la modification champ par champ n'est pas contrôlée (état intermédiaire légitime) mais l'encodage la vérifie
-1: file binary: field items of Batch holds 2, but the field it depends on says 3 ($n)
+1: type binary: field items of Batch holds 2, but the field it depends on says 3 ($n)

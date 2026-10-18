@@ -18,8 +18,8 @@ catch {mini::add a 1} e; puts "erreur   : $e"
 #      compare à ce que C a lu directement.
 # EN : read the real Tcl_Obj back with our binary types and compare with what C
 #      read directly.
-set dump [mini::peek $o(objAddr) [file binary sizeof Tcl_Obj]]
-set t [file binary decode Tcl_Obj $dump]
+set dump [mini::peek $o(objAddr) [type binary {sizeof?}Tcl_Obj]]
+set t [type binary decode Tcl_Obj $dump]
 # FR : refCount est volontairement exclu : il vaut 4 pendant l'appel de objinfo
 #      (variable, argument, enveloppe Tcl, commande C) et 1 quand on relit la
 #      mémoire après coup. Ce n'est pas un écart du modèle, c'est le comptage.
@@ -39,9 +39,9 @@ puts "refCount : C=$o(refCount) (pendant l'appel), modèle=$t(refCount) (après)
 # EN : two process segments: the Tcl_Obj and its string; bytes becomes a link
 #      to the virtual address, followed in the `live` space.
 set str [mini::peek $o(bytesPtr) [expr {$o(length) + 1}]]
-set sz [file binary sizeof Tcl_Obj]
-catch {file binary space delete live}
-file binary space memory $dump$str [list [list $o(objAddr) 0 $sz] [list $o(bytesPtr) $sz [expr {$o(length)+1}]]] -name live
+set sz [type binary {sizeof?}Tcl_Obj]
+catch {type binary space delete live}
+type binary space memory $dump$str [list [list $o(objAddr) 0 $sz] [list $o(bytesPtr) $sz [expr {$o(length)+1}]]] -name live
 type def Tcl_ObjLive {
     {Tcl_Size}refCount;
     {*(memory://live/,u64le,null).cstring}bytes;
@@ -49,6 +49,6 @@ type def Tcl_ObjLive {
     {ptr}typePtr;
     {string(raw,16)}internalRep
 }
-set l [file binary decode Tcl_ObjLive $dump]
+set l [type binary decode Tcl_ObjLive $dump]
 puts "lien     : bytes -> \"$l(bytes)\" (refCount=$l(refCount) length=$l(length))"
 puts "cohérent : [expr {$l(bytes) eq $x}]"

@@ -6,7 +6,7 @@ what_extra: 1: wrong # args: should be "type binary type"
 -- la taille
 sizeof: 0: 8
 sizeof_al: 0: 8
-sizeof_var: 1: file binary sizeof: variable size (string(...,z))
+sizeof_var: 1: type binary sizeof?: variable size (string(...,z))
 -- la validité des octets
 is_ok: 0: 1
 is_court: 0: 0
@@ -26,7 +26,9 @@ encode: 0: 0102
 decode: 0: 258
 consumed: 0: 4
 space: 0: 
-alias: 0: 8
+alias_sz: 0: 8
+alias_enc: 0: 0102
+chan_bin: 0: 258
 -- un type qui porte le nom d'un verbe
 nom_verbe: 0: uint 2 be
 verbe_reste: 0: 258

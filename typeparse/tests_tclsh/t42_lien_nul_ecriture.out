@@ -8,4 +8,4 @@
 --- aller-retour / round trip
 2 {7 8}
 --- sans défaut : lecture d'un lien nul = erreur / without default: reading a null link is an error
-1: file binary: field r of G is a null link (give the field a default value, or make the target an opt(...))
+1: type binary: field r of G is a null link (give the field a default value, or make the target an opt(...))

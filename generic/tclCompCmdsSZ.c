@@ -138,6 +138,21 @@ TclCompileSetCmd(
 	return TCL_ERROR;
     }
     if (TclHasAnnotatedWord(parsePtr)) {	/* set {type}x ... : at run time */
+	if (numWords == 3) {
+	    /* set x {-v}$mot : annotation locale écrite sur la valeur */
+	    Tcl_Obj *lt = TclAnnotLocalWordText(interp,
+		    TokenAfter(TokenAfter(parsePtr->tokenPtr)));
+
+	    if (lt != NULL) {
+		TclEmitPush(TclRegisterLiteral(envPtr, "::tcl::annotlocal",
+			17, 0), envPtr);
+		TclEmitPush(TclRegisterLiteral(envPtr, Tcl_GetString(lt),
+			strlen(Tcl_GetString(lt)), 0), envPtr);
+		TclEmitInvoke(envPtr, INST_INVOKE_STK1, 2);
+		Tcl_DecrRefCount(lt);
+		return TCL_OK;
+	    }
+	}
 	return TCL_ERROR;
     }
     isAssignment = (numWords == 3);

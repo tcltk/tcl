@@ -15,14 +15,14 @@ mesure Tcl.
 
 ## Deux voies pour passer le produit à C
 
-* **Voie rapide — `cs::stats_raw OCTETS`.** Tcl encode (`file binary encode Batch $b -align
+* **Voie rapide — `cs::stats_raw OCTETS`.** Tcl encode (`type binary encode Batch $b -align
   natural`) ; C lit les octets à travers un `(const Batch *)`. Pas de conversion champ par champ.
   C **vérifie** le contrat (longueur = `8 + 24 n`, alignement) au lieu de le supposer.
 * **Voie objet — `cs::stats_obj BATCH`.** C reçoit la **valeur annotée** elle-même. Il vérifie son
   type, lit ses champs par l'API publique (pour elle, un produit annoté est la liste de ses
   champs, dans l'ordre du type) et remplit ses structures. Plus lent, mais sans encodage.
 
-Dans l'autre sens, `cs::generate N SEED` fabrique un `Batch` en C ; `file binary decode Batch ...
+Dans l'autre sens, `cs::generate N SEED` fabrique un `Batch` en C ; `type binary decode Batch ...
 -align natural` le relit en produit annoté (`$b(items)`, `$it(value)`...).
 
 ## Ce que montre `test.tcl`

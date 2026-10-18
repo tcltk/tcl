@@ -7,7 +7,7 @@ lit 0
 0 {}
 1 1 9
 0 1 {}
-1: file binary: data truncated at offset 2 reading variant 1 of field x of C (needs 1 bytes, got 0)
-1: file binary: selector present is 0 but field x of A holds variant 1 of opt01($present)
-1: file binary: selector present is 1 but field x of A holds variant 0 of opt01($present)
+1: type binary: data truncated at offset 2 reading variant 1 of field x of C (needs 1 bytes, got 0)
+1: type binary: selector present is 0 but field x of A holds variant 1 of opt01($present)
+1: type binary: selector present is 1 but field x of A holds variant 0 of opt01($present)
 1: opt01($zz != 0) uses $zz, which is not a field read before it (in this product or an enclosing one)

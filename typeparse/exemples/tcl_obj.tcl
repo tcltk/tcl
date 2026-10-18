@@ -57,12 +57,12 @@ type def Tcl_ObjInternalRep {
 }
 
 # --- La structure elle-même -------------------------------------------------
-# FR : Pour `file binary`, une somme a besoin d'un SÉLECTEUR : un champ déjà lu
+# FR : Pour `type binary`, une somme a besoin d'un SÉLECTEUR : un champ déjà lu
 #      dont la valeur est le nom de la variante (S($champ)). Ici le seul
 #      discriminant est typePtr, une adresse, qui ne désigne pas un nom de
 #      variante. Le champ est donc lu en octets bruts (16 = taille de la
 #      plus grande variante) et on applique la vue voulue.
-# EN : For `file binary` a sum needs a SELECTOR: an already-read field whose
+# EN : For `type binary` a sum needs a SELECTOR: an already-read field whose
 #      value is the variant's name (S($field)). Here the only discriminant is
 #      typePtr, an address, which names no variant. So the field is read as
 #      raw bytes (16 = size of the largest variant) and the wanted view is applied.
@@ -90,21 +90,21 @@ type def {Tcl_ObjAs({string}rep)} {
 if {[info exists argv0] && [file tail $argv0] eq "tcl_obj.tcl"} {
     set oct [binary format {w w w w w w} \
         2 0x5000 11 0x7000 0x9000 0x9100]
-    set o [file binary decode Tcl_Obj $oct]
-    puts "sizeof Tcl_Obj = [file binary sizeof Tcl_Obj]"
+    set o [type binary decode Tcl_Obj $oct]
+    puts "sizeof Tcl_Obj = [type binary {sizeof?}Tcl_Obj]"
     puts "refCount=$o(refCount) length=$o(length)"
     puts [format "bytes=0x%x typePtr=0x%x" $o(bytes) $o(typePtr)]
-    set v [file binary decode rep_twoPtrValue $o(internalRep)]
+    set v [type binary decode rep_twoPtrValue $o(internalRep)]
     puts [format "twoPtr: ptr1=0x%x ptr2=0x%x" $v(ptr1) $v(ptr2)]
     # aller-retour / round trip
-    puts "aller-retour: [expr {[file binary encode Tcl_Obj $o] eq $oct}]"
+    puts "aller-retour: [expr {[type binary encode Tcl_Obj $o] eq $oct}]"
 
     # la somme directement, par paramètre / the sum directly, by parameter
-    puts "sizeof Tcl_ObjAs(twoPtrValue) = [file binary sizeof {Tcl_ObjAs(twoPtrValue)}]"
-    set t [file binary decode {Tcl_ObjAs(twoPtrValue)} $oct]
+    puts "sizeof Tcl_ObjAs(twoPtrValue) = [type binary {sizeof?}{Tcl_ObjAs(twoPtrValue)}]"
+    set t [type binary decode {Tcl_ObjAs(twoPtrValue)} $oct]
     puts [format "internalRep.twoPtrValue.ptr2 = 0x%x" \
         $t(internalRep.twoPtrValue.ptr2)]
-    puts "aller-retour: [expr {[file binary encode {Tcl_ObjAs(twoPtrValue)} $t] eq $oct}]"
-    set w [file binary decode {Tcl_ObjAs(wideValue)} $oct]
+    puts "aller-retour: [expr {[type binary encode {Tcl_ObjAs(twoPtrValue)} $t] eq $oct}]"
+    set w [type binary decode {Tcl_ObjAs(wideValue)} $oct]
     puts "wideValue = $w(internalRep.wideValue.wideValue)"
 }

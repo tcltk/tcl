@@ -1,0 +1,71 @@
+--- a/generic/tclTypes.c	2026-10-18 01:55:49.299057591 +0200
++++ b/generic/tclTypes.c	2026-10-18 01:55:49.301554824 +0200
+@@ -493,9 +493,9 @@
+ 	tp->binBase = (elem->binBase != NULL) ? elem->binBase : elem;
+ 	Tcl_SetHashValue(hPtr, tp);
+ 	{
+-	    /* FR : l'adresse d'un lien de frontière (file binary -linkdepth) :
++	    /* FR : l'adresse d'un lien de frontière (type binary -linkdepth) :
+ 	     *      la position absolue de la cible, annotée par ce type.
+-	     * EN : the address of a frontier link (file binary -linkdepth):
++	     * EN : the address of a frontier link (type binary -linkdepth):
+ 	     *      the target's absolute position, annotated with this type. */
+ 
+ 	    Tcl_DString rs;
+@@ -2664,7 +2664,7 @@
+ 
+ /* Un lien qui se retrouve lui-même dans sa propre cible (liste chaînée,
+  * arbre) : la seconde occurrence est la représentation {linkref NOM}, que
+- * file binary développe à la demande. */
++ * type binary développe à la demande. */
+ 
+ static int
+ LinkRepr(
+--- a/generic/tclTypedVar.c	2026-10-18 01:55:49.303470534 +0200
++++ b/generic/tclTypedVar.c	2026-10-18 01:55:49.305578917 +0200
+@@ -579,14 +579,14 @@
+  *	produit doit la respecter dès sa construction, sans attendre l'encodage
+  *	binaire. L'expression est évaluée avec les valeurs des champs
+  *	qu'elle cite ($n...). Les affectations ultérieures champ par champ ne sont
+- *	pas contrôlées (un état intermédiaire est légitime) : file binary vérifie
++ *	pas contrôlées (un état intermédiaire est légitime) : type binary vérifie
+  *	à nouveau à l'écriture.
+  *
+  *	A list field whose element count is an expression over other fields
+  *	(list($n).T) carries a constraint between fields: the product value must
+  *	satisfy it as soon as it is built, without waiting for the binary
+  *	encoding. Later field-by-field assignments are not checked (an intermediate
+- *	state is legitimate); file binary checks again when writing.
++ *	state is legitimate); type binary checks again when writing.
+  */
+ 
+ static int
+@@ -677,7 +677,7 @@
+ 	}
+ 	if (k != TCL_OK || Tcl_GetWideIntFromObj(NULL,
+ 		Tcl_GetObjResult(interp), &want) != TCL_OK) {
+-	    Tcl_ResetResult(interp);	/* file binary jugera à l'écriture */
++	    Tcl_ResetResult(interp);	/* type binary jugera à l'écriture */
+ 	    continue;
+ 	}
+ 	Tcl_ResetResult(interp);
+--- a/generic/tclTypes.h	2026-10-18 01:55:49.307328775 +0200
++++ b/generic/tclTypes.h	2026-10-18 01:55:49.309583952 +0200
+@@ -46,7 +46,7 @@
+ } TclTypeKind;
+ 
+ /* Représentation binaire d'un type (int(u|s,n), double(n), string(enc,N|z),
+- * bitarray(n)) : ce que `type binary` décrit et que `file binary` lit/écrit. */
++ * bitarray(n)) : ce que `type binary` décrit, lit et écrit. */
+ enum {
+     TCLBIN_NONE = 0, TCLBIN_UINT, TCLBIN_SINT, TCLBIN_FLOAT, TCLBIN_BYTES,
+     TCLBIN_STR, TCLBIN_CSTRING
+@@ -58,7 +58,7 @@
+ };
+ 
+ /* Taille, nombre ou position qui dépend de la valeur lue ailleurs (niveau 2 de
+- * `file binary`) : un préfixe, ou une expression Tcl avec des $champ. */
++ * `type binary`) : un préfixe, ou une expression Tcl avec des $champ. */
+ enum {
+     TCLDYN_PREFIX = 1,		/* string(utf-8,int(u,16,be)), list(int(u,8)).T */
+     TCLDYN_EXPR			/* string(raw,$len), list($n).T, at($off).T */

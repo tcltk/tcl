@@ -17,4 +17,4 @@ typee_ok: toto
 typee_refus: ERREUR expected integer but got "toto"
 cast_refus: ERREUR value "300" does not fit in int(u,8)
 cast_ok: 300
-nom_inconnu: ERREUR unknown type "inconnu"
+nom_inconnu: toto

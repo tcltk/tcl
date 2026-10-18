@@ -1,6 +1,6 @@
 # niveau2.tcl --
 #
-# FR : Démonstration du niveau 2 de « file binary » : des tailles, des nombres
+# FR : Démonstration du niveau 2 de « type binary » : des tailles, des nombres
 #      et des positions LUS DANS LE FICHIER, et des sommes dont la variante
 #      est choisie par un champ. Toujours AUCUNE syntaxe de plus : c'est la
 #      notation $champ des types paramétrés, dans les arguments du type.
@@ -8,7 +8,7 @@
 #        2. ELF : la table des sections et des segments, avec at($shoff) ;
 #        3. un protocole à messages : la variante dépend du champ type, la
 #           taille du champ len.
-# EN : Demonstration of level 2 of "file binary": sizes, counts and positions
+# EN : Demonstration of level 2 of "type binary": sizes, counts and positions
 #      READ FROM THE FILE, and sums whose variant is chosen by a field. Still
 #      NO extra syntax: it is the $field notation of parameterized types, in
 #      the arguments of the type.
@@ -69,7 +69,7 @@ if {[string range $debut 0 1] eq "MZ"} {
 	{mz}magic = MZ; {string(raw,58)}stub = [string repeat \x00 58];
 	{u32}lfanew; {at($lfanew).pe}nt
     }
-    set x [file binary read $f exe]
+    set x [chan binary read $f exe]
     set nt $x(nt)
     puts "en-tête PE à l'offset $x(lfanew) / PE header at offset $x(lfanew)"
     puts [format "machine 0x%x, %d sections, en-tête facultatif de %d octets / optional header of %d bytes" \
@@ -83,7 +83,7 @@ if {[string range $debut 0 1] eq "MZ"} {
     # EN : re-encoding: the PE header region is identical byte for byte
     seek $f 0
     set orig [::read $f [expr {$x(lfanew) + 24 + $nt(optsize) + 40 * $nt(nsec)}]]
-    set neuf [file binary encode exe $x]
+    set neuf [type binary encode exe $x]
     puts "aller-retour de l'en-tête PE / PE header round trip : [expr {[string range $orig $x(lfanew) end] eq [string range $neuf $x(lfanew) end]}]"
 } elseif {$debut eq "\x7fELF"} {
     puts "=== 2. ELF : [file tail $chemin] ==="
@@ -108,7 +108,7 @@ if {[string range $debut 0 1] eq "MZ"} {
 	{at($phoff).list($phnum).phdr}segments;
 	{at($shoff).list($shnum).shdr}sections
     }
-    set e [file binary read $f elf]
+    set e [chan binary read $f elf]
     puts "$e(phnum) segments, $e(shnum) sections"
     # FR : les noms sont des chaînes terminées par NUL dans la section shstrndx
     # EN : names are NUL-terminated strings in section shstrndx
@@ -117,7 +117,7 @@ if {[string range $debut 0 1] eq "MZ"} {
     set tout [::read $f [file size $chemin]]
     set n 0
     foreach s $e(sections) {
-	set nom [file binary decode string(utf-8,z) $tout -offset [expr {$strsec(offset) + $s(nom)}]]
+	set nom [type binary decode string(utf-8,z) $tout -offset [expr {$strsec(offset) + $s(nom)}]]
 	if {[incr n] <= 8} {
 	    puts [format "  %-18s type=%-2d offset=0x%06x taille/size=0x%x" $nom $s(genre) $s(offset) $s(taille)]
 	}
@@ -146,24 +146,24 @@ type def message {{u8}type; {u16be}len; {corps($type)}body}
 
 set {utilisateur}u nom "Léa" age 31
 set {message}m1 type 1 len 6 body {1}$u
-set b1 [file binary encode message $m1]
+set b1 [type binary encode message $m1]
 puts "utilisateur : [hex $b1]"
-set d [file binary decode message $b1]
+set d [type binary decode message $b1]
 puts "  décodé / decoded: [type get $d(body)] nom=$d(body.1.nom) age=$d(body.1.age)"
 
 set {pingmsg}pg numero 4242
 set {message}m2 type 2 len 4 body {2}$pg
-set b2 [file binary encode message $m2]
+set b2 [type binary encode message $m2]
 puts "ping        : [hex $b2]"
-set d2 [file binary decode message $b2]
+set d2 [type binary decode message $b2]
 puts "  décodé / decoded: [type get $d2(body)] numero=$d2(body.2.numero)"
 
 set {message}m3 type 3 len 5 body {3}hello
-set b3 [file binary encode message $m3]
+set b3 [type binary encode message $m3]
 puts "données     : [hex $b3]"
-puts "  décodé / decoded: [file binary decode message $b3]"
+puts "  décodé / decoded: [type binary decode message $b3]"
 
 # FR : l'étiquette et la variante doivent concorder / tag and variant must agree
 set {message}m4 type 2 len 6 body {1}$u
-if {[catch {file binary encode message $m4} msg]} {puts "refus / refused : $msg"}
-if {[catch {file binary decode message "\x09\x00\x00"} msg]} {puts "refus / refused : $msg"}
+if {[catch {type binary encode message $m4} msg]} {puts "refus / refused : $msg"}
+if {[catch {type binary decode message "\x09\x00\x00"} msg]} {puts "refus / refused : $msg"}

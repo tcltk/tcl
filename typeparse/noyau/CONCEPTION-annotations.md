@@ -81,14 +81,15 @@ propre).
   (`set x {-v}$mot` est aujourd'hui accepté, annotation ignorée).
 * `type binary` : **fait** (patch `types-binaires-type-binary-annote.patch`, test t46) :
   `type binary {what?}T`, `{is?}T $data ?-exact 1?`, `{sizeof?}T`, avec `encode`, `decode`,
-  `deref`, `space` comme verbes d'action. Reste le renommage de `file binary` (alias gardé).
+  `deref`, `space` comme verbes d'action. Renommage fait : `type binary` / `chan binary` (patch types-binaires-nom-type-binary), `file binary` reste en alias.
+  `set x {-v}$mot` est refusé (patch types-binaires-set-annotation-locale, t47).
 * Une annotation locale survit-elle à `Tcl_DuplicateObj` ? À vérifier avant de la donner
   à lire à une commande C (`Tcl_GetAnnotation`).
 * Unifier types nominaux et annotations (notes qui suivent la valeur) : voir §6.
 
 ## 6. Piste décidée sur le papier : unifier types nominaux et annotations
 
-Non codée. Elle prolonge §4 : le correctif d'aujourd'hui n'en est que la moitié (les
+Codée en prototype (patch types-binaires-notes, t48) : voir §6.7. Elle prolonge §4 : le correctif d'aujourd'hui n'en est que la moitié (les
 annotations qui ne sont pas des noms restent éphémères).
 
 ### 6.1 Principe
@@ -206,3 +207,34 @@ Ouvert :
 * une note sans type résolu (`@mm`) : `T` vide est-il un état légitime, ou une note force-t-elle
   `string` ? ;
 * le nom de la commande de lecture (`note`), face à une vue de `type` (p. ex. `type layers`).
+
+### 6.7 Prototype codé (patch types-binaires-notes, test t48)
+
+Décisions de l'auteur : **pas d'empilage** `{a}{b}$x` (on annote une valeur déjà annotée) ;
+`{#}` (commentaire du parseur) reste à part.
+
+Fait :
+
+* **Objet à deux listes.** Sans note, `ptr2` reste T seul (aucun coût). Avec notes, c'est un
+  objet « annotstate » immuable et partagé `{T, N}` (T peut être NULL : note seule `@mm`).
+  `Tcl_DuplicateObj` partage l'état.
+* **Poser une note** : `{nom}$x` où `nom` ne se résout pas (ni type, ni variante, ni caractère
+  local) ajoute `nom` à N et garde le type résolu. Une annotation littérale `{mm}5` non
+  résolue est vue comme une note par `type get`, `note` et par l'adoption.
+* **Cast** (`{T}$x`, `T` défini) : le type change, les **notes sont gardées**. `lset` aussi.
+  `{}$x` retire le type, garde les notes.
+* **Adoption** : une variable non typée garde une note seule (avant : `unknown type "mm"`).
+  Une variable typée qui reçoit un nom inconnu refuse toujours (`unknown type`), réponse
+  provisoire à la question ouverte « effacer ou refuser ».
+* **Consommation** : une note seule se lit comme un nom à la consommation (la plus récente) :
+  `type def` donne donc un sens à des notes déjà posées. Une note qui nomme une variante de la
+  somme cible garde son rôle (`{d}$v`).
+* **Commandes** : `note get V` (notes jointes par « . », de la plus ancienne à la plus récente),
+  `note has V nom`, `note delete V ?nom?` (rend la valeur sans la note, ou sans aucune).
+* **Affichage** : `type get V` rend `list<int>@mm.hello` (type résolu, `@`, notes) ; sans note
+  il rend le type seul comme avant ; sans type, `@mm`.
+
+Pas fait : `{@}$x`, note par élément d'une liste typée (la note est sur la liste entière),
+effacement des notes par un `set {T}a` sur variable typée (elles sont perdues, comme
+`port` → `int`), uniformisation « un nominal s'efface toujours vers sa base » (6.5).
+Seule la note la plus récente est lue comme nom à la consommation.

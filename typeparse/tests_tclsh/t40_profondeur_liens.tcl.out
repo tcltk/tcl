@@ -11,11 +11,11 @@
 0105000000
 0905000000
 --- un calcul perd l'annotation / arithmetic drops the annotation
-1: file binary deref: "5" is not a link left by -linkdepth (its type is "")
+1: type binary deref: "5" is not a link left by -linkdepth (its type is "")
 --- erreurs / errors
 1: bad link depth "-2": must be a non-negative integer or Inf
 1: bad link depth "abc": must be a non-negative integer or Inf
-1: file binary deref: "5" is not a link left by -linkdepth (its type is "")
+1: type binary deref: "5" is not a link left by -linkdepth (its type is "")
 --- liste chaînée / linked list
 10 {11 {12 {}}}
 10 2
@@ -25,5 +25,5 @@ cellule 0 : x=10
 cellule 1 : x=11
 cellule 2 : x=12
 --- un cycle / a cycle
-1: file binary: link cycle at offset 2 (field next of N)
+1: type binary: link cycle at offset 2 (field next of N)
 10 {11 {11 {11 2}}}

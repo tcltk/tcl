@@ -16,25 +16,25 @@ type def S {{pa}x, {pb}y}
 
 # 1. S(nom) directement / directly
 type def Q {{S(y)}s}
-set q [file binary decode Q "\x01\x02"]
+set q [type binary decode Q "\x01\x02"]
 puts "$q [type get $q(s)] $q(s.y.d)"
-puts [hex [file binary encode Q $q]]
-puts [file binary sizeof Q]
-attempt {file binary decode Q "\x01"}
+puts [hex [type binary encode Q $q]]
+puts [type binary {sizeof?}Q]
+attempt {type binary decode Q "\x01"}
 
 # 2. par paramètre de valeur / by value parameter
 type def {R({string}v)} {{u8}k; {S($v)}s}
-set rx [file binary decode {R(x)} "\x07\x01\x02"]
-puts "x: $rx [file binary sizeof {R(x)}] [type get $rx(s)]"
-puts [hex [file binary encode {R(x)} $rx]]
-set ry [file binary decode {R(y)} "\x07\x01\x02"]
-puts "y: $ry [file binary sizeof {R(y)}] [type get $ry(s)]"
-puts [hex [file binary encode {R(y)} $ry]]
-attempt {file binary decode {R(zz)} "\x07\x01\x02"}
+set rx [type binary decode {R(x)} "\x07\x01\x02"]
+puts "x: $rx [type binary {sizeof?}{R(x)}] [type get $rx(s)]"
+puts [hex [type binary encode {R(x)} $rx]]
+set ry [type binary decode {R(y)} "\x07\x01\x02"]
+puts "y: $ry [type binary {sizeof?}{R(y)}] [type get $ry(s)]"
+puts [hex [type binary encode {R(y)} $ry]]
+attempt {type binary decode {R(zz)} "\x07\x01\x02"}
 
 # 3. variante qui ne va pas / wrong variant
-attempt {file binary encode {R(y)} $rx}
+attempt {type binary encode {R(y)} $rx}
 
 # 4. sélecteur par champ inchangé / field selector unchanged
 type def F {{u8}k; {S($k)}s}
-attempt {file binary sizeof F}
+attempt {type binary {sizeof?}F}

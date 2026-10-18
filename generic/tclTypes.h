@@ -46,7 +46,7 @@ typedef enum {
 } TclTypeKind;
 
 /* Représentation binaire d'un type (int(u|s,n), double(n), string(enc,N|z),
- * bitarray(n)) : ce que `type binary` décrit et que `file binary` lit/écrit. */
+ * bitarray(n)) : ce que `type binary` décrit, lit et écrit. */
 enum {
     TCLBIN_NONE = 0, TCLBIN_UINT, TCLBIN_SINT, TCLBIN_FLOAT, TCLBIN_BYTES,
     TCLBIN_STR, TCLBIN_CSTRING
@@ -58,7 +58,7 @@ enum {
 };
 
 /* Taille, nombre ou position qui dépend de la valeur lue ailleurs (niveau 2 de
- * `file binary`) : un préfixe, ou une expression Tcl avec des $champ. */
+ * `type binary`) : un préfixe, ou une expression Tcl avec des $champ. */
 enum {
     TCLDYN_PREFIX = 1,		/* string(utf-8,int(u,16,be)), list(int(u,8)).T */
     TCLDYN_EXPR			/* string(raw,$len), list($n).T, at($off).T */
@@ -205,6 +205,10 @@ extern const Tcl_ObjType *const TclAnnotatedObjTypePtr;
 int	TclAnnotSetContent(Tcl_Interp *interp, Tcl_Obj *aPtr, Tcl_Obj *wPtr);
 
 struct Tcl_Token;
+Tcl_Obj	*TclAnnotNotes(Tcl_Obj *objPtr);
+Tcl_Obj	*TclAnnotNormalize(Tcl_Interp *interp, Tcl_Obj *objPtr);
+int	TclAnnotIsNoteOnly(Tcl_Obj *objPtr);
+Tcl_Obj	*TclAnnotDisplay(Tcl_Interp *interp, Tcl_Obj *objPtr);
 int	TclAnnotSuffixIsLiteral(struct Tcl_Token *tokenPtr, Tcl_Size count);
 int	TclAnnotateValue(Tcl_Interp *interp, Tcl_Obj *typeText, Tcl_Obj *value,
 	    Tcl_Obj **resultPtr);
@@ -212,6 +216,7 @@ int	TclAnnotateValue(Tcl_Interp *interp, Tcl_Obj *typeText, Tcl_Obj *value,
 /* tclCompAnnot.c */
 struct Tcl_Parse;
 int	TclHasAnnotatedWord(Tcl_Parse *parsePtr);
+Tcl_Obj *TclAnnotLocalWordText(Tcl_Interp *interp, struct Tcl_Token *wordTokenPtr);
 void	TclVecAdd(TclObjVec *vec, Tcl_Obj *objPtr);
 void	TclVecFree(TclObjVec *vec);
 void	TclDiscard(Tcl_Obj *objPtr);

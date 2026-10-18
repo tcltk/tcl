@@ -3,7 +3,7 @@
 Commandes : `mini::add`, `mini::reverse`, `mini::objinfo_raw` (liste), `mini::objinfo` (valeur annotée de type `objinfo`, fabriquée par `minidll.tcl`), `mini::peek` (voir `minidll.c`).
 `mini::objinfo` donne les champs réels d'un `Tcl_Obj` (adresse, `refCount`, `bytes`, `length`,
 `typePtr`, nom du type) ; `mini::peek` relit des octets du processus : on peut ainsi comparer
-`tcl_obj.tcl` (`file binary`, `memory://`) à la mémoire vivante.
+`tcl_obj.tcl` (`type binary`, `memory://`) à la mémoire vivante.
 
 ## Compiler
 

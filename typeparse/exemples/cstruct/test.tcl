@@ -13,13 +13,13 @@ proc check {label cond} {
 puts "--- 1. La disposition : le compilateur C et nos types décrivent les mêmes octets"
 set c [cs::layout]
 check "sizeof Sample : C=[dict get $c sizeof(Sample)]" \
-    {[file binary sizeof Sample -align natural] == [dict get $c sizeof(Sample)]}
+    {[type binary {sizeof?}Sample -align natural] == [dict get $c sizeof(Sample)]}
 check "sizeof Summary : C=[dict get $c sizeof(Summary)]" \
-    {[file binary sizeof Summary -align natural] == [dict get $c sizeof(Summary)]}
+    {[type binary {sizeof?}Summary -align natural] == [dict get $c sizeof(Summary)]}
 # FR : décalages mesurés côté Tcl en encodant des valeurs repères
 # EN : offsets measured on the Tcl side by encoding landmark values
 proc offsetOf {type probe marker} {
-    set bytes [file binary encode $type $probe -align natural]
+    set bytes [type binary encode $type $probe -align natural]
     return [string first $marker $bytes]
 }
 set s [set {Sample}p id 0xAABBCCDD value 0.0 flags 0xEE]
@@ -38,7 +38,7 @@ puts "--- 2. Tcl -> C : un lot de mesures construit en Tcl"
 set {Batch}b n 5 items {
     {1 20.5 0} {2 18.0 0} {3 99.9 1} {4 22.5 0} {5 19.0 0}
 }
-puts "type : [type get $b]   taille encodée : [string length [file binary encode Batch $b -align natural]] octets"
+puts "type : [type get $b]   taille encodée : [string length [type binary encode Batch $b -align natural]] octets"
 set r1 [cs::stats $b]
 set r2 [cs::stats_typed $b]
 puts "voie rapide (octets)  : $r1"
@@ -71,7 +71,7 @@ proc attempt {script} {
     puts "  $c: [lindex [split $r \n] 0]"
 }
 puts "- un Batch encodé sans -align natural (disposition packed) :"
-attempt {cs::stats_raw [file binary encode Batch $b]}
+attempt {cs::stats_raw [type binary encode Batch $b]}
 puts "- une valeur qui n'est pas un Batch :"
 attempt {cs::stats_obj [set {Sample}z id 1 value 2.0 flags 0]}
 attempt {cs::stats_obj {n 1 items {}}}

@@ -1,7 +1,8 @@
 # filebinary.tcl --
 #
-# FR : « file binary » : lecture et écriture de valeurs typées dans des
-#      fichiers (ou canaux) binaires, en pur Tcl au-dessus du noyau.
+# FR : « type binary » et « chan binary » : lecture et écriture de valeurs typées
+#      dans des octets en mémoire, des fichiers ou des canaux binaires, en pur Tcl
+#      au-dessus du noyau. (L'ancien nom « file binary » reste un alias.)
 #
 #      AUCUNE syntaxe supplémentaire : la représentation binaire d'un champ
 #      est portée par son TYPE, comme bitarray(n) porte déjà sa largeur.
@@ -41,8 +42,9 @@
 #      Le remplissage vaut zéro à l'écriture et est ignoré à la lecture, sauf
 #      avec -strictpad 1.
 #
-# EN : "file binary": reading and writing typed values in binary files (or
-#      channels), in pure Tcl on top of the core.
+# EN : "type binary" and "chan binary": reading and writing typed values in bytes
+#      held in memory, binary files or channels, in pure Tcl on top of the core.
+#      (The former name "file binary" remains as an alias.)
 #
 #      NO extra syntax: the binary representation of a field is carried by
 #      its TYPE, just as bitarray(n) already carries its width. The core
@@ -75,12 +77,12 @@
 #
 # Commandes / Commands :
 #
-#   file binary read   CHANNEL TYPE ?-endian little|big? ?-align A? ?-strictpad B?
-#   file binary write  CHANNEL TYPE VALUE ?-endian E? ?-align A?
-#   file binary decode TYPE BYTES ?-offset N? ?-endian E? ?-consumed VAR?
+#   chan binary read   CHANNEL TYPE ?-endian little|big? ?-align A? ?-strictpad B?
+#   chan binary write  CHANNEL TYPE VALUE ?-endian E? ?-align A?
+#   type binary decode TYPE BYTES ?-offset N? ?-endian E? ?-consumed VAR?
 #                                 ?-align A? ?-strictpad B?
-#   file binary encode TYPE VALUE ?-endian E? ?-align A?
-#   file binary sizeof TYPE ?-align A?
+#   type binary encode TYPE VALUE ?-endian E? ?-align A?
+#   type binary {sizeof?}TYPE ?-align A?
 #
 #   A : packed (défaut / default), natural, ou une puissance de deux / or a power of two
 
@@ -228,7 +230,7 @@ proc ::fb::skipPad {sName al ctx what} {
     if {$n == 0} return
     set got [take s $n "padding before $what"]
     if {[dict get $ctx strict] && $got ne [string repeat \x00 $n]} {
-	error "file binary: non-zero padding at offset [expr {$s(pos) - $n}] before $what"
+	error "type binary: non-zero padding at offset [expr {$s(pos) - $n}] before $what"
     }
 }
 
@@ -263,7 +265,7 @@ proc ::fb::evalExpr {text scope what} {
 	    expr $__text
 	}} $text $scope
     } r]} {
-	error "file binary: cannot compute \"$text\" for $what: $r"
+	error "type binary: cannot compute \"$text\" for $what: $r"
     }
     return $r
 }
@@ -282,7 +284,7 @@ proc ::fb::tagValue {a ctx what verb} {
 	return [dict get $scope $a]
     }
     if {[regexp {^[A-Za-z_][A-Za-z0-9_]*$} $a]} {
-	error "file binary: tag field $a of $what has not been $verb"
+	error "type binary: tag field $a of $what has not been $verb"
     }
     return [evalExpr "\$$a" $scope $what]
 }
@@ -303,7 +305,7 @@ proc ::fb::readSize {spec sName ctx what} {
 	set n [evalExpr $arg [dict get $ctx scope] $what]
     }
     if {![string is integer -strict $n] || $n < 0} {
-	error "file binary: the size or count of $what is \"$n\", not a natural number"
+	error "type binary: the size or count of $what is \"$n\", not a natural number"
     }
     return $n
 }
@@ -319,7 +321,7 @@ proc ::fb::writeSize {spec n ctx what outName} {
     } else {
 	set want [evalExpr $arg [dict get $ctx scope] $what]
 	if {$want != $n} {
-	    error "file binary: $what holds $n, but the field it depends on says $want ($arg)"
+	    error "type binary: $what holds $n, but the field it depends on says $want ($arg)"
 	}
     }
 }
@@ -374,7 +376,7 @@ proc ::fb::originSpace {origin} {
 proc ::fb::spaceLookup {name what} {
     variable spaces
     if {![dict exists $spaces $name]} {
-	error "file binary: unknown space \"$name\" ($what)"
+	error "type binary: unknown space \"$name\" ($what)"
     }
     return [dict get $spaces $name]
 }
@@ -386,7 +388,7 @@ proc ::fb::spaceTarget {name kind addr what} {
     set segs $sp(segments)
     if {$kind eq "memory"} {
 	if {[llength $segs] == 0} {
-	    error "file binary: space \"$name\" has no segments: memory://$name/ needs a space made by \"file binary space memory\" ($what)"
+	    error "type binary: space \"$name\" has no segments: memory://$name/ needs a space made by \"type binary space memory\" ($what)"
 	}
 	foreach seg $segs {
 	    lassign $seg vaddr offset size
@@ -394,10 +396,10 @@ proc ::fb::spaceTarget {name kind addr what} {
 		return [expr {$sp(base) + $offset + $addr - $vaddr}]
 	    }
 	}
-	error [format "file binary: unmapped address 0x%x in space \"%s\" (%s)" $addr $name $what]
+	error [format "type binary: unmapped address 0x%x in space \"%s\" (%s)" $addr $name $what]
     }
     if {[llength $segs] != 0} {
-	error "file binary: space \"$name\" is a memory area: write memory://$name/ ($what)"
+	error "type binary: space \"$name\" is a memory area: write memory://$name/ ($what)"
     }
     return [expr {$sp(base) + $addr}]
 }
@@ -412,12 +414,12 @@ proc ::fb::spaceAddress {name kind pos what} {
 	    set rel [expr {$pos - $sp(base) - $offset}]
 	    if {$rel >= 0 && $rel < $size} {return [expr {$vaddr + $rel}]}
 	}
-	error "file binary: position $pos is outside the segments of space \"$name\" ($what)"
+	error "type binary: position $pos is outside the segments of space \"$name\" ($what)"
     }
     return [expr {$pos - $sp(base)}]
 }
 
-# --- file binary space ...
+# --- type binary space ...
 proc ::fb::spaceMake {data segs args} {
     variable spaces
     set o [dict create -base 0 -name ""]
@@ -440,7 +442,7 @@ proc ::fb::spaceMake {data segs args} {
     eval "set {space}sp data \$data base \$base segments \$segs$extra"
     set nm $sp(name)
     if {[dict exists $spaces $nm]} {
-	error "file binary: space \"$nm\" already exists (use \"file binary space delete $nm\")"
+	error "type binary: space \"$nm\" already exists (use \"type binary space delete $nm\")"
     }
     dict set spaces $nm $sp
     return $sp
@@ -452,7 +454,7 @@ proc ::fb::spaceFile {data args} {
 
 proc ::fb::spaceMemory {data segments args} {
     if {[llength $segments] == 0} {
-	error "file binary space memory: -segments needs at least one {address offset size}"
+	error "type binary space memory: -segments needs at least one {address offset size}"
     }
     foreach seg $segments {
 	if {[llength $seg] != 3} {
@@ -469,7 +471,7 @@ proc ::fb::spaceMemory {data segments args} {
 
 proc ::fb::spaceDelete {name} {
     variable spaces
-    if {![dict exists $spaces $name]} {error "file binary space delete: unknown space \"$name\""}
+    if {![dict exists $spaces $name]} {error "type binary space delete: unknown space \"$name\""}
     set spaces [dict remove $spaces $name]
     return
 }
@@ -480,7 +482,7 @@ proc ::fb::spaceList {} {
 }
 
 proc ::fb::spaceGet {name} {
-    return [spaceLookup $name "file binary space get"]
+    return [spaceLookup $name "type binary space get"]
 }
 
 namespace eval ::fb {
@@ -508,7 +510,7 @@ proc ::fb::originPos {origin starts here top what} {
     set n [expr {[string length $origin] / 3}]
     set i [expr {[llength $starts] - 1 - $n}]
     if {$i < 0} {
-	error "file binary: $what uses the origin $origin, but it is not nested that deep"
+	error "type binary: $what uses the origin $origin, but it is not nested that deep"
     }
     return [lindex $starts $i]
 }
@@ -541,7 +543,7 @@ proc ::fb::linkRead {r sName ctx what} {
     }
     set target [expr {[originPos $a [dict get $info starts] $here $s(base) $what] + $off}]
     if {$target < $s(base)} {
-	error "file binary: the target of $what is at $target, before the start of the data"
+	error "type binary: the target of $what is at $target, before the start of the data"
     }
     dict set info target $target
     return $info
@@ -553,7 +555,7 @@ proc ::fb::linkNull {info ctx what} {
     variable nullLink
     if {[dict get $info e] ne ""} {return [mkSum [dict get $info e] none ""]}
     if {![dict getdef $ctx nullOk 0]} {
-	error "file binary: $what is a null link (give the field a default value, or make the target an opt(...))"
+	error "type binary: $what is a null link (give the field a default value, or make the target an opt(...))"
     }
     return $nullLink
 }
@@ -604,7 +606,7 @@ proc ::fb::linkFollow {info sName ctx what} {
     set spName [dict getdef $info space ""]
     set key [expr {$spName eq "" ? $target : "$spName@$target"}]
     if {$depth < 0 && $key in $chain} {
-	error "file binary: link cycle at offset $target ($what)"
+	error "type binary: link cycle at offset $target ($what)"
     }
     set saved [array get s]
     if {$spName ne ""} {
@@ -675,7 +677,7 @@ proc ::fb::flushLinks {outName ctx} {
 	}
 	set rel [expr {$tpos - $origin}]
 	if {$rel < 0 && [lindex $repr 0] eq "uint"} {
-	    error "file binary: the target of $what is at $tpos, before its origin ($origin): use a signed address"
+	    error "type binary: the target of $what is at $tpos, before its origin ($origin): use a signed address"
 	}
 	set bytes ""
 	enc $repr $rel $ctx "address of $what" bytes
@@ -715,7 +717,7 @@ proc ::fb::take {sName n what} {
 	set got [::read $s(chan) $n]
     }
     if {[string length $got] < $n} {
-	error "file binary: data truncated at offset $s(pos) reading $what (needs $n bytes, got [string length $got])"
+	error "type binary: data truncated at offset $s(pos) reading $what (needs $n bytes, got [string length $got])"
     }
     incr s(pos) $n
     return $got
@@ -730,7 +732,7 @@ proc ::fb::takez {sName w what} {
 	set i $s(pos)
 	while 1 {
 	    set j [string first $zero $s(data) $i]
-	    if {$j < 0} {error "file binary: unterminated string at offset $s(pos) reading $what"}
+	    if {$j < 0} {error "type binary: unterminated string at offset $s(pos) reading $what"}
 	    if {($j - $s(pos)) % $w == 0} break
 	    set i [expr {$j + 1}]
 	}
@@ -741,7 +743,7 @@ proc ::fb::takez {sName w what} {
     set got ""
     while {1} {
 	set c [::read $s(chan) $w]
-	if {[string length $c] < $w} {error "file binary: unterminated string at offset $s(pos) reading $what"}
+	if {[string length $c] < $w} {error "type binary: unterminated string at offset $s(pos) reading $what"}
 	incr s(pos) $w
 	if {$c eq $zero} break
 	append got $c
@@ -791,7 +793,7 @@ proc ::fb::dec {r sName ctx what} {
 	    # EN : the value is elsewhere; the sequential cursor does not move
 	    set off [evalExpr $a [dict get $ctx scope] $what]
 	    if {![string is integer -strict $off] || $off < 0} {
-		error "file binary: position of $what is \"$off\""
+		error "type binary: position of $what is \"$off\""
 	    }
 	    set save $s(pos)
 	    set s(pos) [expr {$s(base) + $off}]
@@ -815,7 +817,7 @@ proc ::fb::dec {r sName ctx what} {
 		    return [mkSum $c $vname [dec $vrepr s $ctx "variant $vname of $what"]]
 		}
 	    }
-	    error "file binary: tag $tag of $what matches no variant of $c"
+	    error "type binary: tag $tag of $what matches no variant of $c"
 	}
 	product {
 	    # a = nom du type, b = champs {nom repr avecdefaut}
@@ -830,7 +832,7 @@ proc ::fb::dec {r sName ctx what} {
 		set frepr [unref $frepr]
 		if {$frepr eq "none"} {
 		    if {$hasdef} continue
-		    error "file binary: field $fname of $a has no binary representation and no default value"
+		    error "type binary: field $fname of $a has no binary representation and no default value"
 		}
 		skipPad s [alignOf $frepr $ctx] $ctx "field $fname of $a"
 		if {!$mine} {
@@ -881,7 +883,7 @@ proc ::fb::dec {r sName ctx what} {
 	    return $V
 	}
     }
-    error "file binary: unsupported representation \"$r\""
+    error "type binary: unsupported representation \"$r\""
 }
 
 # ---------------------------------------------------------------------------
@@ -960,14 +962,14 @@ proc ::fb::enc {r value ctx what outName} {
 		    set origin [originPos $a [dict getdef $ctx starts {}] $here 0 $what]
 		    set rel [expr {[string range $value 0 end] - $origin}]
 		    if {$rel < 0 && [lindex $b 0] eq "uint"} {
-			error "file binary: the target of $what is at $value, before its origin ($origin): use a signed address"
+			error "type binary: the target of $what is at $value, before its origin ($origin): use a signed address"
 		    }
 		}
 		enc $b $rel $ctx "address of $what" out
 		return
 	    }
 	    if {[originSpace $a] ne ""} {
-		error "file binary: cannot write the target of $what into the space [lindex [originSpace $a] 0]: leave the link unfollowed (-linkdepth 0) to rewrite its address"
+		error "type binary: cannot write the target of $what into the space [lindex [originSpace $a] 0]: leave the link unfollowed (-linkdepth 0) to rewrite its address"
 	    }
 	    if {$e ne ""} {
 		set tg [type get $value]
@@ -977,7 +979,7 @@ proc ::fb::enc {r value ctx what outName} {
 		    return
 		}
 		if {$vname ne "some"} {
-		    error "file binary: $what is a $tg, not an opt value (some or none)"
+		    error "type binary: $what is a $tg, not an opt value (some or none)"
 		}
 		set payload $value(some)
 	    } else {
@@ -997,11 +999,11 @@ proc ::fb::enc {r value ctx what outName} {
 	    set tg [type get $value]
 	    set prefix "$c."
 	    if {[string first $prefix $tg] != 0} {
-		error "file binary: $what is a $tg, not a $c"
+		error "type binary: $what is a $tg, not a $c"
 	    }
 	    set vname [string range $tg [string length $prefix] end]
 	    if {![tagEq $tag $vname]} {
-		error "file binary: selector $a is $tag but $what holds variant $vname of $c"
+		error "type binary: selector $a is $tag but $what holds variant $vname of $c"
 	    }
 	    foreach vr $b {
 		lassign $vr n vrepr
@@ -1011,7 +1013,7 @@ proc ::fb::enc {r value ctx what outName} {
 		    return
 		}
 	    }
-	    error "file binary: $c has no variant $vname"
+	    error "type binary: $c has no variant $vname"
 	}
 	product {
 	    set scope [dict get $ctx scope]
@@ -1024,7 +1026,7 @@ proc ::fb::enc {r value ctx what outName} {
 		set frepr [unref $frepr]
 		if {$frepr eq "none"} {
 		    if {$hasdef} continue
-		    error "file binary: field $fname of $a has no binary representation and no default value"
+		    error "type binary: field $fname of $a has no binary representation and no default value"
 		}
 		putPad out [alignOf $frepr $ctx]
 		if {!$mine} {
@@ -1059,7 +1061,7 @@ proc ::fb::enc {r value ctx what outName} {
 	    }
 	    putPad out [alignOf $r $ctx]
 	}
-	default {error "file binary: unsupported representation \"$r\""}
+	default {error "type binary: unsupported representation \"$r\""}
     }
 }
 
@@ -1072,10 +1074,10 @@ proc ::fb::sizeAt {r off ctx} {
     switch $kind {
 	uint - sint - float - bits - lit {return [expr {$off + $a}]}
 	bytes - str {
-	    if {![isFixed $a]} {error "file binary sizeof: the size depends on the data ($kind)"}
+	    if {![isFixed $a]} {error "type binary sizeof?: the size depends on the data ($kind)"}
 	    return [expr {$off + $a}]
 	}
-	cstring {error "file binary sizeof: variable size (string(...,z))"}
+	cstring {error "type binary sizeof?: variable size (string(...,z))"}
 	tagged {
 	    # FR : sélecteur constant (=nom, paramètre de type) : taille connue
 	    # EN : constant selector (=name, type parameter): size is known
@@ -1085,11 +1087,11 @@ proc ::fb::sizeAt {r off ctx} {
 		    lassign $vr vname vrepr
 		    if {[tagEq $tag $vname]} {return [sizeAt $vrepr $off $ctx]}
 		}
-		error "file binary: tag $tag matches no variant of $c"
+		error "type binary: tag $tag matches no variant of $c"
 	    }
-	    error "file binary sizeof: the size depends on the data ($kind)"
+	    error "type binary sizeof?: the size depends on the data ($kind)"
 	}
-	at {error "file binary sizeof: the size depends on the data ($kind)"}
+	at {error "type binary sizeof?: the size depends on the data ($kind)"}
 	link {
 	    # FR : la taille EN PLACE : celle de l'adresse ; la cible est ailleurs
 	    # EN : the size IN PLACE: that of the address; the target is elsewhere
@@ -1098,7 +1100,7 @@ proc ::fb::sizeAt {r off ctx} {
 	    return [sizeAt $b $off $ctx]
 	}
 	array {
-	    if {![isFixed $a]} {error "file binary sizeof: the element count depends on the data"}
+	    if {![isFixed $a]} {error "type binary sizeof?: the element count depends on the data"}
 	    for {set i 0} {$i < $a} {incr i} {set off [sizeAt $b $off $ctx]}
 	    return $off
 	}
@@ -1108,7 +1110,7 @@ proc ::fb::sizeAt {r off ctx} {
 		set frepr [unref $frepr]
 		if {$frepr eq "none"} {
 		    if {$hasdef} continue
-		    error "file binary: field $fname of $a has no binary representation and no default value"
+		    error "type binary: field $fname of $a has no binary representation and no default value"
 		}
 		incr off [padFor $off [alignOf $frepr $ctx]]
 		set off [sizeAt $frepr $off $ctx]
@@ -1120,7 +1122,7 @@ proc ::fb::sizeAt {r off ctx} {
 }
 
 # ---------------------------------------------------------------------------
-# FR : Les commandes « file binary ... »   /   EN: The "file binary ..." commands
+# FR : Les commandes « type binary ... » et « chan binary ... »   /   EN: The "type binary ..." and "chan binary ..." commands
 # ---------------------------------------------------------------------------
 
 proc ::fb::options {argv known} {
@@ -1190,7 +1192,7 @@ proc ::fb::deref {value args} {
     }
     set tp [type get $value]
     if {[string index $tp 0] ne "&"} {
-	error "file binary deref: \"$value\" is not a link left by -linkdepth (its type is \"$tp\")"
+	error "type binary deref: \"$value\" is not a link left by -linkdepth (its type is \"$tp\")"
     }
     set o [options [concat {-linkdepth 0} $args] {-offset -endian -align -strictpad -linkdepth}]
     set r [repr [string range $tp 1 end]]
@@ -1204,7 +1206,7 @@ proc ::fb::deref {value args} {
 	array set s [list kind str data $spv(data) pos [string range $value 0 end] base $spv(base) origin 0]
     } else {
 	if {[info exists noData]} {
-	    error "file binary deref: the link \"$tp\" is anonymous: DATA is required"
+	    error "type binary deref: the link \"$tp\" is anonymous: DATA is required"
 	}
 	array set s [list kind str data $data pos [string range $value 0 end] base $off origin 0]
     }
@@ -1308,18 +1310,31 @@ proc ::fb::isvalid {type data args} {
     return 1
 }
 
-# FR : « file binary » est un sous-ensemble de « file » ; la même table
-#      servira plus tard à « chan binary » (read/write sur les canaux).
-# EN : "file binary" is a subensemble of "file"; the same table will later
-#      serve "chan binary" (read/write on channels).
+# FR : « type binary » (octets en mémoire : decode encode deref space, plus les
+#      interrogations {what?} {sizeof?} {is?} traitées par le noyau) et
+#      « chan binary » (read write sur un canal). L'ancien « file binary »
+#      garde toute la table, par compatibilité.
+# EN : "type binary" (bytes in memory: decode encode deref space, plus the
+#      {what?} {sizeof?} {is?} questions handled by the core) and "chan binary"
+#      (read write on a channel). The former "file binary" keeps the whole
+#      table, for compatibility.
 namespace eval ::fb {
     namespace ensemble create -command ::fb::filebinary -map {
 	read ::fb::readChan write ::fb::writeChan decode ::fb::decode
 	encode ::fb::encode sizeof ::fb::sizeof deref ::fb::deref
 	space ::fb::spaceCmd
     }
+    namespace ensemble create -command ::fb::chanbinary -map {
+	read ::fb::readChan write ::fb::writeChan
+    }
 }
+# FR : « type binary » est une commande du noyau : elle passe decode, encode,
+#      deref et space à ::fb::filebinary (voir TypeBinaryCmd).
+# EN : "type binary" is a core command: it hands decode, encode, deref and
+#      space to ::fb::filebinary (see TypeBinaryCmd).
+namespace ensemble configure chan -map \
+	[dict merge [namespace ensemble configure chan -map] {binary ::fb::chanbinary}]
 namespace ensemble configure file -map \
 	[dict merge [namespace ensemble configure file -map] {binary ::fb::filebinary}]
 
-package provide filebinary 0.7
+package provide filebinary 0.8

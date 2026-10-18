@@ -108,6 +108,20 @@ TclTypedVarPrepareWrite(Tcl_Interp *interp, Var *varPtr,
 	if (!TclIsAnnotated(value)) {
 	    return TCL_OK;
 	}
+	{
+	    /* Un nom qui ne se résout pas est une NOTE : la variable la garde. */
+	    Tcl_Obj *norm = TclAnnotNormalize(interp, value);
+
+	    if (TclAnnotIsNoteOnly(norm)) {
+		if (norm != value) {
+		    Tcl_IncrRefCount(norm);
+		    *valuePtrPtr = norm;
+		    *tmpPtrPtr = norm;
+		}
+		return TCL_OK;
+	    }
+	    TclDiscard(norm == value ? NULL : norm);
+	}
 	if (TclAnnotResolve(interp, value, NULL, &status, &at, &avar, &content)
 		!= TCL_OK) {
 	    return TCL_ERROR;
@@ -579,14 +593,14 @@ ProductFieldTag(Tcl_Interp *interp, TclType *tp, Tcl_Obj *arg,
  *	produit doit la respecter dès sa construction, sans attendre l'encodage
  *	binaire. L'expression est évaluée avec les valeurs des champs
  *	qu'elle cite ($n...). Les affectations ultérieures champ par champ ne sont
- *	pas contrôlées (un état intermédiaire est légitime) : file binary vérifie
+ *	pas contrôlées (un état intermédiaire est légitime) : type binary vérifie
  *	à nouveau à l'écriture.
  *
  *	A list field whose element count is an expression over other fields
  *	(list($n).T) carries a constraint between fields: the product value must
  *	satisfy it as soon as it is built, without waiting for the binary
  *	encoding. Later field-by-field assignments are not checked (an intermediate
- *	state is legitimate); file binary checks again when writing.
+ *	state is legitimate); type binary checks again when writing.
  */
 
 static int
@@ -677,7 +691,7 @@ CheckDynCounts(Tcl_Interp *interp, TclType *tp, Tcl_Obj **slot)
 	}
 	if (k != TCL_OK || Tcl_GetWideIntFromObj(NULL,
 		Tcl_GetObjResult(interp), &want) != TCL_OK) {
-	    Tcl_ResetResult(interp);	/* file binary jugera à l'écriture */
+	    Tcl_ResetResult(interp);	/* type binary jugera à l'écriture */
 	    continue;
 	}
 	Tcl_ResetResult(interp);

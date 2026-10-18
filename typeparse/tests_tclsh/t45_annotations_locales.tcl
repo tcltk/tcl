@@ -35,12 +35,16 @@ essai conteneur    {set l [list {-v}$mot]; set c [lindex $l 0]; set c}
 essai catch        {catch {r1 {-v}$mot} res; set res}
 
 # 4. La variable ne devient pas typée à cause de l'annotation locale.
-essai non_typee    {set x {-v}$mot; list $x [type get x]}
+proc rangee {v} {set x $v; list $x [type get x]}
+proc rangee_s {v} {set {string}s $v; set s}
+proc rangee_i {v} {set {int}n $v}
+essai non_typee    {rangee {-v}$mot}
 
 # 5. Une annotation locale sur une variable typée n'est pas un type non
 #    plus : le contenu est validé comme si elle n'existait pas.
-essai typee_ok     {set {string}s {-v}$mot; set s}
-essai typee_refus  {set {int}n {-v}$mot}
+essai typee_ok     {rangee_s {-v}$mot}
+essai typee_refus  {rangee_i {-v}$mot}
+# (écrite directement sur la valeur d'un set, elle est refusée : voir t47)
 
 # 6. Un vrai type, lui, garde son effet (cast sur une substitution).
 set n 300

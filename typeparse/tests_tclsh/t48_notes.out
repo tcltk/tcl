@@ -1,0 +1,44 @@
+-- l'exemple de CONCEPTION 6.3
+mm list<int>@mm
+px list<int>@px
+sans note
+A: list<int>@mm
+essai: list<int>@mm.hello / mm.hello
+L reste: list<int>
+-- note has / delete
+has_mm: 0 1
+has_px: 0 0
+B: 0 list<int>@mm.hello
+del_un: 0 list<int>@hello
+del_tout: 0 list<int>
+del_rien: 0 list<int>
+contenu: 0 10 20 30 40
+-- valeur ordinaire, note seule
+note_seule: 0 @mm
+litterale: 0 @mm
+litt_note: 0 mm
+litt_type: 0 int
+litt_notenote: 0 
+-- une variable non typée garde la note
+adopte: 0 @mm mm 3
+adopte_lit: 0 @mm mm 3
+-- une variable typée refuse un nom inconnu
+typee: 1 unknown type "mm"
+-- {} retire le type, pas les notes
+vide: 0 @mm
+-- le cast garde les notes
+cast: 0 list<int>@mm
+X_string: 0 string@mm
+-- type def donne un sens à la note
+N_type: 0 mm2
+apres_def: 0 mmdef
+-- lset garde la note
+lset: 0 list<int>@mm {99 20 30 40}
+-- copie : les notes suivent
+copie: 0 list<int>@mm
+string: 0 
+-- erreurs
+usage1: 1 wrong # args: should be "note get|has|delete value ?name?"
+usage2: 1 wrong # args: should be "note get|has|delete value ?name?"
+usage3: 1 wrong # args: should be "note get|has|delete value ?name?"
+local: 0 -v

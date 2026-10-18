@@ -1,0 +1,8 @@
+top: 1 local annotation {-v} cannot be stored by "set": it only applies between a caller and the command it calls
+question: 1 local annotation {what?} cannot be stored by "set": it only applies between a caller and the command it calls
+typed: 1 local annotation {-v} cannot be stored by "set": it only applies between a caller and the command it calls
+nominal: 0 abc
+inproc: 1 local annotation {-v} cannot be stored by "set": it only applies between a caller and the command it calls
+evalstr: 1 local annotation {-v} cannot be stored by "set": it only applies between a caller and the command it calls
+heritee: abc 3
+valide: 5 int

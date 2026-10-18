@@ -26,18 +26,18 @@ proc cs::init {{lib ""}} {
 # EN : fast path: the product is encoded in the C layout and read as is by C;
 #      the result comes back as an annotated Summary product.
 proc cs::stats {batch} {
-    set bytes [file binary encode Batch $batch -align natural]
-    return [file binary decode Summary [cs::stats_raw $bytes] -align natural]
+    set bytes [type binary encode Batch $batch -align natural]
+    return [type binary decode Summary [cs::stats_raw $bytes] -align natural]
 }
 
 # FR : voie « objet » : C reçoit la valeur annotée elle-même.
 # EN : "object" path: C receives the annotated value itself.
 proc cs::stats_typed {batch} {
-    return [file binary decode Summary [cs::stats_obj $batch] -align natural]
+    return [type binary decode Summary [cs::stats_obj $batch] -align natural]
 }
 
 # FR : C fabrique un Batch ; Tcl le relit comme produit annoté.
 # EN : C builds a Batch; Tcl reads it back as an annotated product.
 proc cs::make {n seed} {
-    return [file binary decode Batch [cs::generate $n $seed] -align natural]
+    return [type binary decode Batch [cs::generate $n $seed] -align natural]
 }

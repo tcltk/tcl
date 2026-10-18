@@ -1,4 +1,4 @@
-# file binary — niveau 1 / level 1
+# type binary — niveau 1 / level 1
 
 **FR** — `filebinary.tcl` (pur Tcl) lit et écrit des valeurs typées dans des fichiers ou canaux
 binaires. **Aucune syntaxe de plus** : la représentation binaire d'un champ est portée par son
@@ -12,11 +12,11 @@ core patch `noyau/types-binaires.patch`; `type binary T` describes the represent
     source binaliases.tcl                       ;# u16be = int(u,16,be), u32be, f64le ... (alias courts)
     type def tcp {{u16be}src; {u16be}dst; ... {bitarray(16,msb0,be)}flags; ...}
 
-    file binary read   CANAL TYPE ?-endian E?
-    file binary write  CANAL TYPE VALEUR ?-endian E?
-    file binary decode TYPE OCTETS ?-offset N? ?-endian E? ?-consumed VAR?
-    file binary encode TYPE VALEUR ?-endian E?
-    file binary sizeof TYPE
+    chan binary read   CANAL TYPE ?-endian E?
+    chan binary write  CANAL TYPE VALEUR ?-endian E?
+    type binary decode TYPE OCTETS ?-offset N? ?-endian E? ?-consumed VAR?
+    type binary encode TYPE VALEUR ?-endian E?
+    type binary {sizeof?}TYPE
 
 Le canal est mis en mode binaire le temps de l'appel puis rétabli / the channel is put in binary
 mode for the call, then restored. La même table servira à `chan binary` / the same table will
