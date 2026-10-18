@@ -35,6 +35,7 @@
 #include "tclInt.h"
 #include "tclTomMath.h"
 #include "tclStringRep.h"
+#include <math.h>
 
 /*
  * Prototypes for functions defined later in this file:
@@ -2494,6 +2495,27 @@ Tcl_AppendFormatToObj(
 		/* TODO: Figure out ACCEPT_NAN here */
 		goto error;
 	    }
+	    if (isinf(d)) {
+		/*
+		 * Format infinities ourselves, as C99 specifies, since some C
+		 * runtimes (msvcrt) print "1.#INF". The "0" flag pads with
+		 * spaces. [Bug 2dff98e079]
+		 */
+
+		TclNewObj(segment);
+		allocSegment = 1;
+		if (d < 0) {
+		    Tcl_AppendToObj(segment, "-", 1);
+		} else if (gotPlus) {
+		    Tcl_AppendToObj(segment, "+", 1);
+		} else if (gotSpace) {
+		    Tcl_AppendToObj(segment, " ", 1);
+		}
+		Tcl_AppendToObj(segment,
+			(ch == 'A' || ch == 'E' || ch == 'G') ? "INF" : "inf", 3);
+		gotZero = 0;
+		break;
+	    }
 	    *p++ = '%';
 	    if (gotMinus) {
 		*p++ = '-';
@@ -2556,7 +2578,7 @@ Tcl_AppendFormatToObj(
 	    if (ch == 'A') {
 		/*
 		 * Lowercase the "0X" prefix and the "P" exponent marker. The
-		 * prefix may follow padding or a sign, and is absent for Inf.
+		 * prefix may follow padding or a sign.
 		 */
 
 		char *q = strstr(TclGetString(segment), "0X");
