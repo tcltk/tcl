@@ -82,7 +82,7 @@ typedef struct GetsState {
     int charsWrote;		/* The corresponding number of UTF-8
 				 * characters appended to objPtr during the
 				 * last call to FilterInputBytes(). */
-    int totalChars;		/* The total number of UTF-8 characters
+    Tcl_Size totalChars;	/* The total number of UTF-8 characters
 				 * appended to objPtr so far, just before the
 				 * last call to FilterInputBytes(). */
 } GetsState;
@@ -210,7 +210,7 @@ static int		FilterInputBytes(Channel *chanPtr,
 			    GetsState *statePtr);
 static int		FlushChannel(Tcl_Interp *interp, Channel *chanPtr,
 			    int calledFromAsyncFlush);
-static int		TclGetsObjBinary(Tcl_Channel chan, Tcl_Obj *objPtr);
+static Tcl_Size	TclGetsObjBinary(Tcl_Channel chan, Tcl_Obj *objPtr);
 static Tcl_Encoding	GetBinaryEncoding(void);
 static void		FreeBinaryEncoding(void);
 static Tcl_HashTable *	GetChannelTable(Tcl_Interp *interp);
@@ -4628,8 +4628,8 @@ Tcl_GetsObj(
     ChannelState *statePtr = chanPtr->state;
 				/* State info for channel */
     ChannelBuffer *bufPtr;
-    int inEofChar, skip, copiedTotal, oldFlags, oldRemoved;
-    Tcl_Size oldLength;
+    int inEofChar, skip, oldFlags, oldRemoved;
+    Tcl_Size copiedTotal, oldLength;
     Tcl_Encoding encoding;
     char *dst, *dstEnd, *eol, *eof;
     Tcl_EncodingState oldState;
@@ -4841,7 +4841,7 @@ Tcl_GetsObj(
 			 */
 
 			if (eol != eof) {
-			    int offset;
+			    Tcl_Size offset;
 
 			    offset = eol - objPtr->bytes;
 			    dst = dstEnd;
@@ -5068,7 +5068,7 @@ Tcl_GetsObj(
  *---------------------------------------------------------------------------
  */
 
-static int
+static Tcl_Size
 TclGetsObjBinary(
     Tcl_Channel chan,		/* Channel from which to read. */
     Tcl_Obj *objPtr)		/* The line read will be appended to this
@@ -5078,8 +5078,8 @@ TclGetsObjBinary(
     ChannelState *statePtr = chanPtr->state;
 				/* State info for channel */
     ChannelBuffer *bufPtr;
-    int inEofChar, skip, copiedTotal, oldFlags, oldRemoved;
-    Tcl_Size rawLen, byteLen = 0, oldLength;
+    int inEofChar, skip, oldFlags, oldRemoved;
+    Tcl_Size copiedTotal, rawLen, byteLen = 0, oldLength;
     int eolChar;
     unsigned char *dst, *dstEnd, *eol, *eof, *byteArray;
 
@@ -5392,7 +5392,8 @@ FilterInputBytes(
 				/* State info for channel */
     ChannelBuffer *bufPtr;
     char *raw, *dst;
-    int offset, toRead, dstNeeded, spaceLeft, result, rawLen;
+    int toRead, dstNeeded, result, rawLen;
+    Tcl_Size offset, spaceLeft;
     Tcl_Obj *objPtr;
 #define ENCODING_LINESIZE 20	/* Lower bound on how many bytes to convert at
 				 * a time. Since we don't know a priori how
@@ -5474,8 +5475,10 @@ FilterInputBytes(
     dstNeeded = toRead * TCL_UTF_MAX;
     spaceLeft = objPtr->length - offset;
     if (dstNeeded > spaceLeft) {
-	int length = offset + ((offset < dstNeeded) ? dstNeeded : offset);
+	Tcl_Size length = (offset < dstNeeded) ? dstNeeded : offset;
 
+	length = (length > TCL_SIZE_MAX - offset) ? TCL_SIZE_MAX
+		: offset + length;
 	if (Tcl_AttemptSetObjLength(objPtr, length) == 0) {
 	    length = offset + dstNeeded;
 	    if (Tcl_AttemptSetObjLength(objPtr, length) == 0) {

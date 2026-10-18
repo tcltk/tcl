@@ -1147,6 +1147,53 @@ test puts-bigdata-2 "puts" -setup {
     set written
 } -result {2345—}
 
+proc bigGetsFile {len eol} {
+    set fpath [makeFile {} gets-bigdata.data]
+    set fd [open $fpath w]
+    fconfigure $fd -translation binary
+    puts -nonewline $fd [testbigdata string $len]$eol
+    puts -nonewline $fd end\n
+    close $fd
+    return $fpath
+}
+test gets-bigdata-1 "gets of a line over 2 GB, bug \[69b4f7eb37\]" -setup {
+    set fd [open [bigGetsFile 0x80000001 \n]]
+} -constraints {
+    bigdata
+} -body {
+    list [gets $fd line] [string range $line end-4 end] [gets $fd]
+} -cleanup {
+    close $fd
+    unset -nocomplain line
+    removeFile gets-bigdata.data
+} -result {2147483649 45678 end}
+test gets-bigdata-2 "gets of a line over 2 GB, binary, bug \[69b4f7eb37\]" -setup {
+    set fd [open [bigGetsFile 0x80000001 \n]]
+    fconfigure $fd -translation binary
+} -constraints {
+    bigdata
+} -body {
+    list [gets $fd line] [string range $line end-4 end] [gets $fd]
+} -cleanup {
+    close $fd
+    unset -nocomplain line
+    removeFile gets-bigdata.data
+} -result {2147483649 45678 end}
+test gets-bigdata-3 "gets of a line over 2 GB, CR at the end of a buffer, bug \[69b4f7eb37\]" -setup {
+    # The \r is the last byte of a 4096-byte channel buffer.
+    set fd [open [bigGetsFile 0x80000fff \r\n]]
+    fconfigure $fd -translation auto -buffersize 4096
+} -constraints {
+    bigdata
+} -body {
+    list [gets $fd line] [string range $line end-4 end] [gets $fd]
+} -cleanup {
+    close $fd
+    unset -nocomplain line
+    removeFile gets-bigdata.data
+} -result {2147487743 89012 end}
+rename bigGetsFile {}
+
 test source-bigdata-1 "source" -setup {
     # This test crashes because the frame linenumber tracking
     # wraps around at INT_MAX
