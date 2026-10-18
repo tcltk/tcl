@@ -3537,6 +3537,8 @@ Tcl_LsearchObjCmd(
 
 	    TclListObjGetElements(NULL, objv[objc - 2], &listc, &listv);
 	    break;
+	default:
+	    TCL_UNREACHABLE();
 	}
     } else {
 	patternBytes = TclGetStringFromObj(patObj, &length);
@@ -3616,6 +3618,8 @@ Tcl_LsearchObjCmd(
 		    match = 1;
 		}
 		break;
+	    default:
+		TCL_UNREACHABLE();
 	    }
 	    if (match == 0) {
 		/*
@@ -3732,6 +3736,8 @@ Tcl_LsearchObjCmd(
 		    }
 		    match = (objDouble == patDouble);
 		    break;
+		default:
+		    TCL_UNREACHABLE();
 		}
 		break;
 
@@ -3750,6 +3756,8 @@ Tcl_LsearchObjCmd(
 		    goto done;
 		}
 		break;
+	    default:
+		TCL_UNREACHABLE();
 	    }
 
 	    /*
