@@ -1,5 +1,7 @@
 # Manuel des types annotés — chapitres
 
+> **Remplacé par la documentation complète `doc/ANNOTATIONS.fr.md`** (et ses traductions `doc/ANNOTATIONS.{en,de,nl,es,pt,it}.md`). Ce fichier et les `MANUAL.*.md` restent pour l'historique.
+
 *(Ce fichier accueille les chapitres du manuel au fur et à mesure ; les notes
 de patch restent dans `noyau/LISEZMOI.md`.)*
 
