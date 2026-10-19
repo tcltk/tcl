@@ -3117,7 +3117,11 @@ TclLsetFlat(
 		if (Tcl_IsShared(subListObj)) {
 		    subListObj = Tcl_DuplicateObj(subListObj);
 		}
+
+		/* It may be held only by a cache that is freed. [Bug 526b01c0b9] */
+		Tcl_IncrRefCount(subListObj);
 		TclListObjSetElement(NULL, parentList, index, subListObj);
+		Tcl_DecrRefCount(subListObj);
 		if (Tcl_IsShared(subListObj)) {
 		    subListObj = Tcl_DuplicateObj(subListObj);
 		    TclListObjSetElement(NULL, parentList, index, subListObj);
