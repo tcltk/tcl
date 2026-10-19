@@ -2140,13 +2140,21 @@ Tcl_ConcatObj(
  *----------------------------------------------------------------------
  */
 
-int
-Tcl_StringCaseMatch(
+/*
+ * The static helpers return 1 for a match, 0 for no match and -1 if the
+ * string ran out before the pattern: then no outer '*' can do better by
+ * consuming more characters, so retrying stops. This keeps the matching time
+ * polynomial instead of exponential. [Bug a4a7f2abd3]
+ */
+
+static int
+StringCaseMatch(
     const char *str,		/* String. */
     const char *pattern,	/* Pattern, which may contain special
 				 * characters. */
     int nocase)			/* 0 for case sensitive, 1 for insensitive */
 {
+    int result;
     Tcl_Size charLen;
     int p, ch1 = 0, ch2 = 0;
 
@@ -2163,7 +2171,7 @@ Tcl_StringCaseMatch(
 	    return *str == '\0';
 	}
 	if ((*str == '\0') && (p != '*')) {
-	    return 0;
+	    return -1;
 	}
 
 	/*
@@ -2232,11 +2240,12 @@ Tcl_StringCaseMatch(
 			}
 		    }
 		}
-		if (Tcl_StringCaseMatch(str, pattern, nocase)) {
-		    return 1;
+		result = StringCaseMatch(str, pattern, nocase);
+		if (result != 0) {
+		    return result;
 		}
 		if (*str == '\0') {
-		    return 0;
+		    return -1;
 		}
 		str += TclUtfToUniChar(str, &ch1);
 	    }
@@ -2356,6 +2365,16 @@ Tcl_StringCaseMatch(
 	}
     }
 }
+
+int
+Tcl_StringCaseMatch(
+    const char *str,		/* String. */
+    const char *pattern,	/* Pattern, which may contain special
+				 * characters. */
+    int nocase)			/* 0 for case sensitive, 1 for insensitive */
+{
+    return StringCaseMatch(str, pattern, nocase) == 1;
+}
 
 /*
  *----------------------------------------------------------------------
@@ -2377,8 +2396,8 @@ Tcl_StringCaseMatch(
  *----------------------------------------------------------------------
  */
 
-bool
-TclByteArrayMatch(
+static int
+ByteArrayMatch(
     const unsigned char *string,/* String. */
     Tcl_Size strLen,		/* Length of String */
     const unsigned char *pattern,
@@ -2387,6 +2406,7 @@ TclByteArrayMatch(
     Tcl_Size ptnLen,		/* Length of Pattern */
     TCL_UNUSED(int) /*flags*/)
 {
+    int result;
     const unsigned char *stringEnd, *patternEnd;
     unsigned char p;
 
@@ -2405,7 +2425,7 @@ TclByteArrayMatch(
 	}
 	p = *pattern;
 	if ((string == stringEnd) && (p != '*')) {
-	    return false;
+	    return -1;
 	}
 
 	/*
@@ -2440,12 +2460,13 @@ TclByteArrayMatch(
 			string++;
 		    }
 		}
-		if (TclByteArrayMatch(string, stringEnd - string,
-			pattern, patternEnd - pattern, 0)) {
-		    return true;
+		result = ByteArrayMatch(string, stringEnd - string,
+			pattern, patternEnd - pattern, 0);
+		if (result != 0) {
+		    return result;
 		}
 		if (string == stringEnd) {
-		    return false;
+		    return -1;
 		}
 		string++;
 	    }
@@ -2532,6 +2553,19 @@ TclByteArrayMatch(
 	string++;
 	pattern++;
     }
+}
+
+bool
+TclByteArrayMatch(
+    const unsigned char *string,/* String. */
+    Tcl_Size strLen,		/* Length of String */
+    const unsigned char *pattern,
+				/* Pattern, which may contain special
+				 * characters. */
+    Tcl_Size ptnLen,		/* Length of Pattern */
+    int flags)
+{
+    return ByteArrayMatch(string, strLen, pattern, ptnLen, flags) == 1;
 }
 
 /*
