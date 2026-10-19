@@ -1296,9 +1296,16 @@ CopyFileAtts(
      * isn't currently handled. It would require another lstat(), or getuid().
      */
 
+    /*
+     * The target has just been created by us, so EPERM means that the
+     * filesystem cannot store the mode or the times (e.g. VFAT, or CIFS
+     * with a fixed owner). Keep the copy then, as cp(1) does.
+     * [Bug 1523045] [Bug 731062]
+     */
+
     if (chmod(dst, newMode)) {				/* INTL: Native. */
 	newMode &= ~(S_ISUID | S_ISGID);
-	if (chmod(dst, newMode)) {			/* INTL: Native. */
+	if (chmod(dst, newMode) && (errno != EPERM)) {	/* INTL: Native. */
 	    return TCL_ERROR;
 	}
     }
@@ -1306,7 +1313,7 @@ CopyFileAtts(
     tval.actime = Tcl_GetAccessTimeFromStat(statBufPtr);
     tval.modtime = Tcl_GetModificationTimeFromStat(statBufPtr);
 
-    if (utime(dst, &tval)) {				/* INTL: Native. */
+    if (utime(dst, &tval) && (errno != EPERM)) {		/* INTL: Native. */
 	return TCL_ERROR;
     }
 #ifdef MAC_OSX_TCL
