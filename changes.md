@@ -48,6 +48,7 @@ to the userbase.
 # Updated bundled packages, libraries, standards, data
  - http 2.10.3
  - msgcat 1.7.2
+ - tcl::idna 1.0.2
  - tzcode 2026e
 
 # Updated bundled packages, libraries, standards, data
