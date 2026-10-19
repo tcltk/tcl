@@ -151,6 +151,7 @@ static Tcl_ThreadDataKey dataKey;
 static void		AfterCleanupProc(void *clientData,
 			    Tcl_Interp *interp);
 static int		AfterDelay(Tcl_Interp *interp, Tcl_WideInt ms);
+static void		TimeAddMs(Tcl_Time *timePtr, Tcl_WideInt ms);
 static void		AfterProc(void *clientData);
 static void		FreeAfterPtr(AfterInfo *afterPtr);
 static AfterInfo *	GetAfterEvent(AfterAssocData *assocPtr,
@@ -862,12 +863,7 @@ Tcl_AfterObjCmd(
 	afterPtr->id = tsdPtr->afterId;
 	tsdPtr->afterId += 1;
 	Tcl_GetTime(&wakeup);
-	wakeup.sec += ms / 1000;
-	wakeup.usec += ms % 1000 * 1000;
-	if (wakeup.usec > 1000000) {
-	    wakeup.sec++;
-	    wakeup.usec -= 1000000;
-	}
+	TimeAddMs(&wakeup, ms);
 	afterPtr->token = TclCreateAbsoluteTimerHandler(&wakeup,
 		AfterProc, afterPtr);
 	afterPtr->nextPtr = assocPtr->firstAfterPtr;
@@ -983,6 +979,45 @@ Tcl_AfterObjCmd(
 /*
  *----------------------------------------------------------------------
  *
+ * TimeAddMs --
+ *
+ *	Add a non-negative number of milliseconds to a time. The result
+ *	saturates instead of overflowing the millisecond arithmetic of
+ *	TCL_TIME_DIFF_MS. [Bug 1802895]
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Modifies *timePtr.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+TimeAddMs(
+    Tcl_Time *timePtr,
+    Tcl_WideInt ms)
+{
+    /* Keep (t1.sec - t2.sec) * 1000 in TCL_TIME_DIFF_MS from overflowing. */
+    const long long maxSec = WIDE_MAX / 1000 - 1;
+
+    if (ms / 1000 >= maxSec - timePtr->sec) {
+	timePtr->sec = maxSec;
+	timePtr->usec = 0;
+	return;
+    }
+    timePtr->sec += ms / 1000;
+    timePtr->usec += (ms % 1000) * 1000;
+    if (timePtr->usec >= 1000000) {
+	timePtr->sec++;
+	timePtr->usec -= 1000000;
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * AfterDelay --
  *
  *	Implements the blocking delay behaviour of [after $time]. Tricky
@@ -1010,12 +1045,7 @@ AfterDelay(
 
     Tcl_GetTime(&now);
     endTime = now;
-    endTime.sec += (ms / 1000);
-    endTime.usec += (ms % 1000) * 1000;
-    if (endTime.usec >= 1000000) {
-	endTime.sec++;
-	endTime.usec -= 1000000;
-    }
+    TimeAddMs(&endTime, ms);
 
     do {
 	if (Tcl_AsyncReady()) {
