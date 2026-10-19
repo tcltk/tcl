@@ -9502,3 +9502,5 @@ Many code fixes to avoid overflow or undefined behavior.  Thanks chrstphrchvz.
 2026-10-18 on Unix, Tcl_JoinThread() should not call pthread_join() for detached threads (storchaka)
 
 2026-10-19 http.test: use a port just released by the OS (storchaka)
+
+2026-10-19 zlib-8.3 and zlib-9.3 connected to localhost (storchaka)
