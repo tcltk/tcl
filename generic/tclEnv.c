@@ -707,6 +707,20 @@ EnvTraceProc(
 	const char *value = TclGetEnv(name2, &valueString);
 
 	if (value == NULL) {
+	    /*
+	     * If the variable was removed from the environment behind our
+	     * back (e.g. by another interpreter), drop the stale array element
+	     * so that [info exists] agrees with the read. [Bug 3602289]
+	     * [Bug 67fd4f973a] [Bug 845241] Leave undefined elements alone,
+	     * they may carry traces (bug [9b4702]).
+	     */
+
+	    Var *arrayPtr, *varPtr = TclLookupVar(interp, name1, name2, 0,
+		    NULL, /*createPart1*/ 0, /*createPart2*/ 0, &arrayPtr);
+
+	    if (varPtr != NULL && !TclIsVarUndefined(varPtr)) {
+		Tcl_UnsetVar2(interp, name1, name2, 0);
+	    }
 	    return (char *) "no such variable";
 	}
 	Tcl_SetVar2(interp, name1, name2, value, 0);
