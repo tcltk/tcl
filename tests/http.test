@@ -168,7 +168,14 @@ test http-3.2.$ThreadLevel {http::geturl} -returnCodes error -body {
 } -result {Unsupported URL: http:junk}
 
 set url //${::HOST}:$port
-set badurl //${::HOST}:[expr {$port+1}]
+# A port without a listener.  Not $port+1: where ports are allocated in
+# sequence (e.g. NetBSD), it can be that of the httpd started by the outer run.
+set badurl //${::HOST}:[apply {{} {
+    set s [socket -server {} 0]
+    set p [lindex [fconfigure $s -sockname] 2]
+    close $s
+    return $p
+}}]
 test http-3.3.$ThreadLevel {http::geturl} -body {
     set token [http::geturl $url]
     http::data $token

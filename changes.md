@@ -44,6 +44,7 @@ to the userbase.
  - [test portability for illumos: skip socket-14.19 where SO_REUSEPORT is not supported](https://core.tcl-lang.org/tcl/tktview/dbf988)
  - [lset with several indices on an abstract list (lseq) used a freed sublist](https://core.tcl-lang.org/tcl/tktview/526b01)
  - [lset errors during appending operation left original list modified](https://core.tcl-lang.org/tcl/tktview/301934)
+ - [http.test: use a port just released by the OS for badurl](https://core.tcl-lang.org/tcl/tktview/5350f3)
 
 # Updated bundled packages, libraries, standards, data
  - http 2.10.3
