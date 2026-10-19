@@ -1484,6 +1484,31 @@ test string-11.56.$noComp {string match, no exponential backtracking: bug a4a7f2
     unset -nocomplain res s p t c nocase
 } -result {0 1 0 1 0 1 0 1 0 1 0 1 1 1 0}
 
+test string-11.57.$noComp {string match, "-" before "]" is literal: bug 219233ffff} -body {
+    set res {}
+    foreach {p str} {{[.-]} - {[.-]} A {*[.-]*} 2.1-Beta {[a-z_/-]} \\
+	    {[a-]} \] {[A-]]} -\] {[A-]]} B {[]-]} -} {
+	lappend res [run {string match $p $str}]
+	lappend res [run {string match [binary format a* $p] [binary format a* $str]}]
+    }
+    set u \u0141
+    lappend res [run {string match "\[$u-\]" -}] [run {string match "\[$u-\]" \u0140}] \
+	[run {string match -nocase {[.-]} -}]
+} -cleanup {
+    unset -nocomplain res p str u
+} -result {1 1 0 0 1 1 0 0 0 0 1 1 0 0 1 1 1 0 1}
+test string-11.58.$noComp {string match, "]" first in a set is literal: bug 3556218fff} -body {
+    set res {}
+    foreach {p str} {{[]a]} \] {[]a]} a {[]a]} b {x[]]y} x\]y {[]-a]} ^ {[]-a]} b} {
+	lappend res [run {string match $p $str}]
+	lappend res [run {string match [binary format a* $p] [binary format a* $str]}]
+    }
+    set u \u0141
+    lappend res [run {string match "\[\]$u\]" $u}] [run {string match "\[\]$u\]" \]}] \
+	[run {string match -nocase {[]A]} a}]
+} -cleanup {
+    unset -nocomplain res p str u
+} -result {1 1 1 1 0 0 1 1 1 1 0 0 1 1 1}
 test stringComp-12.1.0.$noComp {Bug 3588366: end-offsets before start} {
     apply {s {
 	string range $s 0 end-5

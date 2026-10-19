@@ -295,6 +295,16 @@ and
 .QW a ),
 with \fB\-nocase\fR this is considered like {[A\-Za\-z]} (and
 probably what was meant in the first place).
+A \fB]\fR immediately after the opening \fB[\fR is taken as a member of
+the set rather than as its end, so {[]a]} matches
+.QW ]
+or
+.QW a .
+A \fB\-\fR right before the closing \fB]\fR is taken as a member of the
+set, so {[a\-]} matches
+.QW a
+or
+.QW \- .
 .IP \fB\e\fIx\fR 10
 Matches the single character \fIx\fR.  This provides a way of avoiding
 the special interpretation of the characters \fB*?[]\e\fR in

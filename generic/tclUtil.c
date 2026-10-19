@@ -2270,8 +2270,8 @@ StringCaseMatch(
 
 	if (p == '[') {
 	    int startChar = 0, endChar = 0;
+	    const char *setStart = ++pattern;
 
-	    pattern++;
 	    if (UCHAR(*str) < 0x80) {
 		ch1 = (int)
 			(nocase ? tolower(UCHAR(*str)) : UCHAR(*str));
@@ -2283,7 +2283,9 @@ StringCaseMatch(
 		}
 	    }
 	    while (1) {
-		if ((*pattern == ']') || (*pattern == '\0')) {
+		/* A "]" first in the set is a literal character. */
+		if (((*pattern == ']') && (pattern != setStart))
+			|| (*pattern == '\0')) {
 		    return 0;
 		}
 		if (UCHAR(*pattern) < 0x80) {
@@ -2296,7 +2298,7 @@ StringCaseMatch(
 			startChar = Tcl_UniCharToLower(startChar);
 		    }
 		}
-		if (*pattern == '-') {
+		if ((*pattern == '-') && (pattern[1] != ']')) {
 		    pattern++;
 		    if (*pattern == '\0') {
 			return 0;
@@ -2491,17 +2493,20 @@ ByteArrayMatch(
 
 	if (p == '[') {
 	    unsigned char ch1, startChar, endChar;
+	    const unsigned char *setStart = ++pattern;
 
-	    pattern++;
 	    ch1 = *string;
 	    string++;
 	    while (1) {
-		if ((*pattern == ']') || (pattern == patternEnd)) {
+		/* A "]" first in the set is a literal character. */
+		if (((*pattern == ']') && (pattern != setStart))
+			|| (pattern == patternEnd)) {
 		    return false;
 		}
 		startChar = *pattern;
 		pattern++;
-		if (*pattern == '-') {
+		if ((*pattern == '-') && ((pattern + 1 == patternEnd)
+			|| (pattern[1] != ']'))) {
 		    pattern++;
 		    if (pattern == patternEnd) {
 			return false;

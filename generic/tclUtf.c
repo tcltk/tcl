@@ -2382,18 +2382,20 @@ UniCharCaseMatch(
 
 	if (p == '[') {
 	    Tcl_UniChar startChar, endChar;
+	    const Tcl_UniChar *setStart = ++uniPattern;
 
-	    uniPattern++;
 	    ch1 = (nocase ? Tcl_UniCharToLower(*uniStr) : *uniStr);
 	    uniStr++;
 	    while (1) {
-		if ((*uniPattern == ']') || (*uniPattern == 0)) {
+		/* A "]" first in the set is a literal character. */
+		if (((*uniPattern == ']') && (uniPattern != setStart))
+			|| (*uniPattern == 0)) {
 		    return false;
 		}
 		startChar = (nocase ? Tcl_UniCharToLower(*uniPattern)
 			: *uniPattern);
 		uniPattern++;
-		if (*uniPattern == '-') {
+		if ((*uniPattern == '-') && (uniPattern[1] != ']')) {
 		    uniPattern++;
 		    if (*uniPattern == 0) {
 			return false;
@@ -2588,17 +2590,20 @@ UniCharMatch(
 
 	if (p == '[') {
 	    Tcl_UniChar ch1, startChar, endChar;
+	    const Tcl_UniChar *setStart = ++pattern;
 
-	    pattern++;
 	    ch1 = (nocase ? Tcl_UniCharToLower(*string) : *string);
 	    string++;
 	    while (1) {
-		if ((*pattern == ']') || (pattern == patternEnd)) {
+		/* A "]" first in the set is a literal character. */
+		if (((*pattern == ']') && (pattern != setStart))
+			|| (pattern == patternEnd)) {
 		    return false;
 		}
 		startChar = (nocase ? Tcl_UniCharToLower(*pattern) : *pattern);
 		pattern++;
-		if (*pattern == '-') {
+		if ((*pattern == '-') && ((pattern + 1 == patternEnd)
+			|| (pattern[1] != ']'))) {
 		    pattern++;
 		    if (pattern == patternEnd) {
 			return false;

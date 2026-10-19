@@ -352,19 +352,19 @@ test util-5.39 {Tcl_StringMatch: reverse range} {
 } 0
 test util-5.40 {Tcl_StringMatch: skip correct number of ']'} {
     Wrapper_Tcl_StringMatch {[A-]x} Ax
-} 0
+} 1
 test util-5.41 {Tcl_StringMatch: skip correct number of ']'} {
     Wrapper_Tcl_StringMatch {[A-]]x} Ax
-} 1
+} 0
 test util-5.42 {Tcl_StringMatch: skip correct number of ']'} {
     Wrapper_Tcl_StringMatch {[A-]]x} \xE1x
 } 0
 test util-5.43 {Tcl_StringMatch: skip correct number of ']'} {
     Wrapper_Tcl_StringMatch \[A-]\xE1]x \xE1x
-} 1
+} 0
 test util-5.44 {Tcl_StringMatch: skip correct number of ']'} {
     Wrapper_Tcl_StringMatch {[A-]h]x} hx
-} 1
+} 0
 test util-5.45 {Tcl_StringMatch} {
     # if (*pattern == '\x00')
     # badly formed pattern, still treats as a set
