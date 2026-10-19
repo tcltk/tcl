@@ -3088,36 +3088,42 @@ TclLsetFlat(
 	if (--indexCount) {
 	    parentList = subListObj;
 	    if (index == elemCount) {
+		/* 
+		 * Appending to the list so need to create a new sublist and
+		 * attach it. Further, in case of errors down the road, we
+		 * will need to delete this attached sublist so that original
+		 * value is preserved - Bug [3019348fff].
+		  */
 		TclNewObj(subListObj);
-	    } else {
-		subListObj = elemPtrs[index];
-	    }
-	    if (Tcl_IsShared(subListObj)) {
-		subListObj = Tcl_DuplicateObj(subListObj);
-	    }
-
-	    /*
-	     * Replace the original elemPtr[index] in parentList with a copy
-	     * we know to be unshared.  This call will also deal with the
-	     * situation where parentList shares its internalrep with other
-	     * Tcl_Obj's.  Dealing with the shared internalrep case can
-	     * cause subListObj to become shared again, so detect that case
-	     * and make and store another copy.
-	     */
-
-	    if (index == elemCount) {
 		Tcl_ListObjAppendElement(NULL, parentList, subListObj);
 		if (appendedTo == NULL) {
 		    appendedTo = parentList;
 		    appendedIndex = index;
 		}
+		/*
+		 * Newly allocated subListObj can't become shared so no need
+		 * for the additional checks as in the else clause below.
+		 */
 	    } else {
+		/*
+		 * Replace the original elemPtr[index] in parentList with a copy
+		 * we know to be unshared.  This call will also deal with the
+		 * situation where parentList shares its internalrep with other
+		 * Tcl_Obj's.  Dealing with the shared internalrep case can
+		 * cause subListObj to become shared again, so detect that case
+		 * and make and store another copy.
+		 */
+		subListObj = elemPtrs[index];
+		if (Tcl_IsShared(subListObj)) {
+		    subListObj = Tcl_DuplicateObj(subListObj);
+		}
 		TclListObjSetElement(NULL, parentList, index, subListObj);
+		if (Tcl_IsShared(subListObj)) {
+		    subListObj = Tcl_DuplicateObj(subListObj);
+		    TclListObjSetElement(NULL, parentList, index, subListObj);
+		}
 	    }
-	    if (Tcl_IsShared(subListObj)) {
-		subListObj = Tcl_DuplicateObj(subListObj);
-		TclListObjSetElement(NULL, parentList, index, subListObj);
-	    }
+	    LIST_ASSERT(!Tcl_IsShared(subListObj));
 
 	    /*
 	     * The TclListObjSetElement() calls do not spoil the string rep
@@ -3139,21 +3145,24 @@ TclLsetFlat(
     } while (indexCount > 0);
 
     /*
-     * Either we've detected and error condition, and exited the loop with
+     * Either we've detected an error condition, and exited the loop with
      * result == TCL_ERROR, or we've successfully reached the last index, and
-     * we're ready to store valueObj. On success, we need to invalidate
-     * the string representations of intermediate lists whose contained
-     * list element would have changed.
+     * we're ready to store valueObj.
      */
-    if (result != TCL_OK && appendedTo != NULL) {
+    if (result != TCL_OK) {
 	/*
 	 * Remove the empty sublist appended above, so that a failed [lset]
 	 * leaves the list unchanged. [Bug 3019348]
 	 */
-
-	Tcl_ListObjReplace(NULL, appendedTo, appendedIndex, 1, 0, NULL);
-    }
-    if (result == TCL_OK) {
+	if (appendedTo != NULL) {
+	    LIST_ASSERT(!Tcl_IsShared(appendedTo));
+	    Tcl_ListObjReplace(NULL, appendedTo, appendedIndex, 1, 0, NULL);
+	}
+    } else {
+	/*
+	 * On success, we need to invalidate the string representations of
+	 * intermediate lists whose contained list element would have changed.
+	 */
 	while (numPendingInvalidates > 0) {
 	    Tcl_Obj *objPtr;
 
