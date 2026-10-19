@@ -240,6 +240,7 @@ TclFSNormalizeAbsolutePath(
 		Tcl_Obj *linkObj;
 		Tcl_Size curLen;
 		char *linkStr;
+		int linkDepth = 0;
 
 		/*
 		 * Have '..' so need to skip previous directory.
@@ -256,7 +257,14 @@ TclFSNormalizeAbsolutePath(
 		    Tcl_AppendToObj(retVal, dirSep, 1);
 		}
 		if (!first || (tclPlatform == TCL_PLATFORM_UNIX)) {
-		    if (zipVolumeLen) {
+		    if (zipVolumeLen || (tclPlatform == TCL_PLATFORM_WINDOWS)) {
+			/*
+			 * On Windows ".." is resolved lexically, as the system
+			 * itself does, even after a junction or a symbolic
+			 * link. Otherwise the process and Tcl would disagree
+			 * about such paths. [Bug 3183016]
+			 */
+
 			linkObj = NULL;
 		    } else {
 			linkObj = Tcl_FSLink(retVal, NULL, 0);
@@ -269,6 +277,7 @@ TclFSNormalizeAbsolutePath(
 			}
 		    }
 
+		gotLink:
 		    if (linkObj != NULL) {
 			/*
 			 * Got a link. Need to check if the link is relative
@@ -328,6 +337,30 @@ TclFSNormalizeAbsolutePath(
 				    }
 				}
 			    }
+			}
+
+			/*
+			 * The link target can contain "." or ".." components
+			 * or a trailing separator, or be a link itself, so
+			 * normalize it before removing its last element.
+			 * [Bug 3577801]
+			 */
+
+			TclFSNormalizeToUniquePath(interp, retVal, 0);
+			if (++linkDepth < 32) {
+			    linkObj = Tcl_FSLink(retVal, NULL, 0);
+			    if (Tcl_IsShared(retVal)) {
+				TclDecrRefCount(retVal);
+				retVal = Tcl_DuplicateObj(retVal);
+				Tcl_IncrRefCount(retVal);
+			    }
+			    if (linkObj != NULL) {
+				goto gotLink;
+			    }
+			}
+			linkStr = TclGetStringFromObj(retVal, &curLen);
+			while (curLen > 1 && linkStr[curLen - 1] == '/') {
+			    curLen--;
 			}
 		    } else {
 			linkStr = TclGetStringFromObj(retVal, &curLen);

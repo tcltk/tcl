@@ -216,6 +216,38 @@ if {[testConstraint win]} {
     file delete $fname
 }
 
+test winFile-6.1 {cd .. from a junction is resolved lexically, as by Windows [Bug 3183016]} -constraints {
+    win
+} -setup {
+    set savedir [pwd]
+    set base [makeDirectory winFile-6.1]
+    file mkdir $base/test1/test2
+    close [open $base/test1/test2/in_test2 w]
+    file link -symbolic $base/test1/test2/link $base/test1
+} -body {
+    cd $base/test1/test2/link
+    cd ..
+    list [expr {[pwd] eq [file normalize $base/test1/test2]}] [lsort [glob *]] \
+	[file isdirectory test1] [file exists in_test2]
+} -cleanup {
+    cd $savedir
+    file delete $base/test1/test2/link
+    removeDirectory winFile-6.1
+} -result {1 {in_test2 link} 0 1}
+test winFile-6.2 {normalize: .. after a junction is lexical, other links are resolved [Bug 3183016]} -constraints {
+    win
+} -setup {
+    set base [file normalize [makeDirectory winFile-6.2]]
+    file mkdir $base/test1/test2
+    file link -symbolic $base/test1/test2/link $base/test1
+} -body {
+    list [expr {[file normalize $base/test1/test2/link/..] eq "$base/test1/test2"}] \
+	[expr {[file normalize $base/test1/test2/link/x] eq "$base/test1/x"}]
+} -cleanup {
+    file delete $base/test1/test2/link
+    removeDirectory winFile-6.2
+} -result {1 1}
+
 # cleanup
 cleanupTests
 return

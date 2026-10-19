@@ -266,7 +266,9 @@ test filesystem-1.26 {link normalisation: link and ..} -setup {
     set dir [file join dir2 foo bar]
     file mkdir $dir
     file link dir2.link [file join dir2 foo bar]
-    testPathEqual [file normalize [file join dir2 foo x]] \
+    # On Windows ".." is lexical, as for the system [Bug 3183016]
+    set up [expr {[testConstraint win] ? "x" : [file join dir2 foo x]}]
+    testPathEqual [file normalize $up] \
 	    [file normalize [file join dir2.link .. x]]
 } -result ok
 test filesystem-1.27 {file normalisation: up and down with ..} {
@@ -283,7 +285,9 @@ test filesystem-1.28 {link normalisation: link with .. and ..} -setup {
     file mkdir $dir
     set to [file join dir2 .. dir2 foo .. foo bar]
     file link dir2.link $to
-    testPathEqual [file normalize [file join dir2 foo x]] \
+    # On Windows ".." is lexical, as for the system [Bug 3183016]
+    set up [expr {[testConstraint win] ? "x" : [file join dir2 foo x]}]
+    testPathEqual [file normalize $up] \
 	    [file normalize [file join dir2.link .. x]]
 } -result ok
 test filesystem-1.29 {link normalisation: link with ..} -setup {
@@ -468,6 +472,65 @@ test filesystem-1.54 {[Bug ce3a211dcb] - normalize when tail is empty} -setup {
     cd $save
     removeDirectory ce3a211dcb
 } -result 1
+test filesystem-1.55 {[Bug 3577801] - .. after link with .. in target} -setup {
+    set home [makeDirectory 3577801]
+    makeDirectory x $home
+    makeDirectory d $home
+} -constraints {unix hasLinks} -body {
+    exec ln -s ../x $home/d/l
+    exec ln -s ./../x/ $home/d/ls
+    exec ln -s l $home/d/ll
+    set home [file normalize $home]
+    set res {}
+    lappend res [expr {[file normalize $home/d/l/../..] eq [file dirname $home]}]
+    foreach p {l/.. l/../y ls/.. ls/../y ll/.. ll/../y} {
+	lappend res [string map [list $home H] [file normalize $home/d/$p]]
+    }
+    set res
+} -cleanup {
+    unset -nocomplain res
+    removeDirectory 3577801
+} -result {1 H H/y H H/y H H/y}
+test filesystem-1.56 {[Bug 3570244] - cd .. from link with .. in target} -setup {
+    set save [pwd]
+    set home [file normalize [makeDirectory 3570244]]
+    makeDirectory x $home
+    makeDirectory d $home
+} -constraints {unix hasLinks} -body {
+    exec ln -s ../x/ $home/d/l
+    cd $home/d/l
+    cd ..
+    string map [list $home H] [pwd]
+} -cleanup {
+    cd $save
+    removeDirectory 3570244
+} -result H
+test filesystem-1.57 {[Bug 3183016] - normalize .. after a relative link} -setup {
+    set home [makeDirectory 3183016]
+    file mkdir [file join $home test1 test2]
+    file link -symbolic [file join $home test1 test2 link] ../../test1
+} -constraints {hasLinks unix} -body {
+    list [testPathEqual [file normalize [file join $home test1 test2 link ..]] \
+	    [file normalize $home]] \
+	[testPathEqual [file normalize [file join $home test1 test2 link .. x]] \
+	    [file normalize [file join $home x]]]
+} -cleanup {
+    removeDirectory 3183016
+} -result {ok ok}
+test filesystem-1.58 {[Bug 3099612] - access through relative link and ..} -setup {
+    set home [makeDirectory 3099612]
+    file mkdir [file join $home etc httpd] [file join $home var run] \
+	[file join $home var tmp]
+    file link -symbolic [file join $home etc httpd run] ../../var/run
+} -constraints {hasLinks unix} -body {
+    set p [file join $home etc httpd run .. tmp .]
+    file stat $p a
+    file stat [file join $home var tmp] b
+    list [file exists $p] [file isdirectory $p] [expr {$a(ino) == $b(ino)}] \
+	[file exists [file join $home etc tmp]]
+} -cleanup {
+    removeDirectory 3099612
+} -result {1 1 1 0}
 
 test filesystem-2.0 {new native path} {unix} {
    foreach f [lsort [glob -nocomplain /usr/bin/c*]] {
