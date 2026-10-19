@@ -61,8 +61,10 @@ proc lire_executable {chemin} {
     }
     # FR : le nom des types contient n : on construit les commandes en texte
     # EN : type names contain n: the commands are built as text
-    set cmd "set {${variante}($n)}V"
-    foreach champ $champs v $valeurs {append cmd " " [list $champ $v]}
+    # FR : construction par chemin : set {T}V(c1,c2,...) v1 v2 ...
+    # EN : construction by path: set {T}V(f1,f2,...) v1 v2 ...
+    set cmd "set {${variante}($n)}V([join $champs ,])"
+    foreach v $valeurs {append cmd " " [list $v]}
     eval $cmd
     eval "set {executable($n)}X {$variante}\$V"
     return $X

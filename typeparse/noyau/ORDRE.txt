@@ -18,3 +18,4 @@ types-chemins-construction.patch
 types-chemins-depliage.patch
 index-chemins-noyau.patch
 types-chemins-atomes.patch
+types-produit-etiquettes.patch

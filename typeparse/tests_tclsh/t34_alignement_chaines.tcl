@@ -13,7 +13,7 @@ type def cs {{int(u,8)}a; {int(u,32)}b; {int(u,16)}c; {int(u,64)}d; {int(u,8)}e}
 puts "packed  [type binary {sizeof?}cs]"
 puts "natural [type binary {sizeof?}cs -align natural]"
 puts "align4  [type binary {sizeof?}cs -align 4]"
-set {cs}v a 1 b 2 c 3 d 4 e 5
+set {cs}v {a}1 {b}2 {c}3 {d}4 {e}5
 puts [hex [type binary encode cs $v]]
 puts [hex [type binary encode cs $v -align natural]]
 puts [hex [type binary encode cs $v -align 4]]
@@ -31,7 +31,7 @@ attempt {type binary {sizeof?}cs -align wide}
 type def inner {{int(u,8)}x; {int(u,16)}y}
 type def outer {{int(u,8)}p; {inner}q; {int(u,32)}r}
 puts "outer packed [type binary {sizeof?}outer] natural [type binary {sizeof?}outer -align natural]"
-set {outer}o p 1 q {2 3} r 4
+set {outer}o(p,q,r) 1 {2 3} 4
 puts [hex [type binary encode outer $o -align natural]]
 puts [type binary decode outer [type binary encode outer $o -align natural] -align natural]
 
@@ -54,7 +54,7 @@ puts [type binary string(utf-8,8)]
 puts [type binary string(utf-16le,z)]
 puts [type binary string(raw,4)]
 type def txt {{string(utf-16le,6)}w; {string(utf-16be,z)}z; {string(latin1,4)}l; {string(ascii,z)}a}
-set {txt}t w "héé" z "日本" l "éà" a "plain"
+set {txt}t(w,z,l,a) "héé" "日本" "éà" "plain"
 set b [type binary encode txt $t]
 puts [hex $b]
 puts [type binary decode txt $b]

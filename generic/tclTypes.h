@@ -240,6 +240,8 @@ int	TclAnnotSettle(Tcl_Interp *interp, Tcl_Obj *objPtr, const TclType *ctx,
 /* La pile d'annotations non résolues (liste neuve, de la plus ancienne à la
  * plus récente), vide pour une valeur dont le type a été effacé par {}. */
 Tcl_Obj	*TclAnnotPending(Tcl_Obj *objPtr);
+Tcl_Obj	*TclAnnotPopTop(Tcl_Obj *src, Tcl_Obj **topPtr);
+int	TclAnnotIsUnknown(Tcl_Interp *interp, Tcl_Obj *textObj);
 Tcl_Obj	*TclAnnotWithPending(Tcl_Obj *res, Tcl_Obj *pending);
 /* Vrai si la valeur porte la marque {} (type vide) posée hors constructeur. */
 int	TclAnnotIsCleared(Tcl_Obj *objPtr);

@@ -38,15 +38,14 @@ proc lire_png {octets} {
 	binary scan $octets @${pos}Iua4 len nom
 	set data [string range $octets [expr {$pos+8}] [expr {$pos+7+$len}]]
 	binary scan $octets @[expr {$pos+8+$len}]Iu crc
-	lappend blocs [set {chunk}k length $len name $nom data [binary encode hex $data] crc $crc]
+	lappend blocs [set {chunk}k {length}$len {name}$nom {data}[binary encode hex $data] {crc}$crc]
 	if {$nom eq "IHDR"} {
 	    binary scan $data IuIucucucucucu w h dep ct comp fil inter
-	    set {ihdr}entete width $w height $h depth $dep colortype $ct \
-		compression $comp filter $fil interlace $inter
+	    set {ihdr}entete {width}$w {height}$h {depth}$dep {colortype}$ct {compression}$comp {filter}$fil {interlace}$inter
 	}
 	incr pos [expr {12 + $len}]
     }
-    set {png}p signature $sig header $entete chunks $blocs
+    set {png}p {signature}$sig {header}$entete {chunks}$blocs
     return $p
 }
 
@@ -58,9 +57,9 @@ puts "blocs           : [lmap b $image(chunks) {set b(name)}]"
 puts "longueurs       : [lmap b $image(chunks) {set b(length)}]"
 
 # --- ce que le système de types garantit ------------------------------------
-if {[catch {set {ihdr}faux width abc height 1 depth 8 colortype 2} m]} {
+if {[catch {set {ihdr}faux {width}abc {height}1 {depth}8 {colortype}2} m]} {
     puts "largeur invalide : $m"
 }
-if {[catch {set {png}faux header $image(header) chunks {{1 2}}} m]} {
+if {[catch {set {png}faux(header,chunks) $image(header) {{1 2}}} m]} {
     puts "bloc incomplet   : $m"
 }

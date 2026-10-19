@@ -343,6 +343,8 @@ Test : `tests_tclsh/t22_somme_balisee.tcl`. Exemple : `exemples/png_somme.tcl`
 
 ## produit-ambigu.patch  (à appliquer après somme-balisee.patch)
 
+> **v13 : remplacé** par `types-produit-etiquettes.patch` (forme nom/valeur nue supprimée).
+
 Un type produit appelé avec n arguments pour n champs (n pair) peut se lire
 en positionnel (une valeur par champ) ou en nom/valeur (n/2 couples, champs
 omis par défaut). `set {png}p chunks $blocs` donnait silencieusement
@@ -956,3 +958,46 @@ Tests du projet 30 OK ; AddressSanitizer sans erreur ; mémoire stable.
 clé qu'on lui passe quand elle existe déjà. L'écriture `set D(a) 3` d'un dictionnaire typé
 (`SetIn`) et la construction avec clés en double (`BuildDict`) perdaient un objet à chaque
 fois (~75 octets ; 31 Mo pour 200 000 constructions) : la clé est maintenant rendue.
+
+## types-produit-etiquettes.patch  (v13, à appliquer après types-chemins-atomes.patch)
+
+Sources de types seulement (`tclTypedVar.c`, `tclAnnotObj.c`, `tclTypes.h`, livrées entières
+dans `typeparse/`). **La forme nom/valeur nue d'un produit est supprimée**, et les champs se
+nomment par **étiquette** :
+
+    type def paire {{string}nom; {int}age ?= 0}
+    set {paire}p {nom}jean {age}12      ;# jean 12
+    set {paire}p {age}13 {nom}paul      ;# ordre libre
+    set {paire}p {nom}zoe               ;# zoe 0 (défaut)
+    set {paire}p jean 14                ;# positionnel, inchangé
+    set {paire}p(age,nom) 15 lea        ;# chemin, inchangé
+
+* **Constructeur** (`BuildProductEx`) : copie d'un produit du même type (1 argument),
+  `{T.champ}valeur`, *n* valeurs pour *n* champs = positionnel, 0 argument = tous les
+  défauts, construction nommée interne (chemin, étiquettes). Tout le reste :
+  « wrong # args: T needs n values; to name fields (the others take their default), write
+  {field}value or set {T}var(field,...) value... ». L'essai des deux lectures et l'erreur
+  « ambiguous arguments » disparaissent.
+* **Étiquettes** (`TclSetAnnotatedCmd`) : pour un produit, l'annotation en attente la plus
+  récente de chaque argument est comparée aux noms de champs ; le contexte du produit passe
+  avant les types globaux (`type def age int` ne change rien). Tous étiquetés : la valeur
+  sans son étiquette (`TclAnnotPopTop`) est résolue dans le contexte du type du champ, puis
+  `TclBuildProductNamed` (doublons, champs sans défaut : messages habituels). Aucun :
+  positionnel. Mélange : « can't mix values named by a field annotation ({field}value) and
+  positional values in a T constructor » ; une annotation inconnue à côté d'étiquettes :
+  « unknown field "x" in T ».
+* Une valeur qui porte son étiquette en variable compte : `set v {age}21` puis
+  `set {paire}p {nom}max $v`. `{age}$w` avec `w` = `{mm}12` : l'étiquette est la plus
+  récente, `mm` reste une note.
+* **Usages convertis** : décodeur de `layout/filebinary.tcl` (produit et défaut d'un lien :
+  construction par chemin `set {T}V(c1,c2,...) $fv0 $fv1 ...`), `spaceMake` (étiquettes),
+  exemples (`png`, `gif`, `elf`, `pe`, `executable`, `complexes`, `reseau_couches`,
+  `cstruct`, …) et tests. `t23_ambiguite_produit` réécrit (avec `.out`) : l'ancien piège
+  `set {png}p chunks {a b}` est désormais positionnel, sans erreur ni devinette. Nouveau
+  `t54_etiquettes_champ`.
+
+**Vérifications.** Tests du projet 32 OK (dont t23 et t54 nouveaux avec `.out`), les autres
+sans erreur ; sorties des exemples identiques à la v8 sauf les messages d'erreur attendus
+(et ce qui dépend du binaire ELF lu) ; AddressSanitizer sans erreur ; mémoire stable sur
+1 000 000 de constructions étiquetées ; tests de Tcl `set`, `var`, `dict`, `info`, `compile`
+identiques à la base.

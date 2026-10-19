@@ -10,7 +10,7 @@ type def complexe {
 
 namespace eval cx {
     # Une valeur de type produit se lit comme une liste {re im}.
-    proc new {re im} { set {complexe}z re $re im $im }
+    proc new {re im} { set {complexe}z {re}$re {im}$im}
 
     proc add {a b} {
         lassign $a ar ai; lassign $b br bi
@@ -40,8 +40,8 @@ namespace eval cx {
 }
 
 # --- utilisation -------------------------------------------------
-set {complexe}a re 3 im 4
-set {complexe}b re 1 im -2
+set {complexe}a {re}3 {im}4
+set {complexe}b {re}1 {im}-2
 set {complexe}zero                       ;# défauts : 0 + 0i
 puts "a    = [cx::str $a]"
 puts "b    = [cx::str $b]"
@@ -54,11 +54,11 @@ puts "|a|  = [cx::abs $a]"
 puts "a(re)=$a(re)"
 
 # Le typage protège : une partie réelle non numérique est refusée.
-catch {set {complexe}bad re abc im 1} m
+catch {set {complexe}bad {re}abc {im}1} m
 puts "refus : $m"
 catch {set a(im) xyz} m
 puts "refus : $m"
 
 # i*i = -1
-set {complexe}i re 0 im 1
+set {complexe}i {re}0 {im}1
 puts "i*i  = [cx::str [cx::mul $i $i]]"

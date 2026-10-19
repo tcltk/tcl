@@ -542,67 +542,6 @@ BuildDict(Tcl_Interp *interp, TclType *tp, Tcl_Size n, Tcl_Obj *const a[],
  * ambiguïté réelle ; si aucune, on garde la lecture positionnelle (son
  * message d'erreur est celui d'avant).
  */
-static int
-ProductTryPositional(Tcl_Interp *interp, TclType *tp, Tcl_Size n,
-	Tcl_Obj *const a[])
-{
-    Tcl_Size i;
-    Tcl_InterpState st = Tcl_SaveInterpState(interp, TCL_OK);
-    int ok = 1;
-
-    for (i = 0; i < n && ok; i++) {
-	Tcl_Obj *c = TclTypedConform(interp, tp->fields[i].type, a[i]);
-
-	if (c == NULL) {
-	    ok = 0;
-	} else {
-	    TclDiscard(c);
-	}
-    }
-    (void) Tcl_RestoreInterpState(interp, st);
-    return ok;
-}
-
-static int
-ProductTryNameValue(Tcl_Interp *interp, TclType *tp, Tcl_Size n,
-	Tcl_Obj *const a[])
-{
-    Tcl_Size nf = tp->nfields, i, idx;
-    Tcl_InterpState st = Tcl_SaveInterpState(interp, TCL_OK);
-    int ok = 1;
-    char seen[256];
-
-    if (nf > (Tcl_Size) sizeof(seen)) {
-	(void) Tcl_RestoreInterpState(interp, st);
-	return 0;
-    }
-    memset(seen, 0, sizeof(seen));
-    for (i = 0; i < n / 2 && ok; i++) {
-	Tcl_Obj *c;
-
-	idx = TclTypeFieldIndex(tp, Tcl_GetString(a[2 * i]));
-	if (idx < 0 || seen[idx]) {
-	    ok = 0;
-	    break;
-	}
-	seen[idx] = 1;
-	c = TclTypedConform(interp, tp->fields[idx].type, a[2 * i + 1]);
-	if (c == NULL) {
-	    ok = 0;
-	} else {
-	    TclDiscard(c);
-	}
-    }
-    for (i = 0; i < nf && ok; i++) {
-	if (!seen[i] && tp->fields[i].defcmd == NULL
-		&& tp->fields[i].defval == NULL) {
-	    ok = 0;			/* champ omis sans valeur par défaut */
-	}
-    }
-    (void) Tcl_RestoreInterpState(interp, st);
-    return ok;
-}
-
 /*
  * {T.champ}valeur : un seul champ d'un produit, les autres prenant leur
  * défaut -- même écriture que {Val.i}5 pour la variante d'une somme.
@@ -821,21 +760,6 @@ BuildProductEx(Tcl_Interp *interp, TclType *tp, Tcl_Size n,
 	    forceNameValue = 1;
 	}
     }
-    if (n == nf && n >= 2 && n % 2 == 0 && !forceNameValue) {
-	int pos = ProductTryPositional(interp, tp, n, a);
-	int nv = ProductTryNameValue(interp, tp, n, a);
-
-	if (pos && nv) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "ambiguous arguments for %s: they read both as %"
-		    TCL_SIZE_MODIFIER "d positional values and as name/value "
-		    "pairs; name every field (name value ...) or change the "
-		    "first value", tp->name, nf));
-	    Tcl_SetErrorCode(interp, "TCL", "TYPE", "AMBIGUOUS", (char *) NULL);
-	    goto done;
-	}
-	forceNameValue = (!pos && nv);
-    }
     if (n == nf && !forceNameValue) {
 	for (i = 0; i < nf; i++) {
 	    slot[i] = TclTypedConform(interp, tp->fields[i].type, a[i]);
@@ -843,7 +767,7 @@ BuildProductEx(Tcl_Interp *interp, TclType *tp, Tcl_Size n,
 		goto done;
 	    }
 	}
-    } else if (nf > 0 && n % 2 == 0 && n <= 2 * nf) {
+    } else if (forceNameValue || n == 0) {
       nameValue:
 	/*
 	 * Forme nom/valeur, éventuellement PARTIELLE : les champs omis
@@ -903,9 +827,10 @@ BuildProductEx(Tcl_Interp *interp, TclType *tp, Tcl_Size n,
 	}
     } else {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"wrong # args: %s needs %" TCL_SIZE_MODIFIER "d values, or up "
-		"to %" TCL_SIZE_MODIFIER "d name/value arguments (omitted "
-		"fields take their default)", tp->name, nf, 2 * nf));
+		"wrong # args: %s needs %" TCL_SIZE_MODIFIER "d values; to "
+		"name fields (the others take their default), write "
+		"{field}value or set {%s}var(field,...) value...",
+		tp->name, nf, tp->name));
 	Tcl_SetErrorCode(interp, "TCL", "WRONGARGS", (char *) NULL);
 	goto done;
     }
@@ -1056,6 +981,8 @@ TclSetAnnotatedCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
     int status, avar, variant = -1, forced = -1, hadBit, rc = TCL_ERROR;
     const char *name;
     char *ctorPath = NULL;
+    Tcl_Obj **tagVals = NULL, **tagNames = NULL;
+    int fieldTags = 0;
     Var *varPtr, *arrayPtr = NULL;
 
     if (TclAnnotResolve(interp, objv[1], NULL, &status, &tp, &avar, &nameObj)
@@ -1134,6 +1061,82 @@ TclSetAnnotatedCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
     }
     Tcl_IncrRefCount(baseObj);
 
+    /*
+     * Étiquettes de champ : set {paire}p {nom}jean {age}12. L'annotation en
+     * attente la plus récente de CHAQUE argument nomme un champ du produit
+     * (le contexte du constructeur passe avant les types globaux, comme le
+     * nom d'une variante pour une somme) : construction nommée, ordre libre,
+     * les autres champs à leur défaut. Aucun argument étiqueté : lecture
+     * positionnelle. Un mélange est une erreur.
+     */
+    if (ctorPath == NULL && status != TCLA_EMPTY && tp->kind == TCLT_PRODUCT
+	    && nargs >= 1) {
+	Tcl_Size ntag = 0;
+
+	tagVals = (Tcl_Obj **) Tcl_Alloc(nargs * sizeof(Tcl_Obj *));
+	tagNames = (Tcl_Obj **) Tcl_Alloc(nargs * sizeof(Tcl_Obj *));
+	for (i = 0; i < nargs; i++) {
+	    Tcl_Obj *top = NULL, *v = NULL;
+	    Tcl_Obj *pd = TclAnnotPending(objv[2 + i]);
+	    Tcl_Size npd = 0;
+
+	    Tcl_IncrRefCount(pd);
+	    Tcl_ListObjLength(NULL, pd, &npd);
+	    if (npd > 0) {
+		Tcl_ListObjIndex(NULL, pd, npd - 1, &top);
+	    }
+	    if (top != NULL && TclTypeFieldIndex(tp, Tcl_GetString(top)) >= 0) {
+		Tcl_Obj *t2 = NULL;
+
+		v = TclAnnotPopTop(objv[2 + i], &t2);
+	    }
+	    tagVals[i] = v;
+	    tagNames[i] = (v != NULL) ? Tcl_DuplicateObj(top) : NULL;
+	    if (v != NULL) {
+		Tcl_IncrRefCount(v);
+		Tcl_IncrRefCount(tagNames[i]);
+		ntag++;
+	    }
+	    Tcl_DecrRefCount(pd);
+	}
+	if (ntag == nargs) {
+	    fieldTags = 1;
+	} else if (ntag > 0) {
+	    /* Une annotation inconnue à côté d'étiquettes : un champ mal
+	     * nommé, plus probablement qu'un mélange voulu. */
+	    for (i = 0; i < nargs; i++) {
+		Tcl_Obj *pd, *top = NULL;
+		Tcl_Size npd = 0;
+
+		if (tagVals[i] != NULL) {
+		    continue;
+		}
+		pd = TclAnnotPending(objv[2 + i]);
+		Tcl_IncrRefCount(pd);
+		Tcl_ListObjLength(NULL, pd, &npd);
+		if (npd > 0) {
+		    Tcl_ListObjIndex(NULL, pd, npd - 1, &top);
+		}
+		if (top != NULL && TclAnnotIsUnknown(interp, top)) {
+		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			    "unknown field \"%s\" in %s", Tcl_GetString(top),
+			    tp->name));
+		    Tcl_SetErrorCode(interp, "TCL", "TYPE", "FIELD",
+			    (char *) NULL);
+		    Tcl_DecrRefCount(pd);
+		    goto done;
+		}
+		Tcl_DecrRefCount(pd);
+	    }
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "can't mix values named by a field annotation ({field}value) "
+		    "and positional values in a %s constructor: name every "
+		    "field, or none", tp->name));
+	    Tcl_SetErrorCode(interp, "TCL", "TYPE", "FIELD", (char *) NULL);
+	    goto done;
+	}
+    }
+
     /* Valeur à stocker. */
     if (status == TCLA_EMPTY) {			/* set {}j 10 : sans type */
 	if (nargs != 1) {
@@ -1159,16 +1162,21 @@ TclSetAnnotatedCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 		* sizeof(Tcl_Obj *));
 	for (i = 0; i < nargs; i++) {
 	    Tcl_Obj *one;
+	    const TclType *ctx = (nargs == 1) ? tp : NULL;
 
-	    if (TclAnnotSettle(interp, objv[2 + i], nargs == 1 ? tp : NULL,
-		    0, &one) != TCL_OK) {
+	    if (fieldTags) {		/* le contexte : le type du champ */
+		ctx = tp->fields[TclTypeFieldIndex(tp,
+			Tcl_GetString(tagNames[i]))].type;
+	    }
+	    if (TclAnnotSettle(interp, fieldTags ? tagVals[i] : objv[2 + i],
+		    ctx, 0, &one) != TCL_OK) {
 		nargs = i;		/* libérer seulement les précédents */
 		goto done;
 	    }
 	    Tcl_IncrRefCount(one);
 	    sa[i] = one;
 	}
-	if (nargs == 1) {
+	if (nargs == 1 && !fieldTags) {
 	    pend = TclAnnotPending(sa[0]);
 	    Tcl_IncrRefCount(pend);
 	    Tcl_ListObjLength(NULL, pend, &np);
@@ -1188,6 +1196,20 @@ TclSetAnnotatedCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 	if (ctorPath != NULL) {
 	    if (TclTypePathConstruct(interp, tp, ctorPath, nargs, sa, &c)
 		    != TCL_OK) {
+		goto done;
+	    }
+	} else if (fieldTags) {
+	    Tcl_Obj **pairs = (Tcl_Obj **) Tcl_Alloc(2 * nargs
+		    * sizeof(Tcl_Obj *));
+	    int brc;
+
+	    for (i = 0; i < nargs; i++) {
+		pairs[2 * i] = tagNames[i];
+		pairs[2 * i + 1] = sa[i];
+	    }
+	    brc = TclBuildProductNamed(interp, tp, 2 * nargs, pairs, &c);
+	    Tcl_Free(pairs);
+	    if (brc != TCL_OK) {
 		goto done;
 	    }
 	} else if (BuildValue(interp, tp, forced, nargs, sa, &c, &variant)
@@ -1272,6 +1294,16 @@ TclSetAnnotatedCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
     }
     if (ctorPath != NULL) {
 	Tcl_Free(ctorPath);
+    }
+    if (tagVals != NULL) {
+	for (i = 0; i < objc - 2; i++) {
+	    if (tagVals[i] != NULL) {
+		Tcl_DecrRefCount(tagVals[i]);
+		Tcl_DecrRefCount(tagNames[i]);
+	    }
+	}
+	Tcl_Free(tagVals);
+	Tcl_Free(tagNames);
     }
     Tcl_DecrRefCount(baseObj);
     return rc;

@@ -40,9 +40,9 @@ set C 3
 
 # --- graphe oriente avec cycle : les voisins sont des liens vers des noeuds
 type def node {{string}name; {list.var.node}next}
-set {node}na name A next {nb nc}
-set {node}nb name B next {nc}
-set {node}nc name C next {na}
+set {node}na(name,next) A {nb nc}
+set {node}nb(name,next) B {nc}
+set {node}nc(name,next) C {na}
 set g [type deref $na]
 puts "graphe : $g  ([type get $g])"
 puts "  voisins de A : $g(next.0.name) $g(next.1.name) ; voisins de B vus depuis A : $g(next.0.next)"

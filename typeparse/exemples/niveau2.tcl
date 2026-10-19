@@ -144,26 +144,26 @@ type def pingmsg {{u32be}numero}
 type def corps {{utilisateur}1, {pingmsg}2, {string(raw,$len)}3}
 type def message {{u8}type; {u16be}len; {corps($type)}body}
 
-set {utilisateur}u nom "Léa" age 31
-set {message}m1 type 1 len 6 body {1}$u
+set {utilisateur}u(nom,age) "Léa" 31
+set {message}m1(type,len,body) 1 6 {1}$u
 set b1 [type binary encode message $m1]
 puts "utilisateur : [hex $b1]"
 set d [type binary decode message $b1]
 puts "  décodé / decoded: [type get $d(body)] nom=$d(body.1.nom) age=$d(body.1.age)"
 
-set {pingmsg}pg numero 4242
-set {message}m2 type 2 len 4 body {2}$pg
+set {pingmsg}pg {numero}4242
+set {message}m2(type,len,body) 2 4 {2}$pg
 set b2 [type binary encode message $m2]
 puts "ping        : [hex $b2]"
 set d2 [type binary decode message $b2]
 puts "  décodé / decoded: [type get $d2(body)] numero=$d2(body.2.numero)"
 
-set {message}m3 type 3 len 5 body {3}hello
+set {message}m3(type,len,body) 3 5 {3}hello
 set b3 [type binary encode message $m3]
 puts "données     : [hex $b3]"
 puts "  décodé / decoded: [type binary decode message $b3]"
 
 # FR : l'étiquette et la variante doivent concorder / tag and variant must agree
-set {message}m4 type 2 len 6 body {1}$u
+set {message}m4(type,len,body) 2 6 {1}$u
 if {[catch {type binary encode message $m4} msg]} {puts "refus / refused : $msg"}
 if {[catch {type binary decode message "\x09\x00\x00"} msg]} {puts "refus / refused : $msg"}

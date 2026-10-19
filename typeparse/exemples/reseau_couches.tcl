@@ -34,10 +34,10 @@ set ::seq 1000
 
 # --- émission : on descend les couches, chacune ajoute son en-tête --------
 proc emettre {requete} {
-    set {http}h request $requete
-    set {tcp}t src 49152 dst 80 payload $h
-    set {ip}p src 10.0.0.2 dst 93.184.216.34 payload $t
-    set {eth}f src aa:bb:cc:00:00:01 dst aa:bb:cc:00:00:02 payload $p
+    set {http}h {request}$requete
+    set {tcp}t {src}49152 {dst}80 {payload}$h
+    set {ip}p {src}10.0.0.2 {dst}93.184.216.34 {payload}$t
+    set {eth}f {src}aa:bb:cc:00:00:01 {dst}aa:bb:cc:00:00:02 {payload}$p
     return $f
 }
 
@@ -76,6 +76,6 @@ puts "port TCP     : $trame(payload.payload.dst)"
 puts "TTL IP       : $trame(payload.ttl)"
 
 puts "\n=== le système de types refuse les couches mal empilées ==="
-set {tcp}seg src 1 dst 2 payload [set {http}x request "GET /"]
-if {[catch {set {eth}mauvaise src a dst b payload $seg} m]} {puts "Ethernet directement sur TCP : $m"}
-if {[catch {set {tcp}bad src abc dst 80 payload $x} m]} {puts "port invalide : $m"}
+set {tcp}seg {src}1 {dst}2 {payload}[set {http}x(request) "GET /"]
+if {[catch {set {eth}mauvaise {src}a {dst}b {payload}$seg} m]} {puts "Ethernet directement sur TCP : $m"}
+if {[catch {set {tcp}bad {src}abc {dst}80 {payload}$x} m]} {puts "port invalide : $m"}

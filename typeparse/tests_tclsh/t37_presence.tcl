@@ -34,8 +34,8 @@ puts [type binary decode C "\x00\x01"]
 attempt {type binary decode C "\x01\x01"}
 
 # 3. incohérence à l'écriture / mismatch on write
-attempt {type binary encode A [set {A}bad present 0 x {1}9]}
-attempt {type binary encode A [set {A}bad2 present 1 x {0}{}]}
+attempt {type binary encode A [set {A}bad(present,x) 0 {1}9]}
+attempt {type binary encode A [set {A}bad2(present,x) 1 {0}{}]}
 
 # 4. champ cité non encore lu / field not yet read
 attempt {type def D {{opt01($zz != 0)}x; {u8}zz}; type binary decode D "\x01"}

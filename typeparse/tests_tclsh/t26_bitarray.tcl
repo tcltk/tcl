@@ -18,7 +18,7 @@ expr {"c(0:1)" = 3}
 puts "c apres c(0:1)=3 : $c"
 # la valeur d'un champ de produit
 type def reg {{bitarray(8)}flags = 0; {bitarray(16,msb0)}addr = 0}
-set {reg}r flags 5 addr 0x8001
+set {reg}r {flags}5 {addr}0x8001
 puts "r=$r  flags(2)=[set r(flags.2)]  addr(0)=[set r(addr.0)] addr(15)=[set r(addr.15)]"
 set r(flags.7) 1
 puts "r=$r"

@@ -27,8 +27,7 @@ puts "=== B. analyse avec des masques de bits ==="
 # hyperarête est un entier de n bits (le bit i = le sommet i en fait partie).
 type def {hg({int}n)} {{list($n).string}labels; {list.bitarray($n)}edges}
 
-set {hg(5)}H labels {alice bob carol dave erin} \
-	edges {0b00111 0b01100 0b11000 0b00011}
+set {hg(5)}H(labels,edges) {alice bob carol dave erin} {0b00111 0b01100 0b11000 0b00011}
 # articles :   0: alice bob carol   1: carol dave   2: dave erin   3: alice bob
 puts "type : [type get $H]"
 
@@ -91,7 +90,7 @@ proc dual {H} {
     }
     return $masques
 }
-set {hg(4)}D labels {art0 art1 art2 art3} edges [dual $H]
+set {hg(4)}D(labels,edges) {art0 art1 art2 art3} [dual $H]
 puts "\nDual : les hyperarêtes sont les auteurs"
 for {set k 0} {$k < 5} {incr k} {
     puts [format "  %-6s a écrit : %s" [lindex $etiquettes $k] \
@@ -100,7 +99,7 @@ for {set k 0} {$k < 5} {incr k} {
 
 puts "\nGaranties du typage"
 puts "  [catch {set H(edges.1) 0b100000} msg] $msg"
-puts "  [catch {set {hg(5)}faux labels {a b c} edges {1}} msg] $msg"
+puts "  [catch {set {hg(5)}faux(labels,edges) {a b c} {1}} msg] $msg"
 
 # ===========================================================================
 # A. Données vivantes : sommets = variables, hyperarêtes = listes de liens
@@ -111,13 +110,13 @@ puts "\n=== A. données vivantes avec des liens ==="
 type def auteur {{string}nom; {int}articles = 0}
 type def papier {{string}titre; {list.var(typed).auteur}auteurs}
 
-set {auteur}alice nom alice
-set {auteur}bob   nom bob
-set {auteur}carol nom carol
-set {auteur}dave  nom dave
+set {auteur}alice {nom}alice
+set {auteur}bob {nom}bob
+set {auteur}carol {nom}carol
+set {auteur}dave {nom}dave
 
-set {papier}pa titre "Types et liens"    auteurs {alice bob carol}
-set {papier}pb titre "Sommes et variants" auteurs {carol dave}
+set {papier}pa(titre,auteurs) "Types et liens" {alice bob carol}
+set {papier}pb(titre,auteurs) "Sommes et variants" {carol dave}
 
 # un article regroupe des LIENS : on voit les noms de variables, pas les valeurs
 puts "pa = $pa"
@@ -148,11 +147,11 @@ puts "type : [type get $avant]"
 # un auteur supprimé : erreur franche, qui dit où
 unset bob
 puts "\nauteur supprimé : [catch {type deref $pa} msg] $msg"
-set {auteur}bob nom bob articles 2     ;# on le recrée
+set {auteur}bob {nom}bob {articles}2;# on le recrée
 
 # une variable non typée n'est pas acceptée comme auteur
 set intrus "x"
-puts "variable non typée : [catch {set {papier}pz titre "?" auteurs {intrus}} msg] $msg"
+puts "variable non typée : [catch {set {papier}pz(titre,auteurs) "?" {intrus}} msg] $msg"
 
 # ===========================================================================
 # Le pont : de la forme A (liens) à la forme B (masques)
@@ -173,6 +172,6 @@ proc masque_de {papier etiquettes} {
 }
 set carol(nom) carol                          ;# nom d'origine
 set noms {alice bob carol dave}
-set {hg(4)}G labels $noms edges [list [masque_de pa $noms] [masque_de pb $noms]]
+set {hg(4)}G {labels}$noms {edges}[list [masque_de pa $noms] [masque_de pb $noms]]
 puts "pa -> [format %04b $G(edges.0)]   pb -> [format %04b $G(edges.1)]"
 puts "carol est dans les deux : intersection = [join [noms $noms [expr {$G(edges.0) & $G(edges.1)}]] ", "]"

@@ -37,5 +37,5 @@ set {bitarray(16,lsb0,be)}bb 1
 set bb(3) 1
 puts "bb=$bb $bb(0) [type get $bb] [type binary bitarray(16,lsb0,be)]"
 type def pr {{int(u,16,be)}a; {int}b}
-set {pr}rr a 1 b $u
+set {pr}rr {a}1 {b}$u
 puts "$rr [type binary pr]"

@@ -19,7 +19,7 @@ puts "dict    : [type deref $d]  ([type get [type deref $d]])"
 set {list.list.var.int}mm {A B} {B A}
 puts "imbrique: [type deref $mm]  ([type get [type deref $mm]])"
 type def lien {{var.int}ref; {string}nom}
-set {lien}p ref A nom hello
+set {lien}p {ref}A {nom}hello
 puts "produit : [type deref $p]  ([type get [type deref $p]])"
 
 # valeur sans lien : rendue telle quelle

@@ -6,7 +6,7 @@ proc hex {s} {binary scan $s H* h; return $h}
 
 type def rec {{u8}a; {u8}b}
 type def P {{*(//,u8,null).rec}x; {*(//,u8,null).rec}y; {*(//,u8,null).rec}z}
-set v [set {P}v1 x {7 8} y {7 8} z {9 9}]
+set v [set {P}v1(x,y,z) {7 8} {7 8} {9 9}]
 
 puts "--- sans -dedupe : trois cibles / without: three targets"
 puts [hex [type binary encode P $v]]

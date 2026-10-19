@@ -1631,6 +1631,59 @@ TclAnnotPending(Tcl_Obj *objPtr)
     return PendingOf(objPtr, 0);
 }
 
+/*
+ * La valeur sans son annotation EN ATTENTE la plus récente (la dernière note,
+ * ou le texte brut d'une annotation littérale s'il n'y a pas de note) ;
+ * *topPtr reçoit ce texte (non possédé, vivant tant que src l'est). NULL si
+ * la valeur n'a pas d'annotation en attente. Sert aux étiquettes de champ
+ * d'un constructeur de produit : set {paire}p {nom}jean {age}12.
+ */
+/* Annotation qui ne nomme rien de connu (ni type, ni local) : une note. */
+int
+TclAnnotIsUnknown(Tcl_Interp *interp, Tcl_Obj *textObj)
+{
+    return ClassifyAnnot(interp, textObj, NULL, NULL, NULL) == ANN_UNKNOWN;
+}
+
+Tcl_Obj *
+TclAnnotPopTop(Tcl_Obj *src, Tcl_Obj **topPtr)
+{
+    Tcl_ObjInternalRep *ir = Tcl_FetchInternalRep(src, &annotatedObjType);
+    Tcl_Obj *content, *t, *n, *newN, *p2;
+    Tcl_Size nn = 0, len;
+
+    if (ir == NULL) {
+	return NULL;
+    }
+    content = (Tcl_Obj *) ir->twoPtrValue.ptr1;
+    SplitT((Tcl_Obj *) ir->twoPtrValue.ptr2, &t, &n);
+    if (n != NULL) {
+	Tcl_ListObjLength(NULL, n, &nn);
+    }
+    if (nn > 0) {
+	Tcl_ListObjIndex(NULL, n, nn - 1, topPtr);
+	newN = Tcl_DuplicateObj(n);
+	Tcl_ListObjReplace(NULL, newN, nn - 1, 1, 0, NULL);
+	p2 = StateObj(t, newN);
+	if (p2 == NULL) {
+	    TclDiscard(newN);
+	    return Tcl_DuplicateObj(content);
+	}
+	if (p2 == t) {
+	    TclDiscard(newN);
+	}
+	return MakeAnnotated(Tcl_DuplicateObj(content), p2);
+    }
+    if (t != NULL && !IsTypeRef(t)) {
+	Tcl_GetStringFromObj(t, &len);
+	if (len > 0) {
+	    *topPtr = t;
+	    return Tcl_DuplicateObj(content);
+	}
+    }
+    return NULL;
+}
+
 /* res (valeur typée fraîche, sans pile) + la pile donnée. */
 Tcl_Obj *
 TclAnnotWithPending(Tcl_Obj *res, Tcl_Obj *pending)

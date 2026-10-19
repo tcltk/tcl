@@ -31,7 +31,7 @@ puts "--- réécriture de l'adresse / rewrite the address"
 puts [hex [type binary encode H $h0]]
 puts "--- écrire une vraie cible : erreur / writing a real target: error"
 type def H2 {{u8}m; {*(//lib/,u8,null).rec}r}
-attempt {type binary encode H2 [set {H2}v2 m 1 r {7 8}]}
+attempt {type binary encode H2 [set {H2}v2(m,r) 1 {7 8}]}
 
 puts "--- memory:// : adresses virtuelles et segments / virtual addresses and segments"
 type binary space memory "ABCD\x07\x08" {{4096 4 2}} -name mem

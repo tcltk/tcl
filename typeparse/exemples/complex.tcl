@@ -12,7 +12,7 @@
 # ( ... )), avec le correctif noyau/tip759-fonctions.patch.
 
 # Le type Complex : un couple {re im} de doubles (défauts 0.0).
-#   set {Complex}z re 3 im 4      ;# variable typée
+#   set {Complex}z {re}3 {im}4;# variable typée
 #   expr {z is Complex}           ;# opérateur "is" : vrai (voir noyau/tip759-is.patch)
 type def Complex {{double}re = 0.0; {double}im = 0.0}
 
@@ -110,7 +110,7 @@ if {[info exists argv0] && [file tail $argv0] eq [file tail [info script]]} {
     puts "tan(b) = [Complex tan $b]"
 
     # --- l'opérateur "is" : variable à gauche, type à droite -----------
-    set {Complex}z re 3 im 4
+    set {Complex}z {re}3 {im}4
     set {Complex}w {*}[Complex $a * $b]    ;# résultat rangé dans une variable typée
     set plain {1 2}
     set {int}n 5

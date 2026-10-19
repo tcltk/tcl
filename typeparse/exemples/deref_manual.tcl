@@ -40,7 +40,7 @@ set {dict.var.int}dd x A y B
 puts [type deref $dd]                   ;# x 1 y 2
 
 type def link {{var.int}ref; {string}label}
-set {link}p ref A label first
+set {link}p {ref}A {label}first
 set q [type deref $p]
 puts "$q(ref) $q(label)"                ;# 1 first
 puts [type get $q]                      ;# deref(link)
@@ -67,9 +67,9 @@ puts $dt(children.0.value)              ;# 2
 
 # --- 6. Graphs: one level at a time ------------------------------------------
 type def node {{string}name; {list.var.node}next}
-set {node}na name A next {nb nc}
-set {node}nb name B next {nc}
-set {node}nc name C next {na}
+set {node}na(name,next) A {nb nc}
+set {node}nb(name,next) B {nc}
+set {node}nc(name,next) C {na}
 set g1 [type deref $na]
 puts $g1                                ;# A {{B ::nc} {C ::na}}
 puts "$g1(next.0.name) $g1(next.1.name)"  ;# B C

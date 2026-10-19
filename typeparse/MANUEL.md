@@ -18,7 +18,7 @@ type def fiche  {dict(nom, age?=0).string}              ;# dict typé
 
 | | produit `pt` | dict `fiche` |
 |---|---|---|
-| construction nom/valeur | `set {pt}a nom Jean age 12` | `set {fiche}e nom Jean` |
+| construction par nom | `set {pt}a {nom}Jean {age}12` ou `set {pt}a(nom,age) Jean 12` | `set {fiche}e nom Jean` |
 | accès à un champ | `$a(nom)` | `dict get $e nom`, `$e(nom)` |
 | défaut d'un champ/clé | `age ?= 0` (ou `=`) | `age?=0` |
 | champ inconnu | `unknown field "zz" in pt` | `key "zz" is not allowed in fiche` |
@@ -46,12 +46,27 @@ défaut peut être un littéral, `[script]` (calculé à chaque construction) ou
   valeurs (`.string`).
 * **Taille.** Un produit a un nombre fixe de champs, fixé à la définition.
 
-### Le piège de l'ambiguïté
+### Nommer les champs : étiquettes ou chemin (plus de nom/valeur nue)
 
-Un produit de *n* champs appelé avec *n* arguments (n pair) peut se lire en
-positionnel ou en nom/valeur. Si les deux lectures sont valides, c'est une
-erreur (`ambiguous arguments for T … name every field`) ; si une seule l'est,
-on la prend. Nommer tous les champs lève toujours le doute.
+La forme nom/valeur nue (`set {pt}a nom Jean age 12`) est **supprimée** : elle
+se confondait avec le positionnel dès que *n* arguments valaient pour *n*
+champs. Un produit se construit maintenant de trois façons, sans rien deviner :
+
+* **positionnel** : autant de valeurs que de champs, dans l'ordre
+  (`set {pt}b Jean 12`) ;
+* **étiquettes de champ** : `set {pt}a {age}12 {nom}Jean`. L'étiquette est
+  l'annotation la plus récente de chaque argument ; elle est lue dans le
+  contexte du produit, donc un nom de champ passe avant un type global du même
+  nom (`type def age int` ne change rien), comme le nom d'une variante pour
+  une somme. Ordre libre, les champs omis prennent leur défaut. **Tout ou
+  rien** : mélanger étiquettes et valeurs positionnelles est une erreur
+  (`can't mix values named by a field annotation …`), une étiquette inconnue
+  aussi (`unknown field "taille" in pt`). Une valeur qui porte son étiquette
+  en variable compte (`set v {age}12; set {pt}a {nom}Jean $v`) ;
+* **chemin** : `set {pt}a(age,nom) 12 Jean`, utile quand les noms sont
+  calculés ou les valeurs entre accolades.
+
+Le dict, lui, garde sa forme clé/valeur : un dict n'a pas de forme positionnelle.
 
 ### Choisir
 

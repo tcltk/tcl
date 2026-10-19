@@ -15,7 +15,7 @@ type def complexe {
 }
 
 namespace eval cx {
-    proc new {re im} { set {complexe}z re $re im $im }
+    proc new {re im} { set {complexe}z {re}$re {im}$im}
 
     proc add {a b} {(lassign $a ar ai; lassign $b br bi;
                      [new [($ar+$br)] [($ai+$bi)]])}
@@ -38,13 +38,13 @@ namespace eval cx {
     }
 }
 
-set {complexe}a re 3 im 4
-set {complexe}b re 1 im -2
+set {complexe}a {re}3 {im}4
+set {complexe}b {re}1 {im}-2
 puts "a+b = [cx::str [cx::add $a $b]]"
 puts "a-b = [cx::str [cx::sub $a $b]]"
 puts "a*b = [cx::str [cx::mul $a $b]]"
 puts "a/b = [cx::str [cx::div $a $b]]"
 puts "|a| = [cx::abs $a]"
 puts "|a|^2 = [cx::norm2 $a]"
-catch {set {complexe}bad re abc im 1} m
+catch {set {complexe}bad {re}abc {im}1} m
 puts "refus : $m"

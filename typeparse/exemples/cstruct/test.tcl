@@ -22,20 +22,20 @@ proc offsetOf {type probe marker} {
     set bytes [type binary encode $type $probe -align natural]
     return [string first $marker $bytes]
 }
-set s [set {Sample}p id 0xAABBCCDD value 0.0 flags 0xEE]
+set s [set {Sample}p {id}0xAABBCCDD {value}0.0 {flags}0xEE]
 check "Sample.id    : C=[dict get $c Sample.id]" \
     {[offsetOf Sample $s \xDD] == [dict get $c Sample.id]}
 check "Sample.flags : C=[dict get $c Sample.flags]" \
     {[offsetOf Sample $s \xEE] == [dict get $c Sample.flags]}
-set s2 [set {Sample}q id 0 value 1.0 flags 0]
+set s2 [set {Sample}q {id}0 {value}1.0 {flags}0]
 check "Sample.value : C=[dict get $c Sample.value]" \
     {[expr {[offsetOf Sample $s2 \xF0] - 6}] == [dict get $c Sample.value]}
-set bt [set {Batch}b0 n 1 items {{0xAABBCCDD 1.0 0}}]
+set bt [set {Batch}b0(n,items) 1 {{0xAABBCCDD 1.0 0}}]
 check "Batch.items  : C=[dict get $c Batch.items]" \
     {[offsetOf Batch $bt \xDD] == [dict get $c Batch.items] + [dict get $c Sample.id]}
 
 puts "--- 2. Tcl -> C : un lot de mesures construit en Tcl"
-set {Batch}b n 5 items {
+set {Batch}b(n,items) 5 {
     {1 20.5 0} {2 18.0 0} {3 99.9 1} {4 22.5 0} {5 19.0 0}
 }
 puts "type : [type get $b]   taille encodée : [string length [type binary encode Batch $b -align natural]] octets"
@@ -73,12 +73,12 @@ proc attempt {script} {
 puts "- un Batch encodé sans -align natural (disposition packed) :"
 attempt {cs::stats_raw [type binary encode Batch $b]}
 puts "- une valeur qui n'est pas un Batch :"
-attempt {cs::stats_obj [set {Sample}z id 1 value 2.0 flags 0]}
+attempt {cs::stats_obj [set {Sample}z {id}1 {value}2.0 {flags}0]}
 attempt {cs::stats_obj {n 1 items {}}}
 puts "- n incohérent avec le nombre d'éléments : refusé dès la construction :"
-attempt {set {Batch}bad n 3 items {{1 1.0 0}}}
+attempt {set {Batch}bad(n,items) 3 {{1 1.0 0}}}
 puts "- si on modifie n après coup (état intermédiaire légitime), l'encodage et C le vérifient :"
-set {Batch}ok n 1 items {{1 1.0 0}}
+set {Batch}ok(n,items) 1 {{1 1.0 0}}
 set ok(n) 3
 puts "  voie rapide :"
 attempt {cs::stats $ok}

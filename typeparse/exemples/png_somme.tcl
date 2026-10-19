@@ -39,30 +39,29 @@ proc lire_png {octets} {
 	switch -- $nom {
 	    IHDR {
 		binary scan $data IuIucucucucucu w h dep ct comp fil inter
-		set {ihdr}e width $w height $h depth $dep colortype $ct \
-		    compression $comp filter $fil interlace $inter
+		set {ihdr}e {width}$w {height}$h {depth}$dep {colortype}$ct {compression}$comp {filter}$fil {interlace}$inter
 		lappend blocs [set {bloc}b {IHDR}$e]
 	    }
 	    tEXt {
 		lassign [split $data \x00] mot txt
-		set {texte}t keyword $mot text $txt
+		set {texte}t {keyword}$mot {text}$txt
 		lappend blocs [set {bloc}b {tEXt}$t]
 	    }
 	    IDAT {
-		set {donnees}d hex [binary encode hex $data]
+		set {donnees}d {hex}[binary encode hex $data]
 		lappend blocs [set {bloc}b {IDAT}$d]
 	    }
 	    IEND {
 		lappend blocs [set {bloc}b {IEND}{}]
 	    }
 	    default {
-		set {autre}a name $nom hex [binary encode hex $data]
+		set {autre}a {name}$nom {hex}[binary encode hex $data]
 		lappend blocs [set {bloc}b {inconnu}$a]
 	    }
 	}
 	incr pos [expr {12 + $len}]
     }
-    set {png}p signature $sig chunks $blocs
+    set {png}p {signature}$sig {chunks}$blocs
     return $p
 }
 

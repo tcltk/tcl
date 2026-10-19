@@ -1,0 +1,14 @@
+ok: ancien piège (chunks $l) : positionnel
+ok: étiquettes
+ok: étiquettes, ordre libre
+ok: étiquette seule, défaut
+ok: chemin
+ok: nom/valeur nue : refusée
+ok: deux champs, deux valeurs : positionnel
+ok: positionnel ordinaire
+ok: étiquettes complètes
+ok: mélange refusé
+ok: étiquette partielle (niveau par défaut)
+ok: positionnel numérique
+ok: champ sans défaut manquant
+tout est ok

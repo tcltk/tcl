@@ -274,8 +274,8 @@ puts "\n--- FR: refus du typage / EN: what typing refuses ---"
 # FR : attention, ne pas réutiliser une variable typée pour un message
 #      (ici m1, m2 sont des variables fraîches).
 # EN : careful, do not reuse a typed variable for a message (m1, m2 are fresh).
-catch {set {repertoire}R nom Import rva abc taille 0} m1
+catch {set {repertoire}R {nom}Import {rva}abc {taille}0} m1
 puts "rva not an integer : $m1"
-catch {set {sectionpe}S nom .text flags 0x100000000 vaddr 0 vsize 0 rawptr 0 rawsize 0} m2
+catch {set {sectionpe}S {nom}.text {flags}0x100000000 {vaddr}0 {vsize}0 {rawptr}0 {rawsize}0} m2
 puts "flags too wide     : $m2"
 }

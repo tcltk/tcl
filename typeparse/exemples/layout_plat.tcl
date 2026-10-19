@@ -55,8 +55,7 @@ puts "aller-retour / round trip : [expr {[type binary encode tcp $t] eq $octets}
 
 # FR : on construit un SYN+ACK sans octets, puis on l'encode
 # EN : build a SYN+ACK without bytes, then encode it
-set {tcp}r src 80 dst 40000 seq 7000 ack 1001 flags 0b0101000000010010 \
-	window 65535 checksum 0 urgent 0
+set {tcp}r {src}80 {dst}40000 {seq}7000 {ack}1001 {flags}0b0101000000010010 {window}65535 {checksum}0 {urgent}0
 puts "SYN+ACK : [binary encode hex [type binary encode tcp $r]]"
 
 # ===========================================================================
@@ -135,7 +134,7 @@ catch {type binary decode mzx "XZ\x00\x00"} m2
 puts "constante / constant : $m2"
 catch {type binary encode tcp $r -endian middle} m3
 puts "option : $m3"
-catch {set {tcp}big src 70000 dst 1 seq 0 ack 0 flags 0 window 0 checksum 0 urgent 0} m4
+catch {set {tcp}big {src}70000 {dst}1 {seq}0 {ack}0 {flags}0 {window}0 {checksum}0 {urgent}0} m4
 puts "plage / range : $m4"
 type def sansbin {{int}x}
 catch {type binary {sizeof?}sansbin} m5

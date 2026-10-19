@@ -1,0 +1,9 @@
+Jean 0 | paire
+? 12
+SIG {a b}
+1
+unknown field "zz" in paire
+1
+wrong # args: paire needs 2 values; to name fields (the others take their default), write {field}value or set {paire}var(field,...) value...
+Zed 0
+Jean 3

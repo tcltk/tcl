@@ -1,5 +1,5 @@
 type def complex {{double}re = 0.0; {double}im = 0.0}
-set {complex}z re 3 im 4
+set {complex}z {re}3 {im}4
 set {int}n 5
 set s hello
 set plain 42

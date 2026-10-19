@@ -1,0 +1,17 @@
+1 jean 12
+2 paul 13
+3 zoe 0
+4 jean 14
+5 erreur: wrong # args: paire needs 2 values; to name fields (the others take their default), write {field}value or set {paire}var(field,...) value...
+6 erreur: can't mix values named by a field annotation ({field}value) and positional values in a paire constructor: name every field, or none
+7 erreur: expected integer but got "x"
+8 erreur: duplicate field "nom" in paire
+9 erreur: unknown field "taille" in paire
+10 max 21
+11 lu 12
+12 eve 20
+13 int
+14 ana 30
+15 {1 2} {3 4}
+16 erreur: field "b" of seg has no value and no default
+17 1

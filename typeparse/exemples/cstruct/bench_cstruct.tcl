@@ -34,7 +34,7 @@ proc mesure {label reps script} {
 # Chaque mesure tourne dans une procédure, comme du vrai code (variables compilées).
 if {$mode eq "annote"} {
     set A [cs::make $N 42]
-    proc p_build {n items} {set {Batch}b n $n items $items; return $b}
+    proc p_build {n items} {set {Batch}b {n}$n {items}$items; return $b}
     proc p_encode {b} {type binary encode Batch $b -align natural}
     proc p_decode {bytes} {type binary decode Batch $bytes -align natural}
     proc p_stats {b} {cs::stats $b}

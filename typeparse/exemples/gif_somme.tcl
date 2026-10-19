@@ -57,7 +57,7 @@ proc sous_blocs {octets posVar} {
 proc lire_gif {octets} {
     binary scan $octets a6 sig
     binary scan $octets @6susucucucu w h fl bg asp
-    set {ecran}e width $w height $h flags $fl background $bg aspect $asp
+    set {ecran}e {width}$w {height}$h {flags}$fl {background}$bg {aspect}$asp
     set pos 13
     set palette ""
     if {$fl & 0x80} {
@@ -77,24 +77,20 @@ proc lire_gif {octets} {
 		    249 {
 			set d [sous_blocs $octets pos]
 			binary scan $d cusucu pk delai transp
-			set {controle}c delay $delai \
-			    transparent [expr {($pk & 1) ? $transp : -1}] \
-			    disposal [expr {($pk >> 2) & 7}]
+			set {controle}c {delay}$delai {transparent}[expr {($pk & 1) ? $transp : -1}] {disposal}[expr {($pk >> 2) & 7}]
 			lappend blocs [set {gblock}b {control}$c]
 		    }
 		    254 {
-			set {commentaire}c text [sous_blocs $octets pos]
+			set {commentaire}c {text}[sous_blocs $octets pos]
 			lappend blocs [set {gblock}b {comment}$c]
 		    }
 		    255 {
 			set d [sous_blocs $octets pos]
-			set {application}a id [string range $d 0 10] \
-			    hex [binary encode hex [string range $d 11 end]]
+			set {application}a {id}[string range $d 0 10] {hex}[binary encode hex [string range $d 11 end]]
 			lappend blocs [set {gblock}b {app}$a]
 		    }
 		    default {
-			set {extinconnue}x label $label \
-			    hex [binary encode hex [sous_blocs $octets pos]]
+			set {extinconnue}x {label}$label {hex}[binary encode hex [sous_blocs $octets pos]]
 			lappend blocs [set {gblock}b {extension}$x]
 		    }
 		}
@@ -104,8 +100,7 @@ proc lire_gif {octets} {
 		incr pos 9
 		binary scan $octets @${pos}cu mincode
 		incr pos
-		set {cadre}i left $l top $t width $iw height $ih flags $f \
-		    mincode $mincode lzw [binary encode hex [sous_blocs $octets pos]]
+		set {cadre}i {left}$l {top}$t {width}$iw {height}$ih {flags}$f {mincode}$mincode {lzw}[binary encode hex [sous_blocs $octets pos]]
 		lappend blocs [set {gblock}b {frame}$i]
 	    }
 	    59 {
@@ -116,7 +111,7 @@ proc lire_gif {octets} {
 	    }
 	}
     }
-    set {gif}g signature $sig screen $e palette $palette blocks $blocs
+    set {gif}g {signature}$sig {screen}$e {palette}$palette {blocks}$blocs
     return $g
 }
 

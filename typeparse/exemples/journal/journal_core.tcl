@@ -31,7 +31,7 @@ proc journal_ouvrir {fichier} {
 
 # Crée un objet de type "journal" pour ce message, l'enregistre, et le rend.
 proc journal_ajouter {texte} {
-    set {journal}j message $texte
+    set {journal}j {message}$texte
     set m $j(message)
     set d [date_lisible $j(epoch)]
     set h $j(host)

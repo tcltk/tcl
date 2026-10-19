@@ -26,7 +26,7 @@ type def T {{u8}n; {*(./,u8).rec}x; {*(./,u8).rec}y}
 set v [type binary decode T "\x09\x04\x06\x00\x00\x01\x02\x03\x04"]
 puts $v
 unset v
-puts [hex [type binary encode T [set {T}t n 9 x {5 6} y {7 8}]]]
+puts [hex [type binary encode T [set {T}t(n,x,y) 9 {5 6} {7 8}]]]
 
 # 3. .  : depuis le champ lui-même / from the field itself
 type def U {{u8}pad; {*(.,u8).rec}x}

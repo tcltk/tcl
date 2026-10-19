@@ -201,9 +201,11 @@ lassign [lire_elf $chemin] n valeurs
 # EN : the type is chosen at run time: elf(31), elf(28)...
 # FR : le nom du type contient n, donc on construit la commande en texte.
 # EN : the type name contains n, so the command is built as text.
-set cmd "set {elf($n)}E"
-foreach champ {bits endian machine entry sections segments couverture} v $valeurs {
-    append cmd " " [list $champ $v]
+# FR : construction par chemin : set {elf(n)}E(bits,endian,...) v1 v2 ...
+# EN : construction by path: set {elf(n)}E(bits,endian,...) v1 v2 ...
+set cmd "set {elf($n)}E(bits,endian,machine,entry,sections,segments,couverture)"
+foreach v $valeurs {
+    append cmd " " [list $v]
 }
 eval $cmd
 
@@ -302,6 +304,6 @@ if {$trouve ne "" && $E(segments.$trouve.perms.0)} {
 
 # FR : garanties du typage / EN: guarantees of the typing
 puts "\n--- FR: refus du typage / EN: what typing refuses ---"
-puts "perms=9 : [catch {set {segment}P genre LOAD perms 9 offset 0 vaddr 0 filesz 0 memsz 0} msg] $msg"
-puts "bad count : [catch {set {elf(3)}Z bits 64 endian little machine x entry 0 sections {} segments {} couverture {}} msg] $msg"
+puts "perms=9 : [catch {set {segment}P {genre}LOAD {perms}9 {offset}0 {vaddr}0 {filesz}0 {memsz}0} msg] $msg"
+puts "bad count : [catch {set {elf(3)}Z(bits,endian,machine,entry,sections,segments,couverture) 64 little x 0 {} {} {}} msg] $msg"
 }

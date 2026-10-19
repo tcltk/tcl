@@ -46,7 +46,7 @@ type def {graph(
 #          / \
 #         4   5
 
-set {tree(int)}t value 1 children {
+set {tree(int)}t(value,children) 1 {
     {2 {}}
     {3 {{4 {}} {5 {}}}}
 }
@@ -81,14 +81,14 @@ puts "somme   = [tree_sum $t]"       ;# 15
 puts "hauteur = [tree_depth $t]"     ;# 3
 
 # Le même type, avec un autre paramètre : un arbre de textes.
-set {tree(string)}dirs value /usr children {
+set {tree(string)}dirs(value,children) /usr {
     {bin {}}
     {lib {{tcl9.0 {}}}}
 }
 tree_print $dirs
 
 # Une valeur qui ne respecte pas le type est refusée à la construction.
-if {[catch {set {tree(int)}bad value 1 children {{x {}}}} msg]} {
+if {[catch {set {tree(int)}bad(value,children) 1 {{x {}}}} msg]} {
     puts "refusé : $msg"            ;# expected integer but got "x"
 }
 

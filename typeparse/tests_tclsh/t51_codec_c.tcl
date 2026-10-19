@@ -8,10 +8,10 @@ type def Pt   {{i8}x; {i16be}y}
 type def Box  {{u8}tag; {Pt}a; {list(2).Pt}b; {f32le}r}
 type def Grid {{u8}k; {list(2).list(3).u16le}g; {u64le}big; {i64le}neg}
 type def Hdr  {{u16le}n; {u8}pad; {list($n).f64le}v}
-set {Pt}p1 x -5 y -300; set {Pt}p2 x 127 y 32767; set {Pt}p3 x -128 y 1
-set {Box}bx tag 9 a $p1 b [list $p2 $p3] r 1.5
-set {Grid}gr k 1 g {{1 2 3} {65535 0 7}} big 18446744073709551615 neg -9223372036854775808
-set {Hdr}hd n 3 pad 0 v {1.0 -2.5 1e300}
+set {Pt}p1 {x}-5 {y}-300; set {Pt}p2 {x}127 {y}32767; set {Pt}p3 {x}-128 {y}1
+set {Box}bx {tag}9 {a}$p1 {b}[list $p2 $p3] {r}1.5
+set {Grid}gr(k,g,big,neg) 1 {{1 2 3} {65535 0 7}} 18446744073709551615 -9223372036854775808
+set {Hdr}hd(n,pad,v) 3 0 {1.0 -2.5 1e300}
 
 # forme d'une valeur : texte, type, et types des parties (récursif)
 proc forme {v} {
@@ -65,5 +65,5 @@ deux "option inconnue"         [list type binary decode Hdr $b -bogus 1]
 deux "boutisme faux"           [list type binary decode Hdr $b -endian middle]
 deux "liste (couche Tcl)"      [list type binary decode {list(2).u8} "\x01\x02"]
 deux "liste de Pt (couche Tcl)" [list type binary decode {list(2).Pt} "\x01\x00\x02\x03\x00\x04"]
-set {Hdr}faux n 2 pad 0 v {1.0 2.0}
+set {Hdr}faux(n,pad,v) 2 0 {1.0 2.0}
 deux "encode, n incohérent"    {set ::faux2 [lreplace $::faux 0 0 5]; type binary encode Hdr $::faux2}

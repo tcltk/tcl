@@ -443,9 +443,9 @@ proc ::fb::spaceMake {data segs args} {
 	if {![regexp {^[A-Za-z0-9_.:-]+$} $name]} {
 	    error "bad space name \"$name\": letters, digits and _ - . : only"
 	}
-	set extra " name \$name"
+	set extra " {name}\$name"
     }
-    eval "set {space}sp data \$data base \$base segments \$segs$extra"
+    eval "set {space}sp {data}\$data {base}\$base {segments}\$segs$extra"
     set nm $sp(name)
     if {[dict exists $spaces $nm]} {
 	error "type binary: space \"$nm\" already exists (use \"type binary space delete $nm\")"
@@ -578,16 +578,18 @@ proc ::fb::isDefaultLink {tname fields fname frepr x fval} {
     lassign $frepr kind a b c d e f g
     if {$c eq "none" || $e ne ""} {return 0}
     if {$f ne "" && [type get $fval] eq $f} {return 0}
-    set cmd "set {$tname}dflt"
+    set names {}; set vals ""
     set i 0
     foreach fl $fields {
 	set n [lindex $fl 0]
 	if {$n eq $fname} continue
 	if {[lindex [unref [lindex $fl 1]] 0] eq "none" && [lindex $fl 2]} continue
 	set ov$i $x($n)
-	append cmd " [list $n] \$ov$i"
+	lappend names $n; append vals " \$ov$i"
 	incr i
     }
+    set cmd "set {$tname}dflt"
+    if {$i} {append cmd "([join $names ,])" $vals}
     if {[catch {eval $cmd} err]} {return 0}
     set dv $dflt($fname)
     return [expr {[string range $dv 0 end] eq [string range $fval 0 end]}]
@@ -828,7 +830,7 @@ proc ::fb::dec {r sName ctx what} {
 	product {
 	    # a = nom du type, b = champs {nom repr avecdefaut}
 	    set scope [dict get $ctx scope]
-	    set cmd "set {$a}V"
+	    set names {}; set vals ""
 	    set i 0
 	    set starts [dict getdef $ctx starts {}]
 	    set mine 0
@@ -874,7 +876,7 @@ proc ::fb::dec {r sName ctx what} {
 		dict set scope $fname [set fv$i]
 		# FR : par variable, pour garder le type des sommes et des produits
 		# EN : by variable, to keep the type of sums and products
-		append cmd " " [list $fname] " \$fv$i"
+		lappend names $fname; append vals " \$fv$i"
 		incr i
 	    }
 	    # FR : les cibles des liens, maintenant que tous les champs sont lus
@@ -885,6 +887,10 @@ proc ::fb::dec {r sName ctx what} {
 	    skipPad s [alignOf $r $ctx] $ctx "the end of $a"
 	    # FR : le nom du type peut contenir des parenthèses : commande en texte
 	    # EN : the type name may contain parentheses: the command is built as text
+	    # FR : construction par chemin : set {T}V(c1,c2,...) $fv0 $fv1 ...
+	    # EN : construction by path: set {T}V(f1,f2,...) $fv0 $fv1 ...
+	    set cmd "set {$a}V"
+	    if {$i} {append cmd "([join $names ,])" $vals}
 	    eval $cmd
 	    return $V
 	}
