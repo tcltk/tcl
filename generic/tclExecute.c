@@ -2606,6 +2606,21 @@ TEBCresume(
 	NEXT_INST_V(2, opnd, 1);
     break;
 
+    case INST_INDEX_CONCAT: {
+	/* Index de $nom(...) : les parties substituées restent atomiques. */
+	unsigned int mask = TclGetUInt4AtPtr(pc + 2);
+	char subst[32];
+	Tcl_Size k;
+
+	opnd = TclGetUInt1AtPtr(pc + 1);
+	for (k = 0; k < opnd; k++) {
+	    subst[k] = (char) ((mask >> k) & 1u);
+	}
+	objResultPtr = TclPathIndexNew(&OBJ_AT_DEPTH(opnd - 1), opnd, subst);
+	TRACE_WITH_OBJ(("%u => ", opnd), objResultPtr);
+	NEXT_INST_V(6, opnd, 1);
+    }
+
     case INST_CONCAT_STK:
 	/*
 	 * Pop the opnd (objc) top stack elements, run through Tcl_ConcatObj,
@@ -3016,16 +3031,20 @@ TEBCresume(
 		TCL_LEAVE_ERR_MSG, "read", /*createPart1*/0, /*createPart2*/1,
 		&arrayPtr);
 	if (!varPtr) {
-	    if (part2Ptr != NULL) {
-		int trc;
+	    int trc = TCL_CONTINUE;
 
-		DECACHE_STACK_INFO();
+	    DECACHE_STACK_INFO();
+	    if (part2Ptr != NULL) {
 		trc = TclTypedVarGetElement(interp, part1Ptr, part2Ptr,
 			&objResultPtr);
-		CACHE_STACK_INFO();
-		if (trc == TCL_OK) {
-		    NEXT_INST_V(1, cleanup, 1);
-		}
+	    } else {
+		/* ${R(chemin)} : le nom entier porte l'index */
+		trc = TclTypedVarGetElementByName(interp, part1Ptr,
+			&objResultPtr);
+	    }
+	    CACHE_STACK_INFO();
+	    if (trc == TCL_OK) {
+		NEXT_INST_V(1, cleanup, 1);
 	    }
 	    TRACE_ERROR(interp);
 	    goto gotError;

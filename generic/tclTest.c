@@ -4255,6 +4255,9 @@ PrintParse(
 	case TCL_TOKEN_OPERATOR:
 	    typeString = "operator";
 	    break;
+	case TCL_TOKEN_INDEX:
+	    typeString = "index";
+	    break;
 	default:
 	    typeString = "??";
 	    break;

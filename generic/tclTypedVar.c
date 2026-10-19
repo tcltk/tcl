@@ -503,6 +503,7 @@ BuildDict(Tcl_Interp *interp, TclType *tp, Tcl_Size n, Tcl_Obj *const a[],
 		    goto fail;
 		}
 		Tcl_DictObjPut(interp, dict, kc, vc);
+		TclDiscard(kc);		/* clé en double : non gardée */
 	    }
 	    Tcl_DictObjDone(&search);
 	    i++;
@@ -522,6 +523,7 @@ BuildDict(Tcl_Interp *interp, TclType *tp, Tcl_Size n, Tcl_Obj *const a[],
 	    goto fail;
 	}
 	Tcl_DictObjPut(interp, dict, k, v);
+	TclDiscard(k);			/* clé en double : non gardée */
 	i += 2;
     }
     *contentPtr = dict;
@@ -779,18 +781,21 @@ CheckDynCounts(Tcl_Interp *interp, TclType *tp, Tcl_Obj **slot)
 }
 
 static int
-BuildProduct(Tcl_Interp *interp, TclType *tp, Tcl_Size n, Tcl_Obj *const a[],
-	Tcl_Obj **contentPtr)
+BuildProductEx(Tcl_Interp *interp, TclType *tp, Tcl_Size n,
+	Tcl_Obj *const a[], Tcl_Obj **contentPtr, int named)
 {
     Tcl_Size nf = tp->nfields, i, idx;
     Tcl_Obj **slot, *content;
     TclType *at;
-    int status, variant, rc = TCL_ERROR, forceNameValue = 0;
+    int status, variant, rc = TCL_ERROR, forceNameValue = named;
     Tcl_Obj *tagArgs[2] = {NULL, NULL};
 
     slot = (Tcl_Obj **) Tcl_Alloc((nf ? nf : 1) * sizeof(Tcl_Obj *));
     memset(slot, 0, (nf ? nf : 1) * sizeof(Tcl_Obj *));
 
+    if (named) {
+	goto nameValue;
+    }
     if (n == 1 && TclAnnotResolve(interp, a[0], NULL, &status, &at, &variant,
 	    &content) == TCL_OK && status == TCLA_TYPED && at == tp) {
 	*contentPtr = Tcl_DuplicateObj(content);	/* copie d'un produit */
@@ -839,6 +844,7 @@ BuildProduct(Tcl_Interp *interp, TclType *tp, Tcl_Size n, Tcl_Obj *const a[],
 	    }
 	}
     } else if (nf > 0 && n % 2 == 0 && n <= 2 * nf) {
+      nameValue:
 	/*
 	 * Forme nom/valeur, éventuellement PARTIELLE : les champs omis
 	 * prennent leur valeur par défaut ("=" dans la définition du type).
@@ -921,6 +927,21 @@ BuildProduct(Tcl_Interp *interp, TclType *tp, Tcl_Size n, Tcl_Obj *const a[],
 	Tcl_DecrRefCount(tagArgs[0]);
     }
     return rc;
+}
+
+static int
+BuildProduct(Tcl_Interp *interp, TclType *tp, Tcl_Size n, Tcl_Obj *const a[],
+	Tcl_Obj **contentPtr)
+{
+    return BuildProductEx(interp, tp, n, a, contentPtr, 0);
+}
+
+/* Nom/valeur imposé (constructeur par chemin) : jamais positionnel. */
+int
+TclBuildProductNamed(Tcl_Interp *interp, TclType *tp, Tcl_Size n,
+	Tcl_Obj *const a[], Tcl_Obj **contentPtr)
+{
+    return BuildProductEx(interp, tp, n, a, contentPtr, 1);
 }
 
 static int
@@ -1034,6 +1055,7 @@ TclSetAnnotatedCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
     Tcl_Size nargs = objc - 2, i, np = 0;
     int status, avar, variant = -1, forced = -1, hadBit, rc = TCL_ERROR;
     const char *name;
+    char *ctorPath = NULL;
     Var *varPtr, *arrayPtr = NULL;
 
     if (TclAnnotResolve(interp, objv[1], NULL, &status, &tp, &avar, &nameObj)
@@ -1088,6 +1110,19 @@ TclSetAnnotatedCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 		Tcl_SetErrorCode(interp, "TCL", "TYPE", "VARIANT", (char *) NULL);
 		return TCL_ERROR;
 	    }
+	    baseObj = Tcl_NewStringObj(name, open - name);
+	}
+    }
+    /* Produit : set {T}R(chemin) v... construit par les champs nommés. */
+    if (baseObj == NULL && (status == TCLA_RAW || status == TCLA_TYPED)
+	    && tp->kind == TCLT_PRODUCT) {
+	size_t len = strlen(name);
+	const char *open = strchr(name, '(');
+
+	if (open != NULL && open != name && len > 0 && name[len - 1] == ')') {
+	    ctorPath = (char *) Tcl_Alloc(len);
+	    memcpy(ctorPath, open + 1, len - (open - name) - 2);
+	    ctorPath[len - (open - name) - 2] = '\0';
 	    baseObj = Tcl_NewStringObj(name, open - name);
 	}
     }
@@ -1150,7 +1185,12 @@ TclSetAnnotatedCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 		}
 	    }
 	}
-	if (BuildValue(interp, tp, forced, nargs, sa, &c, &variant)
+	if (ctorPath != NULL) {
+	    if (TclTypePathConstruct(interp, tp, ctorPath, nargs, sa, &c)
+		    != TCL_OK) {
+		goto done;
+	    }
+	} else if (BuildValue(interp, tp, forced, nargs, sa, &c, &variant)
 		!= TCL_OK) {
 	    goto done;
 	}
@@ -1229,6 +1269,9 @@ TclSetAnnotatedCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
     }
     if (pend != NULL) {
 	Tcl_DecrRefCount(pend);
+    }
+    if (ctorPath != NULL) {
+	Tcl_Free(ctorPath);
     }
     Tcl_DecrRefCount(baseObj);
     return rc;

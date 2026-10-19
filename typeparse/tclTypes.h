@@ -341,6 +341,15 @@ int	TclSetAnnotatedCmd(Tcl_Interp *interp, Tcl_Size objc,
 /* tclTypePath.c */
 int	TclTypePathRead(Tcl_Interp *interp, Tcl_Obj *containerPtr,
 	    const char *path, Tcl_Obj **resultPtr);
+int	TclTypedVarGetElementByName(Tcl_Interp *interp, Tcl_Obj *nameObj,
+	    Tcl_Obj **resultPtr);
+Tcl_Obj *TclPathIndexNew(Tcl_Obj *const parts[], Tcl_Size n,
+	    const char *subst);
+int	TclTypePathConstruct(Tcl_Interp *interp, TclType *tp,
+	    const char *path, Tcl_Size nvals, Tcl_Obj *const vals[],
+	    Tcl_Obj **contentPtr);
+int	TclBuildProductNamed(Tcl_Interp *interp, TclType *tp, Tcl_Size n,
+	    Tcl_Obj *const a[], Tcl_Obj **contentPtr);
 int	TclTypePathWrite(Tcl_Interp *interp, Tcl_Obj *containerPtr,
 	    const char *path, Tcl_Size nvals, Tcl_Obj *const vals[],
 	    Tcl_Obj **newPtr);

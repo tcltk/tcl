@@ -1,0 +1,50 @@
+1 feuilles                         | set {rect}R1(A.x,A.y,B.x,B.y) $Ax $Ay $Bx $By              | -> {{1 2} {3 4}} rect
+2 produit de groupes               | set {rect}R2((A,B).(x,y)) $Ax $Ay $Bx $By                  | -> {{1 2} {3 4}} rect
+3 un élément par groupe            | set {rect}R3(A.(x,y),B.(x,y)) [list $Ax $Ay] [list $Bx $By] | -> {{1 2} {3 4}} rect
+3' parenthèses en plus             | set {rect}R4((A.(x,y),B.(x,y))) [list $Ax $Ay] [list $Bx $By] | -> {{1 2} {3 4}} rect
+4 une valeur pour tout             | set {rect}R5((A,B).(x,y)) {{1 2} {3 4}}                    | -> {{1 2} {3 4}} rect
+5 champs entiers                   | set {rect}R6(A,B) {1 2} {3 4}                              | -> {{1 2} {3 4}} rect
+6 ordre libre                      | set {rect}R7(B.y,A.x,B.x,A.y) 4 1 3 2                      | -> {{1 2} {3 4}} rect
+7 défauts                          | set {paire}P1(age) 12                                      | -> {? 12} paire
+8 pas d'ambiguïté                  | set {paire}P2(nom) age                                     | -> {age ?} paire
+9 évolution du type                | set {couple3}C1(x,y) 1 2                                   | -> {1 2 0} couple3
+lecture imbriquée                  | set R2((A,B).(x,y))                                        | -> {{1 2} {3 4}} list<list<int>>
+lecture mixte                      | set R2(A.x,B.(x,y))                                        | -> {1 {3 4}} list<list<int>>
+aller-retour                       | set {rect}R8((A,B).(x,y)) [set R2((A,B).(x,y))]            | -> {{1 2} {3 4}} rect
+écriture par groupes               | set R2(A.(x,y),B.(x,y)) {9 8} {7 6}                        | -> {{9 8} {7 6}} rect
+écriture une valeur                | set R2((A,B).(x,y)) {{5 6} {7 8}}                          | -> {{5 6} {7 8}} 
+err: champ manquant                | set {rect}E1(A.x,B.x,B.y) 1 3 4                            | ERREUR: field "y" of prod<x:int;y:int;> has no value and no default
+err: champ inconnu                 | set {rect}E2(A.z) 1                                        | ERREUR: unknown field "z" in prod<x:int;y:int;>
+err: deux fois                     | set {rect}E3(A,A.x,B) {1 2} 5 {3 4}                        | ERREUR: field "A" of rect is assigned more than once
+err: nombre                        | set {rect}E4((A,B).(x,y)) 1 2 3                            | ERREUR: wrong # args: the path selects 4 targets in 2 groups: give 4 values, 2 or 1, not 3
+err: forme                         | set {rect}E5(A.(x,y),B.(x,y)) {1 2 3} {3 4}                | ERREUR: value "1 2 3" has 3 elements, but this part of the path selects 2
+err: type                          | set {rect}E6(A.x,A.y,B.x,B.y) a 2 3 4                      | ERREUR: expected integer but got "a"
+err: pas un produit                | set {rect}E7(A.x.q,A.y,B) 1 2 {3 4}                        | ERREUR: a constructor path names fields of products: int is not a product
+err: intervalle                    | set {rect}E8(A,0:1) 1 2                                    | ERREUR: a constructor path names fields: no ranges or tags
+amb. données = nom de champ        | set lv texte; set {trace}T1(niveau,texte) $lv a            | ERREUR: expected integer but got "texte"
+amb. données = nom de champ 2      | set a age; set b 12; set {paire}P3(nom,age) $a $b          | -> {age 12} paire
+amb. nommé partiel                 | set {trace}T2(texte) a                                     | -> {3 a} trace
+positionnel inchangé               | set {couple}C2 1 2                                         | -> {1 2} couple
+dans une procédure                 | f                                                          | -> {{{5 6} {7 4}} 4 {5 7} {5 6}} 
+$R(A.(x,y))                        | set {rect}R9(A,B) {1 2} {3 4}; list $R9(A.(x,y))           | -> {{1 2}} 
+$R((A,B).(x,y))                    | list $R9((A,B).(x,y))                                      | -> {{{1 2} {3 4}}} 
+$k dans le chemin                  | set k B; list $R9($k.(x,y))                                | -> {{3 4}} 
+procédure, $Q($k.(x,y))            | g A                                                        | -> {{5 6} {5 7}} 
+tableau ordinaire $a(b(c))         | array set tab {{b(c)} 1}; list $tab(b(c)) [set tab(b(c))]  | -> {1 1} 
+non équilibré                      | list $tab(b(c)                                             | ERREUR: invalid character in array index
+étiquette                          | set {list.int}L0 10 20 30; list $L0(0,"|",1)               | -> {{10 | 20}} 
+étiquette dans une chaîne          | set s "<$L0(0,"|",1)>"                                     | -> {<10 | 20>} 
+parenthèse dans l'étiquette        | list $L0(0,")",1)                                          | -> {{10 ) 20}} 
+substitution dans l'étiquette      | set sep {a"b}; list $L0(0,"$sep",1)                        | -> {{10 a\"b 20}} 
+forme échappée \"…\"               | list $L0(0,\"|\",1)                                        | -> {{10 | 20}} 
+guillemet sans partenaire          | list $L0(0,"|,1)                                           | ERREUR: invalid character in array index
+info complete {a "c $dd("}         | info complete {a "c $dd("}                                 | -> 1 
+accolade refusée                   | list $tab({x})                                             | ERREUR: invalid character in array index
+intervalle groupé                  | set L(0:2,4)                                               | -> {{10 20 30} 50} list<list<int>>
+intervalle déplié                  | set L(*0:2,4)                                              | -> {10 20 30 50} list<int>
+deux dépliages                     | set L(*0:1,*3:4)                                           | -> {10 20 40 50} list<int>
+groupe déplié                      | set R9(*A.(x,y),B.x)                                       | -> {1 2 3} list<int>
+à droite d'un point                | set R9((A,B).*(x,y))                                       | -> {1 2 3 4} list<int>
+construction à plat                | set {rect}Q2((A,B).*(x,y)) {5 6 7 8}                       | -> {{5 6} {7 8}} rect
+écriture dépliée                   | set R9(*A.(x,y),B.x) 7 8 9; set R9                         | -> {{7 8} {9 4}} rect
+racine : sans effet                | set R9(*(A,B).(x,y))                                       | -> {{7 8} {9 4}} list<list<int>>

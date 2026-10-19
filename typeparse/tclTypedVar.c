@@ -32,15 +32,44 @@ Mismatch(Tcl_Interp *interp, const TclType *expected, const TclType *got)
 }
 
 /*
+ * set {}y $x range la valeur sans rien résoudre : pendant cette écriture,
+ * le chemin d'écriture ne doit pas appeler le résolveur. Compteur propre
+ * au thread (un interpréteur ne quitte pas son thread).
+ */
+typedef struct {
+    int suspended;
+} SettleState;
+static Tcl_ThreadDataKey settleKey;
+
+static int
+SettleSuspended(void)
+{
+    SettleState *st = (SettleState *) Tcl_GetThreadData(&settleKey,
+	    sizeof(SettleState));
+
+    return st->suspended > 0;
+}
+
+static void
+SettleSuspend(int delta)
+{
+    SettleState *st = (SettleState *) Tcl_GetThreadData(&settleKey,
+	    sizeof(SettleState));
+
+    st->suspended += delta;
+}
+
+/*
  * Fabrique, à partir de "arg", une valeur annotée de type tp (objet neuf,
  * refcount 0) ou NULL. Sert aux écritures sous contrat.
  */
 static Tcl_Obj *
 MakeTyped(Tcl_Interp *interp, TclType *tp, Tcl_Obj *arg)
 {
-    int status, variant = -1, outVariant = -1;
+    int status, variant = -1, outVariant = -1, dropTop = 0;
     TclType *at;
-    Tcl_Obj *content, *copy, *res;
+    Tcl_Obj *content, *copy, *res, *pend, *rest;
+    Tcl_Size np = 0;
 
     if (TclAnnotResolve(interp, arg, tp, &status, &at, &variant, &content)
 	    != TCL_OK) {
@@ -50,18 +79,20 @@ MakeTyped(Tcl_Interp *interp, TclType *tp, Tcl_Obj *arg)
 	if (TclTypeSame(at, tp)) {
 	    return Tcl_DuplicateObj(arg);
 	}
-	if (!TclTypeAssignable(tp, at)) {
+	/* Élargissement (int(u,8) -> int), ou nominal qui s'efface devant le
+	 * générique (px -> int, dist -> mm) : même contenu, type du contrat. */
+	if (!TclTypeEnters(tp, at)) {
 	    Mismatch(interp, tp, at);
 	    return NULL;
 	}
-	/* Élargissement (int(u,8) -> int) : même contenu, type de la cible. */
     }
     if (status == TCLA_RAW) {
-	if (!TclTypeAssignable(tp, at)) {
+	if (!TclTypeEnters(tp, at)) {
 	    Mismatch(interp, tp, at);
 	    return NULL;
 	}
 	outVariant = variant;		/* balise explicite, ou -1 */
+	dropTop = TclAnnotIsNoteOnly(arg);	/* {d}$v : la note est lue */
     }
     copy = Tcl_DuplicateObj(content);
     /* Valide (arité, clés) et ajoute les valeurs par défaut des clés
@@ -72,6 +103,22 @@ MakeTyped(Tcl_Interp *interp, TclType *tp, Tcl_Obj *arg)
     }
     res = TclNewAnnotated(interp, tp, variant, copy);
     TclDiscard(copy);
+    /* La pile d'annotations non résolues suit la valeur (int@px). */
+    pend = TclAnnotPending(arg);
+    Tcl_IncrRefCount(pend);
+    Tcl_ListObjLength(NULL, pend, &np);
+    if (dropTop && np > 0) {
+	Tcl_ListObjReplace(NULL, pend, np - 1, 1, 0, NULL);
+	np--;
+    }
+    if (np > 0) {
+	rest = TclAnnotWithPending(res, pend);
+	if (rest != res) {
+	    TclDiscard(res);
+	    res = rest;
+	}
+    }
+    Tcl_DecrRefCount(pend);
     return res;
 }
 
@@ -103,45 +150,36 @@ TclTypedVarPrepareWrite(Tcl_Interp *interp, Var *varPtr,
 	}
     }
 
-    if (contract == NULL) {
-	/* Variable sans type : adoption d'une valeur typée. */
-	if (!TclIsAnnotated(value)) {
-	    return TCL_OK;
-	}
-	{
-	    /* Un nom qui ne se résout pas est une NOTE : la variable la garde. */
-	    Tcl_Obj *norm = TclAnnotNormalize(interp, value);
+    /*
+     * Le constructeur résout la pile de la valeur (TclAnnotSettle) : les
+     * annotations qui se résolvent sont dépilées depuis la plus récente,
+     * la plus récente donne le cast. set {}y $x l'a déjà fait sans rien
+     * résoudre (SettleSuspended).
+     */
+    if (TclIsAnnotated(value) && !(*flagsPtr & TCL_APPEND_VALUE)
+	    && !SettleSuspended()) {
+	Tcl_Obj *settled;
 
-	    if (TclAnnotIsNoteOnly(norm)) {
-		if (norm != value) {
-		    Tcl_IncrRefCount(norm);
-		    *valuePtrPtr = norm;
-		    *tmpPtrPtr = norm;
-		}
-		return TCL_OK;
-	    }
-	    TclDiscard(norm == value ? NULL : norm);
-	}
-	if (TclAnnotResolve(interp, value, NULL, &status, &at, &avar, &content)
-		!= TCL_OK) {
+	if (TclAnnotSettle(interp, value, contract, 0, &settled) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	if (status == TCLA_TYPED) {
-	    return TCL_OK;			/* stockée telle quelle */
+	if (settled != value) {
+	    Tcl_IncrRefCount(settled);
+	    value = settled;
+	    *valuePtrPtr = settled;
+	    *tmpPtrPtr = settled;
 	}
-	if (status == TCLA_EMPTY || status == TCLA_PLAIN) {
-	    /* {}$x : on retire le type. PLAIN : annotation locale ({-v}), qui
-	     * s'adressait à la commande appelée : on range le contenu seul. */
-	    res = Tcl_DuplicateObj(content);
-	} else {
-	    res = MakeTyped(interp, at, value);
-	    if (res == NULL) {
-		return TCL_ERROR;
-	    }
-	}
-	Tcl_IncrRefCount(res);
-	*valuePtrPtr = res;
-	*tmpPtrPtr = res;
+    }
+
+    if (contract == NULL) {
+	/*
+	 * Variable sans type : elle adopte le type de la valeur (s'il y en
+	 * a un), qui devient son contrat ; la pile restante suit la valeur.
+	 */
+	(void) status;
+	(void) at;
+	(void) avar;
+	(void) content;
 	return TCL_OK;
     }
 
@@ -187,12 +225,42 @@ TclTypedVarPrepareWrite(Tcl_Interp *interp, Var *varPtr,
     } else {
 	res = MakeTyped(interp, contract, value);
 	if (res == NULL) {
+	    if (*tmpPtrPtr != NULL) {
+		Tcl_DecrRefCount(*tmpPtrPtr);
+		*tmpPtrPtr = NULL;
+	    }
 	    return TCL_ERROR;
 	}
     }
     Tcl_IncrRefCount(res);
+    if (*tmpPtrPtr != NULL) {
+	Tcl_DecrRefCount(*tmpPtrPtr);	/* la valeur résolue, remplacée */
+    }
     *valuePtrPtr = res;
     *tmpPtrPtr = res;
+    return TCL_OK;
+}
+
+/*
+ * Liaison d'un argument de procédure (tclProc.c) : c'est un constructeur.
+ * La valeur reçue passe par le résolveur, puis le bit suit la valeur.
+ */
+int
+TclTypedVarBindArg(Tcl_Interp *interp, Var *varPtr)
+{
+    Tcl_Obj *v = varPtr->value.objPtr, *settled;
+
+    if (v != NULL && TclIsAnnotated(v)) {
+	if (TclAnnotSettle(interp, v, NULL, 0, &settled) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	if (settled != v) {
+	    Tcl_IncrRefCount(settled);
+	    varPtr->value.objPtr = settled;
+	    Tcl_DecrRefCount(v);
+	}
+    }
+    TclTypedVarAfterStore(varPtr);
     return TCL_OK;
 }
 
@@ -271,7 +339,7 @@ TclTypedConform(Tcl_Interp *interp, TclType *tp, Tcl_Obj *arg)
 	return NULL;
     }
     if ((status == TCLA_TYPED || status == TCLA_RAW)
-	    && !TclTypeAssignable(tp, at)
+	    && !TclTypeEnters(tp, at)
 	    && !TclTypeIsPlainString(tp) && !TclTypeIsAny(tp)) {
 	Mismatch(interp, tp, at);
 	return NULL;
@@ -435,6 +503,7 @@ BuildDict(Tcl_Interp *interp, TclType *tp, Tcl_Size n, Tcl_Obj *const a[],
 		    goto fail;
 		}
 		Tcl_DictObjPut(interp, dict, kc, vc);
+		TclDiscard(kc);		/* clé en double : non gardée */
 	    }
 	    Tcl_DictObjDone(&search);
 	    i++;
@@ -454,6 +523,7 @@ BuildDict(Tcl_Interp *interp, TclType *tp, Tcl_Size n, Tcl_Obj *const a[],
 	    goto fail;
 	}
 	Tcl_DictObjPut(interp, dict, k, v);
+	TclDiscard(k);			/* clé en double : non gardée */
 	i += 2;
     }
     *contentPtr = dict;
@@ -711,18 +781,21 @@ CheckDynCounts(Tcl_Interp *interp, TclType *tp, Tcl_Obj **slot)
 }
 
 static int
-BuildProduct(Tcl_Interp *interp, TclType *tp, Tcl_Size n, Tcl_Obj *const a[],
-	Tcl_Obj **contentPtr)
+BuildProductEx(Tcl_Interp *interp, TclType *tp, Tcl_Size n,
+	Tcl_Obj *const a[], Tcl_Obj **contentPtr, int named)
 {
     Tcl_Size nf = tp->nfields, i, idx;
     Tcl_Obj **slot, *content;
     TclType *at;
-    int status, variant, rc = TCL_ERROR, forceNameValue = 0;
+    int status, variant, rc = TCL_ERROR, forceNameValue = named;
     Tcl_Obj *tagArgs[2] = {NULL, NULL};
 
     slot = (Tcl_Obj **) Tcl_Alloc((nf ? nf : 1) * sizeof(Tcl_Obj *));
     memset(slot, 0, (nf ? nf : 1) * sizeof(Tcl_Obj *));
 
+    if (named) {
+	goto nameValue;
+    }
     if (n == 1 && TclAnnotResolve(interp, a[0], NULL, &status, &at, &variant,
 	    &content) == TCL_OK && status == TCLA_TYPED && at == tp) {
 	*contentPtr = Tcl_DuplicateObj(content);	/* copie d'un produit */
@@ -771,6 +844,7 @@ BuildProduct(Tcl_Interp *interp, TclType *tp, Tcl_Size n, Tcl_Obj *const a[],
 	    }
 	}
     } else if (nf > 0 && n % 2 == 0 && n <= 2 * nf) {
+      nameValue:
 	/*
 	 * Forme nom/valeur, éventuellement PARTIELLE : les champs omis
 	 * prennent leur valeur par défaut ("=" dans la définition du type).
@@ -853,6 +927,21 @@ BuildProduct(Tcl_Interp *interp, TclType *tp, Tcl_Size n, Tcl_Obj *const a[],
 	Tcl_DecrRefCount(tagArgs[0]);
     }
     return rc;
+}
+
+static int
+BuildProduct(Tcl_Interp *interp, TclType *tp, Tcl_Size n, Tcl_Obj *const a[],
+	Tcl_Obj **contentPtr)
+{
+    return BuildProductEx(interp, tp, n, a, contentPtr, 0);
+}
+
+/* Nom/valeur imposé (constructeur par chemin) : jamais positionnel. */
+int
+TclBuildProductNamed(Tcl_Interp *interp, TclType *tp, Tcl_Size n,
+	Tcl_Obj *const a[], Tcl_Obj **contentPtr)
+{
+    return BuildProductEx(interp, tp, n, a, contentPtr, 1);
 }
 
 static int
@@ -961,15 +1050,44 @@ int
 TclSetAnnotatedCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 {
     Tcl_Obj *nameObj, *baseObj = NULL, *c = NULL, *valueA = NULL;
-    Tcl_Obj *res;
+    Tcl_Obj *res, **sa = NULL, *pend = NULL;
     TclType *tp;
-    Tcl_Size nargs = objc - 2;
+    Tcl_Size nargs = objc - 2, i, np = 0;
     int status, avar, variant = -1, forced = -1, hadBit, rc = TCL_ERROR;
     const char *name;
+    char *ctorPath = NULL;
     Var *varPtr, *arrayPtr = NULL;
 
     if (TclAnnotResolve(interp, objv[1], NULL, &status, &tp, &avar, &nameObj)
 	    != TCL_OK) {
+	return TCL_ERROR;
+    }
+    if (status != TCLA_EMPTY && tp == NULL) {
+	/*
+	 * Le nom d'une variable attend un TYPE : un nom inconnu n'y est pas
+	 * une note, et une annotation locale ({-v}) n'y a pas de sens.
+	 */
+	Tcl_Obj *raw = NULL;
+	Tcl_Size rl;
+	const char *rt;
+
+	TclAnnotInfo(objv[1], NULL, NULL, NULL, &raw);
+	rt = (raw != NULL) ? Tcl_GetStringFromObj(raw, &rl) : "";
+	if (raw == NULL) {
+	    rl = 0;
+	}
+	if (TclTypeParse(interp, rt, rl) == NULL
+		&& TclAnnotErrorCodeIs(interp, "BADCHAR")) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "local annotation {%s} cannot declare a variable: a "
+		    "variable name takes a type", rt));
+	    Tcl_SetErrorCode(interp, "TCL", "TYPE", "LOCALANNOT",
+		    (char *) NULL);
+	} else if (Tcl_GetCharLength(Tcl_GetObjResult(interp)) == 0) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "unknown type \"%s\"", rt));
+	    Tcl_SetErrorCode(interp, "TCL", "TYPE", "UNKNOWN", (char *) NULL);
+	}
 	return TCL_ERROR;
     }
     name = Tcl_GetString(nameObj);
@@ -995,6 +1113,19 @@ TclSetAnnotatedCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 	    baseObj = Tcl_NewStringObj(name, open - name);
 	}
     }
+    /* Produit : set {T}R(chemin) v... construit par les champs nommés. */
+    if (baseObj == NULL && (status == TCLA_RAW || status == TCLA_TYPED)
+	    && tp->kind == TCLT_PRODUCT) {
+	size_t len = strlen(name);
+	const char *open = strchr(name, '(');
+
+	if (open != NULL && open != name && len > 0 && name[len - 1] == ')') {
+	    ctorPath = (char *) Tcl_Alloc(len);
+	    memcpy(ctorPath, open + 1, len - (open - name) - 2);
+	    ctorPath[len - (open - name) - 2] = '\0';
+	    baseObj = Tcl_NewStringObj(name, open - name);
+	}
+    }
     if (forced < 0 && status == TCLA_RAW && tp->kind == TCLT_SUM && avar >= 0) {
 	forced = avar;			/* set {Val.s}x 7 */
     }
@@ -1005,21 +1136,61 @@ TclSetAnnotatedCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 
     /* Valeur à stocker. */
     if (status == TCLA_EMPTY) {			/* set {}j 10 : sans type */
-	int st2, av2;
-	TclType *t2;
-	Tcl_Obj *ct2;
-
 	if (nargs != 1) {
 	    WrongArgs(interp, "should be \"set {}varName value\"");
 	    goto done;
 	}
-	if (TclAnnotResolve(interp, objv[2], NULL, &st2, &t2, &av2, &ct2)
+	/* Le contrat est levé ; la valeur perd son type résolu et garde sa
+	 * pile, sans que rien n'y soit résolu (le constructeur suivant le
+	 * fera). */
+	if (TclAnnotSettle(interp, objv[2], NULL, TCLA_SETTLE_KEEP, &valueA)
 		!= TCL_OK) {
+	    valueA = NULL;
 	    goto done;
 	}
-	valueA = Tcl_DuplicateObj(ct2);		/* valeur ordinaire */
+	if (valueA == objv[2] && TclAnnotInfo(valueA, NULL, NULL, NULL,
+		NULL) == 1) {
+	    valueA = Tcl_DuplicateObj(TCL_ANNOT_CONTENT(objv[2]));
+	}
     } else {
-	if (BuildValue(interp, tp, forced, nargs, objv + 2, &c, &variant)
+	/* Chaque valeur passe par le résolveur, dans le contexte du type
+	 * déclaré quand il n'y en a qu'une. */
+	sa = (Tcl_Obj **) Tcl_Alloc((nargs > 0 ? nargs : 1)
+		* sizeof(Tcl_Obj *));
+	for (i = 0; i < nargs; i++) {
+	    Tcl_Obj *one;
+
+	    if (TclAnnotSettle(interp, objv[2 + i], nargs == 1 ? tp : NULL,
+		    0, &one) != TCL_OK) {
+		nargs = i;		/* libérer seulement les précédents */
+		goto done;
+	    }
+	    Tcl_IncrRefCount(one);
+	    sa[i] = one;
+	}
+	if (nargs == 1) {
+	    pend = TclAnnotPending(sa[0]);
+	    Tcl_IncrRefCount(pend);
+	    Tcl_ListObjLength(NULL, pend, &np);
+	    if (np > 0 && tp->kind == TCLT_SUM
+		    && TclAnnotInfo(sa[0], NULL, NULL, NULL, NULL) != 1) {
+		Tcl_Obj *top = NULL;
+
+		Tcl_ListObjIndex(NULL, pend, np - 1, &top);
+		if (top != NULL && TclTypeFieldIndex(tp,
+			Tcl_GetString(top)) >= 0) {
+		    /* {circle}$x : la variante choisie est lue, pas gardée. */
+		    Tcl_ListObjReplace(NULL, pend, np - 1, 1, 0, NULL);
+		    np--;
+		}
+	    }
+	}
+	if (ctorPath != NULL) {
+	    if (TclTypePathConstruct(interp, tp, ctorPath, nargs, sa, &c)
+		    != TCL_OK) {
+		goto done;
+	    }
+	} else if (BuildValue(interp, tp, forced, nargs, sa, &c, &variant)
 		!= TCL_OK) {
 	    goto done;
 	}
@@ -1036,6 +1207,14 @@ TclSetAnnotatedCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 	}
 	valueA = TclNewAnnotated(interp, tp, variant, c);
 	TclDiscard(c);
+	if (np > 0) {
+	    Tcl_Obj *withP = TclAnnotWithPending(valueA, pend);
+
+	    if (withP != valueA) {
+		TclDiscard(valueA);
+		valueA = withP;
+	    }
+	}
     }
     Tcl_IncrRefCount(valueA);
 
@@ -1066,7 +1245,9 @@ TclSetAnnotatedCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
      */
     hadBit = varPtr->flags & VAR_TYPED;
     varPtr->flags &= ~VAR_TYPED;
+    SettleSuspend(1);			/* valueA est déjà résolue */
     res = Tcl_ObjSetVar2(interp, baseObj, NULL, valueA, TCL_LEAVE_ERR_MSG);
+    SettleSuspend(-1);
     if (res == NULL) {
 	if (hadBit) {
 	    varPtr->flags |= VAR_TYPED;
@@ -1079,6 +1260,18 @@ TclSetAnnotatedCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
   done:
     if (valueA != NULL) {
 	Tcl_DecrRefCount(valueA);
+    }
+    if (sa != NULL) {
+	for (i = 0; i < nargs; i++) {
+	    Tcl_DecrRefCount(sa[i]);
+	}
+	Tcl_Free(sa);
+    }
+    if (pend != NULL) {
+	Tcl_DecrRefCount(pend);
+    }
+    if (ctorPath != NULL) {
+	Tcl_Free(ctorPath);
     }
     Tcl_DecrRefCount(baseObj);
     return rc;

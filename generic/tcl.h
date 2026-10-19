@@ -1883,6 +1883,9 @@ typedef struct Tcl_Token {
 #define TCL_TOKEN_CMD_IN_EXPR    80
 #define TCL_TOKEN_OPERATOR	128
 #define TCL_TOKEN_EXPAND_WORD	256
+#define TCL_TOKEN_INDEX		1024	/* index of $name(...) in the extended
+				 * syntax (nested parentheses, "tags"):
+				 * wraps its components, which follow */
 #define TCL_TOKEN_ANNOT		512	/* type annotation {type}word: the text of
 				 * the braces; the rest of the word follows */
 

@@ -3671,7 +3671,7 @@ TclPushVarName(
 
 	if (elName != NULL && !(flags & TCL_NO_ELEMENT)) {
 	    if (elNameLen) {
-		TclCompileTokens(interp, elemTokenPtr, elemTokenCount,
+		TclCompileIndexTokens(interp, elemTokenPtr, elemTokenCount,
 			envPtr);
 	    } else {
 		PushStringLiteral(envPtr, "");

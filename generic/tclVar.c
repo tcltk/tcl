@@ -1317,6 +1317,11 @@ Tcl_ObjGetVar2(
 		&tres) == TCL_OK) {
 	    return tres;
 	}
+	if (part2Ptr == NULL
+		&& TclTypedVarGetElementByName(interp, part1Ptr, &tres)
+			== TCL_OK) {
+	    return tres;			/* ${R(chemin)} */
+	}
 	return NULL;
     }
 

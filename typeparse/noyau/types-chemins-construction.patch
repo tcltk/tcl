@@ -1,0 +1,772 @@
+diff -ruN a/generic/tclTypePath.c b/generic/tclTypePath.c
+--- a/generic/tclTypePath.c	2026-10-19 00:55:24.089877465 +0200
++++ b/generic/tclTypePath.c	2026-10-19 00:55:24.091911926 +0200
+@@ -46,8 +46,27 @@
+  *	conteneur ; l'écriture exige des chemins de pas simples, un par
+  *	valeur.
+  *
+- *	Limites : les résultats multiples sont aplatis (pas de niveaux
+- *	imbriqués) ; une étiquette est un chemin à elle seule ; pas
++ *	FORME. L'ensemble de chemins porte aussi une FORME : un arbre dont
++ *	les feuilles sont les chemins et les noeuds les collectes, comme sur
++ *	la page du wiki. "," fait un groupe (les parenthèses le ferment :
++ *	(a,b),c donne {{a b} c}) ; "." remplace chaque feuille de gauche par
++ *	la forme de droite. La lecture rend des listes imbriquées selon la
++ *	forme : $R((A,B).(x,y)) donne {Ax Ay} {Bx By}.
++ *
++ *	ÉCRITURE ET CONSTRUCTION. Trois façons de donner les valeurs, que le
++ *	NOMBRE de valeurs départage (jamais leur contenu) :
++ *	  une par feuille           set R((A,B).(x,y)) 1 2 3 4
++ *	  une par élément du groupe set R(A.(x,y),B.(x,y)) {1 2} {3 4}
++ *	  une pour tout le chemin   set R((A,B).(x,y)) {{1 2} {3 4}}
++ *	chaque valeur ayant la forme de ce que sa lecture rendrait. Les
++ *	nombres ne coïncident que si les lectures coïncident.
++ *	set {T}R(chemin) v... construit un produit (et ses produits
++ *	imbriqués) : les champs nommés reçoivent les valeurs, les autres leur
++ *	défaut (TclTypePathConstruct).
++ *
++ *	Limites : un intervalle a:b est un résultat multiple dont la taille
++ *	n'est connue qu'à la lecture : (0:1).(x,y) donne la colonne des x puis
++ *	celle des y ; une étiquette est un chemin à elle seule ; pas
+  *	d'opérateurs arithmétiques sur les index ; écriture sans intervalles
+  *	ni étiquettes ; pas de cache du vecteur de positions.
+  */
+@@ -679,12 +698,95 @@
+     Tcl_Size n;
+ } IndexPath;
+ 
++/* La forme : feuille (leaf = index du chemin) ou groupe (leaf = -1). */
++typedef struct Shape {
++    Tcl_Size leaf;
++    Tcl_Size n;
++    struct Shape *kid;
++} Shape;
++
+ typedef struct PathSet {
+     IndexPath *path;
+     Tcl_Size n;
+     int multi;			/* résultat multiple : liste, même à 1 élément */
++    Shape shape;		/* memset 0 : feuille 0, un seul chemin */
++    int open;			/* groupe d'une "," pas encore refermé par ")" */
+ } PathSet;
+ 
++static void
++ShapeFree(Shape *sh)
++{
++    Tcl_Size i;
++
++    for (i = 0; i < sh->n; i++) {
++	ShapeFree(&sh->kid[i]);
++    }
++    if (sh->kid != NULL) {
++	Tcl_Free(sh->kid);
++    }
++    sh->kid = NULL;
++    sh->n = 0;
++}
++
++static Shape
++ShapeCopy(const Shape *sh, Tcl_Size shift)
++{
++    Shape c;
++    Tcl_Size i;
++
++    c.leaf = (sh->leaf >= 0) ? sh->leaf + shift : -1;
++    c.n = sh->n;
++    c.kid = NULL;
++    if (sh->n > 0) {
++	c.kid = (Shape *) Tcl_Alloc(sh->n * sizeof(Shape));
++	for (i = 0; i < sh->n; i++) {
++	    c.kid[i] = ShapeCopy(&sh->kid[i], shift);
++	}
++    }
++    return c;
++}
++
++/* l.r : chaque feuille i de l devient la forme de r, décalée de i * rn. */
++static Shape
++ShapeSubst(const Shape *l, const Shape *r, Tcl_Size rn)
++{
++    Shape c;
++    Tcl_Size i;
++
++    if (l->leaf >= 0) {
++	return ShapeCopy(r, l->leaf * rn);
++    }
++    c.leaf = -1;
++    c.n = l->n;
++    c.kid = (Shape *) Tcl_Alloc((l->n ? l->n : 1) * sizeof(Shape));
++    for (i = 0; i < l->n; i++) {
++	c.kid[i] = ShapeSubst(&l->kid[i], r, rn);
++    }
++    return c;
++}
++
++/* Ajoute sh au groupe g (sh est déplacé) ; un groupe ouvert est fondu. */
++static void
++ShapeAppend(Shape *g, Shape *sh, int open)
++{
++    Tcl_Size i;
++
++    if (open && sh->leaf < 0) {
++	g->kid = (Shape *) Tcl_Realloc(g->kid, (g->n + sh->n) * sizeof(Shape));
++	for (i = 0; i < sh->n; i++) {
++	    g->kid[g->n++] = sh->kid[i];
++	}
++	if (sh->kid != NULL) {
++	    Tcl_Free(sh->kid);
++	}
++    } else {
++	g->kid = (Shape *) Tcl_Realloc(g->kid, (g->n + 1) * sizeof(Shape));
++	g->kid[g->n++] = *sh;
++    }
++    sh->kid = NULL;
++    sh->n = 0;
++}
++
+ typedef struct IndexEnv {
+     Tcl_Interp *interp;
+     PathSet *stack;
+@@ -722,6 +824,7 @@
+     if (s->path != NULL) {
+ 	Tcl_Free(s->path);
+     }
++    ShapeFree(&s->shape);
+     memset(s, 0, sizeof(*s));
+ }
+ 
+@@ -841,6 +944,8 @@
+ 	    SetAddPath(&out, p);
+ 	}
+     }
++    out.shape = ShapeSubst(&l.shape, &r.shape, r.n);
++    out.open = 0;
+     SetFree(&l);
+     SetFree(&r);
+     PushSet(env, out);
+@@ -854,7 +959,12 @@
+ {
+     PathSet r = PopSet(env), l = PopSet(env);
+     Tcl_Size i;
++    Shape g = {-1, 0, NULL}, ls = l.shape, rs = ShapeCopy(&r.shape, l.n);
+ 
++    ShapeAppend(&g, &ls, l.open);
++    ShapeAppend(&g, &rs, r.open);
++    l.shape = g;
++    l.open = 1;
+     l.path = (IndexPath *) Tcl_Realloc(l.path,
+ 	    (l.n + r.n) * sizeof(IndexPath));
+     for (i = 0; i < r.n; i++) {
+@@ -902,7 +1012,12 @@
+ 	return ApplyDot(env);
+     case RANGE:
+ 	return ApplyRange(env);
+-    default:			/* START, OPEN_PAREN */
++    case OPEN_PAREN:		/* ")" referme le groupe */
++	if (env->nStack > 0) {
++	    env->stack[env->nStack - 1].open = 0;
++	}
++	return TCL_OK;
++    default:			/* START */
+ 	return TCL_OK;
+     }
+ }
+@@ -965,12 +1080,18 @@
+ 	    s = OneStep(IS_NAME, res, NULL);
+ 	} else {
+ 	    memset(&s, 0, sizeof(s));
++	    s.shape.leaf = -1;
++	    s.shape.kid = (Shape *) Tcl_Alloc(n * sizeof(Shape));
+ 	    for (i = 0; i < n; i++) {
+ 		PathSet one = OneStep(IS_NAME, elems[i], NULL);
+ 
+ 		SetAddPath(&s, one.path[0]);
+ 		Tcl_Free(one.path);
++		s.shape.kid[i].leaf = i;
++		s.shape.kid[i].n = 0;
++		s.shape.kid[i].kid = NULL;
+ 	    }
++	    s.shape.n = n;
+ 	    s.multi = 1;
+ 	}
+ 	Tcl_DecrRefCount(res);
+@@ -1753,76 +1874,227 @@
+  * garde le type du champ ; une collecte donne une liste {list}T, T étant
+  * le type commun des éléments (§10).
+  */
++static int
++PathHasRange(const IndexPath *p)
++{
++    Tcl_Size i;
++
++    for (i = 0; i < p->n; i++) {
++	if (p->step[i].kind == IS_RANGE) {
++	    return 1;
++	}
++    }
++    return 0;
++}
++
++/* Liste typée {list}T de valeurs typées, T leur type commun. */
++static Tcl_Obj *
++TypedListOf(Tcl_Interp *interp, Tcl_Obj **v, Tcl_Size n)
++{
++    TclObjVec contents = {NULL, 0, 0};
++    TclType *common = NULL, *tp;
++    Tcl_Obj *content, *list, *a;
++    Tcl_Size i;
++
++    for (i = 0; i < n; i++) {
++	tp = NULL;
++	content = v[i];
++	TclAnnotInfo(v[i], &content, &tp, NULL, NULL);
++	if (tp != NULL) {
++	    common = (common == NULL) ? tp : TclTypeCommon(interp, common, tp);
++	}
++	TclVecAdd(&contents, content);
++    }
++    if (common == NULL) {
++	common = TclTypeParse(interp, "string", 6);
++    }
++    list = Tcl_NewListObj(contents.n, contents.v);
++    TclVecFree(&contents);
++    a = TclNewAnnotated(interp, TclTypeListOf(interp, common), -1, list);
++    TclDiscard(list);
++    return a;
++}
++
++/* Résultat selon la forme ; *resPtr sans référence ajoutée (refcount 0
++ * possible) : l'appelant l'incrémente. */
++static Tcl_Obj *
++ShapeRead(Tcl_Interp *interp, const Shape *sh, Items *per,
++	const PathSet *set)
++{
++    if (sh->leaf >= 0) {
++	Items *it = &per[sh->leaf];
++
++	if (it->vec.n == 1 && (!PathHasRange(&set->path[sh->leaf])
++		|| it->bitSlice)) {
++	    return it->vec.v[0];
++	}
++	return TypedListOf(interp, it->vec.v, it->vec.n);
++    } else {
++	TclObjVec kids = {NULL, 0, 0};
++	Tcl_Obj *res;
++	Tcl_Size i;
++
++	for (i = 0; i < sh->n; i++) {
++	    Tcl_Obj *k = ShapeRead(interp, &sh->kid[i], per, set);
++
++	    if (k == NULL) {
++		TclVecFree(&kids);
++		return NULL;
++	    }
++	    TclVecAdd(&kids, k);
++	}
++	res = TypedListOf(interp, kids.v, kids.n);
++	TclVecFree(&kids);
++	return res;
++    }
++}
++
++/*
++ * Lecture : *resultPtr reçoit une valeur typée, avec une référence de
++ * plus que l'appelant doit rendre (Tcl_DecrRefCount). Un résultat unique
++ * garde le type du champ ; une collecte donne une liste {list}T, T étant
++ * le type commun des éléments (§10), imbriquée selon la forme du chemin.
++ */
+ int
+ TclTypePathRead(Tcl_Interp *interp, Tcl_Obj *containerPtr, const char *path,
+ 	Tcl_Obj **resultPtr)
+ {
+     PathSet set;
+-    Items out;
+-    Tcl_Size k;
++    Items *per;
++    Tcl_Size k, m;
++    Tcl_Obj *res;
+     int rc = TCL_ERROR;
+ 
+     if (CompileIndex(interp, path, &set) != TCL_OK) {
+ 	return TCL_ERROR;
+     }
+-    ItemsInit(&out);
++    per = (Items *) Tcl_Alloc((set.n ? set.n : 1) * sizeof(Items));
++    for (k = 0; k < set.n; k++) {
++	ItemsInit(&per[k]);
++    }
+     for (k = 0; k < set.n; k++) {
+-	if (ReadSteps(interp, containerPtr, &set.path[k], 0, &out)
++	if (ReadSteps(interp, containerPtr, &set.path[k], 0, &per[k])
+ 		!= TCL_OK) {
+ 	    goto done;
+ 	}
+-    }
+-    out.multi = set.multi;
+-
+-    /* Une case var en fin de chemin se lit à travers son lien. */
+-    for (k = 0; k < out.vec.n; k++) {
+-	Tcl_Obj *content, *target;
+-	TclType *vt;
+-
+-	if (TclAnnotInfo(out.vec.v[k], &content, &vt, NULL, NULL) == 1
+-		&& vt->kind == TCLT_VAR) {
+-	    target = DerefSlot(interp, vt, content);
+-	    if (target == NULL) {
+-		goto done;
++	/* Une case var en fin de chemin se lit à travers son lien. */
++	for (m = 0; m < per[k].vec.n; m++) {
++	    Tcl_Obj *content, *target;
++	    TclType *vt;
++
++	    if (TclAnnotInfo(per[k].vec.v[m], &content, &vt, NULL, NULL) == 1
++		    && vt->kind == TCLT_VAR) {
++		target = DerefSlot(interp, vt, content);
++		if (target == NULL) {
++		    goto done;
++		}
++		Tcl_IncrRefCount(target);
++		Tcl_DecrRefCount(per[k].vec.v[m]);
++		per[k].vec.v[m] = target;
+ 	    }
+-	    Tcl_IncrRefCount(target);
+-	    Tcl_DecrRefCount(out.vec.v[k]);
+-	    out.vec.v[k] = target;
+ 	}
+     }
+-    if ((!out.multi || out.bitSlice) && out.vec.n == 1) {
+-	*resultPtr = out.vec.v[0];
+-	Tcl_IncrRefCount(*resultPtr);
+-    } else {
+-	TclObjVec contents = {NULL, 0, 0};
+-	TclType *common = NULL, *tp;
+-	Tcl_Obj *content, *list, *a;
+-	Tcl_Size i;
+-
+-	for (i = 0; i < out.vec.n; i++) {
+-	    TclAnnotInfo(out.vec.v[i], &content, &tp, NULL, NULL);
+-	    common = (common == NULL) ? tp : TclTypeCommon(interp, common, tp);
+-	    TclVecAdd(&contents, content);
+-	}
+-	if (common == NULL) {
+-	    common = TclTypeParse(interp, "string", 6);
+-	}
+-	list = Tcl_NewListObj(contents.n, contents.v);
+-	TclVecFree(&contents);
+-	a = TclNewAnnotated(interp, TclTypeListOf(interp, common), -1, list);
+-	TclDiscard(list);
+-	Tcl_IncrRefCount(a);
+-	*resultPtr = a;
++    res = ShapeRead(interp, &set.shape, per, &set);
++    if (res == NULL) {
++	goto done;
+     }
++    Tcl_IncrRefCount(res);
++    *resultPtr = res;
+     rc = TCL_OK;
+ 
+   done:
+-    TclVecFree(&out.vec);
++    for (k = 0; k < set.n; k++) {
++	TclVecFree(&per[k].vec);
++    }
++    Tcl_Free(per);
+     SetFree(&set);
+     return rc;
+ }
+ 
+ /* --------------------------------------------------------------------
++ * Répartition des valeurs selon la forme (écriture, construction)
++ * -------------------------------------------------------------------- */
++
++static int
++ShapeDistribute(Tcl_Interp *interp, const Shape *sh, Tcl_Obj *v,
++	Tcl_Obj **flat)
++{
++    Tcl_Obj **elv;
++    Tcl_Size n, i;
++
++    if (sh->leaf >= 0) {
++	flat[sh->leaf] = v;
++	return TCL_OK;
++    }
++    if (Tcl_ListObjGetElements(interp, v, &n, &elv) != TCL_OK) {
++	return TCL_ERROR;
++    }
++    if (n != sh->n) {
++	Tcl_SetObjResult(interp, Tcl_ObjPrintf("value \"%s\" has %"
++		TCL_SIZE_MODIFIER "d elements, but this part of the path "
++		"selects %" TCL_SIZE_MODIFIER "d", Tcl_GetString(v), n, sh->n));
++	Tcl_SetErrorCode(interp, "TCL", "TYPE", "PATH", (char *) NULL);
++	return TCL_ERROR;
++    }
++    for (i = 0; i < n; i++) {
++	if (ShapeDistribute(interp, &sh->kid[i], elv[i], flat) != TCL_OK) {
++	    return TCL_ERROR;
++	}
++    }
++    return TCL_OK;
++}
++
++/*
++ * Une valeur par feuille, par élément du groupe de tête, ou pour tout le
++ * chemin. *flatPtr (set->n cases, à libérer par Tcl_Free) : valeurs sans
++ * référence ajoutée, vivantes tant que vals[] l'est.
++ */
++static int
++FlattenValues(Tcl_Interp *interp, const PathSet *set, Tcl_Size nvals,
++	Tcl_Obj *const vals[], Tcl_Obj ***flatPtr)
++{
++    Tcl_Obj **flat = (Tcl_Obj **) Tcl_Alloc((set->n ? set->n : 1)
++	    * sizeof(Tcl_Obj *));
++    Tcl_Size i;
++    const Shape *sh = &set->shape;
++
++    if (nvals == set->n) {
++	for (i = 0; i < nvals; i++) {
++	    flat[i] = vals[i];
++	}
++    } else if (sh->leaf < 0 && nvals == sh->n) {
++	for (i = 0; i < nvals; i++) {
++	    if (ShapeDistribute(interp, &sh->kid[i], vals[i], flat) != TCL_OK) {
++		Tcl_Free(flat);
++		return TCL_ERROR;
++	    }
++	}
++    } else if (sh->leaf < 0 && nvals == 1) {
++	if (ShapeDistribute(interp, sh, vals[0], flat) != TCL_OK) {
++	    Tcl_Free(flat);
++	    return TCL_ERROR;
++	}
++    } else {
++	if (sh->leaf < 0) {
++	    Tcl_SetObjResult(interp, Tcl_ObjPrintf("wrong # args: the path "
++		    "selects %" TCL_SIZE_MODIFIER "d targets in %"
++		    TCL_SIZE_MODIFIER "d groups: give %" TCL_SIZE_MODIFIER
++		    "d values, %" TCL_SIZE_MODIFIER "d or 1, not %"
++		    TCL_SIZE_MODIFIER "d", set->n, sh->n, set->n, sh->n, nvals));
++	} else {
++	    Tcl_SetObjResult(interp, Tcl_ObjPrintf("wrong # args: %"
++		    TCL_SIZE_MODIFIER "d targets but %" TCL_SIZE_MODIFIER
++		    "d values", set->n, nvals));
++	}
++	Tcl_SetErrorCode(interp, "TCL", "WRONGARGS", (char *) NULL);
++	Tcl_Free(flat);
++	return TCL_ERROR;
++    }
++    *flatPtr = flat;
++    return TCL_OK;
++}
++
++/* --------------------------------------------------------------------
+  * Écriture : reconstruit les objets le long du chemin (valeurs
+  * immuables), le reste est partagé.
+  * -------------------------------------------------------------------- */
+@@ -2087,17 +2359,14 @@
+     Tcl_Size i, j;
+     Tcl_Obj *cur, *next;
+     PendingWrites pw;
++    Tcl_Obj **flat = NULL;
+     int rc = TCL_ERROR;
+ 
+     if (CompileIndex(interp, path, &set) != TCL_OK) {
+ 	return TCL_ERROR;
+     }
+     memset(&pw, 0, sizeof(pw));
+-    if (set.n != nvals) {
+-	Tcl_SetObjResult(interp, Tcl_ObjPrintf("wrong # args: %"
+-		TCL_SIZE_MODIFIER "d targets but %" TCL_SIZE_MODIFIER
+-		"d values", set.n, nvals));
+-	Tcl_SetErrorCode(interp, "TCL", "WRONGARGS", (char *) NULL);
++    if (FlattenValues(interp, &set, nvals, vals, &flat) != TCL_OK) {
+ 	goto done;
+     }
+     for (i = 0; i < set.n; i++) {
+@@ -2118,7 +2387,7 @@
+     cur = containerPtr;
+     Tcl_IncrRefCount(cur);
+     for (i = 0; i < set.n; i++) {
+-	next = SetIn(interp, cur, &set.path[i], 0, vals[i], &pw);
++	next = SetIn(interp, cur, &set.path[i], 0, flat[i], &pw);
+ 	Tcl_DecrRefCount(cur);
+ 	if (next == NULL) {
+ 	    goto done;
+@@ -2139,11 +2408,153 @@
+     rc = TCL_OK;
+ 
+   done:
++    if (flat != NULL) {
++	Tcl_Free(flat);
++    }
+     TclVecFree(&pw.names);
+     TclVecFree(&pw.values);
+     SetFree(&set);
+     return rc;
+ }
++
++/* --------------------------------------------------------------------
++ * Construction : set {T}R(chemin) v...
++ *
++ *	Les chemins, groupés par leur premier pas, nomment des champs de T ;
++ *	un groupe qui descend plus loin construit le produit du champ. Chaque
++ *	niveau passe par le constructeur en nom/valeur (défauts, contrôles),
++ *	sans essai de lecture positionnelle.
++ * -------------------------------------------------------------------- */
++
++static int
++ConstructLevel(Tcl_Interp *interp, TclType *tp, const PathSet *set,
++	Tcl_Obj **flat, const Tcl_Size *idx, Tcl_Size cnt, Tcl_Size d,
++	Tcl_Obj **contentPtr)
++{
++    TclObjVec args = {NULL, 0, 0};
++    char *used;
++    Tcl_Size i, j, *sub;
++    int rc = TCL_ERROR;
++
++    if (tp->kind != TCLT_PRODUCT) {
++	Tcl_SetObjResult(interp, Tcl_ObjPrintf("a constructor path names "
++		"fields of products: %s is not a product", tp->name));
++	Tcl_SetErrorCode(interp, "TCL", "TYPE", "PATH", (char *) NULL);
++	return TCL_ERROR;
++    }
++    used = (char *) Tcl_Alloc(cnt ? cnt : 1);
++    memset(used, 0, cnt ? cnt : 1);
++    sub = (Tcl_Size *) Tcl_Alloc((cnt ? cnt : 1) * sizeof(Tcl_Size));
++    for (i = 0; i < cnt; i++) {
++	const IndexPath *p = &set->path[idx[i]];
++	const char *name;
++	Tcl_Size fi, ns = 0, whole = -1;
++	Tcl_Obj *value;
++
++	if (used[i]) {
++	    continue;
++	}
++	name = Tcl_GetString(p->step[d].a);
++	fi = TclTypeFieldIndex(tp, name);
++	if (fi < 0) {
++	    Tcl_SetObjResult(interp, Tcl_ObjPrintf("unknown field \"%s\" in %s",
++		    name, tp->name));
++	    Tcl_SetErrorCode(interp, "TCL", "TYPE", "FIELD", (char *) NULL);
++	    goto done;
++	}
++	for (j = i; j < cnt; j++) {
++	    const IndexPath *q = &set->path[idx[j]];
++
++	    if (!used[j] && strcmp(Tcl_GetString(q->step[d].a), name) == 0) {
++		used[j] = 1;
++		sub[ns++] = idx[j];
++		if (q->n == d + 1) {
++		    whole = idx[j];
++		}
++	    }
++	}
++	if (whole >= 0) {
++	    if (ns > 1) {
++		Tcl_SetObjResult(interp, Tcl_ObjPrintf("field \"%s\" of %s is "
++			"assigned more than once", name, tp->name));
++		Tcl_SetErrorCode(interp, "TCL", "TYPE", "FIELD", (char *) NULL);
++		goto done;
++	    }
++	    value = flat[whole];
++	    Tcl_IncrRefCount(value);
++	} else {
++	    TclType *ft = tp->fields[fi].type;
++	    Tcl_Obj *c = NULL;
++
++	    if (ft == NULL || ConstructLevel(interp, ft, set, flat, sub, ns,
++		    d + 1, &c) != TCL_OK) {
++		if (ft == NULL) {
++		    Tcl_SetObjResult(interp, Tcl_ObjPrintf("field \"%s\" of %s "
++			    "has no type to construct", name, tp->name));
++		}
++		goto done;
++	    }
++	    value = TclNewAnnotated(interp, ft, -1, c);
++	    TclDiscard(c);
++	    if (value == NULL) {
++		goto done;
++	    }
++	    Tcl_IncrRefCount(value);
++	}
++	TclVecAdd(&args, p->step[d].a);
++	TclVecAdd(&args, value);
++	Tcl_DecrRefCount(value);
++    }
++    rc = TclBuildProductNamed(interp, tp, args.n, args.v, contentPtr);
++
++  done:
++    TclVecFree(&args);
++    Tcl_Free(used);
++    Tcl_Free(sub);
++    return rc;
++}
++
++/* *contentPtr : contenu du produit tp (refcount 0, privé). */
++int
++TclTypePathConstruct(Tcl_Interp *interp, TclType *tp, const char *path,
++	Tcl_Size nvals, Tcl_Obj *const vals[], Tcl_Obj **contentPtr)
++{
++    PathSet set;
++    Tcl_Obj **flat = NULL;
++    Tcl_Size i, j, *idx = NULL;
++    int rc = TCL_ERROR;
++
++    if (CompileIndex(interp, path, &set) != TCL_OK) {
++	return TCL_ERROR;
++    }
++    for (i = 0; i < set.n; i++) {
++	for (j = 0; j < set.path[i].n; j++) {
++	    if (set.path[i].step[j].kind > IS_KEY) {
++		PathErr(interp, "a constructor path names fields: no ranges or "
++			"tags%s%s", "", "");
++		goto done;
++	    }
++	}
++    }
++    if (FlattenValues(interp, &set, nvals, vals, &flat) != TCL_OK) {
++	goto done;
++    }
++    idx = (Tcl_Size *) Tcl_Alloc((set.n ? set.n : 1) * sizeof(Tcl_Size));
++    for (i = 0; i < set.n; i++) {
++	idx[i] = i;
++    }
++    rc = ConstructLevel(interp, tp, &set, flat, idx, set.n, 0, contentPtr);
++
++  done:
++    if (flat != NULL) {
++	Tcl_Free(flat);
++    }
++    if (idx != NULL) {
++	Tcl_Free(idx);
++    }
++    SetFree(&set);
++    return rc;
++}
+ 
+ 
+ 
+diff -ruN a/generic/tclTypedVar.c b/generic/tclTypedVar.c
+--- a/generic/tclTypedVar.c	2026-10-19 00:55:24.095996573 +0200
++++ b/generic/tclTypedVar.c	2026-10-19 00:55:24.097788579 +0200
+@@ -779,18 +779,21 @@
+ }
+ 
+ static int
+-BuildProduct(Tcl_Interp *interp, TclType *tp, Tcl_Size n, Tcl_Obj *const a[],
+-	Tcl_Obj **contentPtr)
++BuildProductEx(Tcl_Interp *interp, TclType *tp, Tcl_Size n,
++	Tcl_Obj *const a[], Tcl_Obj **contentPtr, int named)
+ {
+     Tcl_Size nf = tp->nfields, i, idx;
+     Tcl_Obj **slot, *content;
+     TclType *at;
+-    int status, variant, rc = TCL_ERROR, forceNameValue = 0;
++    int status, variant, rc = TCL_ERROR, forceNameValue = named;
+     Tcl_Obj *tagArgs[2] = {NULL, NULL};
+ 
+     slot = (Tcl_Obj **) Tcl_Alloc((nf ? nf : 1) * sizeof(Tcl_Obj *));
+     memset(slot, 0, (nf ? nf : 1) * sizeof(Tcl_Obj *));
+ 
++    if (named) {
++	goto nameValue;
++    }
+     if (n == 1 && TclAnnotResolve(interp, a[0], NULL, &status, &at, &variant,
+ 	    &content) == TCL_OK && status == TCLA_TYPED && at == tp) {
+ 	*contentPtr = Tcl_DuplicateObj(content);	/* copie d'un produit */
+@@ -839,6 +842,7 @@
+ 	    }
+ 	}
+     } else if (nf > 0 && n % 2 == 0 && n <= 2 * nf) {
++      nameValue:
+ 	/*
+ 	 * Forme nom/valeur, éventuellement PARTIELLE : les champs omis
+ 	 * prennent leur valeur par défaut ("=" dans la définition du type).
+@@ -924,6 +928,21 @@
+ }
+ 
+ static int
++BuildProduct(Tcl_Interp *interp, TclType *tp, Tcl_Size n, Tcl_Obj *const a[],
++	Tcl_Obj **contentPtr)
++{
++    return BuildProductEx(interp, tp, n, a, contentPtr, 0);
++}
++
++/* Nom/valeur imposé (constructeur par chemin) : jamais positionnel. */
++int
++TclBuildProductNamed(Tcl_Interp *interp, TclType *tp, Tcl_Size n,
++	Tcl_Obj *const a[], Tcl_Obj **contentPtr)
++{
++    return BuildProductEx(interp, tp, n, a, contentPtr, 1);
++}
++
++static int
+ BuildSum(Tcl_Interp *interp, TclType *tp, int forced, Tcl_Size n,
+ 	Tcl_Obj *const a[], Tcl_Obj **contentPtr, int *variantPtr)
+ {
+@@ -1034,6 +1053,7 @@
+     Tcl_Size nargs = objc - 2, i, np = 0;
+     int status, avar, variant = -1, forced = -1, hadBit, rc = TCL_ERROR;
+     const char *name;
++    char *ctorPath = NULL;
+     Var *varPtr, *arrayPtr = NULL;
+ 
+     if (TclAnnotResolve(interp, objv[1], NULL, &status, &tp, &avar, &nameObj)
+@@ -1091,6 +1111,19 @@
+ 	    baseObj = Tcl_NewStringObj(name, open - name);
+ 	}
+     }
++    /* Produit : set {T}R(chemin) v... construit par les champs nommés. */
++    if (baseObj == NULL && (status == TCLA_RAW || status == TCLA_TYPED)
++	    && tp->kind == TCLT_PRODUCT) {
++	size_t len = strlen(name);
++	const char *open = strchr(name, '(');
++
++	if (open != NULL && open != name && len > 0 && name[len - 1] == ')') {
++	    ctorPath = (char *) Tcl_Alloc(len);
++	    memcpy(ctorPath, open + 1, len - (open - name) - 2);
++	    ctorPath[len - (open - name) - 2] = '\0';
++	    baseObj = Tcl_NewStringObj(name, open - name);
++	}
++    }
+     if (forced < 0 && status == TCLA_RAW && tp->kind == TCLT_SUM && avar >= 0) {
+ 	forced = avar;			/* set {Val.s}x 7 */
+     }
+@@ -1150,7 +1183,12 @@
+ 		}
+ 	    }
+ 	}
+-	if (BuildValue(interp, tp, forced, nargs, sa, &c, &variant)
++	if (ctorPath != NULL) {
++	    if (TclTypePathConstruct(interp, tp, ctorPath, nargs, sa, &c)
++		    != TCL_OK) {
++		goto done;
++	    }
++	} else if (BuildValue(interp, tp, forced, nargs, sa, &c, &variant)
+ 		!= TCL_OK) {
+ 	    goto done;
+ 	}
+@@ -1230,6 +1268,9 @@
+     if (pend != NULL) {
+ 	Tcl_DecrRefCount(pend);
+     }
++    if (ctorPath != NULL) {
++	Tcl_Free(ctorPath);
++    }
+     Tcl_DecrRefCount(baseObj);
+     return rc;
+ }
+diff -ruN a/generic/tclTypes.h b/generic/tclTypes.h
+--- a/generic/tclTypes.h	2026-10-19 00:55:24.101928464 +0200
++++ b/generic/tclTypes.h	2026-10-19 00:55:24.103893835 +0200
+@@ -341,6 +341,11 @@
+ /* tclTypePath.c */
+ int	TclTypePathRead(Tcl_Interp *interp, Tcl_Obj *containerPtr,
+ 	    const char *path, Tcl_Obj **resultPtr);
++int	TclTypePathConstruct(Tcl_Interp *interp, TclType *tp,
++	    const char *path, Tcl_Size nvals, Tcl_Obj *const vals[],
++	    Tcl_Obj **contentPtr);
++int	TclBuildProductNamed(Tcl_Interp *interp, TclType *tp, Tcl_Size n,
++	    Tcl_Obj *const a[], Tcl_Obj **contentPtr);
+ int	TclTypePathWrite(Tcl_Interp *interp, Tcl_Obj *containerPtr,
+ 	    const char *path, Tcl_Size nvals, Tcl_Obj *const vals[],
+ 	    Tcl_Obj **newPtr);

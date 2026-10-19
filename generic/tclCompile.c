@@ -674,6 +674,11 @@ InstructionDesc const tclInstructionTable[] = {
     {"typeForget",	  5,    0,	   1,	{OPERAND_LVT4}},
 	/* Loop variable: remove its type before it is assigned.
 	 * Stack: ... => ... */
+    {"indexConcat",	  6,   INT_MIN,    2,	{OPERAND_UINT1, OPERAND_UINT4}},
+	/* Operands: number of parts, mask of the substituted parts.
+	 * Concatenates the parts of the index of $name(...); the substituted
+	 * ones stay atomic for the path of a typed value.
+	 * Stack: ... part1 ... partN => ... index */
 
     {NULL, 0, 0, 0, {OPERAND_NONE}}
 };
@@ -2424,7 +2429,8 @@ TclCompileVarSubst(
 	    TclEmitInstInt4(INST_LOAD_SCALAR4, localVar, envPtr);
 	}
     } else {
-	TclCompileTokens(interp, tokenPtr+2, tokenPtr->numComponents-1, envPtr);
+	TclCompileIndexTokens(interp, tokenPtr+2, tokenPtr->numComponents-1,
+		envPtr);
 	if (localVar < 0) {
 	    TclEmitOpcode(INST_LOAD_ARRAY_STK, envPtr);
 	} else if (localVar <= 255) {
@@ -2433,6 +2439,62 @@ TclCompileVarSubst(
 	    TclEmitInstInt4(INST_LOAD_ARRAY4, localVar, envPtr);
 	}
     }
+}
+
+/*
+ * L'index de $nom(...) : comme TclCompileTokens, mais chaque partie
+ * substituée ($x, [cmd], [(expr)]) est marquée, pour que le chemin d'une
+ * valeur typée la lise comme UNE feuille (indexConcat). Sans substitution,
+ * ou au-delà de 32 parties, c'est TclCompileTokens.
+ */
+void
+TclCompileIndexTokens(
+    Tcl_Interp *interp,
+    Tcl_Token *tokenPtr,
+    Tcl_Size count,
+    CompileEnv *envPtr)
+{
+    Tcl_Size i, j, parts = 0;
+    unsigned int mask = 0;
+    int anySubst = 0, pass;
+
+    for (pass = 0; pass < 2; pass++) {
+	parts = 0;
+	for (i = 0; i < count; ) {
+	    Tcl_Token *t = &tokenPtr[i];
+
+	    if (t->type == TCL_TOKEN_INDEX) {
+		i++;
+	    } else if (t->type == TCL_TOKEN_TEXT || t->type == TCL_TOKEN_BS) {
+		for (j = i; j < count && (tokenPtr[j].type == TCL_TOKEN_TEXT
+			|| tokenPtr[j].type == TCL_TOKEN_BS); j++) {
+		    /* une suite de texte : UNE partie littérale */
+		}
+		if (pass) {
+		    TclCompileTokens(interp, t, j - i, envPtr);
+		}
+		parts++;
+		i = j;
+	    } else {
+		Tcl_Size n = 1 + ((t->type == TCL_TOKEN_VARIABLE)
+			? t->numComponents : 0);
+
+		if (pass) {
+		    TclCompileTokens(interp, t, n, envPtr);
+		    mask |= 1u << parts;
+		}
+		anySubst = 1;
+		parts++;
+		i += n;
+	    }
+	}
+	if (pass == 0 && (!anySubst || parts > 32)) {
+	    TclCompileTokens(interp, tokenPtr, count, envPtr);
+	    return;
+	}
+    }
+    TclEmitInstInt1(INST_INDEX_CONCAT, parts, envPtr);
+    TclEmitInt4(mask, envPtr);
 }
 
 void
@@ -2620,6 +2682,10 @@ TclCompileTokens(
 	    numObjsToConcat++;
 	    break;
 		
+	case TCL_TOKEN_INDEX:
+	    /* enveloppe d'un index étendu : ses composants suivent */
+	    break;
+
 	case TCL_TOKEN_VARIABLE:
 	    /*
 	     * Push any accumulated chars appearing before the $<var>.

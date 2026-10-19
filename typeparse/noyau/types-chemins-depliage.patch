@@ -1,0 +1,170 @@
+diff -ruN a/generic/tclTypePath.c b/generic/tclTypePath.c
+--- a/generic/tclTypePath.c	2026-10-19 01:11:01.104713262 +0200
++++ b/generic/tclTypePath.c	2026-10-19 01:11:01.106863886 +0200
+@@ -30,6 +30,9 @@
+  *
+  *	OPÉRATEURS, du plus faible au plus fort
+  *	  ,    collecte (binaire)       a,b
++ *	  *    dépliage (unaire)        *0:2,4   *(a,b),c : le groupe ou
++ *	                                l'intervalle se fond dans le groupe
++ *	                                qui le contient
+  *	  .    imbrication (binaire)    a.b      (a.(b,c) = a.b,a.c)
+  *	  :    intervalle de liste      0:end-1
+  *	  ( )  groupement
+@@ -153,6 +156,7 @@
+ 
+     START = UNARY | 4,
+     OPEN_PAREN = UNARY | 5,
++    SPLAT = UNARY | 6,
+ 
+     /* Binaires */
+ 
+@@ -169,6 +173,7 @@
+     PREC_CLOSE_PAREN,
+     PREC_OPEN_PAREN,
+     PREC_COMMA,
++    PREC_SPLAT,
+     PREC_DOT,
+     PREC_RANGE
+ };
+@@ -180,7 +185,8 @@
+     [CLOSE_PAREN] = PREC_CLOSE_PAREN,
+     [END] = PREC_END,
+     [START] = PREC_START,
+-    [OPEN_PAREN] = PREC_OPEN_PAREN
++    [OPEN_PAREN] = PREC_OPEN_PAREN,
++    [SPLAT] = PREC_SPLAT
+ };
+ 
+ /* Octets qui ne peuvent pas faire partie d'un nom nu. */
+@@ -189,6 +195,7 @@
+ IsDelimiter(int c)
+ {
+     return c == ',' || c == '.' || c == ':' || c == '(' || c == ')'
++	    || c == '*'
+ 	    || c == '[' || c == ']' || c == '$' || c == '"' || c == '\''
+ 	    || c == '\\' || c == '{' || c == '}' || c == ' ' || c == '\t'
+ 	    || c == '\n' || c == '\r';
+@@ -220,6 +227,7 @@
+     case ',': *lexemePtr = COMMA; return 1;
+     case '.': *lexemePtr = DOT; return 1;
+     case ':': *lexemePtr = RANGE; return 1;
++    case '*': *lexemePtr = SPLAT; return 1;
+     case '(': *lexemePtr = OPEN_PAREN; return 1;
+     case ')': *lexemePtr = CLOSE_PAREN; return 1;
+     case '"': *lexemePtr = TAGWORD; return 1;
+@@ -703,6 +711,7 @@
+     Tcl_Size leaf;
+     Tcl_Size n;
+     struct Shape *kid;
++    int splat;			/* "*" : se fond dans le groupe parent */
+ } Shape;
+ 
+ typedef struct PathSet {
+@@ -737,6 +746,7 @@
+     c.leaf = (sh->leaf >= 0) ? sh->leaf + shift : -1;
+     c.n = sh->n;
+     c.kid = NULL;
++    c.splat = sh->splat;
+     if (sh->n > 0) {
+ 	c.kid = (Shape *) Tcl_Alloc(sh->n * sizeof(Shape));
+ 	for (i = 0; i < sh->n; i++) {
+@@ -746,6 +756,8 @@
+     return c;
+ }
+ 
++static void ShapeAppend(Shape *g, Shape *sh, int open);
++
+ /* l.r : chaque feuille i de l devient la forme de r, décalée de i * rn. */
+ static Shape
+ ShapeSubst(const Shape *l, const Shape *r, Tcl_Size rn)
+@@ -754,13 +766,18 @@
+     Tcl_Size i;
+ 
+     if (l->leaf >= 0) {
+-	return ShapeCopy(r, l->leaf * rn);
++	c = ShapeCopy(r, l->leaf * rn);
++	c.splat |= l->splat;
++	return c;
+     }
+     c.leaf = -1;
+-    c.n = l->n;
+-    c.kid = (Shape *) Tcl_Alloc((l->n ? l->n : 1) * sizeof(Shape));
++    c.n = 0;
++    c.splat = l->splat;
++    c.kid = NULL;
+     for (i = 0; i < l->n; i++) {
+-	c.kid[i] = ShapeSubst(&l->kid[i], r, rn);
++	Shape k = ShapeSubst(&l->kid[i], r, rn);
++
++	ShapeAppend(&c, &k, 0);		/* un groupe marqué "*" se fond */
+     }
+     return c;
+ }
+@@ -771,7 +788,7 @@
+ {
+     Tcl_Size i;
+ 
+-    if (open && sh->leaf < 0) {
++    if ((open || sh->splat) && sh->leaf < 0) {
+ 	g->kid = (Shape *) Tcl_Realloc(g->kid, (g->n + sh->n) * sizeof(Shape));
+ 	for (i = 0; i < sh->n; i++) {
+ 	    g->kid[g->n++] = sh->kid[i];
+@@ -959,7 +976,7 @@
+ {
+     PathSet r = PopSet(env), l = PopSet(env);
+     Tcl_Size i;
+-    Shape g = {-1, 0, NULL}, ls = l.shape, rs = ShapeCopy(&r.shape, l.n);
++    Shape g = {-1, 0, NULL, 0}, ls = l.shape, rs = ShapeCopy(&r.shape, l.n);
+ 
+     ShapeAppend(&g, &ls, l.open);
+     ShapeAppend(&g, &rs, r.open);
+@@ -1012,6 +1029,11 @@
+ 	return ApplyDot(env);
+     case RANGE:
+ 	return ApplyRange(env);
++    case SPLAT:			/* "*" : dépliage dans le groupe parent */
++	if (env->nStack > 0) {
++	    env->stack[env->nStack - 1].shape.splat = 1;
++	}
++	return TCL_OK;
+     case OPEN_PAREN:		/* ")" referme le groupe */
+ 	if (env->nStack > 0) {
+ 	    env->stack[env->nStack - 1].open = 0;
+@@ -1081,6 +1103,7 @@
+ 	} else {
+ 	    memset(&s, 0, sizeof(s));
+ 	    s.shape.leaf = -1;
++	    s.shape.splat = 0;
+ 	    s.shape.kid = (Shape *) Tcl_Alloc(n * sizeof(Shape));
+ 	    for (i = 0; i < n; i++) {
+ 		PathSet one = OneStep(IS_NAME, elems[i], NULL);
+@@ -1090,6 +1113,7 @@
+ 		s.shape.kid[i].leaf = i;
+ 		s.shape.kid[i].n = 0;
+ 		s.shape.kid[i].kid = NULL;
++		s.shape.kid[i].splat = 0;
+ 	    }
+ 	    s.shape.n = n;
+ 	    s.multi = 1;
+@@ -1935,8 +1959,19 @@
+ 	Tcl_Size i;
+ 
+ 	for (i = 0; i < sh->n; i++) {
+-	    Tcl_Obj *k = ShapeRead(interp, &sh->kid[i], per, set);
++	    Tcl_Obj *k;
++
++	    if (sh->kid[i].leaf >= 0 && sh->kid[i].splat) {
++		/* *a:b : les éléments de l'intervalle, un par un */
++		Items *it = &per[sh->kid[i].leaf];
++		Tcl_Size m;
+ 
++		for (m = 0; m < it->vec.n; m++) {
++		    TclVecAdd(&kids, it->vec.v[m]);
++		}
++		continue;
++	    }
++	    k = ShapeRead(interp, &sh->kid[i], per, set);
+ 	    if (k == NULL) {
+ 		TclVecFree(&kids);
+ 		return NULL;

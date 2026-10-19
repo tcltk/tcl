@@ -14,3 +14,7 @@ types-binaires-cast-constructeur.patch
 types-binaires-convert-famille.patch
 types-binaires-codec-c.patch
 types-binaires-codec-c-decode.patch
+types-chemins-construction.patch
+types-chemins-depliage.patch
+index-chemins-noyau.patch
+types-chemins-atomes.patch

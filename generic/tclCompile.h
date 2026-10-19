@@ -846,6 +846,10 @@ enum TclInstruction {
     /* Typed loop variables: drop the type before assignment */
     INST_TYPE_FORGET,
 
+    /* Index of $name(...): concatenation that records the substituted
+     * parts (atomic leaves of a typed-value path) */
+    INST_INDEX_CONCAT,
+
     /* The last opcode */
     LAST_INST_OPCODE
 };
@@ -1114,6 +1118,9 @@ MODULE_SCOPE void	TclCompileScript(Tcl_Interp *interp,
 			    const char *script, Tcl_Size numBytes,
 			    CompileEnv *envPtr);
 MODULE_SCOPE void	TclCompileSyntaxError(Tcl_Interp *interp,
+			    CompileEnv *envPtr);
+MODULE_SCOPE void	TclCompileIndexTokens(Tcl_Interp *interp,
+			    Tcl_Token *tokenPtr, Tcl_Size count,
 			    CompileEnv *envPtr);
 MODULE_SCOPE void	TclCompileTokens(Tcl_Interp *interp,
 			    Tcl_Token *tokenPtr, Tcl_Size count,

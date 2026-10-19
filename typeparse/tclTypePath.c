@@ -20,24 +20,27 @@
  *	              liste (entier, end, end-1). Le TYPE du conteneur tranche.
  *	  'clé'       toujours une clé (ne vaut jamais un index : 'end' est la
  *	              clé « end »)
- *	  "étiquette" copiée telle quelle dans le résultat ; les substitutions
- *	              y sont faites
- *	  $var        substitution de variable
- *	  [script]    script évalué, son résultat sert de nom
- *	  [( expr )]  substitution arithmétique (TIP 759) : l'expression est
- *	              évaluée ; une liste de plusieurs éléments donne autant
- *	              d'alternatives, comme (a,b,c)
+ *	  "étiquette" copiée telle quelle dans le résultat (littérale : le
+ *	              chemin ne substitue rien)
+ *
+ *	SUBSTITUTIONS. Le chemin n'en fait AUCUNE (même règle qu'un tableau :
+ *	${a($k)} et ${R($k.x)} sont littéraux). C'est Tcl qui substitue $x,
+ *	[cmd] et [(expr)] dans $R(...) et dans les mots nus, et une valeur
+ *	substituée est UNE feuille, jamais relue comme un chemin : avec
+ *	k = file.txt, $D($k) lit la clé « file.txt » ; collée à du texte
+ *	($D(f_$n)), elle prolonge le nom. Les portées substituées arrivent
+ *	avec l'index (objet « pathindex », voir TclPathIndexNew). *$x déplie
+ *	une valeur liste en autant d'alternatives : $L(*$idx).
  *
  *	OPÉRATEURS, du plus faible au plus fort
  *	  ,    collecte (binaire)       a,b
+ *	  *    dépliage (unaire)        *0:2,4   *(a,b),c : le groupe ou
+ *	                                l'intervalle se fond dans le groupe
+ *	                                qui le contient
  *	  .    imbrication (binaire)    a.b      (a.(b,c) = a.b,a.c)
  *	  :    intervalle de liste      0:end-1
  *	  ( )  groupement
  *
- *	Les substitutions ($var, [script], [( )]) sont faites à la
- *	compilation du chemin, dans le contexte de l'appelant ; elles ne
- *	servent donc qu'à un chemin qui arrive non substitué (par exemple
- *	entre accolades). Dans $P($i) c'est déjà Tcl qui a substitué.
  *
  *	RÉSULTAT DE LA COMPILATION. L'équivalent du bytecode est un
  *	ENSEMBLE DE CHEMINS : chaque chemin est une suite de pas (nom, clé,
@@ -46,8 +49,27 @@
  *	conteneur ; l'écriture exige des chemins de pas simples, un par
  *	valeur.
  *
- *	Limites : les résultats multiples sont aplatis (pas de niveaux
- *	imbriqués) ; une étiquette est un chemin à elle seule ; pas
+ *	FORME. L'ensemble de chemins porte aussi une FORME : un arbre dont
+ *	les feuilles sont les chemins et les noeuds les collectes, comme sur
+ *	la page du wiki. "," fait un groupe (les parenthèses le ferment :
+ *	(a,b),c donne {{a b} c}) ; "." remplace chaque feuille de gauche par
+ *	la forme de droite. La lecture rend des listes imbriquées selon la
+ *	forme : $R((A,B).(x,y)) donne {Ax Ay} {Bx By}.
+ *
+ *	ÉCRITURE ET CONSTRUCTION. Trois façons de donner les valeurs, que le
+ *	NOMBRE de valeurs départage (jamais leur contenu) :
+ *	  une par feuille           set R((A,B).(x,y)) 1 2 3 4
+ *	  une par élément du groupe set R(A.(x,y),B.(x,y)) {1 2} {3 4}
+ *	  une pour tout le chemin   set R((A,B).(x,y)) {{1 2} {3 4}}
+ *	chaque valeur ayant la forme de ce que sa lecture rendrait. Les
+ *	nombres ne coïncident que si les lectures coïncident.
+ *	set {T}R(chemin) v... construit un produit (et ses produits
+ *	imbriqués) : les champs nommés reçoivent les valeurs, les autres leur
+ *	défaut (TclTypePathConstruct).
+ *
+ *	Limites : un intervalle a:b est un résultat multiple dont la taille
+ *	n'est connue qu'à la lecture : (0:1).(x,y) donne la colonne des x puis
+ *	celle des y ; une étiquette est un chemin à elle seule ; pas
  *	d'opérateurs arithmétiques sur les index ; écriture sans intervalles
  *	ni étiquettes ; pas de cache du vecteur de positions.
  */
@@ -63,6 +85,131 @@
 #ifndef UCHAR
 #define UCHAR(c)	((unsigned char) (c))
 #endif
+
+/* --------------------------------------------------------------------
+ * L'index et ses portées substituées
+ *
+ *	Un index de $R(...) dont une partie vient d'une substitution est un
+ *	objet « pathindex » : sa chaîne est l'index (un tableau ordinaire ne
+ *	voit qu'elle), sa représentation interne la liste des portées
+ *	[début, longueur) substituées. Produit par l'instruction indexConcat
+ *	et par TclSubstTokens (index non compilé).
+ * -------------------------------------------------------------------- */
+
+typedef struct PathIndexRep {
+    Tcl_Size n;
+    Tcl_Size pos[1];		/* 2 * n : début, longueur */
+} PathIndexRep;
+
+static void FreePathIndex(Tcl_Obj *objPtr);
+static void DupPathIndex(Tcl_Obj *srcPtr, Tcl_Obj *dupPtr);
+
+static const Tcl_ObjType pathIndexType = {
+    "pathindex", FreePathIndex, DupPathIndex, NULL, NULL, TCL_OBJTYPE_V0
+};
+
+static void
+FreePathIndex(Tcl_Obj *objPtr)
+{
+    Tcl_Free(objPtr->internalRep.twoPtrValue.ptr1);
+    objPtr->typePtr = NULL;
+}
+
+static void
+DupPathIndex(Tcl_Obj *srcPtr, Tcl_Obj *dupPtr)
+{
+    PathIndexRep *s = (PathIndexRep *) srcPtr->internalRep.twoPtrValue.ptr1;
+    size_t sz = sizeof(PathIndexRep) + (2 * (size_t) s->n) * sizeof(Tcl_Size);
+    PathIndexRep *d = (PathIndexRep *) Tcl_Alloc(sz);
+
+    memcpy(d, s, sz);
+    dupPtr->internalRep.twoPtrValue.ptr1 = d;
+    dupPtr->internalRep.twoPtrValue.ptr2 = NULL;
+    dupPtr->typePtr = &pathIndexType;
+}
+
+/*
+ * Concatène parts[0..n-1] ; subst[i] non nul : la part i vient d'une
+ * substitution et devient une portée atomique. Sans aucune part
+ * substituée, c'est une simple concaténation. refcount 0.
+ */
+Tcl_Obj *
+TclPathIndexNew(Tcl_Obj *const parts[], Tcl_Size n, const char *subst)
+{
+    Tcl_DString ds;
+    Tcl_Size i, ns = 0, k = 0;
+    PathIndexRep *rep;
+    Tcl_Obj *res;
+
+    Tcl_DStringInit(&ds);
+    for (i = 0; i < n; i++) {
+	ns += (subst[i] != 0);
+    }
+    rep = (PathIndexRep *) Tcl_Alloc(sizeof(PathIndexRep)
+	    + (2 * (size_t) (ns ? ns : 1)) * sizeof(Tcl_Size));
+    rep->n = ns;
+    for (i = 0; i < n; i++) {
+	Tcl_Size len;
+	const char *str = Tcl_GetStringFromObj(parts[i], &len);
+
+	if (subst[i]) {
+	    rep->pos[2 * k] = Tcl_DStringLength(&ds);
+	    rep->pos[2 * k + 1] = len;
+	    k++;
+	}
+	Tcl_DStringAppend(&ds, str, len);
+    }
+    res = Tcl_NewStringObj(Tcl_DStringValue(&ds), Tcl_DStringLength(&ds));
+    Tcl_DStringFree(&ds);
+    if (ns == 0) {
+	Tcl_Free(rep);
+	return res;
+    }
+    res->internalRep.twoPtrValue.ptr1 = rep;
+    res->internalRep.twoPtrValue.ptr2 = NULL;
+    res->typePtr = &pathIndexType;
+    return res;
+}
+
+/* Les portées substituées d'un index (0 s'il n'en porte pas). */
+static Tcl_Size
+PathIndexSpans(Tcl_Obj *objPtr, const Tcl_Size **posPtr)
+{
+    if (objPtr != NULL && objPtr->typePtr == &pathIndexType) {
+	PathIndexRep *rep = (PathIndexRep *)
+		objPtr->internalRep.twoPtrValue.ptr1;
+
+	*posPtr = rep->pos;
+	return rep->n;
+    }
+    *posPtr = NULL;
+    return 0;
+}
+
+/* Curseur de lecture des portées, dans l'ordre du texte. */
+typedef struct IndexSpans {
+    const char *base;
+    const Tcl_Size *pos;
+    Tcl_Size n, next;
+} IndexSpans;
+
+/* Longueur de la portée qui commence en p (et l'avance), -1 sinon. */
+static Tcl_Size
+SpanTake(IndexSpans *sp, const char *p)
+{
+    if (sp != NULL && sp->next < sp->n
+	    && sp->pos[2 * sp->next] == p - sp->base) {
+	return sp->pos[2 * sp->next++ + 1];
+    }
+    return -1;
+}
+
+static int
+SpanStartsAt(const IndexSpans *sp, const char *p)
+{
+    return sp != NULL && sp->next < sp->n
+	    && sp->pos[2 * sp->next] == p - sp->base;
+}
 
 /* --------------------------------------------------------------------
  * L'arbre : OpNode, OperandTypes, Marks (comme tclCompExpr.c)
@@ -87,6 +234,7 @@ typedef struct OpNode {
  */
 
 enum OperandTypes {
+    OT_ATOM = -8,		/* une valeur substituée, seule */
     OT_ARITH = -7,		/* [( expr )] */
     OT_SCRIPT = -6,		/* [script] */
     OT_VARIABLE = -5,		/* $var */
@@ -119,7 +267,8 @@ enum LexemeCodes {
     /* Lexèmes non catégorisés (erreurs) */
 
     INVALID = 5,		/* caractère non supporté */
-    UNCLOSED = 7,		/* ' ou [ sans fermeture */
+    UNCLOSED = 7,		/* ' ou " sans fermeture */
+    NOSUBST = 9,		/* $ ou [ : le chemin ne substitue pas */
 
     /* Feuilles */
 
@@ -134,6 +283,7 @@ enum LexemeCodes {
 
     START = UNARY | 4,
     OPEN_PAREN = UNARY | 5,
+    SPLAT = UNARY | 6,
 
     /* Binaires */
 
@@ -150,6 +300,7 @@ enum Precedence {
     PREC_CLOSE_PAREN,
     PREC_OPEN_PAREN,
     PREC_COMMA,
+    PREC_SPLAT,
     PREC_DOT,
     PREC_RANGE
 };
@@ -161,7 +312,8 @@ static const unsigned char prec[] = {
     [CLOSE_PAREN] = PREC_CLOSE_PAREN,
     [END] = PREC_END,
     [START] = PREC_START,
-    [OPEN_PAREN] = PREC_OPEN_PAREN
+    [OPEN_PAREN] = PREC_OPEN_PAREN,
+    [SPLAT] = PREC_SPLAT
 };
 
 /* Octets qui ne peuvent pas faire partie d'un nom nu. */
@@ -170,6 +322,7 @@ static int
 IsDelimiter(int c)
 {
     return c == ',' || c == '.' || c == ':' || c == '(' || c == ')'
+	    || c == '*'
 	    || c == '[' || c == ']' || c == '$' || c == '"' || c == '\''
 	    || c == '\\' || c == '{' || c == '}' || c == ' ' || c == '\t'
 	    || c == '\n' || c == '\r';
@@ -188,149 +341,75 @@ ParseIndexLexeme(
     const char *start,
     Tcl_Size numBytes,
     unsigned char *lexemePtr,
-    Tcl_Obj **literalPtr)	/* texte d'un nom ou d'une 'clé' */
+    Tcl_Obj **literalPtr,	/* texte d'un nom, d'une 'clé', d'un "tag" */
+    IndexSpans *sp,		/* portées substituées (NULL : aucune) */
+    int *atomPtr)		/* le nom est UNE valeur substituée, seule */
 {
     const char *end, *limit = start + numBytes;
+    Tcl_Size spans = 0, L;
+    int literalChars = 0;
 
     *literalPtr = NULL;
+    *atomPtr = 0;
     if (numBytes == 0) {
 	*lexemePtr = END;
 	return 0;
     }
-    switch (*start) {
-    case ',': *lexemePtr = COMMA; return 1;
-    case '.': *lexemePtr = DOT; return 1;
-    case ':': *lexemePtr = RANGE; return 1;
-    case '(': *lexemePtr = OPEN_PAREN; return 1;
-    case ')': *lexemePtr = CLOSE_PAREN; return 1;
-    case '"': *lexemePtr = TAGWORD; return 1;
-    case '$': *lexemePtr = VARIABLE; return 1;
-    case '[': *lexemePtr = SCRIPT; return 1;
-    case '\'':
-	for (end = start + 1; end < limit && *end != '\''; end++) {
-	    /* vide */
+    if (!SpanStartsAt(sp, start)) {
+	switch (*start) {
+	case ',': *lexemePtr = COMMA; return 1;
+	case '.': *lexemePtr = DOT; return 1;
+	case ':': *lexemePtr = RANGE; return 1;
+	case '*': *lexemePtr = SPLAT; return 1;
+	case '(': *lexemePtr = OPEN_PAREN; return 1;
+	case ')': *lexemePtr = CLOSE_PAREN; return 1;
+	case '$':
+	case '[': *lexemePtr = NOSUBST; return 1;
+	case '\'':
+	case '"': {
+	    /* 'clé' ou "étiquette" : jusqu'au délimiteur pareil, les portées
+	     * substituées étant du texte opaque */
+	    char q = *start;
+
+	    for (end = start + 1; end < limit; ) {
+		if ((L = SpanTake(sp, end)) >= 0) {
+		    end += L;
+		} else if (*end == q) {
+		    break;
+		} else {
+		    end++;
+		}
+	    }
+	    if (end >= limit) {
+		*lexemePtr = UNCLOSED;
+		return 1;
+	    }
+	    *lexemePtr = (q == '\'') ? KEYWORD : TAGWORD;
+	    *literalPtr = Tcl_NewStringObj(start + 1, end - start - 1);
+	    return end + 1 - start;
 	}
-	if (end >= limit) {
-	    *lexemePtr = UNCLOSED;
-	    return 1;
 	}
-	*lexemePtr = KEYWORD;
-	*literalPtr = Tcl_NewStringObj(start + 1, end - start - 1);
-	return end + 1 - start;
     }
-    for (end = start; end < limit && !IsDelimiter(UCHAR(*end)); end++) {
-	/* vide */
+    /* Un nom : caractères de nom et portées substituées, collés. */
+    for (end = start; end < limit; ) {
+	if ((L = SpanTake(sp, end)) >= 0) {
+	    end += L;
+	    spans++;
+	} else if (!IsDelimiter(UCHAR(*end))) {
+	    end++;
+	    literalChars = 1;
+	} else {
+	    break;
+	}
     }
-    if (end == start) {
+    if (end == start && spans == 0) {
 	*lexemePtr = INVALID;
 	return 1;
     }
     *lexemePtr = NAMEWORD;
+    *atomPtr = (spans == 1 && !literalChars);
     *literalPtr = Tcl_NewStringObj(start, end - start);
     return end - start;
-}
-
-/* --------------------------------------------------------------------
- * "étiquette", $variable, [script] : lus avec les API du parseur de Tcl,
- * comme ParseExpr le fait pour QUOTED, VARIABLE et SCRIPT. Le texte est
- * conservé tel quel et substitué à la compilation du chemin.
- * -------------------------------------------------------------------- */
-
-static int
-ParseIndexQuoted(
-    const char *start,		/* sur le guillemet */
-    Tcl_Size numBytes,
-    Tcl_Obj **valuePtr,		/* contenu entre guillemets (refcount 0) */
-    Tcl_Size *scannedPtr)
-{
-    Tcl_Parse parse;
-    const char *end = start;
-    int code;
-
-    TclParseInit(NULL, start, numBytes, &parse);
-    TclGrowParseTokenArray(&parse, 2);
-    parse.tokenPtr->type = TCL_TOKEN_WORD;
-    parse.tokenPtr->start = start;
-    parse.numTokens++;
-    code = Tcl_ParseQuotedString(NULL, start, numBytes, &parse, 1, &end);
-    Tcl_FreeParse(&parse);
-    if (code != TCL_OK) {
-	*scannedPtr = 1;
-	return TCL_ERROR;
-    }
-    *scannedPtr = end - start;
-    *valuePtr = Tcl_NewStringObj(start + 1, end - start - 2);
-    return TCL_OK;
-}
-
-static int
-ParseIndexVariable(
-    const char *start,		/* sur le "$" */
-    Tcl_Size numBytes,
-    Tcl_Obj **valuePtr,		/* le texte source "$..." (refcount 0) */
-    Tcl_Size *scannedPtr)
-{
-    Tcl_Parse parse;
-
-    if (Tcl_ParseVarName(NULL, start, numBytes, &parse, 0) != TCL_OK
-	    || parse.numTokens < 2
-	    || parse.tokenPtr[0].type != TCL_TOKEN_VARIABLE) {
-	Tcl_FreeParse(&parse);
-	*scannedPtr = 1;
-	return TCL_ERROR;
-    }
-    *scannedPtr = parse.tokenPtr[0].size;
-    *valuePtr = Tcl_NewStringObj(start, parse.tokenPtr[0].size);
-    Tcl_FreeParse(&parse);
-    return TCL_OK;
-}
-
-/*
- * [script] : Tcl_ParseCommand en mode imbriqué, jusqu'au "]" apparié.
- * *arithPtr vaut 1 pour [( expr )] : le « script » est alors l'expression
- * parenthésée elle-même.
- */
-
-static int
-ParseIndexScript(
-    const char *start,		/* sur le "[" */
-    Tcl_Size numBytes,
-    Tcl_Obj **valuePtr,		/* le texte entre crochets (refcount 0) */
-    Tcl_Size *scannedPtr,
-    int *arithPtr)
-{
-    const char *p = start + 1, *end = start + numBytes;
-
-    while (p < end) {
-	Tcl_Parse parse;
-	int code, closed;
-
-	code = Tcl_ParseCommand(NULL, p, end - p, 1, &parse);
-	if (code != TCL_OK) {
-	    *scannedPtr = 1;
-	    Tcl_FreeParse(&parse);
-	    return TCL_ERROR;
-	}
-	closed = (parse.term < end) && (*parse.term == ']');
-	if (closed) {
-	    const char *last = parse.term;
-
-	    *valuePtr = Tcl_NewStringObj(start + 1, parse.term - start - 1);
-	    *scannedPtr = parse.term + 1 - start;
-	    while (last > start + 1 && (last[-1] == ' ' || last[-1] == '\t'
-		    || last[-1] == '\n')) {
-		last--;
-	    }
-	    *arithPtr = (start[1] == '(' && last > start + 1
-		    && last[-1] == ')');
-	    Tcl_FreeParse(&parse);
-	    return TCL_OK;
-	}
-	p = parse.commandStart + parse.commandSize;
-	Tcl_FreeParse(&parse);
-    }
-    *scannedPtr = 1;
-    return TCL_ERROR;
 }
 
 static void
@@ -375,7 +454,8 @@ ParseIndex(
     const char *start,
     Tcl_Size numBytes,
     OpNode **opTreePtr,
-    Tcl_Obj *leafList)
+    Tcl_Obj *leafList,
+    IndexSpans *sp)
 {
     OpNode *nodes = NULL;
     unsigned int nodesAvailable = 64;
@@ -391,7 +471,7 @@ ParseIndex(
     Tcl_Obj *msg = NULL;
     const char *errCode = NULL;
     const char *const mark = "_@_";
-    int insertMark = 0;
+    int insertMark = 0, atom = 0;
     const Tcl_Size limit = 25;
 
     nodes = (OpNode *) Tcl_AttemptAlloc(nodesAvailable * sizeof(OpNode));
@@ -428,12 +508,15 @@ ParseIndex(
 	}
 	nodePtr = nodes + nodesUsed;
 
-	scanned = TclParseAllWhiteSpace(start, numBytes);
+	/* les blancs d'une valeur substituée en font partie */
+	scanned = SpanStartsAt(sp, start) ? 0
+		: TclParseAllWhiteSpace(start, numBytes);
 	start += scanned;
 	numBytes -= scanned;
 
 	literal = NULL;
-	scanned = ParseIndexLexeme(start, numBytes, &lexeme, &literal);
+	scanned = ParseIndexLexeme(start, numBytes, &lexeme, &literal, sp,
+		&atom);
 
 	if ((NODE_TYPE & lexeme) == 0) {
 	    switch (lexeme) {
@@ -445,6 +528,12 @@ ParseIndex(
 	    case UNCLOSED:
 		msg = Tcl_ObjPrintf("missing close-quote");
 		errCode = "UNBALANCED";
+		goto error;
+	    case NOSUBST:
+		msg = Tcl_ObjPrintf("a path does not substitute \"%c\": Tcl "
+			"substitutes $x and [cmd] in $name(...) and in bare "
+			"words, not inside braces or ${...}", *start);
+		errCode = "NOSUBST";
 		goto error;
 	    }
 	}
@@ -467,42 +556,16 @@ ParseIndex(
 	    switch (lexeme) {
 	    case NAMEWORD:
 	    case KEYWORD:
+	    case TAGWORD:
 		Tcl_ListObjAppendElement(NULL, leafList, literal);
 		literal = NULL;
-		complete = lastParsed = (lexeme == NAMEWORD) ? OT_NAME
-			: OT_KEY;
-		break;
-	    case TAGWORD:
-		if (ParseIndexQuoted(start, numBytes, &value, &scanned)
-			!= TCL_OK) {
-		    msg = Tcl_ObjPrintf("missing close-quote");
-		    errCode = "UNBALANCED";
-		    goto error;
-		}
-		Tcl_ListObjAppendElement(NULL, leafList, value);
-		complete = lastParsed = OT_TAG;
-		break;
-	    case VARIABLE:
-		if (ParseIndexVariable(start, numBytes, &value, &scanned)
-			!= TCL_OK) {
-		    msg = Tcl_ObjPrintf("invalid variable reference");
-		    errCode = "VARIABLE";
-		    goto error;
-		}
-		Tcl_ListObjAppendElement(NULL, leafList, value);
-		complete = lastParsed = OT_VARIABLE;
-		break;
-	    case SCRIPT:
-		if (ParseIndexScript(start, numBytes, &value, &scanned,
-			&arith) != TCL_OK) {
-		    msg = Tcl_ObjPrintf("missing close-bracket");
-		    errCode = "UNBALANCED";
-		    goto error;
-		}
-		Tcl_ListObjAppendElement(NULL, leafList, value);
-		complete = lastParsed = arith ? OT_ARITH : OT_SCRIPT;
+		complete = lastParsed = (lexeme == KEYWORD) ? OT_KEY
+			: (lexeme == TAGWORD) ? OT_TAG
+			: atom ? OT_ATOM : OT_NAME;
 		break;
 	    }
+	    (void) value;
+	    (void) arith;
 	    break;
 	}
 
@@ -672,6 +735,7 @@ typedef struct IndexStep {
     StepKind kind;
     Tcl_Obj *a;			/* nom, clé, début d'intervalle, étiquette */
     Tcl_Obj *b;			/* fin d'intervalle */
+    int atom;			/* nom = une valeur substituée, seule */
 } IndexStep;
 
 typedef struct IndexPath {
@@ -679,11 +743,103 @@ typedef struct IndexPath {
     Tcl_Size n;
 } IndexPath;
 
+/* La forme : feuille (leaf = index du chemin) ou groupe (leaf = -1). */
+typedef struct Shape {
+    Tcl_Size leaf;
+    Tcl_Size n;
+    struct Shape *kid;
+    int splat;			/* "*" : se fond dans le groupe parent */
+} Shape;
+
 typedef struct PathSet {
     IndexPath *path;
     Tcl_Size n;
     int multi;			/* résultat multiple : liste, même à 1 élément */
+    Shape shape;		/* memset 0 : feuille 0, un seul chemin */
+    int open;			/* groupe d'une "," pas encore refermé par ")" */
 } PathSet;
+
+static void
+ShapeFree(Shape *sh)
+{
+    Tcl_Size i;
+
+    for (i = 0; i < sh->n; i++) {
+	ShapeFree(&sh->kid[i]);
+    }
+    if (sh->kid != NULL) {
+	Tcl_Free(sh->kid);
+    }
+    sh->kid = NULL;
+    sh->n = 0;
+}
+
+static Shape
+ShapeCopy(const Shape *sh, Tcl_Size shift)
+{
+    Shape c;
+    Tcl_Size i;
+
+    c.leaf = (sh->leaf >= 0) ? sh->leaf + shift : -1;
+    c.n = sh->n;
+    c.kid = NULL;
+    c.splat = sh->splat;
+    if (sh->n > 0) {
+	c.kid = (Shape *) Tcl_Alloc(sh->n * sizeof(Shape));
+	for (i = 0; i < sh->n; i++) {
+	    c.kid[i] = ShapeCopy(&sh->kid[i], shift);
+	}
+    }
+    return c;
+}
+
+static void ShapeAppend(Shape *g, Shape *sh, int open);
+
+/* l.r : chaque feuille i de l devient la forme de r, décalée de i * rn. */
+static Shape
+ShapeSubst(const Shape *l, const Shape *r, Tcl_Size rn)
+{
+    Shape c;
+    Tcl_Size i;
+
+    if (l->leaf >= 0) {
+	c = ShapeCopy(r, l->leaf * rn);
+	c.splat |= l->splat;
+	return c;
+    }
+    c.leaf = -1;
+    c.n = 0;
+    c.splat = l->splat;
+    c.kid = NULL;
+    for (i = 0; i < l->n; i++) {
+	Shape k = ShapeSubst(&l->kid[i], r, rn);
+
+	ShapeAppend(&c, &k, 0);		/* un groupe marqué "*" se fond */
+    }
+    return c;
+}
+
+/* Ajoute sh au groupe g (sh est déplacé) ; un groupe ouvert est fondu. */
+static void
+ShapeAppend(Shape *g, Shape *sh, int open)
+{
+    Tcl_Size i;
+
+    if ((open || sh->splat) && sh->leaf < 0) {
+	g->kid = (Shape *) Tcl_Realloc(g->kid, (g->n + sh->n) * sizeof(Shape));
+	for (i = 0; i < sh->n; i++) {
+	    g->kid[g->n++] = sh->kid[i];
+	}
+	if (sh->kid != NULL) {
+	    Tcl_Free(sh->kid);
+	}
+    } else {
+	g->kid = (Shape *) Tcl_Realloc(g->kid, (g->n + 1) * sizeof(Shape));
+	g->kid[g->n++] = *sh;
+    }
+    sh->kid = NULL;
+    sh->n = 0;
+}
 
 typedef struct IndexEnv {
     Tcl_Interp *interp;
@@ -722,6 +878,7 @@ SetFree(PathSet *s)
     if (s->path != NULL) {
 	Tcl_Free(s->path);
     }
+    ShapeFree(&s->shape);
     memset(s, 0, sizeof(*s));
 }
 
@@ -746,6 +903,7 @@ OneStep(StepKind kind, Tcl_Obj *a, Tcl_Obj *b)
     p.step[0].kind = kind;
     p.step[0].a = a;
     p.step[0].b = b;
+    p.step[0].atom = 0;
     if (a != NULL) {
 	Tcl_IncrRefCount(a);
     }
@@ -841,6 +999,8 @@ ApplyDot(IndexEnv *env)
 	    SetAddPath(&out, p);
 	}
     }
+    out.shape = ShapeSubst(&l.shape, &r.shape, r.n);
+    out.open = 0;
     SetFree(&l);
     SetFree(&r);
     PushSet(env, out);
@@ -854,7 +1014,12 @@ ApplyComma(IndexEnv *env)
 {
     PathSet r = PopSet(env), l = PopSet(env);
     Tcl_Size i;
+    Shape g = {-1, 0, NULL, 0}, ls = l.shape, rs = ShapeCopy(&r.shape, l.n);
 
+    ShapeAppend(&g, &ls, l.open);
+    ShapeAppend(&g, &rs, r.open);
+    l.shape = g;
+    l.open = 1;
     l.path = (IndexPath *) Tcl_Realloc(l.path,
 	    (l.n + r.n) * sizeof(IndexPath));
     for (i = 0; i < r.n; i++) {
@@ -902,7 +1067,52 @@ ApplyIndexOperator(IndexEnv *env, unsigned char lexeme)
 	return ApplyDot(env);
     case RANGE:
 	return ApplyRange(env);
-    default:			/* START, OPEN_PAREN */
+    case SPLAT:			/* "*" : dépliage dans le groupe parent */
+	if (env->nStack > 0) {
+	    PathSet *top = &env->stack[env->nStack - 1];
+
+	    if (top->n == 1 && top->path[0].n == 1
+		    && top->path[0].step[0].kind == IS_NAME
+		    && top->path[0].step[0].atom) {
+		/* *$x : les éléments de la valeur, autant d'alternatives */
+		Tcl_Obj *v = top->path[0].step[0].a, **elems;
+		Tcl_Size ne, i;
+		PathSet alt;
+
+		Tcl_IncrRefCount(v);
+		if (Tcl_ListObjGetElements(env->interp, v, &ne, &elems)
+			!= TCL_OK) {
+		    Tcl_DecrRefCount(v);
+		    return TCL_ERROR;
+		}
+		memset(&alt, 0, sizeof(alt));
+		alt.shape.leaf = -1;
+		alt.shape.kid = (Shape *) Tcl_Alloc((ne ? ne : 1) * sizeof(Shape));
+		for (i = 0; i < ne; i++) {
+		    PathSet one = OneStep(IS_NAME, elems[i], NULL);
+
+		    SetAddPath(&alt, one.path[0]);
+		    Tcl_Free(one.path);
+		    alt.shape.kid[i].leaf = i;
+		    alt.shape.kid[i].n = 0;
+		    alt.shape.kid[i].kid = NULL;
+		    alt.shape.kid[i].splat = 0;
+		}
+		alt.shape.n = ne;
+		alt.multi = 1;
+		Tcl_DecrRefCount(v);
+		SetFree(top);
+		*top = alt;
+	    }
+	    top->shape.splat = 1;
+	}
+	return TCL_OK;
+    case OPEN_PAREN:		/* ")" referme le groupe */
+	if (env->nStack > 0) {
+	    env->stack[env->nStack - 1].open = 0;
+	}
+	return TCL_OK;
+    default:			/* START */
 	return TCL_OK;
     }
 }
@@ -915,67 +1125,22 @@ ApplyIndexOperator(IndexEnv *env, unsigned char lexeme)
 static int
 EvalLeaf(IndexEnv *env, int kind, Tcl_Obj *text)
 {
-    Tcl_Interp *interp = env->interp;
-    Tcl_Obj *res = NULL;
     PathSet s;
 
     switch (kind) {
-    case OT_NAME:
-	s = OneStep(IS_NAME, text, NULL);
-	break;
     case OT_KEY:
 	s = OneStep(IS_KEY, text, NULL);
 	break;
     case OT_TAG:
-	res = Tcl_SubstObj(interp, text, TCL_SUBST_ALL);
-	if (res == NULL) {
-	    return TCL_ERROR;
-	}
-	Tcl_IncrRefCount(res);
-	s = OneStep(IS_TAG, res, NULL);
-	Tcl_DecrRefCount(res);
+	s = OneStep(IS_TAG, text, NULL);	/* littérale */
 	break;
-    case OT_VARIABLE:
-	res = Tcl_SubstObj(interp, text, TCL_SUBST_VARIABLES);
-	if (res == NULL) {
-	    return TCL_ERROR;
-	}
-	Tcl_IncrRefCount(res);
-	s = OneStep(IS_NAME, res, NULL);
-	Tcl_DecrRefCount(res);
+    case OT_ATOM:
+	s = OneStep(IS_NAME, text, NULL);
+	s.path[0].step[0].atom = 1;
 	break;
-    case OT_SCRIPT:
-	if (Tcl_EvalObjEx(interp, text, 0) != TCL_OK) {
-	    return TCL_ERROR;
-	}
-	res = Tcl_NewStringObj(Tcl_GetString(Tcl_GetObjResult(interp)), -1);
-	Tcl_IncrRefCount(res);
-	s = OneStep(IS_NAME, res, NULL);
-	Tcl_DecrRefCount(res);
+    default:			/* OT_NAME */
+	s = OneStep(IS_NAME, text, NULL);
 	break;
-    default: {			/* OT_ARITH : [( expr )], TIP 759 */
-	Tcl_Obj **elems;
-	Tcl_Size n, i;
-
-	if (Tcl_ExprObj(interp, text, &res) != TCL_OK) {
-	    return TCL_ERROR;
-	}
-	/* Une liste de plusieurs éléments : autant d'alternatives. */
-	if (Tcl_ListObjGetElements(NULL, res, &n, &elems) != TCL_OK || n < 2) {
-	    s = OneStep(IS_NAME, res, NULL);
-	} else {
-	    memset(&s, 0, sizeof(s));
-	    for (i = 0; i < n; i++) {
-		PathSet one = OneStep(IS_NAME, elems[i], NULL);
-
-		SetAddPath(&s, one.path[0]);
-		Tcl_Free(one.path);
-	    }
-	    s.multi = 1;
-	}
-	Tcl_DecrRefCount(res);
-	break;
-    }
     }
     PushSet(env, s);
     return TCL_OK;
@@ -1026,9 +1191,7 @@ CompileIndexTree(
 	case OT_NAME:
 	case OT_KEY:
 	case OT_TAG:
-	case OT_VARIABLE:
-	case OT_SCRIPT:
-	case OT_ARITH:
+	case OT_ATOM:
 	    if (EvalLeaf(envPtr, next, **leafObjvPtr) != TCL_OK) {
 		return TCL_ERROR;
 	    }
@@ -1051,8 +1214,10 @@ static int
 CompileIndex(
     Tcl_Interp *interp,
     const char *text,
+    Tcl_Obj *pathObj,		/* l'index et ses portées (ou NULL) */
     PathSet *setPtr)
 {
+    IndexSpans spans, *sp = NULL;
     OpNode *opTree = NULL;
     Tcl_Obj *leafList;
     IndexEnv env;
@@ -1064,7 +1229,15 @@ CompileIndex(
     TclNewObj(leafList);
     Tcl_IncrRefCount(leafList);
 
-    code = ParseIndex(interp, text, strlen(text), &opTree, leafList);
+    if (pathObj != NULL) {
+	spans.base = text;
+	spans.next = 0;
+	spans.n = PathIndexSpans(pathObj, &spans.pos);
+	if (spans.n > 0) {
+	    sp = &spans;
+	}
+    }
+    code = ParseIndex(interp, text, strlen(text), &opTree, leafList, sp);
     if (code == TCL_OK) {
 	Tcl_Size objc;
 	Tcl_Obj **objv;
@@ -1753,73 +1926,235 @@ ReadSteps(Tcl_Interp *interp, Tcl_Obj *a, const IndexPath *p, Tcl_Size i,
  * garde le type du champ ; une collecte donne une liste {list}T, T étant
  * le type commun des éléments (§10).
  */
-int
-TclTypePathRead(Tcl_Interp *interp, Tcl_Obj *containerPtr, const char *path,
-	Tcl_Obj **resultPtr)
+static int
+PathHasRange(const IndexPath *p)
+{
+    Tcl_Size i;
+
+    for (i = 0; i < p->n; i++) {
+	if (p->step[i].kind == IS_RANGE) {
+	    return 1;
+	}
+    }
+    return 0;
+}
+
+/* Liste typée {list}T de valeurs typées, T leur type commun. */
+static Tcl_Obj *
+TypedListOf(Tcl_Interp *interp, Tcl_Obj **v, Tcl_Size n)
+{
+    TclObjVec contents = {NULL, 0, 0};
+    TclType *common = NULL, *tp;
+    Tcl_Obj *content, *list, *a;
+    Tcl_Size i;
+
+    for (i = 0; i < n; i++) {
+	tp = NULL;
+	content = v[i];
+	TclAnnotInfo(v[i], &content, &tp, NULL, NULL);
+	if (tp != NULL) {
+	    common = (common == NULL) ? tp : TclTypeCommon(interp, common, tp);
+	}
+	TclVecAdd(&contents, content);
+    }
+    if (common == NULL) {
+	common = TclTypeParse(interp, "string", 6);
+    }
+    list = Tcl_NewListObj(contents.n, contents.v);
+    TclVecFree(&contents);
+    a = TclNewAnnotated(interp, TclTypeListOf(interp, common), -1, list);
+    TclDiscard(list);
+    return a;
+}
+
+/* Résultat selon la forme ; *resPtr sans référence ajoutée (refcount 0
+ * possible) : l'appelant l'incrémente. */
+static Tcl_Obj *
+ShapeRead(Tcl_Interp *interp, const Shape *sh, Items *per,
+	const PathSet *set)
+{
+    if (sh->leaf >= 0) {
+	Items *it = &per[sh->leaf];
+
+	if (it->vec.n == 1 && (!PathHasRange(&set->path[sh->leaf])
+		|| it->bitSlice)) {
+	    return it->vec.v[0];
+	}
+	return TypedListOf(interp, it->vec.v, it->vec.n);
+    } else {
+	TclObjVec kids = {NULL, 0, 0};
+	Tcl_Obj *res;
+	Tcl_Size i;
+
+	for (i = 0; i < sh->n; i++) {
+	    Tcl_Obj *k;
+
+	    if (sh->kid[i].leaf >= 0 && sh->kid[i].splat) {
+		/* *a:b : les éléments de l'intervalle, un par un */
+		Items *it = &per[sh->kid[i].leaf];
+		Tcl_Size m;
+
+		for (m = 0; m < it->vec.n; m++) {
+		    TclVecAdd(&kids, it->vec.v[m]);
+		}
+		continue;
+	    }
+	    k = ShapeRead(interp, &sh->kid[i], per, set);
+	    if (k == NULL) {
+		TclVecFree(&kids);
+		return NULL;
+	    }
+	    TclVecAdd(&kids, k);
+	}
+	res = TypedListOf(interp, kids.v, kids.n);
+	TclVecFree(&kids);
+	return res;
+    }
+}
+
+/*
+ * Lecture : *resultPtr reçoit une valeur typée, avec une référence de
+ * plus que l'appelant doit rendre (Tcl_DecrRefCount). Un résultat unique
+ * garde le type du champ ; une collecte donne une liste {list}T, T étant
+ * le type commun des éléments (§10), imbriquée selon la forme du chemin.
+ */
+static int
+PathRead(Tcl_Interp *interp, Tcl_Obj *containerPtr, const char *path,
+	Tcl_Obj *pathObj, Tcl_Obj **resultPtr)
 {
     PathSet set;
-    Items out;
-    Tcl_Size k;
+    Items *per;
+    Tcl_Size k, m;
+    Tcl_Obj *res;
     int rc = TCL_ERROR;
 
-    if (CompileIndex(interp, path, &set) != TCL_OK) {
+    if (CompileIndex(interp, path, pathObj, &set) != TCL_OK) {
 	return TCL_ERROR;
     }
-    ItemsInit(&out);
+    per = (Items *) Tcl_Alloc((set.n ? set.n : 1) * sizeof(Items));
     for (k = 0; k < set.n; k++) {
-	if (ReadSteps(interp, containerPtr, &set.path[k], 0, &out)
+	ItemsInit(&per[k]);
+    }
+    for (k = 0; k < set.n; k++) {
+	if (ReadSteps(interp, containerPtr, &set.path[k], 0, &per[k])
 		!= TCL_OK) {
 	    goto done;
 	}
-    }
-    out.multi = set.multi;
+	/* Une case var en fin de chemin se lit à travers son lien. */
+	for (m = 0; m < per[k].vec.n; m++) {
+	    Tcl_Obj *content, *target;
+	    TclType *vt;
 
-    /* Une case var en fin de chemin se lit à travers son lien. */
-    for (k = 0; k < out.vec.n; k++) {
-	Tcl_Obj *content, *target;
-	TclType *vt;
-
-	if (TclAnnotInfo(out.vec.v[k], &content, &vt, NULL, NULL) == 1
-		&& vt->kind == TCLT_VAR) {
-	    target = DerefSlot(interp, vt, content);
-	    if (target == NULL) {
-		goto done;
+	    if (TclAnnotInfo(per[k].vec.v[m], &content, &vt, NULL, NULL) == 1
+		    && vt->kind == TCLT_VAR) {
+		target = DerefSlot(interp, vt, content);
+		if (target == NULL) {
+		    goto done;
+		}
+		Tcl_IncrRefCount(target);
+		Tcl_DecrRefCount(per[k].vec.v[m]);
+		per[k].vec.v[m] = target;
 	    }
-	    Tcl_IncrRefCount(target);
-	    Tcl_DecrRefCount(out.vec.v[k]);
-	    out.vec.v[k] = target;
 	}
     }
-    if ((!out.multi || out.bitSlice) && out.vec.n == 1) {
-	*resultPtr = out.vec.v[0];
-	Tcl_IncrRefCount(*resultPtr);
-    } else {
-	TclObjVec contents = {NULL, 0, 0};
-	TclType *common = NULL, *tp;
-	Tcl_Obj *content, *list, *a;
-	Tcl_Size i;
-
-	for (i = 0; i < out.vec.n; i++) {
-	    TclAnnotInfo(out.vec.v[i], &content, &tp, NULL, NULL);
-	    common = (common == NULL) ? tp : TclTypeCommon(interp, common, tp);
-	    TclVecAdd(&contents, content);
-	}
-	if (common == NULL) {
-	    common = TclTypeParse(interp, "string", 6);
-	}
-	list = Tcl_NewListObj(contents.n, contents.v);
-	TclVecFree(&contents);
-	a = TclNewAnnotated(interp, TclTypeListOf(interp, common), -1, list);
-	TclDiscard(list);
-	Tcl_IncrRefCount(a);
-	*resultPtr = a;
+    res = ShapeRead(interp, &set.shape, per, &set);
+    if (res == NULL) {
+	goto done;
     }
+    Tcl_IncrRefCount(res);
+    *resultPtr = res;
     rc = TCL_OK;
 
   done:
-    TclVecFree(&out.vec);
+    for (k = 0; k < set.n; k++) {
+	TclVecFree(&per[k].vec);
+    }
+    Tcl_Free(per);
     SetFree(&set);
     return rc;
+}
+
+/* --------------------------------------------------------------------
+ * Répartition des valeurs selon la forme (écriture, construction)
+ * -------------------------------------------------------------------- */
+
+static int
+ShapeDistribute(Tcl_Interp *interp, const Shape *sh, Tcl_Obj *v,
+	Tcl_Obj **flat)
+{
+    Tcl_Obj **elv;
+    Tcl_Size n, i;
+
+    if (sh->leaf >= 0) {
+	flat[sh->leaf] = v;
+	return TCL_OK;
+    }
+    if (Tcl_ListObjGetElements(interp, v, &n, &elv) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    if (n != sh->n) {
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf("value \"%s\" has %"
+		TCL_SIZE_MODIFIER "d elements, but this part of the path "
+		"selects %" TCL_SIZE_MODIFIER "d", Tcl_GetString(v), n, sh->n));
+	Tcl_SetErrorCode(interp, "TCL", "TYPE", "PATH", (char *) NULL);
+	return TCL_ERROR;
+    }
+    for (i = 0; i < n; i++) {
+	if (ShapeDistribute(interp, &sh->kid[i], elv[i], flat) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+    }
+    return TCL_OK;
+}
+
+/*
+ * Une valeur par feuille, par élément du groupe de tête, ou pour tout le
+ * chemin. *flatPtr (set->n cases, à libérer par Tcl_Free) : valeurs sans
+ * référence ajoutée, vivantes tant que vals[] l'est.
+ */
+static int
+FlattenValues(Tcl_Interp *interp, const PathSet *set, Tcl_Size nvals,
+	Tcl_Obj *const vals[], Tcl_Obj ***flatPtr)
+{
+    Tcl_Obj **flat = (Tcl_Obj **) Tcl_Alloc((set->n ? set->n : 1)
+	    * sizeof(Tcl_Obj *));
+    Tcl_Size i;
+    const Shape *sh = &set->shape;
+
+    if (nvals == set->n) {
+	for (i = 0; i < nvals; i++) {
+	    flat[i] = vals[i];
+	}
+    } else if (sh->leaf < 0 && nvals == sh->n) {
+	for (i = 0; i < nvals; i++) {
+	    if (ShapeDistribute(interp, &sh->kid[i], vals[i], flat) != TCL_OK) {
+		Tcl_Free(flat);
+		return TCL_ERROR;
+	    }
+	}
+    } else if (sh->leaf < 0 && nvals == 1) {
+	if (ShapeDistribute(interp, sh, vals[0], flat) != TCL_OK) {
+	    Tcl_Free(flat);
+	    return TCL_ERROR;
+	}
+    } else {
+	if (sh->leaf < 0) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf("wrong # args: the path "
+		    "selects %" TCL_SIZE_MODIFIER "d targets in %"
+		    TCL_SIZE_MODIFIER "d groups: give %" TCL_SIZE_MODIFIER
+		    "d values, %" TCL_SIZE_MODIFIER "d or 1, not %"
+		    TCL_SIZE_MODIFIER "d", set->n, sh->n, set->n, sh->n, nvals));
+	} else {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf("wrong # args: %"
+		    TCL_SIZE_MODIFIER "d targets but %" TCL_SIZE_MODIFIER
+		    "d values", set->n, nvals));
+	}
+	Tcl_SetErrorCode(interp, "TCL", "WRONGARGS", (char *) NULL);
+	Tcl_Free(flat);
+	return TCL_ERROR;
+    }
+    *flatPtr = flat;
+    return TCL_OK;
 }
 
 /* --------------------------------------------------------------------
@@ -2054,6 +2389,7 @@ SetIn(Tcl_Interp *interp, Tcl_Obj *a, const IndexPath *chain, Tcl_Size i,
 	    TclDiscard(childContent);
 	    return NULL;
 	}
+	TclDiscard(key);	/* clé existante : Tcl_DictObjPut ne la garde pas */
 	res = TclNewAnnotated(interp, tp, variant, newV);
 	TclDiscard(newV);
 	break;
@@ -2079,25 +2415,23 @@ SetIn(Tcl_Interp *interp, Tcl_Obj *a, const IndexPath *chain, Tcl_Size i,
  * s'appliquent sur le même conteneur, qui n'est remplacé qu'à la fin :
  * tout ou rien. *newPtr porte une référence de plus que l'appelant rend.
  */
-int
-TclTypePathWrite(Tcl_Interp *interp, Tcl_Obj *containerPtr, const char *path,
-	Tcl_Size nvals, Tcl_Obj *const vals[], Tcl_Obj **newPtr)
+static int
+PathWrite(Tcl_Interp *interp, Tcl_Obj *containerPtr, const char *path,
+	Tcl_Obj *pathObj, Tcl_Size nvals, Tcl_Obj *const vals[],
+	Tcl_Obj **newPtr)
 {
     PathSet set;
     Tcl_Size i, j;
     Tcl_Obj *cur, *next;
     PendingWrites pw;
+    Tcl_Obj **flat = NULL;
     int rc = TCL_ERROR;
 
-    if (CompileIndex(interp, path, &set) != TCL_OK) {
+    if (CompileIndex(interp, path, pathObj, &set) != TCL_OK) {
 	return TCL_ERROR;
     }
     memset(&pw, 0, sizeof(pw));
-    if (set.n != nvals) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf("wrong # args: %"
-		TCL_SIZE_MODIFIER "d targets but %" TCL_SIZE_MODIFIER
-		"d values", set.n, nvals));
-	Tcl_SetErrorCode(interp, "TCL", "WRONGARGS", (char *) NULL);
+    if (FlattenValues(interp, &set, nvals, vals, &flat) != TCL_OK) {
 	goto done;
     }
     for (i = 0; i < set.n; i++) {
@@ -2118,7 +2452,7 @@ TclTypePathWrite(Tcl_Interp *interp, Tcl_Obj *containerPtr, const char *path,
     cur = containerPtr;
     Tcl_IncrRefCount(cur);
     for (i = 0; i < set.n; i++) {
-	next = SetIn(interp, cur, &set.path[i], 0, vals[i], &pw);
+	next = SetIn(interp, cur, &set.path[i], 0, flat[i], &pw);
 	Tcl_DecrRefCount(cur);
 	if (next == NULL) {
 	    goto done;
@@ -2139,13 +2473,186 @@ TclTypePathWrite(Tcl_Interp *interp, Tcl_Obj *containerPtr, const char *path,
     rc = TCL_OK;
 
   done:
+    if (flat != NULL) {
+	Tcl_Free(flat);
+    }
     TclVecFree(&pw.names);
     TclVecFree(&pw.values);
     SetFree(&set);
     return rc;
 }
 
+/* --------------------------------------------------------------------
+ * Construction : set {T}R(chemin) v...
+ *
+ *	Les chemins, groupés par leur premier pas, nomment des champs de T ;
+ *	un groupe qui descend plus loin construit le produit du champ. Chaque
+ *	niveau passe par le constructeur en nom/valeur (défauts, contrôles),
+ *	sans essai de lecture positionnelle.
+ * -------------------------------------------------------------------- */
 
+static int
+ConstructLevel(Tcl_Interp *interp, TclType *tp, const PathSet *set,
+	Tcl_Obj **flat, const Tcl_Size *idx, Tcl_Size cnt, Tcl_Size d,
+	Tcl_Obj **contentPtr)
+{
+    TclObjVec args = {NULL, 0, 0};
+    char *used;
+    Tcl_Size i, j, *sub;
+    int rc = TCL_ERROR;
+
+    if (tp->kind != TCLT_PRODUCT) {
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf("a constructor path names "
+		"fields of products: %s is not a product", tp->name));
+	Tcl_SetErrorCode(interp, "TCL", "TYPE", "PATH", (char *) NULL);
+	return TCL_ERROR;
+    }
+    used = (char *) Tcl_Alloc(cnt ? cnt : 1);
+    memset(used, 0, cnt ? cnt : 1);
+    sub = (Tcl_Size *) Tcl_Alloc((cnt ? cnt : 1) * sizeof(Tcl_Size));
+    for (i = 0; i < cnt; i++) {
+	const IndexPath *p = &set->path[idx[i]];
+	const char *name;
+	Tcl_Size fi, ns = 0, whole = -1;
+	Tcl_Obj *value;
+
+	if (used[i]) {
+	    continue;
+	}
+	name = Tcl_GetString(p->step[d].a);
+	fi = TclTypeFieldIndex(tp, name);
+	if (fi < 0) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf("unknown field \"%s\" in %s",
+		    name, tp->name));
+	    Tcl_SetErrorCode(interp, "TCL", "TYPE", "FIELD", (char *) NULL);
+	    goto done;
+	}
+	for (j = i; j < cnt; j++) {
+	    const IndexPath *q = &set->path[idx[j]];
+
+	    if (!used[j] && strcmp(Tcl_GetString(q->step[d].a), name) == 0) {
+		used[j] = 1;
+		sub[ns++] = idx[j];
+		if (q->n == d + 1) {
+		    whole = idx[j];
+		}
+	    }
+	}
+	if (whole >= 0) {
+	    if (ns > 1) {
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf("field \"%s\" of %s is "
+			"assigned more than once", name, tp->name));
+		Tcl_SetErrorCode(interp, "TCL", "TYPE", "FIELD", (char *) NULL);
+		goto done;
+	    }
+	    value = flat[whole];
+	    Tcl_IncrRefCount(value);
+	} else {
+	    TclType *ft = tp->fields[fi].type;
+	    Tcl_Obj *c = NULL;
+
+	    if (ft == NULL || ConstructLevel(interp, ft, set, flat, sub, ns,
+		    d + 1, &c) != TCL_OK) {
+		if (ft == NULL) {
+		    Tcl_SetObjResult(interp, Tcl_ObjPrintf("field \"%s\" of %s "
+			    "has no type to construct", name, tp->name));
+		}
+		goto done;
+	    }
+	    value = TclNewAnnotated(interp, ft, -1, c);
+	    TclDiscard(c);
+	    if (value == NULL) {
+		goto done;
+	    }
+	    Tcl_IncrRefCount(value);
+	}
+	TclVecAdd(&args, p->step[d].a);
+	TclVecAdd(&args, value);
+	Tcl_DecrRefCount(value);
+    }
+    rc = TclBuildProductNamed(interp, tp, args.n, args.v, contentPtr);
+
+  done:
+    TclVecFree(&args);
+    Tcl_Free(used);
+    Tcl_Free(sub);
+    return rc;
+}
+
+/* *contentPtr : contenu du produit tp (refcount 0, privé). */
+int
+TclTypePathConstruct(Tcl_Interp *interp, TclType *tp, const char *path,
+	Tcl_Size nvals, Tcl_Obj *const vals[], Tcl_Obj **contentPtr)
+{
+    PathSet set;
+    Tcl_Obj **flat = NULL;
+    Tcl_Size i, j, *idx = NULL;
+    int rc = TCL_ERROR;
+
+    if (CompileIndex(interp, path, NULL, &set) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    for (i = 0; i < set.n; i++) {
+	for (j = 0; j < set.path[i].n; j++) {
+	    if (set.path[i].step[j].kind > IS_KEY) {
+		PathErr(interp, "a constructor path names fields: no ranges or "
+			"tags%s%s", "", "");
+		goto done;
+	    }
+	}
+    }
+    if (FlattenValues(interp, &set, nvals, vals, &flat) != TCL_OK) {
+	goto done;
+    }
+    idx = (Tcl_Size *) Tcl_Alloc((set.n ? set.n : 1) * sizeof(Tcl_Size));
+    for (i = 0; i < set.n; i++) {
+	idx[i] = i;
+    }
+    rc = ConstructLevel(interp, tp, &set, flat, idx, set.n, 0, contentPtr);
+
+  done:
+    if (flat != NULL) {
+	Tcl_Free(flat);
+    }
+    if (idx != NULL) {
+	Tcl_Free(idx);
+    }
+    SetFree(&set);
+    return rc;
+}
+
+
+
+int
+TclTypePathRead(Tcl_Interp *interp, Tcl_Obj *containerPtr, const char *path,
+	Tcl_Obj **resultPtr)
+{
+    return PathRead(interp, containerPtr, path, NULL, resultPtr);
+}
+
+int
+TclTypePathWrite(Tcl_Interp *interp, Tcl_Obj *containerPtr, const char *path,
+	Tcl_Size nvals, Tcl_Obj *const vals[], Tcl_Obj **newPtr)
+{
+    return PathWrite(interp, containerPtr, path, NULL, nvals, vals, newPtr);
+}
+
+/* Variantes qui gardent les portées substituées de l'index (pathindex). */
+static int
+PathReadObj(Tcl_Interp *interp, Tcl_Obj *containerPtr, Tcl_Obj *pathObj,
+	Tcl_Obj **resultPtr)
+{
+    return PathRead(interp, containerPtr, Tcl_GetString(pathObj), pathObj,
+	    resultPtr);
+}
+
+static int
+PathWriteObj(Tcl_Interp *interp, Tcl_Obj *containerPtr, Tcl_Obj *pathObj,
+	Tcl_Size nvals, Tcl_Obj *const vals[], Tcl_Obj **newPtr)
+{
+    return PathWrite(interp, containerPtr, Tcl_GetString(pathObj), pathObj,
+	    nvals, vals, newPtr);
+}
 
 /*
  * Appelée en tête de Tcl_SetObjCmd quand objv[1] ressemble à nom(chemin) :
@@ -2247,8 +2754,7 @@ TclTypedVarGetElement(Tcl_Interp *interp, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr,
 	    || !(varPtr->flags & VAR_TYPED) || varPtr->value.objPtr == NULL) {
 	return TCL_CONTINUE;
     }
-    rc = TclTypePathRead(interp, varPtr->value.objPtr,
-	    Tcl_GetString(part2Ptr), &res);
+    rc = PathReadObj(interp, varPtr->value.objPtr, part2Ptr, &res);
     if (rc != TCL_OK) {
 	return TCL_ERROR;
     }
@@ -2256,6 +2762,36 @@ TclTypedVarGetElement(Tcl_Interp *interp, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr,
     Tcl_DecrRefCount(res);
     *resultPtr = res;
     return TCL_OK;
+}
+
+/*
+ * ${R(chemin)} : le nom entier porte l'index (part2 absent). Le chemin est
+ * LITTÉRAL, comme la clé de ${a(clé)} pour un tableau. TCL_CONTINUE si le
+ * nom n'a pas cette forme ou si la variable n'est pas un scalaire typé
+ * (le message d'erreur de Tcl est alors conservé).
+ */
+int
+TclTypedVarGetElementByName(Tcl_Interp *interp, Tcl_Obj *nameObj,
+	Tcl_Obj **resultPtr)
+{
+    Tcl_Size len;
+    const char *nm = Tcl_GetStringFromObj(nameObj, &len);
+    const char *open = (len > 2 && nm[len - 1] == ')') ? strchr(nm, '(')
+	    : NULL;
+    Tcl_Obj *p1, *p2;
+    int rc;
+
+    if (open == NULL || open == nm) {
+	return TCL_CONTINUE;
+    }
+    p1 = Tcl_NewStringObj(nm, open - nm);
+    p2 = Tcl_NewStringObj(open + 1, (nm + len - 1) - (open + 1));
+    Tcl_IncrRefCount(p1);
+    Tcl_IncrRefCount(p2);
+    rc = TclTypedVarGetElement(interp, p1, p2, resultPtr);
+    Tcl_DecrRefCount(p1);
+    Tcl_DecrRefCount(p2);
+    return rc;
 }
 
 /*
@@ -2275,8 +2811,8 @@ TclTypedVarGetElementVar(Tcl_Interp *interp, Var *varPtr, Tcl_Obj *part2Ptr,
 	    || !(varPtr->flags & VAR_TYPED) || varPtr->value.objPtr == NULL) {
 	return TCL_CONTINUE;
     }
-    if (TclTypePathRead(interp, varPtr->value.objPtr,
-	    Tcl_GetString(part2Ptr), &res) != TCL_OK) {
+    if (PathReadObj(interp, varPtr->value.objPtr, part2Ptr, &res)
+	    != TCL_OK) {
 	return TCL_ERROR;
     }
     Tcl_SetObjResult(interp, res);
@@ -2304,8 +2840,8 @@ TclTypedVarSetElementVar(Tcl_Interp *interp, Var *varPtr, Tcl_Obj *part1Ptr,
 	    || !(varPtr->flags & VAR_TYPED) || varPtr->value.objPtr == NULL) {
 	return TCL_CONTINUE;
     }
-    if (TclTypePathWrite(interp, varPtr->value.objPtr,
-	    Tcl_GetString(part2Ptr), 1, &valuePtr, &newA) != TCL_OK) {
+    if (PathWriteObj(interp, varPtr->value.objPtr, part2Ptr, 1, &valuePtr,
+	    &newA) != TCL_OK) {
 	return TCL_ERROR;
     }
     stored = TclPtrSetVarIdx(interp, varPtr, NULL, part1Ptr, NULL, newA,

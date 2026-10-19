@@ -46,7 +46,12 @@ proc inspecter {trame} {
     set chemin ""
     set retrait ""
     while {1} {
-	set couche [expr {$chemin eq "" ? $trame : [set trame($chemin)]}]
+	# Le chemin est construit dans une variable. Une valeur substituée
+	# dans un index est UNE feuille : $trame($chemin) chercherait le champ
+	# « payload.payload ». On nomme donc la variable avec son chemin : un
+	# nom donné comme chaîne (set $ref) est lu comme un chemin littéral.
+	set ref trame($chemin)
+	set couche [expr {$chemin eq "" ? $trame : [set $ref]}]
 	set nom [type get $couche]
 	puts "${retrait}\[$nom\]"
 	foreach champ {src dst epoch ttl seq request host} {

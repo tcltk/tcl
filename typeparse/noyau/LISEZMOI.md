@@ -832,3 +832,127 @@ passait la liste en UN argument à `set {T}V`, qui en faisait un seul élément,
 texte, ce qui perdait le type des éléments. La liste est maintenant passée élément par
 élément, par variable. Seule la sortie de `t51` (cas ajoutés) en dépend ; tests et exemples
 identiques.
+
+## Constructeur par chemin et lecture imbriquée (patch types-chemins-construction)
+
+Après `types-binaires-codec-c-decode`. Touche `tclTypePath.c`, `tclTypedVar.c`, `tclTypes.h`
+(sources de types, copiées par `maj.sh`). Répond à l'ambiguïté de la notation
+positionnelle/nom-valeur : le choix des champs se lit dans le SOURCE, plus dans les données.
+
+    type def rect {{{int}x; {int}y}A ; {{int}x; {int}y}B }
+    set {rect}R(A.x,A.y,B.x,B.y) 1 2 3 4          ;# une valeur par feuille
+    set {rect}R((A,B).(x,y))     1 2 3 4          ;# idem (produit de groupes)
+    set {rect}R(A.(x,y),B.(x,y)) {1 2} {3 4}      ;# une valeur par élément du groupe
+    set {rect}R((A,B).(x,y))     {{1 2} {3 4}}    ;# une valeur pour tout le chemin
+    set {paire}p(age) 12                          ;# les autres champs : leur défaut
+    set R((A,B).(x,y))                            ;# lecture : {1 2} {3 4}
+
+* **Forme d'un chemin.** L'ensemble de chemins compilé porte un arbre : `,` fait un groupe,
+  les parenthèses le ferment (`(a,b),c` donne `{{a b} c}`), `.` remplace chaque feuille de
+  gauche par la forme de droite. C'est le modèle de la page « A better way to do indexation ».
+* **Lecture imbriquée.** Une lecture multiple rend des listes imbriquées selon la forme :
+  `R((A,B).(x,y))` donne `{1 2} {3 4}` (avant : `1 2 3 4`). Un intervalle `a:b` est un
+  sous-groupe : `L(0:2,4)` donne `{10 20 30} 50` (avant : `10 20 30 50`, sortie de
+  `t5_index` modifiée d'autant). Limite : la taille d'un intervalle n'est connue qu'à la
+  lecture, donc `(0:1).(x,y)` rend la colonne des x puis celle des y.
+* **Répartition des valeurs** (écriture et construction), par leur NOMBRE seulement : une par
+  feuille, une par élément du groupe de tête, ou une seule pour tout le chemin ; chaque valeur
+  a la forme de ce que sa lecture rendrait. Les nombres ne coïncident que quand les lectures
+  coïncident : aucune ambiguïté. `set R(chemin) [set R(chemin)]` marche toujours.
+* **Construction.** `set {T}R(chemin) v...` (T produit) groupe les chemins par champ ; un
+  groupe qui descend construit le produit du champ ; chaque niveau passe par le constructeur
+  en nom/valeur imposé (`TclBuildProductNamed`, sans essai positionnel) : défauts, contrôles,
+  « field "y" of … has no value and no default », « unknown field », « assigned more than
+  once », champ intermédiaire qui n'est pas un produit, pas d'intervalle ni d'étiquette.
+* **Espaces** : permis dans `{T}R(chemin)` (mot annoté) et dans `$R(...)`, `${R(...)}` ; dans
+  un mot nu non annoté `set R(A.x, A.y) …`, Tcl coupe aux espaces : écrire
+  `set "R(A.x, A.y)" …` ou sans espaces. Voir `index-chemins-noyau.patch` ci-dessous.
+
+Test : `t52_constructeur_chemin.tcl` (+ `.out`). Tests et exemples identiques sauf
+`t5_index` (ci-dessus) ; AddressSanitizer sans erreur ni fuite dans le nouveau code ; mémoire
+stable sur 200 000 constructions.
+
+## Opérateur de dépliage `*` dans les chemins (patch types-chemins-depliage)
+
+Après `types-chemins-construction`. Touche `tclTypePath.c`. `*X` fond le groupe (ou l'intervalle) X
+dans le groupe qui le contient ; précédence entre « , » et « . » (`*A.(x,y)` déplie
+`A.(x,y)` en entier) :
+
+    set {list.int}L 10 20 30 40 50
+    set L(0:2,4)            ;# {10 20 30} 50
+    set L(*0:2,4)           ;# 10 20 30 50
+    set R(*A.(x,y),B.x)     ;# 1 2 3
+    set R((A,B).*(x,y))     ;# 1 2 3 4
+    set {rect}Q((A,B).*(x,y)) {5 6 7 8}   ;# construction : une valeur, à plat
+
+Le dépliage change la forme, donc aussi le nombre d'éléments que compte la répartition des
+valeurs. À la racine, sans groupe parent, `*` n'a pas d'effet. `1*2`, `*` seul : erreurs
+de syntaxe. Test : `t52_constructeur_chemin.tcl` (cas ajoutés).
+
+## Index de `$nom(...)` et valeurs substituées atomiques (patchs index-chemins-noyau, types-chemins-atomes)
+
+Après `types-chemins-depliage`. `index-chemins-noyau.patch` est un patch du NOYAU
+(`tcl.h`, `tclParse.c`, `tclCompile.c/.h`, `tclCompCmds.c`, `tclExecute.c`, `tclVar.c`,
+`tclTest.c`), appliqué par `maj.sh` sans fuzz ; `types-chemins-atomes.patch` touche
+`tclTypePath.c`, `tclTypes.h`, `tclTypedVar.c` (copiés par `maj.sh`, le patch sert
+d'historique). `tcl.h` change : tout est recompilé.
+
+**1. `Tcl_ParseVarIndex` et `TCL_TOKEN_INDEX` (tclParse.c).** `Tcl_ParseVarName`, sur la
+`(` qui suit un nom de variable, appelle `TclParseVarIndex` : grammaire de l'index jusqu'à
+la `)` équilibrée — parenthèses imbriquées, étiquettes `"..."` appariées (les parenthèses y
+sont du texte), substitutions `$x`, `[cmd]`, `[(expr)]`, antislashs ; accolades refusées.
+Si l'index n'est pas bien formé selon cette grammaire, REPLI sur la règle de Tcl 9, avec ses
+messages : dans `"c $dd("`, le `"` ferme le mot et `info complete` reste vrai. Seulement
+quand la syntaxe étendue sert, les composants sont enveloppés dans un jeton
+`TCL_TOKEN_INDEX` (1024, tcl.h ; « index » dans `testparser`) ; un index valide en Tcl 9 garde
+exactement ses jetons. Les mots nus ne changent pas : `puts a(b c)` reste deux mots.
+
+    list $R(A.(x,y)) $R((A,B).(x, y))   "<$L(0,"|",1)>"   $tab(b(c))
+
+**2. Valeurs substituées atomiques.** Une valeur substituée dans l'index est UNE feuille du
+chemin, jamais relue comme un chemin. L'index qui en contient est un objet « pathindex » :
+sa chaîne est l'index (un tableau ordinaire ne voit qu'elle), sa représentation interne la
+liste des portées substituées. Produit par la nouvelle instruction `indexConcat` (compilé :
+`TclCompileIndexTokens`, utilisé par `TclCompileVarSubst` et `TclPushVarName`) et par
+`TclSubstTokens` (non compilé) ; lu par le parseur de chemins.
+
+    set k file.txt ; $D($k)          ;# la clé « file.txt » (avant : D.file.txt)
+    set n 1 ; $D(f_$n)               ;# collée à du texte, la valeur prolonge le nom
+    set k A,B ; $R($k.x)             ;# rect has no field "A,B"
+    set p {[exec …]} ; $L($p)        ;# rien n'est exécuté : bad index "[exec …]"
+    set idx {0 2} ; $L(*$idx)        ;# * déplie une valeur liste : 10 30
+
+La DOUBLE SUBSTITUTION disparaît : avant, une donnée contenant `[script]` était exécutée par
+le parseur de chemins. Limite : l'atomicité suit les jetons, donc `$R(...)` et `set R(...) v`
+compilé ; une écriture multiple `set R($k.x,$k.y) 1 2` et le constructeur `set {T}R(...)`
+reçoivent une chaîne déjà substituée (utiliser `'$k'` pour forcer une clé).
+
+**3. Le chemin ne substitue plus rien.** Même règle qu'un tableau : `${a($k)}` et
+`${R($k.x)}` sont littéraux. Dans un chemin entre accolades ou dans `${...}`, `$` et `[`
+donnent l'erreur « a path does not substitute "$": Tcl substitutes $x and [cmd] in
+$name(...) and in bare words, not inside braces or ${...} ». Les étiquettes sont
+littérales. Un chemin construit dans une variable se lit en NOMMANT la variable avec
+lui : `set ref trame($chemin); set $ref` (exemple `reseau_couches.tcl`, adapté).
+`t5_index`, `t6_substitutions` réécrits en conséquence.
+
+**4. `${R(chemin)}`.** `Tcl_ObjGetVar2` et `INST_LOAD_STK` : quand le nom entier porte
+l'index (part2 absent) et que la variable est un scalaire typé, le chemin littéral est lu ;
+sinon le message de Tcl est inchangé. `${R(A.x, B.y)}`, `"<${L(0,"|",1)}>"`.
+
+**5. Mot annoté avec espaces.** `{T}nom(...)` va jusqu'à la parenthèse équilibrée, espaces
+et tabulations compris, sur une ligne : `set {rect}R(A.x, A.y, B) 1 2 {3 4}`. Tcl d'origine
+refuse tout mot `{T}suite` : aucun script valide ne change de sens. Mots nus non annotés :
+inchangés.
+
+**Vérifications.** Tests de Tcl `parse`, `parseExpr`, `parseOld`, `subst` (avec `tcltest`,
+257 tests de `testparser`), `var`, `compile`, `set`, `upvar`, `basic`, `execute`, `incr`,
+`append`, `lset`, `dict`, `info` : résultats identiques à la base. Équivalence avec un
+Tcl 9 d'origine sur 18 000 cas générés (`$z(…)`, `"<$z(…)>"`, `set z(…)`, et
+`info complete`) : aucun résultat valide changé ; seules des erreurs deviennent autre chose
+(`a""end)[` : l'index `a""end` est valide, le `[` qui suit rend la commande incomplète).
+Tests du projet 30 OK ; AddressSanitizer sans erreur ; mémoire stable.
+
+**Fuites corrigées au passage** (elles existaient en v8) : `Tcl_DictObjPut` ne garde pas la
+clé qu'on lui passe quand elle existe déjà. L'écriture `set D(a) 3` d'un dictionnaire typé
+(`SetIn`) et la construction avec clés en double (`BuildDict`) perdaient un objet à chaque
+fois (~75 octets ; 31 Mo pour 200 000 constructions) : la clé est maintenant rendue.

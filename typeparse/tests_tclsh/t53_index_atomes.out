@@ -1,0 +1,28 @@
+$R(A.(x,y))                        | -> {{1 2}}
+$R((A,B).(x, y))                   | -> {{{1 2} {3 4}}}
+"<$R(A.x, B.y)>"                   | -> {<1 4>}
+$L(0,"|",1)                        | -> {{10 | 20}}
+tableau $tab(b(c))                 | -> {1 2}
+$tab(b(c) non fermé                | ERREUR: invalid character in array index
+k=file.txt : $D($k)                | -> 1
+n=1 : $D(f_$n)                     | -> 4
+k=A,B : $R($k.x)                   | ERREUR: rect has no field "A,B"
+k=A : $R($k.(x,y))                 | -> {{1 2}}
+[cmd] atomique                     | -> 1
+injection neutralisée              | ERREUR: bad index "[error INJECTION]": must be integer?[+-]integer? or end?[+-]integer?
+*$idx                              | -> {{10 30}}
+*$idx, 1                           | -> {{10 30 20}}
+écriture set D($k) v               | -> 5
+tableau ordinaire a($k)            | -> 1
+${R(A.x, B.y)}                     | -> {{1 4}}
+"<${L(0,"|",1)}>"                  | -> {<10 | 20>}
+${R($k)} littéral                  | ERREUR: a path does not substitute "$": Tcl substitutes $x and [cmd] in $name(...) and in bare words, not inside braces or ${...}
+set {L($i)} littéral               | ERREUR: a path does not substitute "$": Tcl substitutes $x and [cmd] in $name(...) and in bare words, not inside braces or ${...}
+chemin dans une variable           | -> 2
+${nope(x)} : message de Tcl        | ERREUR: can't read "nope(x)": no such variable
+set {rect}Q(A.x, A.y, B)           | -> {{1 2} {3 4}}
+set {rect}Q((A, B).*(x, y))        | -> {{5 6} {7 8}}
+k=B : set {rect}Q(A, $k)           | -> {{1 1} {2 2}}
+mot nu inchangé                    | -> 2
+procédure                          | -> {9 {10 30} {10 - 30} {<10 | 20>}}
+bytecode                           | -> 1

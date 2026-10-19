@@ -417,14 +417,64 @@ Tcl_ParseCommand(
 	    /*
 	     * This is an unquoted word. Call ParseTokens and let it do all of
 	     * the work.
+	     *
+	     * After a type annotation, {T}nom(...) : the word runs to the
+	     * BALANCED close parenthesis, spaces and tabs included
+	     * (set {rect}R(A.x, A.y) 1 2). Only on one line; otherwise the
+	     * usual rule applies. Tcl itself rejects any {T}word, so no
+	     * valid script changes meaning.
 	     */
 
-	    if (ParseTokens(src, numBytes, TYPE_SPACE|terminators,
-		    TCL_SUBST_ALL, parsePtr) != TCL_OK) {
-		goto error;
+	    Tcl_Size annotLen = 0;
+
+	    if (annotWord) {
+		const char *p = src, *lim = src + numBytes;
+
+		while (p < lim && (isalnum(UCHAR(*p)) || *p == '_'
+			|| *p == ':')) {
+		    p++;
+		}
+		if (p > src && p < lim && *p == '(') {
+		    int depth = 0;
+		    int spaced = 0;
+
+		    for (; p < lim; p++) {
+			if (*p == '\\' && p + 1 < lim && p[1] != '\n') {
+			    p++;
+			} else if (*p == '(') {
+			    depth++;
+			} else if (*p == ')') {
+			    if (--depth == 0) {
+				break;
+			    }
+			} else if (*p == ' ' || *p == '\t') {
+			    spaced = 1;
+			} else if (*p == '\n' || *p == ';' || *p == '\r') {
+			    break;
+			}
+		    }
+		    if (spaced && p < lim && *p == ')' && depth == 0
+			    && (p + 1 == lim || (CHAR_TYPE(p[1])
+				    & (TYPE_SPACE|terminators)))) {
+			annotLen = (p + 1) - src;
+		    }
+		}
 	    }
-	    src = parsePtr->term;
-	    numBytes = parsePtr->end - src;
+	    if (annotLen > 0) {
+		if (ParseTokens(src, annotLen, 0, TCL_SUBST_ALL, parsePtr)
+			!= TCL_OK) {
+		    goto error;
+		}
+		src += annotLen;
+		numBytes = parsePtr->end - src;
+	    } else {
+		if (ParseTokens(src, numBytes, TYPE_SPACE|terminators,
+			TCL_SUBST_ALL, parsePtr) != TCL_OK) {
+		    goto error;
+		}
+		src = parsePtr->term;
+		numBytes = parsePtr->end - src;
+	    }
 	}
 
 	/*
@@ -1372,6 +1422,152 @@ Tcl_FreeParse(
 /*
  *----------------------------------------------------------------------
  *
+ * TclParseVarIndex --
+ *
+ *	Analyse l'index d'une substitution $nom(...), juste après la "(".
+ *	Grammaire du langage de chemins : parenthèses ÉQUILIBRÉES (du texte),
+ *	étiquettes "..." appariées (les parenthèses y sont du texte),
+ *	substitutions $x, [cmd], [(expr)], antislashs. Les accolades sont
+ *	refusées. Fin : la ")" de profondeur 0 (*endPtr pointe dessus).
+ *
+ *	TCL_ERROR si l'index n'est pas bien formé selon cette grammaire
+ *	(rien de fermé, accolade, guillemet sans partenaire...) : l'appelant
+ *	revient alors à la règle de Tcl 9, qui donne ses messages habituels.
+ *	*extPtr vaut 1 si la syntaxe étendue a servi (une "(" ou un "").
+ *
+ *	Les jetons de texte contigus de PREMIER niveau sont fusionnés : un
+ *	index littéral reste un seul jeton TEXT.
+ *
+ *----------------------------------------------------------------------
+ */
+
+/* Ajoute le caractère *c comme texte : prolonge le dernier jeton TEXT de
+ * premier niveau s'il lui est contigu. */
+static void
+IndexAddChar(
+    Tcl_Parse *parsePtr,
+    Tcl_Size firstTok,
+    const char *c)
+{
+    Tcl_Size last = -1, k = firstTok;
+    Tcl_Token *t;
+
+    while (k < parsePtr->numTokens) {
+	last = k;
+	k += 1 + parsePtr->tokenPtr[k].numComponents;
+    }
+    if (last >= 0 && parsePtr->tokenPtr[last].type == TCL_TOKEN_TEXT
+	    && parsePtr->tokenPtr[last].start + parsePtr->tokenPtr[last].size
+		    == c) {
+	parsePtr->tokenPtr[last].size++;
+	return;
+    }
+    TclGrowParseTokenArray(parsePtr, 1);
+    t = &parsePtr->tokenPtr[parsePtr->numTokens];
+    t->type = TCL_TOKEN_TEXT;
+    t->start = c;
+    t->size = 1;
+    t->numComponents = 0;
+    parsePtr->numTokens++;
+}
+
+/* Le premier jeton ajouté par un ParseTokens prolonge, s'il est un TEXT
+ * contigu, le dernier jeton TEXT de premier niveau qui le précède. */
+static void
+IndexMergeAfter(
+    Tcl_Parse *parsePtr,
+    Tcl_Size firstTok,
+    Tcl_Size before)
+{
+    Tcl_Size last = -1, k = firstTok;
+
+    if (parsePtr->numTokens <= before
+	    || parsePtr->tokenPtr[before].type != TCL_TOKEN_TEXT) {
+	return;
+    }
+    while (k < before) {
+	last = k;
+	k += 1 + parsePtr->tokenPtr[k].numComponents;
+    }
+    if (last < 0 || parsePtr->tokenPtr[last].type != TCL_TOKEN_TEXT
+	    || parsePtr->tokenPtr[last].start + parsePtr->tokenPtr[last].size
+		    != parsePtr->tokenPtr[before].start) {
+	return;
+    }
+    parsePtr->tokenPtr[last].size += parsePtr->tokenPtr[before].size;
+    memmove(parsePtr->tokenPtr + before, parsePtr->tokenPtr + before + 1,
+	    (parsePtr->numTokens - before - 1) * sizeof(Tcl_Token));
+    parsePtr->numTokens--;
+}
+
+static int
+TclParseVarIndex(
+    const char *src,		/* Premier caractère après la "(". */
+    Tcl_Size numBytes,
+    Tcl_Size varIndex,		/* Jeton TCL_TOKEN_VARIABLE propriétaire. */
+    Tcl_Parse *parsePtr,
+    const char **endPtr,	/* Reçoit l'adresse de la ")" finale. */
+    int *extPtr)
+{
+    const char *p = src, *limit = src + numBytes;
+    Tcl_Size firstTok = varIndex + 2;
+    int depth = 0;
+
+    *extPtr = 0;
+    while (1) {
+	Tcl_Size before = parsePtr->numTokens;
+	const char *t;
+
+	if (ParseTokens(p, limit - p, TYPE_BAD_ARRAY_INDEX, TCL_SUBST_ALL,
+		parsePtr) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	IndexMergeAfter(parsePtr, firstTok, before);
+	t = parsePtr->term;
+	if (t >= limit) {
+	    return TCL_ERROR;			/* ")" manquante */
+	}
+	switch (*t) {
+	case '(':
+	    depth++;
+	    *extPtr = 1;
+	    IndexAddChar(parsePtr, firstTok, t);
+	    p = t + 1;
+	    break;
+	case ')':
+	    if (depth == 0) {
+		*endPtr = t;
+		return TCL_OK;
+	    }
+	    depth--;
+	    IndexAddChar(parsePtr, firstTok, t);
+	    p = t + 1;
+	    break;
+	case '"':
+	    /* Étiquette : jusqu'au " suivant ; substitutions faites. */
+	    *extPtr = 1;
+	    IndexAddChar(parsePtr, firstTok, t);
+	    before = parsePtr->numTokens;
+	    if (ParseTokens(t + 1, limit - t - 1, TYPE_QUOTE, TCL_SUBST_ALL,
+		    parsePtr) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    IndexMergeAfter(parsePtr, firstTok, before);
+	    if (parsePtr->term >= limit || *parsePtr->term != '"') {
+		return TCL_ERROR;		/* étiquette non fermée */
+	    }
+	    IndexAddChar(parsePtr, firstTok, parsePtr->term);
+	    p = parsePtr->term + 1;
+	    break;
+	default:				/* accolade */
+	    return TCL_ERROR;
+	}
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Tcl_ParseVarName --
  *
  *	Given a string starting with a $ sign, parse off a variable name and
@@ -1548,6 +1744,46 @@ Tcl_ParseVarName(
 	     * any number of substitutions.
 	     */
 
+	    Tcl_Size saved = parsePtr->numTokens;
+	    const char *indexEnd = NULL;
+	    int extended = 0;
+	    int savedErr = parsePtr->errorType, savedInc = parsePtr->incomplete;
+
+	    if (TclParseVarIndex(src + 1, numBytes - 1, varIndex, parsePtr,
+		    &indexEnd, &extended) == TCL_OK) {
+		if (extended) {
+		    /*
+		     * Nouvelle syntaxe (parenthèses imbriquées, étiquettes
+		     * "...") : les composants de l'index sont enveloppés dans
+		     * un jeton TCL_TOKEN_INDEX. Un index valide en Tcl 9 garde
+		     * exactement ses jetons d'avant.
+		     */
+
+		    Tcl_Token *t;
+
+		    TclGrowParseTokenArray(parsePtr, 1);
+		    memmove(parsePtr->tokenPtr + saved + 1,
+			    parsePtr->tokenPtr + saved,
+			    (parsePtr->numTokens - saved) * sizeof(Tcl_Token));
+		    t = &parsePtr->tokenPtr[saved];
+		    t->type = TCL_TOKEN_INDEX;
+		    t->start = src + 1;
+		    t->size = indexEnd - (src + 1);
+		    t->numComponents = parsePtr->numTokens - saved;
+		    parsePtr->numTokens++;
+		}
+		src = indexEnd + 1;
+		goto indexDone;
+	    }
+
+	    /*
+	     * Repli : la règle de Tcl 9, avec ses messages (et le même
+	     * résultat pour info complete : dans "c $dd(", le " ferme le mot).
+	     */
+
+	    parsePtr->numTokens = saved;
+	    parsePtr->errorType = savedErr;
+	    parsePtr->incomplete = savedInc;
 	    if (TCL_OK != ParseTokens(src+1, numBytes-1, TYPE_BAD_ARRAY_INDEX,
 		    TCL_SUBST_ALL, parsePtr)) {
 		goto error;
@@ -1571,6 +1807,8 @@ Tcl_ParseVarName(
 		goto error;
 	    }
 	    src = parsePtr->term + 1;
+	  indexDone:
+	    ;
 	}
     }
     tokenPtr = &parsePtr->tokenPtr[varIndex];
@@ -2179,6 +2417,81 @@ TclSubstParse(
  *----------------------------------------------------------------------
  */
 
+/*
+ * L'index de $nom(...) hors bytecode : chaque partie substituée ($x, [cmd],
+ * [(expr)]) est marquée, comme le fait l'instruction indexConcat.
+ * *indexPtr reçoit l'index (une référence en plus) même en cas d'erreur,
+ * pour que l'appelant garde son traitement habituel.
+ */
+static int
+SubstIndexTokens(
+    Tcl_Interp *interp,
+    Tcl_Token *tokenPtr,
+    Tcl_Size count,
+    Tcl_Size line,
+    Tcl_Obj **indexPtr)
+{
+    Tcl_Obj *partsStatic[16], **parts = partsStatic;
+    char substStatic[16], *subst = substStatic;
+    Tcl_Size i, j, n = 0, cap = 16, k;
+    int code = TCL_OK;
+
+    for (i = 0; i < count && code == TCL_OK; ) {
+	Tcl_Token *t = &tokenPtr[i];
+	Tcl_Size len;
+	int isSubst;
+
+	if (t->type == TCL_TOKEN_INDEX) {
+	    i++;
+	    continue;
+	}
+	if (t->type == TCL_TOKEN_TEXT || t->type == TCL_TOKEN_BS) {
+	    for (j = i; j < count && (tokenPtr[j].type == TCL_TOKEN_TEXT
+		    || tokenPtr[j].type == TCL_TOKEN_BS); j++) {
+		/* une suite de texte */
+	    }
+	    len = j - i;
+	    isSubst = 0;
+	} else {
+	    len = 1 + ((t->type == TCL_TOKEN_VARIABLE) ? t->numComponents : 0);
+	    isSubst = 1;
+	}
+	code = TclSubstTokens(interp, t, len, NULL, line, NULL, NULL);
+	if (n == cap) {
+	    Tcl_Obj **np = (Tcl_Obj **) Tcl_Alloc(2 * cap * sizeof(Tcl_Obj *));
+	    char *ns = (char *) Tcl_Alloc(2 * cap);
+
+	    memcpy(np, parts, n * sizeof(Tcl_Obj *));
+	    memcpy(ns, subst, n);
+	    if (parts != partsStatic) {
+		Tcl_Free(parts);
+		Tcl_Free(subst);
+	    }
+	    parts = np;
+	    subst = ns;
+	    cap *= 2;
+	}
+	parts[n] = Tcl_GetObjResult(interp);
+	Tcl_IncrRefCount(parts[n]);
+	subst[n++] = (char) isSubst;
+	i += len;
+    }
+    if (code == TCL_OK) {
+	*indexPtr = TclPathIndexNew(parts, n, subst);
+    } else {
+	*indexPtr = Tcl_GetObjResult(interp);
+    }
+    Tcl_IncrRefCount(*indexPtr);
+    for (k = 0; k < n; k++) {
+	Tcl_DecrRefCount(parts[k]);
+    }
+    if (parts != partsStatic) {
+	Tcl_Free(parts);
+	Tcl_Free(subst);
+    }
+    return code;
+}
+
 int
 TclSubstTokens(
     Tcl_Interp *interp,		/* Interpreter in which to lookup variables,
@@ -2381,19 +2694,23 @@ TclSubstTokens(
 	    break;
 	}
 
+	case TCL_TOKEN_INDEX:
+	    /* enveloppe d'un index étendu : ses composants suivent */
+	    continue;
+
 	case TCL_TOKEN_VARIABLE: {
 	    Tcl_Obj *arrayIndex = NULL;
 	    Tcl_Obj *varName = NULL;
 
 	    if (tokenPtr->numComponents > 1) {
 		/*
-		 * Subst the index part of an array variable reference.
+		 * Subst the index part of an array variable reference. The
+		 * substituted parts are recorded (atomic leaves of a typed
+		 * value's path, see TclPathIndexNew).
 		 */
 
-		code = TclSubstTokens(interp, tokenPtr+2,
-			tokenPtr->numComponents - 1, NULL, line, NULL, NULL);
-		arrayIndex = Tcl_GetObjResult(interp);
-		Tcl_IncrRefCount(arrayIndex);
+		code = SubstIndexTokens(interp, tokenPtr+2,
+			tokenPtr->numComponents - 1, line, &arrayIndex);
 	    }
 
 	    if (code == TCL_OK) {
