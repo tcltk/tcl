@@ -74,7 +74,7 @@ static void
 RememberJoinable(
     pthread_t thread)
 {
-    JoinableThread *jPtr = (JoinableThread *) Tcl_Alloc(sizeof(JoinableThread));
+    JoinableThread *jPtr = (JoinableThread *) ckalloc(sizeof(JoinableThread));
 
     jPtr->thread = thread;
     pthread_mutex_lock(&joinableLock);
@@ -100,7 +100,7 @@ ForgetJoinable(
 	if (pthread_equal(jPtr->thread, thread)) {
 	    *jPtrPtr = jPtr->nextPtr;
 	    pthread_mutex_unlock(&joinableLock);
-	    Tcl_Free(jPtr);
+	    ckfree(jPtr);
 	    return 1;
 	}
     }
