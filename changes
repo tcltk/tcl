@@ -9500,3 +9500,5 @@ Many code fixes to avoid overflow or undefined behavior.  Thanks chrstphrchvz.
 2026-10-17 a second yieldto after one failed with "C stack busy" panicked (storchaka)
 
 2026-10-18 on Unix, Tcl_JoinThread() should not call pthread_join() for detached threads (storchaka)
+
+2026-10-19 http.test: use a port just released by the OS (storchaka)
