@@ -252,6 +252,27 @@ test InitAutoPath-1.0 {
     interp delete $ip
 } -result [list {*}$::auto_path /some/directory /some]
 
+test init-6.0 {tcl::CopyDirectory: dest contains src path but is not inside it [Bug 875545270d]} -setup {
+    set src [file join [temporaryDirectory] init6src a]
+    set dst [file join [temporaryDirectory] init6dst a]
+    set dst [file join $dst {*}[lrange [file split $src] 1 end]]
+    file mkdir $src [file dirname $dst]
+    close [open [file join $src f] w]
+} -body {
+    tcl::CopyDirectory copying $src $dst
+    file exists [file join $dst f]
+} -cleanup {
+    file delete -force [file join [temporaryDirectory] init6src] \
+	[file join [temporaryDirectory] init6dst]
+} -result 1
+test init-6.1 {tcl::CopyDirectory: copy into itself} -setup {
+    set src [file join [temporaryDirectory] init6src a]
+    file mkdir $src
+} -body {
+    tcl::CopyDirectory copying $src [file join $src sub]
+} -cleanup {
+    file delete -force [file join [temporaryDirectory] init6src]
+} -returnCodes error -match glob -result {*into itself}
 
 # cleanup
 interp delete $testInterp

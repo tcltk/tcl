@@ -25,6 +25,7 @@ static int		FileCopyRename(Tcl_Interp *interp,
 			    Tcl_Size objc, Tcl_Obj *const *objv, int copyFlag);
 static size_t		FileForceOption(Tcl_Interp *interp,
 			    Tcl_Size objc, Tcl_Obj *const *objv, int *forcePtr);
+static int		IsSubdirectory(Tcl_Obj *dirPtr, Tcl_Obj *pathPtr);
 
 /*
  *---------------------------------------------------------------------------
@@ -489,6 +490,61 @@ TclFileDeleteCmd(
 /*
  *---------------------------------------------------------------------------
  *
+ * IsSubdirectory
+ *
+ *	Checks whether pathPtr is the directory dirPtr or lies inside it,
+ *	comparing normalized paths, and its parent directory exists.
+ *
+ * Results:
+ *	1 if it does, 0 otherwise.
+ *
+ *---------------------------------------------------------------------------
+ */
+
+static int
+IsSubdirectory(
+    Tcl_Obj *dirPtr,
+    Tcl_Obj *pathPtr)
+{
+    Tcl_Obj *normDir = Tcl_FSGetNormalizedPath(NULL, dirPtr);
+    Tcl_Obj *normPath = Tcl_FSGetNormalizedPath(NULL, pathPtr);
+    const char *dir, *path;
+    Tcl_Size dirLen, pathLen;
+
+    if (normDir == NULL || normPath == NULL) {
+	return 0;
+    }
+    dir = TclGetStringFromObj(normDir, &dirLen);
+    path = TclGetStringFromObj(normPath, &pathLen);
+    if (dirLen == 0 || pathLen < dirLen || memcmp(dir, path, dirLen) != 0) {
+	return 0;
+    }
+    if (pathLen != dirLen && path[dirLen] != '/' && dir[dirLen-1] != '/') {
+	return 0;
+    }
+
+    /*
+     * Only report it if the parent of pathPtr exists, otherwise the copy
+     * would fail anyway with a more relevant error.
+     */
+
+    {
+	Tcl_Obj *parentPtr = TclPathPart(NULL, normPath, TCL_PATH_DIRNAME);
+	int result;
+
+	if (parentPtr == NULL) {
+	    return 0;
+	}
+	Tcl_IncrRefCount(parentPtr);
+	result = (Tcl_FSAccess(parentPtr, F_OK) == 0);
+	Tcl_DecrRefCount(parentPtr);
+	return result;
+    }
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
  * CopyRenameOneFile
  *
  *	Copies or renames specified source file or directory hierarchy to the
@@ -731,6 +787,19 @@ CopyRenameOneFile(
 #endif
 
     if (S_ISDIR(sourceStatBuf.st_mode)) {
+	if (copyFlag && IsSubdirectory(source, target)) {
+	    /*
+	     * Copying a directory into itself would recurse until the path
+	     * becomes too long. [Bug 82049f96f8]
+	     */
+
+	    errno = EINVAL;
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "error copying \"%s\" to \"%s\": trying to copy a"
+		    " directory into itself",
+		    TclGetString(source), TclGetString(target)));
+	    goto done;
+	}
 	result = Tcl_FSCopyDirectory(actualSource, target, &errorBuffer);
 	if (result != TCL_OK) {
 	    if (errno == EXDEV) {

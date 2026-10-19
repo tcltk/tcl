@@ -566,14 +566,11 @@ proc tcl::CopyDirectory {action src dest} {
 	    }
 	}
     } else {
-	if {[string first $nsrc $ndest] >= 0} {
-	    set srclen [expr {[llength [file split $nsrc]] - 1}]
-	    set ndest [lindex [file split $ndest] $srclen]
-	    if {$ndest eq [file tail $nsrc]} {
-		return -code error "error $action \"$src\" to\
-		  \"$dest\": trying to rename a volume or move a directory\
-		  into itself"
-	    }
+	set srcparts [file split $nsrc]
+	if {[lrange [file split $ndest] 0 [llength $srcparts]-1] eq $srcparts} {
+	    return -code error "error $action \"$src\" to\
+	      \"$dest\": trying to rename a volume or move a directory\
+	      into itself"
 	}
 	file mkdir $dest
     }

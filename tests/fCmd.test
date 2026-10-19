@@ -2198,6 +2198,23 @@ test fCmd-21.12 {TclFileCopyCmd: copy dir on top of a non-empty dir w/ -force} -
 } -cleanup {
     file delete -force tfa tfad
 } -result {1 1 1}
+test fCmd-21.13 {TclFileCopyCmd: copy dir into itself: Bug 82049f96f8} -setup {
+    catch {file delete -force -- tfa}
+} -constraints {notRoot} -body {
+    file mkdir [file join tfa tfb]
+    list [catch {file copy tfa [file join tfa tfb]} msg] $msg \
+	[file exists [file join tfa tfb tfa]] [glob -tails -dir tfa *]
+} -cleanup {
+    file delete -force tfa
+} -result {1 {error copying "tfa" to "tfa/tfb/tfa": trying to copy a directory into itself} 0 tfb}
+test fCmd-21.14 {TclFileCopyCmd: copy dir onto itself with -force: Bug 82049f96f8} -setup {
+    catch {file delete -force -- tfa}
+} -constraints {notRoot} -body {
+    file mkdir tfa
+    list [catch {file copy -force tfa tfa} msg] $msg [glob -nocomplain -dir tfa *]
+} -cleanup {
+    file delete -force tfa
+} -result {1 {error copying "tfa" to "tfa/tfa": trying to copy a directory into itself} {}}
 
 #
 # Coverage testing for TclpRenameFile
