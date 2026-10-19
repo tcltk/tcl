@@ -3,6 +3,9 @@
 *(Ce fichier accueille les chapitres du manuel au fur et à mesure ; les notes
 de patch restent dans `noyau/LISEZMOI.md`.)*
 
+*Traductions / translations : `MANUAL.en.md`, `MANUAL.de.md`, `MANUAL.nl.md`,
+`MANUAL.es.md`, `MANUAL.pt.md`, `MANUAL.it.md`.*
+
 ## Dict et produit : deux façons de parler d'une structure
 
 Pour qui vient du C : une **liste** Tcl est un tableau, un **dict** est une
@@ -423,7 +426,7 @@ EN: `-dedupe 1` writes link targets with identical bytes once and gives the link
 ## Taille dépendante d'un champ : vérifiée à la construction / size depending on a field: checked at construction
 
 FR : une liste dont le nombre d'éléments est une expression sur d'autres champs (`{list($n).Sample}items`,
-`list($n - 1).u8`) est contrôlée dès la construction du produit : `set {Batch}b n 3 items {{1 1.0 0}}`
+`list($n - 1).u8`) est contrôlée dès la construction du produit : `set {Batch}b(n,items) 3 {{1 1.0 0}}`
 est refusé (`field "items" of Batch holds 1 elements, but its size says 3 ($n)`). Les champs omis
 comptent avec leur valeur par défaut. Le contrôle ne couvre pas les affectations champ par champ
 (`set b(n) 3` : un état intermédiaire est légitime) ; `type binary encode` revérifie à l'écriture.
