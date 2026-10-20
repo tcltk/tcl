@@ -343,6 +343,39 @@ fi
 
 SC_ENABLE_SYMBOLS
 
+#--------------------------------------------------------------------
+#	Let the compiler generate the header dependencies of the object
+#	files (gcc, clang), so that make rebuilds them after a header has
+#	been changed.  This needs a make which supports "-include".
+#--------------------------------------------------------------------
+
+AC_CACHE_CHECK([whether the compiler can generate dependencies],
+    tcl_cv_cc_mmd, [
+    hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -MMD -MP"
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[]])],
+	[tcl_cv_cc_mmd=yes], [tcl_cv_cc_mmd=no])
+    CFLAGS=$hold_cflags
+    rm -f conftest.d])
+CC_DEPFLAGS=""
+CC_DEPINCLUDE=""
+if test "$tcl_cv_cc_mmd" = yes; then
+    AC_CACHE_CHECK([whether ${MAKE-make} supports -include],
+	tcl_cv_make_include, [
+	printf '%s\nall:\n\t@:\n' '-include conftest.none' > conftest.mk
+	if ${MAKE-make} -f conftest.mk >/dev/null 2>&1; then
+	    tcl_cv_make_include=yes
+	else
+	    tcl_cv_make_include=no
+	fi
+	rm -f conftest.mk])
+    if test "$tcl_cv_make_include" = yes; then
+	CC_DEPFLAGS="-MMD -MP"
+	CC_DEPINCLUDE='-include $(TCL_OBJS:.$(OBJEXT)=.d) $(TCLSH_OBJS:.$(OBJEXT)=.d) $(TCLTEST_OBJS:.$(OBJEXT)=.d) $(STUB_OBJS:.$(OBJEXT)=.d) $(DDE_OBJS:.$(OBJEXT)=.d)'
+    fi
+fi
+AC_SUBST(CC_DEPFLAGS)
+AC_SUBST(CC_DEPINCLUDE)
+
 #------------------------------------------------------------------------
 # tclConfig.sh refers to this by a different name
 #------------------------------------------------------------------------
