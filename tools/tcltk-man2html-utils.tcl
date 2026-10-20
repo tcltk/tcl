@@ -372,7 +372,7 @@ proc long-toc {text} {
     set manual($manual(name)-id-$text) $here
     set there L[incr manual(long-toc-n)]
     lappend manual(section-toc) \
-	    "<dd><a href=\"$manual(name).html#$here\" name=\"[nospace-text $there]\" id=\"[nospace-text $there]\">$text</a>"
+	    "<dd><a href=\"$manual(name).html#[nospace-text $here]\" name=\"[nospace-text $there]\" id=\"[nospace-text $there]\">$text</a>"
     return "<a name=\"[nospace-text $here]\" id=\"[nospace-text $here]\">$text</a>"
 }
 
@@ -398,9 +398,9 @@ proc option-toc {name class switch} {
     set here M$first
     set there L[incr manual(long-toc-n)]
     set manual(standard-option-$manual(name)-$first) \
-	"<a href=\"$manual(name).html#$here\">$switch, $name, $class</a>"
+	"<a href=\"$manual(name).html#[nospace-text $here]\">$switch, $name, $class</a>"
     lappend manual(section-toc) \
-	"<dd><a href=\"$manual(name).html#$here\" name=\"[nospace-text $there]\" id=\"[nospace-text $there]\">$switch, $name, $class</a>"
+	"<dd><a href=\"$manual(name).html#[nospace-text $here]\" name=\"[nospace-text $there]\" id=\"[nospace-text $there]\">$switch, $name, $class</a>"
     return "<a name=\"[nospace-text $here]\" id=\"[nospace-text $here]\">$switch</a>"
 }
 
@@ -413,7 +413,7 @@ proc std-option-toc {name page} {
     manerror "missing reference to \"$name\" in $page.n"
     set here M[incr manual(section-toc-n)]
     set there L[incr manual(long-toc-n)]
-    set other M$name
+    set other [nospace-text M$name]
     lappend manual(section-toc) "<dd><a href=\"$page.html#$other\">$name</a>"
     return "<a href=\"$page.html#$other\">$name</a>"
 }
@@ -721,7 +721,7 @@ proc cross-reference {ref} {
 	[regexp {^[A-Z0-9 ?!]+$} $ref]
 	&& [info exists manual($manname-id-$ref)]
     } {
-	return "<a href=\"#$manual($manname-id-$ref)\">$ref</a>"
+	return "<a href=\"#[nospace-text $manual($manname-id-$ref)]\">$ref</a>"
     } else {
 	set lref [string tolower $ref]
 	##
