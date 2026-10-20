@@ -9506,3 +9506,11 @@ Many code fixes to avoid overflow or undefined behavior.  Thanks chrstphrchvz.
 2026-10-19 zlib-8.3 and zlib-9.3 connected to localhost (storchaka)
 
 2026-10-19 clock scan put the half-hour time zones 30 minutes off (storchaka)
+
+2026-10-20 safe interp got the parent's -errorinfo and -errorstack through a failing alias (storchaka)
+
+2026-10-20 Windows: make distclean left tcl.pc behind (storchaka)
+
+2026-10-20 Windows: native MSYS2/Cygwin builds no longer need an installed tclsh (storchaka)
+
+2026-10-20 buildall.vc.bat: install looked for missing static dde/registry libraries (storchaka)
