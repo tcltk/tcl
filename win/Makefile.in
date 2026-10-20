@@ -539,7 +539,23 @@ tcltest.cmd: Makefile
 
 tcltest.sh: tcltest.cmd
 
-tcltest: binaries $(TEST_EXE_FILE) $(TEST_DLL_FILE) $(CAT32) tcltest.cmd
+tcltest: binaries $(TEST_EXE_FILE) $(TEST_DLL_FILE) $(CAT32) dltest tcltest.cmd
+
+# The packages in unix/dltest, used by load.test, unload.test and
+# pkgMkIndex.test, built in the dltest subdirectory as on Unix.
+DLTEST_DIR		= $(UNIX_DIR)/dltest
+DLTEST_PKGS		= pkga pkgb pkgc pkgd pkge pkgt pkgua pkgooa
+DLTEST_DLLS		= $(DLTEST_PKGS:%=dltest/tcl9%${DLLSUFFIX})
+
+dltest: $(DLTEST_DLLS)
+
+dltest/%.$(OBJEXT): $(DLTEST_DIR)/%.c
+	@$(MKDIR) dltest
+	$(CC) -c $(STUB_CC_SWITCHES) -DUSE_TCL_STUBS -DTCL_NO_DEPRECATED=1 \
+		@DEPARG@ $(CC_OBJNAME)
+
+dltest/tcl9%${DLLSUFFIX}: dltest/%.$(OBJEXT) ${TCL_STUB_LIB_FILE}
+	@MAKE_DLL@ dltest/$*.$(OBJEXT) $(TCL_STUB_LIB_FILE) $(SHLIB_LD_LIBS)
 
 exectestapp: $(EXECTESTAPP)
 
@@ -1081,6 +1097,7 @@ cleanhelp:
 clean: cleanhelp clean-packages
 	$(RM) *.lib *.a *.exp *.dll *.$(RES) *.${OBJEXT} *~ \#* TAGS a.out
 	$(RM) $(TCLSH) $(CAT32) $(TEST_EXE_FILE) $(TEST_DLL_FILE) tcltest.cmd tcltest.sh
+	$(RM) -r dltest
 	# remaining binaries (inclusive manifests) by version/branch switch, but retain tclsh.exe.manifest (that created on configure phase)
 	find . -maxdepth 1 -type f -regex '\./tcl\(sh[^.]+\|test\|[^.]+.dll\)\.[^.]*\(\.manifest\)?' \
 		-a -not -name 'tclsh.exe.manifest' -exec rm {} \;
@@ -1216,6 +1233,6 @@ html-tk: $(TCLSH)
 .PHONY: gdb depend cleanhelp clean distclean packages install-packages
 .PHONY: test-packages clean-packages distclean-packages genstubs html
 .PHONY: html-tcl html-tk genscript
-.PHONY: tclzipfile
+.PHONY: tclzipfile dltest
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.

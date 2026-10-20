@@ -532,7 +532,7 @@ shell:      libtclzip
 dlls:	    setup $(TCLDDELIB) $(OUT_DIR)\zlib1.dll $(OUT_DIR)\libtommath.dll
 libtclzip:  $(TCLSCRIPTZIP)
 
-tcltest:    setup core $(TCLTEST) dlls $(EXECTESTAPP)
+tcltest:    setup core $(TCLTEST) dlls $(EXECTESTAPP) dltest
 !if $(TCL_EMBED_SCRIPTS) && $(STATIC_BUILD)
 tcltest:      libtclzip
 	@$(COPY) /b "$(TCLTESTRAW)"+"$(TCLSCRIPTZIP)" "$(TCLTEST)"
@@ -609,6 +609,17 @@ $(TCLDDELIB): $(TMP_DIR)\tclWinDde.obj
 $(TCLDDELIB): $(TMP_DIR)\tclWinDde.obj $(TCLSTUBLIB)
 	$(DLLCMD) $**
 !endif
+
+# The packages in unix\dltest, used by load.test, unload.test and
+# pkgMkIndex.test, are built in $(OUT_DIR)\dltest, next to the test shell.
+DLTESTPKGS = pkga pkgb pkgc pkgd pkge pkgt pkgua pkgooa
+dltest: setup $(TCLSTUBLIB)
+	@if not exist "$(OUT_DIR)\dltest" mkdir "$(OUT_DIR)\dltest"
+	@for %%p in ($(DLTESTPKGS)) do @( \
+	    $(cc32) $(appcflags_nostubs) /DUSE_TCL_STUBS=1 /DTCL_NO_DEPRECATED=1 \
+		-Fo$(TMP_DIR)\dltest_%%p.obj $(ROOT)\unix\dltest\%%p.c && \
+	    $(link32) $(dlllflags) -out:$(OUT_DIR)\dltest\tcl9%%p.dll \
+		$(baselibs) $(TCLSTUBLIB) $(TMP_DIR)\dltest_%%p.obj || exit 1 )
 
 exectestapp: $(EXECTESTAPP)
 $(EXECTESTAPP): execTestApp.c
