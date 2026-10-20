@@ -9504,3 +9504,5 @@ Many code fixes to avoid overflow or undefined behavior.  Thanks chrstphrchvz.
 2026-10-19 http.test: use a port just released by the OS (storchaka)
 
 2026-10-19 zlib-8.3 and zlib-9.3 connected to localhost (storchaka)
+
+2026-10-19 clock scan put the half-hour time zones 30 minutes off (storchaka)
