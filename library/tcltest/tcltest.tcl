@@ -2651,12 +2651,13 @@ proc tcltest::cleanupTests {{calledFromAllFile 0}} {
 	    set numTests($index) 0
 	}
 
-	# exit only if running Tk in non-interactive mode
-	# This should be changed to determine if an event
-	# loop is running, which is the real issue.
-	# Actually, this doesn't belong here at all.  A package
-	# really has no business [exit]-ing an application.
-	if {[info exists ::tk_version] && ![testConstraint interactive]} {
+	# Exit only if running Tk in non-interactive mode with the test
+	# file as the main script (e.g. "wish foo.test"), which would
+	# otherwise wait in the event loop. An application that merely
+	# sources a test file must not be terminated [Bug 8413e79232].
+	if {[info exists ::tk_version] && ![testConstraint interactive]
+		&& [info exists ::argv0] && [info script] ne ""
+		&& [file normalize [info script]] eq [file normalize $::argv0]} {
 	    exit
 	}
     } else {

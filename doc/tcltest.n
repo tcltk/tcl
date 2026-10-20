@@ -207,6 +207,11 @@ the last \fBcleanupTests\fR, but not created by
 to \fBoutputChannel\fR.  This command also restores the original
 shell environment, as described by the global \fBenv\fR
 array. Returns an empty string.
+.PP
+When Tk is loaded, the shell is not interactive and the test file is the
+main script of the application (as in \fBwish foo.test\fR),
+\fBcleanupTests\fR exits the application instead of returning, so that
+the test file does not wait in the event loop.
 .RE
 .\" COMMAND: runAllTests
 .TP
