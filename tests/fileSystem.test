@@ -536,22 +536,6 @@ test filesystem-4.3 {testfilesystem} -constraints testfilesystem -body {
     return $filesystemReport
 } -match glob -result {*{matchindirectory *}*}
 
-# This test is meaningless if there is no tilde expansion
-test filesystem-5.1 {cache and ~} -constraints {
-    testfilesystem tildeexpansion
-} -setup {
-    set orig $::env(HOME)
-} -body {
-    set ::env(HOME) /foo/bar/blah
-    set testdir ~
-    set res1 "Parent of ~ (/foo/bar/blah) is [file dirname $testdir]"
-    set ::env(HOME) /a/b/c
-    set res2 "Parent of ~ (/a/b/c) is [file dirname $testdir]"
-    list $res1 $res2
-} -cleanup {
-    set ::env(HOME) $orig
-} -match regexp -result {{Parent of ~ \(/foo/bar/blah\) is ([a-zA-Z]:)?(/cygwin)?(/foo/bar|foo:bar)} {Parent of ~ \(/a/b/c\) is ([a-zA-Z]:)?(/cygwin)?(/a/b|a:b)}}
-
 test filesystem-6.1 {empty file name} -returnCodes error -body {
     open ""
 } -result {couldn't open "": no such file or directory}
