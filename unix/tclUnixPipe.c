@@ -466,7 +466,8 @@ TclpCreateProcess(
 				 * filled with the process id of the child
 				 * process. */
 {
-    TclFile errPipeIn, errPipeOut;
+    TclFile volatile errPipeIn, errPipeOut;	/* volatile: see fork() below */
+    TclFile pipeIn, pipeOut;
     ssize_t count;
     int status, fd;
     char errSpace[200 + TCL_INTEGER_SPACE];
@@ -488,11 +489,13 @@ TclpCreateProcess(
      * anything goes wrong.
      */
 
-    if (TclpCreatePipe(&errPipeIn, &errPipeOut) == 0) {
+    if (TclpCreatePipe(&pipeIn, &pipeOut) == 0) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"couldn't create pipe: %s", Tcl_PosixError(interp)));
 	goto error;
     }
+    errPipeIn = pipeIn;
+    errPipeOut = pipeOut;
 
     /*
      * We need to allocate and convert this before the fork so it is properly
