@@ -113,7 +113,7 @@ proc parse-directive {line codename restname} {
 }
 
 proc nospace-text {text} {
-    return [regsub -all " " $text _]
+    return [regsub -all {\s+} [string trim $text] _]
 }
 
 proc htmlize-text {text {charmap {}}} {
@@ -1111,7 +1111,7 @@ proc output-directive {line} {
 			    lappend manual(keyword-$key) [list $manual(name) \
 				    $manual(wing-file)/$manual(name).html]
 			    set initial [string toupper [string index $key 0]]
-			    lappend keys "<a href=\"../Keywords/$initial.html\#$key\">$key</a>"
+			    lappend keys "<a href=\"../Keywords/$initial.html\#[nospace-text $key]\">$key</a>"
 			}
 			man-puts [join $keys {, }]
 		    }

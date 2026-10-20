@@ -374,7 +374,13 @@ proc make-man-pages {html args} {
     fconfigure $keyfp -translation lf -encoding utf-8
     puts $keyfp [htmlhead "$tcltkdesc Keywords" "$tcltkdesc Keywords" \
 		     $overall_title "../[indexfile]"]
-    set letters {A B C D E F G H I J K L M N O P Q R S T U V W X Y Z}
+    # Keywords may also start with a digit (e.g. "3D")
+    set letters {}
+    foreach k [array names manual "keyword-\[0-9\]*"] {
+	lappend letters [string index $k 8]
+    }
+    set letters [concat [lsort -unique $letters] \
+	    {A B C D E F G H I J K L M N O P Q R S T U V W X Y Z}]
     # Create header first
     set keyheader {}
     foreach a $letters {
