@@ -1899,6 +1899,30 @@ test tcltest-28.1 {-match and -skip do not apply to nested tests, bug 773924} -s
     unset -nocomplain oldMatch oldSkip ran
 } -result 0
 
+test tcltest-28.2 {constraint names with a dash, bug 9f4feaaaa1} -setup {
+    set script [makeFile {
+	package require tcltest
+	namespace import tcltest::*
+	testConstraint dash-off 0
+	test t-1 {} -constraints dash-on -body {}
+	test t-2 {} -constraints {dash-off || dash-on} -body {}
+	test t-3 {} -constraints {dash-on && !dash-off} -body {}
+	test t-4 {} -constraints {dash-on && dash-off} -body {}
+	test t-5 {} -constraints {
+	    dash-on
+	} -body {}
+	cleanupTests
+    } dashConstraint.tcl]
+} -cleanup {
+    removeFile $script
+    unset -nocomplain script msg1 msg2
+} -body {
+    child msg1 $script
+    child msg2 $script -constraints dash-on
+    list [regexp "Total.+5.+Passed.+0.+Skipped.+5.+Failed.+0" $msg1] \
+	[regexp "Total.+5.+Passed.+4.+Skipped.+1.+Failed.+0" $msg2]
+} -result {1 1}
+
 
 cleanupTests
 }
