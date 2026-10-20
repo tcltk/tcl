@@ -64,11 +64,12 @@ if not %SYMBOLS%.==. set OPTS=symbols
 nmake -nologo -f makefile.vc release htmlhelp OPTS=%OPTS% %1
 if errorlevel 1 goto error
 
-:: Build the static core and shell.
+:: Build the static core and shell, and the static dde, registry and
+:: zlib files that "install" copies.
 ::
 set OPTS=static,msvcrt
 if not %SYMBOLS%.==. set OPTS=symbols,static,msvcrt
-nmake -nologo -f makefile.vc shell OPTS=%OPTS% %1
+nmake -nologo -f makefile.vc shell dlls OPTS=%OPTS% %1
 if errorlevel 1 goto error
 
 set OPTS=
