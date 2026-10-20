@@ -83,6 +83,10 @@ the provided information so that the keys from \fIconfiguration\fR and
 their associated values can be retrieved through calls to
 \fBpkgconfig\fR.
 .PP
+When \fBTcl_RegisterConfig\fR is called again for the same \fIpkgName\fR,
+the keys from the new \fIconfiguration\fR are added to those already
+registered, and the value of a key that already exists is replaced.
+.PP
 The command \fBpkgconfig\fR will provide two subcommands, \fBlist\fR
 and \fBget\fR:
 .RS

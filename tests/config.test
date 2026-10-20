@@ -17,6 +17,11 @@ if {"::tcltest" ni [namespace children]} {
     namespace import -force ::tcltest::*
 }
 
+::tcltest::loadTestedCommands
+catch [list package require -exact tcl::test [info patchlevel]]
+
+testConstraint testregisterconfig [llength [info commands testregisterconfig]]
+
 test pkgconfig-1.1 {query keys} -body {
     lsort [::tcl::pkgconfig list]
 } -match glob -result {*bindir,install bindir,runtime*docdir,install docdir,runtime includedir,install includedir,runtime libdir,install libdir,runtime*scriptdir,install scriptdir,runtime*}
@@ -54,6 +59,17 @@ test pkgconfig-2.5 {error: query with to many arguments} {
     catch {::tcl::pkgconfig get foo bar} msg
     set msg
 } {wrong # args: should be "::tcl::pkgconfig subcommand ?arg?"}
+
+test pkgconfig-3.1 {Tcl_RegisterConfig twice merges, bug 67769bcad3} -constraints {
+    testregisterconfig
+} -body {
+    testregisterconfig pkgconfigtest a 1
+    testregisterconfig pkgconfigtest b 2
+    list [lsort [pkgconfigtest::pkgconfig list]] \
+	    [pkgconfigtest::pkgconfig get a] [pkgconfigtest::pkgconfig get b]
+} -cleanup {
+    namespace delete pkgconfigtest
+} -result {{a b} 1 2}
 
 # cleanup
 ::tcltest::cleanupTests

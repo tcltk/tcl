@@ -270,6 +270,7 @@ static Tcl_ObjCmdProc2	TestpostinitCmd;
 static Tcl_ObjCmdProc2	TestpreferstableCmd;
 static Tcl_ObjCmdProc2	TestprintCmd;
 static Tcl_ObjCmdProc2	TestregexpCmd;
+static Tcl_ObjCmdProc2	TestregisterconfigCmd;
 static Tcl_ObjCmdProc2	TestreturnCmd;
 static void		TestregexpXflags(const char *string,
 			    size_t length, int *cflagsPtr, int *eflagsPtr);
@@ -676,6 +677,8 @@ Tcltest_Init(
     Tcl_CreateObjCommand2(interp, "testprint", TestprintCmd,
 	    NULL, NULL);
     Tcl_CreateObjCommand2(interp, "testregexp", TestregexpCmd,
+	    NULL, NULL);
+    Tcl_CreateObjCommand2(interp, "testregisterconfig", TestregisterconfigCmd,
 	    NULL, NULL);
     Tcl_CreateObjCommand2(interp, "testreturn", TestreturnCmd,
 	    NULL, NULL);
@@ -6179,6 +6182,44 @@ TestpurebytesobjCmd(
     return TCL_OK;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * TestregisterconfigCmd --
+ *
+ *	Implements "testregisterconfig pkgName key value", which calls
+ *	Tcl_RegisterConfig with a single key/value pair.
+ *
+ * Results:
+ *	Returns the TCL_OK result code.
+ *
+ * Side effects:
+ *	Creates or replaces the command ::pkgName::pkgconfig.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TestregisterconfigCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,		/* Current interpreter. */
+    Tcl_Size objc,		/* Number of arguments. */
+    Tcl_Obj *const *objv)	/* The argument objects. */
+{
+    Tcl_Config cfg[2];
+
+    if (objc != 4) {
+	Tcl_WrongNumArgs(interp, 1, objv, "pkgName key value");
+	return TCL_ERROR;
+    }
+    cfg[0].key = Tcl_GetString(objv[2]);
+    cfg[0].value = Tcl_GetString(objv[3]);
+    cfg[1].key = NULL;
+    cfg[1].value = NULL;
+    Tcl_RegisterConfig(interp, Tcl_GetString(objv[1]), cfg, "utf-8");
+    return TCL_OK;
+}
+
 /*
  *----------------------------------------------------------------------
  *

@@ -132,9 +132,12 @@ Tcl_RegisterConfig(
     }
 
     /*
-     * Write the changes back into the overall database.
+     * Write the changes back into the overall database. Keep a reference:
+     * replacing an existing query command below removes the package entry
+     * from the database (see QueryConfigDelete), so it is put back after.
      */
 
+    Tcl_IncrRefCount(pkgDict);
     Tcl_DictObjPut(interp, pDB, cdPtr->pkg, pkgDict);
 
     /*
@@ -168,6 +171,8 @@ Tcl_RegisterConfig(
 	Tcl_Panic("%s: %s", "Tcl_RegisterConfig",
 		"Unable to create query command for package configuration");
     }
+    Tcl_DictObjPut(interp, pDB, cdPtr->pkg, pkgDict);
+    Tcl_DecrRefCount(pkgDict);
 
     Tcl_DStringFree(&cmdName);
 }
