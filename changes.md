@@ -45,6 +45,7 @@ to the userbase.
  - [lset errors during appending operation left original list modified](https://core.tcl-lang.org/tcl/tktview/301934)
  - [http.test: use a port just released by the OS for badurl](https://core.tcl-lang.org/tcl/tktview/5350f3)
  - [the regexp engine could overflow the C stack on deeply nested REs](https://core.tcl-lang.org/tcl/tktview/7d47ba)
+ - [[clock scan] put the half-hour time zones 30 minutes off](https://core.tcl-lang.org/tk/tktview/e580d8)
 
 # Updated bundled packages, libraries, standards, data
  - http 2.10.3
