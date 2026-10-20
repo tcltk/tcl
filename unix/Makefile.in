@@ -2085,8 +2085,8 @@ configure-packages:
 			( cd $(PKG_DIR)/$$pkg; \
 			  $$i/configure --with-tcl=../.. \
 			      --with-tclinclude=$(GENERIC_DIR) \
-			      $(PKG_CFG_ARGS) --libdir=$(PACKAGE_DIR) \
-			      --enable-shared; ) || exit $$?; \
+			      --enable-shared $(PKG_CFG_ARGS) \
+			      --libdir=$(PACKAGE_DIR); ) || exit $$?; \
 		    fi; \
 		fi; \
 	    fi; \

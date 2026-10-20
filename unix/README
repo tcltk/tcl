@@ -60,7 +60,8 @@ How To Compile And Install Tcl:
 				the default on platforms where we know how to
 				build shared libraries.
 	--disable-shared	If this switch is specified, Tcl will compile
-				itself as a static library.
+				itself as a static library, and the bundled
+				packages in pkgs/ as static libraries too.
 	--enable-symbols	Build with debugging symbols. By default
 				standard debugging symbols are used. You can
 				specify the value "mem" to include
