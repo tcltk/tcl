@@ -126,7 +126,7 @@
 /* Compiler support for module scope symbols */
 #undef HAVE_HIDDEN
 
-/* Do we have the intptr_t type? */
+/* Define to 1 if the system has the type 'intptr_t'. */
 #undef HAVE_INTPTR_T
 
 /* Define to 1 if you have the <inttypes.h> header file. */
@@ -143,6 +143,9 @@
 
 /* Define to 1 if you have the 'lseek64' function. */
 #undef HAVE_LSEEK64
+
+/* Define to 1 if you have the <memory.h> header file. */
+#undef HAVE_MEMORY_H
 
 /* Define to 1 if you have the 'mkstemp' function. */
 #undef HAVE_MKSTEMP
@@ -273,7 +276,7 @@
 /* Is off64_t in <sys/types.h>? */
 #undef HAVE_TYPE_OFF64_T
 
-/* Do we have the uintptr_t type? */
+/* Define to 1 if the system has the type 'uintptr_t'. */
 #undef HAVE_UINTPTR_T
 
 /* Define to 1 if you have the <unistd.h> header file. */
@@ -443,8 +446,7 @@
 /* What type should be used to define wide integers? */
 #undef TCL_WIDE_INT_TYPE
 
-/* Define to 1 if you can safely include both <sys/time.h> and <time.h>. This
-   macro is obsolete. */
+/* Define to 1 if you can safely include both <sys/time.h> and <time.h>. */
 #undef TIME_WITH_SYS_TIME
 
 /* Is getcwd Posix-compliant? */
@@ -477,11 +479,11 @@
 /* Are Darwin SUSv3 extensions available? */
 #undef _DARWIN_C_SOURCE
 
+/* Add the _FILE_OFFSET_BITS flag when building */
+#undef _FILE_OFFSET_BITS
+
 /* Add the _ISOC99_SOURCE flag when building */
 #undef _ISOC99_SOURCE
-
-/* Add the _LARGEFILE64_SOURCE flag when building */
-#undef _LARGEFILE64_SOURCE
 
 /* # needed in sys/socket.h Should OS/390 do the right thing with sockets? */
 #undef _OE_SOCKETS
@@ -494,6 +496,9 @@
 
 /* Do we want the thread-safe OS API? */
 #undef _THREAD_SAFE
+
+/* _TIME_BITS=64 enables 64-bit time_t. */
+#undef _TIME_BITS
 
 /* Do we want to use the XOPEN network library? */
 #undef _XOPEN_SOURCE
