@@ -110,9 +110,19 @@ fi
 
 #------------------------------------------------------------------------
 #	Add stuff for zlib/libtommath; note that this is mostly done in the
-#	makefile now as we just assume that the platform hasn't got usable
-#   z.lib/tommath.lib
+#	makefile now. By default the bundled zlib and libtommath are used;
+#	--with-system-zlib and --with-system-libtommath link against the
+#	libraries of the build system instead (e.g. MSYS2 packages).
 #------------------------------------------------------------------------
+
+AC_ARG_WITH(system-zlib,
+    AS_HELP_STRING([--with-system-zlib],
+	[use the zlib of the build system instead of the bundled one (default: off)]),
+    [system_zlib=$withval], [system_zlib=no])
+AC_ARG_WITH(system-libtommath,
+    AS_HELP_STRING([--with-system-libtommath],
+	[use the libtommath of the build system instead of the bundled one (default: off)]),
+    [system_libtommath=$withval], [system_libtommath=no])
 
 AS_IF([test "${enable_shared+set}" = "set"], [
   enableval="$enable_shared"
@@ -154,10 +164,32 @@ AS_IF([test "$tcl_ok" = "yes"], [
     AC_SUBST(TOMMATH_LIBS,[\${TOMMATH_DIR_NATIVE}/win32/tommath.lib])
   ])
 ], [
-  AC_DEFINE(TCL_WITH_INTERNAL_ZLIB, 1, [Tcl with internal zlib])
-  AC_SUBST(ZLIB_OBJS,[\${ZLIB_OBJS}])
-  AC_SUBST(TOMMATH_OBJS,[\${TOMMATH_OBJS}])
+  AS_IF([test "$system_zlib" = "no"], [
+    AC_DEFINE(TCL_WITH_INTERNAL_ZLIB, 1, [Tcl with internal zlib])
+    AC_SUBST(ZLIB_OBJS,[\${ZLIB_OBJS}])
+  ])
+  AS_IF([test "$system_libtommath" = "no"], [
+    AC_SUBST(TOMMATH_OBJS,[\${TOMMATH_OBJS}])
+  ], [
+    AC_DEFINE(TCL_WITH_EXTERNAL_TOMMATH, 1, [Tcl with external libtommath])
+  ])
 ])
+system_libs=
+AS_IF([test "$system_zlib" != "no"], [
+  AC_CHECK_LIB([z], [deflateSetHeader], [system_libs="$system_libs -lz"],
+      [AC_MSG_ERROR([--with-system-zlib given, but no usable zlib found])])
+  ZLIB_LIBS=
+  ZLIB_DLL_FILE=
+  zlib_lib_name=libz.dll.a
+])
+AS_IF([test "$system_libtommath" != "no"], [
+  AC_CHECK_LIB([tommath], [mp_log_u32], [system_libs="$system_libs -ltommath"],
+      [AC_MSG_ERROR([--with-system-libtommath given, but no usable libtommath found])])
+  TOMMATH_LIBS=
+  TOMMATH_DLL_FILE=
+  tommath_lib_name=libtommath.dll.a
+])
+LIBS="$LIBS$system_libs"
 AC_SUBST(TCL_ZLIB_LIB_NAME, $zlib_lib_name)
 AC_SUBST(TCL_TOMMATH_LIB_NAME, $tommath_lib_name)
 AC_CHECK_TYPES([intptr_t, uintptr_t],,,[[
