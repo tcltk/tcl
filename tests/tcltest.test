@@ -275,6 +275,11 @@ test tcltest-5.2 {tcltest -constraints 'knownBug' -limitconstraints 1} {unixOrWi
     list $result [regexp a-1.0 $msg] [regexp b-1.0 $msg] [regexp c-1.0 $msg] \
 	    [regexp "Total.+4.+Passed.+1.+Skipped.+3.+Failed.+0" $msg]
 } {0 0 0 1 1}
+test tcltest-5.2a {-limitconstraints 1 -verbose 's' reports skipped tests, bug 811659} {unixOrWin} {
+    set result [child msg test.tcl -constraints knownBug -verbose 's' -limitconstraints 1]
+    list $result [regexp {a-1.0 SKIPPED: userSpecifiedLimitConstraint} $msg] \
+	    [regexp {d-1.0 SKIPPED: userSpecifiedLimitConstraint} $msg]
+} {0 1 1}
 
 test tcltest-5.3 {testConstraint - constraint empty (tcltest::safeFetch)}  {
     -body {

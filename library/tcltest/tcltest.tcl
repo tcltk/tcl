@@ -2429,10 +2429,7 @@ proc tcltest::Skipped {name constraints} {
 	# If we're limited to the listed constraints and there aren't
 	# any listed, then we shouldn't run the test.
 	if {[limitConstraints]} {
-	    AddToSkippedBecause userSpecifiedLimitConstraint
-	    if {$testLevel == 1} {
-		incr numTests(Skipped)
-	    }
+	    _noticeSkipped $name userSpecifiedLimitConstraint
 	    return 1
 	}
     } else {
