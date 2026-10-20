@@ -26,7 +26,7 @@ m4_ifdef([SC_USE_CONFIG_HEADERS], [
 TCL_VERSION=9.1
 TCL_MAJOR_VERSION=9
 TCL_MINOR_VERSION=1
-TCL_PATCH_LEVEL="b1"
+TCL_PATCH_LEVEL=".1"
 VERSION=${TCL_VERSION}
 
 EXTRA_INSTALL_BINARIES=${EXTRA_INSTALL_BINARIES:-"@:"}
@@ -457,22 +457,6 @@ AC_CACHE_CHECK([for gettimeofday declaration], tcl_cv_grep_gettimeofday, [
 	tcl_cv_grep_gettimeofday=present, tcl_cv_grep_gettimeofday=missing)])
 if test $tcl_cv_grep_gettimeofday = missing ; then
     AC_DEFINE(GETTOD_NOT_DECLARED, 1, [Is gettimeofday() actually declared in <sys/time.h>?])
-fi
-
-#--------------------------------------------------------------------
-#	The following code checks to see whether it is possible to get
-#	signed chars on this platform.  This is needed in order to
-#	properly generate sign-extended ints from character values.
-#--------------------------------------------------------------------
-
-AC_C_CHAR_UNSIGNED
-AC_CACHE_CHECK([signed char declarations], tcl_cv_char_signed, [
-    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
-	signed char *p;
-	p = 0;
-	]])],[tcl_cv_char_signed=yes],[tcl_cv_char_signed=no])])
-if test $tcl_cv_char_signed = yes; then
-    AC_DEFINE(HAVE_SIGNED_CHAR, 1, [Are characters signed?])
 fi
 
 #--------------------------------------------------------------------

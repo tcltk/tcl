@@ -1361,8 +1361,9 @@ TclInfoFrame(
      * Procedure CallFrame.
      */
 
-    if (procPtr != NULL) {
-	Tcl_HashEntry *namePtr = procPtr->cmdPtr->hPtr;
+    if (procPtr != NULL && procPtr->cmdPtr) {
+	Command *cmdPtr = procPtr->cmdPtr;
+	Tcl_HashEntry *namePtr = cmdPtr->hPtr;
 
 	if (namePtr) {
 	    Tcl_Obj *procNameObj;
@@ -1372,11 +1373,15 @@ TclInfoFrame(
 	     */
 
 	    TclNewObj(procNameObj);
-	    Tcl_GetCommandFullName(interp, (Tcl_Command) procPtr->cmdPtr,
+	    Tcl_GetCommandFullName(interp, (Tcl_Command) cmdPtr,
 		    procNameObj);
 	    ADD_PAIR("proc", procNameObj);
-	} else if (procPtr->cmdPtr->clientData) {
-	    ExtraFrameInfo *efiPtr = (ExtraFrameInfo *)procPtr->cmdPtr->clientData;
+	} else if ((procPtr->flags & PROC_CMD_OWNED) && !cmdPtr->objProc2 &&
+		   cmdPtr->objClientData2
+	) {
+	    ADD_PAIR("lambda", (Tcl_Obj *)cmdPtr->objClientData2);
+	} else if (cmdPtr->clientData) {
+	    ExtraFrameInfo *efiPtr = (ExtraFrameInfo *)cmdPtr->clientData;
 	    Tcl_Size i;
 
 	    /*
@@ -3532,6 +3537,8 @@ Tcl_LsearchObjCmd(
 
 	    TclListObjGetElements(NULL, objv[objc - 2], &listc, &listv);
 	    break;
+	default:
+	    TCL_UNREACHABLE();
 	}
     } else {
 	patternBytes = TclGetStringFromObj(patObj, &length);
@@ -3611,6 +3618,8 @@ Tcl_LsearchObjCmd(
 		    match = 1;
 		}
 		break;
+	    default:
+		TCL_UNREACHABLE();
 	    }
 	    if (match == 0) {
 		/*
@@ -3727,6 +3736,8 @@ Tcl_LsearchObjCmd(
 		    }
 		    match = (objDouble == patDouble);
 		    break;
+		default:
+		    TCL_UNREACHABLE();
 		}
 		break;
 
@@ -3738,7 +3749,6 @@ Tcl_LsearchObjCmd(
 	    case REGEXP:
 		match = Tcl_RegExpExecObj(interp, regexp, itemPtr, 0, 0, 0);
 		if (match < 0) {
-		    Tcl_DecrRefCount(patObj);
 		    if (listPtr != NULL) {
 			Tcl_DecrRefCount(listPtr);
 		    }
@@ -3746,6 +3756,8 @@ Tcl_LsearchObjCmd(
 		    goto done;
 		}
 		break;
+	    default:
+		TCL_UNREACHABLE();
 	    }
 
 	    /*

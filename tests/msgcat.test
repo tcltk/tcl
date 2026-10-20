@@ -54,13 +54,8 @@ namespace eval ::msgcat::test {
 	set result [string tolower [lindex $setVars 0]]
 	if {[string length $result] == 0} {
 	    if {[info exists ::tcl::mac::locale]} {
-if {[package vsatisfies [package provide msgcat] 1.7]} {
 		set result [string tolower \
 			[msgcat::mcutil::ConvertLocale $::tcl::mac::locale]]
-} else {
-		set result [string tolower \
-			[msgcat::ConvertLocale $::tcl::mac::locale]]
-}
 	    } else {
 		if {([info sharedlibextension] eq ".dll")
 			&& ![catch {package require registry}]} {
@@ -188,7 +183,7 @@ if {[package vsatisfies [package provide msgcat] 1.7]} {
 	mclocale $locale
     } -body {
 	mclocale /path/to/evil/code
-    } -returnCodes error -match glob -result {invalid newLocale value *}
+    } -returnCodes error -match glob -result {locale "*" not valid} -errorCode {MSGCAT badLocale *}
 
     test msgcat-1.13 {mclocale set, reject evil input} -setup {
 	variable locale [mclocale]
@@ -196,7 +191,7 @@ if {[package vsatisfies [package provide msgcat] 1.7]} {
 	mclocale $locale
     } -body {
 	mclocale looks/ok/../../../../but/is/path/to/evil/code
-    } -returnCodes error -match glob -result {invalid newLocale value *}
+    } -returnCodes error -match glob -result {locale "*" not valid} -errorCode {MSGCAT badLocale *}
 
     test msgcat-1.14 {mcpreferences, custom locale preferences} -setup {
 	variable locale [mclocale]

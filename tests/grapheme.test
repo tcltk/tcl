@@ -10,7 +10,6 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 
 }
 tcltest::loadTestedCommands
-package require tcl::test
 
 source [file join [file dirname [info script]] tcltests.tcl]
 source [file join [file dirname [info script]] ucdUtils.tcl]
@@ -34,7 +33,7 @@ namespace eval grapheme::test {
 
     ### grapheme next
 
-    tcltests::testnumargs "grapheme next" "string strIndex" ""
+    tcltests::testnumargs "grapheme next" "string indexVar" ""
 
     foreach testCase [list [list 0 "empty string" ""] {*}[getGraphemeData]] {
 	lassign $testCase testNum comment graphemes
@@ -51,7 +50,7 @@ namespace eval grapheme::test {
 
     ### grapheme prev
 
-    tcltests::testnumargs "grapheme prev" "string strIndex" ""
+    tcltests::testnumargs "grapheme prev" "string indexVar" ""
 
     foreach testCase [list [list 0 "empty string" ""] {*}[getGraphemeData]] {
 	lassign $testCase testNum comment graphemes

@@ -800,7 +800,7 @@ ${TCL_ZIP_FILE}: ${ZIP_INSTALL_OBJS}
 	fi
 	mv ${TCL_VFS_PATH}/manifest.txt ${TCL_VFS_PATH}/pkgIndex.tcl
 	rm -rf ${TCL_VFS_PATH}/dde
-	@find ${TCL_VFS_ROOT} -type d -empty -delete
+	@find ${TCL_VFS_ROOT} -depth -type d -exec rmdir {} + 2>/dev/null || :
 	@echo "creating ${TCL_ZIP_FILE} from ${TCL_VFS_PATH}"
 	@(zip=`(realpath '${NATIVE_ZIP}' || readlink -m '${NATIVE_ZIP}' || \
 	    echo '${NATIVE_ZIP}' | sed "s?^\./?$$(pwd)/?")  2>/dev/null`; \
@@ -1081,22 +1081,22 @@ install-libraries: libraries
 	    do \
 	    $(INSTALL_DATA) $$i "$(SCRIPT_INSTALL_DIR)/cookiejar0.2"; \
 	    done
-	@echo "Installing package http 2.10.2 as a Tcl Module"
+	@echo "Installing package http 2.10.3 as a Tcl Module"
 	@$(INSTALL_DATA) $(TOP_DIR)/library/http/http.tcl \
-		"$(MODULE_INSTALL_DIR)/9.0/http-2.10.2.tm"
+		"$(MODULE_INSTALL_DIR)/9.0/http-2.10.3.tm"
 	@echo "Installing package opt0.4 files to $(SCRIPT_INSTALL_DIR)/opt0.4/"
 	@for i in $(TOP_DIR)/library/opt/*.tcl; do \
 	    $(INSTALL_DATA) $$i "$(SCRIPT_INSTALL_DIR)/opt0.4"; \
 	done
-	@echo "Installing package msgcat 1.7.1 as a Tcl Module"
+	@echo "Installing package msgcat 1.7.2 as a Tcl Module"
 	@$(INSTALL_DATA) $(TOP_DIR)/library/msgcat/msgcat.tcl \
-		"$(MODULE_INSTALL_DIR)/9.0/msgcat-1.7.1.tm"
+		"$(MODULE_INSTALL_DIR)/9.0/msgcat-1.7.2.tm"
 	@echo "Installing package tcltest 2.6.0 as a Tcl Module"
 	@$(INSTALL_DATA) $(TOP_DIR)/library/tcltest/tcltest.tcl \
 		"$(MODULE_INSTALL_DIR)/9.0/tcltest-2.6.0.tm"
-	@echo "Installing package platform 1.2b1 as a Tcl Module"
+	@echo "Installing package platform 1.2.0 as a Tcl Module"
 	@$(INSTALL_DATA) $(TOP_DIR)/library/platform/platform.tcl \
-		"$(MODULE_INSTALL_DIR)/9.0/platform-1.2b1.tm"
+		"$(MODULE_INSTALL_DIR)/9.0/platform-1.2.0.tm"
 	@echo "Installing package platform::shell 1.1.4 as a Tcl Module"
 	@$(INSTALL_DATA) $(TOP_DIR)/library/platform/shell.tcl \
 		"$(MODULE_INSTALL_DIR)/9.0/platform/shell-1.1.4.tm"

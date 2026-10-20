@@ -322,15 +322,6 @@ next(
     v->lasttype = v->nexttype;
 
     /*
-     * REG_BOSONLY
-     */
-
-    if (v->nexttype == EMPTY && (v->cflags&REG_BOSONLY)) {
-	/* at start of a REG_BOSONLY RE */
-	RETV(SBEGIN, 0);	/* same as \A */
-    }
-
-    /*
      * If we're nested and we've hit end, return to outer level.
      */
 
@@ -872,6 +863,7 @@ lexescape(
 	NOTE(REG_ULOCALE);
 	RETV(NWBDRY, 0);
 	break;
+    case CHR('z'):
     case CHR('Z'):
 	RETV(SEND, 0);
 	break;

@@ -196,7 +196,8 @@ Tcl_RegexpObjCmd(
     Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const *objv)	/* Argument objects. */
 {
-    Tcl_Size i, about, all, offset, stringLength, matchLength, numMatchesSaved;
+    Tcl_Size i, about, all, offset, startOffset, stringLength, matchLength;
+    Tcl_Size numMatchesSaved;
     int indices, match, doinline, cflags, eflags;
     Tcl_RegExp regExpr;
     Tcl_Obj *objPtr, *startIndex = NULL, *resultPtr = NULL;
@@ -226,7 +227,7 @@ Tcl_RegexpObjCmd(
 	if (name[0] != '-') {
 	    break;
 	}
-	if (Tcl_GetIndexFromObj(interp, objv[i], options, "option", TCL_EXACT,
+	if (Tcl_GetIndexFromObj(interp, objv[i], options, "option", 0,
 		&index) != TCL_OK) {
 	    goto optionError;
 	}
@@ -361,33 +362,39 @@ Tcl_RegexpObjCmd(
     }
 
     /*
+     * Pass either 0 or TCL_REG_NOTBOL in the eflags. Passing TCL_REG_NOTBOL
+     * indicates that the character at the start offset should not be
+     * considered the start of the line. If for example the pattern {^} is
+     * passed and -start is positive, then the pattern will not match the
+     * start of the string unless the previous character is a newline.
+     */
+
+    startOffset = offset;
+    if (offset == TCL_INDEX_START) {
+	eflags = 0;
+    } else if (offset > stringLength) {
+	eflags = TCL_REG_NOTBOL;
+    } else if (Tcl_GetUniChar(objPtr, offset-1) == '\n') {
+	eflags = 0;
+    } else {
+	eflags = TCL_REG_NOTBOL;
+    }
+
+    /*
      * The following loop is to handle multiple matches within the same source
      * string; each iteration handles one match. If "-all" hasn't been
      * specified then the loop body only gets executed once. We terminate the
      * loop when the starting offset is past the end of the string.
+     *
+     * Successive matches are searched for starting at offset, but the
+     * string is still considered to begin at startOffset, so that \A only
+     * matches there and ^ does not match after the previous match unless
+     * it ends with a newline in line-anchor mode. [Bugs 471101, 884d0ac78c]
      */
 
     while (1) {
-	/*
-	 * Pass either 0 or TCL_REG_NOTBOL in the eflags. Passing
-	 * TCL_REG_NOTBOL indicates that the character at offset should not be
-	 * considered the start of the line. If for example the pattern {^} is
-	 * passed and -start is positive, then the pattern will not match the
-	 * start of the string unless the previous character is a newline.
-	 */
-
-	if (offset == TCL_INDEX_START) {
-	    eflags = 0;
-	} else if (offset > stringLength) {
-	    eflags = TCL_REG_NOTBOL;
-	} else if (Tcl_GetUniChar(objPtr, offset-1) == '\n') {
-	    eflags = 0;
-	} else {
-	    eflags = TCL_REG_NOTBOL;
-	}
-
-	match = Tcl_RegExpExecObj(interp, regExpr, objPtr, offset,
-		numMatchesSaved, eflags);
+	match = TclRegExpExecObjEx(interp, regExpr, objPtr, startOffset,
+		offset, numMatchesSaved, eflags);
 	if (match < 0) {
 	    return TCL_ERROR;
 	}
@@ -514,7 +521,13 @@ Tcl_RegexpObjCmd(
 	    offset++;
 	}
 	all++;
-	if (offset >= stringLength) {
+
+	/*
+	 * Also try at the end of the string: an RE like {$} or {a*} can still
+	 * match the empty string there.  [regsub -all] does the same.
+	 */
+
+	if (offset > stringLength) {
 	    break;
 	}
     }
@@ -557,8 +570,9 @@ Tcl_RegsubObjCmd(
     Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const *objv)	/* Argument objects. */
 {
-    int result, cflags, all, match, command;
-    Tcl_Size idx, wlen, wsublen = 0, offset, numMatches, numParts;
+    int result, cflags, eflags, all, match, command;
+    Tcl_Size nmatches;
+    Tcl_Size idx, wlen, wsublen = 0, offset, startOffset, numMatches, numParts;
     Tcl_Size start, end, subStart, subEnd;
     Tcl_RegExp regExpr;
     Tcl_RegExpInfo info;
@@ -791,20 +805,43 @@ Tcl_RegsubObjCmd(
      * case where the regexp pattern can match the empty string - this is
      * useful when doing, say, 'regsub -- ^ $str ...' when $str might be
      * empty.
+     *
+     * Successive matches are searched for starting at offset, but the
+     * string is still considered to begin at startOffset, so that \A only
+     * matches there and ^ does not match after the previous match unless
+     * it ends with a newline in line-anchor mode. [Bugs 471101, 884d0ac78c]
+     * The eflags argument is set if string is part of a larger string, so
+     * that "^" won't match.
      */
 
+    /*
+     * Ask the regexp engine only for the submatches that subSpec refers to:
+     * finding the submatch boundaries can be much more expensive than
+     * finding the match.  [Bug 446565]
+     */
+
+    nmatches = -1;
+    if (!command) {
+	Tcl_UniChar *p;
+
+	nmatches = 1;
+	for (p = wsubspec; p < wsubspec + wsublen; p++) {
+	    if (*p == '\\' && p + 1 < wsubspec + wsublen) {
+		p++;
+		if (*p >= '0' && *p <= '9' && *p - '0' + 1 > nmatches) {
+		    nmatches = *p - '0' + 1;
+		}
+	    }
+	}
+    }
+
     numMatches = 0;
+    startOffset = offset;
+    eflags = (offset > 0 && offset <= wlen &&
+	    (wstring[offset-1] != (Tcl_UniChar)'\n')) ? TCL_REG_NOTBOL : 0;
     for ( ; offset <= wlen; ) {
-
-	/*
-	 * The flags argument is set if string is part of a larger string, so
-	 * that "^" won't match.
-	 */
-
-	match = Tcl_RegExpExecObj(interp, regExpr, objPtr, offset,
-		10 /* matches */, ((offset > 0 &&
-		(wstring[offset-1] != (Tcl_UniChar)'\n'))
-		? TCL_REG_NOTBOL : 0));
+	match = TclRegExpExecObjEx(interp, regExpr, objPtr, startOffset,
+		offset, nmatches, eflags);
 
 	if (match < 0) {
 	    result = TCL_ERROR;
@@ -3764,6 +3801,8 @@ TclNRSwitchObjCmd(
 		goto matchFound;
 	    }
 	    break;
+	default:
+	    TCL_UNREACHABLE();
 	}
     }
     return TCL_OK;

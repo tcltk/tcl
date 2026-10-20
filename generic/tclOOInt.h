@@ -419,6 +419,8 @@ struct Foundation {
     Tcl_Obj *slotSetName;	/* The "Set" name used by slots. */
     Tcl_Obj *slotResolveName;	/* The "Resolve" name used by slots. */
     Tcl_Obj *slotDefOpName;	/* The "--default-operation" name used by slots. */
+    Tcl_Obj *singletonInstName;	/* The "::oo::SingletonInstance" used to set
+				 * things as singletons. */
 };
 
 /*

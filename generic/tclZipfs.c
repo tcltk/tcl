@@ -247,6 +247,9 @@ enum ZipCompressionMethods {
 #define ZIP_MAX_FILE_SIZE		INT_MAX
 #define DEFAULT_WRITE_MAX_SIZE		ZIP_MAX_FILE_SIZE
 
+// Size of buffers used for copying files. A power of two.
+#define COPY_BUFFER_SIZE		4096
+
 /*
  * Mutex to protect localtime(3) when no reentrant version available.
  */
@@ -350,6 +353,9 @@ typedef struct ZipChannel {
     int isEncrypted;		/* True if data is encrypted */
     int mode;			/* O_WRITE, O_APPEND, O_TRUNC etc.*/
     unsigned long keys[3];	/* Key for decryption */
+    Tcl_Channel chan;		/* The channel wrapping this ZipChannel */
+    Tcl_TimerToken timer;	/* Timer for synthetic file events */
+    int watchMask;		/* Events of interest */
 } ZipChannel;
 
 static inline int
@@ -391,14 +397,6 @@ static struct {
 	    {0,{0,0,0,0},0,0,0,0,0,0,0,0,0},
 	    {0,{0,0,0,0},0,0,0,0,0,0,0,0,0}
 };
-
-/*
- * For password rotation.
- */
-
-static const char pwrot[17] =
-    "\x00\x80\x40\xC0\x20\xA0\x60\xE0"
-    "\x10\x90\x50\xD0\x30\xB0\x70\xF0";
 
 static int zipfs_tcl_library_init = 0;
 static const char *zipfs_literal_tcl_library = NULL;
@@ -470,6 +468,9 @@ static int		ZipChannelRead(void *instanceData, char *buf,
 			    int toRead, int *errloc);
 static long long	ZipChannelWideSeek(void *instanceData,
 			    long long offset, int mode, int *errloc);
+static void		ZipChannelThreadAction(void *instanceData,
+			    int action);
+static void		ZipChannelTimerRun(void *clientData);
 static void		ZipChannelWatchChannel(void *instanceData,
 			    int mask);
 static int		ZipChannelWrite(void *instanceData,
@@ -549,7 +550,7 @@ static const Tcl_ChannelType zipChannelType = {
     NULL,			/* Function to flush channel. */
     NULL,			/* Function to handle bubbled events. */
     ZipChannelWideSeek,
-    NULL,			/* Thread action function. */
+    ZipChannelThreadAction,	/* Thread action function. */
     NULL,			/* Truncate function. */
 };
 
@@ -922,6 +923,28 @@ IsCryptHeaderValid(
 /*
  *------------------------------------------------------------------------
  *
+ * RotatePasswordByte --
+ *
+ *	Handles one byte for password rotation.
+ *
+ * Results:
+ *	The rotated byte.
+ *
+ *------------------------------------------------------------------------
+ */
+static inline int
+RotatePasswordByte(
+    int byte)			// Byte to rotate.
+{
+    static const char pwrot[] =
+	    "\x00\x80\x40\xC0\x20\xA0\x60\xE0"
+	    "\x10\x90\x50\xD0\x30\xB0\x70\xF0";
+    return (byte & 0x0f) | pwrot[(byte >> 4) & 0x0f];
+}
+
+/*
+ *------------------------------------------------------------------------
+ *
  * DecodeCryptHeader --
  *
  *	Decodes the crypt header and validates it.
@@ -945,13 +968,11 @@ DecodeCryptHeader(
 				/* From zip file content */
 {
     int i;
-    int ch;
     int len = z->zipFilePtr->passBuf[0] & 0xFF;
     char passBuf[260];
 
     for (i = 0; i < len; i++) {
-	ch = z->zipFilePtr->passBuf[len - i];
-	passBuf[i] = (ch & 0x0f) | pwrot[(ch >> 4) & 0x0f];
+	passBuf[i] = RotatePasswordByte(z->zipFilePtr->passBuf[len - i]);
     }
     passBuf[i] = '\0';
     init_keys(passBuf, keys, crc32tab);
@@ -959,7 +980,7 @@ DecodeCryptHeader(
     unsigned char encheader[ZIP_CRYPT_HDR_LEN];
     memcpy(encheader, cryptHeader, ZIP_CRYPT_HDR_LEN);
     for (i = 0; i < ZIP_CRYPT_HDR_LEN; i++) {
-	ch = cryptHeader[i];
+	int ch = cryptHeader[i];
 	ch ^= decrypt_byte(keys, crc32tab);
 	encheader[i] = ch;
 	update_keys(keys, crc32tab, ch);
@@ -2035,8 +2056,7 @@ ZipFSCatalogFilesystem(
 
 	zf->passBuf[k++] = pwlen;
 	for (i = pwlen; i-- > 0 ;) {
-	    zf->passBuf[k++] = (passwd[i] & 0x0f)
-		    | pwrot[(passwd[i] >> 4) & 0x0f];
+	    zf->passBuf[k++] = RotatePasswordByte(passwd[i]);
 	}
 	zf->passBuf[k] = '\0';
     }
@@ -2876,10 +2896,7 @@ ZipFSMkKeyObjCmd(
     passObj = Tcl_NewByteArrayObj(NULL, 264);
     passBuf = Tcl_GetBytesFromObj(NULL, passObj, (Tcl_Size *)NULL);
     while (len > 0) {
-	int ch = pw[len - 1];
-
-	passBuf[i++] = (ch & 0x0f) | pwrot[(ch >> 4) & 0x0f];
-	len--;
+	passBuf[i++] = RotatePasswordByte(pw[--len]);
     }
     passBuf[i] = i;
     i++;
@@ -2887,50 +2904,6 @@ ZipFSMkKeyObjCmd(
     Tcl_SetByteArrayLength(passObj, i + 4);
     Tcl_SetObjResult(interp, passObj);
     return TCL_OK;
-}
-
-/*
- *-------------------------------------------------------------------------
- *
- * RandomChar --
- *
- *	Worker for ZipAddFile().  Picks a random character (range: 0..255)
- *	using Tcl's standard PRNG.
- *
- * Returns:
- *	Tcl result code. Updates chPtr with random character on success.
- *
- * Side effects:
- *	Advances the PRNG state. May reenter the Tcl interpreter if the user
- *	has replaced the PRNG.
- *
- *-------------------------------------------------------------------------
- */
-
-static int
-RandomChar(
-    Tcl_Interp *interp,
-    int step,
-    int *chPtr)
-{
-    double r;
-    Tcl_Obj *ret;
-
-    if (Tcl_EvalEx(interp, "::tcl::mathfunc::rand", TCL_INDEX_NONE, 0) != TCL_OK) {
-	goto failed;
-    }
-    ret = Tcl_GetObjResult(interp);
-    if (Tcl_GetDoubleFromObj(interp, ret, &r) != TCL_OK) {
-	goto failed;
-    }
-    *chPtr = (int) (r * 256);
-    return TCL_OK;
-
-  failed:
-    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-	    "\n    (evaluating PRNG step %d for password encoding)",
-	    step));
-    return TCL_ERROR;
 }
 
 /*
@@ -2986,7 +2959,7 @@ ZipAddFile(
     long long headerStartOffset, dataStartOffset, dataEndOffset;
     int mtime = 0, isNew, compMeth;
     unsigned long keys[3], keys0[3];
-    char obuf[4096];
+    char obuf[COPY_BUFFER_SIZE];
 
     /*
      * Trim leading '/' characters. If this results in an empty string, we've
@@ -3124,15 +3097,13 @@ ZipAddFile(
      */
 
     if (passwd) {
-	int i, ch, tmp;
+	int i, tmp;
 	unsigned char kvbuf[2*ZIP_CRYPT_HDR_LEN];
 
 	init_keys(passwd, keys, crc32tab);
 	for (i = 0; i < ZIP_CRYPT_HDR_LEN - 2; i++) {
-	    if (RandomChar(interp, i, &ch) != TCL_OK) {
-		Tcl_Close(interp, in);
-		return TCL_ERROR;
-	    }
+	    double r = TclRand((Interp *) interp);
+	    int ch = (int) (r * 256);
 	    kvbuf[i + ZIP_CRYPT_HDR_LEN] = UCHAR(zencode(keys, crc32tab, ch, tmp));
 	}
 	Tcl_ResetResult(interp);
@@ -3478,7 +3449,7 @@ ZipFSMkZipOrImg(
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
     Tcl_HashTable fileHash;
-    char *strip = NULL, *pw = NULL, passBuf[264], buf[4096];
+    char *strip = NULL, *pw = NULL, passBuf[264], buf[COPY_BUFFER_SIZE];
     unsigned char *start = (unsigned char *) buf;
     unsigned char *end = start + sizeof(buf);
 
@@ -3546,10 +3517,7 @@ ZipFSMkZipOrImg(
 	if (pwlen) {
 	    i = 0;
 	    for (len = pwlen; len-- > 0;) {
-		int ch = pw[len];
-
-		passBuf[i] = (ch & 0x0f) | pwrot[(ch >> 4) & 0x0f];
-		i++;
+		passBuf[i++] = RotatePasswordByte(pw[len]);
 	    }
 	    passBuf[i] = i;
 	    ++i;
@@ -3767,7 +3735,7 @@ CopyImageFile(
     Tcl_WideInt i, k;
     Tcl_Size m, n;
     Tcl_Channel in;
-    char buf[4096];
+    char buf[COPY_BUFFER_SIZE];
     const char *errMsg;
 
     Tcl_ResetResult(interp);
@@ -4608,6 +4576,10 @@ ZipChannelClose(
 	return EINVAL;
     }
 
+    if (info->timer) {
+	Tcl_DeleteTimerHandler(info->timer);
+	info->timer = NULL;
+    }
     if (info->isEncrypted) {
 	info->isEncrypted = 0;
 	memset(info->keys, 0, sizeof(info->keys));
@@ -4893,24 +4865,65 @@ ZipChannelWideSeek(
  *
  * ZipChannelWatchChannel --
  *
- *	This function is called for event notifications on channel. Does
- *	nothing.
+ *	This function is called for event notifications on channel. The
+ *	channel is always ready, so a timer is used to generate the events.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	None.
+ *	Creates or deletes the timer.
  *
  *-------------------------------------------------------------------------
  */
 
 static void
 ZipChannelWatchChannel(
-    TCL_UNUSED(void *),
-    TCL_UNUSED(int) /*mask*/)
+    void *instanceData,
+    int mask)
 {
-    return;
+    ZipChannel *info = (ZipChannel *) instanceData;
+
+    mask &= TCL_READABLE | TCL_WRITABLE;
+    if (!ZipChannelWritable(info)) {
+	mask &= ~TCL_WRITABLE;
+    }
+    info->watchMask = mask;
+    if (!mask) {
+	if (info->timer) {
+	    Tcl_DeleteTimerHandler(info->timer);
+	    info->timer = NULL;
+	}
+    } else if (!info->timer) {
+	info->timer = Tcl_CreateTimerHandler(0, ZipChannelTimerRun, info);
+    }
+}
+
+static void
+ZipChannelThreadAction(
+    void *instanceData,
+    int action)
+{
+    ZipChannel *info = (ZipChannel *) instanceData;
+
+    /*
+     * The timer belongs to the thread which loses the channel.
+     */
+
+    if (action == TCL_CHANNEL_THREAD_REMOVE && info->timer) {
+	Tcl_DeleteTimerHandler(info->timer);
+	info->timer = NULL;
+    }
+}
+
+static void
+ZipChannelTimerRun(
+    void *clientData)
+{
+    ZipChannel *info = (ZipChannel *) clientData;
+
+    info->timer = NULL;
+    Tcl_NotifyChannel(info->chan, info->watchMask);
 }
 
 /*
@@ -5123,7 +5136,8 @@ ZipChannelOpen(
 	    ZipFS.idCount++);
     z->zipFilePtr->numOpen++;
     Unlock();
-    return Tcl_CreateChannel(&zipChannelType, cname, info, flags);
+    info->chan = Tcl_CreateChannel(&zipChannelType, cname, info, flags);
+    return info->chan;
 
   error:
     Unlock();
@@ -5917,7 +5931,7 @@ ZipFSMatchInDirectoryProc(
 		const char *end = strchr(tail, '/');
 		Tcl_DStringAppend(&ds, zf->mountPoint + strip,
 			end ? (Tcl_Size)(end - tail + len - strip) : -1);
- 		const char *matchedPath = Tcl_DStringValue(&ds);
+		const char *matchedPath = Tcl_DStringValue(&ds);
 		(void)Tcl_CreateHashEntry(&duplicates, matchedPath,
 			&notDuplicate);
 		if (notDuplicate) {
@@ -6456,7 +6470,7 @@ TclZipfsInitInterp(
 	"    } on error {} {\n"
 	"        return $result\n"
 	"    }\n"
-	"    foreach file [concat $normal $hidden] {\n"
+	"    foreach file [::list {*}$normal {*}$hidden] {\n"
 	"        if {[file tail $file] in {. ..}} {\n"
 	"            continue\n"
 	"        }\n"

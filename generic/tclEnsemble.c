@@ -2150,14 +2150,10 @@ TclResetRewriteEnsemble(
 static int
 FreeER(
     void *data[],
-    TCL_UNUSED(Tcl_Interp *),
+    Tcl_Interp *interp,
     int result)
 {
-    Tcl_Obj **tmp = (Tcl_Obj **) data[0];
-    Tcl_Obj **store = (Tcl_Obj **) data[1];
-
-    Tcl_Free(store);
-    Tcl_Free(tmp);
+    TclStackFree(interp, data[0]);
     return result;
 }
 
@@ -2231,10 +2227,11 @@ TclSpellFix(
     search = iPtr->ensembleRewrite.sourceObjs;
     if (search[0] == NULL) {
 	store = (Tcl_Obj **) search[2];
-    }  else {
-	Tcl_Obj **tmp = (Tcl_Obj **) Tcl_Alloc(3 * sizeof(Tcl_Obj *));
+    } else {
+	Tcl_Obj **tmp = (Tcl_Obj **)
+		TclStackAlloc(interp, (3 + size) * sizeof(Tcl_Obj *));
 
-	store = (Tcl_Obj **) Tcl_Alloc(size * sizeof(Tcl_Obj *));
+	store = tmp + 3;
 	memcpy(store, iPtr->ensembleRewrite.sourceObjs,
 		size * sizeof(Tcl_Obj *));
 
