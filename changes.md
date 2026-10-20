@@ -46,6 +46,12 @@ to the userbase.
  - [lset errors during appending operation left original list modified](https://core.tcl-lang.org/tcl/tktview/301934)
  - [http.test: use a port just released by the OS for badurl](https://core.tcl-lang.org/tcl/tktview/5350f3)
  - [[clock scan] put the half-hour time zones 30 minutes off](https://core.tcl-lang.org/tcl/tktview/e580d8)
+ - [safe interp got the parent's -errorinfo and -errorstack through a failing alias](https://core.tcl-lang.org/tcl/tktview/a63f5a)
+ - [threaded allocator could not be disabled with -DUSE_THREAD_ALLOC=0 or nmake OPTS=tclalloc](https://core.tcl-lang.org/tcl/tktview/31294d)
+ - [win/configure: --with-system-zlib and --with-system-libtommath](https://core.tcl-lang.org/tcl/tktview/ac3ea8)
+ - [Windows: make distclean left tcl.pc behind](https://core.tcl-lang.org/tcl/tktview/59a9b9)
+ - [Windows: native MSYS2/Cygwin builds no longer need an installed tclsh](https://core.tcl-lang.org/tcl/tktview/2ef343)
+ - [build failure on Alpine Linux (musl): no sys/queue.h](https://core.tcl-lang.org/tcl/tktview/3ff2d7)
 
 # Updated bundled packages, libraries, standards, data
  - http 2.10.3
