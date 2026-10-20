@@ -70,14 +70,14 @@ respectively.
 \fB\-increasing\fR
 .
 Sort the list in increasing order
-.PQ smallest "items first" .
+.PQ smallest " items first" .
 This is the default.
 .\" OPTION: -decreasing
 .TP
 \fB\-decreasing\fR
 .
 Sort the list in decreasing order
-.PQ largest "items first" .
+.PQ largest " items first" .
 .\" OPTION: -indices
 .TP
 \fB\-indices\fR
