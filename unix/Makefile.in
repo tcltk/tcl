@@ -2068,6 +2068,10 @@ minizip${HOST_EXEEXT}: $(MINIZIP_OBJS)
 
 # Propagate configure args like --enable-64bit to package configure
 PKG_CFG_ARGS		= @PKG_CFG_ARGS@
+# The bundled packages are built as shared libraries, so that [package require]
+# can load them also from a static Tcl. "make PKG_SHARED=--disable-shared"
+# builds them as static libraries. [Bug 9cdb0d5858]
+PKG_SHARED		= --enable-shared
 # If PKG_DIR is changed to a different relative depth to the build dir, need
 # to adapt the ../.. relative paths below and at the top of configure.ac (we
 # cannot use absolute paths due to issues in nested configure when path to
@@ -2086,7 +2090,7 @@ configure-packages:
 			  $$i/configure --with-tcl=../.. \
 			      --with-tclinclude=$(GENERIC_DIR) \
 			      $(PKG_CFG_ARGS) --libdir=$(PACKAGE_DIR) \
-			      --enable-shared; ) || exit $$?; \
+			      $(PKG_SHARED); ) || exit $$?; \
 		    fi; \
 		fi; \
 	    fi; \

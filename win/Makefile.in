@@ -28,6 +28,10 @@ mandir			= @mandir@
 
 # Configure arguments
 PKG_CFG_ARGS		= @PKG_CFG_ARGS@
+# The bundled packages are built as shared libraries, so that [package require]
+# can load them also from a static Tcl. "make PKG_SHARED=--disable-shared"
+# builds them as static libraries. [Bug 9cdb0d5858]
+PKG_SHARED		= --enable-shared
 
 # The following definition can be set to non-null for special systems like AFS
 # with replication. It allows the pathnames used for installation to be
@@ -1107,7 +1111,7 @@ packages:
 	      if [ ! -f '$(PKG_DIR)'/$$pkg/Makefile ]; then \
 		( cd '$(PKG_DIR)'/$$pkg; \
 		  echo "Configuring package '$$i' wd = `$(CYGPATH) $$(pwd -P)`"; \
-		  $$i/configure --with-tcl=$$builddir --with-tclinclude=$(GENERIC_DIR_NATIVE) $(PKG_CFG_ARGS) --enable-shared; ) \
+		  $$i/configure --with-tcl=$$builddir --with-tclinclude=$(GENERIC_DIR_NATIVE) $(PKG_CFG_ARGS) $(PKG_SHARED); ) \
 	      fi ; \
 	      echo "Building package '$$pkg'"; \
 	      ( cd '$(PKG_DIR)'/$$pkg; $(MAKE); ) \
