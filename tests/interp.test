@@ -2238,10 +2238,9 @@ test interp-26.7 {errorInfo transmission: regular interps} -setup {
 "test"}
 test interp-26.8 {errorInfo transmission: safe interps--bug 1637} -setup {
     set interp [interp create -safe]
-} -constraints knownBug -body {
-    # this test fails because the errorInfo is fully transmitted whether the
-    # interp is safe or not.  The errorInfo should never report data from the
-    # parent interpreter because it could contain sensitive information.
+} -body {
+    # The errorInfo should never report data from the parent interpreter
+    # because it could contain sensitive information.
     proc MyError {secret} {
 	return -code error "msg"
     }
@@ -2273,6 +2272,27 @@ test interp-26.9 {error transmission: body line number in info similar to eval-c
 "$interp eval "#1st line\n#2nd line\nexpr {1/0}""}
 
 # Interps & Namespaces
+test interp-26.10 {errorstack transmission: safe interps, bug [a63f5a4fed]} -setup {
+    set interp [interp create -safe]
+} -body {
+    proc MyError {secret} {
+	return -code error -errorcode {MY ERROR} "msg"
+    }
+    proc MyTestAlias {interp args} {
+	MyError "some secret"
+    }
+    interp alias $interp test {} MyTestAlias $interp
+    interp eval $interp {
+	catch {test arg} msg opts
+	list $msg [dict get $opts -errorcode] [dict get $opts -errorstack] \
+	    [dict get $opts -errorline]
+    }
+} -cleanup {
+    interp delete $interp
+    rename MyError {}
+    rename MyTestAlias {}
+} -result {msg {MY ERROR} {INNER {invokeStk1 test arg}} 1}
+
 test interp-27.1 {interp aliases & namespaces} -setup {
     set i [interp create]
 } -body {
