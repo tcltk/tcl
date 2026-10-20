@@ -2839,7 +2839,10 @@ EXTRA_BUILD_HTML=${EXTRA_BUILD_HTML:-"@:"}
 # Setup configure arguments for bundled packages
 #------------------------------------------------------------------------
 
-PKG_CFG_ARGS="$ac_configure_args ${PKG_CFG_ARGS}"
+# Tcl's own --srcdir must not be passed on: the packages find their sources
+# from the (absolute) path used to run their configure scripts.
+PKG_CFG_ARGS="`echo "$ac_configure_args" | sed \
+    -e "s/'--*srcdir=[^']*'//g" -e "s/'--*srcdir' '[^']*'//g"` ${PKG_CFG_ARGS}"
 
 if test -r "$cache_file" -a -f "$cache_file"; then
     case $cache_file in
