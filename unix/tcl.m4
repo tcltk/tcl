@@ -1302,6 +1302,15 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 		AS_IF([test $tcl_cv_cc_m64 = yes], [
 		    CFLAGS="$CFLAGS -m64"
 		    do64bit_ok=yes
+		], [
+		    # Platforms without -m64 (e.g. aarch64): accept the default
+		    # mode if it is already 64-bit.
+		    AC_CACHE_CHECK([if compiler is 64-bit by default],
+			    tcl_cv_cc_64bit, [
+			AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]],
+				[[int a[sizeof(void *) == 8 ? 1 : -1];]])],
+				[tcl_cv_cc_64bit=yes],[tcl_cv_cc_64bit=no])])
+		    AS_IF([test $tcl_cv_cc_64bit = yes], [do64bit_ok=yes])
 		])
 	   ])
 

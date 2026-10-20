@@ -6582,6 +6582,46 @@ then :
 		    CFLAGS="$CFLAGS -m64"
 		    do64bit_ok=yes
 
+else case e in #(
+  e)
+		    # Platforms without -m64 (e.g. aarch64): accept the default
+		    # mode if it is already 64-bit.
+		    { printf '%s\n' "$as_me:${as_lineno-$LINENO}: checking if compiler is 64-bit by default" >&5
+printf %s "checking if compiler is 64-bit by default... " >&6; }
+if test ${tcl_cv_cc_64bit+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e)
+			cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+int a[sizeof(void *) == 8 ? 1 : -1];
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  tcl_cv_cc_64bit=yes
+else case e in #(
+  e) tcl_cv_cc_64bit=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext ;;
+esac
+fi
+{ printf '%s\n' "$as_me:${as_lineno-$LINENO}: result: $tcl_cv_cc_64bit" >&5
+printf '%s\n' "$tcl_cv_cc_64bit" >&6; }
+		    if test $tcl_cv_cc_64bit = yes
+then :
+  do64bit_ok=yes
+fi
+		 ;;
+esac
 fi
 
 fi
