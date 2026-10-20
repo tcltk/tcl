@@ -508,7 +508,9 @@ to the lists of string matching patterns returned by
 \fBconfigure \-match\fR, and \fBconfigure \-skip\fR.  The test
 will be run only if \fIname\fR matches any of the patterns from
 \fBconfigure \-match\fR and matches none of the patterns
-from \fBconfigure \-skip\fR.
+from \fBconfigure \-skip\fR.  Only top-level tests are compared;
+a test nested in the body of another test runs whenever the
+enclosing test runs.
 .PP
 The \fIdescription\fR should be a short textual description of the
 test.  The \fIdescription\fR is included in output produced by the

@@ -1884,6 +1884,21 @@ test tcltest-27.3 {
     regexp "Total.+8.+Passed.+2.+Skipped.+2.+Failed.+4" $msg \
 } -result 1
 
+test tcltest-28.1 {-match and -skip do not apply to nested tests, bug 773924} -setup {
+    set oldMatch [match]
+    set oldSkip [skip]
+    set ran {}
+} -body {
+    match nomatch
+    skip tcltest-28.1.*
+    test tcltest-28.1.0 {nested} -body {lappend ran 0; list}
+    set ran
+} -cleanup {
+    match $oldMatch
+    skip $oldSkip
+    unset -nocomplain oldMatch oldSkip ran
+} -result 0
+
 
 cleanupTests
 }

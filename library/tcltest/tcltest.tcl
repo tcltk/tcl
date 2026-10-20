@@ -2398,8 +2398,10 @@ proc tcltest::Skipped {name constraints} {
     if {$testLevel == 1} {
 	incr numTests(Total)
     }
-    # skip the test if it's name matches an element of skip
-    foreach pattern [skip] {
+    # skip the test if it's name matches an element of skip.
+    # -skip and -match select top-level tests only; tests nested in
+    # the body of a selected test always run (bug 773924).
+    foreach pattern [expr {$testLevel == 1 ? [skip] : {}}] {
 	if {[string match $pattern $name]} {
 	    if {$testLevel == 1} {
 		incr numTests(Skipped)
@@ -2409,7 +2411,7 @@ proc tcltest::Skipped {name constraints} {
 	}
     }
     # skip the test if it's name doesn't match any element of match
-    set ok 0
+    set ok [expr {$testLevel > 1}]
     foreach pattern [match] {
 	if {[string match $pattern $name]} {
 	    set ok 1
