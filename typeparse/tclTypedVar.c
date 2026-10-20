@@ -140,12 +140,12 @@ TclTypedVarPrepareWrite(Tcl_Interp *interp, Var *varPtr,
     int variant = -1, status, avar;
 
     *tmpPtrPtr = NULL;
-    if (varPtr->flags & VAR_TYPED) {
+    if (varPtr->flags & VAR_CONTRACT) {
 	cur = varPtr->value.objPtr;
 	if (cur == NULL
 		|| TclAnnotInfo(cur, &curContent, &contract, &variant, NULL)
 			!= 1) {
-	    varPtr->flags &= ~VAR_TYPED;	/* bit orphelin : on se répare */
+	    varPtr->flags &= ~(VAR_TYPED|VAR_CONTRACT);	/* bit orphelin */
 	    contract = NULL;
 	}
     }
@@ -273,7 +273,7 @@ TclTypedVarAfterStore(Var *varPtr)
     if (v != NULL && TclAnnotInfo(v, NULL, NULL, NULL, NULL) == 1) {
 	varPtr->flags |= VAR_TYPED;
     } else {
-	varPtr->flags &= ~VAR_TYPED;
+	varPtr->flags &= ~(VAR_TYPED|VAR_CONTRACT);
     }
 }
 
@@ -1265,16 +1265,17 @@ TclSetAnnotatedCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
      * Après un échec, varPtr peut avoir été détruit par une trace ; à
      * durcir (relire la variable) si les traces sont à supporter.
      */
-    hadBit = varPtr->flags & VAR_TYPED;
-    varPtr->flags &= ~VAR_TYPED;
+    hadBit = varPtr->flags & (VAR_TYPED|VAR_CONTRACT);
+    varPtr->flags &= ~(VAR_TYPED|VAR_CONTRACT);
     SettleSuspend(1);			/* valueA est déjà résolue */
     res = Tcl_ObjSetVar2(interp, baseObj, NULL, valueA, TCL_LEAVE_ERR_MSG);
     SettleSuspend(-1);
     if (res == NULL) {
-	if (hadBit) {
-	    varPtr->flags |= VAR_TYPED;
-	}
+	varPtr->flags |= hadBit;
 	goto done;
+    }
+    if (status != TCLA_EMPTY && (varPtr->flags & VAR_TYPED)) {
+	varPtr->flags |= VAR_CONTRACT;	/* seul le nom donne un contrat */
     }
     Tcl_SetObjResult(interp, res);
     rc = TCL_OK;
@@ -1351,3 +1352,106 @@ TclSetAnnotatedCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
  * compiledLocals pendant la vie d'un frame, et la disponibilité de
  * TclAddLiteralObj.
  */
+
+/*
+ * "x is T = v" dans expr : comme set {T}x, la déclaration donne le contrat.
+ * typed est la valeur déjà annotée du type T.
+ */
+Tcl_Obj *
+TclTypedVarDeclare(Tcl_Interp *interp, Tcl_Obj *nameObj, Tcl_Obj *typed)
+{
+    Var *varPtr, *arrayPtr;
+    Tcl_Obj *res;
+    int hadBit;
+
+    varPtr = TclObjLookupVarEx(interp, nameObj, NULL, TCL_LEAVE_ERR_MSG,
+	    "set", 1, 0, &arrayPtr);
+    if (varPtr == NULL) {
+	return NULL;
+    }
+    while (TclIsVarLink(varPtr)) {
+	varPtr = varPtr->value.linkPtr;
+    }
+    hadBit = varPtr->flags & (VAR_TYPED|VAR_CONTRACT);
+    varPtr->flags &= ~(VAR_TYPED|VAR_CONTRACT);
+    res = Tcl_ObjSetVar2(interp, nameObj, NULL, typed, TCL_LEAVE_ERR_MSG);
+    if (res == NULL) {
+	varPtr->flags |= hadBit;
+	return NULL;
+    }
+    if (varPtr->flags & VAR_TYPED) {
+	varPtr->flags |= VAR_CONTRACT;
+    }
+    return res;
+}
+
+/*
+ * Essai : redéclaration par un nom annoté ({T}M) dans toute commande qui
+ * écrit (lappend, lset, incr, dict set...). La valeur courante est convertie
+ * en T et la variable reçoit le contrat ; {}M lève le contrat.
+ */
+int
+TclTypedVarRedeclare(Tcl_Interp *interp, Var *varPtr, Tcl_Obj *nameObj)
+{
+    Tcl_Obj *raw = NULL, *cur, *res, *content;
+    TclType *tp;
+    Tcl_Size len;
+    const char *text;
+
+    if (TclAnnotInfo(nameObj, NULL, NULL, NULL, &raw) != 2 || raw == NULL) {
+	return TCL_OK;
+    }
+    while (TclIsVarLink(varPtr)) {
+	varPtr = varPtr->value.linkPtr;
+    }
+    if (TclIsVarArray(varPtr)) {
+	return TCL_OK;
+    }
+    text = Tcl_GetStringFromObj(raw, &len);
+    cur = varPtr->value.objPtr;
+    if (len == 0) {				/* {}M : contrat levé */
+	varPtr->flags &= ~VAR_CONTRACT;
+	if (cur != NULL && TclAnnotInfo(cur, &content, NULL, NULL, NULL) == 1) {
+	    Tcl_IncrRefCount(content);
+	    varPtr->value.objPtr = content;
+	    Tcl_DecrRefCount(cur);
+	}
+	TclTypedVarAfterStore(varPtr);
+	return TCL_OK;
+    }
+    tp = TclTypeParse(interp, text, len);
+    if (tp == NULL) {
+	return TCL_ERROR;
+    }
+    if (cur == NULL) {
+	return TCL_OK;		/* variable neuve : pas de valeur à typer */
+    }
+    {
+	/* Comme set M {T}$M puis contrat : un cast de la valeur courante. */
+	Tcl_Obj *typed = NULL, *plainName = NULL;
+	Tcl_InterpState st = Tcl_SaveInterpState(interp, TCL_OK);
+
+	(void) res;
+	TclAnnotInfo(nameObj, &plainName, NULL, NULL, NULL);
+	/* Le nouveau contrat part du contenu : il remplace l'ancien type. */
+	if (TclAnnotInfo(cur, &content, NULL, NULL, NULL) == 1) {
+	    cur = content;
+	}
+	Tcl_IncrRefCount(cur);
+	if (TclAnnotateValue(interp, raw, cur, &typed) != TCL_OK) {
+	    Tcl_DecrRefCount(cur);
+	    Tcl_DiscardInterpState(st);
+	    return TCL_ERROR;
+	}
+	Tcl_IncrRefCount(typed);
+	Tcl_DecrRefCount(cur);
+	if (TclTypedVarDeclare(interp, plainName, typed) == NULL) {
+	    Tcl_DecrRefCount(typed);
+	    Tcl_DiscardInterpState(st);
+	    return TCL_ERROR;
+	}
+	Tcl_DecrRefCount(typed);
+	(void) Tcl_RestoreInterpState(interp, st);
+    }
+    return TCL_OK;
+}

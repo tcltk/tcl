@@ -66,4 +66,4 @@ deux "boutisme faux"           [list type binary decode Hdr $b -endian middle]
 deux "liste (couche Tcl)"      [list type binary decode {list(2).u8} "\x01\x02"]
 deux "liste de Pt (couche Tcl)" [list type binary decode {list(2).Pt} "\x01\x00\x02\x03\x00\x04"]
 set {Hdr}faux(n,pad,v) 2 0 {1.0 2.0}
-deux "encode, n incohérent"    {set ::faux2 [lreplace $::faux 0 0 5]; type binary encode Hdr $::faux2}
+deux "encode, n incohérent"    {set ::faux2 [lreplace $::faux 0 0 5]; type binary encode Hdr {Hdr}$::faux2}

@@ -3529,7 +3529,8 @@ TEBCresume(
 		TRACE_ERROR(interp);
 		goto gotError;
 	    } else {
-		if (Tcl_IsShared(objResultPtr)) {
+		if (Tcl_IsShared(objResultPtr)
+			|| (varPtr->flags & VAR_CONTRACT)) {
 		    valueToAssign = Tcl_DuplicateObj(objResultPtr);
 		    createdNewObj = 1;
 		} else {

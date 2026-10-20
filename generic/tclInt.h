@@ -761,6 +761,7 @@ typedef struct VarInHash {
 #define VAR_ARRAY		0x1
 #define VAR_LINK		0x2
 #define VAR_CONSTANT		0x10000
+#define VAR_CONTRACT		0x40000	/* contract set by an annotation on the name */
 #define VAR_TYPED		0x20000	/* typed variable: the value carries an
 				 * annotation (type contract), see
 				 * tclTypedVar.c */
@@ -824,7 +825,7 @@ typedef struct VarInHash {
     (varPtr)->flags = ((varPtr)->flags & ~VAR_ARRAY) | VAR_ARRAY_ELEMENT
 
 #define TclSetVarUndefined(varPtr) \
-    (varPtr)->flags &= ~(VAR_ARRAY|VAR_LINK|VAR_CONSTANT|VAR_TYPED);\
+    (varPtr)->flags &= ~(VAR_ARRAY|VAR_LINK|VAR_CONSTANT|VAR_TYPED|VAR_CONTRACT);\
     (varPtr)->value.objPtr = NULL
 
 #define TclClearVarUndefined(varPtr)

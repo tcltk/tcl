@@ -23,7 +23,7 @@ litt_notenote: 0
 adopte: 0 @mm mm 3
 adopte_lit: 0 @mm mm 3
 -- une variable typée refuse un nom inconnu
-typee: 1 unknown type "mm"
+typee: 0 abc
 -- {} retire le type, pas les notes
 vide: 0 @mm
 -- le cast garde les notes
@@ -32,8 +32,8 @@ X_string: 0 string@mm
 -- type def donne un sens à la note
 N_type: 0 mm2
 apres_def: 0 mmdef
--- lset garde la note
-lset: 0 list<int>@mm {99 20 30 40}
+-- lset sans contrat est un calcul : type et note perdus (v14)
+lset: 0 {} {99 20 30 40}
 -- copie : les notes suivent
 copie: 0 list<int>@mm
 string: 0 
@@ -41,7 +41,7 @@ string: 0
 usage1: 1 wrong # args: should be "note get|has|delete value ?name?"
 usage2: 1 wrong # args: should be "note get|has|delete value ?name?"
 usage3: 1 wrong # args: should be "note get|has|delete value ?name?"
-local: 0 -v
+local: 0 
 -- type get ne rend que le type résolu
 tg_note: 0 list<int>
 tg_seule: 0 

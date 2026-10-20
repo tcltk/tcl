@@ -66,13 +66,14 @@ both "type conservé après la boucle" {
     type get $x
 } int
 
-# 7. après la boucle, la variable est de nouveau stricte
-both "stricte après" {
+# 7. après la boucle, la variable reste libre : sans déclaration sur son nom,
+#    elle n'a pas de contrat (v14 : plus d'adoption)
+both "libre après" {
     set {list.int}N 1 2
     foreach x $N {}
     catch {set x abc} m
     set m
-} {expected integer but got "abc"}
+} abc
 
 # 8. variable via global/upvar
 set {int}::gx 7

@@ -68,7 +68,7 @@ set M [keep {mmdef}$s]
 type def mmdef string
 attempt apres_def {set {mmdef}z $M; show $z}
 
-puts "-- lset garde la note"
+puts "-- lset sans contrat est un calcul : type et note perdus (v14)"
 attempt lset      {set l2 [keep {mm}$L]; lset l2 0 99; list [show $l2] $l2}
 
 puts "-- copie : les notes suivent"

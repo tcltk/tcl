@@ -591,8 +591,8 @@ TclObjLookupVar(
  * When createPart2 is 1, callers must IncrRefCount part2Ptr if they
  * plan to DecrRefCount it.
  */
-Var *
-TclObjLookupVarEx(
+static Var *
+LookupVarExInner(
     Tcl_Interp *interp,		/* Interpreter to use for lookup. */
     Tcl_Obj *part1Ptr,		/* If part2Ptr isn't NULL, this is the name of
 				 * an array. Otherwise, this is a full
@@ -786,6 +786,42 @@ TclObjLookupVarEx(
 	*arrayPtrPtr = varPtr;
 	varPtr = TclLookupArrayElement(interp, part1Ptr, part2Ptr, flags, msg,
 		createPart1, createPart2, varPtr, -1);
+    }
+    return varPtr;
+}
+
+/*
+ * Essai TIP 764 : un nom annoté en écriture ({T}M) redéclare la variable
+ * avant l'accès, comme set {T}M $M ; tout accès en écriture passe ici.
+ */
+Var *
+TclObjLookupVarEx(
+    Tcl_Interp *interp,
+    Tcl_Obj *part1Ptr,
+    Tcl_Obj *part2Ptr,
+    int flags,
+    const char *msg,
+    int createPart1,
+    int createPart2,
+    Var **arrayPtrPtr)
+{
+    Var *varPtr;
+    Tcl_Obj *annot = NULL;
+
+    /* L'objet nom peut changer de représentation pendant la recherche :
+     * garder l'annotation d'abord. */
+    if (part2Ptr == NULL && TclIsAnnotated(part1Ptr)) {
+	annot = Tcl_DuplicateObj(part1Ptr);
+	Tcl_IncrRefCount(annot);
+    }
+    varPtr = LookupVarExInner(interp, part1Ptr, part2Ptr, flags, msg,
+	    createPart1, createPart2, arrayPtrPtr);
+    if (annot != NULL) {
+	if (varPtr != NULL && *arrayPtrPtr == NULL
+		&& TclTypedVarRedeclare(interp, varPtr, annot) != TCL_OK) {
+	    varPtr = NULL;
+	}
+	Tcl_DecrRefCount(annot);
     }
     return varPtr;
 }
@@ -2324,8 +2360,9 @@ TclPtrIncrObjVarIdx(
     if (varValuePtr == NULL) {
 	TclNewIntObj(varValuePtr, 0);
     }
-    if (Tcl_IsShared(varValuePtr)) {
-	/* Copy on write */
+    if (Tcl_IsShared(varValuePtr) || (varPtr->flags & VAR_CONTRACT)) {
+	/* Copy on write ; sous contrat, jamais en place : un échec du
+	 * contrat laisse la variable intacte. */
 	varValuePtr = Tcl_DuplicateObj(varValuePtr);
 
 	if (TCL_OK == TclIncrObj(interp, varValuePtr, incrPtr)) {
@@ -3013,7 +3050,7 @@ Tcl_LappendObjCmd(
 
 	    TclNewObj(varValuePtr);
 	    createdNewObj = 1;
-	} else if (Tcl_IsShared(varValuePtr)) {
+	} else if (Tcl_IsShared(varValuePtr) || (varPtr->flags & VAR_CONTRACT)) {
 	    varValuePtr = Tcl_DuplicateObj(varValuePtr);
 	    createdNewObj = 1;
 	}

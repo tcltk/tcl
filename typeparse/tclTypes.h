@@ -367,4 +367,6 @@ int	TclTypedVarSetElementVar(Tcl_Interp *interp, Var *varPtr,
 int	TclTypedVarSetElement(Tcl_Interp *interp, Tcl_Obj *part1Ptr,
 	    Tcl_Obj *part2Ptr, Tcl_Obj *valuePtr, Tcl_Obj **resultPtr);
 
+MODULE_SCOPE Tcl_Obj *TclTypedVarDeclare(Tcl_Interp *interp, Tcl_Obj *nameObj, Tcl_Obj *typed);
+MODULE_SCOPE int TclTypedVarRedeclare(Tcl_Interp *interp, Var *varPtr, Tcl_Obj *nameObj);
 #endif /* TCLTYPES_H */

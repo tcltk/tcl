@@ -1001,3 +1001,18 @@ sans erreur ; sorties des exemples identiques à la v8 sauf les messages d'erreu
 (et ce qui dépend du binaire ELF lu) ; AddressSanitizer sans erreur ; mémoire stable sur
 1 000 000 de constructions étiquetées ; tests de Tcl `set`, `var`, `dict`, `info`, `compile`
 identiques à la base.
+
+## v14 — contrat par le nom (20 octobre 2026)
+
+Sources de types livrées entières : `tclTypedVar.c`, `tclTypes.c`, `tclTypes.h`, `tclAnnotObj.c`.
+Patch noyau : `contrat-par-nom.patch` (`tclInt.h`, `tclVar.c`, `tclExecute.c`).
+
+- Plus d'adoption : une variable non déclarée reçoit une valeur typée, jamais de contrat.
+  Bit `VAR_CONTRACT`, posé seulement par une déclaration (`set {T}v`, `x is T = v`).
+- Déclaration dans toute commande qui écrit : `lappend {list}M x`, `lset {T}M`, `incr {int}n`,
+  `dict set {dict.int}D`… redéclarent la variable dans `TclObjLookupVarEx` (comme `set {T}M $M`).
+- Une modification est un calcul : sans contrat, `lappend`, `lset`, `incr`… rendent une valeur
+  ordinaire et n'échouent jamais à cause du type de la valeur. Sous contrat, le résultat est
+  vérifié au rangement et jamais modifié en place : un refus laisse la variable intacte.
+- Tests : `t19` (variable de boucle libre après la boucle), `t48` (`lset` sur une copie),
+  `t51` (valeur incohérente fabriquée par un cast) mis à jour.

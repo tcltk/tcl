@@ -4435,7 +4435,7 @@ DeclareObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
 	return TCL_ERROR;
     }
     Tcl_IncrRefCount(typed);
-    res = Tcl_ObjSetVar2(interp, objv[1], NULL, typed, TCL_LEAVE_ERR_MSG);
+    res = TclTypedVarDeclare(interp, objv[1], typed);
     if (res == NULL) {
 	Tcl_DecrRefCount(typed);
 	return TCL_ERROR;

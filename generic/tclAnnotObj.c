@@ -829,6 +829,17 @@ TclAnnotSetContent(Tcl_Interp *interp, Tcl_Obj *aPtr, Tcl_Obj *wPtr)
     TclType *tp = NULL;
     Tcl_Obj *content, *nPtr, *oldV, *oldT, *newV, *newT, *keepNotes = NULL;
 
+    /*
+     * Règle « une modification est un calcul » : le résultat est une valeur
+     * ordinaire. Une variable sous contrat la retype au rangement
+     * (TclTypedVarPrepareWrite) ; une variable sans contrat garde le
+     * résultat brut, comme pour expr.
+     */
+    TclSetDuplicateObj(aPtr, wPtr);
+    if (wPtr != NULL) {
+	return TCL_OK;
+    }
+
     if (TclAnnotResolve(interp, aPtr, NULL, &status, &tp, &variant,
 	    &content) != TCL_OK) {
 	return TCL_ERROR;
@@ -914,7 +925,9 @@ AnnotListSetElement(Tcl_Interp *interp, Tcl_Obj *aPtr, Tcl_Size indexCount,
 	Tcl_DecrRefCount(w);
 	return NULL;
     }
-    target = Tcl_IsShared(aPtr) ? Tcl_DuplicateObj(aPtr) : aPtr;
+    /* Jamais en place : la valeur d'une variable sous contrat doit rester
+     * intacte si le contrat refuse le résultat au rangement. */
+    target = Tcl_DuplicateObj(aPtr);
     rc = TclAnnotSetContent(interp, target, r);
     Tcl_DecrRefCount(r);			/* la référence de TclLsetFlat */
     Tcl_DecrRefCount(w);
