@@ -280,6 +280,25 @@ test tcltest-5.2a {-limitconstraints 1 -verbose 's' reports skipped tests, bug 8
     list $result [regexp {a-1.0 SKIPPED: userSpecifiedLimitConstraint} $msg] \
 	    [regexp {d-1.0 SKIPPED: userSpecifiedLimitConstraint} $msg]
 } {0 1 1}
+test tcltest-5.2b {-limitconstraints 1 and constraint expressions, bug 572400} -setup {
+    set script [makeFile {
+	package require tcltest 2.6
+	namespace import ::tcltest::test
+	tcltest::testConstraint foo 0
+	test e-1.0 {not foo} {!foo} {} {}
+	test e-2.0 {knownBug or foo} {knownBug || foo} {} {}
+	test e-3.0 {full expr} {$::tcl_version > 0} {} {}
+	tcltest::cleanupTests
+	exit
+    } testLimitExpr.tcl]
+} -constraints unixOrWin -body {
+    child msg $script -constraints knownBug -limitconstraints 1 -verbose ps
+    list [regexp {e-1.0 SKIPPED} $msg] [regexp {e-2.0 PASSED} $msg] \
+	    [regexp {e-3.0 SKIPPED} $msg]
+} -cleanup {
+    removeFile $script
+    unset -nocomplain script msg
+} -result {1 1 1}
 
 test tcltest-5.3 {testConstraint - constraint empty (tcltest::safeFetch)}  {
     -body {

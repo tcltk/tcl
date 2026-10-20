@@ -2394,6 +2394,7 @@ proc tcltest::Skipped {name constraints} {
     variable testLevel
     variable numTests
     variable testConstraints
+    variable Option
 
     if {$testLevel == 1} {
 	incr numTests(Total)
@@ -2459,6 +2460,18 @@ proc tcltest::Skipped {name constraints} {
 		    # store the constraint that kept the test from
 		    # running
 		    set constraints $constraint
+		    break
+		}
+	    }
+	}
+	if {$doTest && [limitConstraints]} {
+	    # A constraint expression is satisfied in limitConstraints mode
+	    # only if it refers to at least one of the selected constraints
+	    # (bug 572400).
+	    set doTest 0
+	    foreach c [regexp -all -inline {[.\w]+(?:-[.\w]+)*} $constraints] {
+		if {$c in $Option(-constraints)} {
+		    set doTest 1
 		    break
 		}
 	    }
