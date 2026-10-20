@@ -204,6 +204,40 @@ SC_CONFIG_CFLAGS
 
 SC_ENABLE_SYMBOLS(bccdebug)
 
+#--------------------------------------------------------------------
+#	Let the compiler generate the header dependencies of the object
+#	files (gcc, clang), so that make rebuilds them after a header has
+#	been changed.  This needs a make which supports "-include" (GNU
+#	and BSD make, but not Solaris make).
+#--------------------------------------------------------------------
+
+AC_CACHE_CHECK([whether the compiler can generate dependencies],
+    tcl_cv_cc_mmd, [
+    hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -MMD -MP"
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[]])],
+	[tcl_cv_cc_mmd=yes], [tcl_cv_cc_mmd=no])
+    CFLAGS=$hold_cflags
+    rm -f conftest.d])
+CC_DEPFLAGS=""
+CC_DEPINCLUDE=""
+if test "$tcl_cv_cc_mmd" = yes; then
+    AC_CACHE_CHECK([whether ${MAKE-make} supports -include],
+	tcl_cv_make_include, [
+	printf '%s\nall:\n\t@:\n' '-include conftest.none' > conftest.mk
+	if ${MAKE-make} -f conftest.mk >/dev/null 2>&1; then
+	    tcl_cv_make_include=yes
+	else
+	    tcl_cv_make_include=no
+	fi
+	rm -f conftest.mk])
+    if test "$tcl_cv_make_include" = yes; then
+	CC_DEPFLAGS="-MMD -MP"
+	CC_DEPINCLUDE='-include $(OBJS:.o=.d) $(TCLSH_OBJS:.o=.d) $(TCLTEST_OBJS:.o=.d) $(STUB_LIB_OBJS:.o=.d)'
+    fi
+fi
+AC_SUBST(CC_DEPFLAGS)
+AC_SUBST(CC_DEPINCLUDE)
+
 AC_DEFINE(MP_PREC, 4, [Default libtommath precision.])
 
 #--------------------------------------------------------------------

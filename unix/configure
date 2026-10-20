@@ -681,6 +681,8 @@ MACHER_PROG
 EXEEXT_FOR_BUILD
 CC_FOR_BUILD
 DTRACE
+CC_DEPINCLUDE
+CC_DEPFLAGS
 LDFLAGS_DEFAULT
 CFLAGS_DEFAULT
 INSTALL_STUB_LIB
@@ -7797,6 +7799,75 @@ printf '%s\n' "enabled symbols mem compile debugging" >&6; }
 printf '%s\n' "enabled $tcl_ok debugging" >&6; }
 	fi
     fi
+
+
+#--------------------------------------------------------------------
+#	Let the compiler generate the header dependencies of the object
+#	files (gcc, clang), so that make rebuilds them after a header has
+#	been changed.  This needs a make which supports "-include" (GNU
+#	and BSD make, but not Solaris make).
+#--------------------------------------------------------------------
+
+{ printf '%s\n' "$as_me:${as_lineno-$LINENO}: checking whether the compiler can generate dependencies" >&5
+printf %s "checking whether the compiler can generate dependencies... " >&6; }
+if test ${tcl_cv_cc_mmd+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e)
+    hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -MMD -MP"
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  tcl_cv_cc_mmd=yes
+else case e in #(
+  e) tcl_cv_cc_mmd=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+    CFLAGS=$hold_cflags
+    rm -f conftest.d ;;
+esac
+fi
+{ printf '%s\n' "$as_me:${as_lineno-$LINENO}: result: $tcl_cv_cc_mmd" >&5
+printf '%s\n' "$tcl_cv_cc_mmd" >&6; }
+CC_DEPFLAGS=""
+CC_DEPINCLUDE=""
+if test "$tcl_cv_cc_mmd" = yes; then
+    { printf '%s\n' "$as_me:${as_lineno-$LINENO}: checking whether ${MAKE-make} supports -include" >&5
+printf %s "checking whether ${MAKE-make} supports -include... " >&6; }
+if test ${tcl_cv_make_include+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e)
+	printf '%s\nall:\n\t@:\n' '-include conftest.none' > conftest.mk
+	if ${MAKE-make} -f conftest.mk >/dev/null 2>&1; then
+	    tcl_cv_make_include=yes
+	else
+	    tcl_cv_make_include=no
+	fi
+	rm -f conftest.mk ;;
+esac
+fi
+{ printf '%s\n' "$as_me:${as_lineno-$LINENO}: result: $tcl_cv_make_include" >&5
+printf '%s\n' "$tcl_cv_make_include" >&6; }
+    if test "$tcl_cv_make_include" = yes; then
+	CC_DEPFLAGS="-MMD -MP"
+	CC_DEPINCLUDE='-include $(OBJS:.o=.d) $(TCLSH_OBJS:.o=.d) $(TCLTEST_OBJS:.o=.d) $(STUB_LIB_OBJS:.o=.d)'
+    fi
+fi
+
 
 
 
