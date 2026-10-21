@@ -1,39 +1,39 @@
 encode Box packed little   == octets 14: 09fbfed47f7fff8000010000c03f
-decode Box packed little   == 9 {-5 -300} {{127 32767} {-128 1}} 1.5 | Box[,[,],[Pt[,],Pt[,]],] | consumed 14
-decode Box -offset 3       == 9 {-5 -300} {{127 32767} {-128 1}} 1.5 | Box[,[,],[Pt[,],Pt[,]],] | consumed 17
+decode Box packed little   == 9 {-5 -300} {{127 32767} {-128 1}} 1.5 | Box[int(u,8),Pt[int(s,8),int(s,16,be)],list(2)<Pt>[Pt[int(s,8),int(s,16,be)],Pt[int(s,8),int(s,16,be)]],double(32,le)] | consumed 14
+decode Box -offset 3       == 9 {-5 -300} {{127 32767} {-128 1}} 1.5 | Box[int(u,8),Pt[int(s,8),int(s,16,be)],list(2)<Pt>[Pt[int(s,8),int(s,16,be)],Pt[int(s,8),int(s,16,be)]],double(32,le)] | consumed 17
 decode Box tronqué         == ERREUR: type binary: data truncated at offset 10 reading field r of Box (needs 4 bytes, got 3)
 encode Box packed big      == octets 14: 09fbfed47f7fff8000010000c03f
-decode Box packed big      == 9 {-5 -300} {{127 32767} {-128 1}} 1.5 | Box[,[,],[Pt[,],Pt[,]],] | consumed 14
-decode Box -offset 3       == 9 {-5 -300} {{127 32767} {-128 1}} 1.5 | Box[,[,],[Pt[,],Pt[,]],] | consumed 17
+decode Box packed big      == 9 {-5 -300} {{127 32767} {-128 1}} 1.5 | Box[int(u,8),Pt[int(s,8),int(s,16,be)],list(2)<Pt>[Pt[int(s,8),int(s,16,be)],Pt[int(s,8),int(s,16,be)]],double(32,le)] | consumed 14
+decode Box -offset 3       == 9 {-5 -300} {{127 32767} {-128 1}} 1.5 | Box[int(u,8),Pt[int(s,8),int(s,16,be)],list(2)<Pt>[Pt[int(s,8),int(s,16,be)],Pt[int(s,8),int(s,16,be)]],double(32,le)] | consumed 17
 decode Box tronqué         == ERREUR: type binary: data truncated at offset 10 reading field r of Box (needs 4 bytes, got 3)
 encode Box natural little  == octets 20: 0900fb00fed47f007fff8000000100000000c03f
-decode Box natural little  == 9 {-5 -300} {{127 32767} {-128 1}} 1.5 | Box[,[,],[Pt[,],Pt[,]],] | consumed 20
-decode Box -offset 3       == 9 {-5 -300} {{127 32767} {-128 1}} 1.5 | Box[,[,],[Pt[,],Pt[,]],] | consumed 23
+decode Box natural little  == 9 {-5 -300} {{127 32767} {-128 1}} 1.5 | Box[int(u,8),Pt[int(s,8),int(s,16,be)],list(2)<Pt>[Pt[int(s,8),int(s,16,be)],Pt[int(s,8),int(s,16,be)]],double(32,le)] | consumed 20
+decode Box -offset 3       == 9 {-5 -300} {{127 32767} {-128 1}} 1.5 | Box[int(u,8),Pt[int(s,8),int(s,16,be)],list(2)<Pt>[Pt[int(s,8),int(s,16,be)],Pt[int(s,8),int(s,16,be)]],double(32,le)] | consumed 23
 decode Box tronqué         == ERREUR: type binary: data truncated at offset 16 reading field r of Box (needs 4 bytes, got 3)
 encode Box natural big     == octets 20: 0900fb00fed47f007fff8000000100000000c03f
-decode Box natural big     == 9 {-5 -300} {{127 32767} {-128 1}} 1.5 | Box[,[,],[Pt[,],Pt[,]],] | consumed 20
-decode Box -offset 3       == 9 {-5 -300} {{127 32767} {-128 1}} 1.5 | Box[,[,],[Pt[,],Pt[,]],] | consumed 23
+decode Box natural big     == 9 {-5 -300} {{127 32767} {-128 1}} 1.5 | Box[int(u,8),Pt[int(s,8),int(s,16,be)],list(2)<Pt>[Pt[int(s,8),int(s,16,be)],Pt[int(s,8),int(s,16,be)]],double(32,le)] | consumed 20
+decode Box -offset 3       == 9 {-5 -300} {{127 32767} {-128 1}} 1.5 | Box[int(u,8),Pt[int(s,8),int(s,16,be)],list(2)<Pt>[Pt[int(s,8),int(s,16,be)],Pt[int(s,8),int(s,16,be)]],double(32,le)] | consumed 23
 decode Box tronqué         == ERREUR: type binary: data truncated at offset 16 reading field r of Box (needs 4 bytes, got 3)
 encode Box 4 little        == octets 20: 0900fb00fed47f007fff8000000100000000c03f
-decode Box 4 little        == 9 {-5 -300} {{127 32767} {-128 1}} 1.5 | Box[,[,],[Pt[,],Pt[,]],] | consumed 20
-decode Box -offset 3       == 9 {-5 -300} {{127 32767} {-128 1}} 1.5 | Box[,[,],[Pt[,],Pt[,]],] | consumed 23
+decode Box 4 little        == 9 {-5 -300} {{127 32767} {-128 1}} 1.5 | Box[int(u,8),Pt[int(s,8),int(s,16,be)],list(2)<Pt>[Pt[int(s,8),int(s,16,be)],Pt[int(s,8),int(s,16,be)]],double(32,le)] | consumed 20
+decode Box -offset 3       == 9 {-5 -300} {{127 32767} {-128 1}} 1.5 | Box[int(u,8),Pt[int(s,8),int(s,16,be)],list(2)<Pt>[Pt[int(s,8),int(s,16,be)],Pt[int(s,8),int(s,16,be)]],double(32,le)] | consumed 23
 decode Box tronqué         == ERREUR: type binary: data truncated at offset 16 reading field r of Box (needs 4 bytes, got 3)
 encode Box 4 big           == octets 20: 0900fb00fed47f007fff8000000100000000c03f
-decode Box 4 big           == 9 {-5 -300} {{127 32767} {-128 1}} 1.5 | Box[,[,],[Pt[,],Pt[,]],] | consumed 20
-decode Box -offset 3       == 9 {-5 -300} {{127 32767} {-128 1}} 1.5 | Box[,[,],[Pt[,],Pt[,]],] | consumed 23
+decode Box 4 big           == 9 {-5 -300} {{127 32767} {-128 1}} 1.5 | Box[int(u,8),Pt[int(s,8),int(s,16,be)],list(2)<Pt>[Pt[int(s,8),int(s,16,be)],Pt[int(s,8),int(s,16,be)]],double(32,le)] | consumed 20
+decode Box -offset 3       == 9 {-5 -300} {{127 32767} {-128 1}} 1.5 | Box[int(u,8),Pt[int(s,8),int(s,16,be)],list(2)<Pt>[Pt[int(s,8),int(s,16,be)],Pt[int(s,8),int(s,16,be)]],double(32,le)] | consumed 23
 decode Box tronqué         == ERREUR: type binary: data truncated at offset 16 reading field r of Box (needs 4 bytes, got 3)
 encode Grid packed         == octets 29: 01010002000300ffff00000700ffffffffffffffff000000
-decode Grid packed         == 1 {{1 2 3} {65535 0 7}} 18446744073709551615 -9223372036854775808 | Grid[,[[,,],[,,]],,] | consumed 29
+decode Grid packed         == 1 {{1 2 3} {65535 0 7}} 18446744073709551615 -9223372036854775808 | Grid[int(u,8),list(2)<list(3)<int(u,16,le)>>[list(3)<int(u,16,le)>[int(u,16,le),int(u,16,le),int(u,16,le)],list(3)<int(u,16,le)>[int(u,16,le),int(u,16,le),int(u,16,le)]],int(u,64,le),int(s,64,le)] | consumed 29
 encode Grid natural        == octets 32: 0100010002000300ffff000007000000ffffffffffffffff
-decode Grid natural        == 1 {{1 2 3} {65535 0 7}} 18446744073709551615 -9223372036854775808 | Grid[,[[,,],[,,]],,] | consumed 32
+decode Grid natural        == 1 {{1 2 3} {65535 0 7}} 18446744073709551615 -9223372036854775808 | Grid[int(u,8),list(2)<list(3)<int(u,16,le)>>[list(3)<int(u,16,le)>[int(u,16,le),int(u,16,le),int(u,16,le)],list(3)<int(u,16,le)>[int(u,16,le),int(u,16,le),int(u,16,le)]],int(u,64,le),int(s,64,le)] | consumed 32
 encode Hdr                 == octets 32: 0300000000000000000000000000f03f00000000000004c0
-decode Hdr                 == 3 0 {1.0 -2.5 1e+300} | Hdr[,,[,,]]
-decode Hdr -strictpad      == 3 0 {1.0 -2.5 1e+300} | Hdr[,,[,,]]
-remplissage non nul        == 3 0 {1.0 -2.5 1e+300} | Hdr[,,[,,]]
+decode Hdr                 == 3 0 {1.0 -2.5 1e+300} | Hdr[int(u,16,le),int(u,8),list($n)<double(64,le)>[double(64,le),double(64,le),double(64,le)]]
+decode Hdr -strictpad      == 3 0 {1.0 -2.5 1e+300} | Hdr[int(u,16,le),int(u,8),list($n)<double(64,le)>[double(64,le),double(64,le),double(64,le)]]
+remplissage non nul        == 3 0 {1.0 -2.5 1e+300} | Hdr[int(u,16,le),int(u,8),list($n)<double(64,le)>[double(64,le),double(64,le),double(64,le)]]
 idem, -strictpad 1         == ERREUR: type binary: non-zero padding at offset 3 before field v of Hdr
 n trop grand               == ERREUR: type binary: data truncated at offset 32 reading field v of Hdr[3] (needs 8 bytes, got 0)
 option inconnue            == ERREUR: bad option "-bogus": must be -offset, -endian, -consumed, -align, -strictpad, -linkdepth
 boutisme faux              == ERREUR: bad endianness "middle": must be little or big
 liste (couche Tcl)         == 1 2 | list(2)<int(u,8)>[int(u,8),int(u,8)]
-liste de Pt (couche Tcl)   == {1 2} {3 4} | list(2)<Pt>[Pt[,],Pt[,]]
-encode, n incohérent       == ERREUR: type binary: field v of Hdr holds 2, but the field it depends on says 5 ($n)
+liste de Pt (couche Tcl)   == {1 2} {3 4} | list(2)<Pt>[Pt[int(s,8),int(s,16,be)],Pt[int(s,8),int(s,16,be)]]
+encode, n incohérent       == ERREUR: Hdr needs 3 values but got 1

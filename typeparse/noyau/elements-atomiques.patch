@@ -1,0 +1,20 @@
+diff -ruN a/generic/tclCompExpr.c b/generic/tclCompExpr.c
+--- a/generic/tclCompExpr.c	2026-10-20 18:40:03.988313883 +0200
++++ b/generic/tclCompExpr.c	2026-10-20 18:40:03.992941016 +0200
+@@ -2985,6 +2985,16 @@
+ 
+ 		    int path[TUPLE_MAX_DEPTH], counter = 0;
+ 
++		    /*
++		     * Règle B : un produit est un élément ; l'affectation par
++		     * tuple lit son CONTENU (ses champs, et ceux des produits
++		     * imbriqués), pas sa vue liste.
++		     */
++		    TclEmitPush(TclRegisterLiteral(envPtr,
++			    "::tcl::unsupported::content", 27, LITERAL_CMD_NAME),
++			    envPtr);
++		    TclEmitInstInt4(INST_REVERSE, 2, envPtr);
++		    TclEmitInvoke(envPtr, INST_INVOKE_STK1, 2);
+ 		    EmitTupleStores(envPtr, nodes, nodePtr->left, path, 0,
+ 			    &counter, 1);
+ 		    TclEmitInstInt4(INST_REVERSE, 2, envPtr);

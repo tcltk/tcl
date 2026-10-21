@@ -1016,3 +1016,17 @@ Patch noyau : `contrat-par-nom.patch` (`tclInt.h`, `tclVar.c`, `tclExecute.c`).
   vérifié au rangement et jamais modifié en place : un refus laisse la variable intacte.
 - Tests : `t19` (variable de boucle libre après la boucle), `t48` (`lset` sur une copie),
   `t51` (valeur incohérente fabriquée par un cast) mis à jour.
+
+## v15 — collections et éléments (20 octobre 2026)
+
+Sources de types : `tclAnnotObj.c`, `tclTypePath.c`, `tclTypes.c`. Patch noyau : `elements-atomiques.patch` (`tclCompExpr.c`).
+
+- Règle B : seules les collections (`list`, `dict`) se déplient dans la vue liste (`llength`, `lindex`,
+  `foreach`, `lassign`, `{*}`). Un scalaire, un produit, un lien est UN élément ; une somme prend
+  la nature de sa variante active. `llength $P` vaut 1 pour un `Point`.
+- Chemin `*` seul : toutes les parties dans l'ordre (champs d'un produit, éléments d'une liste,
+  valeurs d'un dict) : `$P(*)`, `{*}$P(*)`, `$T(*.y)`. Lecture seule.
+- Une lecture multiple de types différents rend une `list.any` (chaque élément garde son type).
+- `(x,y) = $P` dans expr lit le contenu (les champs), y compris imbriqué : `((a,b),(c,d)) = $T`.
+- Exemples réécrits : `complexes.tcl`, `complexes_tip759.tcl` (`lassign $a(*) …`), `arbre_graphe.tcl`
+  (`$t(value)`, `$t(children)`), `hypergraphe.tcl` ; tests `t10`, `t22`, `t30`, `t51`, `t52`.

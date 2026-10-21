@@ -140,8 +140,8 @@ puts "carol vue par pa : $pa(auteurs.2.nom) ; vue par pb : $pb(auteurs.0.nom)"
 set avant [type deref $pa]
 publier pa
 set apres [type deref $pa]
-puts "instantané avant : [lmap a $avant(auteurs) {lindex $a 1}]"
-puts "instantané après : [lmap a $apres(auteurs) {lindex $a 1}]   (nombre d'articles de chacun)"
+puts "instantané avant : [lmap a $avant(auteurs) {lindex $a(*) 1}]"
+puts "instantané après : [lmap a $apres(auteurs) {lindex $a(*) 1}]   (nombre d'articles de chacun)"
 puts "type : [type get $avant]"
 
 # un auteur supprimé : erreur franche, qui dit où

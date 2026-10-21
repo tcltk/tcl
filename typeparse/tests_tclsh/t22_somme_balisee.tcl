@@ -15,7 +15,7 @@ check "scalaire inconnu" [type get [set {bloc}c {inconnu}$a]] bloc.inconnu
 check "sans balise : ambigu" [catch {set {bloc}d {Comment bonjour}} m] 1
 set {list.bloc}L {tEXt}$t {inconnu}$a {IEND}{}
 check "liste" [lmap e $L {type get $e}] {bloc.tEXt bloc.inconnu bloc.IEND}
-check "accès tEXt" [lindex $L 0 0] Comment
+check "accès tEXt" $L(0.tEXt.keyword) Comment
 set {list.bloc}M
 lappend M $b
 lappend M $c

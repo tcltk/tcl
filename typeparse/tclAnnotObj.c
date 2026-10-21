@@ -636,7 +636,9 @@ AnnotListView(Tcl_Interp *interp, Tcl_Obj *aPtr, Tcl_Obj **contentPtr)
 	}
     }
     kind = EffectiveKind(tp, variant, content);
-    return kind == TCLT_LIST || kind == TCLT_DICT || kind == TCLT_PRODUCT;
+    /* Règle B : seules les collections (list, dict) se déplient ; un
+     * produit est un élément, ses champs se lisent par chemin. */
+    return kind == TCLT_LIST || kind == TCLT_DICT;
 }
 
 /*

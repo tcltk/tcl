@@ -29,5 +29,5 @@ bad {lappend i 1}
 good {lset i 0 7; set i} 7
 type def point {{int}x; {int}y}
 set {point}P 1 2
-good {lset P 0 9; set P} {9 2}
-bad {lset P 0 x}
+good {set P(x) 9; set P} {9 2}
+bad {set P(x) x}

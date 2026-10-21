@@ -196,7 +196,17 @@ main() {
         fi
         ask "   make clean && make && make install-binaries dans $BUILDDIR ?" && {
             ( cd "$BUILDDIR" && make clean >/dev/null 2>&1 && make -j"$JOBS" && make install-binaries ) \
-                || { echo "ÉCHEC de la compilation"; return 1; }
+                || { echo "ÉCHEC de la compilation ou de l'installation (un tclsh ou un wish ouvert ?)"; return 1; }
+            # garde-fou : sous Windows, un exécutable ouvert (« resource busy ») peut empêcher la
+            # copie ; on vérifie que chaque binaire installé est bien celui qu'on vient de construire
+            local bindir b stale=0
+            bindir="$(dirname "$TCLABS")"
+            for b in "$BUILDDIR"/tclsh*.exe "$BUILDDIR"/*tcl*.dll; do
+                [ -f "$b" ] || continue
+                [ -f "$bindir/$(basename "$b")" ] || continue
+                same "$b" "$bindir/$(basename "$b")" || { echo "   NON INSTALLÉ : $bindir/$(basename "$b") (fichier occupé ?)"; stale=1; }
+            done
+            [ "$stale" = 0 ] || { echo "   Fermer les tclsh/wish ouverts, puis : (cd $BUILDDIR && make install-binaries)"; return 1; }
         }
     else
         echo "   rien de C à recompiler (--build pour forcer)"

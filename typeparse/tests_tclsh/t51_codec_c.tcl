@@ -16,9 +16,10 @@ set {Hdr}hd(n,pad,v) 3 0 {1.0 -2.5 1e300}
 # forme d'une valeur : texte, type, et types des parties (récursif)
 proc forme {v} {
     set t [type get $v]
-    if {[catch {llength $v} n] || $n < 2} {return "$t"}
+    # v14 règle B : un produit est un élément ; ses parties se lisent par $v(*)
+    if {[catch {set v(*)} k] || [llength $k] < 2} {return "$t"}
     set parts {}
-    foreach e $v {lappend parts [forme $e]}
+    foreach e $k {lappend parts [forme $e]}
     return "$t\[[join $parts ,]\]"
 }
 proc deux {label script} {

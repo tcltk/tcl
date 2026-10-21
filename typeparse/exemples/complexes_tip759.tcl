@@ -17,23 +17,23 @@ type def complexe {
 namespace eval cx {
     proc new {re im} { set {complexe}z {re}$re {im}$im}
 
-    proc add {a b} {(lassign $a ar ai; lassign $b br bi;
+    proc add {a b} {(lassign $a(*) ar ai; lassign $b(*) br bi;
                      [new [($ar+$br)] [($ai+$bi)]])}
-    proc sub {a b} {(lassign $a ar ai; lassign $b br bi;
+    proc sub {a b} {(lassign $a(*) ar ai; lassign $b(*) br bi;
                      [new [($ar-$br)] [($ai-$bi)]])}
-    proc mul {a b} {(lassign $a ar ai; lassign $b br bi;
+    proc mul {a b} {(lassign $a(*) ar ai; lassign $b(*) br bi;
                      [new [($ar*$br - $ai*$bi)] [($ar*$bi + $ai*$br)]])}
-    proc conj {a}  {(lassign $a r i; [new $r [(-$i)]])}
-    proc norm2 {a} {(lassign $a r i; $r*$r + $i*$i)}
+    proc conj {a}  {(lassign $a(*) r i; [new $r [(-$i)]])}
+    proc norm2 {a} {(lassign $a(*) r i; $r*$r + $i*$i)}
     proc abs {a}   { expr {sqrt([norm2 $a])} }     ;# fonction => expr
     proc div {a b} {
         set d [norm2 $b]
         if {$d == 0.0} { error "division par zéro" }
-        lassign [mul $a [conj $b]] nr ni
+        set m [mul $a [conj $b]]; lassign $m(*) nr ni
         new [($nr/$d)] [($ni/$d)]
     }
     proc str {a} {
-        lassign $a r i
+        lassign $a(*) r i
         format "%g%s%gi" $r [expr {$i < 0 ? "-" : "+"}] [expr {abs($i)}]
     }
 }

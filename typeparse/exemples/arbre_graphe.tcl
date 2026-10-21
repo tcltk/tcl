@@ -52,7 +52,7 @@ set {tree(int)}t(value,children) 1 {
 }
 
 proc tree_sum {t} {
-    lassign $t value children
+    set value $t(value); set children $t(children)
     set total $value
     foreach c $children {
         incr total [tree_sum $c]
@@ -62,14 +62,14 @@ proc tree_sum {t} {
 
 proc tree_depth {t} {
     set deepest 0
-    foreach c [lindex $t 1] {
+    foreach c $t(children) {
         set deepest [expr {max($deepest, [tree_depth $c])}]
     }
     return [expr {$deepest + 1}]
 }
 
 proc tree_print {t {indent 0}} {
-    lassign $t value children
+    set value $t(value); set children $t(children)
     puts "[string repeat {  } $indent]- $value"
     foreach c $children {
         tree_print $c [expr {$indent + 1}]

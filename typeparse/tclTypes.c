@@ -4445,6 +4445,28 @@ DeclareObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
     return TCL_OK;
 }
 
+/* (a,b) = $v dans expr : le contenu d'une valeur annotée (ses champs pour un
+ * produit), ou la valeur elle-même. */
+static int
+ContentObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
+	Tcl_Obj *const objv[])
+{
+    Tcl_Obj *content = NULL;
+    (void) clientData;
+
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "value");
+	return TCL_ERROR;
+    }
+    if (TclAnnotInfo(objv[1], &content, NULL, NULL, NULL) == 1
+	    && content != NULL) {
+	Tcl_SetObjResult(interp, content);
+    } else {
+	Tcl_SetObjResult(interp, objv[1]);
+    }
+    return TCL_OK;
+}
+
 void
 TclTypesInit(Tcl_Interp *interp)
 {
@@ -4478,6 +4500,8 @@ TclTypesInit(Tcl_Interp *interp)
     Tcl_SetAssocData(interp, "tclTypes", DeleteData, d);
     Tcl_CreateObjCommand2(interp, "type", TypeObjCmd, d, NULL);
     Tcl_CreateObjCommand2(interp, "::tcl::mathop::is", IsOpObjCmd, NULL, NULL);
+    Tcl_CreateObjCommand2(interp, "::tcl::unsupported::content", ContentObjCmd,
+	    NULL, NULL);
     Tcl_CreateObjCommand2(interp, "::tcl::unsupported::declare", DeclareObjCmd,
 	    NULL, NULL);
     Tcl_CreateObjCommand2(interp, "::tcl::mathfunc::popcount", PopcountCmd,

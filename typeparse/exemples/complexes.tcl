@@ -13,28 +13,28 @@ namespace eval cx {
     proc new {re im} { set {complexe}z {re}$re {im}$im}
 
     proc add {a b} {
-        lassign $a ar ai; lassign $b br bi
+        lassign $a(*) ar ai; lassign $b(*) br bi
         new [expr {$ar + $br}] [expr {$ai + $bi}]
     }
     proc sub {a b} {
-        lassign $a ar ai; lassign $b br bi
+        lassign $a(*) ar ai; lassign $b(*) br bi
         new [expr {$ar - $br}] [expr {$ai - $bi}]
     }
     proc mul {a b} {
-        lassign $a ar ai; lassign $b br bi
+        lassign $a(*) ar ai; lassign $b(*) br bi
         new [expr {$ar*$br - $ai*$bi}] [expr {$ar*$bi + $ai*$br}]
     }
-    proc conj {a} { lassign $a r i; new $r [expr {-$i}] }
-    proc abs  {a} { lassign $a r i; expr {hypot($r, $i)} }
+    proc conj {a} { lassign $a(*) r i; new $r [expr {-$i}] }
+    proc abs  {a} { lassign $a(*) r i; expr {hypot($r, $i)} }
     proc div {a b} {
-        lassign $b br bi
+        lassign $b(*) br bi
         set d [expr {$br*$br + $bi*$bi}]
         if {$d == 0.0} { error "division par zéro" }
-        lassign [mul $a [conj $b]] nr ni
+        set m [mul $a [conj $b]]; lassign $m(*) nr ni
         new [expr {$nr/$d}] [expr {$ni/$d}]
     }
     proc str {a} {
-        lassign $a r i
+        lassign $a(*) r i
         format "%g%s%gi" $r [expr {$i < 0 ? "-" : "+"}] [expr {abs($i)}]
     }
 }
