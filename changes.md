@@ -49,10 +49,9 @@ to the userbase.
 # Updated bundled packages, libraries, standards, data
  - http 2.10.3
  - msgcat 1.7.2
+ - tcltest 2.6.1
  - tcl::idna 1.0.2
  - tzcode 2026e
-
-# Updated bundled packages, libraries, standards, data
 
 Release Tcl 9.1.0 arises from the check-in with tag `core-9-1-0`.
 
