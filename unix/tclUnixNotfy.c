@@ -403,7 +403,7 @@ AtForkChild(void)
     }
     pthread_mutex_init(&notifierInitMutex, NULL);
     pthread_mutex_init(&notifierMutex, NULL);
-    pthread_cond_init(&notifierCV, NULL);
+    TclpCondInit(&notifierCV);
 
 #ifdef NOTIFIER_SELECT
     asyncPending = false;
@@ -449,7 +449,7 @@ AtForkChild(void)
 	    ResetEvent(tsdPtr->event);
 #else /* !__CYGWIN__ */
 	    pthread_cond_destroy(&tsdPtr->waitCV);
-	    pthread_cond_init(&tsdPtr->waitCV, NULL);
+	    TclpCondInit(&tsdPtr->waitCV);
 #endif /* __CYGWIN__ */
 
 	    /*
@@ -558,7 +558,7 @@ TclUnixWaitForFile(
      */
 
     if (timeout > 0) {
-	now = Tcl_GetDayTime();
+	now = Tcl_GetMonotonicTime();
 	abortTime = now + timeout * 1000;
 	timeoutPtr = &blockTime;
     } else if (timeout == 0) {
@@ -641,7 +641,7 @@ TclUnixWaitForFile(
 	 * The select returned early, so we need to recompute the timeout.
 	 */
 
-	now = Tcl_GetDayTime();
+	now = Tcl_GetMonotonicTime();
 	if (abortTime <= now) {
 	    break;
 	}

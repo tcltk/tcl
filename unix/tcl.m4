@@ -2260,7 +2260,8 @@ AC_DEFUN([SC_TCL_LINK_LIBS], [
 
     ac_saved_libs=$LIBS
     LIBS="$LIBS $THREADS_LIBS"
-    AC_CHECK_FUNCS(pthread_attr_setstacksize pthread_atfork clock_gettime)
+    AC_CHECK_FUNCS(pthread_attr_setstacksize pthread_atfork clock_gettime \
+	pthread_condattr_setclock)
     LIBS=$ac_saved_libs
 ])
 

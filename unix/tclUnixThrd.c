@@ -164,6 +164,75 @@ PCondTimedWait(
 }
 
 /*
+ *----------------------------------------------------------------------
+ *
+ * TclpCondInit, TclpCondDeadline --
+ *
+ *	TclpCondInit initializes a condition variable. Where possible it is
+ *	set to use CLOCK_MONOTONIC, so that a timed wait is not lengthened or
+ *	cut short when the system time is changed [Bug 3328635]. The deadline
+ *	for pthread_cond_timedwait() has to be computed on the same clock;
+ *	TclpCondDeadline returns the absolute deadline for a wait of usec
+ *	microseconds.
+ *
+ *----------------------------------------------------------------------
+ */
+
+#if defined(HAVE_PTHREAD_CONDATTR_SETCLOCK) && defined(CLOCK_MONOTONIC) \
+	&& defined(HAVE_CLOCK_GETTIME)
+/* 1 once a condition variable was set to CLOCK_MONOTONIC, -1 if that failed */
+static int condClockMonotonic = 0;
+#endif
+
+void
+TclpCondInit(
+    pthread_cond_t *condPtr)
+{
+#if defined(HAVE_PTHREAD_CONDATTR_SETCLOCK) && defined(CLOCK_MONOTONIC) \
+	&& defined(HAVE_CLOCK_GETTIME)
+    pthread_condattr_t attr;
+
+    if (condClockMonotonic >= 0 && pthread_condattr_init(&attr) == 0) {
+	if (pthread_condattr_setclock(&attr, CLOCK_MONOTONIC) == 0
+		&& pthread_cond_init(condPtr, &attr) == 0) {
+	    condClockMonotonic = 1;
+	    pthread_condattr_destroy(&attr);
+	    return;
+	}
+	condClockMonotonic = -1;
+	pthread_condattr_destroy(&attr);
+    }
+#endif
+    pthread_cond_init(condPtr, NULL);
+}
+
+void
+TclpCondDeadline(
+    struct timespec *timePtr,
+    long long usec)		/* Timeout in microseconds, >= 0 */
+{
+    long long now;
+
+#if defined(HAVE_PTHREAD_CONDATTR_SETCLOCK) && defined(CLOCK_MONOTONIC) \
+	&& defined(HAVE_CLOCK_GETTIME)
+    struct timespec ts;
+
+    if (condClockMonotonic > 0 && clock_gettime(CLOCK_MONOTONIC, &ts) == 0) {
+	now = (long long) ts.tv_sec * 1000000 + ts.tv_nsec / 1000;
+    } else
+#endif
+    now = Tcl_GetDayTime();
+
+    /*
+     * Make sure to take into account the microsecond component of the
+     * current time, including possible overflow situations. [Bug #411603]
+     */
+
+    timePtr->tv_sec = (usec + now) / 1000000;
+    timePtr->tv_nsec = 1000 * ((usec + now) % 1000000);
+}
+
+/*
  * globalLock is used to serialize creation of mutexes, condition variables,
  * and thread local storage. This is the only place that can count on the
  * ability to statically initialize the mutex.
@@ -762,7 +831,7 @@ Tcl_ConditionWait2(
 
 	if (*condPtr == NULL) {
 	    pcondPtr = (pthread_cond_t *)Tcl_Alloc(sizeof(pthread_cond_t));
-	    pthread_cond_init(pcondPtr, NULL);
+	    TclpCondInit(pcondPtr);
 	    *condPtr = (Tcl_Condition) pcondPtr;
 	    TclRememberCondition(condPtr);
 	}
@@ -773,16 +842,7 @@ Tcl_ConditionWait2(
     if (time < 0) {
 	PCondWait(pcondPtr, pmutexPtr);
     } else {
-	long long now;
-
-	/*
-	 * Make sure to take into account the microsecond component of the
-	 * current time, including possible overflow situations. [Bug #411603]
-	 */
-
-	now = Tcl_GetDayTime();
-	ptime.tv_sec = (time + now) / 1000000;
-	ptime.tv_nsec = 1000 * ((time + now) % 1000000);
+	TclpCondDeadline(&ptime, time);
 	PCondTimedWait(pcondPtr, pmutexPtr, &ptime);
     }
 }

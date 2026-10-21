@@ -343,7 +343,7 @@ TclpInitNotifier(void)
 	tsdPtr->event = CreateEventW(NULL, 1 /* manual */,
 		0 /* !signaled */, NULL);
 #else /* !__CYGWIN__ */
-	pthread_cond_init(&tsdPtr->waitCV, NULL);
+	TclpCondInit(&tsdPtr->waitCV);
 #endif /* __CYGWIN__ */
 	tsdPtr->waitCVinitialized = 1;
     }
@@ -767,13 +767,9 @@ TclpWaitForEvent(
 	}
 #else /* !__CYGWIN__ */
 	if (time >= 0) {
-	    long long now;
 	    struct timespec ptime;
 
-	    now = Tcl_GetDayTime();
-	    ptime.tv_sec = (time + now) / 1000000;
-	    ptime.tv_nsec = 1000 * ((time + now) % 1000000);
-
+	    TclpCondDeadline(&ptime, time);
 	    pthread_cond_timedwait(&tsdPtr->waitCV, &notifierMutex, &ptime);
 	} else {
 	    pthread_cond_wait(&tsdPtr->waitCV, &notifierMutex);

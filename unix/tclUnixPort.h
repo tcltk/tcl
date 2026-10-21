@@ -628,6 +628,13 @@ typedef int socklen_t;
 
 #if !defined(TCL_THREADS) || TCL_THREADS
 #   include <pthread.h>
+/*
+ * Condition variables for timed waits use CLOCK_MONOTONIC where possible,
+ * so that changes of the system time do not change the timeout.
+ */
+MODULE_SCOPE void	TclpCondInit(pthread_cond_t *condPtr);
+MODULE_SCOPE void	TclpCondDeadline(struct timespec *timePtr,
+			    long long usec);
 #endif /* TCL_THREADS */
 
 /* FIXME - Hyper-enormous platform assumption! */
