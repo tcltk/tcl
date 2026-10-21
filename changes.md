@@ -53,6 +53,7 @@ to the userbase.
  - [Windows: native MSYS2/Cygwin builds no longer need an installed tclsh](https://core.tcl-lang.org/tcl/tktview/2ef343)
  - [build failure on Alpine Linux (musl): no sys/queue.h](https://core.tcl-lang.org/tcl/tktview/3ff2d7)
  - [exec hangs, iff stdin & stdout both were previously closed.](https://core.tcl-lang.org/tcl/tktview/21dbc6)
+ - [viewport meta tag in the generated HTML pages for mobile browsers](https://core.tcl-lang.org/tcl/tktview/7f6005)
 
 # Updated bundled packages, libraries, standards, data
  - http 2.10.3
