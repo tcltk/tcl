@@ -84,7 +84,7 @@ proc htmlhead {title header args} {
 	# XXX hack - assume same level for CSS file
 	set level "../"
     }
-    set out "[DOCTYPE]\n<HTML>\n<HEAD><TITLE>$title</TITLE>\n[CSS $level]</HEAD>\n"
+    set out "[DOCTYPE]\n<HTML>\n<HEAD><META name=\"viewport\" content=\"width=device-width, initial-scale=1\"><TITLE>$title</TITLE>\n[CSS $level]</HEAD>\n"
     foreach {uptitle url} $args {
 	set header "<a href=\"$url\">$uptitle</a> <small>&gt;</small> $header"
     }
