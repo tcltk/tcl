@@ -401,6 +401,12 @@ namespace eval tcltest {
 		set outputChannel $filename
 	    }
 	    default {
+		if {$filename in [chan names]} {
+		    # An already open channel, e.g. a reflected channel or a
+		    # socket [Bug 1528500].
+		    set outputChannel $filename
+		    return $outputChannel
+		}
 		set outputChannel [open $filename a]
 		if {$fullutf} {
 		    fconfigure $outputChannel -profile tcl8 -encoding utf-8
@@ -449,6 +455,12 @@ namespace eval tcltest {
 		set errorChannel $filename
 	    }
 	    default {
+		if {$filename in [chan names]} {
+		    # An already open channel, e.g. a reflected channel or a
+		    # socket [Bug 1528500].
+		    set errorChannel $filename
+		    return $errorChannel
+		}
 		set errorChannel [open $filename a]
 		if {$fullutf} {
 		    fconfigure $errorChannel -profile tcl8 -encoding utf-8
