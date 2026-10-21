@@ -806,6 +806,31 @@ test exec-22.1 {exec -encoding invalid encoding} -body {
     exec -encoding nosuchencoding -- [interpreter] $path(echobin) abc
 } -result {unknown encoding "nosuchencoding"} -returnCodes error
 
+test exec-23.1 {exec with stdin and stdout closed} -constraints {exec unix} -setup {
+    set script [makeFile [list apply {{echo} {
+	close stdin
+	close stdout
+	puts stderr [exec [info nameofexecutable] $echo hi]
+    }} $path(echo)] closedstd.tcl]
+    set f [open |[list [interpreter] $script 2>@1]]
+} -body {
+    set ::closedstd timeout
+    set id [after 10000 [list set ::closedstd timeout]]
+    fileevent $f readable [list apply {{f} {
+	set ::closedstd [gets $f]
+    }} $f]
+    vwait ::closedstd
+    after cancel $id
+    set ::closedstd
+} -cleanup {
+    if {$::closedstd eq "timeout"} {
+	catch {exec kill -9 {*}[pid $f]}
+    }
+    catch {close $f}
+    removeFile closedstd.tcl
+    unset -nocomplain ::closedstd script f id
+} -result hi
+
 test exec-bug-4f0b5767ac {exec App Execution Alias} -setup {
     # Ensure winget is on the PATH
     set savedEnv $::env(PATH)

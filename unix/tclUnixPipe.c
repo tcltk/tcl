@@ -100,6 +100,46 @@ static const Tcl_ChannelType pipeChannelType = {
 /*
  *----------------------------------------------------------------------
  *
+ * CloseOnExecAboveStdio --
+ *
+ *	Sets the close-on-exec flag of a file descriptor created for a
+ *	pipeline, first moving it above 2 if it is a standard descriptor.
+ *	TclpCloseFile() never closes 0, 1 and 2, so a pipe or file which got
+ *	one of them because stdin, stdout or stderr was closed would never be
+ *	closed in the parent. [21dbc600ae]
+ *
+ * Results:
+ *	The file descriptor to use.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+CloseOnExecAboveStdio(
+    int fd)
+{
+    if (fd >= 0 && fd <= 2) {
+#ifdef F_DUPFD_CLOEXEC
+	int newFd = fcntl(fd, F_DUPFD_CLOEXEC, 3);
+#else
+	int newFd = fcntl(fd, F_DUPFD, 3);
+#endif
+
+	if (newFd != -1) {
+	    close(fd);
+	    fd = newFd;
+#ifdef F_DUPFD_CLOEXEC
+	    return fd;
+#endif
+	}
+    }
+    fcntl(fd, F_SETFD, FD_CLOEXEC);
+    return fd;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TclpMakeFile --
  *
  *	Make a TclFile from a channel.
@@ -160,7 +200,7 @@ TclpOpenFile(
     fd = TclOSopen(native, mode, 0666);			/* INTL: Native. */
     Tcl_DStringFree(&ds);
     if (fd != -1) {
-	fcntl(fd, F_SETFD, FD_CLOEXEC);
+	fd = CloseOnExecAboveStdio(fd);
 
 	/*
 	 * If the file is being opened for writing, seek to the end so we can
@@ -208,7 +248,7 @@ TclpCreateTempFile(
     if (fd == -1) {
 	return NULL;
     }
-    fcntl(fd, F_SETFD, FD_CLOEXEC);
+    fd = CloseOnExecAboveStdio(fd);
     if (contents != NULL) {
 	Tcl_DString dstring;
 	char *native;
@@ -330,8 +370,8 @@ TclpCreatePipe(
 	return 0;
     }
 
-    fcntl(pipeIds[0], F_SETFD, FD_CLOEXEC);
-    fcntl(pipeIds[1], F_SETFD, FD_CLOEXEC);
+    pipeIds[0] = CloseOnExecAboveStdio(pipeIds[0]);
+    pipeIds[1] = CloseOnExecAboveStdio(pipeIds[1]);
 
     *readPipe = MakeFile(pipeIds[0]);
     *writePipe = MakeFile(pipeIds[1]);
@@ -425,7 +465,8 @@ TclpCreateProcess(
 				 * filled with the process id of the child
 				 * process. */
 {
-    TclFile errPipeIn, errPipeOut;
+    TclFile volatile errPipeIn, errPipeOut;	/* volatile: see fork() below */
+    TclFile pipeIn, pipeOut;
     ssize_t count;
     int status, fd;
     char errSpace[200 + TCL_INTEGER_SPACE];
@@ -447,11 +488,13 @@ TclpCreateProcess(
      * anything goes wrong.
      */
 
-    if (TclpCreatePipe(&errPipeIn, &errPipeOut) == 0) {
+    if (TclpCreatePipe(&pipeIn, &pipeOut) == 0) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"couldn't create pipe: %s", Tcl_PosixError(interp)));
 	goto error;
     }
+    errPipeIn = pipeIn;
+    errPipeOut = pipeOut;
 
     /*
      * We need to allocate and convert this before the fork so it is properly
