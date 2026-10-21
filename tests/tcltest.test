@@ -1947,6 +1947,27 @@ test tcltest-28.2 {constraint names with a dash, bug 9f4feaaaa1} -setup {
 	[regexp "Total.+5.+Passed.+4.+Skipped.+1.+Failed.+0" $msg2]
 } -result {1 1}
 
+test tcltest-29.1 {cleanupTests exits with Tk only for the main script, bug 8413e79232} -constraints {
+    exec
+} -setup {
+    set test [makeFile {
+	package require tcltest
+	set ::tk_version 0.0
+	tcltest::configure -verbose {}
+	tcltest::test t-1 {} {} {}
+	tcltest::cleanupTests
+	puts "after cleanupTests"
+    } exitTest.tcl]
+    set app [makeFile "source [list $test]\nputs {app continues}" exitApp.tcl]
+} -cleanup {
+    removeFile $test
+    removeFile $app
+    unset -nocomplain test app
+} -body {
+    list [string match "*after cleanupTests*" [exec [interpreter] $test]] \
+	[string match "*after cleanupTests*app continues*" \
+	    [exec [interpreter] $app]]
+} -result {0 1}
 
 cleanupTests
 }
