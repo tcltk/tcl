@@ -2454,12 +2454,10 @@ proc tcltest::Skipped {name constraints} {
 	if {[string match {*[$\[]*} $constraints] != 0} {
 	    # full expression, e.g. {$foo > [info tclversion]}
 	    catch {set doTest [uplevel #0 [list expr $constraints]]}
-	} elseif {[regexp {[^.:_a-zA-Z0-9 \n\r\t-]} $constraints]
-		|| [regexp {(?:^|[^.:\w])-|-(?:[^.:\w]|$)} $constraints]} {
+	} elseif {[regexp {[^.:_a-zA-Z0-9 \n\r\t]+} $constraints]} {
 	    # something like {a || b} should be turned into
 	    # $testConstraints(a) || $testConstraints(b).
-	    # A "-" between name characters is part of the name (bug-123).
-	    regsub -all {[.\w]+(?:-[.\w]+)*} $constraints {$testConstraints(&)} c
+	    regsub -all {[.\w]+} $constraints {$testConstraints(&)} c
 	    catch {set doTest [eval [list expr $c]]}
 	} elseif {![catch {llength $constraints}]} {
 	    # just simple constraints such as {unixOnly fonts}.
