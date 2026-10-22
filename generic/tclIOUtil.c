@@ -527,6 +527,13 @@ TclFSCwdPointerEquals(
 
     if (tsdPtr->cwdPathPtr == *pathPtrPtr) {
 	return 1;
+    } else if (tsdPtr->cwdPathPtr == NULL) {
+	/*
+	 * The current directory could not be determined, e.g. because it
+	 * was deleted. [4d3f213029]
+	 */
+
+	return 0;
     } else {
 	Tcl_Size len1, len2;
 	const char *str1, *str2;

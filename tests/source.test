@@ -319,6 +319,27 @@ test source-9.1 {source with relative path after the current directory was delet
     catch {removeDirectory cwddeleted}
     unset -nocomplain dir f m
 } -result {1 0 0}
+test source-9.2 {source with relative path after the current directory was deleted and [pwd] failed} -constraints {
+    unix
+} -setup {
+    set dir [makeDirectory cwddeleted]
+    set f [open [file join $dir cwddeleted.tcl] w]
+    puts $f {
+	set sub [file join [pwd] sub]
+	file mkdir $sub
+	cd $sub
+	set x [pwd]
+	file delete $sub
+	set r [catch {pwd}]
+	puts [list $r [catch {file exists .} m] $m]
+    }
+    close $f
+} -body {
+    exec sh -c {cd "$1" && exec "$2" cwddeleted.tcl} sh $dir [interpreter]
+} -cleanup {
+    catch {removeDirectory cwddeleted}
+    unset -nocomplain dir f m
+} -result {1 0 0}
 
 cleanupTests
 }
