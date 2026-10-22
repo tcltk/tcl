@@ -52,7 +52,7 @@ if {$mode eq "annote"} {
     proc p_compute_lassign {b} {
         set sum 0.0; set cnt 0; set mn ""; set mx ""
         foreach it $b(items) {
-            lassign $it id v fl
+            lassign $it(*) id v fl
             if {$fl & 1} continue
             set sum [expr {$sum + $v}]; incr cnt
             if {$mn eq "" || $v < $mn} {set mn $v}
