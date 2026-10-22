@@ -275,6 +275,30 @@ test tcltest-5.2 {tcltest -constraints 'knownBug' -limitconstraints 1} {unixOrWi
     list $result [regexp a-1.0 $msg] [regexp b-1.0 $msg] [regexp c-1.0 $msg] \
 	    [regexp "Total.+4.+Passed.+1.+Skipped.+3.+Failed.+0" $msg]
 } {0 0 0 1 1}
+test tcltest-5.2a {-limitconstraints 1 -verbose 's' reports skipped tests, bug 811659} {unixOrWin} {
+    set result [child msg test.tcl -constraints knownBug -verbose 's' -limitconstraints 1]
+    list $result [regexp {a-1.0 SKIPPED: userSpecifiedLimitConstraint} $msg] \
+	    [regexp {d-1.0 SKIPPED: userSpecifiedLimitConstraint} $msg]
+} {0 1 1}
+test tcltest-5.2b {-limitconstraints 1 and constraint expressions, bug 572400} -setup {
+    set script [makeFile {
+	package require tcltest 2.6
+	namespace import ::tcltest::test
+	tcltest::testConstraint foo 0
+	test e-1.0 {not foo} {!foo} {} {}
+	test e-2.0 {knownBug or foo} {knownBug || foo} {} {}
+	test e-3.0 {full expr} {$::tcl_version > 0} {} {}
+	tcltest::cleanupTests
+	exit
+    } testLimitExpr.tcl]
+} -constraints unixOrWin -body {
+    child msg $script -constraints knownBug -limitconstraints 1 -verbose ps
+    list [regexp {e-1.0 SKIPPED} $msg] [regexp {e-2.0 PASSED} $msg] \
+	    [regexp {e-3.0 SKIPPED} $msg]
+} -cleanup {
+    removeFile $script
+    unset -nocomplain script msg
+} -result {1 1 1}
 
 test tcltest-5.3 {testConstraint - constraint empty (tcltest::safeFetch)}  {
     -body {
@@ -438,6 +462,29 @@ test tcltest-6.7 {tcltest::outputChannel - retrieval} {
     -result {stdout}
     -cleanup {
 	set ::tcltest::outputChannel $of
+    }
+}
+
+test tcltest-6.7.1 {tcltest::outputChannel, errorChannel - open channel, bug 1528500} {
+    -setup {
+	set of [outputChannel]
+	set ef [errorChannel]
+	set ::tcltest::outputChannel stdout
+	set ::tcltest::errorChannel stderr
+	set f [file tempfile]
+	set pwdFiles [glob -nocomplain -tails -directory [pwd] *]
+    }
+    -body {
+	list [expr {[outputChannel $f] eq $f}] [expr {[outputChannel] eq $f}] \
+	    [expr {[errorChannel $f] eq $f}] [expr {[errorChannel] eq $f}] \
+	    [file exists [file join [pwd] $f]] \
+	    [expr {[glob -nocomplain -tails -directory [pwd] *] eq $pwdFiles}]
+    }
+    -result {1 1 1 1 0 1}
+    -cleanup {
+	set ::tcltest::outputChannel $of
+	set ::tcltest::errorChannel $ef
+	close $f
     }
 }
 
@@ -1884,6 +1931,66 @@ test tcltest-27.3 {
     regexp "Total.+8.+Passed.+2.+Skipped.+2.+Failed.+4" $msg \
 } -result 1
 
+test tcltest-28.1 {-match and -skip do not apply to nested tests, bug 773924} -setup {
+    set oldMatch [match]
+    set oldSkip [skip]
+    set ran {}
+} -body {
+    match nomatch
+    skip tcltest-28.1.*
+    test tcltest-28.1.0 {nested} -body {lappend ran 0; list}
+    set ran
+} -cleanup {
+    match $oldMatch
+    skip $oldSkip
+    unset -nocomplain oldMatch oldSkip ran
+} -result 0
+
+test tcltest-28.2 {constraint names with a dash, bug 9f4feaaaa1} -setup {
+    set script [makeFile {
+	package require tcltest
+	namespace import tcltest::*
+	testConstraint dash-off 0
+	test t-1 {} -constraints dash-on -body {}
+	test t-2 {} -constraints {dash-off || dash-on} -body {}
+	test t-3 {} -constraints {dash-on && !dash-off} -body {}
+	test t-4 {} -constraints {dash-on && dash-off} -body {}
+	test t-5 {} -constraints {
+	    dash-on
+	} -body {}
+	cleanupTests
+    } dashConstraint.tcl]
+} -cleanup {
+    removeFile $script
+    unset -nocomplain script msg1 msg2
+} -body {
+    child msg1 $script
+    child msg2 $script -constraints dash-on
+    list [regexp "Total.+5.+Passed.+0.+Skipped.+5.+Failed.+0" $msg1] \
+	[regexp "Total.+5.+Passed.+4.+Skipped.+1.+Failed.+0" $msg2]
+} -result {1 1}
+
+test tcltest-29.1 {cleanupTests exits with Tk only for the main script, bug 8413e79232} -constraints {
+    exec
+} -setup {
+    set test [makeFile {
+	package require tcltest
+	set ::tk_version 0.0
+	tcltest::configure -verbose {}
+	tcltest::test t-1 {} {} {}
+	tcltest::cleanupTests
+	puts "after cleanupTests"
+    } exitTest.tcl]
+    set app [makeFile "source [list $test]\nputs {app continues}" exitApp.tcl]
+} -cleanup {
+    removeFile $test
+    removeFile $app
+    unset -nocomplain test app
+} -body {
+    list [string match "*after cleanupTests*" [exec [interpreter] $test]] \
+	[string match "*after cleanupTests*app continues*" \
+	    [exec [interpreter] $app]]
+} -result {0 1}
 
 cleanupTests
 }
