@@ -15,6 +15,9 @@
 # Rappels / reminders :
 #   - un point est UN élément (règle B) : ses champs par chemin, $P(x), ou
 #     tous à la fois, (x, y) = $P ;
+#   - les commandes reconnues (llength, lindex, foreach, lmap...) s'écrivent
+#     sans crochets, jusqu'au prochain opérateur : n = llength $P ; nos
+#     procédures, elles, gardent les crochets : [geo::distance $A $B] ;
 #   - les champs sont des double, mais 4 reste la chaîne "4" : les divisions
 #     passent par double() pour ne pas devenir entières.
 
@@ -29,6 +32,7 @@ type def carre     list(4).point
 type def rectangle {{point}min; {point}max}  ;# aligné sur les axes (tcllib)
 type def cercle    {{point}centre; {double}rayon}
 type def bezier    list(4).point           ;# Bézier cubique
+type def nuage     list.point              ;# un ensemble de points
 type def inter     {"aucune", {point}en}   ;# résultat d'une intersection
 
 # FR : un triangle, un carré sont des polygones : conversions explicites.
@@ -103,48 +107,47 @@ proc geo::intersection {s1 s2} {(
 # Polylignes et polygones / polylines and polygons
 
 proc geo::longueur {l} {(
-    L is polyligne = $l;  s = 0.0;
-    [for {set i 1} {$i < [llength $L]} {incr i} {
-        set s [($s + [geo::distance [lindex $L $i-1] [lindex $L $i]])]
-    }];
+    L is polyligne = $l;  n = llength $L;  s = 0.0;
+    foreach i [lseq 1 [($n - 1)]] {(
+        s = $s + [geo::distance [lindex $L $i-1] [lindex $L $i]]
+    )};
     $s
 )}
 
 proc geo::perimetre {p} {(
-    P is polygone = $p;  n = [llength $P];  s = 0.0;
-    [for {set i 0} {$i < $n} {incr i} {
-        set s [($s + [geo::distance [lindex $P $i] [lindex $P [(($i+1) % $n)]]])]
-    }];
+    P is polygone = $p;  n = llength $P;  s = 0.0;
+    foreach i [lseq $n] {(
+        s = $s + [geo::distance [lindex $P $i] [lindex $P [(($i+1) % $n)]]]
+    )};
     $s
 )}
 
 # FR : formule du lacet / EN: shoelace formula
 proc geo::aire {p} {(
-    P is polygone = $p;  n = [llength $P];  s = 0.0;
-    [for {set i 0} {$i < $n} {incr i} {
-        set a [lindex $P $i];  set b [lindex $P [(($i+1) % $n)]]
-        set s [($s + $a(x)*$b(y) - $b(x)*$a(y))]
-    }];
+    P is polygone = $p;  n = llength $P;  s = 0.0;
+    foreach i [lseq $n] {(
+        a = lindex $P $i;  b = lindex $P [(($i+1) % $n)];
+        s = $s + $a(x)*$b(y) - $b(x)*$a(y)
+    )};
     abs($s) / 2.0
 )}
 
 # FR : P est-il dans le polygone ? (lancer de rayon / ray casting)
 proc geo::dedans {p q} {(
-    P is point = $p;  Q is polygone = $q;  n = [llength $Q];  c = 0;
-    [for {set i 0} {$i < $n} {incr i} {
-        set a [lindex $Q $i];  set b [lindex $Q [(($i+1) % $n)]]
-        if {[(($a(y) > $P(y)) != ($b(y) > $P(y)) && $P(x) < $a(x)
-                + ($P(y) - $a(y)) * ($b(x) - $a(x)) / double($b(y) - $a(y)))]} {
-            set c [(1 - $c)]
-        }
-    }];
+    P is point = $p;  Q is polygone = $q;  n = llength $Q;  c = 0;
+    foreach i [lseq $n] {(
+        a = lindex $Q $i;  b = lindex $Q [(($i+1) % $n)];
+        c = ($a(y) > $P(y)) != ($b(y) > $P(y))
+            && $P(x) < $a(x) + ($P(y) - $a(y)) * ($b(x) - $a(x)) / double($b(y) - $a(y))
+            ? 1 - $c : $c
+    )};
     $c ? "oui" : "non"
 )}
 
 # FR : rectangle englobant / EN: bounding box
 proc geo::englobant {p} {(
     P is polygone = $p;
-    xs = [lmap q $P {lindex $q(x)}];  ys = [lmap q $P {lindex $q(y)}];
+    xs = lmap q $P {lindex $q(x)};  ys = lmap q $P {lindex $q(y)};
     R is rectangle = (([tcl::mathfunc::min {*}$xs], [tcl::mathfunc::min {*}$ys]),
                       ([tcl::mathfunc::max {*}$xs], [tcl::mathfunc::max {*}$ys]));
     $R
@@ -207,6 +210,28 @@ proc geo::bezier_point {b t} {(
                   $s**3*$y0 + 3*$s**2*$t*$y1 + 3*$s*$t**2*$y2 + $t**3*$y3);
     $P
 )}
+
+# FR : n points de la courbe, de t = 0 à t = 1 / EN: n points on the curve
+proc geo::bezier_echantillons {b n} {(
+    B is bezier = $b;
+    L is polyligne = lmap i [lseq $n] {geo::bezier_point $B [($i / double($n - 1))]};
+    $L
+)}
+
+# FR : pour chaque point du nuage, 1 s'il est dans le polygone, 0 sinon.
+proc geo::dedans_tous {pts q} {(
+    N is nuage = $pts;  Q is polygone = $q;
+    lmap p $N {expr {[geo::dedans $p $Q] eq "oui"}}
+)}
+
+# FR : les exemples ne tournent que si ce fichier est le programme principal
+#      (tclsh geometrie.tcl) : geometrie/geo_c.tcl et verifier.tcl le chargent
+#      comme bibliothèque.
+# EN : the examples only run when this file is the main program.
+if {![info exists ::argv0]
+        || [file normalize $::argv0] ne [file normalize [info script]]} {
+    return
+}
 
 # ===========================================================================
 # Les exemples / the examples
