@@ -1574,8 +1574,8 @@ ListRepRange(
  *
  * TclListObjRange --
  *
- *	Makes a slice of a list value.
- *	*listObj must be known to be a valid list.
+ *      Makes a slice of a list value.
+ *      *listObj must be to be a valid native or abstract list.
  *
  * Results:
  *	Returns a pointer to the sliced list.
@@ -1599,6 +1599,24 @@ TclListObjRange(
 {
     ListRep listRep;
     ListRep resultRep;
+
+    if (TclHasInternalRep(listObj, &tclListType)) {
+	ListObjGetRep(listObj, &listRep);
+    } else {
+	if (TclObjTypeHasProc(listObj, sliceProc)) {
+	    Tcl_Obj *sliceObj;
+	    if (TclObjTypeSlice(interp, listObj, rangeStart, rangeEnd,
+			&sliceObj)
+		    != TCL_OK) {
+		return NULL;
+	    }
+	    return sliceObj;
+	}
+	/* Convert to native list */
+	if (TclListObjGetRep(interp, listObj, &listRep) != TCL_OK) {
+	    return NULL;
+	}
+    }
 
     int isShared;
     if (TclListObjGetRep(interp, listObj, &listRep) != TCL_OK) {

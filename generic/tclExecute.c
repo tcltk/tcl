@@ -5010,13 +5010,7 @@ TEBCresume(
 	fromIdx = TclIndexDecode(fromIdx, objc - 1);
 
 	DECACHE_STACK_INFO();
-	if (TclObjTypeHasProc(valuePtr, sliceProc)) {
-	    if (TclObjTypeSlice(interp, valuePtr, fromIdx, toIdx, &objResultPtr) != TCL_OK) {
-		objResultPtr = NULL;
-	    }
-	} else {
-	    objResultPtr = TclListObjRange(interp, valuePtr, fromIdx, toIdx);
-	}
+	objResultPtr = TclListObjRange(interp, valuePtr, fromIdx, toIdx);
 	if (objResultPtr == NULL) {
 	    CACHE_STACK_INFO();
 	    TRACE_ERROR(interp);
