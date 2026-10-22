@@ -141,6 +141,13 @@ typedef struct {
 } TclEncoding;
 
 /*
+ * The counter below is used to determine if the TestsaveresultFree routine
+ * was called for a result.
+ */
+
+static int freeCount;
+
+/*
  * Boolean flag used by the "testsetmainloop" and "testexitmainloop" commands.
  */
 
@@ -273,6 +280,8 @@ static Tcl_ObjCmdProc2	TestregexpCmd;
 static Tcl_ObjCmdProc2	TestreturnCmd;
 static void		TestregexpXflags(const char *string,
 			    size_t length, int *cflagsPtr, int *eflagsPtr);
+static Tcl_ObjCmdProc2	TestsaveinterpstateCmd;
+static Tcl_FreeProc	TestsaveresultFree;
 static Tcl_ObjCmdProc2	TestsetassocdataCmd;
 static Tcl_ObjCmdProc2	TestsetCmd;
 static Tcl_ObjCmdProc2	Testset2Cmd;
@@ -678,6 +687,8 @@ Tcltest_Init(
     Tcl_CreateObjCommand2(interp, "testregexp", TestregexpCmd,
 	    NULL, NULL);
     Tcl_CreateObjCommand2(interp, "testreturn", TestreturnCmd,
+	    NULL, NULL);
+    Tcl_CreateObjCommand2(interp, "testsaveinterpstate", TestsaveinterpstateCmd,
 	    NULL, NULL);
     Tcl_CreateObjCommand2(interp, "testservicemode", TestServiceModeCmd,
 	    NULL, NULL);
@@ -6361,6 +6372,137 @@ Testset2Cmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "varName elemName ?newValue??");
 	return TCL_ERROR;
     }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TestsaveinterpstateCmd --
+ *
+ *	Implements the "testsaveinterpstate" cmd that is used when testing the
+ *	Tcl_SaveInterpState, Tcl_RestoreInterpState, and Tcl_DiscardInterpState interfaces.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TestsaveinterpstateCmd(
+    TCL_UNUSED(void *),		/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    Tcl_Size objc,		/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* The argument objects. */
+{
+    int discard, result, index;
+    Tcl_InterpState state;
+    Tcl_Obj *objPtr;
+    static const char *const optionStrings[] = {
+	"append", "dynamic", "free", "object", "small", NULL
+    };
+    enum options {
+	RESULT_APPEND, RESULT_DYNAMIC, RESULT_FREE, RESULT_OBJECT, RESULT_SMALL
+    };
+
+    /*
+     * Parse arguments
+     */
+
+    if (objc != 4) {
+	Tcl_WrongNumArgs(interp, 1, objv, "type script discard");
+	return TCL_ERROR;
+    }
+    if (Tcl_GetIndexFromObj(interp, objv[1], optionStrings, "option", 0,
+	    &index) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    if (Tcl_GetBooleanFromObj(interp, objv[3], &discard) != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    objPtr = NULL;		/* Lint. */
+    switch ((enum options) index) {
+    case RESULT_SMALL:
+	Tcl_SetResult(interp, "small result", TCL_VOLATILE);
+	break;
+    case RESULT_APPEND:
+	Tcl_AppendResult(interp, "append result", NULL);
+	break;
+    case RESULT_FREE: {
+	char *buf = (char *)Tcl_Alloc(200);
+
+	strcpy(buf, "free result");
+	Tcl_SetResult(interp, buf, TCL_DYNAMIC);
+	break;
+    }
+    case RESULT_DYNAMIC:
+	Tcl_SetResult(interp, (char *)"dynamic result", TestsaveresultFree);
+	break;
+    case RESULT_OBJECT:
+	objPtr = Tcl_NewStringObj("object result", -1);
+	Tcl_SetObjResult(interp, objPtr);
+	break;
+    }
+
+    freeCount = 0;
+    state = Tcl_SaveInterpState(interp, TCL_OK);
+
+    if (((enum options) index) == RESULT_OBJECT) {
+	result = Tcl_EvalObjEx(interp, objv[2], 0);
+    } else {
+	result = Tcl_Eval(interp, Tcl_GetString(objv[2]));
+    }
+
+    if (discard) {
+	Tcl_DiscardInterpState(state);
+    } else {
+	Tcl_RestoreInterpState(interp, state);
+	result = TCL_OK;
+    }
+
+    switch ((enum options) index) {
+    case RESULT_DYNAMIC: {
+	int called = freeCount;
+
+	Tcl_AppendElement(interp, called ? "called" : "notCalled");
+
+	break;
+    }
+    case RESULT_OBJECT:
+	Tcl_AppendElement(interp, Tcl_GetObjResult(interp) == objPtr
+		? "same" : "different");
+	break;
+    default:
+	break;
+    }
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TestsaveresultFree --
+ *
+ *	Special purpose freeProc used by TestsaveinterpstateCmd.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Increments the freeCount.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+TestsaveresultFree(
+    TCL_UNUSED(void *))
+{
+    freeCount++;
 }
 
 /*
