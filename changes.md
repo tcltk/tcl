@@ -60,6 +60,7 @@ to the userbase.
  - msgcat 1.7.2
  - platform 1.1.2
  - sqlite3 3.53.4
+ - tcltest 2.6.1
  - tcl::idna 1.0.2
  - tcltest 2.6.0
  - Thread 3.0.7
