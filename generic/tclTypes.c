@@ -4445,6 +4445,61 @@ DeclareObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
     return TCL_OK;
 }
 
+/* Contenu PROFOND : les éléments annotés des collections et des produits
+ * (valeurs décodées, list.T) deviennent bruts eux aussi ; une chaîne n'est
+ * jamais redécoupée. Objet neuf ou partagé, sans référence propre. */
+static Tcl_Obj *
+DeepContent(Tcl_Obj *obj)
+{
+    Tcl_Obj *content = NULL, **elv, *res;
+    TclType *tp = NULL;
+    Tcl_Size n, i;
+    int composite = 0;
+
+    if (TclAnnotInfo(obj, &content, &tp, NULL, NULL) == 1 && content != NULL) {
+	composite = (tp->kind == TCLT_LIST || tp->kind == TCLT_DICT
+		|| tp->kind == TCLT_PRODUCT || tp->kind == TCLT_SUM);
+	obj = content;
+    } else {
+	composite = TclHasInternalRep(obj, &tclListType);
+    }
+    if (!composite || !TclHasInternalRep(obj, &tclListType)
+	    || Tcl_ListObjGetElements(NULL, obj, &n, &elv) != TCL_OK) {
+	return obj;
+    }
+    for (i = 0; i < n; i++) {
+	if (TclIsAnnotated(elv[i]) || TclHasInternalRep(elv[i], &tclListType)) {
+	    break;
+	}
+    }
+    if (i == n) {
+	return obj;			/* rien d'annoté dedans */
+    }
+    res = Tcl_NewListObj(0, NULL);
+    for (i = 0; i < n; i++) {
+	Tcl_ListObjAppendElement(NULL, res, DeepContent(elv[i]));
+    }
+    return res;
+}
+
+/* (a,b) = $v dans expr : le contenu d'une valeur annotée (ses champs pour un
+ * produit), ou la valeur elle-même. */
+static int
+ContentObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
+	Tcl_Obj *const objv[])
+{
+    Tcl_Obj *content = NULL;
+    (void) clientData;
+
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "value");
+	return TCL_ERROR;
+    }
+    (void) content;
+    Tcl_SetObjResult(interp, DeepContent(objv[1]));
+    return TCL_OK;
+}
+
 void
 TclTypesInit(Tcl_Interp *interp)
 {
@@ -4478,6 +4533,8 @@ TclTypesInit(Tcl_Interp *interp)
     Tcl_SetAssocData(interp, "tclTypes", DeleteData, d);
     Tcl_CreateObjCommand2(interp, "type", TypeObjCmd, d, NULL);
     Tcl_CreateObjCommand2(interp, "::tcl::mathop::is", IsOpObjCmd, NULL, NULL);
+    Tcl_CreateObjCommand2(interp, "::tcl::unsupported::content", ContentObjCmd,
+	    NULL, NULL);
     Tcl_CreateObjCommand2(interp, "::tcl::unsupported::declare", DeclareObjCmd,
 	    NULL, NULL);
     Tcl_CreateObjCommand2(interp, "::tcl::mathfunc::popcount", PopcountCmd,

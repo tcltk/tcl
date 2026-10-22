@@ -1028,5 +1028,7 @@ Sources de types : `tclAnnotObj.c`, `tclTypePath.c`, `tclTypes.c`. Patch noyau :
   valeurs d'un dict) : `$P(*)`, `{*}$P(*)`, `$T(*.y)`. Lecture seule.
 - Une lecture multiple de types différents rend une `list.any` (chaque élément garde son type).
 - `(x,y) = $P` dans expr lit le contenu (les champs), y compris imbriqué : `((a,b),(c,d)) = $T`.
+- `::tcl::unsupported::content V` : contenu profond d'une valeur annotée (champs, éléments décodés
+  rendus bruts) ; sert au tuple et à l'exemple `cstruct` (voie objet), à recompiler.
 - Exemples réécrits : `complexes.tcl`, `complexes_tip759.tcl` (`lassign $a(*) …`), `arbre_graphe.tcl`
   (`$t(value)`, `$t(children)`), `hypergraphe.tcl` ; tests `t10`, `t22`, `t30`, `t51`, `t52`.

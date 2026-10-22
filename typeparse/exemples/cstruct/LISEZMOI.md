@@ -105,3 +105,11 @@ qui ne contrôle rien : 4 × pour l'encodage, 2 à 3 × pour le décodage, 4 × 
 complète (8 × face au classique contrôlé). Le coût restant est côté Tcl : lire un champ par
 `$it(champ)` (25 ms pour 10 000 mesures) reste 3 × plus lent que `lassign`, et 10 × plus lent
 que le `lassign` classique.
+
+## v15 : la voie objet lit le CONTENU du produit
+
+Avec la règle B (v15), un produit annoté est UN élément pour l'API de listes : `Tcl_ListObjGetElements`
+sur un `Batch` rend 1 élément. `cs::stats_obj` demande donc à Tcl le contenu brut du produit
+(`::tcl::unsupported::content`, profond : les `Sample` d'un lot décodé deviennent bruts aussi), puis
+lit ses champs comme avant. **Recompiler `cstruct.so` (ou `cstruct.dll`) après la mise à jour.**
+Avec une fonction de stub (contenu d'une valeur annotée), ce serait un appel C direct.

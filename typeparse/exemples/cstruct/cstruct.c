@@ -189,12 +189,36 @@ TypeIs(Tcl_Interp *interp, Tcl_Obj *obj, const char *want)
     return ok;
 }
 
+/*
+ * FR : v15 (règle B) : un produit est UN élément pour la vue liste ; ses champs
+ *      sont son CONTENU. On le demande à Tcl (::tcl::unsupported::content), qui
+ *      rend la liste brute des champs (et des produits imbriqués). Avec une
+ *      fonction de stub, ce serait un appel C direct, comme pour TypeIs.
+ * EN : v15 (rule B): a product is ONE element for the list view; its fields are
+ *      its CONTENT, asked of Tcl. A stub function would make this a C call.
+ */
+static Tcl_Obj *
+Content(Tcl_Interp *interp, Tcl_Obj *obj)
+{
+    Tcl_Obj *cmd[2], *res = NULL;
+
+    cmd[0] = Tcl_NewStringObj("::tcl::unsupported::content", -1);
+    cmd[1] = obj;
+    Tcl_IncrRefCount(cmd[0]);
+    if (Tcl_EvalObjv(interp, 2, cmd, 0) == TCL_OK) {
+	res = Tcl_GetObjResult(interp);
+	Tcl_IncrRefCount(res);
+    }
+    Tcl_DecrRefCount(cmd[0]);
+    return res;			/* une référence pour l'appelant, ou NULL */
+}
+
 /* cs::stats_obj BATCH : la valeur annotée elle-même. */
 static int
 StatsObjCmd(void *cd, Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 {
     Tcl_Size nf, ni, i, nsf;
-    Tcl_Obj **fields, **items, **sf;
+    Tcl_Obj **fields, **items, **sf, *content;
     Tcl_WideInt n;
     Sample *s;
     Summary sm;
@@ -209,16 +233,26 @@ StatsObjCmd(void *cd, Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 		"cs::stats_obj: argument is not a Batch", -1));
 	return TCL_ERROR;
     }
-    /* Batch = { n, items } */
-    if (Tcl_ListObjGetElements(interp, objv[1], &nf, &fields) != TCL_OK
+    /* Batch = { n, items }, lu dans le contenu / read from the content */
+    content = Content(interp, objv[1]);
+    if (content == NULL) {
+	return TCL_ERROR;
+    }
+    if (Tcl_ListObjGetElements(interp, content, &nf, &fields) != TCL_OK
 	    || nf != 2
 	    || Tcl_GetWideIntFromObj(interp, fields[0], &n) != TCL_OK
 	    || Tcl_ListObjGetElements(interp, fields[1], &ni, &items) != TCL_OK) {
+	if (nf != 2) {
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "cs::stats_obj: a Batch has 2 fields", -1));
+	}
+	Tcl_DecrRefCount(content);
 	return TCL_ERROR;
     }
     if (n != ni) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"cs::stats_obj: n does not match the number of items", -1));
+	Tcl_DecrRefCount(content);
 	return TCL_ERROR;
     }
     s = (Sample *) Tcl_Alloc((size_t)(ni ? ni : 1) * sizeof(Sample));
@@ -232,6 +266,7 @@ StatsObjCmd(void *cd, Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 		|| Tcl_GetDoubleFromObj(interp, sf[1], &v) != TCL_OK
 		|| Tcl_GetWideIntFromObj(interp, sf[2], &flags) != TCL_OK) {
 	    Tcl_Free(s);
+	    Tcl_DecrRefCount(content);
 	    return TCL_ERROR;
 	}
 	s[i].id = (uint32_t) id;
@@ -240,6 +275,7 @@ StatsObjCmd(void *cd, Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
     }
     Compute(s, (uint32_t) ni, &sm);
     Tcl_Free(s);
+    Tcl_DecrRefCount(content);
     Tcl_SetObjResult(interp, SummaryBytes(&sm));
     return TCL_OK;
 }
