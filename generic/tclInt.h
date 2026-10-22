@@ -2727,6 +2727,10 @@ typedef struct ListRep {
 	? ListObjSpanPtr(listObj_)->spanStart				\
 	: ListObjStorePtr(listObj_)->firstUsed)
 
+/* Returns element at specified index */
+#define ListObjIndex(listObj_, index_) \
+    (ListObjStorePtr(objPtr)->slots[ListObjStart(objPtr) + index])
+
 /* Stores the element count and base address of this list's elements */
 #define ListObjGetElements(listObj_, objc_, objv_) \
     (((objv_) = &ListObjStorePtr(listObj_)->slots[ListObjStart(listObj_)]), \
@@ -3535,7 +3539,6 @@ MODULE_SCOPE Tcl_Obj *	TclLindexList(Tcl_Interp *interp,
 			    Tcl_Obj *listPtr, Tcl_Obj *argPtr);
 MODULE_SCOPE Tcl_Obj *	TclLindexFlat(Tcl_Interp *interp, Tcl_Obj *listPtr,
 			    Tcl_Size indexCount, Tcl_Obj *const indexArray[]);
-MODULE_SCOPE Tcl_Obj *	TclListObjGetElement(Tcl_Obj *listObj, Tcl_Size index);
 /* TIP #280 */
 MODULE_SCOPE void	TclListLines(Tcl_Obj *listObj, Tcl_Size line, Tcl_Size n,
 			    Tcl_Size *lines, Tcl_Obj *const *elems);

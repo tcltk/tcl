@@ -4729,7 +4729,7 @@ TEBCresume(
 		    && (!TclHasInternalRep(value2Ptr, &tclListType)
 		    || (Tcl_ListObjLength(interp, value2Ptr, &value2Length),
 			value2Length == 1
-			    ? (indexListPtr = TclListObjGetElement(value2Ptr, 0), 1)
+			    ? (indexListPtr = ListObjIndex(value2Ptr, 0), 1)
 			    : 0))) {
 		/* increment the refCount of value2Ptr because TclListObjGetElement may
 		 * have just extracted it from a list in the condition for this block.

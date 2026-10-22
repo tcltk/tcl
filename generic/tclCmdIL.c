@@ -2630,7 +2630,7 @@ Tcl_LpopObjCmd(
      */
 
     if (objc == 2) {
-	if (!listLen) {
+	if (listLen == 0) {
 	    /* empty list, throw the same error as with index "end" */
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"index \"end\" out of range", -1));
