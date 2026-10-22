@@ -1777,9 +1777,20 @@ TclListObjAppendElements(
 	Tcl_Panic("%s called with shared object", "TclListObjAppendElements");
     }
 
-    if (TclListObjGetRep(interp, toObj, &listRep) != TCL_OK) {
-	/* Cannot be converted to a list */
-	return TCL_ERROR;
+    if (TclHasInternalRep(toObj, &tclListType)) {
+	ListObjGetRep(toObj, &listRep);
+    } else {
+	if (TclObjTypeHasProc(toObj, replaceProc)) {
+	    int ret = TclListObjLength(interp, toObj, &toLen);
+	    if (ret == TCL_OK) {
+		return TclObjTypeReplace(interp, toObj, toLen, 0, elemCount,
+			elemObjv);
+	    }
+	}
+	if (TclListObjGetRep(interp, toObj, &listRep) != TCL_OK) {
+	    /* Cannot be converted to a list */
+	    return TCL_ERROR;
+	}
     }
 
     if (elemCount <= 0) {

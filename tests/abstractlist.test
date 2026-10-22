@@ -618,6 +618,27 @@ test abstractlist-int {TclLengthOne: anti-shimmer of boolean, int, double, bignu
 
 # lsort
 
+# lappend must keep an abstract list's type (the type has a Replace hook).  The tests use apply so the
+# lappend is compiled inside a proc body, which is where the type used to be lost.
+test abstractlist-lappend-1.1 {lappend of one element keeps the abstract list type} -constraints {testobj lstring} -body {
+    apply {{} {set l [lstring abc]; lappend l d; list [testobj objtype $l] $l}}
+} -result {lstring {a b c d}}
+test abstractlist-lappend-1.2 {lappend {*}$list keeps the abstract list type} -constraints {testobj lstring} -body {
+    apply {{} {set l [lstring abc]; set x {d e}; lappend l {*}$x; list [testobj objtype $l] $l}}
+} -result {lstring {a b c d e}}
+test abstractlist-lappend-1.3 {lappend {*}{literal list} keeps the abstract list type} -constraints {testobj lstring} -body {
+    apply {{} {set l [lstring abc]; lappend l {*}{d e}; list [testobj objtype $l] $l}}
+} -result {lstring {a b c d e}}
+test abstractlist-lappend-1.4 {lappend to an array element keeps the abstract list type} -constraints {testobj lstring} -body {
+    apply {{} {set A(x) [lstring abc]; lappend A(x) d; list [testobj objtype $A(x)] $A(x)}}
+} -result {lstring {a b c d}}
+test abstractlist-lappend-1.5 {lappend {*}$list to an array element keeps the abstract list type} -constraints {testobj lstring} -body {
+    apply {{} {set A(x) [lstring abc]; set x {d e}; lappend A(x) {*}$x; list [testobj objtype $A(x)] $A(x)}}
+} -result {lstring {a b c d e}}
+test abstractlist-lappend-1.6 {lappend $name keeps the abstract list type} -constraints {testobj lstring} -body {
+    apply {{} {set l [lstring abc]; set n l; lappend $n d; list [testobj objtype $l] $l}}
+} -result {lstring {a b c d}}
+
 # cleanup
 ::tcltest::cleanupTests
 
