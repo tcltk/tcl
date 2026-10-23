@@ -2457,6 +2457,27 @@ Tcl_AppendFormatToObj(
 		/* TODO: Figure out ACCEPT_NAN here */
 		goto error;
 	    }
+	    if (TclIsInfinite(d)) {
+		/*
+		 * Format infinities ourselves, as C99 specifies, since some C
+		 * runtimes (msvcrt) print "1.#INF". The "0" flag pads with
+		 * spaces. [Bug 40f315bc23]
+		 */
+
+		TclNewObj(segment);
+		allocSegment = 1;
+		if (d < 0) {
+		    Tcl_AppendToObj(segment, "-", 1);
+		} else if (gotPlus) {
+		    Tcl_AppendToObj(segment, "+", 1);
+		} else if (gotSpace) {
+		    Tcl_AppendToObj(segment, " ", 1);
+		}
+		Tcl_AppendToObj(segment,
+			(ch == 'E' || ch == 'G') ? "INF" : "inf", 3);
+		gotZero = 0;
+		break;
+	    }
 	    *p++ = '%';
 	    if (gotMinus) {
 		*p++ = '-';

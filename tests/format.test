@@ -595,6 +595,12 @@ test format-19.4.2 {Bug d498578df4: width overflow should cause limit exceeded} 
     format %[expr {0xffffffffffffffff - 1}]g 0
 } -returnCodes error -result "max size for a Tcl value exceeded"
 
+test format-19.6 {infinities are formatted the same on all platforms, bug [40f315bc23]} {
+    lmap spec {%e %E %f %g %G %+e {% g} %6E %-6f| %06g %.3e %.0f %#g} {
+	list [format $spec Inf] [format $spec -Inf]
+    }
+} {{inf -inf} {INF -INF} {inf -inf} {inf -inf} {INF -INF} {+inf -inf} {{ inf} -inf} {{   INF} {  -INF}} {{inf   |} {-inf  |}} {{   inf} {  -inf}} {inf -inf} {inf -inf} {inf -inf}}
+
 # Note that this test may fail in future versions
 test format-20.1 {Bug 2932421: plain %s caused internalrep change of args} -body {
     set x [dict create a b c d]
