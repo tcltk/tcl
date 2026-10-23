@@ -580,6 +580,7 @@ set {paire}p {nom}jean 12        ;# can't mix values named by a field annotation
                                  ;#   and positional values in a paire constructor: name every field, or none
 set {paire}p {nom}a {taille}3    ;# unknown field "taille" in paire
 set {paire}p {nom}a {nom}b       ;# duplicate field "nom" in paire
+set {paire}p {aut.nom}x         ;# aut.nom names a field of aut, not of paire
 ```
 
 Une valeur entre accolades s'étiquette aussi : `set {seg}s {a}{1 2} {b}{3 4}`.
@@ -903,7 +904,6 @@ Le codec C, qui **vérifie** en plus chaque valeur contre son type, est 2 à 3 f
 
 - **Adoption par une variable non typée.** `set e [lindex $L 1]` rend `e` typée et stricte. Le piège `catch … m` (§ 6.2) en découle, et l'erreur qui s'en échappe est le message d'origine, ce qui la rend difficile à comprendre. À décider : adoption silencieuse, adoption sans contrat, ou message explicite.
 - **Variantes de même forme** : sans étiquette, la première est prise sans avertissement.
-- `set {paire}s {aut.nom}x` (le champ d'un **autre** produit) donne `wrong # args` ; un message dédié serait plus clair.
 - `lset` avec une liste d'index passant par `TclLsetList` garde une référence en trop (fuite, sans plantage).
 
 **Pas encore fait**

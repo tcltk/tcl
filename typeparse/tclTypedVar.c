@@ -617,6 +617,45 @@ BuildDict(Tcl_Interp *interp, TclType *tp, Tcl_Size n, Tcl_Obj *const a[],
  * Rend 1 (idx et *valuePtr remplis), 0 (ce n'est pas cette écriture) ou -1
  * (T.champ désigne un champ inexistant de T : message dans l'interp).
  */
+/*
+ * {aut.nom}x dans un constructeur de paire : "aut.nom" désigne le champ d'un
+ * AUTRE produit. Rend 1 avec un message dédié dans l'interp, 0 sinon.
+ */
+static int
+ForeignFieldTag(Tcl_Interp *interp, TclType *tp, const char *text,
+	Tcl_Size len)
+{
+    const char *dot = NULL, *p;
+    TclType *other;
+    Tcl_InterpState st;
+
+    for (p = text; p < text + len; p++) {
+	if (*p == '.') {
+	    dot = p;
+	}
+    }
+    if (dot == NULL || dot == text || dot + 1 >= text + len) {
+	return 0;
+    }
+    st = Tcl_SaveInterpState(interp, TCL_OK);
+    other = TclTypeParse(interp, text, dot - text);
+    (void) Tcl_RestoreInterpState(interp, st);
+    if (other == NULL || other == tp || other->kind != TCLT_PRODUCT) {
+	return 0;
+    }
+    if (TclTypeFieldIndex(other, dot + 1) >= 0) {
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"%.*s names a field of %s, not of %s", (int) len, text,
+		other->name, tp->name));
+    } else {
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"%.*s: %s has no field \"%s\", and the value being built is a %s",
+		(int) len, text, other->name, dot + 1, tp->name));
+    }
+    Tcl_SetErrorCode(interp, "TCL", "TYPE", "FIELD", (char *) NULL);
+    return 1;
+}
+
 static int
 ProductFieldTag(Tcl_Interp *interp, TclType *tp, Tcl_Obj *arg,
 	Tcl_Obj **valuePtr, Tcl_Size *idxPtr)
@@ -649,7 +688,7 @@ ProductFieldTag(Tcl_Interp *interp, TclType *tp, Tcl_Obj *arg,
 	(void) Tcl_RestoreInterpState(interp, st);
     }
     if (named != tp) {
-	return 0;
+	return ForeignFieldTag(interp, tp, text, len) ? -1 : 0;
     }
     idx = TclTypeFieldIndex(tp, dot + 1);
     if (idx < 0) {
@@ -1213,6 +1252,31 @@ TclSetAnnotatedCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 	    }
 	    Tcl_DecrRefCount(pd);
 	}
+	if (ntag == 0) {
+	    /* Aucune étiquette de ce produit : une étiquette d'un AUTRE
+	     * produit ({aut.nom}x) est une erreur, pas une lecture
+	     * positionnelle silencieuse. */
+	    for (i = 0; i < nargs; i++) {
+		Tcl_Obj *pd = TclAnnotPending(objv[2 + i]), *top = NULL;
+		Tcl_Size npd = 0, tl;
+		const char *tt;
+		int foreign = 0;
+
+		Tcl_IncrRefCount(pd);
+		Tcl_ListObjLength(NULL, pd, &npd);
+		if (npd > 0) {
+		    Tcl_ListObjIndex(NULL, pd, npd - 1, &top);
+		}
+		if (top != NULL) {
+		    tt = Tcl_GetStringFromObj(top, &tl);
+		    foreign = ForeignFieldTag(interp, tp, tt, tl);
+		}
+		Tcl_DecrRefCount(pd);
+		if (foreign) {
+		    goto done;
+		}
+	    }
+	}
 	if (ntag == nargs) {
 	    fieldTags = 1;
 	} else if (ntag > 0) {
@@ -1232,6 +1296,13 @@ TclSetAnnotatedCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 		    Tcl_ListObjIndex(NULL, pd, npd - 1, &top);
 		}
 		if (top != NULL && TclAnnotIsUnknown(interp, top)) {
+		    Tcl_Size tl;
+		    const char *tt = Tcl_GetStringFromObj(top, &tl);
+
+		    if (ForeignFieldTag(interp, tp, tt, tl)) {
+			Tcl_DecrRefCount(pd);
+			goto done;
+		    }
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			    "unknown field \"%s\" in %s", Tcl_GetString(top),
 			    tp->name));

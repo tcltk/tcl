@@ -1,0 +1,8 @@
+{aut.nom}x seul                      1 aut.nom names a field of aut, not of paire
+{aut.nom}x {n}3                      1 aut.nom names a field of aut, not of paire
+{aut.age}3 {n}1                      1 aut.age names a field of aut, not of paire
+tous étrangers                       1 aut.nom names a field of aut, not of paire
+{aut.zz}x (champ inconnu)            1 aut.zz: aut has no field "zz", and the value being built is a paire
+{nom}x {n}3 (correct)                0 x 3
+{paire.nom}x {paire.n}3              0 x 3
+positionnel x 3                      0 x 3

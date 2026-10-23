@@ -364,8 +364,8 @@ Même écriture pour les champs d'un produit que pour les variantes d'une somme 
 `set {paire}p {paire.nom}Jean` fixe le seul champ `nom` ; les autres champs
 prennent leur défaut (`Jean 0`). Le préfixe `{T.champ}` n'est reconnu que si
 `T` est le type construit et seulement pour UN argument ; champ inexistant :
-« unknown field "zz" in paire » ; un autre type (`{aut.nom}x`) retombe sur
-l'erreur habituelle. Le préfixe n'a jamais de sens de champ en dehors d'un
+« unknown field "zz" in paire » ; un autre type (`{aut.nom}x`) : message
+dédié depuis v15l. Le préfixe n'a jamais de sens de champ en dehors d'un
 produit. Test : `tests_tclsh/t24_produit_champ.tcl` (+ `.out`).
 
 ## produit-optionnel.patch  (à appliquer après produit-champ.patch)
@@ -1246,3 +1246,18 @@ Source de types : `tclTypePath.c`. Pas de patch noyau.
   not "p": to change the variant, write the whole value ({p}...)`. Écrire la variante entière
   (`set v(s) abc`) change la variante, comme avant.
 - Test `t64_variante_inactive`.
+
+### v15l — étiquette du champ d'un autre produit (23 octobre 2026)
+
+Source de types : `tclTypedVar.c`. Pas de patch noyau.
+
+- Avant : `set {paire}s {aut.nom}x` donnait `wrong # args: paire needs 2 values…` ; avec
+  toutes les valeurs étiquetées d'un autre produit (`{aut.nom}x {aut.age}3`), elles étaient prises
+  par position, sans rien dire (`x 3`).
+- Maintenant : `aut.nom names a field of aut, not of paire`, que l'étiquette étrangère soit seule,
+  mêlée à des étiquettes de `paire` (`{aut.nom}x {n}3`) ou partout. Champ inexistant dans l'autre
+  produit : `aut.zz: aut has no field "zz", and the value being built is a paire`.
+- Inchangé : `{nom}x {n}3`, `{paire.nom}x {paire.n}3`, `x 3`.
+- Tests : `t65_champ_etranger` ; `t24_produit_champ.out` régénéré (ligne 7 : le nouveau message).
+- Exemple `niveau2.tcl` : le refus « selector type is 2 but … variant 1 » a lieu dès la construction
+  (depuis la correction du sélecteur `S($champ)`) ; le `catch` entoure maintenant le `set`.

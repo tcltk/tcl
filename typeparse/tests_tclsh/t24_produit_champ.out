@@ -4,6 +4,6 @@ SIG {a b}
 1
 unknown field "zz" in paire
 1
-wrong # args: paire needs 2 values; to name fields (the others take their default), write {field}value or set {paire}var(field,...) value...
+aut.nom names a field of aut, not of paire
 Zed 0
 Jean 3

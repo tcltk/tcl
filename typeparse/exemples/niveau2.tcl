@@ -164,6 +164,6 @@ puts "données     : [hex $b3]"
 puts "  décodé / decoded: [type binary decode message $b3]"
 
 # FR : l'étiquette et la variante doivent concorder / tag and variant must agree
-set {message}m4(type,len,body) 2 6 {1}$u
-if {[catch {type binary encode message $m4} msg]} {puts "refus / refused : $msg"}
+#      (refusé dès la construction / refused as soon as it is built)
+if {[catch {set {message}m4(type,len,body) 2 6 {1}$u} msg]} {puts "refus / refused : $msg"}
 if {[catch {type binary decode message "\x09\x00\x00"} msg]} {puts "refus / refused : $msg"}
