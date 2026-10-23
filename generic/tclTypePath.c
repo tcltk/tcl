@@ -234,6 +234,7 @@ typedef struct OpNode {
  */
 
 enum OperandTypes {
+    OT_ALL = -9,		/* "*" seul : toutes les parties */
     OT_ATOM = -8,		/* une valeur substituée, seule */
     OT_ARITH = -7,		/* [( expr )] */
     OT_SCRIPT = -6,		/* [script] */
@@ -278,6 +279,7 @@ enum LexemeCodes {
     VARIABLE = LEAF | 4,
     SCRIPT = LEAF | 5,
     ARITH = LEAF | 6,
+    ALLWORD = LEAF | 7,		/* "*" seul */
 
     /* Unaires */
 
@@ -360,7 +362,15 @@ ParseIndexLexeme(
 	case ',': *lexemePtr = COMMA; return 1;
 	case '.': *lexemePtr = DOT; return 1;
 	case ':': *lexemePtr = RANGE; return 1;
-	case '*': *lexemePtr = SPLAT; return 1;
+	case '*':
+	    /* "*" seul (suivi de la fin, de . , : ) ou d'un blanc) : toutes
+	     * les parties ; sinon le dépliage unaire. */
+	    if (start + 1 == limit || strchr(".,:) \t", start[1]) != NULL) {
+		*lexemePtr = ALLWORD;
+		*literalPtr = Tcl_NewStringObj("*", 1);
+		return 1;
+	    }
+	    *lexemePtr = SPLAT; return 1;
 	case '(': *lexemePtr = OPEN_PAREN; return 1;
 	case ')': *lexemePtr = CLOSE_PAREN; return 1;
 	case '$':
@@ -557,9 +567,11 @@ ParseIndex(
 	    case NAMEWORD:
 	    case KEYWORD:
 	    case TAGWORD:
+	    case ALLWORD:
 		Tcl_ListObjAppendElement(NULL, leafList, literal);
 		literal = NULL;
-		complete = lastParsed = (lexeme == KEYWORD) ? OT_KEY
+		complete = lastParsed = (lexeme == ALLWORD) ? OT_ALL
+			: (lexeme == KEYWORD) ? OT_KEY
 			: (lexeme == TAGWORD) ? OT_TAG
 			: atom ? OT_ATOM : OT_NAME;
 		break;
@@ -729,7 +741,7 @@ ParseIndex(
  *	repousse son résultat.
  * -------------------------------------------------------------------- */
 
-typedef enum { IS_NAME, IS_KEY, IS_RANGE, IS_TAG } StepKind;
+typedef enum { IS_NAME, IS_KEY, IS_RANGE, IS_TAG, IS_ALL } StepKind;
 
 typedef struct IndexStep {
     StepKind kind;
@@ -1138,6 +1150,10 @@ EvalLeaf(IndexEnv *env, int kind, Tcl_Obj *text)
 	s = OneStep(IS_NAME, text, NULL);
 	s.path[0].step[0].atom = 1;
 	break;
+    case OT_ALL:
+	s = OneStep(IS_ALL, text, NULL);
+	s.multi = 1;
+	break;
     default:			/* OT_NAME */
 	s = OneStep(IS_NAME, text, NULL);
 	break;
@@ -1192,6 +1208,7 @@ CompileIndexTree(
 	case OT_KEY:
 	case OT_TAG:
 	case OT_ATOM:
+	case OT_ALL:
 	    if (EvalLeaf(envPtr, next, **leafObjvPtr) != TCL_OK) {
 		return TCL_ERROR;
 	    }
@@ -1269,8 +1286,18 @@ PathErr(Tcl_Interp *interp, const char *fmt, const char *a, const char *b)
 
 /* Enveloppe le contenu d'une case dans son type (somme : variante déduite
  * par revalidation, la balise d'un élément imbriqué n'est pas conservée). */
+static Tcl_Obj *WrapSlotHint(Tcl_Interp *interp, TclType *tp,
+	Tcl_Obj *content, int hint);
+
 static Tcl_Obj *
 WrapSlot(Tcl_Interp *interp, TclType *tp, Tcl_Obj *content)
+{
+    return WrapSlotHint(interp, tp, content, -1);
+}
+
+/* Idem, hint : la variante désignée par un sélecteur S($champ), ou -1. */
+static Tcl_Obj *
+WrapSlotHint(Tcl_Interp *interp, TclType *tp, Tcl_Obj *content, int hint)
 {
     int variant = -1, ownVariant = -1;
     TclType *ownType = NULL;
@@ -1295,7 +1322,7 @@ WrapSlot(Tcl_Interp *interp, TclType *tp, Tcl_Obj *content)
 	return TclNewAnnotated(interp, tp, ownVariant, inner);
     }
     if (tp->kind == TCLT_SUM
-	    && TclTypeValidate(interp, tp, content, -1, &variant) != TCL_OK) {
+	    && TclTypeValidate(interp, tp, content, hint, &variant) != TCL_OK) {
 	return NULL;
     }
     return TclNewAnnotated(interp, tp, variant, content);
@@ -1549,7 +1576,8 @@ DerefWalk(Tcl_Interp *interp, Tcl_Obj *a, Tcl_DString *path)
 		snprintf(num, sizeof(num), "%lld", (long long) i);
 	    }
 	    DerefWhere(path, keep, ".", num);
-	    child = WrapSlot(interp, slot, elems[i]);
+	    child = WrapSlotHint(interp, slot, elems[i], tp->kind == TCLT_PRODUCT
+		    ? TclTypeTagVariantFrom(tp, i, elems, n) : -1);
 	    if (child == NULL) {
 		goto fail;
 	    }
@@ -1698,7 +1726,8 @@ Step(Tcl_Interp *interp, Tcl_Obj *a, const char *name, int quoted)
 	if (Tcl_ListObjIndex(interp, v, idx, &elem) != TCL_OK) {
 	    return NULL;
 	}
-	return WrapSlot(interp, tp->fields[idx].type, elem);
+	return WrapSlotHint(interp, tp->fields[idx].type, elem,
+		TclTypeTagVariant(tp, idx, v));
     case TCLT_LIST:
 	if (quoted) {
 	    PathErr(interp, "a list can't be indexed with the key '%s'%s",
@@ -1889,6 +1918,62 @@ ReadSteps(Tcl_Interp *interp, Tcl_Obj *a, const IndexPath *p, Tcl_Size i,
 	TclVecAdd(&out->vec, r);
 	return TCL_OK;
     }
+    case IS_ALL: {
+	/* "*" : chaque partie, dans l'ordre (champs d'un produit, éléments
+	 * d'une liste, valeurs d'un dict) ; les pas suivants s'appliquent à
+	 * chacune. */
+	Tcl_Obj *v, **elv, *key, *val;
+	TclType *tp;
+	Tcl_Size k, ne;
+	Tcl_DictSearch ds;
+	int done, variant;
+	char ibuf[32];
+
+	if (TclAnnotInfo(a, &v, &tp, &variant, NULL) != 1) {
+	    PathErr(interp, "\"*\" needs a typed container%s%s", "", "");
+	    return TCL_ERROR;
+	}
+	switch (tp->kind) {
+	case TCLT_PRODUCT:
+	    for (k = 0; k < tp->nfields; k++) {
+		r = Step(interp, a, Tcl_GetString(tp->fields[k].name), 0);
+		if (r == NULL) return TCL_ERROR;
+		rc = ReadSteps(interp, r, p, i + 1, out);
+		TclDiscard(r);
+		if (rc != TCL_OK) return rc;
+	    }
+	    return TCL_OK;
+	case TCLT_LIST:
+	    if (Tcl_ListObjGetElements(interp, v, &ne, &elv) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    for (k = 0; k < ne; k++) {
+		snprintf(ibuf, sizeof(ibuf), "%" TCL_SIZE_MODIFIER "d", k);
+		r = Step(interp, a, ibuf, 0);
+		if (r == NULL) return TCL_ERROR;
+		rc = ReadSteps(interp, r, p, i + 1, out);
+		TclDiscard(r);
+		if (rc != TCL_OK) return rc;
+	    }
+	    return TCL_OK;
+	case TCLT_DICT:
+	    if (Tcl_DictObjFirst(interp, v, &ds, &key, &val, &done) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    for (; !done; Tcl_DictObjNext(&ds, &key, &val, &done)) {
+		r = Step(interp, a, Tcl_GetString(key), 1);
+		if (r == NULL) { Tcl_DictObjDone(&ds); return TCL_ERROR; }
+		rc = ReadSteps(interp, r, p, i + 1, out);
+		TclDiscard(r);
+		if (rc != TCL_OK) { Tcl_DictObjDone(&ds); return rc; }
+	    }
+	    return TCL_OK;
+	default:
+	    PathErr(interp, "\"*\" needs a product, a list or a dict, not %s%s",
+		    tp->name, "");
+	    return TCL_ERROR;
+	}
+    }
     case IS_RANGE: {
 	Items part;
 	Tcl_Size k;
@@ -1932,7 +2017,7 @@ PathHasRange(const IndexPath *p)
     Tcl_Size i;
 
     for (i = 0; i < p->n; i++) {
-	if (p->step[i].kind == IS_RANGE) {
+	if (p->step[i].kind == IS_RANGE || p->step[i].kind == IS_ALL) {
 	    return 1;
 	}
     }
@@ -1948,14 +2033,31 @@ TypedListOf(Tcl_Interp *interp, Tcl_Obj **v, Tcl_Size n)
     Tcl_Obj *content, *list, *a;
     Tcl_Size i;
 
+    TclType *first = NULL;
+    int mixed = 0;
+
     for (i = 0; i < n; i++) {
 	tp = NULL;
 	content = v[i];
 	TclAnnotInfo(v[i], &content, &tp, NULL, NULL);
 	if (tp != NULL) {
+	    if (first == NULL) {
+		first = tp;
+	    } else if (!TclTypeSame(first, tp)) {
+		mixed = 1;
+	    }
 	    common = (common == NULL) ? tp : TclTypeCommon(interp, common, tp);
 	}
 	TclVecAdd(&contents, content);
+    }
+    if (mixed) {
+	/* Types différents (les champs d'un produit, $P(*)) : list.any,
+	 * chaque élément garde son propre type. */
+	TclVecFree(&contents);
+	for (i = 0; i < n; i++) {
+	    TclVecAdd(&contents, v[i]);
+	}
+	common = TclTypeParse(interp, "any", 3);
     }
     if (common == NULL) {
 	common = TclTypeParse(interp, "string", 6);
@@ -2168,6 +2270,12 @@ SetIn(Tcl_Interp *interp, Tcl_Obj *a, const IndexPath *chain, Tcl_Size i,
 {
     const IndexStep *step = &chain->step[i];
     int last = (i == chain->n - 1);
+
+    if (step->kind == IS_ALL) {
+	PathErr(interp, "\"*\" reads all the parts; it cannot be written to%s%s",
+		"", "");
+	return NULL;
+    }
     const char *name = Tcl_GetString(step->a);
     Tcl_Obj *v, *child = NULL, *childContent = NULL, *newV, *res = NULL;
     Tcl_Obj **elems;
@@ -2331,7 +2439,12 @@ SetIn(Tcl_Interp *interp, Tcl_Obj *a, const IndexPath *chain, Tcl_Size i,
 	TclDiscard(c);
 	childContent = Tcl_DuplicateObj(old);
     } else if (last) {
-	childContent = TclTypedConform(interp, slotType, val);
+	if (tp->kind == TCLT_PRODUCT && idx < n
+		&& TclTypeTagCheck(interp, tp, idx, val, elems, n) != TCL_OK) {
+	    return NULL;
+	}
+	childContent = TclTypedConformHint(interp, slotType, val,
+		tp->kind == TCLT_PRODUCT ? TclTypeTagVariant(tp, idx, v) : -1);
 	if (childContent == NULL) {
 	    return NULL;
 	}
@@ -2358,7 +2471,8 @@ SetIn(Tcl_Interp *interp, Tcl_Obj *a, const IndexPath *chain, Tcl_Size i,
 	} else {
 	    old = elems[idx];
 	}
-	child = WrapSlot(interp, slotType, old);
+	child = WrapSlotHint(interp, slotType, old, tp->kind == TCLT_PRODUCT
+		? TclTypeTagVariant(tp, idx, v) : -1);
 	if (child == NULL) {
 	    return NULL;
 	}
@@ -2401,6 +2515,33 @@ SetIn(Tcl_Interp *interp, Tcl_Obj *a, const IndexPath *chain, Tcl_Size i,
 	    TclDiscard(newV);
 	    TclDiscard(childContent);
 	    return NULL;
+	}
+	if (tp->kind == TCLT_PRODUCT) {
+	    /* Un champ S($champ) dépend de son sélecteur : changer le
+	     * sélecteur revalide le champ selon la nouvelle variante. */
+	    Tcl_Size k, nn;
+	    Tcl_Obj **ne;
+
+	    /* childContent appartient désormais à newV : on ne libère que
+	     * newV en cas d'erreur. */
+	    if (Tcl_ListObjGetElements(interp, newV, &nn, &ne) != TCL_OK) {
+		TclDiscard(newV);
+		return NULL;
+	    }
+	    for (k = 0; k < tp->nfields && k < nn; k++) {
+		TclType *fty = tp->fields[k].type;
+
+		if (k == idx || fty == NULL || fty->kind != TCLT_SUM
+			|| fty->binTag == NULL || fty->binTag[0] == '='
+			|| TclTypeFieldIndex(tp, fty->binTag) != idx) {
+		    continue;
+		}
+		if (TclTypeValidate(interp, fty, ne[k],
+			TclTypeTagVariantFrom(tp, k, ne, nn), NULL) != TCL_OK) {
+		    TclDiscard(newV);
+		    return NULL;
+		}
+	    }
 	}
 	res = TclNewAnnotated(interp, tp, variant, newV);
 	TclDiscard(newV);

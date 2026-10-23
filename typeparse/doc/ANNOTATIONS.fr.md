@@ -681,6 +681,8 @@ type def corps {{pp}1, {pingmsg}2, {string(raw,$len)}3}   ;# noms de variantes =
 type def message {{u8}type; {u16be}len; {corps($type)}body}
 ```
 
+La variante d'un champ `corps($type)` est toujours celle que nomme le sélecteur, au décodage comme à la lecture (`$m(body)`), à la construction et à l'écriture par chemin, même si plusieurs variantes ont la même forme. Une valeur qui porte une autre variante (`{2}...`, ou une valeur typée d'une autre variante) est refusée : `selector type is 1 but field body of message holds variant 2 of corps($type)`. Changer le sélecteur revalide le champ.
+
 À la construction déjà, une liste dont la taille dépend d'un champ est contrôlée : `set {Batch}b(n,items) 3 {{1 1.0 0}}` est refusé (`field "items" of Batch holds 1 elements, but its size says 3 ($n)`).
 
 #### 9.5 Liens : `*(origine, repr, options).T`

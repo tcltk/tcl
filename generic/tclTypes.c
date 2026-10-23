@@ -1445,7 +1445,9 @@ ValidateG(Tcl_Interp *interp, const TclType *tp, Tcl_Obj *value,
 	    return TCL_ERROR;
 	}
 	for (i = 0; i < n; i++) {
-	    if (ValidateG(interp, tp->fields[i].type, elems[i], -1, NULL, &me)
+	    /* S($champ) : la variante est celle que nomme le champ frère. */
+	    if (ValidateG(interp, tp->fields[i].type, elems[i],
+		    TclTypeTagVariantFrom(tp, i, elems, n), NULL, &me)
 		    != TCL_OK) {
 		return TCL_ERROR;
 	    }
@@ -1502,6 +1504,70 @@ ValidateG(Tcl_Interp *interp, const TclType *tp, Tcl_Obj *value,
     }
     }
     return TCL_ERROR;
+}
+
+/*
+ * Champ idx d'un produit dont le type est une somme S($champ) : la variante
+ * est celle dont le NOM est la valeur du champ frère `champ` (un champ déjà
+ * lu ou déjà donné). vals : les valeurs des champs (NULL : pas encore
+ * connue). Rend l'indice de la variante, ou -1 (pas de sélecteur, champ
+ * frère inconnu, ou valeur qui ne nomme aucune variante : la validation
+ * dira alors ce qui ne va pas).
+ */
+int
+TclTypeTagVariantFrom(const TclType *prod, Tcl_Size idx, Tcl_Obj *const *vals,
+	Tcl_Size nvals)
+{
+    const TclType *ft;
+    Tcl_Size j, v;
+    const char *tv;
+    Tcl_WideInt wt, wv;
+    int tIsInt;
+
+    if (prod == NULL || prod->kind != TCLT_PRODUCT || idx < 0
+	    || idx >= prod->nfields) {
+	return -1;
+    }
+    ft = prod->fields[idx].type;
+    if (ft == NULL || ft->kind != TCLT_SUM || ft->binTag == NULL
+	    || ft->binTag[0] == '=') {
+	return -1;
+    }
+    j = TclTypeFieldIndex(prod, ft->binTag);
+    if (j < 0 || j >= nvals || vals[j] == NULL) {
+	return -1;
+    }
+    tv = Tcl_GetString(TCL_ANNOT_CONTENT(vals[j]));
+    tIsInt = (Tcl_GetWideIntFromObj(NULL, TCL_ANNOT_CONTENT(vals[j]), &wt)
+	    == TCL_OK);
+    for (v = 0; v < ft->nfields; v++) {
+	Tcl_Obj *name = ft->fields[v].name;
+
+	if (name == NULL) {
+	    continue;
+	}
+	if (strcmp(Tcl_GetString(name), tv) == 0) {
+	    return (int) v;
+	}
+	if (tIsInt && Tcl_GetWideIntFromObj(NULL, name, &wv) == TCL_OK
+		&& wv == wt) {
+	    return (int) v;		/* 0x04 et 4 nomment la même variante */
+	}
+    }
+    return -1;
+}
+
+int
+TclTypeTagVariant(const TclType *prod, Tcl_Size idx, Tcl_Obj *content)
+{
+    Tcl_Obj **elems;
+    Tcl_Size n;
+
+    if (prod == NULL || prod->kind != TCLT_PRODUCT || content == NULL
+	    || Tcl_ListObjGetElements(NULL, content, &n, &elems) != TCL_OK) {
+	return -1;
+    }
+    return TclTypeTagVariantFrom(prod, idx, elems, n);
 }
 
 /* Termination : un type récursif doit avoir une valeur finie (§4). */
@@ -2318,6 +2384,99 @@ TclTypeCast(Tcl_Interp *interp, Tcl_Obj *src, TclType *target,
 		outVariant = (int) i;
 		goto validate;
 	    }
+	}
+    }
+    /*
+     * Produit -> liste ou dict (cast de base de tout produit) : la liste de
+     * ses champs, ou le dict nom -> champ. {list} et {dict} rendent les
+     * champs nus (texte ordinaire) ; {list.any} et {dict.any} les rendent
+     * annotés de leur type ; {list.T}, {list(N).T}, {dict.T} les valident
+     * comme T. Pour une somme, on part de la variante active.
+     */
+    if (from != NULL && (target->kind == TCLT_LIST
+	    || target->kind == TCLT_DICT)) {
+	const TclType *pt = from;
+	Tcl_Obj *pc = content, **fv;
+	Tcl_Size nf;
+
+	if (pt->kind == TCLT_SUM && variant >= 0 && variant < (int) pt->nfields
+		&& pt->fields[variant].type != NULL) {
+	    pt = pt->fields[variant].type;
+	}
+	if (pt->kind == TCLT_PRODUCT
+		&& Tcl_ListObjGetElements(NULL, pc, &nf, &fv) == TCL_OK
+		&& nf == pt->nfields) {
+	    int annotated = (target->elem != NULL && TclTypeIsAny(target->elem));
+
+	    res = (target->kind == TCLT_LIST) ? Tcl_NewListObj(nf, NULL)
+		    : Tcl_NewDictObj();
+	    for (i = 0; i < nf; i++) {
+		TclType *ft = pt->fields[i].type;
+		Tcl_Obj *fc = TCL_ANNOT_CONTENT(fv[i]), *e;
+
+		if (annotated && ft != NULL) {
+		    int fvar = -1;
+
+		    if (ft->kind == TCLT_SUM) {
+			TclType *own = NULL;
+
+			if (TclAnnotInfo(fv[i], NULL, &own, &fvar, NULL) != 1
+				|| own != ft) {
+			    fvar = -1;
+			    (void) TclTypeValidate(NULL, ft, fc, -1, &fvar);
+			}
+		    }
+		    e = TclNewAnnotated(interp, ft, fvar, fc);
+		} else {
+		    e = Tcl_DuplicateObj(fc);
+		}
+		if (target->kind == TCLT_LIST) {
+		    Tcl_ListObjAppendElement(NULL, res, e);
+		} else {
+		    Tcl_Obj *k = pt->fields[i].name ? pt->fields[i].name
+			    : Tcl_ObjPrintf("%" TCL_SIZE_MODIFIER "d", i);
+
+		    Tcl_DictObjPut(NULL, res, k, e);
+		}
+	    }
+	    goto validate;
+	}
+    }
+    /*
+     * Liste -> liste, dict -> dict, quand l'un des deux côtés au moins est
+     * structurel (polygone -> list.point, list(4).point, list) : même
+     * contenu, revalidé pour la cible. Deux nominaux sans lien restent
+     * refusés plus bas. {list} rend les éléments nus ; {list.any} les rend
+     * annotés du type d'élément de la source.
+     */
+    if (from != NULL && from->kind == target->kind
+	    && (target->kind == TCLT_LIST || target->kind == TCLT_DICT)
+	    && !(from->nominal && target->nominal)) {
+	Tcl_Obj **ev;
+	Tcl_Size ne;
+	int annotated = (target->elem != NULL && TclTypeIsAny(target->elem));
+
+	if (target->kind == TCLT_LIST
+		&& Tcl_ListObjGetElements(NULL, content, &ne, &ev) == TCL_OK) {
+	    res = Tcl_NewListObj(ne, NULL);
+	    for (i = 0; i < ne; i++) {
+		Tcl_Obj *e;
+
+		if (annotated) {
+		    e = TclIsAnnotated(ev[i]) || from->elem == NULL
+			    || TclTypeIsAny(from->elem)
+			    ? Tcl_DuplicateObj(ev[i])
+			    : TclNewAnnotated(interp, from->elem, -1, ev[i]);
+		} else {
+		    e = Tcl_DuplicateObj(TCL_ANNOT_CONTENT(ev[i]));
+		}
+		Tcl_ListObjAppendElement(NULL, res, e);
+	    }
+	    goto validate;
+	}
+	if (target->kind == TCLT_DICT) {
+	    res = Tcl_DuplicateObj(content);
+	    goto validate;
 	}
     }
     /*

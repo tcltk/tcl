@@ -1445,7 +1445,9 @@ ValidateG(Tcl_Interp *interp, const TclType *tp, Tcl_Obj *value,
 	    return TCL_ERROR;
 	}
 	for (i = 0; i < n; i++) {
-	    if (ValidateG(interp, tp->fields[i].type, elems[i], -1, NULL, &me)
+	    /* S($champ) : la variante est celle que nomme le champ frère. */
+	    if (ValidateG(interp, tp->fields[i].type, elems[i],
+		    TclTypeTagVariantFrom(tp, i, elems, n), NULL, &me)
 		    != TCL_OK) {
 		return TCL_ERROR;
 	    }
@@ -1502,6 +1504,70 @@ ValidateG(Tcl_Interp *interp, const TclType *tp, Tcl_Obj *value,
     }
     }
     return TCL_ERROR;
+}
+
+/*
+ * Champ idx d'un produit dont le type est une somme S($champ) : la variante
+ * est celle dont le NOM est la valeur du champ frère `champ` (un champ déjà
+ * lu ou déjà donné). vals : les valeurs des champs (NULL : pas encore
+ * connue). Rend l'indice de la variante, ou -1 (pas de sélecteur, champ
+ * frère inconnu, ou valeur qui ne nomme aucune variante : la validation
+ * dira alors ce qui ne va pas).
+ */
+int
+TclTypeTagVariantFrom(const TclType *prod, Tcl_Size idx, Tcl_Obj *const *vals,
+	Tcl_Size nvals)
+{
+    const TclType *ft;
+    Tcl_Size j, v;
+    const char *tv;
+    Tcl_WideInt wt, wv;
+    int tIsInt;
+
+    if (prod == NULL || prod->kind != TCLT_PRODUCT || idx < 0
+	    || idx >= prod->nfields) {
+	return -1;
+    }
+    ft = prod->fields[idx].type;
+    if (ft == NULL || ft->kind != TCLT_SUM || ft->binTag == NULL
+	    || ft->binTag[0] == '=') {
+	return -1;
+    }
+    j = TclTypeFieldIndex(prod, ft->binTag);
+    if (j < 0 || j >= nvals || vals[j] == NULL) {
+	return -1;
+    }
+    tv = Tcl_GetString(TCL_ANNOT_CONTENT(vals[j]));
+    tIsInt = (Tcl_GetWideIntFromObj(NULL, TCL_ANNOT_CONTENT(vals[j]), &wt)
+	    == TCL_OK);
+    for (v = 0; v < ft->nfields; v++) {
+	Tcl_Obj *name = ft->fields[v].name;
+
+	if (name == NULL) {
+	    continue;
+	}
+	if (strcmp(Tcl_GetString(name), tv) == 0) {
+	    return (int) v;
+	}
+	if (tIsInt && Tcl_GetWideIntFromObj(NULL, name, &wv) == TCL_OK
+		&& wv == wt) {
+	    return (int) v;		/* 0x04 et 4 nomment la même variante */
+	}
+    }
+    return -1;
+}
+
+int
+TclTypeTagVariant(const TclType *prod, Tcl_Size idx, Tcl_Obj *content)
+{
+    Tcl_Obj **elems;
+    Tcl_Size n;
+
+    if (prod == NULL || prod->kind != TCLT_PRODUCT || content == NULL
+	    || Tcl_ListObjGetElements(NULL, content, &n, &elems) != TCL_OK) {
+	return -1;
+    }
+    return TclTypeTagVariantFrom(prod, idx, elems, n);
 }
 
 /* Termination : un type récursif doit avoir une valeur finie (§4). */

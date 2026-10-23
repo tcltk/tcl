@@ -1286,8 +1286,18 @@ PathErr(Tcl_Interp *interp, const char *fmt, const char *a, const char *b)
 
 /* Enveloppe le contenu d'une case dans son type (somme : variante déduite
  * par revalidation, la balise d'un élément imbriqué n'est pas conservée). */
+static Tcl_Obj *WrapSlotHint(Tcl_Interp *interp, TclType *tp,
+	Tcl_Obj *content, int hint);
+
 static Tcl_Obj *
 WrapSlot(Tcl_Interp *interp, TclType *tp, Tcl_Obj *content)
+{
+    return WrapSlotHint(interp, tp, content, -1);
+}
+
+/* Idem, hint : la variante désignée par un sélecteur S($champ), ou -1. */
+static Tcl_Obj *
+WrapSlotHint(Tcl_Interp *interp, TclType *tp, Tcl_Obj *content, int hint)
 {
     int variant = -1, ownVariant = -1;
     TclType *ownType = NULL;
@@ -1312,7 +1322,7 @@ WrapSlot(Tcl_Interp *interp, TclType *tp, Tcl_Obj *content)
 	return TclNewAnnotated(interp, tp, ownVariant, inner);
     }
     if (tp->kind == TCLT_SUM
-	    && TclTypeValidate(interp, tp, content, -1, &variant) != TCL_OK) {
+	    && TclTypeValidate(interp, tp, content, hint, &variant) != TCL_OK) {
 	return NULL;
     }
     return TclNewAnnotated(interp, tp, variant, content);
@@ -1566,7 +1576,8 @@ DerefWalk(Tcl_Interp *interp, Tcl_Obj *a, Tcl_DString *path)
 		snprintf(num, sizeof(num), "%lld", (long long) i);
 	    }
 	    DerefWhere(path, keep, ".", num);
-	    child = WrapSlot(interp, slot, elems[i]);
+	    child = WrapSlotHint(interp, slot, elems[i], tp->kind == TCLT_PRODUCT
+		    ? TclTypeTagVariantFrom(tp, i, elems, n) : -1);
 	    if (child == NULL) {
 		goto fail;
 	    }
@@ -1715,7 +1726,8 @@ Step(Tcl_Interp *interp, Tcl_Obj *a, const char *name, int quoted)
 	if (Tcl_ListObjIndex(interp, v, idx, &elem) != TCL_OK) {
 	    return NULL;
 	}
-	return WrapSlot(interp, tp->fields[idx].type, elem);
+	return WrapSlotHint(interp, tp->fields[idx].type, elem,
+		TclTypeTagVariant(tp, idx, v));
     case TCLT_LIST:
 	if (quoted) {
 	    PathErr(interp, "a list can't be indexed with the key '%s'%s",
@@ -2427,7 +2439,12 @@ SetIn(Tcl_Interp *interp, Tcl_Obj *a, const IndexPath *chain, Tcl_Size i,
 	TclDiscard(c);
 	childContent = Tcl_DuplicateObj(old);
     } else if (last) {
-	childContent = TclTypedConform(interp, slotType, val);
+	if (tp->kind == TCLT_PRODUCT && idx < n
+		&& TclTypeTagCheck(interp, tp, idx, val, elems, n) != TCL_OK) {
+	    return NULL;
+	}
+	childContent = TclTypedConformHint(interp, slotType, val,
+		tp->kind == TCLT_PRODUCT ? TclTypeTagVariant(tp, idx, v) : -1);
 	if (childContent == NULL) {
 	    return NULL;
 	}
@@ -2454,7 +2471,8 @@ SetIn(Tcl_Interp *interp, Tcl_Obj *a, const IndexPath *chain, Tcl_Size i,
 	} else {
 	    old = elems[idx];
 	}
-	child = WrapSlot(interp, slotType, old);
+	child = WrapSlotHint(interp, slotType, old, tp->kind == TCLT_PRODUCT
+		? TclTypeTagVariant(tp, idx, v) : -1);
 	if (child == NULL) {
 	    return NULL;
 	}
@@ -2497,6 +2515,33 @@ SetIn(Tcl_Interp *interp, Tcl_Obj *a, const IndexPath *chain, Tcl_Size i,
 	    TclDiscard(newV);
 	    TclDiscard(childContent);
 	    return NULL;
+	}
+	if (tp->kind == TCLT_PRODUCT) {
+	    /* Un champ S($champ) dépend de son sélecteur : changer le
+	     * sélecteur revalide le champ selon la nouvelle variante. */
+	    Tcl_Size k, nn;
+	    Tcl_Obj **ne;
+
+	    /* childContent appartient désormais à newV : on ne libère que
+	     * newV en cas d'erreur. */
+	    if (Tcl_ListObjGetElements(interp, newV, &nn, &ne) != TCL_OK) {
+		TclDiscard(newV);
+		return NULL;
+	    }
+	    for (k = 0; k < tp->nfields && k < nn; k++) {
+		TclType *fty = tp->fields[k].type;
+
+		if (k == idx || fty == NULL || fty->kind != TCLT_SUM
+			|| fty->binTag == NULL || fty->binTag[0] == '='
+			|| TclTypeFieldIndex(tp, fty->binTag) != idx) {
+		    continue;
+		}
+		if (TclTypeValidate(interp, fty, ne[k],
+			TclTypeTagVariantFrom(tp, k, ne, nn), NULL) != TCL_OK) {
+		    TclDiscard(newV);
+		    return NULL;
+		}
+	    }
 	}
 	res = TclNewAnnotated(interp, tp, variant, newV);
 	TclDiscard(newV);

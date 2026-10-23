@@ -1067,3 +1067,29 @@ Source de types : `tclAnnotObj.c`. Patch noyau : `eias-string-is.patch` (`tclCmd
 - Test `t56_eias_conversions`. Tests du projet et exemples identiques ; tests de Tcl `expr`,
   `expr-old`, `string`, `stringObj`, `incr`, `obj`, `parse`, `subst`, `list`, `lassign`, `foreach`,
   `dict` : 5110 tests, mêmes résultats que la base.
+
+### v15d — somme choisie par un champ, S($champ) (23 octobre 2026)
+
+Sources de types : `tclTypes.c`, `tclTypes.h`, `tclTypePath.c`, `tclTypedVar.c`, `tclAnnotObj.c`. Pas de patch noyau.
+
+- Cause : le décodeur choisissait la bonne variante, mais un produit range ses champs nus ; à la
+  relecture (`$r(corps)`, validation du produit, construction), la variante d'un champ `corps($genre)`
+  était redevinée d'après la forme de la valeur, sans regarder `genre` : `ambiguous variant` quand
+  deux variantes ont la même forme (`{u8; u8}`), ou pire, la mauvaise variante en silence
+  (`3 {10 11}` lu en variante 1 dans `t35`).
+- `TclTypeTagVariantFrom` / `TclTypeTagVariant` (`tclTypes.c`) : la variante dont le nom est la valeur
+  du champ sélecteur (comparaison de chaînes, puis numérique). Utilisée par la validation des produits,
+  la lecture et l'écriture par chemin (`WrapSlotHint`, `tclTypePath.c`) et la construction
+  (`TclTypedConformHint`, `tclTypedVar.c`). Construction nom/valeur en deux passes : le sélecteur peut
+  être donné après le champ qu'il choisit.
+- Changer le sélecteur par chemin revalide le champ selon la nouvelle variante.
+- `TclTypeTagCheck` : une valeur qui porte elle-même une variante (`{4}{9 1}`, ou une valeur typée
+  `c_pwm`) doit concorder avec le sélecteur, sinon `selector genre is 1 but field corps of req holds
+  variant 4 of corps($genre)` dès la construction (avant : à l'encodage, ou relu en silence dans
+  l'autre variante).
+- `ClassifyAnnot` et le cast vers une collection sauvent et restaurent tout l'état de l'interpréteur
+  (`Tcl_SaveInterpState`) : une analyse de type ratée ne laisse plus d'`errorInfo` (`{1}$p` laissait
+  « unknown type "1" », qui remplaçait le message d'une erreur suivante au niveau global).
+- Tests : nouveau `t57_selecteur` ; `t35` (variante `.3` au lieu de `.1`, refus à la construction) et
+  `t37` (même message, sans le préfixe `type binary:`) régénérés. Tests de Tcl (22 fichiers, 6931
+  tests) : mêmes résultats que la base.

@@ -284,6 +284,9 @@ void	TclVarRefFrameGone(Tcl_Interp *interp, struct CallFrame *framePtr);
 /* tclTypes.c */
 void	TclTypesInit(Tcl_Interp *interp);
 TclType *TclTypeParse(Tcl_Interp *interp, const char *text, Tcl_Size len);
+int	TclTypeTagVariantFrom(const TclType *prod, Tcl_Size idx,
+	    Tcl_Obj *const *vals, Tcl_Size nvals);
+int	TclTypeTagVariant(const TclType *prod, Tcl_Size idx, Tcl_Obj *content);
 int	TclTypeValidate(Tcl_Interp *interp, const TclType *tp, Tcl_Obj *value,
 	    int variantHint, int *variantOut);
 int	TclTypeIncludes(const TclType *a, const TclType *b);
@@ -339,6 +342,10 @@ int	TclTypedVarBindArg(Tcl_Interp *interp, Var *varPtr);
 void	TclTypedVarForget(Var *varPtr);
 void	TclTypedVarForgetByName(Tcl_Interp *interp, Tcl_Obj *nameObj);
 Tcl_Obj *TclTypedConform(Tcl_Interp *interp, TclType *tp, Tcl_Obj *arg);
+int	TclTypeTagCheck(Tcl_Interp *interp, const TclType *prod, Tcl_Size idx,
+	    Tcl_Obj *arg, Tcl_Obj *const *vals, Tcl_Size nvals);
+Tcl_Obj *TclTypedConformHint(Tcl_Interp *interp, TclType *tp, Tcl_Obj *arg,
+	    int hint);
 int	TclSetAnnotatedCmd(Tcl_Interp *interp, Tcl_Size objc,
 	    Tcl_Obj *const objv[]);
 

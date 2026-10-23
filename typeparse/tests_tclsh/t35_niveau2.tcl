@@ -62,8 +62,9 @@ set d3 [type binary decode paquet "\x03\x02\x0a\x0b\xff"]
 puts "$d3 [type get $d3(body)]"
 attempt {type binary decode paquet "\x07\x00"}
 set {pp}p2 {x}1 {y}2
-set {paquet}bad(tag,body) 2 {1}$p2
-attempt {type binary encode paquet $bad}
+# FR : le sélecteur et la variante portée par la valeur doivent concorder :
+#      refusé dès la construction / EN: refused at construction
+attempt {set {paquet}bad(tag,body) 2 {1}$p2}
 puts [type binary paquet]
 
 # --- 5. position ailleurs / located value

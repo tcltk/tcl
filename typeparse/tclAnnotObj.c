@@ -1535,7 +1535,7 @@ ClassifyAnnot(Tcl_Interp *interp, Tcl_Obj *textObj, const TclType *ctx,
 {
     Tcl_Size len, idx;
     const char *text = Tcl_GetStringFromObj(textObj, &len);
-    Tcl_Obj *saved = NULL;
+    Tcl_InterpState saved;
     TclType *tp;
     int res;
 
@@ -1557,8 +1557,9 @@ ClassifyAnnot(Tcl_Interp *interp, Tcl_Obj *textObj, const TclType *ctx,
     if (interp == NULL) {
 	return ANN_UNKNOWN;
     }
-    saved = Tcl_GetObjResult(interp);
-    Tcl_IncrRefCount(saved);
+    /* Tout l'état (résultat, errorCode, errorInfo) : une analyse qui échoue
+     * ne doit rien laisser derrière elle. */
+    saved = Tcl_SaveInterpState(interp, TCL_OK);
     /* Val.i : la somme Val, variante i. */
     {
 	const char *dot = (const char *) memchr(text, '.', len);
@@ -1574,8 +1575,7 @@ ClassifyAnnot(Tcl_Interp *interp, Tcl_Obj *textObj, const TclType *ctx,
 		idx = TclTypeFieldIndex(sum, vname);
 		Tcl_Free(vname);
 		if (idx >= 0 && sum->fields[idx].type != NULL) {
-		    Tcl_SetObjResult(interp, saved);
-		    Tcl_DecrRefCount(saved);
+		    Tcl_RestoreInterpState(interp, saved);
 		    if (tpPtr != NULL) {
 			*tpPtr = sum;
 		    }
@@ -1586,8 +1586,7 @@ ClassifyAnnot(Tcl_Interp *interp, Tcl_Obj *textObj, const TclType *ctx,
 		}
 		/* Val.zz, Val connu : une faute sur la variante, pas une
 		 * note. */
-		Tcl_SetObjResult(interp, saved);
-		Tcl_DecrRefCount(saved);
+		Tcl_RestoreInterpState(interp, saved);
 		return ANN_BAD;
 	    }
 	}
@@ -1606,8 +1605,7 @@ ClassifyAnnot(Tcl_Interp *interp, Tcl_Obj *textObj, const TclType *ctx,
     } else {
 	res = ANN_BAD;		/* l'appelant refait l'analyse pour le message */
     }
-    Tcl_SetObjResult(interp, saved);
-    Tcl_DecrRefCount(saved);
+    Tcl_RestoreInterpState(interp, saved);
     return res;
 }
 
@@ -1990,18 +1988,18 @@ TclAnnotCollectionCast(Tcl_Interp *interp, Tcl_Obj *typeText, Tcl_Obj *value,
 	Tcl_Obj **resultPtr)
 {
     TclType *from = NULL, *to;
-    Tcl_Obj *saved;
+    Tcl_InterpState state;
     Tcl_Size tlen;
     const char *ttext = Tcl_GetStringFromObj(typeText, &tlen);
 
     if (TclAnnotInfo(value, NULL, &from, NULL, NULL) != 1 || from == NULL) {
 	return TCL_CONTINUE;
     }
-    saved = Tcl_GetObjResult(interp);
-    Tcl_IncrRefCount(saved);
+    /* Un nom inconnu reste une note : l'échec de l'analyse ne doit rien
+     * laisser, ni résultat ni errorInfo (TclEvalEx s'en servirait). */
+    state = Tcl_SaveInterpState(interp, TCL_OK);
     to = TclTypeParse(interp, ttext, tlen);
-    Tcl_SetObjResult(interp, saved);	/* un nom inconnu reste une note */
-    Tcl_DecrRefCount(saved);
+    Tcl_RestoreInterpState(interp, state);
     if (to == NULL || to == from
 	    || (to->kind != TCLT_LIST && to->kind != TCLT_DICT)) {
 	return TCL_CONTINUE;

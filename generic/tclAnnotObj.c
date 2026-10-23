@@ -636,7 +636,9 @@ AnnotListView(Tcl_Interp *interp, Tcl_Obj *aPtr, Tcl_Obj **contentPtr)
 	}
     }
     kind = EffectiveKind(tp, variant, content);
-    return kind == TCLT_LIST || kind == TCLT_DICT || kind == TCLT_PRODUCT;
+    /* Règle B : seules les collections (list, dict) se déplient ; un
+     * produit est un élément, ses champs se lisent par chemin. */
+    return kind == TCLT_LIST || kind == TCLT_DICT;
 }
 
 /*
@@ -1258,10 +1260,13 @@ KindAllows(TclTypeKind kind, int want)
 {
     switch (want) {
     case TCLWANT_STRING:	return 1;
-    case TCLWANT_NUMBER:	return kind == TCLT_INT || kind == TCLT_DOUBLE;
-    case TCLWANT_INT:		return kind == TCLT_INT;
+    /* EIAS : une chaîne (string, littéral d'énumération, nominal sur
+     * string) se lit comme un nombre si son texte en est un ; la
+     * conversion qui suit échoue avec le message habituel sinon. */
+    case TCLWANT_NUMBER:
     case TCLWANT_DOUBLE:	/* élargissement sans shimmering */
-	return kind == TCLT_INT || kind == TCLT_DOUBLE;
+	return kind == TCLT_INT || kind == TCLT_DOUBLE || kind == TCLT_STRING;
+    case TCLWANT_INT:		return kind == TCLT_INT || kind == TCLT_STRING;
     case TCLWANT_BOOL:		return kind == TCLT_INT || kind == TCLT_DOUBLE
 				|| kind == TCLT_STRING;
     case TCLWANT_LIST:		return kind == TCLT_LIST;
@@ -1354,6 +1359,41 @@ TclAnnotUnwrap(Tcl_Interp *interp, Tcl_Obj *objPtr, int want,
 	variant = -1;
 	if (TclTypeValidate(interp, tp, content, -1, &variant) != TCL_OK) {
 	    return TCL_ERROR;
+	}
+    }
+    /*
+     * Un produit d'UN SEUL champ se lit comme ce champ pour les conversions
+     * scalaires (nombre, entier, flottant, booléen) : {{int}i} qui vaut 5
+     * est le nombre 5. Le contenu rendu est le champ lui-même, pour ne pas
+     * convertir la liste V. (La vue liste, elle, garde la règle B.)
+     */
+    if (want != TCLWANT_LIST && want != TCLWANT_DICT) {
+	int depth;
+
+	for (depth = 0; depth < 16; depth++) {
+	    const TclType *et = tp;
+	    Tcl_Obj *field;
+
+	    if (et->kind == TCLT_SUM && variant >= 0
+		    && variant < (int) et->nfields
+		    && et->fields[variant].type != NULL) {
+		et = et->fields[variant].type;
+	    }
+	    if (et->kind != TCLT_PRODUCT || et->nfields != 1
+		    || et->fields[0].type == NULL
+		    || Tcl_ListObjIndex(NULL, content, 0, &field) != TCL_OK
+		    || field == NULL) {
+		break;
+	    }
+	    tp = et->fields[0].type;
+	    content = TCL_ANNOT_CONTENT(field);
+	    variant = -1;
+	    if (tp->kind == TCLT_SUM
+		    && TclTypeValidate(NULL, tp, content, -1, &variant)
+			    != TCL_OK) {
+		break;
+	    }
+	    *contentPtr = content;
 	}
     }
     if (!KindAllows(EffectiveKind(tp, variant, content), want)) {
@@ -1495,7 +1535,7 @@ ClassifyAnnot(Tcl_Interp *interp, Tcl_Obj *textObj, const TclType *ctx,
 {
     Tcl_Size len, idx;
     const char *text = Tcl_GetStringFromObj(textObj, &len);
-    Tcl_Obj *saved = NULL;
+    Tcl_InterpState saved;
     TclType *tp;
     int res;
 
@@ -1517,8 +1557,9 @@ ClassifyAnnot(Tcl_Interp *interp, Tcl_Obj *textObj, const TclType *ctx,
     if (interp == NULL) {
 	return ANN_UNKNOWN;
     }
-    saved = Tcl_GetObjResult(interp);
-    Tcl_IncrRefCount(saved);
+    /* Tout l'état (résultat, errorCode, errorInfo) : une analyse qui échoue
+     * ne doit rien laisser derrière elle. */
+    saved = Tcl_SaveInterpState(interp, TCL_OK);
     /* Val.i : la somme Val, variante i. */
     {
 	const char *dot = (const char *) memchr(text, '.', len);
@@ -1534,8 +1575,7 @@ ClassifyAnnot(Tcl_Interp *interp, Tcl_Obj *textObj, const TclType *ctx,
 		idx = TclTypeFieldIndex(sum, vname);
 		Tcl_Free(vname);
 		if (idx >= 0 && sum->fields[idx].type != NULL) {
-		    Tcl_SetObjResult(interp, saved);
-		    Tcl_DecrRefCount(saved);
+		    Tcl_RestoreInterpState(interp, saved);
 		    if (tpPtr != NULL) {
 			*tpPtr = sum;
 		    }
@@ -1546,8 +1586,7 @@ ClassifyAnnot(Tcl_Interp *interp, Tcl_Obj *textObj, const TclType *ctx,
 		}
 		/* Val.zz, Val connu : une faute sur la variante, pas une
 		 * note. */
-		Tcl_SetObjResult(interp, saved);
-		Tcl_DecrRefCount(saved);
+		Tcl_RestoreInterpState(interp, saved);
 		return ANN_BAD;
 	    }
 	}
@@ -1566,8 +1605,7 @@ ClassifyAnnot(Tcl_Interp *interp, Tcl_Obj *textObj, const TclType *ctx,
     } else {
 	res = ANN_BAD;		/* l'appelant refait l'analyse pour le message */
     }
-    Tcl_SetObjResult(interp, saved);
-    Tcl_DecrRefCount(saved);
+    Tcl_RestoreInterpState(interp, saved);
     return res;
 }
 
@@ -1937,6 +1975,38 @@ AnnotLocalObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
     return TCL_ERROR;
 }
 
+/*
+ * {list}$p, {dict}$p, {list.T}$p sur une valeur TYPÉE : un cast vers une
+ * collection, fait tout de suite, au moment de l'annotation (la vue liste
+ * n'a pas d'interpréteur pour résoudre un nom de type). Le produit rend ses
+ * champs, la liste nominale ses éléments ; la chaîne ne change pas.
+ * Rend TCL_OK (*resultPtr rempli), TCL_ERROR (cast refusé), ou TCL_CONTINUE
+ * (pas concerné : annoter normalement).
+ */
+int
+TclAnnotCollectionCast(Tcl_Interp *interp, Tcl_Obj *typeText, Tcl_Obj *value,
+	Tcl_Obj **resultPtr)
+{
+    TclType *from = NULL, *to;
+    Tcl_InterpState state;
+    Tcl_Size tlen;
+    const char *ttext = Tcl_GetStringFromObj(typeText, &tlen);
+
+    if (TclAnnotInfo(value, NULL, &from, NULL, NULL) != 1 || from == NULL) {
+	return TCL_CONTINUE;
+    }
+    /* Un nom inconnu reste une note : l'échec de l'analyse ne doit rien
+     * laisser, ni résultat ni errorInfo (TclEvalEx s'en servirait). */
+    state = Tcl_SaveInterpState(interp, TCL_OK);
+    to = TclTypeParse(interp, ttext, tlen);
+    Tcl_RestoreInterpState(interp, state);
+    if (to == NULL || to == from
+	    || (to->kind != TCLT_LIST && to->kind != TCLT_DICT)) {
+	return TCL_CONTINUE;
+    }
+    return TclTypeCast(interp, value, to, resultPtr);
+}
+
 /* ::tcl::annotate type value : l'équivalent exécutable de {type}valeur,
  * appelé par le code compilé et par TclSubstTokens. */
 static int
@@ -1949,6 +2019,13 @@ AnnotateObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "type value");
 	return TCL_ERROR;
+    }
+    switch (TclAnnotCollectionCast(interp, objv[1], objv[2], &res)) {
+    case TCL_ERROR:
+	return TCL_ERROR;
+    case TCL_OK:
+	Tcl_SetObjResult(interp, res);
+	return TCL_OK;
     }
     if (TclAnnotateValue(interp, objv[1], objv[2], &res) != TCL_OK) {
 	return TCL_ERROR;

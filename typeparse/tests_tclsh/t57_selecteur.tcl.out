@@ -1,0 +1,13 @@
+décodé : 4 {9 128} -> corps($genre).4
+décodé : 1 {9 1} -> corps($genre).1
+décodé : 3 14 -> corps($genre).3
+chemin : broche 9 rapport 128
+construit : corps($genre).4
+nom/valeur, sélecteur après : corps($genre).1
+écriture par chemin : 4 {9 60}
+1: value "9 60" is not valid for that variant of corps($genre)
+sélecteur changé : corps($genre).1
+encodé : 1 9 60
+1: selector genre is 1 but field corps of req holds variant 4 of corps($genre)
+1: selector genre is 3 but field corps of req holds variant 4 of corps($genre)
+1: type binary: tag 9 of field corps of req matches no variant of corps($genre)

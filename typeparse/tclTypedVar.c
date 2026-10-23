@@ -326,6 +326,13 @@ TclTypedVarForgetByName(Tcl_Interp *interp, Tcl_Obj *nameObj)
 Tcl_Obj *
 TclTypedConform(Tcl_Interp *interp, TclType *tp, Tcl_Obj *arg)
 {
+    return TclTypedConformHint(interp, tp, arg, -1);
+}
+
+/* Idem, avec la variante désignée par un sélecteur S($champ) (ou -1). */
+Tcl_Obj *
+TclTypedConformHint(Tcl_Interp *interp, TclType *tp, Tcl_Obj *arg, int hint)
+{
     int status, variant;
     TclType *at;
     Tcl_Obj *content, *copy;
@@ -356,7 +363,8 @@ TclTypedConform(Tcl_Interp *interp, TclType *tp, Tcl_Obj *arg)
     /* Balise explicite d'une somme ({tEXt}...) : elle fixe la variante. */
     if (TclTypeComplete(interp, tp, copy,
 	    ((status == TCLA_TYPED || status == TCLA_RAW) && at == tp
-		    && tp->kind == TCLT_SUM) ? variant : -1, NULL) != TCL_OK) {
+		    && tp->kind == TCLT_SUM && variant >= 0) ? variant : hint,
+	    NULL) != TCL_OK) {
 	TclDiscard(copy);
 	return NULL;
     }
@@ -460,6 +468,67 @@ BuildList(Tcl_Interp *interp, TclType *tp, Tcl_Size n, Tcl_Obj *const a[],
   done:
     TclVecFree(&vec);
     return rc;
+}
+
+/*
+ * Champ idx d'un produit, de type S($champ) : si l'argument désigne lui-même
+ * une variante (balise explicite {1}v, ou valeur typée d'une variante), elle
+ * doit être celle que nomme le sélecteur. Sinon : erreur, au lieu d'une
+ * relecture silencieuse dans l'autre variante.
+ */
+int
+TclTypeTagCheck(Tcl_Interp *interp, const TclType *prod, Tcl_Size idx,
+	Tcl_Obj *arg, Tcl_Obj *const *vals, Tcl_Size nvals)
+{
+    int hint = TclTypeTagVariantFrom(prod, idx, vals, nvals), status;
+    int own = -1, variant = -1;
+    TclType *ft, *at = NULL;
+    Tcl_Obj *content;
+    Tcl_Size v, j;
+
+    if (hint < 0) {
+	return TCL_OK;
+    }
+    ft = prod->fields[idx].type;
+    {
+	/* Une annotation qu'on ne sait pas résoudre ici n'est pas notre
+	 * affaire : la construction normale dira ce qui ne va pas. */
+	Tcl_Obj *saved = Tcl_GetObjResult(interp);
+	int rc;
+
+	Tcl_IncrRefCount(saved);
+	rc = TclAnnotResolve(interp, arg, ft, &status, &at, &variant,
+		&content);
+	Tcl_SetObjResult(interp, saved);
+	Tcl_DecrRefCount(saved);
+	if (rc != TCL_OK) {
+	    return TCL_OK;
+	}
+    }
+    if ((status != TCLA_TYPED && status != TCLA_RAW) || at == NULL) {
+	return TCL_OK;
+    }
+    if (at == ft) {
+	own = variant;
+    } else {
+	for (v = 0; v < ft->nfields; v++) {
+	    if (ft->fields[v].type == at) {
+		own = (int) v;
+		break;
+	    }
+	}
+    }
+    if (own < 0 || own == hint) {
+	return TCL_OK;
+    }
+    j = TclTypeFieldIndex(prod, ft->binTag);
+    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    "selector %s is %s but field %s of %s holds variant %s of %s",
+	    ft->binTag, Tcl_GetString(TCL_ANNOT_CONTENT(vals[j])),
+	    Tcl_GetString(prod->fields[idx].name), prod->name,
+	    Tcl_GetString(ft->fields[own].name), ft->name));
+    Tcl_SetErrorCode(interp, "TCL", "TYPE", "SELECTOR", (char *) NULL);
+    return TCL_ERROR;
 }
 
 static int
@@ -762,7 +831,11 @@ BuildProductEx(Tcl_Interp *interp, TclType *tp, Tcl_Size n,
     }
     if (n == nf && !forceNameValue) {
 	for (i = 0; i < nf; i++) {
-	    slot[i] = TclTypedConform(interp, tp->fields[i].type, a[i]);
+	    if (TclTypeTagCheck(interp, tp, i, a[i], a, n) != TCL_OK) {
+		goto done;
+	    }
+	    slot[i] = TclTypedConformHint(interp, tp->fields[i].type, a[i],
+		    TclTypeTagVariantFrom(tp, i, a, n));
 	    if (slot[i] == NULL) {
 		goto done;
 	    }
@@ -775,8 +848,24 @@ BuildProductEx(Tcl_Interp *interp, TclType *tp, Tcl_Size n,
 	 * Aucun argument : tous les champs sont par défaut.
 	 */
 
+	{
+	    /* Deux passes : un champ S($champ) attend que son sélecteur soit
+	     * connu (il peut être donné après lui). */
+	  int pass;
+	  for (pass = 0; pass < 2; pass++) {
 	for (i = 0; i < n / 2; i++) {
 	    idx = TclTypeFieldIndex(tp, Tcl_GetString(a[2 * i]));
+	    if (idx >= 0 && idx < nf) {
+		TclType *fty = tp->fields[idx].type;
+		int tagged = (fty != NULL && fty->kind == TCLT_SUM
+			&& fty->binTag != NULL && fty->binTag[0] != '=');
+
+		if (tagged != pass) {
+		    continue;
+		}
+	    } else if (pass == 1) {
+		continue;
+	    }
 	    if (idx < 0 || slot[idx] != NULL) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"%s field \"%s\" in %s", idx < 0 ? "unknown"
@@ -784,10 +873,17 @@ BuildProductEx(Tcl_Interp *interp, TclType *tp, Tcl_Size n,
 		Tcl_SetErrorCode(interp, "TCL", "TYPE", "FIELD", (char *) NULL);
 		goto done;
 	    }
-	    slot[idx] = TclTypedConform(interp, tp->fields[idx].type, a[2 * i + 1]);
+	    if (TclTypeTagCheck(interp, tp, idx, a[2 * i + 1], slot, nf)
+		    != TCL_OK) {
+		goto done;
+	    }
+	    slot[idx] = TclTypedConformHint(interp, tp->fields[idx].type,
+		    a[2 * i + 1], TclTypeTagVariantFrom(tp, idx, slot, nf));
 	    if (slot[idx] == NULL) {
 		goto done;
 	    }
+	}
+	  }
 	}
 	for (i = 0; i < nf; i++) {
 	    if (slot[i] != NULL) {
