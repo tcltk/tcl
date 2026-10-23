@@ -2549,8 +2549,12 @@ TclSubstTokens(
 		annotated = TclNewRawAnnotation(typeText,
 			Tcl_GetObjResult(interp));	/* {int}5 : brute */
 	    } else {
-		code = TclAnnotateValue(interp, typeText,
+		code = TclAnnotCollectionCast(interp, typeText,
 			Tcl_GetObjResult(interp), &annotated);
+		if (code == TCL_CONTINUE) {
+		    code = TclAnnotateValue(interp, typeText,
+			    Tcl_GetObjResult(interp), &annotated);
+		}
 	    }
 	    if (code == TCL_OK) {
 		Tcl_SetObjResult(interp, annotated);
@@ -2657,6 +2661,13 @@ TclSubstTokens(
 	    Tcl_IncrRefCount(expressionObj);
  	    code = Tcl_ExprObj(interp, expressionObj, &appendObj);
  	    Tcl_DecrRefCount(expressionObj);
+	    if (code == TCL_OK) {
+		/* Tcl_ExprObj gives a reference to the caller; below,
+		 * appendObj is borrowed (as for a command, from the result) */
+		Tcl_SetObjResult(interp, appendObj);
+		Tcl_DecrRefCount(appendObj);
+		appendObj = Tcl_GetObjResult(interp);
+	    }
  	    break;
 	}
 	case TCL_TOKEN_COMMAND: {

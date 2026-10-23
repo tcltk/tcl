@@ -26,3 +26,4 @@ eias-string-is.patch
 chemins-modification.patch
 set-nom-substitue.patch
 lset-reference.patch
+tip759-memoire.patch

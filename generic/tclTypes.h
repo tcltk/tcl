@@ -143,6 +143,11 @@ struct TclType {
     Tcl_Obj *refCache[8];	/* typeref (ce type, variante i-1), empruntés à
 				 * la table de l'interpréteur : évite la clé
 				 * snprintf et le hachage à chaque valeur */
+    struct TclCompactLayout *compact;
+				/* disposition des cases quand ce type est
+				 * l'élément d'une liste compacte, ou NULL */
+    int compactState;		/* 0 : pas encore calculée ; 1 : compact ;
+				 * -1 : pas de forme compacte */
 };
 
 /* Les descripteurs vivent autant que l'interpréteur (pas de comptage). */
@@ -293,6 +298,19 @@ TclType *TclTypeParse(Tcl_Interp *interp, const char *text, Tcl_Size len);
 int	TclTypeTagVariantFrom(const TclType *prod, Tcl_Size idx,
 	    Tcl_Obj *const *vals, Tcl_Size nvals);
 int	TclTypeTagVariant(const TclType *prod, Tcl_Size idx, Tcl_Obj *content);
+int	TclTypeAbiAlign(int isFloat, int bits);
+/* Représentation compacte (tclAnnotObj.c) */
+typedef struct TclCompactLayout TclCompactLayout;
+Tcl_Obj *TclCompactFrom(TclType *listTp, Tcl_Obj *content);
+int	TclCompactHolds(Tcl_Obj *v, const TclType *elemTp, Tcl_Size *nPtr);
+int	TclIsCompact(Tcl_Obj *v);
+Tcl_Obj *TclCompactElement(Tcl_Obj *v, Tcl_Size i);
+Tcl_Obj *TclCompactCache(Tcl_Obj *v);
+Tcl_Obj *TclCompactReadPath(Tcl_Obj *v, Tcl_Size idx, Tcl_Size nnames,
+	    const char *const names[], TclType **tpPtr);
+TclCompactLayout *TclCompactLayoutOf(TclType *elemTp);
+void	TclCompactLayoutRelease(TclCompactLayout *lay);
+void	TclCompactInit(Tcl_Interp *interp);
 int	TclTypeVariantConvert(Tcl_Interp *interp, TclType *sum, int from,
 	    Tcl_Obj *content, int to, Tcl_Obj **resPtr);
 int	TclTypeSumCurrent(const TclType *tp, Tcl_Obj *part);

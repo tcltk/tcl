@@ -736,7 +736,7 @@ AnnotWrapElems(Tcl_Obj *aPtr, Tcl_Obj *v, Tcl_Size from, Tcl_Size to)
     Tcl_Obj *e, *w;
     int variant;
 
-    if (et == NULL || Tcl_IsShared(v)
+    if (et == NULL || Tcl_IsShared(v) || TclIsCompact(v)
 	    || Tcl_ListObjLength(NULL, v, &n) != TCL_OK) {
 	return;
     }
@@ -780,6 +780,15 @@ AnnotListIndex(Tcl_Interp *interp, Tcl_Obj *aPtr, Tcl_Size index,
     Tcl_Obj *v;
 
     if (AnnotListView(interp, aPtr, &v)) {
+	if (TclIsCompact(v)) {
+	    /* une case : un élément neuf, typé (refcount 0, comme lseq) */
+	    TclType *et = AnnotListElemType(aPtr);
+	    Tcl_Obj *c = TclCompactElement(v, index);
+
+	    *elemPtr = (c != NULL && et != NULL)
+		    ? MakeAnnotated(c, NewTypeRefNoCache(et, -1)) : c;
+	    return TCL_OK;
+	}
 	AnnotWrapElems(aPtr, v, index, index);
 	return Tcl_ListObjIndex(interp, v, index, elemPtr);
     }
@@ -794,6 +803,12 @@ AnnotListGetElements(Tcl_Interp *interp, Tcl_Obj *aPtr, Tcl_Size *objcPtr,
     Tcl_Obj *v;
 
     if (AnnotListView(interp, aPtr, &v)) {
+	if (TclIsCompact(v)) {
+	    Tcl_Obj *c = TclCompactCache(v);	/* privé à V : enveloppable */
+
+	    AnnotWrapElems(aPtr, c, 0, TCL_SIZE_MAX);
+	    return Tcl_ListObjGetElements(interp, c, objcPtr, objvPtr);
+	}
 	AnnotWrapElems(aPtr, v, 0, TCL_SIZE_MAX);
 	return Tcl_ListObjGetElements(interp, v, objcPtr, objvPtr);
     }
@@ -1040,7 +1055,9 @@ Tcl_Obj *
 TclNewAnnotated(Tcl_Interp *interp, TclType *tp, int variant,
 	Tcl_Obj *content)
 {
-    return MakeAnnotated(Tcl_DuplicateObj(content),
+    Tcl_Obj *cv = (tp->kind == TCLT_LIST) ? TclCompactFrom(tp, content) : NULL;
+
+    return MakeAnnotated(cv != NULL ? cv : Tcl_DuplicateObj(content),
 	    TypeRefObj(interp, tp, variant));
 }
 
@@ -1071,6 +1088,15 @@ TclTypeRefFor(Tcl_Interp *interp, TclType *tp, int variant)
 Tcl_Obj *
 TclNewAnnotatedOwn(Tcl_Obj *content, Tcl_Obj *typeRef)
 {
+    TclType *tp = IsTypeRef(typeRef)
+	    ? (TclType *) typeRef->internalRep.twoPtrValue.ptr1 : NULL;
+    Tcl_Obj *cv = (tp != NULL && tp->kind == TCLT_LIST)
+	    ? TclCompactFrom(tp, content) : NULL;
+
+    if (cv != NULL) {
+	TclDiscard(content);		/* le contenu neuf est remplacé */
+	return MakeAnnotated(cv, typeRef);
+    }
     return MakeAnnotated(content, typeRef);
 }
 
@@ -2373,4 +2399,1198 @@ TclAnnotSuffixIsLiteral(Tcl_Token *tokenPtr, Tcl_Size count)
 	}
     }
     return 1;
+}
+
+/* ====================================================================
+ * Représentation compacte (prototype ; tcl::unsupported::compact on)
+ * ====================================================================
+ *
+ * Le contenu V d'une liste list.T, quand T est un scalaire à taille fixe
+ * (int(s,n), int(u,n) avec n = 8, 16, 32, 64 ; double, double(32|64)) ou un
+ * produit de tels champs, devient un tableau de cases : une case par
+ * élément, disposée comme le struct C équivalent (alignement naturel,
+ * mesuré à la compilation : TclTypeAbiAlign). V reste un Tcl_Obj, de type
+ * "compactlist", liste abstraite (longueur, index, remplacement) : le reste
+ * de Tcl le voit comme une liste ; ce qui demande tous les éléments à la
+ * fois (Tcl_ListObjGetElements) le convertit en liste ordinaire.
+ *
+ * EIAS : la forme compacte n'est prise que si chaque nombre est écrit sous
+ * sa forme canonique (celle que Tcl regénère) et chaque élément aussi
+ * (espaces) ; la chaîne de la liste entière, si elle existe, est gardée
+ * telle quelle jusqu'à la première modification. Ainsi la chaîne d'une
+ * valeur compacte est toujours celle qu'aurait la liste ordinaire.
+ *
+ * Pour le C : le type "compactlist" est enregistré (Tcl_GetObjType) ;
+ * V->internalRep.twoPtrValue.ptr1 pointe sur un TclCompactBuf dont les
+ * quatre premiers champs sont publics (voir typeparse/tclCompact.h). Le
+ * pointeur data est valable tant que l'objet n'est pas modifié ni converti.
+ */
+
+enum { CN_PROD = 0, CN_INT, CN_UINT, CN_FLT };
+
+typedef struct CNode {
+    int kind;
+    int size;			/* scalaire : octets (1, 2, 4, 8) */
+    size_t off;			/* décalage dans la case de l'élément */
+    int nchild;			/* produit : nombre de champs */
+    int nscal;			/* scalaires du sous-arbre */
+    int nsub;			/* noeuds du sous-arbre, lui compris */
+    const char *name;		/* champ (pour la disposition), ou NULL */
+} CNode;
+
+struct TclCompactLayout {
+    size_t refCount;
+    size_t size, align;
+    int nnodes;
+    CNode node[1];		/* préordre */
+};
+
+typedef struct TclCompactBuf {
+    /* public (tclCompact.h) */
+    unsigned char *data;
+    Tcl_Size n;
+    size_t stride;
+    const char *elemType;	/* nom du type des éléments */
+    /* privé */
+    size_t refCount;
+    Tcl_Size cap;
+    TclType *et;
+    TclCompactLayout *lay;
+} TclCompactBuf;
+
+static int compactOn = 0;
+
+static Tcl_FreeInternalRepProc	FreeCompact;
+static Tcl_DupInternalRepProc	DupCompact;
+static Tcl_UpdateStringProc	UpdateStringOfCompact;
+static Tcl_ObjTypeLengthProc	CompactLength;
+static Tcl_ObjTypeIndexProc	CompactIndex;
+static Tcl_ObjTypeReplaceProc	CompactReplace;
+static Tcl_ObjTypeGetElements	CompactGetElements;
+
+static const Tcl_ObjType compactListType = {
+    "compactlist", FreeCompact, DupCompact, UpdateStringOfCompact, NULL,
+    TCL_OBJTYPE_V2(CompactLength, CompactIndex, NULL, NULL,
+	    CompactGetElements, NULL, CompactReplace, NULL)
+};
+
+/* ptr2 : la liste ordinaire des éléments, fabriquée à la première demande
+ * de TOUS les éléments (lsort, lrange...) et gardée tant que V ne change
+ * pas : V reste compact. */
+#define COMPACT_CACHE(o) ((Tcl_Obj *) (o)->internalRep.twoPtrValue.ptr2)
+
+static void
+CompactDropCache(Tcl_Obj *objPtr)
+{
+    Tcl_Obj *c = COMPACT_CACHE(objPtr);
+
+    if (c != NULL) {
+	objPtr->internalRep.twoPtrValue.ptr2 = NULL;
+	Tcl_DecrRefCount(c);
+    }
+}
+
+#define COMPACT_BUF(o) ((TclCompactBuf *) (o)->internalRep.twoPtrValue.ptr1)
+
+/*
+ * Un élément produit d'une liste compacte, lu sans être recopié : une vue
+ * (tampon partagé, début de la case, noeud). La liste qui change copie son
+ * tampon s'il est partagé : la vue garde la valeur qu'elle a lue.
+ */
+typedef struct CompactElem {
+    TclCompactBuf *b;
+    size_t cell;		/* début de la case de l'élément */
+    int node;			/* le produit vu (noeud de la disposition) */
+    Tcl_Obj *cache;		/* liste ordinaire, à la demande */
+} CompactElem;
+
+static Tcl_FreeInternalRepProc	FreeCompactElem;
+static Tcl_DupInternalRepProc	DupCompactElem;
+static Tcl_UpdateStringProc	UpdateStringOfCompactElem;
+static Tcl_ObjTypeLengthProc	CompactElemLength;
+static Tcl_ObjTypeIndexProc	CompactElemIndex;
+static Tcl_ObjTypeGetElements	CompactElemGetElements;
+static Tcl_ObjTypeReplaceProc	CompactElemReplace;
+
+static const Tcl_ObjType compactElemType = {
+    "compactelem", FreeCompactElem, DupCompactElem, UpdateStringOfCompactElem,
+    NULL, TCL_OBJTYPE_V2(CompactElemLength, CompactElemIndex, NULL, NULL,
+	    CompactElemGetElements, NULL, CompactElemReplace, NULL)
+};
+
+#define COMPACT_ELEM(o) ((CompactElem *) (o)->internalRep.twoPtrValue.ptr1)
+static Tcl_Obj *NewCompactElemObj(TclCompactBuf *b, size_t cell, int node);
+
+/* --- disposition --- */
+
+static int
+CompactScalar(const TclType *t, int *kindPtr, int *sizePtr)
+{
+    union { uint16_t u; unsigned char c[2]; } bo;
+    int native;
+
+    bo.u = 1;
+    native = bo.c[0] ? TCLBIN_LE : TCLBIN_BE;
+    if (t->binLink != NULL || t->binTag != NULL || t->binAt != NULL
+	    || t->binDyn != NULL || t->bitWidth != 0) {
+	return 0;
+    }
+    if (t->binEnd != TCLBIN_AUTO && t->binEnd != native) {
+	return 0;
+    }
+    if (t->kind == TCLT_DOUBLE) {
+	if (t->binKind == TCLBIN_NONE) {
+	    *kindPtr = CN_FLT;
+	    *sizePtr = 8;
+	    return 1;
+	}
+	if (t->binKind == TCLBIN_FLOAT && (t->binSize == 4 || t->binSize == 8)) {
+	    *kindPtr = CN_FLT;
+	    *sizePtr = (int) t->binSize;
+	    return 1;
+	}
+	return 0;
+    }
+    if (t->kind == TCLT_INT && (t->binKind == TCLBIN_SINT
+	    || t->binKind == TCLBIN_UINT) && (t->binSize == 1
+	    || t->binSize == 2 || t->binSize == 4 || t->binSize == 8)) {
+	*kindPtr = (t->binKind == TCLBIN_SINT) ? CN_INT : CN_UINT;
+	*sizePtr = (int) t->binSize;
+	return 1;
+    }
+    return 0;
+}
+
+/* Compte les noeuds (ou -1 : pas de forme compacte). */
+static int
+CompactCount(const TclType *t, int depth)
+{
+    int k, s, n = 1, i, c;
+
+    if (depth > 32) {
+	return -1;
+    }
+    if (CompactScalar(t, &k, &s)) {
+	return 1;
+    }
+    if (t->kind != TCLT_PRODUCT || t->nfields < 1 || t->binTag != NULL
+	    || t->binAt != NULL || t->binDyn != NULL) {
+	return -1;
+    }
+    for (i = 0; i < t->nfields; i++) {
+	if (t->fields[i].type == NULL
+		|| (c = CompactCount(t->fields[i].type, depth + 1)) < 0) {
+	    return -1;
+	}
+	n += c;
+    }
+    return n;
+}
+
+static size_t
+AlignUp(size_t x, size_t a)
+{
+    return (x + a - 1) / a * a;
+}
+
+/* Remplit en préordre ; *off et *align avancent comme dans un struct C. */
+static void
+CompactFill(const TclType *t, const char *name, CNode *nodes, int *idx,
+	size_t *off, size_t *align)
+{
+    int me = (*idx)++;
+    CNode *nd = &nodes[me];
+    int k, s, i;
+
+    nd->name = name;
+    nd->nsub = 1;
+    if (CompactScalar(t, &k, &s)) {
+	size_t a = (size_t) TclTypeAbiAlign(k == CN_FLT, s * 8);
+
+	*off = AlignUp(*off, a);
+	nd->kind = k;
+	nd->size = s;
+	nd->off = *off;
+	nd->nchild = 0;
+	nd->nscal = 1;
+	*off += (size_t) s;
+	if (a > *align) {
+	    *align = a;
+	}
+	return;
+    }
+    {
+	/* un produit imbriqué est un struct imbriqué : il s'aligne et se
+	 * complète comme tel */
+	size_t inner = 0, ialign = 1, base;
+	int first = *idx;
+
+	nd->kind = CN_PROD;
+	nd->nchild = (int) t->nfields;
+	nd->nscal = 0;
+	for (i = 0; i < t->nfields; i++) {
+	    CompactFill(t->fields[i].type, Tcl_GetString(t->fields[i].name),
+		    nodes, idx, &inner, &ialign);
+	}
+	inner = AlignUp(inner, ialign);
+	base = AlignUp(*off, ialign);
+	for (i = first; i < *idx; i++) {
+	    nodes[i].off += base;
+	    if (nodes[i].kind != CN_PROD) {
+		nd->nscal++;
+	    }
+	}
+	nd->off = base;
+	nd->nsub = *idx - me;
+	*off = base + inner;
+	if (ialign > *align) {
+	    *align = ialign;
+	}
+    }
+}
+
+TclCompactLayout *
+TclCompactLayoutOf(TclType *et)
+{
+    TclCompactLayout *lay;
+    int n, idx = 0;
+    size_t off = 0, align = 1;
+
+    if (et->compactState != 0) {
+	return et->compact;
+    }
+    n = CompactCount(et, 0);
+    if (n < 0) {
+	et->compactState = -1;
+	return NULL;
+    }
+    lay = (TclCompactLayout *) Tcl_Alloc(sizeof(TclCompactLayout)
+	    + (size_t) (n - 1) * sizeof(CNode));
+    memset(lay, 0, sizeof(TclCompactLayout) + (size_t) (n - 1) * sizeof(CNode));
+    CompactFill(et, NULL, lay->node, &idx, &off, &align);
+    lay->nnodes = n;
+    lay->align = align;
+    lay->size = AlignUp(off, align);
+    lay->refCount = 1;			/* celle du type */
+    et->compact = lay;
+    et->compactState = 1;
+    return lay;
+}
+
+void
+TclCompactLayoutRelease(TclCompactLayout *lay)
+{
+    if (lay != NULL && --lay->refCount == 0) {
+	Tcl_Free(lay);
+    }
+}
+
+/* --- cases --- */
+
+static int
+EncodeScalar(const CNode *nd, Tcl_Obj *o, unsigned char *p)
+{
+    char buf[TCL_DOUBLE_SPACE + 32];
+    int pure;
+
+    o = TCL_ANNOT_CONTENT(o);
+    if (nd->kind == CN_FLT) {
+	double d;
+
+	pure = TclHasInternalRep(o, &tclDoubleType) && o->bytes == NULL;
+	if (Tcl_GetDoubleFromObj(NULL, o, &d) != TCL_OK) {
+	    return 0;
+	}
+	if (nd->size == 4) {
+	    float f = (float) d;
+
+	    if ((double) f != d && d == d) {
+		return 0;		/* pas exactement un float */
+	    }
+	    memcpy(p, &f, 4);
+	} else {
+	    memcpy(p, &d, 8);
+	}
+	if (!pure) {
+	    Tcl_PrintDouble(NULL, d, buf);
+	    if (strcmp(Tcl_GetString(o), buf) != 0) {
+		return 0;		/* forme non canonique : 1, 0x10, 1e3 */
+	    }
+	}
+	return 1;
+    }
+    pure = TclHasInternalRep(o, &tclIntType) && o->bytes == NULL;
+    if (nd->kind == CN_UINT) {
+	Tcl_WideUInt u;
+
+	if (Tcl_GetWideUIntFromObj(NULL, o, &u) != TCL_OK
+		|| (nd->size < 8 && u >> (nd->size * 8) != 0)) {
+	    return 0;
+	}
+	switch (nd->size) {
+	case 1: { uint8_t v = (uint8_t) u; memcpy(p, &v, 1); break; }
+	case 2: { uint16_t v = (uint16_t) u; memcpy(p, &v, 2); break; }
+	case 4: { uint32_t v = (uint32_t) u; memcpy(p, &v, 4); break; }
+	default: { uint64_t v = (uint64_t) u; memcpy(p, &v, 8); break; }
+	}
+	if (!pure) {
+	    snprintf(buf, sizeof(buf), "%llu", (unsigned long long) u);
+	    if (strcmp(Tcl_GetString(o), buf) != 0) {
+		return 0;
+	    }
+	}
+	return 1;
+    } else {
+	Tcl_WideInt w;
+
+	if (Tcl_GetWideIntFromObj(NULL, o, &w) != TCL_OK) {
+	    return 0;
+	}
+	if (nd->size < 8) {
+	    Tcl_WideInt lim = (Tcl_WideInt) 1 << (nd->size * 8 - 1);
+
+	    if (w < -lim || w >= lim) {
+		return 0;
+	    }
+	}
+	switch (nd->size) {
+	case 1: { int8_t v = (int8_t) w; memcpy(p, &v, 1); break; }
+	case 2: { int16_t v = (int16_t) w; memcpy(p, &v, 2); break; }
+	case 4: { int32_t v = (int32_t) w; memcpy(p, &v, 4); break; }
+	default: { int64_t v = (int64_t) w; memcpy(p, &v, 8); break; }
+	}
+	if (!pure) {
+	    snprintf(buf, sizeof(buf), "%lld", (long long) w);
+	    if (strcmp(Tcl_GetString(o), buf) != 0) {
+		return 0;
+	    }
+	}
+	return 1;
+    }
+}
+
+static void
+FormatScalar(const CNode *nd, const unsigned char *p, Tcl_DString *ds)
+{
+    char buf[TCL_DOUBLE_SPACE + 32];
+
+    switch (nd->kind) {
+    case CN_FLT:
+	if (nd->size == 4) {
+	    float f;
+
+	    memcpy(&f, p, 4);
+	    Tcl_PrintDouble(NULL, (double) f, buf);
+	} else {
+	    double d;
+
+	    memcpy(&d, p, 8);
+	    Tcl_PrintDouble(NULL, d, buf);
+	}
+	break;
+    case CN_INT: {
+	long long w = 0;
+
+	switch (nd->size) {
+	case 1: { int8_t v; memcpy(&v, p, 1); w = v; break; }
+	case 2: { int16_t v; memcpy(&v, p, 2); w = v; break; }
+	case 4: { int32_t v; memcpy(&v, p, 4); w = v; break; }
+	default: { int64_t v; memcpy(&v, p, 8); w = v; break; }
+	}
+	snprintf(buf, sizeof(buf), "%lld", w);
+	break;
+    }
+    default: {
+	unsigned long long u = 0;
+
+	switch (nd->size) {
+	case 1: { uint8_t v; memcpy(&v, p, 1); u = v; break; }
+	case 2: { uint16_t v; memcpy(&v, p, 2); u = v; break; }
+	case 4: { uint32_t v; memcpy(&v, p, 4); u = v; break; }
+	default: { uint64_t v; memcpy(&v, p, 8); u = v; break; }
+	}
+	snprintf(buf, sizeof(buf), "%llu", u);
+	break;
+    }
+    }
+    Tcl_DStringAppend(ds, buf, TCL_AUTO_LENGTH);
+}
+
+static Tcl_Obj *
+DecodeScalar(const CNode *nd, const unsigned char *p)
+{
+    switch (nd->kind) {
+    case CN_FLT:
+	if (nd->size == 4) {
+	    float f;
+
+	    memcpy(&f, p, 4);
+	    return Tcl_NewDoubleObj((double) f);
+	} else {
+	    double d;
+
+	    memcpy(&d, p, 8);
+	    return Tcl_NewDoubleObj(d);
+	}
+    case CN_INT:
+	switch (nd->size) {
+	case 1: { int8_t v; memcpy(&v, p, 1); return Tcl_NewWideIntObj(v); }
+	case 2: { int16_t v; memcpy(&v, p, 2); return Tcl_NewWideIntObj(v); }
+	case 4: { int32_t v; memcpy(&v, p, 4); return Tcl_NewWideIntObj(v); }
+	default: { int64_t v; memcpy(&v, p, 8); return Tcl_NewWideIntObj(v); }
+	}
+    default:
+	switch (nd->size) {
+	case 1: { uint8_t v; memcpy(&v, p, 1); return Tcl_NewWideIntObj(v); }
+	case 2: { uint16_t v; memcpy(&v, p, 2); return Tcl_NewWideIntObj(v); }
+	case 4: { uint32_t v; memcpy(&v, p, 4); return Tcl_NewWideIntObj(v); }
+	default: { uint64_t v; memcpy(&v, p, 8); return Tcl_NewWideUIntObj(v); }
+	}
+    }
+}
+
+/* Texte d'un noeud (sans quotation extérieure). Rend l'indice suivant. */
+static int
+FormatNode(const CNode *nodes, int i, const unsigned char *cell,
+	Tcl_DString *ds)
+{
+    const CNode *nd = &nodes[i];
+    int k, j = i + 1;
+
+    if (nd->kind != CN_PROD) {
+	FormatScalar(nd, cell + nd->off, ds);
+	return j;
+    }
+    for (k = 0; k < nd->nchild; k++) {
+	Tcl_DString sub;
+	int flags;
+	Tcl_Size len;
+	char *q;
+
+	if (k > 0) {
+	    Tcl_DStringAppend(ds, " ", 1);
+	}
+	Tcl_DStringInit(&sub);
+	j = FormatNode(nodes, j, cell, &sub);
+	len = Tcl_ScanCountedElement(Tcl_DStringValue(&sub),
+		Tcl_DStringLength(&sub), &flags);
+	q = (char *) Tcl_Alloc(len + 1);
+	len = Tcl_ConvertCountedElement(Tcl_DStringValue(&sub),
+		Tcl_DStringLength(&sub), q,
+		flags | (k > 0 ? TCL_DONT_QUOTE_HASH : 0));
+	Tcl_DStringAppend(ds, q, len);
+	Tcl_Free(q);
+	Tcl_DStringFree(&sub);
+    }
+    return j;
+}
+
+/* Encode un élément (contenu, éventuellement annoté) ; -1 si impossible. */
+static int
+EncodeNode(const CNode *nodes, int i, Tcl_Obj *o, unsigned char *cell)
+{
+    const CNode *nd = &nodes[i];
+    Tcl_Obj **ev;
+    Tcl_Size n, k;
+    int j = i + 1;
+
+    if (nd->kind != CN_PROD) {
+	return EncodeScalar(nd, o, cell + nd->off) ? j : -1;
+    }
+    o = TCL_ANNOT_CONTENT(o);
+    if (o->typePtr == &compactElemType && o->bytes == NULL) {
+	/* une vue sur une case de même disposition : copie des octets */
+	CompactElem *ce = COMPACT_ELEM(o);
+	const CNode *src = &ce->b->lay->node[ce->node];
+
+	if (src->nsub == nd->nsub && memcmp(src, nd, (size_t) nd->nsub
+		* sizeof(CNode)) == 0) {
+	    /* mêmes noeuds, décalages compris : la case entière ou la partie */
+	    size_t lo = nd->off, hi = lo;
+	    int q;
+
+	    for (q = i; q < i + nd->nsub; q++) {
+		if (nodes[q].kind != CN_PROD
+			&& nodes[q].off + (size_t) nodes[q].size > hi) {
+		    hi = nodes[q].off + (size_t) nodes[q].size;
+		}
+	    }
+	    memcpy(cell + lo, ce->b->data + ce->cell + lo, hi - lo);
+	    return i + nd->nsub;
+	}
+    }
+    if (Tcl_ListObjGetElements(NULL, o, &n, &ev) != TCL_OK
+	    || n != nd->nchild) {
+	return -1;
+    }
+    for (k = 0; k < n; k++) {
+	j = EncodeNode(nodes, j, ev[k], cell);
+	if (j < 0) {
+	    return -1;
+	}
+    }
+    if (o->bytes != NULL) {
+	/* le texte de l'élément doit être celui qu'on regénérera */
+	Tcl_DString ds;
+	int same;
+
+	Tcl_DStringInit(&ds);
+	FormatNode(nodes, i, cell, &ds);
+	same = (Tcl_DStringLength(&ds) == o->length
+		&& memcmp(Tcl_DStringValue(&ds), o->bytes, o->length) == 0);
+	Tcl_DStringFree(&ds);
+	if (!same) {
+	    return -1;
+	}
+    }
+    return j;
+}
+
+/* Un noeud d'une case du tampon b : vue pour un produit, nombre sinon. */
+static Tcl_Obj *
+CompactPart(TclCompactBuf *b, size_t cell, int node)
+{
+    const CNode *nd = &b->lay->node[node];
+
+    if (nd->kind == CN_PROD) {
+	return NewCompactElemObj(b, cell, node);
+    }
+    return DecodeScalar(nd, b->data + cell + nd->off);
+}
+
+static Tcl_Obj *
+DecodeNode(const CNode *nodes, int *ip, const unsigned char *cell)
+{
+    const CNode *nd = &nodes[(*ip)++];
+    Tcl_Obj *l;
+    int k;
+
+    if (nd->kind != CN_PROD) {
+	return DecodeScalar(nd, cell + nd->off);
+    }
+    l = Tcl_NewListObj(0, NULL);
+    for (k = 0; k < nd->nchild; k++) {
+	Tcl_ListObjAppendElement(NULL, l, DecodeNode(nodes, ip, cell));
+    }
+    return l;
+}
+
+/* --- le tampon --- */
+
+static TclCompactBuf *
+NewCompactBuf(TclType *et, TclCompactLayout *lay, Tcl_Size cap)
+{
+    TclCompactBuf *b = (TclCompactBuf *) Tcl_Alloc(sizeof(TclCompactBuf));
+    size_t bytes = (size_t) (cap > 0 ? cap : 1) * lay->size;
+
+    b->data = (unsigned char *) Tcl_Alloc(bytes);
+    memset(b->data, 0, bytes);		/* remplissage d'alignement : 0 */
+    b->n = 0;
+    b->cap = cap > 0 ? cap : 1;
+    b->stride = lay->size;
+    b->elemType = et->name;
+    b->refCount = 1;
+    b->et = et;
+    b->lay = lay;
+    lay->refCount++;
+    return b;
+}
+
+static void
+ReleaseCompactBuf(TclCompactBuf *b)
+{
+    if (--b->refCount == 0) {
+	TclCompactLayoutRelease(b->lay);
+	Tcl_Free(b->data);
+	Tcl_Free(b);
+    }
+}
+
+static void
+FreeCompact(Tcl_Obj *objPtr)
+{
+    CompactDropCache(objPtr);
+    ReleaseCompactBuf(COMPACT_BUF(objPtr));
+    objPtr->typePtr = NULL;
+}
+
+static void
+DupCompact(Tcl_Obj *srcPtr, Tcl_Obj *dupPtr)
+{
+    TclCompactBuf *b = COMPACT_BUF(srcPtr);
+    Tcl_ObjInternalRep ir;
+
+    b->refCount++;			/* partagé ; copie à l'écriture */
+    ir.twoPtrValue.ptr1 = b;
+    ir.twoPtrValue.ptr2 = NULL;
+    Tcl_StoreInternalRep(dupPtr, &compactListType, &ir);
+}
+
+static void
+UpdateStringOfCompact(Tcl_Obj *objPtr)
+{
+    TclCompactBuf *b = COMPACT_BUF(objPtr);
+    Tcl_DString ds, el;
+    Tcl_Size i, len;
+    int flags;
+    char *q;
+
+    Tcl_DStringInit(&ds);
+    for (i = 0; i < b->n; i++) {
+	if (i > 0) {
+	    Tcl_DStringAppend(&ds, " ", 1);
+	}
+	Tcl_DStringInit(&el);
+	FormatNode(b->lay->node, 0, b->data + (size_t) i * b->stride, &el);
+	len = Tcl_ScanCountedElement(Tcl_DStringValue(&el),
+		Tcl_DStringLength(&el), &flags);
+	q = (char *) Tcl_Alloc(len + 1);
+	len = Tcl_ConvertCountedElement(Tcl_DStringValue(&el),
+		Tcl_DStringLength(&el), q,
+		flags | (i > 0 ? TCL_DONT_QUOTE_HASH : 0));
+	Tcl_DStringAppend(&ds, q, len);
+	Tcl_Free(q);
+	Tcl_DStringFree(&el);
+    }
+    Tcl_InitStringRep(objPtr, Tcl_DStringValue(&ds), Tcl_DStringLength(&ds));
+    Tcl_DStringFree(&ds);
+}
+
+static Tcl_Size
+CompactLength(Tcl_Obj *objPtr)
+{
+    return COMPACT_BUF(objPtr)->n;
+}
+
+static int
+CompactIndex(Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_Size index,
+	Tcl_Obj **elemPtr)
+{
+    TclCompactBuf *b = COMPACT_BUF(objPtr);
+    int i = 0;
+
+    (void) interp;
+    if (index < 0 || index >= b->n) {
+	*elemPtr = NULL;
+	return TCL_OK;
+    }
+    (void) i;
+    *elemPtr = CompactPart(b, (size_t) index * b->stride, 0);
+    return TCL_OK;
+}
+
+/* Liste ordinaire des éléments (refcount 0). */
+static Tcl_Obj *
+CompactMaterialize(TclCompactBuf *b)
+{
+    Tcl_Obj *l = Tcl_NewListObj(b->n, NULL);
+    Tcl_Size k;
+
+    for (k = 0; k < b->n; k++) {
+	int i = 0;
+
+	Tcl_ListObjAppendElement(NULL, l, DecodeNode(b->lay->node, &i,
+		b->data + (size_t) k * b->stride));
+    }
+    return l;
+}
+
+static int
+CompactGetElements(Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_Size *objcPtr,
+	Tcl_Obj ***objvPtr)
+{
+    Tcl_Obj *c = COMPACT_CACHE(objPtr);
+
+    if (c == NULL) {
+	c = CompactMaterialize(COMPACT_BUF(objPtr));
+	Tcl_IncrRefCount(c);
+	objPtr->internalRep.twoPtrValue.ptr2 = c;
+    }
+    return Tcl_ListObjGetElements(interp, c, objcPtr, objvPtr);
+}
+
+/* Le cache des éléments d'un V compact (pour l'enveloppe des éléments
+ * d'une valeur annotée), ou NULL. */
+Tcl_Obj *
+TclCompactCache(Tcl_Obj *v)
+{
+    Tcl_Size n;
+    Tcl_Obj **ev;
+
+    if (v->typePtr != &compactListType) {
+	return NULL;
+    }
+    CompactGetElements(NULL, v, &n, &ev);
+    return COMPACT_CACHE(v);
+}
+
+static int
+CompactReplace(Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_Size first,
+	Tcl_Size numToDelete, Tcl_Size numToInsert, Tcl_Obj *const insertObjs[])
+{
+    TclCompactBuf *b = COMPACT_BUF(objPtr), *nb;
+    size_t st = b->stride;
+    unsigned char *tmp = NULL;
+    Tcl_Size k, n = b->n, newn;
+    int ok = 1;
+
+    if (first < 0) {
+	first = 0;
+    }
+    if (first > n) {
+	first = n;
+    }
+    if (numToDelete < 0) {
+	numToDelete = 0;
+    }
+    if (first + numToDelete > n) {
+	numToDelete = n - first;
+    }
+    if (numToInsert > 0) {
+	tmp = (unsigned char *) Tcl_Alloc((size_t) numToInsert * st);
+	memset(tmp, 0, (size_t) numToInsert * st);
+	for (k = 0; k < numToInsert && ok; k++) {
+	    /* une case ne contient que des éléments valides pour le type */
+	    ok = TclTypeValidate(NULL, b->et, TCL_ANNOT_CONTENT(insertObjs[k]),
+		    -1, NULL) == TCL_OK
+		    && EncodeNode(b->lay->node, 0, insertObjs[k],
+			    tmp + (size_t) k * st) >= 0;
+	}
+    }
+    if (!ok) {
+	/* repli : liste ordinaire */
+	Tcl_Obj *l = CompactMaterialize(b), **ev;
+	Tcl_Size ln;
+	int rc;
+
+	Tcl_Free(tmp);
+	Tcl_IncrRefCount(l);
+	rc = Tcl_ListObjReplace(interp, l, first, numToDelete, numToInsert,
+		insertObjs);
+	if (rc == TCL_OK) {
+	    Tcl_ListObjGetElements(NULL, l, &ln, &ev);
+	    Tcl_SetListObj(objPtr, ln, ev);
+	}
+	Tcl_DecrRefCount(l);
+	return rc;
+    }
+    newn = n - numToDelete + numToInsert;
+    if (b->refCount > 1 || newn > b->cap) {
+	Tcl_Size cap = (newn > b->cap) ? (newn < 2 * b->cap ? 2 * b->cap : newn)
+		: b->cap;
+	Tcl_ObjInternalRep ir;
+
+	nb = NewCompactBuf(b->et, b->lay, cap);
+	memcpy(nb->data, b->data, (size_t) first * st);
+	if (numToInsert > 0) {
+	    memcpy(nb->data + (size_t) first * st, tmp, (size_t) numToInsert * st);
+	}
+	memcpy(nb->data + (size_t) (first + numToInsert) * st,
+		b->data + (size_t) (first + numToDelete) * st,
+		(size_t) (n - first - numToDelete) * st);
+	nb->n = newn;
+	b->refCount++;			/* garder b pendant le remplacement */
+	ir.twoPtrValue.ptr1 = nb;
+	ir.twoPtrValue.ptr2 = NULL;
+	Tcl_StoreInternalRep(objPtr, &compactListType, &ir);	/* libère b */
+	ReleaseCompactBuf(b);
+    } else {
+	memmove(b->data + (size_t) (first + numToInsert) * st,
+		b->data + (size_t) (first + numToDelete) * st,
+		(size_t) (n - first - numToDelete) * st);
+	if (numToInsert > 0) {
+	    memcpy(b->data + (size_t) first * st, tmp, (size_t) numToInsert * st);
+	}
+	b->n = newn;
+    }
+    Tcl_Free(tmp);
+    if (objPtr->typePtr == &compactListType) {
+	CompactDropCache(objPtr);
+    }
+    TclInvalidateStringRep(objPtr);
+    return TCL_OK;
+}
+
+
+/* --- vues d'éléments --- */
+
+static Tcl_Obj *
+NewCompactElemObj(TclCompactBuf *b, size_t cell, int node)
+{
+    CompactElem *ce = (CompactElem *) Tcl_Alloc(sizeof(CompactElem));
+    Tcl_Obj *o = Tcl_NewObj();
+    Tcl_ObjInternalRep ir;
+
+    ce->b = b;
+    b->refCount++;
+    ce->cell = cell;
+    ce->node = node;
+    ce->cache = NULL;
+    ir.twoPtrValue.ptr1 = ce;
+    ir.twoPtrValue.ptr2 = NULL;
+    Tcl_StoreInternalRep(o, &compactElemType, &ir);
+    TclInvalidateStringRep(o);
+    return o;
+}
+
+static void
+FreeCompactElem(Tcl_Obj *objPtr)
+{
+    CompactElem *ce = COMPACT_ELEM(objPtr);
+
+    if (ce->cache != NULL) {
+	Tcl_DecrRefCount(ce->cache);
+    }
+    ReleaseCompactBuf(ce->b);
+    Tcl_Free(ce);
+    objPtr->typePtr = NULL;
+}
+
+static void
+DupCompactElem(Tcl_Obj *srcPtr, Tcl_Obj *dupPtr)
+{
+    CompactElem *src = COMPACT_ELEM(srcPtr);
+    CompactElem *ce = (CompactElem *) Tcl_Alloc(sizeof(CompactElem));
+    Tcl_ObjInternalRep ir;
+
+    *ce = *src;
+    ce->cache = NULL;
+    ce->b->refCount++;
+    ir.twoPtrValue.ptr1 = ce;
+    ir.twoPtrValue.ptr2 = NULL;
+    Tcl_StoreInternalRep(dupPtr, &compactElemType, &ir);
+}
+
+static void
+UpdateStringOfCompactElem(Tcl_Obj *objPtr)
+{
+    CompactElem *ce = COMPACT_ELEM(objPtr);
+    Tcl_DString ds;
+
+    Tcl_DStringInit(&ds);
+    FormatNode(ce->b->lay->node, ce->node, ce->b->data + ce->cell, &ds);
+    Tcl_InitStringRep(objPtr, Tcl_DStringValue(&ds), Tcl_DStringLength(&ds));
+    Tcl_DStringFree(&ds);
+}
+
+static Tcl_Size
+CompactElemLength(Tcl_Obj *objPtr)
+{
+    CompactElem *ce = COMPACT_ELEM(objPtr);
+
+    return ce->b->lay->node[ce->node].nchild;
+}
+
+static int
+CompactElemChild(CompactElem *ce, Tcl_Size k)
+{
+    const CNode *nodes = ce->b->lay->node;
+    int j = ce->node + 1;
+    Tcl_Size c;
+
+    for (c = 0; c < k; c++) {
+	j += nodes[j].nsub;
+    }
+    return j;
+}
+
+static int
+CompactElemIndex(Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_Size index,
+	Tcl_Obj **elemPtr)
+{
+    CompactElem *ce = COMPACT_ELEM(objPtr);
+
+    (void) interp;
+    if (index < 0 || index >= ce->b->lay->node[ce->node].nchild) {
+	*elemPtr = NULL;
+	return TCL_OK;
+    }
+    *elemPtr = CompactPart(ce->b, ce->cell, CompactElemChild(ce, index));
+    return TCL_OK;
+}
+
+static int
+CompactElemGetElements(Tcl_Interp *interp, Tcl_Obj *objPtr,
+	Tcl_Size *objcPtr, Tcl_Obj ***objvPtr)
+{
+    CompactElem *ce = COMPACT_ELEM(objPtr);
+
+    if (ce->cache == NULL) {
+	Tcl_Size k, n = ce->b->lay->node[ce->node].nchild;
+
+	ce->cache = Tcl_NewListObj(n, NULL);
+	Tcl_IncrRefCount(ce->cache);
+	for (k = 0; k < n; k++) {
+	    Tcl_ListObjAppendElement(NULL, ce->cache,
+		    CompactPart(ce->b, ce->cell, CompactElemChild(ce, k)));
+	}
+    }
+    return Tcl_ListObjGetElements(interp, ce->cache, objcPtr, objvPtr);
+}
+
+/* Modifier une vue : elle devient une liste ordinaire. */
+static int
+CompactElemReplace(Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_Size first,
+	Tcl_Size numToDelete, Tcl_Size numToInsert, Tcl_Obj *const insertObjs[])
+{
+    Tcl_Obj **ev, *l;
+    Tcl_Size n;
+    int rc;
+
+    if (CompactElemGetElements(interp, objPtr, &n, &ev) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    l = Tcl_NewListObj(n, ev);
+    Tcl_IncrRefCount(l);
+    rc = Tcl_ListObjReplace(interp, l, first, numToDelete, numToInsert,
+	    insertObjs);
+    if (rc == TCL_OK) {
+	Tcl_ListObjGetElements(NULL, l, &n, &ev);
+	Tcl_SetListObj(objPtr, n, ev);
+    }
+    Tcl_DecrRefCount(l);
+    return rc;
+}
+
+/* --- interface --- */
+
+int
+TclIsCompact(Tcl_Obj *v)
+{
+    return v != NULL && v->typePtr == &compactListType;
+}
+
+int
+TclCompactHolds(Tcl_Obj *v, const TclType *et, Tcl_Size *nPtr)
+{
+    if (v == NULL || v->typePtr != &compactListType
+	    || COMPACT_BUF(v)->et != et) {
+	return 0;
+    }
+    if (nPtr != NULL) {
+	*nPtr = COMPACT_BUF(v)->n;
+    }
+    return 1;
+}
+
+Tcl_Obj *
+TclCompactElement(Tcl_Obj *v, Tcl_Size i)
+{
+    Tcl_Obj *e = NULL;
+
+    CompactIndex(NULL, v, i, &e);
+    return e;
+}
+
+
+/*
+ * Lecture directe d'une partie par chemin : l'élément idx, puis les champs
+ * names[0..nnames-1] (des produits). Rend le contenu neuf (refcount 0) et
+ * son type, ou NULL si le chemin ne se suit pas ici (le chemin ordinaire
+ * dira l'erreur). *usedPtr : nombre de noms consommés (tous).
+ */
+Tcl_Obj *
+TclCompactReadPath(Tcl_Obj *v, Tcl_Size idx, Tcl_Size nnames,
+	const char *const names[], TclType **tpPtr)
+{
+    TclCompactBuf *b;
+    TclType *t;
+    int i = 0;
+    Tcl_Size k;
+
+    if (v->typePtr != &compactListType) {
+	return NULL;
+    }
+    b = COMPACT_BUF(v);
+    if (idx < 0 || idx >= b->n) {
+	return NULL;
+    }
+    t = b->et;
+    for (k = 0; k < nnames; k++) {
+	const CNode *nd = &b->lay->node[i];
+	Tcl_Size f, c;
+	int j;
+
+	if (nd->kind != CN_PROD || t->kind != TCLT_PRODUCT) {
+	    return NULL;
+	}
+	f = TclTypeFieldIndex(t, names[k]);
+	if (f < 0 || f >= nd->nchild) {
+	    return NULL;
+	}
+	for (j = i + 1, c = 0; c < f; c++) {
+	    j += b->lay->node[j].nsub;
+	}
+	i = j;
+	t = t->fields[f].type;
+    }
+    *tpPtr = t;
+    return DecodeNode(b->lay->node, &i, b->data + (size_t) idx * b->stride);
+}
+
+/* Contenu compact (objet neuf) d'une liste list.T, ou NULL. */
+Tcl_Obj *
+TclCompactFrom(TclType *ltp, Tcl_Obj *content)
+{
+    TclCompactLayout *lay;
+    TclCompactBuf *b;
+    Tcl_Obj **ev, *v;
+    Tcl_Size n, k;
+    Tcl_ObjInternalRep ir;
+
+    if (!compactOn || ltp == NULL || ltp->kind != TCLT_LIST
+	    || ltp->elem == NULL || content->typePtr == &compactListType
+	    || (lay = TclCompactLayoutOf(ltp->elem)) == NULL
+	    || Tcl_ListObjGetElements(NULL, content, &n, &ev) != TCL_OK) {
+	return NULL;
+    }
+    b = NewCompactBuf(ltp->elem, lay, n);
+    for (k = 0; k < n; k++) {
+	if (EncodeNode(lay->node, 0, ev[k], b->data + (size_t) k * lay->size)
+		< 0) {
+	    ReleaseCompactBuf(b);
+	    return NULL;
+	}
+    }
+    b->n = n;
+    v = Tcl_NewObj();
+    ir.twoPtrValue.ptr1 = b;
+    ir.twoPtrValue.ptr2 = NULL;
+    Tcl_StoreInternalRep(v, &compactListType, &ir);
+    TclInvalidateStringRep(v);		/* Tcl_NewObj a mis "" */
+    if (content->bytes != NULL) {
+	Tcl_InitStringRep(v, content->bytes, content->length);	/* EIAS */
+    }
+    return v;
+}
+
+/*
+ * tcl::unsupported::compact          -> on | off
+ * tcl::unsupported::compact on|off
+ * tcl::unsupported::compact info V   -> {} ou {n N stride S elem T}
+ * tcl::unsupported::compact layout T -> {size S align A fields {{chemin
+ *                                       genre octets décalage} ...}}
+ */
+static void
+LayoutFields(const CNode *nodes, int *ip, Tcl_DString *path, Tcl_Obj *out)
+{
+    const CNode *nd = &nodes[(*ip)++];
+    Tcl_Size mark = Tcl_DStringLength(path);
+    int k;
+
+    if (nd->name != NULL) {
+	if (mark > 0) {
+	    Tcl_DStringAppend(path, ".", 1);
+	}
+	Tcl_DStringAppend(path, nd->name, TCL_AUTO_LENGTH);
+    }
+    if (nd->kind == CN_PROD) {
+	for (k = 0; k < nd->nchild; k++) {
+	    LayoutFields(nodes, ip, path, out);
+	}
+    } else {
+	Tcl_Obj *f[4];
+	static const char *const kinds[] = {"", "int", "uint", "float"};
+
+	f[0] = Tcl_NewStringObj(Tcl_DStringValue(path), Tcl_DStringLength(path));
+	f[1] = Tcl_NewStringObj(kinds[nd->kind], TCL_AUTO_LENGTH);
+	f[2] = Tcl_NewIntObj(nd->size);
+	f[3] = Tcl_NewWideIntObj((Tcl_WideInt) nd->off);
+	Tcl_ListObjAppendElement(NULL, out, Tcl_NewListObj(4, f));
+    }
+    Tcl_DStringSetLength(path, mark);
+}
+
+static int
+CompactObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
+	Tcl_Obj *const objv[])
+{
+    const char *sub;
+
+    (void) clientData;
+    if (objc == 1) {
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(compactOn ? "on" : "off", -1));
+	return TCL_OK;
+    }
+    sub = Tcl_GetString(objv[1]);
+    if (objc == 2 && (strcmp(sub, "on") == 0 || strcmp(sub, "off") == 0)) {
+	compactOn = (sub[1] == 'n');
+	Tcl_SetObjResult(interp, objv[1]);
+	return TCL_OK;
+    }
+    if (objc == 3 && strcmp(sub, "info") == 0) {
+	Tcl_Obj *v = objv[2], *r;
+	TclCompactBuf *b;
+
+	if (TclIsAnnotated(v)) {
+	    v = (Tcl_Obj *) v->internalRep.twoPtrValue.ptr1;
+	}
+	if (v->typePtr != &compactListType) {
+	    Tcl_ResetResult(interp);
+	    return TCL_OK;
+	}
+	b = COMPACT_BUF(v);
+	r = Tcl_NewListObj(0, NULL);
+	Tcl_ListObjAppendElement(NULL, r, Tcl_NewStringObj("n", 1));
+	Tcl_ListObjAppendElement(NULL, r, Tcl_NewWideIntObj(b->n));
+	Tcl_ListObjAppendElement(NULL, r, Tcl_NewStringObj("stride", 6));
+	Tcl_ListObjAppendElement(NULL, r, Tcl_NewWideIntObj((Tcl_WideInt) b->stride));
+	Tcl_ListObjAppendElement(NULL, r, Tcl_NewStringObj("elem", 4));
+	Tcl_ListObjAppendElement(NULL, r, Tcl_NewStringObj(b->elemType, -1));
+	Tcl_ListObjAppendElement(NULL, r, Tcl_NewStringObj("shared", 6));
+	Tcl_ListObjAppendElement(NULL, r, Tcl_NewWideIntObj((Tcl_WideInt) b->refCount));
+	Tcl_SetObjResult(interp, r);
+	return TCL_OK;
+    }
+    if (objc == 3 && strcmp(sub, "layout") == 0) {
+	Tcl_Size tl;
+	const char *tt = Tcl_GetStringFromObj(objv[2], &tl);
+	TclType *tp = TclTypeParse(interp, tt, tl);
+	TclCompactLayout *lay;
+	Tcl_Obj *r, *fields;
+	Tcl_DString path;
+	int i = 0;
+
+	if (tp == NULL) {
+	    return TCL_ERROR;
+	}
+	if ((lay = TclCompactLayoutOf(tp)) == NULL) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf("%s has no compact layout: "
+		    "only fixed-size scalars (int(s,n), int(u,n) with n = 8, 16, "
+		    "32 or 64, double, double(32|64)) and products of them",
+		    tp->name));
+	    Tcl_SetErrorCode(interp, "TCL", "TYPE", "COMPACT", (char *) NULL);
+	    return TCL_ERROR;
+	}
+	fields = Tcl_NewListObj(0, NULL);
+	Tcl_DStringInit(&path);
+	LayoutFields(lay->node, &i, &path, fields);
+	Tcl_DStringFree(&path);
+	r = Tcl_NewListObj(0, NULL);
+	Tcl_ListObjAppendElement(NULL, r, Tcl_NewStringObj("size", 4));
+	Tcl_ListObjAppendElement(NULL, r, Tcl_NewWideIntObj((Tcl_WideInt) lay->size));
+	Tcl_ListObjAppendElement(NULL, r, Tcl_NewStringObj("align", 5));
+	Tcl_ListObjAppendElement(NULL, r, Tcl_NewWideIntObj((Tcl_WideInt) lay->align));
+	Tcl_ListObjAppendElement(NULL, r, Tcl_NewStringObj("fields", 6));
+	Tcl_ListObjAppendElement(NULL, r, fields);
+	Tcl_SetObjResult(interp, r);
+	return TCL_OK;
+    }
+    Tcl_WrongNumArgs(interp, 1, objv, "?on|off? | info value | layout type");
+    return TCL_ERROR;
+}
+
+void
+TclCompactInit(Tcl_Interp *interp)
+{
+    const char *env = getenv("TCL_TYPES_COMPACT");
+
+    if (env != NULL && env[0] == '1') {
+	compactOn = 1;			/* pour passer les tests en forme compacte */
+    }
+    Tcl_RegisterObjType(&compactListType);
+    Tcl_RegisterObjType(&compactElemType);
+    Tcl_RegisterObjType(&annotatedObjType);	/* pour tclCompact.h */
+    Tcl_CreateObjCommand2(interp, "::tcl::unsupported::compact", CompactObjCmd,
+	    NULL, NULL);
 }

@@ -1,0 +1,48 @@
+--- a/generic/tclCompExpr.c	2026-10-23 15:42:17.728865035 +0200
++++ b/generic/tclCompExpr.c	2026-10-23 15:42:17.735667167 +0200
+@@ -1334,15 +1334,21 @@
+ 			}
+ 		    }
+ 		}
+-		TclStackFree(interp, nestedPtr);
+-		if (lexeme == COMMAND) {
+-		    // TIP 759b : if we came back on an operator, we want to parse it again
+-		    if (CHAR_TYPE(nestedPtr->term[0]) == TYPE_OP
+-			|| CHAR_TYPE(nestedPtr->term[0]) == TYPE_CLOSE_PAREN
+-			|| nestedPtr->term[0] == ';') {
+-			end = start-1;
++		{
++		    /* nestedPtr is on the stack: read term before freeing it */
++		    const char *nestedTerm = nestedPtr->term;
++
++		    TclStackFree(interp, nestedPtr);
++		    if (lexeme == COMMAND) {
++			// TIP 759b : if we came back on an operator, we want to parse it again
++			if (CHAR_TYPE(nestedTerm[0]) == TYPE_OP
++			    || CHAR_TYPE(nestedTerm[0]) == TYPE_CLOSE_PAREN
++			    || nestedTerm[0] == ';') {
++			    end = start-1;
++			}
+ 		    }
+-		} else if (lexeme == SCRIPT) {
++		}
++		if (lexeme == SCRIPT) {
+ 		    end = start;
+ 		}
+ 		start = tokenPtr->start;
+--- a/generic/tclParse.c	2026-10-23 15:42:17.731665395 +0200
++++ b/generic/tclParse.c	2026-10-23 15:42:17.735730427 +0200
+@@ -2661,6 +2661,13 @@
+ 	    Tcl_IncrRefCount(expressionObj);
+  	    code = Tcl_ExprObj(interp, expressionObj, &appendObj);
+  	    Tcl_DecrRefCount(expressionObj);
++	    if (code == TCL_OK) {
++		/* Tcl_ExprObj gives a reference to the caller; below,
++		 * appendObj is borrowed (as for a command, from the result) */
++		Tcl_SetObjResult(interp, appendObj);
++		Tcl_DecrRefCount(appendObj);
++		appendObj = Tcl_GetObjResult(interp);
++	    }
+  	    break;
+ 	}
+ 	case TCL_TOKEN_COMMAND: {

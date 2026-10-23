@@ -1467,9 +1467,8 @@ TclSetAnnotatedCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
     /*
      * Déclaration : le nouveau contrat REMPLACE l'ancien. On lève le bit
      * pour que l'écriture passe par la branche "adoption" de
-     * TclTypedVarPrepareWrite, puis on le restaure en cas d'échec.
-     * Après un échec, varPtr peut avoir été détruit par une trace ; à
-     * durcir (relire la variable) si les traces sont à supporter.
+     * TclTypedVarPrepareWrite, puis on le restaure en cas d'échec (en
+     * relisant la variable : elle a pu être détruite).
      */
     hadBit = varPtr->flags & (VAR_TYPED|VAR_CONTRACT);
     varPtr->flags &= ~(VAR_TYPED|VAR_CONTRACT);
@@ -1477,7 +1476,20 @@ TclSetAnnotatedCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
     res = Tcl_ObjSetVar2(interp, baseObj, NULL, valueA, TCL_LEAVE_ERR_MSG);
     SettleSuspend(-1);
     if (res == NULL) {
-	varPtr->flags |= hadBit;
+	if (hadBit) {
+	    /* la variable a pu disparaître pendant l'échec (créée par la
+	     * recherche, puis nettoyée) : la relire au lieu de varPtr */
+	    Var *again, *arr2;
+
+	    again = TclObjLookupVarEx(interp, baseObj, NULL, 0, "set", 0, 0,
+		    &arr2);
+	    while (again != NULL && TclIsVarLink(again)) {
+		again = again->value.linkPtr;
+	    }
+	    if (again != NULL) {
+		again->flags |= hadBit;
+	    }
+	}
 	goto done;
     }
     if (status != TCLA_EMPTY && (varPtr->flags & VAR_TYPED)) {
@@ -1528,7 +1540,8 @@ TclSetAnnotatedCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 		&& strcmp(Tcl_GetString(ev[3]), tp->name) == 0
 		&& Tcl_GetString(ev[4])[0] != '\0') {
 	    Tcl_Obj *m = Tcl_DuplicateObj(Tcl_GetObjResult(interp));
-	    Tcl_Obj *val = TCL_ANNOT_CONTENT(objv[2]);
+	    Tcl_Obj *val = Tcl_NewStringObj(
+		    Tcl_GetString(TCL_ANNOT_CONTENT(objv[2])), -1);
 	    Tcl_Obj *q = Tcl_NewListObj(1, &val);
 
 	    Tcl_IncrRefCount(q);
@@ -1611,7 +1624,20 @@ TclTypedVarDeclare(Tcl_Interp *interp, Tcl_Obj *nameObj, Tcl_Obj *typed)
     varPtr->flags &= ~(VAR_TYPED|VAR_CONTRACT);
     res = Tcl_ObjSetVar2(interp, nameObj, NULL, typed, TCL_LEAVE_ERR_MSG);
     if (res == NULL) {
-	varPtr->flags |= hadBit;
+	if (hadBit) {
+	    /* la variable a pu disparaître pendant l'échec (créée par la
+	     * recherche, puis nettoyée) : la relire au lieu de varPtr */
+	    Var *again, *arr2;
+
+	    again = TclObjLookupVarEx(interp, nameObj, NULL, 0, "set", 0, 0,
+		    &arr2);
+	    while (again != NULL && TclIsVarLink(again)) {
+		again = again->value.linkPtr;
+	    }
+	    if (again != NULL) {
+		again->flags |= hadBit;
+	    }
+	}
 	return NULL;
     }
     if (varPtr->flags & VAR_TYPED) {

@@ -10,6 +10,7 @@
 #include "tclTypesInt.h"
 #include "tclTomMath.h"
 #include <ctype.h>
+#include <stddef.h>
 #include <math.h>
 
 static TypeData *
@@ -121,6 +122,9 @@ DeleteData(void *clientData, Tcl_Interp *interp)
 	}
 	if (d->all[i]->familyArgs != NULL) {
 	    Tcl_DecrRefCount(d->all[i]->familyArgs);
+	}
+	if (d->all[i]->compact != NULL) {
+	    TclCompactLayoutRelease(d->all[i]->compact);
 	}
 	Tcl_Free(d->all[i]->name);
 	Tcl_Free(d->all[i]);
@@ -1434,6 +1438,16 @@ ValidateG(Tcl_Interp *interp, const TclType *tp, Tcl_Obj *value,
 	}
 	return TCL_OK;
     case TCLT_LIST:
+	if (TclCompactHolds(value, tp->elem, &n)) {
+	    /* forme compacte : ses cases sont valides par construction */
+	    if (tp->arity >= 0 && n != tp->arity) {
+		ERR(interp, "LIST", "%s needs exactly %" TCL_SIZE_MODIFIER
+			"d elements but got %" TCL_SIZE_MODIFIER "d", tp->name,
+			tp->arity, n);
+		return TCL_ERROR;
+	    }
+	    return TCL_OK;
+	}
 	if (Tcl_ListObjGetElements(interp, value, &n, &elems) != TCL_OK) {
 	    return TCL_ERROR;
 	}
@@ -1594,7 +1608,10 @@ ValidateG(Tcl_Interp *interp, const TclType *tp, Tcl_Obj *value,
 		first = acc[0];
 	    } else if (nmin > 1) {
 		if (interp != NULL) {
-		    Tcl_Obj *msg = Tcl_NewObj(), *q = Tcl_NewListObj(1, &value);
+		    /* une copie du texte : value peut n'avoir aucune référence,
+		     * et la liste q la libérerait en partant */
+		    Tcl_Obj *vs = Tcl_NewStringObj(Tcl_GetString(value), -1);
+		    Tcl_Obj *msg = Tcl_NewObj(), *q = Tcl_NewListObj(1, &vs);
 		    Tcl_Obj *n0 = tp->fields[acc[0]].name;
 
 		    Tcl_IncrRefCount(q);
@@ -2838,6 +2855,701 @@ TclTypeVariantConvert(Tcl_Interp *interp, TclType *sum, int from,
     }
     *resPtr = res;
     return TCL_OK;
+}
+
+
+/* ====================================================================
+ * type c T ?T ...? : en-tête C produit depuis les types
+ * ====================================================================
+ *
+ * Un typedef par type nommé, dans l'ordre des dépendances ; produits en
+ * struct, sommes de littéraux en enum, sommes en struct {int tag; union},
+ * S($champ) en union seule, list(N).T en tableau, list($n).T final en
+ * membre flexible ; string, list.T, dict et liens en Tcl_Obj *. Chaque
+ * struct est suivi de _Static_assert sur sizeof et offsetof, calculés ici
+ * avec les alignements de TclTypeAbiAlign : si le compilateur de
+ * l'extension range autrement, la compilation échoue.
+ */
+
+typedef struct CGen {
+    Tcl_Interp *interp;
+    Tcl_DString defs;		/* les typedef, dans l'ordre */
+    Tcl_HashTable done;		/* TclType * -> CGenNamed * */
+    int needTcl;
+    int depth;
+    TclType *self;		/* typedef en cours d'un scalaire ou tableau
+				 * nommé : sa propre déclaration, pas son nom */
+} CGen;
+
+typedef struct CGenNamed {
+    char *cname;
+    size_t size, align;
+    int flex;			/* finit par un membre flexible */
+    int busy;			/* en cours (récursion) */
+} CGenNamed;
+
+static size_t
+CAlignUp(size_t x, size_t a)
+{
+    return (x + a - 1) / a * a;
+}
+
+/* Nom C : ASCII, accents usuels translittérés, le reste en "_". */
+static void
+CIdent(const char *s, Tcl_DString *ds)
+{
+    static const char *const kw[] = {
+	"auto", "break", "case", "char", "const", "continue", "default", "do",
+	"double", "else", "enum", "extern", "float", "for", "goto", "if",
+	"inline", "int", "long", "register", "restrict", "return", "short",
+	"signed", "sizeof", "static", "struct", "switch", "typedef", "union",
+	"unsigned", "void", "volatile", "while", "bool", "true", "false", NULL
+    };
+    Tcl_Size start = Tcl_DStringLength(ds);
+    const unsigned char *p = (const unsigned char *) s;
+    int i;
+
+    if (*p >= '0' && *p <= '9') {
+	Tcl_DStringAppend(ds, "_", 1);
+    }
+    while (*p) {
+	if ((*p >= 'a' && *p <= 'z') || (*p >= 'A' && *p <= 'Z')
+		|| (*p >= '0' && *p <= '9') || *p == '_') {
+	    Tcl_DStringAppend(ds, (const char *) p, 1);
+	    p++;
+	} else if (*p == 0xC3 && p[1] != 0) {
+	    static const char map[] =	/* U+00C0 .. U+00FF */
+		"AAAAAAACEEEEIIII_NOOOOO_OUUUUY__aaaaaaaceeeeiiii_nooooo_ouuuuy_y";
+	    unsigned c = p[1];
+	    char ch = (c >= 0x80 && c <= 0xBF) ? map[c - 0x80 + 0] : '_';
+
+	    if (c >= 0x80 && c <= 0xBF) {
+		ch = map[(c - 0x80) + 0];
+	    }
+	    Tcl_DStringAppend(ds, &ch, 1);
+	    p += 2;
+	} else {
+	    Tcl_DStringAppend(ds, "_", 1);
+	    p++;
+	    while ((*p & 0xC0) == 0x80) {
+		p++;			/* reste d'un caractère UTF-8 */
+	    }
+	}
+    }
+    for (i = 0; kw[i] != NULL; i++) {
+	if (strcmp(Tcl_DStringValue(ds) + start, kw[i]) == 0) {
+	    Tcl_DStringAppend(ds, "_", 1);
+	    break;
+	}
+    }
+}
+
+/* Un type à nommer (typedef) : défini par type def, sans paramètres. */
+static int
+CIsNamed(const TclType *tp)
+{
+    return tp->nominal && !tp->reserved && strchr(tp->name, '(') == NULL
+	    && strchr(tp->name, '<') == NULL && tp->binTag == NULL;
+}
+
+static int CDecl(CGen *g, TclType *tp, const char *name, int last,
+	Tcl_DString *out, size_t *sizePtr, size_t *alignPtr, int *flexPtr,
+	const char *where);
+static CGenNamed *CEmitNamed(CGen *g, TclType *tp);
+
+static int
+CErr(CGen *g, const char *where, const char *msg, const char *tname)
+{
+    Tcl_SetObjResult(g->interp, Tcl_ObjPrintf("type c: %s%s%s%s", where,
+	    *where ? ": " : "", msg, tname ? tname : ""));
+    Tcl_SetErrorCode(g->interp, "TCL", "TYPE", "C", (char *) NULL);
+    return TCL_ERROR;
+}
+
+/* Scalaire : texte du type C, taille, alignement ; 0 si ce n'en est pas un,
+ * -1 après une erreur. */
+static int
+CScalar(CGen *g, const TclType *tp, Tcl_DString *base, size_t *sz,
+	size_t *al, const char *where)
+{
+    union { uint16_t u; unsigned char c[2]; } bo;
+    int native;
+
+    bo.u = 1;
+    native = bo.c[0] ? TCLBIN_LE : TCLBIN_BE;
+    if (tp->kind != TCLT_INT && tp->kind != TCLT_DOUBLE) {
+	return 0;
+    }
+    if (tp->binEnd != TCLBIN_AUTO && tp->binEnd != native) {
+	CErr(g, where, "the byte order differs from this machine's: ",
+		tp->name);
+	return -1;
+    }
+    if (tp->bitWidth != 0) {
+	CErr(g, where, "a bitarray has no C struct form: ", tp->name);
+	return -1;
+    }
+    if (tp->kind == TCLT_DOUBLE) {
+	int b = (tp->binKind == TCLBIN_FLOAT) ? (int) tp->binSize * 8 : 64;
+
+	Tcl_DStringAppend(base, b == 32 ? "float" : "double", -1);
+	*sz = (size_t) b / 8;
+	*al = (size_t) TclTypeAbiAlign(1, b);
+	return 1;
+    }
+    if ((tp->binKind == TCLBIN_SINT || tp->binKind == TCLBIN_UINT)
+	    && (tp->binSize == 1 || tp->binSize == 2 || tp->binSize == 4
+		|| tp->binSize == 8)) {
+	char buf[16];
+
+	snprintf(buf, sizeof(buf), "%sint%d_t",
+		tp->binKind == TCLBIN_UINT ? "u" : "", (int) tp->binSize * 8);
+	Tcl_DStringAppend(base, buf, -1);
+	*sz = (size_t) tp->binSize;
+	*al = (size_t) TclTypeAbiAlign(0, (int) tp->binSize * 8);
+	return 1;
+    }
+    CErr(g, where, "int has no fixed size in C: use int(s,n) or int(u,n) "
+	    "with n = 8, 16, 32 or 64, not ", tp->name);
+    return -1;
+}
+
+/* Corps d'un struct pour un produit ; rend taille, alignement, flex. */
+static int
+CStructBody(CGen *g, TclType *tp, Tcl_DString *out, size_t *sz, size_t *al,
+	int *flex, Tcl_DString *asserts, const char *cname, const char *prefix)
+{
+    size_t off = 0, align = 1;
+    Tcl_Size i;
+    int fl = 0;
+
+    Tcl_DStringAppend(out, "struct {\n", -1);
+    for (i = 0; i < tp->nfields; i++) {
+	Tcl_DString fn, decl, where;
+	size_t fs, fa;
+	int ff = 0;
+
+	Tcl_DStringInit(&fn);
+	Tcl_DStringInit(&decl);
+	Tcl_DStringInit(&where);
+	CIdent(Tcl_GetString(tp->fields[i].name), &fn);
+	Tcl_DStringAppend(&where, tp->name, -1);
+	Tcl_DStringAppend(&where, ".", 1);
+	Tcl_DStringAppend(&where, Tcl_GetString(tp->fields[i].name), -1);
+	if (CDecl(g, tp->fields[i].type, Tcl_DStringValue(&fn),
+		i == tp->nfields - 1, &decl, &fs, &fa, &ff,
+		Tcl_DStringValue(&where)) != TCL_OK) {
+	    Tcl_DStringFree(&fn);
+	    Tcl_DStringFree(&decl);
+	    Tcl_DStringFree(&where);
+	    return TCL_ERROR;
+	}
+	off = CAlignUp(off, fa);
+	if (fa > align) {
+	    align = fa;
+	}
+	Tcl_DStringAppend(out, "    ", 4);
+	Tcl_DStringAppend(out, Tcl_DStringValue(&decl), -1);
+	Tcl_DStringAppend(out, ";\n", 2);
+	if (asserts != NULL) {
+	    char buf[64];
+
+	    snprintf(buf, sizeof(buf), "%llu", (unsigned long long) off);
+	    Tcl_DStringAppend(asserts, "_Static_assert(offsetof(", -1);
+	    Tcl_DStringAppend(asserts, cname, -1);
+	    Tcl_DStringAppend(asserts, ", ", 2);
+	    Tcl_DStringAppend(asserts, prefix, -1);
+	    Tcl_DStringAppend(asserts, Tcl_DStringValue(&fn), -1);
+	    Tcl_DStringAppend(asserts, ") == ", -1);
+	    Tcl_DStringAppend(asserts, buf, -1);
+	    Tcl_DStringAppend(asserts, ", \"", 3);
+	    Tcl_DStringAppend(asserts, Tcl_DStringValue(&where), -1);
+	    Tcl_DStringAppend(asserts, ": offset\");\n", -1);
+	}
+	off += fs;
+	fl = ff;
+	Tcl_DStringFree(&fn);
+	Tcl_DStringFree(&decl);
+	Tcl_DStringFree(&where);
+    }
+    Tcl_DStringAppend(out, "}", 1);
+    *sz = CAlignUp(off, align);
+    *al = align;
+    *flex = fl;
+    return TCL_OK;
+}
+
+/* Une somme : enum (littéraux seuls), union (S($champ)), ou struct
+ * {int tag; union}. Les noms de variantes en énumérateurs NOM_variante. */
+static int
+CSumBody(CGen *g, TclType *tp, const char *cname, Tcl_DString *out,
+	size_t *sz, size_t *al, const char *where)
+{
+    Tcl_Size i;
+    int lits = 1, unionOnly = (tp->binTag != NULL);
+    size_t us = 0, ua = 1;
+    Tcl_DString un;
+
+    for (i = 0; i < tp->nfields; i++) {
+	if (tp->fields[i].type != NULL) {
+	    lits = 0;
+	}
+    }
+    if (lits) {
+	Tcl_DStringAppend(out, "enum {", -1);
+	for (i = 0; i < tp->nfields; i++) {
+	    Tcl_DStringAppend(out, i ? ", " : " ", -1);
+	    CIdent(cname, out);
+	    Tcl_DStringAppend(out, "_", 1);
+	    CIdent(Tcl_GetString(tp->fields[i].literal), out);
+	}
+	Tcl_DStringAppend(out, " }", -1);
+	*sz = sizeof(int);
+	*al = (size_t) TclTypeAbiAlign(0, 32);
+	return TCL_OK;
+    }
+    Tcl_DStringInit(&un);
+    Tcl_DStringAppend(&un, "union {\n", -1);
+    for (i = 0; i < tp->nfields; i++) {
+	Tcl_DString fn, decl;
+	size_t fs, fa;
+	int ff = 0;
+	char vbuf[32];
+
+	if (tp->fields[i].type == NULL) {
+	    continue;			/* variante littérale : la balise seule */
+	}
+	Tcl_DStringInit(&fn);
+	Tcl_DStringInit(&decl);
+	if (tp->fields[i].name != NULL) {
+	    CIdent(Tcl_GetString(tp->fields[i].name), &fn);
+	} else {
+	    snprintf(vbuf, sizeof(vbuf), "v%d", (int) i + 1);
+	    Tcl_DStringAppend(&fn, vbuf, -1);
+	}
+	if (CDecl(g, tp->fields[i].type, Tcl_DStringValue(&fn), 0, &decl,
+		&fs, &fa, &ff, where) != TCL_OK) {
+	    Tcl_DStringFree(&fn);
+	    Tcl_DStringFree(&decl);
+	    Tcl_DStringFree(&un);
+	    return TCL_ERROR;
+	}
+	Tcl_DStringAppend(&un, "        ", -1);
+	Tcl_DStringAppend(&un, Tcl_DStringValue(&decl), -1);
+	Tcl_DStringAppend(&un, ";\n", 2);
+	if (fs > us) {
+	    us = fs;
+	}
+	if (fa > ua) {
+	    ua = fa;
+	}
+	Tcl_DStringFree(&fn);
+	Tcl_DStringFree(&decl);
+    }
+    Tcl_DStringAppend(&un, "    }", -1);
+    us = CAlignUp(us, ua);
+    if (unionOnly) {
+	/* S($champ) : la variante est donnée par le champ frère */
+	Tcl_DStringAppend(out, Tcl_DStringValue(&un), -1);
+	*sz = us;
+	*al = ua;
+    } else {
+	size_t ta = (size_t) TclTypeAbiAlign(0, 32);
+	size_t uoff = CAlignUp(sizeof(int), ua);
+
+	Tcl_DStringAppend(out, "struct {\n    int tag;    /* ", -1);
+	for (i = 0; i < tp->nfields; i++) {
+	    Tcl_DStringAppend(out, i ? ", " : "", -1);
+	    CIdent(cname, out);
+	    Tcl_DStringAppend(out, "_", 1);
+	    if (tp->fields[i].name != NULL) {
+		CIdent(Tcl_GetString(tp->fields[i].name), out);
+	    } else if (tp->fields[i].literal != NULL) {
+		CIdent(Tcl_GetString(tp->fields[i].literal), out);
+	    } else {
+		char vbuf[32];
+
+		snprintf(vbuf, sizeof(vbuf), "v%d", (int) i + 1);
+		Tcl_DStringAppend(out, vbuf, -1);
+	    }
+	}
+	Tcl_DStringAppend(out, " */\n    ", -1);
+	Tcl_DStringAppend(out, Tcl_DStringValue(&un), -1);
+	Tcl_DStringAppend(out, " u;\n}", -1);
+	*al = ua > ta ? ua : ta;
+	*sz = CAlignUp(uoff + us, *al);
+    }
+    Tcl_DStringFree(&un);
+    return TCL_OK;
+}
+
+/* Déclaration "TYPE nom[...]" d'un champ (ou d'une variante). */
+static int
+CDecl(CGen *g, TclType *tp, const char *name, int last, Tcl_DString *out,
+	size_t *sz, size_t *al, int *flex, const char *where)
+{
+    int r, isSelf = (tp == g->self);
+
+    g->self = NULL;
+    *flex = 0;
+    if (++g->depth > 64) {
+	g->depth--;
+	return CErr(g, where, "type nested too deeply", NULL);
+    }
+    if (tp->kind == TCLT_LIST && tp->binDyn == NULL && tp->arity < 0
+	    && CIsNamed(tp) && !isSelf) {
+	goto pointer;			/* list.T nommé : Tcl_Obj * */
+    }
+    if (!isSelf && CIsNamed(tp) && tp->kind != TCLT_STRING && tp->kind != TCLT_VAR
+	    && tp->kind != TCLT_DICT) {
+	CGenNamed *nm = CEmitNamed(g, tp);
+
+	if (nm == NULL) {
+	    g->depth--;
+	    return TCL_ERROR;
+	}
+	if (nm->busy) {
+	    g->depth--;
+	    return CErr(g, where, "a recursive type needs a pointer, which "
+		    "type c does not make yet: ", tp->name);
+	}
+	Tcl_DStringAppend(out, nm->cname, -1);
+	Tcl_DStringAppend(out, " ", 1);
+	Tcl_DStringAppend(out, name, -1);
+	*sz = nm->size;
+	*al = nm->align;
+	*flex = nm->flex;
+	g->depth--;
+	return TCL_OK;
+    }
+    {
+	Tcl_DString base;
+
+	Tcl_DStringInit(&base);
+	r = CScalar(g, tp, &base, sz, al, where);
+	if (r != 0) {
+	    if (r > 0) {
+		Tcl_DStringAppend(out, Tcl_DStringValue(&base), -1);
+		Tcl_DStringAppend(out, " ", 1);
+		Tcl_DStringAppend(out, name, -1);
+	    }
+	    Tcl_DStringFree(&base);
+	    g->depth--;
+	    return r > 0 ? TCL_OK : TCL_ERROR;
+	}
+	Tcl_DStringFree(&base);
+    }
+    switch (tp->kind) {
+    case TCLT_STRING:
+	if ((tp->binKind == TCLBIN_STR || tp->binKind == TCLBIN_BYTES)
+		&& tp->binDyn == NULL && tp->binSize > 0) {
+	    char buf[48];
+
+	    snprintf(buf, sizeof(buf), "[%lld]", (long long) tp->binSize);
+	    Tcl_DStringAppend(out, tp->binKind == TCLBIN_BYTES ? "uint8_t "
+		    : "char ", -1);
+	    Tcl_DStringAppend(out, name, -1);
+	    Tcl_DStringAppend(out, buf, -1);
+	    *sz = (size_t) tp->binSize;
+	    *al = 1;
+	    g->depth--;
+	    return TCL_OK;
+	}
+	goto pointer;
+    case TCLT_DICT:
+    case TCLT_VAR:
+	goto pointer;
+    case TCLT_LIST: {
+	Tcl_DString inner, suffix;
+	size_t es, ea;
+	int ef;
+
+	if (tp->arity < 0 && tp->binDyn == NULL) {
+	    goto pointer;
+	}
+	if (tp->binDyn != NULL && !last) {
+	    g->depth--;
+	    return CErr(g, where, "a list whose length depends on another "
+		    "field is a flexible array member, so it must be the last "
+		    "field", NULL);
+	}
+	Tcl_DStringInit(&suffix);
+	if (tp->binDyn != NULL) {
+	    Tcl_DStringAppend(&suffix, "[]", 2);
+	} else {
+	    char buf[32];
+
+	    snprintf(buf, sizeof(buf), "[%lld]", (long long) tp->arity);
+	    Tcl_DStringAppend(&suffix, buf, -1);
+	}
+	Tcl_DStringInit(&inner);
+	Tcl_DStringAppend(&inner, name, -1);
+	Tcl_DStringAppend(&inner, Tcl_DStringValue(&suffix), -1);
+	if (CDecl(g, tp->elem, Tcl_DStringValue(&inner), 0, out, &es, &ea,
+		&ef, where) != TCL_OK) {
+	    Tcl_DStringFree(&inner);
+	    Tcl_DStringFree(&suffix);
+	    g->depth--;
+	    return TCL_ERROR;
+	}
+	Tcl_DStringFree(&inner);
+	Tcl_DStringFree(&suffix);
+	if (ef) {
+	    g->depth--;
+	    return CErr(g, where, "an array of structs ending in a flexible "
+		    "member is not valid C", NULL);
+	}
+	*sz = (tp->binDyn != NULL) ? 0 : es * (size_t) tp->arity;
+	*al = ea;
+	*flex = (tp->binDyn != NULL);
+	g->depth--;
+	return TCL_OK;
+    }
+    case TCLT_PRODUCT: {
+	int ff;
+
+	if (CStructBody(g, tp, out, sz, al, &ff, NULL, NULL, NULL) != TCL_OK) {
+	    g->depth--;
+	    return TCL_ERROR;
+	}
+	Tcl_DStringAppend(out, " ", 1);
+	Tcl_DStringAppend(out, name, -1);
+	*flex = ff;
+	g->depth--;
+	return TCL_OK;
+    }
+    case TCLT_SUM: {
+	Tcl_DString cn;
+
+	Tcl_DStringInit(&cn);
+	CIdent(name, &cn);
+	if (CSumBody(g, tp, Tcl_DStringValue(&cn), out, sz, al, where)
+		!= TCL_OK) {
+	    Tcl_DStringFree(&cn);
+	    g->depth--;
+	    return TCL_ERROR;
+	}
+	Tcl_DStringFree(&cn);
+	Tcl_DStringAppend(out, " ", 1);
+	Tcl_DStringAppend(out, name, -1);
+	g->depth--;
+	return TCL_OK;
+    }
+    default:
+	break;
+    }
+  pointer:
+    g->needTcl = 1;
+    Tcl_DStringAppend(out, "Tcl_Obj *", -1);
+    Tcl_DStringAppend(out, name, -1);
+    Tcl_DStringAppend(out, "    /* ", -1);
+    Tcl_DStringAppend(out, tp->name, -1);
+    Tcl_DStringAppend(out, " */", -1);
+    *sz = sizeof(void *);
+    *al = (size_t) TclTypeAbiAlign(0, 0);
+    g->depth--;
+    return TCL_OK;
+}
+
+/* Valeurs par défaut en initialiseur C : seulement si chaque champ en a
+ * une qui s'écrit en C (un nombre), produits imbriqués compris. */
+static int
+CInit(TclType *tp, Tcl_DString *out)
+{
+    Tcl_Size i;
+
+    if (tp->kind != TCLT_PRODUCT) {
+	return 0;
+    }
+    Tcl_DStringAppend(out, "{", 1);
+    for (i = 0; i < tp->nfields; i++) {
+	TclType *ft = tp->fields[i].type;
+	double dv;
+
+	Tcl_DStringAppend(out, i ? ", " : " ", -1);
+	if (ft->kind == TCLT_PRODUCT && tp->fields[i].defval == NULL) {
+	    if (!CInit(ft, out)) {
+		return 0;
+	    }
+	    continue;
+	}
+	if (tp->fields[i].defval == NULL
+		|| (ft->kind != TCLT_INT && ft->kind != TCLT_DOUBLE)
+		|| Tcl_GetDoubleFromObj(NULL, tp->fields[i].defval, &dv)
+			!= TCL_OK) {
+	    return 0;
+	}
+	Tcl_DStringAppend(out, Tcl_GetString(tp->fields[i].defval), -1);
+    }
+    Tcl_DStringAppend(out, " }", 2);
+    return 1;
+}
+
+static CGenNamed *
+CEmitNamed(CGen *g, TclType *tp)
+{
+    Tcl_HashEntry *h;
+    CGenNamed *nm;
+    Tcl_DString cn, body, asserts;
+    int isNew, flex = 0;
+    size_t sz = 0, al = 1;
+
+    h = Tcl_CreateHashEntry(&g->done, (char *) tp, &isNew);
+    if (!isNew) {
+	return (CGenNamed *) Tcl_GetHashValue(h);
+    }
+    nm = (CGenNamed *) Tcl_Alloc(sizeof(CGenNamed));
+    memset(nm, 0, sizeof(*nm));
+    Tcl_SetHashValue(h, nm);
+    Tcl_DStringInit(&cn);
+    CIdent(tp->name, &cn);
+    nm->cname = (char *) Tcl_Alloc(Tcl_DStringLength(&cn) + 1);
+    strcpy(nm->cname, Tcl_DStringValue(&cn));
+    nm->busy = 1;
+    Tcl_DStringInit(&body);
+    Tcl_DStringInit(&asserts);
+    if (tp->kind == TCLT_PRODUCT) {
+	if (CStructBody(g, tp, &body, &sz, &al, &flex, &asserts, nm->cname, "")
+		!= TCL_OK) {
+	    goto fail;
+	}
+    } else if (tp->kind == TCLT_SUM) {
+	if (CSumBody(g, tp, nm->cname, &body, &sz, &al, tp->name) != TCL_OK) {
+	    goto fail;
+	}
+    } else {
+	/* scalaire, tableau : typedef de la déclaration */
+	g->self = (tp->under != NULL && tp->kind != TCLT_LIST) ? tp->under : tp;
+	if (CDecl(g, tp->under != NULL && tp->kind != TCLT_LIST ? tp->under : tp,
+		nm->cname, 1, &body, &sz, &al, &flex, tp->name) != TCL_OK) {
+	    goto fail;
+	}
+	if (flex) {
+	    CErr(g, tp->name, "a flexible array needs an enclosing struct",
+		    NULL);
+	    goto fail;
+	}
+    }
+    Tcl_DStringAppend(&g->defs, "/* ", 3);
+    Tcl_DStringAppend(&g->defs, tp->name, -1);
+    Tcl_DStringAppend(&g->defs, " */\ntypedef ", -1);
+    Tcl_DStringAppend(&g->defs, Tcl_DStringValue(&body), -1);
+    if (tp->kind == TCLT_PRODUCT || tp->kind == TCLT_SUM) {
+	Tcl_DStringAppend(&g->defs, " ", 1);
+	Tcl_DStringAppend(&g->defs, nm->cname, -1);
+    }
+    Tcl_DStringAppend(&g->defs, ";\n", 2);
+    {
+	char buf[200];
+
+	if (!flex) {
+	    snprintf(buf, sizeof(buf), "_Static_assert(sizeof(%s) == %llu, "
+		    "\"%s: size\");\n", nm->cname, (unsigned long long) sz,
+		    nm->cname);
+	} else {
+	    snprintf(buf, sizeof(buf), "_Static_assert(sizeof(%s) >= %llu, "
+		    "\"%s: size\");\n", nm->cname, (unsigned long long) sz,
+		    nm->cname);
+	}
+	Tcl_DStringAppend(&g->defs, buf, -1);
+    }
+    Tcl_DStringAppend(&g->defs, Tcl_DStringValue(&asserts), -1);
+    if (tp->kind == TCLT_PRODUCT) {
+	Tcl_DString init;
+
+	Tcl_DStringInit(&init);
+	if (CInit(tp, &init)) {
+	    Tcl_DStringAppend(&g->defs, "#define ", -1);
+	    {
+		const char *c;
+
+		for (c = nm->cname; *c; c++) {
+		    char u = (char) ((*c >= 'a' && *c <= 'z') ? *c - 32 : *c);
+
+		    Tcl_DStringAppend(&g->defs, &u, 1);
+		}
+	    }
+	    Tcl_DStringAppend(&g->defs, "_INIT ", -1);
+	    Tcl_DStringAppend(&g->defs, Tcl_DStringValue(&init), -1);
+	    Tcl_DStringAppend(&g->defs, "\n", 1);
+	}
+	Tcl_DStringFree(&init);
+    }
+    Tcl_DStringAppend(&g->defs, "\n", 1);
+    nm->size = sz;
+    nm->align = al;
+    nm->flex = flex;
+    nm->busy = 0;
+    Tcl_DStringFree(&cn);
+    Tcl_DStringFree(&body);
+    Tcl_DStringFree(&asserts);
+    return nm;
+
+  fail:
+    Tcl_DStringFree(&cn);
+    Tcl_DStringFree(&body);
+    Tcl_DStringFree(&asserts);
+    return NULL;
+}
+
+static int
+TypeCCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
+{
+    CGen g;
+    Tcl_Size i;
+    Tcl_HashSearch hs;
+    Tcl_HashEntry *h;
+    int rc = TCL_OK;
+    Tcl_DString head;
+    char buf[200];
+    union { uint16_t u; unsigned char c[2]; } bo;
+
+    if (objc < 3) {
+	Tcl_WrongNumArgs(interp, 2, objv, "type ?type ...?");
+	return TCL_ERROR;
+    }
+    memset(&g, 0, sizeof(g));
+    g.interp = interp;
+    Tcl_DStringInit(&g.defs);
+    Tcl_InitHashTable(&g.done, TCL_ONE_WORD_KEYS);
+    for (i = 2; i < objc && rc == TCL_OK; i++) {
+	Tcl_Size tl;
+	const char *tt = Tcl_GetStringFromObj(objv[i], &tl);
+	TclType *tp = TclTypeParse(interp, tt, tl);
+
+	if (tp == NULL) {
+	    rc = TCL_ERROR;
+	} else if (!CIsNamed(tp)) {
+	    rc = CErr(&g, "", "give names defined by type def, not ", tp->name);
+	} else if (CEmitNamed(&g, tp) == NULL) {
+	    rc = TCL_ERROR;
+	}
+    }
+    if (rc == TCL_OK) {
+	bo.u = 1;
+	Tcl_DStringInit(&head);
+	snprintf(buf, sizeof(buf), "/* Produit par type c : %s-endian, "
+		"pointeurs de %d octets. Ne pas modifier : regénérer. */\n",
+		bo.c[0] ? "little" : "big", (int) sizeof(void *));
+	Tcl_DStringAppend(&head, buf, -1);
+	Tcl_DStringAppend(&head, "#include <stdint.h>\n#include <stddef.h>\n",
+		-1);
+	if (g.needTcl) {
+	    Tcl_DStringAppend(&head, "#include <tcl.h>\n", -1);
+	}
+	Tcl_DStringAppend(&head, "\n", 1);
+	Tcl_DStringAppend(&head, Tcl_DStringValue(&g.defs), -1);
+	Tcl_DStringResult(interp, &head);
+    }
+    for (h = Tcl_FirstHashEntry(&g.done, &hs); h; h = Tcl_NextHashEntry(&hs)) {
+	CGenNamed *nm = (CGenNamed *) Tcl_GetHashValue(h);
+
+	Tcl_Free(nm->cname);
+	Tcl_Free(nm);
+    }
+    Tcl_DeleteHashTable(&g.done);
+    Tcl_DStringFree(&g.defs);
+    return rc;
 }
 
 /* --------------------------------------------------------------------
@@ -4430,7 +5142,7 @@ BinFastDec(BinDec *d, const TclType *tp, int asField, Tcl_Obj **vals,
 	    Tcl_Size j;
 
 	    for (j = 0; j < i; j++) {
-		TclDiscard(elv[j]);
+		Tcl_DecrRefCount(elv[j]);	/* référence prise ci-dessous */
 	    }
 	    Tcl_Free(elv);
 	    return rc;
@@ -4440,7 +5152,7 @@ BinFastDec(BinDec *d, const TclType *tp, int asField, Tcl_Obj **vals,
     rc = BinDecPad(d, BinAlignOf(&d->b, tp, depth));
     if (rc != TCL_OK) {
 	for (i = 0; i < n; i++) {
-	    TclDiscard(elv[i]);
+	    Tcl_DecrRefCount(elv[i]);
 	}
 	Tcl_Free(elv);
 	return rc;
@@ -4691,6 +5403,9 @@ TypeObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
     if (strcmp(sub, "get") == 0) {
 	return TypeGetCmd(interp, objc, objv);
     }
+    if (strcmp(sub, "c") == 0) {
+	return TypeCCmd(interp, objc, objv);
+    }
     if (strcmp(sub, "cast") == 0) {
 	/*
 	 * type cast T valeur : le résolveur d'un constructeur, sans
@@ -4738,7 +5453,7 @@ TypeObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
 	return TypeBinaryCmd(interp, objc, objv);
     }
     ERR(interp, "SUBCMD", "bad subcommand \"%s\": must be def, alias, "
-	    "cast, convert, deref, get or binary", sub);
+	    "c, cast, convert, deref, get or binary", sub);
     return TCL_ERROR;
 }
 
@@ -4937,6 +5652,75 @@ DeepContent(Tcl_Obj *obj)
     return res;
 }
 
+/*
+ * Caractéristiques de la machine, telles que les voit le compilateur qui a
+ * construit Tcl : l'alignement de chaque type fixe DANS UNE STRUCTURE
+ * (offsetof sur {char c; T x;}), que tcl_platform ne donne pas (Linux i386 :
+ * double et int64_t alignés sur 4). Sert au calcul de disposition des cases
+ * (représentation compacte) et à "type c".
+ */
+/* Structures nommées : un type défini dans offsetof n'est pas portable. */
+struct AbiI8 { char c; int8_t x; };
+struct AbiI16 { char c; int16_t x; };
+struct AbiI32 { char c; int32_t x; };
+struct AbiI64 { char c; int64_t x; };
+struct AbiF32 { char c; float x; };
+struct AbiF64 { char c; double x; };
+struct AbiPtr { char c; void *x; };
+#define ABI_ALIGN(S) offsetof(struct S, x)
+
+int
+TclTypeAbiAlign(int isFloat, int bits)
+{
+    if (isFloat) {
+	return bits == 32 ? (int) ABI_ALIGN(AbiF32) : (int) ABI_ALIGN(AbiF64);
+    }
+    switch (bits) {
+    case 8:  return (int) ABI_ALIGN(AbiI8);
+    case 16: return (int) ABI_ALIGN(AbiI16);
+    case 32: return (int) ABI_ALIGN(AbiI32);
+    case 64: return (int) ABI_ALIGN(AbiI64);
+    case 0:  return (int) ABI_ALIGN(AbiPtr);	/* un pointeur */
+    }
+    return 1;
+}
+
+static int
+AbiObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
+	Tcl_Obj *const objv[])
+{
+    static const struct { const char *n; int f, b, size; } t[] = {
+	{"i8", 0, 8, 1}, {"i16", 0, 16, 2}, {"i32", 0, 32, 4},
+	{"i64", 0, 64, 8}, {"f32", 1, 32, 4}, {"f64", 1, 64, 8},
+	{"ptr", 0, 0, (int) sizeof(void *)}
+    };
+    Tcl_Obj *res = Tcl_NewDictObj(), *al = Tcl_NewDictObj();
+    Tcl_Obj *sz = Tcl_NewDictObj();
+    union { uint16_t u; unsigned char c[2]; } bo;
+    size_t i;
+
+    (void) clientData;
+    if (objc != 1) {
+	Tcl_WrongNumArgs(interp, 1, objv, "");
+	return TCL_ERROR;
+    }
+    bo.u = 1;
+    for (i = 0; i < sizeof(t) / sizeof(t[0]); i++) {
+	Tcl_DictObjPut(NULL, al, Tcl_NewStringObj(t[i].n, -1),
+		Tcl_NewIntObj(TclTypeAbiAlign(t[i].f, t[i].b)));
+	Tcl_DictObjPut(NULL, sz, Tcl_NewStringObj(t[i].n, -1),
+		Tcl_NewIntObj(t[i].size));
+    }
+    Tcl_DictObjPut(NULL, res, Tcl_NewStringObj("byteOrder", -1),
+	    Tcl_NewStringObj(bo.c[0] ? "little" : "big", -1));
+    Tcl_DictObjPut(NULL, res, Tcl_NewStringObj("pointer", -1),
+	    Tcl_NewIntObj((int) sizeof(void *)));
+    Tcl_DictObjPut(NULL, res, Tcl_NewStringObj("size", -1), sz);
+    Tcl_DictObjPut(NULL, res, Tcl_NewStringObj("align", -1), al);
+    Tcl_SetObjResult(interp, res);
+    return TCL_OK;
+}
+
 /* (a,b) = $v dans expr : le contenu d'une valeur annotée (ses champs pour un
  * produit), ou la valeur elle-même. */
 static int
@@ -4992,6 +5776,9 @@ TclTypesInit(Tcl_Interp *interp)
 	    NULL, NULL);
     Tcl_CreateObjCommand2(interp, "::tcl::unsupported::declare", DeclareObjCmd,
 	    NULL, NULL);
+    Tcl_CreateObjCommand2(interp, "::tcl::unsupported::abi", AbiObjCmd,
+	    NULL, NULL);
+    TclCompactInit(interp);
     Tcl_CreateObjCommand2(interp, "::tcl::mathfunc::popcount", PopcountCmd,
 	    NULL, NULL);
     Tcl_CreateObjCommand2(interp, "::tcl::mathfunc::bitlen", BitlenCmd,

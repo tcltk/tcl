@@ -1,0 +1,10 @@
+clés : byteOrder pointer size align
+byteOrder = little (tcl_platform : littleEndian)
+pointer = 8 (tcl_platform : 8)
+i8   taille 1  alignement 1  cohérent
+i16  taille 2  alignement 2  cohérent
+i32  taille 4  alignement 4  cohérent
+i64  taille 8  alignement 8  cohérent
+f32  taille 4  alignement 4  cohérent
+f64  taille 8  alignement 8  cohérent
+ptr  taille 8  alignement 8  cohérent

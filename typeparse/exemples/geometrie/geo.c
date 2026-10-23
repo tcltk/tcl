@@ -35,8 +35,18 @@
 #include <math.h>
 #include <stdio.h>
 
-typedef struct { double x, y; } Point;
-typedef struct { uint32_t n; Point pts[]; } Poly;
+/*
+ * FR : les struct viennent des types Tcl : geo_types.h est produit par
+ *      `tclsh geo_types.tcl > geo_types.h` (type c), avec des _Static_assert
+ *      qui arrêtent la compilation si ce compilateur range autrement.
+ * EN : the structs come from the Tcl types (type c), with _Static_assert.
+ */
+#include "geo_types.h"
+#include "../../tclCompact.h"
+
+typedef pointC Point;		/* même disposition que point (deux double) */
+typedef polyC Poly;
+_Static_assert(sizeof(point) == sizeof(Point), "point et pointC");
 
 /* ------------------------------------------------------------------ */
 /* Les calculs, écrits une fois / the computations, written once      */
@@ -178,6 +188,31 @@ AskTcl(Tcl_Interp *interp, const char *c1, const char *c2, Tcl_Obj *obj)
 }
 
 /*
+ * FR : rend VALEUR typée par TYPE (l'équivalent de `type cast TYPE VALEUR`).
+ *      Avec une fonction de stub (Tcl_AnnotatedCreate), ce serait un appel C.
+ * EN : returns VALUE typed as TYPE. A stub function would make it a C call.
+ */
+static int
+SetTypedResult(Tcl_Interp *interp, const char *type, Tcl_Obj *value)
+{
+    Tcl_Obj *cmd[4];
+    int i, code;
+
+    cmd[0] = Tcl_NewStringObj("type", -1);
+    cmd[1] = Tcl_NewStringObj("cast", -1);
+    cmd[2] = Tcl_NewStringObj(type, -1);
+    cmd[3] = value;
+    for (i = 0; i < 4; i++) {
+	Tcl_IncrRefCount(cmd[i]);
+    }
+    code = Tcl_EvalObjv(interp, 4, cmd, 0);	/* résultat dans interp */
+    for (i = 0; i < 4; i++) {
+	Tcl_DecrRefCount(cmd[i]);
+    }
+    return code;
+}
+
+/*
  * Lit les points d'une valeur annotée du type `want` dans un tableau alloué
  * (*ptsPtr, à libérer par Tcl_Free).
  */
@@ -244,6 +279,33 @@ GetPoints(Tcl_Interp *interp, void *cd, Tcl_Obj *obj, const char *want,
 {
     *toFree = NULL;
     if (VOIE_OBJET(cd)) {
+	/*
+	 * FR : forme compacte (tcl::unsupported::compact on) : les points
+	 *      SONT un tableau de `point`, lu en place, sans copie. Le type
+	 *      est vérifié quand même (polygone, nuage, bezier).
+	 * EN : compact form: the points ARE an array of `point`, read in place.
+	 */
+	const TclCompactView *cv = TclCompactViewOfType(obj, "point",
+		sizeof(point));
+
+	if (cv != NULL) {
+	    Tcl_Obj *type = AskTcl(interp, "type", "get", obj);
+
+	    if (type == NULL) {
+		return TCL_ERROR;
+	    }
+	    if (strcmp(Tcl_GetString(type), want) != 0) {
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"geo: expected a %s but got \"%s\"", want,
+			Tcl_GetString(type)));
+		Tcl_DecrRefCount(type);
+		return TCL_ERROR;
+	    }
+	    Tcl_DecrRefCount(type);
+	    *ptsPtr = (const Point *) cv->data;
+	    *nPtr = (uint32_t) cv->n;
+	    return TCL_OK;
+	}
 	if (PolyFromObj(interp, obj, want, toFree, nPtr) != TCL_OK) {
 	    return TCL_ERROR;
 	}
@@ -291,7 +353,7 @@ PerimetreCmd(void *cd, Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
     return TCL_OK;
 }
 
-/* rend {xmin ymin xmax ymax} */
+/* rend un rectangle annoté {{xmin ymin} {xmax ymax}} */
 static int
 EnglobantCmd(void *cd, Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 {
@@ -310,12 +372,16 @@ EnglobantCmd(void *cd, Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 	return TCL_ERROR;
     }
     Englobant(p, n, r);
+    if (f) Tcl_Free(f);
     for (i = 0; i < 4; i++) {
 	v[i] = Tcl_NewDoubleObj(r[i]);
     }
-    Tcl_SetObjResult(interp, Tcl_NewListObj(4, v));
-    if (f) Tcl_Free(f);
-    return TCL_OK;
+    {
+	Tcl_Obj *mm[2];
+	mm[0] = Tcl_NewListObj(2, v);
+	mm[1] = Tcl_NewListObj(2, v + 2);
+	return SetTypedResult(interp, "rectangle", Tcl_NewListObj(2, mm));
+    }
 }
 
 /* dedans NUAGE POLYGONE : rend une liste de 0 et de 1 */
@@ -350,7 +416,7 @@ DedansCmd(void *cd, Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
     return TCL_OK;
 }
 
-/* bezier BEZIER N : rend la liste plate {x0 y0 x1 y1 ...} des N points */
+/* bezier BEZIER N : rend une polyligne annotée de N points */
 static int
 BezierCmd(void *cd, Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 {
@@ -379,15 +445,16 @@ BezierCmd(void *cd, Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 	if (f) Tcl_Free(f);
 	return TCL_ERROR;
     }
-    res = Tcl_NewListObj(2 * n, NULL);
+    res = Tcl_NewListObj(n, NULL);
     for (i = 0; i < n; i++) {
 	Point r = Bezier(b, (double) i / (double)(n - 1));
-	Tcl_ListObjAppendElement(NULL, res, Tcl_NewDoubleObj(r.x));
-	Tcl_ListObjAppendElement(NULL, res, Tcl_NewDoubleObj(r.y));
+	Tcl_Obj *xy[2];
+	xy[0] = Tcl_NewDoubleObj(r.x);
+	xy[1] = Tcl_NewDoubleObj(r.y);
+	Tcl_ListObjAppendElement(NULL, res, Tcl_NewListObj(2, xy));
     }
-    Tcl_SetObjResult(interp, res);
     if (f) Tcl_Free(f);
-    return TCL_OK;
+    return SetTypedResult(interp, "polyligne", res);
 }
 
 /* geo::c::layout : tailles et décalages vus par le compilateur */

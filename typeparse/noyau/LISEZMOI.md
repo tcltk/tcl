@@ -1324,3 +1324,48 @@ tclVar.c), à appliquer après `set-nom-substitue.patch` (dernier de `ORDRE.txt`
 - Tests : `t68_lset_reference` (mesure la mémoire sous Linux). Suites Tcl `lset*`, `lpop`, `list*`,
   `cmdIL`, `abstractlist`, `lseq`, `set*`, `var`, `upvar`, `append*`, `incr*`, `trace` : 1903
   réussis / 84 sautés / 0 échec, comme la v15.
+
+### v15p — forme compacte (prototype), `type c`, `tcl::unsupported::abi` (23 octobre 2026)
+
+Sources de types : `tclAnnotObj.c`, `tclTypes.c`, `tclTypes.h`, `tclTypePath.c`, `tclTypedVar.c` ; nouveau
+`typeparse/tclCompact.h` (pour les extensions, pas copié dans `generic/`). Patch noyau :
+`tip759-memoire.patch` (tclCompExpr.c, tclParse.c), dernier de `ORDRE.txt`.
+
+**`TclType` change de taille** (deux champs) : tout ce qui inclut `tclTypes.h` doit être recompilé. `maj.sh`
+fait `make clean` ; à la main, faire de même.
+
+- `tcl::unsupported::abi` : `byteOrder`, `pointer`, taille et alignement dans une structure de `i8 … i64 f32 f64
+  ptr`, mesurés à la compilation (`offsetof` sur `struct {char c; T x;}`). `TclTypeAbiAlign`.
+- Forme compacte (doc § 12.1) : `tcl::unsupported::compact ?on|off?`, `… info V`, `… layout T` ; variable
+  d'environnement `TCL_TYPES_COMPACT=1`. Types d'objets `compactlist` (V d'une `list.T`) et `compactelem`
+  (vue sur une case), enregistrés, ainsi que `annotated`. Branchements : `TclNewAnnotated` et
+  `TclNewAnnotatedOwn` (création), `AnnotListIndex` (vue typée), `AnnotListGetElements` (liste gardée à côté
+  des cases), `ValidateG` (cases valides par construction), `SetIn` (écriture), `ReadSteps` (lecture directe de
+  `$P(i.x)`).
+- `type c T …` (doc § 12.2) : en-tête C, `_Static_assert` compris. Vérifié avec gcc (C11) ; avec `-m32`, les
+  assertions d'un `{int(s,32); double}` échouent comme prévu (`double` aligné sur 4).
+- Exemple géométrie : `geo_types.h` est produit par `tclsh geo_types.tcl > geo_types.h` ; `geo.c` l'inclut et lit
+  les points d'une forme compacte en place (aire de 10 000 points, voie objet : 564 → 29 µs).
+- Tests : `t69_abi`, `t70_compact` (chaque cas dans les deux formes : identiques), `t71_type_c`. Tous les tests et
+  exemples donnent la même sortie avec `TCL_TYPES_COMPACT=1` et sans.
+
+**Bugs trouvés en route** (valgrind sur un tclsh construit avec `-DPURIFY`, où les `Tcl_Obj` passent par
+`malloc` ; la plupart existaient en v15) :
+
+- `$P(0.x)` après `set e [lindex $P 0]` : plantage ; `set P(0.x) 7.5` remplaçait alors tout le point par `7.5`.
+  `lindex` enveloppe l'élément dans V, et le chemin posait une annotation sur cet objet annoté (un A dans un A,
+  lu comme un seul élément). `WrapSlotHint` annote maintenant le contenu (`tclTypePath.c`).
+- Message « fits variants … equally » (v15m) : la liste qui citait la valeur la libérait quand elle n'avait pas de
+  référence (`tclTypes.c`, `tclTypedVar.c`).
+- `x is T = v` et `set {T}x …` refusés : le drapeau du contrat était remis sur une variable déjà détruite
+  (`TclTypedVarDeclare`, `TclSetAnnotatedCmd` : la variable est relue).
+- `type binary decode`, voie C : fuite des champs déjà lus quand le codec passe la main à la couche Tcl
+  (`BinFastDec`).
+- `SetIn` : le contenu d'une partie écrite était libéré deux fois quand le conteneur ne le garde pas (forme
+  compacte).
+- Code TIP 759 (`tip759-memoire.patch`) : `ParseExpr` lisait `nestedPtr->term` après `TclStackFree(nestedPtr)`
+  (corps `expr` de procédure) ; `TclSubstTokens` gardait la référence rendue par `Tcl_ExprObj` pour un mot `(…)`
+  (fuite à chaque évaluation).
+
+Restent (déjà en v15, hors types) : à la sortie par `exit` en plein script, quelques objets de la ligne en cours
+ne sont pas libérés (`executable_pe.tcl`), sans conséquence.

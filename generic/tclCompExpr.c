@@ -1334,15 +1334,21 @@ ParseExpr(
 			}
 		    }
 		}
-		TclStackFree(interp, nestedPtr);
-		if (lexeme == COMMAND) {
-		    // TIP 759b : if we came back on an operator, we want to parse it again
-		    if (CHAR_TYPE(nestedPtr->term[0]) == TYPE_OP
-			|| CHAR_TYPE(nestedPtr->term[0]) == TYPE_CLOSE_PAREN
-			|| nestedPtr->term[0] == ';') {
-			end = start-1;
+		{
+		    /* nestedPtr is on the stack: read term before freeing it */
+		    const char *nestedTerm = nestedPtr->term;
+
+		    TclStackFree(interp, nestedPtr);
+		    if (lexeme == COMMAND) {
+			// TIP 759b : if we came back on an operator, we want to parse it again
+			if (CHAR_TYPE(nestedTerm[0]) == TYPE_OP
+			    || CHAR_TYPE(nestedTerm[0]) == TYPE_CLOSE_PAREN
+			    || nestedTerm[0] == ';') {
+			    end = start-1;
+			}
 		    }
-		} else if (lexeme == SCRIPT) {
+		}
+		if (lexeme == SCRIPT) {
 		    end = start;
 		}
 		start = tokenPtr->start;
@@ -2985,6 +2991,16 @@ CompileExprTree(
 
 		    int path[TUPLE_MAX_DEPTH], counter = 0;
 
+		    /*
+		     * Règle B : un produit est un élément ; l'affectation par
+		     * tuple lit son CONTENU (ses champs, et ceux des produits
+		     * imbriqués), pas sa vue liste.
+		     */
+		    TclEmitPush(TclRegisterLiteral(envPtr,
+			    "::tcl::unsupported::content", 27, LITERAL_CMD_NAME),
+			    envPtr);
+		    TclEmitInstInt4(INST_REVERSE, 2, envPtr);
+		    TclEmitInvoke(envPtr, INST_INVOKE_STK1, 2);
 		    EmitTupleStores(envPtr, nodes, nodePtr->left, path, 0,
 			    &counter, 1);
 		    TclEmitInstInt4(INST_REVERSE, 2, envPtr);

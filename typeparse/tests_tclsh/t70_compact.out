@@ -1,0 +1,29 @@
+disposition point : size 16 align 8 fields {{x float 8 0} {y float 8 8}}
+disposition pt3   : size 32 align 8 fields {{id int 4 0} {p.x float 8 8} {p.y float 8 16} {w float 4 24}}
+string : prod<s:string;> has no compact layout: only fixed-size scalars (int(s,n), int(u,n) with n = 8, 16, 32 or 64, double, double(32|64)) and products of them
+int : int has no compact layout: only fixed-size scalars (int(s,n), int(u,n) with n = 8, 16, 32 or 64, double, double(32|64)) and products of them
+construire                     identique  compacte  0 {0.5 1.5} {2.5 3.5} {-1.0 4.0}
+type, llength                  identique  compacte  0 list<point> 2
+lindex, type                   identique  compacte  0 {2.5 3.5} point 3.5
+chemin P(1.y)                  identique  compacte  0 3.5 double 2.5
+foreach                        identique  compacte  0 0.5 point 2.5 point
+écrire P(1.y)                  identique  compacte  0 {0.5 1.5} {2.5 9.5}
+écrire 9 (non canonique)       identique  ordinaire 0 {0.5 1.5} {2.5 9}
+lappend                        identique  compacte  0 {0.5 1.5} {7.5 8.5}
+lappend invalide               identique  compacte  1 expected floating-point number but got "a"
+lset                           identique  compacte  0 {1.25 2.25} {2.5 3.5}
+lrange, lsort                  identique  compacte  0 {{0.5 1.5}} {{0.5 1.5} {2.5 3.5}}
+non canonique 1 2              identique  ordinaire 0 {1 2} {3 4}
+espaces gardés                 identique  compacte  0 {0.5 1.5}   {2.5 3.5}
+produit imbriqué               identique  compacte  0 {{7 {0.5 0.25} 0.5} {-3 {1.0 2.0} 0.25}} 2.0 point
+int(s,32) trop grand           identique  compacte  1 value "99999999999" does not fit in int(s,32)
+double(32) inexact             identique  ordinaire 0 {7 {0.5 0.25} 0.1}
+u8                             identique  compacte  0 {1 2 3 255} 1 {value "256" does not fit in int(u,8)} {1 2 3 255}
+vecteur de double              identique  compacte  0 {0.1 0.2 0.30000000000000004} 0.4
+lire après lindex              identique  compacte  0 0.5 1.5
+vue gardée après écriture      identique  compacte  0 {0.5 1.5} {{7.5 1.5} {2.5 3.5}}
+copie puis écriture            identique  compacte  0 {{0.5 1.5}} {{0.5 5.5}}
+élément vers autre liste       identique  compacte  0 {2.5 3.5} {0.5 1.5}
+string length                  identique  ordinaire 0 9 list<point>
+contenu                        identique  compacte  0 {0.5 1.5}
+binary decode                  identique  compacte  0 {1.5 2.5} {3.5 4.5}

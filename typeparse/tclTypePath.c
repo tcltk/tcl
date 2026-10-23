@@ -1325,6 +1325,15 @@ WrapSlotHint(Tcl_Interp *interp, TclType *tp, Tcl_Obj *content, int hint)
 	    && TclTypeValidate(interp, tp, content, hint, &variant) != TCL_OK) {
 	return NULL;
     }
+    /*
+     * Un élément déjà enveloppé dans V (lindex l'a typé une fois pour
+     * toutes) : la nouvelle annotation se pose sur son CONTENU, jamais sur
+     * l'objet annoté (un A dans un A se lirait comme un seul élément :
+     * $P(0.x) relisait tout le point, set P(0.x) le remplaçait).
+     */
+    if (TclIsAnnotated(content)) {
+	content = TCL_ANNOT_CONTENT(content);
+    }
     return TclNewAnnotatedShared(interp, tp, variant, content);
 }
 
@@ -2007,6 +2016,34 @@ ReadSteps(Tcl_Interp *interp, Tcl_Obj *a, const IndexPath *p, Tcl_Size i,
 	return rc;
     }
     default:
+	if (step->kind == IS_NAME) {
+	    /* Forme compacte : L(i.x.y) se lit dans la case, sans fabriquer
+	     * l'élément entier. */
+	    Tcl_Obj *v;
+	    TclType *tp, *pt;
+	    Tcl_Size n, idx, j, nn = 0;
+	    const char *names[16];
+
+	    if (TclAnnotInfo(a, &v, &tp, NULL, NULL) == 1
+		    && tp->kind == TCLT_LIST && TclIsCompact(v)
+		    && Tcl_ListObjLength(NULL, v, &n) == TCL_OK
+		    && ListIndex(NULL, Tcl_GetString(step->a), n, &idx) == TCL_OK
+		    && idx >= 0 && idx < n) {
+		for (j = i + 1; j < p->n && nn < 16
+			&& p->step[j].kind == IS_NAME; j++) {
+		    names[nn++] = Tcl_GetString(p->step[j].a);
+		}
+		r = (j == p->n) ? TclCompactReadPath(v, idx, nn, names, &pt)
+			: NULL;
+		if (r != NULL) {
+		    Tcl_Obj *w = TclNewAnnotated(interp, pt, -1, r);
+
+		    TclDiscard(r);
+		    TclVecAdd(&out->vec, w);
+		    return TCL_OK;
+		}
+	    }
+	}
 	r = Step(interp, a, Tcl_GetString(step->a), step->kind == IS_KEY);
 	if (r == NULL) {
 	    return TCL_ERROR;
@@ -2410,7 +2447,14 @@ SetIn(Tcl_Interp *interp, Tcl_Obj *a, const IndexPath *chain, Tcl_Size i,
 	}
 	break;
     case TCLT_LIST:
-	if (Tcl_ListObjGetElements(interp, v, &n, &elems) != TCL_OK
+	if (TclIsCompact(v)) {
+	    /* forme compacte : pas de tableau d'éléments (il la défairait) */
+	    elems = NULL;
+	    if (Tcl_ListObjLength(interp, v, &n) != TCL_OK
+		    || ListIndex(interp, name, n, &idx) != TCL_OK) {
+		return NULL;
+	    }
+	} else if (Tcl_ListObjGetElements(interp, v, &n, &elems) != TCL_OK
 		|| ListIndex(interp, name, n, &idx) != TCL_OK) {
 	    return NULL;
 	}
@@ -2501,7 +2545,7 @@ SetIn(Tcl_Interp *interp, Tcl_Obj *a, const IndexPath *chain, Tcl_Size i,
 	    int hint = tp->kind == TCLT_PRODUCT ? TclTypeTagVariant(tp, idx, v)
 		    : -1;
 
-	    if (hint < 0 && slotType->kind == TCLT_SUM
+	    if (hint < 0 && slotType->kind == TCLT_SUM && elems != NULL
 		    && (tp->kind == TCLT_PRODUCT || tp->kind == TCLT_LIST)
 		    && idx >= 0 && idx < n) {
 		/* La variante de la partie remplacée départage des variantes
@@ -2544,12 +2588,17 @@ SetIn(Tcl_Interp *interp, Tcl_Obj *a, const IndexPath *chain, Tcl_Size i,
 		return NULL;
 	    }
 	    TclDiscard(key);
+	} else if (elems == NULL) {
+	    old = TclCompactElement(v, idx);	/* neuf : l'enfant le garde */
 	} else {
 	    old = elems[idx];
 	}
 	child = WrapSlotHint(interp, slotType, old, tp->kind == TCLT_PRODUCT
 		? TclTypeTagVariant(tp, idx, v) : -1);
 	if (child == NULL) {
+	    if (elems == NULL) {
+		TclDiscard(old);
+	    }
 	    return NULL;
 	}
 	nc = SetIn(interp, child, chain, i + 1, val, pw);
@@ -2586,11 +2635,21 @@ SetIn(Tcl_Interp *interp, Tcl_Obj *a, const IndexPath *chain, Tcl_Size i,
     }
     default:				/* produit, liste */
 	newV = Tcl_DuplicateObj(v);
-	if (Tcl_ListObjReplace(interp, newV, idx, (idx < n) ? 1 : 0, 1,
-		&childContent) != TCL_OK) {
-	    TclDiscard(newV);
-	    TclDiscard(childContent);
-	    return NULL;
+	{
+	    /* Une liste ordinaire garde childContent ; une forme compacte
+	     * l'encode sans le garder : la référence prise ici le libère
+	     * dans ce cas, et seulement dans ce cas. */
+	    int rrc;
+
+	    Tcl_IncrRefCount(childContent);
+	    rrc = Tcl_ListObjReplace(interp, newV, idx, (idx < n) ? 1 : 0, 1,
+		    &childContent);
+	    Tcl_DecrRefCount(childContent);
+	    childContent = NULL;	/* à newV, ou déjà libéré */
+	    if (rrc != TCL_OK) {
+		TclDiscard(newV);
+		return NULL;
+	    }
 	}
 	if (tp->kind == TCLT_PRODUCT) {
 	    /* Un champ S($champ) dépend de son sélecteur : changer le

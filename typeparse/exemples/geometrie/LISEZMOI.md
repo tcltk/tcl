@@ -35,6 +35,30 @@ tclsh verifier.tcl         ;# les 22 exemples dans les 4 versions : mêmes résu
 tclsh bench.tcl ?N?        ;# vitesses comparées avec timerate (N = 10000 par défaut)
 ```
 
+## L'en-tête C vient des types
+
+`geo_types.h` est produit par `type c` depuis les `type def` (`point`, `pointC`, `polyC`), avec des
+`_Static_assert` qui arrêtent la compilation si le compilateur range autrement que Tcl :
+
+```
+tclsh geo_types.tcl > geo_types.h
+```
+
+## Forme compacte
+
+Avec `tcl::unsupported::compact on` (ou `TCL_TYPES_COMPACT=1 tclsh bench.tcl`), un polygone est rangé en
+cases de 16 octets, exactement un tableau de `point` : la voie objet de `geo.c` le lit en place
+(`tclCompact.h`), sans relire chaque point.
+
+| Calcul (N = 10000, µs par appel) | voie objet, forme ordinaire | voie objet, forme compacte |
+|---|---:|---:|
+| aire | 564 | 29 |
+| périmètre | 629 | 94 |
+| englobant | 568 | 27 |
+
+L'étape 2 (Tcl annoté, `lindex` et `$a(x)` à chaque point) est plus lente en forme compacte (aire : 15 → 23 ms) :
+chaque accès fabrique une vue et un nombre.
+
 ## Compiler `geo.c`
 
 Linux :
@@ -53,10 +77,12 @@ gcc -shared -O2 -DUSE_TCL_STUBS -I<src>/generic -I<src>/win -o geo.dll geo.c <bu
 
 | Calcul | 1 brut | 2 annoté | 3 C, octets | 3 C, objet |
 |---|---:|---:|---:|---:|
-| aire (N points) | 2 976 | 34 671 | 1 226 | 451 |
-| périmètre (N points) | 13 875 | 157 374 | 1 126 | 588 |
-| englobant (N points) | 1 299 | 32 455 | 1 272 | 577 |
-| dedans_tous (1000 points × polygone de 200) | 62 420 | 651 110 | 548 | 459 |
-| Bézier, N points | 20 716 | 107 738 | 4 759 | 4 707 |
+| aire (N points) | 3 288 | 32 702 | 1 002 | 461 |
+| périmètre (N points) | 14 345 | 190 730 | 1 296 | 555 |
+| englobant (N points) | 1 526 | 26 520 | 897 | 516 |
+| dedans_tous (1000 points × polygone de 200) | 57 339 | 766 846 | 561 | 532 |
+| Bézier, N points | 22 716 | 114 739 | 4 458 | 4 805 |
 
-Voie octets, aire : 968 µs d'encodage en Tcl pour 20 µs de calcul en C. La frontière coûte plus que le calcul : il faut envoyer au C des opérations « grosses ».
+Voie octets, aire : 1 029 µs d'encodage en Tcl pour 19 µs de calcul en C. La frontière coûte plus que le calcul : il faut envoyer au C des opérations « grosses ».
+
+`englobant` et `bezier_echantillons` rendent directement une valeur annotée (`rectangle`, `polyligne`) : C construit la liste des points et la fait typer (`type cast`, en attendant une fonction de stub). Pour la Bézier, mesurée seule dans un interpréteur neuf : 3,8 ms avant (liste plate, puis `lmap` et typage en Tcl), 1,8 ms après. Dans `bench.tcl`, après les autres mesures, le même appel prend 4,5 ms : le tas déjà chargé par les grandes données pèse sur les allocations.

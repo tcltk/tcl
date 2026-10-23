@@ -1,0 +1,100 @@
+/* Produit par type c : little-endian, pointeurs de 8 octets. Ne pas modifier : regénérer. */
+#include <stdint.h>
+#include <stddef.h>
+#include <tcl.h>
+
+/* point */
+typedef struct {
+    double x;
+    double y;
+} point;
+_Static_assert(sizeof(point) == 16, "point: size");
+_Static_assert(offsetof(point, x) == 0, "point.x: offset");
+_Static_assert(offsetof(point, y) == 8, "point.y: offset");
+
+/* pointC */
+typedef struct {
+    double x;
+    double y;
+} pointC;
+_Static_assert(sizeof(pointC) == 16, "pointC: size");
+_Static_assert(offsetof(pointC, x) == 0, "pointC.x: offset");
+_Static_assert(offsetof(pointC, y) == 8, "pointC.y: offset");
+
+/* polyC */
+typedef struct {
+    uint32_t n;
+    pointC pts[];
+} polyC;
+_Static_assert(sizeof(polyC) >= 8, "polyC: size");
+_Static_assert(offsetof(polyC, n) == 0, "polyC.n: offset");
+_Static_assert(offsetof(polyC, pts) == 8, "polyC.pts: offset");
+
+/* carré */
+typedef struct {
+    point coin;
+    double cote;
+} carre;
+_Static_assert(sizeof(carre) == 24, "carre: size");
+_Static_assert(offsetof(carre, coin) == 0, "carré.coin: offset");
+_Static_assert(offsetof(carre, cote) == 16, "carré.côté: offset");
+
+/* tri */
+typedef point tri[3];
+_Static_assert(sizeof(tri) == 48, "tri: size");
+
+/* couleur */
+typedef enum { couleur_rouge, couleur_vert, couleur_bleu } couleur;
+_Static_assert(sizeof(couleur) == 4, "couleur: size");
+
+/* forme */
+typedef struct {
+    int tag;    /* forme_p, forme_c, forme_vide */
+    union {
+        point p;
+        carre c;
+    } u;
+} forme;
+_Static_assert(sizeof(forme) == 32, "forme: size");
+
+/* nommé */
+typedef struct {
+    Tcl_Obj *nom    /* string */;
+    Tcl_Obj *pts    /* list<point> */;
+    uint8_t r;
+    int16_t g;
+    tri t;
+    couleur k;
+    forme f;
+} nomme;
+_Static_assert(sizeof(nomme) == 112, "nomme: size");
+_Static_assert(offsetof(nomme, nom) == 0, "nommé.nom: offset");
+_Static_assert(offsetof(nomme, pts) == 8, "nommé.pts: offset");
+_Static_assert(offsetof(nomme, r) == 16, "nommé.r: offset");
+_Static_assert(offsetof(nomme, g) == 18, "nommé.g: offset");
+_Static_assert(offsetof(nomme, t) == 24, "nommé.t: offset");
+_Static_assert(offsetof(nomme, k) == 72, "nommé.k: offset");
+_Static_assert(offsetof(nomme, f) == 80, "nommé.f: offset");
+
+/* def3 */
+typedef struct {
+    int32_t a;
+    double b;
+} def3;
+_Static_assert(sizeof(def3) == 16, "def3: size");
+_Static_assert(offsetof(def3, a) == 0, "def3.a: offset");
+_Static_assert(offsetof(def3, b) == 8, "def3.b: offset");
+#define DEF3_INIT { 1, 2.5 }
+
+/* m3 */
+typedef struct {
+    float m[3][3];
+} m3;
+_Static_assert(sizeof(m3) == 36, "m3: size");
+_Static_assert(offsetof(m3, m) == 0, "m3.m: offset");
+
+
+bad1: type c: bad1.n: int has no fixed size in C: use int(s,n) or int(u,n) with n = 8, 16, 32 or 64, not int
+bad2: type c: bad2.p: a list whose length depends on another field is a flexible array member, so it must be the last field
+bad3: type c: bad3.n: the byte order differs from this machine's: int(u,32,be)
+double: type c: give names defined by type def, not double
