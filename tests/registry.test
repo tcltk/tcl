@@ -185,7 +185,7 @@ test registry-2.6 {DeleteKey: recursive delete} win {
 test registry-2.7 {DeleteKey: trailing backslashes} -constraints {win english} -returnCodes error -body {
     tcl::registry set HKEY_CURRENT_USER\\TclFoobar\\baz
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar\\
-} -result {unable to delete key: The configuration tcl::registry key is invalid.}
+} -result {unable to delete key: The configuration registry key is invalid.}
 test registry-2.8 {DeleteKey: failure} win {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
