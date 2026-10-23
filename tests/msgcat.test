@@ -993,6 +993,42 @@ namespace eval ::msgcat::test {
 	    mcpackagelocale isset
 	} -result {0}
 
+	foreach l [list {*}{
+	    ../UNSAFEPATH/NOWHERE UNSAFEPATH/../EN //UNSAFEPATH/NOWHERE
+	    zipfs:/UNSAFEPATH/NOWHERE C:/UNSAFEPATH/NOWHERE
+	    ~/UNSAFEPATH/NOWHERE ~UNSAFEUSER/NOWHERE
+	  } [list [file join [info library] msgs]]
+	] {
+	  set l [string tolower $l]
+	  foreach l [list $l [string map {/ \\} $l]] {
+	    test msgcat-12.13-$l "mcpackagelocale set - bad locale (not valid - unsafe path)" -cleanup {
+	      mcforgetpackage
+	    } -body {
+	      mcpackagelocale set $l
+	    } -returnCodes 1 -result "locale \"$l\" not valid" -errorCode {MSGCAT badLocale *}
+	    test msgcat-12.14-$l "mcpackagelocale preferences - bad locale (not valid - unsafe path)" -cleanup {
+	      mcforgetpackage
+	    } -body {
+	      mcpackagelocale preferences en $l {}
+	    } -returnCodes 1 -result "locale \"$l\" not valid" -errorCode {MSGCAT badLocale *}
+	  }
+	}
+	unset l
+
+	test msgcat-12.15 {mcpackagelocale preferences does not source a file outside the msgcat directory [2f8bb48009]} -setup {
+	    variable locale [mclocale]
+	    set f [makeFile {set ::msgcat::test::loaded 1} unsafe.msg]
+	    set loaded 0
+	    mcpackageconfig set mcfolder [file join [temporaryDirectory] nosuchdir]
+	} -cleanup {
+	    mclocale $locale
+	    mcforgetpackage
+	    removeFile unsafe.msg
+	    unset -nocomplain f loaded
+	} -body {
+	    list [catch {mcpackagelocale preferences [file rootname $f] {}}] $loaded
+	} -result {1 0}
+
 
     # Tests msgcat-13.*: [mcpackageconfig subcmds]
 
