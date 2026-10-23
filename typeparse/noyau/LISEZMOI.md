@@ -1209,3 +1209,26 @@ Sources de types : `tclAnnotObj.c`, `tclTypes.h`. Patch noyau : `set-nom-substit
 - Inchangé : `set {rect}Q(A, $k) ...` (annotation dans le source, suffixe substitué) construit
   toujours ; `set $nm 9` écrit.
 - Test `t61_set_nom_substitue`.
+
+### Liens `var` : vérification du 23 octobre
+
+- `lset L 1 C` et `lappend L C` rangent bien le nom canonique (`::C`) depuis la v14 ; `lappend L 5`
+  range `::5`, comme la construction (`5` est un nom de variable Tcl valide) ; un nom vide est refusé.
+- Lecture d'un lien seul documentée dans `doc/ANNOTATIONS.fr.md` (§ 5.3) ; limite notée : un lien vers
+  une variable locale (`frame:1:x`) se suit par chemin, pas par `set $r`.
+- Test `t62_liens_ecriture`.
+
+### v15j — `;` et `,` mêlés (23 octobre 2026)
+
+Source de types : `tclTypeParse.c`. Pas de patch noyau.
+
+- Avant : `{int}a; {int}b, {string}c` et `{int}a, {int}b; {string}c` étaient acceptés et donnaient
+  un champ sans nom (une somme anonyme, lue seulement par son numéro), avec un regroupement différent
+  selon l'ordre ; `{int}a; {{int}b, {string}c}` aussi, alors que `{int}a; {int}` était refusé.
+- Maintenant : `;` et `,` au même niveau sont refusés (`mixing ";" and "," at the same level: group
+  and name the inner part, as {int}a; {{int}b, {string}c}u, or define it with type def`) ; dans un
+  produit, un groupe sans nom est refusé comme tout champ sans nom. `SumToField` (la somme devenue
+  champ anonyme) est retirée.
+- Inchangé (décision du 23 octobre) : une somme garde ses variantes anonymes (`{int}, {string}`,
+  `{{int}a; {int}b}, {string}c`).
+- Test `t63_separateurs`. Aucun test ni exemple du projet n'utilisait les formes refusées.

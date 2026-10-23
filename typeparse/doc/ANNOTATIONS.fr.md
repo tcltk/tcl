@@ -266,7 +266,7 @@ Un type s'écrit comme une expression, analysée sur le modèle d'`expr` (`tclTy
 | `,` | somme | `{int}i, {string}s` |
 | `{ }nom` | groupement, avec un nom collé à l'accolade fermante | `{{int}x; {int}y}A` |
 
-`;` et `,` ont la même précédence : pour mêler un produit et une somme, on regroupe avec des accolades (`{int}a; {{int}b, {string}c}u`).
+`;` et `,` ne se mêlent pas au même niveau (`{int}a; {int}b, {string}c` est refusé) : la partie intérieure se regroupe entre accolades et se nomme (`{int}a; {{int}b, {string}c}u`), ou se définit à part avec `type def`. Dans un produit, tout champ a un nom, un groupe aussi ; une somme garde ses variantes anonymes (`{int}, {string}`, `{{int}a; {int}b}, {string}c`).
 
 **Caractères.** Un nom de type ne contient que des lettres ASCII, des chiffres, `_` et des octets non ASCII, sans commencer par un chiffre. La grammaire emploie en plus `{ } , ; . = " # ( ) * $`. Tout autre signe ASCII (`! % & ' + - / : < > ? @ [ \ ] ^ | ~`) est refusé : `invalid character "!"`, code `TCL PARSE TYPE BADCHAR`, sauf après `=` (une valeur par défaut) et dans les parenthèses d'un constructeur (`*(file://x, …)`). C'est ce refus qui rend les annotations locales (`{-v}`, `{is?}`) sûres.
 
@@ -331,6 +331,17 @@ set A 7
 $L(0)                          ;# 7
 type deref $L                  ;# 7 2   (un instantané, de type list.int)
 ```
+
+**Lire un lien seul.** C'est le principe habituel de Tcl (`set A 1; set r A` : `$r` donne `A`, `set $r` donne `1`). Un lien sorti de son conteneur, ou une variable de type `var.int`, vaut le **nom canonique** de la variable ; `set` en donne la valeur. Dans un conteneur, la lecture par chemin suit le lien, et l'écriture par chemin écrit **dans** la variable (son contrat est vérifié).
+
+```tcl
+set r [lindex $L 0]            ;# ::A   (type var<int>)
+set $r                         ;# 7
+set {var.int}R A               ;# ::A ; set $R donne 7
+set L(0) 8                     ;# écrit 8 dans ::A
+```
+
+Toute écriture d'un lien range le nom canonique : construction, `lset L 1 C`, `lappend L C` (`::C`). Un nom vide est refusé ; tout nom de variable Tcl est accepté (`lappend L 5` range `::5`). Le lien vers une variable locale de procédure a un nom canonique propre au cadre (`frame:1:x`) : `$M(0)` le suit, mais ce n'est pas un nom que `set` connaît.
 
 **Paramètre de type `{type}T`** — dans un type paramétré, un paramètre qui reçoit un type (§ 5.5).
 
@@ -891,7 +902,6 @@ Le codec C, qui **vérifie** en plus chaque valeur contre son type, est 2 à 3 f
 **À corriger ou à décider**
 
 - **Adoption par une variable non typée.** `set e [lindex $L 1]` rend `e` typée et stricte. Le piège `catch … m` (§ 6.2) en découle, et l'erreur qui s'en échappe est le message d'origine, ce qui la rend difficile à comprendre. À décider : adoption silencieuse, adoption sans contrat, ou message explicite.
-- **`;` et `,` mêlés sans accolades** (`{int}a; {int}b, {int}c`) sont acceptés sans erreur et produisent un champ anonyme ; la règle de la spécification les refuse.
 - **Lire une variante qui n'est pas la variante courante** d'une somme donne `unknown way to cast the value from S to string` au lieu d'un message qui nomme la variante.
 - **Variantes de même forme** : sans étiquette, la première est prise sans avertissement.
 - `set {paire}s {aut.nom}x` (le champ d'un **autre** produit) donne `wrong # args` ; un message dédié serait plus clair.

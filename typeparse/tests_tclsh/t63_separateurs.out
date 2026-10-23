@@ -1,0 +1,8 @@
+{int}a; {int}b, {string}c          -> 1 mixing ";" and "," at the same level: group and name the inner part, as {int}a; {{int}b, {string}c}u, or define it with type def
+{int}a, {int}b; {string}c          -> 1 mixing ";" and "," at the same level: group and name the inner part, as {int}a; {{int}b, {string}c}u, or define it with type def
+{int}a; {{int}b, {string}c}        -> 1 a product field must be written {type}name: a group needs its name after the closing brace, as {int}a; {{int}b, {string}c}u
+{int}a; {{int}b, {string}c}u       -> 0 
+{{int}a; {int}b}p, {string}c       -> 0 
+{{int}a; {int}b}, {string}c        -> 0 
+{int}, {string}                    -> 0 
+{int}x; {int}y                     -> 0 

@@ -2074,33 +2074,6 @@ BuildGroup(Tcl_Interp *interp, TypeEnv *envPtr)
     return rc;
 }
 
-/*
- * Une somme en construction, élément d'un produit : on la fige et elle
- * devient un champ sans nom, de ce type somme.
- */
-
-static int
-SumToField(Tcl_Interp *interp, TypeEnv *envPtr, TypeItem *it)
-{
-    TclType *tp;
-
-    if (it->kind == SK_TYPE && it->type->kind == TCLT_SUM) {
-	/* {int}a; {{double}d, {int}i} : le groupe est le même champ. */
-
-	it->kind = SK_FIELD;
-	return TCL_OK;
-    }
-    if (it->kind != SK_COMP || it->comp != TCLT_SUM) {
-	return TCL_OK;
-    }
-    if (FinishItem(interp, envPtr, it, NULL, &tp) != TCL_OK) {
-	return TCL_ERROR;
-    }
-    ReleaseItem(it);
-    it->kind = SK_FIELD;
-    it->type = tp;
-    return TCL_OK;
-}
 
 /* "," et ";" : accumulent dans un composite ; le chaînage est à gauche. */
 
@@ -2117,20 +2090,28 @@ BuildSeparated(Tcl_Interp *interp, TypeEnv *envPtr, TclTypeKind kind)
 	    || ResolveCtor(interp, envPtr, &r) != TCL_OK) {
 	goto done;
     }
-    /* Dans un produit, une somme (a, b) est un champ sans nom. */
-
-    if (kind == TCLT_PRODUCT) {
-	if (SumToField(interp, envPtr, &l) != TCL_OK
-		|| SumToField(interp, envPtr, &r) != TCL_OK) {
-	    goto done;
-	}
+    /*
+     * ";" et "," au même niveau : ni un produit dont un champ serait une
+     * somme sans nom, ni une somme dont une variante serait un produit sans
+     * accolades. On regroupe et on nomme la partie intérieure.
+     */
+    if ((l.kind == SK_COMP && l.comp != kind)
+	    || (r.kind == SK_COMP && r.comp != kind)) {
+	ERR(interp, "SYNTAX", "mixing \";\" and \",\" at the same level: group "
+		"and name the inner part, as {int}a; {{int}b, {string}c}u, or "
+		"define it with type def");
+	goto done;
+    }
+    /* Dans un produit, tout champ a un nom, un groupe aussi : {...}nom. */
+    if (kind == TCLT_PRODUCT
+	    && ((l.kind == SK_TYPE && l.type->kind == TCLT_SUM)
+		|| (r.kind == SK_TYPE && r.type->kind == TCLT_SUM))) {
+	ERR(interp, "SYNTAX", "a product field must be written {type}name: "
+		"a group needs its name after the closing brace, as "
+		"{int}a; {{int}b, {string}c}u");
+	goto done;
     }
     if (l.kind == SK_COMP) {
-	if (l.comp != kind) {
-	    ERR(interp, "SYNTAX", "cannot use a product as an element of a "
-		    "sum without braces");
-	    goto done;
-	}
 	comp = l;			/* on poursuit l'accumulation */
 	memset(&l, 0, sizeof(l));
     } else {
