@@ -1680,7 +1680,7 @@ proc ::ndoc::parseCommand {mode line {version {}}} {
 	#
 	# Note: the Span elements are alread fully expanded with appropriate AST "Text" elements
 	#
-	set DEBUG 0
+	set DEBUG 1
 	set verAttr {}
 	if {$version ne ""} {set verAttr " -vs {$version}"}
 	set line [BIRPclean $line]

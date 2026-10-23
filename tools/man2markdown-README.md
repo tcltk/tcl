@@ -14,7 +14,7 @@ When run with two directory names, it will convert all nroff files in the (exist
 
 ```
 # (from the tools directory)
-tclsh man2markdown.tcl ../doc ../markdown
+tclsh man2markdown.tcl ../doc/nroff-original ../doc/markdown/
 ```
 
 The last invocation can be used to check what changed with respect to the last `fossil commit`. Any change reported by fossil (before committing) is a change that might have issues compared to the previous version, so it should be checked before the commit and amended before the commit!
@@ -38,8 +38,10 @@ For a closer representation use the markdown2nroff.tcl script.
 pandoc -f markdown-tex_math_dollars -t html mypage.md -o mypage.html
 ```
 
+For a closer representation use the markdown2html.tcl script.
 
-# Status of conversion process
+
+# Status of conversion process for Tcl
 
 The tcl/doc directory contains 248 manual pages which are divided as follows:
 
@@ -316,13 +318,20 @@ Now the 1 section:
 1. tclsh
 
 
-The tk/doc directory comes next, after finishing Tcl.
+# Status of conversion process for Tk
 
-Note, that only pages counted under "final conversion" are considered
-final markdown versions of the nroff originals. Currently, many of the
-markdown pages are still missing some markup or still contain
-nroff markdown that is not yet handled. 
+The tk/doc directory contains 181 manual pages which are divided as follows:
 
+
+section | number of documents | initial conversion | final conversion
+--------|---------------------|--------------------|-----------------
+1       | 1                   | 0                  | 0
+3       | 87                  | 0                  | 0
+n       | 93                  | 1                  | 0
+
+Final conversion of these files in the n section is currently done:
+
+...
 
 # Open issues
 This section lists the shortcoming which are still present in the pages that already have an initial markdown version.
@@ -379,9 +388,6 @@ List of nroff commands/macros currently implemented (partly not a complete imple
 - .DS DE (display section)
 - .MT (here used for "" display)
 
-
-
-AST element "Paragraph" is not yet treated properly (the content field of the AST is not yet a list of Inline AST elements).
 
 # Manual work to be done after final conversion
 
