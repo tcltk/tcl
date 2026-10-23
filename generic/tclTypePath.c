@@ -1777,11 +1777,40 @@ Step(Tcl_Interp *interp, Tcl_Obj *a, const char *name, int quoted)
 	if (idx == variant) {
 	    return TclNewAnnotated(interp, ft, -1, v);
 	}
-	/* Autre variante : le nom demandé vaut cast explicite (§10). */
-	if (TclTypeCast(interp, a, ft, &res) != TCL_OK) {
+	/*
+	 * Autre variante : le nom demandé vaut cast explicite (§10), de la
+	 * valeur de la variante COURANTE vers le type demandé ({i}5 lu par
+	 * $v(s) donne "5"). Sans cast possible : un message qui nomme les deux
+	 * variantes.
+	 */
+	{
+	    Tcl_Obj *cur = NULL;
+	    TclType *ct = (variant >= 0 && variant < (int) tp->nfields)
+		    ? tp->fields[variant].type : NULL;
+	    const char *cname = (variant >= 0 && variant < (int) tp->nfields
+		    && tp->fields[variant].name != NULL)
+		    ? Tcl_GetString(tp->fields[variant].name) : "?";
+	    int crc;
+
+	    if (ct != NULL) {
+		cur = TclNewAnnotated(interp, ct, -1, v);
+		Tcl_IncrRefCount(cur);
+		crc = TclTypeCast(interp, cur, ft, &res);
+		if (crc == TCL_OK) {
+		    Tcl_IncrRefCount(res);
+		    Tcl_DecrRefCount(cur);
+		    res->refCount--;		/* sans référence propre */
+		    return res;
+		}
+		Tcl_DecrRefCount(cur);
+	    }
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "the current variant of %s is \"%s\", not \"%s\", and its "
+		    "value \"%s\" can't be read as %s", tp->name, cname, name,
+		    Tcl_GetString(v), ft->name));
+	    Tcl_SetErrorCode(interp, "TCL", "TYPE", "VARIANT", (char *) NULL);
 	    return NULL;
 	}
-	return res;
     }
     case TCLT_INT:
 	if (tp->bitWidth > 0) {
@@ -2446,8 +2475,15 @@ SetIn(Tcl_Interp *interp, Tcl_Obj *a, const IndexPath *chain, Tcl_Size i,
 
 	if (tp->kind == TCLT_SUM) {
 	    if (idx != variant) {
-		PathErr(interp, "the current variant of %s is not \"%s\"",
-			tp->name, name);
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"the current variant of %s is \"%s\", not \"%s\": to change "
+			"the variant, write the whole value ({%s}...)",
+			tp->name, (variant >= 0 && variant < (int) tp->nfields
+			    && tp->fields[variant].name != NULL)
+			    ? Tcl_GetString(tp->fields[variant].name) : "?",
+			name, name));
+		Tcl_SetErrorCode(interp, "TCL", "TYPE", "VARIANT",
+			(char *) NULL);
 		return NULL;
 	    }
 	    old = v;
@@ -2488,8 +2524,15 @@ SetIn(Tcl_Interp *interp, Tcl_Obj *a, const IndexPath *chain, Tcl_Size i,
 
 	if (tp->kind == TCLT_SUM) {
 	    if (idx != variant) {
-		PathErr(interp, "the current variant of %s is not \"%s\"",
-			tp->name, name);
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"the current variant of %s is \"%s\", not \"%s\": to change "
+			"the variant, write the whole value ({%s}...)",
+			tp->name, (variant >= 0 && variant < (int) tp->nfields
+			    && tp->fields[variant].name != NULL)
+			    ? Tcl_GetString(tp->fields[variant].name) : "?",
+			name, name));
+		Tcl_SetErrorCode(interp, "TCL", "TYPE", "VARIANT",
+			(char *) NULL);
 		return NULL;
 	    }
 	    old = v;

@@ -531,7 +531,7 @@ Entre accolades et dans `${…}`, `$` et `[` sont des erreurs : `a path does not
 | conteneur | lecture | écriture |
 |---|---|---|
 | produit | `$a(nom)`, `$R(A.x)`, `$R(A.(x,y))` | `set a(nom) Léa` (revalidé) |
-| somme | `$v(i)` : la variante courante | `set v(i) 6` |
+| somme | `$v(i)` : la variante courante ; une autre variante, `$v(s)`, est un cast de la valeur courante (`{i}5` donne `5`), sinon une erreur qui nomme les deux variantes | `set v(i) 6` ; `set v(s) abc` change la variante ; une partie d'une variante inactive (`set u(p.x) 1`) est refusée |
 | liste | `$L(2)`, `$L(end)`, `$L(1:3)`, `$L(0,2)` | `set L(1) 25`, `set L(0,2) 5 6` |
 | dict | `$D(a)`, `$D('end')`, `$D(a,b)` | `set D(a) 3` |
 | bitarray | `$b(3)` (un bit), `$b(1:4)` (une tranche : un entier `bitarray(4,…)`) | `set b(0) 1`, `set b(4:7) 0` |
@@ -902,7 +902,6 @@ Le codec C, qui **vérifie** en plus chaque valeur contre son type, est 2 à 3 f
 **À corriger ou à décider**
 
 - **Adoption par une variable non typée.** `set e [lindex $L 1]` rend `e` typée et stricte. Le piège `catch … m` (§ 6.2) en découle, et l'erreur qui s'en échappe est le message d'origine, ce qui la rend difficile à comprendre. À décider : adoption silencieuse, adoption sans contrat, ou message explicite.
-- **Lire une variante qui n'est pas la variante courante** d'une somme donne `unknown way to cast the value from S to string` au lieu d'un message qui nomme la variante.
 - **Variantes de même forme** : sans étiquette, la première est prise sans avertissement.
 - `set {paire}s {aut.nom}x` (le champ d'un **autre** produit) donne `wrong # args` ; un message dédié serait plus clair.
 - `lset` avec une liste d'index passant par `TclLsetList` garde une référence en trop (fuite, sans plantage).

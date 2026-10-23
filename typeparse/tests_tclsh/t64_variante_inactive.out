@@ -1,0 +1,10 @@
+v(i) active                    0 5
+v(s) inactive                  0 5
+u(p) inactive                  1 the current variant of U is "n", not "p", and its value "3" can't be read as pt
+u(p.x) inactive                1 the current variant of U is "n", not "p", and its value "3" can't be read as pt
+u(n) active                    0 3
+v(zz) inconnue                 1 S has no variant "zz"
+set v(s) abc (écrit)           0 abc S.s
+set u(p.x) 1                   1 the current variant of U is "n", not "p": to change the variant, write the whole value ({p}...)
+abc S.s
+1 2 U.p 1

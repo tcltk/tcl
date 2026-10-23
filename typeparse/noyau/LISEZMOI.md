@@ -1232,3 +1232,17 @@ Source de types : `tclTypeParse.c`. Pas de patch noyau.
 - Inchangé (décision du 23 octobre) : une somme garde ses variantes anonymes (`{int}, {string}`,
   `{{int}a; {int}b}, {string}c`).
 - Test `t63_separateurs`. Aucun test ni exemple du projet n'utilisait les formes refusées.
+
+### v15k — lire une variante inactive (23 octobre 2026)
+
+Source de types : `tclTypePath.c`. Pas de patch noyau.
+
+- Avant : `$v(s)` sur un `S` dont la variante courante est `i` tentait de caster la SOMME vers
+  `string` : `unknown way to cast the value from S to string`.
+- La règle (lire une autre variante = cast explicite) part maintenant de la valeur de la variante
+  COURANTE : `{i}5` lu par `$v(s)` donne `5`, de type `string`. Sans cast possible :
+  `the current variant of U is "n", not "p", and its value "3" can't be read as pt`.
+- Écrire dans une partie d'une variante inactive (`set u(p.x) 1`) : `the current variant of U is "n",
+  not "p": to change the variant, write the whole value ({p}...)`. Écrire la variante entière
+  (`set v(s) abc`) change la variante, comme avant.
+- Test `t64_variante_inactive`.
