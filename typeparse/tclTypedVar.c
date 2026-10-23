@@ -1136,9 +1136,11 @@ TclSetAnnotatedCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 	    baseObj = Tcl_NewStringObj(name, open - name);
 	}
     }
-    /* Produit : set {T}R(chemin) v... construit par les champs nommés. */
+    /* Produit, liste, dict : set {T}R(chemin) v... construit par les champs
+     * nommés, les indices ou les clés. */
     if (baseObj == NULL && (status == TCLA_RAW || status == TCLA_TYPED)
-	    && tp->kind == TCLT_PRODUCT) {
+	    && (tp->kind == TCLT_PRODUCT || tp->kind == TCLT_LIST
+		|| tp->kind == TCLT_DICT)) {
 	size_t len = strlen(name);
 	const char *open = strchr(name, '(');
 
@@ -1151,6 +1153,22 @@ TclSetAnnotatedCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
     }
     if (forced < 0 && status == TCLA_RAW && tp->kind == TCLT_SUM && avar >= 0) {
 	forced = avar;			/* set {Val.s}x 7 */
+    }
+    if (baseObj == NULL && status != TCLA_EMPTY) {
+	/* set {int}A(k) 5 : une variable typée est un scalaire. Refusé AVANT
+	 * toute recherche de variable, pour ne pas laisser de tableau vide. */
+	size_t len = strlen(name);
+	const char *open = strchr(name, '(');
+
+	if (open != NULL && open != name && len > 0 && name[len - 1] == ')') {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "can't set \"%s\": a typed variable is a scalar, not an array "
+		    "element; a constructor path %s names fields of products, "
+		    "indices of lists or keys of dicts, and %s is none of these",
+		    name, open, tp->name));
+	    Tcl_SetErrorCode(interp, "TCL", "TYPE", "PATH", (char *) NULL);
+	    return TCL_ERROR;
+	}
     }
     if (baseObj == NULL) {
 	baseObj = Tcl_NewStringObj(name, TCL_AUTO_LENGTH);

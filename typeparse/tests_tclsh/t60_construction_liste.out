@@ -1,0 +1,22 @@
+set {segment}AB(0,1) $A $B               0 {0 0} {4 4}
+array exists AB                          0 0
+info exists AB                           0 1
+set {segment}AB $A $B                    0 {0 0} {4 4}
+array exists R                           0 0
+list.int : set {list.int}L(0,1) 5 6      0 5 6
+array exists L                           0 0
+dans une procédure                       0 {{0 0} {1 1}} 0 1
+segment ordre inverse AB(1,0)                0 {{0 0} {4 4}} segment
+trou L(0,2)                                  1 element 1 of poly is not given: a list built by its indices needs all of them, from 0 to 2
+  S2 créé ?                                  0 0
+doublon L(0,0)                               1 element "0" of poly is assigned more than once
+pas un indice L(a,b)                         1 a list is built by its indices: "a" is not an index of poly
+segment de 3 : S5(0,1,2)                     1 segment needs exactly 2 elements but got 3
+  S5 créé ?                                  0 0
+chemin profond 0.x,0.y,1.x,1.y               0 {{1 2} {3 4}} point
+élément invalide                             1 point needs 2 values but got 1
+dict.int D(a,b)                              0 {a 1 b 2} dict<int>
+dict.int invalide                            1 expected integer but got "x"
+{int}I(k) refusé                             1 can't set "I(k)": a typed variable is a scalar, not an array element; a constructor path (k) names fields of products, indices of lists or keys of dicts, and int is none of these
+  I créé ?                                   0 0
+nombre de valeurs                            1 point needs 2 values but got 1

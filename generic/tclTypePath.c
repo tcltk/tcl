@@ -2667,6 +2667,156 @@ PathWrite(Tcl_Interp *interp, Tcl_Obj *containerPtr, const char *path,
  *	sans essai de lecture positionnelle.
  * -------------------------------------------------------------------- */
 
+/*
+ * set {segment}AB(0,1) $A $B, set {list.pt}L(0.x,0.y,1.x,1.y) ..., set
+ * {dict.int}D(a,b) 1 2 : construction d'une liste par ses indices (tous, de 0
+ * à N-1, dans un ordre quelconque : une liste n'a pas de défaut) ou d'un
+ * dict par ses clés. Chaque élément est validé comme élément de tp.
+ */
+static int ConstructLevel(Tcl_Interp *interp, TclType *tp,
+	const PathSet *set, Tcl_Obj **flat, const Tcl_Size *idx, Tcl_Size cnt,
+	Tcl_Size d, Tcl_Obj **contentPtr);
+
+static int
+ConstructCollection(Tcl_Interp *interp, TclType *tp, const PathSet *set,
+	Tcl_Obj **flat, const Tcl_Size *idx, Tcl_Size cnt, Tcl_Size d,
+	Tcl_Obj **contentPtr)
+{
+    char *used;
+    Tcl_Size i, j, *sub, nslots = 0, k;
+    Tcl_Obj **slots = NULL, *res = NULL;
+    int rc = TCL_ERROR, isList = (tp->kind == TCLT_LIST);
+    TclType *et = tp->elem;
+
+    used = (char *) Tcl_Alloc(cnt ? cnt : 1);
+    memset(used, 0, cnt ? cnt : 1);
+    sub = (Tcl_Size *) Tcl_Alloc((cnt ? cnt : 1) * sizeof(Tcl_Size));
+    if (isList) {
+	/* Nombre d'éléments : le plus grand indice + 1. */
+	for (i = 0; i < cnt; i++) {
+	    const char *nm = Tcl_GetString(set->path[idx[i]].step[d].a);
+	    Tcl_WideInt w;
+
+	    if (!IsIntegerName(nm) || Tcl_GetWideIntFromObj(NULL,
+		    set->path[idx[i]].step[d].a, &w) != TCL_OK || w < 0) {
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf("a list is built by "
+			"its indices: \"%s\" is not an index of %s", nm,
+			tp->name));
+		Tcl_SetErrorCode(interp, "TCL", "TYPE", "PATH", (char *) NULL);
+		goto done;
+	    }
+	    if (w + 1 > nslots) {
+		nslots = (Tcl_Size) w + 1;
+	    }
+	}
+	slots = (Tcl_Obj **) Tcl_Alloc((nslots ? nslots : 1)
+		* sizeof(Tcl_Obj *));
+	memset(slots, 0, (nslots ? nslots : 1) * sizeof(Tcl_Obj *));
+    } else {
+	res = Tcl_NewDictObj();
+	Tcl_IncrRefCount(res);
+    }
+    for (i = 0; i < cnt; i++) {
+	const IndexPath *p = &set->path[idx[i]];
+	const char *name;
+	Tcl_Size ns = 0, whole = -1;
+	Tcl_Obj *value, *c;
+
+	if (used[i]) {
+	    continue;
+	}
+	name = Tcl_GetString(p->step[d].a);
+	for (j = i; j < cnt; j++) {
+	    const IndexPath *q = &set->path[idx[j]];
+
+	    if (!used[j] && strcmp(Tcl_GetString(q->step[d].a), name) == 0) {
+		used[j] = 1;
+		sub[ns++] = idx[j];
+		if (q->n == d + 1) {
+		    whole = idx[j];
+		}
+	    }
+	}
+	if (whole >= 0) {
+	    if (ns > 1) {
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf("element \"%s\" of %s is "
+			"assigned more than once", name, tp->name));
+		Tcl_SetErrorCode(interp, "TCL", "TYPE", "PATH", (char *) NULL);
+		goto done;
+	    }
+	    value = flat[whole];
+	    Tcl_IncrRefCount(value);
+	} else {
+	    c = NULL;
+	    if (et == NULL || ConstructLevel(interp, et, set, flat, sub, ns,
+		    d + 1, &c) != TCL_OK) {
+		if (et == NULL) {
+		    Tcl_SetObjResult(interp, Tcl_ObjPrintf("elements of %s have "
+			    "no type to construct", tp->name));
+		}
+		goto done;
+	    }
+	    value = TclNewAnnotated(interp, et, -1, c);
+	    TclDiscard(c);
+	    Tcl_IncrRefCount(value);
+	}
+	/* L'élément, validé comme élément de tp. */
+	c = (et != NULL) ? TclTypedConform(interp, et, value)
+		: Tcl_DuplicateObj(TCL_ANNOT_CONTENT(value));
+	Tcl_DecrRefCount(value);
+	if (c == NULL) {
+	    goto done;
+	}
+	if (isList) {
+	    Tcl_WideInt w;
+
+	    Tcl_GetWideIntFromObj(NULL, p->step[d].a, &w);
+	    Tcl_IncrRefCount(c);
+	    slots[w] = c;
+	} else if (Tcl_DictObjPut(interp, res, p->step[d].a, c) != TCL_OK) {
+	    TclDiscard(c);
+	    goto done;
+	}
+    }
+    if (isList) {
+	for (k = 0; k < nslots; k++) {
+	    if (slots[k] == NULL) {
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf("element %"
+			TCL_SIZE_MODIFIER "d of %s is not given: a list built by "
+			"its indices needs all of them, from 0 to %"
+			TCL_SIZE_MODIFIER "d", k, tp->name, nslots - 1));
+		Tcl_SetErrorCode(interp, "TCL", "TYPE", "PATH", (char *) NULL);
+		goto done;
+	    }
+	}
+	res = Tcl_NewListObj(nslots, slots);
+	Tcl_IncrRefCount(res);
+    }
+    if (TclTypeComplete(interp, tp, res, -1, NULL) != TCL_OK) {
+	goto done;
+    }
+    *contentPtr = res;
+    res->refCount--;			/* refcount 0, privé */
+    res = NULL;
+    rc = TCL_OK;
+
+  done:
+    if (slots != NULL) {
+	for (k = 0; k < nslots; k++) {
+	    if (slots[k] != NULL) {
+		Tcl_DecrRefCount(slots[k]);
+	    }
+	}
+	Tcl_Free(slots);
+    }
+    if (res != NULL) {
+	Tcl_DecrRefCount(res);
+    }
+    Tcl_Free(used);
+    Tcl_Free(sub);
+    return rc;
+}
+
 static int
 ConstructLevel(Tcl_Interp *interp, TclType *tp, const PathSet *set,
 	Tcl_Obj **flat, const Tcl_Size *idx, Tcl_Size cnt, Tcl_Size d,
@@ -2677,9 +2827,14 @@ ConstructLevel(Tcl_Interp *interp, TclType *tp, const PathSet *set,
     Tcl_Size i, j, *sub;
     int rc = TCL_ERROR;
 
+    if (tp->kind == TCLT_LIST || tp->kind == TCLT_DICT) {
+	return ConstructCollection(interp, tp, set, flat, idx, cnt, d,
+		contentPtr);
+    }
     if (tp->kind != TCLT_PRODUCT) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf("a constructor path names "
-		"fields of products: %s is not a product", tp->name));
+		"fields of products, indices of lists or keys of dicts: %s is "
+		"none of these", tp->name));
 	Tcl_SetErrorCode(interp, "TCL", "TYPE", "PATH", (char *) NULL);
 	return TCL_ERROR;
     }

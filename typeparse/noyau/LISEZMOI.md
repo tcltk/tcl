@@ -1175,3 +1175,20 @@ typées : `geo::distance` -> `geo::vec`, avec leurs déclarations ; prochaine ci
 Vérifié contre la v15 : tests du projet, exemples (dont `cstruct`, `arduino`, `geometrie/verifier.tcl`)
 identiques ; 23 fichiers de tests de Tcl (6615 tests), mêmes échecs ; valgrind sans erreur sur
 `geometrie.tcl`, `t22`, `t30`, `t52`, `t55`, `t57`, `t58`.
+
+### v15h — construction par chemin d'une liste ou d'un dict (23 octobre 2026)
+
+Sources de types : `tclTypePath.c`, `tclTypedVar.c`. Pas de patch noyau.
+
+- Cause : la construction par chemin (`set {T}v(a,b) x y`) n'existait que pour les produits. Pour
+  tout autre type, le nom `AB(0,1)` partait dans le chemin des tableaux : Tcl créait le tableau `AB`,
+  puis échouait (`no such element in array`), et le `set {segment}AB $A $B` suivant donnait
+  `typed variables must be scalars`.
+- Liste : construite par ses indices, tous de 0 à N-1, dans un ordre quelconque (une liste n'a pas
+  de défaut) : `set {segment}AB(0,1) $A $B`, `set {segment}S(1,0) ...`, chemins profonds
+  `S(0.x,0.y,1.x,1.y) 1 2 3 4`. Trou, doublon, nom qui n'est pas un indice : message clair.
+- Dict : construit par ses clés : `set {dict.int}D(a,b) 1 2`.
+- Autre type (scalaire...) : `set {int}A(k) 5` refusé AVANT toute recherche de variable, rien n'est
+  créé : `a typed variable is a scalar, not an array element; a constructor path (k) names fields of
+  products, indices of lists or keys of dicts, and int is none of these`.
+- Tests : nouveau `t60_construction_liste` ; `t52` régénéré (message élargi aux listes et dicts).

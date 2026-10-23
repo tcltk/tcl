@@ -476,6 +476,8 @@ set R((A,B).x) 10 30                       ;# écriture multiple
 ${R(A.x, B.y)}                             ;# lecture, espaces permis
 ```
 
+La construction par chemin vaut aussi pour une liste, par ses indices (tous, de 0 à N-1, dans un ordre quelconque) : `set {segment}AB(0,1) $A $B`, `set {segment}S(0.x,0.y,1.x,1.y) 1 2 3 4` ; et pour un dict, par ses clés : `set {dict.int}D(a,b) 1 2`. Pour un autre type, `set {int}A(k) 5` est refusé sans rien créer : une variable typée est un scalaire, pas un élément de tableau.
+
 Les espaces sont permis dans `$R(…)`, `${R(…)}` et dans un mot annoté `{T}R(…)`. Dans un mot nu non annoté (`set R(A.x, A.y) …`), Tcl coupe aux espaces comme toujours : écrire sans espaces ou entre guillemets.
 
 #### 7.2 Le langage de chemin

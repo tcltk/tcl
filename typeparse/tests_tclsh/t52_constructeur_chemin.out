@@ -19,7 +19,7 @@ err: deux fois                     | set {rect}E3(A,A.x,B) {1 2} 5 {3 4}        
 err: nombre                        | set {rect}E4((A,B).(x,y)) 1 2 3                            | ERREUR: wrong # args: the path selects 4 targets in 2 groups: give 4 values, 2 or 1, not 3
 err: forme                         | set {rect}E5(A.(x,y),B.(x,y)) {1 2 3} {3 4}                | ERREUR: value "1 2 3" has 3 elements, but this part of the path selects 2
 err: type                          | set {rect}E6(A.x,A.y,B.x,B.y) a 2 3 4                      | ERREUR: expected integer but got "a"
-err: pas un produit                | set {rect}E7(A.x.q,A.y,B) 1 2 {3 4}                        | ERREUR: a constructor path names fields of products: int is not a product
+err: pas un produit                | set {rect}E7(A.x.q,A.y,B) 1 2 {3 4}                        | ERREUR: a constructor path names fields of products, indices of lists or keys of dicts: int is none of these
 err: intervalle                    | set {rect}E8(A,0:1) 1 2                                    | ERREUR: a constructor path names fields: no ranges or tags
 amb. données = nom de champ        | set lv texte; set {trace}T1(niveau,texte) $lv a            | ERREUR: expected integer but got "texte"
 amb. données = nom de champ 2      | set a age; set b 12; set {paire}P3(nom,age) $a $b          | -> {age 12} paire
