@@ -1,0 +1,16 @@
+type cast list.point                           0 list<point>
+type cast list(4).point                        0 list(4)<point>
+{list.point}$P                                 0 list<point>
+set {list.point}L $P (affect.)                 0 list<point>
+set {list(4).point}L4 $P                       0 list(4)<point>
+champ list($n).point <- polygone               0 polyC
+champ list.point <- polygone                   0 boite
+px entre dans int                              0 int
+polygone -> list nue (affect.)                 0 4
+champ avec cast immédiat                       0 polyC
+champ boite cast immédiat                      0 boite
+champ list($n) avec mauvais compte             1 field "pts" of polyC holds 4 elements, but its size says 3 ($n)
+nominal -> autre nominal (refus)               1 triangle needs exactly 3 elements but got 4
+polygone dans champ nuage (refus)              1 type mismatch: expected nuage but got polygone (use an explicit cast)
+list(3).point <- polygone(4)                   1 list(3)<point> needs exactly 3 elements but got 4
+champ list(4) <- poly3 (refus)                 1 type mismatch: expected list(4)<point> but got poly3 (use an explicit cast)

@@ -30,7 +30,11 @@ type def polyC  {{u32le}n; {list($n).pointC}pts}
 
 namespace eval geo {variable voie octets}
 
-# FR : un polygone, un nuage, une Bézier -> les octets d'un polyC.
+# FR : un polygone, un nuage, une Bézier -> les octets d'un polyC. On passe
+#      par le contenu parce que point et pointC sont deux nominaux distincts
+#      (même forme, types différents) : un polygone n'entre pas tel quel dans
+#      list($n).pointC.
+# EN : through the content, because point and pointC are distinct nominals.
 proc geo::octets {v} {
     set c [::tcl::unsupported::content $v]
     set {polyC}p [llength $c] $c
@@ -52,12 +56,11 @@ proc geo::perimetre {p} {(
                              : [geo::c::perimetre_obj $P]
 )}
 
+# FR : C rend directement un rectangle annoté / EN: C returns an annotated rectangle
 proc geo::englobant {p} {(
     P is polygone = $p;
-    (x0, y0, x1, y1) = $::geo::voie eq "octets" ? [geo::c::englobant_raw [geo::octets $P]]
-                                                : [geo::c::englobant_obj $P];
-    R is rectangle = (($x0, $y0), ($x1, $y1));
-    $R
+    $::geo::voie eq "octets" ? [geo::c::englobant_raw [geo::octets $P]]
+                             : [geo::c::englobant_obj $P]
 )}
 
 proc geo::dedans_tous {pts q} {(
@@ -66,10 +69,9 @@ proc geo::dedans_tous {pts q} {(
                              : [geo::c::dedans_obj $N $Q]
 )}
 
+# FR : C rend directement une polyligne annotée / EN: C returns an annotated polyline
 proc geo::bezier_echantillons {b n} {(
     B is bezier = $b;
-    xy = $::geo::voie eq "octets" ? [geo::c::bezier_raw [geo::octets $B] $n]
-                                  : [geo::c::bezier_obj $B $n];
-    L is polyligne = lmap {x y} $xy {list $x $y};
-    $L
+    $::geo::voie eq "octets" ? [geo::c::bezier_raw [geo::octets $B] $n]
+                             : [geo::c::bezier_obj $B $n]
 )}

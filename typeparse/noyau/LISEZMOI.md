@@ -1121,3 +1121,22 @@ référence. Refait contre une v15 recompilée depuis ses propres sources : test
 identiques hormis les écarts attendus (`t35`, `t37`, nouveaux `t55` à `t58`, exemples qui lisent le
 `tclsh` lui-même, temps de `bench_matrices`) ; 29 fichiers de tests de Tcl (7542 tests) : mêmes
 échecs, test par test.
+
+### v15f — un nominal de collection entre dans sa base (23 octobre 2026)
+
+Source de types : `tclTypes.c`. Pas de patch noyau.
+
+- État avant : depuis la v15b, les casts explicites marchaient (`type cast list.point $P`,
+  `{list.point}$P`), et l'affectation d'une variable aussi (`set {list.point}L $P`, par la règle de
+  dépliage). Restait le champ d'un produit : `set {polyC}c 4 $P` avec `{list($n).point}pts` donnait
+  `type mismatch: expected list($n)<point> but got polygone`.
+- Cause : `TclTypeEnters` suit la chaîne `under` d'un nominal, qui n'existe que pour un nominal de
+  scalaire (`px` -> `int`). Un `type def polygone list.point` n'en a pas : sa base, sa propre
+  structure, était invisible.
+- Correction : un nominal de liste ou de dict entre dans une collection STRUCTURELLE de même genre
+  dont les éléments l'acceptent (`list.point`, `list(4).point`, `list($n).point`, `list`) ; le nombre
+  d'éléments est vérifié ensuite. Deux nominaux restent distincts (`nuage` refuse un `polygone`),
+  et deux tailles fixes différentes aussi (`list(4).point` refuse un `list(3).point` nominal).
+- `geometrie/geo_c.tcl` garde son passage par le contenu, pour une autre raison : `point` et `pointC`
+  sont deux nominaux distincts (commentaire ajouté).
+- Test `t59_nominal_base`.

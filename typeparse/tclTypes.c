@@ -413,6 +413,29 @@ TclTypeEnters(const TclType *expected, const TclType *got)
 	    break;		/* fin de la chaîne : un type structurel */
 	}
     }
+    /*
+     * Un nominal de collection (type def polygone list.point) n'a pas de
+     * chaîne "under" : sa base est sa propre structure. Il entre dans une
+     * collection STRUCTURELLE de même genre dont les éléments l'acceptent
+     * (list.point, list(4).point, list($n).point, list) ; le nombre
+     * d'éléments est vérifié ensuite, sur le contenu. Deux nominaux restent
+     * distincts.
+     */
+    if (got != NULL && got->nominal && !got->refine && got->under == NULL
+	    && !expected->nominal && expected->kind == got->kind
+	    && (got->kind == TCLT_LIST || got->kind == TCLT_DICT)) {
+	if (expected->kind == TCLT_LIST && expected->arity >= 0
+		&& got->arity >= 0 && expected->arity != got->arity) {
+	    return 0;
+	}
+	if (expected->elem == NULL || TclTypeIsAny(expected->elem)
+		|| TclTypeIsPlainString(expected->elem)) {
+	    return 1;
+	}
+	if (got->elem != NULL && TclTypeEnters(expected->elem, got->elem)) {
+	    return 1;
+	}
+    }
     return 0;
 }
 

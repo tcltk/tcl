@@ -413,7 +413,7 @@ set {int}w $o                  ;# accepté : type get $w -> int
 set {int(u,8)}o2 300           ;# value "300" does not fit in int(u,8)
 ```
 
-**Nominaux.** Un type nominal s'efface devant sa base (`px` entre dans `int` et donne `int`, sans trace). Deux nominaux sans lien de base ne sont jamais équivalents (`mm` et `kg`) : c'est précisément leur rôle.
+**Nominaux.** Un type nominal s'efface devant sa base (`px` entre dans `int` et donne `int`, sans trace). Pour une collection, la base est sa structure : `type def polygone list.point` entre dans `list.point`, `list(4).point` ou un champ `{list($n).point}` (le nombre d'éléments est vérifié). Deux nominaux sans lien de base ne sont jamais équivalents (`mm` et `kg`) : c'est précisément leur rôle.
 
 **Casts explicites.** `set v {T}$x` ou `type cast T $x` convertissent selon, dans l'ordre : une règle `type convert` spécifique ; la chaîne des bases ; la variante d'une somme ; une règle de famille ; les conversions intégrées entre scalaires. Sinon : `unknown way to cast the value from A to B`.
 
