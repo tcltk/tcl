@@ -1784,32 +1784,15 @@ Step(Tcl_Interp *interp, Tcl_Obj *a, const char *name, int quoted)
 	 * variantes.
 	 */
 	{
-	    Tcl_Obj *cur = NULL;
-	    TclType *ct = (variant >= 0 && variant < (int) tp->nfields)
-		    ? tp->fields[variant].type : NULL;
-	    const char *cname = (variant >= 0 && variant < (int) tp->nfields
-		    && tp->fields[variant].name != NULL)
-		    ? Tcl_GetString(tp->fields[variant].name) : "?";
-	    int crc;
+	    Tcl_Obj *c;
 
-	    if (ct != NULL) {
-		cur = TclNewAnnotated(interp, ct, -1, v);
-		Tcl_IncrRefCount(cur);
-		crc = TclTypeCast(interp, cur, ft, &res);
-		if (crc == TCL_OK) {
-		    Tcl_IncrRefCount(res);
-		    Tcl_DecrRefCount(cur);
-		    res->refCount--;		/* sans référence propre */
-		    return res;
-		}
-		Tcl_DecrRefCount(cur);
+	    if (TclTypeVariantConvert(interp, tp, variant, v, (int) idx, &c)
+		    != TCL_OK) {
+		return NULL;
 	    }
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "the current variant of %s is \"%s\", not \"%s\", and its "
-		    "value \"%s\" can't be read as %s", tp->name, cname, name,
-		    Tcl_GetString(v), ft->name));
-	    Tcl_SetErrorCode(interp, "TCL", "TYPE", "VARIANT", (char *) NULL);
-	    return NULL;
+	    res = TclNewAnnotated(interp, ft, -1, c);
+	    TclDiscard(c);
+	    return res;
 	}
     }
     case TCLT_INT:
@@ -2514,8 +2497,23 @@ SetIn(Tcl_Interp *interp, Tcl_Obj *a, const IndexPath *chain, Tcl_Size i,
 		&& TclTypeTagCheck(interp, tp, idx, val, elems, n) != TCL_OK) {
 	    return NULL;
 	}
-	childContent = TclTypedConformHint(interp, slotType, val,
-		tp->kind == TCLT_PRODUCT ? TclTypeTagVariant(tp, idx, v) : -1);
+	{
+	    int hint = tp->kind == TCLT_PRODUCT ? TclTypeTagVariant(tp, idx, v)
+		    : -1;
+
+	    if (hint < 0 && slotType->kind == TCLT_SUM
+		    && (tp->kind == TCLT_PRODUCT || tp->kind == TCLT_LIST)
+		    && idx >= 0 && idx < n) {
+		/* La variante de la partie remplacée départage des variantes
+		 * également strictes, comme pour une variable (set v 8). */
+		int cur = TclTypeSumCurrent(slotType, elems[idx]);
+
+		if (cur >= 0) {
+		    hint = -2 - cur;
+		}
+	    }
+	    childContent = TclTypedConformHint(interp, slotType, val, hint);
+	}
 	if (childContent == NULL) {
 	    return NULL;
 	}

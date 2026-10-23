@@ -1,0 +1,21 @@
+sans règle                     1 the current variant of temp is "celsius", not "fahrenheit"; both have the same form, so reading one as the other needs a rule: type convert temp.celsius temp.fahrenheit {{x} ...}
+cast sans règle                1 the current variant of temp is "celsius", not "fahrenheit"; both have the same form, so reading one as the other needs a rule: type convert temp.celsius temp.fahrenheit {{x} ...}
+t(fahrenheit)                  0 212.0 double
+t(celsius)                     0 100
+cast                           0 212.0 temp.fahrenheit
+cast retour                    0 100.0 temp.celsius
+cast même variante             0 100 temp.celsius
+type cast                      0 212.0 temp.fahrenheit
+t inchangé                     0 100 temp.celsius
+écrire changer                 0 50 temp.fahrenheit
+déduction : ambigu             1 value "5" fits variants celsius and fahrenheit of temp equally: write {celsius}5, or set {temp}y(celsius) 5
+S i lu s (cast)                0 5 string
+S s lu i (cast)                0 12 int
+S s abc lu i                   1 the current variant of S is "s", not "i", and its value "abc" can't be read as int
+S s abc lu i, règle            0 3
+règle qui rend faux            1 non
+erreur : sommes ≠              1 type convert between variants needs two variants of the same sum, as in S.a S.b, not "temp.celsius" and "S.i"
+erreur : variante ?            1 type convert: temp has no variant "kelvin"
+erreur : même                  1 type convert: "temp.celsius" and "temp.celsius" are the same variant
+erreur : mêlé                  1 type convert between variants needs two variants of the same sum, as in S.a S.b, not "temp.celsius" and "double"
+liste de temp                  0 212.0

@@ -531,7 +531,7 @@ Entre accolades et dans `${…}`, `$` et `[` sont des erreurs : `a path does not
 | conteneur | lecture | écriture |
 |---|---|---|
 | produit | `$a(nom)`, `$R(A.x)`, `$R(A.(x,y))` | `set a(nom) Léa` (revalidé) |
-| somme | `$v(i)` : la variante courante ; une autre variante, `$v(s)`, est un cast de la valeur courante (`{i}5` donne `5`), sinon une erreur qui nomme les deux variantes | `set v(i) 6` ; `set v(s) abc` change la variante ; une partie d'une variante inactive (`set u(p.x) 1`) est refusée |
+| somme | `$v(i)` : la variante courante ; une autre variante, `$v(s)`, passe par la règle `type convert S.i S.s` s'il y en a une, sinon par le cast de la valeur courante (`{i}5` donne `5`) ; variantes de même forme sans règle, ou cast impossible : une erreur qui nomme les deux variantes (§ 8) | `set v(i) 6` ; `set v(s) abc` change la variante ; une partie d'une variante inactive (`set u(p.x) 1`) est refusée |
 | liste | `$L(2)`, `$L(end)`, `$L(1:3)`, `$L(0,2)` | `set L(1) 25`, `set L(0,2) 5 6` |
 | dict | `$D(a)`, `$D('end')`, `$D(a,b)` | `set D(a) 3` |
 | bitarray | `$b(3)` (un bit), `$b(1:4)` (une tranche : un entier `bitarray(4,…)`) | `set b(0) 1`, `set b(4:7) 0` |
@@ -620,6 +620,19 @@ set {A}v {j}5   ;# A.j
 ```
 
 La variante choisie reste attachée à la valeur, y compris dans une liste ou un produit (`set {list.A}L $v`, `set {R}r $v 1` : `A.j`), et `type cast A {j}5` la lit aussi. Une modification (`set v 8`, `incr v`, `set L(0) 4`, `lset L 0 9`, `set r(a) 7`) garde la variante courante quand plusieurs conviennent également ; la valeur choisit toujours si une seule variante convient, ou si une est plus stricte. Variantes anonymes de même forme (`{int}, {int}`) : rien ne permet de choisir, `name the variants to choose one`.
+
+**Conversions entre variantes.** Deux variantes d'une même somme peuvent recevoir une règle, sens par sens :
+
+```tcl
+type def temp {{double}celsius, {double}fahrenheit}
+type convert temp.celsius temp.fahrenheit {{x} {expr {$x*9/5.0 + 32}}}
+set {temp}t {celsius}100
+set t(fahrenheit)              ;# 212.0 : lecture d'une variante inactive, par la règle
+set u {temp.fahrenheit}$t      ;# cast explicite : u vaut 212.0, de type temp.fahrenheit
+type cast temp.fahrenheit $t   ;# idem
+```
+
+La lecture d'une variante inactive et le cast `{S.v}` (ou `type cast S.v`) prennent, dans l'ordre : la règle ; refus si les deux variantes ont la même forme (un cast identité dirait qu'un celsius est un fahrenheit : `… both have the same form, so reading one as the other needs a rule: type convert temp.celsius temp.fahrenheit {{x} ...}`) ; sinon le cast ordinaire entre les types des deux variantes (`{int}i, {string}s` : `{i}5` lu par `$v(s)` donne `5`). Une règle n'intervient jamais dans la déduction (`set {temp}y 5` reste ambigu), ni dans l'écriture (`set t {fahrenheit}50` change de variante sans convertir). Pas d'enchaînement (une règle a → b et une règle b → c ne font pas a → c), pas de réciproque supposée.
 
 Une liste reçoit ses éléments un par un : `set {list.int}L 1 2 3`, `set {list(2).int}c 3 4`. Un seul argument est **un** élément.
 

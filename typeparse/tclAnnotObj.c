@@ -1941,7 +1941,20 @@ TclAnnotSettle(Tcl_Interp *interp, Tcl_Obj *objPtr, const TclType *ctx,
     }
 
     /* Le cast. */
-    if (nr > 0 && cur != NULL) {
+    if (nr > 0 && cur != NULL && cur == rt[0] && cur->kind == TCLT_SUM
+	    && rv[0] >= 0 && curVar >= 0 && rv[0] != curVar) {
+	/* {S.b}$v, v en S.a : d'une variante à l'autre (règle, ou cast). */
+	Tcl_Obj *c;
+
+	if (TclTypeVariantConvert(interp, cur, curVar, content, rv[0], &c)
+		!= TCL_OK) {
+	    Tcl_DecrRefCount(pend);
+	    return TCL_ERROR;
+	}
+	val = TclNewAnnotated(interp, cur, rv[0], c);
+	TclDiscard(c);
+	Tcl_IncrRefCount(val);
+    } else if (nr > 0 && cur != NULL) {
 	Tcl_Obj *base = MakeAnnotated(Tcl_DuplicateObj(content),
 		TypeRefObj(interp, cur, curVar));
 

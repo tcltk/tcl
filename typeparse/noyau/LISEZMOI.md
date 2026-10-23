@@ -1282,3 +1282,20 @@ Sources de types : `tclTypes.c`, `tclTypes.h`, `tclTypedVar.c`, `tclTypePath.c`,
 - `type cast S {v}x` : l'étiquette sous le type d'une somme nomme la variante (`TclAnnotSettle`).
   Avant : ignorée (`type cast B {s}5` donnait `B.i`).
 - Test `t66_variantes_meme_forme`. Les autres tests et les exemples sont inchangés.
+
+### v15n — règles de conversion entre variantes (23 octobre 2026)
+
+Sources de types : `tclTypes.c`, `tclTypes.h`, `tclTypePath.c`, `tclAnnotObj.c`. Pas de patch noyau.
+
+- `type convert S.a S.b {{x} ...}` : une règle d'une variante vers une autre de la même somme (clé
+  `S.a\1S.b` dans la table des conversions). Refus : sommes différentes, variante inconnue, même
+  variante, variante mêlée à un type.
+- `TclTypeVariantConvert` (`tclTypes.c`) : la règle ; sinon, variantes de même forme : erreur qui propose
+  la règle ; sinon le cast ordinaire entre les types des variantes. Utilisée par la lecture d'une
+  variante inactive (`$t(fahrenheit)`, `tclTypePath.c`, remplace le cast de v15k) et par le cast
+  `{S.b}$v` (`TclAnnotSettle`), qui ignorait jusqu'ici la variante demandée (`{temp.fahrenheit}$t`
+  restait `temp.celsius`).
+- `type cast S.v valeur` : accepté (avant : `unknown type "v"`).
+- Tranche la question ouverte de v15k : cast pour des variantes de formes différentes, règle ou refus
+  pour des variantes de même forme.
+- Test `t67_conversion_variantes`.

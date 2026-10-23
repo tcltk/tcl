@@ -1282,6 +1282,48 @@ TclTypeValidate(Tcl_Interp *interp, const TclType *tp, Tcl_Obj *value,
     return ValidateG(interp, tp, value, variantHint, variantOut, NULL);
 }
 
+/* Variante d'une partie rangée (annotée, ou déduite de son contenu), ou -1. */
+int
+TclTypeSumCurrent(const TclType *tp, Tcl_Obj *part)
+{
+    TclType *ownTp = NULL;
+    int own = -1, got = -1;
+
+    if (tp == NULL || tp->kind != TCLT_SUM || part == NULL) {
+	return -1;
+    }
+    if (TclAnnotInfo(part, NULL, &ownTp, &own, NULL) == 1 && ownTp == tp) {
+	return own;
+    }
+    if (ValidateG(NULL, tp, TCL_ANNOT_CONTENT(part), -1, &got, NULL)
+	    != TCL_OK) {
+	return -1;
+    }
+    return got;
+}
+
+/*
+ * Somme : le contenu seul (sans balise) redonne-t-il la variante v ? Non
+ * quand plusieurs variantes également strictes l'acceptent, ou quand une
+ * balise a choisi une variante moins stricte que celle qu'on déduirait.
+ * Une partie de liste ou de produit garde alors son annotation.
+ */
+int
+TclTypeSumNeedsTag(const TclType *tp, Tcl_Obj *content, int v)
+{
+    int got = -1;
+
+    if (tp == NULL || tp->kind != TCLT_SUM || v < 0
+	    || (tp->binTag != NULL && tp->binTag[0] == '=')) {
+	return 0;
+    }
+    if (ValidateG(NULL, tp, TCL_ANNOT_CONTENT(content), -1, &got, NULL)
+	    != TCL_OK) {
+	return 1;
+    }
+    return got != v;
+}
+
 static int
 ValidateG(Tcl_Interp *interp, const TclType *tp, Tcl_Obj *value,
 	int variantHint, int *variantOut, const ValGuard *up)
@@ -1477,7 +1519,14 @@ ValidateG(Tcl_Interp *interp, const TclType *tp, Tcl_Obj *value,
 	}
 	return TCL_OK;
     case TCLT_SUM: {
-	int first = -1;
+	int first = -1, prefer = -1;
+
+	if (variantHint <= -2) {
+	    /* -2 - v : la variante courante, qui départage des variantes
+	     * également strictes (écriture dans une variable typée) */
+	    prefer = -2 - variantHint;
+	    variantHint = -1;
+	}
 
 	if (variantHint < 0 && tp->binTag != NULL && tp->binTag[0] == '=') {
 	    /* S(nom) : la variante est CHOISIE, il n'y a rien à deviner */
@@ -1502,17 +1551,92 @@ ValidateG(Tcl_Interp *interp, const TclType *tp, Tcl_Obj *value,
 	    }
 	    return TCL_OK;
 	}
-	for (i = 0; i < tp->nfields; i++) {
-	    if (!VariantAccepts(&tp->fields[i], value, &me)) {
-		continue;
+	{
+	    /*
+	     * Déduction par la plus stricte : parmi les variantes qui
+	     * acceptent la valeur, on garde celles qu'aucune autre ne bat
+	     * (strictement plus spécifique). Une seule : c'est elle. Plusieurs
+	     * (même forme, ou formes incomparables) : erreur qui propose
+	     * l'étiquette.
+	     */
+	    int ok[64], *acc = ok;
+	    Tcl_Size nacc = 0, a, b, nmin = 0;
+
+	    if (tp->nfields > 64) {
+		acc = (int *) Tcl_Alloc(tp->nfields * sizeof(int));
 	    }
-	    if (first < 0) {
-		first = (int) i;
-	    } else if (!VariantIncludes(&tp->fields[first], &tp->fields[i])) {
-		ERR(interp, "AMBIGUOUS", "ambiguous variant for \"%s\" in %s: "
-			"give the variant name", Tcl_GetString(value),
-			tp->name);
+	    for (i = 0; i < tp->nfields; i++) {
+		if (VariantAccepts(&tp->fields[i], value, &me)) {
+		    acc[nacc++] = (int) i;
+		}
+	    }
+	    for (a = 0; a < nacc; a++) {
+		int beaten = 0;
+
+		for (b = 0; b < nacc && !beaten; b++) {
+		    beaten = (b != a
+			    && VariantIncludes(&tp->fields[acc[b]],
+				    &tp->fields[acc[a]])
+			    && !VariantIncludes(&tp->fields[acc[a]],
+				    &tp->fields[acc[b]]));
+		}
+		if (!beaten) {
+		    acc[nmin++] = acc[a];	/* a >= nmin : sans risque */
+		}
+	    }
+	    for (a = 0; nmin > 1 && a < nmin; a++) {
+		if (acc[a] == prefer) {
+		    acc[0] = prefer;
+		    nmin = 1;
+		}
+	    }
+	    if (nmin == 1) {
+		first = acc[0];
+	    } else if (nmin > 1) {
+		if (interp != NULL) {
+		    Tcl_Obj *msg = Tcl_NewObj(), *q = Tcl_NewListObj(1, &value);
+		    Tcl_Obj *n0 = tp->fields[acc[0]].name;
+
+		    Tcl_IncrRefCount(q);
+		    Tcl_AppendPrintfToObj(msg, "value \"%s\" fits variants ",
+			    Tcl_GetString(value));
+		    for (a = 0; a < nmin; a++) {
+			Tcl_Obj *nm = tp->fields[acc[a]].name;
+
+			Tcl_AppendToObj(msg, a == 0 ? "" :
+				(a == nmin - 1 ? " and " : ", "), -1);
+			if (nm != NULL) {
+			    Tcl_AppendObjToObj(msg, nm);
+			} else {
+			    /* variante anonyme : son rang et sa forme */
+			    Tcl_AppendPrintfToObj(msg, "#%d (%s)", acc[a] + 1,
+				    tp->fields[acc[a]].type != NULL
+				    ? tp->fields[acc[a]].type->name
+				    : Tcl_GetString(tp->fields[acc[a]].literal));
+			}
+		    }
+		    if (n0 != NULL) {
+			const char *v0 = Tcl_GetString(n0);
+
+			Tcl_AppendPrintfToObj(msg, " of %s equally: write {%s}%s",
+				tp->name, v0, Tcl_GetString(q));
+		    } else {
+			Tcl_AppendPrintfToObj(msg, " of %s equally: name the "
+				"variants to choose one", tp->name);
+		    }
+		    Tcl_DecrRefCount(q);
+		    Tcl_SetObjResult(interp, msg);
+		    Tcl_SetErrorCode(interp, "TCL", "TYPE", "AMBIGUOUS",
+			    tp->name, n0 != NULL ? Tcl_GetString(n0) : "",
+			    (char *) NULL);
+		}
+		if (acc != ok) {
+		    Tcl_Free(acc);
+		}
 		return TCL_ERROR;
+	    }
+	    if (acc != ok) {
+		Tcl_Free(acc);
 	    }
 	}
 	if (first < 0) {
@@ -2632,6 +2756,90 @@ TclTypeCast(Tcl_Interp *interp, Tcl_Obj *src, TclType *target,
     return TCL_OK;
 }
 
+/*
+ * D'une variante à une autre de la même somme : le contenu de la variante
+ * "from" lu comme variante "to". Dans l'ordre : une règle "type convert
+ * S.from S.to" ; refus si les deux variantes ont la même forme (un cast
+ * identité dirait qu'un celsius est un fahrenheit) ; sinon le cast
+ * ordinaire du type de "from" vers celui de "to". *resPtr : contenu neuf,
+ * valide pour "to" (sans annotation).
+ */
+int
+TclTypeVariantConvert(Tcl_Interp *interp, TclType *sum, int from,
+	Tcl_Obj *content, int to, Tcl_Obj **resPtr)
+{
+    TypeData *d = GetData(interp);
+    TclTypeField *ff, *tf;
+    Tcl_HashEntry *hPtr;
+    Tcl_Obj *res = NULL;
+    const char *fn, *tn;
+    char key[512];
+
+    if (sum == NULL || sum->kind != TCLT_SUM || from < 0 || to < 0
+	    || from >= (int) sum->nfields || to >= (int) sum->nfields) {
+	ERR(interp, "VARIANT", "no such variant");
+	return TCL_ERROR;
+    }
+    ff = &sum->fields[from];
+    tf = &sum->fields[to];
+    fn = ff->name != NULL ? Tcl_GetString(ff->name) : "?";
+    tn = tf->name != NULL ? Tcl_GetString(tf->name) : "?";
+    if (from == to) {
+	*resPtr = Tcl_DuplicateObj(content);
+	return TCL_OK;
+    }
+    snprintf(key, sizeof(key), "%s.%s\1%s.%s", sum->name, fn, sum->name, tn);
+    hPtr = Tcl_FindHashEntry(&d->converts, key);
+    if (hPtr != NULL) {
+	res = ApplyConvert(interp, (Tcl_Obj *) Tcl_GetHashValue(hPtr),
+		content);
+	if (res == NULL) {
+	    return TCL_ERROR;
+	}
+    } else if (VariantIncludes(ff, tf) && VariantIncludes(tf, ff)) {
+	if (interp != NULL) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "the current variant of %s is \"%s\", not \"%s\"; both "
+		    "have the same form, so reading one as the other needs a "
+		    "rule: type convert %s.%s %s.%s {{x} ...}", sum->name, fn,
+		    tn, sum->name, fn, sum->name, tn));
+	    Tcl_SetErrorCode(interp, "TCL", "TYPE", "VARIANT", (char *) NULL);
+	}
+	return TCL_ERROR;
+    } else if (ff->type != NULL && tf->type != NULL) {
+	Tcl_Obj *cur = TclNewAnnotated(interp, ff->type, -1, content), *out;
+
+	Tcl_IncrRefCount(cur);
+	if (TclTypeCast(interp, cur, tf->type, &out) != TCL_OK) {
+	    Tcl_DecrRefCount(cur);
+	    if (interp != NULL) {
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"the current variant of %s is \"%s\", not \"%s\", and "
+			"its value \"%s\" can't be read as %s", sum->name, fn,
+			tn, Tcl_GetString(content), tf->type->name));
+		Tcl_SetErrorCode(interp, "TCL", "TYPE", "VARIANT",
+			(char *) NULL);
+	    }
+	    return TCL_ERROR;
+	}
+	Tcl_IncrRefCount(out);
+	res = Tcl_DuplicateObj(TCL_ANNOT_CONTENT(out));
+	Tcl_DecrRefCount(out);
+	Tcl_DecrRefCount(cur);
+    } else {
+	ERR(interp, "VARIANT", "the current variant of %s is \"%s\", not "
+		"\"%s\", and its value \"%s\" can't be read as that variant",
+		sum->name, fn, tn, Tcl_GetString(content));
+	return TCL_ERROR;
+    }
+    if (TclTypeValidate(interp, sum, res, to, NULL) != TCL_OK) {
+	TclDiscard(res);
+	return TCL_ERROR;
+    }
+    *resPtr = res;
+    return TCL_OK;
+}
+
 /* --------------------------------------------------------------------
  * type deref : le type d'une valeur dont les liens ont été suivis
  * -------------------------------------------------------------------- */
@@ -3042,6 +3250,60 @@ TypeConvertCmd(Tcl_Interp *interp, TypeData *d, Tcl_Obj *fromObj,
      */
     objs[0] = fromObj;
     objs[1] = toObj;
+    {
+	/*
+	 * Deux variantes d'une même somme : type convert S.a S.b {{x} ...}.
+	 * La règle sert à la lecture d'une variante inactive ($v(b)) et au
+	 * cast explicite {S.b}$v ; elle n'intervient jamais dans la déduction.
+	 */
+	TclType *vs[2] = {NULL, NULL};
+	Tcl_Size vi[2] = {-1, -1};
+	int nv = 0;
+
+	for (i = 0; i < 2; i++) {
+	    const char *nm = Tcl_GetString(objs[i]);
+	    const char *dot = strrchr(nm, '.');
+
+	    if (dot != NULL && Tcl_FindHashEntry(&d->names, nm) == NULL) {
+		Tcl_DString sd;
+		Tcl_HashEntry *h;
+
+		Tcl_DStringInit(&sd);
+		Tcl_DStringAppend(&sd, nm, dot - nm);
+		h = Tcl_FindHashEntry(&d->names, Tcl_DStringValue(&sd));
+		Tcl_DStringFree(&sd);
+		if (h != NULL && Tcl_GetHashValue(h) != NULL
+			&& ((TclType *) Tcl_GetHashValue(h))->kind == TCLT_SUM) {
+		    vs[i] = (TclType *) Tcl_GetHashValue(h);
+		    vi[i] = TclTypeFieldIndex(vs[i], dot + 1);
+		    if (vi[i] < 0) {
+			ERR(interp, "UNKNOWN", "type convert: %s has no variant "
+				"\"%s\"", vs[i]->name, dot + 1);
+			return TCL_ERROR;
+		    }
+		    nv++;
+		}
+	    }
+	}
+	if (nv > 0) {
+	    if (nv != 2 || vs[0] != vs[1]) {
+		ERR(interp, "SYNTAX", "type convert between variants needs two "
+			"variants of the same sum, as in S.a S.b, not \"%s\" and "
+			"\"%s\"", Tcl_GetString(fromObj), Tcl_GetString(toObj));
+		return TCL_ERROR;
+	    }
+	    if (vi[0] == vi[1]) {
+		ERR(interp, "SYNTAX", "type convert: \"%s\" and \"%s\" are the "
+			"same variant", Tcl_GetString(fromObj),
+			Tcl_GetString(toObj));
+		return TCL_ERROR;
+	    }
+	    snprintf(key, sizeof(key), "%s.%s\1%s.%s", vs[0]->name,
+		    Tcl_GetString(vs[0]->fields[vi[0]].name), vs[1]->name,
+		    Tcl_GetString(vs[1]->fields[vi[1]].name));
+	    goto store;
+	}
+    }
     for (i = 0; i < 2; i++) {
 	const char *nm = Tcl_GetString(objs[i]);
 	Tcl_HashEntry *h = Tcl_FindHashEntry(&d->names, nm);
@@ -3058,6 +3320,7 @@ TypeConvertCmd(Tcl_Interp *interp, TypeData *d, Tcl_Obj *fromObj,
 	}
     }
     snprintf(key, sizeof(key), "%s\1%s", side[0], side[1]);
+  store:
     hPtr = Tcl_CreateHashEntry(&d->converts, key, &isNew);
     if (!isNew) {
 	Tcl_DecrRefCount((Tcl_Obj *) Tcl_GetHashValue(hPtr));
@@ -4446,7 +4709,17 @@ TypeObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
 	    const char *tt = Tcl_GetStringFromObj(objv[2], &tl);
 
 	    if (TclTypeParse(interp, tt, tl) == NULL) {
-		return TCL_ERROR;
+		/* S.v : une variante d'une somme (comme {S.v}$x). */
+		const char *dot = strrchr(tt, '.');
+		TclType *sum = (dot != NULL && dot > tt)
+			? TclTypeParse(interp, tt, dot - tt) : NULL;
+
+		if (sum == NULL || sum->kind != TCLT_SUM
+			|| TclTypeFieldIndex(sum, dot + 1) < 0) {
+		    (void) TclTypeParse(interp, tt, tl);	/* le message */
+		    return TCL_ERROR;
+		}
+		Tcl_ResetResult(interp);
 	    }
 	}
 	pushed = TclAnnotPush(objv[3], objv[2]);
