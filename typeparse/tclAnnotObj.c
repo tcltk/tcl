@@ -934,9 +934,10 @@ AnnotListReplace(Tcl_Interp *interp, Tcl_Obj *aPtr, Tcl_Size first,
     return rc;
 }
 
-/* Convention de TclLsetFlat (INST_LSET_FLAT et [lset] l'attendent) : A
- * lui-même s'il n'est pas partagé, sinon une copie, avec UNE référence
- * comptée pour l'appelant ; NULL en cas d'erreur. */
+/* Convention des setElementProc (TclLsetList et [lset] ajoutent la
+ * référence ; INST_LSET_FLAT et lpop aussi, avec chemins-modification ou
+ * lset-reference.patch) : une copie SANS référence propre ; NULL en cas
+ * d'erreur. */
 static Tcl_Obj *
 AnnotListSetElement(Tcl_Interp *interp, Tcl_Obj *aPtr, Tcl_Size indexCount,
 	Tcl_Obj *const indexArray[], Tcl_Obj *valueObj)
@@ -992,8 +993,7 @@ AnnotListSetElement(Tcl_Interp *interp, Tcl_Obj *aPtr, Tcl_Size indexCount,
 	}
 	return NULL;
     }
-    Tcl_IncrRefCount(target);		/* comme TclLsetFlat : une référence */
-    return target;
+    return target;			/* refcount 0 : l'appelant le compte */
 }
 
 static int

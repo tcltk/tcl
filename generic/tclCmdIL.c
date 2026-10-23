@@ -2664,7 +2664,10 @@ Tcl_LpopObjCmd(
      */
 
     if (objc == 2) {
-	if (Tcl_IsShared(listPtr)) {
+	if (Tcl_IsShared(listPtr) || TclObjTypeHasProc(listPtr, replaceProc)) {
+	    /* Une liste abstraite (une liste typée) n'est jamais modifiée en
+	     * place : la valeur de la variable doit rester intacte jusqu'au
+	     * rangement, qui la revalide (et garde son contrat). */
 	    listPtr = TclListObjCopy(NULL, listPtr);
 	    copied = 1;
 	}
@@ -2679,7 +2682,13 @@ Tcl_LpopObjCmd(
 	Tcl_Obj *newListPtr;
 	Tcl_ObjTypeSetElement *proc = TclObjTypeHasProc(listPtr, setElementProc);
 	if (proc) {
+	    /* setElementProc rend une valeur SANS référence propre (comme
+	     * TclLsetList et lset l'attendent) ; TclUndoRefCount ci-dessous
+	     * en suppose une, comme pour TclLsetFlat. */
 	    newListPtr = proc(interp, listPtr, objc-2, objv+2, NULL);
+	    if (newListPtr != NULL) {
+		Tcl_IncrRefCount(newListPtr);
+	    }
 	} else {
 	    newListPtr = TclLsetFlat(interp, listPtr, objc-2, objv+2, NULL);
 	}

@@ -924,7 +924,6 @@ Le codec C, qui **vérifie** en plus chaque valeur contre son type, est 2 à 3 f
 **À corriger ou à décider**
 
 - **Adoption par une variable non typée.** `set e [lindex $L 1]` rend `e` typée et stricte. Le piège `catch … m` (§ 6.2) en découle, et l'erreur qui s'en échappe est le message d'origine, ce qui la rend difficile à comprendre. À décider : adoption silencieuse, adoption sans contrat, ou message explicite.
-- `lset` avec une liste d'index passant par `TclLsetList` garde une référence en trop (fuite, sans plantage).
 
 **Pas encore fait**
 

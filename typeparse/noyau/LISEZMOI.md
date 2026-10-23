@@ -42,8 +42,8 @@ convertissaient l'objet annoté en place et la variable perdait son type.
 Ordre : `integration-noyau*.patch`, `conversions-annotees.patch`,
 `listes-abstraites.patch`. Test : `tests_tclsh/t11_conversions.tcl`.
 
-Connu : `lset` avec une liste d'index passant par `TclLsetList` laisse une
-référence en trop sur l'objet (fuite mémoire, sans plantage).
+La fuite de `lset` (référence en trop, via `TclLsetList`) est corrigée par
+`lset-reference.patch` (v15o).
 
 ## Windows : MSYS2 / MinGW-w64
 
@@ -1299,3 +1299,28 @@ Sources de types : `tclTypes.c`, `tclTypes.h`, `tclTypePath.c`, `tclAnnotObj.c`.
 - Tranche la question ouverte de v15k : cast pour des variantes de formes différentes, règle ou refus
   pour des variantes de même forme.
 - Test `t67_conversion_variantes`.
+
+### v15o — fuite de `lset`, type perdu par `lpop` (23 octobre 2026)
+
+Source de types : `tclAnnotObj.c`. Patch noyau : `lset-reference.patch` (tclCmdIL.c, tclExecute.c,
+tclVar.c), à appliquer après `set-nom-substitue.patch` (dernier de `ORDRE.txt`).
+
+- Cause : Tcl 9.0 n'a pas UNE convention pour la référence que rend un `setElementProc` de liste
+  abstraite. `TclLsetList` (donc `lset L 0 9` compilé, et `lset L {0} 9`) et `lset` non compilé à
+  plusieurs indices en ajoutent une : la valeur rendue doit être sans référence. `INST_LSET_FLAT`
+  (`lset M 0 1 9` compilé) et `lpop L i` l'utilisent telle quelle : elle doit en avoir une. Notre
+  `AnnotListSetElement` suivait la seconde, d'où une référence en trop sur chaque `lset` à un indice
+  (~170 octets ; 17 Mo pour 100 000 `lset`). La liste abstraite de test de Tcl (`tclTestABSList.c`)
+  suit la première : la changer aurait cassé `abstractlist.test`.
+- Correction : une seule convention, celle de `TclLsetList` (sans référence). `AnnotListSetElement`
+  la suit ; `INST_LSET_FLAT` (`tclExecute.c`) et `lpop` à indices (`tclCmdIL.c`) ajoutent la
+  référence qu'ils supposaient.
+- Trouvé en route : `lpop L` sans indice modifiait EN PLACE la valeur non partagée d'une liste typée ;
+  la variable voyait alors une valeur sans type et perdait son contrat (`type get $L` vide). Une liste
+  abstraite est maintenant copiée avant modification (`tclCmdIL.c`), comme pour `lset`.
+- Et : une valeur confiée sans référence à `Tcl_ObjSetVar2` puis remplacée par sa version retypée
+  n'était jamais libérée (`tclVar.c`, après `TclTypedVarPrepareWrite`) ; et en cas d'échec du
+  contrat, le nettoyage visait la valeur intermédiaire au lieu de celle de l'appelant.
+- Tests : `t68_lset_reference` (mesure la mémoire sous Linux). Suites Tcl `lset*`, `lpop`, `list*`,
+  `cmdIL`, `abstractlist`, `lseq`, `set*`, `var`, `upvar`, `append*`, `incr*`, `trace` : 1903
+  réussis / 84 sautés / 0 échec, comme la v15.

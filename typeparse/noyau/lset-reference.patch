@@ -1,0 +1,65 @@
+--- a/generic/tclCmdIL.c	2026-10-23 13:16:40.984802414 +0200
++++ b/generic/tclCmdIL.c	2026-10-23 13:16:40.986669838 +0200
+@@ -2664,7 +2664,10 @@
+      */
+ 
+     if (objc == 2) {
+-	if (Tcl_IsShared(listPtr)) {
++	if (Tcl_IsShared(listPtr) || TclObjTypeHasProc(listPtr, replaceProc)) {
++	    /* Une liste abstraite (une liste typée) n'est jamais modifiée en
++	     * place : la valeur de la variable doit rester intacte jusqu'au
++	     * rangement, qui la revalide (et garde son contrat). */
+ 	    listPtr = TclListObjCopy(NULL, listPtr);
+ 	    copied = 1;
+ 	}
+@@ -2679,7 +2682,13 @@
+ 	Tcl_Obj *newListPtr;
+ 	Tcl_ObjTypeSetElement *proc = TclObjTypeHasProc(listPtr, setElementProc);
+ 	if (proc) {
++	    /* setElementProc rend une valeur SANS référence propre (comme
++	     * TclLsetList et lset l'attendent) ; TclUndoRefCount ci-dessous
++	     * en suppose une, comme pour TclLsetFlat. */
+ 	    newListPtr = proc(interp, listPtr, objc-2, objv+2, NULL);
++	    if (newListPtr != NULL) {
++		Tcl_IncrRefCount(newListPtr);
++	    }
+ 	} else {
+ 	    newListPtr = TclLsetFlat(interp, listPtr, objc-2, objv+2, NULL);
+ 	}
+--- a/generic/tclExecute.c	2026-10-23 13:16:40.988478668 +0200
++++ b/generic/tclExecute.c	2026-10-23 13:16:40.990618475 +0200
+@@ -5083,6 +5083,11 @@
+ 	    objResultPtr = TclObjTypeSetElement(interp,
+ 		    valuePtr, numIndices,
+ 		    &OBJ_AT_DEPTH(numIndices), OBJ_AT_TOS);
++	    /* Sans référence propre (convention de TclLsetList) ; la suite
++	     * en attend une, comme pour TclLsetFlat. */
++	    if (objResultPtr != NULL) {
++		Tcl_IncrRefCount(objResultPtr);
++	    }
+ 	} else {
+ 	    objResultPtr = TclLsetFlat(interp, valuePtr, numIndices,
+ 		    &OBJ_AT_DEPTH(numIndices), OBJ_AT_TOS);
+--- a/generic/tclVar.c	2026-10-23 13:16:40.993661968 +0200
++++ b/generic/tclVar.c	2026-10-23 13:16:40.997203315 +0200
+@@ -2147,10 +2147,20 @@
+      */
+ 
+     if ((varPtr->flags & VAR_TYPED) || TclIsAnnotated(newValuePtr)) {
++	Tcl_Obj *given = newValuePtr;
++
+ 	if (TclTypedVarPrepareWrite(interp, varPtr, &newValuePtr, &flags,
+ 		&typedTmp) != TCL_OK) {
++	    newValuePtr = given;	/* c'est elle que l'appelant a confiée */
+ 	    goto earlyError;
+ 	}
++	if (newValuePtr != given && cleanupOnEarlyError) {
++	    /*
++	     * La valeur rangée est une autre (retypée) : celle que l'appelant
++	     * a confiée sans référence (lpop, lset...) serait perdue.
++	     */
++	    Tcl_BounceRefCount(given);
++	}
+     }
+ 
+     oldValuePtr = varPtr->value.objPtr;

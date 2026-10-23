@@ -2147,9 +2147,19 @@ TclPtrSetVarIdx(
      */
 
     if ((varPtr->flags & VAR_TYPED) || TclIsAnnotated(newValuePtr)) {
+	Tcl_Obj *given = newValuePtr;
+
 	if (TclTypedVarPrepareWrite(interp, varPtr, &newValuePtr, &flags,
 		&typedTmp) != TCL_OK) {
+	    newValuePtr = given;	/* c'est elle que l'appelant a confiée */
 	    goto earlyError;
+	}
+	if (newValuePtr != given && cleanupOnEarlyError) {
+	    /*
+	     * La valeur rangée est une autre (retypée) : celle que l'appelant
+	     * a confiée sans référence (lpop, lset...) serait perdue.
+	     */
+	    Tcl_BounceRefCount(given);
 	}
     }
 

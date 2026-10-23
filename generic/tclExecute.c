@@ -5083,6 +5083,11 @@ TEBCresume(
 	    objResultPtr = TclObjTypeSetElement(interp,
 		    valuePtr, numIndices,
 		    &OBJ_AT_DEPTH(numIndices), OBJ_AT_TOS);
+	    /* Sans référence propre (convention de TclLsetList) ; la suite
+	     * en attend une, comme pour TclLsetFlat. */
+	    if (objResultPtr != NULL) {
+		Tcl_IncrRefCount(objResultPtr);
+	    }
 	} else {
 	    objResultPtr = TclLsetFlat(interp, valuePtr, numIndices,
 		    &OBJ_AT_DEPTH(numIndices), OBJ_AT_TOS);
