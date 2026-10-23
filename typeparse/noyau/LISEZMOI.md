@@ -1032,3 +1032,19 @@ Sources de types : `tclAnnotObj.c`, `tclTypePath.c`, `tclTypes.c`. Patch noyau :
   rendus bruts) ; sert au tuple et à l'exemple `cstruct` (voie objet), à recompiler.
 - Exemples réécrits : `complexes.tcl`, `complexes_tip759.tcl` (`lassign $a(*) …`), `arbre_graphe.tcl`
   (`$t(value)`, `$t(children)`), `hypergraphe.tcl` ; tests `t10`, `t22`, `t30`, `t51`, `t52`.
+
+### v15b — cast d'un produit vers une collection (22 octobre 2026)
+
+Sources de types : `tclAnnotObj.c`, `tclTypes.c`, `tclTypes.h`. Patch noyau : `cast-collection.patch` (`tclParse.c`), après `elements-atomiques.patch`.
+
+- Cast de base de tout produit vers une collection : `{list}$p` rend la liste de ses champs, nus ;
+  `{list.any}$p` les rend annotés de leur type (comme `$p(*)`) ; `{list.T}$p`, `{list(N).T}$p`
+  les valident ; `{dict}$p`, `{dict.any}$p`, `{dict.T}$p` rendent le dict nom -> champ. Une somme part
+  de sa variante active. La chaîne ne change pas.
+- Liste nominale -> liste structurelle (et dict -> dict) : `polygone` -> `list.point`, `list(4).point`,
+  `list` (éléments nus) ; deux nominaux sans lien restent refusés.
+- `{list}$p` sur une valeur typée est un cast immédiat, au moment de l'annotation (`::tcl::annotate`
+  et `TclSubstTokens`) : `foreach {x y} {list}$p`, `lassign {list}$p x y`, `dict for {k v} {dict}$p`.
+  Un nom inconnu reste une note, comme avant.
+- Test `t55_cast_collection`. Tests du projet, exemples et tests de Tcl `parse`, `subst`, `list`,
+  `lassign`, `foreach`, `dict` : identiques à la v15.

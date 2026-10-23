@@ -417,6 +417,8 @@ set {int(u,8)}o2 300           ;# value "300" does not fit in int(u,8)
 
 **Casts explicites.** `set v {T}$x` ou `type cast T $x` convertissent selon, dans l'ordre : une règle `type convert` spécifique ; la chaîne des bases ; la variante d'une somme ; une règle de famille ; les conversions intégrées entre scalaires. Sinon : `unknown way to cast the value from A to B`.
 
+**Produit vers collection.** Tout produit se convertit en liste ou en dict : `{list}$p` donne la liste de ses champs, nus (`foreach {x y} {list}$p`) ; `{list.any}$p` les garde annotés, comme `$p(*)` ; `{list(2).double}$p` les valide ; `{dict}$p` donne `x 3 y 4`. Une liste nominale se convertit de même en liste structurelle (`{list.point}$P`, `{list}$P`). Sur une valeur typée, `{list}$p` est un cast immédiat, même hors d'un constructeur.
+
 **Lever le contrat.** `set {}v valeur` (§ 2.5).
 
 **Tester.** `expr {v is T}` : vrai si la variable est typée et que son type entre dans `T` ; pour une variable non typée, vrai si sa valeur est valide pour `T`.

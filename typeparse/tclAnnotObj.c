@@ -1939,6 +1939,38 @@ AnnotLocalObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
     return TCL_ERROR;
 }
 
+/*
+ * {list}$p, {dict}$p, {list.T}$p sur une valeur TYPÉE : un cast vers une
+ * collection, fait tout de suite, au moment de l'annotation (la vue liste
+ * n'a pas d'interpréteur pour résoudre un nom de type). Le produit rend ses
+ * champs, la liste nominale ses éléments ; la chaîne ne change pas.
+ * Rend TCL_OK (*resultPtr rempli), TCL_ERROR (cast refusé), ou TCL_CONTINUE
+ * (pas concerné : annoter normalement).
+ */
+int
+TclAnnotCollectionCast(Tcl_Interp *interp, Tcl_Obj *typeText, Tcl_Obj *value,
+	Tcl_Obj **resultPtr)
+{
+    TclType *from = NULL, *to;
+    Tcl_Obj *saved;
+    Tcl_Size tlen;
+    const char *ttext = Tcl_GetStringFromObj(typeText, &tlen);
+
+    if (TclAnnotInfo(value, NULL, &from, NULL, NULL) != 1 || from == NULL) {
+	return TCL_CONTINUE;
+    }
+    saved = Tcl_GetObjResult(interp);
+    Tcl_IncrRefCount(saved);
+    to = TclTypeParse(interp, ttext, tlen);
+    Tcl_SetObjResult(interp, saved);	/* un nom inconnu reste une note */
+    Tcl_DecrRefCount(saved);
+    if (to == NULL || to == from
+	    || (to->kind != TCLT_LIST && to->kind != TCLT_DICT)) {
+	return TCL_CONTINUE;
+    }
+    return TclTypeCast(interp, value, to, resultPtr);
+}
+
 /* ::tcl::annotate type value : l'équivalent exécutable de {type}valeur,
  * appelé par le code compilé et par TclSubstTokens. */
 static int
@@ -1951,6 +1983,13 @@ AnnotateObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "type value");
 	return TCL_ERROR;
+    }
+    switch (TclAnnotCollectionCast(interp, objv[1], objv[2], &res)) {
+    case TCL_ERROR:
+	return TCL_ERROR;
+    case TCL_OK:
+	Tcl_SetObjResult(interp, res);
+	return TCL_OK;
     }
     if (TclAnnotateValue(interp, objv[1], objv[2], &res) != TCL_OK) {
 	return TCL_ERROR;

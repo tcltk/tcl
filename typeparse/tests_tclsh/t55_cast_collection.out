@@ -1,0 +1,21 @@
+foreach : 0,0
+foreach : 3,4
+lassign : 3 4
+llength : 2 (le point seul : 1)
+dict : x=3
+dict : y=4
+dict for : centre=1 2
+dict for : rayon=5
+list       : <{1 2} 5> list : {} {}
+list.any   : <{1 2} 5> list<any> : point double
+list.double: <3 4> list<double> : double double
+list(2).int: <3 4> list(2)<int> : int int
+dict.any   : point
+somme      : <3 4> list : {} {}
+poly       : <{0 0} {3 4}> list<point> : point point
+poly nu    : <{0 0} {3 4}> list : {} {}
+chaîne     : 1
+refus : expected integer but got "1 2"
+refus : list(3)<double> needs exactly 3 elements but got 2
+refus : list(3)<point> needs exactly 3 elements but got 2
+dans une procédure : 2

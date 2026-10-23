@@ -2321,6 +2321,99 @@ TclTypeCast(Tcl_Interp *interp, Tcl_Obj *src, TclType *target,
 	}
     }
     /*
+     * Produit -> liste ou dict (cast de base de tout produit) : la liste de
+     * ses champs, ou le dict nom -> champ. {list} et {dict} rendent les
+     * champs nus (texte ordinaire) ; {list.any} et {dict.any} les rendent
+     * annotés de leur type ; {list.T}, {list(N).T}, {dict.T} les valident
+     * comme T. Pour une somme, on part de la variante active.
+     */
+    if (from != NULL && (target->kind == TCLT_LIST
+	    || target->kind == TCLT_DICT)) {
+	const TclType *pt = from;
+	Tcl_Obj *pc = content, **fv;
+	Tcl_Size nf;
+
+	if (pt->kind == TCLT_SUM && variant >= 0 && variant < (int) pt->nfields
+		&& pt->fields[variant].type != NULL) {
+	    pt = pt->fields[variant].type;
+	}
+	if (pt->kind == TCLT_PRODUCT
+		&& Tcl_ListObjGetElements(NULL, pc, &nf, &fv) == TCL_OK
+		&& nf == pt->nfields) {
+	    int annotated = (target->elem != NULL && TclTypeIsAny(target->elem));
+
+	    res = (target->kind == TCLT_LIST) ? Tcl_NewListObj(nf, NULL)
+		    : Tcl_NewDictObj();
+	    for (i = 0; i < nf; i++) {
+		TclType *ft = pt->fields[i].type;
+		Tcl_Obj *fc = TCL_ANNOT_CONTENT(fv[i]), *e;
+
+		if (annotated && ft != NULL) {
+		    int fvar = -1;
+
+		    if (ft->kind == TCLT_SUM) {
+			TclType *own = NULL;
+
+			if (TclAnnotInfo(fv[i], NULL, &own, &fvar, NULL) != 1
+				|| own != ft) {
+			    fvar = -1;
+			    (void) TclTypeValidate(NULL, ft, fc, -1, &fvar);
+			}
+		    }
+		    e = TclNewAnnotated(interp, ft, fvar, fc);
+		} else {
+		    e = Tcl_DuplicateObj(fc);
+		}
+		if (target->kind == TCLT_LIST) {
+		    Tcl_ListObjAppendElement(NULL, res, e);
+		} else {
+		    Tcl_Obj *k = pt->fields[i].name ? pt->fields[i].name
+			    : Tcl_ObjPrintf("%" TCL_SIZE_MODIFIER "d", i);
+
+		    Tcl_DictObjPut(NULL, res, k, e);
+		}
+	    }
+	    goto validate;
+	}
+    }
+    /*
+     * Liste -> liste, dict -> dict, quand l'un des deux côtés au moins est
+     * structurel (polygone -> list.point, list(4).point, list) : même
+     * contenu, revalidé pour la cible. Deux nominaux sans lien restent
+     * refusés plus bas. {list} rend les éléments nus ; {list.any} les rend
+     * annotés du type d'élément de la source.
+     */
+    if (from != NULL && from->kind == target->kind
+	    && (target->kind == TCLT_LIST || target->kind == TCLT_DICT)
+	    && !(from->nominal && target->nominal)) {
+	Tcl_Obj **ev;
+	Tcl_Size ne;
+	int annotated = (target->elem != NULL && TclTypeIsAny(target->elem));
+
+	if (target->kind == TCLT_LIST
+		&& Tcl_ListObjGetElements(NULL, content, &ne, &ev) == TCL_OK) {
+	    res = Tcl_NewListObj(ne, NULL);
+	    for (i = 0; i < ne; i++) {
+		Tcl_Obj *e;
+
+		if (annotated) {
+		    e = TclIsAnnotated(ev[i]) || from->elem == NULL
+			    || TclTypeIsAny(from->elem)
+			    ? Tcl_DuplicateObj(ev[i])
+			    : TclNewAnnotated(interp, from->elem, -1, ev[i]);
+		} else {
+		    e = Tcl_DuplicateObj(TCL_ANNOT_CONTENT(ev[i]));
+		}
+		Tcl_ListObjAppendElement(NULL, res, e);
+	    }
+	    goto validate;
+	}
+	if (target->kind == TCLT_DICT) {
+	    res = Tcl_DuplicateObj(content);
+	    goto validate;
+	}
+    }
+    /*
      * Règle de FAMILLE (type convert grandeur grandeur ...), entre deux
      * instances différentes : un changement d'unité. Deux nominaux sur la
      * même instance (couple, energie) ne relèvent pas de la règle.

@@ -1,0 +1,16 @@
+--- a/generic/tclParse.c	2026-10-22 12:21:37.652505934 +0200
++++ b/generic/tclParse.c	2026-10-22 12:21:08.965386335 +0200
+@@ -2549,8 +2549,12 @@
+ 		annotated = TclNewRawAnnotation(typeText,
+ 			Tcl_GetObjResult(interp));	/* {int}5 : brute */
+ 	    } else {
+-		code = TclAnnotateValue(interp, typeText,
++		code = TclAnnotCollectionCast(interp, typeText,
+ 			Tcl_GetObjResult(interp), &annotated);
++		if (code == TCL_CONTINUE) {
++		    code = TclAnnotateValue(interp, typeText,
++			    Tcl_GetObjResult(interp), &annotated);
++		}
+ 	    }
+ 	    if (code == TCL_OK) {
+ 		Tcl_SetObjResult(interp, annotated);

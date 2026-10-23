@@ -21,3 +21,4 @@ types-chemins-atomes.patch
 types-produit-etiquettes.patch
 contrat-par-nom.patch
 elements-atomiques.patch
+cast-collection.patch
