@@ -1,0 +1,13 @@
+r                                    0 ::A <var<int>>
+type get $r                          0 var<int> <>
+set $r                               0 5 <int>
+set $r (proc)                        0 5 <int>
+set $r (non compilé)                 0 5 <int>
+set {int}x (sans valeur)             1 wrong # args: should be "set {int}varName value" <>
+set $nm (nom annoté en var)          0 7 <int>
+set $nm2 (note mm)                   0 7 <int>
+set {pt}p (défauts, littéral)        0 1 2 <pt>
+set {int}z (littéral, sans défaut)   1 wrong # args: should be "set {int}varName value" <>
+set $nm 9 (écrit)                    0 9 int <>
+set $r 6 (écrit via lien)            0 6 <int>
+lappend {list.int}M littéral         0 list<int> <>

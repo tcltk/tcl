@@ -24,3 +24,4 @@ elements-atomiques.patch
 cast-collection.patch
 eias-string-is.patch
 chemins-modification.patch
+set-nom-substitue.patch

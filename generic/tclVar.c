@@ -810,7 +810,10 @@ TclObjLookupVarEx(
 
     /* L'objet nom peut changer de représentation pendant la recherche :
      * garder l'annotation d'abord. */
-    if (part2Ptr == NULL && TclIsAnnotated(part1Ptr)) {
+    if (part2Ptr == NULL && TclIsAnnotated(part1Ptr)
+	    && (strcmp(msg, "read") != 0 || TclAnnotIsSourceRaw(part1Ptr))) {
+	/* Une LECTURE par un nom substitué qui porte un type ou des notes
+	 * (set $r, $r étant un lien) ne redéclare rien : le nom est un nom. */
 	annot = Tcl_DuplicateObj(part1Ptr);
 	Tcl_IncrRefCount(annot);
     }
@@ -1555,8 +1558,28 @@ Tcl_SetObjCmd(
 	/* typed values: set {type}x ... ; and paths: set x(a.b) ... */
 	int rc;
 
-	if (TclIsAnnotated(objv[1])) {
+	if (TclIsAnnotated(objv[1])
+		&& (objc > 2 || TclAnnotIsSourceRaw(objv[1]))) {
 	    return TclSetAnnotatedCmd(interp, objc, objv);
+	}
+	if (TclIsAnnotated(objv[1])) {
+	    /* set $r : un set à un seul argument dont le nom SUBSTITUÉ porte un
+	     * type ou des notes (un lien var<int>, {mm}n...) LIT ; seul un nom
+	     * annoté dans le source (set {pt}p) construit avec les défauts. */
+	    Tcl_Obj **nv = (Tcl_Obj **) Tcl_Alloc(objc * sizeof(Tcl_Obj *));
+	    Tcl_Size nlen;
+	    const char *nb = TclGetStringFromObj(objv[1], &nlen);
+	    int i;
+
+	    for (i = 0; i < objc; i++) {
+		nv[i] = objv[i];
+	    }
+	    nv[1] = Tcl_NewStringObj(nb, nlen);
+	    Tcl_IncrRefCount(nv[1]);
+	    rc = Tcl_SetObjCmd(NULL, interp, objc, nv);
+	    Tcl_DecrRefCount(nv[1]);
+	    Tcl_Free(nv);
+	    return rc;
 	}
 	rc = TclSetPathCmd(interp, objc, objv);
 	if (rc != TCL_CONTINUE) {

@@ -1192,3 +1192,20 @@ Sources de types : `tclTypePath.c`, `tclTypedVar.c`. Pas de patch noyau.
   créé : `a typed variable is a scalar, not an array element; a constructor path (k) names fields of
   products, indices of lists or keys of dicts, and int is none of these`.
 - Tests : nouveau `t60_construction_liste` ; `t52` régénéré (message élargi aux listes et dicts).
+
+### v15i — `set` à un seul argument et nom substitué (23 octobre 2026)
+
+Sources de types : `tclAnnotObj.c`, `tclTypes.h`. Patch noyau : `set-nom-substitue.patch`
+(`tclVar.c`), après `chemins-modification.patch`.
+
+- Le cas noté au planning (`set $r`, `$r` un lien `var<int>`) ne se reproduisait plus depuis la v13 :
+  il lit bien `::A`. Restait un cas voisin : `set $nm` avec `nm` qui vaut `{mm}n` (une note) donnait
+  `unknown type "mm"` : le nom substitué était pris pour une déclaration, par `set` (constructeur) et
+  par la redéclaration de la v14 dans `TclObjLookupVarEx`.
+- Règle : seule une annotation ÉCRITE dans le source déclare (`set {pt}p` construit avec les défauts,
+  `lappend {list}M x` redéclare). Un `set` à un seul argument dont le nom substitué porte un type ou
+  des notes lit ; une lecture (`"read"`) par un tel nom ne redéclare rien.
+- `TclAnnotIsSourceRaw` (`tclAnnotObj.c`) : l'annotation est un texte de type brut, pas encore résolu.
+- Inchangé : `set {rect}Q(A, $k) ...` (annotation dans le source, suffixe substitué) construit
+  toujours ; `set $nm 9` écrit.
+- Test `t61_set_nom_substitue`.

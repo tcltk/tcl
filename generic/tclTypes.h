@@ -221,6 +221,7 @@ struct Tcl_Token;
 Tcl_Obj	*TclAnnotNotes(Tcl_Obj *objPtr);
 Tcl_Obj	*TclAnnotNormalize(Tcl_Interp *interp, Tcl_Obj *objPtr);
 int	TclAnnotIsNoteOnly(Tcl_Obj *objPtr);
+int	TclAnnotIsSourceRaw(Tcl_Obj *objPtr);
 Tcl_Obj	*TclAnnotDisplay(Tcl_Interp *interp, Tcl_Obj *objPtr, int withNotes);
 int	TclAnnotSuffixIsLiteral(struct Tcl_Token *tokenPtr, Tcl_Size count);
 int	TclAnnotCollectionCast(Tcl_Interp *interp, Tcl_Obj *typeText,

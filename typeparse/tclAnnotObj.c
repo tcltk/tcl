@@ -2111,6 +2111,24 @@ AnnotRawObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
 }
 
 
+/*
+ * Vrai si l'annotation a été ÉCRITE dans le source ({T}M, {}M) : un texte de
+ * type brut, pas encore résolu. Une valeur substituée ($nm) porte au plus un
+ * type résolu ou des notes : pour un NOM de variable, elle ne déclare rien.
+ */
+int
+TclAnnotIsSourceRaw(Tcl_Obj *objPtr)
+{
+    Tcl_ObjInternalRep *ir = Tcl_FetchInternalRep(objPtr, &annotatedObjType);
+    Tcl_Obj *t, *n;
+
+    if (ir == NULL) {
+	return 0;
+    }
+    SplitT((Tcl_Obj *) ir->twoPtrValue.ptr2, &t, &n);
+    return t != NULL && !IsTypeRef(t);
+}
+
 /* Vrai si la valeur n'a que des notes (aucun type résolu ni brut). */
 int
 TclAnnotIsNoteOnly(Tcl_Obj *objPtr)
