@@ -611,7 +611,15 @@ set {S.s}w abc                 ;# S.s
 set {list.S}L {i}1 {s}a        ;# chaque élément garde sa variante
 ```
 
-Sans étiquette, la variante est déduite de la valeur, dans l'ordre des variantes : `set {S}u 5` donne `S.i`. Quand plusieurs variantes ont la même forme (`{string}a, {string}b`), la première convient toujours : pour choisir, étiqueter (`{b}y`).
+Sans étiquette, la variante est déduite de la valeur : la plus stricte de celles qui l'acceptent (`set {S}u 5` donne `S.i`, `int` étant plus strict que `string`). Quand plusieurs variantes **également strictes** l'acceptent (même forme, `{int}i, {int}j`, ou formes sans ordre entre elles), c'est une erreur qui propose l'étiquette :
+
+```tcl
+type def A {{int}i, {int}j}
+set {A}v 5      ;# value "5" fits variants i and j of A equally: write {i}5, or set {A}v(i) 5
+set {A}v {j}5   ;# A.j
+```
+
+La variante choisie reste attachée à la valeur, y compris dans une liste ou un produit (`set {list.A}L $v`, `set {R}r $v 1` : `A.j`), et `type cast A {j}5` la lit aussi. Une modification (`set v 8`, `incr v`, `set L(0) 4`, `lset L 0 9`, `set r(a) 7`) garde la variante courante quand plusieurs conviennent également ; la valeur choisit toujours si une seule variante convient, ou si une est plus stricte. Variantes anonymes de même forme (`{int}, {int}`) : rien ne permet de choisir, `name the variants to choose one`.
 
 Une liste reçoit ses éléments un par un : `set {list.int}L 1 2 3`, `set {list(2).int}c 3 4`. Un seul argument est **un** élément.
 
@@ -903,7 +911,6 @@ Le codec C, qui **vérifie** en plus chaque valeur contre son type, est 2 à 3 f
 **À corriger ou à décider**
 
 - **Adoption par une variable non typée.** `set e [lindex $L 1]` rend `e` typée et stricte. Le piège `catch … m` (§ 6.2) en découle, et l'erreur qui s'en échappe est le message d'origine, ce qui la rend difficile à comprendre. À décider : adoption silencieuse, adoption sans contrat, ou message explicite.
-- **Variantes de même forme** : sans étiquette, la première est prise sans avertissement.
 - `lset` avec une liste d'index passant par `TclLsetList` garde une référence en trop (fuite, sans plantage).
 
 **Pas encore fait**

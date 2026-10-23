@@ -2514,8 +2514,23 @@ SetIn(Tcl_Interp *interp, Tcl_Obj *a, const IndexPath *chain, Tcl_Size i,
 		&& TclTypeTagCheck(interp, tp, idx, val, elems, n) != TCL_OK) {
 	    return NULL;
 	}
-	childContent = TclTypedConformHint(interp, slotType, val,
-		tp->kind == TCLT_PRODUCT ? TclTypeTagVariant(tp, idx, v) : -1);
+	{
+	    int hint = tp->kind == TCLT_PRODUCT ? TclTypeTagVariant(tp, idx, v)
+		    : -1;
+
+	    if (hint < 0 && slotType->kind == TCLT_SUM
+		    && (tp->kind == TCLT_PRODUCT || tp->kind == TCLT_LIST)
+		    && idx >= 0 && idx < n) {
+		/* La variante de la partie remplacée départage des variantes
+		 * également strictes, comme pour une variable (set v 8). */
+		int cur = TclTypeSumCurrent(slotType, elems[idx]);
+
+		if (cur >= 0) {
+		    hint = -2 - cur;
+		}
+	    }
+	    childContent = TclTypedConformHint(interp, slotType, val, hint);
+	}
 	if (childContent == NULL) {
 	    return NULL;
 	}

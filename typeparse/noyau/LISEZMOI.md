@@ -1261,3 +1261,24 @@ Source de types : `tclTypedVar.c`. Pas de patch noyau.
 - Tests : `t65_champ_etranger` ; `t24_produit_champ.out` régénéré (ligne 7 : le nouveau message).
 - Exemple `niveau2.tcl` : le refus « selector type is 2 but … variant 1 » a lieu dès la construction
   (depuis la correction du sélecteur `S($champ)`) ; le `catch` entoure maintenant le `set`.
+
+### v15m — variantes de même forme (23 octobre 2026)
+
+Sources de types : `tclTypes.c`, `tclTypes.h`, `tclTypedVar.c`, `tclTypePath.c`, `tclAnnotObj.c`. Pas de patch noyau.
+
+- Avant : `set {A}v 5` avec `A = {int}i, {int}j` prenait `i` sans rien dire. Pire, une variante choisie
+  (`{j}5`) se perdait dans une liste (`set {list.A}L $v`), un produit (`set {R}r $v 1`), une
+  modification (`incr v`, `set v 8`, `lset`, `set L(0) …`) et dans `type cast A {j}5` : relue `A.i`.
+- Déduction (`ValidateG`, `tclTypes.c`) : parmi les variantes qui acceptent la valeur, celles qu'aucune
+  autre ne bat (strictement plus spécifique). Une seule : c'est elle (`{int}i, {string}s` : `5` donne
+  `i`, comme avant). Plusieurs : `value "5" fits variants i and j of A equally: write {i}5`, et
+  `set` ajoute `, or set {A}v(i) 5` avec le nom de la variable. Variantes anonymes : `#1 (int) and
+  #2 (int) … name the variants to choose one`. Code d'erreur `TCL TYPE AMBIGUOUS A i`.
+- La variante survit : une partie de liste ou de produit dont le contenu ne redit pas la variante
+  (`TclTypeSumNeedsTag`) garde son annotation, que la validation relit déjà (`TclTypedConformHint`).
+- Modifications : la variante courante départage des variantes également strictes (variable :
+  `MakeTyped` ; chemin : `SetIn` ; `lset` : `AnnotListSetElement`, via `TclTypeSumCurrent`). Un indice
+  `-2 - v` passé à la validation code cette préférence.
+- `type cast S {v}x` : l'étiquette sous le type d'une somme nomme la variante (`TclAnnotSettle`).
+  Avant : ignorée (`type cast B {s}5` donnait `B.i`).
+- Test `t66_variantes_meme_forme`. Les autres tests et les exemples sont inchangés.

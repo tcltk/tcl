@@ -64,7 +64,7 @@ SettleSuspend(int delta)
  * refcount 0) ou NULL. Sert aux écritures sous contrat.
  */
 static Tcl_Obj *
-MakeTyped(Tcl_Interp *interp, TclType *tp, Tcl_Obj *arg)
+MakeTyped(Tcl_Interp *interp, TclType *tp, Tcl_Obj *arg, int prefer)
 {
     int status, variant = -1, outVariant = -1, dropTop = 0;
     TclType *at;
@@ -93,6 +93,10 @@ MakeTyped(Tcl_Interp *interp, TclType *tp, Tcl_Obj *arg)
 	}
 	outVariant = variant;		/* balise explicite, ou -1 */
 	dropTop = TclAnnotIsNoteOnly(arg);	/* {d}$v : la note est lue */
+    }
+    if (outVariant < 0 && prefer >= 0 && tp->kind == TCLT_SUM) {
+	/* Variantes également strictes : la variante courante départage. */
+	outVariant = -2 - prefer;
     }
     copy = Tcl_DuplicateObj(content);
     /* Valide (arité, clés) et ajoute les valeurs par défaut des clés
@@ -216,14 +220,14 @@ TclTypedVarPrepareWrite(Tcl_Interp *interp, Var *varPtr,
 	    TclDiscard(sum);
 	    return TCL_ERROR;
 	}
-	res = MakeTyped(interp, contract, sum);
+	res = MakeTyped(interp, contract, sum, variant);
 	TclDiscard(sum);
 	if (res == NULL) {
 	    return TCL_ERROR;
 	}
 	*flagsPtr &= ~(TCL_APPEND_VALUE | TCL_LIST_ELEMENT);
     } else {
-	res = MakeTyped(interp, contract, value);
+	res = MakeTyped(interp, contract, value, variant);
 	if (res == NULL) {
 	    if (*tmpPtrPtr != NULL) {
 		Tcl_DecrRefCount(*tmpPtrPtr);
@@ -361,12 +365,29 @@ TclTypedConformHint(Tcl_Interp *interp, TclType *tp, Tcl_Obj *arg, int hint)
 	return copy;
     }
     /* Balise explicite d'une somme ({tEXt}...) : elle fixe la variante. */
-    if (TclTypeComplete(interp, tp, copy,
-	    ((status == TCLA_TYPED || status == TCLA_RAW) && at == tp
-		    && tp->kind == TCLT_SUM && variant >= 0) ? variant : hint,
-	    NULL) != TCL_OK) {
-	TclDiscard(copy);
-	return NULL;
+    {
+	int chosen = -1;
+
+	if (TclTypeComplete(interp, tp, copy,
+		((status == TCLA_TYPED || status == TCLA_RAW) && at == tp
+			&& tp->kind == TCLT_SUM && variant >= 0) ? variant : hint,
+		&chosen) != TCL_OK) {
+	    TclDiscard(copy);
+	    return NULL;
+	}
+	if (tp->kind == TCLT_SUM && hint < 0
+		&& TclTypeSumNeedsTag(tp, copy, chosen)) {
+	    /*
+	     * Partie d'une liste ou d'un produit : le contenu seul ne dit pas
+	     * la variante (plusieurs variantes également strictes, ou une
+	     * balise qui choisit une variante moins stricte) ; l'élément
+	     * garde son annotation, que la validation relit.
+	     */
+	    Tcl_Obj *w = TclNewAnnotated(interp, tp, chosen, copy);
+
+	    TclDiscard(copy);
+	    return w;
+	}
     }
     return copy;
 }
@@ -452,7 +473,7 @@ BuildList(Tcl_Interp *interp, TclType *tp, Tcl_Size n, Tcl_Obj *const a[],
 		goto done;
 	    }
 	    if (status == TCLA_RAW && at == tp->elem && variant >= 0
-		    && tp->elem->kind == TCLT_SUM) {
+		    && tp->elem->kind == TCLT_SUM && !TclIsAnnotated(c)) {
 		/* {i}5 dans une liste de sommes : la balise est conservée. */
 		Tcl_Obj *w = TclNewAnnotated(interp, tp->elem, variant, c);
 
@@ -1490,6 +1511,35 @@ TclSetAnnotatedCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 	}
 	Tcl_Free(tagVals);
 	Tcl_Free(tagNames);
+    }
+    if (rc != TCL_OK && tp != NULL && tp->kind == TCLT_SUM
+	    && ctorPath == NULL && nargs == 1) {
+	/* Variantes également strictes de la somme déclarée : proposer
+	 * aussi le chemin, avec le nom de la variable. */
+	Tcl_Obj *opts = Tcl_GetReturnOptions(interp, TCL_ERROR), *ec = NULL;
+	Tcl_Obj *key = Tcl_NewStringObj("-errorcode", -1), **ev;
+	Tcl_Size nev;
+
+	Tcl_IncrRefCount(opts);
+	Tcl_IncrRefCount(key);
+	if (Tcl_DictObjGet(NULL, opts, key, &ec) == TCL_OK && ec != NULL
+		&& Tcl_ListObjGetElements(NULL, ec, &nev, &ev) == TCL_OK
+		&& nev == 5 && strcmp(Tcl_GetString(ev[2]), "AMBIGUOUS") == 0
+		&& strcmp(Tcl_GetString(ev[3]), tp->name) == 0
+		&& Tcl_GetString(ev[4])[0] != '\0') {
+	    Tcl_Obj *m = Tcl_DuplicateObj(Tcl_GetObjResult(interp));
+	    Tcl_Obj *val = TCL_ANNOT_CONTENT(objv[2]);
+	    Tcl_Obj *q = Tcl_NewListObj(1, &val);
+
+	    Tcl_IncrRefCount(q);
+	    Tcl_AppendPrintfToObj(m, ", or set {%s}%s(%s) %s", tp->name,
+		    Tcl_GetString(baseObj), Tcl_GetString(ev[4]),
+		    Tcl_GetString(q));
+	    Tcl_DecrRefCount(q);
+	    Tcl_SetObjResult(interp, m);
+	}
+	Tcl_DecrRefCount(key);
+	Tcl_DecrRefCount(opts);
     }
     Tcl_DecrRefCount(baseObj);
     return rc;

@@ -1,0 +1,30 @@
+-- déduction
+B 5 : int, la plus stricte     0 B.i
+B 2.5                          0 B.d
+B abc                          0 B.s
+A 5 : i et j                   1 value "5" fits variants i and j of A equally: write {i}5, or set {A}v(i) 5
+C {1 2} : p et q               1 value "1 2" fits variants p and q of C equally: write {p}{1 2}, or set {C}v(p) {1 2}
+W 5 : anonymes                 1 value "5" fits variants #1 (int) and #2 (int) of W equally: name the variants to choose one
+A {j}5                         0 A.j
+A v(j) 5                       0 A.j
+type cast A 5                  1 value "5" fits variants i and j of A equally: write {i}5
+type cast A {j}5               0 A.j
+type cast B {s}5               0 B.s
+-- la variante survit
+copie                          0 A.j
+liste                          0 A.j A.i
+liste nue                      1 value "7" fits variants i and j of A equally: write {i}7
+lappend                        0 A.j
+lappend nu                     1 value "3" fits variants i and j of A equally: write {i}3
+produit                        0 {5 1} A.j
+produit {a}                    0 A.j
+B {s}5 dans une liste          0 B.s
+-- modifications : la variante courante départage
+set v 8                        0 8 A.j
+incr v                         0 6 A.j
+set v(i) 8                     0 A.i
+set v {i}8                     0 A.i
+L(0) 4                         0 A.j
+lset L 0 9                     0 A.j
+r(a) 7                         0 A.j
+r(n) 2                         0 A.j

@@ -941,11 +941,41 @@ static Tcl_Obj *
 AnnotListSetElement(Tcl_Interp *interp, Tcl_Obj *aPtr, Tcl_Size indexCount,
 	Tcl_Obj *const indexArray[], Tcl_Obj *valueObj)
 {
-    Tcl_Obj *w = AnnotListCopy(interp, aPtr), *r, *target;
+    Tcl_Obj *w = AnnotListCopy(interp, aPtr), *r, *target, *tagged = NULL;
     int rc;
+    TclType *ltp = NULL;
 
     Tcl_IncrRefCount(w);
+    if (indexCount == 1 && TclAnnotInfo(aPtr, NULL, &ltp, NULL, NULL) == 1
+	    && ltp->kind == TCLT_LIST && ltp->elem != NULL
+	    && ltp->elem->kind == TCLT_SUM && !TclIsAnnotated(valueObj)) {
+	/*
+	 * Liste de sommes : la variante de l'élément remplacé départage des
+	 * variantes également strictes (comme set L(0) 4, ou set v 8).
+	 */
+	Tcl_Obj **ev;
+	Tcl_Size ne, ix;
+	int cur, chosen = -1;
+
+	if (Tcl_ListObjGetElements(NULL, w, &ne, &ev) == TCL_OK
+		&& Tcl_GetIntForIndex(NULL, indexArray[0], ne - 1, &ix) == TCL_OK
+		&& ix >= 0 && ix < ne
+		&& (cur = TclTypeSumCurrent(ltp->elem, ev[ix])) >= 0
+		&& TclTypeValidate(NULL, ltp->elem, valueObj, -2 - cur, &chosen)
+			== TCL_OK
+		&& TclTypeSumNeedsTag(ltp->elem, valueObj, chosen)) {
+	    Tcl_Obj *c = Tcl_DuplicateObj(valueObj);
+
+	    tagged = TclNewAnnotated(interp, ltp->elem, chosen, c);
+	    TclDiscard(c);
+	    Tcl_IncrRefCount(tagged);
+	    valueObj = tagged;
+	}
+    }
     r = TclLsetFlat(interp, w, indexCount, indexArray, valueObj);
+    if (tagged != NULL) {
+	Tcl_DecrRefCount(tagged);
+    }
     if (r == NULL) {
 	Tcl_DecrRefCount(w);
 	return NULL;
@@ -1873,6 +1903,19 @@ TclAnnotSettle(Tcl_Interp *interp, Tcl_Obj *objPtr, const TclType *ctx,
 	    (void) TclTypeParse(interp, bt, bl);	/* le message d'erreur */
 	    Tcl_DecrRefCount(pend);
 	    return TCL_ERROR;
+	}
+	if (nr > 0 && rv[nr - 1] < 0 && rt[nr - 1]->kind == TCLT_SUM
+		&& cur == NULL) {
+	    /* type cast S {v}x : la balise sous le type d'une somme nomme
+	     * sa variante (comme set {S}y {v}x). */
+	    Tcl_Size fi = TclTypeFieldIndex(rt[nr - 1],
+		    Tcl_GetString(elv[i]));
+
+	    if (fi >= 0) {
+		rv[nr - 1] = (int) fi;
+		keep[i] = 0;
+		changed = 1;
+	    }
 	}
 	stopped = 1;			/* nom inconnu, ou variante de ctx */
     }

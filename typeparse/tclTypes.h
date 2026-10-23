@@ -293,6 +293,8 @@ TclType *TclTypeParse(Tcl_Interp *interp, const char *text, Tcl_Size len);
 int	TclTypeTagVariantFrom(const TclType *prod, Tcl_Size idx,
 	    Tcl_Obj *const *vals, Tcl_Size nvals);
 int	TclTypeTagVariant(const TclType *prod, Tcl_Size idx, Tcl_Obj *content);
+int	TclTypeSumCurrent(const TclType *tp, Tcl_Obj *part);
+int	TclTypeSumNeedsTag(const TclType *tp, Tcl_Obj *content, int v);
 int	TclTypeValidate(Tcl_Interp *interp, const TclType *tp, Tcl_Obj *value,
 	    int variantHint, int *variantOut);
 int	TclTypeIncludes(const TclType *a, const TclType *b);
