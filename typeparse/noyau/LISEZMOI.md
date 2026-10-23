@@ -1048,3 +1048,22 @@ Sources de types : `tclAnnotObj.c`, `tclTypes.c`, `tclTypes.h`. Patch noyau : `c
   Un nom inconnu reste une note, comme avant.
 - Test `t55_cast_collection`. Tests du projet, exemples et tests de Tcl `parse`, `subst`, `list`,
   `lassign`, `foreach`, `dict` : identiques à la v15.
+
+### v15c — conversions EIAS (23 octobre 2026)
+
+Source de types : `tclAnnotObj.c`. Patch noyau : `eias-string-is.patch` (`tclCmdMZ.c`), après `cast-collection.patch`.
+
+- Cause : les conversions du noyau (`Tcl_GetDoubleFromObj`, `Tcl_GetIntFromObj`, nombres de `expr`…)
+  passent par `TclAnnotUnwrap`, qui décidait selon le GENRE du type (`KindAllows`) et non selon la
+  chaîne : une énumération `{"3.14159"}`, un `{string}` qui vaut `12`, un produit `{{int}i}` étaient
+  refusés comme nombres (`cannot use non-numeric string`, `can't use pi value as floating-point number`).
+- Une valeur de genre chaîne (string, littéral d'énumération, nominal sur string) se lit comme un nombre
+  si son texte en est un ; sinon le message habituel de Tcl.
+- Un produit d'UN SEUL champ se lit comme ce champ pour les conversions scalaires (nombre, entier,
+  flottant, booléen), y compris imbriqué. La vue liste garde la règle B (`llength` vaut 1).
+- `string is` juge la chaîne, quel que soit le type (`string is list $P` vaut 1 pour un point).
+- Inchangé : un produit de plusieurs champs, une liste ou un dict restent refusés comme nombres ; une
+  écriture sous contrat reste validée (`incr` d'une énumération hors de ses variantes : erreur).
+- Test `t56_eias_conversions`. Tests du projet et exemples identiques ; tests de Tcl `expr`,
+  `expr-old`, `string`, `stringObj`, `incr`, `obj`, `parse`, `subst`, `list`, `lassign`, `foreach`,
+  `dict` : 5110 tests, mêmes résultats que la base.

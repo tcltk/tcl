@@ -1260,10 +1260,13 @@ KindAllows(TclTypeKind kind, int want)
 {
     switch (want) {
     case TCLWANT_STRING:	return 1;
-    case TCLWANT_NUMBER:	return kind == TCLT_INT || kind == TCLT_DOUBLE;
-    case TCLWANT_INT:		return kind == TCLT_INT;
+    /* EIAS : une chaîne (string, littéral d'énumération, nominal sur
+     * string) se lit comme un nombre si son texte en est un ; la
+     * conversion qui suit échoue avec le message habituel sinon. */
+    case TCLWANT_NUMBER:
     case TCLWANT_DOUBLE:	/* élargissement sans shimmering */
-	return kind == TCLT_INT || kind == TCLT_DOUBLE;
+	return kind == TCLT_INT || kind == TCLT_DOUBLE || kind == TCLT_STRING;
+    case TCLWANT_INT:		return kind == TCLT_INT || kind == TCLT_STRING;
     case TCLWANT_BOOL:		return kind == TCLT_INT || kind == TCLT_DOUBLE
 				|| kind == TCLT_STRING;
     case TCLWANT_LIST:		return kind == TCLT_LIST;
@@ -1356,6 +1359,41 @@ TclAnnotUnwrap(Tcl_Interp *interp, Tcl_Obj *objPtr, int want,
 	variant = -1;
 	if (TclTypeValidate(interp, tp, content, -1, &variant) != TCL_OK) {
 	    return TCL_ERROR;
+	}
+    }
+    /*
+     * Un produit d'UN SEUL champ se lit comme ce champ pour les conversions
+     * scalaires (nombre, entier, flottant, booléen) : {{int}i} qui vaut 5
+     * est le nombre 5. Le contenu rendu est le champ lui-même, pour ne pas
+     * convertir la liste V. (La vue liste, elle, garde la règle B.)
+     */
+    if (want != TCLWANT_LIST && want != TCLWANT_DICT) {
+	int depth;
+
+	for (depth = 0; depth < 16; depth++) {
+	    const TclType *et = tp;
+	    Tcl_Obj *field;
+
+	    if (et->kind == TCLT_SUM && variant >= 0
+		    && variant < (int) et->nfields
+		    && et->fields[variant].type != NULL) {
+		et = et->fields[variant].type;
+	    }
+	    if (et->kind != TCLT_PRODUCT || et->nfields != 1
+		    || et->fields[0].type == NULL
+		    || Tcl_ListObjIndex(NULL, content, 0, &field) != TCL_OK
+		    || field == NULL) {
+		break;
+	    }
+	    tp = et->fields[0].type;
+	    content = TCL_ANNOT_CONTENT(field);
+	    variant = -1;
+	    if (tp->kind == TCLT_SUM
+		    && TclTypeValidate(NULL, tp, content, -1, &variant)
+			    != TCL_OK) {
+		break;
+	    }
+	    *contentPtr = content;
 	}
     }
     if (!KindAllows(EffectiveKind(tp, variant, content), want)) {

@@ -1,0 +1,49 @@
+--- a/generic/tclCmdMZ.c	2026-10-18 15:19:41.629295096 +0200
++++ b/generic/tclCmdMZ.c	2026-10-23 08:43:23.392318773 +0200
+@@ -21,6 +21,7 @@
+ #include "tclRegexp.h"
+ #include "tclStringTrim.h"
+ #include "tclTomMath.h"
++#include "tclTypes.h"
+ 
+ static inline Tcl_Obj *	During(Tcl_Interp *interp, int resultCode,
+ 			    Tcl_Obj *oldOptions, Tcl_Obj *errorInfo);
+@@ -1530,7 +1531,7 @@
+     int (*chcomp)(int) = NULL;	/* The UniChar comparison function. */
+     int i, result = 1, strict = 0;
+     Tcl_Size failat = 0, length1, length2, length3;
+-    Tcl_Obj *objPtr, *failVarObj = NULL;
++    Tcl_Obj *objPtr, *failVarObj = NULL, *annotCopy = NULL;
+     Tcl_WideInt w;
+ 
+     static const char *const isClasses[] = {
+@@ -1600,6 +1601,19 @@
+     objPtr = objv[objc-1];
+ 
+     /*
++     * EIAS : "string is" juge la CHAÎNE, quel que soit le type qui annote la
++     * valeur (un produit "3 4" est une liste, un pi "3.14159" un double).
++     */
++    if (TclIsAnnotated(objPtr)) {
++	Tcl_Size slen;
++	const char *sbytes = TclGetStringFromObj(objPtr, &slen);
++
++	objPtr = Tcl_NewStringObj(sbytes, slen);
++	Tcl_IncrRefCount(objPtr);
++	annotCopy = objPtr;		/* libéré à la sortie */
++    }
++
++    /*
+      * When entering here, result == 1 and failat == 0.
+      */
+ 
+@@ -1913,6 +1927,9 @@
+      */
+ 
+  str_is_done:
++    if (annotCopy != NULL) {
++	Tcl_DecrRefCount(annotCopy);
++    }
+     if ((result == 0) && (failVarObj != NULL)) {
+ 	TclNewIndexObj(objPtr, failat);
+ 	if (Tcl_ObjSetVar2(interp, failVarObj, NULL, objPtr, TCL_LEAVE_ERR_MSG) == NULL) {

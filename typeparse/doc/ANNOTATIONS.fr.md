@@ -446,6 +446,8 @@ C'est le comportement le plus surprenant du modèle. Le piège classique est `ca
 
 **Procédures.** Un argument qui reçoit une valeur typée est typé et strict dans la procédure ; un argument ordinaire ne change pas.
 
+**Conversions.** Une valeur typée se lit comme un nombre si sa chaîne en est un et que son type n'est pas une collection : `string`, une énumération (`type def pi {"3.14159"}` puis `expr {$PI * 2}`), un produit d'un seul champ (`{{int}i}`). Un produit de plusieurs champs, une liste ou un dict restent refusés. `string is` juge toujours la chaîne.
+
 ```tcl
 proc f {x} {set x 1.5}
 set {int}n 3

@@ -22,3 +22,4 @@ types-produit-etiquettes.patch
 contrat-par-nom.patch
 elements-atomiques.patch
 cast-collection.patch
+eias-string-is.patch
