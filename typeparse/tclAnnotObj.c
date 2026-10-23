@@ -144,17 +144,25 @@ GetRefData(Tcl_Interp *interp)
 static Tcl_Obj *
 TypeRefObj(Tcl_Interp *interp, TclType *tp, int variant)
 {
-    RefData *rd = GetRefData(interp);
+    RefData *rd;
     char key[64];
-    int isNew;
+    int isNew, slot = variant + 1;
     Tcl_HashEntry *hPtr;
     Tcl_Obj *tPtr;
     Tcl_ObjInternalRep ir;
 
+    if (slot >= 0 && slot < 8 && tp->refCache[slot] != NULL) {
+	return tp->refCache[slot];	/* le cas courant : sans hachage */
+    }
+    rd = GetRefData(interp);
     snprintf(key, sizeof(key), "%p/%d", (void *) tp, variant);
     hPtr = Tcl_CreateHashEntry(&rd->refs, key, &isNew);
     if (!isNew) {
-	return (Tcl_Obj *) Tcl_GetHashValue(hPtr);
+	tPtr = (Tcl_Obj *) Tcl_GetHashValue(hPtr);
+	if (slot >= 0 && slot < 8) {
+	    tp->refCache[slot] = tPtr;
+	}
+	return tPtr;
     }
     tPtr = Tcl_NewObj();
     ir.twoPtrValue.ptr1 = tp;
@@ -163,6 +171,9 @@ TypeRefObj(Tcl_Interp *interp, TclType *tp, int variant)
     TclInvalidateStringRep(tPtr);	/* Tcl_NewObj() donne "" : à invalider */
     Tcl_IncrRefCount(tPtr);
     Tcl_SetHashValue(hPtr, tPtr);
+    if (slot >= 0 && slot < 8) {
+	tp->refCache[slot] = tPtr;
+    }
     return tPtr;
 }
 
@@ -507,6 +518,8 @@ typedef struct {
 } SelfCells;
 
 static Tcl_ThreadDataKey selfCellsKey;
+static int selfCellsEver = 0;	/* une case a-t-elle déjà été créée ? (sinon,
+				 * la libération ne cherche rien) */
 
 static SelfCells *
 GetSelfCells(void)
@@ -530,6 +543,7 @@ SelfCell(Tcl_Obj *aPtr)
     Tcl_Obj **cell;
 
     if (isNew) {
+	selfCellsEver = 1;
 	cell = (Tcl_Obj **) Tcl_Alloc(sizeof(Tcl_Obj *));
 	*cell = aPtr;			/* pas de référence : aPtr survit */
 	Tcl_SetHashValue(hPtr, cell);
@@ -540,9 +554,13 @@ SelfCell(Tcl_Obj *aPtr)
 static void
 FreeAnnotated(Tcl_Obj *objPtr)
 {
-    SelfCells *sc = (SelfCells *) Tcl_GetThreadData(&selfCellsKey,
-	    sizeof(SelfCells));
+    SelfCells *sc;
 
+    if (!selfCellsEver) {
+	FreeAnnotatedReps(objPtr);
+	return;
+    }
+    sc = (SelfCells *) Tcl_GetThreadData(&selfCellsKey, sizeof(SelfCells));
     if (sc->init && sc->cells.numEntries > 0) {
 	Tcl_HashEntry *hPtr = Tcl_FindHashEntry(&sc->cells, objPtr);
 
@@ -695,8 +713,13 @@ AnnotListElemType(Tcl_Obj *aPtr)
 static Tcl_Obj *
 NewTypeRefNoCache(TclType *tp, int variant)
 {
-    Tcl_Obj *tPtr = Tcl_NewObj();
+    Tcl_Obj *tPtr;
     Tcl_ObjInternalRep ir;
+
+    if (variant + 1 >= 0 && variant + 1 < 8 && tp->refCache[variant + 1]) {
+	return tp->refCache[variant + 1];	/* partagé, déjà interné */
+    }
+    tPtr = Tcl_NewObj();
 
     ir.twoPtrValue.ptr1 = tp;
     ir.twoPtrValue.ptr2 = (void *) (intptr_t) (variant + 1);
@@ -733,7 +756,7 @@ AnnotWrapElems(Tcl_Obj *aPtr, Tcl_Obj *v, Tcl_Size from, Tcl_Size to)
 		&& TclTypeValidate(NULL, et, e, -1, &variant) != TCL_OK) {
 	    continue;
 	}
-	w = MakeAnnotated(Tcl_DuplicateObj(e), NewTypeRefNoCache(et, variant));
+	w = MakeAnnotated(e, NewTypeRefNoCache(et, variant));	/* partagé */
 	Tcl_ListObjReplace(NULL, v, i, 1, 1, &w);
     }
 }
@@ -989,6 +1012,19 @@ TclNewAnnotated(Tcl_Interp *interp, TclType *tp, int variant,
 {
     return MakeAnnotated(Tcl_DuplicateObj(content),
 	    TypeRefObj(interp, tp, variant));
+}
+
+/*
+ * Idem, en PARTAGEANT le contenu (lecture d'une partie : le champ d'un
+ * produit, l'élément d'une liste). Une valeur est immuable ; qui la modifie
+ * travaille sur une copie (TclIncrObj, TclAnnotSetContent) : le partage
+ * évite une copie par lecture.
+ */
+Tcl_Obj *
+TclNewAnnotatedShared(Tcl_Interp *interp, TclType *tp, int variant,
+	Tcl_Obj *content)
+{
+    return MakeAnnotated(content, TypeRefObj(interp, tp, variant));
 }
 
 /*
@@ -1344,6 +1380,27 @@ TclAnnotUnwrap(Tcl_Interp *interp, Tcl_Obj *objPtr, int want,
     TclType *tp;
     Tcl_Obj *content;
 
+    {
+	/* Le cas courant : un scalaire typé sans note (un double lu par
+	 * chemin, un int) ; son genre suffit, sans résolution. */
+	Tcl_ObjInternalRep *ir = Tcl_FetchInternalRep(objPtr,
+		&annotatedObjType);
+	Tcl_Obj *t, *n;
+
+	if (ir != NULL) {
+	    SplitT((Tcl_Obj *) ir->twoPtrValue.ptr2, &t, &n);
+	    if (n == NULL && t != NULL && IsTypeRef(t)) {
+		TclType *ft = (TclType *) Tcl_FetchInternalRep(t,
+			&typeRefObjType)->twoPtrValue.ptr1;
+
+		if ((ft->kind == TCLT_INT || ft->kind == TCLT_DOUBLE
+			|| ft->kind == TCLT_STRING) && KindAllows(ft->kind, want)) {
+		    *contentPtr = (Tcl_Obj *) ir->twoPtrValue.ptr1;
+		    return TCL_OK;
+		}
+	    }
+	}
+    }
     if (TclAnnotResolve(interp, objPtr, NULL, &status, &tp, &variant,
 	    &content) != TCL_OK) {
 	return TCL_ERROR;
@@ -1762,6 +1819,9 @@ TclAnnotSettle(Tcl_Interp *interp, Tcl_Obj *objPtr, const TclType *ctx,
     }
     content = (Tcl_Obj *) ir->twoPtrValue.ptr1;
     SplitT((Tcl_Obj *) ir->twoPtrValue.ptr2, &t, &n);
+    if (n == NULL && t != NULL && IsTypeRef(t) && !(flags & TCLA_SETTLE_KEEP)) {
+	return TCL_OK;		/* type résolu, aucune note : rien à faire */
+    }
     if (t != NULL && IsTypeRef(t)) {
 	Tcl_ObjInternalRep *tir = Tcl_FetchInternalRep(t, &typeRefObjType);
 

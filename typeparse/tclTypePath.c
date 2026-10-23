@@ -1325,7 +1325,7 @@ WrapSlotHint(Tcl_Interp *interp, TclType *tp, Tcl_Obj *content, int hint)
 	    && TclTypeValidate(interp, tp, content, hint, &variant) != TCL_OK) {
 	return NULL;
     }
-    return TclNewAnnotated(interp, tp, variant, content);
+    return TclNewAnnotatedShared(interp, tp, variant, content);
 }
 
 static int
@@ -2130,6 +2130,41 @@ PathRead(Tcl_Interp *interp, Tcl_Obj *containerPtr, const char *path,
     Tcl_Obj *res;
     int rc = TCL_ERROR;
 
+    {
+	/* Le cas courant, $a(x), $L(3) : un seul nom, un seul pas, sans
+	 * compiler l'index (ni portées substituées, ni opérateur). */
+	const char *c;
+	const Tcl_Size *pos;
+
+	for (c = path; *c != '\0'; c++) {
+	    if (!(isalnum(UCHAR(*c)) || *c == '_')) {
+		break;
+	    }
+	}
+	if (c != path && *c == '\0' && PathIndexSpans(pathObj, &pos) == 0) {
+	    Tcl_Obj *content, *target;
+	    TclType *vt;
+
+	    res = Step(interp, containerPtr, path, 0);
+	    if (res == NULL) {
+		return TCL_ERROR;
+	    }
+	    Tcl_IncrRefCount(res);
+	    /* Une case var en fin de chemin se lit à travers son lien. */
+	    if (TclAnnotInfo(res, &content, &vt, NULL, NULL) == 1
+		    && vt->kind == TCLT_VAR) {
+		target = DerefSlot(interp, vt, content);
+		Tcl_DecrRefCount(res);
+		if (target == NULL) {
+		    return TCL_ERROR;
+		}
+		Tcl_IncrRefCount(target);
+		res = target;
+	    }
+	    *resultPtr = res;
+	    return TCL_OK;
+	}
+    }
     if (CompileIndex(interp, path, pathObj, &set) != TCL_OK) {
 	return TCL_ERROR;
     }

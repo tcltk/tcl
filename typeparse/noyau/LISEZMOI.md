@@ -1140,3 +1140,38 @@ Source de types : `tclTypes.c`. Pas de patch noyau.
 - `geometrie/geo_c.tcl` garde son passage par le contenu, pour une autre raison : `point` et `pointC`
   sont deux nominaux distincts (commentaire ajouté).
 - Test `t59_nominal_base`.
+
+### v15g — performances de l'étape annotée (23 octobre 2026)
+
+Sources de types : `tclAnnotObj.c`, `tclTypes.h`, `tclTypePath.c`. Pas de patch noyau.
+
+Mesuré avec `exemples/geometrie/bench_parties.tcl` (polygone de 10 000 points) et callgrind. Avant :
+l'aire annotée prenait 50,9 ms contre 4,0 ms en Tcl nu ; la lecture `$a(x)` coûtait environ 1 µs,
+la redéclaration `P is polygone = $p` 4 µs (négligeable).
+
+- Lecture par chemin d'un seul nom (`$a(x)`, `$L(3)`) : un seul pas, sans compiler l'index
+  (`CompileIndex` faisait 21 % du temps).
+- Typeref mis en cache dans le descripteur de type (`refCache`) : plus de clé `snprintf` ni de
+  hachage à chaque valeur créée (13 %) ; les éléments enveloppés par `lindex` le partagent aussi.
+- `TclAnnotUnwrap` : un scalaire typé sans note (int, double, string) donne son contenu sans
+  résolution (les opérandes de `expr`).
+- `TclAnnotSettle` : rien à faire pour une valeur au type résolu et sans note (la plupart des
+  affectations `a = lindex ...`).
+- Libération : la table des cases d'auto-élément n'est consultée que si une case a été créée.
+- Lecture d'une partie : le contenu est partagé au lieu d'être copié (une valeur est immuable ; qui
+  la modifie travaille sur une copie).
+
+| polygone de 10 000 points (µs) | v15 | v15g |
+|---|---:|---:|
+| aire annotée (Tcl nu : environ 4 000) | 50 867 | 14 110 |
+| `$a(x)` + `$a(y)` sur 10 000 points | 23 241 | 6 117 |
+| `lindex` sur 10 000 points typés | 3 086 | 2 166 |
+| `foreach` + chemins | 22 395 | 5 611 |
+
+`geometrie/bench.tcl`, étape 2 : aire 39,8 -> 15,7 ms, englobant 36,1 -> 11,8 ms, dedans_tous
+841 -> 314 ms, Bézier 149 -> 99 ms, périmètre 254 -> 202 ms (dominé par les appels de procédures
+typées : `geo::distance` -> `geo::vec`, avec leurs déclarations ; prochaine cible).
+
+Vérifié contre la v15 : tests du projet, exemples (dont `cstruct`, `arduino`, `geometrie/verifier.tcl`)
+identiques ; 23 fichiers de tests de Tcl (6615 tests), mêmes échecs ; valgrind sans erreur sur
+`geometrie.tcl`, `t22`, `t30`, `t52`, `t55`, `t57`, `t58`.

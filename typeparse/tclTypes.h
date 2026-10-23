@@ -140,6 +140,9 @@ struct TclType {
 				 * famille famille » ; NULL sinon */
     Tcl_Obj *familyArgs;	/* liste des valeurs liées des paramètres, dans
 				 * l'ordre de la déclaration (défauts compris) */
+    Tcl_Obj *refCache[8];	/* typeref (ce type, variante i-1), empruntés à
+				 * la table de l'interpréteur : évite la clé
+				 * snprintf et le hachage à chaque valeur */
 };
 
 /* Les descripteurs vivent autant que l'interpréteur (pas de comptage). */
@@ -175,6 +178,8 @@ Tcl_Obj *TclNewAnnotated(Tcl_Interp *interp, TclType *tp, int variant,
 Tcl_Obj *TclNewRawAnnotation(Tcl_Obj *typeText, Tcl_Obj *content);
 Tcl_Obj *TclTypeRefFor(Tcl_Interp *interp, TclType *tp, int variant);
 Tcl_Obj *TclNewAnnotatedOwn(Tcl_Obj *content, Tcl_Obj *typeRef);
+Tcl_Obj *TclNewAnnotatedShared(Tcl_Interp *interp, TclType *tp, int variant,
+	    Tcl_Obj *content);
 int	TclIsAnnotated(Tcl_Obj *objPtr);
 int	TclAnnotInfo(Tcl_Obj *objPtr, Tcl_Obj **contentPtr, TclType **tpPtr,
 	    int *variantPtr, Tcl_Obj **rawTypePtr);
