@@ -373,6 +373,17 @@ int	TclTypedVarGetElementVar(Tcl_Interp *interp, Var *varPtr,
 int	TclTypedVarSetElementVar(Tcl_Interp *interp, Var *varPtr,
 	    Tcl_Obj *part1Ptr, int index, Tcl_Obj *part2Ptr,
 	    Tcl_Obj *valuePtr, Tcl_Obj **resultPtr);
+/* Écritures qui MODIFIENT une partie (incr, append, lappend) par chemin. */
+#define TCLTV_APPEND		1	/* argPtr : texte ajouté */
+#define TCLTV_LAPPEND		2	/* argPtr : un élément ajouté */
+#define TCLTV_LAPPEND_LIST	3	/* argPtr : liste d'éléments ajoutés */
+#define TCLTV_INCR		4	/* argPtr : incrément, ou NULL pour 1 */
+int	TclTypedVarModifyElementVar(Tcl_Interp *interp, Var *varPtr,
+	    Tcl_Obj *part1Ptr, int index, Tcl_Obj *part2Ptr, int op,
+	    Tcl_Obj *argPtr, Tcl_Obj **resultPtr);
+int	TclTypedVarModifyElement(Tcl_Interp *interp, Tcl_Obj *part1Ptr,
+	    Tcl_Obj *part2Ptr, int op, Tcl_Obj *argPtr, Tcl_Obj **resultPtr);
+int	TclTypedVarFlagsOp(int flags);
 int	TclTypedVarSetElement(Tcl_Interp *interp, Tcl_Obj *part1Ptr,
 	    Tcl_Obj *part2Ptr, Tcl_Obj *valuePtr, Tcl_Obj **resultPtr);
 

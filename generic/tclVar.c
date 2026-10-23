@@ -1758,14 +1758,53 @@ Tcl_ObjSetVar2(
 	    /*createPart1*/ 1, /*createPart2*/ 1, &arrayPtr);
     if (varPtr == NULL) {
 	Tcl_Obj *tres;
+	int op = TclTypedVarFlagsOp(flags);
 
-	if (part2Ptr != NULL && !(flags & (TCL_APPEND_VALUE|TCL_LIST_ELEMENT))
+	if (part2Ptr != NULL && op == 0
 		&& TclTypedVarSetElement(interp, part1Ptr, part2Ptr,
 		newValuePtr, &tres) == TCL_OK) {
 	    if (newValuePtr->refCount == 0) {
 		Tcl_BounceRefCount(newValuePtr);
 	    }
 	    return tres;
+	}
+	/* append, lappend, dict set... sur une partie : lire, modifier,
+	 * écrire ; "v(chemin)" en un seul mot est aussi accepté. */
+	if ((op != 0 || part2Ptr == NULL)) {
+	    int trc;
+
+	    Tcl_IncrRefCount(newValuePtr);
+	    if (op == 0) {
+		Tcl_Size len;
+		const char *nm = Tcl_GetStringFromObj(part1Ptr, &len);
+		const char *open = (len > 2 && nm[len - 1] == ')')
+			? strchr(nm, '(') : NULL;
+
+		trc = TCL_CONTINUE;
+		if (open != NULL && open > nm) {
+		    Tcl_Obj *p1 = Tcl_NewStringObj(nm, open - nm);
+		    Tcl_Obj *p2 = Tcl_NewStringObj(open + 1,
+			    (nm + len - 1) - (open + 1));
+
+		    Tcl_IncrRefCount(p1);
+		    Tcl_IncrRefCount(p2);
+		    trc = TclTypedVarSetElement(interp, p1, p2, newValuePtr,
+			    &tres);
+		    Tcl_DecrRefCount(p1);
+		    Tcl_DecrRefCount(p2);
+		}
+	    } else {
+		trc = TclTypedVarModifyElement(interp, part1Ptr, part2Ptr, op,
+			newValuePtr, &tres);
+	    }
+	    Tcl_DecrRefCount(newValuePtr);
+	    if (trc == TCL_OK) {
+		return tres;
+	    }
+	    if (trc == TCL_ERROR) {
+		return NULL;
+	    }
+	    return NULL;
 	}
 	if (newValuePtr->refCount == 0) {
 	    Tcl_DecrRefCount(newValuePtr);
@@ -2223,8 +2262,17 @@ TclIncrObjVar2(
     varPtr = TclObjLookupVarEx(interp, part1Ptr, part2Ptr, flags, "read",
 	    1, 1, &arrayPtr);
     if (varPtr == NULL) {
-	Tcl_AddErrorInfo(interp,
-		"\n    (reading value of variable to increment)");
+	Tcl_Obj *tres;
+	int trc = TclTypedVarModifyElement(interp, part1Ptr, part2Ptr,
+		TCLTV_INCR, incrPtr, &tres);	/* incr v(age) */
+
+	if (trc == TCL_OK) {
+	    return tres;
+	}
+	if (trc == TCL_CONTINUE) {
+	    Tcl_AddErrorInfo(interp,
+		    "\n    (reading value of variable to increment)");
+	}
 	return NULL;
     }
     return TclPtrIncrObjVarIdx(interp, varPtr, arrayPtr, part1Ptr, part2Ptr,
@@ -2927,7 +2975,18 @@ Tcl_AppendObjCmd(
 	varPtr = TclObjLookupVarEx(interp, objv[1], NULL, TCL_LEAVE_ERR_MSG,
 		"set", /*createPart1*/ 1, /*createPart2*/ 1, &arrayPtr);
 	if (varPtr == NULL) {
-	    return TCL_ERROR;
+	    /* append v(nom) a b : une partie d'une valeur typée */
+	    Tcl_Obj *all = Tcl_NewObj(), *tres;
+	    int trc;
+
+	    for (i = 2; i < objc; i++) {
+		Tcl_AppendObjToObj(all, objv[i]);
+	    }
+	    Tcl_IncrRefCount(all);
+	    trc = TclTypedVarModifyElement(interp, objv[1], NULL,
+		    TCLTV_APPEND, all, &tres);
+	    Tcl_DecrRefCount(all);
+	    return (trc == TCL_OK) ? TCL_OK : TCL_ERROR;
 	}
 	for (i=2 ; i<objc ; i++) {
 	    /*
@@ -3024,7 +3083,15 @@ Tcl_LappendObjCmd(
 	varPtr = TclObjLookupVarEx(interp, objv[1], NULL, TCL_LEAVE_ERR_MSG,
 		"set", /*createPart1*/ 1, /*createPart2*/ 1, &arrayPtr);
 	if (varPtr == NULL) {
-	    return TCL_ERROR;
+	    /* lappend v(notes) 3 4 : une partie d'une valeur typée */
+	    Tcl_Obj *all = Tcl_NewListObj(objc - 2, objv + 2), *tres;
+	    int trc;
+
+	    Tcl_IncrRefCount(all);
+	    trc = TclTypedVarModifyElement(interp, objv[1], NULL,
+		    TCLTV_LAPPEND_LIST, all, &tres);
+	    Tcl_DecrRefCount(all);
+	    return (trc == TCL_OK) ? TCL_OK : TCL_ERROR;
 	}
 	if (TclIsVarInHash(varPtr)) {
 	    VarHashRefCount(varPtr)++;

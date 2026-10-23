@@ -1093,3 +1093,31 @@ Sources de types : `tclTypes.c`, `tclTypes.h`, `tclTypePath.c`, `tclTypedVar.c`,
 - Tests : nouveau `t57_selecteur` ; `t35` (variante `.3` au lieu de `.1`, refus à la construction) et
   `t37` (même message, sans le préfixe `type binary:`) régénérés. Tests de Tcl (22 fichiers, 6931
   tests) : mêmes résultats que la base.
+
+### v15e — incr, append, lappend, dict set par chemin (23 octobre 2026)
+
+Sources de types : `tclTypePath.c`, `tclTypes.h`. Patch noyau : `chemins-modification.patch`
+(`tclVar.c`, `tclExecute.c`), après `eias-string-is.patch`.
+
+- Cause : seuls `Tcl_ObjGetVar2`, `Tcl_ObjSetVar2` et les instructions de lecture et d'écriture
+  d'élément connaissaient les chemins. `incr v(age)`, `append v(nom) X`, `lappend v(notes) 3`,
+  `dict set v(d) k 1` cherchaient un élément de tableau et échouaient (`variable isn't array`),
+  partout. (Le bug noté « set v(age) dans une procédure » n'existait plus depuis la v13.)
+- `TclTypedVarModifyElementVar` / `TclTypedVarModifyElement` (`tclTypePath.c`) : lire la partie par
+  chemin, la modifier (ajout de texte, d'éléments, incrément), l'écrire par chemin : le contrat et le
+  type de la partie sont vérifiés comme pour `set v(age) ...` (`lappend c(notes) x` sur un
+  `list.int` : `expected integer but got "x"`).
+- Branché dans les commandes (`TclIncrObjVar2`, `append`, `lappend`, `Tcl_ObjSetVar2` avec
+  `TCL_APPEND_VALUE` / `TCL_LIST_ELEMENT`, et `Tcl_ObjSetVar2` sur un nom `v(chemin)` en un mot, pour
+  `dict set`) et dans les instructions compilées (`INST_INCR_ARRAY*`, `INST_INCR_*_STK`,
+  `INST_APPEND_ARRAY*`, `INST_LAPPEND_ARRAY*`, `INST_LAPPEND_LIST_ARRAY*`) : même comportement
+  compilé ou non.
+- Les vrais tableaux et les variables non typées ne changent pas.
+- Test `t58_modif_chemin`.
+
+**Vérification de v15b à v15e, refaite contre une vraie v15.** L'arbre de référence de mes comparaisons
+précédentes compilait, par son Makefile copié, les sources de l'arbre de travail : il ne servait pas de
+référence. Refait contre une v15 recompilée depuis ses propres sources : tests du projet et exemples
+identiques hormis les écarts attendus (`t35`, `t37`, nouveaux `t55` à `t58`, exemples qui lisent le
+`tclsh` lui-même, temps de `bench_matrices`) ; 29 fichiers de tests de Tcl (7542 tests) : mêmes
+échecs, test par test.

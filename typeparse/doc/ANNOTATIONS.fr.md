@@ -397,7 +397,7 @@ Une règle `type convert` peut viser un type ou une **famille** (le nom d'un `ty
 
 #### 6.1 Le contrat d'une variable typée
 
-Une variable déclarée par `set {T}v …` a un **contrat** : chaque écriture est vérifiée, qu'elle vienne de `set`, `lappend`, `lset`, `incr`, `dict set`, d'une écriture de chemin (`set v(x) …`) ou d'`expr {v = …}`.
+Une variable déclarée par `set {T}v …` a un **contrat** : chaque écriture est vérifiée, qu'elle vienne de `set`, `lappend`, `lset`, `incr`, `dict set`, d'une écriture de chemin (`set v(x) …`) ou d'`expr {v = …}`. Toutes ces commandes écrivent aussi par chemin : `incr v(age)`, `append v(nom) X`, `lappend v(notes) 3`, `dict set v(d) k 1` lisent la partie, la modifient et l'écrivent, avec les mêmes vérifications que `set v(age) …`.
 
 ```tcl
 set {list.int}M 1 2

@@ -1,0 +1,20 @@
+résultat incr                                0 13
+résultat append                              0 Jean Dupont
+résultat lappend 2 val                       0 1 2 3 4
+contrat lappend x                            1 expected integer but got "x"
+contrat incr nom                             1 expected integer but got a list
+incr chemin imbriqué                         0 11
+dict set c(d) k 1                            0 k 1
+dict incr c(d) n                             0 k 1 n 1
+valeur                                       0 {Jean Dupont} 13 {11 2 3 4} {k 1 n 1}
+type                                         0 pt
+liste directe (non compilé)                  0 113
+liste directe append                         0 Jean Dupont!
+liste directe lappend                        0 11 2 3 4 9
+nom calculé incr $n                          0 114
+proc arguments                               0 {Jean Dupont!?} 115 {11 2 3 4 9 5} {k 1 n 1}
+c inchangé par p                             0 {Jean Dupont!} 114 {11 2 3 4 9} {k 1 n 1}
+lappend sur défaut vide                      0 1
+variable non typée                           1 can't read "z(a)": variable isn't array
+vrai tableau incr                            0 2
+tableau append                               0 x

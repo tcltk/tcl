@@ -3012,3 +3012,132 @@ TclTypedVarSetElement(Tcl_Interp *interp, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr,
 	    valuePtr, resultPtr);
 }
 
+/*
+ * incr v(age), append v(nom) X, lappend v(notes) 3 : la partie est lue par
+ * chemin, modifiée, puis écrite par chemin (le contrat et le type de la
+ * partie sont vérifiés comme pour set v(age) ...). TCL_CONTINUE : pas une
+ * variable scalaire typée, l'appelant garde son erreur.
+ */
+int
+TclTypedVarModifyElementVar(Tcl_Interp *interp, Var *varPtr, Tcl_Obj *part1Ptr,
+	int index, Tcl_Obj *part2Ptr, int op, Tcl_Obj *argPtr,
+	Tcl_Obj **resultPtr)
+{
+    Tcl_Obj *cur = NULL, *c, *w, **ev;
+    Tcl_Size ne, i;
+    int rc;
+
+    while (varPtr != NULL && TclIsVarLink(varPtr)) {
+	varPtr = varPtr->value.linkPtr;
+    }
+    if (varPtr == NULL || TclIsVarArray(varPtr)
+	    || !(varPtr->flags & VAR_TYPED) || varPtr->value.objPtr == NULL) {
+	return TCL_CONTINUE;
+    }
+    if (PathReadObj(interp, varPtr->value.objPtr, part2Ptr, &cur) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    c = TCL_ANNOT_CONTENT(cur);
+    switch (op) {
+    case TCLTV_APPEND:
+	w = Tcl_NewStringObj(Tcl_GetString(c), TCL_AUTO_LENGTH);
+	if (argPtr != NULL) {
+	    Tcl_AppendObjToObj(w, argPtr);
+	}
+	break;
+    case TCLTV_LAPPEND:
+    case TCLTV_LAPPEND_LIST:
+	w = Tcl_DuplicateObj(c);
+	if (op == TCLTV_LAPPEND) {
+	    ev = &argPtr;
+	    ne = (argPtr != NULL);
+	} else if (Tcl_ListObjGetElements(interp, argPtr, &ne, &ev)
+		!= TCL_OK) {
+	    goto fail;
+	}
+	for (i = 0; i < ne; i++) {
+	    if (Tcl_ListObjAppendElement(interp, w, ev[i]) != TCL_OK) {
+		goto fail;
+	    }
+	}
+	break;
+    case TCLTV_INCR: {
+	Tcl_Obj *one = NULL;
+
+	w = Tcl_DuplicateObj(c);
+	if (argPtr == NULL) {
+	    TclNewIntObj(one, 1);
+	    Tcl_IncrRefCount(one);
+	}
+	rc = TclIncrObj(interp, w, argPtr != NULL ? argPtr : one);
+	if (one != NULL) {
+	    Tcl_DecrRefCount(one);
+	}
+	if (rc != TCL_OK) {
+	    goto fail;
+	}
+	break;
+    }
+    default:
+	Tcl_DecrRefCount(cur);
+	return TCL_CONTINUE;
+    }
+    Tcl_IncrRefCount(w);
+    rc = TclTypedVarSetElementVar(interp, varPtr, part1Ptr, index, part2Ptr,
+	    w, resultPtr);			/* le résultat de l'interp garde w */
+    Tcl_DecrRefCount(w);
+    Tcl_DecrRefCount(cur);
+    return rc == TCL_CONTINUE ? TCL_ERROR : rc;
+
+  fail:
+    TclDiscard(w);
+    Tcl_DecrRefCount(cur);
+    return TCL_ERROR;
+}
+
+/* Par nom : part2Ptr NULL, part1Ptr écrit "v(chemin)" en un seul mot. */
+int
+TclTypedVarModifyElement(Tcl_Interp *interp, Tcl_Obj *part1Ptr,
+	Tcl_Obj *part2Ptr, int op, Tcl_Obj *argPtr, Tcl_Obj **resultPtr)
+{
+    Var *varPtr, *arrayPtr = NULL;
+    Tcl_Obj *p1 = part1Ptr, *p2 = part2Ptr;
+    int rc;
+
+    if (part2Ptr == NULL) {
+	Tcl_Size len;
+	const char *nm = Tcl_GetStringFromObj(part1Ptr, &len);
+	const char *open = (len > 2 && nm[len - 1] == ')') ? strchr(nm, '(')
+		: NULL;
+
+	if (open == NULL || open == nm) {
+	    return TCL_CONTINUE;
+	}
+	p1 = Tcl_NewStringObj(nm, open - nm);
+	p2 = Tcl_NewStringObj(open + 1, (nm + len - 1) - (open + 1));
+	Tcl_IncrRefCount(p1);
+	Tcl_IncrRefCount(p2);
+    }
+    varPtr = TclObjLookupVarEx(interp, p1, NULL, 0, "set", 0, 0, &arrayPtr);
+    if (varPtr == NULL || arrayPtr != NULL) {
+	rc = TCL_CONTINUE;
+    } else {
+	rc = TclTypedVarModifyElementVar(interp, varPtr, p1, -1, p2, op,
+		argPtr, resultPtr);
+    }
+    if (part2Ptr == NULL) {
+	Tcl_DecrRefCount(p1);
+	Tcl_DecrRefCount(p2);
+    }
+    return rc;
+}
+
+/* Drapeaux de Tcl_ObjSetVar2 -> opération (0 : set). */
+int
+TclTypedVarFlagsOp(int flags)
+{
+    if (flags & TCL_LIST_ELEMENT) {
+	return TCLTV_LAPPEND;
+    }
+    return (flags & TCL_APPEND_VALUE) ? TCLTV_APPEND : 0;
+}

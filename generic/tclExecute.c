@@ -3223,6 +3223,23 @@ TEBCresume(
 	varPtr = TclObjLookupVarEx(interp, objPtr, part2Ptr, TCL_LEAVE_ERR_MSG,
 		"set", /*createPart1*/ 1, /*createPart2*/ 1, &arrayPtr);
 	if (!varPtr) {
+	    if (storeFlags & TCL_APPEND_VALUE) {
+		/* append/lappend v(chemin) : lire, modifier, écrire */
+		int trc;
+
+		DECACHE_STACK_INFO();
+		trc = TclTypedVarModifyElement(interp, part1Ptr, part2Ptr,
+			TclTypedVarFlagsOp(storeFlags), valuePtr,
+			&objResultPtr);
+		CACHE_STACK_INFO();
+		if (trc == TCL_OK) {
+		    NEXT_INST_V(1, (part2Ptr != NULL) ? 3 : 2, 1);
+		}
+		if (trc == TCL_ERROR) {
+		    TRACE_ERROR(interp);
+		    goto gotError;
+		}
+	    }
 	    if (part2Ptr != NULL && storeFlags == TCL_LEAVE_ERR_MSG) {
 		int trc;
 
@@ -3311,13 +3328,18 @@ TEBCresume(
 	part1Ptr = NULL;
 
     doStoreArrayDirectFailed:
-	if (storeFlags == TCL_LEAVE_ERR_MSG && !TclIsVarArray(arrayPtr)
-		&& (arrayPtr->flags & VAR_TYPED)) {
+	if (!TclIsVarArray(arrayPtr) && (arrayPtr->flags & VAR_TYPED)) {
 	    int trc;
 
 	    DECACHE_STACK_INFO();
-	    trc = TclTypedVarSetElementVar(interp, arrayPtr, NULL, (int) opnd,
-		    part2Ptr, valuePtr, &objResultPtr);
+	    if (storeFlags & TCL_APPEND_VALUE) {
+		trc = TclTypedVarModifyElementVar(interp, arrayPtr, NULL,
+			(int) opnd, part2Ptr, TclTypedVarFlagsOp(storeFlags),
+			valuePtr, &objResultPtr);
+	    } else {
+		trc = TclTypedVarSetElementVar(interp, arrayPtr, NULL,
+			(int) opnd, part2Ptr, valuePtr, &objResultPtr);
+	    }
 	    CACHE_STACK_INFO();
 	    if (trc == TCL_OK) {
 		NEXT_INST_V(pcAdjustment, cleanup, 1);
@@ -3437,6 +3459,22 @@ TEBCresume(
 		goto lappendListDirect;
 	    }
 	}
+	if (!TclIsVarArray(arrayPtr) && (arrayPtr->flags & VAR_TYPED)) {
+	    int trc;
+
+	    DECACHE_STACK_INFO();
+	    trc = TclTypedVarModifyElementVar(interp, arrayPtr, NULL,
+		    (int) opnd, part2Ptr, TCLTV_LAPPEND_LIST, valuePtr,
+		    &objResultPtr);
+	    CACHE_STACK_INFO();
+	    if (trc == TCL_OK) {
+		NEXT_INST_V(pcAdjustment, cleanup, 1);
+	    }
+	    if (trc == TCL_ERROR) {
+		TRACE_ERROR(interp);
+		goto gotError;
+	    }
+	}
 	varPtr = TclLookupArrayElement(interp, part1Ptr, part2Ptr,
 		TCL_LEAVE_ERR_MSG, "set", 1, 1, arrayPtr, opnd);
 	if (varPtr == NULL) {
@@ -3497,6 +3535,15 @@ TEBCresume(
 		TCL_LEAVE_ERR_MSG, "set", 1, 1, &arrayPtr);
 	CACHE_STACK_INFO();
 	if (!varPtr) {
+	    int trc;
+
+	    DECACHE_STACK_INFO();
+	    trc = TclTypedVarModifyElement(interp, part1Ptr, part2Ptr,
+		    TCLTV_LAPPEND_LIST, valuePtr, &objResultPtr);
+	    CACHE_STACK_INFO();
+	    if (trc == TCL_OK) {
+		NEXT_INST_V(pcAdjustment, cleanup, 1);
+	    }
 	    TRACE_ERROR(interp);
 	    goto gotError;
 	}
@@ -3619,9 +3666,22 @@ TEBCresume(
 	varPtr = TclObjLookupVarEx(interp, objPtr, part2Ptr,
 		TCL_LEAVE_ERR_MSG, "read", 1, 1, &arrayPtr);
 	if (!varPtr) {
+	    int trc;
+
 	    DECACHE_STACK_INFO();
-	    Tcl_AddErrorInfo(interp,
-		    "\n    (reading value of variable to increment)");
+	    trc = TclTypedVarModifyElement(interp, part1Ptr, part2Ptr,
+		    TCLTV_INCR, incrPtr, &objResultPtr);	/* incr v(age) */
+	    CACHE_STACK_INFO();
+	    if (trc == TCL_OK) {
+		Tcl_DecrRefCount(incrPtr);
+		cleanup = ((part2Ptr == NULL)? 1 : 2);
+		goto doneIncr;
+	    }
+	    DECACHE_STACK_INFO();
+	    if (trc == TCL_CONTINUE) {
+		Tcl_AddErrorInfo(interp,
+			"\n    (reading value of variable to increment)");
+	    }
 	    CACHE_STACK_INFO();
 	    TRACE_ERROR(interp);
 	    Tcl_DecrRefCount(incrPtr);
@@ -3646,6 +3706,23 @@ TEBCresume(
 	    arrayPtr = arrayPtr->value.linkPtr;
 	}
 	TRACE(("%u \"%.30s\" (by %ld) => ", opnd, O2S(part2Ptr), increment));
+	if (!TclIsVarArray(arrayPtr) && (arrayPtr->flags & VAR_TYPED)) {
+	    int trc;
+
+	    DECACHE_STACK_INFO();
+	    trc = TclTypedVarModifyElementVar(interp, arrayPtr, NULL,
+		    (int) opnd, part2Ptr, TCLTV_INCR, incrPtr, &objResultPtr);
+	    CACHE_STACK_INFO();
+	    if (trc == TCL_OK) {
+		Tcl_DecrRefCount(incrPtr);
+		goto doneIncr;
+	    }
+	    if (trc == TCL_ERROR) {
+		TRACE_ERROR(interp);
+		Tcl_DecrRefCount(incrPtr);
+		goto gotError;
+	    }
+	}
 	varPtr = TclLookupArrayElement(interp, part1Ptr, part2Ptr,
 		TCL_LEAVE_ERR_MSG, "read", 1, 1, arrayPtr, opnd);
 	if (!varPtr) {
