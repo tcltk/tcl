@@ -5534,12 +5534,20 @@ TypeObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
 	    Tcl_HashEntry *h = Tcl_FindHashEntry(&d->names, nm);
 	    TclType *tp = (h != NULL) ? (TclType *) Tcl_GetHashValue(h) : NULL;
 
-	    if (tp == NULL || tp->kind != TCLT_LIST || tp->elem == NULL
-		    || TclCompactLayoutOf(tp->elem) == NULL) {
+	    /*
+	     * Une liste dont les éléments ont une disposition en cases, ou un
+	     * produit qui en a une : toute liste de ce produit sera en cases
+	     * (comme une struct C), y compris dans le champ d'un autre produit.
+	     */
+	    if (tp == NULL || !((tp->kind == TCLT_LIST && tp->elem != NULL
+		    && TclCompactLayoutOf(tp->elem) != NULL)
+		    || (tp->kind == TCLT_PRODUCT
+		    && TclCompactLayoutOf(tp) != NULL))) {
 		ERR(interp, "COMPACT", "type def {-compact}%s: only a list of "
 			"fixed-size scalars (int(s,n), int(u,n) with n = 8, 16, "
-			"32 or 64, double, double(32|64)) or of products of them "
-			"can be compact, not %s", nm, tp != NULL ? tp->name : "?");
+			"32 or 64, double, double(32|64)) or of products of them, "
+			"or such a product, can be compact, not %s", nm,
+			tp != NULL ? tp->name : "?");
 		if (h != NULL) {
 		    Tcl_DeleteHashEntry(h);	/* la définition est annulée */
 		    d->gen++;

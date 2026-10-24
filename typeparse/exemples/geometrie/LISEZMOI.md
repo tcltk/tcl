@@ -35,6 +35,17 @@ tclsh verifier.tcl         ;# les 22 exemples dans les 4 versions : mêmes résu
 tclsh bench.tcl ?N?        ;# vitesses comparées avec timerate (N = 10000 par défaut)
 ```
 
+`bench.tcl` prend le Tcl nu (étape 1) pour référence : à côté de chaque temps, `(/ 2.7)` veut dire
+2,7 fois plus lent que le Tcl nu, `(x 13.0)` 13 fois plus rapide. Mesure du 24 octobre (v15s, Linux) :
+
+| N = 10000, µs par appel | 1 brut | 2 annoté | 3 C, octets | 3 C, objet |
+|---|---:|---:|---:|---:|
+| aire | 4 044 | 13 945 (/ 3.4) | 1 413 (x 2.9) | 437 (x 9.2) |
+| périmètre | 18 415 | 48 847 (/ 2.7) | 1 414 (x 13.0) | 512 (x 36.0) |
+| englobant | 1 273 | 8 515 (/ 6.7) | 1 189 (x 1.1) | 457 (x 2.8) |
+| dedans_tous | 67 758 | 243 283 (/ 3.6) | 659 (x 102.8) | 544 (x 124.5) |
+| Bézier | 21 096 | 56 693 (/ 2.7) | 2 276 (x 9.3) | 2 517 (x 8.4) |
+
 ## L'en-tête C vient des types
 
 `geo_types.h` est produit par `type {c!}export` depuis les `type def` (`point`, `pointC`, `polyC`), avec des
@@ -58,6 +69,13 @@ cases de 16 octets, exactement un tableau de `point` : la voie objet de `geo.c` 
 
 L'étape 2 (Tcl annoté, `lindex` et `$a(x)` à chaque point) est plus lente en forme compacte (aire : 15 → 23 ms) :
 chaque accès fabrique une vue et un nombre.
+
+## Écrit avec les fonctions de stub prévues
+
+La voie objet de `geo.c` n'appelle plus l'interpréteur elle-même : elle est écrite avec les fonctions C prévues
+pour le TIP (`Tcl_AnnotatedGetType`, `Tcl_AnnotatedGetCells`, `Tcl_AnnotatedGetParts`, `Tcl_AnnotatedCreate`).
+En attendant qu'elles soient de vraies fonctions de stub, `typeparse/tclAnnotatedApi.h` les fournit avec l'API
+publique de Tcl 9 ; ce jour-là, on retire la ligne `#include "../../tclAnnotatedApi.h"`, rien d'autre.
 
 ## Compiler `geo.c`
 

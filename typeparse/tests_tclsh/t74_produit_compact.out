@@ -1,0 +1,13 @@
+type is {compact?}pointC : 1
+type is {compact?}polyC  : 0
+p = 2 {{1.0 2.0} {3.0 4.0}}   pts : cases   (3 normalisé en 3.0)
+p(pts.1.x) = 3.0   pointC
+set p(pts.0.y) 7.5 : 2 {{1.0 7.5} {3.0 4.0}}   pts : cases
+octets : 40   n = 2   1.0 7.5 3.0 4.0
+decode : 2 {{1.0 7.5} {3.0 4.0}}   pts : cases
+codec Tcl, mêmes octets : 1
+lappend p(pts) : 3 {{1.0 7.5} {3.0 4.0} {5.0 6.0}}   pts : cases
+boite : b(poly.pts) : cases   b(poly.pts.2.y) = 6.0
+list.pointC : {1.0 2.0} {3.0 4.0}   cases
+refus : 1 expected floating-point number but got "a"
+sans -compact : 1 {{1.0 2.0}}   pts en cases si compact on : 1

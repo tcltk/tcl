@@ -204,7 +204,7 @@ type cast TYPE VALEUR          ;# le résolveur d'un constructeur, sans variable
 type convert DE VERS LAMBDA    ;# déclare une conversion explicite
 type deref VALEUR              ;# instantané : chaque lien var remplacé par sa valeur
 type binary TYPE ...           ;# représentation binaire, encodage, décodage (§ 9)
-type def {-compact}NOM DÉF     ;# une liste toujours rangée en cases (§ 12.1)
+type def {-compact}NOM DÉF     ;# une liste (ou toute liste d'un produit) toujours en cases (§ 12.1)
 type is {compact?}TYPE|VALEUR  ;# une question sur un type ou une valeur
 type {c!}export TYPE ?TYPE ...? ;# en-tête C des types nommés (§ 12.2) ; {llvm!} prévu
 ```
@@ -896,6 +896,18 @@ set {polygone}P {0 0} {4 0} {4 3}     ;# {0.0 0.0} {4.0 0.0} {4.0 3.0}
 type is {compact?}$P                   ;# 1, même après string length $P
 ```
 
+**Sur un produit**, `{-compact}` veut dire « toute liste de ce produit est en cases », comme un tableau de `struct` en C, que la liste soit une variable, l'élément d'une autre valeur ou le champ d'un produit. Le produit doit avoir une disposition (que des scalaires à taille fixe, ou des produits de tels champs).
+
+```tcl
+type def {-compact}pointC {{f64le}x; {f64le}y}
+type def polyC {{u32le}n; {list($n).pointC}pts}
+set {polyC}p 2 {{1 2} {3 4}}           ;# 2 {{1.0 2.0} {3.0 4.0}}
+type is {compact?}pointC               ;# 1
+type is {compact?}$p(pts)              ;# 1 : le champ pts est en cases
+```
+
+Une liste qui est le champ d'un produit (ou d'un produit imbriqué) est mise en cases dans les mêmes cas qu'une liste seule : son type ou son élément le demande, ou la forme compacte est activée partout. Elle le reste après une écriture par chemin, un `lappend p(pts)` ou un `type binary decode`.
+
 **Pour tout le programme**, derrière `tcl::unsupported::compact on` (ou la variable d'environnement `TCL_TYPES_COMPACT=1`, pour passer les tests), le contenu V d'une liste `list.T` est rangé en **cases** quand T est un scalaire à taille fixe (`int(s,n)`, `int(u,n)` avec n = 8, 16, 32 ou 64 ; `double`, `double(32|64)`) ou un produit de tels champs, produits imbriqués compris. Une case par élément, disposée comme le struct C équivalent (alignement naturel, mesuré à la compilation : `tcl::unsupported::abi`). `int` sans taille n'entre pas (c'est un grand entier).
 
 ```tcl
@@ -1020,6 +1032,7 @@ Le reste de l'écart vient surtout des lectures par chemin dans `expr` (`$a(y)` 
 - Codecs C pour les sommes, les liens et les tailles calculées ; cache du type analysé.
 - Forme compacte : cases à pointeurs (`string`, listes imbriquées), lecture directe dans les cases par `expr` compilé, fonction de stub pour le C, `lappend` en temps constant (aujourd'hui une copie par ajout, comme pour une liste typée ordinaire).
 - `type {c!}export` : pointeurs pour les types récursifs ; cible `{llvm!}` ; sens inverse (en-tête C vers `type def`).
+- `type binary encode`/`decode` directement depuis et vers les cases quand leur disposition est celle de la cible : aujourd'hui une valeur en cases est relue case par case, plus lentement qu'une liste ordinaire (voie octets de `geometrie/geo_c.tcl` avec `{-compact}pointC` : encodage 1,1 → 4,5 ms).
 - `type def {-compact}` pour une famille ; `type is` : une valeur dont le texte est aussi un nom de type (`type is {compact?}$x` avec `x` = `point`) est lue comme le type.
 - Banc de test C sur maquette (`typeparse/test/`) à remettre à jour ; exemples `arbre_var.tcl` et `defauts_calcules.tcl` à corriger.
 

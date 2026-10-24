@@ -1441,3 +1441,29 @@ texte du type (`TclCompileType`) à chaque appel, et le reste à empiler puis d�
   `t24_produit_champ` (message de la v15l ; doublon `.tcl.out` retiré). Ces sorties nommées
   `*.tcl.out` échappaient à mes vérifications. `t68_lset_reference` n'écrit plus rien quand il n'y a
   pas de fuite : sous Windows (sans `/proc`), la mesure n'est pas faite et la sortie est la même.
+
+### v15t — `{-compact}` sur un produit, listes en cases dans les champs (24 octobre 2026)
+
+Sources de types : `tclAnnotObj.c`, `tclTypes.c`, `tclTypes.h` (un champ de plus dans `TclType` : `make clean`).
+Pas de patch noyau.
+
+Essai de Florent : `type def {-compact}pointC {{f64le}x; {f64le}y}` dans `geo_c.tcl` était refusé, la forme
+compacte n'étant prévue que pour une liste.
+
+- `type def {-compact}P` sur un produit qui a une disposition : toute liste de P est en cases, nombres
+  normalisés (comme `type def {-compact}L list.P`). `type is {compact?}P` vaut 1. Un produit avec un champ
+  `string` reste refusé, avec un message qui cite maintenant les deux cas.
+- Une liste champ d'un produit (`{list($n).pointC}pts` dans `polyC`), y compris dans un produit imbriqué, est
+  mise en cases dans les mêmes cas qu'une liste seule (type ou élément `{-compact}`, ou forme compacte
+  activée partout). Fait à la création de la valeur annotée (`TclNewAnnotated`, `TclNewAnnotatedOwn`), donc
+  aussi après une écriture par chemin, `lappend p(pts)`, `type binary decode`. `TclType.compactFields` garde
+  si un produit a de tels champs, pour ne rien parcourir sinon.
+- Mêmes octets par `type binary encode` (codec C et codec Tcl) que sans cases.
+- Mesure : avec `{-compact}pointC`, la voie octets de `geo_c.tcl` est plus lente (aire : encodage 1,1 → 4,5 ms) :
+  normalisation à la construction de `polyC`, puis lecture case par case par l'encodeur. Encoder directement
+  depuis les cases est noté au planning ; `geo_c.tcl` reste sans `{-compact}`.
+- Correction de ma réponse du 24 octobre : un champ `{ptsC}pts` avec `ptsC` = `list.pointC` n'a pas de forme
+  binaire parce qu'une liste sans compte n'en a pas (choix assumé), pas à cause du nom.
+- Tests : `t72_compact_type` (un produit est accepté), nouveau `t74_produit_compact`.
+- `exemples/geometrie/bench.tcl` prend le Tcl nu pour référence : `(/ 2.7)` = 2,7 fois plus lent, `(x 13.0)` =
+  13 fois plus rapide.

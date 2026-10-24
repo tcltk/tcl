@@ -150,7 +150,11 @@ struct TclType {
 				 * -1 : pas de forme compacte */
     int compactWanted;		/* type def {-compact}T : les valeurs de ce type
 				 * (une liste) sont toujours en cases, nombres
-				 * normalisés à la construction */
+				 * normalisés à la construction ; sur un
+				 * produit : toute liste de ce produit */
+    int compactFields;		/* PRODUCT : un champ (ou un sous-champ) est une
+				 * liste qui peut être en cases ; 0 : pas
+				 * encore calculé, 1 : oui, -1 : non */
 };
 
 /* Les descripteurs vivent autant que l'interpréteur (pas de comptage). */

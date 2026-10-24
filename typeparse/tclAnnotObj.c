@@ -1067,6 +1067,108 @@ MakeAnnotated(Tcl_Obj *vPtr, Tcl_Obj *tPtr)
 }
 
 /*
+ * Un produit dont un champ (ou le champ d'un champ) est une liste qui peut
+ * être en cases : list($n).pointC dans polyC. Calculé une fois par type.
+ */
+static int
+ProductHasCompactable(TclType *tp, int depth)
+{
+    Tcl_Size i;
+    int r = -1;
+
+    if (tp->compactFields != 0) {
+	return tp->compactFields > 0;
+    }
+    if (depth > 16) {
+	return 0;
+    }
+    tp->compactFields = -1;		/* type récursif : pas de boucle */
+    for (i = 0; i < tp->nfields && r < 0; i++) {
+	TclType *ft = tp->fields[i].type;
+
+	if (ft == NULL) {
+	    continue;
+	}
+	if ((ft->kind == TCLT_LIST && ft->elem != NULL
+		&& TclCompactLayoutOf(ft->elem) != NULL)
+		|| (ft->kind == TCLT_PRODUCT
+		&& ProductHasCompactable(ft, depth + 1))) {
+	    r = 1;
+	}
+    }
+    tp->compactFields = r;
+    return r > 0;
+}
+
+/*
+ * Contenu (objet neuf) d'un produit dont les champs listes sont mis en
+ * cases, ou NULL si rien ne change. Le texte du produit est gardé quand
+ * celui de chaque champ l'est (pas de normalisation).
+ */
+static Tcl_Obj *
+CompactFields(TclType *tp, Tcl_Obj *content, int depth)
+{
+    Tcl_Obj **ev, **nev = NULL, *out;
+    Tcl_Size n, i;
+    int keep = (content->bytes != NULL);
+
+    if (tp->kind != TCLT_PRODUCT || depth > 16
+	    || !ProductHasCompactable(tp, 0)
+	    || TclIsAnnotated(content)
+	    || Tcl_ListObjGetElements(NULL, content, &n, &ev) != TCL_OK
+	    || n > tp->nfields) {
+	return NULL;
+    }
+    for (i = 0; i < n; i++) {
+	TclType *ft = tp->fields[i].type;
+	Tcl_Obj *nv = NULL;
+
+	if (ft == NULL || TclIsAnnotated(ev[i])) {
+	    continue;
+	}
+	if (ft->kind == TCLT_LIST) {
+	    nv = TclCompactFrom(ft, ev[i]);
+	} else if (ft->kind == TCLT_PRODUCT) {
+	    nv = CompactFields(ft, ev[i], depth + 1);
+	}
+	if (nv == NULL) {
+	    continue;
+	}
+	if (nev == NULL) {
+	    nev = (Tcl_Obj **) Tcl_Alloc((size_t) n * sizeof(Tcl_Obj *));
+	    memcpy(nev, ev, (size_t) n * sizeof(Tcl_Obj *));
+	}
+	if (nv->bytes == NULL) {
+	    keep = 0;			/* champ normalisé */
+	}
+	nev[i] = nv;
+    }
+    if (nev == NULL) {
+	return NULL;
+    }
+    out = Tcl_NewListObj(n, nev);
+    Tcl_Free(nev);
+    if (keep) {
+	TclInvalidateStringRep(out);
+	Tcl_InitStringRep(out, content->bytes, content->length);	/* EIAS */
+    }
+    return out;
+}
+
+/* Contenu en cases pour un nouveau A de type tp, ou NULL. */
+static Tcl_Obj *
+CompactContent(TclType *tp, Tcl_Obj *content)
+{
+    if (tp->kind == TCLT_LIST) {
+	return TclCompactFrom(tp, content);
+    }
+    if (tp->kind == TCLT_PRODUCT && tp->compactFields >= 0) {
+	return CompactFields(tp, content, 0);
+    }
+    return NULL;
+}
+
+/*
  * Valeur typée : V = copie privée du contenu (conserve sa représentation
  * interne), T résolu. variant = -1 sauf pour une somme.
  */
@@ -1074,7 +1176,7 @@ Tcl_Obj *
 TclNewAnnotated(Tcl_Interp *interp, TclType *tp, int variant,
 	Tcl_Obj *content)
 {
-    Tcl_Obj *cv = (tp->kind == TCLT_LIST) ? TclCompactFrom(tp, content) : NULL;
+    Tcl_Obj *cv = CompactContent(tp, content);
 
     return MakeAnnotated(cv != NULL ? cv : Tcl_DuplicateObj(content),
 	    TypeRefObj(interp, tp, variant));
@@ -1109,8 +1211,7 @@ TclNewAnnotatedOwn(Tcl_Obj *content, Tcl_Obj *typeRef)
 {
     TclType *tp = IsTypeRef(typeRef)
 	    ? (TclType *) typeRef->internalRep.twoPtrValue.ptr1 : NULL;
-    Tcl_Obj *cv = (tp != NULL && tp->kind == TCLT_LIST)
-	    ? TclCompactFrom(tp, content) : NULL;
+    Tcl_Obj *cv = (tp != NULL) ? CompactContent(tp, content) : NULL;
 
     if (cv != NULL) {
 	TclDiscard(content);		/* le contenu neuf est remplacé */
@@ -3642,15 +3743,20 @@ TclCompactFrom(TclType *ltp, Tcl_Obj *content)
     Tcl_Size n, k;
     Tcl_ObjInternalRep ir;
 
-    if (ltp == NULL || !(compactOn || ltp->compactWanted)
-	    || ltp->kind != TCLT_LIST
-	    || ltp->elem == NULL || content->typePtr == &compactListType
+    int wanted;
+
+    if (ltp == NULL || ltp->kind != TCLT_LIST || ltp->elem == NULL) {
+	return NULL;
+    }
+    /* type def {-compact}L (la liste) ou {-compact}P (son élément) */
+    wanted = ltp->compactWanted || ltp->elem->compactWanted;
+    if (!(compactOn || wanted) || content->typePtr == &compactListType
 	    || (lay = TclCompactLayoutOf(ltp->elem)) == NULL
 	    || Tcl_ListObjGetElements(NULL, content, &n, &ev) != TCL_OK) {
 	return NULL;
     }
     b = NewCompactBuf(ltp->elem, lay, n);
-    b->norm = ltp->compactWanted;
+    b->norm = wanted;
     for (k = 0; k < n; k++) {
 	if (EncodeNode(lay->node, 0, ev[k], b->data + (size_t) k * lay->size,
 		b->norm) < 0) {

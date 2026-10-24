@@ -28,7 +28,11 @@ type def {-compact}octets list.int(u,8)
 t "int(u,8)"                     {set {octets}B 1 2 0x10; list $B [catch {lappend B 256} m] $m}
 t "refus : list.string"          {type def {-compact}noms list.string}
 t "le nom refusé reste libre"    {type def noms list.string; type get [set {noms}n a b]}
-t "refus : un produit"           {type def {-compact}pp {{double}x}}
+t "un produit (v15t)"            {type def {-compact}pp {{double}x; {int(s,32)}k}; type is {compact?}pp}
+t "liste de ce produit"          {set {list.pp}Q {1 2} {3e0 4}; list $Q [type is {compact?}$Q]}
+t "champ liste d'un produit"     {type def poly {{int(u,32)}n; {list($n).pp}pts}; set {poly}R 1 {{0x10 5}}
+                                  list $R [type is {compact?}$R(pts)] [type is {compact?}$R]}
+t "refus : produit avec chaîne"  {type def {-compact}pq {{double}x; {string}s}}
 t "refus : option inconnue"      {type def {-zz}u list.double}
 t "refus : alias"                {type alias {-compact}w list.double}
 t "refus : famille"              {type def {-compact}{v({int}n)} {list($n).double}}
