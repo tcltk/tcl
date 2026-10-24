@@ -6668,6 +6668,16 @@ TEBCresume(
 	    varListPtr = infoPtr->varLists[i];
 	    numVars = varListPtr->numVars;
 	    listPtr = OBJ_AT_DEPTH(listTmpDepth);
+	    {
+		/* Liste typée : parcourir son contenu V, éléments typés. */
+		Tcl_Obj *itPtr = TclAnnotIterList(listPtr);
+
+		if (itPtr != NULL) {
+		    Tcl_IncrRefCount(itPtr);
+		    Tcl_DecrRefCount(listPtr);
+		    OBJ_AT_DEPTH(listTmpDepth) = listPtr = itPtr;
+		}
+	    }
 	    DECACHE_STACK_INFO();
 	    if (TclListObjLength(interp, listPtr, &listLen) != TCL_OK) {
 		CACHE_STACK_INFO();
@@ -6798,10 +6808,21 @@ TEBCresume(
 			varPtr = varPtr->value.linkPtr;
 		    }
 		    if (varPtr->flags & VAR_TYPED) {
-			TclTypedVarForget(varPtr);
+			if (!(varPtr->flags & VAR_CONTRACT)
+				&& TclAnnotIsSettled(valuePtr)) {
+			    /* remplacée juste après par un élément typé */
+			    varPtr->flags &= ~VAR_TYPED;
+			} else {
+			    TclTypedVarForget(varPtr);
+			}
 		    }
 		    if (TclIsVarDirectWritable(varPtr)
-			    && !TclIsAnnotated(valuePtr)) {
+			    && (!TclIsAnnotated(valuePtr)
+			    || (!(varPtr->flags & VAR_CONTRACT)
+			    && TclAnnotIsSettled(valuePtr)))) {
+			/* Élément typé d'une liste typée, variable sans
+			 * contrat : rien à résoudre, la variable porte la
+			 * valeur typée (comme TclPtrSetVarIdx). */
 			value2Ptr = varPtr->value.objPtr;
 			if (valuePtr != value2Ptr) {
 			    if (value2Ptr != NULL) {
@@ -6809,6 +6830,9 @@ TEBCresume(
 			    }
 			    varPtr->value.objPtr = valuePtr;
 			    Tcl_IncrRefCount(valuePtr);
+			}
+			if (TclAnnotIsSettled(valuePtr)) {
+			    varPtr->flags |= VAR_TYPED;
 			}
 		    } else {
 			DECACHE_STACK_INFO();

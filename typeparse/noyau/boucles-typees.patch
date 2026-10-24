@@ -1,0 +1,90 @@
+--- a/generic/tclCmdAH.c
++++ b/generic/tclCmdAH.c
+@@ -2792,6 +2792,7 @@
+     struct ForeachState *statePtr;
+     int i, result;
+     Tcl_Size j;
++    Tcl_Obj *valObj;
+ 
+     if (objc < 4 || (objc%2 != 0)) {
+ 	Tcl_WrongNumArgs(interp, 1, objv,
+@@ -2870,9 +2871,15 @@
+ 	    &statePtr->varcList[i], &statePtr->varvList[i]);
+ 
+ 	/* Values */
+-	if (TclObjTypeHasProc(objv[2+i*2],indexProc)) {
++	/* Liste typée : parcourir son contenu V (tenu par la valeur annotée
++	 * pendant la commande), éléments typés. */
++	valObj = TclAnnotIterList(objv[2+i*2]);
++	if (valObj == NULL) {
++	    valObj = objv[2+i*2];
++	}
++	if (TclObjTypeHasProc(valObj,indexProc)) {
+ 	    /* Special case for AbstractList */
+-	    statePtr->aCopyList[i] = Tcl_DuplicateObj(objv[2+i*2]);
++	    statePtr->aCopyList[i] = Tcl_DuplicateObj(valObj);
+ 	    if (statePtr->aCopyList[i] == NULL) {
+ 		result = TCL_ERROR;
+ 		goto done;
+@@ -2889,7 +2896,7 @@
+ 	    statePtr->argcList[i] = TclObjTypeLength(statePtr->aCopyList[i]);
+ 	} else {
+ 	    /* List values */
+-	    statePtr->aCopyList[i] = TclListObjCopy(interp, objv[2+i*2]);
++	    statePtr->aCopyList[i] = TclListObjCopy(interp, valObj);
+ 	    if (statePtr->aCopyList[i] == NULL) {
+ 		result = TCL_ERROR;
+ 		goto done;
+--- a/generic/tclExecute.c
++++ b/generic/tclExecute.c
+@@ -6668,6 +6668,16 @@
+ 	    varListPtr = infoPtr->varLists[i];
+ 	    numVars = varListPtr->numVars;
+ 	    listPtr = OBJ_AT_DEPTH(listTmpDepth);
++	    {
++		/* Liste typée : parcourir son contenu V, éléments typés. */
++		Tcl_Obj *itPtr = TclAnnotIterList(listPtr);
++
++		if (itPtr != NULL) {
++		    Tcl_IncrRefCount(itPtr);
++		    Tcl_DecrRefCount(listPtr);
++		    OBJ_AT_DEPTH(listTmpDepth) = listPtr = itPtr;
++		}
++	    }
+ 	    DECACHE_STACK_INFO();
+ 	    if (TclListObjLength(interp, listPtr, &listLen) != TCL_OK) {
+ 		CACHE_STACK_INFO();
+@@ -6798,10 +6808,21 @@
+ 			varPtr = varPtr->value.linkPtr;
+ 		    }
+ 		    if (varPtr->flags & VAR_TYPED) {
+-			TclTypedVarForget(varPtr);
++			if (!(varPtr->flags & VAR_CONTRACT)
++				&& TclAnnotIsSettled(valuePtr)) {
++			    /* remplacée juste après par un élément typé */
++			    varPtr->flags &= ~VAR_TYPED;
++			} else {
++			    TclTypedVarForget(varPtr);
++			}
+ 		    }
+ 		    if (TclIsVarDirectWritable(varPtr)
+-			    && !TclIsAnnotated(valuePtr)) {
++			    && (!TclIsAnnotated(valuePtr)
++			    || (!(varPtr->flags & VAR_CONTRACT)
++			    && TclAnnotIsSettled(valuePtr)))) {
++			/* Élément typé d'une liste typée, variable sans
++			 * contrat : rien à résoudre, la variable porte la
++			 * valeur typée (comme TclPtrSetVarIdx). */
+ 			value2Ptr = varPtr->value.objPtr;
+ 			if (valuePtr != value2Ptr) {
+ 			    if (value2Ptr != NULL) {
+@@ -6810,6 +6831,9 @@
+ 			    varPtr->value.objPtr = valuePtr;
+ 			    Tcl_IncrRefCount(valuePtr);
+ 			}
++			if (TclAnnotIsSettled(valuePtr)) {
++			    varPtr->flags |= VAR_TYPED;
++			}
+ 		    } else {
+ 			DECACHE_STACK_INFO();
+ 			if (TclPtrSetVarIdx(interp, varPtr, NULL, NULL, NULL,

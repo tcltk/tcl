@@ -144,6 +144,11 @@ TclTypedVarPrepareWrite(Tcl_Interp *interp, Var *varPtr,
     int variant = -1, status, avar;
 
     *tmpPtrPtr = NULL;
+    if (!(varPtr->flags & VAR_CONTRACT) && !(*flagsPtr & TCL_APPEND_VALUE)
+	    && TclAnnotIsSettled(value)) {
+	return TCL_OK;		/* variable libre, valeur typée sans note :
+				 * rien à résoudre (variable de boucle) */
+    }
     if (varPtr->flags & VAR_CONTRACT) {
 	cur = varPtr->value.objPtr;
 	if (cur == NULL

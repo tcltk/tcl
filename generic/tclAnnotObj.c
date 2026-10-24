@@ -588,9 +588,9 @@ static void
 DupAnnotated(Tcl_Obj *srcPtr, Tcl_Obj *dupPtr)
 {
     Tcl_ObjInternalRep ir;
-    Tcl_Obj *vPtr = Tcl_DuplicateObj(
-	    (Tcl_Obj *) srcPtr->internalRep.twoPtrValue.ptr1);
-    Tcl_Obj *tPtr = (Tcl_Obj *) srcPtr->internalRep.twoPtrValue.ptr2;
+    Tcl_Obj *vPtr, *tPtr = (Tcl_Obj *) srcPtr->internalRep.twoPtrValue.ptr2;
+
+    vPtr = Tcl_DuplicateObj((Tcl_Obj *) srcPtr->internalRep.twoPtrValue.ptr1);
 
     Tcl_IncrRefCount(vPtr);
     Tcl_IncrRefCount(tPtr);
@@ -761,11 +761,74 @@ AnnotWrapElems(Tcl_Obj *aPtr, Tcl_Obj *v, Tcl_Size from, Tcl_Size to)
     }
 }
 
+/*
+ * Cas courant des procédures de liste : A typé (référence de type, sans
+ * note) par un type liste dont les éléments sont typés. Rend le type liste
+ * et V, ou NULL (cas général : AnnotListView, AnnotListElemType).
+ */
+static inline TclType *
+FastListType(Tcl_Obj *aPtr, Tcl_Obj **vPtr)
+{
+    Tcl_Obj *t = (Tcl_Obj *) aPtr->internalRep.twoPtrValue.ptr2;
+    TclType *lt;
+
+    if (t->typePtr != &typeRefObjType) {
+	return NULL;
+    }
+    lt = (TclType *) t->internalRep.twoPtrValue.ptr1;
+    if (lt->kind != TCLT_LIST || lt->elem == NULL) {
+	return NULL;
+    }
+    *vPtr = (Tcl_Obj *) aPtr->internalRep.twoPtrValue.ptr1;
+    return lt;
+}
+
+/*
+ * foreach, lmap : la liste à parcourir pour une liste typée A. Si TOUS les
+ * éléments de V sont des valeurs typées (les éléments sont typés dans V,
+ * une fois pour toutes, s'il n'est pas partagé), la boucle parcourt V comme
+ * une liste ordinaire : chaque variable reçoit l'élément typé, sans passer
+ * par les procédures de liste abstraite à chaque tour. Sinon NULL : la
+ * boucle passe par A (AnnotListIndex), comme avant.
+ */
+Tcl_Obj *
+TclAnnotIterList(Tcl_Obj *aPtr)
+{
+    Tcl_Obj *v, **ev;
+    Tcl_Size n, i;
+    int pass;
+
+    if (aPtr->typePtr != &annotatedObjType
+	    || FastListType(aPtr, &v) == NULL || TclIsCompact(v)
+	    || AnnotListElemType(aPtr) == NULL) {
+	return NULL;
+    }
+    for (pass = 0; pass < 2; pass++) {
+	if (Tcl_ListObjGetElements(NULL, v, &n, &ev) != TCL_OK) {
+	    return NULL;
+	}
+	for (i = 0; i < n && TCL_ANNOT_P(ev[i]); i++) {
+	}
+	if (i == n) {
+	    return v;
+	}
+	if (pass == 1 || Tcl_IsShared(v)) {
+	    return NULL;
+	}
+	AnnotWrapElems(aPtr, v, i, TCL_SIZE_MAX);
+    }
+    return NULL;
+}
+
 static Tcl_Size
 AnnotListLength(Tcl_Obj *aPtr)
 {
     Tcl_Obj *v;
     Tcl_Size n;
+
+    if (FastListType(aPtr, &v) != NULL) {
+	return (Tcl_ListObjLength(NULL, v, &n) == TCL_OK) ? n : 1;
+    }
 
     if (!AnnotListView(NULL, aPtr, &v)) {
 	return 1;
@@ -779,6 +842,11 @@ AnnotListIndex(Tcl_Interp *interp, Tcl_Obj *aPtr, Tcl_Size index,
 {
     Tcl_Obj *v;
 
+    if (FastListType(aPtr, &v) != NULL && !TclIsCompact(v)
+	    && Tcl_ListObjIndex(NULL, v, index, elemPtr) == TCL_OK
+	    && *elemPtr != NULL && TCL_ANNOT_P(*elemPtr)) {
+	return TCL_OK;			/* élément déjà typé dans V */
+    }
     if (AnnotListView(interp, aPtr, &v)) {
 	if (TclIsCompact(v)) {
 	    /* une case : un élément neuf, typé (refcount 0, comme lseq) */
@@ -1237,17 +1305,41 @@ TclIsAnnotated(Tcl_Obj *objPtr)
     return Tcl_FetchInternalRep(objPtr, &annotatedObjType) != NULL;
 }
 
+/* Valeur typée par une référence de type, sans note : TclAnnotSettle n'a
+ * rien à faire. */
+int
+TclAnnotIsSettled(Tcl_Obj *objPtr)
+{
+    return objPtr->typePtr == &annotatedObjType && ((Tcl_Obj *)
+	    objPtr->internalRep.twoPtrValue.ptr2)->typePtr == &typeRefObjType;
+}
+
 /* 0 : pas annoté ; 1 : typé (tpPtr, variantPtr remplis) ; 2 : brut. */
 int
 TclAnnotInfo(Tcl_Obj *objPtr, Tcl_Obj **contentPtr, TclType **tpPtr,
 	int *variantPtr, Tcl_Obj **rawTypePtr)
 {
-    Tcl_ObjInternalRep *ir = Tcl_FetchInternalRep(objPtr, &annotatedObjType);
-    Tcl_ObjInternalRep *tir;
+    Tcl_ObjInternalRep *ir, *tir;
     Tcl_Obj *vPtr, *tPtr, *nPtr;
 
-    if (ir == NULL) {
+    if (objPtr->typePtr != &annotatedObjType) {
 	return 0;
+    }
+    ir = &objPtr->internalRep;
+    tPtr = (Tcl_Obj *) ir->twoPtrValue.ptr2;
+    if (tPtr->typePtr == &typeRefObjType) {
+	/* Cas courant : valeur typée, sans note (appel par élément). */
+	if (contentPtr != NULL) {
+	    *contentPtr = (Tcl_Obj *) ir->twoPtrValue.ptr1;
+	}
+	if (tpPtr != NULL) {
+	    *tpPtr = (TclType *) tPtr->internalRep.twoPtrValue.ptr1;
+	}
+	if (variantPtr != NULL) {
+	    *variantPtr = (int) (intptr_t) tPtr->internalRep.twoPtrValue.ptr2
+		    - 1;
+	}
+	return 1;
     }
     vPtr = (Tcl_Obj *) ir->twoPtrValue.ptr1;
     SplitT((Tcl_Obj *) ir->twoPtrValue.ptr2, &tPtr, &nPtr);

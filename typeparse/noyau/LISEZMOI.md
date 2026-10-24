@@ -1467,3 +1467,35 @@ compacte n'étant prévue que pour une liste.
 - Tests : `t72_compact_type` (un produit est accepté), nouveau `t74_produit_compact`.
 - `exemples/geometrie/bench.tcl` prend le Tcl nu pour référence : `(/ 2.7)` = 2,7 fois plus lent, `(x 13.0)` =
   13 fois plus rapide.
+
+### v15u — boucles sur une liste typée (24 octobre 2026)
+
+Sources de types : `tclAnnotObj.c`, `tclTypedVar.c`, `tclTypes.h` (deux fonctions déclarées, pas de
+changement de structure). Patch noyau : `boucles-typees.patch` (`tclExecute.c`, `tclCmdAH.c`), dernier de
+`ORDRE.txt`.
+
+Profil d'un `foreach q $P {}` sur un `polygone` de 10 000 points : 18 fois le Tcl nu. `foreach` et `lmap`
+copient la liste qu'ils parcourent ; pour une liste annotée, la copie de A duplique V, chaque élément y était
+typé (une nouvelle valeur annotée), puis jeté avec la copie. Et chaque tour passait par les procédures de liste
+abstraite (longueur, élément), chacune résolvant à nouveau l'annotation, puis par l'écriture complète de la
+variable (`TclPtrSetVarIdx`).
+
+- `TclAnnotIterList(A)` : pour une liste typée dont les éléments ont un type, rend V une fois tous ses éléments
+  typés dans V (typés sur place si V n'est pas partagé ; gardés tant que la valeur vit). `foreach` / `lmap`,
+  compilés (`INST_FOREACH_START`) ou non (`EachloopCmd`), parcourent alors V comme une liste ordinaire : la
+  variable reçoit l'élément typé. Sinon (forme compacte, liste nue `{list}`, élément qui ne se type pas), rien ne
+  change : la boucle passe par A.
+- Variable de boucle sans contrat qui reçoit une valeur typée sans note : écriture directe (comme une valeur
+  ordinaire), bit `VAR_TYPED` posé ; l'ancienne valeur n'est plus d'abord remplacée par son contenu.
+  `TclTypedVarPrepareWrite` sort tout de suite dans le même cas (`TclAnnotIsSettled`).
+- `TclAnnotInfo` : cas courant (référence de type, sans note) lu directement ; `AnnotListLength` et
+  `AnnotListIndex` : chemin direct pour une liste typée dont l'élément est déjà typé dans V.
+- Essayé puis retiré : typer les éléments dans l'original à chaque copie de A. Bézier (voie C objet) y perdait :
+  sa liste résultat est copiée sans jamais être parcourue, 10 000 éléments typés pour rien.
+- Mesures (µs, 10 000 points) : `foreach q $P {}` 2 623 → 238 (Tcl nu 164) ; `lmap q $P {lindex $q 0}` 3 124 → 771
+  (Tcl nu 427) ; `lmap q $P {lindex $q(x)}` 5 120 → 1 480. Géométrie, écart avec le Tcl nu : aire / 3.4 → / 2.2,
+  périmètre / 2.7 → / 1.9, englobant / 6.7 → / 3.7, dedans_tous / 3.6 → / 2.6, Bézier / 2.7 → / 2.4.
+  Ce qui reste dans les boucles est surtout la lecture `$q(x)` (point suivant du planning).
+- Test `t75_boucles_typees` : mêmes sorties qu'avant le changement (boucle compilée ou non, plusieurs
+  variables ou listes, variable sous contrat, liste modifiée pendant la boucle, somme, liste nue, liste vide).
+- `exemples/geometrie/bench.tcl` écrit ses résultats en tableaux markdown.

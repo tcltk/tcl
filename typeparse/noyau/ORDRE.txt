@@ -29,3 +29,4 @@ lset-reference.patch
 tip759-memoire.patch
 compact-conversions.patch
 procedures-typees.patch
+boucles-typees.patch

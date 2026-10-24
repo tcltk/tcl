@@ -1,0 +1,17 @@
+proc foreach      : point point point
+global foreach    : point point point
+eval foreach      : point point point
+lmap $q(x)        : 0 1 1
+apply lmap        : 0 1 2
+après la boucle   : 1 1 point
+deux variables    : 0 0 (point) / 1 0 (point)
+deux variables    : 1 1 (point) /  ()
+u=point v=point w=point 
+sous contrat      : {1 1} point 0 abc
+modifiée          : 3 6 point
+copie partagée    : point
+somme             : forme.p forme.r
+liste nue         : {{a b} {}} {{c d} {}}
+liste de listes   : {{1 2} list<int>} {{3 4} list<int>}
+liste vide        : 0
+chaîne inchangée  : {0 0} {1 0} {1 1}

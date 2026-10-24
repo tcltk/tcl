@@ -40,18 +40,34 @@ foreach e $etapes {
     $i eval [list set B  [$i eval [list donnee bezier $bez]]]
 }
 
-puts "N = $N   (µs par appel ; entre parenthèses : gain sur l'étape 2)"
-puts [format "%-28s %12s %12s %20s %20s" "" [etape::nom brut] [etape::nom annote] \
-          [etape::nom octets] [etape::nom objet]]
+# FR : la référence est le Tcl nu (étape 1). Entre parenthèses, l'écart avec
+#      lui : « / 2.4 » = 2,4 fois plus lent, « x 3.0 » = 3 fois plus rapide.
+# EN : the reference is plain Tcl (stage 1). In parentheses, the ratio to it:
+#      "/ 2.4" = 2.4 times slower, "x 3.0" = 3 times faster.
+proc ecart {t ref} {
+    if {$t >= $ref} {
+        return [format "(/ %.1f)" [expr {$t / $ref}]]
+    }
+    return [format "(x %.1f)" [expr {$ref / $t}]]
+}
+
+# FR : la sortie est un tableau markdown (colonnes séparées par « | »), lisible
+#      tel quel et à copier dans un document.
+# EN : the output is a markdown table.
+puts "N = $N, µs par appel ; entre parenthèses : écart avec le Tcl nu"
+puts "(/ = plus lent, x = plus rapide)\n"
+puts [format "| %-26s | %10s | %22s | %22s | %22s |" "calcul" [etape::nom brut] \
+          [etape::nom annote] [etape::nom octets] [etape::nom objet]]
+puts "|[string repeat - 28]|[string repeat - 11]:|[string repeat - 23]:|[string repeat - 23]:|[string repeat - 23]:|"
 foreach {libelle script} $mesures {
-    set ligne [format "%-28s" $libelle]
+    set ligne [format "| %-26s |" $libelle]
     foreach e $etapes {
         set t [lindex [$I($e) eval [list timerate $script 1000]] 0]
         set T($e) $t
-        if {$e in {octets objet}} {
-            append ligne [format " %11.1f (x%5.0f)" $t [expr {$T(annote) / $t}]]
+        if {$e eq "brut"} {
+            append ligne [format " %10.1f |" $t]
         } else {
-            append ligne [format " %12.1f" $t]
+            append ligne [format " %22s |" [format "%.1f %s" $t [ecart $t $T(brut)]]]
         }
     }
     puts $ligne
@@ -64,5 +80,8 @@ $i eval {set octets [geo::octets $G]}
 set enc [lindex [$i eval {timerate {geo::octets $G} 1000}] 0]
 set cal [lindex [$i eval {timerate {geo::c::aire_raw $octets} 1000}] 0]
 set obj [lindex [$I(objet) eval {timerate {geo::c::aire_obj $G} 1000}] 0]
-puts "\nvoie octets, aire : encodage $enc µs + calcul C $cal µs"
-puts "voie objet,  aire : type + contenu + lecture des points + calcul C $obj µs"
+puts "\n| aire, d'où vient le temps | µs |"
+puts "|---|---:|"
+puts [format "| voie octets : encodage | %.1f |" $enc]
+puts [format "| voie octets : calcul C | %.1f |" $cal]
+puts [format "| voie objet : type, contenu, lecture des points, calcul C | %.1f |" $obj]

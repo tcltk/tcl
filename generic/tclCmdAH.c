@@ -2792,6 +2792,7 @@ EachloopCmd(
     struct ForeachState *statePtr;
     int i, result;
     Tcl_Size j;
+    Tcl_Obj *valObj;
 
     if (objc < 4 || (objc%2 != 0)) {
 	Tcl_WrongNumArgs(interp, 1, objv,
@@ -2870,9 +2871,15 @@ EachloopCmd(
 	    &statePtr->varcList[i], &statePtr->varvList[i]);
 
 	/* Values */
-	if (TclObjTypeHasProc(objv[2+i*2],indexProc)) {
+	/* Liste typée : parcourir son contenu V (tenu par la valeur annotée
+	 * pendant la commande), éléments typés. */
+	valObj = TclAnnotIterList(objv[2+i*2]);
+	if (valObj == NULL) {
+	    valObj = objv[2+i*2];
+	}
+	if (TclObjTypeHasProc(valObj,indexProc)) {
 	    /* Special case for AbstractList */
-	    statePtr->aCopyList[i] = Tcl_DuplicateObj(objv[2+i*2]);
+	    statePtr->aCopyList[i] = Tcl_DuplicateObj(valObj);
 	    if (statePtr->aCopyList[i] == NULL) {
 		result = TCL_ERROR;
 		goto done;
@@ -2889,7 +2896,7 @@ EachloopCmd(
 	    statePtr->argcList[i] = TclObjTypeLength(statePtr->aCopyList[i]);
 	} else {
 	    /* List values */
-	    statePtr->aCopyList[i] = TclListObjCopy(interp, objv[2+i*2]);
+	    statePtr->aCopyList[i] = TclListObjCopy(interp, valObj);
 	    if (statePtr->aCopyList[i] == NULL) {
 		result = TCL_ERROR;
 		goto done;

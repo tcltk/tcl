@@ -995,10 +995,12 @@ Le codec C, qui **vérifie** en plus chaque valeur contre son type, est 2 à 3 f
 |---|---|---|
 | `X is point = $a` | 0,6 µs | — |
 | `geo::distance` | 4,7 µs | 1,9 µs |
-| périmètre | 46 à 52 ms | 17 à 19 ms |
-| point dans un polygone (`dedans_tous`) | ≈ 255 ms | ≈ 65 ms |
+| périmètre | ≈ 44 ms | ≈ 20 ms |
+| point dans un polygone (`dedans_tous`) | ≈ 205 ms | ≈ 75 ms |
 
-Le reste de l'écart vient surtout des lectures par chemin dans `expr` (`$a(y)` ≈ 0,2 µs contre 0,06 µs pour `lindex`).
+**Boucles.** `foreach` et `lmap` sur une liste typée parcourent son contenu, dont les éléments sont typés une fois pour toutes : la variable de boucle reçoit l'élément typé sans qu'il soit refabriqué à chaque tour. Sur 10 000 points, `foreach q $P {}` prend 0,24 ms contre 0,16 ms en Tcl nu (2,6 ms avant la v15u).
+
+Le reste de l'écart vient surtout des lectures par chemin (`$q(x)`, `$a(y)` ≈ 0,2 µs contre 0,06 µs pour `lindex`).
 
 ### 16. Choix de conception
 
