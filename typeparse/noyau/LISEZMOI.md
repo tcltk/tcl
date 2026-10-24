@@ -1527,3 +1527,28 @@ quitter à l'exécuteur son chemin rapide (`GetNumberFromObj`), et chaque conver
   supprimer demanderait que `expr` sache, à la compilation, qu'il ne veut qu'un nombre.
 - Test `t76_lecture_champ` : mêmes sorties qu'avant (champ de même nom à une autre place dans un autre produit,
   somme, lien `var`, `list.any`, opérandes typés intacts, champ inconnu).
+
+### v15w — `type binary encode` / `decode` depuis et vers les cases (24 octobre 2026)
+
+Sources de types : `tclTypes.c`, `tclAnnotObj.c`, `tclTypes.h` (trois fonctions déclarées). Pas de patch noyau.
+
+Avec `type def {-compact}pointC`, la voie octets de `geo_c.tcl` devenait plus lente (v15t) : l'encodeur relisait
+chaque case par une vue.
+
+- Encodage : une liste en cases dont l'élément a, sous les options de l'appel (`-align`, `-endian`), exactement
+  la disposition de sa case (mêmes scalaires aux mêmes décalages, même taille, boutisme de la machine) est écrite
+  par copie de ses scalaires : un seul `memcpy` quand la case n'a pas de remplissage, une copie par scalaire sinon
+  (le remplissage reste à zéro). Sinon, chemin ordinaire.
+- Décodage : une liste qui serait de toute façon en cases (type ou élément `{-compact}`, ou forme compacte
+  partout) est lue directement dans un tampon de cases (`TclCompactNew`), sans objet par élément. Pas avec
+  `-strictpad` (qui vérifie le remplissage : chemin ordinaire).
+- Fonctions : `TclCompactFlat` (scalaires d'une case, à plat), `TclCompactData` (les cases d'une liste
+  compacte), `TclCompactNew` (liste compacte neuve) ; côté codec, `BinFlat` et `BinCellsMatch` comparent la
+  disposition binaire à celle des cases.
+- Mesures (`polyC` de 10 000 points, `-align natural`) : encodage 474 → 15 µs, décodage 3 056 → 10 µs. Dans
+  `geo_c.tcl` avec `{-compact}pointC`, l'encodage de l'aire (voie octets, `geo::octets`) passe de 4,5 ms (v15t) à
+  ≈ 1,0 ms ; le reste est la construction de `polyC` depuis le polygone (`content` 0,25 ms, normalisation 0,59 ms).
+  `geo_c.tcl` reste sans `{-compact}` ; la suite serait un cast de `list.point` vers `list.pointC` sur les cases
+  mêmes (disposition identique), sans passer par le texte.
+- Test `t77_binaire_cases` : mêmes octets que le codec Tcl et que sans cases (`natural`, `packed`, `4`), relecture,
+  autre boutisme, `-strictpad`, compte faux, liste vide.

@@ -1,0 +1,9 @@
+natural     808 octets  codec Tcl : 1  sans cases : 1  relu : 1 cases
+packed      804 octets  codec Tcl : 1  sans cases : 1  relu : 1 cases
+4           804 octets  codec Tcl : 1  sans cases : 1  relu : 1 cases
+img natural : 40 octets, codec Tcl 1, relu 1 cases
+img packed : 26 octets, codec Tcl 1, relu 1 cases
+gros-boutiste : 40 octets, codec Tcl 1, relu 1
+strictpad : 1
+compte faux : 1 type binary: field pts of polyC holds 50,
+vide : 8 0 {}

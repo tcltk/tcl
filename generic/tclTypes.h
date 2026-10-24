@@ -323,6 +323,11 @@ Tcl_Obj *TclAnnotIterList(Tcl_Obj *aPtr);
 Tcl_Obj *TclCompactFrom(TclType *listTp, Tcl_Obj *content);
 int	TclCompactHolds(Tcl_Obj *v, const TclType *elemTp, Tcl_Size *nPtr);
 int	TclIsCompact(Tcl_Obj *v);
+int	TclCompactFlat(TclType *et, size_t *stridePtr, int max, size_t off[],
+	    int size[], int isFloat[]);
+const unsigned char *TclCompactData(Tcl_Obj *v, const TclType *et,
+	    Tcl_Size *nPtr);
+Tcl_Obj *TclCompactNew(TclType *ltp, Tcl_Size n, unsigned char **dataPtr);
 Tcl_Obj *TclCompactElement(Tcl_Obj *v, Tcl_Size i);
 Tcl_Obj *TclCompactCache(Tcl_Obj *v);
 Tcl_Obj *TclCompactReadPath(Tcl_Obj *v, Tcl_Size idx, Tcl_Size nnames,

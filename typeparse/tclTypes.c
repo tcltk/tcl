@@ -4804,6 +4804,139 @@ BinFastAlign(const TclType *tp, size_t cap, int depth)
     return 0;
 }
 
+/*
+ * Cases d'une liste compacte et octets du codec : quand un élément a, sous
+ * les options de l'appel (-align, -endian), exactement la disposition de sa
+ * case (mêmes scalaires aux mêmes décalages, même taille, boutisme de la
+ * machine), une liste en cases s'encode et se décode par copie de ses
+ * scalaires, sans objet par élément. Le remplissage reste à zéro.
+ */
+#define BIN_FLAT_MAX 64
+
+static size_t
+BinAlignUp(size_t x, size_t a)
+{
+    return (a > 1) ? (x + a - 1) / a * a : x;
+}
+
+/* Disposition binaire d'un élément, à plat ; nombre de scalaires ou -1. */
+static int
+BinFlat(BinCtx *c, const TclType *tp, size_t *pos, int depth, int k,
+	size_t off[], int size[], int isFloat[])
+{
+    Tcl_Size i;
+
+    if (depth > 32) {
+	return -1;
+    }
+    if (BinFastScalar(tp)) {
+	int big = tp->binEnd == TCLBIN_BE
+		|| (tp->binEnd == TCLBIN_AUTO && c->bigDefault);
+
+	if (big != c->hostBig || k >= BIN_FLAT_MAX) {
+	    return -1;
+	}
+	off[k] = *pos;
+	size[k] = (int) tp->binSize;
+	isFloat[k] = (tp->binKind == TCLBIN_FLOAT);
+	*pos += (size_t) tp->binSize;
+	return k + 1;
+    }
+    if (tp->kind != TCLT_PRODUCT || tp->nfields < 1) {
+	return -1;
+    }
+    for (i = 0; i < tp->nfields; i++) {
+	const TclType *ft = tp->fields[i].type;
+
+	if (ft == NULL) {
+	    return -1;
+	}
+	*pos = BinAlignUp(*pos, BinAlignOf(c, ft, depth + 1));
+	k = BinFlat(c, ft, pos, depth + 1, k, off, size, isFloat);
+	if (k < 0) {
+	    return -1;
+	}
+    }
+    *pos = BinAlignUp(*pos, BinAlignOf(c, tp, depth));
+    return k;
+}
+
+/* Nombre de scalaires (off, size remplis) si les cases de et ont la
+ * disposition binaire ; -1 sinon. */
+static int
+BinCellsMatch(BinCtx *c, const TclType *et, size_t *stridePtr, size_t off[],
+	int size[])
+{
+    size_t coff[BIN_FLAT_MAX], stride, pos = 0;
+    int csize[BIN_FLAT_MAX], cfl[BIN_FLAT_MAX], fl[BIN_FLAT_MAX], nc, nb, i;
+
+    nc = TclCompactFlat((TclType *) et, &stride, BIN_FLAT_MAX, coff, csize,
+	    cfl);
+    if (nc <= 0) {
+	return -1;
+    }
+    nb = BinFlat(c, et, &pos, 1, 0, off, size, fl);
+    if (nb != nc || pos != stride) {
+	return -1;
+    }
+    for (i = 0; i < nc; i++) {
+	if (off[i] != coff[i] || size[i] != csize[i] || fl[i] != cfl[i]) {
+	    return -1;
+	}
+    }
+    *stridePtr = stride;
+    return nc;
+}
+
+/* Copie les scalaires de n cases (le remplissage de dst reste tel quel). */
+static void
+BinCopyCells(unsigned char *dst, const unsigned char *src, Tcl_Size n,
+	size_t stride, int ns, const size_t off[], const int size[])
+{
+    Tcl_Size i;
+    int k;
+    size_t sum = 0;
+
+    for (k = 0; k < ns; k++) {
+	sum += (size_t) size[k];
+    }
+    if (sum == stride) {
+	memcpy(dst, src, (size_t) n * stride);	/* sans remplissage : un bloc */
+	return;
+    }
+    for (i = 0; i < n; i++) {
+	size_t base = (size_t) i * stride;
+
+	for (k = 0; k < ns; k++) {
+	    memcpy(dst + base + off[k], src + base + off[k], (size_t) size[k]);
+	}
+    }
+}
+
+/* list($n).T : le nombre voulu, lu dans le champ n déjà écrit ou lu. */
+static int
+BinDynCount(const TclType *tp, const TclType *encl, Tcl_Obj **vals,
+	Tcl_Size nvals, Tcl_WideInt *wantPtr)
+{
+    const char *name = tp->binDyn->expr + 1;
+    Tcl_Size f;
+
+    if (encl == NULL) {
+	return TCL_CONTINUE;
+    }
+    for (f = 0; f < nvals; f++) {
+	if (encl->fields[f].name != NULL
+		&& strcmp(Tcl_GetString(encl->fields[f].name), name) == 0) {
+	    break;
+	}
+    }
+    if (f == nvals || Tcl_GetWideIntFromObj(NULL, BinContent(vals[f]),
+	    wantPtr) != TCL_OK) {
+	return TCL_CONTINUE;
+    }
+    return TCL_OK;
+}
+
 static int
 BinFastEnc(BinCtx *c, const TclType *tp, Tcl_Obj *v, const TclType *encl,
 	Tcl_Obj **vals, Tcl_Size nvals, int depth)
@@ -4854,6 +4987,32 @@ BinFastEnc(BinCtx *c, const TclType *tp, Tcl_Obj *v, const TclType *encl,
 	}
 	BinBufPut(out, buf, sz);
 	return TCL_OK;
+    }
+    if (tp->kind == TCLT_LIST && tp->elem != NULL) {
+	/* une liste en cases à la disposition binaire : copie des scalaires */
+	const unsigned char *cells;
+	size_t off[BIN_FLAT_MAX], stride;
+	int size[BIN_FLAT_MAX], ns;
+	Tcl_WideInt want;
+
+	if ((cells = TclCompactData(v, tp->elem, &n)) != NULL
+		&& (ns = BinCellsMatch(c, tp->elem, &stride, off, size)) > 0) {
+	    if (tp->binDyn != NULL) {
+		if (BinDynCount(tp, encl, vals, nvals, &want) != TCL_OK
+			|| want != (Tcl_WideInt) n) {
+		    return TCL_CONTINUE;	/* le message : couche Tcl */
+		}
+	    } else if (n != tp->arity) {
+		return TCL_CONTINUE;
+	    }
+	    {
+		size_t at = out->len;
+
+		BinBufPut(out, NULL, (size_t) n * stride);
+		BinCopyCells(out->p + at, cells, n, stride, ns, off, size);
+	    }
+	    return TCL_OK;
+	}
     }
     if (Tcl_ListObjGetElements(NULL, v, &n, &elv) != TCL_OK) {
 	return TCL_CONTINUE;
@@ -5135,6 +5294,25 @@ BinFastDec(BinDec *d, const TclType *tp, int asField, Tcl_Obj **vals,
 	    return TCL_CONTINUE;	/* taille absurde : couche Tcl */
 	}
 	n = (Tcl_Size) want;
+	if (!d->strict && tp->elem != NULL) {
+	    /* liste qui serait en cases, à la disposition binaire : les
+	     * scalaires sont copiés dans les cases, sans objet par élément */
+	    size_t off[BIN_FLAT_MAX], stride;
+	    int size[BIN_FLAT_MAX], ns;
+	    unsigned char *cells;
+
+	    if (BinDecPad(d, BinAlignOf(&d->b, tp->elem, depth + 1)) == TCL_OK
+		    && (ns = BinCellsMatch(&d->b, tp->elem, &stride, off,
+			size)) > 0
+		    && (size_t) n * stride <= d->len - d->pos
+		    && (lst = TclCompactNew((TclType *) tp, n, &cells))
+			!= NULL) {
+		BinCopyCells(cells, d->p + d->pos, n, stride, ns, off, size);
+		d->pos += (size_t) n * stride;
+		*resPtr = lst;
+		return TCL_OK;
+	    }
+	}
 	lst = Tcl_NewListObj(n, NULL);
 	for (i = 0; i < n; i++) {
 	    Tcl_Obj *e;

@@ -3898,6 +3898,85 @@ TclCompactFrom(TclType *ltp, Tcl_Obj *content)
 }
 
 /*
+ * Pour les codecs binaires en C (type binary encode / decode) : la
+ * disposition à plat des cases d'un type élément (ses scalaires en préordre :
+ * décalage, taille, flottant ou non) et l'accès aux cases.
+ */
+int
+TclCompactFlat(TclType *et, size_t *stridePtr, int max, size_t off[],
+	int size[], int isFloat[])
+{
+    TclCompactLayout *lay = TclCompactLayoutOf(et);
+    int i, k = 0;
+
+    if (lay == NULL) {
+	return -1;
+    }
+    for (i = 0; i < lay->nnodes; i++) {
+	const CNode *nd = &lay->node[i];
+
+	if (nd->kind == CN_PROD) {
+	    continue;
+	}
+	if (k >= max) {
+	    return -1;
+	}
+	off[k] = nd->off;
+	size[k] = nd->size;
+	isFloat[k] = (nd->kind == CN_FLT);
+	k++;
+    }
+    *stridePtr = lay->size;
+    return k;
+}
+
+/* Les cases de V si V est une liste compacte d'éléments et, sinon NULL. */
+const unsigned char *
+TclCompactData(Tcl_Obj *v, const TclType *et, Tcl_Size *nPtr)
+{
+    if (v == NULL || v->typePtr != &compactListType
+	    || COMPACT_BUF(v)->et != et) {
+	return NULL;
+    }
+    *nPtr = COMPACT_BUF(v)->n;
+    return COMPACT_BUF(v)->data;
+}
+
+/*
+ * Une liste compacte neuve (refcount 0) de n cases à zéro, à remplir par
+ * *dataPtr, pour une liste du type ltp qui serait de toute façon en cases
+ * (type ou élément {-compact}, ou forme compacte partout). NULL sinon.
+ */
+Tcl_Obj *
+TclCompactNew(TclType *ltp, Tcl_Size n, unsigned char **dataPtr)
+{
+    TclCompactLayout *lay;
+    TclCompactBuf *b;
+    Tcl_Obj *v;
+    Tcl_ObjInternalRep ir;
+    int wanted;
+
+    if (ltp == NULL || ltp->kind != TCLT_LIST || ltp->elem == NULL || n < 0) {
+	return NULL;
+    }
+    wanted = ltp->compactWanted || ltp->elem->compactWanted;
+    if (!(compactOn || wanted)
+	    || (lay = TclCompactLayoutOf(ltp->elem)) == NULL) {
+	return NULL;
+    }
+    b = NewCompactBuf(ltp->elem, lay, n);
+    b->norm = wanted;
+    b->n = n;
+    v = Tcl_NewObj();
+    ir.twoPtrValue.ptr1 = b;
+    ir.twoPtrValue.ptr2 = NULL;
+    Tcl_StoreInternalRep(v, &compactListType, &ir);
+    TclInvalidateStringRep(v);		/* chaîne recalculée depuis les cases */
+    *dataPtr = b->data;
+    return v;
+}
+
+/*
  * tcl::unsupported::compact          -> on | off
  * tcl::unsupported::compact on|off
  * tcl::unsupported::compact info V   -> {} ou {n N stride S elem T}

@@ -908,6 +908,8 @@ type is {compact?}$p(pts)              ;# 1 : le champ pts est en cases
 
 Une liste qui est le champ d'un produit (ou d'un produit imbriqué) est mise en cases dans les mêmes cas qu'une liste seule : son type ou son élément le demande, ou la forme compacte est activée partout. Elle le reste après une écriture par chemin, un `lappend p(pts)` ou un `type binary decode`.
 
+**Cases et octets.** Quand la disposition des cases est celle des octets demandés (mêmes scalaires aux mêmes décalages sous `-align`, boutisme de la machine), `type binary encode` copie les cases et `type binary decode` remplit directement des cases, sans objet par élément : pour 10 000 points, 15 µs et 10 µs au lieu de 0,5 et 3 ms. Les octets sont les mêmes que sans cases ; sinon, le codec suit son chemin ordinaire.
+
 **Pour tout le programme**, derrière `tcl::unsupported::compact on` (ou la variable d'environnement `TCL_TYPES_COMPACT=1`, pour passer les tests), le contenu V d'une liste `list.T` est rangé en **cases** quand T est un scalaire à taille fixe (`int(s,n)`, `int(u,n)` avec n = 8, 16, 32 ou 64 ; `double`, `double(32|64)`) ou un produit de tels champs, produits imbriqués compris. Une case par élément, disposée comme le struct C équivalent (alignement naturel, mesuré à la compilation : `tcl::unsupported::abi`). `int` sans taille n'entre pas (c'est un grand entier).
 
 ```tcl
@@ -1034,7 +1036,7 @@ Le codec C, qui **vérifie** en plus chaque valeur contre son type, est 2 à 3 f
 - Codecs C pour les sommes, les liens et les tailles calculées ; cache du type analysé.
 - Forme compacte : cases à pointeurs (`string`, listes imbriquées), lecture directe dans les cases par `expr` compilé, fonction de stub pour le C, `lappend` en temps constant (aujourd'hui une copie par ajout, comme pour une liste typée ordinaire).
 - `type {c!}export` : pointeurs pour les types récursifs ; cible `{llvm!}` ; sens inverse (en-tête C vers `type def`).
-- `type binary encode`/`decode` directement depuis et vers les cases quand leur disposition est celle de la cible : aujourd'hui une valeur en cases est relue case par case, plus lentement qu'une liste ordinaire (voie octets de `geometrie/geo_c.tcl` avec `{-compact}pointC` : encodage 1,1 → 4,5 ms).
+- Cast entre listes en cases de même disposition (`list.point` vers `list.pointC`) sans passer par le texte.
 - `type def {-compact}` pour une famille ; `type is` : une valeur dont le texte est aussi un nom de type (`type is {compact?}$x` avec `x` = `point`) est lue comme le type.
 - Banc de test C sur maquette (`typeparse/test/`) à remettre à jour ; exemples `arbre_var.tcl` et `defauts_calcules.tcl` à corriger.
 
