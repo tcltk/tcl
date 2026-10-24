@@ -1,14 +1,14 @@
 # REPRISE — état du prototype TIP 764 (valeurs annotées, variables typées)
 
-*Fiche de reprise, 24 octobre 2026, version **v15u**. À joindre (avec `typeparse.zip`) au
+*Fiche de reprise, 24 octobre 2026, version **v15v**. À joindre (avec `typeparse.zip`) au
 premier message d'une conversation qui reprend le travail.*
 
 ## 1. Où en est-on
 
-* **v15u livrée** (24 octobre) : boucles sur une liste typée sans refabriquer les éléments. Le détail de chaque version est
-  dans `noyau/LISEZMOI.md`, une section par version, de la v14 à la v15u en fin de fichier.
-* **Vérifié pour la v15u** (côté Claude, Linux) :
-  - les 53 tests de `tests_tclsh` qui ont une sortie attendue passent (Linux ; MinGW64 chez
+* **v15v livrée** (24 octobre) : lecture `$a(champ)` par un cache du champ, nombres typés lus directement par `expr`. Le détail de chaque version est
+  dans `noyau/LISEZMOI.md`, une section par version, de la v14 à la v15v en fin de fichier.
+* **Vérifié pour la v15v** (côté Claude, Linux) :
+  - les 54 tests de `tests_tclsh` qui ont une sortie attendue passent (Linux ; MinGW64 chez
     l'utilisateur pour la v15s) ; les autres tournent sans erreur ;
   - sorties de tous les tests et exemples identiques avec et sans forme compacte
     (`TCL_TYPES_COMPACT=0/1`) ;
@@ -43,6 +43,7 @@ premier message d'une conversation qui reprend le travail.*
 | v15s | procédures typées : cache du classement, déclaration directe, variables locales compilées |
 | v15t | `type def {-compact}P` sur un produit ; listes champs d'un produit en cases ; `bench.tcl` rapporté au Tcl nu |
 | v15u | `foreach`/`lmap` parcourent le contenu d'une liste typée (patch `boucles-typees.patch`) ; `bench.tcl` en markdown |
+| v15v | cache du champ pour `$a(x)` ; nombres typés lus directement par `expr` (patch `expr-nombres-types.patch`) |
 
 ## 2. Installation et tests (chez l'utilisateur, MinGW64)
 
@@ -142,12 +143,10 @@ recompilé : `maj.sh` fait `make clean`. Des objets périmés donnent une corrup
 
 ## 5. Prochaine étape
 
-**Performances, lecture par chemin (`$q(x)`, `$a(y)`).** Après la v15u, l'étape annotée de
-l'exemple `geometrie` est à 1,9 à 3,7 fois le Tcl nu. L'essentiel du reste vient des lectures par
-chemin : ≈ 0,2 µs chacune contre 0,06 µs pour `lindex`. Piste : un cache à l'endroit de la lecture
-dans le bytecode (type du produit, indice du champ), lecture directe dans la case en forme compacte.
-Puis, côté C : `type binary encode`/`decode` depuis et vers les cases, et une valeur en cases rendue
-par C sans passer par le texte (`Tcl_AnnotatedCreateCells`). Bancs :
+**Performances, côté C.** Après la v15v, l'étape annotée de l'exemple `geometrie` est à 1,8 à 3 fois
+le Tcl nu ; une lecture `$a(x)` dans `expr` coûte ≈ 0,14 µs (la valeur typée du champ, créée puis
+libérée). Suite proposée : `type binary encode`/`decode` depuis et vers les cases, une valeur en cases
+rendue par C sans passer par le texte (`Tcl_AnnotatedCreateCells`), puis de vraies entrées de stub.
 `exemples/geometrie/bench.tcl` et `bench_parties.tcl` ; profil avec callgrind.
 
 Les autres points ouverts sont dans le planning et au § 17 de `doc/ANNOTATIONS.fr.md`, entre

@@ -995,12 +995,12 @@ Le codec C, qui **vérifie** en plus chaque valeur contre son type, est 2 à 3 f
 |---|---|---|
 | `X is point = $a` | 0,6 µs | — |
 | `geo::distance` | 4,7 µs | 1,9 µs |
-| périmètre | ≈ 44 ms | ≈ 20 ms |
-| point dans un polygone (`dedans_tous`) | ≈ 205 ms | ≈ 75 ms |
+| périmètre | ≈ 38 ms | ≈ 18 ms |
+| point dans un polygone (`dedans_tous`) | ≈ 141 ms | ≈ 68 ms |
 
 **Boucles.** `foreach` et `lmap` sur une liste typée parcourent son contenu, dont les éléments sont typés une fois pour toutes : la variable de boucle reçoit l'élément typé sans qu'il soit refabriqué à chaque tour. Sur 10 000 points, `foreach q $P {}` prend 0,24 ms contre 0,16 ms en Tcl nu (2,6 ms avant la v15u).
 
-Le reste de l'écart vient surtout des lectures par chemin (`$q(x)`, `$a(y)` ≈ 0,2 µs contre 0,06 µs pour `lindex`).
+**Lecture d'un champ.** Une lecture compilée `$a(x)` garde, dans l'objet de son index, le type produit vu la dernière fois et la place du champ : la lecture suivante sur le même type va droit à l'élément. Dans `expr`, un opérande typé `int` ou `double` est lu directement dans son contenu. Une lecture `$a(x)` dans `expr` coûte ≈ 0,14 µs, contre 0,05 µs pour `lindex` en Tcl nu : la différence est la valeur typée du champ, créée puis libérée.
 
 ### 16. Choix de conception
 

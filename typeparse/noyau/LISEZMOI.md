@@ -1499,3 +1499,31 @@ variable (`TclPtrSetVarIdx`).
 - Test `t75_boucles_typees` : mêmes sorties qu'avant le changement (boucle compilée ou non, plusieurs
   variables ou listes, variable sous contrat, liste modifiée pendant la boucle, somme, liste nue, liste vide).
 - `exemples/geometrie/bench.tcl` écrit ses résultats en tableaux markdown.
+
+### v15v — lecture `$a(champ)` et nombres typés dans `expr` (24 octobre 2026)
+
+Sources de types : `tclTypePath.c`, `tclAnnotObj.c`, `tclTypes.h` (une fonction déclarée). Patch noyau :
+`expr-nombres-types.patch` (`tclExecute.c`), dernier de `ORDRE.txt`.
+
+Profil de `foreach a $P {set s [expr {$s + $a(x)}]}` : une lecture `$a(x)` coûtait ≈ 730 instructions (recherche
+du champ par son nom, règles générales du chemin), puis l'addition ≈ 1 000 de plus : l'opérande typé faisait
+quitter à l'exécuteur son chemin rapide (`GetNumberFromObj`), et chaque conversion repassait par
+`TclAnnotUnwrap`.
+
+- Cache du champ à l'endroit de la lecture : l'objet index d'une lecture compilée (`x` dans `$a(x)`, littéral du
+  bytecode) garde le type produit vu la dernière fois et l'indice du champ (type d'objet `pathfield`). Même type :
+  l'élément est lu directement. Les descripteurs de types ne changent jamais (une redéfinition est refusée) ; le
+  nom du champ est revérifié. Seulement pour un nom simple et un champ « simple » : une somme (et son sélecteur
+  `S($f)`), un lien `var`, `list.any`, un lien de frontière gardent le chemin général.
+- `TclAnnotNumericContent` : une valeur typée `int` ou `double` (genre, nominal, famille, `int(s,n)`) sans note,
+  dont le contenu est déjà un nombre. L'exécuteur lit ce contenu directement (`GetNumberFromObj`, et la conversion
+  en `double` de `ExecuteExtendedBinaryMathOp`), comme le faisait `TclAnnotUnwrap`. Le résultat se construit
+  comme avant : jamais dans le contenu de l'opérande (une variable `{double}d` reste intacte).
+- Mesures : lecture `$a(x)` dans `expr` ≈ 0,52 → 0,14 µs (Tcl nu, `lindex` : 0,05) ;
+  `foreach a $P {set s [expr {$s + $a(x)}]}` sur 10 000 points 5,2 → 1,5 ms (Tcl nu 0,64). Géométrie, écart avec le
+  Tcl nu : aire / 2.2 → / 1.8, périmètre / 1.9 → / 2.1 (bruit de mesure ; ce calcul passe surtout par des appels de
+  procédure), englobant / 3.7 → / 3.0, dedans_tous / 2.6 → / 2.1, Bézier / 2.4.
+- Ce qui reste par lecture : la valeur typée du champ (un objet alloué puis libéré, ≈ 140 + 300 instructions). La
+  supprimer demanderait que `expr` sache, à la compilation, qu'il ne veut qu'un nombre.
+- Test `t76_lecture_champ` : mêmes sorties qu'avant (champ de même nom à une autre place dans un autre produit,
+  somme, lien `var`, `list.any`, opérandes typés intacts, champ inconnu).

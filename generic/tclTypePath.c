@@ -3226,6 +3226,80 @@ TclTypedVarGetElementByName(Tcl_Interp *interp, Tcl_Obj *nameObj,
 }
 
 /*
+ * Lecture $a(champ) d'un produit : cache à l'endroit de la lecture. L'objet
+ * index d'un chemin compilé ("x" dans $q(x)) est un littéral du bytecode ; il
+ * garde le type produit vu la dernière fois et l'indice du champ. Les
+ * descripteurs de types vivent autant que l'interpréteur et ne changent
+ * jamais : même type, même indice. Le nom du champ est revérifié (strcmp
+ * court) par prudence.
+ */
+static const Tcl_ObjType pathFieldType = {
+    "pathfield", NULL, NULL, NULL, NULL, TCL_OBJTYPE_V0
+};
+
+/* Champ « simple » : lu sans règle particulière (somme et sélecteur S($f),
+ * lien var, list.any, lien de frontière passent par le chemin général). */
+static int
+SimpleFieldType(const TclType *ft)
+{
+    return ft != NULL && ft->kind != TCLT_SUM && ft->kind != TCLT_VAR
+	    && ft->binLink == NULL && !TclTypeIsAny(ft);
+}
+
+static Tcl_Obj *
+FastFieldRead(Tcl_Interp *interp, Tcl_Obj *a, Tcl_Obj *part2Ptr)
+{
+    Tcl_Obj *v, *e;
+    TclType *tp, *ft;
+    int variant;
+    Tcl_Size idx, len;
+    const char *name, *c;
+    const Tcl_Size *pos;
+
+    if (!TclAnnotIsSettled(a)
+	    || TclAnnotInfo(a, &v, &tp, &variant, NULL) != 1
+	    || tp->kind != TCLT_PRODUCT) {
+	return NULL;
+    }
+    name = Tcl_GetStringFromObj(part2Ptr, &len);
+    if (part2Ptr->typePtr == &pathFieldType
+	    && part2Ptr->internalRep.twoPtrValue.ptr1 == tp) {
+	idx = (Tcl_Size) (intptr_t) part2Ptr->internalRep.twoPtrValue.ptr2;
+    } else {
+	Tcl_ObjInternalRep ir;
+
+	if (len == 0 || PathIndexSpans(part2Ptr, &pos) != 0) {
+	    return NULL;
+	}
+	for (c = name; *c != '\0'; c++) {
+	    if (!(isalnum(UCHAR(*c)) || *c == '_')) {
+		return NULL;		/* un vrai chemin : a.b, (x,y), ... */
+	    }
+	}
+	idx = TclTypeFieldIndex(tp, name);
+	if (idx < 0 || idx >= tp->nfields
+		|| !SimpleFieldType(tp->fields[idx].type)) {
+	    return NULL;
+	}
+	ir.twoPtrValue.ptr1 = tp;
+	ir.twoPtrValue.ptr2 = (void *) (intptr_t) idx;
+	Tcl_StoreInternalRep(part2Ptr, &pathFieldType, &ir);
+    }
+    if (idx < 0 || idx >= tp->nfields || tp->fields[idx].name == NULL
+	    || strcmp(Tcl_GetString(tp->fields[idx].name), name) != 0) {
+	return NULL;
+    }
+    ft = tp->fields[idx].type;
+    if (Tcl_ListObjIndex(NULL, v, idx, &e) != TCL_OK || e == NULL) {
+	return NULL;
+    }
+    if (TclIsAnnotated(e)) {
+	e = TCL_ANNOT_CONTENT(e);
+    }
+    return TclNewAnnotatedShared(interp, ft, -1, e);
+}
+
+/*
  * Variantes qui travaillent sur un Var déjà résolu (exécuteur : variables
  * locales compilées, résolues sans nom).
  */
@@ -3241,6 +3315,12 @@ TclTypedVarGetElementVar(Tcl_Interp *interp, Var *varPtr, Tcl_Obj *part2Ptr,
     if (varPtr == NULL || TclIsVarArray(varPtr)
 	    || !(varPtr->flags & VAR_TYPED) || varPtr->value.objPtr == NULL) {
 	return TCL_CONTINUE;
+    }
+    res = FastFieldRead(interp, varPtr->value.objPtr, part2Ptr);
+    if (res != NULL) {
+	Tcl_IncrRefCount(res);
+	*resultPtr = res;
+	return TCL_OK;
     }
     if (PathReadObj(interp, varPtr->value.objPtr, part2Ptr, &res)
 	    != TCL_OK) {

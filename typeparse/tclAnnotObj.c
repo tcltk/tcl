@@ -1314,6 +1314,35 @@ TclAnnotIsSettled(Tcl_Obj *objPtr)
 	    objPtr->internalRep.twoPtrValue.ptr2)->typePtr == &typeRefObjType;
 }
 
+/*
+ * Opérande d'expr : une valeur typée int ou double (genre, nominal, famille,
+ * bitarray), sans note, dont le contenu est déjà un nombre. Rend le contenu,
+ * que l'exécuteur lit directement (comme TclAnnotUnwrap le ferait), ou NULL.
+ */
+Tcl_Obj *
+TclAnnotNumericContent(Tcl_Obj *objPtr)
+{
+    Tcl_Obj *t, *c;
+    TclType *tp;
+
+    if (objPtr->typePtr != &annotatedObjType) {
+	return NULL;
+    }
+    t = (Tcl_Obj *) objPtr->internalRep.twoPtrValue.ptr2;
+    if (t->typePtr != &typeRefObjType) {
+	return NULL;
+    }
+    tp = (TclType *) t->internalRep.twoPtrValue.ptr1;
+    if (tp->kind != TCLT_INT && tp->kind != TCLT_DOUBLE) {
+	return NULL;
+    }
+    c = (Tcl_Obj *) objPtr->internalRep.twoPtrValue.ptr1;
+    if (c->typePtr != &tclIntType && c->typePtr != &tclDoubleType) {
+	return NULL;
+    }
+    return c;
+}
+
 /* 0 : pas annoté ; 1 : typé (tpPtr, variantPtr remplis) ; 2 : brut. */
 int
 TclAnnotInfo(Tcl_Obj *objPtr, Tcl_Obj **contentPtr, TclType **tpPtr,

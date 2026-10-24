@@ -1,0 +1,11 @@
+point : 1.5 double 3.0
+pivot : 8.0 double 16.0   (x à une autre place, même littéral)
+point : 1.5 double
+autre type : 3.25 double 6.5
+rgb : 350 int(u,8) 100 8
+somme : 2.0 forme.rayon boule string
+list.any : list<any> int 5.0
+lien : 5.0 9.5
+intacts : 1.5 double 2.5 {} 1.5 {2.0 3.0} 3.0 4.0
+boucle : 44.0 44.0
+champ inconnu : point has no field "z"

@@ -318,6 +318,7 @@ int	TclTypesGeneration(Tcl_Interp *interp, size_t *uidPtr, size_t *genPtr);
 /* Représentation compacte (tclAnnotObj.c) */
 typedef struct TclCompactLayout TclCompactLayout;
 int TclAnnotIsSettled(Tcl_Obj *objPtr);
+Tcl_Obj *TclAnnotNumericContent(Tcl_Obj *objPtr);
 Tcl_Obj *TclAnnotIterList(Tcl_Obj *aPtr);
 Tcl_Obj *TclCompactFrom(TclType *listTp, Tcl_Obj *content);
 int	TclCompactHolds(Tcl_Obj *v, const TclType *elemTp, Tcl_Size *nPtr);

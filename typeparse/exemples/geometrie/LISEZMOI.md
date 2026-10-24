@@ -36,19 +36,29 @@ tclsh bench.tcl ?N?        ;# vitesses comparées avec timerate (N = 10000 par d
 ```
 
 `bench.tcl` prend le Tcl nu (étape 1) pour référence et écrit des tableaux markdown : à côté de chaque
-temps, `(/ 2.2)` veut dire 2,2 fois plus lent que le Tcl nu, `(x 17.5)` 17,5 fois plus rapide. Mesure du
-24 octobre (v15u, Linux) :
+temps, `(/ 1.8)` veut dire 1,8 fois plus lent que le Tcl nu, `(x 12.6)` 12,6 fois plus rapide. Mesure du
+24 octobre (v15v, Linux) :
 
 | calcul (N = 10000, µs par appel) | 1 brut | 2 annoté | 3 C, octets | 3 C, objet |
 |---|---:|---:|---:|---:|
-| aire | 4 722 | 10 406 (/ 2.2) | 1 281 (x 3.7) | 470 (x 10.0) |
-| périmètre | 23 506 | 44 503 (/ 1.9) | 1 346 (x 17.5) | 477 (x 49.3) |
-| englobant | 1 382 | 5 163 (/ 3.7) | 1 180 (x 1.2) | 510 (x 2.7) |
-| dedans_tous | 79 026 | 203 659 (/ 2.6) | 698 (x 113.3) | 538 (x 146.9) |
-| Bézier | 21 271 | 50 341 (/ 2.4) | 2 101 (x 10.1) | 2 341 (x 9.1) |
+| aire | 3 871 | 7 123 (/ 1.8) | 1 333 (x 2.9) | 417 (x 9.3) |
+| périmètre | 17 802 | 37 578 (/ 2.1) | 1 418 (x 12.6) | 450 (x 39.6) |
+| englobant | 1 276 | 3 852 (/ 3.0) | 1 205 (x 1.1) | 410 (x 3.1) |
+| dedans_tous | 67 517 | 141 419 (/ 2.1) | 658 (x 102.7) | 530 (x 127.4) |
+| Bézier | 21 827 | 51 565 (/ 2.4) | 2 246 (x 9.7) | 2 550 (x 8.6) |
 
-En v15s, l'étape annotée était à / 3.4 (aire), / 2.7 (périmètre), / 6.7 (englobant), / 3.6 (dedans_tous),
-/ 2.7 (Bézier) : la v15u parcourt une liste typée sans refabriquer ses éléments à chaque boucle.
+L'étape annotée, rapportée au Tcl nu, au fil des versions :
+
+| calcul | v15s | v15u | v15v |
+|---|---:|---:|---:|
+| aire | / 3.4 | / 2.2 | / 1.8 |
+| périmètre | / 2.7 | / 1.9 | / 2.1 |
+| englobant | / 6.7 | / 3.7 | / 3.0 |
+| dedans_tous | / 3.6 | / 2.6 | / 2.1 |
+| Bézier | / 2.7 | / 2.4 | / 2.4 |
+
+v15u : `foreach` parcourt une liste typée sans refabriquer ses éléments ; v15v : lecture `$a(x)` par un cache du
+champ, nombres typés lus directement par `expr`.
 
 ## L'en-tête C vient des types
 

@@ -452,7 +452,17 @@ VarHashFindVar(
  *			void **ptrPtr, int *tPtr);
  */
 
+/*
+ * Un opérande typé int ou double ($q(x), une variable {double}) dont le
+ * contenu est déjà un nombre : lu directement dans le contenu (TIP 764).
+ */
+static inline int
+GetNumberFromObjT(Tcl_Interp *interp, Tcl_Obj *objPtr, void **ptrPtr,
+	int *tPtr);
 #define GetNumberFromObj(interp, objPtr, ptrPtr, tPtr) \
+    (TCL_ANNOT_P(objPtr) ? GetNumberFromObjT((interp), (objPtr), (ptrPtr), \
+	(tPtr)) : GetNumberFromObjP((interp), (objPtr), (ptrPtr), (tPtr)))
+#define GetNumberFromObjP(interp, objPtr, ptrPtr, tPtr) \
     ((TclHasInternalRep((objPtr), &tclIntType))				\
 	?	(*(tPtr) = TCL_NUMBER_INT,				\
 		*(ptrPtr) = (void *)					\
@@ -466,6 +476,32 @@ VarHashFindVar(
     (((objPtr)->bytes != NULL) && ((objPtr)->length == 0))		\
 	? TCL_ERROR :							\
     Tcl_GetNumberFromObj((interp), (objPtr), (ptrPtr), (tPtr)))
+
+static inline Tcl_Obj *
+NumObj(Tcl_Obj *objPtr)
+{
+    Tcl_Obj *c;
+
+    if (TCL_ANNOT_P(objPtr) && (c = TclAnnotNumericContent(objPtr)) != NULL) {
+	return c;
+    }
+    return objPtr;
+}
+
+static inline int
+GetNumberFromObjT(
+    Tcl_Interp *interp,
+    Tcl_Obj *objPtr,
+    void **ptrPtr,
+    int *tPtr)
+{
+    Tcl_Obj *c = TclAnnotNumericContent(objPtr);
+
+    if (c != NULL) {
+	objPtr = c;
+    }
+    return GetNumberFromObjP(interp, objPtr, ptrPtr, tPtr);
+}
 
 /*
  * Macro used to make the check for type overflow more mnemonic. This works by
@@ -8516,8 +8552,9 @@ ExecuteExtendedBinaryMathOp(
 	unsigned short base;
 
 	if ((type1 == TCL_NUMBER_DOUBLE) || (type2 == TCL_NUMBER_DOUBLE)) {
-	    Tcl_GetDoubleFromObj(NULL, valuePtr, &d1);
-	    Tcl_GetDoubleFromObj(NULL, value2Ptr, &d2);
+	    /* opérande typé : son contenu, déjà un nombre (TIP 764) */
+	    Tcl_GetDoubleFromObj(NULL, NumObj(valuePtr), &d1);
+	    Tcl_GetDoubleFromObj(NULL, NumObj(value2Ptr), &d2);
 
 	    if (d1==0.0 && d2<0.0) {
 		return EXPONENT_OF_ZERO;
@@ -8727,8 +8764,9 @@ ExecuteExtendedBinaryMathOp(
 	     * floating point calculations.
 	     */
 
-	    Tcl_GetDoubleFromObj(NULL, valuePtr, &d1);
-	    Tcl_GetDoubleFromObj(NULL, value2Ptr, &d2);
+	    /* opérande typé : son contenu, déjà un nombre (TIP 764) */
+	    Tcl_GetDoubleFromObj(NULL, NumObj(valuePtr), &d1);
+	    Tcl_GetDoubleFromObj(NULL, NumObj(value2Ptr), &d2);
 
 	    switch (opcode) {
 	    case INST_ADD:
