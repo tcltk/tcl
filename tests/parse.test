@@ -30,6 +30,20 @@ testConstraint testcmdtrace [llength [info commands testcmdtrace]]
 testConstraint testevent [llength [info commands testevent]]
 testConstraint memory [llength [info commands memory]]
 
+# Expression substitution has two possible spellings, selected when Tcl is
+# built (TCL_EXPR_SUBST_PARENS in tclParse.c): "$((expr))" (the default; plain
+# "$(...)" keeps its old meaning) or "$(expr)". This constraint is true only
+# for the latter build. Tests that use "$((expr))" are valid for both.
+testConstraint exprSubstSingleParen [expr {![catch {subst {$(1)}}]}]
+testConstraint exprSubstDoubleParen [expr {![testConstraint exprSubstSingleParen]}]
+# The body of "$((X))" is "X" in the default build ("$((" and "))" are the
+# delimiters) and "(X)" in the single-paren build. Tests that show the body
+# use %L and %R for the parentheses that are part of it in that build.
+set lp [expr {[testConstraint exprSubstSingleParen] ? "(" : ""}]
+set rp [expr {[testConstraint exprSubstSingleParen] ? ")" : ""}]
+# "$((1+2)" with nothing after it: only "$((" wants a second ")"
+set unterm [expr {[testConstraint exprSubstSingleParen] ? "missing )" : "missing second \")\" at _@_\nin expression substitution \"\$((1+2)_@_\""}]
+
 test parse-1.1 {Tcl_ParseCommand procedure, computing string length} {testparser testbytestring} {
     testparser [testbytestring "foo\x00 bar"] -1
 } {- foo 1 simple foo 1 text foo 0 {}}
@@ -973,9 +987,12 @@ test parse-18.10 {Tcl_SubstObj, parse errors} {
 test parse-18.11 {Tcl_SubstObj, parse errors} {
     list [catch "subst foo\$array(\$\{foo)" msg] $msg
 } [list 1 "missing close-brace for variable name"]
-test parse-18.12 {Tcl_SubstObj, parse errors} {
+test parse-18.12 {Tcl_SubstObj, parse errors} !exprSubstSingleParen {
     list [catch "subst foo\$(\$\{foo)" msg] $msg
 } [list 1 "missing close-brace for variable name"]
+test parse-18.12.1 {Tcl_SubstObj, parse errors, $( is an expr substitution} exprSubstSingleParen {
+    list [catch "subst foo\$(\$\{foo)" msg] $msg
+} [list 1 "missing )"]
 test parse-18.13 {Tcl_SubstObj, parse errors} {
     list [catch "subst \[" msg] $msg
 } [list 1 "missing close-bracket"]
@@ -1130,6 +1147,469 @@ test parse-21.1 {TCL_EVAL_DIRECT coverage} testevent {
     vwait done
     set ::done
 } 2
+
+# Expression substitution: $((expr)) means [expr {expr}] wherever a $
+# substitution is recognised. The body is handed to the expression parser as
+# one unsubstituted word, so nothing in it is substituted twice.
+# (When built with TCL_EXPR_SUBST_PARENS=1, "$(expr)" means the same thing.)
+
+test parse-22.1 {expression substitution: token structure} -constraints testparser -body {
+    testparser {puts $((1+2))} 0
+} -result [string map [list %L $lp %R $rp] {- {puts $((1+2))} 2 simple puts 1 text puts 0 word {$((1+2))} 2 exprsubst {$((1+2))} 1 text %L1+2%R 0 {}}]
+test parse-22.2 {expression substitution: inside a quoted word} -constraints testparser -body {
+    testparser {x "a$(((1+2)*3))b"} 0
+} -result [string map [list %L $lp %R $rp] {- {x "a$(((1+2)*3))b"} 2 simple x 1 text x 0 word {"a$(((1+2)*3))b"} 4 text a 0 exprsubst {$(((1+2)*3))} 1 text %L(1+2)*3%R 0 text b 0 {}}]
+test parse-22.3 {expression substitution: inner parentheses are part of the body} -constraints testparser -body {
+    testparser {$(((1+2)*3))} 0
+} -result [string map [list %L $lp %R $rp] {- {$(((1+2)*3))} 1 word {$(((1+2)*3))} 2 exprsubst {$(((1+2)*3))} 1 text %L(1+2)*3%R 0 {}}]
+test parse-22.4 {expression substitution: Tcl_ParseVarName} -constraints testparsevarname -body {
+    testparsevarname {$((1+(2*3)))z} 20 0
+} -result [string map [list %L $lp %R $rp] {- {} 0 exprsubst {$((1+(2*3)))} 1 text %L1+(2*3)%R 0 z}]
+test parse-22.5 {expression substitution: Tcl_ParseVar result stays valid} testparsevar {
+    lindex [testparsevar {$((7*6))z}] 0
+} 42
+test parse-22.6 {expression substitution: body is not substituted by the parser} -constraints testparser -body {
+    testparser {$(($x [y] \n))} 0
+} -result [string map [list %L $lp %R $rp] {- {$(($x [y] \n))} 1 word {$(($x [y] \n))} 2 exprsubst {$(($x [y] \n))} 1 text {%L$x [y] \n%R} 0 {}}]
+
+test parse-22.10 {expression substitution: bare word} {
+    set v $((1+2))
+} 3
+test parse-22.11 {expression substitution: inside quotes} {
+    set v "n=$((3*4))!"
+} n=12!
+test parse-22.12 {expression substitution: several in one word} {
+    set v a$((1+1))b$((2+2))c
+} a2b4c
+test parse-22.13 {expression substitution: extra parentheses} {
+    set v $(((1+2)*3))
+} 9
+test parse-22.14 {expression substitution: variables are substituted by expr} {
+    set x 5
+    set v $(($x*2))
+} 10
+test parse-22.15 {expression substitution: the body is not substituted first} {
+    # If the word parser substituted $x first this would be the (erroneous)
+    # command [llength a b].
+    set x {a b}
+    set v $(([llength $x]))
+} 2
+test parse-22.16 {expression substitution: no double substitution} {
+    # The *value* of a variable inside the body is never substituted again.
+    set cnt 0
+    set s {[incr cnt]}
+    list $(([string length $s])) $cnt
+} {10 0}
+test parse-22.17 {expression substitution: close paren inside braces} {
+    set v $(([llength {a b )}]))
+} 3
+test parse-22.18 {expression substitution: close paren inside quotes} {
+    set v $(([string length ")"]))
+} 1
+test parse-22.19 {expression substitution: close paren inside a script} {
+    set v $(([string length [string trim " ) "]]))
+} 1
+test parse-22.20 {expression substitution: nested} {
+    set v $(($((1+1))+1))
+} 3
+test parse-22.21 {expression substitution: as an array index} {
+    unset -nocomplain ax
+    array set ax {2 two}
+    set v $ax($((1+1)))
+} two
+test parse-22.22 {expression substitution: in bracketed command} {
+    list $((1+1)) $((2+2))
+} {2 4}
+test parse-22.23 {expression substitution: in subst} {
+    subst {r=$((6*7))}
+} r=42
+test parse-22.24 {expression substitution: in an expression} {
+    expr {$((2+3))*2}
+} 10
+test parse-22.25 {expression substitution: in an if condition} {
+    if {$((1+1)) == 2} {set v yes} else {set v no}
+} yes
+test parse-22.26 {expression substitution: expansion} {
+    list {*}$((1+1)) b
+} {2 b}
+test parse-22.27 {expression substitution: result is not forced to a string} {
+    set v $((1/3.0))
+} 0.3333333333333333
+test parse-22.28 {expression substitution: in a compiled procedure} {
+    proc p {n} {return "<$(($n+1))>"}
+    p 4
+} <5>
+test parse-22.29 {expression substitution: line numbers are tracked} {
+    proc p {} {
+	set x 1
+	set y [catch {
+	    set v ok
+	    set v $((1+))
+	} m opts]
+	dict get $opts -errorline
+    }
+    p
+} 5
+
+test parse-22.30 {expression substitution: unterminated, subst} -body {
+    list [catch {subst {$((1+2)}} msg] $msg
+} -result [list 1 $unterm]
+test parse-22.31 {expression substitution: unterminated, eval} -body {
+    list [catch {eval {set v $((1+2)}} msg] $msg
+} -result [list 1 $unterm]
+test parse-22.32 {expression substitution: syntax error is the expr error} -body {
+    list [catch {set v $((1+))} msg] $msg
+} -result [string map [list %L $lp %R $rp] {1 {missing operand at _@_
+in expression "%L1+_@_%R"}}]
+test parse-22.33 {expression substitution: same error as [expr]} {
+    set a [catch {set v $((1+))} msg1]
+    set b [catch {eval "set v \[expr {${lp}1+${rp}}\]"} msg2]
+    list $a $b [string equal $msg1 $msg2]
+} {1 1 1}
+
+# $((body)) must behave exactly as [expr {body}] ([expr {(body)}] in the
+# single-paren build, where the parentheses are part of the body), including
+# error and non-OK return codes, both when the script is compiled and when it
+# is not. The parentheses are visible only in the quoted expression of error
+# messages.
+test parse-22.40 {expression substitution == [expr {(...)}]: compiled and not} -body {
+    set bad {}
+    foreach body {
+	{1+2} {2*3+1} {max(3,9)} {"a" eq "a"} {1/0} {1+} {int(7.9)}
+	{[string length abc]+1} {[return -code break]} {[return -code error boom]}
+	{[return -code continue]} {[return -code 7 x]}
+	{1 ? "y" : "n"} {1,2} {$x*2} {$x . 1} {$nosuchvar} {[error oops]}
+	{9223372036854775807+1} {"a$x"} {{braced $x}}
+    } {
+	set new "set x 4; set v \$(($body))"
+	set ref "set x 4; set v \[expr {$lp$body$rp}\]"
+	proc newp {} $new
+	proc refp {} $ref
+	foreach {kind a b} [list \
+		uncompiled [list catch $new] [list catch $ref] \
+		compiled   {catch newp}      {catch refp}] {
+	    set ra [list [{*}$a m1] $m1]
+	    set rb [list [{*}$b m2] $m2]
+	    if {$ra ne $rb} {
+		lappend bad [list $kind $body $ra $rb]
+	    }
+	}
+    }
+    set bad
+} -result {}
+
+test parse-22.50 {empty array name keeps its meaning unless built with $(...)} !exprSubstSingleParen {
+    set () E
+    set v $()
+} E
+test parse-22.51 {"$(" alone is an expr substitution when built that way} exprSubstSingleParen {
+    set v $(1+2)
+} 3
+test parse-22.52 {"$(" alone is not an expr substitution by default} !exprSubstSingleParen {
+    list [catch {set v $(1+2)} msg] $msg
+} {1 {can't read "(1+2)": no such element in array}}
+test parse-22.53 {"$((" works the same under either spelling} {
+    set v $(((1+2)*3))
+} 9
+
+# --- Scanner details: where the body of "$((...))" ends -------------------
+
+test parse-22.60 {expression substitution: nested braces are counted} {
+    set v $(([llength {a {b )} c}]))
+} 3
+test parse-22.61 {expression substitution: escaped brace inside braces} {
+    set v $(([string length {\} )}]))
+} 4
+test parse-22.62 {expression substitution: escaped quote inside quotes} {
+    set v $(([string length "a\")"]))
+} 3
+test parse-22.63 {expression substitution: bracket inside quotes} {
+    set v $(([string length "[string length ")"]x"]))
+} 2
+test parse-22.64 {expression substitution: close paren inside a bracket} {
+    set v $(([string index a) 0] eq "a"))
+} 1
+test parse-22.65 {expression substitution: nested brackets with a close paren} {
+    set v $(([string length [string index a) 0]]))
+} 1
+test parse-22.66 {expression substitution: escaped close bracket inside brackets} {
+    set v $(([string length a\]b]))
+} 3
+test parse-22.67 {expression substitution: unterminated body} -body {
+    set bad {}
+    foreach s [list "\$((\{abc))" "\$((\"abc))" "\$((\[foo))" "\$((1+2\\" \
+	    "\$((\"a\[b))" "\$((\"a\\\"))"] {
+	set r [list [catch {subst $s} msg] $msg]
+	if {$r ne {1 {missing )}}} {lappend bad [list $s $r]}
+    }
+    set bad
+} -result {}
+test parse-22.68 {expression substitution: backslash skips a close paren} -body {
+    list [catch {subst {$((1\)+2))}} msg] $msg
+} -result [string map [list %L $lp %R $rp] {1 {invalid character "\"
+in expression "%L1\)+2%R"}}]
+test parse-22.69 {expression substitution: incomplete script (info complete)} {
+    list [info complete {puts $((1+2)}] [info complete {puts $((1+2))}] \
+	[info complete "puts \$((\{a))"] [info complete "puts \$((\{a\}))"]
+} {0 1 0 1}
+
+# The tests above put braces and quotes inside [...], where ")" is irrelevant.
+# These put them directly in the expression, where a ")" must not end the body.
+
+test parse-22.86 {expression substitution: nested braces in the expression} {
+    set v $(({a {b )} c} eq {a {b )} c}))
+} 1
+test parse-22.87 {expression substitution: escaped brace in the expression} {
+    set v $(({\} )} eq {\} )}))
+} 1
+test parse-22.88 {expression substitution: close paren in quotes in the expression} {
+    set v $(("a)b" eq "a)b"))
+} 1
+test parse-22.89 {expression substitution: escaped quote in the expression} {
+    set v $(("a\")" eq "a\")"))
+} 1
+test parse-22.90 {expression substitution: bracket with quote and paren, inside quotes} {
+    set v $(("x[string length ")"]y" eq "x1y"))
+} 1
+test parse-22.91 {expression substitution: unbalanced parens inside a bracket} {
+    set v $(([string length a)(]))
+} 3
+test parse-22.92 {expression substitution: unbalanced parens inside a nested bracket} {
+    set v $(([string length [string index a)( 0]]))
+} 1
+
+test parse-22.94 {expression substitution: a close paren after a nested brace group} {
+    set v $(({a {b} ) c} eq {a {b} ) c}))
+} 1
+
+# Parsing is limited to numBytes bytes: no truncated prefix of a valid
+# substitution may be accepted as one, whatever follows the cut.
+test parse-22.93 {expression substitution: truncated input is never accepted} -constraints testparsevarname -body {
+    set bad {}
+    foreach s [list \
+	    {$((1+2))} {$(([llength {a b}]))} {$(({a {b )} c} eq {a {b )} c}))} \
+	    {$(("a)b" eq "a)b"))} {$(("a\")" eq "a\")"))} {$(([string length a)(]))} \
+	    {$(("x[string length ")"]y" eq "x1y"))} {$(({\} )} eq {\} )}))} \
+	    {$((1\)+2))}] {
+	set n [string length $s]
+	for {set L 2} {$L < $n} {incr L} {
+	    if {![catch {testparsevarname $s $L 0} r] && [string match *exprsubst* $r]} {
+		lappend bad [list $s $L $r]
+	    }
+	}
+	if {[catch {testparsevarname $s $n 0} r] || ![string match *exprsubst* $r]} {
+	    lappend bad [list $s full $r]
+	}
+    }
+    set bad
+} -result {}
+
+# --- The substitution when the word is NOT compiled to bytecode -------------
+# "subst $var" and testevalex (Tcl_EvalEx) go through TclSubstTokens;
+# a literal "subst {...}" or "catch {...}" would be compiled instead.
+
+test parse-22.70 {expression substitution: runtime subst, text on both sides} {
+    set s {a$((1+1))b$((2+2))c}
+    subst $s
+} a2b4c
+test parse-22.71 {expression substitution: runtime subst, last token} {
+    set s {x=$((6*7))}
+    subst $s
+} x=42
+test parse-22.72 {expression substitution: runtime subst, repeated} {
+    set s {$((1+1))$((2+2))$((3+3))}
+    list [subst $s] [subst $s]
+} {246 246}
+test parse-22.73 {expression substitution: uncompiled word (Tcl_EvalEx)} testevalex {
+    list [testevalex {set v a$((1+1))b}] [testevalex {set w "x$((2*3))y$((1+1))"}]
+} {a2b x6y2}
+test parse-22.74 {expression substitution: uncompiled, error} -constraints testevalex -body {
+    list [catch {testevalex {set v a$((1+))b}} msg] $msg
+} -result [string map [list %L $lp %R $rp] {1 {missing operand at _@_
+in expression "%L1+_@_%R"}}]
+test parse-22.75 {expression substitution == [expr {(...)}] when NOT compiled} -constraints testevalex -body {
+    set bad {}
+    set x 4
+    foreach body {
+	{1+2} {2*3+1} {1/0} {1+} {int(7.9)} {[string length abc]+1}
+	{[return -code break]} {[return -code error boom]} {[return -code continue]}
+	{[return -code 7 x]} {1 ? "y" : "n"} {1,2} {$x*2} {$nosuchvar} {[error oops]}
+	{"a$x"}
+    } {
+	set new "set x 4; set v \$(($body))"
+	set ref "set x 4; set v \[expr {$lp$body$rp}\]"
+	set r1 [list [catch {testevalex $new} m1] $m1]
+	set r2 [list [catch {testevalex $ref} m2] $m2]
+	if {$r1 ne $r2} {lappend bad [list evalex $body $r1 $r2]}
+	# the same text through the runtime "subst" command
+	set r1 [list [catch {subst "\$(($body))"} m1] $m1]
+	set r2 [list [catch {subst "\[expr {$lp$body$rp}\]"} m2] $m2]
+	if {$r1 ne $r2} {lappend bad [list subst $body $r1 $r2]}
+    }
+    set bad
+} -result {}
+
+# Memory-debug builds only (constraint "memory"): the runtime substitution
+# paths must not leak, including on errors and non-OK return codes.
+test parse-22.80 {expression substitution: memory leak} -constraints {testparsevar testevalex memory} -setup {
+    proc getbytes {} {
+	return [lindex [split [memory info] \n] 3 3]
+    }
+    set s {a$((1+1))b$(([string length abc]))c}
+    set bad {$((1+))}
+    set rc {a$(([return -code 5 x]))b}
+} -body {
+    set end [getbytes]
+    for {set i 0} {$i < 5} {incr i} {
+	set r1 [subst $s]
+	set r2 [testevalex {set v a$((1+1))b}]
+	set r3 [testparsevar {$((7*6))z}]
+	catch {subst $bad}
+	catch {testevalex {set v $((1+))}}
+	catch {subst $rc}
+	set tmp $end
+	set end [getbytes]
+    }
+    expr {$end - $tmp}
+} -cleanup {
+    unset -nocomplain s bad rc end i r1 r2 r3 tmp
+    rename getbytes {}
+} -result 0
+
+# --- Optional: check the build really uses the spelling we expect -------------
+# The tests above adapt themselves to whichever spelling the build uses, so they
+# cannot notice if the build uses the *wrong* one. When the environment
+# variable TCL_TEST_EXPR_SUBST_PARENS is set to 1 or 2, check against it.
+
+testConstraint exprSubstExpected [info exists ::env(TCL_TEST_EXPR_SUBST_PARENS)]
+# --- "$((" needs a closing "))" (default build) -------------------------------
+# The second "(" is not a delimiter of its own in the sense of a pair: the body
+# ends at the first ")" that balances the parentheses inside it, and the next
+# character must be another ")". So a forgotten "(" is reported instead of
+# leaving a stray ")" in the output.
+test parse-22.90 {"$((": missing opening paren inside the body} -constraints exprSubstDoubleParen -body {
+    list [catch {subst {$((1+2)*3)}} msg] $msg
+} -result {1 {missing second ")" at _@_
+in expression substitution "$((1+2)_@_*3)"}}
+test parse-22.91 {"$((": the typo from the design notes} -constraints exprSubstDoubleParen -body {
+    list [catch {subst {$((  1+2)*3  ))}} msg] $msg
+} -result {1 {missing second ")" at _@_
+in expression substitution "$((  1+2)_@_*3  ))"}}
+test parse-22.92 {"$((": the intended form} -constraints exprSubstDoubleParen -body {
+    subst {$((  (1+2)*3  ))}
+} -result 9
+test parse-22.93 {"$((": spaces inside are part of the body} -constraints exprSubstDoubleParen -body {
+    subst {$(( 1+2 ))}
+} -result 3
+test parse-22.94 {"$((": a space between the two closing parens is an error} -constraints exprSubstDoubleParen -body {
+    list [catch {subst {$((1+2) )}} msg] $msg
+} -result {1 {missing second ")" at _@_
+in expression substitution "$((1+2)_@_ )"}}
+test parse-22.95 {"$((": unterminated after the first close} -constraints {exprSubstDoubleParen testparser} -body {
+    catch {testparser {set v $((1+2)} 0} msg
+    set msg
+} -match glob -result {missing second ")" at _@_*}
+test parse-22.96 {"$((": a space after the first paren is not the trigger} -constraints exprSubstDoubleParen -body {
+    list [catch {subst {$( (1+2))}} msg] $msg
+} -result {1 {invalid character in array index}}
+test parse-22.97 {"$((": parse error is reported as a syntax error, not incomplete} -constraints {exprSubstDoubleParen testparser} -body {
+    catch {testparser {set v $((1+2)*3)} 0} msg
+    set msg
+} -result {missing second ")" at _@_
+in expression substitution "$((1+2)_@_*3)"}
+
+test parse-22.98 {"$((": long text is shortened around the marker} -constraints exprSubstDoubleParen -body {
+    set pad [string repeat x 100]
+    list [catch {subst "\$(($pad+1)${pad}y)"} msg] $msg
+} -result [list 1 "missing second \")\" at _@_\nin expression substitution \"...[string repeat x 57]+1)_@_[string repeat x 20]...\""]
+test parse-22.98a {"$((": shortening does not split a UTF-8 character} -constraints exprSubstDoubleParen -body {
+    set bad 0
+    foreach pad [list \u00e9 \u20ac \U0001F600] {
+	for {set n 55} {$n < 66} {incr n} {
+	    set r [string repeat $pad $n]
+	    catch {subst "\$(($r+1)$r)"} msg
+	    if {[string first \uFFFD $msg] >= 0 || [string first _@_ $msg] < 0} {incr bad}
+	}
+    }
+    set bad
+} -result 0
+
+test parse-22.99 {expression substitution: build uses the expected spelling} \
+    -constraints exprSubstExpected -body {
+    set expectSingle [expr {$::env(TCL_TEST_EXPR_SUBST_PARENS) == 1}]
+    list [expr {$expectSingle == [testConstraint exprSubstSingleParen]}] \
+	[catch {subst {$((1+2))}} r] $r
+} -result {1 0 3}
+
+# The subst flags must treat "$(" as an expression only where the build
+# says so; everywhere else it is still an array with the empty name.
+test parse-22.100 {"$((": $(a) is an empty-name array, not an expression} -constraints exprSubstDoubleParen -setup {
+    set (a) 5
+} -body {
+    list [subst {$(a)}] [subst -noexpressions {$(a)}] [subst -novariables {$(a)}]
+} -cleanup {
+    unset -nocomplain (a)
+} -result {5 5 {$(a)}}
+test parse-22.101 {"$(": the flag decides for the single-paren spelling} -constraints exprSubstSingleParen -body {
+    list [subst {$(1+2)}] [subst -noexpressions {$(1+2)}] [subst -novariables {$(1+2)}]
+} -result {3 {$(1+2)} {$(1+2)}}
+test parse-22.102 {expression substitution: text cut off before the closer} -constraints {exprSubstDoubleParen testparser} -body {
+    # The scanner must stop at the length it is given, not at the NUL.
+    list [catch {testparser {set v $((1+2))} 12} msg] $msg
+} -result {1 {missing )}}
+test parse-22.103 {expression substitution: text cut off before the closer} -constraints {exprSubstSingleParen testparser} -body {
+    list [catch {testparser {set v $(1+2)} 11} msg] $msg
+} -result {1 {missing )}}
+
+# Exact shape of the message around the 60 and 20 byte limits.
+proc parse-22-msg {script} {
+    catch {eval $script} msg
+    set msg
+}
+set parse22e é
+test parse-22.104 {"$((": message cut falls inside a UTF-8 character, before the marker} -constraints exprSubstDoubleParen -body {
+    parse-22-msg "set v \$(([string repeat $parse22e 40])*3)"
+} -result "missing second \")\" at _@_\nin expression substitution \"...[string repeat $parse22e 29])_@_*3)\""
+test parse-22.105 {"$((": message cut falls inside a UTF-8 character, after the marker} -constraints exprSubstDoubleParen -body {
+    parse-22-msg "set v \$((x)*[string repeat $parse22e 15]"
+} -result "missing second \")\" at _@_\nin expression substitution \"\$((x)_@_*[string repeat $parse22e 9]...\""
+test parse-22.106 {"$((": exactly 60 bytes before and 20 after the marker are not shortened} -constraints exprSubstDoubleParen -body {
+    parse-22-msg "set v \$(([string repeat x 56])*[string repeat y 19]"
+} -result "missing second \")\" at _@_\nin expression substitution \"\$(([string repeat x 56])_@_*[string repeat y 19]\""
+test parse-22.107 {"$((": one byte more on each side is shortened} -constraints exprSubstDoubleParen -body {
+    parse-22-msg "set v \$(([string repeat x 57])*[string repeat y 20]"
+} -result "missing second \")\" at _@_\nin expression substitution \"...(([string repeat x 57])_@_*[string repeat y 19]...\""
+rename parse-22-msg {}
+unset parse22e
+
+# Commands after an expression substitution in the same word keep their
+# line numbers. The second word uses [expr {...}] and its command is one
+# line below the first word's, so the two reported lines must differ by 1.
+test parse-22.108 {expression substitution: line numbers of later commands} -body {
+    proc parse22p {} {
+	list "a
+b $((1+1)) [dict get [info frame 0] line]" "a
+b [expr {1+1}] [dict get [info frame 0] line]"
+    }
+    lassign [parse22p] w1 w2
+    rename parse22p {}
+    expr {[lindex $w2 end] - [lindex $w1 end]}
+} -result 1
+
+# A backslash-newline earlier in the same word shifts the line of the
+# commands that come after it. A command inside $((...)) must see the same
+# line as the same command inside [expr {...}], both before and after the
+# expression substitution in the word.
+test parse-22.109 {expression substitution: line numbers after a continuation line} -body {
+    proc parse22q {} {
+	return "a\
+b[dict get [info frame 0] line]-$(([dict get [info frame 0] line]))-[dict get [info frame 0] line]-[expr {[dict get [info frame 0] line]}]-$(([dict get [info frame 0] line]))"
+    }
+    set r [parse22q]
+    rename parse22q {}
+    regexp {^a b(\d+)-(\d+)-(\d+)-(\d+)-(\d+)$} $r -> n1 n2 n3 n4 n5
+    list [expr {$n1 == $n2}] [expr {$n3 == $n4}] [expr {$n4 == $n5}] [expr {$n3 - $n1}]
+} -result {1 1 1 0}
 
 cleanupTests
 }

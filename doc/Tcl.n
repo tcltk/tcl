@@ -136,6 +136,34 @@ or close brace characters,
 and \fIindex\fR can be any sequence of characters except for close brace
 characters.  No further
 substitutions are performed during the parsing of \fIname\fR.
+.TP 15
+\fB$((\fIexpression\fB))\fR
+.
+A dollar-sign followed by two open parentheses begins an
+\fIexpression substitution\fR, a shortcut for
+.QW "\fB[expr {\fIexpression\fB}]\fR" .
+The expression is the text between the two open parentheses and the first
+close parenthesis that balances the parentheses inside the text, and that
+close parenthesis must be followed immediately by a second one.
+Leaving out an open parenthesis is therefore an error, not a shorter
+expression: \fB$((1+2)*3)\fR is rejected, and should be written
+\fB$(((1+2)*3))\fR.
+A space between the dollar-sign and the second open parenthesis, as in
+\fB$( (1+2))\fR, is not an expression substitution; as before it is a
+(here invalid) array reference with an empty name.
+Parentheses nested inside are counted, and parentheses inside braces,
+double quotes or bracketed commands are skipped.
+The text is passed to \fBexpr\fR as if it were enclosed in braces:
+the Tcl parser performs no substitution on it, so that variable, command and
+backslash substitutions in it are performed once, by \fBexpr\fR, and the
+result of the expression is never substituted a second time. For example,
+.QW "\fBset area $(($width * $height))\fR"
+sets \fBarea\fR to the product of the two variables, and
+.QW "\fBputs \N'34'n=$((2**10))!\N'34'\fR"
+prints
+.QW "\fBn=1024!\fR" .
+Extra parentheses around the expression make no difference:
+\fB$(($a+$b))\fR and \fB$((($a+$b)))\fR have the same value.
 .PP
 There may be any number of variable substitutions in a single word.
 Variable substitution is not performed on words enclosed in braces.

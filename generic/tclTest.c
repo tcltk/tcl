@@ -4611,6 +4611,9 @@ PrintParse(
 	case TCL_TOKEN_VARIABLE:
 	    typeString = "variable";
 	    break;
+	case TCL_TOKEN_EXPR_SUBST:
+	    typeString = "exprsubst";
+	    break;
 	case TCL_TOKEN_SUB_EXPR:
 	    typeString = "subexpr";
 	    break;

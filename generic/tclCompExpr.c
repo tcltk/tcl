@@ -935,7 +935,8 @@ ParseExpr(
 		 */
 
 		tokenPtr = parsePtr->tokenPtr + wordIndex + 1;
-		if (code == TCL_OK && tokenPtr->type != TCL_TOKEN_VARIABLE) {
+		if (code == TCL_OK && tokenPtr->type != TCL_TOKEN_VARIABLE
+			&& tokenPtr->type != TCL_TOKEN_EXPR_SUBST) {
 		    TclNewLiteralStringObj(msg, "invalid character \"$\"");
 		    errCode = "BADCHAR";
 		    goto error;

@@ -2873,6 +2873,28 @@ TclCompileTokens(
 	    tokenPtr += tokenPtr->numComponents;
 	    break;
 
+	case TCL_TOKEN_EXPR_SUBST:
+	    /*
+	     * $(expr): compile the body exactly as the argument of a braced
+	     * [expr {...}] would be; the body is never substituted by the
+	     * word parser, so nothing is substituted twice.
+	     */
+
+	    if (Tcl_DStringLength(&textBuffer) > 0) {
+		TclPushDString(envPtr, &textBuffer);
+		numObjsToConcat++;
+		Tcl_DStringFree(&textBuffer);
+	    }
+
+	    envPtr->line += adjust;
+	    TclCompileExpr(interp, tokenPtr[1].start, tokenPtr[1].size,
+		    envPtr, 1);
+	    envPtr->line -= adjust;
+	    numObjsToConcat++;
+	    count -= tokenPtr->numComponents;
+	    tokenPtr += tokenPtr->numComponents;
+	    break;
+
 	default:
 	    Tcl_Panic("Unexpected token type in TclCompileTokens: %d; %.*s",
 		    tokenPtr->type, (int)tokenPtr->size, tokenPtr->start);

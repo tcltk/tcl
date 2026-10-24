@@ -22,10 +22,10 @@ testConstraint testbytestring [llength [info commands testbytestring]]
 
 test subst-1.1 {basics} -returnCodes error -body {
     subst
-} -result {wrong # args: should be "subst ?-backslashes? ?-commands? ?-variables? ?-nobackslashes? ?-nocommands? ?-novariables? string"}
+} -result {wrong # args: should be "subst ?-backslashes? ?-commands? ?-variables? ?-nobackslashes? ?-nocommands? ?-novariables? ?-expressions? ?-noexpressions? string"}
 test subst-1.2 {basics} -returnCodes error -body {
     subst a b c
-} -result {bad option "a": must be -backslashes, -commands, -variables, -nobackslashes, -nocommands, or -novariables}
+} -result {bad option "a": must be -backslashes, -commands, -variables, -nobackslashes, -nocommands, -novariables, -expressions, or -noexpressions}
 
 test subst-2.1 {simple strings} {
     subst {}
@@ -123,13 +123,13 @@ test subst-6.1 {clear the result after command substitution} -body {
 
 test subst-7.1 {switches} -returnCodes error -body {
     subst foo bar
-} -result {bad option "foo": must be -backslashes, -commands, -variables, -nobackslashes, -nocommands, or -novariables}
+} -result {bad option "foo": must be -backslashes, -commands, -variables, -nobackslashes, -nocommands, -novariables, -expressions, or -noexpressions}
 test subst-7.2 {switches} -returnCodes error -body {
     subst -no bar
-} -result {ambiguous option "-no": must be -backslashes, -commands, -variables, -nobackslashes, -nocommands, or -novariables}
+} -result {ambiguous option "-no": must be -backslashes, -commands, -variables, -nobackslashes, -nocommands, -novariables, -expressions, or -noexpressions}
 test subst-7.3 {switches} -returnCodes error -body {
     subst -bogus bar
-} -result {bad option "-bogus": must be -backslashes, -commands, -variables, -nobackslashes, -nocommands, or -novariables}
+} -result {bad option "-bogus": must be -backslashes, -commands, -variables, -nobackslashes, -nocommands, -novariables, -expressions, or -noexpressions}
 test subst-7.4 {switches} {
     set x 123
     subst -nobackslashes {abc $x [expr {1 + 2}] \\\x41}
@@ -334,6 +334,55 @@ test subst-13.2 {Test for segfault} -body {
 
 
 # cleanup
+# Expression substitution ($((expr)), or $(expr) when built with
+# TCL_EXPR_SUBST_PARENS=1) is controlled by -expressions/-noexpressions.
+test subst-expr-1.1 {-noexpressions leaves the syntax literal} -body {
+    set x 5
+    subst -noexpressions {$((1+2)) $x}
+} -result {$((1+2)) 5}
+test subst-expr-1.2 {-expressions alone enables only expressions} -body {
+    set x 5
+    subst -expressions {$((1+2)) $x [set x]}
+} -result {3 $x [set x]}
+test subst-expr-1.3 {-novariables also disables expressions} -body {
+    subst -novariables {$((1+2)) [set x 7]}
+} -result {$((1+2)) 7}
+test subst-expr-1.4 {default substitutes expressions} -body {
+    subst {$((1+2))}
+} -result 3
+test subst-expr-1.5 {-noexpressions with -nocommands} -body {
+    subst -noexpressions -nocommands {$((1+2)) [x]}
+} -result {$((1+2)) [x]}
+test subst-expr-1.6 {positive and negative cannot combine} -body {
+    subst -expressions -noexpressions x
+} -returnCodes error -result {cannot combine positive and negative options}
+test subst-expr-1.7 {-expressions with -variables} -body {
+    set x 5
+    subst -expressions -variables {$((1+$x)) $x}
+} -result {6 5}
+test subst-expr-1.8 {option inside a procedure (compiled)} -body {
+    proc p {} {subst -noexpressions {$((1+2))}}
+    p
+} -result {$((1+2))}
+test subst-expr-1.9 {option from a variable (not compiled inline)} -body {
+    set o -noexpressions
+    subst $o {$((1+2))}
+} -result {$((1+2))}
+test subst-expr-1.10 {unmatched parens are fine when disabled} -body {
+    subst -noexpressions {a $((1+ b}
+} -result {a $((1+ b}
+test subst-expr-1.11 {unique prefix} -body {
+    subst -noexpr {$((1+2))}
+} -result {$((1+2))}
+
+test subst-expr-1.12 {-nocommands also disables expressions (bodies run commands)} -body {
+    set x 5
+    subst -nocommands {$((1+2)) $x $(([string length abc]+1))}
+} -result {$((1+2)) 5 $(([string length abc]+1))}
+test subst-expr-1.13 {-nobackslashes keeps expressions} -body {
+    subst -nobackslashes {$((1+2))\x41}
+} -result {3\x41}
+
 ::tcltest::cleanupTests
 return
 

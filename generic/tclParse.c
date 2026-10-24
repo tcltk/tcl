@@ -116,9 +116,40 @@ const unsigned char tclCharTypeTable[] = {
 };
 
 /*
+ * TCL_EXPR_SUBST_PARENS selects which spelling introduces an expression
+ * substitution, a shortcut for [expr {...}] that is recognized wherever a "$"
+ * variable substitution is:
+ *
+ *	2 (default)	"$((expr))" - the trigger is "$((". Plain "$(...)" keeps
+ *			its historical meaning (an element of the array whose
+ *			name is the empty string), so no existing script
+ *			that does not contain "$((" changes meaning.
+ *	1		"$(expr)" - the trigger is "$(". This changes the
+ *			meaning of every "$(" in existing scripts.
+ *
+ * "$((expr))" is valid, and means the same thing, with either setting: with
+ * setting 1 the inner parentheses are simply a parenthesized subexpression.
+ * With setting 2 the closing "))" is required, and "$((1+2)*3)" (one "("
+ * missing) is a syntax error rather than "$((1+2)" followed by "*3)".
+ *
+ * Select with -DTCL_EXPR_SUBST_PARENS=1 at build time.
+ */
+
+#ifndef TCL_EXPR_SUBST_PARENS
+#define TCL_EXPR_SUBST_PARENS 2
+#endif
+#if (TCL_EXPR_SUBST_PARENS != 1) && (TCL_EXPR_SUBST_PARENS != 2)
+#error "TCL_EXPR_SUBST_PARENS must be 1 or 2"
+#endif
+
+/*
  * Prototypes for local functions defined in this file:
  */
 
+static const char *	FindExprSubstEnd(const char *src, const char *end);
+static void		ExprSubstSyntaxError(Tcl_Interp *interp,
+			    const char *start, const char *where,
+			    const char *end);
 static bool		CommandComplete(const char *script, Tcl_Size numBytes);
 static Tcl_Size		ParseComment(const char *src, Tcl_Size numBytes,
 			    Tcl_Parse *parsePtr);
@@ -1085,7 +1116,16 @@ ParseTokens(
 	} else if (*src == '$') {
 	    Tcl_Size varToken;
 
-	    if (!(flags & TCL_SUBST_VARIABLES)) {
+	    int exprSyntax = (numBytes > 1) && (src[1] == '(')
+		    && ((TCL_EXPR_SUBST_PARENS == 1)
+			|| ((numBytes > 2) && (src[2] == '(')));
+
+	    if (exprSyntax ? !(flags & TCL_SUBST_EXPRESSIONS)
+		    : !(flags & TCL_SUBST_VARIABLES)) {
+		/*
+		 * Substitution of this kind is disabled: the "$" is literal.
+		 */
+
 		tokenPtr->type = TCL_TOKEN_TEXT;
 		tokenPtr->size = 1;
 		parsePtr->numTokens++;
@@ -1283,6 +1323,198 @@ Tcl_FreeParse(
 /*
  *----------------------------------------------------------------------
  *
+ * SkipExprSubstScan --
+ *
+ *	Helper for FindExprSubstEnd. Scans from src (which is just past an
+ *	opening delimiter) to the first unnested occurrence of the closing
+ *	delimiter 'closer', which is either ')' (for the body of an
+ *	expression) or ']' (for a script inside an expression). Braced words,
+ *	double-quoted strings, backslash sequences and bracketed scripts are
+ *	skipped as units so that a closer inside them is not seen. When the
+ *	closer is ')', nested parentheses are counted.
+ *
+ * Results:
+ *	Pointer to the closing delimiter, or NULL if end was reached first.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static const char *
+SkipExprSubstScan(
+    const char *src,
+    const char *end,
+    char closer)
+{
+    int depth = 0;
+
+    while (src < end) {
+	switch (*src) {
+	case '\\':
+	    /* Skip the escaped character (if there is one). */
+	    if (src + 1 < end) {
+		src++;
+	    }
+	    break;
+	case '{': {
+	    int braces = 1;
+
+	    src++;
+	    while (src < end) {
+		if (*src == '\\') {
+		    if (src + 1 < end) {
+			src++;
+		    }
+		} else if (*src == '{') {
+		    braces++;
+		} else if (*src == '}' && --braces == 0) {
+		    break;
+		}
+		src++;
+	    }
+	    if (src >= end) {
+		return NULL;
+	    }
+	    break;
+	}
+	case '"':
+	    src++;
+	    while (src < end && *src != '"') {
+		if (*src == '\\') {
+		    if (src + 1 < end) {
+			src++;
+		    }
+		} else if (*src == '[') {
+		    src = SkipExprSubstScan(src + 1, end, ']');
+		    if (src == NULL) {
+			return NULL;
+		    }
+		}
+		src++;
+	    }
+	    if (src >= end) {
+		return NULL;
+	    }
+	    break;
+	case '[':
+	    src = SkipExprSubstScan(src + 1, end, ']');
+	    if (src == NULL) {
+		return NULL;
+	    }
+	    break;
+	case '(':
+	    if (closer == ')') {
+		depth++;
+	    }
+	    break;
+	case ')':
+	    if (closer == ')') {
+		if (depth == 0) {
+		    return src;
+		}
+		depth--;
+	    }
+	    break;
+	case ']':
+	    if (closer == ']') {
+		return src;
+	    }
+	    break;
+	}
+	src++;
+    }
+    return NULL;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FindExprSubstEnd --
+ *
+ *	Given the text just after the "(" that opens an expression
+ *	substitution, find the matching ")".
+ *
+ * Results:
+ *	Pointer to the matching ")", or NULL if there isn't one.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static const char *
+FindExprSubstEnd(
+    const char *src,
+    const char *end)
+{
+    return SkipExprSubstScan(src, end, ')');
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ExprSubstSyntaxError --
+ *
+ *	Leaves in the interpreter result the error for a "$((" expression
+ *	substitution whose closing parenthesis is not followed by a second
+ *	one. The message follows the style of expr: the position is marked
+ *	with "_@_" and the text around it is quoted. Long text is shortened
+ *	with "..." on either side, never in the middle of a UTF-8 character.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Sets the result of interp.
+ *
+ *----------------------------------------------------------------------
+ */
+
+#define EXPR_SUBST_ERR_BEFORE	60	/* bytes quoted before the marker */
+#define EXPR_SUBST_ERR_AFTER	20	/* bytes quoted after the marker */
+
+static void
+ExprSubstSyntaxError(
+    Tcl_Interp *interp,
+    const char *start,		/* The "$" that begins the substitution. */
+    const char *where,		/* The ")" that is not followed by a ")". The
+				 * marker goes just after it. */
+    const char *end)		/* End of the text being parsed. */
+{
+    const char *from = start, *to = where + 1;
+    Tcl_Obj *msg = Tcl_NewStringObj("missing second \")\" at _@_\n"
+	    "in expression substitution \"", -1);
+
+    if (to - from > EXPR_SUBST_ERR_BEFORE) {
+	from = to - EXPR_SUBST_ERR_BEFORE;
+	while ((from < to) && ((*from & 0xC0) == 0x80)) {
+	    from++;
+	}
+	Tcl_AppendToObj(msg, "...", -1);
+    }
+    Tcl_AppendToObj(msg, from, to - from);
+    Tcl_AppendToObj(msg, "_@_", -1);
+    if (end - to > EXPR_SUBST_ERR_AFTER) {
+	const char *stop = to + EXPR_SUBST_ERR_AFTER;
+
+	while ((stop > to) && ((*stop & 0xC0) == 0x80)) {
+	    stop--;
+	}
+	Tcl_AppendToObj(msg, to, stop - to);
+	Tcl_AppendToObj(msg, "...", -1);
+    } else {
+	Tcl_AppendToObj(msg, to, end - to);
+    }
+    Tcl_AppendToObj(msg, "\"", -1);
+    Tcl_SetObjResult(interp, msg);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Tcl_ParseVarName --
  *
  *	Given a string starting with a $ sign, parse off a variable name and
@@ -1420,6 +1652,61 @@ Tcl_ParseVarName(
 	tokenPtr[-1].size = src - tokenPtr[-1].start;
 	parsePtr->numTokens++;
 	src++;
+    } else if ((*src == '(') && ((TCL_EXPR_SUBST_PARENS == 1)
+	    || ((numBytes > 1) && (src[1] == '(')))) {
+	/*
+	 * Expression substitution: $(expr) when TCL_EXPR_SUBST_PARENS is 1,
+	 * or $((expr)) when it is 2. Equivalent to [expr {expr}]. The body is
+	 * deliberately left unparsed here: it is handed to the expression
+	 * parser as one unsubstituted word, so nothing in it is substituted
+	 * twice.
+	 *
+	 * With "$(" the body is everything up to the matching ")". With "$(("
+	 * the body is everything up to the first ")" that balances the
+	 * parentheses inside it, and that ")" must be followed immediately by
+	 * a second ")". That look-ahead is what makes "$((1+2)*3)" (a missing
+	 * "(") an error instead of silently ending early and leaving a stray
+	 * ")" behind.
+	 */
+
+	const int skip = (TCL_EXPR_SUBST_PARENS == 2) ? 2 : 1;
+	const char *bodyEnd = FindExprSubstEnd(src + skip, src + numBytes);
+
+	if ((bodyEnd != NULL) && (skip == 2) && (bodyEnd + 1 < src + numBytes)
+		&& (bodyEnd[1] != ')')) {
+	    if (parsePtr->interp != NULL) {
+		ExprSubstSyntaxError(parsePtr->interp, src - 1, bodyEnd,
+			src + numBytes);
+	    }
+	    parsePtr->errorType = TCL_PARSE_SYNTAX;
+	    parsePtr->term = src;
+	    goto error;
+	}
+	if ((bodyEnd == NULL) || ((skip == 2) && (bodyEnd + 1 >= src + numBytes))) {
+	    if (parsePtr->interp != NULL) {
+		if (bodyEnd != NULL) {
+		    /*
+		     * The body closed, but the input ended where the second
+		     * ")" of "$((expr))" belongs.
+		     */
+
+		    ExprSubstSyntaxError(parsePtr->interp, src - 1, bodyEnd,
+			    src + numBytes);
+		} else {
+		    Tcl_SetObjResult(parsePtr->interp, Tcl_NewStringObj(
+			    "missing )", -1));
+		}
+	    }
+	    parsePtr->errorType = TCL_PARSE_MISSING_PAREN;
+	    parsePtr->term = src;
+	    parsePtr->incomplete = 1;
+	    goto error;
+	}
+	parsePtr->tokenPtr[varIndex].type = TCL_TOKEN_EXPR_SUBST;
+	tokenPtr->start = src + skip;
+	tokenPtr->size = bodyEnd - (src + skip);
+	parsePtr->numTokens++;
+	src = bodyEnd + skip;
     } else {
 	tokenPtr->type = TCL_TOKEN_TEXT;
 	tokenPtr->start = src;
@@ -1540,6 +1827,7 @@ Tcl_ParseVar(
 {
     Tcl_Obj *objPtr;
     int code;
+    bool isExprSubst;
     Tcl_Parse *parsePtr = (Tcl_Parse *)TclStackAlloc(interp, sizeof(Tcl_Parse));
 
     if (Tcl_ParseVarName(interp, start, TCL_INDEX_NONE, parsePtr, 0) != TCL_OK) {
@@ -1559,6 +1847,7 @@ Tcl_ParseVar(
 	return "$";
     }
 
+    isExprSubst = (parsePtr->tokenPtr->type == TCL_TOKEN_EXPR_SUBST);
     code = TclSubstTokens(interp, parsePtr->tokenPtr, parsePtr->numTokens,
 	    NULL, 1, NULL, NULL);
     Tcl_FreeParse(parsePtr);
@@ -1567,6 +1856,17 @@ Tcl_ParseVar(
 	return NULL;
     }
     objPtr = Tcl_GetObjResult(interp);
+
+    if (isExprSubst) {
+	/*
+	 * The value of an expression substitution is not held by any
+	 * variable; the interp result is the only reference to it. Leave it
+	 * there (rather than resetting the result as below) so the returned
+	 * string stays valid until the interp result is next changed.
+	 */
+
+	return TclGetString(objPtr);
+    }
 
     /*
      * At this point we should have an object containing the value of a
@@ -2252,6 +2552,38 @@ TclSubstTokens(
 	    iPtr->numLevels--;
 	    TclResetCancellation(interp, 0);
 	    appendObj = Tcl_GetObjResult(interp);
+	    break;
+	}
+
+	case TCL_TOKEN_EXPR_SUBST: {
+	    /*
+	     * $(expr): evaluate the body exactly as [expr {body}] would,
+	     * i.e. as one unsubstituted expression word.
+	     */
+
+	    Tcl_Obj *bodyObj = Tcl_NewStringObj(tokenPtr[1].start,
+		    tokenPtr[1].size);
+	    Tcl_Obj *valueObj = NULL;
+
+	    Tcl_IncrRefCount(bodyObj);
+	    code = Tcl_ExprObj(interp, bodyObj, &valueObj);
+	    Tcl_DecrRefCount(bodyObj);
+	    if (code == TCL_OK) {
+		Tcl_SetObjResult(interp, valueObj);
+		Tcl_DecrRefCount(valueObj);
+		appendObj = Tcl_GetObjResult(interp);
+	    } else {
+		/*
+		 * As for [command]: the result of the code-throwing
+		 * evaluation is substituted (for return codes other than
+		 * TCL_ERROR, TCL_BREAK and TCL_CONTINUE, which are handled
+		 * below).
+		 */
+
+		appendObj = Tcl_GetObjResult(interp);
+	    }
+	    count -= tokenPtr->numComponents;
+	    tokenPtr += tokenPtr->numComponents;
 	    break;
 	}
 

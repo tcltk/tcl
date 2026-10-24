@@ -1114,6 +1114,136 @@ test compile-21.4 {stack balance management} {
 } {1 2 3 4 5 6 7 8 9 10}
 
 # TODO sometime - check that bytecode from tbcload is *not* disassembled.
+# Expression substitution ($((expr)), or $(expr) when built that way) is
+# compiled inline, to exactly the code for the corresponding [expr {...}].
+proc exprSubstInsns {name} {
+    set out {}
+    foreach line [split [tcl::unsupported::disassemble proc $name] \n] {
+	if {[regexp {^\s+\(\d+\)\s+(.*)$} $line -> insn]} {
+	    lappend out $insn
+	}
+    }
+    join $out \n
+}
+test compile-21.1 {expression substitution compiles like [expr]} -body {
+    proc p1 {n} {return "<$(($n+1))>"}
+    proc p2 {n} {return "<[expr {($n+1)}]>"}
+    set a [exprSubstInsns p1]
+    set b [exprSubstInsns p2]
+    list [string equal $a $b] [expr {[string first invokeStk $a] < 0}]
+} -cleanup {
+    rename p1 {}
+    rename p2 {}
+} -result {1 1}
+test compile-21.2 {expression substitution: constants are folded} -body {
+    proc p1 {} {return $((2*3+1))}
+    proc p2 {} {return [expr {(2*3+1)}]}
+    string equal [exprSubstInsns p1] [exprSubstInsns p2]
+} -cleanup {
+    rename p1 {}
+    rename p2 {}
+} -result 1
+test compile-21.3 {expression substitution: in a word with text} -body {
+    proc p1 {a b} {set r "$a:$(($a*$b)):$b"}
+    p1 3 4
+} -cleanup {
+    rename p1 {}
+} -result 3:12:4
+test compile-21.4 {expression substitution: in subst, compiled} -body {
+    proc p1 {n} {subst {n+1=$(($n+1)) n=$n}}
+    p1 6
+} -cleanup {
+    rename p1 {}
+} -result {n+1=7 n=6}
+test compile-21.5 {expression substitution: non-OK codes from body in subst} -body {
+    # Compare against the equivalent [expr], compiled and not.
+    set bad {}
+    foreach code {break continue {5 x} {error boom} {return r}} {
+	set new "subst {a\$((\[return -code $code\]))b}"
+	set ref "subst {a\[expr {((\[return -code $code\]))}\]b}"
+	proc p1 {} $new
+	proc p2 {} $ref
+	set r1 [list [catch {eval $new} m] $m]
+	set r2 [list [catch {eval $ref} m] $m]
+	set r3 [list [catch p1 m] $m]
+	set r4 [list [catch p2 m] $m]
+	if {!($r1 eq $r2 && $r3 eq $r4 && $r1 eq $r3)} {
+	    lappend bad [list $code $r1 $r2 $r3 $r4]
+	}
+    }
+    set bad
+} -cleanup {
+    rename p1 {}
+    rename p2 {}
+} -result {}
+test compile-21.6 {expression substitution: getbytecode instructions and literals match [expr]} -body {
+    proc p1 {n} {set r "x$(($n*2))"}
+    proc p2 {n} {set r "x[expr {($n*2)}]"}
+    set a [tcl::unsupported::getbytecode proc p1]
+    set b [tcl::unsupported::getbytecode proc p2]
+    list [expr {[dict get $a instructions] eq [dict get $b instructions]}] \
+	[expr {[dict get $a literals] eq [dict get $b literals]}] \
+	[expr {[dict get $a variables] eq [dict get $b variables]}] \
+	[expr {[dict get $a stackdepth] == [dict get $b stackdepth]}]
+} -cleanup {
+    rename p1 {}
+    rename p2 {}
+} -result {1 1 1 1}
+test compile-21.7 {expression substitution: no nested command is compiled} -body {
+    proc p1 {n} {set r "x$(($n*2))"}
+    proc p2 {n} {set r "x[expr {($n*2)}]"}
+    list [llength [dict get [tcl::unsupported::getbytecode proc p1] commands]] \
+	[llength [dict get [tcl::unsupported::getbytecode proc p2] commands]]
+} -cleanup {
+    rename p1 {}
+    rename p2 {}
+} -result {1 2}
+test compile-21.8 {expression substitution: getbytecode of a script, constants folded} -body {
+    set bc [tcl::unsupported::getbytecode script {set r "x$((1+2))"}]
+    list [dict get $bc literals] [dict get $bc instructions]
+} -result {{r x 3} {0 {push @0} 5 {push @1} 10 {push @2} 15 {strcat 2} 17 storeStk 18 done}}
+test compile-21.9 {expression substitution: error line after a continuation line matches [expr]} -body {
+    proc p1 {} {
+	catch {
+	    set v "a\
+b $(([error boom]))"
+	} m o
+	dict get $o -errorline
+    }
+    proc p2 {} {
+	catch {
+	    set v "a\
+b [expr {([error boom])}]"
+	} m o
+	dict get $o -errorline
+    }
+    list [p1] [p2]
+} -cleanup {
+    rename p1 {}
+    rename p2 {}
+} -result {3 3}
+test compile-21.10 {expression substitution: error line on later lines of a multi-line body matches [expr]} -body {
+    proc p1 {} {
+	catch {
+	    set v "x $((1 +
+		[error boom]))"
+	} m o
+	dict get $o -errorline
+    }
+    proc p2 {} {
+	catch {
+	    set v "x [expr {(1 +
+		[error boom])}]"
+	} m o
+	dict get $o -errorline
+    }
+    list [p1] [p2]
+} -cleanup {
+    rename p1 {}
+    rename p2 {}
+} -result {4 4}
+catch {rename exprSubstInsns {}}
+
 
 # cleanup
 catch {rename p ""}
