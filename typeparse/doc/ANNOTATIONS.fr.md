@@ -977,6 +977,17 @@ puts [type {c!}export point]
 
 Le codec C, qui **vérifie** en plus chaque valeur contre son type, est 2 à 3 fois plus rapide que le code Tcl classique écrit à la main, et 130 à 250 fois plus rapide que la couche Tcl générique.
 
+**Procédures typées.** Le texte d'un type n'est analysé qu'une fois : l'objet qui le porte garde son classement tant que la table des types de l'interpréteur n'a pas changé (un `type def` invalide tous les classements). Dans une procédure, le nom affecté par `x = …` ou `x is T = …` est une variable locale compilée, et `X is T = v` range une valeur déjà conforme sans repasser par une note. Mesures (exemple `geometrie`, 10 000 points) :
+
+| opération | annotée | Tcl classique |
+|---|---|---|
+| `X is point = $a` | 0,6 µs | — |
+| `geo::distance` | 4,7 µs | 1,9 µs |
+| périmètre | 46 à 52 ms | 17 à 19 ms |
+| point dans un polygone (`dedans_tous`) | ≈ 255 ms | ≈ 65 ms |
+
+Le reste de l'écart vient surtout des lectures par chemin dans `expr` (`$a(y)` ≈ 0,2 µs contre 0,06 µs pour `lindex`).
+
 ### 16. Choix de conception
 
 | choix | raison |

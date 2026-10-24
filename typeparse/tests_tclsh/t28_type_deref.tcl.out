@@ -19,4 +19,4 @@ type deref needs a typed value
 1
 wrong # args: should be "type deref value"
 1
-bad subcommand "zz": must be def, alias, convert, deref, get or binary
+bad subcommand "zz": must be def, alias, cast, convert, deref, export, get, is or binary

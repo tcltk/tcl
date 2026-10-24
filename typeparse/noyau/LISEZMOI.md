@@ -1392,3 +1392,52 @@ Sources de types : `tclAnnotObj.c`, `tclTypes.c`, `tclTypes.h`. Patch noyau : `c
   inconnue : refus.
 - Tests : `t72_compact_type` ; `t71_type_c` passe par `{c!}export` ; `t70_compact.out` : `string length` garde
   désormais la forme compacte. `geo_types.tcl` emploie `{c!}export`.
+
+### v15r — `geo.c` écrit avec les fonctions de stub prévues (24 octobre 2026)
+
+Pas de changement du noyau ni des sources de types.
+
+- `typeparse/tclAnnotatedApi.h` (pour les extensions) : `Tcl_AnnotatedGetType`, `Tcl_AnnotatedCreate`,
+  `Tcl_AnnotatedGetParts` (noms et conventions du planning) et `Tcl_AnnotatedGetCells` (proposée : les cases
+  d'une liste compacte, en lecture seule), écrites en fonctions `static inline` sur l'API publique (`type get`,
+  `type cast`, `::tcl::unsupported::content`, `tclCompact.h`). Gardées par `#if !defined(TCL_ANNOTATED_STUBS)
+  && !defined(Tcl_AnnotatedGetType)` : les vraies fonctions de stub, macros de `tclDecls.h`, les remplaceront
+  sans conflit de noms.
+- Limites de la cale : elle passe par l'interpréteur ; `Tcl_AnnotatedGetParts` recopie le contenu (tableau
+  valable jusqu'au 8e appel suivant du thread, libéré à la fin du thread) au lieu de lire en place.
+- `geo.c` : la voie objet n'emploie plus que ces fonctions (types en `Tcl_Obj *` créés une fois, données du
+  client des commandes `_obj`). Mêmes résultats (`verifier.tcl`, deux formes), mêmes vitesses ; valgrind propre.
+
+### v15s — procédures typées plus rapides (24 octobre 2026)
+
+Sources de types : `tclAnnotObj.c`, `tclTypes.c`, `tclTypes.h`, `tclTypesInt.h`, `tclTypeGeneric.c`,
+`tclTypePath.c`, `tclTypedVar.c`. Patch noyau : `procedures-typees.patch` (tclCompExpr.c, tclExecute.c),
+dernier de `ORDRE.txt`. `TypeData` change : `make clean`.
+
+Profil (callgrind) de `geo::perimetre` : chaque `X is T = $x` coûtait 3,3 µs, dont un tiers à réanalyser le
+texte du type (`TclCompileType`) à chaque appel, et le reste à empiler puis dépiler une note.
+
+- Classement d'une annotation gardé dans l'objet texte (`ClassifyAnnot`, type d'objet `annotclass`) : valable
+  pour la même table de types (interp, `uid`) à la même génération (`gen`, augmentée par tout `type def`, toute
+  famille, toute annulation).
+- `::tcl::unsupported::declare` (`X is T = v`) : valeur déjà de type T sans note → rangée telle quelle ; valeur
+  sans annotation → construite directement (`TclTypeComplete` + `TclNewAnnotated`), sans note ni dépilage.
+  `TclTypedVarDeclare` : une seule recherche de la variable (`TclPtrSetVar`).
+- `tclCompExpr.c` : dans une procédure, le nom affecté par `x = …` ou `x is T = …` devient une variable locale
+  compilée (plus de table de hachage créée puis détruite à chaque appel).
+- Lecture `$a(x)` compilée : le résultat passe par la pile sans passer par le résultat de l'interpréteur
+  (`TclTypedVarGetElementVar`, `tclExecute.c`).
+- Mesures (µs) : `X is point = $a` 3,30 → 0,58 ; `V is vecteur = (1.0, 2.0)` 3,78 → 0,70 ;
+  `geo::distance` 14,6 → 4,7 (Tcl nu : 1,9). Géométrie, N = 10 000 : périmètre 163 → 46 à 52 ms (Tcl nu 17 à 19) ;
+  Bézier 99 → 53 ms ; aire 15 → 11 à 13 ms. `dedans_tous` ne bouge pas (≈ 255 ms contre 65) : ce sont les
+  lectures `$a(y)` (≈ 0,2 µs chacune contre 0,06 pour `lindex`), prochaine cible.
+- **Trouvé en route** (existait depuis v15g) : l'élément d'une `list.T` lue par chemin (`lindex $t(children) 0`,
+  `foreach c $t(children)` dans une procédure) sortait sans type quand le contenu était partagé : le typage de
+  l'élément dépendait du partage de l'objet. `AnnotListIndex` type maintenant l'élément dans tous les cas (objet
+  neuf si V est partagé). `arbre_graphe.tcl` en dépendait.
+- Test `t73_procedures_typees` (mêmes sorties que la v15).
+- Sorties attendues corrigées après un passage de `maj.sh` sous MinGW64 (24 octobre) :
+  `t28_type_deref.tcl.out` (liste des sous-commandes de `type`, `export` et `is` depuis la v15q) et
+  `t24_produit_champ` (message de la v15l ; doublon `.tcl.out` retiré). Ces sorties nommées
+  `*.tcl.out` échappaient à mes vérifications. `t68_lset_reference` n'écrit plus rien quand il n'y a
+  pas de fuite : sous Windows (sans `/proc`), la mesure n'est pas faite et la sortie est la même.

@@ -790,7 +790,26 @@ AnnotListIndex(Tcl_Interp *interp, Tcl_Obj *aPtr, Tcl_Size index,
 	    return TCL_OK;
 	}
 	AnnotWrapElems(aPtr, v, index, index);
-	return Tcl_ListObjIndex(interp, v, index, elemPtr);
+	if (Tcl_ListObjIndex(interp, v, index, elemPtr) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	if (*elemPtr != NULL && !TCL_ANNOT_P(*elemPtr)) {
+	    /*
+	     * V partagé (une partie lue par chemin, une valeur copiée) :
+	     * l'élément n'a pas pu être typé dans V. Il est typé ici, objet
+	     * neuf (refcount 0, comme pour lseq) : l'élément d'une list.T est
+	     * toujours un T, que V soit partagé ou non.
+	     */
+	    TclType *et = AnnotListElemType(aPtr);
+	    int variant = -1;
+
+	    if (et != NULL && !(et->kind == TCLT_SUM && TclTypeValidate(NULL,
+		    et, *elemPtr, -1, &variant) != TCL_OK)) {
+		*elemPtr = MakeAnnotated(*elemPtr, NewTypeRefNoCache(et,
+			variant));
+	    }
+	}
+	return TCL_OK;
     }
     *elemPtr = (index == 0) ? aPtr : NULL;	/* le scalaire est son élément */
     return TCL_OK;
@@ -1647,15 +1666,56 @@ LastErrorCodeIs(Tcl_Interp *interp, const char *what)
  *   ANN_LOCAL   : un caractère que les noms refusent ({-v}, {what?}) ;
  *   ANN_BAD     : un texte de type mal formé (int( ...).
  */
+
+/*
+ * Le classement d'un texte d'annotation (type, local, inconnu), gardé dans
+ * l'objet texte lui-même : « point » dans « A is point = $a », littéral du
+ * bytecode, n'est analysé qu'une fois. Valable pour la même table de types
+ * (interp, uid) à la même génération (tout type def la change).
+ */
+typedef struct AnnotClass {
+    Tcl_Interp *interp;
+    size_t uid, gen;
+    int res, variant;
+    TclType *tp;
+} AnnotClass;
+
+static Tcl_FreeInternalRepProc FreeAnnotClass;
+static Tcl_DupInternalRepProc DupAnnotClass;
+
+static const Tcl_ObjType annotClassType = {
+    "annotclass", FreeAnnotClass, DupAnnotClass, NULL, NULL, TCL_OBJTYPE_V0
+};
+
+static void
+FreeAnnotClass(Tcl_Obj *objPtr)
+{
+    Tcl_Free(objPtr->internalRep.twoPtrValue.ptr1);
+    objPtr->typePtr = NULL;
+}
+
+static void
+DupAnnotClass(Tcl_Obj *srcPtr, Tcl_Obj *dupPtr)
+{
+    AnnotClass *c = (AnnotClass *) Tcl_Alloc(sizeof(AnnotClass));
+    Tcl_ObjInternalRep ir;
+
+    *c = *(AnnotClass *) srcPtr->internalRep.twoPtrValue.ptr1;
+    ir.twoPtrValue.ptr1 = c;
+    ir.twoPtrValue.ptr2 = NULL;
+    Tcl_StoreInternalRep(dupPtr, &annotClassType, &ir);
+}
+
+static int ClassifyAnnotRaw(Tcl_Interp *interp, Tcl_Obj *textObj,
+	TclType **tpPtr, int *variantPtr);
+
 static int
 ClassifyAnnot(Tcl_Interp *interp, Tcl_Obj *textObj, const TclType *ctx,
 	TclType **tpPtr, int *variantPtr)
 {
     Tcl_Size len, idx;
     const char *text = Tcl_GetStringFromObj(textObj, &len);
-    Tcl_InterpState saved;
-    TclType *tp;
-    int res;
+    TclType *tp = NULL;
 
     if (tpPtr != NULL) {
 	*tpPtr = NULL;
@@ -1674,6 +1734,92 @@ ClassifyAnnot(Tcl_Interp *interp, Tcl_Obj *textObj, const TclType *ctx,
     }
     if (interp == NULL) {
 	return ANN_UNKNOWN;
+    }
+    {
+	size_t uid, gen;
+	AnnotClass *c;
+	int r, v = -1;
+
+	if (!TclTypesGeneration(interp, &uid, &gen)) {
+	    return ClassifyAnnotRaw(interp, textObj, tpPtr, variantPtr);
+	}
+	c = (textObj->typePtr == &annotClassType)
+		? (AnnotClass *) textObj->internalRep.twoPtrValue.ptr1 : NULL;
+	if (c != NULL && c->interp == interp && c->uid == uid
+		&& c->gen == gen) {
+	    if (tpPtr != NULL) {
+		*tpPtr = c->tp;
+	    }
+	    if (variantPtr != NULL) {
+		*variantPtr = c->variant;
+	    }
+	    return c->res;
+	}
+	(void) text;
+	(void) len;
+	r = ClassifyAnnotRaw(interp, textObj, &tp, &v);
+	/* gardé si le texte a sa chaîne (il la garde : pas de mise à jour
+	 * de chaîne pour ce type) et si le classement est sûr */
+	if (r != ANN_BAD && textObj->bytes != NULL
+		&& (textObj->typePtr == NULL
+		    || textObj->typePtr == &annotClassType
+		    || textObj->typePtr->updateStringProc != NULL)) {
+	    if (c == NULL) {
+		Tcl_ObjInternalRep ir;
+
+		c = (AnnotClass *) Tcl_Alloc(sizeof(AnnotClass));
+		ir.twoPtrValue.ptr1 = c;
+		ir.twoPtrValue.ptr2 = NULL;
+		Tcl_StoreInternalRep(textObj, &annotClassType, &ir);
+	    }
+	    c->interp = interp;
+	    c->uid = uid;
+	    c->gen = gen;
+	    c->res = r;
+	    c->variant = v;
+	    c->tp = tp;
+	}
+	if (tpPtr != NULL) {
+	    *tpPtr = tp;
+	}
+	if (variantPtr != NULL) {
+	    *variantPtr = v;
+	}
+	return r;
+    }
+}
+
+/* Le type que nomme un texte d'annotation (classement en cache), ou NULL
+ * (note, local, variante, invalide). */
+TclType *
+TclAnnotTypeOf(Tcl_Interp *interp, Tcl_Obj *textObj)
+{
+    TclType *tp = NULL;
+    int v = -1;
+
+    if (ClassifyAnnot(interp, textObj, NULL, &tp, &v) != ANN_TYPE || v >= 0) {
+	return NULL;
+    }
+    return tp;
+}
+
+/* Le classement sans cache (ni contexte) : type, variante S.v, local,
+ * inconnu ou invalide. */
+static int
+ClassifyAnnotRaw(Tcl_Interp *interp, Tcl_Obj *textObj, TclType **tpPtr,
+	int *variantPtr)
+{
+    Tcl_Size len, idx;
+    const char *text = Tcl_GetStringFromObj(textObj, &len);
+    Tcl_InterpState saved;
+    TclType *tp;
+    int res;
+
+    if (tpPtr != NULL) {
+	*tpPtr = NULL;
+    }
+    if (variantPtr != NULL) {
+	*variantPtr = -1;
     }
     /* Tout l'état (résultat, errorCode, errorInfo) : une analyse qui échoue
      * ne doit rien laisser derrière elle. */

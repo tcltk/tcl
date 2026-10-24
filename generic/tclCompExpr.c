@@ -3117,7 +3117,29 @@ CompileExprTree(
 	case OT_LITERAL: {
 	    Tcl_Obj *const *litObjv = *litObjvPtr;
 	    Tcl_Obj *literal = *litObjv;
-	    
+
+	    if (envPtr->procPtr != NULL && nodePtr->mark == MARK_RIGHT
+		    && (nodePtr->lexeme == IS_TYPE || nodePtr->lexeme == ASSIGN)) {
+		/*
+		 * Left operand of "name is T = value" or "name = value" in a
+		 * procedure: make the name a compiled local, so the store (by
+		 * name, at run time) finds it without creating a hashed
+		 * variable at each call.
+		 */
+		Tcl_Size nlen;
+		const char *nm = TclGetStringFromObj(literal, &nlen);
+
+		Tcl_Size k;
+
+		for (k = 0; k < nlen; k++) {
+		    if (nm[k] == ':' || nm[k] == '(' || nm[k] == ')') {
+			break;		/* qualifié ou tableau : par nom */
+		    }
+		}
+		if (nlen > 0 && k == nlen) {
+		    (void) TclFindCompiledLocal(nm, nlen, 1, envPtr);
+		}
+	    }
 	    if (optimize) {
 		Tcl_Size length;
 		const char *bytes = TclGetStringFromObj(literal, &length);

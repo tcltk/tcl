@@ -922,7 +922,14 @@ TclTypesDefineGeneric(
 	}
 	g->nparams = i + 1;
 	p = Tcl_GetString(g->params[i].name);
-	if (!WordOccurs(body, bodyLen, p, (Tcl_Size) strlen(p))) {
+	/*
+	 * Un paramètre absent du corps est FANTÔME : il ne change pas la
+	 * représentation mais distingue les instances, qui sont des
+	 * nominaux différents (grandeur(L,0.001) et grandeur(L,1.0) sont
+	 * deux types). Il n'a de sens que pour type def : l'instance d'un
+	 * alias est le corps lui-même, le paramètre y serait perdu.
+	 */
+	if (alias && !WordOccurs(body, bodyLen, p, (Tcl_Size) strlen(p))) {
 	    ERR(interp, "PARAM", "parameter \"%s\" is never used in the "
 		    "definition of %s", p, baseName);
 	    goto fail;
@@ -930,6 +937,7 @@ TclTypesDefineGeneric(
     }
     Tcl_Free(spans);
     Tcl_SetHashValue(Tcl_CreateHashEntry(&d->generics, baseName, &isNew), g);
+    TclTypesBump(d);
     return TCL_OK;
 
   fail:
@@ -1355,6 +1363,25 @@ TclTypesInstantiate(
 		    "\"%s\"", endw);
 	    goto fail;
 	}
+    }
+    if (!g->bits) {
+	/* Famille et paramètres liés : les règles « type convert famille
+	 * famille » les passent à leur lambda. Une instance appartient à SA
+	 * famille, même si son corps est l'instance d'une autre. */
+	Tcl_Obj *args = Tcl_NewListObj(0, NULL);
+	Tcl_Size k;
+
+	if (inst->familyArgs != NULL) {
+	    Tcl_DecrRefCount(inst->familyArgs);
+	}
+
+	for (k = 0; k < g->nparams; k++) {
+	    Tcl_ListObjAppendElement(NULL, args, bound.p[k].value != NULL
+		    ? Tcl_DuplicateObj(bound.p[k].value) : Tcl_NewObj());
+	}
+	inst->family = g;
+	inst->familyArgs = args;
+	Tcl_IncrRefCount(args);
     }
     if (!TclTypesInhabited(inst, stack, 0)) {
 	ERR(interp, "RECURSIVE", "type \"%s\" has no finite value: every "

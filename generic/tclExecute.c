@@ -2996,7 +2996,8 @@ TEBCresume(
 		    &objResultPtr);
 	    CACHE_STACK_INFO();
 	    if (trc == TCL_OK) {
-		NEXT_INST_F(pcAdjustment, 1, 1);
+		/* objResultPtr arrive avec sa référence : poussé tel quel */
+		NEXT_INST_F(pcAdjustment, 1, -1);
 	    } else if (trc == TCL_ERROR) {
 		TRACE_ERROR(interp);
 		goto gotError;

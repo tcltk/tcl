@@ -1,0 +1,12 @@
+lindex $A(children) 0              0 tree(string)
+copie puis lindex                  0 tree(string)
+foreach en procédure (récursif)    0 3
+déclaration, déjà typé             0 point 1.5
+déclaration, valeur nue            0 point 3.5
+déclaration, refus                 1 expected floating-point number but got "a"
+déclaration nominal                0 mm
+déclaration d'une note             0 mm
+global puis affectation            0 7 7
+upvar puis affectation             0 9 9
+locales                            0 a b
+compact : lindex typé              0 point

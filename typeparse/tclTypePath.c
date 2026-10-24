@@ -3246,8 +3246,8 @@ TclTypedVarGetElementVar(Tcl_Interp *interp, Var *varPtr, Tcl_Obj *part2Ptr,
 	    != TCL_OK) {
 	return TCL_ERROR;
     }
-    Tcl_SetObjResult(interp, res);
-    Tcl_DecrRefCount(res);
+    /* une référence pour l'appelant (TEBC la pousse sur la pile sans en
+     * prendre une autre) : pas de passage par le résultat de l'interp */
     *resultPtr = res;
     return TCL_OK;
 }

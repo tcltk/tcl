@@ -19,6 +19,26 @@ GetData(Tcl_Interp *interp)
     return (TypeData *) Tcl_GetAssocData(interp, "tclTypes", NULL);
 }
 
+/* (uid, gen) de la table de types de l'interpréteur : 0 si aucune. */
+int
+TclTypesGeneration(Tcl_Interp *interp, size_t *uidPtr, size_t *genPtr)
+{
+    TypeData *d = GetData(interp);
+
+    if (d == NULL) {
+	return 0;
+    }
+    *uidPtr = d->uid;
+    *genPtr = d->gen;
+    return 1;
+}
+
+void
+TclTypesBump(TypeData *d)
+{
+    d->gen++;
+}
+
 static char *
 DupStr(const char *s, Tcl_Size len)
 {
@@ -3942,6 +3962,7 @@ TypeDefine(Tcl_Interp *interp, TypeData *d, Tcl_Obj *nameObj, Tcl_Obj *defObj,
 	res = into;
     }
     Tcl_SetHashValue(Tcl_CreateHashEntry(&d->names, name, &isNew), res);
+    d->gen++;
     return TCL_OK;
 }
 
@@ -5521,6 +5542,7 @@ TypeObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
 			"can be compact, not %s", nm, tp != NULL ? tp->name : "?");
 		if (h != NULL) {
 		    Tcl_DeleteHashEntry(h);	/* la définition est annulée */
+		    d->gen++;
 		}
 		rc = TCL_ERROR;
 	    } else {
@@ -5770,8 +5792,38 @@ DeclareObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
 	Tcl_WrongNumArgs(interp, 1, objv, "varName type value");
 	return TCL_ERROR;
     }
-    if (TclAnnotateValue(interp, objv[2], objv[3], &typed) != TCL_OK) {
-	return TCL_ERROR;
+    {
+	/* X is T = $x avec $x déjà de type T, sans note : la valeur telle
+	 * quelle (le cas courant des procédures typées : P is point = $p) */
+	TclType *tp = TclAnnotTypeOf(interp, objv[2]), *vt = NULL;
+	Tcl_Obj *pend;
+	Tcl_Size np = 1;
+
+	if (tp != NULL && TclAnnotInfo(objv[3], NULL, &vt, NULL, NULL) == 1
+		&& vt == tp) {
+	    pend = TclAnnotPending(objv[3]);
+	    Tcl_IncrRefCount(pend);
+	    Tcl_ListObjLength(NULL, pend, &np);
+	    Tcl_DecrRefCount(pend);
+	}
+	if (np == 0) {
+	    typed = objv[3];
+	} else if (tp != NULL && !TclIsAnnotated(objv[3])) {
+	    /* X is T = (a, b) : une valeur sans annotation, construite
+	     * directement (ce que ferait le résolveur du constructeur) */
+	    Tcl_Obj *copy = Tcl_DuplicateObj(objv[3]);
+	    int variant = -1;
+
+	    Tcl_IncrRefCount(copy);
+	    if (TclTypeComplete(interp, tp, copy, -1, &variant) != TCL_OK) {
+		Tcl_DecrRefCount(copy);
+		return TCL_ERROR;
+	    }
+	    typed = TclNewAnnotated(interp, tp, variant, copy);
+	    Tcl_DecrRefCount(copy);
+	} else if (TclAnnotateValue(interp, objv[2], objv[3], &typed) != TCL_OK) {
+	    return TCL_ERROR;
+	}
     }
     Tcl_IncrRefCount(typed);
     res = TclTypedVarDeclare(interp, objv[1], typed);
@@ -5920,6 +5972,12 @@ TclTypesInit(Tcl_Interp *interp)
     int isNew;
 
     memset(d, 0, sizeof(*d));
+    {
+	static size_t uids = 0;
+
+	d->uid = ++uids;
+	d->gen = 1;
+    }
     Tcl_InitHashTable(&d->names, TCL_STRING_KEYS);
     Tcl_InitHashTable(&d->generics, TCL_STRING_KEYS);
     Tcl_InitHashTable(&d->instances, TCL_STRING_KEYS);

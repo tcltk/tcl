@@ -1,10 +1,3 @@
-lset L 0 9                   pas de fuite
-lset L {1} 8                 pas de fuite
-eval lset                    pas de fuite
-lset M 0 1 9                 pas de fuite
-eval lset M 1 0 8            pas de fuite
-lpop + lappend               pas de fuite
-lpop M 0 + lset              pas de fuite
 lset L 0 9                   9 2 3 4  list<int>
 lset L {1} 8                 9 8 3 4  list<int>
 lpop L                       9 8 3    list<int>

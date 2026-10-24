@@ -1,5 +1,7 @@
 # t68 : lset / lpop sur une liste typée : pas de référence en trop (fuite), et
-#   lpop garde le type de la variable. Mesure de mémoire sous Linux seulement.
+#   lpop garde le type de la variable. Mesure de mémoire sous Linux seulement (/proc) :
+#   ailleurs (Windows), elle n'est pas faite. Rien n'est écrit sans fuite, pour que la sortie
+#   attendue soit la même partout ; une fuite trouvée écrit une ligne « FUITE » (échec).
 proc rss {} {
     if {[catch {open /proc/self/status} f]} {return -1}
     set d [read $f]; close $f; regexp {VmRSS:\s+(\d+)} $d -> k; return $k
@@ -9,8 +11,8 @@ proc mesure {label body} {
                  for {set k 0} {\$k < 100000} {incr k} {$body}"
     __b
     set a [rss]; __b; set b [rss]
-    if {$a < 0} {puts [format "%-28s (pas de /proc)" $label]; return}
-    puts [format "%-28s %s" $label [expr {$b - $a < 2000 ? "pas de fuite" : "FUITE [expr {$b-$a}] Ko"}]]
+    if {$a < 0 || $b - $a < 2000} return
+    puts [format "%-28s FUITE %s Ko" $label [expr {$b-$a}]]
 }
 mesure "lset L 0 9"          {lset L 0 9}
 mesure "lset L {1} 8"        {lset L {1} 8}

@@ -73,7 +73,14 @@ typedef struct TypeData {
     void **blobs;		/* décorations binaires (TclBinDyn, textes),
 				 * partagées par les types, libérées à la fin */
     Tcl_Size nBlobs, capBlobs;
+    size_t uid;			/* identifiant de cette table de types */
+    size_t gen;			/* génération : augmente à chaque changement des
+				 * noms (type def, famille, annulation) ; un
+				 * classement d'annotation en cache n'est valable
+				 * que pour la même (uid, gen) */
 } TypeData;
+
+void	TclTypesBump(TypeData *d);
 
 #define ERR(interp, code, ...) \
     do { \

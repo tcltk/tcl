@@ -309,6 +309,8 @@ int	TclTypeTagVariantFrom(const TclType *prod, Tcl_Size idx,
 	    Tcl_Obj *const *vals, Tcl_Size nvals);
 int	TclTypeTagVariant(const TclType *prod, Tcl_Size idx, Tcl_Obj *content);
 int	TclTypeAbiAlign(int isFloat, int bits);
+TclType *TclAnnotTypeOf(Tcl_Interp *interp, Tcl_Obj *textObj);
+int	TclTypesGeneration(Tcl_Interp *interp, size_t *uidPtr, size_t *genPtr);
 /* Représentation compacte (tclAnnotObj.c) */
 typedef struct TclCompactLayout TclCompactLayout;
 Tcl_Obj *TclCompactFrom(TclType *listTp, Tcl_Obj *content);

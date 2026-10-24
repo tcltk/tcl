@@ -1622,7 +1622,9 @@ TclTypedVarDeclare(Tcl_Interp *interp, Tcl_Obj *nameObj, Tcl_Obj *typed)
     }
     hadBit = varPtr->flags & (VAR_TYPED|VAR_CONTRACT);
     varPtr->flags &= ~(VAR_TYPED|VAR_CONTRACT);
-    res = Tcl_ObjSetVar2(interp, nameObj, NULL, typed, TCL_LEAVE_ERR_MSG);
+    /* la variable est déjà trouvée : pas de seconde recherche par nom */
+    res = TclPtrSetVar(interp, (Tcl_Var) varPtr, (Tcl_Var) arrayPtr, nameObj,
+	    NULL, typed, TCL_LEAVE_ERR_MSG);
     if (res == NULL) {
 	if (hadBit) {
 	    /* la variable a pu disparaître pendant l'échec (créée par la

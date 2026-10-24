@@ -937,6 +937,7 @@ TclTypesDefineGeneric(
     }
     Tcl_Free(spans);
     Tcl_SetHashValue(Tcl_CreateHashEntry(&d->generics, baseName, &isNew), g);
+    TclTypesBump(d);
     return TCL_OK;
 
   fail:
