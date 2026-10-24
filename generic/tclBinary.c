@@ -369,7 +369,7 @@ Tcl_GetBytesFromObj(
     ByteArray *baPtr;
     const Tcl_ObjInternalRep *irPtr;
 
-    objPtr = TCL_ANNOT_CONTENT(objPtr);
+    objPtr = TCL_ANNOT_CONV(objPtr);
     irPtr = TclFetchInternalRep(objPtr, &properByteArrayType);
 
     if (irPtr == NULL) {

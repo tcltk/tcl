@@ -148,6 +148,9 @@ struct TclType {
 				 * l'élément d'une liste compacte, ou NULL */
     int compactState;		/* 0 : pas encore calculée ; 1 : compact ;
 				 * -1 : pas de forme compacte */
+    int compactWanted;		/* type def {-compact}T : les valeurs de ce type
+				 * (une liste) sont toujours en cases, nombres
+				 * normalisés à la construction */
 };
 
 /* Les descripteurs vivent autant que l'interpréteur (pas de comptage). */
@@ -208,6 +211,13 @@ extern const Tcl_ObjType *const TclAnnotatedObjTypePtr;
 #define TCL_ANNOT_P(o)	((o)->typePtr == TclAnnotatedObjTypePtr)
 #define TCL_ANNOT_CONTENT(o) \
 	(TCL_ANNOT_P(o) ? (Tcl_Obj *) (o)->internalRep.twoPtrValue.ptr1 : (o))
+/* Le contenu à CONVERTIR (chaîne, octets) : pour une forme compacte, une
+ * copie en chaîne gardée à côté des cases, pour que la conversion ne la
+ * défasse pas. */
+Tcl_Obj *TclCompactConv(Tcl_Obj *v);
+#define TCL_ANNOT_CONV(o) \
+	(TCL_ANNOT_P(o) ? TclCompactConv((Tcl_Obj *) \
+		(o)->internalRep.twoPtrValue.ptr1) : (o))
 #define TCL_ANNOT_UNWRAP(interp, o, want) \
 	do { \
 	    if (TCL_ANNOT_P(o)) { \

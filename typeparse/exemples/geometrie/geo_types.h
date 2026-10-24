@@ -1,4 +1,4 @@
-/* Produit par type c : little-endian, pointeurs de 8 octets. Ne pas modifier : regénérer. */
+/* Produit par type {c!}export : little-endian, pointeurs de 8 octets. Ne pas modifier : regénérer. */
 #include <stdint.h>
 #include <stddef.h>
 

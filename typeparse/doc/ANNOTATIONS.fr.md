@@ -204,7 +204,9 @@ type cast TYPE VALEUR          ;# le résolveur d'un constructeur, sans variable
 type convert DE VERS LAMBDA    ;# déclare une conversion explicite
 type deref VALEUR              ;# instantané : chaque lien var remplacé par sa valeur
 type binary TYPE ...           ;# représentation binaire, encodage, décodage (§ 9)
-type c TYPE ?TYPE ...?         ;# en-tête C des types nommés (§ 12.2)
+type def {-compact}NOM DÉF     ;# une liste toujours rangée en cases (§ 12.1)
+type is {compact?}TYPE|VALEUR  ;# une question sur un type ou une valeur
+type {c!}export TYPE ?TYPE ...? ;# en-tête C des types nommés (§ 12.2) ; {llvm!} prévu
 ```
 
 ```tcl
@@ -886,7 +888,15 @@ Côté Tcl : `layout/filebinary.tcl` (couche binaire : `type binary decode/encod
 
 #### 12.1 La forme compacte (prototype)
 
-Derrière `tcl::unsupported::compact on` (ou la variable d'environnement `TCL_TYPES_COMPACT=1`, pour passer les tests), le contenu V d'une liste `list.T` est rangé en **cases** quand T est un scalaire à taille fixe (`int(s,n)`, `int(u,n)` avec n = 8, 16, 32 ou 64 ; `double`, `double(32|64)`) ou un produit de tels champs, produits imbriqués compris. Une case par élément, disposée comme le struct C équivalent (alignement naturel, mesuré à la compilation : `tcl::unsupported::abi`). `int` sans taille n'entre pas (c'est un grand entier).
+**Par type** : `type def {-compact}polygone list.point`. Les valeurs de ce type sont **toujours** en cases : les nombres sont normalisés à la construction (le constructeur est une conversion : `{0 0}` devient `{0.0 0.0}`, `0x10` devient `16`, un `double(32)` est arrondi au `float`), et une conversion du noyau (`string length`, `string range`, `dict`…) travaille sur une copie en chaîne gardée à côté des cases. Le type doit être une liste dont l'élément a une disposition : sinon `type def` refuse, et le nom reste libre. Pas encore pour une famille (`type def {-compact}{v({int}n)} …`) ; pas d'option pour un alias. `type is {compact?}polygone` dit si le type le demande, `type is {compact?}$P` si la valeur est en cases.
+
+```tcl
+type def {-compact}polygone list.point
+set {polygone}P {0 0} {4 0} {4 3}     ;# {0.0 0.0} {4.0 0.0} {4.0 3.0}
+type is {compact?}$P                   ;# 1, même après string length $P
+```
+
+**Pour tout le programme**, derrière `tcl::unsupported::compact on` (ou la variable d'environnement `TCL_TYPES_COMPACT=1`, pour passer les tests), le contenu V d'une liste `list.T` est rangé en **cases** quand T est un scalaire à taille fixe (`int(s,n)`, `int(u,n)` avec n = 8, 16, 32 ou 64 ; `double`, `double(32|64)`) ou un produit de tels champs, produits imbriqués compris. Une case par élément, disposée comme le struct C équivalent (alignement naturel, mesuré à la compilation : `tcl::unsupported::abi`). `int` sans taille n'entre pas (c'est un grand entier).
 
 ```tcl
 tcl::unsupported::compact on
@@ -897,10 +907,10 @@ tcl::unsupported::compact layout point ;# size 16 align 8 fields {{x float 8 0} 
 ```
 
 - **Rien ne change pour le script** : V reste un `Tcl_Obj`, de type `compactlist`, liste abstraite (longueur, index, remplacement, éléments). Tous les tests et exemples donnent la même sortie forme compacte ou non (`t70_compact` compare chaque cas dans les deux formes).
-- **EIAS** : la forme compacte n'est prise que si chaque nombre est écrit sous sa forme canonique (celle que Tcl regénère : `0.5`, pas `1` pour un `double`, ni `0x10`, ni `1e3`) et chaque élément aussi (espaces) ; sinon, liste ordinaire. La chaîne d'origine de la liste entière est gardée telle quelle jusqu'à la première modification. Écrire une valeur non canonique (`set P(1.y) 9`) rend la liste ordinaire.
+- **EIAS** (interrupteur global seulement ; un type `{-compact}` normalise) : la forme compacte n'est prise que si chaque nombre est écrit sous sa forme canonique (celle que Tcl regénère : `0.5`, pas `1` pour un `double`, ni `0x10`, ni `1e3`) et chaque élément aussi (espaces) ; sinon, liste ordinaire. La chaîne d'origine de la liste entière est gardée telle quelle jusqu'à la première modification. Écrire une valeur non canonique (`set P(1.y) 9`) rend la liste ordinaire.
 - **Lecture** : `lindex`, `foreach` rendent une **vue** sur la case (type `compactelem`), sans recopier l'élément ; `$P(i.x)` lit le nombre directement dans la case. Un nombre lu reste une allocation.
 - **Écriture** : `set P(1.y) …`, `lset`, `lappend` écrivent dans les cases (copie du tampon s'il est partagé : une vue ou une copie garde la valeur qu'elle a lue). Une valeur invalide est refusée avant d'être écrite.
-- **Ce qui demande tous les éléments à la fois** (`lsort`, `lrange`, `{*}`) fabrique une fois la liste ordinaire, gardée à côté des cases tant que la valeur ne change pas. Les commandes de chaîne sur la valeur entière (`string length $P`) la convertissent en chaîne : elle n'est plus compacte.
+- **Ce qui demande tous les éléments à la fois** (`lsort`, `lrange`, `{*}`) fabrique une fois la liste ordinaire, gardée à côté des cases tant que la valeur ne change pas. Les conversions du noyau (`string length $P`, `string range`, `dict`) travaillent sur une copie en chaîne, gardée de même : les cases restent. `tcl::unsupported::content $P` rend une copie qui partage les cases.
 - **Pour le C** : `typeparse/tclCompact.h` donne `TclCompactViewOf(obj)` (données, n, pas, nom du type des éléments), par les types d'objets enregistrés (`Tcl_GetObjType`). Le pointeur est valable tant que la valeur n'est ni modifiée ni convertie. Une fonction de stub remplacera ce passage.
 
 Mesures (Linux x86-64) :
@@ -914,9 +924,9 @@ Mesures (Linux x86-64) :
 
 La lecture élément par élément depuis Tcl est plus lente (une vue et un nombre fabriqués à chaque accès, au lieu de l'élément gardé) ; le gain est en mémoire, à la frontière C et dans les modifications.
 
-#### 12.2 `type c` : l'en-tête C des types
+#### 12.2 `type {c!}export` : l'en-tête C des types
 
-`type c T ?T ...?` rend le texte d'un en-tête C : un `typedef` par type nommé, dans l'ordre des dépendances, et des `_Static_assert` sur `sizeof` et `offsetof` calculés par Tcl avec les mêmes alignements que la forme compacte. Si le compilateur de l'extension range autrement (Linux i386 : `double` aligné sur 4), la compilation échoue au lieu de lire des octets faux.
+`type {c!}export T ?T ...?` rend le texte d'un en-tête C (la cible est une annotation locale sur le verbe ; `{llvm!}` est réservé) : un `typedef` par type nommé, dans l'ordre des dépendances, et des `_Static_assert` sur `sizeof` et `offsetof` calculés par Tcl avec les mêmes alignements que la forme compacte. Si le compilateur de l'extension range autrement (Linux i386 : `double` aligné sur 4), la compilation échoue au lieu de lire des octets faux.
 
 | type Tcl | C |
 |---|---|
@@ -936,7 +946,7 @@ Refus motivés : `int` sans taille, tableau de taille variable qui n'est pas le 
 
 ```tcl
 type def point {{double}x; {double}y}
-puts [type c point]
+puts [type {c!}export point]
 ;# typedef struct {
 ;#     double x;
 ;#     double y;
@@ -998,7 +1008,8 @@ Le codec C, qui **vérifie** en plus chaque valeur contre son type, est 2 à 3 f
 - Notes par élément d'une liste typée (aujourd'hui la note porte sur la liste entière) ; effacement de toutes les notes par `{@}$x`.
 - Codecs C pour les sommes, les liens et les tailles calculées ; cache du type analysé.
 - Forme compacte : cases à pointeurs (`string`, listes imbriquées), lecture directe dans les cases par `expr` compilé, fonction de stub pour le C, `lappend` en temps constant (aujourd'hui une copie par ajout, comme pour une liste typée ordinaire).
-- `type c` : pointeurs pour les types récursifs ; sens inverse (en-tête C vers `type def`).
+- `type {c!}export` : pointeurs pour les types récursifs ; cible `{llvm!}` ; sens inverse (en-tête C vers `type def`).
+- `type def {-compact}` pour une famille ; `type is` : une valeur dont le texte est aussi un nom de type (`type is {compact?}$x` avec `x` = `point`) est lue comme le type.
 - Banc de test C sur maquette (`typeparse/test/`) à remettre à jour ; exemples `arbre_var.tcl` et `defauts_calcules.tcl` à corriger.
 
 ## Annexes

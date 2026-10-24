@@ -412,7 +412,7 @@ Tcl_GetCharLength(
      * OK, need to work with the object as a string.
      */
 
-    objPtr = TCL_ANNOT_CONTENT(objPtr);
+    objPtr = TCL_ANNOT_CONV(objPtr);
     SetStringFromAny(NULL, objPtr);
     stringPtr = GET_STRING(objPtr);
     numChars = stringPtr->numChars;
@@ -562,7 +562,7 @@ Tcl_GetUniChar(
      * OK, need to work with the object as a string.
      */
 
-    objPtr = TCL_ANNOT_CONTENT(objPtr);
+    objPtr = TCL_ANNOT_CONV(objPtr);
     SetStringFromAny(NULL, objPtr);
     stringPtr = GET_STRING(objPtr);
 
@@ -659,7 +659,7 @@ TclGetUnicodeFromObj(
 {
     String *stringPtr;
 
-    objPtr = TCL_ANNOT_CONTENT(objPtr);
+    objPtr = TCL_ANNOT_CONV(objPtr);
     SetStringFromAny(NULL, objPtr);
     stringPtr = GET_STRING(objPtr);
 
@@ -689,7 +689,7 @@ Tcl_GetUnicodeFromObj(
 {
     String *stringPtr;
 
-    objPtr = TCL_ANNOT_CONTENT(objPtr);
+    objPtr = TCL_ANNOT_CONV(objPtr);
     SetStringFromAny(NULL, objPtr);
     stringPtr = GET_STRING(objPtr);
 
@@ -763,7 +763,7 @@ Tcl_GetRange(
      * OK, need to work with the object as a string.
      */
 
-    objPtr = TCL_ANNOT_CONTENT(objPtr);
+    objPtr = TCL_ANNOT_CONV(objPtr);
     SetStringFromAny(NULL, objPtr);
     stringPtr = GET_STRING(objPtr);
 
@@ -4081,7 +4081,11 @@ TclStringReverse(
 	return objPtr;
     }
 
-    objPtr = TCL_ANNOT_CONTENT(objPtr);
+    if (TCL_ANNOT_P(objPtr)) {
+	/* le contenu d'une valeur annotée n'est jamais modifié en place */
+	inPlace = 0;
+    }
+    objPtr = TCL_ANNOT_CONV(objPtr);
     SetStringFromAny(NULL, objPtr);
     stringPtr = GET_STRING(objPtr);
 

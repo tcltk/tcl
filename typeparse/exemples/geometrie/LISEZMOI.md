@@ -37,7 +37,7 @@ tclsh bench.tcl ?N?        ;# vitesses comparées avec timerate (N = 10000 par d
 
 ## L'en-tête C vient des types
 
-`geo_types.h` est produit par `type c` depuis les `type def` (`point`, `pointC`, `polyC`), avec des
+`geo_types.h` est produit par `type {c!}export` depuis les `type def` (`point`, `pointC`, `polyC`), avec des
 `_Static_assert` qui arrêtent la compilation si le compilateur range autrement que Tcl :
 
 ```
@@ -46,7 +46,7 @@ tclsh geo_types.tcl > geo_types.h
 
 ## Forme compacte
 
-Avec `tcl::unsupported::compact on` (ou `TCL_TYPES_COMPACT=1 tclsh bench.tcl`), un polygone est rangé en
+Avec `tcl::unsupported::compact on` (ou `TCL_TYPES_COMPACT=1 tclsh bench.tcl`), ou un type déclaré `type def {-compact}polygone list.point`, un polygone est rangé en
 cases de 16 octets, exactement un tableau de `point` : la voie objet de `geo.c` le lit en place
 (`tclCompact.h`), sans relire chaque point.
 

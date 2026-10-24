@@ -1,0 +1,29 @@
+type is {compact?}polygone         0 1
+type is {compact?}list.point       0 0
+type is {compact?}point            0 0
+construit, normalisé               0 {0.0 0.0} {4.0 0.0} {4.0 3.0}
+type is {compact?}$P               0 1
+string length                      0 29 1
+string reverse                     0 \}0.3\ 0.4\{\ \}0.0\ 0.4\{\ \}0.0\ 0.0\{ \}0.3\ 0.4\{\ \}0.0\ 0.4\{\ \}0.0\ 0.0\{ 1
+string range                       0 {{0.0 0.0}} 1
+dict size (refus)                  0 1 1
+set P(1.x) 7                       0 {{0.0 0.0} {7.0 0.0} {4.0 3.0}} 1
+lappend {1 2}                      0 {{0.0 0.0} {7.0 0.0} {4.0 3.0} {1.0 2.0}} 1
+lset 0 {5 5}                       0 {{5.0 5.0} {7.0 0.0} {4.0 3.0} {1.0 2.0}} 1
+lappend invalide                   1 expected floating-point number but got "a"
+contenu puis conversion            0 1
+list.point ordinaire               0 {{0 0}} 0
+cast vers polygone                 0 {{1.0 1.0} {2.0 2.0}} 1
+valeur ordinaire                   0 0
+double(32) arrondi                 0 0.10000000149011612 0.5
+int(u,8)                           0 {1 2 16} 1 {value "256" does not fit in int(u,8)}
+refus : list.string                1 type def {-compact}noms: only a list of fixed-size scalars (int(s,n), int(u,n) with n = 8, 16, 32 or 64, double, double(32|64)) or of products of them can be compact, not noms
+le nom refusé reste libre          0 noms
+refus : un produit                 1 type def {-compact}pp: only a list of fixed-size scalars (int(s,n), int(u,n) with n = 8, 16, 32 or 64, double, double(32|64)) or of products of them can be compact, not pp
+refus : option inconnue            1 type def: unknown option {-zz}: must be {-compact}
+refus : alias                      1 type alias: unknown option {-compact} (an alias is not a new type: it takes no option)
+refus : famille                    1 type def {-compact}: not yet for a type family (v({int}n))
+question inconnue                  1 unknown question "zz?": must be compact?
+sans question                      1 type is takes one question: type is {compact?}T or type is {compact?}$value
+export : llvm                      1 type export: the target llvm! is not available yet: must be c!
+export : sans cible                1 type export needs one target: type {c!}export T ?T ...?

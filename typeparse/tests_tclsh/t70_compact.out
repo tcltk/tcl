@@ -24,6 +24,6 @@ lire après lindex              identique  compacte  0 0.5 1.5
 vue gardée après écriture      identique  compacte  0 {0.5 1.5} {{7.5 1.5} {2.5 3.5}}
 copie puis écriture            identique  compacte  0 {{0.5 1.5}} {{0.5 5.5}}
 élément vers autre liste       identique  compacte  0 {2.5 3.5} {0.5 1.5}
-string length                  identique  ordinaire 0 9 list<point>
+string length                  identique  compacte  0 9 list<point>
 contenu                        identique  compacte  0 {0.5 1.5}
 binary decode                  identique  compacte  0 {1.5 2.5} {3.5 4.5}

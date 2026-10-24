@@ -37,9 +37,9 @@
 
 /*
  * FR : les struct viennent des types Tcl : geo_types.h est produit par
- *      `tclsh geo_types.tcl > geo_types.h` (type c), avec des _Static_assert
+ *      `tclsh geo_types.tcl > geo_types.h` (type {c!}export), avec des _Static_assert
  *      qui arrêtent la compilation si ce compilateur range autrement.
- * EN : the structs come from the Tcl types (type c), with _Static_assert.
+ * EN : the structs come from the Tcl types (type {c!}export), with _Static_assert.
  */
 #include "geo_types.h"
 #include "../../tclCompact.h"

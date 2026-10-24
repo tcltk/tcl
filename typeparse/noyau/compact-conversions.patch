@@ -1,0 +1,71 @@
+--- a/generic/tclStringObj.c	2026-10-23 19:50:34.878835577 +0200
++++ b/generic/tclStringObj.c	2026-10-23 19:50:34.881098656 +0200
+@@ -412,7 +412,7 @@
+      * OK, need to work with the object as a string.
+      */
+ 
+-    objPtr = TCL_ANNOT_CONTENT(objPtr);
++    objPtr = TCL_ANNOT_CONV(objPtr);
+     SetStringFromAny(NULL, objPtr);
+     stringPtr = GET_STRING(objPtr);
+     numChars = stringPtr->numChars;
+@@ -562,7 +562,7 @@
+      * OK, need to work with the object as a string.
+      */
+ 
+-    objPtr = TCL_ANNOT_CONTENT(objPtr);
++    objPtr = TCL_ANNOT_CONV(objPtr);
+     SetStringFromAny(NULL, objPtr);
+     stringPtr = GET_STRING(objPtr);
+ 
+@@ -659,7 +659,7 @@
+ {
+     String *stringPtr;
+ 
+-    objPtr = TCL_ANNOT_CONTENT(objPtr);
++    objPtr = TCL_ANNOT_CONV(objPtr);
+     SetStringFromAny(NULL, objPtr);
+     stringPtr = GET_STRING(objPtr);
+ 
+@@ -689,7 +689,7 @@
+ {
+     String *stringPtr;
+ 
+-    objPtr = TCL_ANNOT_CONTENT(objPtr);
++    objPtr = TCL_ANNOT_CONV(objPtr);
+     SetStringFromAny(NULL, objPtr);
+     stringPtr = GET_STRING(objPtr);
+ 
+@@ -763,7 +763,7 @@
+      * OK, need to work with the object as a string.
+      */
+ 
+-    objPtr = TCL_ANNOT_CONTENT(objPtr);
++    objPtr = TCL_ANNOT_CONV(objPtr);
+     SetStringFromAny(NULL, objPtr);
+     stringPtr = GET_STRING(objPtr);
+ 
+@@ -4081,7 +4081,11 @@
+ 	return objPtr;
+     }
+ 
+-    objPtr = TCL_ANNOT_CONTENT(objPtr);
++    if (TCL_ANNOT_P(objPtr)) {
++	/* le contenu d'une valeur annotée n'est jamais modifié en place */
++	inPlace = 0;
++    }
++    objPtr = TCL_ANNOT_CONV(objPtr);
+     SetStringFromAny(NULL, objPtr);
+     stringPtr = GET_STRING(objPtr);
+ 
+--- a/generic/tclBinary.c	2026-10-23 19:50:34.883231621 +0200
++++ b/generic/tclBinary.c	2026-10-23 19:50:34.885489074 +0200
+@@ -369,7 +369,7 @@
+     ByteArray *baPtr;
+     const Tcl_ObjInternalRep *irPtr;
+ 
+-    objPtr = TCL_ANNOT_CONTENT(objPtr);
++    objPtr = TCL_ANNOT_CONV(objPtr);
+     irPtr = TclFetchInternalRep(objPtr, &properByteArrayType);
+ 
+     if (irPtr == NULL) {

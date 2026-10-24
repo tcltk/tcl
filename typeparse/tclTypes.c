@@ -2859,7 +2859,7 @@ TclTypeVariantConvert(Tcl_Interp *interp, TclType *sum, int from,
 
 
 /* ====================================================================
- * type c T ?T ...? : en-tête C produit depuis les types
+ * type {c!}export T ?T ...? : en-tête C produit depuis les types
  * ====================================================================
  *
  * Un typedef par type nommé, dans l'ordre des dépendances ; produits en
@@ -2960,7 +2960,7 @@ static CGenNamed *CEmitNamed(CGen *g, TclType *tp);
 static int
 CErr(CGen *g, const char *where, const char *msg, const char *tname)
 {
-    Tcl_SetObjResult(g->interp, Tcl_ObjPrintf("type c: %s%s%s%s", where,
+    Tcl_SetObjResult(g->interp, Tcl_ObjPrintf("type {c!}export: %s%s%s%s", where,
 	    *where ? ": " : "", msg, tname ? tname : ""));
     Tcl_SetErrorCode(g->interp, "TCL", "TYPE", "C", (char *) NULL);
     return TCL_ERROR;
@@ -3211,7 +3211,7 @@ CDecl(CGen *g, TclType *tp, const char *name, int last, Tcl_DString *out,
 	if (nm->busy) {
 	    g->depth--;
 	    return CErr(g, where, "a recursive type needs a pointer, which "
-		    "type c does not make yet: ", tp->name);
+		    "the C export does not make yet: ", tp->name);
 	}
 	Tcl_DStringAppend(out, nm->cname, -1);
 	Tcl_DStringAppend(out, " ", 1);
@@ -3528,7 +3528,7 @@ TypeCCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
     if (rc == TCL_OK) {
 	bo.u = 1;
 	Tcl_DStringInit(&head);
-	snprintf(buf, sizeof(buf), "/* Produit par type c : %s-endian, "
+	snprintf(buf, sizeof(buf), "/* Produit par type {c!}export : %s-endian, "
 		"pointeurs de %d octets. Ne pas modifier : regénérer. */\n",
 		bo.c[0] ? "little" : "big", (int) sizeof(void *));
 	Tcl_DStringAppend(&head, buf, -1);
@@ -5372,6 +5372,93 @@ TypeBinaryCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
     return TCL_OK;
 }
 
+
+/*
+ * Annotations locales d'un mot (options -nom, questions nom?, cibles nom!),
+ * de la plus récente à la plus ancienne : *words reçoit une liste neuve
+ * (refcount 0), *subject le mot sans elles (non possédé : objv, ou un objet
+ * gardé par la liste *keep). Rend le nombre d'annotations.
+ */
+static Tcl_Size
+LocalWords(Tcl_Obj *word, Tcl_Obj **words, Tcl_Obj **subject, TclObjVec *keep)
+{
+    Tcl_Obj *cur = word, *top = NULL, *rest;
+    Tcl_Size n = 0;
+
+    *words = Tcl_NewListObj(0, NULL);
+    while ((rest = TclAnnotPopTop(cur, &top)) != NULL) {
+	const char *t = Tcl_GetString(top);
+
+	if (strpbrk(t, "-?!") == NULL) {
+	    TclDiscard(rest);
+	    break;			/* une note ou un type : pas à nous */
+	}
+	Tcl_ListObjAppendElement(NULL, *words, Tcl_NewStringObj(t, -1));
+	TclVecAdd(keep, rest);
+	cur = rest;
+	n++;
+    }
+    *subject = cur;
+    return n;
+}
+
+/* type is {question?}SUJET : une question sur un type ou une valeur. */
+static int
+TypeIsCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
+{
+    Tcl_Obj *words, *subject, *q;
+    TclObjVec keep = {NULL, 0, 0};
+    Tcl_Size n;
+    int rc = TCL_ERROR;
+
+    if (objc != 3) {
+	Tcl_WrongNumArgs(interp, 2, objv, "{question?}type|value");
+	return TCL_ERROR;
+    }
+    n = LocalWords(objv[2], &words, &subject, &keep);
+    Tcl_IncrRefCount(words);
+    if (n != 1) {
+	ERR(interp, "IS", "type is takes one question: type is {compact?}T "
+		"or type is {compact?}$value");
+	goto done;
+    }
+    Tcl_ListObjIndex(NULL, words, 0, &q);
+    if (strcmp(Tcl_GetString(q), "compact?") == 0) {
+	Tcl_Obj *content = NULL;
+	TclType *tp = NULL;
+
+	/*
+	 * Une annotation locale sur une valeur ne garde que son contenu
+	 * ({compact?}$P : le contenu V de P). Un contenu en cases : la valeur
+	 * est compacte. Sinon, un nom de type : le type le demande-t-il
+	 * (type def {-compact}T) ? Sinon une valeur ordinaire : 0.
+	 */
+	if (TclAnnotInfo(subject, &content, &tp, NULL, NULL) == 1) {
+	    subject = content;
+	}
+	if (TclIsCompact(subject)) {
+	    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(1));
+	} else {
+	    Tcl_Size tl;
+	    const char *tt = Tcl_GetStringFromObj(subject, &tl);
+	    Tcl_InterpState st = Tcl_SaveInterpState(interp, TCL_OK);
+
+	    tp = (tl > 0) ? TclTypeParse(interp, tt, tl) : NULL;
+	    Tcl_RestoreInterpState(interp, st);
+	    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(tp != NULL
+		    && tp->compactWanted));
+	}
+	rc = TCL_OK;
+    } else {
+	ERR(interp, "IS", "unknown question \"%s\": must be compact?",
+		Tcl_GetString(q));
+    }
+  done:
+    Tcl_DecrRefCount(words);
+    TclVecFree(&keep);
+    return rc;
+}
+
 static int
 TypeObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
 	Tcl_Obj *const objv[])
@@ -5386,12 +5473,62 @@ TypeObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
     sub = Tcl_GetString(objv[1]);
     if (strcmp(sub, "def") == 0 || strcmp(sub, "define") == 0
 	    || strcmp(sub, "alias") == 0) {
+	int isAlias = (strcmp(sub, "alias") == 0), compact = 0, rc;
+	Tcl_Obj *words, *nameObj, **wv;
+	TclObjVec keep = {NULL, 0, 0};
+	Tcl_Size nw, k;
+
 	if (objc != 4) {
 	    Tcl_WrongNumArgs(interp, 2, objv, "name definition");
 	    return TCL_ERROR;
 	}
-	return TypeDefine(interp, d, objv[2], objv[3],
-		strcmp(sub, "alias") == 0);
+	/* type def {-compact}T ... : options sur le nom du type */
+	LocalWords(objv[2], &words, &nameObj, &keep);
+	Tcl_IncrRefCount(words);
+	Tcl_ListObjGetElements(NULL, words, &nw, &wv);
+	for (k = 0; k < nw; k++) {
+	    const char *w = Tcl_GetString(wv[k]);
+
+	    if (strcmp(w, "-compact") == 0 && !isAlias) {
+		compact = 1;
+	    } else {
+		ERR(interp, "OPTION", "type %s: unknown option {%s}%s", sub, w,
+			isAlias ? " (an alias is not a new type: it takes no "
+			"option)" : ": must be {-compact}");
+		Tcl_DecrRefCount(words);
+		TclVecFree(&keep);
+		return TCL_ERROR;
+	    }
+	}
+	Tcl_DecrRefCount(words);
+	if (compact && strchr(Tcl_GetString(nameObj), '(') != NULL) {
+	    ERR(interp, "OPTION", "type def {-compact}: not yet for a type "
+		    "family (%s)", Tcl_GetString(nameObj));
+	    TclVecFree(&keep);
+	    return TCL_ERROR;
+	}
+	rc = TypeDefine(interp, d, nameObj, objv[3], isAlias);
+	if (rc == TCL_OK && compact) {
+	    const char *nm = Tcl_GetString(nameObj);
+	    Tcl_HashEntry *h = Tcl_FindHashEntry(&d->names, nm);
+	    TclType *tp = (h != NULL) ? (TclType *) Tcl_GetHashValue(h) : NULL;
+
+	    if (tp == NULL || tp->kind != TCLT_LIST || tp->elem == NULL
+		    || TclCompactLayoutOf(tp->elem) == NULL) {
+		ERR(interp, "COMPACT", "type def {-compact}%s: only a list of "
+			"fixed-size scalars (int(s,n), int(u,n) with n = 8, 16, "
+			"32 or 64, double, double(32|64)) or of products of them "
+			"can be compact, not %s", nm, tp != NULL ? tp->name : "?");
+		if (h != NULL) {
+		    Tcl_DeleteHashEntry(h);	/* la définition est annulée */
+		}
+		rc = TCL_ERROR;
+	    } else {
+		tp->compactWanted = 1;
+	    }
+	}
+	TclVecFree(&keep);
+	return rc;
     }
     if (strcmp(sub, "convert") == 0) {
 	if (objc != 5) {
@@ -5403,8 +5540,40 @@ TypeObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
     if (strcmp(sub, "get") == 0) {
 	return TypeGetCmd(interp, objc, objv);
     }
-    if (strcmp(sub, "c") == 0) {
-	return TypeCCmd(interp, objc, objv);
+    if (strcmp(sub, "export") == 0) {
+	/* type {c!}export T ... : la cible est une annotation locale sur le
+	 * verbe */
+	Tcl_Obj *words, *verb, *tg;
+	TclObjVec keep = {NULL, 0, 0};
+	Tcl_Size nw;
+	int rc = TCL_ERROR;
+
+	nw = LocalWords(objv[1], &words, &verb, &keep);
+	Tcl_IncrRefCount(words);
+	if (nw != 1) {
+	    ERR(interp, "EXPORT", "type export needs one target: "
+		    "type {c!}export T ?T ...?");
+	} else {
+	    const char *t;
+
+	    Tcl_ListObjIndex(NULL, words, 0, &tg);
+	    t = Tcl_GetString(tg);
+	    if (strcmp(t, "c!") == 0) {
+		rc = TypeCCmd(interp, objc, objv);
+	    } else if (strcmp(t, "llvm!") == 0) {
+		ERR(interp, "EXPORT", "type export: the target llvm! is not "
+			"available yet: must be c!");
+	    } else {
+		ERR(interp, "EXPORT", "type export: unknown target {%s}: must be "
+			"c!", t);
+	    }
+	}
+	Tcl_DecrRefCount(words);
+	TclVecFree(&keep);
+	return rc;
+    }
+    if (strcmp(sub, "is") == 0) {
+	return TypeIsCmd(interp, objc, objv);
     }
     if (strcmp(sub, "cast") == 0) {
 	/*
@@ -5453,7 +5622,7 @@ TypeObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
 	return TypeBinaryCmd(interp, objc, objv);
     }
     ERR(interp, "SUBCMD", "bad subcommand \"%s\": must be def, alias, "
-	    "c, cast, convert, deref, get or binary", sub);
+	    "cast, convert, deref, export, get, is or binary", sub);
     return TCL_ERROR;
 }
 
@@ -5630,6 +5799,11 @@ DeepContent(Tcl_Obj *obj)
 	composite = (tp->kind == TCLT_LIST || tp->kind == TCLT_DICT
 		|| tp->kind == TCLT_PRODUCT || tp->kind == TCLT_SUM);
 	obj = content;
+	if (TclIsCompact(obj)) {
+	    /* une copie (le tampon est partagé) : ce que le script fera du
+	     * contenu ne défait pas la forme compacte de la valeur */
+	    return Tcl_DuplicateObj(obj);
+	}
     } else {
 	composite = TclHasInternalRep(obj, &tclListType);
     }

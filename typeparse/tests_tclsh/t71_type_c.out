@@ -1,4 +1,4 @@
-/* Produit par type c : little-endian, pointeurs de 8 octets. Ne pas modifier : regénérer. */
+/* Produit par type {c!}export : little-endian, pointeurs de 8 octets. Ne pas modifier : regénérer. */
 #include <stdint.h>
 #include <stddef.h>
 #include <tcl.h>
@@ -94,7 +94,7 @@ _Static_assert(sizeof(m3) == 36, "m3: size");
 _Static_assert(offsetof(m3, m) == 0, "m3.m: offset");
 
 
-bad1: type c: bad1.n: int has no fixed size in C: use int(s,n) or int(u,n) with n = 8, 16, 32 or 64, not int
-bad2: type c: bad2.p: a list whose length depends on another field is a flexible array member, so it must be the last field
-bad3: type c: bad3.n: the byte order differs from this machine's: int(u,32,be)
-double: type c: give names defined by type def, not double
+bad1: type {c!}export: bad1.n: int has no fixed size in C: use int(s,n) or int(u,n) with n = 8, 16, 32 or 64, not int
+bad2: type {c!}export: bad2.p: a list whose length depends on another field is a flexible array member, so it must be the last field
+bad3: type {c!}export: bad3.n: the byte order differs from this machine's: int(u,32,be)
+double: type {c!}export: give names defined by type def, not double

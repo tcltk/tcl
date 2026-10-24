@@ -1342,7 +1342,7 @@ fait `make clean` ; à la main, faire de même.
   `TclNewAnnotatedOwn` (création), `AnnotListIndex` (vue typée), `AnnotListGetElements` (liste gardée à côté
   des cases), `ValidateG` (cases valides par construction), `SetIn` (écriture), `ReadSteps` (lecture directe de
   `$P(i.x)`).
-- `type c T …` (doc § 12.2) : en-tête C, `_Static_assert` compris. Vérifié avec gcc (C11) ; avec `-m32`, les
+- `type c T …` (doc § 12.2, devenu `type {c!}export` en v15q) : en-tête C, `_Static_assert` compris. Vérifié avec gcc (C11) ; avec `-m32`, les
   assertions d'un `{int(s,32); double}` échouent comme prévu (`double` aligné sur 4).
 - Exemple géométrie : `geo_types.h` est produit par `tclsh geo_types.tcl > geo_types.h` ; `geo.c` l'inclut et lit
   les points d'une forme compacte en place (aire de 10 000 points, voie objet : 564 → 29 µs).
@@ -1369,3 +1369,26 @@ fait `make clean` ; à la main, faire de même.
 
 Restent (déjà en v15, hors types) : à la sortie par `exit` en plein script, quelques objets de la ligne en cours
 ne sont pas libérés (`executable_pe.tcl`), sans conséquence.
+
+### v15q — `type def {-compact}T`, `type is {compact?}`, `type {c!}export` (23 octobre 2026)
+
+Sources de types : `tclAnnotObj.c`, `tclTypes.c`, `tclTypes.h`. Patch noyau : `compact-conversions.patch`
+(tclStringObj.c, tclBinary.c), dernier de `ORDRE.txt`. `TclType` grandit encore d'un champ : `make clean`.
+
+- `type def {-compact}T DÉF` : option (annotation locale) sur le NOM du type ; marque `compactWanted` dans le
+  descripteur. Refus : type qui n'est pas une liste d'éléments à disposition (la définition est annulée, le nom
+  reste libre), option inconnue, alias, famille.
+- Les valeurs d'un tel type sont toujours en cases : `TclCompactFrom` normalise au lieu de refuser (`norm` dans le
+  tampon, gardé par les copies et les écritures) et ne garde pas la chaîne d'origine.
+- Conversions sur une copie : `TCL_ANNOT_CONV` (tclTypes.h) donne, pour un contenu compact, une copie en chaîne
+  gardée à côté des cases (`TclCompactConv`) ; utilisé par `Tcl_GetCharLength`, `Tcl_GetUniChar`,
+  `Tcl_GetUnicodeFromObj`, `Tcl_GetRange`, `TclStringReverse`, `Tcl_GetBytesFromObj` (patch) et par
+  `TclAnnotUnwrap` pour toute demande autre que liste (dict, nombres…). `TclStringReverse` ne retourne plus en
+  place le contenu d'une valeur annotée. `tcl::unsupported::content` rend une copie qui partage les cases.
+  Pour l'interrupteur global aussi : `string length $P` ne défait plus la forme compacte.
+- `type is {compact?}X` : X valeur en cases → 1 ; sinon, nom de type → la marque ; sinon 0. Questions inconnues
+  refusées.
+- `type {c!}export T …` remplace `type c` ; `{llvm!}export` : « not available yet » ; sans cible ou cible
+  inconnue : refus.
+- Tests : `t72_compact_type` ; `t71_type_c` passe par `{c!}export` ; `t70_compact.out` : `string length` garde
+  désormais la forme compacte. `geo_types.tcl` emploie `{c!}export`.

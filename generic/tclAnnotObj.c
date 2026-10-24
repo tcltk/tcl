@@ -1461,6 +1461,11 @@ TclAnnotUnwrap(Tcl_Interp *interp, Tcl_Obj *objPtr, int want,
 	    &content) != TCL_OK) {
 	return TCL_ERROR;
     }
+    if (want != TCLWANT_LIST && TclIsCompact(content)) {
+	/* une conversion (chaîne, dict...) se fait sur une copie : V reste
+	 * en cases */
+	content = TclCompactConv(content);
+    }
     *contentPtr = content;
     if (status == TCLA_PLAIN || status == TCLA_EMPTY
 	    || want == TCLWANT_STRING) {
@@ -2456,6 +2461,9 @@ typedef struct TclCompactBuf {
     Tcl_Size cap;
     TclType *et;
     TclCompactLayout *lay;
+    int norm;			/* type {-compact} : les nombres sont normalisés
+				 * (écrits sous leur forme canonique) au lieu
+				 * de refuser la forme compacte */
 } TclCompactBuf;
 
 static int compactOn = 0;
@@ -2474,19 +2482,46 @@ static const Tcl_ObjType compactListType = {
 	    CompactGetElements, NULL, CompactReplace, NULL)
 };
 
-/* ptr2 : la liste ordinaire des éléments, fabriquée à la première demande
- * de TOUS les éléments (lsort, lrange...) et gardée tant que V ne change
- * pas : V reste compact. */
-#define COMPACT_CACHE(o) ((Tcl_Obj *) (o)->internalRep.twoPtrValue.ptr2)
+/* ptr2 : ce qu'on fabrique à la demande et garde tant que V ne change
+ * pas, pour que V reste compact : la liste ordinaire des éléments (à la
+ * première demande de TOUS les éléments : lsort, lrange...) et une copie
+ * en chaîne, que les conversions du noyau (string length...) convertissent
+ * à la place de V. */
+typedef struct CompactAux {
+    Tcl_Obj *list;
+    Tcl_Obj *conv;
+} CompactAux;
+
+#define COMPACT_AUX(o) ((CompactAux *) (o)->internalRep.twoPtrValue.ptr2)
+#define COMPACT_CACHE(o) (COMPACT_AUX(o) ? COMPACT_AUX(o)->list : NULL)
+
+static CompactAux *
+CompactAuxOf(Tcl_Obj *objPtr)
+{
+    CompactAux *a = COMPACT_AUX(objPtr);
+
+    if (a == NULL) {
+	a = (CompactAux *) Tcl_Alloc(sizeof(CompactAux));
+	a->list = a->conv = NULL;
+	objPtr->internalRep.twoPtrValue.ptr2 = a;
+    }
+    return a;
+}
 
 static void
 CompactDropCache(Tcl_Obj *objPtr)
 {
-    Tcl_Obj *c = COMPACT_CACHE(objPtr);
+    CompactAux *a = COMPACT_AUX(objPtr);
 
-    if (c != NULL) {
+    if (a != NULL) {
 	objPtr->internalRep.twoPtrValue.ptr2 = NULL;
-	Tcl_DecrRefCount(c);
+	if (a->list != NULL) {
+	    Tcl_DecrRefCount(a->list);
+	}
+	if (a->conv != NULL) {
+	    Tcl_DecrRefCount(a->conv);
+	}
+	Tcl_Free(a);
     }
 }
 
@@ -2688,7 +2723,7 @@ TclCompactLayoutRelease(TclCompactLayout *lay)
 /* --- cases --- */
 
 static int
-EncodeScalar(const CNode *nd, Tcl_Obj *o, unsigned char *p)
+EncodeScalar(const CNode *nd, Tcl_Obj *o, unsigned char *p, int norm)
 {
     char buf[TCL_DOUBLE_SPACE + 32];
     int pure;
@@ -2697,14 +2732,14 @@ EncodeScalar(const CNode *nd, Tcl_Obj *o, unsigned char *p)
     if (nd->kind == CN_FLT) {
 	double d;
 
-	pure = TclHasInternalRep(o, &tclDoubleType) && o->bytes == NULL;
+	pure = norm || (TclHasInternalRep(o, &tclDoubleType) && o->bytes == NULL);
 	if (Tcl_GetDoubleFromObj(NULL, o, &d) != TCL_OK) {
 	    return 0;
 	}
 	if (nd->size == 4) {
 	    float f = (float) d;
 
-	    if ((double) f != d && d == d) {
+	    if ((double) f != d && d == d && !norm) {
 		return 0;		/* pas exactement un float */
 	    }
 	    memcpy(p, &f, 4);
@@ -2719,7 +2754,7 @@ EncodeScalar(const CNode *nd, Tcl_Obj *o, unsigned char *p)
 	}
 	return 1;
     }
-    pure = TclHasInternalRep(o, &tclIntType) && o->bytes == NULL;
+    pure = norm || (TclHasInternalRep(o, &tclIntType) && o->bytes == NULL);
     if (nd->kind == CN_UINT) {
 	Tcl_WideUInt u;
 
@@ -2887,7 +2922,8 @@ FormatNode(const CNode *nodes, int i, const unsigned char *cell,
 
 /* Encode un élément (contenu, éventuellement annoté) ; -1 si impossible. */
 static int
-EncodeNode(const CNode *nodes, int i, Tcl_Obj *o, unsigned char *cell)
+EncodeNode(const CNode *nodes, int i, Tcl_Obj *o, unsigned char *cell,
+	int norm)
 {
     const CNode *nd = &nodes[i];
     Tcl_Obj **ev;
@@ -2895,7 +2931,7 @@ EncodeNode(const CNode *nodes, int i, Tcl_Obj *o, unsigned char *cell)
     int j = i + 1;
 
     if (nd->kind != CN_PROD) {
-	return EncodeScalar(nd, o, cell + nd->off) ? j : -1;
+	return EncodeScalar(nd, o, cell + nd->off, norm) ? j : -1;
     }
     o = TCL_ANNOT_CONTENT(o);
     if (o->typePtr == &compactElemType && o->bytes == NULL) {
@@ -2924,12 +2960,12 @@ EncodeNode(const CNode *nodes, int i, Tcl_Obj *o, unsigned char *cell)
 	return -1;
     }
     for (k = 0; k < n; k++) {
-	j = EncodeNode(nodes, j, ev[k], cell);
+	j = EncodeNode(nodes, j, ev[k], cell, norm);
 	if (j < 0) {
 	    return -1;
 	}
     }
-    if (o->bytes != NULL) {
+    if (o->bytes != NULL && !norm) {
 	/* le texte de l'élément doit être celui qu'on regénérera */
 	Tcl_DString ds;
 	int same;
@@ -2992,6 +3028,7 @@ NewCompactBuf(TclType *et, TclCompactLayout *lay, Tcl_Size cap)
     b->refCount = 1;
     b->et = et;
     b->lay = lay;
+    b->norm = 0;
     lay->refCount++;
     return b;
 }
@@ -3099,14 +3136,34 @@ static int
 CompactGetElements(Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_Size *objcPtr,
 	Tcl_Obj ***objvPtr)
 {
-    Tcl_Obj *c = COMPACT_CACHE(objPtr);
+    CompactAux *a = CompactAuxOf(objPtr);
 
-    if (c == NULL) {
-	c = CompactMaterialize(COMPACT_BUF(objPtr));
-	Tcl_IncrRefCount(c);
-	objPtr->internalRep.twoPtrValue.ptr2 = c;
+    if (a->list == NULL) {
+	a->list = CompactMaterialize(COMPACT_BUF(objPtr));
+	Tcl_IncrRefCount(a->list);
     }
-    return Tcl_ListObjGetElements(interp, c, objcPtr, objvPtr);
+    return Tcl_ListObjGetElements(interp, a->list, objcPtr, objvPtr);
+}
+
+/* La copie en chaîne de V, que les conversions du noyau peuvent
+ * transformer sans défaire la forme compacte. */
+Tcl_Obj *
+TclCompactConv(Tcl_Obj *v)
+{
+    CompactAux *a;
+
+    if (v->typePtr != &compactListType) {
+	return v;
+    }
+    a = CompactAuxOf(v);
+    if (a->conv == NULL) {
+	Tcl_Size len;
+	const char *s = Tcl_GetStringFromObj(v, &len);
+
+	a->conv = Tcl_NewStringObj(s, len);
+	Tcl_IncrRefCount(a->conv);
+    }
+    return a->conv;
 }
 
 /* Le cache des éléments d'un V compact (pour l'enveloppe des éléments
@@ -3154,7 +3211,7 @@ CompactReplace(Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_Size first,
 	    ok = TclTypeValidate(NULL, b->et, TCL_ANNOT_CONTENT(insertObjs[k]),
 		    -1, NULL) == TCL_OK
 		    && EncodeNode(b->lay->node, 0, insertObjs[k],
-			    tmp + (size_t) k * st) >= 0;
+			    tmp + (size_t) k * st, b->norm) >= 0;
 	}
     }
     if (!ok) {
@@ -3181,6 +3238,7 @@ CompactReplace(Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_Size first,
 	Tcl_ObjInternalRep ir;
 
 	nb = NewCompactBuf(b->et, b->lay, cap);
+	nb->norm = b->norm;
 	memcpy(nb->data, b->data, (size_t) first * st);
 	if (numToInsert > 0) {
 	    memcpy(nb->data + (size_t) first * st, tmp, (size_t) numToInsert * st);
@@ -3438,16 +3496,18 @@ TclCompactFrom(TclType *ltp, Tcl_Obj *content)
     Tcl_Size n, k;
     Tcl_ObjInternalRep ir;
 
-    if (!compactOn || ltp == NULL || ltp->kind != TCLT_LIST
+    if (ltp == NULL || !(compactOn || ltp->compactWanted)
+	    || ltp->kind != TCLT_LIST
 	    || ltp->elem == NULL || content->typePtr == &compactListType
 	    || (lay = TclCompactLayoutOf(ltp->elem)) == NULL
 	    || Tcl_ListObjGetElements(NULL, content, &n, &ev) != TCL_OK) {
 	return NULL;
     }
     b = NewCompactBuf(ltp->elem, lay, n);
+    b->norm = ltp->compactWanted;
     for (k = 0; k < n; k++) {
-	if (EncodeNode(lay->node, 0, ev[k], b->data + (size_t) k * lay->size)
-		< 0) {
+	if (EncodeNode(lay->node, 0, ev[k], b->data + (size_t) k * lay->size,
+		b->norm) < 0) {
 	    ReleaseCompactBuf(b);
 	    return NULL;
 	}
@@ -3458,7 +3518,7 @@ TclCompactFrom(TclType *ltp, Tcl_Obj *content)
     ir.twoPtrValue.ptr2 = NULL;
     Tcl_StoreInternalRep(v, &compactListType, &ir);
     TclInvalidateStringRep(v);		/* Tcl_NewObj a mis "" */
-    if (content->bytes != NULL) {
+    if (content->bytes != NULL && !b->norm) {
 	Tcl_InitStringRep(v, content->bytes, content->length);	/* EIAS */
     }
     return v;
