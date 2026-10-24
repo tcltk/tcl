@@ -1250,6 +1250,8 @@ DisassembleByteCodeAsDicts(
 		    rangePtr->codeOffset + rangePtr->numCodeBytes - 1,
 		    rangePtr->catchOffset));
 	    break;
+	default:
+	    TCL_UNREACHABLE();
 	}
     }
 

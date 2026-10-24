@@ -1897,6 +1897,8 @@ CopyNumber(
 	    toPtr[6] = fromPtr[1];
 	    toPtr[7] = fromPtr[0];
 	    break;
+	default:
+	    TCL_UNREACHABLE();
 	}
 	break;
     }
@@ -1928,6 +1930,8 @@ CopyNumber(
 	toPtr[7] = fromPtr[4];
 	break;
     }
+    default:
+	TCL_UNREACHABLE();
     }
 }
 
@@ -2763,12 +2767,12 @@ BinaryEncodeUu(
 		    goto end_check_loop;
 		default:
 		badwrap:
-			Tcl_SetObjResult(interp, Tcl_NewStringObj(
-				"invalid wrapchar; will defeat decoding",
-				-1));
-			Tcl_SetErrorCode(interp, "TCL", "BINARY",
-				"ENCODE", "WRAPCHAR", (char *)NULL);
-			return TCL_ERROR;
+		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			    "invalid wrapchar; will defeat decoding",
+			    -1));
+		    Tcl_SetErrorCode(interp, "TCL", "BINARY",
+			    "ENCODE", "WRAPCHAR", (char *)NULL);
+		    return TCL_ERROR;
 		}
 	    }
 	    end_check_loop:
@@ -2776,6 +2780,8 @@ BinaryEncodeUu(
 		goto badwrap;
 	    }
 	    break;
+	default:
+	    TCL_UNREACHABLE();
 	}
     }
 

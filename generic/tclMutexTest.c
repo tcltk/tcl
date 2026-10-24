@@ -201,6 +201,8 @@ TestMutexObjCmd(
     case CONDITION:
 	result = TestConditionVariable(interp, &context);
 	break;
+    default:
+	TCL_UNREACHABLE();
     }
     return result;
 }

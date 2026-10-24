@@ -827,6 +827,8 @@ SetupStdFile(
 	targetFd = 2;
 	direction = TCL_WRITABLE;
 	break;
+    default:
+	TCL_UNREACHABLE();
     }
 
     if (!file) {
