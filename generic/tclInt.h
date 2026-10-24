@@ -2729,7 +2729,7 @@ typedef struct ListRep {
 
 /* Returns element at specified index */
 #define ListObjIndex(listObj_, index_) \
-    (ListObjStorePtr(objPtr)->slots[ListObjStart(objPtr) + index])
+    (ListObjStorePtr(listObj_)->slots[ListObjStart(listObj_) + index_])
 
 /* Stores the element count and base address of this list's elements */
 #define ListObjGetElements(listObj_, objc_, objv_) \
