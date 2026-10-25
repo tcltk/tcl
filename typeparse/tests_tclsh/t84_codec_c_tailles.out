@@ -1,0 +1,17 @@
+pascal          13 octets  C=Tcl 1  relu C=Tcl 1  relu=v 1  010005c38974c3a90461620063
+pascal nat      13 octets  C=Tcl 1  relu C=Tcl 1  relu=v 1  010005c38974c3a90461620063
+blob            11 octets  C=Tcl 1  relu C=Tcl 1  relu=v 1  0500000068656c6c6f0700
+texte -4         7 octets  C=Tcl 1  relu C=Tcl 1  relu=v 1  08006162636401
+($a+$b)*2       10 octets  C=Tcl 1  relu C=Tcl 1  relu=v 1  01000100020003000400
+nat             10 octets  C=Tcl 1  relu C=Tcl 1  relu=v 1  01000100020003000400
+/ et %           4 octets  C=Tcl 1  relu C=Tcl 1  relu=v 1  07010209
+préfixe liste   18 octets  C=Tcl 1  relu C=Tcl 1  relu=v 1  09030100020003000400050006004d000000
+préfixe nat     20 octets  C=Tcl 1  relu C=Tcl 1  relu=v 1  090003000100020003000400050006004d000000
+préfixe vide     6 octets  C=Tcl 1  relu C=Tcl 1  relu=v 1  09004d000000
+préfixe tronqué : 1 012c00
+écart : 1 type binary: field data of blob holds 5, but the field it depends on says 4 ($len)
+tronqué : 1 type binary: data truncated at offset 4 reading field data of blob (needs 9 bytes, got 3)
+préfixe tronqué lu : 1 type binary: data truncated at offset 3 reading field nom of pascal (needs 50 bytes, got 0)
+chemin           7 octets  C=Tcl 1  relu C=Tcl 1  relu=v 1  0000030078797a
+extérieur        4 octets  C=Tcl 1  relu C=Tcl 1  relu=v 1  03616263
+extérieur : 0 

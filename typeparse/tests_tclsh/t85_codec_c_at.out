@@ -1,0 +1,10 @@
+at liste        20 octets  C=Tcl 1  relu C=Tcl 1  relu=v 1  0c00000002ff0000000000000100020003000400
+at nat          20 octets  C=Tcl 1  relu C=Tcl 1  relu=v 1  0c00000002ff0000000000000100020003000400
+at calculé      16 octets  C=Tcl 1  relu C=Tcl 1  relu=v 1  4d5a0400000000000700080063000000
+at chaîne        8 octets  C=Tcl 1  relu C=Tcl 1  relu=v 1  030500c3a974c3a9
+at imbriqué     11 octets  C=Tcl 1  relu C=Tcl 1  relu=v 1  0100000005000000000006
+recouvrement     1 octets  C=Tcl 1  relu C=Tcl 1  relu=v 0  02
+-offset : 1 12 2 {{1 2} {3 4}} 255
+-consumed : 6 6
+hors données : 1 type binary: data truncated at offset 100 reading field x of 
+chemin : 1 at($h(o)).int(u,8) uses $h, which is not a field read before it (in this product or an enclosing one)

@@ -749,7 +749,7 @@ type binary deref $h(r) $d             ;# 7 8 : la cible
 
 #### 9.6 Codecs C
 
-`type binary encode` et `decode` essaient d'abord une voie en C, qui couvre les dispositions fixes : entiers de 1, 2, 4, 8 octets, flottants de 4 et 8 octets, produits (avec `-align`), `list(N).T` et `list($n).T`. Hors de ce domaine (chaînes, sommes, liens, `at`, champs de bits, tailles calculées, `-dedupe`), ou en cas d'erreur, la couche Tcl prend la main et donne ses messages. `set ::tcl_typebinaryc 0` désactive la voie C. Les octets et les valeurs produits sont identiques dans les deux voies (test `t51_codec_c`). Mesures : § 15.
+`type binary encode` et `decode` essaient d'abord une voie en C : entiers de 1, 2, 4, 8 octets, flottants de 4 et 8 octets, produits (avec `-align`), `list(N).T`, chaînes fixes et à zéro final, sommes de littéraux et balisées, tailles et nombres dynamiques (préfixe `string(utf-8,int(u,16,be))`, `list(int(u,8)).T`, ou expression entière sur les champs déjà lus : `$len`, `$len - 4`, `($a + $b) * 2`), `at(EXPR).T`, liens `*(ORIGINE,REPR).T` (origines `//`, `.`, `./`, `../`, cible `opt(T)` comprise). Hors de ce domaine (champs de bits, référentiels nommés, `-linkdepth` fini, `-dedupe`, lien nul d'un champ à défaut, `$h(off)` dans une expression), ou en cas d'erreur, la couche Tcl prend la main et donne ses messages. `set ::tcl_typebinaryc 0` désactive la voie C. Les octets et les valeurs produits sont identiques dans les deux voies (test `t51_codec_c`). Mesures : § 15.
 
 ### 10. Erreurs
 
@@ -1033,7 +1033,7 @@ Le codec C, qui **vérifie** en plus chaque valeur contre son type, est 2 à 3 f
 - `union`, champs de bits partagés, liste « jusqu'à la fin du fichier » (le refus d'`union` est voulu).
 - Annotation de commentaire `{#}` au niveau du parseur, annotation du premier mot (`{c}proc`), annotations de déclaration (`proc p {{?}{…} {!}arg}`).
 - Notes par élément d'une liste typée (aujourd'hui la note porte sur la liste entière) ; effacement de toutes les notes par `{@}$x`.
-- Codecs C pour les sommes, les liens et les tailles calculées ; cache du type analysé.
+- Codec C : référentiels nommés, `-linkdepth` fini, `-dedupe`, lien nul d'un champ à défaut, champs de bits (le reste est couvert depuis la v16d).
 - Forme compacte : cases à pointeurs (`string`, listes imbriquées), `lindex` sans vue neuve, fonction de stub pour le C, `lappend` en temps constant (aujourd'hui une copie par ajout, comme pour une liste typée ordinaire).
 - `type {c!}export` : pointeurs pour les types récursifs ; cible `{llvm!}` ; sens inverse (en-tête C vers `type def`).
 - `type def {-compact}` pour une famille ; `type is` : une valeur dont le texte est aussi un nom de type (`type is {compact?}$x` avec `x` = `point`) est lue comme le type.

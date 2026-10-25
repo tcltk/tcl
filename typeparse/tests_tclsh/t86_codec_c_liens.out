@@ -1,0 +1,18 @@
+//               7 octets  C=Tcl 1  relu C=Tcl 1  relu=v 1  07050000000102
+// nat          10 octets  C=Tcl 1  relu C=Tcl 1  relu=v 1  07000000080000000102
+./               7 octets  C=Tcl 1  relu C=Tcl 1  relu=v 1  09030505060708
+./ lu          C=Tcl 1  9 {0 1} {2 3}
+.                4 octets  C=Tcl 1  relu C=Tcl 1  relu=v 1  00010708
+../            C=Tcl 1  0 {0 {10 11}}
+../ écrit        5 octets  C=Tcl 1  relu C=Tcl 1  relu=v 1  0000030a0b
+liste            7 octets  C=Tcl 1  relu C=Tcl 1  relu=v 1  02030501020304
+taille après     9 octets  C=Tcl 1  relu C=Tcl 1  relu=v 1  030003010203040506
+chaînée        C=Tcl 1  1 {2 {3 {}}}
+chaînée écrite   6 octets  C=Tcl 1  relu C=Tcl 1  relu=v 1  010202040300
+signé          C=Tcl 1  1 5 6 {5 6}
+at + lien        4 octets  C=Tcl 1  relu C=Tcl 1  relu=v 1  04020909
+lien nul à défaut : 1 {0 0} 0300
+-linkdepth 0 : 5 &*(//,int(u,32,le)).rec
+cycle : 1 type binary: link cycle at offset 0 (field s of boucle)
+dedupe : 09030505060708
+chaîne de 300 : 1 1

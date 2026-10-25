@@ -1717,3 +1717,43 @@ Patch noyau : **`expr-declaration-champs.patch`** (`tclCompile.h`, `tclCompile.c
   chaîne, champ inconnu, lien ; affectations : traces d'écriture, contrat, lien, global).
 - Essayé et retiré : sauter, dans `TclFreeObj`, la recherche des lignes de continuation (TIP 280) quand la
   table est vide ; elle ne l'est jamais (les scripts sourcés y laissent leurs entrées).
+
+### v16d — codec C : tailles calculées, préfixes, at(...), liens (25 octobre 2026)
+
+Sources de types : `tclTypes.c`, `tclTypes.h` (champ `binAtBody` : le type T de `at(EXPR).T`). Pas de patch
+noyau ; la structure `TclType` change : recompilation complète.
+
+- **Tailles et nombres dynamiques** : préfixe de longueur (`string(utf-8,int(u,16,be))`,
+  `string(raw,int(u,8))`, `list(int(u,8)).T` ; préfixe tronqué comme `binary format` s'il déborde) et
+  expressions sur les champs déjà lus ou écrits du produit : `$champ`, entiers, `+ - * / %` (division et reste
+  au plancher, comme `expr`), moins unaire, parenthèses. `$h(off)`, `${x}`, `**`, un champ d'un produit
+  extérieur, une taille négative : la couche Tcl. Après un préfixe qui désaligne la liste, ses éléments sont
+  écrits et lus un par un (comme la couche Tcl) au lieu d'une copie des cases.
+- **at(EXPR).T** : lu à la position EXPR (depuis le début de la valeur lue), le curseur ne bouge pas ; écrit à
+  part (remplissage compté depuis le début de la partie) puis posé à la fin, dans l'ordre, des zéros jusqu'à
+  la position si la sortie est plus courte. Les liens d'une partie sont écrits dans la partie.
+- **Liens *(ORIGINE,REPR).T** : origines `//`, `.`, `./`, `../`, `../../` (débuts des structures englobantes
+  suivis comme la couche Tcl) ; dans un produit, l'adresse est lue à sa place et la cible APRÈS tous les champs
+  (ses tailles peuvent citer un champ qui suit) ; à l'écriture, l'adresse 0 puis les cibles après la valeur
+  (alignées), adresse reportée ; une cible peut en ajouter d'autres. `opt(T)` : `none` = valeur nulle, `some`
+  = la cible ; comme champ, le contenu nu (ce que garde le constructeur de la couche Tcl). Liste chaînée :
+  jusqu'à 512 liens en cours, puis la couche Tcl ; un cycle : la couche Tcl (son message). Restent à la couche
+  Tcl : référentiels nommés, `-linkdepth` fini, liens de frontière, `-dedupe`, lien nul d'un champ à défaut.
+- Trouvé en route : une liste de liens en forme compacte (`list($n).*(//,u8).rec`) était copiée case par case
+  comme des `rec` (le lien ignoré) ; `BinFlat` refuse maintenant les liens et `at(...)`.
+- Mesures (µs, codec C / couche Tcl) : en-tête Pascal (préfixes) 1,3 / 36 à l'écriture, 1,7 / 54 à la
+  lecture ; `string(raw,$len)` 0,9 / 51 et 1,1 / 68 ; `list(($a + $b) * 2).pt` 2,3 / 62 et 2,0 / 100 ;
+  `at($off).list($n).pt` 1,9 / 107 et 3,0 / 163 ; deux liens `./` 1,6 / 121 et 1,6 / 108 ; liste chaînée de
+  400 nœuds (`opt`) 0,10 / 304 ms à l'écriture, 0,23 / 1 444 ms à la lecture (la couche Tcl est quadratique).
+- Tests `t84_codec_c_tailles`, `t85_codec_c_at`, `t86_codec_c_liens` : mêmes octets et mêmes valeurs (texte et
+  type) que la couche Tcl, `-align natural`, `-offset`, `-consumed`, erreurs et cas non couverts par la couche
+  Tcl. Tous les exemples donnent la même sortie avec le codec C et avec `set ::tcl_typebinaryc 0`, dans les
+  deux formes.
+- **`maj.sh`, détection des patchs déjà appliqués** (corrigé après la livraison) : après la v16c,
+  `index-chemins-noyau.patch` sortait en « CONFLIT » sur un arbre déjà à jour : `expr-declaration-champs.patch`
+  ajoute ses lignes juste après les siennes et change ainsi son contexte, si bien que `patch -R --dry-run` ne le
+  reconnaissait plus. Maintenant, sur une copie des fichiers touchés, `maj.sh` défait les m premiers patchs du
+  dernier au premier (chacun retrouve alors exactement son contexte) ; le plus grand m qui se défait sans fuzz
+  est le nombre de patchs déjà appliqués, les suivants sont appliqués. Vérifié sur la branche de base : arbre
+  neuf (3 déjà là, 14 appliqués), relance (17 déjà appliqués), arbre sans le dernier patch (16 + 1) ; l'arbre
+  obtenu est identique à celui de travail.
