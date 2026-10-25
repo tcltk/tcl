@@ -2000,7 +2000,6 @@ TclListObjInsertIfAbsent(
     Tcl_Size numElems;
     Tcl_Size newElemLen;
     const char *newElem;
-    int found = 0;
     int result = TCL_OK;
 
     newElem = Tcl_GetStringFromObj(newElemObj, &newElemLen);
@@ -2730,12 +2729,13 @@ TclLindexList(
     /*
      * Determine whether argPtr designates a list or a single index. We have
      * to be careful about the order of the checks to avoid repeated
-     * shimmering; if internal rep is already a list do not shimmer it.
-     * see TIP#22 and TIP#33 for the details.
+     * shimmering; if internal rep is already a native or abstract list do
+     * not shimmer, see TIP#22 and TIP#33 for the details.
      */
     if (!TclListObjIsNative(argObj)
-	    && TclGetIntForIndexM(NULL, argObj, TCL_SIZE_MAX - 1,
-		    &index) == TCL_OK) {
+	    && (TclObjTypeHasProc(argObj, indexProc) == NULL)
+	    && TclGetIntForIndexM(NULL, argObj, TCL_SIZE_MAX - 1, &index)
+		       == TCL_OK) {
 	/*
 	 * argPtr designates a single index.
 	 */
