@@ -5397,8 +5397,7 @@ TclInitStaticPackages(
  */
 static void
 TclPostInitThreadExitProc(
-    void *clientData
-)
+    void *clientData)
 {
     ThreadSpecificData *tsdPtr = (ThreadSpecificData *)clientData;
 

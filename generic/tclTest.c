@@ -9954,8 +9954,8 @@ PostInitEvalProc(
 static int
 PostInitAddProc(
     Tcl_Interp *interp,
-    void *clientData
-) {
+    void *clientData)
+{
     int value = (int)(intptr_t)clientData;
     Tcl_Obj *objPtr;
     objPtr = Tcl_ObjPrintf("proc add%d arg {incr arg %d}", value, value);
@@ -9969,8 +9969,8 @@ PostInitAddProc(
 static int
 PostInitSafeCheckProc(
     Tcl_Interp *interp,
-    TCL_UNUSED(void *)
-) {
+    TCL_UNUSED(void *))
+{
     Tcl_Obj *objPtr;
     objPtr = Tcl_ObjPrintf("proc isSafe {} {return %d}", Tcl_IsSafe(interp));
     Tcl_IncrRefCount(objPtr);
@@ -10004,8 +10004,7 @@ MultiplyCmd(
 
 static int
 Postinitpackage_Init(
-	Tcl_Interp *interp
-)
+    Tcl_Interp *interp)
 {
     Tcl_CreateObjCommand2(interp, "multiply", MultiplyCmd, NULL, NULL);
     Tcl_PkgProvideEx(interp, "postinitpackage", TCL_PATCH_LEVEL, NULL);
@@ -10015,8 +10014,8 @@ Postinitpackage_Init(
 static int
 PostInitStaticPackageProc(
     Tcl_Interp *interp,
-    TCL_UNUSED(void *)
-) {
+    TCL_UNUSED(void *))
+{
     Tcl_StaticLibrary(NULL, "postinitpackage", Postinitpackage_Init, NULL);
     return Tcl_Eval(interp, "package ifneeded postinitpackage [info patchlevel] [list load {} postinitpackage]");
 }
@@ -10025,8 +10024,8 @@ PostInitStaticPackageProc(
 static int
 PostInitInterpCreateProc(
     Tcl_Interp *interp,
-    void *clientData
-) {
+    void *clientData)
+{
     if (clientData) {
 	Tcl_Interp *child = Tcl_CreateInterp();
 	int result = Tcl_Init(child);
@@ -10055,8 +10054,8 @@ PostInitInterpDeleteProc(
 static int
 PostInitRaiseErrorProc(
     Tcl_Interp *interp,
-    TCL_UNUSED(void *)
-) {
+    TCL_UNUSED(void *))
+{
     Tcl_SetResult(interp, "PostInit test error raised", TCL_STATIC);
     return TCL_ERROR;
 }
@@ -10065,8 +10064,7 @@ PostInitRaiseErrorProc(
 static int
 PostInitRegisterInCbProc(
     TCL_UNUSED(Tcl_Interp *),
-    void *clientData
-)
+    void *clientData)
 {
     Tcl_RegisterPostInitProc(PostInitAddProc, clientData);
     return TCL_OK;
@@ -10076,8 +10074,7 @@ PostInitRegisterInCbProc(
 static int
 PostInitUnregisterInCbProc(
     TCL_UNUSED(Tcl_Interp *),
-    void *clientData
-)
+    void *clientData)
 {
     Tcl_UnregisterPostInitProc(PostInitAddProc, clientData);
     return TCL_OK;
