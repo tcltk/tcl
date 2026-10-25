@@ -3706,16 +3706,16 @@ test interp-36.7 {ChildBgerror sets error handler of child [1999035]} -setup {
 	set result [lindex $args 0]
     }
 } -body {
-    child eval {
-	variable done {}
-	after 0 error foo
-	after 10 [list ::set [namespace which -variable done] {}]
-	vwait [namespace which -variable done]
-    }
+    # Wait for the handler itself: a fixed delay loses the race on a loaded
+    # host, when both timers fire before the bgerror idle handler runs.
+    child eval {after 0 error foo}
+    set timeout [after 10000 [list set [namespace which -variable result] timeout]]
+    vwait [namespace which -variable result]
     set result
 } -cleanup {
+    after cancel $timeout
     variable result {}
-    unset -nocomplain result
+    unset -nocomplain result timeout
     interp delete child
 } -result foo
 
