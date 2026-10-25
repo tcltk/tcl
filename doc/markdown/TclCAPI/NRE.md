@@ -224,7 +224,7 @@ Use **Tcl\_NRAddCallback** to schedule any required final decrementing of the re
 
 [catch]: ../Tcl/catch.md
 [CrtObjCmd]: CrtObjCmd.md
-[Eval]: ../Tcl/Eval.md
+[Eval]: Eval.md
 [ExprLongObj]: ExprLongObj.md
-[Object]: ../Tcl/Object.md
+[Object]: Object.md
 

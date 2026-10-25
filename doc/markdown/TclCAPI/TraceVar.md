@@ -172,7 +172,7 @@ Array traces are not yet integrated with the Tcl [info exists][info] command, no
 [CrtInterp]: CrtInterp.md
 [Eval]: Eval.md
 [info]: ../Tcl/info.md
-[Object]: ../Tcl/Object.md
+[Object]: Object.md
 [SaveInterpState]: SaveInterpState.md
 [scan]: ../Tcl/scan.md
 [set]: ../Tcl/set.md

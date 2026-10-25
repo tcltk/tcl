@@ -68,5 +68,5 @@ The third argument to [Tcl\_Main][Tcl_Main] gives the address of the application
 [Tcl_Main]: Tcl_Main.md
 [tclsh]: ../Tcl/tclsh.md
 [Tk_Main]: ../TkCAPI/Tk_Main.md
-[wish]: ../Tcl/wish.md
+[wish]: ../Tk/wish.md
 

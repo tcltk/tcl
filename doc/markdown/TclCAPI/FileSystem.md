@@ -975,12 +975,12 @@ For all virtual filesystem implementation functions, any *pathPtr* arguments sho
 [ListObj]: ListObj.md
 [Load3]: Load.md
 [load]: ../Tcl/load.md
-[Object]: ../Tcl/Object.md
+[Object]: Object.md
 [open]: ../Tcl/open.md
 [OpenFileChnl]: OpenFileChnl.md
 [pwd]: ../Tcl/pwd.md
 [set]: ../Tcl/set.md
-[SetErrno]: ../Tcl/SetErrno.md
+[SetErrno]: SetErrno.md
 [string]: ../Tcl/string.md
 [unload]: ../Tcl/unload.md
 

@@ -227,5 +227,5 @@ if {$::argv0 eq [info script]} {
 [set]: set.md
 [source]: source.md
 [tclsh]: tclsh.md
-[wish]: wish.md
+[wish]: ../Tk/wish.md
 

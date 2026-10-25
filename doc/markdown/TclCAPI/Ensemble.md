@@ -128,5 +128,5 @@ The ensemble property setters (**Tcl\_SetEnsembleMappingDict**, **Tcl\_SetEnsemb
 
 [catch]: ../Tcl/catch.md
 [namespace]: ../Tcl/namespace.md
-[Object]: ../Tcl/Object.md
+[Object]: Object.md
 

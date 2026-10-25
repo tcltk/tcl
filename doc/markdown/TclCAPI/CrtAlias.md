@@ -132,5 +132,5 @@ For a description of the Tcl interface to multiple interpreters, see *interp(n)*
 
 [catch]: ../Tcl/catch.md
 [interp]: ../Tcl/interp.md
-[Object]: ../Tcl/Object.md
+[Object]: Object.md
 

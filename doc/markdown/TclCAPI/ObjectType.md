@@ -321,7 +321,7 @@ None of the callback functions in the **Tcl\_ObjType** structure should modify t
 [lrange]: ../Tcl/lrange.md
 [lreverse]: ../Tcl/lreverse.md
 [lset]: ../Tcl/lset.md
-[Object]: ../Tcl/Object.md
-[PrintDbl]: ../Tcl/PrintDbl.md
+[Object]: Object.md
+[PrintDbl]: PrintDbl.md
 [StringObj]: StringObj.md
 

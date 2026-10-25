@@ -213,5 +213,5 @@ exec $img >@stdout
 [source]: source.md
 [string]: string.md
 [tclsh]: tclsh.md
-[wish]: wish.md
+[wish]: ../Tk/wish.md
 

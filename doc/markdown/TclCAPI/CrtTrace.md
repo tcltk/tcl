@@ -144,7 +144,7 @@ When the *proc* passed to **Tcl\_CreateObjTrace** is called, the values in its *
 
 [catch]: ../Tcl/catch.md
 [CrtObjCmd]: CrtObjCmd.md
-[Eval]: ../Tcl/Eval.md
+[Eval]: Eval.md
 [if]: ../Tcl/if.md
 [Object]: Object.md
 [while]: ../Tcl/while.md

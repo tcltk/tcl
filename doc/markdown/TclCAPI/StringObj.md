@@ -224,6 +224,6 @@ Additional arguments to the above functions (the *appendObjPtr* argument to **Tc
 [concat]: ../Tcl/concat.md
 [Encoding]: Encoding.md
 [format]: ../Tcl/format.md
-[Object]: ../Tcl/Object.md
-[SetResult]: ../Tcl/SetResult.md
+[Object]: Object.md
+[SetResult]: SetResult.md
 

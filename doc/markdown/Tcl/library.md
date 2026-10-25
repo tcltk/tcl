@@ -48,7 +48,7 @@ auto\_execok, auto\_import, auto\_load, auto\_mkindex, auto\_qualify, auto\_rese
 
 # Introduction
 
-Tcl includes a library of Tcl procedures for commonly-needed functions. The procedures defined in the Tcl library are generic ones suitable for use by many different applications. The location of the Tcl library is returned by the [info library][info] command. In addition to the Tcl library, each application will normally have its own library of support procedures as well;  the location of this library is normally given by the value of the **$***app***\_library** global variable, where *app* is the name of the application. For example, the location of the Tk library is kept in the variable **tk\_library**.
+Tcl includes a library of Tcl procedures for commonly-needed functions. The procedures defined in the Tcl library are generic ones suitable for use by many different applications. The location of the Tcl library is returned by the [info library][info] command. In addition to the Tcl library, each application will normally have its own library of support procedures as well;  the location of this library is normally given by the value of the **$***app***\_library** global variable, where *app* is the name of the application. For example, the location of the Tk library is kept in the variable [tk\_library][tkvars].
 
 To access the procedures in the Tcl library, an application should source the file **init.tcl** in the library, for example with the Tcl command
 
@@ -245,5 +245,6 @@ These variables are only used in the **tcl\_endOfWord**, **tcl\_startOfNextWord*
 [proc]: proc.md
 [return]: return.md
 [string]: string.md
+[tkvars]: ../Tk/tkvars.md
 [unknown]: unknown.md
 

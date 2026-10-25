@@ -162,6 +162,6 @@ The pointer to a result value returned in *objPtrPtr* by the functions **Tcl\_Li
 
 
 [catch]: ../Tcl/catch.md
-[Object]: ../Tcl/Object.md
+[Object]: Object.md
 [SetResult]: SetResult.md
 

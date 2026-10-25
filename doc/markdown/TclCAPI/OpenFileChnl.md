@@ -370,6 +370,6 @@ The *writeObjPtr* argument to **Tcl\_WriteObj** should be a value with any refer
 [socket]: ../Tcl/socket.md
 [StdChannels]: StdChannels.md
 [StringObj]: StringObj.md
-[StrMatch]: ../Tcl/StrMatch.md
+[StrMatch]: StrMatch.md
 [Utf]: Utf.md
 

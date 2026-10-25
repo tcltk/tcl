@@ -79,5 +79,5 @@ Note that the routines **Tcl\_GetBooleanFromObj** and [Tcl\_GetBoolean][GetInt] 
 
 [catch]: ../Tcl/catch.md
 [GetInt]: GetInt.md
-[Object]: ../Tcl/Object.md
+[Object]: Object.md
 

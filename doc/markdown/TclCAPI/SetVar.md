@@ -129,6 +129,6 @@ The *part2Ptr* argument to **Tcl\_ObjSetVar2** and **Tcl\_ObjGetVar2**, if non-N
 
 
 [catch]: ../Tcl/catch.md
-[Object]: ../Tcl/Object.md
+[Object]: Object.md
 [SetResult]: SetResult.md
 

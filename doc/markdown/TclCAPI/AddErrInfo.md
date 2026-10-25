@@ -169,7 +169,7 @@ The *errorObjPtr* argument to **Tcl\_SetObjErrorCode** will have a reference add
 
 [catch]: ../Tcl/catch.md
 [Eval]: Eval.md
-[Object]: ../Tcl/Object.md
+[Object]: Object.md
 [return]: ../Tcl/return.md
 [SetErrno]: SetErrno.md
 [SetResult]: SetResult.md

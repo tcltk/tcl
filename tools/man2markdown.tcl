@@ -233,7 +233,7 @@ namespace eval ::ndoc {
 	
 	# list of Tcl commands to recognize for links between manual pages:
 	set tclCmdList [lsort [info commands]]
-	lappend tclCmdList my next bgerror Tcl mathop mathfunc tclvars tm msgcat tclsh wish
+	lappend tclCmdList my next bgerror Tcl mathop mathfunc tclvars tm msgcat tclsh
 
 	# dictionary mapping every documented Tcl C API function (Tcl_...) to the
 	# manual page (file root) that documents it:
@@ -271,7 +271,7 @@ namespace eval ::ndoc {
 		Tcl_DecrRefCount Object Tcl_DeleteAssocData AssocData Tcl_DeleteChannelHandler CrtChnlHdlr Tcl_DeleteCloseHandler CrtCloseHdlr
 		Tcl_DeleteCommand CrtObjCmd Tcl_DeleteCommandFromToken CrtObjCmd Tcl_DeleteEventSource Notifier Tcl_DeleteEvents Notifier
 		Tcl_DeleteExitHandler Exit Tcl_DeleteFileHandler CrtFileHdlr Tcl_DeleteHashEntry Hash Tcl_DeleteHashTable Hash
-		Tcl_DeleteInterp CrtInterp Tcl_DeleteNamespace Namespace Tcl_DeleteThreadExitHandler Exit3 Tcl_DeleteTimerHandler CrtTimerHdlr
+		Tcl_DeleteInterp CrtInterp Tcl_DeleteNamespace Namespace Tcl_DeleteThreadExitHandler Exit Tcl_DeleteTimerHandler CrtTimerHdlr
 		Tcl_DeleteTrace CrtTrace Tcl_DetachChannel OpenFileChnl Tcl_DetachPids DetachPids Tcl_DictObjDone DictObj
 		Tcl_DictObjFirst DictObj Tcl_DictObjGet DictObj Tcl_DictObjNext DictObj Tcl_DictObjPut DictObj
 		Tcl_DictObjPutKeyList DictObj Tcl_DictObjRemove DictObj Tcl_DictObjRemoveKeyList DictObj Tcl_DictObjSize DictObj
@@ -486,6 +486,38 @@ namespace eval ::ndoc {
 		Tk_Y WindowId
 	}]
 
+	# dictionary mapping every documented Tk command (and Tk variable/option page name) to the
+	# manual page (file root) that documents it (generated from the NAME sections of the Tk man pages):
+	set tkCmdFileMap [dict create {*}{
+		accessible accessible attribtable attribtable bell bell bind bind
+		bindtags bindtags bitmap bitmap busy busy button button
+		canvas canvas checkbutton checkbutton clipboard clipboard colors colors
+		console console cursors cursors destroy destroy entry entry
+		event event fileicon fileicon focus focus font font
+		fontchooser fontchooser frame frame geometry tkvars grab grab
+		grid grid image image keysyms keysyms label label
+		labelframe labelframe listbox listbox lower lower menu menu
+		menubutton menubutton message message nsimage nsimage option option
+		options options pack pack panedwindow panedwindow photo photo
+		place place print print radiobutton radiobutton raise raise
+		safe::loadTk loadTk scale scale scrollbar scrollbar selection selection
+		send send spinbox spinbox sysnotify sysnotify systray systray
+		text text tk tk tk::mac tk_mac tk::scalingPct tkvars
+		tk::svgFmt tkvars tk_bisque palette tk_chooseColor chooseColor tk_chooseDirectory chooseDirectory
+		tk_dialog dialog tk_focusFollowsMouse focusNext tk_focusNext focusNext tk_focusPrev focusNext
+		tk_getOpenFile getOpenFile tk_getSaveFile getOpenFile tk_library tkvars tk_menuSetFocus menu
+		tk_messageBox messageBox tk_optionMenu optionMenu tk_patchLevel tkvars tk_popup popup
+		tk_setPalette palette tk_strictMotif tkvars tk_textCopy text tk_textCut text
+		tk_textPaste text tk_version tkvars tkerror tkerror tkwait tkwait
+		toplevel toplevel ttk::button ttk_button ttk::checkbutton ttk_checkbutton ttk::combobox ttk_combobox
+		ttk::entry ttk_entry ttk::frame ttk_frame ttk::intro ttk_intro ttk::label ttk_label
+		ttk::labelframe ttk_labelframe ttk::menubutton ttk_menubutton ttk::notebook ttk_notebook ttk::panedwindow ttk_panedwindow
+		ttk::progressbar ttk_progressbar ttk::radiobutton ttk_radiobutton ttk::scale ttk_scale ttk::scrollbar ttk_scrollbar
+		ttk::separator ttk_separator ttk::sizegrip ttk_sizegrip ttk::spinbox ttk_spinbox ttk::style ttk_style
+		ttk::toggleswitch ttk_toggleswitch ttk::treeview ttk_treeview ttk::widget ttk_widget ttk_image ttk_image
+		ttk_vsapi ttk_vsapi winfo winfo wish wish wm wm
+	}]
+
 	# dictionary mapping Tcl's return code constants to the manual page (file root) that documents them:
 	set tclReturnCodeFileMap [dict create {*}{
 		TCL_OK catch TCL_ERROR catch TCL_RETURN catch TCL_BREAK catch TCL_CONTINUE catch
@@ -551,28 +583,33 @@ namespace eval ::ndoc {
 		cookiejar	{destroy configure info error set}
 		console		{eval}
 		clipboard	{string}
-		define          {variable}
+		define          {variable destroy}
 		entry		{string}
 		event		{return}
 		expr            {variable}
 		file            {socket}
 		font		{menu}
+		GetIndex        {option}
 		getOpenFile	{file open text}
 		grab		{global}
-		history		{exec}
-		http 		{error Tcl binary}
+		history		{exec event}
+		http 		{error Tcl binary text}
 		info            {coroutine proc}
 		interp		{time}
+		library         {text}
 		menu		{checkbutton radiobutton}
 		messageBox	{error info}
+		namespace       {text}
 		next		{unknown destroy}
 		options		{bitmap image set}
 		radiobutton	{image}
 		regexp          {binary}
+		re_syntax       {lower print}
 		safe		{join split}
 		scale		{label variable}
 		scrollbar	{set}
 		selection	{string}
+		string          {lower print}
 		tcltest		{error Tcl}
 		tclvars         {Tcl split}
 		text		{bind image lower raise}
@@ -1680,7 +1717,7 @@ proc ::ndoc::parseCommand {mode line {version {}}} {
 	#
 	# Note: the Span elements are alread fully expanded with appropriate AST "Text" elements
 	#
-	set DEBUG 1
+	set DEBUG 0
 	set verAttr {}
 	if {$version ne ""} {set verAttr " -vs {$version}"}
 	set line [BIRPclean $line]
@@ -2367,7 +2404,20 @@ proc ::ndoc::man2markdown {manContent} {
 	#
 	# Returns the markdown
 	#
+	variable manual
 	man2AST $manContent
+	#
+	# determine the output group (= output subdirectory) of this page: Tcl or Tk,
+	# with the suffix CAPI for the C API pages (manual section 3).
+	# This is needed in mdLinks to build the paths of cross references.
+	# (a page belongs to Tk if the part name given in its .TH line is "Tk"):
+	if {[dict get $manual meta TclPart] eq "Tk"} {
+		set group Tk
+	} else {
+		set group Tcl
+	}
+	if {[dict get $manual meta ManualSection] eq "3"} {append group CAPI}
+	dict set manual outGroup $group
 	set md [AST2Markdown]
 	set md [mdLinks $md]
 	set md [mdExceptions $md]
@@ -2872,6 +2922,7 @@ proc ::ndoc::mdLinks {md} {
 	variable tclCmdListExclude
 	variable tclCApiFileMap
 	variable tkCApiFileMap
+	variable tkCmdFileMap
 	variable tclReturnCodeFileMap
 	variable sectionTitles
 	# list to build the markdown references for external links (these are put at the end of the document):
@@ -2911,13 +2962,26 @@ proc ::ndoc::mdLinks {md} {
 			set linkGroup Tcl
 			set isValidLink 1
 		}
+		if {! $isValidLink && $linkCmd ne $cmdName} {
+			## link to a known Tk command (or a Tk variable/option page);
+			## the file to link to is not always the command name (e.g. tk_chooseColor -> chooseColor):
+			set linkCmdSubst [subst -novariables -nocommands $linkCmd]
+			if {[dict exists $tkCmdFileMap $linkCmdSubst]} {
+				set apiTarget [dict get $tkCmdFileMap $linkCmdSubst]
+				if {$apiTarget ne $fileRoot || $outGroup ne "Tk"} {
+					set linkTarget $apiTarget
+					set linkGroup Tk
+					set isValidLink 1
+				}
+			}
+		}
 		if {! $isValidLink && ([string match {Tcl\\_*} $linkCmd] || [string match {TclZipfs\\_*} $linkCmd])} {
 			## a Tcl C API function (Tcl_... or TclZipfs_...)
 			# (note that we can't handle this in tclCmdList as the md conversion has added a backslash (Tcl\_...):
 			set linkCmdSubst [subst -novariables -nocommands $linkCmd]
 			if {[dict exists $tclCApiFileMap $linkCmdSubst]} {
 				set apiTarget [dict get $tclCApiFileMap $linkCmdSubst]
-				if {$apiTarget ne $fileRoot} {
+				if {$apiTarget ne $fileRoot || $outGroup ne "TclCAPI"} {
 					## don't link to another Tcl_ function documented on this very page:
 					set linkTarget $apiTarget
 					set linkGroup TclCAPI
@@ -2931,7 +2995,7 @@ proc ::ndoc::mdLinks {md} {
 			set linkCmdSubst [subst -novariables -nocommands $linkCmd]
 			if {[dict exists $tkCApiFileMap $linkCmdSubst]} {
 				set apiTarget [dict get $tkCApiFileMap $linkCmdSubst]
-				if {$apiTarget ne $fileRoot} {
+				if {$apiTarget ne $fileRoot || $outGroup ne "TkCAPI"} {
 					## don't link to another Tk_ function documented on this very page:
 					set linkTarget $apiTarget
 					set linkGroup TkCAPI
@@ -2946,7 +3010,7 @@ proc ::ndoc::mdLinks {md} {
 			set linkCmdSubst [subst -novariables -nocommands $linkCmd]
 			if {[dict exists $tclReturnCodeFileMap $linkCmdSubst]} {
 				set apiTarget [dict get $tclReturnCodeFileMap $linkCmdSubst]
-				if {$apiTarget ne $fileRoot} {
+				if {$apiTarget ne $fileRoot || $outGroup ne "Tcl"} {
 					## don't link to catch.md from catch.n itself:
 					set linkTarget $apiTarget
 					set linkGroup Tcl
@@ -3013,18 +3077,22 @@ proc ::ndoc::mdLinks {md} {
 		set linkCmd [string range $md {*}$candRange]
 		set linkCmdSubst [subst -novariables -nocommands $linkCmd]
 		set apiTarget {}
+		set linkGroup {}
 		if {[dict exists $tclCApiFileMap $linkCmdSubst]} {
 			set apiTarget [dict get $tclCApiFileMap $linkCmdSubst]
+			set linkGroup TclCAPI
 		} elseif {[dict exists $tkCApiFileMap $linkCmdSubst]} {
 			set apiTarget [dict get $tkCApiFileMap $linkCmdSubst]
+			set linkGroup TkCAPI
 		} elseif {[dict exists $tclReturnCodeFileMap $linkCmdSubst]} {
 			set apiTarget [dict get $tclReturnCodeFileMap $linkCmdSubst]
+			set linkGroup Tcl
 		}
-		if {$apiTarget ne {} && $apiTarget ne $fileRoot} {
+		if {$apiTarget ne {} && ($apiTarget ne $fileRoot || $outGroup ne $linkGroup)} {
 			## don't link to the very page that documents this identifier:
 			set replaceString \[$linkCmd\]\[$apiTarget\]
 			set md [string replace $md {*}$candRange $replaceString]
-			lappend refList $apiTarget Tcl
+			lappend refList $apiTarget $linkGroup
 			set pos [expr {[lindex $candRange 0] + [string length $replaceString]}]
 		} else {
 			set pos [expr {[lindex $candRange 1] + 1}]
@@ -3081,7 +3149,6 @@ proc ::ndoc::main {} {
 		set tclManDir [file join $myDir .. doc nroff-original]
 		set tkManDir [file join $myDir .. doc]	
 		set myFile [file join $tclManDir string.n]
-		dict set manual outGroup TESTER
 		puts [man2markdown [readFile $myFile]]
 	} elseif {[llength $argv] == 2} {
 		# convert whole directory:
@@ -3094,13 +3161,20 @@ proc ::ndoc::main {} {
 		} elseif {! [file exists $outDir]} {
 			file mkdir $outDir
 		}
-		# first the files in section "n", then in section "1", finally in section "3":
-		foreach section {n 1 3} MDdir {Tcl Tcl TclCAPI}  {
-			foreach file [lsort -dictionary [glob [file join $inDir *.$section]]] {
+		# The output goes into a subdirectory of outDir that depends on where the page belongs
+		# (ndoc::man2markdown determines this from the manual page itself and puts it into
+		#  the 'outGroup' key of the $manual dictionary):
+		#   Tcl      - Tcl commands (sections n and 1)
+		#   TclCAPI  - Tcl C API (from section 3)
+		#   Tk       - Tk and ttk commands (sections n and 1)
+		#   TkCAPI   - Tk C API (section 3)
+		#
+		foreach section {n 1 3} {
+			foreach file [lsort -dictionary [glob -nocomplain [file join $inDir *.$section]]] {
 				puts "converting $file ..."
 				set sectionTitles [list]
-				dict set manual outGroup $MDdir
 				set md [man2markdown [readFile $file]]
+				set MDdir [dict get $manual outGroup]
 				set stem [file rootname [file tail $file]]
 				file mkdir [file join $outDir $MDdir]
 				set fh [open [file join $outDir $MDdir $stem.md] w]
@@ -3110,7 +3184,6 @@ proc ::ndoc::main {} {
 		}
 	} else {
 		# convert single file (to stdout):
-		dict set manual outGroup TESTER
 		puts [man2markdown [readFile [lindex $argv 0]]]
 	}
 }

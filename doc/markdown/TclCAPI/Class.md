@@ -177,6 +177,6 @@ The *methodNameObj* argument to a Tcl\_ObjectMapMethodNameProc implementation wi
 [catch]: ../Tcl/catch.md
 [class]: ../Tcl/class.md
 [next]: ../Tcl/next.md
-[Object]: ../Tcl/Object.md
+[Object]: Object.md
 [Preserve]: Preserve.md
 

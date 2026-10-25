@@ -367,7 +367,7 @@ For details about profiles, see the [Profiles] section in the documentation of t
 
 [binary]: ../Tcl/binary.md
 [catch]: ../Tcl/catch.md
-[DString]: ../Tcl/DString.md
+[DString]: DString.md
 [encoding]: ../Tcl/encoding.md
 [interp]: ../Tcl/interp.md
 [Utf]: Utf.md

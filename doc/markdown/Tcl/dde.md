@@ -95,5 +95,5 @@ dde execute -async iexplore WWW_OpenURL http://www.tcl-lang.org/
 [exec]: exec.md
 [update]: update.md
 [vwait]: vwait.md
-[wish]: wish.md
+[wish]: ../Tk/wish.md
 
