@@ -1,4 +1,5 @@
 # bench_cstruct.tcl annote|annote-tcl|classique ?typeparse? ?N?
+#   (forme compacte : TCL_TYPES_COMPACT=1 tclsh bench_cstruct.tcl annote)
 # FR : mesure, sur un lot de N mesures (10000 par défaut), chaque étape de
 #      l'exemple cstruct, en version annotée et en version Tcl classique.
 #      Résultat : µs par opération. annote-tcl : codecs en Tcl seulement
@@ -15,9 +16,9 @@ if {$mode eq "annote"} {
     source [file join $tp layout filebinary.tcl]
     source [file join $tp layout binaliases.tcl]
     source [file join $tp exemples cstruct cstruct.tcl]
-    cs::init [file join $here cstruct.so]
+    cs::init [file join $here cstruct[info sharedlibextension]]
 } else {
-    csc::init [file join $here cstruct.so]
+    csc::init [file join $here cstruct[info sharedlibextension]]
 }
 set bytes [cs::generate $N 42]
 set C [csc::decode $bytes]
@@ -60,12 +61,41 @@ if {$mode eq "annote"} {
         }
         list $cnt $mn $mx
     }
+    # v16c : $it(champ) opérande d'un calcul ou d'une comparaison dans expr est
+    #        lu comme nombre (instruction loadFieldNum)
+    proc p_compute_expr {b} {
+        set sum 0.0; set cnt 0; set mn ""; set mx ""
+        foreach it $b(items) {
+            if {$it(flags) & 1} continue
+            set sum [expr {$sum + $it(value)}]; incr cnt
+            if {$mn eq "" || $it(value) < $mn} {set mn $it(value)}
+            if {$mx eq "" || $it(value) > $mx} {set mx $it(value)}
+        }
+        list $cnt $mn $mx
+    }
+    # v16e : affectation par tuple (instruction tupleAssign)
+    proc p_compute_tuple {b} {
+        set sum 0.0; set cnt 0; set mn ""; set mx ""
+        foreach it $b(items) {
+            expr {(id, v, fl) = $it}
+            if {$fl & 1} continue
+            set sum [expr {$sum + $v}]; incr cnt
+            if {$mn eq "" || $v < $mn} {set mn $v}
+            if {$mx eq "" || $v > $mx} {set mx $v}
+        }
+        list $cnt $mn $mx
+    }
+    if {[p_compute_expr $A] ne [p_compute $A] || [p_compute_tuple $A] ne [p_compute $A]} {
+        error "calculs différents : [p_compute $A] [p_compute_expr $A] [p_compute_tuple $A]"
+    }
     mesure "1 construction (set {Batch})"     200 {p_build $N $items}
     mesure "2 encodage (type binary encode)"  200 {p_encode $A}
     mesure "3 C stats_raw sur les octets"     2000 {cs::stats_raw $bytes}
     mesure "4 décodage (type binary decode)"  200 {p_decode $bytes}
     mesure "5 calcul Tcl, \$it(champ)"         200 {p_compute $A}
     mesure "5b calcul Tcl, lassign"           200 {p_compute_lassign $A}
+    mesure "5c calcul Tcl, \$it(champ) dans expr" 200 {p_compute_expr $A}
+    mesure "5d calcul Tcl, (id, v, fl) = \$it" 200 {p_compute_tuple $A}
     mesure "6 chaîne complète (cs::stats)"    200 {p_stats $A}
     mesure "7 voie objet (cs::stats_obj)"     200 {p_statsobj $A}
 } else {

@@ -113,3 +113,38 @@ sur un `Batch` rend 1 élément. `cs::stats_obj` demande donc à Tcl le contenu 
 (`::tcl::unsupported::content`, profond : les `Sample` d'un lot décodé deviennent bruts aussi), puis
 lit ses champs comme avant. **Recompiler `cstruct.so` (ou `cstruct.dll`) après la mise à jour.**
 Avec une fonction de stub (contenu d'une valeur annotée), ce serait un appel C direct.
+
+## v16e : mesures avec les optimisations des v15u à v16e (25 octobre)
+
+`bench_cstruct.tcl` charge maintenant `cstruct[info sharedlibextension]` (`cstruct.so` sous Linux,
+`cstruct.dll` sous Windows) et mesure deux calculs de plus : `5c`, les champs lus dans `expr`
+(`$it(value) < $mn`, instruction `loadFieldNum`, v16c), et `5d`, l'affectation par tuple
+`(id, v, fl) = $it` (instruction `tupleAssign`, v16e). La forme compacte se mesure avec
+`TCL_TYPES_COMPACT=1 tclsh bench_cstruct.tcl annote`.
+
+Lot de 10 000 mesures, µs par opération, Linux, deux tours (fourchette) :
+
+| Étape | annoté | annoté, forme compacte | Tcl classique |
+|---|---:|---:|---:|
+| 1 Construction | 1 000 | 1 350 à 2 000 | 0,3 nue ; 4 000 contrôlée |
+| 2 Encodage | 1 150 | **255 à 340** | 4 100 à 4 200 |
+| 3 C sur les octets | 16 | 16 à 28 | 17 à 21 |
+| 4 Décodage | 3 400 | **127 à 163** | 8 000 à 9 400 |
+| 5 Calcul `$it(champ)` | 3 800 à 4 000 | 3 900 à 4 000 | — |
+| 5b Calcul `lassign $it(*)` | 15 300 à 15 600 | 15 400 à 17 200 | 2 800 à 3 300 (`lassign`) |
+| 5c Calcul, `$it(champ)` dans `expr` | 3 700 à 3 800 | 3 700 à 5 300 | — |
+| 5d Calcul, `(id, v, fl) = $it` | 7 500 à 9 100 | 5 800 à 6 300 | — |
+| 6 Chaîne complète `cs::stats` | 1 600 | **270 à 280** | 4 000 à 4 600 nue ; 8 600 à 8 800 contrôlée |
+| 7 Voie objet `cs::stats_obj` | 2 400 à 2 800 | 2 500 à 2 700 | — |
+
+- En forme compacte, la liste des `Sample` est en cases : l'encodage et le décodage copient les cases
+  (v15w), la chaîne complète est 15 fois plus rapide que le Tcl classique nu, 30 fois plus que le classique
+  contrôlé, et le décodage 60 fois plus rapide que `binary scan`.
+- Le calcul en Tcl reste le point lent : `$it(champ)` coûte environ 0,4 µs par mesure (deux à trois lectures
+  de champ), le classique `lassign` 0,3 µs.
+- **À reprendre** : `lassign $it(*)` (5b) est maintenant 4 fois plus lent que `$it(champ)` : la lecture
+  `$P(*)` (toutes les parties, typées, dans une `list<any>`) passe par le chemin général des chemins, environ
+  2,4 µs, contre 0,7 µs pour un champ. Et la voie objet (7) demande le contenu du lot à Tcl
+  (`::tcl::unsupported::content`, par l'interpréteur) puis relit chaque champ : 2,4 ms au lieu des 0,5 ms
+  d'avant la règle B ; écrite avec `tclAnnotatedApi.h` et `Tcl_AnnotatedGetCells`, comme `geo.c`, elle lirait
+  directement les cases en forme compacte.
