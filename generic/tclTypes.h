@@ -21,7 +21,7 @@
  * VAR_* de tclInt.h). La valeur ci-dessous est un PLACEHOLDER. */
 /* Version du prototype TIP 764 (typeparse/VERSION, maj.sh, et
  * tcl::unsupported::typesversion). */
-#define TCL_TYPES_VERSION "v16b"
+#define TCL_TYPES_VERSION "v16c"
 
 #ifndef VAR_TYPED
 #define VAR_TYPED	0x400000
@@ -334,6 +334,7 @@ const unsigned char *TclCompactData(Tcl_Obj *v, const TclType *et,
 Tcl_Obj *TclCompactNew(TclType *ltp, Tcl_Size n, unsigned char **dataPtr);
 Tcl_Obj *TclCompactCast(TclType *target, Tcl_Obj *content);
 Tcl_Obj *TclCompactElement(Tcl_Obj *v, Tcl_Size i);
+Tcl_Obj *TclCompactFieldNumber(Tcl_Obj *o, Tcl_Size idx);
 Tcl_Obj *TclCompactCache(Tcl_Obj *v);
 Tcl_Obj *TclCompactReadPath(Tcl_Obj *v, Tcl_Size idx, Tcl_Size nnames,
 	    const char *const names[], TclType **tpPtr);
@@ -445,5 +446,10 @@ int	TclTypedVarSetElement(Tcl_Interp *interp, Tcl_Obj *part1Ptr,
 	    Tcl_Obj *part2Ptr, Tcl_Obj *valuePtr, Tcl_Obj **resultPtr);
 
 MODULE_SCOPE Tcl_Obj *TclTypedVarDeclare(Tcl_Interp *interp, Tcl_Obj *nameObj, Tcl_Obj *typed);
+MODULE_SCOPE Tcl_Obj *TclTypedVarDeclareVar(Tcl_Interp *interp, Var *varPtr, Var *arrayPtr,
+			    Tcl_Obj *nameObj, Tcl_Obj *typed);
+MODULE_SCOPE Tcl_Obj *TclTypedFieldNumber(Var *varPtr, Tcl_Obj *part2Ptr);
+MODULE_SCOPE Tcl_Obj *TclTypedDeclareLocal(Tcl_Interp *interp, Var *varPtr,
+			    Tcl_Obj *nameObj, Tcl_Obj *typeObj, Tcl_Obj *valueObj);
 MODULE_SCOPE int TclTypedVarRedeclare(Tcl_Interp *interp, Var *varPtr, Tcl_Obj *nameObj);
 #endif /* TCLTYPES_H */

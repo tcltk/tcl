@@ -1,0 +1,16 @@
+produit : -9.0 4 0
+cases : -3.0 n 3 stride 16 elem point shared 1 2 0
+entier : 3 1 -2 1 4 0 6 0
+repli : 1 {cannot use a list as left operand of "+"} 1 {cannot use non-numeric string "txt" as left operand of "+"} 1 {pi has no field "z"}
+tableau : 20
+erreurs : 1 {can't read "l(x)": variable isn't array} 1 {can't read "nul(x)": no such variable}
+trace lecture : 2.5 {}
+lien : 3.0
+somme : 1 can't read "s(cote)": variable isn't array
+eq : 1 0 0
+affectations : 4 3 3 0 0
+trace écriture : 5 A
+contrat : {3.0 4.0} point 1 {point needs 2 values but got 1}
+lien : 9
+liste : {1.0 2.0} {}
+global : 4 4

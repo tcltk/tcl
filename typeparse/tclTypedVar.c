@@ -1683,14 +1683,26 @@ Tcl_Obj *
 TclTypedVarDeclare(Tcl_Interp *interp, Tcl_Obj *nameObj, Tcl_Obj *typed)
 {
     Var *varPtr, *arrayPtr;
-    Tcl_Obj *res;
-    int hadBit;
 
     varPtr = TclObjLookupVarEx(interp, nameObj, NULL, TCL_LEAVE_ERR_MSG,
 	    "set", 1, 0, &arrayPtr);
     if (varPtr == NULL) {
 	return NULL;
     }
+    return TclTypedVarDeclareVar(interp, varPtr, arrayPtr, nameObj, typed);
+}
+
+/*
+ * La même chose, la variable déjà trouvée (variable locale compilée :
+ * instruction declareLocal, arrayPtr NULL).
+ */
+Tcl_Obj *
+TclTypedVarDeclareVar(Tcl_Interp *interp, Var *varPtr, Var *arrayPtr,
+	Tcl_Obj *nameObj, Tcl_Obj *typed)
+{
+    Tcl_Obj *res;
+    int hadBit;
+
     while (TclIsVarLink(varPtr)) {
 	varPtr = varPtr->value.linkPtr;
     }

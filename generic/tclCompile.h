@@ -850,6 +850,13 @@ enum TclInstruction {
      * parts (atomic leaves of a typed-value path) */
     INST_INDEX_CONCAT,
 
+    /* "x is T = v" in expr, x a compiled local: typed declaration */
+    INST_DECLARE_LOCAL,
+
+    /* $a(x) operand of an arithmetic operator in expr: the number in
+     * field x of the typed product a, else as loadArray */
+    INST_LOAD_FIELD_NUM,
+
     /* The last opcode */
     LAST_INST_OPCODE
 };

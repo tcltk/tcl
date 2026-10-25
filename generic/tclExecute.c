@@ -2995,6 +2995,17 @@ TEBCresume(
 	part1Ptr = part2Ptr = NULL;
 	goto doCallPtrGetVar;
 
+    case INST_LOAD_FIELD_NUM:
+	opnd = TclGetUInt4AtPtr(pc + 1);
+	objResultPtr = TclTypedFieldNumber(LOCAL(opnd), OBJ_AT_TOS);
+	if (objResultPtr != NULL) {
+	    TRACE(("%u \"%.30s\" => %.30s\n", opnd, O2S(OBJ_AT_TOS),
+		    O2S(objResultPtr)));
+	    NEXT_INST_F(5, 1, 1);
+	}
+	pcAdjustment = 5;
+	goto doLoadArray;
+
     case INST_LOAD_ARRAY4:
 	opnd = TclGetUInt4AtPtr(pc + 1);
 	pcAdjustment = 5;
@@ -7449,6 +7460,25 @@ TEBCresume(
 	    TclTypedVarForget(varPtr);
 	}
 	NEXT_INST_F(5, 0, 0);
+
+    case INST_DECLARE_LOCAL: {
+	Tcl_Obj *declPtr;
+
+	opnd = TclGetUInt4AtPtr(pc + 1);
+	TRACE(("%u \"%.30s\" \"%.30s\" => ", opnd, O2S(OBJ_UNDER_TOS),
+		O2S(OBJ_AT_TOS)));
+	DECACHE_STACK_INFO();
+	declPtr = TclTypedDeclareLocal(interp, LOCAL(opnd), OBJ_AT_DEPTH(2),
+		OBJ_UNDER_TOS, OBJ_AT_TOS);
+	CACHE_STACK_INFO();
+	if (declPtr == NULL) {
+	    TRACE_ERROR(interp);
+	    goto gotError;
+	}
+	objResultPtr = declPtr;
+	TRACE_APPEND(("\"%.30s\"\n", O2S(objResultPtr)));
+	NEXT_INST_V(5, 3, -1);
+    }
 
     case INST_DICT_UPDATE_START:
 	opnd = TclGetUInt4AtPtr(pc + 1);

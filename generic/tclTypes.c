@@ -6292,6 +6292,63 @@ IsOpObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
  * affecte VALEUR (validée). Le résultat est la valeur typée.
  */
 
+/* La valeur typée d'une déclaration X is T = v : *typedPtr, sans
+ * référence propre (la valeur elle-même quand elle est déjà de type T).
+ * mayOwn : valueObj non partagée peut devenir le contenu (valeur de la pile
+ * d'exécution, que seule la pile tient : la liste neuve de (a, b)). */
+static int
+DeclareTyped(Tcl_Interp *interp, Tcl_Obj *typeObj, Tcl_Obj *valueObj,
+	int mayOwn, Tcl_Obj **typedPtr)
+{
+    /* X is T = $x avec $x déjà de type T, sans note : la valeur telle
+     * quelle (le cas courant des procédures typées : P is point = $p) */
+    TclType *tp = TclAnnotTypeOf(interp, typeObj), *vt = NULL;
+    Tcl_Size np = 1;
+
+    if (tp != NULL && TclAnnotInfo(valueObj, NULL, &vt, NULL, NULL) == 1
+	    && vt == tp) {
+	if (TclAnnotIsSettled(valueObj)) {
+	    np = 0;
+	} else {
+	    Tcl_Obj *pend = TclAnnotPending(valueObj);
+
+	    Tcl_IncrRefCount(pend);
+	    Tcl_ListObjLength(NULL, pend, &np);
+	    Tcl_DecrRefCount(pend);
+	}
+    }
+    if (np == 0) {
+	*typedPtr = valueObj;
+    } else if (tp != NULL && (tp->kind == TCLT_INT || tp->kind == TCLT_DOUBLE)
+	    && !TclIsAnnotated(valueObj)) {
+	/* X is double = $x : un nombre n'a rien à compléter ; le contenu est
+	 * partagé (une valeur est immuable), comme pour la lecture d'un champ */
+	if (TclTypeValidate(interp, tp, valueObj, -1, NULL) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	*typedPtr = TclNewAnnotatedShared(interp, tp, -1, valueObj);
+    } else if (tp != NULL && !TclIsAnnotated(valueObj)) {
+	/* X is T = (a, b) : une valeur sans annotation, construite
+	 * directement (ce que ferait le résolveur du constructeur) */
+	Tcl_Obj *copy = (mayOwn && !Tcl_IsShared(valueObj))
+		? valueObj : Tcl_DuplicateObj(valueObj);
+	int variant = -1;
+
+	Tcl_IncrRefCount(copy);
+	if (TclTypeComplete(interp, tp, copy, -1, &variant) != TCL_OK) {
+	    Tcl_DecrRefCount(copy);
+	    return TCL_ERROR;
+	}
+	/* la copie (ou la valeur de la pile) devient le contenu : pas de
+	 * seconde copie */
+	*typedPtr = TclNewAnnotatedOwn(copy, TclTypeRefFor(interp, tp, variant));
+	Tcl_DecrRefCount(copy);
+    } else if (TclAnnotateValue(interp, typeObj, valueObj, typedPtr) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    return TCL_OK;
+}
+
 static int
 DeclareObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
 	Tcl_Obj *const objv[])
@@ -6303,38 +6360,8 @@ DeclareObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
 	Tcl_WrongNumArgs(interp, 1, objv, "varName type value");
 	return TCL_ERROR;
     }
-    {
-	/* X is T = $x avec $x déjà de type T, sans note : la valeur telle
-	 * quelle (le cas courant des procédures typées : P is point = $p) */
-	TclType *tp = TclAnnotTypeOf(interp, objv[2]), *vt = NULL;
-	Tcl_Obj *pend;
-	Tcl_Size np = 1;
-
-	if (tp != NULL && TclAnnotInfo(objv[3], NULL, &vt, NULL, NULL) == 1
-		&& vt == tp) {
-	    pend = TclAnnotPending(objv[3]);
-	    Tcl_IncrRefCount(pend);
-	    Tcl_ListObjLength(NULL, pend, &np);
-	    Tcl_DecrRefCount(pend);
-	}
-	if (np == 0) {
-	    typed = objv[3];
-	} else if (tp != NULL && !TclIsAnnotated(objv[3])) {
-	    /* X is T = (a, b) : une valeur sans annotation, construite
-	     * directement (ce que ferait le résolveur du constructeur) */
-	    Tcl_Obj *copy = Tcl_DuplicateObj(objv[3]);
-	    int variant = -1;
-
-	    Tcl_IncrRefCount(copy);
-	    if (TclTypeComplete(interp, tp, copy, -1, &variant) != TCL_OK) {
-		Tcl_DecrRefCount(copy);
-		return TCL_ERROR;
-	    }
-	    typed = TclNewAnnotated(interp, tp, variant, copy);
-	    Tcl_DecrRefCount(copy);
-	} else if (TclAnnotateValue(interp, objv[2], objv[3], &typed) != TCL_OK) {
-	    return TCL_ERROR;
-	}
+    if (DeclareTyped(interp, objv[2], objv[3], 0, &typed) != TCL_OK) {
+	return TCL_ERROR;
     }
     Tcl_IncrRefCount(typed);
     res = TclTypedVarDeclare(interp, objv[1], typed);
@@ -6345,6 +6372,31 @@ DeclareObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
     Tcl_SetObjResult(interp, res);	/* la valeur rangée, résolue */
     Tcl_DecrRefCount(typed);
     return TCL_OK;
+}
+
+/*
+ * Instruction declareLocal (X is T = v compilé dans une procédure, X
+ * variable locale) : comme ::tcl::unsupported::declare, sans appel de
+ * commande ni recherche de la variable par son nom. Rend la valeur rangée
+ * AVEC une référence pour l'appelant (une trace d'écriture peut défaire la
+ * variable), NULL en cas d'erreur (message dans l'interpréteur).
+ */
+Tcl_Obj *
+TclTypedDeclareLocal(Tcl_Interp *interp, Var *varPtr, Tcl_Obj *nameObj,
+	Tcl_Obj *typeObj, Tcl_Obj *valueObj)
+{
+    Tcl_Obj *typed = NULL, *res;
+
+    if (DeclareTyped(interp, typeObj, valueObj, 1, &typed) != TCL_OK) {
+	return NULL;
+    }
+    Tcl_IncrRefCount(typed);
+    res = TclTypedVarDeclareVar(interp, varPtr, NULL, nameObj, typed);
+    if (res != NULL) {
+	Tcl_IncrRefCount(res);
+    }
+    Tcl_DecrRefCount(typed);
+    return res;
 }
 
 /* Contenu PROFOND : les éléments annotés des collections et des produits

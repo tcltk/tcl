@@ -852,9 +852,18 @@ AnnotListIndex(Tcl_Interp *interp, Tcl_Obj *aPtr, Tcl_Size index,
 	Tcl_Obj **elemPtr)
 {
     Tcl_Obj *v;
+    TclType *lt = FastListType(aPtr, &v);
 
-    if (FastListType(aPtr, &v) != NULL && !TclIsCompact(v)
-	    && Tcl_ListObjIndex(NULL, v, index, elemPtr) == TCL_OK
+    if (lt != NULL && TclIsCompact(v)) {
+	/* liste typée en cases : la vue sur la case, typée (refcount 0),
+	 * sans repasser par la résolution du type */
+	Tcl_Obj *c = TclCompactElement(v, index);
+
+	*elemPtr = (c != NULL) ? MakeAnnotated(c, NewTypeRefNoCache(lt->elem,
+		-1)) : NULL;
+	return TCL_OK;
+    }
+    if (lt != NULL && Tcl_ListObjIndex(NULL, v, index, elemPtr) == TCL_OK
 	    && *elemPtr != NULL && TCL_ANNOT_P(*elemPtr)) {
 	return TCL_OK;			/* élément déjà typé dans V */
     }
@@ -3808,6 +3817,31 @@ TclCompactHolds(Tcl_Obj *v, const TclType *et, Tcl_Size *nPtr)
 	*nPtr = COMPACT_BUF(v)->n;
     }
     return 1;
+}
+
+/*
+ * Le champ idx d'une vue sur une case (produit en cases), s'il est un
+ * nombre : lu dans la case, objet neuf (refcount 0) ; NULL sinon (pas une
+ * vue, champ hors bornes, champ produit).
+ */
+Tcl_Obj *
+TclCompactFieldNumber(Tcl_Obj *o, Tcl_Size idx)
+{
+    CompactElem *ce;
+    const CNode *nd;
+
+    if (o == NULL || o->typePtr != &compactElemType) {
+	return NULL;
+    }
+    ce = COMPACT_ELEM(o);
+    if (idx < 0 || idx >= ce->b->lay->node[ce->node].nchild) {
+	return NULL;
+    }
+    nd = &ce->b->lay->node[CompactElemChild(ce, idx)];
+    if (nd->kind == CN_PROD) {
+	return NULL;
+    }
+    return DecodeScalar(nd, ce->b->data + ce->cell + nd->off);
 }
 
 Tcl_Obj *

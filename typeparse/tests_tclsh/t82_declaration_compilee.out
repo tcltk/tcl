@@ -1,0 +1,18 @@
+point : {1.0 2.0} point 1 {point needs 2 values but got 1} compilé 1
+défaut : 1 pdef needs 2 values but got 1
+double : 1.5 double 1 {expected floating-point number but got "z"} 3 double 1 {expected floating-point number but got "z"}
+refus : 1 expected floating-point number but got "abc"
+  expected floating-point number but got "abc"
+    (procedure "p4" line 1)
+    invoked from within
+"p4"
+partagée : {1.0 2.0} {} {1.0 2.0} point
+déjà typée : {3.0 4.0} point
+compacte : {{1.0 2.0} {3.0 4.0}} 1
+somme : 2.0 forme.cote carré forme.nom
+lien : {5.0 6.0} point 1 {point needs 2 values but got 1}
+trace : {7.0 8.0} point A
+qualifié : {1.0 1.0} point compilé 0
+global : 2.0 2.0 point
+boucle : {2 1.0} point
+type inconnu : 0 1

@@ -2833,6 +2833,41 @@ ExecConstantExprTree(
  *----------------------------------------------------------------------
  */
 
+/*
+ * $a(x), operand of an arithmetic operator or a comparison, compiled to
+ * [push "x"; loadArray %a]: the load becomes loadFieldNum, which reads the
+ * number in field x of a typed product without its type wrapper (the
+ * operator would only read the content), and is loadArray otherwise.
+ */
+static void
+NumericFieldLoad(
+    CompileEnv *envPtr,
+    Tcl_Size start)
+{
+    unsigned char *code = envPtr->codeStart + start;
+    Tcl_Size len = envPtr->codeNext - code, pushLen, lv;
+
+    if (len < 4) {
+	return;
+    }
+    if (code[0] == INST_PUSH1) {
+	pushLen = 2;
+    } else if (code[0] == INST_PUSH4) {
+	pushLen = 5;
+    } else {
+	return;
+    }
+    if (len == pushLen + 2 && code[pushLen] == INST_LOAD_ARRAY1) {
+	lv = TclGetUInt1AtPtr(code + pushLen + 1);
+    } else if (len == pushLen + 5 && code[pushLen] == INST_LOAD_ARRAY4) {
+	lv = TclGetUInt4AtPtr(code + pushLen + 1);
+    } else {
+	return;
+    }
+    envPtr->codeNext = code + pushLen;
+    TclEmitInstInt4(INST_LOAD_FIELD_NUM, lv, envPtr);
+}
+
 static void
 CompileExprTree(
     Tcl_Interp *interp,
@@ -2849,6 +2884,15 @@ CompileExprTree(
     int numWords = 0;
     JumpList *jumpPtr = NULL;
     int convert = 1;
+    /* "name is T = v" in a procedure: IS_TYPE node -> compiled local of
+     * name (declareLocal instead of ::tcl::unsupported::declare) */
+    enum { DECL_MAX = 32 };
+    Tcl_Size declNode[DECL_MAX], declLocal[DECL_MAX];
+    int nDecl = 0;
+    /* "name = v" in a procedure, name a compiled local: ASSIGN node ->
+     * local (storeScalar, the name is not pushed) */
+    Tcl_Size assignNode[DECL_MAX], assignLocal[DECL_MAX];
+    int nAssign = 0;
 
     while (1) {
 	int next;
@@ -2971,15 +3015,28 @@ CompileExprTree(
 			&& nodes[nodePtr->left].lexeme == IS_TYPE) {
 		    /*
 		     * "var is type = value": the stack holds [name type value].
-		     * Invoke ::tcl::unsupported::declare name type value.
+		     * A compiled local: declareLocal; otherwise invoke
+		     * ::tcl::unsupported::declare name type value.
 		     */
+		    int d;
 
+		    for (d = 0; d < nDecl; d++) {
+			if (declNode[d] == nodePtr->left) {
+			    break;
+			}
+		    }
+		    if (d < nDecl) {
+			TclEmitInstInt4(INST_DECLARE_LOCAL, declLocal[d], envPtr);
+			goto declared;
+		    }
 		    TclEmitPush(TclRegisterLiteral(envPtr,
 			    "::tcl::unsupported::declare", 27, LITERAL_CMD_NAME),
 			    envPtr);
 		    TclEmitInstInt4(INST_REVERSE, 4, envPtr);
 		    TclEmitInstInt4(INST_REVERSE, 3, envPtr);
 		    TclEmitInvoke(envPtr, INST_INVOKE_STK1, 4);
+		declared:
+		    ;
 		} else if (nodePtr->left >= 0
 			&& nodes[nodePtr->left].lexeme == LIST) {
 		    /*
@@ -3006,7 +3063,22 @@ CompileExprTree(
 		    TclEmitInstInt4(INST_REVERSE, 2, envPtr);
 		    TclEmitOpcode(INST_POP, envPtr);
 		} else {
-		    TclEmitOpcode(INST_STORE_STK, envPtr);
+		    int d;
+
+		    for (d = 0; d < nAssign; d++) {
+			if (assignNode[d] == nodePtr - nodes) {
+			    break;
+			}
+		    }
+		    if (d < nAssign && assignLocal[d] <= 255) {
+			TclEmitInstInt1(INST_STORE_SCALAR1, assignLocal[d],
+				envPtr);
+		    } else if (d < nAssign) {
+			TclEmitInstInt4(INST_STORE_SCALAR4, assignLocal[d],
+				envPtr);
+		    } else {
+			TclEmitOpcode(INST_STORE_STK, envPtr);
+		    }
 		}
 		break;
 	    case NULL_FUNC:
@@ -3137,7 +3209,19 @@ CompileExprTree(
 		    }
 		}
 		if (nlen > 0 && k == nlen) {
-		    (void) TclFindCompiledLocal(nm, nlen, 1, envPtr);
+		    Tcl_Size lv = TclFindCompiledLocal(nm, nlen, 1, envPtr);
+
+		    if (lv >= 0 && nodePtr->lexeme == IS_TYPE
+			    && nDecl < DECL_MAX) {
+			declNode[nDecl] = nodePtr - nodes;
+			declLocal[nDecl++] = lv;
+		    } else if (lv >= 0 && nodePtr->lexeme == ASSIGN
+			    && nAssign < DECL_MAX) {
+			assignNode[nAssign] = nodePtr - nodes;
+			assignLocal[nAssign++] = lv;
+			(*litObjvPtr)++;
+			break;		/* no name on the stack */
+		    }
 		}
 	    }
 	    if (optimize) {
@@ -3180,10 +3264,23 @@ CompileExprTree(
 	    (*litObjvPtr)++;
 	    break;
 	}
-	case OT_TOKENS:
+	case OT_TOKENS: {
+	    Tcl_Size start = CurrentOffset(envPtr);
+
 	    CompileTokens(envPtr, tokenPtr, interp);
 	    tokenPtr += tokenPtr->numComponents + 1;
+	    if (envPtr->procPtr != NULL) {
+		switch (nodePtr->lexeme) {
+		case BINARY_PLUS: case BINARY_MINUS: case UNARY_PLUS:
+		case UNARY_MINUS: case MULT: case DIVIDE: case MOD:
+		case EXPON: case LESS: case GREATER: case LEQ: case GEQ:
+		case EQUAL: case NEQ:
+		    NumericFieldLoad(envPtr, start);
+		    break;
+		}
+	    }
 	    break;
+	}
 	default:
 	    if (optimize && nodes[next].constant) {
 		Tcl_InterpState save = Tcl_SaveInterpState(interp, TCL_OK);

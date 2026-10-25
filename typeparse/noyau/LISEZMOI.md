@@ -1671,3 +1671,49 @@ Sources de types : `tclTypes.h`, `tclTypes.c`. Pas de patch noyau.
 - `typeparse/version.tcl` : pour un tclsh d'avant la v16b, devine la version à ce que chaque livraison a ajouté :
   codec C des chaînes (v16a), `lappend` linéaire (v15z), `compact cells` (v15x ; v15x et v15y ne se distinguent
   pas de l'extérieur), sinon « v15w ou antérieure ».
+
+### v16c — déclarations et lectures de champ compilées (25 octobre 2026)
+
+Sources de types : `tclTypes.c`, `tclTypes.h`, `tclTypedVar.c`, `tclTypePath.c`, `tclAnnotObj.c`.
+Patch noyau : **`expr-declaration-champs.patch`** (`tclCompile.h`, `tclCompile.c`, `tclCompExpr.c`,
+`tclExecute.c`), en fin de `ORDRE.txt`. Deux instructions nouvelles : la recompilation est complète.
+
+- **`X is T = v` compilé** (instruction `declareLocal`, X variable locale d'une procédure) : plus d'appel de
+  `::tcl::unsupported::declare`, plus de recherche de X par son nom. La commande reste pour les autres cas
+  (hors procédure, nom qualifié `{::G}`, élément de tableau), avec les mêmes valeurs, contrats et messages.
+  `TclTypedVarDeclareVar` (la variable déjà trouvée) ; `DeclareTyped` commun à la commande et à l'instruction.
+- **Moins de copies dans la déclaration** : la liste neuve de `(a, b)`, que seule la pile tient, devient le
+  contenu sans copie (une valeur partagée, `$L`, est copiée comme avant) ; plus de seconde copie dans
+  `TclNewAnnotated` (`TclNewAnnotatedOwn`) ; un `int` ou un `double` partage son contenu, comme la lecture
+  d'un champ (une valeur est immuable).
+- **`$a(x)` lu comme nombre dans `expr`** (instruction `loadFieldNum`) : opérande d'un opérateur
+  arithmétique (`+ - * / % **`, unaires `-` `+`) ou d'une comparaison numérique (`< > <= >= == !=`), dans une
+  procédure. Si `a` est un produit typé sans trace de lecture et `x` un champ `int` ou `double`, la valeur
+  poussée est le nombre du contenu, sans l'enveloppe du type (l'opérateur n'en lisait que le contenu) ; dans
+  une vue sur une case (forme compacte), il est lu directement dans la case (`TclCompactFieldNumber`). Sinon
+  l'instruction fait exactement `loadArray` (tableau ordinaire, erreurs, `eq`/`ne` non concernés). Le
+  compilateur réécrit `push "x"; loadArray %a` produit pour l'opérande (`NumericFieldLoad`).
+- **`nom = v` dans une procédure** : `storeScalar` sur la variable locale, au lieu de `storeStk` (recherche
+  par le nom à chaque affectation). Traces, liens `upvar`, contrats : le chemin ordinaire de `storeScalar`.
+- **`lindex` sur une liste en cases** : la vue typée sans repasser par la résolution du type de la liste.
+- Mesures (ns par opération, boucle déduite, Linux) :
+
+| opération | v16b | v16c |
+|---|---:|---:|
+| `A = $x` | 50 | 28 |
+| `A is double = $x` | 313 | 83 |
+| `A is point = $p` | 147 | 33 |
+| `A is point = (1.0, 2.0)` | 357 | 196 |
+| `$p(x) * 2` | 91 | 59 |
+| `$c(x) * 2`, `c` vue sur une case | 113 | 64 |
+| `lindex $C 0`, liste en cases | 239 | 177 |
+
+- `geo::aire` (étape 2, 10 000 points ; instructions comptées par callgrind) : forme ordinaire 63,5 → 51,6
+  millions, forme compacte 114 → 76 millions. La forme compacte reste plus lente (1,5 fois) : chaque `lindex`
+  fabrique une vue (deux objets, créés puis libérés).
+- Tests `t82_declaration_compilee` (valeurs, contrats, messages, liens, traces, forme compacte, somme ; repli
+  par la commande pour un nom qualifié et hors procédure) et `t83_lecture_champ_affectation` (mêmes
+  résultats et mêmes erreurs que `loadArray` : tableau ordinaire, variable non tableau, champ produit ou
+  chaîne, champ inconnu, lien ; affectations : traces d'écriture, contrat, lien, global).
+- Essayé et retiré : sauter, dans `TclFreeObj`, la recherche des lignes de continuation (TIP 280) quand la
+  table est vide ; elle ne l'est jamais (les scripts sourcés y laissent leurs entrées).

@@ -52,13 +52,16 @@ temps, `(/ 2.2)` veut dire 2,2 fois plus lent que le Tcl nu, `(x 37.1)` 37,1 foi
 L'étape annotée, rapportée au Tcl nu, au fil des versions (les écarts de ± 0.3 d'un passage à l'autre sont du
 bruit de mesure) :
 
-| calcul | v15s | v15u | v15v |
-|---|---:|---:|---:|
-| aire | / 3.4 | / 2.2 | / 1.8 |
-| périmètre | / 2.7 | / 1.9 | / 2.1 |
-| englobant | / 6.7 | / 3.7 | / 3.0 |
-| dedans_tous | / 3.6 | / 2.6 | / 2.1 |
-| Bézier | / 2.7 | / 2.4 | / 2.4 |
+| calcul | v15s | v15u | v15v | v16b | v16c |
+|---|---:|---:|---:|---:|---:|
+| aire | / 3.4 | / 2.2 | / 1.8 | / 1.8 | / 1.2 à 1.5 |
+| périmètre | / 2.7 | / 1.9 | / 2.1 | / 1.9 à 2.3 | / 1.1 à 1.4 |
+| englobant | / 6.7 | / 3.7 | / 3.0 | / 2.7 à 3.1 | / 2.4 à 2.8 |
+| dedans_tous | / 3.6 | / 2.6 | / 2.1 | / 1.9 à 2.2 | / 1.3 à 1.4 |
+| Bézier | / 2.7 | / 2.4 | / 2.4 | / 2.2 à 2.5 | / 2.0 à 2.1 |
+
+En forme compacte (`TCL_TYPES_COMPACT=1`), v16b → v16c : aire / 3.1 → / 1.9, périmètre / 3.0 → / 1.7,
+dedans_tous / 3.9 → / 2.2.
 
 Les voies C, rapportées au Tcl nu :
 
@@ -70,7 +73,8 @@ Les voies C, rapportées au Tcl nu :
 
 v15u : `foreach` parcourt une liste typée sans refabriquer ses éléments ; v15v : lecture `$a(x)` par un cache du
 champ, nombres typés lus directement par `expr` ; v15w : `type binary encode` / `decode` copient les cases ;
-v15x : cast vers une liste en cases sans objet par élément (voie octets), `Tcl_AnnotatedCreateCells` (Bézier).
+v15x : cast vers une liste en cases sans objet par élément (voie octets), `Tcl_AnnotatedCreateCells` (Bézier) ;
+v16c : `X is T = v` et `nom = v` sans recherche par le nom, `$a(x)` lu comme nombre dans `expr`.
 
 ## L'en-tête C vient des types
 
@@ -93,8 +97,9 @@ cases de 16 octets, exactement un tableau de `point` : la voie objet de `geo.c` 
 | périmètre | 629 | 94 |
 | englobant | 568 | 27 |
 
-L'étape 2 (Tcl annoté, `lindex` et `$a(x)` à chaque point) est plus lente en forme compacte (aire : 15 → 23 ms) :
-chaque accès fabrique une vue et un nombre.
+L'étape 2 (Tcl annoté, `lindex` et `$a(x)` à chaque point) est plus lente en forme compacte : chaque `lindex`
+fabrique une vue. Depuis la v16c, `$a(x)` dans `expr` est lu directement dans la case ; l'écart est passé de 1,8
+à 1,5 fois (aire, instructions comptées par callgrind : 114 → 76 millions, contre 52 millions en forme ordinaire).
 
 ## Écrit avec les fonctions de stub prévues
 

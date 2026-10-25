@@ -1,0 +1,240 @@
+--- a/generic/tclCompile.h
++++ b/generic/tclCompile.h
+@@ -850,6 +850,13 @@
+      * parts (atomic leaves of a typed-value path) */
+     INST_INDEX_CONCAT,
+ 
++    /* "x is T = v" in expr, x a compiled local: typed declaration */
++    INST_DECLARE_LOCAL,
++
++    /* $a(x) operand of an arithmetic operator in expr: the number in
++     * field x of the typed product a, else as loadArray */
++    INST_LOAD_FIELD_NUM,
++
+     /* The last opcode */
+     LAST_INST_OPCODE
+ };
+--- a/generic/tclCompile.c
++++ b/generic/tclCompile.c
+@@ -679,6 +679,15 @@
+ 	 * Concatenates the parts of the index of $name(...); the substituted
+ 	 * ones stay atomic for the path of a typed value.
+ 	 * Stack: ... part1 ... partN => ... index */
++    {"declareLocal",	  5,   -2,	   1,	{OPERAND_LVT4}},
++	/* "x is T = v" in expr: declares the compiled local x of type T
++	 * (contract) and stores v, checked; the name is for messages.
++	 * Stack: ... varName type value => ... storedValue */
++    {"loadFieldNum",	  5,    0,	   1,	{OPERAND_LVT4}},
++	/* $a(x) operand of an arithmetic operator or comparison in expr:
++	 * the number in field x of the typed product a (no type wrapper);
++	 * otherwise exactly loadArray4.
++	 * Stack: ... field => ... value */
+ 
+     {NULL, 0, 0, 0, {OPERAND_NONE}}
+ };
+--- a/generic/tclCompExpr.c
++++ b/generic/tclCompExpr.c
+@@ -2833,6 +2833,41 @@
+  *----------------------------------------------------------------------
+  */
+ 
++/*
++ * $a(x), operand of an arithmetic operator or a comparison, compiled to
++ * [push "x"; loadArray %a]: the load becomes loadFieldNum, which reads the
++ * number in field x of a typed product without its type wrapper (the
++ * operator would only read the content), and is loadArray otherwise.
++ */
++static void
++NumericFieldLoad(
++    CompileEnv *envPtr,
++    Tcl_Size start)
++{
++    unsigned char *code = envPtr->codeStart + start;
++    Tcl_Size len = envPtr->codeNext - code, pushLen, lv;
++
++    if (len < 4) {
++	return;
++    }
++    if (code[0] == INST_PUSH1) {
++	pushLen = 2;
++    } else if (code[0] == INST_PUSH4) {
++	pushLen = 5;
++    } else {
++	return;
++    }
++    if (len == pushLen + 2 && code[pushLen] == INST_LOAD_ARRAY1) {
++	lv = TclGetUInt1AtPtr(code + pushLen + 1);
++    } else if (len == pushLen + 5 && code[pushLen] == INST_LOAD_ARRAY4) {
++	lv = TclGetUInt4AtPtr(code + pushLen + 1);
++    } else {
++	return;
++    }
++    envPtr->codeNext = code + pushLen;
++    TclEmitInstInt4(INST_LOAD_FIELD_NUM, lv, envPtr);
++}
++
+ static void
+ CompileExprTree(
+     Tcl_Interp *interp,
+@@ -2849,6 +2884,15 @@
+     int numWords = 0;
+     JumpList *jumpPtr = NULL;
+     int convert = 1;
++    /* "name is T = v" in a procedure: IS_TYPE node -> compiled local of
++     * name (declareLocal instead of ::tcl::unsupported::declare) */
++    enum { DECL_MAX = 32 };
++    Tcl_Size declNode[DECL_MAX], declLocal[DECL_MAX];
++    int nDecl = 0;
++    /* "name = v" in a procedure, name a compiled local: ASSIGN node ->
++     * local (storeScalar, the name is not pushed) */
++    Tcl_Size assignNode[DECL_MAX], assignLocal[DECL_MAX];
++    int nAssign = 0;
+ 
+     while (1) {
+ 	int next;
+@@ -2971,15 +3015,28 @@
+ 			&& nodes[nodePtr->left].lexeme == IS_TYPE) {
+ 		    /*
+ 		     * "var is type = value": the stack holds [name type value].
+-		     * Invoke ::tcl::unsupported::declare name type value.
++		     * A compiled local: declareLocal; otherwise invoke
++		     * ::tcl::unsupported::declare name type value.
+ 		     */
++		    int d;
+ 
++		    for (d = 0; d < nDecl; d++) {
++			if (declNode[d] == nodePtr->left) {
++			    break;
++			}
++		    }
++		    if (d < nDecl) {
++			TclEmitInstInt4(INST_DECLARE_LOCAL, declLocal[d], envPtr);
++			goto declared;
++		    }
+ 		    TclEmitPush(TclRegisterLiteral(envPtr,
+ 			    "::tcl::unsupported::declare", 27, LITERAL_CMD_NAME),
+ 			    envPtr);
+ 		    TclEmitInstInt4(INST_REVERSE, 4, envPtr);
+ 		    TclEmitInstInt4(INST_REVERSE, 3, envPtr);
+ 		    TclEmitInvoke(envPtr, INST_INVOKE_STK1, 4);
++		declared:
++		    ;
+ 		} else if (nodePtr->left >= 0
+ 			&& nodes[nodePtr->left].lexeme == LIST) {
+ 		    /*
+@@ -3006,7 +3063,22 @@
+ 		    TclEmitInstInt4(INST_REVERSE, 2, envPtr);
+ 		    TclEmitOpcode(INST_POP, envPtr);
+ 		} else {
+-		    TclEmitOpcode(INST_STORE_STK, envPtr);
++		    int d;
++
++		    for (d = 0; d < nAssign; d++) {
++			if (assignNode[d] == nodePtr - nodes) {
++			    break;
++			}
++		    }
++		    if (d < nAssign && assignLocal[d] <= 255) {
++			TclEmitInstInt1(INST_STORE_SCALAR1, assignLocal[d],
++				envPtr);
++		    } else if (d < nAssign) {
++			TclEmitInstInt4(INST_STORE_SCALAR4, assignLocal[d],
++				envPtr);
++		    } else {
++			TclEmitOpcode(INST_STORE_STK, envPtr);
++		    }
+ 		}
+ 		break;
+ 	    case NULL_FUNC:
+@@ -3137,7 +3209,19 @@
+ 		    }
+ 		}
+ 		if (nlen > 0 && k == nlen) {
+-		    (void) TclFindCompiledLocal(nm, nlen, 1, envPtr);
++		    Tcl_Size lv = TclFindCompiledLocal(nm, nlen, 1, envPtr);
++
++		    if (lv >= 0 && nodePtr->lexeme == IS_TYPE
++			    && nDecl < DECL_MAX) {
++			declNode[nDecl] = nodePtr - nodes;
++			declLocal[nDecl++] = lv;
++		    } else if (lv >= 0 && nodePtr->lexeme == ASSIGN
++			    && nAssign < DECL_MAX) {
++			assignNode[nAssign] = nodePtr - nodes;
++			assignLocal[nAssign++] = lv;
++			(*litObjvPtr)++;
++			break;		/* no name on the stack */
++		    }
+ 		}
+ 	    }
+ 	    if (optimize) {
+@@ -3180,10 +3264,23 @@
+ 	    (*litObjvPtr)++;
+ 	    break;
+ 	}
+-	case OT_TOKENS:
++	case OT_TOKENS: {
++	    Tcl_Size start = CurrentOffset(envPtr);
++
+ 	    CompileTokens(envPtr, tokenPtr, interp);
+ 	    tokenPtr += tokenPtr->numComponents + 1;
++	    if (envPtr->procPtr != NULL) {
++		switch (nodePtr->lexeme) {
++		case BINARY_PLUS: case BINARY_MINUS: case UNARY_PLUS:
++		case UNARY_MINUS: case MULT: case DIVIDE: case MOD:
++		case EXPON: case LESS: case GREATER: case LEQ: case GEQ:
++		case EQUAL: case NEQ:
++		    NumericFieldLoad(envPtr, start);
++		    break;
++		}
++	    }
+ 	    break;
++	}
+ 	default:
+ 	    if (optimize && nodes[next].constant) {
+ 		Tcl_InterpState save = Tcl_SaveInterpState(interp, TCL_OK);
+--- a/generic/tclExecute.c
++++ b/generic/tclExecute.c
+@@ -2995,6 +2995,17 @@
+ 	part1Ptr = part2Ptr = NULL;
+ 	goto doCallPtrGetVar;
+ 
++    case INST_LOAD_FIELD_NUM:
++	opnd = TclGetUInt4AtPtr(pc + 1);
++	objResultPtr = TclTypedFieldNumber(LOCAL(opnd), OBJ_AT_TOS);
++	if (objResultPtr != NULL) {
++	    TRACE(("%u \"%.30s\" => %.30s\n", opnd, O2S(OBJ_AT_TOS),
++		    O2S(objResultPtr)));
++	    NEXT_INST_F(5, 1, 1);
++	}
++	pcAdjustment = 5;
++	goto doLoadArray;
++
+     case INST_LOAD_ARRAY4:
+ 	opnd = TclGetUInt4AtPtr(pc + 1);
+ 	pcAdjustment = 5;
+@@ -7450,6 +7461,25 @@
+ 	}
+ 	NEXT_INST_F(5, 0, 0);
+ 
++    case INST_DECLARE_LOCAL: {
++	Tcl_Obj *declPtr;
++
++	opnd = TclGetUInt4AtPtr(pc + 1);
++	TRACE(("%u \"%.30s\" \"%.30s\" => ", opnd, O2S(OBJ_UNDER_TOS),
++		O2S(OBJ_AT_TOS)));
++	DECACHE_STACK_INFO();
++	declPtr = TclTypedDeclareLocal(interp, LOCAL(opnd), OBJ_AT_DEPTH(2),
++		OBJ_UNDER_TOS, OBJ_AT_TOS);
++	CACHE_STACK_INFO();
++	if (declPtr == NULL) {
++	    TRACE_ERROR(interp);
++	    goto gotError;
++	}
++	objResultPtr = declPtr;
++	TRACE_APPEND(("\"%.30s\"\n", O2S(objResultPtr)));
++	NEXT_INST_V(5, 3, -1);
++    }
++
+     case INST_DICT_UPDATE_START:
+ 	opnd = TclGetUInt4AtPtr(pc + 1);
+ 	opnd2 = TclGetUInt4AtPtr(pc + 5);

@@ -991,7 +991,7 @@ puts [type {c!}export point]
 
 Le codec C, qui **vérifie** en plus chaque valeur contre son type, est 2 à 3 fois plus rapide que le code Tcl classique écrit à la main, et 130 à 250 fois plus rapide que la couche Tcl générique.
 
-**Procédures typées.** Le texte d'un type n'est analysé qu'une fois : l'objet qui le porte garde son classement tant que la table des types de l'interpréteur n'a pas changé (un `type def` invalide tous les classements). Dans une procédure, le nom affecté par `x = …` ou `x is T = …` est une variable locale compilée, et `X is T = v` range une valeur déjà conforme sans repasser par une note. Mesures (exemple `geometrie`, 10 000 points) :
+**Procédures typées.** Le texte d'un type n'est analysé qu'une fois : l'objet qui le porte garde son classement tant que la table des types de l'interpréteur n'a pas changé (un `type def` invalide tous les classements). Dans une procédure, le nom affecté par `x = …` ou `x is T = …` est une variable locale compilée, rangée sans recherche par son nom (`storeScalar`, et l'instruction `declareLocal` pour `X is T = v`, v16c), et `X is T = v` range une valeur déjà conforme sans repasser par une note. Mesures (exemple `geometrie`, 10 000 points) :
 
 | opération | annotée | Tcl classique |
 |---|---|---|
@@ -1002,7 +1002,7 @@ Le codec C, qui **vérifie** en plus chaque valeur contre son type, est 2 à 3 f
 
 **Boucles.** `foreach` et `lmap` sur une liste typée parcourent son contenu, dont les éléments sont typés une fois pour toutes : la variable de boucle reçoit l'élément typé sans qu'il soit refabriqué à chaque tour. Sur 10 000 points, `foreach q $P {}` prend 0,24 ms contre 0,16 ms en Tcl nu (2,6 ms avant la v15u). Il en va de même pour une liste en cases (v15y). Le champ d'un produit lu par `$a(x)` est, lui aussi, typé une fois pour toutes dans le contenu quand celui-ci n'est pas partagé.
 
-**Lecture d'un champ.** Une lecture compilée `$a(x)` garde, dans l'objet de son index, le type produit vu la dernière fois et la place du champ : la lecture suivante sur le même type va droit à l'élément. Dans `expr`, un opérande typé `int` ou `double` est lu directement dans son contenu. Une lecture `$a(x)` dans `expr` coûte ≈ 0,14 µs, contre 0,05 µs pour `lindex` en Tcl nu : la différence est la valeur typée du champ, créée puis libérée.
+**Lecture d'un champ.** Une lecture compilée `$a(x)` garde, dans l'objet de son index, le type produit vu la dernière fois et la place du champ : la lecture suivante sur le même type va droit à l'élément. Dans `expr`, un opérande typé `int` ou `double` est lu directement dans son contenu. Depuis la v16c, `$a(x)` opérande d'un opérateur arithmétique ou d'une comparaison numérique est compilé en `loadFieldNum` : le nombre du champ, sans enveloppe de type (l'opérateur n'en lirait que le contenu), lu directement dans la case pour une vue en forme compacte ; ≈ 60 ns, contre 90 ns avant (et 0,14 µs en v15x).
 
 ### 16. Choix de conception
 
@@ -1034,7 +1034,7 @@ Le codec C, qui **vérifie** en plus chaque valeur contre son type, est 2 à 3 f
 - Annotation de commentaire `{#}` au niveau du parseur, annotation du premier mot (`{c}proc`), annotations de déclaration (`proc p {{?}{…} {!}arg}`).
 - Notes par élément d'une liste typée (aujourd'hui la note porte sur la liste entière) ; effacement de toutes les notes par `{@}$x`.
 - Codecs C pour les sommes, les liens et les tailles calculées ; cache du type analysé.
-- Forme compacte : cases à pointeurs (`string`, listes imbriquées), lecture directe dans les cases par `expr` compilé, fonction de stub pour le C, `lappend` en temps constant (aujourd'hui une copie par ajout, comme pour une liste typée ordinaire).
+- Forme compacte : cases à pointeurs (`string`, listes imbriquées), `lindex` sans vue neuve, fonction de stub pour le C, `lappend` en temps constant (aujourd'hui une copie par ajout, comme pour une liste typée ordinaire).
 - `type {c!}export` : pointeurs pour les types récursifs ; cible `{llvm!}` ; sens inverse (en-tête C vers `type def`).
 - `type def {-compact}` pour une famille ; `type is` : une valeur dont le texte est aussi un nom de type (`type is {compact?}$x` avec `x` = `point`) est lue comme le type.
 - Banc de test C sur maquette (`typeparse/test/`) à remettre à jour ; exemples `arbre_var.tcl` et `defauts_calcules.tcl` à corriger.

@@ -3246,21 +3246,17 @@ SimpleFieldType(const TclType *ft)
 	    && ft->binLink == NULL && !TclTypeIsAny(ft);
 }
 
-static Tcl_Obj *
-FastFieldRead(Tcl_Interp *interp, Tcl_Obj *a, Tcl_Obj *part2Ptr)
+/*
+ * L'index du champ simple nommé par part2Ptr dans le produit tp (cache dans
+ * part2Ptr), ou -1 (un vrai chemin, un champ inconnu ou non simple).
+ */
+static Tcl_Size
+SimpleFieldIndex(TclType *tp, Tcl_Obj *part2Ptr)
 {
-    Tcl_Obj *v, *e;
-    TclType *tp, *ft;
-    int variant;
     Tcl_Size idx, len;
     const char *name, *c;
     const Tcl_Size *pos;
 
-    if (!TclAnnotIsSettled(a)
-	    || TclAnnotInfo(a, &v, &tp, &variant, NULL) != 1
-	    || tp->kind != TCLT_PRODUCT) {
-	return NULL;
-    }
     name = Tcl_GetStringFromObj(part2Ptr, &len);
     if (part2Ptr->typePtr == &pathFieldType
 	    && part2Ptr->internalRep.twoPtrValue.ptr1 == tp) {
@@ -3269,17 +3265,17 @@ FastFieldRead(Tcl_Interp *interp, Tcl_Obj *a, Tcl_Obj *part2Ptr)
 	Tcl_ObjInternalRep ir;
 
 	if (len == 0 || PathIndexSpans(part2Ptr, &pos) != 0) {
-	    return NULL;
+	    return -1;
 	}
 	for (c = name; *c != '\0'; c++) {
 	    if (!(isalnum(UCHAR(*c)) || *c == '_')) {
-		return NULL;		/* un vrai chemin : a.b, (x,y), ... */
+		return -1;		/* un vrai chemin : a.b, (x,y), ... */
 	    }
 	}
 	idx = TclTypeFieldIndex(tp, name);
 	if (idx < 0 || idx >= tp->nfields
 		|| !SimpleFieldType(tp->fields[idx].type)) {
-	    return NULL;
+	    return -1;
 	}
 	ir.twoPtrValue.ptr1 = tp;
 	ir.twoPtrValue.ptr2 = (void *) (intptr_t) idx;
@@ -3287,6 +3283,26 @@ FastFieldRead(Tcl_Interp *interp, Tcl_Obj *a, Tcl_Obj *part2Ptr)
     }
     if (idx < 0 || idx >= tp->nfields || tp->fields[idx].name == NULL
 	    || strcmp(Tcl_GetString(tp->fields[idx].name), name) != 0) {
+	return -1;
+    }
+    return idx;
+}
+
+static Tcl_Obj *
+FastFieldRead(Tcl_Interp *interp, Tcl_Obj *a, Tcl_Obj *part2Ptr)
+{
+    Tcl_Obj *v, *e;
+    TclType *tp, *ft;
+    int variant;
+    Tcl_Size idx;
+
+    if (!TclAnnotIsSettled(a)
+	    || TclAnnotInfo(a, &v, &tp, &variant, NULL) != 1
+	    || tp->kind != TCLT_PRODUCT) {
+	return NULL;
+    }
+    idx = SimpleFieldIndex(tp, part2Ptr);
+    if (idx < 0) {
 	return NULL;
     }
     ft = tp->fields[idx].type;
@@ -3316,6 +3332,55 @@ FastFieldRead(Tcl_Interp *interp, Tcl_Obj *a, Tcl_Obj *part2Ptr)
 	}
 	return w;
     }
+}
+
+/*
+ * Instruction loadFieldNum ($a(x) opérande d'un opérateur arithmétique ou
+ * d'une comparaison, dans expr compilé) : le NOMBRE du champ x d'un produit
+ * typé, sans l'envelopper dans son type (l'opérateur n'en lirait que le
+ * contenu) ; dans une vue sur une case, lu directement dans la case. Rend
+ * l'objet (sans référence propre) ou NULL : l'instruction fait alors ce que
+ * fait loadArray (même résultat, mêmes erreurs, traces).
+ */
+Tcl_Obj *
+TclTypedFieldNumber(Var *varPtr, Tcl_Obj *part2Ptr)
+{
+    Tcl_Obj *a, *v, *e;
+    TclType *tp, *ft;
+    Tcl_Size idx;
+
+    while (TclIsVarLink(varPtr)) {
+	varPtr = varPtr->value.linkPtr;
+    }
+    if (TclIsVarArray(varPtr) || !(varPtr->flags & VAR_TYPED)
+	    || !TclIsVarDirectReadable(varPtr)) {
+	return NULL;
+    }
+    a = varPtr->value.objPtr;
+    if (!TclAnnotIsSettled(a)
+	    || TclAnnotInfo(a, &v, &tp, NULL, NULL) != 1
+	    || tp->kind != TCLT_PRODUCT) {
+	return NULL;
+    }
+    idx = SimpleFieldIndex(tp, part2Ptr);
+    if (idx < 0) {
+	return NULL;
+    }
+    ft = tp->fields[idx].type;
+    if (ft->kind != TCLT_INT && ft->kind != TCLT_DOUBLE) {
+	return NULL;
+    }
+    e = TclCompactFieldNumber(v, idx);
+    if (e != NULL) {
+	return e;
+    }
+    if (Tcl_ListObjIndex(NULL, v, idx, &e) != TCL_OK || e == NULL) {
+	return NULL;
+    }
+    if (TclIsAnnotated(e)) {
+	e = TCL_ANNOT_CONTENT(e);
+    }
+    return e;
 }
 
 /*

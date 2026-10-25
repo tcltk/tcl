@@ -679,6 +679,15 @@ InstructionDesc const tclInstructionTable[] = {
 	 * Concatenates the parts of the index of $name(...); the substituted
 	 * ones stay atomic for the path of a typed value.
 	 * Stack: ... part1 ... partN => ... index */
+    {"declareLocal",	  5,   -2,	   1,	{OPERAND_LVT4}},
+	/* "x is T = v" in expr: declares the compiled local x of type T
+	 * (contract) and stores v, checked; the name is for messages.
+	 * Stack: ... varName type value => ... storedValue */
+    {"loadFieldNum",	  5,    0,	   1,	{OPERAND_LVT4}},
+	/* $a(x) operand of an arithmetic operator or comparison in expr:
+	 * the number in field x of the typed product a (no type wrapper);
+	 * otherwise exactly loadArray4.
+	 * Stack: ... field => ... value */
 
     {NULL, 0, 0, 0, {OPERAND_NONE}}
 };
