@@ -4699,7 +4699,8 @@ TEBCresume(
 	TRACE(("\"%.30s\" \"%.30s\" => ", O2S(valuePtr), O2S(value2Ptr)));
 
 	/* special case for AbstractList */
-	if (TclObjTypeHasProc(valuePtr, indexProc)) {
+	if (!TclListObjIsNative(valuePtr)
+		&& TclObjTypeHasProc(valuePtr, indexProc)) {
 	    Tcl_Obj *indexPtr;
 	    int haveSingleIndex;
 	    DECACHE_STACK_INFO();
@@ -4734,7 +4735,7 @@ TEBCresume(
 		goto lindexDone;
 	    }
 	} else {
-	    /* Non-abstract list */
+	    /* Not an abstract list */
 	    Tcl_Size value2Length;
 	    Tcl_Obj *indexListPtr = value2Ptr;
 
