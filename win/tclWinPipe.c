@@ -1108,7 +1108,13 @@ TclpCreateProcess(
 	startInfo.wShowWindow = SW_HIDE;
 	startInfo.dwFlags |= STARTF_USESHOWWINDOW;
 	createFlags = CREATE_NEW_CONSOLE;
-	TclDStringAppendLiteral(&cmdLine, "cmd.exe /c");
+	/*
+	 * Put the whole command after /c in double quotes (the closing
+	 * quote is added by BuildCommandLine), otherwise cmd.exe strips
+	 * the first and the last quote of the command if it contains more
+	 * than two quotes. [6dacb3b6f0] [f91ab723f3]
+	 */
+	TclDStringAppendLiteral(&cmdLine, "cmd.exe /c \"");
     } else {
 	createFlags = DETACHED_PROCESS;
     }
@@ -1982,6 +1988,13 @@ BuildCommandLine(
 
 	    TclDStringAppendLiteral(&ds, "\"");
 	}
+    }
+    if (Tcl_DStringLength(linePtr) > 0) {
+	/*
+	 * Close the quote opened after "cmd.exe /c".
+	 */
+
+	TclDStringAppendLiteral(&ds, "\"");
     }
     Tcl_DStringFree(linePtr);
     Tcl_DStringInit(linePtr);
