@@ -1998,24 +1998,64 @@ TclListObjInsertIfAbsent(
 {
     Tcl_Obj **elemObjs;
     Tcl_Size numElems;
-    int result;
-
-    result = Tcl_ListObjGetElements(interp, toObj, &numElems, &elemObjs);
-    if (result != TCL_OK) {
-	goto vamoose;
-    }
     Tcl_Size newElemLen;
     const char *newElem;
+    int found = 0;
+    int result = TCL_OK;
+
     newElem = Tcl_GetStringFromObj(newElemObj, &newElemLen);
+
+    /*
+     * Calling Tcl_ListObjGetElements on abstract lists may shimmer it or
+     * (as in lseq) cause it to instantiate a large cached array. Try to avoid.
+     */
+    if (!TclHasInternalRep(toObj, &tclListType)) {
+	Tcl_ObjTypeLengthProc *lenProc = TclObjTypeHasProc(toObj, lengthProc);
+	Tcl_ObjTypeIndexProc *indexProc = TclObjTypeHasProc(toObj, indexProc);
+	if (lenProc != NULL && indexProc != NULL) {
+	    numElems = lenProc(toObj);
+	    for (Tcl_Size i = 0; i < numElems; ++i) {
+		Tcl_Size toElemLen;
+		Tcl_Obj *toElem;
+		result = indexProc(interp, toObj, i, &toElem);
+		if (result != TCL_OK) {
+		    goto vamoose;
+		}
+		const char *toElemStr
+			= Tcl_GetStringFromObj(toElem, &toElemLen);
+		int exists = (toElemLen == newElemLen
+			     && memcmp(newElem, toElemStr, newElemLen) == 0);
+		Tcl_BounceRefCount(toElem);
+		if (exists) {
+		    /* Present, so skip adding it */
+		    goto vamoose;
+		}
+	    }
+	    /* Not present so add it */
+	    goto insert;
+	}
+
+	/* Abstract list method(s) not available. Shimmer and fall through */
+	result = Tcl_ListObjGetElements(interp, toObj, &numElems, &elemObjs);
+	if (result != TCL_OK) {
+	    goto vamoose;
+	}
+    } else {
+	ListObjGetElements(toObj, numElems, elemObjs);
+    }
+
     for (Tcl_Size i = 0; i < numElems; ++i) {
 	Tcl_Size toElemLen;
 	const char *toElemStr = Tcl_GetStringFromObj(elemObjs[i], &toElemLen);
 	if (toElemLen == newElemLen &&
-		strncmp(newElem, toElemStr, newElemLen) == 0) {
-	    result = TCL_OK;
+		memcmp(newElem, toElemStr, newElemLen) == 0) {
+	    /* Present, so skip adding it */
 	    goto vamoose;
 	}
     }
+
+insert:
+    /* Not present so add it */
     result = Tcl_ListObjReplace(interp, toObj, index, 0, 1, &newElemObj);
 
 vamoose: /* Return result after freeing elemObj if unreferenced */
@@ -2064,9 +2104,12 @@ Tcl_ListObjIndex(
 	return TCL_OK;
     }
 
-    int hasAbstractList = TclObjTypeHasProc(listObj,indexProc) != 0;
-    if (hasAbstractList) {
-	return TclObjTypeIndex(interp, listObj, index, objPtrPtr);
+    if (!TclHasInternalRep(listObj, &tclListType)) {
+	Tcl_ObjTypeIndexProc *indexProc = TclObjTypeHasProc(listObj, indexProc);
+	if (indexProc != NULL) {
+	    return indexProc(interp, listObj, index, objPtrPtr);
+	}
+	/* Fall through and shimmer to native list */
     }
 
     if (TclListObjGetElements(interp, listObj, &numElems, &elemObjs) != TCL_OK) {
@@ -2118,9 +2161,13 @@ Tcl_ListObjLength(
 	return TCL_OK;
     }
 
-    if (TclObjTypeHasProc(listObj, lengthProc)) {
-	*lenPtr = TclObjTypeLength(listObj);
-	return TCL_OK;
+    if (!TclListObjIsNative(listObj)) {
+	Tcl_ObjTypeLengthProc *proc = TclObjTypeHasProc(listObj, lengthProc);
+	if (proc != NULL) {
+	    *lenPtr = proc(listObj);
+	    return TCL_OK;
+	}
+	/* Fall through and shimmer to native list */
     }
 
     if (TclListObjGetRep(interp, listObj, &listRep) != TCL_OK) {
@@ -2201,9 +2248,14 @@ Tcl_ListObjReplace(
 	Tcl_Panic("%s called with shared object", "Tcl_ListObjReplace");
     }
 
-    if (TclObjTypeHasProc(listObj, replaceProc)) {
-	return TclObjTypeReplace(interp, listObj, first,
-		numToDelete, numToInsert, insertObjs);
+    if (!TclListObjIsNative(listObj)) {
+	Tcl_ObjTypeReplaceProc *replaceProc;
+	replaceProc = TclObjTypeHasProc(listObj, replaceProc);
+	if (replaceProc != NULL) {
+	    return replaceProc(interp, listObj, first, numToDelete, numToInsert,
+		    insertObjs);
+	}
+	/* Fall through to shimmer */
     }
 
     if (TclListObjGetRep(interp, listObj, &listRep) != TCL_OK) {
@@ -2681,7 +2733,7 @@ TclLindexList(
      * shimmering; if internal rep is already a list do not shimmer it.
      * see TIP#22 and TIP#33 for the details.
      */
-    if (!TclHasInternalRep(argObj, &tclListType)
+    if (!TclListObjIsNative(argObj)
 	    && TclGetIntForIndexM(NULL, argObj, TCL_SIZE_MAX - 1,
 		    &index) == TCL_OK) {
 	/*

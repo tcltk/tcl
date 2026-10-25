@@ -2765,6 +2765,12 @@ typedef struct ListRep {
 	|| ListObjSpanPtr(listObj_) != NULL)
 
 /*
+ * Returns true/false depending on whether listObj_ is a native Tcl list.
+ */
+#define TclListObjIsNative(listObj_) \
+    TclHasInternalRep((listObj_), &tclListType)
+
+/*
  * Converts the Tcl_Obj to a list if it isn't one and stores the element
  * count and base address of this list's elements in objcPtr_ and objvPtr_.
  * Return TCL_OK on success or TCL_ERROR if the Tcl_Obj cannot be

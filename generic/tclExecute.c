@@ -4700,12 +4700,25 @@ TEBCresume(
 
 	/* special case for AbstractList */
 	if (TclObjTypeHasProc(valuePtr, indexProc)) {
+	    Tcl_Obj *indexPtr;
+	    int haveSingleIndex;
 	    DECACHE_STACK_INFO();
 	    length = TclObjTypeLength(valuePtr);
-	    if (TclGetIntForIndexM(NULL, value2Ptr, length-1, &index)!=TCL_OK) {
+	    /* Avoid shimmer - crash [b24becc2ab] */
+	    indexPtr = value2Ptr == valuePtr ? Tcl_DuplicateObj(value2Ptr)
+					     : value2Ptr;
+	    haveSingleIndex
+		    = (TclGetIntForIndexM(NULL, indexPtr, length - 1, &index)
+			    == TCL_OK);
+	    if (indexPtr != value2Ptr) {
+		Tcl_DecrRefCount(indexPtr);
+	    }
+	    if (!haveSingleIndex) {
 		CACHE_STACK_INFO();
 		/* Could be list of indices. Let TclLindexList handle it below */
-	    } else {
+	    }
+	    else
+	    {
 		if (TclObjTypeIndex(interp, valuePtr, index, &objResultPtr) !=
 		    TCL_OK) {
 		    CACHE_STACK_INFO();
@@ -4727,8 +4740,8 @@ TEBCresume(
 
 	    if ((TclListObjGetElements(interp, valuePtr, &objc, &objv) == TCL_OK)
 		    && (!TclHasInternalRep(value2Ptr, &tclListType)
-		    || (Tcl_ListObjLength(interp, value2Ptr, &value2Length),
-			value2Length == 1
+			|| (Tcl_ListObjLength(interp, value2Ptr, &value2Length),
+			    value2Length == 1
 			    ? (indexListPtr = ListObjIndex(value2Ptr, 0), 1)
 			    : 0))) {
 		/* increment the refCount of value2Ptr because TclListObjGetElement may
@@ -6540,12 +6553,16 @@ TEBCresume(
 	    for (i = 0;  i < numLists;  i++) {
 		varListPtr = infoPtr->varLists[i];
 		numVars = varListPtr->numVars;
-		int hasAbstractList;
+		Tcl_ObjTypeIndexProc *indexProc;
 
 		listPtr = OBJ_AT_DEPTH(listTmpDepth);
-		hasAbstractList = TclObjTypeHasProc(listPtr, indexProc) != 0;
+
+		/* For abstract lists, avoid generating element array */
+		indexProc = TclListObjIsNative(listPtr)
+				  ? NULL
+				  : TclObjTypeHasProc(listPtr, indexProc);
 		DECACHE_STACK_INFO();
-		if (hasAbstractList) {
+		if (indexProc != NULL) {
 		    status = Tcl_ListObjLength(interp, listPtr, &listLen);
 		    elements = NULL;
 		} else {
@@ -6567,7 +6584,7 @@ TEBCresume(
 			if (elements) {
 			    valuePtr = elements[valIndex];
 			} else {
-			    status = Tcl_ListObjIndex(
+			    status = indexProc(
 				    interp, listPtr, valIndex, &valuePtr);
 			    if (status != TCL_OK) {
 				/* Could happen for abstract lists */

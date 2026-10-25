@@ -457,6 +457,26 @@ test lindex-18.0 {nested bytecode execution} -setup {
     rename demo {}
 }
 
+test lindex-19.0 {lindex compiled shimmering} -body {
+    set l [list 0]
+    lindex $l $l
+} -result 0
+test lindex-19.1 {lindex uncompiled shimmering} -body {
+    set l [list 0]
+    [subst lindex] $l $l
+} -result 0
+test lindex-19.2 {
+    lindex compiled shimmering - abstract list crash [b24becc2ab]
+} -body {
+    set l [list 0]
+    lindex $l $l
+} -result 0
+test lindex-19.3 {lindex uncompiled shimmering - abstract list} -body {
+    set l [list 0]
+    [subst lindex] $l $l
+} -result 0
+
+
 catch { unset minus }
 
 # cleanup
