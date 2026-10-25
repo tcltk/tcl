@@ -1,0 +1,10 @@
+somme : 12.0 12.0
+brut intact :   / {1.5 2.5} {3.5 4.5}
+lectures : 1.0 double 1.0 2.0 1.0 double 1.0 2.0 1.0 2.0 point
+copie modifiée : q=7.0 2.0 p=1.0 2.0
+cases : n 3 stride 16 elem point shared 1
+boucle en cases : 18.0 point point point 1.5 3.5 5.5
+deux variables : 2
+déclaration : {1.0 2.0} point 1 {point needs 2 values but got 1}
+avec trace : {3.0 4.0} B
+par upvar : 5.0 6.0 5.0 6.0 point

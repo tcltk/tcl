@@ -3294,9 +3294,28 @@ FastFieldRead(Tcl_Interp *interp, Tcl_Obj *a, Tcl_Obj *part2Ptr)
 	return NULL;
     }
     if (TclIsAnnotated(e)) {
+	TclType *et = NULL;
+
+	if (TclAnnotIsSettled(e)
+		&& TclAnnotInfo(e, NULL, &et, NULL, NULL) == 1 && et == ft) {
+	    return e;			/* champ déjà typé dans le contenu */
+	}
 	e = TCL_ANNOT_CONTENT(e);
     }
-    return TclNewAnnotatedShared(interp, ft, -1, e);
+    {
+	Tcl_Obj *w = TclNewAnnotatedShared(interp, ft, -1, e);
+
+	/*
+	 * Le champ est typé une fois pour toutes dans le contenu du produit,
+	 * comme les éléments d'une liste typée (la chaîne ne change pas) : la
+	 * lecture suivante le rend sans rien allouer. Seulement dans un contenu
+	 * privé (non partagé), liste ordinaire.
+	 */
+	if (!Tcl_IsShared(v) && TclHasInternalRep(v, &tclListType)) {
+	    Tcl_ListObjReplace(NULL, v, idx, 1, 1, &w);
+	}
+	return w;
+    }
 }
 
 /*

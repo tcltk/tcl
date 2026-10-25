@@ -1575,3 +1575,99 @@ Sources de types : `tclAnnotObj.c`, `tclTypes.c`, `tclTypes.h`, `tclAnnotatedApi
   `geo::octets` passe par `type cast list.pointC $v` au lieu du contenu : voie octets de l'aire 1,28 → 0,56 ms
   (x 2.9 → x 7.7), périmètre x 12.6 → x 37.1.
 - Test `t78_cases_cast_c` : casts (mêmes résultats qu'en v15w), `compact cells` et ses erreurs.
+
+### v15y — Tcl annoté : boucles en cases, champs typés sur place, déclarations, données de l'interpréteur (25 octobre 2026)
+
+Sources de types : `tclAnnotObj.c`, `tclTypes.c`, `tclTypes.h`, `tclTypePath.c`, `tclTypedVar.c`, `tclVarRef.c`.
+Patch noyau : `donnees-interp.patch` (`tclInt.h`, `tclBasic.c`), dernier de `ORDRE.txt`. **La structure `Interp`
+change** : tout doit être recompilé (`maj.sh` fait `make clean`), extensions comprises si elles incluent `tclInt.h`.
+
+- Boucle sur une liste en cases (forme compacte) : `foreach` / `lmap` parcourent la liste des éléments gardée à
+  côté des cases, typée une fois pour toutes, comme une liste ordinaire depuis la v15u. Forme compacte partout,
+  10 000 points : `foreach q $P {}` 1,8 → 0,18 ms ; `foreach … {expr {$s + $q(x)}}` 3,5 → 1,1 ms.
+- Champ d'un produit typé sur place à sa première lecture `$a(x)` (comme les éléments d'une liste typée) : la
+  lecture suivante rend la valeur typée gardée, sans rien allouer. Seulement dans un contenu privé (non partagé,
+  liste ordinaire) : une liste partagée avec du Tcl non typé ne change pas (test `t79`). Boucle
+  `foreach q $P {set s [expr {$s + $q(x)}]}` : 1,5 → 1,1 ms (Tcl nu 0,6).
+- `X is T = v` : écriture directe (contrat posé) quand la variable est locale, sans trace, et la valeur typée sans
+  note ; sinon `TclPtrSetVar` comme avant (trace, `upvar`, tableau).
+- `donnees-interp.patch` : trois pointeurs dans `Interp` (`typesData`, `typeRefsData`, `varRefData`) pour les
+  données du système de types, toujours enregistrées aussi comme `assocData` ; chaque accès évite une recherche
+  `Tcl_GetAssocData` (≈ 200 instructions), y compris à la fin de chaque appel de procédure
+  (`TclVarRefFrameGone`).
+- Mesure, `geo::distance` (4 procédures, 5 déclarations) : 37 400 → 34 400 instructions par appel (Tcl nu
+  ≈ 20 000). Le bench géométrie ne bouge pas au-delà du bruit (les données y sont partagées avec les listes
+  d'origine, et sans forme compacte) : étape annotée / 1.9 à / 3.0 du Tcl nu.
+- Mémo des textes de types déjà analysés (`TclTypeParse`, table `parsed` de `TypeData`, vidée quand les noms
+  changent, bornée à 4 096 entrées) : `set {point}p 1.0 2.0` recompilait le texte `point` à chaque exécution (le texte
+  d'une annotation est recopié à chaque fois, le cache des objets ne le retrouvait pas). 17 300 → 12 400
+  instructions par `set {point}p 1.0 2.0` dans une boucle. `TypeData` change : `make clean`.
+- Libération des valeurs annotées (point du planning « un drapeau pour éviter la recherche `SelfCell` ») : la
+  recherche n'a lieu que si une case `SelfCell` existe (drapeau global depuis la v15g) ; mesurée alors à ≈ 120
+  instructions par valeur libérée, 1,4 % d'une boucle de constructions.
+- Ce qui reste dans un appel typé : l'appel de `::tcl::unsupported::declare` comme une commande (≈ 600
+  instructions par déclaration) ; le compiler en une instruction demanderait une nouvelle instruction du bytecode.
+- Test `t79_lectures_declarations` : mêmes sorties qu'en v15x.
+
+### v15z — `lappend` sous contrat en temps linéaire (25 octobre 2026)
+
+Source de types : `tclTypedVar.c`. Pas de patch noyau.
+
+Sous contrat, `lappend` copiait tout le contenu de la liste, y ajoutait l'élément, puis revalidait tout le résultat :
+un temps quadratique (20 000 points : 7,7 s pour une `list.point`, 0,19 s en forme compacte, 7,7 ms en Tcl nu).
+
+- Quand la variable est seule à tenir sa valeur (et la valeur seule à tenir son contenu), cas de la boucle
+  `lappend L …`, l'élément est validé seul (`TclTypeComplete` sur une copie), puis ajouté au contenu même. Les
+  éléments déjà là sont valides par le contrat. En cas de refus, rien n'a changé et le chemin ordinaire refait le
+  travail, avec ses messages : la variable reste intacte, comme avant.
+- Seulement pour une liste extensible (`list.T`, pas `list(N)`) dont l'élément est « simple » (`PlainElemType` :
+  scalaires, produits, listes et dicts de tels types) : une somme (variante à garder), un lien `var` (nom canonique
+  à construire), `list.any`, un lien binaire passent par le chemin ordinaire.
+- Une valeur partagée (copiée dans une autre variable, parcourue par un `foreach` en cours) passe par le chemin
+  ordinaire : la copie ne change pas.
+- Mesure, 20 000 `lappend L [list $i.5 1.5]` dans une procédure : `list.point` 7,7 s → 12 à 18 ms, forme compacte
+  0,19 s → 11 à 18 ms, Tcl nu 8 à 12 ms (machine chargée : rapport ≈ 1,4).
+- L'élément ajouté est tenu par une référence pendant l'ajout : une liste en cases le recopie dans ses cases
+  sans le garder (valgrind l'a signalé comme fuite dans une première version).
+- Test `t80_lappend_contrat` : mêmes sorties qu'en v15y. **Relevé en l'écrivant** (déjà en v15y, pas corrigé ici) :
+  `lappend S {nom}carré` dans une `list.forme` (somme `{{double}cote, {string}nom}`) range l'élément sans variante
+  (`type get` rend une chaîne vide au lieu de `forme.nom`).
+
+### v16a — codec C : chaînes, sommes de littéraux, sommes balisées (25 octobre 2026)
+
+Source de types : `tclTypes.c`. Pas de patch noyau.
+
+- Chaînes de taille fixe (`string(raw,N)` : octets ; `string(ENC,N)` : texte, complété de zéros à l'écriture,
+  zéros de fin retirés à la lecture) et terminées par un zéro (`string(ENC,z)`, zéro de deux octets en utf-16 et
+  ucs-2), comme la couche Tcl ; profil d'encodage strict (une erreur rend la main à la couche Tcl et à ses messages).
+- Sommes de littéraux de même longueur (`{"MZ"}`, `{"PE\0\0"}`) : un des littéraux octet pour octet, sinon la
+  couche Tcl.
+- Sommes balisées `S($champ)` et `S(=texte)` : la balise (champ déjà lu ou écrit du produit englobant) choisit la
+  variante, comparée comme `tagEq` (entiers par valeur, sinon texte) ; à l'écriture, la variante de la valeur doit
+  être celle de la balise. La valeur lue garde sa variante, même comme champ.
+- Alignement 1 pour ces formes, comme `alignOf` de la couche Tcl.
+- Tailles lues ailleurs ou calculées (`string(raw,$len)`, préfixes), `at(...)`, liens `*(...)` : toujours la couche Tcl.
+- Mesures (petit en-tête de 34 octets : signature, chaînes fixes et à zéro final ; bloc à somme balisée) :
+  encodage 41 → 1,0 µs, décodage 57 → 1,3 µs ; bloc balisé 66 → 1,2 µs.
+- **Trouvé en mesurant** (depuis le codec C de décodage) : `type binary decode` convertissait les données en
+  tableau d'octets AVANT de savoir si le codec C couvrait le type. Pour un type qu'il ne couvre pas, la couche Tcl
+  les reconvertissait en chaîne (`string first` d'un `cstring`) : tout le fichier changeait de représentation
+  dans les deux sens à chaque appel. Le type est maintenant examiné d'abord. `exemples/niveau2.tcl` (lecture de
+  `tclsh` lui-même) : 1,8 s → 0,1 s.
+- Test `t81_codec_c_chaines` : mêmes octets et mêmes valeurs (texte, type, variante) que la couche Tcl, en
+  `natural` et par défaut ; balise inconnue, littéral faux, données tronquées (messages de la couche Tcl). Tous les
+  exemples donnent la même sortie avec le codec C et avec `set ::tcl_typebinaryc 0`.
+
+### v16b — numéro de version lisible (25 octobre 2026)
+
+Sources de types : `tclTypes.h`, `tclTypes.c`. Pas de patch noyau.
+
+- `TCL_TYPES_VERSION` (`tclTypes.h`) et `tcl::unsupported::typesversion` : le tclsh dit quelle version il contient
+  (`v16b`). À changer à chaque livraison, avec `typeparse/VERSION`.
+- `typeparse/VERSION` : la version de l'archive, en clair.
+- `maj.sh` affiche au début la version de l'archive et celle du tclsh installé, et vérifie après compilation et
+  installation que le tclsh installé dit bien la version de l'archive (sinon : « ATTENTION … ») ; la ligne des
+  tests rappelle la version testée.
+- `typeparse/version.tcl` : pour un tclsh d'avant la v16b, devine la version à ce que chaque livraison a ajouté :
+  codec C des chaînes (v16a), `lappend` linéaire (v15z), `compact cells` (v15x ; v15x et v15y ne se distinguent
+  pas de l'extérieur), sinon « v15w ou antérieure ».

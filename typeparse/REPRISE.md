@@ -1,14 +1,14 @@
 # REPRISE — état du prototype TIP 764 (valeurs annotées, variables typées)
 
-*Fiche de reprise, 24 octobre 2026, version **v15x**. À joindre (avec `typeparse.zip`) au
+*Fiche de reprise, 25 octobre 2026, version **v16b**. À joindre (avec `typeparse.zip`) au
 premier message d'une conversation qui reprend le travail.*
 
 ## 1. Où en est-on
 
-* **v15x livrée** (24 octobre) : cast vers une liste en cases, `Tcl_AnnotatedCreateCells`. Le détail de chaque version est
-  dans `noyau/LISEZMOI.md`, une section par version, de la v14 à la v15x en fin de fichier.
-* **Vérifié pour la v15x** (côté Claude, Linux) :
-  - les 56 tests de `tests_tclsh` qui ont une sortie attendue passent (Linux ; MinGW64 chez
+* **v16b livrée** (25 octobre) : numéro de version lisible (`typeparse/VERSION`, `tcl::unsupported::typesversion`, affiché et vérifié par `maj.sh` ; `version.tcl` devine celle d'un tclsh plus ancien). (v16a : codec C pour les chaînes, les sommes de littéraux et les sommes balisées.) (v15z : `lappend` sous contrat en temps linéaire.) (v15y : Tcl annoté, patch `donnees-interp.patch`, la structure `Interp` change.) Le détail de chaque version est
+  dans `noyau/LISEZMOI.md`, une section par version, de la v14 à la v16b en fin de fichier.
+* **Vérifié pour la v16b** (côté Claude, Linux) :
+  - les 59 tests de `tests_tclsh` qui ont une sortie attendue passent (Linux ; MinGW64 chez
     l'utilisateur pour la v15s) ; les autres tournent sans erreur ;
   - sorties de tous les tests et exemples identiques avec et sans forme compacte
     (`TCL_TYPES_COMPACT=0/1`) ;
@@ -46,6 +46,10 @@ premier message d'une conversation qui reprend le travail.*
 | v15v | cache du champ pour `$a(x)` ; nombres typés lus directement par `expr` (patch `expr-nombres-types.patch`) |
 | v15w | `type binary encode`/`decode` par copie des cases quand la disposition est celle des octets |
 | v15x | cast vers une liste en cases sans objet par élément ; `Tcl_AnnotatedCreateCells` (Bézier en C x 77) |
+| v15y | boucles en cases, champs typés sur place, `X is T = v` direct, pointeurs de données dans `Interp`, mémo des types |
+| v15z | `lappend` sous contrat sur place (7,7 s → 15 ms pour 20 000 points) |
+| v16a | codec C : chaînes fixes et `z`, littéraux, sommes balisées ; `type binary decode` ne convertit plus les données inutilement |
+| v16b | `typeparse/VERSION`, `tcl::unsupported::typesversion`, versions affichées et vérifiées par `maj.sh`, `version.tcl` |
 
 ## 2. Installation et tests (chez l'utilisateur, MinGW64)
 
@@ -53,6 +57,9 @@ premier message d'une conversation qui reprend le travail.*
                                                # les patchs NOYAU de ORDRE.txt (-F0), make clean,
                                                # recompile, puis compare tests_tclsh/*.tcl à leur .out
     bash typeparse/maj.sh --help               # options : -n, -y, --no-build, --no-test, --commit "msg"
+    app/bin/tclsh90.exe typeparse/version.tcl  # version du tclsh installé (devinée avant la v16b)
+
+À chaque livraison : changer `TCL_TYPES_VERSION` (`tclTypes.h`) ET `typeparse/VERSION` ensemble.
 
 Les sources de types (`tclTypes*.{c,h}`, `tclAnnotObj.c`, `tclTypedVar.c`, `tclTypePath.c`,
 `tclTypeGeneric.c`, `tclTypeParse.c`, `tclVarRef.c`) sont livrées ENTIÈRES à la racine de
@@ -147,9 +154,9 @@ recompilé : `maj.sh` fait `make clean`. Des objets périmés donnent une corrup
 
 **Performances.** Après la v15x, l'étape annotée de l'exemple `geometrie` est à 1,8 à 3 fois
 le Tcl nu, les voies C de 3 à 150 fois plus rapides que lui ; une lecture `$a(x)` dans `expr` coûte ≈ 0,14 µs (la valeur typée du champ, créée puis
-libérée). Restent : de vraies entrées de stub (les fonctions
-de `tclAnnotatedApi.h`), les données par thread, la forme compacte côté Tcl (parcours et lecture des
-cases), les appels de procédure (avec les signatures).
+libérée). Ensuite au codec C : tailles calculées et préfixes (formes courantes), `at(...)`, puis les liens. Restent aussi : de vraies entrées de stub (les fonctions
+de `tclAnnotatedApi.h`), une instruction du bytecode pour `X is T = v` (aujourd'hui l'appel d'une
+commande), les appels de procédure (avec les signatures).
 Bancs : `exemples/geometrie/bench.tcl` et `bench_parties.tcl` ; profil avec callgrind.
 
 Les autres points ouverts sont dans le planning et au § 17 de `doc/ANNOTATIONS.fr.md`, entre

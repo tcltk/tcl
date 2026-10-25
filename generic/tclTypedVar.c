@@ -63,6 +63,8 @@ SettleSuspend(int delta)
  * Fabrique, à partir de "arg", une valeur annotée de type tp (objet neuf,
  * refcount 0) ou NULL. Sert aux écritures sous contrat.
  */
+static int PlainElemType(const TclType *tp, int depth);
+
 static Tcl_Obj *
 MakeTyped(Tcl_Interp *interp, TclType *tp, Tcl_Obj *arg, int prefer)
 {
@@ -214,6 +216,37 @@ TclTypedVarPrepareWrite(Tcl_Interp *interp, Var *varPtr,
 	     * (donc la variante) de l'élément est gardée. */
 	    add = content;
 	}
+	/*
+	 * lappend dans une liste typée que la variable est seule à tenir (la
+	 * boucle « lappend L ... » courante) : l'élément est validé seul, puis
+	 * ajouté au contenu même, sans copier ni revalider la liste entière
+	 * (temps linéaire au lieu de quadratique). Les éléments déjà là sont
+	 * valides. En cas de refus, rien n'a changé et le chemin ordinaire
+	 * donne son message.
+	 */
+	if ((*flagsPtr & TCL_LIST_ELEMENT) && add == content
+		&& contract->kind == TCLT_LIST && contract->arity < 0
+		&& contract->binDyn == NULL && contract->elem != NULL
+		&& PlainElemType(contract->elem, 0)
+		&& (cur = varPtr->value.objPtr) != NULL && !Tcl_IsShared(cur)
+		&& TclAnnotIsSettled(cur) && curContent != NULL
+		&& !Tcl_IsShared(curContent)) {
+	    Tcl_Obj *e = Tcl_DuplicateObj(add);
+	    int ok;
+
+	    /* une référence pendant l'ajout : une liste en cases recopie
+	     * l'élément dans ses cases sans le garder */
+	    Tcl_IncrRefCount(e);
+	    ok = TclTypeComplete(NULL, contract->elem, e, -1, NULL) == TCL_OK
+		    && Tcl_ListObjAppendElement(NULL, curContent, e) == TCL_OK;
+	    Tcl_DecrRefCount(e);
+	    if (ok) {
+		TclInvalidateStringRep(cur);	/* chaîne de A = chaîne de V */
+		*flagsPtr &= ~(TCL_APPEND_VALUE | TCL_LIST_ELEMENT);
+		res = cur;
+		goto store;
+	    }
+	}
 	sum = Tcl_DuplicateObj(curContent);
 	if (*flagsPtr & TCL_LIST_ELEMENT) {
 	    rc = Tcl_ListObjAppendElement(errInterp, sum, add);
@@ -241,6 +274,7 @@ TclTypedVarPrepareWrite(Tcl_Interp *interp, Var *varPtr,
 	    return TCL_ERROR;
 	}
     }
+  store:
     Tcl_IncrRefCount(res);
     if (*tmpPtrPtr != NULL) {
 	Tcl_DecrRefCount(*tmpPtrPtr);	/* la valeur résolue, remplacée */
@@ -248,6 +282,41 @@ TclTypedVarPrepareWrite(Tcl_Interp *interp, Var *varPtr,
     *valuePtrPtr = res;
     *tmpPtrPtr = res;
     return TCL_OK;
+}
+
+/*
+ * Type d'élément « simple » pour lappend sur place : scalaires, produits,
+ * listes et dicts de tels types. Pas de somme (variante), de lien var (nom
+ * canonique à construire), de list.any, de lien binaire : le chemin
+ * ordinaire les construit.
+ */
+static int
+PlainElemType(const TclType *tp, int depth)
+{
+    Tcl_Size i;
+
+    if (tp == NULL || depth > 16 || tp->binLink != NULL || tp->binTag != NULL
+	    || TclTypeIsAny(tp)) {
+	return 0;
+    }
+    switch (tp->kind) {
+    case TCLT_INT: case TCLT_DOUBLE: case TCLT_STRING:
+	return 1;
+    case TCLT_LIST:
+	return tp->elem == NULL || PlainElemType(tp->elem, depth + 1);
+    case TCLT_DICT:
+	return (tp->key == NULL || PlainElemType(tp->key, depth + 1))
+		&& (tp->elem == NULL || PlainElemType(tp->elem, depth + 1));
+    case TCLT_PRODUCT:
+	for (i = 0; i < tp->nfields; i++) {
+	    if (!PlainElemType(tp->fields[i].type, depth + 1)) {
+		return 0;
+	    }
+	}
+	return 1;
+    default:
+	return 0;
+    }
 }
 
 /*
@@ -1627,6 +1696,25 @@ TclTypedVarDeclare(Tcl_Interp *interp, Tcl_Obj *nameObj, Tcl_Obj *typed)
     }
     hadBit = varPtr->flags & (VAR_TYPED|VAR_CONTRACT);
     varPtr->flags &= ~(VAR_TYPED|VAR_CONTRACT);
+    if (arrayPtr == NULL && TclIsVarDirectWritable(varPtr)
+	    && !TclIsVarArray(varPtr) && TclAnnotIsSettled(typed)) {
+	/*
+	 * Cas courant (variable locale sans trace, valeur typée sans note) :
+	 * TclPtrSetVar n'aurait rien à résoudre ; écriture directe, le
+	 * contrat est posé.
+	 */
+	Tcl_Obj *old = varPtr->value.objPtr;
+
+	if (old != typed) {
+	    Tcl_IncrRefCount(typed);
+	    varPtr->value.objPtr = typed;
+	    if (old != NULL) {
+		TclDecrRefCount(old);
+	    }
+	}
+	varPtr->flags |= VAR_TYPED|VAR_CONTRACT;
+	return typed;
+    }
     /* la variable est déjà trouvée : pas de seconde recherche par nom */
     res = TclPtrSetVar(interp, (Tcl_Var) varPtr, (Tcl_Var) arrayPtr, nameObj,
 	    NULL, typed, TCL_LEAVE_ERR_MSG);

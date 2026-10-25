@@ -1,0 +1,30 @@
+--- a/generic/tclBasic.c
++++ b/generic/tclBasic.c
+@@ -983,6 +983,9 @@
+ 
+     iPtr->rootFramePtr = NULL;	/* Initialise as soon as :: is available */
+     iPtr->lookupNsPtr = NULL;
++    iPtr->typesData = NULL;	/* TIP 764: set by the type system */
++    iPtr->typeRefsData = NULL;
++    iPtr->varRefData = NULL;
+ 
+     Tcl_InitHashTable(&iPtr->packageTable, TCL_STRING_KEYS);
+     iPtr->packageUnknown = NULL;
+--- a/generic/tclInt.h
++++ b/generic/tclInt.h
+@@ -2356,6 +2356,15 @@
+     Tcl_Obj *innerContext;	/* cached list for fast reallocation */
+     int resetErrorStack;	/* controls cleaning up of ::errorStack */
+ 
++    /*
++     * TIP 764: per-interpreter data of the type system (tclTypes.c,
++     * tclAnnotObj.c, tclVarRef.c), also registered as assoc data; kept here
++     * so that each access avoids a Tcl_GetAssocData hash lookup.
++     */
++    void *typesData;
++    void *typeRefsData;
++    void *varRefData;
++
+ #ifdef TCL_COMPILE_STATS
+     /*
+      * Statistical information about the bytecode compiler and interpreter's

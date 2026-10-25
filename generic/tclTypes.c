@@ -16,7 +16,8 @@
 static TypeData *
 GetData(Tcl_Interp *interp)
 {
-    return (TypeData *) Tcl_GetAssocData(interp, "tclTypes", NULL);
+    /* gardé dans l'interpréteur (Interp.typesData), posé par TclTypesInit */
+    return (TypeData *) ((Interp *) interp)->typesData;
 }
 
 /* (uid, gen) de la table de types de l'interpréteur : 0 si aucune. */
@@ -124,6 +125,10 @@ static void
 DeleteData(void *clientData, Tcl_Interp *interp)
 {
     TypeData *d = (TypeData *) clientData;
+
+    if (interp != NULL && ((Interp *) interp)->typesData == d) {
+	((Interp *) interp)->typesData = NULL;
+    }
     Tcl_HashSearch search;
     Tcl_HashEntry *hPtr;
     Tcl_Size i;
@@ -159,6 +164,7 @@ DeleteData(void *clientData, Tcl_Interp *interp)
     Tcl_DeleteHashTable(&d->instances);
     Tcl_DeleteHashTable(&d->names);
     Tcl_DeleteHashTable(&d->canon);
+    Tcl_DeleteHashTable(&d->parsed);
     Tcl_DeleteHashTable(&d->converts);
     Tcl_DeleteHashTable(&d->derefs);
     Tcl_Free(d);
@@ -2294,6 +2300,39 @@ TclTypeParse(Tcl_Interp *interp, const char *text, Tcl_Size len)
 	Tcl_DStringFree(&ds);
 	if (hPtr != NULL) {
 	    return (TclType *) Tcl_GetHashValue(hPtr);
+	}
+    }
+    /*
+     * Mémo des textes déjà analysés ({point}p reconstruit à chaque appel
+     * son texte d'annotation : TclTypeParse le recompilait à chaque fois).
+     * Valable tant que les noms ne changent pas (gen) ; borné.
+     */
+    if (env.d != NULL && len > 0 && len < 200) {
+	char key[200];
+	Tcl_HashEntry *hPtr;
+	int isNew;
+
+	if (env.d->parsedGen != env.d->gen
+		|| env.d->parsed.numEntries > 4096) {
+	    Tcl_DeleteHashTable(&env.d->parsed);
+	    Tcl_InitHashTable(&env.d->parsed, TCL_STRING_KEYS);
+	    env.d->parsedGen = env.d->gen;
+	}
+	memcpy(key, text, (size_t) len);
+	key[len] = '\0';
+	if (memchr(text, '\0', (size_t) len) == NULL) {
+	    hPtr = Tcl_FindHashEntry(&env.d->parsed, key);
+	    if (hPtr != NULL) {
+		return (TclType *) Tcl_GetHashValue(hPtr);
+	    }
+	    if (TclCompileType(interp, text, len, &env) != TCL_OK) {
+		return NULL;
+	    }
+	    if (env.result != NULL && env.d->parsedGen == env.d->gen) {
+		hPtr = Tcl_CreateHashEntry(&env.d->parsed, key, &isNew);
+		Tcl_SetHashValue(hPtr, env.result);
+	    }
+	    return env.result;
 	}
     }
     if (TclCompileType(interp, text, len, &env) != TCL_OK) {
@@ -4728,6 +4767,98 @@ BinFastScalar(const TclType *tp)
 	    || tp->binSize == 8);
 }
 
+/*
+ * Chaînes couvertes par le codec C : octets ou texte de taille fixe
+ * (string(raw,8), string(utf-8,16)) et texte terminé par un zéro
+ * (cstring). Les tailles lues ailleurs ou calculées : couche Tcl.
+ */
+static int
+BinFastString(const TclType *tp)
+{
+    if (tp->binAt != NULL || tp->binLink != NULL || tp->binTag != NULL
+	    || tp->bitWidth > 0) {
+	return 0;
+    }
+    if ((tp->binKind == TCLBIN_BYTES || tp->binKind == TCLBIN_STR)
+	    && tp->binDyn == NULL && tp->binSize >= 0
+	    && (tp->binKind == TCLBIN_BYTES || tp->binEnc != NULL)) {
+	return 1;
+    }
+    return tp->binKind == TCLBIN_CSTRING && tp->binEnc != NULL;
+}
+
+/* Somme de littéraux de même longueur ("MZ", "PE\0\0") : longueur, ou -1. */
+static Tcl_Size
+BinFastLit(const TclType *tp)
+{
+    Tcl_Size i, len = -1, l;
+
+    if (tp->kind != TCLT_SUM || tp->binTag != NULL || tp->nfields < 1
+	    || tp->binAt != NULL || tp->binLink != NULL) {
+	return -1;
+    }
+    for (i = 0; i < tp->nfields; i++) {
+	if (tp->fields[i].type != NULL || tp->fields[i].literal == NULL) {
+	    return -1;
+	}
+	l = Tcl_GetCharLength(tp->fields[i].literal);
+	if (len >= 0 && l != len) {
+	    return -1;
+	}
+	len = l;
+    }
+    return len;
+}
+
+/* Largeur du zéro final d'un cstring : 2 pour utf-16 et ucs-2. */
+static int
+BinNulWidth(const char *enc)
+{
+    return (enc != NULL && (strncmp(enc, "utf-16", 6) == 0
+	    || strncmp(enc, "ucs-2", 5) == 0)) ? 2 : 1;
+}
+
+/* Variante d'une somme balisée nommée par le texte tv (comme tagEq). */
+static int
+BinTagMatch(const TclType *sum, const char *tv)
+{
+    Tcl_Obj *t = Tcl_NewStringObj(tv, -1);
+    Tcl_WideInt wt, wv;
+    int tIsInt, v, r = -1;
+
+    Tcl_IncrRefCount(t);
+    tIsInt = (Tcl_GetWideIntFromObj(NULL, t, &wt) == TCL_OK);
+    for (v = 0; v < (int) sum->nfields && r < 0; v++) {
+	Tcl_Obj *name = sum->fields[v].name;
+
+	if (name == NULL) {
+	    continue;
+	}
+	if (strcmp(Tcl_GetString(name), tv) == 0
+		|| (tIsInt && Tcl_GetWideIntFromObj(NULL, name, &wv) == TCL_OK
+		&& wv == wt)) {
+	    r = v;
+	}
+    }
+    Tcl_DecrRefCount(t);
+    return r;
+}
+
+/* La variante choisie par la balise : champ déjà lu ou écrit du produit
+ * englobant (vals[0..nvals-1]), ou constante =texte ; -1 sinon. */
+static int
+BinTagVariant(const TclType *sum, const TclType *encl, Tcl_Obj **vals,
+	Tcl_Size nvals)
+{
+    if (sum->binTag[0] == '=') {
+	return BinTagMatch(sum, sum->binTag + 1);
+    }
+    if (encl == NULL) {
+	return -1;
+    }
+    return TclTypeTagVariantFrom(encl, nvals, vals, nvals);
+}
+
 /* Contexte d'un encodage : options et mémo des alignements par type. */
 #define BIN_MEMO 16
 typedef struct {
@@ -4776,6 +4907,19 @@ BinFastAlign(const TclType *tp, size_t cap, int depth)
 	    p *= 2;
 	}
 	return (cap <= 1) ? 1 : (p < cap ? p : cap);
+    }
+    if (BinFastString(tp) || BinFastLit(tp) >= 0) {
+	return 1;			/* octets : pas d'alignement */
+    }
+    if (tp->kind == TCLT_SUM && tp->binTag != NULL && tp->binAt == NULL
+	    && tp->binLink == NULL && tp->nfields > 0) {
+	for (i = 0; i < tp->nfields; i++) {
+	    if (tp->fields[i].type == NULL
+		    || BinFastAlign(tp->fields[i].type, cap, depth + 1) == 0) {
+		return 0;
+	    }
+	}
+	return 1;			/* comme la couche Tcl (alignOf tagged) */
     }
     if (tp->binAt != NULL || tp->binLink != NULL || tp->binTag != NULL) {
 	return 0;
@@ -4947,10 +5091,72 @@ BinFastEnc(BinCtx *c, const TclType *tp, Tcl_Obj *v, const TclType *encl,
 {
     BinBuf *out = c->out;
     int bigDefault = c->bigDefault, hostBig = c->hostBig;
-    Tcl_Obj **elv;
+    Tcl_Obj **elv, *orig = v;
     Tcl_Size n, i;
 
     v = BinContent(v);
+    if (tp->kind == TCLT_SUM && tp->binTag != NULL) {
+	/* somme balisée : la balise (déjà écrite) choisit la variante, qui
+	 * doit être celle de la valeur */
+	int var = BinTagVariant(tp, encl, vals, nvals), own = -1;
+	TclType *ot = NULL;
+
+	if (var < 0 || tp->fields[var].type == NULL) {
+	    return TCL_CONTINUE;		/* le message : couche Tcl */
+	}
+	if (TclAnnotInfo(orig, NULL, &ot, &own, NULL) == 1
+		&& (ot != tp || own != var)) {
+	    return TCL_CONTINUE;
+	}
+	return BinFastEnc(c, tp->fields[var].type, v, NULL, NULL, 0,
+		depth + 1);
+    }
+    if (BinFastLit(tp) >= 0) {
+	unsigned char *b = Tcl_GetBytesFromObj(NULL, v, &n);
+
+	if (b == NULL) {
+	    return TCL_CONTINUE;
+	}
+	BinBufPut(out, b, (size_t) n);
+	return TCL_OK;
+    }
+    if (BinFastString(tp)) {
+	if (tp->binKind == TCLBIN_BYTES) {
+	    unsigned char *b = Tcl_GetBytesFromObj(NULL, v, &n);
+
+	    if (b == NULL) {
+		return TCL_CONTINUE;
+	    }
+	    BinBufPut(out, b, (size_t) n);	/* comme la couche Tcl */
+	    return TCL_OK;
+	} else {
+	    Tcl_Encoding enc = Tcl_GetEncoding(NULL, tp->binEnc);
+	    Tcl_DString ds;
+	    Tcl_Size len;
+	    const char *str = Tcl_GetStringFromObj(v, &len);
+	    int rc;
+
+	    if (enc == NULL) {
+		return TCL_CONTINUE;
+	    }
+	    Tcl_DStringInit(&ds);
+	    rc = Tcl_UtfToExternalDStringEx(NULL, enc, str, len,
+		    TCL_ENCODING_PROFILE_STRICT, &ds, NULL);
+	    Tcl_FreeEncoding(enc);
+	    n = Tcl_DStringLength(&ds);
+	    if (rc != TCL_OK || (tp->binKind == TCLBIN_STR
+		    && n > tp->binSize)) {
+		Tcl_DStringFree(&ds);
+		return TCL_CONTINUE;
+	    }
+	    BinBufPut(out, Tcl_DStringValue(&ds), (size_t) n);
+	    Tcl_DStringFree(&ds);
+	    BinBufPut(out, NULL, tp->binKind == TCLBIN_STR
+		    ? (size_t) (tp->binSize - n)
+		    : (size_t) BinNulWidth(tp->binEnc));
+	    return TCL_OK;
+	}
+    }
     if (BinFastScalar(tp)) {
 	unsigned char buf[8], tmp;
 	int big = tp->binEnd == TCLBIN_BE
@@ -5226,6 +5432,115 @@ BinFastDec(BinDec *d, const TclType *tp, int asField, Tcl_Obj **vals,
     if (depth > 32) {
 	return TCL_CONTINUE;
     }
+    if (tp->kind == TCLT_SUM && tp->binTag != NULL) {
+	/* somme balisée : la balise (champ déjà lu) choisit la variante ; la
+	 * valeur garde son annotation (la variante), même comme champ */
+	int var = BinTagVariant(tp, encl, vals, nvals);
+	Tcl_Obj *payload;
+
+	if (var < 0 || tp->fields[var].type == NULL) {
+	    return TCL_CONTINUE;		/* le message : couche Tcl */
+	}
+	rc = BinFastDec(d, tp->fields[var].type, 1, NULL, NULL, 0, depth + 1,
+		&payload);
+	if (rc != TCL_OK) {
+	    return rc;
+	}
+	*resPtr = TclNewAnnotatedOwn(payload,
+		TclTypeRefFor(d->interp, (TclType *) tp, var));
+	return TCL_OK;
+    }
+    {
+	Tcl_Size ll = BinFastLit(tp);
+
+	if (ll >= 0) {
+	    /* un des littéraux, octet pour octet ; sinon la couche Tcl (et
+	     * son message) */
+	    Tcl_Obj *got;
+
+	    if (d->pos + (size_t) ll > d->len) {
+		return TCL_CONTINUE;
+	    }
+	    got = Tcl_NewByteArrayObj(d->p + d->pos, ll);
+	    Tcl_IncrRefCount(got);
+	    for (i = 0; i < tp->nfields; i++) {
+		if (strcmp(Tcl_GetString(got),
+			Tcl_GetString(tp->fields[i].literal)) == 0) {
+		    break;
+		}
+	    }
+	    if (i == tp->nfields) {
+		Tcl_DecrRefCount(got);
+		return TCL_CONTINUE;
+	    }
+	    d->pos += (size_t) ll;
+	    *resPtr = Tcl_NewStringObj(Tcl_GetString(got), -1);
+	    Tcl_DecrRefCount(got);
+	    return TCL_OK;
+	}
+    }
+    if (BinFastString(tp)) {
+	const unsigned char *q = d->p + d->pos;
+	size_t take, adv;
+
+	if (tp->binKind == TCLBIN_CSTRING) {
+	    size_t w = (size_t) BinNulWidth(tp->binEnc), k;
+
+	    for (k = 0; d->pos + k + w <= d->len; k += w) {
+		if (q[k] == 0 && (w == 1 || q[k + 1] == 0)) {
+		    break;
+		}
+	    }
+	    if (d->pos + k + w > d->len) {
+		return TCL_CONTINUE;		/* pas de zéro final */
+	    }
+	    take = k;
+	    adv = k + w;
+	} else {
+	    take = adv = (size_t) tp->binSize;
+	    if (d->pos + take > d->len) {
+		return TCL_CONTINUE;
+	    }
+	}
+	if (tp->binKind == TCLBIN_BYTES) {
+	    *resPtr = Tcl_NewByteArrayObj(q, (Tcl_Size) take);
+	} else {
+	    Tcl_Encoding enc = Tcl_GetEncoding(NULL, tp->binEnc);
+	    Tcl_DString ds;
+	    Tcl_Size len;
+	    const char *str;
+	    int erc;
+
+	    if (enc == NULL) {
+		return TCL_CONTINUE;
+	    }
+	    Tcl_DStringInit(&ds);
+	    erc = Tcl_ExternalToUtfDStringEx(NULL, enc, (const char *) q,
+		    (Tcl_Size) take, TCL_ENCODING_PROFILE_STRICT, &ds, NULL);
+	    Tcl_FreeEncoding(enc);
+	    if (erc != TCL_OK) {
+		Tcl_DStringFree(&ds);
+		return TCL_CONTINUE;
+	    }
+	    str = Tcl_DStringValue(&ds);
+	    len = Tcl_DStringLength(&ds);
+	    if (tp->binKind == TCLBIN_STR) {
+		/* taille fixe : les zéros de fin sont du remplissage
+		 * (string trimright \x00 ; U+0000 s'écrit C0 80) */
+		while (len >= 2 && (unsigned char) str[len - 2] == 0xC0
+			&& (unsigned char) str[len - 1] == 0x80) {
+		    len -= 2;
+		}
+		while (len >= 1 && str[len - 1] == '\0') {
+		    len--;
+		}
+	    }
+	    *resPtr = Tcl_NewStringObj(str, len);
+	    Tcl_DStringFree(&ds);
+	}
+	d->pos += adv;
+	return TCL_OK;
+    }
     if (BinFastScalar(tp)) {
 	size_t sz = (size_t) tp->binSize, k;
 	const unsigned char *q = d->p + d->pos;
@@ -5434,10 +5749,6 @@ BinDecodeFast(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
     if (TclIsAnnotated(objv[0])) {
 	return TCL_CONTINUE;
     }
-    bytes = Tcl_GetBytesFromObj(NULL, objv[1], &len);
-    if (bytes == NULL || (Tcl_WideInt) len < off) {
-	return TCL_CONTINUE;
-    }
     text = Tcl_GetStringFromObj(objv[0], &i);
     {
 	Tcl_Obj *saved = Tcl_GetObjResult(interp);
@@ -5450,6 +5761,16 @@ BinDecodeFast(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
     /* un résultat produit seulement : les autres passent par set {T}V */
     if (tp == NULL || tp->kind != TCLT_PRODUCT
 	    || BinFastAlign(tp, d.b.cap, 0) == 0) {
+	return TCL_CONTINUE;
+    }
+    /*
+     * Les octets seulement maintenant : convertir les données d'un type que
+     * le codec C ne couvre pas les ferait changer de représentation à
+     * chaque appel (tableau d'octets ici, chaîne dans la couche Tcl : tout
+     * le fichier converti dans les deux sens).
+     */
+    bytes = Tcl_GetBytesFromObj(NULL, objv[1], &len);
+    if (bytes == NULL || (Tcl_WideInt) len < off) {
 	return TCL_CONTINUE;
     }
     probe.s = 1;
@@ -6155,6 +6476,21 @@ ContentObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
     return TCL_OK;
 }
 
+/* tcl::unsupported::typesversion : la version du prototype compilée
+ * (TCL_TYPES_VERSION, tclTypes.h ; aussi dans typeparse/VERSION). */
+static int
+TypesVersionObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
+	Tcl_Obj *const objv[])
+{
+    (void) clientData;
+    if (objc != 1) {
+	Tcl_WrongNumArgs(interp, 1, objv, "");
+	return TCL_ERROR;
+    }
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(TCL_TYPES_VERSION, -1));
+    return TCL_OK;
+}
+
 void
 TclTypesInit(Tcl_Interp *interp)
 {
@@ -6172,6 +6508,8 @@ TclTypesInit(Tcl_Interp *interp)
     Tcl_InitHashTable(&d->generics, TCL_STRING_KEYS);
     Tcl_InitHashTable(&d->instances, TCL_STRING_KEYS);
     Tcl_InitHashTable(&d->canon, TCL_STRING_KEYS);
+    Tcl_InitHashTable(&d->parsed, TCL_STRING_KEYS);
+    d->parsedGen = 0;
     Tcl_InitHashTable(&d->converts, TCL_STRING_KEYS);
     Tcl_InitHashTable(&d->derefs, TCL_ONE_WORD_KEYS);
     d->tInt = Builtin(d, TCLT_INT, "int");
@@ -6192,12 +6530,15 @@ TclTypesInit(Tcl_Interp *interp)
     /* "array" est réservé sans sémantique : entrée à valeur NULL. */
     Tcl_SetHashValue(Tcl_CreateHashEntry(&d->names, "array", &isNew), NULL);
     Tcl_SetAssocData(interp, "tclTypes", DeleteData, d);
+    ((Interp *) interp)->typesData = d;
     Tcl_CreateObjCommand2(interp, "type", TypeObjCmd, d, NULL);
     Tcl_CreateObjCommand2(interp, "::tcl::mathop::is", IsOpObjCmd, NULL, NULL);
     Tcl_CreateObjCommand2(interp, "::tcl::unsupported::content", ContentObjCmd,
 	    NULL, NULL);
     Tcl_CreateObjCommand2(interp, "::tcl::unsupported::declare", DeclareObjCmd,
 	    NULL, NULL);
+    Tcl_CreateObjCommand2(interp, "::tcl::unsupported::typesversion",
+	    TypesVersionObjCmd, NULL, NULL);
     Tcl_CreateObjCommand2(interp, "::tcl::unsupported::abi", AbiObjCmd,
 	    NULL, NULL);
     TclCompactInit(interp);

@@ -1,0 +1,10 @@
+entete        34 octets  C=Tcl 1  relu C=Tcl 1  relu=v 1  4d5a070061620164c38974c3a900000063737472696e67006800e9006800e9000000
+naturel       34 octets  C=Tcl 1  relu C=Tcl 1  relu=v 1  4d5a070061620164c38974c3a900000063737472696e67006800e9006800e9000000
+bloc 1 {5 6} 255   6 octets  C=Tcl 1  relu C=Tcl 1  relu=v 1  0105000600ff
+bloc 2 xyz 255   5 octets  C=Tcl 1  relu C=Tcl 1  relu=v 1  0278797aff
+bloc 7 99 255   6 octets  C=Tcl 1  relu C=Tcl 1  relu=v 1  0763000000ff
+balise txt     4 octets  C=Tcl 1  relu C=Tcl 1  relu=v 1  42420102
+variante relue : corps($genre).1 6
+balise inconnue : 1 type binary: tag 9 of field corps of bloc matches no variant 
+littéral faux : 1 type binary: data truncated at offset 2 reading fie
+tronqué : 1 type binary: data truncated at offset 4 r

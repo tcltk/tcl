@@ -983,6 +983,9 @@ Tcl_CreateInterp(void)
 
     iPtr->rootFramePtr = NULL;	/* Initialise as soon as :: is available */
     iPtr->lookupNsPtr = NULL;
+    iPtr->typesData = NULL;	/* TIP 764: set by the type system */
+    iPtr->typeRefsData = NULL;
+    iPtr->varRefData = NULL;
 
     Tcl_InitHashTable(&iPtr->packageTable, TCL_STRING_KEYS);
     iPtr->packageUnknown = NULL;

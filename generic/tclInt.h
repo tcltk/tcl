@@ -2356,6 +2356,15 @@ typedef struct Interp {
     Tcl_Obj *innerContext;	/* cached list for fast reallocation */
     int resetErrorStack;	/* controls cleaning up of ::errorStack */
 
+    /*
+     * TIP 764: per-interpreter data of the type system (tclTypes.c,
+     * tclAnnotObj.c, tclVarRef.c), also registered as assoc data; kept here
+     * so that each access avoids a Tcl_GetAssocData hash lookup.
+     */
+    void *typesData;
+    void *typeRefsData;
+    void *varRefData;
+
 #ifdef TCL_COMPILE_STATS
     /*
      * Statistical information about the bytecode compiler and interpreter's

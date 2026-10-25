@@ -15,6 +15,10 @@
 # Variables : TCLSH (défaut app/bin/tclsh90.exe), TCLWIN (dossier de build, défaut win),
 #             JOBS (défaut 4)
 #
+# Version : typeparse/VERSION (celle de l'archive) ; le tclsh installé la donne par
+#           tcl::unsupported::typesversion (v16b et suivantes ; avant : tclsh typeparse/version.tcl).
+#           Le script affiche les deux au début, et vérifie après compilation qu'elles concordent.
+#
 # Étapes : 1. extrait l'archive dans un dossier temporaire et ne remplace dans typeparse/ que
 #             les fichiers qui DIFFÈRENT (cmp) ; liste ce qui est nouveau/modifié/absent de l'archive
 #          2. sources de types (tclTypes*.{c,h}, tclAnnotObj.c, tclTypedVar.c, tclTypePath.c,
@@ -39,7 +43,7 @@ main() {
             --build) FORCEBUILD=1 ;;
             --no-test) TEST=0 ;;
             --commit) shift; MSG="$1" ;;
-            -h|--help) sed -n '2,31p' "$0"; return 0 ;;
+            -h|--help) sed -n '2,35p' "$0"; return 0 ;;
             *) ZIP="$1" ;;
         esac
         shift
@@ -68,6 +72,13 @@ main() {
         echo "Ni cmp ni md5sum : pacman -S diffutils"; return 1
     fi
 
+    # version compilée dans un tclsh : « v16b », ou « antérieure à v16b » sans la commande
+    tclversion() {
+        [ -f "$TCLABS" ] || { echo "(pas de $TCLSH)"; return; }
+        echo 'puts [expr {[info commands ::tcl::unsupported::typesversion] eq "" ? "antérieure à v16b (tclsh typeparse/version.tcl pour la deviner)" : [::tcl::unsupported::typesversion]}]' \
+            | "$TCLABS" 2>/dev/null | tr -d '\r'
+    }
+
     ask() { [ "$YES" = 1 ] && return 0; read -r -p "$1 [o/N] " a; [ "$a" = o ] || [ "$a" = O ] || [ "$a" = y ]; }
     local TOUCHED; TOUCHED="$(mktemp)"
 
@@ -75,6 +86,11 @@ main() {
     local TMP; TMP="$(mktemp -d)"
     unzip -q "$ZIP" -d "$TMP" || return 1
     [ -d "$TMP/typeparse" ] || { echo "L'archive ne contient pas de dossier typeparse/"; return 1; }
+    local VARCH="?" VAVANT
+    [ -f "$TMP/typeparse/VERSION" ] && VARCH="$(tr -d '\r\n' < "$TMP/typeparse/VERSION")"
+    VAVANT="$(tclversion)"
+    echo "   version de l'archive   : $VARCH"
+    echo "   version de $TCLSH : ${VAVANT:-?}"
     local nnew=0 nmod=0 f rel
     while IFS= read -r -d '' f; do
         rel="${f#$TMP/}"
@@ -166,9 +182,20 @@ main() {
                     applied_now=1
                 fi
             else
-                echo "   CONFLIT         $p (ni appliqué ni applicable sans fuzz) :"
-                echo "$out" | sed 's/^/      /'
-                rm -f "$CORE"; return 1
+                # Déjà appliqué, mais un patch SUIVANT a retouché le contexte de
+                # ses lignes : -R ne passe plus à l'identique, et patch reconnaît
+                # chaque fichier comme « Reversed (or previously applied) ».
+                local nfiles nrev
+                nfiles=$(printf '%s\n' "$out" | grep -c '^checking file')
+                nrev=$(printf '%s\n' "$out" | grep -c 'Reversed (or previously applied)')
+                if [ "$nrev" -gt 0 ] && [ "$nrev" = "$nfiles" ] \
+                        && ! printf '%s\n' "$out" | grep -q 'FAILED'; then
+                    echo "   déjà appliqué   $p (contexte retouché par un patch suivant)"
+                else
+                    echo "   CONFLIT         $p (ni appliqué ni applicable sans fuzz) :"
+                    echo "$out" | sed 's/^/      /'
+                    rm -f "$CORE"; return 1
+                fi
             fi
         done < typeparse/noyau/ORDRE.txt
         rm -f "$CORE"
@@ -207,6 +234,12 @@ main() {
                 same "$b" "$bindir/$(basename "$b")" || { echo "   NON INSTALLÉ : $bindir/$(basename "$b") (fichier occupé ?)"; stale=1; }
             done
             [ "$stale" = 0 ] || { echo "   Fermer les tclsh/wish ouverts, puis : (cd $BUILDDIR && make install-binaries)"; return 1; }
+            local VAPRES; VAPRES="$(tclversion)"
+            if [ "$VAPRES" = "$VARCH" ]; then
+                echo "   version installée : $VAPRES"
+            else
+                echo "   ATTENTION : le tclsh installé dit « $VAPRES », l'archive est la $VARCH"
+            fi
         }
     else
         echo "   rien de C à recompiler (--build pour forcer)"
@@ -233,7 +266,7 @@ main() {
             fi
         done
         rm -f "$fo" "$fe"
-        echo "   $n test(s) OK, $fails échec(s)"
+        echo "   $n test(s) OK, $fails échec(s)  (version $(tclversion))"
     fi
 
     echo "== 6. Fossil"

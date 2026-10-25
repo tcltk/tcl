@@ -78,6 +78,9 @@ typedef struct TypeData {
 				 * noms (type def, famille, annulation) ; un
 				 * classement d'annotation en cache n'est valable
 				 * que pour la même (uid, gen) */
+    Tcl_HashTable parsed;	/* texte d'un type -> TclType* déjà analysé
+				 * (TclTypeParse), valable pour parsedGen */
+    size_t parsedGen;
 } TypeData;
 
 void	TclTypesBump(TypeData *d);

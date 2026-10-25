@@ -28,10 +28,13 @@ typedef struct FrameReg {
 } FrameReg;
 
 static void
-RegDelete(void *clientData, TCL_UNUSED(Tcl_Interp *))
+RegDelete(void *clientData, Tcl_Interp *interp)
 {
     FrameReg *reg = (FrameReg *) clientData;
 
+    if (interp != NULL && ((Interp *) interp)->varRefData == reg) {
+	((Interp *) interp)->varRefData = NULL;
+    }
     Tcl_DeleteHashTable(&reg->byFrame);
     Tcl_DeleteHashTable(&reg->byUid);
     Tcl_Free(reg);
@@ -40,7 +43,7 @@ RegDelete(void *clientData, TCL_UNUSED(Tcl_Interp *))
 static FrameReg *
 GetReg(Tcl_Interp *interp, int create)
 {
-    FrameReg *reg = (FrameReg *) Tcl_GetAssocData(interp, REG_KEY, NULL);
+    FrameReg *reg = (FrameReg *) ((Interp *) interp)->varRefData;
 
     if (reg == NULL && create) {
 	reg = (FrameReg *) Tcl_Alloc(sizeof(FrameReg));
@@ -48,6 +51,7 @@ GetReg(Tcl_Interp *interp, int create)
 	Tcl_InitHashTable(&reg->byUid, TCL_ONE_WORD_KEYS);
 	reg->next = 1;
 	Tcl_SetAssocData(interp, REG_KEY, RegDelete, reg);
+	((Interp *) interp)->varRefData = reg;
     }
     return reg;
 }

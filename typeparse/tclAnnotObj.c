@@ -119,7 +119,9 @@ DeleteRefData(void *clientData, Tcl_Interp *interp)
     Tcl_HashSearch search;
     Tcl_HashEntry *hPtr;
 
-    (void) interp;
+    if (interp != NULL && ((Interp *) interp)->typeRefsData == rd) {
+	((Interp *) interp)->typeRefsData = NULL;
+    }
     for (hPtr = Tcl_FirstHashEntry(&rd->refs, &search); hPtr != NULL;
 	    hPtr = Tcl_NextHashEntry(&search)) {
 	Tcl_DecrRefCount((Tcl_Obj *) Tcl_GetHashValue(hPtr));
@@ -131,12 +133,13 @@ DeleteRefData(void *clientData, Tcl_Interp *interp)
 static RefData *
 GetRefData(Tcl_Interp *interp)
 {
-    RefData *rd = (RefData *) Tcl_GetAssocData(interp, "tclTypeRefs", NULL);
+    RefData *rd = (RefData *) ((Interp *) interp)->typeRefsData;
 
     if (rd == NULL) {
 	rd = (RefData *) Tcl_Alloc(sizeof(RefData));
 	Tcl_InitHashTable(&rd->refs, TCL_STRING_KEYS);
 	Tcl_SetAssocData(interp, "tclTypeRefs", DeleteRefData, rd);
+	((Interp *) interp)->typeRefsData = rd;
     }
     return rd;
 }
@@ -799,9 +802,17 @@ TclAnnotIterList(Tcl_Obj *aPtr)
     int pass;
 
     if (aPtr->typePtr != &annotatedObjType
-	    || FastListType(aPtr, &v) == NULL || TclIsCompact(v)
+	    || FastListType(aPtr, &v) == NULL
 	    || AnnotListElemType(aPtr) == NULL) {
 	return NULL;
+    }
+    if (TclIsCompact(v)) {
+	/* en cases : la liste des éléments gardée à côté des cases (des vues),
+	 * privée à V, typée sur place comme une liste ordinaire */
+	v = TclCompactCache(v);
+	if (v == NULL) {
+	    return NULL;
+	}
     }
     for (pass = 0; pass < 2; pass++) {
 	if (Tcl_ListObjGetElements(NULL, v, &n, &ev) != TCL_OK) {
