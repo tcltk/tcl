@@ -1,0 +1,7 @@
+mixte : {1 2.5 0} list<any> {int double int}
+identiques : {1.0 2.0} list<double> {double double}
+imbriqué : {{1.0 2.0} {3.0 4.0}} list<point> {point point} {1.0 3.0} list<double> {double double}
+case : {2.5 3.5} list<double> {double double}
+lassign : 1 2.5 0 double
+somme : {2.0 3} list<any> {forme.cote int}
+après écriture : {1 9.5 0} list<any> {int double int} 1 2.5 0

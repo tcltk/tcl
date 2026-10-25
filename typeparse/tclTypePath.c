@@ -3288,10 +3288,13 @@ SimpleFieldIndex(TclType *tp, Tcl_Obj *part2Ptr)
     return idx;
 }
 
+static Tcl_Obj *FieldAt(Tcl_Interp *interp, Tcl_Obj *v, TclType *ft,
+	Tcl_Size idx);
+
 static Tcl_Obj *
 FastFieldRead(Tcl_Interp *interp, Tcl_Obj *a, Tcl_Obj *part2Ptr)
 {
-    Tcl_Obj *v, *e;
+    Tcl_Obj *v;
     TclType *tp, *ft;
     int variant;
     Tcl_Size idx;
@@ -3306,6 +3309,16 @@ FastFieldRead(Tcl_Interp *interp, Tcl_Obj *a, Tcl_Obj *part2Ptr)
 	return NULL;
     }
     ft = tp->fields[idx].type;
+    return FieldAt(interp, v, ft, idx);
+}
+
+/* Le champ idx (de type ft) du contenu v d'un produit, typé ; NULL si le
+ * contenu n'a pas ce champ. */
+static Tcl_Obj *
+FieldAt(Tcl_Interp *interp, Tcl_Obj *v, TclType *ft, Tcl_Size idx)
+{
+    Tcl_Obj *e;
+
     if (Tcl_ListObjIndex(NULL, v, idx, &e) != TCL_OK || e == NULL) {
 	return NULL;
     }
@@ -3384,6 +3397,78 @@ TclTypedFieldNumber(Var *varPtr, Tcl_Obj *part2Ptr)
 }
 
 /*
+ * $P(*) d'un produit typé dont tous les champs sont simples : chaque champ
+ * typé (comme $P(champ)), puis, comme le chemin général (MergeItems) : des
+ * types tous identiques -> list.T des contenus ; sinon list.any des champs
+ * typés. NULL : le chemin général.
+ */
+static Tcl_Obj *
+FastAllParts(Tcl_Interp *interp, Tcl_Obj *a, Tcl_Obj *part2Ptr)
+{
+    Tcl_Obj *v, **parts, *list, *res;
+    TclType *tp, *common = NULL;
+    Tcl_Size len, i, n;
+    int mixed = 0;
+    const char *name = Tcl_GetStringFromObj(part2Ptr, &len);
+
+    if (len != 1 || name[0] != '*' || !TclAnnotIsSettled(a)
+	    || TclAnnotInfo(a, &v, &tp, NULL, NULL) != 1
+	    || tp->kind != TCLT_PRODUCT || tp->nfields < 1) {
+	return NULL;
+    }
+    n = tp->nfields;
+    for (i = 0; i < n; i++) {
+	if (!SimpleFieldType(tp->fields[i].type)
+		|| TclTypeIsAny(tp->fields[i].type)) {
+	    return NULL;
+	}
+	if (common == NULL) {
+	    common = tp->fields[i].type;
+	} else if (!TclTypeSame(common, tp->fields[i].type)) {
+	    mixed = 1;
+	}
+    }
+    parts = (Tcl_Obj **) Tcl_Alloc(n * sizeof(Tcl_Obj *));
+    for (i = 0; i < n; i++) {
+	Tcl_Obj *f = FieldAt(interp, v, tp->fields[i].type, i);
+
+	if (f == NULL) {
+	    while (i-- > 0) {
+		Tcl_DecrRefCount(parts[i]);
+	    }
+	    Tcl_Free(parts);
+	    return NULL;
+	}
+	if (!mixed && TclIsAnnotated(f)) {
+	    Tcl_Obj *c = TCL_ANNOT_CONTENT(f);
+
+	    Tcl_IncrRefCount(c);
+	    TclDiscard(f);
+	    f = c;
+	} else {
+	    Tcl_IncrRefCount(f);
+	}
+	parts[i] = f;
+    }
+    if (mixed) {
+	common = TclTypeParse(interp, "any", 3);
+    }
+    list = Tcl_NewListObj(n, parts);
+    for (i = 0; i < n; i++) {
+	Tcl_DecrRefCount(parts[i]);
+    }
+    Tcl_Free(parts);
+    if (common == NULL) {
+	TclDiscard(list);
+	return NULL;
+    }
+    /* la liste neuve devient le contenu (pas de copie) */
+    res = TclNewAnnotatedOwn(list, TclTypeRefFor(interp,
+	    TclTypeListOf(interp, common), -1));
+    return res;
+}
+
+/*
  * Variantes qui travaillent sur un Var déjà résolu (exécuteur : variables
  * locales compilées, résolues sans nom).
  */
@@ -3401,6 +3486,9 @@ TclTypedVarGetElementVar(Tcl_Interp *interp, Var *varPtr, Tcl_Obj *part2Ptr,
 	return TCL_CONTINUE;
     }
     res = FastFieldRead(interp, varPtr->value.objPtr, part2Ptr);
+    if (res == NULL) {
+	res = FastAllParts(interp, varPtr->value.objPtr, part2Ptr);
+    }
     if (res != NULL) {
 	Tcl_IncrRefCount(res);
 	*resultPtr = res;

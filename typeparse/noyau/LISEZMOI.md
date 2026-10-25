@@ -1783,3 +1783,26 @@ change), `tclTypes.h`. Patch noyau : **`expr-tuple.patch`** (`tclCompile.h`, `tc
   perdu ; il donne maintenant "" tout de suite.
 - Test `t87_tuple_bytecode` : imbrication, élément absent, littéral, produit, forme compacte, valeur de
   l'affectation, trace d'écriture, lien `upvar`, tableau (erreur), contrat (erreur), liste invalide, global.
+
+### v16f — $P(*) rapide ; cstruct : voie objet par l'API prévue (25 octobre 2026)
+
+Sources de types : `tclTypePath.c`, `tclTypes.c`, `tclTypes.h` (champ `listOf` de `TclType`). Pas de patch
+noyau ; la structure `TclType` change : recompilation complète.
+
+- **`$P(*)`** d'un produit typé dont tous les champs sont simples (ni somme, ni lien, ni `any`) : un raccourci
+  (`FastAllParts`) lit chaque champ comme `$P(champ)` puis assemble comme le chemin général : types tous
+  identiques -> `list.T` des contenus, sinon `list.any` des champs typés ; la liste neuve devient le contenu
+  sans copie. 2,4 -> 0,7 µs pour un `Sample` de trois champs.
+- `TclTypeListOf` garde `list.T` dans `T->listOf` (plus de construction du nom ni de recherche dans la table à
+  chaque `$P(*)`).
+- **`exemples/cstruct/cstruct.c`** : la voie objet (`cs::stats_obj`) est écrite avec `tclAnnotatedApi.h`
+  (`Tcl_AnnotatedGetType`, `Tcl_AnnotatedGetParts`, `Tcl_AnnotatedGetCells`), comme `geo.c` ; en forme
+  compacte, les mesures sont lues en place dans les cases. **Recompiler `cstruct.so` / `cstruct.dll`.**
+- `exemples/cstruct/bench_cstruct.tcl` : charge `cstruct[info sharedlibextension]` ; mesures `5c` (`$it(champ)`
+  dans `expr`) et `5d` (affectation par tuple).
+- Mesures (lot de 10 000, ms) : `lassign $it(*)` 15,3 -> 7,4 à 10,6 ; voie objet en forme compacte
+  2,5 -> 0,024 ; en forme ordinaire inchangée (2,4 à 2,8 : la cale de `Tcl_AnnotatedGetParts` passe par
+  `::tcl::unsupported::content`, qui refait le contenu profond de tout le lot ; une vraie fonction de stub le
+  lirait en place).
+- Test `t88_parties_produit` : types mixtes, identiques, produit imbriqué, `$P(*.x)`, vue sur une case,
+  `lassign`, somme (chemin général), après écriture.

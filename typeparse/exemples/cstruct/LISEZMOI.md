@@ -142,9 +142,10 @@ Lot de 10 000 mesures, µs par opération, Linux, deux tours (fourchette) :
   contrôlé, et le décodage 60 fois plus rapide que `binary scan`.
 - Le calcul en Tcl reste le point lent : `$it(champ)` coûte environ 0,4 µs par mesure (deux à trois lectures
   de champ), le classique `lassign` 0,3 µs.
-- **À reprendre** : `lassign $it(*)` (5b) est maintenant 4 fois plus lent que `$it(champ)` : la lecture
-  `$P(*)` (toutes les parties, typées, dans une `list<any>`) passe par le chemin général des chemins, environ
-  2,4 µs, contre 0,7 µs pour un champ. Et la voie objet (7) demande le contenu du lot à Tcl
-  (`::tcl::unsupported::content`, par l'interpréteur) puis relit chaque champ : 2,4 ms au lieu des 0,5 ms
-  d'avant la règle B ; écrite avec `tclAnnotatedApi.h` et `Tcl_AnnotatedGetCells`, comme `geo.c`, elle lirait
-  directement les cases en forme compacte.
+- **Repris en v16f** : `$P(*)` a un raccourci (2,4 -> 0,7 µs par mesure) : `lassign $it(*)` (5b) passe de
+  15,3 à 7,4 à 10,6 ms. La voie objet (7) est écrite avec `tclAnnotatedApi.h`, comme `geo.c` : en forme
+  compacte, `Tcl_AnnotatedGetCells` donne le tableau de `Sample` lui-même, lu en place : **2,5 ms -> 24 µs**
+  (plus rapide que l'encodage suivi de la voie octets). En forme ordinaire, elle reste à 2,4 à 2,8 ms : la cale
+  de `Tcl_AnnotatedGetParts` passe par `::tcl::unsupported::content`, qui refait le contenu profond du lot ;
+  une vraie fonction de stub le lirait en place. **Recompiler `cstruct.so` / `cstruct.dll`** (même commande
+  qu'avant ; `cstruct.c` inclut `../../tclAnnotatedApi.h`).

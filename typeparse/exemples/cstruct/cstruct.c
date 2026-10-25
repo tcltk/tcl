@@ -58,6 +58,8 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <string.h>
+#include "../../tclAnnotatedApi.h"	/* les fonctions de stub prévues (cale) ;
+					 * à retirer quand elles existeront */
 
 typedef struct { uint32_t id; double value; uint8_t flags; } Sample;
 typedef struct { uint32_t n; Sample items[]; } Batch;
@@ -162,111 +164,100 @@ StatsRawCmd(void *cd, Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 }
 
 /*
- * Lecture d'un champ d'un produit annoté : l'objet annoté se comporte, pour
- * l'API publique, comme la liste de ses champs, dans l'ordre du type.
- * Reading a field of an annotated product: through the public API the object
- * behaves as the list of its fields, in the type's order.
+ * cs::stats_obj BATCH : C reçoit la valeur annotée elle-même. Écrit avec les
+ * fonctions C prévues pour les valeurs annotées (tclAnnotatedApi.h), comme
+ * exemples/geometrie/geo.c :
+ *   - Tcl_AnnotatedGetType : le type (un Batch, sinon erreur) ;
+ *   - Tcl_AnnotatedGetParts : ses champs n et items (règle B : un produit est
+ *     UN élément pour l'API de listes ; ses champs sont ses parties) ;
+ *   - Tcl_AnnotatedGetCells : en forme compacte, items EST un tableau de
+ *     Sample (même disposition, alignement naturel) : lu en place, sans
+ *     copie ni objet par mesure ;
+ *   - sinon, les parties de chaque mesure, copiées dans un tableau C.
+ * EN : written with the planned C functions for annotated values; in compact
+ *      form the items ARE an array of Sample, read in place.
  */
-static int
-TypeIs(Tcl_Interp *interp, Tcl_Obj *obj, const char *want)
-{
-    /*
-     * FR : AUJOURD'HUI le type d'une valeur annotée se demande à Tcl (`type get`).
-     *      Avec une fonction de stub Tcl_GetAnnotation(obj) -> Tcl_Obj*, ce serait
-     *      un simple appel C, sans évaluation de script.
-     * EN : TODAY a value's type is asked of Tcl (`type get`). With a stub
-     *      Tcl_GetAnnotation(obj) -> Tcl_Obj*, this would be a plain C call.
-     */
-    Tcl_Obj *cmd[3];
-    int ok;
-    cmd[0] = Tcl_NewStringObj("type", -1);
-    cmd[1] = Tcl_NewStringObj("get", -1);
-    cmd[2] = obj;
-    Tcl_IncrRefCount(cmd[0]); Tcl_IncrRefCount(cmd[1]);
-    ok = (Tcl_EvalObjv(interp, 3, cmd, 0) == TCL_OK
-	    && strcmp(Tcl_GetString(Tcl_GetObjResult(interp)), want) == 0);
-    Tcl_DecrRefCount(cmd[0]); Tcl_DecrRefCount(cmd[1]);
-    return ok;
-}
-
-/*
- * FR : v15 (règle B) : un produit est UN élément pour la vue liste ; ses champs
- *      sont son CONTENU. On le demande à Tcl (::tcl::unsupported::content), qui
- *      rend la liste brute des champs (et des produits imbriqués). Avec une
- *      fonction de stub, ce serait un appel C direct, comme pour TypeIs.
- * EN : v15 (rule B): a product is ONE element for the list view; its fields are
- *      its CONTENT, asked of Tcl. A stub function would make this a C call.
- */
-static Tcl_Obj *
-Content(Tcl_Interp *interp, Tcl_Obj *obj)
-{
-    Tcl_Obj *cmd[2], *res = NULL;
-
-    cmd[0] = Tcl_NewStringObj("::tcl::unsupported::content", -1);
-    cmd[1] = obj;
-    Tcl_IncrRefCount(cmd[0]);
-    if (Tcl_EvalObjv(interp, 2, cmd, 0) == TCL_OK) {
-	res = Tcl_GetObjResult(interp);
-	Tcl_IncrRefCount(res);
-    }
-    Tcl_DecrRefCount(cmd[0]);
-    return res;			/* une référence pour l'appelant, ou NULL */
-}
-
-/* cs::stats_obj BATCH : la valeur annotée elle-même. */
 static int
 StatsObjCmd(void *cd, Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 {
     Tcl_Size nf, ni, i, nsf;
-    Tcl_Obj **fields, **items, **sf, *content;
+    Tcl_Obj **fields, **items, **sf, *typeObj = NULL, *sampleType;
+    const void *cells = NULL;
     Tcl_WideInt n;
     Sample *s;
     Summary sm;
+    int isBatch, rc;
     (void) cd;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "batch");
 	return TCL_ERROR;
     }
-    if (!TypeIs(interp, objv[1], "Batch")) {
+    if (Tcl_AnnotatedGetType(interp, objv[1], &typeObj) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    isBatch = (typeObj != NULL && strcmp(Tcl_GetString(typeObj), "Batch") == 0);
+    if (typeObj != NULL) {
+	Tcl_IncrRefCount(typeObj);
+	Tcl_DecrRefCount(typeObj);
+    }
+    if (!isBatch) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"cs::stats_obj: argument is not a Batch", -1));
 	return TCL_ERROR;
     }
-    /* Batch = { n, items }, lu dans le contenu / read from the content */
-    content = Content(interp, objv[1]);
-    if (content == NULL) {
+    /* Batch = { n, items } */
+    if (Tcl_AnnotatedGetParts(interp, objv[1], TCL_ANNOT_PLAIN, &nf, &fields)
+	    != TCL_OK) {
 	return TCL_ERROR;
     }
-    if (Tcl_ListObjGetElements(interp, content, &nf, &fields) != TCL_OK
-	    || nf != 2
-	    || Tcl_GetWideIntFromObj(interp, fields[0], &n) != TCL_OK
-	    || Tcl_ListObjGetElements(interp, fields[1], &ni, &items) != TCL_OK) {
-	if (nf != 2) {
+    if (nf != 2) {
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"cs::stats_obj: a Batch has 2 fields", -1));
+	return TCL_ERROR;
+    }
+    if (Tcl_GetWideIntFromObj(interp, fields[0], &n) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    /* en cases : le tableau de Sample lui-même */
+    sampleType = Tcl_NewStringObj("Sample", -1);
+    Tcl_IncrRefCount(sampleType);
+    rc = Tcl_AnnotatedGetCells(interp, fields[1], sampleType, sizeof(Sample),
+	    &cells, &ni);
+    Tcl_DecrRefCount(sampleType);
+    if (rc != TCL_OK) {
+	return TCL_ERROR;
+    }
+    if (cells != NULL) {
+	if (n != ni) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "cs::stats_obj: a Batch has 2 fields", -1));
+		    "cs::stats_obj: n does not match the number of items", -1));
+	    return TCL_ERROR;
 	}
-	Tcl_DecrRefCount(content);
+	Compute((const Sample *) cells, (uint32_t) ni, &sm);
+	Tcl_SetObjResult(interp, SummaryBytes(&sm));
+	return TCL_OK;
+    }
+    /* forme ordinaire : les parties de chaque mesure */
+    if (Tcl_ListObjGetElements(interp, fields[1], &ni, &items) != TCL_OK) {
 	return TCL_ERROR;
     }
     if (n != ni) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"cs::stats_obj: n does not match the number of items", -1));
-	Tcl_DecrRefCount(content);
 	return TCL_ERROR;
     }
     s = (Sample *) Tcl_Alloc((size_t)(ni ? ni : 1) * sizeof(Sample));
     for (i = 0; i < ni; i++) {
 	Tcl_WideInt id, flags;
 	double v;
-	/* Sample = { id, value, flags } */
+	/* Sample = { id, value, flags } (contenu nu : GetParts est profond) */
 	if (Tcl_ListObjGetElements(interp, items[i], &nsf, &sf) != TCL_OK
 		|| nsf != 3
 		|| Tcl_GetWideIntFromObj(interp, sf[0], &id) != TCL_OK
 		|| Tcl_GetDoubleFromObj(interp, sf[1], &v) != TCL_OK
 		|| Tcl_GetWideIntFromObj(interp, sf[2], &flags) != TCL_OK) {
 	    Tcl_Free(s);
-	    Tcl_DecrRefCount(content);
 	    return TCL_ERROR;
 	}
 	s[i].id = (uint32_t) id;
@@ -275,7 +266,6 @@ StatsObjCmd(void *cd, Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
     }
     Compute(s, (uint32_t) ni, &sm);
     Tcl_Free(s);
-    Tcl_DecrRefCount(content);
     Tcl_SetObjResult(interp, SummaryBytes(&sm));
     return TCL_OK;
 }

@@ -789,7 +789,12 @@ TclTypeDictKeyAllowed(const TclType *tp, const char *key)
 TclType *
 TclTypeListOf(Tcl_Interp *interp, TclType *elem)
 {
-    return TclTypesMakeList(GetData(interp), elem);
+    /* list.T est interné une fois pour toutes (la table des types le garde
+     * aussi longtemps que T) : le pointeur se garde dans T */
+    if (elem->listOf == NULL) {
+	elem->listOf = TclTypesMakeList(GetData(interp), elem);
+    }
+    return elem->listOf;
 }
 
 /* --------------------------------------------------------------------

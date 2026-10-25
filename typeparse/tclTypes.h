@@ -21,7 +21,7 @@
  * VAR_* de tclInt.h). La valeur ci-dessous est un PLACEHOLDER. */
 /* Version du prototype TIP 764 (typeparse/VERSION, maj.sh, et
  * tcl::unsupported::typesversion). */
-#define TCL_TYPES_VERSION "v16e"
+#define TCL_TYPES_VERSION "v16f"
 
 #ifndef VAR_TYPED
 #define VAR_TYPED	0x400000
@@ -129,6 +129,8 @@ struct TclType {
     TclBinDyn *binDyn;		/* chaîne ou liste : taille / nombre dynamique */
     char *binAt;		/* at(EXPR).T : position de la valeur (texte) */
     struct TclType *binAtBody;	/* at(EXPR).T : T (codec C) */
+    struct TclType *listOf;	/* list.T de ce type, déjà interné (cache de
+				 * TclTypeListOf : $P(*)) */
     TclBinLink *binLink;	/* *(...).T : la valeur est désignée par un entier */
     struct TclType *refOf;	/* type adresse de frontière : le lien dont il est
 				 * l'adresse (position absolue de la cible) */
