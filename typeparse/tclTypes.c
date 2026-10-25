@@ -7407,9 +7407,29 @@ DeepContent(Tcl_Obj *obj)
     if (i == n) {
 	return obj;			/* rien d'annoté dedans */
     }
-    res = Tcl_NewListObj(0, NULL);
-    for (i = 0; i < n; i++) {
-	Tcl_ListObjAppendElement(NULL, res, DeepContent(elv[i]));
+    {
+	/* la liste n'est refaite que si un élément change vraiment (une
+	 * liste imbriquée sans annotation reste telle quelle) */
+	Tcl_Obj *first = NULL;
+	Tcl_Size j;
+
+	for (; i < n; i++) {
+	    first = DeepContent(elv[i]);
+	    if (first != elv[i]) {
+		break;
+	    }
+	}
+	if (i == n) {
+	    return obj;
+	}
+	res = Tcl_NewListObj(n, NULL);
+	for (j = 0; j < i; j++) {
+	    Tcl_ListObjAppendElement(NULL, res, elv[j]);
+	}
+	Tcl_ListObjAppendElement(NULL, res, first);
+	for (j = i + 1; j < n; j++) {
+	    Tcl_ListObjAppendElement(NULL, res, DeepContent(elv[j]));
+	}
     }
     return res;
 }
@@ -7499,6 +7519,100 @@ ContentObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
     (void) content;
     Tcl_SetObjResult(interp, DeepContent(objv[1]));
     return TCL_OK;
+}
+
+/*
+ * Instruction tupleAssign ("(a, (b, c), d) = v" dans expr) : le contenu
+ * profond de v (comme ::tcl::unsupported::content), puis, pour chaque
+ * chemin de PATHS ({0} {1 0} {1 1} {2}, établi à la compilation), le nom
+ * au chemin dans NAMES reçoit l'élément au même chemin du contenu (un
+ * élément absent donne "", comme lindex), dans l'ordre, comme le faisaient
+ * listIndexImm et storeStk. Rend le contenu avec une référence pour
+ * l'appelant, ou NULL (message dans l'interpréteur).
+ */
+static int
+TupleIndex(Tcl_Interp *interp, Tcl_Obj *list, Tcl_Obj *const *pv,
+	Tcl_Size np, Tcl_Obj **res)
+{
+    Tcl_Obj *cur = list;
+    Tcl_Size k;
+    Tcl_WideInt idx;
+
+    for (k = 0; k < np; k++) {
+	Tcl_Obj *e = NULL;
+
+	if (Tcl_GetWideIntFromObj(interp, pv[k], &idx) != TCL_OK
+		|| Tcl_ListObjIndex(interp, cur, (Tcl_Size) idx, &e) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	if (e == NULL) {
+	    *res = Tcl_NewObj();	/* absent : "" (les niveaux suivants
+					 * aussi, comme listIndexImm) */
+	    return TCL_OK;
+	}
+	cur = e;
+    }
+    *res = cur;
+    return TCL_OK;
+}
+
+Tcl_Obj *
+TclTupleAssign(Tcl_Interp *interp, Tcl_Obj *names, Tcl_Obj *value,
+	Tcl_Obj *paths)
+{
+    Tcl_Obj *content = DeepContent(value), **pv;
+    Tcl_Size np, i;
+
+    Tcl_IncrRefCount(content);
+    if (Tcl_ListObjGetElements(interp, paths, &np, &pv) != TCL_OK) {
+	goto error;
+    }
+    for (i = 0; i < np; i++) {
+	/* chaque entrée : {LOCAL i0 i1 ...} ; LOCAL >= 0 : variable locale
+	 * compilée (comme storeScalar), sinon le nom au même chemin dans
+	 * NAMES (comme storeStk) */
+	Tcl_Obj *name = NULL, *val = NULL, **ev;
+	Tcl_Size ne;
+	Tcl_WideInt lv;
+	int ok;
+
+	if (Tcl_ListObjGetElements(interp, pv[i], &ne, &ev) != TCL_OK
+		|| ne < 2 || Tcl_GetWideIntFromObj(interp, ev[0], &lv) != TCL_OK) {
+	    goto error;
+	}
+	Tcl_IncrRefCount(pv[i]);		/* ev reste valable */
+	if (TupleIndex(interp, content, ev + 1, ne - 1, &val) != TCL_OK) {
+	    Tcl_DecrRefCount(pv[i]);
+	    goto error;
+	}
+	Tcl_IncrRefCount(val);
+	if (lv >= 0) {
+	    Interp *iPtr = (Interp *) interp;
+	    Var *varPtr = &iPtr->varFramePtr->compiledLocals[lv];
+
+	    while (TclIsVarLink(varPtr)) {
+		varPtr = varPtr->value.linkPtr;
+	    }
+	    ok = (TclPtrSetVarIdx(interp, varPtr, NULL, NULL, NULL, val,
+		    TCL_LEAVE_ERR_MSG, (int) lv) != NULL);
+	} else if (TupleIndex(interp, names, ev + 1, ne - 1, &name) != TCL_OK) {
+	    ok = 0;
+	} else {
+	    Tcl_IncrRefCount(name);
+	    ok = (Tcl_ObjSetVar2(interp, name, NULL, val, TCL_LEAVE_ERR_MSG)
+		    != NULL);
+	    Tcl_DecrRefCount(name);
+	}
+	Tcl_DecrRefCount(val);
+	Tcl_DecrRefCount(pv[i]);
+	if (!ok) {
+	    goto error;
+	}
+    }
+    return content;
+  error:
+    Tcl_DecrRefCount(content);
+    return NULL;
 }
 
 /* tcl::unsupported::typesversion : la version du prototype compilée

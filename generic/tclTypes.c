@@ -548,6 +548,7 @@ TclTypesMakeAt(TypeData *d, TclType *elem, const char *expr)
 	CopyInto(tp, elem);
 	tp->refine = elem->refine;
 	tp->binAt = TclTypesKeepText(d, expr, (Tcl_Size) strlen(expr));
+	tp->binAtBody = elem;
 	tp->binBase = (elem->binBase != NULL) ? elem->binBase : elem;
 	Tcl_SetHashValue(hPtr, tp);
     } else {
@@ -3828,6 +3829,7 @@ CopyInto(TclType *into, const TclType *res)
     into->binEnc = res->binEnc;
     into->binDyn = res->binDyn;
     into->binAt = res->binAt;
+    into->binAtBody = res->binAtBody;
     into->binLink = res->binLink;
     into->binTag = res->binTag;
     if (into->family == NULL && res->family != NULL) {
@@ -4691,17 +4693,21 @@ BinCallFb(Tcl_Interp *interp, const char *cmd, Tcl_Obj *typeObj,
 }
 
 /* --------------------------------------------------------------------
- * Codec C de « type binary encode » pour les dispositions FIXES
+ * Codec C de « type binary encode / decode »
  * --------------------------------------------------------------------
  *
- * Entiers u/s de 1, 2, 4 ou 8 octets, flottants de 4 ou 8 octets, produits
- * de ces types, listes de taille fixe (list(N).T) ou donnée par un champ
- * déjà écrit du même produit (list($n).T). Même disposition que la couche
- * Tcl (layout/filebinary.tcl) : remplissage avant chaque champ jusqu'à son
- * alignement, et à la fin d'un produit jusqu'au sien ; alignement d'un
- * scalaire = la plus grande puissance de 2 <= sa taille, plafonnée par
- * -align. Tout le reste (chaînes, sommes, liens, at(...), préfixes de
- * taille, bitarray, -dedupe, valeur non typée, incohérence n / éléments)
+ * Entiers u/s de 1, 2, 4 ou 8 octets, flottants de 4 ou 8 octets, produits,
+ * listes de taille fixe (list(N).T), chaînes fixes et à zéro final, sommes
+ * de littéraux et balisées (v16a) ; tailles et nombres dynamiques : préfixe
+ * (string(utf-8,int(u,16,be)), list(int(u,8)).T) ou expression entière sur
+ * les champs déjà lus ($len, $len - 4, ($a + $b) * 2) ; at(EXPR).T ; liens
+ * *(ORIGINE,REPR).T (origines //, ., ./, ../, cibles quelconques, opt(T))
+ * (v16d). Même disposition que la couche Tcl (layout/filebinary.tcl) :
+ * remplissage avant chaque champ jusqu'à son alignement, et à la fin d'un
+ * produit jusqu'au sien ; alignement d'un scalaire = la plus grande
+ * puissance de 2 <= sa taille, plafonnée par -align. Le reste (bitarray,
+ * référentiels nommés, -linkdepth fini, -dedupe, lien nul d'un champ à
+ * défaut, $h(off) dans une expression, valeur non typée, toute erreur)
  * rend TCL_CONTINUE : la couche Tcl s'en charge, avec ses messages.
  * La variable globale tcl_typebinaryc = 0 désactive le codec (comparaisons).
  */
@@ -4769,9 +4775,13 @@ BinFastScalar(const TclType *tp)
 
 /*
  * Chaînes couvertes par le codec C : octets ou texte de taille fixe
- * (string(raw,8), string(utf-8,16)) et texte terminé par un zéro
- * (cstring). Les tailles lues ailleurs ou calculées : couche Tcl.
+ * (string(raw,8), string(utf-8,16)), texte terminé par un zéro (cstring),
+ * et taille dynamique couverte (BinDynCovered : préfixe, expression).
  */
+static int BinDynCovered(const TclBinDyn *dyn);
+
+static int BinExprCovered(const char *text);
+
 static int
 BinFastString(const TclType *tp)
 {
@@ -4780,7 +4790,8 @@ BinFastString(const TclType *tp)
 	return 0;
     }
     if ((tp->binKind == TCLBIN_BYTES || tp->binKind == TCLBIN_STR)
-	    && tp->binDyn == NULL && tp->binSize >= 0
+	    && (tp->binDyn == NULL ? tp->binSize >= 0
+		: BinDynCovered(tp->binDyn))
 	    && (tp->binKind == TCLBIN_BYTES || tp->binEnc != NULL)) {
 	return 1;
     }
@@ -4862,12 +4873,163 @@ BinTagVariant(const TclType *sum, const TclType *encl, Tcl_Obj **vals,
 /* Contexte d'un encodage : options et mémo des alignements par type. */
 #define BIN_MEMO 16
 typedef struct {
+    size_t off;
+    BinBuf buf;
+} BinLate;
+
+typedef struct {
     size_t cap;
     int bigDefault, hostBig, nmemo;
     BinBuf *out;
     const TclType *memoT[BIN_MEMO];
     size_t memoA[BIN_MEMO];
+    BinLate *late;		/* at(...) : posées à la fin, dans l'ordre */
+    int nlate, maxlate;
+    size_t wbase;		/* position de out dans la sortie (at(...)) */
+    size_t *starts;		/* débuts des structures englobantes */
+    int nstarts, maxstarts;
+    struct BinPend *pend;	/* liens : cibles à écrire après la valeur */
+    int npend, maxpend;
 } BinCtx;
+
+/* Une cible de lien en attente (encodage) : écrite après la valeur, puis
+ * son adresse reportée à patch (comme flushLinks de la couche Tcl). */
+typedef struct BinPend {
+    size_t patch, origin;
+    const TclType *repr, *target;
+    Tcl_Obj *payload;		/* référence tenue */
+    const TclType *encl;	/* produit dont les champs sont la portée */
+    Tcl_Obj *scope;		/* ses champs (liste), référence tenue, ou NULL */
+    int fin;
+} BinPend;
+
+static void
+BinStartPush(size_t **sp, int *n, int *max, size_t pos)
+{
+    if (*n == *max) {
+	*max = *max ? 2 * *max : 8;
+	*sp = (size_t *) Tcl_Realloc(*sp, *max * sizeof(size_t));
+    }
+    (*sp)[(*n)++] = pos;
+}
+
+static void
+BinPendFree(BinCtx *c, int from)
+{
+    int k;
+
+    for (k = from; k < c->npend; k++) {
+	Tcl_DecrRefCount(c->pend[k].payload);
+	if (c->pend[k].scope != NULL) {
+	    Tcl_DecrRefCount(c->pend[k].scope);
+	}
+    }
+    c->npend = from;
+}
+
+/*
+ * Liens *(ORIGINE,REPR).T dans le codec C : origines //, ., ./, ../, ../../
+ * (pas les référentiels nommés), adresse entière de 1, 2, 4 ou 8 octets,
+ * cible quelconque couverte, opt(T) ({T}some, {unit}none). Pas de
+ * -linkdepth fini, ni de -dedupe, ni de lien de frontière, ni de lien nul
+ * hors opt (champ à défaut) : la couche Tcl.
+ */
+static int
+BinOriginPos(const char *origin, const size_t *starts, int nstarts,
+	size_t here, size_t top, size_t *posPtr)
+{
+    size_t len = strlen(origin), k;
+    int i;
+
+    if (strcmp(origin, "//") == 0) {
+	*posPtr = top;
+	return 1;
+    }
+    if (strcmp(origin, ".") == 0) {
+	*posPtr = here;
+	return 1;
+    }
+    if (strcmp(origin, "./") == 0) {
+	*posPtr = nstarts ? starts[nstarts - 1] : top;
+	return 1;
+    }
+    if (len == 0 || len % 3 != 0) {
+	return 0;
+    }
+    for (k = 0; k < len; k += 3) {
+	if (strncmp(origin + k, "../", 3) != 0) {
+	    return 0;			/* un référentiel nommé : couche Tcl */
+	}
+    }
+    i = nstarts - 1 - (int) (len / 3);
+    if (i < 0) {
+	return 0;			/* le message : couche Tcl */
+    }
+    *posPtr = starts[i];
+    return 1;
+}
+
+static int
+BinOriginCovered(const char *origin)
+{
+    size_t len = strlen(origin), k;
+
+    if (strcmp(origin, "//") == 0 || strcmp(origin, ".") == 0
+	    || strcmp(origin, "./") == 0) {
+	return 1;
+    }
+    if (len == 0 || len % 3 != 0) {
+	return 0;
+    }
+    for (k = 0; k < len; k += 3) {
+	if (strncmp(origin + k, "../", 3) != 0) {
+	    return 0;
+	}
+    }
+    return 1;
+}
+
+/* Lien vers opt(T) : le type T de {T}some (et les indices des variantes),
+ * ou NULL (comme LinkReprBody). */
+static const TclType *
+BinLinkSome(const TclType *tp, int *someIdx, int *noneIdx)
+{
+    const TclType *t = tp->binLink->target, *some = NULL;
+    Tcl_Size i;
+    int hasNone = 0;
+
+    if (t->kind != TCLT_SUM || t->binTag != NULL || t->binLink != NULL
+	    || t->nfields != 2) {
+	return NULL;
+    }
+    for (i = 0; i < t->nfields; i++) {
+	const char *nm = t->fields[i].name ? Tcl_GetString(t->fields[i].name)
+		: "";
+
+	if (strcmp(nm, "some") == 0) {
+	    some = t->fields[i].type;
+	    if (someIdx) {
+		*someIdx = (int) i;
+	    }
+	} else if (strcmp(nm, "none") == 0) {
+	    hasNone = 1;
+	    if (noneIdx) {
+		*noneIdx = (int) i;
+	    }
+	}
+    }
+    return hasNone ? some : NULL;
+}
+
+/* La valeur nulle d'un lien (texte), ou NULL s'il n'en a pas. */
+static const char *
+BinLinkNull(const TclType *tp)
+{
+    if (tp->binLink->nullVal != NULL) {
+	return tp->binLink->nullVal;
+    }
+    return BinLinkSome(tp, NULL, NULL) != NULL ? "0" : NULL;
+}
 
 static size_t BinFastAlign(const TclType *tp, size_t cap, int depth);
 
@@ -4890,6 +5052,54 @@ BinAlignOf(BinCtx *c, const TclType *tp, int depth)
     return a;
 }
 
+/* Les cibles des liens atteignables depuis tp sont-elles couvertes ?
+ * (BinFastAlign ne suit pas les liens : une liste chaînée est récursive) */
+static int
+BinLinksCovered(const TclType *tp, size_t cap, const TclType **seen,
+	int *nseen, int depth)
+{
+    Tcl_Size i;
+    int k;
+
+    if (tp == NULL || depth > 64) {
+	return 0;
+    }
+    for (k = 0; k < *nseen; k++) {
+	if (seen[k] == tp) {
+	    return 1;
+	}
+    }
+    if (*nseen >= 64) {
+	return 0;
+    }
+    seen[(*nseen)++] = tp;
+    if (tp->binLink != NULL) {
+	const TclType *t = BinLinkSome(tp, NULL, NULL);
+
+	if (t == NULL) {
+	    t = tp->binLink->target;
+	}
+	return BinFastAlign(t, cap, 0) != 0
+		&& BinLinksCovered(t, cap, seen, nseen, depth + 1);
+    }
+    if (tp->binAt != NULL) {
+	return BinLinksCovered(tp->binAtBody, cap, seen, nseen, depth + 1);
+    }
+    if (tp->kind == TCLT_LIST && tp->elem != NULL) {
+	return BinLinksCovered(tp->elem, cap, seen, nseen, depth + 1);
+    }
+    if (tp->kind == TCLT_PRODUCT || (tp->kind == TCLT_SUM
+	    && tp->binTag != NULL)) {
+	for (i = 0; i < tp->nfields; i++) {
+	    if (tp->fields[i].type != NULL && !BinLinksCovered(
+		    tp->fields[i].type, cap, seen, nseen, depth + 1)) {
+		return 0;
+	    }
+	}
+    }
+    return 1;
+}
+
 /* Alignement d'un type couvert ; 0 si le type n'est pas couvert. */
 static size_t
 BinFastAlign(const TclType *tp, size_t cap, int depth)
@@ -4899,6 +5109,20 @@ BinFastAlign(const TclType *tp, size_t cap, int depth)
 
     if (depth > 32) {
 	return 0;
+    }
+    if (tp->binLink != NULL) {
+	/* *(ORIGINE,REPR).T : l'adresse ici (la cible : BinLinksCovered) */
+	if (tp->binAt != NULL || !BinOriginCovered(tp->binLink->origin)
+		|| !BinFastScalar(tp->binLink->repr)) {
+	    return 0;
+	}
+	return BinFastAlign(tp->binLink->repr, cap, depth + 1);
+    }
+    if (tp->binAt != NULL) {
+	/* at(EXPR).T : ailleurs ; alignement 1 ici, comme la couche Tcl */
+	return (tp->binAtBody != NULL && tp->binLink == NULL
+		&& BinExprCovered(tp->binAt)
+		&& BinFastAlign(tp->binAtBody, cap, depth + 1) != 0) ? 1 : 0;
     }
     if (BinFastScalar(tp)) {
 	size_t p = 1;
@@ -4925,8 +5149,7 @@ BinFastAlign(const TclType *tp, size_t cap, int depth)
 	return 0;
     }
     if (tp->kind == TCLT_LIST && tp->elem != NULL) {
-	if (tp->binDyn != NULL && (tp->binDyn->kind != TCLDYN_EXPR
-		|| tp->binDyn->expr == NULL || tp->binDyn->expr[0] != '$')) {
+	if (tp->binDyn != NULL && !BinDynCovered(tp->binDyn)) {
 	    return 0;
 	}
 	if (tp->binDyn == NULL && tp->arity < 0) {
@@ -4974,8 +5197,8 @@ BinFlat(BinCtx *c, const TclType *tp, size_t *pos, int depth, int k,
 {
     Tcl_Size i;
 
-    if (depth > 32) {
-	return -1;
+    if (depth > 32 || tp->binLink != NULL || tp->binAt != NULL) {
+	return -1;			/* un lien, at(...) : pas une case */
     }
     if (BinFastScalar(tp)) {
 	int big = tp->binEnd == TCLBIN_BE
@@ -5061,26 +5284,245 @@ BinCopyCells(unsigned char *dst, const unsigned char *src, Tcl_Size n,
     }
 }
 
-/* list($n).T : le nombre voulu, lu dans le champ n déjà écrit ou lu. */
-static int
-BinDynCount(const TclType *tp, const TclType *encl, Tcl_Obj **vals,
-	Tcl_Size nvals, Tcl_WideInt *wantPtr)
-{
-    const char *name = tp->binDyn->expr + 1;
-    Tcl_Size f;
+/*
+ * Tailles et nombres dynamiques (TclBinDyn) dans le codec C.
+ *
+ * Expression : le sous-ensemble entier d'expr que la couche Tcl évalue le
+ * plus souvent, sur les champs déjà lus ou écrits du produit englobant :
+ * $champ, entiers, + - * / % (division et reste au plancher, comme expr),
+ * moins unaire, parenthèses. Tout le reste ($h(off), champ d'un produit
+ * extérieur, nombre non entier, division par zéro, taille négative) rend
+ * TCL_CONTINUE : la couche Tcl, avec ses messages.
+ */
+typedef struct {
+    const char *p;
+    const TclType *encl;
+    Tcl_Obj **vals;
+    Tcl_Size nvals;
+    int bad;
+} BinExprCtx;
 
-    if (encl == NULL) {
-	return TCL_CONTINUE;
+static Tcl_WideInt BinExprSum(BinExprCtx *e);
+
+static void
+BinExprSkip(BinExprCtx *e)
+{
+    while (*e->p == ' ' || *e->p == '\t') {
+	e->p++;
     }
-    for (f = 0; f < nvals; f++) {
-	if (encl->fields[f].name != NULL
-		&& strcmp(Tcl_GetString(encl->fields[f].name), name) == 0) {
-	    break;
+}
+
+static Tcl_WideInt
+BinExprAtom(BinExprCtx *e)
+{
+    Tcl_WideInt v = 0;
+
+    BinExprSkip(e);
+    if (*e->p == '-') {
+	e->p++;
+	return -BinExprAtom(e);
+    }
+    if (*e->p == '+') {
+	e->p++;
+	return BinExprAtom(e);
+    }
+    if (*e->p == '(') {
+	e->p++;
+	v = BinExprSum(e);
+	BinExprSkip(e);
+	if (*e->p != ')') {
+	    e->bad = 1;
+	    return 0;
+	}
+	e->p++;
+	return v;
+    }
+    if (*e->p >= '0' && *e->p <= '9') {
+	if (e->p[0] == '0' && e->p[1] != '\0' && strchr("xXbBoO", e->p[1])) {
+	    e->bad = 1;			/* 0x10... : la couche Tcl */
+	    return 0;
+	}
+	while (*e->p >= '0' && *e->p <= '9') {
+	    if (v > (WIDE_MAX - 9) / 10) {
+		e->bad = 1;
+		return 0;
+	    }
+	    v = v * 10 + (*e->p++ - '0');
+	}
+	return v;
+    }
+    if (*e->p == '$') {
+	const char *q = ++e->p;
+	Tcl_Size f, len;
+
+	while (isalnum(UCHAR(*e->p)) || *e->p == '_') {
+	    e->p++;
+	}
+	len = e->p - q;
+	if (len == 0 || *e->p == '(' || *e->p == ':' || e->encl == NULL) {
+	    e->bad = 1;			/* $h(off), ${x}, ::x : la couche Tcl */
+	    return 0;
+	}
+	for (f = 0; f < e->nvals; f++) {
+	    const char *fn = (e->encl->fields[f].name != NULL)
+		    ? Tcl_GetString(e->encl->fields[f].name) : NULL;
+
+	    if (fn != NULL && (Tcl_Size) strlen(fn) == len
+		    && strncmp(fn, q, (size_t) len) == 0) {
+		break;
+	    }
+	}
+	if (f == e->nvals || Tcl_GetWideIntFromObj(NULL,
+		BinContent(e->vals[f]), &v) != TCL_OK) {
+	    e->bad = 1;
+	    return 0;
+	}
+	return v;
+    }
+    e->bad = 1;
+    return 0;
+}
+
+static Tcl_WideInt
+BinExprProd(BinExprCtx *e)
+{
+    Tcl_WideInt v = BinExprAtom(e), w, q;
+
+    for (;;) {
+	char op;
+
+	BinExprSkip(e);
+	op = *e->p;
+	if (e->bad || (op != '*' && op != '/' && op != '%') || e->p[1] == '*') {
+	    return v;			/* ** : la couche Tcl */
+	}
+	e->p++;
+	w = BinExprAtom(e);
+	if (e->bad) {
+	    return 0;
+	}
+	if (op == '*') {
+	    v *= w;
+	} else if (w == 0) {
+	    e->bad = 1;
+	    return 0;
+	} else {
+	    /* division et reste au plancher, comme expr */
+	    q = v / w;
+	    if ((v % w != 0) && ((v < 0) != (w < 0))) {
+		q--;
+	    }
+	    v = (op == '/') ? q : v - q * w;
 	}
     }
-    if (f == nvals || Tcl_GetWideIntFromObj(NULL, BinContent(vals[f]),
-	    wantPtr) != TCL_OK) {
+}
+
+static Tcl_WideInt
+BinExprSum(BinExprCtx *e)
+{
+    Tcl_WideInt v = BinExprProd(e), w;
+
+    for (;;) {
+	char op;
+
+	BinExprSkip(e);
+	op = *e->p;
+	if (e->bad || (op != '+' && op != '-')) {
+	    return v;
+	}
+	e->p++;
+	w = BinExprProd(e);
+	v = (op == '+') ? v + w : v - w;
+    }
+}
+
+/* L'expression est-elle de la forme couverte ? (syntaxe seulement) */
+static int
+BinExprCovered(const char *text)
+{
+    const char *p;
+
+    for (p = text; *p != '\0'; p++) {
+	if (strchr("0123456789+-*/%() \t$_", *p) == NULL && !isalnum(UCHAR(*p))) {
+	    return 0;
+	}
+	if (*p == '$' && (p[1] == '{' || !(isalpha(UCHAR(p[1])) || p[1] == '_'))) {
+	    return 0;
+	}
+	if (*p == '*' && p[1] == '*') {
+	    return 0;
+	}
+    }
+    return 1;
+}
+
+/* Une taille dynamique couverte : préfixe entier 1, 2, 4 ou 8 octets, ou
+ * expression de la forme couverte. */
+static int
+BinDynCovered(const TclBinDyn *dyn)
+{
+    if (dyn->kind == TCLDYN_PREFIX) {
+	return dyn->pre != NULL && BinFastScalar(dyn->pre)
+		&& dyn->pre->binKind == TCLBIN_UINT;
+    }
+    return dyn->kind == TCLDYN_EXPR && dyn->expr != NULL
+	    && BinExprCovered(dyn->expr);
+}
+
+/* La valeur d'une expression de taille ou de position : TCL_OK, ou
+ * TCL_CONTINUE. */
+static int
+BinExprValue(const char *text, const TclType *encl, Tcl_Obj **vals,
+	Tcl_Size nvals, Tcl_WideInt *wantPtr)
+{
+    BinExprCtx e;
+    Tcl_WideInt v;
+
+    e.p = text;
+    e.encl = encl;
+    e.vals = vals;
+    e.nvals = nvals;
+    e.bad = 0;
+    v = BinExprSum(&e);
+    BinExprSkip(&e);
+    if (e.bad || *e.p != '\0' || v < 0) {
 	return TCL_CONTINUE;
+    }
+    *wantPtr = v;
+    return TCL_OK;
+}
+
+static int
+BinDynExpr(const TclBinDyn *dyn, const TclType *encl, Tcl_Obj **vals,
+	Tcl_Size nvals, Tcl_WideInt *wantPtr)
+{
+    return BinExprValue(dyn->expr, encl, vals, nvals, wantPtr);
+}
+
+static int BinFastEnc(BinCtx *c, const TclType *tp, Tcl_Obj *v,
+	const TclType *encl, Tcl_Obj **vals, Tcl_Size nvals, int depth);
+static int BinFlushLinks(BinCtx *c);
+
+/* Écriture : n éléments ou octets. Préfixe : écrit (tronqué comme binary
+ * format) ; expression : doit valoir n. */
+static int
+BinDynWrite(BinCtx *c, const TclBinDyn *dyn, Tcl_Size n, const TclType *encl,
+	Tcl_Obj **vals, Tcl_Size nvals)
+{
+    Tcl_WideInt want;
+    Tcl_Obj *o;
+    int rc;
+
+    if (dyn->kind == TCLDYN_PREFIX) {
+	o = Tcl_NewWideIntObj((Tcl_WideInt) n);
+	Tcl_IncrRefCount(o);
+	rc = BinFastEnc(c, dyn->pre, o, NULL, NULL, 0, 1);
+	Tcl_DecrRefCount(o);
+	return rc;
+    }
+    if (BinDynExpr(dyn, encl, vals, nvals, &want) != TCL_OK
+	    || want != (Tcl_WideInt) n) {
+	return TCL_CONTINUE;		/* le message : couche Tcl */
     }
     return TCL_OK;
 }
@@ -5095,6 +5537,156 @@ BinFastEnc(BinCtx *c, const TclType *tp, Tcl_Obj *v, const TclType *encl,
     Tcl_Size n, i;
 
     v = BinContent(v);
+    if (tp->binLink != NULL) {
+	/* *(ORIGINE,REPR).T : l'adresse 0 ici, la cible après la valeur
+	 * (BinFlushLinks), son adresse reportée ensuite */
+	const TclBinLink *lk = tp->binLink;
+	const TclType *target = lk->target, *some;
+	Tcl_Obj *payload = orig, *zero;
+	TclType *ot = NULL;
+	size_t origin;
+	int someIdx = -1, noneIdx = -1, var = -1, rc;
+
+	if (lk->ref != NULL && TclAnnotInfo(orig, NULL, &ot, NULL, NULL) == 1
+		&& ot == lk->ref) {
+	    return TCL_CONTINUE;	/* lien de frontière : couche Tcl */
+	}
+	some = BinLinkSome(tp, &someIdx, &noneIdx);
+	if (some != NULL) {
+	    Tcl_Obj *content = NULL;
+
+	    if (TclAnnotInfo(orig, &content, &ot, &var, NULL) != 1) {
+		/* champ d'un produit : contenu nu, la variante se déduit
+		 * (comme la lecture $x(champ) de la couche Tcl) */
+		Tcl_Size ln = 1;
+
+		ot = lk->target;
+		content = v;
+		var = -1;
+		if (Tcl_ListObjLength(NULL, content, &ln) != TCL_OK) {
+		    return TCL_CONTINUE;
+		}
+		if (ln > 0) {
+		    var = someIdx;	/* none est "" : un contenu non vide est
+					 * some (sa forme : à l'encodage) ; pas de
+					 * validation de toute la suite */
+		} else if (TclTypeValidate(NULL, ot, content, -1, &var)
+			!= TCL_OK) {
+		    return TCL_CONTINUE;
+		}
+	    }
+	    if (ot == NULL || ot->kind != TCLT_SUM || var < 0
+		    || var >= (int) ot->nfields || ot->fields[var].name == NULL) {
+		return TCL_CONTINUE;
+	    }
+	    if (strcmp(Tcl_GetString(ot->fields[var].name), "none") == 0) {
+		Tcl_WideInt w;
+		Tcl_Obj *nt = Tcl_NewStringObj(BinLinkNull(tp), -1);
+
+		Tcl_IncrRefCount(nt);
+		rc = Tcl_GetWideIntFromObj(NULL, nt, &w);
+		Tcl_DecrRefCount(nt);
+		if (rc != TCL_OK) {
+		    return TCL_CONTINUE;
+		}
+		zero = Tcl_NewWideIntObj(w);
+		Tcl_IncrRefCount(zero);
+		rc = BinFastEnc(c, lk->repr, zero, NULL, NULL, 0, depth + 1);
+		Tcl_DecrRefCount(zero);
+		return rc;
+	    }
+	    if (strcmp(Tcl_GetString(ot->fields[var].name), "some") != 0) {
+		return TCL_CONTINUE;
+	    }
+	    payload = content;
+	    target = some;
+	}
+	if (!BinOriginPos(lk->origin, c->starts, c->nstarts,
+		c->wbase + out->len, 0, &origin)) {
+	    return TCL_CONTINUE;
+	}
+	if (c->npend == c->maxpend) {
+	    c->maxpend = c->maxpend ? 2 * c->maxpend : 8;
+	    c->pend = (BinPend *) Tcl_Realloc(c->pend,
+		    c->maxpend * sizeof(BinPend));
+	}
+	c->pend[c->npend].patch = out->len;
+	c->pend[c->npend].origin = origin;
+	c->pend[c->npend].repr = lk->repr;
+	c->pend[c->npend].target = target;
+	c->pend[c->npend].payload = payload;
+	Tcl_IncrRefCount(payload);
+	c->pend[c->npend].encl = NULL;
+	c->pend[c->npend].scope = NULL;
+	c->pend[c->npend].fin = 0;
+	c->npend++;
+	zero = Tcl_NewWideIntObj(0);
+	Tcl_IncrRefCount(zero);
+	rc = BinFastEnc(c, lk->repr, zero, NULL, NULL, 0, depth + 1);
+	Tcl_DecrRefCount(zero);
+	return rc;
+    }
+    if (tp->binAt != NULL) {
+	/* at(EXPR).T : encodé à part, posé à la position EXPR à la fin (le
+	 * remplissage y est compté depuis le début de la partie, comme dans
+	 * la couche Tcl) */
+	Tcl_WideInt off;
+	BinBuf sub = {NULL, 0, 0};
+	int rc;
+
+	if (tp->binAtBody == NULL || BinExprValue(tp->binAt, encl, vals, nvals,
+		&off) != TCL_OK) {
+	    return TCL_CONTINUE;
+	}
+	{
+	    /* comme la couche Tcl : wbase = la position, pas de structure
+	     * englobante, des liens à part (écrits dans la partie) */
+	    size_t sw = c->wbase, *ss = c->starts;
+	    int sn = c->nstarts, sm = c->maxstarts, pn = c->npend;
+	    int pm = c->maxpend;
+	    BinPend *pp = c->pend;
+
+	    c->wbase = (size_t) off;
+	    c->starts = NULL;
+	    c->nstarts = c->maxstarts = 0;
+	    c->pend = NULL;
+	    c->npend = c->maxpend = 0;
+	    c->out = &sub;
+	    rc = BinFastEnc(c, tp->binAtBody, v, encl, vals, nvals, depth + 1);
+	    if (rc == TCL_OK) {
+		rc = BinFlushLinks(c);
+	    }
+	    BinPendFree(c, 0);
+	    if (c->pend != NULL) {
+		Tcl_Free(c->pend);
+	    }
+	    if (c->starts != NULL) {
+		Tcl_Free(c->starts);
+	    }
+	    c->out = out;
+	    c->wbase = sw;
+	    c->starts = ss;
+	    c->nstarts = sn;
+	    c->maxstarts = sm;
+	    c->pend = pp;
+	    c->npend = pn;
+	    c->maxpend = pm;
+	}
+	if (rc != TCL_OK) {
+	    if (sub.p != NULL) {
+		Tcl_Free(sub.p);
+	    }
+	    return rc;
+	}
+	if (c->nlate == c->maxlate) {
+	    c->maxlate = c->maxlate ? 2 * c->maxlate : 8;
+	    c->late = (BinLate *) Tcl_Realloc(c->late,
+		    c->maxlate * sizeof(BinLate));
+	}
+	c->late[c->nlate].off = (size_t) off;
+	c->late[c->nlate++].buf = sub;
+	return TCL_OK;
+    }
     if (tp->kind == TCLT_SUM && tp->binTag != NULL) {
 	/* somme balisée : la balise (déjà écrite) choisit la variante, qui
 	 * doit être celle de la valeur */
@@ -5123,9 +5715,18 @@ BinFastEnc(BinCtx *c, const TclType *tp, Tcl_Obj *v, const TclType *encl,
     if (BinFastString(tp)) {
 	if (tp->binKind == TCLBIN_BYTES) {
 	    unsigned char *b = Tcl_GetBytesFromObj(NULL, v, &n);
+	    int rc;
 
 	    if (b == NULL) {
 		return TCL_CONTINUE;
+	    }
+	    if (tp->binDyn != NULL) {
+		/* string(raw,$len), string(raw,int(u,16)) : la taille d'abord */
+		rc = BinDynWrite(c, tp->binDyn, n, encl, vals, nvals);
+		if (rc != TCL_OK) {
+		    return rc;
+		}
+		b = Tcl_GetBytesFromObj(NULL, v, &n);	/* v n'a pas changé */
 	    }
 	    BinBufPut(out, b, (size_t) n);	/* comme la couche Tcl */
 	    return TCL_OK;
@@ -5145,9 +5746,19 @@ BinFastEnc(BinCtx *c, const TclType *tp, Tcl_Obj *v, const TclType *encl,
 	    Tcl_FreeEncoding(enc);
 	    n = Tcl_DStringLength(&ds);
 	    if (rc != TCL_OK || (tp->binKind == TCLBIN_STR
-		    && n > tp->binSize)) {
+		    && tp->binDyn == NULL && n > tp->binSize)) {
 		Tcl_DStringFree(&ds);
 		return TCL_CONTINUE;
+	    }
+	    if (tp->binDyn != NULL) {
+		/* string(utf-8,$len), string(utf-8,int(u,16,be)) : la taille
+		 * en octets, puis le texte, sans remplissage */
+		rc = BinDynWrite(c, tp->binDyn, n, encl, vals, nvals);
+		if (rc == TCL_OK) {
+		    BinBufPut(out, Tcl_DStringValue(&ds), (size_t) n);
+		}
+		Tcl_DStringFree(&ds);
+		return rc;
 	    }
 	    BinBufPut(out, Tcl_DStringValue(&ds), (size_t) n);
 	    Tcl_DStringFree(&ds);
@@ -5205,12 +5816,18 @@ BinFastEnc(BinCtx *c, const TclType *tp, Tcl_Obj *v, const TclType *encl,
 	int size[BIN_FLAT_MAX], ns;
 	Tcl_WideInt want;
 
+	(void) want;
 	if ((cells = TclCompactData(v, tp->elem, &n)) != NULL
-		&& (ns = BinCellsMatch(c, tp->elem, &stride, off, size)) > 0) {
+		&& (ns = BinCellsMatch(c, tp->elem, &stride, off, size)) > 0
+		&& (tp->binDyn == NULL || tp->binDyn->kind != TCLDYN_PREFIX
+		    || (out->len + (size_t) tp->binDyn->pre->binSize)
+			% BinAlignOf(c, tp->elem, depth + 1) == 0)) {
+	    /* (après un préfixe, les cases doivent rester alignées) */
 	    if (tp->binDyn != NULL) {
-		if (BinDynCount(tp, encl, vals, nvals, &want) != TCL_OK
-			|| want != (Tcl_WideInt) n) {
-		    return TCL_CONTINUE;	/* le message : couche Tcl */
+		int rc = BinDynWrite(c, tp->binDyn, n, encl, vals, nvals);
+
+		if (rc != TCL_OK) {
+		    return rc;
 		}
 	    } else if (n != tp->arity) {
 		return TCL_CONTINUE;
@@ -5229,23 +5846,11 @@ BinFastEnc(BinCtx *c, const TclType *tp, Tcl_Obj *v, const TclType *encl,
     }
     if (tp->kind == TCLT_LIST) {
 	if (tp->binDyn != NULL) {
-	    /* list($n).T : n est un champ déjà écrit du produit englobant */
-	    const char *name = tp->binDyn->expr + 1;
-	    Tcl_Size f;
-	    Tcl_WideInt want;
+	    /* list($n).T, list(int(u,8)).T : nombre vérifié, ou préfixe écrit */
+	    int rc = BinDynWrite(c, tp->binDyn, n, encl, vals, nvals);
 
-	    if (encl == NULL) {
-		return TCL_CONTINUE;
-	    }
-	    for (f = 0; f < nvals; f++) {
-		if (encl->fields[f].name != NULL
-			&& strcmp(Tcl_GetString(encl->fields[f].name), name) == 0) {
-		    break;
-		}
-	    }
-	    if (f == nvals || Tcl_GetWideIntFromObj(NULL, BinContent(vals[f]),
-		    &want) != TCL_OK || want != (Tcl_WideInt) n) {
-		return TCL_CONTINUE;	/* le message d'erreur : couche Tcl */
+	    if (rc != TCL_OK) {
+		return rc;
 	    }
 	} else if (n != tp->arity) {
 	    return TCL_CONTINUE;
@@ -5263,17 +5868,99 @@ BinFastEnc(BinCtx *c, const TclType *tp, Tcl_Obj *v, const TclType *encl,
     if (n != tp->nfields) {
 	return TCL_CONTINUE;
     }
-    for (i = 0; i < n; i++) {
-	const TclType *ft = tp->fields[i].type;
-	int rc;
+    {
+	int n0 = c->npend, ns0 = c->nstarts, k;
 
-	BinBufPad(out, BinAlignOf(c, ft, depth + 1));
-	rc = BinFastEnc(c, ft, elv[i], tp, elv, i, depth + 1);
+	for (i = 0; i < n; i++) {
+	    const TclType *ft = tp->fields[i].type;
+	    int rc;
+
+	    if (ft->binLink != NULL && tp->fields[i].defval != NULL) {
+		c->nstarts = ns0;
+		return TCL_CONTINUE;	/* lien nul possible : couche Tcl */
+	    }
+	    BinBufPad(out, BinAlignOf(c, ft, depth + 1));
+	    if (i == 0) {
+		/* le début de la structure : son premier champ, aligné */
+		BinStartPush(&c->starts, &c->nstarts, &c->maxstarts,
+			c->wbase + out->len);
+	    }
+	    rc = BinFastEnc(c, ft, elv[i], tp, elv, i, depth + 1);
+	    if (rc != TCL_OK) {
+		c->nstarts = ns0;
+		return rc;
+	    }
+	}
+	c->nstarts = ns0;
+	/* les cibles des liens voient TOUS les champs du produit */
+	for (k = n0; k < c->npend; k++) {
+	    if (!c->pend[k].fin) {
+		c->pend[k].encl = tp;
+		c->pend[k].scope = v;
+		Tcl_IncrRefCount(v);
+		c->pend[k].fin = 1;
+	    }
+	}
+    }
+    BinBufPad(out, BinAlignOf(c, tp, depth));
+    return TCL_OK;
+}
+
+/* Les cibles des liens en attente, à la suite de la sortie (alignées), puis
+ * leurs adresses reportées ; une cible peut en ajouter d'autres. */
+static int
+BinFlushLinks(BinCtx *c)
+{
+    int k, rc;
+
+    for (k = 0; k < c->npend; k++) {
+	BinPend it = c->pend[k];	/* copie : pend peut être agrandi */
+	BinBuf *out = c->out, tmp = {NULL, 0, 0};
+	Tcl_Obj **sv = NULL, *relObj;
+	Tcl_Size sn = 0;
+	size_t tpos, *ss = c->starts;
+	int sns = c->nstarts, sms = c->maxstarts;
+	Tcl_WideInt rel;
+
+	BinBufPad(out, BinAlignOf(c, it.target, 1));
+	tpos = c->wbase + out->len;
+	if (it.scope != NULL && Tcl_ListObjGetElements(NULL, it.scope, &sn,
+		&sv) != TCL_OK) {
+	    return TCL_CONTINUE;
+	}
+	c->starts = NULL;		/* starts {} pour la cible */
+	c->nstarts = c->maxstarts = 0;
+	rc = BinFastEnc(c, it.target, it.payload, it.encl, sv,
+		(it.encl != NULL) ? sn : 0, 1);
+	if (c->starts != NULL) {
+	    Tcl_Free(c->starts);
+	}
+	c->starts = ss;
+	c->nstarts = sns;
+	c->maxstarts = sms;
+	if (rc != TCL_OK) {
+	    return rc;
+	}
+	rel = (Tcl_WideInt) tpos - (Tcl_WideInt) it.origin;
+	if (rel < 0 && it.repr->binKind == TCLBIN_UINT) {
+	    return TCL_CONTINUE;	/* le message : couche Tcl */
+	}
+	relObj = Tcl_NewWideIntObj(rel);
+	Tcl_IncrRefCount(relObj);
+	c->out = &tmp;
+	rc = BinFastEnc(c, it.repr, relObj, NULL, NULL, 0, 1);
+	c->out = out;
+	Tcl_DecrRefCount(relObj);
+	if (rc == TCL_OK) {
+	    memcpy(out->p + it.patch, tmp.p, tmp.len);
+	}
+	if (tmp.p != NULL) {
+	    Tcl_Free(tmp.p);
+	}
 	if (rc != TCL_OK) {
 	    return rc;
 	}
     }
-    BinBufPad(out, BinAlignOf(c, tp, depth));
     return TCL_OK;
 }
 
@@ -5337,6 +6024,14 @@ BinEncodeFast(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 	    || !TclTypeSame(vt, tp) || BinFastAlign(tp, cap, 0) == 0) {
 	return TCL_CONTINUE;
     }
+    {
+	const TclType *seen[64];
+	int nseen = 0;
+
+	if (!BinLinksCovered(tp, cap, seen, &nseen, 0)) {
+	    return TCL_CONTINUE;
+	}
+    }
     probe.s = 1;
     hostBig = (probe.c[0] == 0);
     ctx.cap = cap;
@@ -5344,7 +6039,47 @@ BinEncodeFast(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
     ctx.hostBig = hostBig;
     ctx.nmemo = 0;
     ctx.out = &out;
+    ctx.late = NULL;
+    ctx.nlate = ctx.maxlate = 0;
+    ctx.wbase = 0;
+    ctx.starts = NULL;
+    ctx.nstarts = ctx.maxstarts = 0;
+    ctx.pend = NULL;
+    ctx.npend = ctx.maxpend = 0;
     rc = BinFastEnc(&ctx, tp, objv[1], NULL, NULL, 0, 0);
+    if (rc == TCL_OK) {
+	rc = BinFlushLinks(&ctx);
+    }
+    BinPendFree(&ctx, 0);
+    if (ctx.pend != NULL) {
+	Tcl_Free(ctx.pend);
+    }
+    if (ctx.starts != NULL) {
+	Tcl_Free(ctx.starts);
+    }
+    for (i = 0; i < ctx.nlate; i++) {
+	/* at(...) : comme la couche Tcl, dans l'ordre, des zéros jusqu'à la
+	 * position si la sortie est plus courte, puis les octets par-dessus */
+	BinLate *l = &ctx.late[i];
+
+	if (rc == TCL_OK) {
+	    if (l->off > out.len) {
+		BinBufPut(&out, NULL, l->off - out.len);
+	    }
+	    if (l->off + l->buf.len > out.len) {
+		BinBufPut(&out, NULL, l->off + l->buf.len - out.len);
+	    }
+	    if (l->buf.len > 0) {
+		memcpy(out.p + l->off, l->buf.p, l->buf.len);
+	    }
+	}
+	if (l->buf.p != NULL) {
+	    Tcl_Free(l->buf.p);
+	}
+    }
+    if (ctx.late != NULL) {
+	Tcl_Free(ctx.late);
+    }
     if (rc == TCL_OK) {
 	Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(out.p, (Tcl_Size) out.len));
     }
@@ -5377,6 +6112,12 @@ typedef struct {
     const TclType *refT[BIN_MEMO];
     Tcl_Obj *refO[BIN_MEMO];
     int nref;
+    int linkdepth;		/* -1 : Inf (seul cas couvert) */
+    size_t *starts;		/* débuts des structures englobantes */
+    int nstarts, maxstarts;
+    size_t chain[512];		/* cibles en cours (cycles ; liste chaînée :
+				 * au-delà, la couche Tcl) */
+    int nchain;
 } BinDec;
 
 static Tcl_Obj *
@@ -5420,6 +6161,142 @@ BinDecPad(BinDec *d, size_t al)
     return TCL_OK;
 }
 
+static int BinFastDec(BinDec *d, const TclType *tp, int asField,
+	Tcl_Obj **vals, const TclType *encl, Tcl_Size nvals, int depth,
+	Tcl_Obj **resPtr);
+
+/* Lecture : la taille ou le nombre (préfixe lu, ou expression sur les
+ * champs déjà lus). TCL_OK ou TCL_CONTINUE. */
+static int
+BinDynRead(BinDec *d, const TclBinDyn *dyn, const TclType *encl,
+	Tcl_Obj **vals, Tcl_Size nvals, Tcl_WideInt *wantPtr)
+{
+    if (dyn->kind == TCLDYN_PREFIX) {
+	Tcl_Obj *o = NULL;
+	int rc = BinFastDec(d, dyn->pre, 1, NULL, NULL, 0, 1, &o);
+
+	if (rc != TCL_OK) {
+	    return rc;
+	}
+	Tcl_IncrRefCount(o);
+	rc = (Tcl_GetWideIntFromObj(NULL, o, wantPtr) == TCL_OK
+		&& *wantPtr >= 0) ? TCL_OK : TCL_CONTINUE;	/* u64 > 2^63 */
+	Tcl_DecrRefCount(o);
+	return rc;
+    }
+    return BinDynExpr(dyn, encl, vals, nvals, wantPtr);
+}
+
+/* Lit l'adresse d'un lien ; *nullPtr si c'est la valeur nulle, sinon
+ * *targetPtr = position absolue de la cible. */
+static int
+BinLinkRead(BinDec *d, const TclType *tp, int *nullPtr, size_t *targetPtr,
+	int depth)
+{
+    const TclBinLink *lk = tp->binLink;
+    const char *nt = BinLinkNull(tp);
+    size_t here = d->pos, origin;
+    Tcl_Obj *a = NULL;
+    Tcl_WideInt off, nv;
+    int rc;
+
+    if (d->linkdepth >= 0) {
+	return TCL_CONTINUE;		/* -linkdepth N : couche Tcl */
+    }
+    rc = BinFastDec(d, lk->repr, 1, NULL, NULL, 0, depth + 1, &a);
+    if (rc != TCL_OK) {
+	return rc;
+    }
+    Tcl_IncrRefCount(a);
+    rc = Tcl_GetWideIntFromObj(NULL, a, &off);
+    Tcl_DecrRefCount(a);
+    if (rc != TCL_OK) {
+	return TCL_CONTINUE;
+    }
+    *nullPtr = 0;
+    if (nt != NULL) {
+	Tcl_Obj *n = Tcl_NewStringObj(nt, -1);
+
+	Tcl_IncrRefCount(n);
+	rc = Tcl_GetWideIntFromObj(NULL, n, &nv);
+	Tcl_DecrRefCount(n);
+	if (rc != TCL_OK) {
+	    return TCL_CONTINUE;
+	}
+	if (nv == off) {
+	    *nullPtr = 1;
+	    return TCL_OK;
+	}
+    }
+    if (!BinOriginPos(lk->origin, d->starts, d->nstarts, here, d->base,
+	    &origin)) {
+	return TCL_CONTINUE;
+    }
+    if ((off < 0 && (size_t) (-off) > origin - d->base)
+	    || (off > 0 && (size_t) off > d->len - origin)) {
+	return TCL_CONTINUE;		/* avant les données, ou au-delà */
+    }
+    *targetPtr = (size_t) ((Tcl_WideInt) origin + off);
+    return TCL_OK;
+}
+
+/* La valeur d'un lien : nul (opt : none) ou cible lue ; le curseur revient
+ * où il était. */
+static int
+BinLinkValue(BinDec *d, const TclType *tp, int isNull, size_t target,
+	int asField, Tcl_Obj **vals, const TclType *encl, Tcl_Size nvals,
+	int depth, Tcl_Obj **resPtr)
+{
+    int someIdx = -1, noneIdx = -1, rc, k;
+    const TclType *some = BinLinkSome(tp, &someIdx, &noneIdx), *t;
+    size_t save = d->pos, *ss = d->starts;
+    int sns = d->nstarts, sms = d->maxstarts;
+    Tcl_Obj *v = NULL;
+
+    if (isNull) {
+	if (some == NULL) {
+	    return TCL_CONTINUE;	/* champ à défaut : couche Tcl */
+	}
+	/* comme field : le constructeur de la couche Tcl garde le contenu nu
+	 * d'une somme opt ; ailleurs, la valeur annotée de mkSum */
+	*resPtr = asField ? Tcl_NewObj() : TclNewAnnotatedOwn(Tcl_NewObj(),
+		TclTypeRefFor(d->interp, (TclType *) tp, noneIdx));
+	return TCL_OK;
+    }
+    for (k = 0; k < d->nchain; k++) {
+	if (d->chain[k] == target) {
+	    return TCL_CONTINUE;	/* cycle : le message, couche Tcl */
+	}
+    }
+    if (d->nchain >= 512) {
+	return TCL_CONTINUE;
+    }
+    d->chain[d->nchain++] = target;
+    t = (some != NULL) ? some : tp->binLink->target;
+    d->pos = target;
+    d->starts = NULL;			/* starts {} pour la cible */
+    d->nstarts = d->maxstarts = 0;
+    /* la profondeur des types repart de 1 : une liste chaînée n'est bornée
+     * que par la chaîne */
+    (void) depth;
+    rc = BinFastDec(d, t, (some != NULL) ? 1 : asField, vals, encl, nvals,
+	    1, &v);
+    if (d->starts != NULL) {
+	Tcl_Free(d->starts);
+    }
+    d->starts = ss;
+    d->nstarts = sns;
+    d->maxstarts = sms;
+    d->pos = save;
+    d->nchain--;
+    if (rc != TCL_OK) {
+	return rc;
+    }
+    *resPtr = (some != NULL && !asField) ? TclNewAnnotatedOwn(v,
+	    TclTypeRefFor(d->interp, (TclType *) tp, someIdx)) : v;
+    return TCL_OK;
+}
+
 /* asField : la valeur est celle d'un champ (produit rendu sans annotation) */
 static int
 BinFastDec(BinDec *d, const TclType *tp, int asField, Tcl_Obj **vals,
@@ -5431,6 +6308,35 @@ BinFastDec(BinDec *d, const TclType *tp, int asField, Tcl_Obj **vals,
 
     if (depth > 32) {
 	return TCL_CONTINUE;
+    }
+    if (tp->binLink != NULL) {
+	/* un lien hors d'un produit (élément de liste, cible) : suivi tout
+	 * de suite */
+	size_t target = 0;
+	int isNull = 0;
+
+	rc = BinLinkRead(d, tp, &isNull, &target, depth);
+	if (rc != TCL_OK) {
+	    return rc;
+	}
+	return BinLinkValue(d, tp, isNull, target, asField, vals, encl, nvals,
+		depth, resPtr);
+    }
+    if (tp->binAt != NULL) {
+	/* at(EXPR).T : lu à la position EXPR (depuis le début de la valeur
+	 * lue) ; le curseur séquentiel ne bouge pas */
+	Tcl_WideInt off;
+	size_t save = d->pos;
+
+	if (tp->binAtBody == NULL || BinExprValue(tp->binAt, encl, vals, nvals,
+		&off) != TCL_OK || (Tcl_WideUInt) off > d->len - d->base) {
+	    return TCL_CONTINUE;
+	}
+	d->pos = d->base + (size_t) off;
+	rc = BinFastDec(d, tp->binAtBody, asField, vals, encl, nvals,
+		depth + 1, resPtr);
+	d->pos = save;
+	return rc;
     }
     if (tp->kind == TCLT_SUM && tp->binTag != NULL) {
 	/* somme balisée : la balise (champ déjà lu) choisit la variante ; la
@@ -5496,6 +6402,19 @@ BinFastDec(BinDec *d, const TclType *tp, int asField, Tcl_Obj **vals,
 	    }
 	    take = k;
 	    adv = k + w;
+	} else if (tp->binDyn != NULL) {
+	    /* string(raw,$len), string(utf-8,int(u,16,be)) */
+	    Tcl_WideInt want;
+
+	    rc = BinDynRead(d, tp->binDyn, encl, vals, nvals, &want);
+	    if (rc != TCL_OK) {
+		return rc;
+	    }
+	    q = d->p + d->pos;		/* après le préfixe */
+	    if ((Tcl_WideUInt) want > (Tcl_WideUInt) (d->len - d->pos)) {
+		return TCL_CONTINUE;	/* données tronquées : couche Tcl */
+	    }
+	    take = adv = (size_t) want;
 	} else {
 	    take = adv = (size_t) tp->binSize;
 	    if (d->pos + take > d->len) {
@@ -5524,7 +6443,7 @@ BinFastDec(BinDec *d, const TclType *tp, int asField, Tcl_Obj **vals,
 	    }
 	    str = Tcl_DStringValue(&ds);
 	    len = Tcl_DStringLength(&ds);
-	    if (tp->binKind == TCLBIN_STR) {
+	    if (tp->binKind == TCLBIN_STR && tp->binDyn == NULL) {
 		/* taille fixe : les zéros de fin sont du remplissage
 		 * (string trimright \x00 ; U+0000 s'écrit C0 80) */
 		while (len >= 2 && (unsigned char) str[len - 2] == 0xC0
@@ -5590,21 +6509,9 @@ BinFastDec(BinDec *d, const TclType *tp, int asField, Tcl_Obj **vals,
 	Tcl_WideInt want;
 
 	if (tp->binDyn != NULL) {
-	    const char *name = tp->binDyn->expr + 1;
-	    Tcl_Size f;
-
-	    if (encl == NULL) {
-		return TCL_CONTINUE;
-	    }
-	    for (f = 0; f < nvals; f++) {
-		if (encl->fields[f].name != NULL
-			&& strcmp(Tcl_GetString(encl->fields[f].name), name) == 0) {
-		    break;
-		}
-	    }
-	    if (f == nvals || Tcl_GetWideIntFromObj(NULL, vals[f], &want)
-		    != TCL_OK) {
-		return TCL_CONTINUE;
+	    rc = BinDynRead(d, tp->binDyn, encl, vals, nvals, &want);
+	    if (rc != TCL_OK) {
+		return rc;
 	    }
 	} else {
 	    want = tp->arity;
@@ -5620,7 +6527,10 @@ BinFastDec(BinDec *d, const TclType *tp, int asField, Tcl_Obj **vals,
 	    int size[BIN_FLAT_MAX], ns;
 	    unsigned char *cells;
 
-	    if (BinDecPad(d, BinAlignOf(&d->b, tp->elem, depth + 1)) == TCL_OK
+	    /* déjà aligné (champ précédé de son remplissage) ; après un
+	     * préfixe qui le désaligne : élément par élément, comme la
+	     * couche Tcl */
+	    if ((d->pos - d->base) % BinAlignOf(&d->b, tp->elem, depth + 1) == 0
 		    && (ns = BinCellsMatch(&d->b, tp->elem, &stride, off,
 			size)) > 0
 		    && (size_t) n * stride <= d->len - d->pos
@@ -5649,23 +6559,71 @@ BinFastDec(BinDec *d, const TclType *tp, int asField, Tcl_Obj **vals,
     /* produit */
     n = tp->nfields;
     elv = (Tcl_Obj **) Tcl_Alloc((n ? n : 1) * sizeof(Tcl_Obj *));
-    for (i = 0; i < n; i++) {
-	const TclType *ft = tp->fields[i].type;
+    {
+	/* liens : l'adresse à sa place, la cible APRÈS tous les champs (ses
+	 * tailles peuvent citer des champs qui suivent), comme la couche Tcl */
+	size_t *tgt = (size_t *) Tcl_Alloc((n ? n : 1) * sizeof(size_t));
+	int ns0 = d->nstarts, nlinks = 0;
 
-	rc = BinDecPad(d, BinAlignOf(&d->b, ft, depth + 1));
-	if (rc == TCL_OK) {
-	    rc = BinFastDec(d, ft, 1, elv, tp, i, depth + 1, &elv[i]);
-	}
-	if (rc != TCL_OK) {
-	    Tcl_Size j;
+	for (i = 0; i < n; i++) {
+	    const TclType *ft = tp->fields[i].type;
 
-	    for (j = 0; j < i; j++) {
-		Tcl_DecrRefCount(elv[j]);	/* référence prise ci-dessous */
+	    rc = BinDecPad(d, BinAlignOf(&d->b, ft, depth + 1));
+	    if (rc == TCL_OK && i == 0) {
+		BinStartPush(&d->starts, &d->nstarts, &d->maxstarts, d->pos);
 	    }
-	    Tcl_Free(elv);
-	    return rc;
+	    if (rc == TCL_OK && ft->binLink != NULL) {
+		int isNull = 0;
+
+		tgt[i] = 0;
+		rc = BinLinkRead(d, ft, &isNull, &tgt[i], depth + 1);
+		if (rc == TCL_OK && isNull) {
+		    rc = BinLinkValue(d, ft, 1, 0, 1, NULL, NULL, 0, depth + 1,
+			    &elv[i]);
+		    tgt[i] = (size_t) -1;	/* déjà lu (nul) */
+		} else if (rc == TCL_OK) {
+		    elv[i] = Tcl_NewObj();	/* "" en attendant, comme fv$i */
+		    nlinks++;
+		}
+	    } else if (rc == TCL_OK) {
+		tgt[i] = (size_t) -1;
+		rc = BinFastDec(d, ft, 1, elv, tp, i, depth + 1, &elv[i]);
+	    }
+	    if (rc != TCL_OK) {
+		Tcl_Size j;
+
+		for (j = 0; j < i; j++) {
+		    Tcl_DecrRefCount(elv[j]);	/* référence prise ci-dessous */
+		}
+		Tcl_Free(elv);
+		Tcl_Free(tgt);
+		d->nstarts = ns0;
+		return rc;
+	    }
+	    Tcl_IncrRefCount(elv[i]);
 	}
-	Tcl_IncrRefCount(elv[i]);
+	d->nstarts = ns0;
+	for (i = 0; nlinks > 0 && i < n; i++) {
+	    Tcl_Obj *lv = NULL;
+
+	    if (tgt[i] == (size_t) -1) {
+		continue;
+	    }
+	    rc = BinLinkValue(d, tp->fields[i].type, 0, tgt[i], 1, elv, tp, n,
+		    depth + 1, &lv);
+	    if (rc != TCL_OK) {
+		for (i = 0; i < n; i++) {
+		    Tcl_DecrRefCount(elv[i]);
+		}
+		Tcl_Free(elv);
+		Tcl_Free(tgt);
+		return rc;
+	    }
+	    Tcl_IncrRefCount(lv);
+	    Tcl_DecrRefCount(elv[i]);
+	    elv[i] = lv;
+	}
+	Tcl_Free(tgt);
     }
     rc = BinDecPad(d, BinAlignOf(&d->b, tp, depth));
     if (rc != TCL_OK) {
@@ -5699,13 +6657,14 @@ BinDecodeFast(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
     Tcl_Obj *consumed = NULL, *res = NULL;
     const char *text;
     unsigned char *bytes;
-    int rc;
+    int rc, linkdepth = -1;
 
     if ((flag != NULL && strcmp(flag, "0") == 0) || objc < 2 || objc % 2) {
 	return TCL_CONTINUE;
     }
     memset(&d, 0, sizeof(d));
     d.b.cap = 1;
+    linkdepth = -1;
     for (i = 2; i < objc; i += 2) {
 	const char *o = Tcl_GetString(objv[i]), *a = Tcl_GetString(objv[i + 1]);
 	Tcl_WideInt w;
@@ -5735,11 +6694,13 @@ BinDecodeFast(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 	    }
 	} else if (strcmp(o, "-linkdepth") == 0) {
 	    /* sans lien, la profondeur ne joue pas ; une valeur fausse donne
-	     * son message par la couche Tcl */
+	     * son message par la couche Tcl ; une profondeur finie, avec un
+	     * lien : la couche Tcl (BinLinkRead) */
 	    if (strcmp(a, "Inf") != 0 && (Tcl_GetWideIntFromObj(NULL,
 		    objv[i + 1], &w) != TCL_OK || w < 0)) {
 		return TCL_CONTINUE;
 	    }
+	    linkdepth = (strcmp(a, "Inf") == 0) ? -1 : (int) (w > 1000000 ? 1000000 : w);
 	} else if (strcmp(o, "-consumed") == 0) {
 	    consumed = (a[0] != '\0') ? objv[i + 1] : NULL;
 	} else {
@@ -5763,6 +6724,15 @@ BinDecodeFast(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 	    || BinFastAlign(tp, d.b.cap, 0) == 0) {
 	return TCL_CONTINUE;
     }
+    {
+	const TclType *seen[64];
+	int nseen = 0;
+
+	if (!BinLinksCovered(tp, d.b.cap, seen, &nseen, 0)) {
+	    return TCL_CONTINUE;
+	}
+    }
+    d.linkdepth = linkdepth;
     /*
      * Les octets seulement maintenant : convertir les données d'un type que
      * le codec C ne couvre pas les ferait changer de représentation à
@@ -5780,6 +6750,9 @@ BinDecodeFast(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
     d.len = (size_t) len;
     d.pos = d.base = (size_t) off;
     rc = BinFastDec(&d, tp, 0, NULL, NULL, 0, 0, &res);
+    if (d.starts != NULL) {
+	Tcl_Free(d.starts);
+    }
     if (rc != TCL_OK) {
 	return rc;
     }
@@ -6434,9 +7407,29 @@ DeepContent(Tcl_Obj *obj)
     if (i == n) {
 	return obj;			/* rien d'annoté dedans */
     }
-    res = Tcl_NewListObj(0, NULL);
-    for (i = 0; i < n; i++) {
-	Tcl_ListObjAppendElement(NULL, res, DeepContent(elv[i]));
+    {
+	/* la liste n'est refaite que si un élément change vraiment (une
+	 * liste imbriquée sans annotation reste telle quelle) */
+	Tcl_Obj *first = NULL;
+	Tcl_Size j;
+
+	for (; i < n; i++) {
+	    first = DeepContent(elv[i]);
+	    if (first != elv[i]) {
+		break;
+	    }
+	}
+	if (i == n) {
+	    return obj;
+	}
+	res = Tcl_NewListObj(n, NULL);
+	for (j = 0; j < i; j++) {
+	    Tcl_ListObjAppendElement(NULL, res, elv[j]);
+	}
+	Tcl_ListObjAppendElement(NULL, res, first);
+	for (j = i + 1; j < n; j++) {
+	    Tcl_ListObjAppendElement(NULL, res, DeepContent(elv[j]));
+	}
     }
     return res;
 }
@@ -6526,6 +7519,100 @@ ContentObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
     (void) content;
     Tcl_SetObjResult(interp, DeepContent(objv[1]));
     return TCL_OK;
+}
+
+/*
+ * Instruction tupleAssign ("(a, (b, c), d) = v" dans expr) : le contenu
+ * profond de v (comme ::tcl::unsupported::content), puis, pour chaque
+ * chemin de PATHS ({0} {1 0} {1 1} {2}, établi à la compilation), le nom
+ * au chemin dans NAMES reçoit l'élément au même chemin du contenu (un
+ * élément absent donne "", comme lindex), dans l'ordre, comme le faisaient
+ * listIndexImm et storeStk. Rend le contenu avec une référence pour
+ * l'appelant, ou NULL (message dans l'interpréteur).
+ */
+static int
+TupleIndex(Tcl_Interp *interp, Tcl_Obj *list, Tcl_Obj *const *pv,
+	Tcl_Size np, Tcl_Obj **res)
+{
+    Tcl_Obj *cur = list;
+    Tcl_Size k;
+    Tcl_WideInt idx;
+
+    for (k = 0; k < np; k++) {
+	Tcl_Obj *e = NULL;
+
+	if (Tcl_GetWideIntFromObj(interp, pv[k], &idx) != TCL_OK
+		|| Tcl_ListObjIndex(interp, cur, (Tcl_Size) idx, &e) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	if (e == NULL) {
+	    *res = Tcl_NewObj();	/* absent : "" (les niveaux suivants
+					 * aussi, comme listIndexImm) */
+	    return TCL_OK;
+	}
+	cur = e;
+    }
+    *res = cur;
+    return TCL_OK;
+}
+
+Tcl_Obj *
+TclTupleAssign(Tcl_Interp *interp, Tcl_Obj *names, Tcl_Obj *value,
+	Tcl_Obj *paths)
+{
+    Tcl_Obj *content = DeepContent(value), **pv;
+    Tcl_Size np, i;
+
+    Tcl_IncrRefCount(content);
+    if (Tcl_ListObjGetElements(interp, paths, &np, &pv) != TCL_OK) {
+	goto error;
+    }
+    for (i = 0; i < np; i++) {
+	/* chaque entrée : {LOCAL i0 i1 ...} ; LOCAL >= 0 : variable locale
+	 * compilée (comme storeScalar), sinon le nom au même chemin dans
+	 * NAMES (comme storeStk) */
+	Tcl_Obj *name = NULL, *val = NULL, **ev;
+	Tcl_Size ne;
+	Tcl_WideInt lv;
+	int ok;
+
+	if (Tcl_ListObjGetElements(interp, pv[i], &ne, &ev) != TCL_OK
+		|| ne < 2 || Tcl_GetWideIntFromObj(interp, ev[0], &lv) != TCL_OK) {
+	    goto error;
+	}
+	Tcl_IncrRefCount(pv[i]);		/* ev reste valable */
+	if (TupleIndex(interp, content, ev + 1, ne - 1, &val) != TCL_OK) {
+	    Tcl_DecrRefCount(pv[i]);
+	    goto error;
+	}
+	Tcl_IncrRefCount(val);
+	if (lv >= 0) {
+	    Interp *iPtr = (Interp *) interp;
+	    Var *varPtr = &iPtr->varFramePtr->compiledLocals[lv];
+
+	    while (TclIsVarLink(varPtr)) {
+		varPtr = varPtr->value.linkPtr;
+	    }
+	    ok = (TclPtrSetVarIdx(interp, varPtr, NULL, NULL, NULL, val,
+		    TCL_LEAVE_ERR_MSG, (int) lv) != NULL);
+	} else if (TupleIndex(interp, names, ev + 1, ne - 1, &name) != TCL_OK) {
+	    ok = 0;
+	} else {
+	    Tcl_IncrRefCount(name);
+	    ok = (Tcl_ObjSetVar2(interp, name, NULL, val, TCL_LEAVE_ERR_MSG)
+		    != NULL);
+	    Tcl_DecrRefCount(name);
+	}
+	Tcl_DecrRefCount(val);
+	Tcl_DecrRefCount(pv[i]);
+	if (!ok) {
+	    goto error;
+	}
+    }
+    return content;
+  error:
+    Tcl_DecrRefCount(content);
+    return NULL;
 }
 
 /* tcl::unsupported::typesversion : la version du prototype compilée

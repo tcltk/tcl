@@ -857,6 +857,10 @@ enum TclInstruction {
      * field x of the typed product a, else as loadArray */
     INST_LOAD_FIELD_NUM,
 
+    /* "(a, (b, c)) = v" in expr: deep content of v, then each name at a
+     * path of the names list receives the element at the same path */
+    INST_TUPLE_ASSIGN,
+
     /* The last opcode */
     LAST_INST_OPCODE
 };

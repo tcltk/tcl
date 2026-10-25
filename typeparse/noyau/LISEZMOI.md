@@ -1757,3 +1757,29 @@ noyau ; la structure `TclType` change : recompilation complète.
   est le nombre de patchs déjà appliqués, les suivants sont appliqués. Vérifié sur la branche de base : arbre
   neuf (3 déjà là, 14 appliqués), relance (17 déjà appliqués), arbre sans le dernier patch (16 + 1) ; l'arbre
   obtenu est identique à celui de travail.
+- **`maj.sh`, variable `TMP`** (corrigé après la livraison) : le dossier d'extraction s'appelait `TMP` ; sous
+  MSYS2, `TMP` est exportée, et un `local TMP` l'est aussi : gcc, puis les tests qui font `file tempfile` (t32,
+  t34, t35, t46), recevaient ce dossier, supprimé à la fin de l'étape 1 (« Cannot create temporary file »). Il
+  s'appelle maintenant `XDIR`.
+
+### v16e — affectation par tuple compilée (25 octobre 2026)
+
+Sources de types : `tclTypes.c` (`TclTupleAssign` ; `DeepContent` ne refait plus une liste dont rien ne
+change), `tclTypes.h`. Patch noyau : **`expr-tuple.patch`** (`tclCompile.h`, `tclCompile.c`, `tclCompExpr.c`,
+`tclExecute.c`), en fin de `ORDRE.txt`. Une instruction nouvelle : recompilation complète.
+
+- `(a, (b, c), d) = v` dans `expr` : une instruction `tupleAssign` au lieu de l'appel de
+  `::tcl::unsupported::content` puis, pour chaque nom, `over`, `listIndexImm` (deux fois par niveau) et
+  `storeStk`. Pile : noms, valeur, chemins → contenu. Les chemins sont un littéral établi à la compilation,
+  une entrée `{LOCAL i0 i1 …}` par nom : `LOCAL` est la variable locale compilée du nom (écriture comme
+  `storeScalar`), ou -1 (nom qualifié, hors procédure, côté gauche qui n'est pas fait que de noms : le nom est
+  pris au même chemin dans la liste des noms, écriture comme `storeStk`). Mêmes règles qu'avant
+  (`CollectTuplePaths` suit le parcours de l'ancien `EmitTupleStores`) : contenu profond d'un produit
+  (règle B), élément absent = "", ordre des affectations, traces, liens, contrats, messages.
+- `DeepContent` : une liste imbriquée sans annotation n'est plus refaite (elle l'était à chaque affectation).
+- Mesures (ns par affectation, boucle déduite) : `(a, (b, c), d) = $v` 820 → 330 ; `(x, y) = $p` (point)
+  340 → 170.
+- Trouvé par valgrind : un élément absent à un niveau intermédiaire (`(a, (b, c)) = {1}`) laissait un objet vide
+  perdu ; il donne maintenant "" tout de suite.
+- Test `t87_tuple_bytecode` : imbrication, élément absent, littéral, produit, forme compacte, valeur de
+  l'affectation, trace d'écriture, lien `upvar`, tableau (erreur), contrat (erreur), liste invalide, global.

@@ -688,6 +688,11 @@ InstructionDesc const tclInstructionTable[] = {
 	 * the number in field x of the typed product a (no type wrapper);
 	 * otherwise exactly loadArray4.
 	 * Stack: ... field => ... value */
+    {"tupleAssign",	  1,   -2,	   0,	{OPERAND_NONE}},
+	/* "(a, (b, c), d) = v" in expr: content of v (deep), then for each
+	 * path of the list paths, the name at that path in names receives
+	 * the element at the same path of the content ("" if absent).
+	 * Stack: ... names value paths => ... content */
 
     {NULL, 0, 0, 0, {OPERAND_NONE}}
 };

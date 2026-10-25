@@ -21,7 +21,7 @@
  * VAR_* de tclInt.h). La valeur ci-dessous est un PLACEHOLDER. */
 /* Version du prototype TIP 764 (typeparse/VERSION, maj.sh, et
  * tcl::unsupported::typesversion). */
-#define TCL_TYPES_VERSION "v16d"
+#define TCL_TYPES_VERSION "v16e"
 
 #ifndef VAR_TYPED
 #define VAR_TYPED	0x400000
@@ -450,6 +450,8 @@ MODULE_SCOPE Tcl_Obj *TclTypedVarDeclare(Tcl_Interp *interp, Tcl_Obj *nameObj, T
 MODULE_SCOPE Tcl_Obj *TclTypedVarDeclareVar(Tcl_Interp *interp, Var *varPtr, Var *arrayPtr,
 			    Tcl_Obj *nameObj, Tcl_Obj *typed);
 MODULE_SCOPE Tcl_Obj *TclTypedFieldNumber(Var *varPtr, Tcl_Obj *part2Ptr);
+MODULE_SCOPE Tcl_Obj *TclTupleAssign(Tcl_Interp *interp, Tcl_Obj *names,
+			    Tcl_Obj *value, Tcl_Obj *paths);
 MODULE_SCOPE Tcl_Obj *TclTypedDeclareLocal(Tcl_Interp *interp, Var *varPtr,
 			    Tcl_Obj *nameObj, Tcl_Obj *typeObj, Tcl_Obj *valueObj);
 MODULE_SCOPE int TclTypedVarRedeclare(Tcl_Interp *interp, Var *varPtr, Tcl_Obj *nameObj);

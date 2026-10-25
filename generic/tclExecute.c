@@ -2995,6 +2995,24 @@ TEBCresume(
 	part1Ptr = part2Ptr = NULL;
 	goto doCallPtrGetVar;
 
+    case INST_TUPLE_ASSIGN: {
+	Tcl_Obj *tupPtr;
+
+	TRACE(("\"%.30s\" \"%.30s\" => ", O2S(OBJ_AT_DEPTH(2)),
+		O2S(OBJ_UNDER_TOS)));
+	DECACHE_STACK_INFO();
+	tupPtr = TclTupleAssign(interp, OBJ_AT_DEPTH(2), OBJ_UNDER_TOS,
+		OBJ_AT_TOS);
+	CACHE_STACK_INFO();
+	if (tupPtr == NULL) {
+	    TRACE_ERROR(interp);
+	    goto gotError;
+	}
+	objResultPtr = tupPtr;
+	TRACE_APPEND(("\"%.30s\"\n", O2S(objResultPtr)));
+	NEXT_INST_V(1, 3, -1);
+    }
+
     case INST_LOAD_FIELD_NUM:
 	opnd = TclGetUInt4AtPtr(pc + 1);
 	objResultPtr = TclTypedFieldNumber(LOCAL(opnd), OBJ_AT_TOS);

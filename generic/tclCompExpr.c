@@ -523,9 +523,11 @@ static void		CompileExprTree(Tcl_Interp *interp, OpNode *nodes,
 static const char *	FindTupleTarget(const char *start, Tcl_Size numBytes);
 static int		IsTypeAhead(const char *start, Tcl_Size numBytes);
 static Tcl_Size		ElementTargetLen(const char *start, Tcl_Size numBytes);
-static void		EmitTupleStores(CompileEnv *envPtr, OpNode *nodes,
-			    int index, int *path, int depth, int *counter,
-			    int root);
+static void		CollectTuplePaths(OpNode *nodes, int index, int *path,
+			    int depth, int *counter, int root, Tcl_Obj *paths,
+			    CompileEnv *envPtr, Tcl_Obj *const *names,
+			    int *nameIdx);
+static int		TupleNamesOnly(OpNode *nodes, int index, int root);
 static void		ConvertTreeToTokens(const char *start, Tcl_Size numBytes,
 			    OpNode *nodes, Tcl_Token *tokenPtr,
 			    Tcl_Parse *parsePtr);
@@ -552,30 +554,85 @@ static Tcl_Size		ParseLexeme(const char *start, Tcl_Size numBytes,
  *----------------------------------------------------------------------
  */
 
-static void
-EmitTupleStores(
-    CompileEnv *envPtr,
+/*
+ * The paths of the names of a tuple assignment, in the order (and with the
+ * rules) of EmitTupleStores: each leaf name gives a list of indices.
+ */
+/*
+ * Is the left side of a tuple assignment made only of names, commas and
+ * parentheses? Then its literals, consumed in order while it was compiled,
+ * are exactly its leaf names (CollectTuplePaths can give their compiled
+ * locals).
+ */
+static int
+TupleNamesOnly(
     OpNode *nodes,
-    int index,			/* Node, or OT_LITERAL for a leaf name. */
+    int index,
+    int root)
+{
+    if (index == OT_LITERAL) {
+	return 1;
+    }
+    if (index < 0) {
+	return 0;
+    }
+    switch (nodes[index].lexeme) {
+    case COMMA:
+	return TupleNamesOnly(nodes, nodes[index].left, 0)
+		&& TupleNamesOnly(nodes, nodes[index].right, 0);
+    case OPEN_PAREN:
+    case LIST:
+    case NULL_FUNC:
+	(void) root;
+	return TupleNamesOnly(nodes, nodes[index].right, 0);
+    default:
+	return 0;
+    }
+}
+
+static void
+CollectTuplePaths(
+    OpNode *nodes,
+    int index,
     int *path,
     int depth,
-    int *counter,		/* Next element number at this depth. */
-    int root)			/* Index is the outermost LIST node. */
+    int *counter,
+    int root,
+    Tcl_Obj *paths,
+    CompileEnv *envPtr,		/* With names: compiled locals. */
+    Tcl_Obj *const *names,	/* Leaf names in order, or NULL. */
+    int *nameIdx)
 {
     int k;
 
     if (index == OT_LITERAL) {
+	Tcl_Obj *p = Tcl_NewListObj(0, NULL);
+	Tcl_Size lv = -1;
+
+	if (names != NULL && envPtr->procPtr != NULL) {
+	    Tcl_Size nlen, c;
+	    const char *nm = TclGetStringFromObj(names[*nameIdx], &nlen);
+
+	    for (c = 0; c < nlen; c++) {
+		if (nm[c] == ':' || nm[c] == '(' || nm[c] == ')') {
+		    break;		/* qualifié ou tableau : par nom */
+		}
+	    }
+	    if (nlen > 0 && c == nlen) {
+		lv = TclFindCompiledLocal(nm, nlen, 1, envPtr);
+	    }
+	}
+	if (names != NULL) {
+	    (*nameIdx)++;
+	}
+	/* {LOCAL index...} : LOCAL = variable locale compilée, ou -1 (par
+	 * le nom pris dans la liste des noms) */
+	Tcl_ListObjAppendElement(NULL, p, Tcl_NewWideIntObj(lv));
 	path[depth] = (*counter)++;
-	TclEmitInstInt4(INST_OVER, 1, envPtr);
 	for (k = 0; k <= depth; k++) {
-	    TclEmitInstInt4(INST_LIST_INDEX_IMM, path[k], envPtr);
+	    Tcl_ListObjAppendElement(NULL, p, Tcl_NewWideIntObj(path[k]));
 	}
-	TclEmitInstInt4(INST_OVER, 1, envPtr);
-	for (k = 0; k <= depth; k++) {
-	    TclEmitInstInt4(INST_LIST_INDEX_IMM, path[k], envPtr);
-	}
-	TclEmitOpcode(INST_STORE_STK, envPtr);
-	TclEmitOpcode(INST_POP, envPtr);
+	Tcl_ListObjAppendElement(NULL, paths, p);
 	return;
     }
     if (index < 0) {
@@ -583,32 +640,33 @@ EmitTupleStores(
     }
     switch (nodes[index].lexeme) {
     case COMMA:
-	EmitTupleStores(envPtr, nodes, nodes[index].left, path, depth,
-		counter, 0);
-	EmitTupleStores(envPtr, nodes, nodes[index].right, path, depth,
-		counter, 0);
+	CollectTuplePaths(nodes, nodes[index].left, path, depth, counter, 0,
+		paths, envPtr, names, nameIdx);
+	CollectTuplePaths(nodes, nodes[index].right, path, depth, counter, 0,
+		paths, envPtr, names, nameIdx);
 	break;
     case OPEN_PAREN:
-	EmitTupleStores(envPtr, nodes, nodes[index].right, path, depth,
-		counter, 0);
+	CollectTuplePaths(nodes, nodes[index].right, path, depth, counter, 0,
+		paths, envPtr, names, nameIdx);
 	break;
     case LIST:
     case NULL_FUNC:
 	if (root) {
-	    EmitTupleStores(envPtr, nodes, nodes[index].right, path, depth,
-		    counter, 0);
+	    CollectTuplePaths(nodes, nodes[index].right, path, depth, counter,
+		    0, paths, envPtr, names, nameIdx);
 	} else if (depth + 1 < TUPLE_MAX_DEPTH) {
 	    int inner = 0;
 
 	    path[depth] = (*counter)++;
-	    EmitTupleStores(envPtr, nodes, nodes[index].right, path,
-		    depth + 1, &inner, 0);
+	    CollectTuplePaths(nodes, nodes[index].right, path, depth + 1,
+		    &inner, 0, paths, envPtr, names, nameIdx);
 	}
 	break;
     default:
 	break;
     }
 }
+
 
 /*
  *----------------------------------------------------------------------
@@ -2893,6 +2951,10 @@ CompileExprTree(
      * local (storeScalar, the name is not pushed) */
     Tcl_Size assignNode[DECL_MAX], assignLocal[DECL_MAX];
     int nAssign = 0;
+    /* "(a, b) = v": ASSIGN node -> its first literal (the leaf names) */
+    Tcl_Size tupleNode[DECL_MAX];
+    Tcl_Obj *const *tupleLit[DECL_MAX];
+    int nTupleLit = 0;
 
     while (1) {
 	int next;
@@ -2903,6 +2965,12 @@ CompileExprTree(
 
 	    if (nodePtr->lexeme == QUESTION) {
 		convert = 1;
+	    }
+	    if (nodePtr->lexeme == ASSIGN && next >= 0
+		    && nodes[next].lexeme == LIST && nTupleLit < DECL_MAX) {
+		/* "(a, b) = v": its names are the literals from here */
+		tupleNode[nTupleLit] = nodePtr - nodes;
+		tupleLit[nTupleLit++] = *litObjvPtr;
 	    }
 	} else if (nodePtr->mark == MARK_RIGHT) {
 	    next = nodePtr->right;
@@ -3047,21 +3115,36 @@ CompileExprTree(
 		     */
 
 		    int path[TUPLE_MAX_DEPTH], counter = 0;
+		    Tcl_Obj *paths = Tcl_NewListObj(0, NULL);
+		    Tcl_Size plen;
+		    const char *ptext;
 
 		    /*
 		     * Règle B : un produit est un élément ; l'affectation par
 		     * tuple lit son CONTENU (ses champs, et ceux des produits
-		     * imbriqués), pas sa vue liste.
+		     * imbriqués), pas sa vue liste. Une instruction
+		     * (tupleAssign) fait le contenu et toutes les affectations,
+		     * selon les chemins des noms établis ici.
 		     */
-		    TclEmitPush(TclRegisterLiteral(envPtr,
-			    "::tcl::unsupported::content", 27, LITERAL_CMD_NAME),
+		    Tcl_Obj *const *names = NULL;
+		    int t, nameIdx = 0;
+
+		    for (t = 0; t < nTupleLit; t++) {
+			if (tupleNode[t] == nodePtr - nodes) {
+			    break;
+			}
+		    }
+		    if (t < nTupleLit && TupleNamesOnly(nodes, nodePtr->left, 1)) {
+			names = tupleLit[t];
+		    }
+		    Tcl_IncrRefCount(paths);
+		    CollectTuplePaths(nodes, nodePtr->left, path, 0, &counter,
+			    1, paths, envPtr, names, &nameIdx);
+		    ptext = TclGetStringFromObj(paths, &plen);
+		    TclEmitPush(TclRegisterLiteral(envPtr, ptext, plen, 0),
 			    envPtr);
-		    TclEmitInstInt4(INST_REVERSE, 2, envPtr);
-		    TclEmitInvoke(envPtr, INST_INVOKE_STK1, 2);
-		    EmitTupleStores(envPtr, nodes, nodePtr->left, path, 0,
-			    &counter, 1);
-		    TclEmitInstInt4(INST_REVERSE, 2, envPtr);
-		    TclEmitOpcode(INST_POP, envPtr);
+		    Tcl_DecrRefCount(paths);
+		    TclEmitOpcode(INST_TUPLE_ASSIGN, envPtr);
 		} else {
 		    int d;
 

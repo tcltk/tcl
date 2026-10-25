@@ -1,14 +1,14 @@
 # REPRISE — état du prototype TIP 764 (valeurs annotées, variables typées)
 
-*Fiche de reprise, 25 octobre 2026, version **v16d**. À joindre (avec `typeparse.zip`) au
+*Fiche de reprise, 25 octobre 2026, version **v16e**. À joindre (avec `typeparse.zip`) au
 premier message d'une conversation qui reprend le travail.*
 
 ## 1. Où en est-on
 
-* **v16d livrée** (25 octobre) : codec C pour les tailles calculées et les préfixes, `at(EXPR).T` et les liens `*(ORIGINE,REPR).T` (opt(T), listes chaînées) ; `TclType` gagne `binAtBody`. (v16c : `X is T = v` compilé (instruction `declareLocal`), `$a(x)` lu comme nombre dans `expr` (instruction `loadFieldNum`, directement dans la case en forme compacte), `nom = v` par `storeScalar` ; patch `expr-declaration-champs.patch`.) (v16b : numéro de version lisible (`typeparse/VERSION`, `tcl::unsupported::typesversion`, affiché et vérifié par `maj.sh` ; `version.tcl` devine celle d'un tclsh plus ancien). (v16a : codec C pour les chaînes, les sommes de littéraux et les sommes balisées.) (v15z : `lappend` sous contrat en temps linéaire.) (v15y : Tcl annoté, patch `donnees-interp.patch`, la structure `Interp` change.) Le détail de chaque version est
-  dans `noyau/LISEZMOI.md`, une section par version, de la v14 à la v16d en fin de fichier.
-* **Vérifié pour la v16d** (côté Claude, Linux) :
-  - les 64 tests de `tests_tclsh` qui ont une sortie attendue passent (Linux ; MinGW64 chez
+* **v16e livrée** (25 octobre) : affectation par tuple `(a, (b, c)) = v` compilée en une instruction (`tupleAssign`, patch `expr-tuple.patch`) ; `maj.sh` : patchs déjà appliqués reconnus même quand un patch suivant a retouché leur contexte, variable `TMP` renommée (MSYS2). (v16d : codec C pour les tailles calculées et les préfixes, `at(EXPR).T` et les liens `*(ORIGINE,REPR).T` (opt(T), listes chaînées) ; `TclType` gagne `binAtBody`.) (v16c : `X is T = v` compilé (instruction `declareLocal`), `$a(x)` lu comme nombre dans `expr` (instruction `loadFieldNum`, directement dans la case en forme compacte), `nom = v` par `storeScalar` ; patch `expr-declaration-champs.patch`.) (v16b : numéro de version lisible (`typeparse/VERSION`, `tcl::unsupported::typesversion`, affiché et vérifié par `maj.sh` ; `version.tcl` devine celle d'un tclsh plus ancien). (v16a : codec C pour les chaînes, les sommes de littéraux et les sommes balisées.) (v15z : `lappend` sous contrat en temps linéaire.) (v15y : Tcl annoté, patch `donnees-interp.patch`, la structure `Interp` change.) Le détail de chaque version est
+  dans `noyau/LISEZMOI.md`, une section par version, de la v14 à la v16e en fin de fichier.
+* **Vérifié pour la v16e** (côté Claude, Linux) :
+  - les 65 tests de `tests_tclsh` qui ont une sortie attendue passent (Linux ; MinGW64 chez
     l'utilisateur pour la v16b) ; les autres tournent sans erreur ;
   - sorties de tous les tests et exemples identiques avec et sans forme compacte
     (`TCL_TYPES_COMPACT=0/1`) ;
@@ -52,6 +52,7 @@ premier message d'une conversation qui reprend le travail.*
 | v16b | `typeparse/VERSION`, `tcl::unsupported::typesversion`, versions affichées et vérifiées par `maj.sh`, `version.tcl` |
 | v16c | instructions `declareLocal` (`X is T = v`) et `loadFieldNum` (`$a(x)` nombre dans `expr`), `nom = v` par `storeScalar` (patch `expr-declaration-champs.patch`) |
 | v16d | codec C : tailles calculées et préfixes, `at(EXPR).T`, liens `*(…)` (opt, listes chaînées) |
+| v16e | affectation par tuple : instruction `tupleAssign` (patch `expr-tuple.patch`) ; `maj.sh` plus sûr |
 
 ## 2. Installation et tests (chez l'utilisateur, MinGW64)
 
