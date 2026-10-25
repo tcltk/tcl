@@ -327,7 +327,7 @@ section | number of documents | initial conversion | final conversion
 --------|---------------------|--------------------|-----------------
 1       | 1                   | 0                  | 0
 3       | 87                  | 0                  | 0
-n       | 93                  | 1                  | 0
+n       | 93                  | 7                  | 0
 
 Final conversion of these files in the n section is currently done:
 
