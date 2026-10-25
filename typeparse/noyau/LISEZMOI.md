@@ -1806,3 +1806,31 @@ noyau ; la structure `TclType` change : recompilation complète.
   lirait en place).
 - Test `t88_parties_produit` : types mixtes, identiques, produit imbriqué, `$P(*.x)`, vue sur une case,
   `lassign`, somme (chemin général), après écriture.
+
+### v16g — set {T}x a b… rapide ; loadFieldNum pour les opérateurs de bits (25 octobre 2026)
+
+Sources de types : `tclTypedVar.c`, `tclTypes.h`. Patchs noyau, en fin de `ORDRE.txt` :
+**`expr-champs-bits.patch`** (`tclCompExpr.c`) et **`set-type-local-compile.patch`** (`tclCompCmdsSZ.c`).
+Pas d'instruction nouvelle.
+
+- **`set {T}x a b…`** (`TclSetAnnotatedCmd`) :
+  - voie rapide pour un produit dont tous les champs sont `int`, `double` ou `string` (sans lien), avec autant de
+    valeurs que de champs, toutes nues (ni annotation ni note) : chaque valeur est validée sur place
+    (`TclTypeValidate`) et partagée par le contenu (`Tcl_NewListObj` sur `objv`, `TclNewAnnotatedOwn`), sans
+    la copie que faisait `TclTypedConformHint` par champ. Au moindre écart (valeur refusée comprise), la voie
+    générale reprend tout et donne son message habituel ;
+  - voie générale : le contenu privé construit est pris (`TclNewAnnotatedOwn`), plus recopié ;
+  - la variable trouvée par `TclObjLookupVarEx` est écrite par `TclPtrSetVar` (plus de seconde recherche du
+    nom par `Tcl_ObjSetVar2`) ;
+  - le nom sans chemin est l'objet du nom lui-même (plus de copie en chaîne neuve).
+- **`set-type-local-compile.patch`** : `TclCompileSetCmd`, dans une procédure, enregistre `x` de
+  `set {T}x a…` comme variable locale compilée (nom simple : ni `::`, ni parenthèse). La commande reste
+  exécutée à l'exécution ; la recherche du nom évite alors la table de hachage des variables locales.
+- **`expr-champs-bits.patch`** : `$a(x)` opérande de `&`, `|`, `^`, `<<`, `>>` et `~` est compilé en
+  `loadFieldNum` comme pour l'arithmétique (v16c). Un champ `double` y donne la même erreur qu'avant.
+- Mesures (µs par `set`, boucle de 100 000) : `set {point}A 1.0 2.0` 1,3 -> 0,6 ; `set {pi}A 3 zz` (int,
+  string) 1,25 -> 0,63 ; les formes générales (`{x}1.0 {y}2.0`, produit de produits) inchangées.
+- Test `t89_set_type_rapide` : produit de doubles, int et chaîne, valeur refusée, arité, champs nommés, produit
+  de produits, contrat posé, `upvar`, chemin de constructeur, élément de tableau (erreur), valeurs substituées ;
+  opérateurs de bits sur un champ, sur un double (erreur), sur un tableau ordinaire, et le nombre
+  d'instructions `loadFieldNum` émises.

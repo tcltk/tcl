@@ -34,3 +34,5 @@ expr-nombres-types.patch
 donnees-interp.patch
 expr-declaration-champs.patch
 expr-tuple.patch
+expr-champs-bits.patch
+set-type-local-compile.patch

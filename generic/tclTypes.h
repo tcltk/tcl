@@ -21,7 +21,7 @@
  * VAR_* de tclInt.h). La valeur ci-dessous est un PLACEHOLDER. */
 /* Version du prototype TIP 764 (typeparse/VERSION, maj.sh, et
  * tcl::unsupported::typesversion). */
-#define TCL_TYPES_VERSION "v16f"
+#define TCL_TYPES_VERSION "v16g"
 
 #ifndef VAR_TYPED
 #define VAR_TYPED	0x400000

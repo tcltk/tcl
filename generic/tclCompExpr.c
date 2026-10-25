@@ -3358,6 +3358,8 @@ CompileExprTree(
 		case UNARY_MINUS: case MULT: case DIVIDE: case MOD:
 		case EXPON: case LESS: case GREATER: case LEQ: case GEQ:
 		case EQUAL: case NEQ:
+		case BIT_AND: case BIT_OR: case BIT_XOR: case BIT_NOT:
+		case LEFT_SHIFT: case RIGHT_SHIFT:
 		    NumericFieldLoad(envPtr, start);
 		    break;
 		}

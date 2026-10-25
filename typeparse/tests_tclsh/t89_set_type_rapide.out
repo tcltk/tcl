@@ -1,0 +1,16 @@
+produit de doubles : {1.0 2.0} point A
+int et chaîne : {3 zz} pi 3 zz
+valeur refusée (voie générale) : erreur : expected floating-point number but got "abc"
+entier refusé : erreur : expected integer but got "3.5"
+arité : erreur : wrong # args: point needs 2 values; to name fields (the others take their default), write {field}value or set {point}var(field,...) value...
+champs nommés : 1.0 2.0
+produit de produits : {{1 2} {1 2}} seg
+contrat après la voie rapide : erreur : expected integer but got "zz"
+variable liée (upvar) : {4 5} {4 5} point
+chemin de constructeur : erreur : field "y" of point has no value and no default
+élément de tableau refusé : erreur : can't set "A(k)": a typed variable is a scalar, not an array element; a constructor path (k) names fields of products, indices of lists or keys of dicts, and int is none of these
+valeurs substituées : {1.5 2.5} point
+bits sur un champ : 1 29 12 52 6 -14
+bits sur un double : erreur : cannot use floating-point value "1.5" as left operand of "&"
+tableau ordinaire : 2
+bytecode : lectures numériques : 6

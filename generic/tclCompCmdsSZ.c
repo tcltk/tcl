@@ -134,6 +134,28 @@ TclCompileSetCmd(
     int isAssignment, isScalar, localIndex, numWords;
 
     numWords = parsePtr->numWords;
+    if (numWords >= 3 && envPtr->procPtr != NULL
+	    && TclHasAnnotatedWord(parsePtr)) {
+	/*
+	 * set {T}x a... : la commande s'exécute, mais x simple (sans espace
+	 * de noms ni chemin) devient une variable compilée : sa recherche
+	 * à l'exécution évite la table de hachage des variables locales.
+	 */
+	Tcl_Token *w = TokenAfter(parsePtr->tokenPtr);
+
+	if (w->type == TCL_TOKEN_WORD && w->numComponents == 2
+		&& w[1].type == TCL_TOKEN_ANNOT && w[2].type == TCL_TOKEN_TEXT
+		&& w[2].size > 0) {
+	    const char *p = w[2].start, *e = p + w[2].size;
+
+	    while (p < e && *p != '(' && *p != ':' && *p != ')') {
+		p++;
+	    }
+	    if (p == e) {
+		TclFindCompiledLocal(w[2].start, w[2].size, 1, envPtr);
+	    }
+	}
+    }
     if ((numWords != 2) && (numWords != 3)) {
 	return TCL_ERROR;
     }

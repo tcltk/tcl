@@ -1305,9 +1305,40 @@ TclSetAnnotatedCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 	}
     }
     if (baseObj == NULL) {
-	baseObj = Tcl_NewStringObj(name, TCL_AUTO_LENGTH);
+	/* Le nom lui-même : un littéral du bytecode, dont la représentation
+	 * de nom local (index de la variable compilée) sert d'un appel à
+	 * l'autre. */
+	baseObj = nameObj;
     }
     Tcl_IncrRefCount(baseObj);
+
+    /*
+     * Voie rapide : set {T}x a b... d'un produit de scalaires, autant de
+     * valeurs nues (sans annotation ni note) que de champs. Chaque valeur
+     * est validée en place et partagée par le contenu, sans copie ; au
+     * moindre écart (valeur refusée comprise), la voie générale reprend
+     * tout et donne son message.
+     */
+    if (status == TCLA_RAW && ctorPath == NULL && tp->kind == TCLT_PRODUCT
+	    && nargs > 0 && nargs == tp->nfields && tp->binLink == NULL) {
+	for (i = 0; i < nargs; i++) {
+	    TclType *ft = tp->fields[i].type;
+
+	    if (ft == NULL || (ft->kind != TCLT_INT && ft->kind != TCLT_DOUBLE
+		    && ft->kind != TCLT_STRING) || ft->binLink != NULL
+		    || TclIsAnnotated(objv[2 + i])
+		    || TclTypeValidate(NULL, ft, objv[2 + i], -1, NULL)
+			    != TCL_OK) {
+		break;
+	    }
+	}
+	if (i == nargs) {
+	    Tcl_Obj *fresh = Tcl_NewListObj(nargs, objv + 2);
+
+	    valueA = TclNewAnnotatedOwn(fresh, TclTypeRefFor(interp, tp, -1));
+	    goto store;
+	}
+    }
 
     /*
      * Étiquettes de champ : set {paire}p {nom}jean {age}12. L'annotation en
@@ -1507,8 +1538,12 @@ TclSetAnnotatedCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 	    TclDiscard(c);
 	    goto done;
 	}
-	valueA = TclNewAnnotated(interp, tp, variant, c);
-	TclDiscard(c);
+	if (c->refCount == 0) {		/* privé : pris, pas recopié */
+	    valueA = TclNewAnnotatedOwn(c, TclTypeRefFor(interp, tp, variant));
+	} else {
+	    valueA = TclNewAnnotated(interp, tp, variant, c);
+	    TclDiscard(c);
+	}
 	if (np > 0) {
 	    Tcl_Obj *withP = TclAnnotWithPending(valueA, pend);
 
@@ -1518,6 +1553,7 @@ TclSetAnnotatedCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 	    }
 	}
     }
+  store:
     Tcl_IncrRefCount(valueA);
 
     /* La variable : scalaire seulement (v1), liens suivis. */
@@ -1547,7 +1583,8 @@ TclSetAnnotatedCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
     hadBit = varPtr->flags & (VAR_TYPED|VAR_CONTRACT);
     varPtr->flags &= ~(VAR_TYPED|VAR_CONTRACT);
     SettleSuspend(1);			/* valueA est déjà résolue */
-    res = Tcl_ObjSetVar2(interp, baseObj, NULL, valueA, TCL_LEAVE_ERR_MSG);
+    res = TclPtrSetVar(interp, (Tcl_Var) varPtr, NULL, baseObj, NULL, valueA,
+	    TCL_LEAVE_ERR_MSG);
     SettleSuspend(-1);
     if (res == NULL) {
 	if (hadBit) {
