@@ -1552,3 +1552,26 @@ chaque case par une vue.
   mêmes (disposition identique), sans passer par le texte.
 - Test `t77_binaire_cases` : mêmes octets que le codec Tcl et que sans cases (`natural`, `packed`, `4`), relecture,
   autre boutisme, `-strictpad`, compte faux, liste vide.
+
+### v15x — cast vers une liste en cases, `Tcl_AnnotatedCreateCells` (24 octobre 2026)
+
+Sources de types : `tclAnnotObj.c`, `tclTypes.c`, `tclTypes.h`, `tclAnnotatedApi.h`. Exemple : `geometrie/geo.c`,
+`geometrie/geo_c.tcl`. Pas de patch noyau.
+
+- Cast vers une liste dont les éléments ont une disposition en cases, quand le résultat serait en cases
+  (`TclCompactCast`, appelé par `TclTypeCast` pour un cast liste → liste) : depuis une liste en cases de même
+  disposition (`list.point` → `list.pointC` : mêmes scalaires, mêmes tailles, même signe), copie d'un bloc ;
+  depuis une liste ordinaire, les éléments sont écrits directement dans les cases. Sinon (signe différent,
+  texte invalide, compte faux), le cast ordinaire, avec ses messages. Les règles `type convert` entre éléments ne
+  s'appliquaient déjà pas à un cast liste → liste. Mesure, 10 000 points : `type cast list.pointC $P` 990 → 237 µs
+  (polygone ordinaire), 2 990 → 12 µs (polygone en cases).
+- `tcl::unsupported::compact cells TYPE OCTETS ?STRIDE?` : une valeur du type liste TYPE dont les cases sont les
+  octets donnés ; seuls les scalaires sont copiés (le remplissage reste à zéro) ; contrôle du stride, de la longueur
+  et du compte `list(N)`. Toujours en cases.
+- `Tcl_AnnotatedCreateCells(interp, type, data, n, stride, &res)` (`tclAnnotatedApi.h`) : une valeur depuis un
+  tableau C, par la commande ci-dessus en attendant une vraie fonction de stub.
+- `geo.c` : `bezier_echantillons` remplit un tableau de `Point` et le donne à `Tcl_AnnotatedCreateCells` :
+  2,3 ms → 0,27 ms pour 10 000 points (x 9 → x 77 sur le Tcl nu). `geo_c.tcl` : `type def {-compact}pointC`, et
+  `geo::octets` passe par `type cast list.pointC $v` au lieu du contenu : voie octets de l'aire 1,28 → 0,56 ms
+  (x 2.9 → x 7.7), périmètre x 12.6 → x 37.1.
+- Test `t78_cases_cast_c` : casts (mêmes résultats qu'en v15w), `compact cells` et ses erreurs.

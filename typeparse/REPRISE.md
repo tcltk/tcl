@@ -1,14 +1,14 @@
 # REPRISE — état du prototype TIP 764 (valeurs annotées, variables typées)
 
-*Fiche de reprise, 24 octobre 2026, version **v15w**. À joindre (avec `typeparse.zip`) au
+*Fiche de reprise, 24 octobre 2026, version **v15x**. À joindre (avec `typeparse.zip`) au
 premier message d'une conversation qui reprend le travail.*
 
 ## 1. Où en est-on
 
-* **v15w livrée** (24 octobre) : `type binary encode`/`decode` depuis et vers les cases. Le détail de chaque version est
-  dans `noyau/LISEZMOI.md`, une section par version, de la v14 à la v15w en fin de fichier.
-* **Vérifié pour la v15w** (côté Claude, Linux) :
-  - les 55 tests de `tests_tclsh` qui ont une sortie attendue passent (Linux ; MinGW64 chez
+* **v15x livrée** (24 octobre) : cast vers une liste en cases, `Tcl_AnnotatedCreateCells`. Le détail de chaque version est
+  dans `noyau/LISEZMOI.md`, une section par version, de la v14 à la v15x en fin de fichier.
+* **Vérifié pour la v15x** (côté Claude, Linux) :
+  - les 56 tests de `tests_tclsh` qui ont une sortie attendue passent (Linux ; MinGW64 chez
     l'utilisateur pour la v15s) ; les autres tournent sans erreur ;
   - sorties de tous les tests et exemples identiques avec et sans forme compacte
     (`TCL_TYPES_COMPACT=0/1`) ;
@@ -45,6 +45,7 @@ premier message d'une conversation qui reprend le travail.*
 | v15u | `foreach`/`lmap` parcourent le contenu d'une liste typée (patch `boucles-typees.patch`) ; `bench.tcl` en markdown |
 | v15v | cache du champ pour `$a(x)` ; nombres typés lus directement par `expr` (patch `expr-nombres-types.patch`) |
 | v15w | `type binary encode`/`decode` par copie des cases quand la disposition est celle des octets |
+| v15x | cast vers une liste en cases sans objet par élément ; `Tcl_AnnotatedCreateCells` (Bézier en C x 77) |
 
 ## 2. Installation et tests (chez l'utilisateur, MinGW64)
 
@@ -144,11 +145,11 @@ recompilé : `maj.sh` fait `make clean`. Des objets périmés donnent une corrup
 
 ## 5. Prochaine étape
 
-**Performances, côté C.** Après la v15v, l'étape annotée de l'exemple `geometrie` est à 1,8 à 3 fois
-le Tcl nu ; une lecture `$a(x)` dans `expr` coûte ≈ 0,14 µs (la valeur typée du champ, créée puis
-libérée). Suite proposée : une valeur en cases rendue par C sans passer par le texte
-(`Tcl_AnnotatedCreateCells`), un cast entre listes en cases de même disposition, puis de vraies
-entrées de stub.
+**Performances.** Après la v15x, l'étape annotée de l'exemple `geometrie` est à 1,8 à 3 fois
+le Tcl nu, les voies C de 3 à 150 fois plus rapides que lui ; une lecture `$a(x)` dans `expr` coûte ≈ 0,14 µs (la valeur typée du champ, créée puis
+libérée). Restent : de vraies entrées de stub (les fonctions
+de `tclAnnotatedApi.h`), les données par thread, la forme compacte côté Tcl (parcours et lecture des
+cases), les appels de procédure (avec les signatures).
 Bancs : `exemples/geometrie/bench.tcl` et `bench_parties.tcl` ; profil avec callgrind.
 
 Les autres points ouverts sont dans le planning et au § 17 de `doc/ANNOTATIONS.fr.md`, entre

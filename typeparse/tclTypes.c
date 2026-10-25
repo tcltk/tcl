@@ -2640,6 +2640,10 @@ TclTypeCast(Tcl_Interp *interp, Tcl_Obj *src, TclType *target,
 	Tcl_Size ne;
 	int annotated = (target->elem != NULL && TclTypeIsAny(target->elem));
 
+	if (target->kind == TCLT_LIST && !annotated
+		&& (res = TclCompactCast(target, content)) != NULL) {
+	    goto validate;		/* écrit directement en cases */
+	}
 	if (target->kind == TCLT_LIST
 		&& Tcl_ListObjGetElements(NULL, content, &ne, &ev) == TCL_OK) {
 	    res = Tcl_NewListObj(ne, NULL);

@@ -3976,6 +3976,75 @@ TclCompactNew(TclType *ltp, Tcl_Size n, unsigned char **dataPtr)
     return v;
 }
 
+/* Deux dispositions de cases identiques (noms des champs exceptés). */
+static int
+SameCompactLayout(const TclCompactLayout *a, const TclCompactLayout *b)
+{
+    int i;
+
+    if (a == b) {
+	return 1;
+    }
+    if (a->nnodes != b->nnodes || a->size != b->size) {
+	return 0;
+    }
+    for (i = 0; i < a->nnodes; i++) {
+	if (a->node[i].kind != b->node[i].kind
+		|| a->node[i].off != b->node[i].off
+		|| (a->node[i].kind == CN_PROD
+		    ? a->node[i].nchild != b->node[i].nchild
+		    : a->node[i].size != b->node[i].size)) {
+	    return 0;
+	}
+    }
+    return 1;
+}
+
+/*
+ * Cast d'une liste vers le type liste target dont les éléments ont une
+ * disposition en cases, quand le résultat serait en cases : contenu neuf
+ * (refcount 0), ou NULL (le cast ordinaire s'en charge). Une source déjà en
+ * cases de même disposition (list.point vers list.pointC) est copiée d'un
+ * bloc ; sinon les éléments sont écrits directement dans les cases
+ * (TclCompactFrom), sans objet intermédiaire.
+ */
+Tcl_Obj *
+TclCompactCast(TclType *target, Tcl_Obj *content)
+{
+    TclCompactLayout *tl;
+    TclCompactBuf *sb, *b;
+    Tcl_Obj *v;
+    Tcl_ObjInternalRep ir;
+    int wanted;
+
+    if (target == NULL || target->kind != TCLT_LIST || target->elem == NULL) {
+	return NULL;
+    }
+    wanted = target->compactWanted || target->elem->compactWanted;
+    if (!(compactOn || wanted)
+	    || (tl = TclCompactLayoutOf(target->elem)) == NULL) {
+	return NULL;
+    }
+    if (content->typePtr != &compactListType) {
+	return TclCompactFrom(target, content);
+    }
+    sb = COMPACT_BUF(content);
+    if (!SameCompactLayout(sb->lay, tl)
+	    || (target->arity >= 0 && sb->n != target->arity)) {
+	return NULL;
+    }
+    b = NewCompactBuf(target->elem, tl, sb->n);
+    memcpy(b->data, sb->data, (size_t) sb->n * tl->size);
+    b->n = sb->n;
+    b->norm = wanted;
+    v = Tcl_NewObj();
+    ir.twoPtrValue.ptr1 = b;
+    ir.twoPtrValue.ptr2 = NULL;
+    Tcl_StoreInternalRep(v, &compactListType, &ir);
+    TclInvalidateStringRep(v);		/* chaîne recalculée depuis les cases */
+    return v;
+}
+
 /*
  * tcl::unsupported::compact          -> on | off
  * tcl::unsupported::compact on|off
@@ -4088,7 +4157,92 @@ CompactObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
 	Tcl_SetObjResult(interp, r);
 	return TCL_OK;
     }
-    Tcl_WrongNumArgs(interp, 1, objv, "?on|off? | info value | layout type");
+    if ((objc == 4 || objc == 5) && strcmp(sub, "cells") == 0) {
+	/*
+	 * cells TYPE BYTES ?STRIDE? : une valeur du type liste TYPE dont les
+	 * cases sont les octets donnés (un tableau de struct écrit par C,
+	 * Tcl_AnnotatedCreateCells). Toujours en cases ; seuls les scalaires
+	 * sont copiés (le remplissage reste à zéro).
+	 */
+	Tcl_Size tl, len, n, k;
+	const char *tt = Tcl_GetStringFromObj(objv[2], &tl);
+	TclType *tp = TclTypeParse(interp, tt, tl);
+	TclCompactLayout *lay;
+	TclCompactBuf *b;
+	const unsigned char *bytes;
+	Tcl_Obj *v;
+	Tcl_ObjInternalRep ir;
+	Tcl_WideInt stride;
+	int i;
+
+	if (tp == NULL) {
+	    return TCL_ERROR;
+	}
+	if (tp->kind != TCLT_LIST || tp->elem == NULL
+		|| (lay = TclCompactLayoutOf(tp->elem)) == NULL) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf("%s is not a list whose "
+		    "elements have a compact layout", tp->name));
+	    Tcl_SetErrorCode(interp, "TCL", "TYPE", "COMPACT", (char *) NULL);
+	    return TCL_ERROR;
+	}
+	if (objc == 5) {
+	    if (Tcl_GetWideIntFromObj(interp, objv[4], &stride) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    if ((size_t) stride != lay->size) {
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf("stride %" TCL_LL_MODIFIER
+			"d does not match the cells of %s (%" TCL_Z_MODIFIER
+			"u bytes)", (long long) stride, tp->elem->name,
+			lay->size));
+		Tcl_SetErrorCode(interp, "TCL", "TYPE", "COMPACT", (char *) NULL);
+		return TCL_ERROR;
+	    }
+	}
+	bytes = Tcl_GetBytesFromObj(interp, objv[3], &len);
+	if (bytes == NULL) {
+	    return TCL_ERROR;
+	}
+	if ((size_t) len % lay->size != 0) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf("%" TCL_SIZE_MODIFIER
+		    "d bytes is not a whole number of %s cells (%"
+		    TCL_Z_MODIFIER "u bytes)", len, tp->elem->name, lay->size));
+	    Tcl_SetErrorCode(interp, "TCL", "TYPE", "COMPACT", (char *) NULL);
+	    return TCL_ERROR;
+	}
+	n = (Tcl_Size) ((size_t) len / lay->size);
+	if (tp->arity >= 0 && n != tp->arity) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf("%s needs exactly %"
+		    TCL_SIZE_MODIFIER "d elements but got %" TCL_SIZE_MODIFIER
+		    "d", tp->name, tp->arity, n));
+	    Tcl_SetErrorCode(interp, "TCL", "TYPE", "LIST", (char *) NULL);
+	    return TCL_ERROR;
+	}
+	b = NewCompactBuf(tp->elem, lay, n);
+	for (k = 0; k < n; k++) {
+	    size_t base = (size_t) k * lay->size;
+
+	    for (i = 0; i < lay->nnodes; i++) {
+		const CNode *nd = &lay->node[i];
+
+		if (nd->kind != CN_PROD) {
+		    memcpy(b->data + base + nd->off, bytes + base + nd->off,
+			    (size_t) nd->size);
+		}
+	    }
+	}
+	b->n = n;
+	b->norm = tp->compactWanted || tp->elem->compactWanted;
+	v = Tcl_NewObj();
+	ir.twoPtrValue.ptr1 = b;
+	ir.twoPtrValue.ptr2 = NULL;
+	Tcl_StoreInternalRep(v, &compactListType, &ir);
+	TclInvalidateStringRep(v);
+	Tcl_SetObjResult(interp, TclNewAnnotatedOwn(v,
+		TypeRefObj(interp, tp, -1)));
+	return TCL_OK;
+    }
+    Tcl_WrongNumArgs(interp, 1, objv,
+	    "?on|off? | info value | layout type | cells type bytes ?stride?");
     return TCL_ERROR;
 }
 

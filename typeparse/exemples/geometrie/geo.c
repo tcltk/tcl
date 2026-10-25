@@ -42,7 +42,8 @@
  * EN : the structs come from the Tcl types (type {c!}export), with _Static_assert.
  */
 #include "geo_types.h"
-#include "../../tclCompact.h"
+#include "../../tclAnnotatedApi.h"	/* les fonctions de stub prévues ; à retirer
+					 * quand elles seront dans tcl.h */
 
 typedef pointC Point;		/* même disposition que point (deux double) */
 typedef polyC Poly;
@@ -152,96 +153,75 @@ PolyFromBytes(Tcl_Interp *interp, Tcl_Obj *obj, const Point **ptsPtr,
 }
 
 /* ------------------------------------------------------------------ */
-/* Voie OBJET : la valeur annotée elle-même                            */
-/* OBJECT way: the annotated value itself                              */
+/* Voie OBJET : la valeur annotée elle-même, par les fonctions de stub  */
+/* OBJECT way: the annotated value itself, through the stub functions  */
 /* ------------------------------------------------------------------ */
 
-/*
- * FR : AUJOURD'HUI le type et le contenu se demandent à Tcl (`type get`,
- *      ::tcl::unsupported::content). Avec les fonctions de stub prévues
- *      (Tcl_AnnotatedGetType, Tcl_AnnotatedGetParts), ce seraient deux appels C.
- * EN : TODAY type and content are asked of Tcl. With the planned stub
- *      functions, these would be two plain C calls.
- */
-static Tcl_Obj *
-AskTcl(Tcl_Interp *interp, const char *c1, const char *c2, Tcl_Obj *obj)
-{
-    Tcl_Obj *cmd[3], *res = NULL;
-    int n = 0, i;
+/* Les noms des types, créés une fois (clientData des commandes _obj). */
+enum { T_POINT, T_POLYGONE, T_NUAGE, T_BEZIER, T_RECTANGLE, T_POLYLIGNE,
+    T_NB };
+static const char *const geoTypeNames[T_NB] = {
+    "point", "polygone", "nuage", "bezier", "rectangle", "polyligne"
+};
+typedef struct GeoTypes {
+    Tcl_Obj *t[T_NB];
+} GeoTypes;
 
-    cmd[n++] = Tcl_NewStringObj(c1, -1);
-    if (c2 != NULL) {
-	cmd[n++] = Tcl_NewStringObj(c2, -1);
+#define VOIE_OBJET(cd) ((cd) != NULL)
+
+/* La valeur est-elle du type voulu ? Sinon, le message. */
+static int
+CheckType(Tcl_Interp *interp, Tcl_Obj *obj, Tcl_Obj *want)
+{
+    Tcl_Obj *type;
+    int same;
+
+    if (Tcl_AnnotatedGetType(interp, obj, &type) != TCL_OK) {
+	return TCL_ERROR;
     }
-    for (i = 0; i < n; i++) {
-	Tcl_IncrRefCount(cmd[i]);
+    same = (type != NULL && strcmp(Tcl_GetString(type),
+	    Tcl_GetString(want)) == 0);
+    if (!same) {
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"geo: expected a %s but got \"%s\"", Tcl_GetString(want),
+		type != NULL ? Tcl_GetString(type) : "untyped value"));
     }
-    cmd[n++] = obj;
-    if (Tcl_EvalObjv(interp, n, cmd, 0) == TCL_OK) {
-	res = Tcl_GetObjResult(interp);
-	Tcl_IncrRefCount(res);
+    if (type != NULL) {
+	Tcl_BounceRefCount(type);
     }
-    for (i = 0; i < n - 1; i++) {
-	Tcl_DecrRefCount(cmd[i]);
-    }
-    return res;			/* une référence pour l'appelant, ou NULL */
+    return same ? TCL_OK : TCL_ERROR;
 }
 
 /*
- * FR : rend VALEUR typée par TYPE (l'équivalent de `type cast TYPE VALEUR`).
- *      Avec une fonction de stub (Tcl_AnnotatedCreate), ce serait un appel C.
- * EN : returns VALUE typed as TYPE. A stub function would make it a C call.
+ * Les points d'une valeur annotée (polygone, nuage, bezier) :
+ *   - en cases (type def {-compact}, ou forme compacte) : le tableau de
+ *     `point` lui-même, lu en place ;
+ *   - sinon : ses parties (les points), puis les parties de chaque point,
+ *     copiées dans *toFree.
  */
 static int
-SetTypedResult(Tcl_Interp *interp, const char *type, Tcl_Obj *value)
+PolyFromObj(Tcl_Interp *interp, GeoTypes *t, Tcl_Obj *obj, Tcl_Obj *want,
+	const Point **ptsPtr, uint32_t *nPtr, Point **toFree)
 {
-    Tcl_Obj *cmd[4];
-    int i, code;
-
-    cmd[0] = Tcl_NewStringObj("type", -1);
-    cmd[1] = Tcl_NewStringObj("cast", -1);
-    cmd[2] = Tcl_NewStringObj(type, -1);
-    cmd[3] = value;
-    for (i = 0; i < 4; i++) {
-	Tcl_IncrRefCount(cmd[i]);
-    }
-    code = Tcl_EvalObjv(interp, 4, cmd, 0);	/* résultat dans interp */
-    for (i = 0; i < 4; i++) {
-	Tcl_DecrRefCount(cmd[i]);
-    }
-    return code;
-}
-
-/*
- * Lit les points d'une valeur annotée du type `want` dans un tableau alloué
- * (*ptsPtr, à libérer par Tcl_Free).
- */
-static int
-PolyFromObj(Tcl_Interp *interp, Tcl_Obj *obj, const char *want,
-	Point **ptsPtr, uint32_t *nPtr)
-{
-    Tcl_Obj *type, *content, **elv, **xy;
+    const void *cells;
+    Tcl_Obj **elv, **xy;
     Tcl_Size n, i, nxy;
     Point *pts;
 
-    type = AskTcl(interp, "type", "get", obj);
-    if (type == NULL) {
+    if (CheckType(interp, obj, want) != TCL_OK) {
 	return TCL_ERROR;
     }
-    if (strcmp(Tcl_GetString(type), want) != 0) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"geo: expected a %s but got \"%s\"", want,
-		Tcl_GetString(type)[0] ? Tcl_GetString(type) : "untyped value"));
-	Tcl_DecrRefCount(type);
+    if (Tcl_AnnotatedGetCells(interp, obj, t->t[T_POINT], sizeof(point), &cells,
+	    &n) != TCL_OK) {
 	return TCL_ERROR;
     }
-    Tcl_DecrRefCount(type);
-    content = AskTcl(interp, "::tcl::unsupported::content", NULL, obj);
-    if (content == NULL) {
-	return TCL_ERROR;
+    if (cells != NULL) {
+	*ptsPtr = (const Point *) cells;	/* même disposition (geo_types.h) */
+	*nPtr = (uint32_t) n;
+	return TCL_OK;
     }
-    if (Tcl_ListObjGetElements(interp, content, &n, &elv) != TCL_OK) {
-	Tcl_DecrRefCount(content);
+    if (Tcl_AnnotatedGetParts(interp, obj, TCL_ANNOT_PLAIN, &n, &elv)
+	    != TCL_OK) {
 	return TCL_ERROR;
     }
     pts = (Point *) Tcl_Alloc((size_t)(n ? n : 1) * sizeof(Point));
@@ -255,64 +235,63 @@ PolyFromObj(Tcl_Interp *interp, Tcl_Obj *obj, const char *want,
 			"geo: a point has 2 fields", -1));
 	    }
 	    Tcl_Free(pts);
-	    Tcl_DecrRefCount(content);
 	    return TCL_ERROR;
 	}
     }
-    Tcl_DecrRefCount(content);
     *ptsPtr = pts;
+    *toFree = pts;
     *nPtr = (uint32_t) n;
     return TCL_OK;
 }
 
 /* ------------------------------------------------------------------ */
 /* Les commandes / the commands                                        */
-/*   clientData = NULL : voie octets ; non NULL : voie objet           */
+/*   clientData = NULL : voie octets ; GeoTypes * : voie objet         */
 /* ------------------------------------------------------------------ */
 
-#define VOIE_OBJET(cd) ((cd) != NULL)
-
-/* Obtient les points de objv[k], selon la voie. *toFree à libérer. */
+/* Obtient les points de obj, selon la voie. *toFree à libérer. */
 static int
 GetPoints(Tcl_Interp *interp, void *cd, Tcl_Obj *obj, const char *want,
 	const Point **ptsPtr, uint32_t *nPtr, Point **toFree)
 {
     *toFree = NULL;
     if (VOIE_OBJET(cd)) {
-	/*
-	 * FR : forme compacte (tcl::unsupported::compact on) : les points
-	 *      SONT un tableau de `point`, lu en place, sans copie. Le type
-	 *      est vérifié quand même (polygone, nuage, bezier).
-	 * EN : compact form: the points ARE an array of `point`, read in place.
-	 */
-	const TclCompactView *cv = TclCompactViewOfType(obj, "point",
-		sizeof(point));
+	GeoTypes *t = (GeoTypes *) cd;
+	Tcl_Obj *w = t->t[strcmp(want, "nuage") == 0 ? T_NUAGE
+		: strcmp(want, "bezier") == 0 ? T_BEZIER : T_POLYGONE];
 
-	if (cv != NULL) {
-	    Tcl_Obj *type = AskTcl(interp, "type", "get", obj);
-
-	    if (type == NULL) {
-		return TCL_ERROR;
-	    }
-	    if (strcmp(Tcl_GetString(type), want) != 0) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"geo: expected a %s but got \"%s\"", want,
-			Tcl_GetString(type)));
-		Tcl_DecrRefCount(type);
-		return TCL_ERROR;
-	    }
-	    Tcl_DecrRefCount(type);
-	    *ptsPtr = (const Point *) cv->data;
-	    *nPtr = (uint32_t) cv->n;
-	    return TCL_OK;
-	}
-	if (PolyFromObj(interp, obj, want, toFree, nPtr) != TCL_OK) {
-	    return TCL_ERROR;
-	}
-	*ptsPtr = *toFree;
-	return TCL_OK;
+	return PolyFromObj(interp, t, obj, w, ptsPtr, nPtr, toFree);
     }
     return PolyFromBytes(interp, obj, ptsPtr, nPtr);
+}
+
+/* Le résultat : VALEUR typée par TYPE (Tcl_AnnotatedCreate). La voie
+ * octets rend le même résultat typé : on y passe par les noms. */
+static int
+SetTypedResult(Tcl_Interp *interp, void *cd, const char *type,
+	Tcl_Obj *value)
+{
+    Tcl_Obj *typeObj, *res;
+    int rc;
+
+    if (VOIE_OBJET(cd)) {
+	GeoTypes *t = (GeoTypes *) cd;
+
+	typeObj = t->t[strcmp(type, "rectangle") == 0 ? T_RECTANGLE
+		: T_POLYLIGNE];
+	Tcl_IncrRefCount(typeObj);
+    } else {
+	typeObj = Tcl_NewStringObj(type, -1);
+	Tcl_IncrRefCount(typeObj);
+    }
+    Tcl_IncrRefCount(value);
+    rc = Tcl_AnnotatedCreate(interp, typeObj, value, &res);
+    Tcl_DecrRefCount(value);
+    Tcl_DecrRefCount(typeObj);
+    if (rc == TCL_OK) {
+	Tcl_SetObjResult(interp, res);
+    }
+    return rc;
 }
 
 static int
@@ -380,7 +359,7 @@ EnglobantCmd(void *cd, Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 	Tcl_Obj *mm[2];
 	mm[0] = Tcl_NewListObj(2, v);
 	mm[1] = Tcl_NewListObj(2, v + 2);
-	return SetTypedResult(interp, "rectangle", Tcl_NewListObj(2, mm));
+	return SetTypedResult(interp, cd, "rectangle", Tcl_NewListObj(2, mm));
     }
 }
 
@@ -445,16 +424,29 @@ BezierCmd(void *cd, Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 	if (f) Tcl_Free(f);
 	return TCL_ERROR;
     }
-    res = Tcl_NewListObj(n, NULL);
-    for (i = 0; i < n; i++) {
-	Point r = Bezier(b, (double) i / (double)(n - 1));
-	Tcl_Obj *xy[2];
-	xy[0] = Tcl_NewDoubleObj(r.x);
-	xy[1] = Tcl_NewDoubleObj(r.y);
-	Tcl_ListObjAppendElement(NULL, res, Tcl_NewListObj(2, xy));
+    /* Les points vont dans un tableau C, que Tcl adopte comme cases d'une
+     * polyligne (Tcl_AnnotatedCreateCells) : pas d'objet par point. */
+    {
+	Point *pts = (Point *) Tcl_Alloc((size_t) n * sizeof(Point));
+	Tcl_Obj *typeObj;
+	int rc;
+
+	for (i = 0; i < n; i++) {
+	    pts[i] = Bezier(b, (double) i / (double)(n - 1));
+	}
+	if (f) Tcl_Free(f);
+	typeObj = VOIE_OBJET(cd) ? ((GeoTypes *) cd)->t[T_POLYLIGNE]
+		: Tcl_NewStringObj("polyligne", -1);
+	Tcl_IncrRefCount(typeObj);
+	rc = Tcl_AnnotatedCreateCells(interp, typeObj, pts, (Tcl_Size) n,
+		sizeof(Point), &res);
+	Tcl_DecrRefCount(typeObj);
+	Tcl_Free(pts);
+	if (rc == TCL_OK) {
+	    Tcl_SetObjResult(interp, res);
+	}
+	return rc;
     }
-    if (f) Tcl_Free(f);
-    return SetTypedResult(interp, "polyligne", res);
 }
 
 /* geo::c::layout : tailles et décalages vus par le compilateur */
@@ -473,13 +465,26 @@ LayoutCmd(void *cd, Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
     return TCL_OK;
 }
 
+static void
+FreeGeoTypes(void *cd, Tcl_Interp *interp)
+{
+    GeoTypes *t = (GeoTypes *) cd;
+    int k;
+
+    (void) interp;
+    for (k = 0; k < T_NB; k++) {
+	Tcl_DecrRefCount(t->t[k]);
+    }
+    Tcl_Free(t);
+}
+
 #ifdef _WIN32
 __declspec(dllexport)
 #endif
 int
 Geo_Init(Tcl_Interp *interp)
 {
-    static int objet = 1;
+    GeoTypes *t;
     static const struct {
 	const char *nom;
 	Tcl_ObjCmdProc2 *proc;
@@ -493,12 +498,20 @@ Geo_Init(Tcl_Interp *interp)
     if (Tcl_InitStubs(interp, "9.0", 0) == NULL) {
 	return TCL_ERROR;
     }
+    /* les noms des types, une fois (ils gardent le type analysé en cache
+     * avec les vraies fonctions de stub) ; libérés avec l'interpréteur */
+    t = (GeoTypes *) Tcl_Alloc(sizeof(GeoTypes));
+    for (i = 0; i < T_NB; i++) {
+	t->t[i] = Tcl_NewStringObj(geoTypeNames[i], -1);
+	Tcl_IncrRefCount(t->t[i]);
+    }
+    Tcl_SetAssocData(interp, "geo::types", FreeGeoTypes, t);
     for (i = 0; cmds[i].nom != NULL; i++) {
 	char buf[64];
 	snprintf(buf, sizeof(buf), "::geo::c::%s_raw", cmds[i].nom);
 	Tcl_CreateObjCommand2(interp, buf, cmds[i].proc, NULL, NULL);
 	snprintf(buf, sizeof(buf), "::geo::c::%s_obj", cmds[i].nom);
-	Tcl_CreateObjCommand2(interp, buf, cmds[i].proc, &objet, NULL);
+	Tcl_CreateObjCommand2(interp, buf, cmds[i].proc, t, NULL);
     }
     Tcl_CreateObjCommand2(interp, "::geo::c::layout", LayoutCmd, NULL, NULL);
     return Tcl_PkgProvide(interp, "geo", "1.0");

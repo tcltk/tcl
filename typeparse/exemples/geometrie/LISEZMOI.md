@@ -15,14 +15,16 @@ Les trois étapes ont les mêmes noms (`geo::aire`, `geo::projete`…), les mêm
 Le type Tcl décrit la structure C :
 
 ```
-type def pointC {{f64le}x; {f64le}y}         typedef struct {double x, y;} Point;
+type def {-compact}pointC {{f64le}x; {f64le}y}   typedef struct {double x, y;} Point;
 type def polyC  {{u32le}n;                   typedef struct {uint32_t n; Point pts[];} Poly;
                  {list($n).pointC}pts}
 ```
 
 Deux voies vers le C, au choix (`set geo::voie octets|objet`) :
 
-- **octets** : le polygone est encodé par `type binary encode polyC … -align natural`, et C lit un `(const Poly *)` ;
+- **octets** : le polygone devient un `polyC` par `type cast list.pointC $P` (écrit directement en cases, copié d'un
+  bloc si le polygone est lui-même en cases), puis `type binary encode polyC … -align natural` copie ces cases ;
+  C lit un `(const Poly *)` ;
 - **objet** : C reçoit la valeur annotée elle-même, vérifie son type (`geo: expected a polygone but got "nuage"`) et lit ses points.
 
 Fonctions en C : `aire`, `perimetre`, `englobant`, `dedans_tous` (un nuage de points dans un polygone), `bezier_echantillons` (n points d'une Bézier cubique).
@@ -36,18 +38,19 @@ tclsh bench.tcl ?N?        ;# vitesses comparées avec timerate (N = 10000 par d
 ```
 
 `bench.tcl` prend le Tcl nu (étape 1) pour référence et écrit des tableaux markdown : à côté de chaque
-temps, `(/ 1.8)` veut dire 1,8 fois plus lent que le Tcl nu, `(x 12.6)` 12,6 fois plus rapide. Mesure du
-24 octobre (v15v, Linux) :
+temps, `(/ 2.2)` veut dire 2,2 fois plus lent que le Tcl nu, `(x 37.1)` 37,1 fois plus rapide. Mesure du
+24 octobre (v15x, Linux) :
 
 | calcul (N = 10000, µs par appel) | 1 brut | 2 annoté | 3 C, octets | 3 C, objet |
 |---|---:|---:|---:|---:|
-| aire | 3 871 | 7 123 (/ 1.8) | 1 333 (x 2.9) | 417 (x 9.3) |
-| périmètre | 17 802 | 37 578 (/ 2.1) | 1 418 (x 12.6) | 450 (x 39.6) |
-| englobant | 1 276 | 3 852 (/ 3.0) | 1 205 (x 1.1) | 410 (x 3.1) |
-| dedans_tous | 67 517 | 141 419 (/ 2.1) | 658 (x 102.7) | 530 (x 127.4) |
-| Bézier | 21 827 | 51 565 (/ 2.4) | 2 246 (x 9.7) | 2 550 (x 8.6) |
+| aire | 4 340 | 9 650 (/ 2.2) | 562 (x 7.7) | 391 (x 11.1) |
+| périmètre | 17 532 | 40 533 (/ 2.3) | 472 (x 37.1) | 440 (x 39.8) |
+| englobant | 1 276 | 3 595 (/ 2.8) | 450 (x 2.8) | 411 (x 3.1) |
+| dedans_tous | 73 590 | 162 420 (/ 2.2) | 508 (x 144.8) | 498 (x 147.9) |
+| Bézier | 21 059 | 60 683 (/ 2.9) | 324 (x 64.9) | 274 (x 76.8) |
 
-L'étape annotée, rapportée au Tcl nu, au fil des versions :
+L'étape annotée, rapportée au Tcl nu, au fil des versions (les écarts de ± 0.3 d'un passage à l'autre sont du
+bruit de mesure) :
 
 | calcul | v15s | v15u | v15v |
 |---|---:|---:|---:|
@@ -57,8 +60,17 @@ L'étape annotée, rapportée au Tcl nu, au fil des versions :
 | dedans_tous | / 3.6 | / 2.6 | / 2.1 |
 | Bézier | / 2.7 | / 2.4 | / 2.4 |
 
+Les voies C, rapportées au Tcl nu :
+
+| calcul | octets v15v | octets v15x | objet v15v | objet v15x |
+|---|---:|---:|---:|---:|
+| aire | x 2.9 | x 7.7 | x 9.3 | x 11.1 |
+| périmètre | x 12.6 | x 37.1 | x 39.6 | x 39.8 |
+| Bézier | x 9.7 | x 64.9 | x 8.6 | x 76.8 |
+
 v15u : `foreach` parcourt une liste typée sans refabriquer ses éléments ; v15v : lecture `$a(x)` par un cache du
-champ, nombres typés lus directement par `expr`.
+champ, nombres typés lus directement par `expr` ; v15w : `type binary encode` / `decode` copient les cases ;
+v15x : cast vers une liste en cases sans objet par élément (voie octets), `Tcl_AnnotatedCreateCells` (Bézier).
 
 ## L'en-tête C vient des types
 
@@ -87,7 +99,9 @@ chaque accès fabrique une vue et un nombre.
 ## Écrit avec les fonctions de stub prévues
 
 La voie objet de `geo.c` n'appelle plus l'interpréteur elle-même : elle est écrite avec les fonctions C prévues
-pour le TIP (`Tcl_AnnotatedGetType`, `Tcl_AnnotatedGetCells`, `Tcl_AnnotatedGetParts`, `Tcl_AnnotatedCreate`).
+pour le TIP (`Tcl_AnnotatedGetType`, `Tcl_AnnotatedGetCells`, `Tcl_AnnotatedGetParts`, `Tcl_AnnotatedCreate`,
+`Tcl_AnnotatedCreateCells`). `bezier_echantillons` remplit un tableau C de `Point` et le donne à
+`Tcl_AnnotatedCreateCells`, qui en fait une `polyligne` en cases : pas d'objet par point.
 En attendant qu'elles soient de vraies fonctions de stub, `typeparse/tclAnnotatedApi.h` les fournit avec l'API
 publique de Tcl 9 ; ce jour-là, on retire la ligne `#include "../../tclAnnotatedApi.h"`, rien d'autre.
 
@@ -117,4 +131,4 @@ gcc -shared -O2 -DUSE_TCL_STUBS -I<src>/generic -I<src>/win -o geo.dll geo.c <bu
 
 Voie octets, aire : 1 029 µs d'encodage en Tcl pour 19 µs de calcul en C. La frontière coûte plus que le calcul : il faut envoyer au C des opérations « grosses ».
 
-`englobant` et `bezier_echantillons` rendent directement une valeur annotée (`rectangle`, `polyligne`) : C construit la liste des points et la fait typer (`type cast`, en attendant une fonction de stub). Pour la Bézier, mesurée seule dans un interpréteur neuf : 3,8 ms avant (liste plate, puis `lmap` et typage en Tcl), 1,8 ms après. Dans `bench.tcl`, après les autres mesures, le même appel prend 4,5 ms : le tas déjà chargé par les grandes données pèse sur les allocations.
+`englobant` et `bezier_echantillons` rendent directement une valeur annotée (`rectangle`, `polyligne`) : C construit la liste des points et la fait typer (`type cast`, en attendant une fonction de stub). Depuis la v15x, la Bézier passe par `Tcl_AnnotatedCreateCells` : 2,3 ms → 0,27 ms. Pour la Bézier, mesurée seule dans un interpréteur neuf : 3,8 ms avant (liste plate, puis `lmap` et typage en Tcl), 1,8 ms après. Dans `bench.tcl`, après les autres mesures, le même appel prend 4,5 ms : le tas déjà chargé par les grandes données pèse sur les allocations.

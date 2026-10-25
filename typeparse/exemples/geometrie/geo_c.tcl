@@ -23,21 +23,23 @@ source [file join $geo_racine layout binaliases.tcl]
 source [file join $geo_ici .. geometrie.tcl]
 load [file join $geo_ici geo[info sharedlibextension]] Geo
 
-# FR : la disposition C (geo.c) : struct Poly {uint32_t n; Point pts[];}
-# EN : the C layout (geo.c)
-type def pointC {{f64le}x; {f64le}y}
+# FR : la disposition C (geo.c) : struct Poly {uint32_t n; Point pts[];}.
+#      {-compact} : toute liste de pointC est rangée en cases, exactement le
+#      tableau de Point du C ; type binary encode les copie d'un bloc.
+# EN : the C layout (geo.c); {-compact}: lists of pointC are stored as cells.
+type def {-compact}pointC {{f64le}x; {f64le}y}
 type def polyC  {{u32le}n; {list($n).pointC}pts}
 
 namespace eval geo {variable voie octets}
 
-# FR : un polygone, un nuage, une Bézier -> les octets d'un polyC. On passe
-#      par le contenu parce que point et pointC sont deux nominaux distincts
-#      (même forme, types différents) : un polygone n'entre pas tel quel dans
-#      list($n).pointC.
-# EN : through the content, because point and pointC are distinct nominals.
+# FR : un polygone, un nuage, une Bézier -> les octets d'un polyC. point et
+#      pointC sont deux nominaux distincts (même forme, types différents) : un
+#      polygone n'entre pas tel quel dans list($n).pointC, il y entre par un
+#      cast vers list.pointC, écrit directement en cases (copié d'un bloc si
+#      le polygone est lui-même en cases).
+# EN : point and pointC are distinct nominals: cast to list.pointC first.
 proc geo::octets {v} {
-    set c [::tcl::unsupported::content $v]
-    set {polyC}p [llength $c] $c
+    set {polyC}p [llength $v] [type cast list.pointC $v]
     type binary encode polyC $p -align natural
 }
 

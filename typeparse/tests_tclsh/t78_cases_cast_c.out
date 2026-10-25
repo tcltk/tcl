@@ -1,0 +1,16 @@
+cases -> cases  : {0.5 1.0} {2.0 3.25} list<pointC> cases cases
+liste -> cases  : {0.5 1.0} {2.0 3.25} list<pointC> cases liste
+dans polyC      : 2 {{0.5 1.0} {2.0 3.25}} cases
+list(2)         : {0.5 1.0} {2.0 3.25} 1 list(3)<pointC> needs exactly 3 elements but got 2
+signe différent : 1 value "-1" does not fit in int(u,32)
+même valeurs    : 1 7 cases
+texte invalide  : 1 expected floating-point number but got "a"
+cells           : {1.5 2.5} {-3.0 4.0} polygone cases -6.0
+sans stride     : {1.5 2.5} {-3.0 4.0} list<point>
+erreurs :
+  1 stride 24 does not match the cells of point (16 bytes)
+  1 10 bytes is not a whole number of point cells (16 bytes)
+  1 list(3)<point> needs exactly 3 elements but got 2
+  1 list<string> is not a list whose elements have a compact layout
+  1 point is not a list whose elements have a compact layout
+lappend         : {1.5 2.5} {-3.0 4.0} {9.0 9.0} cases
