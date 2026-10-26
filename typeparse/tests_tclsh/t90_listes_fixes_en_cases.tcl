@@ -161,3 +161,18 @@ proc ecrit_3d {} {
     lappend r [catch {set X(0.0.0) 3000000000} m] $m $X
 }
 essai "3D sur place" {ecrit_3d}
+# Lecture directe depuis une vue (une matrice d'un lot) et dans une liste
+# typée ordinaire.
+type def {-compact}lotc list.m3c
+type def loto list.m3o
+proc lot_lit {T} {
+    set v1 {{1.0 2.0 3.0} {4.0 5.0 6.0} {7.0 8.0 9.0}}
+    set v2 {{0.5 0.0 0.0} {0.0 0.5 0.0} {0.0 0.0 0.5}}
+    if {$T eq "lotc"} {set {lotc}L $v1 $v2} else {set {loto}L $v1 $v2}
+    set r {}
+    foreach M $L {lappend r [expr {$M(0.0) + $M(1.1) + $M(2.2)}] $M(2.0) [type get $M(2.0)] [catch {set M(2.3)} m]}
+    lappend r $L(1.2.2) [expr {$L(0.1.2) * 2}] [type get $L(0.1.2)]
+}
+essai "lot en cases" {lot_lit lotc}
+essai "lot ordinaire" {lot_lit loto}
+essai "lot en cases : en cases" {set {lotc}L {{1.0 2.0 3.0} {4.0 5.0 6.0} {7.0 8.0 9.0}}; type is {compact?}$L}

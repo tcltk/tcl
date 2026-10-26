@@ -54,3 +54,6 @@ trace d'écriture : 33.0
 indices calculés : {{10.0 2.0 3.0} {4.0 50.0 6.0} {7.0 8.0 90.0}} 1 {bad index "1.2": must be integer?[+-]integer? or end?[+-]integer?} {0.0 8.0 90.0}
 refus et normalisation : 1 {expected floating-point number but got "abc"} 1 {list(3)<double> cannot grow beyond 3 elements} {7.0 2.0 3.0}
 3D sur place : 1 {value "3000000000" does not fit in int(s,32)} {{{1 2} {3 4} {5 6}} {{7 8} {9 10} {11 -7}}}
+lot en cases : 15.0 7.0 double 1 1.5 0.0 double 1 0.5 12.0 double
+lot ordinaire : 15.0 7.0 double 1 1.5 0.0 double 1 0.5 12.0 double
+lot en cases : en cases : 1

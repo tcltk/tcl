@@ -1868,3 +1868,23 @@ structure `CNode` (disposition des cases) change : recompilation complète.
   cast, `type binary`, `compact cells`, grande matrice, refus au-delà de 4 096 parties ; écriture sur place :
   vue, copie et éléments parcourus gardés, chaîne refaite, trace, indices calculés, refus et normalisation.
   `t70_compact` et `t72_compact_type` : nouveau texte du message de refus.
+
+### v16i — exemple `exemples/matrices` (C) ; lectures directes depuis une vue et dans une liste ordinaire (26 octobre 2026)
+
+Sources de types : `tclAnnotObj.c` (`TclCompactViewReadPath`, `CompactWalkFrom`), `tclTypePath.c`
+(`PlainPathPart`), `tclTypes.h`. Pas de patch noyau.
+
+- **Nouvel exemple `exemples/matrices/`** : `type def {-compact}matrix3 list(3).ligne3` lue et
+  fabriquée en C par `tclAnnotatedApi.h` (`Tcl_AnnotatedGetCells` avec le type des lignes,
+  `Tcl_AnnotatedCreateCells`) ; un lot `list.matrix3` lu en place comme un tableau `matrix3[n]` ;
+  en-tête `mat_types.h` produit par `type {c!}export` et vérifié par `test.tcl` (22 contrôles) ;
+  `bench.tcl` (Tcl brut, Tcl typé en cases ou non, C). À compiler : `mat.c`.
+- **`$M(i.j)` d'une vue** (une matrice d'un lot, lue par `foreach` ou `lindex`) : lu dans la case
+  depuis le noeud de la vue (`TclCompactViewReadPath`), au lieu du chemin général. 10 000
+  déterminants en Tcl sur un lot : 176 -> 21 ms.
+- **`$M(i.j)` d'une liste typée ordinaire** dont chaque niveau est une liste et la partie un nombre
+  (`list.list(3).double`...) : lu en descendant les listes (`PlainPathPart`), sans compiler l'index ;
+  au moindre écart (élément annoté, produit, somme, chaîne), le chemin général. Déterminant
+  3×3 : 16,7 -> 1,8 µs. Sorties comparées à la v16b (chemin général seul) : identiques.
+- Test `t90_listes_fixes_en_cases` : lots en cases et ordinaires lus par `foreach`, par chemin et
+  dans `expr`.

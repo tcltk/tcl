@@ -3935,11 +3935,9 @@ TclCompactElement(Tcl_Obj *v, Tcl_Size i)
 /* Le noeud (et son type) désigné par names dans une case du tampon b ;
  * -1 si le chemin ne se suit pas ici. */
 static int
-CompactWalk(TclCompactBuf *b, Tcl_Size nnames, const char *const names[],
-	TclType **tpPtr)
+CompactWalkFrom(TclCompactBuf *b, int i, TclType *t, Tcl_Size nnames,
+	const char *const names[], TclType **tpPtr)
 {
-    TclType *t = b->et;
-    int i = 0;
     Tcl_Size k;
 
     for (k = 0; k < nnames; k++) {
@@ -3980,6 +3978,36 @@ CompactWalk(TclCompactBuf *b, Tcl_Size nnames, const char *const names[],
     }
     *tpPtr = t;
     return i;
+}
+
+static int
+CompactWalk(TclCompactBuf *b, Tcl_Size nnames, const char *const names[],
+	TclType **tpPtr)
+{
+    return CompactWalkFrom(b, 0, b->et, nnames, names, tpPtr);
+}
+
+/*
+ * Idem depuis une vue sur une case (une ligne d'une matrice, une matrice
+ * d'un lot), vue typée vt : la partie names lue dans la case (contenu neuf,
+ * refcount 0, et son type), ou NULL.
+ */
+Tcl_Obj *
+TclCompactViewReadPath(Tcl_Obj *view, TclType *vt, Tcl_Size nnames,
+	const char *const names[], TclType **tpPtr)
+{
+    CompactElem *ce;
+    int i;
+
+    if (view == NULL || view->typePtr != &compactElemType || nnames < 1) {
+	return NULL;
+    }
+    ce = COMPACT_ELEM(view);
+    i = CompactWalkFrom(ce->b, ce->node, vt, nnames, names, tpPtr);
+    if (i < 0) {
+	return NULL;
+    }
+    return DecodeNode(ce->b->lay->node, &i, ce->b->data + ce->cell);
 }
 
 Tcl_Obj *

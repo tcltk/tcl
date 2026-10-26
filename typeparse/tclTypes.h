@@ -21,7 +21,7 @@
  * VAR_* de tclInt.h). La valeur ci-dessous est un PLACEHOLDER. */
 /* Version du prototype TIP 764 (typeparse/VERSION, maj.sh, et
  * tcl::unsupported::typesversion). */
-#define TCL_TYPES_VERSION "v16h"
+#define TCL_TYPES_VERSION "v16i"
 
 #ifndef VAR_TYPED
 #define VAR_TYPED	0x400000
@@ -341,6 +341,8 @@ Tcl_Obj *TclCompactElement(Tcl_Obj *v, Tcl_Size i);
 Tcl_Obj *TclCompactFieldNumber(Tcl_Obj *o, Tcl_Size idx);
 Tcl_Obj *TclCompactCache(Tcl_Obj *v);
 Tcl_Obj *TclCompactReadPath(Tcl_Obj *v, Tcl_Size idx, Tcl_Size nnames,
+	    const char *const names[], TclType **tpPtr);
+Tcl_Obj *TclCompactViewReadPath(Tcl_Obj *view, TclType *vt, Tcl_Size nnames,
 	    const char *const names[], TclType **tpPtr);
 int	TclCompactWriteScalar(Tcl_Obj *v, Tcl_Size idx, Tcl_Size nnames,
 	    const char *const names[], Tcl_Obj *value);

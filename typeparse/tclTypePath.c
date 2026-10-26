@@ -3427,6 +3427,40 @@ SimpleListIndex(const char *name, Tcl_Size n, Tcl_Size *idxPtr)
 }
 
 /*
+ * L(i.j...) d'une liste typée ordinaire dont chaque niveau est une liste
+ * (list.list(3).double...) et la partie un nombre : le contenu de la partie
+ * (partagé, refcount quelconque : l'appelant l'enveloppe ou le pousse), ou
+ * NULL dès qu'un niveau sort de ce cas simple (élément annoté, produit,
+ * somme...) : le chemin général s'en charge.
+ */
+static Tcl_Obj *
+PlainPathPart(Tcl_Obj *v, TclType *tp, int k, const char *const names[],
+	TclType **tpPtr)
+{
+    int d;
+
+    for (d = 0; d < k; d++) {
+	Tcl_Size n, idx;
+	Tcl_Obj **ev;
+
+	/* les éléments appartiennent à la liste (pas d'objet neuf) */
+	if (tp->kind != TCLT_LIST || tp->elem == NULL || TclIsCompact(v)
+		|| TclIsCompactElem(v)
+		|| Tcl_ListObjGetElements(NULL, v, &n, &ev) != TCL_OK
+		|| !SimpleListIndex(names[d], n, &idx) || TclIsAnnotated(ev[idx])) {
+	    return NULL;
+	}
+	v = ev[idx];
+	tp = tp->elem;
+    }
+    if (tp->kind != TCLT_INT && tp->kind != TCLT_DOUBLE) {
+	return NULL;
+    }
+    *tpPtr = tp;
+    return v;
+}
+
+/*
  * L(i.j...) d'une liste typée en cases : la partie lue dans la case (contenu
  * neuf, refcount 0, et son type), sans compiler l'index ni fabriquer
  * l'élément. NULL : le chemin général (qui fait la même lecture, ou dit
@@ -3443,9 +3477,18 @@ CompactPathPart(Tcl_Obj *a, Tcl_Obj *part2Ptr, TclType **tpPtr)
     int k;
 
     if (!TclAnnotIsSettled(a) || TclAnnotInfo(a, &v, &tp, NULL, NULL) != 1
-	    || tp->kind != TCLT_LIST || !TclIsCompact(v)
-	    || (k = DottedNames(part2Ptr, 16, names, buf, sizeof(buf))) < 2
-	    || Tcl_ListObjLength(NULL, v, &n) != TCL_OK
+	    || tp->kind != TCLT_LIST
+	    || (k = DottedNames(part2Ptr, 16, names, buf, sizeof(buf))) < 2) {
+	return NULL;
+    }
+    if (TclIsCompactElem(v)) {
+	/* une vue sur une case : une matrice d'un lot (foreach, lindex) */
+	return TclCompactViewReadPath(v, tp, k, names, tpPtr);
+    }
+    if (!TclIsCompact(v)) {
+	return PlainPathPart(v, tp, k, names, tpPtr);
+    }
+    if (Tcl_ListObjLength(NULL, v, &n) != TCL_OK
 	    || !SimpleListIndex(names[0], n, &idx)) {
 	return NULL;
     }
