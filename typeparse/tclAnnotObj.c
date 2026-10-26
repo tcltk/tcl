@@ -863,6 +863,16 @@ AnnotListIndex(Tcl_Interp *interp, Tcl_Obj *aPtr, Tcl_Size index,
 		-1)) : NULL;
 	return TCL_OK;
     }
+    if (lt != NULL && TclIsCompactElem(v)) {
+	/* une ligne d'une liste en cases (list(n).T) : la partie lue dans la
+	 * case est neuve (refcount 0), typée ici */
+	Tcl_Obj *c = NULL;
+
+	Tcl_ListObjIndex(NULL, v, index, &c);
+	*elemPtr = (c != NULL) ? MakeAnnotated(c, NewTypeRefNoCache(lt->elem,
+		-1)) : NULL;
+	return TCL_OK;
+    }
     if (lt != NULL && Tcl_ListObjIndex(NULL, v, index, elemPtr) == TCL_OK
 	    && *elemPtr != NULL && TCL_ANNOT_P(*elemPtr)) {
 	return TCL_OK;			/* élément déjà typé dans V */
@@ -1069,6 +1079,26 @@ AnnotListSetElement(Tcl_Interp *interp, Tcl_Obj *aPtr, Tcl_Size indexCount,
     TclType *ltp = NULL;
 
     Tcl_IncrRefCount(w);
+    if (indexCount > 1 && TclIsCompact(w)) {
+	/*
+	 * lset L i j... d'une liste en cases : TclLsetFlat garde l'élément i
+	 * (pris dans la liste des éléments fabriquée à la demande) puis
+	 * remplace l'élément de la liste, ce qui la convertit et libère cette
+	 * liste avec l'élément. On part donc d'une liste ordinaire ; le
+	 * résultat est remis en cases au rangement (TclAnnotSetContent).
+	 */
+	Tcl_Obj **ev, *pl;
+	Tcl_Size ne;
+
+	if (Tcl_ListObjGetElements(interp, w, &ne, &ev) != TCL_OK) {
+	    Tcl_DecrRefCount(w);
+	    return NULL;
+	}
+	pl = Tcl_NewListObj(ne, ev);
+	Tcl_IncrRefCount(pl);
+	Tcl_DecrRefCount(w);
+	w = pl;
+    }
     if (indexCount == 1 && TclAnnotInfo(aPtr, NULL, &ltp, NULL, NULL) == 1
 	    && ltp->kind == TCLT_LIST && ltp->elem != NULL
 	    && ltp->elem->kind == TCLT_SUM && !TclIsAnnotated(valueObj)) {
@@ -2829,7 +2859,16 @@ typedef struct CNode {
     int nscal;			/* scalaires du sous-arbre */
     int nsub;			/* noeuds du sous-arbre, lui compris */
     const char *name;		/* champ (pour la disposition), ou NULL */
+    int isList;			/* produit : 1 si c'est une liste de taille
+				 * fixe list(n).T (n enfants identiques,
+				 * disposés comme un tableau C T[n]) */
+    int index;			/* élément d'une telle liste : son rang, sinon
+				 * -1 */
 } CNode;
+
+/* Au-delà, une liste de taille fixe (développée noeud par noeud) n'est pas
+ * mise en cases. */
+#define COMPACT_MAX_NODES 4096
 
 struct TclCompactLayout {
     size_t refCount;
@@ -2996,6 +3035,16 @@ CompactCount(const TclType *t, int depth)
     if (CompactScalar(t, &k, &s)) {
 	return 1;
     }
+    if (t->kind == TCLT_LIST) {
+	/* list(n).T, n fixe, T en cases : un tableau C T[n] */
+	if (t->arity < 1 || t->elem == NULL || t->binTag != NULL
+		|| t->binAt != NULL || t->binDyn != NULL || t->binLink != NULL
+		|| (c = CompactCount(t->elem, depth + 1)) < 0
+		|| (Tcl_WideInt) c * t->arity >= COMPACT_MAX_NODES) {
+	    return -1;
+	}
+	return 1 + (int) (c * t->arity);
+    }
     if (t->kind != TCLT_PRODUCT || t->nfields < 1 || t->binTag != NULL
 	    || t->binAt != NULL || t->binDyn != NULL) {
 	return -1;
@@ -3006,6 +3055,9 @@ CompactCount(const TclType *t, int depth)
 	    return -1;
 	}
 	n += c;
+	if (n >= COMPACT_MAX_NODES) {
+	    return -1;
+	}
     }
     return n;
 }
@@ -3027,6 +3079,8 @@ CompactFill(const TclType *t, const char *name, CNode *nodes, int *idx,
 
     nd->name = name;
     nd->nsub = 1;
+    nd->isList = 0;
+    nd->index = -1;
     if (CompactScalar(t, &k, &s)) {
 	size_t a = (size_t) TclTypeAbiAlign(k == CN_FLT, s * 8);
 
@@ -3049,11 +3103,23 @@ CompactFill(const TclType *t, const char *name, CNode *nodes, int *idx,
 	int first = *idx;
 
 	nd->kind = CN_PROD;
-	nd->nchild = (int) t->nfields;
 	nd->nscal = 0;
-	for (i = 0; i < t->nfields; i++) {
-	    CompactFill(t->fields[i].type, Tcl_GetString(t->fields[i].name),
-		    nodes, idx, &inner, &ialign);
+	if (t->kind == TCLT_LIST) {
+	    nd->isList = 1;
+	    nd->nchild = (int) t->arity;
+	    for (i = 0; i < t->arity; i++) {
+		int child = *idx;
+
+		CompactFill(t->elem, NULL, nodes, idx, &inner, &ialign);
+		nodes[child].index = i;
+	    }
+	} else {
+	    nd->nchild = (int) t->nfields;
+	    for (i = 0; i < t->nfields; i++) {
+		CompactFill(t->fields[i].type,
+			Tcl_GetString(t->fields[i].name), nodes, idx, &inner,
+			&ialign);
+	    }
 	}
 	inner = AlignUp(inner, ialign);
 	base = AlignUp(*off, ialign);
@@ -3807,6 +3873,12 @@ TclIsCompact(Tcl_Obj *v)
 }
 
 int
+TclIsCompactElem(Tcl_Obj *v)
+{
+    return v != NULL && v->typePtr == &compactElemType;
+}
+
+int
 TclCompactHolds(Tcl_Obj *v, const TclType *et, Tcl_Size *nPtr)
 {
     if (v == NULL || v->typePtr != &compactListType
@@ -3860,43 +3932,120 @@ TclCompactElement(Tcl_Obj *v, Tcl_Size i)
  * son type, ou NULL si le chemin ne se suit pas ici (le chemin ordinaire
  * dira l'erreur). *usedPtr : nombre de noms consommés (tous).
  */
-Tcl_Obj *
-TclCompactReadPath(Tcl_Obj *v, Tcl_Size idx, Tcl_Size nnames,
-	const char *const names[], TclType **tpPtr)
+/* Le noeud (et son type) désigné par names dans une case du tampon b ;
+ * -1 si le chemin ne se suit pas ici. */
+static int
+CompactWalk(TclCompactBuf *b, Tcl_Size nnames, const char *const names[],
+	TclType **tpPtr)
 {
-    TclCompactBuf *b;
-    TclType *t;
+    TclType *t = b->et;
     int i = 0;
     Tcl_Size k;
 
-    if (v->typePtr != &compactListType) {
-	return NULL;
-    }
-    b = COMPACT_BUF(v);
-    if (idx < 0 || idx >= b->n) {
-	return NULL;
-    }
-    t = b->et;
     for (k = 0; k < nnames; k++) {
 	const CNode *nd = &b->lay->node[i];
 	Tcl_Size f, c;
 	int j;
 
-	if (nd->kind != CN_PROD || t->kind != TCLT_PRODUCT) {
-	    return NULL;
+	if (nd->kind != CN_PROD) {
+	    return -1;
 	}
-	f = TclTypeFieldIndex(t, names[k]);
+	if (nd->isList && t->kind == TCLT_LIST) {
+	    /* un rang écrit en chiffres ; le reste (end, i+1...) au chemin
+	     * ordinaire */
+	    const char *q = names[k];
+
+	    if (*q == '\0' || (q[0] == '0' && q[1] != '\0')) {
+		return -1;
+	    }
+	    for (f = 0; *q; q++) {
+		if (*q < '0' || *q > '9' || f > nd->nchild) {
+		    return -1;
+		}
+		f = f * 10 + (*q - '0');
+	    }
+	} else if (!nd->isList && t->kind == TCLT_PRODUCT) {
+	    f = TclTypeFieldIndex(t, names[k]);
+	} else {
+	    return -1;
+	}
 	if (f < 0 || f >= nd->nchild) {
-	    return NULL;
+	    return -1;
 	}
 	for (j = i + 1, c = 0; c < f; c++) {
 	    j += b->lay->node[j].nsub;
 	}
 	i = j;
-	t = t->fields[f].type;
+	t = (t->kind == TCLT_LIST) ? t->elem : t->fields[f].type;
     }
     *tpPtr = t;
+    return i;
+}
+
+Tcl_Obj *
+TclCompactReadPath(Tcl_Obj *v, Tcl_Size idx, Tcl_Size nnames,
+	const char *const names[], TclType **tpPtr)
+{
+    TclCompactBuf *b;
+    int i;
+
+    if (v->typePtr != &compactListType) {
+	return NULL;
+    }
+    b = COMPACT_BUF(v);
+    if (idx < 0 || idx >= b->n
+	    || (i = CompactWalk(b, nnames, names, tpPtr)) < 0) {
+	return NULL;
+    }
     return DecodeNode(b->lay->node, &i, b->data + (size_t) idx * b->stride);
+}
+
+/*
+ * L(idx.names...) = value écrit sur place dans la case, quand la partie
+ * est un scalaire et que rien d'autre ne voit ces cases : V non partagé,
+ * son tampon non plus (ni copie, ni vue vivante). value doit être un nombre
+ * nu que le type de la partie accepte, et (sauf type {-compact}) sous sa
+ * forme canonique. 1 : écrit (chaîne de V invalidée) ; 0 : rien n'a changé,
+ * le chemin ordinaire s'en charge.
+ */
+int
+TclCompactWriteScalar(Tcl_Obj *v, Tcl_Size idx, Tcl_Size nnames,
+	const char *const names[], Tcl_Obj *value)
+{
+    TclCompactBuf *b;
+    TclType *t;
+    const CNode *nd;
+    unsigned char tmp[8];
+    int i;
+
+    if (v->typePtr != &compactListType || Tcl_IsShared(v)
+	    || TclIsAnnotated(value)) {
+	return 0;
+    }
+    b = COMPACT_BUF(v);
+    if (idx < 0 || idx >= b->n
+	    || (i = CompactWalk(b, nnames, names, &t)) < 0) {
+	return 0;
+    }
+    nd = &b->lay->node[i];
+    if (nd->kind == CN_PROD
+	    || TclTypeValidate(NULL, t, value, -1, NULL) != TCL_OK) {
+	return 0;
+    }
+    if (b->refCount > 1) {
+	CompactDropCache(v);		/* ses vues tiennent le tampon */
+	if (b->refCount > 1) {
+	    return 0;
+	}
+    }
+    if (!EncodeScalar(nd, value, tmp, b->norm)) {
+	return 0;
+    }
+    memcpy(b->data + (size_t) idx * b->stride + nd->off, tmp,
+	    (size_t) nd->size);
+    CompactDropCache(v);
+    TclInvalidateStringRep(v);
+    return 1;
 }
 
 /* Contenu compact (objet neuf) d'une liste list.T, ou NULL. */
@@ -4037,7 +4186,8 @@ SameCompactLayout(const TclCompactLayout *a, const TclCompactLayout *b)
 	if (a->node[i].kind != b->node[i].kind
 		|| a->node[i].off != b->node[i].off
 		|| (a->node[i].kind == CN_PROD
-		    ? a->node[i].nchild != b->node[i].nchild
+		    ? (a->node[i].nchild != b->node[i].nchild
+			|| a->node[i].isList != b->node[i].isList)
 		    : a->node[i].size != b->node[i].size)) {
 	    return 0;
 	}
@@ -4104,11 +4254,18 @@ LayoutFields(const CNode *nodes, int *ip, Tcl_DString *path, Tcl_Obj *out)
     Tcl_Size mark = Tcl_DStringLength(path);
     int k;
 
-    if (nd->name != NULL) {
+    if (nd->name != NULL || nd->index >= 0) {
+	char num[TCL_INTEGER_SPACE];
+
 	if (mark > 0) {
 	    Tcl_DStringAppend(path, ".", 1);
 	}
-	Tcl_DStringAppend(path, nd->name, TCL_AUTO_LENGTH);
+	if (nd->name != NULL) {
+	    Tcl_DStringAppend(path, nd->name, TCL_AUTO_LENGTH);
+	} else {
+	    snprintf(num, sizeof(num), "%d", nd->index);
+	    Tcl_DStringAppend(path, num, TCL_AUTO_LENGTH);
+	}
     }
     if (nd->kind == CN_PROD) {
 	for (k = 0; k < nd->nchild; k++) {
@@ -4183,7 +4340,9 @@ CompactObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
 	if ((lay = TclCompactLayoutOf(tp)) == NULL) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf("%s has no compact layout: "
 		    "only fixed-size scalars (int(s,n), int(u,n) with n = 8, 16, "
-		    "32 or 64, double, double(32|64)) and products of them",
+		    "32 or 64, double, double(32|64)), products of them and "
+		    "fixed-size lists list(n) of them (at most 4096 parts per "
+		    "element)",
 		    tp->name));
 	    Tcl_SetErrorCode(interp, "TCL", "TYPE", "COMPACT", (char *) NULL);
 	    return TCL_ERROR;

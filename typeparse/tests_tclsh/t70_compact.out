@@ -1,7 +1,7 @@
 disposition point : size 16 align 8 fields {{x float 8 0} {y float 8 8}}
 disposition pt3   : size 32 align 8 fields {{id int 4 0} {p.x float 8 8} {p.y float 8 16} {w float 4 24}}
-string : prod<s:string;> has no compact layout: only fixed-size scalars (int(s,n), int(u,n) with n = 8, 16, 32 or 64, double, double(32|64)) and products of them
-int : int has no compact layout: only fixed-size scalars (int(s,n), int(u,n) with n = 8, 16, 32 or 64, double, double(32|64)) and products of them
+string : prod<s:string;> has no compact layout: only fixed-size scalars (int(s,n), int(u,n) with n = 8, 16, 32 or 64, double, double(32|64)), products of them and fixed-size lists list(n) of them (at most 4096 parts per element)
+int : int has no compact layout: only fixed-size scalars (int(s,n), int(u,n) with n = 8, 16, 32 or 64, double, double(32|64)), products of them and fixed-size lists list(n) of them (at most 4096 parts per element)
 construire                     identique  compacte  0 {0.5 1.5} {2.5 3.5} {-1.0 4.0}
 type, llength                  identique  compacte  0 list<point> 2
 lindex, type                   identique  compacte  0 {2.5 3.5} point 3.5

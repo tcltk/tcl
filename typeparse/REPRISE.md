@@ -1,14 +1,14 @@
 # REPRISE — état du prototype TIP 764 (valeurs annotées, variables typées)
 
-*Fiche de reprise, 25 octobre 2026, version **v16g**. À joindre (avec `typeparse.zip`) au
+*Fiche de reprise, 25 octobre 2026, version **v16h**. À joindre (avec `typeparse.zip`) au
 premier message d'une conversation qui reprend le travail.*
 
 ## 1. Où en est-on
 
-* **v16g livrée** (25 octobre) : `set {T}x a b…` d'un produit de scalaires deux fois plus rapide (1,3 -> 0,6 µs : voie rapide sans copie, `x` variable locale compilée, patch `set-type-local-compile.patch`) ; `$a(x)` lu comme nombre aussi pour `& | ^ << >> ~` (patch `expr-champs-bits.patch`). (v16f : `$P(*)` rapide (2,4 -> 0,7 µs) ; `cstruct.c` : voie objet par `tclAnnotatedApi.h`, lecture en place en forme compacte (2,5 ms -> 24 µs) ; banc cstruct mis à jour.) (v16e : affectation par tuple `(a, (b, c)) = v` compilée en une instruction (`tupleAssign`, patch `expr-tuple.patch`) ; `maj.sh` : patchs déjà appliqués reconnus même quand un patch suivant a retouché leur contexte, variable `TMP` renommée (MSYS2).) (v16d : codec C pour les tailles calculées et les préfixes, `at(EXPR).T` et les liens `*(ORIGINE,REPR).T` (opt(T), listes chaînées) ; `TclType` gagne `binAtBody`.) (v16c : `X is T = v` compilé (instruction `declareLocal`), `$a(x)` lu comme nombre dans `expr` (instruction `loadFieldNum`, directement dans la case en forme compacte), `nom = v` par `storeScalar` ; patch `expr-declaration-champs.patch`.) (v16b : numéro de version lisible (`typeparse/VERSION`, `tcl::unsupported::typesversion`, affiché et vérifié par `maj.sh` ; `version.tcl` devine celle d'un tclsh plus ancien). (v16a : codec C pour les chaînes, les sommes de littéraux et les sommes balisées.) (v15z : `lappend` sous contrat en temps linéaire.) (v15y : Tcl annoté, patch `donnees-interp.patch`, la structure `Interp` change.) Le détail de chaque version est
-  dans `noyau/LISEZMOI.md`, une section par version, de la v14 à la v16g en fin de fichier.
-* **Vérifié pour la v16g** (côté Claude, Linux) :
-  - les 67 tests de `tests_tclsh` qui ont une sortie attendue passent (Linux ; MinGW64 chez
+* **v16h livrée** (25 octobre) : listes de taille fixe en cases — `type def {-compact}m list(3).list(3).double`, et à N dimensions ; `$M(i.j)` lu et écrit directement dans la case (0,9 -> 0,2 µs ; 2,2 -> 0,14 µs) ; correction de `lset L i j v` sur une liste en cases (mémoire libérée). (v16g : `set {T}x a b…` d'un produit de scalaires deux fois plus rapide (1,3 -> 0,6 µs : voie rapide sans copie, `x` variable locale compilée, patch `set-type-local-compile.patch`) ; `$a(x)` lu comme nombre aussi pour `& | ^ << >> ~` (patch `expr-champs-bits.patch`).) (v16f : `$P(*)` rapide (2,4 -> 0,7 µs) ; `cstruct.c` : voie objet par `tclAnnotatedApi.h`, lecture en place en forme compacte (2,5 ms -> 24 µs) ; banc cstruct mis à jour.) (v16e : affectation par tuple `(a, (b, c)) = v` compilée en une instruction (`tupleAssign`, patch `expr-tuple.patch`) ; `maj.sh` : patchs déjà appliqués reconnus même quand un patch suivant a retouché leur contexte, variable `TMP` renommée (MSYS2).) (v16d : codec C pour les tailles calculées et les préfixes, `at(EXPR).T` et les liens `*(ORIGINE,REPR).T` (opt(T), listes chaînées) ; `TclType` gagne `binAtBody`.) (v16c : `X is T = v` compilé (instruction `declareLocal`), `$a(x)` lu comme nombre dans `expr` (instruction `loadFieldNum`, directement dans la case en forme compacte), `nom = v` par `storeScalar` ; patch `expr-declaration-champs.patch`.) (v16b : numéro de version lisible (`typeparse/VERSION`, `tcl::unsupported::typesversion`, affiché et vérifié par `maj.sh` ; `version.tcl` devine celle d'un tclsh plus ancien). (v16a : codec C pour les chaînes, les sommes de littéraux et les sommes balisées.) (v15z : `lappend` sous contrat en temps linéaire.) (v15y : Tcl annoté, patch `donnees-interp.patch`, la structure `Interp` change.) Le détail de chaque version est
+  dans `noyau/LISEZMOI.md`, une section par version, de la v14 à la v16h en fin de fichier.
+* **Vérifié pour la v16h** (côté Claude, Linux) :
+  - les 68 tests de `tests_tclsh` qui ont une sortie attendue passent (Linux ; MinGW64 chez
     l'utilisateur pour la v16b) ; les autres tournent sans erreur ;
   - sorties de tous les tests et exemples identiques avec et sans forme compacte
     (`TCL_TYPES_COMPACT=0/1`) ;
@@ -55,6 +55,7 @@ premier message d'une conversation qui reprend le travail.*
 | v16e | affectation par tuple : instruction `tupleAssign` (patch `expr-tuple.patch`) ; `maj.sh` plus sûr |
 | v16f | `$P(*)` rapide ; `cstruct.c` par `tclAnnotatedApi.h` (cases lues en place) ; banc cstruct mis à jour |
 | v16g | `set {T}x a b…` rapide (produit de scalaires, variable locale compilée) ; `loadFieldNum` pour les opérateurs de bits (patchs `expr-champs-bits.patch`, `set-type-local-compile.patch`) |
+| v16h | listes de taille fixe en cases (matrices, N dimensions) ; `$M(i.j)` lu et écrit dans la case ; `lset` profond sur une liste en cases corrigé |
 
 ## 2. Installation et tests (chez l'utilisateur, MinGW64)
 
@@ -173,7 +174,7 @@ autres :
 * valeur « inexistante » en général (`opt(T)` ne couvre que les liens binaires) ;
 * annotation de commentaire `{#}`, du premier mot, de déclaration dans `proc` ;
 * notes par élément d'une liste typée ;
-* forme compacte : cases à pointeurs, `lindex` sans vue neuve, `lappend` en temps
+* forme compacte : cases à pointeurs (listes de taille variable, chaînes), `lindex` sans vue neuve, `lappend` en temps
   constant, `{-compact}` pour une famille ;
 * `type {c!}export` pour les types récursifs, cible `{llvm!}`, sens inverse (en-tête C →
   `type def`) ;

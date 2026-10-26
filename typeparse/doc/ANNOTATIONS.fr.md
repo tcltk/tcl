@@ -908,9 +908,24 @@ type is {compact?}$p(pts)              ;# 1 : le champ pts est en cases
 
 Une liste qui est le champ d'un produit (ou d'un produit imbriqué) est mise en cases dans les mêmes cas qu'une liste seule : son type ou son élément le demande, ou la forme compacte est activée partout. Elle le reste après une écriture par chemin, un `lappend p(pts)` ou un `type binary decode`.
 
+**Listes de taille fixe : matrices et tableaux à N dimensions** (v16h). Un élément `list(n).T`, où T a lui-même une disposition en cases (scalaire, produit, ou à son tour une liste de taille fixe), est rangé dans la case comme le tableau C `T[n]` : `list(3).list(3).double` est une liste de 3 cases de 24 octets, `list(2).list(3).list(2).int(s,32)` un tableau `int32_t[2][3][2]`, et un produit peut avoir un champ `{list(2).double}v` dans ses cases. Une case a au plus 4 096 parties (une matrice `list(100).list(100).double` passe : 100 cases de 800 octets).
+
+```tcl
+type def {-compact}matrix3 list(3).list(3).double
+set {matrix3}M {1 2 3} {4 5 6} {7 8 9}   ;# normalisés : {1.0 2.0 3.0} ...
+type is {compact?}$M                      ;# 1
+expr {$M(0.0) * $M(1.1) + $M(2.2)}        ;# 14.0, lu dans les cases
+set M(1.2) 60.5                           ;# écrit dans la case
+lindex $M 1 2                             ;# 60.5 : chaque ligne est une liste
+tcl::unsupported::compact layout list(2).list(3).int(s,16)
+    ;# size 12 align 2 fields {{0.0 int 2 0} {0.1 int 2 2} ... {1.2 int 2 10}}
+```
+
+Une famille passe par une instance nommée : `type def {-compact}mat3 mat(3,3)`. Comme une ligne de produit, une ligne d'une matrice est une liste ordinaire pour le script (`lindex`, `foreach`, `lset`, arité vérifiée) ; seule la rangée change. `$M(i.j)` se lit directement dans la case (≈ 0,2 µs, contre 0,9 µs par le chemin général), et `set M(i.j) v` d'un nombre écrit la case sur place quand rien d'autre ne voit la valeur (ni copie, ni vue vivante : sinon le tampon est copié comme avant) : 0,14 µs contre 2,2 µs. Produit de deux matrices 3×3 (`exemples`, boucles Tcl et `$A($i.$k)`) : 33 µs, contre 75 µs en forme ordinaire et 9 µs pour des listes brutes avec `lindex`/`lset`.
+
 **Cases et octets.** Quand la disposition des cases est celle des octets demandés (mêmes scalaires aux mêmes décalages sous `-align`, boutisme de la machine), `type binary encode` copie les cases et `type binary decode` remplit directement des cases, sans objet par élément : pour 10 000 points, 15 µs et 10 µs au lieu de 0,5 et 3 ms. Les octets sont les mêmes que sans cases ; sinon, le codec suit son chemin ordinaire. Un cast vers une liste en cases (`type cast list.pointC $P`) copie d'un bloc les cases d'une source de même disposition, ou écrit directement les éléments d'une liste ordinaire dans les cases. Depuis C, `Tcl_AnnotatedCreateCells` fait d'un tableau de `struct` une valeur en cases, sans objet par élément (`tcl::unsupported::compact cells TYPE OCTETS ?STRIDE?` en Tcl).
 
-**Pour tout le programme**, derrière `tcl::unsupported::compact on` (ou la variable d'environnement `TCL_TYPES_COMPACT=1`, pour passer les tests), le contenu V d'une liste `list.T` est rangé en **cases** quand T est un scalaire à taille fixe (`int(s,n)`, `int(u,n)` avec n = 8, 16, 32 ou 64 ; `double`, `double(32|64)`) ou un produit de tels champs, produits imbriqués compris. Une case par élément, disposée comme le struct C équivalent (alignement naturel, mesuré à la compilation : `tcl::unsupported::abi`). `int` sans taille n'entre pas (c'est un grand entier).
+**Pour tout le programme**, derrière `tcl::unsupported::compact on` (ou la variable d'environnement `TCL_TYPES_COMPACT=1`, pour passer les tests), le contenu V d'une liste `list.T` est rangé en **cases** quand T est un scalaire à taille fixe (`int(s,n)`, `int(u,n)` avec n = 8, 16, 32 ou 64 ; `double`, `double(32|64)`) ou un produit de tels champs, produits imbriqués et listes de taille fixe `list(n).T` compris. Une case par élément, disposée comme le struct C équivalent (alignement naturel, mesuré à la compilation : `tcl::unsupported::abi`). `int` sans taille n'entre pas (c'est un grand entier).
 
 ```tcl
 tcl::unsupported::compact on
@@ -1036,9 +1051,9 @@ Le codec C, qui **vérifie** en plus chaque valeur contre son type, est 2 à 3 f
 - Annotation de commentaire `{#}` au niveau du parseur, annotation du premier mot (`{c}proc`), annotations de déclaration (`proc p {{?}{…} {!}arg}`).
 - Notes par élément d'une liste typée (aujourd'hui la note porte sur la liste entière) ; effacement de toutes les notes par `{@}$x`.
 - Codec C : référentiels nommés, `-linkdepth` fini, `-dedupe`, lien nul d'un champ à défaut, champs de bits (le reste est couvert depuis la v16d).
-- Forme compacte : cases à pointeurs (`string`, listes imbriquées), `lindex` sans vue neuve, fonction de stub pour le C, `lappend` en temps constant (aujourd'hui une copie par ajout, comme pour une liste typée ordinaire).
+- Forme compacte : cases à pointeurs (`string`, listes imbriquées de taille variable), `lindex` sans vue neuve, fonction de stub pour le C, `lappend` en temps constant (aujourd'hui une copie par ajout, comme pour une liste typée ordinaire).
 - `type {c!}export` : pointeurs pour les types récursifs ; cible `{llvm!}` ; sens inverse (en-tête C vers `type def`).
-- `type def {-compact}` pour une famille ; `type is` : une valeur dont le texte est aussi un nom de type (`type is {compact?}$x` avec `x` = `point`) est lue comme le type.
+- `type def {-compact}` pour une famille elle-même (une instance nommée passe : `type def {-compact}mat3 mat(3,3)`) ; `type is` : une valeur dont le texte est aussi un nom de type (`type is {compact?}$x` avec `x` = `point`) est lue comme le type.
 - Banc de test C sur maquette (`typeparse/test/`) à remettre à jour ; exemples `arbre_var.tcl` et `defauts_calcules.tcl` à corriger.
 
 ## Annexes

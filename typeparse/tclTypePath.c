@@ -3355,6 +3355,127 @@ FieldAt(Tcl_Interp *interp, Tcl_Obj *v, TclType *ft, Tcl_Size idx)
  * l'objet (sans référence propre) ou NULL : l'instruction fait alors ce que
  * fait loadArray (même résultat, mêmes erreurs, traces).
  */
+/*
+ * Index a.b.c fait de noms simples (lettres, chiffres, _), sans portée
+ * substituée qui contienne un point (elle serait un seul nom) : les noms,
+ * terminés par '\0' dans buf. Rend leur nombre, 0 sinon.
+ */
+static int
+DottedNames(Tcl_Obj *part2Ptr, int max, const char *names[], char *buf,
+	size_t bufLen)
+{
+    Tcl_Size len, ns, k;
+    const Tcl_Size *pos;
+    const char *t = Tcl_GetStringFromObj(part2Ptr, &len);
+    int n = 0;
+    char *q;
+
+    if (len == 0 || (size_t) len >= bufLen) {
+	return 0;
+    }
+    ns = PathIndexSpans(part2Ptr, &pos);
+    for (k = 0; k < ns; k++) {
+	if (pos[2 * k + 1] == 0
+		|| memchr(t + pos[2 * k], '.', (size_t) pos[2 * k + 1])) {
+	    return 0;
+	}
+    }
+    memcpy(buf, t, (size_t) len + 1);
+    names[n++] = buf;
+    for (q = buf; *q != '\0'; q++) {
+	if (*q == '.') {
+	    if (q == names[n - 1] || n == max) {
+		return 0;
+	    }
+	    *q = '\0';
+	    names[n++] = q + 1;
+	} else if (!(isalnum(UCHAR(*q)) || *q == '_')) {
+	    return 0;
+	}
+    }
+    if (*names[n - 1] == '\0') {
+	return 0;
+    }
+    return n;
+}
+
+/* L'élément idx d'une liste de n éléments, désigné par un nom simple. */
+static int
+SimpleListIndex(const char *name, Tcl_Size n, Tcl_Size *idxPtr)
+{
+    const char *q = name;
+    Tcl_Size i = 0;
+
+    if (isdigit(UCHAR(*q)) && (q[0] != '0' || q[1] == '\0')) {
+	for (; isdigit(UCHAR(*q)); q++) {
+	    if (i > n) {
+		return 0;
+	    }
+	    i = i * 10 + (*q - '0');
+	}
+	if (*q != '\0') {
+	    return 0;
+	}
+    } else if (ListIndex(NULL, name, n, &i) != TCL_OK) {
+	return 0;
+    }
+    if (i < 0 || i >= n) {
+	return 0;
+    }
+    *idxPtr = i;
+    return 1;
+}
+
+/*
+ * L(i.j...) d'une liste typée en cases : la partie lue dans la case (contenu
+ * neuf, refcount 0, et son type), sans compiler l'index ni fabriquer
+ * l'élément. NULL : le chemin général (qui fait la même lecture, ou dit
+ * l'erreur).
+ */
+static Tcl_Obj *
+CompactPathPart(Tcl_Obj *a, Tcl_Obj *part2Ptr, TclType **tpPtr)
+{
+    Tcl_Obj *v;
+    TclType *tp;
+    Tcl_Size n, idx;
+    const char *names[16];
+    char buf[256];
+    int k;
+
+    if (!TclAnnotIsSettled(a) || TclAnnotInfo(a, &v, &tp, NULL, NULL) != 1
+	    || tp->kind != TCLT_LIST || !TclIsCompact(v)
+	    || (k = DottedNames(part2Ptr, 16, names, buf, sizeof(buf))) < 2
+	    || Tcl_ListObjLength(NULL, v, &n) != TCL_OK
+	    || !SimpleListIndex(names[0], n, &idx)) {
+	return NULL;
+    }
+    return TclCompactReadPath(v, idx, k - 1, names + 1, tpPtr);
+}
+
+/* L(i.j...) = value sur place (TclCompactWriteScalar) ; 1 si écrit. */
+static int
+CompactPathWrite(Tcl_Obj *a, Tcl_Obj *part2Ptr, Tcl_Obj *value)
+{
+    Tcl_Obj *v;
+    TclType *tp;
+    Tcl_Size n, idx;
+    const char *names[16];
+    char buf[256];
+    int k;
+
+    if (Tcl_IsShared(a) || !TclAnnotIsSettled(a)
+	    || TclAnnotInfo(a, &v, &tp, NULL, NULL) != 1
+	    || tp->kind != TCLT_LIST || !TclIsCompact(v)
+	    || (k = DottedNames(part2Ptr, 16, names, buf, sizeof(buf))) < 2
+	    || Tcl_ListObjLength(NULL, v, &n) != TCL_OK
+	    || !SimpleListIndex(names[0], n, &idx)
+	    || !TclCompactWriteScalar(v, idx, k - 1, names + 1, value)) {
+	return 0;
+    }
+    Tcl_InvalidateStringRep(a);
+    return 1;
+}
+
 Tcl_Obj *
 TclTypedFieldNumber(Var *varPtr, Tcl_Obj *part2Ptr)
 {
@@ -3371,8 +3492,19 @@ TclTypedFieldNumber(Var *varPtr, Tcl_Obj *part2Ptr)
     }
     a = varPtr->value.objPtr;
     if (!TclAnnotIsSettled(a)
-	    || TclAnnotInfo(a, &v, &tp, NULL, NULL) != 1
-	    || tp->kind != TCLT_PRODUCT) {
+	    || TclAnnotInfo(a, &v, &tp, NULL, NULL) != 1) {
+	return NULL;
+    }
+    if (tp->kind == TCLT_LIST) {
+	/* M(i.j) d'une matrice en cases : le nombre lu dans la case */
+	e = CompactPathPart(a, part2Ptr, &ft);
+	if (e != NULL && ft->kind != TCLT_INT && ft->kind != TCLT_DOUBLE) {
+	    TclDiscard(e);
+	    e = NULL;
+	}
+	return e;
+    }
+    if (tp->kind != TCLT_PRODUCT) {
 	return NULL;
     }
     idx = SimpleFieldIndex(tp, part2Ptr);
@@ -3489,6 +3621,15 @@ TclTypedVarGetElementVar(Tcl_Interp *interp, Var *varPtr, Tcl_Obj *part2Ptr,
     if (res == NULL) {
 	res = FastAllParts(interp, varPtr->value.objPtr, part2Ptr);
     }
+    if (res == NULL) {
+	TclType *pt;
+	Tcl_Obj *r = CompactPathPart(varPtr->value.objPtr, part2Ptr, &pt);
+
+	if (r != NULL) {
+	    res = TclNewAnnotated(interp, pt, -1, r);
+	    TclDiscard(r);
+	}
+    }
     if (res != NULL) {
 	Tcl_IncrRefCount(res);
 	*resultPtr = res;
@@ -3523,8 +3664,12 @@ TclTypedVarSetElementVar(Tcl_Interp *interp, Var *varPtr, Tcl_Obj *part1Ptr,
 	    || !(varPtr->flags & VAR_TYPED) || varPtr->value.objPtr == NULL) {
 	return TCL_CONTINUE;
     }
-    if (PathWriteObj(interp, varPtr->value.objPtr, part2Ptr, 1, &valuePtr,
-	    &newA) != TCL_OK) {
+    if (CompactPathWrite(varPtr->value.objPtr, part2Ptr, valuePtr)) {
+	/* écrit dans la case : la variable garde sa valeur (traces) */
+	newA = varPtr->value.objPtr;
+	Tcl_IncrRefCount(newA);
+    } else if (PathWriteObj(interp, varPtr->value.objPtr, part2Ptr, 1,
+	    &valuePtr, &newA) != TCL_OK) {
 	return TCL_ERROR;
     }
     stored = TclPtrSetVarIdx(interp, varPtr, NULL, part1Ptr, NULL, newA,

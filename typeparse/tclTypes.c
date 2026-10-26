@@ -7026,8 +7026,10 @@ TypeObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
 		    && TclCompactLayoutOf(tp) != NULL))) {
 		ERR(interp, "COMPACT", "type def {-compact}%s: only a list of "
 			"fixed-size scalars (int(s,n), int(u,n) with n = 8, 16, "
-			"32 or 64, double, double(32|64)) or of products of them, "
-			"or such a product, can be compact, not %s", nm,
+			"32 or 64, double, double(32|64)), of products of them or of "
+			"fixed-size lists list(n) of them (at most 4096 parts per "
+			"element), or such a product, "
+			"can be compact, not %s", nm,
 			tp != NULL ? tp->name : "?");
 		if (h != NULL) {
 		    Tcl_DeleteHashEntry(h);	/* la définition est annulée */

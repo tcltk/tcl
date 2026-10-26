@@ -21,7 +21,7 @@
  * VAR_* de tclInt.h). La valeur ci-dessous est un PLACEHOLDER. */
 /* Version du prototype TIP 764 (typeparse/VERSION, maj.sh, et
  * tcl::unsupported::typesversion). */
-#define TCL_TYPES_VERSION "v16g"
+#define TCL_TYPES_VERSION "v16h"
 
 #ifndef VAR_TYPED
 #define VAR_TYPED	0x400000
@@ -330,6 +330,7 @@ Tcl_Obj *TclAnnotIterList(Tcl_Obj *aPtr);
 Tcl_Obj *TclCompactFrom(TclType *listTp, Tcl_Obj *content);
 int	TclCompactHolds(Tcl_Obj *v, const TclType *elemTp, Tcl_Size *nPtr);
 int	TclIsCompact(Tcl_Obj *v);
+int	TclIsCompactElem(Tcl_Obj *v);
 int	TclCompactFlat(TclType *et, size_t *stridePtr, int max, size_t off[],
 	    int size[], int isFloat[]);
 const unsigned char *TclCompactData(Tcl_Obj *v, const TclType *et,
@@ -341,6 +342,8 @@ Tcl_Obj *TclCompactFieldNumber(Tcl_Obj *o, Tcl_Size idx);
 Tcl_Obj *TclCompactCache(Tcl_Obj *v);
 Tcl_Obj *TclCompactReadPath(Tcl_Obj *v, Tcl_Size idx, Tcl_Size nnames,
 	    const char *const names[], TclType **tpPtr);
+int	TclCompactWriteScalar(Tcl_Obj *v, Tcl_Size idx, Tcl_Size nnames,
+	    const char *const names[], Tcl_Obj *value);
 TclCompactLayout *TclCompactLayoutOf(TclType *elemTp);
 void	TclCompactLayoutRelease(TclCompactLayout *lay);
 void	TclCompactInit(Tcl_Interp *interp);

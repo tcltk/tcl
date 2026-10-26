@@ -17,12 +17,12 @@ cast vers polygone                 0 {{1.0 1.0} {2.0 2.0}} 1
 valeur ordinaire                   0 0
 double(32) arrondi                 0 0.10000000149011612 0.5
 int(u,8)                           0 {1 2 16} 1 {value "256" does not fit in int(u,8)}
-refus : list.string                1 type def {-compact}noms: only a list of fixed-size scalars (int(s,n), int(u,n) with n = 8, 16, 32 or 64, double, double(32|64)) or of products of them, or such a product, can be compact, not noms
+refus : list.string                1 type def {-compact}noms: only a list of fixed-size scalars (int(s,n), int(u,n) with n = 8, 16, 32 or 64, double, double(32|64)), of products of them or of fixed-size lists list(n) of them (at most 4096 parts per element), or such a product, can be compact, not noms
 le nom refusé reste libre          0 noms
 un produit (v15t)                  0 1
 liste de ce produit                0 {{1.0 2} {3.0 4}} 1
 champ liste d'un produit           0 {1 {{16.0 5}}} 1 0
-refus : produit avec chaîne        1 type def {-compact}pq: only a list of fixed-size scalars (int(s,n), int(u,n) with n = 8, 16, 32 or 64, double, double(32|64)) or of products of them, or such a product, can be compact, not pq
+refus : produit avec chaîne        1 type def {-compact}pq: only a list of fixed-size scalars (int(s,n), int(u,n) with n = 8, 16, 32 or 64, double, double(32|64)), of products of them or of fixed-size lists list(n) of them (at most 4096 parts per element), or such a product, can be compact, not pq
 refus : option inconnue            1 type def: unknown option {-zz}: must be {-compact}
 refus : alias                      1 type alias: unknown option {-compact} (an alias is not a new type: it takes no option)
 refus : famille                    1 type def {-compact}: not yet for a type family (v({int}n))

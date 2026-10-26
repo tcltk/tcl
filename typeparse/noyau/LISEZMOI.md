@@ -1834,3 +1834,37 @@ Pas d'instruction nouvelle.
   de produits, contrat posé, `upvar`, chemin de constructeur, élément de tableau (erreur), valeurs substituées ;
   opérateurs de bits sur un champ, sur un double (erreur), sur un tableau ordinaire, et le nombre
   d'instructions `loadFieldNum` émises.
+
+### v16h — listes de taille fixe en cases : matrices, tableaux à N dimensions (25 octobre 2026)
+
+Sources de types : `tclAnnotObj.c`, `tclTypePath.c`, `tclTypes.c`, `tclTypes.h`. Pas de patch noyau ; la
+structure `CNode` (disposition des cases) change : recompilation complète.
+
+- **Disposition** (`CompactCount`, `CompactFill`) : un élément `list(n).T` dont T a une disposition en cases
+  (scalaire, produit, ou liste de taille fixe : N dimensions) est un noeud à n enfants identiques, disposé comme
+  le tableau C `T[n]` (`CNode.isList`, rang `CNode.index`). Au plus 4 096 noeuds par case
+  (`COMPACT_MAX_NODES`). `type def {-compact}m list(3).list(3).double` est accepté ; un produit à champ
+  `list(2).double` se range aussi tout entier dans ses cases. Message de refus et
+  `tcl::unsupported::compact layout` (parties `i.j`) mis à jour.
+- **Lecture** : `TclCompactReadPath` suit aussi les rangs dans la case (`CompactWalk`). `$M(i.j…)` d'une variable
+  typée en cases est lu directement (`CompactPathPart`, sans compiler l'index : noms simples séparés par des
+  points, portée substituée sans point) ; `loadFieldNum` aussi (`TclTypedFieldNumber`). 0,89 -> 0,23 µs.
+- **Écriture sur place** : `set M(i.j…) nombre` (`TclCompactWriteScalar`, `CompactPathWrite`) écrit la case
+  quand ni la valeur, ni son contenu, ni son tampon ne sont partagés (une vue vivante tient le tampon) ; la
+  valeur est validée par le type de la partie puis encodée à part avant d'être copiée ; sinon le chemin
+  général. La variable est réécrite avec la même valeur (traces, contrat). 2,2 -> 0,14 µs.
+- **Correction (existait avant)** : `lset L i j v` d'une liste en cases (produits aussi) lisait de la mémoire
+  libérée : `TclLsetFlat` garde l'élément i pris dans la liste des éléments fabriquée à la demande, puis
+  convertit la liste, ce qui la libère. `AnnotListSetElement` part maintenant d'une liste ordinaire ; le
+  résultat est remis en cases au rangement.
+- `lindex $M i j` : la ligne vue dans la case est indexée et son élément typé directement
+  (`AnnotListIndex`, `TclIsCompactElem`) ; sans cela, l'élément lu dans la case était perdu (trouvé par
+  valgrind).
+- Mesures : produit de deux matrices 3×3 en Tcl (`$A($i.$k)`, `set C($i.$j)`) 89 -> 33 µs en cases, 113 ->
+  75 µs en forme ordinaire, 9 µs pour des listes brutes (`lindex`/`lset`).
+- Test `t90_listes_fixes_en_cases` : chaque opération sur une matrice en cases et sur sa jumelle ordinaire
+  (lecture, chemins, `end`, `expr`, `foreach`, `lmap`, écriture, `lset`, arité, nombre refusé, tuple,
+  partage, chaîne), tableau à 3 dimensions, liste extensible de `list(4).int(u,8)`, produit à champ liste,
+  cast, `type binary`, `compact cells`, grande matrice, refus au-delà de 4 096 parties ; écriture sur place :
+  vue, copie et éléments parcourus gardés, chaîne refaite, trace, indices calculés, refus et normalisation.
+  `t70_compact` et `t72_compact_type` : nouveau texte du message de refus.

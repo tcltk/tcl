@@ -1,0 +1,56 @@
+disposition : size 12 align 2 fields {{0.0 int 2 0} {0.1 int 2 2} {0.2 int 2 4} {1.0 int 2 6} {1.1 int 2 8} {1.2 int 2 10}}
+disposition produit : {a float 8 0} {v.0 float 8 8} {v.1 float 8 16}
+en cases : 1
+valeur : {{1.0 2.0 3.0} {4.0 5.0 6.0} {7.0 8.0 9.0}} m3
+ligne : {4.0 5.0 6.0} list(3)<double>
+case : 6.0 double
+chemin : 7.0 double
+chemin ligne : {4.0 5.0 6.0} list(3)<double>
+chemin end : 9.0
+chemin hors bornes : erreur : list index "3" out of range
+expr : 14.0
+lindex end : 8.0
+llength : 3 3
+foreach : 1.0 2.0 3.0 4.0 5.0 6.0 7.0 8.0 9.0
+lmap : 6.0 15.0 24.0
+écriture chemin : {{1.0 2.0 3.0} {4.0 5.0 60.5} {7.0 8.0 9.0}} m3 6.0
+lset : {{11.0 2.0 3.0} {4.0 5.0 6.0} {1.0 1.0 1.0}} {}
+lset mauvaise ligne : {1.0 2.0 3.0} {4.0 5.0 6.0} {1 1}
+lset mauvais nombre : {1.0 x 3.0} {4.0 5.0 6.0} {7.0 8.0 9.0}
+ligne entière : {7.0 7.0 7.0} {4.0 5.0 6.0} {7.0 8.0 9.0}
+mauvaise arité : erreur : list(3)<double> needs exactly 3 elements but got 2
+mauvais nombre : erreur : expected floating-point number but got "x"
+tuple : {1.0 2.0 3.0} {4.0 5.0 6.0} {7.0 8.0 9.0}
+partage : 1.0 99.0
+chaîne : 41
+3D en cases : 1
+3D chemin : 11
+3D lindex : 12
+3D plan : {{1 2} {3 4} {5 6}} list(3)<list(2)<int(s,32)>>
+3D écriture : {{1 2} {3 40} {5 6}} {{-1 -2} {9 10} {11 12}}
+3D débordement : erreur : value "3000000000" does not fit in int(s,32)
+liste extensible en cases : 1
+lappend : {{1 2 3 4} {5 6 7 8} {9 10 11 12}} 3
+lappend mauvais : {1 2 3 4} {5 6 7 8} {9 10 11 300}
+u8 : 8
+produit à liste en cases : 1
+produit chemin : 6.0 1.5 list(2)<double>
+produit écriture : {1.5 {20.0 3.0}} {4.5 {5.0 6.0}}
+cast : {{1.0 2.0 3.0} {4.0 5.0 6.0} {7.0 8.0 9.0}} m3c 1
+binaire : 0100000002000000030000000400000005000000060000000700000008000000090000000a0000000b0000000c000000
+binaire retour : {{{1 2} {3 4} {5 6}} {{7 8} {9 10} {11 12}}} 1
+cells : {{1 2} {3 4}} list<list(2)<int(s,16)>>
+binaire double(64) : {{1.0 2.5} {-3.0 4.25}} 1 32
+trace (procédure) : 15.0
+erreur de type de ligne : erreur : list(3)<double> needs exactly 3 elements but got 2
+contrat sur une case : erreur : expected floating-point number but got "abc"
+grande matrice : 800
+trop grande : erreur : type def {-compact}m5000: only a list of fixed-size scalars (int(s,n), int(u,n) with n = 8, 16, 32 or 64, double, double(32|64)), of products of them or of fixed-size lists list(n) of them (at most 4096 parts per element), or such a product, can be compact, not m5000
+vue gardée : {1.0 2.0 3.0} {5.0 2.0 3.0} 1
+copie gardée : 9.0 -1.5
+éléments parcourus gardés : {{1.0 2.0 3.0} {4.0 5.0 6.0} {7.0 8.0 9.0}} {{1.0 2.0 3.0} {4.0 0.5 6.0} {7.0 8.0 9.0}}
+chaîne refaite : {{1.0 2.0 3.0} {4.0 5.0 6.0} {7.0 8.0 9.0}} {{1.0 2.5 3.0} {4.0 5.0 6.0} {7.0 8.0 9.0}} 41
+trace d'écriture : 33.0
+indices calculés : {{10.0 2.0 3.0} {4.0 50.0 6.0} {7.0 8.0 90.0}} 1 {bad index "1.2": must be integer?[+-]integer? or end?[+-]integer?} {0.0 8.0 90.0}
+refus et normalisation : 1 {expected floating-point number but got "abc"} 1 {list(3)<double> cannot grow beyond 3 elements} {7.0 2.0 3.0}
+3D sur place : 1 {value "3000000000" does not fit in int(s,32)} {{{1 2} {3 4} {5 6}} {{7 8} {9 10} {11 -7}}}
