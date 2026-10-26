@@ -1611,6 +1611,35 @@ b[dict get [info frame 0] line]-$(([dict get [info frame 0] line]))-[dict get [i
     list [expr {$n1 == $n2}] [expr {$n3 == $n4}] [expr {$n4 == $n5}] [expr {$n3 - $n1}]
 } -result {1 1 1 0}
 
+# Expression substitutions nested inside one another are compiled by
+# recursion that does not pass through TclCompileScript, so they need their
+# own check against the nesting limit (interp recursionlimit); without it the
+# C stack overflows.
+test parse-22.110 {expression substitution: moderate nesting works} -body {
+    subst [string repeat {$((1+} 100]1[string repeat )) 100]
+} -result 101
+test parse-22.111 {expression substitution: nesting too deep is an error, not a crash} -body {
+    set parse22s [string repeat {$((1+} 20000]1[string repeat )) 20000]
+    list [catch {subst $parse22s} msg opts] $msg [dict get $opts -errorcode]
+} -cleanup {
+    unset -nocomplain parse22s msg opts
+} -result {1 {too many nested compilations (infinite loop?)} {TCL LIMIT STACK}}
+test parse-22.112 {expression substitution: nesting depth follows interp recursionlimit} -body {
+    set parse22old [interp recursionlimit {}]
+    interp recursionlimit {} 50
+    set parse22s [string repeat {$((1+} 100]1[string repeat )) 100]
+    list [catch {subst $parse22s} msg opts] $msg [dict get $opts -errorcode]
+} -cleanup {
+    interp recursionlimit {} $parse22old
+    unset -nocomplain parse22old parse22s msg opts
+} -result {1 {too many nested compilations (infinite loop?)} {TCL LIMIT STACK}}
+test parse-22.113 {expression substitution: nesting inside an expression too deep is an error} -body {
+    set parse22s [string repeat {$((1+} 20000]1[string repeat )) 20000]
+    list [catch {expr "$parse22s"} msg opts] $msg [dict get $opts -errorcode]
+} -cleanup {
+    unset -nocomplain parse22s msg opts
+} -result {1 {too many nested compilations (infinite loop?)} {TCL LIMIT STACK}}
+
 cleanupTests
 }
 

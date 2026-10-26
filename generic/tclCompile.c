@@ -2887,8 +2887,30 @@ TclCompileTokens(
 	    }
 
 	    envPtr->line += adjust;
-	    TclCompileExpr(interp, tokenPtr[1].start, tokenPtr[1].size,
-		    envPtr, 1);
+	    {
+		Interp *iPtr = (Interp *) interp;
+
+		/*
+		 * Nested $(expr) inside $(expr) recurses through
+		 * TclCompileExpr -> CompileExprTree -> TclCompileTokens
+		 * without passing TclCompileScript, so apply the same depth
+		 * check here to avoid overflowing the C stack.
+		 */
+
+		if (iPtr->numLevels / 5 > iPtr->maxNestingDepth / 4) {
+		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			    "too many nested compilations (infinite loop?)",
+			    TCL_AUTO_LENGTH));
+		    Tcl_SetErrorCode(interp, "TCL", "LIMIT", "STACK",
+			    (char *)NULL);
+		    TclCompileSyntaxError(interp, envPtr);
+		} else {
+		    iPtr->numLevels++;
+		    TclCompileExpr(interp, tokenPtr[1].start,
+			    tokenPtr[1].size, envPtr, 1);
+		    iPtr->numLevels--;
+		}
+	    }
 	    envPtr->line -= adjust;
 	    numObjsToConcat++;
 	    count -= tokenPtr->numComponents;
