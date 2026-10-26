@@ -959,6 +959,16 @@ test event-14.8 {Tcl_WaitForFile procedure, waiting indefinitely, big fd} -setup
 } -cleanup {
     foreach chan $chanList {close $chan}
 } -result {{} readable}
+
+# 15.x: exception event type
+
+test event-15.1 {event types error} -body {
+    fileevent stdin junk "puts 1"
+} -returnCodes error -result {bad event name "junk": must be readable, writable, or exception}
+
+test event-15.2 {event type exception not defined for stdin} -body {
+    fileevent stdin exception "puts 1"
+} -returnCodes error -result {channel is not allowed to have the exception handler}
 
 # cleanup
 foreach i [after info] {
