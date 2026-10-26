@@ -1,11 +1,11 @@
 /*
  * tclCompile.h --
  *
- * Copyright (c) 1996-1998 Sun Microsystems, Inc.
- * Copyright (c) 1998-2000 by Scriptics Corporation.
- * Copyright (c) 2001 by Kevin B. Kenny. All rights reserved.
- * Copyright (c) 2007 Daniel A. Steffen <das@users.sourceforge.net>
- * Copyright (c) 2025 Donal K. Fellows <dkf@users.sourceforge.net>
+ * Copyright © 1996-1998 Sun Microsystems, Inc.
+ * Copyright © 1998-2000 by Scriptics Corporation.
+ * Copyright © 2001 by Kevin B. Kenny. All rights reserved.
+ * Copyright © 2007 Daniel A. Steffen <das@users.sourceforge.net>
+ * Copyright © 2025 Donal K. Fellows <dkf@users.sourceforge.net>
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -114,7 +114,11 @@ OutOfUintRange(
 
 static inline bool
 OutOfUintRangeUpper(
+#if defined(PTRDIFF_MAX) && PTRDIFF_MAX == INT_MAX
+    TCL_UNUSED(Tcl_Size))
+#else
     Tcl_Size value)
+#endif
 {
     // Not sure what to do on 32-bit platforms that don't have PTRDIFF_MAX.
 #if defined(PTRDIFF_MAX) && PTRDIFF_MAX == INT_MAX
@@ -1810,25 +1814,11 @@ TclFixupForwardJumpToHere(
  * unsigned int TclGetUInt4AtPtr(unsigned char *p);
  */
 
-/*
- * The TclGetInt1AtPtr function is tricky because we want to do sign extension
- * on the 1-byte value. Unfortunately the "char" type isn't signed on all
- * platforms so sign-extension doesn't always happen automatically. Sometimes
- * we can explicitly declare the pointer to be signed, but other times we have
- * to explicitly sign-extend the value in software.
- */
-
 static inline int
 TclGetInt1AtPtr(
     const unsigned char *p)
 {
-#ifndef __CHAR_UNSIGNED__
-    return (int) *((char *) p);
-#elif defined(HAVE_SIGNED_CHAR)
     return (int) *((signed char *) p);
-#else
-    return (int) ((*((char *) p)) | ((*(p) & 0200) ? (-256) : 0));
-#endif
 }
 
 static inline unsigned int
@@ -1844,9 +1834,9 @@ TclGetInt4AtPtr(
 {
     return (int) (
 	(TclGetUInt1AtPtr(p) << 24) |
-	(p[1] << 16) |
-	(p[2] <<  8) |
-	(p[3]      ));
+	((unsigned int)p[1] << 16) |
+	((unsigned int)p[2] <<  8) |
+	((unsigned int)p[3]      ));
 }
 
 static inline unsigned
@@ -1854,10 +1844,10 @@ TclGetUInt4AtPtr(
     const unsigned char *p)
 {
     return (unsigned) (
-	(p[0] << 24) |
-	(p[1] << 16) |
-	(p[2] <<  8) |
-	(p[3]      ));
+	((unsigned int)p[0] << 24) |
+	((unsigned int)p[1] << 16) |
+	((unsigned int)p[2] <<  8) |
+	((unsigned int)p[3]      ));
 }
 
 /*

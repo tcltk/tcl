@@ -61,7 +61,7 @@ Tcl_GetDayTime(void)
     struct timeval tv;
 
     (void) gettimeofday(&tv, NULL);
-    return tv.tv_sec * 1000000 + tv.tv_usec;
+    return (long long)tv.tv_sec * 1000000 + tv.tv_usec;
 }
 
 /*

@@ -168,7 +168,14 @@ test http-3.2.$ThreadLevel {http::geturl} -returnCodes error -body {
 } -result {Unsupported URL: http:junk}
 
 set url //${::HOST}:$port
-set badurl //${::HOST}:[expr {$port+1}]
+# A port without a listener.  Not $port+1: where ports are allocated in
+# sequence (e.g. NetBSD), it can be that of the httpd started by the outer run.
+set badurl //${::HOST}:[apply {{} {
+    set s [socket -server {} 0]
+    set p [lindex [fconfigure $s -sockname] 2]
+    close $s
+    return $p
+}}]
 test http-3.3.$ThreadLevel {http::geturl} -body {
     set token [http::geturl $url]
     http::data $token
@@ -688,6 +695,48 @@ test http-4.16.$ThreadLevel {Leak with Close vs Keepalive (bug [6ca52aec14]} -se
 } -cleanup {
     rename list-difference {}
 } -result {}
+
+# The socket command enters the event loop, and the request is reset by an
+# event handler meanwhile. [0c1e91d072]
+proc waitingSocket {args} {
+    after 100 {set ::waitingSocketDone 1}
+    vwait ::waitingSocketDone
+    socket {*}$args
+}
+proc resetWhileOpening {cleanup} {
+    set before [chan names]
+    set oldbgerror [interp bgerror {}]
+    set ::bgerrors {}
+    set ::callbacks {}
+    interp bgerror {} {apply {{msg opts} {lappend ::bgerrors $msg}}}
+    http::register xhttp $::port waitingSocket
+    try {
+	set token [http::geturl xhttp:$::url \
+		-command {apply {{token} {lappend ::callbacks [http::status $token]}}}]
+	after 20 [list apply {{token cleanup} {
+	    http::reset $token
+	    if {$cleanup} {
+		http::cleanup $token
+	    }
+	}} $token $cleanup]
+	after 300 {set ::waitingSocketTestDone 1}
+	vwait ::waitingSocketTestDone
+	set status [expr {[info exists $token] ? [http::status $token] : "-"}]
+	catch {http::cleanup $token}
+	update
+	list $status $::callbacks $::bgerrors \
+		[lmap ch [chan names] {if {$ch in $before} continue; set ch}]
+    } finally {
+	http::unregister xhttp
+	interp bgerror {} $oldbgerror
+    }
+}
+test http-4.17.$ThreadLevel {reset and cleanup while the socket command runs the event loop} -body {
+    resetWhileOpening 1
+} -result {- reset {} {}}
+test http-4.18.$ThreadLevel {reset while the socket command runs the event loop} -body {
+    resetWhileOpening 0
+} -result {reset reset {} {}}
 
 test http-5.1.$ThreadLevel {http::formatQuery} {
     http::formatQuery name1 value1 name2 "value two"

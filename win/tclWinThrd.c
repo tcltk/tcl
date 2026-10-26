@@ -909,3 +909,45 @@ TclpThreadGetGlobalTSD(
  * fill-column: 78
  * End:
  */
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclpGetCStackLimit --
+ *
+ *	Determine the lowest address of the C stack of the current thread,
+ *	for code that needs to protect itself against stack overflow, like
+ *	the regexp engine.  The value is cached per thread.
+ *
+ * Results:
+ *	The lowest address of the reserved stack region, or NULL if it
+ *	cannot be determined.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+typedef struct {
+    int initialized;
+    const char *limit;
+} StackLimitData;
+static Tcl_ThreadDataKey stackLimitKey;
+
+const char *
+TclpGetCStackLimit(void)
+{
+    StackLimitData *dataPtr = (StackLimitData *)
+	    Tcl_GetThreadData(&stackLimitKey, sizeof(StackLimitData));
+
+    if (!dataPtr->initialized) {
+	MEMORY_BASIC_INFORMATION mbi;
+
+	if (VirtualQuery(&mbi, &mbi, sizeof(mbi)) != 0) {
+	    dataPtr->limit = (const char *) mbi.AllocationBase;
+	}
+	dataPtr->initialized = 1;
+    }
+    return dataPtr->limit;
+}

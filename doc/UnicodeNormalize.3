@@ -67,14 +67,14 @@ respectively. For details on the above normalization forms, refer to Section
 The \fBTcl_UtfToNormalized\fR function stores the normalized result
 in the buffer provided by the caller through the \fIdst\fR argument. The
 result is nul terminated but the nul is not included in the count of
-stored bytes returned in \fIdstWrotePtr\fR. The function returns TCL_OK
+stored bytes returned in \fIdstWrotePtr\fR. The function returns \fBTCL_OK\fR
 on success, TCL_CONVERT_NOSPACE if there is insufficient room in the output
 buffer and TCL_ERROR in case of other failures. In the latter two cases,
 an error message is stored in \fIinterp\fR if it is not NULL.
 .PP
 The \fBTcl_UtfToNormalizedDString\fR function stores the normalized result
 in \fIdstPtr\fR which must eventually be freed by caller through
-\fBTcl_DStringFree\fR. The function returns TCL_OK on success and
+\fBTcl_DStringFree\fR. The function returns \fBTCL_OK\fR on success and
 TCL_ERROR on failure with an error message in \fIinterp\fR if it is not NULL.
 .SH "SEE ALSO"
 unicode(n)

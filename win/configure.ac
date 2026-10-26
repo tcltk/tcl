@@ -15,13 +15,16 @@ SHELL=/bin/sh
 TCL_VERSION=9.1
 TCL_MAJOR_VERSION=9
 TCL_MINOR_VERSION=1
-TCL_PATCH_LEVEL="b1"
+TCL_PATCH_LEVEL=".1"
 VER=$TCL_MAJOR_VERSION$TCL_MINOR_VERSION
 
 TCL_DDE_VERSION=1.5
 TCL_DDE_MAJOR_VERSION=1
 TCL_DDE_MINOR_VERSION=5
 DDEVER=$TCL_DDE_MAJOR_VERSION$TCL_DDE_MINOR_VERSION
+
+TCL_REG_MAJOR_VERSION=1
+TCL_REG_MINOR_VERSION=4
 
 PKG_CFG_ARGS=$@
 
@@ -94,21 +97,30 @@ SC_ENABLE_SHARED
 
 SC_CONFIG_CFLAGS
 
-# Cross-compiling
-case ${host_alias} in
-*mingw32*)
+# When cross-compiling, the tclsh being built cannot be run on the build
+# host, so a tclsh installed there is used. Native builds (including MSYS2
+# and Cygwin, where host is also *mingw32*) use the freshly built one.
+if test "$cross_compiling" = yes; then
     TCL_EXE="tclsh"
-    ;;
-*)
+else
     TCL_EXE="TCL_LIBRARY=\"\${LIBRARY_DIR}\"; export TCL_LIBRARY; ./\${TCLSH}"
-    ;;
-esac
+fi
 
 #------------------------------------------------------------------------
 #	Add stuff for zlib/libtommath; note that this is mostly done in the
-#	makefile now as we just assume that the platform hasn't got usable
-#   z.lib/tommath.lib
+#	makefile now. By default the bundled zlib and libtommath are used;
+#	--with-system-zlib and --with-system-libtommath link against the
+#	libraries of the build system instead (e.g. MSYS2 packages).
 #------------------------------------------------------------------------
+
+AC_ARG_WITH(system-zlib,
+    AS_HELP_STRING([--with-system-zlib],
+	[use the zlib of the build system instead of the bundled one (default: off)]),
+    [system_zlib=$withval], [system_zlib=no])
+AC_ARG_WITH(system-libtommath,
+    AS_HELP_STRING([--with-system-libtommath],
+	[use the libtommath of the build system instead of the bundled one (default: off)]),
+    [system_libtommath=$withval], [system_libtommath=no])
 
 AS_IF([test "${enable_shared+set}" = "set"], [
   enableval="$enable_shared"
@@ -150,10 +162,32 @@ AS_IF([test "$tcl_ok" = "yes"], [
     AC_SUBST(TOMMATH_LIBS,[\${TOMMATH_DIR_NATIVE}/win32/tommath.lib])
   ])
 ], [
-  AC_DEFINE(TCL_WITH_INTERNAL_ZLIB, 1, [Tcl with internal zlib])
-  AC_SUBST(ZLIB_OBJS,[\${ZLIB_OBJS}])
-  AC_SUBST(TOMMATH_OBJS,[\${TOMMATH_OBJS}])
+  AS_IF([test "$system_zlib" = "no"], [
+    AC_DEFINE(TCL_WITH_INTERNAL_ZLIB, 1, [Tcl with internal zlib])
+    AC_SUBST(ZLIB_OBJS,[\${ZLIB_OBJS}])
+  ])
+  AS_IF([test "$system_libtommath" = "no"], [
+    AC_SUBST(TOMMATH_OBJS,[\${TOMMATH_OBJS}])
+  ], [
+    AC_DEFINE(TCL_WITH_EXTERNAL_TOMMATH, 1, [Tcl with external libtommath])
+  ])
 ])
+system_libs=
+AS_IF([test "$system_zlib" != "no"], [
+  AC_CHECK_LIB([z], [deflateSetHeader], [system_libs="$system_libs -lz"],
+      [AC_MSG_ERROR([--with-system-zlib given, but no usable zlib found])])
+  ZLIB_LIBS=
+  ZLIB_DLL_FILE=
+  zlib_lib_name=libz.dll.a
+])
+AS_IF([test "$system_libtommath" != "no"], [
+  AC_CHECK_LIB([tommath], [mp_log_u32], [system_libs="$system_libs -ltommath"],
+      [AC_MSG_ERROR([--with-system-libtommath given, but no usable libtommath found])])
+  TOMMATH_LIBS=
+  TOMMATH_DLL_FILE=
+  tommath_lib_name=libtommath.dll.a
+])
+LIBS="$LIBS$system_libs"
 AC_SUBST(TCL_ZLIB_LIB_NAME, $zlib_lib_name)
 AC_SUBST(TCL_TOMMATH_LIB_NAME, $tommath_lib_name)
 AC_CHECK_TYPES([intptr_t, uintptr_t],,,[[
@@ -202,6 +236,34 @@ AC_SUBST(ZIPFS_BUILD)
 AC_SUBST(TCL_ZIP_FILE)
 AC_SUBST(INSTALL_LIBRARIES)
 AC_SUBST(INSTALL_MSGS)
+
+#--------------------------------------------------------------------
+#	Timezone data
+#--------------------------------------------------------------------
+
+AC_MSG_CHECKING([for timezone data])
+AC_ARG_WITH(tzdata,
+    AS_HELP_STRING([--with-tzdata],
+	[install timezone data (default: yes)]),
+    [tcl_ok=$withval], [tcl_ok=yes])
+#
+# Unlike on Unix there is no system copy to fall back on, so the default is
+# to install ours. Saying no is for a build that supplies the data by some
+# other means.
+#
+case $tcl_ok in
+    no)
+	AC_MSG_RESULT([supplied by other means])
+    ;;
+    yes)
+	AC_MSG_RESULT([supplied by Tcl])
+	INSTALL_TZDATA=install-tzdata
+    ;;
+    *)
+	AC_MSG_ERROR([invalid argument: $tcl_ok])
+    ;;
+esac
+AC_SUBST(INSTALL_TZDATA)
 
 
 #--------------------------------------------------------------------
@@ -464,6 +526,8 @@ AC_SUBST(TCL_PACKAGE_PATH)
 AC_SUBST(TCL_DDE_VERSION)
 AC_SUBST(TCL_DDE_MAJOR_VERSION)
 AC_SUBST(TCL_DDE_MINOR_VERSION)
+AC_SUBST(TCL_REG_MAJOR_VERSION)
+AC_SUBST(TCL_REG_MINOR_VERSION)
 
 AC_SUBST(RC)
 AC_SUBST(RC_OUT)

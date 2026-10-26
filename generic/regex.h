@@ -6,7 +6,7 @@
 /*
  * regular expressions
  *
- * Copyright (c) 1998, 1999 Henry Spencer.  All rights reserved.
+ * Copyright © 1998, 1999 Henry Spencer.  All rights reserved.
  *
  * Development of this software was funded, in part, by Cray Research Inc.,
  * UUNET Communications Services Inc., Sun Microsystems Inc., and Scriptics
@@ -176,7 +176,7 @@ typedef struct {
 #define	REG_NEWLINE	000300	/* newlines are line terminators */
 #define	REG_PEND	000400	/* ugh -- backward-compatibility hack */
 #define	REG_EXPECT	001000	/* report details on partial/limited matches */
-#define	REG_BOSONLY	002000	/* temporary kludge for BOS-only matches */
+#define	REG_BOSONLY	002000	/* match only at string start (like \A) */
 #define	REG_DUMP	004000	/* none of your business :-) */
 #define	REG_FAKE	010000	/* none of your business :-) */
 #define	REG_PROGRESS	020000	/* none of your business :-) */
@@ -191,7 +191,7 @@ typedef struct {
  ^ int regexec(regex_t *, const char *, size_t, regmatch_t [], int);
  ^ #endif
  ^ #ifdef __REG_WIDE_T
- ^ int __REG_WIDE_EXEC(regex_t *, const __REG_WIDE_T *, size_t,
+ ^ int __REG_WIDE_EXEC(regex_t *, const __REG_WIDE_T *, size_t, size_t,
  ^				rm_detail_t *, size_t, regmatch_t [], int);
  ^ #endif
  */
@@ -264,7 +264,7 @@ int re_exec(regex_t *, const char *, size_t, rm_detail_t *, size_t, regmatch_t [
 int regexec(regex_t *, const char *, size_t, regmatch_t [], int);
 #endif
 #ifdef __REG_WIDE_T
-MODULE_SCOPE int __REG_WIDE_EXEC(regex_t *, const __REG_WIDE_T *, size_t, rm_detail_t *, size_t, regmatch_t [], int);
+MODULE_SCOPE int __REG_WIDE_EXEC(regex_t *, const __REG_WIDE_T *, size_t, size_t, rm_detail_t *, size_t, regmatch_t [], int);
 #endif
 MODULE_SCOPE void regfree(regex_t *);
 MODULE_SCOPE size_t regerror(int, char *, size_t);

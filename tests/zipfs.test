@@ -1038,6 +1038,40 @@ namespace eval test_ns_zipfs {
 	puts $fd blah
     } -result {channel "*" wasn't opened for writing} -match glob -returnCodes error
 
+    test zipfs-read-fileevent "Readable event on file opened for read" -setup {
+	mount [zippath test.zip]
+	set fd [open [file join $defMountPt test]]
+    } -cleanup {
+	close $fd
+	cleanup
+    } -body {
+	set done timeout
+	set id [after 1000 [namespace code {set done timeout}]]
+	fileevent $fd readable [namespace code {set done [gets $fd]}]
+	vwait [namespace current]::done
+	after cancel $id
+	set done
+    } -result test
+
+    test zipfs-read-fcopy-async "Background fcopy from file opened for read" -setup {
+	mount [zippath test.zip]
+	set fd [open [file join $defMountPt test]]
+	set out [file tempfile outname]
+    } -cleanup {
+	close $fd
+	close $out
+	file delete $outname
+	cleanup
+    } -body {
+	set done timeout
+	set id [after 1000 [namespace code {set done timeout}]]
+	fcopy $fd $out -command [namespace code {set done}]
+	vwait [namespace current]::done
+	after cancel $id
+	seek $out 0
+	list $done [read $out]
+    } -result [list 5 test\n]
+
     #
     # Write
     proc testzipfswrite {id zippath result filename mode args} {
@@ -1970,6 +2004,73 @@ namespace eval test_ns_zipfs {
 	zipfs mount $zipfile $mt
 	lsort [zipfs list $mt/*]
     } -result {//zipfs:/bug-7d5f1c1308-mt/bug-7d5f1c1308 //zipfs:/bug-7d5f1c1308-mt/bug-7d5f1c1308/.ext}
+
+    test bug-4676f5c78-0 {
+        Corrupted entries with glob -dir . (toplevel)
+    } -constraints {zipfs zipfslib} -setup {
+        set dir [pwd]
+        cd //zipfs:/
+    } -cleanup {
+        cd $dir
+    } -body {
+        glob -dir . *
+    } -result [list ./$::zipLibTop]
+
+    test bug-4676f5c78-1 {
+        Corrupted entries with glob -dir . (toplevel, additional mount)
+    } -constraints zipfs -setup {
+        mount [zippath test.zip] $defMountPt
+        set dir [pwd]
+        cd //zipfs:/
+    } -cleanup {
+        cd $dir
+        cleanup
+    } -body {
+        lsort [glob -dir . *]
+    } -result [expr {
+                     $::zipLibTop eq "" ?
+                     [list ./[file tail $defMountPt]]
+                     :
+                     [lsort [list ./$::zipLibTop ./[file tail $defMountPt]]]
+                 }]
+
+    test bug-4676f5c78-2 {
+        Corrupted entries with glob -dir . (second level)
+    } -constraints {zipfs zipfslib} -setup {
+        set dir [pwd]
+        cd //zipfs:/$::zipLibTop
+    } -cleanup {
+        cd $dir
+    } -body {
+        glob -dir . *
+    } -result ./[expr {$::zipLibTop eq "app" ? "tcl_library" : "tcl"}]
+
+    test bug-4676f5c78-3 {
+        Corrupted entries with glob -dir . (second level, additional mount)
+    } -constraints zipfs -setup {
+        mount [zippath test.zip] $defMountPt
+        set dir [pwd]
+        cd $defMountPt
+    } -cleanup {
+        cd $dir
+        cleanup
+    } -body {
+        lsort [glob -dir . *]
+    } -result [list ./test ./testdir]
+
+    test bug-4676f5c78-4 {
+        Corrupted entries with glob -dir . (second level, additional mount)
+    } -constraints zipfs -setup {
+        mount [zippath test.zip] $defMountPt
+        set dir [pwd]
+        cd $defMountPt/testdir
+    } -cleanup {
+        cd $dir
+        cleanup
+    } -body {
+        lsort [glob -dir . *]
+    } -result [list ./test2]
+    
 }
 
 

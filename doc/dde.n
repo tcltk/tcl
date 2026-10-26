@@ -20,7 +20,7 @@ dde \- Execute a Dynamic Data Exchange command
 \fBdde poke\fR ?\fB\-binary\fR? \fIservice topic item data\fR
 \fBdde request\fR ?\fB\-binary\fR? \fIservice topic item\fR
 \fBdde services \fIservice topic\fR
-\fBdde eval\fR ?\fB\-async\fR? \fItopic cmd \fR?\fIarg arg ...\fR?
+\fBdde eval\fR ?\fB\-async\fR? \fItopic cmd \fR?\fIarg ...\fR?
 .fi
 .BE
 .SH DESCRIPTION

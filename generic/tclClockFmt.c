@@ -762,7 +762,11 @@ ClockFrmObjGetLocFmtKey(
 	return keyObj;
     }
 
-    keyObj = Tcl_ObjPrintf("FMT_%s", TclGetString(objPtr));
+    Tcl_DString ds;
+    Tcl_DStringInit(&ds);
+    TclDStringAppendLiteral(&ds, "FMT_");
+    TclDStringAppendObj(&ds, objPtr);
+    keyObj = Tcl_DStringToObj(&ds);
     TclInitObjRef(ObjLocFmtKey(objPtr), keyObj);
 
     return keyObj;
@@ -3454,7 +3458,7 @@ TclClockFormat(
 		    dateFmt->output = Clock_itoaw(
 			    dateFmt->output, val, *map->tostr, map->width);
 		} else {
-		    dateFmt->output += sprintf(dateFmt->output, map->tostr, val);
+		    dateFmt->output += snprintf(dateFmt->output, dateFmt->resEnd - dateFmt->output, map->tostr, val);
 		}
 	    } else {
 		const char *s;
@@ -3486,7 +3490,7 @@ TclClockFormat(
 		dateFmt->output = Clock_witoaw(dateFmt->output, val, *map->tostr,
 			map->width);
 	    } else {
-		dateFmt->output += sprintf(dateFmt->output, map->tostr, val);
+		dateFmt->output += snprintf(dateFmt->output, dateFmt->resEnd - dateFmt->output, map->tostr, val);
 	    }
 	    break;
 	}

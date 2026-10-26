@@ -11,7 +11,7 @@
 .SH NAME
 lset \- Change an element in a list
 .SH SYNOPSIS
-\fBlset \fIvarName ?index ...? newValue\fR
+\fBlset \fIvarName\fR ?\fIindex ...\fR? \fInewValue\fR
 .BE
 .SH DESCRIPTION
 .PP

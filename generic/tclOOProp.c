@@ -56,6 +56,8 @@ static void		ImplementObjectProperty(Tcl_Object targetObject,
 static void		ImplementClassProperty(Tcl_Class targetObject,
 			    Tcl_Obj *propNamePtr, bool installGetter,
 			    bool installSetter);
+static void		FreePropName(Tcl_Obj *objPtr);
+static void		DupPropName(Tcl_Obj *srcPtr, Tcl_Obj *copyPtr);
 
 /*
  * Method descriptors
@@ -76,6 +78,110 @@ static const Tcl_MethodType2 SetterType = {
     DetailsDeleter,
     DetailsCloner
 };
+
+/*
+ * Cache for longer-term handling of property implementation names. This is
+ * the interior representation of the cache attached to the property names
+ * used by users. It allows the version of the names after they're mapped to
+ * TclOO method names to also be cached.
+ */
+typedef struct PropertyName {
+    // If the property is '-foo', this is '<ReadProp-foo>'
+    Tcl_Obj *readerName;
+    // If the property is '-foo', this is '<WriteProp-foo>'
+    Tcl_Obj *writerName;
+} PropertyName;
+
+/*
+ * The object type descriptor for the property implementation cache type.
+ */
+static const Tcl_ObjType propNameType = {
+    "tcl::oo property name",
+    FreePropName,		// FreeIntRep
+    DupPropName,		// DupIntRep
+    NULL,			// UpdateString
+    NULL,			// SetFromAnyProc
+    TCL_OBJTYPE_V0
+};
+
+/*
+ * How to install a cache value into a Tcl_Obj internal representation.
+ */
+#define SET_PROPERTY_NAME(objPtr, namePtr) \
+    do {							\
+	Tcl_ObjInternalRep ir;					\
+	ir.twoPtrValue.ptr1 = (namePtr);			\
+	ir.twoPtrValue.ptr2 = NULL;				\
+	Tcl_StoreInternalRep((objPtr), &propNameType, &ir);	\
+    } while (0)
+
+/*
+ * How to retrieve a cache value from a Tcl_Obj internal representation.
+ */
+#define GET_PROPERTY_NAME(irPtr) \
+    ((PropertyName *) (irPtr)->twoPtrValue.ptr1)
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * DupPropName, FreePropName, GetImplNamesForProperty --
+ *
+ *	A caching scheme for the actual property implementation names so
+ *	that don't have to reallocate the method name each time we call the
+ *	implementations.
+ *
+ *	Note that this scheme is NOT used by the property configuration code,
+ *	where the starting names have a slightly different structure.
+ *
+ * ----------------------------------------------------------------------
+ */
+
+static void
+FreePropName(
+    Tcl_Obj *objPtr)
+{
+    PropertyName *namePtr = GET_PROPERTY_NAME(&objPtr->internalRep);
+    TclDecrRefCount(namePtr->readerName);
+    TclDecrRefCount(namePtr->writerName);
+    Tcl_Free((void *) namePtr);
+    objPtr->typePtr = NULL;
+}
+
+static void
+DupPropName(
+    Tcl_Obj *srcPtr,
+    Tcl_Obj *copyPtr)
+{
+    const PropertyName *srcNamePtr = GET_PROPERTY_NAME(&srcPtr->internalRep);
+    PropertyName *copyNamePtr = (PropertyName *)
+	    Tcl_Alloc(sizeof(PropertyName));
+    copyNamePtr->readerName = srcNamePtr->readerName;
+    copyNamePtr->writerName = srcNamePtr->writerName;
+    Tcl_IncrRefCount(copyNamePtr->readerName);
+    Tcl_IncrRefCount(copyNamePtr->writerName);
+    SET_PROPERTY_NAME(copyPtr, copyNamePtr);
+}
+
+static PropertyName *
+GetImplNamesForProperty(
+    Tcl_Obj *objPtr)
+{
+    Tcl_ObjInternalRep *irPtr = TclFetchInternalRep(objPtr, &propNameType);
+    if (irPtr) {
+	return GET_PROPERTY_NAME(irPtr);
+    }
+
+    // No cached version; make it
+
+    const char *propName = TclGetString(objPtr);
+    PropertyName *namePtr = (PropertyName *) Tcl_Alloc(sizeof(PropertyName));
+    namePtr->readerName = Tcl_ObjPrintf("<ReadProp%s>", propName);
+    namePtr->writerName = Tcl_ObjPrintf("<WriteProp%s>", propName);
+    Tcl_IncrRefCount(namePtr->readerName);
+    Tcl_IncrRefCount(namePtr->writerName);
+    SET_PROPERTY_NAME(objPtr, namePtr);
+    return namePtr;
+}
 
 /*
  * ----------------------------------------------------------------------
@@ -91,66 +197,72 @@ static const Tcl_MethodType2 SetterType = {
  * ----------------------------------------------------------------------
  */
 
+// Helper: call the property read method implementation
 static inline int
 ReadProperty(
     Tcl_Interp *interp,
     Object *oPtr,
-    const char *propName)
+    Tcl_Obj *propName)
 {
     Tcl_Obj *args[] = {
 	oPtr->fPtr->myName,
-	Tcl_ObjPrintf("<ReadProp%s>", propName)
+	GetImplNamesForProperty(propName)->readerName
     };
-    int code;
 
     Tcl_IncrRefCount(args[0]);
     Tcl_IncrRefCount(args[1]);
-    code = TclOOPrivateObjectCmd(oPtr, interp, 2, args);
+    int code = TclOOPrivateObjectCmd(oPtr, interp, 2, args);
     Tcl_DecrRefCount(args[0]);
     Tcl_DecrRefCount(args[1]);
+
     switch (code) {
     case TCL_BREAK:
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"property getter for %s did a break", propName));
+		"property getter for %s did a break",
+		TclGetString(propName)));
 	return TCL_ERROR;
     case TCL_CONTINUE:
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"property getter for %s did a continue", propName));
+		"property getter for %s did a continue",
+		TclGetString(propName)));
 	return TCL_ERROR;
     default:
 	return code;
     }
 }
 
+// Helper: call the property write method implementation
 static inline int
 WriteProperty(
     Tcl_Interp *interp,
     Object *oPtr,
-    const char *propName,
+    Tcl_Obj *propName,
     Tcl_Obj *valueObj)
 {
     Tcl_Obj *args[] = {
 	oPtr->fPtr->myName,
-	Tcl_ObjPrintf("<WriteProp%s>", propName),
+	GetImplNamesForProperty(propName)->writerName,
 	valueObj
     };
-    int code;
 
     Tcl_IncrRefCount(args[0]);
     Tcl_IncrRefCount(args[1]);
     Tcl_IncrRefCount(args[2]);
-    code = TclOOPrivateObjectCmd(oPtr, interp, 3, args);
+    int code = TclOOPrivateObjectCmd(oPtr, interp, 3, args);
     Tcl_DecrRefCount(args[0]);
     Tcl_DecrRefCount(args[1]);
     Tcl_DecrRefCount(args[2]);
+
     switch (code) {
     case TCL_BREAK:
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"property setter for %s did a break", propName));
+		"property setter for %s did a break",
+		TclGetString(propName)));
 	return TCL_ERROR;
     case TCL_CONTINUE:
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"property setter for %s did a continue", propName));
+		"property setter for %s did a continue",
+		TclGetString(propName)));
 	return TCL_ERROR;
     default:
 	return code;
@@ -286,7 +398,7 @@ TclOO_Configurable_Configure(
 	ListObjGetElements(listPtr, namec, namev);
 
 	for (i = 0; i < namec; ) {
-	    code = ReadProperty(interp, oPtr, TclGetString(namev[i]));
+	    code = ReadProperty(interp, oPtr, namev[i]);
 	    if (code != TCL_OK) {
 		Tcl_DecrRefCount(resultPtr);
 		break;
@@ -310,7 +422,7 @@ TclOO_Configurable_Configure(
 	if (namePtr == NULL) {
 	    return TCL_ERROR;
 	}
-	return ReadProperty(interp, oPtr, TclGetString(namePtr));
+	return ReadProperty(interp, oPtr, namePtr);
     } else if (objc == 2) {
 	/*
 	 * Special case for writing to one property. Saves fiddling with the
@@ -321,7 +433,7 @@ TclOO_Configurable_Configure(
 	if (namePtr == NULL) {
 	    return TCL_ERROR;
 	}
-	code = WriteProperty(interp, oPtr, TclGetString(namePtr), objv[1]);
+	code = WriteProperty(interp, oPtr, namePtr, objv[1]);
 	if (code == TCL_OK) {
 	    Tcl_ResetResult(interp);
 	}
@@ -341,8 +453,7 @@ TclOO_Configurable_Configure(
 		code = TCL_ERROR;
 		break;
 	    }
-	    code = WriteProperty(interp, oPtr, TclGetString(namePtr),
-		    objv[i + 1]);
+	    code = WriteProperty(interp, oPtr, namePtr, objv[i + 1]);
 	    if (code != TCL_OK) {
 		break;
 	    }

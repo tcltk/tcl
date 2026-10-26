@@ -367,6 +367,15 @@ TclpInitPlatform(void)
     (void) signal(SIGPIPE, SIG_IGN);
 #endif /* SIGPIPE */
 
+    /*
+     * Ignore SIGXFSZ too, so that writing a file beyond the file size limit
+     * (ulimit -f) fails with an error instead of killing the process.
+     */
+
+#ifdef SIGXFSZ
+    (void) signal(SIGXFSZ, SIG_IGN);
+#endif /* SIGXFSZ */
+
 #if defined(__FreeBSD__) && defined(__GNUC__)
     (void) fpsetmask(0L);
 #endif
@@ -535,9 +544,21 @@ TclpInitLibraryPath(
 void
 TclpSetInitialEncodings(void)
 {
+    /*
+     * Once the encoding from the environment is set, don't set it again:
+     * that would undo [encoding system] done by the application.
+     */
+
+    static int initialEncodingSet = 0;
     Tcl_DString encodingName;
-    Tcl_SetSystemEncoding(NULL,
-	    Tcl_GetEncodingNameFromEnvironment(&encodingName));
+
+    if (initialEncodingSet) {
+	return;
+    }
+    if (Tcl_SetSystemEncoding(NULL,
+	    Tcl_GetEncodingNameFromEnvironment(&encodingName)) == TCL_OK) {
+	initialEncodingSet = 1;
+    }
     Tcl_DStringFree(&encodingName);
 }
 

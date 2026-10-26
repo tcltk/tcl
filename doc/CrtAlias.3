@@ -85,7 +85,7 @@ Pointer to location to store count of additional value arguments to be
 passed to the alias. The location is in storage owned by the caller.
 If it points to a variable which type is not \fBTcl_Size\fR, a compiler
 warning will be generated. If your extensions is compiled with \fB-DTCL_8_API\fR,
-this function will return TCL_ERROR for aliases with more than INT_MAX
+this function will return \fBTCL_ERROR\fR for aliases with more than INT_MAX
 value arguments, otherwise expect it to crash
 .AP Tcl_Obj ***objvPtr out
 Pointer to location to store a vector of Tcl_Obj structures, the additional

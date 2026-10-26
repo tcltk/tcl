@@ -4456,6 +4456,18 @@ test oo-29.1 {self class with object-defined methods} -setup {
 } -returnCodes error -cleanup {
     obj destroy
 } -result {method not defined by a class}
+test oo-29.2 {Bug 8ab06e31e3: compiled self n is ambiguous} -setup {
+    oo::object create obj
+} -body {
+    oo::objdefine obj method demo {} {
+	list [catch {self n} msg] $msg \
+		[expr {[self na] eq [info object namespace [self]]}] \
+		[self ne] [self o]
+    }
+    obj demo
+} -cleanup {
+    obj destroy
+} -match glob -result {1 {ambiguous subcommand "n": must be *} 1 {} ::obj}
 
 test oo-30.1 {Bug 2903011: deleting an object in a constructor} -setup {
     oo::class create cls

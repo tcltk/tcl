@@ -202,6 +202,9 @@ TCL_TEST_LIBRARY=
 DDEDOTVERSION = 1.5
 DDEVERSION = $(DDEDOTVERSION:.=)
 
+REGDOTVERSION = 1.4
+REGVERSION = $(REGDOTVERSION:.=)
+
 TCLDDELIBNAME	= $(PROJECT)9dde$(DDEVERSION)$(SUFX:t=).$(EXT)
 TCLDDELIB	= $(OUT_DIR)\$(TCLDDELIBNAME)
 
@@ -546,11 +549,11 @@ test-core: tcltest
 	set TCL_LIBRARY=$(TCL_TEST_LIBRARY)
 !if $(STATIC_BUILD)
 	$(DEBUGGER) $(TCLTEST) "$(ROOT:\=/)/tests/all.tcl" $(TESTFLAGS) -loadfile <<
-		package ifneeded dde 1.5b1 [list load {} Dde]
+		package ifneeded dde 1.5.0 [list load {} Dde]
 <<
 !else
 	$(DEBUGGER) $(TCLTEST) "$(ROOT:\=/)/tests/all.tcl" $(TESTFLAGS) -loadfile <<
-		package ifneeded dde 1.5b1 [list load "$(TCLDDELIB:\=/)"]
+		package ifneeded dde 1.5.0 [list load "$(TCLDDELIB:\=/)"]
 <<
 !endif
 
@@ -1124,6 +1127,9 @@ install-libraries: tclConfig tcl-nmake install-msgs install-tzdata
 	@$(CPY) "$(ROOT)\library\dde\pkgIndex.tcl" \
 	    "$(LIB_INSTALL_DIR)\dde$(DDEDOTVERSION)\"
 !if !$(TCL_EMBED_SCRIPTS)
+	@echo Installing registry package
+	@$(CPY) "$(ROOT)\library\registry\pkgIndex.tcl" \
+	    "$(LIB_INSTALL_DIR)\registry$(REGDOTVERSION)\"
 	@$(ECHO) Installing encodings
 	@$(CPY) "$(ROOT)\library\encoding\*.enc" \
 		"$(SCRIPT_INSTALL_DIR)\encoding\"

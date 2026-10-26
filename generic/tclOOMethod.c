@@ -751,8 +751,8 @@ TclOOMakeProcMethod(
 
     InitCmdFrame(iPtr, procPtr);
 
-    return TclNewMethod(
-	    (Tcl_Class) clsPtr, nameObj, flags, (const Tcl_MethodType2 *)typePtr, clientData);
+    return TclNewMethod((Tcl_Class) clsPtr, nameObj, flags,
+	    (const Tcl_MethodType2 *)typePtr, clientData);
 }
 #endif /* TCL_NO_DEPRECATED */
 

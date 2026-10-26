@@ -11,7 +11,7 @@
 .SH NAME
 tcl::process \- Subprocess management
 .SH SYNOPSIS
-\fB::tcl::process \fIoption \fR?\fIarg arg ...\fR?
+\fB::tcl::process \fIoption \fR?\fIarg  ...\fR?
 .BE
 .SH DESCRIPTION
 .PP
@@ -61,8 +61,8 @@ where:
 .TP
 \fIcode\fR
 .
-is a standard Tcl return code, i.e., \fB0\fR for TCL_OK and \fB1\fR
-for TCL_ERROR,
+is a standard Tcl return code, i.e., \fB0\fR for \fBTCL_OK\fR and \fB1\fR
+for \fBTCL_ERROR\fR,
 .TP
 \fImsg\fR
 .

@@ -441,7 +441,7 @@ static const EnsembleSetup ensembleCommands[] = {
     {"unicode",		tclUnicodeImplMap,	NULL, CMD_IS_SAFE},
     {"zipfs",		tclZipfsImplMap,	NULL, 0},
     {"zlib",		tclZlibImplMap,		NULL, CMD_IS_SAFE},
-    {"::tcl::unsupported::grapheme", tclGraphemeImplMap, NULL, 0},
+    {"::tcl::unsupported::grapheme", tclGraphemeImplMap, NULL, CMD_IS_SAFE},
     {NULL, NULL, NULL, 0}
 };
 
@@ -1421,27 +1421,40 @@ HideCommandInTclNs(
     const char *name,
     Tcl_Obj *publicNameTuple)
 {
-    Tcl_Obj *cmdName = Tcl_ObjPrintf("::tcl::%s::%s", nsName, name);
-    Tcl_Obj *hideName = Tcl_ObjPrintf("tcl:%s:%s", nsName, name);
+    Tcl_DString cmd, hide;
+    Tcl_Size nsLen = strlen(nsName), nameLen = strlen(name);
+
+    Tcl_DStringInit(&cmd);
+    TclDStringAppendLiteral(&cmd, "::tcl::");
+    Tcl_DStringAppend(&cmd, nsName, nsLen);
+    TclDStringAppendLiteral(&cmd, "::");
+    Tcl_DStringAppend(&cmd, name, nameLen);
+
+    Tcl_DStringInit(&hide);
+    TclDStringAppendLiteral(&hide, "tcl:");
+    Tcl_DStringAppend(&hide, nsName, nsLen);
+    TclDStringAppendLiteral(&hide, ":");
+    Tcl_DStringAppend(&hide, name, nameLen);
 
 #define INTERIM_HACK_NAME "___tmp"
     // TODO: Fix the hiding machinery to handle namespaced commands.
 
-    if (TclRenameCommand(interp, TclGetString(cmdName),
+    if (TclRenameCommand(interp, Tcl_DStringValue(&cmd),
 		INTERIM_HACK_NAME) != TCL_OK
 	    || Tcl_HideCommand(interp, INTERIM_HACK_NAME,
-		    TclGetString(hideName)) != TCL_OK) {
+		    Tcl_DStringValue(&hide)) != TCL_OK) {
 	Tcl_Panic("problem making '%s %s' safe: %s",
 		nsName, name, Tcl_GetStringResult(interp));
     }
     if (publicNameTuple) {
 	Tcl_IncrRefCount(publicNameTuple);
-	Tcl_CreateObjCommand2(interp, TclGetString(cmdName),
+	Tcl_CreateObjCommand2(interp, Tcl_DStringValue(&cmd),
 		BadEnsembleSubcommand, (void *)publicNameTuple,
 		BadEnsembleSubcommandCleanup);
     }
-    TclDecrRefCount(cmdName);
-    TclDecrRefCount(hideName);
+
+    Tcl_DStringFree(&cmd);
+    Tcl_DStringFree(&hide);
 }
 
 int
@@ -6594,6 +6607,9 @@ Tcl_ExprLongObj(
     case TCL_NUMBER_NAN:
 	Tcl_GetDoubleFromObj(interp, resultPtr, &d);
 	result = TCL_ERROR;
+	break;
+    default:
+	TCL_UNREACHABLE();
     }
 
     Tcl_DecrRefCount(resultPtr);/* Discard the result object. */
@@ -7009,6 +7025,99 @@ Tcl_GetVersion(
     if (type != NULL) {
 	*type = TCL_RELEASE_LEVEL;
     }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclRand --
+ *
+ *	Implementation of Tcl's built-in random number generator. This is not
+ *	suitable for cryptography, or even monte carlo simulation, but it's
+ *	good enough for many simple uses.
+ *
+ * Results:
+ *	A randomly chosen floating point number from the range [0..1).
+ *	The upper end-point of the range is never returned.
+ *
+ * Side effects:
+ *	Updates the current random number seed stored in the interpreter. If
+ *	the seed has not been initialised before in this interpreter, it will
+ *	be set to a value from the current time and thread ID.
+ *
+ *----------------------------------------------------------------------
+ */
+double
+TclRand(
+    Interp *iPtr)
+{
+    long tmp;			/* Algorithm assumes at least 32 bits. Only
+				 * long guarantees that. See below. */
+
+    if (!(iPtr->flags & RAND_SEED_INITIALIZED)) {
+	iPtr->flags |= RAND_SEED_INITIALIZED;
+
+	/*
+	 * To ensure different seeds in different threads (bug #416643),
+	 * take into consideration the thread this interp is running in.
+	 */
+
+	iPtr->randSeed = (long)TclpGetClicks() + (long)PTR2UINT(Tcl_GetCurrentThread()) * 4093U;
+
+	/*
+	 * Make sure 1 <= randSeed <= (2^31) - 2. See below.
+	 */
+
+	iPtr->randSeed &= 0x7FFFFFFFL;
+	if ((iPtr->randSeed == 0) || (iPtr->randSeed == 0x7FFFFFFFL)) {
+	    iPtr->randSeed ^= 123459876L;
+	}
+    }
+
+    /*
+     * Generate the random number using the linear congruential generator
+     * defined by the following recurrence:
+     *		seed = ( IA * seed ) mod IM
+     * where IA is 16807 and IM is (2^31) - 1. The recurrence maps a seed in
+     * the range [1, IM - 1] to a new seed in that same range. The recurrence
+     * maps IM to 0, and maps 0 back to 0, so those two values must not be
+     * allowed as initial values of seed.
+     *
+     * In order to avoid potential problems with integer overflow, the
+     * recurrence is implemented in terms of additional constants IQ and IR
+     * such that
+     *		IM = IA*IQ + IR
+     * None of the operations in the implementation overflows a 32-bit signed
+     * integer, and the C type long is guaranteed to be at least 32 bits wide.
+     *
+     * For more details on how this algorithm works, refer to the following
+     * papers:
+     *
+     *	S.K. Park & K.W. Miller, "Random number generators: good ones are hard
+     *	to find," Comm ACM 31(10):1192-1201, Oct 1988
+     *
+     *	W.H. Press & S.A. Teukolsky, "Portable random number generators,"
+     *	Computers in Physics 6(5):522-524, Sep/Oct 1992.
+     */
+
+#define RAND_IA		16807
+#define RAND_IM		2147483647
+#define RAND_IQ		127773
+#define RAND_IR		2836
+#define RAND_MASK	123459876
+
+    tmp = iPtr->randSeed/RAND_IQ;
+    iPtr->randSeed = RAND_IA*(iPtr->randSeed - tmp*RAND_IQ) - RAND_IR*tmp;
+    if (iPtr->randSeed < 0) {
+	iPtr->randSeed += RAND_IM;
+    }
+
+    /*
+     * Since the recurrence keeps seed values in the range [1, RAND_IM - 1],
+     * dividing by RAND_IM yields a double in the range (0, 1).
+     */
+
+    return (double)iPtr->randSeed * (1.0/RAND_IM);
 }
 
 /*
@@ -7760,86 +7869,18 @@ ExprRandFunc(
     Tcl_Size objc,		/* Actual parameter count. */
     Tcl_Obj *const *objv)	/* Actual parameter vector. */
 {
-    Interp *iPtr = (Interp *) interp;
-    double dResult;
-    long tmp;			/* Algorithm assumes at least 32 bits. Only
-				 * long guarantees that. See below. */
-    Tcl_Obj *oResult;
-
     if (objc != 1) {
 	MathFuncWrongNumArgs(interp, 1, objc, objv);
 	return TCL_ERROR;
     }
 
-    if (!(iPtr->flags & RAND_SEED_INITIALIZED)) {
-	iPtr->flags |= RAND_SEED_INITIALIZED;
-
-	/*
-	 * To ensure different seeds in different threads (bug #416643),
-	 * take into consideration the thread this interp is running in.
-	 */
-
-	iPtr->randSeed = (long)TclpGetClicks() + (long)PTR2UINT(Tcl_GetCurrentThread()) * 4093U;
-
-	/*
-	 * Make sure 1 <= randSeed <= (2^31) - 2. See below.
-	 */
-
-	iPtr->randSeed &= 0x7FFFFFFFL;
-	if ((iPtr->randSeed == 0) || (iPtr->randSeed == 0x7FFFFFFFL)) {
-	    iPtr->randSeed ^= 123459876L;
-	}
-    }
-
-    /*
-     * Generate the random number using the linear congruential generator
-     * defined by the following recurrence:
-     *		seed = ( IA * seed ) mod IM
-     * where IA is 16807 and IM is (2^31) - 1. The recurrence maps a seed in
-     * the range [1, IM - 1] to a new seed in that same range. The recurrence
-     * maps IM to 0, and maps 0 back to 0, so those two values must not be
-     * allowed as initial values of seed.
-     *
-     * In order to avoid potential problems with integer overflow, the
-     * recurrence is implemented in terms of additional constants IQ and IR
-     * such that
-     *		IM = IA*IQ + IR
-     * None of the operations in the implementation overflows a 32-bit signed
-     * integer, and the C type long is guaranteed to be at least 32 bits wide.
-     *
-     * For more details on how this algorithm works, refer to the following
-     * papers:
-     *
-     *	S.K. Park & K.W. Miller, "Random number generators: good ones are hard
-     *	to find," Comm ACM 31(10):1192-1201, Oct 1988
-     *
-     *	W.H. Press & S.A. Teukolsky, "Portable random number generators,"
-     *	Computers in Physics 6(5):522-524, Sep/Oct 1992.
-     */
-
-#define RAND_IA		16807
-#define RAND_IM		2147483647
-#define RAND_IQ		127773
-#define RAND_IR		2836
-#define RAND_MASK	123459876
-
-    tmp = iPtr->randSeed/RAND_IQ;
-    iPtr->randSeed = RAND_IA*(iPtr->randSeed - tmp*RAND_IQ) - RAND_IR*tmp;
-    if (iPtr->randSeed < 0) {
-	iPtr->randSeed += RAND_IM;
-    }
-
-    /*
-     * Since the recurrence keeps seed values in the range [1, RAND_IM - 1],
-     * dividing by RAND_IM yields a double in the range (0, 1).
-     */
-
-    dResult = (double)iPtr->randSeed * (1.0/RAND_IM);
+    double dResult = TclRand((Interp *) interp);
 
     /*
      * Push a Tcl object with the result.
      */
 
+    Tcl_Obj *oResult;
     TclNewDoubleObj(oResult, dResult);
     Tcl_SetObjResult(interp, oResult);
     return TCL_OK;
@@ -8823,6 +8864,12 @@ Tcl_NRCallObjProc2(
 {
     NRE_callback *rootPtr = TOP_CB(interp);
 
+    /*
+     * The command may be called directly, without a TclNREvalObjv below,
+     * so provide the spot for a [tailcall] in it. [4955f5d8a4]
+     */
+
+    TclPushTailcallPoint(interp);
     TclNRAddCallback(interp, Dispatch, objProc, clientData,
 	    INT2PTR(objc), objv);
     return TclNRRunCallbacks(interp, TCL_OK, rootPtr);
@@ -8862,6 +8909,7 @@ Tcl_NRCallObjProc(
     info->clientData = clientData;
     info->proc = objProc;
 
+    TclPushTailcallPoint(interp);
     TclNRAddCallback(interp, Dispatch, WrapperNRObjProc, info,
 	    INT2PTR(objc), objv);
     return TclNRRunCallbacks(interp, TCL_OK, rootPtr);

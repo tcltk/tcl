@@ -1287,9 +1287,10 @@ TcpConnect(
     TcpState *statePtr)
 {
     socklen_t optlen;
-    int async_callback = GOT_BITS(statePtr->flags, TCP_ASYNC_PENDING);
     int ret = -1, error = EHOSTUNREACH;
-    int async = GOT_BITS(statePtr->flags, TCP_ASYNC_CONNECT);
+    bool async_callback = GOT_BITS(statePtr->flags, TCP_ASYNC_PENDING) != 0;
+    bool async = GOT_BITS(statePtr->flags, TCP_ASYNC_CONNECT) != 0;
+    bool triedConnect = false;
     static const int reuseaddr = 1;
 
     if (async_callback) {
@@ -1373,6 +1374,7 @@ TcpConnect(
 
 	    ret = connect(statePtr->fds.fd, statePtr->addr->ai_addr,
 		    statePtr->addr->ai_addrlen);
+	    triedConnect = true;
 	    if (ret < 0) {
 		error = errno;
 	    }
@@ -1434,6 +1436,25 @@ TcpConnect(
 	if (statePtr->cachedBlocking == TCL_MODE_NONBLOCKING) {
 	    Tcl_NotifyChannel(statePtr->channel, TCL_WRITABLE);
 	}
+    }
+    if (error != 0 && async && !async_callback && triedConnect) {
+	/*
+	 * An async connect failed at once, e.g. because some systems refuse
+	 * a connection to a local port without a listener without returning
+	 * EINPROGRESS first.  Report it like a failure in the background.
+	 */
+
+	TclUnixSetBlockingMode(statePtr->fds.fd, statePtr->cachedBlocking);
+	SET_BITS(statePtr->flags, TCP_ASYNC_FAILED);
+	return TCL_OK;
+    } else if (async) {
+	/*
+	 * An async connect finished at once, e.g. because some systems
+	 * connect to a local listener without returning EINPROGRESS first.
+	 * Restore the blocking mode, as when it finishes in the background.
+	 */
+
+	TclUnixSetBlockingMode(statePtr->fds.fd, statePtr->cachedBlocking);
     }
     if (error != 0) {
 	/*

@@ -11,6 +11,10 @@
  */
 
 #include "tclInt.h"
+#if defined (__clang__) && (__clang_major__ > 20)
+#pragma clang diagnostic ignored "-Wc++-keyword"
+#endif
+
 /*
  * The following table contains the mapping from Win32 errors to errno errors.
  */

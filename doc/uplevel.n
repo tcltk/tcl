@@ -12,13 +12,13 @@
 .SH NAME
 uplevel \- Execute a script in a different stack frame
 .SH SYNOPSIS
-\fBuplevel \fR?\fIlevel\fR?\fI arg \fR?\fIarg ...\fR?
+\fBuplevel\fR ?\fIlevel\fR? \fIarg\fR ?\fIarg ...\fR?
 .BE
 .SH DESCRIPTION
 .PP
 All of the \fIarg\fR arguments are concatenated as if they had
 been passed to \fBconcat\fR; the result is then evaluated in the
-variable context indicated by \fIlevel\fR.  \fBUplevel\fR returns
+variable context indicated by \fIlevel\fR.  \fBuplevel\fR returns
 the result of that evaluation.
 .PP
 If \fIlevel\fR is an integer then

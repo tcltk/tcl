@@ -1,7 +1,7 @@
 /*
  * Internal interface definitions, etc., for the reg package
  *
- * Copyright (c) 1998, 1999 Henry Spencer.  All rights reserved.
+ * Copyright © 1998, 1999 Henry Spencer.  All rights reserved.
  *
  * Development of this software was funded, in part, by Cray Research Inc.,
  * UUNET Communications Services Inc., Sun Microsystems Inc., and Scriptics
@@ -416,6 +416,57 @@ struct guts {
 #ifndef FreeVars
 #define FreeVars(vPtr) ((void) 0)
 #endif
+
+/*
+ * Protection of the recursive functions against stack overflow.  The stack
+ * used by one compile or execution, measured from a local variable of
+ * compile() or exec(), is limited to REG_MAX_STACK_DEPTH, and to the stack
+ * left in the current thread minus REG_STACK_MARGIN when that is known.
+ * [Bug 7d47ba7d94]
+ */
+
+#ifndef REG_MAX_STACK_DEPTH
+#define REG_MAX_STACK_DEPTH	((size_t) 1024 * 1024)
+#endif
+#ifndef REG_STACK_MARGIN
+#define REG_STACK_MARGIN	((size_t) 64 * 1024)
+#endif
+
+static TCL_NOINLINE size_t
+stackdepthlimit(
+    const char *base)		/* address of a local variable at entry */
+{
+    const char *limit = TclpGetCStackLimit();
+    size_t depth = REG_MAX_STACK_DEPTH;
+
+    if (limit != NULL && (uintptr_t) base > (uintptr_t) limit) {
+	size_t room = (size_t) ((uintptr_t) base - (uintptr_t) limit);
+
+	room = (room > REG_STACK_MARGIN) ? room - REG_STACK_MARGIN : 0;
+	if (room < depth) {
+	    depth = room;
+	}
+    }
+    return depth;
+}
+
+static inline int
+stacktoodeep(
+    const char *base,		/* address of a local variable at entry */
+    size_t *maxdepthPtr)	/* limit, computed when first needed */
+{
+    char here;
+    size_t depth = ((uintptr_t) base > (uintptr_t) &here)
+	    ? (size_t) ((uintptr_t) base - (uintptr_t) &here)
+	    : (size_t) ((uintptr_t) &here - (uintptr_t) base);
+
+    if (*maxdepthPtr == 0) {
+	*maxdepthPtr = stackdepthlimit(base) + 1;
+    }
+    return depth >= *maxdepthPtr;
+}
+
+#define STACK_TOO_DEEP(vv)	stacktoodeep((vv)->stackbase, &(vv)->stackmax)
 
 /*
  * Local Variables:

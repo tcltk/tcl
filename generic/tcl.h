@@ -4,11 +4,11 @@
  *	This header file describes the externally-visible facilities of the
  *	Tcl interpreter.
  *
- * Copyright (c) 1987-1994 The Regents of the University of California.
- * Copyright (c) 1993-1996 Lucent Technologies.
- * Copyright (c) 1994-1998 Sun Microsystems, Inc.
- * Copyright (c) 1998-2000 by Scriptics Corporation.
- * Copyright (c) 2002 by Kevin B. Kenny.  All rights reserved.
+ * Copyright © 1987-1994 The Regents of the University of California.
+ * Copyright © 1993-1996 Lucent Technologies.
+ * Copyright © 1994-1998 Sun Microsystems, Inc.
+ * Copyright © 1998-2000 by Scriptics Corporation.
+ * Copyright © 2002 by Kevin B. Kenny.  All rights reserved.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -53,11 +53,11 @@ extern "C" {
 #   error "This header-file is for Tcl 9 only"
 #endif
 #define TCL_MINOR_VERSION   1
-#define TCL_RELEASE_LEVEL   TCL_BETA_RELEASE
+#define TCL_RELEASE_LEVEL   TCL_FINAL_RELEASE
 #define TCL_RELEASE_SERIAL  1
 
 #define TCL_VERSION	    "9.1"
-#define TCL_PATCH_LEVEL	    "9.1b1"
+#define TCL_PATCH_LEVEL	    "9.1.1"
 
 #if defined(RC_INVOKED)
 /*

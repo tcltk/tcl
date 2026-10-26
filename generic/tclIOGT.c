@@ -489,6 +489,9 @@ ExecuteCallback(
 	resObj = Tcl_GetObjResult(eval);
 	TclGetIntFromObj(eval, resObj, &dataPtr->maxRead);
 	break;
+
+    default:
+	TCL_UNREACHABLE();
     }
 
     Tcl_ResetResult(eval);

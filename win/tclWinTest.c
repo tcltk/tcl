@@ -775,7 +775,7 @@ TestfilesddlCmd (
 		SDDL_REVISION_1, secInfo, &sddlPtr, NULL)) {
 	err = GetLastError();
 	errorMessage = "Failed to convert security descriptor to SDDL";
-        goto vamoose;
+	goto vamoose;
     }
 
     (void)Tcl_Char16ToUtfDString(sddlPtr, -1, &ds);

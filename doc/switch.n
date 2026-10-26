@@ -34,7 +34,7 @@ they are treated as options
 unless there are exactly two arguments to \fBswitch\fR (in which case the
 first must the \fIvalue\fR and the second must be the
 \fIpattern\fR/\fIbody\fR list).
-The following options are currently supported:
+The following options (which may be abbreviated) are currently supported:
 .\" OPTION: -exact
 .TP 10
 \fB\-exact\fR

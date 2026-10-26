@@ -11,7 +11,7 @@
 package require Tcl 8.6-
 # Keep this in sync with pkgIndex.tcl and with the install directories in
 # Makefiles
-package provide http 2.10.2
+package provide http 2.10.3
 
 namespace eval http {
     # Allow resourcing to not clobber existing data
@@ -364,7 +364,7 @@ proc http::config {args} {
     set pat ^-(?:[join $options |])$
     if {[llength $args] == 1} {
 	set flag [lindex $args 0]
-	if {![regexp -- $pat $flag]} {
+	if {![regexp $pat $flag]} {
 	    return -code error "Unknown option $flag, must be: $usage"
 	}
 	return $http($flag)
@@ -1750,6 +1750,8 @@ proc http::OpenSocket {token DoLater} {
     dict unset socketCoEvent($state(socketinfo)) $token
     unset -nocomplain state(socketcoro)
 
+    # The [return] in the script below results in code 2, which is not an
+    # error.
     if {[catch {
 	if {$state(reusing)} {
 	    # If ($state(reusing)) is true, then we do not need to create a new
@@ -1761,6 +1763,13 @@ proc http::OpenSocket {token DoLater} {
 	    ##Log pre socket opened, - token $token
 	    ##Log $state(openCmd) - token $token
 	    set sock [namespace eval :: $state(openCmd)]
+	    if {![info exists state(-keepalive)] || ($state(status) ne "")} {
+		# The request has been reset or cleaned up while
+		# $state(openCmd) was running, e.g. by an event handler if
+		# the command entered the event loop.
+		catch {close $sock}
+		return
+	    }
 	    set state(sock) $sock
 	    # Normal return from $state(openCmd) always returns a valid socket.
 	    # A TLS proxy connection with 407 or other failure from the
@@ -1787,8 +1796,13 @@ proc http::OpenSocket {token DoLater} {
 	# Code above has set state(sock) $sock
 	ConfigureNewSocket $token $sockOld $DoLater
 	##Log OpenSocket success $sock - token $token
-    } result errdict]} {
+    } result errdict] == 1} {
 	##Log OpenSocket failed $result - token $token
+	if {![info exists state(-keepalive)] || ($state(status) ne "")} {
+	    # The request has been reset or cleaned up while $state(openCmd)
+	    # was running, see above.
+	    return
+	}
 	# There may be other requests in the socketPhQueue.
 	# Prepare socketPlayCmd so that Finish will replay them.
 	if {    ($state(-keepalive)) && (!$state(reusing))
@@ -4215,7 +4229,7 @@ proc http::ParseCookie {token value} {
     variable $token
     upvar 0 $token state
 
-    if {![regexp $CookieRE $value -> cookiename cookieval opts]} {
+    if {![regexp -- $CookieRE $value -> cookiename cookieval opts]} {
 	# Bad cookie! No biscuit!
 	return
     }

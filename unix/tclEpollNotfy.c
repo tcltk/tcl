@@ -25,7 +25,32 @@
 #ifdef HAVE_EVENTFD
 #include <sys/eventfd.h>
 #endif /* HAVE_EVENTFD */
-#include <sys/queue.h>
+
+/*
+ * The list macros of the BSD <sys/queue.h> that are used here. That header is
+ * not available everywhere (e.g. musl). [Bug 3ff2d724d0]
+ */
+
+#ifndef LIST_HEAD
+#define LIST_HEAD(name, type)						\
+    struct name { struct type *lh_first; }
+#define LIST_ENTRY(type)						\
+    struct { struct type *le_next; struct type **le_prev; }
+#define LIST_INIT(head)	((head)->lh_first = NULL)
+#define LIST_INSERT_HEAD(head, elm, field) do {				\
+	if (((elm)->field.le_next = (head)->lh_first) != NULL)		\
+	    (head)->lh_first->field.le_prev = &(elm)->field.le_next;	\
+	(head)->lh_first = (elm);					\
+	(elm)->field.le_prev = &(head)->lh_first;			\
+    } while (0)
+#define LIST_REMOVE(elm, field) do {					\
+	if ((elm)->field.le_next != NULL)				\
+	    (elm)->field.le_next->field.le_prev = (elm)->field.le_prev;	\
+	*(elm)->field.le_prev = (elm)->field.le_next;			\
+    } while (0)
+#define LIST_FOREACH(var, head, field)					\
+    for ((var) = (head)->lh_first; (var); (var) = (var)->field.le_next)
+#endif /* LIST_HEAD */
 
 /*
  * This structure is used to keep track of the notifier info for a registered

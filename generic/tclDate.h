@@ -4,7 +4,7 @@
  *	This header file handles common usage of clock primitives
  *	between tclDate.c (yacc), tclClock.c and tclClockFmt.c.
  *
- * Copyright (c) 2014 Serg G. Brester (aka sebres)
+ * Copyright © 2014 Serg G. Brester (aka sebres)
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.

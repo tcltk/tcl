@@ -4,7 +4,7 @@
 #	uses the standard Unix build system in tcl/unix (which can be used directly instead of this
 #	if you are not using the tk/macosx projects).
 #
-# Copyright (c) 2002-2008 Daniel A. Steffen <das@users.sourceforge.net>
+# Copyright © 2002-2008 Daniel A. Steffen <das@users.sourceforge.net>
 #
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -132,6 +132,9 @@ clean-${PROJECT} distclean-${PROJECT} test-${PROJECT}: \
 			target = $*
 
 DO_MAKE			= +${MAKE} -C "${OBJ_DIR}" ${target} ${MAKE_ARGS_V} ${MAKE_ARGS} ${EXTRA_MAKE_ARGS}
+# clean targets must not fail when this build style was never configured
+DO_MAKE_CLEAN		= +test ! -f "${OBJ_DIR}/Makefile" || \
+			  ${MAKE} -C "${OBJ_DIR}" ${target} ${MAKE_ARGS_V} ${MAKE_ARGS} ${EXTRA_MAKE_ARGS}
 
 #-------------------------------------------------------------------------------------------------------
 # build rules
@@ -192,14 +195,14 @@ ifeq (${BUILD_STYLE}_${EMBEDDED_BUILD},Development_)
 endif
 
 clean-${PROJECT}: %-${PROJECT}:
-	${DO_MAKE}
+	${DO_MAKE_CLEAN}
 	rm -rf "${SYMROOT}"/{${PRODUCT_NAME}.framework,${TCLSH},tcltest}
 	rm -f "${OBJ_DIR}"{"${LIBDIR}","${BINDIR}"} && \
 	rmdir -p "${OBJ_DIR}"$(dir $(subst ${space},\ ,${LIBDIR})) 2>&- || true && \
 	rmdir -p "${OBJ_DIR}"$(dir $(subst ${space},\ ,${BINDIR})) 2>&- || true
 
 distclean-${PROJECT}: %-${PROJECT}: clean-${PROJECT}
-	${DO_MAKE}
+	${DO_MAKE_CLEAN}
 	rm -rf "${OBJ_DIR}"
 
 test-${PROJECT}: %-${PROJECT}: build-${PROJECT}

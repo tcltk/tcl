@@ -12,7 +12,7 @@
 Tcl_ZlibAdler32, Tcl_ZlibCRC32, Tcl_ZlibDeflate, Tcl_ZlibInflate, Tcl_ZlibStreamChecksum, Tcl_ZlibStreamClose, Tcl_ZlibStreamEof, Tcl_ZlibStreamGet, Tcl_ZlibStreamGetCommandName, Tcl_ZlibStreamInit, Tcl_ZlibStreamPut \- compression and decompression functions
 .SH SYNOPSIS
 .nf
-#include <tcl.h>
+\fB#include <tcl.h>\fR
 .sp
 int
 \fBTcl_ZlibDeflate\fR(\fIinterp, format, dataObj, level, dictObj\fR)
@@ -207,7 +207,7 @@ If you wish to clear a stream and reuse it for a new compression or
 decompression action, \fBTcl_ZlibStreamReset\fR will do this and return a
 normal Tcl result code to indicate whether it was successful; if the stream is
 registered with an interpreter, an error message will be left in the
-interpreter result when this function returns TCL_ERROR.
+interpreter result when this function returns \fBTCL_ERROR\fR.
 Finally, \fBTcl_ZlibStreamClose\fR will clean up the stream and delete the
 associated command: using \fBTcl_DeleteCommand\fR on the stream's command is
 equivalent (when such a command exists).

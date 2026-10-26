@@ -14,7 +14,7 @@ variable \- Create and initialize a namespace variable
 .SH SYNOPSIS
 \fBvariable \fR\fIname\fR
 .sp
-\fBvariable \fR?\fIname value...\fR?
+\fBvariable \fR?\fIname value ...\fR?
 .BE
 .SH DESCRIPTION
 .PP
@@ -42,7 +42,7 @@ command, but not to the \fBinfo exists\fR command.
 If the \fBvariable\fR command is executed inside a Tcl procedure,
 it creates local variables
 linked to the corresponding namespace variables (and therefore these
-variables are listed by \fBinfo vars\fR.)
+variables are listed by \fBinfo vars\fR).
 In this way the \fBvariable\fR command resembles the \fBglobal\fR command,
 although the \fBglobal\fR command
 resolves variable names with respect to the global namespace instead

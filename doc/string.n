@@ -24,7 +24,7 @@ term \fIcharacter\fB in place of the more accurate term \fIcode point\fR.
 The legal \fIoption\fRs (which may be abbreviated) are:
 .\" METHOD: cat
 .TP
-\fBstring cat\fR ?\fIstring1\fR? ?\fIstring2...\fR?
+\fBstring cat\fR ?\fIstring ...\fR?
 .
 Concatenate the given \fIstring\fRs just like placing them directly
 next to each other and return the resulting compound string.  If no

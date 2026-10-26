@@ -254,7 +254,7 @@ execute scripts and access variables as well as being where to put the result
 of the method, and the \fIobjc\fR and \fIobjv\fR fields give the parameter
 objects to the method. The calling context of the method can be discovered
 through the \fIobjectContext\fR argument, and the return value from a
-Tcl_MethodCallProc is any Tcl return code (e.g. TCL_OK, TCL_ERROR).
+Tcl_MethodCallProc is any Tcl return code (e.g. \fBTCL_OK\fR, \fBTCL_ERROR\fR).
 .SS "TCL_METHODDELETEPROC FUNCTION SIGNATURE"
 .PP
 Functions matching this signature are used when a method is deleted, whether
@@ -282,7 +282,7 @@ typedef int \fBTcl_CloneProc\fR(
 .PP
 The \fIinterp\fR argument gives a place to write an error message when the
 attempt to clone the object is to fail, in which case the clone procedure must
-also return TCL_ERROR; it should return TCL_OK otherwise.
+also return \fBTCL_ERROR\fR; it should return \fBTCL_OK\fR otherwise.
 The \fIoldClientData\fR field to a Tcl_CloneProc gives the value from the
 method being copied from, and the \fInewClientDataPtr\fR field will point to
 a variable in which to write the value for the method being copied to.

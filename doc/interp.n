@@ -13,7 +13,7 @@
 .SH NAME
 interp \- Create and manipulate Tcl interpreters
 .SH SYNOPSIS
-\fBinterp \fIsubcommand \fR?\fIarg arg ...\fR?
+\fBinterp \fIsubcommand \fR?\fIarg ...\fR?
 .BE
 .SH DESCRIPTION
 .PP
@@ -105,7 +105,7 @@ Deletes the alias for \fIsrcToken\fR in the child interpreter identified by
 was created;  if the source command has been renamed, the renamed
 command will be deleted.
 .TP
-\fBinterp alias\fI srcPath srcCmd targetPath targetCmd \fR?\fIarg arg ...\fR?
+\fBinterp alias\fI srcPath srcCmd targetPath targetCmd \fR?\fIarg ...\fR?
 .
 This command creates an alias between one child and another (see the
 \fBalias\fR child command below for creating aliases between a child
@@ -206,13 +206,15 @@ The initial recursion limit of the child interpreter is set to the
 current recursion limit of its parent interpreter.
 .\" METHOD: debug
 .TP
-\fBinterp debug \fIpath\fR ?\fB\-frame\fR ?\fIbool\fR??
+\fBinterp debug \fIpath\fR ?\fB\-frame\fR?
+.TP
+\fBinterp debug \fIpath\fR ?\fB\-frame\fR \fIboolean\fR?
 .
 Controls whether frame-level stack information is captured in the
 child interpreter identified by \fIpath\fR.  If no arguments are
-given, option and current setting are returned.  If \fB\-frame\fR
-is given, the debug setting is set to the given boolean if provided
-and the current setting is returned.
+specified, the option and its current setting are returned.  If \fB\-frame\fR
+is specified, the current setting is returned. If \fIboolean\fR if provided as well,
+the debug setting is set to the specified value. 
 This only affects the output of \fBinfo frame\fR, in that exact
 frame-level information for command invocation at the bytecode level
 is only captured with this setting on.
@@ -470,7 +472,7 @@ Deletes the alias for \fIsrcToken\fR in the child interpreter.
 was created;  if the source command has been renamed, the renamed
 command will be deleted.
 .TP
-\fIchild \fBalias \fIsrcCmd targetCmd \fR?\fIarg ..\fR?
+\fIchild \fBalias \fIsrcCmd targetCmd \fR?\fIarg ...\fR?
 .
 Creates an alias such that whenever \fIsrcCmd\fR is invoked
 in \fIchild\fR, \fItargetCmd\fR is invoked in the parent.
@@ -493,7 +495,7 @@ what to set the interpreter's background exception handler to. See the
 \fBBACKGROUND EXCEPTION HANDLING\fR section for more details.
 .\" METHOD: eval
 .TP
-\fIchild \fBeval \fIarg \fR?\fIarg ..\fR?
+\fIchild \fBeval \fIarg \fR?\fIarg ...\fR?
 .
 This command concatenates all of the \fIarg\fR arguments in
 the same fashion as the \fBconcat\fR command, then evaluates
@@ -543,7 +545,7 @@ For more details on hidden commands, see \fBHIDDEN COMMANDS\fR, below.
 Returns a list of the names of all hidden commands in \fIchild\fR.
 .\" METHOD: invokehidden
 .TP
-\fIchild \fBinvokehidden\fR ?\fI\-option ...\fR? \fIhiddenName \fR?\fIarg ..\fR?
+\fIchild \fBinvokehidden\fR ?\fI\-option ...\fR? \fIhiddenName \fR?\fIarg ...\fR?
 .
 This command invokes the hidden command \fIhiddenName\fR with the
 supplied arguments, in \fIchild\fR. No substitutions or evaluations are
@@ -597,7 +599,7 @@ is already trusted.
 .
 Returns the maximum allowable nesting depth for the \fIchild\fR interpreter.
 If \fInewlimit\fR is specified, the recursion limit in \fIchild\fR will be
-set so that nesting of more than \fInewlimit\fR calls to \fBTcl_Eval()\fR
+set so that nesting of more than \fInewlimit\fR calls to \fBTcl_Eval\fR
 and related procedures in \fIchild\fR will return an error.
 The \fInewlimit\fR value is also returned.
 The \fInewlimit\fR value must be a positive integer between 1 and the

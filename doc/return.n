@@ -16,7 +16,7 @@ return \- Return from a procedure, or set return code of a script
 .nf
 \fBreturn \fR?\fIresult\fR?
 \fBreturn \fR?\fB\-code \fIcode\fR? ?\fIresult\fR?
-\fBreturn \fR?\fIoption value \fR...? ?\fIresult\fR?
+\fBreturn \fR?\fIoption value ...\fR? ?\fIresult\fR?
 .fi
 .BE
 .SH DESCRIPTION

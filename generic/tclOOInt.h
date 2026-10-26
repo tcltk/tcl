@@ -4,7 +4,7 @@
  *	This file contains the structure definitions and some of the function
  *	declarations for the object-system (NB: not Tcl_Obj, but ::oo).
  *
- * Copyright (c) 2006-2012 by Donal K. Fellows
+ * Copyright © 2006-2012 by Donal K. Fellows
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -364,6 +364,13 @@ struct Class {
     PropertyStorage properties;	/* Information relating to the lists of
 				 * properties that this class *claims* to
 				 * support. */
+   Tcl_Obj *delegateNameObj;	/* The cache of the name of the class's
+				 * delegate. Class delegates are special
+				 * classes mixed into ordinary classes to
+				 * allow class methods to be findable as
+				 * expected. Delegates do not themselves have
+				 * sub-delegates; it's not prohbited... but
+				 * they don't anyway. */
 };
 
 /*
@@ -412,6 +419,8 @@ struct Foundation {
     Tcl_Obj *slotSetName;	/* The "Set" name used by slots. */
     Tcl_Obj *slotResolveName;	/* The "Resolve" name used by slots. */
     Tcl_Obj *slotDefOpName;	/* The "--default-operation" name used by slots. */
+    Tcl_Obj *singletonInstName;	/* The "::oo::SingletonInstance" used to set
+				 * things as singletons. */
 };
 
 /*
@@ -598,6 +607,7 @@ MODULE_SCOPE CallContext *TclOOGetCallContext(Object *oPtr,
 			    Object *contextObjPtr, Class *contextClsPtr,
 			    Tcl_Obj *cacheInThisObj);
 MODULE_SCOPE Class *	TclOOGetClassDefineCmdContext(Tcl_Interp *interp);
+MODULE_SCOPE Tcl_Obj *	TclOOGetClassDelegateName(Object *oPtr);
 MODULE_SCOPE Class *	TclOOGetClassFromObj(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr);
 MODULE_SCOPE Tcl_Namespace *TclOOGetDefineContextNamespace(

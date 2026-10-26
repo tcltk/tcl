@@ -466,6 +466,10 @@ Tcl_ReadObjCmd(
 	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "NUMBER", (char *)NULL);
 	    return TCL_ERROR;
 	}
+	if (toRead > TCL_SIZE_MAX) {
+	    /* Bug 6e82720e14 */
+	    toRead = TCL_SIZE_MAX;
+	}
     }
 
     TclNewObj(resultPtr);
@@ -996,6 +1000,8 @@ Tcl_ExecObjCmd(
 		Tcl_FreeEncoding(encoding);
 	    }
 	    break;
+	default:
+	    TCL_UNREACHABLE();
 	}
     }
     if (objc <= skip) {

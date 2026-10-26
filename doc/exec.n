@@ -23,9 +23,7 @@ The arguments take the form of a standard shell pipeline
 where each \fIarg\fR becomes one word of a command, and
 each distinct command becomes a subprocess.
 The result of the command is the standard output of the final subprocess in
-the pipeline, interpreted using the system \fBencoding\fR; to use any other
-encoding (especially including binary data), the pipeline must be
-\fBopen\fRed, configured and read explicitly.
+the pipeline, decoded as per the \fB-encoding\fR option. 
 .PP
 If the initial arguments to \fBexec\fR start with \fB\-\fR then
 they are treated as command-line switches and are not part
@@ -35,8 +33,9 @@ currently supported:
 .TP 13
 \fB\-encoding \fIencodingName\fR
 .
-Specifies the name of the encoding to use to decode the output of the first
-subprocess. Defaults to that returned by the \fBencoding system\fR command.
+Specifies the name of the encoding to use to decode the result of the
+command when not run in the background. Defaults to that returned by
+the \fBencoding system\fR command.
 .\" OPTION: -ignorestderr
 .TP 13
 \fB\-ignorestderr\fR
@@ -198,7 +197,7 @@ pipeline is taken from the application's current standard input.
 .PP
 If the last \fIarg\fR is
 .QW &
-then the pipeline will be executed in background.
+then the pipeline will be executed in the background.
 In this case the \fBexec\fR command will return a list whose
 elements are the process identifiers for all of the subprocesses
 in the pipeline.

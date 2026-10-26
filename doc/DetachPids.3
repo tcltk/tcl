@@ -38,7 +38,7 @@ checking the process.
 .SH DESCRIPTION
 .PP
 \fBTcl_DetachPids\fR and \fBTcl_ReapDetachedProcs\fR provide a
-mechanism for managing subprocesses that are running in background.
+mechanism for managing subprocesses that are running in the background.
 These procedures are needed because the parent of a process must
 eventually invoke the \fBwaitpid\fR kernel call (or one of a few other
 similar kernel calls) to wait for the child to exit.  Until the
@@ -50,7 +50,7 @@ overflow, even if all the children have exited.
 \fBTcl_DetachPids\fR may be called to ask Tcl to take responsibility
 for one or more processes whose process ids are contained in the
 \fIpidPtr\fR array passed as argument.  The caller presumably
-has started these processes running in background and does not
+has started these processes running in the background and does not
 want to have to deal with them again.
 .PP
 \fBTcl_ReapDetachedProcs\fR invokes the \fBwaitpid\fR kernel call
