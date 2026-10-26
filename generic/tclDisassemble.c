@@ -1250,6 +1250,8 @@ DisassembleByteCodeAsDicts(
 		    rangePtr->codeOffset + rangePtr->numCodeBytes - 1,
 		    rangePtr->catchOffset));
 	    break;
+	default:
+	    TCL_UNREACHABLE();
 	}
     }
 
@@ -1386,9 +1388,7 @@ Tcl_DisassembleObjCmd(
 
     switch (idx) {
     case DISAS_LAMBDA: {
-	Command cmd;
 	Tcl_Obj *nsObjPtr;
-	Tcl_Namespace *nsPtr;
 
 	/*
 	 * Compile (if uncompiled) and disassemble a lambda term.
@@ -1404,13 +1404,6 @@ Tcl_DisassembleObjCmd(
 	    return TCL_ERROR;
 	}
 
-	memset(&cmd, 0, sizeof(Command));
-	result = TclGetNamespaceFromObj(interp, nsObjPtr, &nsPtr);
-	if (result != TCL_OK) {
-	    return result;
-	}
-	cmd.nsPtr = (Namespace *) nsPtr;
-	procPtr->cmdPtr = &cmd;
 	result = TclPushProcCallFrame(procPtr, interp, objc, objv, 1);
 	if (result != TCL_OK) {
 	    return result;

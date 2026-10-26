@@ -531,7 +531,7 @@ test regexp-14.1 {CompileRegexp: regexp cache} {
     regexp .*e f
     set x .
     append x *a
-    regexp $x bbba
+    regexp -- $x bbba
 } 1
 test regexp-14.2 {CompileRegexp: regexp cache, different flags} {
     regexp .*a b
@@ -611,7 +611,7 @@ test regexp-16.4 {regsub -start, \A behavior} -body {
     set out {}
     lappend out [regsub -start 0 -all {\A(\w)} {abcde} {/\1} x] $x
     lappend out [regsub -start 2 -all {\A(\w)} {abcde} {/\1} x] $x
-} -result {5 /a/b/c/d/e 3 ab/c/d/e}
+} -result {1 /abcde 1 ab/cde}
 test regexp-16.5 {regsub -start, double option} -body {
     list [regsub -start 2 -start 0 a abc c x] $x
 } -result {1 cbc}
@@ -727,26 +727,30 @@ test regexp-18.7 {regexp -all -inline} {
 test regexp-18.8 {regexp -all} {
     # This should not cause an infinite loop
     regexp -all -inline {a*} a
-} {a}
+} {a {}}
 test regexp-18.9 {regexp -all} {
-    # Yes, the expected result is {a {}}.  Here's why:
+    # Yes, the expected result is {a {} {}}.  Here's why:
     # Start at index 0; a* matches the "a" there then stops.
     # Go to index 1; a* matches the lambda (or {}) there then stops.  Recall
     #   that a* matches zero or more "a"'s; thus it matches the string "b", as
     #   there are zero or more "a"'s there.
-    # Go to index 2; this is past the end of the string, so stop.
+    # Go to index 2; this is the end of the string, a* matches the lambda
+    #   there too.
+    # Go to index 3; this is past the end of the string, so stop.
     regexp -all -inline {a*} ab
-} {a {}}
+} {a {} {}}
 test regexp-18.10 {regexp -all} {
-    # Yes, the expected result is {a {} a}.  Here's why:
+    # Yes, the expected result is {a {} a {}}.  Here's why:
     # Start at index 0; a* matches the "a" there then stops.
     # Go to index 1; a* matches the lambda (or {}) there then stops.   Recall
     #   that a* matches zero or more "a"'s; thus it matches the string "b", as
     #   there are zero or more "a"'s there.
     # Go to index 2; a* matches the "a" there then stops.
-    # Go to index 3; this is past the end of the string, so stop.
+    # Go to index 3; this is the end of the string, a* matches the lambda
+    #   there too.
+    # Go to index 4; this is past the end of the string, so stop.
     regexp -all -inline {a*} aba
-} {a {} a}
+} {a {} a {}}
 test regexp-18.11 {regexp -all} {
     regexp -all -inline {^a} aaaa
 } {a}
@@ -852,7 +856,7 @@ test regexp-22.4 {Bug 3606139} -setup {
     interp alias {} a {} string repeat a
 } -body {
     # This crashes in interps where the bug is not fixed
-    regexp [join [list [a 160]([a 55])[a 668]([a 55])[a 669]([a 55]) \
+    regexp -- [join [list [a 160]([a 55])[a 668]([a 55])[a 669]([a 55]) \
 	[a 668]([a 55])[a 649]([a 55])[a 668]([a 55])[a 668]([a 55]) \
 	[a 672]([a 55])[a 669]([a 55])[a 671]([a 55])[a 671]([a 55]) \
 	[a 672]([a 55])[a 652]([a 55])[a 672]([a 55])[a 671]([a 55]) \
@@ -919,14 +923,14 @@ test regexp-23.2 {regexp -all and -line} {
 	[regexp -all -inline -indices -line -- {^} $string] \
 	[regexp -all -inline -indices -line -- {^$} $string] \
 	[regexp -all -inline -indices -line -- {$} $string]
-} {{{0 -1}} {{0 -1}} {{0 -1}}}
+} {{{0 -1} {1 0}} {{0 -1} {1 0}} {{0 -1} {1 0}}}
 test regexp-23.3 {regexp -all and -line} {
     set string "\n\n"
     list \
 	[regexp -all -inline -indices -line -- {^} $string] \
 	[regexp -all -inline -indices -line -- {^$} $string] \
 	[regexp -all -inline -indices -line -- {$} $string]
-} {{{0 -1} {1 0}} {{0 -1} {1 0}} {{0 -1} {1 0}}}
+} {{{0 -1} {1 0} {2 1}} {{0 -1} {1 0} {2 1}} {{0 -1} {1 0} {2 1}}}
 test regexp-23.4 {regexp -all and -line} {
     set string "a"
     list \
@@ -934,7 +938,7 @@ test regexp-23.4 {regexp -all and -line} {
 	[regexp -all -inline -indices -line -- {^.*$} $string] \
 	[regexp -all -inline -indices -line -- {$} $string]
 } {{{0 -1}} {{0 0}} {{1 0}}}
-test regexp-23.5 {regexp -all and -line} {knownBug} {
+test regexp-23.5 {regexp -all and -line} {
     set string "a\n"
     list \
 	[regexp -all -inline -indices -line -- {^} $string] \
@@ -948,7 +952,7 @@ test regexp-23.6 {regexp -all and -line} {
 	[regexp -all -inline -indices -line -- {^.*$} $string] \
 	[regexp -all -inline -indices -line -- {$} $string]
 } {{{0 -1} {1 0}} {{0 -1} {1 1}} {{0 -1} {2 1}}}
-test regexp-23.7 {regexp -all and -line} {knownBug} {
+test regexp-23.7 {regexp -all and -line} {
     set string "ab\n"
     list \
 	[regexp -all -inline -indices -line -- {^} $string] \
@@ -962,7 +966,7 @@ test regexp-23.8 {regexp -all and -line} {
 	[regexp -all -inline -indices -line -- {^.*$} $string] \
 	[regexp -all -inline -indices -line -- {$} $string]
 } {{{0 -1} {2 1}} {{0 0} {2 2}} {{1 0} {3 2}}}
-test regexp-23.9 {regexp -all and -line} {knownBug} {
+test regexp-23.9 {regexp -all and -line} {
     set string "a\nb\n"
     list \
 	[regexp -all -inline -indices -line -- {^} $string] \
@@ -1138,16 +1142,16 @@ test regexp-26.9 {Tcl bug 2826551: diff regexp with embedded -line option} {
 } [list "@1\n2\n+3\n" "@4\n-5\n+6\n7\n" "@8\n9\n"]
 test regexp-26.10 {regexp with -line option} {
     regexp -all -inline -line -- {a*} "a\n"
-} {a {}}
+} {a {} {}}
 test regexp-26.11 {regexp without -line option} {
     regexp -all -inline -- {a*} "a\n"
-} {a {}}
+} {a {} {}}
 test regexp-26.12 {regexp with -line option} {
     regexp -all -inline -line -- {a*} "b\n"
-} {{} {}}
+} {{} {} {}}
 test regexp-26.13 {regexp without -line option} {
     regexp -all -inline -- {a*} "b\n"
-} {{} {}}
+} {{} {} {}}
 
 test regexp-27.1 {regsub -command} {
     regsub -command {.x.} {abcxdef} {string length}
@@ -1204,6 +1208,77 @@ test regexp-28.1 {bug cb03e57a7b} -returnCodes error -body {
 	regexp {} $nosuchvar
 } -result {can't read "nosuchvar": no such variable}
 
+# regsub asks the engine only for the submatches used in subSpec [Bug 446565]
+test regexp-31.1 {regsub: subSpec without references} -body {
+    list [regsub -all {(a)(b)} xabyab Z] [regsub -all {(a)(b)} xabyab {[&]}] \
+	    [regsub -all {(a)(b)} xabyab {<\0>}]
+} -result [list xZyZ {x[ab]y[ab]} x<ab>y<ab>]
+test regexp-31.2 {regsub: subSpec references} {
+    list [regsub -all {(a)(b)} xabyab {\2\1}] [regsub {(a)(b)(c)} abc {\3}] \
+	    [regsub {(a)(b)} ab {[\9]}]
+} {xbayba c {[]}}
+test regexp-31.3 {regsub: escaped references} -body {
+    list [regsub {(a)(b)} ab {\\1}] [regsub {(a)(b)} ab {\&\\\2}] \
+	    [regsub {(a)(b)} ab {\x\1}] [regsub {(a)(b)} ab "x\\"]
+} -result [list "\\1" "&\\b" "\\xa" "x\\"]
+test regexp-31.4 {regsub: submatches after a regsub that needed none} {
+    set re {(a)(b)}
+    list [regsub $re ab Z] [regsub $re ab {\2\1}] [regsub $re xy {\2\1}] \
+	    [regsub $re ab Z]
+} {Z ba xy Z}
+test regexp-31.5 {regsub: capturing parens in a slow RE, bug 446565} {
+    set text "<script>[string repeat x 200] spylog [string repeat y 200]</script>"
+    regsub -all -nocase {<script(.(?!</script>))*?(doubleclick|flycast|burstnet|spylog)+?.*?</script>} \
+	    "a${text}b" trash
+} atrashb
+
+test regexp-29.1 {regexp -all: \A matches only at string start, bug 471101} {
+    regexp -all -inline -indices {\Aa} aabbcc
+} {{0 0}}
+test regexp-29.2 {regsub -all: \A matches only at string start, bug 471101} {
+    list [regsub -all {\Aa} aabbcc b x] $x \
+	    [regsub -all {(\Aa|c\Z)} aabbcc b x] $x
+} {1 babbcc 2 babbcb}
+test regexp-29.3 {regexp -all: \A with -start, bug 471101} {
+    regexp -all -inline -indices -start 2 {\A\w} abcde
+} {{2 2}}
+test regexp-29.4 {regexp -all: ^ after newline without -lineanchor, bug 884d0ac78c} {
+    regexp -all -inline -indices "^|\n" "foo\nbar"
+} {{0 -1} {3 3}}
+test regexp-29.5 {regsub -all: ^ after newline without -lineanchor, bug 884d0ac78c} {
+    regsub -all "^|\n" "foo\nbar" "\nXX"
+} "\nXXfoo\nXXbar"
+test regexp-29.6 {regexp -all: ^ after newline with -lineanchor} {
+    regexp -all -inline -indices -lineanchor "^|\n" "foo\nbar"
+} {{0 -1} {3 3} {4 3}}
+test regexp-29.7 {regexp -all: ^ after newline with -start and -lineanchor} {
+    regexp -all -inline -indices -start 4 -lineanchor "^b|\n" "foo\nbar\nb"
+} {{4 4} {7 7} {8 8}}
+test regexp-29.8 {regexp -all: word constraints see the previous match} {
+    list [regexp -all -inline {\m\w} "ab cd"] \
+	    [regexp -all -inline {\w\M} "ab cd"] \
+	    [regexp -all {\Y} aabbcc] \
+	    [regsub -all {\y} "ab cd" |]
+} {{a c} {b d} 5 {|ab| |cd|}}
+
+test regexp-30.1 {regexp: abbreviated -nocase, bug 3069454} -body {
+    lmap opt {-n -no -noc -noca -nocas -nocase} {
+	regexp $opt -- A a
+    }
+} -result {1 1 1 1 1 1}
+test regexp-30.2 {regexp: abbreviated -nocase, bug 3069454} -body {
+    set cmd [list regexp -noc -indices -- A a m]
+    list [{*}$cmd] $m
+} -result {1 {0 0}}
+
+test regexp-32.1 {regsub -command with more than 9 groups, bug 41bc9a8298} {
+    regsub -command {(a)(b)(c)(d)(e)(f)(g)(h)(i)(j)(k)(l)} xabcdefghijkly list
+} {xabcdefghijkl a b c d e f g h i j k ly}
+test regexp-32.2 {regsub -command -all with more than 9 groups, bug 41bc9a8298} {
+    regsub -all -command {(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)} abcdefghijkABCDEFGHIJK {apply {args {
+	lindex $args end
+    }}}
+} kK
 
 # cleanup
 ::tcltest::cleanupTests

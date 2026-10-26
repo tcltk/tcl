@@ -1125,7 +1125,7 @@ TclOOLookupObjectVar(
     } else {
 	Tcl_DString ds;
 	Tcl_DStringInit(&ds);
-	Tcl_DStringAppend(&ds, 	Tcl_GetObjectNamespace(object)->fullName, -1);
+	Tcl_DStringAppend(&ds, Tcl_GetObjectNamespace(object)->fullName, -1);
 	Tcl_DStringAppend(&ds, "::", 2);
 	CallFrame *framePtr = ((Interp *) interp)->varFramePtr;
 
@@ -2012,10 +2012,8 @@ MarkAsSingleton(
     Class *clsPtr = (Class *) data[0];
     if (result == TCL_OK && clsPtr->instances.num) {
 	// Prepend oo::SingletonInstance to the list of mixins
-	Tcl_Obj *singletonInstanceName = Tcl_NewStringObj(
-		"::oo::SingletonInstance", TCL_AUTO_LENGTH);
-	Class *singInst = TclOOGetClassFromObj(interp, singletonInstanceName);
-	Tcl_BounceRefCount(singletonInstanceName);
+	Class *singInst = TclOOGetClassFromObj(interp,
+		clsPtr->thisPtr->fPtr->singletonInstName);
 	if (!singInst) {
 	    return TCL_ERROR;
 	}

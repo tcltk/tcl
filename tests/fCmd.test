@@ -866,19 +866,10 @@ test fCmd-7.5 {FileForceOption: multiple times through loop} -setup {
 } -result {}
 
 test fCmd-8.1 {FileBasename: basename of ~user: argc == 1 && *path == ~} \
-    -constraints {unix notRoot knownBug tildeexpansion} -body {
-    # Labeled knownBug because it is dangerous [Bug: 3881]
-    file mkdir td1
-    file attr td1 -perm 0o40000
-    file rename ~$user td1
-} -returnCodes error -cleanup {
-    file delete -force td1
-} -result "error renaming \"~$user\" to \"td1/[file tail ~$user]\": permission denied"
-test fCmd-8.2 {FileBasename: basename of ~user: argc == 1 && *path == ~} \
 	-constraints {unix notRoot} -body {
     string equal [file tail ~$user] ~$user
 } -result 1
-test fCmd-8.3 {file copy and path translation: ensure correct error} -body {
+test fCmd-8.2 {file copy and path translation: ensure correct error} -body {
     file copy [file home] [file join this file doesnt exist]
 } -returnCodes error -result [subst \
    {error copying "[file home]" to "[file join this file doesnt exist]": no such file or directory}]

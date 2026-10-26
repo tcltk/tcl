@@ -244,12 +244,9 @@ proc ::platform::patterns {id} {
 	    }
 	}
 	linux*-* {
-	    if {[regexp {linux-glibc([^-]*)-(.*)} $id -> v cpu]} {
-		lassign [split $v .] major minor
-		incr minor -1
-		for {set j $minor} {$j >= 0} {incr j -1} {
-		    lappend res linux-glibc${major}.${j}-${cpu}
-		}
+	    if {[regexp {linux-(.*)-(.*)} $id -> c cpu]
+		    && ($c ne "unknown")} {
+		lappend res linux-unknown-${cpu}
 	    }
 	}
 	macosx-powerpc {
@@ -343,7 +340,7 @@ proc ::platform::patterns {id} {
 # ### ### ### ######### ######### #########
 ## Ready
 
-package provide platform 1.2b1
+package provide platform 1.2.0
 
 # ### ### ### ######### ######### #########
 ## Demo application

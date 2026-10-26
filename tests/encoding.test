@@ -1196,6 +1196,17 @@ test encoding-31.4 {Tcl_GetEncodingNameForUser} -constraints testencoding -body 
     testencoding Tcl_GetEncodingNameForUser
 } -result [encoding user]
 
+test encoding-31.5 {interp create does not reset the system encoding} -setup {
+    set system [encoding system]
+} -body {
+    encoding system iso8859-2
+    interp delete [interp create]
+    encoding system
+} -cleanup {
+    encoding system $system
+    unset system
+} -result iso8859-2
+
 test encoding-bug-6a3e2cb0f0-1 {Bug [6a3e2cb0f0] - invalid bytes in escape encodings} -body {
     encoding convertfrom -profile tcl8 iso2022-jp x\x1B\x7Aaby
 } -result x\uFFFDy

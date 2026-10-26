@@ -2065,10 +2065,12 @@ test chan-io-27.5 {FlushChannel, implicit flush when buffer fills and on chan cl
 } -result {0 60 72}
 set path(pipe)   [makeFile {} pipe]
 set path(output) [makeFile {} output]
+set path(done)   [makeFile {} done]
 test chan-io-27.6 {FlushChannel, async flushing, async chan close} -setup {
     file delete $path(pipe)
     file delete $path(output)
-} -constraints {stdio asyncPipeChan Close} -body {
+    file delete $path(done)
+} -constraints {stdio asyncPipeClose} -body {
     set f [open $path(pipe) w]
     chan puts $f "set f \[[list open $path(output) w]]"
     chan puts $f {
@@ -2079,6 +2081,8 @@ test chan-io-27.6 {FlushChannel, async flushing, async chan close} -setup {
 	}
 	chan close $f
     }
+    # Signal that the output file is closed.
+    chan puts $f "chan close \[[list open $path(done) w]]"
     chan close $f
     set x 01234567890123456789012345678901
     for {set i 0} {$i < 11} {incr i} {
@@ -2091,11 +2095,13 @@ test chan-io-27.6 {FlushChannel, async flushing, async chan close} -setup {
     chan puts -nonewline $f $x
     chan close $f
     set counter 0
-    while {([file size $path(output)] < 65536) && ($counter < 1000)} {
+    # Wait until the child closes the output file, otherwise deleting it in
+    # the following test fails on Windows.
+    while {![file exists $path(done)] && ($counter < 1000)} {
 	after 20 [list incr [namespace which -variable counter]]
 	vwait [namespace which -variable counter]
     }
-    if {$counter == 1000} {
+    if {[file size $path(output)] < 65536} {
 	set result "file size only [file size $path(output)]"
     } else {
 	set result ok
@@ -2138,7 +2144,7 @@ test chan-io-28.2 {Chan CloseChannel called when all references are dropped} -se
 test chan-io-28.3 {Chan CloseChannel, not called before output queue is empty} -setup {
     file delete $path(pipe)
     file delete $path(output)
-} -constraints {stdio asyncPipeChan Close nonPortable} -body {
+} -constraints {stdio asyncPipeClose nonPortable} -body {
     set f [open $path(pipe) w]
     chan puts $f {
 	set f [open $path(output) w]
@@ -2246,7 +2252,7 @@ test chan-io-28.7 {Tcl_CloseEx (half-close) socket} -setup {
     set ff [openpipe r $echo]
     gets $ff port
 } -body {
-    set s [socket 127.0.0.1 $port]
+    set s [socket [tcltests::localIPv4Address] $port]
     puts $s Hey
     close $s w
     set timer [after 1000 [namespace code {set done Failed}]]
@@ -2751,7 +2757,8 @@ test chan-io-29.31 {Tcl_WriteChars, background flush} -setup {
 test chan-io-29.32 {Tcl_WriteChars, background flush to slow reader} -setup {
     file delete $path(pipe)
     file delete $path(output)
-} -constraints {stdio asyncPipeChan Close} -body {
+    file delete $path(done)
+} -constraints {stdio asyncPipeClose} -body {
     set f [open $path(pipe) w]
     chan puts $f "set f \[[list open $path(output) w]]"
     chan puts $f {chan configure $f -translation lf}
@@ -2763,6 +2770,8 @@ test chan-io-29.32 {Tcl_WriteChars, background flush to slow reader} -setup {
     chan puts $f {  chan flush $f}
     chan puts $f "\}"
     chan puts $f {chan close $f}
+    # Signal that the output file is closed.
+    chan puts $f "chan close \[[list open $path(done) w]]"
     chan close $f
     set x 01234567890123456789012345678901
     for {set i 0} {$i < 11} {incr i} {
@@ -2775,11 +2784,13 @@ test chan-io-29.32 {Tcl_WriteChars, background flush to slow reader} -setup {
     chan puts -nonewline $f $x
     chan close $f
     set counter 0
-    while {([file size $path(output)] < 65536) && ($counter < 1000)} {
+    # Wait until the child closes the output file, otherwise deleting it in
+    # the following test fails on Windows.
+    while {![file exists $path(done)] && ($counter < 1000)} {
 	after 20 [list incr [namespace which -variable counter]]
 	vwait [namespace which -variable counter]
     }
-    if {$counter == 1000} {
+    if {[file size $path(output)] < 65536} {
 	set result "file size only [file size $path(output)]"
     } else {
 	set result ok
@@ -2810,7 +2821,7 @@ test chan-io-29.34 {Tcl_Chan Close, async flush on chan close, using sockets} -s
 	    chan puts $s $l
 	}
     }
-} -constraints {socket tempNotMac fileevent notWinCI} -body {
+} -constraints {socket fileevent notWinCI} -body {
     proc accept {s a p} {
 	variable x
 	chan event $s readable [namespace code [list readit $s]]
@@ -2828,8 +2839,8 @@ test chan-io-29.34 {Tcl_Chan Close, async flush on chan close, using sockets} -s
 	    incr c
 	}
     }
-    set ss [socket -server [namespace code accept] -myaddr 127.0.0.1 0]
-    set cs [socket 127.0.0.1 [lindex [chan configure $ss -sockname] 2]]
+    set ss [socket -server [namespace code accept] -myaddr [tcltests::localIPv4Address] 0]
+    set cs [socket [tcltests::localIPv4Address] [lindex [chan configure $ss -sockname] 2]]
     vwait [namespace which -variable x]
     chan configure $cs -blocking off
     writelots $cs $l
@@ -2841,17 +2852,17 @@ test chan-io-29.34 {Tcl_Chan Close, async flush on chan close, using sockets} -s
 test chan-io-29.35 {Tcl_Chan Close vs chan event vs multiple interpreters} -setup {
     catch {interp delete x}
     catch {interp delete y}
-} -constraints {socket tempNotMac fileevent} -body {
+} -constraints {socket fileevent} -body {
     # On Mac, this test screws up sockets such that subsequent tests using
     # port 2828 either cause errors or panic().
     interp create x
     interp create y
-    set s [socket -server [namespace code accept] -myaddr 127.0.0.1 0]
+    set s [socket -server [namespace code accept] -myaddr [tcltests::localIPv4Address] 0]
     proc accept {s a p} {
 	chan puts $s hello
 	chan close $s
     }
-    set c [socket 127.0.0.1 [lindex [chan configure $s -sockname] 2]]
+    set c [socket [tcltests::localIPv4Address] [lindex [chan configure $s -sockname] 2]]
     interp share {} $c x
     interp share {} $c y
     chan close $c
@@ -5234,9 +5245,9 @@ test chan-io-39.17 {Tcl_SetChannelOption: -encoding, clearing CHANNEL_NEED_MORE_
 test chan-io-39.18 {Tcl_SetChannelOption, setting read mode independently} \
 	-constraints {socket} -body {
     proc accept {s a p} {chan close $s}
-    set s1 [socket -server [namespace code accept] -myaddr 127.0.0.1 0]
+    set s1 [socket -server [namespace code accept] -myaddr [tcltests::localIPv4Address] 0]
     set port [lindex [chan configure $s1 -sockname] 2]
-    set s2 [socket 127.0.0.1 $port]
+    set s2 [socket [tcltests::localIPv4Address] $port]
     update
     chan configure $s2 -translation {auto lf}
     chan configure $s2 -translation
@@ -5247,9 +5258,9 @@ test chan-io-39.18 {Tcl_SetChannelOption, setting read mode independently} \
 test chan-io-39.19 {Tcl_SetChannelOption, setting read mode independently} \
 	-constraints {socket} -body {
     proc accept {s a p} {chan close $s}
-    set s1 [socket -server [namespace code accept] -myaddr 127.0.0.1 0]
+    set s1 [socket -server [namespace code accept] -myaddr [tcltests::localIPv4Address] 0]
     set port [lindex [chan configure $s1 -sockname] 2]
-    set s2 [socket 127.0.0.1 $port]
+    set s2 [socket [tcltests::localIPv4Address] $port]
     update
     chan configure $s2 -translation {auto crlf}
     chan configure $s2 -translation
@@ -5260,9 +5271,9 @@ test chan-io-39.19 {Tcl_SetChannelOption, setting read mode independently} \
 test chan-io-39.20 {Tcl_SetChannelOption, setting read mode independently} \
 	-constraints {socket} -body {
     proc accept {s a p} {chan close $s}
-    set s1 [socket -server [namespace code accept] -myaddr 127.0.0.1 0]
+    set s1 [socket -server [namespace code accept] -myaddr [tcltests::localIPv4Address] 0]
     set port [lindex [chan configure $s1 -sockname] 2]
-    set s2 [socket 127.0.0.1 $port]
+    set s2 [socket [tcltests::localIPv4Address] $port]
     update
     chan configure $s2 -translation {auto cr}
     chan configure $s2 -translation
@@ -5273,9 +5284,9 @@ test chan-io-39.20 {Tcl_SetChannelOption, setting read mode independently} \
 test chan-io-39.21 {Tcl_SetChannelOption, setting read mode independently} \
 	-constraints {socket} -body {
     proc accept {s a p} {chan close $s}
-    set s1 [socket -server [namespace code accept] -myaddr 127.0.0.1 0]
+    set s1 [socket -server [namespace code accept] -myaddr [tcltests::localIPv4Address] 0]
     set port [lindex [chan configure $s1 -sockname] 2]
-    set s2 [socket 127.0.0.1 $port]
+    set s2 [socket [tcltests::localIPv4Address] $port]
     update
     chan configure $s2 -translation {auto auto}
     chan configure $s2 -translation
@@ -5315,7 +5326,7 @@ test chan-io-39.23 {
 } -setup {
     set l [list]
 } -body {
-    set sock [socket -server [namespace code accept] -myaddr 127.0.0.1 0]
+    set sock [socket -server [namespace code accept] -myaddr [tcltests::localIPv4Address] 0]
     lappend l [chan configure $sock -eofchar] \
 	[chan configure $sock -translation]
 } -cleanup {
@@ -5325,7 +5336,7 @@ test chan-io-39.24 {Tcl_SetChannelOption, server socket is not readable or\
 	writable so we can't change -eofchar or -translation} -setup {
     set l [list]
 } -body {
-    set sock [socket -server [namespace code accept] -myaddr 127.0.0.1 0]
+    set sock [socket -server [namespace code accept] -myaddr [tcltests::localIPv4Address] 0]
     chan configure $sock -eofchar D -translation lf
     lappend l [chan configure $sock -eofchar] \
 	[chan configure $sock -translation]
@@ -6648,21 +6659,21 @@ test chan-io-51.1 {Test old socket deletion on Macintosh} -setup {
 	chan close $s
 	variable wait done
     }
-    set ss [socket -server [namespace code accept] -myaddr 127.0.0.1 0]
+    set ss [socket -server [namespace code accept] -myaddr [tcltests::localIPv4Address] 0]
     set port [lindex [chan configure $ss -sockname] 2]
-    set cs [socket 127.0.0.1 $port]
+    set cs [socket [tcltests::localIPv4Address] $port]
     vwait [namespace which -variable wait]
     lappend result [chan gets $cs]
     chan close $cs
-    set cs [socket 127.0.0.1 $port]
+    set cs [socket [tcltests::localIPv4Address] $port]
     vwait [namespace which -variable wait]
     lappend result [chan gets $cs]
     chan close $cs
-    set cs [socket 127.0.0.1 $port]
+    set cs [socket [tcltests::localIPv4Address] $port]
     vwait [namespace which -variable wait]
     lappend result [chan gets $cs]
     chan close $cs
-    set cs [socket 127.0.0.1 $port]
+    set cs [socket [tcltests::localIPv4Address] $port]
     vwait [namespace which -variable wait]
     lappend result [chan gets $cs]
 } -cleanup {
@@ -7020,9 +7031,9 @@ proc FcopyTestDone {bytes {error {}}} {
 }
 test chan-io-53.5 {CopyData: error during chan copy} {socket fcopy} {
     variable fcopyTestDone
-    set listen [socket -server [namespace code FcopyTestAccept] -myaddr 127.0.0.1 0]
+    set listen [socket -server [namespace code FcopyTestAccept] -myaddr [tcltests::localIPv4Address] 0]
     set in [open $thisScript]	;# 126 K
-    set out [socket 127.0.0.1 [lindex [chan configure $listen -sockname] 2]]
+    set out [socket [tcltests::localIPv4Address] [lindex [chan configure $listen -sockname] 2]]
     catch {unset fcopyTestDone}
     chan close $listen	;# This means the socket open never really succeeds
     chan copy $in $out -command [namespace code FcopyTestDone]
@@ -7245,7 +7256,7 @@ test chan-io-53.10 {Bug 1350564, multi-directional fcopy} -setup {
     set err [makeFile {} err]
     set pipe [open "|[list [info nameofexecutable] 2> $err]" r+]
     chan configure $pipe -translation binary -buffering line
-    chan puts $pipe {
+    chan puts $pipe [string map [list @@TCLTEST_IPV4@@ [tcltests::localIPv4Address]] {
 	chan configure stderr -buffering line
 	# Kill server when pipe closed by invoker.
 	proc bye args {
@@ -7274,13 +7285,13 @@ test chan-io-53.10 {Bug 1350564, multi-directional fcopy} -setup {
 	}
 	chan puts stderr SRV
 	set l {}
-	set srv [socket -server new -myaddr 127.0.0.1 0]
+	set srv [socket -server new -myaddr @@TCLTEST_IPV4@@ 0]
 	set port [lindex [chan configure $srv -sockname] 2]
 	chan puts stderr WAITING
 	chan event stdin readable bye
 	puts "OK $port"
 	vwait forever
-    }
+    }]
     # wait for OK from server.
     lassign [chan gets $pipe] ok port
     # Now the two clients.
@@ -7289,8 +7300,8 @@ test chan-io-53.10 {Bug 1350564, multi-directional fcopy} -setup {
 	lappend ::forever [chan gets $sock]
 	return
     }
-    set a [socket 127.0.0.1 $port]
-    set b [socket 127.0.0.1 $port]
+    set a [socket [tcltests::localIPv4Address] $port]
+    set b [socket [tcltests::localIPv4Address] $port]
     chan configure $a -translation binary -buffering none
     chan configure $b -translation binary -buffering none
     chan event  $a readable [namespace code "done $a"]
@@ -7334,13 +7345,13 @@ test chan-io-54.1 {Recursive channel events} {socket fileevent} {
 	}
 	incr x
     }
-    set ss [socket -server [namespace code accept] -myaddr 127.0.0.1 0]
+    set ss [socket -server [namespace code accept] -myaddr [tcltests::localIPv4Address] 0]
     # We need to delay on some systems until the creation of the server socket
     # completes.
     set done 0
     for {set i 0} {$i < 10} {incr i} {
 	if {![catch {
-	    set cs [socket 127.0.0.1 [lindex [chan configure $ss -sockname] 2]]
+	    set cs [socket [tcltests::localIPv4Address] [lindex [chan configure $ss -sockname] 2]]
 	}]} {
 	    set done 1
 	    break
@@ -7372,7 +7383,7 @@ test chan-io-54.2 {Testing for busy-wait in recursive channel events} -setup {
     set after {}
     variable done 0
 } -constraints {socket fileevent} -body {
-    variable s [socket -server [namespace code accept] -myaddr 127.0.0.1 0]
+    variable s [socket -server [namespace code accept] -myaddr [tcltests::localIPv4Address] 0]
     proc accept {s a p} {
 	variable counter 0
 	variable accept $s
@@ -7403,7 +7414,7 @@ test chan-io-54.2 {Testing for busy-wait in recursive channel events} -setup {
     proc producer {} {
 	variable s
 	variable writer
-	set writer [socket 127.0.0.1 [lindex [chan configure $s -sockname] 2]]
+	set writer [socket [tcltests::localIPv4Address] [lindex [chan configure $s -sockname] 2]]
 	chan configure $writer -buffering line
 	chan puts -nonewline $writer hello
 	chan flush $writer
@@ -7473,8 +7484,8 @@ test chan-io-57.1 {buffered data and file events, gets} -setup {
 	variable s2
 	set s2 $sock
     }
-    set server [socket -server [namespace code accept] -myaddr 127.0.0.1 0]
-    set s [socket 127.0.0.1 [lindex [chan configure $server -sockname] 2]]
+    set server [socket -server [namespace code accept] -myaddr [tcltests::localIPv4Address] 0]
+    set s [socket [tcltests::localIPv4Address] [lindex [chan configure $server -sockname] 2]]
     vwait [namespace which -variable s2]
     update
     chan event $s2 readable [namespace code {lappend result readable}]
@@ -7498,8 +7509,8 @@ test chan-io-57.2 {buffered data and file events, read} -setup {
 	variable s2
 	set s2 $sock
     }
-    set server [socket -server [namespace code accept] -myaddr 127.0.0.1 0]
-    set s [socket 127.0.0.1 [lindex [chan configure $server -sockname] 2]]
+    set server [socket -server [namespace code accept] -myaddr [tcltests::localIPv4Address] 0]
+    set s [socket [tcltests::localIPv4Address] [lindex [chan configure $server -sockname] 2]]
     vwait [namespace which -variable s2]
     update
     chan event $s2 readable [namespace code {lappend result readable}]
@@ -7872,3 +7883,4 @@ foreach file [list fooBar longfile script output test1 pipe my_script \
 cleanupTests
 }
 namespace delete ::tcl::test::io
+

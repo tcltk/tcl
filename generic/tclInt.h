@@ -1049,7 +1049,11 @@ typedef struct Proc {
     CompiledLocal *lastLocalPtr;/* Pointer to the last allocated local
 				 * variable or NULL if none. This has frame
 				 * index (numCompiledLocals-1). */
+    int flags;			/* Miscellaneous bits of proc. */
 } Proc;
+
+#define PROC_CMD_OWNED		0x80
+
 
 /*
  * The type of functions called to process errors found during the execution
@@ -1526,8 +1530,8 @@ typedef void **TclHandle;
  *----------------------------------------------------------------
  */
 enum ExperimentalRegExpFlags {
-    TCL_REG_BOSONLY = 002000	/* Prepend \A to pattern so it only matches at
-				 * the beginning of the string. */
+    TCL_REG_BOSONLY = 002000	/* Allow pattern to match only at the
+				 * beginning of the string (implicit \A). */
 };
 
 /*
@@ -2995,9 +2999,7 @@ enum TclParseNumberFlags {
  *----------------------------------------------------------------------
  */
 
-enum EncodingProfileMask {
-    ENCODING_PROFILE_MASK = 0xFF000000
-};
+#define ENCODING_PROFILE_MASK     0xFF000000
 #define ENCODING_PROFILE_GET(flags_) \
     ((flags_) & ENCODING_PROFILE_MASK)
 #define ENCODING_PROFILE_SET(flags_, profile_) \
@@ -3666,6 +3668,7 @@ MODULE_SCOPE void	TclPkgFileSeen(Tcl_Interp *interp,
 MODULE_SCOPE void *	TclInitPkgFiles(Tcl_Interp *interp);
 MODULE_SCOPE Tcl_Obj *	TclPathPart(Tcl_Interp *interp, Tcl_Obj *pathPtr,
 			    Tcl_PathPart portion);
+MODULE_SCOPE double	TclRand(Interp *iPtr);
 MODULE_SCOPE char *	TclpReadlink(const char *fileName,
 			    Tcl_DString *linkPtr);
 MODULE_SCOPE void	TclpSetVariables(Tcl_Interp *interp);
@@ -3673,6 +3676,7 @@ MODULE_SCOPE void *	TclThreadStorageKeyGet(Tcl_ThreadDataKey *keyPtr);
 MODULE_SCOPE void	TclThreadStorageKeySet(Tcl_ThreadDataKey *keyPtr,
 			    void *data);
 MODULE_SCOPE TCL_NORETURN void TclpThreadExit(int status);
+MODULE_SCOPE const char *TclpGetCStackLimit(void);
 MODULE_SCOPE void	TclRememberCondition(Tcl_Condition *mutex);
 MODULE_SCOPE void	TclRememberJoinableThread(Tcl_ThreadId id);
 MODULE_SCOPE void	TclRememberMutex(Tcl_Mutex *mutex);
@@ -4323,8 +4327,17 @@ MODULE_SCOPE int	TclListLimitExceededError(Tcl_Interp *interp);
 	}								\
     }
 
-#if TCL_THREADS && !defined(USE_THREAD_ALLOC)
-#   define USE_THREAD_ALLOC 1
+/*
+ * The threaded allocator is the default in threaded builds. Compile with
+ * -DUSE_THREAD_ALLOC=0 to use the system malloc() instead. [Bug 31294d48ef]
+ */
+
+#if !defined(USE_THREAD_ALLOC)
+#   if TCL_THREADS
+#	define USE_THREAD_ALLOC 1
+#   endif
+#elif !USE_THREAD_ALLOC
+#   undef USE_THREAD_ALLOC
 #endif
 
 #if defined(PURIFY)

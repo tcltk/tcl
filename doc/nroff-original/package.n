@@ -26,6 +26,7 @@ package \- Facilities for package loading and version control
 \fBpackage vcompare \fIversion1 version2\fR
 \fBpackage versions \fIpackage\fR
 \fBpackage vsatisfies \fIversion requirement\fR ?\fIrequirement ...\fR?
+\fBpackage prefer \fR?\fBlatest\fR|\fBstable\fR?
 .fi
 .BE
 .SH DESCRIPTION

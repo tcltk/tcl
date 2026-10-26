@@ -141,6 +141,13 @@ typedef struct {
 } TclEncoding;
 
 /*
+ * The counter below is used to determine if the TestsaveresultFree routine
+ * was called for a result.
+ */
+
+static int freeCount;
+
+/*
  * Boolean flag used by the "testsetmainloop" and "testexitmainloop" commands.
  */
 
@@ -273,6 +280,8 @@ static Tcl_ObjCmdProc2	TestregexpCmd;
 static Tcl_ObjCmdProc2	TestreturnCmd;
 static void		TestregexpXflags(const char *string,
 			    size_t length, int *cflagsPtr, int *eflagsPtr);
+static Tcl_ObjCmdProc2	TestsaveinterpstateCmd;
+static Tcl_FreeProc	TestsaveresultFree;
 static Tcl_ObjCmdProc2	TestsetassocdataCmd;
 static Tcl_ObjCmdProc2	TestsetCmd;
 static Tcl_ObjCmdProc2	Testset2Cmd;
@@ -678,6 +687,8 @@ Tcltest_Init(
     Tcl_CreateObjCommand2(interp, "testregexp", TestregexpCmd,
 	    NULL, NULL);
     Tcl_CreateObjCommand2(interp, "testreturn", TestreturnCmd,
+	    NULL, NULL);
+    Tcl_CreateObjCommand2(interp, "testsaveinterpstate", TestsaveinterpstateCmd,
 	    NULL, NULL);
     Tcl_CreateObjCommand2(interp, "testservicemode", TestServiceModeCmd,
 	    NULL, NULL);
@@ -1152,15 +1163,15 @@ TestcmdinfoCmd(
     Tcl_Obj *const *objv)	/* Argument objects. */
 {
     static const char *const subcmds[] = {
-	"create", "delete", "get", "modify", NULL
+	"call", "create", "delete", "get", "modify", NULL
     };
     enum options {
-	CMDINFO_CREATE,
+	CMDINFO_CALL, CMDINFO_CREATE,
 	CMDINFO_DELETE, CMDINFO_GET, CMDINFO_MODIFY
     } idx;
     Tcl_CmdInfo info;
 
-    if (objc != 3) {
+    if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "command arg");
 	return TCL_ERROR;
     }
@@ -1168,7 +1179,41 @@ TestcmdinfoCmd(
 	    &idx) != TCL_OK) {
 	return TCL_ERROR;
     }
+    if (idx != CMDINFO_CALL && objc != 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "command arg");
+	return TCL_ERROR;
+    }
     switch (idx) {
+    case CMDINFO_CALL: {
+	/*
+	 * testcmdinfo call interp cmdName ?arg ...?
+	 *
+	 * Call the objProc of the command in the given (child) interpreter
+	 * directly, without the evaluation machinery, as some extensions do.
+	 * The child interpreter has no evaluation in progress.
+	 */
+
+	Tcl_Interp *childInterp;
+	int code;
+
+	if (objc < 4) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "interp cmdName ?arg ...?");
+	    return TCL_ERROR;
+	}
+	childInterp = Tcl_GetChild(interp, Tcl_GetString(objv[2]));
+	if (childInterp == NULL) {
+	    return TCL_ERROR;
+	}
+	if (Tcl_GetCommandInfo(childInterp, Tcl_GetString(objv[3]), &info) == 0) {
+	    Tcl_AppendResult(interp, "unknown command \"",
+		    Tcl_GetString(objv[3]), "\"", (char *)NULL);
+	    return TCL_ERROR;
+	}
+	code = info.objProc2(info.objClientData2, childInterp, objc - 3,
+		objv + 3);
+	Tcl_SetObjResult(interp, Tcl_GetObjResult(childInterp));
+	return code;
+    }
     case CMDINFO_CREATE:
 	Tcl_CreateObjCommand2(interp, Tcl_GetString(objv[2]), CmdProc1,
 		(void *)"original", CmdDelProc1);
@@ -6332,6 +6377,137 @@ Testset2Cmd(
 /*
  *----------------------------------------------------------------------
  *
+ * TestsaveinterpstateCmd --
+ *
+ *	Implements the "testsaveinterpstate" cmd that is used when testing the
+ *	Tcl_SaveInterpState, Tcl_RestoreInterpState, and Tcl_DiscardInterpState interfaces.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TestsaveinterpstateCmd(
+    TCL_UNUSED(void *),		/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    Tcl_Size objc,		/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* The argument objects. */
+{
+    int discard, result, index;
+    Tcl_InterpState state;
+    Tcl_Obj *objPtr;
+    static const char *const optionStrings[] = {
+	"append", "dynamic", "free", "object", "small", NULL
+    };
+    enum options {
+	RESULT_APPEND, RESULT_DYNAMIC, RESULT_FREE, RESULT_OBJECT, RESULT_SMALL
+    };
+
+    /*
+     * Parse arguments
+     */
+
+    if (objc != 4) {
+	Tcl_WrongNumArgs(interp, 1, objv, "type script discard");
+	return TCL_ERROR;
+    }
+    if (Tcl_GetIndexFromObj(interp, objv[1], optionStrings, "option", 0,
+	    &index) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    if (Tcl_GetBooleanFromObj(interp, objv[3], &discard) != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    objPtr = NULL;		/* Lint. */
+    switch ((enum options) index) {
+    case RESULT_SMALL:
+	Tcl_SetResult(interp, "small result", TCL_VOLATILE);
+	break;
+    case RESULT_APPEND:
+	Tcl_AppendResult(interp, "append result", NULL);
+	break;
+    case RESULT_FREE: {
+	char *buf = (char *)Tcl_Alloc(200);
+
+	strcpy(buf, "free result");
+	Tcl_SetResult(interp, buf, TCL_DYNAMIC);
+	break;
+    }
+    case RESULT_DYNAMIC:
+	Tcl_SetResult(interp, (char *)"dynamic result", TestsaveresultFree);
+	break;
+    case RESULT_OBJECT:
+	objPtr = Tcl_NewStringObj("object result", -1);
+	Tcl_SetObjResult(interp, objPtr);
+	break;
+    }
+
+    freeCount = 0;
+    state = Tcl_SaveInterpState(interp, TCL_OK);
+
+    if (((enum options) index) == RESULT_OBJECT) {
+	result = Tcl_EvalObjEx(interp, objv[2], 0);
+    } else {
+	result = Tcl_Eval(interp, Tcl_GetString(objv[2]));
+    }
+
+    if (discard) {
+	Tcl_DiscardInterpState(state);
+    } else {
+	Tcl_RestoreInterpState(interp, state);
+	result = TCL_OK;
+    }
+
+    switch ((enum options) index) {
+    case RESULT_DYNAMIC: {
+	int called = freeCount;
+
+	Tcl_AppendElement(interp, called ? "called" : "notCalled");
+
+	break;
+    }
+    case RESULT_OBJECT:
+	Tcl_AppendElement(interp, Tcl_GetObjResult(interp) == objPtr
+		? "same" : "different");
+	break;
+    default:
+	break;
+    }
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TestsaveresultFree --
+ *
+ *	Special purpose freeProc used by TestsaveinterpstateCmd.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Increments the freeCount.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+TestsaveresultFree(
+    TCL_UNUSED(void *))
+{
+    freeCount++;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TestmainthreadCmd  --
  *
  *	Implements the "testmainthread" cmd that is used to test the
@@ -9778,8 +9954,8 @@ PostInitEvalProc(
 static int
 PostInitAddProc(
     Tcl_Interp *interp,
-    void *clientData
-) {
+    void *clientData)
+{
     int value = (int)(intptr_t)clientData;
     Tcl_Obj *objPtr;
     objPtr = Tcl_ObjPrintf("proc add%d arg {incr arg %d}", value, value);
@@ -9793,8 +9969,8 @@ PostInitAddProc(
 static int
 PostInitSafeCheckProc(
     Tcl_Interp *interp,
-    TCL_UNUSED(void *)
-) {
+    TCL_UNUSED(void *))
+{
     Tcl_Obj *objPtr;
     objPtr = Tcl_ObjPrintf("proc isSafe {} {return %d}", Tcl_IsSafe(interp));
     Tcl_IncrRefCount(objPtr);
@@ -9828,8 +10004,7 @@ MultiplyCmd(
 
 static int
 Postinitpackage_Init(
-	Tcl_Interp *interp
-)
+    Tcl_Interp *interp)
 {
     Tcl_CreateObjCommand2(interp, "multiply", MultiplyCmd, NULL, NULL);
     Tcl_PkgProvideEx(interp, "postinitpackage", TCL_PATCH_LEVEL, NULL);
@@ -9839,8 +10014,8 @@ Postinitpackage_Init(
 static int
 PostInitStaticPackageProc(
     Tcl_Interp *interp,
-    TCL_UNUSED(void *)
-) {
+    TCL_UNUSED(void *))
+{
     Tcl_StaticLibrary(NULL, "postinitpackage", Postinitpackage_Init, NULL);
     return Tcl_Eval(interp, "package ifneeded postinitpackage [info patchlevel] [list load {} postinitpackage]");
 }
@@ -9849,8 +10024,8 @@ PostInitStaticPackageProc(
 static int
 PostInitInterpCreateProc(
     Tcl_Interp *interp,
-    void *clientData
-) {
+    void *clientData)
+{
     if (clientData) {
 	Tcl_Interp *child = Tcl_CreateInterp();
 	int result = Tcl_Init(child);
@@ -9879,8 +10054,8 @@ PostInitInterpDeleteProc(
 static int
 PostInitRaiseErrorProc(
     Tcl_Interp *interp,
-    TCL_UNUSED(void *)
-) {
+    TCL_UNUSED(void *))
+{
     Tcl_SetResult(interp, "PostInit test error raised", TCL_STATIC);
     return TCL_ERROR;
 }
@@ -9889,8 +10064,7 @@ PostInitRaiseErrorProc(
 static int
 PostInitRegisterInCbProc(
     TCL_UNUSED(Tcl_Interp *),
-    void *clientData
-)
+    void *clientData)
 {
     Tcl_RegisterPostInitProc(PostInitAddProc, clientData);
     return TCL_OK;
@@ -9900,8 +10074,7 @@ PostInitRegisterInCbProc(
 static int
 PostInitUnregisterInCbProc(
     TCL_UNUSED(Tcl_Interp *),
-    void *clientData
-)
+    void *clientData)
 {
     Tcl_UnregisterPostInitProc(PostInitAddProc, clientData);
     return TCL_OK;

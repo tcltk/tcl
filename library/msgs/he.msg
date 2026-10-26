@@ -44,8 +44,8 @@ namespace eval ::tcl::clock {
         "נובמבר"\
         "דצמבר"\
         ""]
-    ::msgcat::mcset he BCE "לסה"נ"
-    ::msgcat::mcset he CE "לפסה"נ"
+    ::msgcat::mcset he BCE "לפסה\"נ"
+    ::msgcat::mcset he CE "לסה\"נ"
     ::msgcat::mcset he DATE_FORMAT "%d/%m/%Y"
     ::msgcat::mcset he TIME_FORMAT "%H:%M:%S"
     ::msgcat::mcset he DATE_TIME_FORMAT "%d/%m/%Y %H:%M:%S %z"

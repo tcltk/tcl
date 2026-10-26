@@ -782,9 +782,9 @@ TclCompileClockClicksCmd(
 	 * -milliseconds or -microseconds
 	 */
 	tokenPtr = TokenAfter(parsePtr->tokenPtr);
-	if (IS_TOKEN_PREFIX(tokenPtr, 3, "-microseconds")) {
+	if (IS_TOKEN_PREFIX(tokenPtr, 4, "-microseconds")) {
 	    OP1(		CLOCK_READ, CLOCK_READ_MICROS);
-	} else if (IS_TOKEN_PREFIX(tokenPtr, 3, "-milliseconds")) {
+	} else if (IS_TOKEN_PREFIX(tokenPtr, 4, "-milliseconds")) {
 	    OP1(		CLOCK_READ, CLOCK_READ_MILLIS);
 	} else {
 	    return TCL_ERROR;

@@ -2140,7 +2140,7 @@ FilesystemSeparatorCmd(
 	return TCL_ERROR;
     }
     if (objc == 1) {
-	const char *separator = NULL;
+	const char *separator;
 
 	switch (tclPlatform) {
 	case TCL_PLATFORM_UNIX:
@@ -2149,6 +2149,8 @@ FilesystemSeparatorCmd(
 	case TCL_PLATFORM_WINDOWS:
 	    separator = "\\";
 	    break;
+	default:
+	    TCL_UNREACHABLE();
 	}
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(separator, 1));
     } else {

@@ -34,7 +34,6 @@
 
 #define	NISERR()	VISERR(nfa->v)
 #define	NERR(e)		VERR(nfa->v, (e))
-#define STACK_TOO_DEEP(x) (0)
 #define CANCEL_REQUESTED(x) (0)
 #define REG_CANCEL 777
 
@@ -74,9 +73,26 @@ newnfa(
 	freenfa(nfa);
 	return NULL;
     }
-    rainbow(nfa, nfa->cm, PLAIN, COLORLESS, nfa->pre, nfa->init);
+
+    /*
+     * pre to init arcs match the character before the match proper.
+     * Ordinarily that can be anything including BOS/BOL.  (If the regexp
+     * constrains the preceding character, we'll discover that and remove arcs
+     * as appropriate during NFA optimization.)  However, REG_BOSONLY tells us
+     * to only allow BOS/BOL, if this is the top level NFA.
+     */
+    if (parent == NULL && (v->cflags & REG_BOSONLY)) {
+	/* BOSONLY, do not insert rainbow */
+    } else {
+	rainbow(nfa, nfa->cm, PLAIN, COLORLESS, nfa->pre, nfa->init);
+    }
     newarc(nfa, '^', 1, nfa->pre, nfa->init);
     newarc(nfa, '^', 0, nfa->pre, nfa->init);
+
+    /*
+     * Similarly, final to post arcs match the character after the match
+     * proper, and initially that can be any character or EOS/EOL.
+     */
     rainbow(nfa, nfa->cm, PLAIN, COLORLESS, nfa->final, nfa->post);
     newarc(nfa, '$', 1, nfa->final, nfa->post);
     newarc(nfa, '$', 0, nfa->final, nfa->post);
@@ -1234,6 +1250,12 @@ deltraverse(
     struct arc *a;
     struct state *to;
 
+    /* Since this is recursive, it could be driven to stack overflow */
+    if (STACK_TOO_DEEP(nfa->v)) {
+	NERR(REG_ETOOBIG);
+	return;
+    }
+
     if (s->nouts == 0) {
 	return;			/* nothing to do */
     }
@@ -1303,6 +1325,12 @@ duptraverse(
 {
     struct arc *a;
 
+    /* Since this is recursive, it could be driven to stack overflow */
+    if (STACK_TOO_DEEP(nfa->v)) {
+	NERR(REG_ETOOBIG);
+	return;
+    }
+
     if (s->tmp != NULL) {
 	return;			/* already done */
     }
@@ -1345,6 +1373,12 @@ cleartraverse(
     struct state *s)
 {
     struct arc *a;
+
+    /* Since this is recursive, it could be driven to stack overflow */
+    if (STACK_TOO_DEEP(nfa->v)) {
+	NERR(REG_ETOOBIG);
+	return;
+    }
 
     if (s->tmp == NULL) {
 	return;
@@ -2264,7 +2298,7 @@ findconstraintloop(struct nfa * nfa, struct state * s)
     struct arc *a;
 
     /* Since this is recursive, it could be driven to stack overflow */
-    if (STACK_TOO_DEEP(nfa->v->re)) {
+    if (STACK_TOO_DEEP(nfa->v)) {
 	NERR(REG_ETOOBIG);
 	return 1;		/* to exit as quickly as possible */
     }
@@ -2500,7 +2534,7 @@ clonesuccessorstates(
     struct arc *a;
 
     /* Since this is recursive, it could be driven to stack overflow */
-    if (STACK_TOO_DEEP(nfa->v->re)) {
+    if (STACK_TOO_DEEP(nfa->v)) {
 	NERR(REG_ETOOBIG);
 	return;
     }
@@ -2736,6 +2770,12 @@ markreachable(
 {
     struct arc *a;
 
+    /* Since this is recursive, it could be driven to stack overflow */
+    if (STACK_TOO_DEEP(nfa->v)) {
+	NERR(REG_ETOOBIG);
+	return;
+    }
+
     if (s->tmp != okay) {
 	return;
     }
@@ -2759,6 +2799,12 @@ markcanreach(
     struct state *mark)		/* the value to mark with */
 {
     struct arc *a;
+
+    /* Since this is recursive, it could be driven to stack overflow */
+    if (STACK_TOO_DEEP(nfa->v)) {
+	NERR(REG_ETOOBIG);
+	return;
+    }
 
     if (s->tmp != okay) {
 	return;
