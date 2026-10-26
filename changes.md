@@ -55,6 +55,7 @@ to the userbase.
  - [exec hangs, iff stdin & stdout both were previously closed.](https://core.tcl-lang.org/tcl/tktview/21dbc6)
  - [viewport meta tag in the generated HTML pages for mobile browsers](https://core.tcl-lang.org/tcl/tktview/7f6005)
  - [no longer replace "::" in manual page with "_" on installation](https://core.tcl-lang.org/tcl/tktview/0ef68e)
+ - [tcl_startOfPreviousWord ignores the last character when start is the string length](https://core.tcl-lang.org/tcl/tktview/3e7c4a)
 
 # Updated bundled packages, libraries, standards, data
  - http 2.10.3
