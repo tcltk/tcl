@@ -154,8 +154,8 @@ INSTALL_STRIP_PROGRAM	= strip
 INSTALL_STRIP_LIBRARY	= strip -x
 
 INSTALL			= $(SHELL) $(UNIX_DIR)/install-sh -c
-INSTALL_PROGRAM		= ${INSTALL}
-INSTALL_LIBRARY		= ${INSTALL}
+INSTALL_PROGRAM		= ${INSTALL} -m 755
+INSTALL_LIBRARY		= ${INSTALL} -m 755
 INSTALL_DATA		= ${INSTALL} -m 644
 INSTALL_DATA_DIR	= ${INSTALL} -d -m 755
 
@@ -270,8 +270,6 @@ VALGRINDARGS		= --tool=memcheck --num-callers=24 \
 	--keep-debuginfo=yes \
 	--suppressions=$(TOOL_DIR)/valgrind_suppress
 
-shquotequote = $(subst ",\",$(subst ',\',$(1)))
-shquotesingle = $(subst ','\'',$(1))
 #--------------------------------------------------------------------------
 # The information below should be usable as is. The configure script won't
 # modify it and you shouldn't need to modify it either.
@@ -725,15 +723,17 @@ test: test-tcl test-packages
 test-tcl: ${TCLTEST_EXE}
 	$(SHELL_ENV) ./${TCLTEST_EXE} $(TOP_DIR)/tests/all.tcl $(TESTFLAGS)
 
+# Tcl ignores SIGPIPE, but gdb would still stop on it (e.g. in io-29.27)
+GDB_SIGPIPE		= -ex "handle SIGPIPE nostop noprint"
+
 gdb-test: ${TCLTEST_EXE}
-	@printf '%s ' set env @LD_LIBRARY_PATH_VAR@=\"`pwd`$${@LD_LIBRARY_PATH_VAR@:+:$${@LD_LIBRARY_PATH_VAR}}\" > gdb.run
-	@printf '\n' >>gdb.run
-	@printf '%s ' set env TCL_LIBRARY=\'$(call shquotesingle,${TCL_BUILDTIME_LIBRARY})\' >> gdb.run
-	@printf '\n' >>gdb.run
-	@printf '%s ' set args $(call shquotequote,$(TOP_DIR))/tests/all.tcl\
-		$(call shquotequote,$(TESTFLAGS)) -singleproc 1 >> gdb.run
-	$(GDB) ./${TCLTEST_EXE} --command=gdb.run
-	rm gdb.run
+	$(SHELL_ENV) $(GDB) $(GDB_SIGPIPE) --args ./${TCLTEST_EXE} \
+		$(TOP_DIR)/tests/all.tcl $(TESTFLAGS) -singleproc 1
+
+lldb-test: ${TCLTEST_EXE}
+	$(SHELL_ENV) $(LLDB) -- ./${TCLTEST_EXE} $(TOP_DIR)/tests/all.tcl \
+		$(TESTFLAGS) -singleproc 1
+
 
 # Useful target to launch a built tcltest with the proper path,...
 runtest: ${TCLTEST_EXE}
@@ -764,7 +764,7 @@ shell: ${TCL_EXE}
 
 # This target can be used to run tclsh inside either gdb or insight
 gdb: ${TCL_EXE}
-	$(SHELL_ENV) $(GDB) ./${TCL_EXE}
+	$(SHELL_ENV) $(GDB) $(GDB_SIGPIPE) ./${TCL_EXE}
 
 lldb: ${TCL_EXE}
 	$(SHELL_ENV) $(LLDB) ./${TCL_EXE}
@@ -773,6 +773,27 @@ valgrind: ${TCL_EXE} ${TCLTEST_EXE}
 	$(SHELL_ENV) $(VALGRIND) $(VALGRINDARGS) ./${TCLTEST_EXE} \
 		$(TOP_DIR)/tests/all.tcl -singleproc 1 -constraints valgrind \
 		$(TESTFLAGS)
+
+testresults/valgrind/%.result: ${TCL_EXE} ${TCLTEST_EXE}
+	@mkdir -p testresults/valgrind
+	$(SHELL_ENV) $(VALGRIND) $(VALGRINDARGS) ./${TCLTEST_EXE} \
+		$(TOP_DIR)/tests/all.tcl -singleproc 1 -constraints valgrind \
+		-file $(basename $(notdir $@)) > $@.tmp 2>&1
+	@mv $@.tmp $@
+.PRECIOUS: testresults/valgrind/%.result
+
+
+testresults/valgrind/%.success: testresults/valgrind/%.result
+	@printf '%s' valgrind >&2
+	@printf ' %s' $(basename $(notdir $@)) >&2
+	@printf '\n >&2'
+	@status=$$(./${TCLTEST_EXE} $(TOP_DIR)/tools/valgrind_check_success \
+		file $(basename $@).result); \
+	if [ "$$status" -eq 1 ]; then touch $@; exit 0; else exit 1; fi
+
+valgrind_each: $(addprefix testresults/valgrind/,$(addsuffix .success,$(notdir\
+	$(wildcard $(TOP_DIR)/tests/*.test))))
+
 
 valgrindshell: ${TCL_EXE}
 	$(SHELL_ENV) $(VALGRIND) $(VALGRINDARGS) ./${TCL_EXE} $(SCRIPT)
@@ -812,7 +833,6 @@ install-binaries: binaries
 	done
 	@echo "Installing $(LIB_FILE) to $(DLL_INSTALL_DIR)/"
 	@@INSTALL_LIB@
-	@chmod 555 "$(DLL_INSTALL_DIR)/$(LIB_FILE)"
 	@echo "Installing ${TCL_EXE} as $(BIN_INSTALL_DIR)/tclsh$(VERSION)${EXE_SUFFIX}"
 	@$(INSTALL_PROGRAM) ${TCL_EXE} "$(BIN_INSTALL_DIR)/tclsh$(VERSION)${EXE_SUFFIX}"
 	@echo "Installing tclConfig.sh to $(CONFIG_INSTALL_DIR)/"
