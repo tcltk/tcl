@@ -636,14 +636,14 @@ namespace eval tcltest {
     proc AcceptVerbose { level } {
 	set level [AcceptList $level]
 	set levelMap {
-	    l list
-	    p pass
 	    b body
-	    s skip
-	    t start
+	    d desc
 	    e error
 	    l line
 	    m msec
+	    p pass
+	    s skip
+	    t start
 	    u usec
 	}
 	set levelRegexp "^([join [dict values $levelMap] |])\$"
@@ -669,12 +669,14 @@ namespace eval tcltest {
 
     # Default verbosity is to show bodies of failed tests
     Option -verbose {body error} {
-	Takes any combination of the values 'p', 's', 'b', 't', 'e' and 'l'.
-	Test suite will display all passed tests if 'p' is specified, all
-	skipped tests if 's' is specified, the bodies of failed tests if
-	'b' is specified, and when tests start if 't' is specified.
-	ErrorInfo is displayed if 'e' is specified. Source file line
-	information of failed tests is displayed if 'l' is specified.
+	Takes any combination of the values 'b', 'd', 'e', 'l', 'm', 'p',
+	's', 't' and 'u'. Test suite will display all passed tests if 'p'
+	is specified, all skipped tests if 's' is specified, the bodies
+	of failed tests if 'b' is specified, and when tests start if 't'
+	is specified. ErrorInfo is displayed if 'e' is specified. Source
+	file line information of failed tests is displayed if 'l' is
+	specified. Description is also displayed if 'd' is specified.
+	'm' and 'u' will add duration the testcase took (in ms/\xB5s).
     } AcceptVerbose verbose
 
     # Match and skip patterns default to the empty list, except for
@@ -1952,6 +1954,7 @@ proc tcltest::TestOnce {name description args} {
     variable testLevel
     variable coreModTime
     variable fullutf
+    variable xdesc
 
     DebugPuts 3 "test $name $args"
     DebugDo 1 {
@@ -2053,6 +2056,12 @@ proc tcltest::TestOnce {name description args} {
 	}
     }
 
+    if {[IsVerbose desc]} {
+	set xdesc " ([string trim $description])"
+    } else {
+	set xdesc ""
+    }
+
     if {[Skipped $name $constraints]} {
 	incr testLevel -1
 	return
@@ -2091,7 +2100,7 @@ proc tcltest::TestOnce {name description args} {
 
 	# Verbose notification of $body start
 	if {[IsVerbose start]} {
-	    puts [outputChannel] "---- $name start"
+	    puts [outputChannel] "---- $name start$xdesc"
 	    flush [outputChannel]
 	}
 
@@ -2231,7 +2240,7 @@ proc tcltest::TestOnce {name description args} {
 	if {$testLevel == 1} {
 	    incr numTests(Passed)
 	    if {[IsVerbose pass]} {
-		puts [outputChannel] "++++ $name PASSED"
+		puts [outputChannel] "++++ $name PASSED$xdesc"
 	    }
 	}
 	incr testLevel -1
@@ -2383,9 +2392,10 @@ proc tcltest::Skip {reason} {
 proc tcltest::_noticeSkipped {name reason} {
     variable testLevel
     variable numTests
+    variable xdesc
 
     if {[IsVerbose skip]} {
-	puts [outputChannel] "++++ $name SKIPPED: $reason"
+	puts [outputChannel] "++++ $name SKIPPED$xdesc: $reason"
     }
 
     if {$testLevel == 1} {
