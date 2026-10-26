@@ -67,6 +67,21 @@ test word-2.7 {tcl_startOfPreviousWord} -body {
 test word-2.8 {tcl_startOfPreviousWord, bug [16e25e1402]} -body {
     tcl_startOfPreviousWord "ab cd" end-1
 } -result 0
+test word-2.10 {tcl_startOfPreviousWord, bug [3e7c4a039d]} -body {
+    tcl_startOfPreviousWord "ab c" 4
+} -result 3
+test word-2.11 {tcl_startOfPreviousWord, bug [3e7c4a039d]} -body {
+    tcl_startOfPreviousWord "ab c" 10
+} -result 3
+test word-2.12 {tcl_startOfPreviousWord, bug [3e7c4a039d]} -body {
+    tcl_startOfPreviousWord "ab c" end+1
+} -result 3
+test word-2.13 {tcl_startOfPreviousWord, bug [3e7c4a039d]} -body {
+    tcl_startOfPreviousWord "a b c" 5
+} -result 4
+test word-2.14 {tcl_startOfPreviousWord} -body {
+    tcl_startOfPreviousWord "ab c" 3
+} -result 0
 
 test word-3.0 {tcl_startOfNextWord} -body {
     tcl_startOfNextWord "ab cd" -1

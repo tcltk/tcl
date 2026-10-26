@@ -147,8 +147,12 @@ proc tcl_startOfPreviousWord {str start} {
     variable ::tcl::WordBreakRE
     set word {-1 -1}
     if {$start > 0} {
-	regexp -indices -- $WordBreakRE(previous) [string range [string range $str 0 $start] 0 end-1] \
-		result word
+	set prefix [string range $str 0 $start]
+	if {[string index $str $start] ne ""} {
+	    # Exclude the character at $start, but only if there is one.
+	    set prefix [string range $prefix 0 end-1]
+	}
+	regexp -indices -- $WordBreakRE(previous) $prefix result word
     }
     return [lindex $word 0]
 }

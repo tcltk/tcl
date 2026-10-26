@@ -9520,3 +9520,5 @@ Many code fixes to avoid overflow or undefined behavior.  Thanks chrstphrchvz.
 2026-10-23 Windows (msvcrt): format printed infinities as "1.#INF", or as a wrong number like "1" for %.0f (storchaka)
 
 2026-10-26 tcltest => 2.6.1 (nijtmans)
+
+2026-10-26 tcl_startOfPreviousWord ignores the last character when start is the string length (storchaka)
