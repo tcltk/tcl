@@ -914,9 +914,12 @@ test: test-tcl test-packages
 test-tcl: ${TCLTEST_EXE}
 	$(SHELL_ENV) ./${TCLTEST_EXE} $(TOP_DIR)/tests/all.tcl $(TESTFLAGS)
 
+# Tcl ignores SIGPIPE, but gdb would still stop on it (e.g. in io-29.27)
+GDB_SIGPIPE		= -ex "handle SIGPIPE nostop noprint"
+
 gdb-test: ${TCLTEST_EXE}
-	$(SHELL_ENV) $(GDB) --args ./${TCLTEST_EXE} $(TOP_DIR)/tests/all.tcl \
-		$(TESTFLAGS) -singleproc 1
+	$(SHELL_ENV) $(GDB) $(GDB_SIGPIPE) --args ./${TCLTEST_EXE} \
+		$(TOP_DIR)/tests/all.tcl $(TESTFLAGS) -singleproc 1
 
 lldb-test: ${TCLTEST_EXE}
 	$(SHELL_ENV) $(LLDB) -- ./${TCLTEST_EXE} $(TOP_DIR)/tests/all.tcl \
@@ -952,7 +955,7 @@ shell: ${TCL_EXE}
 
 # This target can be used to run tclsh inside either gdb or insight
 gdb: ${TCL_EXE}
-	$(SHELL_ENV) $(GDB) ./${TCL_EXE}
+	$(SHELL_ENV) $(GDB) $(GDB_SIGPIPE) ./${TCL_EXE}
 
 lldb: ${TCL_EXE}
 	$(SHELL_ENV) $(LLDB) ./${TCL_EXE}
