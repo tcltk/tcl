@@ -57,6 +57,7 @@ to the userbase.
  - [no longer replace "::" in manual page with "_" on installation](https://core.tcl-lang.org/tcl/tktview/0ef68e)
  - [shimmer of abstract lists with linsert/lappend](https://core.tcl-lang.org/tcl/tktview/0c82728f)
  - [crash on indexing abstract lists](https://core.tcl-lang.org/tcl/tktview/b24becc2)
+ - [tcl_startOfPreviousWord ignores the last character when start is the string length](https://core.tcl-lang.org/tcl/tktview/3e7c4a)
 
 # Updated bundled packages, libraries, standards, data
  - http 2.10.3
