@@ -2332,19 +2332,10 @@ Tcl_LassignObjCmd(
 
     if (listObjc > 0) {
 	Tcl_Obj *resultObjPtr = NULL;
-	Tcl_Size fromIdx = origListObjc - listObjc;
-	Tcl_Size toIdx = origListObjc - 1;
-	if (TclObjTypeHasProc(listPtr, sliceProc)) {
-	    if (TclObjTypeSlice(
-		    interp, listPtr, fromIdx, toIdx, &resultObjPtr) != TCL_OK) {
-		return TCL_ERROR;
-	    }
-	} else {
-	    resultObjPtr = TclListObjRange(
-		interp, listPtr, origListObjc - listObjc, origListObjc - 1);
-	    if (resultObjPtr == NULL) {
-		return TCL_ERROR;
-	    }
+	resultObjPtr = TclListObjRange(interp, listPtr, origListObjc - listObjc,
+		origListObjc - 1);
+	if (resultObjPtr == NULL) {
+	    return TCL_ERROR;
 	}
 	Tcl_SetObjResult(interp, resultObjPtr);
     }
@@ -2639,7 +2630,7 @@ Tcl_LpopObjCmd(
      */
 
     if (objc == 2) {
-	if (!listLen) {
+	if (listLen == 0) {
 	    /* empty list, throw the same error as with index "end" */
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"index \"end\" out of range", -1));
@@ -2734,6 +2725,7 @@ Tcl_LrangeObjCmd(
 {
     int result;
     Tcl_Size listLen, first, last;
+
     if (objc != 4) {
 	Tcl_WrongNumArgs(interp, 1, objv, "list first last");
 	return TCL_ERROR;
@@ -2756,21 +2748,11 @@ Tcl_LrangeObjCmd(
 	return result;
     }
 
-    if (TclObjTypeHasProc(objv[1], sliceProc)) {
-	Tcl_Obj *resultObj;
-	int status = TclObjTypeSlice(interp, objv[1], first, last, &resultObj);
-	if (status == TCL_OK) {
-	    Tcl_SetObjResult(interp, resultObj);
-	} else {
-	    return TCL_ERROR;
-	}
-    } else {
-	Tcl_Obj *resultObj = TclListObjRange(interp, objv[1], first, last);
-	if (resultObj == NULL) {
-	    return TCL_ERROR;
-	}
-	Tcl_SetObjResult(interp, resultObj);
+    Tcl_Obj *resultObjPtr = TclListObjRange(interp, objv[1], first, last);
+    if (resultObjPtr == NULL) {
+	return TCL_ERROR;
     }
+    Tcl_SetObjResult(interp, resultObjPtr);
     return TCL_OK;
 }
 

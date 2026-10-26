@@ -1574,8 +1574,8 @@ ListRepRange(
  *
  * TclListObjRange --
  *
- *	Makes a slice of a list value.
- *	*listObj must be known to be a valid list.
+ *      Makes a slice of a list value.
+ *      *listObj must be to be a valid native or abstract list.
  *
  * Results:
  *	Returns a pointer to the sliced list.
@@ -1600,6 +1600,24 @@ TclListObjRange(
     ListRep listRep;
     ListRep resultRep;
 
+    if (TclHasInternalRep(listObj, &tclListType)) {
+	ListObjGetRep(listObj, &listRep);
+    } else {
+	Tcl_ObjTypeSliceProc *proc = TclObjTypeHasProc(listObj, sliceProc);
+	if (proc != NULL) {
+	    Tcl_Obj *sliceObj;
+	    if (proc(interp, listObj, rangeStart, rangeEnd, &sliceObj)
+		    != TCL_OK) {
+		return NULL;
+	    }
+	    return sliceObj;
+	}
+	/* Convert to native list */
+	if (TclListObjGetRep(interp, listObj, &listRep) != TCL_OK) {
+	    return NULL;
+	}
+    }
+
     int isShared;
     if (TclListObjGetRep(interp, listObj, &listRep) != TCL_OK) {
 	return NULL;
@@ -1615,28 +1633,6 @@ TclListObjRange(
     } /* T:listrep-1.{4.3,5.1,5.2} */
     ListObjReplaceRepAndInvalidate(listObj, &resultRep);
     return listObj;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclListObjGetElement --
- *
- *	Returns a single element from the array of the elements in a list
- *	object, without doing any bounds checking.  Caller must ensure
- *	that ObjPtr of type 'tclListType' and that index is valid for the
- *	list.
- *
- *----------------------------------------------------------------------
- */
-
-Tcl_Obj *
-TclListObjGetElement(
-    Tcl_Obj *objPtr,		/* List object for which an element array is
-				 * to be returned. */
-    Tcl_Size index)
-{
-    return ListObjStorePtr(objPtr)->slots[ListObjStart(objPtr) + index];
 }
 
 /*
@@ -1681,9 +1677,9 @@ Tcl_ListObjGetElements(
 				 * pointers to the list's objects. */
 {
     ListRep listRep;
-
-    if (TclObjTypeHasProc(objPtr, getElementsProc)) {
-	return TclObjTypeGetElements(interp, objPtr, objcPtr, objvPtr);
+    Tcl_ObjTypeGetElements *proc = TclObjTypeHasProc(objPtr, getElementsProc);
+    if (proc != NULL) {
+	return proc(interp, objPtr, objcPtr, objvPtr);
     }
     if (TclListObjGetRep(interp, objPtr, &listRep) != TCL_OK) {
 	return TCL_ERROR;
@@ -1727,6 +1723,12 @@ Tcl_ListObjAppendList(
 	Tcl_Panic("%s called with shared object", "Tcl_ListObjAppendList");
     }
 
+    /*
+     * This next line shimmers fromObj if it is an abstract list that does
+     * not implement the getElements method. For such cases, an alternative
+     * would be to copy individual elements using Tcl_ListObjIndex. Not sure
+     * that is worthwhile in practice. - TODO - reexamine
+     */
     if (TclListObjGetElements(interp, fromObj, &objc, &objv) != TCL_OK) {
 	return TCL_ERROR;
     }
@@ -1777,9 +1779,25 @@ TclListObjAppendElements(
 	Tcl_Panic("%s called with shared object", "TclListObjAppendElements");
     }
 
-    if (TclListObjGetRep(interp, toObj, &listRep) != TCL_OK) {
-	/* Cannot be converted to a list */
-	return TCL_ERROR;
+    if (TclHasInternalRep(toObj, &tclListType)) {
+	ListObjGetRep(toObj, &listRep);
+    } else {
+	/* Use lengthProc, replaceProc to avoid shimmer */
+	Tcl_ObjTypeLengthProc *lenProc = TclObjTypeHasProc(toObj, lengthProc);
+	Tcl_ObjTypeReplaceProc *repProc = TclObjTypeHasProc(toObj, replaceProc);
+	if (lenProc != NULL && repProc != NULL) {
+	    toLen = lenProc(toObj);
+	    /*
+	     * On failure, don't hide the error by falling through. Pass up
+	     * the error, possibly bug in abstract list implementation.
+	     */
+	    return repProc(interp, toObj, toLen, 0, elemCount, elemObjv);
+	}
+	/* Abstract list method(s) not available. Shimmer and fall through */
+	if (TclListObjGetRep(interp, toObj, &listRep) != TCL_OK) {
+	    /* Cannot be converted to a list */
+	    return TCL_ERROR;
+	}
     }
 
     if (elemCount <= 0) {
@@ -1980,24 +1998,63 @@ TclListObjInsertIfAbsent(
 {
     Tcl_Obj **elemObjs;
     Tcl_Size numElems;
-    int result;
-
-    result = Tcl_ListObjGetElements(interp, toObj, &numElems, &elemObjs);
-    if (result != TCL_OK) {
-	goto vamoose;
-    }
     Tcl_Size newElemLen;
     const char *newElem;
+    int result = TCL_OK;
+
     newElem = Tcl_GetStringFromObj(newElemObj, &newElemLen);
+
+    /*
+     * Calling Tcl_ListObjGetElements on abstract lists may shimmer it or
+     * (as in lseq) cause it to instantiate a large cached array. Try to avoid.
+     */
+    if (!TclHasInternalRep(toObj, &tclListType)) {
+	Tcl_ObjTypeLengthProc *lenProc = TclObjTypeHasProc(toObj, lengthProc);
+	Tcl_ObjTypeIndexProc *indexProc = TclObjTypeHasProc(toObj, indexProc);
+	if (lenProc != NULL && indexProc != NULL) {
+	    numElems = lenProc(toObj);
+	    for (Tcl_Size i = 0; i < numElems; ++i) {
+		Tcl_Size toElemLen;
+		Tcl_Obj *toElem;
+		result = indexProc(interp, toObj, i, &toElem);
+		if (result != TCL_OK) {
+		    goto vamoose;
+		}
+		const char *toElemStr
+			= Tcl_GetStringFromObj(toElem, &toElemLen);
+		int exists = (toElemLen == newElemLen
+			     && memcmp(newElem, toElemStr, newElemLen) == 0);
+		Tcl_BounceRefCount(toElem);
+		if (exists) {
+		    /* Present, so skip adding it */
+		    goto vamoose;
+		}
+	    }
+	    /* Not present so add it */
+	    goto insert;
+	}
+
+	/* Abstract list method(s) not available. Shimmer and fall through */
+	result = Tcl_ListObjGetElements(interp, toObj, &numElems, &elemObjs);
+	if (result != TCL_OK) {
+	    goto vamoose;
+	}
+    } else {
+	ListObjGetElements(toObj, numElems, elemObjs);
+    }
+
     for (Tcl_Size i = 0; i < numElems; ++i) {
 	Tcl_Size toElemLen;
 	const char *toElemStr = Tcl_GetStringFromObj(elemObjs[i], &toElemLen);
 	if (toElemLen == newElemLen &&
-		strncmp(newElem, toElemStr, newElemLen) == 0) {
-	    result = TCL_OK;
+		memcmp(newElem, toElemStr, newElemLen) == 0) {
+	    /* Present, so skip adding it */
 	    goto vamoose;
 	}
     }
+
+insert:
+    /* Not present so add it */
     result = Tcl_ListObjReplace(interp, toObj, index, 0, 1, &newElemObj);
 
 vamoose: /* Return result after freeing elemObj if unreferenced */
@@ -2046,9 +2103,12 @@ Tcl_ListObjIndex(
 	return TCL_OK;
     }
 
-    int hasAbstractList = TclObjTypeHasProc(listObj,indexProc) != 0;
-    if (hasAbstractList) {
-	return TclObjTypeIndex(interp, listObj, index, objPtrPtr);
+    if (!TclHasInternalRep(listObj, &tclListType)) {
+	Tcl_ObjTypeIndexProc *indexProc = TclObjTypeHasProc(listObj, indexProc);
+	if (indexProc != NULL) {
+	    return indexProc(interp, listObj, index, objPtrPtr);
+	}
+	/* Fall through and shimmer to native list */
     }
 
     if (TclListObjGetElements(interp, listObj, &numElems, &elemObjs) != TCL_OK) {
@@ -2100,9 +2160,13 @@ Tcl_ListObjLength(
 	return TCL_OK;
     }
 
-    if (TclObjTypeHasProc(listObj, lengthProc)) {
-	*lenPtr = TclObjTypeLength(listObj);
-	return TCL_OK;
+    if (!TclListObjIsNative(listObj)) {
+	Tcl_ObjTypeLengthProc *proc = TclObjTypeHasProc(listObj, lengthProc);
+	if (proc != NULL) {
+	    *lenPtr = proc(listObj);
+	    return TCL_OK;
+	}
+	/* Fall through and shimmer to native list */
     }
 
     if (TclListObjGetRep(interp, listObj, &listRep) != TCL_OK) {
@@ -2183,9 +2247,14 @@ Tcl_ListObjReplace(
 	Tcl_Panic("%s called with shared object", "Tcl_ListObjReplace");
     }
 
-    if (TclObjTypeHasProc(listObj, replaceProc)) {
-	return TclObjTypeReplace(interp, listObj, first,
-		numToDelete, numToInsert, insertObjs);
+    if (!TclListObjIsNative(listObj)) {
+	Tcl_ObjTypeReplaceProc *replaceProc;
+	replaceProc = TclObjTypeHasProc(listObj, replaceProc);
+	if (replaceProc != NULL) {
+	    return replaceProc(interp, listObj, first, numToDelete, numToInsert,
+		    insertObjs);
+	}
+	/* Fall through to shimmer */
     }
 
     if (TclListObjGetRep(interp, listObj, &listRep) != TCL_OK) {
@@ -2660,12 +2729,13 @@ TclLindexList(
     /*
      * Determine whether argPtr designates a list or a single index. We have
      * to be careful about the order of the checks to avoid repeated
-     * shimmering; if internal rep is already a list do not shimmer it.
-     * see TIP#22 and TIP#33 for the details.
+     * shimmering; if internal rep is already a native or abstract list do
+     * not shimmer, see TIP#22 and TIP#33 for the details.
      */
-    if (!TclHasInternalRep(argObj, &tclListType)
-	    && TclGetIntForIndexM(NULL, argObj, TCL_SIZE_MAX - 1,
-		    &index) == TCL_OK) {
+    if (!TclListObjIsNative(argObj)
+	    && (TclObjTypeHasProc(argObj, indexProc) == NULL)
+	    && TclGetIntForIndexM(NULL, argObj, TCL_SIZE_MAX - 1, &index)
+		       == TCL_OK) {
 	/*
 	 * argPtr designates a single index.
 	 */
@@ -2880,10 +2950,11 @@ TclLsetList(
     if (!TclHasInternalRep(indexArgObj, &tclListType)
 	    && TclGetIntForIndexM(NULL, indexArgObj, TCL_SIZE_MAX - 1, &index)
 		== TCL_OK) {
-	if (TclObjTypeHasProc(listObj, setElementProc)) {
+	Tcl_ObjTypeSetElement *proc;
+	proc = TclObjTypeHasProc(listObj, setElementProc);
+	if (proc != NULL) {
 	    indices = &indexArgObj;
-	    retValueObj = TclObjTypeSetElement(interp,
-		    listObj, 1, indices, valueObj);
+	    retValueObj = proc(interp, listObj, 1, indices, valueObj);
 	    if (retValueObj) {
 		Tcl_IncrRefCount(retValueObj);
 	    }
@@ -3239,7 +3310,7 @@ TclLsetFlat(
  *
  * Results:
  *	The return value is normally TCL_OK. If listObj does not refer to a
- *	list object and cannot be converted to one, TCL_ERROR is returned and
+ *	native list object and cannot be converted, TCL_ERROR is returned and
  *	an error message will be left in the interpreter result if interp is
  *	not NULL. Similarly, if index designates an element outside the range
  *	[0..listLength-1], where listLength is the count of elements in the
@@ -3274,6 +3345,11 @@ TclListObjSetElement(
     if (Tcl_IsShared(listObj)) {
 	Tcl_Panic("%s called with shared object", "TclListObjSetElement");
     }
+
+    /*
+     * Note: cannot use setElementProc method of abstract lists here because
+     * it may return a new Tcl_Obj, and not modified listObj in place.
+     */
 
     if (TclListObjGetRep(interp, listObj, &listRep) != TCL_OK) {
 	return TCL_ERROR;

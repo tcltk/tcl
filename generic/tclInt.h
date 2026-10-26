@@ -2727,6 +2727,10 @@ typedef struct ListRep {
 	? ListObjSpanPtr(listObj_)->spanStart				\
 	: ListObjStorePtr(listObj_)->firstUsed)
 
+/* Returns element at specified index */
+#define ListObjIndex(listObj_, index_) \
+    (ListObjStorePtr(listObj_)->slots[ListObjStart(listObj_) + index_])
+
 /* Stores the element count and base address of this list's elements */
 #define ListObjGetElements(listObj_, objc_, objv_) \
     (((objv_) = &ListObjStorePtr(listObj_)->slots[ListObjStart(listObj_)]), \
@@ -2759,6 +2763,12 @@ typedef struct ListRep {
     (((listObj_)->bytes == NULL)					\
 	|| (ListObjStorePtr(listObj_)->flags & LISTSTORE_CANONICAL)	\
 	|| ListObjSpanPtr(listObj_) != NULL)
+
+/*
+ * Returns true/false depending on whether listObj_ is a native Tcl list.
+ */
+#define TclListObjIsNative(listObj_) \
+    TclHasInternalRep((listObj_), &tclListType)
 
 /*
  * Converts the Tcl_Obj to a list if it isn't one and stores the element
@@ -3535,7 +3545,6 @@ MODULE_SCOPE Tcl_Obj *	TclLindexList(Tcl_Interp *interp,
 			    Tcl_Obj *listPtr, Tcl_Obj *argPtr);
 MODULE_SCOPE Tcl_Obj *	TclLindexFlat(Tcl_Interp *interp, Tcl_Obj *listPtr,
 			    Tcl_Size indexCount, Tcl_Obj *const indexArray[]);
-MODULE_SCOPE Tcl_Obj *	TclListObjGetElement(Tcl_Obj *listObj, Tcl_Size index);
 /* TIP #280 */
 MODULE_SCOPE void	TclListLines(Tcl_Obj *listObj, Tcl_Size line, Tcl_Size n,
 			    Tcl_Size *lines, Tcl_Obj *const *elems);
