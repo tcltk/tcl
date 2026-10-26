@@ -1829,7 +1829,7 @@ InterpProcNR2(
 	goto process;
     }
 
-    done:
+  done:
     if (TCL_DTRACE_PROC_RESULT_ENABLED()) {
 	Tcl_Size l = (iPtr->varFramePtr->isProcCallFrame & FRAME_IS_LAMBDA) ? 1 : 0;
 	Tcl_Obj *r = Tcl_GetObjResult(interp);
@@ -1850,7 +1850,7 @@ InterpProcNR2(
      * Process any non-TCL_OK result code.
      */
 
-    process:
+  process:
     switch (result) {
     case TCL_RETURN:
 	/*
@@ -2188,9 +2188,8 @@ TclProcCleanupProc(
 	localPtr = nextPtr;
     }
 
-    if ( (procPtr->flags & PROC_CMD_OWNED) && procPtr->cmdPtr
-      && procPtr->cmdPtr->refCount-- <= 1
-    ) {
+    if ((procPtr->flags & PROC_CMD_OWNED) && procPtr->cmdPtr
+	    && procPtr->cmdPtr->refCount-- <= 1) {
 	/* cmdPtr owned by procPtr (lambda) */
 	if (procPtr->cmdPtr->nsPtr) {
 	    TclNsDecrRefCount(procPtr->cmdPtr->nsPtr);

@@ -4054,9 +4054,10 @@ Tcl_LimitAddHandler(
 	}
 	iPtr->limit.timeHandlers = handlerPtr;
 	return;
-    }
 
-    Tcl_Panic("unknown type of resource limit");
+    default:
+	Tcl_Panic("unknown type of resource limit");
+    }
 }
 
 /*
@@ -4097,7 +4098,7 @@ Tcl_LimitRemoveHandler(
 	break;
     default:
 	Tcl_Panic("unknown type of resource limit");
-	return;
+	TCL_UNREACHABLE();
     }
 
     for (; handlerPtr!=NULL ; handlerPtr=handlerPtr->nextPtr) {
@@ -4128,6 +4129,8 @@ Tcl_LimitRemoveHandler(
 	    case TCL_LIMIT_TIME:
 		iPtr->limit.timeHandlers = handlerPtr->nextPtr;
 		break;
+	    default:
+		TCL_UNREACHABLE();
 	    }
 	} else {
 	    handlerPtr->prevPtr->nextPtr = handlerPtr->nextPtr;
@@ -4602,8 +4605,9 @@ Tcl_LimitSetGranularity(
     case TCL_LIMIT_TIME:
 	iPtr->limit.timeGranularity = granularity;
 	return;
+    default:
+	Tcl_Panic("unknown type of resource limit");
     }
-    Tcl_Panic("unknown type of resource limit");
 }
 
 /*
@@ -4634,9 +4638,10 @@ Tcl_LimitGetGranularity(
 	return iPtr->limit.cmdGranularity;
     case TCL_LIMIT_TIME:
 	return iPtr->limit.timeGranularity;
+    default:
+	Tcl_Panic("unknown type of resource limit");
+	TCL_UNREACHABLE();
     }
-    Tcl_Panic("unknown type of resource limit");
-    return -1; /* NOT REACHED */
 }
 
 /*
@@ -5392,8 +5397,7 @@ TclInitStaticPackages(
  */
 static void
 TclPostInitThreadExitProc(
-    void *clientData
-)
+    void *clientData)
 {
     ThreadSpecificData *tsdPtr = (ThreadSpecificData *)clientData;
 

@@ -4327,8 +4327,17 @@ MODULE_SCOPE int	TclListLimitExceededError(Tcl_Interp *interp);
 	}								\
     }
 
-#if TCL_THREADS && !defined(USE_THREAD_ALLOC)
-#   define USE_THREAD_ALLOC 1
+/*
+ * The threaded allocator is the default in threaded builds. Compile with
+ * -DUSE_THREAD_ALLOC=0 to use the system malloc() instead. [Bug 31294d48ef]
+ */
+
+#if !defined(USE_THREAD_ALLOC)
+#   if TCL_THREADS
+#	define USE_THREAD_ALLOC 1
+#   endif
+#elif !USE_THREAD_ALLOC
+#   undef USE_THREAD_ALLOC
 #endif
 
 #if defined(PURIFY)

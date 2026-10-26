@@ -1206,6 +1206,8 @@ TraversalCopy(
 	break;
     case DOTREE_POSTD:
 	return TCL_OK;
+    default:
+	TCL_UNREACHABLE();
     }
 
     /*
@@ -1267,6 +1269,8 @@ TraversalDelete(
 	    return TCL_OK;
 	}
 	break;
+    default:
+	TCL_UNREACHABLE();
     }
 
     if (errorPtr != NULL) {

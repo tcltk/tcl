@@ -745,6 +745,8 @@ enable_option_checking
 with_encoding
 enable_shared
 enable_64bit
+with_system_zlib
+with_system_libtommath
 enable_zipfs
 with_tzdata
 enable_symbols
@@ -1384,6 +1386,11 @@ Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
   --with-encoding         encoding for configuration values
+  --with-system-zlib      use the zlib of the build system instead of the
+                          bundled one (default: off)
+  --with-system-libtommath
+                          use the libtommath of the build system instead of
+                          the bundled one (default: off)
   --with-tzdata           install timezone data (default: yes)
 
 Some influential environment variables:
@@ -4836,9 +4843,31 @@ fi
 
 #------------------------------------------------------------------------
 #	Add stuff for zlib/libtommath; note that this is mostly done in the
-#	makefile now as we just assume that the platform hasn't got usable
-#   z.lib/tommath.lib
+#	makefile now. By default the bundled zlib and libtommath are used;
+#	--with-system-zlib and --with-system-libtommath link against the
+#	libraries of the build system instead (e.g. MSYS2 packages).
 #------------------------------------------------------------------------
+
+
+# Check whether --with-system-zlib was given.
+if test ${with_system_zlib+y}
+then :
+  withval=$with_system_zlib; system_zlib=$withval
+else case e in #(
+  e) system_zlib=no ;;
+esac
+fi
+
+
+# Check whether --with-system-libtommath was given.
+if test ${with_system_libtommath+y}
+then :
+  withval=$with_system_libtommath; system_libtommath=$withval
+else case e in #(
+  e) system_libtommath=no ;;
+esac
+fi
+
 
 if test "${enable_shared+set}" = "set"
 then :
@@ -4930,16 +4959,153 @@ fi
 
 else case e in #(
   e)
+  if test "$system_zlib" = "no"
+then :
+
 
 printf '%s\n' "#define TCL_WITH_INTERNAL_ZLIB 1" >>confdefs.h
 
-  ZLIB_OBJS=\${ZLIB_OBJS}
+    ZLIB_OBJS=\${ZLIB_OBJS}
 
-  TOMMATH_OBJS=\${TOMMATH_OBJS}
 
+fi
+  if test "$system_libtommath" = "no"
+then :
+
+    TOMMATH_OBJS=\${TOMMATH_OBJS}
+
+
+else case e in #(
+  e)
+
+printf '%s\n' "#define TCL_WITH_EXTERNAL_TOMMATH 1" >>confdefs.h
+
+   ;;
+esac
+fi
  ;;
 esac
 fi
+system_libs=
+if test "$system_zlib" != "no"
+then :
+
+  { printf '%s\n' "$as_me:${as_lineno-$LINENO}: checking for deflateSetHeader in -lz" >&5
+printf %s "checking for deflateSetHeader in -lz... " >&6; }
+if test ${ac_cv_lib_z_deflateSetHeader+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) ac_check_lib_save_LIBS=$LIBS
+LIBS="-lz  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.
+   The 'extern "C"' is for builds by C++ compilers;
+   although this is not generally supported in C code supporting it here
+   has little cost and some practical benefit (sr 110532).  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char deflateSetHeader (void);
+int
+main (void)
+{
+return deflateSetHeader ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  ac_cv_lib_z_deflateSetHeader=yes
+else case e in #(
+  e) ac_cv_lib_z_deflateSetHeader=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS ;;
+esac
+fi
+{ printf '%s\n' "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_z_deflateSetHeader" >&5
+printf '%s\n' "$ac_cv_lib_z_deflateSetHeader" >&6; }
+if test "x$ac_cv_lib_z_deflateSetHeader" = xyes
+then :
+  system_libs="$system_libs -lz"
+else case e in #(
+  e) as_fn_error $? "--with-system-zlib given, but no usable zlib found" "$LINENO" 5 ;;
+esac
+fi
+
+  ZLIB_LIBS=
+  ZLIB_DLL_FILE=
+  zlib_lib_name=libz.dll.a
+
+fi
+if test "$system_libtommath" != "no"
+then :
+
+  { printf '%s\n' "$as_me:${as_lineno-$LINENO}: checking for mp_log_u32 in -ltommath" >&5
+printf %s "checking for mp_log_u32 in -ltommath... " >&6; }
+if test ${ac_cv_lib_tommath_mp_log_u32+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) ac_check_lib_save_LIBS=$LIBS
+LIBS="-ltommath  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.
+   The 'extern "C"' is for builds by C++ compilers;
+   although this is not generally supported in C code supporting it here
+   has little cost and some practical benefit (sr 110532).  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char mp_log_u32 (void);
+int
+main (void)
+{
+return mp_log_u32 ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  ac_cv_lib_tommath_mp_log_u32=yes
+else case e in #(
+  e) ac_cv_lib_tommath_mp_log_u32=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS ;;
+esac
+fi
+{ printf '%s\n' "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_tommath_mp_log_u32" >&5
+printf '%s\n' "$ac_cv_lib_tommath_mp_log_u32" >&6; }
+if test "x$ac_cv_lib_tommath_mp_log_u32" = xyes
+then :
+  system_libs="$system_libs -ltommath"
+else case e in #(
+  e) as_fn_error $? "--with-system-libtommath given, but no usable libtommath found" "$LINENO" 5 ;;
+esac
+fi
+
+  TOMMATH_LIBS=
+  TOMMATH_DLL_FILE=
+  tommath_lib_name=libtommath.dll.a
+
+fi
+LIBS="$LIBS$system_libs"
 TCL_ZLIB_LIB_NAME=$zlib_lib_name
 
 TCL_TOMMATH_LIB_NAME=$tommath_lib_name
