@@ -1435,7 +1435,8 @@ proc ::ndoc::parseBlock {parent manContent} {
 						# synVersion tracks whether the command line currently being read is inside a
 						# .VS/.VE pair, so its TIP marker can be attached to the command's own Span:
 						set synVersion {}
-						while {$cmd ne ".SH"} {
+						# the synopsis end at the next section header or a Tk section with "STANDARD OPTIONS":
+						while {$cmd ne ".SH" && $cmd ne ".SO"} {
 							if {$cmd eq ".VS"} {
 								lassign $line - synVersion
 							} elseif {$cmd eq ".VE"} {
@@ -1572,6 +1573,33 @@ proc ::ndoc::parseBlock {parent manContent} {
 						set manContent [lrange $manContent 1 end]
 					}				
 				}
+			}
+			.SO {
+				# standard options of Tk manual pages.
+				dict set manual lastComment {}
+				if {$blockType ne ""} {set doCloseBlock 1; continue}
+				if $verbose {puts "Standard options"}
+				lassign $line - refPage
+				if {$refPage eq ""} {set refPage options}
+				# collect the option names up to the line with .SE:
+				set optionList [list]
+				set lineCount 1
+				while {$lineCount < [llength $manContent] && [string range [lindex $manContent $lineCount] 0 2] ne ".SE"} {
+					foreach option [split [parseBackslash [BIRPstrip [lindex $manContent $lineCount]]] "\t "] {
+						if {$option ne ""} {lappend optionList $option}
+					}
+					incr lineCount
+				}
+				# add to list of possible cross reference targets:
+				lappend sectionTitles "Standard options"
+				lappend blockList [list Header {-level 1} "Standard options"]
+				# (Divs come fully expanded, so we need to give the final AST here):
+				set optionTexts [lmap option [lsort -dictionary -unique $optionList] {list Text {} $option}]
+				lappend blockList [list Div .standardoptions $optionTexts]
+				# (a normal Paragraph still has raw nroff inline content which is expanded later):
+				lappend blockList [list Paragraph {} "See the \\fB$refPage\\fR manual entry for details on the standard options."]
+				# remove the eaten lines including the .SE from manContent:
+				set manContent [lrange $manContent [expr {$lineCount + 1}] end]
 			}
 			.SS {
 				# subsection heading (assumption: everything is on one single line)
@@ -2966,6 +2994,10 @@ proc ::ndoc::mdLinks {md} {
 			## link to a known Tk command (or a Tk variable/option page);
 			## the file to link to is not always the command name (e.g. tk_chooseColor -> chooseColor):
 			set linkCmdSubst [subst -novariables -nocommands $linkCmd]
+			if {![dict exists $tkCmdFileMap $linkCmdSubst] && [string match ttk_* $linkCmdSubst]} {
+				## the ttk man pages are also referred to by their file name (e.g. ttk_widget for ttk::widget):
+				set linkCmdSubst ttk::[string range $linkCmdSubst 4 end]
+			}
 			if {[dict exists $tkCmdFileMap $linkCmdSubst]} {
 				set apiTarget [dict get $tkCmdFileMap $linkCmdSubst]
 				if {$apiTarget ne $fileRoot || $outGroup ne "Tk"} {
