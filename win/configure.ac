@@ -15,7 +15,7 @@ SHELL=/bin/sh
 TCL_VERSION=9.1
 TCL_MAJOR_VERSION=9
 TCL_MINOR_VERSION=1
-TCL_PATCH_LEVEL="b1"
+TCL_PATCH_LEVEL=".1"
 VER=$TCL_MAJOR_VERSION$TCL_MINOR_VERSION
 
 TCL_DDE_VERSION=1.5
@@ -97,15 +97,14 @@ SC_ENABLE_SHARED
 
 SC_CONFIG_CFLAGS
 
-# Cross-compiling
-case ${host_alias} in
-*mingw32*)
+# When cross-compiling, the tclsh being built cannot be run on the build
+# host, so a tclsh installed there is used. Native builds (including MSYS2
+# and Cygwin, where host is also *mingw32*) use the freshly built one.
+if test "$cross_compiling" = yes; then
     TCL_EXE="tclsh"
-    ;;
-*)
+else
     TCL_EXE="TCL_LIBRARY=\"\${LIBRARY_DIR}\"; export TCL_LIBRARY; ./\${TCLSH}"
-    ;;
-esac
+fi
 
 #------------------------------------------------------------------------
 #	Add stuff for zlib/libtommath; note that this is mostly done in the

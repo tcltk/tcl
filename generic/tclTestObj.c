@@ -110,13 +110,19 @@ TclObjTest_Init(
 	return TCL_ERROR;
     }
 #endif
-    varPtr = (Tcl_Obj **)Tcl_Alloc(NUMBER_OF_OBJECT_VARS * sizeof(varPtr[0]));
-    if (!varPtr) {
-	return TCL_ERROR;
-    }
-    Tcl_SetAssocData(interp, VARPTR_KEY, VarPtrDeleteProc, varPtr);
-    for (i = 0;  i < NUMBER_OF_OBJECT_VARS;  i++) {
-	varPtr[i] = NULL;
+    /*
+     * Keep the variables if Tcltest is initialized twice.
+     */
+
+    if (GetVarPtr(interp) == NULL) {
+	varPtr = (Tcl_Obj **)Tcl_Alloc(NUMBER_OF_OBJECT_VARS * sizeof(varPtr[0]));
+	if (!varPtr) {
+	    return TCL_ERROR;
+	}
+	Tcl_SetAssocData(interp, VARPTR_KEY, VarPtrDeleteProc, varPtr);
+	for (i = 0;  i < NUMBER_OF_OBJECT_VARS;  i++) {
+	    varPtr[i] = NULL;
+	}
     }
 
     Tcl_CreateObjCommand2(interp, "testbignumobj", TestbignumobjCmd,

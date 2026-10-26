@@ -55,6 +55,25 @@ test stack-3.1 {enough room for regexp near recursion limit} -body {
     }
 } -result {1 1}
 
+# Deeply nested REs must fail with "too complex" instead of overflowing a
+# small C stack. [Bug 7d47ba7d94]
+test stack-4.1 {deep REs with a small C stack} -constraints unix -body {
+    # do this in a sub process in case it segfaults
+    exec /bin/sh -c {ulimit -s 256 && exec "$0"} [interpreter] << {
+	set res {}
+	foreach re [list {(x{200}){200}$y} \
+		[string repeat ( 1500]a[string repeat ) 1500] \
+		[string repeat (?= 3000]a[string repeat ) 3000]] {
+	    if {[catch {regexp -- $re a} msg]} {
+		lappend res [string match {*too complex} $msg]
+	    } else {
+		lappend res 1
+	    }
+	}
+	puts $res
+    }
+} -result {1 1 1}
+
 # cleanup
 ::tcltest::cleanupTests
 return

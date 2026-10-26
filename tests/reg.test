@@ -512,9 +512,10 @@ expectMatch	9.38 eE		{a[\]]b}	"a\\]b"	"a\\]b"
 expectMatch	9.39 EP		{a[\\]b}	"a\\b"	"a\\b"
 expectMatch	9.40 eE		{a[\\]b}	"a\\b"	"a\\b"
 expectMatch	9.41 bE		{a[\\]b}	"a\\b"	"a\\b"
-expectError	9.42 -		{a[\Z]b}	EESCAPE
-expectMatch	9.43 &		{a[[b]c}	"a\[c"	"a\[c"
-expectMatch	9.44 EMP*	{a[\xFE-\u0507][\xFF-\u0300]b} \
+expectError	9.42 -		{a[\z]b}	EESCAPE
+expectError	9.43 -		{a[\Z]b}	EESCAPE
+expectMatch	9.44 &		{a[[b]c}	"a\[c"	"a\[c"
+expectMatch	9.45 EMP*	{a[\xFE-\u0507][\xFF-\u0300]b} \
 	"a\u0102\u02FFb"	"a\u0102\u02FFb"
 
 
@@ -544,13 +545,17 @@ expectMatch	10.22 b		{$^}	"\$^"	"\$^"
 expectMatch	10.23 P		{\Aa}	a	a
 expectMatch	10.24 ^P	{\Aa}	a	a
 expectNomatch	10.25 ^nP	{\Aa}	"b\na"
-expectMatch	10.26 P		{a\Z}	a	a
-expectMatch	10.27 \$P	{a\Z}	a	a
-expectNomatch	10.28 \$nP	{a\Z}	"a\nb"
-expectError	10.29 -		^*	BADRPT
-expectError	10.30 -		{$*}	BADRPT
-expectError	10.31 -		{\A*}	BADRPT
-expectError	10.32 -		{\Z*}	BADRPT
+expectMatch	10.26 P		{a\z}	a	a
+expectMatch	10.27 \$P	{a\z}	a	a
+expectNomatch	10.28 \$nP	{a\z}	"a\nb"
+expectMatch	10.29 P		{a\Z}	a	a
+expectMatch	10.30 \$P	{a\Z}	a	a
+expectNomatch	10.31 \$nP	{a\Z}	"a\nb"
+expectError	10.32 -		^*	BADRPT
+expectError	10.33 -		{$*}	BADRPT
+expectError	10.34 -		{\A*}	BADRPT
+expectError	10.35 -		{\z*}	BADRPT
+expectError	10.36 -		{\Z*}	BADRPT
 
 
 doing 11 "boundary constraints"
@@ -635,16 +640,15 @@ expectMatch	13.21 P		"a\\vb"		"a\vb"	"a\vb"
 expectMatch	13.22 MP	"a\\x08x"	"a\bx"	"a\bx"
 expectError	13.23 -		{a\xq}		EESCAPE
 expectMatch	13.24 MP	"a\\x08x"	"a\bx"	"a\bx"
-expectError	13.25 -		{a\z}		EESCAPE
-expectMatch	13.26 MP	"a\\010b"	"a\bb"	"a\bb"
-expectMatch	13.27 P		"a\\U00001234x"	"a\u1234x"	"a\u1234x"
-expectMatch	13.28 P		{a\U00001234x}	"a\u1234x"	"a\u1234x"
-expectMatch	13.29 P		"a\\U0001234x"	"a\u1234x"	"a\u1234x"
-expectMatch	13.30 P		{a\U0001234x}	"a\u1234x"	"a\u1234x"
-expectMatch	13.31 P		"a\\U000012345x"	"a\u12345x"	"a\u12345x"
-expectMatch	13.32 P		{a\U000012345x}	"a\u12345x"	"a\u12345x"
-expectMatch	13.33 P		"a\\U100000x"	"a\U100000x"	"a\U100000x"
-expectMatch	13.34 P		{a\U100000x}	"a\U100000x"	"a\U100000x"
+expectMatch	13.25 MP	"a\\010b"	"a\bb"	"a\bb"
+expectMatch	13.26 P		"a\\U00001234x"	"a\u1234x"	"a\u1234x"
+expectMatch	13.27 P		{a\U00001234x}	"a\u1234x"	"a\u1234x"
+expectMatch	13.28 P		"a\\U0001234x"	"a\u1234x"	"a\u1234x"
+expectMatch	13.39 P		{a\U0001234x}	"a\u1234x"	"a\u1234x"
+expectMatch	13.30 P		"a\\U000012345x"	"a\u12345x"	"a\u12345x"
+expectMatch	13.31 P		{a\U000012345x}	"a\u12345x"	"a\u12345x"
+expectMatch	13.32 P		"a\\U100000x"	"a\U100000x"	"a\U100000x"
+expectMatch	13.33 P		{a\U100000x}	"a\U100000x"	"a\U100000x"
 
 
 doing 14 "back references"
@@ -678,7 +682,15 @@ expectNomatch	14.26 LRP	{^(\w+)( \1)+$}	{abc abc abd}
 expectMatch	14.27 RP	{^(.+)( \1)+$}	{abc abc abc} {abc abc abc} abc { abc}
 expectNomatch	14.28 RP	{^(.+)( \1)+$}	{abc abd abc}
 expectNomatch	14.29 RP	{^(.+)( \1)+$}	{abc abc abd}
-
+# backref to a capture in a failed alternative must not match [Bug 75c9d9cece]
+expectNomatch	14.30 RP	{^(.)\1|\1.}	abcdef
+expectNomatch	14.31 RP	{^((.)\2|..)\2}	abadef
+# possible empty match that fails must not loop forever [Bug a6029ee505]
+expectMatch	14.32 RPN	{(b*)a\1|\1}	ba	a	""
+expectNomatch	14.33 RPSN	{$()|^\1}	a
+expectNomatch	14.34 RPSN	{.. ()|\1}	a
+expectMatch	14.35 RPSN	{()*\1}	a	""	""
+expectMatch	14.36 RPSN	{()+\1}	a	""	""
 
 doing 15 "octal escapes vs back references"
 # initial zero is always octal
@@ -866,6 +878,13 @@ doing 25 "mixed quantifiers"
 expectMatch	25.1 PNT	{^(.*?)(a*)$}	"xyza"	xyza	xyz	a
 expectMatch	25.2 PNT	{^(.*?)(a*)$}	"xyzaa"	xyzaa	xyz	aa
 expectMatch	25.3 PNT	{^(.*?)(a*)$}	"xyz"	xyz	xyz	""
+# {m,m}? prefers shortest and {m,m} longest even for m == 1 [Bug 524b35a8b5]
+expectMatch	25.4 PQNT	{^(l*){1,1}?(.*)(f*)$}	llmmmfff	llmmmfff	""	llmmmfff	""
+expectMatch	25.5 PQN	{^(l*){1}?(.*)(f*)$}	llmmmfff	llmmmfff	ll	mmmfff	""
+expectMatch	25.6 PQN	{^(l*?){1,1}(.*)(f*)$}	llmmmfff	llmmmfff	ll	mmmfff	""
+expectMatch	25.7 PQ		{(a+?){1,1}(a*)}	aaaa	aaaa	aaaa	""
+expectMatch	25.8 PQN	{(.*?){1,1}(.*)}	abc	abc	abc	""
+expectMatch	25.9 PQT	{x(a*){1,1}?(a*)y}	xaaay	xaaay	""	aaa
 
 
 doing 26 "tricky cases"
@@ -942,11 +961,12 @@ expectMatch	30.4 &		a*b	aab	aab
 expectMatch	30.5 &		^a*b	aaaab	aaaab
 expectMatch	30.6 &M		{[0-6][1-2][0-3][0-6][1-6][0-6]} \
 	"010010" 010010
-# temporary REG_BOSONLY kludge
+# REG_BOSONLY (kludge for Expect, not really public otherwise)
 expectMatch	30.7 s		abc	abcd	abc
 expectNomatch	30.8 s		abc	xabcd
+expectNomatch	30.9 s		abc|def	xdef
 # back to normal stuff
-expectMatch	30.9 HLP	{(?n)^(?![t#])\S+} \
+expectMatch	30.10 HLP	{(?n)^(?![t#])\S+} \
 	"tk\n\n#\n#\nit0"	it0
 
 
@@ -958,7 +978,7 @@ namespace import -force ::tcltest::test
 test reg-31.1 {[[:xdigit:]] behaves correctly when followed by [[:space:]]} {
     set str {2:::DebugWin32}
     set re {([[:xdigit:]])([[:space:]]*)}
-    list [regexp $re $str match xdigit spaces] $match $xdigit $spaces
+    list [regexp -- $re $str match xdigit spaces] $match $xdigit $spaces
     # Code used to produce {1 2:::DebugWin32 2 :::DebugWin32} !!!
 } {1 2 2 {}}
 
@@ -984,6 +1004,13 @@ test reg-32.3 {canmatch functionality -- not last char} testregexp {
     lappend res $resvar
 } {0 7}
 test reg-32.3.1 {canmatch functionality -- no match} testregexp {
+    set pat {\zx}
+    set line "asd asd"
+    # can match the last char, if followed by x
+    set res [testregexp -xflags -- c $pat $line resvar]
+    lappend res $resvar
+} {0 -1}
+test reg-32.3.2 {canmatch functionality -- no match} testregexp {
     set pat {\Zx}
     set line "asd asd"
     # can match the last char, if followed by x
@@ -1086,10 +1113,9 @@ test reg-33.12 {Bug 1810264 - bad read} {
 test reg-33.13 {Bug 1810264 - infinite loop} {
     regexp {($|^)*} {x}
 } 1
-# Some environments have small default stack sizes. [Bug 1905562]
-test reg-33.14 {Bug 1810264 - super-expensive expression} nonPortable {
+test reg-33.14 {Bug 1810264 - super-expensive expression} -body {
     regexp {(x{200}){200}$y} {x}
-} 0
+} -returnCodes error -match regexp -result {too complex|out of memory}
 
 test reg-33.15.1 {Bug 3603557 - an "in the wild" RE} {
     lindex [regexp -expanded -about {
@@ -1215,7 +1241,7 @@ test reg-33.28 {constraint edge cases} {
 } 1
 test reg-33.29 {constraint edge cases} {
     # This is near the limits of the RE engine
-    regexp [string repeat x*y*z* 480] x
+    regexp -- [string repeat x*y*z* 480] x
 } 1
 
 test reg-33.30 {Bug 1080042} {
@@ -1224,6 +1250,20 @@ test reg-33.30 {Bug 1080042} {
 test reg-33.31 {Bug 7c64aa5e1a} {
     regexp -inline {(?b).\{1,10\}} {abcdef}
 } abcdef
+# The limits are measured in bytes of stack, so they depend on the build;
+# keep the depths below far from them.  [Bug 7d47ba7d94]
+test reg-33.32 {deeply nested parentheses are too complex} -body {
+    regexp [string repeat ( 100000]a[string repeat ) 100000] a
+} -returnCodes error -match glob -result {*too complex}
+test reg-33.33 {deeply nested lookahead constraints are too complex} -body {
+    regexp [string repeat (?= 100000]a[string repeat ) 100000] a
+} -returnCodes error -match glob -result {*too complex}
+test reg-33.34 {nested lookahead constraints} {
+    regexp [string repeat (?= 500]a[string repeat ) 500] a
+} 1
+test reg-33.35 {nested parentheses} {
+    regexp [string repeat ( 500]a[string repeat ) 500] a
+} 1
 
 
 # cleanup

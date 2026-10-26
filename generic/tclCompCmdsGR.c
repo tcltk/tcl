@@ -2453,19 +2453,31 @@ TclCompileRegexpCmd(
 
     varTokenPtr = TokenAfter(varTokenPtr);
 
+    /*
+     * If it starts with '-', it could be an incorrectly formed regexp command;
+     * leave it to [regexp] to report.  Check the value of the word, so that
+     * words with backslashes like \- are handled too.  [Bug 697b1bbfe3]
+     */
+
+    if (!sawLast) {
+	Tcl_Obj *patternObj;
+	int dash = 0;
+
+	TclNewObj(patternObj);
+	if (TclWordKnownAtCompileTime(varTokenPtr, patternObj)) {
+	    dash = (TclGetString(patternObj)[0] == '-');
+	}
+	Tcl_BounceRefCount(patternObj);
+	if (dash) {
+	    return TCL_ERROR;
+	}
+    }
+
     if (varTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
 	Tcl_DString ds;
 
 	str = varTokenPtr[1].start;
 	len = varTokenPtr[1].size;
-
-	/*
-	 * If it has a '-', it could be an incorrectly formed regexp command.
-	 */
-
-	if ((*str == '-') && !sawLast) {
-	    return TCL_ERROR;
-	}
 
 	/*
 	 * Note: do not optimize for len == 0, as error should be generated
@@ -2510,8 +2522,39 @@ TclCompileRegexpCmd(
 	 */
 
 	int cflags = TCL_REG_ADVANCED | (nocase ? TCL_REG_NOCASE : 0);
+	Tcl_BytecodeLabel fast, done;
 
+	if (!sawLast) {
+	    /*
+	     * The value of the RE is not known at compile time, so it could
+	     * start with '-' and be taken by [regexp] as a switch.  Check that
+	     * at runtime, and if so, call [regexp] itself.  [Bug 1902890]
+	     */
+
+	    // Stack: pattern string
+	    PUSH(		"-*");
+	    OP4(		OVER, 2);
+	    OP1(		STR_MATCH, 0);
+	    FWDJUMP(		JUMP_FALSE, fast);
+	    PUSH_COMMAND_TOKEN(	parsePtr->tokenPtr);
+	    if (nocase) {
+		PUSH(		"-nocase");
+	    }
+	    OP4(		OVER, nocase ? 3 : 2);
+	    OP4(		OVER, nocase ? 3 : 2);
+	    INVOKE4(		INVOKE_STK, nocase ? 4 : 3);
+	    // Stack: pattern string result
+	    OP4(		REVERSE, 3);
+	    OP(			POP);
+	    OP(			POP);
+	    FWDJUMP(		JUMP, done);
+	    FWDLABEL(	fast);
+	    STKDELTA(+1);
+	}
 	OP1(			REGEXP, cflags);
+	if (!sawLast) {
+	    FWDLABEL(	done);
+	}
     }
 
     return TCL_OK;
@@ -3417,7 +3460,7 @@ TclCompileObjectSelfCmd(
 
 	if (IS_TOKEN_PREFIX(tokenPtr, 1, "object")) {
 	    goto compileSelfObject;
-	} else if (IS_TOKEN_PREFIX(tokenPtr, 1, "namespace")) {
+	} else if (IS_TOKEN_PREFIX(tokenPtr, 2, "namespace")) {
 	    goto compileSelfNamespace;
 	}
     }

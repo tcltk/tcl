@@ -656,7 +656,7 @@
 ÷ 1CF5 × 0308 ÷ AC01 ÷	#  ÷ [1.0] VEDIC SIGN JIHVAMULIYA (ConjunctLinkermExtend) × [9.0] COMBINING DIAERESIS (Extend_ConjunctExtender) ÷ [999.0] HANGUL SYLLABLE GAG (LVT) ÷ [2.0]
 ÷ 1CF5 ÷ 1CF5 ÷	#  ÷ [1.0] VEDIC SIGN JIHVAMULIYA (ConjunctLinkermExtend) ÷ [999.0] VEDIC SIGN JIHVAMULIYA (ConjunctLinkermExtend) ÷ [2.0]
 ÷ 1CF5 × 0308 ÷ 1CF5 ÷	#  ÷ [1.0] VEDIC SIGN JIHVAMULIYA (ConjunctLinkermExtend) × [9.0] COMBINING DIAERESIS (Extend_ConjunctExtender) ÷ [999.0] VEDIC SIGN JIHVAMULIYA (ConjunctLinkermExtend) ÷ [2.0]
-#÷ 1CF5 × 0915 ÷	#  ÷ [1.0] VEDIC SIGN JIHVAMULIYA (ConjunctLinkermExtend) × [9.3] DEVANAGARI LETTER KA (LinkingConsonant) ÷ [2.0]
+÷ 1CF5 × 0915 ÷	#  ÷ [1.0] VEDIC SIGN JIHVAMULIYA (ConjunctLinkermExtend) × [9.3] DEVANAGARI LETTER KA (LinkingConsonant) ÷ [2.0]
 ÷ 1CF5 × 0308 × 0915 ÷	#  ÷ [1.0] VEDIC SIGN JIHVAMULIYA (ConjunctLinkermExtend) × [9.0] COMBINING DIAERESIS (Extend_ConjunctExtender) × [9.3] DEVANAGARI LETTER KA (LinkingConsonant) ÷ [2.0]
 ÷ 1CF5 ÷ 00A9 ÷	#  ÷ [1.0] VEDIC SIGN JIHVAMULIYA (ConjunctLinkermExtend) ÷ [999.0] COPYRIGHT SIGN (ExtPict) ÷ [2.0]
 ÷ 1CF5 × 0308 ÷ 00A9 ÷	#  ÷ [1.0] VEDIC SIGN JIHVAMULIYA (ConjunctLinkermExtend) × [9.0] COMBINING DIAERESIS (Extend_ConjunctExtender) ÷ [999.0] COPYRIGHT SIGN (ExtPict) ÷ [2.0]
@@ -872,11 +872,11 @@
 ÷ 0CF1 ÷ 0C95 ÷	#  ÷ [1.0] KANNADA SIGN JIHVAMULIYA (XXmConjunctLinkermLinkingConsonantmExtPict) ÷ [999.0] KANNADA LETTER KA (XXmConjunctLinkermLinkingConsonantmExtPict) ÷ [2.0]
 ÷ 0CF2 ÷ 0CAB ÷	#  ÷ [1.0] KANNADA SIGN UPADHMANIYA (XXmConjunctLinkermLinkingConsonantmExtPict) ÷ [999.0] KANNADA LETTER PHA (XXmConjunctLinkermLinkingConsonantmExtPict) ÷ [2.0]
 ÷ 0CF1 ÷ 0C95 × 0CBF ÷	#  ÷ [1.0] KANNADA SIGN JIHVAMULIYA (XXmConjunctLinkermLinkingConsonantmExtPict) ÷ [999.0] KANNADA LETTER KA (XXmConjunctLinkermLinkingConsonantmExtPict) × [9.0] KANNADA VOWEL SIGN I (Extend_ConjunctExtender) ÷ [2.0]
-#÷ 1CF5 × 0995 ÷	#  ÷ [1.0] VEDIC SIGN JIHVAMULIYA (ConjunctLinkermExtend) × [9.3] BENGALI LETTER KA (LinkingConsonant) ÷ [2.0]
-#÷ 1CF6 × 09AA ÷	#  ÷ [1.0] VEDIC SIGN UPADHMANIYA (ConjunctLinkermExtend) × [9.3] BENGALI LETTER PA (LinkingConsonant) ÷ [2.0]
+÷ 1CF5 × 0995 ÷	#  ÷ [1.0] VEDIC SIGN JIHVAMULIYA (ConjunctLinkermExtend) × [9.3] BENGALI LETTER KA (LinkingConsonant) ÷ [2.0]
+÷ 1CF6 × 09AA ÷	#  ÷ [1.0] VEDIC SIGN UPADHMANIYA (ConjunctLinkermExtend) × [9.3] BENGALI LETTER PA (LinkingConsonant) ÷ [2.0]
 ÷ 1CF5 × 200C ÷ 0995 ÷	#  ÷ [1.0] VEDIC SIGN JIHVAMULIYA (ConjunctLinkermExtend) × [9.0] ZERO WIDTH NON-JOINER (ExtendmConjunctLinkermConjunctExtender) ÷ [999.0] BENGALI LETTER KA (LinkingConsonant) ÷ [2.0]
 ÷ 1CF6 × 200C ÷ 09AA ÷	#  ÷ [1.0] VEDIC SIGN UPADHMANIYA (ConjunctLinkermExtend) × [9.0] ZERO WIDTH NON-JOINER (ExtendmConjunctLinkermConjunctExtender) ÷ [999.0] BENGALI LETTER PA (LinkingConsonant) ÷ [2.0]
-#÷ 11A3A × 11A0B ÷	#  ÷ [1.0] ZANABAZAR SQUARE CLUSTER-INITIAL LETTER RA (ConjunctLinkermExtend) × [9.3] ZANABAZAR SQUARE LETTER KA (LinkingConsonant) ÷ [2.0]
+÷ 11A3A × 11A0B ÷	#  ÷ [1.0] ZANABAZAR SQUARE CLUSTER-INITIAL LETTER RA (ConjunctLinkermExtend) × [9.3] ZANABAZAR SQUARE LETTER KA (LinkingConsonant) ÷ [2.0]
 #
 # Lines: 853
 #

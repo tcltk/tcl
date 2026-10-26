@@ -135,8 +135,8 @@ below).
 .RS
 .PP
 The difference between string and line matching modes is immaterial
-when the string does not contain a newline character.  The \fB\eA\fR
-and \fB\eZ\fR constraint escapes have a similar purpose but are
+when the string does not contain a newline character.  The \fB\eA\fR,
+\fB\ez\fR and \fB\eZ\fR constraint escapes have a similar purpose but are
 always constraints for the overall string.
 .PP
 The default newline-sensitivity depends on the command that uses the
@@ -452,10 +452,12 @@ matches only at the end of a word
 matches only at the beginning or end of a word
 .IP \fB\eY\fR 6
 matches only at a point that is not the beginning or end of a word
-.IP \fB\eZ\fR 6
+.IP \fB\ez\fR 6
 matches only at the end of the string (see \fBMATCHING\fR, below, for
 how this differs from
 .QW \fB$\fR )
+.IP \fB\eZ\fR 6
+Same as \fB\ez\fR.
 .IP \fB\e\fIm\fR 6
 (where \fIm\fR is a nonzero digit) a \fIback reference\fR, see below
 .IP \fB\e\fImnn\fR 6
@@ -707,7 +709,8 @@ expressions using \fB^\fR will never match the newline character (so
 that matches will never cross newlines unless the RE explicitly
 arranges it) and \fB^\fR and \fB$\fR will match the empty string after
 and before a newline respectively, in addition to matching at
-beginning and end of string respectively. ARE \fB\eA\fR and \fB\eZ\fR
+beginning and end of string respectively. ARE \fB\eA\fR and
+\fB\ez\fR and \fB\eZ\fR
 continue to match beginning or end of string \fIonly\fR.
 .PP
 If partial newline-sensitive matching is specified, this affects

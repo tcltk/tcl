@@ -638,7 +638,7 @@ test regexpComp-14.1 {CompileRegexp: regexp cache} {
 	regexp .*e f
 	set x .
 	append x *a
-	regexp $x bbba
+	regexp -- $x bbba
     }
 } 1
 test regexpComp-14.2 {CompileRegexp: regexp cache, different flags} {
@@ -705,7 +705,7 @@ test regexpComp-16.4 {regsub -start, \A behavior} -body {
     set out {}
     lappend out [regsub -start 0 -all {\A(\w)} {abcde} {/\1} x] $x
     lappend out [regsub -start 2 -all {\A(\w)} {abcde} {/\1} x] $x
-} -result {5 /a/b/c/d/e 3 ab/c/d/e}
+} -result {1 /abcde 1 ab/cde}
 
 test regexpComp-17.1 {regexp -inline} -body {
     regexp -inline b ababa
@@ -753,26 +753,30 @@ test regexpComp-18.7 {regexp -all -inline} {
 test regexpComp-18.8 {regexp -all} {
     # This should not cause an infinite loop
     regexp -all -inline {a*} a
-} {a}
+} {a {}}
 test regexpComp-18.9 {regexp -all} {
-    # Yes, the expected result is {a {}}.  Here's why:
+    # Yes, the expected result is {a {} {}}.  Here's why:
     # Start at index 0; a* matches the "a" there then stops.
     # Go to index 1; a* matches the lambda (or {}) there then stops.  Recall
     #   that a* matches zero or more "a"'s; thus it matches the string "b", as
     #   there are zero or more "a"'s there.
-    # Go to index 2; this is past the end of the string, so stop.
+    # Go to index 2; this is the end of the string, a* matches the lambda
+    #   there too.
+    # Go to index 3; this is past the end of the string, so stop.
     regexp -all -inline {a*} ab
-} {a {}}
+} {a {} {}}
 test regexpComp-18.10 {regexp -all} {
-    # Yes, the expected result is {a {} a}.  Here's why:
+    # Yes, the expected result is {a {} a {}}.  Here's why:
     # Start at index 0; a* matches the "a" there then stops.
     # Go to index 1; a* matches the lambda (or {}) there then stops.   Recall
     #   that a* matches zero or more "a"'s; thus it matches the string "b", as
     #   there are zero or more "a"'s there.
     # Go to index 2; a* matches the "a" there then stops.
-    # Go to index 3; this is past the end of the string, so stop.
+    # Go to index 3; this is the end of the string, a* matches the lambda
+    #   there too.
+    # Go to index 4; this is past the end of the string, so stop.
     regexp -all -inline {a*} aba
-} {a {} a}
+} {a {} a {}}
 test regexpComp-18.11 {regexp -all} {
     evalInProc {
 	regexp -all -inline {^a} aaaa
@@ -987,6 +991,86 @@ test regexpComp-24.11 {regexp command compiling tests} {
 	regexp -- $re $text
     }
 } 1
+test regexpComp-24.12 {regexp command compiling tests: pattern with backslash looks like option, bug 697b1bbfe3} {
+    evalInProc {
+	regexp \- a-z
+    }
+} {ambiguous option "-": must be -all, -about, -indices, -inline, -expanded, -line, -linestop, -lineanchor, -nocase, -start, or --}
+test regexpComp-24.13 {regexp command compiling tests: pattern with backslash looks like option, bug 697b1bbfe3} {
+    evalInProc {
+	regexp -\\ a-z
+    }
+} {bad option "-\": must be -all, -about, -indices, -inline, -expanded, -line, -linestop, -lineanchor, -nocase, -start, or --}
+test regexpComp-24.14 {regexp command compiling tests: pattern with backslash after --, bug 697b1bbfe3} {
+    evalInProc {
+	regexp -- \- a-z
+    }
+} 1
+test regexpComp-24.15 {regexp command compiling tests: pattern with backslash, bug 697b1bbfe3} {
+    evalInProc {
+	regexp \x41 xAx
+    }
+} 1
+
+# A RE not known at compile time can be a switch [Bug 1902890]
+test regexpComp-25.1 {regexp compiled: RE value is a switch} {
+    evalInProc {
+	set re --
+	regexp $re ----
+    }
+} {wrong # args: should be "regexp ?-option ...? exp string ?matchVar? ?subMatchVar ...?"}
+test regexpComp-25.2 {regexp compiled: RE value is -about} {
+    evalInProc {
+	set re -about
+	regexp $re foo
+    }
+} {0 {}}
+test regexpComp-25.3 {regexp compiled: RE value is a bad switch} {
+    evalInProc {
+	set re -x
+	regexp $re foo
+    }
+} {bad option "-x": must be -all, -about, -indices, -inline, -expanded, -line, -linestop, -lineanchor, -nocase, -start, or --}
+test regexpComp-25.4 {regexp compiled: RE value is a switch after -nocase} {
+    evalInProc {
+	lmap re {-nocase -- -about -start -x} {
+	    catch {regexp -nocase $re foo} msg
+	    set msg
+	}
+    }
+} {{wrong # args: should be "regexp ?-option ...? exp string ?matchVar? ?subMatchVar ...?"} {wrong # args: should be "regexp ?-option ...? exp string ?matchVar? ?subMatchVar ...?"} {0 {}} {bad index "foo": must be integer?[+-]integer? or end?[+-]integer?} {bad option "-x": must be -all, -about, -indices, -inline, -expanded, -line, -linestop, -lineanchor, -nocase, -start, or --}}
+test regexpComp-25.5 {regexp compiled: RE value starting with - after --} {
+    evalInProc {
+	set re {-[0-9]+}
+	list [regexp -- $re a-42] [regexp -nocase -- $re A-42]
+    }
+} {1 1}
+test regexpComp-25.6 {regexp compiled: RE value not starting with -} {
+    evalInProc {
+	set re {^-?[0-9]+$}
+	set n 0
+	foreach s {-42 42 x} {
+	    if {[regexp $re $s]} {incr n}
+	}
+	set n
+    }
+} 2
+test regexpComp-25.7 {regexp compiled: switches in variables} {
+    evalInProc {
+	set re A
+	set o -nocase
+	set r [regexp $o $re xay]
+	set re a
+	set o -all
+	lappend r [regexp $o $re aXaa]
+	set re {-[0-9]+}
+	set o --
+	lappend r [regexp $o $re a-42]
+	set re -A
+	set o -nocase
+	lappend r [regexp $o -- $re x-a]
+    }
+} {1 3 1 1}
 
 # cleanup
 ::tcltest::cleanupTests
