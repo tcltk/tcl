@@ -1064,20 +1064,22 @@ AsyncHandlerProc(
 	return TCL_OK;
     }
 
+    if (interp == NULL) {
+	/*
+	 * Invoked from the event loop, there is no interpreter to run the
+	 * command in.
+	 */
+
+	return code;
+    }
+
     TclFormatInt(string, code);
     listArgv[0] = asyncPtr->command;
     listArgv[1] = Tcl_GetStringResult(interp);
     listArgv[2] = string;
     listArgv[3] = NULL;
     cmd = Tcl_Merge(3, listArgv);
-    if (interp != NULL) {
-	code = Tcl_EvalEx(interp, cmd, TCL_INDEX_NONE, 0);
-    } else {
-	/*
-	 * this should not happen, but by definition of how async handlers are
-	 * invoked, it's possible.  Better error checking is needed here.
-	 */
-    }
+    code = Tcl_EvalEx(interp, cmd, TCL_INDEX_NONE, 0);
     Tcl_Free(cmd);
     return code;
 }
