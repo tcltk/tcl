@@ -856,6 +856,8 @@ Optional Packages:
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
   --with-encoding         encoding for configuration values
   --with-celib=DIR        use Windows/CE support library from DIR
+  --with-system-zlib      use the zlib of the build system instead of the
+                          bundled one (default: off)
 
 Some influential environment variables:
   CC          C compiler command
@@ -1338,7 +1340,21 @@ TCL_REG_MAJOR_VERSION=1
 TCL_REG_MINOR_VERSION=3
 REGVER=$TCL_REG_MAJOR_VERSION$TCL_REG_MINOR_VERSION
 
-PKG_CFG_ARGS=$@
+# Tcl's own --srcdir must not be passed on: the packages find their sources
+# from the (absolute) path used to run their configure scripts.
+PKG_CFG_ARGS=
+tcl_skip_arg=no
+for tcl_arg in "$@"; do
+    if test "$tcl_skip_arg" = yes; then
+	tcl_skip_arg=no
+	continue
+    fi
+    case $tcl_arg in
+	--srcdir|-srcdir) tcl_skip_arg=yes ;;
+	--srcdir=*|-srcdir=*) ;;
+	*) PKG_CFG_ARGS="$PKG_CFG_ARGS $tcl_arg" ;;
+    esac
+done
 
 #------------------------------------------------------------------------
 # Empty slate for bundled packages, to avoid stale configuration
@@ -4470,9 +4486,20 @@ else
 fi
 
 #------------------------------------------------------------------------
-#	Add stuff for zlib; note that this is mostly done in the makefile now
-#	as we just assume that the platform hasn't got a usable z.lib
+#	Add stuff for zlib; note that this is mostly done in the
+#	makefile now. By default the bundled zlib is used;
+#	--with-system-zlib link against the
+#	libraries of the build system instead (e.g. MSYS2 packages).
 #------------------------------------------------------------------------
+
+
+# Check whether --with-system-zlib or --without-system-zlib was given.
+if test "${with_system_zlib+set}" = set; then
+  withval="$with_system_zlib"
+  system_zlib=$withval
+else
+  system_zlib=no
+fi;
 
 if test "${enable_shared+set}" = "set"; then
 
@@ -4542,6 +4569,88 @@ else
 
 fi
 
+system_libs=
+if test "$system_zlib" != "no"; then
+
+  echo "$as_me:$LINENO: checking for deflateSetHeader in -lz" >&5
+echo $ECHO_N "checking for deflateSetHeader in -lz... $ECHO_C" >&6
+if test "${ac_cv_lib_z_deflateSetHeader+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lz  $LIBS"
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+/* Override any gcc2 internal prototype to avoid an error.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+/* We use char because int might match the return type of a gcc2
+   builtin and then its argument prototype would still apply.  */
+char deflateSetHeader ();
+int
+main ()
+{
+deflateSetHeader ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_lib_z_deflateSetHeader=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ac_cv_lib_z_deflateSetHeader=no
+fi
+rm -f conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+echo "$as_me:$LINENO: result: $ac_cv_lib_z_deflateSetHeader" >&5
+echo "${ECHO_T}$ac_cv_lib_z_deflateSetHeader" >&6
+if test $ac_cv_lib_z_deflateSetHeader = yes; then
+  system_libs="$system_libs -lz"
+else
+  { { echo "$as_me:$LINENO: error: --with-system-zlib given, but no usable zlib found" >&5
+echo "$as_me: error: --with-system-zlib given, but no usable zlib found" >&2;}
+   { (exit 1); exit 1; }; }
+fi
+
+  ZLIB_LIBS=
+  ZLIB_DLL_FILE=
+  zlib_lib_name=libz.dll.a
+
+fi
+
+LIBS="$LIBS$system_libs"
 
 cat >>confdefs.h <<\_ACEOF
 #define HAVE_ZLIB 1

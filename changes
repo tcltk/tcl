@@ -9522,3 +9522,7 @@ Many code fixes to avoid overflow or undefined behavior.  Thanks chrstphrchvz.
 2026-10-26 tcltest => 2.6.1 (nijtmans)
 
 2026-10-26 tcl_startOfPreviousWord ignores the last character when start is the string length (storchaka)
+
+2026-10-27 Don't assume that Windows has no usable zlib/tommath (storchaka)
+
+2026-10-27 Make packages work in an out-of-tree build with "configure --srcdir=..." (storchaka)

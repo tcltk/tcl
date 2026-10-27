@@ -28,7 +28,21 @@ TCL_REG_MAJOR_VERSION=1
 TCL_REG_MINOR_VERSION=3
 REGVER=$TCL_REG_MAJOR_VERSION$TCL_REG_MINOR_VERSION
 
-PKG_CFG_ARGS=$@
+# Tcl's own --srcdir must not be passed on: the packages find their sources
+# from the (absolute) path used to run their configure scripts.
+PKG_CFG_ARGS=
+tcl_skip_arg=no
+for tcl_arg in "$@"; do
+    if test "$tcl_skip_arg" = yes; then
+	tcl_skip_arg=no
+	continue
+    fi
+    case $tcl_arg in
+	--srcdir|-srcdir) tcl_skip_arg=yes ;;
+	--srcdir=*|-srcdir=*) ;;
+	*) PKG_CFG_ARGS="$PKG_CFG_ARGS $tcl_arg" ;;
+    esac
+done
 
 #------------------------------------------------------------------------
 # Empty slate for bundled packages, to avoid stale configuration
@@ -130,9 +144,16 @@ else
 fi
 
 #------------------------------------------------------------------------
-#	Add stuff for zlib; note that this is mostly done in the makefile now
-#	as we just assume that the platform hasn't got a usable z.lib
+#	Add stuff for zlib; note that this is mostly done in the
+#	makefile now. By default the bundled zlib is used;
+#	--with-system-zlib link against the
+#	libraries of the build system instead (e.g. MSYS2 packages).
 #------------------------------------------------------------------------
+
+AC_ARG_WITH(system-zlib,
+    AS_HELP_STRING([--with-system-zlib],
+	[use the zlib of the build system instead of the bundled one (default: off)]),
+    [system_zlib=$withval], [system_zlib=no])
 
 AS_IF([test "${enable_shared+set}" = "set"], [
   enableval="$enable_shared"
@@ -165,6 +186,15 @@ AS_IF([test "$tcl_ok" = "yes"], [
 ], [
   AC_SUBST(ZLIB_OBJS,[\${ZLIB_OBJS}])
 ])
+system_libs=
+AS_IF([test "$system_zlib" != "no"], [
+  AC_CHECK_LIB([z], [deflateSetHeader], [system_libs="$system_libs -lz"],
+      [AC_MSG_ERROR([--with-system-zlib given, but no usable zlib found])])
+  ZLIB_LIBS=
+  ZLIB_DLL_FILE=
+  zlib_lib_name=libz.dll.a
+])
+LIBS="$LIBS$system_libs"
 AC_DEFINE(HAVE_ZLIB, 1, [Is there an installed zlib?])
 AC_SUBST(TCL_ZLIB_LIB_NAME, $zlib_lib_name)
 
