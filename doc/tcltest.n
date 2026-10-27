@@ -537,6 +537,8 @@ defined by a call to \fBtestConstraint\fR.  If any of the listed
 constraints is false or does not exist, the test is skipped.  If the
 \fB\-constraints\fR value is an expression, that expression
 is evaluated. If the expression evaluates to true, then the test is run.
+A \fB\-\fR between other name characters is part of a constraint name, as in
+\fBbug\-1234\fR, and not a subtraction.
 .RS
 .PP
 Note that the expression form of \fB\-constraints\fR may interfere with the
