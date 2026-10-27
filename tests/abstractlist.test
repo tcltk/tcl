@@ -352,7 +352,7 @@ test abstractlist-3.12 {shimmer lrepeat} {testobj lstring} {
 
 # shimmer
 
-foreach not {{} REVERSE SLICE SETELEMENT REPLACE GETELEMENTS} {
+foreach not {{} INDEX REVERSE SLICE SETELEMENT REPLACE GETELEMENTS} {
 
     testConstraint [format "%sShimmer" [string totitle $not]] [expr {$not eq ""}]
     set options [expr {$not ne "" ? "-not $not" : ""}]
@@ -639,6 +639,20 @@ test abstractlist-lappend-1.5 {lappend {*}$list to an array element keeps the ab
 test abstractlist-lappend-1.6 {lappend $name keeps the abstract list type} -constraints {testobj lstring} -body {
     apply {{} {set l [lstring abc]; set n l; lappend $n d; list [testobj objtype $l] $l}}
 } -result {lstring {a b c d}}
+
+test abstractlist-bug-b24becc2ab-0 {
+    lindex crash on shimmer
+} -constraints {testobj} -body {
+    set l [lseq 1]
+    lindex $l $l
+} -result 0
+
+test abstractlist-bug-b24becc2ab-1 {
+    lindex crash on when indexProc method not defined
+} -constraints {testobj lstring} -body {
+    set l [lstring -not INDEX 0]
+    lindex $l $l
+} -result 0
 
 # cleanup
 ::tcltest::cleanupTests

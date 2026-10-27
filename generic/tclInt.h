@@ -2727,7 +2727,7 @@ typedef struct ListRep {
 	? ListObjSpanPtr(listObj_)->spanStart				\
 	: ListObjStorePtr(listObj_)->firstUsed)
 
-/* Returns element at specified index */
+/* Returns element at specified index. No bounds checking! */
 #define ListObjIndex(listObj_, index_) \
     (ListObjStorePtr(listObj_)->slots[ListObjStart(listObj_) + index_])
 
