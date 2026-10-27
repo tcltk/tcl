@@ -5941,7 +5941,7 @@ TEBCresume(
 	    Tcl_Size wlen1 = 0, wlen2 = 0;
 	    unsigned char *bytes1 = Tcl_GetBytesFromObj(NULL, valuePtr, &wlen1);
 	    unsigned char *bytes2 = Tcl_GetBytesFromObj(NULL, value2Ptr, &wlen2);
-	    match = TclByteArrayMatch(bytes1, wlen1, bytes2, wlen2, 0);
+	    match = TclByteArrayMatch(bytes1, wlen1, bytes2, wlen2, 0) > 0;
 	} else {
 	    match = Tcl_StringCaseMatch(TclGetString(valuePtr),
 		    TclGetString(value2Ptr), nocase);
