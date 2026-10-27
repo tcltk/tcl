@@ -143,6 +143,27 @@ const unsigned char tclCharTypeTable[] = {
 #endif
 
 /*
+ * EXPR_SUBST_MAX_SCAN_DEPTH is the deepest nesting of "[...]" (a script
+ * inside an expression substitution) that SkipExprSubstScan follows. The
+ * scan recurses once per level, so without a limit a long enough run of "["
+ * overflows the C stack. 1000 is the same number as Tcl's default
+ * "interp recursionlimit"; it is a plain constant and can be changed here.
+ */
+
+#ifndef EXPR_SUBST_MAX_SCAN_DEPTH
+#define EXPR_SUBST_MAX_SCAN_DEPTH 1000
+#endif
+
+/*
+ * SkipExprSubstScan returns a pointer to this object (never dereferenced) to
+ * report that EXPR_SUBST_MAX_SCAN_DEPTH was exceeded, as opposed to NULL,
+ * which means the closing delimiter was not found.
+ */
+
+static const char exprSubstTooDeep = 0;
+#define EXPR_SUBST_TOO_DEEP (&exprSubstTooDeep)
+
+/*
  * Prototypes for local functions defined in this file:
  */
 
@@ -1334,7 +1355,9 @@ Tcl_FreeParse(
  *	closer is ')', nested parentheses are counted.
  *
  * Results:
- *	Pointer to the closing delimiter, or NULL if end was reached first.
+ *	Pointer to the closing delimiter, or NULL if end was reached first,
+ *	or EXPR_SUBST_TOO_DEEP if "[" was nested more than
+ *	EXPR_SUBST_MAX_SCAN_DEPTH levels (level is the current nesting).
  *
  * Side effects:
  *	None.
@@ -1346,9 +1369,14 @@ static const char *
 SkipExprSubstScan(
     const char *src,
     const char *end,
-    char closer)
+    char closer,
+    int level)
 {
     int depth = 0;
+
+    if (level > EXPR_SUBST_MAX_SCAN_DEPTH) {
+	return EXPR_SUBST_TOO_DEEP;
+    }
 
     while (src < end) {
 	switch (*src) {
@@ -1387,9 +1415,9 @@ SkipExprSubstScan(
 			src++;
 		    }
 		} else if (*src == '[') {
-		    src = SkipExprSubstScan(src + 1, end, ']');
-		    if (src == NULL) {
-			return NULL;
+		    src = SkipExprSubstScan(src + 1, end, ']', level + 1);
+		    if ((src == NULL) || (src == EXPR_SUBST_TOO_DEEP)) {
+			return src;
 		    }
 		}
 		src++;
@@ -1399,9 +1427,9 @@ SkipExprSubstScan(
 	    }
 	    break;
 	case '[':
-	    src = SkipExprSubstScan(src + 1, end, ']');
-	    if (src == NULL) {
-		return NULL;
+	    src = SkipExprSubstScan(src + 1, end, ']', level + 1);
+	    if ((src == NULL) || (src == EXPR_SUBST_TOO_DEEP)) {
+		return src;
 	    }
 	    break;
 	case '(':
@@ -1450,7 +1478,7 @@ FindExprSubstEnd(
     const char *src,
     const char *end)
 {
-    return SkipExprSubstScan(src, end, ')');
+    return SkipExprSubstScan(src, end, ')', 0);
 }
 
 /*
@@ -1672,6 +1700,17 @@ Tcl_ParseVarName(
 	const int skip = (TCL_EXPR_SUBST_PARENS == 2) ? 2 : 1;
 	const char *bodyEnd = FindExprSubstEnd(src + skip, src + numBytes);
 
+	if (bodyEnd == EXPR_SUBST_TOO_DEEP) {
+	    if (parsePtr->interp != NULL) {
+		Tcl_SetObjResult(parsePtr->interp, Tcl_NewStringObj(
+			"expression substitution nested too deeply", -1));
+		Tcl_SetErrorCode(parsePtr->interp, "TCL", "LIMIT", "STACK",
+			(char *)NULL);
+	    }
+	    parsePtr->errorType = TCL_PARSE_SYNTAX;
+	    parsePtr->term = src;
+	    goto error;
+	}
 	if ((bodyEnd != NULL) && (skip == 2) && (bodyEnd + 1 < src + numBytes)
 		&& (bodyEnd[1] != ')')) {
 	    if (parsePtr->interp != NULL) {

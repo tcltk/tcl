@@ -1640,6 +1640,39 @@ test parse-22.113 {expression substitution: nesting inside an expression too dee
     unset -nocomplain parse22s msg opts
 } -result {1 {too many nested compilations (infinite loop?)} {TCL LIMIT STACK}}
 
+test parse-22.114 {expression substitution: nested brackets inside the body work} -body {
+    set parse22s "\$(([string repeat {[expr } 100]1[string repeat {]} 100]+1))"
+    subst $parse22s
+} -cleanup {
+    unset -nocomplain parse22s
+} -result 2
+test parse-22.115 {expression substitution: bracket nesting exactly at the scan limit} -body {
+    # 1000 nested "[" in an unfinished body: the scan reaches the end of the
+    # input without exceeding the limit, so it is an ordinary missing ")".
+    set parse22s "\$(([string repeat \[ 1000]"
+    list [catch {subst $parse22s} msg opts] $msg
+} -cleanup {
+    unset -nocomplain parse22s msg opts
+} -result {1 {missing )}}
+test parse-22.116 {expression substitution: bracket nesting one past the scan limit} -body {
+    set parse22s "\$(([string repeat \[ 1001]"
+    list [catch {subst $parse22s} msg opts] $msg [dict get $opts -errorcode]
+} -cleanup {
+    unset -nocomplain parse22s msg opts
+} -result {1 {expression substitution nested too deeply} {TCL LIMIT STACK}}
+test parse-22.117 {expression substitution: very deep bracket nesting is an error, not a crash} -body {
+    set parse22s "\$(([string repeat \[ 2000000]"
+    list [catch {subst $parse22s} msg opts] $msg [dict get $opts -errorcode]
+} -cleanup {
+    unset -nocomplain parse22s msg opts
+} -result {1 {expression substitution nested too deeply} {TCL LIMIT STACK}}
+test parse-22.118 {expression substitution: deep nesting inside double quotes in the body} -body {
+    set parse22s "\$((\"[string repeat \[ 1001]"
+    list [catch {subst $parse22s} msg opts] $msg [dict get $opts -errorcode]
+} -cleanup {
+    unset -nocomplain parse22s msg opts
+} -result {1 {expression substitution nested too deeply} {TCL LIMIT STACK}}
+
 cleanupTests
 }
 
