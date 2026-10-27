@@ -58,3 +58,75 @@ proc mat::rotz {a} {
     set {matrix3}R [list $c [expr {-$s}] 0.0] [list $s $c 0.0] {0.0 0.0 1.0}
     return $R
 }
+
+proc mat::rotz {a} {(
+    (c, s)=(cos($a), sin($a));
+    R is matrix3 = (($c, -$s, 0.0), ($s, $c, 0.0), (0.0, 0.0, 1.0));
+    return $R
+)}
+    
+#catch {console show}
+
+# mat::init
+# load mat.dll
+
+# set {matrix3}M {2 2 3} {4 5 6} {7 8 9}
+
+proc mat::tcl.c.inv {m} {
+    if {[set det [mat::det $m]] != 0} {
+	return [mat::mulByScal [mat::adj $m] [(1.0/$det)]]
+    } else {
+	error "can't inverse matrix $m : det = 0"
+    }
+}
+
+proc mat::tcl.inv {matrix} {
+    if {[llength $matrix] != 3 ||
+        [llength [lindex $matrix 0]] != 3 || 
+        [llength [lindex $matrix 1]] != 3 || 
+        [llength [lindex $matrix 2]] != 3} {
+        error "wrong sized matrix"
+    }
+    set inv {{? ? ?} {? ? ?} {? ? ?}}
+ 
+    # Get adjoint matrix : transpose of cofactor matrix
+    for {set i 0} {$i < 3} {incr i} {
+        for {set j 0} {$j < 3} {incr j} {
+            lset inv $i $j [::_Cofactor3 $matrix $i $j]
+        }
+    }
+    # Now divide by the determinant
+    set det [expr {double([lindex $matrix 0 0]   * [lindex $inv 0 0]
+                   + [lindex $matrix 0 1] * [lindex $inv 1 0]
+                   + [lindex $matrix 0 2] * [lindex $inv 2 0])}]
+    if {$det == 0} {
+        error "non-invertable matrix"
+    }
+    
+    for {set i 0} {$i < 3} {incr i} {
+        for {set j 0} {$j < 3} {incr j} {
+            lset inv $i $j [expr {[lindex $inv $i $j] / $det}]
+        }
+    }
+    return $inv
+}
+proc _Cofactor3 {matrix i j} {
+    array set COLS {0 {1 2} 1 {0 2} 2 {0 1}}
+    foreach {row1 row2} $COLS($j) break
+    foreach {col1 col2} $COLS($i) break
+    
+    set a [lindex $matrix $row1 $col1]
+    set b [lindex $matrix $row1 $col2]
+    set c [lindex $matrix $row2 $col1]
+    set d [lindex $matrix $row2 $col2]
+ 
+    set det [expr {$a*$d - $b*$c}]
+    if {($i+$j) & 1} { set det [expr {-$det}]}
+    return $det
+ }
+
+# proc bench {M} {
+#     puts "c only : [timerate {mat::c.inv $M}]"
+#     puts "tcl + c : [timerate {mat::tcl.c.inv $M}]"
+#     puts "tcl only : [timerate {mat::tcl.inv $M}]"
+# }

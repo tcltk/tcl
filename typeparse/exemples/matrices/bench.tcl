@@ -16,8 +16,8 @@ proc brut_det {M} {
 }
 proc brut_mul {A B} {
     set C {{0.0 0.0 0.0} {0.0 0.0 0.0} {0.0 0.0 0.0}}
-    for {set i 0} {$i < 3} {incr i} {
-	for {set j 0} {$j < 3} {incr j} {
+    foreach i [lseq  3]  {
+	foreach j [lseq 3] {
 	    lset C $i $j [expr {[lindex $A $i 0] * [lindex $B 0 $j]
 		+ [lindex $A $i 1] * [lindex $B 1 $j]
 		+ [lindex $A $i 2] * [lindex $B 2 $j]}]
@@ -28,8 +28,8 @@ proc brut_mul {A B} {
 # mat::tcl_mul déclare son résultat matrix3 ; la variante ordinaire :
 proc o_mul {A B} {
     set {matrix3o}C {0.0 0.0 0.0} {0.0 0.0 0.0} {0.0 0.0 0.0}
-    for {set i 0} {$i < 3} {incr i} {
-	for {set j 0} {$j < 3} {incr j} {
+    foreach i [lseq  3]  {
+	foreach j [lseq 3] {
 	    set C($i.$j) [expr {$A($i.0) * $B(0.$j) + $A($i.1) * $B(1.$j)
 		+ $A($i.2) * $B(2.$j)}]
 	}
@@ -59,13 +59,16 @@ mesure "produit, C (résultat en cases)"              5000 {mat::mul $A $A}
 
 set N 10000
 set {lot}L
+set I [list]
 set brut {}
 for {set k 0} {$k < $N} {incr k} {
     set M [mat::rotz [expr {$k * 0.001}]]
     lappend L $M
+    lappend I $M
     lappend brut [list {*}$M]
 }
 mesure "$N déterminants, Tcl brut"                   3 {lmap M $brut {brut_det $M}}
-mesure "$N déterminants, Tcl typé en cases"          3 {lmap M $L {mat::tcl_det $M}}
+mesure "$N déterminants, lot Tcl typé en cases"          3 {lmap M $L {mat::tcl_det $M}}
+mesure "$N déterminants, list Tcl typé en cases"          3 {lmap M $I {mat::tcl_det $M}}
 mesure "$N déterminants, C sur le lot en cases"     20 {mat::lot_det $L}
 mesure "$N déterminants, C sur une liste brute"     20 {mat::lot_det $brut}

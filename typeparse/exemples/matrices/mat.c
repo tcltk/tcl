@@ -54,8 +54,7 @@ GetMatrix(Tcl_Interp *interp, Tcl_Obj *obj, matrix3 m)
     Tcl_Obj **rows, **cols;
 
     /* une matrix3 en cases : 3 cases, une par ligne (ligne3, 24 octets) */
-    if (GetCells(interp, obj, "ligne3", sizeof(ligne3), &cells, &n)
-	    != TCL_OK) {
+    if (GetCells(interp, obj, "ligne3", sizeof(ligne3), &cells, &n) != TCL_OK) {
 	return TCL_ERROR;
     }
     if (cells != NULL && n == 3) {
@@ -111,6 +110,61 @@ Det(const matrix3 m)
 }
 
 static int
+Adjoint(const matrix3 m, matrix3 n) {
+  double a,b,c,d,e,f,g,h,i;
+  
+   a = m[0][0]; b = m[0][1]; c = m[0][2];
+   d = m[1][0]; e = m[1][1]; f = m[1][2];
+   g = m[2][0]; h = m[2][1]; i = m[2][2];
+   
+   n[0][0] = e*i - f*h; n[0][1] = d*i - f*g; n[0][2] = d*h - e*g;
+   n[1][0] = b*i - c*h; n[1][1] = a*i - c*g; n[1][2] = a*h - b*g;
+   n[2][0] = b*f - c*e; n[2][1] = a*f - c*d; n[2][2] = a*e - b*d;
+   
+   return 1;
+}
+
+static int
+multMatByScal (const matrix3 m, matrix3 n, double scal) {
+    double a,b,c,d,e,f,g,h,i;
+    
+    a = m[0][0]; b = m[0][1]; c = m[0][2];
+    d = m[1][0]; e = m[1][1]; f = m[1][2];
+    g = m[2][0]; h = m[2][1]; i = m[2][2];
+    
+    n[0][0] = a*scal; n[0][1] = b*scal; n[0][2] = c*scal;
+    n[1][0] = d*scal; n[1][1] = e*scal; n[1][2] = f*scal;
+    n[2][0] = g*scal; n[2][1] = h*scal; n[2][2] = i*scal;
+    
+   return 1;
+} 
+
+static int
+multMatByScalObjCmd(void *cd, Tcl_Interp *interp, Tcl_Size objc,
+		    Tcl_Obj *const objv[]) {
+  matrix3 m,n;
+  double d;
+  Tcl_Obj *res;
+  
+  if (objc != 3) {
+    Tcl_WrongNumArgs(interp, 1, objv, "matrix");
+    return TCL_ERROR;
+  }
+  
+  if (GetMatrix(interp, objv[1], m) != TCL_OK) {   return TCL_ERROR; }
+  if (Tcl_GetDoubleFromObj(interp, objv[2], &d) != TCL_OK) { return TCL_ERROR; }
+  
+  multMatByScal(m, n, d);
+  
+  if (NewMatrix(interp, (const double (*)[3]) n, &res) != TCL_OK) {
+	return TCL_ERROR;
+  }
+  Tcl_SetObjResult(interp, res);
+  
+  return TCL_OK;
+}
+
+static int
 TraceObjCmd(void *cd, Tcl_Interp *interp, Tcl_Size objc,
 	Tcl_Obj *const objv[])
 {
@@ -146,11 +200,76 @@ DetObjCmd(void *cd, Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 }
 
 static int
+AddObjCmd(void *cd, Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
+{
+  matrix3 a,b,c;
+  Tcl_Obj *res;
+  int i, j;
+  (void) cd;
+  
+  if (objc != 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "matrixA matrixB");
+	return TCL_ERROR;
+    }
+    if (GetMatrix(interp, objv[1], a) != TCL_OK
+	    || GetMatrix(interp, objv[2], b) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    for (i = 0; i < 3; i++) {
+	for (j = 0; j < 3; j++) {
+	    c[i][j] = a[i][j] + b[i][j];
+	}
+    }
+    if (NewMatrix(interp, (const double (*)[3]) c, &res) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    Tcl_SetObjResult(interp, res);
+    return TCL_OK;
+}
+
+static int
+SubObjCmd(void *cd, Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
+{
+  matrix3 a,b,c;
+  Tcl_Obj *res;
+  int i, j;
+  (void) cd;
+  
+  if (objc != 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "matrixA matrixB");
+	return TCL_ERROR;
+    }
+    if (GetMatrix(interp, objv[1], a) != TCL_OK
+	    || GetMatrix(interp, objv[2], b) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    for (i = 0; i < 3; i++) {
+	for (j = 0; j < 3; j++) {
+	    c[i][j] = a[i][j] - b[i][j];
+	}
+    }
+    if (NewMatrix(interp, (const double (*)[3]) c, &res) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    Tcl_SetObjResult(interp, res);
+    return TCL_OK;
+}
+
+static int MatMult(const matrix3 a, const matrix3 b, matrix3 c) {
+    int i, j;
+    for (i = 0; i < 3; i++) {
+	for (j = 0; j < 3; j++) {
+	    c[i][j] = a[i][0] * b[0][j] + a[i][1] * b[1][j] + a[i][2] * b[2][j];
+	}
+    }
+    return TCL_OK;
+}  
+static int
 MulObjCmd(void *cd, Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 {
     matrix3 a, b, c;
     Tcl_Obj *res;
-    int i, j;
+  
 
     (void) cd;
     if (objc != 3) {
@@ -161,18 +280,68 @@ MulObjCmd(void *cd, Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 	    || GetMatrix(interp, objv[2], b) != TCL_OK) {
 	return TCL_ERROR;
     }
-    for (i = 0; i < 3; i++) {
-	for (j = 0; j < 3; j++) {
-	    c[i][j] = a[i][0] * b[0][j] + a[i][1] * b[1][j] + a[i][2] * b[2][j];
-	}
-    }
-    if (NewMatrix(interp, (const double (*)[3]) c, &res) != TCL_OK) {
-	return TCL_ERROR;
-    }
+    
+    MatMult(a,b,c);
+    
+    if (NewMatrix(interp, (const double (*)[3]) c, &res) != TCL_OK) { 	return TCL_ERROR;  }
     Tcl_SetObjResult(interp, res);
     return TCL_OK;
 }
 
+static int
+AdjointObjCmd(void *cd, Tcl_Interp *interp, Tcl_Size objc,
+	Tcl_Obj *const objv[])
+{
+  matrix3 m, n;
+  Tcl_Obj *res;
+  
+   if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "matrix3");
+	return TCL_ERROR;
+   }
+   if (GetMatrix(interp, objv[1], m) != TCL_OK) {
+	return TCL_ERROR;
+   }
+   
+   Adjoint(m, n);
+
+   if (NewMatrix(interp, (const double (*)[3]) n, &res) != TCL_OK) {
+     return TCL_ERROR;
+   }
+   Tcl_SetObjResult(interp, res);
+   return TCL_OK;
+}
+
+static int
+InverseMatObjCmd(void *cd, Tcl_Interp *interp, Tcl_Size objc,
+		 Tcl_Obj *const objv[]) {
+  matrix3 m, n, o;
+  Tcl_Obj *res;
+  double det;
+
+   if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "matrix3");
+	return TCL_ERROR;
+   }
+   if (GetMatrix(interp, objv[1], m) != TCL_OK) { return TCL_ERROR;}
+   
+   det = Det(m);
+   Adjoint(m,n);
+   
+   if(det!=0.0) {
+     multMatByScal(n, o, 1.0/det);
+   }
+   
+   if (NewMatrix(interp, (const double (*)[3]) o, &res) != TCL_OK) {
+     return TCL_ERROR;
+   }
+   
+   Tcl_SetObjResult(interp, res);
+   return TCL_OK;
+}
+
+
+   
 static int
 IdentiteObjCmd(void *cd, Tcl_Interp *interp, Tcl_Size objc,
 	Tcl_Obj *const objv[])
@@ -266,7 +435,12 @@ Mat_Init(Tcl_Interp *interp)
     Tcl_CreateObjCommand2(interp, "::mat::trace", TraceObjCmd, NULL, NULL);
     Tcl_CreateObjCommand2(interp, "::mat::det", DetObjCmd, NULL, NULL);
     Tcl_CreateObjCommand2(interp, "::mat::mul", MulObjCmd, NULL, NULL);
+    Tcl_CreateObjCommand2(interp, "::mat::mulByScal", multMatByScalObjCmd, NULL, NULL);
+    Tcl_CreateObjCommand2(interp, "::mat::add", AddObjCmd, NULL, NULL);
+    Tcl_CreateObjCommand2(interp, "::mat::adj", AdjointObjCmd, NULL, NULL);
+    Tcl_CreateObjCommand2(interp, "::mat::sub", SubObjCmd, NULL, NULL);
     Tcl_CreateObjCommand2(interp, "::mat::identite", IdentiteObjCmd, NULL, NULL);
+    Tcl_CreateObjCommand2(interp, "::mat::c.inv", InverseMatObjCmd, NULL, NULL);
     Tcl_CreateObjCommand2(interp, "::mat::lot_det", LotDetObjCmd, NULL, NULL);
     Tcl_CreateObjCommand2(interp, "::mat::layout", LayoutObjCmd, NULL, NULL);
     return Tcl_PkgProvide(interp, "mat", "1.0");
