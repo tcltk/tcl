@@ -752,7 +752,6 @@ FindElement(
 		}
 	    }
 	    break;
-
 	}
 	p++;
     }
@@ -905,13 +904,17 @@ Tcl_SplitList(
     length = end - list;
     if (size >= (Tcl_Size) (TCL_SIZE_MAX/sizeof(char *)) ||
 	length > (Tcl_Size) (TCL_SIZE_MAX - 1 - (size * sizeof(char *)))) {
+	goto memerror;
+    }
+    argv = (const char **)Tcl_AttemptAlloc((size * sizeof(char *)) + length + 1);
+    if (!argv) {
+    memerror:
 	if (interp) {
 	    Tcl_SetResult(
 		interp, "memory allocation limit exceeded", TCL_STATIC);
 	}
 	return TCL_ERROR;
     }
-    argv = (const char **)Tcl_Alloc((size * sizeof(char *)) + length + 1);
 
     for (i = 0, p = ((char *) argv) + size*sizeof(char *);
 	    *list != 0;  i++) {
@@ -978,8 +981,8 @@ Tcl_SplitList(
 
 Tcl_Size
 Tcl_ScanElement(
-    const char *src,	/* String to convert to list element. */
-    int *flagPtr)	/* Where to store information to guide
+    const char *src,		/* String to convert to list element. */
+    int *flagPtr)		/* Where to store information to guide
 			 * Tcl_ConvertCountedElement. */
 {
     return Tcl_ScanCountedElement(src, TCL_INDEX_NONE, flagPtr);
@@ -1498,7 +1501,7 @@ TclConvertElement(
 	}
 	*p = '}';
 	p++;
-	return (p - dst);
+	return p - dst;
     }
 
     /* conversion == CONVERT_ESCAPE or CONVERT_MASK */
@@ -1561,7 +1564,7 @@ TclConvertElement(
 	    continue;
 	case '\0':
 	    if (length < 0) {
-		return (p - dst);
+		return p - dst;
 	    }
 
 	    /*
@@ -1577,7 +1580,7 @@ TclConvertElement(
 	*p = *src;
 	p++;
     }
-    return (p - dst);
+    return p - dst;
 }
 
 /*
@@ -1635,7 +1638,7 @@ Tcl_Merge(
 	flagPtr = (char *)Tcl_Alloc(argc);
     }
     for (i = 0; i < argc; i++) {
-	flagPtr[i] = ( i ? DONT_QUOTE_HASH : 0 );
+	flagPtr[i] = (i ? DONT_QUOTE_HASH : 0);
 	bytesNeeded += TclScanElement(argv[i], TCL_INDEX_NONE, &flagPtr[i]);
     }
     bytesNeeded += argc;
@@ -1666,6 +1669,7 @@ Tcl_Merge(
  *----------------------------------------------------------------------
  *
  * TclTrimRight --
+ *
  *	Takes two counted strings in the Tcl encoding.  Conceptually
  *	finds the sub string (offset) to trim from the right side of the
  *	first string all characters found in the second string.
@@ -1820,6 +1824,7 @@ TclTrimLeft(
  *----------------------------------------------------------------------
  *
  * TclTrim --
+ *
  *	Finds the sub string (offset) to trim from both sides of the
  *	first string all characters found in the second string.
  *
@@ -1848,7 +1853,6 @@ TclTrim(
 
     /* Empty strings -> nothing to do */
     if ((numBytes > 0) && (numTrim > 0)) {
-
 	/* When bytes is NUL-terminated, returns 0 <= trimLeft <= numBytes */
 	trimLeft = TclTrimLeft(bytes, numBytes, trim, numTrim);
 	numBytes -= trimLeft;
@@ -1997,7 +2001,7 @@ Tcl_Concat(
 Tcl_Obj *
 Tcl_ConcatObj(
     Tcl_Size objc,		/* Number of objects to concatenate. */
-    Tcl_Obj *const objv[])	/* Array of objects to concatenate. */
+    Tcl_Obj *const *objv)	/* Array of objects to concatenate. */
 {
     int needSpace = 0;
     Tcl_Size i, bytesNeeded = 0, elemLength;
@@ -2136,13 +2140,21 @@ Tcl_ConcatObj(
  *----------------------------------------------------------------------
  */
 
-int
-Tcl_StringCaseMatch(
+/*
+ * The static helpers return 1 for a match, 0 for no match and -1 if the
+ * string ran out before the pattern: then no outer '*' can do better by
+ * consuming more characters, so retrying stops. This keeps the matching time
+ * polynomial instead of exponential. [Bug a4a7f2abd3]
+ */
+
+static int
+StringCaseMatch(
     const char *str,		/* String. */
     const char *pattern,	/* Pattern, which may contain special
 				 * characters. */
     int nocase)			/* 0 for case sensitive, 1 for insensitive */
 {
+    int result;
     Tcl_Size charLen;
     int p, ch1 = 0, ch2 = 0;
 
@@ -2156,10 +2168,10 @@ Tcl_StringCaseMatch(
 	 */
 
 	if (p == '\0') {
-	    return (*str == '\0');
+	    return *str == '\0';
 	}
 	if ((*str == '\0') && (p != '*')) {
-	    return 0;
+	    return -1;
 	}
 
 	/*
@@ -2174,7 +2186,9 @@ Tcl_StringCaseMatch(
 	     * Skip all successive *'s in the pattern
 	     */
 
-	    while (*(++pattern) == '*');
+	    while (*(++pattern) == '*') {
+		// Empty body
+	    }
 	    p = *pattern;
 	    if (p == '\0') {
 		return 1;
@@ -2226,11 +2240,12 @@ Tcl_StringCaseMatch(
 			}
 		    }
 		}
-		if (Tcl_StringCaseMatch(str, pattern, nocase)) {
-		    return 1;
+		result = StringCaseMatch(str, pattern, nocase);
+		if (result != 0) {
+		    return result;
 		}
 		if (*str == '\0') {
-		    return 0;
+		    return -1;
 		}
 		str += TclUtfToUniChar(str, &ch1);
 	    }
@@ -2314,7 +2329,7 @@ Tcl_StringCaseMatch(
 		    /* We ran out of pattern after matching something in
 		     * (unclosed!) brackets. So long as we ran out of string
 		     * at the same time, we have a match. Otherwise, not. */
-		    return (*str == '\0');
+		    return *str == '\0';
 		}
 		pattern++;
 	    }
@@ -2350,6 +2365,16 @@ Tcl_StringCaseMatch(
 	}
     }
 }
+
+int
+Tcl_StringCaseMatch(
+    const char *str,		/* String. */
+    const char *pattern,	/* Pattern, which may contain special
+				 * characters. */
+    int nocase)			/* 0 for case sensitive, 1 for insensitive */
+{
+    return StringCaseMatch(str, pattern, nocase) == 1;
+}
 
 /*
  *----------------------------------------------------------------------
@@ -2371,8 +2396,8 @@ Tcl_StringCaseMatch(
  *----------------------------------------------------------------------
  */
 
-int
-TclByteArrayMatch(
+static int
+ByteArrayMatch(
     const unsigned char *string,/* String. */
     Tcl_Size strLen,		/* Length of String */
     const unsigned char *pattern,
@@ -2381,6 +2406,7 @@ TclByteArrayMatch(
     Tcl_Size ptnLen,		/* Length of Pattern */
     TCL_UNUSED(int) /*flags*/)
 {
+    int result;
     const unsigned char *stringEnd, *patternEnd;
     unsigned char p;
 
@@ -2395,11 +2421,11 @@ TclByteArrayMatch(
 	 */
 
 	if (pattern == patternEnd) {
-	    return (string == stringEnd);
+	    return string == stringEnd;
 	}
 	p = *pattern;
 	if ((string == stringEnd) && (p != '*')) {
-	    return 0;
+	    return -1;
 	}
 
 	/*
@@ -2434,12 +2460,13 @@ TclByteArrayMatch(
 			string++;
 		    }
 		}
-		if (TclByteArrayMatch(string, stringEnd - string,
-			pattern, patternEnd - pattern, 0)) {
-		    return 1;
+		result = ByteArrayMatch(string, stringEnd - string,
+			pattern, patternEnd - pattern, 0);
+		if (result != 0) {
+		    return result;
 		}
 		if (string == stringEnd) {
-		    return 0;
+		    return -1;
 		}
 		string++;
 	    }
@@ -2526,6 +2553,19 @@ TclByteArrayMatch(
 	string++;
 	pattern++;
     }
+}
+
+int
+TclByteArrayMatch(
+    const unsigned char *string,/* String. */
+    Tcl_Size strLen,		/* Length of String */
+    const unsigned char *pattern,
+				/* Pattern, which may contain special
+				 * characters. */
+    Tcl_Size ptnLen,		/* Length of Pattern */
+    int flags)
+{
+    return ByteArrayMatch(string, strLen, pattern, ptnLen, flags) == 1;
 }
 
 /*
@@ -3504,7 +3544,7 @@ GetWideForIndex(
  *	TCL_SIZE_MAX. Negative values are returned as TCL_INDEX_NONE (-1).
  *
  *	Callers should pass reasonable values for endValue - one in the
- *      valid index range or TCL_INDEX_NONE (-1), for example for an empty
+ *	valid index range or TCL_INDEX_NONE (-1), for example for an empty
  *	list.
  *
  * Results:
@@ -3544,13 +3584,13 @@ Tcl_GetIntForIndex(
     if (indexPtr != NULL) {
 	/* Note: check against TCL_SIZE_MAX needed for 32-bit builds */
 	if (wide >= 0 && wide <= TCL_SIZE_MAX) {
-	    *indexPtr = (Tcl_Size)wide; /* A valid index */
+	    *indexPtr = (Tcl_Size)wide;	/* A valid index */
 	} else if (wide > TCL_SIZE_MAX) {
-	    *indexPtr = TCL_SIZE_MAX;   /* Beyond max possible index */
+	    *indexPtr = TCL_SIZE_MAX;	/* Beyond max possible index */
 	} else if (wide < -1-TCL_SIZE_MAX) {
 	    *indexPtr = -1-TCL_SIZE_MAX; /* Below most negative index */
 	} else if ((wide < 0) && (endValue >= 0)) {
-	    *indexPtr = TCL_INDEX_NONE; /* No clue why this special case */
+	    *indexPtr = TCL_INDEX_NONE;	/* No clue why this special case */
 	} else {
 	    *indexPtr = (Tcl_Size) wide;
 	}
@@ -3575,7 +3615,7 @@ Tcl_GetIntForIndex(
  *	-1:         Index "end"
  *	0:          Index "0"
  *	WIDE_MAX-1: Index "end+n", for any n > 1. Distinguish from end+1 for
- *                  commands like lset.
+ *	            commands like lset.
  *	WIDE_MAX:   Index "end+1"
  *
  * Results:
@@ -3832,57 +3872,58 @@ GetEndOffsetFromObj(
  *----------------------------------------------------------------------
  *
  * TclIndexEncode --
- *      IMPORTANT: function only encodes indices in the range that fits within
- *      an "int" type. Do NOT change this as the byte code compiler and engine
- *      which call this function cannot handle wider index types. Indices
- *      outside the range will result in the function returning an error.
  *
- *      Parse objPtr to determine if it is an index value. Two cases
+ *	IMPORTANT: function only encodes indices in the range that fits within
+ *	an "int" type. Do NOT change this as the byte code compiler and engine
+ *	which call this function cannot handle wider index types. Indices
+ *	outside the range will result in the function returning an error.
+ *
+ *	Parse objPtr to determine if it is an index value. Two cases
  *	are possible.  The value objPtr might be parsed as an absolute
  *	index value in the Tcl_Size range.  Note that this includes
  *	index values that are integers as presented and it includes index
- *      arithmetic expressions.
+ *	arithmetic expressions.
  *
- *      The largest string supported in Tcl 8 has byte length TCL_SIZE_MAX.
- *      This means the largest supported character length is also TCL_SIZE_MAX,
- *      and the index of the last character in a string of length TCL_SIZE_MAX
- *      is TCL_SIZE_MAX-1. Thus the absolute index values that can be
+ *	The largest string supported in Tcl 8 has byte length TCL_SIZE_MAX.
+ *	This means the largest supported character length is also TCL_SIZE_MAX,
+ *	and the index of the last character in a string of length TCL_SIZE_MAX
+ *	is TCL_SIZE_MAX-1. Thus the absolute index values that can be
  *	directly meaningful as an index into either a list or a string are
  *	integer values in the range 0 to TCL_SIZE_MAX - 1.
  *
- *      This function however can only handle integer indices in the range
- *      0 : INT_MAX-1.
+ *	This function however can only handle integer indices in the range
+ *	0 : INT_MAX-1.
  *
- *      Any absolute index value parsed outside that range is encoded
- *      using the before and after values passed in by the
- *      caller as the encoding to use for indices that are either
- *      less than or greater than the usable index range. TCL_INDEX_NONE
- *      is available as a good choice for most callers to use for
- *      after. Likewise, the value TCL_INDEX_NONE is good for
- *      most callers to use for before.  Other values are possible
- *      when the caller knows it is helpful in producing its own behavior
- *      for indices before and after the indexed item.
+ *	Any absolute index value parsed outside that range is encoded
+ *	using the before and after values passed in by the
+ *	caller as the encoding to use for indices that are either
+ *	less than or greater than the usable index range. TCL_INDEX_NONE
+ *	is available as a good choice for most callers to use for
+ *	after. Likewise, the value TCL_INDEX_NONE is good for
+ *	most callers to use for before.  Other values are possible
+ *	when the caller knows it is helpful in producing its own behavior
+ *	for indices before and after the indexed item.
  *
- *      A token can also be parsed as an end-relative index expression.
- *      All end-relative expressions that indicate an index larger
- *      than end (end+2, end--5) point beyond the end of the indexed
- *      collection, and can be encoded as after.  The end-relative
- *      expressions that indicate an index less than or equal to end
- *      are encoded relative to the value TCL_INDEX_END (-2).  The
- *      index "end" is encoded as -2, down to the index "end-0x7FFFFFFE"
- *      which is encoded as INT_MIN. Since the largest index into a
- *      string possible in Tcl 8 is 0x7FFFFFFE, the interpretation of
+ *	A token can also be parsed as an end-relative index expression.
+ *	All end-relative expressions that indicate an index larger
+ *	than end (end+2, end--5) point beyond the end of the indexed
+ *	collection, and can be encoded as after.  The end-relative
+ *	expressions that indicate an index less than or equal to end
+ *	are encoded relative to the value TCL_INDEX_END (-2).  The
+ *	index "end" is encoded as -2, down to the index "end-0x7FFFFFFE"
+ *	which is encoded as INT_MIN. Since the largest index into a
+ *	string possible in Tcl 8 is 0x7FFFFFFE, the interpretation of
  *      "end-0x7FFFFFFE" for that largest string would be 0.  Thus,
- *      if the tokens "end-0x7FFFFFFF" or "end+-0x80000000" are parsed,
- *      they can be encoded with the before value.
+ *	if the tokens "end-0x7FFFFFFF" or "end+-0x80000000" are parsed,
+ *	they can be encoded with the before value.
  *
  * Returns:
- *      TCL_OK if parsing succeeded, and TCL_ERROR if it failed or the
- *      index does not fit in an int type.
+ *	TCL_OK if parsing succeeded, and TCL_ERROR if it failed or the
+ *	index does not fit in an int type.
  *
  * Side effects:
- *      When TCL_OK is returned, the encoded index value is written
- *      to *indexPtr.
+ *	When TCL_OK is returned, the encoded index value is written
+ *	to *indexPtr.
  *
  *----------------------------------------------------------------------
  */
@@ -4445,6 +4486,8 @@ Tcl_GetNameOfExecutable(void)
 
 #if !defined(STATIC_BUILD)
 /*
+ *----------------------------------------------------------------------
+ *
  * TclSetObjNameOfShlib --
  *
  *	This function stores the absolute pathname of the Tcl shared library.
@@ -4454,8 +4497,9 @@ Tcl_GetNameOfExecutable(void)
  *
  * Side effects:
  *	Stores the shared library name in the process global database.
+ *
+ *----------------------------------------------------------------------
  */
-
 void
 TclSetObjNameOfShlib(
     Tcl_Obj *name,
@@ -4751,7 +4795,7 @@ TclReToGlob(
  *	Electrotechnical and Computer Science Conference, Portoroz,
  *	Slovenia, 1993.  The adaptations permit the computation to take
  *	place within unsigned long long values without the need for double
- *	length	buffers for calculation.  They also fill in a number of
+ *	length buffers for calculation.  They also fill in a number of
  *	details the paper omits or leaves unclear.
  *
  * Results:
@@ -4768,8 +4812,8 @@ int
 TclMSB(
     unsigned long long n)
 {
-    /* assert ( 64 == CHAR_BIT * sizeof(unsigned long long) ); */
-    /* assert ( n != 0 ); */
+    /* assert(64 == CHAR_BIT * sizeof(unsigned long long)); */
+    /* assert(n != 0); */
 
     /*
      * Many platforms offer access to this functionality through

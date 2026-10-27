@@ -360,7 +360,7 @@ Tcl_Char16ToUtfDString(
     const unsigned short *w, *wEnd;
     char *p, *string;
     Tcl_Size oldLength;
-    int len = 1;
+    Tcl_Size len = 1;
 
     /*
      * UTF-8 string length in bytes will be <= Utf16 string length * 3.
@@ -523,8 +523,8 @@ Tcl_UtfToUniChar(
 
 Tcl_Size
 Tcl_UtfToChar16(
-    const char *src,	/* The UTF-8 string. */
-    unsigned short *chPtr)/* Filled with the Tcl_UniChar represented by
+    const char *src,		/* The UTF-8 string. */
+    unsigned short *chPtr)	/* Filled with the Tcl_UniChar represented by
 				 * the UTF-8 string. This could be a surrogate too. */
 {
     unsigned short byte;
@@ -552,7 +552,7 @@ Tcl_UtfToChar16(
 		&& ((src[1] & 0xC0) == 0x80) && ((src[2] & 0xC0) == 0x80)
 		&& (((((byte - 0x10) << 2) & 0xFC) | 0xD800) == (*chPtr & 0xFCFC))
 		&& ((src[1] & 0xF0) == (((*chPtr << 4) & 0x30) | 0x80))) {
-	    *chPtr = ((src[1] & 0x0F) << 6) + (src[2] & 0x3F) + 0xDC00;
+	    *chPtr = (unsigned short)(((src[1] & 0x0F) << 6) + (src[2] & 0x3F) + 0xDC00);
 	    return 3;
 	}
 	if ((unsigned)(byte-0x80) < (unsigned)0x20) {
@@ -567,7 +567,7 @@ Tcl_UtfToChar16(
 	     * Two-byte-character lead-byte followed by a trail-byte.
 	     */
 
-	    *chPtr = (((byte & 0x1F) << 6) | (src[1] & 0x3F));
+	    *chPtr = (unsigned short)(((byte & 0x1F) << 6) | (src[1] & 0x3F));
 	    if ((unsigned)(*chPtr - 1) >= (UNICODE_SELF - 1)) {
 		return 2;
 	    }
@@ -583,7 +583,7 @@ Tcl_UtfToChar16(
 	     * Three-byte-character lead byte followed by two trail bytes.
 	     */
 
-	    *chPtr = (((byte & 0x0F) << 12)
+	    *chPtr = (unsigned short)(((byte & 0x0F) << 12)
 		    | ((src[1] & 0x3F) << 6) | (src[2] & 0x3F));
 	    if (*chPtr > 0x7FF) {
 		return 3;
@@ -604,7 +604,7 @@ Tcl_UtfToChar16(
 		    | ((src[2] & 0x3F) >> 4)) - 0x40;
 	    if (high < 0x400) {
 		/* produce high surrogate, advance source pointer */
-		*chPtr = 0xD800 + high;
+		*chPtr = (unsigned short)(0xD800 + high);
 		return 1;
 	    }
 	    /* out of range, < 0x10000 or > 0x10FFFF */
@@ -801,8 +801,8 @@ Tcl_UtfCharComplete(
 
 Tcl_Size
 Tcl_NumUtfChars(
-    const char *src,	/* The UTF-8 string to measure. */
-    Tcl_Size length)	/* The length of the string in bytes, or
+    const char *src,		/* The UTF-8 string to measure. */
+    Tcl_Size length)		/* The length of the string in bytes, or
 			 * negative value for strlen(src). */
 {
     Tcl_UniChar ch = 0;
@@ -853,8 +853,8 @@ Tcl_NumUtfChars(
 
 Tcl_Size
 TclNumUtfChars(
-    const char *src,	/* The UTF-8 string to measure. */
-    Tcl_Size length)	/* The length of the string in bytes, or
+    const char *src,		/* The UTF-8 string to measure. */
+    Tcl_Size length)		/* The length of the string in bytes, or
 			 * negative for strlen(src). */
 {
     unsigned short ch = 0;
@@ -928,7 +928,8 @@ Tcl_UtfFindFirst(
     int ch)			/* The Unicode character to search for. */
 {
     while (1) {
-	int find, len = TclUtfToUniChar(src, &find);
+	int find;
+	Tcl_Size len = TclUtfToUniChar(src, &find);
 
 	if (find == ch) {
 	    return src;
@@ -967,7 +968,8 @@ Tcl_UtfFindLast(
     const char *last = NULL;
 
     while (1) {
-	int find, len = TclUtfToUniChar(src, &find);
+	int find;
+	Tcl_Size len = TclUtfToUniChar(src, &find);
 
 	if (find == ch) {
 	    last = src;
@@ -1177,21 +1179,19 @@ Tcl_UtfPrev(
 
 int
 Tcl_UniCharAtIndex(
-    const char *src,	/* The UTF-8 string to dereference. */
-    Tcl_Size index)	/* The position of the desired character. */
+    const char *src,		/* The UTF-8 string to dereference. */
+    Tcl_Size index)		/* The position of the desired character. */
 {
     Tcl_UniChar ch = 0;
-    int i = 0;
 
     if (index < 0) {
 	return -1;
     }
     while (index--) {
-	i = TclUtfToUniChar(src, &ch);
-	src += i;
+	src += TclUtfToUniChar(src, &ch);
     }
-    TclUtfToUniChar(src, &i);
-    return i;
+    TclUtfToUniChar(src, &ch);
+    return ch;
 }
 
 /*
@@ -1213,8 +1213,8 @@ Tcl_UniCharAtIndex(
 
 const char *
 Tcl_UtfAtIndex(
-    const char *src,	/* The UTF-8 string. */
-    Tcl_Size index)	/* The position of the desired character. */
+    const char *src,		/* The UTF-8 string. */
+    Tcl_Size index)		/* The position of the desired character. */
 {
     Tcl_UniChar ch = 0;
 
@@ -1226,8 +1226,8 @@ Tcl_UtfAtIndex(
 
 const char *
 TclUtfAtIndex(
-    const char *src,	/* The UTF-8 string. */
-    Tcl_Size index)	/* The position of the desired character. */
+    const char *src,		/* The UTF-8 string. */
+    Tcl_Size index)		/* The position of the desired character. */
 {
     unsigned short ch = 0;
     Tcl_Size len = 0;
@@ -1281,7 +1281,7 @@ Tcl_UtfBackslash(
 {
 #define LINE_LENGTH 128
     Tcl_Size numRead;
-    int result;
+    Tcl_Size result;
 
     result = TclParseBackslash(src, LINE_LENGTH, &numRead, dst);
     if (numRead == LINE_LENGTH) {
@@ -1292,7 +1292,7 @@ Tcl_UtfBackslash(
 	result = TclParseBackslash(src, strlen(src), &numRead, dst);
     }
     if (readPtr != NULL) {
-	*readPtr = numRead;
+	*readPtr = (int)numRead;
     }
     return result;
 }
@@ -1490,7 +1490,7 @@ int
 TclpUtfNcmp2(
     const void *csPtr,		/* UTF string to compare to ct. */
     const void *ctPtr,		/* UTF string cs is compared to. */
-    size_t numBytes)	/* Number of *bytes* to compare. */
+    size_t numBytes)		/* Number of *bytes* to compare. */
 {
     const char *cs = (const char *)csPtr;
     const char *ct = (const char *)ctPtr;
@@ -1539,7 +1539,7 @@ int
 TclUtfNcmp(
     const char *cs,		/* UTF string to compare to ct. */
     const char *ct,		/* UTF string cs is compared to. */
-    size_t numChars)	/* Number of UTF-16 chars to compare. */
+    size_t numChars)		/* Number of UTF-16 chars to compare. */
 {
     unsigned short ch1 = 0, ch2 = 0;
 
@@ -1577,7 +1577,7 @@ int
 Tcl_UtfNcmp(
     const char *cs,		/* UTF string to compare to ct. */
     const char *ct,		/* UTF string cs is compared to. */
-    size_t numChars)	/* Number of chars to compare. */
+    size_t numChars)		/* Number of chars to compare. */
 {
     Tcl_UniChar ch1 = 0, ch2 = 0;
 
@@ -1625,7 +1625,7 @@ int
 TclUtfNcasecmp(
     const char *cs,		/* UTF string to compare to ct. */
     const char *ct,		/* UTF string cs is compared to. */
-    size_t numChars)	/* Number of UTF-16 chars to compare. */
+    size_t numChars)		/* Number of UTF-16 chars to compare. */
 {
     unsigned short ch1 = 0, ch2 = 0;
 
@@ -1646,8 +1646,8 @@ TclUtfNcasecmp(
 	    } else if ((ch2 & 0xFC00) == 0xD800) {
 		return -ch2;
 	    }
-	    ch1 = Tcl_UniCharToLower(ch1);
-	    ch2 = Tcl_UniCharToLower(ch2);
+	    ch1 = (unsigned short)Tcl_UniCharToLower(ch1);
+	    ch2 = (unsigned short)Tcl_UniCharToLower(ch2);
 	    if (ch1 != ch2) {
 		return (ch1 - ch2);
 	    }
@@ -1660,7 +1660,7 @@ int
 Tcl_UtfNcasecmp(
     const char *cs,		/* UTF string to compare to ct. */
     const char *ct,		/* UTF string cs is compared to. */
-    size_t numChars)	/* Number of chars to compare. */
+    size_t numChars)		/* Number of chars to compare. */
 {
     Tcl_UniChar ch1 = 0, ch2 = 0;
 
@@ -1909,7 +1909,7 @@ Tcl_Char16Len(
 
 Tcl_Size
 Tcl_UniCharLen(
-    const int *uniStr)	/* Unicode string to find length of. */
+    const int *uniStr)		/* Unicode string to find length of. */
 {
     Tcl_Size len = 0;
 
@@ -1941,7 +1941,7 @@ int
 TclUniCharNcmp(
     const Tcl_UniChar *ucs,	/* Unicode string to compare to uct. */
     const Tcl_UniChar *uct,	/* Unicode string ucs is compared to. */
-    size_t numChars)	/* Number of chars to compare. */
+    size_t numChars)		/* Number of chars to compare. */
 {
 #if defined(WORDS_BIGENDIAN)
     /*
@@ -1986,7 +1986,7 @@ int
 TclUniCharNcasecmp(
     const Tcl_UniChar *ucs,	/* Unicode string to compare to uct. */
     const Tcl_UniChar *uct,	/* Unicode string ucs is compared to. */
-    size_t numChars)	/* Number of chars to compare. */
+    size_t numChars)		/* Number of chars to compare. */
 {
     for ( ; numChars != 0; numChars--, ucs++, uct++) {
 	if (*ucs != *uct) {
@@ -2326,14 +2326,17 @@ Tcl_UniCharIsWordChar(
  *----------------------------------------------------------------------
  */
 
-int
-TclUniCharCaseMatch(
+/* Returns 1, 0 or -1 (string exhausted), see StringCaseMatch in tclUtil.c. */
+
+static int
+UniCharCaseMatch(
     const Tcl_UniChar *uniStr,	/* Unicode String. */
     const Tcl_UniChar *uniPattern,
 				/* Pattern, which may contain special
 				 * characters. */
     int nocase)			/* 0 for case sensitive, 1 for insensitive */
 {
+    int result;
     Tcl_UniChar ch1 = 0, p;
 
     while (1) {
@@ -2349,7 +2352,7 @@ TclUniCharCaseMatch(
 	    return (*uniStr == 0);
 	}
 	if ((*uniStr == 0) && (p != '*')) {
-	    return 0;
+	    return -1;
 	}
 
 	/*
@@ -2394,11 +2397,12 @@ TclUniCharCaseMatch(
 			}
 		    }
 		}
-		if (TclUniCharCaseMatch(uniStr, uniPattern, nocase)) {
-		    return 1;
+		result = UniCharCaseMatch(uniStr, uniPattern, nocase);
+		if (result != 0) {
+		    return result;
 		}
 		if (*uniStr == 0) {
-		    return 0;
+		    return -1;
 		}
 		uniStr++;
 	    }
@@ -2492,6 +2496,17 @@ TclUniCharCaseMatch(
 	uniPattern++;
     }
 }
+
+int
+TclUniCharCaseMatch(
+    const Tcl_UniChar *uniStr,	/* Unicode String. */
+    const Tcl_UniChar *uniPattern,
+				/* Pattern, which may contain special
+				 * characters. */
+    int nocase)			/* 0 for case sensitive, 1 for insensitive */
+{
+    return UniCharCaseMatch(uniStr, uniPattern, nocase) == 1;
+}
 
 /*
  *----------------------------------------------------------------------
@@ -2514,8 +2529,8 @@ TclUniCharCaseMatch(
  *----------------------------------------------------------------------
  */
 
-int
-TclUniCharMatch(
+static int
+UniCharMatch(
     const Tcl_UniChar *string,	/* Unicode String. */
     Tcl_Size strLen,		/* Length of String */
     const Tcl_UniChar *pattern,	/* Pattern, which may contain special
@@ -2523,6 +2538,7 @@ TclUniCharMatch(
     Tcl_Size ptnLen,		/* Length of Pattern */
     int nocase)			/* 0 for case sensitive, 1 for insensitive */
 {
+    int result;
     const Tcl_UniChar *stringEnd, *patternEnd;
     Tcl_UniChar p;
 
@@ -2541,7 +2557,7 @@ TclUniCharMatch(
 	}
 	p = *pattern;
 	if ((string == stringEnd) && (p != '*')) {
-	    return 0;
+	    return -1;
 	}
 
 	/*
@@ -2586,12 +2602,13 @@ TclUniCharMatch(
 			}
 		    }
 		}
-		if (TclUniCharMatch(string, stringEnd - string,
-			pattern, patternEnd - pattern, nocase)) {
-		    return 1;
+		result = UniCharMatch(string, stringEnd - string,
+			pattern, patternEnd - pattern, nocase);
+		if (result != 0) {
+		    return result;
 		}
 		if (string == stringEnd) {
-		    return 0;
+		    return -1;
 		}
 		string++;
 	    }
@@ -2682,6 +2699,18 @@ TclUniCharMatch(
 	string++;
 	pattern++;
     }
+}
+
+int
+TclUniCharMatch(
+    const Tcl_UniChar *string,	/* Unicode String. */
+    Tcl_Size strLen,		/* Length of String */
+    const Tcl_UniChar *pattern,	/* Pattern, which may contain special
+				 * characters. */
+    Tcl_Size ptnLen,		/* Length of Pattern */
+    int nocase)			/* 0 for case sensitive, 1 for insensitive */
+{
+    return UniCharMatch(string, strLen, pattern, ptnLen, nocase) == 1;
 }
 
 /*

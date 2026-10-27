@@ -1457,6 +1457,24 @@ test string-11.54.$noComp {string match, failure} {
 test string-11.55.$noComp {string match, invalid binary optimization} {
     [format string] match \u0141 [binary format c 65]
 } 0
+test string-11.56.$noComp {string match, no exponential backtracking: bug a4a7f2abd3} -body {
+    set res {}
+    foreach {c nocase} {a 0 a 1 \u0141 0 \u0141 1 \U1F600 0} {
+	set s [string repeat $c 30]
+	set p [string repeat $c* 30]b
+	string length $s; string length $p
+	set t [lindex [time {lappend res [run {string match {*}[expr {$nocase ? "-nocase" : ""}] $p $s}]}] 0]
+	lappend res [expr {$t < 1000000}]
+    }
+    set s [binary format a* [string repeat a 30]]
+    set p [binary format a* [string repeat a* 30]b]
+    set t [lindex [time {lappend res [run {string match $p $s}]}] 0]
+    lappend res [expr {$t < 1000000}]
+    lappend res [run {string match [string repeat a* 30] [string repeat a 30]}]
+    lappend res [run {string match *a*b*c* xxaxxbxxcxx}] [run {string match *a*b*c* xxaxxcxxbxx}]
+} -cleanup {
+    unset -nocomplain res s p t c nocase
+} -result {0 1 0 1 0 1 0 1 0 1 0 1 1 1 0}
 
 test stringComp-12.1.0.$noComp {Bug 3588366: end-offsets before start} {
     apply {s {
