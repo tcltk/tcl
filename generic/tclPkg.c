@@ -1755,7 +1755,7 @@ CheckRequirement(
 
     char *dash = NULL, *buf;
 
-    dash = strchr(string, '-');
+    dash = (char *)strchr(string, '-');
     if (dash == NULL) {
 	/*
 	 * No dash found, has to be a simple version.
@@ -1943,7 +1943,7 @@ RequirementSatisfied(
     int satisfied, res;
     char *dash = NULL, *buf, *min, *max;
 
-    dash = strchr(req, '-');
+    dash = (char *)strchr(req, '-');
     if (dash == NULL) {
 	/*
 	 * No dash found, is a simple version, fallback to regular check. The

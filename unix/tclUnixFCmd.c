@@ -1970,7 +1970,7 @@ TclpObjNormalizePath(
      */
 
     if (nextCheckpoint == 0 && haveRealpath) {
-	char *lastDir = strrchr(currentPathEndPosition, '/');
+	const char *lastDir = strrchr(currentPathEndPosition, '/');
 
 	if (lastDir != NULL) {
 	    nativePath = Tcl_UtfToExternalDString(NULL, path,
