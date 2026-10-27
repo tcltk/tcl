@@ -350,7 +350,8 @@ test abstractlist-3.12 {shimmer lrepeat} {testobj lstring} {
     list $l ${l-isa} $m ${m-isa} [testobj objtype $n] [value-cmp l n]
 } {{I n c o n c e i v a b l e} lstring {{I n c o n c e i v a b l e} {I n c o n c e i v a b l e} {I n c o n c e i v a b l e}} list lstring 0}
 
-# lsort
+# shimmer
+
 foreach not {{} REVERSE SLICE SETELEMENT REPLACE GETELEMENTS} {
 
     testConstraint [format "%sShimmer" [string totitle $not]] [expr {$not eq ""}]
