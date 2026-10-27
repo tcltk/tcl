@@ -2747,7 +2747,7 @@ BinaryEncodeUu(
 	    }
 	    lineLength = ((lineLength - 1) & -4) + 1; /* 5, 9, 13 ... */
 	    break;
-	case OPT_WRAPCHAR:
+	case OPT_WRAPCHAR: {
 	    wrapchar = (const unsigned char *)TclGetStringFromObj(
 		    objv[i + 1], &wrapcharlen);
 	    const unsigned char *p = wrapchar;
@@ -2780,6 +2780,7 @@ BinaryEncodeUu(
 		goto badwrap;
 	    }
 	    break;
+	}
 	default:
 	    TCL_UNREACHABLE();
 	}
