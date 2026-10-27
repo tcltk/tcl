@@ -57,6 +57,7 @@ to the userbase.
  - [no longer replace "::" in manual page with "_" on installation](https://core.tcl-lang.org/tcl/tktview/0ef68e)
  - [tcl_startOfPreviousWord ignores the last character when start is the string length](https://core.tcl-lang.org/tcl/tktview/3e7c4a)
  - [glob matching can take exponential time](https://core.tcl-lang.org/tcl/tktview/a4a7f2)
+ - [Make packages work in an out-of-tree build with "configure --srcdir=..."](https://core.tcl-lang.org/tcl/tktview/17ffc4)
 
 # Updated bundled packages, libraries, standards, data
  - http 2.10.3
