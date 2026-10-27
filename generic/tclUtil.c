@@ -2386,7 +2386,7 @@ Tcl_StringCaseMatch(
  *	Parallels tclUtf.c:TclUniCharMatch, adjusted for char* and sans nocase.
  *
  * Results:
- *	The return value is true if string matches pattern, and false otherwise. The
+ *	The return value is 1 if string matches pattern, and 0 otherwise. The
  *	matching operation permits the following special characters in the
  *	pattern: *?\[] (see the manual entry for details on what these mean).
  *
@@ -2445,7 +2445,7 @@ ByteArrayMatch(
 		/* empty body */
 	    }
 	    if (pattern == patternEnd) {
-		return true;
+		return 1;
 	    }
 	    p = *pattern;
 	    while (1) {
@@ -2497,14 +2497,14 @@ ByteArrayMatch(
 	    string++;
 	    while (1) {
 		if ((*pattern == ']') || (pattern == patternEnd)) {
-		    return false;
+		    return 0;
 		}
 		startChar = *pattern;
 		pattern++;
 		if (*pattern == '-') {
 		    pattern++;
 		    if (pattern == patternEnd) {
-			return false;
+			return 0;
 		    }
 		    endChar = *pattern;
 		    pattern++;
@@ -2538,7 +2538,7 @@ ByteArrayMatch(
 
 	if (p == '\\') {
 	    if (++pattern == patternEnd) {
-		return false;
+		return 0;
 	    }
 	}
 
@@ -2548,7 +2548,7 @@ ByteArrayMatch(
 	 */
 
 	if (*string != *pattern) {
-	    return false;
+	    return 0;
 	}
 	string++;
 	pattern++;

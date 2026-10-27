@@ -4175,8 +4175,6 @@ MODULE_SCOPE int	TclUniCharNcmp(const Tcl_UniChar *ucs,
 			    const Tcl_UniChar *uct, size_t numChars);
 MODULE_SCOPE int	TclUniCharNcasecmp(const Tcl_UniChar *ucs,
 			    const Tcl_UniChar *uct, size_t numChars);
-MODULE_SCOPE bool	TclUniCharCaseMatch(const Tcl_UniChar *uniStr,
-			    const Tcl_UniChar *uniPattern, int nocase);
 
 /*
  * Just for the purposes of command-type registration.
