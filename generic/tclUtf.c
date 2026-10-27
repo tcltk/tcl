@@ -2281,14 +2281,17 @@ Tcl_UniCharIsWordChar(
  *----------------------------------------------------------------------
  */
 
-bool
-TclUniCharCaseMatch(
+/* Returns 1, 0 or -1 (string exhausted), see StringCaseMatch in tclUtil.c. */
+
+static int
+UniCharCaseMatch(
     const Tcl_UniChar *uniStr,	/* Unicode String. */
     const Tcl_UniChar *uniPattern,
 				/* Pattern, which may contain special
 				 * characters. */
     int nocase)			/* 0 for case sensitive, 1 for insensitive */
 {
+    int result;
     Tcl_UniChar ch1 = 0, p;
 
     while (1) {
@@ -2304,7 +2307,7 @@ TclUniCharCaseMatch(
 	    return (*uniStr == 0);
 	}
 	if ((*uniStr == 0) && (p != '*')) {
-	    return false;
+	    return -1;
 	}
 
 	/*
@@ -2349,11 +2352,12 @@ TclUniCharCaseMatch(
 			}
 		    }
 		}
-		if (TclUniCharCaseMatch(uniStr, uniPattern, nocase)) {
-		    return true;
+		result = UniCharCaseMatch(uniStr, uniPattern, nocase);
+		if (result != 0) {
+		    return result;
 		}
 		if (*uniStr == 0) {
-		    return false;
+		    return -1;
 		}
 		uniStr++;
 	    }
@@ -2447,6 +2451,17 @@ TclUniCharCaseMatch(
 	uniPattern++;
     }
 }
+
+bool
+TclUniCharCaseMatch(
+    const Tcl_UniChar *uniStr,	/* Unicode String. */
+    const Tcl_UniChar *uniPattern,
+				/* Pattern, which may contain special
+				 * characters. */
+    int nocase)			/* 0 for case sensitive, 1 for insensitive */
+{
+    return UniCharCaseMatch(uniStr, uniPattern, nocase) == 1;
+}
 
 /*
  *----------------------------------------------------------------------
@@ -2469,8 +2484,8 @@ TclUniCharCaseMatch(
  *----------------------------------------------------------------------
  */
 
-bool
-TclUniCharMatch(
+static int
+UniCharMatch(
     const Tcl_UniChar *string,	/* Unicode String. */
     Tcl_Size strLen,		/* Length of String */
     const Tcl_UniChar *pattern,	/* Pattern, which may contain special
@@ -2478,6 +2493,7 @@ TclUniCharMatch(
     Tcl_Size ptnLen,		/* Length of Pattern */
     int nocase)			/* 0 for case sensitive, 1 for insensitive */
 {
+    int result;
     const Tcl_UniChar *stringEnd, *patternEnd;
     Tcl_UniChar p;
 
@@ -2496,7 +2512,7 @@ TclUniCharMatch(
 	}
 	p = *pattern;
 	if ((string == stringEnd) && (p != '*')) {
-	    return false;
+	    return -1;
 	}
 
 	/*
@@ -2541,12 +2557,13 @@ TclUniCharMatch(
 			}
 		    }
 		}
-		if (TclUniCharMatch(string, stringEnd - string,
-			pattern, patternEnd - pattern, nocase)) {
-		    return true;
+		result = UniCharMatch(string, stringEnd - string,
+			pattern, patternEnd - pattern, nocase);
+		if (result != 0) {
+		    return result;
 		}
 		if (string == stringEnd) {
-		    return false;
+		    return -1;
 		}
 		string++;
 	    }
@@ -2637,6 +2654,18 @@ TclUniCharMatch(
 	string++;
 	pattern++;
     }
+}
+
+bool
+TclUniCharMatch(
+    const Tcl_UniChar *string,	/* Unicode String. */
+    Tcl_Size strLen,		/* Length of String */
+    const Tcl_UniChar *pattern,	/* Pattern, which may contain special
+				 * characters. */
+    Tcl_Size ptnLen,		/* Length of Pattern */
+    int nocase)			/* 0 for case sensitive, 1 for insensitive */
+{
+    return UniCharMatch(string, strLen, pattern, ptnLen, nocase) == 1;
 }
 
 /*
