@@ -57,7 +57,7 @@ Tcl\_NewStringObj, Tcl\_NewUnicodeObj, Tcl\_SetStringObj, Tcl\_SetUnicodeObj, Tc
 [void]{.ret} [Tcl\_SetObjLength]{.ccmd} [objPtr, newLength]{.cargs}
 [int]{.ret} [Tcl\_AttemptSetObjLength]{.ccmd} [objPtr, newLength]{.cargs}
 [Tcl\_Obj \*]{.ret} [Tcl\_ConcatObj]{.ccmd} [objc, objv]{.cargs}
-[int]{.ret} [Tcl\_IsEmpty]{.ccmd} [fIobjPtr]{.cargs}
+[int]{.ret} [Tcl\_IsEmpty]{.ccmd} [objPtr]{.cargs}
 :::
 
 # Arguments

@@ -36,7 +36,7 @@ Determines whether the regular expression *exp* matches part or all of *string* 
 
 If additional arguments are specified after *string* then they are treated as the names of variables in which to return information about which part(s) of *string* matched *exp*. *MatchVar* will be set to the range of *string* that matched all of *exp*.  The first *subMatchVar* will contain the characters in *string* that matched the leftmost parenthesized subexpression within *exp*, the next *subMatchVar* will contain the characters that matched the next parenthesized subexpression to the right in *exp*, and so on.
 
-If the initial arguments to **regexp** start with **-** then they are treated as switches.  The following switches are currently supported:
+If the initial arguments to **regexp** start with **-** then they are treated as switches.  The following switches (which may be abbreviated) are currently supported:
 
 [-about]{.lit}
 : Instead of attempting to match the regular expression, returns a list containing information about the regular expression.  The first element of the list is a subexpression count.  The second element is a list of property names that describe various attributes of the regular expression. This switch is primarily intended for debugging purposes.

@@ -108,8 +108,9 @@ namespace eval ::ndoc {
 		|              | -class        | defines that the header belongs to a specific class (can be used for CSS)
 		| List         | -type         | a bullet (-type bullet) or numbered (-type numbered) list
 		| ListItem     |               |
-		| Dlist        |               | a definition list
-		| DlistItem    | -definition   | the definition text making up the 'label' of the item (this is an Inline AST element!)
+		| Dlist        | -type         | a definition list; with '-type tkoption' it is a list of widget options (from the Tk .OP macro)
+		| DlistItem    | -definition   | the definition text making up the 'label' of the item (this is an Inline AST element!).
+		|              |               | In a Dlist of '-type tkoption' this is a sequence of three Span elements: '.cmdline', '.dbname' and '.dbclass'
 		| Emphasis     |               |
 		| Strong       |               | text with strong emphasis, typically rendered as bold |
 		| Quoted       | -type         | text enclosed in quotes of a specific type (-type single|double)
@@ -983,12 +984,13 @@ proc ::ndoc::man2AST {manContent} {
 }
 
 
-proc ::ndoc::blocksExpand {blockList} {
+proc ::ndoc::blocksExpand {blockList {listType {}}} {
 	#
 	# takes a hierarchical list of blocks and processes them in breadth-first order
 	# to parse the inline content and convert it into proper inline AST elements
 	#
 	# blockList - a list of AST block elements with unparsed inline content
+	# listType  - the '-type' attribute of the Dlist the block elements are the items of (if any)
 	#
 	# Returns a modified AST with the parsed inline elements
 	#
@@ -998,7 +1000,8 @@ proc ::ndoc::blocksExpand {blockList} {
 		lassign $block blockType blockAttributes blockContent
 		switch $blockType {
 			List - Dlist {
-				lappend newList [list $blockType $blockAttributes [blocksExpand $blockContent]]
+				lappend newList [list $blockType $blockAttributes \
+					[blocksExpand $blockContent [dict getwithdefault $blockAttributes -type {}]]]
 			}
 			ListItem - DlistItem {
 				if {$blockType eq "DlistItem"} {
@@ -1013,7 +1016,17 @@ proc ::ndoc::blocksExpand {blockList} {
 						set titleVs [dict get $blockAttributes -vs]
 						dict unset blockAttributes -vs
 					}
-					if {[string range $content 0 5] in {METHOD OPTION COMMAN}} {
+					if {$listType eq "tkoption"} {
+						# the names of a widget option from an .OP macro: command-line name,
+						# database name and database class, kept together in one line:
+						lassign $content cmdLineName dbName dbClass
+						set termSpans [list \
+							[list Span .cmdline [list [list Text {} $cmdLineName]]] [list Space {} {}] \
+							[list Span .dbname [list [list Text {} $dbName]]] [list Space {} {}] \
+							[list Span .dbclass [list [list Text {} $dbClass]]]]
+						if {$titleVs ne ""} {set termSpans [list [list Span "-vs {$titleVs}" $termSpans]]}
+						dict set blockAttributes -definition $termSpans
+					} elseif {[string range $content 0 5] in {METHOD OPTION COMMAN}} {
 						# a Tcl syntax element to convert to proper custom AST
 						set startIndex [string first "_" $content]
 						incr startIndex
@@ -1113,7 +1126,7 @@ proc ::ndoc::parseBlock {parent manContent} {
 					# upcoming .TP/.IP is what closed this block, hand its info off to
 					# that new list instead of just losing it (see pendingVsInfo above):
 					set blockContent [string trimright [regsub {‡[^:]*:¤$} $blockContent {}]]
-					if {$markup in {.TP .IP}} {set pendingVsInfo $trailingInfo}
+					if {$markup in {.TP .IP .OP}} {set pendingVsInfo $trailingInfo}
 				}
 				if {[string trim [regsub -all {‡[^:]*:|¤} $blockContent {}]] eq ""} {
 					# nothing real left at all - drop the block entirely rather than
@@ -1177,7 +1190,7 @@ proc ::ndoc::parseBlock {parent manContent} {
 					TclDescription $tclDescription
 				set manContent [lrange $manContent 1 end]
 			}
-			.TP - .IP {
+			.TP - .IP - .OP {
 #set verbose 1
 ### ... what about a .TP inside a .RS/.RE pair inside a .TP ... as in file(n)?
 				# .TP = tagged paragraph, used as a delimiter between e.g. subcommands
@@ -1196,11 +1209,16 @@ proc ::ndoc::parseBlock {parent manContent} {
 				#     ../nroff/tcl9.0/doc/StdChannels.3:.IP (b)
 				#     ../nroff/tcl9.0/doc/StdChannels.3:.IP 3)
 				#
+				# .OP (Tk pages, see man.macros) starts a definition list item for a widget option,
+				# with the three names of the option (command-line name, database name and database class)
+				# as arguments; its description follows like for .IP
+				#
 				if {$blockType ne ""} {set doCloseBlock 1; continue}
 				set blockType Dlist
 				lassign [parseArgs $line] number
 				set subType [string range $markup 1 end]
 				set blockAttributes [list]
+				if {$subType eq "OP"} {set blockAttributes [list -type tkoption]}
 				if {$subType eq "IP"} {
 					# do we have a simple bullet/numbered list here?
 					if {[string match {\[[0-9]\]} $number]} {set blockType List; set blockAttributes [list -type numbered]}
@@ -1261,9 +1279,14 @@ proc ::ndoc::parseBlock {parent manContent} {
 							if $verbose {puts "SH/SS - finish list"}
 							set finishDlist 1
 						}
-						.TP - .IP {
-							if $verbose {puts "TP/IP found"}
-							if {$dlistState eq "inset"} {
+						.TP - .IP - .OP {
+							if $verbose {puts "TP/IP/OP found"}
+							if {$dlistState ne "inset" && ($markup eq ".OP") != ([dict getwithdefault $blockAttributes -type {}] eq "tkoption")} {
+								# a list of widget options (.OP) and other definition lists (.TP/.IP)
+								# cannot be mixed in one list, so the current list ends here:
+								if $verbose {puts "finish dlist"}
+								set finishDlist 1
+							} elseif {$dlistState eq "inset"} {
 								# a list nested within a list item
 								lappend itemContent $line
 							} else {
@@ -1284,7 +1307,14 @@ proc ::ndoc::parseBlock {parent manContent} {
 								set subType [string range $markup 1 end]
 								# start new item
 								if $verbose {puts "start new dlist item"}
-								if {$subType eq "IP"} {
+								if {$subType eq "OP"} {
+									# .OP cmdLineName dbName dbClass: the three names are kept together as a list
+									# in the item title; blocksExpand turns them into the Spans of the term
+									# (it knows from the '-type tkoption' of the list how to interpret the title).
+									# lastComment is neither consulted nor touched here (same as for .IP):
+									lassign [parseArgs $line] cmdLineName dbName dbClass
+									set itemTitle [list [parseBackslash [BIRPstrip $cmdLineName]] $dbName $dbClass]
+								} elseif {$subType eq "IP"} {
 									# itemTitle is on the same line - this is always a same-line-title
 									# item such as a nested character-class/pattern-sequence sub-list
 									# (e.g. "string is"'s alnum/alpha/... or "string match"'s */?/[chars]),

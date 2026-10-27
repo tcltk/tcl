@@ -35,7 +35,7 @@ The **switch** command matches its *value* argument against each of the *pattern
 
 Two syntaxes are provided for the *pattern* and *body* arguments. The first uses a separate argument for each of the patterns and commands; this form is convenient if substitutions are desired on some of the patterns or commands. The second form places all of the patterns and commands together into a single argument *patternBodyList*; the argument must have proper list structure, with the elements of the list being the patterns and commands. The second form makes it easy to construct multi-line switch commands. Putting braces around the whole list makes it unnecessary to include a backslash at the end of each line. When the *pattern* arguments are in braces in the second form, no command or variable substitutions are performed on them;  this makes the behavior of the second form different than the first form in some cases.
 
-If the initial arguments to **switch** start with **-** then they are treated as options unless there are exactly two arguments to **switch** (in which case the first must the *value* and the second must be the *pattern*/*body* list). The following options are currently supported:
+If the initial arguments to **switch** start with **-** then they are treated as options unless there are exactly two arguments to **switch** (in which case the first must the *value* and the second must be the *pattern*/*body* list). The following options (which may be abbreviated) are currently supported:
 
 [-exact]{.lit}
 : Use exact matching when comparing *value* to a pattern.  This is the default.

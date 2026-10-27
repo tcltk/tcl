@@ -33,7 +33,7 @@ Tcl\_Sleep - delay execution for a given number of milliseconds
 [ms]{.carg .in type="int"}
 : Number of milliseconds to sleep.
 
-[long]{.carg .us type="long"}
+[us]{.carg .in type="long long"}
 : Number of micro-seconds to sleep.
 
 :::

@@ -167,7 +167,7 @@ The *flags* parameter is a bitmask that controls operation of the conversion and
 **TCL\_ENCODING\_NO\_TERMINATE**
 : Disables null termination of the output. By default, the output buffer *dst* is terminated with an encoding-appropriate null.
 
-**TCL\_ENCODING\_START**
+**TCL\_ENCODING\_START** and **TCL\_ENCODING\_END**
 : Indicate whether the source bytes correspond to the first or last blocks, respectively, in a source stream. **TCL\_ENCODING\_START** will cause the conversion routine to reset to an initial state ready to process the first byte of an encoded stream. **TCL\_ENCODING\_END** indicates the source buffer is the last block in an input stream allowing any required finalization to be performed. Any incomplete trailing characters will then be treated as per the encoding profile in effect. Both flags may be specified in the same call when all data to be converted is passed in a single block. Both flags are also presumed to be implicitly set if the *statePtr* parameter is passed as NULL.
 
 **TCL\_ENCODING\_CHAR\_LIMIT**

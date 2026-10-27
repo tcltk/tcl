@@ -37,6 +37,7 @@ package - Facilities for package loading and version control
 [package]{.cmd} [vcompare]{.sub} [version1]{.arg} [version2]{.arg}
 [package]{.cmd} [versions]{.sub} [package]{.arg}
 [package]{.cmd} [vsatisfies]{.sub} [version]{.arg} [requirement]{.arg} [requirement]{.optdot}
+[package]{.cmd} [prefer]{.sub} [latest|stable]{.optlit}
 :::
 
 # Description

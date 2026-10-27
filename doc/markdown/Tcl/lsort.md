@@ -67,10 +67,10 @@ By default ASCII sorting is used with the result returned in increasing order.  
 : Use *command* as a comparison command. To compare two elements, evaluate a Tcl script consisting of *command* with the two elements appended as additional arguments.  The script should return an integer less than, equal to, or greater than zero if the first element is to be considered less than, equal to, or greater than the second, respectively.
 
 [-increasing]{.lit}
-: Sort the list in increasing order ("smallest"items first). This is the default.
+: Sort the list in increasing order ("smallest" items first). This is the default.
 
 [-decreasing]{.lit}
-: Sort the list in decreasing order ("largest"items first).
+: Sort the list in decreasing order ("largest" items first).
 
 [-indices]{.lit}
 : Return a list of indices into *list* in sorted order instead of the values themselves.

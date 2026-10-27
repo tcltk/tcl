@@ -60,7 +60,7 @@ Tcl\_UniChar, Tcl\_UniCharToUtf, Tcl\_UtfToUniChar, Tcl\_UtfToChar16, Tcl\_UtfTo
 [\*chPtr]{.carg .out type="Tcl_UniChar"}
 : Filled with the Tcl\_UniChar represented by the head of the TUTF-8 byte sequence.
 
-[short]{.carg .*uPtr type="unsigned"}
+[\*uPtr]{.carg .out type="unsigned short"}
 : Filled with the utf-16 represented by the head of the TUTF-8 byte sequence.
 
 [\*wPtr]{.carg .out type="wchar_t"}

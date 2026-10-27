@@ -240,9 +240,9 @@ expr {5 / 4.0}
 expr {5 / ( [string length "abcd"] + 0.0 )}
 ```
 
-both return 1.25. A floating-point result can be distinguished from an integer result by the presence of either "**.**" or "**e**"
+both return 1.25. A floating-point result can be distinguished from an integer result by the presence of either "**.**" or "**e**".
 
-. For example,
+For example,
 
 ```
 expr {20.0/5.0}

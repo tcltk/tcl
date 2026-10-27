@@ -112,6 +112,8 @@ See [Creating test suites with tcltest] below for an extended example of how to 
 
     Prints statistics about the tests run and removes files that were created by **makeDirectory** and **makeFile** since the last **cleanupTests**.  Names of files and directories in the directory **configure -tmpdir** created since the last **cleanupTests**, but not created by **makeFile** or **makeDirectory** are printed to **outputChannel**.  This command also restores the original shell environment, as described by the global **env** array. Returns an empty string.
 
+    When Tk is loaded, the shell is not interactive and the test file is the main script of the application (as in [wish foo.test][wish]), **cleanupTests** exits the application instead of returning, so that the test file does not wait in the event loop.
+
 [runAllTests]{.cmd}
 : This is a main command meant to run an entire suite of tests, spanning multiple files and/or directories, as governed by the configurable options of **tcltest**.  See [Running all tests] below for a complete description of the many variations possible with **runAllTests**.
 
@@ -247,7 +249,7 @@ target-majorNum.minorNum
 
 For white-box (regression) tests, the target should be the name of the C function or Tcl procedure being tested.  For black-box tests, the target should be the name of the feature being tested.  Some conventions call for the names of black-box tests to have the suffix **\_bb**. Related tests should share a major number.  As a test suite evolves, it is best to have the same test name continue to correspond to the same test, so that it remains meaningful to say things like "Test foo-1.3 passed in all releases up to 3.4, but began failing in release 3.5."
 
-During evaluation of **test**, the *name* will be compared to the lists of string matching patterns returned by **configure -match**, and **configure -skip**.  The test will be run only if *name* matches any of the patterns from **configure -match** and matches none of the patterns from **configure -skip**.
+During evaluation of **test**, the *name* will be compared to the lists of string matching patterns returned by **configure -match**, and **configure -skip**.  The test will be run only if *name* matches any of the patterns from **configure -match** and matches none of the patterns from **configure -skip**.  Only top-level tests are compared; a test nested in the body of another test runs whenever the enclosing test runs.
 
 The *description* should be a short textual description of the test.  The *description* is included in output produced by the test, typically test failure messages.  Good *description* values should briefly explain the purpose of the test to users of a test suite. The name of a Tcl or C function being tested should be included in the description for regression tests.  If the test case exists to reproduce a bug, include the bug ID in the description.
 
@@ -679,4 +681,5 @@ Implementation of output and error comparison in the test command depends on usa
 [source]: source.md
 [switch]: switch.md
 [time]: time.md
+[wish]: ../Tk/wish.md
 

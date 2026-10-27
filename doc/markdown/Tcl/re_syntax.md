@@ -116,7 +116,7 @@ A *constraint* matches an empty string when specific conditions are met. A const
 **$**
 : matches at the end of the string or a line (according to whether matching is newline-sensitive or not, as described in [Matching], below).
 
-    The difference between string and line matching modes is immaterial when the string does not contain a newline character.  The **\\A** and **\\Z** constraint escapes have a similar purpose but are always constraints for the overall string.
+    The difference between string and line matching modes is immaterial when the string does not contain a newline character.  The **\\A**, **\\z** and **\\Z** constraint escapes have a similar purpose but are always constraints for the overall string.
 
     The default newline-sensitivity depends on the command that uses the regular expression, and can be overridden as described in [Metasyntax], below.
 
@@ -307,8 +307,11 @@ A constraint escape (AREs only) is a constraint, matching the empty string if sp
 **\\Y**
 : matches only at a point that is not the beginning or end of a word
 
-**\\Z**
+**\\z**
 : matches only at the end of the string (see [Matching], below, for how this differs from "**$**")
+
+**\\Z**
+: Same as **\\z**.
 
 **\\***m*
 : (where *m* is a nonzero digit) a *back reference*, see below
@@ -411,7 +414,7 @@ Match lengths are measured in characters, not collating elements. An empty strin
 
 If case-independent matching is specified, the effect is much as if all case distinctions had vanished from the alphabet. When an alphabetic that exists in multiple cases appears as an ordinary character outside a bracket expression, it is effectively transformed into a bracket expression containing both cases, so that **x** becomes "**\[xX\]**". When it appears inside a bracket expression, all case counterparts of it are added to the bracket expression, so that "**\[x\]**" becomes "**\[xX\]**" and "**\[^x\]**" becomes "**\[^xX\]**".
 
-If newline-sensitive matching is specified, **.** and bracket expressions using **^** will never match the newline character (so that matches will never cross newlines unless the RE explicitly arranges it) and **^** and **$** will match the empty string after and before a newline respectively, in addition to matching at beginning and end of string respectively. ARE **\\A** and **\\Z** continue to match beginning or end of string *only*.
+If newline-sensitive matching is specified, **.** and bracket expressions using **^** will never match the newline character (so that matches will never cross newlines unless the RE explicitly arranges it) and **^** and **$** will match the empty string after and before a newline respectively, in addition to matching at beginning and end of string respectively. ARE **\\A** and **\\z** and **\\Z** continue to match beginning or end of string *only*.
 
 If partial newline-sensitive matching is specified, this affects **.** and bracket expressions as with newline-sensitive matching, but not **^** and **$**.
 

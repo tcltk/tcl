@@ -89,7 +89,7 @@ Tcl\_CreateEventSource, Tcl\_DeleteEventSource, Tcl\_SetMaxBlockTime, Tcl\_Queue
 [mode]{.carg .in type="int"}
 : Indicates whether events should be serviced by **Tcl\_ServiceAll**. Must be one of **TCL\_SERVICE\_NONE** or **TCL\_SERVICE\_ALL**.
 
-[Tcl\_NotifierProcs\*]{.carg .notifierProcPtr type="const"}
+[\*notifierProcPtr]{.carg .in type="const Tcl_NotifierProcs"}
 : Structure of function pointers describing notifier procedures that are to replace the ones installed in the executable.  See [Replacing the notifier] for details.
 
 :::
