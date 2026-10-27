@@ -9526,3 +9526,5 @@ Many code fixes to avoid overflow or undefined behavior.  Thanks chrstphrchvz.
 2026-10-27 Don't assume that Windows has no usable zlib/tommath (storchaka)
 
 2026-10-27 Make packages work in an out-of-tree build with "configure --srcdir=..." (storchaka)
+
+2026-10-27 no longer replace "::" in manual page with "_" on installation (storchaka)
