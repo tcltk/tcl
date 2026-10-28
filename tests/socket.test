@@ -96,6 +96,14 @@ proc randport {} {
     return $port
 }
 
+# Some systems (e.g. illumos) refuse a connection to a local port without a
+# listener at once, so an async connect to it is never pending.
+testConstraint asyncConnectPending [expr {![catch {
+	set h [socket -async localhost [randport]]
+	set pending [fconfigure $h -connecting]
+	close $h
+    }] && $pending}]
+
 # Test the latency of tcp connections over the loopback interface. Some OSes
 # (e.g. NetBSD) seem to use the Nagle algorithm and delayed ACKs, so it takes
 # up to 200ms for a packet sent to localhost to arrive. We're measuring this
@@ -2446,7 +2454,7 @@ test socket-14.15 {blocking read on async socket should not trigger event handle
 test socket-14.16 {empty -peername while [socket -async] connecting} -body {
     set client [socket -async localhost [randport]]
     fconfigure $client -peername
-} -constraints {socket localhost_v4 localhost_v6 notOSX} -cleanup {
+} -constraints {socket localhost_v4 localhost_v6 notOSX asyncConnectPending} -cleanup {
     catch {close $client}
 } -result {}
 # v4 and v6 is required to prevent that the async connect does not terminate
@@ -2454,7 +2462,7 @@ test socket-14.16 {empty -peername while [socket -async] connecting} -body {
 test socket-14.17 {empty -sockname while [socket -async] connecting} -body {
     set client [socket -async localhost [randport]]
     fconfigure $client -sockname
-} -constraints {socket localhost_v4 localhost_v6 notOSX} -cleanup {
+} -constraints {socket localhost_v4 localhost_v6 notOSX asyncConnectPending} -cleanup {
     catch {close $client}
 } -result {}
 # test for bug c6ed4acfd8: running async socket connect with other connect
