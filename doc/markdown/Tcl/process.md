@@ -48,7 +48,7 @@ This command provides a way to manage subprocesses created by the [open] and [ex
 [::tcl::process]{.cmd} [status]{.sub} [switches]{.optarg} [pids]{.optarg}
 : Returns a dictionary mapping subprocess PIDs to their respective status. If *pids* is specified as a list of PIDs then the command only returns the status of the matching subprocesses if they exist. Any PID that does not correspond to a subprocess is ignored. For active processes, the status is an empty value. For terminated processes, the status is a list with the following format: "**{***code* ?*msg errorCode*?**}**", where:
 
-    [code]{.ins} []{.sub}
+    [code]{.ins}
     : is a standard Tcl return code, i.e., **0** for [TCL\_OK][catch] and **1** for [TCL\_ERROR][catch],
 
     *msg*

@@ -1895,16 +1895,40 @@ proc ::ndoc::parseCommand {mode line {version {}}} {
 					# an instance as a command name:
 					# (this one is normally followd by a subcommand)
 					lappend spanList [list Span .ins [string range $word 1 end-1]]
+					set subWords [list]
 					incr i
 					set sub [lindex $line $i]
-					if {[string index $sub 0] eq "?"} {
-						# not a subcommand anyway
+					if {$sub eq "" || [string index $sub 0] eq "?"} {
+						# not a subcommand anyway (no further word, or an optional argument follows)
 						# (rare case; e.g. for `coroutine`), so revert
 						incr i -1
 					} else {
-						lappend spanList \
-							[list Space {} {}] \
-							[list Span .sub [string range $sub 1 end-1]]
+						# a subcommand, which can be followed by several literal words
+						# (e.g. 'scan mark' or 'edit canredo'), all inside the bold markup:
+						set startIndex 1
+						while {[string index $sub end] ne "="} {
+							lappend subWords [string range $sub $startIndex end]
+							incr i
+							set sub [lindex $line $i]
+							set startIndex 0
+							if {$i > [llength $line]} {
+								puts "emergencyStop 5 in parseCommand"
+								puts "Line: $line"
+								exit
+							}
+						}
+						lappend subWords [string range $sub $startIndex end-1]
+						lappend spanList [list Space {} {}] [list Span .sub [lindex $subWords 0]]
+						foreach subWord [lrange $subWords 1 end] {
+							lappend spanList [list Space {} {}] [list Span .lit $subWord]
+						}
+					}
+					if $DEBUG {
+						if {[llength $subWords] == 0} {
+							puts "word 1 (instance, no subcommand): $word"
+						} else {
+							puts "word 1 + [llength $subWords] (instance and subcommand): $word $subWords"
+						}
 					}
 					if $DEBUG {puts "instance command .ins: $spanList"}
 				}
@@ -2034,8 +2058,8 @@ proc ::ndoc::parseCommand {mode line {version {}}} {
 					lappend spanList [list Space {} {}] [list Span $grouptype $sublist]
 					if $DEBUG {puts "multiple optional arg group: $spanList"}
 				}
-				{^\?\+.+[^=][^\?]} {
-					# multiple optional arguments
+				{^\?\+.+} {
+					# multiple optional arguments:
 					set content [string range $word 2 end]
 					while 1 {
 						incr i
@@ -2063,6 +2087,7 @@ proc ::ndoc::parseCommand {mode line {version {}}} {
 				}
 				default {
 					puts "parseCommand error: unknown syntax pattern"
+					puts "Word [expr {$i + 1}]: $word"
 					puts "Line: $line"
 					exit
 				}
