@@ -2807,6 +2807,7 @@ TclLindexFlat(
     Tcl_Size i;
 
     /* Handle AbstractList as special case */
+    /* the indexCount restriction is related to the TODO below. */
     if (indexCount == 1 && TclObjTypeHasProc(listObj,indexProc)) {
 	Tcl_Size listLen = TclObjTypeLength(listObj);
 	Tcl_Size index;
