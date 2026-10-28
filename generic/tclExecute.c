@@ -5030,56 +5030,98 @@ TEBCresume(
 	valuePtr = OBJ_UNDER_TOS;
 	TRACE("\"%.30s\" \"%.30s\" => ", O2S(valuePtr), O2S(value2Ptr));
 
-	/* special case for AbstractList */
-	if (TclObjTypeHasProc(valuePtr, indexProc)) {
+	/*
+	 * The TclLindexList function handles the general case. Here we
+	 * optimize for very specific cases where the following conditions
+	 * are applicable.
+	 * (a) valuePtr (source list) != value2Ptr (index list)
+	 * (b) value2Ptr is not a list type or is list of a single element
+	 * (c) obtaining an array of list elements is cheap. This is the
+	 *     case for native lists and presumably for abstract lists
+	 *     that define the indexProc or getElementsProc methods.
+	 * Conditions (a) and (b) is to avoid shimmering related bugs. See
+	 * [b24becc2ab] or [0c82728f85]. (c) is to avoid memory bloat. While
+	 * shimmering issues can be worked around here, it is not worthwhile
+	 * to complicate the code (as was earlier attempted) because those
+	 * cases almost never occur in practice AND performance gains are
+	 * anyways lost by having to duplicate and release the index object
+	 * as TclLindexList does.
+	 */
+	if ((valuePtr != value2Ptr)
+		&& (TclListObjIsNative(valuePtr)
+			|| TclObjTypeHasProc(valuePtr, indexProc)
+			|| TclObjTypeHasProc(valuePtr, getElementsProc))) {
+	    /* Condition (a) and (c) met. */
+	    Tcl_ObjTypeLengthProc *lenProc;
+	    Tcl_Size value2Len = 1;
+	    Tcl_Size valueLen;
+
+	    /*
+	     * Avoid TclListObjLength etc. as we do not want to shimmer
+	     * values that are not already lists. Conversely, for values
+	     * that are already lists of size 1, we do not mind shimmering
+	     * as that will be cheaper than extracting the first element.
+	     * Remember also that integer internal reps also have lengthProc
+	     * so extracting the first element will needlessly create an
+	     * extra object. Better to use it as is.
+	     */
 	    DECACHE_STACK_INFO();
-	    length = TclObjTypeLength(valuePtr);
-	    if (TclGetIntForIndexM(NULL, value2Ptr, length-1, &index)!=TCL_OK) {
-		CACHE_STACK_INFO();
-		/* Could be list of indices. Let TclLindexList handle it below */
+	    if (TclListObjIsNative(value2Ptr)) {
+		ListObjLength(value2Ptr, value2Len);
+	    } else if ((lenProc = TclObjTypeHasProc(value2Ptr, lengthProc))
+		       != NULL) {
+		value2Len = lenProc(value2Ptr);
 	    } else {
-		if (TclObjTypeIndex(interp, valuePtr, index, &objResultPtr) !=
-			TCL_OK) {
-		    CACHE_STACK_INFO();
-		    TRACE_ERROR(interp);
-		    goto gotError;
-		}
-		CACHE_STACK_INFO();
-		if (objResultPtr == NULL) {
-		    /* Index is out of range, return empty result. */
-		    TclNewObj(objResultPtr);
-		}
-		Tcl_IncrRefCount(objResultPtr); // reference held here
-		goto lindexDone;
-	    }
-	} else {
-	    /* Non-abstract list */
-	    Tcl_Size value2Length;
-	    Tcl_Obj *indexListPtr = value2Ptr;
-
-	    if ((TclListObjGetElements(interp, valuePtr, &objc, &objv) == TCL_OK)
-		    && (!TclHasInternalRep(value2Ptr, &tclListType)
-		    || (Tcl_ListObjLength(interp, value2Ptr, &value2Length),
-			value2Length == 1
-			    ? (indexListPtr = TclListObjGetElement(value2Ptr, 0), 1)
-			    : 0))) {
-		/* increment the refCount of value2Ptr because TclListObjGetElement may
-		 * have just extracted it from a list in the condition for this block.
+		/*
+		 * Not a list, so ok to treat as length of 1. Code below will
+		 * abort and fall down to TclLindexList if not the case.
 		 */
-		Tcl_IncrRefCount(indexListPtr);
-
-		DECACHE_STACK_INFO();
-		int code = TclGetIntForIndexM(interp, indexListPtr, objc - 1, &index);
-		TclDecrRefCount(indexListPtr);
-		CACHE_STACK_INFO();
-		if (code == TCL_OK) {
-		    Tcl_DecrRefCount(value2Ptr);
-		    tosPtr--;
-		    pcAdjustment = 1;
-		    goto lindexFastPath;
-		}
-		Tcl_ResetResult(interp);
 	    }
+	    if (value2Len == 1) {
+		/* Condition (b) met */
+		if (TclListObjLength(NULL, valuePtr, &valueLen) == TCL_OK
+			&& TclGetIntForIndexM(NULL, value2Ptr, valueLen - 1,
+				   &index) == TCL_OK) {
+		    /* Valid scalar index */
+		    if (TclListObjIsNative(valuePtr)) {
+			ListObjGetElements(valuePtr, objc, objv);
+			CACHE_STACK_INFO();
+			Tcl_DecrRefCount(value2Ptr);
+			tosPtr--;
+			pcAdjustment = 1;
+			goto lindexFastPath;
+		    } else if (TclObjTypeHasProc(valuePtr, indexProc)) {
+			if (TclObjTypeIndex(NULL, valuePtr, index,
+				    &objResultPtr)
+				== TCL_OK) {
+			    CACHE_STACK_INFO();
+			    if (objResultPtr == NULL) {
+				/* Index out of range, return empty result. */
+				TclNewObj(objResultPtr);
+			    }
+			    Tcl_IncrRefCount(objResultPtr);
+			    goto lindexDone;
+			}
+			/* Fall through to TclLindexList */
+		    } else if (TclObjTypeHasProc(valuePtr, getElementsProc)) {
+			if (TclObjTypeGetElements(NULL, valuePtr, &objc, &objv)
+				== TCL_OK) {
+			    CACHE_STACK_INFO();
+			    Tcl_DecrRefCount(value2Ptr);
+			    tosPtr--;
+			    pcAdjustment = 1;
+			    goto lindexFastPath;
+			}
+			/* Fall through to TclLindexList */
+		    } else {
+			/*
+			 * Should never happen because of the earlier
+			 * checks for condition (c) but no harm to fall through.
+			 */
+		    }
+		}
+	    }
+	    CACHE_STACK_INFO();
 	}
 
 	DECACHE_STACK_INFO();
@@ -6829,7 +6871,7 @@ TEBCresume(
 	pc += 5 - infoPtr->loopCtTemp;
 	TCL_FALLTHROUGH();
 
-    case INST_FOREACH_STEP: /* TODO: address abstract list indexing here! */
+    case INST_FOREACH_STEP:
 	/*
 	 * "Step" a foreach loop (i.e., begin its next iteration) by assigning
 	 * the next value list element to each loop var.
@@ -6862,23 +6904,25 @@ TEBCresume(
 	    for (i = 0;  i < numLists;  i++) {
 		varListPtr = infoPtr->varLists[i];
 		numVars = varListPtr->numVars;
-		int hasAbstractList;
+		Tcl_ObjTypeIndexProc *indexProc;
 
 		listPtr = OBJ_AT_DEPTH(listTmpDepth);
-		hasAbstractList = TclObjTypeHasProc(listPtr, indexProc) != 0;
+		indexProc = TclObjTypeHasProc(listPtr, indexProc);
 		DECACHE_STACK_INFO();
-		if (hasAbstractList) {
-		    status = Tcl_ListObjLength(interp, listPtr, &listLen);
+		/* Avoid shimmering abstract lists */
+		if (indexProc != NULL) {
+		    assert(TclObjTypeHasProc(listPtr, lengthProc));
+		    listLen = TclObjTypeLength(listPtr);
 		    elements = NULL;
+		    status = TCL_OK;
 		} else {
 		    status = TclListObjGetElements(interp, listPtr,
 			    &listLen, &elements);
 		}
+		CACHE_STACK_INFO();
 		if (status != TCL_OK) {
-		    CACHE_STACK_INFO();
 		    goto gotError;
 		}
-		CACHE_STACK_INFO();
 
 		valIndex = (iterNum * numVars);
 		for (j = 0;  j < numVars;  j++) {
@@ -6889,8 +6933,9 @@ TEBCresume(
 			if (elements) {
 			    valuePtr = elements[valIndex];
 			} else {
-			    status = Tcl_ListObjIndex(interp,
-				    listPtr, valIndex, &valuePtr);
+			    assert(indexProc);
+			    status = indexProc(interp, listPtr, valIndex,
+				    &valuePtr);
 			    if (status != TCL_OK) {
 				/* Could happen for abstract lists */
 				CACHE_STACK_INFO();
