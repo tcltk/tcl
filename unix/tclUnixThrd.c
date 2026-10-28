@@ -19,6 +19,9 @@
 #   include <pthread_np.h>
 #elif defined(__sun)
 #   include <thread.h>
+#elif defined(__linux__) && !defined(__GLIBC__)
+#   include <sys/resource.h>
+#   include <sys/syscall.h>
 #endif
 
 #if TCL_THREADS
@@ -1064,6 +1067,31 @@ TclpGetCStackLimit(void)
 	    limit = (const char *) addr;
 	}
 	pthread_attr_destroy(&attr);
+#elif defined(__linux__)
+	/*
+	 * Other C libraries, like musl.  Their pthread_getattr_np() may report
+	 * only the already mapped part of the main thread's stack, which grows
+	 * up to RLIMIT_STACK.
+	 */
+
+	pthread_attr_t attr;
+	void *addr;
+	size_t size;
+
+	if (pthread_getattr_np(pthread_self(), &attr) == 0) {
+	    if (pthread_attr_getstack(&attr, &addr, &size) == 0) {
+		struct rlimit rl;
+
+		if (getpid() != (pid_t) syscall(SYS_gettid)) {
+		    limit = (const char *) addr;
+		} else if (getrlimit(RLIMIT_STACK, &rl) == 0
+			&& rl.rlim_cur != RLIM_INFINITY) {
+		    limit = (const char *) addr + size
+			    - (rl.rlim_cur > size ? rl.rlim_cur : size);
+		}
+	    }
+	    pthread_attr_destroy(&attr);
+	}
 #endif
 	dataPtr->limit = limit;
 	dataPtr->initialized = 1;
