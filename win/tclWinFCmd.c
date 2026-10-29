@@ -1473,6 +1473,7 @@ TraversalDelete(
 	}
 	break;
     }
+    }
 
     if (errorPtr != NULL) {
 	char *p = Tcl_WinTCharToUtf((TCHAR *)nativeSrc, -1, errorPtr);
