@@ -59,6 +59,7 @@ to the userbase.
  - [glob matching can take exponential time](https://core.tcl-lang.org/tcl/tktview/a4a7f2)
  - [Make packages work in an out-of-tree build with "configure --srcdir=..."](https://core.tcl-lang.org/tcl/tktview/17ffc4)
  - [tclLoadDl.c dlerror() is not thread safe"](https://core.tcl-lang.org/tcl/tktview/196763)
+ - [msgcat did not check the locales](https://core.tcl-lang.org/tcl/tktview/2f8bb4)
 
 # Updated bundled packages, libraries, standards, data
  - http 2.10.3
