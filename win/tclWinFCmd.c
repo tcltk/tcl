@@ -50,13 +50,23 @@ enum {
     WIN_SYSTEM_ATTRIBUTE
 };
 
-static const int attributeArray[] = {FILE_ATTRIBUTE_ARCHIVE, FILE_ATTRIBUTE_HIDDEN,
-	0, FILE_ATTRIBUTE_READONLY, 0, FILE_ATTRIBUTE_SYSTEM};
-
+static const int attributeArray[] = {
+    FILE_ATTRIBUTE_ARCHIVE,
+    FILE_ATTRIBUTE_HIDDEN,
+    0,
+    FILE_ATTRIBUTE_READONLY,
+    0,
+    FILE_ATTRIBUTE_SYSTEM
+};
 
 const char *const tclpFileAttrStrings[] = {
-	"-archive", "-hidden", "-longname", "-readonly",
-	"-shortname", "-system", NULL
+    "-archive",
+    "-hidden",
+    "-longname",
+    "-readonly",
+    "-shortname",
+    "-system",
+    NULL
 };
 
 const TclFileAttrProcs tclpFileAttrProcs[] = {
@@ -145,8 +155,8 @@ TclpObjRenameFile(
     Tcl_Obj *srcPathPtr,
     Tcl_Obj *destPathPtr)
 {
-    return DoRenameFile((WCHAR *)Tcl_FSGetNativePath(srcPathPtr),
-	    (WCHAR *)Tcl_FSGetNativePath(destPathPtr));
+    return DoRenameFile((const WCHAR *)Tcl_FSGetNativePath(srcPathPtr),
+	    (const WCHAR *)Tcl_FSGetNativePath(destPathPtr));
 }
 
 static int
@@ -163,7 +173,7 @@ DoRenameFile(
     int retval = -1;
 
     /*
-     * The MoveFileW API acts differently under Win95/98 and NT WRT NULL and
+     * The MoveFile API acts differently under Win95/98 and NT WRT NULL and
      * "". Avoid passing these values.
      */
 
@@ -174,7 +184,7 @@ DoRenameFile(
     }
 
     /*
-     * The MoveFileW API would throw an exception under NT if one of the
+     * The MoveFile API would throw an exception under NT if one of the
      * arguments is a char block device.
      */
 
@@ -195,7 +205,7 @@ DoRenameFile(
 
 	/*
 	 * Construct an TCLEXCEPTION_REGISTRATION to protect the call to
-	 * MoveFileW.
+	 * MoveFile.
 	 */
 
 	"leal	    %[registration], %%edx"	    "\n\t"
@@ -224,7 +234,7 @@ DoRenameFile(
 
 	/*
 	 * Come here on normal exit. Recover the TCLEXCEPTION_REGISTRATION and
-	 * put the status return from MoveFileW into it.
+	 * put the status return from MoveFile into it.
 	 */
 
 	"movl	    %%fs:0,	    %%edx"	    "\n\t"
@@ -369,7 +379,7 @@ DoRenameFile(
 		 * errno should be EXDEV. It is very important to get this
 		 * behavior, so that the caller can respond to a cross
 		 * filesystem rename by simulating it with copy and delete.
-		 * The MoveFileW system call already handles the case of moving
+		 * The MoveFile system call already handles the case of moving
 		 * a file between filesystems.
 		 */
 
@@ -408,8 +418,7 @@ DoRenameFile(
 		     * directory back, for completeness.
 		     */
 
-		    if (MoveFileW(nativeSrc,
-			    nativeDst) != FALSE) {
+		    if (MoveFileW(nativeSrc, nativeDst) != FALSE) {
 			return TCL_OK;
 		    }
 
@@ -455,15 +464,15 @@ DoRenameFile(
 		    return TCL_ERROR;
 		}
 		nativeTmp = (WCHAR *) tempBuf;
-		nativeRest[0] = L'\0';
+		nativeRest[0] = '\0';
 
 		result = TCL_ERROR;
-		nativePrefix = (WCHAR *) L"tclr";
+		nativePrefix = (WCHAR *)L"tclr";
 		if (GetTempFileNameW(nativeTmp, nativePrefix,
 			0, tempBuf) != 0) {
 		    /*
 		     * Strictly speaking, need the following DeleteFile and
-		     * MoveFileW to be joined as an atomic operation so no
+		     * MoveFile to be joined as an atomic operation so no
 		     * other app comes along in the meantime and creates the
 		     * same temp file.
 		     */
@@ -534,8 +543,8 @@ TclpObjCopyFile(
     Tcl_Obj *srcPathPtr,
     Tcl_Obj *destPathPtr)
 {
-    return DoCopyFile((WCHAR *)Tcl_FSGetNativePath(srcPathPtr),
-	    (WCHAR *)Tcl_FSGetNativePath(destPathPtr));
+    return DoCopyFile((const WCHAR *)Tcl_FSGetNativePath(srcPathPtr),
+	    (const WCHAR *)Tcl_FSGetNativePath(destPathPtr));
 }
 
 static int
@@ -694,8 +703,7 @@ DoCopyFile(
 	    if (dstAttr & FILE_ATTRIBUTE_READONLY) {
 		SetFileAttributesW(nativeDst,
 			dstAttr & ~((DWORD)FILE_ATTRIBUTE_READONLY));
-		if (CopyFileW(nativeSrc, nativeDst,
-			0) != FALSE) {
+		if (CopyFileW(nativeSrc, nativeDst, 0) != FALSE) {
 		    return TCL_OK;
 		}
 
@@ -791,8 +799,7 @@ TclpDeleteFile(
 		int res = SetFileAttributesW(path,
 			attr & ~((DWORD) FILE_ATTRIBUTE_READONLY));
 
-		if ((res != 0) &&
-			(DeleteFileW(path) != FALSE)) {
+		if ((res != 0) && (DeleteFileW(path) != FALSE)) {
 		    return TCL_OK;
 		}
 		TclWinConvertError(GetLastError());
@@ -854,7 +861,7 @@ int
 TclpObjCreateDirectory(
     Tcl_Obj *pathPtr)
 {
-    return DoCreateDirectory((WCHAR *)Tcl_FSGetNativePath(pathPtr));
+    return DoCreateDirectory((const WCHAR *)Tcl_FSGetNativePath(pathPtr));
 }
 
 static int
@@ -998,7 +1005,7 @@ TclpObjRemoveDirectory(
 	ret = DoRemoveDirectory(&native, recursive, &ds);
 	Tcl_DStringFree(&native);
     } else {
-	ret = DoRemoveJustDirectory((WCHAR *)Tcl_FSGetNativePath(pathPtr), 0, &ds);
+	ret = DoRemoveJustDirectory((const WCHAR *)Tcl_FSGetNativePath(pathPtr), 0, &ds);
     }
 
     if (ret != TCL_OK) {
@@ -1087,8 +1094,7 @@ DoRemoveJustDirectory(
 
 	    if (attr & FILE_ATTRIBUTE_READONLY) {
 		attr &= ~FILE_ATTRIBUTE_READONLY;
-		if (SetFileAttributesW(nativePath,
-			attr) == FALSE) {
+		if (SetFileAttributesW(nativePath, attr) == FALSE) {
 		    goto end;
 		}
 		if (RemoveDirectoryW(nativePath) != FALSE) {
@@ -1126,7 +1132,6 @@ DoRemoveJustDirectory(
 	}
     }
     return TCL_ERROR;
-
 }
 
 static int
@@ -1192,13 +1197,14 @@ TraverseWinTree(
 {
     DWORD sourceAttr;
     WCHAR *nativeSource, *nativeTarget, *nativeErrfile;
-    int result, found, sourceLen, targetLen = 0, oldSourceLen, oldTargetLen;
+    int result, found;
+    int sourceLen, oldSourceLen, oldTargetLen, targetLen = 0;
     HANDLE handle;
     WIN32_FIND_DATAW data;
 
     nativeErrfile = NULL;
     result = TCL_OK;
-    oldTargetLen = 0;		/* lint. */
+    oldTargetLen = 0;
 
     nativeSource = (WCHAR *) Tcl_DStringValue(sourcePtr);
     nativeTarget = (WCHAR *)
@@ -1382,8 +1388,7 @@ TraversalCopy(
 	if (DoCreateDirectory(nativeDst) == TCL_OK) {
 	    DWORD attr = GetFileAttributesW(nativeSrc);
 
-	    if (SetFileAttributesW(nativeDst,
-		    attr) != FALSE) {
+	    if (SetFileAttributesW(nativeDst, attr) != FALSE) {
 		return TCL_OK;
 	    }
 	    TclWinConvertError(GetLastError());
@@ -1446,15 +1451,36 @@ TraversalDelete(
 	break;
     case DOTREE_PRED:
 	return TCL_OK;
-    case DOTREE_POSTD:
-	if (DoRemoveJustDirectory(nativeSrc, 0, NULL) == TCL_OK) {
-	    return TCL_OK;
+    case DOTREE_POSTD: {
+	int i;
+
+	for (i = 0; ; i++) {
+	    if (DoRemoveJustDirectory(nativeSrc, 0, NULL) == TCL_OK) {
+		return TCL_OK;
+	    }
+
+	    /*
+	     * A file that another process keeps open (e.g. a virus scanner
+	     * or an indexer) is only marked for deletion, and the directory
+	     * stays non-empty until that process closes it. Wait a little
+	     * and try again. [3006571fff]
+	     */
+
+	    if (Tcl_GetErrno() != EEXIST || i >= 10) {
+		break;
+	    }
+	    Sleep(1 << i);
 	}
 	break;
     }
 
     if (errorPtr != NULL) {
-	Tcl_WinTCharToUtf((TCHAR *)nativeSrc, -1, errorPtr);
+	char *p = Tcl_WinTCharToUtf((TCHAR *)nativeSrc, -1, errorPtr);
+	for (; *p; ++p) {
+	    if (*p == '\\') {
+		*p = '/';
+	    }
+	}
     }
     return TCL_ERROR;
 }
@@ -1517,7 +1543,7 @@ GetWinFileAttributes(
     const WCHAR *nativeName;
     int attr;
 
-    nativeName = (WCHAR *)Tcl_FSGetNativePath(fileName);
+    nativeName = (const WCHAR *)Tcl_FSGetNativePath(fileName);
     result = GetFileAttributesW(nativeName);
 
     if (result == 0xFFFFFFFF) {
@@ -1536,7 +1562,7 @@ GetWinFileAttributes(
 	 */
 
 	int len;
-	const char *str = Tcl_GetStringFromObj(fileName,&len);
+	const char *str = Tcl_GetStringFromObj(fileName, &len);
 
 	if (len < 4) {
 	    if (len == 0) {
@@ -1595,7 +1621,7 @@ ConvertFileNameFormat(
     int longShort,		/* 0 to short name, 1 to long name. */
     Tcl_Obj **attributePtrPtr)	/* A pointer to return the object with. */
 {
-    int pathc, i;
+    int pathc, i, length;
     Tcl_Obj *splitPath;
 
     splitPath = Tcl_FSSplitPath(fileName, &pathc);
@@ -1621,12 +1647,11 @@ ConvertFileNameFormat(
     for (i = 0; i < pathc; i++) {
 	Tcl_Obj *elt;
 	char *pathv;
-	int pathLen;
 
 	Tcl_ListObjIndex(NULL, splitPath, i, &elt);
 
-	pathv = Tcl_GetStringFromObj(elt, &pathLen);
-	if ((pathv[0] == '/') || ((pathLen == 3) && (pathv[1] == ':'))
+	pathv = Tcl_GetStringFromObj(elt, &length);
+	if ((pathv[0] == '/') || ((length == 3) && (pathv[1] == ':'))
 		|| (strcmp(pathv, ".") == 0) || (strcmp(pathv, "..") == 0)) {
 	    /*
 	     * Handle "/", "//machine/export", "c:/", "." or ".." by just
@@ -1649,7 +1674,6 @@ ConvertFileNameFormat(
 	    Tcl_DString dsTemp;
 	    const WCHAR *nativeName;
 	    const char *tempString;
-	    int tempLen;
 	    WIN32_FIND_DATAW data;
 	    HANDLE handle;
 	    DWORD attr;
@@ -1662,9 +1686,8 @@ ConvertFileNameFormat(
 	     * likely to lead to infinite loops.
 	     */
 
-	    Tcl_DStringInit(&ds);
-	    tempString = Tcl_GetStringFromObj(tempPath,&tempLen);
-	    nativeName = (WCHAR *)Tcl_WinUtfToTChar(tempString, tempLen, &ds);
+	    tempString = Tcl_GetStringFromObj(tempPath, &length);
+	    nativeName = (WCHAR *)Tcl_WinUtfToTChar(tempString, length, &ds);
 	    Tcl_DecrRefCount(tempPath);
 	    handle = FindFirstFileW(nativeName, &data);
 	    if (handle == INVALID_HANDLE_VALUE) {
@@ -1712,7 +1735,6 @@ ConvertFileNameFormat(
 	     *	fprintf(stderr, "%d\n", ((WCHAR *) nativeName)[0]);
 	     */
 
-	    Tcl_DStringInit(&dsTemp);
 	    Tcl_WinTCharToUtf((TCHAR *)nativeName, -1, &dsTemp);
 	    Tcl_DStringFree(&ds);
 
@@ -1844,7 +1866,7 @@ SetWinFileAttributes(
     int yesNo, result;
     const WCHAR *nativeName;
 
-    nativeName = (WCHAR *)Tcl_FSGetNativePath(fileName);
+    nativeName = (const WCHAR *)Tcl_FSGetNativePath(fileName);
     fileAttributes = old = GetFileAttributesW(nativeName);
 
     if (fileAttributes == 0xFFFFFFFF) {
