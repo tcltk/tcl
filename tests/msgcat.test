@@ -194,6 +194,29 @@ namespace eval ::msgcat::test {
 	mclocale looks/ok/../../../../but/is/path/to/evil/code
     } -returnCodes error -match glob -result {locale "*" not valid} -errorCode {MSGCAT badLocale *}
 
+    test msgcat-1.14 {mclocale set, reject a home relative path [2f8bb48009]} -setup {
+	variable locale [mclocale]
+    } -cleanup {
+	mclocale $locale
+    } -body {
+	mclocale ~/path/to/evil/code
+    } -returnCodes error -match glob -result {locale "*" not valid} -errorCode {MSGCAT badLocale *}
+
+    test msgcat-1.15 {clock -locale in a safe interp cannot source a file from a home directory [2f8bb48009]} -setup {
+	set home $::env(HOME)
+	set ::env(HOME) [temporaryDirectory]
+	makeFile {set ::msgcat::test::loaded 1} evil.msg
+	set loaded 0
+	set safe [interp create -safe]
+    } -cleanup {
+	interp delete $safe
+	set ::env(HOME) $home
+	removeFile evil.msg
+	unset -nocomplain home loaded safe
+    } -body {
+	list [catch {$safe eval {clock format 0 -gmt 1 -locale ~/evil}}] $loaded
+    } -result {1 0}
+
     # Tests msgcat-2.*: [mcset], [mcmset], namespace partitioning
 
     test msgcat-2.1 {mcset, global scope} {
@@ -925,6 +948,7 @@ namespace eval ::msgcat::test {
 	foreach l [list {*}{
 	    ../UNSAFEPATH/NOWHERE UNSAFEPATH/../EN //UNSAFEPATH/NOWHERE
 	    zipfs:/UNSAFEPATH/NOWHERE C:/UNSAFEPATH/NOWHERE
+	    ~/UNSAFEPATH/NOWHERE ~UNSAFEUSER/NOWHERE
 	  } [list [file join [info library] msgs]]
 	] {
 	  set l [string tolower $l]

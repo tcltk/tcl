@@ -9530,3 +9530,5 @@ Many code fixes to avoid overflow or undefined behavior.  Thanks chrstphrchvz.
 2026-10-27 no longer replace "::" in manual page with "_" on installation (storchaka)
 
 2026-10-27 dlerror() is not thread safe (storchaka)
+
+2026-10-29 msgcat did not check the locales (storchaka)
