@@ -9532,3 +9532,5 @@ Many code fixes to avoid overflow or undefined behavior.  Thanks chrstphrchvz.
 2026-10-27 dlerror() is not thread safe (storchaka)
 
 2026-10-29 msgcat did not check the locales (storchaka)
+
+2026-10-29 compiler warnings in UCRT environment (nijtmans)

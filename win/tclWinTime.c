@@ -740,7 +740,7 @@ TclpGetDate(
 #endif
 
     if (!useGMT) {
-#if defined(_MSC_VER) && (_MSC_VER >= 1900)
+#if defined(_UCRT) || (defined(_MSC_VER) && (_MSC_VER >= 1900))
 #	undef timezone /* prevent conflict with timezone() function */
 	long timezone = 0;
 #endif
@@ -774,7 +774,7 @@ TclpGetDate(
 	    return TclpLocaltime(&t2);
 	}
 
-#if defined(_MSC_VER) && (_MSC_VER >= 1900)
+#if defined(_UCRT) || (defined(_MSC_VER) && (_MSC_VER >= 1900))
 	_get_timezone(&timezone);
 #endif
 

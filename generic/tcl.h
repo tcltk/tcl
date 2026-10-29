@@ -401,7 +401,7 @@ typedef long LONG;
 #	define TCL_WIDE_INT_TYPE __int64
 #	ifdef __BORLANDC__
 #	    define TCL_LL_MODIFIER	"L"
-#	elif defined(_WIN32) && (!defined(__USE_MINGW_ANSI_STDIO) || !__USE_MINGW_ANSI_STDIO)
+#       elif defined(_WIN32) && !defined(_UCRT) && !(defined(__USE_MINGW_ANSI_STDIO) && __USE_MINGW_ANSI_STDIO)
 #	    define TCL_LL_MODIFIER	"I64"
 #	else
 #	    define TCL_LL_MODIFIER	"ll"
