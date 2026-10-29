@@ -1469,16 +1469,37 @@ TraversalDelete(
 	break;
     case DOTREE_PRED:
 	return TCL_OK;
-    case DOTREE_POSTD:
-	if (DoRemoveJustDirectory(nativeSrc, 0, NULL) == TCL_OK) {
-	    return TCL_OK;
+    case DOTREE_POSTD: {
+	int i;
+
+	for (i = 0; ; i++) {
+	    if (DoRemoveJustDirectory(nativeSrc, 0, NULL) == TCL_OK) {
+		return TCL_OK;
+	    }
+
+	    /*
+	     * A file that another process keeps open (e.g. a virus scanner
+	     * or an indexer) is only marked for deletion, and the directory
+	     * stays non-empty until that process closes it. Wait a little
+	     * and try again. [3006571fff]
+	     */
+
+	    if (Tcl_GetErrno() != EEXIST || i >= 10) {
+		break;
+	    }
+	    Sleep(1 << i);
 	}
 	break;
     }
 
     if (errorPtr != NULL) {
 	Tcl_DStringInit(errorPtr);
-	Tcl_WCharToUtfDString(nativeSrc, TCL_INDEX_NONE, errorPtr);
+	char *p = Tcl_WCharToUtfDString(nativeSrc, TCL_INDEX_NONE, errorPtr);
+	for (; *p; ++p) {
+	    if (*p == '\\') {
+		*p = '/';
+	    }
+	}
     }
     return TCL_ERROR;
 }
