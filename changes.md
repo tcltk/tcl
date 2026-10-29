@@ -62,6 +62,7 @@ to the userbase.
  - [msgcat did not check the locales](https://core.tcl-lang.org/tcl/tktview/2f8bb4)
  - [-Wformat warnings with MSYS2 UCRT64](https://core.tcl-lang.org/tcl/tktview/ae62ba)
  - [error deleting: file already exists on Vista](https://core.tcl-lang.org/tcl/tktview/3006571)
+ - [lset on empty list is allowed when index argument is large](https://core.tcl-lang.org/tcl/tktview/13d3c0d)
 
 # Updated bundled packages, libraries, standards, data
  - http 2.10.3
