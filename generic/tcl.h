@@ -291,7 +291,7 @@ typedef TCL_WIDE_INT_TYPE		Tcl_WideInt;
 typedef unsigned TCL_WIDE_INT_TYPE	Tcl_WideUInt;
 
 #ifndef TCL_LL_MODIFIER
-#   if defined(_WIN32) && (!defined(__USE_MINGW_ANSI_STDIO) || !__USE_MINGW_ANSI_STDIO)
+#   if defined(_WIN32) && !defined(_UCRT) && !(defined(__USE_MINGW_ANSI_STDIO) && __USE_MINGW_ANSI_STDIO)
 #	define TCL_LL_MODIFIER	"I64"
 #   else
 #	define TCL_LL_MODIFIER	"ll"
