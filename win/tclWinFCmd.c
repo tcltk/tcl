@@ -1767,7 +1767,7 @@ TclpObjListVolumes(void)
 
     if (GetLogicalDriveStringsA(sizeof(buf), buf) == 0) {
 	/*
-	 * GetVolumeInformationW() will detects all drives, but causes
+	 * GetVolumeInformationW() will detect all drives, but causes
 	 * chattering on empty floppy drives. We only do this if
 	 * GetLogicalDriveStrings() didn't work. It has also been reported
 	 * that on some laptops it takes a while for GetVolumeInformationW() to
