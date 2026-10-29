@@ -61,6 +61,7 @@ to the userbase.
  - [tclLoadDl.c dlerror() is not thread safe"](https://core.tcl-lang.org/tcl/tktview/196763)
  - [msgcat did not check the locales](https://core.tcl-lang.org/tcl/tktview/2f8bb4)
  - [-Wformat warnings with MSYS2 UCRT64](https://core.tcl-lang.org/tcl/tktview/ae62ba)
+ - [error deleting: file already exists on Vista](https://core.tcl-lang.org/tcl/tktview/3006571)
 
 # Updated bundled packages, libraries, standards, data
  - http 2.10.3
