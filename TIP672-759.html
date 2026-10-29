@@ -1,0 +1,463 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TIP 672 and TIP 759 side by side</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,650&family=Source+Sans+3:wght@400;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: one reading column; each example shows its three spellings stacked, labelled by style. */
+:root {
+  --bg: #fbfbfa;
+  --surface: #f1f2f0;
+  --fg: #1d2124;
+  --muted: #5d656b;
+  --rule: #d9dcd8;
+  --plain: #5b6670;      /* plain Tcl */
+  --t672: #a1590f;       /* TIP 672 */
+  --t759: #0f6b67;       /* TIP 759 */
+  --code-bg: #f3f4f1;
+  --note-bg: #eef3f2;
+  --display: "Source Serif 4", "Georgia", "Times New Roman", serif;
+  --body: "Source Sans 3", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --mono: "JetBrains Mono", "DejaVu Sans Mono", "Consolas", monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #15181a; --surface: #1d2124; --fg: #e3e6e4; --muted: #9aa3a8; --rule: #33393c;
+    --plain: #9eabb5; --t672: #e2a15a; --t759: #5cc4bd; --code-bg: #1b1f21; --note-bg: #1b2625;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #15181a; --surface: #1d2124; --fg: #e3e6e4; --muted: #9aa3a8; --rule: #33393c;
+  --plain: #9eabb5; --t672: #e2a15a; --t759: #5cc4bd; --code-bg: #1b1f21; --note-bg: #1b2625;
+  color-scheme: dark;
+}
+body { background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 16.5px; line-height: 1.6; }
+main {
+  max-width: 50rem; margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 2.5rem 4rem;
+}
+h1, h2, h3 { font-family: var(--display); font-weight: 650; text-wrap: balance; line-height: 1.25; }
+h1 { font-size: 2.1rem; margin: 0 0 .4rem; }
+h2 { font-size: 1.45rem; margin: 3rem 0 .8rem; padding-top: 1rem; border-top: 1px solid var(--rule); }
+h3 { font-size: 1.1rem; margin: 1.8rem 0 .5rem; font-weight: 500; }
+p { margin: .7rem 0; max-width: 68ch; }
+.lede { color: var(--muted); font-size: 1.05rem; }
+code { font-family: var(--mono); font-size: .88em; background: var(--code-bg); padding: .05em .3em; border-radius: 3px; }
+.ex { display: grid; gap: .55rem; margin: 1rem 0; }
+.block { min-width: 0; }
+.tag { display: inline-block; font-family: var(--body); font-weight: 600; font-size: .74rem; letter-spacing: .06em; text-transform: uppercase; margin-bottom: .2rem; }
+.tag.plain { color: var(--plain); } .tag.t672 { color: var(--t672); } .tag.t759 { color: var(--t759); }
+pre {
+  margin: 0; overflow-x: auto; background: var(--code-bg); padding: .75rem .9rem; border-radius: 4px;
+  font-family: var(--mono); font-size: .84rem; line-height: 1.5; border-left: 3px solid var(--rule);
+}
+.plain + pre, pre.plain { border-left-color: var(--plain); }
+pre.t672 { border-left-color: var(--t672); }
+pre.t759 { border-left-color: var(--t759); }
+.out { font-family: var(--mono); font-size: .85rem; color: var(--muted); }
+.note { background: var(--note-bg); padding: .7rem .9rem; border-radius: 4px; margin: .9rem 0; max-width: 68ch; }
+.note p { margin: .3rem 0; }
+.tablewrap { overflow-x: auto; margin: 1rem 0; }
+table { border-collapse: collapse; font-size: .93rem; font-variant-numeric: tabular-nums; min-width: 28rem; }
+th, td { padding: .35rem .7rem; border-bottom: 1px solid var(--rule); text-align: right; vertical-align: top; }
+th:first-child, td:first-child { text-align: left; }
+thead th { font-weight: 600; color: var(--muted); font-size: .82rem; letter-spacing: .03em; }
+th.c672 { color: var(--t672); } th.c759 { color: var(--t759); } th.cplain { color: var(--plain); }
+.legend { display: flex; flex-wrap: wrap; gap: .4rem 1.2rem; margin: 1rem 0; font-size: .92rem; }
+.legend span::before { content: ""; display: inline-block; width: .7rem; height: .7rem; border-radius: 2px; margin-right: .4rem; vertical-align: -.05rem; }
+.legend .lp::before { background: var(--plain); } .legend .l6::before { background: var(--t672); } .legend .l7::before { background: var(--t759); }
+dl.rules { display: grid; grid-template-columns: max-content 1fr; gap: .3rem 1rem; margin: 1rem 0; }
+dl.rules dt { font-family: var(--mono); font-size: .86rem; white-space: nowrap; }
+dl.rules dd { margin: 0; min-width: 0; }
+@media (max-width: 560px) { dl.rules { grid-template-columns: 1fr; } dl.rules dd { margin-bottom: .5rem; } }
+a { color: var(--t759); }
+a:focus-visible { outline: 2px solid var(--t759); outline-offset: 2px; }
+footer { margin-top: 3rem; color: var(--muted); font-size: .9rem; }
+</style>
+</head><body>
+<main>
+<h1>TIP 672 and TIP 759 side by side</h1>
+<p class="lede">Eric T.’s page of <code>$((...))</code> examples, taken up again with a third version of every example written in TIP 759 syntax, including tuple assignment <code>(x, y, z) = $U</code>. Every version was run, and the outputs shown are what came out.</p>
+
+<div class="legend" aria-label="Colour key">
+  <span class="lp">plain Tcl</span><span class="l6">TIP 672, <code>$((expr))</code></span><span class="l7">TIP 759, arithmetic syntax</span>
+</div>
+
+<p>This page was prepared by Claude (an AI assistant made by Anthropic) at Florent Merlet’s request. The plain-Tcl and TIP 672 code is Eric T.’s page as published, except the <code>point_in_triangle</code> helper of section 9, rewritten in every style without <code>lassign</code>. The TIP 759 versions are new, apart from section E of TIP 759 (in section 9 below), and owe several shortenings to Florent. The Calc module version of section 9 is not repeated here, since it was not re-run; see the <a href="https://rocketship88.github.io/tcl-tip-672-claude-built/TIP672-examples.html">original page</a> for it.</p>
+
+<h2>How these were checked</h2>
+<p>Two builds of Tcl 9.0.5 were used.</p>
+<ul>
+  <li><strong>The TIP 759 branch</strong> as published: <code>tip-759b_tcl90</code>, commit <code>f9e939e3</code>. Every TIP 759 example on this page runs on it except those that use tuple assignment. Its bytecode for TIP 759 section E matches the counts on Eric’s page exactly (138 instructions, 5 commands, 7 stores by name).</li>
+  <li><strong>The prototype build</strong>: the same branch with the TIP 764 prototype (version v16j), which adds tuple assignment to the expression language and compiles it to one instruction, <code>tupleAssign</code>. The TIP 672 patch from Eric’s repository (<code>extras/expr-subst.patch</code>, written for 9.1.1) was ported onto it, so that plain Tcl, TIP 672 and TIP 759 all run in one binary. The port needed three adjustments: a free token number for <code>TCL_TOKEN_EXPR_SUBST</code>, the existing <code>TCL_SUBST_EXPR</code> flag reused for <code>$((...))</code>, and two places in the array-index code that must skip the new token’s sub-token.</li>
+</ul>
+<p>Unless a section says otherwise, the outputs and the bytecode come from the prototype build. All the outputs are the same on both builds wherever the code runs on both.</p>
+
+<h3>The TIP 759 forms used here</h3>
+<dl class="rules">
+  <dt>[( expr )]</dt><dd>An expression inside a command, in place of <code>[expr {expr}]</code>. It can stand wherever a <code>[...]</code> can: a word, a quoted string, an array index.</dd>
+  <dt>{( ... )}</dt><dd>A script written in arithmetic syntax: a proc body, a <code>foreach</code> or <code>lmap</code> body. Its value is the value of its last statement.</dd>
+  <dt>a ; b</dt><dd>Statements in sequence.</dd>
+  <dt>name = expr</dt><dd>Assignment; the value of the statement is the value assigned.</dd>
+  <dt>(a, b, c)</dt><dd>A list.</dd>
+  <dt>(x, y) = $L</dt><dd>Tuple assignment: <code>x</code> and <code>y</code> receive the first two elements of <code>$L</code>, like <code>lassign</code>. Targets nest, <code>((x1, y1), (x2, y2)) = $edge</code>; a missing element gives an empty string; extra elements are ignored. Prototype build only.</dd>
+  <dt>[cmd ...]</dt><dd>A Tcl command inside arithmetic syntax.</dd>
+  <dt>foreach ... ;</dt><dd>A raw command: some commands can be written without brackets inside arithmetic syntax, among them <code>foreach</code>, <code>incr</code>, <code>llength</code>, <code>lindex</code>, <code>lset</code>, <code>lappend</code>, <code>lassign</code>, <code>return</code>, <code>if</code>, <code>while</code>, <code>for</code>. The list is fixed in the current branch (<code>lrepeat</code>, <code>set</code> and <code>list</code> are not on it). A raw command ends at <code>;</code>; a line break does not end it.</dd>
+  <dt>{(a) + (b)}</dt><dd>A body that begins with <code>(</code> and ends with <code>)</code>, with balanced parentheses, is an arithmetic script: the two do not have to be a matching pair.</dd>
+</dl>
+
+<h2>1. Cross product</h2>
+<div class="ex">
+<div class="block"><span class="tag plain">plain Tcl</span>
+<pre class="plain">proc crossPlain {U V} {
+    lassign $U x y z
+    lassign $V u v w
+    list [expr {$y*$w - $v*$z}] [expr {$w*$x - $u*$z}] [expr {$x*$v - $u*$y}]
+}</pre></div>
+<div class="block"><span class="tag t672">TIP 672</span>
+<pre class="t672">proc cross672 {U V} {
+    lassign $U x y z
+    lassign $V u v w
+    list $(($y*$w - $v*$z)) $(($w*$x - $u*$z)) $(($x*$v - $u*$y))
+}</pre></div>
+<div class="block"><span class="tag t759">TIP 759, with tuple assignment</span>
+<pre class="t759">proc cross759 {U V} {(
+    (x, y, z) = $U; (u, v, w) = $V;
+    $y*$w - $v*$z, $w*$x - $u*$z, $x*$v - $u*$y
+)}</pre></div>
+</div>
+<p class="out">cross {1 2 3} {4 5 6} → -3 -6 -3 in all three.</p>
+<p>The parentheses of the arithmetic body already make the last statement a list, so the three values need no parentheses of their own. Both vectors can also be taken apart in one statement, <code>((x,y,z),(u,v,w)) = ($U,$V);</code>, at the cost of building the pair first (1.19 µs per call against 0.93 µs for the two assignments above, and 0.99 µs for plain Tcl). Without tuple assignment (the published 759 branch), the two <code>lassign</code> are written as raw commands inside the body: <code>lassign $U x y z; lassign $V u v w;</code>.</p>
+
+<h2>2. Rectangle from a centre, width and height (canvas coordinates)</h2>
+<div class="ex">
+<div class="block"><span class="tag plain">plain Tcl</span>
+<pre class="plain">list [expr {$Cx-$L/2.0}] [expr {$Cy-$H/2.0}] [expr {$Cx+$L/2.0}] [expr {$Cy+$H/2.0}]</pre></div>
+<div class="block"><span class="tag t672">TIP 672</span>
+<pre class="t672">list $(($Cx-$L/2.0)) $(($Cy-$H/2.0)) $(($Cx+$L/2.0)) $(($Cy+$H/2.0))</pre></div>
+<div class="block"><span class="tag t759">TIP 759</span>
+<pre class="t759">[($Cx-$L/2.0, $Cy-$H/2.0, $Cx+$L/2.0, $Cy+$H/2.0)]</pre></div>
+</div>
+<p class="out">With Cx=100, Cy=50, L=40, H=20, all three give 80.0 40.0 120.0 60.0.</p>
+<p>The comma list makes one substitution of four values, where 672 needs four substitutions inside a <code>list</code> command.</p>
+
+<h2>3. Scalar product (loop body)</h2>
+<div class="ex">
+<div class="block"><span class="tag plain">plain Tcl</span>
+<pre class="plain">proc dotPlain {U V} {set s 0; foreach u $U v $V {set s [expr {$s + $u*$v}]}; set s}</pre></div>
+<div class="block"><span class="tag t672">TIP 672</span>
+<pre class="t672">proc dot672 {U V} {set s 0; foreach u $U v $V {set s $(($s + $u*$v))}; set s}</pre></div>
+<div class="block"><span class="tag t759">TIP 759</span>
+<pre class="t759">proc dot759 {U V} {( s = 0; foreach u $U v $V {( s = $s + $u*$v )}; $s )}</pre></div>
+</div>
+<p class="out">{1 2 3} and {4 5 6} give 32 in all three.</p>
+<p><code>foreach</code> is a raw command: it needs no brackets inside the arithmetic body, and its own body is an arithmetic script too. The bytecode is the same with or without brackets (42 instructions).</p>
+
+<h2>4. Tensor product</h2>
+<div class="ex">
+<div class="block"><span class="tag plain">plain Tcl</span>
+<pre class="plain">proc tensorPlain {U V} {lmap u $U {lmap v $V {expr {$u * $v}}}}</pre></div>
+<div class="block"><span class="tag t672">TIP 672 (an lmap body is a script, so the value needs a command around it)</span>
+<pre class="t672">proc tensor672 {U V} {lmap u $U {lmap v $V {set _ $(($u * $v))}}}</pre></div>
+<div class="block"><span class="tag t759">TIP 759 (an lmap body can be an arithmetic script)</span>
+<pre class="t759">proc tensor759 {U V} {lmap u $U {lmap v $V {( $u * $v )}}}</pre></div>
+</div>
+<p class="out">All three give {4 5 6} {8 10 12} {12 15 18}.</p>
+<p>The value of an arithmetic script is its last expression, so 759 needs neither <code>set _</code> nor <code>expr</code> here; it is the shortest of the three.</p>
+
+<h2>5. Rotation matrix</h2>
+<div class="ex">
+<div class="block"><span class="tag plain">plain Tcl</span>
+<pre class="plain">proc rotPlain {deg} {
+    set a [expr {$deg/180.0*acos(-1)}]
+    list [expr {cos($a)}] [expr {sin($a)}] [expr {-sin($a)}] [expr {cos($a)}] 0 0
+}</pre></div>
+<div class="block"><span class="tag t672">TIP 672</span>
+<pre class="t672">proc rot672 {deg} {
+    set a $(($deg/180.0*acos(-1)))
+    list $((cos($a))) $((sin($a))) $((-sin($a))) $((cos($a))) 0 0
+}</pre></div>
+<div class="block"><span class="tag t759">TIP 759</span>
+<pre class="t759">proc rot759 {deg} {(
+    a = $deg/180.0*acos(-1);
+    (cos($a), sin($a), -sin($a), cos($a), 0, 0)
+)}</pre></div>
+</div>
+<p class="out">rot 90 gives 6.123233995736766e-17 1.0 -1.0 6.123233995736766e-17 0 0 in all three.</p>
+
+<h2>6. Distance</h2>
+<div class="ex">
+<div class="block"><span class="tag plain">plain Tcl</span>
+<pre class="plain">proc distPlain {x0 y0 x1 y1} {expr {hypot($x1-$x0, $y1-$y0)}}</pre></div>
+<div class="block"><span class="tag t672">TIP 672 (a proc body ends with a command, so it needs return)</span>
+<pre class="t672">proc dist672 {x0 y0 x1 y1} {return $((hypot($x1-$x0, $y1-$y0)))}</pre></div>
+<div class="block"><span class="tag t759">TIP 759</span>
+<pre class="t759">proc dist759 {x0 y0 x1 y1} {( hypot($x1-$x0, $y1-$y0) )}
+
+# taking two points, with tuple assignment:
+proc distPts759 {P Q} {( ((x0, y0), (x1, y1)) = ($P, $Q); hypot($x1-$x0, $y1-$y0) )}</pre></div>
+</div>
+<p class="out">dist 0 0 3 4 gives 5.0 in all three; distPts759 {0 0} {3 4} gives 5.0.</p>
+<p>For a one-line numeric proc, plain <code>expr</code> and the arithmetic body are about the same length; 672 needs <code>return</code>.</p>
+
+<h2>7. Values inside strings, array indexes and conditions</h2>
+<div class="ex">
+<div class="block"><span class="tag t672">TIP 672</span>
+<pre class="t672">puts "area=$(($w*$h)) perimeter=$((2*($w+$h)))"      ;# area=21 perimeter=20
+puts "array: $a($((1+1)))"                            ;# array: two
+if {$(($w % 2)) == 1} {puts "w is odd"}               ;# w is odd
+puts [format "%.2f" $((3.14159*$w*$w))]               ;# 153.94</pre></div>
+<div class="block"><span class="tag t759">TIP 759</span>
+<pre class="t759">puts "area=[($w*$h)] perimeter=[(2*($w+$h))]"        ;# area=21 perimeter=20
+puts "array: $a([(1+1)])"                             ;# array: two
+if {$w % 2 == 1} {puts "w is odd"}                    ;# w is odd
+puts [format "%.2f" [(3.14159*$w*$w)]]                ;# 153.94</pre></div>
+</div>
+<p>This is where both proposals help most compared with <code>[expr {...}]</code>. <code>[(...)]</code> adds four characters around the expression and <code>$((...))</code> adds five; <code>[expr {...}]</code> adds nine. The condition of <code>if</code> is already an expression, so it needs neither.</p>
+
+<h2>8. Polynomial multiplication (inner loops, adapted from tcllib math)</h2>
+<div class="ex">
+<div class="block"><span class="tag plain">plain Tcl</span>
+<pre class="plain">proc polyPlain {c1 c2} {
+    set out [lrepeat [expr {[llength $c1]+[llength $c2]-1}] 0]
+    set i 0
+    foreach a $c1 {
+        set j 0
+        foreach b $c2 {
+            lset out [expr {$i+$j}] [expr {[lindex $out [expr {$i+$j}]] + $a*$b}]
+            incr j
+        }
+        incr i
+    }
+    set out
+}</pre></div>
+<div class="block"><span class="tag t672">TIP 672</span>
+<pre class="t672">proc poly672 {c1 c2} {
+    set out [lrepeat $(([llength $c1]+[llength $c2]-1)) 0]
+    set i 0
+    foreach a $c1 {
+        set j 0
+        foreach b $c2 {
+            lset out $(($i+$j)) $(([lindex $out $(($i+$j))] + $a*$b))
+            incr j
+        }
+        incr i
+    }
+    set out
+}</pre></div>
+<div class="block"><span class="tag t759">TIP 759</span>
+<pre class="t759">proc poly759 {c1 c2} {(
+    out = [lrepeat [(llength $c1 + llength $c2 - 1)] 0];
+    i = 0;
+    foreach a $c1 {(
+        j = 0;
+        foreach b $c2 {
+            lset out [($i+$j)] [(lindex $out [($i+$j)] + $a*$b)]
+            incr j
+        };
+        incr i
+    )};
+    $out
+)}</pre></div>
+</div>
+<p class="out">{2 4 3} times {3 2 4 5} gives 6 16 25 32 32 15 in all three.</p>
+<p>The 759 version has an arithmetic body. <code>llength</code>, <code>lindex</code>, <code>foreach</code> and <code>incr</code> are raw commands, and <code>llength $c1 + llength $c2 - 1</code> ends each <code>llength</code> at the operator. <code>lrepeat</code> is not on the list of raw commands yet, so it keeps its brackets. Every statement ends with <code>;</code>, including the one after a loop: a line break does not end a raw command. The inner loop is left in command syntax; in arithmetic syntax (<code>{( ...; j = $j + 1 )}</code>) it works too, but runs slower (4.8 µs per call against 3.9 µs, and 4.0 µs for plain Tcl).</p>
+
+<h3>Size of examples 1 to 8</h3>
+<p>Characters of each proc, with every run of whitespace counted as one, and the number of <code>$</code>. The proc names are not counted.</p>
+<div class="tablewrap"><table>
+<thead><tr><th>example</th><th class="cplain">plain</th><th class="c672">672</th><th class="c759">759</th></tr></thead>
+<tbody>
+<tr><td>1. cross product</td><td>128 / 14 $</td><td>116 / 17 $</td><td>98 / 14 $</td></tr>
+<tr><td>3. scalar product</td><td>78 / 5 $</td><td>74 / 6 $</td><td>70 / 6 $</td></tr>
+<tr><td>4. tensor product</td><td>58 / 4 $</td><td>62 / 5 $</td><td>55 / 4 $</td></tr>
+<tr><td>5. rotation matrix</td><td>131 / 5 $</td><td>111 / 10 $</td><td>89 / 5 $</td></tr>
+<tr><td>6. distance</td><td>56 / 4 $</td><td>61 / 5 $</td><td>53 / 4 $</td></tr>
+<tr><td>8. polynomial product</td><td>224 / 11 $</td><td>208 / 15 $</td><td>202 / 12 $</td></tr>
+</tbody></table></div>
+<p>672 adds one <code>$</code> per expression. 759 adds none: <code>[(...)]</code> has no <code>$</code>, and the arithmetic body (examples 1, 5, 6) and the comma list replace the <code>list</code> commands. In examples 3 and 8 the <code>$</code> count of 759 is one more than plain because the result is written <code>$s</code> (or <code>$out</code>) instead of <code>set s</code>.</p>
+
+<h2>9. A longer function: distance from a point to the edges of a triangle</h2>
+<p>This is the function from section E of TIP 759, which Eric’s page compares in several styles. Section E calls <code>point_in_triangle</code>, which TIP 759 does not define. Eric’s page wrote one in plain Tcl, with three <code>lassign</code> to take the points apart; neither <code>lassign</code> nor a tuple is needed there, since each point can go to <code>sgn</code> as two arguments with <code>{*}</code>. The helpers below are written that way, once in each style, and each edge function calls the helper of its own style, except section E, which keeps the plain helper it was published with.</p>
+
+<div class="ex">
+<div class="block"><span class="tag plain">helpers, plain Tcl</span>
+<pre class="plain">proc sgn {x1 y1 x2 y2 x3 y3} {
+    expr {($x1-$x3)*($y2-$y3) - ($x2-$x3)*($y1-$y3)}
+}
+
+proc point_in_triangle {px py t1 t2 t3} {
+    set d1 [sgn $px $py {*}$t1 {*}$t2]
+    set d2 [sgn $px $py {*}$t2 {*}$t3]
+    set d3 [sgn $px $py {*}$t3 {*}$t1]
+    expr {!((($d1 &lt; 0) || ($d2 &lt; 0) || ($d3 &lt; 0)) &amp;&amp; (($d1 &gt; 0) || ($d2 &gt; 0) || ($d3 &gt; 0)))}
+}</pre></div>
+<div class="block"><span class="tag t672">helpers, TIP 672</span>
+<pre class="t672">proc sgn672 {x1 y1 x2 y2 x3 y3} {
+    return $((($x1-$x3)*($y2-$y3) - ($x2-$x3)*($y1-$y3)))
+}
+
+proc point_in_triangle672 {px py t1 t2 t3} {
+    set d1 [sgn672 $px $py {*}$t1 {*}$t2]
+    set d2 [sgn672 $px $py {*}$t2 {*}$t3]
+    set d3 [sgn672 $px $py {*}$t3 {*}$t1]
+    return $((!((($d1 &lt; 0) || ($d2 &lt; 0) || ($d3 &lt; 0)) &amp;&amp; (($d1 &gt; 0) || ($d2 &gt; 0) || ($d3 &gt; 0)))))
+}</pre></div>
+<div class="block"><span class="tag t759">helpers, TIP 759</span>
+<pre class="t759">proc sgn759 {x1 y1 x2 y2 x3 y3} {($x1-$x3)*($y2-$y3) - ($x2-$x3)*($y1-$y3)}
+
+proc point_in_triangle759 {px py t1 t2 t3} {(
+    d1 = [sgn759 $px $py {*}$t1 {*}$t2];
+    d2 = [sgn759 $px $py {*}$t2 {*}$t3];
+    d3 = [sgn759 $px $py {*}$t3 {*}$t1];
+    !((($d1 &lt; 0) || ($d2 &lt; 0) || ($d3 &lt; 0)) &amp;&amp; (($d1 &gt; 0) || ($d2 &gt; 0) || ($d3 &gt; 0)))
+)}</pre></div>
+</div>
+<p><code>sgn759</code> has no outer <code>{( ... )}</code>: its body begins with <code>(</code> and ends with <code>)</code>, so it is already an arithmetic script. The three helpers agree with the <code>lassign</code> helper of Eric’s page on a grid of 36 points. The 759 helpers use no tuple, so they run on the published 759 branch too.</p>
+
+<h3>The edge function</h3>
+<div class="ex">
+<div class="block"><span class="tag plain">plain Tcl</span>
+<pre class="plain">proc calculate_edge_distance_Plain {px py t1 t2 t3} {
+    set edges [list [list $t1 $t2] [list $t2 $t3] [list $t3 $t1]]
+    set min_distance 999999999
+    foreach edge $edges {
+        lassign $edge p1 p2
+        lassign $p1 x1 y1
+        lassign $p2 x2 y2
+        set A [expr {$y2-$y1}]
+        set B [expr {$x1-$x2}]
+        set C [expr {$x2*$y1 - $x1*$y2}]
+        set distance [expr {abs($A*$px + $B*$py + $C) / hypot($A, $B)}]
+        if {$distance &lt; $min_distance} {set min_distance $distance}
+    }
+    expr {[point_in_triangle $px $py $t1 $t2 $t3] ? -$min_distance : $min_distance}
+}</pre></div>
+<div class="block"><span class="tag t672">TIP 672</span>
+<pre class="t672">proc calculate_edge_distance_672 {px py t1 t2 t3} {
+    set edges [list [list $t1 $t2] [list $t2 $t3] [list $t3 $t1]]
+    set min_distance 999999999
+    foreach edge $edges {
+        lassign $edge p1 p2
+        lassign $p1 x1 y1
+        lassign $p2 x2 y2
+        set A $(($y2-$y1))
+        set B $(($x1-$x2))
+        set C $(($x2*$y1 - $x1*$y2))
+        set distance $((abs($A*$px + $B*$py + $C) / hypot($A, $B)))
+        if {$distance &lt; $min_distance} {set min_distance $distance}
+    }
+    return $(([point_in_triangle672 $px $py $t1 $t2 $t3] ? -$min_distance : $min_distance))
+}</pre></div>
+<div class="block"><span class="tag t759">TIP 759, as published in section E</span>
+<pre class="t759">proc calculate_edge_distance_Arith {px py t1 t2 t3} {(
+       # Arithmetic Syntax
+        edges = (($t1,$t2),($t2,$t3),($t3,$t1));
+        min_distance = 999999999;
+       [# Command Syntax
+           foreach edge $edges {(
+              # Arithmetic Syntax
+              [ # Command Syntax
+                 lassign $edge p1 p2
+                 lassign $p1 x1 y1
+                 lassign $p2 x2 y2      ] ;
+              A = $y2-$y1; B = $x1-$x2;
+              C = $x2*$y1 - $x1*$y2;
+              distance = abs($A * $px + $B * $py + $C) / hypot($A, $B);
+              $distance &lt; $min_distance ? (min_distance = $distance) :;
+         )}];
+       [point_in_triangle $px $py $t1 $t2 $t3] ? -$min_distance : $min_distance
+)}</pre></div>
+<div class="block"><span class="tag t759">TIP 759 with tuple assignment</span>
+<pre class="t759">proc calculate_edge_distance_Tuple {px py t1 t2 t3} {(
+    min_distance = 999999999;
+    foreach edge [(($t1,$t2),($t2,$t3),($t3,$t1))] {(
+        ((x1, y1), (x2, y2)) = $edge;
+        A = $y2-$y1; B = $x1-$x2;
+        C = $x2*$y1 - $x1*$y2;
+        distance = abs($A*$px + $B*$py + $C) / hypot($A, $B);
+        $distance &lt; $min_distance ? (min_distance = $distance) :;
+    )};
+    [point_in_triangle759 $px $py $t1 $t2 $t3] ? -$min_distance : $min_distance
+)}</pre></div>
+</div>
+<p>The tuple version makes three changes to section E. The three <code>lassign</code> become one nested tuple assignment, which takes an edge apart into its two points and their coordinates. The list of edges goes straight into <code>foreach</code>, so the <code>edges</code> variable is gone. <code>foreach</code> is written as a raw command, without brackets. The comment lines are also left out.</p>
+<p class="out">All four give -0.14142135623730948 for .5 .3 {0.0 0.0} {1.0 0.0} {0.0 1.0}, the number published in TIP 759, and 2.0 for the point (2, 2) outside the triangle.</p>
+
+<h3>Size</h3>
+<p>The edge function only; the helpers are not counted, and the helper names are counted as <code>point_in_triangle</code> in every version.</p>
+<div class="tablewrap"><table>
+<thead><tr><th></th><th class="cplain">plain</th><th class="c672">672</th><th class="c759">759 (section E)</th><th class="c759">759 with tuples</th></tr></thead>
+<tbody>
+<tr><td>non-comment lines</td><td>15</td><td>15</td><td>16</td><td>11</td></tr>
+<tr><td><code>$</code> characters</td><td>35</td><td>40</td><td>35</td><td>32</td></tr>
+<tr><td>characters, as printed</td><td>591</td><td>578</td><td>724</td><td>457</td></tr>
+<tr><td>characters, comment lines removed</td><td>591</td><td>578</td><td>663</td><td>457</td></tr>
+<tr><td>characters, each run of whitespace counted as one</td><td>507</td><td>494</td><td>487</td><td>401</td></tr>
+<tr><td>characters, no whitespace at all</td><td>424</td><td>415</td><td>404</td><td>340</td></tr>
+</tbody></table></div>
+<p>The counts were made again with a small script that uses the rules of Eric’s table: comment lines are removed before the last two rows are counted. It gives the same numbers as his table except in the whitespace-as-one row, where every version comes out one character higher. That row matters most, since Tcl needs the spaces between words.</p>
+<p>The tuple version is the shortest by every measure: 401 characters against 487 for section E and 494 for 672. Most of the gain comes from the destructuring: one line instead of three <code>lassign</code>, and three fewer <code>$</code>.</p>
+<p>The helpers, counted the same way (whitespace as one): plain 319, 672 329, 759 302 characters; 9, 9 and 7 non-comment lines; 26, 28 and 26 <code>$</code>. With <code>{*}</code> instead of <code>lassign</code>, the plain helper went from 379 to 319 characters.</p>
+
+<h3>Timing</h3>
+<p>One call of each edge function (inside point .5 .3), 20,000 calls per sample, median of 9 samples. The whole was repeated four times per run, in five runs, which gives 20 medians per row; the table shows the lowest. The machine was noisy during these runs: an empty compiled <code>for</code> loop took 28 to 47 ns per iteration, and the highest medians reached 8 to 9 µs in every row. The lowest median is the steadier figure, but the differences between rows are of the same size as the noise.</p>
+<div class="tablewrap"><table>
+<thead><tr><th>build</th><th>version</th><th>helpers</th><th>µs per call (lowest median)</th></tr></thead>
+<tbody>
+<tr><td>759 branch</td><td>plain</td><td>plain</td><td>5.19</td></tr>
+<tr><td>759 branch</td><td>759 (section E)</td><td>plain</td><td>5.34</td></tr>
+<tr><td>prototype</td><td>plain</td><td>plain</td><td>5.51</td></tr>
+<tr><td>prototype</td><td>672</td><td>672</td><td>5.53</td></tr>
+<tr><td>prototype</td><td>759 (section E)</td><td>plain</td><td>5.45</td></tr>
+<tr><td>prototype</td><td>759 with tuples</td><td>759</td><td>5.66</td></tr>
+</tbody></table></div>
+<p>These figures should not be compared with Eric’s page, which ran on a quieter, faster machine (about 20 ns per empty loop iteration); only the rows of this table compare with one another. On each build the versions are within about 4% of one another, and no version is clearly faster. The tuple version is the slowest by a small margin: a nested tuple assignment of one edge, <code>((x1, y1), (x2, y2)) = $e</code>, takes 0.23 µs, against 0.16 µs for the three <code>lassign</code> it replaces. It took 0.42 µs before prototype v16j, which stopped building the list of names at run time. These numbers say nothing about large inputs or other functions.</p>
+
+<h2>10. Same bytecode</h2>
+<p>On the prototype build the three spellings of one assignment compile to the same instructions:</p>
+<div class="ex">
+<div class="block"><span class="tag plain">set A [expr {$y2-$y1}]</span> · <span class="tag t672">set A $(($y2-$y1))</span> · <span class="tag t759">( A = $y2-$y1 )</span>
+<pre>loadScalar1 %v0   # y2
+loadScalar1 %v1   # y1
+sub
+storeScalar1 %v2  # A
+done</pre></div>
+</div>
+<p>The listings differ only in their command count: 2 for <code>set A [expr ...]</code>, 1 for the 672 form, 0 for the arithmetic body. On the published 759 branch, an assignment in an arithmetic body is stored by name (<code>storeStk</code>); in the prototype it goes straight into the local variable slot (<code>storeScalar</code>), as plain Tcl does.</p>
+<p>A tuple assignment is one instruction. <code>(x, y) = $p</code> in a proc compiles to:</p>
+<div class="ex"><div class="block">
+<pre>push1 ""                 # placeholder: every name is a compiled local
+loadScalar1 %v0          # p
+push1 "{1 0} {2 1}"      # for each name: its slot, then its index path
+tupleAssign</pre></div></div>
+<p>The literal tells <code>tupleAssign</code> where each value goes: <code>{1 0}</code> means “slot 1 receives element 0”, and a nested target such as <code>((x1, y1), (x2, y2))</code> gives paths <code>{7 0 0} {8 0 1} {9 1 0} {10 1 1}</code>. The instruction stores into the slots as <code>storeScalar</code> does, so traces, links (<code>upvar</code>, <code>global</code>) and typed variables behave as usual. A qualified name, written in braces (<code>{::ns::x}</code>), is stored by name instead.</p>
+
+<h3>Bytecode of the whole edge function</h3>
+<p>Each version is compared with plain Tcl on its own build; the counts come from <code>tcl::unsupported::disassemble</code>. The helpers are compiled separately and are not counted.</p>
+<div class="tablewrap"><table>
+<thead><tr><th>build</th><th>version</th><th>instructions</th><th>commands compiled</th><th>bytes of code</th><th>stores by name</th></tr></thead>
+<tbody>
+<tr><td>759 branch</td><td>plain</td><td>133</td><td>22</td><td>383</td><td>0</td></tr>
+<tr><td>759 branch</td><td>759 (section E)</td><td>138</td><td>5</td><td>318</td><td>7</td></tr>
+<tr><td>prototype</td><td>plain</td><td>133</td><td>22</td><td>383</td><td>0</td></tr>
+<tr><td>prototype</td><td>672</td><td>134</td><td>18</td><td>384</td><td>0</td></tr>
+<tr><td>prototype</td><td>759 (section E)</td><td>124</td><td>5</td><td>295</td><td>0</td></tr>
+<tr><td>prototype</td><td>759 with tuples</td><td>90</td><td>2</td><td>181</td><td>0</td></tr>
+</tbody></table></div>
+<p><strong>672 against plain</strong>: the same instructions in the same order, plus a second <code>done</code> that comes from the <code>return</code>, as on Eric’s 9.1.1 build.</p>
+<p><strong>759 (section E)</strong>: on the published branch, 5 more instructions than plain, because 7 assignments are stored by name. On the prototype those 7 go into the local slots, and the function has 9 fewer instructions than plain, most of them <code>startCommand</code> (4 against 14).</p>
+<p><strong>759 with tuples</strong>: 43 fewer instructions than plain. The three <code>lassign</code> per edge (6 <code>listIndexImm</code>, 3 <code>listRangeImm</code>, 6 <code>dup</code> and their stores) become one <code>tupleAssign</code>, and the <code>edges</code> variable is gone. Writing <code>foreach</code> as a raw command changes nothing in the bytecode. Fewer instructions does not mean faster here: see the timing note in section 9.</p>
+<p><strong>The helpers</strong> (prototype build): <code>point_in_triangle</code> 81 instructions and 7 commands, the 672 one 82 and 7, the 759 one 78 and 3. All three <code>sgn</code> compile to the same 16 instructions. On the published branch, the 759 <code>point_in_triangle</code> stores its three assignments by name (81 instructions).</p>
+
+<h2>What these examples do not cover</h2>
+<p>TIP 759 adds more than a substitution: assignment, <code>;</code>, the comma list and arithmetic scripts, all used above. Tuple assignment is not in the published TIP 759 branch; it comes from the TIP 764 prototype, which proposes it for TIP 759. As far as can be seen the two TIPs do not conflict: in the prototype build <code>$((...))</code> and <code>[(...)]</code> work side by side, and the body of <code>$((...))</code> is handed to the expression parser, so the TIP 759 extensions also work inside it. This was checked only with the examples on this page.</p>
+
+<footer>
+<p>Prepared by Claude (Anthropic) for Florent Merlet, from Eric T.’s <a href="https://rocketship88.github.io/tcl-tip-672-claude-built/TIP672-examples.html">TIP 672 examples</a>. Builds: Tcl 9.0.5, branch tip-759b_tcl90 (commit f9e939e3), with and without the TIP 764 prototype v16j; TIP 672 patch ported from <code>rocketship88/tcl-tip-672-claude-built</code>.</p>
+</footer>
+</main>
+</body></html>
