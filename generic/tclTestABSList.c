@@ -744,7 +744,18 @@ NewLStringObj(
     lstringRepPtr->strlen = strlen(string);
     lstringRepPtr->allocated = lstringRepPtr->strlen + 1;
     lstringRepPtr->string = (char*)Tcl_Alloc(lstringRepPtr->allocated);
-    strcpy(lstringRepPtr->string, string);
+    /*
+     * Implementation will not work with non-ASCII. Error out up front.
+     */
+    for (i = 0; i < lstringRepPtr->strlen; ++i) {
+        if (string[i] <= 0 || string[i] > 127) {
+            Tcl_Free(lstringRepPtr->string);
+            Tcl_Free(lstringRepPtr);
+            Tcl_SetResult(interp, "lstring only supports Unicode range U+0001-U+007F", TCL_STATIC);
+            return NULL;
+        }
+        lstringRepPtr->string[i] = string[i];
+    }
     lstringRepPtr->elements = NULL;
     lstringPtr = Tcl_NewObj();
     itr.twoPtrValue.ptr1 = lstringRepPtr;
@@ -861,76 +872,25 @@ static void
 LStringUpdateString(
     Tcl_Obj *objPtr)
 {
-#   define LOCAL_SIZE 64
-    int localFlags[LOCAL_SIZE], *flagPtr = NULL;
-    Tcl_ObjType const *typePtr = objPtr->typePtr;
-    char *p;
-    Tcl_Size bytesNeeded = 0;
-    Tcl_Size llen, i;
-
     /*
-     * Handle empty list case first, so rest of the routine is simpler.
+     * Since we don't give two hoots about performance, just use a native
+     * list to generate the string representation and copy it. Note the
+     * test suite includes tests when some abstract list methods are missing
+     * so cannot use any of them here (particularly, indexProc)
      */
-    llen = typePtr->lengthProc(objPtr);
-    if (llen <= 0) {
-	Tcl_InitStringRep(objPtr, NULL, 0);
-	return;
+    LString *lstringRepPtr = (LString*)objPtr->internalRep.twoPtrValue.ptr1;
+    Tcl_Obj *nativeListPtr = Tcl_NewListObj(lstringRepPtr->strlen, NULL);
+    for (Tcl_Size i = 0; i < lstringRepPtr->strlen; ++i) {
+        Tcl_ListObjAppendElement(NULL, nativeListPtr,
+                                 Tcl_NewStringObj(&lstringRepPtr->string[i], 1));
     }
 
-    /*
-     * Pass 1: estimate space.
-     */
-    if (llen <= LOCAL_SIZE) {
-	flagPtr = localFlags;
-    } else {
-	/* We know numElems <= LIST_MAX, so this is safe. */
-	flagPtr = (int *) Tcl_Alloc(llen*sizeof(int));
-    }
-    for (bytesNeeded = 0, i = 0; i < llen; i++) {
-	Tcl_Obj *elemObj;
-	const char *elemStr;
-	Tcl_Size elemLen;
-	flagPtr[i] = (i ? TCL_DONT_QUOTE_HASH : 0);
-	typePtr->indexProc(NULL, objPtr, i, &elemObj);
-	Tcl_IncrRefCount(elemObj);
-	elemStr = Tcl_GetStringFromObj(elemObj, &elemLen);
-	/* Note TclScanElement updates flagPtr[i] */
-	bytesNeeded += Tcl_ScanCountedElement(elemStr, elemLen, &flagPtr[i]);
-	if (bytesNeeded < 0) {
-	    Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
-	}
-	Tcl_DecrRefCount(elemObj);
-    }
-    if (bytesNeeded > INT_MAX - llen + 1) {
-	Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
-    }
-    bytesNeeded += llen; /* Separating spaces and terminating nul */
-
-    /*
-     * Pass 2: generate the string repr.
-     */
-    objPtr->bytes = (char *) Tcl_Alloc(bytesNeeded);
-    p = objPtr->bytes;
-    for (i = 0; i < llen; i++) {
-	Tcl_Obj *elemObj;
-	const char *elemStr;
-	Tcl_Size elemLen;
-	flagPtr[i] |= (i ? TCL_DONT_QUOTE_HASH : 0);
-	typePtr->indexProc(NULL, objPtr, i, &elemObj);
-	Tcl_IncrRefCount(elemObj);
-	elemStr = Tcl_GetStringFromObj(elemObj, &elemLen);
-	p += Tcl_ConvertCountedElement(elemStr, elemLen, p, flagPtr[i]);
-	*p++ = ' ';
-	Tcl_DecrRefCount(elemObj);
-    }
-    p[-1] = '\0'; /* Overwrite last space added */
-
-    /* Length of generated string */
-    objPtr->length = p - 1 - objPtr->bytes;
-
-    if (flagPtr != localFlags) {
-	Tcl_Free(flagPtr);
-    }
+    Tcl_Size len;
+    char *p = Tcl_GetStringFromObj(nativeListPtr, &len);
+    objPtr->bytes = (char *) Tcl_Alloc(len+1);
+    objPtr->length = len;
+    memcpy(objPtr->bytes, p, len+1);
+    Tcl_DecrRefCount(nativeListPtr);
 }
 
 /*
@@ -1223,7 +1183,6 @@ Lgen_Init(
     Tcl_PkgProvide(interp, "lgen", "1.0");
     return TCL_OK;
 }
-
 /*
  *----------------------------------------------------------------------
  *
@@ -1273,5 +1232,7 @@ Tcl_ABSListTest_Init(
  * mode: c
  * c-basic-offset: 4
  * fill-column: 78
+ * tab-width: 8
+ * indent-tabs-mode: nil
  * End:
  */
