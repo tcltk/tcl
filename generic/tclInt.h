@@ -3605,6 +3605,24 @@ MODULE_SCOPE int	TclParseNumber(Tcl_Interp *interp, Tcl_Obj *objPtr,
 MODULE_SCOPE void	TclParseInit(Tcl_Interp *interp, const char *string,
 			    Tcl_Size numBytes, Tcl_Parse *parsePtr);
 MODULE_SCOPE Tcl_Size	TclParseAllWhiteSpace(const char *src, Tcl_Size numBytes);
+MODULE_SCOPE void	TclCompileSubExpr(Tcl_Interp *interp,
+			    Tcl_Token *tokenPtr, struct CompileEnv *envPtr);
+MODULE_SCOPE int	TclParseExprSubst(Tcl_Interp *interp,
+			    const char *start, Tcl_Size numBytes,
+			    Tcl_Size *lengthPtr, Tcl_Parse *parsePtr);
+
+/*
+ * TIP 759: is the command parsed in *parsePtr made of one word, itself made
+ * of one TCL_TOKEN_SUB_EXPR token, an expression substitution [(...)]? The
+ * value of the expression is then the result of the command; it is not a
+ * command name.
+ */
+
+#define TclIsExprCommand(parsePtr) \
+    ((parsePtr)->numWords == 1 \
+	&& (parsePtr)->tokenPtr[0].type == TCL_TOKEN_WORD \
+	&& (parsePtr)->tokenPtr[0].numComponents == 1 \
+	&& (parsePtr)->tokenPtr[1].type == TCL_TOKEN_SUB_EXPR)
 MODULE_SCOPE int	TclProcessReturn(Tcl_Interp *interp,
 			    int code, int level, Tcl_Obj *returnOpts);
 MODULE_SCOPE void	TclUndoRefCount(Tcl_Obj *objPtr);

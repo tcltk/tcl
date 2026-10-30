@@ -5542,8 +5542,19 @@ TclEvalEx(
 	    eeFramePtr->line = lines;
 
 	    TclArgumentEnter(interp, objv, objectsUsed, eeFramePtr);
-	    code = Tcl_EvalObjv(interp, objectsUsed, objv,
-		    TCL_EVAL_NOERR | TCL_EVAL_SOURCE_IN_FRAME);
+	    if (TclIsExprCommand(parsePtr)) {
+		/*
+		 * TIP 759: a command that is one expression substitution
+		 * [(...)]: its value, already computed as the only word, is the
+		 * result. It is not a command name.
+		 */
+
+		Tcl_SetObjResult(interp, objv[0]);
+		code = TCL_OK;
+	    } else {
+		code = Tcl_EvalObjv(interp, objectsUsed, objv,
+			TCL_EVAL_NOERR | TCL_EVAL_SOURCE_IN_FRAME);
+	    }
 	    TclArgumentRelease(interp, objv, objectsUsed);
 
 	    eeFramePtr->line = NULL;

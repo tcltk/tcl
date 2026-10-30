@@ -503,10 +503,24 @@ static void		ConvertTreeToTokens(const char *start, Tcl_Size numBytes,
 			    Tcl_Parse *parsePtr);
 static int		ExecConstantExprTree(Tcl_Interp *interp, OpNode *nodes,
 			    Tcl_Size index, Tcl_Obj *const **litObjvPtr);
+/*
+ * TIP 759: what ParseExpr needs and gives for an expression substitution
+ * [(...)].
+ */
+
+typedef struct SubstExpr {
+    Tcl_Size length;		/* Bytes up to and including the "]", or 0. */
+    int depth;			/* Nesting depth of [(...)] in [(...)]. */
+} SubstExpr;
+
+static int		ParseExprSubst(Tcl_Interp *interp, const char *start,
+			    Tcl_Size numBytes, Tcl_Size *lengthPtr,
+			    Tcl_Parse *parsePtr, int depth);
 static int		ParseExpr(Tcl_Interp *interp, const char *start,
 			    Tcl_Size numBytes, OpNode **opTreePtr,
 			    Tcl_Obj *litList, Tcl_Obj *funcList,
-			    Tcl_Parse *parsePtr, bool parseOnly);
+			    Tcl_Parse *parsePtr, bool parseOnly,
+			    SubstExpr *substPtr);
 static Tcl_Size		ParseLexeme(const char *start, Tcl_Size numBytes,
 			    unsigned char *lexemePtr, Tcl_Obj **literalPtr);
 
@@ -553,11 +567,19 @@ ParseExpr(
     Tcl_Parse *parsePtr,	/* Structure to fill with tokens representing
 				 * those operands that require run time
 				 * substitutions. */
-    bool parseOnly)		/* A boolean indicating whether the caller's
+    bool parseOnly,		/* A boolean indicating whether the caller's
 				 * aim is just a parse, or whether it will go
 				 * on to compile the expression. Different
 				 * optimizations are appropriate for the two
 				 * scenarios. */
+    SubstExpr *substPtr)	/* TIP 759: NULL, or the expression is the
+				 * "(...)" of an expression substitution
+				 * [(...)]. The parse then ends with the ")"
+				 * that balances the first "(", when "]"
+				 * follows it directly, and the number of
+				 * bytes up to and including that "]" is
+				 * written in substPtr->length (0 if there is
+				 * none). */
 {
     OpNode *nodes = NULL;	/* Pointer to the OpNode storage array where
 				 * we build the parse tree. */
@@ -617,7 +639,13 @@ ParseExpr(
 				 * original expression. In order to keep the
 				 * error message readable, we impose this
 				 * limit on the substring size we extract. */
+    const char *exprStart = start;
+    int parenDepth = 0;		/* TIP 759: depth of parentheses, for an
+				 * expression substitution [(...)]. */
 
+    if (substPtr != NULL) {
+	substPtr->length = 0;
+    }
     TclParseInit(interp, start, numBytes, parsePtr);
 
     nodes = (OpNode *)Tcl_AttemptAlloc(nodesAvailable * sizeof(OpNode));
@@ -944,10 +972,29 @@ ParseExpr(
 		break;
 
 	    case SCRIPT: {
-		Tcl_Parse *nestedPtr = (Tcl_Parse *)
-			TclStackAlloc(interp, sizeof(Tcl_Parse));
+		Tcl_Parse *nestedPtr;
 
 		tokenPtr = parsePtr->tokenPtr + parsePtr->numTokens;
+		if (numBytes > 1 && start[1] == '(') {
+		    /*
+		     * TIP 759: an expression substitution [(...)].
+		     */
+
+		    code = ParseExprSubst(interp, start, numBytes, &scanned,
+			    parsePtr,
+			    (substPtr != NULL) ? substPtr->depth + 1 : 1);
+		    if (code == TCL_OK) {
+			tokenPtr->type = TCL_TOKEN_SUB_EXPR;
+			tokenPtr->start = start;
+			tokenPtr->size = scanned;
+			tokenPtr->numComponents = 0;
+			parsePtr->numTokens++;
+		    }
+		    break;
+		}
+
+		nestedPtr = (Tcl_Parse *)
+			TclStackAlloc(interp, sizeof(Tcl_Parse));
 		tokenPtr->type = TCL_TOKEN_COMMAND;
 		tokenPtr->start = start;
 		tokenPtr->numComponents = 0;
@@ -1048,6 +1095,9 @@ ParseExpr(
 	} /* case LEAF */
 
 	case UNARY:
+	    if (substPtr != NULL && lexeme == OPEN_PAREN) {
+		parenDepth++;
+	    }
 
 	    /*
 	     * A unary operator appearing just after something that's not an
@@ -1094,6 +1144,21 @@ ParseExpr(
 	case BINARY: {
 	    OpNode *incompletePtr;
 	    unsigned char precedence = prec[lexeme];
+
+	    if (substPtr != NULL && lexeme == CLOSE_PAREN
+		    && --parenDepth == 0) {
+		/*
+		 * TIP 759: the ")" that balances the first "(" ends an
+		 * expression substitution when "]" follows it directly: ")]"
+		 * is one symbol. The parse ends here: this lexeme is the last
+		 * one.
+		 */
+
+		if (numBytes > 1 && start[1] == ']') {
+		    substPtr->length = (start - exprStart) + 2;
+		    numBytes = scanned;
+		}
+	    }
 
 	    /*
 	     * A binary operator appearing just after another operator is a
@@ -1825,6 +1890,123 @@ ConvertTreeToTokens(
 /*
  *----------------------------------------------------------------------
  *
+ * TclParseExprSubst --
+ *
+ *	TIP 759. START points at "[(", the beginning of an expression
+ *	substitution [(...)]. Find where it ends: the ")" that balances the
+ *	first "(", directly followed by "]": ")]" is one symbol.
+ *
+ * Results:
+ *	TCL_OK, and the length of the whole substitution, from "[" to "]",
+ *	is written to *lengthPtr. TCL_ERROR if the expression is not valid
+ *	or has no end: the error message is left in interp (if not NULL), and
+ *	the errorType, term (the "[") and incomplete fields of parsePtr are
+ *	set.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclParseExprSubst(
+    Tcl_Interp *interp,		/* For error reporting, or NULL. */
+    const char *start,		/* Points to "[(". */
+    Tcl_Size numBytes,		/* Bytes available from start. */
+    Tcl_Size *lengthPtr,	/* Receives the length of [(...)]. */
+    Tcl_Parse *parsePtr)	/* Receives the error information. */
+{
+    return ParseExprSubst(interp, start, numBytes, lengthPtr, parsePtr, 0);
+}
+
+static int
+ParseExprSubst(
+    Tcl_Interp *interp,		/* For error reporting, or NULL. */
+    const char *start,		/* Points to "[(". */
+    Tcl_Size numBytes,		/* Bytes available from start. */
+    Tcl_Size *lengthPtr,	/* Receives the length of [(...)]. */
+    Tcl_Parse *parsePtr,	/* Receives the error information. */
+    int depth)			/* Nesting depth in other [(...)]. */
+{
+    Interp *iPtr = (Interp *) interp;
+    SubstExpr subst;
+    OpNode *opTree = NULL;
+    Tcl_Obj *litList, *funcList;
+    Tcl_Size length;
+    int code;
+    Tcl_Parse *exprParsePtr;
+
+    /*
+     * Each nested [(...)] is parsed by a nested call of ParseExpr: limit the
+     * depth, so that the C stack does not overflow. The interpreter's
+     * recursion limit applies, as for nested compilations; without an
+     * interpreter, the default one.
+     */
+
+    if ((depth > ((iPtr != NULL) ? iPtr->maxNestingDepth : MAX_NESTING_DEPTH))
+	    || ((iPtr != NULL)
+	    && (iPtr->numLevels / 5 > iPtr->maxNestingDepth / 4))) {
+	if (interp != NULL) {
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "too many nested expression substitutions",
+		    TCL_AUTO_LENGTH));
+	    Tcl_SetErrorCode(interp, "TCL", "LIMIT", "STACK", (char *)NULL);
+	}
+	parsePtr->errorType = TCL_PARSE_SYNTAX;
+	parsePtr->term = start;
+	parsePtr->incomplete = 0;
+	return TCL_ERROR;
+    }
+
+    exprParsePtr = (Tcl_Parse *)TclStackAlloc(interp, sizeof(Tcl_Parse));
+    subst.length = 0;
+    subst.depth = depth;
+    TclNewObj(litList);
+    TclNewObj(funcList);
+    if (iPtr != NULL) {
+	iPtr->numLevels++;
+    }
+    code = ParseExpr(interp, start + 1, numBytes - 1, &opTree, litList,
+	    funcList, exprParsePtr, true /* parseOnly */, &subst);
+    if (iPtr != NULL) {
+	iPtr->numLevels--;
+    }
+    length = subst.length;
+    Tcl_DecrRefCount(funcList);
+    Tcl_DecrRefCount(litList);
+    if (code == TCL_OK && length == 0) {
+	/*
+	 * A valid expression, but the string ends before the "]".
+	 */
+
+	if (interp != NULL) {
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "missing close-bracket", TCL_AUTO_LENGTH));
+	    Tcl_SetErrorCode(interp, "TCL", "PARSE", "EXPR", "UNBALANCED",
+		    (char *)NULL);
+	}
+	exprParsePtr->errorType = TCL_PARSE_MISSING_BRACKET;
+	exprParsePtr->incomplete = 1;
+	code = TCL_ERROR;
+    } else if (code != TCL_OK
+	    && exprParsePtr->errorType == TCL_PARSE_MISSING_PAREN) {
+	exprParsePtr->errorType = TCL_PARSE_MISSING_BRACKET;
+	exprParsePtr->incomplete = 1;
+    }
+    if (code == TCL_OK) {
+	*lengthPtr = 1 + length;
+    } else {
+	parsePtr->errorType = exprParsePtr->errorType;
+	parsePtr->term = start;
+	parsePtr->incomplete = exprParsePtr->incomplete;
+    }
+    Tcl_FreeParse(exprParsePtr);
+    TclStackFree(interp, exprParsePtr);
+    Tcl_Free(opTree);
+    return code;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Tcl_ParseExpr --
  *
  *	Given a string, the numBytes bytes starting at start, this function
@@ -1873,7 +2055,7 @@ Tcl_ParseExpr(
     }
 
     code = ParseExpr(interp, start, numBytes, &opTree, litList, funcList,
-	    exprParsePtr, true /* parseOnly */);
+	    exprParsePtr, true /* parseOnly */, NULL);
     Tcl_DecrRefCount(funcList);
     Tcl_DecrRefCount(litList);
 
@@ -2205,7 +2387,7 @@ TclCompileExpr(
     TclNewObj(litList);
     TclNewObj(funcList);
     code = ParseExpr(interp, script, numBytes, &opTree, litList,
-	    funcList, parsePtr, false /* parseOnly */);
+	    funcList, parsePtr, false /* parseOnly */, NULL);
 
     if (code == TCL_OK) {
 	/*

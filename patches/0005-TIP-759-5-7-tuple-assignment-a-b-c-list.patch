@@ -1,0 +1,887 @@
+From 6f50b90b3ec9de8472a557a4929e3b5ad4df98f1 Mon Sep 17 00:00:00 2001
+From: Florent Merlet <florentmerlet73@gmail.com>
+Date: Thu, 29 Oct 2026 11:10:40 +0100
+Subject: [PATCH 5/7] TIP 759 (5/7): tuple assignment (a, (b, c)) = list
+
+In an expression, the target of "=" may be a list of names, nested at
+will: ((x0, y0), (x1, y1)) = ($p, $q). Each variable gets the element
+of the value at the same place (lindex semantics: "" if missing). As for
+"=", a name is a bareword, or any operand whose value is the name.
+
+- ParseExpr: FindTupleTarget finds a parenthesized group followed by "=";
+  its barewords that are not function calls are names.
+- CompileExprTree: the paths of the names are a literal list; when every
+  name is a compiled local, the list of names is not built at run time.
+- New instruction tupleAssign (INST_TUPLE_ASSIGN), TupleAssign in
+  tclExecute.c: stores by local index, or by name.
+- Tests: exprTuple.test; exprAssign-5.6. Docs: expr.n.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01MrNWAEyXLqekovNBvbMZ4z
+---
+ doc/expr.n            |  28 ++++
+ generic/tclCompExpr.c | 328 +++++++++++++++++++++++++++++++++++++++++-
+ generic/tclCompile.c  |   8 ++
+ generic/tclCompile.h  |   1 +
+ generic/tclExecute.c  | 128 +++++++++++++++++
+ tests/exprAssign.test |   7 +-
+ tests/exprTuple.test  | 203 ++++++++++++++++++++++++++
+ 7 files changed, 700 insertions(+), 3 deletions(-)
+ create mode 100644 tests/exprTuple.test
+
+diff --git a/doc/expr.n b/doc/expr.n
+index 0b3e9b8..50d0094 100644
+--- a/doc/expr.n
++++ b/doc/expr.n
+@@ -282,6 +282,22 @@ value is the name (\fB$ref = 0\fR). The variable is resolved as by
+ \fBset\fR: in a procedure, a name that is not qualified is a local
+ variable (see \fBglobal\fR, \fBvariable\fR and \fBupvar\fR).
+ Assignment groups right-to-left: \fBa = b = 0\fR sets both variables.
++.VE TIP282
++.VS TIP759
++.TP 20
++\fB(\fIname\fB, \fIname\fB, \fR...\fB) = \fIx\fR
++.
++Tuple assignment. The target is a list of names, as written for a list
++(see \fBOPERANDS\fR), whose elements are variable names or nested lists
++of names. As for \fB=\fR, a name is a bareword or any other operand whose
++value is the name (\fB"A($i)"\fR, \fB{::ns::v}\fR, \fB$ref\fR). Each variable is set
++to the element of the value of \fIx\fR at the same place, as given by
++\fBlindex\fR: a missing element gives the empty string, extra elements
++are ignored. The value of the assignment is the value of \fIx\fR. For
++instance, \fB((x0, y0), (x1, y1)) = ($p, $q)\fR sets four variables from
++two points.
++.VE TIP759
++.VS TIP282
+ .TP 20
+ \fIx\fB ; \fIy\fR
+ .
+@@ -523,6 +539,18 @@ A sequence of computations, each result stored in a variable:
+ .CE
+ .VE TIP282
+ .PP
++.VS TIP759
++The distance between two points, given as lists {x y}, with a tuple
++assignment in an expression script:
++.PP
++.CS
++proc distance {p q} {(
++    ((x0, y0), (x1, y1)) = ($p, $q);
++    hypot($x1 - $x0, $y1 - $y0)
++)}
++.CE
++.VE TIP759
++.PP
+ Define a procedure that computes an
+ .QW interesting
+ mathematical function:
+diff --git a/generic/tclCompExpr.c b/generic/tclCompExpr.c
+index 12a3c7b..8c6d0c2 100644
+--- a/generic/tclCompExpr.c
++++ b/generic/tclCompExpr.c
+@@ -511,6 +511,8 @@ typedef struct JumpList {
+     struct JumpList *next;	/* Point to next item on the stack */
+ } JumpList;
+ 
++#define TUPLE_MAX_DEPTH 32	/* Nesting limit of (a, (b, c)) = list */
++
+ /*
+  * Declarations for local functions to this file:
+  */
+@@ -539,6 +541,15 @@ static int		ParseExprSubst(Tcl_Interp *interp, const char *start,
+ 			    Tcl_Parse *parsePtr, int depth);
+ static int		AssignFollows(const char *start, Tcl_Size numBytes);
+ static int		SimpleLocalName(Tcl_Obj *nameObj);
++static const char *	FindTupleTarget(const char *start, Tcl_Size numBytes);
++static void		CollectTuplePaths(OpNode *nodes, int index, int *path,
++			    int depth, int *counter, int root, Tcl_Obj *paths,
++			    CompileEnv *envPtr, Tcl_Obj *const *names,
++			    int *nameIdx);
++static int		TupleNamesOnly(OpNode *nodes, int index);
++static int		TupleRoot(OpNode *nodes, int index);
++static int		TupleLocalNames(OpNode *nodes, int index,
++			    Tcl_Obj *const *names, int *countPtr);
+ static int		ParseExpr(Tcl_Interp *interp, const char *start,
+ 			    Tcl_Size numBytes, OpNode **opTreePtr,
+ 			    Tcl_Obj *litList, Tcl_Obj *funcList,
+@@ -595,6 +606,241 @@ SimpleLocalName(
+     return length > 0;
+ }
+ 
++/*
++ *----------------------------------------------------------------------
++ *
++ * Tuple assignment (a, (b, c)) = $list --
++ *
++ *	TupleNamesOnly: is a tuple target made only of literal names, commas
++ *	and parentheses? Then its literals, consumed in order while it is
++ *	compiled, are exactly its leaf names.
++ *
++ *	TupleLocalNames: are those names all simple (not qualified, not an
++ *	array element), so that each is a compiled local? *countPtr receives
++ *	their number.
++ *
++ *	CollectTuplePaths: for each leaf name, in order, the list
++ *	{LOCAL i0 i1 ...}: the compiled local of the name (or -1, the name
++ *	is then taken at the same path in the list of names) and the path of
++ *	indices of its value.
++ *
++ *----------------------------------------------------------------------
++ */
++
++static int
++TupleRoot(
++    OpNode *nodes,
++    int index)			/* Left operand of an ASSIGN node. */
++{
++    /*
++     * The LIST node of a tuple target, under any extra parentheses, or -1
++     * when the target is not a tuple.
++     */
++
++    while (index >= 0 && (nodes[index].lexeme == NULL_FUNC
++	    || nodes[index].lexeme == OPEN_PAREN)) {
++	index = nodes[index].right;
++    }
++    return (index >= 0 && nodes[index].lexeme == LIST) ? index : -1;
++}
++
++static int
++TupleNamesOnly(
++    OpNode *nodes,
++    int index)
++{
++    if (index == OT_LITERAL) {
++	return 1;
++    }
++    if (index < 0) {
++	return 0;
++    }
++    switch (nodes[index].lexeme) {
++    case COMMA:
++	return TupleNamesOnly(nodes, nodes[index].left)
++		&& TupleNamesOnly(nodes, nodes[index].right);
++    case OPEN_PAREN:
++    case LIST:
++    case NULL_FUNC:
++	return TupleNamesOnly(nodes, nodes[index].right);
++    default:
++	return 0;
++    }
++}
++
++static int
++TupleLocalNames(
++    OpNode *nodes,
++    int index,
++    Tcl_Obj *const *names,
++    int *countPtr)
++{
++    if (index == OT_LITERAL) {
++	return SimpleLocalName(names[(*countPtr)++]);
++    }
++    if (index < 0) {
++	return 0;
++    }
++    switch (nodes[index].lexeme) {
++    case COMMA:
++	return TupleLocalNames(nodes, nodes[index].left, names, countPtr)
++		&& TupleLocalNames(nodes, nodes[index].right, names, countPtr);
++    case OPEN_PAREN:
++    case LIST:
++    case NULL_FUNC:
++	return TupleLocalNames(nodes, nodes[index].right, names, countPtr);
++    default:
++	return 0;
++    }
++}
++
++static void
++CollectTuplePaths(
++    OpNode *nodes,
++    int index,
++    int *path,
++    int depth,
++    int *counter,
++    int root,
++    Tcl_Obj *paths,
++    CompileEnv *envPtr,		/* With names: compiled locals. */
++    Tcl_Obj *const *names,	/* Leaf names in order, or NULL. */
++    int *nameIdx)
++{
++    int k;
++
++    if (index < 0 || (nodes[index].lexeme != COMMA
++	    && nodes[index].lexeme != LIST && nodes[index].lexeme != OPEN_PAREN
++	    && nodes[index].lexeme != NULL_FUNC)) {
++	/*
++	 * A leaf: a name, or any other operand whose value is a name (the
++	 * list of names is then built at run time).
++	 */
++
++	Tcl_Obj *p = Tcl_NewListObj(0, NULL);
++	Tcl_Size lv = -1;
++
++	if (names != NULL) {
++	    Tcl_Obj *nameObj = names[(*nameIdx)++];
++
++	    if (envPtr->procPtr != NULL && SimpleLocalName(nameObj)) {
++		Tcl_Size nlen;
++		const char *nm = TclGetStringFromObj(nameObj, &nlen);
++
++		lv = TclFindCompiledLocal(nm, nlen, 1, envPtr);
++	    }
++	}
++	Tcl_ListObjAppendElement(NULL, p, Tcl_NewWideIntObj(lv));
++	path[depth] = (*counter)++;
++	for (k = 0; k <= depth; k++) {
++	    Tcl_ListObjAppendElement(NULL, p, Tcl_NewWideIntObj(path[k]));
++	}
++	Tcl_ListObjAppendElement(NULL, paths, p);
++	return;
++    }
++    switch (nodes[index].lexeme) {
++    case COMMA:
++	CollectTuplePaths(nodes, nodes[index].left, path, depth, counter, 0,
++		paths, envPtr, names, nameIdx);
++	CollectTuplePaths(nodes, nodes[index].right, path, depth, counter, 0,
++		paths, envPtr, names, nameIdx);
++	break;
++    case OPEN_PAREN:
++    case NULL_FUNC:
++	CollectTuplePaths(nodes, nodes[index].right, path, depth, counter,
++		root, paths, envPtr, names, nameIdx);
++	break;
++    case LIST:
++	if (root) {
++	    CollectTuplePaths(nodes, nodes[index].right, path, depth, counter,
++		    0, paths, envPtr, names, nameIdx);
++	} else if (depth + 1 < TUPLE_MAX_DEPTH) {
++	    int inner = 0;
++
++	    path[depth] = (*counter)++;
++	    CollectTuplePaths(nodes, nodes[index].right, path, depth + 1,
++		    &inner, 0, paths, envPtr, names, nameIdx);
++	}
++	break;
++    default:
++	break;
++    }
++}
++
++/*
++ *----------------------------------------------------------------------
++ *
++ * FindTupleTarget --
++ *
++ *	Tuple assignment "(a, b, c) = $list". START points at an open
++ *	parenthesis. Scan forward to the matching close parenthesis and
++ *	check that it is followed by a single "=" (not "=="). Strings, braces
++ *	and brackets inside are skipped.
++ *
++ * Results:
++ *	A pointer to the matching ')' when the parenthesized group is the
++ *	target of an assignment, NULL otherwise.
++ *
++ *----------------------------------------------------------------------
++ */
++
++static const char *
++FindTupleTarget(
++    const char *start,
++    Tcl_Size numBytes)
++{
++    const char *p = start, *end = start + numBytes;
++    int depth = 0;
++
++    while (p < end) {
++	switch (*p) {
++	case '\\':
++	    p++;
++	    break;
++	case '"':
++	    p++;
++	    while (p < end && *p != '"') {
++		if (*p == '\\') {
++		    p++;
++		}
++		p++;
++	    }
++	    break;
++	case '{': case '[': {
++	    char open = *p, close = (open == '{') ? '}' : ']';
++	    int d = 1;
++
++	    p++;
++	    while (p < end && d > 0) {
++		if (*p == '\\') {
++		    p++;
++		} else if (*p == open) {
++		    d++;
++		} else if (*p == close) {
++		    d--;
++		}
++		p++;
++	    }
++	    p--;
++	    break;
++	}
++	case '(':
++	    depth++;
++	    break;
++	case ')':
++	    if (--depth == 0) {
++		if (AssignFollows(p + 1, end - p - 1)) {
++		    return p;
++		}
++		return NULL;
++	    }
++	    break;
++	}
++	p++;
++    }
++    return NULL;
++}
++
+ /*
+  *----------------------------------------------------------------------
+  *
+@@ -713,6 +959,10 @@ ParseExpr(
+     const char *exprStart = start;
+     int parenDepth = 0;		/* TIP 759: depth of parentheses, for an
+ 				 * expression substitution [(...)]. */
++    const char *tupleEnd = NULL;
++				/* TIP 759: the ")" that ends the target of a
++				 * tuple assignment (a, b) = list. */
++    int mayAssign = (memchr(start, '=', numBytes) != NULL);
+ 
+     if (substPtr != NULL) {
+ 	substPtr->length = 0;
+@@ -824,7 +1074,15 @@ ParseExpr(
+ 		 */
+ 
+ 		if (literal && IsOperator(lastParsed)
+-			&& AssignFollows(start + scanned, numBytes - scanned)) {
++			&& (AssignFollows(start + scanned, numBytes - scanned)
++			|| ((tupleEnd != NULL) && (start < tupleEnd)
++			&& (start[scanned + TclParseAllWhiteSpace(start + scanned,
++			numBytes - scanned)] != '(')))) {
++		    /*
++		     * In the target of a tuple assignment (TIP 759), a
++		     * bareword that is not a function call is a name too.
++		     */
++
+ 		    Tcl_ListObjAppendElement(NULL, litList, literal);
+ 		    complete = lastParsed = OT_LITERAL;
+ 		    start += scanned;
+@@ -1205,6 +1463,13 @@ ParseExpr(
+ 		 * LIST node.
+ 		 */
+ 
++		if (mayAssign && (tupleEnd == NULL || start > tupleEnd)) {
++		    /*
++		     * Is this group the target of a tuple assignment?
++		     */
++
++		    tupleEnd = FindTupleTarget(start, numBytes);
++		}
+ 		nodePtr->lexeme = NULL_FUNC;
+ 		nodePtr->precedence = prec[NULL_FUNC];
+ 		nodePtr->mark = MARK_RIGHT;
+@@ -2679,6 +2944,15 @@ CompileExprTree(
+     Tcl_Size assignNode[ASSIGN_MAX], assignLocal[ASSIGN_MAX];
+     int nAssign = 0;
+ 
++    /*
++     * TIP 759: "(a, b) = value": the first literal of each such ASSIGN node,
++     * where its leaf names begin.
++     */
++
++    Tcl_Size tupleNode[ASSIGN_MAX];
++    Tcl_Obj *const *tupleLit[ASSIGN_MAX];
++    int nTupleLit = 0;
++
+     while (1) {
+ 	int next;
+ 	JumpList *freePtr, *newJump;
+@@ -2689,6 +2963,27 @@ CompileExprTree(
+ 	    if (nodePtr->lexeme == QUESTION) {
+ 		convert = true;
+ 	    }
++	    if ((nodePtr->lexeme == ASSIGN) && (TupleRoot(nodes, next) >= 0)
++		    && (nTupleLit < ASSIGN_MAX)) {
++		int nNames = 0;
++
++		tupleNode[nTupleLit] = nodePtr - nodes;
++		tupleLit[nTupleLit++] = *litObjvPtr;
++		if ((envPtr->procPtr != NULL) && TupleNamesOnly(nodes, next)
++			&& TupleLocalNames(nodes, next, *litObjvPtr, &nNames)) {
++		    /*
++		     * Every name is a compiled local: tupleAssign stores by
++		     * index and never reads the list of names. It is not
++		     * built at run time: an empty literal takes its place on
++		     * the stack, and its literals are skipped.
++		     */
++
++		    PUSH(	"");
++		    *litObjvPtr += nNames;
++		    nodePtr->mark++;
++		    continue;
++		}
++	    }
+ 	} else if (nodePtr->mark == MARK_RIGHT) {
+ 	    next = nodePtr->right;
+ 
+@@ -2771,6 +3066,37 @@ CompileExprTree(
+ 	    case ASSIGN: {
+ 		int d;
+ 
++		if (TupleRoot(nodes, nodePtr->left) >= 0) {
++		    /*
++		     * TIP 759: tuple assignment "(a, (b, c), d) = value": the
++		     * stack holds the (nested) list of names, or "", and the
++		     * value. tupleAssign stores each leaf (lindex semantics:
++		     * a missing element gives "") and leaves the value.
++		     */
++
++		    int path[TUPLE_MAX_DEPTH], counter = 0, t, nameIdx = 0;
++		    Tcl_Obj *paths = Tcl_NewListObj(0, NULL);
++		    Tcl_Obj *const *names = NULL;
++		    Tcl_Size length;
++		    const char *bytes;
++
++		    for (t = 0; t < nTupleLit; t++) {
++			if (tupleNode[t] == nodePtr - nodes) {
++			    break;
++			}
++		    }
++		    if (t < nTupleLit && TupleNamesOnly(nodes, nodePtr->left)) {
++			names = tupleLit[t];
++		    }
++		    Tcl_IncrRefCount(paths);
++		    CollectTuplePaths(nodes, TupleRoot(nodes, nodePtr->left),
++			    path, 0, &counter, 1, paths, envPtr, names, &nameIdx);
++		    bytes = TclGetStringFromObj(paths, &length);
++		    PushLiteral(envPtr, bytes, length);
++		    Tcl_DecrRefCount(paths);
++		    OP(		TUPLE_ASSIGN);
++		    break;
++		}
+ 		for (d = 0; d < nAssign; d++) {
+ 		    if (assignNode[d] == nodePtr - nodes) {
+ 			break;
+diff --git a/generic/tclCompile.c b/generic/tclCompile.c
+index 3d8d3d2..e3e481e 100644
+--- a/generic/tclCompile.c
++++ b/generic/tclCompile.c
+@@ -993,6 +993,14 @@ InstructionDesc const tclInstructionTable[] = {
+ 	 * of the opnd0'th list of variables.
+ 	 * Stack: ... listObjs... iterTracker info =>
+ 	 *			... listObjs... iterTracker info stepIdx */
++    TCL_INSTRUCTION_ENTRY(
++	"tupleAssign",		-2),
++	/* Tuple assignment "(a, (b, c), d) = v" in expr (TIP 759). paths is
++	 * a list with one entry {LOCAL i0 i1 ...} per name: the element of v
++	 * at path i0 i1 ... ("" if absent, as for lindex) is stored in the
++	 * compiled local LOCAL or, when LOCAL is -1, in the variable named
++	 * at the same path in names.
++	 * Stack:  ... names value paths => ... value */
+ 
+     {NULL, 0, 0, 0, {OPERAND_NONE}}
+ };
+diff --git a/generic/tclCompile.h b/generic/tclCompile.h
+index 30f02a4..d6eaaae 100644
+--- a/generic/tclCompile.h
++++ b/generic/tclCompile.h
+@@ -974,6 +974,7 @@ enum TclInstruction {
+     INST_ARITH_SERIES,
+     INST_UPLEVEL,
+     INST_FOREACH_INDEX,
++    INST_TUPLE_ASSIGN,		/* TIP 759: (a, (b, c)) = v in expr */
+ 
+     /* The last opcode */
+     LAST_INST_OPCODE
+diff --git a/generic/tclExecute.c b/generic/tclExecute.c
+index d686045..14776a0 100644
+--- a/generic/tclExecute.c
++++ b/generic/tclExecute.c
+@@ -688,6 +688,8 @@ static ByteCode *	CompileExprObj(Tcl_Interp *interp, Tcl_Obj *objPtr);
+ static void		DeleteExecStack(ExecStack *esPtr);
+ static void		DupExprCodeInternalRep(Tcl_Obj *srcPtr,
+ 			    Tcl_Obj *copyPtr);
++static Tcl_Obj *	TupleAssign(Tcl_Interp *interp, Tcl_Obj *names,
++			    Tcl_Obj *value, Tcl_Obj *paths);
+ static Tcl_Obj *	ExecuteExtendedBinaryMathOp(Tcl_Interp *interp,
+ 			    int opcode, Tcl_Obj **constants,
+ 			    Tcl_Obj *valuePtr, Tcl_Obj *value2Ptr);
+@@ -7015,6 +7017,20 @@ TEBCresume(
+ 	NEXT_INST_F(9, 0, 1);
+     }
+ 
++    case INST_TUPLE_ASSIGN:
++	TRACE("\"%.30s\" \"%.30s\" => ", O2S(OBJ_AT_DEPTH(2)),
++		O2S(OBJ_UNDER_TOS));
++	DECACHE_STACK_INFO();
++	objResultPtr = TupleAssign(interp, OBJ_AT_DEPTH(2), OBJ_UNDER_TOS,
++		OBJ_AT_TOS);
++	CACHE_STACK_INFO();
++	if (objResultPtr == NULL) {
++	    TRACE_ERROR(interp);
++	    goto gotError;
++	}
++	TRACE_APPEND_OBJ(objResultPtr);
++	NEXT_INST_V(1, 3, 1);
++
+     case INST_LMAP_COLLECT:
+ 	/*
+ 	 * This instruction is only issued by lmap. The stack is:
+@@ -8349,6 +8365,118 @@ WidePwrSmallExpon(
+     return wResult;
+ }
+ 
++/*
++ *----------------------------------------------------------------------
++ *
++ * TupleIndexPath, TupleAssign --
++ *
++ *	TIP 759. TupleIndexPath gives the element of a nested list at a path
++ *	of indices, or NULL when there is none (lindex semantics).
++ *
++ *	TupleAssign does the work of INST_TUPLE_ASSIGN: for each entry
++ *	{LOCAL i0 i1 ...} of
++ *	paths, the element of value at path i0 i1 ... ("" if absent, like
++ *	lindex) is stored in the compiled local LOCAL, or, when LOCAL is -1,
++ *	in the variable named by the element of names at the same path.
++ *
++ * Results:
++ *	value, or NULL on error (message in the interpreter result).
++ *
++ *----------------------------------------------------------------------
++ */
++
++static Tcl_Obj *
++TupleIndexPath(
++    Tcl_Interp *interp,
++    Tcl_Obj *listPtr,
++    Tcl_Obj *const *pathv,
++    Tcl_Size pathc,
++    Tcl_Obj **resultPtr)	/* Element (borrowed), or NULL if absent. */
++{
++    Tcl_Obj *cur = listPtr;
++    Tcl_Size k;
++
++    for (k = 0; k < pathc; k++) {
++	Tcl_Obj **elemv;
++	Tcl_Size elemc;
++	Tcl_WideInt idx;
++
++	if (Tcl_GetWideIntFromObj(interp, pathv[k], &idx) != TCL_OK
++		|| TclListObjGetElements(interp, cur, &elemc, &elemv)
++			!= TCL_OK) {
++	    return NULL;
++	}
++	if (idx < 0 || idx >= elemc) {
++	    *resultPtr = NULL;
++	    return listPtr;
++	}
++	cur = elemv[idx];
++    }
++    *resultPtr = cur;
++    return listPtr;
++}
++
++static Tcl_Obj *
++TupleAssign(
++    Tcl_Interp *interp,
++    Tcl_Obj *names,
++    Tcl_Obj *value,
++    Tcl_Obj *paths)
++{
++    Interp *iPtr = (Interp *) interp;
++    Tcl_Obj **pathv;
++    Tcl_Size pathc, i;
++
++    if (TclListObjGetElements(interp, paths, &pathc, &pathv) != TCL_OK) {
++	return NULL;
++    }
++    for (i = 0; i < pathc; i++) {
++	Tcl_Obj **ev, *elemPtr, *stored;
++	Tcl_Size ec;
++	Tcl_WideInt local;
++
++	if (TclListObjGetElements(interp, pathv[i], &ec, &ev) != TCL_OK
++		|| ec < 2
++		|| Tcl_GetWideIntFromObj(interp, ev[0], &local) != TCL_OK
++		|| TupleIndexPath(interp, value, ev + 1, ec - 1, &elemPtr)
++			== NULL) {
++	    return NULL;
++	}
++	if (elemPtr == NULL) {
++	    TclNewObj(elemPtr);
++	}
++	Tcl_IncrRefCount(elemPtr);
++	if (local >= 0) {
++	    Var *varPtr = &iPtr->varFramePtr->compiledLocals[local];
++
++	    while (TclIsVarLink(varPtr)) {
++		varPtr = varPtr->value.linkPtr;
++	    }
++	    stored = TclPtrSetVarIdx(interp, varPtr, NULL, NULL, NULL,
++		    elemPtr, TCL_LEAVE_ERR_MSG, (int) local);
++	} else {
++	    Tcl_Obj *namePtr = NULL;
++
++	    if (TupleIndexPath(interp, names, ev + 1, ec - 1, &namePtr)
++		    == NULL || namePtr == NULL) {
++		Tcl_DecrRefCount(elemPtr);
++		if (namePtr == NULL) {
++		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
++			    "bad tuple assignment target", TCL_AUTO_LENGTH));
++		}
++		return NULL;
++	    }
++	    stored = Tcl_ObjSetVar2(interp, namePtr, NULL, elemPtr,
++		    TCL_LEAVE_ERR_MSG);
++	}
++	Tcl_DecrRefCount(elemPtr);
++	if (stored == NULL) {
++	    return NULL;
++	}
++    }
++    return value;
++}
++
+ /*
+  *----------------------------------------------------------------------
+  *
+diff --git a/tests/exprAssign.test b/tests/exprAssign.test
+index 14f7ccf..9b1164f 100644
+--- a/tests/exprAssign.test
++++ b/tests/exprAssign.test
+@@ -280,9 +280,12 @@ test exprAssign-5.1 {comparison is not an assignment} -body {
+ test exprAssign-5.4 {missing target} -body {
+     expr {= 1}
+ } -returnCodes error -match glob -result {missing operand*}
+-test exprAssign-5.6 {name in parentheses} -body {
++test exprAssign-5.6 {name in parentheses (TIP 759 tuple)} -setup {
++    unset -nocomplain a
++} -body {
+     expr {(a) = 1}
+-} -returnCodes error -match glob -result {invalid bareword "a"*}
++    set a
++} -result 1
+ test exprAssign-5.7 {missing operator} -body {
+     expr {1 x = 2}
+ } -returnCodes error -match glob -result {invalid bareword "x"*}
+diff --git a/tests/exprTuple.test b/tests/exprTuple.test
+new file mode 100644
+index 0000000..b287194
+--- /dev/null
++++ b/tests/exprTuple.test
+@@ -0,0 +1,203 @@
++# Commands covered: expr, tuple assignment (a, b) = list (TIP 759)
++#
++# This file contains a collection of tests for the tuple assignment of
++# TIP 759 in expressions. Sourcing this file into Tcl runs the tests and
++# generates output for errors. No output means no errors were found.
++#
++# See the file "license.terms" for information on usage and redistribution of
++# this file, and for a DISCLAIMER OF ALL WARRANTIES.
++
++if {"::tcltest" ni [namespace children]} {
++    package require tcltest 2.5
++    namespace import -force ::tcltest::*
++}
++
++::tcltest::loadTestedCommands
++catch [list package require -exact tcl::test [info patchlevel]]
++
++testConstraint testexprparser [llength [info commands testexprparser]]
++
++test exprTuple-1.1 {three names} -setup {
++    unset -nocomplain a b c
++} -body {
++    list [expr {(a, b, c) = {1 2 3}}] $a $b $c
++} -result {{1 2 3} 1 2 3}
++test exprTuple-1.2 {extra elements are ignored} -setup {
++    unset -nocomplain h t
++} -body {
++    expr {(h, t) = {1 2 3}}
++    list $h $t
++} -result {1 2}
++test exprTuple-1.3 {missing elements give ""} -setup {
++    unset -nocomplain p q r
++} -body {
++    expr {(p, q, r) = {1 2}}
++    list $p $q $r
++} -result {1 2 {}}
++test exprTuple-1.4 {nested} -setup {
++    unset -nocomplain a b c d e f
++} -body {
++    expr {((a, b), c, (d, (e, f))) = {{1 2} 3 {4 {5 6}}}}
++    list $a $b $c $d $e $f
++} -result {1 2 3 4 5 6}
++test exprTuple-1.5 {value built as a list} -setup {
++    unset -nocomplain x0 y0 x1 y1
++} -body {
++    expr {((x0, y0), (x1, y1)) = ({0 0}, {3 4})}
++    list $x0 $y0 $x1 $y1
++} -result {0 0 3 4}
++test exprTuple-1.6 {two matrices} -setup {
++    unset -nocomplain x y z u v w
++} -body {
++    expr {((x,y,z),(u,v,w)) = ({1 2 3},{4 5 6})}
++    list $x $y $z $u $v $w
++} -result {1 2 3 4 5 6}
++test exprTuple-1.7 {extra parentheses around the target} -setup {
++    unset -nocomplain a b
++} -body {
++    expr {((a, b)) = {5 6}}
++    list $a $b
++} -result {5 6}
++test exprTuple-1.8 {one name in parentheses is a plain assignment} -setup {
++    unset -nocomplain x
++} -body {
++    expr {(x) = {1 2}}
++    set x
++} -result {1 2}
++test exprTuple-1.9 {array elements, quoted and braced} -setup {
++    unset -nocomplain A
++} -body {
++    set i 3
++    expr {("A($i)", {A(k)}) = {x y}}
++    lsort -stride 2 [array get A]
++} -result {3 x k y}
++test exprTuple-1.10 {braced qualified name} -setup {
++    unset -nocomplain a ::nsv
++    proc p {v} {expr {(a, {::nsv}) = $v}; list $a $::nsv}
++} -body {
++    p {1 2}
++} -cleanup {
++    rename p {}
++    unset -nocomplain ::nsv
++} -result {1 2}
++test exprTuple-1.11 {bad list} -body {
++    set bad "not a \{list"
++    expr {(a, b) = $bad}
++} -returnCodes error -result {unmatched open brace in list}
++test exprTuple-1.12 {comparison of lists is not an assignment} {
++    set a 1; set b 2
++    expr {($a, $b) == (1, 2)}
++} 1
++test exprTuple-1.13 {not compiled} -setup {
++    unset -nocomplain m n
++} -body {
++    set e {(m, n) = {7 8}}
++    expr $e
++    list $m $n
++} -result {7 8}
++
++# In procedures
++
++test exprTuple-2.1 {expression script} -setup {
++    proc p {v} {( (x, y, z) = $v; $x + $y + $z )}
++} -body {
++    p {1 2 3}
++} -cleanup {
++    rename p {}
++} -result 6
++test exprTuple-2.2 {distance between two points} -setup {
++    proc distance {p q} {(
++	((x0, y0), (x1, y1)) = ($p, $q);
++	hypot($x1 - $x0, $y1 - $y0)
++    )}
++} -body {
++    distance {0 0} {3 4}
++} -cleanup {
++    rename distance {}
++} -result 5.0
++test exprTuple-2.3 {global} -setup {
++    unset -nocomplain g1 g2
++    proc p {v} {global g1 g2; expr {(g1, g2) = $v}}
++} -body {
++    p {7 8}
++    list $g1 $g2
++} -cleanup {
++    rename p {}
++} -result {7 8}
++test exprTuple-2.4 {upvar} -setup {
++    set X 0
++    proc p {v} {upvar 1 X x; expr {(x, y) = $v}; list $x $y}
++} -body {
++    list [p {5 6}] $X
++} -cleanup {
++    rename p {}
++} -result {{5 6} 5}
++test exprTuple-2.5 {write trace} -setup {
++    proc p {v} {
++	set ::tr {}
++	trace add variable a write {apply {args {lappend ::tr w}}}
++	expr {(a, b) = $v}
++	list $a $b $::tr
++    }
++} -body {
++    p {1 2}
++} -cleanup {
++    rename p {}
++} -result {1 2 w}
++test exprTuple-2.6 {compiled locals: no list of names at run time} -setup {
++    proc p {v} {expr {(p, q) = $v}; list $p $q}
++} -body {
++    set code [tcl::unsupported::disassemble proc p]
++    list [p {1 2}] [string match {*push*""*tupleAssign*} $code]
++} -cleanup {
++    rename p {}
++} -result {{1 2} 1}
++
++# Names given by values
++
++test exprTuple-3.1 {name given by a variable} -setup {
++    unset -nocomplain a vn
++} -body {
++    set n vn
++    expr {(a, $n) = {1 2}}
++    list $a $vn
++} -result {1 2}
++test exprTuple-3.2 {name given by a number} -setup {
++    unset -nocomplain a 1
++} -body {
++    expr {(a, 1) = {1 2}}
++    set 1
++} -cleanup {
++    unset -nocomplain 1
++} -result 2
++test exprTuple-3.3 {name given by a function} -setup {
++    unset -nocomplain v_x b
++    proc ::tcl::mathfunc::nom {t} {return v_$t}
++} -body {
++    expr {(nom("x"), b) = {5 6}}
++    list $v_x $b
++} -cleanup {
++    rename ::tcl::mathfunc::nom {}
++} -result {5 6}
++test exprTuple-3.4 {name given by an expression} -setup {
++    unset -nocomplain a 3
++} -body {
++    expr {(a, 1+2) = {1 2}}
++    set 3
++} -cleanup {
++    unset -nocomplain 3
++} -result 2
++
++# Tcl_ParseExpr
++
++test exprTuple-4.1 {Tcl_ParseExpr} -constraints testexprparser -body {
++    testexprparser {(a, b) = $v} -1
++} -result {- {} 0 subexpr {(a, b) = $v} 10 operator = 0 subexpr {(a, b)} 5 operator {} 0 subexpr a 1 text a 0 subexpr b 1 text b 0 subexpr {$v} 2 variable {$v} 1 text v 0 {}}
++
++# cleanup
++::tcltest::cleanupTests
++return
++
++# Local Variables:
++# mode: tcl
++# End:
+-- 
+2.43.0
+

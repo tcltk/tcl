@@ -1,0 +1,753 @@
+From 029ef2f45e62b3c606b18dfb232f59551124909b Mon Sep 17 00:00:00 2001
+From: Florent Merlet <florentmerlet73@gmail.com>
+Date: Thu, 29 Oct 2026 11:05:41 +0100
+Subject: [PATCH 4/7] TIP 282 (4/7): assignment "=" and separator ";" in
+ expressions
+
+TIP 282, by Will Duquette and Don Porter: "name = value" assigns a
+variable and is the assigned value; "x ; y" evaluates x then y, the
+value of y. The left operand of "=" is a bareword, the name itself, or
+any other operand, whose value is the name: {::ns::v} = 1, "A($i)" = 1,
+$ref = 1, name(...) = 1. "=" groups right-to-left and binds looser than
+"?:"; ";" binds looser than "=", tighter than ",". Empty statements
+(";;", ";" before ")" or at the end, ":;") have the empty string as
+value.
+
+- ParseLexeme: "=" is ASSIGN, ";" is SEPARATOR.
+- ParseExpr: a bareword followed by "=" (not "==") is a name
+  (AssignFollows); ASSIGN is never constant.
+- CompileExprTree: ";" pops its left value; "=" compiles to storeStk,
+  or to storeScalar when the name is a compiled local of a procedure.
+- ConvertTreeToTokens: empty statements.
+- Tests: exprAssign.test; parseExpr-16.33, parseExpr-21.2. Docs: expr.n.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01MrNWAEyXLqekovNBvbMZ4z
+---
+ doc/expr.n            |  36 ++++-
+ generic/tclCompExpr.c | 182 +++++++++++++++++++++++--
+ tests/exprAssign.test | 310 ++++++++++++++++++++++++++++++++++++++++++
+ tests/parseExpr.test  |   6 +-
+ 4 files changed, 517 insertions(+), 17 deletions(-)
+ create mode 100644 tests/exprAssign.test
+
+diff --git a/doc/expr.n b/doc/expr.n
+index 4132fd5..0b3e9b8 100644
+--- a/doc/expr.n
++++ b/doc/expr.n
+@@ -269,12 +269,32 @@ must in order to determine its result.
+ If-then-else, as in C.  If \fIx\fR is true , the result is the value of
+ \fIy\fR.  Otherwise the result is the value of \fIz\fR.
+ This operator evaluates lazily; it evaluates only one of \fIy\fR or \fIz\fR.
++.VS TIP282
++.TP 20
++\fIname\fB = \fIx\fR
++.
++Assignment, as in C. The value of \fIx\fR is stored in the variable
++\fIname\fR, and is the value of the assignment. \fIname\fR is usually a
++bareword (not \fB$\fIname\fR); otherwise it is any operand, whose value is
++the name of the variable: a braced or quoted name, for a qualified name or
++an array element (\fB"A($i)" = 0\fR), or a variable or function whose
++value is the name (\fB$ref = 0\fR). The variable is resolved as by
++\fBset\fR: in a procedure, a name that is not qualified is a local
++variable (see \fBglobal\fR, \fBvariable\fR and \fBupvar\fR).
++Assignment groups right-to-left: \fBa = b = 0\fR sets both variables.
++.TP 20
++\fIx\fB ; \fIy\fR
++.
++Sequence. \fIx\fR is evaluated, then \fIy\fR, whose value is the value of
++the sequence, as the comma operator of C. An empty operand, as in
++\fBx = 1;\fR or \fB1;;2\fR, has the empty string as its value.
++.VE TIP282
+ .PP
+ The exponentiation operator promotes types in the same way that the multiply
+ and divide operators do, and the result is is the same as the result of
+ \fBpow\fR.
+-Exponentiation groups right-to-left within a precedence level. Other binary
+-operators group left-to-right.  For example, the value of
++Exponentiation and assignment group right-to-left within a precedence level.
++Other binary operators group left-to-right.  For example, the value of
+ .PP
+ .PP
+ .CS
+@@ -491,6 +511,18 @@ puts "half: [( $area / 2.0 )]"
+ .CE
+ .VE TIP759
+ .PP
++.VS TIP282
++A sequence of computations, each result stored in a variable:
++.PP
++.CS
++\fBexpr\fR {
++    x = 5*$y + 6*$z;
++    w = $x**2 + $y**2;
++    v = $w**2 + $y**2
++}
++.CE
++.VE TIP282
++.PP
+ Define a procedure that computes an
+ .QW interesting
+ mathematical function:
+diff --git a/generic/tclCompExpr.c b/generic/tclCompExpr.c
+index 15d554e..12a3c7b 100644
+--- a/generic/tclCompExpr.c
++++ b/generic/tclCompExpr.c
+@@ -279,12 +279,17 @@ enum LexemeCodes {
+     STR_GT = BINARY | 29,
+     STR_LEQ = BINARY | 30,
+     STR_GEQ = BINARY | 31,
+-    END = BINARY | 32		/* This lexeme represents the end of the
++    END = BINARY | 32,		/* This lexeme represents the end of the
+ 				 * string being parsed. Treating it as a
+ 				 * binary operator follows the same logic as
+ 				 * the CLOSE_PAREN lexeme and END pairs with
+ 				 * START, in the same way that CLOSE_PAREN
+ 				 * pairs with OPEN_PAREN. */
++    SEPARATOR = BINARY | 33,	/* TIP 282: ";", evaluates its left operand,
++				 * then its right one, which is its value. */
++    ASSIGN = BINARY | 34	/* TIP 282: "=", assignment. Like EXPON, it
++				 * is right associative, and this distinction
++				 * is coded directly in ParseExpr(). */
+ };
+ 
+ /*
+@@ -302,6 +307,8 @@ enum Precedence {
+     PREC_CLOSE_PAREN,		/* ")" */
+     PREC_OPEN_PAREN,		/* "(" */
+     PREC_COMMA,			/* "," */
++    PREC_SEPARATOR,		/* ";" (TIP 282) */
++    PREC_ASSIGN,		/* "=" (TIP 282) */
+     PREC_CONDITIONAL,		/* "?", ":" */
+     PREC_OR,			/* "||" */
+     PREC_AND,			/* "&&" */
+@@ -364,8 +371,10 @@ static const unsigned char prec[] = {
+     PREC_COMPARE,		/* STR_LEQ */
+     PREC_COMPARE,		/* STR_GEQ */
+     PREC_END,			/* END */
++    PREC_SEPARATOR,		/* SEPARATOR */
++    PREC_ASSIGN,		/* ASSIGN */
+     /* Expansion room for more binary operators */
+-    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
++    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+     /* Unary operator lexemes */
+     PREC_UNARY,			/* UNARY_PLUS */
+@@ -423,8 +432,10 @@ static const unsigned char instruction[] = {
+     INST_STR_LE,		/* STR_LEQ */
+     INST_STR_GE,		/* STR_GEQ */
+     0,				/* END */
++    0,				/* SEPARATOR */
++    0,				/* ASSIGN */
+     /* Expansion room for more binary operators */
+-    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
++    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+     /* Unary operator lexemes */
+     INST_UPLUS,			/* UNARY_PLUS */
+@@ -469,9 +480,9 @@ static const unsigned char Lexeme[] = {
+ 	COMMA		/* , */,	MINUS		/* - */,
+ 	0		/* . */,	DIVIDE		/* / */,
+ 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0,			/* 0-9 */
+-	COLON		/* : */,	INVALID		/* ; */,
++	COLON		/* : */,	SEPARATOR	/* ; */,
+ 	0		/* < or << or <= */,
+-	0		/* == or INVALID */,
++	0		/* == or = */,
+ 	0		/* > or >> or >= */,
+ 	QUESTION	/* ? */,	INVALID		/* @ */,
+ 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,		/* A-M */
+@@ -526,6 +537,8 @@ typedef struct SubstExpr {
+ static int		ParseExprSubst(Tcl_Interp *interp, const char *start,
+ 			    Tcl_Size numBytes, Tcl_Size *lengthPtr,
+ 			    Tcl_Parse *parsePtr, int depth);
++static int		AssignFollows(const char *start, Tcl_Size numBytes);
++static int		SimpleLocalName(Tcl_Obj *nameObj);
+ static int		ParseExpr(Tcl_Interp *interp, const char *start,
+ 			    Tcl_Size numBytes, OpNode **opTreePtr,
+ 			    Tcl_Obj *litList, Tcl_Obj *funcList,
+@@ -534,6 +547,54 @@ static int		ParseExpr(Tcl_Interp *interp, const char *start,
+ static Tcl_Size		ParseLexeme(const char *start, Tcl_Size numBytes,
+ 			    unsigned char *lexemePtr, Tcl_Obj **literalPtr);
+ 
++/*
++ *----------------------------------------------------------------------
++ *
++ * AssignFollows --
++ *
++ *	TIP 282. Is the text at START, after any white space, the
++ *	assignment operator "=" (and not "==")?
++ *
++ *----------------------------------------------------------------------
++ */
++
++static int
++AssignFollows(
++    const char *start,
++    Tcl_Size numBytes)
++{
++    Tcl_Size ws = TclParseAllWhiteSpace(start, numBytes);
++
++    return (ws < numBytes) && (start[ws] == '=')
++	    && ((ws + 1 == numBytes) || (start[ws + 1] != '='));
++}
++
++/*
++ *----------------------------------------------------------------------
++ *
++ * SimpleLocalName --
++ *
++ *	TIP 282. Is the name of an assignment target simple enough (not
++ *	qualified, not an array element) to be a compiled local variable?
++ *
++ *----------------------------------------------------------------------
++ */
++
++static int
++SimpleLocalName(
++    Tcl_Obj *nameObj)
++{
++    Tcl_Size length, i;
++    const char *name = TclGetStringFromObj(nameObj, &length);
++
++    for (i = 0; i < length; i++) {
++	if (name[i] == ':' || name[i] == '(' || name[i] == ')') {
++	    return 0;
++	}
++    }
++    return length > 0;
++}
++
+ /*
+  *----------------------------------------------------------------------
+  *
+@@ -757,8 +818,20 @@ ParseExpr(
+ 		 * exceptions are that when a bareword is followed by an open
+ 		 * paren, it might be a function call, and when the bareword
+ 		 * is a legal literal boolean value, we accept that as well.
++		 *
++		 * TIP 282: a bareword followed by "=" is the name of the
++		 * variable to assign.
+ 		 */
+ 
++		if (literal && IsOperator(lastParsed)
++			&& AssignFollows(start + scanned, numBytes - scanned)) {
++		    Tcl_ListObjAppendElement(NULL, litList, literal);
++		    complete = lastParsed = OT_LITERAL;
++		    start += scanned;
++		    numBytes -= scanned;
++		    continue;
++		}
++
+ 		if (literal && start[scanned+TclParseAllWhiteSpace(
+ 			start+scanned, numBytes-scanned)] == '(') {
+ 		    lexeme = FUNCTION;
+@@ -1195,6 +1268,26 @@ ParseExpr(
+ 	     */
+ 
+ 	    if (IsOperator(lastParsed)) {
++		if (((nodePtr[-1].lexeme == SEPARATOR) && ((lexeme == SEPARATOR)
++			|| (lexeme == CLOSE_PAREN) || (lexeme == END)))
++			|| ((nodePtr[-1].lexeme == COLON)
++			&& (lexeme == SEPARATOR))) {
++		    /*
++		     * TIP 282: an empty statement: ";;", ";" before ")" or at
++		     * the end, ":;". Its value is the empty string. Restart
++		     * the parsing loop with zero characters scanned, after an
++		     * empty literal.
++		     */
++
++		    TclNewLiteralStringObj(literal, "");
++		    Tcl_ListObjAppendElement(NULL, litList, literal);
++		    complete = lastParsed = OT_LITERAL;
++		    scanned = 0;
++		    if (substPtr != NULL && lexeme == CLOSE_PAREN) {
++			parenDepth++;		/* The ")" is parsed again. */
++		    }
++		    break;
++		}
+ 		if ((lexeme == CLOSE_PAREN)
+ 			&& (nodePtr[-1].lexeme == OPEN_PAREN)) {
+ 		    if (nodePtr[-2].lexeme == FUNCTION) {
+@@ -1294,10 +1387,11 @@ ParseExpr(
+ 
+ 		if (incompletePtr->precedence == precedence) {
+ 		    /*
+-		     * Right association rules for exponentiation.
++		     * Right association rules for exponentiation and
++		     * assignment (TIP 282).
+ 		     */
+ 
+-		    if (lexeme == EXPON) {
++		    if (lexeme == EXPON || lexeme == ASSIGN) {
+ 			break;
+ 		    }
+ 
+@@ -1465,11 +1559,12 @@ ParseExpr(
+ 	    /*
+ 	     * The COMMA operator cannot be optimized, since the function
+ 	     * needs all of its arguments, and optimization would reduce the
+-	     * number. Other binary operators root constant expressions when
+-	     * both arguments are constant expressions.
++	     * number. Nor can the ASSIGN operator (TIP 282), whose effect is
++	     * to set a variable. Other binary operators root constant
++	     * expressions when both arguments are constant expressions.
+ 	     */
+ 
+-	    nodePtr->constant = (lexeme != COMMA);
++	    nodePtr->constant = (lexeme != COMMA) && (lexeme != ASSIGN);
+ 
+ 	    if (IsOperator(complete)) {
+ 		nodes[complete].parent = nodesUsed;
+@@ -1652,7 +1747,15 @@ ConvertTreeToTokens(
+ 	     * Reparse the literal to get pointers into source string.
+ 	     */
+ 
+-	    scanned = ParseLexeme(start, numBytes, &lexeme, NULL);
++	    if ((numBytes == 0) || (*start == ';') || (*start == ')')) {
++		/*
++		 * TIP 282: the empty literal of an empty statement.
++		 */
++
++		scanned = 0;
++	    } else {
++		scanned = ParseLexeme(start, numBytes, &lexeme, NULL);
++	    }
+ 
+ 	    TclGrowParseTokenArray(parsePtr, 2);
+ 	    subExprTokenPtr = parsePtr->tokenPtr + parsePtr->numTokens;
+@@ -2198,7 +2301,7 @@ ParseLexeme(
+ 	    *lexemePtr = EQUAL;
+ 	    return 2;
+ 	}
+-	*lexemePtr = INCOMPLETE;
++	*lexemePtr = ASSIGN;		/* TIP 282 */
+ 	return 1;
+ 
+     case '!':
+@@ -2565,6 +2668,17 @@ CompileExprTree(
+     JumpList *jumpPtr = NULL;
+     bool convert = true;
+ 
++    /*
++     * TIP 282: "name = value" in a procedure, where name is a compiled local
++     * variable: the name is not pushed, and the ASSIGN node stores the
++     * value in the local (storeScalar). These maps give the local of each
++     * such ASSIGN node.
++     */
++
++    enum { ASSIGN_MAX = 32 };
++    Tcl_Size assignNode[ASSIGN_MAX], assignLocal[ASSIGN_MAX];
++    int nAssign = 0;
++
+     while (1) {
+ 	int next;
+ 	JumpList *freePtr, *newJump;
+@@ -2635,6 +2749,13 @@ CompileExprTree(
+ 		TclEmitForwardJump(envPtr, (nodePtr->lexeme == AND)
+ 			?  TCL_FALSE_JUMP : TCL_TRUE_JUMP, &jumpPtr->jump);
+ 		break;
++	    case SEPARATOR:
++		/*
++		 * TIP 282: the value of the left operand is discarded.
++		 */
++
++		OP(		POP);
++		break;
+ 	    }
+ 	} else {
+ 	    Tcl_Size target;
+@@ -2647,6 +2768,23 @@ CompileExprTree(
+ 		    OP(		TRY_CVT_TO_NUMERIC);
+ 		}
+ 		break;
++	    case ASSIGN: {
++		int d;
++
++		for (d = 0; d < nAssign; d++) {
++		    if (assignNode[d] == nodePtr - nodes) {
++			break;
++		    }
++		}
++		if (d < nAssign) {
++		    OP4(	STORE_SCALAR, assignLocal[d]);
++		} else {
++		    OP(		STORE_STK);
++		}
++		break;
++	    }
++	    case SEPARATOR:		/* TIP 282: the value is the right
++				 * operand's */
+ 	    case NULL_FUNC:
+ 	    case OPEN_PAREN:
+ 
+@@ -2746,6 +2884,26 @@ CompileExprTree(
+ 	    Tcl_Obj *const *litObjv = *litObjvPtr;
+ 	    Tcl_Obj *literal = *litObjv;
+ 
++	    if ((nodePtr->lexeme == ASSIGN) && (nodePtr->mark == MARK_RIGHT)
++		    && (envPtr->procPtr != NULL) && (nAssign < ASSIGN_MAX)
++		    && SimpleLocalName(literal)) {
++		/*
++		 * TIP 282: the name in "name = value", in a procedure: a
++		 * compiled local, stored by its index; the name is not
++		 * pushed.
++		 */
++
++		Tcl_Size length;
++		const char *name = TclGetStringFromObj(literal, &length);
++		Tcl_Size local = TclFindCompiledLocal(name, length, 1, envPtr);
++
++		if (local >= 0) {
++		    assignNode[nAssign] = nodePtr - nodes;
++		    assignLocal[nAssign++] = local;
++		    (*litObjvPtr)++;
++		    break;
++		}
++	    }
+ 	    if (optimize) {
+ 		int idx = PUSH_OBJ_FLAGS(literal, 0);
+ 		Tcl_Obj *objPtr = TclFetchLiteral(envPtr, idx);
+diff --git a/tests/exprAssign.test b/tests/exprAssign.test
+new file mode 100644
+index 0000000..14f7ccf
+--- /dev/null
++++ b/tests/exprAssign.test
+@@ -0,0 +1,310 @@
++# Commands covered: expr, assignment "=" and separator ";" (TIP 282)
++#
++# This file contains a collection of tests for the assignment and separator
++# operators of TIP 282 in expressions. Sourcing this file into Tcl runs the
++# tests and generates output for errors. No output means no errors were
++# found.
++#
++# See the file "license.terms" for information on usage and redistribution of
++# this file, and for a DISCLAIMER OF ALL WARRANTIES.
++
++if {"::tcltest" ni [namespace children]} {
++    package require tcltest 2.5
++    namespace import -force ::tcltest::*
++}
++
++::tcltest::loadTestedCommands
++catch [list package require -exact tcl::test [info patchlevel]]
++
++testConstraint testexprparser [llength [info commands testexprparser]]
++
++# Assignment
++
++test exprAssign-1.1 {assignment} -setup {
++    unset -nocomplain x
++} -body {
++    set y 2; set z 3
++    list [expr {x = 5*$y + 6*$z}] $x
++} -result {28 28}
++test exprAssign-1.2 {the examples of TIP 282} -setup {
++    unset -nocomplain x w v
++} -body {
++    set y 2; set z 3
++    list [expr {
++	x = 5*$y  + 6*$z;
++	w = $x**2 + $y**2;
++	v = $w**2 + $y**2
++    }] $x $w $v
++} -result {620948 28 788 620948}
++test exprAssign-1.3 {right associative} -setup {
++    unset -nocomplain a b
++} -body {
++    list [expr {a = b = 4}] $a $b
++} -result {4 4 4}
++test exprAssign-1.4 {names that are boolean values} -setup {
++    unset -nocomplain t f y n
++} -body {
++    expr {t = 1; f = 2; y = 3; n = 4}
++    list $t $f $y $n
++} -result {1 2 3 4}
++test exprAssign-1.5 {lower precedence than ?:} -setup {
++    unset -nocomplain c
++} -body {
++    set y 2
++    list [expr {c = $y > 1 ? 10 : 20}] $c
++} -result {10 10}
++test exprAssign-1.6 {assignment in parentheses} -setup {
++    unset -nocomplain x
++} -body {
++    list [expr {(x = 1) + 2}] $x
++} -result {3 1}
++test exprAssign-1.7 {value is a list} -setup {
++    unset -nocomplain x
++} -body {
++    expr {x = (1, 2)}
++    set x
++} -result {1 2}
++test exprAssign-1.8 {variable keeps the assigned string} -setup {
++    unset -nocomplain s
++} -body {
++    expr {s = "0x10"}
++    set s
++} -result 0x10
++test exprAssign-1.9 {write trace} -setup {
++    unset -nocomplain tv trc
++    trace add variable tv write {apply {args {lappend ::trc $args}}}
++} -body {
++    expr {tv = 3}
++    set trc
++} -cleanup {
++    unset -nocomplain tv trc
++} -result {{tv {} write}}
++test exprAssign-1.10 {not compiled} -setup {
++    unset -nocomplain k
++} -body {
++    set e {k = 5}
++    expr $e
++    set k
++} -result 5
++test exprAssign-1.11 {in an expression substitution} -setup {
++    unset -nocomplain q
++} -body {
++    list [set x [(q = 3*4)]] $q
++} -result {12 12}
++
++test exprAssign-1.12 {assignment alone as a command} -setup {
++    unset -nocomplain y
++} -body {
++    set x 1
++    eval {[(y = $x*3)]
++	puts -nonewline ""
++	set y}
++} -result 3
++test exprAssign-1.13 {assignment alone as a command, in a procedure} -setup {
++    proc p {x} {
++	[(y = $x*3)]
++	return $y
++    }
++} -body {
++    p 2
++} -cleanup {
++    rename p {}
++} -result 6
++
++# Names given by a value: array elements, qualified names, computed names
++
++test exprAssign-2.1 {array element, braced} -setup {
++    unset -nocomplain A
++} -body {
++    expr {{A(k)} = 6}
++    set A(k)
++} -result 6
++test exprAssign-2.2 {array element, quoted, variable in the index} -setup {
++    unset -nocomplain A
++} -body {
++    set i 7
++    expr {"A($i)" = 5}
++    array get A
++} -result {7 5}
++test exprAssign-2.3 {array element, command in the index} -setup {
++    unset -nocomplain A
++} -body {
++    expr {"A([string toupper q])" = 8}
++    array get A
++} -result {Q 8}
++test exprAssign-2.4 {array element in a procedure} -setup {
++    proc p {} {expr {"A(1)" = 2}; array get A}
++} -body {
++    p
++} -cleanup {
++    rename p {}
++} -result {1 2}
++test exprAssign-2.5 {qualified name, braced} -setup {
++    unset -nocomplain ::gx
++    proc p {} {expr {{::gx} = 5}}
++} -body {
++    p
++    set ::gx
++} -cleanup {
++    rename p {}
++    unset -nocomplain ::gx
++} -result 5
++test exprAssign-2.6 {qualified name, quoted} -setup {
++    unset -nocomplain ::gq
++} -body {
++    expr {"::gq" = 6}
++    set ::gq
++} -cleanup {
++    unset -nocomplain ::gq
++} -result 6
++test exprAssign-2.7 {name given by a variable} -setup {
++    unset -nocomplain v
++} -body {
++    set i v
++    expr {$i = 4}
++    set v
++} -result 4
++test exprAssign-2.8 {name given by a function} -setup {
++    unset -nocomplain var_int
++    proc ::tcl::mathfunc::nom {t} {return var_$t}
++} -body {
++    expr {nom("int") = 7}
++    set var_int
++} -cleanup {
++    rename ::tcl::mathfunc::nom {}
++    unset -nocomplain var_int
++} -result 7
++test exprAssign-2.9 {name given by a number} -setup {
++    unset -nocomplain 2
++} -body {
++    expr {2 = 3}
++    set 2
++} -cleanup {
++    unset -nocomplain 2
++} -result 3
++test exprAssign-2.10 {name given by a value: right associative} -setup {
++    unset -nocomplain a 1
++} -body {
++    list [expr {a = 1 = 2}] [set 1]
++} -cleanup {
++    unset -nocomplain 1
++} -result {2 2}
++
++# In procedures: compiled locals
++
++test exprAssign-3.1 {local variables} -setup {
++    proc p {u} {expr { s = 0; s = $s + $u; s = $s * 2 }}
++} -body {
++    p 5
++} -cleanup {
++    rename p {}
++} -result 10
++test exprAssign-3.2 {stored in the compiled local} -setup {
++    proc p {u} {expr { s = $u * 2 }}
++} -body {
++    p 1
++    set code [tcl::unsupported::disassemble proc p]
++    list [string match {*storeScalar*} $code] [string match {*storeStk*} $code]
++} -cleanup {
++    rename p {}
++} -result {1 0}
++test exprAssign-3.3 {local, not global} -setup {
++    unset -nocomplain g
++    proc p {} {expr {g = 7}}
++} -body {
++    p
++    info exists g
++} -cleanup {
++    rename p {}
++} -result 0
++test exprAssign-3.4 {global variable} -setup {
++    unset -nocomplain G
++    proc p {} {global G; expr {G = 8}}
++} -body {
++    p
++    set G
++} -cleanup {
++    rename p {}
++} -result 8
++test exprAssign-3.5 {upvar} -setup {
++    unset -nocomplain U
++    proc p {} {upvar 1 U u; expr {u = 9}}
++} -body {
++    p
++    set U
++} -cleanup {
++    rename p {}
++} -result 9
++
++# Separator
++
++test exprAssign-4.1 {separator} {
++    expr {1; 2}
++} 2
++test exprAssign-4.2 {separator, non-constant} {
++    set y 1
++    expr {$y; $y + 1}
++} 2
++test exprAssign-4.3 {trailing separator} -setup {
++    unset -nocomplain x
++} -body {
++    list [expr {x = 1;}] $x
++} -result {{} 1}
++test exprAssign-4.4 {trailing separator in parentheses} -setup {
++    unset -nocomplain x x2
++} -body {
++    list [expr {(x = 2; x2 = 3;)}] $x $x2
++} -result {{} 2 3}
++test exprAssign-4.5 {empty statement} {
++    expr {1;; 2}
++} 2
++test exprAssign-4.6 {empty else branch} {
++    set y 2
++    expr {$y > 1 ? 5 :; 7}
++} 7
++test exprAssign-4.7 {separator in an expression substitution} {
++    set x [( a = 2; $a * 3 )]
++} 6
++test exprAssign-4.8 {trailing separator in an expression substitution} {
++    set x [( a = 2; )]
++} {}
++test exprAssign-4.9 {separator in a function argument} {
++    expr {max(1; 5, 3)}
++} 5
++
++# Errors
++
++test exprAssign-5.1 {comparison is not an assignment} -body {
++    expr {x==3}
++} -returnCodes error -match glob -result {invalid bareword "x"*}
++test exprAssign-5.4 {missing target} -body {
++    expr {= 1}
++} -returnCodes error -match glob -result {missing operand*}
++test exprAssign-5.6 {name in parentheses} -body {
++    expr {(a) = 1}
++} -returnCodes error -match glob -result {invalid bareword "a"*}
++test exprAssign-5.7 {missing operator} -body {
++    expr {1 x = 2}
++} -returnCodes error -match glob -result {invalid bareword "x"*}
++test exprAssign-5.9 {leading separator} -body {
++    expr {; 1}
++} -returnCodes error -match glob -result {*}
++test exprAssign-6.1 {Tcl_ParseExpr} -constraints testexprparser -body {
++    testexprparser {x = 1; y = 2} -1
++} -result {- {} 0 subexpr {x = 1; y = 2} 13 operator {;} 0 subexpr {x = 1} 5 operator = 0 subexpr x 1 text x 0 subexpr 1 1 text 1 0 subexpr {y = 2} 5 operator = 0 subexpr y 1 text y 0 subexpr 2 1 text 2 0 {}}
++test exprAssign-6.2 {Tcl_ParseExpr, quoted name} -constraints {
++    testexprparser
++} -body {
++    testexprparser {"A($i)" = 1} -1
++} -result {- {} 0 subexpr {"A($i)" = 1} 9 operator = 0 subexpr {"A($i)"} 5 word {"A($i)"} 4 text A( 0 variable {$i} 1 text i 0 text ) 0 subexpr 1 1 text 1 0 {}}
++test exprAssign-6.4 {Tcl_ParseExpr, empty statement} -constraints testexprparser -body {
++    testexprparser {x = 1;} -1
++} -result {- {} 0 subexpr {x = 1;} 9 operator {;} 0 subexpr {x = 1} 5 operator = 0 subexpr x 1 text x 0 subexpr 1 1 text 1 0 subexpr {} 1 text {} 0 {}}
++
++# cleanup
++::tcltest::cleanupTests
++return
++
++# Local Variables:
++# mode: tcl
++# End:
+diff --git a/tests/parseExpr.test b/tests/parseExpr.test
+index 949984b..0815f42 100644
+--- a/tests/parseExpr.test
++++ b/tests/parseExpr.test
+@@ -676,7 +676,7 @@ test parseExpr-16.32 {GetLexeme procedure, lexeme is "=="} testexprparser {
+     testexprparser {2==3} -1
+ } {- {} 0 subexpr 2==3 5 operator == 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 {}}
+ test parseExpr-16.33 {GetLexeme procedure, bad lexeme starting with "="} -constraints testexprparser -body {
+-    testexprparser {2=+3} -1
++    testexprparser {2=} -1
+ } -returnCodes error -match glob -result *
+ test parseExpr-16.34 {GetLexeme procedure, lexeme is "!="} testexprparser {
+     testexprparser {2!=3} -1
+@@ -743,8 +743,8 @@ test parseExpr-21.1 {error messages} -body {
+ in expression "@"}
+ test parseExpr-21.2 {error messages} -body {
+     expr =
+-} -returnCodes error -result {incomplete operator "="
+-in expression "="}
++} -returnCodes error -result {missing operand at _@_
++in expression "_@_="}
+ test parseExpr-21.3 {error messages} -body {
+     expr x
+ } -returnCodes error -result {invalid bareword "x"
+-- 
+2.43.0
+

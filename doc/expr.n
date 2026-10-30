@@ -112,6 +112,14 @@ A Tcl command enclosed in \fBbrackets\fR
 Command substitution is performed as according to the command substitution rule
 for \fBTcl\fR.
 .TP
+An expression enclosed in \fB[(\fR and \fB)]\fR
+.
+.VS TIP759
+Expression substitution, as described in the script substitution rule
+([7]) for \fBTcl\fR: the value of the expression between the brackets is the
+value of the operand.
+.VE TIP759
+.TP
 A function call.
 .
 This is mathematical function such as \fBsin($x)\fR, whose arguments have any of
@@ -446,6 +454,16 @@ A forced string comparison whose result is 0:
 \fBexpr\fR {"0x03" gt "2"}
 .CE
 .VE TIP461
+.PP
+.VS TIP759
+Compute a value with an expression substitution, the short form of
+\fB[expr {...}]\fR in a word:
+.PP
+.CS
+set area [( $width * $height )]
+puts "half: [( $area / 2.0 )]"
+.CE
+.VE TIP759
 .PP
 Define a procedure that computes an
 .QW interesting

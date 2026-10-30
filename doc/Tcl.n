@@ -17,13 +17,39 @@ Summary of Tcl language syntax.
 .SS "SYNTAX"
 .PP
 The following rules define the syntax and semantics of the Tcl language:
-.IP "[1] \fBCommands.\fR"
-A Tcl script is a string containing one or more commands.
+.IP "[1] \fBScripts.\fR"
+A Tcl script is a string of one of two kinds: a \fIcommand script\fR,
+made of one or more commands, or an \fIexpression script\fR, made of
+one expression.
+.RS
+.TP 5
+\fBCommand scripts.\fR
+A command script contains one or more commands.
 Semi-colons and newlines are command separators unless quoted as
 described below.
 Close brackets are command terminators during command substitution
 (see below) unless quoted.
+.TP 5
+\fBExpression scripts.\fR
+.VS TIP759
+The script of an expression substitution (rule [7]), which begins with
+an open parenthesis
+.PQ ( "" ,
+is an expression script: the whole script, parentheses included, is one
+expression, as described in the \fBexpr\fR manual page. Semi-colons and
+newlines inside it are not command separators.
+During expression substitution (see below), the expression ends at the
+first close parenthesis that is immediately followed by a close bracket
+and leaves the parentheses of the expression balanced:
+.QW )]
+is one symbol.
+.VE TIP759
+.RE
 .IP "[2] \fBEvaluation.\fR"
+How a script is evaluated depends on its kind.
+.RS
+.TP 5
+\fBEvaluation of a command.\fR
 A command is evaluated in two steps.
 First, the Tcl interpreter breaks the command into \fIwords\fR
 and performs substitutions as described below.
@@ -36,18 +62,63 @@ The routine is free to interpret each of its words
 in any way it likes, such as an integer, variable name, list,
 or Tcl script.
 Different commands interpret their words differently.
+.VS TIP759
+There is one exception: a command made of a single word that is a
+single expression substitution, such as
+.QW "[( $x * 3 )]"
+alone on a line, is evaluated as the expression; its value is the
+result of the command and is not used as a command name.
+.VE TIP759
+.TP 5
+\fBEvaluation of an expression.\fR
+.VS TIP759
+An expression is evaluated as by the \fBexpr\fR command, in two steps.
+First, it is broken into \fIoperands\fR and operators (see rule [3]);
+the precedence of the operators, given in the \fBexpr\fR manual page,
+and parentheses determine the order in which the operators apply.
+Secondly, each operator is applied to the values of its operands.
+Substitutions in an operand are performed when that operand is
+evaluated, not before (see rule [11]).
+No routine is located: the value of the expression is the result.
+.VE TIP759
+.RE
 .IP "[3] \fBWords.\fR"
+How a script is divided into words depends on its kind (rule [1]).
+.RS
+.TP 5
+\fBWords of a command.\fR
 Words of a command are separated by white space (except for
 newlines, which are command separators).
+.TP 5
+\fBOperands of an expression.\fR
+.VS TIP759
+An expression is a sequence of operands and operators, as described
+in the \fBexpr\fR manual page; its operands play the role of words.
+Unlike in a command, white space, including newlines, does not
+separate operands: it is ignored, except that it ends a number or a
+name. An operand ends at the first character that cannot continue it,
+such as white space, an operator, a comma or a parenthesis.
+Two operands must be separated by an operator, or by a comma between
+the arguments of a function; otherwise the expression is an error, as
+in \fB1 2\fR or \fB\N'34'a\N'34'\N'34'b\N'34'\fR, whereas
+\fB\N'34'a\N'34'eq\N'34'a\N'34'\fR is valid.
+An operand is a number, a boolean value, a quoted word (rule [4]),
+a braced word (rule [6]), a substitution (rules [7] to [9]) or a function call.
+The value of a substituted operand is always a single operand: it is
+never parsed again as an expression.
+.VE TIP759
+.RE
 .IP "[4] \fBDouble quotes.\fR"
-If the first character of a word is double-quote
+If the first character of a word, or of an operand of an expression,
+is double-quote
 .PQ \N'34'
 then the word is terminated by the next double-quote character.
 If semi-colons, close brackets, or white space characters
 (including newlines) appear between the quotes then they are treated
 as ordinary characters and included in the word.
-Command substitution, variable substitution, and backslash substitution
-are performed on the characters between the quotes as described below.
+Command substitution, expression substitution, variable substitution,
+and backslash substitution are performed on the characters between
+the quotes as described below.
 The double-quotes are not retained as part of the word.
 .IP "[5] \fBArgument expansion.\fR"
 If a word starts with the string
@@ -64,7 +135,8 @@ substituted. For instance,
 is equivalent to
 .QW "cmd a b {[c]} d {$e} f {g h}" .
 .IP "[6] \fBBraces.\fR"
-If the first character of a word is an open brace
+If the first character of a word, or of an operand of an expression,
+is an open brace
 .PQ {
 and rule [5] does not apply, then
 the word is terminated by the matching close brace
@@ -80,20 +152,57 @@ below, nor do semi-colons, newlines, close brackets,
 or white space receive any special interpretation.
 The word will consist of exactly the characters between the
 outer braces, not including the braces themselves.
-.IP "[7] \fBCommand substitution.\fR"
+.IP "[7] \fBScript substitution.\fR"
 If a word contains an open bracket
 .PQ [
-then Tcl performs \fIcommand substitution\fR.
+then Tcl performs \fIscript substitution\fR: the characters following
+the open bracket form a script (rule [1]), which is evaluated; its
+result is substituted into the word in place of the brackets and all of
+the characters between them.
+.VS TIP759
+The kind of the script decides where it ends and how it is evaluated.
+.VE TIP759
+There may be any number of script substitutions in a single word.
+Script substitution is not performed on words enclosed in braces.
+.RS
+.TP 5
+\fBCommand substitution.\fR
+If the open bracket is not immediately followed by an open parenthesis,
+the script is a command script, and Tcl performs
+\fIcommand substitution\fR.
 To do this it invokes the Tcl interpreter recursively to process
 the characters following the open bracket as a Tcl script.
 The script may contain any number of commands and must be terminated
 by a close bracket
 .PQ ] "" .
 The result of the script (i.e. the result of its last command) is
-substituted into the word in place of the brackets and all of the
-characters between them.
-There may be any number of command substitutions in a single word.
-Command substitution is not performed on words enclosed in braces.
+the result of the substitution.
+.VS TIP759
+To substitute the result of a command whose name begins with an open
+parenthesis, put a space after the open bracket.
+.VE TIP759
+.TP 5
+\fBExpression substitution.\fR
+.VS TIP759
+If the open bracket is immediately followed by an open parenthesis
+.PQ [(
+the script is an expression script, and Tcl performs
+\fIexpression substitution\fR.
+The script extends from that open parenthesis to the first close
+parenthesis that is immediately followed by a close bracket
+.PQ )]
+and leaves the parentheses balanced; parentheses inside braces, quotes
+and nested substitutions are not counted.
+It is evaluated as an expression, as by the \fBexpr\fR command, and the
+value of the expression is the result of the substitution.
+For instance,
+.QW "set area [( $w * $h )]"
+is equivalent to
+.QW "set area [expr {$w * $h}]" .
+A command made of a single expression substitution is described in
+rule [2].
+.VE TIP759
+.RE
 .IP "[8] \fBVariable substitution.\fR"
 If a word contains a dollar-sign
 .PQ $
@@ -231,6 +340,11 @@ Backslash substitution is not performed on words enclosed in braces,
 except for backslash-newline as described above.
 .RE
 .IP "[10] \fBComments.\fR"
+Comments are recognized differently in a command script and in an
+expression.
+.RS
+.TP 5
+\fBComments in a command script.\fR
 If a hash character
 .PQ #
 appears at a point where Tcl is
@@ -239,7 +353,22 @@ then the hash character and the characters that follow it, up
 through the next newline, are treated as a comment and ignored.
 The comment character only has significance when it appears
 at the beginning of a command.
+.TP 5
+\fBComments in an expression.\fR
+.VS TIP759
+If a hash character
+.PQ #
+appears at a point where an operand is expected,
+then the hash character and the characters that follow it, up
+through the next newline, are treated as a comment and ignored,
+as described in the \fBexpr\fR manual page.
+.VE TIP759
+.RE
 .IP "[11] \fBOrder of substitution.\fR"
+The order of substitutions depends on the kind of script.
+.RS
+.TP 5
+\fBOrder of substitution in a command.\fR
 Each character is processed exactly once by the Tcl interpreter
 as part of creating the words of a command.
 For example, if variable substitution occurs then no further
@@ -262,13 +391,33 @@ set y [set x 0][incr x][incr x]
 .PP
 will always set the variable \fIy\fR to the value, \fI012\fR.
 .RE
+.TP 5
+\fBOrder of substitution in an expression.\fR
+.VS TIP759
+Substitutions in an expression are performed when the operand that
+contains them is evaluated, not before the expression is evaluated.
+Operands are evaluated from left to right, except that the operators
+\fB&&\fR, \fB||\fR and \fB?:\fR evaluate only the operands they need.
+Thus
+.QW "expr {$n != 0 && [check $n]}"
+does not invoke \fBcheck\fR when \fIn\fR is 0.
+As in a command, the value of a substitution is not substituted again.
+.VE TIP759
+.RE
 .IP "[12] \fBSubstitution and word boundaries.\fR"
 Substitutions do not affect the word boundaries of a command,
 except for argument expansion as specified in rule [5].
 For example, during variable substitution the entire value of
 the variable becomes part of a single word, even if the variable's
 value contains spaces.
-.PP
+.VS TIP759
+Likewise, in an expression, a substitution always gives a single
+operand: if the value of \fBx\fR is
+\fB1 + 1\fR, then
+.QW "$x * 2"
+multiplies the string \fB1 + 1\fR by 2, which is an error, and does
+not compute 4.
+.VE TIP759
 .SS "TCL VALUES"
 .PP
 Conceptually, all values in Tcl are strings, or to be precise, sequences of
@@ -301,7 +450,7 @@ to U+00FF and may be stored as an array of bytes. In all cases this internal
 representation is irrelevant at the Tcl language level but exposed in the Tcl
 C API.
 .SH KEYWORDS
-backslash, command, comment, script, substitution, variable
+backslash, command, comment, expression, script, substitution, variable
 '\" Local Variables:
 '\" mode: nroff
 '\" fill-column: 78

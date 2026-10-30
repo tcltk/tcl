@@ -1560,7 +1560,8 @@ TclSubstCompile(
 		int foundCommand = 0;
 
 		for (i=2 ; i<=tokenPtr->numComponents ; i++) {
-		    if (tokenPtr[i].type == TCL_TOKEN_COMMAND) {
+		    if (tokenPtr[i].type == TCL_TOKEN_COMMAND
+			    || tokenPtr[i].type == TCL_TOKEN_SUB_EXPR) {
 			foundCommand = 1;
 			break;
 		    }
@@ -1606,6 +1607,10 @@ TclSubstCompile(
 	    case TCL_TOKEN_COMMAND:
 		TclCompileScript(interp, tokenPtr->start+1, tokenPtr->size-2,
 			envPtr);
+		count++;
+		break;
+	    case TCL_TOKEN_SUB_EXPR:	/* TIP 759: [(expr)] */
+		TclCompileSubExpr(interp, tokenPtr, envPtr);
 		count++;
 		break;
 	    case TCL_TOKEN_VARIABLE:

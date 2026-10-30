@@ -1106,6 +1106,32 @@ ParseTokens(
 	    }
 	    src += parsePtr->tokenPtr[varToken].size;
 	    numBytes -= parsePtr->tokenPtr[varToken].size;
+	} else if (numBytes >= 2 && src[0] == '[' && src[1] == '(') {
+	    /*
+	     * TIP 759: expression substitution [(expr)]. The expression
+	     * parser finds where it ends: the ")" that balances the first
+	     * "(", followed by "]".
+	     */
+
+	    Tcl_Size length;
+
+	    if (!(flags & TCL_SUBST_EXPR)) {
+		tokenPtr->type = TCL_TOKEN_TEXT;
+		tokenPtr->size = 1;
+		parsePtr->numTokens++;
+		src++;
+		numBytes--;
+		continue;
+	    }
+	    if (TclParseExprSubst(parsePtr->interp, src, numBytes, &length,
+		    parsePtr) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    tokenPtr->type = TCL_TOKEN_SUB_EXPR;
+	    tokenPtr->size = length;
+	    parsePtr->numTokens++;
+	    src += length;
+	    numBytes -= length;
 	} else if (*src == '[') {
 	    Tcl_Parse *nestedPtr;
 
@@ -2002,9 +2028,10 @@ TclSubstParse(
 	    parsePtr->end = p + length;
 	    p = parsePtr->term + 1;
 	    length = parsePtr->end - p;
-	    if (length == 0) {
+	    if (length == 0 || ((flags & TCL_SUBST_EXPR) && *p == '(')) {
 		/*
-		 * No commands, just an unmatched [. As in previous cases,
+		 * No commands, just an unmatched [, or a bad expression
+		 * substitution [(...)] (TIP 759). As in previous cases,
 		 * existing token stream is OK.
 		 */
 	    } else {
@@ -2219,7 +2246,32 @@ TclSubstTokens(
 		adjust++;
 	    }
 	    break;
+	case TCL_TOKEN_SUB_EXPR: {
+	    /*
+	     * TIP 759: expression substitution [(expr)]. The expression is
+	     * the text between the brackets.
+	     */
 
+	    Tcl_Obj *exprObj, *valueObj;
+
+	    exprObj = Tcl_NewStringObj(tokenPtr->start + 1, tokenPtr->size - 2);
+	    Tcl_IncrRefCount(exprObj);
+	    code = Tcl_ExprObj(interp, exprObj, &valueObj);
+	    Tcl_DecrRefCount(exprObj);
+	    TclAdvanceLines(&line, tokenPtr->start + 1,
+		    tokenPtr->start + tokenPtr->size - 1);
+	    if (code == TCL_OK) {
+		/*
+		 * Tcl_ExprObj gives the caller a reference; appendObj is
+		 * borrowed, as for a command, from the interpreter result.
+		 */
+
+		Tcl_SetObjResult(interp, valueObj);
+		Tcl_DecrRefCount(valueObj);
+		appendObj = Tcl_GetObjResult(interp);
+	    }
+	    break;
+	}
 	case TCL_TOKEN_COMMAND: {
 	    /* TIP #280: Transfer line information to nested command */
 	    iPtr->numLevels++;

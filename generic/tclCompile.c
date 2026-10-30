@@ -2417,6 +2417,14 @@ CompileCommandTokens(
     /* If cmdPtr != NULL, try to call cmdPtr->compileProc */
     if (cmdPtr) {
 	code = CompileCmdCompileProc(interp, parsePtr, cmdPtr, envPtr);
+    } else if (TclIsExprCommand(parsePtr)) {
+	/*
+	 * TIP 759: a command that is one expression substitution [(...)] is
+	 * compiled as the expression. Its value is the value of the command.
+	 */
+
+	TclCompileSubExpr(interp, tokenPtr + 1, envPtr);
+	code = TCL_OK;
     }
 
     if (code == TCL_ERROR) {
@@ -2650,6 +2658,41 @@ TclCompileScript(
 /*
  *----------------------------------------------------------------------
  *
+ * TclCompileSubExpr --
+ *
+ *	TIP 759. Compiles the expression of an expression substitution
+ *	[(...)], a TCL_TOKEN_SUB_EXPR token. Each nested [(...)] is compiled
+ *	by a nested call: the depth is limited as for nested scripts, so that
+ *	the C stack does not overflow.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TclCompileSubExpr(
+    Tcl_Interp *interp,
+    Tcl_Token *tokenPtr,	/* The TCL_TOKEN_SUB_EXPR token. */
+    CompileEnv *envPtr)
+{
+    Interp *iPtr = (Interp *) interp;
+
+    if (iPtr->numLevels / 5 > iPtr->maxNestingDepth / 4) {
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"too many nested compilations (infinite loop?)",
+		TCL_AUTO_LENGTH));
+	Tcl_SetErrorCode(interp, "TCL", "LIMIT", "STACK", (char *)NULL);
+	TclCompileSyntaxError(interp, envPtr);
+	return;
+    }
+    iPtr->numLevels++;
+    TclCompileExpr(interp, tokenPtr->start + 1, tokenPtr->size - 2, envPtr,
+	    true);
+    iPtr->numLevels--;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TclCompileTokens --
  *
  *	Given an array of tokens parsed from a Tcl command, e.g. the tokens
@@ -2852,6 +2895,30 @@ TclCompileTokens(
 	    envPtr->line += adjust;
 	    TclCompileScript(interp, tokenPtr->start+1,
 		    tokenPtr->size-2, envPtr);
+	    envPtr->line -= adjust;
+	    numObjsToConcat++;
+	    break;
+
+	case TCL_TOKEN_SUB_EXPR:
+	    /*
+	     * TIP 759: expression substitution [(...)]. Push any accumulated
+	     * chars appearing before it.
+	     */
+
+	    if (Tcl_DStringLength(&textBuffer) > 0) {
+		int literal = TclPushDString(envPtr, &textBuffer);
+
+		numObjsToConcat++;
+		Tcl_DStringFree(&textBuffer);
+		if (numCL) {
+		    TclContinuationsEnter(TclFetchLiteral(envPtr, literal),
+			    numCL, clPosition);
+		}
+		numCL = 0;
+	    }
+
+	    envPtr->line += adjust;
+	    TclCompileSubExpr(interp, tokenPtr, envPtr);
 	    envPtr->line -= adjust;
 	    numObjsToConcat++;
 	    break;

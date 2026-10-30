@@ -1,0 +1,536 @@
+From 72b671965e8bbd607c77ad28e6e1f15f1cbc16ba Mon Sep 17 00:00:00 2001
+From: Florent Merlet <florentmerlet73@gmail.com>
+Date: Fri, 30 Oct 2026 12:03:30 +0100
+Subject: [PATCH 7/7] TIP 759 (7/7): argument expansion {*} in expressions
+
+{*} before an argument of a function or an element of a list expands
+the value as a list, as in a command: max({*}$L, 0), (0, {*}$L).
+{*} is recognized only when immediately followed by the start of an
+operand, so {*} eq "*" keeps its meaning. Elsewhere it is an error.
+
+Compiled with expandStart / expandStkTop / invokeExpanded.
+
+Tests: tests/exprExpand.test. Documentation: expr.n.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01MrNWAEyXLqekovNBvbMZ4z
+---
+ doc/Tcl.n             |  30 ++++++++-
+ doc/expr.n            |  13 ++++
+ generic/tclCompExpr.c | 153 +++++++++++++++++++++++++++++++++++++++++-
+ generic/tclCompile.c  |   7 ++
+ generic/tclCompile.h  |   1 +
+ tests/exprExpand.test | 149 ++++++++++++++++++++++++++++++++++++++++
+ 6 files changed, 349 insertions(+), 4 deletions(-)
+ create mode 100644 tests/exprExpand.test
+
+diff --git a/doc/Tcl.n b/doc/Tcl.n
+index 4ae8957..cd7eb48 100644
+--- a/doc/Tcl.n
++++ b/doc/Tcl.n
+@@ -133,6 +133,11 @@ and backslash substitution are performed on the characters between
+ the quotes as described below.
+ The double-quotes are not retained as part of the word.
+ .IP "[5] \fBArgument expansion.\fR"
++A word of a command, or an operand of an expression, may be expanded
++into several.
++.RS
++.TP 5
++\fBArgument expansion in a command.\fR
+ If a word starts with the string
+ .QW {*}
+ followed by a non-whitespace character, then the leading
+@@ -146,6 +151,29 @@ substituted. For instance,
+ .QW "cmd a {*}{b [c]} d {*}{$e f {g h}}"
+ is equivalent to
+ .QW "cmd a b {[c]} d {$e} f {g h}" .
++.TP 5
++\fBArgument expansion in an expression.\fR
++.VS TIP759
++If an argument of a function, or an element of a list, starts with the
++string
++.QW {*}
++immediately followed by the start of an operand, then the leading
++.QW {*}
++is removed and the rest of the operand is evaluated as any other
++operand. Its value is then parsed as a list, as in a command, and each
++of its elements becomes a separate argument of the function, or a
++separate element of the list. For instance, if the value of \fBL\fR is
++\fB3 1 2\fR, then
++.QW "max({*}$L, 0)"
++is equivalent to
++.QW "max(3, 1, 2, 0)" .
++Anywhere else in an expression, this prefix is an error; but
++.QW {*}
++followed by white space or by an operator, as in
++.QW "{*} eq \N'34'*\N'34'" ,
++is the braced string \fB*\fR (rule [6]).
++.VE TIP759
++.RE
+ .IP "[6] \fBBraces.\fR"
+ If the first character of a word, or of an operand of an expression,
+ is an open brace
+@@ -424,7 +452,7 @@ the variable becomes part of a single word, even if the variable's
+ value contains spaces.
+ .VS TIP759
+ Likewise, in an expression, a substitution always gives a single
+-operand: if the value of \fBx\fR is
++operand, except for argument expansion: if the value of \fBx\fR is
+ \fB1 + 1\fR, then
+ .QW "$x * 2"
+ multiplies the string \fB1 + 1\fR by 2, which is an error, and does
+diff --git a/doc/expr.n b/doc/expr.n
+index 8d12c39..fe50e49 100644
+--- a/doc/expr.n
++++ b/doc/expr.n
+@@ -153,6 +153,19 @@ parenthesized expression without a comma is not a list.
+ .VE TIP759
+ .RE
+ .PP
++.VS TIP759
++An argument of a function, or an element of a list, may be prefixed by
++\fB{*}\fR, as in the argument expansion rule for \fBTcl\fR: its value is
++taken as a list, and each element of that list becomes a separate argument
++of the function, or a separate element of the list. For instance, if the
++value of \fBL\fR is \fB3 1 2\fR, \fBmax({*}$L, 0)\fR is \fBmax(3, 1, 2, 0)\fR
++and \fB(0, {*}$L)\fR is \fB0 3 1 2\fR. \fB{*}\fR is recognized only when it
++is immediately followed by the start of an operand (a number, a variable, a
++bracket, a brace, a quote, a name or an open parenthesis); elsewhere, as in
++\fB{*} eq "*"\fR, it is a braced string. It is an error to use \fB{*}\fR
++anywhere but before an argument of a function or an element of a list.
++.VE TIP759
++.PP
+ Because \fBexpr\fR parses and performs substitutions on values that have
+ already been parsed and substituted by \fBTcl\fR, it is usually best to enclose
+ expressions in braces to avoid the first round of substitutions by
+diff --git a/generic/tclCompExpr.c b/generic/tclCompExpr.c
+index 327ddbd..d2cfa7e 100644
+--- a/generic/tclCompExpr.c
++++ b/generic/tclCompExpr.c
+@@ -220,6 +220,8 @@ enum LexemeCodes {
+ 				 * nothing, unless a comma follows at the top
+ 				 * of the parens: it then becomes LIST. */
+     LIST = UNARY | 9,		/* TIP 759: the list (a, b, ...) */
++    EXPAND = UNARY | 10,	/* TIP 759: {*}, expansion of an argument of
++				 * a function or an element of a list. */
+ 
+     /* Binary operator lexemes */
+ 
+@@ -389,6 +391,7 @@ static const unsigned char prec[] = {
+     PREC_UNARY,			/* BIT_NOT*/
+     PREC_UNARY,			/* NULL_FUNC */
+     PREC_UNARY,			/* LIST */
++    PREC_UNARY,			/* EXPAND */
+ };
+ 
+ /*
+@@ -450,6 +453,7 @@ static const unsigned char instruction[] = {
+     INST_BITNOT,		/* BIT_NOT*/
+     0,				/* NULL_FUNC */
+     0,				/* LIST */
++    0,				/* EXPAND */
+ };
+ 
+ /*
+@@ -543,6 +547,8 @@ static int		ParseExprSubst(Tcl_Interp *interp, const char *start,
+ 			    Tcl_Size numBytes, Tcl_Size *lengthPtr,
+ 			    Tcl_Parse *parsePtr, int depth);
+ static int		AssignFollows(const char *start, Tcl_Size numBytes);
++static int		ExpandPlacesValid(OpNode *nodes, unsigned int nodesUsed);
++static int		HasExpandedArg(OpNode *nodes, int index);
+ static int		SimpleLocalName(Tcl_Obj *nameObj);
+ static const char *	FindTupleTarget(const char *start, Tcl_Size numBytes);
+ static void		CollectTuplePaths(OpNode *nodes, int index, int *path,
+@@ -844,6 +850,88 @@ FindTupleTarget(
+     return NULL;
+ }
+ 
++/*
++ *----------------------------------------------------------------------
++ *
++ * ExpandPlacesValid, HasExpandedArg --
++ *
++ *	TIP 759. ExpandPlacesValid: is each {*} (EXPAND node) an argument of
++ *	a function or an element of a list, the only places where the
++ *	elements of a value can stand for several values?
++ *
++ *	HasExpandedArg: has the function or list whose OPEN_PAREN node is
++ *	given an expanded argument? Its arguments are the right operand of
++ *	the OPEN_PAREN, separated by COMMA nodes.
++ *
++ *----------------------------------------------------------------------
++ */
++
++static int
++ExpandPlacesValid(
++    OpNode *nodes,
++    unsigned int nodesUsed)
++{
++    unsigned int i;
++
++    for (i = 0; i < nodesUsed; i++) {
++	int p;
++
++	if (nodes[i].lexeme != EXPAND) {
++	    continue;
++	}
++	p = nodes[i].parent;
++	while (p >= 0 && nodes[p].lexeme == COMMA) {
++	    p = nodes[p].parent;
++	}
++	if (p < 0 || nodes[p].lexeme != OPEN_PAREN) {
++	    return 0;
++	}
++	p = nodes[p].parent;
++	if (p < 0 || (nodes[p].lexeme != FUNCTION && nodes[p].lexeme != LIST)) {
++	    return 0;
++	}
++
++	/*
++	 * Not in the target of a (tuple) assignment.
++	 */
++
++	while (1) {
++	    int q = nodes[p].parent;
++
++	    if (q < 0 || !(nodes[q].lexeme == COMMA
++		    || nodes[q].lexeme == OPEN_PAREN
++		    || nodes[q].lexeme == NULL_FUNC
++		    || nodes[q].lexeme == LIST)) {
++		if (q >= 0 && nodes[q].lexeme == ASSIGN && nodes[q].left == p) {
++		    return 0;
++		}
++		break;
++	    }
++	    p = q;
++	}
++    }
++    return 1;
++}
++
++static int
++HasExpandedArg(
++    OpNode *nodes,
++    int index)			/* An argument, or COMMA of arguments. */
++{
++    if (index < 0) {
++	return 0;
++    }
++    switch (nodes[index].lexeme) {
++    case EXPAND:
++	return 1;
++    case COMMA:
++	return HasExpandedArg(nodes, nodes[index].left)
++		|| HasExpandedArg(nodes, nodes[index].right);
++    default:
++	return 0;
++    }
++}
++
+ /*
+  *----------------------------------------------------------------------
+  *
+@@ -1548,7 +1636,7 @@ ParseExpr(
+ 	     * expression, so long as the argument is a constant expression.
+ 	     */
+ 
+-	    nodePtr->constant = (lexeme != FUNCTION);
++	    nodePtr->constant = (lexeme != FUNCTION) && (lexeme != EXPAND);
+ 
+ 	    /*
+ 	     * This unary operator is a new incomplete tree, so push it onto
+@@ -1797,6 +1885,15 @@ ParseExpr(
+ 		     * Transfer the parse tree to the caller and return.
+ 		     */
+ 
++		    if (!ExpandPlacesValid(nodes, nodesUsed)) {
++			TclNewLiteralStringObj(msg, "{*} is allowed only for "
++				"the arguments of a function or the elements "
++				"of a list");
++			errCode = "EXPAND";
++			start = parsePtr->string;
++			scanned = 0;
++			goto error;
++		    }
+ 		    *opTreePtr = nodes;
+ 		    return TCL_OK;
+ 		}
+@@ -2613,6 +2710,23 @@ ParseLexeme(
+ 	    }
+ 	}
+     }
++    if ((numBytes > 3) && (start[0] == '{') && (start[1] == '*')
++	    && (start[2] == '}')) {
++	/*
++	 * TIP 759: "{*}" directly followed by the beginning of an operand is
++	 * the expansion of an argument (a syntax error before). Otherwise, as
++	 * before, it is the braced word "*": {*} eq "*", {*}eq "*", {*}-1.
++	 */
++
++	unsigned char next;
++
++	ParseLexeme(start + 3, numBytes - 3, &next, NULL);
++	if (((next & NODE_TYPE) == LEAF) || (next == BAREWORD)
++		|| (next == OPEN_PAREN)) {
++	    *lexemePtr = EXPAND;
++	    return 3;
++	}
++    }
+     byte = UCHAR(*start);
+     if (byte < sizeof(Lexeme) && Lexeme[byte] != 0) {
+ 	*lexemePtr = Lexeme[byte];
+@@ -3070,6 +3184,10 @@ CompileExprTree(
+ 	    case FUNCTION: {
+ 		Tcl_Obj *cmdName;
+ 
++		if (HasExpandedArg(nodes, nodes[nodePtr->right].right)) {
++		    /* TIP 759: an argument is expanded: {*} */
++		    TclStartExpanding(envPtr);
++		}
+ 		TclNewLiteralStringObj(cmdName, "tcl::mathfunc::");
+ 		Tcl_AppendObjToObj(cmdName, *funcObjv);
+ 		funcObjv++;
+@@ -3096,6 +3214,19 @@ CompileExprTree(
+ 
+ 		nodePtr->left = numWords;
+ 		numWords = 1;
++		if (HasExpandedArg(nodes, nodes[nodePtr->right].right)) {
++		    /*
++		     * An element is expanded, {*}: the list is built by the
++		     * command list, invoked with expansion.
++		     */
++
++		    Tcl_Obj *cmdName;
++
++		    TclStartExpanding(envPtr);
++		    TclNewLiteralStringObj(cmdName, "::list");
++		    PUSH_OBJ_FLAGS(cmdName, LITERAL_CMD_NAME);
++		    numWords = 2;
++		}
+ 		break;
+ 	    case QUESTION:
+ 		newJump = (JumpList *)TclStackAlloc(interp, sizeof(JumpList));
+@@ -3202,17 +3333,33 @@ CompileExprTree(
+ 		 * to a number.
+ 		 */
+ 
+-		OP4(		LIST, numWords);
++		if (HasExpandedArg(nodes, nodes[nodePtr->right].right)) {
++		    INVOKE4(	INVOKE_EXPANDED, numWords);
++		} else {
++		    OP4(	LIST, numWords);
++		}
+ 		numWords = nodePtr->left;
+ 		convert = false;
+ 		break;
++	    case EXPAND:
++		/*
++		 * TIP 759: {*}: the elements of the value are arguments of
++		 * the function (or elements of the list) being built.
++		 */
++
++		OP4(		EXPAND_STKTOP, envPtr->currStackDepth);
++		break;
+ 	    case FUNCTION:
+ 		/*
+ 		 * Use the numWords count we've kept to invoke the function
+ 		 * command with the correct number of arguments.
+ 		 */
+ 
+-		INVOKE4(	INVOKE_STK, numWords);
++		if (HasExpandedArg(nodes, nodes[nodePtr->right].right)) {
++		    INVOKE4(	INVOKE_EXPANDED, numWords);
++		} else {
++		    INVOKE4(	INVOKE_STK, numWords);
++		}
+ 
+ 		/*
+ 		 * Restore any saved numWords value.
+diff --git a/generic/tclCompile.c b/generic/tclCompile.c
+index c2a41a8..bbe97b6 100644
+--- a/generic/tclCompile.c
++++ b/generic/tclCompile.c
+@@ -4054,6 +4054,13 @@ TclCleanupStackForBreakContinue(
+  * ---------------------------------------------------------------------
+  */
+ 
++void
++TclStartExpanding(
++    CompileEnv *envPtr)		/* TIP 759: for {*} in expressions. */
++{
++    StartExpanding(envPtr);
++}
++
+ static void
+ StartExpanding(
+     CompileEnv *envPtr)
+diff --git a/generic/tclCompile.h b/generic/tclCompile.h
+index d6eaaae..af9d3f5 100644
+--- a/generic/tclCompile.h
++++ b/generic/tclCompile.h
+@@ -1311,6 +1311,7 @@ MODULE_SCOPE void	TclCompileInvocation(Tcl_Interp *interp,
+ MODULE_SCOPE void	TclCompileScript(Tcl_Interp *interp,
+ 			    const char *script, Tcl_Size numBytes,
+ 			    CompileEnv *envPtr);
++MODULE_SCOPE void	TclStartExpanding(CompileEnv *envPtr);
+ MODULE_SCOPE void	TclCompileSyntaxError(Tcl_Interp *interp,
+ 			    CompileEnv *envPtr);
+ MODULE_SCOPE void	TclCompileTokens(Tcl_Interp *interp,
+diff --git a/tests/exprExpand.test b/tests/exprExpand.test
+new file mode 100644
+index 0000000..47e5e15
+--- /dev/null
++++ b/tests/exprExpand.test
+@@ -0,0 +1,149 @@
++# Commands covered: expr, argument expansion {*} (TIP 759)
++#
++# This file contains a collection of tests for the argument expansion {*}
++# in expressions: arguments of functions and elements of lists. Sourcing
++# this file into Tcl runs the tests and generates output for errors. No
++# output means no errors were found.
++#
++# See the file "license.terms" for information on usage and redistribution of
++# this file, and for a DISCLAIMER OF ALL WARRANTIES.
++
++if {"::tcltest" ni [namespace children]} {
++    package require tcltest 2.5
++    namespace import -force ::tcltest::*
++}
++
++::tcltest::loadTestedCommands
++catch [list package require -exact tcl::test [info patchlevel]]
++
++testConstraint testexprparser [llength [info commands testexprparser]]
++
++# Arguments of functions
++
++test exprExpand-1.1 {all the arguments} {
++    set L {3 1 2}
++    expr {max({*}$L)}
++} 3
++test exprExpand-1.2 {with other arguments} {
++    set L {3 1 2}
++    expr {max(10, {*}$L)}
++} 10
++test exprExpand-1.3 {several expansions} {
++    set L {3 1 2}
++    expr {max({*}$L, 0, {*}{7 8})}
++} 8
++test exprExpand-1.4 {a point} {
++    set p {3 4}
++    expr {hypot({*}$p)}
++} 5.0
++test exprExpand-1.5 {command substitution} {
++    set L {3 1 2}
++    expr {max({*}[lsort -integer $L])}
++} 3
++test exprExpand-1.6 {empty list} -body {
++    expr {max({*}{})}
++} -returnCodes error -result {not enough arguments for math function "max"}
++test exprExpand-1.7 {in a procedure} -setup {
++    proc p {L} {expr {max({*}$L) + min({*}$L)}}
++} -body {
++    p {5 2 9}
++} -cleanup {
++    rename p {}
++} -result 11
++test exprExpand-1.8 {user function} -setup {
++    proc ::tcl::mathfunc::count {args} {llength $args}
++} -body {
++    set L {a b c}
++    expr {count(1, {*}$L, 2)}
++} -cleanup {
++    rename ::tcl::mathfunc::count {}
++} -result 5
++test exprExpand-1.9 {bytecode: expansion instructions} {
++    set code [tcl::unsupported::disassemble script {expr {max({*}$L)}}]
++    list [string match {*expandStart*expandStkTop*invokeExpanded*} $code]
++} 1
++test exprExpand-1.10 {break and continue in an expanded argument} -setup {
++    proc q {} {
++	set r {}
++	foreach x {1 2 3} {
++	    lappend r [expr {max(0, {*}[if {$x == 2} continue; list $x])}]
++	}
++	return $r
++    }
++} -body {
++    q
++} -cleanup {
++    rename q {}
++} -result {1 3}
++
++# Elements of lists
++
++test exprExpand-2.1 {concatenation} {
++    set a {1 2}; set b {x y}
++    expr {({*}$a, {*}$b)}
++} {1 2 x y}
++test exprExpand-2.2 {with other elements} {
++    set a {1 2}
++    expr {(0, {*}$a, 9)}
++} {0 1 2 9}
++test exprExpand-2.3 {with a nested list} {
++    set a {1 2}
++    expr {({*}$a, (5, 6))}
++} {1 2 {5 6}}
++test exprExpand-2.4 {empty list} {
++    expr {({*}{}, 1)}
++} 1
++test exprExpand-2.5 {in an expression script} {
++    lmap v {{1 2} {3 4}} {( ({*}$v, 0) )}
++} {{1 2 0} {3 4 0}}
++test exprExpand-2.6 {in an expression substitution} {
++    set L {3 1 2}
++    set x [( max({*}$L) )]
++} 3
++
++# Compatibility: {*} as a braced word
++
++test exprExpand-3.1 {braced word followed by white space} {
++    expr {{*} eq "*"}
++} 1
++test exprExpand-3.2 {braced word followed by an operator} {
++    expr {{*}eq "*"}
++} 1
++
++# Errors
++
++test exprExpand-4.1 {not an argument} -body {
++    set L {1 2}
++    expr {{*}$L}
++} -returnCodes error -match glob -result {{*} is allowed only for the arguments of a function or the elements of a list*}
++test exprExpand-4.2 {parentheses without a comma} -body {
++    set L {1 2}
++    expr {({*}$L)}
++} -returnCodes error -match glob -result {{*} is allowed only*}
++test exprExpand-4.3 {operand of an operator} -body {
++    set L {1 2}
++    expr {max(1, {*}$L + 1)}
++} -returnCodes error -match glob -result {{*} is allowed only*}
++test exprExpand-4.4 {in an assignment target} -body {
++    expr {(x, {*}$y) = {1 2 3}}
++} -returnCodes error -match glob -result {{*} is allowed only*}
++test exprExpand-4.5 {error code} -body {
++    catch {expr {{*}{1 2}}} m o
++    dict get $o -errorcode
++} -result {TCL PARSE EXPR EXPAND}
++
++# Tcl_ParseExpr
++
++test exprExpand-5.1 {Tcl_ParseExpr: a unary operator} -constraints {
++    testexprparser
++} -body {
++    testexprparser {max({*}$L)} -1
++} -result {- {} 0 subexpr {max({*}$L)} 6 operator max 0 subexpr {{*}$L} 4 operator {{*}} 0 subexpr {$L} 2 variable {$L} 1 text L 0 {}}
++
++# cleanup
++::tcltest::cleanupTests
++return
++
++# Local Variables:
++# mode: tcl
++# End:
+-- 
+2.43.0
+

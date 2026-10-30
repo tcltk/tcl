@@ -11,17 +11,17 @@
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
-subst \- Perform backslash, command, and variable substitutions
+subst \- Perform backslash, command, expression, and variable substitutions
 .SH SYNOPSIS
 .nf
-\fBsubst \fR?\fB\-nobackslashes\fR? ?\fB\-nocommands\fR? ?\fB\-novariables\fR? \fIstring\fR
-\fBsubst \fR?\fB\-backslashes\fR? ?\fB\-commands\fR? ?\fB\-variables\fR? \fIstring\fR
+\fBsubst \fR?\fB\-nobackslashes\fR? ?\fB\-nocommands\fR? ?\fB\-noexpr\fR? ?\fB\-novariables\fR? \fIstring\fR
+\fBsubst \fR?\fB\-backslashes\fR? ?\fB\-commands\fR? ?\fB\-expr\fR? ?\fB\-variables\fR? \fIstring\fR
 .fi
 .BE
 .SH DESCRIPTION
 .PP
 This command performs variable substitutions, command substitutions,
-and backslash substitutions on its \fIstring\fR argument and
+expression substitutions and backslash substitutions on its \fIstring\fR argument and
 returns the fully-substituted result.
 The substitutions are performed in exactly the same way as for
 Tcl commands.
@@ -29,14 +29,21 @@ As a result, the \fIstring\fR argument is actually substituted twice,
 once by the Tcl parser in the usual fashion for Tcl commands, and
 again by the \fIsubst\fR command.
 .PP
-If any of the \fB\-nobackslashes\fR, \fB\-nocommands\fR, or
-\fB\-novariables\fR are specified, then the corresponding substitutions
+If any of the \fB\-nobackslashes\fR, \fB\-nocommands\fR, \fB\-noexpr\fR,
+or \fB\-novariables\fR are specified, then the corresponding substitutions
 are not performed.
 For example, if \fB\-nocommands\fR is specified, command substitution
 is not performed:  open and close brackets are treated as ordinary characters
 with no special interpretation.
+.VS TIP759
+Expression substitution
+.QW [( ... )]
+(see rule [7] of the \fBTcl\fR manual page) is controlled by
+\fB\-noexpr\fR, not by \fB\-nocommands\fR: with \fB\-noexpr\fR, an
+open bracket followed by an open parenthesis is an ordinary character.
+.VE TIP759
 .PP
-If any of the \fB\-backslashes\fR, \fB\-commands\fR, or
+If any of the \fB\-backslashes\fR, \fB\-commands\fR, \fB\-expr\fR, or
 \fB\-variables\fR are specified, then only the corresponding
 substitutions are performed. This means that the following lines are
 equivalent:

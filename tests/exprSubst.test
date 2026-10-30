@@ -1,0 +1,306 @@
+# Commands covered: expression substitution [(...)] (TIP 759)
+#
+# This file contains a collection of tests for the expression substitution
+# [(expr)] of TIP 759, in scripts, in [subst] and in expressions. Sourcing
+# this file into Tcl runs the tests and generates output for errors. No
+# output means no errors were found.
+#
+# See the file "license.terms" for information on usage and redistribution of
+# this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2.5
+    namespace import -force ::tcltest::*
+}
+
+::tcltest::loadTestedCommands
+catch [list package require -exact tcl::test [info patchlevel]]
+
+testConstraint testevalex [llength [info commands testevalex]]
+
+# In a word of a command
+
+test exprSubst-1.1 {whole word} {
+    set x [(1+2)]
+} 3
+test exprSubst-1.2 {variables in the expression} {
+    set a 3
+    set x [( $a * 2 )]
+} 6
+test exprSubst-1.3 {in a quoted word} {
+    set a 3
+    set x "v=[($a+1)]!"
+} v=4!
+test exprSubst-1.4 {followed by text in the word} {
+    set x [(1)]+1
+} 1+1
+test exprSubst-1.5 {two substitutions in a word} {
+    set x [( 1+2 )][( 3 )]
+} 33
+test exprSubst-1.6 {")]" is one symbol: no white space inside} -body {
+    set x [( 1+2 ) ]
+} -returnCodes error -match glob -result {invalid character "]"*}
+test exprSubst-1.7 {the first "(" is closed early} {
+    set x [(1)+(2)]
+} 3
+test exprSubst-1.8 {nested parentheses} {
+    set x [( (1+2)*(3+4) )]
+} 21
+test exprSubst-1.9 {function call} {
+    set x [( max(1,2) )]
+} 2
+test exprSubst-1.10 {nested expression substitution} {
+    set x [(1+[(2*3)])]
+} 7
+test exprSubst-1.11 {command substitution inside} {
+    set L {1 2 3}
+    set x [( [llength $L] * 2 )]
+} 6
+test exprSubst-1.12 {brackets and parentheses in strings are skipped} {
+    set x [( {a)]} eq "a)]" )]
+} 1
+test exprSubst-1.13 {close bracket in a quoted string} {
+    set x "[( "]" )]"
+} \]
+test exprSubst-1.14 {in an array index} {
+    set y(2) 7
+    set x $y([(1+1)])
+} 7
+test exprSubst-1.15 {on several lines} {
+    set x [(
+	1 +
+	2
+    )]
+} 3
+test exprSubst-1.16 {in a procedure} -setup {
+    proc p {v} {return [( $v*7 )]}
+} -body {
+    p 6
+} -cleanup {
+    rename p {}
+} -result 42
+test exprSubst-1.17 {in a loop body} {
+    set r {}
+    foreach v {1 2 3} {lappend r [($v*$v)]}
+    set r
+} {1 4 9}
+test exprSubst-1.18 {in a lambda} {
+    apply {{} {set a 5; return [($a**2)]}}
+} 25
+test exprSubst-1.19 {error in the expression} -body {
+    set x [(1/0)]
+} -returnCodes error -result {divide by zero}
+test exprSubst-1.20 {error is catchable} {
+    list [catch {set x [(1/0)]} m] $m
+} {1 {divide by zero}}
+test exprSubst-1.21 {not compiled: Tcl_EvalEx} -constraints testevalex -body {
+    testevalex {set x [( 2*[(3+4)] )]}
+} -result 14
+test exprSubst-1.22 {not compiled: Tcl_EvalEx, error} -constraints testevalex -body {
+    testevalex {set x [(1/0)]}
+} -returnCodes error -result {divide by zero}
+
+test exprSubst-1.23 {deep nesting is limited, no C stack overflow} -body {
+    set n 5000
+    eval "set x [string repeat {[( 1 + } $n]0[string repeat { )]} $n]"
+} -returnCodes error -match glob -result {too many nested expression substitutions*}
+test exprSubst-1.24 {deep nesting mixed with commands} -body {
+    set n 5000
+    eval "set x [string repeat {[( 1 + [list } $n]0[string repeat { ] )]} $n]"
+} -returnCodes error -match glob -result {too many nested*}
+test exprSubst-1.25 {moderate nesting} {
+    set n 200
+    eval "set x [string repeat {[( 1 + } $n]0[string repeat { )]} $n]"
+} 200
+test exprSubst-1.26 {deep nesting in subst} -body {
+    set n 5000
+    subst "[string repeat {[( 1 + } $n]0[string repeat { )]} $n]"
+} -returnCodes error -match glob -result {too many nested expression substitutions*}
+
+# A command that is one expression substitution: its value is the result
+
+test exprSubst-5.1 {expression substitution alone as a command} {
+    set x 1
+    eval {[($x*3)]}
+} 3
+test exprSubst-5.2 {alone as a command, side effect} -setup {
+    unset -nocomplain y
+} -body {
+    set x 2
+    eval {[( [set y $x] * 3 )]
+	set y}
+} -result 2
+test exprSubst-5.3 {alone as a command, in a procedure} -setup {
+    proc p {x} {[( [set y $x] )]; return $y}
+} -body {
+    p 4
+} -cleanup {
+    rename p {}
+} -result 4
+test exprSubst-5.4 {alone as a command, compiled as an expression} -setup {
+    proc p {x} {[($x*3)]}
+} -body {
+    list [p 5] [string match {*invoke*} [tcl::unsupported::disassemble proc p]]
+} -cleanup {
+    rename p {}
+} -result {15 0}
+test exprSubst-5.5 {alone as a command, Tcl_EvalEx} -constraints testevalex -body {
+    set x 1
+    testevalex {[($x*7)]}
+} -result 7
+test exprSubst-5.6 {alone as a command, in a sourced file} -setup {
+    set f [makeFile {set x 3
+[($x*3)]} exprSubst5.tcl]
+} -body {
+    source $f
+} -cleanup {
+    removeFile exprSubst5.tcl
+} -result 9
+test exprSubst-5.7 {two substitutions in the word: a command name} -setup {
+    proc 12 {} {return twelve}
+} -body {
+    eval {[(1)][(2)]}
+} -cleanup {
+    rename 12 {}
+} -result twelve
+test exprSubst-5.8 {with an argument: a command name} -setup {
+    proc 3 {a} {return three$a}
+} -body {
+    eval {[(1+2)] !}
+} -cleanup {
+    rename 3 {}
+} -result three!
+test exprSubst-5.9 {expanded: a command name} -setup {
+    proc 3 {} {return three}
+} -body {
+    eval {{*}[(1+2)]}
+} -cleanup {
+    rename 3 {}
+} -result three
+test exprSubst-5.10 {command substitution alone: still a command name} -setup {
+    proc 3 {} {return three}
+} -body {
+    eval {[expr {1+2}]}
+} -cleanup {
+    rename 3 {}
+} -result three
+test exprSubst-5.11 {alone as a command, error} -body {
+    eval {[(1/0)]}
+} -returnCodes error -result {divide by zero}
+
+# Syntax
+
+test exprSubst-2.1 {missing close bracket} -body {
+    set x [(1+2)
+} -returnCodes error -result {missing close-bracket}
+test exprSubst-2.2 {bad syntax} -body {
+    set x [(1+) ]
+} -returnCodes error -match glob -result {missing operand at _@_*}
+test exprSubst-2.3 {unbalanced close paren} -body {
+    set x [(1+2))]
+} -returnCodes error -match glob -result {unbalanced close paren*}
+test exprSubst-2.4 {text after the expression} -body {
+    set x [(1+2) foo]
+} -returnCodes error -match glob -result {invalid bareword "foo"*}
+test exprSubst-2.5 {info complete} {
+    list [info complete "set x \[(1+2"] [info complete "set x \[(1+2)"] \
+	[info complete "set x \[(1+2)\]"] [info complete "set x \[(\"a\""]
+} {0 0 1 0}
+test exprSubst-2.6 {a command whose name starts with "(" needs a space} -setup {
+    proc (p) {} {return cmd}
+} -body {
+    set x [ (p)]
+} -cleanup {
+    rename (p) {}
+} -result cmd
+
+# In an expression
+
+test exprSubst-3.1 {operand of an expression} {
+    expr {[(1)]+1}
+} 2
+test exprSubst-3.2 {operand, with white space} {
+    expr {[( 1 )] + 1}
+} 2
+test exprSubst-3.3 {quoted strings inside} {
+    expr {1+[( "a"=="b" )]}
+} 1
+test exprSubst-3.4 {two operands} {
+    expr {[(2)]*[(3)]}
+} 6
+test exprSubst-3.5 {error inside} -body {
+    expr {[(1/0)] + 1}
+} -returnCodes error -result {divide by zero}
+test exprSubst-3.6 {missing close bracket inside} -body {
+    expr {1 + [(2)}
+} -returnCodes error -match glob -result {missing close-bracket*}
+test exprSubst-3.7 {missing close paren inside} -body {
+    expr {1 + [(2}
+} -returnCodes error -match glob -result {unbalanced open paren*}
+
+# subst
+
+test exprSubst-4.1 {subst} {
+    subst {a [(1+2)] b}
+} {a 3 b}
+test exprSubst-4.2 {subst -noexpr} {
+    subst -noexpr {a [(1+2)] b}
+} {a [(1+2)] b}
+test exprSubst-4.3 {subst -nocommands keeps expressions} {
+    subst -nocommands {a [(1+2)] b [list x]}
+} {a 3 b [list x]}
+test exprSubst-4.4 {subst -expr alone} {
+    set a 1
+    subst -expr {a [(1+2)] b [list x] $a}
+} {a 3 b [list x] $a}
+test exprSubst-4.5 {subst, compiled} -setup {
+    proc p {} {subst {a [(1+2)] b}}
+} -body {
+    p
+} -cleanup {
+    rename p {}
+} -result {a 3 b}
+test exprSubst-4.6 {subst, not compiled} {
+    set s {a [(1+2)] b}
+    subst $s
+} {a 3 b}
+test exprSubst-4.7 {subst, syntax error} -body {
+    subst {a [(1+) ] b}
+} -returnCodes error -match glob -result {missing operand at _@_*}
+test exprSubst-4.8 {subst, error in the expression, compiled} -setup {
+    proc p {} {subst {a [(1/0)] b}}
+} -body {
+    p
+} -cleanup {
+    rename p {}
+} -returnCodes error -result {divide by zero}
+test exprSubst-4.9 {subst, break in the expression} {
+    subst {a [( [break] )] b}
+} {a }
+test exprSubst-4.11 {subst, syntax error, no endless loop} -body {
+    subst {[( 1 + )]}
+} -returnCodes error -match glob -result {missing operand at _@_*}
+test exprSubst-4.12 {subst, empty expression, no endless loop} -body {
+    subst {[( ) ]}
+} -returnCodes error -match glob -result {empty subexpression*}
+test exprSubst-4.13 {subst, syntax error, compiled} -setup {
+    proc p {} {subst {a [( 1 + )] b}}
+} -body {
+    p
+} -cleanup {
+    rename p {}
+} -returnCodes error -match glob -result {missing operand at _@_*}
+test exprSubst-4.14 {subst, missing close bracket} -body {
+    subst {a [( 1 + 2 ) b}
+} -returnCodes error -match glob -result {invalid bareword "b"*}
+test exprSubst-4.10 {subst -noexpr -nocommands} {
+    subst -noexpr -nocommands {[(1+2)] [list x]}
+} {[(1+2)] [list x]}
+
+# cleanup
+::tcltest::cleanupTests
+return
+
+# Local Variables:
+# mode: tcl
+# End:

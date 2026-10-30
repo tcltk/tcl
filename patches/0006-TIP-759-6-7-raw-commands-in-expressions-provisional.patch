@@ -1,0 +1,567 @@
+From fdea15709b8bd4133796b08ec6a0a3376f85371b Mon Sep 17 00:00:00 2001
+From: Florent Merlet <florentmerlet73@gmail.com>
+Date: Thu, 29 Oct 2026 11:14:10 +0100
+Subject: [PATCH 6/7] TIP 759 (6/7): raw commands in expressions (provisional)
+
+In an expression, a command without brackets is an operand when its name
+is one of: concat dict for foreach global if incr lappend lassign lindex
+llength lmap lrange lset namespace return string switch upvar variable
+while, followed by a space. It ends at ";", or at an operator or a close
+paren that begins a word: llength $L + 1 is [llength $L] + 1. This makes
+expression scripts such as {( s = 0; foreach u $U v $V {( s = $s+$u*$v )};
+$s )} possible. Provisional: to be reviewed with a register of the
+command names.
+
+- tclCharTypeTable: TYPE_OP for the operator characters (the table and
+  the type variables become int; the TYPE_NORMAL fast paths ignore it).
+- Tcl_ParseCommand: nested == TCL_CMD_NESTED_IN_EXPR ends a command at
+  TYPE_OP and TYPE_CLOSE_PAREN too.
+- ParseLexeme: COMMAND lexeme; ParseExpr: TCL_TOKEN_CMD_IN_EXPR token
+  (new token type, 512); TclCompileTokens compiles it as a script.
+- testexprparser shows it as "rawcommand".
+- Tests: exprRawCmd.test. Docs: expr.n.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01MrNWAEyXLqekovNBvbMZ4z
+---
+ doc/expr.n            |  27 ++++++++++
+ generic/tcl.h         |   6 +++
+ generic/tclCompExpr.c |  79 ++++++++++++++++++++++++++++
+ generic/tclCompile.c  |  25 +++++++++
+ generic/tclParse.c    |  43 +++++++++-------
+ generic/tclParse.h    |  12 ++++-
+ generic/tclTest.c     |   3 ++
+ generic/tclUtil.c     |   2 +-
+ tests/exprRawCmd.test | 116 ++++++++++++++++++++++++++++++++++++++++++
+ 9 files changed, 293 insertions(+), 20 deletions(-)
+ create mode 100644 tests/exprRawCmd.test
+
+diff --git a/doc/expr.n b/doc/expr.n
+index 50d0094..8d12c39 100644
+--- a/doc/expr.n
++++ b/doc/expr.n
+@@ -112,6 +112,21 @@ A Tcl command enclosed in \fBbrackets\fR
+ Command substitution is performed as according to the command substitution rule
+ for \fBTcl\fR.
+ .TP
++A \fBraw command\fR
++.
++.VS TIP759
++A command without brackets, when its name is one of \fBconcat\fR,
++\fBdict\fR, \fBfor\fR, \fBforeach\fR, \fBglobal\fR, \fBif\fR,
++\fBincr\fR, \fBlappend\fR, \fBlassign\fR, \fBlindex\fR,
++\fBllength\fR, \fBlmap\fR, \fBlrange\fR, \fBlset\fR,
++\fBnamespace\fR, \fBreturn\fR, \fBstring\fR, \fBswitch\fR,
++\fBupvar\fR, \fBvariable\fR or \fBwhile\fR, followed by a space. The
++command ends at a semicolon, or at an operator or a close parenthesis
++that begins a word, or at the end of the expression; its result is the
++value of the operand. For instance \fBllength $list + 1\fR is
++\fB[llength $list] + 1\fR. This form is provisional.
++.VE TIP759
++.TP
+ An expression enclosed in \fB[(\fR and \fB)]\fR
+ .
+ .VS TIP759
+@@ -527,6 +542,18 @@ puts "half: [( $area / 2.0 )]"
+ .CE
+ .VE TIP759
+ .PP
++.VS TIP759
++A procedure whose body is an expression script with raw commands:
++.PP
++.CS
++proc dot {u v} {(
++    s = 0;
++    foreach a $u b $v {( s = $s + $a*$b )};
++    $s
++)}
++.CE
++.VE TIP759
++.PP
+ .VS TIP282
+ A sequence of computations, each result stored in a variable:
+ .PP
+diff --git a/generic/tcl.h b/generic/tcl.h
+index a617e04..f4c2f90 100644
+--- a/generic/tcl.h
++++ b/generic/tcl.h
+@@ -1818,6 +1818,11 @@ typedef struct Tcl_Token {
+  *				followed by the TCL_TOKEN_OPERATOR token for
+  *				the operator, then TCL_TOKEN_SUB_EXPR tokens
+  *				for the left then the right operands.
++ * TCL_TOKEN_CMD_IN_EXPR -	TIP 759: the token describes a raw command in
++ *				an expression, a command without brackets,
++ *				whose result is the value of an operand. The
++ *				token is the text of the command.
++ *				NumComponents is always 0.
+  * TCL_TOKEN_OPERATOR -		The token describes one expression operator.
+  *				An operator might be the name of a math
+  *				function such as "abs". A TCL_TOKEN_OPERATOR
+@@ -1842,6 +1847,7 @@ typedef struct Tcl_Token {
+ #define TCL_TOKEN_SUB_EXPR	64
+ #define TCL_TOKEN_OPERATOR	128
+ #define TCL_TOKEN_EXPAND_WORD	256
++#define TCL_TOKEN_CMD_IN_EXPR	512
+ 
+ /*
+  * Parsing error types. On any parsing error, one of these values will be
+diff --git a/generic/tclCompExpr.c b/generic/tclCompExpr.c
+index 8c6d0c2..327ddbd 100644
+--- a/generic/tclCompExpr.c
++++ b/generic/tclCompExpr.c
+@@ -13,6 +13,7 @@
+ 
+ #include "tclInt.h"
+ #include "tclCompile.h"		/* CompileEnv */
++#include "tclParse.h"		/* CHAR_TYPE, for raw commands (TIP 759) */
+ 
+ /*
+  * Expression parsing takes place in the routine ParseExpr(). It takes a
+@@ -179,6 +180,8 @@ enum LexemeCodes {
+     EMPTY = LEAF | 7,		/* Used only for an empty argument list to a
+ 				 * function. Represents the empty string
+ 				 * within parens in the expression: rand() */
++    COMMAND = LEAF | 8,		/* TIP 759: a raw command, without brackets:
++				 * incr i, llength $l, foreach ... */
+ 
+     /* Unary operator lexemes */
+ 
+@@ -1376,6 +1379,56 @@ ParseExpr(
+ 		parsePtr->numTokens++;
+ 		break;
+ 	    }			/* SCRIPT case */
++
++	    case COMMAND: {
++		/*
++		 * TIP 759: a raw command, a command without brackets that
++		 * begins with one of the command names known to ParseLexeme.
++		 * It ends at a ";", or at an operator or a close paren after
++		 * a word, which are then parsed again as part of the
++		 * expression, or at the end of the expression. Newlines
++		 * separate the commands of a raw script.
++		 */
++
++		Tcl_Parse *nestedPtr = (Tcl_Parse *)
++			TclStackAlloc(interp, sizeof(Tcl_Parse));
++		const char *cmdEnd;
++
++		tokenPtr = parsePtr->tokenPtr + parsePtr->numTokens;
++		tokenPtr->type = TCL_TOKEN_CMD_IN_EXPR;
++		tokenPtr->start = start;
++		tokenPtr->numComponents = 0;
++
++		end = start + numBytes;
++		cmdEnd = end;
++		while (1) {
++		    code = Tcl_ParseCommand(interp, start, end - start,
++			    TCL_CMD_NESTED_IN_EXPR, nestedPtr);
++		    if (code != TCL_OK) {
++			parsePtr->term = nestedPtr->term;
++			parsePtr->errorType = nestedPtr->errorType;
++			parsePtr->incomplete = nestedPtr->incomplete;
++			break;
++		    }
++		    start = nestedPtr->commandStart + nestedPtr->commandSize;
++		    Tcl_FreeParse(nestedPtr);
++		    if ((nestedPtr->term < end) && !nestedPtr->incomplete
++			    && ((nestedPtr->term[0] == ';') || (CHAR_TYPE(
++			    nestedPtr->term[0]) & (TYPE_OP | TYPE_CLOSE_PAREN)))) {
++			cmdEnd = nestedPtr->term;
++			break;
++		    }
++		    if (start >= end) {
++			break;
++		    }
++		}
++		TclStackFree(interp, nestedPtr);
++		start = tokenPtr->start;
++		scanned = cmdEnd - start;
++		tokenPtr->size = scanned;
++		parsePtr->numTokens++;
++		break;
++	    }			/* COMMAND case */
+ 	    }
+ 	    if (code != TCL_OK) {
+ 		/*
+@@ -2534,6 +2587,32 @@ ParseLexeme(
+ 	*lexemePtr = END;
+ 	return 0;
+     }
++
++    /*
++     * TIP 759: a raw command, one of these command names followed by a
++     * space.
++     */
++
++    if (islower(UCHAR(*start))) {
++	static const char *const rawCommands[] = {
++	    "concat", "dict", "for", "foreach", "global", "if", "incr",
++	    "lappend", "lassign", "lindex", "llength", "lmap", "lrange",
++	    "lset", "namespace", "return", "string", "switch", "upvar",
++	    "variable", "while", NULL
++	};
++	const char *const *namePtr;
++
++	for (namePtr = rawCommands; *namePtr != NULL; namePtr++) {
++	    size_t length = strlen(*namePtr);
++
++	    if (((*namePtr)[0] == *start) && ((size_t) numBytes > length)
++		    && (start[length] == ' ')
++		    && (memcmp(start, *namePtr, length) == 0)) {
++		*lexemePtr = COMMAND;
++		return 0;
++	    }
++	}
++    }
+     byte = UCHAR(*start);
+     if (byte < sizeof(Lexeme) && Lexeme[byte] != 0) {
+ 	*lexemePtr = Lexeme[byte];
+diff --git a/generic/tclCompile.c b/generic/tclCompile.c
+index e3e481e..c2a41a8 100644
+--- a/generic/tclCompile.c
++++ b/generic/tclCompile.c
+@@ -2917,6 +2917,31 @@ TclCompileTokens(
+ 	    numObjsToConcat++;
+ 	    break;
+ 
++	case TCL_TOKEN_CMD_IN_EXPR:
++	    /*
++	     * TIP 759: a raw command in an expression, the text of a script
++	     * without brackets. Push any accumulated chars appearing before
++	     * it.
++	     */
++
++	    if (Tcl_DStringLength(&textBuffer) > 0) {
++		int literal = TclPushDString(envPtr, &textBuffer);
++
++		numObjsToConcat++;
++		Tcl_DStringFree(&textBuffer);
++		if (numCL) {
++		    TclContinuationsEnter(TclFetchLiteral(envPtr, literal),
++			    numCL, clPosition);
++		}
++		numCL = 0;
++	    }
++
++	    envPtr->line += adjust;
++	    TclCompileScript(interp, tokenPtr->start, tokenPtr->size, envPtr);
++	    envPtr->line -= adjust;
++	    numObjsToConcat++;
++	    break;
++
+ 	case TCL_TOKEN_SUB_EXPR:
+ 	    /*
+ 	     * TIP 759: expression substitution [(...)]. Push any accumulated
+diff --git a/generic/tclParse.c b/generic/tclParse.c
+index 9cf25e1..452ef70 100644
+--- a/generic/tclParse.c
++++ b/generic/tclParse.c
+@@ -38,7 +38,7 @@
+  * TYPE_BRACE -		Character is a curly brace (either left or right).
+  */
+ 
+-const unsigned char tclCharTypeTable[] = {
++const int tclCharTypeTable[] = {
+ 
+     /*
+      * Positive character values, from 0-127:
+@@ -52,14 +52,14 @@ const unsigned char tclCharTypeTable[] = {
+     TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
+     TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
+     TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
+-    TYPE_SPACE,       TYPE_NORMAL,      TYPE_QUOTE,       TYPE_NORMAL,
+-    TYPE_SUBS,        TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
+-    TYPE_OPEN_PAREN,  TYPE_CLOSE_PAREN, TYPE_NORMAL,      TYPE_NORMAL,
+-    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
+-    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
++    TYPE_SPACE,       TYPE_OP,          TYPE_QUOTE,       TYPE_NORMAL,
++    TYPE_SUBS,        TYPE_OP,          TYPE_OP,          TYPE_NORMAL,
++    TYPE_OPEN_PAREN,  TYPE_CLOSE_PAREN, TYPE_OP,          TYPE_OP,
++    TYPE_OP,          TYPE_OP,          TYPE_NORMAL,      TYPE_OP,
+     TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
+-    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_COMMAND_END,
+     TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
++    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_OP,          TYPE_COMMAND_END,
++    TYPE_OP,          TYPE_OP,          TYPE_OP,          TYPE_OP,
+     TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
+     TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
+     TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
+@@ -67,7 +67,7 @@ const unsigned char tclCharTypeTable[] = {
+     TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
+     TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
+     TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_SUBS,
+-    TYPE_SUBS,        TYPE_CLOSE_BRACK, TYPE_NORMAL,      TYPE_NORMAL,
++    TYPE_SUBS,        TYPE_CLOSE_BRACK, TYPE_OP,          TYPE_NORMAL,
+     TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
+     TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
+     TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
+@@ -75,7 +75,7 @@ const unsigned char tclCharTypeTable[] = {
+     TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
+     TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
+     TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_BRACE,
+-    TYPE_NORMAL,      TYPE_BRACE,       TYPE_NORMAL,      TYPE_NORMAL,
++    TYPE_OP,          TYPE_BRACE,       TYPE_OP,          TYPE_NORMAL,
+ 
+     /*
+      * Large unsigned character values, from 128-255:
+@@ -125,7 +125,7 @@ static Tcl_Size		ParseComment(const char *src, Tcl_Size numBytes,
+ static int		ParseTokens(const char *src, Tcl_Size numBytes, int mask,
+ 			    int flags, Tcl_Parse *parsePtr);
+ static Tcl_Size		ParseWhiteSpace(const char *src, Tcl_Size numBytes,
+-			    int *incompletePtr, unsigned char *typePtr);
++			    int *incompletePtr, int *typePtr);
+ static Tcl_Size		ParseAllWhiteSpace(const char *src, Tcl_Size numBytes,
+ 			    int *incompletePtr);
+ static Tcl_Size		ParseHex(const char *src, Tcl_Size numBytes,
+@@ -210,7 +210,7 @@ Tcl_ParseCommand(
+ {
+     const char *src;		/* Points to current character in the
+ 				 * command. */
+-    unsigned char type;		/* Result returned by CHAR_TYPE(*src). */
++    int type;			/* Result returned by CHAR_TYPE(*src). */
+     Tcl_Token *tokenPtr;	/* Pointer to token being filled in. */
+     Tcl_Size wordIndex;		/* Index of word token for current word. */
+     int terminators;		/* CHAR_TYPE bits that indicate the end of a
+@@ -235,7 +235,14 @@ Tcl_ParseCommand(
+     parsePtr->commandStart = NULL;
+     parsePtr->commandSize = 0;
+ 
+-    if (nested != 0) {
++    if (nested == TCL_CMD_NESTED_IN_EXPR) {
++	/*
++	 * TIP 759: a raw command in an expression ends at an operator or at
++	 * a close paren, as well as at the end of a command.
++	 */
++
++	terminators = TYPE_COMMAND_END | TYPE_OP | TYPE_CLOSE_PAREN;
++    } else if (nested != 0) {
+ 	terminators = TYPE_COMMAND_END | TYPE_CLOSE_BRACK;
+     } else {
+ 	terminators = TYPE_COMMAND_END;
+@@ -250,7 +257,7 @@ Tcl_ParseCommand(
+     src = (start + scanned);
+     numBytes -= scanned;
+     if (numBytes == 0) {
+-	if (nested) {
++	if (nested && (nested != TCL_CMD_NESTED_IN_EXPR)) {
+ 	    parsePtr->incomplete = nested;
+ 	}
+     }
+@@ -689,10 +696,10 @@ ParseWhiteSpace(
+     Tcl_Size numBytes,		/* Max number of bytes to scan. */
+     int *incompletePtr,		/* Set this boolean memory to true if parsing
+ 				 * indicates an incomplete command. */
+-    unsigned char *typePtr)	/* Points to location to store character type
++    int *typePtr)		/* Points to location to store character type
+ 				 * of character that ends run of whitespace */
+ {
+-    unsigned char type = TYPE_NORMAL;
++    int type = TYPE_NORMAL;
+     const char *p = src;
+ 
+     while (true) {
+@@ -743,7 +750,7 @@ ParseAllWhiteSpace(
+     Tcl_Size numBytes,		/* Max number of byes to scan */
+     int *incompletePtr)		/* Set true if parse is incomplete. */
+ {
+-    unsigned char type;
++    int type;
+     const char *p = src;
+ 
+     do {
+@@ -1114,7 +1121,7 @@ ParseTokens(
+ 				 * Updated with additional tokens and
+ 				 * termination information. */
+ {
+-    unsigned char type;
++    int type;
+     Tcl_Size originalTokens;
+     Tcl_Token *tokenPtr;
+ 
+@@ -1745,7 +1752,7 @@ Tcl_ParseBraces(
+     level = 1;
+     while (true) {
+ 	while (++src, --numBytes) {
+-	    if (CHAR_TYPE(*src) != TYPE_NORMAL) {
++	    if ((CHAR_TYPE(*src) & ~TYPE_OP) != TYPE_NORMAL) {
+ 		break;
+ 	    }
+ 	}
+diff --git a/generic/tclParse.h b/generic/tclParse.h
+index 1381b30..a219109 100644
+--- a/generic/tclParse.h
++++ b/generic/tclParse.h
+@@ -13,10 +13,20 @@ enum ParseTypeFlags {
+     TYPE_CLOSE_BRACK = 0x20,
+     TYPE_BRACE = 0x40,
+     TYPE_OPEN_PAREN = 0x80,
++    TYPE_OP = 0x100,
+     TYPE_BAD_ARRAY_INDEX = (
+ 	TYPE_OPEN_PAREN | TYPE_CLOSE_PAREN | TYPE_QUOTE | TYPE_BRACE)
+ };
+ 
+ #define CHAR_TYPE(c) tclCharTypeTable[(unsigned char)(c)]
+ 
+-MODULE_SCOPE const unsigned char tclCharTypeTable[];
++MODULE_SCOPE const int tclCharTypeTable[];
++
++/*
++ * Values of the nested argument of Tcl_ParseCommand. TIP 759: a raw command
++ * in an expression ends at an operator or a close paren.
++ */
++
++#define TCL_CMD_NOT_NESTED	0
++#define TCL_CMD_NESTED_IN_CMD	1
++#define TCL_CMD_NESTED_IN_EXPR	2
+diff --git a/generic/tclTest.c b/generic/tclTest.c
+index ce8fbf7..ee753f3 100644
+--- a/generic/tclTest.c
++++ b/generic/tclTest.c
+@@ -4619,6 +4619,9 @@ PrintParse(
+ 	case TCL_TOKEN_OPERATOR:
+ 	    typeString = "operator";
+ 	    break;
++	case TCL_TOKEN_CMD_IN_EXPR:
++	    typeString = "rawcommand";
++	    break;
+ 	default:
+ 	    typeString = "??";
+ 	    break;
+diff --git a/generic/tclUtil.c b/generic/tclUtil.c
+index 824b367..c13ca74 100644
+--- a/generic/tclUtil.c
++++ b/generic/tclUtil.c
+@@ -1119,7 +1119,7 @@ TclScanElement(
+     }
+ 
+     while (length) {
+-	if (CHAR_TYPE(*p) != TYPE_NORMAL) {
++	if ((CHAR_TYPE(*p) & ~TYPE_OP) != TYPE_NORMAL) {
+ 	    switch (*p) {
+ 	    case '{':	/* TYPE_BRACE */
+ #if COMPAT
+diff --git a/tests/exprRawCmd.test b/tests/exprRawCmd.test
+new file mode 100644
+index 0000000..b044bc2
+--- /dev/null
++++ b/tests/exprRawCmd.test
+@@ -0,0 +1,116 @@
++# Commands covered: expr, raw commands (TIP 759)
++#
++# This file contains a collection of tests for the raw commands of TIP 759:
++# commands without brackets in expressions. Sourcing this file into Tcl runs
++# the tests and generates output for errors. No output means no errors were
++# found.
++#
++# See the file "license.terms" for information on usage and redistribution of
++# this file, and for a DISCLAIMER OF ALL WARRANTIES.
++
++if {"::tcltest" ni [namespace children]} {
++    package require tcltest 2.5
++    namespace import -force ::tcltest::*
++}
++
++::tcltest::loadTestedCommands
++catch [list package require -exact tcl::test [info patchlevel]]
++
++testConstraint testexprparser [llength [info commands testexprparser]]
++
++test exprRawCmd-1.1 {ends at an operator} {
++    set L {a b c}
++    expr {llength $L + 1}
++} 4
++test exprRawCmd-1.2 {ends at a close paren} {
++    set L {a b c}
++    expr {(llength $L) * 2}
++} 6
++test exprRawCmd-1.3 {ends at a semicolon} {
++    set i 0
++    expr {incr i; incr i; $i}
++} 2
++test exprRawCmd-1.4 {operator that begins a word} {
++    set L {5 6 7}
++    expr {lindex $L 1 + 10}
++} 16
++test exprRawCmd-1.5 {operator inside a word} {
++    set L {5 6 7}
++    expr {lindex $L end-1}
++} 6
++test exprRawCmd-1.6 {string} {
++    set s abc
++    expr {string length $s == 3}
++} 1
++test exprRawCmd-1.7 {if} {
++    expr {if 1 {set x 5} else {set x 6}}
++} 5
++test exprRawCmd-1.8 {dict} {
++    set d {a 1 b 2}
++    expr {dict get $d b}
++} 2
++test exprRawCmd-1.9 {lmap} {
++    expr {lmap v {1 2 3} {expr {$v*2}}}
++} {2 4 6}
++test exprRawCmd-1.10 {global in an expression script} -setup {
++    unset -nocomplain G
++    proc f {} {( global G; G = 4 )}
++} -body {
++    f
++    set G
++} -cleanup {
++    rename f {}
++} -result 4
++test exprRawCmd-1.11 {other commands need brackets} -body {
++    expr {lrepeat 3 x}
++} -returnCodes error -match glob -result {invalid bareword "lrepeat"*}
++test exprRawCmd-1.12 {name not followed by a space} -body {
++    expr {incr}
++} -returnCodes error -match glob -result {invalid bareword "incr"*}
++
++# Expression scripts with raw commands
++
++test exprRawCmd-2.1 {dot product} -setup {
++    proc dot {U V} {( s = 0; foreach u $U v $V {( s = $s + $u*$v )}; $s )}
++} -body {
++    dot {1 2 3} {4 5 6}
++} -cleanup {
++    rename dot {}
++} -result 32
++test exprRawCmd-2.2 {polynomial} -setup {
++    proc poly {coeffs x} {(
++	r = 0;
++	i = llength $coeffs;
++	while {[incr i -1] >= 0} {( r = $r*$x + [lindex $coeffs $i] )};
++	$r
++    )}
++} -body {
++    poly {1 2 3} 2
++} -cleanup {
++    rename poly {}
++} -result 17
++test exprRawCmd-2.3 {dot product, on several lines} -setup {
++    proc dot {u v} {(
++	s = 0;
++	foreach a $u b $v {( s = $s + $a*$b )};
++	$s
++    )}
++} -body {
++    dot {1 2} {3 4}
++} -cleanup {
++    rename dot {}
++} -result 11
++
++# Tcl_ParseExpr
++
++test exprRawCmd-3.1 {Tcl_ParseExpr} -constraints testexprparser -body {
++    testexprparser {llength $L + 1} -1
++} -result {- {} 0 subexpr {llength $L + 1} 5 operator + 0 subexpr {llength $L } 1 rawcommand {llength $L } 0 subexpr 1 1 text 1 0 {}}
++
++# cleanup
++::tcltest::cleanupTests
++return
++
++# Local Variables:
++# mode: tcl
++# End:
+-- 
+2.43.0
+
