@@ -456,7 +456,7 @@
 
 2002-10-15  Jeff Hobbs  <jeffh@ActiveState.com>
 
-	* README: added archives.tcl.tk note
+	* README: added archives.tcl-lang.org note
 
 	* unix/configure:
 	* unix/tcl.m4: Correct AIX-5 ppc build flags. Correct HP 11 64-bit gcc
@@ -3403,7 +3403,7 @@
 	* unix/README: added --enable-langinfo doc.
 
 	* unix/tcl.spec:
-	* tools/tcl.wse.in: fixed URL refs to use www.tcl.tk or SF.
+	* tools/tcl.wse.in: fixed URL refs to use www.tcl-lang.org or SF.
 
 2002-03-04  Jeff Hobbs  <jeffh@ActiveState.com>
 
@@ -3412,7 +3412,7 @@
 	* unix/Makefile.in:
 	* unix/README:
 	* win/README:
-	* win/README.binary: updated to use www.tcl.tk URL.
+	* win/README.binary: updated to use www.tcl-lang.org URL.
 
 	* unix/Makefile.in: added older ChangeLogs to dist target.
 

@@ -1,7 +1,7 @@
-Tcl Mac OS X README
+Tcl macOS README
 -------------------
 
-This is the README file for the Mac OS X/Darwin version of Tcl.
+This is the README file for the macOS/Darwin version of Tcl.
 
 
 1. Where to go for support
@@ -17,8 +17,8 @@ before asking on the list, many questions have already been answered).
 	http://groups.google.com/group/comp.lang.tcl/
 
 - The Tcl'ers Wiki also has many pages dealing with Tcl & Tk on Mac OS X, see
-	http://wiki.tcl.tk/_/ref?N=3753
-	http://wiki.tcl.tk/_/ref?N=8361
+	http://wiki.tcl-lang.org/_/ref?N=3753
+	http://wiki.tcl-lang.org/_/ref?N=8361
 
 - Please report bugs with Tcl on Mac OS X to the tracker:
 	https://core.tcl-lang.org/tcl/reportlist
@@ -70,7 +70,7 @@ OS X install media or may be present in /Applications/Installers on Macs that
 came with OS X preinstalled. The most recent version can always be downloaded
 from the ADC website http://connect.apple.com (free ADC membership required).
 
-- Tcl is most easily built as a Mac OS X framework via GNUmakefile in tcl/macosx
+- Tcl is most easily built as a macOS framework via the GNUmakefile in tcl/macosx
 (see below for details), but can also be built with the standard unix configure
 and make buildsystem in tcl/unix as on any other unix platform (indeed, the
 GNUmakefile is just a wrapper around the unix buildsystem).
@@ -138,8 +138,8 @@ Detailed Instructions for building with macosx/GNUmakefile
 Setup this shell variable as follows:
 	ver="8.6"
 
-- Setup environment variables as desired, e.g. for a universal build on 10.5:
-	CFLAGS="-arch i386 -arch x86_64 -arch ppc -mmacosx-version-min=10.5"
+- Setup environment variables as desired, for example:
+	CFLAGS="-arch x86_64 -arch arm64 -mmacosx-version-min=10.13"
 	export CFLAGS
 
 - Change to the directory containing the Tcl source tree and build:
