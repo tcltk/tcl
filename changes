@@ -9536,3 +9536,5 @@ Many code fixes to avoid overflow or undefined behavior.  Thanks chrstphrchvz.
 2026-10-29 compiler warnings in UCRT environment (nijtmans)
 
 2026-10-29 error deleting: file already exists on Vista (storchaka)
+
+2026-10-30 Unsetting env vars in slave interps (storchaka)
