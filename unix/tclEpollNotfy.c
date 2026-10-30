@@ -184,7 +184,6 @@ TclpInitNotifier(void)
     return tsdPtr;
 }
 
-
 /*
  *----------------------------------------------------------------------
  *
@@ -435,7 +434,11 @@ PlatformEventsTranslate(
 	mask |= TCL_WRITABLE;
     }
     if (eventPtr->events & EPOLLERR) {
-	mask |= TCL_EXCEPTION;
+	/*
+	 * Like select(), report an error as readable and writable.
+	 */
+
+	mask |= TCL_READABLE | TCL_WRITABLE | TCL_EXCEPTION;
     }
     return mask;
 }
