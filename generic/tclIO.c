@@ -1960,11 +1960,21 @@ Tcl_StackChannel(
     return (Tcl_Channel) chanPtr;
 }
 
+/*
+ * The reference count of a channel can be changed by two threads when a
+ * channel is transferred to another thread while one of its handlers runs,
+ * so it is protected by a mutex. [815e246806]
+ */
+
+TCL_DECLARE_MUTEX(channelRefMutex)
+
 void
 TclChannelPreserve(
     Tcl_Channel chan)
 {
+    Tcl_MutexLock(&channelRefMutex);
     ((Channel *)chan)->refCount++;
+    Tcl_MutexUnlock(&channelRefMutex);
 }
 
 void
@@ -1972,14 +1982,16 @@ TclChannelRelease(
     Tcl_Channel chan)
 {
     Channel *chanPtr = (Channel *) chan;
+    int doFree;
 
+    Tcl_MutexLock(&channelRefMutex);
     if (chanPtr->refCount == 0) {
+	Tcl_MutexUnlock(&channelRefMutex);
 	Tcl_Panic("Channel released more than preserved");
     }
-    if (--chanPtr->refCount) {
-	return;
-    }
-    if (chanPtr->typePtr == NULL) {
+    doFree = (--chanPtr->refCount == 0) && (chanPtr->typePtr == NULL);
+    Tcl_MutexUnlock(&channelRefMutex);
+    if (doFree) {
 	Tcl_Free(chanPtr);
     }
 }
@@ -1988,11 +2000,17 @@ static void
 ChannelFree(
     Channel *chanPtr)
 {
-    if (chanPtr->refCount == 0) {
-	Tcl_Free(chanPtr);
-	return;
+    int doFree;
+
+    Tcl_MutexLock(&channelRefMutex);
+    doFree = (chanPtr->refCount == 0);
+    if (!doFree) {
+	chanPtr->typePtr = NULL;
     }
-    chanPtr->typePtr = NULL;
+    Tcl_MutexUnlock(&channelRefMutex);
+    if (doFree) {
+	Tcl_Free(chanPtr);
+    }
 }
 
 /*
