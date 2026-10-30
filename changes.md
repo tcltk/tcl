@@ -68,6 +68,7 @@ to the userbase.
  - [missing locks, when transferring a channel to another thread](https://core.tcl-lang.org/tcl/tktview/815e24)
  - [epoll notifier spins and never reports writable after EPOLLERR](https://core.tcl-lang.org/tcl/tktview/7aa8fd)
  - [don't wait in a blocking "gets" on a channel with a reflected transform](https://core.tcl-lang.org/tcl/tktview/d48728)
+ - [Unsetting env vars in slave interps](https://core.tcl-lang.org/tcl/tktview/845241)
 
 # Updated bundled packages, libraries, standards, data
  - http 2.10.3
