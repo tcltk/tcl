@@ -1,0 +1,310 @@
+# Commands covered: expr, assignment "=" and separator ";" (TIP 282)
+#
+# This file contains a collection of tests for the assignment and separator
+# operators of TIP 282 in expressions. Sourcing this file into Tcl runs the
+# tests and generates output for errors. No output means no errors were
+# found.
+#
+# See the file "license.terms" for information on usage and redistribution of
+# this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2.5
+    namespace import -force ::tcltest::*
+}
+
+::tcltest::loadTestedCommands
+catch [list package require -exact tcl::test [info patchlevel]]
+
+testConstraint testexprparser [llength [info commands testexprparser]]
+
+# Assignment
+
+test exprAssign-1.1 {assignment} -setup {
+    unset -nocomplain x
+} -body {
+    set y 2; set z 3
+    list [expr {x = 5*$y + 6*$z}] $x
+} -result {28 28}
+test exprAssign-1.2 {the examples of TIP 282} -setup {
+    unset -nocomplain x w v
+} -body {
+    set y 2; set z 3
+    list [expr {
+	x = 5*$y  + 6*$z;
+	w = $x**2 + $y**2;
+	v = $w**2 + $y**2
+    }] $x $w $v
+} -result {620948 28 788 620948}
+test exprAssign-1.3 {right associative} -setup {
+    unset -nocomplain a b
+} -body {
+    list [expr {a = b = 4}] $a $b
+} -result {4 4 4}
+test exprAssign-1.4 {names that are boolean values} -setup {
+    unset -nocomplain t f y n
+} -body {
+    expr {t = 1; f = 2; y = 3; n = 4}
+    list $t $f $y $n
+} -result {1 2 3 4}
+test exprAssign-1.5 {lower precedence than ?:} -setup {
+    unset -nocomplain c
+} -body {
+    set y 2
+    list [expr {c = $y > 1 ? 10 : 20}] $c
+} -result {10 10}
+test exprAssign-1.6 {assignment in parentheses} -setup {
+    unset -nocomplain x
+} -body {
+    list [expr {(x = 1) + 2}] $x
+} -result {3 1}
+test exprAssign-1.7 {value is a list} -setup {
+    unset -nocomplain x
+} -body {
+    expr {x = (1, 2)}
+    set x
+} -result {1 2}
+test exprAssign-1.8 {variable keeps the assigned string} -setup {
+    unset -nocomplain s
+} -body {
+    expr {s = "0x10"}
+    set s
+} -result 0x10
+test exprAssign-1.9 {write trace} -setup {
+    unset -nocomplain tv trc
+    trace add variable tv write {apply {args {lappend ::trc $args}}}
+} -body {
+    expr {tv = 3}
+    set trc
+} -cleanup {
+    unset -nocomplain tv trc
+} -result {{tv {} write}}
+test exprAssign-1.10 {not compiled} -setup {
+    unset -nocomplain k
+} -body {
+    set e {k = 5}
+    expr $e
+    set k
+} -result 5
+test exprAssign-1.11 {in an expression substitution} -setup {
+    unset -nocomplain q
+} -body {
+    list [set x [(q = 3*4)]] $q
+} -result {12 12}
+
+test exprAssign-1.12 {assignment alone as a command} -setup {
+    unset -nocomplain y
+} -body {
+    set x 1
+    eval {[(y = $x*3)]
+	puts -nonewline ""
+	set y}
+} -result 3
+test exprAssign-1.13 {assignment alone as a command, in a procedure} -setup {
+    proc p {x} {
+	[(y = $x*3)]
+	return $y
+    }
+} -body {
+    p 2
+} -cleanup {
+    rename p {}
+} -result 6
+
+# Names given by a value: array elements, qualified names, computed names
+
+test exprAssign-2.1 {array element, braced} -setup {
+    unset -nocomplain A
+} -body {
+    expr {{A(k)} = 6}
+    set A(k)
+} -result 6
+test exprAssign-2.2 {array element, quoted, variable in the index} -setup {
+    unset -nocomplain A
+} -body {
+    set i 7
+    expr {"A($i)" = 5}
+    array get A
+} -result {7 5}
+test exprAssign-2.3 {array element, command in the index} -setup {
+    unset -nocomplain A
+} -body {
+    expr {"A([string toupper q])" = 8}
+    array get A
+} -result {Q 8}
+test exprAssign-2.4 {array element in a procedure} -setup {
+    proc p {} {expr {"A(1)" = 2}; array get A}
+} -body {
+    p
+} -cleanup {
+    rename p {}
+} -result {1 2}
+test exprAssign-2.5 {qualified name, braced} -setup {
+    unset -nocomplain ::gx
+    proc p {} {expr {{::gx} = 5}}
+} -body {
+    p
+    set ::gx
+} -cleanup {
+    rename p {}
+    unset -nocomplain ::gx
+} -result 5
+test exprAssign-2.6 {qualified name, quoted} -setup {
+    unset -nocomplain ::gq
+} -body {
+    expr {"::gq" = 6}
+    set ::gq
+} -cleanup {
+    unset -nocomplain ::gq
+} -result 6
+test exprAssign-2.7 {name given by a variable} -setup {
+    unset -nocomplain v
+} -body {
+    set i v
+    expr {$i = 4}
+    set v
+} -result 4
+test exprAssign-2.8 {name given by a function} -setup {
+    unset -nocomplain var_int
+    proc ::tcl::mathfunc::nom {t} {return var_$t}
+} -body {
+    expr {nom("int") = 7}
+    set var_int
+} -cleanup {
+    rename ::tcl::mathfunc::nom {}
+    unset -nocomplain var_int
+} -result 7
+test exprAssign-2.9 {name given by a number} -setup {
+    unset -nocomplain 2
+} -body {
+    expr {2 = 3}
+    set 2
+} -cleanup {
+    unset -nocomplain 2
+} -result 3
+test exprAssign-2.10 {name given by a value: right associative} -setup {
+    unset -nocomplain a 1
+} -body {
+    list [expr {a = 1 = 2}] [set 1]
+} -cleanup {
+    unset -nocomplain 1
+} -result {2 2}
+
+# In procedures: compiled locals
+
+test exprAssign-3.1 {local variables} -setup {
+    proc p {u} {expr { s = 0; s = $s + $u; s = $s * 2 }}
+} -body {
+    p 5
+} -cleanup {
+    rename p {}
+} -result 10
+test exprAssign-3.2 {stored in the compiled local} -setup {
+    proc p {u} {expr { s = $u * 2 }}
+} -body {
+    p 1
+    set code [tcl::unsupported::disassemble proc p]
+    list [string match {*storeScalar*} $code] [string match {*storeStk*} $code]
+} -cleanup {
+    rename p {}
+} -result {1 0}
+test exprAssign-3.3 {local, not global} -setup {
+    unset -nocomplain g
+    proc p {} {expr {g = 7}}
+} -body {
+    p
+    info exists g
+} -cleanup {
+    rename p {}
+} -result 0
+test exprAssign-3.4 {global variable} -setup {
+    unset -nocomplain G
+    proc p {} {global G; expr {G = 8}}
+} -body {
+    p
+    set G
+} -cleanup {
+    rename p {}
+} -result 8
+test exprAssign-3.5 {upvar} -setup {
+    unset -nocomplain U
+    proc p {} {upvar 1 U u; expr {u = 9}}
+} -body {
+    p
+    set U
+} -cleanup {
+    rename p {}
+} -result 9
+
+# Separator
+
+test exprAssign-4.1 {separator} {
+    expr {1; 2}
+} 2
+test exprAssign-4.2 {separator, non-constant} {
+    set y 1
+    expr {$y; $y + 1}
+} 2
+test exprAssign-4.3 {trailing separator} -setup {
+    unset -nocomplain x
+} -body {
+    list [expr {x = 1;}] $x
+} -result {{} 1}
+test exprAssign-4.4 {trailing separator in parentheses} -setup {
+    unset -nocomplain x x2
+} -body {
+    list [expr {(x = 2; x2 = 3;)}] $x $x2
+} -result {{} 2 3}
+test exprAssign-4.5 {empty statement} {
+    expr {1;; 2}
+} 2
+test exprAssign-4.6 {empty else branch} {
+    set y 2
+    expr {$y > 1 ? 5 :; 7}
+} 7
+test exprAssign-4.7 {separator in an expression substitution} {
+    set x [( a = 2; $a * 3 )]
+} 6
+test exprAssign-4.8 {trailing separator in an expression substitution} {
+    set x [( a = 2; )]
+} {}
+test exprAssign-4.9 {separator in a function argument} {
+    expr {max(1; 5, 3)}
+} 5
+
+# Errors
+
+test exprAssign-5.1 {comparison is not an assignment} -body {
+    expr {x==3}
+} -returnCodes error -match glob -result {invalid bareword "x"*}
+test exprAssign-5.4 {missing target} -body {
+    expr {= 1}
+} -returnCodes error -match glob -result {missing operand*}
+test exprAssign-5.6 {name in parentheses} -body {
+    expr {(a) = 1}
+} -returnCodes error -match glob -result {invalid bareword "a"*}
+test exprAssign-5.7 {missing operator} -body {
+    expr {1 x = 2}
+} -returnCodes error -match glob -result {invalid bareword "x"*}
+test exprAssign-5.9 {leading separator} -body {
+    expr {; 1}
+} -returnCodes error -match glob -result {*}
+test exprAssign-6.1 {Tcl_ParseExpr} -constraints testexprparser -body {
+    testexprparser {x = 1; y = 2} -1
+} -result {- {} 0 subexpr {x = 1; y = 2} 13 operator {;} 0 subexpr {x = 1} 5 operator = 0 subexpr x 1 text x 0 subexpr 1 1 text 1 0 subexpr {y = 2} 5 operator = 0 subexpr y 1 text y 0 subexpr 2 1 text 2 0 {}}
+test exprAssign-6.2 {Tcl_ParseExpr, quoted name} -constraints {
+    testexprparser
+} -body {
+    testexprparser {"A($i)" = 1} -1
+} -result {- {} 0 subexpr {"A($i)" = 1} 9 operator = 0 subexpr {"A($i)"} 5 word {"A($i)"} 4 text A( 0 variable {$i} 1 text i 0 text ) 0 subexpr 1 1 text 1 0 {}}
+test exprAssign-6.4 {Tcl_ParseExpr, empty statement} -constraints testexprparser -body {
+    testexprparser {x = 1;} -1
+} -result {- {} 0 subexpr {x = 1;} 9 operator {;} 0 subexpr {x = 1} 5 operator = 0 subexpr x 1 text x 0 subexpr 1 1 text 1 0 subexpr {} 1 text {} 0 {}}
+
+# cleanup
+::tcltest::cleanupTests
+return
+
+# Local Variables:
+# mode: tcl
+# End:

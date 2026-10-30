@@ -676,7 +676,7 @@ test parseExpr-16.32 {GetLexeme procedure, lexeme is "=="} testexprparser {
     testexprparser {2==3} -1
 } {- {} 0 subexpr 2==3 5 operator == 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 {}}
 test parseExpr-16.33 {GetLexeme procedure, bad lexeme starting with "="} -constraints testexprparser -body {
-    testexprparser {2=+3} -1
+    testexprparser {2=} -1
 } -returnCodes error -match glob -result *
 test parseExpr-16.34 {GetLexeme procedure, lexeme is "!="} testexprparser {
     testexprparser {2!=3} -1
@@ -743,8 +743,8 @@ test parseExpr-21.1 {error messages} -body {
 in expression "@"}
 test parseExpr-21.2 {error messages} -body {
     expr =
-} -returnCodes error -result {incomplete operator "="
-in expression "="}
+} -returnCodes error -result {missing operand at _@_
+in expression "_@_="}
 test parseExpr-21.3 {error messages} -body {
     expr x
 } -returnCodes error -result {invalid bareword "x"

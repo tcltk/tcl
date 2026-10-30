@@ -279,12 +279,17 @@ enum LexemeCodes {
     STR_GT = BINARY | 29,
     STR_LEQ = BINARY | 30,
     STR_GEQ = BINARY | 31,
-    END = BINARY | 32		/* This lexeme represents the end of the
+    END = BINARY | 32,		/* This lexeme represents the end of the
 				 * string being parsed. Treating it as a
 				 * binary operator follows the same logic as
 				 * the CLOSE_PAREN lexeme and END pairs with
 				 * START, in the same way that CLOSE_PAREN
 				 * pairs with OPEN_PAREN. */
+    SEPARATOR = BINARY | 33,	/* TIP 282: ";", evaluates its left operand,
+				 * then its right one, which is its value. */
+    ASSIGN = BINARY | 34	/* TIP 282: "=", assignment. Like EXPON, it
+				 * is right associative, and this distinction
+				 * is coded directly in ParseExpr(). */
 };
 
 /*
@@ -302,6 +307,8 @@ enum Precedence {
     PREC_CLOSE_PAREN,		/* ")" */
     PREC_OPEN_PAREN,		/* "(" */
     PREC_COMMA,			/* "," */
+    PREC_SEPARATOR,		/* ";" (TIP 282) */
+    PREC_ASSIGN,		/* "=" (TIP 282) */
     PREC_CONDITIONAL,		/* "?", ":" */
     PREC_OR,			/* "||" */
     PREC_AND,			/* "&&" */
@@ -364,8 +371,10 @@ static const unsigned char prec[] = {
     PREC_COMPARE,		/* STR_LEQ */
     PREC_COMPARE,		/* STR_GEQ */
     PREC_END,			/* END */
+    PREC_SEPARATOR,		/* SEPARATOR */
+    PREC_ASSIGN,		/* ASSIGN */
     /* Expansion room for more binary operators */
-    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
     /* Unary operator lexemes */
     PREC_UNARY,			/* UNARY_PLUS */
@@ -423,8 +432,10 @@ static const unsigned char instruction[] = {
     INST_STR_LE,		/* STR_LEQ */
     INST_STR_GE,		/* STR_GEQ */
     0,				/* END */
+    0,				/* SEPARATOR */
+    0,				/* ASSIGN */
     /* Expansion room for more binary operators */
-    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
     /* Unary operator lexemes */
     INST_UPLUS,			/* UNARY_PLUS */
@@ -469,9 +480,9 @@ static const unsigned char Lexeme[] = {
 	COMMA		/* , */,	MINUS		/* - */,
 	0		/* . */,	DIVIDE		/* / */,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0,			/* 0-9 */
-	COLON		/* : */,	INVALID		/* ; */,
+	COLON		/* : */,	SEPARATOR	/* ; */,
 	0		/* < or << or <= */,
-	0		/* == or INVALID */,
+	0		/* == or = */,
 	0		/* > or >> or >= */,
 	QUESTION	/* ? */,	INVALID		/* @ */,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,		/* A-M */
@@ -526,6 +537,8 @@ typedef struct SubstExpr {
 static int		ParseExprSubst(Tcl_Interp *interp, const char *start,
 			    Tcl_Size numBytes, Tcl_Size *lengthPtr,
 			    Tcl_Parse *parsePtr, int depth);
+static int		AssignFollows(const char *start, Tcl_Size numBytes);
+static int		SimpleLocalName(Tcl_Obj *nameObj);
 static int		ParseExpr(Tcl_Interp *interp, const char *start,
 			    Tcl_Size numBytes, OpNode **opTreePtr,
 			    Tcl_Obj *litList, Tcl_Obj *funcList,
@@ -534,6 +547,54 @@ static int		ParseExpr(Tcl_Interp *interp, const char *start,
 static Tcl_Size		ParseLexeme(const char *start, Tcl_Size numBytes,
 			    unsigned char *lexemePtr, Tcl_Obj **literalPtr);
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * AssignFollows --
+ *
+ *	TIP 282. Is the text at START, after any white space, the
+ *	assignment operator "=" (and not "==")?
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+AssignFollows(
+    const char *start,
+    Tcl_Size numBytes)
+{
+    Tcl_Size ws = TclParseAllWhiteSpace(start, numBytes);
+
+    return (ws < numBytes) && (start[ws] == '=')
+	    && ((ws + 1 == numBytes) || (start[ws + 1] != '='));
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SimpleLocalName --
+ *
+ *	TIP 282. Is the name of an assignment target simple enough (not
+ *	qualified, not an array element) to be a compiled local variable?
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+SimpleLocalName(
+    Tcl_Obj *nameObj)
+{
+    Tcl_Size length, i;
+    const char *name = TclGetStringFromObj(nameObj, &length);
+
+    for (i = 0; i < length; i++) {
+	if (name[i] == ':' || name[i] == '(' || name[i] == ')') {
+	    return 0;
+	}
+    }
+    return length > 0;
+}
+
 /*
  *----------------------------------------------------------------------
  *
@@ -757,7 +818,19 @@ ParseExpr(
 		 * exceptions are that when a bareword is followed by an open
 		 * paren, it might be a function call, and when the bareword
 		 * is a legal literal boolean value, we accept that as well.
+		 *
+		 * TIP 282: a bareword followed by "=" is the name of the
+		 * variable to assign.
 		 */
+
+		if (literal && IsOperator(lastParsed)
+			&& AssignFollows(start + scanned, numBytes - scanned)) {
+		    Tcl_ListObjAppendElement(NULL, litList, literal);
+		    complete = lastParsed = OT_LITERAL;
+		    start += scanned;
+		    numBytes -= scanned;
+		    continue;
+		}
 
 		if (literal && start[scanned+TclParseAllWhiteSpace(
 			start+scanned, numBytes-scanned)] == '(') {
@@ -1195,6 +1268,26 @@ ParseExpr(
 	     */
 
 	    if (IsOperator(lastParsed)) {
+		if (((nodePtr[-1].lexeme == SEPARATOR) && ((lexeme == SEPARATOR)
+			|| (lexeme == CLOSE_PAREN) || (lexeme == END)))
+			|| ((nodePtr[-1].lexeme == COLON)
+			&& (lexeme == SEPARATOR))) {
+		    /*
+		     * TIP 282: an empty statement: ";;", ";" before ")" or at
+		     * the end, ":;". Its value is the empty string. Restart
+		     * the parsing loop with zero characters scanned, after an
+		     * empty literal.
+		     */
+
+		    TclNewLiteralStringObj(literal, "");
+		    Tcl_ListObjAppendElement(NULL, litList, literal);
+		    complete = lastParsed = OT_LITERAL;
+		    scanned = 0;
+		    if (substPtr != NULL && lexeme == CLOSE_PAREN) {
+			parenDepth++;		/* The ")" is parsed again. */
+		    }
+		    break;
+		}
 		if ((lexeme == CLOSE_PAREN)
 			&& (nodePtr[-1].lexeme == OPEN_PAREN)) {
 		    if (nodePtr[-2].lexeme == FUNCTION) {
@@ -1294,10 +1387,11 @@ ParseExpr(
 
 		if (incompletePtr->precedence == precedence) {
 		    /*
-		     * Right association rules for exponentiation.
+		     * Right association rules for exponentiation and
+		     * assignment (TIP 282).
 		     */
 
-		    if (lexeme == EXPON) {
+		    if (lexeme == EXPON || lexeme == ASSIGN) {
 			break;
 		    }
 
@@ -1465,11 +1559,12 @@ ParseExpr(
 	    /*
 	     * The COMMA operator cannot be optimized, since the function
 	     * needs all of its arguments, and optimization would reduce the
-	     * number. Other binary operators root constant expressions when
-	     * both arguments are constant expressions.
+	     * number. Nor can the ASSIGN operator (TIP 282), whose effect is
+	     * to set a variable. Other binary operators root constant
+	     * expressions when both arguments are constant expressions.
 	     */
 
-	    nodePtr->constant = (lexeme != COMMA);
+	    nodePtr->constant = (lexeme != COMMA) && (lexeme != ASSIGN);
 
 	    if (IsOperator(complete)) {
 		nodes[complete].parent = nodesUsed;
@@ -1652,7 +1747,15 @@ ConvertTreeToTokens(
 	     * Reparse the literal to get pointers into source string.
 	     */
 
-	    scanned = ParseLexeme(start, numBytes, &lexeme, NULL);
+	    if ((numBytes == 0) || (*start == ';') || (*start == ')')) {
+		/*
+		 * TIP 282: the empty literal of an empty statement.
+		 */
+
+		scanned = 0;
+	    } else {
+		scanned = ParseLexeme(start, numBytes, &lexeme, NULL);
+	    }
 
 	    TclGrowParseTokenArray(parsePtr, 2);
 	    subExprTokenPtr = parsePtr->tokenPtr + parsePtr->numTokens;
@@ -2198,7 +2301,7 @@ ParseLexeme(
 	    *lexemePtr = EQUAL;
 	    return 2;
 	}
-	*lexemePtr = INCOMPLETE;
+	*lexemePtr = ASSIGN;		/* TIP 282 */
 	return 1;
 
     case '!':
@@ -2565,6 +2668,17 @@ CompileExprTree(
     JumpList *jumpPtr = NULL;
     bool convert = true;
 
+    /*
+     * TIP 282: "name = value" in a procedure, where name is a compiled local
+     * variable: the name is not pushed, and the ASSIGN node stores the
+     * value in the local (storeScalar). These maps give the local of each
+     * such ASSIGN node.
+     */
+
+    enum { ASSIGN_MAX = 32 };
+    Tcl_Size assignNode[ASSIGN_MAX], assignLocal[ASSIGN_MAX];
+    int nAssign = 0;
+
     while (1) {
 	int next;
 	JumpList *freePtr, *newJump;
@@ -2635,6 +2749,13 @@ CompileExprTree(
 		TclEmitForwardJump(envPtr, (nodePtr->lexeme == AND)
 			?  TCL_FALSE_JUMP : TCL_TRUE_JUMP, &jumpPtr->jump);
 		break;
+	    case SEPARATOR:
+		/*
+		 * TIP 282: the value of the left operand is discarded.
+		 */
+
+		OP(		POP);
+		break;
 	    }
 	} else {
 	    Tcl_Size target;
@@ -2647,6 +2768,23 @@ CompileExprTree(
 		    OP(		TRY_CVT_TO_NUMERIC);
 		}
 		break;
+	    case ASSIGN: {
+		int d;
+
+		for (d = 0; d < nAssign; d++) {
+		    if (assignNode[d] == nodePtr - nodes) {
+			break;
+		    }
+		}
+		if (d < nAssign) {
+		    OP4(	STORE_SCALAR, assignLocal[d]);
+		} else {
+		    OP(		STORE_STK);
+		}
+		break;
+	    }
+	    case SEPARATOR:		/* TIP 282: the value is the right
+				 * operand's */
 	    case NULL_FUNC:
 	    case OPEN_PAREN:
 
@@ -2746,6 +2884,26 @@ CompileExprTree(
 	    Tcl_Obj *const *litObjv = *litObjvPtr;
 	    Tcl_Obj *literal = *litObjv;
 
+	    if ((nodePtr->lexeme == ASSIGN) && (nodePtr->mark == MARK_RIGHT)
+		    && (envPtr->procPtr != NULL) && (nAssign < ASSIGN_MAX)
+		    && SimpleLocalName(literal)) {
+		/*
+		 * TIP 282: the name in "name = value", in a procedure: a
+		 * compiled local, stored by its index; the name is not
+		 * pushed.
+		 */
+
+		Tcl_Size length;
+		const char *name = TclGetStringFromObj(literal, &length);
+		Tcl_Size local = TclFindCompiledLocal(name, length, 1, envPtr);
+
+		if (local >= 0) {
+		    assignNode[nAssign] = nodePtr - nodes;
+		    assignLocal[nAssign++] = local;
+		    (*litObjvPtr)++;
+		    break;
+		}
+	    }
 	    if (optimize) {
 		int idx = PUSH_OBJ_FLAGS(literal, 0);
 		Tcl_Obj *objPtr = TclFetchLiteral(envPtr, idx);

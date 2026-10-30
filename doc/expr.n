@@ -269,12 +269,32 @@ must in order to determine its result.
 If-then-else, as in C.  If \fIx\fR is true , the result is the value of
 \fIy\fR.  Otherwise the result is the value of \fIz\fR.
 This operator evaluates lazily; it evaluates only one of \fIy\fR or \fIz\fR.
+.VS TIP282
+.TP 20
+\fIname\fB = \fIx\fR
+.
+Assignment, as in C. The value of \fIx\fR is stored in the variable
+\fIname\fR, and is the value of the assignment. \fIname\fR is usually a
+bareword (not \fB$\fIname\fR); otherwise it is any operand, whose value is
+the name of the variable: a braced or quoted name, for a qualified name or
+an array element (\fB"A($i)" = 0\fR), or a variable or function whose
+value is the name (\fB$ref = 0\fR). The variable is resolved as by
+\fBset\fR: in a procedure, a name that is not qualified is a local
+variable (see \fBglobal\fR, \fBvariable\fR and \fBupvar\fR).
+Assignment groups right-to-left: \fBa = b = 0\fR sets both variables.
+.TP 20
+\fIx\fB ; \fIy\fR
+.
+Sequence. \fIx\fR is evaluated, then \fIy\fR, whose value is the value of
+the sequence, as the comma operator of C. An empty operand, as in
+\fBx = 1;\fR or \fB1;;2\fR, has the empty string as its value.
+.VE TIP282
 .PP
 The exponentiation operator promotes types in the same way that the multiply
 and divide operators do, and the result is is the same as the result of
 \fBpow\fR.
-Exponentiation groups right-to-left within a precedence level. Other binary
-operators group left-to-right.  For example, the value of
+Exponentiation and assignment group right-to-left within a precedence level.
+Other binary operators group left-to-right.  For example, the value of
 .PP
 .PP
 .CS
@@ -490,6 +510,18 @@ set area [( $width * $height )]
 puts "half: [( $area / 2.0 )]"
 .CE
 .VE TIP759
+.PP
+.VS TIP282
+A sequence of computations, each result stored in a variable:
+.PP
+.CS
+\fBexpr\fR {
+    x = 5*$y + 6*$z;
+    w = $x**2 + $y**2;
+    v = $w**2 + $y**2
+}
+.CE
+.VE TIP282
 .PP
 Define a procedure that computes an
 .QW interesting
