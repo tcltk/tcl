@@ -64,6 +64,7 @@ to the userbase.
  - [error deleting: file already exists on Vista](https://core.tcl-lang.org/tcl/tktview/3006571)
  - [lset on empty list is allowed when index argument is large](https://core.tcl-lang.org/tcl/tktview/13d3c0d)
  - [missing locks, when transferring a channel to another thread](https://core.tcl-lang.org/tcl/tktview/815e24)
+ - [epoll notifier spins and never reports writable after EPOLLERR](https://core.tcl-lang.org/tcl/tktview/7aa8fd)
 
 # Updated bundled packages, libraries, standards, data
  - http 2.10.3
