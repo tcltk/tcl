@@ -5359,7 +5359,10 @@ TclEvalEx(
 
     iPtr->evalFlags = 0;
     do {
-	if (Tcl_ParseCommand(interp, p, bytesLeft, 0, parsePtr) != TCL_OK) {
+	if (!((p == script) /* TIP 759: expression script */
+		&& TclParseExprScript(interp, p, bytesLeft, parsePtr))
+		&& (Tcl_ParseCommand(interp, p, bytesLeft, 0, parsePtr)
+		!= TCL_OK)) {
 	    code = TCL_ERROR;
 	    Tcl_LogCommandInfo(interp, script, parsePtr->commandStart,
 		    parsePtr->term + 1 - parsePtr->commandStart);
@@ -5545,8 +5548,9 @@ TclEvalEx(
 	    if (TclIsExprCommand(parsePtr)) {
 		/*
 		 * TIP 759: a command that is one expression substitution
-		 * [(...)]: its value, already computed as the only word, is the
-		 * result. It is not a command name.
+		 * [(...)], or an expression script (...): its value, already
+		 * computed as the only word, is the result, not a command
+		 * name.
 		 */
 
 		Tcl_SetObjResult(interp, objv[0]);

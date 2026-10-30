@@ -2419,8 +2419,9 @@ CompileCommandTokens(
 	code = CompileCmdCompileProc(interp, parsePtr, cmdPtr, envPtr);
     } else if (TclIsExprCommand(parsePtr)) {
 	/*
-	 * TIP 759: a command that is one expression substitution [(...)] is
-	 * compiled as the expression. Its value is the value of the command.
+	 * TIP 759: a command that is one expression substitution [(...)], or
+	 * an expression script (...), is compiled as the expression. Its
+	 * value is the value of the command.
 	 */
 
 	TclCompileSubExpr(interp, tokenPtr + 1, envPtr);
@@ -2539,7 +2540,10 @@ TclCompileScript(
 	do {
 	    const char *next;
 
-	    if (TCL_OK != Tcl_ParseCommand(interp, p, numBytes, 0, parsePtr)) {
+	    if (!((p == script) /* TIP 759 */
+		    && TclParseExprScript(interp, p, numBytes, parsePtr))
+		    && (TCL_OK != Tcl_ParseCommand(interp, p, numBytes, 0,
+		    parsePtr))) {
 		/*
 		* Compile bytecodes to report the parsePtr error at runtime.
 		*/
@@ -2661,9 +2665,9 @@ TclCompileScript(
  * TclCompileSubExpr --
  *
  *	TIP 759. Compiles the expression of an expression substitution
- *	[(...)], a TCL_TOKEN_SUB_EXPR token. Each nested [(...)] is compiled
- *	by a nested call: the depth is limited as for nested scripts, so that
- *	the C stack does not overflow.
+ *	[(...)] or of an expression script (...), a TCL_TOKEN_SUB_EXPR token.
+ *	Each nested [(...)] is compiled by a nested call: the depth is limited
+ *	as for nested scripts, so that the C stack does not overflow.
  *
  *----------------------------------------------------------------------
  */
@@ -2685,8 +2689,14 @@ TclCompileSubExpr(
 	return;
     }
     iPtr->numLevels++;
-    TclCompileExpr(interp, tokenPtr->start + 1, tokenPtr->size - 2, envPtr,
-	    true);
+    if (tokenPtr->start[0] == '[') {
+	TclCompileExpr(interp, tokenPtr->start + 1, tokenPtr->size - 2,
+		envPtr, true);
+    } else {
+	/* TIP 759: expression script "(...)", the whole text */
+	TclCompileExpr(interp, tokenPtr->start, tokenPtr->size, envPtr,
+		true);
+    }
     iPtr->numLevels--;
 }
 

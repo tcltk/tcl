@@ -456,6 +456,14 @@ A forced string comparison whose result is 0:
 .VE TIP461
 .PP
 .VS TIP759
+A procedure whose body is an expression script (see rule [1] of the
+\fBTcl\fR manual page): the body is one expression.
+.PP
+.CS
+proc hypot {a b} {( sqrt($a**2 + $b**2) )}
+lmap x {1 2 3} {( $x * $x )}
+.CE
+.PP
 Compute a value with an expression substitution, the short form of
 \fB[expr {...}]\fR in a word:
 .PP

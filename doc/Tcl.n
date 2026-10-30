@@ -20,7 +20,8 @@ The following rules define the syntax and semantics of the Tcl language:
 .IP "[1] \fBScripts.\fR"
 A Tcl script is a string of one of two kinds: a \fIcommand script\fR,
 made of one or more commands, or an \fIexpression script\fR, made of
-one expression.
+one expression. Commands that take a script as an argument, such as
+the body of \fBproc\fR or \fBforeach\fR, accept both kinds.
 .RS
 .TP 5
 \fBCommand scripts.\fR
@@ -32,12 +33,23 @@ Close brackets are command terminators during command substitution
 .TP 5
 \fBExpression scripts.\fR
 .VS TIP759
-The script of an expression substitution (rule [7]), which begins with
-an open parenthesis
-.PQ ( "" ,
-is an expression script: the whole script, parentheses included, is one
-expression, as described in the \fBexpr\fR manual page. Semi-colons and
-newlines inside it are not command separators.
+A script that begins with an open parenthesis
+.PQ (
+and ends with a close parenthesis
+.PQ ) ""
+(a newline may follow it) is an expression script: the whole script,
+parentheses included, is one expression, as described in the
+\fBexpr\fR manual page. Semi-colons and newlines inside it are not
+command separators. For instance, the body of
+.QW "proc hypot {a b} {( sqrt($a**2 + $b**2) )}"
+is an expression script, and so is
+.QW "(\N'34'Hi there\N'34')" ,
+whose result is the string \fBHi there\fR.
+Only a whole script is tested: in a script of several commands, a
+command that begins with an open parenthesis is an ordinary command.
+Conversely, a script such as
+.QW "(cmd) (x)"
+is an expression script, and an error.
 During expression substitution (see below), the expression ends at the
 first close parenthesis that is immediately followed by a close bracket
 and leaves the parentheses of the expression balanced:

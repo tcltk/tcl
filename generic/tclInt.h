@@ -3607,15 +3607,18 @@ MODULE_SCOPE void	TclParseInit(Tcl_Interp *interp, const char *string,
 MODULE_SCOPE Tcl_Size	TclParseAllWhiteSpace(const char *src, Tcl_Size numBytes);
 MODULE_SCOPE void	TclCompileSubExpr(Tcl_Interp *interp,
 			    Tcl_Token *tokenPtr, struct CompileEnv *envPtr);
+MODULE_SCOPE int	TclParseExprScript(Tcl_Interp *interp,
+			    const char *start, Tcl_Size numBytes,
+			    Tcl_Parse *parsePtr);
 MODULE_SCOPE int	TclParseExprSubst(Tcl_Interp *interp,
 			    const char *start, Tcl_Size numBytes,
 			    Tcl_Size *lengthPtr, Tcl_Parse *parsePtr);
 
 /*
  * TIP 759: is the command parsed in *parsePtr made of one word, itself made
- * of one TCL_TOKEN_SUB_EXPR token, an expression substitution [(...)]? The
- * value of the expression is then the result of the command; it is not a
- * command name.
+ * of one TCL_TOKEN_SUB_EXPR token: an expression substitution [(...)], or an
+ * expression script (...)? The value of the expression is then the result
+ * of the command; it is not a command name.
  */
 
 #define TclIsExprCommand(parsePtr) \

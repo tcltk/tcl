@@ -1,0 +1,195 @@
+# Commands covered: expression scripts "(...)" (TIP 759)
+#
+# This file contains a collection of tests for the expression scripts of
+# TIP 759: a script that begins with "(" and ends with ")" is one
+# expression. Sourcing this file into Tcl runs the tests and generates
+# output for errors. No output means no errors were found.
+#
+# See the file "license.terms" for information on usage and redistribution of
+# this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2.5
+    namespace import -force ::tcltest::*
+}
+
+::tcltest::loadTestedCommands
+catch [list package require -exact tcl::test [info patchlevel]]
+
+testConstraint testevalex [llength [info commands testevalex]]
+
+# Forms given by the parser: {(...)}, "(...)", (...)
+
+test exprScript-1.1 {procedure body} -setup {
+    proc sq {x} {($x*$x)}
+} -body {
+    sq 5
+} -cleanup {
+    rename sq {}
+} -result 25
+test exprScript-1.2 {procedure body, function and white space} -setup {
+    proc hyp {a b} {( sqrt($a**2 + $b**2) )}
+} -body {
+    hyp 3 4
+} -cleanup {
+    rename hyp {}
+} -result 5.0
+test exprScript-1.3 {braced loop body} {
+    lmap v {1 2 3} {($v*10)}
+} {10 20 30}
+test exprScript-1.4 {quoted loop body} {
+    lmap v {1 2 3} "(\$v+1)"
+} {2 3 4}
+test exprScript-1.5 {bare word, substituted before the call} {
+    set n 4
+    lmap v {1 2} ($n*2)
+} {8 8}
+test exprScript-1.6 {eval} {
+    set a 3
+    eval {($a+1)}
+} 4
+test exprScript-1.7 {eval, quoted} {
+    set a 3
+    eval "(\$a+2)"
+} 5
+test exprScript-1.8 {uplevel} {
+    uplevel 0 {(1+1)}
+} 2
+test exprScript-1.9 {if body} {
+    if {1} {(42)}
+} 42
+test exprScript-1.10 {the first "(" is closed early} {
+    eval {(1)+(2)}
+} 3
+test exprScript-1.11 {lambda} {
+    apply {{x} {($x - 1)}} 10
+} 9
+test exprScript-1.12 {newline after the close paren} {
+    eval "(2*3)\n"
+} 6
+test exprScript-1.13 {only a whole script: not its last command} -body {
+    eval {set b 5
+($b+1)}
+} -returnCodes error -result {invalid command name "(5+1)"}
+test exprScript-1.13.1 {only a whole script: in a procedure body} -setup {
+    proc p {} {set b 5
+($b+1)}
+} -body {
+    p
+} -cleanup {
+    rename p {}
+} -returnCodes error -result {invalid command name "(5+1)"}
+test exprScript-1.13.2 {nested script in brackets} {
+    set b 5
+    list [eval {set c [eval {($b*2)}]}] $c
+} {10 10}
+test exprScript-1.14 {command substitution inside} -setup {
+    proc f {} {( [llength {a b c}] )}
+} -body {
+    f
+} -cleanup {
+    rename f {}
+} -result 3
+test exprScript-1.15 {same script object twice} {
+    set a 3
+    set s {($a*$a)}
+    list [eval $s] [eval $s]
+} {9 9}
+test exprScript-1.16 {semicolon and newline are not separators} {
+    eval {(1 +
+	2)}
+} 3
+
+# Not compiled: Tcl_EvalEx
+
+test exprScript-2.1 {Tcl_EvalEx} -constraints testevalex -body {
+    set a 3
+    testevalex {($a * 7)}
+} -result 21
+test exprScript-2.2 {Tcl_EvalEx, first "(" closed early} -constraints {
+    testevalex
+} -body {
+    testevalex {(1)+(2)}
+} -result 3
+test exprScript-2.3 {Tcl_EvalEx, newline after} -constraints testevalex -body {
+    testevalex "(2*3)\n"
+} -result 6
+test exprScript-2.4 {Tcl_EvalEx, only a whole script} -constraints {
+    testevalex
+} -body {
+    testevalex {set b 5
+($b+1)}
+} -returnCodes error -result {invalid command name "(5+1)"}
+test exprScript-2.6 {Tcl_EvalEx, sourced file} -setup {
+    set f [makeFile {( 6 * 7 )} exprScript26.tcl]
+} -body {
+    source $f
+} -cleanup {
+    removeFile exprScript26.tcl
+} -result 42
+test exprScript-2.5 {Tcl_EvalEx, error} -constraints testevalex -body {
+    testevalex {(1/0)}
+} -returnCodes error -result {divide by zero}
+
+# Errors and limits
+
+test exprScript-3.1 {error in the expression} -body {
+    eval {(1/0)}
+} -returnCodes error -result {divide by zero}
+test exprScript-3.2 {error info} -setup {
+    proc e {} {(1/0)}
+} -body {
+    catch e m o
+    dict get $o -errorinfo
+} -cleanup {
+    rename e {}
+} -result {divide by zero
+    invoked from within
+"(1/0)"
+    (procedure "e" line 1)
+    invoked from within
+"e"}
+test exprScript-3.3 {syntax error} -body {
+    eval {(a b)}
+} -returnCodes error -match glob -result {invalid bareword "a"*}
+test exprScript-3.4 {empty expression} -body {
+    eval {()}
+} -returnCodes error -match glob -result {empty subexpression*}
+test exprScript-3.5 {script that does not end with ")" is not one} -body {
+    eval {(1+2) ;}
+} -returnCodes error -result {invalid command name "(1+2)"}
+test exprScript-3.6 {command name that starts with "("} -setup {
+    proc (x) {} {return cmd}
+} -body {
+    list [eval {(x) }] [eval { (x)}]
+} -cleanup {
+    rename (x) {}
+} -result {cmd cmd}
+test exprScript-3.7 {expression substitution alone: its value is the result} {
+    eval {[(1+2)]}
+} 3
+test exprScript-3.8 {nested command substitution is not an expression script} -setup {
+    proc (x) {} {return cmd}
+} -body {
+    set r [(x)]
+} -cleanup {
+    rename (x) {}
+} -returnCodes error -match glob -result {invalid bareword "x"*}
+
+# Bytecode
+
+test exprScript-4.1 {compiled as an expression} -setup {
+    proc sq {x} {($x*$x)}
+} -body {
+    string match "*mult*" [tcl::unsupported::disassemble proc sq]
+} -cleanup {
+    rename sq {}
+} -result 1
+
+# cleanup
+::tcltest::cleanupTests
+return
+
+# Local Variables:
+# mode: tcl
+# End:

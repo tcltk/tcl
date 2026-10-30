@@ -234,6 +234,7 @@ Tcl_ParseCommand(
     parsePtr->commentSize = 0;
     parsePtr->commandStart = NULL;
     parsePtr->commandSize = 0;
+
     if (nested != 0) {
 	terminators = TYPE_COMMAND_END | TYPE_CLOSE_BRACK;
     } else {
@@ -535,6 +536,68 @@ Tcl_ParseCommand(
     }
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclParseExprScript --
+ *
+ *	TIP 759. Is the script an expression script: does it begin with "("
+ *	and end with ")" (or with ")" and a newline, as typed in a console)?
+ *	Then the whole script is one command of one word, a
+ *	TCL_TOKEN_SUB_EXPR token for the whole expression (see
+ *	TclIsExprCommand).
+ *
+ *	Only the callers that evaluate or compile a whole script call it, on
+ *	the whole script, before parsing its first command: the test is on the
+ *	script, not on the text left after the previous commands.
+ *
+ * Results:
+ *	1 and *parsePtr filled if it is an expression script, 0 otherwise
+ *	(*parsePtr is then untouched).
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclParseExprScript(
+    Tcl_Interp *interp,		/* For the parse structure, or NULL. */
+    const char *start,		/* The whole script. */
+    Tcl_Size numBytes,		/* Its length in bytes. */
+    Tcl_Parse *parsePtr)	/* Filled if it is an expression script. */
+{
+    Tcl_Token *tokenPtr;
+    Tcl_Size length = numBytes;
+
+    if ((start == NULL) || (numBytes < 2) || (start[0] != '(')) {
+	return 0;
+    }
+    if (start[length - 1] == '\n') {
+	length--;
+    }
+    if (start[length - 1] != ')') {
+	return 0;
+    }
+    TclParseInit(interp, start, numBytes, parsePtr);
+    parsePtr->commentStart = NULL;
+    parsePtr->commentSize = 0;
+    TclGrowParseTokenArray(parsePtr, 2);
+    tokenPtr = parsePtr->tokenPtr;
+    tokenPtr[0].type = TCL_TOKEN_WORD;
+    tokenPtr[0].start = start;
+    tokenPtr[0].size = length;
+    tokenPtr[0].numComponents = 1;
+    tokenPtr[1].type = TCL_TOKEN_SUB_EXPR;
+    tokenPtr[1].start = start;
+    tokenPtr[1].size = length;
+    tokenPtr[1].numComponents = 0;
+    parsePtr->numTokens = 2;
+    parsePtr->numWords = 1;
+    parsePtr->commandStart = start;
+    parsePtr->commandSize = length;
+    parsePtr->term = start + length;
+    return 1;
+}
+
 /*
  *----------------------------------------------------------------------
  *
@@ -2254,12 +2317,18 @@ TclSubstTokens(
 
 	    Tcl_Obj *exprObj, *valueObj;
 
-	    exprObj = Tcl_NewStringObj(tokenPtr->start + 1, tokenPtr->size - 2);
+	    if (tokenPtr->start[0] == '[') {
+		exprObj = Tcl_NewStringObj(tokenPtr->start + 1,
+			tokenPtr->size - 2);
+	    } else {
+		/* TIP 759: expression script "(...)", the whole text */
+		exprObj = Tcl_NewStringObj(tokenPtr->start, tokenPtr->size);
+	    }
 	    Tcl_IncrRefCount(exprObj);
 	    code = Tcl_ExprObj(interp, exprObj, &valueObj);
 	    Tcl_DecrRefCount(exprObj);
-	    TclAdvanceLines(&line, tokenPtr->start + 1,
-		    tokenPtr->start + tokenPtr->size - 1);
+	    TclAdvanceLines(&line, tokenPtr->start,
+		    tokenPtr->start + tokenPtr->size);
 	    if (code == TCL_OK) {
 		/*
 		 * Tcl_ExprObj gives the caller a reference; appendObj is
