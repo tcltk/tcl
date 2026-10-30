@@ -1119,7 +1119,7 @@ TclScanElement(
     }
 
     while (length) {
-	if (CHAR_TYPE(*p) != TYPE_NORMAL) {
+	if ((CHAR_TYPE(*p) & ~TYPE_OP) != TYPE_NORMAL) {
 	    switch (*p) {
 	    case '{':	/* TYPE_BRACE */
 #if COMPAT

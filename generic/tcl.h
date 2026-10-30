@@ -1818,6 +1818,11 @@ typedef struct Tcl_Token {
  *				followed by the TCL_TOKEN_OPERATOR token for
  *				the operator, then TCL_TOKEN_SUB_EXPR tokens
  *				for the left then the right operands.
+ * TCL_TOKEN_CMD_IN_EXPR -	TIP 759: the token describes a raw command in
+ *				an expression, a command without brackets,
+ *				whose result is the value of an operand. The
+ *				token is the text of the command.
+ *				NumComponents is always 0.
  * TCL_TOKEN_OPERATOR -		The token describes one expression operator.
  *				An operator might be the name of a math
  *				function such as "abs". A TCL_TOKEN_OPERATOR
@@ -1842,6 +1847,7 @@ typedef struct Tcl_Token {
 #define TCL_TOKEN_SUB_EXPR	64
 #define TCL_TOKEN_OPERATOR	128
 #define TCL_TOKEN_EXPAND_WORD	256
+#define TCL_TOKEN_CMD_IN_EXPR	512
 
 /*
  * Parsing error types. On any parsing error, one of these values will be

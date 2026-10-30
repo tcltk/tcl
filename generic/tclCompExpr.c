@@ -13,6 +13,7 @@
 
 #include "tclInt.h"
 #include "tclCompile.h"		/* CompileEnv */
+#include "tclParse.h"		/* CHAR_TYPE, for raw commands (TIP 759) */
 
 /*
  * Expression parsing takes place in the routine ParseExpr(). It takes a
@@ -179,6 +180,8 @@ enum LexemeCodes {
     EMPTY = LEAF | 7,		/* Used only for an empty argument list to a
 				 * function. Represents the empty string
 				 * within parens in the expression: rand() */
+    COMMAND = LEAF | 8,		/* TIP 759: a raw command, without brackets:
+				 * incr i, llength $l, foreach ... */
 
     /* Unary operator lexemes */
 
@@ -1376,6 +1379,56 @@ ParseExpr(
 		parsePtr->numTokens++;
 		break;
 	    }			/* SCRIPT case */
+
+	    case COMMAND: {
+		/*
+		 * TIP 759: a raw command, a command without brackets that
+		 * begins with one of the command names known to ParseLexeme.
+		 * It ends at a ";", or at an operator or a close paren after
+		 * a word, which are then parsed again as part of the
+		 * expression, or at the end of the expression. Newlines
+		 * separate the commands of a raw script.
+		 */
+
+		Tcl_Parse *nestedPtr = (Tcl_Parse *)
+			TclStackAlloc(interp, sizeof(Tcl_Parse));
+		const char *cmdEnd;
+
+		tokenPtr = parsePtr->tokenPtr + parsePtr->numTokens;
+		tokenPtr->type = TCL_TOKEN_CMD_IN_EXPR;
+		tokenPtr->start = start;
+		tokenPtr->numComponents = 0;
+
+		end = start + numBytes;
+		cmdEnd = end;
+		while (1) {
+		    code = Tcl_ParseCommand(interp, start, end - start,
+			    TCL_CMD_NESTED_IN_EXPR, nestedPtr);
+		    if (code != TCL_OK) {
+			parsePtr->term = nestedPtr->term;
+			parsePtr->errorType = nestedPtr->errorType;
+			parsePtr->incomplete = nestedPtr->incomplete;
+			break;
+		    }
+		    start = nestedPtr->commandStart + nestedPtr->commandSize;
+		    Tcl_FreeParse(nestedPtr);
+		    if ((nestedPtr->term < end) && !nestedPtr->incomplete
+			    && ((nestedPtr->term[0] == ';') || (CHAR_TYPE(
+			    nestedPtr->term[0]) & (TYPE_OP | TYPE_CLOSE_PAREN)))) {
+			cmdEnd = nestedPtr->term;
+			break;
+		    }
+		    if (start >= end) {
+			break;
+		    }
+		}
+		TclStackFree(interp, nestedPtr);
+		start = tokenPtr->start;
+		scanned = cmdEnd - start;
+		tokenPtr->size = scanned;
+		parsePtr->numTokens++;
+		break;
+	    }			/* COMMAND case */
 	    }
 	    if (code != TCL_OK) {
 		/*
@@ -2533,6 +2586,32 @@ ParseLexeme(
     if (numBytes == 0) {
 	*lexemePtr = END;
 	return 0;
+    }
+
+    /*
+     * TIP 759: a raw command, one of these command names followed by a
+     * space.
+     */
+
+    if (islower(UCHAR(*start))) {
+	static const char *const rawCommands[] = {
+	    "concat", "dict", "for", "foreach", "global", "if", "incr",
+	    "lappend", "lassign", "lindex", "llength", "lmap", "lrange",
+	    "lset", "namespace", "return", "string", "switch", "upvar",
+	    "variable", "while", NULL
+	};
+	const char *const *namePtr;
+
+	for (namePtr = rawCommands; *namePtr != NULL; namePtr++) {
+	    size_t length = strlen(*namePtr);
+
+	    if (((*namePtr)[0] == *start) && ((size_t) numBytes > length)
+		    && (start[length] == ' ')
+		    && (memcmp(start, *namePtr, length) == 0)) {
+		*lexemePtr = COMMAND;
+		return 0;
+	    }
+	}
     }
     byte = UCHAR(*start);
     if (byte < sizeof(Lexeme) && Lexeme[byte] != 0) {

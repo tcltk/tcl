@@ -4619,6 +4619,9 @@ PrintParse(
 	case TCL_TOKEN_OPERATOR:
 	    typeString = "operator";
 	    break;
+	case TCL_TOKEN_CMD_IN_EXPR:
+	    typeString = "rawcommand";
+	    break;
 	default:
 	    typeString = "??";
 	    break;

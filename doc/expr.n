@@ -112,6 +112,21 @@ A Tcl command enclosed in \fBbrackets\fR
 Command substitution is performed as according to the command substitution rule
 for \fBTcl\fR.
 .TP
+A \fBraw command\fR
+.
+.VS TIP759
+A command without brackets, when its name is one of \fBconcat\fR,
+\fBdict\fR, \fBfor\fR, \fBforeach\fR, \fBglobal\fR, \fBif\fR,
+\fBincr\fR, \fBlappend\fR, \fBlassign\fR, \fBlindex\fR,
+\fBllength\fR, \fBlmap\fR, \fBlrange\fR, \fBlset\fR,
+\fBnamespace\fR, \fBreturn\fR, \fBstring\fR, \fBswitch\fR,
+\fBupvar\fR, \fBvariable\fR or \fBwhile\fR, followed by a space. The
+command ends at a semicolon, or at an operator or a close parenthesis
+that begins a word, or at the end of the expression; its result is the
+value of the operand. For instance \fBllength $list + 1\fR is
+\fB[llength $list] + 1\fR. This form is provisional.
+.VE TIP759
+.TP
 An expression enclosed in \fB[(\fR and \fB)]\fR
 .
 .VS TIP759
@@ -524,6 +539,18 @@ Compute a value with an expression substitution, the short form of
 .CS
 set area [( $width * $height )]
 puts "half: [( $area / 2.0 )]"
+.CE
+.VE TIP759
+.PP
+.VS TIP759
+A procedure whose body is an expression script with raw commands:
+.PP
+.CS
+proc dot {u v} {(
+    s = 0;
+    foreach a $u b $v {( s = $s + $a*$b )};
+    $s
+)}
 .CE
 .VE TIP759
 .PP

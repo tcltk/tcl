@@ -2917,6 +2917,31 @@ TclCompileTokens(
 	    numObjsToConcat++;
 	    break;
 
+	case TCL_TOKEN_CMD_IN_EXPR:
+	    /*
+	     * TIP 759: a raw command in an expression, the text of a script
+	     * without brackets. Push any accumulated chars appearing before
+	     * it.
+	     */
+
+	    if (Tcl_DStringLength(&textBuffer) > 0) {
+		int literal = TclPushDString(envPtr, &textBuffer);
+
+		numObjsToConcat++;
+		Tcl_DStringFree(&textBuffer);
+		if (numCL) {
+		    TclContinuationsEnter(TclFetchLiteral(envPtr, literal),
+			    numCL, clPosition);
+		}
+		numCL = 0;
+	    }
+
+	    envPtr->line += adjust;
+	    TclCompileScript(interp, tokenPtr->start, tokenPtr->size, envPtr);
+	    envPtr->line -= adjust;
+	    numObjsToConcat++;
+	    break;
+
 	case TCL_TOKEN_SUB_EXPR:
 	    /*
 	     * TIP 759: expression substitution [(...)]. Push any accumulated
