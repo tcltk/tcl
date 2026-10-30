@@ -63,13 +63,14 @@ to the userbase.
  - [-Wformat warnings with MSYS2 UCRT64](https://core.tcl-lang.org/tcl/tktview/ae62ba)
  - [error deleting: file already exists on Vista](https://core.tcl-lang.org/tcl/tktview/3006571)
  - [lset on empty list is allowed when index argument is large](https://core.tcl-lang.org/tcl/tktview/13d3c0d)
+ - [missing locks, when transferring a channel to another thread](https://core.tcl-lang.org/tcl/tktview/815e24)
 
 # Updated bundled packages, libraries, standards, data
  - http 2.10.3
  - msgcat 1.7.2
  - tcltest 2.6.1
  - tcl::idna 1.0.2
- - tzcode 2026e
+ - tzdata 2026e
 
 Release Tcl 9.1.0 arises from the check-in with tag `core-9-1-0`.
 
@@ -133,4 +134,4 @@ for list operations on large lists.
 
 # Updated bundled packages, libraries, standards, data
  - Unicode 18.0.0
- - platorm 1.2.0: Add support for musl C runtime
+ - platform 1.2.0: Add support for musl C runtime
