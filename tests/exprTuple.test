@@ -1,0 +1,203 @@
+# Commands covered: expr, tuple assignment (a, b) = list (TIP 759)
+#
+# This file contains a collection of tests for the tuple assignment of
+# TIP 759 in expressions. Sourcing this file into Tcl runs the tests and
+# generates output for errors. No output means no errors were found.
+#
+# See the file "license.terms" for information on usage and redistribution of
+# this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2.5
+    namespace import -force ::tcltest::*
+}
+
+::tcltest::loadTestedCommands
+catch [list package require -exact tcl::test [info patchlevel]]
+
+testConstraint testexprparser [llength [info commands testexprparser]]
+
+test exprTuple-1.1 {three names} -setup {
+    unset -nocomplain a b c
+} -body {
+    list [expr {(a, b, c) = {1 2 3}}] $a $b $c
+} -result {{1 2 3} 1 2 3}
+test exprTuple-1.2 {extra elements are ignored} -setup {
+    unset -nocomplain h t
+} -body {
+    expr {(h, t) = {1 2 3}}
+    list $h $t
+} -result {1 2}
+test exprTuple-1.3 {missing elements give ""} -setup {
+    unset -nocomplain p q r
+} -body {
+    expr {(p, q, r) = {1 2}}
+    list $p $q $r
+} -result {1 2 {}}
+test exprTuple-1.4 {nested} -setup {
+    unset -nocomplain a b c d e f
+} -body {
+    expr {((a, b), c, (d, (e, f))) = {{1 2} 3 {4 {5 6}}}}
+    list $a $b $c $d $e $f
+} -result {1 2 3 4 5 6}
+test exprTuple-1.5 {value built as a list} -setup {
+    unset -nocomplain x0 y0 x1 y1
+} -body {
+    expr {((x0, y0), (x1, y1)) = ({0 0}, {3 4})}
+    list $x0 $y0 $x1 $y1
+} -result {0 0 3 4}
+test exprTuple-1.6 {two matrices} -setup {
+    unset -nocomplain x y z u v w
+} -body {
+    expr {((x,y,z),(u,v,w)) = ({1 2 3},{4 5 6})}
+    list $x $y $z $u $v $w
+} -result {1 2 3 4 5 6}
+test exprTuple-1.7 {extra parentheses around the target} -setup {
+    unset -nocomplain a b
+} -body {
+    expr {((a, b)) = {5 6}}
+    list $a $b
+} -result {5 6}
+test exprTuple-1.8 {one name in parentheses is a plain assignment} -setup {
+    unset -nocomplain x
+} -body {
+    expr {(x) = {1 2}}
+    set x
+} -result {1 2}
+test exprTuple-1.9 {array elements, quoted and braced} -setup {
+    unset -nocomplain A
+} -body {
+    set i 3
+    expr {("A($i)", {A(k)}) = {x y}}
+    lsort -stride 2 [array get A]
+} -result {3 x k y}
+test exprTuple-1.10 {braced qualified name} -setup {
+    unset -nocomplain a ::nsv
+    proc p {v} {expr {(a, {::nsv}) = $v}; list $a $::nsv}
+} -body {
+    p {1 2}
+} -cleanup {
+    rename p {}
+    unset -nocomplain ::nsv
+} -result {1 2}
+test exprTuple-1.11 {bad list} -body {
+    set bad "not a \{list"
+    expr {(a, b) = $bad}
+} -returnCodes error -result {unmatched open brace in list}
+test exprTuple-1.12 {comparison of lists is not an assignment} {
+    set a 1; set b 2
+    expr {($a, $b) == (1, 2)}
+} 1
+test exprTuple-1.13 {not compiled} -setup {
+    unset -nocomplain m n
+} -body {
+    set e {(m, n) = {7 8}}
+    expr $e
+    list $m $n
+} -result {7 8}
+
+# In procedures
+
+test exprTuple-2.1 {expression script} -setup {
+    proc p {v} {( (x, y, z) = $v; $x + $y + $z )}
+} -body {
+    p {1 2 3}
+} -cleanup {
+    rename p {}
+} -result 6
+test exprTuple-2.2 {distance between two points} -setup {
+    proc distance {p q} {(
+	((x0, y0), (x1, y1)) = ($p, $q);
+	hypot($x1 - $x0, $y1 - $y0)
+    )}
+} -body {
+    distance {0 0} {3 4}
+} -cleanup {
+    rename distance {}
+} -result 5.0
+test exprTuple-2.3 {global} -setup {
+    unset -nocomplain g1 g2
+    proc p {v} {global g1 g2; expr {(g1, g2) = $v}}
+} -body {
+    p {7 8}
+    list $g1 $g2
+} -cleanup {
+    rename p {}
+} -result {7 8}
+test exprTuple-2.4 {upvar} -setup {
+    set X 0
+    proc p {v} {upvar 1 X x; expr {(x, y) = $v}; list $x $y}
+} -body {
+    list [p {5 6}] $X
+} -cleanup {
+    rename p {}
+} -result {{5 6} 5}
+test exprTuple-2.5 {write trace} -setup {
+    proc p {v} {
+	set ::tr {}
+	trace add variable a write {apply {args {lappend ::tr w}}}
+	expr {(a, b) = $v}
+	list $a $b $::tr
+    }
+} -body {
+    p {1 2}
+} -cleanup {
+    rename p {}
+} -result {1 2 w}
+test exprTuple-2.6 {compiled locals: no list of names at run time} -setup {
+    proc p {v} {expr {(p, q) = $v}; list $p $q}
+} -body {
+    set code [tcl::unsupported::disassemble proc p]
+    list [p {1 2}] [string match {*push*""*tupleAssign*} $code]
+} -cleanup {
+    rename p {}
+} -result {{1 2} 1}
+
+# Names given by values
+
+test exprTuple-3.1 {name given by a variable} -setup {
+    unset -nocomplain a vn
+} -body {
+    set n vn
+    expr {(a, $n) = {1 2}}
+    list $a $vn
+} -result {1 2}
+test exprTuple-3.2 {name given by a number} -setup {
+    unset -nocomplain a 1
+} -body {
+    expr {(a, 1) = {1 2}}
+    set 1
+} -cleanup {
+    unset -nocomplain 1
+} -result 2
+test exprTuple-3.3 {name given by a function} -setup {
+    unset -nocomplain v_x b
+    proc ::tcl::mathfunc::nom {t} {return v_$t}
+} -body {
+    expr {(nom("x"), b) = {5 6}}
+    list $v_x $b
+} -cleanup {
+    rename ::tcl::mathfunc::nom {}
+} -result {5 6}
+test exprTuple-3.4 {name given by an expression} -setup {
+    unset -nocomplain a 3
+} -body {
+    expr {(a, 1+2) = {1 2}}
+    set 3
+} -cleanup {
+    unset -nocomplain 3
+} -result 2
+
+# Tcl_ParseExpr
+
+test exprTuple-4.1 {Tcl_ParseExpr} -constraints testexprparser -body {
+    testexprparser {(a, b) = $v} -1
+} -result {- {} 0 subexpr {(a, b) = $v} 10 operator = 0 subexpr {(a, b)} 5 operator {} 0 subexpr a 1 text a 0 subexpr b 1 text b 0 subexpr {$v} 2 variable {$v} 1 text v 0 {}}
+
+# cleanup
+::tcltest::cleanupTests
+return
+
+# Local Variables:
+# mode: tcl
+# End:

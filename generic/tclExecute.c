@@ -688,6 +688,8 @@ static ByteCode *	CompileExprObj(Tcl_Interp *interp, Tcl_Obj *objPtr);
 static void		DeleteExecStack(ExecStack *esPtr);
 static void		DupExprCodeInternalRep(Tcl_Obj *srcPtr,
 			    Tcl_Obj *copyPtr);
+static Tcl_Obj *	TupleAssign(Tcl_Interp *interp, Tcl_Obj *names,
+			    Tcl_Obj *value, Tcl_Obj *paths);
 static Tcl_Obj *	ExecuteExtendedBinaryMathOp(Tcl_Interp *interp,
 			    int opcode, Tcl_Obj **constants,
 			    Tcl_Obj *valuePtr, Tcl_Obj *value2Ptr);
@@ -7015,6 +7017,20 @@ TEBCresume(
 	NEXT_INST_F(9, 0, 1);
     }
 
+    case INST_TUPLE_ASSIGN:
+	TRACE("\"%.30s\" \"%.30s\" => ", O2S(OBJ_AT_DEPTH(2)),
+		O2S(OBJ_UNDER_TOS));
+	DECACHE_STACK_INFO();
+	objResultPtr = TupleAssign(interp, OBJ_AT_DEPTH(2), OBJ_UNDER_TOS,
+		OBJ_AT_TOS);
+	CACHE_STACK_INFO();
+	if (objResultPtr == NULL) {
+	    TRACE_ERROR(interp);
+	    goto gotError;
+	}
+	TRACE_APPEND_OBJ(objResultPtr);
+	NEXT_INST_V(1, 3, 1);
+
     case INST_LMAP_COLLECT:
 	/*
 	 * This instruction is only issued by lmap. The stack is:
@@ -8347,6 +8363,118 @@ WidePwrSmallExpon(
 	break;
     }
     return wResult;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TupleIndexPath, TupleAssign --
+ *
+ *	TIP 759. TupleIndexPath gives the element of a nested list at a path
+ *	of indices, or NULL when there is none (lindex semantics).
+ *
+ *	TupleAssign does the work of INST_TUPLE_ASSIGN: for each entry
+ *	{LOCAL i0 i1 ...} of
+ *	paths, the element of value at path i0 i1 ... ("" if absent, like
+ *	lindex) is stored in the compiled local LOCAL, or, when LOCAL is -1,
+ *	in the variable named by the element of names at the same path.
+ *
+ * Results:
+ *	value, or NULL on error (message in the interpreter result).
+ *
+ *----------------------------------------------------------------------
+ */
+
+static Tcl_Obj *
+TupleIndexPath(
+    Tcl_Interp *interp,
+    Tcl_Obj *listPtr,
+    Tcl_Obj *const *pathv,
+    Tcl_Size pathc,
+    Tcl_Obj **resultPtr)	/* Element (borrowed), or NULL if absent. */
+{
+    Tcl_Obj *cur = listPtr;
+    Tcl_Size k;
+
+    for (k = 0; k < pathc; k++) {
+	Tcl_Obj **elemv;
+	Tcl_Size elemc;
+	Tcl_WideInt idx;
+
+	if (Tcl_GetWideIntFromObj(interp, pathv[k], &idx) != TCL_OK
+		|| TclListObjGetElements(interp, cur, &elemc, &elemv)
+			!= TCL_OK) {
+	    return NULL;
+	}
+	if (idx < 0 || idx >= elemc) {
+	    *resultPtr = NULL;
+	    return listPtr;
+	}
+	cur = elemv[idx];
+    }
+    *resultPtr = cur;
+    return listPtr;
+}
+
+static Tcl_Obj *
+TupleAssign(
+    Tcl_Interp *interp,
+    Tcl_Obj *names,
+    Tcl_Obj *value,
+    Tcl_Obj *paths)
+{
+    Interp *iPtr = (Interp *) interp;
+    Tcl_Obj **pathv;
+    Tcl_Size pathc, i;
+
+    if (TclListObjGetElements(interp, paths, &pathc, &pathv) != TCL_OK) {
+	return NULL;
+    }
+    for (i = 0; i < pathc; i++) {
+	Tcl_Obj **ev, *elemPtr, *stored;
+	Tcl_Size ec;
+	Tcl_WideInt local;
+
+	if (TclListObjGetElements(interp, pathv[i], &ec, &ev) != TCL_OK
+		|| ec < 2
+		|| Tcl_GetWideIntFromObj(interp, ev[0], &local) != TCL_OK
+		|| TupleIndexPath(interp, value, ev + 1, ec - 1, &elemPtr)
+			== NULL) {
+	    return NULL;
+	}
+	if (elemPtr == NULL) {
+	    TclNewObj(elemPtr);
+	}
+	Tcl_IncrRefCount(elemPtr);
+	if (local >= 0) {
+	    Var *varPtr = &iPtr->varFramePtr->compiledLocals[local];
+
+	    while (TclIsVarLink(varPtr)) {
+		varPtr = varPtr->value.linkPtr;
+	    }
+	    stored = TclPtrSetVarIdx(interp, varPtr, NULL, NULL, NULL,
+		    elemPtr, TCL_LEAVE_ERR_MSG, (int) local);
+	} else {
+	    Tcl_Obj *namePtr = NULL;
+
+	    if (TupleIndexPath(interp, names, ev + 1, ec - 1, &namePtr)
+		    == NULL || namePtr == NULL) {
+		Tcl_DecrRefCount(elemPtr);
+		if (namePtr == NULL) {
+		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			    "bad tuple assignment target", TCL_AUTO_LENGTH));
+		}
+		return NULL;
+	    }
+	    stored = Tcl_ObjSetVar2(interp, namePtr, NULL, elemPtr,
+		    TCL_LEAVE_ERR_MSG);
+	}
+	Tcl_DecrRefCount(elemPtr);
+	if (stored == NULL) {
+	    return NULL;
+	}
+    }
+    return value;
 }
 
 /*

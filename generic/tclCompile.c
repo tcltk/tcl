@@ -993,6 +993,14 @@ InstructionDesc const tclInstructionTable[] = {
 	 * of the opnd0'th list of variables.
 	 * Stack: ... listObjs... iterTracker info =>
 	 *			... listObjs... iterTracker info stepIdx */
+    TCL_INSTRUCTION_ENTRY(
+	"tupleAssign",		-2),
+	/* Tuple assignment "(a, (b, c), d) = v" in expr (TIP 759). paths is
+	 * a list with one entry {LOCAL i0 i1 ...} per name: the element of v
+	 * at path i0 i1 ... ("" if absent, as for lindex) is stored in the
+	 * compiled local LOCAL or, when LOCAL is -1, in the variable named
+	 * at the same path in names.
+	 * Stack:  ... names value paths => ... value */
 
     {NULL, 0, 0, 0, {OPERAND_NONE}}
 };

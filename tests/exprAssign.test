@@ -280,9 +280,12 @@ test exprAssign-5.1 {comparison is not an assignment} -body {
 test exprAssign-5.4 {missing target} -body {
     expr {= 1}
 } -returnCodes error -match glob -result {missing operand*}
-test exprAssign-5.6 {name in parentheses} -body {
+test exprAssign-5.6 {name in parentheses (TIP 759 tuple)} -setup {
+    unset -nocomplain a
+} -body {
     expr {(a) = 1}
-} -returnCodes error -match glob -result {invalid bareword "a"*}
+    set a
+} -result 1
 test exprAssign-5.7 {missing operator} -body {
     expr {1 x = 2}
 } -returnCodes error -match glob -result {invalid bareword "x"*}

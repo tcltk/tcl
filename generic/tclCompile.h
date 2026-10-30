@@ -974,6 +974,7 @@ enum TclInstruction {
     INST_ARITH_SERIES,
     INST_UPLEVEL,
     INST_FOREACH_INDEX,
+    INST_TUPLE_ASSIGN,		/* TIP 759: (a, (b, c)) = v in expr */
 
     /* The last opcode */
     LAST_INST_OPCODE

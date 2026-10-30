@@ -282,6 +282,22 @@ value is the name (\fB$ref = 0\fR). The variable is resolved as by
 \fBset\fR: in a procedure, a name that is not qualified is a local
 variable (see \fBglobal\fR, \fBvariable\fR and \fBupvar\fR).
 Assignment groups right-to-left: \fBa = b = 0\fR sets both variables.
+.VE TIP282
+.VS TIP759
+.TP 20
+\fB(\fIname\fB, \fIname\fB, \fR...\fB) = \fIx\fR
+.
+Tuple assignment. The target is a list of names, as written for a list
+(see \fBOPERANDS\fR), whose elements are variable names or nested lists
+of names. As for \fB=\fR, a name is a bareword or any other operand whose
+value is the name (\fB"A($i)"\fR, \fB{::ns::v}\fR, \fB$ref\fR). Each variable is set
+to the element of the value of \fIx\fR at the same place, as given by
+\fBlindex\fR: a missing element gives the empty string, extra elements
+are ignored. The value of the assignment is the value of \fIx\fR. For
+instance, \fB((x0, y0), (x1, y1)) = ($p, $q)\fR sets four variables from
+two points.
+.VE TIP759
+.VS TIP282
 .TP 20
 \fIx\fB ; \fIy\fR
 .
@@ -522,6 +538,18 @@ A sequence of computations, each result stored in a variable:
 }
 .CE
 .VE TIP282
+.PP
+.VS TIP759
+The distance between two points, given as lists {x y}, with a tuple
+assignment in an expression script:
+.PP
+.CS
+proc distance {p q} {(
+    ((x0, y0), (x1, y1)) = ($p, $q);
+    hypot($x1 - $x0, $y1 - $y0)
+)}
+.CE
+.VE TIP759
 .PP
 Define a procedure that computes an
 .QW interesting

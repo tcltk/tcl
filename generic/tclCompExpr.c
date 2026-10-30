@@ -511,6 +511,8 @@ typedef struct JumpList {
     struct JumpList *next;	/* Point to next item on the stack */
 } JumpList;
 
+#define TUPLE_MAX_DEPTH 32	/* Nesting limit of (a, (b, c)) = list */
+
 /*
  * Declarations for local functions to this file:
  */
@@ -539,6 +541,15 @@ static int		ParseExprSubst(Tcl_Interp *interp, const char *start,
 			    Tcl_Parse *parsePtr, int depth);
 static int		AssignFollows(const char *start, Tcl_Size numBytes);
 static int		SimpleLocalName(Tcl_Obj *nameObj);
+static const char *	FindTupleTarget(const char *start, Tcl_Size numBytes);
+static void		CollectTuplePaths(OpNode *nodes, int index, int *path,
+			    int depth, int *counter, int root, Tcl_Obj *paths,
+			    CompileEnv *envPtr, Tcl_Obj *const *names,
+			    int *nameIdx);
+static int		TupleNamesOnly(OpNode *nodes, int index);
+static int		TupleRoot(OpNode *nodes, int index);
+static int		TupleLocalNames(OpNode *nodes, int index,
+			    Tcl_Obj *const *names, int *countPtr);
 static int		ParseExpr(Tcl_Interp *interp, const char *start,
 			    Tcl_Size numBytes, OpNode **opTreePtr,
 			    Tcl_Obj *litList, Tcl_Obj *funcList,
@@ -593,6 +604,241 @@ SimpleLocalName(
 	}
     }
     return length > 0;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tuple assignment (a, (b, c)) = $list --
+ *
+ *	TupleNamesOnly: is a tuple target made only of literal names, commas
+ *	and parentheses? Then its literals, consumed in order while it is
+ *	compiled, are exactly its leaf names.
+ *
+ *	TupleLocalNames: are those names all simple (not qualified, not an
+ *	array element), so that each is a compiled local? *countPtr receives
+ *	their number.
+ *
+ *	CollectTuplePaths: for each leaf name, in order, the list
+ *	{LOCAL i0 i1 ...}: the compiled local of the name (or -1, the name
+ *	is then taken at the same path in the list of names) and the path of
+ *	indices of its value.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TupleRoot(
+    OpNode *nodes,
+    int index)			/* Left operand of an ASSIGN node. */
+{
+    /*
+     * The LIST node of a tuple target, under any extra parentheses, or -1
+     * when the target is not a tuple.
+     */
+
+    while (index >= 0 && (nodes[index].lexeme == NULL_FUNC
+	    || nodes[index].lexeme == OPEN_PAREN)) {
+	index = nodes[index].right;
+    }
+    return (index >= 0 && nodes[index].lexeme == LIST) ? index : -1;
+}
+
+static int
+TupleNamesOnly(
+    OpNode *nodes,
+    int index)
+{
+    if (index == OT_LITERAL) {
+	return 1;
+    }
+    if (index < 0) {
+	return 0;
+    }
+    switch (nodes[index].lexeme) {
+    case COMMA:
+	return TupleNamesOnly(nodes, nodes[index].left)
+		&& TupleNamesOnly(nodes, nodes[index].right);
+    case OPEN_PAREN:
+    case LIST:
+    case NULL_FUNC:
+	return TupleNamesOnly(nodes, nodes[index].right);
+    default:
+	return 0;
+    }
+}
+
+static int
+TupleLocalNames(
+    OpNode *nodes,
+    int index,
+    Tcl_Obj *const *names,
+    int *countPtr)
+{
+    if (index == OT_LITERAL) {
+	return SimpleLocalName(names[(*countPtr)++]);
+    }
+    if (index < 0) {
+	return 0;
+    }
+    switch (nodes[index].lexeme) {
+    case COMMA:
+	return TupleLocalNames(nodes, nodes[index].left, names, countPtr)
+		&& TupleLocalNames(nodes, nodes[index].right, names, countPtr);
+    case OPEN_PAREN:
+    case LIST:
+    case NULL_FUNC:
+	return TupleLocalNames(nodes, nodes[index].right, names, countPtr);
+    default:
+	return 0;
+    }
+}
+
+static void
+CollectTuplePaths(
+    OpNode *nodes,
+    int index,
+    int *path,
+    int depth,
+    int *counter,
+    int root,
+    Tcl_Obj *paths,
+    CompileEnv *envPtr,		/* With names: compiled locals. */
+    Tcl_Obj *const *names,	/* Leaf names in order, or NULL. */
+    int *nameIdx)
+{
+    int k;
+
+    if (index < 0 || (nodes[index].lexeme != COMMA
+	    && nodes[index].lexeme != LIST && nodes[index].lexeme != OPEN_PAREN
+	    && nodes[index].lexeme != NULL_FUNC)) {
+	/*
+	 * A leaf: a name, or any other operand whose value is a name (the
+	 * list of names is then built at run time).
+	 */
+
+	Tcl_Obj *p = Tcl_NewListObj(0, NULL);
+	Tcl_Size lv = -1;
+
+	if (names != NULL) {
+	    Tcl_Obj *nameObj = names[(*nameIdx)++];
+
+	    if (envPtr->procPtr != NULL && SimpleLocalName(nameObj)) {
+		Tcl_Size nlen;
+		const char *nm = TclGetStringFromObj(nameObj, &nlen);
+
+		lv = TclFindCompiledLocal(nm, nlen, 1, envPtr);
+	    }
+	}
+	Tcl_ListObjAppendElement(NULL, p, Tcl_NewWideIntObj(lv));
+	path[depth] = (*counter)++;
+	for (k = 0; k <= depth; k++) {
+	    Tcl_ListObjAppendElement(NULL, p, Tcl_NewWideIntObj(path[k]));
+	}
+	Tcl_ListObjAppendElement(NULL, paths, p);
+	return;
+    }
+    switch (nodes[index].lexeme) {
+    case COMMA:
+	CollectTuplePaths(nodes, nodes[index].left, path, depth, counter, 0,
+		paths, envPtr, names, nameIdx);
+	CollectTuplePaths(nodes, nodes[index].right, path, depth, counter, 0,
+		paths, envPtr, names, nameIdx);
+	break;
+    case OPEN_PAREN:
+    case NULL_FUNC:
+	CollectTuplePaths(nodes, nodes[index].right, path, depth, counter,
+		root, paths, envPtr, names, nameIdx);
+	break;
+    case LIST:
+	if (root) {
+	    CollectTuplePaths(nodes, nodes[index].right, path, depth, counter,
+		    0, paths, envPtr, names, nameIdx);
+	} else if (depth + 1 < TUPLE_MAX_DEPTH) {
+	    int inner = 0;
+
+	    path[depth] = (*counter)++;
+	    CollectTuplePaths(nodes, nodes[index].right, path, depth + 1,
+		    &inner, 0, paths, envPtr, names, nameIdx);
+	}
+	break;
+    default:
+	break;
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FindTupleTarget --
+ *
+ *	Tuple assignment "(a, b, c) = $list". START points at an open
+ *	parenthesis. Scan forward to the matching close parenthesis and
+ *	check that it is followed by a single "=" (not "=="). Strings, braces
+ *	and brackets inside are skipped.
+ *
+ * Results:
+ *	A pointer to the matching ')' when the parenthesized group is the
+ *	target of an assignment, NULL otherwise.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static const char *
+FindTupleTarget(
+    const char *start,
+    Tcl_Size numBytes)
+{
+    const char *p = start, *end = start + numBytes;
+    int depth = 0;
+
+    while (p < end) {
+	switch (*p) {
+	case '\\':
+	    p++;
+	    break;
+	case '"':
+	    p++;
+	    while (p < end && *p != '"') {
+		if (*p == '\\') {
+		    p++;
+		}
+		p++;
+	    }
+	    break;
+	case '{': case '[': {
+	    char open = *p, close = (open == '{') ? '}' : ']';
+	    int d = 1;
+
+	    p++;
+	    while (p < end && d > 0) {
+		if (*p == '\\') {
+		    p++;
+		} else if (*p == open) {
+		    d++;
+		} else if (*p == close) {
+		    d--;
+		}
+		p++;
+	    }
+	    p--;
+	    break;
+	}
+	case '(':
+	    depth++;
+	    break;
+	case ')':
+	    if (--depth == 0) {
+		if (AssignFollows(p + 1, end - p - 1)) {
+		    return p;
+		}
+		return NULL;
+	    }
+	    break;
+	}
+	p++;
+    }
+    return NULL;
 }
 
 /*
@@ -713,6 +959,10 @@ ParseExpr(
     const char *exprStart = start;
     int parenDepth = 0;		/* TIP 759: depth of parentheses, for an
 				 * expression substitution [(...)]. */
+    const char *tupleEnd = NULL;
+				/* TIP 759: the ")" that ends the target of a
+				 * tuple assignment (a, b) = list. */
+    int mayAssign = (memchr(start, '=', numBytes) != NULL);
 
     if (substPtr != NULL) {
 	substPtr->length = 0;
@@ -824,7 +1074,15 @@ ParseExpr(
 		 */
 
 		if (literal && IsOperator(lastParsed)
-			&& AssignFollows(start + scanned, numBytes - scanned)) {
+			&& (AssignFollows(start + scanned, numBytes - scanned)
+			|| ((tupleEnd != NULL) && (start < tupleEnd)
+			&& (start[scanned + TclParseAllWhiteSpace(start + scanned,
+			numBytes - scanned)] != '(')))) {
+		    /*
+		     * In the target of a tuple assignment (TIP 759), a
+		     * bareword that is not a function call is a name too.
+		     */
+
 		    Tcl_ListObjAppendElement(NULL, litList, literal);
 		    complete = lastParsed = OT_LITERAL;
 		    start += scanned;
@@ -1205,6 +1463,13 @@ ParseExpr(
 		 * LIST node.
 		 */
 
+		if (mayAssign && (tupleEnd == NULL || start > tupleEnd)) {
+		    /*
+		     * Is this group the target of a tuple assignment?
+		     */
+
+		    tupleEnd = FindTupleTarget(start, numBytes);
+		}
 		nodePtr->lexeme = NULL_FUNC;
 		nodePtr->precedence = prec[NULL_FUNC];
 		nodePtr->mark = MARK_RIGHT;
@@ -2679,6 +2944,15 @@ CompileExprTree(
     Tcl_Size assignNode[ASSIGN_MAX], assignLocal[ASSIGN_MAX];
     int nAssign = 0;
 
+    /*
+     * TIP 759: "(a, b) = value": the first literal of each such ASSIGN node,
+     * where its leaf names begin.
+     */
+
+    Tcl_Size tupleNode[ASSIGN_MAX];
+    Tcl_Obj *const *tupleLit[ASSIGN_MAX];
+    int nTupleLit = 0;
+
     while (1) {
 	int next;
 	JumpList *freePtr, *newJump;
@@ -2688,6 +2962,27 @@ CompileExprTree(
 
 	    if (nodePtr->lexeme == QUESTION) {
 		convert = true;
+	    }
+	    if ((nodePtr->lexeme == ASSIGN) && (TupleRoot(nodes, next) >= 0)
+		    && (nTupleLit < ASSIGN_MAX)) {
+		int nNames = 0;
+
+		tupleNode[nTupleLit] = nodePtr - nodes;
+		tupleLit[nTupleLit++] = *litObjvPtr;
+		if ((envPtr->procPtr != NULL) && TupleNamesOnly(nodes, next)
+			&& TupleLocalNames(nodes, next, *litObjvPtr, &nNames)) {
+		    /*
+		     * Every name is a compiled local: tupleAssign stores by
+		     * index and never reads the list of names. It is not
+		     * built at run time: an empty literal takes its place on
+		     * the stack, and its literals are skipped.
+		     */
+
+		    PUSH(	"");
+		    *litObjvPtr += nNames;
+		    nodePtr->mark++;
+		    continue;
+		}
 	    }
 	} else if (nodePtr->mark == MARK_RIGHT) {
 	    next = nodePtr->right;
@@ -2771,6 +3066,37 @@ CompileExprTree(
 	    case ASSIGN: {
 		int d;
 
+		if (TupleRoot(nodes, nodePtr->left) >= 0) {
+		    /*
+		     * TIP 759: tuple assignment "(a, (b, c), d) = value": the
+		     * stack holds the (nested) list of names, or "", and the
+		     * value. tupleAssign stores each leaf (lindex semantics:
+		     * a missing element gives "") and leaves the value.
+		     */
+
+		    int path[TUPLE_MAX_DEPTH], counter = 0, t, nameIdx = 0;
+		    Tcl_Obj *paths = Tcl_NewListObj(0, NULL);
+		    Tcl_Obj *const *names = NULL;
+		    Tcl_Size length;
+		    const char *bytes;
+
+		    for (t = 0; t < nTupleLit; t++) {
+			if (tupleNode[t] == nodePtr - nodes) {
+			    break;
+			}
+		    }
+		    if (t < nTupleLit && TupleNamesOnly(nodes, nodePtr->left)) {
+			names = tupleLit[t];
+		    }
+		    Tcl_IncrRefCount(paths);
+		    CollectTuplePaths(nodes, TupleRoot(nodes, nodePtr->left),
+			    path, 0, &counter, 1, paths, envPtr, names, &nameIdx);
+		    bytes = TclGetStringFromObj(paths, &length);
+		    PushLiteral(envPtr, bytes, length);
+		    Tcl_DecrRefCount(paths);
+		    OP(		TUPLE_ASSIGN);
+		    break;
+		}
 		for (d = 0; d < nAssign; d++) {
 		    if (assignNode[d] == nodePtr - nodes) {
 			break;
