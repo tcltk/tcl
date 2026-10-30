@@ -748,7 +748,7 @@ NewLStringObj(
      * Implementation will not work with non-ASCII. Error out up front.
      */
     for (i = 0; i < lstringRepPtr->strlen; ++i) {
-        if (string[i] <= 0 || string[i] > 127) {
+        if (string[i] <= 0 || string[i] & 0x80) {
             Tcl_Free(lstringRepPtr->string);
             Tcl_Free(lstringRepPtr);
             Tcl_SetResult(interp, "lstring only supports Unicode range U+0001-U+007F", TCL_STATIC);
