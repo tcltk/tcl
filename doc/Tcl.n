@@ -94,14 +94,15 @@ substituted into the word in place of the brackets and all of the
 characters between them.
 There may be any number of command substitutions in a single word.
 Command substitution is not performed on words enclosed in braces.
-.IP "[8] \fBVariable substitution.\fR"
+.IP "[8] \fBVariable and expression substitution.\fR"
 If a word contains a dollar-sign
 .PQ $
 followed by one of the forms
 described below, then Tcl performs \fIvariable
-substitution\fR:  the dollar-sign and the following characters are
-replaced in the word by the value of a variable.
-Variable substitution may take any of the following forms:
+substitution\fR or \fIexpression substitution\fR:  the dollar-sign and the following characters are
+replaced in the word by the value of a variable or of an expression.
+Variable substitution may take any of the following three forms;
+the fourth form is expression substitution:
 .RS
 .TP 15
 \fB$\fIname\fR
@@ -145,25 +146,27 @@ A dollar-sign followed by two open parentheses begins an
 The expression is the text between the two open parentheses and the first
 close parenthesis that balances the parentheses inside the text, and that
 close parenthesis must be followed immediately by a second one.
-Leaving out an open parenthesis is therefore an error, not a shorter
-expression: \fB$((1+2)*3)\fR is rejected, and should be written
-\fB$(((1+2)*3))\fR.
-A space between the dollar-sign and the second open parenthesis, as in
-\fB$( (1+2))\fR, is not an expression substitution; as before it is a
-(here invalid) array reference with an empty name.
-Parentheses nested inside are counted, and parentheses inside braces,
-double quotes or bracketed commands are skipped.
+Parentheses inside braces, double quotes or bracketed commands are not counted.
+.sp
+A \fB$((\fR that is not closed by a matching \fB))\fR is an error:
+\fB$((1+2)*3)\fR is rejected, and should be written \fB$(((1+2)*3))\fR
+or, with spaces, \fB$(( (1+2)*3 ))\fR.
+Any other form that begins with \fB$(\fR, such as \fB$( (1+2))\fR, is not an
+expression substitution; as before it is an array reference with an empty name.
+.sp
 The text is passed to \fBexpr\fR as if it were enclosed in braces:
 the Tcl parser performs no substitution on it, so that variable, command and
 backslash substitutions in it are performed once, by \fBexpr\fR, and the
-result of the expression is never substituted a second time. For example,
-.QW "\fBset area $(($width * $height))\fR"
+result of the expression is never substituted a second time.
+.sp
+For example,
+.QW "\fBset area $(( $width * $height ))\fR"
 sets \fBarea\fR to the product of the two variables, and
-.QW "\fBputs \N'34'n=$((2**10))!\N'34'\fR"
+.QW "\fBputs \N'34'n=$(( 2**10 ))!\N'34'\fR"
 prints
 .QW "\fBn=1024!\fR" .
 Extra parentheses around the expression make no difference:
-\fB$(($a+$b))\fR and \fB$((($a+$b)))\fR have the same value.
+\fB$(( $a+$b ))\fR and \fB$(( ($a+$b) ))\fR have the same value.
 .PP
 There may be any number of variable substitutions in a single word.
 Variable substitution is not performed on words enclosed in braces.
