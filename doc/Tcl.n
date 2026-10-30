@@ -133,6 +133,11 @@ and backslash substitution are performed on the characters between
 the quotes as described below.
 The double-quotes are not retained as part of the word.
 .IP "[5] \fBArgument expansion.\fR"
+A word of a command, or an operand of an expression, may be expanded
+into several.
+.RS
+.TP 5
+\fBArgument expansion in a command.\fR
 If a word starts with the string
 .QW {*}
 followed by a non-whitespace character, then the leading
@@ -146,6 +151,29 @@ substituted. For instance,
 .QW "cmd a {*}{b [c]} d {*}{$e f {g h}}"
 is equivalent to
 .QW "cmd a b {[c]} d {$e} f {g h}" .
+.TP 5
+\fBArgument expansion in an expression.\fR
+.VS TIP759
+If an argument of a function, or an element of a list, starts with the
+string
+.QW {*}
+immediately followed by the start of an operand, then the leading
+.QW {*}
+is removed and the rest of the operand is evaluated as any other
+operand. Its value is then parsed as a list, as in a command, and each
+of its elements becomes a separate argument of the function, or a
+separate element of the list. For instance, if the value of \fBL\fR is
+\fB3 1 2\fR, then
+.QW "max({*}$L, 0)"
+is equivalent to
+.QW "max(3, 1, 2, 0)" .
+Anywhere else in an expression, this prefix is an error; but
+.QW {*}
+followed by white space or by an operator, as in
+.QW "{*} eq \N'34'*\N'34'" ,
+is the braced string \fB*\fR (rule [6]).
+.VE TIP759
+.RE
 .IP "[6] \fBBraces.\fR"
 If the first character of a word, or of an operand of an expression,
 is an open brace
@@ -424,7 +452,7 @@ the variable becomes part of a single word, even if the variable's
 value contains spaces.
 .VS TIP759
 Likewise, in an expression, a substitution always gives a single
-operand: if the value of \fBx\fR is
+operand, except for argument expansion: if the value of \fBx\fR is
 \fB1 + 1\fR, then
 .QW "$x * 2"
 multiplies the string \fB1 + 1\fR by 2, which is an error, and does

@@ -153,6 +153,19 @@ parenthesized expression without a comma is not a list.
 .VE TIP759
 .RE
 .PP
+.VS TIP759
+An argument of a function, or an element of a list, may be prefixed by
+\fB{*}\fR, as in the argument expansion rule for \fBTcl\fR: its value is
+taken as a list, and each element of that list becomes a separate argument
+of the function, or a separate element of the list. For instance, if the
+value of \fBL\fR is \fB3 1 2\fR, \fBmax({*}$L, 0)\fR is \fBmax(3, 1, 2, 0)\fR
+and \fB(0, {*}$L)\fR is \fB0 3 1 2\fR. \fB{*}\fR is recognized only when it
+is immediately followed by the start of an operand (a number, a variable, a
+bracket, a brace, a quote, a name or an open parenthesis); elsewhere, as in
+\fB{*} eq "*"\fR, it is a braced string. It is an error to use \fB{*}\fR
+anywhere but before an argument of a function or an element of a list.
+.VE TIP759
+.PP
 Because \fBexpr\fR parses and performs substitutions on values that have
 already been parsed and substituted by \fBTcl\fR, it is usually best to enclose
 expressions in braces to avoid the first round of substitutions by

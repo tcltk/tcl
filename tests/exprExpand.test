@@ -1,0 +1,149 @@
+# Commands covered: expr, argument expansion {*} (TIP 759)
+#
+# This file contains a collection of tests for the argument expansion {*}
+# in expressions: arguments of functions and elements of lists. Sourcing
+# this file into Tcl runs the tests and generates output for errors. No
+# output means no errors were found.
+#
+# See the file "license.terms" for information on usage and redistribution of
+# this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2.5
+    namespace import -force ::tcltest::*
+}
+
+::tcltest::loadTestedCommands
+catch [list package require -exact tcl::test [info patchlevel]]
+
+testConstraint testexprparser [llength [info commands testexprparser]]
+
+# Arguments of functions
+
+test exprExpand-1.1 {all the arguments} {
+    set L {3 1 2}
+    expr {max({*}$L)}
+} 3
+test exprExpand-1.2 {with other arguments} {
+    set L {3 1 2}
+    expr {max(10, {*}$L)}
+} 10
+test exprExpand-1.3 {several expansions} {
+    set L {3 1 2}
+    expr {max({*}$L, 0, {*}{7 8})}
+} 8
+test exprExpand-1.4 {a point} {
+    set p {3 4}
+    expr {hypot({*}$p)}
+} 5.0
+test exprExpand-1.5 {command substitution} {
+    set L {3 1 2}
+    expr {max({*}[lsort -integer $L])}
+} 3
+test exprExpand-1.6 {empty list} -body {
+    expr {max({*}{})}
+} -returnCodes error -result {not enough arguments for math function "max"}
+test exprExpand-1.7 {in a procedure} -setup {
+    proc p {L} {expr {max({*}$L) + min({*}$L)}}
+} -body {
+    p {5 2 9}
+} -cleanup {
+    rename p {}
+} -result 11
+test exprExpand-1.8 {user function} -setup {
+    proc ::tcl::mathfunc::count {args} {llength $args}
+} -body {
+    set L {a b c}
+    expr {count(1, {*}$L, 2)}
+} -cleanup {
+    rename ::tcl::mathfunc::count {}
+} -result 5
+test exprExpand-1.9 {bytecode: expansion instructions} {
+    set code [tcl::unsupported::disassemble script {expr {max({*}$L)}}]
+    list [string match {*expandStart*expandStkTop*invokeExpanded*} $code]
+} 1
+test exprExpand-1.10 {break and continue in an expanded argument} -setup {
+    proc q {} {
+	set r {}
+	foreach x {1 2 3} {
+	    lappend r [expr {max(0, {*}[if {$x == 2} continue; list $x])}]
+	}
+	return $r
+    }
+} -body {
+    q
+} -cleanup {
+    rename q {}
+} -result {1 3}
+
+# Elements of lists
+
+test exprExpand-2.1 {concatenation} {
+    set a {1 2}; set b {x y}
+    expr {({*}$a, {*}$b)}
+} {1 2 x y}
+test exprExpand-2.2 {with other elements} {
+    set a {1 2}
+    expr {(0, {*}$a, 9)}
+} {0 1 2 9}
+test exprExpand-2.3 {with a nested list} {
+    set a {1 2}
+    expr {({*}$a, (5, 6))}
+} {1 2 {5 6}}
+test exprExpand-2.4 {empty list} {
+    expr {({*}{}, 1)}
+} 1
+test exprExpand-2.5 {in an expression script} {
+    lmap v {{1 2} {3 4}} {( ({*}$v, 0) )}
+} {{1 2 0} {3 4 0}}
+test exprExpand-2.6 {in an expression substitution} {
+    set L {3 1 2}
+    set x [( max({*}$L) )]
+} 3
+
+# Compatibility: {*} as a braced word
+
+test exprExpand-3.1 {braced word followed by white space} {
+    expr {{*} eq "*"}
+} 1
+test exprExpand-3.2 {braced word followed by an operator} {
+    expr {{*}eq "*"}
+} 1
+
+# Errors
+
+test exprExpand-4.1 {not an argument} -body {
+    set L {1 2}
+    expr {{*}$L}
+} -returnCodes error -match glob -result {{*} is allowed only for the arguments of a function or the elements of a list*}
+test exprExpand-4.2 {parentheses without a comma} -body {
+    set L {1 2}
+    expr {({*}$L)}
+} -returnCodes error -match glob -result {{*} is allowed only*}
+test exprExpand-4.3 {operand of an operator} -body {
+    set L {1 2}
+    expr {max(1, {*}$L + 1)}
+} -returnCodes error -match glob -result {{*} is allowed only*}
+test exprExpand-4.4 {in an assignment target} -body {
+    expr {(x, {*}$y) = {1 2 3}}
+} -returnCodes error -match glob -result {{*} is allowed only*}
+test exprExpand-4.5 {error code} -body {
+    catch {expr {{*}{1 2}}} m o
+    dict get $o -errorcode
+} -result {TCL PARSE EXPR EXPAND}
+
+# Tcl_ParseExpr
+
+test exprExpand-5.1 {Tcl_ParseExpr: a unary operator} -constraints {
+    testexprparser
+} -body {
+    testexprparser {max({*}$L)} -1
+} -result {- {} 0 subexpr {max({*}$L)} 6 operator max 0 subexpr {{*}$L} 4 operator {{*}} 0 subexpr {$L} 2 variable {$L} 1 text L 0 {}}
+
+# cleanup
+::tcltest::cleanupTests
+return
+
+# Local Variables:
+# mode: tcl
+# End:

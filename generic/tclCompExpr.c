@@ -220,6 +220,8 @@ enum LexemeCodes {
 				 * nothing, unless a comma follows at the top
 				 * of the parens: it then becomes LIST. */
     LIST = UNARY | 9,		/* TIP 759: the list (a, b, ...) */
+    EXPAND = UNARY | 10,	/* TIP 759: {*}, expansion of an argument of
+				 * a function or an element of a list. */
 
     /* Binary operator lexemes */
 
@@ -389,6 +391,7 @@ static const unsigned char prec[] = {
     PREC_UNARY,			/* BIT_NOT*/
     PREC_UNARY,			/* NULL_FUNC */
     PREC_UNARY,			/* LIST */
+    PREC_UNARY,			/* EXPAND */
 };
 
 /*
@@ -450,6 +453,7 @@ static const unsigned char instruction[] = {
     INST_BITNOT,		/* BIT_NOT*/
     0,				/* NULL_FUNC */
     0,				/* LIST */
+    0,				/* EXPAND */
 };
 
 /*
@@ -543,6 +547,8 @@ static int		ParseExprSubst(Tcl_Interp *interp, const char *start,
 			    Tcl_Size numBytes, Tcl_Size *lengthPtr,
 			    Tcl_Parse *parsePtr, int depth);
 static int		AssignFollows(const char *start, Tcl_Size numBytes);
+static int		ExpandPlacesValid(OpNode *nodes, unsigned int nodesUsed);
+static int		HasExpandedArg(OpNode *nodes, int index);
 static int		SimpleLocalName(Tcl_Obj *nameObj);
 static const char *	FindTupleTarget(const char *start, Tcl_Size numBytes);
 static void		CollectTuplePaths(OpNode *nodes, int index, int *path,
@@ -842,6 +848,88 @@ FindTupleTarget(
 	p++;
     }
     return NULL;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ExpandPlacesValid, HasExpandedArg --
+ *
+ *	TIP 759. ExpandPlacesValid: is each {*} (EXPAND node) an argument of
+ *	a function or an element of a list, the only places where the
+ *	elements of a value can stand for several values?
+ *
+ *	HasExpandedArg: has the function or list whose OPEN_PAREN node is
+ *	given an expanded argument? Its arguments are the right operand of
+ *	the OPEN_PAREN, separated by COMMA nodes.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+ExpandPlacesValid(
+    OpNode *nodes,
+    unsigned int nodesUsed)
+{
+    unsigned int i;
+
+    for (i = 0; i < nodesUsed; i++) {
+	int p;
+
+	if (nodes[i].lexeme != EXPAND) {
+	    continue;
+	}
+	p = nodes[i].parent;
+	while (p >= 0 && nodes[p].lexeme == COMMA) {
+	    p = nodes[p].parent;
+	}
+	if (p < 0 || nodes[p].lexeme != OPEN_PAREN) {
+	    return 0;
+	}
+	p = nodes[p].parent;
+	if (p < 0 || (nodes[p].lexeme != FUNCTION && nodes[p].lexeme != LIST)) {
+	    return 0;
+	}
+
+	/*
+	 * Not in the target of a (tuple) assignment.
+	 */
+
+	while (1) {
+	    int q = nodes[p].parent;
+
+	    if (q < 0 || !(nodes[q].lexeme == COMMA
+		    || nodes[q].lexeme == OPEN_PAREN
+		    || nodes[q].lexeme == NULL_FUNC
+		    || nodes[q].lexeme == LIST)) {
+		if (q >= 0 && nodes[q].lexeme == ASSIGN && nodes[q].left == p) {
+		    return 0;
+		}
+		break;
+	    }
+	    p = q;
+	}
+    }
+    return 1;
+}
+
+static int
+HasExpandedArg(
+    OpNode *nodes,
+    int index)			/* An argument, or COMMA of arguments. */
+{
+    if (index < 0) {
+	return 0;
+    }
+    switch (nodes[index].lexeme) {
+    case EXPAND:
+	return 1;
+    case COMMA:
+	return HasExpandedArg(nodes, nodes[index].left)
+		|| HasExpandedArg(nodes, nodes[index].right);
+    default:
+	return 0;
+    }
 }
 
 /*
@@ -1548,7 +1636,7 @@ ParseExpr(
 	     * expression, so long as the argument is a constant expression.
 	     */
 
-	    nodePtr->constant = (lexeme != FUNCTION);
+	    nodePtr->constant = (lexeme != FUNCTION) && (lexeme != EXPAND);
 
 	    /*
 	     * This unary operator is a new incomplete tree, so push it onto
@@ -1797,6 +1885,15 @@ ParseExpr(
 		     * Transfer the parse tree to the caller and return.
 		     */
 
+		    if (!ExpandPlacesValid(nodes, nodesUsed)) {
+			TclNewLiteralStringObj(msg, "{*} is allowed only for "
+				"the arguments of a function or the elements "
+				"of a list");
+			errCode = "EXPAND";
+			start = parsePtr->string;
+			scanned = 0;
+			goto error;
+		    }
 		    *opTreePtr = nodes;
 		    return TCL_OK;
 		}
@@ -2613,6 +2710,23 @@ ParseLexeme(
 	    }
 	}
     }
+    if ((numBytes > 3) && (start[0] == '{') && (start[1] == '*')
+	    && (start[2] == '}')) {
+	/*
+	 * TIP 759: "{*}" directly followed by the beginning of an operand is
+	 * the expansion of an argument (a syntax error before). Otherwise, as
+	 * before, it is the braced word "*": {*} eq "*", {*}eq "*", {*}-1.
+	 */
+
+	unsigned char next;
+
+	ParseLexeme(start + 3, numBytes - 3, &next, NULL);
+	if (((next & NODE_TYPE) == LEAF) || (next == BAREWORD)
+		|| (next == OPEN_PAREN)) {
+	    *lexemePtr = EXPAND;
+	    return 3;
+	}
+    }
     byte = UCHAR(*start);
     if (byte < sizeof(Lexeme) && Lexeme[byte] != 0) {
 	*lexemePtr = Lexeme[byte];
@@ -3070,6 +3184,10 @@ CompileExprTree(
 	    case FUNCTION: {
 		Tcl_Obj *cmdName;
 
+		if (HasExpandedArg(nodes, nodes[nodePtr->right].right)) {
+		    /* TIP 759: an argument is expanded: {*} */
+		    TclStartExpanding(envPtr);
+		}
 		TclNewLiteralStringObj(cmdName, "tcl::mathfunc::");
 		Tcl_AppendObjToObj(cmdName, *funcObjv);
 		funcObjv++;
@@ -3096,6 +3214,19 @@ CompileExprTree(
 
 		nodePtr->left = numWords;
 		numWords = 1;
+		if (HasExpandedArg(nodes, nodes[nodePtr->right].right)) {
+		    /*
+		     * An element is expanded, {*}: the list is built by the
+		     * command list, invoked with expansion.
+		     */
+
+		    Tcl_Obj *cmdName;
+
+		    TclStartExpanding(envPtr);
+		    TclNewLiteralStringObj(cmdName, "::list");
+		    PUSH_OBJ_FLAGS(cmdName, LITERAL_CMD_NAME);
+		    numWords = 2;
+		}
 		break;
 	    case QUESTION:
 		newJump = (JumpList *)TclStackAlloc(interp, sizeof(JumpList));
@@ -3202,9 +3333,21 @@ CompileExprTree(
 		 * to a number.
 		 */
 
-		OP4(		LIST, numWords);
+		if (HasExpandedArg(nodes, nodes[nodePtr->right].right)) {
+		    INVOKE4(	INVOKE_EXPANDED, numWords);
+		} else {
+		    OP4(	LIST, numWords);
+		}
 		numWords = nodePtr->left;
 		convert = false;
+		break;
+	    case EXPAND:
+		/*
+		 * TIP 759: {*}: the elements of the value are arguments of
+		 * the function (or elements of the list) being built.
+		 */
+
+		OP4(		EXPAND_STKTOP, envPtr->currStackDepth);
 		break;
 	    case FUNCTION:
 		/*
@@ -3212,7 +3355,11 @@ CompileExprTree(
 		 * command with the correct number of arguments.
 		 */
 
-		INVOKE4(	INVOKE_STK, numWords);
+		if (HasExpandedArg(nodes, nodes[nodePtr->right].right)) {
+		    INVOKE4(	INVOKE_EXPANDED, numWords);
+		} else {
+		    INVOKE4(	INVOKE_STK, numWords);
+		}
 
 		/*
 		 * Restore any saved numWords value.

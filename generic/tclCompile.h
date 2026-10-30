@@ -1311,6 +1311,7 @@ MODULE_SCOPE void	TclCompileInvocation(Tcl_Interp *interp,
 MODULE_SCOPE void	TclCompileScript(Tcl_Interp *interp,
 			    const char *script, Tcl_Size numBytes,
 			    CompileEnv *envPtr);
+MODULE_SCOPE void	TclStartExpanding(CompileEnv *envPtr);
 MODULE_SCOPE void	TclCompileSyntaxError(Tcl_Interp *interp,
 			    CompileEnv *envPtr);
 MODULE_SCOPE void	TclCompileTokens(Tcl_Interp *interp,

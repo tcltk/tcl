@@ -4054,6 +4054,13 @@ TclCleanupStackForBreakContinue(
  * ---------------------------------------------------------------------
  */
 
+void
+TclStartExpanding(
+    CompileEnv *envPtr)		/* TIP 759: for {*} in expressions. */
+{
+    StartExpanding(envPtr);
+}
+
 static void
 StartExpanding(
     CompileEnv *envPtr)
