@@ -1,0 +1,134 @@
+# Commands covered: expr, lists (a, b, ...) (TIP 759)
+#
+# This file contains a collection of tests for the comma lists of TIP 759 in
+# expressions. Sourcing this file into Tcl runs the tests and generates
+# output for errors. No output means no errors were found.
+#
+# See the file "license.terms" for information on usage and redistribution of
+# this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2.5
+    namespace import -force ::tcltest::*
+}
+
+::tcltest::loadTestedCommands
+catch [list package require -exact tcl::test [info patchlevel]]
+
+testConstraint testexprparser [llength [info commands testexprparser]]
+
+test exprList-1.1 {two elements} {
+    expr {(1,2)}
+} {1 2}
+test exprList-1.2 {computed elements, string element} {
+    set a 3
+    expr {($a, $a*2, "x y")}
+} {3 6 {x y}}
+test exprList-1.3 {nested lists} {
+    expr {((1,2),(3,4))}
+} {{1 2} {3 4}}
+test exprList-1.4 {nested, mixed} {
+    expr {((1,2), 3)}
+} {{1 2} 3}
+test exprList-1.5 {not converted to a number} {
+    expr {("0x10", 1)}
+} {0x10 1}
+test exprList-1.7 {list argument of a function} -setup {
+    proc ::tcl::mathfunc::len {l} {llength $l}
+} -body {
+    expr {len((1,2,3))}
+} -cleanup {
+    rename ::tcl::mathfunc::len {}
+} -result 3
+test exprList-1.8 {string comparison of a list} {
+    expr {(1, (2,3)) eq "1 {2 3}"}
+} 1
+test exprList-1.9 {conditional inside an element} {
+    expr {(1 ? 2 : 3, 4)}
+} {2 4}
+test exprList-1.10 {braced element} {
+    expr {("a b", {c})}
+} {{a b} c}
+test exprList-1.11 {lmap over two lists} {
+    lmap a {1 2 3} b {a b c} {expr {($a,$b)}}
+} {{1 a} {2 b} {3 c}}
+test exprList-1.12 {in a procedure} -setup {
+    proc p {x} {expr {($x, $x*$x)}}
+} -body {
+    p 4
+} -cleanup {
+    rename p {}
+} -result {4 16}
+test exprList-1.13 {not compiled} {
+    set e {(1, 2+3)}
+    expr $e
+} {1 5}
+test exprList-1.14 {many elements} {
+    expr {(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20)}
+} {1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20}
+test exprList-1.15 {deep nesting} {
+    expr {(((((1,2),3),4),5),6)}
+} {{{{{1 2} 3} 4} 5} 6}
+
+# Parentheses without a comma are unchanged
+
+test exprList-2.1 {parenthesized expression} {
+    expr {(1+2)*3}
+} 9
+test exprList-2.2 {constant folding is kept} {
+    string match {*push*"9"*done*} \
+	[tcl::unsupported::disassemble script {expr {(1+2)*3}}]
+} 1
+test exprList-2.3 {parens in a function argument} {
+    expr {max((1),2)}
+} 2
+test exprList-2.4 {unary minus and power} {
+    list [expr {-(2)**2}] [expr {(2)**2}]
+} {4 4}
+test exprList-2.5 {nested parens} {
+    expr {(((5)))}
+} 5
+test exprList-2.6 {numeric conversion of a function result is kept} {
+    list [expr {abs(0x80000000)}] [expr {min(300, "0xFF")}]
+} {2147483648 255}
+
+# Errors
+
+test exprList-3.1 {comma outside parens} -body {
+    expr {1,2}
+} -returnCodes error -match glob -result {unexpected "," outside function argument list*}
+test exprList-3.2 {comma after parens} -body {
+    expr {(1),2}
+} -returnCodes error -match glob -result {unexpected "," outside function argument list*}
+test exprList-3.3 {missing element} -body {
+    expr {(1,)}
+} -returnCodes error -match glob -result {missing function argument*}
+test exprList-3.4 {empty parens} -body {
+    expr {()}
+} -returnCodes error -match glob -result {empty subexpression*}
+
+# Tcl_ParseExpr
+
+test exprList-4.1 {Tcl_ParseExpr: a list is a call with no name} -constraints {
+    testexprparser
+} -body {
+    testexprparser {(1,2)} -1
+} -result {- {} 0 subexpr (1,2) 5 operator {} 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 {}}
+test exprList-4.2 {Tcl_ParseExpr: parens without a comma} -constraints {
+    testexprparser
+} -body {
+    testexprparser {(1+2)} -1
+} -result {- {} 0 subexpr 1+2 5 operator + 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 {}}
+test exprList-4.3 {Tcl_ParseExpr: list in a function call} -constraints {
+    testexprparser
+} -body {
+    testexprparser {f(1,(2,3))} -1
+} -result {- {} 0 subexpr f(1,(2,3)) 9 operator f 0 subexpr 1 1 text 1 0 subexpr (2,3) 5 operator {} 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 {}}
+
+# cleanup
+::tcltest::cleanupTests
+return
+
+# Local Variables:
+# mode: tcl
+# End:

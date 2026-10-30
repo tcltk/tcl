@@ -111,11 +111,11 @@ separate operands: it is ignored, except that it ends a number or a
 name. An operand ends at the first character that cannot continue it,
 such as white space, an operator, a comma or a parenthesis.
 Two operands must be separated by an operator, or by a comma between
-the arguments of a function; otherwise the expression is an error, as
+the arguments of a function or the elements of a list; otherwise the expression is an error, as
 in \fB1 2\fR or \fB\N'34'a\N'34'\N'34'b\N'34'\fR, whereas
 \fB\N'34'a\N'34'eq\N'34'a\N'34'\fR is valid.
 An operand is a number, a boolean value, a quoted word (rule [4]),
-a braced word (rule [6]), a substitution (rules [7] to [9]) or a function call.
+a braced word (rule [6]), a substitution (rules [7] to [9]), a function call or a list.
 The value of a substituted operand is always a single operand: it is
 never parsed again as an expression.
 .VE TIP759

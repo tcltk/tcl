@@ -212,6 +212,11 @@ enum LexemeCodes {
 				 * CLOSE_PAREN below. */
     NOT = UNARY | 6,
     BIT_NOT = UNARY | 7,
+    NULL_FUNC = UNARY | 8,	/* TIP 759: made before an open paren that
+				 * does not follow a function name. It does
+				 * nothing, unless a comma follows at the top
+				 * of the parens: it then becomes LIST. */
+    LIST = UNARY | 9,		/* TIP 759: the list (a, b, ...) */
 
     /* Binary operator lexemes */
 
@@ -309,7 +314,8 @@ enum Precedence {
     PREC_ADD,			/* "+", "-" */
     PREC_MULT,			/* "*", "/", "%" */
     PREC_EXPON,			/* "**" */
-    PREC_UNARY			/* "+", "-", FUNCTION, "!", "~" */
+    PREC_UNARY			/* "+", "-", FUNCTION, "!", "~", NULL_FUNC,
+				 * LIST */
 };
 
 /*
@@ -369,6 +375,8 @@ static const unsigned char prec[] = {
     PREC_OPEN_PAREN,		/* OPEN_PAREN */
     PREC_UNARY,			/* NOT*/
     PREC_UNARY,			/* BIT_NOT*/
+    PREC_UNARY,			/* NULL_FUNC */
+    PREC_UNARY,			/* LIST */
 };
 
 /*
@@ -426,6 +434,8 @@ static const unsigned char instruction[] = {
     0,				/* OPEN_PAREN */
     INST_LNOT,			/* NOT*/
     INST_BITNOT,		/* BIT_NOT*/
+    0,				/* NULL_FUNC */
+    0,				/* LIST */
 };
 
 /*
@@ -682,11 +692,11 @@ ParseExpr(
 				 * worth preserving. */
 
 	/*
-	 * Each pass through this loop adds up to one more OpNode. Allocate
-	 * space for one if required.
+	 * Each pass through this loop adds up to two more OpNodes (TIP 759: a
+	 * NULL_FUNC before an open paren). Allocate space if required.
 	 */
 
-	if (nodesUsed >= nodesAvailable) {
+	if (nodesUsed + 1 >= nodesAvailable) {
 	    size_t size = nodesUsed * 2;
 	    OpNode *newPtr = NULL;
 
@@ -1113,6 +1123,25 @@ ParseExpr(
 		goto error;
 	    }
 
+	    if ((lexeme == OPEN_PAREN) && (nodes[lastParsed].lexeme != FUNCTION)) {
+		/*
+		 * TIP 759: an open paren that is not the one of a function
+		 * call. Whether it starts a list (a, b, ...) is not known
+		 * yet: make room for a LIST node before it, a NULL_FUNC
+		 * node, which does nothing unless a comma turns it into a
+		 * LIST node.
+		 */
+
+		nodePtr->lexeme = NULL_FUNC;
+		nodePtr->precedence = prec[NULL_FUNC];
+		nodePtr->mark = MARK_RIGHT;
+		nodePtr->constant = 1;
+		nodePtr->prev = incomplete;
+		incomplete = lastParsed = nodesUsed;
+		nodesUsed++;
+		nodePtr++;
+	    }
+
 	    /*
 	     * Create an OpNode for the unary operator.
 	     */
@@ -1388,10 +1417,19 @@ ParseExpr(
 		}
 	    }
 
-	    /* Commas must appear only in function argument lists. */
+	    /*
+	     * Commas must appear only in function argument lists, or in a
+	     * list (a, b, ...) (TIP 759): the NULL_FUNC node made before its
+	     * open paren then becomes a LIST node.
+	     */
+
 	    if (lexeme == COMMA) {
-		if ((incompletePtr->lexeme != OPEN_PAREN)
-			|| (incompletePtr[-1].lexeme != FUNCTION)) {
+		if ((incompletePtr->lexeme == OPEN_PAREN)
+			&& (incompletePtr[-1].lexeme == NULL_FUNC)) {
+		    incompletePtr[-1].lexeme = LIST;
+		} else if ((incompletePtr->lexeme != OPEN_PAREN)
+			|| ((incompletePtr[-1].lexeme != FUNCTION)
+			&& (incompletePtr[-1].lexeme != LIST))) {
 		    TclNewLiteralStringObj(msg,
 			    "unexpected \",\" outside function argument list");
 		    errCode = "SURPRISE";
@@ -1707,13 +1745,15 @@ ConvertTreeToTokens(
 	     */
 
 	    switch (nodePtr->lexeme) {
+	    case NULL_FUNC:
 	    case OPEN_PAREN:
 	    case COMMA:
 	    case COLON:
 
 		/*
 		 * Historical practice has been to have no Tcl_Tokens for
-		 * these operators.
+		 * these operators. The NULL_FUNC node made before an open
+		 * paren (TIP 759) has none either.
 		 */
 
 		break;
@@ -1780,6 +1820,22 @@ ConvertTreeToTokens(
 	    start += scanned;
 	    numBytes -= scanned;
 
+	    if (nodePtr->lexeme == NULL_FUNC || nodePtr->lexeme == LIST) {
+		/*
+		 * TIP 759: these nodes have no text: the open paren that
+		 * follows is the one of the OPEN_PAREN node. A list
+		 * (a, b, ...) is shown as a call of a function whose name,
+		 * the TCL_TOKEN_OPERATOR token, is empty.
+		 */
+
+		if (nodePtr->lexeme == LIST) {
+		    subExprTokenPtr = parsePtr->tokenPtr + subExprTokenIdx;
+		    subExprTokenPtr[1].start = start;
+		    subExprTokenPtr[1].size = 0;
+		}
+		break;
+	    }
+
 	    /*
 	     * Here we scan from the string the operator corresponding to
 	     * nodePtr->lexeme.
@@ -1822,6 +1878,7 @@ ConvertTreeToTokens(
 		/* When we get back to the START node, we're done. */
 		return;
 
+	    case NULL_FUNC:
 	    case COMMA:
 	    case COLON:
 
@@ -2541,6 +2598,17 @@ CompileExprTree(
 		numWords = 2;	/* Command plus one argument */
 		break;
 	    }
+	    case LIST:
+		/*
+		 * TIP 759: start a count of the number of elements of this
+		 * list. In case there's already a count in progress (nested
+		 * functions or lists), save it in our unused "left" field
+		 * for restoring later.
+		 */
+
+		nodePtr->left = numWords;
+		numWords = 1;
+		break;
 	    case QUESTION:
 		newJump = (JumpList *)TclStackAlloc(interp, sizeof(JumpList));
 		newJump->next = jumpPtr;
@@ -2579,9 +2647,21 @@ CompileExprTree(
 		    OP(		TRY_CVT_TO_NUMERIC);
 		}
 		break;
+	    case NULL_FUNC:
 	    case OPEN_PAREN:
 
 		/* do nothing */
+		break;
+	    case LIST:
+		/*
+		 * TIP 759: build the list (a, b, ...) from its elements, then
+		 * restore any saved numWords value. A list is not converted
+		 * to a number.
+		 */
+
+		OP4(		LIST, numWords);
+		numWords = nodePtr->left;
+		convert = false;
 		break;
 	    case FUNCTION:
 		/*

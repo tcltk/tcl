@@ -125,6 +125,17 @@ A function call.
 This is mathematical function such as \fBsin($x)\fR, whose arguments have any of
 the above forms for operands.  See \fBMATH FUNCTIONS\fR below for
 a discussion of how mathematical functions are handled.
+.TP
+A \fBlist\fR.
+.
+.VS TIP759
+Two or more expressions separated by commas, in parentheses that do
+not follow a function name: \fB(\fIa\fB, \fIb\fB, \fR...\fB)\fR.
+The value is the list of the values of the expressions, as built by the
+\fBlist\fR command; it is not converted to a number. Lists may be
+nested: the value of \fB((1, 2), 3)\fR is \fB{1 2} 3\fR. A
+parenthesized expression without a comma is not a list.
+.VE TIP759
 .RE
 .PP
 Because \fBexpr\fR parses and performs substitutions on values that have
@@ -462,6 +473,13 @@ A procedure whose body is an expression script (see rule [1] of the
 .CS
 proc hypot {a b} {( sqrt($a**2 + $b**2) )}
 lmap x {1 2 3} {( $x * $x )}
+.CE
+.PP
+Build lists of computed values, for instance coordinates for a canvas:
+.PP
+.CS
+set pairs [lmap a $xs b $ys {( $a, $b )}]
+set coords [lmap x $xs {( $x, sin($x) )}]
 .CE
 .PP
 Compute a value with an expression substitution, the short form of

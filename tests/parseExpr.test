@@ -862,9 +862,12 @@ test parseExpr-21.31 {error messages} -body {
 } -returnCodes error -result {unexpected "," outside function argument list
 in expression "0,0"}
 test parseExpr-21.32 {error messages} -body {
-    expr (0,0)
+    expr 0,0
 } -returnCodes error -result {unexpected "," outside function argument list
-in expression "(0,0)"}
+in expression "0,0"}
+test parseExpr-21.32.1 {comma list, TIP 759} -body {
+    expr (0,0)
+} -result {0 0}
 test parseExpr-21.33 {error messages} -body {
     expr a(0:0,0)
 } -returnCodes error -result {unexpected operator ":" without preceding "?"
