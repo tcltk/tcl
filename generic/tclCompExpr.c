@@ -168,6 +168,10 @@ enum LexemeCodes {
 				 * appears that's not a supported operator. */
     COMMENT = 6,		/* Comment. Lasts to end of line or end of
 				 * expression, whichever comes first. */
+    USER_OP = 7,		/* TIP 759: "\name", an operator defined by
+				 * the command tcl::mathop::name. Resolves to
+				 * UNARY_USER or BINARY_USER according to
+				 * context, as "+" and "-". */
 
     /* Leaf lexemes */
 
@@ -225,6 +229,7 @@ enum LexemeCodes {
 				 * list: "(a, b), (c, d)" or "1, 2". */
     EXPAND = UNARY | 11,	/* TIP 759: {*}, expansion of an argument of
 				 * a function or an element of a list. */
+    UNARY_USER = UNARY | 12,	/* TIP 759: "\name x", tcl::mathop::name x */
 
     /* Binary operator lexemes */
 
@@ -295,9 +300,11 @@ enum LexemeCodes {
 				 * pairs with OPEN_PAREN. */
     SEPARATOR = BINARY | 33,	/* TIP 282: ";", evaluates its left operand,
 				 * then its right one, which is its value. */
-    ASSIGN = BINARY | 34	/* TIP 282: "=", assignment. Like EXPON, it
+    ASSIGN = BINARY | 34,	/* TIP 282: "=", assignment. Like EXPON, it
 				 * is right associative, and this distinction
 				 * is coded directly in ParseExpr(). */
+    BINARY_USER = BINARY | 35	/* TIP 759: "x \name y",
+				 * tcl::mathop::name x y */
 };
 
 /*
@@ -381,8 +388,9 @@ static const unsigned char prec[] = {
     PREC_END,			/* END */
     PREC_SEPARATOR,		/* SEPARATOR */
     PREC_ASSIGN,		/* ASSIGN */
+    PREC_MULT,			/* BINARY_USER */
     /* Expansion room for more binary operators */
-    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
     /* Unary operator lexemes */
     PREC_UNARY,			/* UNARY_PLUS */
@@ -396,6 +404,7 @@ static const unsigned char prec[] = {
     PREC_UNARY,			/* LIST */
     PREC_START,			/* START_LIST */
     PREC_UNARY,			/* EXPAND */
+    PREC_UNARY,			/* UNARY_USER */
 };
 
 /*
@@ -444,8 +453,9 @@ static const unsigned char instruction[] = {
     0,				/* END */
     0,				/* SEPARATOR */
     0,				/* ASSIGN */
+    0,				/* BINARY_USER */
     /* Expansion room for more binary operators */
-    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
     /* Unary operator lexemes */
     INST_UPLUS,			/* UNARY_PLUS */
@@ -459,6 +469,7 @@ static const unsigned char instruction[] = {
     0,				/* LIST */
     0,				/* START_LIST */
     0,				/* EXPAND */
+    0,				/* UNARY_USER */
 };
 
 /*
@@ -1351,6 +1362,17 @@ ParseExpr(
 		    goto error;
 		}
 		break;
+	    case USER_OP:
+		/*
+		 * TIP 759: "\name", unary after an operator (or at the
+		 * start), binary after an operand, as "+" and "-". Its name
+		 * is kept with the function names, in the order of parsing,
+		 * which is the order in which they are compiled.
+		 */
+
+		lexeme = IsOperator(lastParsed) ? UNARY_USER : BINARY_USER;
+		Tcl_ListObjAppendElement(NULL, funcList, literal);
+		break;
 	    case PLUS:
 	    case MINUS:
 		if (IsOperator(lastParsed)) {
@@ -1575,7 +1597,8 @@ ParseExpr(
 		    start = nestedPtr->commandStart + nestedPtr->commandSize;
 		    Tcl_FreeParse(nestedPtr);
 		    if ((nestedPtr->term < end) && !nestedPtr->incomplete
-			    && ((nestedPtr->term[0] == ';') || (CHAR_TYPE(
+			    && ((nestedPtr->term[0] == ';')
+			    || (nestedPtr->term[0] == '\\') || (CHAR_TYPE(
 			    nestedPtr->term[0]) & (TYPE_OP | TYPE_CLOSE_PAREN)))) {
 			cmdEnd = nestedPtr->term;
 			break;
@@ -1710,7 +1733,8 @@ ParseExpr(
 	     * expression, so long as the argument is a constant expression.
 	     */
 
-	    nodePtr->constant = (lexeme != FUNCTION) && (lexeme != EXPAND);
+	    nodePtr->constant = (lexeme != FUNCTION) && (lexeme != EXPAND)
+		    && (lexeme != UNARY_USER);
 
 	    /*
 	     * This unary operator is a new incomplete tree, so push it onto
@@ -2078,7 +2102,8 @@ ParseExpr(
 	     * expressions when both arguments are constant expressions.
 	     */
 
-	    nodePtr->constant = (lexeme != COMMA) && (lexeme != ASSIGN);
+	    nodePtr->constant = (lexeme != COMMA) && (lexeme != ASSIGN)
+		    && (lexeme != BINARY_USER);
 
 	    if (IsOperator(complete)) {
 		nodes[complete].parent = nodesUsed;
@@ -2816,6 +2841,26 @@ ParseLexeme(
     }
 
     /*
+     * TIP 759: "\name", a user-defined operator: a backslash directly
+     * followed by a letter, then letters, digits and underscores. A bare
+     * backslash was an error in an expression (backslash-newline is white
+     * space, skipped before).
+     */
+
+    if ((start[0] == '\\') && (numBytes > 1) && isalpha(UCHAR(start[1]))) {
+	end = start + 2;
+	while ((end < start + numBytes)
+		&& (isalnum(UCHAR(*end)) || (*end == '_'))) {
+	    end++;
+	}
+	*lexemePtr = USER_OP;
+	if (literalPtr) {
+	    *literalPtr = Tcl_NewStringObj(start + 1, end - start - 1);
+	}
+	return end - start;
+    }
+
+    /*
      * TIP 759: a raw command, one of these command names followed by a
      * space.
      */
@@ -3311,6 +3356,26 @@ CompileExprTree(
 	    next = nodePtr->right;
 
 	    switch (nodePtr->lexeme) {
+	    case UNARY_USER:
+	    case BINARY_USER: {
+		/*
+		 * TIP 759: "\name": the command tcl::mathop::name, resolved
+		 * as the functions of tcl::mathfunc. For the binary form, the
+		 * left operand is already on the stack: the name goes below
+		 * it.
+		 */
+
+		Tcl_Obj *cmdName;
+
+		TclNewLiteralStringObj(cmdName, "tcl::mathop::");
+		Tcl_AppendObjToObj(cmdName, *funcObjv);
+		funcObjv++;
+		PUSH_OBJ_FLAGS(cmdName, LITERAL_CMD_NAME);
+		if (nodePtr->lexeme == BINARY_USER) {
+		    OP4(	REVERSE, 2);
+		}
+		break;
+	    }
 	    case FUNCTION: {
 		Tcl_Obj *cmdName;
 
@@ -3509,6 +3574,14 @@ CompileExprTree(
 		 */
 
 		OP4(		EXPAND_STKTOP, envPtr->currStackDepth);
+		break;
+	    case UNARY_USER:
+		INVOKE4(	INVOKE_STK, 2);
+		convert = true;
+		break;
+	    case BINARY_USER:
+		INVOKE4(	INVOKE_STK, 3);
+		convert = true;
 		break;
 	    case FUNCTION:
 		/*

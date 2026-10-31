@@ -275,7 +275,14 @@ Tcl_ParseCommand(
 
 	/* Are we at command termination? */
 
-	if ((numBytes == 0) || (type & terminators) != 0) {
+	if ((numBytes == 0) || (type & terminators) != 0
+		|| ((nested == TCL_CMD_NESTED_IN_EXPR) && (*src == '\\')
+		&& (numBytes > 1) && isalpha(UCHAR(src[1])))) {
+	    /*
+	     * TIP 759: in an expression, a raw command also ends at a word
+	     * that begins with a user-defined operator, "\name".
+	     */
+
 	    parsePtr->term = src;
 	    parsePtr->commandSize = src + (numBytes != 0)
 		    - parsePtr->commandStart;

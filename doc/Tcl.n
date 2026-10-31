@@ -391,10 +391,19 @@ In an expression, backslash substitution is performed only where it is
 performed in a word: between the double quotes of a quoted operand
 (rule [4]), in the index of an array variable, and in a command
 substitution. Elsewhere, a backslash is an error, except a
-backslash-newline, which is white space. Thus
+backslash-newline, which is white space, and a backslash directly
+followed by a letter, which begins a user-defined operator, as
+\fB$U \edot $V\fR (see \fBexpr\fR). Some operator names look like
+backslash sequences, such as \fB\etimes\fR or \fB\eneg\fR: in a braced
+expression they are operators, but in an expression written between
+double quotes, as in \fBexpr "$a \etimes $b"\fR, the Tcl parser first
+replaces \fB\et\fR or \fB\en\fR (rule [4]). Thus
 .QW "\N'34'\ex31\N'34' + 1"
 is 2, but
 .QW "\ex31 + 1"
+calls a user-defined operator \fB\ex31\fR (an error unless the command
+\fBtcl::mathop::x31\fR exists), and
+.QW "1 + \e 2"
 is an error.
 .VE TIP759
 .RE

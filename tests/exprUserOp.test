@@ -1,0 +1,182 @@
+# Commands covered: expr, user-defined operators \name (TIP 759)
+#
+# This file contains a collection of tests for the user-defined operators
+# of TIP 759: "\name x" and "x \name y" call the command tcl::mathop::name.
+# Sourcing this file into Tcl runs the tests and generates output for
+# errors. No output means no errors were found.
+#
+# See the file "license.terms" for information on usage and redistribution of
+# this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2.5
+    namespace import -force ::tcltest::*
+}
+
+::tcltest::loadTestedCommands
+catch [list package require -exact tcl::test [info patchlevel]]
+
+testConstraint testexprparser [llength [info commands testexprparser]]
+
+proc ::tcl::mathop::dot {u v} {
+    set s 0
+    foreach a $u b $v {
+	set s [expr {$s + $a*$b}]
+    }
+    return $s
+}
+proc ::tcl::mathop::neg {x} {
+    lmap e $x {expr {-$e}}
+}
+proc ::tcl::mathop::cross {u v} {
+    lassign $u a b c
+    lassign $v d e f
+    list [expr {$b*$f - $c*$e}] [expr {$c*$d - $a*$f}] [expr {$a*$e - $b*$d}]
+}
+proc ::tcl::mathop::plus {a b} {
+    expr {$a + $b}
+}
+set U {1 2 3}
+set V {4 5 6}
+
+# Binary operators
+
+test exprUserOp-1.1 {binary operator} {
+    expr {$U \dot $V}
+} 32
+test exprUserOp-1.2 {precedence of "*", left to right} {
+    expr {1 + $U \dot $V * 2}
+} 65
+test exprUserOp-1.3 {binds tighter than "+"} {
+    expr {$U \dot $V + 1}
+} 33
+test exprUserOp-1.4 {result is a list} {
+    expr {$U \cross $V}
+} {-3 6 -3}
+test exprUserOp-1.5 {chained} {
+    expr {($U \cross $V) \dot $U}
+} 0
+test exprUserOp-1.6 {in a function argument} {
+    expr {max(1, $U \dot $V)}
+} 32
+test exprUserOp-1.7 {lists as operands} {
+    expr {(1, 2) \dot (3, 4)}
+} 11
+test exprUserOp-1.8 {expression substitution} {
+    set x [( $U \dot $V )]
+} 32
+test exprUserOp-1.9 {name with digits and underscores} -setup {
+    proc ::tcl::mathop::my_op2 {a b} {list $a $b}
+} -body {
+    expr {1 \my_op2 2}
+} -cleanup {
+    rename ::tcl::mathop::my_op2 {}
+} -result {1 2}
+test exprUserOp-1.10 {white space is not needed} {
+    expr {1\plus 2}
+} 3
+
+# Unary operators
+
+test exprUserOp-2.1 {unary operator} {
+    expr {\neg $U}
+} {-1 -2 -3}
+test exprUserOp-2.2 {unary binds tighter than binary} {
+    expr {\neg $U \dot $V}
+} -32
+test exprUserOp-2.3 {unary on a parenthesized expression} {
+    expr {\neg ($U \cross $V)}
+} {3 -6 3}
+test exprUserOp-2.4 {unary after a binary operator} {
+    expr {$U \dot \neg $V}
+} -32
+
+# Compilation and resolution
+
+test exprUserOp-3.1 {in a procedure: bytecode} -setup {
+    proc p {U V} {( $U \dot $V )}
+} -body {
+    set code [tcl::unsupported::disassemble proc p]
+    list [p {1 1} {2 3}] [regexp {push.*tcl::mathop::dot.*reverse 2.*invokeStk 3} $code]
+} -cleanup {
+    rename p {}
+} -result {5 1}
+test exprUserOp-3.2 {resolved relative to the current namespace} -setup {
+    namespace eval ::ns {
+	namespace eval tcl::mathop {
+	    proc dot {u v} {return local}
+	}
+	proc g {} {expr {1 \dot 2}}
+	proc h {} {expr {(1, 2, 0) \cross (3, 4, 5)}}
+    }
+} -body {
+    list [::ns::g] [::ns::h]
+} -cleanup {
+    namespace delete ::ns
+} -result {local {10 -5 -2}}
+test exprUserOp-3.3 {not compiled} {
+    set e {$U \dot $V}
+    expr $e
+} 32
+test exprUserOp-3.4 {defined after the compilation} -setup {
+    proc p {} {expr {2 \later 3}}
+    catch p
+} -body {
+    proc ::tcl::mathop::later {a b} {expr {$a * 10 + $b}}
+    p
+} -cleanup {
+    rename p {}
+    rename ::tcl::mathop::later {}
+} -result 23
+test exprUserOp-3.5 {raw command ends at a user-defined operator} {
+    expr {llength $U \plus 10}
+} 13
+test exprUserOp-3.6 {raw command ends at a user-defined operator} {
+    expr {lindex $U 1 \plus 10}
+} 12
+
+# Errors and compatibility
+
+test exprUserOp-4.1 {undefined operator} -body {
+    expr {$U \nope $V}
+} -returnCodes error -result {invalid command name "tcl::mathop::nope"}
+test exprUserOp-4.2 {missing right operand} -body {
+    expr {$U \dot}
+} -returnCodes error -match glob -result {missing operand at _@_*}
+test exprUserOp-4.3 {backslash not followed by a letter} -body {
+    expr {1 + \ 2}
+} -returnCodes error -match glob -result {invalid character "\\"*}
+test exprUserOp-4.4 {backslash followed by a digit} -body {
+    expr {1 + \1}
+} -returnCodes error -match glob -result {invalid character "\\"*}
+test exprUserOp-4.5 {backslash-newline is still white space} {
+    expr "1 +\\\n 2"
+} 3
+test exprUserOp-4.6 {backslash substitution in a quoted operand} {
+    expr {"\x31" + 1}
+} 2
+test exprUserOp-4.7 {not an operand for {*}} -body {
+    expr {{*}$U \dot $V}
+} -returnCodes error -match glob -result {{*} is allowed only*}
+
+# Tcl_ParseExpr
+
+test exprUserOp-5.1 {Tcl_ParseExpr: binary} -constraints testexprparser -body {
+    testexprparser {$U \dot $V} -1
+} -result {- {} 0 subexpr {$U \dot $V} 7 operator {\dot} 0 subexpr {$U} 2 variable {$U} 1 text U 0 subexpr {$V} 2 variable {$V} 1 text V 0 {}}
+test exprUserOp-5.2 {Tcl_ParseExpr: unary} -constraints testexprparser -body {
+    testexprparser {\dot $U} -1
+} -result {- {} 0 subexpr {\dot $U} 4 operator {\dot} 0 subexpr {$U} 2 variable {$U} 1 text U 0 {}}
+
+# cleanup
+rename ::tcl::mathop::dot {}
+rename ::tcl::mathop::neg {}
+rename ::tcl::mathop::cross {}
+rename ::tcl::mathop::plus {}
+unset -nocomplain U V
+::tcltest::cleanupTests
+return
+
+# Local Variables:
+# mode: tcl
+# End:

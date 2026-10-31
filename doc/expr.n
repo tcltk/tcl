@@ -207,6 +207,16 @@ below, grouped in decreasing order of precedence:
 Unary minus, unary plus, bit-wise NOT, logical NOT.  These operators
 may only be applied to numeric operands, and bit-wise NOT may only be
 applied to integers.
+.VS TIP759
+.TP 20
+\fB\e\fIname\fR
+.
+User-defined unary operator: \fB\e\fIname x\fR is the result of the
+command \fBtcl::mathop::\fIname x\fR. \fIname\fR begins with a letter,
+followed by letters, digits and underscores. The command is resolved as
+the functions of \fBtcl::mathfunc\fR (see \fBMATH FUNCTIONS\fR): relative
+to the current namespace, then in the global namespace.
+.VE TIP759
 .TP 20
 \fB**\fR
 .
@@ -231,6 +241,26 @@ is always -6, and the result of
 .QW "-57 \fB%\fR 10"
 is always 3.
 .RE
+.VS TIP759
+.TP 20
+\fIx\fB \e\fIname y\fR
+.
+User-defined binary operator, with the precedence of \fB*\fR and grouping
+left-to-right: \fIx\fB \e\fIname y\fR is the result of the command
+\fBtcl::mathop::\fIname x y\fR, resolved as for the unary form. For
+instance, with
+.QW "proc tcl::mathop::dot {u v} {...}"
+returning the dot product of two vectors,
+.QW "$U \e\fBdot\fR $V"
+is the dot product of \fIU\fR and \fIV\fR, and
+.QW "$a + $U \e\fBdot\fR $V * 2"
+is
+.QW "$a + (($U \e\fBdot\fR $V) * 2)" .
+A user-defined operator is recognized only in an expression read by the
+expression parser: in braces, or in an expression substitution or an
+expression script. Between double quotes, the Tcl parser performs
+backslash substitution first (see \fBTcl\fR, rule [4]).
+.VE TIP759
 .TP 20
 \fB+\0\0\-\fR
 .
