@@ -70,6 +70,7 @@ to the userbase.
  - [don't wait in a blocking "gets" on a channel with a reflected transform](https://core.tcl-lang.org/tcl/tktview/d48728)
  - [Unsetting env vars in slave interps](https://core.tcl-lang.org/tcl/tktview/845241)
  - [Memory corruption false positive with TCL_MEM_DEBUG](https://core.tcl-lang.org/tcl/tktview/7e3f26)
+ - [Windows: [file delete -force] failed on a directory containing a symbolic link](https://core.tcl-lang.org/tcl/tktview/08203e)
 
 # Updated bundled packages, libraries, standards, data
  - http 2.10.3
