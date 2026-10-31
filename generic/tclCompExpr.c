@@ -217,6 +217,9 @@ enum LexemeCodes {
 				 * nothing, unless a comma follows at the top
 				 * of the parens: it then becomes LIST. */
     LIST = UNARY | 9,		/* TIP 759: the list (a, b, ...) */
+    START_LIST = UNARY | 10,	/* TIP 759: START, when a comma outside of
+				 * any parens makes the whole expression a
+				 * list: "(a, b), (c, d)" or "1, 2". */
 
     /* Binary operator lexemes */
 
@@ -377,6 +380,7 @@ static const unsigned char prec[] = {
     PREC_UNARY,			/* BIT_NOT*/
     PREC_UNARY,			/* NULL_FUNC */
     PREC_UNARY,			/* LIST */
+    PREC_START,			/* START_LIST */
 };
 
 /*
@@ -436,6 +440,7 @@ static const unsigned char instruction[] = {
     INST_BITNOT,		/* BIT_NOT*/
     0,				/* NULL_FUNC */
     0,				/* LIST */
+    0,				/* START_LIST */
 };
 
 /*
@@ -1379,7 +1384,8 @@ ParseExpr(
 		    nodes[complete].constant = incompletePtr->constant;
 		}
 
-		if (incompletePtr->lexeme == START) {
+		if ((incompletePtr->lexeme == START)
+			|| (incompletePtr->lexeme == START_LIST)) {
 		    /*
 		     * Completing the START tree indicates we're done.
 		     * Transfer the parse tree to the caller and return.
@@ -1420,11 +1426,16 @@ ParseExpr(
 	    /*
 	     * Commas must appear only in function argument lists, or in a
 	     * list (a, b, ...) (TIP 759): the NULL_FUNC node made before its
-	     * open paren then becomes a LIST node.
+	     * open paren then becomes a LIST node. A comma outside of any
+	     * parens makes the whole expression a list: START becomes
+	     * START_LIST.
 	     */
 
 	    if (lexeme == COMMA) {
-		if ((incompletePtr->lexeme == OPEN_PAREN)
+		if ((incompletePtr->lexeme == START)
+			|| (incompletePtr->lexeme == START_LIST)) {
+		    incompletePtr->lexeme = START_LIST;
+		} else if ((incompletePtr->lexeme == OPEN_PAREN)
 			&& (incompletePtr[-1].lexeme == NULL_FUNC)) {
 		    incompletePtr[-1].lexeme = LIST;
 		} else if ((incompletePtr->lexeme != OPEN_PAREN)
@@ -1615,6 +1626,30 @@ ConvertTreeToTokens(
     Tcl_Size subExprTokenIdx = 0;
     OpNode *nodePtr = nodes;
     int next = nodePtr->right;
+
+    if (nodes->lexeme == START_LIST) {
+	/*
+	 * TIP 759: the whole expression is a list "a, b, ...": shown as
+	 * the list (a, b, ...), a call of a function whose name, the
+	 * TCL_TOKEN_OPERATOR token, is empty.
+	 */
+
+	Tcl_Token *listTokenPtr;
+	Tcl_Size scanned = TclParseAllWhiteSpace(start, numBytes);
+
+	start += scanned;
+	numBytes -= scanned;
+	TclGrowParseTokenArray(parsePtr, 2);
+	subExprTokenIdx = parsePtr->numTokens;
+	listTokenPtr = parsePtr->tokenPtr + subExprTokenIdx;
+	parsePtr->numTokens += 2;
+	listTokenPtr->type = TCL_TOKEN_SUB_EXPR;
+	listTokenPtr->start = start;
+	listTokenPtr[1].type = TCL_TOKEN_OPERATOR;
+	listTokenPtr[1].start = start;
+	listTokenPtr[1].size = 0;
+	listTokenPtr[1].numComponents = 0;
+    }
 
     while (1) {
 	Tcl_Token *subExprTokenPtr;
@@ -1873,6 +1908,13 @@ ConvertTreeToTokens(
 
 	case MARK_PARENT:
 	    switch (nodePtr->lexeme) {
+	    case START_LIST:
+		/* TIP 759: finish the tokens of the list. */
+		subExprTokenPtr = parsePtr->tokenPtr + subExprTokenIdx;
+		subExprTokenPtr->size = start - subExprTokenPtr->start;
+		subExprTokenPtr->numComponents =
+			(parsePtr->numTokens - subExprTokenIdx) - 1;
+		return;
 	    case START:
 
 		/* When we get back to the START node, we're done. */
@@ -2609,6 +2651,13 @@ CompileExprTree(
 		nodePtr->left = numWords;
 		numWords = 1;
 		break;
+	    case START_LIST:
+		/*
+		 * TIP 759: the whole expression is a list "a, b, ...".
+		 */
+
+		numWords = 1;
+		break;
 	    case QUESTION:
 		newJump = (JumpList *)TclStackAlloc(interp, sizeof(JumpList));
 		newJump->next = jumpPtr;
@@ -2641,6 +2690,13 @@ CompileExprTree(
 	    Tcl_BytecodeLabel pc1, pc2;
 
 	    switch (nodePtr->lexeme) {
+	    case START_LIST:
+		/*
+		 * TIP 759: build the list. It is not converted to a number.
+		 */
+
+		OP4(		LIST, numWords);
+		break;
 	    case START:
 	    case QUESTION:
 		if (convert && (nodePtr == rootPtr)) {

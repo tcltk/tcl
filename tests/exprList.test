@@ -94,18 +94,58 @@ test exprList-2.6 {numeric conversion of a function result is kept} {
 
 # Errors
 
-test exprList-3.1 {comma outside parens} -body {
-    expr {1,2}
-} -returnCodes error -match glob -result {unexpected "," outside function argument list*}
-test exprList-3.2 {comma after parens} -body {
-    expr {(1),2}
-} -returnCodes error -match glob -result {unexpected "," outside function argument list*}
+test exprList-3.1 {missing last element} -body {
+    expr {1,}
+} -returnCodes error -match glob -result {missing function argument*}
+test exprList-3.2 {unbalanced close paren after a list} -body {
+    expr {1, 2)}
+} -returnCodes error -match glob -result {unbalanced close paren*}
 test exprList-3.3 {missing element} -body {
     expr {(1,)}
 } -returnCodes error -match glob -result {missing function argument*}
 test exprList-3.4 {empty parens} -body {
     expr {()}
 } -returnCodes error -match glob -result {empty subexpression*}
+
+# A comma outside of any parens: the whole expression is a list
+
+test exprList-5.1 {two elements} {
+    expr {1, 2}
+} {1 2}
+test exprList-5.2 {lists of lists, parens closed early} {
+    set M [(1,2,3),(4,5,6),(7,8,9)]
+} {{1 2 3} {4 5 6} {7 8 9}}
+test exprList-5.3 {same as with the outer parens} {
+    expr {[(1,2),(3,4)] eq [((1,2),(3,4))]}
+} 1
+test exprList-5.4 {computed elements} {
+    set a 1; set b 2
+    expr {$a+1, $b*2, "x"}
+} {2 4 x}
+test exprList-5.5 {a list and a number} {
+    expr {(1,2),3}
+} {{1 2} 3}
+test exprList-5.6 {conditional element} {
+    expr {1 ? 2 : 3, 4}
+} {2 4}
+test exprList-5.7 {in a procedure: a list, not converted to a number} -setup {
+    proc p {a b} {expr {$a, $b + 1}}
+} -body {
+    set code [tcl::unsupported::disassemble proc p]
+    list [p 3 4] [regexp {list 2} $code] [string match *tryCvtToNumeric* $code]
+} -cleanup {
+    rename p {}
+} -result {{3 5} 1 0}
+test exprList-5.8 {arithmetic script} {
+    lmap v {1 2} {($v, $v*10)}
+} {{1 10} {2 20}}
+test exprList-5.9 {not compiled} {
+    set e {1, (2, 3)}
+    expr $e
+} {1 {2 3}}
+test exprList-5.10 {unbalanced open paren} -body {
+    expr {(1, 2}
+} -returnCodes error -match glob -result {unbalanced open paren*}
 
 # Tcl_ParseExpr
 
@@ -124,6 +164,12 @@ test exprList-4.3 {Tcl_ParseExpr: list in a function call} -constraints {
 } -body {
     testexprparser {f(1,(2,3))} -1
 } -result {- {} 0 subexpr f(1,(2,3)) 9 operator f 0 subexpr 1 1 text 1 0 subexpr (2,3) 5 operator {} 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 {}}
+
+test exprList-4.4 {Tcl_ParseExpr: a list outside of any parens} -constraints {
+    testexprparser
+} -body {
+    testexprparser {1, (2, 3)} -1
+} -result {- {} 0 subexpr {1, (2, 3)} 9 operator {} 0 subexpr 1 1 text 1 0 subexpr {(2, 3)} 5 operator {} 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 {}}
 
 # cleanup
 ::tcltest::cleanupTests

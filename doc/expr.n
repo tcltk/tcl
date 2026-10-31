@@ -134,7 +134,11 @@ not follow a function name: \fB(\fIa\fB, \fIb\fB, \fR...\fB)\fR.
 The value is the list of the values of the expressions, as built by the
 \fBlist\fR command; it is not converted to a number. Lists may be
 nested: the value of \fB((1, 2), 3)\fR is \fB{1 2} 3\fR. A
-parenthesized expression without a comma is not a list.
+parenthesized expression without a comma is not a list. A comma outside of
+any parentheses makes the whole expression a list, as if it were enclosed
+in parentheses: \fB1, 2\fR is \fB1 2\fR, and the parentheses of an
+expression substitution may close early, as in
+\fB[(1, 2), (3, 4)]\fR, which is \fB{1 2} {3 4}\fR.
 .VE TIP759
 .RE
 .PP
