@@ -294,6 +294,11 @@ above, but in that case other mechanisms must be used to access them (e.g.,
 via the \fBset\fR command's single-argument form).
 .RE
 .IP "[9] \fBBackslash substitution.\fR"
+Backslash substitution is performed differently in a command and in an
+expression.
+.RS
+.TP 5
+\fBBackslash substitution in a command.\fR
 If a backslash
 .PQ \e
 appears within a word then \fIbackslash substitution\fR occurs.
@@ -378,6 +383,20 @@ is reached.  The upper bits of the Unicode character will be 0.
 .PP
 Backslash substitution is not performed on words enclosed in braces,
 except for backslash-newline as described above.
+.RE
+.TP 5
+\fBBackslash substitution in an expression.\fR
+.VS TIP759
+In an expression, backslash substitution is performed only where it is
+performed in a word: between the double quotes of a quoted operand
+(rule [4]), in the index of an array variable, and in a command
+substitution. Elsewhere, a backslash is an error, except a
+backslash-newline, which is white space. Thus
+.QW "\N'34'\ex31\N'34' + 1"
+is 2, but
+.QW "\ex31 + 1"
+is an error.
+.VE TIP759
 .RE
 .IP "[10] \fBComments.\fR"
 Comments are recognized differently in a command script and in an
