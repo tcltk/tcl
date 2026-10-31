@@ -327,7 +327,10 @@ to the element of the value of \fIx\fR at the same place, as given by
 \fBlindex\fR: a missing element gives the empty string, extra elements
 are ignored. The value of the assignment is the value of \fIx\fR. For
 instance, \fB((x0, y0), (x1, y1)) = ($p, $q)\fR sets four variables from
-two points.
+two points. A tuple assignment may not be an element of a list or an
+argument of a function among others, unless it is enclosed in
+parentheses: \fB(a, b) = 1, 2\fR is an error, which is written
+\fB(a, b) = (1, 2)\fR.
 .VE TIP759
 .VS TIP282
 .TP 20
