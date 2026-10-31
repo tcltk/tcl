@@ -100,6 +100,17 @@ test exprExpand-2.6 {in an expression substitution} {
     set L {3 1 2}
     set x [( max({*}$L) )]
 } 3
+test exprExpand-2.7 {list outside of parens} {
+    set a {1 2}; set b {x y}
+    expr {{*}$a, {*}$b}
+} {1 2 x y}
+test exprExpand-2.8 {list outside of parens, in a procedure} -setup {
+    proc q {a} {expr {{*}$a, 9}}
+} -body {
+    list [q {7 8}] [regexp invokeExpanded [tcl::unsupported::disassemble proc q]]
+} -cleanup {
+    rename q {}
+} -result {{7 8 9} 1}
 
 # Compatibility: {*} as a braced word
 

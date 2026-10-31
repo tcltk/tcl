@@ -220,7 +220,10 @@ enum LexemeCodes {
 				 * nothing, unless a comma follows at the top
 				 * of the parens: it then becomes LIST. */
     LIST = UNARY | 9,		/* TIP 759: the list (a, b, ...) */
-    EXPAND = UNARY | 10,	/* TIP 759: {*}, expansion of an argument of
+    START_LIST = UNARY | 10,	/* TIP 759: START, when a comma outside of
+				 * any parens makes the whole expression a
+				 * list: "(a, b), (c, d)" or "1, 2". */
+    EXPAND = UNARY | 11,	/* TIP 759: {*}, expansion of an argument of
 				 * a function or an element of a list. */
 
     /* Binary operator lexemes */
@@ -391,6 +394,7 @@ static const unsigned char prec[] = {
     PREC_UNARY,			/* BIT_NOT*/
     PREC_UNARY,			/* NULL_FUNC */
     PREC_UNARY,			/* LIST */
+    PREC_START,			/* START_LIST */
     PREC_UNARY,			/* EXPAND */
 };
 
@@ -453,6 +457,7 @@ static const unsigned char instruction[] = {
     INST_BITNOT,		/* BIT_NOT*/
     0,				/* NULL_FUNC */
     0,				/* LIST */
+    0,				/* START_LIST */
     0,				/* EXPAND */
 };
 
@@ -567,6 +572,48 @@ static int		ParseExpr(Tcl_Interp *interp, const char *start,
 static Tcl_Size		ParseLexeme(const char *start, Tcl_Size numBytes,
 			    unsigned char *lexemePtr, Tcl_Obj **literalPtr);
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * SeparatorPlacesValid --
+ *
+ *	TIP 282. Is each ";" (SEPARATOR node) outside of the arguments of a
+ *	function and of the elements of a list? There, the statements it
+ *	separates must be enclosed in parentheses: "max((a = 1; $a), 2)",
+ *	not "max(a = 1; $a, 2)". The arguments of a function are written as
+ *	the elements of a list.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+SeparatorPlacesValid(
+    OpNode *nodes,
+    unsigned int nodesUsed)
+{
+    unsigned int i;
+
+    for (i = 0; i < nodesUsed; i++) {
+	int p;
+
+	if (nodes[i].lexeme != SEPARATOR) {
+	    continue;
+	}
+	p = nodes[i].parent;
+	if (p < 0) {
+	    continue;
+	}
+	if (nodes[p].lexeme == COMMA) {
+	    return 0;		/* an element or argument among others */
+	}
+	if ((nodes[p].lexeme == OPEN_PAREN) && (nodes[p].parent >= 0)
+		&& (nodes[nodes[p].parent].lexeme == FUNCTION)) {
+	    return 0;		/* the only argument of a function */
+	}
+    }
+    return 1;
+}
+
 /*
  *----------------------------------------------------------------------
  *
@@ -882,6 +929,9 @@ ExpandPlacesValid(
 	p = nodes[i].parent;
 	while (p >= 0 && nodes[p].lexeme == COMMA) {
 	    p = nodes[p].parent;
+	}
+	if (p >= 0 && nodes[p].lexeme == START_LIST) {
+	    continue;		/* an element of the list "a, b, ..." */
 	}
 	if (p < 0 || nodes[p].lexeme != OPEN_PAREN) {
 	    return 0;
@@ -1879,12 +1929,22 @@ ParseExpr(
 		    nodes[complete].constant = incompletePtr->constant;
 		}
 
-		if (incompletePtr->lexeme == START) {
+		if ((incompletePtr->lexeme == START)
+			|| (incompletePtr->lexeme == START_LIST)) {
 		    /*
 		     * Completing the START tree indicates we're done.
 		     * Transfer the parse tree to the caller and return.
 		     */
 
+		    if (!SeparatorPlacesValid(nodes, nodesUsed)) {
+			TclNewLiteralStringObj(msg, "\";\" is not allowed "
+				"between the arguments of a function or the "
+				"elements of a list: use parentheses");
+			errCode = "SEPARATOR";
+			start = parsePtr->string;
+			scanned = 0;
+			goto error;
+		    }
 		    if (!ExpandPlacesValid(nodes, nodesUsed)) {
 			TclNewLiteralStringObj(msg, "{*} is allowed only for "
 				"the arguments of a function or the elements "
@@ -1929,11 +1989,16 @@ ParseExpr(
 	    /*
 	     * Commas must appear only in function argument lists, or in a
 	     * list (a, b, ...) (TIP 759): the NULL_FUNC node made before its
-	     * open paren then becomes a LIST node.
+	     * open paren then becomes a LIST node. A comma outside of any
+	     * parens makes the whole expression a list: START becomes
+	     * START_LIST.
 	     */
 
 	    if (lexeme == COMMA) {
-		if ((incompletePtr->lexeme == OPEN_PAREN)
+		if ((incompletePtr->lexeme == START)
+			|| (incompletePtr->lexeme == START_LIST)) {
+		    incompletePtr->lexeme = START_LIST;
+		} else if ((incompletePtr->lexeme == OPEN_PAREN)
 			&& (incompletePtr[-1].lexeme == NULL_FUNC)) {
 		    incompletePtr[-1].lexeme = LIST;
 		} else if ((incompletePtr->lexeme != OPEN_PAREN)
@@ -2125,6 +2190,30 @@ ConvertTreeToTokens(
     Tcl_Size subExprTokenIdx = 0;
     OpNode *nodePtr = nodes;
     int next = nodePtr->right;
+
+    if (nodes->lexeme == START_LIST) {
+	/*
+	 * TIP 759: the whole expression is a list "a, b, ...": shown as
+	 * the list (a, b, ...), a call of a function whose name, the
+	 * TCL_TOKEN_OPERATOR token, is empty.
+	 */
+
+	Tcl_Token *listTokenPtr;
+	Tcl_Size scanned = TclParseAllWhiteSpace(start, numBytes);
+
+	start += scanned;
+	numBytes -= scanned;
+	TclGrowParseTokenArray(parsePtr, 2);
+	subExprTokenIdx = parsePtr->numTokens;
+	listTokenPtr = parsePtr->tokenPtr + subExprTokenIdx;
+	parsePtr->numTokens += 2;
+	listTokenPtr->type = TCL_TOKEN_SUB_EXPR;
+	listTokenPtr->start = start;
+	listTokenPtr[1].type = TCL_TOKEN_OPERATOR;
+	listTokenPtr[1].start = start;
+	listTokenPtr[1].size = 0;
+	listTokenPtr[1].numComponents = 0;
+    }
 
     while (1) {
 	Tcl_Token *subExprTokenPtr;
@@ -2391,6 +2480,13 @@ ConvertTreeToTokens(
 
 	case MARK_PARENT:
 	    switch (nodePtr->lexeme) {
+	    case START_LIST:
+		/* TIP 759: finish the tokens of the list. */
+		subExprTokenPtr = parsePtr->tokenPtr + subExprTokenIdx;
+		subExprTokenPtr->size = start - subExprTokenPtr->start;
+		subExprTokenPtr->numComponents =
+			(parsePtr->numTokens - subExprTokenIdx) - 1;
+		return;
 	    case START:
 
 		/* When we get back to the START node, we're done. */
@@ -3228,6 +3324,26 @@ CompileExprTree(
 		    numWords = 2;
 		}
 		break;
+	    case START_LIST:
+		/*
+		 * TIP 759: the whole expression is a list "a, b, ...".
+		 */
+
+		numWords = 1;
+		if (HasExpandedArg(nodes, nodePtr->right)) {
+		    /*
+		     * An element is expanded, {*}: the list is built by the
+		     * command list, invoked with expansion.
+		     */
+
+		    Tcl_Obj *cmdName;
+
+		    TclStartExpanding(envPtr);
+		    TclNewLiteralStringObj(cmdName, "::list");
+		    PUSH_OBJ_FLAGS(cmdName, LITERAL_CMD_NAME);
+		    numWords = 2;
+		}
+		break;
 	    case QUESTION:
 		newJump = (JumpList *)TclStackAlloc(interp, sizeof(JumpList));
 		newJump->next = jumpPtr;
@@ -3267,6 +3383,17 @@ CompileExprTree(
 	    Tcl_BytecodeLabel pc1, pc2;
 
 	    switch (nodePtr->lexeme) {
+	    case START_LIST:
+		/*
+		 * TIP 759: build the list. It is not converted to a number.
+		 */
+
+		if (HasExpandedArg(nodes, nodePtr->right)) {
+		    INVOKE4(	INVOKE_EXPANDED, numWords);
+		} else {
+		    OP4(	LIST, numWords);
+		}
+		break;
 	    case START:
 	    case QUESTION:
 		if (convert && (nodePtr == rootPtr)) {
