@@ -188,6 +188,50 @@ test exprTuple-3.4 {name given by an expression} -setup {
     unset -nocomplain 3
 } -result 2
 
+# A tuple assignment among the elements of a list or the arguments of a
+# function
+
+test exprTuple-5.1 {value written without parens} -body {
+    expr {(a, b) = 1, 2}
+} -returnCodes error -result {a tuple assignment is not allowed between the arguments of a function or the elements of a list: use parentheses, as in (a, b) = (1, 2)
+in expression "(a, b) = 1, 2"}
+test exprTuple-5.2 {value in parens} -setup {
+    unset -nocomplain a b
+} -body {
+    list [expr {(a, b) = (1, 2)}] $a $b
+} -result {{1 2} 1 2}
+test exprTuple-5.3 {last element of a list} -body {
+    expr {1, (a, b) = {1 2}}
+} -returnCodes error -match glob -result {a tuple assignment is not allowed*}
+test exprTuple-5.4 {element of a list in parens} -body {
+    expr {((a, b) = {1 2}, 3)}
+} -returnCodes error -match glob -result {a tuple assignment is not allowed*}
+test exprTuple-5.5 {argument of a function among others} -body {
+    expr {max((a, b) = {1 2}, 3)}
+} -returnCodes error -match glob -result {a tuple assignment is not allowed*}
+test exprTuple-5.6 {in parens, as an element} -setup {
+    unset -nocomplain a b
+} -body {
+    list [expr {(((a, b) = {1 2}), 3)}] $a $b
+} -result {{{1 2} 3} 1 2}
+test exprTuple-5.7 {only argument of a function} -setup {
+    unset -nocomplain a b
+    proc ::tcl::mathfunc::count {l} {llength $l}
+} -body {
+    list [expr {count((a, b) = {1 2})}] $a $b
+} -cleanup {
+    rename ::tcl::mathfunc::count {}
+} -result {2 1 2}
+test exprTuple-5.8 {scalar assignments remain valid elements} -setup {
+    unset -nocomplain x y
+} -body {
+    list [expr {x = 1, y = 2}] $x $y
+} -result {{1 2} 1 2}
+test exprTuple-5.9 {error code} -body {
+    catch {expr {(a, b) = 1, 2}} m o
+    dict get $o -errorcode
+} -result {TCL PARSE EXPR TUPLE}
+
 # Tcl_ParseExpr
 
 test exprTuple-4.1 {Tcl_ParseExpr} -constraints testexprparser -body {

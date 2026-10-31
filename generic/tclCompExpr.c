@@ -691,6 +691,30 @@ TupleRoot(
     return (index >= 0 && nodes[index].lexeme == LIST) ? index : -1;
 }
 
+/*
+ * TuplePlacesValid: is each tuple assignment outside of the elements of a
+ * list and of the arguments of a function, where it would stand among
+ * others? "(a, b) = 1, 2" would assign 1 to the tuple, and leave b empty:
+ * the value must be written "(a, b) = (1, 2)".
+ */
+
+static int
+TuplePlacesValid(
+    OpNode *nodes,
+    unsigned int nodesUsed)
+{
+    unsigned int i;
+
+    for (i = 0; i < nodesUsed; i++) {
+	if ((nodes[i].lexeme == ASSIGN) && (TupleRoot(nodes, nodes[i].left) >= 0)
+		&& (nodes[i].parent >= 0)
+		&& (nodes[nodes[i].parent].lexeme == COMMA)) {
+	    return 0;
+	}
+    }
+    return 1;
+}
+
 static int
 TupleNamesOnly(
     OpNode *nodes,
@@ -1797,6 +1821,16 @@ ParseExpr(
 				"between the arguments of a function or the "
 				"elements of a list: use parentheses");
 			errCode = "SEPARATOR";
+			start = parsePtr->string;
+			scanned = 0;
+			goto error;
+		    }
+		    if (!TuplePlacesValid(nodes, nodesUsed)) {
+			TclNewLiteralStringObj(msg, "a tuple assignment is not "
+				"allowed between the arguments of a function or "
+				"the elements of a list: use parentheses, as in "
+				"(a, b) = (1, 2)");
+			errCode = "TUPLE";
 			start = parsePtr->string;
 			scanned = 0;
 			goto error;
