@@ -99,7 +99,8 @@ If a word contains a dollar-sign
 .PQ $
 followed by one of the forms
 described below, then Tcl performs \fIvariable
-substitution\fR or \fIexpression substitution\fR:  the dollar-sign and the following characters are
+substitution\fR or \fIexpression substitution\fR:  the dollar-sign and the
+following characters are
 replaced in the word by the value of a variable or of an expression.
 Variable substitution may take any of the following three forms;
 the fourth form is expression substitution:
@@ -140,12 +141,17 @@ substitutions are performed during the parsing of \fIname\fR.
 .TP 15
 \fB$((\fIexpression\fB))\fR
 .
-A dollar-sign followed by two open parentheses begins an
-\fIexpression substitution\fR, a shortcut for
+A dollar-sign followed by two open parentheses,
+.QW \fB$((\fR ,
+begins an \fIexpression substitution\fR, and two close parentheses written
+together with no space between them,
+.QW \fB))\fR ,
+end it.
+It is a shortcut for
 .QW "\fB[expr {\fIexpression\fB}]\fR" .
-The expression is the text between the two open parentheses and the first
-close parenthesis that balances the parentheses inside the text, and that
-close parenthesis must be followed immediately by a second one.
+The expression does not include the opening \fB((\fR or the closing
+\fB))\fR, which delimit it.
+If the expression itself contains parentheses they must be balanced.
 Parentheses inside braces, double quotes or bracketed commands are not counted.
 .sp
 A \fB$((\fR that is not closed by a matching \fB))\fR is an error:
