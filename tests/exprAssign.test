@@ -268,8 +268,8 @@ test exprAssign-4.7 {separator in an expression substitution} {
 test exprAssign-4.8 {trailing separator in an expression substitution} {
     set x [( a = 2; )]
 } {}
-test exprAssign-4.9 {separator in a function argument} {
-    expr {max(1; 5, 3)}
+test exprAssign-4.9 {separator in a function argument, in parens} {
+    expr {max((1; 5), 3)}
 } 5
 
 # Errors
@@ -303,6 +303,49 @@ test exprAssign-6.2 {Tcl_ParseExpr, quoted name} -constraints {
 test exprAssign-6.4 {Tcl_ParseExpr, empty statement} -constraints testexprparser -body {
     testexprparser {x = 1;} -1
 } -result {- {} 0 subexpr {x = 1;} 9 operator {;} 0 subexpr {x = 1} 5 operator = 0 subexpr x 1 text x 0 subexpr 1 1 text 1 0 subexpr {} 1 text {} 0 {}}
+
+# A bare ";" among the arguments of a function or the elements of a list
+
+test exprAssign-6.1 {in a list} -body {
+    expr {(1, 2; 3)}
+} -returnCodes error -result {";" is not allowed between the arguments of a function or the elements of a list: use parentheses
+in expression "(1, 2; 3)"}
+test exprAssign-6.2 {first element} -body {
+    expr {(1; 2, 3)}
+} -returnCodes error -match glob -result {";" is not allowed*}
+test exprAssign-6.3 {trailing separator} -body {
+    expr {(1, 2;)}
+} -returnCodes error -match glob -result {";" is not allowed*}
+test exprAssign-6.4 {in function arguments} -body {
+    expr {max(1; 5, 3)}
+} -returnCodes error -match glob -result {";" is not allowed*}
+test exprAssign-6.5 {only argument of a function} -body {
+    expr {abs(1; -2)}
+} -returnCodes error -match glob -result {";" is not allowed*}
+test exprAssign-6.6 {list outside of parens} -body {
+    expr {a = 1; $a, 2}
+} -returnCodes error -match glob -result {";" is not allowed*}
+test exprAssign-6.7 {in an expression substitution} -body {
+    set x [(1, 2; 3)]
+} -returnCodes error -match glob -result {";" is not allowed*}
+test exprAssign-6.8 {error code} -body {
+    catch {expr {(1, 2; 3)}} m o
+    dict get $o -errorcode
+} -result {TCL PARSE EXPR SEPARATOR}
+test exprAssign-6.9 {sequence in parens, as an element} {
+    expr {(1, (2; 3))}
+} {1 3}
+test exprAssign-6.10 {list in parens after a sequence} {
+    expr {a = 1; ($a, 2)}
+} {1 2}
+test exprAssign-6.11 {assignments as elements} -setup {
+    unset -nocomplain x y
+} -body {
+    list [expr {x = 2*3, y = 4}] $x $y
+} -result {{6 4} 6 4}
+test exprAssign-6.12 {sequence in parens, as the only argument} {
+    expr {abs((1; -2))}
+} 2
 
 # cleanup
 ::tcltest::cleanupTests
