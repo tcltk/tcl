@@ -899,6 +899,25 @@ test oo-3.12 {Bug 3d96b7076e: killing the object's class in a method call} -setu
 } -cleanup {
     Super destroy
 } -result ok
+test oo-3.13 {Bug 28de60cef5: object variable after deleting the object in its destructor} -setup {
+    oo::class create Cls {
+	variable thing
+	constructor {} {
+	    set thing something
+	}
+	destructor {
+	    rename [self] {}
+	    lappend ::result [catch {eval {set thing}} msg] $msg
+	}
+    }
+} -body {
+    set ::result {}
+    [Cls new] destroy
+    set ::result
+} -cleanup {
+    Cls destroy
+    unset -nocomplain ::result
+} -result {1 {can't read "thing": no such variable}}
 
 test oo-4.1 {basic test of OO functionality: export} {
     set o [oo::object new]
