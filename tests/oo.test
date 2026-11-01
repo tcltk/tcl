@@ -900,7 +900,12 @@ test oo-3.12 {Bug 3d96b7076e: killing the object's class in a method call} -setu
     Super destroy
 } -result ok
 test oo-3.13 {Bug 28de60cef5: object variable after deleting the object in its destructor} -setup {
+    oo::class create Parent
+    unset -nocomplain ::result
+    set ::result {}
+} -body {
     oo::class create Cls {
+	superclass Parent
 	variable thing
 	constructor {} {
 	    set thing something
@@ -910,31 +915,29 @@ test oo-3.13 {Bug 28de60cef5: object variable after deleting the object in its d
 	    lappend ::result [catch {eval {set thing}} msg] $msg
 	}
     }
-} -body {
-    set ::result {}
     [Cls new] destroy
     set ::result
 } -cleanup {
-    Cls destroy
+    Parent destroy
     unset -nocomplain ::result
 } -result {1 {can't read "thing": no such variable}}
 test oo-3.14 {Bug b4637c4312: upvar to an object variable after deleting the object} -setup {
-    proc linkvar {name} {
-	upvar 1 $name v
-	info exists v
-    }
+    oo::class create Parent
+} -body {
     oo::class create Cls {
+	superclass Parent
 	variable thing
 	method run {} {
 	    my destroy
-	    linkvar thing
+	    apply {name {
+		upvar 1 $name v
+		info exists v
+	    }} thing
 	}
     }
-} -body {
     [Cls new] run
 } -cleanup {
-    Cls destroy
-    rename linkvar {}
+    Parent destroy
 } -result 0
 
 test oo-4.1 {basic test of OO functionality: export} {
