@@ -1,0 +1,1359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TIP 759 series: changes to Tcl(n), expr(n), subst(n)</title>
+<style>
+body, div, p, th, td, li, dd, ul, ol, dl, dt, blockquote {
+	font-family: Verdana, sans-serif;
+    }
+pre, code {
+	font-family: 'Courier New', Courier, monospace;
+    }
+pre {
+	background-color:  #F6FCEC;
+	border-top:        1px solid #6A6A6A;
+	border-bottom:     1px solid #6A6A6A;
+	padding:           1em;
+	overflow:          auto;
+    }
+body {
+	background-color:  #FFFFFF;
+	font-size:         12px;
+	line-height:       1.25;
+	letter-spacing:    .2px;
+	padding-left:      .5em;
+    }
+h1, h2, h3, h4 {
+	font-family:       Georgia, serif;
+	padding-left:      1em;
+	margin-top:        1em;
+    }
+h1 {
+	font-size:         18px;
+	color:             #11577B;
+	border-bottom:     1px dotted #11577B;
+	margin-top:        0px;
+    }
+h2 {
+	font-size:         14px;
+	color:             #11577B;
+	background-color:  #C5DCE8;
+	padding-left:      1em;
+	border:            1px solid #6A6A6A;
+    }
+h3, h4 {
+	color:             #1674A4;
+	background-color:  #E8F2F6;
+	border-bottom:     1px dotted #11577B;
+	border-top:        1px dotted #11577B;
+    }
+h3 {
+	font-size: 12px;
+    }
+h4 {
+	font-size: 11px;
+    }
+.keylist dt, .arguments dt {
+	width: 25em;
+	float: left;
+	padding: 2px;
+	border-top: 1px solid #999999;
+    }
+.keylist dt { font-weight: bold; }
+.keylist dd, .arguments dd {
+	margin-left: 25em;
+	padding: 2px;
+	border-top: 1px solid #999999;
+    }
+.copy {
+	background-color:  #F6FCFC;
+	white-space:       pre;
+	font-size:         80%;
+	border-top:        1px solid #6A6A6A;
+	margin-top:        2em;
+    }
+.tablecell {
+	font-size:	   12px;
+	padding-left:	   .5em;
+	padding-right:	   .5em;
+    }
+
+
+:root { --add: #1a7f37; --add-bg: #dafbe1; }
+@media (prefers-color-scheme: dark) { :root { --add: #3fb950; --add-bg: #12261e; } }
+body { max-width: 60em; margin: 0 auto; padding: 0 16px; }
+.add { color: var(--add); background: var(--add-bg); }
+.mod { text-decoration: underline; text-decoration-color: var(--add);
+       text-decoration-thickness: 2px; text-underline-offset: 2px; }
+.legend { border: 1px solid #888; padding: .5em 1em; margin: 1em 0; }
+.manpage { border-top: 3px double #888; margin-top: 2em; }
+nav { margin: 1em 0; }
+</style></head>
+<body>
+<h1>TIP 759 series: changes to Tcl(n), expr(n), subst(n)</h1>
+<div class="legend"><span class="add">Green text</span>: added. <span class="mod">Underlined in green</span>: modified terms. Removed text is not shown. Compared with the 9.1 trunk.</div>
+<nav><a href="#Tcl-M2">Tcl(n)</a> · <a href="#expr-M2">expr(n)</a> · <a href="#subst-M2">subst(n)</a></nav>
+<section class="manpage">
+<dl>
+<dd><a href="#Tcl-M2" name="L2318" id="L2318">NAME</a>
+<dl><dd>Tcl &mdash; Tool Command Language</dd></dl>
+<dd><a href="#Tcl-M3" name="L2319" id="L2319">SYNOPSIS</a>
+<dl>
+</dl>
+<dd><a href="#Tcl-M4" name="L2320" id="L2320">DESCRIPTION</a>
+<dd><a href="#Tcl-M5" name="L2321" id="L2321">SYNTAX</a>
+<ol class="syntax">
+<dd><a href="#Tcl-M6" name="L2322" id="L2322">[1] <b><span class="add">Scripts.</span></b></a>
+<dl class="syntax">
+<dd><a href="#Tcl-M7" name="L2323" id="L2323"><b><span class="add">Command scripts.</span></b></a>
+<dd><a href="#Tcl-M8" name="L2324" id="L2324"><b><span class="add">Expression scripts.</span></b></a>
+</dl>
+<dd><a href="#Tcl-M9" name="L2325" id="L2325">[2] <b>Evaluation.</b></a>
+<dl class="syntax">
+<dd><a href="#Tcl-M10" name="L2326" id="L2326"><b><span class="add">Evaluation of a command.</span></b></a>
+<dd><a href="#Tcl-M11" name="L2327" id="L2327"><b><span class="add">Evaluation of an expression.</span></b></a>
+</dl>
+<dd><a href="#Tcl-M12" name="L2328" id="L2328">[3] <b>Words.</b></a>
+<dl class="syntax">
+<dd><a href="#Tcl-M13" name="L2329" id="L2329"><b><span class="add">Words of a command.</span></b></a>
+<dd><a href="#Tcl-M14" name="L2330" id="L2330"><b><span class="add">Operands of an expression.</span></b></a>
+</dl>
+<dd><a href="#Tcl-M15" name="L2331" id="L2331">[4] <b>Double quotes.</b></a>
+<dd><a href="#Tcl-M16" name="L2332" id="L2332">[5] <b>Argument expansion.</b></a>
+<dl class="syntax">
+<dd><a href="#Tcl-M17" name="L2333" id="L2333"><b><span class="add">Argument expansion in a command.</span></b></a>
+<dd><a href="#Tcl-M18" name="L2334" id="L2334"><b><span class="add">Argument expansion in an expression.</span></b></a>
+</dl>
+<dd><a href="#Tcl-M19" name="L2335" id="L2335">[6] <b>Braces.</b></a>
+<dd><a href="#Tcl-M20" name="L2336" id="L2336">[7] <b><span class="add">Script substitution.</span></b></a>
+<dl class="syntax">
+<dd><a href="#Tcl-M21" name="L2337" id="L2337"><b>Command <span class="add">substitution.</span></b></a>
+<dd><a href="#Tcl-M22" name="L2338" id="L2338"><b><span class="add">Expression</span> substitution.</b></a>
+</dl>
+<dd><a href="#Tcl-M23" name="L2339" id="L2339">[8] <b>Variable substitution.</b></a>
+<dl class="syntax">
+<dd><a href="#Tcl-M24" name="L2340" id="L2340"><b>$</b><i>name</i></a>
+<dd><a href="#Tcl-M25" name="L2341" id="L2341"><b>$</b><i>name</i><b>(</b><i>index</i><b>)</b></a>
+<dd><a href="#Tcl-M26" name="L2342" id="L2342"><b>${</b><i>name</i><b>}</b></a>
+</dl>
+<dd><a href="#Tcl-M27" name="L2343" id="L2343">[9] <b>Backslash substitution.</b></a>
+<dl class="syntax">
+<dd><a href="#Tcl-M28" name="L2344" id="L2344"><b><span class="add">Backslash substitution in a command.</span></b></a>
+<dl class="syntax">
+<dd><a href="#Tcl-M29" name="L2345" id="L2345">&#92;<b>a</b></a>
+<dd><a href="#Tcl-M30" name="L2346" id="L2346">&#92;<b>b</b></a>
+<dd><a href="#Tcl-M31" name="L2347" id="L2347">&#92;<b>f</b></a>
+<dd><a href="#Tcl-M32" name="L2348" id="L2348">&#92;<b>n</b></a>
+<dd><a href="#Tcl-M33" name="L2349" id="L2349">&#92;<b>r</b></a>
+<dd><a href="#Tcl-M34" name="L2350" id="L2350">&#92;<b>t</b></a>
+<dd><a href="#Tcl-M35" name="L2351" id="L2351">&#92;<b>v</b></a>
+<dd><a href="#Tcl-M36" name="L2352" id="L2352">&#92;<b>&lt;newline&gt;</b><i>whiteSpace</i></a>
+<dd><a href="#Tcl-M37" name="L2353" id="L2353">&#92;&#92;</a>
+<dd><a href="#Tcl-M38" name="L2354" id="L2354">&#92;<i>ooo</i></a>
+<dd><a href="#Tcl-M39" name="L2355" id="L2355">&#92;<b>x</b><i>hh</i></a>
+<dd><a href="#Tcl-M40" name="L2356" id="L2356">&#92;<b>u</b><i>hhhh</i></a>
+<dd><a href="#Tcl-M41" name="L2357" id="L2357">&#92;<b>U</b><i>hhhhhhhh</i></a>
+</dl>
+<dd><a href="#Tcl-M42" name="L2358" id="L2358"><b><span class="add">Backslash substitution in an expression.</span></b></a>
+</dl>
+<dd><a href="#Tcl-M43" name="L2359" id="L2359">[10] <b>Comments.</b></a>
+<dl class="syntax">
+<dd><a href="#Tcl-M44" name="L2360" id="L2360"><b><span class="add">Comments in a command script.</span></b></a>
+<dd><a href="#Tcl-M45" name="L2361" id="L2361"><b><span class="add">Comments in an expression.</span></b></a>
+</dl>
+<dd><a href="#Tcl-M46" name="L2362" id="L2362">[11] <b>Order of substitution.</b></a>
+<dl class="syntax">
+<dd><a href="#Tcl-M47" name="L2363" id="L2363"><b><span class="add">Order of substitution in a command.</span></b></a>
+<dd><a href="#Tcl-M48" name="L2364" id="L2364"><b><span class="add">Order of substitution in an expression.</span></b></a>
+</dl>
+<dd><a href="#Tcl-M49" name="L2365" id="L2365">[12] <b>Substitution and word boundaries.</b></a>
+</ol>
+<dd><a href="#Tcl-M50" name="L2366" id="L2366">TCL VALUES</a>
+<dd><a href="#Tcl-M51" name="L2367" id="L2367">KEYWORDS</a>
+</dl>
+<h3><a name="Tcl-M2" id="Tcl-M2">NAME</a></h3>
+Tcl &mdash; Tool Command Language
+<h3><a name="Tcl-M3" id="Tcl-M3">SYNOPSIS</a></h3>
+Summary of Tcl language syntax.<br>
+<h3><a name="Tcl-M4" id="Tcl-M4">DESCRIPTION</a></h3>
+<h4><a name="Tcl-M5" id="Tcl-M5">SYNTAX</a></h4>
+The following rules define the syntax and semantics of the Tcl language:
+<p>
+<ol class="syntax">
+<dt><a name="Tcl-M6" id="Tcl-M6">[1] <b><span class="mod">Scripts.</span></b></a><dd>
+A Tcl script is a string <span class="add">of one of two kinds: a</span> <i><span class="add">command script</span></i><span class="add">,
+made of one or more commands, or an</span> <i><span class="add">expression script</span></i><span class="add">, made of
+one expression. Commands that take a script as an argument, such as
+the body of</span> <b><a data-href="../TclCmd/proc.html"><span class="add">proc</span></a></b> <span class="add">or</span> <b><a data-href="../TclCmd/foreach.html"><span class="add">foreach</span></a></b><span class="add">, accept both kinds.</span>
+<p>
+<dl class="syntax">
+<dt><a name="Tcl-M7" id="Tcl-M7"><b><span class="add">Command scripts.</span></b></a><dd>
+<span class="add">A command script contains</span> one or more commands.
+Semi-colons and newlines are command separators unless quoted as
+described below.
+Close brackets are command terminators during command substitution
+(see below) unless quoted.
+<p><dt><a name="Tcl-M8" id="Tcl-M8"><b><span class="add">Expression scripts.</span></b></a><dd>
+<span class="add">A script that begins with an open parenthesis
+(&ldquo;(&rdquo;)
+and ends with a close parenthesis
+(&ldquo;)&rdquo;)
+(a newline may follow it) is an expression script: the whole script,
+parentheses included, is one expression, as described in the</span>
+<b><a href="#expr-M2"><span class="add">expr</span></a></b> <span class="add">manual page. Semi-colons and newlines inside it are not
+command separators. For instance, the body of
+&ldquo;proc hypot {a b} {( sqrt($a**2 + $b**2) )}&rdquo;
+is an expression script, and so is
+&ldquo;(&#34;Hi there&#34;)&rdquo;,
+whose result is the string</span> <b><span class="add">Hi there</span></b><span class="add">.
+Only a whole script is tested: in a script of several commands, a
+command that begins with an open parenthesis is an ordinary command.
+Conversely, a script such as
+&ldquo;(cmd) (x)&rdquo;
+is an expression script, and an error.
+During expression substitution (see below), the expression ends at the
+first close parenthesis that is immediately followed by a close bracket
+and leaves the parentheses of the expression balanced:
+&ldquo;)]&rdquo;
+is one symbol.</span>
+<p></dl>
+<p><dt><a name="Tcl-M9" id="Tcl-M9">[2] <b>Evaluation.</b></a><dd>
+<span class="add">How a script is evaluated depends on its kind.</span>
+<p>
+<dl class="syntax">
+<dt><a name="Tcl-M10" id="Tcl-M10"><b><span class="add">Evaluation of a command.</span></b></a><dd>
+A command is evaluated in two steps.
+First, the Tcl interpreter breaks the command into <i>words</i>
+and performs substitutions as described below.
+These substitutions are performed in the same way for all
+commands.
+Secondly, the first word is used to locate a routine to
+carry out the command, and the remaining words of the command are
+passed to that routine.
+The routine is free to interpret each of its words
+in any way it likes, such as an integer, variable name, list,
+or Tcl script.
+Different commands interpret their words differently.
+<span class="add">There is one exception: a command made of a single word that is a
+single expression substitution, such as
+&ldquo;[( $x * 3 )]&rdquo;
+alone on a line, is evaluated as the expression; its value is the
+result of the command and is not used as a command name.</span>
+<p><dt><a name="Tcl-M11" id="Tcl-M11"><b><span class="add">Evaluation of an expression.</span></b></a><dd>
+<span class="add">An expression is evaluated as by the</span> <b><a href="#expr-M2"><span class="add">expr</span></a></b> <span class="add">command, in two steps.
+First, it is broken into</span> <i><span class="add">operands</span></i> <span class="add">and operators (see rule [3]);
+the precedence of the operators, given in the</span> <b><a href="#expr-M2"><span class="add">expr</span></a></b> <span class="add">manual page,
+and parentheses determine the order in which the operators apply.
+Secondly, each operator is applied to the values of its operands.
+Substitutions in an operand are performed when that operand is
+evaluated, not before (see rule [11]).
+No routine is located: the value of the expression is the result.</span>
+<p></dl>
+<p><dt><a name="Tcl-M12" id="Tcl-M12">[3] <b>Words.</b></a><dd>
+<span class="add">How a script is divided into words depends on its kind (rule [1]).</span>
+<p>
+<dl class="syntax">
+<dt><a name="Tcl-M13" id="Tcl-M13"><b><span class="add">Words of a command.</span></b></a><dd>
+Words of a command are separated by white space (except for
+newlines, which are command separators).
+<p><dt><a name="Tcl-M14" id="Tcl-M14"><b><span class="add">Operands of an expression.</span></b></a><dd>
+<span class="add">An expression is a sequence of operands and operators, as described
+in the</span> <b><a href="#expr-M2"><span class="add">expr</span></a></b> <span class="add">manual page; its operands play the role of words.
+Unlike in a command, white space, including newlines, does not
+separate operands: it is ignored, except that it ends a number or a
+name. An operand ends at the first character that cannot continue it,
+such as white space, an operator, a comma or a parenthesis.
+Two operands must be separated by an operator, or by a comma between
+the arguments of a function or the elements of a list; otherwise the expression is an error, as
+in</span> <b><span class="add">1 2</span></b> <span class="add">or</span> <b><span class="add">&#34;a&#34;&#34;b&#34;</span></b><span class="add">, whereas</span>
+<b><span class="add">&#34;a&#34;eq&#34;a&#34;</span></b> <span class="add">is valid.
+An operand is a number, a boolean value, a quoted word (rule [4]),
+a braced word (rule [6]), a substitution (rules [7] to [9]), a function call or a list.
+The value of a substituted operand is always a single operand: it is
+never parsed again as an expression.</span>
+<p></dl>
+<p><dt><a name="Tcl-M15" id="Tcl-M15">[4] <b>Double quotes.</b></a><dd>
+If the first character of a <span class="add">word, or of an operand of an expression,</span>
+is double-quote
+(&ldquo;&#34;&rdquo;)
+then the word is terminated by the next double-quote character.
+If semi-colons, close brackets, or white space characters
+(including newlines) appear between the quotes then they are treated
+as ordinary characters and included in the word.
+Command substitution, <span class="add">expression substitution,</span> variable substitution,
+and backslash substitution are performed on the characters between
+the quotes as described below.
+The double-quotes are not retained as part of the word.
+<p><dt><a name="Tcl-M16" id="Tcl-M16">[5] <b>Argument expansion.</b></a><dd>
+<span class="add">A word of a command, or an operand of an expression, may be expanded
+into several.</span>
+<p>
+<dl class="syntax">
+<dt><a name="Tcl-M17" id="Tcl-M17"><b><span class="add">Argument expansion in a command.</span></b></a><dd>
+If a word starts with the string
+&ldquo;{*}&rdquo;
+followed by a non-whitespace character, then the leading
+&ldquo;{*}&rdquo;
+is removed and the rest of the word is parsed and substituted as any other
+word. After substitution, the word is parsed as a list (without command or
+variable substitutions; backslash substitutions are performed as is normal for
+a list and individual internal words may be surrounded by either braces or
+double-quote characters), and its words are added to the command being
+substituted. For instance,
+&ldquo;cmd a {*}{b [c]} d {*}{$e f {g h}}&rdquo;
+is equivalent to
+&ldquo;cmd a b {[c]} d {$e} f {g h}&rdquo;.
+<p><dt><a name="Tcl-M18" id="Tcl-M18"><b><span class="add">Argument expansion in an expression.</span></b></a><dd>
+<span class="add">If an argument of a function, or an element of a list, starts with the
+string
+&ldquo;{*}&rdquo;
+immediately followed by the start of an operand, then the leading
+&ldquo;{*}&rdquo;
+is removed and the rest of the operand is evaluated as any other
+operand. Its value is then parsed as a list, as in a command, and each
+of its elements becomes a separate argument of the function, or a
+separate element of the list. For instance, if the value of</span> <b><span class="add">L</span></b> <span class="add">is</span>
+<b><span class="add">3 1 2</span></b><span class="add">, then
+&ldquo;max({*}$L, 0)&rdquo;
+is equivalent to
+&ldquo;max(3, 1, 2, 0)&rdquo;.
+Anywhere else in an expression, this prefix is an error; but
+&ldquo;{*}&rdquo;
+followed by white space or by an operator, as in
+&ldquo;{*} eq &#34;*&#34;&rdquo;,
+is the braced string</span> <b><span class="add">*</span></b> <span class="add">(rule [6]).</span>
+<p></dl>
+<p><dt><a name="Tcl-M19" id="Tcl-M19">[6] <b>Braces.</b></a><dd>
+If the first character of a <span class="add">word, or of an operand of an expression,</span>
+is an open brace
+(&ldquo;{&rdquo;)
+and rule [5] does not apply, then
+the word is terminated by the matching close brace
+(&ldquo;}&rdquo;).
+Braces nest within the word: for each additional open
+brace there must be an additional close brace (however,
+if an open brace or close brace within the word is
+quoted with a backslash then it is not counted in locating the
+matching close brace).
+No substitutions are performed on the characters between the
+braces except for backslash-newline substitutions described
+below, nor do semi-colons, newlines, close brackets,
+or white space receive any special interpretation.
+The word will consist of exactly the characters between the
+outer braces, not including the braces themselves.
+<p><dt><a name="Tcl-M20" id="Tcl-M20">[7] <b><span class="mod">Script</span> substitution.</b></a><dd>
+If a word contains an open bracket
+(&ldquo;[&rdquo;)
+then <span class="add">Tcl performs</span> <i><span class="add">script substitution</span></i><span class="add">: the characters following
+the open bracket form a script (rule [1]), which is evaluated; its
+result is substituted into the word in place of the brackets and all of
+the characters between them.
+The kind of the script decides where it ends and how it is evaluated.
+There may be any number of script substitutions in a single word.
+Script substitution is not performed on words enclosed in braces.</span>
+<p>
+<dl class="syntax">
+<dt><a name="Tcl-M21" id="Tcl-M21"><b><span class="add">Command substitution.</span></b></a><dd>
+<span class="add">If the open bracket is not immediately followed by an open parenthesis,
+the script is a command script, and</span> Tcl performs
+<i>command substitution</i>.
+To do this it invokes the Tcl interpreter recursively to process
+the characters following the open bracket as a Tcl script.
+The script may contain any number of commands and must be terminated
+by a close bracket
+(&ldquo;]&rdquo;).
+The result of the script (i.e. the result of its last command) is
+the <span class="mod">result</span> of the <span class="add">substitution.
+To substitute the result of a command whose name begins with an open
+parenthesis, put a space after the open bracket.</span>
+<p><dt><a name="Tcl-M22" id="Tcl-M22"><b><span class="add">Expression substitution.</span></b></a><dd>
+<span class="add">If the open bracket is immediately followed by an open parenthesis
+(&ldquo;[(&rdquo;)
+the script is an expression script,</span> and <span class="add">Tcl performs</span>
+<i><span class="add">expression substitution</span></i><span class="add">.
+The script extends from that open parenthesis to the first close
+parenthesis that is immediately followed by a close bracket
+(&ldquo;)]&rdquo;)
+and leaves the parentheses balanced; parentheses inside braces, quotes
+and nested substitutions are not counted.
+It is evaluated as an expression, as by the</span> <b><a href="#expr-M2"><span class="add">expr</span></a></b> <span class="add">command, and the
+value</span> of the <span class="mod">expression is the result</span> of <span class="add">the substitution.
+For instance,
+&ldquo;set area [( $w * $h )]&rdquo;
+is equivalent to
+&ldquo;set area [expr {$w * $h}]&rdquo;.
+A</span> command <span class="mod">made of</span> a single <span class="mod">expression</span> substitution is <span class="mod">described</span> in
+<span class="mod">rule [2].</span>
+<p></dl>
+<p><dt><a name="Tcl-M23" id="Tcl-M23">[8] <b>Variable substitution.</b></a><dd>
+If a word contains a dollar-sign
+(&ldquo;$&rdquo;)
+followed by one of the forms
+described below, then Tcl performs <i>variable
+substitution</i>:  the dollar-sign and the following characters are
+replaced in the word by the value of a variable.
+Variable substitution may take any of the following forms:
+<p>
+<dl class="syntax">
+<dt><a name="Tcl-M24" id="Tcl-M24"><b>$</b><i>name</i></a><dd>
+<i>Name</i> is the name of a scalar variable;  the name is a sequence
+of one or more characters that are a letter, digit, underscore,
+or namespace separators (two or more colons).
+Letters and digits are <i>only</i> the standard ASCII ones (<b>0</b>&ndash;<b>9</b>,
+<b>A</b>&ndash;<b>Z</b> and <b>a</b>&ndash;<b>z</b>).
+<p><dt><a name="Tcl-M25" id="Tcl-M25"><b>$</b><i>name</i><b>(</b><i>index</i><b>)</b></a><dd>
+<i>Name</i> gives the name of an array variable and <i>index</i> gives
+the name of an element within that array.
+<i>Name</i> must contain only letters, digits, underscores, and
+namespace separators, and may be an empty string.
+Letters and digits are <i>only</i> the standard ASCII ones (<b>0</b>&ndash;<b>9</b>,
+<b>A</b>&ndash;<b>Z</b> and <b>a</b>&ndash;<b>z</b>).
+Command substitutions, variable substitutions, and backslash
+substitutions are performed on the characters of <i>index</i>.
+<p><dt><a name="Tcl-M26" id="Tcl-M26"><b>${</b><i>name</i><b>}</b></a><dd>
+<i>Name</i> is the name of a scalar variable or array element.  It may contain
+any characters whatsoever except for close braces.  It indicates an array
+element if <i>name</i> is in the form
+&ldquo;<i>arrayName</i><b>(</b><i>index</i><b>)</b>&rdquo;
+where <i>arrayName</i> does not contain any open parenthesis characters,
+&ldquo;<b>(</b>&rdquo;,
+or close brace characters,
+&ldquo;<b>}</b>&rdquo;,
+and <i>index</i> can be any sequence of characters except for close brace
+characters.  No further
+substitutions are performed during the parsing of <i>name</i>.
+<p></dl>
+<dl><dd>
+<p>
+There may be any number of variable substitutions in a single word.
+Variable substitution is not performed on words enclosed in braces.
+<p>
+Note that variables may contain character sequences other than those listed
+above, but in that case other mechanisms must be used to access them (e.g.,
+via the <b><a data-href="../TclCmd/set.html">set</a></b> command's single-argument form).
+</dl>
+<p><dt><a name="Tcl-M27" id="Tcl-M27">[9] <b>Backslash substitution.</b></a><dd>
+<span class="add">Backslash substitution is performed differently in a command and in an
+expression.</span>
+<p>
+<dl class="syntax">
+<dt><a name="Tcl-M28" id="Tcl-M28"><b><span class="add">Backslash substitution in a command.</span></b></a><dd>
+If a backslash
+(&ldquo;&#92;&rdquo;)
+appears within a word then <i>backslash substitution</i> occurs.
+In all cases but those described below the backslash is dropped and
+the following character is treated as an ordinary
+character and included in the word.
+This allows characters such as double quotes, close brackets,
+and dollar signs to be included in words without triggering
+special processing.
+The following table lists the backslash sequences that are
+handled specially, along with the value that replaces each sequence.
+<dl><dd>
+<p>
+<dl class="syntax">
+<dt><a name="Tcl-M29" id="Tcl-M29">&#92;<b>a</b></a><dd>
+Audible alert (bell) (Unicode U+000007).
+<p><dt><a name="Tcl-M30" id="Tcl-M30">&#92;<b>b</b></a><dd>
+Backspace (Unicode U+000008).
+<p><dt><a name="Tcl-M31" id="Tcl-M31">&#92;<b>f</b></a><dd>
+Form feed (Unicode U+00000C).
+<p><dt><a name="Tcl-M32" id="Tcl-M32">&#92;<b>n</b></a><dd>
+Newline (Unicode U+00000A).
+<p><dt><a name="Tcl-M33" id="Tcl-M33">&#92;<b>r</b></a><dd>
+Carriage-return (Unicode U+00000D).
+<p><dt><a name="Tcl-M34" id="Tcl-M34">&#92;<b>t</b></a><dd>
+Tab (Unicode U+000009).
+<p><dt><a name="Tcl-M35" id="Tcl-M35">&#92;<b>v</b></a><dd>
+Vertical tab (Unicode U+00000B).
+<p><dt><a name="Tcl-M36" id="Tcl-M36">&#92;<b>&lt;newline&gt;</b><i>whiteSpace</i></a><dd>
+A single space character replaces the backslash, newline, and all spaces
+and tabs after the newline.  This backslash sequence is unique in that it
+is replaced in a separate pre-pass before the command is actually parsed.
+This means that it will be replaced even when it occurs between braces,
+and the resulting space will be treated as a word separator if it is not
+in braces or quotes.
+<p><dt><a name="Tcl-M37" id="Tcl-M37">&#92;&#92;</a><dd>
+Backslash
+(&ldquo;&#92;&rdquo;).
+<p><dt><a name="Tcl-M38" id="Tcl-M38">&#92;<i>ooo</i></a><dd>
+The digits <i>ooo</i> (one, two, or three of them) give a eight-bit octal
+value for the Unicode character that will be inserted, in the range
+<i>000</i>&ndash;<i>377</i> (i.e., the range U+000000&ndash;U+0000FF).
+The parser will stop just before this range overflows, or when
+the maximum of three digits is reached.  The upper bits of the Unicode
+character will be 0.
+<p><dt><a name="Tcl-M39" id="Tcl-M39">&#92;<b>x</b><i>hh</i></a><dd>
+The hexadecimal digits <i>hh</i> (one or two of them) give an eight-bit
+hexadecimal value for the Unicode character that will be inserted.  The upper
+bits of the Unicode character will be 0 (i.e., the character will be in the
+range U+000000&ndash;U+0000FF).
+<p><dt><a name="Tcl-M40" id="Tcl-M40">&#92;<b>u</b><i>hhhh</i></a><dd>
+The hexadecimal digits <i>hhhh</i> (one, two, three, or four of them) give a
+sixteen-bit hexadecimal value for the Unicode character that will be
+inserted.  The upper bits of the Unicode character will be 0 (i.e., the
+character will be in the range U+000000&ndash;U+00FFFF).
+<p><dt><a name="Tcl-M41" id="Tcl-M41">&#92;<b>U</b><i>hhhhhhhh</i></a><dd>
+The hexadecimal digits <i>hhhhhhhh</i> (one up to eight of them) give a
+twenty-one-bit hexadecimal value for the Unicode character that will be
+inserted, in the range U+000000&ndash;U+10FFFF.  The parser will stop just
+before this range overflows, or when the maximum of eight digits
+is reached.  The upper bits of the Unicode character will be 0.
+<p></dl>
+</dl>
+<p>Backslash substitution is not performed on words enclosed in braces,
+except for backslash-newline as described above.
+<p><dt><a name="Tcl-M42" id="Tcl-M42"><b><span class="add">Backslash substitution in an expression.</span></b></a><dd>
+<span class="add">In an expression, backslash substitution is performed only where it is
+performed in a word: between the double quotes of a quoted operand
+(rule [4]), in the index of an array variable, and in a command
+substitution. Elsewhere, a backslash is an error, except a
+backslash-newline, which is white space, and a backslash directly
+followed by a letter, which begins a user-defined operator, as</span>
+<b><span class="add">$U &#92;dot $V</span></b> <span class="add">(see</span> <b><a href="#expr-M2"><span class="add">expr</span></a></b><span class="add">). Some operator names look like
+backslash sequences, such as</span> <b><span class="add">&#92;times</span></b> <span class="add">or</span> <b><span class="add">&#92;neg</span></b><span class="add">: in a braced
+expression they are operators, but in an expression written between
+double quotes, as in</span> <b><span class="add">expr &quot;$a &#92;times $b&quot;</span></b><span class="add">, the Tcl parser first
+replaces</span> <b><span class="add">&#92;t</span></b> <span class="add">or</span> <b><span class="add">&#92;n</span></b> <span class="add">(rule [4]). Thus
+&ldquo;&#34;&#92;x31&#34; + 1&rdquo;
+is 2, but
+&ldquo;&#92;x31 + 1&rdquo;
+calls a user-defined operator</span> <b><span class="add">&#92;x31</span></b> <span class="add">(an error unless the command</span>
+<b><span class="add">tcl::mathop::x31</span></b> <span class="add">exists), and
+&ldquo;1 + &#92; 2&rdquo;
+is an error.</span>
+<p></dl>
+<p><dt><a name="Tcl-M43" id="Tcl-M43">[10] <b>Comments.</b></a><dd>
+<span class="add">Comments are recognized differently in a command script and in an
+expression.</span>
+<p>
+<dl class="syntax">
+<dt><a name="Tcl-M44" id="Tcl-M44"><b><span class="add">Comments in a command script.</span></b></a><dd>
+If a hash character
+(&ldquo;#&rdquo;)
+appears at a point where Tcl is
+expecting the first character of the first word of a command,
+then the hash character and the characters that follow it, up
+through the next newline, are treated as a comment and ignored.
+The comment character only has significance when it appears
+at the beginning of a command.
+<p><dt><a name="Tcl-M45" id="Tcl-M45"><b><span class="add">Comments in an expression.</span></b></a><dd>
+<span class="add">If a hash character
+(&ldquo;#&rdquo;)
+appears at a point where an operand is expected,
+then the hash character and the characters that follow it, up
+through the next newline, are treated as a comment and ignored,
+as described in the</span> <b><a href="#expr-M2"><span class="add">expr</span></a></b> <span class="add">manual page.</span>
+<p></dl>
+<p><dt><a name="Tcl-M46" id="Tcl-M46">[11] <b>Order of substitution.</b></a><dd>
+<span class="add">The order of substitutions depends on the kind of script.</span>
+<p>
+<dl class="syntax">
+<dt><a name="Tcl-M47" id="Tcl-M47"><b><span class="add">Order of substitution in a command.</span></b></a><dd>
+Each character is processed exactly once by the Tcl interpreter
+as part of creating the words of a command.
+For example, if variable substitution occurs then no further
+substitutions are performed on the value of the variable;  the
+value is inserted into the word verbatim.
+If command substitution occurs then the nested command is
+processed entirely by the recursive call to the Tcl interpreter;
+no substitutions are performed before making the recursive
+call and no additional substitutions are performed on the result
+of the nested script.
+<p>
+Substitutions take place from left to right, and each substitution is
+evaluated completely before attempting to evaluate the next.  Thus, a
+sequence like
+<p>
+<pre>set y [set x 0][incr x][incr x]</pre>
+<p>will always set the variable <i>y</i> to the value, <i>012</i>.
+<p><dt><a name="Tcl-M48" id="Tcl-M48"><b><span class="add">Order of substitution in an expression.</span></b></a><dd>
+<span class="add">Substitutions in an expression are performed when the operand that
+contains them is evaluated, not before the expression is evaluated.
+Operands are evaluated from left to right, except that the operators</span>
+<b><span class="add">&amp;&amp;</span></b><span class="add">,</span> <b><span class="add">||</span></b> <span class="add">and</span> <b><span class="add">?:</span></b> <span class="add">evaluate only the operands they need.
+Thus
+&ldquo;expr {$n != 0 &amp;&amp; [check $n]}&rdquo;
+does not invoke</span> <b><span class="add">check</span></b> <span class="add">when</span> <i><span class="add">n</span></i> <span class="add">is 0.
+As in a command, the value of a substitution is not substituted again.</span>
+<p></dl>
+<p><dt><a name="Tcl-M49" id="Tcl-M49">[12] <b>Substitution and word boundaries.</b></a><dd>
+Substitutions do not affect the word boundaries of a command,
+except for argument expansion as specified in rule [5].
+For example, during variable substitution the entire value of
+the variable becomes part of a single word, even if the variable's
+value contains spaces.
+<span class="add">Likewise, in an expression, a substitution always gives a single
+operand, except for argument expansion: if the value of</span> <b><span class="add">x</span></b> <span class="add">is</span>
+<b><span class="add">1 + 1</span></b><span class="add">, then
+&ldquo;$x * 2&rdquo;
+multiplies the string</span> <b><span class="add">1 + 1</span></b> <span class="add">by 2, which is an error, and does
+not compute 4.</span>
+<p></ol>
+<h4><a name="Tcl-M50" id="Tcl-M50">TCL VALUES</a></h4>
+Conceptually, all values in Tcl are strings, or to be precise, sequences of
+Unicode code points. This characteristic of all values being strings is
+commonly referred to as the <i>Everything Is A String (EIAS)</i> principle.
+<p>
+For the most part, Tcl strings can be thought of as strings of characters
+instead of sequences of code points and following common usage, command
+descriptions refer to them as such. However, the distinction is to be noted as
+some characters may have multiple representations as Unicode code point
+sequences and in operations like comparisons, Tcl compares individual
+code points and not individual abstract characters.
+<p>
+While all values are strings, individual commands may treat or
+expect their arguments to be representations of data of a particular type.
+For example, the <b><a data-href="../TclCmd/incr.html">incr</a></b> command expects its operands to be integers.
+<p>
+The most important consequence of the EIAS principle is that all commands must
+treat arguments that have a particular string representation exactly the same
+irrespective of how that value was produced. Thus the <b><a data-href="../TclCmd/incr.html">incr</a></b> command
+must treat <b>100</b> produced by appending <b>0</b> to <b>10</b> exactly the
+same as <b>100</b> produced by multiplying 10 by itself.
+<p>
+Note this EIAS principle is only true at a conceptual level and for reasons of
+efficiency the implementation may choose different internal representations
+for a value depending on its usage. For example, arithmetic operations on
+integers may internally store the value as a native machine word. Similarly, a
+<i>binary string</i> is a sequence of Unicode code points in the range U+0000
+to U+00FF and may be stored as an array of bytes. In all cases this internal
+representation is irrelevant at the Tcl language level but exposed in the Tcl
+C API.
+<h3><a name="Tcl-M51" id="Tcl-M51">KEYWORDS</a></h3>
+<a data-href="../Keywords/B.html#backslash">backslash</a>, <a data-href="../Keywords/C.html#command">command</a>, <a data-href="../Keywords/C.html#comment">comment</a>, <a data-href="../Keywords/E.html#expression"><span class="add">expression</span></a><span class="add">,</span> <a data-href="../Keywords/S.html#script">script</a>, <a data-href="../Keywords/S.html#substitution">substitution</a>, <a data-href="../Keywords/V.html#variable">variable</a>
+<div class="copy">Copyright &copy; 1993 The Regents of the University of California.
+<br>Copyright &copy; 1994-1996 Sun Microsystems, Inc.
+</div>
+</section>
+<section class="manpage">
+<dl>
+<dd><a href="#expr-M2" name="L626" id="L626">NAME</a>
+<dl><dd>expr &mdash; Evaluate an expression</dd></dl>
+<dd><a href="#expr-M3" name="L627" id="L627">SYNOPSIS</a>
+<dl>
+</dl>
+<dd><a href="#expr-M4" name="L628" id="L628">DESCRIPTION</a>
+<dd><a href="#expr-M5" name="L629" id="L629">OPERANDS</a>
+<dl class="operands">
+<dd><a href="#expr-M6" name="L630" id="L630">A <b>numeric value</b></a>
+</dl>
+<dl class="operands">
+<dd><a href="#expr-M7" name="L631" id="L631">A <b>boolean value</b></a>
+<dd><a href="#expr-M8" name="L632" id="L632">A <b>variable</b></a>
+<dd><a href="#expr-M9" name="L633" id="L633">A string enclosed in <b>double-quotes</b></a>
+<dd><a href="#expr-M10" name="L634" id="L634">A string enclosed in <b>braces</b>.</a>
+<dd><a href="#expr-M11" name="L635" id="L635">A Tcl command enclosed in <b>brackets</b></a>
+<dd><a href="#expr-M12" name="L636" id="L636">A <b><span class="add">raw command</span></b></a>
+<dd><a href="#expr-M13" name="L637" id="L637"><span class="add">An expression enclosed in</span> <b><span class="add">[(</span></b> <span class="add">and</span> <b><span class="add">)]</span></b></a>
+<dd><a href="#expr-M14" name="L638" id="L638"><span class="add">A</span> function call.</a>
+<dd><a href="#expr-M15" name="L639" id="L639"><span class="add">A</span> <b><span class="add">list</span></b><span class="add">.</span></a>
+</dl>
+<dd><a href="#expr-M16" name="L640" id="L640">OPERATORS</a>
+<dl class="operators">
+<dd><a href="#expr-M17" name="L641" id="L641"><b>-  +  ~  !</b></a>
+<dd><a href="#expr-M18" name="L642" id="L642"><b><span class="add">&#92;</span></b><i><span class="add">name</span></i></a>
+<dd><a href="#expr-M19" name="L643" id="L643"><b>**</b></a>
+<dd><a href="#expr-M20" name="L644" id="L644"><b>*  /  %</b></a>
+<dd><a href="#expr-M21" name="L645" id="L645"><i><span class="add">x</span></i><b> <span class="add">&#92;</span></b><i><span class="add">name y</span></i></a>
+<dd><a href="#expr-M22" name="L646" id="L646"><b>+  -</b></a>
+<dd><a href="#expr-M23" name="L647" id="L647"><b>&lt;&lt;  &gt;&gt;</b></a>
+<dd><a href="#expr-M24" name="L648" id="L648"><b>&lt;  &gt;  &lt;=  &gt;=</b></a>
+<dd><a href="#expr-M25" name="L649" id="L649"><b>lt  gt  le  ge</b></a>
+<dd><a href="#expr-M26" name="L650" id="L650"><b>==  !=</b></a>
+<dd><a href="#expr-M27" name="L651" id="L651"><b>eq  ne</b></a>
+<dd><a href="#expr-M28" name="L652" id="L652"><b>in  ni</b></a>
+<dd><a href="#expr-M29" name="L653" id="L653"><b>&amp;</b></a>
+<dd><a href="#expr-M30" name="L654" id="L654"><b>^</b></a>
+<dd><a href="#expr-M31" name="L655" id="L655"><b>|</b></a>
+<dd><a href="#expr-M32" name="L656" id="L656"><b>&amp;&amp;</b></a>
+<dd><a href="#expr-M33" name="L657" id="L657"><b>||</b></a>
+<dd><a href="#expr-M34" name="L658" id="L658"><i>x </i><b>?</b><i> y </i><b>:</b><i> z</i></a>
+<dd><a href="#expr-M35" name="L659" id="L659"><i><span class="add">name</span></i><b> <span class="add">=</span> </b><i><span class="add">x</span></i></a>
+<dd><a href="#expr-M36" name="L660" id="L660"><b><span class="add">(</span></b><i><span class="add">name</span></i><b><span class="add">,</span> </b><i><span class="add">name</span></i><b><span class="add">,</span> </b><span class="add">...</span><b><span class="add">) =</span> </b><i><span class="add">x</span></i></a>
+<dd><a href="#expr-M37" name="L661" id="L661"><i><span class="add">x</span></i><b> <span class="add">;</span> </b><i><span class="add">y</span></i></a>
+</dl>
+<dd><a href="#expr-M38" name="L662" id="L662">MATH FUNCTIONS</a>
+<dd><a href="#expr-M39" name="L663" id="L663">TYPES, OVERFLOW, AND PRECISION</a>
+<dd><a href="#expr-M40" name="L664" id="L664">PERFORMANCE CONSIDERATIONS</a>
+<dd><a href="#expr-M41" name="L665" id="L665">EXAMPLES</a>
+<dd><a href="#expr-M42" name="L666" id="L666">SEE ALSO</a>
+<dd><a href="#expr-M43" name="L667" id="L667">KEYWORDS</a>
+</dl>
+<h3><a name="expr-M2" id="expr-M2">NAME</a></h3>
+expr &mdash; Evaluate an expression
+<h3><a name="expr-M3" id="expr-M3">SYNOPSIS</a></h3>
+<b>expr </b><i>arg </i>?<i>arg arg ...</i>?<br>
+<h3><a name="expr-M4" id="expr-M4">DESCRIPTION</a></h3>
+Concatenates <i>arg</i>s, separated by a space, into an expression, and evaluates
+that expression, returning its value.
+The operators permitted in an expression include a subset of
+the operators permitted in C expressions.  For those operators
+common to both Tcl and C, Tcl applies the same meaning and precedence
+as the corresponding C operators.
+The value of an expression is often a numeric result, either an integer or a
+floating-point value, but may also be a non-numeric value.
+For example, the expression
+<p>
+<pre><b>expr</b> 8.2 + 6</pre>
+<p>
+evaluates to 14.2.
+Expressions differ from C expressions in the way that
+operands are specified.  Expressions also support
+non-numeric operands, string comparisons, and some
+additional operators not found in C.
+<p>
+When the result of expression is an integer, it is in decimal form, and when
+the result is a floating-point number, it is in the form produced by the
+<b>%g</b> format specifier of <b><a data-href="../TclCmd/format.html">format</a></b>.
+<p>
+At any point in the expression except within double quotes or braces, <b>#</b>
+is the beginning of a comment, which lasts to the end of the line or
+the end of the expression, whichever comes first.
+<h4><a name="expr-M5" id="expr-M5">OPERANDS</a></h4>
+An expression consists of a combination of operands, operators, parentheses and
+commas, possibly with whitespace between any of these elements, which is
+ignored.  Each operand is interpreted as a numeric value if at all possible.
+<p>
+Each operand has one of the following forms:
+<p>
+<dl class="operands">
+<dt><a name="expr-M6" id="expr-M6">A <b>numeric value</b></a><dd>
+<p></dl>
+<dl><dd>
+<p>
+<dl><dd>
+Either integer or floating-point.  The first two characters of an integer may
+also be <b>0d</b> for decimal, <b>0b</b> for binary, <b>0o</b> for octal or
+<b>0x</b> for hexadecimal.
+<p>
+A floating-point number may be take any of several
+common decimal formats, and may use the decimal point <b>.</b>,
+<b>e</b> or <b>E</b> for scientific notation, and
+the sign characters <b>+</b> and <b>-</b>.  The
+following are all valid floating-point numbers:  2.1, 3., 6e4, 7.91e+16.
+The strings <b>Inf</b>
+and <b>NaN</b>, in any combination of case, are also recognized as floating point
+values.  An operand that doesn't have a numeric interpretation must be quoted
+with either braces or with double quotes.
+<p>
+Digits in any numeric value may be separated with one or more underscore
+characters, &quot;<b>_</b>&quot;.  A separator may only
+appear between digits, not appear at the start of a
+numeric value, between the leading 0 and radix specifier, or at the
+end of a numeric value.  Here are some examples:
+<p>
+<pre><b>expr</b> 100_000_000		<i>100000000</i>
+<b>expr</b> 0xffff_ffff		<i>4294967295</i>
+<b><a data-href="../TclCmd/format.html">format</a></b> 0x%x 0b1111_1110_1101_1011		<i>0xfedb</i>
+<b>expr</b> 3_141_592_653_589e-1_2		<i>3.141592653589</i></pre>
+</dl>
+<p>
+<dl class="operands">
+<dt><a name="expr-M7" id="expr-M7">A <b>boolean value</b></a><dd>
+Using any form understood by <b><a data-href="../TclCmd/string.html">string is</a></b>
+<b>boolean</b>.
+<p><dt><a name="expr-M8" id="expr-M8">A <b>variable</b></a><dd>
+Using standard <b>$</b> notation.
+The value of the variable is the value of the operand.
+<p><dt><a name="expr-M9" id="expr-M9">A string enclosed in <b>double-quotes</b></a><dd>
+Backslash, variable, and command substitution are performed according to the
+rules for <b><a href="#Tcl-M2">Tcl</a></b>.
+<p><dt><a name="expr-M10" id="expr-M10">A string enclosed in <b>braces</b>.</a><dd>
+The operand is treated as a braced value according to the rule for braces in
+<b><a href="#Tcl-M2">Tcl</a></b>.
+<p><dt><a name="expr-M11" id="expr-M11">A Tcl command enclosed in <b>brackets</b></a><dd>
+Command substitution is performed as according to the command substitution rule
+for <b><a href="#Tcl-M2">Tcl</a></b>.
+<p><dt><a name="expr-M12" id="expr-M12">A <b><span class="add">raw command</span></b></a><dd>
+<span class="add">A command without brackets, when its name is one of</span> <b><a data-href="../TclCmd/concat.html"><span class="add">concat</span></a></b><span class="add">,</span>
+<b><a data-href="../TclCmd/dict.html"><span class="add">dict</span></a></b><span class="add">,</span> <b><a data-href="../TclCmd/for.html"><span class="add">for</span></a></b><span class="add">,</span> <b><a data-href="../TclCmd/foreach.html"><span class="add">foreach</span></a></b><span class="add">,</span> <b><a data-href="../TclCmd/global.html"><span class="add">global</span></a></b><span class="add">,</span> <b><a data-href="../TclCmd/if.html"><span class="add">if</span></a></b><span class="add">,</span>
+<b><a data-href="../TclCmd/incr.html"><span class="add">incr</span></a></b><span class="add">,</span> <b><a data-href="../TclCmd/lappend.html"><span class="add">lappend</span></a></b><span class="add">,</span> <b><a data-href="../TclCmd/lassign.html"><span class="add">lassign</span></a></b><span class="add">,</span> <b><a data-href="../TclCmd/lindex.html"><span class="add">lindex</span></a></b><span class="add">,</span>
+<b><a data-href="../TclCmd/llength.html"><span class="add">llength</span></a></b><span class="add">,</span> <b><a data-href="../TclCmd/lmap.html"><span class="add">lmap</span></a></b><span class="add">,</span> <b><a data-href="../TclCmd/lrange.html"><span class="add">lrange</span></a></b><span class="add">,</span> <b><a data-href="../TclCmd/lset.html"><span class="add">lset</span></a></b><span class="add">,</span>
+<b><a data-href="../TclCmd/namespace.html"><span class="add">namespace</span></a></b><span class="add">,</span> <b><a data-href="../TclCmd/return.html"><span class="add">return</span></a></b><span class="add">,</span> <b><a data-href="../TclCmd/string.html"><span class="add">string</span></a></b><span class="add">,</span> <b><a data-href="../TclCmd/switch.html"><span class="add">switch</span></a></b><span class="add">,</span>
+<b><a data-href="../TclCmd/upvar.html"><span class="add">upvar</span></a></b><span class="add">,</span> <b><a data-href="../TclCmd/variable.html"><span class="add">variable</span></a></b> <span class="add">or</span> <b><a data-href="../TclCmd/while.html"><span class="add">while</span></a></b><span class="add">, followed by a space. The
+command ends at a semicolon, or at an operator or a close parenthesis
+that begins a word, or at the end of the expression; its result is the
+value of the operand. For instance</span> <b><span class="add">llength $list + 1</span></b> <span class="add">is</span>
+<b><span class="add">[llength $list] + 1</span></b><span class="add">. This form is provisional.</span>
+<p><dt><a name="expr-M13" id="expr-M13"><span class="add">An expression enclosed in</span> <b><span class="add">[(</span></b> <span class="add">and</span> <b><span class="add">)]</span></b></a><dd>
+<span class="add">Expression substitution, as described in the script substitution rule
+([7]) for</span> <b><a href="#Tcl-M2"><span class="add">Tcl</span></a></b><span class="add">: the value of the expression between the brackets is the
+value of the operand.</span>
+<p><dt><a name="expr-M14" id="expr-M14"><span class="add">A</span> function call.</a><dd>
+This is mathematical function such as <b>sin($x)</b>, whose arguments have any of
+the above forms for operands.  See <b><a data-href="#M38">MATH FUNCTIONS</a></b> below for
+a discussion of how mathematical functions are handled.
+<p><dt><a name="expr-M15" id="expr-M15"><span class="add">A</span> <b><span class="add">list</span></b><span class="add">.</span></a><dd>
+<span class="add">Two or more expressions separated by commas, in parentheses that do
+not follow a function name:</span> <b><span class="add">(</span></b><i><span class="add">a</span></i><b><span class="add">,</span> </b><i><span class="add">b</span></i><b><span class="add">,</span> </b><span class="add">...</span><b><span class="add">)</span></b><span class="add">.
+The value is the list of the values of the expressions, as built by the</span>
+<b><a data-href="../TclCmd/list.html"><span class="add">list</span></a></b> <span class="add">command; it is not converted to a number. Lists may be
+nested: the value of</span> <b><span class="add">((1, 2), 3)</span></b> <span class="add">is</span> <b><span class="add">{1 2} 3</span></b><span class="add">. A
+parenthesized expression without a comma is not a list. A comma outside of
+any parentheses makes the whole expression a list, as if it were enclosed
+in parentheses:</span> <b><span class="add">1, 2</span></b> <span class="add">is</span> <b><span class="add">1 2</span></b><span class="add">, and the parentheses of an
+expression substitution may close early, as in</span>
+<b><span class="add">[(1, 2), (3, 4)]</span></b><span class="add">, which is</span> <b><span class="add">{1 2} {3 4}</span></b><span class="add">.</span>
+<p></dl>
+</dl>
+<p>
+<span class="add">An argument of a function, or an element of a list, may be prefixed by</span>
+<b><span class="add">{*}</span></b><span class="add">, as in the argument expansion rule for</span> <b><a href="#Tcl-M2"><span class="add">Tcl</span></a></b><span class="add">: its value is
+taken as a list, and each element of that list becomes a separate argument
+of the function, or a separate element of the list. For instance, if the
+value of</span> <b><span class="add">L</span></b> <span class="add">is</span> <b><span class="add">3 1 2</span></b><span class="add">,</span> <b><span class="add">max({*}$L, 0)</span></b> <span class="add">is</span> <b><span class="add">max(3, 1, 2, 0)</span></b>
+<span class="add">and</span> <b><span class="add">(0, {*}$L)</span></b> <span class="add">is</span> <b><span class="add">0 3 1 2</span></b><span class="add">.</span> <b><span class="add">{*}</span></b> <span class="add">is recognized only when it
+is immediately followed by the start of an operand (a number, a variable, a
+bracket, a brace, a quote, a name or an open parenthesis); elsewhere, as in</span>
+<b><span class="add">{*} eq &quot;*&quot;</span></b><span class="add">, it is a braced string. It is an error to use</span> <b><span class="add">{*}</span></b>
+<span class="add">anywhere but before an argument of a function or an element of a list.</span>
+<p>
+Because <b>expr</b> parses and performs substitutions on values that have
+already been parsed and substituted by <b><a href="#Tcl-M2">Tcl</a></b>, it is usually best to enclose
+expressions in braces to avoid the first round of substitutions by
+<b><a href="#Tcl-M2">Tcl</a></b>.
+<p>
+Below are some examples of simple expressions where the value of <b>a</b> is 3
+and the value of <b>b</b> is 6.  The command on the left side of each line
+produces the value on the right side.
+<p>
+<pre><b>expr</b> {3.1 + $a}	<i>6.1</i>
+<b>expr</b> {2 + &quot;$a.$b&quot;}	<i>5.6</i>
+<b>expr</b> {4*[llength {6 2}]}	<i>8</i>
+<b>expr</b> {{word one} &lt; &quot;word $a&quot;}	<i>0</i></pre>
+<p>
+<h4><a name="expr-M16" id="expr-M16">OPERATORS</a></h4>
+For operators having both a numeric mode and a string mode, the numeric mode is
+chosen when all operands have a numeric interpretation.  The integer
+interpretation of an operand is preferred over the floating-point
+interpretation.  To ensure string operations on arbitrary values it is generally
+a good idea to use <b>eq</b>, <b>ne</b>, or the <b><a data-href="../TclCmd/string.html">string</a></b> command instead of
+more versatile operators such as <b>==</b>.
+<p>
+Unless otherwise specified, operators accept non-numeric operands.  The value
+of a boolean operation is 1 if true, 0 otherwise.  See also <b><a data-href="../TclCmd/string.html">string is</a></b>
+<b>boolean</b>.  The valid operators, most of which are also available as
+commands in the <b>::tcl::mathop</b> namespace (see <b><a data-href="../TclCmd/mathop.html">mathop</a></b>(n)), are listed
+below, grouped in decreasing order of precedence:
+<p>
+<dl class="operators">
+<dt><a name="expr-M17" id="expr-M17"><b>-  +  ~  !</b></a><dd>
+Unary minus, unary plus, bit-wise NOT, logical NOT.  These operators
+may only be applied to numeric operands, and bit-wise NOT may only be
+applied to integers.
+<p><dt><a name="expr-M18" id="expr-M18"><b><span class="add">&#92;</span></b><i><span class="add">name</span></i></a><dd>
+<span class="add">User-defined unary operator:</span> <b><span class="add">&#92;</span></b><i><span class="add">name x</span></i> <span class="add">is the result of the
+command</span> <b><span class="add">tcl::mathop::</span></b><i><span class="add">name x</span></i><span class="add">.</span> <i><span class="add">name</span></i> <span class="add">begins with a letter,
+followed by letters, digits and underscores. The command is resolved as
+the functions of</span> <b><span class="add">tcl::mathfunc</span></b> <span class="add">(see</span> <b><a data-href="#M38"><span class="add">MATH FUNCTIONS</span></a></b><span class="add">): relative
+to the current namespace, then in the global namespace.</span>
+<p><dt><a name="expr-M19" id="expr-M19"><b>**</b></a><dd>
+Exponentiation.  Valid for numeric operands.  The maximum exponent value
+that Tcl can handle if the first number is an integer &gt; 1 is 268435455.
+<p><dt><a name="expr-M20" id="expr-M20"><b>*  /  %</b></a><dd>
+Multiply and divide, which are valid for numeric operands, and remainder, which
+is valid for integers.  The remainder, an absolute value smaller than the
+absolute value of the divisor, has the same sign as the divisor.
+<p>
+When applied to integers, division and remainder can be
+considered to partition the number line into a sequence of
+adjacent non-overlapping pieces, where each piece is the size of the divisor;
+the quotient identifies which piece the dividend lies within, and the
+remainder identifies where within that piece the dividend lies. A
+consequence of this is that the result of
+&ldquo;-57 <b>/</b> 10&rdquo;
+is always -6, and the result of
+&ldquo;-57 <b>%</b> 10&rdquo;
+is always 3.
+<p><dt><a name="expr-M21" id="expr-M21"><i><span class="add">x</span></i><b> <span class="add">&#92;</span></b><i><span class="add">name y</span></i></a><dd>
+<span class="add">User-defined binary operator, with the precedence of</span> <b><span class="add">*</span></b> <span class="add">and grouping
+left-to-right:</span> <i><span class="add">x</span></i><b> <span class="add">&#92;</span></b><i><span class="add">name y</span></i> <span class="add">is the result of the command</span>
+<b><span class="add">tcl::mathop::</span></b><i><span class="add">name x y</span></i><span class="add">, resolved as for the unary form. For
+instance, with
+&ldquo;proc tcl::mathop::dot {u v} {...}&rdquo;
+returning the dot product of two vectors,
+&ldquo;$U &#92;</span><b><span class="add">dot</span></b> <span class="add">$V&rdquo;
+is the dot product of</span> <i><span class="add">U</span></i> <span class="add">and</span> <i><span class="add">V</span></i><span class="add">, and
+&ldquo;$a + $U &#92;</span><b><span class="add">dot</span></b> <span class="add">$V * 2&rdquo;
+is
+&ldquo;$a + (($U &#92;</span><b><span class="add">dot</span></b> <span class="add">$V) * 2)&rdquo;.
+A user-defined operator is recognized only in an expression read by the
+expression parser: in braces, or in an expression substitution or an
+expression script. Between double quotes, the Tcl parser performs
+backslash substitution first (see</span> <b><a href="#Tcl-M2"><span class="add">Tcl</span></a></b><span class="add">, rule [4]).</span>
+<p><dt><a name="expr-M22" id="expr-M22"><b>+  -</b></a><dd>
+Add and subtract.  Valid for numeric operands.
+<p><dt><a name="expr-M23" id="expr-M23"><b>&lt;&lt;  &gt;&gt;</b></a><dd>
+Left and right shift.  Valid for integers.
+A right shift always propagates the sign bit.
+<p><dt><a name="expr-M24" id="expr-M24"><b>&lt;  &gt;  &lt;=  &gt;=</b></a><dd>
+Boolean numeric-preferring comparisons: less than, greater than, less than or
+equal, and greater than or equal. If either argument is not numeric, the
+comparison is done using UNICODE string comparison, as with the string
+comparison operators below, which have the same precedence.
+<p><dt><a name="expr-M25" id="expr-M25"><b>lt  gt  le  ge</b></a><dd>
+Boolean string comparisons: less than, greater than, less than or equal, and
+greater than or equal. These always compare values using their UNICODE strings
+(also see <b><a data-href="../TclCmd/string.html">string compare</a></b>), unlike with the numeric-preferring
+comparisons above, which have the same precedence.
+<p><dt><a name="expr-M26" id="expr-M26"><b>==  !=</b></a><dd>
+Boolean equal and not equal.
+<p><dt><a name="expr-M27" id="expr-M27"><b>eq  ne</b></a><dd>
+Boolean string equal and string not equal.
+<p><dt><a name="expr-M28" id="expr-M28"><b>in  ni</b></a><dd>
+List containment and negated list containment.  The first argument is
+interpreted as a string, the second as a list.  <b>in</b> tests for membership
+in the list, and <b>ni</b> is the inverse.
+<p><dt><a name="expr-M29" id="expr-M29"><b>&amp;</b></a><dd>
+Bit-wise AND.  Valid for integer operands.
+<p><dt><a name="expr-M30" id="expr-M30"><b>^</b></a><dd>
+Bit-wise exclusive OR.  Valid for integer operands.
+<p><dt><a name="expr-M31" id="expr-M31"><b>|</b></a><dd>
+Bit-wise OR.  Valid for integer operands.
+<p><dt><a name="expr-M32" id="expr-M32"><b>&amp;&amp;</b></a><dd>
+Logical AND.  If both operands are true, the result is 1, or 0 otherwise.
+This operator evaluates lazily; it only evaluates its second operand if it
+must in order to determine its result.
+This operator evaluates lazily; it only evaluates its second operand if it
+must in order to determine its result.
+<p><dt><a name="expr-M33" id="expr-M33"><b>||</b></a><dd>
+Logical OR.  If both operands are false, the result is 0, or 1 otherwise.
+This operator evaluates lazily; it only evaluates its second operand if it
+must in order to determine its result.
+<p><dt><a name="expr-M34" id="expr-M34"><i>x </i><b>?</b><i> y </i><b>:</b><i> z</i></a><dd>
+If-then-else, as in C.  If <i>x</i> is true , the result is the value of
+<i>y</i>.  Otherwise the result is the value of <i>z</i>.
+This operator evaluates lazily; it evaluates only one of <i>y</i> or <i>z</i>.
+<p><dt><a name="expr-M35" id="expr-M35"><i><span class="add">name</span></i><b> <span class="add">=</span> </b><i><span class="add">x</span></i></a><dd>
+<span class="add">Assignment, as in C. The value of</span> <i><span class="add">x</span></i> <span class="add">is stored in the variable</span>
+<i><span class="add">name</span></i><span class="add">, and is the value of the assignment.</span> <i><span class="add">name</span></i> <span class="add">is usually a
+bareword (not</span> <b><span class="add">$</span></b><i><span class="add">name</span></i><span class="add">); otherwise it is any operand, whose value is
+the name of the variable: a braced or quoted name, for a qualified name or
+an array element (</span><b><span class="add">&quot;A($i)&quot; = 0</span></b><span class="add">), or a variable or function whose
+value is the name (</span><b><span class="add">$ref = 0</span></b><span class="add">). The variable is resolved as by</span>
+<b><a data-href="../TclCmd/set.html"><span class="add">set</span></a></b><span class="add">: in a procedure, a name that is not qualified is a local
+variable (see</span> <b><a data-href="../TclCmd/global.html"><span class="add">global</span></a></b><span class="add">,</span> <b><a data-href="../TclCmd/variable.html"><span class="add">variable</span></a></b> <span class="add">and</span> <b><a data-href="../TclCmd/upvar.html"><span class="add">upvar</span></a></b><span class="add">).
+Assignment groups right-to-left:</span> <b><span class="add">a = b = 0</span></b> <span class="add">sets both variables.</span>
+<p><dt><a name="expr-M36" id="expr-M36"><b><span class="add">(</span></b><i><span class="add">name</span></i><b><span class="add">,</span> </b><i><span class="add">name</span></i><b><span class="add">,</span> </b><span class="add">...</span><b><span class="add">) =</span> </b><i><span class="add">x</span></i></a><dd>
+<span class="add">Tuple assignment. The target is a list of names, as written for a list
+(see</span> <b><a data-href="#M5"><span class="add">OPERANDS</span></a></b><span class="add">), whose elements are variable names or nested lists
+of names. As for</span> <b><span class="add">=</span></b><span class="add">, a name is a bareword or any other operand whose
+value is the name (</span><b><span class="add">&quot;A($i)&quot;</span></b><span class="add">,</span> <b><span class="add">{::ns::v}</span></b><span class="add">,</span> <b><span class="add">$ref</span></b><span class="add">). Each variable is set
+to the element of the value of</span> <i><span class="add">x</span></i> <span class="add">at the same place, as given by</span>
+<b><a data-href="../TclCmd/lindex.html"><span class="add">lindex</span></a></b><span class="add">: a missing element gives the empty string, extra elements
+are ignored. The value of the assignment is the value of</span> <i><span class="add">x</span></i><span class="add">. For
+instance,</span> <b><span class="add">((x0, y0), (x1, y1)) = ($p, $q)</span></b> <span class="add">sets four variables from
+two points. A tuple assignment may not be an element of a list or an
+argument of a function among others, unless it is enclosed in
+parentheses:</span> <b><span class="add">(a, b) = 1, 2</span></b> <span class="add">is an error, which is written</span>
+<b><span class="add">(a, b) = (1, 2)</span></b><span class="add">.</span>
+<p><dt><a name="expr-M37" id="expr-M37"><i><span class="add">x</span></i><b> <span class="add">;</span> </b><i><span class="add">y</span></i></a><dd>
+<span class="add">Sequence.</span> <i><span class="add">x</span></i> <span class="add">is evaluated, then</span> <i><span class="add">y</span></i><span class="add">, whose value is the value of
+the sequence, as the comma operator of C. An empty operand, as in</span>
+<b><span class="add">x = 1;</span></b> <span class="add">or</span> <b><span class="add">1;;2</span></b><span class="add">, has the empty string as its value.
+A sequence may not be an argument of a function or an element of a list
+unless it is enclosed in parentheses:</span> <b><span class="add">max((a = 1; $a), 2)</span></b><span class="add">, not</span>
+<b><span class="add">max(a = 1; $a, 2)</span></b><span class="add">, and</span> <b><span class="add">a = 1; ($a, 2)</span></b><span class="add">, not</span>
+<b><span class="add">a = 1; $a, 2</span></b><span class="add">.</span>
+<p></dl>
+<p>
+The exponentiation operator promotes types in the same way that the multiply
+and divide operators do, and the result is is the same as the result of
+<b>pow</b>.
+Exponentiation <span class="mod">and assignment group</span> right-to-left within a precedence level.
+Other binary operators group left-to-right.  For example, the value of
+<p>
+<p>
+<pre><b>expr</b> {4*2 &lt; 7}</pre>
+<p>
+is 0, while the value of
+<p>
+<pre><b>expr</b> {2**3**2}</pre>
+<p>
+is 512.
+<p>
+As in C, <b>&amp;&amp;</b>, <b>||</b>, and <b>?:</b> feature
+&ldquo;lazy evaluation&rdquo;,
+which means that operands are not evaluated if they are
+not needed to determine the outcome.  For example, in
+<p>
+<pre><b>expr</b> {$v?[a]:[b]}</pre>
+<p>
+only one of <b>[a]</b> or <b>[b]</b> is evaluated,
+depending on the value of <b>$v</b>.  This is not true of the normal Tcl parser,
+so it is normally recommended to enclose the arguments to <b>expr</b> in braces.
+Without braces, as in
+<b>expr</b> $v ? [a] : [b]
+both <b>[a]</b> and <b>[b]</b> are evaluated before <b>expr</b> is even called.
+<p>
+For more details on the results
+produced by each operator, see the documentation for C.
+<h4><a name="expr-M38" id="expr-M38">MATH FUNCTIONS</a></h4>
+A mathematical function such as <b>sin($x)</b> is replaced with a call to an
+ordinary Tcl command in the <b>::tcl::mathfunc</b> namespace.  The evaluation
+of an expression such as
+<p>
+<pre><b>expr</b> {sin($x+$y)}</pre>
+<p>
+is the same in every way as the evaluation of
+<p>
+<pre><b>expr</b> {[::tcl::mathfunc::sin [<b>expr</b> {$x+$y}]]}</pre>
+<p>
+which in turn is the same as the evaluation of
+<p>
+<pre>::tcl::mathfunc::sin [<b>expr</b> {$x+$y}]</pre>
+<p>
+<b>::tcl::mathfunc::sin</b> is resolved as described in
+<b><a data-href="../TclCmd/namespace.html">NAMESPACE RESOLUTION</a></b> in the <b><a data-href="../TclCmd/namespace.html">namespace</a></b>(n) documentation.  Given the
+default value of <b><a data-href="../TclCmd/namespace.html">namespace path</a></b>, <b>[namespace
+current]::tcl::mathfunc::sin</b> or <b>::tcl::mathfunc::sin</b> are the typical
+resolutions.
+<p>
+As in C, a mathematical function may accept multiple arguments separated by
+commas. Thus,
+<p>
+<pre><b>expr</b> {hypot($x,$y)}</pre>
+<p>
+becomes
+<p>
+<pre>::tcl::mathfunc::hypot $x $y</pre>
+<p>
+See the <b><a data-href="../TclCmd/mathfunc.html">mathfunc</a></b>(n) documentation for the math functions that are
+available by default.
+<h4><a name="expr-M39" id="expr-M39">TYPES, OVERFLOW, AND PRECISION</a></h4>
+Internal floating-point computations are
+performed using the <i>double</i> C type.
+When converting a string to floating-point value, exponent overflow is
+detected and results in the <i>double</i> value of <b>Inf</b> or
+<b>-Inf</b> as appropriate.  Floating-point overflow and underflow
+are detected to the degree supported by the hardware, which is generally
+fairly reliable.
+<p>
+Conversion among internal representations for integer, floating-point, and
+string operands is done automatically as needed.  For arithmetic computations,
+integers are used until some floating-point number is introduced, after which
+floating-point values are used.  For example,
+<p>
+<pre><b>expr</b> {5 / 4}</pre>
+<p>
+returns 1, while
+<p>
+<pre><b>expr</b> {5 / 4.0}
+<b>expr</b> {5 / ( [string length &quot;abcd&quot;] + 0.0 )}</pre>
+<p>
+both return 1.25.
+A floating-point result can be distinguished from an integer result by the
+presence of either
+&ldquo;<b>.</b>&rdquo;
+or
+&ldquo;<b>e</b>&rdquo;.
+<p>
+For example,
+<p>
+<pre><b>expr</b> {20.0/5.0}</pre>
+<p>
+returns <b>4.0</b>, not <b>4</b>.
+<h3><a name="expr-M40" id="expr-M40">PERFORMANCE CONSIDERATIONS</a></h3>
+Where an expression contains syntax that Tcl would otherwise perform
+substitutions on, enclosing an expression in braces or otherwise quoting it
+so that it's a static value allows the Tcl compiler to generate bytecode for
+the expression, resulting in better speed and smaller storage requirements.
+This also avoids issues that can arise if Tcl is allowed to perform
+substitution on the value before <b>expr</b> is called.
+<p>
+In the following example, the value of the expression is 11 because the Tcl
+parser first substitutes <b>$b</b> and <b>expr</b> then substitutes <b>$a</b> as
+part of evaluating the expression
+&ldquo;$a + 2*4&rdquo;.
+Enclosing the expression in braces would result in a syntax error as <b>$b</b>
+does not evaluate to a numeric value.
+<p>
+<pre>set a 3
+set b {$a + 2}
+<b>expr</b> $b*4</pre>
+<p>
+When an expression is generated at runtime, like the one above is, the bytecode
+compiler must ensure that new code is generated each time the expression
+is evaluated.  This is the most costly kind of expression from a performance
+perspective.  In such cases, consider directly using the commands described in
+the <b><a data-href="../TclCmd/mathfunc.html">mathfunc</a></b>(n) or <b><a data-href="../TclCmd/mathop.html">mathop</a></b>(n) documentation instead of <b>expr</b>.
+<p>
+Most expressions are not formed at runtime, but are literal strings or contain
+substitutions that don't introduce other substitutions.  To allow the bytecode
+compiler to work with an expression as a string literal at compilation time,
+ensure that it contains no substitutions or that it is enclosed in braces or
+otherwise quoted to prevent Tcl from performing substitutions, allowing
+<b>expr</b> to perform them instead.
+<p>
+If it is necessary to include a non-constant expression string within the
+wider context of an otherwise-constant expression, the most efficient
+technique is to put the varying part inside a recursive <b>expr</b>, as this at
+least allows for the compilation of the outer part, though it does mean that
+the varying part must itself be evaluated as a separate expression. Thus, in
+this example the result is 20 and the outer expression benefits from fully
+cached bytecode compilation.
+<p>
+<pre>set a 3
+set b {$a + 2}
+<b>expr</b> {[<b>expr</b> $b] * 4}</pre>
+<p>
+In general, you should enclose your expression in braces wherever possible,
+and where not possible, the argument to <b>expr</b> should be an expression
+defined elsewhere as simply as possible. It is usually more efficient and
+safer to use other techniques (e.g., the commands in the <b>::tcl::mathop</b>
+namespace) than it is to do complex expression generation.
+<h3><a name="expr-M41" id="expr-M41">EXAMPLES</a></h3>
+A numeric comparison whose result is 1:
+<p>
+<pre><b>expr</b> {&quot;0x03&quot; &gt; &quot;2&quot;}</pre>
+<p>
+A string comparison whose result is 1:
+<p>
+<pre><b>expr</b> {&quot;0y&quot; &gt; &quot;0x12&quot;}</pre>
+<p>
+A forced string comparison whose result is 0:
+<p>
+<pre><b>expr</b> {&quot;0x03&quot; gt &quot;2&quot;}</pre>
+<p>
+<span class="add">A procedure whose body is an expression script (see rule [1] of the</span>
+<b><a href="#Tcl-M2"><span class="add">Tcl</span></a></b> <span class="add">manual page): the body is one expression.</span>
+<p>
+<pre><span class="add">proc hypot {a b} {( sqrt($a**2 + $b**2) )}
+lmap x {1 2 3} {( $x * $x )}</span></pre>
+<p>
+<span class="add">Build lists of computed values, for instance coordinates for a canvas:</span>
+<p>
+<pre><span class="add">set pairs [lmap a $xs b $ys {( $a, $b )}]
+set coords [lmap x $xs {( $x, sin($x) )}]</span></pre>
+<p>
+<span class="add">Compute a value with an expression substitution, the short form of</span>
+<b><span class="add">[expr {...}]</span></b> <span class="add">in a word:</span>
+<p>
+<pre><span class="add">set area [( $width * $height )]
+puts &quot;half: [( $area / 2.0 )]&quot;</span></pre>
+<p>
+<span class="add">A procedure whose body is an expression script with raw commands:</span>
+<p>
+<pre><span class="add">proc dot {u v} {(
+    s = 0;
+    foreach a $u b $v {( s = $s + $a*$b )};
+    $s
+)}</span></pre>
+<p>
+<span class="add">A sequence of computations, each result stored in a variable:</span>
+<p>
+<pre><b><span class="add">expr</span></b> <span class="add">{
+    x = 5*$y + 6*$z;
+    w = $x**2 + $y**2;
+    v = $w**2 + $y**2
+}</span></pre>
+<p>
+<span class="add">The distance between two points, given as lists {x y}, with a tuple
+assignment in an expression script:</span>
+<p>
+<pre><span class="add">proc distance {p q} {(
+    ((x0, y0), (x1, y1)) = ($p, $q);
+    hypot($x1 - $x0, $y1 - $y0)
+)}</span></pre>
+<p>
+Define a procedure that computes an
+&ldquo;interesting&rdquo;
+mathematical function:
+<p>
+<pre>proc ::tcl::mathfunc::calc {x y} {
+    <b>expr</b> { ($x**2 - $y**2) / exp($x**2 + $y**2) }
+}</pre>
+<p>
+Convert polar coordinates into cartesian coordinates:
+<p>
+<pre># convert from ($radius,$angle)
+set x [<b>expr</b> { $radius * cos($angle) }]
+set y [<b>expr</b> { $radius * sin($angle) }]</pre>
+<p>
+Convert cartesian coordinates into polar coordinates:
+<p>
+<pre># convert from ($x,$y)
+set radius [<b>expr</b> { hypot($y, $x) }]
+set angle  [<b>expr</b> { atan2($y, $x) }]</pre>
+<p>
+Print a message describing the relationship of two string values to
+each other:
+<p>
+<pre>puts &quot;a and b are [<b>expr</b> {$a eq $b ? {equal} : {different}}]&quot;</pre>
+<p>
+Set a variable indicating whether an environment variable is defined and has
+value of true:
+<p>
+<pre>set isTrue [<b>expr</b> {
+    # Does the environment variable exist, and...
+    [info exists ::env(SOME_ENV_VAR)] &amp;&amp;
+    # ...does it contain a proper true value?
+    [string is true -strict $::env(SOME_ENV_VAR)]
+}]</pre>
+<p>
+Generate a random integer in the range 0..99 inclusive:
+<p>
+<pre>set randNum [<b>expr</b> { int(100 * rand()) }]</pre>
+<h3><a name="expr-M42" id="expr-M42">SEE ALSO</a></h3>
+<b><a data-href="../TclCmd/array.html">array</a></b>, <b><a data-href="../TclCmd/for.html">for</a></b>, <b><a data-href="../TclCmd/if.html">if</a></b>, <b><a data-href="../TclCmd/mathfunc.html">mathfunc</a></b>, <b><a data-href="../TclCmd/mathop.html">mathop</a></b>, <b><a data-href="../TclCmd/namespace.html">namespace</a></b>, <b><a data-href="../TclCmd/proc.html">proc</a></b>, <b><a data-href="../TclCmd/string.html">string</a></b>, <b><a href="#Tcl-M2">Tcl</a></b>, <b><a data-href="../TclCmd/while.html">while</a></b>
+<h3><a name="expr-M43" id="expr-M43">KEYWORDS</a></h3>
+<a data-href="../Keywords/A.html#arithmetic">arithmetic</a>, <a data-href="../Keywords/B.html#boolean">boolean</a>, <a data-href="../Keywords/C.html#compare">compare</a>, <a data-href="../Keywords/E.html#expression">expression</a>, <a data-href="../Keywords/F.html#fuzzy comparison">fuzzy comparison</a>, <a data-href="../Keywords/I.html#integer value">integer value</a>
+<div class="copy">Copyright &copy; 1993 The Regents of the University of California.
+<br>Copyright &copy; 1994-2000 Sun Microsystems, Inc.
+<br>Copyright &copy; 2005 Kevin B. Kenny &lt;kennykb(at)acm.org&gt;. All rights reserved
+</div>
+</section>
+<section class="manpage">
+<h3><a name="subst-M2" id="subst-M2">NAME</a></h3>
+subst &mdash; Perform backslash, command, <span class="add">expression,</span> and variable substitutions
+<h3><a name="subst-M3" id="subst-M3">SYNOPSIS</a></h3>
+<b>subst </b>?<b>-nobackslashes</b>? ?<b>-nocommands</b><span class="add">? ?</span><b><span class="add">-noexpr</span></b>? ?<b>-novariables</b>? <i>string</i><br>
+<b>subst </b>?<b>-backslashes</b>? ?<b>-commands</b>? ?<b><span class="add">-expr</span></b><span class="add">? ?</span><b>-variables</b>? <i>string</i><br>
+<h3><a name="subst-M4" id="subst-M4">DESCRIPTION</a></h3>
+This command performs variable substitutions, command substitutions,
+<span class="add">expression substitutions</span> and backslash substitutions on its <i>string</i> argument and
+returns the fully-substituted result.
+The substitutions are performed in exactly the same way as for
+Tcl commands.
+As a result, the <i>string</i> argument is actually substituted twice,
+once by the Tcl parser in the usual fashion for Tcl commands, and
+again by the <i>subst</i> command.
+<p>
+If any of the <b>-nobackslashes</b>, <b>-nocommands</b>, <b><span class="add">-noexpr</span></b><span class="add">,</span>
+or <b>-novariables</b> are specified, then the corresponding substitutions
+are not performed.
+For example, if <b>-nocommands</b> is specified, command substitution
+is not performed:  open and close brackets are treated as ordinary characters
+with no special interpretation.
+<span class="add">Expression substitution
+&ldquo;[(&rdquo;...
+(see rule [7] of the</span> <b><a href="#Tcl-M2"><span class="add">Tcl</span></a></b> <span class="add">manual page) is controlled by</span>
+<b><span class="add">-noexpr</span></b><span class="add">, not by</span> <b><span class="add">-nocommands</span></b><span class="add">: with</span> <b><span class="add">-noexpr</span></b><span class="add">, an
+open bracket followed by an open parenthesis is an ordinary character.</span>
+<p>
+If any of the <b>-backslashes</b>, <b>-commands</b><span class="add">,</span> <b><span class="add">-expr</span></b>, or
+<b>-variables</b> are specified, then only the corresponding
+substitutions are performed. This means that the following lines are
+equivalent:
+<p>
+<pre><b>subst</b> -nobackslashes -nocommands $string
+<b>subst</b> -variables $string</pre>
+<p>
+It is not allowed to combine positive and negated options.
+<p>
+Note that the substitution of one kind can include substitution of
+other kinds.  For example, even when the <b>-novariables</b> option
+is specified, command substitution is performed without restriction.
+This means that any variable substitution necessary to complete the
+command substitution will still take place.  Likewise, any command
+substitution necessary to complete a variable substitution will
+take place, even when <b>-nocommands</b> is specified.  See the
+<b><a data-href="#M5">EXAMPLES</a></b> below.
+<p>
+If an error occurs during substitution, then <b>subst</b> will return
+that error.  If a break exception occurs during command or variable
+substitution, the result of the whole substitution will be the
+string (as substituted) up to the start of the substitution that
+raised the exception.  If a continue exception occurs during the
+evaluation of a command or variable substitution, an empty string
+will be substituted for that entire command or variable substitution
+(as long as it is well-formed Tcl.)  If a return exception occurs,
+or any other return code is returned during command or variable
+substitution, then the returned value is substituted for that
+substitution.  See the <b><a data-href="#M5">EXAMPLES</a></b> below.  In this way, all exceptional
+return codes are
+&ldquo;caught&rdquo;
+by <b>subst</b>.  The <b>subst</b> command
+itself will either return an error, or will complete successfully.
+<h3><a name="subst-M5" id="subst-M5">EXAMPLES</a></h3>
+When it performs its substitutions, <i>subst</i> does not give any
+special treatment to double quotes or curly braces (except within
+command substitutions) so the script
+<p>
+<pre>set a 44
+<b>subst</b> {xyz {$a}}</pre>
+<p>
+returns
+&ldquo;<b>xyz {44}</b>&rdquo;,
+not
+&ldquo;<b>xyz {$a}</b>&rdquo;
+and the script
+<p>
+<pre>set a &quot;p&#92;} q &#92;{r&quot;
+<b>subst</b> {xyz {$a}}</pre>
+<p>
+returns
+&ldquo;<b>xyz {p} q {r}</b>&rdquo;,
+not
+&ldquo;<b>xyz {p&#92;} q &#92;{r}</b>&rdquo;.
+<p>
+When command substitution is performed, it includes any variable
+substitution necessary to evaluate the script.
+<p>
+<pre>set a 44
+<b>subst</b> -novariables {$a [format $a]}</pre>
+<p>
+returns
+&ldquo;<b>$a 44</b>&rdquo;,
+not
+&ldquo;<b>$a $a</b>&rdquo;.
+Similarly, when
+variable substitution is performed, it includes any command
+substitution necessary to retrieve the value of the variable.
+<p>
+<pre>proc b {} {return c}
+array set a {c c [b] tricky}
+<b>subst</b> -nocommands {[b] $a([b])}</pre>
+<p>
+returns
+&ldquo;<b>[b] c</b>&rdquo;,
+not
+&ldquo;<b>[b] tricky</b>&rdquo;.
+<p>
+The continue and break exceptions allow command substitutions to
+prevent substitution of the rest of the command substitution and the
+rest of <i>string</i> respectively, giving script authors more options
+when processing text using <i>subst</i>.  For example, the script
+<p>
+<pre><b>subst</b> {abc,[break],def}</pre>
+<p>
+returns
+&ldquo;<b>abc,</b>&rdquo;,
+not
+&ldquo;<b>abc,,def</b>&rdquo;
+and the script
+<p>
+<pre><b>subst</b> {abc,[continue;expr {1+2}],def}</pre>
+<p>
+returns
+&ldquo;<b>abc,,def</b>&rdquo;,
+not
+&ldquo;<b>abc,3,def</b>&rdquo;.
+<p>
+Other exceptional return codes substitute the returned value
+<p>
+<pre><b>subst</b> {abc,[return foo;expr {1+2}],def}</pre>
+<p>
+returns
+&ldquo;<b>abc,foo,def</b>&rdquo;,
+not
+&ldquo;<b>abc,3,def</b>&rdquo;
+and
+<p>
+<pre><b>subst</b> {abc,[return -code 10 foo;expr {1+2}],def}</pre>
+<p>
+also returns
+&ldquo;<b>abc,foo,def</b>&rdquo;,
+not
+&ldquo;<b>abc,3,def</b>&rdquo;.
+<h3><a name="subst-M6" id="subst-M6">SEE ALSO</a></h3>
+<b><a href="#Tcl-M2">Tcl</a></b>, <b><a data-href="../TclCmd/eval.html">eval</a></b>, <b><a data-href="../TclCmd/break.html">break</a></b>, <b><a data-href="../TclCmd/continue.html">continue</a></b>
+<h3><a name="subst-M7" id="subst-M7">KEYWORDS</a></h3>
+<a data-href="../Keywords/B.html#backslash substitution">backslash substitution</a>, <a data-href="../Keywords/C.html#command substitution">command substitution</a>, <a data-href="../Keywords/Q.html#quoting">quoting</a>, <a data-href="../Keywords/S.html#substitution">substitution</a>, <a data-href="../Keywords/V.html#variable substitution">variable substitution</a>
+<div class="copy">Copyright &copy; 1994 The Regents of the University of California.
+<br>Copyright &copy; 1994-1996 Sun Microsystems, Inc.
+<br>Copyright &copy; 2001 Donal K. Fellows
+</div>
+</section>
+</body></html>
