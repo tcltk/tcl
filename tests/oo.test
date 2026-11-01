@@ -918,6 +918,24 @@ test oo-3.13 {Bug 28de60cef5: object variable after deleting the object in its d
     Cls destroy
     unset -nocomplain ::result
 } -result {1 {can't read "thing": no such variable}}
+test oo-3.14 {Bug b4637c4312: upvar to an object variable after deleting the object} -setup {
+    proc linkvar {name} {
+	upvar 1 $name v
+	info exists v
+    }
+    oo::class create Cls {
+	variable thing
+	method run {} {
+	    my destroy
+	    linkvar thing
+	}
+    }
+} -body {
+    [Cls new] run
+} -cleanup {
+    Cls destroy
+    rename linkvar {}
+} -result 0
 
 test oo-4.1 {basic test of OO functionality: export} {
     set o [oo::object new]
