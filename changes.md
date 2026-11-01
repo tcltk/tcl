@@ -75,7 +75,7 @@ to the userbase.
  - msgcat 1.7.2
  - tcltest 2.6.1
  - tcl::idna 1.0.2
- - tzdata 2026e
+ - tzdata 2026f
 
 Release Tcl 9.1.0 arises from the check-in with tag `core-9-1-0`.
 
