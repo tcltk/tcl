@@ -1165,6 +1165,13 @@ ProcedureMethodCompiledVarConnect(
      */
 
   gotMatch:
+    if (!contextPtr->oPtr->namespacePtr) {
+	/*
+	 * Namespace has gone. Guess we're not resolving this after all.
+	 * [Bugs 28de60cef5, b4637c4312]
+	 */
+	return NULL;
+    }
     hPtr = Tcl_CreateHashEntry(TclVarTable(contextPtr->oPtr->namespacePtr),
 	    variableObj, &isNew);
     if (isNew) {
