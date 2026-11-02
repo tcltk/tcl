@@ -1,0 +1,27 @@
+-- redéfinir après oubli
+redéfinir sans oublier: 1 type "binop" is already defined
+oublier: 0 
+redéfinir: 0 
+nouveau binop: 0 *
+v : ancienne valeur: 0 + binop
+v : ancien contrat: 1 value "*" matches no variant of binop
+w : ancienne valeur: 0 ** binop
+-- refus
+inconnu: 1 type "nexistepas" is not defined
+intégré: 1 type "int" is built in: it cannot be forgotten
+utilisé par un autre: 1 type "exprop" is used by type "exprtree": forget both (type forget exprtree exprop)
+les deux ensemble: 0 
+plus défini: 1 unknown type "exprtree"
+-- types anonymes : list.T voit le nouveau T
+list.p ancien: 0 list<p>
+list.p nouveau: 0 list<p>
+list.p : 2 champs: 1 p needs 3 values but got 2
+-- conversions déclarées
+cast: 0 20
+règle oubliée: 1 unknown way to cast the value from cm to mm
+-- familles
+oublier q: 0 
+q inconnu: 1 unknown type "q"
+q redéfini: 0 
+nouvelle q: 0 q(2)
+mm2 garde: 0 1.5 mm2

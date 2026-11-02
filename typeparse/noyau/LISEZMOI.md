@@ -1888,3 +1888,20 @@ Sources de types : `tclAnnotObj.c` (`TclCompactViewReadPath`, `CompactWalkFrom`)
   3×3 : 16,7 -> 1,8 µs. Sorties comparées à la v16b (chemin général seul) : identiques.
 - Test `t90_listes_fixes_en_cases` : lots en cases et ordinaires lus par `foreach`, par chemin et
   dans `expr`.
+
+### v16j — `type forget` : oublier la définition d'un type (2 novembre 2026)
+
+Sources de types : `tclTypes.c` (`TypeForgetCmd`, `ForgetReaches`, `ForgetKeys`), `tclTypes.h`
+(version). Pas de patch noyau.
+
+- **`type forget T ?T ...?`** : le nom redevient libre, un nouveau `type def T` est permis. Rien
+  n'est libéré (les types restent dans `d->all`) : les valeurs et les variables déjà typées gardent
+  l'ancienne définition, un type distinct du nouveau de même nom ; une variable déclarée garde son
+  ancien contrat.
+- Caches purgés : types anonymes internés qui mentionnent le nom (`list.T` voit le nouveau `T`),
+  instances d'une famille, conversions déclarées dont `T` est la source ou la cible (lambda
+  libérée). Une famille oubliée est rangée sous une clé qui ne peut pas être un nom (`\1forgotten\1…`)
+  et libérée avec les autres à la destruction de l'interpréteur.
+- Refus : type intégré, nom inconnu, type dont se sert un autre type nommé qui reste (« forget
+  both ») ; un alias n'est pas un usage. Code d'erreur `TCL TYPE INUSE`, `NAME`, `UNKNOWN`.
+- Test `t91_type_forget` ; identique avec `TCL_TYPES_COMPACT=0/1` ; valgrind propre.

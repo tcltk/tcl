@@ -6961,6 +6961,251 @@ TypeIsCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
     return rc;
 }
 
+
+/*
+ * type forget T ?T ...? : l'interpréteur oublie la définition de ces types.
+ * Le nom est libre ensuite (un nouveau type def est permis). Les types ne
+ * sont jamais libérés (d->all) : les valeurs et les variables déjà typées
+ * gardent l'ancienne définition, un type distinct du nouveau de même nom.
+ * Refus : un type intégré, un nom inconnu, un type dont se sert un autre
+ * type nommé qui n'est pas oublié dans le même appel.
+ */
+
+/* Le nom k mentionne-t-il le type "name" (borné à gauche et à droite) ? */
+static int
+ForgetMentions(const char *k, const char *name)
+{
+    Tcl_Size len = (Tcl_Size) strlen(name);
+    const char *p = k;
+
+    while ((p = strstr(p, name)) != NULL) {
+	if ((p == k || !TclTypeIsNameChar((unsigned char) p[-1]))
+		&& !TclTypeIsNameChar((unsigned char) p[len])) {
+	    return 1;
+	}
+	p++;
+    }
+    return 0;
+}
+
+/* tp atteint-il un des types de "doomed" (sans passer par un nom) ? */
+static int
+ForgetReaches(TclType *tp, TclType **doomed, Tcl_Size nd)
+{
+    Tcl_HashTable seen;
+    TclType **stack = NULL;
+    Tcl_Size top = 0, cap = 0, i;
+    int found = 0, isNew;
+
+#define FORGET_PUSH(t) do {						\
+	TclType *t_ = (t);						\
+	if (t_ != NULL) {						\
+	    Tcl_CreateHashEntry(&seen, (char *) t_, &isNew);		\
+	    if (isNew) {						\
+		if (top == cap) {					\
+		    cap = cap ? 2 * cap : 16;				\
+		    stack = (TclType **) Tcl_Realloc(stack,		\
+			    cap * sizeof(TclType *));			\
+		}							\
+		stack[top++] = t_;					\
+	    }								\
+	}								\
+    } while (0)
+
+    Tcl_InitHashTable(&seen, TCL_ONE_WORD_KEYS);
+    FORGET_PUSH(tp);
+    while (top > 0 && !found) {
+	TclType *t = stack[--top];
+
+	for (i = 0; i < nd; i++) {
+	    if (t == doomed[i] && t != tp) {
+		found = 1;
+	    }
+	}
+	FORGET_PUSH(t->under);
+	FORGET_PUSH(t->key);
+	FORGET_PUSH(t->elem);
+	FORGET_PUSH(t->binAtBody);
+	FORGET_PUSH(t->binBase);
+	if (t->binLink != NULL) {
+	    FORGET_PUSH(t->binLink->repr);
+	    FORGET_PUSH(t->binLink->target);
+	}
+	if (t->binDyn != NULL) {
+	    FORGET_PUSH(t->binDyn->pre);
+	}
+	for (i = 0; i < t->nfields; i++) {
+	    FORGET_PUSH(t->fields[i].type);
+	}
+    }
+#undef FORGET_PUSH
+    Tcl_Free(stack);
+    Tcl_DeleteHashTable(&seen);
+    return found;
+}
+
+/* Supprime de la table "tab" (clés chaîne) les entrées dont la clé mentionne
+ * un des noms : un segment entre \1 (instances, conversions), ou un nom
+ * n'importe où dans la clé (canon). ownsObj : la valeur est un Tcl_Obj compté. */
+enum { FORGET_ANY, FORGET_SEGMENTS };
+
+static void
+ForgetKeys(Tcl_HashTable *tab, Tcl_Obj *const names[], Tcl_Size n, int how,
+	int ownsObj)
+{
+    Tcl_HashSearch search;
+    Tcl_HashEntry *hPtr;
+    char **doomed = NULL;
+    Tcl_Size nk = 0, capk = 0, i, j;
+
+    for (hPtr = Tcl_FirstHashEntry(tab, &search); hPtr != NULL;
+	    hPtr = Tcl_NextHashEntry(&search)) {
+	const char *k = (const char *) Tcl_GetHashKey(tab, hPtr);
+	int hit = 0;
+
+	for (j = 0; j < n && !hit; j++) {
+	    const char *nm = Tcl_GetString(names[j]);
+
+	    if (how == FORGET_ANY) {
+		hit = ForgetMentions(k, nm);
+	    } else {
+		/* segments séparés par \1 : l'un d'eux est le nom */
+		const char *p = k;
+
+		while (!hit) {
+		    const char *e = strchr(p, '\1');
+		    Tcl_Size l = e ? (Tcl_Size) (e - p) : (Tcl_Size) strlen(p);
+
+		    hit = (l == (Tcl_Size) strlen(nm)
+			    && strncmp(p, nm, (size_t) l) == 0);
+		    if (e == NULL) {
+			break;
+		    }
+		    p = e + 1;
+		}
+	    }
+	}
+	if (hit) {
+	    if (nk == capk) {
+		capk = capk ? 2 * capk : 8;
+		doomed = (char **) Tcl_Realloc(doomed, capk * sizeof(char *));
+	    }
+	    doomed[nk++] = DupStr(k, (Tcl_Size) strlen(k));
+	}
+    }
+    for (i = 0; i < nk; i++) {
+	hPtr = Tcl_FindHashEntry(tab, doomed[i]);
+	if (hPtr != NULL) {
+	    if (ownsObj) {
+		/* converts : la lambda est comptée */
+		Tcl_DecrRefCount((Tcl_Obj *) Tcl_GetHashValue(hPtr));
+	    }
+	    Tcl_DeleteHashEntry(hPtr);
+	}
+	Tcl_Free(doomed[i]);
+    }
+    Tcl_Free(doomed);
+}
+
+static int
+TypeForgetCmd(Tcl_Interp *interp, TypeData *d, Tcl_Size n,
+	Tcl_Obj *const names[])
+{
+    TclType **doomed;
+    Tcl_HashSearch search;
+    Tcl_HashEntry *hPtr;
+    Tcl_Size i, j;
+
+    doomed = (TclType **) Tcl_Alloc((n > 0 ? n : 1) * sizeof(TclType *));
+    for (i = 0; i < n; i++) {
+	const char *nm = Tcl_GetString(names[i]);
+
+	doomed[i] = NULL;
+	hPtr = Tcl_FindHashEntry(&d->names, nm);
+	if (hPtr != NULL) {
+	    TclType *tp = (TclType *) Tcl_GetHashValue(hPtr);
+
+	    if (tp == NULL || tp->reserved || TclTypeIsAny(tp)
+		    || tp == d->tInt || tp == d->tDouble || tp == d->tString
+		    || tp == d->tList || tp == d->tDict || tp == d->tVar) {
+		ERR(interp, "NAME", "type \"%s\" is built in: it cannot be "
+			"forgotten", nm);
+		Tcl_Free(doomed);
+		return TCL_ERROR;
+	    }
+	    doomed[i] = tp;
+	} else if (Tcl_FindHashEntry(&d->generics, nm) == NULL) {
+	    ERR(interp, "UNKNOWN", "type \"%s\" is not defined", nm);
+	    Tcl_Free(doomed);
+	    return TCL_ERROR;
+	}
+    }
+
+    /*
+     * Un autre type nommé, qui reste, se sert-il d'un type oublié ? Un alias
+     * (même TclType sous un autre nom) n'est pas un usage : il garde le type.
+     */
+    for (hPtr = Tcl_FirstHashEntry(&d->names, &search); hPtr != NULL;
+	    hPtr = Tcl_NextHashEntry(&search)) {
+	const char *k = (const char *) Tcl_GetHashKey(&d->names, hPtr);
+	TclType *tp = (TclType *) Tcl_GetHashValue(hPtr);
+	int listed = 0;
+
+	if (tp == NULL || tp->reserved) {
+	    continue;
+	}
+	for (j = 0; j < n; j++) {
+	    if (strcmp(k, Tcl_GetString(names[j])) == 0 || tp == doomed[j]) {
+		listed = 1;
+	    }
+	}
+	if (!listed && ForgetReaches(tp, doomed, n)) {
+	    for (j = 0; j < n; j++) {
+		if (doomed[j] != NULL && ForgetReaches(tp, doomed + j, 1)) {
+		    break;
+		}
+	    }
+	    ERR(interp, "INUSE", "type \"%s\" is used by type \"%s\": forget "
+		    "both (type forget %s %s)",
+		    j < n ? Tcl_GetString(names[j]) : "?", k, k,
+		    j < n ? Tcl_GetString(names[j]) : "?");
+	    Tcl_Free(doomed);
+	    return TCL_ERROR;
+	}
+    }
+
+    for (i = 0; i < n; i++) {
+	const char *nm = Tcl_GetString(names[i]);
+
+	hPtr = Tcl_FindHashEntry(&d->names, nm);
+	if (hPtr != NULL) {
+	    Tcl_DeleteHashEntry(hPtr);
+	}
+	hPtr = Tcl_FindHashEntry(&d->generics, nm);
+	if (hPtr != NULL) {
+	    /*
+	     * La famille reste utilisée par ses instances (->family) : elle
+	     * est rangée sous une clé qui ne peut pas être un nom (\1), et
+	     * libérée avec les autres par TclTypesFreeGenerics.
+	     */
+	    void *gen = Tcl_GetHashValue(hPtr);
+	    char key[64];
+	    int isNew;
+
+	    snprintf(key, sizeof(key), "\1forgotten\1%p", gen);
+	    Tcl_DeleteHashEntry(hPtr);
+	    Tcl_SetHashValue(Tcl_CreateHashEntry(&d->generics, key, &isNew),
+		    gen);
+	}
+    }
+    ForgetKeys(&d->instances, names, n, FORGET_SEGMENTS, 0);
+    ForgetKeys(&d->converts, names, n, FORGET_SEGMENTS, 1);
+    ForgetKeys(&d->canon, names, n, FORGET_ANY, 0);
+    Tcl_Free(doomed);
+    TclTypesBump(d);
+    return TCL_OK;
+}
+
 static int
 TypeObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
 	Tcl_Obj *const objv[])
@@ -7042,6 +7287,9 @@ TypeObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
 	}
 	TclVecFree(&keep);
 	return rc;
+    }
+    if (strcmp(sub, "forget") == 0) {
+	return TypeForgetCmd(interp, d, objc - 2, objv + 2);
     }
     if (strcmp(sub, "convert") == 0) {
 	if (objc != 5) {
@@ -7135,7 +7383,7 @@ TypeObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
 	return TypeBinaryCmd(interp, objc, objv);
     }
     ERR(interp, "SUBCMD", "bad subcommand \"%s\": must be def, alias, "
-	    "cast, convert, deref, export, get, is or binary", sub);
+	    "cast, convert, deref, export, forget, get, is or binary", sub);
     return TCL_ERROR;
 }
 
