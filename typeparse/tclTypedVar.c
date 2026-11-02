@@ -180,6 +180,22 @@ TclTypedVarPrepareWrite(Tcl_Interp *interp, Var *varPtr,
 	    *valuePtrPtr = settled;
 	    *tmpPtrPtr = settled;
 	}
+	{
+	    /* v16l : une étiquette {nom:} que personne n'a lue ne se range
+	     * pas (comme une annotation locale écrite sur la valeur). */
+	    Tcl_Obj *lab = TclAnnotLabelOf(value);
+
+	    if (lab != NULL) {
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"local annotation {%s} cannot be stored by \"set\": "
+			"it only applies between a caller and the command it "
+			"calls", Tcl_GetString(lab)));
+		Tcl_SetErrorCode(interp, "TCL", "TYPE", "LOCALANNOT",
+			(char *) NULL);
+		Tcl_DecrRefCount(lab);
+		return TCL_ERROR;
+	    }
+	}
     }
 
     if (contract == NULL) {
@@ -1059,7 +1075,7 @@ BuildProductEx(Tcl_Interp *interp, TclType *tp, Tcl_Size n,
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"wrong # args: %s needs %" TCL_SIZE_MODIFIER "d values; to "
 		"name fields (the others take their default), write "
-		"{field}value or set {%s}var(field,...) value...",
+		"{field:}value or set {%s}var(field,...) value...",
 		tp->name, nf, tp->name));
 	Tcl_SetErrorCode(interp, "TCL", "WRONGARGS", (char *) NULL);
 	goto done;
@@ -1364,13 +1380,29 @@ TclSetAnnotatedCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 	    if (npd > 0) {
 		Tcl_ListObjIndex(NULL, pd, npd - 1, &top);
 	    }
-	    if (top != NULL && TclTypeFieldIndex(tp, Tcl_GetString(top)) >= 0) {
+	    if (top != NULL
+		    && TclAnnotLabelIndex(tp, Tcl_GetString(top)) >= 0) {
+		/* v16l : {nom:}valeur, une étiquette de champ */
 		Tcl_Obj *t2 = NULL;
 
 		v = TclAnnotPopTop(objv[2 + i], &t2);
+	    } else if (top != NULL
+		    && TclAnnotOldLabel(interp, tp, Tcl_GetString(top))) {
+		Tcl_DecrRefCount(pd);	/* {nom} : écrire {nom:} */
+		nargs = i;
+		tagNames[i] = tagVals[i] = NULL;
+		goto tagError;
 	    }
 	    tagVals[i] = v;
-	    tagNames[i] = (v != NULL) ? Tcl_DuplicateObj(top) : NULL;
+	    if (v != NULL) {
+		/* le nom du champ, sans le « : » final */
+		Tcl_Size tl;
+		const char *tt = Tcl_GetStringFromObj(top, &tl);
+
+		tagNames[i] = Tcl_NewStringObj(tt, tl - 1);
+	    } else {
+		tagNames[i] = NULL;
+	    }
 	    if (v != NULL) {
 		Tcl_IncrRefCount(v);
 		Tcl_IncrRefCount(tagNames[i]);
@@ -1403,6 +1435,14 @@ TclSetAnnotatedCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 		}
 	    }
 	}
+	if (0) {
+	  tagError:
+	    /* tagVals/tagNames remplis jusqu'à i exclu : libérés par done */
+	    for (i = nargs; i < (Tcl_Size) (objc - 2); i++) {
+		tagVals[i] = tagNames[i] = NULL;
+	    }
+	    goto done;
+	}
 	if (ntag == nargs) {
 	    fieldTags = 1;
 	} else if (ntag > 0) {
@@ -1421,7 +1461,10 @@ TclSetAnnotatedCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 		if (npd > 0) {
 		    Tcl_ListObjIndex(NULL, pd, npd - 1, &top);
 		}
-		if (top != NULL && TclAnnotIsUnknown(interp, top)) {
+		if (top != NULL && (TclAnnotIsUnknown(interp, top)
+			|| (Tcl_GetString(top)[0] != '\0'
+			&& Tcl_GetString(top)[strlen(Tcl_GetString(top)) - 1]
+			== ':'))) {
 		    Tcl_Size tl;
 		    const char *tt = Tcl_GetStringFromObj(top, &tl);
 
@@ -1440,7 +1483,7 @@ TclSetAnnotatedCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 		Tcl_DecrRefCount(pd);
 	    }
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "can't mix values named by a field annotation ({field}value) "
+		    "can't mix values named by a field label ({field:}value) "
 		    "and positional values in a %s constructor: name every "
 		    "field, or none", tp->name));
 	    Tcl_SetErrorCode(interp, "TCL", "TYPE", "FIELD", (char *) NULL);
@@ -1475,6 +1518,14 @@ TclSetAnnotatedCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 	    Tcl_Obj *one;
 	    const TclType *ctx = (nargs == 1) ? tp : NULL;
 
+	    /* v16l : le contexte d'un argument positionnel est le type de son
+	     * champ, ou des éléments d'une liste, pour qu'une étiquette de
+	     * variante {v:} y soit lue. */
+	    if (nargs > 1 && tp->kind == TCLT_PRODUCT && nargs == tp->nfields) {
+		ctx = tp->fields[i].type;
+	    } else if (nargs > 1 && tp->kind == TCLT_LIST) {
+		ctx = tp->elem;
+	    }
 	    if (fieldTags) {		/* le contexte : le type du champ */
 		ctx = tp->fields[TclTypeFieldIndex(tp,
 			Tcl_GetString(tagNames[i]))].type;
@@ -1491,16 +1542,30 @@ TclSetAnnotatedCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 	    pend = TclAnnotPending(sa[0]);
 	    Tcl_IncrRefCount(pend);
 	    Tcl_ListObjLength(NULL, pend, &np);
-	    if (np > 0 && tp->kind == TCLT_SUM
-		    && TclAnnotInfo(sa[0], NULL, NULL, NULL, NULL) != 1) {
+	    if (np > 0) {
 		Tcl_Obj *top = NULL;
+		Tcl_Size tl;
+		const char *tt;
 
 		Tcl_ListObjIndex(NULL, pend, np - 1, &top);
-		if (top != NULL && TclTypeFieldIndex(tp,
-			Tcl_GetString(top)) >= 0) {
-		    /* {circle}$x : la variante choisie est lue, pas gardée. */
+		tt = (top != NULL) ? Tcl_GetStringFromObj(top, &tl) : "";
+		if (top != NULL && tp->kind == TCLT_SUM
+			&& TclAnnotLabelIndex(tp, tt) >= 0) {
+		    /* {circle:}$x (v16l) : la variante choisie est lue, pas
+		     * gardée, que la valeur soit typée ou non. */
 		    Tcl_ListObjReplace(NULL, pend, np - 1, 1, 0, NULL);
 		    np--;
+		} else if (top != NULL && tl > 1 && tt[tl - 1] == ':'
+			&& tp->kind != TCLT_LIST && tp->kind != TCLT_DICT) {
+		    /* (une liste ou un dict : l'étiquette est celle de
+		     * l'élément, lue par le constructeur de l'élément) */
+		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			    "label {%s} names no %s of %s", tt,
+			    tp->kind == TCLT_SUM ? "variant" : "field",
+			    tp->name));
+		    Tcl_SetErrorCode(interp, "TCL", "TYPE", "LABEL",
+			    (char *) NULL);
+		    goto done;
 		}
 	    }
 	}

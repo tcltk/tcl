@@ -1,0 +1,51 @@
+--- a/generic/tclCompile.c
++++ b/generic/tclCompile.c
+@@ -2541,6 +2541,9 @@
+ 	if (TclAnnotSuffixIsLiteral(tokenPtr + 1, count - 1)) {
+ 	    TclEmitPush(TclRegisterLiteral(envPtr, "::tcl::annotraw", 15, 0),
+ 		    envPtr);			/* {int}5 : annotation brute */
++	} else if (TclAnnotSuffixIsVariable(tokenPtr + 1, count - 1)) {
++	    TclEmitPush(TclRegisterLiteral(envPtr, "::tcl::annotcast", 16, 0),
++		    envPtr);			/* {int}$x : cast immédiat */
+ 	} else {
+ 	    TclEmitPush(TclRegisterLiteral(envPtr, "::tcl::annotate", 15, 0),
+ 		    envPtr);
+--- a/generic/tclParse.c
++++ b/generic/tclParse.c
+@@ -2548,6 +2548,9 @@
+ 	    if (TclAnnotSuffixIsLiteral(tokenPtr + 1, count - 1)) {
+ 		annotated = TclNewRawAnnotation(typeText,
+ 			Tcl_GetObjResult(interp));	/* {int}5 : brute */
++	    } else if (TclAnnotSuffixIsVariable(tokenPtr + 1, count - 1)) {
++		code = TclAnnotCastValue(interp, typeText,
++			Tcl_GetObjResult(interp), &annotated);	/* {int}$x */
+ 	    } else {
+ 		code = TclAnnotCollectionCast(interp, typeText,
+ 			Tcl_GetObjResult(interp), &annotated);
+--- a/generic/tclCompCmdsSZ.c
++++ b/generic/tclCompCmdsSZ.c
+@@ -160,11 +160,21 @@
+ 	return TCL_ERROR;
+     }
+     if (TclHasAnnotatedWord(parsePtr)) {	/* set {type}x ... : at run time */
++	Tcl_Token *nameTok = TokenAfter(parsePtr->tokenPtr);
++
+ 	if (numWords == 3) {
+-	    /* set x {-v}$mot : annotation locale écrite sur la valeur */
+-	    Tcl_Obj *lt = TclAnnotLocalWordText(interp,
+-		    TokenAfter(TokenAfter(parsePtr->tokenPtr)));
++	    /* set x {-v}$mot : annotation locale écrite sur la valeur. Une
++	     * étiquette {i:} est permise quand le nom est annoté : le
++	     * constructeur la lit (set {S}v {i:}5, v16l). */
++	    Tcl_Obj *lt = TclAnnotLocalWordText(interp, TokenAfter(nameTok));
+ 
++	    if (lt != NULL && nameTok->numComponents > 0
++		    && nameTok[1].type == TCL_TOKEN_ANNOT
++		    && Tcl_GetString(lt)[0] != '\0'
++		    && Tcl_GetString(lt)[strlen(Tcl_GetString(lt)) - 1] == ':') {
++		Tcl_DecrRefCount(lt);
++		lt = NULL;
++	    }
+ 	    if (lt != NULL) {
+ 		TclEmitPush(TclRegisterLiteral(envPtr, "::tcl::annotlocal",
+ 			17, 0), envPtr);

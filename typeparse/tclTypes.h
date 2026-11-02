@@ -21,7 +21,7 @@
  * VAR_* de tclInt.h). La valeur ci-dessous est un PLACEHOLDER. */
 /* Version du prototype TIP 764 (typeparse/VERSION, maj.sh, et
  * tcl::unsupported::typesversion). */
-#define TCL_TYPES_VERSION "v16k"
+#define TCL_TYPES_VERSION "v16l"
 
 #ifndef VAR_TYPED
 #define VAR_TYPED	0x400000
@@ -250,6 +250,12 @@ int	TclAnnotIsNoteOnly(Tcl_Obj *objPtr);
 int	TclAnnotIsSourceRaw(Tcl_Obj *objPtr);
 Tcl_Obj	*TclAnnotDisplay(Tcl_Interp *interp, Tcl_Obj *objPtr, int withNotes);
 int	TclAnnotSuffixIsLiteral(struct Tcl_Token *tokenPtr, Tcl_Size count);
+int	TclAnnotSuffixIsVariable(struct Tcl_Token *tokenPtr, Tcl_Size count);
+int	TclAnnotCastValue(Tcl_Interp *interp, Tcl_Obj *typeText, Tcl_Obj *value,
+	    Tcl_Obj **resultPtr);
+Tcl_Size TclAnnotLabelIndex(const TclType *tp, const char *text);
+int	TclAnnotOldLabel(Tcl_Interp *interp, const TclType *tp, const char *text);
+Tcl_Obj *TclAnnotLabelOf(Tcl_Obj *objPtr);
 int	TclAnnotCollectionCast(Tcl_Interp *interp, Tcl_Obj *typeText,
 	    Tcl_Obj *value, Tcl_Obj **resultPtr);
 int	TclAnnotateValue(Tcl_Interp *interp, Tcl_Obj *typeText, Tcl_Obj *value,

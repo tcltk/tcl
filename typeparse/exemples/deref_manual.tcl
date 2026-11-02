@@ -40,7 +40,7 @@ set {dict.var.int}dd x A y B
 puts [type deref $dd]                   ;# x 1 y 2
 
 type def link {{var.int}ref; {string}label}
-set {link}p {ref}A {label}first
+set {link}p {ref:}A {label:}first
 set q [type deref $p]
 puts "$q(ref) $q(label)"                ;# 1 first
 puts [type get $q]                      ;# deref(link)
@@ -50,11 +50,11 @@ puts [type deref $mm]                   ;# {1 2} {2 1}
 
 # --- 4. Sums ------------------------------------------------------------------
 type def mix {{int}a, {var.int}b, {string}s}
-set {mix}s1 {b}A
+set {mix}s1 {b:}A
 set t1 [type deref $s1]
 puts "$t1 [type get $t1]"              ;# 1 deref(mix).b
 
-set {list.mix}L {b}A {a}7 {b}B
+set {list.mix}L {b:}A {a:}7 {b:}B
 puts [lmap e [type deref $L] {type get $e}]   ;# deref(mix).b deref(mix).a deref(mix).b
 
 # --- 5. Trees -----------------------------------------------------------------

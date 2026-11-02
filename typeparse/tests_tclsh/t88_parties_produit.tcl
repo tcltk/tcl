@@ -22,7 +22,7 @@ proc p2 {N} {set q [lindex $N 1]; montre $q(*)}
 puts "case : [p2 $N]"
 proc p3 {s} {lassign $s(*) a b c; list $a $b $c [type get $b]}
 puts "lassign : [p3 $s]"
-set {boite}bx(f,n) {cote}2.0 3
+set {boite}bx(f,n) {cote:}2.0 3
 puts "somme : [p1 $bx]"
 proc p4 {s} {set s(value) 9.5; montre $s(*)}
 puts "après écriture : [p4 $s] $s"

@@ -13,7 +13,7 @@ type def cs {{int(u,8)}a; {int(u,32)}b; {int(u,16)}c; {int(u,64)}d; {int(u,8)}e}
 puts "packed  [type binary {sizeof?}cs]"
 puts "natural [type binary {sizeof?}cs -align natural]"
 puts "align4  [type binary {sizeof?}cs -align 4]"
-set {cs}v {a}1 {b}2 {c}3 {d}4 {e}5
+set {cs}v {a:}1 {b:}2 {c:}3 {d:}4 {e:}5
 puts [hex [type binary encode cs $v]]
 puts [hex [type binary encode cs $v -align natural]]
 puts [hex [type binary encode cs $v -align 4]]

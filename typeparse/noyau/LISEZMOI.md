@@ -1919,3 +1919,39 @@ Patch noyau : `jeton-annot-2048.patch` (`tcl.h` seul). Sources de types : `tclTy
   compilation incrémentale à la main donnait 28 tests faux.
 - `tests_tclsh` : les 52 tests avec sortie passent.
 
+### v16l — cast immédiat de `{T}$x` ; étiquettes `{nom:}` (2 novembre 2026)
+
+Patch noyau : `cast-immediat-etiquettes.patch` (`tclCompile.c`, `tclParse.c`, `tclCompCmdsSZ.c`).
+Sources de types : `tclAnnotObj.c`, `tclTypedVar.c`, `tclTypes.c` (un message), `tclTypes.h`.
+
+- **Cast immédiat.** Quand le reste d'un mot annoté est une variable et rien d'autre (`{T}$x`,
+  `{T}${x}`, `{T}$a(chemin)`), le mot est compilé en `::tcl::annotcast` (et `TclSubstTokens` fait de
+  même) : l'annotation est résolue là où elle est écrite, par le résolveur des constructeurs, sans
+  contexte. Un type connu valide et caste tout de suite ; l'erreur naît dans la commande qui contient
+  le mot, et un `catch` qui l'entoure l'attrape (`catch {concat {int}$s} r` avec `s` = 3.0 rend 1 ;
+  avant, l'erreur naissait en écrivant `r` et échappait au `catch`). Un nom inconnu reste une note.
+  `{T}[cmd]`, `{T}[(...)]`, `{T}"..."` et `{T}littéral` gardent leur sens : empilés, résolus par le
+  constructeur qui les reçoit (lui seul sait si le mot est une valeur ou un nom de variable).
+- **Étiquettes `{nom:}`.** Les champs d'un produit et les variantes d'une somme se nomment par une
+  annotation locale finie par `:` : `set {pt}a {age:}12`, `set {S}v {i:}5`, `type cast S {s:}x`,
+  `set {list.S}L {i:}1 {s:}a`, `set {msg}m(t,body) 1 {1:}$p`. Une étiquette ne peut pas être un type :
+  la règle « le contexte du constructeur passe avant les types globaux » disparaît. `{nom}` est
+  toujours un type ou une note ; l'ancienne étiquette `{nom}`, quand `nom` nomme un champ ou une
+  variante et aucun type, est une erreur qui donne la nouvelle écriture (`TCL TYPE LABEL`).
+  Une étiquette est lue par le constructeur qui reçoit le mot, même à travers une commande ; une
+  étiquette qu'aucun constructeur ne lit ne se range pas (`TCL TYPE LOCALANNOT`). Une étiquette
+  portée par une variable (`set v {age}21`, puis `$v`) n'existe plus. Sur une variable sous contrat
+  d'une somme : `set v {S.s}abc`.
+- Exemple corrigé au passage : `exemples/executable.tcl` échouait (`type "elf" takes parameters`) :
+  `{elf}$V` voulait nommer la variante `elf`, mais `elf` est aussi un type paramétré, qui l'emportait.
+  Avec `{elf:}$V`, il va jusqu'au bout (et la forme nom/valeur nue de son hypergraphe est réécrite
+  avec des étiquettes).
+- Migration : tests (`{champ}` → `{champ:}` dans 33 fichiers), `layout/filebinary.tcl` (sommes et
+  référentiels), exemples. Sorties attendues changées, et pourquoi : t45 et t49 H1–H3 (cast
+  immédiat), t54, t65, t66, t67, t89 (écriture et messages des étiquettes ; t54 cas 10 : une étiquette
+  ne se range pas). Nouveau test `t92_cast_etiquettes`.
+- Vérifié : 53 tests avec sortie, identiques avec `TCL_TYPES_COMPACT=0/1` ; sorties des exemples
+  identiques à la v16k (sauf `executable.tcl`, qui marche maintenant) ; valgrind propre.
+- Reste à traduire : `doc/ANNOTATIONS.{en,de,nl,es,pt,it}.md` et `MANUAL.*.md` (le français et
+  `doc/764.md` sont à jour).
+

@@ -10,19 +10,19 @@ t {set S(a.z)}
 t {set S(a.x) foo}
 set ::niveau 3
 type def trace {{int}niveau = $::niveau; {string}texte; {int}k = 0}
-t {set {trace}t1 {texte}a; set t1(niveau)}
+t {set {trace}t1 {texte:}a; set t1(niveau)}
 set ::niveau 5
-t {set {trace}t2 {texte}b; set t2(niveau)}
+t {set {trace}t2 {texte:}b; set t2(niveau)}
 t {set t1(niveau)}
 proc ::fake {} {return 1000}
 type def {horo({type}T,{cmd}h = ::fake)} {{int}date = $h; {$T}valeur; {int}k=0}
-t {set {horo(string,::fake)}h1 {valeur}x; set h1(date)}
+t {set {horo(string,::fake)}h1 {valeur:}x; set h1(date)}
 set {point}Q 1 2
 type def holder {{var.point}p; {int}n}
-set {holder}H {p}::Q {n}3
+set {holder}H {p:}::Q {n:}3
 t {set H(p.y)}
 t {set H(p.y) 77; set Q}
-proc g {} { set {point}loc 5 6; set {holder}hh {p}loc {n}1; set hh(p.x) 50; return $loc }
+proc g {} { set {point}loc 5 6; set {holder}hh {p:}loc {n:}1; set hh(p.x) 50; return $loc }
 t g
 t {set Q(x.y) 1}
 t {set {var}u ::Q; set u(x)}

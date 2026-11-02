@@ -1,0 +1,80 @@
+-- côté nom : set {A}y valeur
+N1    ok: mm
+N2    ERREUR: expected floating-point number but got "abc"
+N3    ERREUR: unknown type "zz"
+N4    ERREUR: local annotation {-v} cannot declare a variable: a variable name takes a type
+N5    ERREUR: missing close-parenthesis
+in type "int("
+N6    ok: px
+N7    ok: {} xyz
+N8    ok: Shape.circle
+-- côté valeur, variable libre : set y {A}$x
+V1    ok: 
+V2    ok: mm
+V3    ERREUR: expected floating-point number but got "abc"
+V4    ok: @zz
+V5    ok: {} 5
+V6    ok: {} abc
+V7    ok: mm@hello
+V8    ok: @circle
+V9    ok: @mm9 @mm9.stop px@mm9.stop
+V10   ok: mm10
+V11   ok: dist11
+V11b  ok: @mm.px.stop
+V12   ERREUR: contradictory annotations px and qq
+V12b  ERREUR: contradictory annotations qq2 and px
+V13   ERREUR: unknown way to cast the value from mm to px
+-- côté valeur, variable typée : le contrat
+C1    ok: int@zzpx
+C2    ok: int
+C3    ok: int
+C4    ok: double
+C5    ok: mm
+C6    ok: double
+C7    ERREUR: type mismatch: expected dist but got mm (use an explicit cast)
+C8    ERREUR: type mismatch: expected mm but got px (use an explicit cast)
+C9    ERREUR: type mismatch: expected mm but got double (use an explicit cast)
+C10   ok: mm
+C11   ok: mm@zz
+C12   ERREUR: type mismatch: expected mm but got px (use an explicit cast)
+C13   ok: Shape.circle
+C14   ERREUR: type mismatch: expected int(u,8) but got int (use an explicit cast)
+-- casts
+K1    ERREUR: unknown way to cast the value from mm to kg
+K2    ok: int 5
+K3    ERREUR: value "70000" does not fit in port
+K4    ERREUR: expected floating-point number but got "a b"
+K5    ok: mm 26.450000000000003
+-- hors constructeur
+H1    ERREUR: expected integer but got "abc"
+H2    ok: px {}
+H3    ok: mm {} mm
+H4    ok: mm
+H4b   ERREUR: expected floating-point number but got "abc"
+H5    ok: mm@zz
+H6    ok: mm
+H7    ok: mm
+H8    ok: 6
+-- l'annotation vide {}
+E-nu  ok: nom= libre= typée=mm hors=
+E-mm@ ok: nom= libre= typée=mm hors=
+E-@zz ok: nom=@zz libre=@zz typée=mm@zz hors=
+E-@px ok: nom=@px4 libre=px4 {typée=type mismatch: expected mm but got px4 (use an explicit cast)} hors=
+E-mm@zz ok: nom=@zz libre=@zz typée=mm@zz hors=
+E-mm@px ok: nom=@px6 libre=px6 {typée=type mismatch: expected mm but got px6 (use an explicit cast)} hors=
+E-suite ok: pxs {} pxs
+-- type cast
+TC1   ok: px
+TC2   ERREUR: unknown way to cast the value from mm to kg
+TC3   ERREUR: unknown type "zz"
+TC4   ERREUR: expected integer but got "abc"
+-- paramètres fantômes : des unités (le paramètre distingue les instances)
+F1    ok: ok
+F2    ok: mmF 1500 3000
+F3    ERREUR: type mismatch: expected m but got mmF (use an explicit cast)
+F4    ERREUR: unknown way to cast the value from mmF to kgF
+F5    ERREUR: type mismatch: expected energie but got couple (use an explicit cast)
+F6    ok: double
+F7    ok: grandeur(L,1.0,0.0)
+F8    ERREUR: parameter "u" is never used in the definition of ga
+F9    ok: m 1.5

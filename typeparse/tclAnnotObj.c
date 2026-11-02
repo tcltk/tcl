@@ -1513,7 +1513,10 @@ TclAnnotResolve(Tcl_Interp *interp, Tcl_Obj *objPtr, const TclType *ctx,
 
 	Tcl_ListObjLength(NULL, nl, &nn);
 	if (nn > 0 && Tcl_ListObjIndex(NULL, nl, nn - 1, &last) == TCL_OK) {
-	    idx = TclTypeFieldIndex(ctx, Tcl_GetString(last));
+	    idx = TclAnnotLabelIndex(ctx, Tcl_GetString(last));
+	    if (idx < 0 && TclAnnotOldLabel(interp, ctx, Tcl_GetString(last))) {
+		return TCL_ERROR;		/* {v}$x : écrire {v:} */
+	    }
 	    if (idx >= 0 && ctx->fields[idx].type != NULL) {
 		*statusPtr = TCLA_RAW;
 		*tpPtr = (TclType *) ctx;
@@ -1543,7 +1546,10 @@ TclAnnotResolve(Tcl_Interp *interp, Tcl_Obj *objPtr, const TclType *ctx,
 	return TCL_OK;
     }
     if (ctx != NULL && ctx->kind == TCLT_SUM) {
-	idx = TclTypeFieldIndex(ctx, text);
+	idx = TclAnnotLabelIndex(ctx, text);	/* {v:} (v16l) */
+	if (idx < 0 && TclAnnotOldLabel(interp, ctx, text)) {
+	    return TCL_ERROR;			/* {v} : écrire {v:} */
+	}
 	if (idx >= 0 && ctx->fields[idx].type != NULL) {
 	    *statusPtr = TCLA_RAW;
 	    *tpPtr = (TclType *) ctx;
@@ -1884,6 +1890,15 @@ AnnotateCore(Tcl_Interp *interp, Tcl_Obj *typeText, Tcl_Obj *value,
 	return TCL_OK;
     }
     if (ClassifyAnnot(interp, typeText, NULL, NULL, NULL) == ANN_LOCAL) {
+	const char *lt = Tcl_GetString(typeText);
+
+	if (len > 1 && lt[len - 1] == ':') {
+	    /* {nom:}$x (v16l) : une étiquette, au sommet de la pile ; la
+	     * valeur garde son type et ses notes, le constructeur lit et
+	     * retire l'étiquette. */
+	    *resultPtr = AnnotAddNote(value, typeText);
+	    return TCL_OK;
+	}
 	/* {-v} : locale, éphémère, lue par la commande appelée seule. */
 	*resultPtr = TclNewRawAnnotation(typeText, vcontent);
 	return TCL_OK;
@@ -1996,7 +2011,7 @@ ClassifyAnnot(Tcl_Interp *interp, Tcl_Obj *textObj, const TclType *ctx,
 	*variantPtr = -1;
     }
     if (ctx != NULL && ctx->kind == TCLT_SUM) {
-	idx = TclTypeFieldIndex(ctx, text);
+	idx = TclAnnotLabelIndex(ctx, text);	/* {v:} (v16l) */
 	if (idx >= 0 && ctx->fields[idx].type != NULL) {
 	    if (variantPtr != NULL) {
 		*variantPtr = (int) idx;
@@ -2225,6 +2240,29 @@ TclAnnotPending(Tcl_Obj *objPtr)
  * la valeur n'a pas d'annotation en attente. Sert aux étiquettes de champ
  * d'un constructeur de produit : set {paire}p {nom}jean {age}12.
  */
+/* v16l : la première étiquette {nom:} encore en attente sur la valeur, ou
+ * NULL (texte possédé par l'appelant, à libérer). */
+Tcl_Obj *
+TclAnnotLabelOf(Tcl_Obj *objPtr)
+{
+    Tcl_Obj *pd = PendingOf(objPtr, 0), **elv, *res = NULL;
+    Tcl_Size n, i, l;
+
+    Tcl_IncrRefCount(pd);
+    if (Tcl_ListObjGetElements(NULL, pd, &n, &elv) == TCL_OK) {
+	for (i = 0; i < n && res == NULL; i++) {
+	    const char *t = Tcl_GetStringFromObj(elv[i], &l);
+
+	    if (l > 1 && t[l - 1] == ':') {
+		res = elv[i];
+		Tcl_IncrRefCount(res);
+	    }
+	}
+    }
+    Tcl_DecrRefCount(pd);
+    return res;
+}
+
 /* Annotation qui ne nomme rien de connu (ni type, ni local) : une note. */
 int
 TclAnnotIsUnknown(Tcl_Interp *interp, Tcl_Obj *textObj)
@@ -2330,6 +2368,32 @@ TclAnnotSettle(Tcl_Interp *interp, Tcl_Obj *objPtr, const TclType *ctx,
 	}
 	cls = ClassifyAnnot(interp, elv[i], ctx, &tp, &v);
 	if (cls == ANN_LOCAL) {
+	    if (nr > 0 && rv[nr - 1] < 0 && rt[nr - 1]->kind == TCLT_SUM
+		    && cur == NULL) {
+		/* type cast S {v:}x (v16l) : l'étiquette sous le type d'une
+		 * somme nomme sa variante. */
+		Tcl_Size fi = TclAnnotLabelIndex(rt[nr - 1],
+			Tcl_GetString(elv[i]));
+
+		if (fi >= 0) {
+		    rv[nr - 1] = (int) fi;
+		    keep[i] = 0;	/* consommée */
+		    changed = 1;
+		    continue;
+		}
+	    }
+	    {
+		Tcl_Size ll;
+		const char *lt = Tcl_GetStringFromObj(elv[i], &ll);
+
+		if (ll > 1 && lt[ll - 1] == ':') {
+		    /* {nom:} (v16l) : une étiquette reste en attente pour le
+		     * constructeur qui la lira (champ, variante, chemin) ; un
+		     * rangement final la refuse (TclAnnotLabelOf). */
+		    stopped = 1;
+		    continue;
+		}
+	    }
 	    keep[i] = 0;		/* éphémère : jamais rangée */
 	    changed = 1;
 	    continue;
@@ -2357,8 +2421,8 @@ TclAnnotSettle(Tcl_Interp *interp, Tcl_Obj *objPtr, const TclType *ctx,
 		&& cur == NULL) {
 	    /* type cast S {v}x : la balise sous le type d'une somme nomme
 	     * sa variante (comme set {S}y {v}x). */
-	    Tcl_Size fi = TclTypeFieldIndex(rt[nr - 1],
-		    Tcl_GetString(elv[i]));
+	    Tcl_Size fi = TclAnnotLabelIndex(rt[nr - 1],
+		    Tcl_GetString(elv[i]));	/* {v:} (v16l) */
 
 	    if (fi >= 0) {
 		rv[nr - 1] = (int) fi;
@@ -2599,6 +2663,65 @@ AnnotateObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
     return TCL_OK;
 }
 
+/*
+ * v16l : {T}$x, cast immédiat. L'annotation est résolue là où elle est
+ * écrite, par le résolveur des constructeurs, sans contexte : un type connu
+ * valide et caste tout de suite (l'erreur naît dans la commande qui contient
+ * le mot) ; un nom inconnu reste une note ; une annotation locale ({-v},
+ * {nom:}) passe telle quelle à la commande appelée.
+ */
+int
+TclAnnotCastValue(Tcl_Interp *interp, Tcl_Obj *typeText, Tcl_Obj *value,
+	Tcl_Obj **resultPtr)
+{
+    Tcl_Obj *res = NULL, *ann;
+
+    switch (TclAnnotCollectionCast(interp, typeText, value, &res)) {
+    case TCL_ERROR:
+	return TCL_ERROR;
+    case TCL_OK:
+	*resultPtr = res;
+	return TCL_OK;
+    }
+    if (TclAnnotateValue(interp, typeText, value, &ann) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    if (ClassifyAnnot(interp, typeText, NULL, NULL, NULL) == ANN_LOCAL) {
+	*resultPtr = ann;		/* {-v}, {nom:} : pour l'appelé */
+	return TCL_OK;
+    }
+    Tcl_IncrRefCount(ann);
+    if (TclAnnotSettle(interp, ann, NULL, 0, &res) != TCL_OK) {
+	Tcl_DecrRefCount(ann);
+	return TCL_ERROR;
+    }
+    if (res == ann) {
+	ann->refCount--;		/* rendu sans référence propre */
+    } else {
+	Tcl_DecrRefCount(ann);
+    }
+    *resultPtr = res;
+    return TCL_OK;
+}
+
+static int
+AnnotCastObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
+	Tcl_Obj *const objv[])
+{
+    Tcl_Obj *res = NULL;
+
+    (void) clientData;
+    if (objc != 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "type value");
+	return TCL_ERROR;
+    }
+    if (TclAnnotCastValue(interp, objv[1], objv[2], &res) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    Tcl_SetObjResult(interp, res);
+    return TCL_OK;
+}
+
 /* ::tcl::annotraw type value : annotation BRUTE d'un suffixe littéral
  * ({int}5, {int}x) : jamais validée ici, le type peut ne pas exister
  * encore ; elle est résolue à la consommation. */
@@ -2803,6 +2926,8 @@ TclAnnotInit(Tcl_Interp *interp)
     Tcl_CreateObjCommand2(interp, "note", NoteObjCmd, NULL, NULL);
     Tcl_CreateObjCommand2(interp, "::tcl::annotate", AnnotateObjCmd, NULL,
 	    NULL);
+    Tcl_CreateObjCommand2(interp, "::tcl::annotcast", AnnotCastObjCmd, NULL,
+	    NULL);
     Tcl_CreateObjCommand2(interp, "::tcl::annotraw", AnnotRawObjCmd, NULL,
 	    NULL);
     Tcl_CreateObjCommand2(interp, "::tcl::annotlocal", AnnotLocalObjCmd, NULL,
@@ -2821,6 +2946,73 @@ TclAnnotSuffixIsLiteral(Tcl_Token *tokenPtr, Tcl_Size count)
 	    return 0;
 	}
     }
+    return 1;
+}
+
+/*
+ * v16l : le reste du mot annoté est-il UNE variable, et rien d'autre
+ * ({T}$x, {T}${x}, {T}$a(chemin)) ? Alors l'annotation est un cast immédiat
+ * (::tcl::annotcast), là où elle est écrite.
+ */
+int
+TclAnnotSuffixIsVariable(Tcl_Token *tokenPtr, Tcl_Size count)
+{
+    return count >= 1 && tokenPtr[0].type == TCL_TOKEN_VARIABLE
+	    && count == 1 + tokenPtr[0].numComponents;
+}
+
+/*
+ * v16l : une étiquette {nom:} (annotation locale finie par « : ») nomme un
+ * champ d'un produit ou une variante d'une somme, lue par le constructeur.
+ * Rend l'indice du champ ou de la variante, ou -1 si le texte n'est pas une
+ * étiquette de tp.
+ */
+Tcl_Size
+TclAnnotLabelIndex(const TclType *tp, const char *text)
+{
+    size_t len = strlen(text);
+    char buf[256];
+
+    if (tp == NULL || len < 2 || text[len - 1] != ':' || len > sizeof(buf)) {
+	return -1;
+    }
+    memcpy(buf, text, len - 1);
+    buf[len - 1] = '\0';
+    return TclTypeFieldIndex(tp, buf);
+}
+
+/*
+ * v16l : l'ancienne étiquette {nom} (sans « : ») d'un champ ou d'une
+ * variante de tp, quand nom n'est pas un type : une erreur qui donne la
+ * nouvelle écriture. Rend 1 (erreur posée) ou 0.
+ */
+int
+TclAnnotOldLabel(Tcl_Interp *interp, const TclType *tp, const char *text)
+{
+    Tcl_Size idx;
+    Tcl_Obj *t;
+    int isType;
+
+    if (tp == NULL || interp == NULL
+	    || (tp->kind != TCLT_PRODUCT && tp->kind != TCLT_SUM)) {
+	return 0;
+    }
+    idx = TclTypeFieldIndex(tp, text);
+    if (idx < 0 || (tp->kind == TCLT_SUM && tp->fields[idx].type == NULL)) {
+	return 0;
+    }
+    t = Tcl_NewStringObj(text, TCL_AUTO_LENGTH);
+    Tcl_IncrRefCount(t);
+    isType = (ClassifyAnnot(interp, t, NULL, NULL, NULL) == ANN_TYPE);
+    Tcl_DecrRefCount(t);
+    if (isType) {
+	return 0;		/* un type, qui l'emporte : pas une étiquette */
+    }
+    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    "{%s} is not a type: to name the %s \"%s\" of %s, write {%s:}",
+	    text, tp->kind == TCLT_SUM ? "variant" : "field", text, tp->name,
+	    text));
+    Tcl_SetErrorCode(interp, "TCL", "TYPE", "LABEL", (char *) NULL);
     return 1;
 }
 

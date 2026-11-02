@@ -1,0 +1,35 @@
+--- cast immédiat
+catch {concat {int}$s} r: 1 {expected integer but got "3.0"}
+s = 3: 3 int {}
+double typé -> int: 3 int {}
+{int}${s}: 4 int {}
+nom inconnu : note: 3.0 {} zz
+{}$d retire le type: 3.0 {} {}
+commande : pas de cast ici: 3 int
+dans une procédure: 1 {expected integer but got "abc"}
+--- étiquettes de champ
+littérales: jean 12
+substituées: ana 30
+ordre libre, défaut: zoe 0
+compilé: bob 40
+à travers une commande: jo 3
+ancienne écriture: ERREUR {nom} is not a type: to name the field "nom" of paire, write {nom:}
+étiquette inconnue: ERREUR unknown field "taille:" in paire
+type global age : aucun conflit: int
+{age} est le type age: 12 age {}
+--- étiquettes de variante
+{i:}5: S.i
+{i:}$x: S.i
+ancienne écriture {i}5: ERREUR {i} is not a type: to name the variant "i" of S, write {i:}
+{S.s}$n, un type: ana S.s {}
+contrat : set v {S.s}abc: S.s
+type cast S {s:}abc: S.s
+liste {list.S}: S.i S.s
+variante inconnue: ERREUR label {zz:} names no variant of S
+--- une étiquette ne se range pas
+set y {age:}21: ERREUR local annotation {age:} cannot be stored by "set": it only applies between a caller and the command it calls
+set y [concat {age:}21]: ERREUR local annotation {age:} cannot be stored by "set": it only applies between a caller and the command it calls
+--- variante dont le nom est aussi un type global
+{elf:}5: exe.elf
+--- un nom annoté avec une substitution reste un nom
+set {rect}Q(A, $k): {1 1} {2 2}

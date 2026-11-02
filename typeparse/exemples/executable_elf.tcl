@@ -304,6 +304,6 @@ if {$trouve ne "" && $E(segments.$trouve.perms.0)} {
 
 # FR : garanties du typage / EN: guarantees of the typing
 puts "\n--- FR: refus du typage / EN: what typing refuses ---"
-puts "perms=9 : [catch {set {segment}P {genre}LOAD {perms}9 {offset}0 {vaddr}0 {filesz}0 {memsz}0} msg] $msg"
+puts "perms=9 : [catch {set {segment}P {genre:}LOAD {perms:}9 {offset:}0 {vaddr:}0 {filesz:}0 {memsz:}0} msg] $msg"
 puts "bad count : [catch {set {elf(3)}Z(bits,endian,machine,entry,sections,segments,couverture) 64 little x 0 {} {} {}} msg] $msg"
 }

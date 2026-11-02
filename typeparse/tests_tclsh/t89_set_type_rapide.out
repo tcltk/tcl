@@ -2,7 +2,7 @@ produit de doubles : {1.0 2.0} point A
 int et chaîne : {3 zz} pi 3 zz
 valeur refusée (voie générale) : erreur : expected floating-point number but got "abc"
 entier refusé : erreur : expected integer but got "3.5"
-arité : erreur : wrong # args: point needs 2 values; to name fields (the others take their default), write {field}value or set {point}var(field,...) value...
+arité : erreur : wrong # args: point needs 2 values; to name fields (the others take their default), write {field:}value or set {point}var(field,...) value...
 champs nommés : 1.0 2.0
 produit de produits : {{1 2} {1 2}} seg
 contrat après la voie rapide : erreur : expected integer but got "zz"

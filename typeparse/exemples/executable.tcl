@@ -66,7 +66,7 @@ proc lire_executable {chemin} {
     set cmd "set {${variante}($n)}V([join $champs ,])"
     foreach v $valeurs {append cmd " " [list $v]}
     eval $cmd
-    eval "set {executable($n)}X {$variante}\$V"
+    eval "set {executable($n)}X {$variante:}\$V"
     return $X
 }
 
@@ -117,7 +117,7 @@ proc hypergraphe_de {x} {
     set v [variante $x]
     set n [llength $x($v.sections)]
     set noms [lmap s $x($v.sections) {expr {[lindex $s 0] eq "" ? "(null)" : [lindex $s 0]}}]
-    set cmd "set {hg($n)}H labels [list $noms] edges [list $x($v.couverture)]"
+    set cmd "set {hg($n)}H {labels:}[list $noms] {edges:}[list $x($v.couverture)]"
     eval $cmd
     return $H
 }

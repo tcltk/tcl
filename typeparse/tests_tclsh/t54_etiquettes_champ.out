@@ -2,12 +2,12 @@
 2 paul 13
 3 zoe 0
 4 jean 14
-5 erreur: wrong # args: paire needs 2 values; to name fields (the others take their default), write {field}value or set {paire}var(field,...) value...
-6 erreur: can't mix values named by a field annotation ({field}value) and positional values in a paire constructor: name every field, or none
+5 erreur: wrong # args: paire needs 2 values; to name fields (the others take their default), write {field:}value or set {paire}var(field,...) value...
+6 erreur: can't mix values named by a field label ({field:}value) and positional values in a paire constructor: name every field, or none
 7 erreur: expected integer but got "x"
 8 erreur: duplicate field "nom" in paire
 9 erreur: unknown field "taille" in paire
-10 max 21
+10 erreur: local annotation {age:} cannot be stored by "set": it only applies between a caller and the command it calls
 11 lu 12
 12 eve 20
 13 int

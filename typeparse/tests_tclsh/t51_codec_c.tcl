@@ -8,8 +8,8 @@ type def Pt   {{i8}x; {i16be}y}
 type def Box  {{u8}tag; {Pt}a; {list(2).Pt}b; {f32le}r}
 type def Grid {{u8}k; {list(2).list(3).u16le}g; {u64le}big; {i64le}neg}
 type def Hdr  {{u16le}n; {u8}pad; {list($n).f64le}v}
-set {Pt}p1 {x}-5 {y}-300; set {Pt}p2 {x}127 {y}32767; set {Pt}p3 {x}-128 {y}1
-set {Box}bx {tag}9 {a}$p1 {b}[list $p2 $p3] {r}1.5
+set {Pt}p1 {x:}-5 {y:}-300; set {Pt}p2 {x:}127 {y:}32767; set {Pt}p3 {x:}-128 {y:}1
+set {Box}bx {tag:}9 {a:}$p1 {b:}[list $p2 $p3] {r:}1.5
 set {Grid}gr(k,g,big,neg) 1 {{1 2 3} {65535 0 7}} 18446744073709551615 -9223372036854775808
 set {Hdr}hd(n,pad,v) 3 0 {1.0 -2.5 1e300}
 

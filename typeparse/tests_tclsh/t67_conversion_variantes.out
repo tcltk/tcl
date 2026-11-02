@@ -8,7 +8,7 @@ cast même variante             0 100 temp.celsius
 type cast                      0 212.0 temp.fahrenheit
 t inchangé                     0 100 temp.celsius
 écrire changer                 0 50 temp.fahrenheit
-déduction : ambigu             1 value "5" fits variants celsius and fahrenheit of temp equally: write {celsius}5, or set {temp}y(celsius) 5
+déduction : ambigu             1 value "5" fits variants celsius and fahrenheit of temp equally: write {celsius:}5, or set {temp}y(celsius) 5
 S i lu s (cast)                0 5 string
 S s lu i (cast)                0 12 int
 S s abc lu i                   1 the current variant of S is "s", not "i", and its value "abc" can't be read as int

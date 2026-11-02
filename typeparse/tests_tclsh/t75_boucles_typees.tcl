@@ -33,7 +33,7 @@ puts "modifiée          : [modifie $P]"
 set Q $P
 foreach q $Q {}
 puts "copie partagée    : [type get $q]"
-set {list.forme}S {p}{0 0} {r}2.5
+set {list.forme}S {p:}{0 0} {r:}2.5
 puts "somme             : [lmap s $S {type get $s}]"
 set {list}N {a b} {c d}
 puts "liste nue         : [lmap e $N {list $e [type get $e]}]"

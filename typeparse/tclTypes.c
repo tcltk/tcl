@@ -1667,7 +1667,7 @@ ValidateG(Tcl_Interp *interp, const TclType *tp, Tcl_Obj *value,
 		    if (n0 != NULL) {
 			const char *v0 = Tcl_GetString(n0);
 
-			Tcl_AppendPrintfToObj(msg, " of %s equally: write {%s}%s",
+			Tcl_AppendPrintfToObj(msg, " of %s equally: write {%s:}%s",
 				tp->name, v0, Tcl_GetString(q));
 		    } else {
 			Tcl_AppendPrintfToObj(msg, " of %s equally: name the "

@@ -37,3 +37,4 @@ expr-tuple.patch
 expr-champs-bits.patch
 set-type-local-compile.patch
 jeton-annot-2048.patch
+cast-immediat-etiquettes.patch

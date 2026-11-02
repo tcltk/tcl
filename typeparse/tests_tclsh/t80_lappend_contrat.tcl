@@ -22,7 +22,7 @@ puts "défaut absent : [catch {lappend D {3}} m] $m ; D=$D"
 set {nuage}N {0.5 1.5}
 proc nuage_plus {} {set {nuage}N {0.5 1.5}; lappend N {2.5 3.5}; lappend N {4.5 5.5}; list $N [expr {[tcl::unsupported::compact info $N] ne ""}] [catch {lappend N {x y}} m] $m $N}
 puts "compacte : [nuage_plus]"
-set {list.forme}S {cote}2.0
+set {list.forme}S {cote:}2.0
 lappend S {nom}carré
 puts "somme : $S [lmap e $S {type get $e}]"
 set {list.any}A {int}1
