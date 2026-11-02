@@ -116,7 +116,7 @@ test set-old-4.1 {parsing array names} {
     catch {unset a}
     set a(()) 44
     list [catch {array names a} msg] $msg
-} {0 ()}
+} {0 {{()}}}
 test set-old-4.2 {parsing array names} {
     catch {unset a a(abcd}
     set a(abcd 33
