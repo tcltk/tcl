@@ -70,6 +70,17 @@ static ProcessGlobalValue shlibName = {
  * Tcl*Convert*Element routines.
  */
 
+/*
+ * QUOTED_LEADER: the leading characters of the first element of a list that
+ * must be quoted, so that a canonical list evaluated as a script is one
+ * command (TIP 407): "#" would begin a comment and, TIP 759, "(" an
+ * expression script, a script that begins with "(" and ends with ")".
+ * TCL_DONT_QUOTE_HASH turns this off for both, for an element that is not
+ * the first one.
+ */
+
+#define QUOTED_LEADER(c)	((c) == '#' || (c) == '(')
+
 enum ConvertFlags {
     CONVERT_NONE = 0,		/* The element needs no quoting. Its literal
 				 * string is suitable as is. */
@@ -1101,7 +1112,7 @@ TclScanElement(
      * This is inconsistent with [list x{a"b}], but we will not change that now.
      * Set that preference here so that we compute a tight size requirement.
      */
-    if ((*src == '#') && !(*flagPtr & DONT_QUOTE_HASH)) {
+    if (QUOTED_LEADER(*src) && !(*flagPtr & DONT_QUOTE_HASH)) {
 	preferBrace = 1;
     }
 #endif
@@ -1241,7 +1252,7 @@ TclScanElement(
 	 * Make room to escape leading #, if needed.
 	 */
 
-	if ((*src == '#') && !(*flagPtr & DONT_QUOTE_HASH)) {
+	if (QUOTED_LEADER(*src) && !(*flagPtr & DONT_QUOTE_HASH)) {
 	    bytesNeeded++;
 	}
 	*flagPtr = CONVERT_ESCAPE;
@@ -1279,7 +1290,7 @@ TclScanElement(
 
 	    bytesNeeded += (extra - braceCount);
 	    /* Make room to escape leading #, if needed. */
-	    if ((*src == '#') && !(*flagPtr & DONT_QUOTE_HASH)) {
+	    if (QUOTED_LEADER(*src) && !(*flagPtr & DONT_QUOTE_HASH)) {
 		bytesNeeded++;
 	    }
 
@@ -1308,7 +1319,7 @@ TclScanElement(
 	     * Make room to escape leading #, if needed.
 	     */
 
-	    if ((*src == '#') && !(*flagPtr & DONT_QUOTE_HASH)) {
+	    if (QUOTED_LEADER(*src) && !(*flagPtr & DONT_QUOTE_HASH)) {
 		bytesNeeded++;
 	    }
 	} else {
@@ -1326,7 +1337,7 @@ TclScanElement(
      * So far, no need to quote or escape anything.
      */
 
-    if ((*src == '#') && !(*flagPtr & DONT_QUOTE_HASH)) {
+    if (QUOTED_LEADER(*src) && !(*flagPtr & DONT_QUOTE_HASH)) {
 	/*
 	 * If we need to quote a leading #, make room to enclose in braces.
 	 */
@@ -1454,10 +1465,10 @@ TclConvertElement(
      * Escape leading hash as needed and requested.
      */
 
-    if ((*src == '#') && !(flags & DONT_QUOTE_HASH)) {
+    if (QUOTED_LEADER(*src) && !(flags & DONT_QUOTE_HASH)) {
 	if (conversion == CONVERT_ESCAPE) {
 	    p[0] = '\\';
-	    p[1] = '#';
+	    p[1] = *src;
 	    p += 2;
 	    src++;
 	    length -= (length > 0);
@@ -2042,7 +2053,7 @@ Tcl_ConcatObj(
 		if (elemPtr == NULL) {
 		    continue;
 		}
-		if (TclGetString(elemPtr)[0] == '#' || TCL_OK
+		if (QUOTED_LEADER(TclGetString(elemPtr)[0]) || TCL_OK
 			!= Tcl_ListObjAppendList(NULL, resPtr, objPtr)) {
 		    /* Abandon ship! */
 		    Tcl_DecrRefCount(resPtr);

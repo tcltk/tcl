@@ -186,6 +186,45 @@ test exprScript-4.1 {compiled as an expression} -setup {
     rename sq {}
 } -result 1
 
+# Canonical lists (TIP 407): a list evaluated as a script is one command.
+# A first element that begins with "(" is quoted, as one that begins with
+# "#", so that a list is never an expression script.
+
+test exprScript-6.1 {first element that begins with "(" is braced} {
+    list (cmd) (x)
+} {{(cmd)} (x)}
+test exprScript-6.2 {only the first element} {
+    list x (y) (z)
+} {x (y) (z)}
+test exprScript-6.3 {a list is one command, not an expression script} -setup {
+    proc (cmd) {args} {return "called with $args"}
+} -body {
+    set script [string range [list (cmd) (x)] 0 end]
+    uplevel #0 $script
+} -cleanup {
+    rename (cmd) {}
+} -result {called with {(x)}}
+test exprScript-6.4 {one element} -setup {
+    proc (a) {} {return called}
+} -body {
+    uplevel #0 [string range [list (a)] 0 end]
+} -cleanup {
+    rename (a) {}
+} -result called
+test exprScript-6.5 {escaped form} {
+    list "(\}" b)
+} {\(\} b)}
+test exprScript-6.6 {round trip} {
+    set L [list "(\}" b) (c)]
+    expr {[lindex [string range $L 0 end] 0] eq "(\}"}
+} 1
+test exprScript-6.7 {dict keys} {
+    dict create (k) v
+} {{(k)} v}
+test exprScript-6.8 {concat keeps the string} {
+    concat [list a] [list (b) c]
+} {a {(b)} c}
+
 # cleanup
 ::tcltest::cleanupTests
 return
