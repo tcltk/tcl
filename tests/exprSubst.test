@@ -116,6 +116,19 @@ test exprSubst-1.26 {deep nesting in subst} -body {
     set n 5000
     subst "[string repeat {[( 1 + } $n]0[string repeat { )]} $n]"
 } -returnCodes error -match glob -result {too many nested expression substitutions*}
+test exprSubst-1.27 {function call without arguments} {
+    expr {srand(1)}
+    set x [( rand() < 2 )]
+} 1
+test exprSubst-1.28 {nested call without arguments} {
+    set x [( int(rand()) )]
+} 0
+test exprSubst-1.29 {call without arguments in parens} {
+    set x [( (rand() < 2) )]
+} 1
+test exprSubst-1.30 {call without arguments last} {
+    set x [(0*rand())]
+} 0.0
 
 # A command that is one expression substitution: its value is the result
 

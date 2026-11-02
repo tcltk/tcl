@@ -1350,6 +1350,9 @@ ParseExpr(
 
 			scanned = 0;
 			complete = lastParsed = OT_EMPTY;
+			if (substPtr != NULL) {
+			    parenDepth++;	/* TIP 759: ")" parsed again. */
+			}
 			break;
 		    }
 		    msg = Tcl_ObjPrintf("empty subexpression at %s", mark);
