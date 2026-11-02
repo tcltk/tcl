@@ -1905,3 +1905,17 @@ Sources de types : `tclTypes.c` (`TypeForgetCmd`, `ForgetReaches`, `ForgetKeys`)
 - Refus : type intégré, nom inconnu, type dont se sert un autre type nommé qui reste (« forget
   both ») ; un alias n'est pas un usage. Code d'erreur `TCL TYPE INUSE`, `NAME`, `UNKNOWN`.
 - Test `t91_type_forget` ; identique avec `TCL_TYPES_COMPACT=0/1` ; valgrind propre.
+
+### v16k — `TCL_TOKEN_ANNOT` passe de 512 à 2048 (2 novembre 2026)
+
+Patch noyau : `jeton-annot-2048.patch` (`tcl.h` seul). Sources de types : `tclTypes.h` (version).
+
+- La série TIP 759 pour Tcl 9.1 définit `TCL_TOKEN_CMD_IN_EXPR` à 512 (commandes brutes), la
+  valeur que prenait `TCL_TOKEN_ANNOT`. La TIP 759 devant être prête la première, c'est le jeton
+  d'annotation qui change : 2048, libre des deux côtés (`TCL_TOKEN_INDEX` reste à 1024). Le code
+  n'emploie que le nom ; seules `doc/764.md` et `doc/ANNOTATIONS.*.md` citaient la valeur.
+- Attention : tous les objets doivent être recompilés (`tcl.h` n'est pas une dépendance de chaque
+  `.o` dans le Makefile de Tcl). `maj.sh` le fait (`make clean` après un patch appliqué) ; une
+  compilation incrémentale à la main donnait 28 tests faux.
+- `tests_tclsh` : les 52 tests avec sortie passent.
+

@@ -793,7 +793,7 @@ Ein annotierter Wert ist ein gewöhnliches `Tcl_Obj`, dessen interner Typ `annot
 
 Im ursprünglichen Tcl 9 ist ein Wort in geschweiften Klammern, dem weitere Zeichen folgen, ein Syntaxfehler (`extra characters after close-brace`), außer `{*}`. Das Annotationspräfix belegt also eine Schreibweise, **die keinen Sinn hatte**: Kein gültiges Skript ändert seine Bedeutung.
 
-- `tclParse.c`, `ParseTokens` / `Tcl_ParseCommand`: Ein Wort `{text}rest` erzeugt ein Token **`TCL_TOKEN_ANNOT`** (512, `tcl.h`), das den Text der Annotation trägt, gefolgt von den Tokens des restlichen Worts. Ein annotiertes Wort `{T}name(...)` reicht bis zur ausgeglichenen Klammer, Leerzeichen eingeschlossen, auf einer Zeile.
+- `tclParse.c`, `ParseTokens` / `Tcl_ParseCommand`: Ein Wort `{text}rest` erzeugt ein Token **`TCL_TOKEN_ANNOT`** (2048, `tcl.h`), das den Text der Annotation trägt, gefolgt von den Tokens des restlichen Worts. Ein annotiertes Wort `{T}name(...)` reicht bis zur ausgeglichenen Klammer, Leerzeichen eingeschlossen, auf einer Zeile.
 - `tclCompile.c`, `TclCompileTokens`: Ist der Rest des Worts literal (`TclAnnotSuffixIsLiteral`), wird das Wort zu `::tcl::annotraw text wort` kompiliert (eine rohe Notiz, ohne Ersetzung); sonst zu `::tcl::annotate text wert`.
 - `tclCompCmdsSZ.c`, `TclCompileSetCmd`: Ein `set` mit annotiertem Namen läuft über `TclSetAnnotatedCmd`; eine auf den Wert geschriebene lokale Annotation (`set x {-v}$mot`) erzeugt einen Aufruf von `::tcl::annotlocal`, der den Fehler auslöst (`TclAnnotLocalWordText`).
 - `tclVar.c`, `Tcl_SetObjCmd`: Ein annotiertes erstes Argument delegiert an `TclSetAnnotatedCmd` (`tclTypedVar.c`), den Konstruktor.

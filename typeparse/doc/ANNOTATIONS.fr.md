@@ -837,7 +837,7 @@ Une valeur annotée est un `Tcl_Obj` ordinaire dont le type interne est `annotat
 
 Dans Tcl 9 d'origine, un mot entre accolades suivi d'autres caractères est une erreur de syntaxe (`extra characters after close-brace`), sauf `{*}`. Le préfixe d'annotation occupe donc une écriture **qui n'avait aucun sens** : aucun script valide ne change de sens.
 
-- `tclParse.c`, `ParseTokens` / `Tcl_ParseCommand` : un mot `{texte}suite` produit un jeton **`TCL_TOKEN_ANNOT`** (512, `tcl.h`) qui porte le texte de l'annotation, suivi des jetons du reste du mot. Un mot annoté `{T}nom(...)` va jusqu'à la parenthèse équilibrée, espaces compris, sur une ligne.
+- `tclParse.c`, `ParseTokens` / `Tcl_ParseCommand` : un mot `{texte}suite` produit un jeton **`TCL_TOKEN_ANNOT`** (2048, `tcl.h`) qui porte le texte de l'annotation, suivi des jetons du reste du mot. Un mot annoté `{T}nom(...)` va jusqu'à la parenthèse équilibrée, espaces compris, sur une ligne.
 - `tclCompile.c`, `TclCompileTokens` : si le reste du mot est littéral (`TclAnnotSuffixIsLiteral`), le mot compile en `::tcl::annotraw texte mot` (une note brute, sans substitution) ; sinon en `::tcl::annotate texte valeur`.
 - `tclCompCmdsSZ.c`, `TclCompileSetCmd` : un `set` dont le nom est annoté passe par `TclSetAnnotatedCmd` ; une annotation locale écrite sur la valeur (`set x {-v}$mot`) émet un appel à `::tcl::annotlocal`, qui lève l'erreur (`TclAnnotLocalWordText`).
 - `tclVar.c`, `Tcl_SetObjCmd` : un premier argument annoté délègue à `TclSetAnnotatedCmd` (`tclTypedVar.c`), le constructeur.

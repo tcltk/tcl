@@ -793,7 +793,7 @@ Een geannoteerde waarde is een gewoon `Tcl_Obj` waarvan het interne type `annota
 
 In het oorspronkelijke Tcl 9 is een woord tussen accolades dat door andere tekens wordt gevolgd een syntaxfout (`extra characters after close-brace`), behalve `{*}`. Het annotatievoorvoegsel neemt dus een schrijfwijze in **die geen betekenis had**: geen geldig script verandert van betekenis.
 
-- `tclParse.c`, `ParseTokens` / `Tcl_ParseCommand`: een woord `{tekst}rest` levert een token **`TCL_TOKEN_ANNOT`** (512, `tcl.h`) dat de tekst van de annotatie draagt, gevolgd door de tokens van de rest van het woord. Een geannoteerd woord `{T}naam(...)` loopt tot het sluitende haakje, spaties inbegrepen, op één regel.
+- `tclParse.c`, `ParseTokens` / `Tcl_ParseCommand`: een woord `{tekst}rest` levert een token **`TCL_TOKEN_ANNOT`** (2048, `tcl.h`) dat de tekst van de annotatie draagt, gevolgd door de tokens van de rest van het woord. Een geannoteerd woord `{T}naam(...)` loopt tot het sluitende haakje, spaties inbegrepen, op één regel.
 - `tclCompile.c`, `TclCompileTokens`: als de rest van het woord letterlijk is (`TclAnnotSuffixIsLiteral`), wordt het woord gecompileerd tot `::tcl::annotraw tekst woord` (een ruwe notitie, zonder substitutie); anders tot `::tcl::annotate tekst waarde`.
 - `tclCompCmdsSZ.c`, `TclCompileSetCmd`: een `set` met een geannoteerde naam gaat via `TclSetAnnotatedCmd`; een lokale annotatie op de waarde (`set x {-v}$mot`) levert een aanroep van `::tcl::annotlocal` op, die de fout geeft (`TclAnnotLocalWordText`).
 - `tclVar.c`, `Tcl_SetObjCmd`: een geannoteerd eerste argument delegeert naar `TclSetAnnotatedCmd` (`tclTypedVar.c`), de constructor.
