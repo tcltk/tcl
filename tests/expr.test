@@ -7504,6 +7504,175 @@ test expr-bug-8dd2807066-1 {Bug 8dd2807066, more elaborate} {
 # }
 # run-test-expr-63
 
+
+# ---------------------------------------------------------------------------
+# Double-precision fast path of INST_ADD / SUB / MULT / DIV (both operands double, or one a double and
+# the other a wide integer).  Each row is "a b add sub mult div": the IEEE 754 binary64 result of each
+# operator as 16 hex digits (big-endian), computed outside Tcl.  NaN means the result is NaN, which
+# [expr] reports as a domain error.  Rows: DD double/double, DI double/integer, ID integer/double.
+# Each row is evaluated with fresh-string operands, already-numeric operands, an unshared left or
+# right temporary, an unshared string-with-representation operand, and compile-time literals.
+# ---------------------------------------------------------------------------
+set dblfastRows(DD) {
+    {3.0 0.5 400c000000000000 4004000000000000 3ff8000000000000 4018000000000000}
+    {0.1 3.0 4008cccccccccccd c007333333333333 3fd3333333333334 3fa1111111111111}
+    {1.0 -1.0 0000000000000000 4000000000000000 bff0000000000000 bff0000000000000}
+    {0.0 -0.0 0000000000000000 0000000000000000 8000000000000000 NaN}
+    {-0.0 -0.0 8000000000000000 0000000000000000 0000000000000000 NaN}
+    {1e+308 1e+308 7ff0000000000000 0000000000000000 7ff0000000000000 3ff0000000000000}
+    {1e+308 -1e+308 0000000000000000 7ff0000000000000 fff0000000000000 bff0000000000000}
+    {5e-324 0.5 3fe0000000000000 bfe0000000000000 0000000000000000 0000000000000002}
+    {1e+16 1.0 4341c37937e08000 4341c37937e08000 4341c37937e08000 4341c37937e08000}
+    {1.0 0.0 3ff0000000000000 3ff0000000000000 0000000000000000 7ff0000000000000}
+    {0.0 0.0 0000000000000000 0000000000000000 0000000000000000 NaN}
+    {Inf 1.0 7ff0000000000000 7ff0000000000000 7ff0000000000000 7ff0000000000000}
+    {Inf Inf 7ff0000000000000 NaN 7ff0000000000000 NaN}
+    {0.0 Inf 7ff0000000000000 fff0000000000000 NaN 0000000000000000}
+    {-Inf 3.0 fff0000000000000 fff0000000000000 fff0000000000000 fff0000000000000}
+    {2.0 5e-324 4000000000000000 4000000000000000 0000000000000002 7ff0000000000000}
+}
+set dblfastRows(DI) {
+    {3.0 0 4008000000000000 4008000000000000 0000000000000000 7ff0000000000000}
+    {0.5 3 400c000000000000 c004000000000000 3ff8000000000000 3fc5555555555555}
+    {-1.0 -1 c000000000000000 0000000000000000 3ff0000000000000 3ff0000000000000}
+    {1e+16 9007199254740993 4350e1bc9bf04000 430c37937e080000 4691c37937e08000 3ff1c37937e08000}
+    {0.1 16777217 417000001199999a c17000000e666666 41399999b3333334 3e3999998000001a}
+    {1e+308 9223372036854775807 7fe1ccf385ebc8a0 7fe1ccf385ebc8a0 7ff0000000000000 7bf1ccf385ebc8a0}
+    {Inf 3 7ff0000000000000 7ff0000000000000 7ff0000000000000 7ff0000000000000}
+    {-0.0 0 0000000000000000 8000000000000000 8000000000000000 NaN}
+    {0.0 0 0000000000000000 0000000000000000 0000000000000000 NaN}
+    {5e-324 3 4008000000000000 c008000000000000 0000000000000003 0000000000000000}
+    {3.0 -9223372036854775808 c3e0000000000000 43e0000000000000 c3f8000000000000 bc18000000000000}
+    {1.0 9007199254740991 4340000000000000 c33ffffffffffffe 433fffffffffffff 3ca0000000000001}
+}
+set dblfastRows(ID) {
+    {0 3.0 4008000000000000 c008000000000000 0000000000000000 0000000000000000}
+    {3 0.5 400c000000000000 4004000000000000 3ff8000000000000 4018000000000000}
+    {-1 -1.0 c000000000000000 0000000000000000 3ff0000000000000 3ff0000000000000}
+    {9007199254740993 1.0 4340000000000000 433fffffffffffff 4340000000000000 4340000000000000}
+    {16777217 0.1 417000001199999a 417000000e666666 41399999b3333334 41a4000014000000}
+    {9223372036854775807 1e+308 7fe1ccf385ebc8a0 ffe1ccf385ebc8a0 7ff0000000000000 03ecc359e067a349}
+    {3 Inf 7ff0000000000000 fff0000000000000 7ff0000000000000 0000000000000000}
+    {0 -0.0 0000000000000000 0000000000000000 8000000000000000 NaN}
+    {0 0.0 0000000000000000 0000000000000000 0000000000000000 NaN}
+    {3 5e-324 4008000000000000 4008000000000000 0000000000000003 7ff0000000000000}
+    {-9223372036854775808 3.0 c3e0000000000000 c3e0000000000000 c3f8000000000000 c3c5555555555555}
+    {9007199254740991 1.0 4340000000000000 433ffffffffffffe 433fffffffffffff 433fffffffffffff}
+}
+proc dblfastEval {a b op form} {
+    switch -- $form {
+	str   {set x $a; set y $b; return [expr "\$x $op \$y"]}
+	typed {set x $a; set y $b; expr {$x == $x}; expr {$y == $y}; return [expr "\$x $op \$y"]}
+	ltemp {set x $a; set y $b; return [expr "(\$x * 1.0) $op \$y"]}
+	rtemp {set x $a; set y $b; return [expr "\$x $op (\$y * 1.0)"]}
+	ltrim {set y $b; return [expr "\[string trim { $a }\] $op \$y"]}
+	lit   {return [expr "$a $op $b"]}
+    }
+}
+proc dblfastCheck {combo op form} {
+    global dblfastRows
+    set col [dict get {+ 0 - 1 * 2 / 3} $op]
+    set bad {}
+    foreach row $dblfastRows($combo) {
+	lassign $row a b
+	set want [lindex $row [expr {2 + $col}]]
+	if {$form eq "lit" && ([string match *Inf* $a] || [string match *Inf* $b])} continue
+	set r [catch {dblfastEval $a $b $op $form} got]
+	if {$want eq "NaN"} {
+	    if {!($r && [string match {domain error*} $got])} {lappend bad [list $a $op $b wanted domain error, got $got]}
+	} elseif {$r} {
+	    lappend bad [list $a $op $b error $got]
+	} else {
+	    set have [binary encode hex [binary format Q $got]]
+	    if {$have ne $want} {lappend bad [list $a $op $b got $have want $want]}
+	}
+    }
+    return $bad
+}
+foreach combo {DD DI ID} {
+    foreach {opname op} {add + sub - mul * div /} {
+	foreach form {str typed ltemp rtemp ltrim lit} {
+	    test expr-dblfast-$combo-$opname-$form {double fast path: $combo $opname, operands $form} -body {
+		dblfastCheck $combo $op $form
+	    } -result {}
+	}
+    }
+}
+test expr-dblfast-alias {the same operand used twice: x op x} -body {
+    set bad {}
+    foreach row {
+    {1.5 4008000000000000 0000000000000000 4002000000000000 3ff0000000000000}
+    {-0.0 8000000000000000 0000000000000000 0000000000000000 NaN}
+    {1e+308 7ff0000000000000 0000000000000000 7ff0000000000000 3ff0000000000000}
+    {3.0 4018000000000000 0000000000000000 4022000000000000 3ff0000000000000}
+    } {
+	set x [lindex $row 0]
+	foreach op {+ - * /} want [lrange $row 1 end] {
+	    set r [catch {expr "\$x $op \$x"} got]
+	    if {$want eq "NaN"} {
+		if {!($r && [string match {domain error*} $got])} {lappend bad [list $x $op $x $got]}
+	    } elseif {$r || [binary encode hex [binary format Q $got]] ne $want} {
+		lappend bad [list $x $op $x $got]
+	    }
+	}
+    }
+    set bad
+} -result {}
+
+# ---- results are fresh or updated objects: no stale string representation ----
+test expr-dblfast-strrep-1 {unshared string operand converted in place, result has no stale string} -body {expr {[string trim " 2.5"] * 2.0}} -result {5.0}
+test expr-dblfast-strrep-2 {two unshared string operands} -body {expr {[string trim " 2.5 "] + [string trim " 0.5"]}} -result {3.0}
+test expr-dblfast-strrep-3 {result string length (no stale "1.50")} -body {set r [expr {[string trim "1.50"] * 2.0}]; list $r [string length $r]} -result {3.0 3}
+test expr-dblfast-strrep-4 {unshared integer-with-string operand and double} -body {expr {[string trim " 3"] * 0.5}} -result {1.5}
+test expr-dblfast-strrep-5 {unshared double with string in all four operators} -body {list [expr {[string trim "8.0"] + 1.0}] [expr {[string trim "8.0"] - 1.0}] [expr {[string trim "8.0"] * 1.5}] [expr {[string trim "8.0"] / 4.0}]} -result {9.0 7.0 12.0 2.0}
+test expr-dblfast-shared-1 {shared operand is left unchanged} -body {set x 1.5; set y $x; set z [expr {$x * 2.0}]; list $x $y $z} -result {1.5 1.5 3.0}
+test expr-dblfast-shared-2 {operand held in a list element is left unchanged} -body {set L {1.5 2.5}; set z [expr {[lindex $L 0] * 4.0}]; list $L $z} -result {{1.5 2.5} 6.0}
+test expr-dblfast-shared-3 {literal operands in a loop are not modified} -body {set s {}; for {set i 0} {$i < 3} {incr i} {lappend s [expr {1.5 + 2.5}]}; set s} -result {4.0 4.0 4.0}
+test expr-dblfast-shared-4 {unshared temporary reused through a chain} -body {set x 1.5; expr {$x * 2.0 * 2.0 * 2.0 - 1.0}} -result {11.0}
+test expr-dblfast-result-type-1 {result of a double operation is a double object} -body {set a 1.5; set b 2.25; tcl::unsupported::representation [expr {$a * $b}]} -match glob -result {value is a double *internal representation 3.375*}
+
+# ---- neighbouring paths that must be unaffected (integers, bignums, **, %, errors) ----
+test expr-dblfast-int-1 {integer addition overflows to a bignum} -body {set m 9223372036854775807; list [expr {$m + 1}] [expr {$m * 2}] [expr {-$m - 2}]} -result {9223372036854775808 18446744073709551614 -9223372036854775809}
+test expr-dblfast-int-2 {integer division rounds toward negative infinity} -body {set a 7; set b 2; list [expr {$a/$b}] [expr {-$a/$b}]} -result {3 -4}
+test expr-dblfast-int-3 {WIDE_MIN / -1 is a bignum} -body {set a -9223372036854775808; set b -1; expr {$a/$b}} -result {9223372036854775808}
+test expr-dblfast-big-1 {bignum times double (general path)} -body {set big 123456789012345678901234567890; list [expr {$big * 1.5}] [expr {1.5 + $big}]} -result {1.851851835185185e+29 1.2345678901234568e+29}
+test expr-dblfast-pow-1 {** with doubles (not handled by the fast path)} -body {set x 4.0; list [expr {$x ** 0.5}] [expr {2.0 ** $x}] [expr {$x ** 2}]} -result {2.0 16.0 16.0}
+test expr-dblfast-mod-1 {% with a double operand is an error} -body {set x 5.0; expr {$x % 2.0}} -returnCodes error -result {cannot use floating-point value "5.0" as left operand of "%"}
+test expr-dblfast-err-nan-l {NaN as left operand} -body {expr {"NaN" + 1.0}} -returnCodes error -result {cannot use non-numeric floating-point value "NaN" as left operand of "+"}
+test expr-dblfast-err-nan-r {NaN as right operand} -body {set x 1.5; expr {$x * "NaN"}} -returnCodes error -result {cannot use non-numeric floating-point value "NaN" as right operand of "*"}
+test expr-dblfast-err-str-l {non-numeric string as left operand} -body {set x abc; set y 1.5; expr {$x - $y}} -returnCodes error -result {cannot use non-numeric string "abc" as left operand of "-"}
+test expr-dblfast-err-str-r {non-numeric string as right operand} -body {set x 1.5; set y abc; expr {$x / $y}} -returnCodes error -result {cannot use non-numeric string "abc" as right operand of "/"}
+test expr-dblfast-err-empty-r {empty string as right operand} -body {set x 1.5; set y {}; expr {$x * $y}} -returnCodes error -result {cannot use non-numeric string "" as right operand of "*"}
+test expr-dblfast-err-nanres {NaN result is a domain error} -body {set x Inf; set y Inf; expr {$x - $y}} -returnCodes error -result {domain error: argument not in valid range}
+test expr-dblfast-err-stack {errors in the right operand leave the stack consistent} -body {set n 0; for {set i 0} {$i < 100} {incr i} {if {[catch {expr {$i * 1.0 + "abc"}}]} {incr n}}; list $n [expr {$n * 0.5 + 1.0}]} -result {100 51.0}
+
+# ---- assembler instructions reach the same code ----
+foreach {dblfastNm dblfastIns} {add add sub sub mul mult div div} {
+    proc dblfastAsm_$dblfastNm {x y} "tcl::unsupported::assemble \{\n    load x\n    load y\n    $dblfastIns\n\}"
+}
+test expr-dblfast-asm-1 {assembled add, sub, mult, div on doubles} -body {list [dblfastAsm_add 1.5 2.25] [dblfastAsm_sub 1.5 2.25] [dblfastAsm_mul 1.5 2.25] [dblfastAsm_div 1.5 2.25]} -result {3.75 -0.75 3.375 0.6666666666666666}
+test expr-dblfast-asm-2 {assembled mixed integer and double} -body {list [dblfastAsm_add 1.5 2] [dblfastAsm_mul 3 0.5] [dblfastAsm_sub 10 0.25] [dblfastAsm_div 1 4.0]} -result {3.5 1.5 9.75 0.25}
+
+# ---- expression chains and loops (expected values computed outside Tcl) ----
+test expr-dblfast-chain-1 {a*b + c*d - e/f} -body {set a 1.1; set b 2.2; set c 3.3; set d 4.4; set e 5.5; set f 6.6; binary encode hex [binary format Q [expr {$a*$b + $c*$d - $e/$f}]]} -result {40301b4e81b4e81c}
+test expr-dblfast-chain-2 {((a+b)*(c-d))/(e+0.5)} -body {set a 1.1; set b 2.2; set c 3.3; set d 4.4; set e 5.5; binary encode hex [binary format Q [expr {(($a+$b)*($c-$d))/($e+0.5)}]]} -result {bfe35c28f5c28f5f}
+test expr-dblfast-chain-3 {a*b*c*d*e*f} -body {set a 1.1; set b 2.2; set c 3.3; set d 4.4; set e 5.5; set f 6.6; binary encode hex [binary format Q [expr {$a*$b*$c*$d*$e*$f}]]} -result {4093ee187e7c06e2}
+test expr-dblfast-chain-4 {Horner polynomial} -body {set a 1.1; set b 2.2; set c 3.3; set d 4.4; set x 0.3; binary encode hex [binary format Q [expr {(($a*$x + $b)*$x + $c)*$x + $d}]]} -result {40167886594af4f1}
+test expr-dblfast-loop-1 {sum of 0.1, 1000 times} -body {set s 0.0; for {set i 0} {$i < 1000} {incr i} {set s [expr {$s + 0.1}]}; binary encode hex [binary format Q $s]} -result {4058ffffffffff9d}
+test expr-dblfast-loop-2 {product loop} -body {set p 1.0; for {set i 0} {$i < 1000} {incr i} {set p [expr {$p * 1.0000001}]}; binary encode hex [binary format Q $p]} -result {3ff00068dce2f15c}
+test expr-dblfast-loop-3 {mixed integer index and double accumulator} -body {set s 0.0; for {set i 0} {$i < 1000} {incr i} {set s [expr {$s + $i*0.5 - $i/3.0}]}; binary encode hex [binary format Q $s]} -result {40f4531fffffffff}
+test expr-dblfast-loop-4 {Newton iteration for sqrt(2)} -body {set g 1.0; for {set i 0} {$i < 10} {incr i} {set g [expr {0.5*($g + 2.0/$g)}]}; binary encode hex [binary format Q $g]} -result {3ff6a09e667f3bcc}
+test expr-dblfast-loop-5 {20000-step recurrence s = s*0.999 + 1} -body {set s 0.0; for {set i 0} {$i < 20000} {incr i} {set s [expr {$s*0.999 + 1.0}]}; binary encode hex [binary format Q $s]} -result {408f3ffffeee1c70}
+
+# ---- different contexts for the operation ----
+test expr-dblfast-ctx-1 {results used by list} -body {set x 3.0; set y 0.5; list [expr {$x+$y}] [expr {$x*$y}] [expr {$x-$y}] [expr {$x/$y}]} -result {3.5 1.5 2.5 6.0}
+test expr-dblfast-ctx-2 {result used by if} -body {set x 3.0; set y 0.5; if {$x*$y > 1.0} {set r yes} else {set r no}; set r} -result {yes}
+test expr-dblfast-ctx-3 {results as math function arguments} -body {set x 3.0; set y 4.0; list [expr {sqrt($x*$x + $y*$y)}] [expr {max($x+$y, $x*$y)}]} -result {5.0 12.0}
+test expr-dblfast-ctx-4 {foreach and lappend} -body {set r {}; foreach v {1.5 2.5} {lappend r [expr {$v*2.0}]}; set r} -result {3.0 5.0}
+test expr-dblfast-ctx-5 {repeated update of the same variable} -body {set x 1.5; for {set i 0} {$i < 4} {incr i} {set x [expr {$x + 1.0}]}; set x} -result {5.5}
+test expr-dblfast-ctx-6 {temporary survives a coroutine yield} -body {coroutine dblfastC apply {{} {set first [yield start]; return [expr {$first * 4.0 - [yield mid]}]}}; list [dblfastC 1.5] [dblfastC 0.5]} -result {mid 5.5}
+test expr-dblfast-ctx-7 {string results of repeated formatting} -body {set x 0.1; set y 0.2; list [expr {$x + $y}] [expr {$x + $y == 0.3}] [expr {$y - $x}]} -result {0.30000000000000004 0 0.1}
+
 # cleanup
 unset -nocomplain a
 unset -nocomplain min

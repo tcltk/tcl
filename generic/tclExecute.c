@@ -6548,6 +6548,59 @@ TEBCresume(
 	     */
 	}
 
+	/*
+	 * Floating-point fast path: both operands are doubles, or one is a
+	 * double and the other a wide integer. Computes the result here rather
+	 * than going out to ExecuteExtendedBinaryMathOp.
+	 *
+	 * This code is reached only if the integer path above did not finish
+	 * the operation. Integer operands that fall out of it (exponentiation,
+	 * large multiplies) have no double operand and fail the test below,
+	 * so they continue to overflow.
+	 */
+
+	if (((type1 == TCL_NUMBER_DOUBLE)
+		&& ((type2 == TCL_NUMBER_DOUBLE) || (type2 == TCL_NUMBER_INT)))
+		|| ((type1 == TCL_NUMBER_INT) && (type2 == TCL_NUMBER_DOUBLE))) {
+	    double fd1 = (type1 == TCL_NUMBER_DOUBLE)
+		    ? *((const double *)ptr1)
+		    : (double)*((const Tcl_WideInt *)ptr1);
+	    double fd2 = (type2 == TCL_NUMBER_DOUBLE)
+		    ? *((const double *)ptr2)
+		    : (double)*((const Tcl_WideInt *)ptr2);
+	    double fdr;
+
+	    switch (*pc) {
+	    case INST_ADD:
+		fdr = fd1 + fd2;
+		break;
+	    case INST_SUB:
+		fdr = fd1 - fd2;
+		break;
+	    case INST_MULT:
+		fdr = fd1 * fd2;
+		break;
+#ifdef IEEE_FLOATING_POINT
+	    case INST_DIV:
+		fdr = fd1 / fd2;
+		break;
+#endif
+	    default:
+		goto overflow;	/* EXPON etc: general path */
+	    }
+	    if (isnan(fdr)) {
+		goto overflow;	/* general path reports the error */
+	    }
+	    if (Tcl_IsShared(valuePtr)) {
+		TclNewDoubleObj(objResultPtr, fdr);
+		TRACE_APPEND_NUM_OBJ(objResultPtr);
+		NEXT_INST_F(1, 2, 1);
+	    }
+	    Tcl_SetDoubleObj(valuePtr, fdr);
+	    TRACE_APPEND_NUM_OBJ(valuePtr);
+	    NEXT_INST_F0(1, 1);
+	}
+
     overflow:
 	objResultPtr = ExecuteExtendedBinaryMathOp(interp, *pc, &TCONST(0),
 		valuePtr, value2Ptr);
