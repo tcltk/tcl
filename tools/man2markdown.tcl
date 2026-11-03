@@ -576,6 +576,7 @@ namespace eval ::ndoc {
 	# and supplemented as we go and find more places).
 	# The key to this dictionary refers to the nroff file name:
 	set tclCmdListExclude [dict create {*}{
+		attribtable     {set}
 		bind		{button destroy option}
 		clock		{next}
 		canvas		{bitmap text}
