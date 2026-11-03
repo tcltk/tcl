@@ -321,7 +321,7 @@ test clock-1.5 "clock format - bad timezone (not found)" -body {
 } -returnCodes 1 -result {time zone ":NOWHERE" not found} -errorCode {CLOCK badTimeZone :NOWHERE}
 foreach tz [list {*}{
     ../UNSAFEPATH/NOWHERE UNSAFEPATH/../GMT //UNSAFEPATH/NOWHERE
-    zipfs:/UNSAFEPATH/NOWHERE C:/UNSAFEPATH/NOWHERE
+    zipfs:/UNSAFEPATH/NOWHERE C:/UNSAFEPATH/NOWHERE ~/UNSAFEPATH/NOWHERE
   } [list $::tcl::clock::DataDir/GMT]
 ] {
   foreach tz [list $tz [string map {/ \\} $tz]] {
@@ -343,6 +343,24 @@ foreach l [list {*}{
   }
 }
 unset l
+
+test clock-1.5.3 {clock -timezone in a safe interp cannot source a file from a home directory [3d978e0a84]} -setup {
+    set home $::env(HOME)
+    set ::env(HOME) [temporaryDirectory]
+    makeFile {set ::clockTestLoaded 1} evil
+    set ::clockTestLoaded 0
+    set safe [interp create -safe]
+} -cleanup {
+    interp delete $safe
+    set ::env(HOME) $home
+    removeFile evil
+    unset -nocomplain home safe ::clockTestLoaded
+} -body {
+    list [catch {$safe eval {clock format 0 -timezone :~/evil}}] \
+	[catch {$safe eval {clock format 0 -timezone ~/evil}}] \
+	[catch {$safe eval {clock scan 0 -timezone :~/evil}}] \
+	$::clockTestLoaded
+} -result {1 1 1 0}
 
 test clock-1.6 "clock format - gmt + timezone" {
     list [catch {clock format 0 -timezone :GMT -gmt true} msg] $msg $::errorCode
