@@ -22,6 +22,7 @@ catch [list package require -exact tcl::test [info patchlevel]]
 
 set minus -
 testConstraint testevalex [llength [info commands testevalex]]
+testConstraint testobj [llength [info commands testobj]]
 
 # Tests of Tcl_LindexObjCmd, NOT COMPILED
 
@@ -490,7 +491,7 @@ test lindex-19.6 {nested lindex compiled shimmering - abstract list} -body {
     # Note nested lindex currently shimmers to native list
     list [lindex [list $l $l] $l] [testobj objtype $l]
 } -result {1 list}
-test lindex-19.5 {nested lindex uncompiled shimmering} -body {
+test lindex-19.7 {nested lindex uncompiled shimmering} -body {
     set l [lseq 2]
     # Note nested lindex currently shimmers to native list
     list [[subst lindex] [list $l $l] $l] [testobj objtype $l]
