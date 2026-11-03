@@ -9540,3 +9540,5 @@ Many code fixes to avoid overflow or undefined behavior.  Thanks chrstphrchvz.
 2026-10-30 Unsetting env vars in slave interps (storchaka)
 
 2026-11-01 tzdata updated to Olson's tzdata2026f (nijtmans)
+
+2026-11-02 'clock -timezone' escapes safe interp (storchaka)
