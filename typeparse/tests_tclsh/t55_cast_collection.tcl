@@ -10,7 +10,7 @@ set {point}p 3 4
 set {cercle}C {1 2} 5
 foreach q $P { foreach {x y} {list}$q { puts "foreach : $x,$y" } }
 lassign {list}$p a b;            puts "lassign : $a $b"
-puts "llength : [llength {list}$p] (le point seul : [llength $p])"
+puts "llength : [llength [type {list}$p]] (le point seul : [llength $p])"
 foreach {k v} {dict}$p           { puts "dict : $k=$v" }
 dict for {k v} {dict}$C          { puts "dict for : $k=$v" }
 proc montre {v} { return "<$v> [type get $v] : [lmap e $v {type get $e}]" }

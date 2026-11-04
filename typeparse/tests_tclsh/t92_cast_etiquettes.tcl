@@ -1,7 +1,8 @@
 # t92 : v16l. Deux règles.
-# 1. {T}$x (le reste du mot est UNE variable) est un cast immédiat, là où il
-#    est écrit : un type connu valide et caste, un nom inconnu reste une note.
-#    {T}[cmd], {T}[(...)], {T}"..." et {T}littéral gardent leur sens.
+# 1. (v16l) {T}$x était un cast immédiat. v16m (piste B) : plus de cast
+#    immédiat ; l'annotation n'agit que sur la commande qui reçoit le mot, puis
+#    expire (elle devient une note). concat ne résout rien : les sorties de la
+#    première partie le montrent ; le cast explicite est « type {T}mot » (t93).
 # 2. Les étiquettes de champ et de variante s'écrivent {nom:} (annotation
 #    locale) ; {nom} est toujours un type ou une note. Le contexte du
 #    constructeur ne passe plus avant les types globaux.
@@ -10,7 +11,7 @@ proc t {label script} {
 }
 proc show {v} { list $v [type get $v] [note get $v] }
 
-puts "--- cast immédiat"
+puts "--- plus de cast immédiat (v16m)"
 set s 3.0
 t "catch {concat {int}\$s} r"    {list [catch {concat {int}$s} r] $r}
 t "s = 3"                        {set s 3; show [concat {int}$s]}

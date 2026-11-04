@@ -31,7 +31,7 @@ cast: 0 list<int>@mm
 X_string: 0 string@mm
 -- type def donne un sens à la note
 N_type: 0 mm2
-apres_def: 0 mmdef
+apres_def: 0 mmdef@mmdef
 -- lset sans contrat est un calcul : type et note perdus (v14)
 lset: 0 {} {99 20 30 40}
 -- copie : les notes suivent

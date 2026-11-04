@@ -4,6 +4,11 @@
 # vérifie la cohérence de ce qu'il a dépilé, caste vers la plus récente, puis le
 # contrat de la variable fait le dernier contrôle. Chaque ligne reprend un cas du
 # doc « Constructeurs de variables : annotations, types et casts ».
+# v16m (piste B) : une annotation expire après la commande qui reçoit le mot ;
+# une note rangée dans une liste puis relue (V10–V12b), le résultat d'une
+# procédure (H3), une annotation passée à list (H1, H6) ou lue par type get
+# (H2) ne se résolvent plus plus tard : ce sont des notes. De même une note
+# rangée par set avant son type def (E-@px, E-mm@px, E-suite).
 type def mm    double
 type def dist  mm
 type def kg    double

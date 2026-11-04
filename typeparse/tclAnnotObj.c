@@ -110,6 +110,10 @@ SetTypeRefFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr)
 
 typedef struct RefData {
     Tcl_HashTable refs;		/* "%p/%d" -> Tcl_Obj* (compté) */
+    Tcl_Obj **fresh;		/* v16m : valeurs annotées par un mot, en
+				 * attente de la fin de la commande qui les
+				 * reçoit (comptées) */
+    Tcl_Size nFresh, capFresh;
 } RefData;
 
 static void
@@ -127,6 +131,12 @@ DeleteRefData(void *clientData, Tcl_Interp *interp)
 	Tcl_DecrRefCount((Tcl_Obj *) Tcl_GetHashValue(hPtr));
     }
     Tcl_DeleteHashTable(&rd->refs);
+    while (rd->nFresh > 0) {
+	Tcl_DecrRefCount(rd->fresh[--rd->nFresh]);
+    }
+    if (rd->fresh != NULL) {
+	Tcl_Free(rd->fresh);
+    }
     Tcl_Free(rd);
 }
 
@@ -138,6 +148,8 @@ GetRefData(Tcl_Interp *interp)
     if (rd == NULL) {
 	rd = (RefData *) Tcl_Alloc(sizeof(RefData));
 	Tcl_InitHashTable(&rd->refs, TCL_STRING_KEYS);
+	rd->fresh = NULL;
+	rd->nFresh = rd->capFresh = 0;
 	Tcl_SetAssocData(interp, "tclTypeRefs", DeleteRefData, rd);
 	((Interp *) interp)->typeRefsData = rd;
     }
@@ -299,10 +311,19 @@ NotesJoined(Tcl_Obj *notes)
 
     if (notes != NULL && Tcl_ListObjGetElements(NULL, notes, &n, &elv)
 	    == TCL_OK) {
+	int first = 1;
+
 	for (i = 0; i < n; i++) {
-	    if (i > 0) {
+	    Tcl_Size el;
+
+	    (void) Tcl_GetStringFromObj(elv[i], &el);
+	    if (el == 0) {
+		continue;		/* v16m : la marque d'expiration */
+	    }
+	    if (!first) {
 		Tcl_AppendToObj(res, ".", 1);
 	    }
+	    first = 0;
 	    Tcl_AppendObjToObj(res, elv[i]);
 	}
     }
@@ -1049,16 +1070,80 @@ AnnotListCopy(Tcl_Interp *interp, Tcl_Obj *aPtr)
     return Tcl_NewListObj(1, &v);
 }
 
+/*
+ * v16m : l'élément reçu par lset, linsert, lreplace sur une liste typée porte
+ * peut-être une annotation en attente ({double}2.5) : la commande reçoit le
+ * mot, elle la résout (la variante d'une liste de sommes compte). Rend une
+ * référence possédée, ou NULL (erreur dans interp).
+ */
+static Tcl_Obj *
+SettleElement(Tcl_Interp *interp, Tcl_Obj *aPtr, Tcl_Obj *valueObj)
+{
+    TclType *ltp = NULL;
+    const TclType *ctx = NULL;
+    Tcl_Obj *res = NULL;
+
+    Tcl_Obj *lab;
+
+    if (interp == NULL || !TclAnnotHasFresh(valueObj)) {
+	Tcl_IncrRefCount(valueObj);
+	return valueObj;
+    }
+    lab = TclAnnotLabelOf(valueObj);
+    if (lab != NULL) {
+	/* {s:}abc : l'étiquette est lue plus loin (variante de l'élément) */
+	Tcl_DecrRefCount(lab);
+	Tcl_IncrRefCount(valueObj);
+	return valueObj;
+    }
+    if (TclAnnotInfo(aPtr, NULL, &ltp, NULL, NULL) == 1 && ltp != NULL
+	    && ltp->kind == TCLT_LIST && ltp->elem != NULL
+	    && ltp->elem->kind == TCLT_SUM) {
+	ctx = ltp->elem;
+    }
+    if (TclAnnotSettle(interp, valueObj, ctx, 0, &res) != TCL_OK) {
+	return NULL;
+    }
+    Tcl_IncrRefCount(res);
+    return res;
+}
+
 static int
 AnnotListReplace(Tcl_Interp *interp, Tcl_Obj *aPtr, Tcl_Size first,
 	Tcl_Size numToDelete, Tcl_Size numToInsert, Tcl_Obj *const insertObjs[])
 {
-    Tcl_Obj *w = AnnotListCopy(interp, aPtr);
+    Tcl_Obj *w = AnnotListCopy(interp, aPtr), *ins = NULL, **iv;
+    Tcl_Size k;
     int rc;
 
     Tcl_IncrRefCount(w);
+    for (k = 0; k < numToInsert && interp != NULL; k++) {
+	if (TclAnnotHasFresh(insertObjs[k])) {
+	    break;
+	}
+    }
+    if (interp != NULL && k < numToInsert) {
+	ins = Tcl_NewListObj(0, NULL);
+	Tcl_IncrRefCount(ins);
+	for (k = 0; k < numToInsert; k++) {
+	    Tcl_Obj *e = SettleElement(interp, aPtr, insertObjs[k]);
+
+	    if (e == NULL) {
+		Tcl_DecrRefCount(ins);
+		Tcl_DecrRefCount(w);
+		return TCL_ERROR;
+	    }
+	    Tcl_ListObjAppendElement(NULL, ins, e);
+	    Tcl_DecrRefCount(e);
+	}
+	Tcl_ListObjGetElements(NULL, ins, &k, &iv);
+	insertObjs = iv;
+    }
     rc = Tcl_ListObjReplace(interp, w, first, numToDelete, numToInsert,
 	    insertObjs);
+    if (ins != NULL) {
+	Tcl_DecrRefCount(ins);
+    }
     if (rc == TCL_OK) {
 	rc = TclAnnotSetContent(interp, aPtr, w);
     }
@@ -1074,10 +1159,19 @@ static Tcl_Obj *
 AnnotListSetElement(Tcl_Interp *interp, Tcl_Obj *aPtr, Tcl_Size indexCount,
 	Tcl_Obj *const indexArray[], Tcl_Obj *valueObj)
 {
-    Tcl_Obj *w = AnnotListCopy(interp, aPtr), *r, *target, *tagged = NULL;
+    Tcl_Obj *w, *r, *target, *tagged = NULL, *settled;
     int rc;
     TclType *ltp = NULL;
 
+    settled = NULL;
+    if (valueObj != NULL) {		/* lpop : NULL, un élément retiré */
+	settled = SettleElement(interp, aPtr, valueObj);	/* v16m */
+	if (settled == NULL) {
+	    return NULL;
+	}
+	valueObj = settled;
+    }
+    w = AnnotListCopy(interp, aPtr);
     Tcl_IncrRefCount(w);
     if (indexCount > 1 && TclIsCompact(w)) {
 	/*
@@ -1092,6 +1186,7 @@ AnnotListSetElement(Tcl_Interp *interp, Tcl_Obj *aPtr, Tcl_Size indexCount,
 
 	if (Tcl_ListObjGetElements(interp, w, &ne, &ev) != TCL_OK) {
 	    Tcl_DecrRefCount(w);
+	    if (settled != NULL) {Tcl_DecrRefCount(settled);}
 	    return NULL;
 	}
 	pl = Tcl_NewListObj(ne, ev);
@@ -1131,6 +1226,7 @@ AnnotListSetElement(Tcl_Interp *interp, Tcl_Obj *aPtr, Tcl_Size indexCount,
     }
     if (r == NULL) {
 	Tcl_DecrRefCount(w);
+	if (settled != NULL) {Tcl_DecrRefCount(settled);}
 	return NULL;
     }
     /* Jamais en place : la valeur d'une variable sous contrat doit rester
@@ -1139,6 +1235,7 @@ AnnotListSetElement(Tcl_Interp *interp, Tcl_Obj *aPtr, Tcl_Size indexCount,
     rc = TclAnnotSetContent(interp, target, r);
     Tcl_DecrRefCount(r);			/* la référence de TclLsetFlat */
     Tcl_DecrRefCount(w);
+    if (settled != NULL) {Tcl_DecrRefCount(settled);}
     if (rc != TCL_OK) {
 	if (target != aPtr) {
 	    Tcl_BounceRefCount(target);
@@ -2198,8 +2295,41 @@ TclAnnotIsCleared(Tcl_Obj *objPtr)
  * withCleared : garder la pile sous une marque {} (lecture d'un
  * constructeur) ; sinon une valeur marquée n'a pas de pile.
  */
+/*
+ * v16m (piste B) : une annotation expire après la commande qui reçoit le mot.
+ * Les notes expirées restent dans N, sous une marque (un élément vide) : ce
+ * sont des métadonnées, affichées, jamais résolues. Seules les notes au-dessus
+ * de la dernière marque sont en attente.
+ */
+static Tcl_Size
+FreshStart(Tcl_Obj *n)
+{
+    Tcl_Obj **elv;
+    Tcl_Size nn, i, el;
+
+    if (n == NULL || Tcl_ListObjGetElements(NULL, n, &nn, &elv) != TCL_OK) {
+	return 0;
+    }
+    for (i = nn - 1; i >= 0; i--) {
+	(void) Tcl_GetStringFromObj(elv[i], &el);
+	if (el == 0) {
+	    return i + 1;
+	}
+    }
+    return 0;
+}
+
+static Tcl_Obj *PendingOfEx(Tcl_Obj *objPtr, int withCleared, int all);
+
 static Tcl_Obj *
 PendingOf(Tcl_Obj *objPtr, int withCleared)
+{
+    return PendingOfEx(objPtr, withCleared, 0);
+}
+
+/* all : aussi les notes expirées (affichage, note get). */
+static Tcl_Obj *
+PendingOfEx(Tcl_Obj *objPtr, int withCleared, int all)
 {
     Tcl_ObjInternalRep *ir = Tcl_FetchInternalRep(objPtr, &annotatedObjType);
     Tcl_Obj *t, *n, *res, **elv;
@@ -2220,8 +2350,13 @@ PendingOf(Tcl_Obj *objPtr, int withCleared)
 	}
     }
     if (n != NULL && Tcl_ListObjGetElements(NULL, n, &nn, &elv) == TCL_OK) {
-	for (i = 0; i < nn; i++) {
-	    Tcl_ListObjAppendElement(NULL, res, Tcl_DuplicateObj(elv[i]));
+	for (i = all ? 0 : FreshStart(n); i < nn; i++) {
+	    Tcl_Size el;
+
+	    (void) Tcl_GetStringFromObj(elv[i], &el);
+	    if (el > 0) {
+		Tcl_ListObjAppendElement(NULL, res, Tcl_DuplicateObj(elv[i]));
+	    }
 	}
     }
     return res;
@@ -2285,6 +2420,9 @@ TclAnnotPopTop(Tcl_Obj *src, Tcl_Obj **topPtr)
     if (n != NULL) {
 	Tcl_ListObjLength(NULL, n, &nn);
     }
+    if (nn > 0 && FreshStart(n) >= nn) {
+	return NULL;			/* v16m : rien en attente (expiré) */
+    }
     if (nn > 0) {
 	Tcl_ListObjIndex(NULL, n, nn - 1, topPtr);
 	newN = Tcl_DuplicateObj(n);
@@ -2307,6 +2445,44 @@ TclAnnotPopTop(Tcl_Obj *src, Tcl_Obj **topPtr)
 	}
     }
     return NULL;
+}
+
+/*
+ * v16m : res (valeur neuve d'un constructeur) + les notes EXPIRÉES de src :
+ * des métadonnées, qui suivent la valeur comme elle. Rend res lui-même s'il
+ * n'y a rien à porter, sinon une valeur neuve (sans référence).
+ */
+Tcl_Obj *
+TclAnnotKeepExpired(Tcl_Obj *res, Tcl_Obj *src)
+{
+    Tcl_ObjInternalRep *sir = Tcl_FetchInternalRep(src, &annotatedObjType);
+    Tcl_ObjInternalRep *rir;
+    Tcl_Obj *st, *sn, *rt = NULL, *rn = NULL, *content = res, *newN, **elv;
+    Tcl_Size fs, nn;
+
+    if (sir == NULL) {
+	return res;
+    }
+    SplitT((Tcl_Obj *) sir->twoPtrValue.ptr2, &st, &sn);
+    fs = FreshStart(sn);
+    if (fs <= 1) {
+	return res;			/* aucune note expirée */
+    }
+    rir = Tcl_FetchInternalRep(res, &annotatedObjType);
+    if (rir != NULL) {
+	content = (Tcl_Obj *) rir->twoPtrValue.ptr1;
+	SplitT((Tcl_Obj *) rir->twoPtrValue.ptr2, &rt, &rn);
+	if (FreshStart(rn) > 0) {
+	    return res;			/* déjà portées */
+	}
+    }
+    Tcl_ListObjGetElements(NULL, sn, &nn, &elv);
+    newN = Tcl_NewListObj(fs, elv);	/* notes expirées et la marque */
+    if (rn != NULL) {
+	Tcl_ListObjGetElements(NULL, rn, &nn, &elv);
+	Tcl_ListObjReplace(NULL, newN, fs, 0, nn, elv);
+    }
+    return MakeAnnotated(Tcl_DuplicateObj(content), StateObj(rt, newN));
 }
 
 /* res (valeur typée fraîche, sans pile) + la pile donnée. */
@@ -2501,9 +2677,21 @@ TclAnnotSettle(Tcl_Interp *interp, Tcl_Obj *objPtr, const TclType *ctx,
 	Tcl_IncrRefCount(val);
     }
 
-    /* La pile restante, dans l'ordre. */
+    /* La pile restante, dans l'ordre : d'abord les notes expirées (v16m),
+     * marque comprise, telles quelles. */
     remaining = Tcl_NewListObj(0, NULL);
     Tcl_IncrRefCount(remaining);
+    if (n != NULL) {
+	Tcl_Size fs = FreshStart(n);
+
+	if (fs > 0) {
+	    Tcl_Obj **xv;
+	    Tcl_Size xn;
+
+	    Tcl_ListObjGetElements(NULL, n, &xn, &xv);
+	    Tcl_ListObjReplace(NULL, remaining, 0, 0, fs, xv);
+	}
+    }
     for (i = 0; i < np; i++) {
 	if (keep[i]) {
 	    Tcl_ListObjAppendElement(NULL, remaining, elv[i]);
@@ -2531,6 +2719,12 @@ TclAnnotSettle(Tcl_Interp *interp, Tcl_Obj *objPtr, const TclType *ctx,
     }
     Tcl_DecrRefCount(remaining);
     Tcl_DecrRefCount(pend);
+    if (interp != NULL && res != objPtr && TclAnnotHasFresh(res)) {
+	/* v16m, piste B : ce que le constructeur n'a pas résolu (une note,
+	 * une étiquette qu'il lira ensuite) expire avec la commande, même
+	 * rangé dans une variable : la valeur neuve est inscrite. */
+	TclAnnotRegisterFresh(interp, res);
+    }
     *resultPtr = res;
     return TCL_OK;
 }
@@ -2604,40 +2798,389 @@ AnnotLocalObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
     return TCL_ERROR;
 }
 
+/* --------------------------------------------------------------------
+ * v16m, piste B : une annotation expire après la commande qui reçoit le mot
+ * --------------------------------------------------------------------
+ *
+ * Chaque valeur annotée par un mot ({T}mot) est inscrite dans une liste par
+ * interpréteur. Le code compilé encadre une commande qui a un mot annoté :
+ *
+ *	::tcl::annotexpire [::tcl::annotmark] <la commande>
+ *
+ * annotmark rend la longueur de la liste ; annotexpire fait expirer tout ce
+ * qui a été inscrit depuis, et rend le résultat de la commande. Expirer, c'est
+ * changer EN PLACE l'état de l'objet créé par le mot : ce qu'il porte encore
+ * en attente (un type non résolu, une note) devient une note expirée, une
+ * métadonnée que plus aucun constructeur ne résout ; une étiquette {nom:} et
+ * une annotation locale disparaissent. Le changement en place atteint toutes
+ * les copies par référence : le résultat d'une commande qui rend son
+ * argument (concat, return), un élément rangé dans une liste ou un dict, une
+ * valeur rangée dans une variable.
+ */
+
+/* L'objet a-t-il une annotation encore en attente (texte brut, note) ? */
+static int
+HasFresh(Tcl_Obj *objPtr, Tcl_Obj **tPtr, Tcl_Obj **nPtr)
+{
+    Tcl_ObjInternalRep *ir = Tcl_FetchInternalRep(objPtr, &annotatedObjType);
+    Tcl_Obj *t, *n;
+    Tcl_Size len, nn = 0;
+
+    if (ir == NULL) {
+	return 0;
+    }
+    SplitT((Tcl_Obj *) ir->twoPtrValue.ptr2, &t, &n);
+    *tPtr = t;
+    *nPtr = n;
+    if (t != NULL && !IsTypeRef(t)) {
+	Tcl_GetStringFromObj(t, &len);
+	if (len > 0) {
+	    return 1;
+	}
+    }
+    if (n != NULL) {
+	Tcl_ListObjLength(NULL, n, &nn);
+    }
+    return FreshStart(n) < nn;
+}
+
+/* Une étiquette {nom:} ou une annotation locale : ne survit pas. */
+static int
+IsEphemeral(Tcl_Interp *interp, Tcl_Obj *text)
+{
+    Tcl_Size l;
+    const char *s = Tcl_GetStringFromObj(text, &l);
+
+    if (l > 1 && s[l - 1] == ':') {
+	return 1;
+    }
+    return interp != NULL
+	    && ClassifyAnnot(interp, text, NULL, NULL, NULL) == ANN_LOCAL;
+}
+
 /*
- * {list}$p, {dict}$p, {list.T}$p sur une valeur TYPÉE : un cast vers une
- * collection, fait tout de suite, au moment de l'annotation (la vue liste
- * n'a pas d'interpréteur pour résoudre un nom de type). Le produit rend ses
- * champs, la liste nominale ses éléments ; la chaîne ne change pas.
- * Rend TCL_OK (*resultPtr rempli), TCL_ERROR (cast refusé), ou TCL_CONTINUE
- * (pas concerné : annoter normalement).
+ * L'état (ptr2) est changé EN PLACE, pas seulement l'objet : les copies de la
+ * valeur (Tcl_DuplicateObj, que concat ou lindex peuvent faire) partagent cet
+ * état et expirent avec elle. L'état est un texte brut ({int}5) ou un objet
+ * annotstate {T, N} ; jamais une référence de type (rien en attente).
+ */
+static void
+SetStateInPlace(Tcl_Obj *st, Tcl_Obj *newT, Tcl_Obj *newN)
+{
+    Tcl_ObjInternalRep ir;
+
+    if (newT != NULL) {
+	Tcl_IncrRefCount(newT);
+    }
+    Tcl_IncrRefCount(newN);
+    if (st->typePtr == &annotStateObjType) {
+	Tcl_Obj *ot = (Tcl_Obj *) st->internalRep.twoPtrValue.ptr1;
+	Tcl_Obj *on = (Tcl_Obj *) st->internalRep.twoPtrValue.ptr2;
+
+	st->internalRep.twoPtrValue.ptr1 = newT;
+	st->internalRep.twoPtrValue.ptr2 = newN;
+	if (ot != NULL) {
+	    Tcl_DecrRefCount(ot);
+	}
+	if (on != NULL) {
+	    Tcl_DecrRefCount(on);
+	}
+    } else {
+	(void) Tcl_GetString(st);
+	TclFreeInternalRep(st);
+	ir.twoPtrValue.ptr1 = newT;
+	ir.twoPtrValue.ptr2 = newN;
+	Tcl_StoreInternalRep(st, &annotStateObjType, &ir);
+    }
+    TclInvalidateStringRep(st);
+}
+
+void
+TclAnnotExpire(Tcl_Interp *interp, Tcl_Obj *objPtr)
+{
+    Tcl_ObjInternalRep *ir;
+    Tcl_Obj *t, *n, *newN, **elv, *newT, *st;
+    Tcl_Size nn = 0, fs, i, len, kept = 0;
+    Tcl_InterpState state = NULL;
+
+    if (!HasFresh(objPtr, &t, &n)) {
+	return;
+    }
+    if (interp != NULL) {
+	state = Tcl_SaveInterpState(interp, TCL_OK);
+    }
+    ir = Tcl_FetchInternalRep(objPtr, &annotatedObjType);
+    st = (Tcl_Obj *) ir->twoPtrValue.ptr2;
+    Tcl_IncrRefCount(st);
+    newN = Tcl_NewListObj(0, NULL);
+    Tcl_IncrRefCount(newN);
+    fs = FreshStart(n);
+    if (n != NULL) {
+	Tcl_ListObjGetElements(NULL, n, &nn, &elv);
+	if (fs > 0) {
+	    Tcl_ListObjReplace(NULL, newN, 0, 0, fs - 1, elv);
+	    kept = fs - 1;
+	}
+    }
+    newT = t;
+    if (t != NULL && !IsTypeRef(t)) {
+	Tcl_GetStringFromObj(t, &len);
+	if (len > 0) {
+	    newT = NULL;		/* {int}5 brut : devient une note */
+	    if (!IsEphemeral(interp, t)) {
+		Tcl_ListObjAppendElement(NULL, newN, Tcl_DuplicateObj(t));
+		kept++;
+	    }
+	}
+    }
+    if (n != NULL) {
+	Tcl_ListObjGetElements(NULL, n, &nn, &elv);
+	for (i = fs; i < nn; i++) {
+	    if (!IsEphemeral(interp, elv[i])) {
+		Tcl_ListObjAppendElement(NULL, newN, elv[i]);
+		kept++;
+	    }
+	}
+    }
+    if (state != NULL) {
+	Tcl_RestoreInterpState(interp, state);
+    }
+    if (newT != NULL) {
+	Tcl_IncrRefCount(newT);		/* survit au changement de st */
+    }
+    Tcl_ListObjAppendElement(NULL, newN, Tcl_NewObj());	/* la marque */
+    SetStateInPlace(st, newT, newN);
+    Tcl_DecrRefCount(newN);
+    if (kept == 0) {
+	/* Plus rien d'écrit sur cet objet : il redevient une valeur
+	 * ordinaire (sa chaîne), ou garde son seul type résolu. Ses copies
+	 * gardent l'état marqué, sans note. */
+	if (newT == NULL) {
+	    (void) Tcl_GetString(objPtr);
+	    TclFreeInternalRep(objPtr);
+	} else {
+	    ir->twoPtrValue.ptr2 = newT;
+	    Tcl_IncrRefCount(newT);
+	    Tcl_DecrRefCount(st);
+	}
+    }
+    if (newT != NULL) {
+	Tcl_DecrRefCount(newT);
+    }
+    Tcl_DecrRefCount(st);
+}
+
+int
+TclAnnotHasFresh(Tcl_Obj *objPtr)
+{
+    Tcl_Obj *t, *n;
+
+    return HasFresh(objPtr, &t, &n);
+}
+
+/*
+ * v16m : un argument de VALEUR d'une commande qui le consomme (foreach,
+ * lmap, dict for, dict map, lassign) : la commande reçoit le mot, elle résout
+ * son annotation en attente ({list}$p, {dict}$p, {int}$x), comme un
+ * constructeur sans contexte. *resPtr reçoit une référence possédée.
  */
 int
-TclAnnotCollectionCast(Tcl_Interp *interp, Tcl_Obj *typeText, Tcl_Obj *value,
+TclAnnotSettleValueArg(Tcl_Interp *interp, Tcl_Obj *objPtr,
+	Tcl_Obj **resPtr)
+{
+    Tcl_Obj *t, *n, *res = NULL;
+
+    if (!HasFresh(objPtr, &t, &n)) {
+	Tcl_IncrRefCount(objPtr);
+	*resPtr = objPtr;
+	return TCL_OK;
+    }
+    if (TclAnnotSettle(interp, objPtr, NULL, 0, &res) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    Tcl_IncrRefCount(res);
+    *resPtr = res;
+    return TCL_OK;
+}
+
+/*
+ * v16m : {T}mot reçu par une boucle compilée (foreach, lmap, dict for, dict
+ * map) : la boucle le résout tout de suite, sans fabriquer la valeur annotée
+ * intermédiaire (instruction annotCast). Même résultat que
+ * TclAnnotSettleValueArg sur [::tcl::annotate T valeur]. Rend une valeur
+ * sans référence propre (la valeur elle-même si rien ne change).
+ */
+int
+TclAnnotCastText(Tcl_Interp *interp, Tcl_Obj *typeText, Tcl_Obj *value,
 	Tcl_Obj **resultPtr)
 {
-    TclType *from = NULL, *to;
-    Tcl_InterpState state;
-    Tcl_Size tlen;
-    const char *ttext = Tcl_GetStringFromObj(typeText, &tlen);
+    TclType *tp = NULL, *cur = NULL;
+    int v = -1, cls, curVar = -1, variant = -1;
+    Tcl_Obj *res = NULL, *ann = NULL;
 
-    if (TclAnnotInfo(value, NULL, &from, NULL, NULL) != 1 || from == NULL) {
-	return TCL_CONTINUE;
+    if (TclIsAnnotated(value) && !TclAnnotIsSettled(value)) {
+	goto general;			/* la valeur a déjà des notes */
     }
-    /* Un nom inconnu reste une note : l'échec de l'analyse ne doit rien
-     * laisser, ni résultat ni errorInfo (TclEvalEx s'en servirait). */
-    state = Tcl_SaveInterpState(interp, TCL_OK);
-    to = TclTypeParse(interp, ttext, tlen);
-    Tcl_RestoreInterpState(interp, state);
-    if (to == NULL || to == from
-	    || (to->kind != TCLT_LIST && to->kind != TCLT_DICT)) {
-	return TCL_CONTINUE;
+    cls = ClassifyAnnot(interp, typeText, NULL, &tp, &v);
+    if (cls == ANN_BAD) {
+	Tcl_Size bl;
+	const char *bt = Tcl_GetStringFromObj(typeText, &bl);
+
+	(void) TclTypeParse(interp, bt, bl);	/* le message */
+	return TCL_ERROR;
     }
-    return TclTypeCast(interp, value, to, resultPtr);
+    if (cls != ANN_TYPE) {
+	if (Tcl_GetString(typeText)[0] == '\0') {
+	    goto general;		/* {} : retirer le type */
+	}
+	*resultPtr = value;		/* une note, une locale : rien à faire */
+	return TCL_OK;
+    }
+    if (!TclIsAnnotated(value)) {
+	Tcl_Obj *copy = Tcl_DuplicateObj(value);
+
+	Tcl_IncrRefCount(copy);
+	if (TclTypeComplete(interp, tp, copy, v, &variant) != TCL_OK) {
+	    Tcl_DecrRefCount(copy);
+	    return TCL_ERROR;
+	}
+	res = TclNewAnnotated(interp, tp, variant, copy);
+	Tcl_DecrRefCount(copy);
+	*resultPtr = res;
+	return TCL_OK;
+    }
+    (void) TclAnnotInfo(value, NULL, &cur, &curVar, NULL);
+    if (cur == tp && (v < 0 || v == curVar)) {
+	*resultPtr = value;
+	return TCL_OK;
+    }
+    if (cur == tp) {
+	goto general;			/* d'une variante à l'autre */
+    }
+    if (TclTypeCast(interp, value, tp, &res) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    *resultPtr = res;
+    return TCL_OK;
+
+  general:
+    if (TclAnnotateValue(interp, typeText, value, &ann) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    Tcl_IncrRefCount(ann);
+    if (TclAnnotSettle(interp, ann, NULL, 0, &res) != TCL_OK) {
+	Tcl_DecrRefCount(ann);
+	return TCL_ERROR;
+    }
+    if (res == ann) {
+	ann->refCount--;		/* rendue sans référence propre */
+    } else {
+	Tcl_IncrRefCount(res);
+	Tcl_DecrRefCount(ann);
+	res->refCount--;
+    }
+    *resultPtr = res;
+    return TCL_OK;
+}
+
+/* Inscrit une valeur annotée par un mot. */
+void
+TclAnnotRegisterFresh(Tcl_Interp *interp, Tcl_Obj *objPtr)
+{
+    RefData *rd;
+    Tcl_Size i, j;
+
+    if (interp == NULL || objPtr->typePtr != &annotatedObjType) {
+	return;
+    }
+    rd = GetRefData(interp);
+    if (rd->nFresh >= rd->capFresh) {
+	/* Les inscrits que plus rien ne tient (refCount 1) s'en vont. Une
+	 * commande en erreur ne fait pas expirer les siens : l'encadrement
+	 * suivant, plus extérieur, s'en charge ; sinon ils restent ici. */
+	for (i = j = 0; i < rd->nFresh; i++) {
+	    if (rd->fresh[i]->refCount <= 1) {
+		Tcl_DecrRefCount(rd->fresh[i]);
+	    } else {
+		rd->fresh[j++] = rd->fresh[i];
+	    }
+	}
+	rd->nFresh = j;
+	if (rd->nFresh >= rd->capFresh / 2) {
+	    rd->capFresh = rd->capFresh ? 2 * rd->capFresh : 32;
+	    rd->fresh = (Tcl_Obj **) Tcl_Realloc(rd->fresh,
+		    rd->capFresh * sizeof(Tcl_Obj *));
+	}
+    }
+    Tcl_IncrRefCount(objPtr);
+    rd->fresh[rd->nFresh++] = objPtr;
+}
+
+Tcl_Size
+TclAnnotFreshMark(Tcl_Interp *interp)
+{
+    RefData *rd = (RefData *) ((Interp *) interp)->typeRefsData;
+
+    return rd == NULL ? 0 : rd->nFresh;
+}
+
+void
+TclAnnotExpireFrom(Tcl_Interp *interp, Tcl_Size mark)
+{
+    RefData *rd = (RefData *) ((Interp *) interp)->typeRefsData;
+    Tcl_Obj *o;
+
+    if (rd == NULL || mark < 0) {
+	return;
+    }
+    while (rd->nFresh > mark) {
+	o = rd->fresh[--rd->nFresh];
+	/* Rien d'autre ne le tient, ni lui ni son état (une copie le
+	 * partagerait) : il part sans expirer. */
+	if (o->refCount > 1 || o->typePtr != &annotatedObjType
+		|| ((Tcl_Obj *) o->internalRep.twoPtrValue.ptr2)->refCount > 1) {
+	    TclAnnotExpire(interp, o);
+	}
+	Tcl_DecrRefCount(o);
+    }
+}
+
+static int
+AnnotMarkObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
+	Tcl_Obj *const objv[])
+{
+    (void) clientData;
+    (void) objv;
+    if (objc != 1) {
+	Tcl_WrongNumArgs(interp, 1, objv, NULL);
+	return TCL_ERROR;
+    }
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(TclAnnotFreshMark(interp)));
+    return TCL_OK;
+}
+
+static int
+AnnotExpireObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
+	Tcl_Obj *const objv[])
+{
+    Tcl_WideInt mark;
+
+    (void) clientData;
+    if (objc != 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "mark value");
+	return TCL_ERROR;
+    }
+    if (Tcl_GetWideIntFromObj(interp, objv[1], &mark) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    TclAnnotExpireFrom(interp, (Tcl_Size) mark);
+    Tcl_SetObjResult(interp, objv[2]);
+    return TCL_OK;
 }
 
 /* ::tcl::annotate type value : l'équivalent exécutable de {type}valeur,
- * appelé par le code compilé et par TclSubstTokens. */
+ * appelé par le code compilé et par TclSubstTokens. Rien n'est résolu ici
+ * (v16m : plus de cast immédiat) ; la valeur est inscrite. */
 static int
 AnnotateObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
 	Tcl_Obj *const objv[])
@@ -2649,76 +3192,69 @@ AnnotateObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
 	Tcl_WrongNumArgs(interp, 1, objv, "type value");
 	return TCL_ERROR;
     }
-    switch (TclAnnotCollectionCast(interp, objv[1], objv[2], &res)) {
-    case TCL_ERROR:
-	return TCL_ERROR;
-    case TCL_OK:
-	Tcl_SetObjResult(interp, res);
-	return TCL_OK;
-    }
     if (TclAnnotateValue(interp, objv[1], objv[2], &res) != TCL_OK) {
 	return TCL_ERROR;
     }
+    TclAnnotRegisterFresh(interp, res);
     Tcl_SetObjResult(interp, res);
     return TCL_OK;
 }
 
 /*
- * v16l : {T}$x, cast immédiat. L'annotation est résolue là où elle est
- * écrite, par le résolveur des constructeurs, sans contexte : un type connu
- * valide et caste tout de suite (l'erreur naît dans la commande qui contient
- * le mot) ; un nom inconnu reste une note ; une annotation locale ({-v},
- * {nom:}) passe telle quelle à la commande appelée.
+ * type {T}mot (v16m) : le cast explicite. La commande reçoit le mot, elle
+ * résout son annotation comme un constructeur sans contexte : un type connu
+ * valide et caste, sinon erreur. Rend TCL_CONTINUE si objPtr n'a aucune
+ * annotation en attente.
  */
 int
-TclAnnotCastValue(Tcl_Interp *interp, Tcl_Obj *typeText, Tcl_Obj *value,
-	Tcl_Obj **resultPtr)
+TclAnnotCastWord(Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_Obj **resultPtr)
 {
-    Tcl_Obj *res = NULL, *ann;
+    Tcl_Obj *t, *n, *pend, *res = NULL;
+    Tcl_Size np = 0;
 
-    switch (TclAnnotCollectionCast(interp, typeText, value, &res)) {
-    case TCL_ERROR:
+    if (!HasFresh(objPtr, &t, &n)) {
+	return TCL_CONTINUE;
+    }
+    pend = PendingOf(objPtr, 0);
+    Tcl_IncrRefCount(pend);
+    Tcl_ListObjLength(NULL, pend, &np);
+    if (np > 0) {
+	Tcl_Obj *top;
+	TclType *tp = NULL;
+	int v, cls;
+
+	Tcl_ListObjIndex(NULL, pend, np - 1, &top);
+	cls = ClassifyAnnot(interp, top, NULL, &tp, &v);
+	if (cls == ANN_BAD) {
+	    Tcl_Size bl;
+	    const char *bt = Tcl_GetStringFromObj(top, &bl);
+
+	    (void) TclTypeParse(interp, bt, bl);	/* le message */
+	    Tcl_DecrRefCount(pend);
+	    return TCL_ERROR;
+	}
+	if (cls != ANN_TYPE) {
+	    if (cls != ANN_LOCAL) {
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"unknown type \"%s\"", Tcl_GetString(top)));
+		Tcl_SetErrorCode(interp, "TCL", "TYPE", "UNKNOWN",
+			(char *) NULL);
+	    } else {
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"\"%s\" is not a type: \"type\" casts to a type",
+			Tcl_GetString(top)));
+		Tcl_SetErrorCode(interp, "TCL", "TYPE", "NOTATYPE",
+			(char *) NULL);
+	    }
+	    Tcl_DecrRefCount(pend);
+	    return TCL_ERROR;
+	}
+    }
+    Tcl_DecrRefCount(pend);
+    if (TclAnnotSettle(interp, objPtr, NULL, 0, &res) != TCL_OK) {
 	return TCL_ERROR;
-    case TCL_OK:
-	*resultPtr = res;
-	return TCL_OK;
-    }
-    if (TclAnnotateValue(interp, typeText, value, &ann) != TCL_OK) {
-	return TCL_ERROR;
-    }
-    if (ClassifyAnnot(interp, typeText, NULL, NULL, NULL) == ANN_LOCAL) {
-	*resultPtr = ann;		/* {-v}, {nom:} : pour l'appelé */
-	return TCL_OK;
-    }
-    Tcl_IncrRefCount(ann);
-    if (TclAnnotSettle(interp, ann, NULL, 0, &res) != TCL_OK) {
-	Tcl_DecrRefCount(ann);
-	return TCL_ERROR;
-    }
-    if (res == ann) {
-	ann->refCount--;		/* rendu sans référence propre */
-    } else {
-	Tcl_DecrRefCount(ann);
     }
     *resultPtr = res;
-    return TCL_OK;
-}
-
-static int
-AnnotCastObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
-	Tcl_Obj *const objv[])
-{
-    Tcl_Obj *res = NULL;
-
-    (void) clientData;
-    if (objc != 3) {
-	Tcl_WrongNumArgs(interp, 1, objv, "type value");
-	return TCL_ERROR;
-    }
-    if (TclAnnotCastValue(interp, objv[1], objv[2], &res) != TCL_OK) {
-	return TCL_ERROR;
-    }
-    Tcl_SetObjResult(interp, res);
     return TCL_OK;
 }
 
@@ -2729,12 +3265,16 @@ static int
 AnnotRawObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
 	Tcl_Obj *const objv[])
 {
+    Tcl_Obj *res;
+
     (void) clientData;
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "type value");
 	return TCL_ERROR;
     }
-    Tcl_SetObjResult(interp, TclNewRawAnnotation(objv[1], objv[2]));
+    res = TclNewRawAnnotation(objv[1], objv[2]);
+    TclAnnotRegisterFresh(interp, res);
+    Tcl_SetObjResult(interp, res);
     return TCL_OK;
 }
 
@@ -2806,7 +3346,7 @@ TclAnnotDisplay(Tcl_Interp *interp, Tcl_Obj *objPtr, int withNotes)
 	(void) t;
 	(void) n;
 	(void) raw;
-	notes = PendingOf(norm, 0);
+	notes = PendingOfEx(norm, 0, 1);
 	Tcl_IncrRefCount(notes);
 	if (withNotes) {
 	    Tcl_Size nn = 0;
@@ -2848,7 +3388,7 @@ NoteObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
     sub = Tcl_GetString(objv[1]);
     norm = objv[2];
     Tcl_IncrRefCount(norm);
-    notes = PendingOf(norm, 0);		/* la pile, vue d'un lecteur */
+    notes = PendingOfEx(norm, 0, 1);	/* la pile, vue d'un lecteur */
     Tcl_IncrRefCount(notes);
     if (strcmp(sub, "get") == 0 && objc == 3) {
 	Tcl_Obj *j = NotesJoined(notes);
@@ -2909,7 +3449,15 @@ NoteObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
 			StateObj(t, newN));
 	    }
 	    TclDiscard(newN);
-	    Tcl_SetObjResult(interp, res);
+	    if (Tcl_FetchInternalRep(res, &annotatedObjType)
+		    && TclAnnotNotes(res) != NULL) {
+		Tcl_IncrRefCount(res);
+		TclAnnotExpire(interp, res);	/* métadonnées (v16m) */
+		Tcl_SetObjResult(interp, res);
+		Tcl_DecrRefCount(res);
+	    } else {
+		Tcl_SetObjResult(interp, res);
+	    }
 	}
     } else {
 	Tcl_WrongNumArgs(interp, 1, objv, "get|has|delete value ?name?");
@@ -2926,8 +3474,10 @@ TclAnnotInit(Tcl_Interp *interp)
     Tcl_CreateObjCommand2(interp, "note", NoteObjCmd, NULL, NULL);
     Tcl_CreateObjCommand2(interp, "::tcl::annotate", AnnotateObjCmd, NULL,
 	    NULL);
-    Tcl_CreateObjCommand2(interp, "::tcl::annotcast", AnnotCastObjCmd, NULL,
+    Tcl_CreateObjCommand2(interp, "::tcl::annotmark", AnnotMarkObjCmd, NULL,
 	    NULL);
+    Tcl_CreateObjCommand2(interp, "::tcl::annotexpire", AnnotExpireObjCmd,
+	    NULL, NULL);
     Tcl_CreateObjCommand2(interp, "::tcl::annotraw", AnnotRawObjCmd, NULL,
 	    NULL);
     Tcl_CreateObjCommand2(interp, "::tcl::annotlocal", AnnotLocalObjCmd, NULL,
@@ -2947,18 +3497,6 @@ TclAnnotSuffixIsLiteral(Tcl_Token *tokenPtr, Tcl_Size count)
 	}
     }
     return 1;
-}
-
-/*
- * v16l : le reste du mot annoté est-il UNE variable, et rien d'autre
- * ({T}$x, {T}${x}, {T}$a(chemin)) ? Alors l'annotation est un cast immédiat
- * (::tcl::annotcast), là où elle est écrite.
- */
-int
-TclAnnotSuffixIsVariable(Tcl_Token *tokenPtr, Tcl_Size count)
-{
-    return count >= 1 && tokenPtr[0].type == TCL_TOKEN_VARIABLE
-	    && count == 1 + tokenPtr[0].numComponents;
 }
 
 /*

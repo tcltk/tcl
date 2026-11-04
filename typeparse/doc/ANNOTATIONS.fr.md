@@ -70,7 +70,7 @@ Une annotation s'écrit toujours `{texte}mot`. Selon ce que dit le texte et selo
 
 #### 2.1 La note : l'annotation brute
 
-Une **note** est une annotation qu'aucun constructeur n'a encore résolue. Elle suit la valeur : copie, argument de procédure, élément de liste.
+Une **note** est une annotation qu'aucun constructeur n'a résolue. Elle suit la valeur : copie, argument de procédure, élément de liste. Depuis la v16m, c'est une **métadonnée** : elle se lit (`note get`, `type get` avec `@`), mais une annotation n'agit que sur la commande qui reçoit le mot (§ 2.2) ; passé cette commande, ce qui n'a pas été résolu reste une note pour toujours.
 
 ```tcl
 set x {mm}5
@@ -93,7 +93,10 @@ Un **type** est une annotation **résolue** dans la typologie connue de l'interp
 
 - `set {T}v …` (et `set v {T}$x`) ;
 - la liaison des arguments de `proc` ;
-- `lassign`, `foreach`, et dans `expr`, `x = v` et `x is T = v`.
+- `lassign`, `foreach`, `lmap`, `dict for`, `dict map` pour leurs listes et dicts (`foreach {x y} {list}$p`) ;
+- `lappend`, `lset`, `linsert`, `lreplace` sur une variable typée, pour les éléments reçus ;
+- dans `expr`, `x = v` et `x is T = v` ;
+- **`type {T}mot`**, le cast explicite (v16m) : `type {int}$s`, `type {list}$p`, `type {int}[cmd]`, `type {int}[(expr)]`.
 
 Annotée sur le **nom** d'une variable, une annotation donne à la variable un **contrat** : toute écriture ultérieure est vérifiée.
 
@@ -104,7 +107,17 @@ set {list.int}L 1 2 3
 type get $L          ;# list<int>
 ```
 
-**Où agit une annotation (v16l).** Quand le reste du mot est une variable et rien d'autre (`{T}$x`, `{T}${x}`, `{T}$a(chemin)`), l'annotation est résolue **là où elle est écrite**, comme le ferait un constructeur : un type connu vérifie et caste tout de suite (`{int}$s` échoue dans la commande qui contient le mot si `$s` vaut `3.0`, et un `catch` qui l'entoure l'attrape), un nom inconnu reste une note. Tout autre mot annoté (`{T}[cmd]`, `{T}[(...)]`, `{T}"..."`, `{T}littéral`) est simplement **empilé**, comme une note, et résolu par le constructeur qui le reçoit : seule cette commande sait si le mot est une valeur ou un nom de variable (`lappend {list}M x`, `set {rect}Q(A, $k) ...`). `list {int}abc` ne lève pas d'erreur.
+**Où agit une annotation (v16m, piste B).** Une annotation n'agit que sur la **commande qui reçoit le mot**. Rien n'est résolu pendant la substitution : Tcl substitue tous les mots avant d'appeler la commande, et seule la commande sait si un mot est une valeur ou un nom de variable (`set {int}$nom 5` déclare la variable nommée par `$nom`). Si cette commande est un constructeur, elle résout l'annotation ; sinon l'annotation ne fait rien. Quand la commande finit, ce qui est encore en attente **expire** : une note, que plus aucun constructeur ne résout, même si la valeur a été rendue (`concat`, `return`), rangée dans une liste ou dans une variable, ou si le type est défini plus tard. Une étiquette `{nom:}` ou une annotation locale disparaît.
+
+```tcl
+set s 3.0
+catch {concat {int}$s} r      ;# 0 : concat ne vérifie rien ; r vaut 3.0, note int
+catch {set y {int}$s} r       ;# 1 : set reçoit le mot, il vérifie : expected integer...
+catch {type {int}$s} r        ;# 1 : le cast explicite
+set q [type {list}$p]         ;# un produit vers la liste de ses champs
+```
+
+L'erreur d'un cast naît donc toujours dans la commande qui contient le mot, et un `catch` qui l'entoure l'attrape (avant la v16m, `catch {concat {int}$s} r` laissait l'annotation en attente, et l'erreur naissait en rangeant `r`, hors du `catch`). La v16l faisait un cast immédiat de `{T}$x` ; il est retiré : il castait le nom de `set {int}$nom 5`.
 
 #### 2.3 Deux piles et une règle de dépilage
 
@@ -130,9 +143,9 @@ set z {px}$y         ;# y = @mm.px : px se résout, mm non
 type get $z          ;# px      ; note get $z : mm
 ```
 
-Une note posée **avant** son `type def` est donc résolue par le constructeur suivant : écrire `type def mm double` plus tard donne un sens aux `{mm}` déjà posés.
+Cette pile n'existe que pour les annotations d'**un même mot**, reçues par un même constructeur. Une note posée avant son `type def` ne prend pas sens plus tard (v16m) : la commande qui l'a reçue l'a fait expirer.
 
-**Les étiquettes (v16l).** Un champ de produit ou une variante de somme se nomme par une **étiquette**, `{nom:}valeur` : `set {pt}a {age:}12`, `set {S}v {i:}5`. Une étiquette est une annotation locale : elle ne peut jamais être un type, donc un type global du même nom ne change rien, et `{nom}` sans deux-points est toujours un type ou une note. Elle est lue par le constructeur qui reçoit le mot, même à travers une autre commande (`set {pt}a [f {age:}12]`) ; une étiquette qu'aucun constructeur ne lit ne se range pas. L'ancienne forme `{age}12`, quand `age` nomme un champ et aucun type, est une erreur qui donne la nouvelle écriture.
+**Les étiquettes (v16l).** Un champ de produit ou une variante de somme se nomme par une **étiquette**, `{nom:}valeur` : `set {pt}a {age:}12`, `set {S}v {i:}5`. Une étiquette est une annotation locale : elle ne peut jamais être un type, donc un type global du même nom ne change rien, et `{nom}` sans deux-points est toujours un type ou une note. Elle est lue par le constructeur qui reçoit le mot ; à travers une autre commande (`set {pt}a [concat {age:}12]`), elle a expiré (v16m) et l'argument est positionnel. Une étiquette qu'aucun constructeur ne lit ne se range pas. L'ancienne forme `{age}12`, quand `age` nomme un champ et aucun type, est une erreur qui donne la nouvelle écriture.
 
 #### 2.4 Les annotations locales
 
@@ -201,6 +214,7 @@ type def NOM DÉFINITION        ;# définit un type nominal (ou une famille para
 type alias NOM DÉFINITION      ;# donne un nom structurel à une définition
 type get VALEUR                ;# le type résolu d'une valeur (vide s'il n'y en a pas)
 type cast TYPE VALEUR          ;# le résolveur d'un constructeur, sans variable
+type {T}MOT                    ;# le même cast, écrit comme une annotation (v16m)
 type convert DE VERS LAMBDA    ;# déclare une conversion explicite
 type deref VALEUR              ;# instantané : chaque lien var remplacé par sa valeur
 type binary TYPE ...           ;# représentation binaire, encodage, décodage (§ 9)
@@ -431,7 +445,7 @@ set {int(u,8)}o2 300           ;# value "300" does not fit in int(u,8)
 
 **Casts explicites.** `set v {T}$x` ou `type cast T $x` convertissent selon, dans l'ordre : une règle `type convert` spécifique ; la chaîne des bases ; la variante d'une somme ; une règle de famille ; les conversions intégrées entre scalaires. Sinon : `unknown way to cast the value from A to B`.
 
-**Produit vers collection.** Tout produit se convertit en liste ou en dict : `{list}$p` donne la liste de ses champs, nus (`foreach {x y} {list}$p`) ; `{list.any}$p` les garde annotés, comme `$p(*)` ; `{list(2).double}$p` les valide ; `{dict}$p` donne `x 3 y 4`. Une liste nominale se convertit de même en liste structurelle (`{list.point}$P`, `{list}$P`). Sur une valeur typée, `{list}$p` est un cast immédiat, même hors d'un constructeur.
+**Produit vers collection.** Tout produit se convertit en liste ou en dict : `{list}$p` donne la liste de ses champs, nus (`foreach {x y} {list}$p`) ; `{list.any}$p` les garde annotés, comme `$p(*)` ; `{list(2).double}$p` les valide ; `{dict}$p` donne `x 3 y 4`. Une liste nominale se convertit de même en liste structurelle (`{list.point}$P`, `{list}$P`). Le cast se fait dans la commande qui reçoit le mot : `foreach {x y} {list}$p`, `lassign {list}$p x y`, `dict for {k v} {dict}$p`, ou `type {list}$p` ailleurs (`llength [type {list}$p]`) ; `llength {list}$p` ne caste rien (v16m).
 
 **Lever le contrat.** `set {}v valeur` (§ 2.5).
 
@@ -856,6 +870,11 @@ Dans Tcl 9 d'origine, un mot entre accolades suivi d'autres caractères est une 
 |---|---|---|
 | `INST_INDEX_CONCAT` (« indexConcat », 6 octets : nombre `uint1` + masque `uint4`) | `tclCompile.c` (`TclCompileIndexTokens`, appelé par `TclCompileVarSubst` et `TclPushVarName`), `tclExecute.c` | concatène les parties d'un index en un objet **pathindex** qui retient les portées substituées (`TclPathIndexNew`) : une valeur substituée reste une feuille du chemin |
 | `INST_TYPE_FORGET` | `tclCompCmds.c` (`dict for`, `dict map` compilés), `tclExecute.c` | oublie le type d'une variable de boucle avant l'affectation |
+| `INST_ANNOT_MARK`, `INST_ANNOT_EXPIRE` (« annotMark », « annotExpire », v16m) | `tclCompile.c` (`CompileCommandTokens`), `tclExecute.c` | encadrent une commande qui a un mot annoté : la marque de la liste des annotations posées, puis l'expiration de ce qui a été posé depuis (§ 2.2) |
+| `INST_ANNOT_CAST` (« annotCast », v16m) | `tclCompCmds.c` (`foreach`, `lmap`, `dict for`, `dict map` compilés), `tclExecute.c` | une liste ou un dict reçu par la boucle sous la forme `{T}mot` : la valeur du mot est castée vers `T` une fois, sans valeur annotée intermédiaire (`TclAnnotCastText`) |
+| `INST_ANNOT_SETTLE` (« annotSettle », v16m) | `tclExecute.c` | résout l'annotation en attente d'une valeur (`TclAnnotSettleValueArg`) ; défini, non émis pour l'instant |
+
+**Expiration (v16m, piste B).** Chaque valeur annotée par un mot (`::tcl::annotate`, `::tcl::annotraw`, `TclSubstTokens`), et chaque valeur neuve d'un constructeur qui garde une annotation en attente, est inscrite dans une liste par interpréteur (`TclAnnotRegisterFresh`). L'expiration change **en place** l'état de l'objet (le `ptr2`, partagé par ses copies) : le texte brut et les notes en attente deviennent des notes expirées, sous une marque (un élément vide de la liste des notes), que `TclAnnotSettle` ne lit plus. Elle a lieu à la fin de la commande (`annotExpire` ; `TclEvalEx` pour un script non compilé), et à la sortie d'un bytecode (`TEBCresume` : `return {T}$x`, une commande sortie en erreur). Un inscrit que plus rien ne tient, ni lui ni son état, part sans expirer.
 
 Chemin non compilé : `TclSubstTokens` (`SubstIndexTokens`) produit le même objet pathindex.
 
@@ -1028,7 +1047,8 @@ Le codec C, qui **vérifie** en plus chaque valeur contre son type, est 2 à 3 f
 |---|---|
 | `{x}mot` occupe une erreur de syntaxe | compatibilité totale, aucune nouvelle règle de citation |
 | pas d'empilage collé `{a}{b}$x` | ambigu avec `{int}{300}` ; on empile en annotant une valeur annotée |
-| seul un constructeur résout un type | `{T}$x` hors constructeur ne coûte rien et n'échoue jamais ; la vérification a lieu là où la valeur est rangée |
+| seul un constructeur résout un type | `{T}$x` hors constructeur ne coûte rien et n'échoue jamais |
+| une annotation expire avec la commande qui reçoit le mot (v16m) | pas d'action à distance : l'erreur d'un cast naît dans la commande qui contient le mot (un `catch` l'attrape) ; une note ne change pas de sens quand un type est défini plus tard |
 | annotations locales reconnues à leurs caractères | un nom de type ne peut pas contenir `-` ou `?` : aucune collision possible |
 | `type def` nominal, `type alias` structurel | distinguer des unités (`mm`, `kg`) sans changer les valeurs |
 | élargissement automatique, rétrécissement explicite | aucune perte d'information silencieuse |

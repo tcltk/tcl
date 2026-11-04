@@ -1,0 +1,527 @@
+--- a/generic/tclBasic.c
++++ b/generic/tclBasic.c
+@@ -5288,6 +5288,7 @@
+     int allowExceptions = (iPtr->evalFlags & TCL_ALLOW_EXCEPTIONS);
+     int gotParse = 0;
+     Tcl_Size i, objectsUsed = 0;
++    Tcl_Size annotMark = 0;		/* v16m : annotations des mots */
+ 				/* These variables keep track of how much
+ 				 * state has been allocated while evaluating
+ 				 * the script, so that it can be freed
+@@ -5443,6 +5444,7 @@
+ 	    lines = lineSpace;
+ 
+ 	    iPtr->cmdFramePtr = eeFramePtr->nextPtr;
++	    annotMark = TclAnnotFreshMark(interp);	/* v16m, piste B */
+ 	    for (objectsUsed = 0, tokenPtr = parsePtr->tokenPtr;
+ 		    objectsUsed < numWords;
+ 		    objectsUsed++, tokenPtr += tokenPtr->numComponents + 1) {
+@@ -5593,6 +5595,7 @@
+ 	    code = Tcl_EvalObjv(interp, objectsUsed, objv,
+ 		    TCL_EVAL_NOERR | TCL_EVAL_SOURCE_IN_FRAME);
+ 	    TclArgumentRelease(interp, objv, objectsUsed);
++	    TclAnnotExpireFrom(interp, annotMark);	/* v16m, piste B */
+ 
+ 	    eeFramePtr->line = NULL;
+ 	    eeFramePtr->nline = 0;
+--- a/generic/tclCmdAH.c
++++ b/generic/tclCmdAH.c
+@@ -40,6 +40,8 @@
+     Tcl_Obj *resultList;	/* List of result values from the loop body,
+ 				 * or NULL if we're not collecting them
+ 				 * ([lmap] vs [foreach]). */
++    Tcl_Obj *settled;		/* v16m : les listes dont l'annotation a été
++				 * résolue, tenues pendant la boucle. */
+ };
+ 
+ /*
+@@ -2873,9 +2875,30 @@
+ 	/* Values */
+ 	/* Liste typée : parcourir son contenu V (tenu par la valeur annotée
+ 	 * pendant la commande), éléments typés. */
+-	valObj = TclAnnotIterList(objv[2+i*2]);
+-	if (valObj == NULL) {
+-	    valObj = objv[2+i*2];
++	valObj = objv[2+i*2];
++	if (TclAnnotHasFresh(valObj)) {
++	    /* v16m : foreach {a b} {list}$p : la boucle reçoit le mot et
++	     * résout son annotation. */
++	    Tcl_Obj *settled;
++
++	    if (TclAnnotSettleValueArg(interp, valObj, &settled) != TCL_OK) {
++		result = TCL_ERROR;
++		goto done;
++	    }
++	    if (statePtr->settled == NULL) {
++		statePtr->settled = Tcl_NewListObj(0, NULL);
++		Tcl_IncrRefCount(statePtr->settled);
++	    }
++	    Tcl_ListObjAppendElement(NULL, statePtr->settled, settled);
++	    Tcl_DecrRefCount(settled);
++	    valObj = settled;
++	}
++	{
++	    Tcl_Obj *iv = TclAnnotIterList(valObj);
++
++	    if (iv != NULL) {
++		valObj = iv;
++	    }
+ 	}
+ 	if (TclObjTypeHasProc(valObj,indexProc)) {
+ 	    /* Special case for AbstractList */
+@@ -3095,6 +3118,9 @@
+     if (statePtr->resultList != NULL) {
+ 	TclDecrRefCount(statePtr->resultList);
+     }
++    if (statePtr->settled != NULL) {
++	TclDecrRefCount(statePtr->settled);
++    }
+     TclStackFree(interp, statePtr);
+ }
+ 
+--- a/generic/tclCmdIL.c
++++ b/generic/tclCmdIL.c
+@@ -20,8 +20,12 @@
+ #include "tclInt.h"
+ #include "tclRegexp.h"
+ #include "tclTomMath.h"
++#include "tclTypes.h"
+ #include <math.h>
+ 
++static int		LassignCore(Tcl_Interp *interp, Tcl_Obj *listPtr,
++			    int objc, Tcl_Obj *const objv[]);
++
+ /*
+  * During execution of the "lsort" command, structures of the following type
+  * are used to arrange the objects being sorted into a collection of linked
+@@ -2260,9 +2264,6 @@
+     Tcl_Obj *const objv[])	/* Argument objects. */
+ {
+     Tcl_Obj *listPtr;
+-    Tcl_Size listObjc;		/* The length of the list. */
+-    Tcl_Size origListObjc;	/* Original length */
+-    int i;
+ 
+     if (objc < 2) {
+ 	Tcl_WrongNumArgs(interp, 1, objv, "list ?varName ...?");
+@@ -2277,7 +2278,29 @@
+      * (see below). I see that as preferable as duping lists is potentially
+      * expensive for abstract lists when they have a string representation.
+      */
+-    listPtr = objv[1];
++    /* v16m : lassign {list}$p a b : lassign reçoit le mot et résout son
++     * annotation. */
++    if (TclAnnotSettleValueArg(interp, objv[1], &listPtr) != TCL_OK) {
++	return TCL_ERROR;
++    }
++    {
++	int code = LassignCore(interp, listPtr, objc, objv);
++
++	Tcl_DecrRefCount(listPtr);
++	return code;
++    }
++}
++
++static int
++LassignCore(
++    Tcl_Interp *interp,
++    Tcl_Obj *listPtr,
++    int objc,
++    Tcl_Obj *const objv[])
++{
++    Tcl_Size listObjc;		/* The length of the list. */
++    Tcl_Size origListObjc;	/* Original length */
++    int i;
+ 
+     if (TclListObjLength(interp, listPtr, &listObjc) != TCL_OK) {
+ 	return TCL_ERROR;
+--- a/generic/tclCompCmds.c
++++ b/generic/tclCompCmds.c
+@@ -15,6 +15,7 @@
+ 
+ #include "tclInt.h"
+ #include "tclCompile.h"
++#include "tclTypes.h"
+ 
+ /*
+  * Prototypes for procedures defined later in this file:
+@@ -1609,6 +1610,7 @@
+     const char **argv;
+     Tcl_DString buffer;
+ 
++
+     /*
+      * There must be three arguments after the command.
+      */
+@@ -1695,7 +1697,18 @@
+      * this point.
+      */
+ 
+-    CompileWord(envPtr, dictTokenPtr, interp, 2);
++    if (dictTokenPtr->numComponents > 1
++	    && dictTokenPtr[1].type == TCL_TOKEN_ANNOT) {
++	/* v16m : dict for {k v} {dict}$p : la boucle reçoit le mot et caste
++	 * sa valeur une fois. */
++	SetLineInformation(2);
++	PushLiteral(envPtr, dictTokenPtr[1].start, dictTokenPtr[1].size);
++	TclCompileTokens(interp, dictTokenPtr + 2,
++		dictTokenPtr->numComponents - 1, envPtr);
++	TclEmitOpcode(INST_ANNOT_CAST, envPtr);
++    } else {
++	CompileWord(envPtr, dictTokenPtr, interp, 2);
++    }
+ 
+     /*
+      * Now we catch errors from here on so that we can finalize the search
+@@ -2777,6 +2790,7 @@
+ 	return TCL_ERROR;
+     }
+ 
++
+     numWords = (int)parsePtr->numWords;
+     if ((numWords < 4) || (numWords%2 != 0)) {
+ 	return TCL_ERROR;
+@@ -2882,7 +2896,19 @@
+ 	    i < numWords-1;
+ 	    i++, tokenPtr = TokenAfter(tokenPtr)) {
+ 	if ((i%2 == 0) && (i > 0)) {
+-	    CompileWord(envPtr, tokenPtr, interp, i);
++	    if (tokenPtr->numComponents > 1
++		    && tokenPtr[1].type == TCL_TOKEN_ANNOT) {
++		/* v16m : foreach {a b} {list}$p : la boucle reçoit le mot et
++		 * caste sa valeur une fois, sans valeur annotée entre les
++		 * deux. */
++		SetLineInformation(i);
++		PushLiteral(envPtr, tokenPtr[1].start, tokenPtr[1].size);
++		TclCompileTokens(interp, tokenPtr + 2,
++			tokenPtr->numComponents - 1, envPtr);
++		TclEmitOpcode(INST_ANNOT_CAST, envPtr);
++	    } else {
++		CompileWord(envPtr, tokenPtr, interp, i);
++	    }
+ 	}
+     }
+ 
+--- a/generic/tclCompCmdsGR.c
++++ b/generic/tclCompCmdsGR.c
+@@ -16,6 +16,7 @@
+ 
+ #include "tclInt.h"
+ #include "tclCompile.h"
++#include "tclTypes.h"
+ 
+ /*
+  * Prototypes for procedures defined later in this file:
+@@ -971,6 +972,11 @@
+ 	return TCL_ERROR;
+     }
+ 
++    /* v16m : lassign {list}$p a b : à l'exécution. */
++    if (TclHasAnnotatedWord(parsePtr)) {
++	return TCL_ERROR;
++    }
++
+     /*
+      * Generate code to push list being taken apart by [lassign].
+      */
+--- a/generic/tclCompile.c
++++ b/generic/tclCompile.c
+@@ -693,6 +693,22 @@
+ 	 * path of the list paths, the name at that path in names receives
+ 	 * the element at the same path of the content ("" if absent).
+ 	 * Stack: ... names value paths => ... content */
++    {"annotMark",	  1,   +1,	   0,	{OPERAND_NONE}},
++	/* v16m: the mark of the annotations of the words of the command that
++	 * follows.
++	 * Stack: ... => ... mark */
++    {"annotExpire",	  1,   -1,	   0,	{OPERAND_NONE}},
++	/* v16m: the annotations of the words of the command expire (in
++	 * place) when it is done; its result stays.
++	 * Stack: ... mark result => ... result */
++    {"annotSettle",	  1,    0,	   0,	{OPERAND_NONE}},
++	/* v16m: a value argument of a loop command: its pending annotation
++	 * is resolved, as by a constructor without context.
++	 * Stack: ... value => ... settledValue */
++    {"annotCast",	  1,   -1,	   0,	{OPERAND_NONE}},
++	/* v16m: {T}word received by a loop compiled inline: cast the value of
++	 * the word to T at once, without the annotated value in between.
++	 * Stack: ... typeText value => ... castValue */
+ 
+     {NULL, 0, 0, 0, {OPERAND_NONE}}
+ };
+@@ -2064,7 +2080,7 @@
+     Tcl_Obj *cmdObj;
+     Command *cmdPtr = NULL;
+     int code = TCL_ERROR;
+-    int cmdKnown, expand = -1;
++    int cmdKnown, expand = -1, annotWrap;
+     Tcl_Size *wlines, wlineat;
+     Tcl_Size cmdLine = envPtr->line;
+     Tcl_Size *clNext = envPtr->clNext;
+@@ -2125,6 +2141,16 @@
+ 	}
+     }
+ 
++    /*
++     * v16m, piste B : une commande qui a un mot annoté est encadrée,
++     *	annotMark <commande> annotExpire
++     * pour que les annotations de ses mots expirent quand elle finit.
++     */
++    annotWrap = TclHasAnnotatedWord(parsePtr);
++    if (annotWrap) {
++	TclEmitOpcode(INST_ANNOT_MARK, envPtr);
++    }
++
+     /* If cmdPtr != NULL, try to call cmdPtr->compileProc */
+     if (cmdPtr) {
+ 	code = CompileCmdCompileProc(interp, parsePtr, cmdPtr, envPtr);
+@@ -2146,6 +2172,9 @@
+ 
+     Tcl_DecrRefCount(cmdObj);
+ 
++    if (annotWrap) {
++	TclEmitOpcode(INST_ANNOT_EXPIRE, envPtr);
++    }
+     TclEmitOpcode(INST_POP, envPtr);
+     EnterCmdExtentData(envPtr, cmdIdx,
+ 	    parsePtr->term - parsePtr->commandStart,
+@@ -2541,9 +2570,6 @@
+ 	if (TclAnnotSuffixIsLiteral(tokenPtr + 1, count - 1)) {
+ 	    TclEmitPush(TclRegisterLiteral(envPtr, "::tcl::annotraw", 15, 0),
+ 		    envPtr);			/* {int}5 : annotation brute */
+-	} else if (TclAnnotSuffixIsVariable(tokenPtr + 1, count - 1)) {
+-	    TclEmitPush(TclRegisterLiteral(envPtr, "::tcl::annotcast", 16, 0),
+-		    envPtr);			/* {int}$x : cast immédiat */
+ 	} else {
+ 	    TclEmitPush(TclRegisterLiteral(envPtr, "::tcl::annotate", 15, 0),
+ 		    envPtr);
+--- a/generic/tclCompile.h
++++ b/generic/tclCompile.h
+@@ -861,6 +861,15 @@
+      * path of the names list receives the element at the same path */
+     INST_TUPLE_ASSIGN,
+ 
++    /* v16m, piste B: an annotation expires after the command that receives
++     * the word. annotMark pushes the mark, annotExpire expires what was
++     * annotated since, annotSettle resolves the annotation of a value
++     * argument (foreach, lmap, dict for, dict map compiled inline) */
++    INST_ANNOT_MARK,
++    INST_ANNOT_EXPIRE,
++    INST_ANNOT_SETTLE,
++    INST_ANNOT_CAST,
++
+     /* The last opcode */
+     LAST_INST_OPCODE
+ };
+--- a/generic/tclDictObj.c
++++ b/generic/tclDictObj.c
+@@ -2783,11 +2783,25 @@
+ 	Tcl_SetErrorCode(interp, "TCL", "SYNTAX", "dict", "for", (char *)NULL);
+ 	return TCL_ERROR;
+     }
+-    searchPtr = (Tcl_DictSearch *)TclStackAlloc(interp, sizeof(Tcl_DictSearch));
+-    if (Tcl_DictObjFirst(interp, objv[2], searchPtr, &keyObj, &valueObj,
+-	    &done) != TCL_OK) {
+-	TclStackFree(interp, searchPtr);
+-	return TCL_ERROR;
++    {
++	/* v16m : dict for {k v} {dict}$p : résoudre l'annotation du mot. La
++	 * recherche tient le dict interne, l'objet peut partir ensuite. */
++	Tcl_Obj *dictArg;
++	int code;
++
++	if (TclAnnotSettleValueArg(interp, objv[2], &dictArg) != TCL_OK) {
++	    return TCL_ERROR;
++	}
++	searchPtr = (Tcl_DictSearch *)TclStackAlloc(interp,
++		sizeof(Tcl_DictSearch));
++	code = Tcl_DictObjFirst(interp, dictArg, searchPtr, &keyObj,
++		&valueObj, &done);
++	if (code != TCL_OK) {
++	    Tcl_DecrRefCount(dictArg);
++	    TclStackFree(interp, searchPtr);
++	    return TCL_ERROR;
++	}
++	Tcl_DecrRefCount(dictArg);
+     }
+     if (done) {
+ 	TclStackFree(interp, searchPtr);
+@@ -2982,11 +2996,23 @@
+ 	Tcl_SetErrorCode(interp, "TCL", "SYNTAX", "dict", "map", (char *)NULL);
+ 	return TCL_ERROR;
+     }
+-    storagePtr = (DictMapStorage *)TclStackAlloc(interp, sizeof(DictMapStorage));
+-    if (Tcl_DictObjFirst(interp, objv[2], &storagePtr->search, &keyObj,
+-	    &valueObj, &done) != TCL_OK) {
+-	TclStackFree(interp, storagePtr);
+-	return TCL_ERROR;
++    {
++	/* v16m : dict map {k v} {dict}$p : résoudre l'annotation du mot. */
++	Tcl_Obj *dictArg;
++	int code;
++
++	if (TclAnnotSettleValueArg(interp, objv[2], &dictArg) != TCL_OK) {
++	    return TCL_ERROR;
++	}
++	storagePtr = (DictMapStorage *)TclStackAlloc(interp,
++		sizeof(DictMapStorage));
++	code = Tcl_DictObjFirst(interp, dictArg, &storagePtr->search, &keyObj,
++		&valueObj, &done);
++	Tcl_DecrRefCount(dictArg);
++	if (code != TCL_OK) {
++	    TclStackFree(interp, storagePtr);
++	    return TCL_ERROR;
++	}
+     }
+     if (done) {
+ 	/*
+--- a/generic/tclExecute.c
++++ b/generic/tclExecute.c
+@@ -119,6 +119,8 @@
+ 				/* -----------------------------------------*/
+     Tcl_Obj **catchTop;		/* These fields are used on return TO this */
+     Tcl_Obj *auxObjList;	/* level: they record the state when a new */
++    Tcl_Size annotMark;		/* v16m : annotations inscrites avant ce
++				 * bytecode (tclAnnotObj.c) */
+     CmdFrame cmdFrame;		/* codePtr was received for NR execution. */
+     Tcl_Obj *stack[1];		/* Start of the actual combined catch and obj
+ 				 * stacks; the struct will be expanded as
+@@ -1942,6 +1944,7 @@
+     TD->codePtr     = codePtr;
+     TD->catchTop    = initCatchTop;
+     TD->auxObjList  = NULL;
++    TD->annotMark   = TclAnnotFreshMark(interp);
+ 
+     /*
+      * TIP #280: Initialize the frame. Do not push it yet: it will be pushed
+@@ -3013,6 +3016,66 @@
+ 	NEXT_INST_V(1, 3, -1);
+     }
+ 
++    case INST_ANNOT_MARK:
++	/* v16m, piste B (tclAnnotObj.c) */
++	TclNewIntObj(objResultPtr, TclAnnotFreshMark(interp));
++	TRACE_WITH_OBJ(("=> "), objResultPtr);
++	NEXT_INST_F(1, 0, 1);
++
++    case INST_ANNOT_EXPIRE: {
++	Tcl_WideInt mark;
++
++	objPtr = OBJ_UNDER_TOS;
++	if (TclGetWideIntFromObj(NULL, objPtr, &mark) == TCL_OK
++		&& TclAnnotFreshMark(interp) > (Tcl_Size) mark) {
++	    DECACHE_STACK_INFO();
++	    TclAnnotExpireFrom(interp, (Tcl_Size) mark);
++	    CACHE_STACK_INFO();
++	}
++	OBJ_UNDER_TOS = OBJ_AT_TOS;
++	tosPtr--;
++	TclDecrRefCount(objPtr);
++	TRACE_WITH_OBJ(("=> "), OBJ_AT_TOS);
++	NEXT_INST_F(1, 0, 0);
++    }
++
++    case INST_ANNOT_SETTLE: {
++	Tcl_Obj *settled;
++
++	if (!TclAnnotHasFresh(OBJ_AT_TOS)) {
++	    TRACE(("=> unchanged\n"));
++	    NEXT_INST_F(1, 0, 0);
++	}
++	DECACHE_STACK_INFO();
++	if (TclAnnotSettleValueArg(interp, OBJ_AT_TOS, &settled) != TCL_OK) {
++	    CACHE_STACK_INFO();
++	    TRACE_ERROR(interp);
++	    goto gotError;
++	}
++	CACHE_STACK_INFO();
++	objPtr = OBJ_AT_TOS;
++	OBJ_AT_TOS = settled;		/* référence déjà prise */
++	TclDecrRefCount(objPtr);
++	TRACE_WITH_OBJ(("=> "), settled);
++	NEXT_INST_F(1, 0, 0);
++    }
++
++    case INST_ANNOT_CAST: {
++	Tcl_Obj *castPtr = NULL;
++
++	DECACHE_STACK_INFO();
++	if (TclAnnotCastText(interp, OBJ_UNDER_TOS, OBJ_AT_TOS, &castPtr)
++		!= TCL_OK) {
++	    CACHE_STACK_INFO();
++	    TRACE_ERROR(interp);
++	    goto gotError;
++	}
++	CACHE_STACK_INFO();
++	objResultPtr = castPtr;
++	TRACE_WITH_OBJ(("=> "), objResultPtr);
++	NEXT_INST_F(1, 2, 1);
++    }
++
+     case INST_LOAD_FIELD_NUM:
+ 	opnd = TclGetUInt4AtPtr(pc + 1);
+ 	objResultPtr = TclTypedFieldNumber(LOCAL(opnd), OBJ_AT_TOS);
+@@ -8042,6 +8105,9 @@
+     }
+ 
+     iPtr->cmdFramePtr = bcFramePtr->nextPtr;
++    /* v16m, piste B : ce que ce bytecode a annoté expire avec lui (return
++     * {T}$x, une commande sortie en erreur ou par break). */
++    TclAnnotExpireFrom(interp, TD->annotMark);
+     TclReleaseByteCode(codePtr);
+     TclStackFree(interp, TD);	/* free my stack */
+ 
+--- a/generic/tclParse.c
++++ b/generic/tclParse.c
+@@ -2548,18 +2548,12 @@
+ 	    if (TclAnnotSuffixIsLiteral(tokenPtr + 1, count - 1)) {
+ 		annotated = TclNewRawAnnotation(typeText,
+ 			Tcl_GetObjResult(interp));	/* {int}5 : brute */
+-	    } else if (TclAnnotSuffixIsVariable(tokenPtr + 1, count - 1)) {
+-		code = TclAnnotCastValue(interp, typeText,
+-			Tcl_GetObjResult(interp), &annotated);	/* {int}$x */
+ 	    } else {
+-		code = TclAnnotCollectionCast(interp, typeText,
++		code = TclAnnotateValue(interp, typeText,
+ 			Tcl_GetObjResult(interp), &annotated);
+-		if (code == TCL_CONTINUE) {
+-		    code = TclAnnotateValue(interp, typeText,
+-			    Tcl_GetObjResult(interp), &annotated);
+-		}
+ 	    }
+ 	    if (code == TCL_OK) {
++		TclAnnotRegisterFresh(interp, annotated);	/* v16m */
+ 		Tcl_SetObjResult(interp, annotated);
+ 	    }
+ 	}
+--- a/generic/tclVar.c
++++ b/generic/tclVar.c
+@@ -3156,7 +3156,27 @@
+ 	}
+ 
+ 	result = TclListObjLength(interp, varValuePtr, &numElems);
+-	if (result == TCL_OK) {
++	if (result == TCL_OK && (varPtr->flags & VAR_CONTRACT)) {
++	    /* v16m : lappend L {T}x sous contrat : lappend reçoit le mot et
++	     * résout l'annotation de chaque élément (elle expire ensuite). */
++	    Tcl_Obj *elems = Tcl_NewListObj(0, NULL), *e, **ev;
++	    Tcl_Size k, ne;
++
++	    Tcl_IncrRefCount(elems);
++	    for (k = 2; k < objc && result == TCL_OK; k++) {
++		result = TclAnnotSettleValueArg(interp, objv[k], &e);
++		if (result == TCL_OK) {
++		    Tcl_ListObjAppendElement(NULL, elems, e);
++		    Tcl_DecrRefCount(e);
++		}
++	    }
++	    if (result == TCL_OK) {
++		Tcl_ListObjGetElements(NULL, elems, &ne, &ev);
++		result = Tcl_ListObjReplace(interp, varValuePtr, numElems, 0,
++			ne, ev);
++	    }
++	    Tcl_DecrRefCount(elems);
++	} else if (result == TCL_OK) {
+ 	    result = Tcl_ListObjReplace(interp, varValuePtr, numElems, 0,
+ 		    (objc-2), (objv+2));
+ 	}

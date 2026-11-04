@@ -1,0 +1,52 @@
+--- plus de fuite : l'erreur ne sort plus d'un catch
+catch {concat {int}$s} r: 0 {3.0 {} int}
+string cat: 0 {3.0 {} int}
+lindex: 0 {3.0 {} int}
+return {int}$s: 0 {3.0 {} int}
+procédure, concat: 0 {3.0 {} int}
+return -level 0: 0 {3.0 {} int}
+if: 0 {3.0 {} int}
+élément d'une liste: 0 {3.0 {} int}
+eval: 0 {3.0 {} int}
+subst: 0 {3.0 {} int}
+set y [concat ...]: 0 {3.0 {} int}
+{dict} non vérifié: 0 {{a b c} {} dict}
+--- le constructeur qui reçoit le mot résout toujours
+set _ {int}$s: 1 {expected integer but got "3.0"}
+set {int}i 5: int
+nom calculé : déclaration: int
+nom calculé : [set nom]: double
+étiquettes: 3 4
+contrat: 1 {expected integer but got "3.0"}
+--- type {T}mot : le cast explicite
+type {int}$s: 1 {expected integer but got "3.0"}
+type {double}$s: 3.0 double {}
+type {list}$p: {1 2} list {}
+type {dict}$p: {x 1 y 2} dict {}
+type {int}[cmd]: 5 int {}
+type {int}[(expr)]: 5 int {}
+type {int}"…": 44 int {}
+type {int}5: 5 int {}
+nom inconnu: 1 {unknown type "zz"}
+annotation locale: 1 {"-v" is not a type: "type" casts to a type}
+sans annotation: 1 {bad subcommand "5": must be def, alias, cast, convert, deref, export, forget, get, is or binary}
+dans un catch: 1 {unmatched open brace in list}
+--- les boucles reçoivent leurs listes
+foreach {list}$p: 1/2
+lmap {list}$p: 3
+dict for {dict}$p: x=1 y=2
+dict map {dict}$p: x 10 y 20
+lassign {list}$p: 1 2
+foreach : erreur attrapée: 1 {unmatched open brace in list}
+lassign : erreur attrapée: 1 {unmatched open brace in list}
+compilées dans une procédure: 3-4 12 x y {x 4 y 5} 3 4 1 {unmatched open brace in list}
+--- listes typées : lappend et lset reçoivent l'élément
+list.any, list.S: double string S.s S.i
+au niveau global: int string
+--- notes expirées : des métadonnées
+note posée, passée par concat: 5 {} mm
+type def ensuite: 5 {} mm2
+rangée par set: 5 {} mm3
+note delete: 5 {} b
+--- boucles compilées : {T}mot casté une fois (annotCast)
+castes: int 1 {expected integer but got "a"} 1 {list(3)<int> needs exactly 3 elements but got 2} 1 {unmatched open brace in list} {a {} b {}} 1 2 30

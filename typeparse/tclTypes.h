@@ -21,7 +21,7 @@
  * VAR_* de tclInt.h). La valeur ci-dessous est un PLACEHOLDER. */
 /* Version du prototype TIP 764 (typeparse/VERSION, maj.sh, et
  * tcl::unsupported::typesversion). */
-#define TCL_TYPES_VERSION "v16l"
+#define TCL_TYPES_VERSION "v16m"
 
 #ifndef VAR_TYPED
 #define VAR_TYPED	0x400000
@@ -250,14 +250,21 @@ int	TclAnnotIsNoteOnly(Tcl_Obj *objPtr);
 int	TclAnnotIsSourceRaw(Tcl_Obj *objPtr);
 Tcl_Obj	*TclAnnotDisplay(Tcl_Interp *interp, Tcl_Obj *objPtr, int withNotes);
 int	TclAnnotSuffixIsLiteral(struct Tcl_Token *tokenPtr, Tcl_Size count);
-int	TclAnnotSuffixIsVariable(struct Tcl_Token *tokenPtr, Tcl_Size count);
-int	TclAnnotCastValue(Tcl_Interp *interp, Tcl_Obj *typeText, Tcl_Obj *value,
+void	TclAnnotRegisterFresh(Tcl_Interp *interp, Tcl_Obj *objPtr);
+Tcl_Size TclAnnotFreshMark(Tcl_Interp *interp);
+void	TclAnnotExpireFrom(Tcl_Interp *interp, Tcl_Size mark);
+void	TclAnnotExpire(Tcl_Interp *interp, Tcl_Obj *objPtr);
+int	TclAnnotHasFresh(Tcl_Obj *objPtr);
+int	TclAnnotCastText(Tcl_Interp *interp, Tcl_Obj *typeText, Tcl_Obj *value,
+	    Tcl_Obj **resultPtr);
+Tcl_Obj *TclAnnotKeepExpired(Tcl_Obj *res, Tcl_Obj *src);
+int	TclAnnotSettleValueArg(Tcl_Interp *interp, Tcl_Obj *objPtr,
+	    Tcl_Obj **resPtr);
+int	TclAnnotCastWord(Tcl_Interp *interp, Tcl_Obj *objPtr,
 	    Tcl_Obj **resultPtr);
 Tcl_Size TclAnnotLabelIndex(const TclType *tp, const char *text);
 int	TclAnnotOldLabel(Tcl_Interp *interp, const TclType *tp, const char *text);
 Tcl_Obj *TclAnnotLabelOf(Tcl_Obj *objPtr);
-int	TclAnnotCollectionCast(Tcl_Interp *interp, Tcl_Obj *typeText,
-	    Tcl_Obj *value, Tcl_Obj **resultPtr);
 int	TclAnnotateValue(Tcl_Interp *interp, Tcl_Obj *typeText, Tcl_Obj *value,
 	    Tcl_Obj **resultPtr);
 /*

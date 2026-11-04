@@ -8,7 +8,7 @@ set {polygone}P {0 0} {4 0} {4 4} {0 4}
 proc t {l s} { set r [catch {uplevel 1 $s} m]; puts [format "%-46s %s %s" $l $r $m] }
 t "type cast list.point"           {type get [type cast list.point $P]}
 t "type cast list(4).point"        {type get [type cast list(4).point $P]}
-t "{list.point}\$P"                {type get {list.point}$P}
+t "{list.point}\$P"                {type get [type {list.point}$P]}
 t "set {list.point}L \$P (affect.)" {set {list.point}L $P; type get $L}
 t "set {list(4).point}L4 \$P"      {set {list(4).point}L4 $P; type get $L4}
 type def polyC {{u32le}n; {list($n).point}pts}

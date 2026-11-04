@@ -125,6 +125,11 @@ MakeTyped(Tcl_Interp *interp, TclType *tp, Tcl_Obj *arg, int prefer)
 	}
     }
     Tcl_DecrRefCount(pend);
+    rest = TclAnnotKeepExpired(res, arg);	/* v16m */
+    if (rest != res) {
+	TclDiscard(res);
+	res = rest;
+    }
     return res;
 }
 
@@ -213,7 +218,7 @@ TclTypedVarPrepareWrite(Tcl_Interp *interp, Var *varPtr,
     /* Variable typée : le contrat est le type de la valeur courante. */
     if (*flagsPtr & TCL_APPEND_VALUE) {
 	/* append / lappend : valider le RÉSULTAT, pas le delta. */
-	Tcl_Obj *add = value, *sum;
+	Tcl_Obj *add = value, *sum, *settledAdd = NULL;
 	int rc;
 
 	if (TclAnnotResolve(interp, value, contract, &status, &at, &avar,
@@ -228,9 +233,17 @@ TclTypedVarPrepareWrite(Tcl_Interp *interp, Var *varPtr,
 			    || (contract->elem->kind == TCLT_SUM
 				&& status == TCLA_TYPED
 				&& at == contract->elem)))) {
-	    /* lappend à list.any ou à une liste de sommes : l'annotation
-	     * (donc la variante) de l'élément est gardée. */
 	    add = content;
+	} else if (TclAnnotHasFresh(value)) {
+	    /* lappend à list.any ou à une liste de sommes : l'annotation
+	     * (donc la variante) de l'élément est gardée. v16m : résolue ici,
+	     * lappend reçoit le mot (elle expire après la commande). */
+	    if (TclAnnotSettle(interp, value, TclTypeIsAny(contract->elem)
+		    ? NULL : contract->elem, 0, &settledAdd) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    Tcl_IncrRefCount(settledAdd);
+	    add = settledAdd;
 	}
 	/*
 	 * lappend dans une liste typée que la variable est seule à tenir (la
@@ -269,6 +282,9 @@ TclTypedVarPrepareWrite(Tcl_Interp *interp, Var *varPtr,
 	} else {
 	    Tcl_AppendObjToObj(sum, add);
 	    rc = TCL_OK;
+	}
+	if (settledAdd != NULL) {
+	    Tcl_DecrRefCount(settledAdd);
 	}
 	if (rc != TCL_OK) {
 	    TclDiscard(sum);
@@ -1615,6 +1631,14 @@ TclSetAnnotatedCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 	    if (withP != valueA) {
 		TclDiscard(valueA);
 		valueA = withP;
+	    }
+	}
+	if (nargs == 1 && !fieldTags) {
+	    Tcl_Obj *withX = TclAnnotKeepExpired(valueA, sa[0]);	/* v16m */
+
+	    if (withX != valueA) {
+		TclDiscard(valueA);
+		valueA = withX;
 	    }
 	}
     }

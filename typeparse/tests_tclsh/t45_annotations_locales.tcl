@@ -46,10 +46,13 @@ essai typee_ok     {rangee_s {-v}$mot}
 essai typee_refus  {rangee_i {-v}$mot}
 # (écrite directement sur la valeur d'un set, elle est refusée : voir t47)
 
-# 6. Un vrai type, lui, garde son effet (cast sur une substitution).
+# 6. Un vrai type, lui, garde son effet (cast sur une substitution) quand la
+#    commande qui reçoit le mot le résout : « type » (v16m, piste B ; list ne
+#    résout rien, l'annotation y devient une note).
 set n 300
-essai cast_refus   {list {int(u,8)}$n}
-essai cast_ok      {list {int(s,16)}$n}
+essai cast_refus   {list [type {int(u,8)}$n]}
+essai cast_ok      {list [type {int(s,16)}$n]}
+essai list_note    {note get [lindex [list {int(u,8)}$n] 0]}
 
 # 7. Un nom qui ressemble à un type (sans caractère invalide) reste une
 #    erreur de frappe pour une variable : pas d'indulgence.

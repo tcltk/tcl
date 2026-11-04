@@ -18,11 +18,11 @@ V6    ok: {} abc
 V7    ok: mm@hello
 V8    ok: @circle
 V9    ok: @mm9 @mm9.stop px@mm9.stop
-V10   ok: mm10
-V11   ok: dist11
+V10   ok: @mm10
+V11   ok: @mm11.dist11
 V11b  ok: @mm.px.stop
-V12   ERREUR: contradictory annotations px and qq
-V12b  ERREUR: contradictory annotations qq2 and px
+V12   ok: @qq.px
+V12b  ok: 100
 V13   ERREUR: unknown way to cast the value from mm to px
 -- côté valeur, variable typée : le contrat
 C1    ok: int@zzpx
@@ -46,23 +46,23 @@ K3    ERREUR: value "70000" does not fit in port
 K4    ERREUR: expected floating-point number but got "a b"
 K5    ok: mm 26.450000000000003
 -- hors constructeur
-H1    ERREUR: expected integer but got "abc"
-H2    ok: px {}
-H3    ok: mm {} mm
+H1    ok: {} px abc
+H2    ok: {} px
+H3    ok: {} mm {}
 H4    ok: mm
 H4b   ERREUR: expected floating-point number but got "abc"
 H5    ok: mm@zz
-H6    ok: mm
+H6    ok: @mm
 H7    ok: mm
 H8    ok: 6
 -- l'annotation vide {}
 E-nu  ok: nom= libre= typée=mm hors=
 E-mm@ ok: nom= libre= typée=mm hors=
 E-@zz ok: nom=@zz libre=@zz typée=mm@zz hors=
-E-@px ok: nom=@px4 libre=px4 {typée=type mismatch: expected mm but got px4 (use an explicit cast)} hors=
+E-@px ok: nom=@px4 libre=@px4 typée=mm@px4 hors=
 E-mm@zz ok: nom=@zz libre=@zz typée=mm@zz hors=
-E-mm@px ok: nom=@px6 libre=px6 {typée=type mismatch: expected mm but got px6 (use an explicit cast)} hors=
-E-suite ok: pxs {} pxs
+E-mm@px ok: nom=@px6 libre=@px6 typée=mm@px6 hors=
+E-suite ok: pxs {} {}
 -- type cast
 TC1   ok: px
 TC2   ERREUR: unknown way to cast the value from mm to kg

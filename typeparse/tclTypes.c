@@ -7217,6 +7217,19 @@ TypeObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
 	Tcl_WrongNumArgs(interp, 1, objv, "subcommand ?arg ...?");
 	return TCL_ERROR;
     }
+    if (objc == 2) {
+	/* type {T}mot (v16m) : le cast explicite ; la commande reçoit le mot
+	 * et résout son annotation. */
+	Tcl_Obj *res = NULL;
+
+	switch (TclAnnotCastWord(interp, objv[1], &res)) {
+	case TCL_OK:
+	    Tcl_SetObjResult(interp, res);
+	    return TCL_OK;
+	case TCL_ERROR:
+	    return TCL_ERROR;
+	}
+    }
     sub = Tcl_GetString(objv[1]);
     if (strcmp(sub, "def") == 0 || strcmp(sub, "define") == 0
 	    || strcmp(sub, "alias") == 0) {

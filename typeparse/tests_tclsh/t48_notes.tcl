@@ -61,6 +61,8 @@ set X [keep {mm}$s]
 attempt X_string  {show [keep {string}$X]}
 
 puts "-- type def donne un sens à la note"
+# v16m : seulement à une note encore en attente ; une note expirée (passée par
+# keep) reste une note : le contrat {mmdef}z donne le type, la note suit.
 type def mm2 int
 set N [keep {mm2}5]
 attempt N_type    {show $N}
