@@ -6607,6 +6607,9 @@ Tcl_ExprLongObj(
     case TCL_NUMBER_NAN:
 	Tcl_GetDoubleFromObj(interp, resultPtr, &d);
 	result = TCL_ERROR;
+	break;
+    default:
+	TCL_UNREACHABLE();
     }
 
     Tcl_DecrRefCount(resultPtr);/* Discard the result object. */

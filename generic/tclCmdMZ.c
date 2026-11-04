@@ -3801,6 +3801,8 @@ TclNRSwitchObjCmd(
 		goto matchFound;
 	    }
 	    break;
+	default:
+	    TCL_UNREACHABLE();
 	}
     }
     return TCL_OK;

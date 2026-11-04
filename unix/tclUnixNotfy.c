@@ -547,7 +547,7 @@ TclUnixWaitForFile(
 				 * at all, and a value of -1 means wait
 				 * forever. */
 {
-    long long abortTime = 0, now; /* silence gcc 4 warning */
+    long long abortTime = 0, now = 0; /* silence gcc 4 warning */
     struct timeval blockTime, *timeoutPtr;
     struct pollfd pollFds[1];
     int numFound, result = 0, pollTimeout;

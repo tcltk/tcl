@@ -1376,9 +1376,8 @@ TclInfoFrame(
 	    Tcl_GetCommandFullName(interp, (Tcl_Command) cmdPtr,
 		    procNameObj);
 	    ADD_PAIR("proc", procNameObj);
-	} else if ((procPtr->flags & PROC_CMD_OWNED) && !cmdPtr->objProc2 &&
-		   cmdPtr->objClientData2
-	) {
+	} else if ((procPtr->flags & PROC_CMD_OWNED) && !cmdPtr->objProc2
+		&& cmdPtr->objClientData2) {
 	    ADD_PAIR("lambda", (Tcl_Obj *)cmdPtr->objClientData2);
 	} else if (cmdPtr->clientData) {
 	    ExtraFrameInfo *efiPtr = (ExtraFrameInfo *)cmdPtr->clientData;
@@ -3540,6 +3539,8 @@ Tcl_LsearchObjCmd(
 
 	    TclListObjGetElements(NULL, objv[objc - 2], &listc, &listv);
 	    break;
+	default:
+	    TCL_UNREACHABLE();
 	}
     } else {
 	patternBytes = TclGetStringFromObj(patObj, &length);
@@ -3619,6 +3620,8 @@ Tcl_LsearchObjCmd(
 		    match = 1;
 		}
 		break;
+	    default:
+		TCL_UNREACHABLE();
 	    }
 	    if (match == 0) {
 		/*
@@ -3735,6 +3738,8 @@ Tcl_LsearchObjCmd(
 		    }
 		    match = (objDouble == patDouble);
 		    break;
+		default:
+		    TCL_UNREACHABLE();
 		}
 		break;
 
@@ -3753,6 +3758,8 @@ Tcl_LsearchObjCmd(
 		    goto done;
 		}
 		break;
+	    default:
+		TCL_UNREACHABLE();
 	    }
 
 	    /*

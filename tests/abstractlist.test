@@ -350,8 +350,9 @@ test abstractlist-3.12 {shimmer lrepeat} {testobj lstring} {
     list $l ${l-isa} $m ${m-isa} [testobj objtype $n] [value-cmp l n]
 } {{I n c o n c e i v a b l e} lstring {{I n c o n c e i v a b l e} {I n c o n c e i v a b l e} {I n c o n c e i v a b l e}} list lstring 0}
 
-# lsort
-foreach not {{} REVERSE SLICE SETELEMENT REPLACE GETELEMENTS} {
+# shimmer
+
+foreach not {{} INDEX REVERSE SLICE SETELEMENT REPLACE GETELEMENTS} {
 
     testConstraint [format "%sShimmer" [string totitle $not]] [expr {$not eq ""}]
     set options [expr {$not ne "" ? "-not $not" : ""}]
@@ -642,7 +643,45 @@ test abstractlist-int {TclLengthOne: anti-shimmer of boolean, int, double, bignu
     set res
 } {int 1 int boolean 1 boolean double 1 double bignum 1 bignum}
 
-# lsort
+# Bug regression tests
+
+# Contributed from ticket [0c82728f85]
+# lappend must keep an abstract list's type (the type has a Replace hook). The
+# tests use apply so the lappend is compiled inside a proc body, which is where
+# the type used to be lost.
+test abstractlist-lappend-1.1 {lappend of one element keeps the abstract list type} -constraints {testobj lstring} -body {
+    apply {{} {set l [lstring abc]; lappend l d; list [testobj objtype $l] $l}}
+} -result {lstring {a b c d}}
+test abstractlist-lappend-1.2 {lappend {*}$list keeps the abstract list type} -constraints {testobj lstring} -body {
+    apply {{} {set l [lstring abc]; set x {d e}; lappend l {*}$x; list [testobj objtype $l] $l}}
+} -result {lstring {a b c d e}}
+test abstractlist-lappend-1.3 {lappend {*}{literal list} keeps the abstract list type} -constraints {testobj lstring} -body {
+    apply {{} {set l [lstring abc]; lappend l {*}{d e}; list [testobj objtype $l] $l}}
+} -result {lstring {a b c d e}}
+test abstractlist-lappend-1.4 {lappend to an array element keeps the abstract list type} -constraints {testobj lstring} -body {
+    apply {{} {set A(x) [lstring abc]; lappend A(x) d; list [testobj objtype $A(x)] $A(x)}}
+} -result {lstring {a b c d}}
+test abstractlist-lappend-1.5 {lappend {*}$list to an array element keeps the abstract list type} -constraints {testobj lstring} -body {
+    apply {{} {set A(x) [lstring abc]; set x {d e}; lappend A(x) {*}$x; list [testobj objtype $A(x)] $A(x)}}
+} -result {lstring {a b c d e}}
+test abstractlist-lappend-1.6 {lappend $name keeps the abstract list type} -constraints {testobj lstring} -body {
+    apply {{} {set l [lstring abc]; set n l; lappend $n d; list [testobj objtype $l] $l}}
+} -result {lstring {a b c d}}
+
+# 
+test abstractlist-bug-b24becc2ab-0 {
+    lindex crash on shimmer
+} -constraints {testobj} -body {
+    set l [lseq 1]
+    lindex $l $l
+} -result 0
+
+test abstractlist-bug-b24becc2ab-1 {
+    lindex crash on when indexProc method not defined
+} -constraints {testobj lstring} -body {
+    set l [lstring -not INDEX 0]
+    lindex $l $l
+} -result 0
 
 # cleanup
 ::tcltest::cleanupTests

@@ -432,6 +432,8 @@ TclpGetNativePathType(
 	Tcl_DStringFree(&ds);
 	break;
     }
+    default:
+	TCL_UNREACHABLE();
     }
     return type;
 }
@@ -478,6 +480,9 @@ TclpNativeSplitPath(
     case TCL_PLATFORM_WINDOWS:
 	resultPtr = SplitWinPath(TclGetString(pathPtr));
 	break;
+
+    default:
+	TCL_UNREACHABLE();
     }
 
     /*
@@ -940,6 +945,9 @@ TclpNativeJoinPath(
 	length = dest - TclGetString(prefix);
 	Tcl_SetObjLength(prefix, length);
 	break;
+
+    default:
+	TCL_UNREACHABLE();
     }
     return;
 }
@@ -1115,6 +1123,9 @@ TclGetExtension(
 	    }
 	}
 	break;
+
+    default:
+	TCL_UNREACHABLE();
     }
     p = strrchr(name, '.');
     if ((p != NULL) && (lastSep != NULL) && (lastSep > p)) {
@@ -1294,6 +1305,8 @@ Tcl_GlobObjCmd(
     case TCL_PLATFORM_WINDOWS:
 	separators = "/\\:";
 	break;
+    default:
+	TCL_UNREACHABLE();
     }
 
     if (dir == PATH_GENERAL) {
@@ -1640,6 +1653,8 @@ TclGlob(
     case TCL_PLATFORM_WINDOWS:
 	separators = "/\\:";
 	break;
+    default:
+	TCL_UNREACHABLE();
     }
 
     if (pathPrefix != NULL) {
@@ -1727,6 +1742,8 @@ TclGlob(
 	    case TCL_PATH_RELATIVE:
 		/* Do nothing */
 		break;
+	    default:
+		TCL_UNREACHABLE();
 	    }
 	    Tcl_DecrRefCount(temp);
 	}
@@ -2276,6 +2293,8 @@ DoGlob(
 		}
 	    }
 	    break;
+	default:
+	    TCL_UNREACHABLE();
 	}
 
 	/*

@@ -1141,11 +1141,17 @@ GetRealVarName(
 }
 
 // Get or allocate a variable in an object.
+// Returns NULL if the variable can't be made to exist
 static inline Tcl_Var
 GetObjectVar(
     Object *oPtr,
     Tcl_Obj *variableObj)
 {
+    if (!oPtr->namespacePtr) {
+	// Namespace has gone. Guess we're not resolving this after all.
+	// [Bugs 28de60cef5, b4637c4312]
+	return NULL;
+    }
     int isNew;
     Tcl_HashEntry *hPtr = Tcl_CreateHashEntry(
 	    TclVarTable(oPtr->namespacePtr), variableObj, &isNew);
@@ -1205,7 +1211,7 @@ ProcedureMethodCompiledVarConnect(
      */
 
     Tcl_Var var = GetObjectVar(contextPtr->oPtr, variableObj);
-    if (cacheIt) {
+    if (var && cacheIt) {
 	infoPtr->cachedObjectVar = var;
 
 	/*

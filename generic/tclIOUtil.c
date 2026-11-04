@@ -4651,6 +4651,8 @@ NativeFilesystemSeparator(
     case TCL_PLATFORM_WINDOWS:
 	separator = "\\";
 	break;
+    default:
+	TCL_UNREACHABLE();
     }
     return Tcl_NewStringObj(separator,1);
 }
