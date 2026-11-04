@@ -1246,6 +1246,8 @@ TclSetAnnotatedCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
     Tcl_Obj **tagVals = NULL, **tagNames = NULL;
     int fieldTags = 0;
     Var *varPtr, *arrayPtr = NULL;
+    TclType *sumTp = NULL;		/* v16o : set {S.v}x {f:}a {g:}b */
+    int sumVar = -1;
 
     if (TclAnnotResolve(interp, objv[1], NULL, &status, &tp, &avar, &nameObj)
 	    != TCL_OK) {
@@ -1291,6 +1293,13 @@ TclSetAnnotatedCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 
 	    memcpy(tag, open + 1, len - (open - name) - 2);
 	    tag[len - (open - name) - 2] = '\0';
+	    if (strpbrk(tag, ".,(") != NULL) {
+		/* v16o : set {segment}s(lien.(cible,contenu)) ... : un chemin
+		 * qui choisit la variante puis construit sa valeur. */
+		ctorPath = tag;
+		baseObj = Tcl_NewStringObj(name, open - name);
+		goto pathChosen;
+	    }
 	    forced = (int) TclTypeFieldIndex(tp, tag);
 	    Tcl_Free(tag);
 	    if (forced < 0 || tp->fields[forced].type == NULL) {
@@ -1317,8 +1326,37 @@ TclSetAnnotatedCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 	    baseObj = Tcl_NewStringObj(name, open - name);
 	}
     }
-    if (forced < 0 && status == TCLA_RAW && tp->kind == TCLT_SUM && avar >= 0) {
+  pathChosen:
+    if (forced < 0 && status == TCLA_RAW && tp->kind == TCLT_SUM && avar >= 0
+	    && ctorPath == NULL) {
 	forced = avar;			/* set {Val.s}x 7 */
+    }
+    /*
+     * v16o : set {segment.lien}s {cible:}$u {contenu:}$c, ou positionnel
+     * set {segment.lien}s $u $c : la variante choisie par le nom du type,
+     * ses arguments construisent le produit de son type (étiquettes,
+     * défauts), puis la valeur prend la variante.
+     */
+    if (forced >= 0 && ctorPath == NULL && baseObj == NULL
+	    && tp->fields[forced].type != NULL
+	    && tp->fields[forced].type->kind == TCLT_PRODUCT && nargs >= 1) {
+	TclType *vt = tp->fields[forced].type;
+	int labelled = 0;
+
+	if (nargs == 1) {
+	    Tcl_Obj *lab = TclAnnotLabelOf(objv[2]);
+
+	    if (lab != NULL) {
+		labelled = TclAnnotLabelIndex(vt, Tcl_GetString(lab)) >= 0;
+		Tcl_DecrRefCount(lab);
+	    }
+	}
+	if (nargs > 1 || labelled) {
+	    sumTp = tp;
+	    sumVar = forced;
+	    tp = vt;
+	    forced = -1;
+	}
     }
     if (baseObj == NULL && status != TCLA_EMPTY) {
 	/* set {int}A(k) 5 : une variable typée est un scalaire. Refusé AVANT
@@ -1352,6 +1390,7 @@ TclSetAnnotatedCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
      * tout et donne son message.
      */
     if (status == TCLA_RAW && ctorPath == NULL && tp->kind == TCLT_PRODUCT
+	    && sumTp == NULL
 	    && nargs > 0 && nargs == tp->nfields && tp->binLink == NULL) {
 	for (i = 0; i < nargs; i++) {
 	    TclType *ft = tp->fields[i].type;
@@ -1488,9 +1527,18 @@ TclSetAnnotatedCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 			Tcl_DecrRefCount(pd);
 			goto done;
 		    }
-		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			    "unknown field \"%s\" in %s", Tcl_GetString(top),
-			    tp->name));
+		    Tcl_Size ul;
+		    const char *ut = Tcl_GetStringFromObj(top, &ul);
+
+		    if (ul > 1 && ut[ul - 1] == ':') {
+			ul--;		/* {href:} : le nom, sans « : » */
+		    }
+		    Tcl_SetObjResult(interp, sumTp != NULL ? Tcl_ObjPrintf(
+			    "unknown field \"%.*s\" in %s.%s", (int) ul, ut,
+			    sumTp->name, Tcl_GetString(
+				sumTp->fields[sumVar].name))
+			    : Tcl_ObjPrintf("unknown field \"%.*s\" in %s",
+			    (int) ul, ut, tp->name));
 		    Tcl_SetErrorCode(interp, "TCL", "TYPE", "FIELD",
 			    (char *) NULL);
 		    Tcl_DecrRefCount(pd);
@@ -1586,7 +1634,8 @@ TclSetAnnotatedCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 	    }
 	}
 	if (ctorPath != NULL) {
-	    if (TclTypePathConstruct(interp, tp, ctorPath, nargs, sa, &c)
+	    if (TclTypePathConstruct(interp, tp, ctorPath, nargs, sa, &c,
+		    &variant)
 		    != TCL_OK) {
 		goto done;
 	    }
@@ -1618,6 +1667,10 @@ TclSetAnnotatedCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 		&& TclTypeComplete(interp, tp, c, -1, NULL) != TCL_OK) {
 	    TclDiscard(c);
 	    goto done;
+	}
+	if (sumTp != NULL) {		/* le produit d'une variante */
+	    tp = sumTp;
+	    variant = sumVar;
 	}
 	if (c->refCount == 0) {		/* privé : pris, pas recopié */
 	    valueA = TclNewAnnotatedOwn(c, TclTypeRefFor(interp, tp, variant));
@@ -1699,6 +1752,15 @@ TclSetAnnotatedCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
     rc = TCL_OK;
 
   done:
+    if (rc != TCL_OK && sumTp != NULL && !tp->nominal) {
+	/* le produit anonyme d'une variante : nommé S.v dans le message */
+	Tcl_Obj *nm = Tcl_ObjPrintf("%s.%s", sumTp->name,
+		Tcl_GetString(sumTp->fields[sumVar].name));
+
+	Tcl_IncrRefCount(nm);
+	TclTypeResultRename(interp, tp->name, Tcl_GetString(nm));
+	Tcl_DecrRefCount(nm);
+    }
     if (valueA != NULL) {
 	Tcl_DecrRefCount(valueA);
     }

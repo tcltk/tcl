@@ -80,3 +80,24 @@ deux textes voisins fusionnent -> ab
 para, gras, italique, gras dans italique -> {3.0 aspect} {3.3 aspect@police.poids=bold} {3.8 aspect} {3.25 aspect@police.pente=italic} {3.38 aspect@police.(pente=italic,poids=bold)}
 après italique sur « texte », te::habiller -> {1.13 aspect} {3.3 aspect@police.(pente=italic,poids=bold)} {3.8 aspect} {3.25 aspect@police.pente=italic}
 relu : les aspects sont ignorés -> {Un } {gras {{italique texte}}}
+--- écrire en gabarit : sans guillemets
+même document qu'à la main -> 1
+mêmes types -> 1
+aller-retour -> 1
+un lien, attribut cité -> segment.lien https://a.b/c?x=1,2
+crochets et barre échappés -> {un [crochet] et une barre \ seule}
+un -- dans le contenu -> {gras {{a -- b}}}
+balise inconnue -> ERREUR unknown tag "grass": must be a variant of segment or a style (gras, italique, titre1, titre2, titre3, code, puce, alerte)
+attribut inconnu -> ERREUR [lien@href=x]: unknown field "href" in segment.lien
+attribut manquant -> ERREUR [lien]: field "cible" of segment.lien has no value and no default
+style hors du type -> ERREUR [marque@style=surligne]: value "surligne" matches no variant of nomstyle
+sans -- -> ERREUR [gras b]: write [head -- content]
+crochet non fermé -> ERREUR "[" without "]" in "a [gras -- b"
+--- te::ecrire : un interpréteur sûr, des noms courts
+même document -> 1
+types -> bloc.titre bloc.para bloc.puces
+code -> bloc.code
+pas de fichier -> ERREUR invalid command name "open"
+pas de te:: -> ERREUR invalid command name "te::p"
+erreur de balise -> ERREUR unknown tag "grass": must be a variant of segment or a style (gras, italique, titre1, titre2, titre3, code, puce, alerte)
+rien n'est gardé ensuite -> 

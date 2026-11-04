@@ -38,14 +38,13 @@ type def style {
 
 # Un style par ses champs nommés, les autres à leur défaut :
 #   te::style poids bold couleur #803000
-# Le chemin d'un constructeur ne se calcule pas : il faut passer par un texte.
 proc te::style {args} {
     if {[llength $args] == 0} {
 	set {style}s
 	return $s
     }
-    set chemin [join [dict keys $args] ,]
-    eval "set {style}s($chemin) [list {*}[dict values $args]]"
+    # le chemin se calcule : les champs nommés, les autres à leur défaut
+    set {style}s([join [dict keys $args] ,]) {*}[dict values $args]
     return $s
 }
 
@@ -140,6 +139,195 @@ proc te::code {texte} {
 proc te::document {args} {
     set {document}d {*}$args
     return $d
+}
+
+# ------------------------------------------------------------------
+# Écrire du texte sans guillemets : le gabarit
+# ------------------------------------------------------------------
+#
+# Un seul argument, le texte tel qu'on le lit ; les passages balisés sont
+# entre crochets, une tête puis le contenu :
+#
+#   te::p {Voir [lien@cible="https://tcl.tk" -- la page de la TIP], puis
+#          [marque@style=alerte -- un texte [gras -- très] important].}
+#
+#   [variante@attribut=valeur,... -- contenu]   une variante de segment
+#   [style -- contenu]                          raccourci de [marque@style=style -- …]
+#
+# La tête est la forme des noms de tags (te::LireNotes : « , » sépare les
+# attributs, "…" cite une valeur). Le contenu est lu comme le texte autour :
+# espaces et ponctuation gardés, crochets imbriqués. \[ \] \\ échappent un
+# crochet ou une barre. Comme en HTML, une suite de blancs (fin de ligne
+# comprise) compte pour un espace.
+#
+# Les attributs sont les champs de la variante, le contenu son champ
+# {list.segment}contenu : la valeur est construite par un chemin à travers la
+# somme, set {segment}s(lien.(cible,contenu)) ..., calculé à partir de la
+# balise. Le type refuse une variante inconnue, un attribut inconnu ou
+# manquant, un style hors de nomstyle : aucune table ici.
+
+proc te::texte {gabarit} {
+    set res {}
+    set buf ""
+    set n [string length $gabarit]
+    for {set i 0} {$i < $n} {incr i} {
+	set c [string index $gabarit $i]
+	if {$c eq "\\" && [string index $gabarit $i+1] in {\[ \] \\}} {
+	    append buf [string index $gabarit [incr i]]
+	} elseif {$c eq "\["} {
+	    set j [te::Fermant $gabarit $i]
+	    if {$buf ne ""} {
+		lappend res [te::seg [regsub -all {\s+} $buf " "]]
+		set buf ""
+	    }
+	    lappend res [te::Balise [string range $gabarit $i+1 $j-1]]
+	    set i $j
+	} elseif {$c eq "\]"} {
+	    return -code error -errorcode {TE GABARIT} \
+		"\"\]\" without \"\[\" at $i in \"$gabarit\""
+	} else {
+	    append buf $c
+	}
+    }
+    if {$buf ne ""} {
+	lappend res [te::seg [regsub -all {\s+} $buf " "]]
+    }
+    return $res
+}
+
+# L'indice du crochet fermant qui répond à celui de i.
+proc te::Fermant {texte i} {
+    set prof 0
+    set n [string length $texte]
+    for {} {$i < $n} {incr i} {
+	switch -- [string index $texte $i] {
+	    \\ {incr i}
+	    \[ {incr prof}
+	    \] {
+		if {[incr prof -1] == 0} {
+		    return $i
+		}
+	    }
+	}
+    }
+    return -code error -errorcode {TE GABARIT} \
+	"\"\[\" without \"\]\" in \"$texte\""
+}
+
+# [tête -- contenu] -> un segment typé.
+proc te::Balise {interieur} {
+    variable styles
+    # le premier « -- » hors des crochets imbriqués et des guillemets
+    set prof 0
+    set guill 0
+    set coupe -1
+    set n [string length $interieur]
+    for {set i 0} {$i < $n && $coupe < 0} {incr i} {
+	set c [string index $interieur $i]
+	if {$c eq "\\"} {
+	    incr i
+	} elseif {$c eq "\""} {
+	    set guill [expr {!$guill}]
+	} elseif {!$guill && $c eq "\["} {
+	    incr prof
+	} elseif {!$guill && $c eq "\]"} {
+	    incr prof -1
+	} elseif {!$guill && $prof == 0 && $c eq "-"
+		&& [string range $interieur $i $i+1] eq "--"
+		&& ($i == 0 || [string is space [string index $interieur $i-1]])
+		&& [string is space [string index $interieur $i+2]]} {
+	    set coupe $i
+	}
+    }
+    if {$coupe < 0} {
+	return -code error -errorcode {TE GABARIT} \
+	    "\[$interieur\]: write \[head -- content\]"
+    }
+    set tete [string trim [string range $interieur 0 $coupe-1]]
+    set contenu [te::texte [string trimleft [string range $interieur $coupe+2 end]]]
+    if {![regexp {^([A-Za-z_]\w*)(?:@(.*))?$} $tete -> nom notes]} {
+	return -code error -errorcode {TE GABARIT} "bad head \"$tete\""
+    }
+    if {$notes eq "" && [dict exists $styles $nom]} {
+	set notes style=$nom			;# [gras -- …]
+	set nom marque
+    } elseif {[catch {type def segment.$nom}]} {
+	# type def S.v rend la définition d'une variante : ici, elle n'existe pas
+	return -code error -errorcode {TE GABARIT} "unknown tag \"$nom\":\
+	    must be a variant of segment or a style ([join [dict keys $styles] {, }])"
+    }
+    set champs {}
+    set valeurs {}
+    dict for {chemin val} [te::LireNotes $notes] {
+	if {[llength $chemin] != 1 || [llength $val] != 1} {
+	    return -code error -errorcode {TE GABARIT} \
+		"\[$tete\]: an attribute is written name=value"
+	}
+	lappend champs [lindex $chemin 0]
+	lappend valeurs [lindex $val 0]
+    }
+    lappend champs contenu
+    lappend valeurs $contenu
+    # la variante et ses champs par un chemin calculé : le type vérifie
+    if {[catch {
+	set {segment}s($nom.([join $champs ,])) {*}$valeurs
+    } msg]} {
+	return -code error -errorcode {TE GABARIT} "\[$tete\]: $msg"
+    }
+    return $s
+}
+
+# Un document entier dans un interpréteur à part : te::ecrire SCRIPT.
+#
+#   te::ecrire {
+#       h 1 {Texte enrichi}
+#       p {Un [gras -- texte] et un [lien@cible="https://tcl.tk" -- lien].}
+#       ul {premier point} {second point}
+#       code {set x 1}
+#   }
+#
+# Le script s'exécute dans un interpréteur sûr (interp create -safe) : les
+# noms de blocs sont courts (p, h, ul, code) sans rien masquer ici, et le
+# document ne peut ni lire de fichier ni lancer de commande. Chaque bloc est
+# un alias vers te::p, te::h, te::ul, te::code, qui range le bloc typé ICI :
+# seuls des textes traversent ; le document est construit et vérifié dans cet
+# interpréteur, avec ses types.
+
+proc te::ecrire {script} {
+    variable blocsEcrits
+    set blocsEcrits {}
+    set i [interp create -safe]
+    try {
+	foreach {nom cible} {p te::p h te::h ul te::ul code te::code} {
+	    interp alias $i $nom {} te::Ranger $cible
+	}
+	interp eval $i $script
+    } finally {
+	interp delete $i
+    }
+    set doc [te::document {*}$blocsEcrits]
+    set blocsEcrits {}
+    return $doc
+}
+proc te::Ranger {cible args} {
+    variable blocsEcrits
+    lappend blocsEcrits [$cible {*}$args]
+    return
+}
+
+# Blocs écrits en gabarit : te::p, te::h, te::ul (un gabarit par puce).
+proc te::p {gabarit} {
+    set {bloc}b {bloc.para}[te::texte [string trim $gabarit]]
+    return $b
+}
+proc te::h {niveau gabarit} {
+    set {bloc}b {bloc.titre}[list $niveau [te::texte [string trim $gabarit]]]
+    return $b
+}
+proc te::ul {args} {
+    set items [lmap g $args {te::texte [string trim $g]}]
+    set {bloc}b {bloc.puces}$items
+    return $b
 }
 
 # ------------------------------------------------------------------

@@ -40,6 +40,59 @@ te::document [te::titre 1 "Titre"] \
 Le rendu est un `switch` sur `type get`, et lit les variantes par chemin (`$b(titre.niveau)`,
 `$s(marque.contenu)`).
 
+## Écrire sans guillemets : le gabarit
+
+Avec `te::para`, chaque morceau de texte est un argument, et un espace sépare deux arguments :
+il faut des guillemets partout. Un **gabarit** est un seul argument, le texte tel qu'on le lit ;
+les passages balisés sont entre crochets, une **tête** puis le **contenu** :
+
+```tcl
+te::document \
+    [te::h 1 {Texte enrichi et types}] \
+    [te::p {Voir [lien@cible="https://tcl.tk" -- la page de la TIP], puis
+        [alerte -- un texte [gras -- très] important].}] \
+    [te::ul {premier point} {second, avec [italique -- un style]}]
+```
+
+* `[variante@attribut=valeur,… -- contenu]` : une variante de `segment` (`marque`, `lien`) ; la
+  tête a la forme des noms de tags (`te::LireNotes` : `,` sépare, `"…"` cite une valeur).
+  `[style -- contenu]` est le raccourci de `[marque@style=style -- contenu]`.
+* Le contenu est lu comme le texte autour (pas en mots Tcl) : espaces, ponctuation et `--`
+  gardés, crochets imbriqués. `\[`, `\]`, `\\` échappent. Comme en HTML, une suite de blancs
+  (fin de ligne comprise) compte pour un espace.
+* `te::p`, `te::h niveau`, `te::ul gabarit…` (un gabarit par puce) ; `te::texte gabarit` rend la
+  liste des segments. Le document obtenu est **le même** que celui écrit à la main avec
+  `te::para`, `te::m`, `te::lien` (testé), et l'aller-retour par le widget aussi.
+* Erreurs : balise inconnue (avec la liste des styles), attribut inconnu ou manquant
+  (`unknown field "href" in segment.lien`), `[a b]` sans `--`, crochet seul ; un style hors du
+  type : `value "surligne" matches no variant of nomstyle`.
+
+**Un document entier : `te::ecrire`.** Le script s'exécute dans un interpréteur sûr
+(`interp create -safe`) où les blocs ont des noms courts, `h`, `p`, `ul`, `code`, sans rien masquer
+dans l'interpréteur principal :
+
+```tcl
+set doc [te::ecrire {
+    h 1 {Texte enrichi et types}
+    p {Voir [lien@cible="https://tcl.tk" -- la page de la TIP].}
+    ul {premier point} {second, avec [italique -- un style]}
+    code {set x [list 1 2]}
+}]
+```
+
+Chaque bloc est un alias vers `te::p`, `te::h`, `te::ul`, `te::code`, qui construit le bloc typé
+dans l'interpréteur principal et le range : seuls des textes traversent, le document est typé et
+vérifié avec les types de l'interpréteur principal (chaque interpréteur a sa table de types). Le
+document ne peut rien faire d'autre : ni `open`, ni `exec`, ni `te::…` (testé). C'est aussi ce qui
+permet de lire un document venu d'ailleurs sans risque.
+
+L'analogie avec HTML est directe : l'élément est la variante, les attributs ses champs simples,
+le contenu son champ `{list.segment}contenu`. Chaque balise est construite par un **chemin calculé à
+travers la somme**, `set {segment}s($nom.($champs,contenu)) {*}$valeurs` (v16o) : aucune table des
+balises, c'est le type qui refuse une variante inconnue, un attribut inconnu ou manquant, un style
+hors de `nomstyle` ; une balise inconnue se reconnaît par `type def segment.$nom`, qui rend la
+définition d'une variante.
+
 ## Des noms de tags `type@notes`
 
 Un tag Tk est un texte, et le type d'une valeur n'est jamais dans son texte. Le nom d'un tag suit
@@ -164,11 +217,10 @@ vers la même cible (le widget en fait une seule plage), rien de vide.
    variante n'est jamais devinée (`value "pas un bloc" names no variant of the strict sum
    bloc`) ; les constructeurs `te::para`, `te::m`… la nomment. `type is {disjoint?}bloc` montre
    que toutes ses variantes se recouvrent.
-3. **Pas de construction programmatique par noms.** `te::style poids bold` doit passer par `eval`
-   d'un texte : ni le chemin (`set {style}s($chemin)`) ni les étiquettes ne se calculent, et un
-   dict n'entre pas dans un produit (`type cast style {poids bold}` : `needs 7 values`). Piste :
-   un cast dict → produit qui remplit les champs omis par leur défaut, ou une commande
-   `type new style poids bold`.
+3. **Construction programmatique par noms.** Dépassé : le chemin d'un produit se calcule
+   (`set {style}s([join [dict keys $args] ,]) {*}[dict values $args]`, sans `eval`), et depuis la
+   v16o il traverse aussi une somme. Reste : un dict n'entre pas dans un produit
+   (`type cast style {poids bold}` : `needs 7 values`).
 4. **Types dérivés d'une donnée.** `nomstyle` dépend de la table ; la refaire oblige à oublier et
    redéfinir `segment`, `bloc`, `document` (règle « forget both »). Un type paramétré par l'ensemble
    des noms serait plus naturel, mais les paramètres de type ne sont pas des listes de littéraux.
@@ -187,6 +239,11 @@ vers la même cible (le widget en fait une seule plage), rien de vide.
    `type canonic $v` et `type parse $texte` (voir `doc/PISTES-annotations-locales.md`). Les messages
    d'erreur sont plus précis qu'avec l'ancien type `balise` :
    `value "surligne" matches no variant of nomstyle`.
+
+8. **Une variante de somme se construit par ses champs** (réglé en v16o). Avant, sa valeur était
+   un seul argument : ni étiquettes, ni chemin. Maintenant `set {segment.lien}s {cible:}…
+   {contenu:}…`, `set {segment}s(lien.(cible,contenu)) …`, et `type def segment.lien` rend ses
+   champs. Le gabarit n'a plus de table.
 
 Côté annotations (débat du 2 novembre) : toutes les annotations de cet exemple sont écrites sur des
 mots que reçoit un constructeur (`set {segment}s {segment.marque}$x`). Les pistes B et C ne

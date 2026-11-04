@@ -2038,3 +2038,39 @@ fin de structure).
   exemples, 59 disjointes.
 - Sorties attendues changées : t72 (messages des options et des questions). Nouveau test
   `t94_sommes_strictes`.
+
+### v16o — variantes construites par leurs champs ; `type def NOM` (4 novembre 2026)
+
+Pas de patch noyau. Sources de types : `tclTypedVar.c`, `tclTypePath.c`, `tclTypes.c`,
+`tclTypes.h`.
+
+- **Une variante dont le type est un produit se construit par ses champs** :
+  `set {segment.lien}s {cible:}$u {contenu:}$c` (étiquettes, ordre libre, défauts),
+  `set {segment.lien}s $u $c` (positionnel). Avant : `a sum value takes exactly one argument`.
+  Un seul argument sans étiquette reste la valeur entière (la liste des champs).
+  `TclSetAnnotatedCmd` construit le produit de la variante, puis la valeur prend la variante.
+- **Chemin à travers une somme** : `set {segment}s(lien.(cible,contenu)) $u $c`,
+  `set {segment}s(lien.cible,lien.contenu) …`, calculable (`set {segment}s($v.($ch)) {*}$vals`) ;
+  aussi une somme champ d'un produit (`set {P2}r(n.i,m) 4 5`). `ConstructLevel` (tclTypePath.c)
+  a un cas somme : le premier pas choisit la variante (une seule : sinon `a value of S has one
+  variant`), la suite construit son type ; `TclTypePathConstruct` rend la variante.
+- **`type def NOM`** (sans définition) rend la définition dans la syntaxe de `type def`, relisible
+  (testé) : `type def pt` → `{double}x ?= 0; {double}y` ; `type def segment.lien` → `{string}cible;
+  {list.segment}contenu` ; `type def pt.x` → `double`. Un type nommé s'écrit par son nom ; les
+  variantes d'une somme sortent dans l'ordre interne (triées) ; les options (`{-strict}`) ne font
+  pas partie de la définition (`type is {strict?}S`).
+- Messages : le produit anonyme d'une variante est nommé `S.v` (`unknown field "href" in
+  segment.lien`, au lieu de `prod<cible:string;…>`) ; `unknown field "taille"` sans le `:` de
+  l'étiquette (t92).
+- La leçon 3 du texte enrichi était dépassée : le chemin d'un **produit** se calcule déjà
+  (`set {style}s([join [dict keys $args] ,]) {*}[dict values $args]`) ; `te::style` n'a plus
+  d'`eval`. Le gabarit construit chaque balise par un chemin calculé à travers `segment`, sans
+  table (`te::variantes` retirée) ; ses messages viennent du type (`[marque@style=surligne]: value
+  "surligne" matches no variant of nomstyle`) ; une balise inconnue se reconnaît par
+  `type def segment.$nom`.
+- Sorties attendues changées : t92 (message `unknown field`). Nouveau test `t95_variantes_produits`.
+- Vérifié : 73 tests avec sortie ; mêmes sorties avec `TCL_TYPES_COMPACT=0/1` ; exemples
+  inchangés ; démo du texte enrichi ; valgrind propre (sauf `executable_pe.tcl`).
+- Patch noyau `annot-fallthrough.patch` (v16o) : un `break;` après `NEXT_INST_F` à la fin des
+  instructions `annotMark`, `annotExpire`, `annotSettle`, `annotCast` (comme le reste de
+  `tclExecute.c`) : plus d'avertissement `-Wimplicit-fallthrough` (signalé sous MinGW64).

@@ -2775,7 +2775,7 @@ PathWrite(Tcl_Interp *interp, Tcl_Obj *containerPtr, const char *path,
  */
 static int ConstructLevel(Tcl_Interp *interp, TclType *tp,
 	const PathSet *set, Tcl_Obj **flat, const Tcl_Size *idx, Tcl_Size cnt,
-	Tcl_Size d, Tcl_Obj **contentPtr);
+	Tcl_Size d, Tcl_Obj **contentPtr, int *variantPtr);
 
 static int
 ConstructCollection(Tcl_Interp *interp, TclType *tp, const PathSet *set,
@@ -2847,16 +2847,18 @@ ConstructCollection(Tcl_Interp *interp, TclType *tp, const PathSet *set,
 	    value = flat[whole];
 	    Tcl_IncrRefCount(value);
 	} else {
+	    int sv = -1;
+
 	    c = NULL;
 	    if (et == NULL || ConstructLevel(interp, et, set, flat, sub, ns,
-		    d + 1, &c) != TCL_OK) {
+		    d + 1, &c, &sv) != TCL_OK) {
 		if (et == NULL) {
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf("elements of %s have "
 			    "no type to construct", tp->name));
 		}
 		goto done;
 	    }
-	    value = TclNewAnnotated(interp, et, -1, c);
+	    value = TclNewAnnotated(interp, et, sv, c);
 	    TclDiscard(c);
 	    Tcl_IncrRefCount(value);
 	}
@@ -2920,13 +2922,75 @@ ConstructCollection(Tcl_Interp *interp, TclType *tp, const PathSet *set,
 static int
 ConstructLevel(Tcl_Interp *interp, TclType *tp, const PathSet *set,
 	Tcl_Obj **flat, const Tcl_Size *idx, Tcl_Size cnt, Tcl_Size d,
-	Tcl_Obj **contentPtr)
+	Tcl_Obj **contentPtr, int *variantPtr)
 {
     TclObjVec args = {NULL, 0, 0};
     char *used;
     Tcl_Size i, j, *sub;
     int rc = TCL_ERROR;
 
+    if (variantPtr != NULL) {
+	*variantPtr = -1;
+    }
+    if (tp->kind == TCLT_SUM && cnt > 0) {
+	/*
+	 * v16o : set {segment}s(lien.(cible,contenu)) ... : le premier pas
+	 * choisit la variante (une seule pour tous les chemins), la suite
+	 * construit la valeur de son type.
+	 */
+	const char *vn = Tcl_GetString(set->path[idx[0]].step[d].a);
+	Tcl_Size fi = TclTypeFieldIndex(tp, vn), whole = -1;
+	TclType *vt;
+	Tcl_Obj *c = NULL;
+
+	for (i = 0; i < cnt; i++) {
+	    const IndexPath *q = &set->path[idx[i]];
+
+	    if (strcmp(Tcl_GetString(q->step[d].a), vn) != 0) {
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf("a value of %s has one "
+			"variant: \"%s\" and \"%s\" can't be built together",
+			tp->name, vn, Tcl_GetString(q->step[d].a)));
+		Tcl_SetErrorCode(interp, "TCL", "TYPE", "PATH", (char *) NULL);
+		return TCL_ERROR;
+	    }
+	    if (q->n == d + 1) {
+		whole = idx[i];
+	    }
+	}
+	if (fi < 0 || (vt = tp->fields[fi].type) == NULL) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf("%s has no variant \"%s\"",
+		    tp->name, vn));
+	    Tcl_SetErrorCode(interp, "TCL", "TYPE", "VARIANT", (char *) NULL);
+	    return TCL_ERROR;
+	}
+	if (whole >= 0) {
+	    if (cnt > 1) {
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf("variant \"%s\" of %s is "
+			"assigned more than once", vn, tp->name));
+		Tcl_SetErrorCode(interp, "TCL", "TYPE", "PATH", (char *) NULL);
+		return TCL_ERROR;
+	    }
+	    c = TclTypedConform(interp, vt, flat[whole]);
+	    if (c == NULL) {
+		return TCL_ERROR;
+	    }
+	} else if (ConstructLevel(interp, vt, set, flat, idx, cnt, d + 1, &c,
+		NULL) != TCL_OK) {
+	    if (!vt->nominal) {
+		Tcl_Obj *nm = Tcl_ObjPrintf("%s.%s", tp->name, vn);
+
+		Tcl_IncrRefCount(nm);
+		TclTypeResultRename(interp, vt->name, Tcl_GetString(nm));
+		Tcl_DecrRefCount(nm);
+	    }
+	    return TCL_ERROR;
+	}
+	*contentPtr = c;
+	if (variantPtr != NULL) {
+	    *variantPtr = (int) fi;
+	}
+	return TCL_OK;
+    }
     if (tp->kind == TCLT_LIST || tp->kind == TCLT_DICT) {
 	return ConstructCollection(interp, tp, set, flat, idx, cnt, d,
 		contentPtr);
@@ -2981,16 +3045,17 @@ ConstructLevel(Tcl_Interp *interp, TclType *tp, const PathSet *set,
 	} else {
 	    TclType *ft = tp->fields[fi].type;
 	    Tcl_Obj *c = NULL;
+	    int sv = -1;
 
 	    if (ft == NULL || ConstructLevel(interp, ft, set, flat, sub, ns,
-		    d + 1, &c) != TCL_OK) {
+		    d + 1, &c, &sv) != TCL_OK) {
 		if (ft == NULL) {
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf("field \"%s\" of %s "
 			    "has no type to construct", name, tp->name));
 		}
 		goto done;
 	    }
-	    value = TclNewAnnotated(interp, ft, -1, c);
+	    value = TclNewAnnotated(interp, ft, sv, c);
 	    TclDiscard(c);
 	    if (value == NULL) {
 		goto done;
@@ -3013,7 +3078,8 @@ ConstructLevel(Tcl_Interp *interp, TclType *tp, const PathSet *set,
 /* *contentPtr : contenu du produit tp (refcount 0, privé). */
 int
 TclTypePathConstruct(Tcl_Interp *interp, TclType *tp, const char *path,
-	Tcl_Size nvals, Tcl_Obj *const vals[], Tcl_Obj **contentPtr)
+	Tcl_Size nvals, Tcl_Obj *const vals[], Tcl_Obj **contentPtr,
+	int *variantPtr)
 {
     PathSet set;
     Tcl_Obj **flat = NULL;
@@ -3039,7 +3105,8 @@ TclTypePathConstruct(Tcl_Interp *interp, TclType *tp, const char *path,
     for (i = 0; i < set.n; i++) {
 	idx[i] = i;
     }
-    rc = ConstructLevel(interp, tp, &set, flat, idx, set.n, 0, contentPtr);
+    rc = ConstructLevel(interp, tp, &set, flat, idx, set.n, 0, contentPtr,
+	    variantPtr);
 
   done:
     if (flat != NULL) {

@@ -21,7 +21,7 @@
  * VAR_* de tclInt.h). La valeur ci-dessous est un PLACEHOLDER. */
 /* Version du prototype TIP 764 (typeparse/VERSION, maj.sh, et
  * tcl::unsupported::typesversion). */
-#define TCL_TYPES_VERSION "v16n"
+#define TCL_TYPES_VERSION "v16o"
 
 #ifndef VAR_TYPED
 #define VAR_TYPED	0x400000
@@ -398,6 +398,8 @@ int	TclTypeRunDefault(Tcl_Interp *interp, const char *what,
 int	TclTypeIsPlainString(const TclType *tp);
 int	TclTypeIsAny(const TclType *tp);
 Tcl_Obj *TclTypeSumOverlaps(const TclType *tp);
+void	TclTypeResultRename(Tcl_Interp *interp, const char *from,
+	    const char *to);
 /* type deref : TclTypeHasLink dit si un lien var se trouve dans tp ;
  * TclTypeDerefType rend le type où chaque var.T est remplacé par T (NULL et
  * message si impossible). TclValueDeref remplace chaque lien d'une valeur
@@ -443,7 +445,7 @@ Tcl_Obj *TclPathIndexNew(Tcl_Obj *const parts[], Tcl_Size n,
 	    const char *subst);
 int	TclTypePathConstruct(Tcl_Interp *interp, TclType *tp,
 	    const char *path, Tcl_Size nvals, Tcl_Obj *const vals[],
-	    Tcl_Obj **contentPtr);
+	    Tcl_Obj **contentPtr, int *variantPtr);
 int	TclBuildProductNamed(Tcl_Interp *interp, TclType *tp, Tcl_Size n,
 	    Tcl_Obj *const a[], Tcl_Obj **contentPtr);
 int	TclTypePathWrite(Tcl_Interp *interp, Tcl_Obj *containerPtr,

@@ -211,6 +211,7 @@ longueur {mm}12              ;# 12 millimètres
 
 ```
 type def NOM DÉFINITION        ;# définit un type nominal (ou une famille paramétrée)
+type def NOM                   ;# rend la définition (de S, d'une variante S.v, d'un champ P.f)
 type alias NOM DÉFINITION      ;# donne un nom structurel à une définition
 type get VALEUR                ;# le type résolu d'une valeur (vide s'il n'y en a pas)
 type cast TYPE VALEUR          ;# le résolveur d'un constructeur, sans variable
@@ -641,6 +642,21 @@ type def A {{int}i, {int}j}
 set {A}v 5      ;# value "5" fits variants i and j of A equally: write {i:}5, or set {A}v(i) 5
 set {A}v {j:}5  ;# A.j
 ```
+
+**Une variante qui est un produit (v16o)** se construit par ses champs, comme un produit nommé :
+
+```tcl
+type def {-strict}segment {{string}texte, {{string}cible; {list.segment}contenu}lien}
+set {segment.lien}s {cible:}$url {contenu:}$segs     ;# étiquettes, ordre libre, défauts
+set {segment.lien}s $url $segs                       ;# positionnel
+set {segment}s(lien.(cible,contenu)) $url $segs      ;# chemin à travers la somme
+set {segment}s($v.($champs)) {*}$valeurs             ;# le même, calculé
+type def segment.lien                                ;# {string}cible; {list.segment}contenu
+```
+
+Le premier pas d'un chemin choisit la variante (une seule pour tous les chemins), la suite
+construit la valeur de son type ; un chemin traverse aussi une somme champ d'un produit
+(`set {P}r(n.i,m) 4 5`). Les messages nomment le produit anonyme d'une variante `S.v`.
 
 **Sommes disjointes, à déduction, strictes (v16n).** La déduction n'est sûre que si aucune valeur ne peut entrer dans deux variantes. `type is {disjoint?}S` le vérifie à partir de la définition et rend les paires de variantes qui peuvent accepter une même valeur (vide : disjointe). L'analyse est prudente : `string`, `any` et `var` acceptent tout, un scalaire est une liste d'un élément, la liste vide est un dict vide. Quand des variantes se recouvrent, la définition dit ce qu'on veut :
 
