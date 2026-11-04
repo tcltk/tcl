@@ -141,7 +141,7 @@ puts "\n=== 3. messages ==="
 #      data depends on field len. Variant names are the tag values (1, 2, 3).
 type def utilisateur {{string(utf-8,int(u,8))}nom; {u8}age}
 type def pingmsg {{u32be}numero}
-type def corps {{utilisateur}1, {pingmsg}2, {string(raw,$len)}3}
+type def {-deduce}corps {{utilisateur}1, {pingmsg}2, {string(raw,$len)}3}
 type def message {{u8}type; {u16be}len; {corps($type)}body}
 
 set {utilisateur}u(nom,age) "Léa" 31

@@ -1,0 +1,82 @@
+--- styles
+table -> gras italique titre1 titre2 titre3 code puce alerte
+un style -> 18 bold roman style
+style faux -> ERREUR value "gras" matches no variant of poids
+--- document
+type -> document {bloc.titre bloc.para bloc.puces bloc.code}
+--- refus à la construction
+style inconnu -> ERREUR value "grass x" is not valid for that variant of segment
+titre de niveau 4 -> ERREUR value "4 x" is not valid for that variant of bloc
+bloc inconnu -> ERREUR value "pas un bloc" names no variant of the strict sum bloc: write {titre:}value or {bloc.titre}value
+--- rendu
+  insert {Texte enrichi}              bloc.titre@niveau=1 aspect@couleur=\"#1d2433\",police.(poids=bold,taille=18)
+  insert {
+
+}                         
+  insert {Un }                        bloc.para aspect
+  insert texte                        bloc.para segment.marque@style=gras aspect@police.poids=bold
+  insert { avec un passage }          bloc.para aspect
+  insert {en italique, }              bloc.para segment.marque@style=italique aspect@police.pente=italic
+  insert {et gras dedans}             bloc.para segment.marque@style=italique segment.marque@style=gras aspect@police.(pente=italic,poids=bold)
+  insert .                            bloc.para aspect
+  insert {
+
+}                         
+  insert {• }                         bloc.puces aspect@marge=16
+  insert {premier point}              bloc.puces aspect@marge=16
+  insert {
+}                          bloc.puces aspect@marge=16
+  insert {• }                         bloc.puces aspect@marge=16
+  insert {second, avec un }           bloc.puces aspect@marge=16
+  tag bind segment.lien@cible=\"https://tcl.tk\" <1> {ouvrir https://tcl.tk}
+  insert lien                         bloc.puces segment.lien@cible=\"https://tcl.tk\" aspect@couleur=\"#2b5c8a\",marge=16,souligne=1
+  insert {
+
+}                         
+  insert {set {style}s(poids) bold}   bloc.code aspect@couleur=\"#4a5468\",police.(famille=Courier,taille=10)
+  insert {
+
+}                         
+  tags configurés : aspect@couleur=\"#1d2433\",police.(poids=bold,taille=18) aspect aspect@police.poids=bold aspect@police.pente=italic aspect@police.(pente=italic,poids=bold) aspect@marge=16 aspect@couleur=\"#2b5c8a\",marge=16,souligne=1 aspect@couleur=\"#4a5468\",police.(famille=Courier,taille=10)
+--- changer la table des styles
+nouvelle table -> gras rouge
+ancien document -> document bloc.para
+italique refusé -> ERREUR value "italique x" is not valid for that variant of segment
+rouge accepté -> segment.marque
+--- relire le widget (te::lire)
+aller-retour exact -> 1
+type relu -> bloc.titre bloc.para bloc.puces bloc.code bloc.para
+chevauchement, coupé -> {segment.texte {Un }} {segment.marque {gras texte}} {segment.texte { avec un pas}} {segment.marque {gras {{sage } {italique {{en it}}}}}} {segment.marque {italique {{alique, } {gras {{et gras dedans}}}}}} {segment.texte .}
+chevauchement, erreur -> ERREUR marque "gras" (3.20-3.30) and marque "italique" (3.25-3.52) overlap: they do not nest
+deux gras voisins fusionnent -> {gras {{Un texte}}} { avec un passage }
+tag non typé : ignoré -> 1
+tag typé, valeur hors du type -> ERREUR tag "segment.marque@style=surligne" at 3.0: value "surligne" matches no variant of nomstyle
+titre de niveau 7 -> ERREUR tag "bloc.titre@niveau=7" at 1.0: value "7" matches no variant of niveau
+texte hors bloc -> bloc.para {{Un paragraphe tapé à la main.}}
+--- les noms de tags
+  bloc.titre@niveau=2  ->  titre 2
+  bloc.para  ->  para
+  segment.marque@style=gras  ->  marque gras
+  segment.lien@cible="https://wiki.tcl-lang.org/page/Été 2026?q=a.b&x=1_2"  ->  lien {https://wiki.tcl-lang.org/page/Été 2026?q=a.b&x=1_2}
+cible relue à l'identique -> 1
+--- la syntaxe des notes
+  gras,rouge,italique -> gras,italique,rouge {gras {} rouge {} italique {}}
+  font.(family=helvetica,size=10),gras -> font.(family=helvetica,size=10),gras {{font family} helvetica {font size} 10 gras {}}
+  gras,font.size=10,font.family=helvetica -> font.(family=helvetica,size=10),gras {gras {} {font size} 10 {font family} helvetica}
+  size=10,size=12 -> size=12 {size 12}
+  font=x,font.size=10 -> font.size=10 {{font size} 10}
+  font.size=10,font=x -> font=x {font x}
+  a.b.(c=1,d=2),a.e=3 -> a.(b.(c=1,d=2),e=3) {{a b c} 1 {a b d} 2 {a e} 3}
+  cible="https://tcl.tk/a,b.c?x=(1)" -> cible=\"https://tcl.tk/a,b.c?x=(1)\" {cible https://tcl.tk/a,b.c?x=(1)}
+  "une clé"="é\u00e9 \"q\" \\ fin" -> {"une clé"="éé \"q\" \\ fin"} {{{une clé}} {{éé "q" \ fin}}}
+  a=( -> ERREUR bad notes "a=(": key expected at 2
+  a.(b=1 -> ERREUR bad notes "a.(b=1": missing ")" at 6
+  a="sans fin -> ERREUR bad notes "a="sans fin": missing close-quote
+  ,a -> ERREUR bad notes ",a": key expected at 0
+forme canonique stable -> 1
+la sélection est ignorée -> 1
+deux textes voisins fusionnent -> ab
+--- apparence : un tag d'aspect par morceau, styles cumulés
+para, gras, italique, gras dans italique -> {3.0 aspect} {3.3 aspect@police.poids=bold} {3.8 aspect} {3.25 aspect@police.pente=italic} {3.38 aspect@police.(pente=italic,poids=bold)}
+après italique sur « texte », te::habiller -> {1.13 aspect} {3.3 aspect@police.(pente=italic,poids=bold)} {3.8 aspect} {3.25 aspect@police.pente=italic}
+relu : les aspects sont ignorés -> {Un } {gras {{italique texte}}}

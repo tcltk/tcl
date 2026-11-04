@@ -3,12 +3,12 @@
 #   (et set {S}v(variante) valeur). La variante choisie survit dans les listes,
 #   les produits, et aux modifications (la variante courante départage).
 proc t {l s} { set rc [catch {uplevel 1 $s} m]; puts [format "%-30s %s %s" $l $rc $m] }
-type def A {{int}i, {int}j}
-type def B {{int}i, {double}d, {string}s}
+type def {-deduce}A {{int}i, {int}j}
+type def {-deduce}B {{int}i, {double}d, {string}s}
 type def P {{int}x; {int}y}
 type def Q {{int}a; {int}b}
-type def C {{P}p, {Q}q}
-type def W {{int}, {int}}
+type def {-deduce}C {{P}p, {Q}q}
+type def {-deduce}W {{int}, {int}}
 type def R {{A}a; {int}n}
 puts "-- déduction"
 t "B 5 : int, la plus stricte"  {set {B}v 5; type get $v}

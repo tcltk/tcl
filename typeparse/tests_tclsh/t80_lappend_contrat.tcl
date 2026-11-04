@@ -5,7 +5,7 @@
 type def point {{double}x; {double}y}
 type def pdef {{double}x; {double}y = 0.5}
 type def {-compact}nuage list.point
-type def forme {{double}cote, {string}nom}
+type def {-deduce}forme {{double}cote, {string}nom}
 
 proc remplit {N} {set {list.point}L; for {set i 0} {$i < $N} {incr i} {lappend L [list $i 1]}; list [llength $L] [lindex $L end] [type get $L] [type get [lindex $L 0]]}
 puts "boucle : [remplit 1000]"

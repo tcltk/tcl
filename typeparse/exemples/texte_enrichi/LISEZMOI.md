@@ -158,10 +158,12 @@ vers la même cible (le widget en fait une seule plage), rien de vide.
    sont permis. Il faudrait que l'erreur la plus profonde remonte : `"grass" is not a nomstyle
    (gras, italique, ...)`, avec le chemin `marque.style`.
 2. **La déduction de variante est dangereuse avec des sommes qui acceptent tout.** Un texte nu
-   passé comme bloc (`te::document ... {pas un bloc}`) est accepté **sans erreur** comme
+   passé comme bloc (`te::document ... {pas un bloc}`) était accepté **sans erreur** comme
    `bloc.puces` : `list.list.segment` accepte n'importe quelle liste, car `segment.texte` accepte
-   n'importe quelle chaîne. Piste : une somme qui exige que sa variante soit nommée
-   (`type def {-strict}bloc ...`), ou un refus de déduire quand une variante accepte toute chaîne.
+   n'importe quelle chaîne. Réglé en v16n : `bloc` et `segment` sont définis `{-strict}`, la
+   variante n'est jamais devinée (`value "pas un bloc" names no variant of the strict sum
+   bloc`) ; les constructeurs `te::para`, `te::m`… la nomment. `type is {disjoint?}bloc` montre
+   que toutes ses variantes se recouvrent.
 3. **Pas de construction programmatique par noms.** `te::style poids bold` doit passer par `eval`
    d'un texte : ni le chemin (`set {style}s($chemin)`) ni les étiquettes ne se calculent, et un
    dict n'entre pas dans un produit (`type cast style {poids bold}` : `needs 7 values`). Piste :

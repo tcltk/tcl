@@ -1,0 +1,40 @@
+--- disjointes ou non
+F: 
+E: 
+X: 
+énumération: 
+S (int, string): {i s}
+Sh (scalaire, liste): {circle rect}
+M (var : prudent): {a b} {a s} {b s}
+pas une somme: ERREUR type is {disjoint?}: pt is not a sum
+--- l'avertissement (une somme qui se recouvre, sans option)
+warning: type def W: variants i and d can take the same value (type is {disjoint?}W); write {-deduce}W to keep the deduction, or {-strict}W
+sans option: 0
+disjointe : rien: 0
+--- {-deduce} : la plus stricte gagne
+5: S.i
+abc: S.s
+strict?: 0
+--- {-strict} : nommer la variante
+strict?: 1
+valeur nue: ERREUR value "5" names no variant of the strict sum T: write {i:}value or {T.i}value
+{i:}5: T.i
+{T.s}5: T.s
+type {T.i}5: T.i
+type cast T.i 5: T.i
+type cast T 5: ERREUR value "5" names no variant of the strict sum T: write {i:}value or {T.i}value
+liste, étiquettes: T.i T.s
+liste, nu: ERREUR value "1" names no variant of the strict sum T: write {i:}value or {T.i}value
+variable : la variante reste: T.s
+valeur déjà typée: T.i
+littéral : nommé par sa valeur: U
+variante typée nue: ERREUR value "4" names no variant of the strict sum U: write {n:}value or {U.n}value
+--- options
+{-compact,-strict}: ERREUR type def {-strict}C: only a sum has a variant to choose
+{-strict,-deduce}: ERREUR type def: {-strict} and {-deduce} exclude each other
+{-strict} sur une liste: ERREUR type def {-strict}Z: only a sum has a variant to choose
+sous-option: ERREUR type def: option {-strict} takes no sub-option or value: {-strict.niveau=1}
+inconnue: ERREUR type def: unknown option {-bof}: must be {-compact}, {-strict} or {-deduce} (several: {-compact,-strict})
+{-compact,-compact}: 1
+alias: ERREUR type alias: unknown option {-strict} (an alias is not a new type: it takes no option)
+question inconnue: ERREUR unknown question "zz?": must be compact?, disjoint? or strict?

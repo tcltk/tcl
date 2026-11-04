@@ -12,7 +12,7 @@ proc hex {s} {binary scan $s H* h; return $h}
 # deux variantes de MÊME forme : rien à deviner / two variants of the SAME shape
 type def pa {{u8}a; {u8}b}
 type def pb {{u8}c; {u8}d}
-type def S {{pa}x, {pb}y}
+type def {-deduce}S {{pa}x, {pb}y}
 
 # 1. S(nom) directement / directly
 type def Q {{S(y)}s}

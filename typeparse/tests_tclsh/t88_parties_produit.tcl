@@ -7,7 +7,7 @@ type def Sample {{int}id; {double}value; {int}flags}
 type def point {{double}x; {double}y}
 type def seg {{point}a; {point}b}
 type def {-compact}nuage list.point
-type def forme {{double}cote, {string}nom}
+type def {-deduce}forme {{double}cote, {string}nom}
 type def boite {{forme}f; {int}n}
 proc montre {v} {list $v [type get $v] [lmap e $v {type get $e}]}
 proc p1 {s} {montre $s(*)}

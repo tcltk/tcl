@@ -1955,3 +1955,86 @@ Sources de types : `tclAnnotObj.c`, `tclTypedVar.c`, `tclTypes.c` (un message), 
 - Reste à traduire : `doc/ANNOTATIONS.{en,de,nl,es,pt,it}.md` et `MANUAL.*.md` (le français et
   `doc/764.md` sont à jour).
 
+
+### v16m — piste B : une annotation expire avec la commande qui reçoit le mot (3 novembre 2026)
+
+Patch noyau : `piste-b-expiration.patch` (`tclBasic.c`, `tclCmdAH.c`, `tclCmdIL.c`,
+`tclCompCmds.c`, `tclCompCmdsGR.c`, `tclCompile.c`, `tclCompile.h`, `tclDictObj.c`, `tclExecute.c`,
+`tclParse.c`, `tclVar.c`). Sources de types : `tclAnnotObj.c`, `tclTypedVar.c`, `tclTypes.c`,
+`tclTypes.h`.
+
+- **Plus de cast immédiat.** Celui de `{T}$x` (v16l) et celui de `{list}`/`{dict}` sur une valeur
+  typée (v15) sont retirés : `::tcl::annotate` et `TclSubstTokens` ne font qu'annoter.
+  `set {int}$nom 5` et `set {int}[set nom] 5` déclarent de nouveau la variable nommée.
+- **Expiration.** Une annotation n'agit que sur la commande qui reçoit le mot. Les valeurs annotées
+  par un mot sont inscrites (`TclAnnotRegisterFresh`) ; une commande qui a un mot annoté est
+  encadrée par deux instructions nouvelles, `annotMark` … `annotExpire` (`CompileCommandTokens`),
+  et `TclEvalEx` fait de même pour un script non compilé ; la sortie d'un bytecode fait expirer ce
+  qu'il a inscrit (`return {T}$x`, une commande sortie en erreur). Expirer change **en place**
+  l'état de l'objet (partagé par ses copies) : texte brut et notes en attente deviennent des notes
+  expirées, sous une marque (un élément vide de la liste des notes), affichées mais jamais résolues ;
+  une étiquette `{nom:}` ou une annotation locale disparaît. Une valeur neuve d'un constructeur qui
+  garde une note en attente est inscrite aussi : la note rangée par `set v {mm}5` expire avec `set`.
+  Les notes expirées suivent la valeur construite (`TclAnnotKeepExpired`).
+- **Les boucles reçoivent leurs listes.** `foreach`, `lmap`, `dict for`, `dict map` résolvent
+  l'annotation de leurs listes et dicts (`foreach {x y} {list}$p`). Compilées, le mot `{T}mot`
+  est compilé en sa valeur suivie de l'instruction nouvelle `annotCast`, qui la caste une fois vers
+  `T` sans fabriquer de valeur annotée (`TclAnnotCastText`) ; sinon la commande résout
+  (`TclAnnotSettleValueArg`). Les littéraux sont vérifiés aussi : `foreach x {list.int}{1 a}`
+  échoue (la v16l le laissait passer). `annotSettle` (résoudre une valeur déjà annotée) est
+  définie mais pas émise. `lassign` aussi (sa
+  compilation en ligne laisse la place à la commande quand un mot est annoté).
+- **Listes typées.** `lappend`, `lset`, `linsert`, `lreplace` sur une variable typée résolvent
+  l'annotation de l'élément reçu (`lappend A {string}x` dans une `list.any`), sauf une étiquette,
+  lue plus loin comme avant.
+- **`type {T}mot`** : le cast explicite, écrit comme une annotation. `type` à un seul argument
+  annoté résout l'annotation comme un constructeur sans contexte (`TclAnnotCastWord`) :
+  `type {int}$s`, `type {list}$p`, `type {int}[cmd]`, `type {int}[(2 + 3)]`. Un nom inconnu, une
+  annotation locale : erreur.
+- Coût : deux instructions par commande qui a un mot annoté ; un inscrit que plus rien ne tient
+  part sans expirer. `set {pt}p 1 2` dans une boucle : comme la v16l (≈ 0,6 µs) ;
+  `foreach {a b} {list}$p {}` (la commande entière, cast compris) : 0,8 µs en v16l, 0,7 µs ;
+  `foreach {x y} {list.int}$L {}` : 1,4 → 0,8 µs.
+- Atomicité des produits gardée : `foreach {x y} $p` ne déplie pas un produit (`llength $p` vaut
+  1) ; on écrit `{list}$p`.
+- Sorties attendues changées, et pourquoi : t28 (`forget` dans le message, oublié en v16j) ; t45
+  (cast par `type`, `list` ne caste plus), t48 (`apres_def` : une note expirée reste une note), t49
+  (V10–V12b, H1–H6, E : notes expirées), t55 et t59 (`type {list}$p` au lieu de `llength {list}$p`,
+  `type get {list.point}$P`), t92 (première partie : plus de cast immédiat). Nouveau test
+  `t93_piste_b`.
+- Vérifié : 71 tests avec sortie ; mêmes sorties avec `TCL_TYPES_COMPACT=0/1` ; sorties des
+  exemples identiques à la v16l ; valgrind propre (sauf `executable_pe.tcl`, comme avant) ;
+  `make test` : 61 échecs, exactement ceux de la référence (51 090 tests, 45 056 passés).
+- Reste à traduire : `doc/ANNOTATIONS.{en,de,nl,es,pt,it}.md` et `MANUAL.*.md` (le français et
+  `doc/764.md` sont à jour).
+
+### v16n — sommes disjointes, à déduction, strictes ; options multiples (4 novembre 2026)
+
+Pas de patch noyau. Sources de types : `tclTypes.c`, `tclTypes.h` (`TclType` gagne `sumMode`, en
+fin de structure).
+
+- **`type is {disjoint?}S`** : les paires de variantes de la somme `S` qui peuvent accepter une
+  même valeur (vide : disjointe). Analyse prudente sur la définition (`MayOverlap`) : `string`,
+  `any`, `var` acceptent tout ; un scalaire est une liste d'un élément ; une liste extensible
+  accepte la liste vide, qui est aussi un dict vide ; une variante littérale est validée contre
+  l'autre variante.
+- **`type def {-strict}S`** : la variante d'une valeur nue n'est jamais devinée (`value "5" names
+  no variant of the strict sum S: write {i:}value or {S.i}value`, code `TCL TYPE STRICT`). Une
+  valeur déjà typée, une étiquette, le nom de la variante dans le type passent ; une variante
+  littérale se nomme par sa valeur ; dans une variable typée, la variante courante reste.
+  **`type def {-deduce}S`** : la plus stricte gagne (le comportement d'avant). **`type is
+  {strict?}S`**.
+- **Avertissement** : une somme qui se recouvre, définie sans `{-strict}` ni `{-deduce}` (et sans
+  sélecteur binaire), écrit sur `stderr` `warning: type def S: variants i and s can take the
+  same value (type is {disjoint?}S); write {-deduce}S to keep the deduction, or {-strict}S`.
+- **Options multiples** : `{-compact,-strict}`, dans la syntaxe des notes (`LocalWords` →
+  `SplitOptions` : `,` sépare, `.` descend, `=` donne une valeur, `(…)` regroupe, `"…"` cite ;
+  chaque option est rendue à plat, `{-a.(b=1,c=2)}` → `-a.b=1`, `-a.c=2`). Les options de
+  `type def` n'ont pas encore de sous-option (erreur explicite). `{-strict}` et `{-deduce}` :
+  seulement sur une somme, et pas ensemble.
+- Sommes des tests et des exemples qui se recouvrent : annotées `{-deduce}` (sorties
+  inchangées) ; `bloc` et `segment` de `exemples/texte_enrichi` : `{-strict}` (la ligne
+  « bloc inconnu » de son `test.out` devient l'erreur voulue). Sur 94 sommes des tests et
+  exemples, 59 disjointes.
+- Sorties attendues changées : t72 (messages des options et des questions). Nouveau test
+  `t94_sommes_strictes`.

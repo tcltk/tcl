@@ -219,7 +219,12 @@ type convert DE VERS LAMBDA    ;# déclare une conversion explicite
 type deref VALEUR              ;# instantané : chaque lien var remplacé par sa valeur
 type binary TYPE ...           ;# représentation binaire, encodage, décodage (§ 9)
 type def {-compact}NOM DÉF     ;# une liste (ou toute liste d'un produit) toujours en cases (§ 12.1)
+type def {-strict}S DÉF        ;# une somme dont la variante n'est jamais devinée (§ 8.4)
+type def {-deduce}S DÉF        ;# une somme dont la variante se déduit (§ 8.4)
+type def {-a,-b}NOM DÉF        ;# plusieurs options, dans la syntaxe des notes
 type is {compact?}TYPE|VALEUR  ;# une question sur un type ou une valeur
+type is {disjoint?}S           ;# les paires de variantes qui peuvent accepter une même valeur
+type is {strict?}S             ;# 1 si S a été défini {-strict}
 type {c!}export TYPE ?TYPE ...? ;# en-tête C des types nommés (§ 12.2) ; {llvm!} prévu
 ```
 
@@ -636,6 +641,17 @@ type def A {{int}i, {int}j}
 set {A}v 5      ;# value "5" fits variants i and j of A equally: write {i:}5, or set {A}v(i) 5
 set {A}v {j:}5  ;# A.j
 ```
+
+**Sommes disjointes, à déduction, strictes (v16n).** La déduction n'est sûre que si aucune valeur ne peut entrer dans deux variantes. `type is {disjoint?}S` le vérifie à partir de la définition et rend les paires de variantes qui peuvent accepter une même valeur (vide : disjointe). L'analyse est prudente : `string`, `any` et `var` acceptent tout, un scalaire est une liste d'un élément, la liste vide est un dict vide. Quand des variantes se recouvrent, la définition dit ce qu'on veut :
+
+```tcl
+type def {-deduce}S {{int}i, {string}s}     ;# la plus stricte gagne : 5 -> S.i
+type def {-strict}bloc {{list.segment}para, {string}code, ...}
+set {bloc}b "texte"     ;# value "texte" names no variant of the strict sum bloc: write {para:}value or {bloc.para}value
+set {bloc}b {para:}$x   ;# bloc.para
+```
+
+Une somme `{-strict}` ne devine jamais : il faut une valeur déjà typée, une étiquette, ou le nom de la variante dans le type (`{bloc.para}`, `type cast bloc.para`). Une variante littérale se nomme par sa valeur, et dans une variable typée la variante courante reste. Sans option, une somme qui se recouvre se déduit comme avant, avec un avertissement sur `stderr` à sa définition (`warning: type def S: variants i and s can take the same value…`) : le choix doit se voir dans la définition. Une somme disjointe n'a besoin de rien. Plusieurs options s'écrivent dans une seule annotation, séparées par des virgules : `{-compact,-strict}` (la syntaxe des notes ; `.` et `=` sont réservés aux sous-options).
 
 La variante choisie reste attachée à la valeur, y compris dans une liste ou un produit (`set {list.A}L $v`, `set {R}r $v 1` : `A.j`), et `type cast A {j:}5` la lit aussi. Une modification (`set v 8`, `incr v`, `set L(0) 4`, `lset L 0 9`, `set r(a) 7`) garde la variante courante quand plusieurs conviennent également ; la valeur choisit toujours si une seule variante convient, ou si une est plus stricte. Variantes anonymes de même forme (`{int}, {int}`) : rien ne permet de choisir, `name the variants to choose one`.
 

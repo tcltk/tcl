@@ -14,7 +14,7 @@ type def dist  mm
 type def kg    double
 type def px    int
 type def port  int(u,16)
-type def Shape {{double}circle, {list.double}rect}
+type def {-deduce}Shape {{double}circle, {list.double}rect}
 
 # id : rend son argument tel quel sans être un constructeur (ce n'est pas
 # une proc), pour empiler plusieurs annotations : {b}[id {a}5] -> @a.b

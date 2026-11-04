@@ -2,8 +2,8 @@
 #   lecture d'une variante inactive : la règle, sinon le cast ordinaire, sinon (même
 #   forme) une erreur qui propose la règle.
 proc t {l s} { set rc [catch {uplevel 1 $s} m]; puts [format "%-30s %s %s" $l $rc $m] }
-type def temp {{double}celsius, {double}fahrenheit}
-type def S {{int}i, {string}s}
+type def {-deduce}temp {{double}celsius, {double}fahrenheit}
+type def {-deduce}S {{int}i, {string}s}
 set {temp}t {celsius:}100
 t "sans règle"            {set t(fahrenheit)}
 t "cast sans règle"       {set u {temp.fahrenheit}$t}

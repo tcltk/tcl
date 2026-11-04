@@ -9,7 +9,7 @@ check "foreach list.int" $r {int int int}
 check "lindex list.int" [type get [lindex $N 1]] int
 check "lmap list.int" [lmap e $N {type get $e}] {int int int}
 catch {unset e}
-type def Val {{int}i, {string}s}
+type def {-deduce}Val {{int}i, {string}s}
 set {list.Val}L {i:}5 {s:}hello {s:}7 {Val.i}8
 check "L" $L {5 hello 7 8}
 catch {unset e}

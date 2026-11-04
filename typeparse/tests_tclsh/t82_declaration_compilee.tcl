@@ -5,7 +5,7 @@
 type def point {{double}x; {double}y}
 type def pdef {{double}x; {double}y = 0.5}
 type def {-compact}nuage list.point
-type def forme {{double}cote, {string}nom}
+type def {-deduce}forme {{double}cote, {string}nom}
 
 proc compile {nom} {expr {[string first declareLocal [tcl::unsupported::disassemble proc $nom]] >= 0}}
 proc p1 {} {( A is point = (1.0, 2.0); [list $A [type get $A] [catch {set A abc} m] $m] )}

@@ -21,7 +21,7 @@
  * VAR_* de tclInt.h). La valeur ci-dessous est un PLACEHOLDER. */
 /* Version du prototype TIP 764 (typeparse/VERSION, maj.sh, et
  * tcl::unsupported::typesversion). */
-#define TCL_TYPES_VERSION "v16m"
+#define TCL_TYPES_VERSION "v16n"
 
 #ifndef VAR_TYPED
 #define VAR_TYPED	0x400000
@@ -162,7 +162,12 @@ struct TclType {
     int compactFields;		/* PRODUCT : un champ (ou un sous-champ) est une
 				 * liste qui peut être en cases ; 0 : pas
 				 * encore calculé, 1 : oui, -1 : non */
+    int sumMode;		/* SUM (v16m) : TCLT_SUM_DEDUCE par défaut ;
+				 * type def {-strict}S : la variante d'une
+				 * valeur nue n'est jamais devinée */
 };
+#define TCLT_SUM_DEDUCE	0
+#define TCLT_SUM_STRICT	1
 
 /* Les descripteurs vivent autant que l'interpréteur (pas de comptage). */
 
@@ -392,6 +397,7 @@ int	TclTypeRunDefault(Tcl_Interp *interp, const char *what,
 	    Tcl_Obj *script, Tcl_Obj **resultPtr);
 int	TclTypeIsPlainString(const TclType *tp);
 int	TclTypeIsAny(const TclType *tp);
+Tcl_Obj *TclTypeSumOverlaps(const TclType *tp);
 /* type deref : TclTypeHasLink dit si un lien var se trouve dans tp ;
  * TclTypeDerefType rend le type où chaque var.T est remplacé par T (NULL et
  * message si impossible). TclValueDeref remplace chaque lien d'une valeur

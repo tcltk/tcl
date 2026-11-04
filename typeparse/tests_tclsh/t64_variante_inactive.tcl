@@ -1,6 +1,6 @@
 # t64 : lire une variante inactive : cast de la valeur courante, ou message qui nomme
 #   les deux variantes ; écrire dans une variante inactive : message qui guide.
-type def S {{int}i, {string}s}
+type def {-deduce}S {{int}i, {string}s}
 type def pt {{int}x; {int}y}
 type def U {{pt}p, {int}n}
 set {S}v {i:}5

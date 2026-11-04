@@ -1597,6 +1597,41 @@ ValidateG(Tcl_Interp *interp, const TclType *tp, Tcl_Obj *value,
 	    }
 	    return TCL_OK;
 	}
+	if (tp->sumMode == TCLT_SUM_STRICT) {
+	    /*
+	     * v16m, {-strict}S : rien n'est deviné. Une variante littérale se
+	     * nomme par sa valeur ; dans une variable typée, la variante
+	     * courante reste ; sinon il faut la nommer.
+	     */
+	    for (i = 0; i < tp->nfields; i++) {
+		if (tp->fields[i].type == NULL
+			&& VariantAccepts(&tp->fields[i], value, &me)) {
+		    first = (int) i;
+		    break;
+		}
+	    }
+	    if (first < 0 && prefer >= 0 && prefer < tp->nfields
+		    && VariantAccepts(&tp->fields[prefer], value, &me)) {
+		first = prefer;
+	    }
+	    if (first < 0) {
+		Tcl_Obj *n0 = NULL;
+
+		for (i = 0; i < tp->nfields && n0 == NULL; i++) {
+		    n0 = tp->fields[i].name;
+		}
+		ERR(interp, "STRICT", "value \"%s\" names no variant of the "
+			"strict sum %s: write {%s:}value or {%s.%s}value",
+			Tcl_GetString(value), tp->name,
+			n0 ? Tcl_GetString(n0) : "variant", tp->name,
+			n0 ? Tcl_GetString(n0) : "variant");
+		return TCL_ERROR;
+	    }
+	    if (variantOut != NULL) {
+		*variantOut = first;
+	    }
+	    return TCL_OK;
+	}
 	{
 	    /*
 	     * Déduction par la plus stricte : parmi les variantes qui
@@ -6881,6 +6916,136 @@ TypeBinaryCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
  * (refcount 0), *subject le mot sans elles (non possédé : objv, ou un objet
  * gardé par la liste *keep). Rend le nombre d'annotations.
  */
+/*
+ * v16m : le texte d'une annotation locale peut porter plusieurs options,
+ * dans la syntaxe des notes : « , » sépare, « . » descend, « = » donne une
+ * valeur, (…) regroupe, "…" cite (substitutions backslash). Chaque option est
+ * rendue à plat, son chemin écrit en entier :
+ *	{-compact,-strict}	-> -compact  -strict
+ *	{-a.(b=1,c="x,y")}	-> -a.b=1  -a.c="x,y"
+ * Un texte qui ne suit pas cette syntaxe reste une seule option.
+ */
+static int
+OptToken(const char *s, Tcl_Size *ip, Tcl_Size n)
+{
+    Tcl_Size i = *ip;
+
+    if (i < n && s[i] == '"') {
+	for (i++; i < n && s[i] != '"'; i++) {
+	    if (s[i] == '\\' && i + 1 < n) {
+		i++;
+	    }
+	}
+	if (i >= n) {
+	    return 0;
+	}
+	*ip = i + 1;
+	return 1;
+    }
+    while (i < n && strchr(",.()=\"", s[i]) == NULL) {
+	i++;
+    }
+    if (i == *ip) {
+	return 0;
+    }
+    *ip = i;
+    return 1;
+}
+
+static int OptSeq(const char *s, Tcl_Size *ip, Tcl_Size n, Tcl_DString *pre,
+	Tcl_Obj *out);
+
+static int
+OptItem(const char *s, Tcl_Size *ip, Tcl_Size n, Tcl_DString *pre,
+	Tcl_Obj *out)
+{
+    Tcl_DString path;
+    Tcl_Size st = *ip;
+    int ok = 1;
+
+    Tcl_DStringInit(&path);
+    Tcl_DStringAppend(&path, Tcl_DStringValue(pre), Tcl_DStringLength(pre));
+    if (!OptToken(s, ip, n)) {
+	Tcl_DStringFree(&path);
+	return 0;
+    }
+    Tcl_DStringAppend(&path, s + st, *ip - st);
+    while (*ip < n && s[*ip] == '.') {
+	(*ip)++;
+	if (*ip < n && s[*ip] == '(') {
+	    (*ip)++;
+	    Tcl_DStringAppend(&path, ".", 1);
+	    ok = OptSeq(s, ip, n, &path, out);
+	    if (ok && (*ip >= n || s[*ip] != ')')) {
+		ok = 0;
+	    }
+	    (*ip)++;
+	    Tcl_DStringFree(&path);
+	    return ok;
+	}
+	st = *ip;
+	if (!OptToken(s, ip, n)) {
+	    Tcl_DStringFree(&path);
+	    return 0;
+	}
+	Tcl_DStringAppend(&path, ".", 1);
+	Tcl_DStringAppend(&path, s + st, *ip - st);
+    }
+    if (*ip < n && s[*ip] == '=') {
+	(*ip)++;
+	st = *ip;
+	if (!OptToken(s, ip, n)) {
+	    Tcl_DStringFree(&path);
+	    return 0;
+	}
+	Tcl_DStringAppend(&path, "=", 1);
+	Tcl_DStringAppend(&path, s + st, *ip - st);
+    }
+    Tcl_ListObjAppendElement(NULL, out, Tcl_NewStringObj(
+	    Tcl_DStringValue(&path), Tcl_DStringLength(&path)));
+    Tcl_DStringFree(&path);
+    return 1;
+}
+
+static int
+OptSeq(const char *s, Tcl_Size *ip, Tcl_Size n, Tcl_DString *pre,
+	Tcl_Obj *out)
+{
+    while (1) {
+	if (!OptItem(s, ip, n, pre, out)) {
+	    return 0;
+	}
+	if (*ip >= n || s[*ip] != ',') {
+	    return 1;
+	}
+	(*ip)++;
+    }
+}
+
+static void
+SplitOptions(const char *text, Tcl_Obj *out)
+{
+    Tcl_Obj *items = Tcl_NewListObj(0, NULL);
+    Tcl_DString pre;
+    Tcl_Size i = 0, n = (Tcl_Size) strlen(text);
+
+    Tcl_IncrRefCount(items);
+    Tcl_DStringInit(&pre);
+    if (OptSeq(text, &i, n, &pre, items) && i == n) {
+	Tcl_Obj **ev;
+	Tcl_Size ne, k;
+
+	Tcl_ListObjGetElements(NULL, items, &ne, &ev);
+	for (k = 0; k < ne; k++) {
+	    Tcl_ListObjAppendElement(NULL, out, ev[k]);
+	}
+    } else {
+	Tcl_ListObjAppendElement(NULL, out, Tcl_NewStringObj(text, -1));
+    }
+    Tcl_DStringFree(&pre);
+    Tcl_DecrRefCount(items);
+}
+
 static Tcl_Size
 LocalWords(Tcl_Obj *word, Tcl_Obj **words, Tcl_Obj **subject, TclObjVec *keep)
 {
@@ -6895,13 +7060,198 @@ LocalWords(Tcl_Obj *word, Tcl_Obj **words, Tcl_Obj **subject, TclObjVec *keep)
 	    TclDiscard(rest);
 	    break;			/* une note ou un type : pas à nous */
 	}
-	Tcl_ListObjAppendElement(NULL, *words, Tcl_NewStringObj(t, -1));
+	SplitOptions(t, *words);		/* {-a,-b} (v16m) */
 	TclVecAdd(keep, rest);
 	cur = rest;
 	n++;
     }
     *subject = cur;
+    Tcl_ListObjLength(NULL, *words, &n);
     return n;
+}
+
+/*
+ * v16m : deux types peuvent-ils accepter une même valeur ? Réponse prudente :
+ * 1 dans le doute (string, any, var, profondeur dépassée). Avec EIAS, un
+ * scalaire est une liste d'un élément, la liste vide est un dict vide, et une
+ * liste extensible accepte la liste vide.
+ */
+static const TclType *
+OverlapBase(const TclType *t)
+{
+    while (t != NULL && t->under != NULL
+	    && (t->kind == TCLT_INT || t->kind == TCLT_DOUBLE
+		|| t->kind == TCLT_STRING)) {
+	t = t->under;
+    }
+    return t;
+}
+
+static int
+SumLiteralFits(const TclType *t, Tcl_Obj *lit)
+{
+    return TclTypeValidate(NULL, t, lit, -1, NULL) == TCL_OK;
+}
+
+static int
+MayOverlap(const TclType *a, const TclType *b, int depth)
+{
+    Tcl_Size i;
+
+    a = OverlapBase(a);
+    b = OverlapBase(b);
+    if (depth > 8 || a == NULL || b == NULL || a == b
+	    || TclTypeIsAny(a) || TclTypeIsAny(b)) {
+	return 1;
+    }
+    if (a->kind != TCLT_SUM && b->kind == TCLT_SUM) {
+	const TclType *x = a;
+
+	a = b;
+	b = x;
+    }
+    if (a->kind == TCLT_SUM) {
+	for (i = 0; i < a->nfields; i++) {
+	    const TclTypeField *f = &a->fields[i];
+
+	    if (f->type == NULL) {
+		if (f->literal != NULL && SumLiteralFits(b, f->literal)) {
+		    return 1;
+		}
+	    } else if (MayOverlap(f->type, b, depth + 1)) {
+		return 1;
+	    }
+	}
+	return 0;
+    }
+    if (a->kind == TCLT_STRING || b->kind == TCLT_STRING
+	    || a->kind == TCLT_VAR || b->kind == TCLT_VAR) {
+	return 1;
+    }
+    /* Mettre le scalaire, puis le dict, en premier. */
+    if ((b->kind == TCLT_INT || b->kind == TCLT_DOUBLE)
+	    && a->kind != TCLT_INT && a->kind != TCLT_DOUBLE) {
+	const TclType *x = a;
+
+	a = b;
+	b = x;
+    }
+    if (a->kind == TCLT_INT || a->kind == TCLT_DOUBLE) {
+	switch (b->kind) {
+	case TCLT_INT:
+	case TCLT_DOUBLE:
+	    return 1;
+	case TCLT_LIST:
+	    return (b->arity < 0 || b->arity == 1)
+		    && MayOverlap(a, b->elem, depth + 1);
+	case TCLT_PRODUCT:
+	    return b->nfields == 1
+		    && MayOverlap(a, b->fields[0].type, depth + 1);
+	default:
+	    return 0;			/* un dict a un nombre pair de mots */
+	}
+    }
+    if (b->kind == TCLT_DICT && a->kind != TCLT_DICT) {
+	const TclType *x = a;
+
+	a = b;
+	b = x;
+    }
+    if (a->kind == TCLT_DICT) {
+	switch (b->kind) {
+	case TCLT_DICT:
+	    return 1;			/* le dict vide, au moins */
+	case TCLT_LIST:
+	    return b->arity < 0 || b->arity % 2 == 0;
+	case TCLT_PRODUCT:
+	    return b->nfields % 2 == 0;
+	default:
+	    return 1;
+	}
+    }
+    if (a->kind == TCLT_PRODUCT && b->kind == TCLT_LIST) {
+	const TclType *x = a;
+
+	a = b;
+	b = x;
+    }
+    if (a->kind == TCLT_LIST && b->kind == TCLT_LIST) {
+	if (a->arity < 0 || b->arity < 0) {
+	    if (a->arity <= 0 || b->arity <= 0) {
+		return 1;		/* la liste vide */
+	    }
+	} else if (a->arity != b->arity) {
+	    return 0;
+	} else if (a->arity == 0) {
+	    return 1;
+	}
+	return MayOverlap(a->elem, b->elem, depth + 1);
+    }
+    if (a->kind == TCLT_LIST && b->kind == TCLT_PRODUCT) {
+	if (a->arity >= 0 && a->arity != b->nfields) {
+	    return 0;
+	}
+	if (b->nfields == 0) {
+	    return 1;
+	}
+	for (i = 0; i < b->nfields; i++) {
+	    if (!MayOverlap(a->elem, b->fields[i].type, depth + 1)) {
+		return 0;
+	    }
+	}
+	return 1;
+    }
+    if (a->kind == TCLT_PRODUCT && b->kind == TCLT_PRODUCT) {
+	if (a->nfields != b->nfields) {
+	    return 0;
+	}
+	for (i = 0; i < a->nfields; i++) {
+	    if (!MayOverlap(a->fields[i].type, b->fields[i].type, depth + 1)) {
+		return 0;
+	    }
+	}
+	return 1;
+    }
+    return 1;
+}
+
+/* Les paires de variantes de la somme tp qui peuvent accepter une même
+ * valeur : {{a b} {a c} ...}, vide si la somme est disjointe. */
+Tcl_Obj *
+TclTypeSumOverlaps(const TclType *tp)
+{
+    Tcl_Obj *res = Tcl_NewListObj(0, NULL);
+    Tcl_Size i, j;
+
+    for (i = 0; i < tp->nfields; i++) {
+	for (j = i + 1; j < tp->nfields; j++) {
+	    const TclTypeField *a = &tp->fields[i], *b = &tp->fields[j];
+	    int ov;
+
+	    if (a->type == NULL && b->type == NULL) {
+		ov = a->literal != NULL && b->literal != NULL
+			&& strcmp(Tcl_GetString(a->literal),
+				Tcl_GetString(b->literal)) == 0;
+	    } else if (a->type == NULL) {
+		ov = a->literal != NULL && SumLiteralFits(b->type, a->literal);
+	    } else if (b->type == NULL) {
+		ov = b->literal != NULL && SumLiteralFits(a->type, b->literal);
+	    } else {
+		ov = MayOverlap(a->type, b->type, 0);
+	    }
+	    if (ov) {
+		Tcl_Obj *pair[2];
+
+		/* une variante sans nom : son indice */
+		pair[0] = a->name ? a->name : a->literal ? a->literal
+			: Tcl_NewWideIntObj(i);
+		pair[1] = b->name ? b->name : b->literal ? b->literal
+			: Tcl_NewWideIntObj(j);
+		Tcl_ListObjAppendElement(NULL, res, Tcl_NewListObj(2, pair));
+	    }
+	}
+    }
+    return res;
 }
 
 /* type is {question?}SUJET : une question sur un type ou une valeur. */
@@ -6951,9 +7301,37 @@ TypeIsCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 		    && tp->compactWanted));
 	}
 	rc = TCL_OK;
+    } else if (strcmp(Tcl_GetString(q), "strict?") == 0) {
+	/* v16m : type is {strict?}S : 1 si S a été défini {-strict}. */
+	Tcl_Size tl;
+	const char *tt = Tcl_GetStringFromObj(subject, &tl);
+	TclType *tp = (tl > 0) ? TclTypeParse(interp, tt, tl) : NULL;
+
+	if (tp == NULL) {
+	    goto done;
+	}
+	Tcl_SetObjResult(interp, Tcl_NewBooleanObj(tp->kind == TCLT_SUM
+		&& tp->sumMode == TCLT_SUM_STRICT));
+	rc = TCL_OK;
+    } else if (strcmp(Tcl_GetString(q), "disjoint?") == 0) {
+	/* v16m : type is {disjoint?}S : les paires de variantes de la somme
+	 * S qui peuvent accepter une même valeur (vide : disjointe). */
+	Tcl_Size tl;
+	const char *tt = Tcl_GetStringFromObj(subject, &tl);
+	TclType *tp = (tl > 0) ? TclTypeParse(interp, tt, tl) : NULL;
+
+	if (tp == NULL) {
+	    goto done;
+	}
+	if (tp->kind != TCLT_SUM) {
+	    ERR(interp, "IS", "type is {disjoint?}: %s is not a sum", tp->name);
+	    goto done;
+	}
+	Tcl_SetObjResult(interp, TclTypeSumOverlaps(tp));
+	rc = TCL_OK;
     } else {
-	ERR(interp, "IS", "unknown question \"%s\": must be compact?",
-		Tcl_GetString(q));
+	ERR(interp, "IS", "unknown question \"%s\": must be compact?, "
+		"disjoint? or strict?", Tcl_GetString(q));
     }
   done:
     Tcl_DecrRefCount(words);
@@ -7234,6 +7612,7 @@ TypeObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
     if (strcmp(sub, "def") == 0 || strcmp(sub, "define") == 0
 	    || strcmp(sub, "alias") == 0) {
 	int isAlias = (strcmp(sub, "alias") == 0), compact = 0, rc;
+	int strict = 0, deduce = 0;
 	Tcl_Obj *words, *nameObj, **wv;
 	TclObjVec keep = {NULL, 0, 0};
 	Tcl_Size nw, k;
@@ -7249,18 +7628,43 @@ TypeObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
 	for (k = 0; k < nw; k++) {
 	    const char *w = Tcl_GetString(wv[k]);
 
+	    const char *dot = strchr(w, '.'), *eq = strchr(w, '=');
+	    size_t base = dot ? (size_t) (dot - w)
+		    : eq ? (size_t) (eq - w) : strlen(w);
+
+	    if (!isAlias && (dot != NULL || eq != NULL)
+		    && ((base == 8 && strncmp(w, "-compact", 8) == 0)
+		    || (base == 7 && strncmp(w, "-strict", 7) == 0)
+		    || (base == 7 && strncmp(w, "-deduce", 7) == 0))) {
+		ERR(interp, "OPTION", "type def: option {%.*s} takes no "
+			"sub-option or value: {%s}", (int) base, w, w);
+		Tcl_DecrRefCount(words);
+		TclVecFree(&keep);
+		return TCL_ERROR;
+	    }
 	    if (strcmp(w, "-compact") == 0 && !isAlias) {
 		compact = 1;
+	    } else if (strcmp(w, "-strict") == 0 && !isAlias) {
+		strict = 1;
+	    } else if (strcmp(w, "-deduce") == 0 && !isAlias) {
+		deduce = 1;
 	    } else {
 		ERR(interp, "OPTION", "type %s: unknown option {%s}%s", sub, w,
 			isAlias ? " (an alias is not a new type: it takes no "
-			"option)" : ": must be {-compact}");
+			"option)" : ": must be {-compact}, {-strict} or "
+			"{-deduce} (several: {-compact,-strict})");
 		Tcl_DecrRefCount(words);
 		TclVecFree(&keep);
 		return TCL_ERROR;
 	    }
 	}
 	Tcl_DecrRefCount(words);
+	if (strict && deduce) {
+	    ERR(interp, "OPTION", "type def: {-strict} and {-deduce} exclude "
+		    "each other");
+	    TclVecFree(&keep);
+	    return TCL_ERROR;
+	}
 	if (compact && strchr(Tcl_GetString(nameObj), '(') != NULL) {
 	    ERR(interp, "OPTION", "type def {-compact}: not yet for a type "
 		    "family (%s)", Tcl_GetString(nameObj));
@@ -7268,6 +7672,63 @@ TypeObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
 	    return TCL_ERROR;
 	}
 	rc = TypeDefine(interp, d, nameObj, objv[3], isAlias);
+	if (rc == TCL_OK && !isAlias
+		&& strchr(Tcl_GetString(nameObj), '(') == NULL) {
+	    /*
+	     * v16m : une somme. {-strict} : la variante d'une valeur nue n'est
+	     * jamais devinée. {-deduce} : la plus stricte gagne (le défaut).
+	     * Sans option, une somme dont deux variantes peuvent accepter une
+	     * même valeur reçoit un avertissement : le choix doit se voir.
+	     */
+	    Tcl_HashEntry *h = Tcl_FindHashEntry(&d->names,
+		    Tcl_GetString(nameObj));
+	    TclType *tp = (h != NULL) ? (TclType *) Tcl_GetHashValue(h) : NULL;
+
+	    if ((strict || deduce) && (tp == NULL || tp->kind != TCLT_SUM)) {
+		ERR(interp, "OPTION", "type def {-%s}%s: only a sum has a "
+			"variant to choose", strict ? "strict" : "deduce",
+			Tcl_GetString(nameObj));
+		if (h != NULL) {
+		    Tcl_DeleteHashEntry(h);	/* la définition est annulée */
+		    d->gen++;
+		}
+		TclVecFree(&keep);
+		return TCL_ERROR;
+	    }
+	    if (tp != NULL && tp->kind == TCLT_SUM) {
+		tp->sumMode = strict ? TCLT_SUM_STRICT : TCLT_SUM_DEDUCE;
+		if (!strict && !deduce && tp->binTag == NULL) {
+		    Tcl_Obj *ov = TclTypeSumOverlaps(tp);
+		    Tcl_Size nov = 0;
+
+		    Tcl_IncrRefCount(ov);
+		    Tcl_ListObjLength(NULL, ov, &nov);
+		    if (nov > 0) {
+			Tcl_Channel err = Tcl_GetStdChannel(TCL_STDERR);
+			Tcl_Obj *p0, *va, *vb;
+
+			Tcl_ListObjIndex(NULL, ov, 0, &p0);
+			Tcl_ListObjIndex(NULL, p0, 0, &va);
+			Tcl_ListObjIndex(NULL, p0, 1, &vb);
+			if (err != NULL) {
+			    Tcl_Obj *m = Tcl_ObjPrintf("warning: type def %s: "
+				    "variants %s and %s can take the same value "
+				    "(type is {disjoint?}%s); write {-deduce}%s "
+				    "to keep the deduction, or {-strict}%s\n",
+				    tp->name, Tcl_GetString(va),
+				    Tcl_GetString(vb), tp->name, tp->name,
+				    tp->name);
+
+			    Tcl_IncrRefCount(m);
+			    Tcl_WriteObj(err, m);
+			    Tcl_Flush(err);
+			    Tcl_DecrRefCount(m);
+			}
+		    }
+		    Tcl_DecrRefCount(ov);
+		}
+	    }
+	}
 	if (rc == TCL_OK && compact) {
 	    const char *nm = Tcl_GetString(nameObj);
 	    Tcl_HashEntry *h = Tcl_FindHashEntry(&d->names, nm);
