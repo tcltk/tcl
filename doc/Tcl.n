@@ -46,8 +46,9 @@ then the word is terminated by the next double-quote character.
 If semi-colons, close brackets, or white space characters
 (including newlines) appear between the quotes then they are treated
 as ordinary characters and included in the word.
-Command substitution, variable substitution, and backslash substitution
-are performed on the characters between the quotes as described below.
+Command substitution, variable substitution, expression substitution, and
+backslash substitution are performed on the characters between the quotes
+as described below.
 The double-quotes are not retained as part of the word.
 .IP "[5] \fBArgument expansion.\fR"
 If a word starts with the string
@@ -55,11 +56,11 @@ If a word starts with the string
 followed by a non-whitespace character, then the leading
 .QW {*}
 is removed and the rest of the word is parsed and substituted as any other
-word. After substitution, the word is parsed as a list (without command or
-variable substitutions; backslash substitutions are performed as is normal for
-a list and individual internal words may be surrounded by either braces or
-double-quote characters), and its words are added to the command being
-substituted. For instance,
+word. After substitution, the word is parsed as a list (without command,
+variable, or expression substitutions; backslash substitutions are performed
+as is normal for a list and individual internal words may be surrounded by
+either braces or double-quote characters), and its words are added to the
+command being substituted. For instance,
 .QW "cmd a {*}{b [c]} d {*}{$e f {g h}}"
 is equivalent to
 .QW "cmd a b {[c]} d {$e} f {g h}" .
@@ -179,8 +180,10 @@ prints
 Extra parentheses around the expression make no difference:
 \fB$(( $a+$b ))\fR and \fB$(( ($a+$b) ))\fR have the same value.
 .PP
-There may be any number of variable substitutions in a single word.
-Variable substitution is not performed on words enclosed in braces.
+There may be any number of variable and expression substitutions in a single
+word.
+Variable and expression substitution is not performed on words enclosed in
+braces.
 .PP
 Note that variables may contain character sequences other than those listed
 above, but in that case other mechanisms must be used to access them (e.g.,
