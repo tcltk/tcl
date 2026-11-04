@@ -327,12 +327,16 @@ section | number of documents | initial conversion | final conversion
 --------|---------------------|--------------------|-----------------
 1       | 1                   | 0                  | 0
 3       | 87                  | 0                  | 0
-n       | 93                  | 93                 | 2
+n       | 93                  | 93                 | 6
 
 Final conversion of these files in the n section is currently done:
 
 1. accessible
 2. attribtable
+3. bell
+4. bind (the list of modifiers and the list of event types need manual formatting, as well as the definition for the %d substitution)
+5. bindtags
+6. bitmap
 
 # Open issues
 This section lists the shortcoming which are still present in the pages that already have an initial markdown version.
