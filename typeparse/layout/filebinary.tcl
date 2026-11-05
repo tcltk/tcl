@@ -1173,7 +1173,10 @@ proc ::fb::options {argv known} {
 # FR : le résultat d'un type non produit est lui aussi une valeur typée
 # EN : the result of a non-product type is a typed value too
 proc ::fb::typed {type v} {
-    set k [lindex [repr $type] 0]
+    set r [repr $type]
+    # at(N).T : la sorte est celle de T (une liste reste une liste)
+    while {[lindex $r 0] eq "at"} {set r [lindex $r 2]}
+    set k [lindex $r 0]
     if {$k eq "product"} {return $v}
     # FR : la valeur passe par variable (une chaîne perdrait le type des
     #      éléments) ; une liste est donnée élément par élément, comme le veut

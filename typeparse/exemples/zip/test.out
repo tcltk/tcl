@@ -1,0 +1,32 @@
+--- le format, par ses types
+une archive ?                  1 0
+{is?} sur la fin               1
+{is?} sur le début             1
+membres                        main.tcl lib/util.tcl données/é.txt
+commentaire                    archive de test
+une entrée (type)              ::zipmem::entry
+ses champs par chemin          8 119 204
+info                           size 350 compressed 14 method deflate crc 2317385905
+lire (stored)                  namespace eval util {proc hello {} {return "util.tcl : bonjour"}}
+lire (deflate, utf-8)          héhé
+
+membre absent                  ERREUR: zipmem: no member "nulle/part" in the archive
+--- sourcer
+main.tcl : app.zip/main.tcl
+util.tcl : bonjour
+zipmem::source app.zip         fin de main.tcl
+main.tcl : zipmem1/main.tcl
+util.tcl : bonjour
+zipmem::source -data           fin de main.tcl
+main.tcl : app.zip/main.tcl
+util.tcl : bonjour
+source app.zip                 fin de main.tcl
+source d'un .tcl ordinaire     un script ordinaire
+--- d'autres archives
+zipfs mkzip                    bonjour (zipfs mkzip)
+derrière 5000 octets           5000 {main.tcl lib/util.tcl données/é.txt}
+main.tcl : sfx.zip/main.tcl
+util.tcl : bonjour
+source de cette archive        fin de main.tcl
+flux (zip64)                   - 143
+vide                           

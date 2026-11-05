@@ -2308,3 +2308,14 @@ Sources de types : `tclTypes.c`, `tclTypes.h`, `tclTypesInt.h`, `tclAnnotObj.c`,
   types dans `::math::geometry` ; `make test` : mêmes échecs que la référence (61) ; valgrind
   propre (sauf `executable_pe`, comme avant), y compris des valeurs (simples, en cases, sommes,
   défauts typés) qui survivent à `interp delete`.
+
+### Exemple `zip` (6 novembre 2026, sur v16u)
+
+`exemples/zip/zipmem.tcl` : une archive zip décrite par des types binaires, lue en mémoire,
+et `source app.zip` (voir son `LISEZMOI.md`). Une correction dans `layout/filebinary.tcl` :
+`::fb::typed` range un `at(N).list(...).T` décodé en tête comme une liste (il le rangeait comme
+une valeur seule : `T needs 20 values but got 3`). Constats sur la vitesse de `type binary
+decode`, à reprendre : la voie C ne prend qu'un produit en tête (une liste seule passe par la
+couche Tcl, 75 fois plus lente) ; décoder à `-offset` dans une grande chaîne coûte sa copie
+(11 ms sur 16 Mo, 5 µs dans une tranche) ; un lien non suivi (`-linkdepth 0`) passe par la
+couche Tcl ; dans cette couche, un produit anonyme (`prod<...>`) ne se range pas.
