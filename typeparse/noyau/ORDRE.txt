@@ -41,3 +41,4 @@ cast-immediat-etiquettes.patch
 piste-b-expiration.patch
 annot-fallthrough.patch
 procs-typees.patch
+procs-typees-locales.patch

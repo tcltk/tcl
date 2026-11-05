@@ -8255,13 +8255,102 @@ IsOpObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
  * référence propre (la valeur elle-même quand elle est déjà de type T).
  * mayOwn : valueObj non partagée peut devenir le contenu (valeur de la pile
  * d'exécution, que seule la pile tient : la liste neuve de (a, b)). */
+static int DeclareTypedTp(Tcl_Interp *interp, TclType *tp, Tcl_Obj *typeObj,
+	Tcl_Obj *valueObj, int mayOwn, Tcl_Obj **typedPtr);
+
+/* Un champ scalaire simple : int, double, string, sans représentation
+ * binaire qui borne la valeur. */
+static int
+QuickScalarOk(const TclType *ft, Tcl_Obj *v)
+{
+    double d;
+
+    if (ft == NULL || ft->binLink != NULL) {
+	return 0;
+    }
+    switch (ft->kind) {
+    case TCLT_DOUBLE:
+	return Tcl_GetDoubleFromObj(NULL, v, &d) == TCL_OK;
+    case TCLT_INT:
+	return ft->bitWidth == 0 && ft->binKind != TCLBIN_UINT
+		&& ft->binKind != TCLBIN_SINT && IsIntegerValue(v);
+    case TCLT_STRING:
+	return ft->binKind == TCLBIN_NONE && !TclIsAnnotated(v);
+    default:
+	return 0;
+    }
+}
+
+/* v16s : un produit de scalaires simples donné par une liste nue d'autant
+ * de valeurs que de champs : la valeur typée, ou NULL (cas général : le
+ * message d'erreur, les défauts, les cases viennent du chemin ordinaire). */
+/* Les valeurs d'une liste nue, champ par champ, pour un produit de
+ * scalaires simples : *plainPtr reçoit la liste des contenus (nue, refcount
+ * 0 ; la liste elle-même si aucun élément n'est annoté), ou NULL. Un
+ * élément déjà typé du type du champ, sans note, est accepté. */
+static Tcl_Obj *
+ScalarProductPlain(TclType *tp, Tcl_Obj *valueObj)
+{
+    Tcl_Size n, i;
+    Tcl_Obj **ev, *buf[16], **cv = buf, *res;
+    int annotated = 0;
+
+    if (tp->kind != TCLT_PRODUCT || tp->compactWanted || tp->binTag != NULL
+	    || Tcl_ListObjGetElements(NULL, valueObj, &n, &ev) != TCL_OK
+	    || n != tp->nfields || n == 0 || n > 16) {
+	return NULL;
+    }
+    for (i = 0; i < n; i++) {
+	const TclType *ft = tp->fields[i].type;
+	Tcl_Obj *e = ev[i];
+
+	if (TclIsAnnotated(e)) {
+	    TclType *et = NULL;
+	    Tcl_Obj *c = NULL;
+
+	    if (TclAnnotInfo(e, &c, &et, NULL, NULL) != 1 || et != ft
+		    || c == NULL || !TclAnnotIsSettled(e)) {
+		return NULL;
+	    }
+	    e = c;
+	    annotated = 1;
+	} else if (!QuickScalarOk(ft, e)) {
+	    return NULL;
+	}
+	cv[i] = e;
+    }
+    res = annotated ? Tcl_NewListObj(n, cv) : valueObj;
+    return res;
+}
+
+static Tcl_Obj *
+ScalarProductQuick(Tcl_Interp *interp, TclType *tp, Tcl_Obj *valueObj)
+{
+    Tcl_Obj *plain = ScalarProductPlain(tp, valueObj), *copy;
+
+    if (plain == NULL) {
+	return NULL;
+    }
+    copy = (plain == valueObj) ? Tcl_DuplicateObj(valueObj) : plain;
+    return TclNewAnnotatedOwn(copy, TclTypeRefFor(interp, tp, -1));
+}
+
 static int
 DeclareTyped(Tcl_Interp *interp, Tcl_Obj *typeObj, Tcl_Obj *valueObj,
 	int mayOwn, Tcl_Obj **typedPtr)
 {
+    return DeclareTypedTp(interp, TclAnnotTypeOf(interp, typeObj), typeObj,
+	    valueObj, mayOwn, typedPtr);
+}
+
+/* v16s : la même chose, le type déjà résolu (tp, peut être NULL). */
+static int
+DeclareTypedTp(Tcl_Interp *interp, TclType *tp, Tcl_Obj *typeObj,
+	Tcl_Obj *valueObj, int mayOwn, Tcl_Obj **typedPtr)
+{
     /* X is T = $x avec $x déjà de type T, sans note : la valeur telle
      * quelle (le cas courant des procédures typées : P is point = $p) */
-    TclType *tp = TclAnnotTypeOf(interp, typeObj), *vt = NULL;
+    TclType *vt = NULL;
     Tcl_Size np = 1;
 
     if (tp != NULL && TclAnnotInfo(valueObj, NULL, &vt, NULL, NULL) == 1
@@ -8281,11 +8370,26 @@ DeclareTyped(Tcl_Interp *interp, Tcl_Obj *typeObj, Tcl_Obj *valueObj,
     } else if (tp != NULL && (tp->kind == TCLT_INT || tp->kind == TCLT_DOUBLE)
 	    && !TclIsAnnotated(valueObj)) {
 	/* X is double = $x : un nombre n'a rien à compléter ; le contenu est
-	 * partagé (une valeur est immuable), comme pour la lecture d'un champ */
-	if (TclTypeValidate(interp, tp, valueObj, -1, NULL) != TCL_OK) {
+	 * partagé (une valeur est immuable), comme pour la lecture d'un champ.
+	 * v16s : double et int simples vérifiés directement (ValidateG fait
+	 * la même chose après ses cas généraux) ; le message vient de
+	 * TclTypeValidate. */
+	double dv;
+	int quick = (tp->binLink == NULL) && (tp->kind == TCLT_DOUBLE
+		? Tcl_GetDoubleFromObj(NULL, valueObj, &dv) == TCL_OK
+		: (tp->bitWidth == 0 && tp->binKind != TCLBIN_UINT
+		    && tp->binKind != TCLBIN_SINT
+		    && IsIntegerValue(valueObj)));
+
+	if (!quick && TclTypeValidate(interp, tp, valueObj, -1, NULL)
+		!= TCL_OK) {
 	    return TCL_ERROR;
 	}
 	*typedPtr = TclNewAnnotatedShared(interp, tp, -1, valueObj);
+    } else if (tp != NULL && !TclIsAnnotated(valueObj)
+	    && (*typedPtr = ScalarProductQuick(interp, tp, valueObj)) != NULL) {
+	/* v16s : un produit de scalaires donné en liste ({1 2} pour un
+	 * point) : ses champs vérifiés un à un, sans le validateur général */
     } else if (tp != NULL && !TclIsAnnotated(valueObj)) {
 	/* X is T = (a, b) : une valeur sans annotation, construite
 	 * directement (ce que ferait le résolveur du constructeur) */
@@ -8760,6 +8864,12 @@ typedef struct TypedArg {
     Tcl_Obj *cache[2];		/* OPT_SCALAR : la valeur typée du défaut (ou
 				 * 0) et de 1 (drapeau donné), partagées */
     size_t cacheGen;		/* génération des types de ce cache */
+    TclType *ctp;		/* v16s : le type du champ, résolu (typeText) */
+    size_t ctpGen;		/* ... pour cette génération des types */
+    Tcl_Size lidx;		/* v16s : l'indice de la locale compilée (à
+				 * vérifier par son nom), ou -1 */
+    Tcl_Obj *lname;		/* ... et l'objet nom vu à cet indice (une
+				 * référence : l'égalité des pointeurs suffit) */
 } TypedArg;
 
 /* Un mot d'option reconnu à l'appel. */
@@ -8790,7 +8900,10 @@ typedef struct TclTypedSig {
     Tcl_Obj *retText;		/* le type de retour, ou NULL */
     int unfold;			/* v16r : {*}T (1, une liste), {**}T (2, un
 				 * dict) : le résultat est rendu déplié */
+    TclType *retTp;		/* v16s : retText résolu ... */
+    size_t retGen;		/* ... pour cette génération des types */
     Tcl_Obj *usage;		/* p ?dx? ?dy? */
+    Tcl_Obj **locals;		/* v16s : les noms des locales des champs */
 } TclTypedSig;
 
 static Tcl_Obj *
@@ -8843,12 +8956,16 @@ TclTypedSigRelease(void *sigv)
 	DecrIf(a->varElem);
 	DecrIf(a->cache[0]);
 	DecrIf(a->cache[1]);
+	DecrIf(a->lname);
     }
     for (i = 0; i < sig->nopts; i++) {
 	DecrIf(sig->opts[i].opt);
     }
     if (sig->opts != NULL) {
 	Tcl_Free(sig->opts);
+    }
+    if (sig->locals != NULL) {
+	Tcl_Free(sig->locals);
     }
     if (sig->pos != NULL) {
 	Tcl_Free(sig->pos);
@@ -9395,6 +9512,7 @@ TclTypedProcSig(Tcl_Interp *interp, Tcl_Obj *nameObj, Tcl_Obj *argsObj,
 		Tcl_IncrRefCount(a->defcmd);
 	    }
 	    a->tp = f->type;
+	    a->lidx = -1;
 	    if (nm[0] == '-') {
 		/* v16q : une option */
 		if (Tcl_GetCharLength(uopt) > 0) {
@@ -9630,6 +9748,65 @@ DeclareLocalTyped(Tcl_Interp *interp, Tcl_Obj *nameObj, Tcl_Obj *typeText,
     return TCL_OK;
 }
 
+/* v16s : la locale compilée d'un champ (AddTypedLocals, tclProc.c), par
+ * son indice, vérifié par son nom ; NULL si le champ n'en a pas. */
+static Var *
+FieldVar(Tcl_Interp *interp, TypedArg *a)
+{
+    CallFrame *framePtr = ((Interp *) interp)->varFramePtr;
+    Tcl_Size i, n = framePtr->numCompiledLocals, ll;
+    const char *ln = Tcl_GetStringFromObj(a->local, &ll);
+
+    if (framePtr->localCachePtr == NULL) {
+	return NULL;
+    }
+    if (a->lidx >= 0 && a->lidx < n
+	    && localName(framePtr, a->lidx) == a->lname) {
+	return &framePtr->compiledLocals[a->lidx];
+    }
+    for (i = 0; i < n; i++) {
+	Tcl_Obj *nm = localName(framePtr, i);
+	Tcl_Size l;
+
+	if (nm != NULL && strcmp(Tcl_GetStringFromObj(nm, &l), ln) == 0
+		&& l == ll) {
+	    a->lidx = i;
+	    Tcl_IncrRefCount(nm);	/* tenu : son adresse reste la sienne */
+	    DecrIf(a->lname);
+	    a->lname = nm;
+	    return &framePtr->compiledLocals[i];
+	}
+    }
+    return NULL;
+}
+
+/* v16s : déclare la locale du champ a (type résolu une fois par génération
+ * des types, locale compilée trouvée par son indice). */
+static int
+DeclareField(Tcl_Interp *interp, TypedArg *a, Tcl_Obj *v)
+{
+    Tcl_Obj *typed = NULL, *res;
+    size_t uid, gen;
+    Var *varPtr;
+
+    (void) TclTypesGeneration(interp, &uid, &gen);
+    if (a->ctp == NULL || a->ctpGen != gen) {
+	a->ctp = TclAnnotTypeOf(interp, a->typeText);
+	a->ctpGen = gen;
+    }
+    if (DeclareTypedTp(interp, a->ctp, a->typeText, v, 0, &typed)
+	    != TCL_OK) {
+	return TCL_ERROR;
+    }
+    Tcl_IncrRefCount(typed);
+    varPtr = FieldVar(interp, a);
+    res = (varPtr != NULL)
+	    ? TclTypedVarDeclareVar(interp, varPtr, NULL, a->local, typed)
+	    : TclTypedVarDeclare(interp, a->local, typed);
+    Tcl_DecrRefCount(typed);
+    return (res != NULL) ? TCL_OK : TCL_ERROR;
+}
+
 /* La valeur absente d'une option ou d'un champ : son défaut (ou 0 pour un
  * drapeau), NULL si aucun (la locale reste indéfinie). Référence propre. */
 static int
@@ -9750,8 +9927,15 @@ BindOption(Tcl_Interp *interp, TclTypedSig *sig, Tcl_Size ai, Tcl_Obj **ov)
 		Tcl_DecrRefCount(raw);
 		a->cache[slot] = typed;
 	    }
-	    if (TclTypedVarDeclare(interp, a->local, a->cache[slot]) == NULL) {
-		return TypedArgError(interp, a);
+	    {
+		Var *fv = FieldVar(interp, a);
+
+		if ((fv != NULL ? TclTypedVarDeclareVar(interp, fv, NULL,
+			a->local, a->cache[slot])
+			: TclTypedVarDeclare(interp, a->local, a->cache[slot]))
+			== NULL) {
+		    return TypedArgError(interp, a);
+		}
 	    }
 	    return TCL_OK;
 	}
@@ -9766,7 +9950,7 @@ BindOption(Tcl_Interp *interp, TclTypedSig *sig, Tcl_Size ai, Tcl_Obj **ov)
 		return TCL_OK;		/* absente, sans défaut : indéfinie */
 	    }
 	}
-	if (DeclareLocalTyped(interp, a->local, a->typeText, v) != TCL_OK) {
+	if (DeclareField(interp, a, v) != TCL_OK) {
 	    Tcl_DecrRefCount(v);
 	    return TypedArgError(interp, a);
 	}
@@ -10279,7 +10463,7 @@ TclTypedProcBind(Tcl_Interp *interp, void *sigv, Tcl_Size skip)
 	    }
 	    continue;
 	}
-	if (DeclareLocalTyped(interp, a->name, a->typeText, v) != TCL_OK) {
+	if (DeclareField(interp, a, v) != TCL_OK) {
 	    TypedArgError(interp, a);
 	    goto done;
 	}
@@ -10287,8 +10471,7 @@ TclTypedProcBind(Tcl_Interp *interp, void *sigv, Tcl_Size skip)
     if (restList != NULL) {
 	TypedArg *a = &sig->a[restField];
 
-	if (DeclareLocalTyped(interp, a->name, a->typeText, restList)
-		!= TCL_OK) {
+	if (DeclareField(interp, a, restList) != TCL_OK) {
 	    TypedArgError(interp, a);
 	    goto done;
 	}
@@ -10370,6 +10553,35 @@ TclTypedProcReturn(Tcl_Interp *interp, void *sigv, int result)
 	return result;
     }
     res = Tcl_GetObjResult(interp);
+    if (!TclIsAnnotated(res)) {
+	/* v16s : un produit de scalaires rendu en liste nue ( $x, $y ) :
+	 * ses champs vérifiés un à un ; {*}T le rend tel quel */
+	size_t uid, gen;
+	TclType *rt;
+	Tcl_Obj *q;
+
+	(void) TclTypesGeneration(interp, &uid, &gen);
+	if (sig->retTp == NULL || sig->retGen != gen) {
+	    sig->retTp = TclAnnotTypeOf(interp, sig->retText);
+	    sig->retGen = gen;
+	}
+	rt = sig->retTp;
+	if (rt != NULL && rt->kind == TCLT_PRODUCT) {
+	    if (sig->unfold == 1) {
+		Tcl_Obj *plain = ScalarProductPlain(rt, res);
+
+		if (plain != NULL) {
+		    if (plain != res) {
+			Tcl_SetObjResult(interp, plain);
+		    }
+		    return result;	/* la forme dépliée */
+		}
+	    } else if ((q = ScalarProductQuick(interp, rt, res)) != NULL) {
+		SetRet(interp, sig, q);
+		return result;
+	    }
+	}
+    }
     if (TclIsAnnotated(res) && TclAnnotIsSettled(res)) {
 	/* déjà du type de retour (return $p, p typée) : rien à faire */
 	TclType *rt = TclAnnotTypeOf(interp, sig->retText), *vt = NULL;
@@ -10568,4 +10780,34 @@ TclTypedSigDefault(void *sigv, const char *name, Tcl_Obj **defPtr)
 	}
     }
     return -1;
+}
+
+/* v16s : les noms des variables locales des champs (pour qu'elles soient
+ * des locales compilées : tclProc.c, AddTypedLocals). */
+Tcl_Size
+TclTypedSigLocals(void *sigv, Tcl_Obj ***namesPtr)
+{
+    TclTypedSig *sig = (TclTypedSig *) sigv;
+    Tcl_Size i;
+
+    if (sig == NULL || sig->n <= 0) {
+	*namesPtr = NULL;
+	return 0;
+    }
+    if (sig->locals == NULL) {
+	sig->locals = (Tcl_Obj **) Tcl_Alloc(sizeof(Tcl_Obj *) * sig->n);
+	for (i = 0; i < sig->n; i++) {
+	    sig->locals[i] = sig->a[i].local;
+	}
+    }
+    *namesPtr = sig->locals;
+    return sig->n;
+}
+
+/* v16s : la signature lie elle-même les mots (liste typée) : InitArgsAndLocals
+ * n'a pas à faire la liste « args ». */
+int
+TclTypedSigTakesWords(void *sigv)
+{
+    return sigv != NULL && ((TclTypedSig *) sigv)->n >= 0;
 }

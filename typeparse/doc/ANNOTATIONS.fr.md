@@ -493,6 +493,8 @@ f 3                            ;# 1.5
 
 **Variables de boucle.** `foreach`, `lmap`, `dict for`, `dict map` (et le filtre de `dict filter`) oublient le type de leur variable avant chaque affectation ; après la boucle, la variable garde le type du dernier élément reçu.
 
+**Listes de scalaires (v16s).** Les éléments d'une `list.int`, `list.double` ou `list.string` (types simples : ni nominaux, ni binaires) restent nus dans la liste : ils ont été vérifiés avec elle. `foreach`, `lmap`, `lassign` (le reste) et `lrange` les rendent nus ; `lindex $L i` et `$L(i)` en font une valeur typée à la demande. Une variable ou une procédure typée qui reçoit un élément nu le revérifie. Les listes de produits, de sommes, de `any` ou de types nominaux gardent leurs éléments typés. (Envelopper chaque élément d'une liste neuve coûtait 2,5 fois la boucle.)
+
 #### 6.3 `type deref` : un instantané des liens
 
 `type deref V` rend `V` où chaque lien `var` est remplacé par la valeur qu'a la variable à cet instant. Le résultat a le type « sans les liens » (`list.var.int` → `list.int`), nommé `deref(<type>)` pour un produit ou une somme. Un seul niveau est suivi par appel ; une variable manquante est une erreur qui nomme la case (`type deref: at 2: can't read "::C": no such variable`), sans résultat partiel. Fonctionne dans les listes, dicts, produits, sommes et types récursifs ; un cycle ne boucle jamais.

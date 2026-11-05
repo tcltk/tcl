@@ -2195,3 +2195,38 @@ Pas de patch noyau. Source de types : `tclTypes.c`.
   tests de tcllib passent (Tcl et C). Coût de la vérification au retour : 0,3 à 0,9 µs par appel
   (`p 1 2` : 0,99 → 1,46 µs ; `findLineIntersection` : 2,37 → 3,24 µs).
 - Nouveau test `t98_depliage`. 76 tests ; mêmes sorties en forme compacte ; valgrind propre.
+
+### v16s — optimisations (5 novembre 2026)
+
+Patch noyau `procs-typees-locales.patch` (après `procs-typees.patch`) : `tclProc.c`. Sources de
+types : `tclTypes.c`, `tclTypes.h`, `tclAnnotObj.c`, `tclTypedVar.c`.
+
+- **Liaison des arguments** : les champs d'une signature typée deviennent des locales compilées
+  (`AddTypedLocals`, appelée par `TclProcCompileProc` à chaque compilation du corps, après la
+  remise à zéro des locales) ; la liaison les trouve par leur indice (`FieldVar`, l'objet nom
+  tenu par une référence : l'égalité des pointeurs suffit). Le type de chaque champ est résolu une
+  fois par génération des types. `InitArgsAndLocals` ne fabrique plus la liste `args` pour une
+  signature typée (`TclTypedSigTakesWords`). `int`/`double` vérifiés directement ; un produit de
+  scalaires donné en liste vérifié champ par champ (`ScalarProductQuick`).
+- **Retour** : même chemin rapide ; `{*}T` d'un produit de scalaires rend la liste telle quelle.
+- **Listes de scalaires simples** (`list.int`, `list.double`, `list.string`, ni nominaux ni
+  binaires) : leurs éléments ne sont plus enveloppés dans le contenu (`AnnotWrapElems`) ;
+  `foreach`, `lmap` parcourent le contenu nu (`TclAnnotIterList`), `lassign` (le reste) et
+  `lrange` rendent des éléments nus ; `lindex` et `$L(i)` restent typés. **Changement visible** :
+  `foreach x $L {type get $x}` rend `""` (t55, t88, t93 : sorties mises à jour).
+- `lrange` sur une liste typée ne traite plus que la tranche (`AnnotListSlice`) : `lrange $L end-1
+  end` sur 2 000 nombres, 184 µs → le coût de la liaison seule.
+- **Écritures sous contrat** (`TclTypedVarPrepareWrite`) : une valeur déjà du type du contrat,
+  sans note, est rangée telle quelle ; un nombre nu sous contrat `int`/`double` sans copie
+  (`MakeTyped`).
+- `AnnotWrapElems` : un seul remplacement de la liste pour plusieurs éléments.
+- La table des cases « soi-même » des scalaires annotés est gardée dans une variable propre au
+  thread (libération d'une valeur annotée sans `Tcl_GetThreadData`), oubliée par un gestionnaire
+  de fin de thread.
+- Mesures (µs) : 5 arguments scalaires 1,14 → 0,68 (classique 0,23) ; 2 points 0,86 → 0,56 ; boucle
+  sur 2 000 nombres typés 272 → 111 (classique 97) ; `intervalsOverlap` en expression 2,73 → 1,92 ;
+  retour `{*}point` 0,95 → 0,60. `exemples/tcllib_geometry` : polygones de 1 000 sommets à parité
+  avec tcllib (`areaPolygon` 435 → 209 µs, tcllib 192 ; `pointInsidePolygon` 441 → 222, tcllib
+  248).
+- Vérifié : 76 tests ; mêmes sorties en forme compacte ; tests de tcllib (Tcl et C) ; `make test`
+  : mêmes échecs que la référence ; valgrind propre.

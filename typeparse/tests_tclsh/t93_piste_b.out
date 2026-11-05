@@ -49,4 +49,4 @@ type def ensuite: 5 {} mm2
 rangée par set: 5 {} mm3
 note delete: 5 {} b
 --- boucles compilées : {T}mot casté une fois (annotCast)
-castes: int 1 {expected integer but got "a"} 1 {list(3)<int> needs exactly 3 elements but got 2} 1 {unmatched open brace in list} {a {} b {}} 1 2 30
+castes: {} 1 {expected integer but got "a"} 1 {list(3)<int> needs exactly 3 elements but got 2} 1 {unmatched open brace in list} {a {} b {}} 1 2 30

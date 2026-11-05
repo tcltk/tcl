@@ -545,6 +545,29 @@ static Tcl_ThreadDataKey selfCellsKey;
 static int selfCellsEver = 0;	/* une case a-t-elle déjà été créée ? (sinon,
 				 * la libération ne cherche rien) */
 
+/* v16s : la table du thread, gardée dans une variable propre au thread
+ * (sans Tcl_GetThreadData à chaque libération d'une valeur annotée) ; NULL
+ * tant que ce thread n'a créé aucune case. */
+#if defined(_MSC_VER)
+#  define SELF_TLS __declspec(thread)
+#elif defined(__GNUC__) || defined(__clang__)
+#  define SELF_TLS __thread
+#endif
+#ifdef SELF_TLS
+static SELF_TLS SelfCells *selfCellsTls = NULL;
+static SELF_TLS int selfCellsExiting = 0;
+
+/* À la fin du thread, avant que ses données ne soient libérées : la
+ * libération revient à Tcl_GetThreadData (qui refait une table vide). */
+static void
+SelfCellsTlsForget(void *cd)
+{
+    (void) cd;
+    selfCellsTls = NULL;
+    selfCellsExiting = 1;
+}
+#endif
+
 static SelfCells *
 GetSelfCells(void)
 {
@@ -555,6 +578,12 @@ GetSelfCells(void)
 	Tcl_InitHashTable(&sc->cells, TCL_ONE_WORD_KEYS);
 	sc->init = 1;
     }
+#ifdef SELF_TLS
+    if (selfCellsTls != sc && !selfCellsExiting) {
+	selfCellsTls = sc;
+	Tcl_CreateThreadExitHandler(SelfCellsTlsForget, NULL);
+    }
+#endif
     return sc;
 }
 
@@ -584,8 +613,18 @@ FreeAnnotated(Tcl_Obj *objPtr)
 	FreeAnnotatedReps(objPtr);
 	return;
     }
+#ifdef SELF_TLS
+    sc = selfCellsTls;			/* NULL : aucune case dans ce thread
+					 * (ou fin du thread) */
+    if (sc == NULL) {
+	sc = selfCellsExiting ? (SelfCells *) Tcl_GetThreadData(&selfCellsKey,
+		sizeof(SelfCells)) : GetSelfCells();
+    }
+    if (sc->init && sc->cells.numEntries > 0) {
+#else
     sc = (SelfCells *) Tcl_GetThreadData(&selfCellsKey, sizeof(SelfCells));
     if (sc->init && sc->cells.numEntries > 0) {
+#endif
 	Tcl_HashEntry *hPtr = Tcl_FindHashEntry(&sc->cells, objPtr);
 
 	if (hPtr != NULL) {
@@ -752,6 +791,17 @@ NewTypeRefNoCache(TclType *tp, int variant)
     return tPtr;
 }
 
+/* v16s : un type d'élément scalaire simple (int, double, string, non
+ * nominal, sans représentation binaire) : ses éléments restent nus. */
+static int
+PlainScalarElem(const TclType *et)
+{
+    return et != NULL && !et->nominal && et->binLink == NULL
+	    && et->binKind == TCLBIN_NONE && et->bitWidth == 0
+	    && !TclTypeIsAny(et) && (et->kind == TCLT_DOUBLE
+	    || et->kind == TCLT_INT || et->kind == TCLT_STRING);
+}
+
 static void
 AnnotWrapElems(Tcl_Obj *aPtr, Tcl_Obj *v, Tcl_Size from, Tcl_Size to)
 {
@@ -764,11 +814,44 @@ AnnotWrapElems(Tcl_Obj *aPtr, Tcl_Obj *v, Tcl_Size from, Tcl_Size to)
 	    || Tcl_ListObjLength(NULL, v, &n) != TCL_OK) {
 	return;
     }
+    if (PlainScalarElem(et)) {
+	/* v16s : les éléments d'une liste de scalaires simples restent nus
+	 * dans le contenu ; lassign, lrange, foreach les rendent nus,
+	 * lindex et $L(i) en font une valeur typée à la demande */
+	return;
+    }
     if (from < 0) {
 	from = 0;
     }
     if (to >= n) {
 	to = n - 1;
+    }
+    if (to > from) {
+	/* v16s : plusieurs éléments : un seul remplacement de la liste (au
+	 * lieu d'un Tcl_ListObjReplace par élément) */
+	Tcl_Obj **ev, **nv;
+	Tcl_Size k;
+
+	if (Tcl_ListObjGetElements(NULL, v, &n, &ev) != TCL_OK) {
+	    return;
+	}
+	nv = (Tcl_Obj **) Tcl_Alloc(sizeof(Tcl_Obj *) * (to - from + 1));
+	for (i = from, k = 0; i <= to; i++, k++) {
+	    e = ev[i];
+	    nv[k] = e;
+	    if (e == NULL || TCL_ANNOT_P(e)) {
+		continue;
+	    }
+	    variant = -1;
+	    if (et->kind == TCLT_SUM
+		    && TclTypeValidate(NULL, et, e, -1, &variant) != TCL_OK) {
+		continue;
+	    }
+	    nv[k] = MakeAnnotated(e, NewTypeRefNoCache(et, variant));
+	}
+	Tcl_ListObjReplace(NULL, v, from, to - from + 1, to - from + 1, nv);
+	Tcl_Free(nv);
+	return;
     }
     for (i = from; i <= to; i++) {
 	if (Tcl_ListObjIndex(NULL, v, i, &e) != TCL_OK || e == NULL
@@ -833,6 +916,20 @@ TclAnnotIterList(Tcl_Obj *aPtr)
 	v = TclCompactCache(v);
 	if (v == NULL) {
 	    return NULL;
+	}
+    }
+    {
+	/*
+	 * v16s : une liste de scalaires simples (list.int, list.double,
+	 * list.string) : la boucle parcourt le contenu, ses éléments nus. Ils
+	 * ont été vérifiés à l'entrée (le type de la liste) ; les envelopper un
+	 * à un (un objet par élément, refait pour chaque liste neuve) coûtait
+	 * 2,5 fois la boucle. Une variable typée ou une procédure typée qui
+	 * les reçoit les revérifie. Les listes de produits, de sommes, de any,
+	 * de types nominaux gardent leurs éléments typés.
+	 */
+	if (PlainScalarElem(AnnotListElemType(aPtr))) {
+	    return v;
 	}
     }
     for (pass = 0; pass < 2; pass++) {
@@ -960,9 +1057,34 @@ static int
 AnnotListSlice(Tcl_Interp *interp, Tcl_Obj *aPtr, Tcl_Size from, Tcl_Size to,
 	Tcl_Obj **newPtr)
 {
-    Tcl_Obj **elv;
-    Tcl_Size n;
+    Tcl_Obj **elv, *v;
+    Tcl_Size n, i;
 
+    /* v16s : lrange $L end-1 end ne type que la tranche (pas toute la
+     * liste) quand le contenu est privé */
+    if (FastListType(aPtr, &v) != NULL && !TclIsCompact(v)
+	    && !Tcl_IsShared(v)
+	    && Tcl_ListObjLength(NULL, v, &n) == TCL_OK) {
+	if (from < 0) {
+	    from = 0;
+	}
+	if (to >= n) {
+	    to = n - 1;
+	}
+	if (from > to) {
+	    *newPtr = Tcl_NewObj();
+	    return TCL_OK;
+	}
+	AnnotWrapElems(aPtr, v, from, to);
+	if (Tcl_ListObjGetElements(NULL, v, &n, &elv) == TCL_OK) {
+	    for (i = from; i <= to && TCL_ANNOT_P(elv[i]); i++) {
+	    }
+	    if (i > to) {
+		*newPtr = Tcl_NewListObj(to - from + 1, elv + from);
+		return TCL_OK;
+	    }
+	}
+    }
     if (AnnotListGetElements(interp, aPtr, &n, &elv) != TCL_OK) {
 	return TCL_ERROR;
     }

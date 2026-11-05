@@ -96,6 +96,15 @@ MakeTyped(Tcl_Interp *interp, TclType *tp, Tcl_Obj *arg, int prefer)
 	outVariant = variant;		/* balise explicite, ou -1 */
 	dropTop = TclAnnotIsNoteOnly(arg);	/* {d}$v : la note est lue */
     }
+    if (status == TCLA_PLAIN && (tp->kind == TCLT_INT
+	    || tp->kind == TCLT_DOUBLE) && !TclIsAnnotated(arg)) {
+	/* v16s : un nombre nu sous contrat int / double : rien à compléter,
+	 * le contenu est partagé (une valeur est immuable) */
+	if (TclTypeValidate(interp, tp, content, -1, NULL) != TCL_OK) {
+	    return NULL;
+	}
+	return TclNewAnnotatedShared(interp, tp, -1, content);
+    }
     if (outVariant < 0 && prefer >= 0 && tp->kind == TCLT_SUM) {
 	/* Variantes également strictes : la variante courante départage. */
 	outVariant = -2 - prefer;
@@ -163,6 +172,21 @@ TclTypedVarPrepareWrite(Tcl_Interp *interp, Var *varPtr,
 			!= 1) {
 	    varPtr->flags &= ~(VAR_TYPED|VAR_CONTRACT);	/* bit orphelin */
 	    contract = NULL;
+	}
+    }
+
+    /*
+     * v16s : une valeur déjà du type du contrat, sans note (un échange
+     * (y1, y2) = ($y2, $y1) entre variables typées) : rangée telle quelle,
+     * sans copie ni revalidation.
+     */
+    if (contract != NULL && !(*flagsPtr & TCL_APPEND_VALUE)
+	    && TclIsAnnotated(value) && TclAnnotIsSettled(value)) {
+	TclType *vt = NULL;
+
+	if (TclAnnotInfo(value, NULL, &vt, NULL, NULL) == 1
+		&& vt == contract) {
+	    return TCL_OK;
 	}
     }
 

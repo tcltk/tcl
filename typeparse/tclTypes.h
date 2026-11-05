@@ -21,7 +21,7 @@
  * VAR_* de tclInt.h). La valeur ci-dessous est un PLACEHOLDER. */
 /* Version du prototype TIP 764 (typeparse/VERSION, maj.sh, et
  * tcl::unsupported::typesversion). */
-#define TCL_TYPES_VERSION "v16r"
+#define TCL_TYPES_VERSION "v16s"
 
 #ifndef VAR_TYPED
 #define VAR_TYPED	0x400000
@@ -492,6 +492,8 @@ MODULE_SCOPE int TclTypedProcReturn(Tcl_Interp *interp, void *sig, int result);
 MODULE_SCOPE void TclTypedSigRetain(void *sig);
 MODULE_SCOPE void TclTypedSigRelease(void *sig);
 MODULE_SCOPE Tcl_Obj *TclTypedSigArgNames(void *sig);
+MODULE_SCOPE Tcl_Size TclTypedSigLocals(void *sig, Tcl_Obj ***namesPtr);
+MODULE_SCOPE int TclTypedSigTakesWords(void *sig);
 MODULE_SCOPE int TclTypedSigDefault(void *sig, const char *name,
 			    Tcl_Obj **defPtr);
 #endif /* TCLTYPES_H */

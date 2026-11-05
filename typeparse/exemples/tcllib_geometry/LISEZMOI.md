@@ -128,23 +128,25 @@ entre parenthèses.
 
 | | tcllib | Tcl typé | C | Tcl typé\* | C\* |
 |---|---:|---:|---:|---:|---:|
-| `distance {0 0} {3 4}` | 0,51 | 1,43 (2,8) | **0,15 (0,30)** | 1,05 (2,1) | 0,88 (1,7) |
-| `findLineIntersection` | 1,06 | 2,32 (2,2) | **0,28 (0,26)** | 2,17 (2,1) | 1,09 (1,0) |
-| `lineSegmentsIntersect` | 10,9 | 23,4 (2,2) | **0,21 (0,02)** | 23,4 (2,2) | 0,96 (0,09) |
-| `areaPolygon` (carré) | 1,20 | 2,98 (2,5) | **0,23 (0,19)** | 2,32 (1,9) | 0,33 (0,27) |
-| `rectangleInsidePolygon` (carré) | 198 | 380 (1,9) | **20 (0,10)** | | |
-| 1 000 sommets : `areaPolygon` | 193 | 435 (2,3) | 7,0 (0,04) | 309 (1,6) | **0,93 (0,005)** |
-| `lengthOfPolyline` | 266 | 516 (1,9) | 12,1 (0,05) | 404 (1,5) | **6,0 (0,02)** |
-| `bbox` | 173 | 440 (2,6) | 11,3 (0,07) | 249 (1,4) | **6,0 (0,03)** |
-| `pointInsidePolygon` | 275 | 435 (1,6) | 25,6 (0,09) | 286 (1,0) | **4,9 (0,02)** |
-| `calculateDistanceToPolyline` | 6 934 | 4 124 (0,6) | 20,9 (0,003) | 3 911 (0,6) | **15,6 (0,002)** |
-| `findClosestPointOnPolyline` | 2 665 | 5 054 (1,9) | 14,6 (0,005) | 5 017 (1,9) | **8,5 (0,003)** |
-| `rotate 30` | 384 | 841 (2,2) | 101 (0,26) | 744 (1,9) | **90 (0,23)** |
-| 2 × 200 sommets : `polylinesIntersect` | 4 551 | 8 947 (2,0) | **31 (0,007)** | 8 402 (1,8) | 33 (0,007) |
+| `distance {0 0} {3 4}` | 0,62 | 1,16 (1,9) | **0,15 (0,25)** | 1,27 (2,0) | 1,08 (1,7) |
+| `findLineIntersection` | 0,99 | 2,40 (2,4) | **0,28 (0,28)** | 2,62 (2,6) | 1,03 (1,0) |
+| `lineSegmentsIntersect` | 10,5 | 19,8 (1,9) | **0,22 (0,02)** | 20,0 (1,9) | 0,93 (0,09) |
+| `areaPolygon` (carré) | 1,20 | 2,08 (1,7) | **0,23 (0,19)** | 1,94 (1,6) | 0,27 (0,23) |
+| `rectangleInsidePolygon` (carré) | 205 | 378 (1,8) | **25 (0,12)** | | |
+| 1 000 sommets : `areaPolygon` | 192 | 209 (1,1) | 7,7 (0,04) | 172 (0,9) | **1,5 (0,008)** |
+| `lengthOfPolyline` | 262 | 271 (1,0) | 12,7 (0,05) | 260 (1,0) | **11,3 (0,04)** |
+| `bbox` | 173 | 142 (0,8) | 11,3 (0,07) | 135 (0,8) | **5,4 (0,03)** |
+| `pointInsidePolygon` | 248 | 222 (0,9) | 26,4 (0,11) | 211 (0,9) | **8,2 (0,03)** |
+| `calculateDistanceToPolyline` | 5 693 | 3 305 (0,6) | 21,7 (0,004) | 3 143 (0,6) | **13,4 (0,002)** |
+| `findClosestPointOnPolyline` | 2 733 | 4 606 (1,7) | 15,3 (0,006) | 4 797 (1,8) | **9,6 (0,004)** |
+| `rotate 30` | 406 | 637 (1,6) | 96 (0,24) | 605 (1,5) | **94 (0,23)** |
+| 2 × 200 sommets : `polylinesIntersect` | 3 207 | 6 321 (2,0) | **23 (0,007)** | 6 055 (1,9) | 25 (0,008) |
 
-(Tableau complet : `tclsh bench.tcl`.)
+(v16s ; tableau complet : `tclsh bench.tcl`.)
 
-- **Le Tcl typé** est environ deux fois plus lent que tcllib (causes ci-dessous).
+- **Le Tcl typé** (v16s) va à peu près aussi vite que tcllib sur les polygones (0,8 à 1,1 ; deux
+  fois plus lent en v16r), et reste 1,6 à 2,4 fois plus lent sur les petites procédures (liaison
+  des arguments, vérification du retour).
 - **Le C** va de 4 fois (`rotate`) à 300 fois plus vite que tcllib sur les polygones, de 3 à
   50 fois sur les points et les segments. Ce qui reste est la lecture des arguments : 2 000 `Tcl_GetDoubleFromObj` pour un
   polygone de 1 000 sommets en liste (7 µs pour `areaPolygon`) ; **en cases, plus rien** :
@@ -157,27 +159,33 @@ entre parenthèses.
   (0,15) : un produit typé est lu par la cale `Tcl_AnnotatedGetParts` (`tclAnnotatedApi.h`), qui
   passe par l'interpréteur. La vraie fonction de stub, prévue, lira les parties en place.
 
-### D'où vient le coût (mesures séparées)
+### D'où vient le coût (mesures séparées), et ce qu'en a fait la v16s
 
-| | classique | typé |
-|---|---:|---:|
-| 5 arguments scalaires (`{double}a; …`), corps vide | 0,25 µs | 1,24 µs |
-| liaison d'un `{list.double}` de 2 000 nombres | 0,5 µs | 17 µs |
-| boucle `foreach {a b}` sur ces 2 000 nombres, une multiplication par tour | 101 µs | 358 µs |
-| `intervalsOverlap` : corps Tcl / corps expression avec échanges en tuple | 0,38 / 0,78 µs | 1,13 / 2,83 µs |
+| | classique | typé v16r | typé v16s |
+|---|---:|---:|---:|
+| 5 arguments scalaires (`{double}a; …`), corps vide | 0,23 µs | 1,14 µs | 0,68 µs |
+| 2 points faits de listes | 0,20 µs | 0,86 µs | 0,56 µs |
+| boucle `foreach {a b}` sur 2 000 nombres (`{list.double}`), une multiplication par tour | 97 µs | 272 µs | 111 µs |
+| `intervalsOverlap`, corps expression avec échanges en tuple | 0,36 µs | 2,73 µs | 1,92 µs |
+| retour `{*}point` | 0,25 µs | 0,95 µs | 0,60 µs |
 
-1. **La vérification à l'entrée** : ~0,2 µs par argument scalaire, ~0,3 à 0,5 µs par point fait
-   d'une liste, ~8 ns par nombre d'une liste. tcllib ne vérifie rien ; la même sûreté écrite à la
-   main coûte plus cher : `string is double -strict` sur les 2 000 nombres prend 91 µs, contre
-   17 µs pour la liaison typée (et `exemples/bench_procs.tcl` : à contrôles égaux, une procédure
-   typée va aussi vite).
-2. **Les boucles sur une liste typée** : les éléments sont rendus typés (enveloppés) avant la
-   boucle, puis l'arithmétique déballe chaque élément ; la liste étant une copie neuve à chaque
-   appel (liste nue de l'appelant), l'enveloppement est refait à chaque appel. Avec des arguments
-   typés, il n'est fait qu'une fois : d'où la colonne de droite (`pointInsidePolygon` 1,1×).
-3. **Les affectations à des locales typées** dans une expression (`(y1, y2) = $y1 > $y2 ? … : …`
-   sur des `{double}`) : chaque affectation revérifie et réannote. `rectanglesOverlap` (4 points,
-   2 appels à `intervalsOverlap`) cumule les trois.
+1. **La liaison des arguments** : les champs deviennent des locales compilées (plus de recherche
+   par le nom, plus de table de variables du cadre), le type de chaque champ est résolu une fois,
+   la liste `args` n'est plus fabriquée, un produit de scalaires (`{1 2}` pour un point) est
+   vérifié champ par champ, sans le validateur général.
+2. **Les listes de scalaires** (`list.double`, `list.int`, `list.string`) : leurs éléments
+   restent nus dans le contenu ; `foreach`, `lmap`, `lassign`, `lrange` les rendent nus
+   (vérifiés à l'entrée), `lindex` et `$L(i)` en font une valeur typée à la demande. Avant, chaque
+   élément était enveloppé avant la boucle (2 000 objets créés et libérés à chaque appel avec une
+   liste neuve). Et `lrange $L end-1 end` n'enveloppait pas seulement la tranche, mais toute la
+   liste (184 µs pour 2 000 nombres).
+3. **Les affectations à des locales typées** : une valeur déjà du type de la variable est rangée
+   telle quelle, un nombre nu sous contrat `int`/`double` sans copie.
+4. **Le retour** : un produit de scalaires rendu en liste est vérifié champ par champ ; `{*}T` le
+   rend tel quel.
+
+Ce qui reste, sur les petites procédures, est le prix d'une valeur typée : la créer (une
+enveloppe par argument) et la libérer.
 
 ## Ce que l'exercice apprend
 
