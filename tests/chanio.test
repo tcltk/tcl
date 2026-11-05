@@ -7865,7 +7865,7 @@ test chan-io-74.1 {
 test chan-io-74.2 {
     0-length read on reading 4294967296 characters from small non-empty file
 } -constraints testchancreate -setup {
-    # File of size 2 
+    # File of size 2
     set chan [testchancreate source AB 2]
 } -cleanup {
     close $chan

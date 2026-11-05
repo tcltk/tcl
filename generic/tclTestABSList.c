@@ -748,13 +748,13 @@ NewLStringObj(
      * Implementation will not work with non-ASCII. Error out up front.
      */
     for (i = 0; i < lstringRepPtr->strlen; ++i) {
-        if (string[i] <= 0 || string[i] & 0x80) {
-            Tcl_Free(lstringRepPtr->string);
-            Tcl_Free(lstringRepPtr);
-            Tcl_SetResult(interp, "lstring only supports Unicode range U+0001-U+007F", TCL_STATIC);
-            return NULL;
-        }
-        lstringRepPtr->string[i] = string[i];
+	if (string[i] <= 0 || string[i] & 0x80) {
+	    Tcl_Free(lstringRepPtr->string);
+	    Tcl_Free(lstringRepPtr);
+	    Tcl_SetResult(interp, "lstring only supports Unicode range U+0001-U+007F", TCL_STATIC);
+	    return NULL;
+	}
+	lstringRepPtr->string[i] = string[i];
     }
     lstringRepPtr->elements = NULL;
     lstringPtr = Tcl_NewObj();
@@ -881,8 +881,8 @@ LStringUpdateString(
     LString *lstringRepPtr = (LString*)objPtr->internalRep.twoPtrValue.ptr1;
     Tcl_Obj *nativeListPtr = Tcl_NewListObj(lstringRepPtr->strlen, NULL);
     for (Tcl_Size i = 0; i < lstringRepPtr->strlen; ++i) {
-        Tcl_ListObjAppendElement(NULL, nativeListPtr,
-                                 Tcl_NewStringObj(&lstringRepPtr->string[i], 1));
+	Tcl_ListObjAppendElement(NULL, nativeListPtr,
+		Tcl_NewStringObj(&lstringRepPtr->string[i], 1));
     }
 
     Tcl_Size len;

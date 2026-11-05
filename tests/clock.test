@@ -36300,11 +36300,11 @@ test clock-33.8m {clock test, monotonic timing test} {
     # This test can fail on a system that is so heavily loaded that
     # the test takes >60 ms to run.
     if {[lindex [timerate {
-        set start [clock monotonic]
-        timerate {} 10; # short but precise busy wait
-        set end [clock monotonic]
+	set start [clock monotonic]
+	timerate {} 10; # short but precise busy wait
+	set end [clock monotonic]
     } 1 1] 0] > 60000} {
-        ::tcltest::Skip "timing issue"
+	::tcltest::Skip "timing issue"
     }
     expr {($end > $start) && (($end - $start) <= 60000)}
 } {1}

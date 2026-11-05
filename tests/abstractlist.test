@@ -668,7 +668,7 @@ test abstractlist-lappend-1.6 {lappend $name keeps the abstract list type} -cons
     apply {{} {set l [lstring abc]; set n l; lappend $n d; list [testobj objtype $l] $l}}
 } -result {lstring {a b c d}}
 
-# 
+#
 test abstractlist-bug-b24becc2ab-0 {
     lindex crash on shimmer
 } -constraints {testobj} -body {

@@ -2273,7 +2273,7 @@ Tcl_ListObjReplace(
 	replaceProc = TclObjTypeHasProc(listObj, replaceProc);
 	if (replaceProc != NULL) {
 	    return replaceProc(interp, listObj, first, numToDelete, numToInsert,
-                               insertObjs);
+		    insertObjs);
 	}
 	/* Fall through to shimmer */
     }
