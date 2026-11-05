@@ -8284,9 +8284,25 @@ DeclareTyped(Tcl_Interp *interp, Tcl_Obj *typeObj, Tcl_Obj *valueObj,
     } else if (tp != NULL && !TclIsAnnotated(valueObj)) {
 	/* X is T = (a, b) : une valeur sans annotation, construite
 	 * directement (ce que ferait le résolveur du constructeur) */
-	Tcl_Obj *copy = (mayOwn && !Tcl_IsShared(valueObj))
-		? valueObj : Tcl_DuplicateObj(valueObj);
+	Tcl_Obj *copy;
 	int variant = -1;
+	const TclType *kt = tp;
+	Tcl_Size dummy;
+
+	while (kt->under != NULL && kt->kind != TCLT_LIST
+		&& kt->kind != TCLT_PRODUCT && kt->kind != TCLT_DICT) {
+	    kt = kt->under;
+	}
+	if (kt->kind == TCLT_LIST || kt->kind == TCLT_PRODUCT) {
+	    /* v16q : la source devient une liste une fois pour toutes (comme
+	     * pour un argument classique) : la copie garde la liste, au lieu
+	     * de relire la chaîne à chaque appel */
+	    (void) Tcl_ListObjLength(NULL, valueObj, &dummy);
+	} else if (kt->kind == TCLT_DICT) {
+	    (void) Tcl_DictObjSize(NULL, valueObj, &dummy);
+	}
+	copy = (mayOwn && !Tcl_IsShared(valueObj))
+		? valueObj : Tcl_DuplicateObj(valueObj);
 
 	Tcl_IncrRefCount(copy);
 	if (TclTypeComplete(interp, tp, copy, -1, &variant) != TCL_OK) {
@@ -8636,6 +8652,7 @@ TclTypesInit(Tcl_Interp *interp)
     d->tDouble = Builtin(d, TCLT_DOUBLE, "double");
     d->tString = Builtin(d, TCLT_STRING, "string");
     Builtin(d, TCLT_STRING, "any");		/* éléments de list.any */
+    Builtin(d, TCLT_INT, "flag");		/* v16q : option sans valeur, 0/1 */
     d->tList = Builtin(d, TCLT_LIST, "list");
     d->tList->arity = -1;			/* liste extensible */
     d->tList->elem = d->tString;
@@ -8697,10 +8714,32 @@ TclTypesInit(Tcl_Interp *interp)
  * retour : le résultat est casté au retour normal ; une étiquette ({v:})
  * choisit la variante d'une somme ; {T}$x sur un return n'est qu'une note
  * locale, qui expire avec la procédure.
+ *
+ * v16q : options et drapeaux. Un champ dont le nom commence par « - » est
+ * une option, donnée au début de l'appel (jusqu'au premier mot qui n'est pas
+ * une option, ou « -- ») ; la variable locale perd le « - » ; un préfixe
+ * unique suffit (-dec pour -decreasing).
+ *   {flag}-decreasing           drapeau : la locale vaut 1 ou 0
+ *   {int}-index ?= -1           option à valeur : -index 2
+ *   {"ascii", "dictionary", {string}command}-mode ?= ascii
+ *                               options exclusives (une somme) : -ascii,
+ *                               -dictionary, -command cmd (ou -mode ascii) ;
+ *                               la locale mode reçoit le nom de la variante,
+ *                               la locale command sa valeur ; une variante
+ *                               produit {{string}cmd; {int}-depth ?= 1}command
+ *                               prend ses champs sans « - » à la suite de
+ *                               l'option, et ses champs « -x » sont des
+ *                               options qui dépendent d'elle
+ *   {triopts}-o                 un groupe : les champs du produit triopts
+ *                               sont les options (-decreasing, -index...),
+ *                               la locale o est une valeur de triopts
  * -------------------------------------------------------------------- */
 
+enum { OPT_NONE = 0, OPT_SCALAR, OPT_EXCL, OPT_GROUP };
+
 typedef struct TypedArg {
-    Tcl_Obj *name;		/* nom du champ : la variable locale */
+    Tcl_Obj *name;		/* nom du champ, tel qu'écrit (-index) */
+    Tcl_Obj *local;		/* la variable locale (index) */
     Tcl_Obj *typeText;		/* texte du type (DeclareTyped) */
     Tcl_Obj *defval;		/* ?= v */
     Tcl_Obj *defcmd;		/* ?= [cmd] : évalué dans la procédure */
@@ -8709,13 +8748,39 @@ typedef struct TypedArg {
     TclType *tp;		/* le type du champ (messages, défaut) */
     int allDefault;		/* produit dont tous les champs ont un défaut :
 				 * l'argument absent prend ces défauts */
+    int optKind;		/* OPT_* (v16q) */
+    int isFlag;			/* OPT_SCALAR : {flag}-x */
+    TclType *sub;		/* OPT_EXCL : la somme ; OPT_GROUP : le
+				 * produit */
+    Tcl_Obj *cache[2];		/* OPT_SCALAR : la valeur typée du défaut (ou
+				 * 0) et de 1 (drapeau donné), partagées */
+    size_t cacheGen;		/* génération des types de ce cache */
 } TypedArg;
+
+/* Un mot d'option reconnu à l'appel. */
+typedef struct OptEntry {
+    Tcl_Obj *opt;		/* "-ascii" */
+    Tcl_Size arg;		/* le champ de la signature */
+    Tcl_Size variant;		/* EXCL : la variante ; GROUP : la variante du
+				 * champ somme, sinon -1 */
+    Tcl_Size gfield;		/* GROUP : le champ du produit, sinon -1 */
+    Tcl_Size dep;		/* EXCL : champ « -x » de la variante produit
+				 * (option dépendante), sinon -1 */
+    int nvals;			/* mots pris après l'option */
+    int byName;			/* -mode ascii : la valeur nomme la variante */
+    int isFlag;
+} OptEntry;
 
 typedef struct TclTypedSig {
     size_t refCount;
     Tcl_Size n;			/* -1 : liste d'arguments classique */
     TypedArg *a;
     int rest;			/* le dernier champ est {list...}args */
+    Tcl_Size npos;		/* champs positionnels (sans le reste) */
+    Tcl_Size *pos;		/* leurs indices */
+    Tcl_Size nopts;		/* mots d'option */
+    OptEntry *opts;
+    Tcl_Obj *optList;		/* -a, -b or -c (messages) */
     Tcl_Obj *argsText;		/* la signature, canonique */
     Tcl_Obj *retText;		/* le type de retour, ou NULL */
     Tcl_Obj *usage;		/* p ?dx? ?dy? */
@@ -8743,6 +8808,14 @@ TclTypedSigRetain(void *sigv)
     }
 }
 
+static void
+DecrIf(Tcl_Obj *o)
+{
+    if (o != NULL) {
+	Tcl_DecrRefCount(o);
+    }
+}
+
 void
 TclTypedSigRelease(void *sigv)
 {
@@ -8755,30 +8828,31 @@ TclTypedSigRelease(void *sigv)
     for (i = 0; i < sig->n; i++) {
 	TypedArg *a = &sig->a[i];
 
-	Tcl_DecrRefCount(a->name);
-	Tcl_DecrRefCount(a->typeText);
-	if (a->defval) {
-	    Tcl_DecrRefCount(a->defval);
-	}
-	if (a->defcmd) {
-	    Tcl_DecrRefCount(a->defcmd);
-	}
-	if (a->varElem) {
-	    Tcl_DecrRefCount(a->varElem);
-	}
+	DecrIf(a->name);
+	DecrIf(a->local);
+	DecrIf(a->typeText);
+	DecrIf(a->defval);
+	DecrIf(a->defcmd);
+	DecrIf(a->varElem);
+	DecrIf(a->cache[0]);
+	DecrIf(a->cache[1]);
+    }
+    for (i = 0; i < sig->nopts; i++) {
+	DecrIf(sig->opts[i].opt);
+    }
+    if (sig->opts != NULL) {
+	Tcl_Free(sig->opts);
+    }
+    if (sig->pos != NULL) {
+	Tcl_Free(sig->pos);
     }
     if (sig->a != NULL) {
 	Tcl_Free(sig->a);
     }
-    if (sig->argsText) {
-	Tcl_DecrRefCount(sig->argsText);
-    }
-    if (sig->retText) {
-	Tcl_DecrRefCount(sig->retText);
-    }
-    if (sig->usage) {
-	Tcl_DecrRefCount(sig->usage);
-    }
+    DecrIf(sig->optList);
+    DecrIf(sig->argsText);
+    DecrIf(sig->retText);
+    DecrIf(sig->usage);
     Tcl_Free(sig);
 }
 
@@ -8822,6 +8896,204 @@ LooksTyped(const char *t, Tcl_Size len)
     return 0;
 }
 
+/* v16q : le type de kind sous un nominal, ou NULL. */
+static const TclType *
+UnderKind(const TclType *tp, TclTypeKind kind)
+{
+    while (tp != NULL && tp->kind != kind && tp->under != NULL) {
+	tp = tp->under;
+    }
+    return (tp != NULL && tp->kind == kind) ? tp : NULL;
+}
+
+static int
+IsFlagType(const TclType *tp)
+{
+    return tp != NULL && tp->reserved && strcmp(tp->name, "flag") == 0;
+}
+
+/* Le nom d'une variante : son nom, ou le texte d'une variante littérale. */
+static Tcl_Obj *
+VariantName(const TclTypeField *f)
+{
+    return f->name != NULL ? f->name : f->literal;
+}
+
+/* Le nom sans son « - » éventuel. */
+static Tcl_Obj *
+OptLocalName(Tcl_Obj *name)
+{
+    Tcl_Size l;
+    const char *t = Tcl_GetStringFromObj(name, &l);
+
+    if (l > 1 && t[0] == '-') {
+	return Tcl_NewStringObj(t + 1, l - 1);
+    }
+    return name;
+}
+
+static int
+AddOpt(Tcl_Interp *interp, TclTypedSig *sig, Tcl_Size *capPtr,
+	Tcl_Obj *name, Tcl_Size arg, Tcl_Size variant, Tcl_Size gfield,
+	Tcl_Size dep, int nvals, int byName, int isFlag)
+{
+    Tcl_Size l, i;
+    const char *t = Tcl_GetStringFromObj(name, &l);
+    OptEntry *e;
+    Tcl_Obj *opt;
+
+    opt = (l > 0 && t[0] == '-') ? name
+	    : Tcl_ObjPrintf("-%s", t);	/* les variantes : sans « - » */
+    Tcl_IncrRefCount(opt);
+    for (i = 0; i < sig->nopts; i++) {
+	if (strcmp(Tcl_GetString(sig->opts[i].opt), Tcl_GetString(opt)) == 0) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf("option \"%s\" is defined "
+		    "twice", Tcl_GetString(opt)));
+	    Tcl_SetErrorCode(interp, "TCL", "TYPE", "PROCARGS", (char *) NULL);
+	    Tcl_DecrRefCount(opt);
+	    return TCL_ERROR;
+	}
+    }
+    if (sig->nopts == *capPtr) {
+	*capPtr = (*capPtr == 0) ? 8 : 2 * *capPtr;
+	sig->opts = (OptEntry *) Tcl_Realloc(sig->opts,
+		sizeof(OptEntry) * *capPtr);
+    }
+    e = &sig->opts[sig->nopts++];
+    e->opt = opt;
+    e->arg = arg;
+    e->variant = variant;
+    e->gfield = gfield;
+    e->dep = dep;
+    e->nvals = nvals;
+    e->byName = byName;
+    e->isFlag = isFlag;
+    return TCL_OK;
+}
+
+/* Les options d'une somme (options exclusives) : une par variante ; une
+ * variante produit prend ses champs sans « - » à la suite, ses champs
+ * « -x » sont des options dépendantes. gfield >= 0 : dans un groupe. */
+static int
+AddSumOpts(Tcl_Interp *interp, TclTypedSig *sig, Tcl_Size *capPtr,
+	const TclType *sum, Tcl_Size arg, Tcl_Size gfield)
+{
+    Tcl_Size v, d;
+
+    for (v = 0; v < sum->nfields; v++) {
+	const TclTypeField *f = &sum->fields[v];
+	const TclType *vp;
+	Tcl_Obj *vn = VariantName(f);
+
+	if (vn == NULL) {
+	    continue;
+	}
+	if (f->type == NULL || IsFlagType(f->type)) {
+	    if (AddOpt(interp, sig, capPtr, vn, arg, v, gfield, -1, 0, 0, 1)
+		    != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	} else if (gfield < 0 && (vp = UnderKind(f->type, TCLT_PRODUCT))
+		!= NULL) {
+	    int nv = 0;
+
+	    for (d = 0; d < vp->nfields; d++) {
+		if (vp->fields[d].name != NULL
+			&& Tcl_GetString(vp->fields[d].name)[0] != '-') {
+		    nv++;
+		}
+	    }
+	    if (AddOpt(interp, sig, capPtr, vn, arg, v, -1, -1, nv, 0, 0)
+		    != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    for (d = 0; d < vp->nfields; d++) {
+		const TclTypeField *df = &vp->fields[d];
+
+		if (df->name != NULL && Tcl_GetString(df->name)[0] == '-') {
+		    int fl = IsFlagType(df->type);
+
+		    if (AddOpt(interp, sig, capPtr, df->name, arg, v, -1, d,
+			    fl ? 0 : 1, 0, fl) != TCL_OK) {
+			return TCL_ERROR;
+		    }
+		}
+	    }
+	} else if (AddOpt(interp, sig, capPtr, vn, arg, v, gfield, -1, 1, 0, 0)
+		!= TCL_OK) {
+	    return TCL_ERROR;
+	}
+    }
+    return TCL_OK;
+}
+
+static Tcl_Size
+SumVariantByName(const TclType *sum, const char *name)
+{
+    Tcl_Size v;
+
+    for (v = 0; v < sum->nfields; v++) {
+	Tcl_Obj *vn = VariantName(&sum->fields[v]);
+
+	if (vn != NULL && strcmp(Tcl_GetString(vn), name) == 0) {
+	    return v;
+	}
+    }
+    return -1;
+}
+
+static void
+AppendSumUsage(Tcl_Obj *u, const TclType *sum)
+{
+    Tcl_Size v, d;
+
+    Tcl_AppendToObj(u, "?", 1);
+    for (v = 0; v < sum->nfields; v++) {
+	const TclTypeField *f = &sum->fields[v];
+	const TclType *vp;
+	Tcl_Obj *vn = VariantName(f);
+
+	if (vn == NULL) {
+	    continue;
+	}
+	Tcl_AppendStringsToObj(u, v > 0 ? "|-" : "-", Tcl_GetString(vn),
+		(char *) NULL);
+	if (f->type == NULL || IsFlagType(f->type)) {
+	    continue;
+	}
+	if ((vp = UnderKind(f->type, TCLT_PRODUCT)) != NULL) {
+	    for (d = 0; d < vp->nfields; d++) {
+		const char *dn = vp->fields[d].name
+			? Tcl_GetString(vp->fields[d].name) : "?";
+
+		if (dn[0] != '-') {
+		    Tcl_AppendStringsToObj(u, " ", dn, (char *) NULL);
+		}
+	    }
+	    for (d = 0; d < vp->nfields; d++) {
+		const char *dn = vp->fields[d].name
+			? Tcl_GetString(vp->fields[d].name) : "?";
+
+		if (dn[0] == '-') {
+		    Tcl_AppendStringsToObj(u, " ?", dn,
+			    IsFlagType(vp->fields[d].type) ? "?" : " value?",
+			    (char *) NULL);
+		}
+	    }
+	} else {
+	    Tcl_AppendToObj(u, " value", -1);
+	}
+    }
+    Tcl_AppendToObj(u, "?", 1);
+}
+
+static int
+CompareObjStr(const void *a, const void *b)
+{
+    return strcmp(Tcl_GetString(*(Tcl_Obj *const *) a),
+	    Tcl_GetString(*(Tcl_Obj *const *) b));
+}
+
 /*
  * À la définition (proc NOM ARGS CORPS) : *sigPtr reçoit la signature, ou
  * NULL pour une procédure classique (ni liste typée, ni type de retour).
@@ -8832,8 +9104,8 @@ int
 TclTypedProcSig(Tcl_Interp *interp, Tcl_Obj *nameObj, Tcl_Obj *argsObj,
 	void **sigPtr, int *typedArgsPtr)
 {
-    Tcl_Obj *ret = NULL, *top = NULL, *popped;
-    Tcl_Size len, n, i;
+    Tcl_Obj *ret = NULL, *top = NULL, *popped, *uopt = NULL, *upos = NULL;
+    Tcl_Size len, n, i, cap = 0;
     const char *text = Tcl_GetStringFromObj(argsObj, &len);
     TclType *prod = NULL;
     TclTypedSig *sig;
@@ -8896,30 +9168,32 @@ TclTypedProcSig(Tcl_Interp *interp, Tcl_Obj *nameObj, Tcl_Obj *argsObj,
     sig->n = -1;
     sig->retText = ret;
     if (prod != NULL) {
-	Tcl_Obj *usage = Tcl_NewObj();
-
-	Tcl_IncrRefCount(usage);
-	sig->usage = usage;
+	uopt = Tcl_NewObj();
+	upos = Tcl_NewObj();
+	Tcl_IncrRefCount(uopt);
+	Tcl_IncrRefCount(upos);
 	sig->n = prod->nfields;
 	sig->a = (TypedArg *) Tcl_Alloc(sizeof(TypedArg) * (prod->nfields + 1));
 	memset(sig->a, 0, sizeof(TypedArg) * (prod->nfields + 1));
+	sig->pos = (Tcl_Size *) Tcl_Alloc(sizeof(Tcl_Size)
+		* (prod->nfields + 1));
 	for (i = 0; i < prod->nfields; i++) {
 	    TclTypeField *f = &prod->fields[i];
 	    TypedArg *a = &sig->a[i];
 	    const char *nm;
+	    const TclType *st;
+	    Tcl_Obj *u;
 
 	    if (f->name == NULL || f->type == NULL) {
-		sig->n = i;
-		TclTypedSigRelease(sig);
 		Tcl_SetObjResult(interp, Tcl_NewStringObj("every field of a "
 			"typed argument list needs a type and a name", -1));
-		Tcl_SetErrorCode(interp, "TCL", "TYPE", "PROCARGS",
-			(char *) NULL);
-		return TCL_ERROR;
+		goto sigError;
 	    }
 	    nm = Tcl_GetString(f->name);
 	    a->name = f->name;
 	    Tcl_IncrRefCount(a->name);
+	    a->local = OptLocalName(f->name);
+	    Tcl_IncrRefCount(a->local);
 	    a->typeText = TypeTextObj(f->type, 2);
 	    if (f->defval) {
 		a->defval = f->defval;
@@ -8930,14 +9204,93 @@ TclTypedProcSig(Tcl_Interp *interp, Tcl_Obj *nameObj, Tcl_Obj *argsObj,
 		Tcl_IncrRefCount(a->defcmd);
 	    }
 	    a->tp = f->type;
+	    if (nm[0] == '-') {
+		/* v16q : une option */
+		if (Tcl_GetCharLength(uopt) > 0) {
+		    Tcl_AppendToObj(uopt, " ", 1);
+		}
+		if (IsFlagType(f->type)) {
+		    a->optKind = OPT_SCALAR;
+		    a->isFlag = 1;
+		    if (AddOpt(interp, sig, &cap, f->name, i, -1, -1, -1, 0, 0,
+			    1) != TCL_OK) {
+			goto sigError;
+		    }
+		    Tcl_AppendStringsToObj(uopt, "?", nm, "?", (char *) NULL);
+		} else if ((st = UnderKind(f->type, TCLT_SUM)) != NULL) {
+		    a->optKind = OPT_EXCL;
+		    a->sub = (TclType *) st;
+		    if (AddOpt(interp, sig, &cap, f->name, i, -1, -1, -1, 1, 1,
+			    0) != TCL_OK
+			    || AddSumOpts(interp, sig, &cap, st, i, -1)
+			    != TCL_OK) {
+			goto sigError;
+		    }
+		    if (a->defcmd != NULL || (a->defval != NULL
+			    && SumVariantByName(st, Tcl_GetString(a->defval))
+			    < 0)) {
+			Tcl_SetObjResult(interp, Tcl_ObjPrintf("the default of "
+				"option \"%s\" must name one of its variants",
+				nm));
+			goto sigError;
+		    }
+		    AppendSumUsage(uopt, st);
+		} else if ((st = UnderKind(f->type, TCLT_PRODUCT)) != NULL) {
+		    Tcl_Size g;
+
+		    a->optKind = OPT_GROUP;
+		    a->sub = (TclType *) st;
+		    for (g = 0; g < st->nfields; g++) {
+			const TclTypeField *gf = &st->fields[g];
+			const TclType *gs;
+
+			if (gf->name == NULL || gf->type == NULL) {
+			    continue;
+			}
+			if (g > 0) {
+			    Tcl_AppendToObj(uopt, " ", 1);
+			}
+			if (IsFlagType(gf->type)) {
+			    if (AddOpt(interp, sig, &cap, gf->name, i, -1, g, -1,
+				    0, 0, 1) != TCL_OK) {
+				goto sigError;
+			    }
+			    Tcl_AppendStringsToObj(uopt, "?-",
+				    Tcl_GetString(gf->name), "?", (char *) NULL);
+			} else if ((gs = UnderKind(gf->type, TCLT_SUM)) != NULL) {
+			    if (AddOpt(interp, sig, &cap, gf->name, i, -1, g, -1,
+				    1, 1, 0) != TCL_OK
+				    || AddSumOpts(interp, sig, &cap, gs, i, g)
+				    != TCL_OK) {
+				goto sigError;
+			    }
+			    AppendSumUsage(uopt, gs);
+			} else {
+			    if (AddOpt(interp, sig, &cap, gf->name, i, -1, g, -1,
+				    1, 0, 0) != TCL_OK) {
+				goto sigError;
+			    }
+			    Tcl_AppendStringsToObj(uopt, "?-",
+				    Tcl_GetString(gf->name), " value?",
+				    (char *) NULL);
+			}
+		    }
+		} else {
+		    a->optKind = OPT_SCALAR;
+		    if (AddOpt(interp, sig, &cap, f->name, i, -1, -1, -1, 1, 0,
+			    0) != TCL_OK) {
+			goto sigError;
+		    }
+		    Tcl_AppendStringsToObj(uopt, "?", nm, " value?",
+			    (char *) NULL);
+		}
+		continue;
+	    }
 	    if (!a->defval && !a->defcmd) {
-		const TclType *pt = f->type;
+		const TclType *pt = UnderKind(f->type, TCLT_PRODUCT);
 		Tcl_Size j;
 
-		while (pt->kind != TCLT_PRODUCT && pt->under != NULL) {
-		    pt = pt->under;
-		}
-		if (pt->kind == TCLT_PRODUCT && pt->nfields > 0) {
+		if (pt != NULL && pt->nfields > 0) {
 		    a->allDefault = 1;
 		    for (j = 0; j < pt->nfields; j++) {
 			if (!pt->fields[j].defval && !pt->fields[j].defcmd) {
@@ -8948,31 +9301,68 @@ TclTypedProcSig(Tcl_Interp *interp, Tcl_Obj *nameObj, Tcl_Obj *argsObj,
 	    }
 	    if (f->type->kind == TCLT_VAR) {
 		a->isVar = 1;
-		if (f->type->elem != NULL && !TclTypeIsPlainString(f->type->elem)) {
+		if (f->type->elem != NULL
+			&& !TclTypeIsPlainString(f->type->elem)) {
 		    a->varElem = TypeTextObj(f->type->elem, 2);
 		}
+	    }
+	    u = upos;
+	    if (Tcl_GetCharLength(u) > 0) {
+		Tcl_AppendToObj(u, " ", 1);
 	    }
 	    if (i == prod->nfields - 1 && strcmp(nm, "args") == 0
 		    && f->type->kind == TCLT_LIST && f->type->arity < 0
 		    && !a->defval && !a->defcmd) {
 		sig->rest = 1;
+		Tcl_AppendToObj(u, "?arg ...?", -1);
+		continue;
 	    }
-	    if (i > 0) {
-		Tcl_AppendToObj(usage, " ", 1);
-	    }
-	    if (sig->rest) {
-		Tcl_AppendToObj(usage, "?arg ...?", -1);
-	    } else if (a->defval || a->defcmd || a->allDefault) {
-		Tcl_AppendStringsToObj(usage, "?", nm, "?", (char *) NULL);
+	    sig->pos[sig->npos++] = i;
+	    if (a->defval || a->defcmd || a->allDefault) {
+		Tcl_AppendStringsToObj(u, "?", nm, "?", (char *) NULL);
 	    } else {
-		Tcl_AppendToObj(usage, nm, -1);
+		Tcl_AppendToObj(u, nm, -1);
 	    }
+	}
+	if (Tcl_GetCharLength(uopt) > 0) {
+	    Tcl_AppendToObj(uopt, " ?--?", -1);	/* la fin des options */
+	}
+	if (Tcl_GetCharLength(uopt) > 0 && Tcl_GetCharLength(upos) > 0) {
+	    Tcl_AppendToObj(uopt, " ", 1);
+	}
+	Tcl_AppendObjToObj(uopt, upos);
+	sig->usage = uopt;
+	Tcl_DecrRefCount(upos);
+	if (sig->nopts > 0) {
+	    Tcl_Obj **names = (Tcl_Obj **) Tcl_Alloc(sizeof(Tcl_Obj *)
+		    * sig->nopts);
+
+	    for (i = 0; i < sig->nopts; i++) {
+		names[i] = sig->opts[i].opt;
+	    }
+	    qsort(names, sig->nopts, sizeof(Tcl_Obj *), CompareObjStr);
+	    sig->optList = Tcl_NewObj();
+	    Tcl_IncrRefCount(sig->optList);
+	    for (i = 0; i < sig->nopts; i++) {
+		Tcl_AppendStringsToObj(sig->optList, i == 0 ? "" : ", ",
+			Tcl_GetString(names[i]), (char *) NULL);
+	    }
+	    /* -- termine les options : rappelé comme dans regexp */
+	    Tcl_AppendToObj(sig->optList, " or --", -1);
+	    Tcl_Free(names);
 	}
 	sig->argsText = TypeTextObj(prod, 1);
 	*typedArgsPtr = 1;
     }
     *sigPtr = sig;
     return TCL_OK;
+
+  sigError:
+    Tcl_SetErrorCode(interp, "TCL", "TYPE", "PROCARGS", (char *) NULL);
+    DecrIf(uopt);
+    DecrIf(upos);
+    TclTypedSigRelease(sig);
+    return TCL_ERROR;
 }
 
 static int
@@ -8996,8 +9386,8 @@ TypedArgsWrong(Tcl_Interp *interp, TclTypedSig *sig, CallFrame *framePtr,
 static int
 TypedArgError(Tcl_Interp *interp, TypedArg *a)
 {
-    Tcl_Obj *msg = Tcl_ObjPrintf("argument \"%s\": ",
-	    Tcl_GetString(a->name));
+    Tcl_Obj *msg = Tcl_ObjPrintf("%s \"%s\": ", a->optKind ? "option"
+	    : "argument", Tcl_GetString(a->name));
 
     Tcl_AppendObjToObj(msg, Tcl_GetObjResult(interp));
     Tcl_SetObjResult(interp, msg);
@@ -9013,30 +9403,447 @@ TypedArgError(Tcl_Interp *interp, TypedArg *a)
     return TCL_ERROR;
 }
 
-/* Le champ idx (un champ ou le reste) attend-il une somme (dont une
+/* Le champ (un champ positionnel ou le reste) attend-il une somme (dont une
  * étiquette {v:} nomme la variante) ? -1 : aucun champ. */
 static int
-LabelForSum(Tcl_Interp *interp, TclTypedSig *sig, Tcl_Size idx)
+LabelForSum(Tcl_Interp *interp, TclTypedSig *sig, Tcl_Size field)
 {
     TclType *tp;
 
-    if (idx < 0) {
+    if (field < 0) {
 	return 0;
     }
-    tp = TclAnnotTypeOf(interp, sig->a[idx].typeText);
-    if (tp != NULL && idx == sig->n - 1 && sig->rest) {
+    tp = TclAnnotTypeOf(interp, sig->a[field].typeText);
+    if (tp != NULL && field == sig->n - 1 && sig->rest) {
 	tp = tp->elem;
     }
-    while (tp != NULL && tp->kind != TCLT_SUM && tp->under != NULL) {
-	tp = tp->under;
+    return UnderKind(tp, TCLT_SUM) != NULL;
+}
+
+/* Déclare la locale nameObj, de type typeText, valeur v. */
+static int
+DeclareLocalTyped(Tcl_Interp *interp, Tcl_Obj *nameObj, Tcl_Obj *typeText,
+	Tcl_Obj *v)
+{
+    Tcl_Obj *typed = NULL;
+
+    if (DeclareTyped(interp, typeText, v, 0, &typed) != TCL_OK) {
+	return TCL_ERROR;
     }
-    return tp != NULL && tp->kind == TCLT_SUM;
+    Tcl_IncrRefCount(typed);
+    if (TclTypedVarDeclare(interp, nameObj, typed) == NULL) {
+	Tcl_DecrRefCount(typed);
+	return TCL_ERROR;
+    }
+    Tcl_DecrRefCount(typed);
+    return TCL_OK;
+}
+
+/* La valeur absente d'une option ou d'un champ : son défaut (ou 0 pour un
+ * drapeau), NULL si aucun (la locale reste indéfinie). Référence propre. */
+static int
+OptDefault(Tcl_Interp *interp, const TclTypeField *f, int isFlag,
+	Tcl_Obj **vPtr)
+{
+    *vPtr = NULL;
+    if (f->defval != NULL) {
+	*vPtr = f->defval;
+    } else if (f->defcmd != NULL) {
+	if (Tcl_EvalObjEx(interp, f->defcmd, 0) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	*vPtr = Tcl_GetObjResult(interp);
+    } else if (isFlag) {
+	*vPtr = Tcl_NewWideIntObj(0);
+    }
+    if (*vPtr != NULL) {
+	Tcl_IncrRefCount(*vPtr);
+    }
+    return TCL_OK;
+}
+
+/* Cherche un mot d'option : le nom exact, ou un préfixe unique. -1 : aucun
+ * (*ambigPtr : plusieurs). */
+static Tcl_Size
+FindOpt(TclTypedSig *sig, const char *w, Tcl_Size wl, int *ambigPtr)
+{
+    Tcl_Size i, found = -1, nf = 0;
+
+    *ambigPtr = 0;
+    for (i = 0; i < sig->nopts; i++) {
+	Tcl_Size ol;
+	const char *o = Tcl_GetStringFromObj(sig->opts[i].opt, &ol);
+
+	if (ol == wl && memcmp(o, w, wl) == 0) {
+	    return i;
+	}
+	if (ol > wl && memcmp(o, w, wl) == 0) {
+	    found = i;
+	    nf++;
+	}
+    }
+    if (nf > 1) {
+	*ambigPtr = 1;
+	return -1;
+    }
+    return found;
+}
+
+static int
+OptErr(Tcl_Interp *interp, const char *code, Tcl_Obj *msg)
+{
+    Tcl_SetObjResult(interp, msg);
+    Tcl_SetErrorCode(interp, "TCL", "WRONGARGS", code, (char *) NULL);
+    return TCL_ERROR;
+}
+
+/*
+ * Les options d'un champ : ov[e] est la valeur donnée à l'option e (NULL :
+ * absente ; un objet « 1 » pour un drapeau ; le mot, ou la liste des mots
+ * pour une variante produit).
+ */
+static int
+BindOption(Tcl_Interp *interp, TclTypedSig *sig, Tcl_Size ai, Tcl_Obj **ov)
+{
+    TypedArg *a = &sig->a[ai];
+    Tcl_Size e, chosen = -1, ce = -1;
+
+    if (a->optKind == OPT_SCALAR) {
+	Tcl_Obj *v = NULL;
+	TclTypeField fake;
+	int slot = 0;
+	size_t uid, gen;
+
+	for (e = 0; e < sig->nopts; e++) {
+	    if (sig->opts[e].arg == ai && ov[e] != NULL) {
+		v = ov[e];
+		Tcl_IncrRefCount(v);
+	    }
+	}
+	if ((v == NULL && a->defcmd == NULL) || a->isFlag) {
+	    /* le défaut, ou un drapeau : une valeur typée, faite une fois */
+	    if (v != NULL) {
+		slot = 1;
+		Tcl_DecrRefCount(v);
+		v = NULL;
+	    }
+	    (void) TclTypesGeneration(interp, &uid, &gen);
+	    if (a->cacheGen != gen) {
+		DecrIf(a->cache[0]);
+		DecrIf(a->cache[1]);
+		a->cache[0] = a->cache[1] = NULL;
+		a->cacheGen = gen;
+	    }
+	    if (a->cache[slot] == NULL) {
+		Tcl_Obj *raw = NULL, *typed = NULL;
+
+		if (slot == 1) {
+		    raw = Tcl_NewWideIntObj(1);
+		    Tcl_IncrRefCount(raw);
+		} else {
+		    memset(&fake, 0, sizeof(fake));
+		    fake.defval = a->defval;
+		    if (OptDefault(interp, &fake, a->isFlag, &raw) != TCL_OK) {
+			return TypedArgError(interp, a);
+		    }
+		    if (raw == NULL) {
+			return TCL_OK;	/* absente, sans défaut : indéfinie */
+		    }
+		}
+		if (DeclareTyped(interp, a->typeText, raw, 0, &typed)
+			!= TCL_OK) {
+		    Tcl_DecrRefCount(raw);
+		    return TypedArgError(interp, a);
+		}
+		Tcl_IncrRefCount(typed);
+		Tcl_DecrRefCount(raw);
+		a->cache[slot] = typed;
+	    }
+	    if (TclTypedVarDeclare(interp, a->local, a->cache[slot]) == NULL) {
+		return TypedArgError(interp, a);
+	    }
+	    return TCL_OK;
+	}
+	if (v == NULL) {
+	    memset(&fake, 0, sizeof(fake));
+	    fake.defval = a->defval;
+	    fake.defcmd = a->defcmd;
+	    if (OptDefault(interp, &fake, a->isFlag, &v) != TCL_OK) {
+		return TypedArgError(interp, a);
+	    }
+	    if (v == NULL) {
+		return TCL_OK;		/* absente, sans défaut : indéfinie */
+	    }
+	}
+	if (DeclareLocalTyped(interp, a->local, a->typeText, v) != TCL_OK) {
+	    Tcl_DecrRefCount(v);
+	    return TypedArgError(interp, a);
+	}
+	Tcl_DecrRefCount(v);
+	return TCL_OK;
+    }
+
+    if (a->optKind == OPT_EXCL) {
+	const TclType *sum = a->sub;
+	const TclTypeField *vf;
+	const TclType *vp;
+	Tcl_Obj *vn;
+
+	for (e = 0; e < sig->nopts; e++) {
+	    OptEntry *oe = &sig->opts[e];
+	    Tcl_Size v;
+
+	    if (oe->arg != ai || oe->dep >= 0 || ov[e] == NULL) {
+		continue;
+	    }
+	    if (oe->byName) {
+		/* -mode ascii : le nom d'une variante sans valeur */
+		v = SumVariantByName(sum, Tcl_GetString(ov[e]));
+		if (v < 0 || (sum->fields[v].type != NULL
+			&& !IsFlagType(sum->fields[v].type))) {
+		    Tcl_Obj *msg = Tcl_ObjPrintf("bad value \"%s\" for option "
+			    "\"%s\": must be ", Tcl_GetString(ov[e]),
+			    Tcl_GetString(a->name));
+		    Tcl_Size k, m = 0, tot = 0;
+
+		    for (k = 0; k < sum->nfields; k++) {
+			if (sum->fields[k].type == NULL
+				|| IsFlagType(sum->fields[k].type)) {
+			    tot++;
+			}
+		    }
+		    for (k = 0; k < sum->nfields; k++) {
+			if (sum->fields[k].type == NULL
+				|| IsFlagType(sum->fields[k].type)) {
+			    m++;
+			    Tcl_AppendStringsToObj(msg, m == 1 ? "" : m == tot
+				    ? " or " : ", ",
+				    Tcl_GetString(VariantName(&sum->fields[k])),
+				    (char *) NULL);
+			}
+		    }
+		    return OptErr(interp, "VALUE", msg);
+		}
+	    } else {
+		v = oe->variant;
+	    }
+	    if (chosen >= 0 && chosen != v) {
+		return OptErr(interp, "EXCLUSIVE", Tcl_ObjPrintf(
+			"options -%s and -%s are exclusive",
+			Tcl_GetString(VariantName(&sum->fields[chosen])),
+			Tcl_GetString(VariantName(&sum->fields[v]))));
+	    }
+	    chosen = v;
+	    ce = oe->byName ? -1 : e;
+	}
+	for (e = 0; e < sig->nopts; e++) {
+	    OptEntry *oe = &sig->opts[e];
+
+	    if (oe->arg == ai && oe->dep >= 0 && ov[e] != NULL
+		    && oe->variant != chosen) {
+		return OptErr(interp, "DEPENDENT", Tcl_ObjPrintf(
+			"option \"%s\" requires -%s", Tcl_GetString(oe->opt),
+			Tcl_GetString(VariantName(&sum->fields[oe->variant]))));
+	    }
+	}
+	if (chosen < 0) {
+	    if (a->defval == NULL) {
+		return TCL_OK;		/* aucune : indéfinie */
+	    }
+	    chosen = SumVariantByName(sum, Tcl_GetString(a->defval));
+	}
+	vf = &sum->fields[chosen];
+	vn = VariantName(vf);
+	if (Tcl_ObjSetVar2(interp, a->local, NULL, vn, TCL_LEAVE_ERR_MSG)
+		== NULL) {
+	    return TypedArgError(interp, a);
+	}
+	if (vf->type == NULL || IsFlagType(vf->type)) {
+	    return TCL_OK;
+	}
+	if ((vp = UnderKind(vf->type, TCLT_PRODUCT)) != NULL) {
+	    /* -command cmd -depth 2 : les champs de la variante, en locales */
+	    Tcl_Obj **words = NULL;
+	    Tcl_Size nw = 0, k, d;
+
+	    if (ce >= 0) {
+		if (sig->opts[ce].nvals == 1) {
+		    words = &ov[ce];
+		    nw = 1;
+		} else {
+		    Tcl_ListObjGetElements(NULL, ov[ce], &nw, &words);
+		}
+	    }
+	    for (d = 0, k = 0; d < vp->nfields; d++) {
+		const TclTypeField *df = &vp->fields[d];
+		Tcl_Obj *v = NULL, *tt, *ln;
+		int fl = IsFlagType(df->type), rc;
+
+		if (df->name == NULL) {
+		    continue;
+		}
+		if (Tcl_GetString(df->name)[0] != '-') {
+		    if (k < nw) {
+			v = words[k];
+			Tcl_IncrRefCount(v);
+		    }
+		    k++;
+		} else {
+		    for (e = 0; e < sig->nopts; e++) {
+			if (sig->opts[e].arg == ai && sig->opts[e].dep == d
+				&& sig->opts[e].variant == chosen
+				&& ov[e] != NULL) {
+			    v = ov[e];
+			    Tcl_IncrRefCount(v);
+			}
+		    }
+		}
+		if (v == NULL) {
+		    if (OptDefault(interp, df, fl, &v) != TCL_OK) {
+			return TypedArgError(interp, a);
+		    }
+		    if (v == NULL) {
+			if (Tcl_GetString(df->name)[0] != '-') {
+			    return OptErr(interp, "VALUE", Tcl_ObjPrintf(
+				    "option \"-%s\" needs a value for \"%s\"",
+				    Tcl_GetString(vn),
+				    Tcl_GetString(df->name)));
+			}
+			continue;
+		    }
+		}
+		tt = TypeTextObj(df->type, 2);
+		ln = OptLocalName(df->name);
+		Tcl_IncrRefCount(ln);
+		rc = DeclareLocalTyped(interp, ln, tt, v);
+		Tcl_DecrRefCount(ln);
+		Tcl_DecrRefCount(tt);
+		Tcl_DecrRefCount(v);
+		if (rc != TCL_OK) {
+		    return TypedArgError(interp, a);
+		}
+	    }
+	    return TCL_OK;
+	}
+	if (ce >= 0) {
+	    /* -command cmd : la locale command */
+	    Tcl_Obj *tt = TypeTextObj(vf->type, 2);
+	    int rc = DeclareLocalTyped(interp, vn, tt, ov[ce]);
+
+	    Tcl_DecrRefCount(tt);
+	    if (rc != TCL_OK) {
+		return TypedArgError(interp, a);
+	    }
+	}
+	return TCL_OK;
+    }
+
+    /* OPT_GROUP : la valeur du produit, à partir des options données */
+    {
+	const TclType *gp = a->sub;
+	Tcl_Obj **pairs, *content = NULL, *typed;
+	Tcl_Size np = 0, g, k;
+	int rc = TCL_ERROR;
+
+	pairs = (Tcl_Obj **) Tcl_Alloc(sizeof(Tcl_Obj *) * 2
+		* (gp->nfields + 1));
+	for (g = 0; g < gp->nfields; g++) {
+	    const TclTypeField *gf = &gp->fields[g];
+	    const TclType *gs = UnderKind(gf->type, TCLT_SUM);
+	    Tcl_Obj *v = NULL;
+	    Tcl_Size gchosen = -1;
+
+	    if (gf->name == NULL) {
+		continue;
+	    }
+	    for (e = 0; e < sig->nopts; e++) {
+		OptEntry *oe = &sig->opts[e];
+		Tcl_Size vv = -1;
+
+		if (oe->arg != ai || oe->gfield != g || ov[e] == NULL) {
+		    continue;
+		}
+		if (gs != NULL) {
+		    vv = oe->byName ? SumVariantByName(gs,
+			    Tcl_GetString(ov[e])) : oe->variant;
+		    if (gchosen >= 0 && vv >= 0 && vv != gchosen) {
+			OptErr(interp, "EXCLUSIVE", Tcl_ObjPrintf(
+				"options -%s and -%s are exclusive",
+				Tcl_GetString(VariantName(&gs->fields[gchosen])),
+				Tcl_GetString(VariantName(&gs->fields[vv]))));
+			if (v != NULL) {
+			    Tcl_DecrRefCount(v);
+			}
+			goto groupDone;
+		    }
+		    if (vv >= 0) {
+			gchosen = vv;
+		    }
+		}
+		if (v != NULL) {
+		    Tcl_DecrRefCount(v);
+		}
+		if (gs != NULL && !oe->byName) {
+		    const TclTypeField *vf = &gs->fields[oe->variant];
+
+		    if (vf->type == NULL) {
+			v = vf->literal;	/* -ascii : le littéral */
+		    } else {
+			/* -command cmd : la valeur, sa variante nommée */
+			Tcl_Obj *lab = Tcl_ObjPrintf("%s:",
+				Tcl_GetString(VariantName(vf)));
+
+			Tcl_IncrRefCount(lab);
+			v = TclAnnotPush(ov[e], lab);
+			Tcl_DecrRefCount(lab);
+		    }
+		} else {
+		    v = ov[e];
+		}
+		Tcl_IncrRefCount(v);
+	    }
+	    if (v == NULL && IsFlagType(gf->type) && gf->defval == NULL
+		    && gf->defcmd == NULL) {
+		v = Tcl_NewWideIntObj(0);
+		Tcl_IncrRefCount(v);
+	    }
+	    if (v != NULL) {
+		pairs[np] = gf->name;
+		Tcl_IncrRefCount(pairs[np]);
+		pairs[np + 1] = v;
+		np += 2;
+	    }
+	}
+	if (TclBuildProductNamed(interp, (TclType *) gp, np, pairs, &content)
+		!= TCL_OK) {
+	    TypedArgError(interp, a);
+	    goto groupDone;
+	}
+	Tcl_IncrRefCount(content);
+	typed = TclNewAnnotated(interp, a->tp, -1, content);
+	Tcl_DecrRefCount(content);
+	Tcl_IncrRefCount(typed);
+	if (TclTypedVarDeclare(interp, a->local, typed) == NULL) {
+	    Tcl_DecrRefCount(typed);
+	    TypedArgError(interp, a);
+	    goto groupDone;
+	}
+	Tcl_DecrRefCount(typed);
+	rc = TCL_OK;
+
+      groupDone:
+	for (k = 0; k < np; k++) {
+	    Tcl_DecrRefCount(pairs[k]);
+	}
+	Tcl_Free(pairs);
+	return rc;
+    }
 }
 
 /*
  * À l'appel (InitArgsAndLocals, le cadre de la procédure poussé, ses locales
  * prêtes) : la liste d'arguments a été rangée dans « args » (la seule
- * locale formelle) ; les champs sont liés.
+ * locale formelle) ; les options, puis les champs, sont liés.
  */
 int
 TclTypedProcBind(Tcl_Interp *interp, void *sigv, Tcl_Size skip)
@@ -9044,11 +9851,13 @@ TclTypedProcBind(Tcl_Interp *interp, void *sigv, Tcl_Size skip)
     Interp *iPtr = (Interp *) interp;
     CallFrame *framePtr = iPtr->varFramePtr;
     TclTypedSig *sig = (TclTypedSig *) sigv;
-    Tcl_Size objc = framePtr->objc - skip, i, k = 0;
-    Tcl_Size nf = sig->n - sig->rest;
+    Tcl_Size objc = framePtr->objc - skip, i = 0, k = 0, j;
+    Tcl_Size nf = sig->npos;
     Tcl_Obj *const *objv = framePtr->objv + skip;
-    Tcl_Obj **vals, *restList = NULL;
+    Tcl_Obj **vals, **ov = NULL, *restList = NULL;
+    Tcl_Obj *valsBuf[8], *ovBuf[16];
     int seenLabel = 0, rc = TCL_ERROR;
+    Tcl_Size restField = sig->rest ? sig->n - 1 : -1;
 
     if (sig->n < 0) {
 	return TCL_OK;			/* seulement un type de retour */
@@ -9063,15 +9872,74 @@ TclTypedProcBind(Tcl_Interp *interp, void *sigv, Tcl_Size skip)
 	av->value.objPtr = NULL;
 	av->flags = 0;
     }
-    vals = (Tcl_Obj **) TclStackAlloc(interp, sizeof(Tcl_Obj *) * (nf + 1));
+    vals = (nf + 1 <= 8) ? valsBuf
+	    : (Tcl_Obj **) Tcl_Alloc(sizeof(Tcl_Obj *) * (nf + 1));
     memset(vals, 0, sizeof(Tcl_Obj *) * (nf + 1));
     if (sig->rest) {
 	restList = Tcl_NewListObj(0, NULL);
 	Tcl_IncrRefCount(restList);
     }
-    for (i = 0; i < objc; i++) {
+
+    /* v16q : les options, au début */
+    if (sig->nopts > 0) {
+	ov = (sig->nopts <= 16) ? ovBuf
+		: (Tcl_Obj **) Tcl_Alloc(sizeof(Tcl_Obj *) * sig->nopts);
+	memset(ov, 0, sizeof(Tcl_Obj *) * sig->nopts);
+	while (i < objc) {
+	    Tcl_Size wl, e;
+	    const char *w = Tcl_GetStringFromObj(objv[i], &wl);
+	    int ambig;
+	    OptEntry *oe;
+	    Tcl_Obj *v;
+
+	    if (wl < 2 || w[0] != '-') {
+		break;
+	    }
+	    if (wl == 2 && w[1] == '-') {
+		i++;			/* -- : fin des options */
+		break;
+	    }
+	    e = FindOpt(sig, w, wl, &ambig);
+	    if (e < 0) {
+		double d;
+
+		if (!ambig && Tcl_GetDoubleFromObj(NULL, objv[i], &d)
+			== TCL_OK) {
+		    break;		/* -5 : un argument */
+		}
+		OptErr(interp, ambig ? "AMBIGUOUS" : "OPTION", Tcl_ObjPrintf(
+			"%s option \"%s\": must be %s", ambig ? "ambiguous"
+			: "bad", w, Tcl_GetString(sig->optList)));
+		goto done;
+	    }
+	    oe = &sig->opts[e];
+	    if (objc - i - 1 < oe->nvals) {
+		OptErr(interp, "VALUE", oe->nvals == 1
+			? Tcl_ObjPrintf("option \"%s\" needs a value",
+			    Tcl_GetString(oe->opt))
+			: Tcl_ObjPrintf("option \"%s\" needs %d values",
+			    Tcl_GetString(oe->opt), oe->nvals));
+		goto done;
+	    }
+	    if (oe->nvals == 0) {
+		v = Tcl_NewWideIntObj(1);
+	    } else if (oe->nvals == 1) {
+		v = objv[i + 1];
+	    } else {
+		v = Tcl_NewListObj(oe->nvals, objv + i + 1);
+	    }
+	    Tcl_IncrRefCount(v);
+	    if (ov[e] != NULL) {
+		Tcl_DecrRefCount(ov[e]);	/* la dernière l'emporte */
+	    }
+	    ov[e] = v;
+	    i += 1 + oe->nvals;
+	}
+    }
+
+    for (; i < objc; i++) {
 	Tcl_Obj *arg = objv[i], *lab = NULL, *val = arg;
-	Tcl_Size fi = -1, j;
+	Tcl_Size fi = -1;
 
 	if (TclIsAnnotated(arg)) {
 	    lab = TclAnnotLabelOf(arg);
@@ -9082,7 +9950,8 @@ TclTypedProcBind(Tcl_Interp *interp, void *sigv, Tcl_Size skip)
 
 	    for (j = 0; j < nf; j++) {
 		Tcl_Size nl;
-		const char *nt = Tcl_GetStringFromObj(sig->a[j].name, &nl);
+		const char *nt = Tcl_GetStringFromObj(
+			sig->a[sig->pos[j]].name, &nl);
 
 		if (nl == ll - 1 && memcmp(nt, lt, nl) == 0) {
 		    fi = j;
@@ -9100,14 +9969,15 @@ TclTypedProcBind(Tcl_Interp *interp, void *sigv, Tcl_Size skip)
 		}
 	    }
 	    if (fi < 0 && !seenLabel && LabelForSum(interp, sig,
-		    (k < nf) ? k : (restList != NULL ? nf : -1)) == 0) {
+		    (k < nf) ? sig->pos[k] : restField) == 0) {
 		/* ni un champ, ni la variante d'une somme */
 		Tcl_Obj *msg = Tcl_ObjPrintf("unknown argument label {%s}: "
 			"must be ", lt);
 
 		for (j = 0; j < nf; j++) {
 		    Tcl_AppendStringsToObj(msg, j == 0 ? "" : j == nf - 1
-			    ? " or " : ", ", Tcl_GetString(sig->a[j].name),
+			    ? " or " : ", ",
+			    Tcl_GetString(sig->a[sig->pos[j]].name),
 			    ":", (char *) NULL);
 		}
 		Tcl_SetObjResult(interp, msg);
@@ -9124,7 +9994,7 @@ TclTypedProcBind(Tcl_Interp *interp, void *sigv, Tcl_Size skip)
 		}
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"argument \"%s\" given twice",
-			Tcl_GetString(sig->a[fi].name)));
+			Tcl_GetString(sig->a[sig->pos[fi]].name)));
 		Tcl_SetErrorCode(interp, "TCL", "WRONGARGS", (char *) NULL);
 		goto done;
 	    }
@@ -9147,9 +10017,17 @@ TclTypedProcBind(Tcl_Interp *interp, void *sigv, Tcl_Size skip)
 	    goto done;
 	}
     }
-    for (i = 0; i < nf; i++) {
-	TypedArg *a = &sig->a[i];
-	Tcl_Obj *v = vals[i], *typed = NULL;
+
+    /* les options d'abord : un défaut [cmd] d'un champ peut les lire */
+    for (j = 0; j < sig->n; j++) {
+	if (sig->a[j].optKind != OPT_NONE
+		&& BindOption(interp, sig, j, ov) != TCL_OK) {
+	    goto done;
+	}
+    }
+    for (j = 0; j < nf; j++) {
+	TypedArg *a = &sig->a[sig->pos[j]];
+	Tcl_Obj *v = vals[j], *typed = NULL;
 
 	if (v == NULL) {
 	    if (a->defval != NULL) {
@@ -9163,12 +10041,9 @@ TclTypedProcBind(Tcl_Interp *interp, void *sigv, Tcl_Size skip)
 	    } else if (a->allDefault) {
 		/* {{T}x ?= 0; {T}y ?= 0}dp absent : la valeur des défauts */
 		Tcl_Obj *content = NULL;
-		const TclType *pt = a->tp;
 
-		while (pt->kind != TCLT_PRODUCT && pt->under != NULL) {
-		    pt = pt->under;
-		}
-		if (TclBuildProductNamed(interp, (TclType *) pt, 0, NULL,
+		if (TclBuildProductNamed(interp,
+			(TclType *) UnderKind(a->tp, TCLT_PRODUCT), 0, NULL,
 			&content) != TCL_OK) {
 		    TypedArgError(interp, a);
 		    goto done;
@@ -9185,7 +10060,7 @@ TclTypedProcBind(Tcl_Interp *interp, void *sigv, Tcl_Size skip)
 		Tcl_SetErrorCode(interp, "TCL", "WRONGARGS", (char *) NULL);
 		goto done;
 	    }
-	    vals[i] = v;
+	    vals[j] = v;
 	    Tcl_IncrRefCount(v);
 	}
 	if (a->isVar) {
@@ -9213,44 +10088,42 @@ TclTypedProcBind(Tcl_Interp *interp, void *sigv, Tcl_Size skip)
 	    }
 	    continue;
 	}
-	if (DeclareTyped(interp, a->typeText, v, 0, &typed) != TCL_OK) {
+	if (DeclareLocalTyped(interp, a->name, a->typeText, v) != TCL_OK) {
 	    TypedArgError(interp, a);
 	    goto done;
 	}
-	Tcl_IncrRefCount(typed);
-	if (TclTypedVarDeclare(interp, a->name, typed) == NULL) {
-	    Tcl_DecrRefCount(typed);
-	    TypedArgError(interp, a);
-	    goto done;
-	}
-	Tcl_DecrRefCount(typed);
     }
     if (restList != NULL) {
-	TypedArg *a = &sig->a[nf];
-	Tcl_Obj *typed = NULL;
+	TypedArg *a = &sig->a[restField];
 
-	if (DeclareTyped(interp, a->typeText, restList, 0, &typed) != TCL_OK) {
+	if (DeclareLocalTyped(interp, a->name, a->typeText, restList)
+		!= TCL_OK) {
 	    TypedArgError(interp, a);
 	    goto done;
 	}
-	Tcl_IncrRefCount(typed);
-	if (TclTypedVarDeclare(interp, a->name, typed) == NULL) {
-	    Tcl_DecrRefCount(typed);
-	    TypedArgError(interp, a);
-	    goto done;
-	}
-	Tcl_DecrRefCount(typed);
     }
     Tcl_ResetResult(interp);
     rc = TCL_OK;
 
   done:
-    for (i = 0; i < nf; i++) {
-	if (vals[i] != NULL) {
-	    Tcl_DecrRefCount(vals[i]);
+    for (j = 0; j < nf; j++) {
+	if (vals[j] != NULL) {
+	    Tcl_DecrRefCount(vals[j]);
 	}
     }
-    TclStackFree(interp, vals);
+    if (ov != NULL) {
+	for (j = 0; j < sig->nopts; j++) {
+	    if (ov[j] != NULL) {
+		Tcl_DecrRefCount(ov[j]);
+	    }
+	}
+	if (ov != ovBuf) {
+	    Tcl_Free(ov);
+	}
+    }
+    if (vals != valsBuf) {
+	Tcl_Free(vals);
+    }
     if (restList != NULL) {
 	Tcl_DecrRefCount(restList);
     }
@@ -9479,6 +10352,10 @@ TclTypedSigDefault(void *sigv, const char *name, Tcl_Obj **defPtr)
 	    if (sig->a[i].defcmd != NULL) {
 		*defPtr = Tcl_ObjPrintf("[%s]",
 			Tcl_GetString(sig->a[i].defcmd));
+		return 1;
+	    }
+	    if (sig->a[i].isFlag) {
+		*defPtr = Tcl_NewWideIntObj(0);	/* un drapeau absent : 0 */
 		return 1;
 	    }
 	    return 0;

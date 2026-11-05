@@ -424,6 +424,10 @@ ParseTypeLexeme(
 	    /* Le nom, s'il y en a un, est COLLÉ à l'accolade fermante. */
 
 	    end = start + 1;
+	    if ((end + 1 < start + numBytes) && (*end == '-')
+		    && TclTypeIsNameChar(end[1]) && !isdigit(UCHAR(end[1]))) {
+		end++;			/* v16q : {int}-index, une option */
+	    }
 	    while ((end < start + numBytes) && TclTypeIsNameChar(*end)) {
 		end++;
 	    }

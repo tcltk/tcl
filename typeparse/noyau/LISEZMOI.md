@@ -2118,3 +2118,39 @@ Patch noyau `procs-typees.patch` (après `annot-fallthrough.patch`) : `tclInt.h`
   type est gratuit.
 - Sorties attendues changées : t28, t93 (la liste des sous-commandes de `type` gagne `proc`).
   Nouveau test `t96_procs_typees`. `make test` : mêmes échecs que la référence.
+
+### v16q — options et drapeaux des procédures typées (5 novembre 2026)
+
+Pas de patch noyau. Sources de types : `tclTypes.c`, `tclTypeParse.c`.
+
+- **Option** : un champ dont le nom commence par `-` (`tclTypeParse.c` accepte `{int}-index` : un
+  `-` puis un nom collé à l'accolade). Les options se donnent au début de l'appel, jusqu'au premier
+  mot qui n'en est pas une ou `--` ; préfixe unique accepté ; un nombre négatif (`-5`) termine les
+  options ; la locale perd le `-`.
+- `{flag}-x` : drapeau, locale 1/0 (`flag` : type prédéfini, un entier). `{T}-x ?= v` : option à
+  valeur ; absente et sans défaut, la locale reste indéfinie.
+- **Exclusives** : une somme `{"ascii", "dictionary", {string}command}-mode ?= ascii` ; une option
+  par variante (littéral : sans valeur ; typée : une valeur), plus `-mode NOM` ; la locale `mode`
+  reçoit le nom de la variante, la locale `command` sa valeur ; `options -ascii and -integer are
+  exclusive`. Le défaut doit nommer une variante (vérifié à la définition).
+- **Dépendantes** : une variante produit `{{string}cmd; {int}-depth ?= 1; {flag}-follow}command` :
+  ses champs sans `-` suivent l'option (`-command ls`), ses champs `-x` sont des options valides
+  seulement avec elle (`option "-depth" requires -command`) ; tous deviennent des locales.
+- **Groupe** : `{T}-o`, `T` un produit : ses champs sont les options (un champ somme donne ses
+  variantes), la locale `o` est une valeur de `T`. (Choix : `{T}-o` plutôt qu'un mot-clé
+  `options.T` — le `-` du champ dit déjà « options ».)
+- Une option définie deux fois est refusée à la définition. Messages à la manière de
+  `Tcl_GetIndexFromObj` (`bad option`, `ambiguous option`, liste triée).
+- `info default` d'un drapeau : `1` et `0`.
+- `--` : termine les options (zone des options seulement, en entier) ; rappelé comme dans `regexp`
+  par `bad option "-zz": must be …, -unique or --` et dans l'usage (`… ?--? l`). Une procédure
+  sans option ne le traite pas à part.
+- Accélérations (toutes les procédures typées) : la valeur typée du défaut d'une option (et du
+  drapeau donné) est faite une fois et partagée (refaite si les types changent) ; `X is T = v`
+  et la liaison d'un argument `{list…}`/produit/dict convertissent la source en liste une fois,
+  au lieu de relire sa chaîne à chaque appel ({list}l : 0,96 -> 0,64 µs) ; plus de
+  `TclStackAlloc` dans la liaison.
+- Mesures (`exemples/bench_options.tcl`) : `trier -dec -index 1 -integer $L` 2,2 µs contre 3,3 µs
+  pour la même analyse écrite en Tcl ; sans option 1,5 contre 1,1 µs.
+- Nouveau test `t97_options`. Vérifié : 75 tests, mêmes sorties en forme compacte ; `make test`
+  : mêmes échecs que la référence ; valgrind propre.

@@ -226,7 +226,7 @@ type def {-a,-b}NOM DÉF        ;# plusieurs options, dans la syntaxe des notes
 type is {compact?}TYPE|VALEUR  ;# une question sur un type ou une valeur
 type is {disjoint?}S           ;# les paires de variantes qui peuvent accepter une même valeur
 type is {strict?}S             ;# 1 si S a été défini {-strict}
-type proc NOM                  ;# la signature d'une procédure typée : args, return (§ 6.4)
+type proc NOM                  ;# la signature d'une procédure typée : args, return (§ 6.4, 6.5)
 type {c!}export TYPE ?TYPE ...? ;# en-tête C des types nommés (§ 12.2) ; {llvm!} prévu
 ```
 
@@ -527,6 +527,7 @@ decale {100 200}               ;# 100 200 : dp prend ses défauts
 decale {100 200} {50}          ;# argument "dp": {{double}x ?= 0; {double}y ?= 0} needs 2 values but got 1
 ```
 
+- **Nommer les types qui circulent.** Un produit écrit dans la signature est un type à lui seul : une valeur `pt` de même forme y est refusée (`unknown way to cast the value from pt to {{double}x; {double}y}`), il faudrait `{list}$a` ou un `type convert`. Et une valeur déjà du type d'un champ nommé y entre sans être revérifiée (`{pt}p; {vec}dp` : 1,38 µs avec des valeurs typées, 1,95 µs avec des listes nues, comme la forme anonyme). Les types qui passent de procédure en procédure gagnent donc à être nommés (`type def pt …`) ; la forme anonyme convient à ce qui n'entre que sous forme de liste ou de texte.
 - **Le reste.** Un dernier champ `{list.T}args` reçoit les arguments en trop, chacun validé (`proc somme {{int}a; {list.int}args} …`).
 - **Upvar automatique.** Un champ `{var.T}n` reçoit un nom de variable : `n` est liée à la variable de l'appelant, dont la valeur courante (si elle existe) doit être un `T`.
 
@@ -550,6 +551,53 @@ type get [g p]                 ;# R.point
 - **Introspection.** `type proc nom` rend `args {…} return T` (la signature canonique, vide pour une procédure classique) ; `info args` rend les noms des champs, `info default` leurs défauts (`[cmd]` pour un défaut calculé).
 - **Coût.** Une procédure typée va aussi vite que la même procédure classique qui ferait tous ces contrôles à la main (1,15 µs contre 1,17 µs pour `decale $a 1 1`, sans contrôle 0,47 µs) ; une étiquette coûte environ 0,5 µs. Voir `exemples/bench_procs.tcl`.
 - **Compatibilité.** Une liste d'arguments qui est une liste Tcl valide reste classique (`{a {b 2} args}`, et même `{a;}`) ; elle est typée quand elle n'est pas une liste et contient un `{T}nom`, ou quand elle contient des `;` et se lit comme un produit. Une procédure classique peut avoir un type de retour (`proc {int}f {a} …`).
+
+#### 6.5 Options et drapeaux (v16q)
+
+Un champ dont le nom commence par `-` est une **option**. Les options se donnent au début de l'appel, dans n'importe quel ordre, jusqu'au premier mot qui n'en est pas une (ou `--`) ; un préfixe unique suffit (`-dec` pour `-decreasing`) ; la variable locale perd le `-`.
+
+```tcl
+proc {list}trier {
+    {flag}-decreasing;
+    {int}-index ?= -1;
+    {"ascii", "dictionary", "integer", {string}command}-mode ?= ascii;
+    {list}l
+} {
+    set o [list -$mode]                ;# mode : ascii, dictionary, integer ou command
+    if {$mode eq "command"} {set o [list -command $command]}
+    if {$decreasing} {lappend o -decreasing}
+    if {$index >= 0} {lappend o -index $index}
+    lsort {*}$o $l
+}
+trier -dec -index 1 -integer $L
+```
+
+- **Drapeau** : `{flag}-x` ; la locale vaut `1` si l'option est donnée, sinon `0` (ou son défaut). `flag` est un type prédéfini (un entier).
+- **Option à valeur** : `{T}-x ?= v` ; `-x valeur`, vérifiée comme un argument. Sans défaut et absente, la locale reste indéfinie (`info exists x`).
+- **Options exclusives** : une somme. Chaque variante est une option : un littéral (`"ascii"`) est une option sans valeur, une variante typée (`{string}command`) prend une valeur. La locale du champ (`mode`) reçoit le **nom** de la variante choisie, la locale de la variante (`command`) sa valeur ; `-mode ascii` choisit aussi une variante sans valeur. Deux variantes différentes : `options -ascii and -integer are exclusive`. Le défaut nomme une variante.
+- **Options dépendantes** : une variante dont le type est un produit. Ses champs sans `-` sont les valeurs qui suivent l'option, ses champs `-x` sont des options qui n'ont de sens qu'avec elle ; tous deviennent des locales.
+
+```tcl
+proc parcours {
+    {"plat", {{string}cmd; {int}-depth ?= 1; {flag}-follow}command}-mode ?= plat;
+    {string}dir
+} {...}
+parcours -command ls -depth 3 -follow /tmp   ;# mode=command cmd=ls depth=3 follow=1
+parcours -depth 3 /tmp                       ;# option "-depth" requires -command
+```
+
+- **Groupe** : `{T}-o`, `T` un produit (nommé, réutilisable entre procédures). Les champs de `T` sont les options (`-decreasing`, `-index`, et les variantes d'un champ somme) ; la locale `o` est une valeur de `T` (`$o(index)`).
+
+```tcl
+type def triopts {{flag}decreasing; {int}index ?= -1; {"ascii", "dictionary"}mode ?= ascii}
+proc trier2 {{triopts}-o; {list}l} { ... $o(decreasing) ... }
+trier2 -decreasing -index 3 -dictionary $L
+```
+
+- **Messages** : `bad option "-zz": must be -ascii, -command, -decreasing, … or --`, `ambiguous option "-d": must be …`, `option "-index" needs a value`, `option "-index": expected integer but got "x"` ; l'usage les montre (`?-decreasing? ?-index value? ?-ascii|-dictionary|-integer|-command value? ?--? l`).
+- **`--`** termine les options et n'est pas transmis (`trier -dec -- -x` : `l` vaut `-x`). Il n'est reconnu que dans la zone des options, en entier (pas d'abréviation) ; après les options, ou en position de valeur (`-index --`), c'est un mot ordinaire ; une procédure sans option ne le traite pas à part. Un nombre négatif (`-5`) termine aussi les options ; une autre valeur qui commence par `-` demande `--`.
+- **Avec le reste** : les options se combinent avec les positionnels, les étiquettes, `{list.T}args` et le type de retour. `info args` rend les champs tels qu'écrits (`-decreasing`), `info default` leurs défauts (`0` pour un drapeau).
+- **Coût** : `trier -dec -index 1 -integer $L` 2,2 µs, contre 3,3 µs pour la même analyse écrite en Tcl (`tcl::prefix match`, contrôles, exclusivité) ; sans option, 1,5 µs contre 1,1 µs (`exemples/bench_options.tcl`).
 
 ### 7. Accéder aux parties d'une valeur : les chemins
 

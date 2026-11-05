@@ -1,0 +1,44 @@
+rien: dec=0 uni=0 idx=-1 mode=ascii - {l=3 1 2}
+drapeaux: dec=1 uni=1 idx=-1 mode=ascii - {l=3 1 2}
+préfixe: dec=1 uni=0 idx=2 mode=ascii - {l=3 1 2}
+ambigu: ERREUR ambiguous option "-d": must be -ascii, -command, -decreasing, -dictionary, -index, -integer, -mode, -unique or --
+inconnue: ERREUR bad option "-zz": must be -ascii, -command, -decreasing, -dictionary, -index, -integer, -mode, -unique or --
+exclusives: ERREUR options -ascii and -integer are exclusive
+même deux fois: dec=0 uni=0 idx=-1 mode=integer - {l=3 1 2}
+-integer: dec=0 uni=0 idx=-1 mode=integer - {l=3 1 2}
+-command: dec=0 uni=0 idx=-1 mode=command cmd=mycmp {l=3 1 2}
+-mode: dec=0 uni=0 idx=-1 mode=dictionary - {l=3 1 2}
+-mode mauvais: ERREUR bad value "zz" for option "-mode": must be ascii, dictionary or integer
+-mode command: ERREUR bad value "command" for option "-mode": must be ascii, dictionary or integer
+valeur manque: ERREUR option "-index" needs a value
+index mauvais: ERREUR option "-index": expected integer but got "x"
+--: dec=0 uni=0 idx=-1 mode=ascii - l=-decreasing
+nombre: dec=0 uni=0 idx=-1 mode=ascii - l=-5
+usage: ERREUR wrong # args: should be "trier ?-decreasing? ?-unique? ?-index value? ?-ascii|-dictionary|-integer|-command value? ?--? l"
+info args: -decreasing -unique -index -mode l
+dépendantes : rien: mode=plat dir=/tmp
+dépendantes : -command: mode=command dir=/tmp cmd=ls depth=1 follow=0
+dépendantes : -depth: mode=command dir=/tmp cmd=ls depth=3 follow=1
+dépendante seule: ERREUR option "-depth" requires -command
+usage dép: ERREUR wrong # args: should be "parcours ?-plat|-command cmd ?-depth value? ?-follow?? ?--? dir"
+groupe : rien: {0 -1 ascii} triopts 0 -1 ascii {sum<:"ascii";:"dictionary";command:string;>}
+groupe : options: {1 3 dictionary} triopts 1 3 dictionary {sum<:"ascii";:"dictionary";command:string;>}
+groupe : -command: {0 -1 foo} triopts 0 -1 foo {sum<:"ascii";:"dictionary";command:string;>.command}
+groupe : exclusives: ERREUR options -ascii and -dictionary are exclusive
+groupe : -mode: {0 -1 dictionary} triopts 0 -1 dictionary {sum<:"ascii";:"dictionary";command:string;>}
+groupe : usage: ERREUR wrong # args: should be "trier2 ?-decreasing? ?-index value? ?-ascii|-dictionary|-command value? ?--? l"
+doublon: ERREUR option "-a" is defined twice
+défaut pas une variante: ERREUR value "c" matches no variant of sum<:"a";:"b";>
+info default: 1 -1 1 0
+type proc: {flag}-decreasing; {flag}-unique; {int}-index ?= -1; {"ascii", "dictionary", "integer", {string}command}-mode ?= ascii; {list}l
+{flag} hors procédure: flag
+option et étiquette: 1 1 5
+option et args: 1 {1 2 3}
+argument -5: 0 -5
+valeur commençant par -: ERREUR argument "a": expected integer but got "-x"
+type de retour: 4 8 int
+appel compilé: {dec=1 uni=0 idx=-1 mode=command cmd=foo l=1} {mode=command dir=/ cmd=ls depth=2 follow=0}
+-- termine les options: {dec=0 uni=0 idx=-1 mode=ascii - l=-decreasing} {dec=1 uni=0 idx=-1 mode=ascii - l=-x}
+-- seul: ERREUR wrong # args: should be "trier ?-decreasing? ?-unique? ?-index value? ?-ascii|-dictionary|-integer|-command value? ?--? l"
+-- en valeur: ERREUR option "-index": expected integer but got "--"
+sans options : -- est un argument: -- x
