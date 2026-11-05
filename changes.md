@@ -71,6 +71,8 @@ to the userbase.
  - [Unsetting env vars in slave interps](https://core.tcl-lang.org/tcl/tktview/845241)
  - [Memory corruption false positive with TCL_MEM_DEBUG](https://core.tcl-lang.org/tcl/tktview/7e3f26)
  - [Windows: [file delete -force] failed on a directory containing a symbolic link](https://core.tcl-lang.org/tcl/tktview/08203e)
+ - [lpop/lset/join crashes with abstract lists](https://core.tcl-lang.org/tcl/tktview/409a4e)
+
 
 # Updated bundled packages, libraries, standards, data
  - http 2.10.3
