@@ -2230,3 +2230,36 @@ types : `tclTypes.c`, `tclTypes.h`, `tclAnnotObj.c`, `tclTypedVar.c`.
   248).
 - Vérifié : 76 tests ; mêmes sorties en forme compacte ; tests de tcllib (Tcl et C) ; `make test`
   : mêmes échecs que la référence ; valgrind propre.
+
+### v16t — une chaîne est un scalaire, un produit un conteneur (5 novembre 2026)
+
+Sources de types : `tclAnnotObj.c`. Aucun patch noyau.
+
+La « règle B » (v15) rendait atomique toute valeur typée, produits compris, pour qu'une chaîne
+typée ne soit jamais relue comme une liste. L'atomicité des produits violait EIAS : deux valeurs
+de même chaîne avaient deux structures (`concat $P $P` donnait `{1 2} {1 2}` pour un `point`,
+`1 2 1 2` pour la liste `{1 2}`). Voir `doc/CARTOGRAPHIE-EIAS.md`.
+
+- **Vue liste** (`AnnotListView`) : un produit se déplie, comme `list` et `dict` ; un scalaire
+  typé (chaîne, nombre, littéral d'une somme), un lien restent UN élément. Une somme prend la
+  nature de sa variante active.
+- **Type d'un élément par indice** (`AnnotListElemTypeAt`) : `list.T` → T ; produit → le type du
+  champ. Les champs sont enveloppés dans leur type à la lecture (`AnnotWrapFields`), sauf les
+  champs `int`/`double` simples, rendus nus comme les éléments d'une `list.double` ; `lindex` les
+  type à la demande.
+- **`list.string`** : ses éléments ne sont plus rendus nus dans les parcours (v16s) ; nus, ils
+  étaient relus comme des listes dans une boucle imbriquée (`foreach r $M {foreach s $r …}`
+  découpait `{hello world}`). Restent nus : `list.int`, `list.double`.
+- **Changements visibles** : `llength $P` vaut 2 pour un `point` ; `lassign $P x y`,
+  `foreach {x y} $P`, `{*}$P`, `concat`, `join`, `lmap` voient les champs ; `lset P 0 5` écrit le
+  champ `x` sous contrat ; `lappend P 3` est refusé (`point needs 2 values but got 3`). Sorties
+  mises à jour : t51 (le message attendu de `lreplace $faux 0 0 5` porte maintenant sur le champ
+  `n`), t55, t81, t98 ; t18 et t19 (sans sortie attendue, en échec depuis la v16s) corrigés et
+  dotés d'un `.out`. Nouveau test t99_produits_ouverts.
+- **Exemples** : `tcllib_geometry/geometry.tcl` sans `{*}` (18 procédures), `geom.c` lit les
+  produits typés par `Tcl_ListObjGetElements` ; `executable.tcl` affiche maintenant les noms des
+  sections (`lindex $s 0` rendait la section entière).
+- Mesures : la géométrie sans `{*}` va à la même vitesse ; le C sur des points typés est deux fois
+  plus rapide (`distance $A $B` 0,90 → 0,41 µs, `findLineIntersection` 1,08 → 0,62).
+- Vérifié : 79 tests ; mêmes sorties en forme compacte ; tests de tcllib (Tcl et C) ; `make test`
+  : mêmes échecs que la référence (61) ; valgrind propre (sauf `executable_pe`, comme avant).

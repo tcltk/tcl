@@ -1,0 +1,42 @@
+ok: foreach list.int
+ok: lindex list.int
+ok: lmap list.int
+ok: L
+ok: variantes foreach
+ok: L(2) garde la balise
+ok: lindex L 2
+ok: sans balise (déduite)
+ok: refus {i:}abc
+ok: refus Val.zz
+ok: set {Val.s}w 7
+ok: {Val}{Val.i}
+ok: type get élément string
+ok: Q(0)
+ok: lindex Q 2 1
+ok: Z
+ok: modif lset
+ok: après lset
+ok: lset refus
+ok: lindex R 2 1
+ok: R reste typée
+ok: R(0)
+ok: lindex K 0 0
+ok: K reste typée
+ok: list nue : 5 mots
+ok: list.string type
+ok: list.string llength
+ok: list.string : 2 écritures
+ok: élément atomique
+ok: lindex S 1 1 vide
+ok: lindex S 1
+ok: string range sur élément
+ok: list <- list.string
+ok: list.string <- list
+ok: is list.string
+ok: is list
+ok: double boucle : type conservé
+ok: triple boucle : atomique
+ok: 5 niveaux : atomique
+ok: lindex D 1 0 0
+ok: lindex D 1 0 1
+ok: lmap atomique

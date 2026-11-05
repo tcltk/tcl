@@ -13,6 +13,8 @@ proc both {name body want} {
     check "$name (proc)"   [runproc] $want
 }
 
+type def point {{double}x; {double}y}
+
 # 1. une variable de boucle déjà typée est librement réaffectée
 both "variable int puis string" {
     set {list.string}S {a b} {c d}
@@ -24,11 +26,11 @@ both "variable int puis string" {
 # 2. même nom réutilisé avec deux types d'éléments
 both "réemploi du nom" {
     set {list.string}S {a b} {c d}
-    set {list.int}N 1 2
+    set {list.point}N {1 2} {3 4}
     foreach x $S {lappend r [type get $x]}
     foreach x $N {lappend r [type get $x]}
     set r
-} {string string int int}
+} {string string point point}
 
 # 3. lmap
 both "lmap" {
@@ -61,10 +63,10 @@ both "dict map" {
 
 # 6. la variable reste typée par la dernière valeur reçue après la boucle
 both "type conservé après la boucle" {
-    set {list.int}N 1 2
+    set {list.string}N a b
     foreach x $N {}
     type get $x
-} int
+} string
 
 # 7. après la boucle, la variable reste libre : sans déclaration sur son nom,
 #    elle n'a pas de contrat (v14 : plus d'adoption)

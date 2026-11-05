@@ -335,7 +335,12 @@ set {list(2).int}d 3           ;# list(2)<int> needs exactly 2 elements but got 
 set {list.any}H {int}1 {double}1.0 {string}{a b}
 ```
 
-Les éléments d'une `list.T` sont atomiques : `lindex`, `foreach`, `$L(i)` rendent des éléments typés, jamais redécoupés en mots. La liste nue `{list}` garde le comportement de Tcl.
+**Scalaires et conteneurs (v16t).** La structure d'une valeur typée vient de son type, jamais d'une relecture de sa chaîne :
+
+- un **scalaire** typé (`string`, nombre, littéral d'une somme) est **un seul** élément de liste : `set {string}s "a b c"` donne `llength $s` = 1. Les éléments d'une `list.string` restent des chaînes à tous les niveaux d'imbrication : `foreach r $M {foreach s $r …}` ne redécoupe jamais `{hello world}` en deux mots ;
+- un **conteneur** (`list`, `dict`, **produit**) se déplie : un produit est la liste de ses champs, chacun dans son type. `set {point}P 1 2` donne `llength $P` = 2, `lassign $P x y`, `foreach {x y} $P`, `{*}$P`, `concat $P $P` = `1 2 1 2`, comme pour la liste `{1 2}`. Un champ `string` reste atomique.
+
+La liste nue `{list}` garde le comportement de Tcl. (Jusqu'à la v16s, un produit était lui aussi un seul élément, « règle B » : deux valeurs de même chaîne avaient alors deux structures, voir `doc/CARTOGRAPHIE-EIAS.md`.)
 
 **Dictionnaire** — `dict` (toutes clés), `dict.T` (valeurs de type T), `dict(clés).T`.
 
@@ -453,7 +458,7 @@ set {int(u,8)}o2 300           ;# value "300" does not fit in int(u,8)
 
 **Casts explicites.** `set v {T}$x` ou `type cast T $x` convertissent selon, dans l'ordre : une règle `type convert` spécifique ; la chaîne des bases ; la variante d'une somme ; une règle de famille ; les conversions intégrées entre scalaires. Sinon : `unknown way to cast the value from A to B`.
 
-**Produit vers collection.** Tout produit se convertit en liste ou en dict : `{list}$p` donne la liste de ses champs, nus (`foreach {x y} {list}$p`) ; `{list.any}$p` les garde annotés, comme `$p(*)` ; `{list(2).double}$p` les valide ; `{dict}$p` donne `x 3 y 4`. Une liste nominale se convertit de même en liste structurelle (`{list.point}$P`, `{list}$P`). Le cast se fait dans la commande qui reçoit le mot : `foreach {x y} {list}$p`, `lassign {list}$p x y`, `dict for {k v} {dict}$p`, ou `type {list}$p` ailleurs (`llength [type {list}$p]`) ; `llength {list}$p` ne caste rien (v16m).
+**Produit vers collection.** Tout produit se convertit en liste ou en dict : `{list}$p` donne la liste de ses champs, nus (depuis la v16t, `foreach {x y} $p` suffit) ; `{list.any}$p` les garde annotés, comme `$p(*)` ; `{list(2).double}$p` les valide ; `{dict}$p` donne `x 3 y 4`. Une liste nominale se convertit de même en liste structurelle (`{list.point}$P`, `{list}$P`). Le cast se fait dans la commande qui reçoit le mot : `foreach {x y} {list}$p`, `lassign {list}$p x y`, `dict for {k v} {dict}$p`, ou `type {list}$p` ailleurs (`llength [type {list}$p]`) ; `llength {list}$p` ne caste rien (v16m).
 
 **Lever le contrat.** `set {}v valeur` (§ 2.5).
 
@@ -470,30 +475,23 @@ set {int(u,8)}o2 300           ;# value "300" does not fit in int(u,8)
 | cast `{T}$x` dans un constructeur | changé | gardées |
 | `set {T}a $x`, variable typée | `T` | effacées par élargissement |
 
-**Adoption.** Une variable **non typée** qui reçoit une valeur typée **adopte** son type, et donc son contrat :
+**Pas d'adoption (v16l).** Une variable **non typée** qui reçoit une valeur typée garde la valeur et son type, mais ne prend **aucun contrat** : elle accepte ensuite n'importe quelle valeur. Seul `set {T}v` (ou une déclaration) pose un contrat.
 
 ```tcl
 set {list.int}L 1 2 3
-set e [lindex $L 1]            ;# e devient une variable int
-set e hello                    ;# expected integer but got "hello"
+set e [lindex $L 1]            ;# e vaut 2, de type int
+set e hello                    ;# accepté : e n'a pas de contrat
 ```
 
-C'est le comportement le plus surprenant du modèle. Le piège classique est `catch … m` réutilisé : si un premier `catch` range dans `m` une valeur typée, un second `catch` ne peut plus y ranger son message d'erreur. Utiliser une variable par usage, `unset` entre deux usages, ou `set {}m …`. (Point ouvert, § 17.)
+Le piège de `catch … m` des versions antérieures n'existe donc plus.
 
-**Procédures.** Un argument qui reçoit une valeur typée est typé et strict dans la procédure ; un argument ordinaire ne change pas.
+**Procédures.** Un argument ordinaire (liste d'arguments classique) reçoit la valeur et son type, sans contrat : `proc f {x} {set x 1.5}` puis `f $n`, avec `n` un `int`, rend 1.5. Pour un argument vérifié, utiliser une signature typée (§ 6.4).
 
 **Conversions.** Une valeur typée se lit comme un nombre si sa chaîne en est un et que son type n'est pas une collection : `string`, une énumération (`type def pi {"3.14159"}` puis `expr {$PI * 2}`), un produit d'un seul champ (`{{int}i}`). Un produit de plusieurs champs, une liste ou un dict restent refusés. `string is` juge toujours la chaîne.
 
-```tcl
-proc f {x} {set x 1.5}
-set {int}n 3
-f $n                           ;# expected integer but got "1.5"
-f 3                            ;# 1.5
-```
-
 **Variables de boucle.** `foreach`, `lmap`, `dict for`, `dict map` (et le filtre de `dict filter`) oublient le type de leur variable avant chaque affectation ; après la boucle, la variable garde le type du dernier élément reçu.
 
-**Listes de scalaires (v16s).** Les éléments d'une `list.int`, `list.double` ou `list.string` (types simples : ni nominaux, ni binaires) restent nus dans la liste : ils ont été vérifiés avec elle. `foreach`, `lmap`, `lassign` (le reste) et `lrange` les rendent nus ; `lindex $L i` et `$L(i)` en font une valeur typée à la demande. Une variable ou une procédure typée qui reçoit un élément nu le revérifie. Les listes de produits, de sommes, de `any` ou de types nominaux gardent leurs éléments typés. (Envelopper chaque élément d'une liste neuve coûtait 2,5 fois la boucle.)
+**Listes de nombres (v16s, v16t).** Les éléments d'une `list.int` ou `list.double` (types simples : ni nominaux, ni binaires), et les champs `int` ou `double` d'un produit, restent nus dans la liste : ils ont été vérifiés avec elle. `foreach`, `lmap`, `lassign` (le reste) et `lrange` les rendent nus ; `lindex $L i` et `$L(i)` en font une valeur typée à la demande. Une variable ou une procédure typée qui reçoit un élément nu le revérifie. Les listes de chaînes, de produits, de sommes, de `any` ou de types nominaux gardent leurs éléments typés. (Envelopper chaque élément d'une liste neuve coûtait 2,5 fois la boucle. Un nombre nu ne peut pas être relu comme une liste ; une chaîne nue le pourrait : la v16s rendait aussi les éléments d'une `list.string` nus, la v16t les garde typés.)
 
 #### 6.3 `type deref` : un instantané des liens
 
@@ -555,7 +553,7 @@ type get [g p]                 ;# R.point
 - **Coût.** Une procédure typée va aussi vite que la même procédure classique qui ferait tous ces contrôles à la main (1,15 µs contre 1,17 µs pour `decale $a 1 1`, sans contrôle 0,47 µs) ; une étiquette coûte environ 0,5 µs. Voir `exemples/bench_procs.tcl`.
 - **Compatibilité.** Une liste d'arguments qui est une liste Tcl valide reste classique (`{a {b 2} args}`, et même `{a;}`) ; elle est typée quand elle n'est pas une liste et contient un `{T}nom`, ou quand elle contient des `;` et se lit comme un produit. Une procédure classique peut avoir un type de retour (`proc {int}f {a} …`).
 
-- **Dépliage du résultat (v16r)** : `proc {{*}T}nom` vérifie le résultat comme un `T`, puis le rend **déplié**, en données Tcl ordinaires ; `{{**}T}` le rend en dict. Le `{*}` déplie comme celui de Tcl (et comme `$P(*)`), `{**}` donne les noms, comme `*args` et `**kwargs` en Python. Le dépliage est profond : un produit de produits devient une liste de listes (ou des dicts imbriqués), une `list.point` une liste de listes ; une somme rend le contenu de sa variante (avec `{**}`, un dict `{variante valeur}` ; une variante littérale reste elle-même). C'est la forme d'une API publique : un `point` typé est un seul élément de liste, son dépliage `{x y}` en a deux (`lassign $P x y` marche).
+- **Dépliage du résultat (v16r)** : `proc {{*}T}nom` vérifie le résultat comme un `T`, puis le rend **déplié**, en données Tcl ordinaires ; `{{**}T}` le rend en dict. Le `{*}` déplie comme celui de Tcl (et comme `$P(*)`), `{**}` donne les noms, comme `*args` et `**kwargs` en Python. Le dépliage est profond : un produit de produits devient une liste de listes (ou des dicts imbriqués), une `list.point` une liste de listes ; une somme rend le contenu de sa variante (avec `{**}`, un dict `{variante valeur}` ; une variante littérale reste elle-même). Depuis la v16t, un produit typé se déplie déjà dans la vue liste (`lassign $P x y` marche sur un `point`) : `{*}T` ne sert plus qu'à rendre des données **sans type**, et `{**}T` un dict.
 
 ```tcl
 proc {{*}point}v  {{double}h} {( 0, $h )}     ;# 0 5      (vérifié comme point)
@@ -1214,7 +1212,7 @@ Le codec C, qui **vérifie** en plus chaque valeur contre son type, est 2 à 3 f
 
 **À corriger ou à décider**
 
-- **Adoption par une variable non typée.** `set e [lindex $L 1]` rend `e` typée et stricte. Le piège `catch … m` (§ 6.2) en découle, et l'erreur qui s'en échappe est le message d'origine, ce qui la rend difficile à comprendre. À décider : adoption silencieuse, adoption sans contrat, ou message explicite.
+- **Tensions avec EIAS.** Atomicité des valeurs typées, type perdu par la chaîne, types propres à un interpréteur (lecture après libération si l'interpréteur qui a défini le type disparaît), noms de types globaux : voir `doc/CARTOGRAPHIE-EIAS.md`.
 
 **Pas encore fait**
 
@@ -1253,7 +1251,6 @@ bash typeparse/maj.sh [typeparse.zip]   # extrait, copie les sources de types, a
 | annotation locale | annotation dont le texte ne peut pas être un type (`{-v}`, `{is?}`) ; elle ne vit qu'entre l'appelant et la commande |
 | constructeur | ce qui range une valeur et résout ses annotations : `set {T}v`, liaison d'arguments, `lassign`, `foreach`, affectation dans `expr` |
 | contrat | le type d'une variable, vérifié à chaque écriture |
-| adoption | une variable non typée prend le type de la valeur reçue |
 | cast | conversion explicite vers un type (`{T}$x` dans un constructeur, `type cast`) |
 | nominal | type créé par `type def`, distinct de sa définition ; s'efface devant sa base |
 | raffinement | type de base restreint, avec une représentation binaire (`int(u,8)`) |

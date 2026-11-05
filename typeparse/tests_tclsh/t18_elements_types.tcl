@@ -5,9 +5,11 @@ proc check {what got want} {
 }
 set {list.int}N 4 5 6
 foreach e $N {lappend r [type get $e]}
-check "foreach list.int" $r {int int int}
+# v16s : les éléments d'une list.int (nombres simples) sont rendus nus au
+# parcours ; lindex et $N(i) les typent
+check "foreach list.int" $r {{} {} {}}
 check "lindex list.int" [type get [lindex $N 1]] int
-check "lmap list.int" [lmap e $N {type get $e}] {int int int}
+check "lmap list.int" [lmap e $N {type get $e}] {{} {} {}}
 catch {unset e}
 type def {-deduce}Val {{int}i, {string}s}
 set {list.Val}L {i:}5 {s:}hello {s:}7 {Val.i}8
@@ -37,7 +39,7 @@ set {list.Complex}Z {Complex}{1 2} {Complex}{3 4}
 check "Z" [lmap z $Z {type get $z}] {Complex Complex}
 check "modif lset" [expr {[lset N 0 9; set N] eq {9 5 6}}] 1
 catch {unset e}
-check "après lset" [lmap e $N {type get $e}] {int int int}
+check "après lset" [lmap e $N {type get $e}] {{} {} {}}
 catch {lset N 0 x} m
 check "lset refus" $m {expected integer but got "x"}
 # lindex à plusieurs indices ne détruit plus l'annotation de la variable

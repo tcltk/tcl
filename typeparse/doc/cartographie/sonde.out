@@ -1,0 +1,77 @@
+=== A. identité, égalité
+A1     chaîne de P                                    {1 2} 3 point
+A2     P eq {1 2} / ==                                1 1
+A3     deux types, même chaîne : eq                   1 point vec
+A4     int 5 == double 5.0                            1 0
+A5     clé de dict typée                              1 point
+A6     index de tableau typé                          {{1 2}} 1
+A7     lsort -unique mélange                          {1 2}
+A8     string is double sur int typé                  1 1
+=== B. vue liste
+B1     llength : produit typé / nu                    1 2
+B2     lindex P 0                                     {1 2} 1
+B3     foreach sur P                                  {{1 2}} 1
+B4     {*} d'un produit dans un appel                 1 2
+B5     lassign P                                      {1 2} {}
+B6     list.double : lindex / foreach                 double {- - -}
+B7     list.point : éléments                          2 point 1
+B8     concat P P                                     {{1 2} {1 2}} 2 -
+B9     list P P : éléments typés ?                    2 point
+B10    join / split                                   {1 2} {1 2}
+B11    lsearch L 2.0 / 2                              1 -1
+B12    lappend typée list.double                      {1 2} list<double>
+B13    lappend sur une copie non typée                {1 2 3 x} -
+B14    lrange L                                       {1 2} - -
+=== C. variables
+C1     adoption : set x P                             point 0 abc
+C2     catch m réutilisé                              0 1
+C3     incr int typé / double typé                    2 1 {expected integer but got "1.5"}
+C4     append string typée                            abcd string
+C5     append sur int typé                            1 {expected integer but got "1x"}
+C6     unset puis set                                 -
+C7     upvar vers variable typée                      1 {expected integer but got "x"}
+C8     global + contrat                               1 {expected integer but got "2.5"}
+C9     array set avec valeurs typées                  point 0
+C10    set {}x P : retirer le type                    - 2
+C11    trace write sur typée                          int
+=== D. transport
+D1     aller-retour par fichier                       {1 2} - 2
+D2     subst                                          {1 2} point
+D3     string cat / format                            point point
+D4     eval d'une commande typée                      point
+D5     eval d'une chaîne                              -
+D6     interp enfant : set                            point
+D7     interp enfant : type inconnu là-bas            0 {point int}
+D8     alias vers l'enfant                            point
+D9     dict for / dict get sur dict.int               {- -} -
+D10    after (script)                                 point
+D11    binary format sur double typé                  000000000000f83f
+D12    regexp / regsub                                1 -
+D13    affichage T@notes relisible ?                  {} 1
+=== E. procédures
+E1     proc classique reçoit P                        point 0
+E2     proc typée {point}p reçoit {1 2}               point
+E3     proc typée reçoit un vec                       ERREUR: argument "p": unknown way to cast the value from vec2 to point
+E4     retour {point} vers appelant nu                1 point
+E5     retour {*}point                                2 -
+E6     TclOO : méthode à signature typée              ERREUR: list element in braces followed by "p;" instead of space
+E7     apply à signature typée                        ERREUR: list element in braces followed by "p;" instead of space
+E8     info args proc typée                           p n
+=== F. noms de types
+F1     namespace : type def dans ns                   1 {type "pnt" is already defined}
+F2     redéfinition d'un type existant                1 {type "point" is already defined}
+F3     type forget pendant usage                      tmpT 1
+=== G. compléments
+C1a    adoption globale puis set abc                  abc -
+C1b    adoption dans une proc                         0 abc
+C1c    lindex typé dans une proc                      double 0 abc
+C2b    catch m après valeur typée                     double 0 1 boom
+E1b    proc classique : set p xx                      xx -
+B11b   lsearch -real plain / typé                     -1 -1 1
+B8b    concat nus / typés                             {1 2 1 2} {{1 2} {1 2}} 11
+D14    dict.point : valeurs                           - 2
+D15    lappend d'un point dans liste nue              {{1 2}} 1 point
+D16    string de liste nue contenant P                {0 {1 2}} 1
+D17    relire la chaîne de l3                         {0 {1 2}} 2
+B15    string typée : vue liste                       1 {a b c} 3
+B16    int typé : vue liste                           1 5

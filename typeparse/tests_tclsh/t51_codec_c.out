@@ -36,4 +36,4 @@ option inconnue            == ERREUR: bad option "-bogus": must be -offset, -end
 boutisme faux              == ERREUR: bad endianness "middle": must be little or big
 liste (couche Tcl)         == 1 2 | list(2)<int(u,8)>[int(u,8),int(u,8)]
 liste de Pt (couche Tcl)   == {1 2} {3 4} | list(2)<Pt>[Pt[int(s,8),int(s,16,be)],Pt[int(s,8),int(s,16,be)]]
-encode, n incohérent       == ERREUR: Hdr needs 3 values but got 1
+encode, n incohérent       == ERREUR: type binary: field v of Hdr holds 2, but the field it depends on says 5 ($n)

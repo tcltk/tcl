@@ -1,0 +1,21 @@
+ok: variable int puis string (global)
+ok: variable int puis string (proc)
+ok: réemploi du nom (global)
+ok: réemploi du nom (proc)
+ok: lmap (global)
+ok: lmap (proc)
+ok: foreach multi (global)
+ok: foreach multi (proc)
+ok: dict for (global)
+ok: dict for (proc)
+ok: dict map (global)
+ok: dict map (proc)
+ok: type conservé après la boucle (global)
+ok: type conservé après la boucle (proc)
+ok: libre après (global)
+ok: libre après (proc)
+ok: variable globale liée
+ok: variable upvar
+ok: valeurs plates (global)
+ok: valeurs plates (proc)
+tout est ok

@@ -1,6 +1,6 @@
 {*} liste: {0 5} 2 {} {} 0 5
 {**} dict: {x 0 y 5} 5 {}
-sans dépliage: {0 5} 1 point
+sans dépliage: {0 5} 2 point
 rect {*}: {{0 0} {10 10}} 10 {}
 rect {**}: {nw {x 0 y 0} se {x 10 y 10}} 10
 list.point: {{1 2} {3 4}} {{x 1 y 2} {x 3 y 4}} 2

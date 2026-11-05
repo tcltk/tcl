@@ -1,7 +1,7 @@
 foreach : 0,0
 foreach : 3,4
 lassign : 3 4
-llength : 2 (le point seul : 1)
+llength : 2 (le point seul : 2)
 dict : x=3
 dict : y=4
 dict for : centre=1 2

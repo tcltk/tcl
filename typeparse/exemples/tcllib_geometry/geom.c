@@ -307,17 +307,6 @@ geom_polylines_bounding_intersect(const point *a, size_t na, const point *b,
  * Les commandes Tcl
  * ====================================================================== */
 
-/* Les éléments d'une valeur : une liste ordinaire, ou une valeur typée (un
- * produit est UN élément de liste : ses parties se lisent par
- * Tcl_AnnotatedGetParts). */
-static int
-GetElems(Tcl_Interp *interp, Tcl_Obj *obj, Tcl_Size *nPtr, Tcl_Obj ***evPtr)
-{
-    if (obj->typePtr != NULL && strcmp(obj->typePtr->name, "annotated") == 0) {
-	return Tcl_AnnotatedGetParts(interp, obj, TCL_ANNOT_PLAIN, nPtr, evPtr);
-    }
-    return Tcl_ListObjGetElements(interp, obj, nPtr, evPtr);
-}
 
 /* Un tableau de points lu depuis une valeur Tcl : en place (cases d'une
  * liste {-compact} de double), ou recopié depuis une liste ordinaire ; objs
@@ -356,7 +345,7 @@ GetPts(Tcl_Interp *interp, Tcl_Obj *obj, Pts *P)
 	P->n = (size_t) n / 2;
 	return TCL_OK;
     }
-    if (GetElems(interp, obj, &n, &ev) != TCL_OK) {
+    if (Tcl_ListObjGetElements(interp, obj, &n, &ev) != TCL_OK) {
 	return TCL_ERROR;
     }
     if (n % 2 != 0) {
@@ -389,7 +378,7 @@ GetPoint(Tcl_Interp *interp, Tcl_Obj *obj, point *p)
     Tcl_Obj **ev;
     Tcl_Size n;
 
-    if (GetElems(interp, obj, &n, &ev) != TCL_OK) {
+    if (Tcl_ListObjGetElements(interp, obj, &n, &ev) != TCL_OK) {
 	return TCL_ERROR;
     }
     if (n < 2) {
@@ -410,7 +399,7 @@ GetLine(Tcl_Interp *interp, Tcl_Obj *obj, line *l)
     Tcl_Obj **ev;
     Tcl_Size n;
 
-    if (GetElems(interp, obj, &n, &ev) != TCL_OK) {
+    if (Tcl_ListObjGetElements(interp, obj, &n, &ev) != TCL_OK) {
 	return TCL_ERROR;
     }
     if (n < 4) {
@@ -601,7 +590,7 @@ PointInsidePolygonCmd(void *cd, Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *cons
     (void) cd;
 
     ARGS(2, "point polygon");
-    if (GetElems(interp, objv[1], &n, &ev) != TCL_OK) {
+    if (Tcl_ListObjGetElements(interp, objv[1], &n, &ev) != TCL_OK) {
 	return TCL_ERROR;
     }
     if (n < 2 || GetNum(interp, ev[0], &t[0]) != TCL_OK
@@ -767,7 +756,7 @@ TranslateCmd(void *cd, Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
     (void) cd;
 
     ARGS(2, "vector polyline");
-    if (GetElems(interp, objv[1], &n, &ev) != TCL_OK) {
+    if (Tcl_ListObjGetElements(interp, objv[1], &n, &ev) != TCL_OK) {
 	return TCL_ERROR;
     }
     if (n < 2 || GetNum(interp, ev[0], &t[0]) != TCL_OK
@@ -805,7 +794,7 @@ LineIntersectionCmd(void *cd, Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const 
     for (w = 0; w < 2; w++) {
 	Num *t = w ? b : a;
 
-	if (GetElems(interp, objv[w + 1], &n, &ev) != TCL_OK) {
+	if (Tcl_ListObjGetElements(interp, objv[w + 1], &n, &ev) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	if (n < 4) {

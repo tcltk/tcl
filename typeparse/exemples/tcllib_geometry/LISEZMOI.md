@@ -94,8 +94,9 @@ de positions ; `geometry_c.tcl` vérifie au chargement que le C voit les mêmes 
 - **Les commandes Tcl** (`::math::geometry::c::*`, 15) lisent leurs arguments et appellent ces
   fonctions. Un polygone **en cases** (une liste `{-compact}` de `double`) est lu **en place** par
   `Tcl_AnnotatedGetCells` : le tableau de doubles de Tcl est directement le `const point *` du C,
-  sans copie. Une liste ordinaire est lue par l'API des listes ; une valeur typée (un `point` est
-  un seul élément de liste) par `Tcl_AnnotatedGetParts`.
+  sans copie. Une liste ordinaire est lue par l'API des listes ; une valeur typée aussi : depuis la
+  v16t, un `point` typé est, pour l'API des listes, la liste de ses champs (en v16s, il fallait
+  `Tcl_AnnotatedGetParts`).
 - **`geometry_c.tcl`** charge `geometry.tcl`, puis **remplace** les 15 procédures par les
   commandes C (`rename`) : un appel à `::math::geometry::areaPolygon` va directement à la fonction
   C. Les autres procédures (et `geometry_circle.tcl`, `geometry_ext.tcl`) les appellent sans le
@@ -155,9 +156,10 @@ entre parenthèses.
   pour une liste ordinaire), pas le calcul. Rendre une liste en cases
   (`Tcl_AnnotatedCreateCells`) l'éviterait, mais ce ne serait plus le résultat de tcllib (des
   doubles normalisés : `1.0` au lieu de `1`).
-- **C\* sur des points typés** : `distance $A $B` (0,88 µs) est plus lent qu'avec des listes
-  (0,15) : un produit typé est lu par la cale `Tcl_AnnotatedGetParts` (`tclAnnotatedApi.h`), qui
-  passe par l'interpréteur. La vraie fonction de stub, prévue, lira les parties en place.
+- **C\* sur des points typés** : en v16s, `distance $A $B` (0,88 µs) était plus lent qu'avec
+  des listes (0,15) : un produit typé était lu par la cale `Tcl_AnnotatedGetParts`, qui passe par
+  l'interpréteur. Depuis la v16t, l'API des listes lit ses champs : 0,41 µs
+  (`findLineIntersection` 1,08 → 0,62 ; `lineSegmentsIntersect` 1,02 → 0,53).
 
 ### D'où vient le coût (mesures séparées), et ce qu'en a fait la v16s
 
@@ -197,13 +199,12 @@ enveloppe par argument) et la libérer.
 - **La compatibilité est complète** : 210 tests de tcllib passent, et le code de tcllib qui
   n'a pas été touché (`geometry_circle.tcl`, `geometry_ext.tcl`) appelle la reformulation avec ses
   listes nues sans rien voir. C'est l'intérêt des signatures typées : l'API ne change pas.
-- **Les produits sont atomiques** (règle B) : une valeur `point` est un seul élément de liste.
-  Rendre un `point` à un appelant de tcllib qui fait `lassign $P x y` casserait l'API. D'où le
-  **dépliage** (v16r) : les procédures qui rendent un point déclarent `proc {{*}point}nom` — le
-  résultat est vérifié comme un `point`, puis rendu en liste `{x y}`. De même `{*}line` (`rect`),
-  `{*}list(2).point` (`nwse`), `{*}intersection` (`findLineIntersection`, une somme
-  `{{point}at, "coincident", "none"}` : le point déplié, ou le mot). La vérification au retour
-  coûte 0,3 à 0,9 µs par appel (`p 1 2` : 0,99 → 1,46 µs).
+- **Les produits sont des conteneurs** (v16t) : une valeur `point` est, pour les commandes de
+  liste, la liste de ses deux champs ; un appelant de tcllib qui fait `lassign $P x y` sur un
+  `point` rendu par `proc {point}nom` le lit comme la liste `{x y}`. Jusqu'à la v16s, un produit
+  était un seul élément de liste (« règle B »), et les procédures publiques devaient rendre
+  `{*}point` (dépliage, v16r) ; ce n'est plus nécessaire, et les 18 `{*}` ont été retirés. La
+  vérification au retour coûte 0,3 à 0,9 µs par appel (`p 1 2` : 0,99 → 1,46 µs).
 - **Les noms de types n'ont pas d'espace de noms** : `point`, `line`, `polyline` sont globaux à
   l'interpréteur ; un paquet qui les définit les impose à son hôte (ou les nomme `geometry_point`).
   À traiter avant d'utiliser les types dans une bibliothèque.

@@ -717,9 +717,11 @@ AnnotListView(Tcl_Interp *interp, Tcl_Obj *aPtr, Tcl_Obj **contentPtr)
 	}
     }
     kind = EffectiveKind(tp, variant, content);
-    /* Règle B : seules les collections (list, dict) se déplient ; un
-     * produit est un élément, ses champs se lisent par chemin. */
-    return kind == TCLT_LIST || kind == TCLT_DICT;
+    /* v16t : les conteneurs (list, dict, produit) se déplient ; un scalaire
+     * (chaîne, nombre, littéral d'une somme) est UN élément : une chaîne
+     * n'est jamais relue comme une liste. Un produit se déplie en ses
+     * champs, chacun dans son type. */
+    return kind == TCLT_LIST || kind == TCLT_DICT || kind == TCLT_PRODUCT;
 }
 
 /*
@@ -732,7 +734,21 @@ AnnotListView(Tcl_Interp *interp, Tcl_Obj *aPtr, Tcl_Obj **contentPtr)
  */
 
 static TclType *
+AnnotListElemTypeAt(Tcl_Obj *aPtr, Tcl_Size index);
+
+static TclType *
 AnnotListElemType(Tcl_Obj *aPtr)
+{
+    return AnnotListElemTypeAt(aPtr, -1);
+}
+
+/*
+ * v16t : le type de l'élément INDEX de la vue liste de A : list.T -> T ;
+ * produit -> le type du champ INDEX (index < 0 : NULL, les champs n'ont pas
+ * un type commun). NULL : élément laissé tel quel.
+ */
+static TclType *
+AnnotListElemTypeAt(Tcl_Obj *aPtr, Tcl_Size index)
 {
     int status, variant = -1;
     TclType *tp = NULL, *lt;
@@ -758,6 +774,25 @@ AnnotListElemType(Tcl_Obj *aPtr)
 	    return NULL;
 	}
 	lt = tp->fields[variant].type;
+    }
+    {
+	int d;
+
+	for (d = 0; lt->kind == TCLT_SUM && d < 16; d++) {
+	    int v2 = -1;
+
+	    if (TclTypeValidate(NULL, lt, content, -1, &v2) != TCL_OK
+		    || v2 < 0 || lt->fields[v2].type == NULL) {
+		return NULL;
+	    }
+	    lt = lt->fields[v2].type;
+	}
+    }
+    if (lt->kind == TCLT_PRODUCT) {
+	if (index < 0 || index >= lt->nfields) {
+	    return NULL;
+	}
+	return lt->fields[index].type;
     }
     if (lt->kind != TCLT_LIST || lt->elem == NULL
 	    || (TclTypeIsPlainString(lt->elem) && strcmp(lt->name, "list") == 0)) {
@@ -796,10 +831,51 @@ NewTypeRefNoCache(TclType *tp, int variant)
 static int
 PlainScalarElem(const TclType *et)
 {
+    /* v16t : pas string : une chaîne nue serait relue comme une liste
+     * (foreach x $L {foreach m $x ...}) ; elle reste typée, donc atomique */
     return et != NULL && !et->nominal && et->binLink == NULL
 	    && et->binKind == TCLBIN_NONE && et->bitWidth == 0
 	    && !TclTypeIsAny(et) && (et->kind == TCLT_DOUBLE
-	    || et->kind == TCLT_INT || et->kind == TCLT_STRING);
+	    || et->kind == TCLT_INT);
+}
+
+/*
+ * v16t : les champs d'un produit, chacun dans son type (nombres simples
+ * laissés nus, comme les éléments d'une list.double).
+ */
+static void
+AnnotWrapFields(Tcl_Obj *aPtr, Tcl_Obj *v, Tcl_Size from, Tcl_Size to)
+{
+    Tcl_Size n, i;
+    Tcl_Obj *e, *w;
+    TclType *ft;
+    int variant;
+
+    if (Tcl_IsShared(v) || TclIsCompact(v)
+	    || Tcl_ListObjLength(NULL, v, &n) != TCL_OK) {
+	return;
+    }
+    if (from < 0) {
+	from = 0;
+    }
+    if (to >= n) {
+	to = n - 1;
+    }
+    for (i = from; i <= to; i++) {
+	ft = AnnotListElemTypeAt(aPtr, i);
+	if (ft == NULL || PlainScalarElem(ft)
+		|| Tcl_ListObjIndex(NULL, v, i, &e) != TCL_OK || e == NULL
+		|| TCL_ANNOT_P(e)) {
+	    continue;
+	}
+	variant = -1;
+	if (ft->kind == TCLT_SUM
+		&& TclTypeValidate(NULL, ft, e, -1, &variant) != TCL_OK) {
+	    continue;
+	}
+	w = MakeAnnotated(e, NewTypeRefNoCache(ft, variant));
+	Tcl_ListObjReplace(NULL, v, i, 1, 1, &w);
+    }
 }
 
 static void
@@ -810,7 +886,11 @@ AnnotWrapElems(Tcl_Obj *aPtr, Tcl_Obj *v, Tcl_Size from, Tcl_Size to)
     Tcl_Obj *e, *w;
     int variant;
 
-    if (et == NULL || Tcl_IsShared(v) || TclIsCompact(v)
+    if (et == NULL) {
+	AnnotWrapFields(aPtr, v, from, to);
+	return;
+    }
+    if (Tcl_IsShared(v) || TclIsCompact(v)
 	    || Tcl_ListObjLength(NULL, v, &n) != TCL_OK) {
 	return;
     }
@@ -998,7 +1078,7 @@ AnnotListIndex(Tcl_Interp *interp, Tcl_Obj *aPtr, Tcl_Size index,
     if (AnnotListView(interp, aPtr, &v)) {
 	if (TclIsCompact(v)) {
 	    /* une case : un élément neuf, typé (refcount 0, comme lseq) */
-	    TclType *et = AnnotListElemType(aPtr);
+	    TclType *et = AnnotListElemTypeAt(aPtr, index);
 	    Tcl_Obj *c = TclCompactElement(v, index);
 
 	    *elemPtr = (c != NULL && et != NULL)
@@ -1016,7 +1096,7 @@ AnnotListIndex(Tcl_Interp *interp, Tcl_Obj *aPtr, Tcl_Size index,
 	     * neuf (refcount 0, comme pour lseq) : l'élément d'une list.T est
 	     * toujours un T, que V soit partagé ou non.
 	     */
-	    TclType *et = AnnotListElemType(aPtr);
+	    TclType *et = AnnotListElemTypeAt(aPtr, index);
 	    int variant = -1;
 
 	    if (et != NULL && !(et->kind == TCLT_SUM && TclTypeValidate(NULL,
@@ -1999,7 +2079,7 @@ TclAnnotUnwrap(Tcl_Interp *interp, Tcl_Obj *objPtr, int want,
      * Un produit d'UN SEUL champ se lit comme ce champ pour les conversions
      * scalaires (nombre, entier, flottant, booléen) : {{int}i} qui vaut 5
      * est le nombre 5. Le contenu rendu est le champ lui-même, pour ne pas
-     * convertir la liste V. (La vue liste, elle, garde la règle B.)
+     * convertir la liste V. (Sa vue liste, elle, est la liste de ses champs.)
      */
     if (want != TCLWANT_LIST && want != TCLWANT_DICT) {
 	int depth;

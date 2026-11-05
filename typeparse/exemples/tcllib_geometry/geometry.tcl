@@ -22,8 +22,8 @@ namespace eval ::math::geometry {}
 package require Tcl 9
 package require math
 
-# Results: {*}T checks the result as a T and returns it unfolded, as plain
-# Tcl data (a point as the list {x y}), for callers that use lists.
+# Results: proc {T}name checks the result as a T. A product (a point) is a
+# container: a caller that uses lists sees its fields (lassign $P x y).
 #
 # A point, a vector: two doubles. A line, a line segment, a rectangle (NW and
 # SE corners): four doubles. A polyline, a polygon: a flat list of doubles,
@@ -47,29 +47,29 @@ namespace eval ::math::geometry {
 
 # --- Points and vectors
 
-proc {{*}point}::math::geometry::p  {{double}x; {double}y}     {( $x, $y )}
-proc {{*}point}::math::geometry::+  {{point}pa; {point}pb}     {( $pa(x) + $pb(x), $pa(y) + $pb(y) )}
-proc {{*}point}::math::geometry::-  {{point}pa; {point}pb}     {( $pa(x) - $pb(x), $pa(y) - $pb(y) )}
-proc {{*}point}::math::geometry::s* {{double}factor; {point}p} {( $p(x) * $factor, $p(y) * $factor )}
+proc {point}::math::geometry::p  {{double}x; {double}y}     {( $x, $y )}
+proc {point}::math::geometry::+  {{point}pa; {point}pb}     {( $pa(x) + $pb(x), $pa(y) + $pb(y) )}
+proc {point}::math::geometry::-  {{point}pa; {point}pb}     {( $pa(x) - $pb(x), $pa(y) - $pb(y) )}
+proc {point}::math::geometry::s* {{double}factor; {point}p} {( $p(x) * $factor, $p(y) * $factor )}
 proc ::math::geometry::distance {{point}pa; {point}pb} {( hypot($pb(x)-$pa(x), $pb(y)-$pa(y)) )}
 proc ::math::geometry::length   {{vector}v}         {( hypot($v(x), $v(y)) )}
-proc {{*}point}::math::geometry::v {{double}h}                {( 0, $h )}
-proc {{*}point}::math::geometry::h {{double}w}                {( $w, 0 )}
+proc {point}::math::geometry::v {{double}h}                {( 0, $h )}
+proc {point}::math::geometry::h {{double}w}                {( $w, 0 )}
 proc ::math::geometry::x {{point}p}                 {set p(x)}
 proc ::math::geometry::y {{point}p}                 {set p(y)}
-proc {{*}point}::math::geometry::conjx {{point}p}             {( -$p(x), $p(y) )}
-proc {{*}point}::math::geometry::conjy {{point}p}             {( $p(x), -$p(y) )}
-proc {{*}line}::math::geometry::rect  {{point}pa; {point}pb} {( $pa(x), $pa(y), $pb(x), $pb(y) )}
-proc {{*}list(2).point}::math::geometry::nwse  {{rect}r}              {( ($r(x1), $r(y1)), ($r(x2), $r(y2)) )}
+proc {point}::math::geometry::conjx {{point}p}             {( -$p(x), $p(y) )}
+proc {point}::math::geometry::conjy {{point}p}             {( $p(x), -$p(y) )}
+proc {line}::math::geometry::rect  {{point}pa; {point}pb} {( $pa(x), $pa(y), $pb(x), $pb(y) )}
+proc {list(2).point}::math::geometry::nwse  {{rect}r}              {( ($r(x1), $r(y1)), ($r(x2), $r(y2)) )}
 
 # Unit vector in the direction given by an angle (degrees)
-proc {{*}vector}::math::geometry::direction {{double}angle} {(
+proc {vector}::math::geometry::direction {{double}angle} {(
     t = $angle * $::math::geometry::torad;
     cos($t), sin($t)
 )}
 
 # The point at fraction s from pa to pb (0 => pa, 1 => pb)
-proc {{*}point}::math::geometry::between {{point}pa; {point}pb; {double}s} {(
+proc {point}::math::geometry::between {{point}pa; {point}pb; {double}s} {(
     $pa(x) + ($pb(x) - $pa(x)) * $s, $pa(y) + ($pb(y) - $pa(y)) * $s
 )}
 
@@ -92,7 +92,7 @@ proc ::math::geometry::calculateDistanceToLine {{point}P; {line}line} {(
         : abs(($Ay-$Cy)*($Bx-$Ax)-($Ax-$Cx)*($By-$Ay)) / hypot($Bx-$Ax, $By-$Ay)
 )}
 
-proc {{*}point}::math::geometry::findClosestPointOnLine {{point}P; {line}line} {
+proc {point}::math::geometry::findClosestPointOnLine {{point}P; {line}line} {
     lindex [findClosestPointOnLineImpl $P $line] 0
 }
 
@@ -121,7 +121,7 @@ proc ::math::geometry::calculateDistanceToLineSegmentImpl {{point}P; {segment}se
                (($Cx-$Ax)*($Bx-$Ax) + ($Cy-$Ay)*($By-$Ay))/pow($L,2))
 )}
 
-proc {{*}point}::math::geometry::findClosestPointOnLineSegment {{point}P; {segment}seg} {(
+proc {point}::math::geometry::findClosestPointOnLineSegment {{point}P; {segment}seg} {(
     (Q, r) = [findClosestPointOnLineImpl $P $seg];
     $r < 0 ? ($seg(x1), $seg(y1)) : $r > 1 ? ($seg(x2), $seg(y2)) : $Q
 )}
@@ -139,7 +139,7 @@ proc ::math::geometry::calculateDistanceToPolygon {{point}P; {polygon}pg} {
     calculateDistanceToPolyline $P [ClosedPolygon $pg]
 }
 
-proc {{*}found}::math::geometry::findClosestPointOnPolyline {{point}P; {polyline}pl} {(
+proc {found}::math::geometry::findClosestPointOnPolyline {{point}P; {polyline}pl} {(
     closest = "none";  best = "Inf";
     foreach {Bx By} [lassign $pl Ax Ay] {(
         Q = [findClosestPointOnLineSegment $P [list $Ax $Ay $Bx $By]];
@@ -160,7 +160,7 @@ proc ::math::geometry::lengthOfPolyline {{polyline}pl} {(
 )}
 
 # Move P in a direction (degrees, counter-clockwise) over a distance
-proc {{*}point}::math::geometry::movePointInDirection {{point}P; {double}direction; {double}dist} {(
+proc {point}::math::geometry::movePointInDirection {{point}P; {double}direction; {double}dist} {(
     pi = 4*atan(1);
     $P(x) + $dist*cos(($direction*$pi)/180), $P(y) + $dist*sin(($direction*$pi)/180)
 )}
@@ -189,7 +189,7 @@ proc ::math::geometry::lineSegmentsIntersect {{segment}s1; {segment}s2} {
 }
 
 # The intersection point of two segments, or "coincident", or "none"
-proc {{*}intersection}::math::geometry::findLineSegmentIntersection {{segment}s1; {segment}s2} {
+proc {intersection}::math::geometry::findLineSegmentIntersection {{segment}s1; {segment}s2} {
     if {![lineSegmentsIntersect $s1 $s2]} {return none}
     set p [findLineIntersection $s1 $s2]
     if {$p ne "coincident"} {return $p}
@@ -209,7 +209,7 @@ proc {{*}intersection}::math::geometry::findLineSegmentIntersection {{segment}s1
 
 # The intersection point of two lines, or "coincident", or "none"
 # (http://wiki.tcl.tk/12070, Kevin Kenny ; Paul Bourke, lineline2d)
-proc {{*}intersection}::math::geometry::findLineIntersection {{line}l1; {line}l2} {(
+proc {intersection}::math::geometry::findLineIntersection {{line}l1; {line}l2} {(
     d  = ($l2(y2) - $l2(y1)) * ($l1(x2) - $l1(x1)) - ($l2(x2) - $l2(x1)) * ($l1(y2) - $l1(y1));
     na = ($l2(x2) - $l2(x1)) * ($l1(y1) - $l2(y1)) - ($l2(y2) - $l2(y1)) * ($l1(x1) - $l2(x1));
     $d == 0 ? ($na == 0 ? "coincident" : "none")
