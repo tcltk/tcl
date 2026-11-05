@@ -2921,23 +2921,27 @@ ClockFmtToken_TimeZone_Proc(
     TCL_UNUSED(int *))
 {
     if (*tok->tokWord.start == 'z') {
-	int z = dateFmt->date.tzOffset;
+	Tcl_WideInt z = dateFmt->date.tzOffset;
 	char sign = '+';
 
 	if (z < 0) {
 	    z = -z;
 	    sign = '-';
 	}
-	if (FrmResultAllocate(dateFmt, 7) != TCL_OK) {
+	/*
+	 * Sign, hours, minutes and seconds. The offset is a 32-bit value, so
+	 * the hours take up to 6 digits: +hhhhhhmmss is at most 11 chars.
+	 */
+	if (FrmResultAllocate(dateFmt, 11) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	*dateFmt->output++ = sign;
-	dateFmt->output = Clock_itoaw(dateFmt->output, z / 3600, '0', 2);
+	dateFmt->output = Clock_itoaw(dateFmt->output, (int)(z / 3600), '0', 2);
 	z %= 3600;
-	dateFmt->output = Clock_itoaw(dateFmt->output, z / 60, '0', 2);
+	dateFmt->output = Clock_itoaw(dateFmt->output, (int)(z / 60), '0', 2);
 	z %= 60;
 	if (z != 0) {
-	    dateFmt->output = Clock_itoaw(dateFmt->output, z, '0', 2);
+	    dateFmt->output = Clock_itoaw(dateFmt->output, (int)z, '0', 2);
 	}
     } else {
 	Tcl_Obj * objPtr;

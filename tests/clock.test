@@ -38918,6 +38918,31 @@ test clock-72.2 {Bug [813699148d], empty row} -body {
     set ::tcl::clock::TZData(:bad) {{}}
     clock format 10 -timezone :bad
 } -returnCodes 1 -result {malformed time zone data}
+test clock-72.3 {%z with an offset of 100 hours or more at the end of the stack buffer} -body {
+    clock format 0 -timezone +99:99:99 -format "[string repeat a 72]%z"
+} -result "[string repeat a 72]+1004039"
+test clock-72.4 {%z with an offset of 100 hours or more at the end of a heap buffer} -body {
+    clock format 0 -timezone +99:99:99 \
+	-format "[string repeat a 100]%Y[string repeat b 148]%z"
+} -result "[string repeat a 100]1970[string repeat b 148]+1004039"
+test clock-72.5 {%z with the largest 32-bit offset} -setup {
+    clock format 0 -gmt 1
+    set ::tcl::clock::TZData(:clock-72.3) \
+	{{-9223372036854775808 2147483647 0 clock-72.3}}
+} -body {
+    clock format 0 -timezone :clock-72.3 -format "[string repeat a 72]%z"
+} -cleanup {
+    unset -nocomplain ::tcl::clock::TZData(:clock-72.3)
+} -result "[string repeat a 72]+5965231407"
+test clock-72.6 {%z with the smallest 32-bit offset} -setup {
+    clock format 0 -gmt 1
+    set ::tcl::clock::TZData(:clock-72.4) \
+	{{-9223372036854775808 -2147483648 0 clock-72.4}}
+} -body {
+    clock format 0 -timezone :clock-72.4 -format "[string repeat a 72]%z"
+} -cleanup {
+    unset -nocomplain ::tcl::clock::TZData(:clock-72.4)
+} -result "[string repeat a 72]-5965231408"
 
 # cleanup
 
