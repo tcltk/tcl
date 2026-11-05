@@ -2713,11 +2713,11 @@ TclClockScan(
 static inline int
 FrmResultAllocate(
     DateFormat *dateFmt,
-    int len)
+    Tcl_Size len)
 {
-    int needed = dateFmt->output + len - dateFmt->resEnd;
+    Tcl_Size needed = dateFmt->output + len - dateFmt->resEnd;
     if (needed >= 0) {		/* >= 0 - regards NTS zero */
-	int newsize = dateFmt->resEnd - dateFmt->resMem
+	Tcl_Size newsize = dateFmt->resEnd - dateFmt->resMem
 		+ needed + MIN_FMT_RESULT_BLOCK_ALLOC * 2;
 	char *newRes;
 	/* differentiate between stack and memory */

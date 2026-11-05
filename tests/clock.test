@@ -38927,21 +38927,21 @@ test clock-72.4 {%z with an offset of 100 hours or more at the end of a heap buf
 } -result "[string repeat a 100]1970[string repeat b 148]+1004039"
 test clock-72.5 {%z with the largest 32-bit offset} -setup {
     clock format 0 -gmt 1
-    set ::tcl::clock::TZData(:clock-72.3) \
-	{{-9223372036854775808 2147483647 0 clock-72.3}}
+    set ::tcl::clock::TZData(:clock-72.5) \
+	{{-9223372036854775808 2147483647 0 clock-72.5}}
 } -body {
-    clock format 0 -timezone :clock-72.3 -format "[string repeat a 72]%z"
+    clock format 0 -timezone :clock-72.5 -format "[string repeat a 72]%z"
 } -cleanup {
-    unset -nocomplain ::tcl::clock::TZData(:clock-72.3)
+    unset -nocomplain ::tcl::clock::TZData(:clock-72.5)
 } -result "[string repeat a 72]+5965231407"
 test clock-72.6 {%z with the smallest 32-bit offset} -setup {
     clock format 0 -gmt 1
-    set ::tcl::clock::TZData(:clock-72.4) \
-	{{-9223372036854775808 -2147483648 0 clock-72.4}}
+    set ::tcl::clock::TZData(:clock-72.6) \
+	{{-9223372036854775808 -2147483648 0 clock-72.6}}
 } -body {
-    clock format 0 -timezone :clock-72.4 -format "[string repeat a 72]%z"
+    clock format 0 -timezone :clock-72.6 -format "[string repeat a 72]%z"
 } -cleanup {
-    unset -nocomplain ::tcl::clock::TZData(:clock-72.4)
+    unset -nocomplain ::tcl::clock::TZData(:clock-72.6)
 } -result "[string repeat a 72]-5965231408"
 
 # cleanup
