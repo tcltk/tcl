@@ -119,6 +119,16 @@ Régénérer l'en-tête après un changement des types :
                type def line {{double}x1; {double}y1; {double}x2; {double}y2}
                puts -nonewline [type {c!}export point line]' > geom_types.h
 
+## Le C sans colle : `geometry_cproc.tcl`
+
+La même troisième étape avec `cproc` (`../cproc`) : dix procédures gardent leur
+signature typée, et seul leur corps passe en C, soit 104 lignes de C au lieu des
+919 de `geom.c`. La colle (conversion des arguments, structs, initialisation) est
+générée et compilée par gcc ou tcc. Les 210 tests de tcllib passent avec les deux
+compilateurs (`tclsh run_tests.tcl -cproc TCLLIB`, `CPROC_CC=tcc`). Les vitesses
+(`bench_cproc.tcl`) sont dans `../cproc/LISEZMOI.md` : au niveau de `geom.c` pour
+les fonctions lourdes, avec 0,6 µs de plus par appel pour la liaison typée.
+
 ## Vitesse
 
 `bench.tcl`, µs par appel (meilleur de 10 passes alternées, appel compilé). Avec les listes nues

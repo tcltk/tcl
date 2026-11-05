@@ -1,0 +1,11 @@
+decale       : 4.0 2.0 point 1.0 2.0
+même que Tcl : 1.6 2.0 | 1.6 2
+aire         : 100.0
+aire (cases) : 100.0
+compte       : 2 1 3
+salut        : bonjour monde 1 salut: empty name
+miroir       : {2.0 1.0} {4.0 3.0} list<point>
+erreur Tcl   : 1 argument "p": expected floating-point number but got "x"
+args         : 1 wrong # args: should be "decale p ?dx?"
+étiquette    : 5.0 0.0
+namespace    : 4.0 6.0 ::g::v
