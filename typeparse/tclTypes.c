@@ -8706,6 +8706,9 @@ typedef struct TypedArg {
     Tcl_Obj *defcmd;		/* ?= [cmd] : évalué dans la procédure */
     int isVar;			/* {var.T} : upvar */
     Tcl_Obj *varElem;		/* T de var.T, ou NULL */
+    TclType *tp;		/* le type du champ (messages, défaut) */
+    int allDefault;		/* produit dont tous les champs ont un défaut :
+				 * l'argument absent prend ces défauts */
 } TypedArg;
 
 typedef struct TclTypedSig {
@@ -8926,6 +8929,23 @@ TclTypedProcSig(Tcl_Interp *interp, Tcl_Obj *nameObj, Tcl_Obj *argsObj,
 		a->defcmd = f->defcmd;
 		Tcl_IncrRefCount(a->defcmd);
 	    }
+	    a->tp = f->type;
+	    if (!a->defval && !a->defcmd) {
+		const TclType *pt = f->type;
+		Tcl_Size j;
+
+		while (pt->kind != TCLT_PRODUCT && pt->under != NULL) {
+		    pt = pt->under;
+		}
+		if (pt->kind == TCLT_PRODUCT && pt->nfields > 0) {
+		    a->allDefault = 1;
+		    for (j = 0; j < pt->nfields; j++) {
+			if (!pt->fields[j].defval && !pt->fields[j].defcmd) {
+			    a->allDefault = 0;
+			}
+		    }
+		}
+	    }
 	    if (f->type->kind == TCLT_VAR) {
 		a->isVar = 1;
 		if (f->type->elem != NULL && !TclTypeIsPlainString(f->type->elem)) {
@@ -8942,7 +8962,7 @@ TclTypedProcSig(Tcl_Interp *interp, Tcl_Obj *nameObj, Tcl_Obj *argsObj,
 	    }
 	    if (sig->rest) {
 		Tcl_AppendToObj(usage, "?arg ...?", -1);
-	    } else if (a->defval || a->defcmd) {
+	    } else if (a->defval || a->defcmd || a->allDefault) {
 		Tcl_AppendStringsToObj(usage, "?", nm, "?", (char *) NULL);
 	    } else {
 		Tcl_AppendToObj(usage, nm, -1);
@@ -8974,12 +8994,22 @@ TypedArgsWrong(Tcl_Interp *interp, TclTypedSig *sig, CallFrame *framePtr,
 }
 
 static int
-TypedArgError(Tcl_Interp *interp, Tcl_Obj *name)
+TypedArgError(Tcl_Interp *interp, TypedArg *a)
 {
-    Tcl_Obj *msg = Tcl_ObjPrintf("argument \"%s\": ", Tcl_GetString(name));
+    Tcl_Obj *msg = Tcl_ObjPrintf("argument \"%s\": ",
+	    Tcl_GetString(a->name));
 
     Tcl_AppendObjToObj(msg, Tcl_GetObjResult(interp));
     Tcl_SetObjResult(interp, msg);
+    if (a->tp != NULL && !a->tp->nominal && (a->tp->kind == TCLT_PRODUCT
+	    || a->tp->kind == TCLT_SUM)) {
+	/* un produit écrit dans la signature : son texte, pas prod<…> */
+	Tcl_Obj *txt = Tcl_ObjPrintf("{%s}", Tcl_GetString(a->typeText));
+
+	Tcl_IncrRefCount(txt);
+	TclTypeResultRename(interp, a->tp->name, Tcl_GetString(txt));
+	Tcl_DecrRefCount(txt);
+    }
     return TCL_ERROR;
 }
 
@@ -9126,10 +9156,26 @@ TclTypedProcBind(Tcl_Interp *interp, void *sigv, Tcl_Size skip)
 		v = a->defval;
 	    } else if (a->defcmd != NULL) {
 		if (Tcl_EvalObjEx(interp, a->defcmd, 0) != TCL_OK) {
-		    TypedArgError(interp, a->name);
+		    TypedArgError(interp, a);
 		    goto done;
 		}
 		v = Tcl_GetObjResult(interp);
+	    } else if (a->allDefault) {
+		/* {{T}x ?= 0; {T}y ?= 0}dp absent : la valeur des défauts */
+		Tcl_Obj *content = NULL;
+		const TclType *pt = a->tp;
+
+		while (pt->kind != TCLT_PRODUCT && pt->under != NULL) {
+		    pt = pt->under;
+		}
+		if (TclBuildProductNamed(interp, (TclType *) pt, 0, NULL,
+			&content) != TCL_OK) {
+		    TypedArgError(interp, a);
+		    goto done;
+		}
+		Tcl_IncrRefCount(content);
+		v = TclNewAnnotated(interp, a->tp, -1, content);
+		Tcl_DecrRefCount(content);
 	    } else if (!seenLabel) {
 		TypedArgsWrong(interp, sig, framePtr, skip);
 		goto done;
@@ -9148,7 +9194,7 @@ TclTypedProcBind(Tcl_Interp *interp, void *sigv, Tcl_Size skip)
 
 	    if (Tcl_UpVar2(interp, "1", Tcl_GetString(TCL_ANNOT_CONTENT(v)),
 		    NULL, Tcl_GetString(a->name), 0) != TCL_OK) {
-		TypedArgError(interp, a->name);
+		TypedArgError(interp, a);
 		goto done;
 	    }
 	    if (a->varElem != NULL) {
@@ -9158,7 +9204,7 @@ TclTypedProcBind(Tcl_Interp *interp, void *sigv, Tcl_Size skip)
 		    if (DeclareTyped(interp, a->varElem, cur, 0, &typed)
 			    != TCL_OK) {
 			Tcl_DecrRefCount(cur);
-			TypedArgError(interp, a->name);
+			TypedArgError(interp, a);
 			goto done;
 		    }
 		    TclDiscard(typed);
@@ -9168,13 +9214,13 @@ TclTypedProcBind(Tcl_Interp *interp, void *sigv, Tcl_Size skip)
 	    continue;
 	}
 	if (DeclareTyped(interp, a->typeText, v, 0, &typed) != TCL_OK) {
-	    TypedArgError(interp, a->name);
+	    TypedArgError(interp, a);
 	    goto done;
 	}
 	Tcl_IncrRefCount(typed);
 	if (TclTypedVarDeclare(interp, a->name, typed) == NULL) {
 	    Tcl_DecrRefCount(typed);
-	    TypedArgError(interp, a->name);
+	    TypedArgError(interp, a);
 	    goto done;
 	}
 	Tcl_DecrRefCount(typed);
@@ -9184,13 +9230,13 @@ TclTypedProcBind(Tcl_Interp *interp, void *sigv, Tcl_Size skip)
 	Tcl_Obj *typed = NULL;
 
 	if (DeclareTyped(interp, a->typeText, restList, 0, &typed) != TCL_OK) {
-	    TypedArgError(interp, a->name);
+	    TypedArgError(interp, a);
 	    goto done;
 	}
 	Tcl_IncrRefCount(typed);
 	if (TclTypedVarDeclare(interp, a->name, typed) == NULL) {
 	    Tcl_DecrRefCount(typed);
-	    TypedArgError(interp, a->name);
+	    TypedArgError(interp, a);
 	    goto done;
 	}
 	Tcl_DecrRefCount(typed);

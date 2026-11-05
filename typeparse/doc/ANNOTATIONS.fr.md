@@ -513,6 +513,20 @@ decale {dy:}5 {p:}$a           ;# étiquettes seules, ordre libre
 
 - **Champs.** Chaque champ devient une variable locale qui porte son contrat (`set dx abc` dans le corps est refusé). Un défaut `?= v` rend le champ facultatif ; `?= [cmd]` est évalué à chaque appel, dans la procédure : il peut lire les champs précédents (`{int}b ?= [expr {$a * 2}]`).
 - **Appel.** Des arguments positionnels, puis des étiquettes `{nom:}` ; un positionnel après une étiquette est refusé, un champ donné deux fois aussi. Une étiquette qui ne nomme pas un champ reste sur la valeur si le champ visé est une somme (`ps {s:}abc` choisit la variante `s`), sinon c'est une erreur (`unknown argument label {zz:}: must be p:, dx: or dy:`). Messages : `wrong # args: should be "decale p ?dx? ?dy?"`, `missing argument "p"`, `argument "dx": expected floating-point number but got "abc"`.
+- **Types écrits dans la signature.** Le type d'un champ peut être un produit anonyme : la signature se lit d'elle-même, et une liste nue est vérifiée et devient la valeur du champ. Un champ dont le type est un produit **dont tous les champs ont un défaut** est facultatif : absent, il prend ces défauts. Une liste incomplète reste refusée (la règle des constructeurs : pour ne donner que certains champs, les nommer).
+
+```tcl
+proc {pt}decale {
+    {{double}x; {double}y}p;
+    {{double}x ?= 0; {double}y ?= 0}dp
+} {(
+    $p(x) + $dp(x), $p(y) + $dp(y)
+)}
+decale {100 200} {50 30}       ;# 150 230, de type pt
+decale {100 200}               ;# 100 200 : dp prend ses défauts
+decale {100 200} {50}          ;# argument "dp": {{double}x ?= 0; {double}y ?= 0} needs 2 values but got 1
+```
+
 - **Le reste.** Un dernier champ `{list.T}args` reçoit les arguments en trop, chacun validé (`proc somme {{int}a; {list.int}args} …`).
 - **Upvar automatique.** Un champ `{var.T}n` reçoit un nom de variable : `n` est liée à la variable de l'appelant, dont la valeur courante (si elle existe) doit être un `T`.
 
@@ -534,6 +548,7 @@ type get [g p]                 ;# R.point
 ```
 
 - **Introspection.** `type proc nom` rend `args {…} return T` (la signature canonique, vide pour une procédure classique) ; `info args` rend les noms des champs, `info default` leurs défauts (`[cmd]` pour un défaut calculé).
+- **Coût.** Une procédure typée va aussi vite que la même procédure classique qui ferait tous ces contrôles à la main (1,15 µs contre 1,17 µs pour `decale $a 1 1`, sans contrôle 0,47 µs) ; une étiquette coûte environ 0,5 µs. Voir `exemples/bench_procs.tcl`.
 - **Compatibilité.** Une liste d'arguments qui est une liste Tcl valide reste classique (`{a {b 2} args}`, et même `{a;}`) ; elle est typée quand elle n'est pas une liste et contient un `{T}nom`, ou quand elle contient des `;` et se lit comme un produit. Une procédure classique peut avoir un type de retour (`proc {int}f {a} …`).
 
 ### 7. Accéder aux parties d'une valeur : les chemins

@@ -105,3 +105,20 @@ t "retour inconnu"               {proc {zz}e2 {} {}}
 t "pas un produit"               {proc e3 {{int}a, {string}b} {}}
 t "rename"                       {rename decale dec2; dec2 $a 1}
 t "namespace"                    {namespace eval ns { proc {pt}mk {{double}a; {double}b} { list $a $b } }; type get [ns::mk 1 2]}
+
+puts "--- types écrits dans la signature (produits anonymes)"
+proc {pt}decale2 {
+    {{double}x; {double}y}p;
+    {{double}x ?= 0; {double}y ?= 0}dp
+} {(
+    $p(x) + $dp(x), $p(y) + $dp(y)
+)}
+set Point {100 200}
+set Vecteur {50 30}
+t "listes nues"                  {set r [decale2 $Point $Vecteur]; list $r [type get $r]}
+t "dp absent : ses défauts"      {decale2 $Point}
+t "dp incomplet"                 {decale2 $Point {50}}
+t "étiquette de champ"           {decale2 $Point {dp:}{50 1}}
+t "mauvais champ"                {decale2 {a b} {1 2}}
+t "trop"                         {decale2 $Point {1 2} 3}
+t "type nommé, tous défauts"     {type def V {{double}x ?= 0; {double}y ?= 0}; proc hv {{V}v} {type get $v}; list [hv] [hv {1 2}]}

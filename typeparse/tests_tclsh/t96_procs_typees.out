@@ -60,3 +60,11 @@ retour inconnu: ERREUR bad return type {zz}: unknown type "zz"
 pas un produit: ERREUR a typed argument list is a product: {{T}a; {T}b ?= v}, not sum<a:int;b:string;>
 rename: 2 2
 namespace: pt
+--- types écrits dans la signature (produits anonymes)
+listes nues: {150 230} pt
+dp absent : ses défauts: 100 200
+dp incomplet: ERREUR argument "dp": {{double}x ?= 0; {double}y ?= 0} needs 2 values but got 1
+étiquette de champ: 150 201
+mauvais champ: ERREUR argument "p": expected floating-point number but got "a"
+trop: ERREUR wrong # args: should be "decale2 p ?dp?"
+type nommé, tous défauts: V V

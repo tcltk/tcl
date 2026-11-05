@@ -2088,6 +2088,10 @@ Patch noyau `procs-typees.patch` (après `annot-fallthrough.patch`) : `tclInt.h`
   "decale p ?dx? ?dy?"`, `missing argument "p"`, `argument "dx" given twice`, `positional argument
   "…" after labelled arguments`, `unknown argument label {zz:}: must be p:, dx: or dy:`,
   `argument "dx": expected floating-point number but got "abc"`.
+- **Types écrits dans la signature** : `{{double}x; {double}y}p` (produit anonyme : une liste nue
+  est vérifiée et devient le champ ; les messages le nomment par son texte, pas `prod<…>`). Un
+  champ produit dont tous les champs ont un défaut est facultatif (absent : ses défauts) ; une
+  liste incomplète reste refusée, comme pour `set {T}x {50}`.
 - **Type de retour** : `proc {T}nom` ; le résultat d'un retour normal (fin du corps, `return`
   de niveau 1 et de code ok) est casté en `T` ; erreur `return value {T}: …` (les options du
   `return` sont oubliées). Erreur, `break`, `return -level 2`, `tailcall`, `yield` passent sans
@@ -2108,7 +2112,9 @@ Patch noyau `procs-typees.patch` (après `annot-fallthrough.patch`) : `tclInt.h`
   de la procédure et avant l'expiration des annotations, appelle `TclTypedProcReturn` (une
   étiquette en attente est encore lisible) ; `TclProcCleanupProc` libère la signature,
   `DuplicateProc` la partage.
-- Coût d'appel (3 arguments) : 1,2 µs contre 0,6 µs pour la même procédure classique ; le cast
-  de retour d'une valeur déjà du bon type est gratuit, d'une liste nue ~0,3 µs.
+- Coût d'appel (`exemples/bench_procs.tcl`, µs) : typée 1,15 ; la même procédure classique avec
+  tous les contrôles écrits à la main 1,17 ; sans contrôle 0,47 ; classique qui rend un `pt` par
+  `type {pt}[…]` 2,27 ; une étiquette ajoute ~0,5. Le cast de retour d'une valeur déjà du bon
+  type est gratuit.
 - Sorties attendues changées : t28, t93 (la liste des sous-commandes de `type` gagne `proc`).
   Nouveau test `t96_procs_typees`. `make test` : mêmes échecs que la référence.
