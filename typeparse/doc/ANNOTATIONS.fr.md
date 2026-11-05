@@ -226,6 +226,7 @@ type def {-a,-b}NOM DÉF        ;# plusieurs options, dans la syntaxe des notes
 type is {compact?}TYPE|VALEUR  ;# une question sur un type ou une valeur
 type is {disjoint?}S           ;# les paires de variantes qui peuvent accepter une même valeur
 type is {strict?}S             ;# 1 si S a été défini {-strict}
+type proc NOM                  ;# la signature d'une procédure typée : args, return (§ 6.4)
 type {c!}export TYPE ?TYPE ...? ;# en-tête C des types nommés (§ 12.2) ; {llvm!} prévu
 ```
 
@@ -494,6 +495,46 @@ f 3                            ;# 1.5
 #### 6.3 `type deref` : un instantané des liens
 
 `type deref V` rend `V` où chaque lien `var` est remplacé par la valeur qu'a la variable à cet instant. Le résultat a le type « sans les liens » (`list.var.int` → `list.int`), nommé `deref(<type>)` pour un produit ou une somme. Un seul niveau est suivi par appel ; une variable manquante est une erreur qui nomme la case (`type deref: at 2: can't read "::C": no such variable`), sans résultat partiel. Fonctionne dans les listes, dicts, produits, sommes et types récursifs ; un cycle ne boucle jamais.
+
+#### 6.4 Procédures typées (v16p)
+
+La liste d'arguments d'une procédure peut être un **type produit**, écrit dans la syntaxe des types ; l'annotation du nom donne le **type de retour**.
+
+```tcl
+type def pt {{double}x; {double}y}
+proc {pt}decale {{pt}p; {double}dx ?= 0; {double}dy ?= 0} {
+    set {pt}q [expr {$p(x) + $dx}] [expr {$p(y) + $dy}]
+    return $q
+}
+decale $a 1 1                  ;# positionnel
+decale $a {dy:}5               ;# positionnels, puis étiquettes
+decale {dy:}5 {p:}$a           ;# étiquettes seules, ordre libre
+```
+
+- **Champs.** Chaque champ devient une variable locale qui porte son contrat (`set dx abc` dans le corps est refusé). Un défaut `?= v` rend le champ facultatif ; `?= [cmd]` est évalué à chaque appel, dans la procédure : il peut lire les champs précédents (`{int}b ?= [expr {$a * 2}]`).
+- **Appel.** Des arguments positionnels, puis des étiquettes `{nom:}` ; un positionnel après une étiquette est refusé, un champ donné deux fois aussi. Une étiquette qui ne nomme pas un champ reste sur la valeur si le champ visé est une somme (`ps {s:}abc` choisit la variante `s`), sinon c'est une erreur (`unknown argument label {zz:}: must be p:, dx: or dy:`). Messages : `wrong # args: should be "decale p ?dx? ?dy?"`, `missing argument "p"`, `argument "dx": expected floating-point number but got "abc"`.
+- **Le reste.** Un dernier champ `{list.T}args` reçoit les arguments en trop, chacun validé (`proc somme {{int}a; {list.int}args} …`).
+- **Upvar automatique.** Un champ `{var.T}n` reçoit un nom de variable : `n` est liée à la variable de l'appelant, dont la valeur courante (si elle existe) doit être un `T`.
+
+```tcl
+proc incrv {{var.int}n; {int}d ?= 1} { incr n $d }
+incrv k 10                     ;# k est la variable de l'appelant
+```
+
+- **Retour.** `proc {T}nom` : le résultat d'un retour normal (fin du corps, `return`, `return -code ok`) est casté en `T`, comme `type {T}mot` ; un échec est une erreur `return value {T}: …`. Une erreur, `break`, `return -level 2`, `tailcall` passent sans cast. Un `return {U}$x` dans le corps n'ajoute rien : `{U}` n'est qu'une note locale, qui expire avec la procédure (pas de cumul de types sur le retour).
+- **Étiquettes de retour.** Quand le type de retour est une somme, `return {v:}$x` choisit la variante `v` (indispensable pour une somme `{-strict}`) ; une étiquette qui n'est pas une variante, ou sur un type de retour qui n'est pas une somme, est une erreur. `proc {S.v}f` rend toujours la variante `v`.
+
+```tcl
+type def {-strict}R {{pt}point, {int}n}
+proc {R}g {w} {
+    if {$w eq "p"} { set {pt}z 1 2; return {point:}$z }
+    return {n:}4
+}
+type get [g p]                 ;# R.point
+```
+
+- **Introspection.** `type proc nom` rend `args {…} return T` (la signature canonique, vide pour une procédure classique) ; `info args` rend les noms des champs, `info default` leurs défauts (`[cmd]` pour un défaut calculé).
+- **Compatibilité.** Une liste d'arguments qui est une liste Tcl valide reste classique (`{a {b 2} args}`, et même `{a;}`) ; elle est typée quand elle n'est pas une liste et contient un `{T}nom`, ou quand elle contient des `;` et se lit comme un produit. Une procédure classique peut avoir un type de retour (`proc {int}f {a} …`).
 
 ### 7. Accéder aux parties d'une valeur : les chemins
 

@@ -1,0 +1,170 @@
+--- a/generic/tclInt.h
++++ b/generic/tclInt.h
+@@ -1071,6 +1071,8 @@
+     CompiledLocal *lastLocalPtr;/* Pointer to the last allocated local
+ 				 * variable or NULL if none. This has frame
+ 				 * index (numCompiledLocals-1). */
++    void *typedSig;		/* v16p : signature typée (tclTypes.c), ou
++				 * NULL pour une procédure classique. */
+ } Proc;
+ 
+ /*
+--- a/generic/tclProc.c
++++ b/generic/tclProc.c
+@@ -203,12 +203,39 @@
+      * Create the data structure to represent the procedure.
+      */
+ 
+-    if (TclCreateProc(interp, /*ignored nsPtr*/ NULL, simpleName, objv[2],
+-	    objv[3], &procPtr) != TCL_OK) {
+-	Tcl_AddErrorInfo(interp, "\n    (creating proc \"");
+-	Tcl_AddErrorInfo(interp, simpleName);
+-	Tcl_AddErrorInfo(interp, "\")");
+-	return TCL_ERROR;
++    /*
++     * v16p : une liste d'arguments typée (un produit) ou un type de retour
++     * (proc {T}nom) : la procédure reçoit ses mots dans « args », la
++     * signature lie les champs à l'appel.
++     */
++    {
++	void *sig = NULL;
++	int typedArgs = 0;
++	Tcl_Obj *argsObj = objv[2];
++
++	if (TclTypedProcSig(interp, objv[1], objv[2], &sig, &typedArgs)
++		!= TCL_OK) {
++	    Tcl_AddErrorInfo(interp, "\n    (creating proc \"");
++	    Tcl_AddErrorInfo(interp, simpleName);
++	    Tcl_AddErrorInfo(interp, "\")");
++	    return TCL_ERROR;
++	}
++	if (typedArgs) {
++	    argsObj = Tcl_NewStringObj("args", 4);
++	}
++	Tcl_IncrRefCount(argsObj);
++	if (TclCreateProc(interp, /*ignored nsPtr*/ NULL, simpleName, argsObj,
++		objv[3], &procPtr) != TCL_OK) {
++	    Tcl_DecrRefCount(argsObj);
++	    TclTypedSigRelease(sig);
++	    Tcl_AddErrorInfo(interp, "\n    (creating proc \"");
++	    Tcl_AddErrorInfo(interp, simpleName);
++	    Tcl_AddErrorInfo(interp, "\")");
++	    return TCL_ERROR;
++	}
++	Tcl_DecrRefCount(argsObj);
++	TclTypedSigRelease(procPtr->typedSig);
++	procPtr->typedSig = sig;
+     }
+ 
+     cmd = TclNRCreateCommandInNs(interp, simpleName, (Tcl_Namespace *) nsPtr,
+@@ -485,6 +512,7 @@
+ 	procPtr->numCompiledLocals = 0;
+ 	procPtr->firstLocalPtr = NULL;
+ 	procPtr->lastLocalPtr = NULL;
++	procPtr->typedSig = NULL;
+     }
+ 
+     /*
+@@ -1490,6 +1518,10 @@
+ 	}
+     }
+ 
++    if (procPtr->typedSig != NULL) {
++	/* v16p : les champs de la signature typée */
++	return TclTypedProcBind(interp, procPtr->typedSig, skip);
++    }
+     return TCL_OK;
+ 
+     /*
+@@ -2180,6 +2212,9 @@
+     CmdFrame *cfPtr = NULL;
+     Interp *iPtr = procPtr->iPtr;
+ 
++    TclTypedSigRelease(procPtr->typedSig);	/* v16p */
++    procPtr->typedSig = NULL;
++
+     if (bodyPtr != NULL) {
+ 	/* procPtr is stored in body's ByteCode, so ensure to reset it. */
+ 	ByteCode *codePtr;
+@@ -2940,6 +2975,8 @@
+     newProc->numCompiledLocals = origProc->numArgs;
+     newProc->firstLocalPtr = NULL;
+     newProc->lastLocalPtr = NULL;
++    newProc->typedSig = origProc->typedSig;	/* v16p */
++    TclTypedSigRetain(newProc->typedSig);
+ 
+     /* Work through the original arguments, duplicating them. */
+     origLocal = origProc->firstLocalPtr;
+--- a/generic/tclExecute.c
++++ b/generic/tclExecute.c
+@@ -8109,6 +8109,20 @@
+     }
+ 
+     iPtr->cmdFramePtr = bcFramePtr->nextPtr;
++    /* v16p : le corps d'une procédure typée rend une valeur de son type de
++     * retour (avant l'expiration : une étiquette {v:} choisit la variante). */
++    if (codePtr->procPtr != NULL && codePtr->procPtr->typedSig != NULL
++	    && iPtr->varFramePtr->procPtr == codePtr->procPtr
++	    && codePtr->procPtr->bodyPtr != NULL) {
++	ByteCode *bodyCodePtr;
++
++	ByteCodeGetInternalRep(codePtr->procPtr->bodyPtr, &tclByteCodeType,
++		bodyCodePtr);
++	if (bodyCodePtr == codePtr) {
++	    result = TclTypedProcReturn(interp, codePtr->procPtr->typedSig,
++		    result);
++	}
++    }
+     /* v16m, piste B : ce que ce bytecode a annoté expire avec lui (return
+      * {T}$x, une commande sortie en erreur ou par break). */
+     TclAnnotExpireFrom(interp, TD->annotMark);
+--- a/generic/tclCmdIL.c
++++ b/generic/tclCmdIL.c
+@@ -499,6 +499,11 @@
+      * Build a return list containing the arguments.
+      */
+ 
++    listObjPtr = TclTypedSigArgNames(procPtr->typedSig);	/* v16p */
++    if (listObjPtr != NULL) {
++	Tcl_SetObjResult(interp, listObjPtr);
++	return TCL_OK;
++    }
+     listObjPtr = Tcl_NewListObj(0, NULL);
+     for (localPtr = procPtr->firstLocalPtr;  localPtr != NULL;
+ 	    localPtr = localPtr->nextPtr) {
+@@ -978,6 +983,27 @@
+ 	return TCL_ERROR;
+     }
+ 
++    {
++	/* v16p : les champs d'une procédure typée */
++	Tcl_Obj *defObj = NULL;
++	int has = TclTypedSigDefault(procPtr->typedSig, argName, &defObj);
++
++	if (has >= 0) {
++	    if (defObj == NULL) {
++		TclNewObj(defObj);
++	    }
++	    if (Tcl_ObjSetVar2(interp, objv[3], NULL, defObj,
++		    TCL_LEAVE_ERR_MSG) == NULL) {
++		return TCL_ERROR;
++	    }
++	    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(has));
++	    return TCL_OK;
++	}
++	if (has == -1) {
++	    localPtr = NULL;
++	    goto noArg;
++	}
++    }
+     for (localPtr = procPtr->firstLocalPtr;  localPtr != NULL;
+ 	    localPtr = localPtr->nextPtr) {
+ 	if (TclIsVarArgument(localPtr)
+@@ -1004,6 +1030,7 @@
+ 	}
+     }
+ 
++  noArg:
+     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+ 	    "procedure \"%s\" doesn't have an argument \"%s\"",
+ 	    procName, argName));

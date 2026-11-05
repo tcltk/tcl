@@ -12,20 +12,23 @@ te::styles {
     alerte   {couleur #b4531f souligne 1}
 }
 
-set doc [te::document \
-    [te::titre 1 "Texte enrichi et types"] \
-    [te::para "Chaque passage est un " [te::m gras "segment"] " typé ; les styles " \
-	"sont une " [te::m italique "somme de littéraux"] ", si bien qu'un nom mal " \
-	"orthographié est " [te::m alerte "refusé à la construction"] "."] \
-    [te::titre 2 "Ce que le type vérifie"] \
-    [te::puces \
-	[list "le nom de chaque style (" [te::m code "nomstyle"] ")"] \
-	[list "le niveau d'un titre : 1, 2 ou 3"] \
-	[list "la forme des blocs et des segments, imbriqués " \
-	    [te::m italique "à toute " [te::m gras "profondeur"]]] \
-	[list "un " [te::lien https://core.tcl-lang.org/tips "lien"] " vers les TIP"]] \
-    [te::titre 2 "Un exemple"] \
-    [te::code "set doc \[te::document \[te::para \"Un \" \[te::m gras texte\]\]\]"]]
+# Le document s'écrit en gabarits, dans un interpréteur sûr (te::ecrire) :
+# des blocs courts (h, p, ul, code), du texte tel qu'on le lit, les passages
+# balisés entre crochets, [tête -- contenu].
+set doc [te::ecrire {
+    h 1 {Texte enrichi et types}
+    p {Chaque passage est un [gras -- segment] typé ; les styles sont une
+       [italique -- somme de littéraux], si bien qu'un nom mal orthographié est
+       [alerte -- refusé à la construction].}
+    h 2 {Ce que le type vérifie}
+    ul {le nom de chaque style ([code -- nomstyle])} \
+       {le niveau d'un titre : 1, 2 ou 3} \
+       {la forme des blocs et des segments, imbriqués
+        [italique -- à toute [gras -- profondeur]]} \
+       {un [lien@cible="https://core.tcl-lang.org/tips" -- lien] vers les TIP}
+    h 2 {Un exemple}
+    code {p {Un [gras -- texte] et un [lien@cible="https://tcl.tk" -- lien].}}
+}]
 
 proc ouvrir {cible} {
     tk_messageBox -title Lien -message "Lien vers $cible"

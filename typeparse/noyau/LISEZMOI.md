@@ -2074,3 +2074,41 @@ Pas de patch noyau. Sources de types : `tclTypedVar.c`, `tclTypePath.c`, `tclTyp
 - Patch noyau `annot-fallthrough.patch` (v16o) : un `break;` après `NEXT_INST_F` à la fin des
   instructions `annotMark`, `annotExpire`, `annotSettle`, `annotCast` (comme le reste de
   `tclExecute.c`) : plus d'avertissement `-Wimplicit-fallthrough` (signalé sous MinGW64).
+
+### v16p — procédures typées (5 novembre 2026)
+
+Patch noyau `procs-typees.patch` (après `annot-fallthrough.patch`) : `tclInt.h`, `tclProc.c`,
+`tclExecute.c`, `tclCmdIL.c`. Sources de types : `tclTypes.c`, `tclTypes.h`.
+
+- **La liste d'arguments est un produit** : `proc {pt}decale {{pt}p; {double}dx ?= 0; {double}dy
+  ?= 0} {…}`. Chaque champ devient une variable locale sous contrat ; `?= v` / `?= [cmd]` (évalué
+  dans la procédure, peut lire les champs précédents) ; à l'appel, positionnels puis étiquettes
+  `{dy:}5` ; un dernier `{list.T}args` reçoit le reste ; `{var.T}n` lie `n` à la variable de
+  l'appelant (upvar automatique, valeur courante vérifiée). Messages : `wrong # args: should be
+  "decale p ?dx? ?dy?"`, `missing argument "p"`, `argument "dx" given twice`, `positional argument
+  "…" after labelled arguments`, `unknown argument label {zz:}: must be p:, dx: or dy:`,
+  `argument "dx": expected floating-point number but got "abc"`.
+- **Type de retour** : `proc {T}nom` ; le résultat d'un retour normal (fin du corps, `return`
+  de niveau 1 et de code ok) est casté en `T` ; erreur `return value {T}: …` (les options du
+  `return` sont oubliées). Erreur, `break`, `return -level 2`, `tailcall`, `yield` passent sans
+  cast. `return {U}$x` n'est qu'une note locale (elle expire avec le corps) : pas de cumul.
+- **Étiquettes de retour** : type de retour somme, `return {point:}$z` choisit la variante
+  (`{-strict}` l'exige) ; `label {zz:} on a return value: R has no variant "zz"`, `… the return
+  type int is not a sum`. `proc {S.v}f` : toujours la variante `v`.
+- **Introspection** : `type proc nom` → `args {…} return T` ; `info args` rend les champs,
+  `info default` leurs défauts (`[cmd]` pour un défaut calculé).
+- **Compatibilité** : une liste Tcl valide reste classique (`{a {b 2} args}`, `{a;}`) ; typée si
+  ce n'est pas une liste et qu'elle a un `{T}nom` (sinon l'erreur classique, `unmatched open brace
+  in list` : proc-old-5.4), ou si elle a des `;` et se lit comme un produit. Une procédure
+  classique peut avoir un type de retour.
+- Mise en œuvre : `Proc` gagne un champ `typedSig` (à la fin ; seul `tclProc.c` alloue un `Proc`).
+  `Tcl_ProcObjCmd` lit la signature (`TclTypedProcSig`) et crée la procédure avec la liste
+  `args` ; `InitArgsAndLocals` lie les champs à la fin (`TclTypedProcBind` : la locale `args` est
+  défaite, chaque champ déclaré comme `X is T = v`) ; la sortie de TEBC, pour le bytecode du corps
+  de la procédure et avant l'expiration des annotations, appelle `TclTypedProcReturn` (une
+  étiquette en attente est encore lisible) ; `TclProcCleanupProc` libère la signature,
+  `DuplicateProc` la partage.
+- Coût d'appel (3 arguments) : 1,2 µs contre 0,6 µs pour la même procédure classique ; le cast
+  de retour d'une valeur déjà du bon type est gratuit, d'une liste nue ~0,3 µs.
+- Sorties attendues changées : t28, t93 (la liste des sous-commandes de `type` gagne `proc`).
+  Nouveau test `t96_procs_typees`. `make test` : mêmes échecs que la référence.

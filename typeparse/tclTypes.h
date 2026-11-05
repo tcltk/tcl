@@ -21,7 +21,7 @@
  * VAR_* de tclInt.h). La valeur ci-dessous est un PLACEHOLDER. */
 /* Version du prototype TIP 764 (typeparse/VERSION, maj.sh, et
  * tcl::unsupported::typesversion). */
-#define TCL_TYPES_VERSION "v16o"
+#define TCL_TYPES_VERSION "v16p"
 
 #ifndef VAR_TYPED
 #define VAR_TYPED	0x400000
@@ -483,4 +483,15 @@ MODULE_SCOPE Tcl_Obj *TclTupleAssign(Tcl_Interp *interp, Tcl_Obj *names,
 MODULE_SCOPE Tcl_Obj *TclTypedDeclareLocal(Tcl_Interp *interp, Var *varPtr,
 			    Tcl_Obj *nameObj, Tcl_Obj *typeObj, Tcl_Obj *valueObj);
 MODULE_SCOPE int TclTypedVarRedeclare(Tcl_Interp *interp, Var *varPtr, Tcl_Obj *nameObj);
+/* v16p : procédures typées (tclTypes.c) ; la signature est rangée dans
+ * Proc.typedSig. */
+MODULE_SCOPE int TclTypedProcSig(Tcl_Interp *interp, Tcl_Obj *nameObj,
+			    Tcl_Obj *argsObj, void **sigPtr, int *typedArgsPtr);
+MODULE_SCOPE int TclTypedProcBind(Tcl_Interp *interp, void *sig, Tcl_Size skip);
+MODULE_SCOPE int TclTypedProcReturn(Tcl_Interp *interp, void *sig, int result);
+MODULE_SCOPE void TclTypedSigRetain(void *sig);
+MODULE_SCOPE void TclTypedSigRelease(void *sig);
+MODULE_SCOPE Tcl_Obj *TclTypedSigArgNames(void *sig);
+MODULE_SCOPE int TclTypedSigDefault(void *sig, const char *name,
+			    Tcl_Obj **defPtr);
 #endif /* TCLTYPES_H */

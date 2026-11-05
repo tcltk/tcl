@@ -7260,6 +7260,8 @@ TclTypeSumOverlaps(const TclType *tp)
  * niveau ; un produit ou une somme anonymes s'écrivent en entier.
  */
 static void DefText(const TclType *tp, int top, Tcl_DString *ds);
+static int TypeProcCmd(Tcl_Interp *interp, Tcl_Size objc,
+	Tcl_Obj *const objv[]);		/* v16p */
 
 static void
 DefWord(const char *s, Tcl_DString *ds)
@@ -8100,11 +8102,14 @@ TypeObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
     if (strcmp(sub, "deref") == 0) {
 	return TypeDerefCmd(interp, objc, objv);
     }
+    if (strcmp(sub, "proc") == 0) {
+	return TypeProcCmd(interp, objc, objv);	/* v16p */
+    }
     if (strcmp(sub, "binary") == 0) {
 	return TypeBinaryCmd(interp, objc, objv);
     }
     ERR(interp, "SUBCMD", "bad subcommand \"%s\": must be def, alias, "
-	    "cast, convert, deref, export, forget, get, is or binary", sub);
+	    "cast, convert, deref, export, forget, get, is, proc or binary", sub);
     return TCL_ERROR;
 }
 
@@ -8676,4 +8681,762 @@ TclTypesInit(Tcl_Interp *interp)
 	}
     }
     TclAnnotInit(interp);
+}
+
+/* --------------------------------------------------------------------
+ * v16p : procédures typées.
+ *
+ *   proc {pt}decale {{pt}p; {double}dx ?= 0; {double}dy ?= 0} {...}
+ *
+ * La liste d'arguments est un type produit : chaque champ devient une
+ * variable locale qui porte son contrat ; un défaut (?= v, ?= [cmd]) rend le
+ * champ facultatif ; à l'appel, des arguments positionnels puis des
+ * étiquettes ({dy:}3) ; un dernier champ {list.T}args reçoit le reste ; un
+ * champ {var.T}n lie n à la variable de l'appelant (upvar automatique), dont
+ * la valeur courante est vérifiée. L'annotation du nom donne le type de
+ * retour : le résultat est casté au retour normal ; une étiquette ({v:})
+ * choisit la variante d'une somme ; {T}$x sur un return n'est qu'une note
+ * locale, qui expire avec la procédure.
+ * -------------------------------------------------------------------- */
+
+typedef struct TypedArg {
+    Tcl_Obj *name;		/* nom du champ : la variable locale */
+    Tcl_Obj *typeText;		/* texte du type (DeclareTyped) */
+    Tcl_Obj *defval;		/* ?= v */
+    Tcl_Obj *defcmd;		/* ?= [cmd] : évalué dans la procédure */
+    int isVar;			/* {var.T} : upvar */
+    Tcl_Obj *varElem;		/* T de var.T, ou NULL */
+} TypedArg;
+
+typedef struct TclTypedSig {
+    size_t refCount;
+    Tcl_Size n;			/* -1 : liste d'arguments classique */
+    TypedArg *a;
+    int rest;			/* le dernier champ est {list...}args */
+    Tcl_Obj *argsText;		/* la signature, canonique */
+    Tcl_Obj *retText;		/* le type de retour, ou NULL */
+    Tcl_Obj *usage;		/* p ?dx? ?dy? */
+} TclTypedSig;
+
+static Tcl_Obj *
+TypeTextObj(const TclType *tp, int top)
+{
+    Tcl_DString ds;
+    Tcl_Obj *o;
+
+    Tcl_DStringInit(&ds);
+    DefText(tp, top, &ds);
+    o = Tcl_NewStringObj(Tcl_DStringValue(&ds), Tcl_DStringLength(&ds));
+    Tcl_DStringFree(&ds);
+    Tcl_IncrRefCount(o);
+    return o;
+}
+
+void
+TclTypedSigRetain(void *sigv)
+{
+    if (sigv != NULL) {
+	((TclTypedSig *) sigv)->refCount++;
+    }
+}
+
+void
+TclTypedSigRelease(void *sigv)
+{
+    TclTypedSig *sig = (TclTypedSig *) sigv;
+    Tcl_Size i;
+
+    if (sig == NULL || --sig->refCount > 0) {
+	return;
+    }
+    for (i = 0; i < sig->n; i++) {
+	TypedArg *a = &sig->a[i];
+
+	Tcl_DecrRefCount(a->name);
+	Tcl_DecrRefCount(a->typeText);
+	if (a->defval) {
+	    Tcl_DecrRefCount(a->defval);
+	}
+	if (a->defcmd) {
+	    Tcl_DecrRefCount(a->defcmd);
+	}
+	if (a->varElem) {
+	    Tcl_DecrRefCount(a->varElem);
+	}
+    }
+    if (sig->a != NULL) {
+	Tcl_Free(sig->a);
+    }
+    if (sig->argsText) {
+	Tcl_DecrRefCount(sig->argsText);
+    }
+    if (sig->retText) {
+	Tcl_DecrRefCount(sig->retText);
+    }
+    if (sig->usage) {
+	Tcl_DecrRefCount(sig->usage);
+    }
+    Tcl_Free(sig);
+}
+
+/* Le type de retour : un type, ou une somme (les étiquettes {v:}). */
+static int
+RetTypeCheck(Tcl_Interp *interp, Tcl_Obj *text)
+{
+    Tcl_Size l;
+    const char *t = Tcl_GetStringFromObj(text, &l);
+    TclType *tp = TclTypeParse(interp, t, l);
+
+    if (tp == NULL) {
+	const char *dot = strrchr(t, '.');
+	TclType *sum = (dot != NULL && dot > t)
+		? TclTypeParse(interp, t, dot - t) : NULL;
+
+	if (sum != NULL && sum->kind == TCLT_SUM
+		&& TclTypeFieldIndex(sum, dot + 1) >= 0) {
+	    Tcl_ResetResult(interp);
+	    return TCL_OK;		/* {S.v}f : toujours la variante v */
+	}
+	(void) TclTypeParse(interp, t, l);	/* le message */
+	return TCL_ERROR;
+    }
+    return TCL_OK;
+}
+
+/* Une liste invalide qui a un {T}nom (une accolade fermante collée à un
+ * nom) : une signature typée ; sinon l'erreur classique de la liste. */
+static int
+LooksTyped(const char *t, Tcl_Size len)
+{
+    Tcl_Size i;
+
+    for (i = 0; i + 1 < len; i++) {
+	if (t[i] == '}' && !TclIsSpaceProc(t[i + 1]) && t[i + 1] != '}'
+		&& t[i + 1] != '{' && t[i + 1] != ';') {
+	    return 1;
+	}
+    }
+    return 0;
+}
+
+/*
+ * À la définition (proc NOM ARGS CORPS) : *sigPtr reçoit la signature, ou
+ * NULL pour une procédure classique (ni liste typée, ni type de retour).
+ * *typedArgsPtr : la liste d'arguments est un produit (la procédure est
+ * alors créée avec la liste « args », la signature lie les champs).
+ */
+int
+TclTypedProcSig(Tcl_Interp *interp, Tcl_Obj *nameObj, Tcl_Obj *argsObj,
+	void **sigPtr, int *typedArgsPtr)
+{
+    Tcl_Obj *ret = NULL, *top = NULL, *popped;
+    Tcl_Size len, n, i;
+    const char *text = Tcl_GetStringFromObj(argsObj, &len);
+    TclType *prod = NULL;
+    TclTypedSig *sig;
+
+    *sigPtr = NULL;
+    *typedArgsPtr = 0;
+    if (TclIsAnnotated(nameObj)) {
+	popped = TclAnnotPopTop(nameObj, &top);
+	if (popped != NULL) {
+	    ret = Tcl_DuplicateObj(top);
+	    Tcl_IncrRefCount(ret);
+	    TclDiscard(popped);
+	    if (Tcl_GetCharLength(ret) == 0) {
+		Tcl_DecrRefCount(ret);	/* proc {}f : rien */
+		ret = NULL;
+	    } else if (RetTypeCheck(interp, ret) != TCL_OK) {
+		Tcl_Obj *msg = Tcl_ObjPrintf("bad return type {%s}: ",
+			Tcl_GetString(ret));
+
+		Tcl_AppendObjToObj(msg, Tcl_GetObjResult(interp));
+		Tcl_SetObjResult(interp, msg);
+		Tcl_DecrRefCount(ret);
+		return TCL_ERROR;
+	    }
+	}
+    }
+    if (Tcl_ListObjLength(NULL, argsObj, &n) == TCL_OK) {
+	/* une liste valide reste classique ({a b}, {a {b 2}}) ; avec des
+	 * « ; », elle est typée si elle se lit comme un produit */
+	if (memchr(text, ';', len) != NULL) {
+	    Tcl_InterpState st = Tcl_SaveInterpState(interp, TCL_OK);
+
+	    prod = TclTypeParse(interp, text, len);
+	    if (prod == NULL || prod->kind != TCLT_PRODUCT) {
+		prod = NULL;
+	    }
+	    Tcl_RestoreInterpState(interp, st);
+	}
+    } else if (LooksTyped(text, len)) {
+	prod = TclTypeParse(interp, text, len);
+	if (prod == NULL || prod->kind != TCLT_PRODUCT) {
+	    if (prod != NULL) {
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf("a typed argument list "
+			"is a product: {{T}a; {T}b ?= v}, not %s", prod->name));
+		Tcl_SetErrorCode(interp, "TCL", "TYPE", "PROCARGS",
+			(char *) NULL);
+	    }
+	    if (ret != NULL) {
+		Tcl_DecrRefCount(ret);
+	    }
+	    return TCL_ERROR;
+	}
+    }
+    if (prod == NULL && ret == NULL) {
+	return TCL_OK;			/* procédure classique */
+    }
+    sig = (TclTypedSig *) Tcl_Alloc(sizeof(TclTypedSig));
+    memset(sig, 0, sizeof(TclTypedSig));
+    sig->refCount = 1;
+    sig->n = -1;
+    sig->retText = ret;
+    if (prod != NULL) {
+	Tcl_Obj *usage = Tcl_NewObj();
+
+	Tcl_IncrRefCount(usage);
+	sig->usage = usage;
+	sig->n = prod->nfields;
+	sig->a = (TypedArg *) Tcl_Alloc(sizeof(TypedArg) * (prod->nfields + 1));
+	memset(sig->a, 0, sizeof(TypedArg) * (prod->nfields + 1));
+	for (i = 0; i < prod->nfields; i++) {
+	    TclTypeField *f = &prod->fields[i];
+	    TypedArg *a = &sig->a[i];
+	    const char *nm;
+
+	    if (f->name == NULL || f->type == NULL) {
+		sig->n = i;
+		TclTypedSigRelease(sig);
+		Tcl_SetObjResult(interp, Tcl_NewStringObj("every field of a "
+			"typed argument list needs a type and a name", -1));
+		Tcl_SetErrorCode(interp, "TCL", "TYPE", "PROCARGS",
+			(char *) NULL);
+		return TCL_ERROR;
+	    }
+	    nm = Tcl_GetString(f->name);
+	    a->name = f->name;
+	    Tcl_IncrRefCount(a->name);
+	    a->typeText = TypeTextObj(f->type, 2);
+	    if (f->defval) {
+		a->defval = f->defval;
+		Tcl_IncrRefCount(a->defval);
+	    }
+	    if (f->defcmd) {
+		a->defcmd = f->defcmd;
+		Tcl_IncrRefCount(a->defcmd);
+	    }
+	    if (f->type->kind == TCLT_VAR) {
+		a->isVar = 1;
+		if (f->type->elem != NULL && !TclTypeIsPlainString(f->type->elem)) {
+		    a->varElem = TypeTextObj(f->type->elem, 2);
+		}
+	    }
+	    if (i == prod->nfields - 1 && strcmp(nm, "args") == 0
+		    && f->type->kind == TCLT_LIST && f->type->arity < 0
+		    && !a->defval && !a->defcmd) {
+		sig->rest = 1;
+	    }
+	    if (i > 0) {
+		Tcl_AppendToObj(usage, " ", 1);
+	    }
+	    if (sig->rest) {
+		Tcl_AppendToObj(usage, "?arg ...?", -1);
+	    } else if (a->defval || a->defcmd) {
+		Tcl_AppendStringsToObj(usage, "?", nm, "?", (char *) NULL);
+	    } else {
+		Tcl_AppendToObj(usage, nm, -1);
+	    }
+	}
+	sig->argsText = TypeTextObj(prod, 1);
+	*typedArgsPtr = 1;
+    }
+    *sigPtr = sig;
+    return TCL_OK;
+}
+
+static int
+TypedArgsWrong(Tcl_Interp *interp, TclTypedSig *sig, CallFrame *framePtr,
+	Tcl_Size skip)
+{
+    Tcl_Obj *msg = Tcl_NewStringObj("wrong # args: should be \"", -1);
+    Tcl_Size i;
+
+    for (i = 0; i < skip; i++) {
+	Tcl_AppendObjToObj(msg, framePtr->objv[i]);
+	Tcl_AppendToObj(msg, " ", 1);
+    }
+    Tcl_AppendObjToObj(msg, sig->usage);
+    Tcl_AppendToObj(msg, "\"", 1);
+    Tcl_SetObjResult(interp, msg);
+    Tcl_SetErrorCode(interp, "TCL", "WRONGARGS", (char *) NULL);
+    return TCL_ERROR;
+}
+
+static int
+TypedArgError(Tcl_Interp *interp, Tcl_Obj *name)
+{
+    Tcl_Obj *msg = Tcl_ObjPrintf("argument \"%s\": ", Tcl_GetString(name));
+
+    Tcl_AppendObjToObj(msg, Tcl_GetObjResult(interp));
+    Tcl_SetObjResult(interp, msg);
+    return TCL_ERROR;
+}
+
+/* Le champ idx (un champ ou le reste) attend-il une somme (dont une
+ * étiquette {v:} nomme la variante) ? -1 : aucun champ. */
+static int
+LabelForSum(Tcl_Interp *interp, TclTypedSig *sig, Tcl_Size idx)
+{
+    TclType *tp;
+
+    if (idx < 0) {
+	return 0;
+    }
+    tp = TclAnnotTypeOf(interp, sig->a[idx].typeText);
+    if (tp != NULL && idx == sig->n - 1 && sig->rest) {
+	tp = tp->elem;
+    }
+    while (tp != NULL && tp->kind != TCLT_SUM && tp->under != NULL) {
+	tp = tp->under;
+    }
+    return tp != NULL && tp->kind == TCLT_SUM;
+}
+
+/*
+ * À l'appel (InitArgsAndLocals, le cadre de la procédure poussé, ses locales
+ * prêtes) : la liste d'arguments a été rangée dans « args » (la seule
+ * locale formelle) ; les champs sont liés.
+ */
+int
+TclTypedProcBind(Tcl_Interp *interp, void *sigv, Tcl_Size skip)
+{
+    Interp *iPtr = (Interp *) interp;
+    CallFrame *framePtr = iPtr->varFramePtr;
+    TclTypedSig *sig = (TclTypedSig *) sigv;
+    Tcl_Size objc = framePtr->objc - skip, i, k = 0;
+    Tcl_Size nf = sig->n - sig->rest;
+    Tcl_Obj *const *objv = framePtr->objv + skip;
+    Tcl_Obj **vals, *restList = NULL;
+    int seenLabel = 0, rc = TCL_ERROR;
+
+    if (sig->n < 0) {
+	return TCL_OK;			/* seulement un type de retour */
+    }
+    /* la locale « args » qui a reçu les mots : défaite */
+    if (framePtr->numCompiledLocals > 0) {
+	Var *av = framePtr->compiledLocals;
+
+	if (av->value.objPtr != NULL && !TclIsVarLink(av)) {
+	    Tcl_DecrRefCount(av->value.objPtr);
+	}
+	av->value.objPtr = NULL;
+	av->flags = 0;
+    }
+    vals = (Tcl_Obj **) TclStackAlloc(interp, sizeof(Tcl_Obj *) * (nf + 1));
+    memset(vals, 0, sizeof(Tcl_Obj *) * (nf + 1));
+    if (sig->rest) {
+	restList = Tcl_NewListObj(0, NULL);
+	Tcl_IncrRefCount(restList);
+    }
+    for (i = 0; i < objc; i++) {
+	Tcl_Obj *arg = objv[i], *lab = NULL, *val = arg;
+	Tcl_Size fi = -1, j;
+
+	if (TclIsAnnotated(arg)) {
+	    lab = TclAnnotLabelOf(arg);
+	}
+	if (lab != NULL) {
+	    Tcl_Size ll;
+	    const char *lt = Tcl_GetStringFromObj(lab, &ll);
+
+	    for (j = 0; j < nf; j++) {
+		Tcl_Size nl;
+		const char *nt = Tcl_GetStringFromObj(sig->a[j].name, &nl);
+
+		if (nl == ll - 1 && memcmp(nt, lt, nl) == 0) {
+		    fi = j;
+		    break;
+		}
+	    }
+	    if (fi >= 0) {
+		Tcl_Obj *top = NULL, *popped = TclAnnotPopTop(arg, &top);
+
+		if (popped != NULL && top != NULL
+			&& strcmp(Tcl_GetString(top), lt) == 0) {
+		    val = popped;
+		} else if (popped != NULL) {
+		    TclDiscard(popped);
+		}
+	    }
+	    if (fi < 0 && !seenLabel && LabelForSum(interp, sig,
+		    (k < nf) ? k : (restList != NULL ? nf : -1)) == 0) {
+		/* ni un champ, ni la variante d'une somme */
+		Tcl_Obj *msg = Tcl_ObjPrintf("unknown argument label {%s}: "
+			"must be ", lt);
+
+		for (j = 0; j < nf; j++) {
+		    Tcl_AppendStringsToObj(msg, j == 0 ? "" : j == nf - 1
+			    ? " or " : ", ", Tcl_GetString(sig->a[j].name),
+			    ":", (char *) NULL);
+		}
+		Tcl_SetObjResult(interp, msg);
+		Tcl_SetErrorCode(interp, "TCL", "WRONGARGS", (char *) NULL);
+		Tcl_DecrRefCount(lab);
+		goto done;
+	    }
+	    Tcl_DecrRefCount(lab);
+	}
+	if (fi >= 0) {
+	    if (vals[fi] != NULL) {
+		if (val != arg) {
+		    TclDiscard(val);
+		}
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"argument \"%s\" given twice",
+			Tcl_GetString(sig->a[fi].name)));
+		Tcl_SetErrorCode(interp, "TCL", "WRONGARGS", (char *) NULL);
+		goto done;
+	    }
+	    vals[fi] = val;
+	    Tcl_IncrRefCount(val);
+	    seenLabel = 1;
+	} else if (seenLabel) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "positional argument \"%s\" after labelled arguments",
+		    Tcl_GetString(arg)));
+	    Tcl_SetErrorCode(interp, "TCL", "WRONGARGS", (char *) NULL);
+	    goto done;
+	} else if (k < nf) {
+	    vals[k++] = arg;
+	    Tcl_IncrRefCount(arg);
+	} else if (restList != NULL) {
+	    Tcl_ListObjAppendElement(NULL, restList, arg);
+	} else {
+	    TypedArgsWrong(interp, sig, framePtr, skip);
+	    goto done;
+	}
+    }
+    for (i = 0; i < nf; i++) {
+	TypedArg *a = &sig->a[i];
+	Tcl_Obj *v = vals[i], *typed = NULL;
+
+	if (v == NULL) {
+	    if (a->defval != NULL) {
+		v = a->defval;
+	    } else if (a->defcmd != NULL) {
+		if (Tcl_EvalObjEx(interp, a->defcmd, 0) != TCL_OK) {
+		    TypedArgError(interp, a->name);
+		    goto done;
+		}
+		v = Tcl_GetObjResult(interp);
+	    } else if (!seenLabel) {
+		TypedArgsWrong(interp, sig, framePtr, skip);
+		goto done;
+	    } else {
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"missing argument \"%s\"", Tcl_GetString(a->name)));
+		Tcl_SetErrorCode(interp, "TCL", "WRONGARGS", (char *) NULL);
+		goto done;
+	    }
+	    vals[i] = v;
+	    Tcl_IncrRefCount(v);
+	}
+	if (a->isVar) {
+	    /* {var.T}n : n est la variable de l'appelant */
+	    Tcl_Obj *cur;
+
+	    if (Tcl_UpVar2(interp, "1", Tcl_GetString(TCL_ANNOT_CONTENT(v)),
+		    NULL, Tcl_GetString(a->name), 0) != TCL_OK) {
+		TypedArgError(interp, a->name);
+		goto done;
+	    }
+	    if (a->varElem != NULL) {
+		cur = Tcl_ObjGetVar2(interp, a->name, NULL, 0);
+		if (cur != NULL) {
+		    Tcl_IncrRefCount(cur);
+		    if (DeclareTyped(interp, a->varElem, cur, 0, &typed)
+			    != TCL_OK) {
+			Tcl_DecrRefCount(cur);
+			TypedArgError(interp, a->name);
+			goto done;
+		    }
+		    TclDiscard(typed);
+		    Tcl_DecrRefCount(cur);
+		}
+	    }
+	    continue;
+	}
+	if (DeclareTyped(interp, a->typeText, v, 0, &typed) != TCL_OK) {
+	    TypedArgError(interp, a->name);
+	    goto done;
+	}
+	Tcl_IncrRefCount(typed);
+	if (TclTypedVarDeclare(interp, a->name, typed) == NULL) {
+	    Tcl_DecrRefCount(typed);
+	    TypedArgError(interp, a->name);
+	    goto done;
+	}
+	Tcl_DecrRefCount(typed);
+    }
+    if (restList != NULL) {
+	TypedArg *a = &sig->a[nf];
+	Tcl_Obj *typed = NULL;
+
+	if (DeclareTyped(interp, a->typeText, restList, 0, &typed) != TCL_OK) {
+	    TypedArgError(interp, a->name);
+	    goto done;
+	}
+	Tcl_IncrRefCount(typed);
+	if (TclTypedVarDeclare(interp, a->name, typed) == NULL) {
+	    Tcl_DecrRefCount(typed);
+	    TypedArgError(interp, a->name);
+	    goto done;
+	}
+	Tcl_DecrRefCount(typed);
+    }
+    Tcl_ResetResult(interp);
+    rc = TCL_OK;
+
+  done:
+    for (i = 0; i < nf; i++) {
+	if (vals[i] != NULL) {
+	    Tcl_DecrRefCount(vals[i]);
+	}
+    }
+    TclStackFree(interp, vals);
+    if (restList != NULL) {
+	Tcl_DecrRefCount(restList);
+    }
+    return rc;
+}
+
+/* Un « return » réussi devient une erreur : ses options sont oubliées. */
+static void
+ResetReturn(Tcl_Interp *interp, int result)
+{
+    if (result == TCL_RETURN) {
+	Tcl_Obj *opts = Tcl_NewObj();
+
+	Tcl_IncrRefCount(opts);
+	(void) Tcl_SetReturnOptions(interp, opts);
+	Tcl_DecrRefCount(opts);
+    }
+}
+
+/*
+ * À la sortie du corps (TEBC, avant l'expiration des annotations du corps) :
+ * le résultat d'un retour normal est casté au type de retour. Les notes du
+ * résultat expirent d'abord ({T}$x reste local) ; une étiquette {v:} en
+ * attente choisit la variante d'une somme.
+ */
+int
+TclTypedProcReturn(Tcl_Interp *interp, void *sigv, int result)
+{
+    Interp *iPtr = (Interp *) interp;
+    TclTypedSig *sig = (TclTypedSig *) sigv;
+    Tcl_Obj *res, *lab = NULL, *base, *pushed, *out = NULL;
+    int rc;
+
+    if (sig == NULL || sig->retText == NULL
+	    || iPtr->varFramePtr->tailcallPtr != NULL) {
+	return result;			/* tailcall : le résultat viendra après */
+    }
+    if (!(result == TCL_OK || (result == TCL_RETURN
+	    && iPtr->returnLevel == 1 && iPtr->returnCode == TCL_OK))) {
+	return result;
+    }
+    res = Tcl_GetObjResult(interp);
+    if (TclIsAnnotated(res) && TclAnnotIsSettled(res)) {
+	/* déjà du type de retour (return $p, p typée) : rien à faire */
+	TclType *rt = TclAnnotTypeOf(interp, sig->retText), *vt = NULL;
+
+	if (rt != NULL && TclAnnotInfo(res, NULL, &vt, NULL, NULL) == 1
+		&& vt == rt) {
+	    return result;
+	}
+    }
+    Tcl_IncrRefCount(res);
+    if (TclIsAnnotated(res)) {
+	lab = TclAnnotLabelOf(res);
+	TclAnnotExpire(interp, res);
+    }
+    if (lab == NULL) {
+	/* le cas courant : une valeur sans étiquette (cast direct) */
+	if (TclAnnotCastText(interp, sig->retText, res, &out) == TCL_OK) {
+	    Tcl_SetObjResult(interp, out);
+	    Tcl_DecrRefCount(res);
+	    return result;
+	}
+	pushed = NULL;
+	base = NULL;
+	goto failed;
+    }
+    {
+	/* {v:} : v doit être une variante du type de retour, une somme */
+	TclType *rt = TclAnnotTypeOf(interp, sig->retText);
+	Tcl_Size ll;
+	const char *lt = Tcl_GetStringFromObj(lab, &ll);
+	char *vn = (char *) Tcl_Alloc(ll);
+
+	memcpy(vn, lt, ll - 1);
+	vn[ll - 1] = '\0';
+	while (rt != NULL && rt->kind != TCLT_SUM && rt->under != NULL) {
+	    rt = rt->under;
+	}
+	if (rt == NULL || rt->kind != TCLT_SUM) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf("label {%s} on a return "
+		    "value: the return type %s is not a sum", lt,
+		    Tcl_GetString(sig->retText)));
+	} else if (TclTypeFieldIndex(rt, vn) < 0) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf("label {%s} on a return "
+		    "value: %s has no variant \"%s\"", lt,
+		    Tcl_GetString(sig->retText), vn));
+	} else {
+	    rt = NULL;			/* bonne étiquette */
+	}
+	Tcl_Free(vn);
+	if (rt != NULL) {
+	    Tcl_Obj *msg = Tcl_GetObjResult(interp);
+
+	    Tcl_IncrRefCount(msg);
+	    ResetReturn(interp, result);
+	    Tcl_SetObjResult(interp, msg);
+	    Tcl_DecrRefCount(msg);
+	    Tcl_SetErrorCode(interp, "TCL", "TYPE", "LABEL", (char *) NULL);
+	    pushed = NULL;
+	    base = NULL;
+	    result = TCL_ERROR;
+	    goto cleanup;
+	}
+    }
+    base = TclAnnotPush(res, lab);
+    Tcl_IncrRefCount(base);
+    pushed = TclAnnotPush(base, sig->retText);
+    Tcl_IncrRefCount(pushed);
+    rc = TclAnnotSettle(interp, pushed, NULL, 0, &out);
+    if (rc == TCL_OK) {
+	Tcl_SetObjResult(interp, out);
+    } else {
+	Tcl_Obj *msg;
+
+      failed:
+	msg = Tcl_ObjPrintf("return value {%s}: ",
+		Tcl_GetString(sig->retText));
+
+	Tcl_AppendObjToObj(msg, Tcl_GetObjResult(interp));
+	Tcl_IncrRefCount(msg);
+	{
+	    Tcl_Obj *code = Tcl_GetReturnOptions(interp, TCL_ERROR), *ec = NULL,
+		    *k = Tcl_NewStringObj("-errorcode", -1);
+
+	    Tcl_IncrRefCount(code);
+	    Tcl_IncrRefCount(k);
+	    Tcl_DictObjGet(NULL, code, k, &ec);
+	    if (ec != NULL) {
+		Tcl_IncrRefCount(ec);
+	    }
+	    ResetReturn(interp, result);
+	    Tcl_SetObjResult(interp, msg);
+	    if (ec != NULL) {
+		Tcl_SetObjErrorCode(interp, ec);
+		Tcl_DecrRefCount(ec);
+	    }
+	    Tcl_DecrRefCount(k);
+	    Tcl_DecrRefCount(code);
+	}
+	Tcl_DecrRefCount(msg);
+	result = TCL_ERROR;
+    }
+  cleanup:
+    if (pushed != NULL) {
+	Tcl_DecrRefCount(pushed);
+    }
+    if (base != NULL) {
+	Tcl_DecrRefCount(base);
+    }
+    if (lab != NULL) {
+	Tcl_DecrRefCount(lab);
+    }
+    Tcl_DecrRefCount(res);
+    return result;
+}
+
+/* type proc NOM : la signature (dict : args, return). */
+static int
+TypeProcCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
+{
+    Proc *procPtr;
+    TclTypedSig *sig;
+    Tcl_Obj *d;
+
+    if (objc != 3) {
+	Tcl_WrongNumArgs(interp, 2, objv, "procName");
+	return TCL_ERROR;
+    }
+    procPtr = TclFindProc((Interp *) interp, Tcl_GetString(objv[2]));
+    if (procPtr == NULL) {
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf("\"%s\" isn't a procedure",
+		Tcl_GetString(objv[2])));
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "PROCEDURE",
+		Tcl_GetString(objv[2]), (char *) NULL);
+	return TCL_ERROR;
+    }
+    sig = (TclTypedSig *) procPtr->typedSig;
+    d = Tcl_NewDictObj();
+    Tcl_DictObjPut(NULL, d, Tcl_NewStringObj("args", 4),
+	    (sig != NULL && sig->argsText != NULL) ? sig->argsText
+	    : Tcl_NewObj());
+    Tcl_DictObjPut(NULL, d, Tcl_NewStringObj("return", 6),
+	    (sig != NULL && sig->retText != NULL) ? sig->retText
+	    : Tcl_NewObj());
+    Tcl_SetObjResult(interp, d);
+    return TCL_OK;
+}
+
+/* info args / info default d'une procédure typée : les champs. NULL, -1 :
+ * liste d'arguments classique. */
+Tcl_Obj *
+TclTypedSigArgNames(void *sigv)
+{
+    TclTypedSig *sig = (TclTypedSig *) sigv;
+    Tcl_Obj *l;
+    Tcl_Size i;
+
+    if (sig == NULL || sig->n < 0) {
+	return NULL;
+    }
+    l = Tcl_NewListObj(0, NULL);
+    for (i = 0; i < sig->n; i++) {
+	Tcl_ListObjAppendElement(NULL, l, sig->a[i].name);
+    }
+    return l;
+}
+
+/* 1 : le champ a un défaut (*defPtr, ou le texte [cmd]) ; 0 : non ; -1 : pas
+ * un champ ; -2 : liste classique. */
+int
+TclTypedSigDefault(void *sigv, const char *name, Tcl_Obj **defPtr)
+{
+    TclTypedSig *sig = (TclTypedSig *) sigv;
+    Tcl_Size i;
+
+    if (sig == NULL || sig->n < 0) {
+	return -2;
+    }
+    for (i = 0; i < sig->n; i++) {
+	if (strcmp(Tcl_GetString(sig->a[i].name), name) == 0) {
+	    if (sig->a[i].defval != NULL) {
+		*defPtr = sig->a[i].defval;
+		return 1;
+	    }
+	    if (sig->a[i].defcmd != NULL) {
+		*defPtr = Tcl_ObjPrintf("[%s]",
+			Tcl_GetString(sig->a[i].defcmd));
+		return 1;
+	    }
+	    return 0;
+	}
+    }
+    return -1;
 }

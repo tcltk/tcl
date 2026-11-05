@@ -38,3 +38,6 @@ expr-champs-bits.patch
 set-type-local-compile.patch
 jeton-annot-2048.patch
 cast-immediat-etiquettes.patch
+piste-b-expiration.patch
+annot-fallthrough.patch
+procs-typees.patch
