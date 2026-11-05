@@ -80,10 +80,10 @@ Paths in mounted archives are case-sensitive on all platforms.
 [zipfs]{.cmd} [mount]{.sub}
 : see below ...
 
-**zipfs mount** *mountpoint*
+[zipfs]{.cmd} [mount]{.sub} [mountpoint]{.arg}
 : see below ...
 
-**zipfs mount** *zipfile mountpoint* ?*password*?
+[zipfs]{.cmd} [mount]{.sub} [zipfile]{.arg} [mountpoint]{.arg} [password]{.optarg}
 : The **zipfs mount** command mounts ZIP archives as Tcl virtual file systems and returns information about current mounts.
 
     With no arguments, the command returns a dictionary mapping mount points to the path of the corresponding ZIP archive.

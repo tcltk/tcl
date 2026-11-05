@@ -45,17 +45,17 @@ This command performs one of several operations on the variable given by *arrayN
     [array]{.cmd} [default]{.sub} [exists]{.lit} [arrayName]{.arg}
     : [This returns a boolean value indicating whether a default value has been set for the array *arrayName*. Returns a false value if *arrayName* does not exist. Raises an error if *arrayName* is an existing variable that is not an array.]{version="TIP508"}
 
-    **array default get** *arrayName*
+    [array]{.cmd} [default]{.sub} [get]{.lit} [arrayName]{.arg}
     : [This returns the current default value for the array *arrayName*.  Raises an error if *arrayName* is an existing variable that is not an array, or if *arrayName* is an array without a default value.]{version="TIP508"}
 
-    **array default set** *arrayName value*
+    [array]{.cmd} [default]{.sub} [set]{.lit} [arrayName]{.arg} [value]{.arg}
     : [This sets the default value for the array *arrayName* to *value*. Returns the empty string. Raises an error if *arrayName* is an existing variable that is not an array, or if *arrayName* is an illegal name for an array. If *arrayName* does not currently exist, it is created as an empty array as well as having its default value set.]{version="TIP508"}
 
-    **array default unset** *arrayName*
+    [array]{.cmd} [default]{.sub} [unset]{.lit} [arrayName]{.arg}
     : [This removes the default value for the array *arrayName* and returns the empty string. Does nothing if *arrayName* does not have a default value. Raises an error if *arrayName* is an existing variable that is not an array.]{version="TIP508"}
 
 
-**array donesearch** *arrayName searchId*
+[array]{.cmd} [donesearch]{.sub} [arrayName]{.arg} [searchId]{.arg}
 : This command terminates an array search and destroys all the state associated with that search.  *SearchId* indicates which search on *arrayName* to destroy, and must have been the return value from a previous invocation of **array startsearch**.  Returns an empty string.
 
 [array]{.cmd} [exists]{.sub} [arrayName]{.arg}

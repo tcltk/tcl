@@ -233,7 +233,7 @@ This command provides several operations for reading from, writing to and otherw
 [chan]{.cmd} [read]{.sub} [channel]{.arg} [numChars]{.optarg}
 : see below ...
 
-**chan read** ?**-nonewline**? *channel*
+[chan]{.cmd} [read]{.sub} [-nonewline]{.optlit} [channel]{.arg}
 : In the first form, the result will be the next *numChars* characters read from the channel named *channel*; if *numChars* is omitted, all characters up to the point when the channel would signal a failure (whether an end-of-file, blocked or other error condition) are read. In the second form (i.e. when *numChars* has been omitted) the flag **-nonewline** may be given to indicate that any trailing newline in the string that has been read should be trimmed.
 
     If *channel* is in non-blocking mode, **chan read** may not read as many characters as requested: once all available input has been read, the command will return the data that is available rather than blocking for more input.  If the channel is configured to use a multi-byte encoding, then there may actually be some bytes remaining in the internal buffers that do not form a complete character.  These bytes will not be returned until a complete character is available or end-of-file is reached.  The **-nonewline** switch is ignored if the command returns before reaching the end of the file.
@@ -251,13 +251,13 @@ This command provides several operations for reading from, writing to and otherw
     [chan]{.cmd} [read]{.sub} [channel]{.arg} [numChars]{.arg}
     : In this form **chan read** blocks until *numChars* have been received from the serial port.
 
-    **chan read** *channel*
+    [chan]{.cmd} [read]{.sub} [channel]{.arg}
     : In this form **chan read** blocks until the reception of the end-of-file character, see **chan configure -eofchar**. If there no end-of-file character has been configured for the channel, then **chan read** will block forever.
 
 
     If the encoding profile **strict** is in effect for the channel, the command will raise an exception with the POSIX error code **EILSEQ** if any encoding errors are encountered in the channel input data. If the channel is in blocking mode, the error is thrown after advancing the file pointer to the beginning of the invalid data. The successfully decoded leading portion of the data prior to the error location is returned as the value of the **-data** key of the error option dictionary. If the channel is in non-blocking mode, the successfully decoded portion of data is returned by the command without an error exception being raised. A subsequent read will start at the invalid data and immediately raise a **EILSEQ** POSIX error exception. Unlike the blocking channel case, the **-data** key is not present in the error option dictionary. In the case of exception thrown due to encoding errors, it is possible to introspect, and in some cases recover, by changing the encoding in use. See [Encoding error examples] later.
 
-**chan seek** *channel offset* ?*origin*?
+[chan]{.cmd} [seek]{.sub} [channel]{.arg} [offset]{.arg} [origin]{.optarg}
 : Sets the current access position within the underlying data stream for the channel named *channel* to be *offset* bytes relative to *origin*. *offset* must be an integer (which may be negative) and *origin* must be one of the following:
 
     **start**

@@ -44,7 +44,7 @@ Performs one of several encoding related operations, depending on *option*.  The
 [encoding]{.cmd} [convertto]{.sub} [encoding]{.optarg} [data]{.arg}
 : see below ...
 
-**encoding convertto** ?**-profile** *profile*? ?**-failindex** *varName*? *encoding data*
+[encoding]{.cmd} [convertto]{.sub} [[-profile]{.lit} [profile]{.arg}]{.optarg} [[-failindex]{.lit} [varName]{.arg}]{.optarg} [encoding]{.arg} [data]{.arg}
 : Converts *data* to the specified *encoding*. The result is a Tcl binary string that contains the sequence of bytes representing the converted string in the specified encoding. In the first form of the command, if *encoding* is not specified, the current system encoding is used. [In the second form of the command, the **-profile** and **-failindex** options have the same effect as described for the **encoding convertfrom** command.]{version="TIP607, TIP656"}
 
 [encoding]{.cmd} [dirs]{.sub} [directoryList]{.optarg}

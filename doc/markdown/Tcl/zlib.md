@@ -127,13 +127,13 @@ The **zlib** command provides access to the compression and check-summing facili
     [-dictionary]{.lit} [binData]{.arg}
     : Sets the compression dictionary to use when working with compressing or decompressing the data to be *binData*. Not valid for transformations that work with gzip-format data.  The dictionary should consist of strings (byte sequences) that are likely to be encountered later in the data to be compressed, with the most commonly used strings preferably put towards the end of the dictionary. Tcl provides no mechanism for choosing a good such dictionary for a particular data sequence.
 
-    **-header** *dictionary*
+    [-header]{.lit} [dictionary]{.arg}
     : Passes a description of the gzip header to create, in the same format that **zlib gzip** understands.
 
-    **-level** *compressionLevel*
+    [-level]{.lit} [compressionLevel]{.arg}
     : How hard to compress the data. Must be an integer from 0 (uncompressed) to 9 (maximally compressed).
 
-    **-limit** *readaheadLimit*
+    [-limit]{.lit} [readaheadLimit]{.arg}
     : The maximum number of bytes ahead to read when decompressing.
 
 
@@ -233,13 +233,13 @@ The full set of subcommands supported by a streaming instance command, *stream*,
     [-dictionary]{.lit} [binData]{.arg}
     : Sets the compression dictionary to use when working with compressing or decompressing the data to be *binData*.
 
-    **-finalize**
+    [-finalize]{.lit}
     : Mark the stream as finished, ensuring that all bytes have been wholly compressed or decompressed. For gzip streams, this also ensures that the footer is written to the stream. The stream will need to be reset before having more data written to it after this, though data can still be read out of the stream with the **get** subcommand.
 
 
     This option is mutually exclusive with the **-flush** and **-fullflush** options.
 
-**-flush**
+[-flush]{.lit}
 : Ensure that a decompressor consuming the bytes that the current (compressing) stream is producing will be able to produce all the bytes that have been compressed so far, at some performance penalty.
 
     This option is mutually exclusive with the **-finalize** and **-fullflush** options.

@@ -55,14 +55,14 @@ Performs one of several operations on dictionary values or variables containing 
     [dict]{.cmd} [filter]{.sub} [dictionaryValue]{.arg} [key]{.lit} [globPattern]{.optdot}
     : The **key** rule only matches those key/value pairs whose keys match any of the given patterns (in the style of [string match][string].)
 
-    **dict filter** *dictionaryValue* **script** *variableList script*
+    [dict]{.cmd} [filter]{.sub} [dictionaryValue]{.arg} [script]{.lit} [variableList]{.arg} [script]{.arg}
     : The **script** rule tests for matching by evaluating a script for each key/value pair. The argument after the rule selection word is a two-element list assigning the key to the variable name in the first element and the value to the variable name in the second element of the list, and then evaluating the given script which should result in a boolean value (with the key/value pair only being included in the result of the **dict filter** command when a true value is returned.) If the *script* returns with a condition of [TCL\_BREAK][catch], no further key/value pairs are considered for inclusion in the resulting dictionary, and a condition of [TCL\_CONTINUE][catch] is equivalent to a false result. The key/value pairs are tested in the order in which the keys were inserted into the dictionary.
 
-    **dict filter** *dictionaryValue* **value** ?*globPattern ...*?
+    [dict]{.cmd} [filter]{.sub} [dictionaryValue]{.arg} [value]{.lit} [globPattern]{.optdot}
     : The **value** rule only matches those key/value pairs whose values match any of the given patterns (in the style of [string match][string].)
 
 
-**dict for** *variableList dictionaryValue body*
+[dict]{.cmd} [for]{.sub} [variableList]{.arg} [dictionaryValue]{.arg} [body]{.arg}
 : This command iterates across a dictionary, executing *body* for each key/value mapping. *variableList* is a two-element list of variable names (for the key and value respectively of each mapping in the dictionary), *dictionaryValue* is the dictionary value to iterate across and *body* is a script to be evaluated for each mapping with the key and value variables set appropriately (in the manner of [foreach]). The result of the command is an empty string. If any evaluation of the script generates a [TCL\_BREAK][catch] result, no further pairs from the dictionary will be iterated over and the **dict for** command will terminate successfully immediately. If any evaluation of the body generates a [TCL\_CONTINUE][catch] result, this shall be treated exactly like a normal [TCL\_OK][catch] result. The order of iteration is the order in which the keys were inserted into the dictionary.
 
 [dict]{.cmd} [get]{.sub} [dictionaryValue]{.arg} [key]{.optdot}
@@ -80,7 +80,7 @@ Performs one of several operations on dictionary values or variables containing 
 [dict]{.cmd} [getdef]{.sub} [dictionaryValue]{.arg} [key]{.optdot} [key]{.arg} [default]{.arg}
 : see below ...
 
-**dict getwithdefault** *dictionaryValue* ?*key ...*? *key default*
+[dict]{.cmd} [getwithdefault]{.sub} [dictionaryValue]{.arg} [key]{.optdot} [key]{.arg} [default]{.arg}
 : [This behaves the same as **dict get** (with at least one *key* argument), returning the value that the key path maps to in the dictionary *dictionaryValue*, except that instead of producing an error because the *key* (or one of the *key*s on the key path) is absent, it returns the *default* argument instead.]{version="TIP342"}
 
     Note that there must always be at least one *key* provided, and that **dict getdef** and **dict getwithdefault** are aliases for each other.

@@ -290,7 +290,7 @@ See the [Portability issues] section of the [exec] command for additional inform
 
     Note that setting this option (technically, anything that changes the console state from its default *via this option*) will cause the channel to turn on an automatic reset of the console when the channel is closed.
 
-**-winsize**
+[-winsize]{.lit}
 : This option is query only. It retrieves a two-element list with the current width and height of the console that this channel is talking to.
 
 

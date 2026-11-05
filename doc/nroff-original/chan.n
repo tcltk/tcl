@@ -719,11 +719,13 @@ Then \fBchan read\fR behaves much like described above.  Note that
 most serial ports are comparatively slow; it is entirely possible to
 get a \fBreadable\fR event for each character read from them. Care
 must be taken when using \fBchan read\fR on blocking serial ports:
+.\" METHOD: read
 .TP
 \fBchan read \fIchannel numChars\fR
 .
 In this form \fBchan read\fR blocks until \fInumChars\fR have been
 received from the serial port.
+.\" METHOD: read
 .TP
 \fBchan read \fIchannel\fR
 .

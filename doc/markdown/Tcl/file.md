@@ -51,10 +51,10 @@ This command provides several operations on a file's name or attributes.  The *n
 [file]{.cmd} [attributes]{.sub} [name]{.arg}
 : see below ...
 
-**file attributes** *name* ?*option*?
+[file]{.cmd} [attributes]{.sub} [name]{.arg} [option]{.optarg}
 : see below ...
 
-**file attributes** *name* ?*option value option value...*?
+[file]{.cmd} [attributes]{.sub} [name]{.arg} [option value option value...]{.optarg}
 : This subcommand returns or sets platform-specific values associated with a file. The first form returns a list of the platform-specific options and their values. The second form returns the value for the given option. The third form sets one or more of the values. The values are as follows:
 
     On Unix, **-group** gets or sets the group name for the file. A group id can be given to the command, but it returns a group name. **-owner** gets or sets the user name of the owner of the file. The command returns the owner name, but the numerical id can be passed when setting the owner. **-permissions** retrieves or sets a file's access permissions, using octal notation by default. This option also provides limited support for setting permissions using the symbolic notation accepted by the **chmod** command, following the form \[**ugo**\]?\[\[**+-=**\]\[**rwxst**\]**,**\[...\]\]. Multiple permission specifications may be given, separated by commas. E.g., **u+s,go-rw** would set the setuid bit for a file's owner as well as remove read and write permission for the file's group and other users. An **ls**-style string of the form **rwxrwxrwx** is also accepted but must always be 9 characters long. E.g., **rwxr-xr-t** is equivalent to **01755**. On versions of Unix supporting file flags, **-readonly** returns the value of, or sets, or clears the readonly attribute of a file, i.e., the user immutable flag (**uchg**) to the **chflags** command.
@@ -68,19 +68,19 @@ This command provides several operations on a file's name or attributes.  The *n
     [-archive]{.lit}
     : The path of the mounted ZIP archive containing the file.
 
-    **-compsize**
+    [-compsize]{.lit}
     : The compressed size of the file within the archive. This is **0** for directories.
 
-    **-crc**
+    [-crc]{.lit}
     : The CRC of the file if present, else **0**.
 
-    **-mount**
+    [-mount]{.lit}
     : The path where the containing archive is mounted.
 
-    **-offset**
+    [-offset]{.lit}
     : The offset of the file within the archive.
 
-    **-uncompsize**
+    [-uncompsize]{.lit}
     : The uncompressed size of the file. This is **0** for directories.
 
 
@@ -93,7 +93,7 @@ This command provides several operations on a file's name or attributes.  The *n
 [file]{.cmd} [copy]{.sub} [-force]{.optlit} [--]{.optlit} [source]{.arg} [target]{.arg}
 : see below ...
 
-**file copy** ?**-force**? ?**--**? *source* ?*source ...*? *targetDir*
+[file]{.cmd} [copy]{.sub} [-force]{.optlit} [--]{.optlit} [source]{.arg} [source]{.optdot} [targetDir]{.arg}
 : The first form makes a copy of the file or directory *source* under the pathname *target*. If *target* is an existing directory, then the second form is used.  The second form makes a copy inside *targetDir* of each *source* file listed.  If a directory is specified as a *source*, then the contents of the directory will be recursively copied into *targetDir*. Existing files will not be overwritten unless the **-force** option is specified (when Tcl will also attempt to adjust permissions on the destination file or directory if that is necessary to allow the copy to proceed).  When copying within a single filesystem, *file copy* will copy soft links (i.e. the links themselves are copied, not the things they point to).  Trying to overwrite a non-empty directory, overwrite a directory with a file, or overwrite a file with a directory will all result in errors even if **-force** was specified.  Arguments are processed in the order specified, halting at the first error, if any.  A **--** marks the end of switches; the argument following the **--** will be treated as a *source* even if it starts with a **-**.
 
 [file]{.cmd} [delete]{.sub} [-force]{.optlit} [--]{.optlit} [pathname]{.optdot}
@@ -178,7 +178,7 @@ This command provides several operations on a file's name or attributes.  The *n
 [file]{.cmd} [rename]{.sub} [-force]{.optlit} [--]{.optlit} [source]{.arg} [target]{.arg}
 : see below ...
 
-**file rename** ?**-force**? ?**--**? *source* ?*source ...*? *targetDir*
+[file]{.cmd} [rename]{.sub} [-force]{.optlit} [--]{.optlit} [source]{.arg} [source]{.optdot} [targetDir]{.arg}
 : The first form takes the file or directory specified by pathname *source* and renames it to *target*, moving the file if the pathname *target* specifies a name in a different directory.  If *target* is an existing directory, then the second form is used. The second form moves each *source* file or directory into the directory *targetDir*. Existing files will not be overwritten unless the **-force** option is specified.  When operating inside a single filesystem, Tcl will rename symbolic links rather than the things that they point to.  Trying to overwrite a non-empty directory, overwrite a directory with a file, or a file with a directory will all result in errors. There is no guarantee that metadata such as attributes or access control lists are preserved by the command. Arguments are processed in the order specified, halting at the first error, if any.  A **--** marks the end of switches; the argument following the **--** will be treated as a *source* even if it starts with a **-**.
 
 [file]{.cmd} [rootname]{.sub} [name]{.arg}

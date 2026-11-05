@@ -52,25 +52,25 @@ The database management policy can be controlled at the package level by the **c
     [-domainfile]{.lit} [filename]{.arg}
     : A file (defaulting to within the cookiejar package) with a description of the list of top-level domains (e.g., **.com** or **.co.jp**). Such domains *must not* accept cookies set upon them. Note that the list of such domains is both security-sensitive and *not* constant and should be periodically refetched. Cookie jars maintain their own cache of the domain list.
 
-    **-domainlist** *url*
+    [-domainlist]{.lit} [url]{.arg}
     : A URL to fetch the list of top-level domains (e.g., **.com** or **.co.jp**) from.  Such domains *must not* accept cookies set upon them. Note that the list of such domains is both security-sensitive and *not* constant and should be periodically refetched. Cookie jars maintain their own cache of the domain list.
 
-    **-domainrefresh** *intervalMilliseconds*
+    [-domainrefresh]{.lit} [intervalMilliseconds]{.arg}
     : The number of milliseconds between checks of the **-domainlist** for new domains.
 
-    **-loglevel** *level*
+    [-loglevel]{.lit} [level]{.arg}
     : The logging level of this package. The logging level must be (in order of decreasing verbosity) one of **debug**, **info**, **warn**, or **error**.
 
-    **-offline** *flag*
+    [-offline]{.lit} [flag]{.arg}
     : Allows the cookie management engine to be placed into offline mode. In offline mode, the list of domains is read immediately from the file configured in the **-domainfile** option, and the **-domainlist** option is not used; it also makes the **-domainrefresh** option be effectively ignored.
 
-    **-purgeold** *intervalMilliseconds*
+    [-purgeold]{.lit} [intervalMilliseconds]{.arg}
     : The number of milliseconds between checks of the database for expired cookies; expired cookies are deleted.
 
-    **-retain** *cookieCount*
+    [-retain]{.lit} [cookieCount]{.arg}
     : The maximum number of cookies to retain in the database.
 
-    **-vacuumtrigger** *deletionCount*
+    [-vacuumtrigger]{.lit} [deletionCount]{.arg}
     : A count of the number of persistent cookie deletions to go between vacuuming the database.
 
 

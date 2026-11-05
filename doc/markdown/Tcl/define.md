@@ -82,7 +82,7 @@ The following commands are supported in the *defScript* for [oo::define][define]
 [initialise]{.cmd} [script]{.arg}
 : see below ...
 
-**initialize** *script*
+[initialize]{.cmd} [script]{.arg}
 : [This evaluates *script* in a context which supports local variables and where the current namespace is the instance namespace of the class object itself. This is useful for setting up, e.g., class-scoped variables.]{version="TIP478"}
 
 [method]{.cmd} [name]{.arg} [option]{.optarg} [argList]{.arg} [bodyScript]{.arg}
@@ -93,7 +93,7 @@ The following commands are supported in the *defScript* for [oo::define][define]
 [private]{.cmd} [cmd]{.arg} [arg...]{.arg}
 : see below ...
 
-**private** *script*
+[private]{.cmd} [script]{.arg}
 : [This evaluates the *script* (or the list of command and arguments given by *cmd* and *arg*s) in a context where the definitions made on the current class will be private definitions.]{version="TIP500"}
 
     The following class definition commands are affected by **private**: **forward**, **method**, **self**, and **variable**. Nesting **private** inside **private** has no cumulative effect; the innermost definition context is just a private definition context. All other definition commands have no difference in behavior when used in a private definition context.
@@ -101,10 +101,10 @@ The following commands are supported in the *defScript* for [oo::define][define]
 [self]{.cmd} [subcommand]{.arg} [arg]{.arg} [...]{.arg}
 : see below ...
 
-**self** *script*
+[self]{.cmd} [script]{.arg}
 : see below ...
 
-**self**
+[self]{.cmd}
 : This command is equivalent to calling [oo::objdefine][objdefine] on the class being defined (see [Configuring objects] below for a description of the supported values of *subcommand*). It follows the same general pattern of argument handling as the [oo::define][define] and [oo::objdefine][objdefine] commands, and "[oo::define][define] *class* **self** *subcommand ...*" operates identically to "[oo::objdefine][objdefine] *class subcommand ...*".
 
     [If no arguments at all are used, this gives the name of the class currently being configured.]{version="TIP470"} [If in a private definition context (see the **private** definition command, below), the definitions on the class object will also be made in a private definition context.]{version="TIP500"}
@@ -168,7 +168,7 @@ The following commands are supported in the *defScript* for [oo::objdefine][objd
 [private]{.cmd} [cmd]{.arg} [arg...]{.arg}
 : see below ...
 
-**private** *script*
+[private]{.cmd} [script]{.arg}
 : [This evaluates the *script* (or the list of command and arguments given by *cmd* and *arg*s) in a context where the definitions made on the current object will be private definitions.]{version="TIP500"}
 
     The following class definition commands are affected by **private**: **forward**, **method**, and **variable**. Nesting **private** inside **private** has no cumulative effect; the innermost definition context is just a private definition context. All other definition commands have no difference in behavior when used in a private definition context.

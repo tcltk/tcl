@@ -52,6 +52,7 @@ relation to non-existing array elements.
 The \fIsubcommand\fR argument controls what exact operation will be performed
 on the default value of \fIarrayName\fR. Supported \fIsubcommand\fRs are:
 .VE TIP508
+.\" METHOD: default exists
 .TP
 \fBarray default exists \fIarrayName\fR
 .VS TIP508
@@ -60,6 +61,7 @@ for the array \fIarrayName\fR. Returns a false value if \fIarrayName\fR does
 not exist. Raises an error if \fIarrayName\fR is an existing variable that is
 not an array.
 .VE TIP508
+.\" METHOD: default get
 .TP
 \fBarray default get \fIarrayName\fR
 .VS TIP508
@@ -67,6 +69,7 @@ This returns the current default value for the array \fIarrayName\fR.  Raises
 an error if \fIarrayName\fR is an existing variable that is not an array, or
 if \fIarrayName\fR is an array without a default value.
 .VE TIP508
+.\" METHOD: default set
 .TP
 \fBarray default set \fIarrayName value\fR
 .VS TIP508
@@ -76,6 +79,7 @@ variable that is not an array, or if \fIarrayName\fR is an illegal name for an
 array. If \fIarrayName\fR does not currently exist, it is created as an empty
 array as well as having its default value set.
 .VE TIP508
+.\" METHOD: default unset
 .TP
 \fBarray default unset \fIarrayName\fR
 .VS TIP508

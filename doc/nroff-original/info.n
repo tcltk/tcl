@@ -659,24 +659,29 @@ This subcommand tests whether an object belongs to a particular category,
 returning a boolean value that indicates whether the \fIobject\fR argument
 meets the criteria for the category. The supported categories are:
 .RS
+.\" METHOD: object isa class
 .TP
 \fBinfo object isa class\fI object\fR
 .
 This returns whether \fIobject\fR is a class (i.e. an instance of
 \fBoo::class\fR or one of its subclasses).
+.\" METHOD: object isa metaclass
 .TP
 \fBinfo object isa metaclass\fI object\fR
 .
 This returns whether \fIobject\fR is a class that can manufacture classes
 (i.e. is \fBoo::class\fR or a subclass of it).
+.\" METHOD: object isa mixin
 .TP
 \fBinfo object isa mixin\fI object class\fR
 .
 This returns whether \fIclass\fR is directly mixed into \fIobject\fR.
+.\" METHOD: object isa object
 .TP
 \fBinfo object isa object\fI object\fR
 .
 This returns whether \fIobject\fR really is an object.
+.\" METHOD: object isa typeof
 .TP
 \fBinfo object isa typeof\fI object class\fR
 .

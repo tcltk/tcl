@@ -76,7 +76,7 @@ The **interp** command is used to create, delete, and manipulate child interpret
 [interp]{.cmd} [debug]{.sub} [path]{.arg} [-frame]{.optlit}
 : see below ...
 
-**interp debug** *path* ?**-frame** *boolean*?
+[interp]{.cmd} [debug]{.sub} [path]{.arg} [[-frame]{.lit} [boolean]{.arg}]{.optarg}
 : Controls whether frame-level stack information is captured in the child interpreter identified by *path*.  If no arguments are specified, the option and its current setting are returned.  If **-frame** is specified, the current setting is returned. If *boolean* if provided as well, the debug setting is set to the specified value.  This only affects the output of [info frame][info], in that exact frame-level information for command invocation at the bytecode level is only captured with this setting on.
 
     For example, with code like

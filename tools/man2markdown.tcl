@@ -1232,6 +1232,8 @@ proc ::ndoc::parseBlock {parent manContent} {
 				# - if a .TP item has more than one paragraph or a code block, then it is wrapped into a pair of .RS/.RE
 				# - the list ends at the next unwrapped .PP or .LP or at .SH/.SS
 				set itemTitle {}
+				# the METHOD:/OPTION:/COMMAND: label (if any) the current item's title was tagged with:
+				set itemTag {}
 				# the .VS info (if any) that was open when itemTitle was set - see the
 				# .TP/.IP case below:
 				set itemTitleVs {}
@@ -1292,8 +1294,12 @@ proc ::ndoc::parseBlock {parent manContent} {
 								lappend itemContent $line
 							} else {
 								# new item starts, so finish the current one, if any
+								# (prevItemEmpty tells whether it has no body of its own):
+								set prevItemEmpty 0
+								set prevItemTag $itemTag
+								set itemTag {}
 								if {$itemTitle ne ""} {
-									if {$itemContent eq ""} {set itemContent "see below ..."}
+									if {$itemContent eq ""} {set prevItemEmpty 1; set itemContent "see below ..."}
 									if $verbose {puts "finish ${blockType} item:\n+++\n$itemContent\n+++\n"}
 									if {$blockType eq "Dlist"} {
 										set itemAttr [list -definition $itemTitle]
@@ -1301,7 +1307,14 @@ proc ::ndoc::parseBlock {parent manContent} {
 									} else {
 										set itemAttr [list]
 									}
+									# A ".\" METHOD: xxx" comment directly above this .TP was already read (it is
+									# for the *new* item started below), but parsing the content of the item we finish
+									# here recurses into parseBlock, and a nested .TP list inside of it (e.g. in an
+									# .RS/.RE pair) consumes and clears lastComment. So keep the value across the parse:
+									set pendingComment [dict get $manual lastComment]
+									dict set manual lastComment {}
 									lappend dlistContent [list ${blockType}Item $itemAttr [parseDlistItemContent $blockType $itemContent]]
+									dict set manual lastComment $pendingComment
 									if $verbose {puts "dlistContent: $dlistContent"}
 								}
 								# !! subType can change in the middle of a .TP list !!
@@ -1336,9 +1349,16 @@ proc ::ndoc::parseBlock {parent manContent} {
 									# as determined by the comment line above the .TP line,
 									# then mark it as such so that expandBlock can handle it nicely:
 									# (skip RegConfig.3 as it has non-standard syntax for generated Tcl-level commands)
+									set itemTag {}
 									if {[dict get $manual lastComment] in {OPTION: METHOD: COMMAND: OPTION METHOD COMMAND} && [dict get $manual fileName] ne "RegConfig"} {
-										set itemTitle [dict get $manual lastComment]_$itemTitle
+										set itemTag [dict get $manual lastComment]
+									} elseif {$prevItemEmpty} {
+										# Several .TP lines directly after each other (without a body for the previous
+										# ones) are alternative forms of the same entry that share the body below the
+										# last of them, and the label comment is only given above the first one:
+										set itemTag $prevItemTag
 									}
+									if {$itemTag ne ""} {set itemTitle ${itemTag}_$itemTitle}
 									# the comment only ever labels the single .TP directly below it, so it
 									# must not leak into a later, unlabeled .TP (which would otherwise be
 									# misidentified as Tcl syntax and mishandled by parseCommand):
@@ -1368,7 +1388,14 @@ proc ::ndoc::parseBlock {parent manContent} {
 							# the top-level switch does - otherwise every comment inside
 							# an already-open .TP/.IP list is silently dropped, and only
 							# the list's first item ever gets tagged as METHOD:/OPTION:/COMMAND:
-							dict set manual lastComment [lindex $line 1]
+							if {$dlistState eq "inset"} {
+								# a comment inside an .RS/.RE pair belongs to a .TP of the nested
+								# list in this item's content, so it must go with that content,
+								# where the recursive parse of the item sees it in its right place:
+								lappend itemContent $line
+							} else {
+								dict set manual lastComment [lindex $line 1]
+							}
 							if $verbose {puts "comment (lastComment=[dict get $manual lastComment])"}
 						}
 						.VS {
@@ -1412,6 +1439,8 @@ proc ::ndoc::parseBlock {parent manContent} {
 				} else {
 					set itemAttr [list]
 				}
+				# (a comment seen before cannot belong to the content of this item):
+				dict set manual lastComment {}
 				lappend dlistContent [list ${blockType}Item $itemAttr [parseDlistItemContent $blockType $itemContent]]
 				if $verbose {puts "dlistContent: $dlistContent"}
 				set blockContent $dlistContent

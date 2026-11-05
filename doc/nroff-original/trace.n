@@ -317,6 +317,7 @@ This command returns an empty string.
 .
 Where \fItype\fR is either \fBcommand\fR, \fBexecution\fR or \fBvariable\fR.
 .RS
+.\" METHOD: remove command
 .TP
 \fBtrace remove command\fI name opList commandPrefix\fR
 .
@@ -325,6 +326,7 @@ command given by \fIopList\fR and \fIcommandPrefix\fR, then the trace is
 removed, so that \fIcommandPrefix\fR will never again be invoked.  Returns
 an empty string.   If \fIname\fR does not exist, the command will throw
 an error.
+.\" METHOD: remove execution
 .TP
 \fBtrace remove execution\fI name opList commandPrefix\fR
 .
@@ -333,6 +335,7 @@ command given by \fIopList\fR and \fIcommandPrefix\fR, then the trace is
 removed, so that \fIcommandPrefix\fR will never again be invoked.  Returns
 an empty string.   If \fIname\fR does not exist, the command will throw
 an error.
+.\" METHOD: remove variable
 .TP
 \fBtrace remove variable\fI name opList commandPrefix\fR
 .

@@ -261,10 +261,10 @@ The following *subcommand* values are supported by **info class**:
     [-all]{.lit}
     : If the **-all** flag is given, [and the **-scope** flag is not given,]{version="TIP500"} the list of methods will include those methods defined not just by the class, but also by the class's superclasses and mixins.
 
-    **-private**
+    [-private]{.lit}
     : If the **-private** flag is given, [and the **-scope** flag is not given,]{version="TIP500"} the list of methods will also include the non-exported methods of the class (and superclasses and mixins, if **-all** is also given). [Note that this naming is an unfortunate clash with true private methods; this option name is retained for backward compatibility.]{version="TIP500"}
 
-    **-scope** *scope*
+    [-scope]{.lit} [scope]{.arg}
     : [Returns a list of all methods on *class* that have the given visibility *scope*.  When this option is supplied, both the **-all** and **-private** options are ignored. The valid values for *scope* are:]{version="TIP500"}
 
     [**public**]{version="TIP500"}
@@ -277,7 +277,7 @@ The following *subcommand* values are supported by **info class**:
     : [Only methods with *private* scope (i.e., only callable from within this class's methods) are to be returned.]{version="TIP500"}
 
 
-**info class methodtype** *class method*
+[info]{.cmd} [class]{.sub} [methodtype]{.lit} [class]{.arg} [method]{.arg}
 : This subcommand returns a description of the type of implementation used for the method named *method* of class *class*. When the result is **method**, further information can be discovered with **info class definition**, and when the result is **forward**, further information can be discovered with **info class forward**.
 
 [info]{.cmd} [class]{.sub} [mixins]{.lit} [class]{.arg}
@@ -289,14 +289,14 @@ The following *subcommand* values are supported by **info class**:
     [-all]{.lit}
     : With this option, the properties from the superclasses and mixins of the class are also returned.
 
-    **-readable**
+    [-readable]{.lit}
     : This option (the default behavior) asks for the readable properties to be returned. Only readable or writable properties are returned, not both.
 
-    **-writable**
+    [-writable]{.lit}
     : This option asks for the writable properties to be returned.  Only readable or writable properties are returned, not both.
 
 
-**info class subclasses** *class* ?*pattern*?
+[info]{.cmd} [class]{.sub} [subclasses]{.lit} [class]{.arg} [pattern]{.optarg}
 : This subcommand returns a list of direct subclasses of class *class*. If the optional *pattern* argument is present, it constrains the list of returned classes to those that match it according to the rules of [string match][string].
 
 [info]{.cmd} [class]{.sub} [superclasses]{.lit} [class]{.arg}
@@ -338,29 +338,29 @@ The following *subcommand* values are supported by **info object**:
     [info]{.cmd} [object]{.sub} [isa]{.lit} [class]{.lit} [object]{.arg}
     : This returns whether *object* is a class (i.e. an instance of [oo::class][class] or one of its subclasses).
 
-    **info object isa metaclass** *object*
+    [info]{.cmd} [object]{.sub} [isa]{.lit} [metaclass]{.lit} [object]{.arg}
     : This returns whether *object* is a class that can manufacture classes (i.e. is [oo::class][class] or a subclass of it).
 
-    **info object isa mixin** *object class*
+    [info]{.cmd} [object]{.sub} [isa]{.lit} [mixin]{.lit} [object]{.arg} [class]{.arg}
     : This returns whether *class* is directly mixed into *object*.
 
-    **info object isa object** *object*
+    [info]{.cmd} [object]{.sub} [isa]{.lit} [object]{.lit} [object]{.arg}
     : This returns whether *object* really is an object.
 
-    **info object isa typeof** *object class*
+    [info]{.cmd} [object]{.sub} [isa]{.lit} [typeof]{.lit} [object]{.arg} [class]{.arg}
     : This returns whether *class* is the type of *object* (i.e. whether *object* is an instance of *class* or one of its subclasses, whether direct or indirect).
 
 
-**info object methods** *object* ?*option...*?
+[info]{.cmd} [object]{.sub} [methods]{.lit} [object]{.arg} [option...]{.optarg}
 : This subcommand returns a list of all public (i.e. exported) methods of the object called *object*. Any of the following *option*s may be given, controlling exactly which method names are returned:
 
     [-all]{.lit}
     : If the **-all** flag is given, [and the **-scope** flag is not given,]{version="TIP500"} the list of methods will include those methods defined not just by the object, but also by the object's class and mixins, plus the superclasses of those classes.
 
-    **-private**
+    [-private]{.lit}
     : If the **-private** flag is given, [and the **-scope** flag is not given,]{version="TIP500"} the list of methods will also include the non-exported methods of the object (and classes, if **-all** is also given). [Note that this naming is an unfortunate clash with true private methods; this option name is retained for backward compatibility.]{version="TIP500"}
 
-    **-scope** *scope*
+    [-scope]{.lit} [scope]{.arg}
     : [Returns a list of all methods on *object* that have the given visibility *scope*.  When this option is supplied, both the **-all** and **-private** options are ignored. The valid values for *scope* are:]{version="TIP500"}
 
     [**public**]{version="TIP500"}
@@ -373,7 +373,7 @@ The following *subcommand* values are supported by **info object**:
     : [Only methods with *private* scope (i.e., only callable from within this object's instance methods) are to be returned.]{version="TIP500"}
 
 
-**info object methodtype** *object method*
+[info]{.cmd} [object]{.sub} [methodtype]{.lit} [object]{.arg} [method]{.arg}
 : This subcommand returns a description of the type of implementation used for the method named *method* of object *object*. When the result is **method**, further information can be discovered with **info object definition**, and when the result is **forward**, further information can be discovered with **info object forward**.
 
 [info]{.cmd} [object]{.sub} [mixins]{.lit} [object]{.arg}
@@ -388,14 +388,14 @@ The following *subcommand* values are supported by **info object**:
     [-all]{.lit}
     : With this option, the properties from the class, superclasses and mixins of the object are also returned.
 
-    **-readable**
+    [-readable]{.lit}
     : This option (the default behavior) asks for the readable properties to be returned. Only readable or writable properties are returned, not both.
 
-    **-writable**
+    [-writable]{.lit}
     : This option asks for the writable properties to be returned. Only readable or writable properties are returned, not both.
 
 
-**info object variables** *object* ?**-private**?
+[info]{.cmd} [object]{.sub} [variables]{.lit} [object]{.arg} [-private]{.optlit}
 : This subcommand returns a list of all variables that have been declared for the object named *object* (i.e. that are automatically present in the object's methods). [If the **-private** option is given, this lists the private variables declared instead.]{version="TIP500"}
 
 [info]{.cmd} [object]{.sub} [vars]{.lit} [object]{.arg} [pattern]{.optarg}

@@ -73,7 +73,7 @@ The optional *-mode* argument indicates which registry to work with; when it is 
 [registry]{.cmd} [set]{.sub} [keyName]{.arg} [valueName data]{.optarg}
 : see below ...
 
-**registry set** *keyName* ?*valueName data type*?
+[registry]{.cmd} [set]{.sub} [keyName]{.arg} [valueName data type]{.optarg}
 : If *valueName* is not specified, creates the key *keyName* if it does not already exist.  If *valueName* is specified, creates the key *keyName* and value *valueName* if necessary.  The contents of *valueName* are set to *data* with the type indicated by *type*.  If *type* is not specified, the type **sz** is assumed.  For more details on the data and type arguments, see [Supported types] below.
 
 [registry]{.cmd} [type]{.sub} [keyName]{.arg} [valueName]{.arg}

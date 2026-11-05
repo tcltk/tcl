@@ -86,19 +86,19 @@ When the HTTP server has replied to the request, call the command **::http::resp
     [-accept]{.lit} [mimetypes]{.arg}
     : The Accept header of the request.  The default is \*/\*, which means that all types of documents are accepted.  Otherwise you can supply a comma-separated list of mime type patterns that you are willing to receive.  For example, "image/gif, image/jpeg, text/\*".
 
-    **-cookiejar** *command*
+    [-cookiejar]{.lit} [command]{.arg}
     : [The cookie store for the package to use to manage HTTP cookies. *command* is a command prefix list; if the empty list (the default value) is used, no cookies will be sent by requests or stored from responses. The command indicated by *command*, if supplied, must obey the [Cookie jar protocol] described below.]{version="TIP406"}
 
-    **-pipeline** *boolean*
+    [-pipeline]{.lit} [boolean]{.arg}
     : Specifies whether HTTP/1.1 transactions on a persistent socket will be pipelined.  See the [Persistent connections] section for details. The default is 1.
 
-    **-postfresh** *boolean*
+    [-postfresh]{.lit} [boolean]{.arg}
     : Specifies whether requests that use the **POST** method will always use a fresh socket, overriding the **-keepalive** option of command **http::geturl**.  See the [Persistent connections] section for details. The default is 0.
 
-    **-proxyauth** *string*
+    [-proxyauth]{.lit} [string]{.arg}
     : If non-empty, the string is supplied to the proxy server as the value of the request header Proxy-Authorization.  This option can be used for HTTP Basic Authentication.  If the proxy server requires authentication by another technique, e.g. Digest Authentication, the **-proxyauth** option is not useful.  In that case the caller must expect a 407 response from the proxy, compute the authentication value to be supplied, and use the **-headers** option to supply it as the value of the Proxy-Authorization header.
 
-    **-proxyfilter** *command*
+    [-proxyfilter]{.lit} [command]{.arg}
     : The command is a callback that is made during **::http::geturl** to determine if a proxy is required for a given host.  One argument, a host name, is added to *command* when it is invoked.  If a proxy is required, the callback should return a two-element list containing the proxy server and proxy port.  Otherwise the filter command should return an empty list.
 
 
@@ -106,7 +106,7 @@ When the HTTP server has replied to the request, call the command **::http::resp
 
     The **::http::geturl** command runs the **-proxyfilter** callback inside a [catch] command.  Therefore an error in the callback command does not call the [bgerror] handler.  See the [Errors] section for details.
 
-**-proxyhost** *hostname*
+[-proxyhost]{.lit} [hostname]{.arg}
 : The host name or IP address of the proxy server, if any.  If this value is the empty string, the URL host is contacted directly.  See **-proxyfilter** for how the value is used.
 
 [-proxynot]{.lit} [list]{.arg}
@@ -148,13 +148,13 @@ When the HTTP server has replied to the request, call the command **::http::resp
     [-binary]{.lit} [boolean]{.arg}
     : Specifies whether to force interpreting the URL data as binary.  Normally this is auto-detected (anything not beginning with a **text** content type or whose content encoding is **gzip** or **deflate** is considered binary data).
 
-    **-blocksize** *size*
+    [-blocksize]{.lit} [size]{.arg}
     : The block size used when reading the URL. At most *size* bytes are read at once.  After each block, a call to the **-progress** callback is made (if that option is specified).
 
-    **-channel** *name*
+    [-channel]{.lit} [name]{.arg}
     : Copy the URL contents to channel *name* instead of saving it in a Tcl variable for retrieval by **::http::responseBody**.
 
-    **-command** *callback*
+    [-command]{.lit} [callback]{.arg}
     : The presence of this option causes **::http::geturl** to return immediately. After the HTTP transaction completes, the value of *callback* is expanded, an additional argument is added, and the resulting command is evaluated. The additional argument is the *token* returned from **::http::geturl**. This token is the name of an array that is described in the [State array] section.  Here is a template for the callback:
 
 
@@ -169,7 +169,7 @@ When the HTTP server has replied to the request, call the command **::http::resp
 
     The **::http::geturl** command runs the **-command** callback inside a [catch] command.  Therefore an error in the callback command does not call the [bgerror] handler.  See the [Errors] section for details.
 
-**-guesstype** *boolean*
+[-guesstype]{.lit} [boolean]{.arg}
 : Attempt to guess the **Content-Type** and character set when a misconfigured server provides no information.  The default value is *false* (do nothing).  If boolean *true* then, if the server does not send a **Content-Type** header, or if it sends the value "application/octet-stream", **http::geturl** will attempt to guess appropriate values.  This is not intended to become a general-purpose tool, and currently it is limited to detecting XML documents that begin with an XML declaration.  In this case the **Content-Type** is changed to "application/xml", the binary flag state(binary) is changed to 0, and the character set is changed to the one specified by the "encoding" tag of the XML line, or to utf-8 if no encoding is specified.  Not used if a **-channel** is specified.
 
 [-handler]{.lit} [callback]{.arg}
