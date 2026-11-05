@@ -491,6 +491,12 @@ TestplatformChmod(
      */
     aceEntry[nSids].mask = READ_CONTROL | WRITE_DAC | WRITE_OWNER | SYNCHRONIZE |
 	    FILE_READ_ATTRIBUTES | FILE_WRITE_ATTRIBUTES;
+    if (!isDir) {
+	/*
+	 * As on Unix, the file mode does not prevent renaming or deleting.
+	 */
+	aceEntry[nSids].mask |= DELETE;
+    }
     if (pmode & 0700) {
 	/* Owner permissions. Assumes current process is owner */
 	if (pmode & 0400) {
