@@ -2154,3 +2154,44 @@ Pas de patch noyau. Sources de types : `tclTypes.c`, `tclTypeParse.c`.
   pour la même analyse écrite en Tcl ; sans option 1,5 contre 1,1 µs.
 - Nouveau test `t97_options`. Vérifié : 75 tests, mêmes sorties en forme compacte ; `make test`
   : mêmes échecs que la référence ; valgrind propre.
+
+### Exemple `exemples/tcllib_geometry` (5 novembre 2026)
+
+tcllib math::geometry 1.4.2 (`geometry.tcl`, 52 procédures) reformulé avec les procédures typées
+et les corps en expressions ; `geometry_circle.tcl` et `geometry_ext.tcl` de tcllib, inchangés,
+l'appellent. `run_tests.tcl` : les 210 tests de tcllib passent (résultats identiques au
+caractère près). Code : 289 lignes contre 633 (−33 % en caractères). Vitesse (`bench.tcl`) :
+environ 2× plus lent, 1,1 à 1,5× avec des arguments déjà typés ; causes mesurées (liaison des
+arguments faits de listes, enveloppement des éléments d'une `list.double` avant une boucle,
+affectations à des locales typées) et leçons (produits atomiques : les procédures publiques
+rendent des listes nues ; pas d'espace de noms pour les types) dans son `LISEZMOI.md`.
+
+Ajout (5 novembre) : `geom.c` + `geometry_c.tcl`, le cœur de calcul en C à la manière de
+`matrices` : structures C données par `type {c!}export point line` (`geom_types.h`), fonctions
+`geom_*` en C pur (symboles exportés), 15 commandes Tcl qui prennent la place des procédures
+lourdes ; un polygone en cases (`{-compact}` list.double) est lu en place
+(`Tcl_AnnotatedGetCells`). Les 210 tests de tcllib passent aussi sur cette variante (l'arithmétique
+entière de `expr` est reproduite). Vitesse : 4 à 300 fois tcllib sur les polygones ; en cases,
+`areaPolygon` d'un polygone de 1 000 sommets 0,93 µs contre 193 µs.
+
+### v16r — dépliage : `{*}T`, `{**}T` (5 novembre 2026)
+
+Pas de patch noyau. Source de types : `tclTypes.c`.
+
+- `proc {{*}T}nom` : le résultat est vérifié comme un `T` (le cast de retour de la v16p), puis
+  rendu **déplié** en données Tcl ordinaires : `{*}` une liste des valeurs (comme `$P(*)`, le
+  contenu profond), `{**}` un dict des noms et des valeurs (`DictUnfold`). En profondeur : produit
+  de produits → liste de listes / dicts imbriqués ; `list.point` → liste de listes ; somme → le
+  contenu de sa variante (`{**}` : `{variante valeur}`, une variante littérale reste elle-même) ;
+  une liste en cases rend ses doubles.
+- `type {{*}T}mot`, `type {{**}T}mot` : le cast explicite, déplié (`CastWordUnfold`).
+- `type proc nom` rend `return {*}point`.
+- Le préfixe n'est lu qu'en tête d'une annotation de livraison (`UnfoldPrefix`).
+- Appliqué à `exemples/tcllib_geometry` : les procédures qui rendent un point (`p`, `+`, `-`,
+  `s*`, `v`, `h`, `conjx`, `conjy`, `direction`, `between`, `movePointInDirection`,
+  `findClosestPointOnLine`, `findClosestPointOnLineSegment`), une ligne (`rect`), deux points
+  (`nwse`), une intersection (`{{point}at, "coincident", "none"}`) ou un point trouvé
+  (`{{point}at, "none"}`) déclarent `{*}T` : leur résultat est vérifié et rendu en liste. Les 210
+  tests de tcllib passent (Tcl et C). Coût de la vérification au retour : 0,3 à 0,9 µs par appel
+  (`p 1 2` : 0,99 → 1,46 µs ; `findLineIntersection` : 2,37 → 3,24 µs).
+- Nouveau test `t98_depliage`. 76 tests ; mêmes sorties en forme compacte ; valgrind propre.

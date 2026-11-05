@@ -7262,6 +7262,7 @@ TclTypeSumOverlaps(const TclType *tp)
 static void DefText(const TclType *tp, int top, Tcl_DString *ds);
 static int TypeProcCmd(Tcl_Interp *interp, Tcl_Size objc,
 	Tcl_Obj *const objv[]);		/* v16p */
+static int CastWordUnfold(Tcl_Interp *interp, Tcl_Obj *word);	/* v16r */
 
 static void
 DefWord(const char *s, Tcl_DString *ds)
@@ -7844,7 +7845,11 @@ TypeObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
 	/* type {T}mot (v16m) : le cast explicite ; la commande reçoit le mot
 	 * et résout son annotation. */
 	Tcl_Obj *res = NULL;
+	int urc = CastWordUnfold(interp, objv[1]);	/* v16r : {*}T, {**}T */
 
+	if (urc != TCL_CONTINUE) {
+	    return urc;
+	}
 	switch (TclAnnotCastWord(interp, objv[1], &res)) {
 	case TCL_OK:
 	    Tcl_SetObjResult(interp, res);
@@ -8783,6 +8788,8 @@ typedef struct TclTypedSig {
     Tcl_Obj *optList;		/* -a, -b or -c (messages) */
     Tcl_Obj *argsText;		/* la signature, canonique */
     Tcl_Obj *retText;		/* le type de retour, ou NULL */
+    int unfold;			/* v16r : {*}T (1, une liste), {**}T (2, un
+				 * dict) : le résultat est rendu déplié */
     Tcl_Obj *usage;		/* p ?dx? ?dy? */
 } TclTypedSig;
 
@@ -9095,6 +9102,187 @@ CompareObjStr(const void *a, const void *b)
 }
 
 /*
+ * v16r : {*}T, {**}T en tête d'une annotation de livraison (type de retour
+ * d'une procédure, type {…}mot) : la valeur est vérifiée comme un T, puis
+ * rendue DÉPLIÉE, en données Tcl ordinaires : {*} une liste (les valeurs,
+ * comme $P(*)), {**} un dict (les noms et les valeurs), en profondeur. Rend
+ * 0, 1 ou 2 ; *textPtr perd le préfixe (nouvel objet, référence gardée).
+ */
+static int
+UnfoldPrefix(Tcl_Obj **textPtr)
+{
+    Tcl_Size l;
+    const char *t = Tcl_GetStringFromObj(*textPtr, &l);
+    int mode = 0, skip = 0;
+
+    if (l >= 4 && strncmp(t, "{**}", 4) == 0) {
+	mode = 2;
+	skip = 4;
+    } else if (l >= 3 && strncmp(t, "{*}", 3) == 0) {
+	mode = 1;
+	skip = 3;
+    }
+    if (mode != 0) {
+	Tcl_Obj *rest = Tcl_NewStringObj(t + skip, l - skip);
+
+	Tcl_IncrRefCount(rest);
+	Tcl_DecrRefCount(*textPtr);
+	*textPtr = rest;
+    }
+    return mode;
+}
+
+/* {**} : la valeur en dicts (produits : nom -> valeur ; somme : nom de la
+ * variante -> valeur ; listes et dicts : leurs éléments), en profondeur.
+ * Objet neuf ou partagé, sans référence propre. */
+static Tcl_Obj *
+DictUnfold(Tcl_Obj *obj, const TclType *tp)
+{
+    Tcl_Obj *content = NULL, **elv, *res;
+    TclType *own = NULL;
+    int variant = -1;
+    Tcl_Size n, i;
+
+    if (TclAnnotInfo(obj, &content, &own, &variant, NULL) == 1
+	    && content != NULL && own != NULL) {
+	tp = own;
+	obj = content;
+    } else {
+	variant = -1;
+	obj = TCL_ANNOT_CONTENT(obj);
+    }
+    while (tp != NULL && tp->under != NULL && tp->kind != TCLT_PRODUCT
+	    && tp->kind != TCLT_LIST && tp->kind != TCLT_DICT
+	    && tp->kind != TCLT_SUM) {
+	tp = tp->under;
+    }
+    if (tp == NULL || (tp->kind != TCLT_PRODUCT && tp->kind != TCLT_LIST
+	    && tp->kind != TCLT_DICT && tp->kind != TCLT_SUM)) {
+	return DeepContent(obj);
+    }
+    if (TclIsCompact(obj)) {
+	/* en cases : la liste des éléments gardée à côté des cases */
+	Tcl_Obj *c = TclCompactCache(obj);
+
+	if (c == NULL) {
+	    return DeepContent(obj);
+	}
+	obj = c;
+    }
+    switch (tp->kind) {
+    case TCLT_PRODUCT:
+	res = Tcl_NewDictObj();
+	if (Tcl_ListObjGetElements(NULL, obj, &n, &elv) == TCL_OK) {
+	    for (i = 0; i < n && i < tp->nfields; i++) {
+		const TclTypeField *f = &tp->fields[i];
+
+		Tcl_DictObjPut(NULL, res, f->name != NULL ? f->name
+			: Tcl_NewWideIntObj(i), DictUnfold(elv[i], f->type));
+	    }
+	}
+	break;
+    case TCLT_LIST:
+	res = Tcl_NewListObj(0, NULL);
+	if (Tcl_ListObjGetElements(NULL, obj, &n, &elv) == TCL_OK) {
+	    for (i = 0; i < n; i++) {
+		Tcl_ListObjAppendElement(NULL, res, DictUnfold(elv[i],
+			tp->elem));
+	    }
+	}
+	break;
+    case TCLT_DICT: {
+	Tcl_DictSearch search;
+	Tcl_Obj *k, *v;
+	int done;
+
+	res = Tcl_NewDictObj();
+	if (Tcl_DictObjFirst(NULL, obj, &search, &k, &v, &done) == TCL_OK) {
+	    for (; !done; Tcl_DictObjNext(&search, &k, &v, &done)) {
+		Tcl_DictObjPut(NULL, res, DeepContent(k),
+			DictUnfold(v, tp->elem));
+	    }
+	    Tcl_DictObjDone(&search);
+	}
+	break;
+    }
+    default: {				/* TCLT_SUM */
+	const TclTypeField *f;
+
+	if (variant < 0) {
+	    variant = TclTypeSumCurrent(tp, obj);
+	}
+	if (variant < 0 || variant >= tp->nfields) {
+	    res = DeepContent(obj);
+	    break;
+	}
+	f = &tp->fields[variant];
+	if (f->type == NULL) {
+	    res = obj;			/* une variante littérale : elle-même */
+	} else if (f->name != NULL) {
+	    res = Tcl_NewDictObj();
+	    Tcl_DictObjPut(NULL, res, f->name, DictUnfold(obj, f->type));
+	} else {
+	    res = DictUnfold(obj, f->type);
+	}
+	break;
+    }
+    }
+    return res;
+}
+
+static Tcl_Obj *
+Unfold(Tcl_Obj *value, int mode)
+{
+    return (mode == 2) ? DictUnfold(value, NULL) : DeepContent(value);
+}
+
+/* type {{*}T}mot, type {{**}T}mot : le cast explicite, puis le dépliage,
+ * rangé dans le résultat de l'interpréteur. TCL_CONTINUE : pas de préfixe
+ * (le cas ordinaire). */
+static int
+CastWordUnfold(Tcl_Interp *interp, Tcl_Obj *word)
+{
+    Tcl_Obj *top = NULL, *popped, *text, *pushed, *res = NULL;
+    int mode, rc;
+
+    if (!TclIsAnnotated(word)) {
+	return TCL_CONTINUE;
+    }
+    popped = TclAnnotPopTop(word, &top);
+    if (popped == NULL || top == NULL) {
+	if (popped != NULL) {
+	    TclDiscard(popped);
+	}
+	return TCL_CONTINUE;
+    }
+    text = Tcl_DuplicateObj(top);
+    Tcl_IncrRefCount(text);
+    mode = UnfoldPrefix(&text);
+    if (mode == 0) {
+	Tcl_DecrRefCount(text);
+	TclDiscard(popped);
+	return TCL_CONTINUE;
+    }
+    Tcl_IncrRefCount(popped);
+    pushed = TclAnnotPush(popped, text);
+    Tcl_IncrRefCount(pushed);
+    rc = TclAnnotCastWord(interp, pushed, &res);
+    if (rc == TCL_OK) {
+	Tcl_IncrRefCount(res);
+	Tcl_SetObjResult(interp, Unfold(res, mode));
+	Tcl_DecrRefCount(res);
+    } else if (rc == TCL_CONTINUE) {
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf("type {%s}: nothing to cast",
+		Tcl_GetString(top)));
+	rc = TCL_ERROR;
+    }
+    Tcl_DecrRefCount(pushed);
+    Tcl_DecrRefCount(popped);
+    Tcl_DecrRefCount(text);
+    return rc;
+}
+
+/*
  * À la définition (proc NOM ARGS CORPS) : *sigPtr reçoit la signature, ou
  * NULL pour une procédure classique (ni liste typée, ni type de retour).
  * *typedArgsPtr : la liste d'arguments est un produit (la procédure est
@@ -9106,6 +9294,7 @@ TclTypedProcSig(Tcl_Interp *interp, Tcl_Obj *nameObj, Tcl_Obj *argsObj,
 {
     Tcl_Obj *ret = NULL, *top = NULL, *popped, *uopt = NULL, *upos = NULL;
     Tcl_Size len, n, i, cap = 0;
+    int unfold = 0;
     const char *text = Tcl_GetStringFromObj(argsObj, &len);
     TclType *prod = NULL;
     TclTypedSig *sig;
@@ -9118,6 +9307,7 @@ TclTypedProcSig(Tcl_Interp *interp, Tcl_Obj *nameObj, Tcl_Obj *argsObj,
 	    ret = Tcl_DuplicateObj(top);
 	    Tcl_IncrRefCount(ret);
 	    TclDiscard(popped);
+	    unfold = UnfoldPrefix(&ret);
 	    if (Tcl_GetCharLength(ret) == 0) {
 		Tcl_DecrRefCount(ret);	/* proc {}f : rien */
 		ret = NULL;
@@ -9167,6 +9357,7 @@ TclTypedProcSig(Tcl_Interp *interp, Tcl_Obj *nameObj, Tcl_Obj *argsObj,
     sig->refCount = 1;
     sig->n = -1;
     sig->retText = ret;
+    sig->unfold = (ret != NULL) ? unfold : 0;
     if (prod != NULL) {
 	uopt = Tcl_NewObj();
 	upos = Tcl_NewObj();
@@ -10130,6 +10321,19 @@ TclTypedProcBind(Tcl_Interp *interp, void *sigv, Tcl_Size skip)
     return rc;
 }
 
+/* Le résultat casté, rendu tel quel, ou déplié ({*}T, {**}T). */
+static void
+SetRet(Tcl_Interp *interp, TclTypedSig *sig, Tcl_Obj *out)
+{
+    if (sig->unfold == 0) {
+	Tcl_SetObjResult(interp, out);
+	return;
+    }
+    Tcl_IncrRefCount(out);
+    Tcl_SetObjResult(interp, Unfold(out, sig->unfold));
+    Tcl_DecrRefCount(out);
+}
+
 /* Un « return » réussi devient une erreur : ses options sont oubliées. */
 static void
 ResetReturn(Tcl_Interp *interp, int result)
@@ -10172,6 +10376,7 @@ TclTypedProcReturn(Tcl_Interp *interp, void *sigv, int result)
 
 	if (rt != NULL && TclAnnotInfo(res, NULL, &vt, NULL, NULL) == 1
 		&& vt == rt) {
+	    SetRet(interp, sig, res);
 	    return result;
 	}
     }
@@ -10183,7 +10388,7 @@ TclTypedProcReturn(Tcl_Interp *interp, void *sigv, int result)
     if (lab == NULL) {
 	/* le cas courant : une valeur sans étiquette (cast direct) */
 	if (TclAnnotCastText(interp, sig->retText, res, &out) == TCL_OK) {
-	    Tcl_SetObjResult(interp, out);
+	    SetRet(interp, sig, out);
 	    Tcl_DecrRefCount(res);
 	    return result;
 	}
@@ -10235,7 +10440,7 @@ TclTypedProcReturn(Tcl_Interp *interp, void *sigv, int result)
     Tcl_IncrRefCount(pushed);
     rc = TclAnnotSettle(interp, pushed, NULL, 0, &out);
     if (rc == TCL_OK) {
-	Tcl_SetObjResult(interp, out);
+	SetRet(interp, sig, out);
     } else {
 	Tcl_Obj *msg;
 
@@ -10307,8 +10512,9 @@ TypeProcCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 	    (sig != NULL && sig->argsText != NULL) ? sig->argsText
 	    : Tcl_NewObj());
     Tcl_DictObjPut(NULL, d, Tcl_NewStringObj("return", 6),
-	    (sig != NULL && sig->retText != NULL) ? sig->retText
-	    : Tcl_NewObj());
+	    (sig != NULL && sig->retText != NULL) ? Tcl_ObjPrintf("%s%s",
+	    sig->unfold == 2 ? "{**}" : sig->unfold == 1 ? "{*}" : "",
+	    Tcl_GetString(sig->retText)) : Tcl_NewObj());
     Tcl_SetObjResult(interp, d);
     return TCL_OK;
 }

@@ -227,6 +227,7 @@ type is {compact?}TYPE|VALEUR  ;# une question sur un type ou une valeur
 type is {disjoint?}S           ;# les paires de variantes qui peuvent accepter une même valeur
 type is {strict?}S             ;# 1 si S a été défini {-strict}
 type proc NOM                  ;# la signature d'une procédure typée : args, return (§ 6.4, 6.5)
+type {{*}T}MOT, {{**}T}MOT     ;# le cast explicite, rendu déplié en liste ou en dict (§ 6.4)
 type {c!}export TYPE ?TYPE ...? ;# en-tête C des types nommés (§ 12.2) ; {llvm!} prévu
 ```
 
@@ -551,6 +552,18 @@ type get [g p]                 ;# R.point
 - **Introspection.** `type proc nom` rend `args {…} return T` (la signature canonique, vide pour une procédure classique) ; `info args` rend les noms des champs, `info default` leurs défauts (`[cmd]` pour un défaut calculé).
 - **Coût.** Une procédure typée va aussi vite que la même procédure classique qui ferait tous ces contrôles à la main (1,15 µs contre 1,17 µs pour `decale $a 1 1`, sans contrôle 0,47 µs) ; une étiquette coûte environ 0,5 µs. Voir `exemples/bench_procs.tcl`.
 - **Compatibilité.** Une liste d'arguments qui est une liste Tcl valide reste classique (`{a {b 2} args}`, et même `{a;}`) ; elle est typée quand elle n'est pas une liste et contient un `{T}nom`, ou quand elle contient des `;` et se lit comme un produit. Une procédure classique peut avoir un type de retour (`proc {int}f {a} …`).
+
+- **Dépliage du résultat (v16r)** : `proc {{*}T}nom` vérifie le résultat comme un `T`, puis le rend **déplié**, en données Tcl ordinaires ; `{{**}T}` le rend en dict. Le `{*}` déplie comme celui de Tcl (et comme `$P(*)`), `{**}` donne les noms, comme `*args` et `**kwargs` en Python. Le dépliage est profond : un produit de produits devient une liste de listes (ou des dicts imbriqués), une `list.point` une liste de listes ; une somme rend le contenu de sa variante (avec `{**}`, un dict `{variante valeur}` ; une variante littérale reste elle-même). C'est la forme d'une API publique : un `point` typé est un seul élément de liste, son dépliage `{x y}` en a deux (`lassign $P x y` marche).
+
+```tcl
+proc {{*}point}v  {{double}h} {( 0, $h )}     ;# 0 5      (vérifié comme point)
+proc {{**}point}vd {{double}h} {( 0, $h )}    ;# x 0 y 5
+type def rect {{point}nw; {point}se}
+proc {{*}rect}r {} {( (0, 0), (10, 10) )}     ;# {0 0} {10 10}
+proc {{**}rect}rd {} {( (0, 0), (10, 10) )}   ;# nw {x 0 y 0} se {x 10 y 10}
+```
+
+  Le cast explicite suit la même règle : `type {{*}point}$p` rend la liste `{x y}` vérifiée, `type {{**}point}$p` le dict. Le préfixe n'est reconnu qu'en tête d'une annotation de livraison (dans le langage des types, `{*}point` se lirait comme un champ nommé `point`). Coût : 0,3 à 0,9 µs par appel pour vérifier et déplier un point (`exemples/tcllib_geometry`).
 
 #### 6.5 Options et drapeaux (v16q)
 
