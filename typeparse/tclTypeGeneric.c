@@ -91,14 +91,14 @@ TclTypeFindParam(
 
 TypeGeneric *
 TclTypesFindGeneric(
+    Tcl_Interp *interp,
     TypeData *d,
     const char *w,
     Tcl_Size len)
 {
-    char *name = DupText(w, len);
-    Tcl_HashEntry *hPtr = Tcl_FindHashEntry(&d->generics, name);
+    Tcl_HashEntry *hPtr = TclTypesFindName(interp, d, &d->generics, w, len,
+	    NULL, NULL);
 
-    Tcl_Free(name);
     return (hPtr != NULL) ? (TypeGeneric *) Tcl_GetHashValue(hPtr) : NULL;
 }
 
@@ -772,8 +772,10 @@ ParseParamDecl(
     p += nameLen;
 
     if (strcmp(name, "type") == 0 || strcmp(name, baseName) == 0
-	    || Tcl_FindHashEntry(&d->names, name) != NULL
-	    || Tcl_FindHashEntry(&d->generics, name) != NULL) {
+	    || TclTypesFindName(interp, d, &d->names, name, -1, NULL, NULL)
+		!= NULL
+	    || TclTypesFindName(interp, d, &d->generics, name, -1, NULL, NULL)
+		!= NULL) {
 	ERR(interp, "PARAM", "parameter name \"%s\" is already a type name",
 		name);
 	Tcl_Free(name);
@@ -1312,7 +1314,8 @@ TclTypesInstantiate(
     env.selfName = inst->name;
     env.self = inst;
     env.into = inst;
-    if (TclCompileType(interp, g->body, g->bodyLen, &env) != TCL_OK) {
+    if (TclTypesCompileIn(interp, d, g->name, g->body, g->bodyLen, &env)
+	    != TCL_OK) {
 	goto fail;
     }
     res = env.result;

@@ -623,7 +623,7 @@ proc te::rendre {w doc {commandeLien {}}} {
     set {document}doc $doc
     te::configurer $w
     foreach b $doc {
-	switch -- [type get $b] {
+	switch -- [namespace tail [type get $b]] {
 	    bloc.para {
 		te::Segments $w $b(para) [list [te::Tag bloc.para]] $commandeLien
 	    }
@@ -655,7 +655,7 @@ proc te::rendre {w doc {commandeLien {}}} {
 
 proc te::Segments {w segments tags commandeLien} {
     foreach s $segments {
-	switch -- [type get $s] {
+	switch -- [namespace tail [type get $s]] {
 	    segment.texte {
 		$w insert end $s(texte) [linsert $tags end [te::Aspect $w $tags]]
 	    }

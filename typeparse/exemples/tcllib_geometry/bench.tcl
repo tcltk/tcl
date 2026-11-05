@@ -59,6 +59,7 @@ $i eval [list set P200b $P200b]
 c eval {type def {-compact}polygon_c list.double}
 foreach {i T} {typed polygon c polygon_c} {
 $i eval [string map [list %T $T] {
+    namespace path ::math::geometry	;# the types point, line... (v16u)
     set {point}A 0 0;  set {point}B 3 4;  set {point}C 5 10;  set {point}Q 10 10
     set {point}P12 1 2;  set {point}P34 3 4;  set {point}C55 5 5
     set {line}L1 0 0 10 10;  set {line}L2 0 10 10 0

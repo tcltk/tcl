@@ -1,11 +1,12 @@
 # REPRISE — état du prototype TIP 764 (valeurs annotées, variables typées)
 
-*Fiche de reprise, 5 novembre 2026, version **v16t**. À joindre (avec `typeparse.zip`) au
+*Fiche de reprise, 5 novembre 2026, version **v16u**. À joindre (avec `typeparse.zip`) au
 premier message d'une conversation qui reprend le travail.*
 
 ## 1. Où en est-on
 
-* **v16t livrée** (5 novembre) : une chaîne est un scalaire, un produit un conteneur — un produit typé se déplie en ses champs dans la vue liste (`llength $P` = 2, `lassign $P x y`, `concat`), un scalaire typé reste UN élément, les éléments d'une `list.string` restent typés dans les parcours (la v16s les rendait nus : `{hello world}` redécoupé dans une boucle imbriquée) ; `doc/CARTOGRAPHIE-EIAS.md` (tensions avec EIAS, sondes dans `doc/cartographie/`) ; géométrie sans `{*}`, `geom.c` sans `Tcl_AnnotatedGetParts`.
+* **v16u livrée** (5 novembre) : espaces de noms des types — `type def` range le type dans l'espace courant (`::geom::point`), un nom se résout comme une commande (courant, `namespace path`, global), la signature d'une procédure dans l'espace de la procédure, le corps d'une famille dans le sien ; `type get` donne le nom qualifié (simple pour un type global) ; `namespace delete` retire les noms. Une valeur typée garde en vie la table de types de son interpréteur (plus de lecture après libération après `interp delete`). `type {c!}export` : struct nommée par le dernier mot.
+* **v16t** (5 novembre) : une chaîne est un scalaire, un produit un conteneur — un produit typé se déplie en ses champs dans la vue liste (`llength $P` = 2, `lassign $P x y`, `concat`), un scalaire typé reste UN élément, les éléments d'une `list.string` restent typés dans les parcours (la v16s les rendait nus : `{hello world}` redécoupé dans une boucle imbriquée) ; `doc/CARTOGRAPHIE-EIAS.md` (tensions avec EIAS, sondes dans `doc/cartographie/`) ; géométrie sans `{*}`, `geom.c` sans `Tcl_AnnotatedGetParts`.
 * **v16s** (5 novembre) : optimisations — champs des signatures typées en locales compilées, types résolus une fois, pas de liste `args`, produits de scalaires vérifiés champ par champ ; éléments des listes de scalaires nus dans les boucles, `lassign`, `lrange` (`lindex` reste typé) ; `lrange` ne traite plus que la tranche ; écritures sous contrat sans copie. Patch `procs-typees-locales.patch`. math::geometry typé à parité avec tcllib sur les polygones.
 * **v16r** (5 novembre) : dépliage — `proc {{*}T}nom` vérifie le résultat comme un `T` et le rend en liste ordinaire, `{{**}T}` en dict (profond ; `type {{*}T}mot` de même) ; appliqué aux procédures de `exemples/tcllib_geometry` qui rendent des points.
 * **v16q** (5 novembre) : options et drapeaux des procédures typées — un champ `-x` est une option (`{flag}-decreasing`, `{int}-index ?= -1`), préfixes uniques, `--` ; une somme donne des options exclusives (`{"ascii", "dictionary", {string}command}-mode ?= ascii`), une variante produit des options dépendantes ; `{T}-o` un groupe réutilisable. Pas de patch noyau. (Exemples `bench_procs.tcl`, `bench_options.tcl`, et `tcllib_geometry` : math::geometry de tcllib reformulé, les 210 tests de tcllib passent ; son cœur en C, `geom.c`, avec les structs de `type {c!}export`.)
@@ -73,6 +74,7 @@ premier message d'une conversation qui reprend le travail.*
 | v16r | dépliage du résultat : `{*}T` (liste), `{**}T` (dict), en retour de procédure et dans `type {…}mot` |
 | v16s | optimisations : liaison des arguments, listes de scalaires nues dans les parcours, `lrange` en tranche, écritures sous contrat (patch `procs-typees-locales.patch`) |
 | v16t | produits ouverts dans la vue liste, chaînes atomiques (fin de la règle B) ; cartographie EIAS |
+| v16u | espaces de noms des types ; descripteurs comptés (une valeur survit à son interpréteur) |
 
 ## 2. Installation et tests (chez l'utilisateur, MinGW64)
 

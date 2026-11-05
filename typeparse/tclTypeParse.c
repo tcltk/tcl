@@ -416,6 +416,29 @@ ParseTypeLexeme(
 	return 2;
     }
 
+    if (byte == ':' && numBytes > 2 && start[1] == ':'
+	    && TclTypeIsNameChar(start[2])) {
+	/* v16u : ::geom::point, un nom qualifié absolu */
+	end = start + 2 + TclTypeNameSpan(start + 2, start + numBytes);
+	*lexemePtr = BAREWORD;
+	if (literalPtr != NULL) {
+	    *literalPtr = Tcl_NewStringObj(start, end - start);
+	}
+	if ((end < start + numBytes) && (*end == '(')) {
+	    const char *close = TclTypeFindArgsEnd(end + 1, start + numBytes);
+
+	    if (close == NULL) {
+		*lexemePtr = UNCLOSED;
+		return end - start + 1;
+	    }
+	    if (argsPtr != NULL) {
+		*argsPtr = Tcl_NewStringObj(end + 1, close - end - 1);
+	    }
+	    return close + 1 - start;
+	}
+	return end - start;
+    }
+
     if (!IsParamRef(start, numBytes) && (byte < sizeof(Lexeme))
 	    && (Lexeme[byte] != 0)
 	    && !(byte == '*' && numBytes > 1 && start[1] == '(')) {
@@ -470,8 +493,13 @@ ParseTypeLexeme(
 
     if (TclTypeIsNameChar(byte) || IsParamRef(start, numBytes)) {
 	end = start + (byte == '$');
-	while ((end < start + numBytes) && TclTypeIsNameChar(*end)) {
-	    end++;
+	if (byte == '$') {
+	    while ((end < start + numBytes) && TclTypeIsNameChar(*end)) {
+		end++;
+	    }
+	} else {
+	    /* v16u : geom::point */
+	    end += TclTypeNameSpan(end, start + numBytes);
 	}
 	*lexemePtr = BAREWORD;
 	if (literalPtr != NULL) {
@@ -2412,7 +2440,7 @@ TclCompileTypeTree(
 	    } else if (prm != NULL) {
 		ERR(interp, "PARAM", "\"%s\" is a parameter: write $%s", w, w);
 		return TCL_ERROR;
-	    } else if ((g = TclTypesFindGeneric(envPtr->d, w, len)) != NULL) {
+	    } else if ((g = TclTypesFindGeneric(interp, envPtr->d, w, len)) != NULL) {
 		tp = TclTypesInstantiate(interp, envPtr->d, g, NULL, 0, envPtr);
 	    } else {
 		tp = TclTypesResolve(interp, envPtr->d, envPtr->selfName,
@@ -2459,7 +2487,7 @@ TclCompileTypeTree(
 		PushItem(envPtr, SK_TYPE)->type = tp;
 		break;
 	    }
-	    if ((g = TclTypesFindGeneric(envPtr->d, w, len)) != NULL) {
+	    if ((g = TclTypesFindGeneric(interp, envPtr->d, w, len)) != NULL) {
 		tp = TclTypesInstantiate(interp, envPtr->d, g, a, alen, envPtr);
 		if (tp == NULL) {
 		    return TCL_ERROR;

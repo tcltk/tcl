@@ -51,8 +51,20 @@ typedef struct TypeGeneric {
 				 * première règle de famille qui en a besoin */
 } TypeGeneric;
 
+/* v16u : un espace de noms qui a des types (référence comptée tenue). */
+typedef struct TypeNs {
+    struct Namespace *nsPtr;
+    size_t nsId;		/* nsPtr->nsId à l'enregistrement : 0 ou un
+				 * autre id quand l'espace a été supprimé */
+    char *prefix;		/* "::geom::" */
+    size_t plen;
+} TypeNs;
+
 typedef struct TypeData {
-    Tcl_HashTable names;	/* nom -> TclType* (NULL pour "array") */
+    Tcl_HashTable names;	/* nom -> TclType* (NULL pour "array") ; v16u :
+				 * un type d'un espace de noms y est rangé sous
+				 * son nom qualifié (::geom::point), un type
+				 * global sous son nom simple */
     Tcl_HashTable generics;	/* nom -> TypeGeneric* */
     Tcl_HashTable instances;	/* "nom, 0x01, arg, 0x01, arg" -> TclType* */
     char **instLog;		/* clés créées par l'instanciation en cours,
@@ -81,7 +93,24 @@ typedef struct TypeData {
     Tcl_HashTable parsed;	/* texte d'un type -> TclType* déjà analysé
 				 * (TclTypeParse), valable pour parsedGen */
     size_t parsedGen;
+    size_t refs;		/* v16u : 1 pour l'interpréteur, plus une par
+				 * référence de type ou tampon de cases vivant */
+    int dead;			/* l'interpréteur a été supprimé : la table ne
+				 * vit plus que pour les valeurs qui restent */
+    TypeNs *nss;		/* v16u : les espaces de noms qui ont des types */
+    struct Namespace *ctxNs;	/* v16u : l'espace où résoudre les noms, au
+				 * lieu de l'espace courant (le corps d'une
+				 * famille se lit dans l'espace de la famille) */
+    Tcl_Size nNs, capNs;
 } TypeData;
+
+void	TclTypesSync(TypeData *d);
+int	TclTypesQualify(Tcl_Interp *interp, TypeData *d, const char *name,
+	    Tcl_DString *dsPtr);
+Tcl_HashEntry *TclTypesFindName(Tcl_Interp *interp, TypeData *d,
+	    Tcl_HashTable *table, const char *name, Tcl_Size len,
+	    const char *selfName, int *isSelfPtr);
+Tcl_Size TclTypeNameSpan(const char *p, const char *end);
 
 void	TclTypesBump(TypeData *d);
 
@@ -111,6 +140,9 @@ typedef struct TypeEnv {
     Tcl_Size nStack, capStack;
 } TypeEnv;
 
+int	TclTypesCompileIn(Tcl_Interp *interp, TypeData *d, const char *owner,
+	    const char *text, Tcl_Size len, TypeEnv *envPtr);
+
 /* tclTypeParse.c */
 /* Un mot de valeur : "texte", {texte}, mot nu, ou $param. */
 int	TclTypeParseWord(Tcl_Interp *interp, const TypeEnv *envPtr,
@@ -125,7 +157,8 @@ const char *TclTypeFindArgsEnd(const char *p, const char *limit);
 /* tclTypeGeneric.c : types paramétrés */
 const TypeParam *TclTypeFindParam(const TypeParams *ps, const char *name,
 	    Tcl_Size len);
-TypeGeneric *TclTypesFindGeneric(TypeData *d, const char *w, Tcl_Size len);
+TypeGeneric *TclTypesFindGeneric(Tcl_Interp *interp, TypeData *d,
+	    const char *w, Tcl_Size len);
 /* argText == NULL : aucun argument (tous les paramètres ont un défaut). */
 TclType *TclTypesInstantiate(Tcl_Interp *interp, TypeData *d, TypeGeneric *g,
 	    const char *argText, Tcl_Size argLen, const TypeEnv *parent);

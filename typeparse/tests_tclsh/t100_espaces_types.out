@@ -1,0 +1,25 @@
+trois point                        {{double}x; {double}y} {{int}r; {int}g; {int}b} {{string}nom}
+dans geom                          ::geom::point {1 2}
+global                             point
+qualifié relatif                   ::geom::point
+qualifié absolu                    ::rgb::point
+list. qualifié                     list<::geom::point> ::geom::point
+relire le nom affiché              list<::geom::point>
+nominal: deux formes égales        ERREUR: unknown way to cast the value from ::rgb2::point to ::geom::point
+seg utilise geom::point            ::geom::point {{::geom::point}a; {::geom::point}b}
+inconnu                            ERREUR: unknown type "nowhere::point"
+espace inconnu (def)               ERREUR: type "nowhere::x": unknown namespace "nowhere"
+réservé dans un espace             ERREUR: type "int" is reserved: a built-in type cannot be redefined in a namespace
+namespace path                     ::geom::point
+proc dans geom                     ::geom::point
+proc args                          5.0
+famille dans geom                  ::geom::grille(2) ::geom::point
+somme                              ::geom::S.at {1 2}
+type forget                        unknown type "::geom::S"
+après namespace delete             ::geom::point {1 2} 1 {unknown type "geom::point"}
+redéfini                           ::geom::point {{int}i} ::geom::point
+convert                            ::geom2::p
+interp supprimé                    ::k::kp {1 2} 2
+TclOO (espace de l'objet)          1
+type export : nom C                cp
+export, même nom C                 cp ce2_cp

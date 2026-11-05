@@ -434,6 +434,28 @@ Une règle `type convert` peut viser un type ou une **famille** (le nom d'un `ty
 | `rel32(T)`, `sub32(T)` | `*(.,i32le).T`, `*(./,u32le).T` |
 | `unit`, `opt(T)` | `""` ; `{T}some, {unit}none` |
 
+Ces alias sont globaux (`::u8`…) : le fichier les définit avec leur nom qualifié depuis son espace de noms (§ 5.8).
+
+#### 5.8 Espaces de noms (v16u)
+
+Un type appartient à l'espace de noms où il est défini, comme une procédure :
+
+```tcl
+namespace eval geom {
+    type def point {{double}x; {double}y}      ;# ::geom::point
+}
+type def point {{string}nom}                    ;# point, global
+type def ::geom::seg {{geom::point}a; {geom::point}b}
+```
+
+- **Définition.** `type def NOM` range le type dans l'espace courant ; `type def ::NOM` dans l'espace global ; `type def a::NOM` dans l'espace `a` (relatif à l'espace courant, puis global, comme `proc`), qui doit exister. Les types prédéfinis (`int`, `string`, `list`…) ne se redéfinissent pas dans un espace.
+- **Résolution.** Un nom se résout comme une commande : `point` dans l'espace courant, puis dans son chemin (`namespace path`), puis dans l'espace global ; `geom::point` dans l'espace courant puis global ; `::geom::point` tel quel. Le corps d'un type est lu dans l'espace où il est défini ; le corps d'une famille (`type def {grille({int}n)} …`) dans l'espace de la famille, quel que soit l'endroit où elle est instanciée ; la signature d'une procédure (arguments et retour) dans l'espace de la procédure, comme son corps : `proc {point}::geom::mk {…}` rend un `::geom::point`, même définie depuis l'espace global.
+- **Nom affiché.** `type get`, `type def` et les messages donnent le nom qualifié d'un type d'un espace (`::geom::point`, `list<::geom::point>`, `::geom::S.at`), le nom simple d'un type global. Ce nom se relit. Pour comparer à un nom court, `namespace tail` : `switch [namespace tail [type get $b]] {bloc.para {…}}`.
+- **Bibliothèques.** Un nom de type passé en chaîne à une procédure d'un autre espace s'y résout dans cet espace (comme un nom de commande) : passer le nom qualifié. Un paquet qui veut des types globaux les nomme `::u8` (`binaliases.tcl`, `cstruct.tcl`).
+- **Suppression.** `namespace delete geom` retire les noms de ses types (et ses règles `type convert`) ; les valeurs gardent leur type, sous son nom qualifié. Un nouveau `::geom::point` est un autre type.
+- **C.** `type {c!}export` nomme la struct C d'après le dernier mot (`::math::geometry::point` → `point`) ; si deux types exportés ensemble ont le même, le second prend le nom qualifié (`ce2_cp`).
+- **Durée de vie.** Une valeur typée garde en vie la table de types de l'interpréteur qui l'a créée : passée à un autre interpréteur, elle survit à `interp delete` (v16u ; avant, sa lecture lisait de la mémoire libérée).
+
 ### 6. Variables typées et vie d'une valeur annotée
 
 #### 6.1 Le contrat d'une variable typée
@@ -1212,7 +1234,8 @@ Le codec C, qui **vérifie** en plus chaque valeur contre son type, est 2 à 3 f
 
 **À corriger ou à décider**
 
-- **Tensions avec EIAS.** Atomicité des valeurs typées, type perdu par la chaîne, types propres à un interpréteur (lecture après libération si l'interpréteur qui a défini le type disparaît), noms de types globaux : voir `doc/CARTOGRAPHIE-EIAS.md`.
+- **Tensions avec EIAS.** Type perdu par la chaîne (pas de forme texte relisible), égalité, valeurs nues d'un `dict.point`, types propres à un interpréteur (un même nom désigne deux types dans deux interpréteurs) : voir `doc/CARTOGRAPHIE-EIAS.md`. Réglés : l'atomicité des produits (v16t), la lecture après libération et les noms globaux (v16u).
+- **`namespace path` et caches.** La résolution d'un nom suit le chemin de l'espace courant ; un changement de chemin invalide les caches (`resolverEpoch`). Un espace d'objet TclOO a ses types comme un autre ; ils disparaissent avec l'objet.
 
 **Pas encore fait**
 

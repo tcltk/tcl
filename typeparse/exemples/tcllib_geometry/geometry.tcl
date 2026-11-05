@@ -24,20 +24,26 @@ package require math
 
 # Results: proc {T}name checks the result as a T. A product (a point) is a
 # container: a caller that uses lists sees its fields (lassign $P x y).
-#
-# A point, a vector: two doubles. A line, a line segment, a rectangle (NW and
-# SE corners): four doubles. A polyline, a polygon: a flat list of doubles,
-# x1 y1 x2 y2 ... (tcllib's conventions: callers pass plain lists).
-type def point    {{double}x; {double}y}
-type alias vector point
-type def line     {{double}x1; {double}y1; {double}x2; {double}y2}
-type alias segment line
-type alias rect    line
-type def polyline list.double
-type alias polygon polyline
-# what an intersection or a search returns: a point, or a word
-type def intersection {{point}at, "coincident", "none"}
-type def found        {{point}at, "none"}
+
+namespace eval ::math::geometry {
+    # The types belong to the namespace (v16u): ::math::geometry::point, and
+    # so on; inside it, and for a caller with "namespace path ::math::geometry",
+    # they are simply point, line...
+    #
+    # A point, a vector: two doubles. A line, a line segment, a rectangle (NW and
+    # SE corners): four doubles. A polyline, a polygon: a flat list of doubles,
+    # x1 y1 x2 y2 ... (tcllib's conventions: callers pass plain lists).
+    type def point    {{double}x; {double}y}
+    type alias vector point
+    type def line     {{double}x1; {double}y1; {double}x2; {double}y2}
+    type alias segment line
+    type alias rect    line
+    type def polyline list.double
+    type alias polygon polyline
+    # what an intersection or a search returns: a point, or a word
+    type def intersection {{point}at, "coincident", "none"}
+    type def found        {{point}at, "none"}
+}
 
 namespace eval ::math::geometry {
     variable pi    [expr { 4 * atan(1) }]

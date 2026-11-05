@@ -272,3 +272,20 @@ liste), l'égalité (D3), l'identité des types (D4) et une règle unique pour l
 - Les tests `t18` et `t19`, qui n'avaient pas de sortie attendue, échouaient depuis la v16s sur
   les chaînes (et sur des `list.int` qu'ils supposaient typées au parcours) ; ils passent et ont
   maintenant leur `.out`.
+
+## 6. Suite : v16u, D4 en partie
+
+**Espaces de noms (T5).** Un type appartient à l'espace de noms où il est défini (`::geom::point`)
+et se résout comme une commande (espace courant, `namespace path`, global). La sonde F1 passe :
+`pnt` défini dans `nsA` ne bloque plus un `pnt` global. Voir `ANNOTATIONS.fr.md` § 5.8.
+
+**Sûreté mémoire (T4, premier défaut).** Une valeur typée garde en vie la table de types de
+l'interpréteur qui l'a créée (compteur sur la table, tenu par chaque référence de type et chaque
+tampon de cases) : `sonde_interp.tcl` lit `::k::kp {1 2}` après `interp delete`, sans erreur sous
+valgrind.
+
+**Reste de T4 (le sens).** Une valeur garde un pointeur vers son descripteur, pas un nom résolu
+à l'arrivée : un enfant qui a son propre `point` voit toujours le `point` du parent (D7). Le nom
+qualifié rend la confusion plus rare (`::geom::point` d'un côté, `point` de l'autre) sans la
+supprimer. À reprendre avec la forme texte (D2), qui demande de toute façon de résoudre un nom
+à l'arrivée.

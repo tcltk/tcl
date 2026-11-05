@@ -2263,3 +2263,48 @@ de même chaîne avaient deux structures (`concat $P $P` donnait `{1 2} {1 2}` p
   plus rapide (`distance $A $B` 0,90 → 0,41 µs, `findLineIntersection` 1,08 → 0,62).
 - Vérifié : 79 tests ; mêmes sorties en forme compacte ; tests de tcllib (Tcl et C) ; `make test`
   : mêmes échecs que la référence (61) ; valgrind propre (sauf `executable_pe`, comme avant).
+
+### v16u — espaces de noms des types, durée de vie des descripteurs (5 novembre 2026)
+
+Sources de types : `tclTypes.c`, `tclTypes.h`, `tclTypesInt.h`, `tclAnnotObj.c`,
+`tclTypeParse.c`, `tclTypeGeneric.c`. Aucun patch noyau (les champs `nsId`, `resolverEpoch`,
+`commandPathArray`, `refCount` de `Namespace` existent déjà dans `tclInt.h`).
+
+- **Rangement** : `type def NOM` qualifie le nom par l'espace courant (`TclTypesQualify`) ; la
+  table des noms garde `::geom::point` pour un type d'espace, `point` pour un type global ; les
+  familles de même (`::geom::grille`). Un nom prédéfini ne se redéfinit pas dans un espace.
+- **Résolution** (`TclTypesFindName`) : `::a::b` tel quel ; `a::b` dans l'espace courant puis
+  global ; `b` dans l'espace courant, son `namespace path`, puis global. Utilisée par
+  `TclTypesResolve`, les familles (`TclTypesFindGeneric`, qui prend maintenant l'interpréteur),
+  `type forget`, `type convert`, le contrôle des noms de variantes et de paramètres. Sans type
+  d'espace (`nNs == 0`), un nom simple ne coûte qu'une recherche, comme avant.
+- **Contexte** (`d->ctxNs`) : le corps d'une famille se lit dans l'espace de la famille
+  (`TclTypesCompileIn`), la signature d'une procédure dans l'espace de la procédure
+  (`TclTypedProcSig` calcule l'espace par `TclGetNamespaceForQualName`, comme `proc`).
+- **Caches** : la génération rendue par `TclTypesGeneration` mêle, quand il existe des types
+  d'espace, l'identifiant de l'espace courant et son `resolverEpoch` (changé par `namespace
+  path`) ; le mémo des textes analysés (`d->parsed`) préfixe sa clé de même.
+- **Suppression d'un espace** : la table tient une référence sur chaque espace qui a des types
+  (`TypeNs`) ; `TclTypesSync`, appelée par la résolution et la génération, voit un espace mort
+  (`nsId` changé, `NS_DYING`/`NS_DEAD`), retire ses noms, ses familles (gardées sous une clé
+  interne pour leurs instances) et ses règles `type convert`, et change la génération.
+- **Lexique** : un nom de type peut contenir `::` (`TclTypeNameSpan`) et commencer par `::`.
+- **C** : `type {c!}export` nomme la struct par le dernier mot ; collision → nom qualifié
+  (`geom_point`).
+- **Durée de vie** : `TypeData` a un compteur (`refs`) : 1 pour l'interpréteur, plus un par
+  référence de type (`typeref`, qui a maintenant une procédure de libération) et par tampon de
+  cases. `DeleteData` (suppression de l'interpréteur) libère ce qui peut contenir des valeurs
+  (défauts, arguments des familles, règles de conversion : sinon un cycle) et ne libère la table
+  qu'à la dernière référence (`FreeTypeData`). La table des références internées
+  (`DeleteRefData`) vide `tp->refCache` avant de libérer ses objets. `TclType` a un champ `owner`.
+- **Migration** : `binaliases.tcl` nomme ses alias `::u8`… (il les définissait dans
+  `::binaliases`) ; `cstruct.tcl` nomme `::Sample` ; `texte_enrichi/modele.tcl` compare
+  `[namespace tail [type get $b]]` ; `tcllib_geometry` met ses types dans `::math::geometry`
+  (`bench.tcl` : `namespace path ::math::geometry`). Sorties : les noms qualifiés de
+  `texte_enrichi`. Nouveau test t100_espaces_types.
+- Mesures : appel d'une procédure typée d'espace ou globale, `set {pt}q 1 2` : mêmes temps
+  qu'en v16t.
+- Vérifié : 80 tests ; mêmes sorties en forme compacte ; tests de tcllib (Tcl et C) avec les
+  types dans `::math::geometry` ; `make test` : mêmes échecs que la référence (61) ; valgrind
+  propre (sauf `executable_pe`, comme avant), y compris des valeurs (simples, en cases, sommes,
+  défauts typés) qui survivent à `interp delete`.

@@ -21,7 +21,7 @@
  * VAR_* de tclInt.h). La valeur ci-dessous est un PLACEHOLDER. */
 /* Version du prototype TIP 764 (typeparse/VERSION, maj.sh, et
  * tcl::unsupported::typesversion). */
-#define TCL_TYPES_VERSION "v16t"
+#define TCL_TYPES_VERSION "v16u"
 
 #ifndef VAR_TYPED
 #define VAR_TYPED	0x400000
@@ -165,11 +165,19 @@ struct TclType {
     int sumMode;		/* SUM (v16m) : TCLT_SUM_DEDUCE par défaut ;
 				 * type def {-strict}S : la variante d'une
 				 * valeur nue n'est jamais devinée */
+    struct TypeData *owner;	/* v16u : la table de types qui l'a créé */
 };
 #define TCLT_SUM_DEDUCE	0
 #define TCLT_SUM_STRICT	1
 
-/* Les descripteurs vivent autant que l'interpréteur (pas de comptage). */
+/*
+ * v16u : les descripteurs appartiennent à la table de types d'un
+ * interpréteur ; une valeur qui en garde un (une référence de type, un
+ * tampon de cases) garde la table en vie : elle survit à l'interpréteur
+ * (interp delete) jusqu'à la libération de la dernière valeur.
+ */
+void	TclTypeHold(const TclType *tp);
+void	TclTypeRelease(const TclType *tp);
 
 /* --------------------------------------------------------------------
  * Objets annotés

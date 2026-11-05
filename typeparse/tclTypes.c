@@ -29,9 +29,353 @@ TclTypesGeneration(Tcl_Interp *interp, size_t *uidPtr, size_t *genPtr)
     if (d == NULL) {
 	return 0;
     }
+    TclTypesSync(d);
     *uidPtr = d->uid;
     *genPtr = d->gen;
+    if (d->nNs > 0) {
+	/* v16u : la résolution d'un nom dépend de l'espace courant et de son
+	 * chemin (namespace path) : ils entrent dans la génération. */
+	Namespace *ns = (Namespace *) TclGetCurrentNamespace(interp);
+
+	*genPtr = (d->gen * (size_t) 0x9E3779B97F4A7C15ULL) ^ ns->nsId;
+	*genPtr = (*genPtr * (size_t) 0x9E3779B97F4A7C15ULL)
+		^ (size_t) ns->resolverEpoch;
+    }
     return 1;
+}
+
+/* --------------------------------------------------------------------
+ * v16u : espaces de noms des types
+ *
+ * Un type défini dans ::geom est rangé sous ::geom::point ; un type global
+ * sous son nom simple. Un nom est résolu comme une commande : l'espace
+ * courant, son chemin (namespace path), puis l'espace global. Quand un
+ * espace est supprimé, ses types perdent leur nom (les valeurs gardent
+ * leur descripteur).
+ * -------------------------------------------------------------------- */
+
+/* Un nom de type : des mots, séparés par "::" ; "::" en tête possible. */
+Tcl_Size
+TclTypeNameSpan(const char *p, const char *end)
+{
+    const char *q = p;
+
+    for (;;) {
+	while (q < end && TclTypeIsNameChar(*q)) {
+	    q++;
+	}
+	if (q + 2 < end && q[0] == ':' && q[1] == ':'
+		&& TclTypeIsNameChar(q[2])) {
+	    q += 2;
+	    continue;
+	}
+	return q - p;
+    }
+}
+
+/* L'espace où se résolvent les noms : celui d'une famille pendant
+ * l'analyse de son corps, sinon l'espace courant. */
+static Namespace *
+CtxNs(Tcl_Interp *interp, TypeData *d)
+{
+    if (d != NULL && d->ctxNs != NULL) {
+	return d->ctxNs;
+    }
+    return interp ? (Namespace *) TclGetCurrentNamespace(interp) : NULL;
+}
+
+static int
+NsIsGlobal(Tcl_Interp *interp, Namespace *ns)
+{
+    return ns == NULL || interp == NULL
+	    || ns == ((Interp *) interp)->globalNsPtr;
+}
+
+static int
+NsDead(const TypeNs *r)
+{
+    return r->nsPtr->nsId != r->nsId
+	    || (r->nsPtr->flags & (NS_DYING | NS_DEAD));
+}
+
+static int
+HasPrefix(const char *k, const char *prefix, size_t plen)
+{
+    return strncmp(k, prefix, plen) == 0;
+}
+
+/* Les noms d'un espace supprimé (et de ses enfants) disparaissent. */
+static void
+PurgeNs(TypeData *d, const char *prefix, size_t plen)
+{
+    Tcl_HashSearch search;
+    Tcl_HashEntry *hPtr, *next;
+
+    for (hPtr = Tcl_FirstHashEntry(&d->names, &search); hPtr != NULL;
+	    hPtr = next) {
+	next = Tcl_NextHashEntry(&search);
+	if (HasPrefix((const char *) Tcl_GetHashKey(&d->names, hPtr), prefix,
+		plen)) {
+	    Tcl_DeleteHashEntry(hPtr);
+	}
+    }
+    for (hPtr = Tcl_FirstHashEntry(&d->generics, &search); hPtr != NULL;
+	    hPtr = next) {
+	next = Tcl_NextHashEntry(&search);
+	if (HasPrefix((const char *) Tcl_GetHashKey(&d->generics, hPtr),
+		prefix, plen)) {
+	    /* la famille sert encore à ses instances : gardée sous une clé
+	     * qui n'est pas un nom (comme type forget) */
+	    void *g = Tcl_GetHashValue(hPtr);
+	    char key[64];
+	    int isNew;
+
+	    Tcl_DeleteHashEntry(hPtr);
+	    snprintf(key, sizeof(key), "\1forgotten\1%p", g);
+	    Tcl_SetHashValue(Tcl_CreateHashEntry(&d->generics, key, &isNew),
+		    g);
+	}
+    }
+    for (hPtr = Tcl_FirstHashEntry(&d->converts, &search); hPtr != NULL;
+	    hPtr = next) {
+	const char *k = (const char *) Tcl_GetHashKey(&d->converts, hPtr);
+	const char *sep = strchr(k, '\1');
+
+	next = Tcl_NextHashEntry(&search);
+	if (HasPrefix(k + (*k == '@'), prefix, plen) || (sep != NULL
+		&& HasPrefix(sep + 1 + (sep[1] == '@'), prefix, plen))) {
+	    Tcl_DecrRefCount((Tcl_Obj *) Tcl_GetHashValue(hPtr));
+	    Tcl_DeleteHashEntry(hPtr);
+	}
+    }
+}
+
+void
+TclTypesSync(TypeData *d)
+{
+    Tcl_Size i = 0;
+
+    while (i < d->nNs) {
+	TypeNs *r = &d->nss[i];
+
+	if (!NsDead(r)) {
+	    i++;
+	    continue;
+	}
+	PurgeNs(d, r->prefix, r->plen);
+	TclNsDecrRefCount(r->nsPtr);
+	Tcl_Free(r->prefix);
+	d->nss[i] = d->nss[--d->nNs];
+	d->gen++;
+    }
+}
+
+static void
+RegisterNs(TypeData *d, Namespace *ns)
+{
+    Tcl_Size i;
+    TypeNs *r;
+
+    for (i = 0; i < d->nNs; i++) {
+	if (d->nss[i].nsPtr == ns && !NsDead(&d->nss[i])) {
+	    return;
+	}
+    }
+    if (d->nNs == d->capNs) {
+	d->capNs = d->capNs ? 2 * d->capNs : 8;
+	d->nss = (TypeNs *) Tcl_Realloc(d->nss, d->capNs * sizeof(TypeNs));
+    }
+    r = &d->nss[d->nNs++];
+    r->nsPtr = ns;
+    ns->refCount++;
+    r->nsId = ns->nsId;
+    r->plen = strlen(ns->fullName) + 2;
+    r->prefix = (char *) Tcl_Alloc(r->plen + 1);
+    snprintf(r->prefix, r->plen + 1, "%s::", ns->fullName);
+    d->gen++;
+}
+
+static const char *const reservedNames[] = {
+    "int", "double", "string", "list", "dict", "array", "var", "any", "flag",
+    "type", "at", NULL
+};
+
+/*
+ * TclTypesQualify --
+ *	Le nom sous lequel « type def NAME » range un type : NAME qualifié par
+ *	l'espace courant (ou par l'espace qu'il nomme), le nom simple pour un
+ *	type global. Les arguments d'une famille, NAME(...), suivent tels quels.
+ */
+int
+TclTypesQualify(Tcl_Interp *interp, TypeData *d, const char *name,
+	Tcl_DString *dsPtr)
+{
+    const char *paren = strchr(name, '(');
+    size_t blen = paren ? (size_t) (paren - name) : strlen(name);
+    const char *last = NULL, *p, *tail;
+    Namespace *ns;
+    int i;
+
+    for (p = name; p + 1 < name + blen; p++) {
+	if (p[0] == ':' && p[1] == ':') {
+	    last = p;
+	}
+    }
+    if (last == NULL) {
+	ns = interp ? (Namespace *) TclGetCurrentNamespace(interp) : NULL;
+	tail = name;
+    } else {
+	tail = last + 2;
+	while (last > name && last[-1] == ':') {
+	    last--;
+	}
+	if (last == name) {
+	    ns = interp ? ((Interp *) interp)->globalNsPtr : NULL;
+	} else {
+	    Tcl_DString nd;
+
+	    Tcl_DStringInit(&nd);
+	    Tcl_DStringAppend(&nd, name, last - name);
+	    ns = (Namespace *) Tcl_FindNamespace(interp,
+		    Tcl_DStringValue(&nd), NULL, 0);
+	    if (ns == NULL) {
+		ERR(interp, "NAME", "type \"%s\": unknown namespace \"%s\"",
+			name, Tcl_DStringValue(&nd));
+		Tcl_DStringFree(&nd);
+		return TCL_ERROR;
+	    }
+	    Tcl_DStringFree(&nd);
+	}
+    }
+    if (tail >= name + blen) {
+	ERR(interp, "NAME", "bad type name \"%s\"", name);
+	return TCL_ERROR;
+    }
+    Tcl_DStringInit(dsPtr);
+    if (!NsIsGlobal(interp, ns)) {
+	for (i = 0; reservedNames[i] != NULL; i++) {
+	    if (strlen(reservedNames[i]) == (size_t) (name + blen - tail)
+		    && strncmp(tail, reservedNames[i], name + blen - tail) == 0) {
+		ERR(interp, "NAME", "type \"%s\" is reserved: a built-in type "
+			"cannot be redefined in a namespace", reservedNames[i]);
+		return TCL_ERROR;
+	    }
+	}
+	TclTypesSync(d);
+	RegisterNs(d, ns);
+	Tcl_DStringAppend(dsPtr, ns->fullName, TCL_AUTO_LENGTH);
+	Tcl_DStringAppend(dsPtr, "::", 2);
+    }
+    Tcl_DStringAppend(dsPtr, tail, TCL_AUTO_LENGTH);
+    return TCL_OK;
+}
+
+/*
+ * TclTypesFindName --
+ *	Résout NAME (len octets) dans TABLE (les noms ou les familles) :
+ *	::a::b absolu ; a::b dans l'espace courant puis global ; b dans
+ *	l'espace courant, son chemin, puis global. SELFNAME : le type en cours
+ *	de définition (déjà qualifié), reconnu avant la table (*isSelfPtr).
+ */
+static int
+TryKey(TypeData *d, Tcl_HashTable *table, Tcl_DString *ds,
+	const char *selfName, Tcl_HashEntry **hPtrPtr, int *isSelfPtr)
+{
+    const char *k = Tcl_DStringValue(ds);
+
+    if (selfName != NULL && strcmp(k, selfName) == 0) {
+	if (isSelfPtr != NULL) {
+	    *isSelfPtr = 1;
+	}
+	return 1;
+    }
+    *hPtrPtr = Tcl_FindHashEntry(table, k);
+    (void) d;
+    return *hPtrPtr != NULL;
+}
+
+Tcl_HashEntry *
+TclTypesFindName(Tcl_Interp *interp, TypeData *d, Tcl_HashTable *table,
+	const char *name, Tcl_Size len, const char *selfName, int *isSelfPtr)
+{
+    Tcl_DString ds;
+    Tcl_HashEntry *hPtr = NULL;
+    Namespace *ns;
+    const char *qual;
+    Tcl_Size i;
+
+    if (isSelfPtr != NULL) {
+	*isSelfPtr = 0;
+    }
+    if (len < 0) {
+	len = (Tcl_Size) strlen(name);
+    }
+    TclTypesSync(d);
+    Tcl_DStringInit(&ds);
+    qual = NULL;
+    for (i = 0; i + 1 < len; i++) {
+	if (name[i] == ':' && name[i + 1] == ':') {
+	    qual = name + i;
+	    break;
+	}
+    }
+    if (qual == name) {
+	/* ::a::b, ou ::b (global) */
+	const char *rest = name + 2;
+	Tcl_Size rlen = len - 2, j;
+	int more = 0;
+
+	for (j = 0; j + 1 < rlen; j++) {
+	    if (rest[j] == ':' && rest[j + 1] == ':') {
+		more = 1;
+	    }
+	}
+	if (more) {
+	    Tcl_DStringAppend(&ds, name, len);
+	} else {
+	    Tcl_DStringAppend(&ds, rest, rlen);
+	}
+	TryKey(d, table, &ds, selfName, &hPtr, isSelfPtr);
+	Tcl_DStringFree(&ds);
+	return hPtr;
+    }
+    ns = CtxNs(interp, d);
+    if (d->nNs > 0 && !NsIsGlobal(interp, ns)) {
+	Tcl_DStringAppend(&ds, ns->fullName, TCL_AUTO_LENGTH);
+	Tcl_DStringAppend(&ds, "::", 2);
+	Tcl_DStringAppend(&ds, name, len);
+	if (TryKey(d, table, &ds, selfName, &hPtr, isSelfPtr)) {
+	    goto done;
+	}
+    }
+    if (qual == NULL && d->nNs > 0 && ns != NULL
+	    && ns->commandPathLength > 0) {
+	for (i = 0; i < ns->commandPathLength; i++) {
+	    Namespace *pns = ns->commandPathArray[i].nsPtr;
+
+	    if (pns == NULL) {
+		continue;
+	    }
+	    Tcl_DStringSetLength(&ds, 0);
+	    if (!NsIsGlobal(interp, pns)) {
+		Tcl_DStringAppend(&ds, pns->fullName, TCL_AUTO_LENGTH);
+		Tcl_DStringAppend(&ds, "::", 2);
+	    }
+	    Tcl_DStringAppend(&ds, name, len);
+	    if (TryKey(d, table, &ds, selfName, &hPtr, isSelfPtr)) {
+		goto done;
+	    }
+	}
+    }
+    Tcl_DStringSetLength(&ds, 0);
+    if (qual != NULL) {
+	Tcl_DStringAppend(&ds, "::", 2);	/* a::b : ::a::b */
+    }
+    Tcl_DStringAppend(&ds, name, len);
+    TryKey(d, table, &ds, selfName, &hPtr, isSelfPtr);
+  done:
+    Tcl_DStringFree(&ds);
+    return hPtr;
 }
 
 void
@@ -58,6 +402,7 @@ NewType(TypeData *d, TclTypeKind kind, const char *name)
     memset(tp, 0, sizeof(TclType));
     tp->kind = kind;
     tp->name = DupStr(name, (Tcl_Size) strlen(name));
+    tp->owner = d;
     if (d->nAll == d->capAll) {
 	d->capAll = d->capAll ? 2 * d->capAll : 32;
 	d->all = (TclType **) Tcl_Realloc(d->all,
@@ -121,19 +466,116 @@ TclTypesFreeKeys(TclDictKey *keys, Tcl_Size n)
     Tcl_Free(keys);
 }
 
+static void FreeTypeData(TypeData *d);
+
+void
+TclTypeHold(const TclType *tp)
+{
+    if (tp != NULL && tp->owner != NULL) {
+	tp->owner->refs++;
+    }
+}
+
+void
+TclTypeRelease(const TclType *tp)
+{
+    TypeData *d;
+
+    if (tp == NULL || (d = tp->owner) == NULL) {
+	return;
+    }
+    if (--d->refs == 0 && d->dead) {
+	FreeTypeData(d);
+    }
+}
+
+/*
+ * L'interpréteur est supprimé. Les valeurs typées qui lui survivent (passées
+ * à un autre interpréteur, gardées par le C) gardent la table en vie : on
+ * n'en libère ici que ce qui peut contenir des valeurs (défauts, arguments
+ * des familles, règles de conversion), qui sinon la garderaient en vie pour
+ * toujours, et on attend la dernière référence.
+ */
 static void
 DeleteData(void *clientData, Tcl_Interp *interp)
 {
     TypeData *d = (TypeData *) clientData;
+    Tcl_HashSearch search;
+    Tcl_HashEntry *hPtr;
+    Tcl_Size i, j;
 
     if (interp != NULL && ((Interp *) interp)->typesData == d) {
 	((Interp *) interp)->typesData = NULL;
     }
+    d->dead = 1;
+    d->refs++;				/* pendant le nettoyage */
+    for (hPtr = Tcl_FirstHashEntry(&d->converts, &search); hPtr != NULL;
+	    hPtr = Tcl_NextHashEntry(&search)) {
+	Tcl_DecrRefCount((Tcl_Obj *) Tcl_GetHashValue(hPtr));
+    }
+    Tcl_DeleteHashTable(&d->converts);
+    Tcl_InitHashTable(&d->converts, TCL_STRING_KEYS);
+    for (i = 0; i < d->nAll; i++) {
+	TclType *tp = d->all[i];
+
+	for (j = 0; tp->fields != NULL && j < tp->nfields; j++) {
+	    if (tp->fields[j].defval != NULL) {
+		Tcl_Obj *o = tp->fields[j].defval;
+
+		tp->fields[j].defval = NULL;
+		Tcl_DecrRefCount(o);
+	    }
+	    if (tp->fields[j].defcmd != NULL) {
+		Tcl_Obj *o = tp->fields[j].defcmd;
+
+		tp->fields[j].defcmd = NULL;
+		Tcl_DecrRefCount(o);
+	    }
+	}
+	for (j = 0; tp->keys != NULL && j < tp->nkeys; j++) {
+	    if (tp->keys[j].defval != NULL) {
+		Tcl_Obj *o = tp->keys[j].defval;
+
+		tp->keys[j].defval = NULL;
+		Tcl_DecrRefCount(o);
+	    }
+	    if (tp->keys[j].defcmd != NULL) {
+		Tcl_Obj *o = tp->keys[j].defcmd;
+
+		tp->keys[j].defcmd = NULL;
+		Tcl_DecrRefCount(o);
+	    }
+	}
+	if (tp->familyArgs != NULL) {
+	    Tcl_Obj *o = tp->familyArgs;
+
+	    tp->familyArgs = NULL;
+	    Tcl_DecrRefCount(o);
+	}
+    }
+    for (i = 0; i < d->nNs; i++) {	/* v16u : les espaces de noms */
+	TclNsDecrRefCount(d->nss[i].nsPtr);
+	Tcl_Free(d->nss[i].prefix);
+    }
+    d->nNs = 0;
+    if (d->nss != NULL) {
+	Tcl_Free(d->nss);
+	d->nss = NULL;
+    }
+    d->ctxNs = NULL;
+    d->refs -= 2;			/* le nettoyage, l'interpréteur */
+    if (d->refs == 0) {
+	FreeTypeData(d);
+    }
+}
+
+static void
+FreeTypeData(TypeData *d)
+{
     Tcl_HashSearch search;
     Tcl_HashEntry *hPtr;
     Tcl_Size i;
 
-    (void) interp;
     for (hPtr = Tcl_FirstHashEntry(&d->converts, &search); hPtr != NULL;
 	    hPtr = Tcl_NextHashEntry(&search)) {
 	Tcl_DecrRefCount((Tcl_Obj *) Tcl_GetHashValue(hPtr));
@@ -2131,6 +2573,38 @@ Inhabited(const TclType *tp, const TclType **stack, int depth)
  * garde que ce qui touche à la table.
  * -------------------------------------------------------------------- */
 
+/* Analyse TEXT avec les noms résolus dans l'espace de OWNER (un nom
+ * qualifié : ::geom::matrix) : le corps d'une famille. */
+int
+TclTypesCompileIn(Tcl_Interp *interp, TypeData *d, const char *owner,
+	const char *text, Tcl_Size len, TypeEnv *envPtr)
+{
+    Namespace *save = d->ctxNs, *ns = NULL;
+    const char *last = NULL, *p;
+    int rc;
+
+    for (p = owner; p[0] != '\0' && p[0] != '('; p++) {
+	if (p[0] == ':' && p[1] == ':') {
+	    last = p;
+	}
+    }
+    if (last != NULL && last > owner && interp != NULL) {
+	Tcl_DString nd;
+
+	Tcl_DStringInit(&nd);
+	Tcl_DStringAppend(&nd, owner, last - owner);
+	ns = (Namespace *) Tcl_FindNamespace(interp, Tcl_DStringValue(&nd),
+		NULL, TCL_GLOBAL_ONLY);
+	Tcl_DStringFree(&nd);
+    } else if (interp != NULL) {
+	ns = ((Interp *) interp)->globalNsPtr;
+    }
+    d->ctxNs = ns;
+    rc = TclCompileType(interp, text, len, envPtr);
+    d->ctxNs = save;
+    return rc;
+}
+
 TclType *
 TclTypesResolve(Tcl_Interp *interp, TypeData *d, const char *selfName,
 	TclType *self, const char *w, Tcl_Size len)
@@ -2138,12 +2612,14 @@ TclTypesResolve(Tcl_Interp *interp, TypeData *d, const char *selfName,
     char *name = DupStr(w, len);
     Tcl_HashEntry *hPtr;
     TclType *tp = NULL;
+    int isSelf = 0;
 
-    if (selfName != NULL && strcmp(name, selfName) == 0) {
+    hPtr = TclTypesFindName(interp, d, &d->names, name, len, selfName,
+	    &isSelf);
+    if (isSelf) {
 	Tcl_Free(name);
 	return self;
     }
-    hPtr = Tcl_FindHashEntry(&d->names, name);
     if (hPtr == NULL) {
 	ERR(interp, "UNKNOWN", "unknown type \"%s\"", name);
     } else {
@@ -2252,8 +2728,10 @@ TclTypesFinish(Tcl_Interp *interp, TypeData *d, const char *selfName,
 
 		/* Un nom de variante ne doit pas être aussi un nom de type. */
 
-		if (Tcl_FindHashEntry(&d->names, nm) != NULL
-			|| (selfName != NULL && strcmp(nm, selfName) == 0)) {
+		int isSelf = 0;
+
+		if (TclTypesFindName(interp, d, &d->names, nm, -1, selfName,
+			&isSelf) != NULL || isSelf) {
 		    ERR(interp, "SYNTAX", "variant name \"%s\" is also a type "
 			    "name", nm);
 		    goto fail;
@@ -2349,18 +2827,26 @@ TclTypeParse(Tcl_Interp *interp, const char *text, Tcl_Size len)
      * Valable tant que les noms ne changent pas (gen) ; borné.
      */
     if (env.d != NULL && len > 0 && len < 200) {
-	char key[200];
+	char key[248];
 	Tcl_HashEntry *hPtr;
-	int isNew;
+	int isNew, pre = 0;
 
+	TclTypesSync(env.d);
 	if (env.d->parsedGen != env.d->gen
 		|| env.d->parsed.numEntries > 4096) {
 	    Tcl_DeleteHashTable(&env.d->parsed);
 	    Tcl_InitHashTable(&env.d->parsed, TCL_STRING_KEYS);
 	    env.d->parsedGen = env.d->gen;
 	}
-	memcpy(key, text, (size_t) len);
-	key[len] = '\0';
+	if (env.d->nNs > 0 && interp != NULL) {
+	    /* v16u : le même texte se résout selon l'espace courant */
+	    Namespace *ns = CtxNs(interp, env.d);
+
+	    pre = snprintf(key, 48, "\2%zx.%zx\2", (size_t) ns->nsId,
+		    (size_t) ns->resolverEpoch);
+	}
+	memcpy(key + pre, text, (size_t) len);
+	key[pre + len] = '\0';
 	if (memchr(text, '\0', (size_t) len) == NULL) {
 	    hPtr = Tcl_FindHashEntry(&env.d->parsed, key);
 	    if (hPtr != NULL) {
@@ -3013,10 +3499,18 @@ CIdent(const char *s, Tcl_DString *ds)
     const unsigned char *p = (const unsigned char *) s;
     int i;
 
+    while (p[0] == ':' && p[1] == ':') {
+	p += 2;			/* v16u : ::geom::point -> geom_point */
+    }
     if (*p >= '0' && *p <= '9') {
 	Tcl_DStringAppend(ds, "_", 1);
     }
     while (*p) {
+	if (p[0] == ':' && p[1] == ':') {
+	    Tcl_DStringAppend(ds, "_", 1);
+	    p += 2;
+	    continue;
+	}
 	if ((*p >= 'a' && *p <= 'z') || (*p >= 'A' && *p <= 'Z')
 		|| (*p >= '0' && *p <= '9') || *p == '_') {
 	    Tcl_DStringAppend(ds, (const char *) p, 1);
@@ -3506,7 +4000,35 @@ CEmitNamed(CGen *g, TclType *tp)
     memset(nm, 0, sizeof(*nm));
     Tcl_SetHashValue(h, nm);
     Tcl_DStringInit(&cn);
-    CIdent(tp->name, &cn);
+    {
+	/*
+	 * v16u : le nom C d'un type d'un espace de noms est son dernier mot
+	 * (::math::geometry::point -> point), comme namespace tail ; si un
+	 * autre type déjà exporté a le même, le nom qualifié
+	 * (math_geometry_point).
+	 */
+	const char *tail = tp->name, *q;
+	Tcl_HashSearch hs;
+	Tcl_HashEntry *e;
+
+	for (q = tp->name; q[0] != '\0'; q++) {
+	    if (q[0] == ':' && q[1] == ':') {
+		tail = q + 2;
+	    }
+	}
+	CIdent(tail, &cn);
+	for (e = Tcl_FirstHashEntry(&g->done, &hs); tail != tp->name
+		&& e != NULL; e = Tcl_NextHashEntry(&hs)) {
+	    CGenNamed *o = (CGenNamed *) Tcl_GetHashValue(e);
+
+	    if (o != nm && o->cname != NULL
+		    && strcmp(o->cname, Tcl_DStringValue(&cn)) == 0) {
+		Tcl_DStringSetLength(&cn, 0);
+		CIdent(tp->name, &cn);
+		break;
+	    }
+	}
+    }
     nm->cname = (char *) Tcl_Alloc(Tcl_DStringLength(&cn) + 1);
     strcpy(nm->cname, Tcl_DStringValue(&cn));
     nm->busy = 1;
@@ -3943,10 +4465,17 @@ DefinitionText(Tcl_Interp *interp, Tcl_Obj *obj, Tcl_DString *ds)
 }
 
 static int
-CheckNewName(Tcl_Interp *interp, TypeData *d, const char *name)
+CheckNewName(Tcl_Interp *interp, TypeData *d, const char *full)
 {
-    const char *q;
+    const char *q, *name = full;
 
+    /* v16u : NAME est déjà qualifié (::geom::point) ; seul le dernier mot
+     * est un nom de type (l'espace de noms est celui de Tcl). */
+    for (q = full; q[0] != '\0'; q++) {
+	if (q[0] == ':' && q[1] == ':') {
+	    name = q + 2;
+	}
+    }
     if (name[0] == '\0') {
 	ERR(interp, "NAME", "empty type name");
 	return TCL_ERROR;
@@ -3970,12 +4499,12 @@ CheckNewName(Tcl_Interp *interp, TypeData *d, const char *name)
 		"parameter, as in {type}T");
 	return TCL_ERROR;
     }
-    if (Tcl_FindHashEntry(&d->generics, name) != NULL) {
-	ERR(interp, "NAME", "type \"%s\" is already defined", name);
+    if (Tcl_FindHashEntry(&d->generics, full) != NULL) {
+	ERR(interp, "NAME", "type \"%s\" is already defined", full);
 	return TCL_ERROR;
     }
-    if (Tcl_FindHashEntry(&d->names, name) != NULL) {
-	ERR(interp, "NAME", "type \"%s\" is %s", name,
+    if (Tcl_FindHashEntry(&d->names, full) != NULL) {
+	ERR(interp, "NAME", "type \"%s\" is %s", full,
 		strcmp(name, "int") == 0 || strcmp(name, "double") == 0
 		|| strcmp(name, "string") == 0 || strcmp(name, "list") == 0
 		|| strcmp(name, "dict") == 0 || strcmp(name, "array") == 0
@@ -4082,14 +4611,12 @@ TypeConvertCmd(Tcl_Interp *interp, TypeData *d, Tcl_Obj *fromObj,
 	    const char *nm = Tcl_GetString(objs[i]);
 	    const char *dot = strrchr(nm, '.');
 
-	    if (dot != NULL && Tcl_FindHashEntry(&d->names, nm) == NULL) {
-		Tcl_DString sd;
+	    if (dot != NULL && TclTypesFindName(interp, d, &d->names, nm, -1,
+		    NULL, NULL) == NULL) {
 		Tcl_HashEntry *h;
 
-		Tcl_DStringInit(&sd);
-		Tcl_DStringAppend(&sd, nm, dot - nm);
-		h = Tcl_FindHashEntry(&d->names, Tcl_DStringValue(&sd));
-		Tcl_DStringFree(&sd);
+		h = TclTypesFindName(interp, d, &d->names, nm, dot - nm, NULL,
+			NULL);
 		if (h != NULL && Tcl_GetHashValue(h) != NULL
 			&& ((TclType *) Tcl_GetHashValue(h))->kind == TCLT_SUM) {
 		    vs[i] = (TclType *) Tcl_GetHashValue(h);
@@ -4124,13 +4651,16 @@ TypeConvertCmd(Tcl_Interp *interp, TypeData *d, Tcl_Obj *fromObj,
     }
     for (i = 0; i < 2; i++) {
 	const char *nm = Tcl_GetString(objs[i]);
-	Tcl_HashEntry *h = Tcl_FindHashEntry(&d->names, nm);
+	Tcl_HashEntry *h = TclTypesFindName(interp, d, &d->names, nm, -1,
+		NULL, NULL);
 
 	if (h != NULL && Tcl_GetHashValue(h) != NULL) {
 	    snprintf(side[i], sizeof(side[i]), "%s",
 		    ((TclType *) Tcl_GetHashValue(h))->name);
-	} else if (Tcl_FindHashEntry(&d->generics, nm) != NULL) {
-	    snprintf(side[i], sizeof(side[i]), "@%s", nm);
+	} else if ((h = TclTypesFindName(interp, d, &d->generics, nm, -1,
+		NULL, NULL)) != NULL) {
+	    snprintf(side[i], sizeof(side[i]), "@%s",
+		    (const char *) Tcl_GetHashKey(&d->generics, h));
 	} else {
 	    ERR(interp, "UNKNOWN", "type convert needs two defined types or "
 		    "type families, not \"%s\"", nm);
@@ -7925,6 +8455,20 @@ TypeObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
 	    TclVecFree(&keep);
 	    return TCL_ERROR;
 	}
+	{
+	    /* v16u : le nom sous lequel le type est rangé (::geom::point) */
+	    Tcl_DString qd;
+
+	    if (TclTypesQualify(interp, d, Tcl_GetString(nameObj), &qd)
+		    != TCL_OK) {
+		TclVecFree(&keep);
+		return TCL_ERROR;
+	    }
+	    nameObj = Tcl_NewStringObj(Tcl_DStringValue(&qd),
+		    Tcl_DStringLength(&qd));
+	    Tcl_DStringFree(&qd);
+	    TclVecAdd(&keep, nameObj);
+	}
 	rc = TypeDefine(interp, d, nameObj, objv[3], isAlias);
 	if (rc == TCL_OK && !isAlias
 		&& strchr(Tcl_GetString(nameObj), '(') == NULL) {
@@ -8017,7 +8561,36 @@ TypeObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
 	return rc;
     }
     if (strcmp(sub, "forget") == 0) {
-	return TypeForgetCmd(interp, d, objc - 2, objv + 2);
+	{
+	    /* v16u : chaque nom résolu en son nom rangé (::geom::point) */
+	    Tcl_Size i, n = objc - 2;
+	    Tcl_Obj **keys = (Tcl_Obj **) Tcl_Alloc(
+		    (n > 0 ? n : 1) * sizeof(Tcl_Obj *));
+	    int rc;
+
+	    for (i = 0; i < n; i++) {
+		const char *nm = Tcl_GetString(objv[i + 2]);
+		Tcl_HashEntry *h = TclTypesFindName(interp, d, &d->names, nm,
+			-1, NULL, NULL);
+		Tcl_HashTable *t = &d->names;
+
+		if (h == NULL) {
+		    h = TclTypesFindName(interp, d, &d->generics, nm, -1, NULL,
+			    NULL);
+		    t = &d->generics;
+		}
+		keys[i] = (h != NULL) ? Tcl_NewStringObj(
+			(const char *) Tcl_GetHashKey(t, h), TCL_AUTO_LENGTH)
+			: objv[i + 2];
+		Tcl_IncrRefCount(keys[i]);
+	    }
+	    rc = TypeForgetCmd(interp, d, n, keys);
+	    for (i = 0; i < n; i++) {
+		Tcl_DecrRefCount(keys[i]);
+	    }
+	    Tcl_Free(keys);
+	    return rc;
+	}
     }
     if (strcmp(sub, "convert") == 0) {
 	if (objc != 5) {
@@ -8749,6 +9322,7 @@ TclTypesInit(Tcl_Interp *interp)
 	d->uid = ++uids;
 	d->gen = 1;
     }
+    d->refs = 1;
     Tcl_InitHashTable(&d->names, TCL_STRING_KEYS);
     Tcl_InitHashTable(&d->generics, TCL_STRING_KEYS);
     Tcl_InitHashTable(&d->instances, TCL_STRING_KEYS);
@@ -9405,8 +9979,38 @@ CastWordUnfold(Tcl_Interp *interp, Tcl_Obj *word)
  * *typedArgsPtr : la liste d'arguments est un produit (la procédure est
  * alors créée avec la liste « args », la signature lie les champs).
  */
+static int TypedProcSig(Tcl_Interp *interp, Tcl_Obj *nameObj,
+	Tcl_Obj *argsObj, void **sigPtr, int *typedArgsPtr);
+
+/*
+ * v16u : les types d'une signature se lisent dans l'espace de noms de la
+ * procédure (proc {point}::geom::mk {...} : ::geom::point), comme son corps.
+ */
 int
 TclTypedProcSig(Tcl_Interp *interp, Tcl_Obj *nameObj, Tcl_Obj *argsObj,
+	void **sigPtr, int *typedArgsPtr)
+{
+    TypeData *d = GetData(interp);
+    Namespace *nsPtr = NULL, *altNsPtr, *cxtNsPtr, *save;
+    const char *simple;
+    int rc;
+
+    if (d == NULL) {
+	return TypedProcSig(interp, nameObj, argsObj, sigPtr, typedArgsPtr);
+    }
+    TclGetNamespaceForQualName(interp, TclGetString(nameObj), NULL, 0,
+	    &nsPtr, &altNsPtr, &cxtNsPtr, &simple);
+    save = d->ctxNs;
+    if (nsPtr != NULL) {
+	d->ctxNs = nsPtr;
+    }
+    rc = TypedProcSig(interp, nameObj, argsObj, sigPtr, typedArgsPtr);
+    d->ctxNs = save;
+    return rc;
+}
+
+static int
+TypedProcSig(Tcl_Interp *interp, Tcl_Obj *nameObj, Tcl_Obj *argsObj,
 	void **sigPtr, int *typedArgsPtr)
 {
     Tcl_Obj *ret = NULL, *top = NULL, *popped, *uopt = NULL, *upos = NULL;

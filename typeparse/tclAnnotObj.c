@@ -67,20 +67,29 @@ TclVecFree(TclObjVec *vec)
  * Type d'objet "typeref" : le T résolu
  * -------------------------------------------------------------------- */
 
+static Tcl_FreeInternalRepProc	FreeTypeRef;
 static Tcl_DupInternalRepProc	DupTypeRef;
 static Tcl_UpdateStringProc	UpdateStringOfTypeRef;
 static Tcl_SetFromAnyProc	SetTypeRefFromAny;
 
 static const Tcl_ObjType typeRefObjType = {
-    "typeref", NULL, DupTypeRef, UpdateStringOfTypeRef, SetTypeRefFromAny,
-    TCL_OBJTYPE_V0
+    "typeref", FreeTypeRef, DupTypeRef, UpdateStringOfTypeRef,
+    SetTypeRefFromAny, TCL_OBJTYPE_V0
 };
+
+/* v16u : une référence de type garde la table de son type en vie. */
+static void
+FreeTypeRef(Tcl_Obj *objPtr)
+{
+    TclTypeRelease((const TclType *) objPtr->internalRep.twoPtrValue.ptr1);
+}
 
 static void
 DupTypeRef(Tcl_Obj *srcPtr, Tcl_Obj *dupPtr)
 {
     Tcl_ObjInternalRep ir;
 
+    TclTypeHold((const TclType *) srcPtr->internalRep.twoPtrValue.ptr1);
     ir.twoPtrValue.ptr1 = srcPtr->internalRep.twoPtrValue.ptr1;
     ir.twoPtrValue.ptr2 = srcPtr->internalRep.twoPtrValue.ptr2;
     Tcl_StoreInternalRep(dupPtr, &typeRefObjType, &ir);
@@ -128,7 +137,19 @@ DeleteRefData(void *clientData, Tcl_Interp *interp)
     }
     for (hPtr = Tcl_FirstHashEntry(&rd->refs, &search); hPtr != NULL;
 	    hPtr = Tcl_NextHashEntry(&search)) {
-	Tcl_DecrRefCount((Tcl_Obj *) Tcl_GetHashValue(hPtr));
+	Tcl_Obj *t = (Tcl_Obj *) Tcl_GetHashValue(hPtr);
+	TclType *tp = (TclType *) t->internalRep.twoPtrValue.ptr1;
+	int k;
+
+	/* v16u : le type peut survivre à cet interpréteur (sa table est
+	 * gardée par les valeurs) ; son cache ne doit pas garder un objet
+	 * libéré. t garde la table en vie jusqu'à sa libération. */
+	for (k = 0; k < 8; k++) {
+	    if (tp->refCache[k] == t) {
+		tp->refCache[k] = NULL;
+	    }
+	}
+	Tcl_DecrRefCount(t);
     }
     Tcl_DeleteHashTable(&rd->refs);
     while (rd->nFresh > 0) {
@@ -180,6 +201,7 @@ TypeRefObj(Tcl_Interp *interp, TclType *tp, int variant)
 	return tPtr;
     }
     tPtr = Tcl_NewObj();
+    TclTypeHold(tp);
     ir.twoPtrValue.ptr1 = tp;
     ir.twoPtrValue.ptr2 = (void *) (intptr_t) (variant + 1);
     Tcl_StoreInternalRep(tPtr, &typeRefObjType, &ir);
@@ -819,6 +841,7 @@ NewTypeRefNoCache(TclType *tp, int variant)
     }
     tPtr = Tcl_NewObj();
 
+    TclTypeHold(tp);
     ir.twoPtrValue.ptr1 = tp;
     ir.twoPtrValue.ptr2 = (void *) (intptr_t) (variant + 1);
     Tcl_StoreInternalRep(tPtr, &typeRefObjType, &ir);
@@ -4413,6 +4436,7 @@ NewCompactBuf(TclType *et, TclCompactLayout *lay, Tcl_Size cap)
     b->elemType = et->name;
     b->refCount = 1;
     b->et = et;
+    TclTypeHold(et);			/* v16u : b->et, b->elemType */
     b->lay = lay;
     b->norm = 0;
     lay->refCount++;
@@ -4425,6 +4449,7 @@ ReleaseCompactBuf(TclCompactBuf *b)
     if (--b->refCount == 0) {
 	TclCompactLayoutRelease(b->lay);
 	Tcl_Free(b->data);
+	TclTypeRelease(b->et);
 	Tcl_Free(b);
     }
 }

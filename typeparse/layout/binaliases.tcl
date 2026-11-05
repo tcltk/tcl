@@ -46,33 +46,33 @@ namespace eval ::binaliases {
 	u8 u 8   u16 u 16   u24 u 24   u32 u 32   u64 u 64
 	i8 s 8   i16 s 16   i24 s 24   i32 s 32   i64 s 64
     } {
-	::type alias $name int($sign,$bits)
+	::type alias ::$name int($sign,$bits)
 	if {$bits > 8} {
-	    ::type alias ${name}be int($sign,$bits,be)
-	    ::type alias ${name}le int($sign,$bits,le)
+	    ::type alias ::${name}be int($sign,$bits,be)
+	    ::type alias ::${name}le int($sign,$bits,le)
 	}
     }
     # FR : flottants   /   EN: floats
     foreach {name bits} {f32 32 f64 64} {
-	::type alias $name double($bits)
-	::type alias ${name}be double($bits,be)
-	::type alias ${name}le double($bits,le)
+	::type alias ::$name double($bits)
+	::type alias ::${name}be double($bits,be)
+	::type alias ::${name}le double($bits,le)
     }
     # FR : chaînes terminées par un NUL   /   EN: NUL-terminated strings
     #   cstring  : la chaîne C, en UTF-8 (ou ASCII, qui en est un sous-ensemble)
     #   wstringz : la chaîne « large » de Windows (UTF-16 little-endian)
     #   latin1z  : texte ISO 8859-1, vieux formats
-    ::type alias cstring  string(utf-8,z)
-    ::type alias wstringz string(utf-16le,z)
-    ::type alias latin1z  string(latin1,z)
+    ::type alias ::cstring  string(utf-8,z)
+    ::type alias ::wstringz string(utf-16le,z)
+    ::type alias ::latin1z  string(latin1,z)
 
     # FR : « rien » (0 octet) et « une valeur ou rien » : la présence d'un lien.
     #      opt(T) vaut {T}some ou none. Un lien nul vers opt(T) est none
     #      (voir noyau/CONCEPTION-lien.md).
     # EN : "nothing" (0 bytes) and "a value or nothing": the presence of a link.
     #      opt(T) is {T}some or none. A null link to opt(T) is none.
-    ::type def unit {""}
-    ::type def {opt({type}T)} {{$T}some, {unit}none}
+    ::type def ::unit {""}
+    ::type def {::opt({type}T)} {{$T}some, {unit}none}
 
     # FR : liens : l'adresse est un entier, la valeur est ce qu'il désigne.
     #      ptr32(T) / ptr64(T) : offset depuis le début des données ;
@@ -84,10 +84,10 @@ namespace eval ::binaliases {
     #      rel32(T): signed offset from the field itself;
     #      sub32(T): offset from the start of the enclosing structure.
     #      For a link that may be null: ptr32(opt(T)), value "some" or none.
-    ::type alias {ptr32({type}T)} {*(//,u32le,null).$T}
-    ::type alias {ptr64({type}T)} {*(//,u64le,null).$T}
-    ::type alias {rel32({type}T)} {*(.,i32le).$T}
-    ::type alias {sub32({type}T)} {*(./,u32le).$T}
+    ::type alias {::ptr32({type}T)} {*(//,u32le,null).$T}
+    ::type alias {::ptr64({type}T)} {*(//,u64le,null).$T}
+    ::type alias {::rel32({type}T)} {*(.,i32le).$T}
+    ::type alias {::sub32({type}T)} {*(./,u32le).$T}
 }
 
 package provide binaliases 0.2

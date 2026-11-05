@@ -13,12 +13,16 @@ proc cs::init {{lib ""}} {
     variable dir
     if {$lib eq ""} {set lib [file join $dir cstruct[info sharedlibextension]]}
     ::load $lib Cstruct
+    # Types globaux (::Sample) : ils portent le nom des structs C, et le
+    # programme qui charge cstruct s'en sert sous ce nom. Sans "::", ils
+    # seraient ::cs::Sample (v16u : un type appartient à l'espace de noms
+    # où il est défini).
     # struct Sample { uint32_t id; double value; uint8_t flags; };
-    type def Sample {{u32le}id; {f64le}value; {u8}flags}
+    type def ::Sample {{u32le}id; {f64le}value; {u8}flags}
     # struct Batch  { uint32_t n; Sample items[]; };
-    type def Batch {{u32le}n; {list($n).Sample}items}
+    type def ::Batch {{u32le}n; {list($n).Sample}items}
     # struct Summary { uint32_t count; double min, max, mean; };
-    type def Summary {{u32le}count; {f64le}min; {f64le}max; {f64le}mean}
+    type def ::Summary {{u32le}count; {f64le}min; {f64le}max; {f64le}mean}
 }
 
 # FR : voie rapide : le produit est encodé selon la disposition C et lu tel quel

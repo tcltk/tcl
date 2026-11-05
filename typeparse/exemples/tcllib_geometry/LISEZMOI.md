@@ -205,9 +205,11 @@ enveloppe par argument) et la libérer.
   était un seul élément de liste (« règle B »), et les procédures publiques devaient rendre
   `{*}point` (dépliage, v16r) ; ce n'est plus nécessaire, et les 18 `{*}` ont été retirés. La
   vérification au retour coûte 0,3 à 0,9 µs par appel (`p 1 2` : 0,99 → 1,46 µs).
-- **Les noms de types n'ont pas d'espace de noms** : `point`, `line`, `polyline` sont globaux à
-  l'interpréteur ; un paquet qui les définit les impose à son hôte (ou les nomme `geometry_point`).
-  À traiter avant d'utiliser les types dans une bibliothèque.
+- **Les types sont dans l'espace du paquet** (v16u) : `::math::geometry::point`, `line`,
+  `polyline`… ; les procédures du paquet les nomment `point`, un programme les nomme
+  `math::geometry::point` ou fait `namespace path ::math::geometry` (comme `bench.tcl`). Jusqu'à
+  la v16t, ils étaient globaux à l'interpréteur et s'imposaient à l'hôte. `type {c!}export point
+  line` donne toujours les structs `point` et `line` (le dernier mot du nom).
 - **Les priorités d'optimisation** (prototype) : la liaison des arguments scalaires et des produits
   faits de listes ; l'enveloppement des éléments d'une `list.double` (inutile pour une boucle qui
   ne fait que de l'arithmétique) ; l'affectation à une locale `{double}` d'une valeur déjà
