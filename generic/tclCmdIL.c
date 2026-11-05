@@ -2169,7 +2169,7 @@ Tcl_JoinObjCmd(
     } else if (TclObjTypeHasProc(objv[1], getElementsProc)) {
 	/* Has a getElementsProc, use it */
 	listLen = TclObjTypeLength(objv[1]);
-	if (listLen > 1 && TclObjTypeGetElements(interp, objv[1],
+	if (listLen > 0 && TclObjTypeGetElements(interp, objv[1],
 		&listLen, &elemPtrs) != TCL_OK) {
 	    return TCL_ERROR;
 	}
@@ -2674,6 +2674,9 @@ Tcl_LpopObjCmd(
 	Tcl_ObjTypeSetElement *proc = TclObjTypeHasProc(listPtr, setElementProc);
 	if (proc) {
 	    newListPtr = proc(interp, listPtr, objc-2, objv+2, NULL);
+	    if (newListPtr) {
+		Tcl_IncrRefCount(newListPtr);
+	    }
 	} else {
 	    newListPtr = TclLsetFlat(interp, listPtr, objc-2, objv+2, NULL);
 	}
@@ -4295,7 +4298,7 @@ Tcl_LsetObjCmd(
     if (objc == 4) {
 	finalValuePtr = TclLsetList(interp, listPtr, objv[2], objv[3]);
     } else {
-	if (TclObjTypeHasProc(listPtr, setElementProc)) {
+	if (objc > 3 && TclObjTypeHasProc(listPtr, setElementProc)) {
 	    finalValuePtr = TclObjTypeSetElement(interp, listPtr,
 		    objc-3, objv+2, objv[objc-1]);
 	    if (finalValuePtr) {
