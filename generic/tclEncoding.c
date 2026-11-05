@@ -5491,23 +5491,23 @@ Utf8procErrorToTclError(
     switch (errcode) {
     case UTF8PROC_ERROR_NOMEM:
 	// Memory allocation failure can use the standard Tcl code.
-	Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "MEMORY", (char *)NULL);
 	break;
     case UTF8PROC_ERROR_OVERFLOW:
-	Tcl_SetErrorCode(interp, "TCL", "UNICODE", "OVERFLOW", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "UNICODE", "OVERFLOW", (char *)NULL);
 	break;
     case UTF8PROC_ERROR_INVALIDUTF8:
-	Tcl_SetErrorCode(interp, "TCL", "UNICODE", "INVALIDUTF8", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "UNICODE", "INVALIDUTF8", (char *)NULL);
 	break;
     case UTF8PROC_ERROR_NOTASSIGNED:
-	Tcl_SetErrorCode(interp, "TCL", "UNICODE", "NOTASSIGNED", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "UNICODE", "NOTASSIGNED", (char *)NULL);
 	break;
     case UTF8PROC_ERROR_INVALIDOPTS:
-	Tcl_SetErrorCode(interp, "TCL", "UNICODE", "INVALIDOPTS", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "UNICODE", "INVALIDOPTS", (char *)NULL);
 	break;
     default:
 	// Shouldn't happen...
-	Tcl_SetErrorCode(interp, "TCL", "UNICODE", "UNKNOWN", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "UNICODE", "UNKNOWN", (char *)NULL);
 	break;
     }
 }

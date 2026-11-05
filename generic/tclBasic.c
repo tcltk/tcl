@@ -8463,7 +8463,7 @@ DivModObjCmd(
     }
     if (typeX != TCL_NUMBER_INT && typeX != TCL_NUMBER_BIG) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf("dividend must be an integer"));
-	Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", (char *)NULL);
 	return TCL_ERROR;
     }
 
@@ -8472,7 +8472,7 @@ DivModObjCmd(
     }
     if (typeY != TCL_NUMBER_INT && typeY != TCL_NUMBER_BIG) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf("divisor must be an integer"));
-	Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", (char *)NULL);
 	return TCL_ERROR;
     }
 
@@ -8554,11 +8554,11 @@ DivModObjCmd(
 
   divZero:
     Tcl_SetObjResult(interp, Tcl_ObjPrintf("divide by zero"));
-    Tcl_SetErrorCode(interp, "ARITH", "DIVZERO", "divide by zero", NULL);
+    Tcl_SetErrorCode(interp, "ARITH", "DIVZERO", "divide by zero", (char *)NULL);
     return TCL_ERROR;
   outOfMemory:
     Tcl_SetObjResult(interp, Tcl_ObjPrintf("cannot allocate"));
-    Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
+    Tcl_SetErrorCode(interp, "TCL", "MEMORY", (char *)NULL);
     return TCL_ERROR;
 }
 
