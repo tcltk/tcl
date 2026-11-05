@@ -457,7 +457,7 @@ TestplatformChmod(
     res = -1; /* Assume failure */
 
     Tcl_DStringInit(&ds);
-    Tcl_UtfToChar16DString(nativePath, -1, &ds);
+    Tcl_UtfToWCharDString(nativePath, -1, &ds);
 
     attr = GetFileAttributesW((WCHAR *)Tcl_DStringValue(&ds));
     if (attr == 0xFFFFFFFF) {
@@ -778,7 +778,7 @@ TestfilesddlCmd (
 	goto vamoose;
     }
 
-    (void)Tcl_Char16ToUtfDString(sddlPtr, -1, &ds);
+    Tcl_WCharToUtfDString(sddlPtr, -1, &ds);
     /* The original sddl is returned in all cases */
     Tcl_DStringResult(interp, &ds);
 
@@ -788,7 +788,7 @@ TestfilesddlCmd (
 	secdPtr = NULL;
 	Tcl_Size utflen;
 	const char *utfPtr = Tcl_GetStringFromObj(objv[2], &utflen);
-	WCHAR *newSddl = (WCHAR *) Tcl_UtfToChar16DString(utfPtr, utflen, &ds);
+	WCHAR *newSddl = Tcl_UtfToWCharDString(utfPtr, utflen, &ds);
 	if (!ConvertStringSecurityDescriptorToSecurityDescriptorW(newSddl,
 		    SDDL_REVISION_1, &secdPtr, NULL)) {
 	    err = GetLastError();
