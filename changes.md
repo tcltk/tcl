@@ -43,13 +43,40 @@ to the userbase.
  - [test portability for illumos: skip socket-14.19 where SO_REUSEPORT is not supported](https://core.tcl-lang.org/tcl/tktview/dbf988)
  - [lset with several indices on an abstract list (lseq) used a freed sublist](https://core.tcl-lang.org/tcl/tktview/526b01)
  - [lset errors during appending operation left original list modified](https://core.tcl-lang.org/tcl/tktview/301934)
+ - [http.test: use a port just released by the OS for badurl](https://core.tcl-lang.org/tcl/tktview/5350f3)
+ - [the regexp engine could overflow the C stack on deeply nested REs](https://core.tcl-lang.org/tcl/tktview/7d47ba)
+ - [[clock scan] put the half-hour time zones 30 minutes off](https://core.tcl-lang.org/tcl/tktview/e580d8)
+ - [safe interp got the parent's -errorinfo and -errorstack through a failing alias](https://core.tcl-lang.org/tcl/tktview/a63f5a)
+ - [threaded allocator could not be disabled with -DUSE_THREAD_ALLOC=0 or nmake OPTS=tclalloc](https://core.tcl-lang.org/tcl/tktview/31294d)
+ - [win/configure: --with-system-zlib and --with-system-libtommath](https://core.tcl-lang.org/tcl/tktview/ac3ea8)
+ - [Windows: make distclean left tcl.pc behind](https://core.tcl-lang.org/tcl/tktview/59a9b9)
+ - [Windows: native MSYS2/Cygwin builds no longer need an installed tclsh](https://core.tcl-lang.org/tcl/tktview/2ef343)
+ - [build failure on Alpine Linux (musl): no sys/queue.h](https://core.tcl-lang.org/tcl/tktview/3ff2d7)
+ - [exec hangs, iff stdin & stdout both were previously closed.](https://core.tcl-lang.org/tcl/tktview/21dbc6)
+ - [viewport meta tag in the generated HTML pages for mobile browsers](https://core.tcl-lang.org/tcl/tktview/7f6005)
+ - [no longer replace "::" in manual page with "_" on installation](https://core.tcl-lang.org/tcl/tktview/0ef68e)
+ - [tcl_startOfPreviousWord ignores the last character when start is the string length](https://core.tcl-lang.org/tcl/tktview/3e7c4a)
+ - [glob matching can take exponential time](https://core.tcl-lang.org/tcl/tktview/a4a7f2)
+ - [Make packages work in an out-of-tree build with "configure --srcdir=..."](https://core.tcl-lang.org/tcl/tktview/17ffc4)
+ - [tclLoadDl.c dlerror() is not thread safe"](https://core.tcl-lang.org/tcl/tktview/196763)
+ - [msgcat did not check the locales](https://core.tcl-lang.org/tcl/tktview/2f8bb4)
+ - [-Wformat warnings with MSYS2 UCRT64](https://core.tcl-lang.org/tcl/tktview/ae62ba)
+ - [error deleting: file already exists on Vista](https://core.tcl-lang.org/tcl/tktview/3006571)
+ - [lset on empty list is allowed when index argument is large](https://core.tcl-lang.org/tcl/tktview/13d3c0d)
+ - [missing locks, when transferring a channel to another thread](https://core.tcl-lang.org/tcl/tktview/815e24)
+ - [epoll notifier spins and never reports writable after EPOLLERR](https://core.tcl-lang.org/tcl/tktview/7aa8fd)
+ - [don't wait in a blocking "gets" on a channel with a reflected transform](https://core.tcl-lang.org/tcl/tktview/d48728)
+ - [Unsetting env vars in slave interps](https://core.tcl-lang.org/tcl/tktview/845241)
+ - [Memory corruption false positive with TCL_MEM_DEBUG](https://core.tcl-lang.org/tcl/tktview/7e3f26)
+ - [Windows: [file delete -force] failed on a directory containing a symbolic link](https://core.tcl-lang.org/tcl/tktview/08203e)
+ - [lpop/lset/join crashes with abstract lists](https://core.tcl-lang.org/tcl/tktview/409a4e)
 
 # Updated bundled packages, libraries, standards, data
  - http 2.10.3
  - msgcat 1.7.2
- - tzcode 2026e
-
-# Updated bundled packages, libraries, standards, data
+ - tcltest 2.6.1
+ - tcl::idna 1.0.2
+ - tzdata 2026f
 
 Release Tcl 9.1.0 arises from the check-in with tag `core-9-1-0`.
 
@@ -113,4 +140,4 @@ for list operations on large lists.
 
 # Updated bundled packages, libraries, standards, data
  - Unicode 18.0.0
- - platorm 1.2.0: Add support for musl C runtime
+ - platform 1.2.0: Add support for musl C runtime

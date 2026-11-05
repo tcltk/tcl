@@ -36589,6 +36589,11 @@ test clock-34.20.21 {clock scan tests (local date of base depends on given TZ, t
 	 [clock scan "23:59:59 -0100" -base 0 -timezone -1400] \
 	 [clock scan "23:59:59 -0100" -base 0 -timezone :Pacific/Apia]
 } {89999 89999 3599 3599}
+test clock-34.20.22 {clock scan tests (half-hour TZ), bug [e580d8372b]} {
+    lmap tz {nft nst ndt it ist jt cast cadt} {
+	clock format [clock scan "12:00 $tz" -base 0 -gmt true] -format %H:%M -gmt true
+    }
+} {15:30 15:30 14:30 08:30 06:30 04:30 02:30 01:30}
 
 
 # CLOCK SCAN REAL TESTS

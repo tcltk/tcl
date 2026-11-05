@@ -190,6 +190,8 @@ TclMacOSXGetFileAttribute(
     case MACOSX_RSRCLENGTH_ATTRIBUTE:
 	TclNewIntObj(*attributePtrPtr, *rsrcForkSize);
 	break;
+    default:
+	TCL_UNREACHABLE();
     }
     return TCL_OK;
 #else
@@ -298,6 +300,8 @@ TclMacOSXSetFileAttribute(
 		finder->fdFlags &= ~kFinfoIsInvisible;
 	    }
 	    break;
+	default:
+	    TCL_UNREACHABLE();
 	}
 
 	result = setattrlist(native, &alist,
@@ -400,7 +404,7 @@ TclMacOSXCopyFileAttributes(
 				/* Stat info for source file */
 {
     /*
-     * FIFOs do not have attributes, moreover calling copyfile() 
+     * FIFOs do not have attributes, moreover calling copyfile()
      * could cause a blocking deadlock in the macOS VFS layer,
      * see [7b4a819535231639].
      */

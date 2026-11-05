@@ -1000,6 +1000,8 @@ Tcl_ExecObjCmd(
 		Tcl_FreeEncoding(encoding);
 	    }
 	    break;
+	default:
+	    TCL_UNREACHABLE();
 	}
     }
     if (objc <= skip) {

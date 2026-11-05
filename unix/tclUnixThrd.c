@@ -11,7 +11,18 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
+#ifndef _GNU_SOURCE
+#   define _GNU_SOURCE		/* For pthread_getattr_np() */
+#endif
 #include "tclInt.h"
+#if defined(__FreeBSD__) || defined(__DragonFly__) || defined(__OpenBSD__)
+#   include <pthread_np.h>
+#elif defined(__sun)
+#   include <thread.h>
+#elif defined(__linux__) && !defined(__GLIBC__)
+#   include <sys/resource.h>
+#   include <sys/syscall.h>
+#endif
 
 #if TCL_THREADS
 
@@ -988,3 +999,102 @@ TclpThreadGetGlobalTSD(
  * fill-column: 78
  * End:
  */
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclpGetCStackLimit --
+ *
+ *	Determine the lowest address of the C stack of the current thread
+ *	(stacks grow down on all supported platforms), for code that needs to
+ *	protect itself against stack overflow, like the regexp engine.  The
+ *	value is cached per thread.
+ *
+ * Results:
+ *	The lowest stack address, or NULL if it cannot be determined.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+typedef struct {
+    int initialized;
+    const char *limit;
+} StackLimitData;
+static Tcl_ThreadDataKey stackLimitKey;
+
+const char *
+TclpGetCStackLimit(void)
+{
+    StackLimitData *dataPtr = (StackLimitData *)
+	    Tcl_GetThreadData(&stackLimitKey, sizeof(StackLimitData));
+
+    if (!dataPtr->initialized) {
+	const char *limit = NULL;
+#if defined(__APPLE__)
+	pthread_t self = pthread_self();
+
+	limit = (const char *) pthread_get_stackaddr_np(self)
+		- pthread_get_stacksize_np(self);
+#elif defined(__OpenBSD__)
+	stack_t ss;
+
+	if (pthread_stackseg_np(pthread_self(), &ss) == 0) {
+	    limit = (const char *) ss.ss_sp - ss.ss_size;
+	}
+#elif defined(__sun)
+	stack_t ss;
+
+	if (thr_stksegment(&ss) == 0) {
+	    limit = (const char *) ss.ss_sp - ss.ss_size;
+	}
+#elif defined(__GLIBC__) || defined(__NetBSD__) \
+	|| defined(__FreeBSD__) || defined(__DragonFly__)
+	pthread_attr_t attr;
+	void *addr;
+	size_t size;
+	int ok;
+
+	pthread_attr_init(&attr);
+#   if defined(__FreeBSD__) || defined(__DragonFly__)
+	ok = (pthread_attr_get_np(pthread_self(), &attr) == 0);
+#   else
+	ok = (pthread_getattr_np(pthread_self(), &attr) == 0);
+#   endif
+	if (ok && pthread_attr_getstack(&attr, &addr, &size) == 0) {
+	    limit = (const char *) addr;
+	}
+	pthread_attr_destroy(&attr);
+#elif defined(__linux__)
+	/*
+	 * Other C libraries, like musl.  Their pthread_getattr_np() may report
+	 * only the already mapped part of the main thread's stack, which grows
+	 * up to RLIMIT_STACK.
+	 */
+
+	pthread_attr_t attr;
+	void *addr;
+	size_t size;
+
+	if (pthread_getattr_np(pthread_self(), &attr) == 0) {
+	    if (pthread_attr_getstack(&attr, &addr, &size) == 0) {
+		struct rlimit rl;
+
+		if (getpid() != (pid_t) syscall(SYS_gettid)) {
+		    limit = (const char *) addr;
+		} else if (getrlimit(RLIMIT_STACK, &rl) == 0
+			&& rl.rlim_cur != RLIM_INFINITY) {
+		    limit = (const char *) addr + size
+			    - (rl.rlim_cur > size ? rl.rlim_cur : size);
+		}
+	    }
+	    pthread_attr_destroy(&attr);
+	}
+#endif
+	dataPtr->limit = limit;
+	dataPtr->initialized = 1;
+    }
+    return dataPtr->limit;
+}
