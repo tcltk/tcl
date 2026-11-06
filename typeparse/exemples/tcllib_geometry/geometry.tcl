@@ -41,8 +41,8 @@ namespace eval ::math::geometry {
     type def polyline list.double
     type alias polygon polyline
     # what an intersection or a search returns: a point, or a word
-    type def intersection {{point}at, "coincident", "none"}
-    type def found        {{point}at, "none"}
+    type def intersection {{point}at | "coincident" | "none"}
+    type def found        {{point}at | "none"}
 }
 
 namespace eval ::math::geometry {

@@ -33,7 +33,7 @@ type def rectangle {{point}min; {point}max}  ;# aligné sur les axes (tcllib)
 type def cercle    {{point}centre; {double}rayon}
 type def bezier    list(4).point           ;# Bézier cubique
 type def nuage     list.point              ;# un ensemble de points
-type def inter     {"aucune", {point}en}   ;# résultat d'une intersection
+type def inter     {"aucune" | {point}en}  ;# résultat d'une intersection (union)
 
 # FR : un triangle, un carré sont des polygones : conversions explicites.
 # EN : a triangle, a square are polygons: explicit conversions.

@@ -165,7 +165,7 @@ mehr.
   haben denselben Typ.
 
     type def mix {{int}a, {var.int}b, {string}s}
-    set {mix}s1 {b}A
+    set {mix}s1 {b:}A
     type get [type deref $s1]           ;# deref(mix).b
 
     set {tree(var)}T A {{B {}} {C {}}}  ;# ein Baum, dessen Werte Verweise sind

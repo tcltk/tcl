@@ -40,7 +40,7 @@ t "type global age : aucun conflit" {set {paire}p {nom:}eve {age:}20; type get $
 t "{age} est le type age"        {show [concat {age}12]}
 
 puts "--- étiquettes de variante"
-type def {-deduce}S {{int}i, {string}s}
+type def S {{int}i, {string}s}
 t "{i:}5"                        {set {S}v {i:}5; type get $v}
 set x 7
 t "{i:}\$x"                      {set {S}w {i:}$x; type get $w}
@@ -57,7 +57,7 @@ t {set y [concat {age:}21]}      {set y [concat {age:}21]}
 
 puts "--- variante dont le nom est aussi un type global"
 type def {elf({int}n)} {list($n).int}
-type def {-deduce}exe {{int}elf, {string}pe}
+type def exe {{int}elf, {string}pe}
 t "{elf:}5"                      {set {exe}e {elf:}5; type get $e}
 
 puts "--- un nom annoté avec une substitution reste un nom"

@@ -162,7 +162,7 @@ la variabile ha IN QUELL'ISTANTE: il risultato non cambia più in seguito.
   riutilizzato: due istantanee dello stesso tipo hanno lo stesso tipo.
 
     type def mix {{int}a, {var.int}b, {string}s}
-    set {mix}s1 {b}A
+    set {mix}s1 {b:}A
     type get [type deref $s1]           ;# deref(mix).b
 
     set {tree(var)}T A {{B {}} {C {}}}  ;# albero i cui valori sono collegamenti

@@ -9,7 +9,7 @@ proc attempt {script} {
 type def c_mode {{u8}broche; {u8}mode}
 type def c_lire {{u8}broche}
 type def c_pwm  {{u8}broche; {u8}rapport}
-type def {-deduce}corps {{c_mode}1, {c_lire}3, {c_pwm}4}
+type def corps {{c_mode}1, {c_lire}3, {c_pwm}4}
 type def req {{u8}genre; {corps($genre)}corps}
 foreach octets [list "\x04\x09\x80" "\x01\x09\x01" "\x03\x0e"] {
     set r [type binary decode req $octets]

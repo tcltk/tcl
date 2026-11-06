@@ -1,0 +1,57 @@
+== S1. la variante ne passe pas par la chaîne
+K.b, même objet                          K.b
+K.b, chaîne neuve                        ERREUR: value "5" names no variant of the strict sum K: write {a:}value or {K.a}value
+list.K, chaîne neuve                     ERREUR: value "1" names no variant of the strict sum K: write {a:}value or {K.a}value
+temp.fahrenheit, chaîne                  ERREUR: value "50.0" fits variants celsius and fahrenheit of temp equally: write {celsius:}50.0, or set {temp}u(celsius) 50.0
+S.s "5", chaîne                          S.i
+S.s "5", incr                            S.i
+== S2. une valeur typée invalide
+return [list $k 3] : accepté             P
+... puis son champ k                     ERREUR: value "5" names no variant of the strict sum K: write {a:}value or {K.a}value
+type cast P : correct                    K.b
+== S3. une étiquette relit la valeur par sa chaîne
+{k:} sur un K.b                          ERREUR: value "5" is not valid for that variant of E
+sans étiquette : déduit                  K
+== S4. la durée de vie d'une étiquette dépend de la compilation
+return {a:}1                             K.a
+eval {return {a:}1}                      ERREUR: return value {K}: value "1" names no variant of the strict sum K: write {a:}value or {K.a}value
+uplevel 0 {return {a:}1}                 ERREUR: return value {K}: value "1" names no variant of the strict sum K: write {a:}value or {K.a}value
+switch -matchvar                         ERREUR: return value {K}: value "5" names no variant of the strict sum K: write {a:}value or {K.a}value
+switch sans -matchvar                    K.a
+== S5. les commandes qui reçoivent une étiquette
+set {K}k {b:}5                           K.b
+proc {{K}x} {b:}5                        K.b
+lappend L {b:}3                          ERREUR: value "3" names no variant of the strict sum K: write {a:}value or {K.a}value
+linsert $L end {b:}3                     ERREUR: value "3" names no variant of the strict sum K: write {a:}value or {K.a}value
+dict set D b {b:}2                       ERREUR: value "2" names no variant of the strict sum K: write {a:}value or {K.a}value
+list {b:}5 (perdue)                      
+set e {b:}5 (refus)                      ERREUR: local annotation {b:} cannot be stored by "set": it only applies between a caller and the command it calls
+== S6. une somme ne se lit pas comme sa variante
+lit -> {string}                          ERREUR: argument "s": unknown way to cast the value from lit to string
+S.i -> {int}                             ERREUR: argument "n": unknown way to cast the value from S to int
+type cast int S.i                        ERREUR: unknown way to cast the value from S to int
+type cast S K.a                          ERREUR: unknown way to cast the value from K to S
+expr sur S.i : permis                    10
+string length lit : permis               2
+== S7. le type d'une variante, à moitié
+set {forme.rect}f 2.0 3.0                forme.rect
+... f(w)                                 ERREUR: forme has no variant "w"
+... f(rect.w)                            2.0
+== S8. égalité et clés
+K.a 5 eq K.b 5                           1
+dict de deux clés                        1
+lsearch K.b                              0
+== S9. la variante collante
+temp.celsius : set t 50.0                temp.celsius
+S.s abc : set v 5                        S.i
+== S10. introspection
+type get                                 K.b
+type get list.K                          list<K>
+la variante seule                        ERREUR: bad subcommand "variant": must be def, alias, cast, convert, deref, export, forget, get, is, proc or binary
+type is K.b \$k                          ERREUR: wrong # args: should be "type is {question?}type|value"
+== S11. grammaire
+variante produit à un champ              ERREUR: "cercle" can only name a type, not a field or a value
+produit à un champ seul                  {double}r
+== S12. quatre régimes
+disjointe : 5, abc                       
+recouvrante, sans option                 {celsius fahrenheit}

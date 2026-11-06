@@ -11,7 +11,7 @@ list.any   : <{1 2} 5> list<any> : point double
 list.double: <3 4> list<double> : {} {}
 list(2).int: <3 4> list(2)<int> : {} {}
 dict.any   : point
-somme      : <3 4> list : {} {}
+somme      : <p {3 4}> list : {} {}
 poly       : <{0 0} {3 4}> list<point> : point point
 poly nu    : <{0 0} {3 4}> list : {} {}
 chaîne     : 1

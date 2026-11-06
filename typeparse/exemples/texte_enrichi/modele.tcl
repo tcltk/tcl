@@ -71,12 +71,12 @@ proc te::styles {table} {
     catch {type forget document bloc segment nomstyle niveau}
     type def nomstyle "\"[join [dict keys $styles] {", "}]\""
     type def niveau {"1", "2", "3"}
-    type def {-strict}segment {
+    type def segment {
 	{string}texte,
 	{{nomstyle}style; {list.segment}contenu}marque,
 	{{string}cible; {list.segment}contenu}lien
     }
-    type def {-strict}bloc {
+    type def bloc {
 	{list.segment}para,
 	{{niveau}niveau; {list.segment}contenu}titre,
 	{list.list.segment}puces,

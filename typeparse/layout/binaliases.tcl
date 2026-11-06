@@ -72,7 +72,7 @@ namespace eval ::binaliases {
     # EN : "nothing" (0 bytes) and "a value or nothing": the presence of a link.
     #      opt(T) is {T}some or none. A null link to opt(T) is none.
     ::type def ::unit {""}
-    ::type def {::opt({type}T)} {{$T}some, {unit}none}
+    ::type def {::opt({type}T)} {{$T}some, "none"}
 
     # FR : liens : l'adresse est un entier, la valeur est ce qu'il désigne.
     #      ptr32(T) / ptr64(T) : offset depuis le début des données ;

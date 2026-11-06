@@ -21,7 +21,7 @@
  * VAR_* de tclInt.h). La valeur ci-dessous est un PLACEHOLDER. */
 /* Version du prototype TIP 764 (typeparse/VERSION, maj.sh, et
  * tcl::unsupported::typesversion). */
-#define TCL_TYPES_VERSION "v16v"
+#define TCL_TYPES_VERSION "v16w"
 
 #ifndef VAR_TYPED
 #define VAR_TYPED	0x400000
@@ -162,13 +162,19 @@ struct TclType {
     int compactFields;		/* PRODUCT : un champ (ou un sous-champ) est une
 				 * liste qui peut être en cases ; 0 : pas
 				 * encore calculé, 1 : oui, -1 : non */
-    int sumMode;		/* SUM (v16m) : TCLT_SUM_DEDUCE par défaut ;
-				 * type def {-strict}S : la variante d'une
-				 * valeur nue n'est jamais devinée */
+    int sumMode;		/* SUM (v16w) : TCLT_SUM_TAGGED, une somme
+				 * (",") dont la valeur écrit sa variante
+				 * ("variante charge") ; TCLT_SUM_UNION, une
+				 * union ("|"), disjointe, dont la valeur est
+				 * la charge seule */
     struct TypeData *owner;	/* v16u : la table de types qui l'a créé */
 };
-#define TCLT_SUM_DEDUCE	0
-#define TCLT_SUM_STRICT	1
+#define TCLT_SUM_TAGGED	0
+#define TCLT_SUM_UNION	1
+/* v16w : une somme dont la valeur écrit sa variante (pas une union, pas une
+ * somme S($champ) dont la variante est dans un champ voisin) */
+#define TclSumTagged(tp) ((tp)->kind == TCLT_SUM \
+	&& (tp)->sumMode == TCLT_SUM_TAGGED && (tp)->binTag == NULL)
 
 /*
  * v16u : les descripteurs appartiennent à la table de types d'un
@@ -352,6 +358,8 @@ int	TclTypesGeneration(Tcl_Interp *interp, size_t *uidPtr, size_t *genPtr);
 typedef struct TclCompactLayout TclCompactLayout;
 int TclAnnotIsSettled(Tcl_Obj *objPtr);
 int TclAnnotFastIndex(Tcl_Obj *aPtr, int encodedIndex, Tcl_Obj **elemPtr);
+int TclSumDecode(const TclType *tp, Tcl_Obj *v, Tcl_Obj **payloadPtr);
+Tcl_Obj *TclSumMake(const TclType *tp, int v, Tcl_Obj *payload);
 Tcl_Obj *TclAnnotNumericContent(Tcl_Obj *objPtr);
 Tcl_Obj *TclAnnotIterList(Tcl_Obj *aPtr);
 Tcl_Obj *TclCompactFrom(TclType *listTp, Tcl_Obj *content);

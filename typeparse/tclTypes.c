@@ -1792,14 +1792,119 @@ TclTypeSumNeedsTag(const TclType *tp, Tcl_Obj *content, int v)
     int got = -1;
 
     if (tp == NULL || tp->kind != TCLT_SUM || v < 0
-	    || (tp->binTag != NULL && tp->binTag[0] == '=')) {
-	return 0;
+	    || (tp->binTag != NULL && tp->binTag[0] == '=') || TclSumTagged(tp)) {
+	return 0;			/* v16w : la valeur dit sa variante */
     }
     if (ValidateG(NULL, tp, TCL_ANNOT_CONTENT(content), -1, &got, NULL)
 	    != TCL_OK) {
 	return 1;
     }
     return got != v;
+}
+
+/*
+ * v16w : la valeur V d'une somme balisée (",") écrit sa variante. Une
+ * variante littérale : V est le littéral. Une variante typée : V est la
+ * liste {nom charge}. TclSumDecode rend la variante (et la charge, empruntée
+ * à V, NULL pour un littéral), ou -1 si V n'a pas cette forme.
+ */
+int
+TclSumDecode(const TclType *tp, Tcl_Obj *v, Tcl_Obj **payloadPtr)
+{
+    Tcl_Size i, n, len;
+    Tcl_Obj **ev;
+    const char *str, *nm;
+
+    if (payloadPtr != NULL) {
+	*payloadPtr = NULL;
+    }
+    v = TCL_ANNOT_CONTENT(v);
+    str = Tcl_GetStringFromObj(v, &len);
+    for (i = 0; i < tp->nfields; i++) {
+	if (tp->fields[i].type == NULL && tp->fields[i].literal != NULL
+		&& strcmp(Tcl_GetString(tp->fields[i].literal), str) == 0) {
+	    return (int) i;
+	}
+    }
+    if (len == 0 || TclListObjGetElements(NULL, v, &n, &ev) != TCL_OK
+	    || n != 2) {
+	return -1;
+    }
+    nm = Tcl_GetString(ev[0]);
+    for (i = 0; i < tp->nfields; i++) {
+	if (tp->fields[i].type != NULL && tp->fields[i].name != NULL
+		&& strcmp(Tcl_GetString(tp->fields[i].name), nm) == 0) {
+	    if (payloadPtr != NULL) {
+		*payloadPtr = ev[1];
+	    }
+	    return (int) i;
+	}
+    }
+    return -1;
+}
+
+/* La valeur V (neuve, refcount 0) de la variante v d'une somme balisée, de
+ * charge payload (ignorée pour un littéral). */
+Tcl_Obj *
+TclSumMake(const TclType *tp, int v, Tcl_Obj *payload)
+{
+    Tcl_Obj *pair[2];
+
+    if (tp->fields[v].type == NULL) {
+	return Tcl_DuplicateObj(tp->fields[v].literal);
+    }
+    pair[0] = tp->fields[v].name;
+    pair[1] = (payload != NULL) ? payload : Tcl_NewObj();
+    return Tcl_NewListObj(2, pair);
+}
+
+/* Le message d'une valeur qui n'est pas de la forme d'une somme balisée. */
+static void
+SumFormError(Tcl_Interp *interp, const TclType *tp, Tcl_Obj *value)
+{
+    Tcl_Size i;
+    Tcl_Obj *n0 = NULL;
+
+    if (interp == NULL) {
+	return;
+    }
+    /* l'exemple : la première variante qui accepterait cette valeur */
+    for (i = 0; i < tp->nfields && n0 == NULL; i++) {
+	if (tp->fields[i].type != NULL && tp->fields[i].name != NULL
+		&& TclTypeValidate(NULL, tp->fields[i].type, value, -1, NULL)
+		== TCL_OK) {
+	    n0 = tp->fields[i].name;
+	}
+    }
+    for (i = 0; i < tp->nfields && n0 == NULL; i++) {
+	if (tp->fields[i].type != NULL) {
+	    n0 = tp->fields[i].name;
+	}
+    }
+    if (n0 != NULL) {
+	Tcl_Obj *pair[2], *ex, *one, *vc;
+
+	/* une copie : value peut n'avoir aucune référence, et les listes la
+	 * libéreraient en partant */
+	vc = Tcl_DuplicateObj(value);
+	pair[0] = n0;
+	pair[1] = vc;
+	ex = Tcl_NewListObj(2, pair);
+	one = Tcl_NewListObj(1, &vc);
+	Tcl_IncrRefCount(ex);
+	Tcl_IncrRefCount(one);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf("value \"%s\" names no variant "
+		"of the sum %s: a value of a sum is the name of its variant, "
+		"then its value, as {%s}, or {%s:}%s",
+		Tcl_GetString(value), tp->name, Tcl_GetString(ex),
+		Tcl_GetString(n0), Tcl_GetString(one)));
+	Tcl_DecrRefCount(ex);
+	Tcl_DecrRefCount(one);
+    } else {
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf("value \"%s\" matches no "
+		"variant of %s", Tcl_GetString(value), tp->name));
+    }
+    Tcl_SetErrorCode(interp, "TCL", "TYPE", "SUM", (char *) NULL);
 }
 
 static int
@@ -2009,6 +2114,48 @@ ValidateG(Tcl_Interp *interp, const TclType *tp, Tcl_Obj *value,
     case TCLT_SUM: {
 	int first = -1, prefer = -1;
 
+	if (TclSumTagged(tp)) {
+	    /* v16w : la valeur écrit sa variante ; rien n'est deviné */
+	    Tcl_Obj *pl = NULL;
+	    int vi = TclSumDecode(tp, value, &pl);
+
+	    if (vi < 0) {
+		SumFormError(interp, tp, value);
+		return TCL_ERROR;
+	    }
+	    if (variantHint >= 0 && vi != variantHint) {
+		ERR(interp, "SUM", "value \"%s\" is variant %s of %s, not %s",
+			Tcl_GetString(value), tp->fields[vi].name != NULL
+			? Tcl_GetString(tp->fields[vi].name)
+			: Tcl_GetString(tp->fields[vi].literal), tp->name,
+			variantHint < tp->nfields
+			&& tp->fields[variantHint].name != NULL
+			? Tcl_GetString(tp->fields[variantHint].name) : "?");
+		return TCL_ERROR;
+	    }
+	    if (pl != NULL) {
+		Tcl_IncrRefCount(pl);
+		if (ValidateG(interp, tp->fields[vi].type, pl, -1, NULL, &me)
+			!= TCL_OK) {
+		    Tcl_DecrRefCount(pl);
+		    if (interp != NULL) {
+			Tcl_Obj *m = Tcl_GetObjResult(interp);
+
+			Tcl_IncrRefCount(m);
+			Tcl_SetObjResult(interp, Tcl_ObjPrintf("variant %s of "
+				"%s: %s", Tcl_GetString(tp->fields[vi].name),
+				tp->name, Tcl_GetString(m)));
+			Tcl_DecrRefCount(m);
+		    }
+		    return TCL_ERROR;
+		}
+		Tcl_DecrRefCount(pl);
+	    }
+	    if (variantOut != NULL) {
+		*variantOut = vi;
+	    }
+	    return TCL_OK;
+	}
 	if (variantHint <= -2) {
 	    /* -2 - v : la variante courante, qui départage des variantes
 	     * également strictes (écriture dans une variable typée) */
@@ -2036,41 +2183,6 @@ ValidateG(Tcl_Interp *interp, const TclType *tp, Tcl_Obj *value,
 	    }
 	    if (variantOut != NULL) {
 		*variantOut = variantHint;
-	    }
-	    return TCL_OK;
-	}
-	if (tp->sumMode == TCLT_SUM_STRICT) {
-	    /*
-	     * v16m, {-strict}S : rien n'est deviné. Une variante littérale se
-	     * nomme par sa valeur ; dans une variable typée, la variante
-	     * courante reste ; sinon il faut la nommer.
-	     */
-	    for (i = 0; i < tp->nfields; i++) {
-		if (tp->fields[i].type == NULL
-			&& VariantAccepts(&tp->fields[i], value, &me)) {
-		    first = (int) i;
-		    break;
-		}
-	    }
-	    if (first < 0 && prefer >= 0 && prefer < tp->nfields
-		    && VariantAccepts(&tp->fields[prefer], value, &me)) {
-		first = prefer;
-	    }
-	    if (first < 0) {
-		Tcl_Obj *n0 = NULL;
-
-		for (i = 0; i < tp->nfields && n0 == NULL; i++) {
-		    n0 = tp->fields[i].name;
-		}
-		ERR(interp, "STRICT", "value \"%s\" names no variant of the "
-			"strict sum %s: write {%s:}value or {%s.%s}value",
-			Tcl_GetString(value), tp->name,
-			n0 ? Tcl_GetString(n0) : "variant", tp->name,
-			n0 ? Tcl_GetString(n0) : "variant");
-		return TCL_ERROR;
-	    }
-	    if (variantOut != NULL) {
-		*variantOut = first;
 	    }
 	    return TCL_OK;
 	}
@@ -2504,6 +2616,30 @@ FillDefaults(Tcl_Interp *interp, const TclType *tp, Tcl_Obj *obj,
 	    TclTypeValidate(NULL, tp, obj, -1, &variant);
 	}
 	if (variant >= 0 && variant < tp->nfields
+		&& tp->fields[variant].type != NULL && TclSumTagged(tp)) {
+	    /* v16w : la charge, deuxième élément de "v charge" (une valeur
+	     * déjà typée est complète) */
+	    Tcl_Obj *pl = NULL, *plc;
+
+	    if (TclIsAnnotated(obj)
+		    || Tcl_ListObjIndex(NULL, obj, 1, &pl) != TCL_OK
+		    || pl == NULL) {
+		return TCL_OK;
+	    }
+	    plc = Tcl_DuplicateObj(pl);
+	    Tcl_IncrRefCount(plc);
+	    if (FillDefaults(interp, tp->fields[variant].type, plc, -1,
+		    depth + 1) != TCL_OK) {
+		Tcl_DecrRefCount(plc);
+		return TCL_ERROR;
+	    }
+	    if (strcmp(Tcl_GetString(plc), Tcl_GetString(pl)) != 0) {
+		Tcl_ListObjReplace(NULL, obj, 1, 1, 1, &plc);
+	    }
+	    Tcl_DecrRefCount(plc);
+	    return TCL_OK;
+	}
+	if (variant >= 0 && variant < tp->nfields
 		&& tp->fields[variant].type != NULL) {
 	    return FillDefaults(interp, tp->fields[variant].type, obj, -1,
 		    depth + 1);
@@ -2520,6 +2656,44 @@ TclTypeComplete(Tcl_Interp *interp, const TclType *tp, Tcl_Obj *content,
 {
     int variant = -1;
 
+    if (variantHint >= 0 && variantHint < tp->nfields && TclSumTagged(tp)) {
+	/*
+	 * v16w : une variante désignée (étiquette {v:}, type S.v) avec sa
+	 * charge : la charge est complétée dans son type, puis content (privé)
+	 * devient la valeur de la somme, "v charge".
+	 */
+	const TclTypeField *f = &tp->fields[variantHint];
+
+	if (f->type == NULL) {
+	    if (strcmp(Tcl_GetString(content), Tcl_GetString(f->literal))
+		    != 0 && Tcl_GetCharLength(content) > 0) {
+		ERR(interp, "SUM", "variant %s of %s takes no value, got \"%s\"",
+			Tcl_GetString(f->literal), tp->name,
+			Tcl_GetString(content));
+		return TCL_ERROR;
+	    }
+	    Tcl_SetStringObj(content, Tcl_GetString(f->literal), -1);
+	} else {
+	    Tcl_Obj *pl = Tcl_DuplicateObj(content), *pair[2];
+
+	    Tcl_IncrRefCount(pl);
+	    if (TclTypeComplete(interp, f->type, pl, -1, NULL) != TCL_OK) {
+		Tcl_DecrRefCount(pl);
+		return TCL_ERROR;
+	    }
+	    pair[0] = f->name;
+	    pair[1] = pl;
+	    Tcl_SetListObj(content, 2, pair);
+	    Tcl_DecrRefCount(pl);
+	}
+	if (variantOut != NULL) {
+	    *variantOut = variantHint;
+	}
+	return TCL_OK;
+    }
+    if (variantHint <= -2 && TclSumTagged(tp)) {
+	variantHint = -1;		/* la valeur dit sa variante */
+    }
     if (TclTypeValidate(interp, tp, content, variantHint, &variant)
 	    != TCL_OK) {
 	return TCL_ERROR;
@@ -2709,6 +2883,40 @@ TclType *
 TclTypesFinish(Tcl_Interp *interp, TypeData *d, const char *selfName,
 	TclTypeKind kind, TclTypeField *fields, Tcl_Size n, TclType *into)
 {
+    return TclTypesFinishSum(interp, d, selfName, kind, fields, n, into, 0);
+}
+
+/*
+ * v16w : une union ("|") doit être disjointe : sa valeur est la charge
+ * seule, et l'alternative se calcule à partir d'elle. NULL si elle l'est,
+ * sinon un message (refcount 0).
+ */
+static Tcl_Obj *
+UnionOverlap(const TclType *tp)
+{
+    Tcl_Obj *ov = TclTypeSumOverlaps(tp), *p0, *va, *vb, *msg = NULL;
+    Tcl_Size nov = 0;
+
+    Tcl_IncrRefCount(ov);
+    Tcl_ListObjLength(NULL, ov, &nov);
+    if (nov > 0) {
+	Tcl_ListObjIndex(NULL, ov, 0, &p0);
+	Tcl_ListObjIndex(NULL, p0, 0, &va);
+	Tcl_ListObjIndex(NULL, p0, 1, &vb);
+	msg = Tcl_ObjPrintf("union: alternatives %s and %s can take the same "
+		"value, so the value could not tell which one it is; a union "
+		"must be disjoint. Write a sum with \",\" to tag the "
+		"alternatives", Tcl_GetString(va), Tcl_GetString(vb));
+    }
+    Tcl_DecrRefCount(ov);
+    return msg;
+}
+
+TclType *
+TclTypesFinishSum(Tcl_Interp *interp, TypeData *d, const char *selfName,
+	TclTypeKind kind, TclTypeField *fields, Tcl_Size n, TclType *into,
+	int isUnion)
+{
     Tcl_DString ds;
     Tcl_HashEntry *hPtr;
     Tcl_Size i;
@@ -2738,19 +2946,57 @@ TclTypesFinish(Tcl_Interp *interp, TypeData *d, const char *selfName,
 		}
 	    }
 	}
+	if (!isUnion) {
+	    /* v16w : la valeur d'une somme écrit le nom de sa variante :
+	     * une variante typée a un nom */
+	    for (i = 0; i < n; i++) {
+		if (fields[i].type != NULL && fields[i].name == NULL) {
+		    const char *tn = fields[i].type->name;
+		    int anon = (strchr(tn, '<') != NULL);
+
+		    ERR(interp, "SYNTAX", "variant %d of the sum has no name: "
+			    "a sum writes the name of its variant in its value; "
+			    "name it (%s%s%sname), or write a union with \"|\" "
+			    "if the value itself tells the alternatives apart",
+			    (int) i + 1, anon ? "{...}" : "{", anon ? "" : tn,
+			    anon ? "" : "}");
+		    goto fail;
+		}
+	    }
+	}
 	SortVariants(fields, n);
+    } else {
+	isUnion = 0;
     }
 
     if (into != NULL) {
 	into->kind = kind;
 	into->fields = fields;
 	into->nfields = n;
+	if (kind == TCLT_SUM) {
+	    Tcl_Obj *msg;
+
+	    into->sumMode = isUnion ? TCLT_SUM_UNION : TCLT_SUM_TAGGED;
+	    if (isUnion && (msg = UnionOverlap(into)) != NULL) {
+		if (interp != NULL) {
+		    Tcl_SetObjResult(interp, msg);
+		    Tcl_SetErrorCode(interp, "TCL", "TYPE", "UNION",
+			    (char *) NULL);
+		} else {
+		    Tcl_IncrRefCount(msg);
+		Tcl_DecrRefCount(msg);
+		}
+		into->fields = NULL;
+		into->nfields = 0;
+		goto fail;
+	    }
+	}
 	return into;
     }
 
     Tcl_DStringInit(&ds);
-    Tcl_DStringAppend(&ds, kind == TCLT_PRODUCT ? "prod<" : "sum<",
-	    TCL_AUTO_LENGTH);
+    Tcl_DStringAppend(&ds, kind == TCLT_PRODUCT ? "prod<"
+	    : isUnion ? "union<" : "sum<", TCL_AUTO_LENGTH);
     for (i = 0; i < n; i++) {
 	if (fields[i].name != NULL) {
 	    Tcl_DStringAppend(&ds, Tcl_GetString(fields[i].name),
@@ -2788,9 +3034,26 @@ TclTypesFinish(Tcl_Interp *interp, TypeData *d, const char *selfName,
 	tp = NewType(d, kind, Tcl_DStringValue(&ds));
 	tp->fields = fields;
 	tp->nfields = n;
+	tp->sumMode = isUnion ? TCLT_SUM_UNION : TCLT_SUM_TAGGED;
 	Tcl_SetHashValue(hPtr, tp);
     }
     Tcl_DStringFree(&ds);
+    if (isUnion) {
+	Tcl_Obj *msg = UnionOverlap(tp);
+
+	if (msg != NULL) {
+	    /* le type reste interné (inaccessible), l'erreur revient à
+	     * chaque analyse */
+	    if (interp != NULL) {
+		Tcl_SetObjResult(interp, msg);
+		Tcl_SetErrorCode(interp, "TCL", "TYPE", "UNION", (char *) NULL);
+	    } else {
+		Tcl_IncrRefCount(msg);
+		Tcl_DecrRefCount(msg);
+	    }
+	    return NULL;
+	}
+    }
     return tp;
 
   fail:
@@ -3126,14 +3389,66 @@ TclTypeCast(Tcl_Interp *interp, Tcl_Obj *src, TclType *target,
 	    goto validate;
 	}
     }
+    /*
+     * v16w : toute valeur se lit comme une chaîne ordinaire : son texte
+     * (un littéral d'énumération, "v 5" d'une somme, un point...).
+     */
+    if (from != NULL && TclTypeIsPlainString(target)) {
+	res = Tcl_NewStringObj(Tcl_GetString(content), TCL_AUTO_LENGTH);
+	goto validate;
+    }
+    /*
+     * v16w : une union se lit comme le type de son alternative : sa valeur
+     * est la charge. (Une somme balisée, jamais : sa variante se lit par
+     * son chemin, $t(celsius), pour ne pas perdre ce qu'elle dit.)
+     */
+    if (from != NULL && from->kind == TCLT_SUM && target->kind != TCLT_SUM
+	    && from->sumMode == TCLT_SUM_UNION && from->binTag == NULL) {
+	int av = variant;
+
+	if (av < 0) {
+	    (void) TclTypeValidate(NULL, from, content, -1, &av);
+	}
+	if (av >= 0 && av < from->nfields && from->fields[av].type != NULL) {
+	    Tcl_Obj *cur = TclNewAnnotated(interp, from->fields[av].type, -1,
+		    content);
+	    int crc;
+
+	    Tcl_IncrRefCount(cur);
+	    crc = TclTypeCast(interp, cur, target, resultPtr);
+	    if (crc == TCL_OK && *resultPtr == cur) {
+		*resultPtr = TclNewAnnotated(interp, from->fields[av].type,
+			-1, content);
+	    }
+	    Tcl_DecrRefCount(cur);
+	    return crc;
+	}
+    }
     /* Variante d'une somme dont le type est exactement celui de la source. */
     if (target->kind == TCLT_SUM && from != NULL) {
+	int found = -1, again = -1;
+
 	for (i = 0; i < target->nfields; i++) {
 	    if (target->fields[i].type == from) {
-		res = Tcl_DuplicateObj(content);
-		outVariant = (int) i;
-		goto validate;
+		if (found < 0) {
+		    found = (int) i;
+		} else if (again < 0) {
+		    again = (int) i;
+		}
 	    }
+	}
+	if (found >= 0 && again >= 0 && TclSumTagged(target)) {
+	    ERR(interp, "AMBIGUOUS", "a value of type %s fits variants %s and "
+		    "%s of %s: write {%s:}value", from->name,
+		    Tcl_GetString(target->fields[found].name),
+		    Tcl_GetString(target->fields[again].name), target->name,
+		    Tcl_GetString(target->fields[found].name));
+	    return TCL_ERROR;
+	}
+	if (found >= 0) {
+	    res = Tcl_DuplicateObj(content);
+	    outVariant = found;
+	    goto validate;
 	}
     }
     /*
@@ -3149,6 +3464,11 @@ TclTypeCast(Tcl_Interp *interp, Tcl_Obj *src, TclType *target,
 	Tcl_Obj *pc = content, **fv;
 	Tcl_Size nf;
 
+	if (TclSumTagged(pt)) {
+	    /* v16w : "v charge" se lit comme la liste de ses deux mots */
+	    res = Tcl_DuplicateObj(content);
+	    goto validate;
+	}
 	if (pt->kind == TCLT_SUM && variant >= 0 && variant < (int) pt->nfields
 		&& pt->fields[variant].type != NULL) {
 	    pt = pt->fields[variant].type;
@@ -3345,6 +3665,19 @@ TclTypeCast(Tcl_Interp *interp, Tcl_Obj *src, TclType *target,
 	    goto validate;
 	}
     }
+    if (from != NULL && TclSumTagged(from) && target->kind != TCLT_SUM) {
+	int sv = TclSumDecode(from, content, NULL);
+
+	if (sv >= 0 && from->fields[sv].type != NULL) {
+	    /* v16w : la variante se lit par son nom, pas en silence */
+	    ERR(interp, "CAST", "a value of the sum %s is not of type %s: it is "
+		    "\"%s\" then its value; read that value by its path, as "
+		    "$v(%s)", from->name, target->name,
+		    Tcl_GetString(from->fields[sv].name),
+		    Tcl_GetString(from->fields[sv].name));
+	    return TCL_ERROR;
+	}
+    }
     ERR(interp, "CAST", "unknown way to cast the value from %s to %s",
 	    from ? from->name : "string", target->name);
     return TCL_ERROR;
@@ -3439,7 +3772,10 @@ TclTypeVariantConvert(Tcl_Interp *interp, TclType *sum, int from,
 		sum->name, fn, tn, Tcl_GetString(content));
 	return TCL_ERROR;
     }
-    if (TclTypeValidate(interp, sum, res, to, NULL) != TCL_OK) {
+    if ((TclSumTagged(sum) ? (tf->type != NULL && TclTypeValidate(interp,
+	    tf->type, res, -1, NULL) != TCL_OK)
+	    : TclTypeValidate(interp, sum, res, to, NULL) != TCL_OK)) {
+	/* v16w : une somme balisée : res est la charge de la variante */
 	TclDiscard(res);
 	return TCL_ERROR;
     }
@@ -4394,6 +4730,7 @@ CopyInto(TclType *into, const TclType *res)
     into->binAtBody = res->binAtBody;
     into->binLink = res->binLink;
     into->binTag = res->binTag;
+    into->sumMode = res->sumMode;
     if (into->family == NULL && res->family != NULL) {
 	/* type def mm {grandeur(L, 0.001)} : mm hérite de la famille et des
 	 * paramètres de l'instance (règles de famille de type convert). */
@@ -4801,7 +5138,8 @@ LinkReprBody(
 	int hasNone = 0;
 
 	for (i = 0; i < target->nfields; i++) {
-	    const char *nm = Tcl_GetString(target->fields[i].name);
+	    const char *nm = Tcl_GetString(target->fields[i].name != NULL
+		    ? target->fields[i].name : target->fields[i].literal);
 
 	    if (strcmp(nm, "some") == 0) {
 		some = target->fields[i].type;
@@ -4812,7 +5150,7 @@ LinkReprBody(
 	if (some == NULL || !hasNone) {
 	    Tcl_DecrRefCount(reprR);
 	    ERR(interp, "BIN", "%s: a link to a sum needs the variants "
-		    "{T}some and {unit}none", tp->name);
+		    "{T}some and \"none\"", tp->name);
 	    return TCL_ERROR;
 	}
 	optName = tp->name;
@@ -5574,7 +5912,8 @@ BinLinkSome(const TclType *tp, int *someIdx, int *noneIdx)
     }
     for (i = 0; i < t->nfields; i++) {
 	const char *nm = t->fields[i].name ? Tcl_GetString(t->fields[i].name)
-		: "";
+		: t->fields[i].literal ? Tcl_GetString(t->fields[i].literal)
+		: "";			/* v16w : "none" est un littéral */
 
 	if (strcmp(nm, "some") == 0) {
 	    some = t->fields[i].type;
@@ -6145,11 +6484,20 @@ BinFastEnc(BinCtx *c, const TclType *tp, Tcl_Obj *v, const TclType *encl,
 		    return TCL_CONTINUE;
 		}
 	    }
+	    if (ot != NULL && TclSumTagged(ot)) {
+		/* v16w : "some charge" ou "none" */
+		Tcl_Obj *pl = NULL;
+
+		var = TclSumDecode(ot, content, &pl);
+		content = pl;
+	    }
 	    if (ot == NULL || ot->kind != TCLT_SUM || var < 0
-		    || var >= (int) ot->nfields || ot->fields[var].name == NULL) {
+		    || var >= (int) ot->nfields) {
 		return TCL_CONTINUE;
 	    }
-	    if (strcmp(Tcl_GetString(ot->fields[var].name), "none") == 0) {
+	    if (strcmp(Tcl_GetString(ot->fields[var].name != NULL
+		    ? ot->fields[var].name : ot->fields[var].literal), "none")
+		    == 0) {
 		Tcl_WideInt w;
 		Tcl_Obj *nt = Tcl_NewStringObj(BinLinkNull(tp), -1);
 
@@ -6165,7 +6513,9 @@ BinFastEnc(BinCtx *c, const TclType *tp, Tcl_Obj *v, const TclType *encl,
 		Tcl_DecrRefCount(zero);
 		return rc;
 	    }
-	    if (strcmp(Tcl_GetString(ot->fields[var].name), "some") != 0) {
+	    if (ot->fields[var].name == NULL || content == NULL
+		    || strcmp(Tcl_GetString(ot->fields[var].name), "some")
+		    != 0) {
 		return TCL_CONTINUE;
 	    }
 	    payload = content;
@@ -6829,8 +7179,14 @@ BinLinkValue(BinDec *d, const TclType *tp, int isNull, size_t target,
 	}
 	/* comme field : le constructeur de la couche Tcl garde le contenu nu
 	 * d'une somme opt ; ailleurs, la valeur annotée de mkSum */
-	*resPtr = asField ? Tcl_NewObj() : TclNewAnnotatedOwn(Tcl_NewObj(),
-		TclTypeRefFor(d->interp, (TclType *) tp, noneIdx));
+	{
+	    /* v16w : la valeur nulle est "none" (une somme balisée) */
+	    Tcl_Obj *nv = TclSumTagged(tp) ? TclSumMake(tp, noneIdx, NULL)
+		    : Tcl_NewObj();
+
+	    *resPtr = asField ? nv : TclNewAnnotatedOwn(nv,
+		    TclTypeRefFor(d->interp, (TclType *) tp, noneIdx));
+	}
 	return TCL_OK;
     }
     for (k = 0; k < d->nchain; k++) {
@@ -6861,6 +7217,9 @@ BinLinkValue(BinDec *d, const TclType *tp, int isNull, size_t target,
     d->nchain--;
     if (rc != TCL_OK) {
 	return rc;
+    }
+    if (some != NULL && TclSumTagged(tp)) {
+	v = TclSumMake(tp, someIdx, v);	/* v16w : "some charge" */
     }
     *resPtr = (some != NULL && !asField) ? TclNewAnnotatedOwn(v,
 	    TclTypeRefFor(d->interp, (TclType *) tp, someIdx)) : v;
@@ -8077,8 +8436,8 @@ TypeIsCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 		    && tp->compactWanted));
 	}
 	rc = TCL_OK;
-    } else if (strcmp(Tcl_GetString(q), "strict?") == 0) {
-	/* v16m : type is {strict?}S : 1 si S a été défini {-strict}. */
+    } else if (strcmp(Tcl_GetString(q), "union?") == 0) {
+	/* v16w : type is {union?}S : 1 si S est une union ("|"). */
 	Tcl_Size tl;
 	const char *tt = Tcl_GetStringFromObj(subject, &tl);
 	TclType *tp = (tl > 0) ? TclTypeParse(interp, tt, tl) : NULL;
@@ -8087,7 +8446,7 @@ TypeIsCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 	    goto done;
 	}
 	Tcl_SetObjResult(interp, Tcl_NewBooleanObj(tp->kind == TCLT_SUM
-		&& tp->sumMode == TCLT_SUM_STRICT));
+		&& tp->sumMode == TCLT_SUM_UNION));
 	rc = TCL_OK;
     } else if (strcmp(Tcl_GetString(q), "disjoint?") == 0) {
 	/* v16m : type is {disjoint?}S : les paires de variantes de la somme
@@ -8107,7 +8466,7 @@ TypeIsCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 	rc = TCL_OK;
     } else {
 	ERR(interp, "IS", "unknown question \"%s\": must be compact?, "
-		"disjoint? or strict?", Tcl_GetString(q));
+		"disjoint? or union?", Tcl_GetString(q));
     }
   done:
     Tcl_DecrRefCount(words);
@@ -8392,7 +8751,6 @@ TypeObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
     if (strcmp(sub, "def") == 0 || strcmp(sub, "define") == 0
 	    || strcmp(sub, "alias") == 0) {
 	int isAlias = (strcmp(sub, "alias") == 0), compact = 0, rc;
-	int strict = 0, deduce = 0;
 	Tcl_Obj *words, *nameObj, **wv;
 	TclObjVec keep = {NULL, 0, 0};
 	Tcl_Size nw, k;
@@ -8417,9 +8775,7 @@ TypeObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
 		    : eq ? (size_t) (eq - w) : strlen(w);
 
 	    if (!isAlias && (dot != NULL || eq != NULL)
-		    && ((base == 8 && strncmp(w, "-compact", 8) == 0)
-		    || (base == 7 && strncmp(w, "-strict", 7) == 0)
-		    || (base == 7 && strncmp(w, "-deduce", 7) == 0))) {
+		    && base == 8 && strncmp(w, "-compact", 8) == 0) {
 		ERR(interp, "OPTION", "type def: option {%.*s} takes no "
 			"sub-option or value: {%s}", (int) base, w, w);
 		Tcl_DecrRefCount(words);
@@ -8428,27 +8784,26 @@ TypeObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
 	    }
 	    if (strcmp(w, "-compact") == 0 && !isAlias) {
 		compact = 1;
-	    } else if (strcmp(w, "-strict") == 0 && !isAlias) {
-		strict = 1;
-	    } else if (strcmp(w, "-deduce") == 0 && !isAlias) {
-		deduce = 1;
+	    } else if ((strcmp(w, "-strict") == 0
+		    || strcmp(w, "-deduce") == 0) && !isAlias) {
+		/* v16w : il n'y a plus de régimes de somme */
+		ERR(interp, "OPTION", "type def: {%s} is gone: a sum (\",\") "
+			"always writes its variant in its value (v 5), and a "
+			"union (\"|\") must be disjoint, so nothing is ever "
+			"guessed", w);
+		Tcl_DecrRefCount(words);
+		TclVecFree(&keep);
+		return TCL_ERROR;
 	    } else {
 		ERR(interp, "OPTION", "type %s: unknown option {%s}%s", sub, w,
 			isAlias ? " (an alias is not a new type: it takes no "
-			"option)" : ": must be {-compact}, {-strict} or "
-			"{-deduce} (several: {-compact,-strict})");
+			"option)" : ": must be {-compact}");
 		Tcl_DecrRefCount(words);
 		TclVecFree(&keep);
 		return TCL_ERROR;
 	    }
 	}
 	Tcl_DecrRefCount(words);
-	if (strict && deduce) {
-	    ERR(interp, "OPTION", "type def: {-strict} and {-deduce} exclude "
-		    "each other");
-	    TclVecFree(&keep);
-	    return TCL_ERROR;
-	}
 	if (compact && strchr(Tcl_GetString(nameObj), '(') != NULL) {
 	    ERR(interp, "OPTION", "type def {-compact}: not yet for a type "
 		    "family (%s)", Tcl_GetString(nameObj));
@@ -8470,63 +8825,6 @@ TypeObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
 	    TclVecAdd(&keep, nameObj);
 	}
 	rc = TypeDefine(interp, d, nameObj, objv[3], isAlias);
-	if (rc == TCL_OK && !isAlias
-		&& strchr(Tcl_GetString(nameObj), '(') == NULL) {
-	    /*
-	     * v16m : une somme. {-strict} : la variante d'une valeur nue n'est
-	     * jamais devinée. {-deduce} : la plus stricte gagne (le défaut).
-	     * Sans option, une somme dont deux variantes peuvent accepter une
-	     * même valeur reçoit un avertissement : le choix doit se voir.
-	     */
-	    Tcl_HashEntry *h = Tcl_FindHashEntry(&d->names,
-		    Tcl_GetString(nameObj));
-	    TclType *tp = (h != NULL) ? (TclType *) Tcl_GetHashValue(h) : NULL;
-
-	    if ((strict || deduce) && (tp == NULL || tp->kind != TCLT_SUM)) {
-		ERR(interp, "OPTION", "type def {-%s}%s: only a sum has a "
-			"variant to choose", strict ? "strict" : "deduce",
-			Tcl_GetString(nameObj));
-		if (h != NULL) {
-		    Tcl_DeleteHashEntry(h);	/* la définition est annulée */
-		    d->gen++;
-		}
-		TclVecFree(&keep);
-		return TCL_ERROR;
-	    }
-	    if (tp != NULL && tp->kind == TCLT_SUM) {
-		tp->sumMode = strict ? TCLT_SUM_STRICT : TCLT_SUM_DEDUCE;
-		if (!strict && !deduce && tp->binTag == NULL) {
-		    Tcl_Obj *ov = TclTypeSumOverlaps(tp);
-		    Tcl_Size nov = 0;
-
-		    Tcl_IncrRefCount(ov);
-		    Tcl_ListObjLength(NULL, ov, &nov);
-		    if (nov > 0) {
-			Tcl_Channel err = Tcl_GetStdChannel(TCL_STDERR);
-			Tcl_Obj *p0, *va, *vb;
-
-			Tcl_ListObjIndex(NULL, ov, 0, &p0);
-			Tcl_ListObjIndex(NULL, p0, 0, &va);
-			Tcl_ListObjIndex(NULL, p0, 1, &vb);
-			if (err != NULL) {
-			    Tcl_Obj *m = Tcl_ObjPrintf("warning: type def %s: "
-				    "variants %s and %s can take the same value "
-				    "(type is {disjoint?}%s); write {-deduce}%s "
-				    "to keep the deduction, or {-strict}%s\n",
-				    tp->name, Tcl_GetString(va),
-				    Tcl_GetString(vb), tp->name, tp->name,
-				    tp->name);
-
-			    Tcl_IncrRefCount(m);
-			    Tcl_WriteObj(err, m);
-			    Tcl_Flush(err);
-			    Tcl_DecrRefCount(m);
-			}
-		    }
-		    Tcl_DecrRefCount(ov);
-		}
-	    }
-	}
 	if (rc == TCL_OK && compact) {
 	    const char *nm = Tcl_GetString(nameObj);
 	    Tcl_HashEntry *h = Tcl_FindHashEntry(&d->names, nm);
@@ -8686,8 +8984,46 @@ TypeObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
     if (strcmp(sub, "binary") == 0) {
 	return TypeBinaryCmd(interp, objc, objv);
     }
+    if (strcmp(sub, "variant") == 0) {
+	/* v16w : type variant VALEUR : le nom de la variante d'une valeur
+	 * d'une somme ou d'une union (son texte pour un littéral) */
+	TclType *tp = NULL;
+	Tcl_Obj *content = NULL;
+	int v = -1;
+
+	if (objc != 3) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "value");
+	    return TCL_ERROR;
+	}
+	if (TclAnnotInfo(objv[2], &content, &tp, &v, NULL) != 1
+		|| tp == NULL) {
+	    ERR(interp, "VARIANT", "type variant: the value \"%s\" has no "
+		    "type", Tcl_GetString(objv[2]));
+	    return TCL_ERROR;
+	}
+	if (tp->kind != TCLT_SUM) {
+	    ERR(interp, "VARIANT", "type variant: the value is a %s, not a "
+		    "sum", tp->name);
+	    return TCL_ERROR;
+	}
+	if (TclSumTagged(tp)) {
+	    v = TclSumDecode(tp, content, NULL);
+	} else if (v < 0) {
+	    TclTypeValidate(NULL, tp, content, -1, &v);
+	}
+	if (v < 0 || v >= tp->nfields) {
+	    ERR(interp, "VARIANT", "type variant: no variant of %s",
+		    tp->name);
+	    return TCL_ERROR;
+	}
+	Tcl_SetObjResult(interp, tp->fields[v].name != NULL
+		? tp->fields[v].name : tp->fields[v].type == NULL
+		? tp->fields[v].literal : Tcl_NewWideIntObj(v));
+	return TCL_OK;
+    }
     ERR(interp, "SUBCMD", "bad subcommand \"%s\": must be def, alias, "
-	    "cast, convert, deref, export, forget, get, is, proc or binary", sub);
+	    "cast, convert, deref, export, forget, get, is, proc, variant or "
+	    "binary", sub);
     return TCL_ERROR;
 }
 
@@ -9899,6 +10235,14 @@ DictUnfold(Tcl_Obj *obj, const TclType *tp)
     default: {				/* TCLT_SUM */
 	const TclTypeField *f;
 
+	if (TclSumTagged(tp)) {		/* v16w : "v charge" */
+	    Tcl_Obj *pl = NULL;
+
+	    variant = TclSumDecode(tp, obj, &pl);
+	    if (pl != NULL) {
+		obj = pl;
+	    }
+	}
 	if (variant < 0) {
 	    variant = TclTypeSumCurrent(tp, obj);
 	}

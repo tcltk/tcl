@@ -18,7 +18,7 @@ t "w : ancienne valeur" {list $w [type get $w]}
 puts "-- refus"
 t "inconnu"            {type forget nexistepas}
 t "intégré"            {type forget int}
-type def {-deduce}exprop {"+", "-", {string}name}
+type def exprop {"+", "-", {string}name}
 type def exprtree {{list(0).string}none, {list(1).string}leaf, {{exprtree}left; {exprop}op; {exprtree}right}node}
 t "utilisé par un autre" {type forget exprop}
 t "les deux ensemble"  {type forget exprop exprtree}

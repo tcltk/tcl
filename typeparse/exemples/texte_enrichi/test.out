@@ -3,11 +3,11 @@ table -> gras italique titre1 titre2 titre3 code puce alerte
 un style -> 18 bold roman style
 style faux -> ERREUR value "gras" matches no variant of poids
 --- document
-type -> document {bloc.titre bloc.para bloc.puces bloc.code}
+type -> ::te::document {::te::bloc.titre ::te::bloc.para ::te::bloc.puces ::te::bloc.code}
 --- refus à la construction
-style inconnu -> ERREUR value "grass x" is not valid for that variant of segment
-titre de niveau 4 -> ERREUR value "4 x" is not valid for that variant of bloc
-bloc inconnu -> ERREUR value "pas un bloc" names no variant of the strict sum bloc: write {titre:}value or {bloc.titre}value
+style inconnu -> ERREUR value "grass" matches no variant of ::te::nomstyle
+titre de niveau 4 -> ERREUR value "4" matches no variant of ::te::niveau
+bloc inconnu -> ERREUR value "pas un bloc" names no variant of the sum ::te::bloc: a value of a sum is the name of its variant, then its value, as {code {pas un bloc}}, or {code:}{pas un bloc}
 --- rendu
   insert {Texte enrichi}              bloc.titre@niveau=1 aspect@couleur=\"#1d2433\",police.(poids=bold,taille=18)
   insert {
@@ -40,19 +40,19 @@ bloc inconnu -> ERREUR value "pas un bloc" names no variant of the strict sum bl
   tags configurés : aspect@couleur=\"#1d2433\",police.(poids=bold,taille=18) aspect aspect@police.poids=bold aspect@police.pente=italic aspect@police.(pente=italic,poids=bold) aspect@marge=16 aspect@couleur=\"#2b5c8a\",marge=16,souligne=1 aspect@couleur=\"#4a5468\",police.(famille=Courier,taille=10)
 --- changer la table des styles
 nouvelle table -> gras rouge
-ancien document -> document bloc.para
-italique refusé -> ERREUR value "italique x" is not valid for that variant of segment
-rouge accepté -> segment.marque
+ancien document -> ::te::document ::te::bloc.para
+italique refusé -> ERREUR value "italique" matches no variant of ::te::nomstyle
+rouge accepté -> ::te::segment.marque
 --- relire le widget (te::lire)
 aller-retour exact -> 1
-type relu -> bloc.titre bloc.para bloc.puces bloc.code bloc.para
-chevauchement, coupé -> {segment.texte {Un }} {segment.marque {gras texte}} {segment.texte { avec un pas}} {segment.marque {gras {{sage } {italique {{en it}}}}}} {segment.marque {italique {{alique, } {gras {{et gras dedans}}}}}} {segment.texte .}
+type relu -> ::te::bloc.titre ::te::bloc.para ::te::bloc.puces ::te::bloc.code ::te::bloc.para
+chevauchement, coupé -> {::te::segment.texte {texte {Un }}} {::te::segment.marque {marque {gras {{texte texte}}}}} {::te::segment.texte {texte { avec un pas}}} {::te::segment.marque {marque {gras {{texte {sage }} {marque {italique {{texte {en it}}}}}}}}} {::te::segment.marque {marque {italique {{texte {alique, }} {marque {gras {{texte {et gras dedans}}}}}}}}} {::te::segment.texte {texte .}}
 chevauchement, erreur -> ERREUR marque "gras" (3.20-3.30) and marque "italique" (3.25-3.52) overlap: they do not nest
-deux gras voisins fusionnent -> {gras {{Un texte}}} { avec un passage }
+deux gras voisins fusionnent -> {marque {gras {{texte {Un texte}}}}} {texte { avec un passage }}
 tag non typé : ignoré -> 1
-tag typé, valeur hors du type -> ERREUR tag "segment.marque@style=surligne" at 3.0: value "surligne" matches no variant of nomstyle
-titre de niveau 7 -> ERREUR tag "bloc.titre@niveau=7" at 1.0: value "7" matches no variant of niveau
-texte hors bloc -> bloc.para {{Un paragraphe tapé à la main.}}
+tag typé, valeur hors du type -> ERREUR tag "segment.marque@style=surligne" at 3.0: value "surligne" matches no variant of ::te::nomstyle
+titre de niveau 7 -> ERREUR tag "bloc.titre@niveau=7" at 1.0: value "7" matches no variant of ::te::niveau
+texte hors bloc -> ::te::bloc.para {para {{texte {Un paragraphe tapé à la main.}}}}
 --- les noms de tags
   bloc.titre@niveau=2  ->  titre 2
   bloc.para  ->  para
@@ -75,28 +75,28 @@ cible relue à l'identique -> 1
   ,a -> ERREUR bad notes ",a": key expected at 0
 forme canonique stable -> 1
 la sélection est ignorée -> 1
-deux textes voisins fusionnent -> ab
+deux textes voisins fusionnent -> {para {{texte ab}}}
 --- apparence : un tag d'aspect par morceau, styles cumulés
 para, gras, italique, gras dans italique -> {3.0 aspect} {3.3 aspect@police.poids=bold} {3.8 aspect} {3.25 aspect@police.pente=italic} {3.38 aspect@police.(pente=italic,poids=bold)}
 après italique sur « texte », te::habiller -> {1.13 aspect} {3.3 aspect@police.(pente=italic,poids=bold)} {3.8 aspect} {3.25 aspect@police.pente=italic}
-relu : les aspects sont ignorés -> {Un } {gras {{italique texte}}}
+relu : les aspects sont ignorés -> {texte {Un }} {marque {gras {{marque {italique {{texte texte}}}}}}}
 --- écrire en gabarit : sans guillemets
 même document qu'à la main -> 1
 mêmes types -> 1
 aller-retour -> 1
-un lien, attribut cité -> segment.lien https://a.b/c?x=1,2
-crochets et barre échappés -> {un [crochet] et une barre \ seule}
-un -- dans le contenu -> {gras {{a -- b}}}
+un lien, attribut cité -> ::te::segment.lien https://a.b/c?x=1,2
+crochets et barre échappés -> para {{texte {un [crochet] et une barre \ seule}}}
+un -- dans le contenu -> para {{marque {gras {{texte {a -- b}}}}}}
 balise inconnue -> ERREUR unknown tag "grass": must be a variant of segment or a style (gras, italique, titre1, titre2, titre3, code, puce, alerte)
-attribut inconnu -> ERREUR [lien@href=x]: unknown field "href" in segment.lien
-attribut manquant -> ERREUR [lien]: field "cible" of segment.lien has no value and no default
-style hors du type -> ERREUR [marque@style=surligne]: value "surligne" matches no variant of nomstyle
+attribut inconnu -> ERREUR [lien@href=x]: unknown field "href" in ::te::segment.lien
+attribut manquant -> ERREUR [lien]: field "cible" of ::te::segment.lien has no value and no default
+style hors du type -> ERREUR [marque@style=surligne]: value "surligne" matches no variant of ::te::nomstyle
 sans -- -> ERREUR [gras b]: write [head -- content]
 crochet non fermé -> ERREUR "[" without "]" in "a [gras -- b"
 --- te::ecrire : un interpréteur sûr, des noms courts
 même document -> 1
-types -> bloc.titre bloc.para bloc.puces
-code -> bloc.code
+types -> ::te::bloc.titre ::te::bloc.para ::te::bloc.puces
+code -> ::te::bloc.code
 pas de fichier -> ERREUR invalid command name "open"
 pas de te:: -> ERREUR invalid command name "te::p"
 erreur de balise -> ERREUR unknown tag "grass": must be a variant of segment or a style (gras, italique, titre1, titre2, titre3, code, puce, alerte)

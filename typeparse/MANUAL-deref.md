@@ -185,11 +185,11 @@ in the new type:
 
 ```tcl
 type def mix {{int}a, {var.int}b, {string}s}
-set {mix}s1 {b}A
+set {mix}s1 {b:}A
 set t1 [type deref $s1]
-puts "$t1 [type get $t1]"           ;# 1 deref(mix).b
+puts "$t1 [type get $t1]"           ;# b 1 deref(mix).b   (v16w: a sum value is "variant payload")
 
-set {list.mix}L {b}A {a}7 {b}B
+set {list.mix}L {b:}A {a:}7 {b:}B
 puts [lmap e [type deref $L] {type get $e}]
                                     ;# deref(mix).b deref(mix).a deref(mix).b
 ```

@@ -5,7 +5,7 @@
 type def point {{double}x; {double}y}
 type def pdef {{double}x; {double}y = 0.5}
 type def {-compact}nuage list.point
-type def {-deduce}forme {{double}cote, {string}nom}
+type def forme {{double}cote, {string}nom}
 
 proc compile {nom} {expr {[string first declareLocal [tcl::unsupported::disassemble proc $nom]] >= 0}}
 proc p1 {} {( A is point = (1.0, 2.0); [list $A [type get $A] [catch {set A abc} m] $m] )}
@@ -25,7 +25,7 @@ puts "déjà typée : [p6 $q]"
 proc p7 {} {( N is nuage = ((1.0, 2.0), (3.0, 4.0)); [list $N [expr {[tcl::unsupported::compact info $N] ne ""}]] )}
 puts "compacte : [p7]"
 proc p8 {s} {( S is forme = $s; [list $S [type get $S]] )}
-puts "somme : [p8 {cote}2.0] [p8 {nom}carré]"
+puts "somme : [p8 {cote:}2.0] [p8 {nom:}carré]"
 proc p9 {} {
     upvar 0 B A
     expr {A is point = (5.0, 6.0)}

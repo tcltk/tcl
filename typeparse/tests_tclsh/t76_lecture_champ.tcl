@@ -18,7 +18,7 @@ puts "autre type : [lx $p2] [sx $p2]"
 proc lr {c} {list [expr {$c(r) + $c(g) + $c(b)}] [type get $c(g)] [expr {$c(r) / 2}] [expr {$c(r) & 0xF}]}
 set {rgb}c 200 100 50
 puts "rgb : [lr $c]"
-type def {-deduce}forme {{double}cote, {double}rayon}
+type def forme {{double}cote, {double}rayon}
 type def objet {{string}nom; {forme}f}
 proc lf {o} {list $o(f) [type get $o(f)] $o(nom) [type get $o(nom)]}
 set {objet}o boule {rayon:}2.0

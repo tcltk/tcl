@@ -49,7 +49,7 @@ type def rep_ptrAndSize    {{ptr}ptr; {Tcl_Size}size}            ;# struct
 
 # FR : la SOMME : une valeur est UNE de ces variantes (comme l'union C).
 # EN : the SUM: a value is ONE of these variants (like the C union).
-type def {-deduce}Tcl_ObjInternalRep {
+type def Tcl_ObjInternalRep {
     {rep_longValue}longValue, {rep_doubleValue}doubleValue,
     {rep_otherValuePtr}otherValuePtr, {rep_wideValue}wideValue,
     {rep_twoPtrValue}twoPtrValue, {rep_ptrAndLongRep}ptrAndLongRep,

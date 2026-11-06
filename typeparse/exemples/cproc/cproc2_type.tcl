@@ -35,15 +35,15 @@ namespace eval ::cproc {
     # --- les données du générateur ----------------------------------------
 
     # un champ de la signature : {T}nom ?= défaut
-    type def {-strict}defval {"none", {string}const, {string}computed}
+    type def defval {"none", {string}const, {string}computed}
     type def field   {{string}ttext; {string}name; {defval}def}
 
     # ce que voit le C d'un type Tcl
     type def cstruct {{string}name; {string}qual; {string}ns; {string}tname}
     type def cnum    {{"double", "float", "wide", "int", "fix"}how; {string}ctype}
-    type def {-strict}celem {{cstruct}struct, {cnum}num}
+    type def celem {{cstruct}struct, {cnum}num}
     type def cspan   {{celem}elem; {string}ename}
-    type def {-strict}kind {{cstruct}struct, {cspan}span, {cnum}num, "str", "obj"}
+    type def kind {{cstruct}struct, {cspan}span, {cnum}num, "str", "obj"}
     type def param   {{string}local; {kind}kind; {field}field}
 
     # un bloc de type {c!}export : une struct, une union, un scalaire

@@ -11,18 +11,20 @@ check "foreach list.int" $r {{} {} {}}
 check "lindex list.int" [type get [lindex $N 1]] int
 check "lmap list.int" [lmap e $N {type get $e}] {{} {} {}}
 catch {unset e}
-type def {-deduce}Val {{int}i, {string}s}
+type def Val {{int}i, {string}s}
 set {list.Val}L {i:}5 {s:}hello {s:}7 {Val.i}8
-check "L" $L {5 hello 7 8}
+check "L" $L {{i 5} {s hello} {s 7} {i 8}}
 catch {unset e}
 check "variantes foreach" [lmap e $L {type get $e}] {Val.i Val.s Val.s Val.i}
 check "L(2) garde la balise" [type get $L(2)] Val.s
 check "lindex L 2" [type get [lindex $L 2]] Val.s
-set {list.Val}P 5 hello
+# v16w : une union (|) se lit sans balise ; une somme (,) écrit sa variante
+type def ValU {{int}i | {list(2).int}p}
+set {list.ValU}P 5 {1 2}
 catch {unset e}
-check "sans balise (déduite)" [lmap e $P {type get $e}] {Val.i Val.s}
+check "union, sans balise" [lmap e $P {type get $e}] {ValU.i ValU.p}
 catch {set {list.Val}M {i:}abc} m
-check "refus {i:}abc" $m {value "abc" is not valid for that variant of Val}
+check "refus {i:}abc" $m {expected integer but got "abc"}
 catch {set {list.Val}M {Val.zz}1} m
 check "refus Val.zz" $m {unknown type "zz"}
 set {Val.s}w 7

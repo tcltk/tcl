@@ -65,6 +65,38 @@ SettleSuspend(int delta)
  */
 static int PlainElemType(const TclType *tp, int depth);
 
+/*
+ * v16w : les éléments étiquetés ({b:}3) d'une liste de sommes, mis dans la
+ * liste par lappend ou linsert (qui reçoivent le mot) : l'étiquette nomme la
+ * variante, l'élément devient "b 3". list est privée (modifiable).
+ */
+static int
+LabeledElems(Tcl_Interp *interp, TclType *tp, Tcl_Obj *list)
+{
+    Tcl_Size n, i;
+    Tcl_Obj **ev, *lab, *e;
+
+    if (tp->kind != TCLT_LIST || tp->elem == NULL || !TclSumTagged(tp->elem)
+	    || TclListObjGetElements(NULL, list, &n, &ev) != TCL_OK) {
+	return TCL_OK;
+    }
+    for (i = 0; i < n; i++) {
+	if (!TclIsAnnotated(ev[i]) || (lab = TclAnnotLabelOf(ev[i])) == NULL) {
+	    continue;
+	}
+	Tcl_DecrRefCount(lab);
+	e = TclTypedConform(interp, tp->elem, ev[i]);
+	if (e == NULL) {
+	    return TCL_ERROR;
+	}
+	Tcl_IncrRefCount(e);
+	Tcl_ListObjReplace(NULL, list, i, 1, 1, &e);
+	Tcl_DecrRefCount(e);
+	TclListObjGetElements(NULL, list, &n, &ev);
+    }
+    return TCL_OK;
+}
+
 static Tcl_Obj *
 MakeTyped(Tcl_Interp *interp, TclType *tp, Tcl_Obj *arg, int prefer)
 {
@@ -110,6 +142,10 @@ MakeTyped(Tcl_Interp *interp, TclType *tp, Tcl_Obj *arg, int prefer)
 	outVariant = -2 - prefer;
     }
     copy = Tcl_DuplicateObj(content);
+    if (LabeledElems(interp, tp, copy) != TCL_OK) {
+	TclDiscard(copy);
+	return NULL;
+    }
     /* Valide (arité, clés) et ajoute les valeurs par défaut des clés
      * manquantes : dict(x?=0). */
     if (TclTypeComplete(interp, tp, copy, outVariant, &variant) != TCL_OK) {
@@ -242,14 +278,26 @@ TclTypedVarPrepareWrite(Tcl_Interp *interp, Var *varPtr,
     /* Variable typée : le contrat est le type de la valeur courante. */
     if (*flagsPtr & TCL_APPEND_VALUE) {
 	/* append / lappend : valider le RÉSULTAT, pas le delta. */
-	Tcl_Obj *add = value, *sum, *settledAdd = NULL;
+	Tcl_Obj *add = value, *sum, *settledAdd = NULL, *lab0 = NULL;
 	int rc;
 
 	if (TclAnnotResolve(interp, value, contract, &status, &at, &avar,
 		&content) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	if (status == TCLA_PLAIN) {
+	if ((*flagsPtr & TCL_LIST_ELEMENT) && contract->kind == TCLT_LIST
+		&& contract->elem != NULL && TclSumTagged(contract->elem)
+		&& (lab0 = TclAnnotLabelOf(value)) != NULL) {
+	    /* v16w : lappend L {b:}3 dans une liste de sommes : l'étiquette
+	     * (lue par lappend, qui reçoit le mot) fait l'élément "b 3" */
+	    Tcl_DecrRefCount(lab0);
+	    settledAdd = TclTypedConform(interp, contract->elem, value);
+	    if (settledAdd == NULL) {
+		return TCL_ERROR;
+	    }
+	    Tcl_IncrRefCount(settledAdd);
+	    add = settledAdd;
+	} else if (status == TCLA_PLAIN) {
 	    add = content;		/* valeur ordinaire, ou annotation locale */
 	} else if (!(contract->kind == TCLT_LIST && contract->elem != NULL
 			&& (*flagsPtr & TCL_LIST_ELEMENT)
@@ -475,7 +523,7 @@ TclTypedConformHint(Tcl_Interp *interp, TclType *tp, Tcl_Obj *arg, int hint)
 	    != TCL_OK) {
 	return NULL;
     }
-    if (status == TCLA_RAW
+    if (status == TCLA_RAW && !(variant >= 0 && TclSumTagged(at))
 	    && TclTypeValidate(interp, at, content, variant, NULL) != TCL_OK) {
 	return NULL;
     }
@@ -499,7 +547,8 @@ TclTypedConformHint(Tcl_Interp *interp, TclType *tp, Tcl_Obj *arg, int hint)
 	int chosen = -1;
 
 	if (TclTypeComplete(interp, tp, copy,
-		((status == TCLA_TYPED || status == TCLA_RAW) && at == tp
+		((status == TCLA_RAW || (status == TCLA_TYPED
+			&& !TclSumTagged(tp))) && at == tp
 			&& tp->kind == TCLT_SUM && variant >= 0) ? variant : hint,
 		&chosen) != TCL_OK) {
 	    TclDiscard(copy);
@@ -1164,14 +1213,57 @@ BuildSum(Tcl_Interp *interp, TclType *tp, int forced, Tcl_Size n,
     Tcl_Obj *content, *c;
     Tcl_Size i;
 
-    if (n != 1) {
-	WrongArgs(interp, "a sum value takes exactly one argument");
-	return TCL_ERROR;
-    }
-    if (forced >= 0) {			/* set {U}x(d) 5 */
-	c = TclTypedConform(interp, tp->fields[forced].type, a[0]);
+    if (TclSumTagged(tp) && n == 2 && forced < 0) {
+	/* v16w : set {S}x v charge : la variante, puis sa valeur */
+	Tcl_Obj *pair[2];
+	Tcl_Size vi = TclTypeFieldIndex(tp, Tcl_GetString(a[0]));
+
+	if (vi < 0 || tp->fields[vi].type == NULL) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf("%s has no variant \"%s\" "
+		    "with a value", tp->name, Tcl_GetString(a[0])));
+	    Tcl_SetErrorCode(interp, "TCL", "TYPE", "VARIANT", (char *) NULL);
+	    return TCL_ERROR;
+	}
+	c = TclTypedConform(interp, tp->fields[vi].type, a[1]);
 	if (c == NULL) {
 	    return TCL_ERROR;
+	}
+	pair[0] = tp->fields[vi].name;
+	pair[1] = c;
+	*contentPtr = Tcl_NewListObj(2, pair);
+	*variantPtr = (int) vi;
+	return TCL_OK;
+    }
+    if (n != 1 && !(tp->sumMode == TCLT_SUM_UNION && n > 1 && forced < 0)) {
+	WrongArgs(interp, TclSumTagged(tp) ? "a sum value takes one "
+		"argument, or two: the variant then its value"
+		: "a sum value takes exactly one argument");
+	return TCL_ERROR;
+    }
+    if (n > 1) {
+	/* v16w : set {U}u 3 4 : une union reçoit la liste des valeurs */
+	c = Tcl_NewListObj(n, a);
+	if (TclTypeValidate(interp, tp, c, -1, variantPtr) != TCL_OK) {
+	    TclDiscard(c);
+	    return TCL_ERROR;
+	}
+	*contentPtr = c;
+	return TCL_OK;
+    }
+    if (forced >= 0) {			/* set {U}x(d) 5 */
+	if (tp->fields[forced].type == NULL) {
+	    c = Tcl_DuplicateObj(tp->fields[forced].literal);
+	} else {
+	    c = TclTypedConform(interp, tp->fields[forced].type, a[0]);
+	}
+	if (c == NULL) {
+	    return TCL_ERROR;
+	}
+	if (TclSumTagged(tp)) {
+	    Tcl_Obj *w = TclSumMake(tp, forced, c);
+
+	    TclDiscard(c);
+	    c = w;
 	}
 	*contentPtr = c;
 	*variantPtr = forced;
@@ -1182,6 +1274,29 @@ BuildSum(Tcl_Interp *interp, TclType *tp, int forced, Tcl_Size n,
 	return TCL_ERROR;
     }
     c = Tcl_DuplicateObj(content);
+    if (status == TCLA_RAW && variant >= 0 && TclSumTagged(tp)) {
+	/* set {S}x {d:}5 : l'étiquette donne la variante, la valeur est sa
+	 * charge (v16w) */
+	Tcl_Obj *pl;
+
+	if (tp->fields[variant].type == NULL) {
+	    pl = NULL;
+	} else {
+	    pl = TclTypedConform(interp, tp->fields[variant].type, c);
+	    if (pl == NULL) {
+		TclDiscard(c);
+		return TCL_ERROR;
+	    }
+	}
+	TclDiscard(c);
+	c = TclSumMake(tp, variant, pl);
+	if (pl != NULL) {
+	    TclDiscard(pl);
+	}
+	*variantPtr = variant;
+	*contentPtr = c;
+	return TCL_OK;
+    }
     if (status == TCLA_RAW && variant >= 0) {	/* set {U}x {d}5 */
 	if (TclTypeValidate(interp, tp, c, variant, variantPtr) != TCL_OK) {
 	    TclDiscard(c);
@@ -1202,9 +1317,38 @@ BuildSum(Tcl_Interp *interp, TclType *tp, int forced, Tcl_Size n,
 	    TclDiscard(c);
 	    return TCL_ERROR;
 	}
-	for (i = 0; i < tp->nfields; i++) {
-	    if (tp->fields[i].type == at) {	/* valeur du type d'une variante */
-		*variantPtr = (int) i;
+	{
+	    int found = -1, again = -1;
+
+	    for (i = 0; i < tp->nfields; i++) {
+		if (tp->fields[i].type == at) {	/* du type d'une variante */
+		    if (found < 0) {
+			found = (int) i;
+		    } else if (again < 0) {
+			again = (int) i;
+		    }
+		}
+	    }
+	    if (found >= 0 && again >= 0 && TclSumTagged(tp)) {
+		/* v16w : deux variantes de ce type : laquelle ? */
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf("a value of type %s "
+			"fits variants %s and %s of %s: write {%s:}value",
+			at->name, Tcl_GetString(tp->fields[found].name),
+			Tcl_GetString(tp->fields[again].name), tp->name,
+			Tcl_GetString(tp->fields[found].name)));
+		Tcl_SetErrorCode(interp, "TCL", "TYPE", "AMBIGUOUS",
+			(char *) NULL);
+		TclDiscard(c);
+		return TCL_ERROR;
+	    }
+	    if (found >= 0) {
+		*variantPtr = found;
+		if (TclSumTagged(tp)) {
+		    Tcl_Obj *w = TclSumMake(tp, found, c);
+
+		    TclDiscard(c);
+		    c = w;
+		}
 		*contentPtr = c;
 		return TCL_OK;
 	    }
@@ -1695,6 +1839,12 @@ TclSetAnnotatedCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 	if (sumTp != NULL) {		/* le produit d'une variante */
 	    tp = sumTp;
 	    variant = sumVar;
+	    if (TclSumTagged(tp)) {	/* v16w : la valeur écrit sa variante */
+		Tcl_Obj *w = TclSumMake(tp, variant, c);
+
+		TclDiscard(c);
+		c = w;
+	    }
 	}
 	if (c->refCount == 0) {		/* privé : pris, pas recopié */
 	    valueA = TclNewAnnotatedOwn(c, TclTypeRefFor(interp, tp, variant));

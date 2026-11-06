@@ -14,7 +14,7 @@ namespace path                     ::geom::point
 proc dans geom                     ::geom::point
 proc args                          5.0
 famille dans geom                  ::geom::grille(2) ::geom::point
-somme                              ::geom::S.at {1 2}
+somme                              ::geom::S.at {at {1 2}}
 type forget                        unknown type "::geom::S"
 après namespace delete             ::geom::point {1 2} 1 {unknown type "geom::point"}
 redéfini                           ::geom::point {{int}i} ::geom::point

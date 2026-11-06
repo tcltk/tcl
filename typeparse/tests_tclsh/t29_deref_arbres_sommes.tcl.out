@@ -1,8 +1,8 @@
-somme : A -> 1  (deref(mix).b)  b=1
-variante a : 5  (deref(mix).a)
-variante s : hello  (deref(mix).s)
-liste de sommes : 1 7 2  deref(mix).b deref(mix).a deref(mix).b
-bt : ::A ::B -> 1 2  (deref(bt).node)  premiere feuille : deref(bt).leaf = 1
+somme : b ::A -> b 1  (deref(mix).b)  b=1
+variante a : a 5  (deref(mix).a)
+variante s : s hello  (deref(mix).s)
+liste de sommes : {b 1} {a 7} {b 2}  deref(mix).b deref(mix).a deref(mix).b
+bt : node {{leaf ::A} {leaf ::B}} -> node {{leaf 1} {leaf 2}}  (deref(bt).node)  premiere feuille : deref(bt).leaf = 1
 arbre : 1 {{2 {}} {3 {}}}  (deref(tree(var)))
   racine=1 enfants=2,3
   apres A=100 : instantane=1 lien=100

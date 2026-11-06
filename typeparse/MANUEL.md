@@ -157,7 +157,7 @@ CET INSTANT : le résultat ne change plus ensuite.
   instantanés du même type ont le même type.
 
     type def mix {{int}a, {var.int}b, {string}s}
-    set {mix}s1 {b}A
+    set {mix}s1 {b:}A
     type get [type deref $s1]           ;# deref(mix).b
 
     set {tree(var)}T A {{B {}} {C {}}}  ;# arbre dont les valeurs sont des liens
@@ -180,8 +180,12 @@ pas la même chose.
 | choix de la variante | aucun, il n'y en a pas | par un champ déjà lu (`S($tag)`) ou par son nom (`S(x)`) |
 
 Conséquences :
-* Il n'y a **pas d'`union` dans ce modèle**, volontairement : on garde les garde-fous. Une
-  somme ne peut pas être lue « de travers ».
+* Il n'y a **pas d'`union` du C dans ce modèle**, volontairement : on garde les garde-fous.
+  Une somme ne peut pas être lue « de travers ». Depuis la v16w, sa valeur écrit même sa
+  variante (`x {…}`), comme le champ « tag » à côté d'une union C dans une `struct`. L'**union**
+  `{A}x | {B}y` de la v16w n'est pas non plus une union C : elle accepte une valeur de l'une des
+  formes, ses alternatives doivent être disjointes, et la valeur montre elle-même laquelle elle
+  est.
 * Quand le format ne dit pas quelle variante est valide (la `Tcl_ObjInternalRep` de Tcl, dont
   le discriminant est l'adresse `typePtr`, extérieure à l'union), on choisit la variante
   **à l'appel** : `Tcl_ObjAs(twoPtrValue)` (voir `exemples/tcl_obj.tcl`). C'est l'appelant qui

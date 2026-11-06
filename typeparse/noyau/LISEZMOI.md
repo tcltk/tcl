@@ -2356,6 +2356,54 @@ construisent une liste neuve et la typent. Dans le tutoriel, l'étape 2 passe de
 `tests_tclsh/t101_chemins_caches.tcl` : le même index lu sur des types différents, après une
 erreur, substitué, écrit, réutilisé ailleurs.
 
+### v16w — sommes balisées, unions (6 novembre 2026)
+
+Pas de patch noyau. Sources de types : `tclTypes.c`, `tclTypes.h`, `tclTypesInt.h`,
+`tclTypeParse.c`, `tclAnnotObj.c`, `tclTypePath.c`, `tclTypedVar.c`. `layout/binaliases.tcl` :
+`opt(T)` devient `{$T}some, "none"`. Le diagnostic et la décision : `doc/DIAGNOSTIC-SOMMES.md`.
+
+- **Somme `,` : la valeur écrit sa variante.** `TclSumTagged(tp)` (une somme, ni union ni
+  `S($champ)`) ; la valeur V est la liste `{nom charge}`, ou le littéral seul. `TclSumDecode`
+  (variante et charge depuis V) et `TclSumMake` (V depuis la variante et la charge) sont les deux
+  seules portes. `ValidateG` décode et valide la charge dans le type de la variante ; un indice
+  de variante n'y fait que contrôler. `TclTypeComplete` avec une variante désignée (étiquette,
+  `S.v`) reçoit la **charge** et fait la valeur ; `FillDefaults` complète la charge.
+- **Union `|`** : nouveau lexème `UNION` au rang de `,`, `TB_UNION`, `TypeItem.isUnion` ;
+  `TclTypesFinishSum(…, isUnion)` ; nom canonique `union<…>` ; `sumMode` vaut
+  `TCLT_SUM_TAGGED` ou `TCLT_SUM_UNION` (copié par `CopyInto`). Une union est l'ancienne somme à
+  déduction, restreinte aux alternatives disjointes : `UnionOverlap` (sur `TclTypeSumOverlaps`)
+  refuse les autres à la définition. Mélanger `,` et `|` au même niveau est refusé.
+- **Définitions** : une variante typée d'une somme a un nom ; `{-strict}` et `{-deduce}` sont
+  refusés avec un message ; plus d'avertissement sur stderr. `{{double}r}cercle` (un champ seul,
+  nommé) est un produit à un champ.
+- **Construction** (`tclTypedVar.c`) : `BuildSum` accepte `set {S}v nom charge`, l'étiquette
+  (charge conformée puis `TclSumMake`), le chemin `set {S}v(i) 5`, `set {S.v}x …` d'une variante
+  produit, l'injection d'une valeur du type d'une variante (erreur si deux variantes ont ce
+  type) ; une union accepte plusieurs arguments (la liste). `LabeledElems` : les éléments
+  étiquetés d'une liste de sommes (`lappend`, `lset`) deviennent `nom charge`. `TclAnnotSettle`
+  : une étiquette sous le type d'une somme vaut aussi sur une valeur typée d'un autre type
+  (`return {const:}$d`, `d` une `string`). `{none:}` nomme une variante littérale.
+- **Chemins** (`tclTypePath.c`) : `Step`, `SetIn`, `ConstructLevel`, `DerefWalk` décodent et
+  refont `nom charge` ; un nom qui n'est pas une variante est un pas dans la charge courante
+  (`$f(w)` d'un `forme.rect`), si elle est un conteneur.
+- **Vue liste** : une valeur de somme est un conteneur de deux éléments (`lassign $v nom x`), un
+  littéral un scalaire (`EffectiveKind`, `AnnotListElemTypeAt`).
+- **Casts** : toute valeur se lit en `string` (son texte) ; une union se lit comme le type de
+  son alternative ; une somme jamais (message qui donne le chemin `$v(i)`) ; l'injection
+  ambiguë est refusée. `TclTypeVariantConvert` travaille sur les charges.
+- **Commandes** : `type variant VALEUR`, `type is {union?}S` (au lieu de `{strict?}`) ;
+  `type get` nomme la variante littérale d'une somme qui a aussi des variantes typées
+  (`opt(rec).none`).
+- **Codec C** : `opt` en `some X` / `none` (`BinLinkValue`, `BinFastEnc`, `BinLinkSome`,
+  `LinkReprBody`) ; les sommes `S($champ)` (la balise est un champ voisin) gardent la charge
+  seule.
+
+Migration : les options des sommes retirées des tests et des exemples ; `inter` (géométrie),
+`intersection` et `found` (tcllib) deviennent des unions ; `t94` réécrit (sommes et unions),
+`t66` (variantes de même forme) et `t18` adaptés, les sorties des autres tests mises à jour
+(valeurs `nom charge`). Reste : l'étiquette `return {v:}…` dans un corps non compilé (`eval`,
+`uplevel`, `switch -matchvar`) expire avant le contrôle ; `return [list v …]` marche partout.
+
 ### Exemple `zip` (6 novembre 2026, sur v16u)
 
 `exemples/zip/zipmem.tcl` : une archive zip décrite par des types binaires, lue en mémoire,

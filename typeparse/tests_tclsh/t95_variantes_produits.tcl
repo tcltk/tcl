@@ -5,7 +5,7 @@
 proc t {label script} {
     if {[catch {uplevel #0 $script} r]} { puts "$label: ERREUR $r" } else { puts "$label: $r" }
 }
-type def {-strict}seg {
+type def seg {
     {string}texte,
     {{string}cible; {list.seg}contenu}lien,
     {{string}style; {list.seg}contenu ?= {}}marque
@@ -31,7 +31,7 @@ t "variante entière"             {set {seg}s(texte) abc; type get $s}
 t "deux variantes"               {set {seg}s(lien.cible,marque.style) u x}
 t "variante inconnue"            {set {seg}s(gros.cible) u}
 t "champ inconnu"                {set {seg}s(lien.(href,contenu)) u $c}
-type def {-deduce}N {{int}i, {string}s}
+type def N {{int}i, {string}s}
 type def P2 {{N}n; {int}m}
 t "somme dans un produit"        {set {P2}r(n.i,m) 4 5; list [type get $r] [type get $r(n)]}
 type def style {{string}famille ?= "Helvetica"; {int}taille ?= 11; {string}poids ?= "normal"}

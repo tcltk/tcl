@@ -213,6 +213,9 @@ void	TclTypesFreeKeys(TclDictKey *keys, Tcl_Size n);
 /* Prend possession de fields (même en cas d'échec). */
 TclType *TclTypesFinish(Tcl_Interp *interp, TypeData *d, const char *selfName,
 	    TclTypeKind kind, TclTypeField *fields, Tcl_Size n, TclType *into);
+TclType *TclTypesFinishSum(Tcl_Interp *interp, TypeData *d,
+	const char *selfName, TclTypeKind kind, TclTypeField *fields,
+	Tcl_Size n, TclType *into, int isUnion);
 void	TclTypesFreeFields(TclTypeField *fields, Tcl_Size n);
 
 #endif /* TCLTYPESINT_H */

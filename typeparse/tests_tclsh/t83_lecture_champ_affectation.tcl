@@ -6,7 +6,7 @@
 type def point {{double}x; {double}y}
 type def pi {{int}n; {point}p; {string}s}
 type def {-compact}nuage list.point
-type def {-deduce}forme {{double}cote, {string}nom}
+type def forme {{double}cote, {string}nom}
 
 proc instr {nom} {
     set d [tcl::unsupported::disassemble proc $nom]

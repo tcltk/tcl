@@ -9,4 +9,4 @@ foreach d {
   {{{int}a; {int}b}, {string}c}
   {{int}, {string}}
   {{int}x; {int}y}
-} { incr k; puts "[format %-34s $d] -> [catch {if {$k in {5 6 7}} {type def {-deduce}M$k $d} else {type def M$k $d}} m] $m" }
+} { incr k; puts "[format %-34s $d] -> [catch {if {$k in {5 6 7}} {type def M$k $d} else {type def M$k $d}} m] $m" }

@@ -162,7 +162,7 @@ variabele OP DAT MOMENT heeft: het resultaat verandert daarna niet meer.
   hergebruikt: twee momentopnamen van hetzelfde type hebben hetzelfde type.
 
     type def mix {{int}a, {var.int}b, {string}s}
-    set {mix}s1 {b}A
+    set {mix}s1 {b:}A
     type get [type deref $s1]           ;# deref(mix).b
 
     set {tree(var)}T A {{B {}} {C {}}}  ;# een boom waarvan de waarden koppelingen zijn

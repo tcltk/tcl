@@ -157,7 +157,7 @@ variable EN ESE INSTANTE: el resultado ya no cambia después.
   dos instantáneas del mismo tipo tienen el mismo tipo.
 
     type def mix {{int}a, {var.int}b, {string}s}
-    set {mix}s1 {b}A
+    set {mix}s1 {b:}A
     type get [type deref $s1]           ;# deref(mix).b
 
     set {tree(var)}T A {{B {}} {C {}}}  ;# árbol cuyos valores son enlaces

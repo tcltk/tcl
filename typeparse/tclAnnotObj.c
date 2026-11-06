@@ -827,6 +827,16 @@ AnnotListElemTypeAt(Tcl_Obj *aPtr, Tcl_Size index)
 	}
     }
     lt = tp;
+    if (TclSumTagged(tp)) {
+	/* v16w : "v charge" : la variante (texte), puis la charge */
+	Tcl_Obj *pl;
+	int vv = TclSumDecode(tp, content, &pl);
+
+	if (index == 1 && vv >= 0 && tp->fields[vv].type != NULL) {
+	    return tp->fields[vv].type;
+	}
+	return NULL;
+    }
     if (tp->kind == TCLT_SUM) {
 	if (variant < 0 || variant >= (int) tp->nfields
 		|| tp->fields[variant].type == NULL) {
@@ -2001,7 +2011,8 @@ TclAnnotResolve(Tcl_Interp *interp, Tcl_Obj *objPtr, const TclType *ctx,
 	    if (idx < 0 && TclAnnotOldLabel(interp, ctx, Tcl_GetString(last))) {
 		return TCL_ERROR;		/* {v}$x : écrire {v:} */
 	    }
-	    if (idx >= 0 && ctx->fields[idx].type != NULL) {
+	    if (idx >= 0 && (ctx->fields[idx].type != NULL
+		    || TclSumTagged(ctx))) {	/* v16w : {none:} */
 		*statusPtr = TCLA_RAW;
 		*tpPtr = (TclType *) ctx;
 		*variantPtr = (int) idx;
@@ -2034,7 +2045,8 @@ TclAnnotResolve(Tcl_Interp *interp, Tcl_Obj *objPtr, const TclType *ctx,
 	if (idx < 0 && TclAnnotOldLabel(interp, ctx, text)) {
 	    return TCL_ERROR;			/* {v} : écrire {v:} */
 	}
-	if (idx >= 0 && ctx->fields[idx].type != NULL) {
+	if (idx >= 0 && (ctx->fields[idx].type != NULL
+		    || TclSumTagged(ctx))) {	/* v16w : {none:} */
 	    *statusPtr = TCLA_RAW;
 	    *tpPtr = (TclType *) ctx;
 	    *variantPtr = (int) idx;
@@ -2177,6 +2189,15 @@ EffectiveKind(const TclType *tp, int variant, Tcl_Obj *content)
 
     for (depth = 0; tp->kind == TCLT_SUM && depth < 16; depth++) {
 	const TclTypeField *f;
+
+	if (TclSumTagged(tp)) {
+	    /* v16w : "v charge" est un conteneur de deux éléments (la
+	     * variante, la charge) ; une variante littérale, un scalaire */
+	    int vv = TclSumDecode(tp, content, NULL);
+
+	    return (vv >= 0 && tp->fields[vv].type == NULL) ? TCLT_STRING
+		    : TCLT_PRODUCT;
+	}
 
 	if (variant < 0 || variant >= tp->nfields) {
 	    return TCLT_SUM;
@@ -2496,7 +2517,8 @@ ClassifyAnnot(Tcl_Interp *interp, Tcl_Obj *textObj, const TclType *ctx,
     }
     if (ctx != NULL && ctx->kind == TCLT_SUM) {
 	idx = TclAnnotLabelIndex(ctx, text);	/* {v:} (v16l) */
-	if (idx >= 0 && ctx->fields[idx].type != NULL) {
+	if (idx >= 0 && (ctx->fields[idx].type != NULL
+		    || TclSumTagged(ctx))) {	/* v16w : {none:} */
 	    if (variantPtr != NULL) {
 		*variantPtr = (int) idx;
 	    }
@@ -2932,7 +2954,9 @@ TclAnnotSettle(Tcl_Interp *interp, Tcl_Obj *objPtr, const TclType *ctx,
 	cls = ClassifyAnnot(interp, elv[i], ctx, &tp, &v);
 	if (cls == ANN_LOCAL) {
 	    if (nr > 0 && rv[nr - 1] < 0 && rt[nr - 1]->kind == TCLT_SUM
-		    && cur == NULL) {
+		    && (cur == NULL || cur != rt[nr - 1])) {
+		/* (v16w : aussi sur une valeur typée d'un autre type, {s:}$d :
+		 * sa valeur est la charge) */
 		/* type cast S {v:}x (v16l) : l'étiquette sous le type d'une
 		 * somme nomme sa variante. */
 		Tcl_Size fi = TclAnnotLabelIndex(rt[nr - 1],
@@ -3020,16 +3044,43 @@ TclAnnotSettle(Tcl_Interp *interp, Tcl_Obj *objPtr, const TclType *ctx,
     if (nr > 0 && cur != NULL && cur == rt[0] && cur->kind == TCLT_SUM
 	    && rv[0] >= 0 && curVar >= 0 && rv[0] != curVar) {
 	/* {S.b}$v, v en S.a : d'une variante à l'autre (règle, ou cast). */
-	Tcl_Obj *c;
+	Tcl_Obj *c, *pl = content;
 
-	if (TclTypeVariantConvert(interp, cur, curVar, content, rv[0], &c)
+	if (TclSumTagged(cur)) {	/* v16w : la charge de "v charge" */
+	    TclSumDecode(cur, content, &pl);
+	    if (pl == NULL) {
+		pl = content;
+	    }
+	}
+	if (TclTypeVariantConvert(interp, cur, curVar, pl, rv[0], &c)
 		!= TCL_OK) {
 	    Tcl_DecrRefCount(pend);
 	    return TCL_ERROR;
 	}
+	if (TclSumTagged(cur)) {
+	    Tcl_Obj *w = TclSumMake(cur, rv[0], c);
+
+	    TclDiscard(c);
+	    c = w;
+	}
 	val = TclNewAnnotated(interp, cur, rv[0], c);
 	TclDiscard(c);
 	Tcl_IncrRefCount(val);
+    } else if (nr > 0 && cur != NULL && cur != rt[0]
+	    && rt[0]->kind == TCLT_SUM && rv[0] >= 0) {
+	/* v16w : {const:}$d, d typée (string) : l'étiquette nomme la
+	 * variante, la valeur de d est sa charge */
+	Tcl_Obj *copy = Tcl_DuplicateObj(content);
+
+	Tcl_IncrRefCount(copy);
+	if (TclTypeComplete(interp, rt[0], copy, rv[0], &variant) != TCL_OK) {
+	    Tcl_DecrRefCount(copy);
+	    Tcl_DecrRefCount(pend);
+	    return TCL_ERROR;
+	}
+	val = TclNewAnnotated(interp, rt[0], variant, copy);
+	Tcl_IncrRefCount(val);
+	Tcl_DecrRefCount(copy);
     } else if (nr > 0 && cur != NULL) {
 	Tcl_Obj *base = MakeAnnotated(Tcl_DuplicateObj(content),
 		TypeRefObj(interp, cur, curVar));
@@ -3721,11 +3772,27 @@ TclAnnotDisplay(Tcl_Interp *interp, Tcl_Obj *objPtr, int withNotes)
 	kind = TclAnnotInfo(norm, &content, &tp, &variant, &raw);
 	if (kind == 1) {
 	    Tcl_AppendToObj(res, tp->name, TCL_AUTO_LENGTH);
+	    if (TclSumTagged(tp)) {
+		variant = TclSumDecode(tp, content, NULL);	/* v16w */
+	    }
 	    if (tp->kind == TCLT_SUM && variant >= 0
 		    && variant < (int) tp->nfields
 		    && tp->fields[variant].name != NULL) {
 		Tcl_AppendToObj(res, ".", 1);
 		Tcl_AppendObjToObj(res, tp->fields[variant].name);
+	    } else if (TclSumTagged(tp) && variant >= 0
+		    && variant < (int) tp->nfields) {
+		/* v16w : une variante littérale d'une somme qui a aussi des
+		 * variantes typées (opt : "none") ; pas pour une énumération */
+		Tcl_Size k;
+
+		for (k = 0; k < tp->nfields; k++) {
+		    if (tp->fields[k].type != NULL) {
+			Tcl_AppendToObj(res, ".", 1);
+			Tcl_AppendObjToObj(res, tp->fields[variant].literal);
+			break;
+		    }
+		}
 	    }
 	}
 	/* Une annotation en attente (même un type connu, pas encore résolu
@@ -3903,7 +3970,22 @@ TclAnnotLabelIndex(const TclType *tp, const char *text)
     }
     memcpy(buf, text, len - 1);
     buf[len - 1] = '\0';
-    return TclTypeFieldIndex(tp, buf);
+    {
+	Tcl_Size i = TclTypeFieldIndex(tp, buf);
+
+	if (i < 0 && tp->kind == TCLT_SUM) {
+	    /* v16w : {none:} nomme aussi une variante littérale */
+	    for (i = 0; i < tp->nfields; i++) {
+		if (tp->fields[i].type == NULL && tp->fields[i].literal
+			&& strcmp(Tcl_GetString(tp->fields[i].literal), buf)
+			== 0) {
+		    return i;
+		}
+	    }
+	    return -1;
+	}
+	return i;
+    }
 }
 
 /*

@@ -220,12 +220,11 @@ type convert DE VERS LAMBDA    ;# déclare une conversion explicite
 type deref VALEUR              ;# instantané : chaque lien var remplacé par sa valeur
 type binary TYPE ...           ;# représentation binaire, encodage, décodage (§ 9)
 type def {-compact}NOM DÉF     ;# une liste (ou toute liste d'un produit) toujours en cases (§ 12.1)
-type def {-strict}S DÉF        ;# une somme dont la variante n'est jamais devinée (§ 8.4)
-type def {-deduce}S DÉF        ;# une somme dont la variante se déduit (§ 8.4)
 type def {-a,-b}NOM DÉF        ;# plusieurs options, dans la syntaxe des notes
 type is {compact?}TYPE|VALEUR  ;# une question sur un type ou une valeur
 type is {disjoint?}S           ;# les paires de variantes qui peuvent accepter une même valeur
-type is {strict?}S             ;# 1 si S a été défini {-strict}
+type is {union?}S              ;# 1 si S est une union (|) (v16w, § 8.4)
+type variant VALEUR            ;# la variante d'une valeur d'une somme ou d'une union (v16w)
 type proc NOM                  ;# la signature d'une procédure typée : args, return (§ 6.4, 6.5)
 type {{*}T}MOT, {{**}T}MOT     ;# le cast explicite, rendu déplié en liste ou en dict (§ 6.4)
 type {c!}export TYPE ?TYPE ...? ;# en-tête C des types nommés (§ 12.2) ; {llvm!} prévu
@@ -288,12 +287,13 @@ Un type s'écrit comme une expression, analysée sur le modèle d'`expr` (`tclTy
 | `( )` | arguments, collés au nom | `list(3).int`, `dict(x, y?)`, `pt(double)` |
 | `=` ou `?=` | valeur par défaut d'un champ | `{int}age ?= 0` |
 | `;` | produit | `{double}x; {double}y` |
-| `,` | somme | `{int}i, {string}s` |
+| `,` | somme (balisée) | `{int}i, {string}s` |
+| `\|` | union (v16w) | `{int}n \| {list(2).int}paire` |
 | `{ }nom` | groupement, avec un nom collé à l'accolade fermante | `{{int}x; {int}y}A` |
 
-`;` et `,` ne se mêlent pas au même niveau (`{int}a; {int}b, {string}c` est refusé) : la partie intérieure se regroupe entre accolades et se nomme (`{int}a; {{int}b, {string}c}u`), ou se définit à part avec `type def`. Dans un produit, tout champ a un nom, un groupe aussi ; une somme garde ses variantes anonymes (`{int}, {string}`, `{{int}a; {int}b}, {string}c`).
+`,` et `|` sont au même rang et ne se mêlent pas non plus (§ 8.4). `;` et `,` ne se mêlent pas au même niveau (`{int}a; {int}b, {string}c` est refusé) : la partie intérieure se regroupe entre accolades et se nomme (`{int}a; {{int}b, {string}c}u`), ou se définit à part avec `type def`. Dans un produit, tout champ a un nom, un groupe aussi. Dans une somme, toute variante typée a un nom, qui s'écrit dans sa valeur (v16w) ; une union peut garder ses alternatives anonymes (`{int} | {list(2).int}`). Un champ seul entre accolades et nommé est un produit à un champ : `{{double}r}cercle`.
 
-**Caractères.** Un nom de type ne contient que des lettres ASCII, des chiffres, `_` et des octets non ASCII, sans commencer par un chiffre. La grammaire emploie en plus `{ } , ; . = " # ( ) * $`. Tout autre signe ASCII (`! % & ' + - / : < > ? @ [ \ ] ^ | ~`) est refusé : `invalid character "!"`, code `TCL PARSE TYPE BADCHAR`, sauf après `=` (une valeur par défaut) et dans les parenthèses d'un constructeur (`*(file://x, …)`). C'est ce refus qui rend les annotations locales (`{-v}`, `{is?}`) sûres.
+**Caractères.** Un nom de type ne contient que des lettres ASCII, des chiffres, `_` et des octets non ASCII, sans commencer par un chiffre. La grammaire emploie en plus `{ } , ; . = " # ( ) * $`. Tout autre signe ASCII (`! % & ' + - / : < > ? @ [ \ ] ^ ~`) est refusé : `invalid character "!"`, code `TCL PARSE TYPE BADCHAR`, sauf après `=` (une valeur par défaut) et dans les parenthèses d'un constructeur (`*(file://x, …)`). C'est ce refus qui rend les annotations locales (`{-v}`, `{is?}`) sûres.
 
 Une définition est **déclarative** : aucune substitution n'y est faite à la lecture, sauf dans une valeur par défaut, évaluée à chaque construction.
 
@@ -308,13 +308,21 @@ set {couleur}c jaune           ;# value "jaune" matches no variant of couleur
 type def mz {"MZ"}             ;# un seul littéral : une constante (signature de fichier)
 ```
 
-**Somme** — une seule variante à la fois, qui porte son nom.
+**Somme** — une seule variante à la fois, dont la valeur **écrit le nom** (v16w) : `variante charge`, ou le littéral seul.
 
 ```tcl
 type def S {{int}i, {string}s}
-set {S}v {i:}5
+set {S}v {i:}5                 ;# v vaut "i 5"
+set {S}v i 5                   ;# la même chose, écrite en clair
 type get $v                    ;# S.i
-set {S.s}w abc                 ;# la variante choisie par le nom du type
+set {S.s}w abc                 ;# w vaut "s abc" : la variante choisie par le nom du type
+```
+
+**Union** — une valeur de l'une des formes, sans balise : la valeur est la charge seule, et l'alternative se calcule. Les alternatives doivent être disjointes (v16w, § 8.4).
+
+```tcl
+type def U {{int}n | {list(2).int}paire}
+set {U}u 3 4                   ;# u vaut "3 4", de type U.paire
 ```
 
 **Produit** — une `struct` : des champs nommés, ordonnés, chacun de son type.
@@ -432,7 +440,7 @@ Une règle `type convert` peut viser un type ou une **famille** (le nom d'un `ty
 | `cstring`, `wstringz`, `latin1z` | `string(utf-8,z)`, `string(utf-16le,z)`, `string(latin1,z)` |
 | `ptr32(T)`, `ptr64(T)` | `*(//,u32le,null).T`, `*(//,u64le,null).T` |
 | `rel32(T)`, `sub32(T)` | `*(.,i32le).T`, `*(./,u32le).T` |
-| `unit`, `opt(T)` | `""` ; `{T}some, {unit}none` |
+| `unit`, `opt(T)` | `""` ; `{T}some, "none"` (valeurs `some X` ou `none`, v16w) |
 
 Ces alias sont globaux (`::u8`…) : le fichier les définit avec leur nom qualifié depuis son espace de noms (§ 5.8).
 
@@ -560,10 +568,10 @@ incrv k 10                     ;# k est la variable de l'appelant
 ```
 
 - **Retour.** `proc {T}nom` : le résultat d'un retour normal (fin du corps, `return`, `return -code ok`) est casté en `T`, comme `type {T}mot` ; un échec est une erreur `return value {T}: …`. Une erreur, `break`, `return -level 2`, `tailcall` passent sans cast. Un `return {U}$x` dans le corps n'ajoute rien : `{U}` n'est qu'une note locale, qui expire avec la procédure (pas de cumul de types sur le retour).
-- **Étiquettes de retour.** Quand le type de retour est une somme, `return {v:}$x` choisit la variante `v` (indispensable pour une somme `{-strict}`) ; une étiquette qui n'est pas une variante, ou sur un type de retour qui n'est pas une somme, est une erreur. `proc {S.v}f` rend toujours la variante `v`.
+- **Étiquettes de retour.** Quand le type de retour est une somme, `return {v:}$x` choisit la variante `v` : `$x` est sa charge. Une étiquette qui n'est pas une variante, ou sur un type de retour qui n'est pas une somme, est une erreur. `proc {S.v}f` rend toujours la variante `v`. `return {v 4}` (la valeur écrite en clair, v16w) marche aussi, y compris sous `eval`, `uplevel` ou dans un `switch -matchvar`, où l'étiquette expire avant le contrôle du retour.
 
 ```tcl
-type def {-strict}R {{pt}point, {int}n}
+type def R {{pt}point, {int}n}
 proc {R}g {w} {
     if {$w eq "p"} { set {pt}z 1 2; return {point:}$z }
     return {n:}4
@@ -764,28 +772,50 @@ Chaque valeur a la forme que sa lecture rendrait ; les trois nombres ne coïncid
 
 **La combinaison chemin + étiquettes n'existe pas** : `set {rect}R(A) {y:}2 {x:}1` est une erreur (`1 targets but 2 values`). Elle n'est pas prévue tant qu'un usage ne la demande pas.
 
-#### 8.4 Sommes et listes
+#### 8.4 Sommes, unions et listes
 
-Une somme se construit avec sa variante en étiquette, ou par le nom de la variante dans le type :
+**Deux constructions (v16w).** La forme de la déclaration dit si la valeur porte sa variante :
+
+| | somme `,` | union `\|` |
+|---|---|---|
+| exemple | `{double}celsius, {double}fahrenheit` | `{int}n \| {list(2).int}paire` |
+| valeur | `variante charge` : `fahrenheit 50.0` ; une variante littérale : son texte | la charge seule : `5`, `3 4` |
+| la variante | écrite dans la valeur | calculée à partir de la valeur |
+| à la définition | toute variante typée a un nom (sa balise) | les alternatives doivent être disjointes |
+| `expr` direct | non : `$t(celsius)` | oui |
+
+Une somme ne devine jamais rien : sa valeur dit sa variante, par la chaîne, dans un fichier, d'un interpréteur à l'autre. Deux variantes de même forme (des unités, `{int}a, {int}b`) ne posent donc aucun problème. Une union ne retient rien : ses alternatives ne peuvent pas se recouvrir, la valeur montre toujours laquelle elle est. `type is {disjoint?}S` donne les paires qui peuvent accepter une même valeur ; une union qui se recouvre est refusée à la définition :
 
 ```tcl
-set {S}v {i:}5                 ;# S.i
-set {S.s}w abc                 ;# S.s : un type, valable partout
-set {list.S}L {i:}1 {s:}a      ;# chaque élément garde sa variante
+type def U2 {{int}i | {string}s}
+  ;# union: alternatives i and s can take the same value, so the value could not tell
+  ;# which one it is; a union must be disjoint. Write a sum with "," to tag the alternatives
+type def P {{pt}p | {vec}v}            ;# refusée aussi : deux produits de même forme
+type def P {{pt}p, {vec}v}             ;# la somme : "p {1 2}" ou "v {1 2}"
 ```
 
-Sans étiquette, la variante est déduite de la valeur : la plus stricte de celles qui l'acceptent (`set {S}u 5` donne `S.i`, `int` étant plus strict que `string`). Quand plusieurs variantes **également strictes** l'acceptent (même forme, `{int}i, {int}j`, ou formes sans ordre entre elles), c'est une erreur qui propose l'étiquette :
+Une énumération (`{"on", "off"}`, ou `{"on" | "off"}`) a la même valeur dans les deux cas : une variante littérale est son propre nom. Les options `{-strict}` et `{-deduce}` des v16n–v16v n'existent plus.
+
+**Construire une somme.** Toutes ces écritures donnent `s 5` :
 
 ```tcl
-type def A {{int}i, {int}j}
-set {A}v 5      ;# value "5" fits variants i and j of A equally: write {i:}5, or set {A}v(i) 5
-set {A}v {j:}5  ;# A.j
+set {S}v {s:}5                 ;# l'étiquette : un raccourci pour la variante
+set {S}v s 5                   ;# en clair : la variante, puis sa charge
+set {S.s}v 5                   ;# par le type de la variante
+set {S}v(s) 5                  ;# par le chemin
+set {S}v [read $f]             ;# par la chaîne "s 5"
+set {S}v 5                     ;# refusé : value "5" names no variant of the sum S: a value of
+                               ;# a sum is the name of its variant, then its value, as {i 5}, or {i:}5
+set {list.S}L {i:}1 {s:}a      ;# chaque élément : "i 1", "s a"
+lappend L {s:}x                ;# lappend et lset reçoivent l'étiquette de l'élément
 ```
+
+Une valeur déjà typée du type d'une variante entre dans la somme (`set {int}n 5; set {W}w $n` donne `i 5` si `W` n'a qu'une variante `int`, sinon il faut l'étiquette).
 
 **Une variante qui est un produit (v16o)** se construit par ses champs, comme un produit nommé :
 
 ```tcl
-type def {-strict}segment {{string}texte, {{string}cible; {list.segment}contenu}lien}
+type def segment {{string}texte, {{string}cible; {list.segment}contenu}lien}
 set {segment.lien}s {cible:}$url {contenu:}$segs     ;# étiquettes, ordre libre, défauts
 set {segment.lien}s $url $segs                       ;# positionnel
 set {segment}s(lien.(cible,contenu)) $url $segs      ;# chemin à travers la somme
@@ -793,35 +823,31 @@ set {segment}s($v.($champs)) {*}$valeurs             ;# le même, calculé
 type def segment.lien                                ;# {string}cible; {list.segment}contenu
 ```
 
-Le premier pas d'un chemin choisit la variante (une seule pour tous les chemins), la suite
-construit la valeur de son type ; un chemin traverse aussi une somme champ d'un produit
-(`set {P}r(n.i,m) 4 5`). Les messages nomment le produit anonyme d'une variante `S.v`.
+La valeur est `lien {URL SEGMENTS}`. Le premier pas d'un chemin choisit la variante (une seule pour tous les chemins), la suite construit la valeur de son type ; un chemin traverse aussi une somme champ d'un produit (`set {P}r(n.i,m) 4 5`). Les messages nomment le produit anonyme d'une variante `S.v`.
 
-**Sommes disjointes, à déduction, strictes (v16n).** La déduction n'est sûre que si aucune valeur ne peut entrer dans deux variantes. `type is {disjoint?}S` le vérifie à partir de la définition et rend les paires de variantes qui peuvent accepter une même valeur (vide : disjointe). L'analyse est prudente : `string`, `any` et `var` acceptent tout, un scalaire est une liste d'un élément, la liste vide est un dict vide. Quand des variantes se recouvrent, la définition dit ce qu'on veut :
+**Lire.** `$v(s)` rend la charge, typée ; `$f(w)` lit directement un champ de la charge quand le nom n'est pas une variante (`forme.rect` : `$f(w)` comme `$f(rect.w)`). `type variant $v` rend le nom de la variante (son texte pour un littéral). Une valeur de somme est une liste de deux éléments : `lassign $v nom charge` marche aussi sans les types.
 
 ```tcl
-type def {-deduce}S {{int}i, {string}s}     ;# la plus stricte gagne : 5 -> S.i
-type def {-strict}bloc {{list.segment}para, {string}code, ...}
-set {bloc}b "texte"     ;# value "texte" names no variant of the strict sum bloc: write {para:}value or {bloc.para}value
-set {bloc}b {para:}$x   ;# bloc.para
+expr {$v(i) * 2}               ;# la charge, comme nombre
+switch [type variant $v] { i {…} s {…} }
 ```
 
-Une somme `{-strict}` ne devine jamais : il faut une valeur déjà typée, une étiquette, ou le nom de la variante dans le type (`{bloc.para}`, `type cast bloc.para`). Une variante littérale se nomme par sa valeur, et dans une variable typée la variante courante reste. Sans option, une somme qui se recouvre se déduit comme avant, avec un avertissement sur `stderr` à sa définition (`warning: type def S: variants i and s can take the same value…`) : le choix doit se voir dans la définition. Une somme disjointe n'a besoin de rien. Plusieurs options s'écrivent dans une seule annotation, séparées par des virgules : `{-compact,-strict}` (la syntaxe des notes ; `.` et `=` sont réservés aux sous-options).
+**Modifier.** La valeur porte sa variante, une écriture la dit donc toujours : `set v 8` est refusé, `set v(i) 8` écrit `i 8`, `set v(s) x` change de variante (`s x`), `incr v(i)` incrémente la charge.
 
-La variante choisie reste attachée à la valeur, y compris dans une liste ou un produit (`set {list.A}L $v`, `set {R}r $v 1` : `A.j`), et `type cast A {j:}5` la lit aussi. Une modification (`set v 8`, `incr v`, `set L(0) 4`, `lset L 0 9`, `set r(a) 7`) garde la variante courante quand plusieurs conviennent également ; la valeur choisit toujours si une seule variante convient, ou si une est plus stricte. Variantes anonymes de même forme (`{int}, {int}`) : rien ne permet de choisir, `name the variants to choose one`.
+**Casts.** Toute valeur se lit comme une `string` : son texte (`on`, `i 5`). Une union se lit comme le type de son alternative (`{U}5` passe à un argument `{int}`). Une somme jamais : `a value of the sum S is not of type int: it is "i" then its value; read that value by its path, as $v(i)`. Ce qu'elle dit (l'unité, le genre) ne se perd pas en silence.
 
 **Conversions entre variantes.** Deux variantes d'une même somme peuvent recevoir une règle, sens par sens :
 
 ```tcl
 type def temp {{double}celsius, {double}fahrenheit}
 type convert temp.celsius temp.fahrenheit {{x} {expr {$x*9/5.0 + 32}}}
-set {temp}t {celsius}100
+set {temp}t {celsius:}100      ;# t vaut "celsius 100"
 set t(fahrenheit)              ;# 212.0 : lecture d'une variante inactive, par la règle
-set u {temp.fahrenheit}$t      ;# cast explicite : u vaut 212.0, de type temp.fahrenheit
+set u {temp.fahrenheit}$t      ;# cast explicite : u vaut "fahrenheit 212.0"
 type cast temp.fahrenheit $t   ;# idem
 ```
 
-La lecture d'une variante inactive et le cast `{S.v}` (ou `type cast S.v`) prennent, dans l'ordre : la règle ; refus si les deux variantes ont la même forme (un cast identité dirait qu'un celsius est un fahrenheit : `… both have the same form, so reading one as the other needs a rule: type convert temp.celsius temp.fahrenheit {{x} ...}`) ; sinon le cast ordinaire entre les types des deux variantes (`{int}i, {string}s` : `{i}5` lu par `$v(s)` donne `5`). Une règle n'intervient jamais dans la déduction (`set {temp}y 5` reste ambigu), ni dans l'écriture (`set t {fahrenheit}50` change de variante sans convertir). Pas d'enchaînement (une règle a → b et une règle b → c ne font pas a → c), pas de réciproque supposée.
+La lecture d'une variante inactive et le cast `{S.v}` (ou `type cast S.v`) prennent, dans l'ordre : la règle ; refus si les deux variantes ont la même forme (un cast identité dirait qu'un celsius est un fahrenheit : `… both have the same form, so reading one as the other needs a rule: type convert temp.celsius temp.fahrenheit {{x} ...}`) ; sinon le cast ordinaire entre les types des deux variantes (`{int}i, {string}s` : `{i}5` lu par `$v(s)` donne `5`). Une règle n'intervient jamais dans l'écriture (`set t(fahrenheit) 50` change de variante sans convertir). Pas d'enchaînement (une règle a → b et une règle b → c ne font pas a → c), pas de réciproque supposée.
 
 Une liste reçoit ses éléments un par un : `set {list.int}L 1 2 3`, `set {list(2).int}c 3 4`. Un seul argument est **un** élément.
 
@@ -921,7 +947,7 @@ Un champ contient souvent une adresse, pas la valeur. Le type lien lit l'adresse
 | `.` | le champ lui-même |
 | `//nom/`, `memory://nom/` | un référentiel nommé (fichier, ou segments mémoire) |
 
-Options : `null` (l'adresse 0 signifie « pas de cible »), `null=V`. Avec `opt(T)`, une adresse nulle donne `none`, sinon `some` : c'est la différence entre « nul » et « inexistant ». À l'écriture, les cibles sont ajoutées à la fin, alignées, et les adresses calculées ; `-dedupe 1` n'écrit qu'une fois les cibles identiques. Un champ lien qui vaut son défaut s'écrit comme un lien nul.
+Options : `null` (l'adresse 0 signifie « pas de cible »), `null=V`. Avec `opt(T)`, une adresse nulle donne `none`, sinon `some X` (la cible X) : c'est la différence entre « nul » et « inexistant ». À l'écriture, les cibles sont ajoutées à la fin, alignées, et les adresses calculées ; `-dedupe 1` n'écrit qu'une fois les cibles identiques. Un champ lien qui vaut son défaut s'écrit comme un lien nul.
 
 **`-linkdepth`** règle le nombre de liens suivis (`Inf` par défaut). Un lien non suivi est un entier annoté (la position absolue de la cible) ; `type binary deref` le suit d'un pas. Cela permet de lire seulement l'en-tête d'un gros fichier, de parcourir une liste chaînée, et de réécrire un champ sur place.
 
@@ -1234,13 +1260,14 @@ Le codec C, qui **vérifie** en plus chaque valeur contre son type, est 2 à 3 f
 
 **À corriger ou à décider**
 
-- **Tensions avec EIAS.** Type perdu par la chaîne (pas de forme texte relisible), égalité, valeurs nues d'un `dict.point`, types propres à un interpréteur (un même nom désigne deux types dans deux interpréteurs) : voir `doc/CARTOGRAPHIE-EIAS.md`. Réglés : l'atomicité des produits (v16t), la lecture après libération et les noms globaux (v16u).
+- **Tensions avec EIAS.** Type perdu par la chaîne (pas de forme texte relisible), égalité, valeurs nues d'un `dict.point`, types propres à un interpréteur (un même nom désigne deux types dans deux interpréteurs) : voir `doc/CARTOGRAPHIE-EIAS.md`. Réglés : l'atomicité des produits (v16t), la lecture après libération et les noms globaux (v16u), la variante d'une somme, désormais dans sa valeur (v16w, `doc/DIAGNOSTIC-SOMMES.md`).
+- **Étiquette sur un retour non compilé.** `return {v:}$x` sous `eval`, `uplevel` ou dans un `switch -matchvar` (corps non compilé) : l'étiquette expire avec la commande `return`, avant le contrôle du retour. `return [list v $x]` (la valeur en clair) marche partout.
 - **`namespace path` et caches.** La résolution d'un nom suit le chemin de l'espace courant ; un changement de chemin invalide les caches (`resolverEpoch`). Un espace d'objet TclOO a ses types comme un autre ; ils disparaissent avec l'objet.
 
 **Pas encore fait**
 
 - Valeur « inexistante » en général : `opt(T)` couvre les liens binaires, il n'y a pas de forme générale.
-- `union`, champs de bits partagés, liste « jusqu'à la fin du fichier » (le refus d'`union` est voulu).
+- Union binaire (deux lectures des mêmes octets, l'`union` du C : refus voulu, à ne pas confondre avec l'union `|` des types), champs de bits partagés, liste « jusqu'à la fin du fichier ».
 - Annotation de commentaire `{#}` au niveau du parseur, annotation du premier mot (`{c}proc`), annotations de déclaration (`proc p {{?}{…} {!}arg}`).
 - Notes par élément d'une liste typée (aujourd'hui la note porte sur la liste entière) ; effacement de toutes les notes par `{@}$x`.
 - Codec C : référentiels nommés, `-linkdepth` fini, `-dedupe`, lien nul d'un champ à défaut, champs de bits (le reste est couvert depuis la v16d).

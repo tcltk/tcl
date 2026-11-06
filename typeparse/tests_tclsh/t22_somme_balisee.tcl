@@ -7,7 +7,7 @@ proc check {what got want} {
 }
 type def texte {{string}keyword; {string}text}
 type def autre {{string}name; {string}hex}
-type def {-deduce}bloc {{texte}tEXt, {autre}inconnu, {string}IEND}
+type def bloc {{texte}tEXt, {autre}inconnu, {string}IEND}
 set {texte}t {keyword:}Comment {text:}bonjour
 set {autre}a {name:}zzzz {hex:}00ff
 check "scalaire tEXt" [type get [set {bloc}b {tEXt:}$t]] bloc.tEXt

@@ -4,7 +4,7 @@ sans dépliage: {0 5} 2 point
 rect {*}: {{0 0} {10 10}} 10 {}
 rect {**}: {nw {x 0 y 0} se {x 10 y 10}} 10
 list.point: {{1 2} {3 4}} {{x 1 y 2} {x 3 y 4}} 2
-somme {*}: {1 2} aucune
+somme {*}: {en {1 2}} aucune
 somme {**}: {en {x 1 y 2}} aucune
 mauvais retour: ERREUR return value {point}: expected floating-point number but got "a"
 type {{*}T}: {1 2} 2 {x 1 y 2} {}

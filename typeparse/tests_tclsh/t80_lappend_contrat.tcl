@@ -5,7 +5,7 @@
 type def point {{double}x; {double}y}
 type def pdef {{double}x; {double}y = 0.5}
 type def {-compact}nuage list.point
-type def {-deduce}forme {{double}cote, {string}nom}
+type def forme {{double}cote, {string}nom}
 
 proc remplit {N} {set {list.point}L; for {set i 0} {$i < $N} {incr i} {lappend L [list $i 1]}; list [llength $L] [lindex $L end] [type get $L] [type get [lindex $L 0]]}
 puts "boucle : [remplit 1000]"
@@ -23,7 +23,7 @@ set {nuage}N {0.5 1.5}
 proc nuage_plus {} {set {nuage}N {0.5 1.5}; lappend N {2.5 3.5}; lappend N {4.5 5.5}; list $N [expr {[tcl::unsupported::compact info $N] ne ""}] [catch {lappend N {x y}} m] $m $N}
 puts "compacte : [nuage_plus]"
 set {list.forme}S {cote:}2.0
-lappend S {nom}carré
+lappend S {nom:}carré
 puts "somme : $S [lmap e $S {type get $e}]"
 set {list.any}A {int}1
 lappend A {string}x

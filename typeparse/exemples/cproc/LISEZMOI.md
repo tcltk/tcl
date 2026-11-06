@@ -193,7 +193,10 @@ signalé à la première exécution (`value "0" names no variant of the strict s
 ::cproc::kind`), au lieu d'un C faux plus loin.
 
 Typer `cproc` a aussi fait apparaître **trois points du modèle**, notés pour
-le noyau :
+le noyau, et réglés depuis par la v16w (`doc/DIAGNOSTIC-SOMMES.md`) : toute
+valeur se lit comme `string` ; la valeur d'une somme porte sa variante, donc
+une somme imbriquée ne la perd plus ; et `return {v …}` en clair marche dans un
+corps non compilé (seule l'étiquette `{v:}` y expire encore) :
 
 - **Une somme ne se convertit pas en `string`.** Une variante littérale qu'on
   veut rendre comme simple texte s'écrit `{}$v`.

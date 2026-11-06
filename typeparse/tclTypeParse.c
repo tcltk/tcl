@@ -167,7 +167,8 @@ enum LexemeCodes {
     ASSIGN = BINARY | 6,	/* "=" */
     CLOSE_BRACE = BINARY | 7,	/* "}" : comme CLOSE_PAREN, sauf qu'il crée
 				 * un noeud (le groupe nommé). */
-    END = BINARY | 8		/* Fin du texte : s'apparie avec START. */
+    END = BINARY | 8,		/* Fin du texte : s'apparie avec START. */
+    UNION = BINARY | 9		/* "|" : une union (v16w), au rang de "," */
 };
 
 /*
@@ -191,6 +192,7 @@ enum Precedence {
 
 static const unsigned char prec[] = {
     [SUM] = PREC_SUM,
+    [UNION] = PREC_SUM,
     [PRODUCT] = PREC_PRODUCT,
     [NEST] = PREC_NEST,
     [ASSIGN] = PREC_ASSIGN,
@@ -209,6 +211,7 @@ enum TypeOps {
     TB_NONE = 0,		/* START, OPEN_BRACE : rien à faire */
     TB_GROUP,			/* "}" : groupement / champ nommé */
     TB_SUM,			/* "," */
+    TB_UNION,			/* "|" */
     TB_PRODUCT,			/* ";" */
     TB_NEST,			/* "." */
     TB_ASSIGN			/* "=" */
@@ -216,6 +219,7 @@ enum TypeOps {
 
 static const unsigned char builder[] = {
     [SUM] = TB_SUM,
+    [UNION] = TB_UNION,
     [PRODUCT] = TB_PRODUCT,
     [NEST] = TB_NEST,
     [ASSIGN] = TB_ASSIGN,
@@ -232,6 +236,7 @@ static const unsigned char Lexeme[] = {
     ['{'] = OPEN_BRACE,
     ['}'] = CLOSE_BRACE,
     [','] = SUM,
+    ['|'] = UNION,
     [';'] = PRODUCT,
     ['.'] = NEST,
     ['='] = ASSIGN,
@@ -240,7 +245,7 @@ static const unsigned char Lexeme[] = {
     ['+'] = INVALID, ['-'] = INVALID, ['/'] = INVALID, [':'] = INVALID,
     ['<'] = INVALID, ['>'] = INVALID, ['?'] = INVALID, ['@'] = INVALID,
     ['['] = INVALID, ['\\'] = INVALID, [']'] = INVALID, ['^'] = INVALID,
-    ['`'] = INVALID, ['|'] = INVALID, ['~'] = INVALID, [127] = INVALID
+    ['`'] = INVALID, ['~'] = INVALID, [127] = INVALID
 };
 
 /* --------------------------------------------------------------------
@@ -1213,6 +1218,7 @@ typedef struct TypeItem {
     Tcl_Obj *defcmd;		/* SK_FIELD : script du défaut, ou NULL */
     int vkind;			/* SK_VALUE : VK_LITERAL, VK_SCRIPT, VK_VARIABLE */
     TclTypeKind comp;		/* SK_COMP : TCLT_PRODUCT ou TCLT_SUM */
+    int isUnion;		/* SK_COMP somme : "|" (union) plutôt que "," */
     TclTypeField *fields;	/* SK_COMP : éléments accumulés */
     Tcl_Size n, cap;
     Tcl_Size arity;		/* SK_CTOR liste : nombre d'éléments */
@@ -2026,8 +2032,8 @@ FinishItem(Tcl_Interp *interp, TypeEnv *envPtr, TypeItem *it, TclType *into,
 	*tpPtr = it->type;
 	return TCL_OK;
     case SK_COMP:
-	*tpPtr = TclTypesFinish(interp, envPtr->d, envPtr->selfName,
-		it->comp, it->fields, it->n, into);
+	*tpPtr = TclTypesFinishSum(interp, envPtr->d, envPtr->selfName,
+		it->comp, it->fields, it->n, into, it->isUnion);
 	it->fields = NULL;		/* possession transmise */
 	it->n = it->cap = 0;
 	return (*tpPtr != NULL) ? TCL_OK : TCL_ERROR;
@@ -2087,8 +2093,11 @@ BuildGroup(Tcl_Interp *interp, TypeEnv *envPtr)
 	goto done;
     }
 
-    if ((x->kind != SK_TYPE) && (x->kind != SK_COMP)) {
-	ERR(interp, "SYNTAX", "\"%s\" can only name a type, not a field or a "
+    /* v16w : {{double}r}cercle, un champ seul nommé : un produit à un
+     * champ (comme type def C {{double}r}) */
+    if ((x->kind != SK_TYPE) && (x->kind != SK_COMP)
+	    && (x->kind != SK_FIELD)) {
+	ERR(interp, "SYNTAX", "\"%s\" can only name a type, not a "
 		"value", Tcl_GetString(name.obj));
 	goto done;
     }
@@ -2110,7 +2119,8 @@ BuildGroup(Tcl_Interp *interp, TypeEnv *envPtr)
 /* "," et ";" : accumulent dans un composite ; le chaînage est à gauche. */
 
 static int
-BuildSeparated(Tcl_Interp *interp, TypeEnv *envPtr, TclTypeKind kind)
+BuildSeparated(Tcl_Interp *interp, TypeEnv *envPtr, TclTypeKind kind,
+	int isUnion)
 {
     TypeItem r = PopItem(envPtr);
     TypeItem l = PopItem(envPtr);
@@ -2134,6 +2144,13 @@ BuildSeparated(Tcl_Interp *interp, TypeEnv *envPtr, TclTypeKind kind)
 		"define it with type def");
 	goto done;
     }
+    if (kind == TCLT_SUM && ((l.kind == SK_COMP && l.isUnion != isUnion)
+	    || (r.kind == SK_COMP && r.isUnion != isUnion))) {
+	ERR(interp, "SYNTAX", "mixing \",\" and \"|\" at the same level: a "
+		"sum (,) tags its variants, a union (|) does not; group the "
+		"inner part");
+	goto done;
+    }
     /* Dans un produit, tout champ a un nom, un groupe aussi : {...}nom. */
     if (kind == TCLT_PRODUCT
 	    && ((l.kind == SK_TYPE && l.type->kind == TCLT_SUM)
@@ -2150,6 +2167,7 @@ BuildSeparated(Tcl_Interp *interp, TypeEnv *envPtr, TclTypeKind kind)
 	memset(&comp, 0, sizeof(comp));
 	comp.kind = SK_COMP;
 	comp.comp = kind;
+	comp.isUnion = isUnion;
 	if (AddElement(interp, &comp, &l) != TCL_OK) {
 	    goto done;
 	}
@@ -2353,9 +2371,11 @@ ApplyOperator(Tcl_Interp *interp, TypeEnv *envPtr, unsigned char lexeme)
     case TB_GROUP:
 	return BuildGroup(interp, envPtr);
     case TB_SUM:
-	return BuildSeparated(interp, envPtr, TCLT_SUM);
+	return BuildSeparated(interp, envPtr, TCLT_SUM, 0);
+    case TB_UNION:
+	return BuildSeparated(interp, envPtr, TCLT_SUM, 1);
     case TB_PRODUCT:
-	return BuildSeparated(interp, envPtr, TCLT_PRODUCT);
+	return BuildSeparated(interp, envPtr, TCLT_PRODUCT, 0);
     case TB_NEST:
 	return BuildNest(interp, envPtr);
     case TB_ASSIGN:

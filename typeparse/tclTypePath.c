@@ -1695,6 +1695,14 @@ DerefWalk(Tcl_Interp *interp, Tcl_Obj *a, Tcl_DString *path)
 	TclType *ft;
 	Tcl_Size j = -1;
 
+	if (TclSumTagged(tp)) {		/* v16w : "v charge" */
+	    Tcl_Obj *pl = NULL;
+
+	    variant = TclSumDecode(tp, v, &pl);
+	    if (pl != NULL) {
+		v = pl;
+	    }
+	}
 	if (variant < 0 || variant >= tp->nfields) {
 	    PathErr(interp, "type deref: the value of %s has no variant%s",
 		    tp->name, "");
@@ -1722,7 +1730,8 @@ DerefWalk(Tcl_Interp *interp, Tcl_Obj *a, Tcl_DString *path)
 	    return NULL;
 	}
 	if (ft == NULL) {			/* variante littérale */
-	    return TclNewAnnotated(interp, rt, (int) j, v);
+	    return TclNewAnnotated(interp, rt, (int) j, TclSumTagged(rt)
+		    ? rt->fields[j].literal : v);
 	}
 	DerefWhere(path, keep, ".", tp->fields[variant].name != NULL
 		? Tcl_GetString(tp->fields[variant].name) : "?");
@@ -1737,7 +1746,14 @@ DerefWalk(Tcl_Interp *interp, Tcl_Obj *a, Tcl_DString *path)
 	    return NULL;
 	}
 	TclAnnotInfo(r, &c, NULL, NULL, NULL);
-	res = TclNewAnnotated(interp, rt, (int) j, c);
+	if (TclSumTagged(rt)) {
+	    Tcl_Obj *w = TclSumMake(rt, (int) j, c);
+
+	    res = TclNewAnnotated(interp, rt, (int) j, w);
+	    TclDiscard(w);
+	} else {
+	    res = TclNewAnnotated(interp, rt, (int) j, c);
+	}
 	TclDiscard(r);
 	return res;
     }
@@ -1958,14 +1974,41 @@ Step(Tcl_Interp *interp, Tcl_Obj *a, const char *name, int quoted)
 	TclType *ft;
 	Tcl_Obj *res;
 
+	if (TclSumTagged(tp)) {
+	    /* v16w : la valeur dit sa variante ; la charge est son second
+	     * élément */
+	    Tcl_Obj *pl = NULL;
+
+	    variant = TclSumDecode(tp, v, &pl);
+	    if (variant >= 0 && pl != NULL) {
+		v = pl;
+	    }
+	}
 	idx = TclTypeFieldIndex(tp, name);
+	if ((idx < 0 || tp->fields[idx].type == NULL) && variant >= 0
+		&& variant < tp->nfields && tp->fields[variant].type != NULL
+		&& (tp->fields[variant].type->kind == TCLT_PRODUCT
+		    || tp->fields[variant].type->kind == TCLT_LIST
+		    || tp->fields[variant].type->kind == TCLT_DICT)
+		&& !(quoted && tp->fields[variant].type->kind != TCLT_DICT)) {
+	    /* v16w : un nom qui n'est pas une variante : un pas dans la
+	     * charge de la variante courante ($f(w) d'un forme.rect) */
+	    Tcl_Obj *pa = TclNewAnnotated(interp, tp->fields[variant].type,
+		    -1, v);
+
+	    Tcl_IncrRefCount(pa);
+	    res = Step(interp, pa, name, quoted);
+	    Tcl_DecrRefCount(pa);
+	    return res;
+	}
 	if (idx < 0 || tp->fields[idx].type == NULL) {
 	    PathErr(interp, "%s has no variant \"%s\"", tp->name, name);
 	    return NULL;
 	}
 	ft = tp->fields[idx].type;
 	if (idx == variant) {
-	    return TclNewAnnotated(interp, ft, -1, v);
+	    return WrapSlot(interp, ft, v);	/* une somme imbriquée : sa
+						 * variante */
 	}
 	/*
 	 * Autre variante : le nom demandé vaut cast explicite (§10), de la
@@ -2658,6 +2701,40 @@ SetIn(Tcl_Interp *interp, Tcl_Obj *a, const IndexPath *chain, Tcl_Size i,
 		name, "");
 	return NULL;
     }
+    if (TclSumTagged(tp)) {
+	/* v16w : la valeur dit sa variante ; on travaille sur la charge, la
+	 * valeur est refaite à la fin ("v charge") */
+	Tcl_Obj *pl = NULL;
+
+	variant = TclSumDecode(tp, v, &pl);
+	if (variant >= 0 && pl != NULL) {
+	    v = pl;
+	}
+    }
+    if (tp->kind == TCLT_SUM && step->kind != IS_RANGE
+	    && (TclTypeFieldIndex(tp, name) < 0
+		|| tp->fields[TclTypeFieldIndex(tp, name)].type == NULL)
+	    && variant >= 0 && variant < tp->nfields
+	    && tp->fields[variant].type != NULL) {
+	/* v16w : un nom qui n'est pas une variante : le même pas dans la
+	 * charge de la variante courante (set f(w) 5 d'un forme.rect) */
+	Tcl_Obj *pa = TclNewAnnotated(interp, tp->fields[variant].type, -1, v);
+	Tcl_Obj *nc, *ncc, *w;
+
+	Tcl_IncrRefCount(pa);
+	nc = SetIn(interp, pa, chain, i, val, pw);
+	Tcl_DecrRefCount(pa);
+	if (nc == NULL) {
+	    return NULL;
+	}
+	TclAnnotInfo(nc, &ncc, NULL, NULL, NULL);
+	w = TclSumTagged(tp) ? TclSumMake(tp, variant, ncc)
+		: Tcl_DuplicateObj(ncc);
+	res = TclNewAnnotated(interp, tp, variant, w);
+	TclDiscard(w);
+	TclDiscard(nc);
+	return res;
+    }
 
     /* Un lien est transparent : le pas s'applique à la variable visée, que
      * l'on réaffecte ensuite ; le conteneur ne change pas. */
@@ -2900,7 +2977,14 @@ SetIn(Tcl_Interp *interp, Tcl_Obj *a, const IndexPath *chain, Tcl_Size i,
     /* 3. Reconstruire le conteneur. */
     switch (tp->kind) {
     case TCLT_SUM:
-	res = TclNewAnnotated(interp, tp, (int) idx, childContent);
+	if (TclSumTagged(tp)) {		/* v16w : "v charge" */
+	    Tcl_Obj *w = TclSumMake(tp, (int) idx, childContent);
+
+	    res = TclNewAnnotated(interp, tp, (int) idx, w);
+	    TclDiscard(w);
+	} else {
+	    res = TclNewAnnotated(interp, tp, (int) idx, childContent);
+	}
 	break;
     case TCLT_DICT: {
 	Tcl_Obj *key = Tcl_NewStringObj(name, TCL_AUTO_LENGTH);
@@ -3273,6 +3357,12 @@ ConstructLevel(Tcl_Interp *interp, TclType *tp, const PathSet *set,
 		Tcl_DecrRefCount(nm);
 	    }
 	    return TCL_ERROR;
+	}
+	if (TclSumTagged(tp)) {		/* v16w : "v charge" */
+	    Tcl_Obj *w = TclSumMake(tp, (int) fi, c);
+
+	    TclDiscard(c);
+	    c = w;
 	}
 	*contentPtr = c;
 	if (variantPtr != NULL) {

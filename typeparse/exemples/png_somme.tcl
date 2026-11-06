@@ -13,7 +13,7 @@ type def ihdr {
 type def texte   {{string}keyword; {string}text}
 type def donnees {{string}hex}
 type def autre   {{string}name; {string}hex}
-type def {-deduce}bloc {{ihdr}IHDR, {texte}tEXt, {donnees}IDAT, {string}IEND, {autre}inconnu}
+type def bloc {{ihdr}IHDR, {texte}tEXt, {donnees}IDAT, {string}IEND, {autre}inconnu}
 type def png  {{string}signature = "\x89PNG\r\n\x1a\n"; {list.bloc}chunks}
 
 # --- fabrication d'un petit PNG (aucun fichier externe) ----------------------

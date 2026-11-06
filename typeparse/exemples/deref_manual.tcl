@@ -49,7 +49,7 @@ set {list.list.var.int}mm {A B} {B A}
 puts [type deref $mm]                   ;# {1 2} {2 1}
 
 # --- 4. Sums ------------------------------------------------------------------
-type def {-deduce}mix {{int}a, {var.int}b, {string}s}
+type def mix {{int}a, {var.int}b, {string}s}
 set {mix}s1 {b:}A
 set t1 [type deref $s1]
 puts "$t1 [type get $t1]"              ;# 1 deref(mix).b

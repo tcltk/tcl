@@ -213,10 +213,11 @@ vers la même cible (le widget en fait une seule plage), rien de vide.
 2. **La déduction de variante est dangereuse avec des sommes qui acceptent tout.** Un texte nu
    passé comme bloc (`te::document ... {pas un bloc}`) était accepté **sans erreur** comme
    `bloc.puces` : `list.list.segment` accepte n'importe quelle liste, car `segment.texte` accepte
-   n'importe quelle chaîne. Réglé en v16n : `bloc` et `segment` sont définis `{-strict}`, la
-   variante n'est jamais devinée (`value "pas un bloc" names no variant of the strict sum
-   bloc`) ; les constructeurs `te::para`, `te::m`… la nomment. `type is {disjoint?}bloc` montre
-   que toutes ses variantes se recouvrent.
+   n'importe quelle chaîne. Réglé en v16n (`{-strict}`), puis pour toutes les sommes en v16w :
+   la valeur d'une somme écrit sa variante (`para {…}`, `texte {Un }`, `lien {url {…}}`), rien
+   n'est deviné (`value "pas un bloc" names no variant of the sum ::te::bloc`) ; les
+   constructeurs `te::para`, `te::m`… la nomment. `type is {disjoint?}bloc` montre que toutes
+   ses variantes se recouvrent.
 3. **Construction programmatique par noms.** Dépassé : le chemin d'un produit se calcule
    (`set {style}s([join [dict keys $args] ,]) {*}[dict values $args]`, sans `eval`), et depuis la
    v16o il traverse aussi une somme. Reste : un dict n'entre pas dans un produit

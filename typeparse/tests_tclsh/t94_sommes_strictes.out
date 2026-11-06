@@ -7,34 +7,86 @@ S (int, string): {i s}
 Sh (scalaire, liste): {circle rect}
 M (var : prudent): {a b} {a s} {b s}
 pas une somme: ERREUR type is {disjoint?}: pt is not a sum
---- l'avertissement (une somme qui se recouvre, sans option)
-warning: type def W: variants i and d can take the same value (type is {disjoint?}W); write {-deduce}W to keep the deduction, or {-strict}W
-sans option: 0
-disjointe : rien: 0
---- {-deduce} : la plus stricte gagne
-5: S.i
-abc: S.s
-strict?: 0
---- {-strict} : nommer la variante
-strict?: 1
-valeur nue: ERREUR value "5" names no variant of the strict sum T: write {i:}value or {T.i}value
-{i:}5: T.i
-{T.s}5: T.s
-type {T.i}5: T.i
-type cast T.i 5: T.i
-type cast T 5: ERREUR value "5" names no variant of the strict sum T: write {i:}value or {T.i}value
-liste, étiquettes: T.i T.s
-liste, nu: ERREUR value "1" names no variant of the strict sum T: write {i:}value or {T.i}value
-variable : la variante reste: T.s
-valeur déjà typée: T.i
-littéral : nommé par sa valeur: U
-variante typée nue: ERREUR value "4" names no variant of the strict sum U: write {n:}value or {U.n}value
---- options
-{-compact,-strict}: ERREUR type def {-strict}C: only a sum has a variant to choose
-{-strict,-deduce}: ERREUR type def: {-strict} and {-deduce} exclude each other
-{-strict} sur une liste: ERREUR type def {-strict}Z: only a sum has a variant to choose
-sous-option: ERREUR type def: option {-strict} takes no sub-option or value: {-strict.niveau=1}
-inconnue: ERREUR type def: unknown option {-bof}: must be {-compact}, {-strict} or {-deduce} (several: {-compact,-strict})
+--- définitions
+somme recouvrante : permise: 0
+variante sans nom: ERREUR variant 1 of the sum has no name: a sum writes the name of its variant in its value; name it ({int}name), or write a union with "|" if the value itself tells the alternatives apart
+union disjointe: 1
+union anonyme: 1
+union recouvrante : refusée: ERREUR union: alternatives i and s can take the same value, so the value could not tell which one it is; a union must be disjoint. Write a sum with "," to tag the alternatives
+union int | double: ERREUR union: alternatives i and d can take the same value, so the value could not tell which one it is; a union must be disjoint. Write a sum with "," to tag the alternatives
+point | vecteur : refusée: ERREUR union: alternatives p and v can take the same value, so the value could not tell which one it is; a union must be disjoint. Write a sum with "," to tag the alternatives
+point , vecteur : somme: 0
+mélange , et |: ERREUR mixing "," and "|" at the same level: a sum (,) tags its variants, a union (|) does not; group the inner part
+énumération en union: on onoff
+variante produit à un champ: {double}r
+{-strict} n'existe plus: ERREUR type def: {-strict} is gone: a sum (",") always writes its variant in its value (v 5), and a union ("|") must be disjoint, so nothing is ever guessed
+{-deduce} n'existe plus: ERREUR type def: {-deduce} is gone: a sum (",") always writes its variant in its value (v 5), and a union ("|") must be disjoint, so nothing is ever guessed
+--- somme : la valeur écrit sa variante
+nue : refusée: ERREUR value "5" names no variant of the sum S: a value of a sum is the name of its variant, then its value, as {i 5}, or {i:}5
+{i:}5: {i 5} S.i
+{S.s}5: {s 5} S.s
+en clair: {s 5} S.s
+par la chaîne: S.s
+variante inconnue: ERREUR S has no variant "z" with a value
+charge invalide: ERREUR expected integer but got "abc"
+type {S.i}5: S.i
+type cast S.i 5: S.i
+type cast S 5: ERREUR value "5" names no variant of the sum S: a value of a sum is the name of its variant, then its value, as {i 5}, or {i:}5
+type cast S {i 5}: S.i
+point, vecteur: {v {1 2}} PV.v 1
+littéral seul: vide Lit.vide
+littéral : n 4: {n 4} Lit.n
+variante typée nue: ERREUR value "4" names no variant of the sum Lit: a value of a sum is the name of its variant, then its value, as {n 4}, or {n:}4
+--- lire
+v(i): 5 int
+expr {$v(i) * 2}: 10
+expr {$v * 2} : refusé: ERREUR cannot use a list as left operand of "*"
+lassign: i 5
+type variant: s
+type variant littéral: vide
+type variant, pas une somme: ERREUR type variant: the value is a pt, not a sum
+variante inactive: 5
+f(rect.w): 2.0
+f(w) : la charge courante: 2.0
+f(zz): ERREUR prod<w:double;h:double;> has no field "zz"
+--- la variante est dans la valeur
+égalité: 0
+clés de dict: 2
+liste par la chaîne: S.i S.s
+lappend {s:}x: S.i S.s
+lappend en clair: S.i S.s
+lset {s:}x: {s x}
+produit: {{s 5} 3} S.s
+retour de procédure: S.s
+somme imbriquée: {k {s 5}} S.s
+--- modifier
+set v 8 : refusé: ERREUR value "8" names no variant of the sum S: a value of a sum is the name of its variant, then its value, as {i 8}, or {i:}8
+set v(i) 8: i 8
+set v(s) x : change: s x
+incr v(i): i 6
+--- union : la valeur est la charge
+n: 5 U.n n
+paire: {3 4} U.paire paire
+u(paire): 3 4
+expr direct: 10
+étiquette qui confirme: U.paire
+étiquette fausse: ERREUR value "3 4" is not valid for that variant of U
+rien ne passe: ERREUR value "abc" matches no variant of U
+--- casts
+énumération -> string: rouge
+somme -> string : son texte: i 5
+somme -> int : refusé: ERREUR a value of the sum S is not of type int: it is "i" then its value; read that value by its path, as $v(i)
+union -> int: int
+union -> list.int: list<int>
+int -> S : deux variantes ?: i 5
+int -> F: {n 5} F.n
+proc {string} <- énumération: vert
+proc {int} <- somme: ERREUR argument "n": a value of the sum S is not of type int: it is "i" then its value; read that value by its path, as $v(i)
+proc {int} <- v(i): 5
+--- options et questions
+{-compact}: 
+sur une liste: 
+inconnue: ERREUR type def: unknown option {-bof}: must be {-compact}
 {-compact,-compact}: 1
-alias: ERREUR type alias: unknown option {-strict} (an alias is not a new type: it takes no option)
-question inconnue: ERREUR unknown question "zz?": must be compact?, disjoint? or strict?
+alias: 
+question inconnue: ERREUR unknown question "zz?": must be compact?, disjoint? or union?

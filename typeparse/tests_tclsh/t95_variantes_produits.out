@@ -1,17 +1,17 @@
 --- étiquettes et positionnel
-étiquettes: seg.lien {u abc}
+étiquettes: seg.lien {lien {u {{texte abc}}}}
 ordre libre: u
-positionnel: seg.lien {u abc}
+positionnel: seg.lien {lien {u {{texte abc}}}}
 un seul argument (la liste): seg.lien
-défaut: seg.marque {gras {}}
+défaut: seg.marque {marque {gras {}}}
 champ inconnu: ERREUR unknown field "href" in seg.lien
 champ manquant: ERREUR field "cible" of seg.lien has no value and no default
 mélange: ERREUR can't mix values named by a field label ({field:}value) and positional values in a seg.lien constructor: name every field, or none
 --- chemin à travers la somme
-lien.(cible,contenu): seg.lien {u abc}
+lien.(cible,contenu): seg.lien {lien {u {{texte abc}}}}
 lien.cible,lien.contenu: seg.lien
 calculé: seg.lien
-défaut par chemin: seg.marque {gras {}}
+défaut par chemin: seg.marque {marque {gras {}}}
 variante entière: seg.texte
 deux variantes: ERREUR a value of seg has one variant: "lien" and "marque" can't be built together
 variante inconnue: ERREUR seg has no variant "gros"

@@ -31,7 +31,7 @@ t "mauvais type"                 {decale $a abc}
 t "contrat dans le corps"        {proc pc {{int}a} {set a x}; pc 1}
 t "défaut calculé"               {proc dc {{int}a ?= [expr {6 * 7}]} {set a}; dc}
 t "défaut calculé, champ avant"  {proc dc2 {{int}a; {int}b ?= [expr {$a * 2}]} {list $a $b}; dc2 4}
-type def {-strict}S {{int}i, {string}s}
+type def S {{int}i, {string}s}
 t "variante d'un argument"       {proc ps {{S}v} {type get $v}; ps {s:}abc}
 t "argument somme strict, nu"    {ps abc}
 t "appel compilé"                {proc w {} { list [decale {dx:}1 {p:}[type {pt}{3 4}]] }; w}
@@ -76,7 +76,7 @@ t "eval dans le corps"           {proc {int}ev {} { eval {return x} }; ev}
 t "coroutine"                    {proc {int}co {} { yield 1; return 2 }; list [coroutine C co] [C]}
 
 puts "--- étiquettes : la variante d'une somme rendue"
-type def {-strict}R {{pt}point, {int}n}
+type def R {{pt}point, {int}n}
 proc {R}g {{string}w} {
     if {$w eq "p"} { set {pt}z 1 2; return {point:}$z }
     if {$w eq "n"} { return {n:}4 }

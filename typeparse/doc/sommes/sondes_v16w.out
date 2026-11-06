@@ -1,0 +1,57 @@
+== S1. la variante ne passe pas par la chaîne
+K.b, même objet                          K.b
+K.b, chaîne neuve                        K.b
+list.K, chaîne neuve                     {a 1} {b 2}
+temp.fahrenheit, chaîne                  temp.fahrenheit
+S.s "5", chaîne                          S.s
+S.s "5", incr                            ERREUR: expected integer but got a list
+== S2. une valeur typée invalide
+return [list $k 3] : accepté             P
+... puis son champ k                     K.b
+type cast P : correct                    K.b
+== S3. une étiquette relit la valeur par sa chaîne
+{k:} sur un K.b                          E.k
+sans étiquette : déduit                  K.b
+== S4. la durée de vie d'une étiquette dépend de la compilation
+return {a:}1                             K.a
+eval {return {a:}1}                      ERREUR: return value {K}: value "1" names no variant of the sum K: a value of a sum is the name of its variant, then its value, as {a 1}, or {a:}1
+uplevel 0 {return {a:}1}                 ERREUR: return value {K}: value "1" names no variant of the sum K: a value of a sum is the name of its variant, then its value, as {a 1}, or {a:}1
+switch -matchvar                         ERREUR: return value {K}: value "5" names no variant of the sum K: a value of a sum is the name of its variant, then its value, as {a 5}, or {a:}5
+switch sans -matchvar                    K.a
+== S5. les commandes qui reçoivent une étiquette
+set {K}k {b:}5                           K.b
+proc {{K}x} {b:}5                        K.b
+lappend L {b:}3                          K.b
+linsert $L end {b:}3                     ERREUR: value "3" names no variant of the sum K: a value of a sum is the name of its variant, then its value, as {a 3}, or {a:}3
+dict set D b {b:}2                       ERREUR: value "2" names no variant of the sum K: a value of a sum is the name of its variant, then its value, as {a 2}, or {a:}2
+list {b:}5 (perdue)                      
+set e {b:}5 (refus)                      ERREUR: local annotation {b:} cannot be stored by "set": it only applies between a caller and the command it calls
+== S6. une somme ne se lit pas comme sa variante
+lit -> {string}                          on
+S.i -> {int}                             ERREUR: value "5" names no variant of the sum S: a value of a sum is the name of its variant, then its value, as {i 5}, or {i:}5
+type cast int S.i                        ERREUR: value "5" names no variant of the sum S: a value of a sum is the name of its variant, then its value, as {i 5}, or {i:}5
+type cast S K.a                          ERREUR: unknown way to cast the value from K to S
+expr sur S.i : permis                    ERREUR: value "5" names no variant of the sum S: a value of a sum is the name of its variant, then its value, as {i 5}, or {i:}5
+string length lit : permis               2
+== S7. le type d'une variante, à moitié
+set {forme.rect}f 2.0 3.0                forme.rect
+... f(w)                                 2.0
+... f(rect.w)                            2.0
+== S8. égalité et clés
+K.a 5 eq K.b 5                           0
+dict de deux clés                        2
+lsearch K.b                              1
+== S9. la variante collante
+temp.celsius : set t 50.0                ERREUR: value "50.0" names no variant of the sum temp: a value of a sum is the name of its variant, then its value, as {celsius 50.0}, or {celsius:}50.0
+S.s abc : set v 5                        ERREUR: value "abc" names no variant of the sum S: a value of a sum is the name of its variant, then its value, as {s abc}, or {s:}abc
+== S10. introspection
+type get                                 K.b
+type get list.K                          list<K>
+la variante seule                        b
+type is K.b \$k                          ERREUR: wrong # args: should be "type is {question?}type|value"
+== S11. grammaire
+variante produit à un champ              
+produit à un champ seul                  {double}r
+== S12. quatre régimes
+disjointe : 5, abc                       
+recouvrante, sans option                 {celsius fahrenheit}

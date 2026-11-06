@@ -151,7 +151,7 @@ MOMENT: the result no longer changes afterwards.
   snapshots of the same type have the same type.
 
     type def mix {{int}a, {var.int}b, {string}s}
-    set {mix}s1 {b}A
+    set {mix}s1 {b:}A
     type get [type deref $s1]           ;# deref(mix).b
 
     set {tree(var)}T A {{B {}} {C {}}}  ;# a tree whose values are links
@@ -175,8 +175,12 @@ is not the same thing.
 | choice of the variant | none, there is none | by a field already read (`S($tag)`) or by its name (`S(x)`) |
 
 Consequences:
-* There is **no `union` in this model**, on purpose: the safeguards are
-  kept. A sum cannot be read "the wrong way".
+* There is **no C `union` in this model**, on purpose: the safeguards are
+  kept. A sum cannot be read "the wrong way". Since v16w its value even writes
+  its variant (`x {…}`), like the tag field next to a C union in a `struct`.
+  The **union** `{A}x | {B}y` of v16w is not a C union either: it accepts a
+  value of either form, its alternatives must be disjoint, and the value
+  itself shows which one it is.
 * When the format does not say which variant is valid (Tcl's
   `Tcl_ObjInternalRep`, whose discriminant is the `typePtr` address, outside
   the union), the variant is chosen **at the call**:

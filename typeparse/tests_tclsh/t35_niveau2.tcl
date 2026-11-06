@@ -49,7 +49,7 @@ attempt {type binary mauvais}
 
 # --- 4. somme à étiquette / tagged sum
 type def pp {{int(u,8)}x; {int(u,8)}y}
-type def {-deduce}corps {{pp}1, {string(utf-8,z)}2, {list(int(u,8)).int(u,8)}3}
+type def corps {{pp}1, {string(utf-8,z)}2, {list(int(u,8)).int(u,8)}3}
 type def paquet {{int(u,8)}tag; {corps($tag)}body; {int(u,8)}end = 255}
 set {pp}p1 {x:}3 {y:}4
 set {paquet}q(tag,body) 1 {1:}$p1

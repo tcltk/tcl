@@ -19,7 +19,7 @@ type def cadre {
     {int}mincode; {string}lzw
 }
 type def extinconnue {{int}label; {string}hex}
-type def {-deduce}gblock {
+type def gblock {
     {commentaire}comment, {controle}control, {application}app,
     {cadre}frame, {extinconnue}extension, {string}trailer
 }

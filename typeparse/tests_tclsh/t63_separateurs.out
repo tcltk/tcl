@@ -3,6 +3,6 @@
 {int}a; {{int}b, {string}c}        -> 1 a product field must be written {type}name: a group needs its name after the closing brace, as {int}a; {{int}b, {string}c}u
 {int}a; {{int}b, {string}c}u       -> 0 
 {{int}a; {int}b}p, {string}c       -> 0 
-{{int}a; {int}b}, {string}c        -> 0 
-{int}, {string}                    -> 0 
+{{int}a; {int}b}, {string}c        -> 1 variant 1 of the sum has no name: a sum writes the name of its variant in its value; name it ({...}name), or write a union with "|" if the value itself tells the alternatives apart
+{int}, {string}                    -> 1 variant 1 of the sum has no name: a sum writes the name of its variant in its value; name it ({int}name), or write a union with "|" if the value itself tells the alternatives apart
 {int}x; {int}y                     -> 0 

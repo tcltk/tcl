@@ -23,10 +23,10 @@ un produit (v15t)                  0 1
 liste de ce produit                0 {{1.0 2} {3.0 4}} 1
 champ liste d'un produit           0 {1 {{16.0 5}}} 1 0
 refus : produit avec chaîne        1 type def {-compact}pq: only a list of fixed-size scalars (int(s,n), int(u,n) with n = 8, 16, 32 or 64, double, double(32|64)), of products of them or of fixed-size lists list(n) of them (at most 4096 parts per element), or such a product, can be compact, not pq
-refus : option inconnue            1 type def: unknown option {-zz}: must be {-compact}, {-strict} or {-deduce} (several: {-compact,-strict})
+refus : option inconnue            1 type def: unknown option {-zz}: must be {-compact}
 refus : alias                      1 type alias: unknown option {-compact} (an alias is not a new type: it takes no option)
 refus : famille                    1 type def {-compact}: not yet for a type family (v({int}n))
-question inconnue                  1 unknown question "zz?": must be compact?, disjoint? or strict?
+question inconnue                  1 unknown question "zz?": must be compact?, disjoint? or union?
 sans question                      1 type is takes one question: type is {compact?}T or type is {compact?}$value
 export : llvm                      1 type export: the target llvm! is not available yet: must be c!
 export : sans cible                1 type export needs one target: type {c!}export T ?T ...?

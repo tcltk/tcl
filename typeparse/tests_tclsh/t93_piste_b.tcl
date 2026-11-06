@@ -77,7 +77,7 @@ proc listes {} {
     lappend A {string}x
     lset A 0 {double}2.5
     set r [lmap e $A {type get $e}]
-    type def {-deduce}S {{int}i, {string}s}
+    type def S {{int}i, {string}s}
     set {list.S}L {i:}1
     lset L 0 {s:}abc
     lappend L {i:}7
