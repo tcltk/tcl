@@ -102,12 +102,15 @@ TCL_DECLARE_MUTEX(ddeMutex)
 #   define Tcl_WCharToUtfDString(a,b,c) Tcl_UniCharToUtfDString((Tcl_UniChar *)(a),b,c)
 #   define Tcl_UtfToWCharDString(a,b,c) (WCHAR *)Tcl_UtfToUniCharDString(a,b,c)
 # endif
-#ifndef Tcl_Size
+# ifndef Tcl_Size
 #   define Tcl_Size int
-#endif
-#ifndef Tcl_CreateObjCommand2
+# endif
+# ifndef Tcl_ObjCmdProc2
+#   define Tcl_ObjCmdProc2 Tcl_ObjCmdProc
+# endif
+# ifndef Tcl_CreateObjCommand2
 #   define Tcl_CreateObjCommand2 Tcl_CreateObjCommand
-#endif
+# endif
 #endif
 
 /*

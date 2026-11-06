@@ -97,14 +97,14 @@ TesteventloopCmd(
     void *clientData,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
+    Tcl_Obj *const *objv)	/* Argument objects. */
 {
     static int *framePtr = NULL;/* Pointer to integer on stack frame of
 				 * innermost invocation of the "wait"
 				 * subcommand. */
     (void)clientData;
 
-    if (objc < 2) {
+    if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "option ...");
 	return TCL_ERROR;
     }
@@ -174,7 +174,7 @@ TestvolumetypeCmd(
     void *clientData,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
+    Tcl_Obj *const *objv)	/* Argument objects. */
 {
 #define VOL_BUF_SIZE 32
     int found;
@@ -241,7 +241,7 @@ TestwinclockCmd(
     void *dummy,		/* Unused */
     Tcl_Interp* interp,		/* Tcl interpreter */
     int objc,			/* Argument count */
-    Tcl_Obj *const objv[])	/* Argument vector */
+    Tcl_Obj *const *objv)	/* Argument vector */
 {
     static const FILETIME posixEpoch = { 0xD53E8000, 0x019DB1DE };
 				/* The Posix epoch, expressed as a Windows
@@ -272,9 +272,9 @@ TestwinclockCmd(
 
     result = Tcl_NewObj();
     Tcl_ListObjAppendElement(interp, result,
-	    Tcl_NewIntObj((int) (t2.QuadPart / 10000000)));
+	    Tcl_NewIntObj((int)(t2.QuadPart / 10000000)));
     Tcl_ListObjAppendElement(interp, result,
-	    Tcl_NewIntObj((int) ((t2.QuadPart / 10) % 1000000)));
+	    Tcl_NewIntObj((int)((t2.QuadPart / 10) % 1000000)));
     Tcl_ListObjAppendElement(interp, result, Tcl_NewIntObj(tclTime.sec));
     Tcl_ListObjAppendElement(interp, result, Tcl_NewIntObj(tclTime.usec));
 
@@ -291,7 +291,7 @@ TestwinsleepCmd(
     void *clientData,	/* Unused */
     Tcl_Interp* interp,		/* Tcl interpreter */
     int objc,			/* Parameter count */
-    Tcl_Obj *const * objv)	/* Parameter vector */
+    Tcl_Obj *const *objv)	/* Parameter vector */
 {
     int ms;
     (void)clientData;
@@ -332,10 +332,10 @@ TestwinsleepCmd(
 
 static int
 TestExceptionCmd(
-    void *dummy,			/* Unused */
-    Tcl_Interp* interp,			/* Tcl interpreter */
-    int objc,				/* Argument count */
-    Tcl_Obj *const objv[])		/* Argument vector */
+    void *dummy,		/* Unused */
+    Tcl_Interp *interp,		/* Tcl interpreter */
+    int objc,			/* Argument count */
+    Tcl_Obj *const *objv)	/* Argument vector */
 {
     static const char *const cmds[] = {
 	"access_violation", "datatype_misalignment", "array_bounds",
@@ -390,8 +390,15 @@ TestExceptionCmd(
 }
 
 /*
- * This "chmod" works sufficiently for test script purposes. Do not expect
- * it to be exact emulation of Unix chmod (not sure if that's even possible)
+ *----------------------------------------------------------------------
+ *
+ * TestplatformChmod --
+ *
+ *	This "chmod" works sufficiently for test script purposes. Do not expect
+ *	it to be exact emulation of Unix chmod (not sure if that's even
+ *	possible).
+ *
+ *----------------------------------------------------------------------
  */
 static int
 TestplatformChmod(
@@ -475,7 +482,13 @@ TestplatformChmod(
      * Always include DACL modify rights so we don't get locked out
      */
     aceEntry[nSids].mask = READ_CONTROL | WRITE_DAC | WRITE_OWNER | SYNCHRONIZE |
-			   FILE_READ_ATTRIBUTES | FILE_WRITE_ATTRIBUTES;
+	    FILE_READ_ATTRIBUTES | FILE_WRITE_ATTRIBUTES;
+    if (!isDir) {
+	/*
+	 * As on Unix, the file mode does not prevent renaming or deleting.
+	 */
+	aceEntry[nSids].mask |= DELETE;
+    }
     if (pmode & 0700) {
 	/* Owner permissions. Assumes current process is owner */
 	if (pmode & 0400) {
@@ -508,7 +521,8 @@ TestplatformChmod(
 	}
 	aceEntry[nSids].sidLen = GetLengthSid(pTokenGroup->PrimaryGroup);
 	aceEntry[nSids].pSid = (PSID)ckalloc(aceEntry[nSids].sidLen);
-	if (!CopySid(aceEntry[nSids].sidLen, aceEntry[nSids].pSid, pTokenGroup->PrimaryGroup)) {
+	if (!CopySid(aceEntry[nSids].sidLen, aceEntry[nSids].pSid,
+		pTokenGroup->PrimaryGroup)) {
 	    ckfree(pTokenGroup);
 	    ckfree(aceEntry[nSids].pSid); /* Since we have not ++'ed nSids */
 	    goto done;
