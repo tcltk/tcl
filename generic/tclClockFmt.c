@@ -3401,6 +3401,7 @@ TclClockFormat(
     ClockFormatToken *tok;
     const ClockFormatTokenMap *map;
     char resMem[MIN_FMT_RESULT_BLOCK_ALLOC];
+    size_t minAlloc;
 
     /* get localized format */
     if (ClockLocalizeFormat(opts) == NULL) {
@@ -3415,12 +3416,13 @@ TclClockFormat(
     /* result container object */
     dateFmt->resMem = resMem;
     dateFmt->resEnd = dateFmt->resMem + sizeof(resMem);
-    if (fss->fmtMinAlloc > sizeof(resMem)) {
-	dateFmt->resMem = (char *)Tcl_AttemptAlloc(fss->fmtMinAlloc);
+    minAlloc = fss->fmtMinAlloc;	/* shared, read only once */
+    if (minAlloc > sizeof(resMem)) {
+	dateFmt->resMem = (char *)Tcl_AttemptAlloc(minAlloc);
 	if (dateFmt->resMem == NULL) {
 	    return TCL_ERROR;
 	}
-	dateFmt->resEnd = dateFmt->resMem + fss->fmtMinAlloc;
+	dateFmt->resEnd = dateFmt->resMem + minAlloc;
     }
     dateFmt->output = dateFmt->resMem;
     *dateFmt->output = '\0';
