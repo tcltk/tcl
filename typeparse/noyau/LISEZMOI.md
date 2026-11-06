@@ -2356,6 +2356,38 @@ construisent une liste neuve et la typent. Dans le tutoriel, l'étape 2 passe de
 `tests_tclsh/t101_chemins_caches.tcl` : le même index lu sur des types différents, après une
 erreur, substitué, écrit, réutilisé ailleurs.
 
+### v16y — la mise au point par les notes : `type debug` (6 novembre 2026)
+
+Pas de patch noyau. Sources de types : `tclAnnotObj.c`, `tclTypes.c`, `tclTypes.h`. Nouveau test
+`t103_type_debug.tcl` ; t28 et t93 : la liste des sous-commandes de `type` gagne `debug`.
+
+- **Notes d'instrument.** Un texte `@nom` n'est jamais un type : `TclTypeParse` le refuse avec le
+  code `UNKNOWN` (« is an instrument note, not a type »), `ClassifyAnnotRaw` le classe en note.
+  C'est donc une note ordinaire, qui suit la valeur (et pas une annotation locale, ce que le
+  caractère `@` aurait donné). `set {@trace}x 1` : erreur (un nom de variable veut un type).
+- **`type debug on`** pose `Tcl_CreateObjTrace2(interp, 0, 0, …)` : niveau 0, sans
+  `TCL_ALLOW_INLINE_COMPILATION`, donc aucune commande n'est mise en ligne tant que la trace est
+  posée, et chacune passe par `TypeDebugTrace`. Celle-ci lit les notes (`PendingOfEx`) des
+  arguments annotés ; pour une note `@…`, elle appelle le crochet `CMD note mots indice`
+  (`TCL_EVAL_DIRECT`, état de l'interpréteur sauvé et rendu, garde `busy` : le crochet tourne sans
+  trace). Une erreur du crochet empêche la commande. `type debug next` (champ `stepNext`) appelle
+  le crochet à la commande suivante, quelles que soient ses notes, avec la note `@next` et
+  l'indice 0 : c'est le pas à pas, et un point d'arrêt écrit dans le code.
+- **Le crochet par défaut** `::tcl::typedebug::hit` (script C `typeDebugScript`, chargé par
+  `type debug on`) : une ligne par passage (note, commande, nom du paramètre quand c'est une
+  procédure, valeur abrégée, `fichier:ligne` par `info frame`, procédure appelante) ; pour
+  `@step` et `@next`, une invite sur stdin (`c s r o q w v p`, ou une commande Tcl exécutée par
+  `uplevel 1` là où l'on est arrêté).
+- **Proto-types.** Pendant la trace, une note qui n'est pas un type (`ANN_UNKNOWN`) est
+  inventoriée dans une table `nom -> Proto` (`count`, `where` de la première vue, jusqu'à quatre
+  commandes, jusqu'à trois valeurs distinctes avec leur lieu). `type debug notes` rend
+  l'inventaire en dict, avec un `status` : `note`, `ok` ou `mismatch` (les valeurs vues sont
+  validées par `TclTypeValidate` contre le type défini depuis) ; `type debug report` le met en
+  texte et propose, pour un nom qui n'est pas un type, le nom de type le plus proche
+  (distance d'édition, `TclTypesNames`) ; `type debug clear` le vide.
+
+Coût : nul tant que `type debug` est éteint (aucun test sur le chemin des commandes).
+
 ### v16x — l'étiquette d'un retour hors compilation (6 novembre 2026)
 
 Patch noyau `retour-etiquette.patch` (après `execute-lecture-typee.patch`) : `tclBasic.c`

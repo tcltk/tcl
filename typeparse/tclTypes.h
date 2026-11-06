@@ -21,7 +21,7 @@
  * VAR_* de tclInt.h). La valeur ci-dessous est un PLACEHOLDER. */
 /* Version du prototype TIP 764 (typeparse/VERSION, maj.sh, et
  * tcl::unsupported::typesversion). */
-#define TCL_TYPES_VERSION "v16x"
+#define TCL_TYPES_VERSION "v16y"
 
 #ifndef VAR_TYPED
 #define VAR_TYPED	0x400000
@@ -354,11 +354,13 @@ int	TclTypeTagVariant(const TclType *prod, Tcl_Size idx, Tcl_Obj *content);
 int	TclTypeAbiAlign(int isFloat, int bits);
 TclType *TclAnnotTypeOf(Tcl_Interp *interp, Tcl_Obj *textObj);
 int	TclTypesGeneration(Tcl_Interp *interp, size_t *uidPtr, size_t *genPtr);
+Tcl_Obj *	TclTypesNames(Tcl_Interp *interp);
 /* Représentation compacte (tclAnnotObj.c) */
 typedef struct TclCompactLayout TclCompactLayout;
 int TclAnnotIsSettled(Tcl_Obj *objPtr);
 int TclAnnotFastIndex(Tcl_Obj *aPtr, int encodedIndex, Tcl_Obj **elemPtr);
 int TclAnnotExpireFromRet(Tcl_Interp *interp, Tcl_Size mark, int code);
+int TclTypeDebugCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[]);
 int TclSumDecode(const TclType *tp, Tcl_Obj *v, Tcl_Obj **payloadPtr);
 Tcl_Obj *TclSumMake(const TclType *tp, int v, Tcl_Obj *payload);
 Tcl_Obj *TclAnnotNumericContent(Tcl_Obj *objPtr);

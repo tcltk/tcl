@@ -44,6 +44,26 @@ TclTypesGeneration(Tcl_Interp *interp, size_t *uidPtr, size_t *genPtr)
     return 1;
 }
 
+/* v16y : les noms de types définis (pour les suggestions de type debug). */
+Tcl_Obj *
+TclTypesNames(Tcl_Interp *interp)
+{
+    TypeData *d = GetData(interp);
+    Tcl_Obj *res = Tcl_NewListObj(0, NULL);
+    Tcl_HashSearch search;
+    Tcl_HashEntry *hPtr;
+
+    if (d == NULL) {
+	return res;
+    }
+    for (hPtr = Tcl_FirstHashEntry(&d->names, &search); hPtr != NULL;
+	    hPtr = Tcl_NextHashEntry(&search)) {
+	Tcl_ListObjAppendElement(NULL, res, Tcl_NewStringObj(
+		(const char *) Tcl_GetHashKey(&d->names, hPtr), -1));
+    }
+    return res;
+}
+
 /* --------------------------------------------------------------------
  * v16u : espaces de noms des types
  *
@@ -3068,6 +3088,20 @@ TclTypeParse(Tcl_Interp *interp, const char *text, Tcl_Size len)
 
     memset(&env, 0, sizeof(env));
     env.d = GetData(interp);
+    if (len > 1 && text[0] == '@') {
+	/* v16y : une note d'instrument ({@trace}) n'est jamais un type, mais
+	 * c'est un nom (une note), pas un caractère interdit (local). */
+	Tcl_Size k;
+
+	for (k = 1; k < len && (isalnum(UCHAR(text[k])) || text[k] == '_'
+		|| (text[k] & 0x80)); k++) {
+	}
+	if (k == len) {
+	    ERR(interp, "UNKNOWN", "\"%.*s\" is an instrument note, not a "
+		    "type", (int) len, text);
+	    return NULL;
+	}
+    }
     if ((len > 2 && text[0] == '*' && text[1] == '(')
 	    || (len > 3 && text[0] == '&' && text[1] == '*' && text[2] == '(')) {
 	/* Le nom d'un lien déjà construit (il peut contenir un nom canonique
@@ -8995,6 +9029,9 @@ TypeObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
     if (strcmp(sub, "binary") == 0) {
 	return TypeBinaryCmd(interp, objc, objv);
     }
+    if (strcmp(sub, "debug") == 0) {
+	return TclTypeDebugCmd(interp, objc, objv);	/* v16y */
+    }
     if (strcmp(sub, "variant") == 0) {
 	/* v16w : type variant VALEUR : le nom de la variante d'une valeur
 	 * d'une somme ou d'une union (son texte pour un littéral) */
@@ -9033,8 +9070,8 @@ TypeObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
 	return TCL_OK;
     }
     ERR(interp, "SUBCMD", "bad subcommand \"%s\": must be def, alias, "
-	    "cast, convert, deref, export, forget, get, is, proc, variant or "
-	    "binary", sub);
+	    "cast, convert, debug, deref, export, forget, get, is, proc, variant "
+	    "or binary", sub);
     return TCL_ERROR;
 }
 

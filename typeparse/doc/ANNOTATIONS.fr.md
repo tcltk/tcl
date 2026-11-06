@@ -85,6 +85,8 @@ set y {px}$x
 note get $y          ;# mm.px      (px est la plus récente)
 ```
 
+**Deux usages des notes (v16y).** Une note est un *proto-type* : un nom posé sur des valeurs avant que le type existe (`{vitesse}12.5`), entre le Tcl nu et le Tcl typé. Une note qui commence par `@` (`{@trace}`, `{@step}`) est une **note d'instrument** : jamais un type, elle sert à la mise au point. Les deux se lisent par `type debug` (§ 3.1).
+
 L'écriture `{a}{b}$x` (deux annotations collées) n'existe pas : elle serait ambiguë avec `{int}{300}`, une annotation sur un littéral entre accolades. On empile en annotant une valeur qui l'est déjà.
 
 #### 2.2 Le type : l'annotation résolue par un constructeur
@@ -207,6 +209,101 @@ proc longueur {v} {
 longueur {mm}12              ;# 12 millimètres
 ```
 
+#### 3.1 La mise au point : `type debug` (v16y)
+
+Une note suit sa valeur : copie, argument, élément de liste, variable de boucle, paramètre de procédure. C'est exactement ce qu'il faut pour suivre une donnée à travers un programme. `type debug on` pose une trace sur chaque commande (les commandes ne sont plus mises en ligne tant qu'elle est posée) ; avant chaque commande, il regarde les notes de ses arguments.
+
+```
+type debug ?on|off?        ;# allume, éteint ; sans argument : l'état
+type debug next            ;# arrêt à la prochaine commande (un point d'arrêt écrit dans le code)
+type debug hook ?CMD?      ;# le crochet appelé (par défaut ::tcl::typedebug::hit)
+type debug notes           ;# l'inventaire des proto-types (un dict)
+type debug report          ;# le même, lisible, avec suggestions et vérification
+type debug clear           ;# vide l'inventaire
+```
+
+**Notes d'instrument.** `{@trace}` signale chaque commande qui reçoit la valeur ; `{@step}` s'y arrête aussi. Éteint, `type debug` ne coûte rien et les notes `@` ne font rien : on peut les laisser dans le code.
+
+```tcl
+type def pt {{double}x; {double}y}
+proc {double}norme {{pt}p} {
+    set x2 [expr {$p(x) ** 2}]
+    return [expr {sqrt($x2 + [lindex $p 1] ** 2)}]
+}
+proc chemin {L} {
+    set s 0.0
+    foreach p $L { set s [expr {$s + [norme $p]}] }
+    return $s
+}
+type debug on
+set P {@step}{3.0 4.0}
+chemin [list $P {1.0 0.0}]
+```
+
+```
+@step  set argument 2 = 3.0 4.0   (d.tcl:12, in (global))
+step> c
+@step  list argument 1 = 3.0 4.0   (d.tcl:13, in (global))
+step> c
+@step  ::norme p = 3.0 4.0   (d.tcl:8, in chemin)
+step> s
+@next  expr {$p(x) ** 2}   (d.tcl:3, in norme)
+step> p p
+  3.0 4.0
+step> s
+@next  set x2 9.0   (d.tcl:3, in norme)
+step> r
+@step  lindex argument 1 = 3.0 4.0   (d.tcl:4, in norme)
+```
+
+La valeur est suivie dans `list`, dans le `foreach` de `chemin`, jusqu'au paramètre `p` de `norme` (le nom du paramètre est donné). L'invite :
+
+| touche | effet |
+|---|---|
+| `c` ou Entrée | continuer |
+| `s` | pas à pas : arrêt à la commande suivante (dans la procédure appelée s'il y en a une) |
+| `r` | continuer sans plus s'arrêter (les `@trace`, `@step` s'affichent encore) |
+| `o` | éteindre `type debug` |
+| `q` | arrêter : la commande rend une erreur |
+| `w` | la pile des appels |
+| `v` | les variables locales |
+| `p NOM` | la valeur d'une variable |
+| autre | une commande Tcl, exécutée là où l'on est arrêté |
+
+L'arrêt sur une note précède la commande : on est chez l'appelant. `s` entre dans la procédure, où ses paramètres sont visibles. `type debug next` écrit dans le code est un point d'arrêt sans note.
+
+**Le crochet.** `type debug hook CMD` remplace l'affichage : `CMD note mots indice` est appelé (sans trace) avec la note, les mots de la commande et l'indice de l'argument noté (0 pour un arrêt `next`). Une erreur du crochet empêche la commande de s'exécuter ; c'est ainsi qu'on fait une assertion, ou un journal.
+
+```tcl
+proc rec {note words index} { lappend ::log [list $note [lindex $words 0] $index] }
+type debug hook rec
+```
+
+**Les proto-types.** Pendant que `type debug` est allumé, toute note dont le nom n'est pas (encore) un type est inventoriée : combien de fois elle a été vue, où la première fois, par quelles commandes, et jusqu'à trois valeurs, chacune avec son lieu. Quand le type est défini ensuite, `type debug report` vérifie après coup les valeurs vues ; tant qu'il ne l'est pas, il propose le type défini le plus proche (une faute de frappe).
+
+```tcl
+type def point {{double}x; {double}y}
+type debug on
+set a {pointt}{3 4}
+set v {vitesse}12.5
+set w {vitesse}abc
+type debug off
+type def vitesse double
+puts [type debug report]
+```
+
+```
+pointt: seen 1 time, first at e.tcl:3, via set
+    values: 3 4
+    not a type; did you mean point?
+vitesse: seen 2 times, first at e.tcl:4, via set
+    values: 12.5 | abc
+    now a type, but:
+      abc (e.tcl:5): expected floating-point number but got "abc"
+```
+
+`type debug notes` rend la même chose en dict : `nom {count N where F:L commands {...} samples {{valeur lieu}...} status note|ok|mismatch ?errors {{valeur lieu message}...}?}`.
+
 ### 4. La commande `type`
 
 ```
@@ -228,6 +325,7 @@ type variant VALEUR            ;# la variante d'une valeur d'une somme ou d'une 
 type proc NOM                  ;# la signature d'une procédure typée : args, return (§ 6.4, 6.5)
 type {{*}T}MOT, {{**}T}MOT     ;# le cast explicite, rendu déplié en liste ou en dict (§ 6.4)
 type {c!}export TYPE ?TYPE ...? ;# en-tête C des types nommés (§ 12.2) ; {llvm!} prévu
+type debug ?on|off|next|hook|notes|report|clear? ;# mise au point par les notes (§ 3.1, v16y)
 ```
 
 ```tcl
@@ -1268,6 +1366,7 @@ Le codec C, qui **vérifie** en plus chaque valeur contre son type, est 2 à 3 f
 - Valeur « inexistante » en général : `opt(T)` couvre les liens binaires, il n'y a pas de forme générale.
 - Union binaire (deux lectures des mêmes octets, l'`union` du C : refus voulu, à ne pas confondre avec l'union `|` des types), champs de bits partagés, liste « jusqu'à la fin du fichier ».
 - Annotation de commentaire `{#}` au niveau du parseur, annotation du premier mot (`{c}proc`), annotations de déclaration (`proc p {{?}{…} {!}arg}`).
+- `type debug` (v16y) : l'invite lit stdin (pas de console Tk ni de débogueur distant) ; pas de point d'arrêt par ligne ; le lieu d'une commande d'un corps écrit en syntaxe d'expression est approximatif ; une note posée sur une liste porte sur la liste, pas sur ses éléments (`foreach`, `lindex`, `$L(0)` ne la propagent pas : on note les éléments) ; une condition d'arrêt s'écrit dans un crochet.
 - Notes par élément d'une liste typée (aujourd'hui la note porte sur la liste entière) ; effacement de toutes les notes par `{@}$x`.
 - Codec C : référentiels nommés, `-linkdepth` fini, `-dedupe`, lien nul d'un champ à défaut, champs de bits (le reste est couvert depuis la v16d).
 - Forme compacte : cases à pointeurs (`string`, listes imbriquées de taille variable), `lindex` sans vue neuve, fonction de stub pour le C, `lappend` en temps constant (aujourd'hui une copie par ajout, comme pour une liste typée ordinaire).
