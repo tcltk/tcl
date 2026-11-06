@@ -2175,7 +2175,13 @@ TclConvertUTCToLocal(
 
 	    tzdata = ClockGetTZData(dataPtr, interp, timezoneObj);
 	    if (TclListObjGetElements(interp, tzdata, &rowc, &rowv) != TCL_OK
-		    || Tcl_ListObjIndex(interp, rowv[0], 3, &tzName) != TCL_OK) {
+		    || ((rowc > 0) && Tcl_ListObjIndex(interp, rowv[0], 3, &tzName) != TCL_OK)) {
+		return TCL_ERROR;
+	    }
+	    if (!rowc) {
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			"malformed time zone data", TCL_AUTO_LENGTH));
+		Tcl_SetErrorCode(interp, "CLOCK", "malformedTimeZoneData", (char *)NULL);
 		return TCL_ERROR;
 	    }
 	    TclSetObjRef(dataPtr->gmtTZName, tzName);

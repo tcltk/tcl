@@ -38907,16 +38907,22 @@ test clock-72.0 {Bug [813699148d], UTC to local} -body {
     clock format 0 -gmt 1
     set ::tcl::clock::TZData(:bad) {{0 0}}
     clock format 10 -timezone :bad
+} -cleanup {
+    unset -nocomplain ::tcl::clock::TZData(:bad)
 } -returnCodes 1 -result {malformed time zone data}
 test clock-72.1 {Bug [813699148d], local to UTC} -body {
     clock format 0 -gmt 1
     set ::tcl::clock::TZData(:bad) {{-9223372036854775808 0 0 A} {100000 0}}
     clock scan "1970-01-03 00:00:00" -format "%Y-%m-%d %T" -base 10 -timezone :bad
+} -cleanup {
+    unset -nocomplain ::tcl::clock::TZData(:bad)
 } -returnCodes 1 -result {malformed time zone data}
 test clock-72.2 {Bug [813699148d], empty row} -body {
     clock format 0 -gmt 1
     set ::tcl::clock::TZData(:bad) {{}}
     clock format 10 -timezone :bad
+} -cleanup {
+    unset -nocomplain ::tcl::clock::TZData(:bad)
 } -returnCodes 1 -result {malformed time zone data}
 test clock-72.3 {%z with an offset of 100 hours or more at the end of the stack buffer} -body {
     clock format 0 -timezone +99:99:99 -format "[string repeat a 72]%z"
