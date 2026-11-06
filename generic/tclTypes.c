@@ -29,9 +29,353 @@ TclTypesGeneration(Tcl_Interp *interp, size_t *uidPtr, size_t *genPtr)
     if (d == NULL) {
 	return 0;
     }
+    TclTypesSync(d);
     *uidPtr = d->uid;
     *genPtr = d->gen;
+    if (d->nNs > 0) {
+	/* v16u : la résolution d'un nom dépend de l'espace courant et de son
+	 * chemin (namespace path) : ils entrent dans la génération. */
+	Namespace *ns = (Namespace *) TclGetCurrentNamespace(interp);
+
+	*genPtr = (d->gen * (size_t) 0x9E3779B97F4A7C15ULL) ^ ns->nsId;
+	*genPtr = (*genPtr * (size_t) 0x9E3779B97F4A7C15ULL)
+		^ (size_t) ns->resolverEpoch;
+    }
     return 1;
+}
+
+/* --------------------------------------------------------------------
+ * v16u : espaces de noms des types
+ *
+ * Un type défini dans ::geom est rangé sous ::geom::point ; un type global
+ * sous son nom simple. Un nom est résolu comme une commande : l'espace
+ * courant, son chemin (namespace path), puis l'espace global. Quand un
+ * espace est supprimé, ses types perdent leur nom (les valeurs gardent
+ * leur descripteur).
+ * -------------------------------------------------------------------- */
+
+/* Un nom de type : des mots, séparés par "::" ; "::" en tête possible. */
+Tcl_Size
+TclTypeNameSpan(const char *p, const char *end)
+{
+    const char *q = p;
+
+    for (;;) {
+	while (q < end && TclTypeIsNameChar(*q)) {
+	    q++;
+	}
+	if (q + 2 < end && q[0] == ':' && q[1] == ':'
+		&& TclTypeIsNameChar(q[2])) {
+	    q += 2;
+	    continue;
+	}
+	return q - p;
+    }
+}
+
+/* L'espace où se résolvent les noms : celui d'une famille pendant
+ * l'analyse de son corps, sinon l'espace courant. */
+static Namespace *
+CtxNs(Tcl_Interp *interp, TypeData *d)
+{
+    if (d != NULL && d->ctxNs != NULL) {
+	return d->ctxNs;
+    }
+    return interp ? (Namespace *) TclGetCurrentNamespace(interp) : NULL;
+}
+
+static int
+NsIsGlobal(Tcl_Interp *interp, Namespace *ns)
+{
+    return ns == NULL || interp == NULL
+	    || ns == ((Interp *) interp)->globalNsPtr;
+}
+
+static int
+NsDead(const TypeNs *r)
+{
+    return r->nsPtr->nsId != r->nsId
+	    || (r->nsPtr->flags & (NS_DYING | NS_DEAD));
+}
+
+static int
+HasPrefix(const char *k, const char *prefix, size_t plen)
+{
+    return strncmp(k, prefix, plen) == 0;
+}
+
+/* Les noms d'un espace supprimé (et de ses enfants) disparaissent. */
+static void
+PurgeNs(TypeData *d, const char *prefix, size_t plen)
+{
+    Tcl_HashSearch search;
+    Tcl_HashEntry *hPtr, *next;
+
+    for (hPtr = Tcl_FirstHashEntry(&d->names, &search); hPtr != NULL;
+	    hPtr = next) {
+	next = Tcl_NextHashEntry(&search);
+	if (HasPrefix((const char *) Tcl_GetHashKey(&d->names, hPtr), prefix,
+		plen)) {
+	    Tcl_DeleteHashEntry(hPtr);
+	}
+    }
+    for (hPtr = Tcl_FirstHashEntry(&d->generics, &search); hPtr != NULL;
+	    hPtr = next) {
+	next = Tcl_NextHashEntry(&search);
+	if (HasPrefix((const char *) Tcl_GetHashKey(&d->generics, hPtr),
+		prefix, plen)) {
+	    /* la famille sert encore à ses instances : gardée sous une clé
+	     * qui n'est pas un nom (comme type forget) */
+	    void *g = Tcl_GetHashValue(hPtr);
+	    char key[64];
+	    int isNew;
+
+	    Tcl_DeleteHashEntry(hPtr);
+	    snprintf(key, sizeof(key), "\1forgotten\1%p", g);
+	    Tcl_SetHashValue(Tcl_CreateHashEntry(&d->generics, key, &isNew),
+		    g);
+	}
+    }
+    for (hPtr = Tcl_FirstHashEntry(&d->converts, &search); hPtr != NULL;
+	    hPtr = next) {
+	const char *k = (const char *) Tcl_GetHashKey(&d->converts, hPtr);
+	const char *sep = strchr(k, '\1');
+
+	next = Tcl_NextHashEntry(&search);
+	if (HasPrefix(k + (*k == '@'), prefix, plen) || (sep != NULL
+		&& HasPrefix(sep + 1 + (sep[1] == '@'), prefix, plen))) {
+	    Tcl_DecrRefCount((Tcl_Obj *) Tcl_GetHashValue(hPtr));
+	    Tcl_DeleteHashEntry(hPtr);
+	}
+    }
+}
+
+void
+TclTypesSync(TypeData *d)
+{
+    Tcl_Size i = 0;
+
+    while (i < d->nNs) {
+	TypeNs *r = &d->nss[i];
+
+	if (!NsDead(r)) {
+	    i++;
+	    continue;
+	}
+	PurgeNs(d, r->prefix, r->plen);
+	TclNsDecrRefCount(r->nsPtr);
+	Tcl_Free(r->prefix);
+	d->nss[i] = d->nss[--d->nNs];
+	d->gen++;
+    }
+}
+
+static void
+RegisterNs(TypeData *d, Namespace *ns)
+{
+    Tcl_Size i;
+    TypeNs *r;
+
+    for (i = 0; i < d->nNs; i++) {
+	if (d->nss[i].nsPtr == ns && !NsDead(&d->nss[i])) {
+	    return;
+	}
+    }
+    if (d->nNs == d->capNs) {
+	d->capNs = d->capNs ? 2 * d->capNs : 8;
+	d->nss = (TypeNs *) Tcl_Realloc(d->nss, d->capNs * sizeof(TypeNs));
+    }
+    r = &d->nss[d->nNs++];
+    r->nsPtr = ns;
+    ns->refCount++;
+    r->nsId = ns->nsId;
+    r->plen = strlen(ns->fullName) + 2;
+    r->prefix = (char *) Tcl_Alloc(r->plen + 1);
+    snprintf(r->prefix, r->plen + 1, "%s::", ns->fullName);
+    d->gen++;
+}
+
+static const char *const reservedNames[] = {
+    "int", "double", "string", "list", "dict", "array", "var", "any", "flag",
+    "type", "at", NULL
+};
+
+/*
+ * TclTypesQualify --
+ *	Le nom sous lequel « type def NAME » range un type : NAME qualifié par
+ *	l'espace courant (ou par l'espace qu'il nomme), le nom simple pour un
+ *	type global. Les arguments d'une famille, NAME(...), suivent tels quels.
+ */
+int
+TclTypesQualify(Tcl_Interp *interp, TypeData *d, const char *name,
+	Tcl_DString *dsPtr)
+{
+    const char *paren = strchr(name, '(');
+    size_t blen = paren ? (size_t) (paren - name) : strlen(name);
+    const char *last = NULL, *p, *tail;
+    Namespace *ns;
+    int i;
+
+    for (p = name; p + 1 < name + blen; p++) {
+	if (p[0] == ':' && p[1] == ':') {
+	    last = p;
+	}
+    }
+    if (last == NULL) {
+	ns = interp ? (Namespace *) TclGetCurrentNamespace(interp) : NULL;
+	tail = name;
+    } else {
+	tail = last + 2;
+	while (last > name && last[-1] == ':') {
+	    last--;
+	}
+	if (last == name) {
+	    ns = interp ? ((Interp *) interp)->globalNsPtr : NULL;
+	} else {
+	    Tcl_DString nd;
+
+	    Tcl_DStringInit(&nd);
+	    Tcl_DStringAppend(&nd, name, last - name);
+	    ns = (Namespace *) Tcl_FindNamespace(interp,
+		    Tcl_DStringValue(&nd), NULL, 0);
+	    if (ns == NULL) {
+		ERR(interp, "NAME", "type \"%s\": unknown namespace \"%s\"",
+			name, Tcl_DStringValue(&nd));
+		Tcl_DStringFree(&nd);
+		return TCL_ERROR;
+	    }
+	    Tcl_DStringFree(&nd);
+	}
+    }
+    if (tail >= name + blen) {
+	ERR(interp, "NAME", "bad type name \"%s\"", name);
+	return TCL_ERROR;
+    }
+    Tcl_DStringInit(dsPtr);
+    if (!NsIsGlobal(interp, ns)) {
+	for (i = 0; reservedNames[i] != NULL; i++) {
+	    if (strlen(reservedNames[i]) == (size_t) (name + blen - tail)
+		    && strncmp(tail, reservedNames[i], name + blen - tail) == 0) {
+		ERR(interp, "NAME", "type \"%s\" is reserved: a built-in type "
+			"cannot be redefined in a namespace", reservedNames[i]);
+		return TCL_ERROR;
+	    }
+	}
+	TclTypesSync(d);
+	RegisterNs(d, ns);
+	Tcl_DStringAppend(dsPtr, ns->fullName, TCL_AUTO_LENGTH);
+	Tcl_DStringAppend(dsPtr, "::", 2);
+    }
+    Tcl_DStringAppend(dsPtr, tail, TCL_AUTO_LENGTH);
+    return TCL_OK;
+}
+
+/*
+ * TclTypesFindName --
+ *	Résout NAME (len octets) dans TABLE (les noms ou les familles) :
+ *	::a::b absolu ; a::b dans l'espace courant puis global ; b dans
+ *	l'espace courant, son chemin, puis global. SELFNAME : le type en cours
+ *	de définition (déjà qualifié), reconnu avant la table (*isSelfPtr).
+ */
+static int
+TryKey(TypeData *d, Tcl_HashTable *table, Tcl_DString *ds,
+	const char *selfName, Tcl_HashEntry **hPtrPtr, int *isSelfPtr)
+{
+    const char *k = Tcl_DStringValue(ds);
+
+    if (selfName != NULL && strcmp(k, selfName) == 0) {
+	if (isSelfPtr != NULL) {
+	    *isSelfPtr = 1;
+	}
+	return 1;
+    }
+    *hPtrPtr = Tcl_FindHashEntry(table, k);
+    (void) d;
+    return *hPtrPtr != NULL;
+}
+
+Tcl_HashEntry *
+TclTypesFindName(Tcl_Interp *interp, TypeData *d, Tcl_HashTable *table,
+	const char *name, Tcl_Size len, const char *selfName, int *isSelfPtr)
+{
+    Tcl_DString ds;
+    Tcl_HashEntry *hPtr = NULL;
+    Namespace *ns;
+    const char *qual;
+    Tcl_Size i;
+
+    if (isSelfPtr != NULL) {
+	*isSelfPtr = 0;
+    }
+    if (len < 0) {
+	len = (Tcl_Size) strlen(name);
+    }
+    TclTypesSync(d);
+    Tcl_DStringInit(&ds);
+    qual = NULL;
+    for (i = 0; i + 1 < len; i++) {
+	if (name[i] == ':' && name[i + 1] == ':') {
+	    qual = name + i;
+	    break;
+	}
+    }
+    if (qual == name) {
+	/* ::a::b, ou ::b (global) */
+	const char *rest = name + 2;
+	Tcl_Size rlen = len - 2, j;
+	int more = 0;
+
+	for (j = 0; j + 1 < rlen; j++) {
+	    if (rest[j] == ':' && rest[j + 1] == ':') {
+		more = 1;
+	    }
+	}
+	if (more) {
+	    Tcl_DStringAppend(&ds, name, len);
+	} else {
+	    Tcl_DStringAppend(&ds, rest, rlen);
+	}
+	TryKey(d, table, &ds, selfName, &hPtr, isSelfPtr);
+	Tcl_DStringFree(&ds);
+	return hPtr;
+    }
+    ns = CtxNs(interp, d);
+    if (d->nNs > 0 && !NsIsGlobal(interp, ns)) {
+	Tcl_DStringAppend(&ds, ns->fullName, TCL_AUTO_LENGTH);
+	Tcl_DStringAppend(&ds, "::", 2);
+	Tcl_DStringAppend(&ds, name, len);
+	if (TryKey(d, table, &ds, selfName, &hPtr, isSelfPtr)) {
+	    goto done;
+	}
+    }
+    if (qual == NULL && d->nNs > 0 && ns != NULL
+	    && ns->commandPathLength > 0) {
+	for (i = 0; i < ns->commandPathLength; i++) {
+	    Namespace *pns = ns->commandPathArray[i].nsPtr;
+
+	    if (pns == NULL) {
+		continue;
+	    }
+	    Tcl_DStringSetLength(&ds, 0);
+	    if (!NsIsGlobal(interp, pns)) {
+		Tcl_DStringAppend(&ds, pns->fullName, TCL_AUTO_LENGTH);
+		Tcl_DStringAppend(&ds, "::", 2);
+	    }
+	    Tcl_DStringAppend(&ds, name, len);
+	    if (TryKey(d, table, &ds, selfName, &hPtr, isSelfPtr)) {
+		goto done;
+	    }
+	}
+    }
+    Tcl_DStringSetLength(&ds, 0);
+    if (qual != NULL) {
+	Tcl_DStringAppend(&ds, "::", 2);	/* a::b : ::a::b */
+    }
+    Tcl_DStringAppend(&ds, name, len);
+    TryKey(d, table, &ds, selfName, &hPtr, isSelfPtr);
+  done:
+    Tcl_DStringFree(&ds);
+    return hPtr;
 }
 
 void
@@ -58,6 +402,7 @@ NewType(TypeData *d, TclTypeKind kind, const char *name)
     memset(tp, 0, sizeof(TclType));
     tp->kind = kind;
     tp->name = DupStr(name, (Tcl_Size) strlen(name));
+    tp->owner = d;
     if (d->nAll == d->capAll) {
 	d->capAll = d->capAll ? 2 * d->capAll : 32;
 	d->all = (TclType **) Tcl_Realloc(d->all,
@@ -121,19 +466,116 @@ TclTypesFreeKeys(TclDictKey *keys, Tcl_Size n)
     Tcl_Free(keys);
 }
 
+static void FreeTypeData(TypeData *d);
+
+void
+TclTypeHold(const TclType *tp)
+{
+    if (tp != NULL && tp->owner != NULL) {
+	tp->owner->refs++;
+    }
+}
+
+void
+TclTypeRelease(const TclType *tp)
+{
+    TypeData *d;
+
+    if (tp == NULL || (d = tp->owner) == NULL) {
+	return;
+    }
+    if (--d->refs == 0 && d->dead) {
+	FreeTypeData(d);
+    }
+}
+
+/*
+ * L'interpréteur est supprimé. Les valeurs typées qui lui survivent (passées
+ * à un autre interpréteur, gardées par le C) gardent la table en vie : on
+ * n'en libère ici que ce qui peut contenir des valeurs (défauts, arguments
+ * des familles, règles de conversion), qui sinon la garderaient en vie pour
+ * toujours, et on attend la dernière référence.
+ */
 static void
 DeleteData(void *clientData, Tcl_Interp *interp)
 {
     TypeData *d = (TypeData *) clientData;
+    Tcl_HashSearch search;
+    Tcl_HashEntry *hPtr;
+    Tcl_Size i, j;
 
     if (interp != NULL && ((Interp *) interp)->typesData == d) {
 	((Interp *) interp)->typesData = NULL;
     }
+    d->dead = 1;
+    d->refs++;				/* pendant le nettoyage */
+    for (hPtr = Tcl_FirstHashEntry(&d->converts, &search); hPtr != NULL;
+	    hPtr = Tcl_NextHashEntry(&search)) {
+	Tcl_DecrRefCount((Tcl_Obj *) Tcl_GetHashValue(hPtr));
+    }
+    Tcl_DeleteHashTable(&d->converts);
+    Tcl_InitHashTable(&d->converts, TCL_STRING_KEYS);
+    for (i = 0; i < d->nAll; i++) {
+	TclType *tp = d->all[i];
+
+	for (j = 0; tp->fields != NULL && j < tp->nfields; j++) {
+	    if (tp->fields[j].defval != NULL) {
+		Tcl_Obj *o = tp->fields[j].defval;
+
+		tp->fields[j].defval = NULL;
+		Tcl_DecrRefCount(o);
+	    }
+	    if (tp->fields[j].defcmd != NULL) {
+		Tcl_Obj *o = tp->fields[j].defcmd;
+
+		tp->fields[j].defcmd = NULL;
+		Tcl_DecrRefCount(o);
+	    }
+	}
+	for (j = 0; tp->keys != NULL && j < tp->nkeys; j++) {
+	    if (tp->keys[j].defval != NULL) {
+		Tcl_Obj *o = tp->keys[j].defval;
+
+		tp->keys[j].defval = NULL;
+		Tcl_DecrRefCount(o);
+	    }
+	    if (tp->keys[j].defcmd != NULL) {
+		Tcl_Obj *o = tp->keys[j].defcmd;
+
+		tp->keys[j].defcmd = NULL;
+		Tcl_DecrRefCount(o);
+	    }
+	}
+	if (tp->familyArgs != NULL) {
+	    Tcl_Obj *o = tp->familyArgs;
+
+	    tp->familyArgs = NULL;
+	    Tcl_DecrRefCount(o);
+	}
+    }
+    for (i = 0; i < d->nNs; i++) {	/* v16u : les espaces de noms */
+	TclNsDecrRefCount(d->nss[i].nsPtr);
+	Tcl_Free(d->nss[i].prefix);
+    }
+    d->nNs = 0;
+    if (d->nss != NULL) {
+	Tcl_Free(d->nss);
+	d->nss = NULL;
+    }
+    d->ctxNs = NULL;
+    d->refs -= 2;			/* le nettoyage, l'interpréteur */
+    if (d->refs == 0) {
+	FreeTypeData(d);
+    }
+}
+
+static void
+FreeTypeData(TypeData *d)
+{
     Tcl_HashSearch search;
     Tcl_HashEntry *hPtr;
     Tcl_Size i;
 
-    (void) interp;
     for (hPtr = Tcl_FirstHashEntry(&d->converts, &search); hPtr != NULL;
 	    hPtr = Tcl_NextHashEntry(&search)) {
 	Tcl_DecrRefCount((Tcl_Obj *) Tcl_GetHashValue(hPtr));
@@ -1350,14 +1792,119 @@ TclTypeSumNeedsTag(const TclType *tp, Tcl_Obj *content, int v)
     int got = -1;
 
     if (tp == NULL || tp->kind != TCLT_SUM || v < 0
-	    || (tp->binTag != NULL && tp->binTag[0] == '=')) {
-	return 0;
+	    || (tp->binTag != NULL && tp->binTag[0] == '=') || TclSumTagged(tp)) {
+	return 0;			/* v16w : la valeur dit sa variante */
     }
     if (ValidateG(NULL, tp, TCL_ANNOT_CONTENT(content), -1, &got, NULL)
 	    != TCL_OK) {
 	return 1;
     }
     return got != v;
+}
+
+/*
+ * v16w : la valeur V d'une somme balisée (",") écrit sa variante. Une
+ * variante littérale : V est le littéral. Une variante typée : V est la
+ * liste {nom charge}. TclSumDecode rend la variante (et la charge, empruntée
+ * à V, NULL pour un littéral), ou -1 si V n'a pas cette forme.
+ */
+int
+TclSumDecode(const TclType *tp, Tcl_Obj *v, Tcl_Obj **payloadPtr)
+{
+    Tcl_Size i, n, len;
+    Tcl_Obj **ev;
+    const char *str, *nm;
+
+    if (payloadPtr != NULL) {
+	*payloadPtr = NULL;
+    }
+    v = TCL_ANNOT_CONTENT(v);
+    str = Tcl_GetStringFromObj(v, &len);
+    for (i = 0; i < tp->nfields; i++) {
+	if (tp->fields[i].type == NULL && tp->fields[i].literal != NULL
+		&& strcmp(Tcl_GetString(tp->fields[i].literal), str) == 0) {
+	    return (int) i;
+	}
+    }
+    if (len == 0 || TclListObjGetElements(NULL, v, &n, &ev) != TCL_OK
+	    || n != 2) {
+	return -1;
+    }
+    nm = Tcl_GetString(ev[0]);
+    for (i = 0; i < tp->nfields; i++) {
+	if (tp->fields[i].type != NULL && tp->fields[i].name != NULL
+		&& strcmp(Tcl_GetString(tp->fields[i].name), nm) == 0) {
+	    if (payloadPtr != NULL) {
+		*payloadPtr = ev[1];
+	    }
+	    return (int) i;
+	}
+    }
+    return -1;
+}
+
+/* La valeur V (neuve, refcount 0) de la variante v d'une somme balisée, de
+ * charge payload (ignorée pour un littéral). */
+Tcl_Obj *
+TclSumMake(const TclType *tp, int v, Tcl_Obj *payload)
+{
+    Tcl_Obj *pair[2];
+
+    if (tp->fields[v].type == NULL) {
+	return Tcl_DuplicateObj(tp->fields[v].literal);
+    }
+    pair[0] = tp->fields[v].name;
+    pair[1] = (payload != NULL) ? payload : Tcl_NewObj();
+    return Tcl_NewListObj(2, pair);
+}
+
+/* Le message d'une valeur qui n'est pas de la forme d'une somme balisée. */
+static void
+SumFormError(Tcl_Interp *interp, const TclType *tp, Tcl_Obj *value)
+{
+    Tcl_Size i;
+    Tcl_Obj *n0 = NULL;
+
+    if (interp == NULL) {
+	return;
+    }
+    /* l'exemple : la première variante qui accepterait cette valeur */
+    for (i = 0; i < tp->nfields && n0 == NULL; i++) {
+	if (tp->fields[i].type != NULL && tp->fields[i].name != NULL
+		&& TclTypeValidate(NULL, tp->fields[i].type, value, -1, NULL)
+		== TCL_OK) {
+	    n0 = tp->fields[i].name;
+	}
+    }
+    for (i = 0; i < tp->nfields && n0 == NULL; i++) {
+	if (tp->fields[i].type != NULL) {
+	    n0 = tp->fields[i].name;
+	}
+    }
+    if (n0 != NULL) {
+	Tcl_Obj *pair[2], *ex, *one, *vc;
+
+	/* une copie : value peut n'avoir aucune référence, et les listes la
+	 * libéreraient en partant */
+	vc = Tcl_DuplicateObj(value);
+	pair[0] = n0;
+	pair[1] = vc;
+	ex = Tcl_NewListObj(2, pair);
+	one = Tcl_NewListObj(1, &vc);
+	Tcl_IncrRefCount(ex);
+	Tcl_IncrRefCount(one);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf("value \"%s\" names no variant "
+		"of the sum %s: a value of a sum is the name of its variant, "
+		"then its value, as {%s}, or {%s:}%s",
+		Tcl_GetString(value), tp->name, Tcl_GetString(ex),
+		Tcl_GetString(n0), Tcl_GetString(one)));
+	Tcl_DecrRefCount(ex);
+	Tcl_DecrRefCount(one);
+    } else {
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf("value \"%s\" matches no "
+		"variant of %s", Tcl_GetString(value), tp->name));
+    }
+    Tcl_SetErrorCode(interp, "TCL", "TYPE", "SUM", (char *) NULL);
 }
 
 static int
@@ -1567,6 +2114,48 @@ ValidateG(Tcl_Interp *interp, const TclType *tp, Tcl_Obj *value,
     case TCLT_SUM: {
 	int first = -1, prefer = -1;
 
+	if (TclSumTagged(tp)) {
+	    /* v16w : la valeur écrit sa variante ; rien n'est deviné */
+	    Tcl_Obj *pl = NULL;
+	    int vi = TclSumDecode(tp, value, &pl);
+
+	    if (vi < 0) {
+		SumFormError(interp, tp, value);
+		return TCL_ERROR;
+	    }
+	    if (variantHint >= 0 && vi != variantHint) {
+		ERR(interp, "SUM", "value \"%s\" is variant %s of %s, not %s",
+			Tcl_GetString(value), tp->fields[vi].name != NULL
+			? Tcl_GetString(tp->fields[vi].name)
+			: Tcl_GetString(tp->fields[vi].literal), tp->name,
+			variantHint < tp->nfields
+			&& tp->fields[variantHint].name != NULL
+			? Tcl_GetString(tp->fields[variantHint].name) : "?");
+		return TCL_ERROR;
+	    }
+	    if (pl != NULL) {
+		Tcl_IncrRefCount(pl);
+		if (ValidateG(interp, tp->fields[vi].type, pl, -1, NULL, &me)
+			!= TCL_OK) {
+		    Tcl_DecrRefCount(pl);
+		    if (interp != NULL) {
+			Tcl_Obj *m = Tcl_GetObjResult(interp);
+
+			Tcl_IncrRefCount(m);
+			Tcl_SetObjResult(interp, Tcl_ObjPrintf("variant %s of "
+				"%s: %s", Tcl_GetString(tp->fields[vi].name),
+				tp->name, Tcl_GetString(m)));
+			Tcl_DecrRefCount(m);
+		    }
+		    return TCL_ERROR;
+		}
+		Tcl_DecrRefCount(pl);
+	    }
+	    if (variantOut != NULL) {
+		*variantOut = vi;
+	    }
+	    return TCL_OK;
+	}
 	if (variantHint <= -2) {
 	    /* -2 - v : la variante courante, qui départage des variantes
 	     * également strictes (écriture dans une variable typée) */
@@ -1667,7 +2256,7 @@ ValidateG(Tcl_Interp *interp, const TclType *tp, Tcl_Obj *value,
 		    if (n0 != NULL) {
 			const char *v0 = Tcl_GetString(n0);
 
-			Tcl_AppendPrintfToObj(msg, " of %s equally: write {%s}%s",
+			Tcl_AppendPrintfToObj(msg, " of %s equally: write {%s:}%s",
 				tp->name, v0, Tcl_GetString(q));
 		    } else {
 			Tcl_AppendPrintfToObj(msg, " of %s equally: name the "
@@ -2027,6 +2616,30 @@ FillDefaults(Tcl_Interp *interp, const TclType *tp, Tcl_Obj *obj,
 	    TclTypeValidate(NULL, tp, obj, -1, &variant);
 	}
 	if (variant >= 0 && variant < tp->nfields
+		&& tp->fields[variant].type != NULL && TclSumTagged(tp)) {
+	    /* v16w : la charge, deuxième élément de "v charge" (une valeur
+	     * déjà typée est complète) */
+	    Tcl_Obj *pl = NULL, *plc;
+
+	    if (TclIsAnnotated(obj)
+		    || Tcl_ListObjIndex(NULL, obj, 1, &pl) != TCL_OK
+		    || pl == NULL) {
+		return TCL_OK;
+	    }
+	    plc = Tcl_DuplicateObj(pl);
+	    Tcl_IncrRefCount(plc);
+	    if (FillDefaults(interp, tp->fields[variant].type, plc, -1,
+		    depth + 1) != TCL_OK) {
+		Tcl_DecrRefCount(plc);
+		return TCL_ERROR;
+	    }
+	    if (strcmp(Tcl_GetString(plc), Tcl_GetString(pl)) != 0) {
+		Tcl_ListObjReplace(NULL, obj, 1, 1, 1, &plc);
+	    }
+	    Tcl_DecrRefCount(plc);
+	    return TCL_OK;
+	}
+	if (variant >= 0 && variant < tp->nfields
 		&& tp->fields[variant].type != NULL) {
 	    return FillDefaults(interp, tp->fields[variant].type, obj, -1,
 		    depth + 1);
@@ -2043,6 +2656,44 @@ TclTypeComplete(Tcl_Interp *interp, const TclType *tp, Tcl_Obj *content,
 {
     int variant = -1;
 
+    if (variantHint >= 0 && variantHint < tp->nfields && TclSumTagged(tp)) {
+	/*
+	 * v16w : une variante désignée (étiquette {v:}, type S.v) avec sa
+	 * charge : la charge est complétée dans son type, puis content (privé)
+	 * devient la valeur de la somme, "v charge".
+	 */
+	const TclTypeField *f = &tp->fields[variantHint];
+
+	if (f->type == NULL) {
+	    if (strcmp(Tcl_GetString(content), Tcl_GetString(f->literal))
+		    != 0 && Tcl_GetCharLength(content) > 0) {
+		ERR(interp, "SUM", "variant %s of %s takes no value, got \"%s\"",
+			Tcl_GetString(f->literal), tp->name,
+			Tcl_GetString(content));
+		return TCL_ERROR;
+	    }
+	    Tcl_SetStringObj(content, Tcl_GetString(f->literal), -1);
+	} else {
+	    Tcl_Obj *pl = Tcl_DuplicateObj(content), *pair[2];
+
+	    Tcl_IncrRefCount(pl);
+	    if (TclTypeComplete(interp, f->type, pl, -1, NULL) != TCL_OK) {
+		Tcl_DecrRefCount(pl);
+		return TCL_ERROR;
+	    }
+	    pair[0] = f->name;
+	    pair[1] = pl;
+	    Tcl_SetListObj(content, 2, pair);
+	    Tcl_DecrRefCount(pl);
+	}
+	if (variantOut != NULL) {
+	    *variantOut = variantHint;
+	}
+	return TCL_OK;
+    }
+    if (variantHint <= -2 && TclSumTagged(tp)) {
+	variantHint = -1;		/* la valeur dit sa variante */
+    }
     if (TclTypeValidate(interp, tp, content, variantHint, &variant)
 	    != TCL_OK) {
 	return TCL_ERROR;
@@ -2096,6 +2747,38 @@ Inhabited(const TclType *tp, const TclType **stack, int depth)
  * garde que ce qui touche à la table.
  * -------------------------------------------------------------------- */
 
+/* Analyse TEXT avec les noms résolus dans l'espace de OWNER (un nom
+ * qualifié : ::geom::matrix) : le corps d'une famille. */
+int
+TclTypesCompileIn(Tcl_Interp *interp, TypeData *d, const char *owner,
+	const char *text, Tcl_Size len, TypeEnv *envPtr)
+{
+    Namespace *save = d->ctxNs, *ns = NULL;
+    const char *last = NULL, *p;
+    int rc;
+
+    for (p = owner; p[0] != '\0' && p[0] != '('; p++) {
+	if (p[0] == ':' && p[1] == ':') {
+	    last = p;
+	}
+    }
+    if (last != NULL && last > owner && interp != NULL) {
+	Tcl_DString nd;
+
+	Tcl_DStringInit(&nd);
+	Tcl_DStringAppend(&nd, owner, last - owner);
+	ns = (Namespace *) Tcl_FindNamespace(interp, Tcl_DStringValue(&nd),
+		NULL, TCL_GLOBAL_ONLY);
+	Tcl_DStringFree(&nd);
+    } else if (interp != NULL) {
+	ns = ((Interp *) interp)->globalNsPtr;
+    }
+    d->ctxNs = ns;
+    rc = TclCompileType(interp, text, len, envPtr);
+    d->ctxNs = save;
+    return rc;
+}
+
 TclType *
 TclTypesResolve(Tcl_Interp *interp, TypeData *d, const char *selfName,
 	TclType *self, const char *w, Tcl_Size len)
@@ -2103,12 +2786,14 @@ TclTypesResolve(Tcl_Interp *interp, TypeData *d, const char *selfName,
     char *name = DupStr(w, len);
     Tcl_HashEntry *hPtr;
     TclType *tp = NULL;
+    int isSelf = 0;
 
-    if (selfName != NULL && strcmp(name, selfName) == 0) {
+    hPtr = TclTypesFindName(interp, d, &d->names, name, len, selfName,
+	    &isSelf);
+    if (isSelf) {
 	Tcl_Free(name);
 	return self;
     }
-    hPtr = Tcl_FindHashEntry(&d->names, name);
     if (hPtr == NULL) {
 	ERR(interp, "UNKNOWN", "unknown type \"%s\"", name);
     } else {
@@ -2198,6 +2883,40 @@ TclType *
 TclTypesFinish(Tcl_Interp *interp, TypeData *d, const char *selfName,
 	TclTypeKind kind, TclTypeField *fields, Tcl_Size n, TclType *into)
 {
+    return TclTypesFinishSum(interp, d, selfName, kind, fields, n, into, 0);
+}
+
+/*
+ * v16w : une union ("|") doit être disjointe : sa valeur est la charge
+ * seule, et l'alternative se calcule à partir d'elle. NULL si elle l'est,
+ * sinon un message (refcount 0).
+ */
+static Tcl_Obj *
+UnionOverlap(const TclType *tp)
+{
+    Tcl_Obj *ov = TclTypeSumOverlaps(tp), *p0, *va, *vb, *msg = NULL;
+    Tcl_Size nov = 0;
+
+    Tcl_IncrRefCount(ov);
+    Tcl_ListObjLength(NULL, ov, &nov);
+    if (nov > 0) {
+	Tcl_ListObjIndex(NULL, ov, 0, &p0);
+	Tcl_ListObjIndex(NULL, p0, 0, &va);
+	Tcl_ListObjIndex(NULL, p0, 1, &vb);
+	msg = Tcl_ObjPrintf("union: alternatives %s and %s can take the same "
+		"value, so the value could not tell which one it is; a union "
+		"must be disjoint. Write a sum with \",\" to tag the "
+		"alternatives", Tcl_GetString(va), Tcl_GetString(vb));
+    }
+    Tcl_DecrRefCount(ov);
+    return msg;
+}
+
+TclType *
+TclTypesFinishSum(Tcl_Interp *interp, TypeData *d, const char *selfName,
+	TclTypeKind kind, TclTypeField *fields, Tcl_Size n, TclType *into,
+	int isUnion)
+{
     Tcl_DString ds;
     Tcl_HashEntry *hPtr;
     Tcl_Size i;
@@ -2217,27 +2936,67 @@ TclTypesFinish(Tcl_Interp *interp, TypeData *d, const char *selfName,
 
 		/* Un nom de variante ne doit pas être aussi un nom de type. */
 
-		if (Tcl_FindHashEntry(&d->names, nm) != NULL
-			|| (selfName != NULL && strcmp(nm, selfName) == 0)) {
+		int isSelf = 0;
+
+		if (TclTypesFindName(interp, d, &d->names, nm, -1, selfName,
+			&isSelf) != NULL || isSelf) {
 		    ERR(interp, "SYNTAX", "variant name \"%s\" is also a type "
 			    "name", nm);
 		    goto fail;
 		}
 	    }
 	}
+	if (!isUnion) {
+	    /* v16w : la valeur d'une somme écrit le nom de sa variante :
+	     * une variante typée a un nom */
+	    for (i = 0; i < n; i++) {
+		if (fields[i].type != NULL && fields[i].name == NULL) {
+		    const char *tn = fields[i].type->name;
+		    int anon = (strchr(tn, '<') != NULL);
+
+		    ERR(interp, "SYNTAX", "variant %d of the sum has no name: "
+			    "a sum writes the name of its variant in its value; "
+			    "name it (%s%s%sname), or write a union with \"|\" "
+			    "if the value itself tells the alternatives apart",
+			    (int) i + 1, anon ? "{...}" : "{", anon ? "" : tn,
+			    anon ? "" : "}");
+		    goto fail;
+		}
+	    }
+	}
 	SortVariants(fields, n);
+    } else {
+	isUnion = 0;
     }
 
     if (into != NULL) {
 	into->kind = kind;
 	into->fields = fields;
 	into->nfields = n;
+	if (kind == TCLT_SUM) {
+	    Tcl_Obj *msg;
+
+	    into->sumMode = isUnion ? TCLT_SUM_UNION : TCLT_SUM_TAGGED;
+	    if (isUnion && (msg = UnionOverlap(into)) != NULL) {
+		if (interp != NULL) {
+		    Tcl_SetObjResult(interp, msg);
+		    Tcl_SetErrorCode(interp, "TCL", "TYPE", "UNION",
+			    (char *) NULL);
+		} else {
+		    Tcl_IncrRefCount(msg);
+		Tcl_DecrRefCount(msg);
+		}
+		into->fields = NULL;
+		into->nfields = 0;
+		goto fail;
+	    }
+	}
 	return into;
     }
 
     Tcl_DStringInit(&ds);
-    Tcl_DStringAppend(&ds, kind == TCLT_PRODUCT ? "prod<" : "sum<",
-	    TCL_AUTO_LENGTH);
+    Tcl_DStringAppend(&ds, kind == TCLT_PRODUCT ? "prod<"
+	    : isUnion ? "union<" : "sum<", TCL_AUTO_LENGTH);
     for (i = 0; i < n; i++) {
 	if (fields[i].name != NULL) {
 	    Tcl_DStringAppend(&ds, Tcl_GetString(fields[i].name),
@@ -2275,9 +3034,26 @@ TclTypesFinish(Tcl_Interp *interp, TypeData *d, const char *selfName,
 	tp = NewType(d, kind, Tcl_DStringValue(&ds));
 	tp->fields = fields;
 	tp->nfields = n;
+	tp->sumMode = isUnion ? TCLT_SUM_UNION : TCLT_SUM_TAGGED;
 	Tcl_SetHashValue(hPtr, tp);
     }
     Tcl_DStringFree(&ds);
+    if (isUnion) {
+	Tcl_Obj *msg = UnionOverlap(tp);
+
+	if (msg != NULL) {
+	    /* le type reste interné (inaccessible), l'erreur revient à
+	     * chaque analyse */
+	    if (interp != NULL) {
+		Tcl_SetObjResult(interp, msg);
+		Tcl_SetErrorCode(interp, "TCL", "TYPE", "UNION", (char *) NULL);
+	    } else {
+		Tcl_IncrRefCount(msg);
+		Tcl_DecrRefCount(msg);
+	    }
+	    return NULL;
+	}
+    }
     return tp;
 
   fail:
@@ -2314,18 +3090,26 @@ TclTypeParse(Tcl_Interp *interp, const char *text, Tcl_Size len)
      * Valable tant que les noms ne changent pas (gen) ; borné.
      */
     if (env.d != NULL && len > 0 && len < 200) {
-	char key[200];
+	char key[248];
 	Tcl_HashEntry *hPtr;
-	int isNew;
+	int isNew, pre = 0;
 
+	TclTypesSync(env.d);
 	if (env.d->parsedGen != env.d->gen
 		|| env.d->parsed.numEntries > 4096) {
 	    Tcl_DeleteHashTable(&env.d->parsed);
 	    Tcl_InitHashTable(&env.d->parsed, TCL_STRING_KEYS);
 	    env.d->parsedGen = env.d->gen;
 	}
-	memcpy(key, text, (size_t) len);
-	key[len] = '\0';
+	if (env.d->nNs > 0 && interp != NULL) {
+	    /* v16u : le même texte se résout selon l'espace courant */
+	    Namespace *ns = CtxNs(interp, env.d);
+
+	    pre = snprintf(key, 48, "\2%zx.%zx\2", (size_t) ns->nsId,
+		    (size_t) ns->resolverEpoch);
+	}
+	memcpy(key + pre, text, (size_t) len);
+	key[pre + len] = '\0';
 	if (memchr(text, '\0', (size_t) len) == NULL) {
 	    hPtr = Tcl_FindHashEntry(&env.d->parsed, key);
 	    if (hPtr != NULL) {
@@ -2605,14 +3389,66 @@ TclTypeCast(Tcl_Interp *interp, Tcl_Obj *src, TclType *target,
 	    goto validate;
 	}
     }
+    /*
+     * v16w : toute valeur se lit comme une chaîne ordinaire : son texte
+     * (un littéral d'énumération, "v 5" d'une somme, un point...).
+     */
+    if (from != NULL && TclTypeIsPlainString(target)) {
+	res = Tcl_NewStringObj(Tcl_GetString(content), TCL_AUTO_LENGTH);
+	goto validate;
+    }
+    /*
+     * v16w : une union se lit comme le type de son alternative : sa valeur
+     * est la charge. (Une somme balisée, jamais : sa variante se lit par
+     * son chemin, $t(celsius), pour ne pas perdre ce qu'elle dit.)
+     */
+    if (from != NULL && from->kind == TCLT_SUM && target->kind != TCLT_SUM
+	    && from->sumMode == TCLT_SUM_UNION && from->binTag == NULL) {
+	int av = variant;
+
+	if (av < 0) {
+	    (void) TclTypeValidate(NULL, from, content, -1, &av);
+	}
+	if (av >= 0 && av < from->nfields && from->fields[av].type != NULL) {
+	    Tcl_Obj *cur = TclNewAnnotated(interp, from->fields[av].type, -1,
+		    content);
+	    int crc;
+
+	    Tcl_IncrRefCount(cur);
+	    crc = TclTypeCast(interp, cur, target, resultPtr);
+	    if (crc == TCL_OK && *resultPtr == cur) {
+		*resultPtr = TclNewAnnotated(interp, from->fields[av].type,
+			-1, content);
+	    }
+	    Tcl_DecrRefCount(cur);
+	    return crc;
+	}
+    }
     /* Variante d'une somme dont le type est exactement celui de la source. */
     if (target->kind == TCLT_SUM && from != NULL) {
+	int found = -1, again = -1;
+
 	for (i = 0; i < target->nfields; i++) {
 	    if (target->fields[i].type == from) {
-		res = Tcl_DuplicateObj(content);
-		outVariant = (int) i;
-		goto validate;
+		if (found < 0) {
+		    found = (int) i;
+		} else if (again < 0) {
+		    again = (int) i;
+		}
 	    }
+	}
+	if (found >= 0 && again >= 0 && TclSumTagged(target)) {
+	    ERR(interp, "AMBIGUOUS", "a value of type %s fits variants %s and "
+		    "%s of %s: write {%s:}value", from->name,
+		    Tcl_GetString(target->fields[found].name),
+		    Tcl_GetString(target->fields[again].name), target->name,
+		    Tcl_GetString(target->fields[found].name));
+	    return TCL_ERROR;
+	}
+	if (found >= 0) {
+	    res = Tcl_DuplicateObj(content);
+	    outVariant = found;
+	    goto validate;
 	}
     }
     /*
@@ -2628,6 +3464,11 @@ TclTypeCast(Tcl_Interp *interp, Tcl_Obj *src, TclType *target,
 	Tcl_Obj *pc = content, **fv;
 	Tcl_Size nf;
 
+	if (TclSumTagged(pt)) {
+	    /* v16w : "v charge" se lit comme la liste de ses deux mots */
+	    res = Tcl_DuplicateObj(content);
+	    goto validate;
+	}
 	if (pt->kind == TCLT_SUM && variant >= 0 && variant < (int) pt->nfields
 		&& pt->fields[variant].type != NULL) {
 	    pt = pt->fields[variant].type;
@@ -2824,6 +3665,19 @@ TclTypeCast(Tcl_Interp *interp, Tcl_Obj *src, TclType *target,
 	    goto validate;
 	}
     }
+    if (from != NULL && TclSumTagged(from) && target->kind != TCLT_SUM) {
+	int sv = TclSumDecode(from, content, NULL);
+
+	if (sv >= 0 && from->fields[sv].type != NULL) {
+	    /* v16w : la variante se lit par son nom, pas en silence */
+	    ERR(interp, "CAST", "a value of the sum %s is not of type %s: it is "
+		    "\"%s\" then its value; read that value by its path, as "
+		    "$v(%s)", from->name, target->name,
+		    Tcl_GetString(from->fields[sv].name),
+		    Tcl_GetString(from->fields[sv].name));
+	    return TCL_ERROR;
+	}
+    }
     ERR(interp, "CAST", "unknown way to cast the value from %s to %s",
 	    from ? from->name : "string", target->name);
     return TCL_ERROR;
@@ -2918,7 +3772,10 @@ TclTypeVariantConvert(Tcl_Interp *interp, TclType *sum, int from,
 		sum->name, fn, tn, Tcl_GetString(content));
 	return TCL_ERROR;
     }
-    if (TclTypeValidate(interp, sum, res, to, NULL) != TCL_OK) {
+    if ((TclSumTagged(sum) ? (tf->type != NULL && TclTypeValidate(interp,
+	    tf->type, res, -1, NULL) != TCL_OK)
+	    : TclTypeValidate(interp, sum, res, to, NULL) != TCL_OK)) {
+	/* v16w : une somme balisée : res est la charge de la variante */
 	TclDiscard(res);
 	return TCL_ERROR;
     }
@@ -2978,10 +3835,18 @@ CIdent(const char *s, Tcl_DString *ds)
     const unsigned char *p = (const unsigned char *) s;
     int i;
 
+    while (p[0] == ':' && p[1] == ':') {
+	p += 2;			/* v16u : ::geom::point -> geom_point */
+    }
     if (*p >= '0' && *p <= '9') {
 	Tcl_DStringAppend(ds, "_", 1);
     }
     while (*p) {
+	if (p[0] == ':' && p[1] == ':') {
+	    Tcl_DStringAppend(ds, "_", 1);
+	    p += 2;
+	    continue;
+	}
 	if ((*p >= 'a' && *p <= 'z') || (*p >= 'A' && *p <= 'Z')
 		|| (*p >= '0' && *p <= '9') || *p == '_') {
 	    Tcl_DStringAppend(ds, (const char *) p, 1);
@@ -3471,7 +4336,35 @@ CEmitNamed(CGen *g, TclType *tp)
     memset(nm, 0, sizeof(*nm));
     Tcl_SetHashValue(h, nm);
     Tcl_DStringInit(&cn);
-    CIdent(tp->name, &cn);
+    {
+	/*
+	 * v16u : le nom C d'un type d'un espace de noms est son dernier mot
+	 * (::math::geometry::point -> point), comme namespace tail ; si un
+	 * autre type déjà exporté a le même, le nom qualifié
+	 * (math_geometry_point).
+	 */
+	const char *tail = tp->name, *q;
+	Tcl_HashSearch hs;
+	Tcl_HashEntry *e;
+
+	for (q = tp->name; q[0] != '\0'; q++) {
+	    if (q[0] == ':' && q[1] == ':') {
+		tail = q + 2;
+	    }
+	}
+	CIdent(tail, &cn);
+	for (e = Tcl_FirstHashEntry(&g->done, &hs); tail != tp->name
+		&& e != NULL; e = Tcl_NextHashEntry(&hs)) {
+	    CGenNamed *o = (CGenNamed *) Tcl_GetHashValue(e);
+
+	    if (o != nm && o->cname != NULL
+		    && strcmp(o->cname, Tcl_DStringValue(&cn)) == 0) {
+		Tcl_DStringSetLength(&cn, 0);
+		CIdent(tp->name, &cn);
+		break;
+	    }
+	}
+    }
     nm->cname = (char *) Tcl_Alloc(Tcl_DStringLength(&cn) + 1);
     strcpy(nm->cname, Tcl_DStringValue(&cn));
     nm->busy = 1;
@@ -3603,6 +4496,17 @@ TypeCCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 	Tcl_DStringAppend(&head, buf, -1);
 	Tcl_DStringAppend(&head, "#include <stdint.h>\n#include <stddef.h>\n",
 		-1);
+	/* les contrôles de taille sont des _Static_assert (C11) : un
+	 * compilateur C99 sans en-tête qui le fournisse (tcc 0.9.27 sous
+	 * Windows) reçoit l'équivalent, un tableau de taille négative */
+	Tcl_DStringAppend(&head, "#if !defined(__cplusplus) && "
+		"!defined(_Static_assert) \\\n"
+		"\t&& (!defined(__STDC_VERSION__) || __STDC_VERSION__ < 201112L)\n"
+		"#define TCLT_SA_CAT_(a, b) a##b\n"
+		"#define TCLT_SA_CAT(a, b) TCLT_SA_CAT_(a, b)\n"
+		"#define _Static_assert(c, m) typedef char "
+		"TCLT_SA_CAT(tclt_static_assert_, __LINE__)[(c) ? 1 : -1]\n"
+		"#endif\n", -1);
 	if (g.needTcl) {
 	    Tcl_DStringAppend(&head, "#include <tcl.h>\n", -1);
 	}
@@ -3837,6 +4741,7 @@ CopyInto(TclType *into, const TclType *res)
     into->binAtBody = res->binAtBody;
     into->binLink = res->binLink;
     into->binTag = res->binTag;
+    into->sumMode = res->sumMode;
     if (into->family == NULL && res->family != NULL) {
 	/* type def mm {grandeur(L, 0.001)} : mm hérite de la famille et des
 	 * paramètres de l'instance (règles de famille de type convert). */
@@ -3908,10 +4813,17 @@ DefinitionText(Tcl_Interp *interp, Tcl_Obj *obj, Tcl_DString *ds)
 }
 
 static int
-CheckNewName(Tcl_Interp *interp, TypeData *d, const char *name)
+CheckNewName(Tcl_Interp *interp, TypeData *d, const char *full)
 {
-    const char *q;
+    const char *q, *name = full;
 
+    /* v16u : NAME est déjà qualifié (::geom::point) ; seul le dernier mot
+     * est un nom de type (l'espace de noms est celui de Tcl). */
+    for (q = full; q[0] != '\0'; q++) {
+	if (q[0] == ':' && q[1] == ':') {
+	    name = q + 2;
+	}
+    }
     if (name[0] == '\0') {
 	ERR(interp, "NAME", "empty type name");
 	return TCL_ERROR;
@@ -3935,12 +4847,12 @@ CheckNewName(Tcl_Interp *interp, TypeData *d, const char *name)
 		"parameter, as in {type}T");
 	return TCL_ERROR;
     }
-    if (Tcl_FindHashEntry(&d->generics, name) != NULL) {
-	ERR(interp, "NAME", "type \"%s\" is already defined", name);
+    if (Tcl_FindHashEntry(&d->generics, full) != NULL) {
+	ERR(interp, "NAME", "type \"%s\" is already defined", full);
 	return TCL_ERROR;
     }
-    if (Tcl_FindHashEntry(&d->names, name) != NULL) {
-	ERR(interp, "NAME", "type \"%s\" is %s", name,
+    if (Tcl_FindHashEntry(&d->names, full) != NULL) {
+	ERR(interp, "NAME", "type \"%s\" is %s", full,
 		strcmp(name, "int") == 0 || strcmp(name, "double") == 0
 		|| strcmp(name, "string") == 0 || strcmp(name, "list") == 0
 		|| strcmp(name, "dict") == 0 || strcmp(name, "array") == 0
@@ -4047,14 +4959,12 @@ TypeConvertCmd(Tcl_Interp *interp, TypeData *d, Tcl_Obj *fromObj,
 	    const char *nm = Tcl_GetString(objs[i]);
 	    const char *dot = strrchr(nm, '.');
 
-	    if (dot != NULL && Tcl_FindHashEntry(&d->names, nm) == NULL) {
-		Tcl_DString sd;
+	    if (dot != NULL && TclTypesFindName(interp, d, &d->names, nm, -1,
+		    NULL, NULL) == NULL) {
 		Tcl_HashEntry *h;
 
-		Tcl_DStringInit(&sd);
-		Tcl_DStringAppend(&sd, nm, dot - nm);
-		h = Tcl_FindHashEntry(&d->names, Tcl_DStringValue(&sd));
-		Tcl_DStringFree(&sd);
+		h = TclTypesFindName(interp, d, &d->names, nm, dot - nm, NULL,
+			NULL);
 		if (h != NULL && Tcl_GetHashValue(h) != NULL
 			&& ((TclType *) Tcl_GetHashValue(h))->kind == TCLT_SUM) {
 		    vs[i] = (TclType *) Tcl_GetHashValue(h);
@@ -4089,13 +4999,16 @@ TypeConvertCmd(Tcl_Interp *interp, TypeData *d, Tcl_Obj *fromObj,
     }
     for (i = 0; i < 2; i++) {
 	const char *nm = Tcl_GetString(objs[i]);
-	Tcl_HashEntry *h = Tcl_FindHashEntry(&d->names, nm);
+	Tcl_HashEntry *h = TclTypesFindName(interp, d, &d->names, nm, -1,
+		NULL, NULL);
 
 	if (h != NULL && Tcl_GetHashValue(h) != NULL) {
 	    snprintf(side[i], sizeof(side[i]), "%s",
 		    ((TclType *) Tcl_GetHashValue(h))->name);
-	} else if (Tcl_FindHashEntry(&d->generics, nm) != NULL) {
-	    snprintf(side[i], sizeof(side[i]), "@%s", nm);
+	} else if ((h = TclTypesFindName(interp, d, &d->generics, nm, -1,
+		NULL, NULL)) != NULL) {
+	    snprintf(side[i], sizeof(side[i]), "@%s",
+		    (const char *) Tcl_GetHashKey(&d->generics, h));
 	} else {
 	    ERR(interp, "UNKNOWN", "type convert needs two defined types or "
 		    "type families, not \"%s\"", nm);
@@ -4236,7 +5149,8 @@ LinkReprBody(
 	int hasNone = 0;
 
 	for (i = 0; i < target->nfields; i++) {
-	    const char *nm = Tcl_GetString(target->fields[i].name);
+	    const char *nm = Tcl_GetString(target->fields[i].name != NULL
+		    ? target->fields[i].name : target->fields[i].literal);
 
 	    if (strcmp(nm, "some") == 0) {
 		some = target->fields[i].type;
@@ -4247,7 +5161,7 @@ LinkReprBody(
 	if (some == NULL || !hasNone) {
 	    Tcl_DecrRefCount(reprR);
 	    ERR(interp, "BIN", "%s: a link to a sum needs the variants "
-		    "{T}some and {unit}none", tp->name);
+		    "{T}some and \"none\"", tp->name);
 	    return TCL_ERROR;
 	}
 	optName = tp->name;
@@ -5009,7 +5923,8 @@ BinLinkSome(const TclType *tp, int *someIdx, int *noneIdx)
     }
     for (i = 0; i < t->nfields; i++) {
 	const char *nm = t->fields[i].name ? Tcl_GetString(t->fields[i].name)
-		: "";
+		: t->fields[i].literal ? Tcl_GetString(t->fields[i].literal)
+		: "";			/* v16w : "none" est un littéral */
 
 	if (strcmp(nm, "some") == 0) {
 	    some = t->fields[i].type;
@@ -5580,11 +6495,20 @@ BinFastEnc(BinCtx *c, const TclType *tp, Tcl_Obj *v, const TclType *encl,
 		    return TCL_CONTINUE;
 		}
 	    }
+	    if (ot != NULL && TclSumTagged(ot)) {
+		/* v16w : "some charge" ou "none" */
+		Tcl_Obj *pl = NULL;
+
+		var = TclSumDecode(ot, content, &pl);
+		content = pl;
+	    }
 	    if (ot == NULL || ot->kind != TCLT_SUM || var < 0
-		    || var >= (int) ot->nfields || ot->fields[var].name == NULL) {
+		    || var >= (int) ot->nfields) {
 		return TCL_CONTINUE;
 	    }
-	    if (strcmp(Tcl_GetString(ot->fields[var].name), "none") == 0) {
+	    if (strcmp(Tcl_GetString(ot->fields[var].name != NULL
+		    ? ot->fields[var].name : ot->fields[var].literal), "none")
+		    == 0) {
 		Tcl_WideInt w;
 		Tcl_Obj *nt = Tcl_NewStringObj(BinLinkNull(tp), -1);
 
@@ -5600,7 +6524,9 @@ BinFastEnc(BinCtx *c, const TclType *tp, Tcl_Obj *v, const TclType *encl,
 		Tcl_DecrRefCount(zero);
 		return rc;
 	    }
-	    if (strcmp(Tcl_GetString(ot->fields[var].name), "some") != 0) {
+	    if (ot->fields[var].name == NULL || content == NULL
+		    || strcmp(Tcl_GetString(ot->fields[var].name), "some")
+		    != 0) {
 		return TCL_CONTINUE;
 	    }
 	    payload = content;
@@ -6264,8 +7190,14 @@ BinLinkValue(BinDec *d, const TclType *tp, int isNull, size_t target,
 	}
 	/* comme field : le constructeur de la couche Tcl garde le contenu nu
 	 * d'une somme opt ; ailleurs, la valeur annotée de mkSum */
-	*resPtr = asField ? Tcl_NewObj() : TclNewAnnotatedOwn(Tcl_NewObj(),
-		TclTypeRefFor(d->interp, (TclType *) tp, noneIdx));
+	{
+	    /* v16w : la valeur nulle est "none" (une somme balisée) */
+	    Tcl_Obj *nv = TclSumTagged(tp) ? TclSumMake(tp, noneIdx, NULL)
+		    : Tcl_NewObj();
+
+	    *resPtr = asField ? nv : TclNewAnnotatedOwn(nv,
+		    TclTypeRefFor(d->interp, (TclType *) tp, noneIdx));
+	}
 	return TCL_OK;
     }
     for (k = 0; k < d->nchain; k++) {
@@ -6296,6 +7228,9 @@ BinLinkValue(BinDec *d, const TclType *tp, int isNull, size_t target,
     d->nchain--;
     if (rc != TCL_OK) {
 	return rc;
+    }
+    if (some != NULL && TclSumTagged(tp)) {
+	v = TclSumMake(tp, someIdx, v);	/* v16w : "some charge" */
     }
     *resPtr = (some != NULL && !asField) ? TclNewAnnotatedOwn(v,
 	    TclTypeRefFor(d->interp, (TclType *) tp, someIdx)) : v;
@@ -6881,6 +7816,136 @@ TypeBinaryCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
  * (refcount 0), *subject le mot sans elles (non possédé : objv, ou un objet
  * gardé par la liste *keep). Rend le nombre d'annotations.
  */
+/*
+ * v16m : le texte d'une annotation locale peut porter plusieurs options,
+ * dans la syntaxe des notes : « , » sépare, « . » descend, « = » donne une
+ * valeur, (…) regroupe, "…" cite (substitutions backslash). Chaque option est
+ * rendue à plat, son chemin écrit en entier :
+ *	{-compact,-strict}	-> -compact  -strict
+ *	{-a.(b=1,c="x,y")}	-> -a.b=1  -a.c="x,y"
+ * Un texte qui ne suit pas cette syntaxe reste une seule option.
+ */
+static int
+OptToken(const char *s, Tcl_Size *ip, Tcl_Size n)
+{
+    Tcl_Size i = *ip;
+
+    if (i < n && s[i] == '"') {
+	for (i++; i < n && s[i] != '"'; i++) {
+	    if (s[i] == '\\' && i + 1 < n) {
+		i++;
+	    }
+	}
+	if (i >= n) {
+	    return 0;
+	}
+	*ip = i + 1;
+	return 1;
+    }
+    while (i < n && strchr(",.()=\"", s[i]) == NULL) {
+	i++;
+    }
+    if (i == *ip) {
+	return 0;
+    }
+    *ip = i;
+    return 1;
+}
+
+static int OptSeq(const char *s, Tcl_Size *ip, Tcl_Size n, Tcl_DString *pre,
+	Tcl_Obj *out);
+
+static int
+OptItem(const char *s, Tcl_Size *ip, Tcl_Size n, Tcl_DString *pre,
+	Tcl_Obj *out)
+{
+    Tcl_DString path;
+    Tcl_Size st = *ip;
+    int ok = 1;
+
+    Tcl_DStringInit(&path);
+    Tcl_DStringAppend(&path, Tcl_DStringValue(pre), Tcl_DStringLength(pre));
+    if (!OptToken(s, ip, n)) {
+	Tcl_DStringFree(&path);
+	return 0;
+    }
+    Tcl_DStringAppend(&path, s + st, *ip - st);
+    while (*ip < n && s[*ip] == '.') {
+	(*ip)++;
+	if (*ip < n && s[*ip] == '(') {
+	    (*ip)++;
+	    Tcl_DStringAppend(&path, ".", 1);
+	    ok = OptSeq(s, ip, n, &path, out);
+	    if (ok && (*ip >= n || s[*ip] != ')')) {
+		ok = 0;
+	    }
+	    (*ip)++;
+	    Tcl_DStringFree(&path);
+	    return ok;
+	}
+	st = *ip;
+	if (!OptToken(s, ip, n)) {
+	    Tcl_DStringFree(&path);
+	    return 0;
+	}
+	Tcl_DStringAppend(&path, ".", 1);
+	Tcl_DStringAppend(&path, s + st, *ip - st);
+    }
+    if (*ip < n && s[*ip] == '=') {
+	(*ip)++;
+	st = *ip;
+	if (!OptToken(s, ip, n)) {
+	    Tcl_DStringFree(&path);
+	    return 0;
+	}
+	Tcl_DStringAppend(&path, "=", 1);
+	Tcl_DStringAppend(&path, s + st, *ip - st);
+    }
+    Tcl_ListObjAppendElement(NULL, out, Tcl_NewStringObj(
+	    Tcl_DStringValue(&path), Tcl_DStringLength(&path)));
+    Tcl_DStringFree(&path);
+    return 1;
+}
+
+static int
+OptSeq(const char *s, Tcl_Size *ip, Tcl_Size n, Tcl_DString *pre,
+	Tcl_Obj *out)
+{
+    while (1) {
+	if (!OptItem(s, ip, n, pre, out)) {
+	    return 0;
+	}
+	if (*ip >= n || s[*ip] != ',') {
+	    return 1;
+	}
+	(*ip)++;
+    }
+}
+
+static void
+SplitOptions(const char *text, Tcl_Obj *out)
+{
+    Tcl_Obj *items = Tcl_NewListObj(0, NULL);
+    Tcl_DString pre;
+    Tcl_Size i = 0, n = (Tcl_Size) strlen(text);
+
+    Tcl_IncrRefCount(items);
+    Tcl_DStringInit(&pre);
+    if (OptSeq(text, &i, n, &pre, items) && i == n) {
+	Tcl_Obj **ev;
+	Tcl_Size ne, k;
+
+	Tcl_ListObjGetElements(NULL, items, &ne, &ev);
+	for (k = 0; k < ne; k++) {
+	    Tcl_ListObjAppendElement(NULL, out, ev[k]);
+	}
+    } else {
+	Tcl_ListObjAppendElement(NULL, out, Tcl_NewStringObj(text, -1));
+    }
+    Tcl_DStringFree(&pre);
+    Tcl_DecrRefCount(items);
+}
+
 static Tcl_Size
 LocalWords(Tcl_Obj *word, Tcl_Obj **words, Tcl_Obj **subject, TclObjVec *keep)
 {
@@ -6895,13 +7960,444 @@ LocalWords(Tcl_Obj *word, Tcl_Obj **words, Tcl_Obj **subject, TclObjVec *keep)
 	    TclDiscard(rest);
 	    break;			/* une note ou un type : pas à nous */
 	}
-	Tcl_ListObjAppendElement(NULL, *words, Tcl_NewStringObj(t, -1));
+	SplitOptions(t, *words);		/* {-a,-b} (v16m) */
 	TclVecAdd(keep, rest);
 	cur = rest;
 	n++;
     }
     *subject = cur;
+    Tcl_ListObjLength(NULL, *words, &n);
     return n;
+}
+
+/*
+ * v16m : deux types peuvent-ils accepter une même valeur ? Réponse prudente :
+ * 1 dans le doute (string, any, var, profondeur dépassée). Avec EIAS, un
+ * scalaire est une liste d'un élément, la liste vide est un dict vide, et une
+ * liste extensible accepte la liste vide.
+ */
+static const TclType *
+OverlapBase(const TclType *t)
+{
+    while (t != NULL && t->under != NULL
+	    && (t->kind == TCLT_INT || t->kind == TCLT_DOUBLE
+		|| t->kind == TCLT_STRING)) {
+	t = t->under;
+    }
+    return t;
+}
+
+static int
+SumLiteralFits(const TclType *t, Tcl_Obj *lit)
+{
+    return TclTypeValidate(NULL, t, lit, -1, NULL) == TCL_OK;
+}
+
+static int
+MayOverlap(const TclType *a, const TclType *b, int depth)
+{
+    Tcl_Size i;
+
+    a = OverlapBase(a);
+    b = OverlapBase(b);
+    if (depth > 8 || a == NULL || b == NULL || a == b
+	    || TclTypeIsAny(a) || TclTypeIsAny(b)) {
+	return 1;
+    }
+    if (a->kind != TCLT_SUM && b->kind == TCLT_SUM) {
+	const TclType *x = a;
+
+	a = b;
+	b = x;
+    }
+    if (a->kind == TCLT_SUM) {
+	for (i = 0; i < a->nfields; i++) {
+	    const TclTypeField *f = &a->fields[i];
+
+	    if (f->type == NULL) {
+		if (f->literal != NULL && SumLiteralFits(b, f->literal)) {
+		    return 1;
+		}
+	    } else if (MayOverlap(f->type, b, depth + 1)) {
+		return 1;
+	    }
+	}
+	return 0;
+    }
+    if (a->kind == TCLT_STRING || b->kind == TCLT_STRING
+	    || a->kind == TCLT_VAR || b->kind == TCLT_VAR) {
+	return 1;
+    }
+    /* Mettre le scalaire, puis le dict, en premier. */
+    if ((b->kind == TCLT_INT || b->kind == TCLT_DOUBLE)
+	    && a->kind != TCLT_INT && a->kind != TCLT_DOUBLE) {
+	const TclType *x = a;
+
+	a = b;
+	b = x;
+    }
+    if (a->kind == TCLT_INT || a->kind == TCLT_DOUBLE) {
+	switch (b->kind) {
+	case TCLT_INT:
+	case TCLT_DOUBLE:
+	    return 1;
+	case TCLT_LIST:
+	    return (b->arity < 0 || b->arity == 1)
+		    && MayOverlap(a, b->elem, depth + 1);
+	case TCLT_PRODUCT:
+	    return b->nfields == 1
+		    && MayOverlap(a, b->fields[0].type, depth + 1);
+	default:
+	    return 0;			/* un dict a un nombre pair de mots */
+	}
+    }
+    if (b->kind == TCLT_DICT && a->kind != TCLT_DICT) {
+	const TclType *x = a;
+
+	a = b;
+	b = x;
+    }
+    if (a->kind == TCLT_DICT) {
+	switch (b->kind) {
+	case TCLT_DICT:
+	    return 1;			/* le dict vide, au moins */
+	case TCLT_LIST:
+	    return b->arity < 0 || b->arity % 2 == 0;
+	case TCLT_PRODUCT:
+	    return b->nfields % 2 == 0;
+	default:
+	    return 1;
+	}
+    }
+    if (a->kind == TCLT_PRODUCT && b->kind == TCLT_LIST) {
+	const TclType *x = a;
+
+	a = b;
+	b = x;
+    }
+    if (a->kind == TCLT_LIST && b->kind == TCLT_LIST) {
+	if (a->arity < 0 || b->arity < 0) {
+	    if (a->arity <= 0 || b->arity <= 0) {
+		return 1;		/* la liste vide */
+	    }
+	} else if (a->arity != b->arity) {
+	    return 0;
+	} else if (a->arity == 0) {
+	    return 1;
+	}
+	return MayOverlap(a->elem, b->elem, depth + 1);
+    }
+    if (a->kind == TCLT_LIST && b->kind == TCLT_PRODUCT) {
+	if (a->arity >= 0 && a->arity != b->nfields) {
+	    return 0;
+	}
+	if (b->nfields == 0) {
+	    return 1;
+	}
+	for (i = 0; i < b->nfields; i++) {
+	    if (!MayOverlap(a->elem, b->fields[i].type, depth + 1)) {
+		return 0;
+	    }
+	}
+	return 1;
+    }
+    if (a->kind == TCLT_PRODUCT && b->kind == TCLT_PRODUCT) {
+	if (a->nfields != b->nfields) {
+	    return 0;
+	}
+	for (i = 0; i < a->nfields; i++) {
+	    if (!MayOverlap(a->fields[i].type, b->fields[i].type, depth + 1)) {
+		return 0;
+	    }
+	}
+	return 1;
+    }
+    return 1;
+}
+
+/* Les paires de variantes de la somme tp qui peuvent accepter une même
+ * valeur : {{a b} {a c} ...}, vide si la somme est disjointe. */
+Tcl_Obj *
+TclTypeSumOverlaps(const TclType *tp)
+{
+    Tcl_Obj *res = Tcl_NewListObj(0, NULL);
+    Tcl_Size i, j;
+
+    for (i = 0; i < tp->nfields; i++) {
+	for (j = i + 1; j < tp->nfields; j++) {
+	    const TclTypeField *a = &tp->fields[i], *b = &tp->fields[j];
+	    int ov;
+
+	    if (a->type == NULL && b->type == NULL) {
+		ov = a->literal != NULL && b->literal != NULL
+			&& strcmp(Tcl_GetString(a->literal),
+				Tcl_GetString(b->literal)) == 0;
+	    } else if (a->type == NULL) {
+		ov = a->literal != NULL && SumLiteralFits(b->type, a->literal);
+	    } else if (b->type == NULL) {
+		ov = b->literal != NULL && SumLiteralFits(a->type, b->literal);
+	    } else {
+		ov = MayOverlap(a->type, b->type, 0);
+	    }
+	    if (ov) {
+		Tcl_Obj *pair[2];
+
+		/* une variante sans nom : son indice */
+		pair[0] = a->name ? a->name : a->literal ? a->literal
+			: Tcl_NewWideIntObj(i);
+		pair[1] = b->name ? b->name : b->literal ? b->literal
+			: Tcl_NewWideIntObj(j);
+		Tcl_ListObjAppendElement(NULL, res, Tcl_NewListObj(2, pair));
+	    }
+	}
+    }
+    return res;
+}
+
+/*
+ * v16o : la définition d'un type, dans la syntaxe de type def (ce que
+ * « type def NOM » rend). Un type nommé s'écrit par son nom, sauf au premier
+ * niveau ; un produit ou une somme anonymes s'écrivent en entier.
+ */
+static void DefText(const TclType *tp, int top, Tcl_DString *ds);
+static int TypeProcCmd(Tcl_Interp *interp, Tcl_Size objc,
+	Tcl_Obj *const objv[]);		/* v16p */
+static int CastWordUnfold(Tcl_Interp *interp, Tcl_Obj *word);	/* v16r */
+
+static void
+DefWord(const char *s, Tcl_DString *ds)
+{
+    const char *p;
+    int plain = (*s != '\0');
+
+    for (p = s; *p; p++) {
+	if (!(isalnum(UCHAR(*p)) || *p == '_' || *p == '-' || *p == '.'
+		|| (*p & 0x80))) {
+	    plain = 0;
+	    break;
+	}
+    }
+    if (plain) {
+	Tcl_DStringAppend(ds, s, -1);
+	return;
+    }
+    Tcl_DStringAppend(ds, "\"", 1);
+    for (p = s; *p; p++) {
+	if (*p == '"' || *p == '\\' || *p == '$' || *p == '[') {
+	    Tcl_DStringAppend(ds, "\\", 1);
+	}
+	Tcl_DStringAppend(ds, p, 1);
+    }
+    Tcl_DStringAppend(ds, "\"", 1);
+}
+
+static void
+DefDefault(const TclTypeField *f, Tcl_DString *ds)
+{
+    if (f->defval != NULL) {
+	Tcl_DStringAppend(ds, " ?= ", 4);
+	DefWord(Tcl_GetString(f->defval), ds);
+    } else if (f->defcmd != NULL) {
+	Tcl_DStringAppend(ds, " ?= [", 5);
+	Tcl_DStringAppend(ds, Tcl_GetString(f->defcmd), -1);
+	Tcl_DStringAppend(ds, "]", 1);
+    }
+}
+
+static void
+DefField(const TclTypeField *f, Tcl_DString *ds)
+{
+    if (f->type == NULL) {
+	Tcl_DStringAppend(ds, "\"", 1);
+	if (f->literal != NULL) {
+	    Tcl_DStringAppend(ds, Tcl_GetString(f->literal), -1);
+	}
+	Tcl_DStringAppend(ds, "\"", 1);
+	return;
+    }
+    Tcl_DStringAppend(ds, "{", 1);
+    DefText(f->type, 2, ds);		/* les accolades du champ suffisent */
+    Tcl_DStringAppend(ds, "}", 1);
+    if (f->name != NULL) {
+	Tcl_DStringAppend(ds, Tcl_GetString(f->name), -1);
+    }
+    DefDefault(f, ds);
+}
+
+static void
+DefText(const TclType *tp, int top, Tcl_DString *ds)
+{
+    Tcl_Size i;
+
+    if (tp == NULL) {
+	Tcl_DStringAppend(ds, "string", 6);
+	return;
+    }
+    if (TclTypeIsAny(tp)) {
+	Tcl_DStringAppend(ds, "any", 3);
+	return;
+    }
+    if (top != 1 && (tp->nominal || tp->reserved)) {
+	Tcl_DStringAppend(ds, tp->name, -1);
+	return;
+    }
+    switch (tp->kind) {
+    case TCLT_INT:
+    case TCLT_DOUBLE:
+    case TCLT_STRING:
+	if (tp->nominal && tp->under != NULL) {
+	    DefText(tp->under, 0, ds);	/* type def mm double */
+	} else {
+	    Tcl_DStringAppend(ds, tp->name, -1);
+	}
+	return;
+    case TCLT_VAR:
+	Tcl_DStringAppend(ds, tp->varTyped ? "var(typed)" : "var", -1);
+	if (tp->elem != NULL) {
+	    Tcl_DStringAppend(ds, ".", 1);
+	    DefText(tp->elem, 0, ds);
+	}
+	return;
+    case TCLT_LIST:
+	if (tp->binDyn != NULL) {
+	    Tcl_DStringAppend(ds, tp->name, -1);
+	    return;
+	}
+	Tcl_DStringAppend(ds, "list", 4);
+	if (tp->arity >= 0) {
+	    char buf[32];
+
+	    snprintf(buf, sizeof(buf), "(%" TCL_SIZE_MODIFIER "d)",
+		    tp->arity);
+	    Tcl_DStringAppend(ds, buf, -1);
+	}
+	if (tp->elem != NULL) {
+	    Tcl_DStringAppend(ds, ".", 1);
+	    DefText(tp->elem, 0, ds);
+	}
+	return;
+    case TCLT_DICT:
+	Tcl_DStringAppend(ds, "dict", 4);
+	if (tp->keyed) {
+	    Tcl_DStringAppend(ds, "(", 1);
+	    for (i = 0; i < tp->nkeys; i++) {
+		if (i > 0) {
+		    Tcl_DStringAppend(ds, ", ", 2);
+		}
+		Tcl_DStringAppend(ds, Tcl_GetString(tp->keys[i].name), -1);
+		if (tp->keys[i].optional) {
+		    Tcl_DStringAppend(ds, "?", 1);
+		}
+		if (tp->keys[i].defval != NULL) {
+		    Tcl_DStringAppend(ds, "=", 1);
+		    DefWord(Tcl_GetString(tp->keys[i].defval), ds);
+		}
+	    }
+	    Tcl_DStringAppend(ds, ")", 1);
+	}
+	if (tp->elem != NULL) {
+	    Tcl_DStringAppend(ds, ".", 1);
+	    DefText(tp->elem, 0, ds);
+	}
+	return;
+    case TCLT_PRODUCT:
+    case TCLT_SUM:
+	if (!top) {
+	    /* anonyme hors d'un champ : entre accolades */
+	    Tcl_DStringAppend(ds, "{", 1);
+	}
+	for (i = 0; i < tp->nfields; i++) {
+	    if (i > 0) {
+		Tcl_DStringAppend(ds, tp->kind == TCLT_SUM ? ", " : "; ", 2);
+	    }
+	    DefField(&tp->fields[i], ds);
+	}
+	if (!top) {
+	    Tcl_DStringAppend(ds, "}", 1);
+	}
+	return;
+    }
+    Tcl_DStringAppend(ds, tp->name, -1);
+}
+
+/* type def NOM : la définition (NOM peut être S.v, une variante). */
+static int
+TypeDefShow(Tcl_Interp *interp, Tcl_Obj *nameObj)
+{
+    Tcl_Size len;
+    const char *text = Tcl_GetStringFromObj(nameObj, &len);
+    const char *dot = strrchr(text, '.');
+    TclType *tp = NULL, *sum;
+    Tcl_DString ds;
+
+    if (dot != NULL && strchr(dot, '(') == NULL) {
+	Tcl_InterpState st = Tcl_SaveInterpState(interp, TCL_OK);
+
+	sum = TclTypeParse(interp, text, dot - text);
+	Tcl_RestoreInterpState(interp, st);
+	if (sum != NULL && (sum->kind == TCLT_SUM
+		|| sum->kind == TCLT_PRODUCT)) {
+	    /* S.v : la variante ; P.f : le champ d'un produit */
+	    Tcl_Size fi = TclTypeFieldIndex(sum, dot + 1);
+
+	    if (fi < 0) {
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf("%s has no %s \"%s\"",
+			sum->name, sum->kind == TCLT_SUM ? "variant" : "field",
+			dot + 1));
+		Tcl_SetErrorCode(interp, "TCL", "TYPE", "FIELD",
+			(char *) NULL);
+		return TCL_ERROR;
+	    }
+	    if (fi >= 0) {
+		Tcl_DStringInit(&ds);
+		if (sum->fields[fi].type == NULL) {
+		    DefField(&sum->fields[fi], &ds);
+		} else {
+		    DefText(sum->fields[fi].type, 1, &ds);
+		}
+		Tcl_DStringResult(interp, &ds);
+		return TCL_OK;
+	    }
+	}
+    }
+    tp = TclTypeParse(interp, text, len);
+    if (tp == NULL) {
+	return TCL_ERROR;
+    }
+    Tcl_DStringInit(&ds);
+    DefText(tp, 1, &ds);
+    Tcl_DStringResult(interp, &ds);
+    return TCL_OK;
+}
+
+/* v16o : dans le message d'erreur de l'interpréteur, le nom canonique d'un
+ * type anonyme (prod<cible:string;…>) remplacé par un nom lisible (S.v). */
+void
+TclTypeResultRename(Tcl_Interp *interp, const char *from, const char *to)
+{
+    Tcl_Obj *old, *r;
+    const char *src, *p;
+    Tcl_Size fl;
+
+    if (interp == NULL || from == NULL || from[0] == '\0') {
+	return;
+    }
+    old = Tcl_GetObjResult(interp);
+    src = Tcl_GetString(old);
+    if (strstr(src, from) == NULL) {
+	return;
+    }
+    Tcl_IncrRefCount(old);
+    fl = (Tcl_Size) strlen(from);
+    r = Tcl_NewObj();
+    while ((p = strstr(src, from)) != NULL) {
+	Tcl_AppendToObj(r, src, p - src);
+	Tcl_AppendToObj(r, to, -1);
+	src = p + fl;
+    }
+    Tcl_AppendToObj(r, src, -1);
+    Tcl_SetObjResult(interp, r);
+    Tcl_DecrRefCount(old);
 }
 
 /* type is {question?}SUJET : une question sur un type ou une valeur. */
@@ -6951,14 +8447,287 @@ TypeIsCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 		    && tp->compactWanted));
 	}
 	rc = TCL_OK;
+    } else if (strcmp(Tcl_GetString(q), "union?") == 0) {
+	/* v16w : type is {union?}S : 1 si S est une union ("|"). */
+	Tcl_Size tl;
+	const char *tt = Tcl_GetStringFromObj(subject, &tl);
+	TclType *tp = (tl > 0) ? TclTypeParse(interp, tt, tl) : NULL;
+
+	if (tp == NULL) {
+	    goto done;
+	}
+	Tcl_SetObjResult(interp, Tcl_NewBooleanObj(tp->kind == TCLT_SUM
+		&& tp->sumMode == TCLT_SUM_UNION));
+	rc = TCL_OK;
+    } else if (strcmp(Tcl_GetString(q), "disjoint?") == 0) {
+	/* v16m : type is {disjoint?}S : les paires de variantes de la somme
+	 * S qui peuvent accepter une même valeur (vide : disjointe). */
+	Tcl_Size tl;
+	const char *tt = Tcl_GetStringFromObj(subject, &tl);
+	TclType *tp = (tl > 0) ? TclTypeParse(interp, tt, tl) : NULL;
+
+	if (tp == NULL) {
+	    goto done;
+	}
+	if (tp->kind != TCLT_SUM) {
+	    ERR(interp, "IS", "type is {disjoint?}: %s is not a sum", tp->name);
+	    goto done;
+	}
+	Tcl_SetObjResult(interp, TclTypeSumOverlaps(tp));
+	rc = TCL_OK;
     } else {
-	ERR(interp, "IS", "unknown question \"%s\": must be compact?",
-		Tcl_GetString(q));
+	ERR(interp, "IS", "unknown question \"%s\": must be compact?, "
+		"disjoint? or union?", Tcl_GetString(q));
     }
   done:
     Tcl_DecrRefCount(words);
     TclVecFree(&keep);
     return rc;
+}
+
+
+/*
+ * type forget T ?T ...? : l'interpréteur oublie la définition de ces types.
+ * Le nom est libre ensuite (un nouveau type def est permis). Les types ne
+ * sont jamais libérés (d->all) : les valeurs et les variables déjà typées
+ * gardent l'ancienne définition, un type distinct du nouveau de même nom.
+ * Refus : un type intégré, un nom inconnu, un type dont se sert un autre
+ * type nommé qui n'est pas oublié dans le même appel.
+ */
+
+/* Le nom k mentionne-t-il le type "name" (borné à gauche et à droite) ? */
+static int
+ForgetMentions(const char *k, const char *name)
+{
+    Tcl_Size len = (Tcl_Size) strlen(name);
+    const char *p = k;
+
+    while ((p = strstr(p, name)) != NULL) {
+	if ((p == k || !TclTypeIsNameChar((unsigned char) p[-1]))
+		&& !TclTypeIsNameChar((unsigned char) p[len])) {
+	    return 1;
+	}
+	p++;
+    }
+    return 0;
+}
+
+/* tp atteint-il un des types de "doomed" (sans passer par un nom) ? */
+static int
+ForgetReaches(TclType *tp, TclType **doomed, Tcl_Size nd)
+{
+    Tcl_HashTable seen;
+    TclType **stack = NULL;
+    Tcl_Size top = 0, cap = 0, i;
+    int found = 0, isNew;
+
+#define FORGET_PUSH(t) do {						\
+	TclType *t_ = (t);						\
+	if (t_ != NULL) {						\
+	    Tcl_CreateHashEntry(&seen, (char *) t_, &isNew);		\
+	    if (isNew) {						\
+		if (top == cap) {					\
+		    cap = cap ? 2 * cap : 16;				\
+		    stack = (TclType **) Tcl_Realloc(stack,		\
+			    cap * sizeof(TclType *));			\
+		}							\
+		stack[top++] = t_;					\
+	    }								\
+	}								\
+    } while (0)
+
+    Tcl_InitHashTable(&seen, TCL_ONE_WORD_KEYS);
+    FORGET_PUSH(tp);
+    while (top > 0 && !found) {
+	TclType *t = stack[--top];
+
+	for (i = 0; i < nd; i++) {
+	    if (t == doomed[i] && t != tp) {
+		found = 1;
+	    }
+	}
+	FORGET_PUSH(t->under);
+	FORGET_PUSH(t->key);
+	FORGET_PUSH(t->elem);
+	FORGET_PUSH(t->binAtBody);
+	FORGET_PUSH(t->binBase);
+	if (t->binLink != NULL) {
+	    FORGET_PUSH(t->binLink->repr);
+	    FORGET_PUSH(t->binLink->target);
+	}
+	if (t->binDyn != NULL) {
+	    FORGET_PUSH(t->binDyn->pre);
+	}
+	for (i = 0; i < t->nfields; i++) {
+	    FORGET_PUSH(t->fields[i].type);
+	}
+    }
+#undef FORGET_PUSH
+    Tcl_Free(stack);
+    Tcl_DeleteHashTable(&seen);
+    return found;
+}
+
+/* Supprime de la table "tab" (clés chaîne) les entrées dont la clé mentionne
+ * un des noms : un segment entre \1 (instances, conversions), ou un nom
+ * n'importe où dans la clé (canon). ownsObj : la valeur est un Tcl_Obj compté. */
+enum { FORGET_ANY, FORGET_SEGMENTS };
+
+static void
+ForgetKeys(Tcl_HashTable *tab, Tcl_Obj *const names[], Tcl_Size n, int how,
+	int ownsObj)
+{
+    Tcl_HashSearch search;
+    Tcl_HashEntry *hPtr;
+    char **doomed = NULL;
+    Tcl_Size nk = 0, capk = 0, i, j;
+
+    for (hPtr = Tcl_FirstHashEntry(tab, &search); hPtr != NULL;
+	    hPtr = Tcl_NextHashEntry(&search)) {
+	const char *k = (const char *) Tcl_GetHashKey(tab, hPtr);
+	int hit = 0;
+
+	for (j = 0; j < n && !hit; j++) {
+	    const char *nm = Tcl_GetString(names[j]);
+
+	    if (how == FORGET_ANY) {
+		hit = ForgetMentions(k, nm);
+	    } else {
+		/* segments séparés par \1 : l'un d'eux est le nom */
+		const char *p = k;
+
+		while (!hit) {
+		    const char *e = strchr(p, '\1');
+		    Tcl_Size l = e ? (Tcl_Size) (e - p) : (Tcl_Size) strlen(p);
+
+		    hit = (l == (Tcl_Size) strlen(nm)
+			    && strncmp(p, nm, (size_t) l) == 0);
+		    if (e == NULL) {
+			break;
+		    }
+		    p = e + 1;
+		}
+	    }
+	}
+	if (hit) {
+	    if (nk == capk) {
+		capk = capk ? 2 * capk : 8;
+		doomed = (char **) Tcl_Realloc(doomed, capk * sizeof(char *));
+	    }
+	    doomed[nk++] = DupStr(k, (Tcl_Size) strlen(k));
+	}
+    }
+    for (i = 0; i < nk; i++) {
+	hPtr = Tcl_FindHashEntry(tab, doomed[i]);
+	if (hPtr != NULL) {
+	    if (ownsObj) {
+		/* converts : la lambda est comptée */
+		Tcl_DecrRefCount((Tcl_Obj *) Tcl_GetHashValue(hPtr));
+	    }
+	    Tcl_DeleteHashEntry(hPtr);
+	}
+	Tcl_Free(doomed[i]);
+    }
+    Tcl_Free(doomed);
+}
+
+static int
+TypeForgetCmd(Tcl_Interp *interp, TypeData *d, Tcl_Size n,
+	Tcl_Obj *const names[])
+{
+    TclType **doomed;
+    Tcl_HashSearch search;
+    Tcl_HashEntry *hPtr;
+    Tcl_Size i, j;
+
+    doomed = (TclType **) Tcl_Alloc((n > 0 ? n : 1) * sizeof(TclType *));
+    for (i = 0; i < n; i++) {
+	const char *nm = Tcl_GetString(names[i]);
+
+	doomed[i] = NULL;
+	hPtr = Tcl_FindHashEntry(&d->names, nm);
+	if (hPtr != NULL) {
+	    TclType *tp = (TclType *) Tcl_GetHashValue(hPtr);
+
+	    if (tp == NULL || tp->reserved || TclTypeIsAny(tp)
+		    || tp == d->tInt || tp == d->tDouble || tp == d->tString
+		    || tp == d->tList || tp == d->tDict || tp == d->tVar) {
+		ERR(interp, "NAME", "type \"%s\" is built in: it cannot be "
+			"forgotten", nm);
+		Tcl_Free(doomed);
+		return TCL_ERROR;
+	    }
+	    doomed[i] = tp;
+	} else if (Tcl_FindHashEntry(&d->generics, nm) == NULL) {
+	    ERR(interp, "UNKNOWN", "type \"%s\" is not defined", nm);
+	    Tcl_Free(doomed);
+	    return TCL_ERROR;
+	}
+    }
+
+    /*
+     * Un autre type nommé, qui reste, se sert-il d'un type oublié ? Un alias
+     * (même TclType sous un autre nom) n'est pas un usage : il garde le type.
+     */
+    for (hPtr = Tcl_FirstHashEntry(&d->names, &search); hPtr != NULL;
+	    hPtr = Tcl_NextHashEntry(&search)) {
+	const char *k = (const char *) Tcl_GetHashKey(&d->names, hPtr);
+	TclType *tp = (TclType *) Tcl_GetHashValue(hPtr);
+	int listed = 0;
+
+	if (tp == NULL || tp->reserved) {
+	    continue;
+	}
+	for (j = 0; j < n; j++) {
+	    if (strcmp(k, Tcl_GetString(names[j])) == 0 || tp == doomed[j]) {
+		listed = 1;
+	    }
+	}
+	if (!listed && ForgetReaches(tp, doomed, n)) {
+	    for (j = 0; j < n; j++) {
+		if (doomed[j] != NULL && ForgetReaches(tp, doomed + j, 1)) {
+		    break;
+		}
+	    }
+	    ERR(interp, "INUSE", "type \"%s\" is used by type \"%s\": forget "
+		    "both (type forget %s %s)",
+		    j < n ? Tcl_GetString(names[j]) : "?", k, k,
+		    j < n ? Tcl_GetString(names[j]) : "?");
+	    Tcl_Free(doomed);
+	    return TCL_ERROR;
+	}
+    }
+
+    for (i = 0; i < n; i++) {
+	const char *nm = Tcl_GetString(names[i]);
+
+	hPtr = Tcl_FindHashEntry(&d->names, nm);
+	if (hPtr != NULL) {
+	    Tcl_DeleteHashEntry(hPtr);
+	}
+	hPtr = Tcl_FindHashEntry(&d->generics, nm);
+	if (hPtr != NULL) {
+	    /*
+	     * La famille reste utilisée par ses instances (->family) : elle
+	     * est rangée sous une clé qui ne peut pas être un nom (\1), et
+	     * libérée avec les autres par TclTypesFreeGenerics.
+	     */
+	    void *gen = Tcl_GetHashValue(hPtr);
+	    char key[64];
+	    int isNew;
+
+	    snprintf(key, sizeof(key), "\1forgotten\1%p", gen);
+	    Tcl_DeleteHashEntry(hPtr);
+	    Tcl_SetHashValue(Tcl_CreateHashEntry(&d->generics, key, &isNew),
+		    gen);
+	}
+    }
+    ForgetKeys(&d->instances, names, n, FORGET_SEGMENTS, 0);
+    ForgetKeys(&d->converts, names, n, FORGET_SEGMENTS, 1);
+    ForgetKeys(&d->canon, names, n, FORGET_ANY, 0);
+    Tcl_Free(doomed);
+    TclTypesBump(d);
+    return TCL_OK;
 }
 
 static int
@@ -6972,6 +8741,23 @@ TypeObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
 	Tcl_WrongNumArgs(interp, 1, objv, "subcommand ?arg ...?");
 	return TCL_ERROR;
     }
+    if (objc == 2) {
+	/* type {T}mot (v16m) : le cast explicite ; la commande reçoit le mot
+	 * et résout son annotation. */
+	Tcl_Obj *res = NULL;
+	int urc = CastWordUnfold(interp, objv[1]);	/* v16r : {*}T, {**}T */
+
+	if (urc != TCL_CONTINUE) {
+	    return urc;
+	}
+	switch (TclAnnotCastWord(interp, objv[1], &res)) {
+	case TCL_OK:
+	    Tcl_SetObjResult(interp, res);
+	    return TCL_OK;
+	case TCL_ERROR:
+	    return TCL_ERROR;
+	}
+    }
     sub = Tcl_GetString(objv[1]);
     if (strcmp(sub, "def") == 0 || strcmp(sub, "define") == 0
 	    || strcmp(sub, "alias") == 0) {
@@ -6980,8 +8766,12 @@ TypeObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
 	TclObjVec keep = {NULL, 0, 0};
 	Tcl_Size nw, k;
 
+	if (objc == 3 && !isAlias) {
+	    return TypeDefShow(interp, objv[2]);	/* v16o */
+	}
 	if (objc != 4) {
-	    Tcl_WrongNumArgs(interp, 2, objv, "name definition");
+	    Tcl_WrongNumArgs(interp, 2, objv, isAlias ? "name definition"
+		    : "name ?definition?");
 	    return TCL_ERROR;
 	}
 	/* type def {-compact}T ... : options sur le nom du type */
@@ -6991,8 +8781,30 @@ TypeObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
 	for (k = 0; k < nw; k++) {
 	    const char *w = Tcl_GetString(wv[k]);
 
+	    const char *dot = strchr(w, '.'), *eq = strchr(w, '=');
+	    size_t base = dot ? (size_t) (dot - w)
+		    : eq ? (size_t) (eq - w) : strlen(w);
+
+	    if (!isAlias && (dot != NULL || eq != NULL)
+		    && base == 8 && strncmp(w, "-compact", 8) == 0) {
+		ERR(interp, "OPTION", "type def: option {%.*s} takes no "
+			"sub-option or value: {%s}", (int) base, w, w);
+		Tcl_DecrRefCount(words);
+		TclVecFree(&keep);
+		return TCL_ERROR;
+	    }
 	    if (strcmp(w, "-compact") == 0 && !isAlias) {
 		compact = 1;
+	    } else if ((strcmp(w, "-strict") == 0
+		    || strcmp(w, "-deduce") == 0) && !isAlias) {
+		/* v16w : il n'y a plus de régimes de somme */
+		ERR(interp, "OPTION", "type def: {%s} is gone: a sum (\",\") "
+			"always writes its variant in its value (v 5), and a "
+			"union (\"|\") must be disjoint, so nothing is ever "
+			"guessed", w);
+		Tcl_DecrRefCount(words);
+		TclVecFree(&keep);
+		return TCL_ERROR;
 	    } else {
 		ERR(interp, "OPTION", "type %s: unknown option {%s}%s", sub, w,
 			isAlias ? " (an alias is not a new type: it takes no "
@@ -7008,6 +8820,20 @@ TypeObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
 		    "family (%s)", Tcl_GetString(nameObj));
 	    TclVecFree(&keep);
 	    return TCL_ERROR;
+	}
+	{
+	    /* v16u : le nom sous lequel le type est rangé (::geom::point) */
+	    Tcl_DString qd;
+
+	    if (TclTypesQualify(interp, d, Tcl_GetString(nameObj), &qd)
+		    != TCL_OK) {
+		TclVecFree(&keep);
+		return TCL_ERROR;
+	    }
+	    nameObj = Tcl_NewStringObj(Tcl_DStringValue(&qd),
+		    Tcl_DStringLength(&qd));
+	    Tcl_DStringFree(&qd);
+	    TclVecAdd(&keep, nameObj);
 	}
 	rc = TypeDefine(interp, d, nameObj, objv[3], isAlias);
 	if (rc == TCL_OK && compact) {
@@ -7026,8 +8852,10 @@ TypeObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
 		    && TclCompactLayoutOf(tp) != NULL))) {
 		ERR(interp, "COMPACT", "type def {-compact}%s: only a list of "
 			"fixed-size scalars (int(s,n), int(u,n) with n = 8, 16, "
-			"32 or 64, double, double(32|64)) or of products of them, "
-			"or such a product, can be compact, not %s", nm,
+			"32 or 64, double, double(32|64)), of products of them or of "
+			"fixed-size lists list(n) of them (at most 4096 parts per "
+			"element), or such a product, "
+			"can be compact, not %s", nm,
 			tp != NULL ? tp->name : "?");
 		if (h != NULL) {
 		    Tcl_DeleteHashEntry(h);	/* la définition est annulée */
@@ -7040,6 +8868,38 @@ TypeObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
 	}
 	TclVecFree(&keep);
 	return rc;
+    }
+    if (strcmp(sub, "forget") == 0) {
+	{
+	    /* v16u : chaque nom résolu en son nom rangé (::geom::point) */
+	    Tcl_Size i, n = objc - 2;
+	    Tcl_Obj **keys = (Tcl_Obj **) Tcl_Alloc(
+		    (n > 0 ? n : 1) * sizeof(Tcl_Obj *));
+	    int rc;
+
+	    for (i = 0; i < n; i++) {
+		const char *nm = Tcl_GetString(objv[i + 2]);
+		Tcl_HashEntry *h = TclTypesFindName(interp, d, &d->names, nm,
+			-1, NULL, NULL);
+		Tcl_HashTable *t = &d->names;
+
+		if (h == NULL) {
+		    h = TclTypesFindName(interp, d, &d->generics, nm, -1, NULL,
+			    NULL);
+		    t = &d->generics;
+		}
+		keys[i] = (h != NULL) ? Tcl_NewStringObj(
+			(const char *) Tcl_GetHashKey(t, h), TCL_AUTO_LENGTH)
+			: objv[i + 2];
+		Tcl_IncrRefCount(keys[i]);
+	    }
+	    rc = TypeForgetCmd(interp, d, n, keys);
+	    for (i = 0; i < n; i++) {
+		Tcl_DecrRefCount(keys[i]);
+	    }
+	    Tcl_Free(keys);
+	    return rc;
+	}
     }
     if (strcmp(sub, "convert") == 0) {
 	if (objc != 5) {
@@ -7129,11 +8989,52 @@ TypeObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
     if (strcmp(sub, "deref") == 0) {
 	return TypeDerefCmd(interp, objc, objv);
     }
+    if (strcmp(sub, "proc") == 0) {
+	return TypeProcCmd(interp, objc, objv);	/* v16p */
+    }
     if (strcmp(sub, "binary") == 0) {
 	return TypeBinaryCmd(interp, objc, objv);
     }
+    if (strcmp(sub, "variant") == 0) {
+	/* v16w : type variant VALEUR : le nom de la variante d'une valeur
+	 * d'une somme ou d'une union (son texte pour un littéral) */
+	TclType *tp = NULL;
+	Tcl_Obj *content = NULL;
+	int v = -1;
+
+	if (objc != 3) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "value");
+	    return TCL_ERROR;
+	}
+	if (TclAnnotInfo(objv[2], &content, &tp, &v, NULL) != 1
+		|| tp == NULL) {
+	    ERR(interp, "VARIANT", "type variant: the value \"%s\" has no "
+		    "type", Tcl_GetString(objv[2]));
+	    return TCL_ERROR;
+	}
+	if (tp->kind != TCLT_SUM) {
+	    ERR(interp, "VARIANT", "type variant: the value is a %s, not a "
+		    "sum", tp->name);
+	    return TCL_ERROR;
+	}
+	if (TclSumTagged(tp)) {
+	    v = TclSumDecode(tp, content, NULL);
+	} else if (v < 0) {
+	    TclTypeValidate(NULL, tp, content, -1, &v);
+	}
+	if (v < 0 || v >= tp->nfields) {
+	    ERR(interp, "VARIANT", "type variant: no variant of %s",
+		    tp->name);
+	    return TCL_ERROR;
+	}
+	Tcl_SetObjResult(interp, tp->fields[v].name != NULL
+		? tp->fields[v].name : tp->fields[v].type == NULL
+		? tp->fields[v].literal : Tcl_NewWideIntObj(v));
+	return TCL_OK;
+    }
     ERR(interp, "SUBCMD", "bad subcommand \"%s\": must be def, alias, "
-	    "cast, convert, deref, export, get, is or binary", sub);
+	    "cast, convert, deref, export, forget, get, is, proc, variant or "
+	    "binary", sub);
     return TCL_ERROR;
 }
 
@@ -7274,13 +9175,102 @@ IsOpObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
  * référence propre (la valeur elle-même quand elle est déjà de type T).
  * mayOwn : valueObj non partagée peut devenir le contenu (valeur de la pile
  * d'exécution, que seule la pile tient : la liste neuve de (a, b)). */
+static int DeclareTypedTp(Tcl_Interp *interp, TclType *tp, Tcl_Obj *typeObj,
+	Tcl_Obj *valueObj, int mayOwn, Tcl_Obj **typedPtr);
+
+/* Un champ scalaire simple : int, double, string, sans représentation
+ * binaire qui borne la valeur. */
+static int
+QuickScalarOk(const TclType *ft, Tcl_Obj *v)
+{
+    double d;
+
+    if (ft == NULL || ft->binLink != NULL) {
+	return 0;
+    }
+    switch (ft->kind) {
+    case TCLT_DOUBLE:
+	return Tcl_GetDoubleFromObj(NULL, v, &d) == TCL_OK;
+    case TCLT_INT:
+	return ft->bitWidth == 0 && ft->binKind != TCLBIN_UINT
+		&& ft->binKind != TCLBIN_SINT && IsIntegerValue(v);
+    case TCLT_STRING:
+	return ft->binKind == TCLBIN_NONE && !TclIsAnnotated(v);
+    default:
+	return 0;
+    }
+}
+
+/* v16s : un produit de scalaires simples donné par une liste nue d'autant
+ * de valeurs que de champs : la valeur typée, ou NULL (cas général : le
+ * message d'erreur, les défauts, les cases viennent du chemin ordinaire). */
+/* Les valeurs d'une liste nue, champ par champ, pour un produit de
+ * scalaires simples : *plainPtr reçoit la liste des contenus (nue, refcount
+ * 0 ; la liste elle-même si aucun élément n'est annoté), ou NULL. Un
+ * élément déjà typé du type du champ, sans note, est accepté. */
+static Tcl_Obj *
+ScalarProductPlain(TclType *tp, Tcl_Obj *valueObj)
+{
+    Tcl_Size n, i;
+    Tcl_Obj **ev, *buf[16], **cv = buf, *res;
+    int annotated = 0;
+
+    if (tp->kind != TCLT_PRODUCT || tp->compactWanted || tp->binTag != NULL
+	    || Tcl_ListObjGetElements(NULL, valueObj, &n, &ev) != TCL_OK
+	    || n != tp->nfields || n == 0 || n > 16) {
+	return NULL;
+    }
+    for (i = 0; i < n; i++) {
+	const TclType *ft = tp->fields[i].type;
+	Tcl_Obj *e = ev[i];
+
+	if (TclIsAnnotated(e)) {
+	    TclType *et = NULL;
+	    Tcl_Obj *c = NULL;
+
+	    if (TclAnnotInfo(e, &c, &et, NULL, NULL) != 1 || et != ft
+		    || c == NULL || !TclAnnotIsSettled(e)) {
+		return NULL;
+	    }
+	    e = c;
+	    annotated = 1;
+	} else if (!QuickScalarOk(ft, e)) {
+	    return NULL;
+	}
+	cv[i] = e;
+    }
+    res = annotated ? Tcl_NewListObj(n, cv) : valueObj;
+    return res;
+}
+
+static Tcl_Obj *
+ScalarProductQuick(Tcl_Interp *interp, TclType *tp, Tcl_Obj *valueObj)
+{
+    Tcl_Obj *plain = ScalarProductPlain(tp, valueObj), *copy;
+
+    if (plain == NULL) {
+	return NULL;
+    }
+    copy = (plain == valueObj) ? Tcl_DuplicateObj(valueObj) : plain;
+    return TclNewAnnotatedOwn(copy, TclTypeRefFor(interp, tp, -1));
+}
+
 static int
 DeclareTyped(Tcl_Interp *interp, Tcl_Obj *typeObj, Tcl_Obj *valueObj,
 	int mayOwn, Tcl_Obj **typedPtr)
 {
+    return DeclareTypedTp(interp, TclAnnotTypeOf(interp, typeObj), typeObj,
+	    valueObj, mayOwn, typedPtr);
+}
+
+/* v16s : la même chose, le type déjà résolu (tp, peut être NULL). */
+static int
+DeclareTypedTp(Tcl_Interp *interp, TclType *tp, Tcl_Obj *typeObj,
+	Tcl_Obj *valueObj, int mayOwn, Tcl_Obj **typedPtr)
+{
     /* X is T = $x avec $x déjà de type T, sans note : la valeur telle
      * quelle (le cas courant des procédures typées : P is point = $p) */
-    TclType *tp = TclAnnotTypeOf(interp, typeObj), *vt = NULL;
+    TclType *vt = NULL;
     Tcl_Size np = 1;
 
     if (tp != NULL && TclAnnotInfo(valueObj, NULL, &vt, NULL, NULL) == 1
@@ -7300,17 +9290,48 @@ DeclareTyped(Tcl_Interp *interp, Tcl_Obj *typeObj, Tcl_Obj *valueObj,
     } else if (tp != NULL && (tp->kind == TCLT_INT || tp->kind == TCLT_DOUBLE)
 	    && !TclIsAnnotated(valueObj)) {
 	/* X is double = $x : un nombre n'a rien à compléter ; le contenu est
-	 * partagé (une valeur est immuable), comme pour la lecture d'un champ */
-	if (TclTypeValidate(interp, tp, valueObj, -1, NULL) != TCL_OK) {
+	 * partagé (une valeur est immuable), comme pour la lecture d'un champ.
+	 * v16s : double et int simples vérifiés directement (ValidateG fait
+	 * la même chose après ses cas généraux) ; le message vient de
+	 * TclTypeValidate. */
+	double dv;
+	int quick = (tp->binLink == NULL) && (tp->kind == TCLT_DOUBLE
+		? Tcl_GetDoubleFromObj(NULL, valueObj, &dv) == TCL_OK
+		: (tp->bitWidth == 0 && tp->binKind != TCLBIN_UINT
+		    && tp->binKind != TCLBIN_SINT
+		    && IsIntegerValue(valueObj)));
+
+	if (!quick && TclTypeValidate(interp, tp, valueObj, -1, NULL)
+		!= TCL_OK) {
 	    return TCL_ERROR;
 	}
 	*typedPtr = TclNewAnnotatedShared(interp, tp, -1, valueObj);
+    } else if (tp != NULL && !TclIsAnnotated(valueObj)
+	    && (*typedPtr = ScalarProductQuick(interp, tp, valueObj)) != NULL) {
+	/* v16s : un produit de scalaires donné en liste ({1 2} pour un
+	 * point) : ses champs vérifiés un à un, sans le validateur général */
     } else if (tp != NULL && !TclIsAnnotated(valueObj)) {
 	/* X is T = (a, b) : une valeur sans annotation, construite
 	 * directement (ce que ferait le résolveur du constructeur) */
-	Tcl_Obj *copy = (mayOwn && !Tcl_IsShared(valueObj))
-		? valueObj : Tcl_DuplicateObj(valueObj);
+	Tcl_Obj *copy;
 	int variant = -1;
+	const TclType *kt = tp;
+	Tcl_Size dummy;
+
+	while (kt->under != NULL && kt->kind != TCLT_LIST
+		&& kt->kind != TCLT_PRODUCT && kt->kind != TCLT_DICT) {
+	    kt = kt->under;
+	}
+	if (kt->kind == TCLT_LIST || kt->kind == TCLT_PRODUCT) {
+	    /* v16q : la source devient une liste une fois pour toutes (comme
+	     * pour un argument classique) : la copie garde la liste, au lieu
+	     * de relire la chaîne à chaque appel */
+	    (void) Tcl_ListObjLength(NULL, valueObj, &dummy);
+	} else if (kt->kind == TCLT_DICT) {
+	    (void) Tcl_DictObjSize(NULL, valueObj, &dummy);
+	}
+	copy = (mayOwn && !Tcl_IsShared(valueObj))
+		? valueObj : Tcl_DuplicateObj(valueObj);
 
 	Tcl_IncrRefCount(copy);
 	if (TclTypeComplete(interp, tp, copy, -1, &variant) != TCL_OK) {
@@ -7648,6 +9669,7 @@ TclTypesInit(Tcl_Interp *interp)
 	d->uid = ++uids;
 	d->gen = 1;
     }
+    d->refs = 1;
     Tcl_InitHashTable(&d->names, TCL_STRING_KEYS);
     Tcl_InitHashTable(&d->generics, TCL_STRING_KEYS);
     Tcl_InitHashTable(&d->instances, TCL_STRING_KEYS);
@@ -7660,6 +9682,7 @@ TclTypesInit(Tcl_Interp *interp)
     d->tDouble = Builtin(d, TCLT_DOUBLE, "double");
     d->tString = Builtin(d, TCLT_STRING, "string");
     Builtin(d, TCLT_STRING, "any");		/* éléments de list.any */
+    Builtin(d, TCLT_INT, "flag");		/* v16q : option sans valeur, 0/1 */
     d->tList = Builtin(d, TCLT_LIST, "list");
     d->tList->arity = -1;			/* liste extensible */
     d->tList->elem = d->tString;
@@ -7705,4 +9728,2045 @@ TclTypesInit(Tcl_Interp *interp)
 	}
     }
     TclAnnotInit(interp);
+}
+
+/* --------------------------------------------------------------------
+ * v16p : procédures typées.
+ *
+ *   proc {pt}decale {{pt}p; {double}dx ?= 0; {double}dy ?= 0} {...}
+ *
+ * La liste d'arguments est un type produit : chaque champ devient une
+ * variable locale qui porte son contrat ; un défaut (?= v, ?= [cmd]) rend le
+ * champ facultatif ; à l'appel, des arguments positionnels puis des
+ * étiquettes ({dy:}3) ; un dernier champ {list.T}args reçoit le reste ; un
+ * champ {var.T}n lie n à la variable de l'appelant (upvar automatique), dont
+ * la valeur courante est vérifiée. L'annotation du nom donne le type de
+ * retour : le résultat est casté au retour normal ; une étiquette ({v:})
+ * choisit la variante d'une somme ; {T}$x sur un return n'est qu'une note
+ * locale, qui expire avec la procédure.
+ *
+ * v16q : options et drapeaux. Un champ dont le nom commence par « - » est
+ * une option, donnée au début de l'appel (jusqu'au premier mot qui n'est pas
+ * une option, ou « -- ») ; la variable locale perd le « - » ; un préfixe
+ * unique suffit (-dec pour -decreasing).
+ *   {flag}-decreasing           drapeau : la locale vaut 1 ou 0
+ *   {int}-index ?= -1           option à valeur : -index 2
+ *   {"ascii", "dictionary", {string}command}-mode ?= ascii
+ *                               options exclusives (une somme) : -ascii,
+ *                               -dictionary, -command cmd (ou -mode ascii) ;
+ *                               la locale mode reçoit le nom de la variante,
+ *                               la locale command sa valeur ; une variante
+ *                               produit {{string}cmd; {int}-depth ?= 1}command
+ *                               prend ses champs sans « - » à la suite de
+ *                               l'option, et ses champs « -x » sont des
+ *                               options qui dépendent d'elle
+ *   {triopts}-o                 un groupe : les champs du produit triopts
+ *                               sont les options (-decreasing, -index...),
+ *                               la locale o est une valeur de triopts
+ * -------------------------------------------------------------------- */
+
+enum { OPT_NONE = 0, OPT_SCALAR, OPT_EXCL, OPT_GROUP };
+
+typedef struct TypedArg {
+    Tcl_Obj *name;		/* nom du champ, tel qu'écrit (-index) */
+    Tcl_Obj *local;		/* la variable locale (index) */
+    Tcl_Obj *typeText;		/* texte du type (DeclareTyped) */
+    Tcl_Obj *defval;		/* ?= v */
+    Tcl_Obj *defcmd;		/* ?= [cmd] : évalué dans la procédure */
+    int isVar;			/* {var.T} : upvar */
+    Tcl_Obj *varElem;		/* T de var.T, ou NULL */
+    TclType *tp;		/* le type du champ (messages, défaut) */
+    int allDefault;		/* produit dont tous les champs ont un défaut :
+				 * l'argument absent prend ces défauts */
+    int optKind;		/* OPT_* (v16q) */
+    int isFlag;			/* OPT_SCALAR : {flag}-x */
+    TclType *sub;		/* OPT_EXCL : la somme ; OPT_GROUP : le
+				 * produit */
+    Tcl_Obj *cache[2];		/* OPT_SCALAR : la valeur typée du défaut (ou
+				 * 0) et de 1 (drapeau donné), partagées */
+    size_t cacheGen;		/* génération des types de ce cache */
+    TclType *ctp;		/* v16s : le type du champ, résolu (typeText) */
+    size_t ctpGen;		/* ... pour cette génération des types */
+    Tcl_Size lidx;		/* v16s : l'indice de la locale compilée (à
+				 * vérifier par son nom), ou -1 */
+    Tcl_Obj *lname;		/* ... et l'objet nom vu à cet indice (une
+				 * référence : l'égalité des pointeurs suffit) */
+} TypedArg;
+
+/* Un mot d'option reconnu à l'appel. */
+typedef struct OptEntry {
+    Tcl_Obj *opt;		/* "-ascii" */
+    Tcl_Size arg;		/* le champ de la signature */
+    Tcl_Size variant;		/* EXCL : la variante ; GROUP : la variante du
+				 * champ somme, sinon -1 */
+    Tcl_Size gfield;		/* GROUP : le champ du produit, sinon -1 */
+    Tcl_Size dep;		/* EXCL : champ « -x » de la variante produit
+				 * (option dépendante), sinon -1 */
+    int nvals;			/* mots pris après l'option */
+    int byName;			/* -mode ascii : la valeur nomme la variante */
+    int isFlag;
+} OptEntry;
+
+typedef struct TclTypedSig {
+    size_t refCount;
+    Tcl_Size n;			/* -1 : liste d'arguments classique */
+    TypedArg *a;
+    int rest;			/* le dernier champ est {list...}args */
+    Tcl_Size npos;		/* champs positionnels (sans le reste) */
+    Tcl_Size *pos;		/* leurs indices */
+    Tcl_Size nopts;		/* mots d'option */
+    OptEntry *opts;
+    Tcl_Obj *optList;		/* -a, -b or -c (messages) */
+    Tcl_Obj *argsText;		/* la signature, canonique */
+    Tcl_Obj *retText;		/* le type de retour, ou NULL */
+    int unfold;			/* v16r : {*}T (1, une liste), {**}T (2, un
+				 * dict) : le résultat est rendu déplié */
+    TclType *retTp;		/* v16s : retText résolu ... */
+    size_t retGen;		/* ... pour cette génération des types */
+    Tcl_Obj *usage;		/* p ?dx? ?dy? */
+    Tcl_Obj **locals;		/* v16s : les noms des locales des champs */
+} TclTypedSig;
+
+static Tcl_Obj *
+TypeTextObj(const TclType *tp, int top)
+{
+    Tcl_DString ds;
+    Tcl_Obj *o;
+
+    Tcl_DStringInit(&ds);
+    DefText(tp, top, &ds);
+    o = Tcl_NewStringObj(Tcl_DStringValue(&ds), Tcl_DStringLength(&ds));
+    Tcl_DStringFree(&ds);
+    Tcl_IncrRefCount(o);
+    return o;
+}
+
+void
+TclTypedSigRetain(void *sigv)
+{
+    if (sigv != NULL) {
+	((TclTypedSig *) sigv)->refCount++;
+    }
+}
+
+static void
+DecrIf(Tcl_Obj *o)
+{
+    if (o != NULL) {
+	Tcl_DecrRefCount(o);
+    }
+}
+
+void
+TclTypedSigRelease(void *sigv)
+{
+    TclTypedSig *sig = (TclTypedSig *) sigv;
+    Tcl_Size i;
+
+    if (sig == NULL || --sig->refCount > 0) {
+	return;
+    }
+    for (i = 0; i < sig->n; i++) {
+	TypedArg *a = &sig->a[i];
+
+	DecrIf(a->name);
+	DecrIf(a->local);
+	DecrIf(a->typeText);
+	DecrIf(a->defval);
+	DecrIf(a->defcmd);
+	DecrIf(a->varElem);
+	DecrIf(a->cache[0]);
+	DecrIf(a->cache[1]);
+	DecrIf(a->lname);
+    }
+    for (i = 0; i < sig->nopts; i++) {
+	DecrIf(sig->opts[i].opt);
+    }
+    if (sig->opts != NULL) {
+	Tcl_Free(sig->opts);
+    }
+    if (sig->locals != NULL) {
+	Tcl_Free(sig->locals);
+    }
+    if (sig->pos != NULL) {
+	Tcl_Free(sig->pos);
+    }
+    if (sig->a != NULL) {
+	Tcl_Free(sig->a);
+    }
+    DecrIf(sig->optList);
+    DecrIf(sig->argsText);
+    DecrIf(sig->retText);
+    DecrIf(sig->usage);
+    Tcl_Free(sig);
+}
+
+/* Le type de retour : un type, ou une somme (les étiquettes {v:}). */
+static int
+RetTypeCheck(Tcl_Interp *interp, Tcl_Obj *text)
+{
+    Tcl_Size l;
+    const char *t = Tcl_GetStringFromObj(text, &l);
+    TclType *tp = TclTypeParse(interp, t, l);
+
+    if (tp == NULL) {
+	const char *dot = strrchr(t, '.');
+	TclType *sum = (dot != NULL && dot > t)
+		? TclTypeParse(interp, t, dot - t) : NULL;
+
+	if (sum != NULL && sum->kind == TCLT_SUM
+		&& TclTypeFieldIndex(sum, dot + 1) >= 0) {
+	    Tcl_ResetResult(interp);
+	    return TCL_OK;		/* {S.v}f : toujours la variante v */
+	}
+	(void) TclTypeParse(interp, t, l);	/* le message */
+	return TCL_ERROR;
+    }
+    return TCL_OK;
+}
+
+/* Une liste invalide qui a un {T}nom (une accolade fermante collée à un
+ * nom) : une signature typée ; sinon l'erreur classique de la liste. */
+static int
+LooksTyped(const char *t, Tcl_Size len)
+{
+    Tcl_Size i;
+
+    for (i = 0; i + 1 < len; i++) {
+	if (t[i] == '}' && !TclIsSpaceProc(t[i + 1]) && t[i + 1] != '}'
+		&& t[i + 1] != '{' && t[i + 1] != ';') {
+	    return 1;
+	}
+    }
+    return 0;
+}
+
+/* v16q : le type de kind sous un nominal, ou NULL. */
+static const TclType *
+UnderKind(const TclType *tp, TclTypeKind kind)
+{
+    while (tp != NULL && tp->kind != kind && tp->under != NULL) {
+	tp = tp->under;
+    }
+    return (tp != NULL && tp->kind == kind) ? tp : NULL;
+}
+
+static int
+IsFlagType(const TclType *tp)
+{
+    return tp != NULL && tp->reserved && strcmp(tp->name, "flag") == 0;
+}
+
+/* Le nom d'une variante : son nom, ou le texte d'une variante littérale. */
+static Tcl_Obj *
+VariantName(const TclTypeField *f)
+{
+    return f->name != NULL ? f->name : f->literal;
+}
+
+/* Le nom sans son « - » éventuel. */
+static Tcl_Obj *
+OptLocalName(Tcl_Obj *name)
+{
+    Tcl_Size l;
+    const char *t = Tcl_GetStringFromObj(name, &l);
+
+    if (l > 1 && t[0] == '-') {
+	return Tcl_NewStringObj(t + 1, l - 1);
+    }
+    return name;
+}
+
+static int
+AddOpt(Tcl_Interp *interp, TclTypedSig *sig, Tcl_Size *capPtr,
+	Tcl_Obj *name, Tcl_Size arg, Tcl_Size variant, Tcl_Size gfield,
+	Tcl_Size dep, int nvals, int byName, int isFlag)
+{
+    Tcl_Size l, i;
+    const char *t = Tcl_GetStringFromObj(name, &l);
+    OptEntry *e;
+    Tcl_Obj *opt;
+
+    opt = (l > 0 && t[0] == '-') ? name
+	    : Tcl_ObjPrintf("-%s", t);	/* les variantes : sans « - » */
+    Tcl_IncrRefCount(opt);
+    for (i = 0; i < sig->nopts; i++) {
+	if (strcmp(Tcl_GetString(sig->opts[i].opt), Tcl_GetString(opt)) == 0) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf("option \"%s\" is defined "
+		    "twice", Tcl_GetString(opt)));
+	    Tcl_SetErrorCode(interp, "TCL", "TYPE", "PROCARGS", (char *) NULL);
+	    Tcl_DecrRefCount(opt);
+	    return TCL_ERROR;
+	}
+    }
+    if (sig->nopts == *capPtr) {
+	*capPtr = (*capPtr == 0) ? 8 : 2 * *capPtr;
+	sig->opts = (OptEntry *) Tcl_Realloc(sig->opts,
+		sizeof(OptEntry) * *capPtr);
+    }
+    e = &sig->opts[sig->nopts++];
+    e->opt = opt;
+    e->arg = arg;
+    e->variant = variant;
+    e->gfield = gfield;
+    e->dep = dep;
+    e->nvals = nvals;
+    e->byName = byName;
+    e->isFlag = isFlag;
+    return TCL_OK;
+}
+
+/* Les options d'une somme (options exclusives) : une par variante ; une
+ * variante produit prend ses champs sans « - » à la suite, ses champs
+ * « -x » sont des options dépendantes. gfield >= 0 : dans un groupe. */
+static int
+AddSumOpts(Tcl_Interp *interp, TclTypedSig *sig, Tcl_Size *capPtr,
+	const TclType *sum, Tcl_Size arg, Tcl_Size gfield)
+{
+    Tcl_Size v, d;
+
+    for (v = 0; v < sum->nfields; v++) {
+	const TclTypeField *f = &sum->fields[v];
+	const TclType *vp;
+	Tcl_Obj *vn = VariantName(f);
+
+	if (vn == NULL) {
+	    continue;
+	}
+	if (f->type == NULL || IsFlagType(f->type)) {
+	    if (AddOpt(interp, sig, capPtr, vn, arg, v, gfield, -1, 0, 0, 1)
+		    != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	} else if (gfield < 0 && (vp = UnderKind(f->type, TCLT_PRODUCT))
+		!= NULL) {
+	    int nv = 0;
+
+	    for (d = 0; d < vp->nfields; d++) {
+		if (vp->fields[d].name != NULL
+			&& Tcl_GetString(vp->fields[d].name)[0] != '-') {
+		    nv++;
+		}
+	    }
+	    if (AddOpt(interp, sig, capPtr, vn, arg, v, -1, -1, nv, 0, 0)
+		    != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    for (d = 0; d < vp->nfields; d++) {
+		const TclTypeField *df = &vp->fields[d];
+
+		if (df->name != NULL && Tcl_GetString(df->name)[0] == '-') {
+		    int fl = IsFlagType(df->type);
+
+		    if (AddOpt(interp, sig, capPtr, df->name, arg, v, -1, d,
+			    fl ? 0 : 1, 0, fl) != TCL_OK) {
+			return TCL_ERROR;
+		    }
+		}
+	    }
+	} else if (AddOpt(interp, sig, capPtr, vn, arg, v, gfield, -1, 1, 0, 0)
+		!= TCL_OK) {
+	    return TCL_ERROR;
+	}
+    }
+    return TCL_OK;
+}
+
+static Tcl_Size
+SumVariantByName(const TclType *sum, const char *name)
+{
+    Tcl_Size v;
+
+    for (v = 0; v < sum->nfields; v++) {
+	Tcl_Obj *vn = VariantName(&sum->fields[v]);
+
+	if (vn != NULL && strcmp(Tcl_GetString(vn), name) == 0) {
+	    return v;
+	}
+    }
+    return -1;
+}
+
+static void
+AppendSumUsage(Tcl_Obj *u, const TclType *sum)
+{
+    Tcl_Size v, d;
+
+    Tcl_AppendToObj(u, "?", 1);
+    for (v = 0; v < sum->nfields; v++) {
+	const TclTypeField *f = &sum->fields[v];
+	const TclType *vp;
+	Tcl_Obj *vn = VariantName(f);
+
+	if (vn == NULL) {
+	    continue;
+	}
+	Tcl_AppendStringsToObj(u, v > 0 ? "|-" : "-", Tcl_GetString(vn),
+		(char *) NULL);
+	if (f->type == NULL || IsFlagType(f->type)) {
+	    continue;
+	}
+	if ((vp = UnderKind(f->type, TCLT_PRODUCT)) != NULL) {
+	    for (d = 0; d < vp->nfields; d++) {
+		const char *dn = vp->fields[d].name
+			? Tcl_GetString(vp->fields[d].name) : "?";
+
+		if (dn[0] != '-') {
+		    Tcl_AppendStringsToObj(u, " ", dn, (char *) NULL);
+		}
+	    }
+	    for (d = 0; d < vp->nfields; d++) {
+		const char *dn = vp->fields[d].name
+			? Tcl_GetString(vp->fields[d].name) : "?";
+
+		if (dn[0] == '-') {
+		    Tcl_AppendStringsToObj(u, " ?", dn,
+			    IsFlagType(vp->fields[d].type) ? "?" : " value?",
+			    (char *) NULL);
+		}
+	    }
+	} else {
+	    Tcl_AppendToObj(u, " value", -1);
+	}
+    }
+    Tcl_AppendToObj(u, "?", 1);
+}
+
+static int
+CompareObjStr(const void *a, const void *b)
+{
+    return strcmp(Tcl_GetString(*(Tcl_Obj *const *) a),
+	    Tcl_GetString(*(Tcl_Obj *const *) b));
+}
+
+/*
+ * v16r : {*}T, {**}T en tête d'une annotation de livraison (type de retour
+ * d'une procédure, type {…}mot) : la valeur est vérifiée comme un T, puis
+ * rendue DÉPLIÉE, en données Tcl ordinaires : {*} une liste (les valeurs,
+ * comme $P(*)), {**} un dict (les noms et les valeurs), en profondeur. Rend
+ * 0, 1 ou 2 ; *textPtr perd le préfixe (nouvel objet, référence gardée).
+ */
+static int
+UnfoldPrefix(Tcl_Obj **textPtr)
+{
+    Tcl_Size l;
+    const char *t = Tcl_GetStringFromObj(*textPtr, &l);
+    int mode = 0, skip = 0;
+
+    if (l >= 4 && strncmp(t, "{**}", 4) == 0) {
+	mode = 2;
+	skip = 4;
+    } else if (l >= 3 && strncmp(t, "{*}", 3) == 0) {
+	mode = 1;
+	skip = 3;
+    }
+    if (mode != 0) {
+	Tcl_Obj *rest = Tcl_NewStringObj(t + skip, l - skip);
+
+	Tcl_IncrRefCount(rest);
+	Tcl_DecrRefCount(*textPtr);
+	*textPtr = rest;
+    }
+    return mode;
+}
+
+/* {**} : la valeur en dicts (produits : nom -> valeur ; somme : nom de la
+ * variante -> valeur ; listes et dicts : leurs éléments), en profondeur.
+ * Objet neuf ou partagé, sans référence propre. */
+static Tcl_Obj *
+DictUnfold(Tcl_Obj *obj, const TclType *tp)
+{
+    Tcl_Obj *content = NULL, **elv, *res;
+    TclType *own = NULL;
+    int variant = -1;
+    Tcl_Size n, i;
+
+    if (TclAnnotInfo(obj, &content, &own, &variant, NULL) == 1
+	    && content != NULL && own != NULL) {
+	tp = own;
+	obj = content;
+    } else {
+	variant = -1;
+	obj = TCL_ANNOT_CONTENT(obj);
+    }
+    while (tp != NULL && tp->under != NULL && tp->kind != TCLT_PRODUCT
+	    && tp->kind != TCLT_LIST && tp->kind != TCLT_DICT
+	    && tp->kind != TCLT_SUM) {
+	tp = tp->under;
+    }
+    if (tp == NULL || (tp->kind != TCLT_PRODUCT && tp->kind != TCLT_LIST
+	    && tp->kind != TCLT_DICT && tp->kind != TCLT_SUM)) {
+	return DeepContent(obj);
+    }
+    if (TclIsCompact(obj)) {
+	/* en cases : la liste des éléments gardée à côté des cases */
+	Tcl_Obj *c = TclCompactCache(obj);
+
+	if (c == NULL) {
+	    return DeepContent(obj);
+	}
+	obj = c;
+    }
+    switch (tp->kind) {
+    case TCLT_PRODUCT:
+	res = Tcl_NewDictObj();
+	if (Tcl_ListObjGetElements(NULL, obj, &n, &elv) == TCL_OK) {
+	    for (i = 0; i < n && i < tp->nfields; i++) {
+		const TclTypeField *f = &tp->fields[i];
+
+		Tcl_DictObjPut(NULL, res, f->name != NULL ? f->name
+			: Tcl_NewWideIntObj(i), DictUnfold(elv[i], f->type));
+	    }
+	}
+	break;
+    case TCLT_LIST:
+	res = Tcl_NewListObj(0, NULL);
+	if (Tcl_ListObjGetElements(NULL, obj, &n, &elv) == TCL_OK) {
+	    for (i = 0; i < n; i++) {
+		Tcl_ListObjAppendElement(NULL, res, DictUnfold(elv[i],
+			tp->elem));
+	    }
+	}
+	break;
+    case TCLT_DICT: {
+	Tcl_DictSearch search;
+	Tcl_Obj *k, *v;
+	int done;
+
+	res = Tcl_NewDictObj();
+	if (Tcl_DictObjFirst(NULL, obj, &search, &k, &v, &done) == TCL_OK) {
+	    for (; !done; Tcl_DictObjNext(&search, &k, &v, &done)) {
+		Tcl_DictObjPut(NULL, res, DeepContent(k),
+			DictUnfold(v, tp->elem));
+	    }
+	    Tcl_DictObjDone(&search);
+	}
+	break;
+    }
+    default: {				/* TCLT_SUM */
+	const TclTypeField *f;
+
+	if (TclSumTagged(tp)) {		/* v16w : "v charge" */
+	    Tcl_Obj *pl = NULL;
+
+	    variant = TclSumDecode(tp, obj, &pl);
+	    if (pl != NULL) {
+		obj = pl;
+	    }
+	}
+	if (variant < 0) {
+	    variant = TclTypeSumCurrent(tp, obj);
+	}
+	if (variant < 0 || variant >= tp->nfields) {
+	    res = DeepContent(obj);
+	    break;
+	}
+	f = &tp->fields[variant];
+	if (f->type == NULL) {
+	    res = obj;			/* une variante littérale : elle-même */
+	} else if (f->name != NULL) {
+	    res = Tcl_NewDictObj();
+	    Tcl_DictObjPut(NULL, res, f->name, DictUnfold(obj, f->type));
+	} else {
+	    res = DictUnfold(obj, f->type);
+	}
+	break;
+    }
+    }
+    return res;
+}
+
+static Tcl_Obj *
+Unfold(Tcl_Obj *value, int mode)
+{
+    return (mode == 2) ? DictUnfold(value, NULL) : DeepContent(value);
+}
+
+/* type {{*}T}mot, type {{**}T}mot : le cast explicite, puis le dépliage,
+ * rangé dans le résultat de l'interpréteur. TCL_CONTINUE : pas de préfixe
+ * (le cas ordinaire). */
+static int
+CastWordUnfold(Tcl_Interp *interp, Tcl_Obj *word)
+{
+    Tcl_Obj *top = NULL, *popped, *text, *pushed, *res = NULL;
+    int mode, rc;
+
+    if (!TclIsAnnotated(word)) {
+	return TCL_CONTINUE;
+    }
+    popped = TclAnnotPopTop(word, &top);
+    if (popped == NULL || top == NULL) {
+	if (popped != NULL) {
+	    TclDiscard(popped);
+	}
+	return TCL_CONTINUE;
+    }
+    text = Tcl_DuplicateObj(top);
+    Tcl_IncrRefCount(text);
+    mode = UnfoldPrefix(&text);
+    if (mode == 0) {
+	Tcl_DecrRefCount(text);
+	TclDiscard(popped);
+	return TCL_CONTINUE;
+    }
+    Tcl_IncrRefCount(popped);
+    pushed = TclAnnotPush(popped, text);
+    Tcl_IncrRefCount(pushed);
+    rc = TclAnnotCastWord(interp, pushed, &res);
+    if (rc == TCL_OK) {
+	Tcl_IncrRefCount(res);
+	Tcl_SetObjResult(interp, Unfold(res, mode));
+	Tcl_DecrRefCount(res);
+    } else if (rc == TCL_CONTINUE) {
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf("type {%s}: nothing to cast",
+		Tcl_GetString(top)));
+	rc = TCL_ERROR;
+    }
+    Tcl_DecrRefCount(pushed);
+    Tcl_DecrRefCount(popped);
+    Tcl_DecrRefCount(text);
+    return rc;
+}
+
+/*
+ * À la définition (proc NOM ARGS CORPS) : *sigPtr reçoit la signature, ou
+ * NULL pour une procédure classique (ni liste typée, ni type de retour).
+ * *typedArgsPtr : la liste d'arguments est un produit (la procédure est
+ * alors créée avec la liste « args », la signature lie les champs).
+ */
+static int TypedProcSig(Tcl_Interp *interp, Tcl_Obj *nameObj,
+	Tcl_Obj *argsObj, void **sigPtr, int *typedArgsPtr);
+
+/*
+ * v16u : les types d'une signature se lisent dans l'espace de noms de la
+ * procédure (proc {point}::geom::mk {...} : ::geom::point), comme son corps.
+ */
+int
+TclTypedProcSig(Tcl_Interp *interp, Tcl_Obj *nameObj, Tcl_Obj *argsObj,
+	void **sigPtr, int *typedArgsPtr)
+{
+    TypeData *d = GetData(interp);
+    Namespace *nsPtr = NULL, *altNsPtr, *cxtNsPtr, *save;
+    const char *simple;
+    int rc;
+
+    if (d == NULL) {
+	return TypedProcSig(interp, nameObj, argsObj, sigPtr, typedArgsPtr);
+    }
+    TclGetNamespaceForQualName(interp, TclGetString(nameObj), NULL, 0,
+	    &nsPtr, &altNsPtr, &cxtNsPtr, &simple);
+    save = d->ctxNs;
+    if (nsPtr != NULL) {
+	d->ctxNs = nsPtr;
+    }
+    rc = TypedProcSig(interp, nameObj, argsObj, sigPtr, typedArgsPtr);
+    d->ctxNs = save;
+    return rc;
+}
+
+static int
+TypedProcSig(Tcl_Interp *interp, Tcl_Obj *nameObj, Tcl_Obj *argsObj,
+	void **sigPtr, int *typedArgsPtr)
+{
+    Tcl_Obj *ret = NULL, *top = NULL, *popped, *uopt = NULL, *upos = NULL;
+    Tcl_Size len, n, i, cap = 0;
+    int unfold = 0;
+    const char *text = Tcl_GetStringFromObj(argsObj, &len);
+    TclType *prod = NULL;
+    TclTypedSig *sig;
+
+    *sigPtr = NULL;
+    *typedArgsPtr = 0;
+    if (TclIsAnnotated(nameObj)) {
+	popped = TclAnnotPopTop(nameObj, &top);
+	if (popped != NULL) {
+	    ret = Tcl_DuplicateObj(top);
+	    Tcl_IncrRefCount(ret);
+	    TclDiscard(popped);
+	    unfold = UnfoldPrefix(&ret);
+	    if (Tcl_GetCharLength(ret) == 0) {
+		Tcl_DecrRefCount(ret);	/* proc {}f : rien */
+		ret = NULL;
+	    } else if (RetTypeCheck(interp, ret) != TCL_OK) {
+		Tcl_Obj *msg = Tcl_ObjPrintf("bad return type {%s}: ",
+			Tcl_GetString(ret));
+
+		Tcl_AppendObjToObj(msg, Tcl_GetObjResult(interp));
+		Tcl_SetObjResult(interp, msg);
+		Tcl_DecrRefCount(ret);
+		return TCL_ERROR;
+	    }
+	}
+    }
+    if (Tcl_ListObjLength(NULL, argsObj, &n) == TCL_OK) {
+	/* une liste valide reste classique ({a b}, {a {b 2}}) ; avec des
+	 * « ; », elle est typée si elle se lit comme un produit */
+	if (memchr(text, ';', len) != NULL) {
+	    Tcl_InterpState st = Tcl_SaveInterpState(interp, TCL_OK);
+
+	    prod = TclTypeParse(interp, text, len);
+	    if (prod == NULL || prod->kind != TCLT_PRODUCT) {
+		prod = NULL;
+	    }
+	    Tcl_RestoreInterpState(interp, st);
+	}
+    } else if (LooksTyped(text, len)) {
+	prod = TclTypeParse(interp, text, len);
+	if (prod == NULL || prod->kind != TCLT_PRODUCT) {
+	    if (prod != NULL) {
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf("a typed argument list "
+			"is a product: {{T}a; {T}b ?= v}, not %s", prod->name));
+		Tcl_SetErrorCode(interp, "TCL", "TYPE", "PROCARGS",
+			(char *) NULL);
+	    }
+	    if (ret != NULL) {
+		Tcl_DecrRefCount(ret);
+	    }
+	    return TCL_ERROR;
+	}
+    }
+    if (prod == NULL && ret == NULL) {
+	return TCL_OK;			/* procédure classique */
+    }
+    sig = (TclTypedSig *) Tcl_Alloc(sizeof(TclTypedSig));
+    memset(sig, 0, sizeof(TclTypedSig));
+    sig->refCount = 1;
+    sig->n = -1;
+    sig->retText = ret;
+    sig->unfold = (ret != NULL) ? unfold : 0;
+    if (prod != NULL) {
+	uopt = Tcl_NewObj();
+	upos = Tcl_NewObj();
+	Tcl_IncrRefCount(uopt);
+	Tcl_IncrRefCount(upos);
+	sig->n = prod->nfields;
+	sig->a = (TypedArg *) Tcl_Alloc(sizeof(TypedArg) * (prod->nfields + 1));
+	memset(sig->a, 0, sizeof(TypedArg) * (prod->nfields + 1));
+	sig->pos = (Tcl_Size *) Tcl_Alloc(sizeof(Tcl_Size)
+		* (prod->nfields + 1));
+	for (i = 0; i < prod->nfields; i++) {
+	    TclTypeField *f = &prod->fields[i];
+	    TypedArg *a = &sig->a[i];
+	    const char *nm;
+	    const TclType *st;
+	    Tcl_Obj *u;
+
+	    if (f->name == NULL || f->type == NULL) {
+		Tcl_SetObjResult(interp, Tcl_NewStringObj("every field of a "
+			"typed argument list needs a type and a name", -1));
+		goto sigError;
+	    }
+	    nm = Tcl_GetString(f->name);
+	    a->name = f->name;
+	    Tcl_IncrRefCount(a->name);
+	    a->local = OptLocalName(f->name);
+	    Tcl_IncrRefCount(a->local);
+	    a->typeText = TypeTextObj(f->type, 2);
+	    if (f->defval) {
+		a->defval = f->defval;
+		Tcl_IncrRefCount(a->defval);
+	    }
+	    if (f->defcmd) {
+		a->defcmd = f->defcmd;
+		Tcl_IncrRefCount(a->defcmd);
+	    }
+	    a->tp = f->type;
+	    a->lidx = -1;
+	    if (nm[0] == '-') {
+		/* v16q : une option */
+		if (Tcl_GetCharLength(uopt) > 0) {
+		    Tcl_AppendToObj(uopt, " ", 1);
+		}
+		if (IsFlagType(f->type)) {
+		    a->optKind = OPT_SCALAR;
+		    a->isFlag = 1;
+		    if (AddOpt(interp, sig, &cap, f->name, i, -1, -1, -1, 0, 0,
+			    1) != TCL_OK) {
+			goto sigError;
+		    }
+		    Tcl_AppendStringsToObj(uopt, "?", nm, "?", (char *) NULL);
+		} else if ((st = UnderKind(f->type, TCLT_SUM)) != NULL) {
+		    a->optKind = OPT_EXCL;
+		    a->sub = (TclType *) st;
+		    if (AddOpt(interp, sig, &cap, f->name, i, -1, -1, -1, 1, 1,
+			    0) != TCL_OK
+			    || AddSumOpts(interp, sig, &cap, st, i, -1)
+			    != TCL_OK) {
+			goto sigError;
+		    }
+		    if (a->defcmd != NULL || (a->defval != NULL
+			    && SumVariantByName(st, Tcl_GetString(a->defval))
+			    < 0)) {
+			Tcl_SetObjResult(interp, Tcl_ObjPrintf("the default of "
+				"option \"%s\" must name one of its variants",
+				nm));
+			goto sigError;
+		    }
+		    AppendSumUsage(uopt, st);
+		} else if ((st = UnderKind(f->type, TCLT_PRODUCT)) != NULL) {
+		    Tcl_Size g;
+
+		    a->optKind = OPT_GROUP;
+		    a->sub = (TclType *) st;
+		    for (g = 0; g < st->nfields; g++) {
+			const TclTypeField *gf = &st->fields[g];
+			const TclType *gs;
+
+			if (gf->name == NULL || gf->type == NULL) {
+			    continue;
+			}
+			if (g > 0) {
+			    Tcl_AppendToObj(uopt, " ", 1);
+			}
+			if (IsFlagType(gf->type)) {
+			    if (AddOpt(interp, sig, &cap, gf->name, i, -1, g, -1,
+				    0, 0, 1) != TCL_OK) {
+				goto sigError;
+			    }
+			    Tcl_AppendStringsToObj(uopt, "?-",
+				    Tcl_GetString(gf->name), "?", (char *) NULL);
+			} else if ((gs = UnderKind(gf->type, TCLT_SUM)) != NULL) {
+			    if (AddOpt(interp, sig, &cap, gf->name, i, -1, g, -1,
+				    1, 1, 0) != TCL_OK
+				    || AddSumOpts(interp, sig, &cap, gs, i, g)
+				    != TCL_OK) {
+				goto sigError;
+			    }
+			    AppendSumUsage(uopt, gs);
+			} else {
+			    if (AddOpt(interp, sig, &cap, gf->name, i, -1, g, -1,
+				    1, 0, 0) != TCL_OK) {
+				goto sigError;
+			    }
+			    Tcl_AppendStringsToObj(uopt, "?-",
+				    Tcl_GetString(gf->name), " value?",
+				    (char *) NULL);
+			}
+		    }
+		} else {
+		    a->optKind = OPT_SCALAR;
+		    if (AddOpt(interp, sig, &cap, f->name, i, -1, -1, -1, 1, 0,
+			    0) != TCL_OK) {
+			goto sigError;
+		    }
+		    Tcl_AppendStringsToObj(uopt, "?", nm, " value?",
+			    (char *) NULL);
+		}
+		continue;
+	    }
+	    if (!a->defval && !a->defcmd) {
+		const TclType *pt = UnderKind(f->type, TCLT_PRODUCT);
+		Tcl_Size j;
+
+		if (pt != NULL && pt->nfields > 0) {
+		    a->allDefault = 1;
+		    for (j = 0; j < pt->nfields; j++) {
+			if (!pt->fields[j].defval && !pt->fields[j].defcmd) {
+			    a->allDefault = 0;
+			}
+		    }
+		}
+	    }
+	    if (f->type->kind == TCLT_VAR) {
+		a->isVar = 1;
+		if (f->type->elem != NULL
+			&& !TclTypeIsPlainString(f->type->elem)) {
+		    a->varElem = TypeTextObj(f->type->elem, 2);
+		}
+	    }
+	    u = upos;
+	    if (Tcl_GetCharLength(u) > 0) {
+		Tcl_AppendToObj(u, " ", 1);
+	    }
+	    if (i == prod->nfields - 1 && strcmp(nm, "args") == 0
+		    && f->type->kind == TCLT_LIST && f->type->arity < 0
+		    && !a->defval && !a->defcmd) {
+		sig->rest = 1;
+		Tcl_AppendToObj(u, "?arg ...?", -1);
+		continue;
+	    }
+	    sig->pos[sig->npos++] = i;
+	    if (a->defval || a->defcmd || a->allDefault) {
+		Tcl_AppendStringsToObj(u, "?", nm, "?", (char *) NULL);
+	    } else {
+		Tcl_AppendToObj(u, nm, -1);
+	    }
+	}
+	if (Tcl_GetCharLength(uopt) > 0) {
+	    Tcl_AppendToObj(uopt, " ?--?", -1);	/* la fin des options */
+	}
+	if (Tcl_GetCharLength(uopt) > 0 && Tcl_GetCharLength(upos) > 0) {
+	    Tcl_AppendToObj(uopt, " ", 1);
+	}
+	Tcl_AppendObjToObj(uopt, upos);
+	sig->usage = uopt;
+	Tcl_DecrRefCount(upos);
+	if (sig->nopts > 0) {
+	    Tcl_Obj **names = (Tcl_Obj **) Tcl_Alloc(sizeof(Tcl_Obj *)
+		    * sig->nopts);
+
+	    for (i = 0; i < sig->nopts; i++) {
+		names[i] = sig->opts[i].opt;
+	    }
+	    qsort(names, sig->nopts, sizeof(Tcl_Obj *), CompareObjStr);
+	    sig->optList = Tcl_NewObj();
+	    Tcl_IncrRefCount(sig->optList);
+	    for (i = 0; i < sig->nopts; i++) {
+		Tcl_AppendStringsToObj(sig->optList, i == 0 ? "" : ", ",
+			Tcl_GetString(names[i]), (char *) NULL);
+	    }
+	    /* -- termine les options : rappelé comme dans regexp */
+	    Tcl_AppendToObj(sig->optList, " or --", -1);
+	    Tcl_Free(names);
+	}
+	sig->argsText = TypeTextObj(prod, 1);
+	*typedArgsPtr = 1;
+    }
+    *sigPtr = sig;
+    return TCL_OK;
+
+  sigError:
+    Tcl_SetErrorCode(interp, "TCL", "TYPE", "PROCARGS", (char *) NULL);
+    DecrIf(uopt);
+    DecrIf(upos);
+    TclTypedSigRelease(sig);
+    return TCL_ERROR;
+}
+
+static int
+TypedArgsWrong(Tcl_Interp *interp, TclTypedSig *sig, CallFrame *framePtr,
+	Tcl_Size skip)
+{
+    Tcl_Obj *msg = Tcl_NewStringObj("wrong # args: should be \"", -1);
+    Tcl_Size i;
+
+    for (i = 0; i < skip; i++) {
+	Tcl_AppendObjToObj(msg, framePtr->objv[i]);
+	Tcl_AppendToObj(msg, " ", 1);
+    }
+    Tcl_AppendObjToObj(msg, sig->usage);
+    Tcl_AppendToObj(msg, "\"", 1);
+    Tcl_SetObjResult(interp, msg);
+    Tcl_SetErrorCode(interp, "TCL", "WRONGARGS", (char *) NULL);
+    return TCL_ERROR;
+}
+
+static int
+TypedArgError(Tcl_Interp *interp, TypedArg *a)
+{
+    Tcl_Obj *msg = Tcl_ObjPrintf("%s \"%s\": ", a->optKind ? "option"
+	    : "argument", Tcl_GetString(a->name));
+
+    Tcl_AppendObjToObj(msg, Tcl_GetObjResult(interp));
+    Tcl_SetObjResult(interp, msg);
+    if (a->tp != NULL && !a->tp->nominal && (a->tp->kind == TCLT_PRODUCT
+	    || a->tp->kind == TCLT_SUM)) {
+	/* un produit écrit dans la signature : son texte, pas prod<…> */
+	Tcl_Obj *txt = Tcl_ObjPrintf("{%s}", Tcl_GetString(a->typeText));
+
+	Tcl_IncrRefCount(txt);
+	TclTypeResultRename(interp, a->tp->name, Tcl_GetString(txt));
+	Tcl_DecrRefCount(txt);
+    }
+    return TCL_ERROR;
+}
+
+/* Le champ (un champ positionnel ou le reste) attend-il une somme (dont une
+ * étiquette {v:} nomme la variante) ? -1 : aucun champ. */
+static int
+LabelForSum(Tcl_Interp *interp, TclTypedSig *sig, Tcl_Size field)
+{
+    TclType *tp;
+
+    if (field < 0) {
+	return 0;
+    }
+    tp = TclAnnotTypeOf(interp, sig->a[field].typeText);
+    if (tp != NULL && field == sig->n - 1 && sig->rest) {
+	tp = tp->elem;
+    }
+    return UnderKind(tp, TCLT_SUM) != NULL;
+}
+
+/* Déclare la locale nameObj, de type typeText, valeur v. */
+static int
+DeclareLocalTyped(Tcl_Interp *interp, Tcl_Obj *nameObj, Tcl_Obj *typeText,
+	Tcl_Obj *v)
+{
+    Tcl_Obj *typed = NULL;
+
+    if (DeclareTyped(interp, typeText, v, 0, &typed) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    Tcl_IncrRefCount(typed);
+    if (TclTypedVarDeclare(interp, nameObj, typed) == NULL) {
+	Tcl_DecrRefCount(typed);
+	return TCL_ERROR;
+    }
+    Tcl_DecrRefCount(typed);
+    return TCL_OK;
+}
+
+/* v16s : la locale compilée d'un champ (AddTypedLocals, tclProc.c), par
+ * son indice, vérifié par son nom ; NULL si le champ n'en a pas. */
+static Var *
+FieldVar(Tcl_Interp *interp, TypedArg *a)
+{
+    CallFrame *framePtr = ((Interp *) interp)->varFramePtr;
+    Tcl_Size i, n = framePtr->numCompiledLocals, ll;
+    const char *ln = Tcl_GetStringFromObj(a->local, &ll);
+
+    if (framePtr->localCachePtr == NULL) {
+	return NULL;
+    }
+    if (a->lidx >= 0 && a->lidx < n
+	    && localName(framePtr, a->lidx) == a->lname) {
+	return &framePtr->compiledLocals[a->lidx];
+    }
+    for (i = 0; i < n; i++) {
+	Tcl_Obj *nm = localName(framePtr, i);
+	Tcl_Size l;
+
+	if (nm != NULL && strcmp(Tcl_GetStringFromObj(nm, &l), ln) == 0
+		&& l == ll) {
+	    a->lidx = i;
+	    Tcl_IncrRefCount(nm);	/* tenu : son adresse reste la sienne */
+	    DecrIf(a->lname);
+	    a->lname = nm;
+	    return &framePtr->compiledLocals[i];
+	}
+    }
+    return NULL;
+}
+
+/* v16s : déclare la locale du champ a (type résolu une fois par génération
+ * des types, locale compilée trouvée par son indice). */
+static int
+DeclareField(Tcl_Interp *interp, TypedArg *a, Tcl_Obj *v)
+{
+    Tcl_Obj *typed = NULL, *res;
+    size_t uid, gen;
+    Var *varPtr;
+
+    (void) TclTypesGeneration(interp, &uid, &gen);
+    if (a->ctp == NULL || a->ctpGen != gen) {
+	a->ctp = TclAnnotTypeOf(interp, a->typeText);
+	a->ctpGen = gen;
+    }
+    if (DeclareTypedTp(interp, a->ctp, a->typeText, v, 0, &typed)
+	    != TCL_OK) {
+	return TCL_ERROR;
+    }
+    Tcl_IncrRefCount(typed);
+    varPtr = FieldVar(interp, a);
+    res = (varPtr != NULL)
+	    ? TclTypedVarDeclareVar(interp, varPtr, NULL, a->local, typed)
+	    : TclTypedVarDeclare(interp, a->local, typed);
+    Tcl_DecrRefCount(typed);
+    return (res != NULL) ? TCL_OK : TCL_ERROR;
+}
+
+/* La valeur absente d'une option ou d'un champ : son défaut (ou 0 pour un
+ * drapeau), NULL si aucun (la locale reste indéfinie). Référence propre. */
+static int
+OptDefault(Tcl_Interp *interp, const TclTypeField *f, int isFlag,
+	Tcl_Obj **vPtr)
+{
+    *vPtr = NULL;
+    if (f->defval != NULL) {
+	*vPtr = f->defval;
+    } else if (f->defcmd != NULL) {
+	if (Tcl_EvalObjEx(interp, f->defcmd, 0) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	*vPtr = Tcl_GetObjResult(interp);
+    } else if (isFlag) {
+	*vPtr = Tcl_NewWideIntObj(0);
+    }
+    if (*vPtr != NULL) {
+	Tcl_IncrRefCount(*vPtr);
+    }
+    return TCL_OK;
+}
+
+/* Cherche un mot d'option : le nom exact, ou un préfixe unique. -1 : aucun
+ * (*ambigPtr : plusieurs). */
+static Tcl_Size
+FindOpt(TclTypedSig *sig, const char *w, Tcl_Size wl, int *ambigPtr)
+{
+    Tcl_Size i, found = -1, nf = 0;
+
+    *ambigPtr = 0;
+    for (i = 0; i < sig->nopts; i++) {
+	Tcl_Size ol;
+	const char *o = Tcl_GetStringFromObj(sig->opts[i].opt, &ol);
+
+	if (ol == wl && memcmp(o, w, wl) == 0) {
+	    return i;
+	}
+	if (ol > wl && memcmp(o, w, wl) == 0) {
+	    found = i;
+	    nf++;
+	}
+    }
+    if (nf > 1) {
+	*ambigPtr = 1;
+	return -1;
+    }
+    return found;
+}
+
+static int
+OptErr(Tcl_Interp *interp, const char *code, Tcl_Obj *msg)
+{
+    Tcl_SetObjResult(interp, msg);
+    Tcl_SetErrorCode(interp, "TCL", "WRONGARGS", code, (char *) NULL);
+    return TCL_ERROR;
+}
+
+/*
+ * Les options d'un champ : ov[e] est la valeur donnée à l'option e (NULL :
+ * absente ; un objet « 1 » pour un drapeau ; le mot, ou la liste des mots
+ * pour une variante produit).
+ */
+static int
+BindOption(Tcl_Interp *interp, TclTypedSig *sig, Tcl_Size ai, Tcl_Obj **ov)
+{
+    TypedArg *a = &sig->a[ai];
+    Tcl_Size e, chosen = -1, ce = -1;
+
+    if (a->optKind == OPT_SCALAR) {
+	Tcl_Obj *v = NULL;
+	TclTypeField fake;
+	int slot = 0;
+	size_t uid, gen;
+
+	for (e = 0; e < sig->nopts; e++) {
+	    if (sig->opts[e].arg == ai && ov[e] != NULL) {
+		v = ov[e];
+		Tcl_IncrRefCount(v);
+	    }
+	}
+	if ((v == NULL && a->defcmd == NULL) || a->isFlag) {
+	    /* le défaut, ou un drapeau : une valeur typée, faite une fois */
+	    if (v != NULL) {
+		slot = 1;
+		Tcl_DecrRefCount(v);
+		v = NULL;
+	    }
+	    (void) TclTypesGeneration(interp, &uid, &gen);
+	    if (a->cacheGen != gen) {
+		DecrIf(a->cache[0]);
+		DecrIf(a->cache[1]);
+		a->cache[0] = a->cache[1] = NULL;
+		a->cacheGen = gen;
+	    }
+	    if (a->cache[slot] == NULL) {
+		Tcl_Obj *raw = NULL, *typed = NULL;
+
+		if (slot == 1) {
+		    raw = Tcl_NewWideIntObj(1);
+		    Tcl_IncrRefCount(raw);
+		} else {
+		    memset(&fake, 0, sizeof(fake));
+		    fake.defval = a->defval;
+		    if (OptDefault(interp, &fake, a->isFlag, &raw) != TCL_OK) {
+			return TypedArgError(interp, a);
+		    }
+		    if (raw == NULL) {
+			return TCL_OK;	/* absente, sans défaut : indéfinie */
+		    }
+		}
+		if (DeclareTyped(interp, a->typeText, raw, 0, &typed)
+			!= TCL_OK) {
+		    Tcl_DecrRefCount(raw);
+		    return TypedArgError(interp, a);
+		}
+		Tcl_IncrRefCount(typed);
+		Tcl_DecrRefCount(raw);
+		a->cache[slot] = typed;
+	    }
+	    {
+		Var *fv = FieldVar(interp, a);
+
+		if ((fv != NULL ? TclTypedVarDeclareVar(interp, fv, NULL,
+			a->local, a->cache[slot])
+			: TclTypedVarDeclare(interp, a->local, a->cache[slot]))
+			== NULL) {
+		    return TypedArgError(interp, a);
+		}
+	    }
+	    return TCL_OK;
+	}
+	if (v == NULL) {
+	    memset(&fake, 0, sizeof(fake));
+	    fake.defval = a->defval;
+	    fake.defcmd = a->defcmd;
+	    if (OptDefault(interp, &fake, a->isFlag, &v) != TCL_OK) {
+		return TypedArgError(interp, a);
+	    }
+	    if (v == NULL) {
+		return TCL_OK;		/* absente, sans défaut : indéfinie */
+	    }
+	}
+	if (DeclareField(interp, a, v) != TCL_OK) {
+	    Tcl_DecrRefCount(v);
+	    return TypedArgError(interp, a);
+	}
+	Tcl_DecrRefCount(v);
+	return TCL_OK;
+    }
+
+    if (a->optKind == OPT_EXCL) {
+	const TclType *sum = a->sub;
+	const TclTypeField *vf;
+	const TclType *vp;
+	Tcl_Obj *vn;
+
+	for (e = 0; e < sig->nopts; e++) {
+	    OptEntry *oe = &sig->opts[e];
+	    Tcl_Size v;
+
+	    if (oe->arg != ai || oe->dep >= 0 || ov[e] == NULL) {
+		continue;
+	    }
+	    if (oe->byName) {
+		/* -mode ascii : le nom d'une variante sans valeur */
+		v = SumVariantByName(sum, Tcl_GetString(ov[e]));
+		if (v < 0 || (sum->fields[v].type != NULL
+			&& !IsFlagType(sum->fields[v].type))) {
+		    Tcl_Obj *msg = Tcl_ObjPrintf("bad value \"%s\" for option "
+			    "\"%s\": must be ", Tcl_GetString(ov[e]),
+			    Tcl_GetString(a->name));
+		    Tcl_Size k, m = 0, tot = 0;
+
+		    for (k = 0; k < sum->nfields; k++) {
+			if (sum->fields[k].type == NULL
+				|| IsFlagType(sum->fields[k].type)) {
+			    tot++;
+			}
+		    }
+		    for (k = 0; k < sum->nfields; k++) {
+			if (sum->fields[k].type == NULL
+				|| IsFlagType(sum->fields[k].type)) {
+			    m++;
+			    Tcl_AppendStringsToObj(msg, m == 1 ? "" : m == tot
+				    ? " or " : ", ",
+				    Tcl_GetString(VariantName(&sum->fields[k])),
+				    (char *) NULL);
+			}
+		    }
+		    return OptErr(interp, "VALUE", msg);
+		}
+	    } else {
+		v = oe->variant;
+	    }
+	    if (chosen >= 0 && chosen != v) {
+		return OptErr(interp, "EXCLUSIVE", Tcl_ObjPrintf(
+			"options -%s and -%s are exclusive",
+			Tcl_GetString(VariantName(&sum->fields[chosen])),
+			Tcl_GetString(VariantName(&sum->fields[v]))));
+	    }
+	    chosen = v;
+	    ce = oe->byName ? -1 : e;
+	}
+	for (e = 0; e < sig->nopts; e++) {
+	    OptEntry *oe = &sig->opts[e];
+
+	    if (oe->arg == ai && oe->dep >= 0 && ov[e] != NULL
+		    && oe->variant != chosen) {
+		return OptErr(interp, "DEPENDENT", Tcl_ObjPrintf(
+			"option \"%s\" requires -%s", Tcl_GetString(oe->opt),
+			Tcl_GetString(VariantName(&sum->fields[oe->variant]))));
+	    }
+	}
+	if (chosen < 0) {
+	    if (a->defval == NULL) {
+		return TCL_OK;		/* aucune : indéfinie */
+	    }
+	    chosen = SumVariantByName(sum, Tcl_GetString(a->defval));
+	}
+	vf = &sum->fields[chosen];
+	vn = VariantName(vf);
+	if (Tcl_ObjSetVar2(interp, a->local, NULL, vn, TCL_LEAVE_ERR_MSG)
+		== NULL) {
+	    return TypedArgError(interp, a);
+	}
+	if (vf->type == NULL || IsFlagType(vf->type)) {
+	    return TCL_OK;
+	}
+	if ((vp = UnderKind(vf->type, TCLT_PRODUCT)) != NULL) {
+	    /* -command cmd -depth 2 : les champs de la variante, en locales */
+	    Tcl_Obj **words = NULL;
+	    Tcl_Size nw = 0, k, d;
+
+	    if (ce >= 0) {
+		if (sig->opts[ce].nvals == 1) {
+		    words = &ov[ce];
+		    nw = 1;
+		} else {
+		    Tcl_ListObjGetElements(NULL, ov[ce], &nw, &words);
+		}
+	    }
+	    for (d = 0, k = 0; d < vp->nfields; d++) {
+		const TclTypeField *df = &vp->fields[d];
+		Tcl_Obj *v = NULL, *tt, *ln;
+		int fl = IsFlagType(df->type), rc;
+
+		if (df->name == NULL) {
+		    continue;
+		}
+		if (Tcl_GetString(df->name)[0] != '-') {
+		    if (k < nw) {
+			v = words[k];
+			Tcl_IncrRefCount(v);
+		    }
+		    k++;
+		} else {
+		    for (e = 0; e < sig->nopts; e++) {
+			if (sig->opts[e].arg == ai && sig->opts[e].dep == d
+				&& sig->opts[e].variant == chosen
+				&& ov[e] != NULL) {
+			    v = ov[e];
+			    Tcl_IncrRefCount(v);
+			}
+		    }
+		}
+		if (v == NULL) {
+		    if (OptDefault(interp, df, fl, &v) != TCL_OK) {
+			return TypedArgError(interp, a);
+		    }
+		    if (v == NULL) {
+			if (Tcl_GetString(df->name)[0] != '-') {
+			    return OptErr(interp, "VALUE", Tcl_ObjPrintf(
+				    "option \"-%s\" needs a value for \"%s\"",
+				    Tcl_GetString(vn),
+				    Tcl_GetString(df->name)));
+			}
+			continue;
+		    }
+		}
+		tt = TypeTextObj(df->type, 2);
+		ln = OptLocalName(df->name);
+		Tcl_IncrRefCount(ln);
+		rc = DeclareLocalTyped(interp, ln, tt, v);
+		Tcl_DecrRefCount(ln);
+		Tcl_DecrRefCount(tt);
+		Tcl_DecrRefCount(v);
+		if (rc != TCL_OK) {
+		    return TypedArgError(interp, a);
+		}
+	    }
+	    return TCL_OK;
+	}
+	if (ce >= 0) {
+	    /* -command cmd : la locale command */
+	    Tcl_Obj *tt = TypeTextObj(vf->type, 2);
+	    int rc = DeclareLocalTyped(interp, vn, tt, ov[ce]);
+
+	    Tcl_DecrRefCount(tt);
+	    if (rc != TCL_OK) {
+		return TypedArgError(interp, a);
+	    }
+	}
+	return TCL_OK;
+    }
+
+    /* OPT_GROUP : la valeur du produit, à partir des options données */
+    {
+	const TclType *gp = a->sub;
+	Tcl_Obj **pairs, *content = NULL, *typed;
+	Tcl_Size np = 0, g, k;
+	int rc = TCL_ERROR;
+
+	pairs = (Tcl_Obj **) Tcl_Alloc(sizeof(Tcl_Obj *) * 2
+		* (gp->nfields + 1));
+	for (g = 0; g < gp->nfields; g++) {
+	    const TclTypeField *gf = &gp->fields[g];
+	    const TclType *gs = UnderKind(gf->type, TCLT_SUM);
+	    Tcl_Obj *v = NULL;
+	    Tcl_Size gchosen = -1;
+
+	    if (gf->name == NULL) {
+		continue;
+	    }
+	    for (e = 0; e < sig->nopts; e++) {
+		OptEntry *oe = &sig->opts[e];
+		Tcl_Size vv = -1;
+
+		if (oe->arg != ai || oe->gfield != g || ov[e] == NULL) {
+		    continue;
+		}
+		if (gs != NULL) {
+		    vv = oe->byName ? SumVariantByName(gs,
+			    Tcl_GetString(ov[e])) : oe->variant;
+		    if (gchosen >= 0 && vv >= 0 && vv != gchosen) {
+			OptErr(interp, "EXCLUSIVE", Tcl_ObjPrintf(
+				"options -%s and -%s are exclusive",
+				Tcl_GetString(VariantName(&gs->fields[gchosen])),
+				Tcl_GetString(VariantName(&gs->fields[vv]))));
+			if (v != NULL) {
+			    Tcl_DecrRefCount(v);
+			}
+			goto groupDone;
+		    }
+		    if (vv >= 0) {
+			gchosen = vv;
+		    }
+		}
+		if (v != NULL) {
+		    Tcl_DecrRefCount(v);
+		}
+		if (gs != NULL && !oe->byName) {
+		    const TclTypeField *vf = &gs->fields[oe->variant];
+
+		    if (vf->type == NULL) {
+			v = vf->literal;	/* -ascii : le littéral */
+		    } else {
+			/* -command cmd : la valeur, sa variante nommée */
+			Tcl_Obj *lab = Tcl_ObjPrintf("%s:",
+				Tcl_GetString(VariantName(vf)));
+
+			Tcl_IncrRefCount(lab);
+			v = TclAnnotPush(ov[e], lab);
+			Tcl_DecrRefCount(lab);
+		    }
+		} else {
+		    v = ov[e];
+		}
+		Tcl_IncrRefCount(v);
+	    }
+	    if (v == NULL && IsFlagType(gf->type) && gf->defval == NULL
+		    && gf->defcmd == NULL) {
+		v = Tcl_NewWideIntObj(0);
+		Tcl_IncrRefCount(v);
+	    }
+	    if (v != NULL) {
+		pairs[np] = gf->name;
+		Tcl_IncrRefCount(pairs[np]);
+		pairs[np + 1] = v;
+		np += 2;
+	    }
+	}
+	if (TclBuildProductNamed(interp, (TclType *) gp, np, pairs, &content)
+		!= TCL_OK) {
+	    TypedArgError(interp, a);
+	    goto groupDone;
+	}
+	Tcl_IncrRefCount(content);
+	typed = TclNewAnnotated(interp, a->tp, -1, content);
+	Tcl_DecrRefCount(content);
+	Tcl_IncrRefCount(typed);
+	if (TclTypedVarDeclare(interp, a->local, typed) == NULL) {
+	    Tcl_DecrRefCount(typed);
+	    TypedArgError(interp, a);
+	    goto groupDone;
+	}
+	Tcl_DecrRefCount(typed);
+	rc = TCL_OK;
+
+      groupDone:
+	for (k = 0; k < np; k++) {
+	    Tcl_DecrRefCount(pairs[k]);
+	}
+	Tcl_Free(pairs);
+	return rc;
+    }
+}
+
+/*
+ * À l'appel (InitArgsAndLocals, le cadre de la procédure poussé, ses locales
+ * prêtes) : la liste d'arguments a été rangée dans « args » (la seule
+ * locale formelle) ; les options, puis les champs, sont liés.
+ */
+int
+TclTypedProcBind(Tcl_Interp *interp, void *sigv, Tcl_Size skip)
+{
+    Interp *iPtr = (Interp *) interp;
+    CallFrame *framePtr = iPtr->varFramePtr;
+    TclTypedSig *sig = (TclTypedSig *) sigv;
+    Tcl_Size objc = framePtr->objc - skip, i = 0, k = 0, j;
+    Tcl_Size nf = sig->npos;
+    Tcl_Obj *const *objv = framePtr->objv + skip;
+    Tcl_Obj **vals, **ov = NULL, *restList = NULL;
+    Tcl_Obj *valsBuf[8], *ovBuf[16];
+    int seenLabel = 0, rc = TCL_ERROR;
+    Tcl_Size restField = sig->rest ? sig->n - 1 : -1;
+
+    if (sig->n < 0) {
+	return TCL_OK;			/* seulement un type de retour */
+    }
+    /* la locale « args » qui a reçu les mots : défaite */
+    if (framePtr->numCompiledLocals > 0) {
+	Var *av = framePtr->compiledLocals;
+
+	if (av->value.objPtr != NULL && !TclIsVarLink(av)) {
+	    Tcl_DecrRefCount(av->value.objPtr);
+	}
+	av->value.objPtr = NULL;
+	av->flags = 0;
+    }
+    vals = (nf + 1 <= 8) ? valsBuf
+	    : (Tcl_Obj **) Tcl_Alloc(sizeof(Tcl_Obj *) * (nf + 1));
+    memset(vals, 0, sizeof(Tcl_Obj *) * (nf + 1));
+    if (sig->rest) {
+	restList = Tcl_NewListObj(0, NULL);
+	Tcl_IncrRefCount(restList);
+    }
+
+    /* v16q : les options, au début */
+    if (sig->nopts > 0) {
+	ov = (sig->nopts <= 16) ? ovBuf
+		: (Tcl_Obj **) Tcl_Alloc(sizeof(Tcl_Obj *) * sig->nopts);
+	memset(ov, 0, sizeof(Tcl_Obj *) * sig->nopts);
+	while (i < objc) {
+	    Tcl_Size wl, e;
+	    const char *w = Tcl_GetStringFromObj(objv[i], &wl);
+	    int ambig;
+	    OptEntry *oe;
+	    Tcl_Obj *v;
+
+	    if (wl < 2 || w[0] != '-') {
+		break;
+	    }
+	    if (wl == 2 && w[1] == '-') {
+		i++;			/* -- : fin des options */
+		break;
+	    }
+	    e = FindOpt(sig, w, wl, &ambig);
+	    if (e < 0) {
+		double d;
+
+		if (!ambig && Tcl_GetDoubleFromObj(NULL, objv[i], &d)
+			== TCL_OK) {
+		    break;		/* -5 : un argument */
+		}
+		OptErr(interp, ambig ? "AMBIGUOUS" : "OPTION", Tcl_ObjPrintf(
+			"%s option \"%s\": must be %s", ambig ? "ambiguous"
+			: "bad", w, Tcl_GetString(sig->optList)));
+		goto done;
+	    }
+	    oe = &sig->opts[e];
+	    if (objc - i - 1 < oe->nvals) {
+		OptErr(interp, "VALUE", oe->nvals == 1
+			? Tcl_ObjPrintf("option \"%s\" needs a value",
+			    Tcl_GetString(oe->opt))
+			: Tcl_ObjPrintf("option \"%s\" needs %d values",
+			    Tcl_GetString(oe->opt), oe->nvals));
+		goto done;
+	    }
+	    if (oe->nvals == 0) {
+		v = Tcl_NewWideIntObj(1);
+	    } else if (oe->nvals == 1) {
+		v = objv[i + 1];
+	    } else {
+		v = Tcl_NewListObj(oe->nvals, objv + i + 1);
+	    }
+	    Tcl_IncrRefCount(v);
+	    if (ov[e] != NULL) {
+		Tcl_DecrRefCount(ov[e]);	/* la dernière l'emporte */
+	    }
+	    ov[e] = v;
+	    i += 1 + oe->nvals;
+	}
+    }
+
+    for (; i < objc; i++) {
+	Tcl_Obj *arg = objv[i], *lab = NULL, *val = arg;
+	Tcl_Size fi = -1;
+
+	if (TclIsAnnotated(arg)) {
+	    lab = TclAnnotLabelOf(arg);
+	}
+	if (lab != NULL) {
+	    Tcl_Size ll;
+	    const char *lt = Tcl_GetStringFromObj(lab, &ll);
+
+	    for (j = 0; j < nf; j++) {
+		Tcl_Size nl;
+		const char *nt = Tcl_GetStringFromObj(
+			sig->a[sig->pos[j]].name, &nl);
+
+		if (nl == ll - 1 && memcmp(nt, lt, nl) == 0) {
+		    fi = j;
+		    break;
+		}
+	    }
+	    if (fi >= 0) {
+		Tcl_Obj *top = NULL, *popped = TclAnnotPopTop(arg, &top);
+
+		if (popped != NULL && top != NULL
+			&& strcmp(Tcl_GetString(top), lt) == 0) {
+		    val = popped;
+		} else if (popped != NULL) {
+		    TclDiscard(popped);
+		}
+	    }
+	    if (fi < 0 && !seenLabel && LabelForSum(interp, sig,
+		    (k < nf) ? sig->pos[k] : restField) == 0) {
+		/* ni un champ, ni la variante d'une somme */
+		Tcl_Obj *msg = Tcl_ObjPrintf("unknown argument label {%s}: "
+			"must be ", lt);
+
+		for (j = 0; j < nf; j++) {
+		    Tcl_AppendStringsToObj(msg, j == 0 ? "" : j == nf - 1
+			    ? " or " : ", ",
+			    Tcl_GetString(sig->a[sig->pos[j]].name),
+			    ":", (char *) NULL);
+		}
+		Tcl_SetObjResult(interp, msg);
+		Tcl_SetErrorCode(interp, "TCL", "WRONGARGS", (char *) NULL);
+		Tcl_DecrRefCount(lab);
+		goto done;
+	    }
+	    Tcl_DecrRefCount(lab);
+	}
+	if (fi >= 0) {
+	    if (vals[fi] != NULL) {
+		if (val != arg) {
+		    TclDiscard(val);
+		}
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"argument \"%s\" given twice",
+			Tcl_GetString(sig->a[sig->pos[fi]].name)));
+		Tcl_SetErrorCode(interp, "TCL", "WRONGARGS", (char *) NULL);
+		goto done;
+	    }
+	    vals[fi] = val;
+	    Tcl_IncrRefCount(val);
+	    seenLabel = 1;
+	} else if (seenLabel) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "positional argument \"%s\" after labelled arguments",
+		    Tcl_GetString(arg)));
+	    Tcl_SetErrorCode(interp, "TCL", "WRONGARGS", (char *) NULL);
+	    goto done;
+	} else if (k < nf) {
+	    vals[k++] = arg;
+	    Tcl_IncrRefCount(arg);
+	} else if (restList != NULL) {
+	    Tcl_ListObjAppendElement(NULL, restList, arg);
+	} else {
+	    TypedArgsWrong(interp, sig, framePtr, skip);
+	    goto done;
+	}
+    }
+
+    /* les options d'abord : un défaut [cmd] d'un champ peut les lire */
+    for (j = 0; j < sig->n; j++) {
+	if (sig->a[j].optKind != OPT_NONE
+		&& BindOption(interp, sig, j, ov) != TCL_OK) {
+	    goto done;
+	}
+    }
+    for (j = 0; j < nf; j++) {
+	TypedArg *a = &sig->a[sig->pos[j]];
+	Tcl_Obj *v = vals[j], *typed = NULL;
+
+	if (v == NULL) {
+	    if (a->defval != NULL) {
+		v = a->defval;
+	    } else if (a->defcmd != NULL) {
+		if (Tcl_EvalObjEx(interp, a->defcmd, 0) != TCL_OK) {
+		    TypedArgError(interp, a);
+		    goto done;
+		}
+		v = Tcl_GetObjResult(interp);
+	    } else if (a->allDefault) {
+		/* {{T}x ?= 0; {T}y ?= 0}dp absent : la valeur des défauts */
+		Tcl_Obj *content = NULL;
+
+		if (TclBuildProductNamed(interp,
+			(TclType *) UnderKind(a->tp, TCLT_PRODUCT), 0, NULL,
+			&content) != TCL_OK) {
+		    TypedArgError(interp, a);
+		    goto done;
+		}
+		Tcl_IncrRefCount(content);
+		v = TclNewAnnotated(interp, a->tp, -1, content);
+		Tcl_DecrRefCount(content);
+	    } else if (!seenLabel) {
+		TypedArgsWrong(interp, sig, framePtr, skip);
+		goto done;
+	    } else {
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"missing argument \"%s\"", Tcl_GetString(a->name)));
+		Tcl_SetErrorCode(interp, "TCL", "WRONGARGS", (char *) NULL);
+		goto done;
+	    }
+	    vals[j] = v;
+	    Tcl_IncrRefCount(v);
+	}
+	if (a->isVar) {
+	    /* {var.T}n : n est la variable de l'appelant */
+	    Tcl_Obj *cur;
+
+	    if (Tcl_UpVar2(interp, "1", Tcl_GetString(TCL_ANNOT_CONTENT(v)),
+		    NULL, Tcl_GetString(a->name), 0) != TCL_OK) {
+		TypedArgError(interp, a);
+		goto done;
+	    }
+	    if (a->varElem != NULL) {
+		cur = Tcl_ObjGetVar2(interp, a->name, NULL, 0);
+		if (cur != NULL) {
+		    Tcl_IncrRefCount(cur);
+		    if (DeclareTyped(interp, a->varElem, cur, 0, &typed)
+			    != TCL_OK) {
+			Tcl_DecrRefCount(cur);
+			TypedArgError(interp, a);
+			goto done;
+		    }
+		    TclDiscard(typed);
+		    Tcl_DecrRefCount(cur);
+		}
+	    }
+	    continue;
+	}
+	if (DeclareField(interp, a, v) != TCL_OK) {
+	    TypedArgError(interp, a);
+	    goto done;
+	}
+    }
+    if (restList != NULL) {
+	TypedArg *a = &sig->a[restField];
+
+	if (DeclareField(interp, a, restList) != TCL_OK) {
+	    TypedArgError(interp, a);
+	    goto done;
+	}
+    }
+    Tcl_ResetResult(interp);
+    rc = TCL_OK;
+
+  done:
+    for (j = 0; j < nf; j++) {
+	if (vals[j] != NULL) {
+	    Tcl_DecrRefCount(vals[j]);
+	}
+    }
+    if (ov != NULL) {
+	for (j = 0; j < sig->nopts; j++) {
+	    if (ov[j] != NULL) {
+		Tcl_DecrRefCount(ov[j]);
+	    }
+	}
+	if (ov != ovBuf) {
+	    Tcl_Free(ov);
+	}
+    }
+    if (vals != valsBuf) {
+	Tcl_Free(vals);
+    }
+    if (restList != NULL) {
+	Tcl_DecrRefCount(restList);
+    }
+    return rc;
+}
+
+/* Le résultat casté, rendu tel quel, ou déplié ({*}T, {**}T). */
+static void
+SetRet(Tcl_Interp *interp, TclTypedSig *sig, Tcl_Obj *out)
+{
+    if (sig->unfold == 0) {
+	Tcl_SetObjResult(interp, out);
+	return;
+    }
+    Tcl_IncrRefCount(out);
+    Tcl_SetObjResult(interp, Unfold(out, sig->unfold));
+    Tcl_DecrRefCount(out);
+}
+
+/* Un « return » réussi devient une erreur : ses options sont oubliées. */
+static void
+ResetReturn(Tcl_Interp *interp, int result)
+{
+    if (result == TCL_RETURN) {
+	Tcl_Obj *opts = Tcl_NewObj();
+
+	Tcl_IncrRefCount(opts);
+	(void) Tcl_SetReturnOptions(interp, opts);
+	Tcl_DecrRefCount(opts);
+    }
+}
+
+/*
+ * À la sortie du corps (TEBC, avant l'expiration des annotations du corps) :
+ * le résultat d'un retour normal est casté au type de retour. Les notes du
+ * résultat expirent d'abord ({T}$x reste local) ; une étiquette {v:} en
+ * attente choisit la variante d'une somme.
+ */
+int
+TclTypedProcReturn(Tcl_Interp *interp, void *sigv, int result)
+{
+    Interp *iPtr = (Interp *) interp;
+    TclTypedSig *sig = (TclTypedSig *) sigv;
+    Tcl_Obj *res, *lab = NULL, *base, *pushed, *out = NULL;
+    int rc;
+
+    if (sig == NULL || sig->retText == NULL
+	    || iPtr->varFramePtr->tailcallPtr != NULL) {
+	return result;			/* tailcall : le résultat viendra après */
+    }
+    if (!(result == TCL_OK || (result == TCL_RETURN
+	    && iPtr->returnLevel == 1 && iPtr->returnCode == TCL_OK))) {
+	return result;
+    }
+    res = Tcl_GetObjResult(interp);
+    if (!TclIsAnnotated(res)) {
+	/* v16s : un produit de scalaires rendu en liste nue ( $x, $y ) :
+	 * ses champs vérifiés un à un ; {*}T le rend tel quel */
+	size_t uid, gen;
+	TclType *rt;
+	Tcl_Obj *q;
+
+	(void) TclTypesGeneration(interp, &uid, &gen);
+	if (sig->retTp == NULL || sig->retGen != gen) {
+	    sig->retTp = TclAnnotTypeOf(interp, sig->retText);
+	    sig->retGen = gen;
+	}
+	rt = sig->retTp;
+	if (rt != NULL && rt->kind == TCLT_PRODUCT) {
+	    if (sig->unfold == 1) {
+		Tcl_Obj *plain = ScalarProductPlain(rt, res);
+
+		if (plain != NULL) {
+		    if (plain != res) {
+			Tcl_SetObjResult(interp, plain);
+		    }
+		    return result;	/* la forme dépliée */
+		}
+	    } else if ((q = ScalarProductQuick(interp, rt, res)) != NULL) {
+		SetRet(interp, sig, q);
+		return result;
+	    }
+	}
+    }
+    if (TclIsAnnotated(res) && TclAnnotIsSettled(res)) {
+	/* déjà du type de retour (return $p, p typée) : rien à faire */
+	TclType *rt = TclAnnotTypeOf(interp, sig->retText), *vt = NULL;
+
+	if (rt != NULL && TclAnnotInfo(res, NULL, &vt, NULL, NULL) == 1
+		&& vt == rt) {
+	    SetRet(interp, sig, res);
+	    return result;
+	}
+    }
+    Tcl_IncrRefCount(res);
+    if (TclIsAnnotated(res)) {
+	lab = TclAnnotLabelOf(res);
+	TclAnnotExpire(interp, res);
+    }
+    if (lab == NULL) {
+	/* le cas courant : une valeur sans étiquette (cast direct) */
+	if (TclAnnotCastText(interp, sig->retText, res, &out) == TCL_OK) {
+	    SetRet(interp, sig, out);
+	    Tcl_DecrRefCount(res);
+	    return result;
+	}
+	pushed = NULL;
+	base = NULL;
+	goto failed;
+    }
+    {
+	/* {v:} : v doit être une variante du type de retour, une somme */
+	TclType *rt = TclAnnotTypeOf(interp, sig->retText);
+	Tcl_Size ll;
+	const char *lt = Tcl_GetStringFromObj(lab, &ll);
+	char *vn = (char *) Tcl_Alloc(ll);
+
+	memcpy(vn, lt, ll - 1);
+	vn[ll - 1] = '\0';
+	while (rt != NULL && rt->kind != TCLT_SUM && rt->under != NULL) {
+	    rt = rt->under;
+	}
+	if (rt == NULL || rt->kind != TCLT_SUM) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf("label {%s} on a return "
+		    "value: the return type %s is not a sum", lt,
+		    Tcl_GetString(sig->retText)));
+	} else if (TclTypeFieldIndex(rt, vn) < 0) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf("label {%s} on a return "
+		    "value: %s has no variant \"%s\"", lt,
+		    Tcl_GetString(sig->retText), vn));
+	} else {
+	    rt = NULL;			/* bonne étiquette */
+	}
+	Tcl_Free(vn);
+	if (rt != NULL) {
+	    Tcl_Obj *msg = Tcl_GetObjResult(interp);
+
+	    Tcl_IncrRefCount(msg);
+	    ResetReturn(interp, result);
+	    Tcl_SetObjResult(interp, msg);
+	    Tcl_DecrRefCount(msg);
+	    Tcl_SetErrorCode(interp, "TCL", "TYPE", "LABEL", (char *) NULL);
+	    pushed = NULL;
+	    base = NULL;
+	    result = TCL_ERROR;
+	    goto cleanup;
+	}
+    }
+    base = TclAnnotPush(res, lab);
+    Tcl_IncrRefCount(base);
+    pushed = TclAnnotPush(base, sig->retText);
+    Tcl_IncrRefCount(pushed);
+    rc = TclAnnotSettle(interp, pushed, NULL, 0, &out);
+    if (rc == TCL_OK) {
+	SetRet(interp, sig, out);
+    } else {
+	Tcl_Obj *msg;
+
+      failed:
+	msg = Tcl_ObjPrintf("return value {%s}: ",
+		Tcl_GetString(sig->retText));
+
+	Tcl_AppendObjToObj(msg, Tcl_GetObjResult(interp));
+	Tcl_IncrRefCount(msg);
+	{
+	    Tcl_Obj *code = Tcl_GetReturnOptions(interp, TCL_ERROR), *ec = NULL,
+		    *k = Tcl_NewStringObj("-errorcode", -1);
+
+	    Tcl_IncrRefCount(code);
+	    Tcl_IncrRefCount(k);
+	    Tcl_DictObjGet(NULL, code, k, &ec);
+	    if (ec != NULL) {
+		Tcl_IncrRefCount(ec);
+	    }
+	    ResetReturn(interp, result);
+	    Tcl_SetObjResult(interp, msg);
+	    if (ec != NULL) {
+		Tcl_SetObjErrorCode(interp, ec);
+		Tcl_DecrRefCount(ec);
+	    }
+	    Tcl_DecrRefCount(k);
+	    Tcl_DecrRefCount(code);
+	}
+	Tcl_DecrRefCount(msg);
+	result = TCL_ERROR;
+    }
+  cleanup:
+    if (pushed != NULL) {
+	Tcl_DecrRefCount(pushed);
+    }
+    if (base != NULL) {
+	Tcl_DecrRefCount(base);
+    }
+    if (lab != NULL) {
+	Tcl_DecrRefCount(lab);
+    }
+    Tcl_DecrRefCount(res);
+    return result;
+}
+
+/* type proc NOM : la signature (dict : args, return). */
+static int
+TypeProcCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
+{
+    Proc *procPtr;
+    TclTypedSig *sig;
+    Tcl_Obj *d;
+
+    if (objc != 3) {
+	Tcl_WrongNumArgs(interp, 2, objv, "procName");
+	return TCL_ERROR;
+    }
+    procPtr = TclFindProc((Interp *) interp, Tcl_GetString(objv[2]));
+    if (procPtr == NULL) {
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf("\"%s\" isn't a procedure",
+		Tcl_GetString(objv[2])));
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "PROCEDURE",
+		Tcl_GetString(objv[2]), (char *) NULL);
+	return TCL_ERROR;
+    }
+    sig = (TclTypedSig *) procPtr->typedSig;
+    d = Tcl_NewDictObj();
+    Tcl_DictObjPut(NULL, d, Tcl_NewStringObj("args", 4),
+	    (sig != NULL && sig->argsText != NULL) ? sig->argsText
+	    : Tcl_NewObj());
+    Tcl_DictObjPut(NULL, d, Tcl_NewStringObj("return", 6),
+	    (sig != NULL && sig->retText != NULL) ? Tcl_ObjPrintf("%s%s",
+	    sig->unfold == 2 ? "{**}" : sig->unfold == 1 ? "{*}" : "",
+	    Tcl_GetString(sig->retText)) : Tcl_NewObj());
+    Tcl_SetObjResult(interp, d);
+    return TCL_OK;
+}
+
+/* info args / info default d'une procédure typée : les champs. NULL, -1 :
+ * liste d'arguments classique. */
+Tcl_Obj *
+TclTypedSigArgNames(void *sigv)
+{
+    TclTypedSig *sig = (TclTypedSig *) sigv;
+    Tcl_Obj *l;
+    Tcl_Size i;
+
+    if (sig == NULL || sig->n < 0) {
+	return NULL;
+    }
+    l = Tcl_NewListObj(0, NULL);
+    for (i = 0; i < sig->n; i++) {
+	Tcl_ListObjAppendElement(NULL, l, sig->a[i].name);
+    }
+    return l;
+}
+
+/* 1 : le champ a un défaut (*defPtr, ou le texte [cmd]) ; 0 : non ; -1 : pas
+ * un champ ; -2 : liste classique. */
+int
+TclTypedSigDefault(void *sigv, const char *name, Tcl_Obj **defPtr)
+{
+    TclTypedSig *sig = (TclTypedSig *) sigv;
+    Tcl_Size i;
+
+    if (sig == NULL || sig->n < 0) {
+	return -2;
+    }
+    for (i = 0; i < sig->n; i++) {
+	if (strcmp(Tcl_GetString(sig->a[i].name), name) == 0) {
+	    if (sig->a[i].defval != NULL) {
+		*defPtr = sig->a[i].defval;
+		return 1;
+	    }
+	    if (sig->a[i].defcmd != NULL) {
+		*defPtr = Tcl_ObjPrintf("[%s]",
+			Tcl_GetString(sig->a[i].defcmd));
+		return 1;
+	    }
+	    if (sig->a[i].isFlag) {
+		*defPtr = Tcl_NewWideIntObj(0);	/* un drapeau absent : 0 */
+		return 1;
+	    }
+	    return 0;
+	}
+    }
+    return -1;
+}
+
+/* v16s : les noms des variables locales des champs (pour qu'elles soient
+ * des locales compilées : tclProc.c, AddTypedLocals). */
+Tcl_Size
+TclTypedSigLocals(void *sigv, Tcl_Obj ***namesPtr)
+{
+    TclTypedSig *sig = (TclTypedSig *) sigv;
+    Tcl_Size i;
+
+    if (sig == NULL || sig->n <= 0) {
+	*namesPtr = NULL;
+	return 0;
+    }
+    if (sig->locals == NULL) {
+	sig->locals = (Tcl_Obj **) Tcl_Alloc(sizeof(Tcl_Obj *) * sig->n);
+	for (i = 0; i < sig->n; i++) {
+	    sig->locals[i] = sig->a[i].local;
+	}
+    }
+    *namesPtr = sig->locals;
+    return sig->n;
+}
+
+/* v16s : la signature lie elle-même les mots (liste typée) : InitArgsAndLocals
+ * n'a pas à faire la liste « args ». */
+int
+TclTypedSigTakesWords(void *sigv)
+{
+    return sigv != NULL && ((TclTypedSig *) sigv)->n >= 0;
 }

@@ -448,6 +448,16 @@ proc {string}::cproc::Gen {{list.cdef}procs} {
     append c "#include <tcl.h>\n#include <stdint.h>\n#include <stddef.h>\n"
     append c "#include <string.h>\n#include <stdio.h>\n#include <stdarg.h>\n"
     append c "#include \"tclAnnotatedApi.h\"\n\n"
+    # les contrôles de taille des structs sont des _Static_assert (C11) :
+    # leur équivalent pour un compilateur C99 (tcc 0.9.27 sous Windows)
+    append c {#if !defined(__cplusplus) && !defined(_Static_assert) \
+	&& (!defined(__STDC_VERSION__) || __STDC_VERSION__ < 201112L)
+#define TCLT_SA_CAT_(a, b) a##b
+#define TCLT_SA_CAT(a, b) TCLT_SA_CAT_(a, b)
+#define _Static_assert(c, m) typedef char TCLT_SA_CAT(tclt_static_assert_, __LINE__)[(c) ? 1 : -1]
+#endif
+
+}
     append c [Prelude]
     foreach b $blocks {
 	append c $b(text)

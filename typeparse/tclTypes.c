@@ -4496,6 +4496,17 @@ TypeCCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 	Tcl_DStringAppend(&head, buf, -1);
 	Tcl_DStringAppend(&head, "#include <stdint.h>\n#include <stddef.h>\n",
 		-1);
+	/* les contrôles de taille sont des _Static_assert (C11) : un
+	 * compilateur C99 sans en-tête qui le fournisse (tcc 0.9.27 sous
+	 * Windows) reçoit l'équivalent, un tableau de taille négative */
+	Tcl_DStringAppend(&head, "#if !defined(__cplusplus) && "
+		"!defined(_Static_assert) \\\n"
+		"\t&& (!defined(__STDC_VERSION__) || __STDC_VERSION__ < 201112L)\n"
+		"#define TCLT_SA_CAT_(a, b) a##b\n"
+		"#define TCLT_SA_CAT(a, b) TCLT_SA_CAT_(a, b)\n"
+		"#define _Static_assert(c, m) typedef char "
+		"TCLT_SA_CAT(tclt_static_assert_, __LINE__)[(c) ? 1 : -1]\n"
+		"#endif\n", -1);
 	if (g.needTcl) {
 	    Tcl_DStringAppend(&head, "#include <tcl.h>\n", -1);
 	}
