@@ -2324,7 +2324,7 @@ EXTERN const char *	TclZipfs_AppHook(int *argc, char ***argv);
 #   define Tcl_FindExecutable(arg) ((Tcl_FindExecutable)((const char *)(arg)))
 #endif
 #   define Tcl_MainEx Tcl_MainExW
-    EXTERN TCL_NORETURN void Tcl_MainExW(Tcl_Size argc, unsigned short **argv,
+    EXTERN TCL_NORETURN void Tcl_MainExW(Tcl_Size argc, const void *argv,
 	    Tcl_AppInitProc *appInitProc, Tcl_Interp *interp);
 #endif
 #if defined(USE_TCL_STUBS)
