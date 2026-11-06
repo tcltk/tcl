@@ -1719,6 +1719,36 @@ TclUtfCmp(
 {
     Tcl_UniChar ch1 = 0, ch2 = 0;
 
+    /*
+     * Fast path for strings that start with ASCII: skip the common prefix
+     * bytewise.  Identical bytes decode to identical characters, so they
+     * need no decoding.  If the first differing bytes (or the terminating
+     * NULs) are both ASCII they are whole characters and their difference
+     * is the answer.  Otherwise a multi-byte character is involved: step
+     * back to the nearest character boundary (a byte that is not a UTF-8
+     * continuation byte always starts a character) and let the general loop
+     * take over from there.  Strings that start with a non-ASCII character
+     * go straight to the general loop, so text such as CJK that differs in
+     * its first characters pays nothing for the scan.
+     */
+    if (!((UCHAR(*cs) | UCHAR(*ct)) & 0x80)) {
+	const unsigned char *a = (const unsigned char *) cs;
+	const unsigned char *b = (const unsigned char *) ct;
+
+	while (*a == *b && *a) {
+	    a++, b++;
+	}
+	if (!((*a | *b) & 0x80)) {
+	    return *a - *b;
+	}
+	while ((((*a & 0xC0) == 0x80) || ((*b & 0xC0) == 0x80))
+		&& a > (const unsigned char *) cs) {
+	    a--, b--;
+	}
+	cs = (const char *) a;
+	ct = (const char *) b;
+    }
+
     while (*cs && *ct) {
 	cs += TclUtfToUniChar(cs, &ch1);
 	ct += TclUtfToUniChar(ct, &ch2);
@@ -1788,6 +1818,10 @@ int
 Tcl_UniCharToUpper(
     int ch)			/* Unicode character to convert. */
 {
+    if ((unsigned) ch < 0x80) {
+	/* ASCII fast path; no table lookup needed. */
+	return (ch >= 'a' && ch <= 'z') ? ch - ('a' - 'A') : ch;
+    }
     if (!UNICODE_OUT_OF_RANGE(ch)) {
 	ch = utf8proc_toupper(ch & 0x1FFFFF);
     }
@@ -1815,6 +1849,10 @@ int
 Tcl_UniCharToLower(
     int ch)			/* Unicode character to convert. */
 {
+    if ((unsigned) ch < 0x80) {
+	/* ASCII fast path; no table lookup needed. */
+	return (ch >= 'A' && ch <= 'Z') ? ch + ('a' - 'A') : ch;
+    }
     if (!UNICODE_OUT_OF_RANGE(ch)) {
 	ch = utf8proc_tolower(ch & 0x1FFFFF);
     }
@@ -2125,6 +2163,9 @@ int
 Tcl_UniCharIsLower(
     int ch)			/* Unicode character to test. */
 {
+    if ((unsigned) ch < 0x80) {
+	return (ch >= 'a' && ch <= 'z');
+    }
     return (utf8proc_category(ch & 0x1FFFFF) == UTF8PROC_CATEGORY_LL);
 }
 
@@ -2232,6 +2273,9 @@ int
 Tcl_UniCharIsUpper(
     int ch)			/* Unicode character to test. */
 {
+    if ((unsigned) ch < 0x80) {
+	return (ch >= 'A' && ch <= 'Z');
+    }
     return (utf8proc_category(ch & 0x1FFFFF) == UTF8PROC_CATEGORY_LU);
 }
 
