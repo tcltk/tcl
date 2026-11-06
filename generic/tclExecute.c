@@ -5511,7 +5511,7 @@ TEBCresume(
 
 	/* haveSecondIndex==0 => pure insert */
 	int haveSecondIndex = (flags & TCL_LREPLACE_SINGLE_INDEX) == 0;
-	size_t numNewElems = numArgs - 2 - haveSecondIndex;
+	Tcl_Size numNewElems = numArgs - 2 - haveSecondIndex;
 
 	/* end_indicator==1 => "end" is last element's index, 0=>index beyond */
 	int endIndicator = (flags & TCL_LREPLACE_END_IS_LAST) != 0;
