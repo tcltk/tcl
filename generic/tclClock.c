@@ -74,7 +74,7 @@ static int		ConvertUTCToLocalUsingC(Tcl_Interp *,
 static int		ConvertLocalToUTC(ClockClientData *, Tcl_Interp *,
 			    TclDateFields *, Tcl_Obj *timezoneObj, int);
 static int		ConvertLocalToUTCUsingTable(Tcl_Interp *,
-			    TclDateFields *, int, Tcl_Obj *const[],
+			    TclDateFields *, Tcl_Size, Tcl_Obj *const[],
 			    Tcl_WideInt *rangesVal);
 static int		ConvertLocalToUTCUsingC(Tcl_Interp *,
 			    TclDateFields *, int);
@@ -702,7 +702,6 @@ TclClockMCDict(
 
     /* if dict not yet retrieved */
     if (opts->mcDictObj == NULL) {
-
 	/* if locale was not yet used */
 	if (!(opts->flags & CLF_LOCALE_USED)) {
 	    opts->localeObj = NormLocaleObj(dataPtr, opts->interp,
@@ -722,7 +721,7 @@ TclClockMCDict(
 		int i;
 
 		dataPtr->mcLiterals = (Tcl_Obj **)
-			Tcl_Alloc(MCLIT__END * sizeof(Tcl_Obj*));
+			Tcl_Alloc(MCLIT__END * sizeof(Tcl_Obj *));
 		for (i = 0; i < MCLIT__END; ++i) {
 		    TclInitObjRef(dataPtr->mcLiterals[i], Tcl_NewStringObj(
 			    MsgCtLiterals[i], TCL_AUTO_LENGTH));
@@ -895,7 +894,7 @@ TclClockMCSetIdx(
     if (dataPtr->mcLitIdxs == NULL) {
 	int i;
 
-	dataPtr->mcLitIdxs = (Tcl_Obj **)Tcl_Alloc(MCLIT__END * sizeof(Tcl_Obj*));
+	dataPtr->mcLitIdxs = (Tcl_Obj **)Tcl_Alloc(MCLIT__END * sizeof(Tcl_Obj *));
 	for (i = 0; i < MCLIT__END; ++i) {
 	    TclInitObjRef(dataPtr->mcLitIdxs[i],
 		    Tcl_NewStringObj(MsgCtLitIdxs[i], TCL_AUTO_LENGTH));
@@ -956,7 +955,7 @@ ClockConfigureObjCmd(
     void *clientData,		/* Client data containing literal pool */
     Tcl_Interp *interp,		/* Tcl interpreter */
     int objc,			/* Parameter count */
-    Tcl_Obj *const objv[])	/* Parameter vector */
+    Tcl_Obj *const *objv)	/* Parameter vector */
 {
     ClockClientData *dataPtr = (ClockClientData *)clientData;
     static const char *const options[] = {
@@ -2005,7 +2004,7 @@ static int
 ConvertLocalToUTCUsingTable(
     Tcl_Interp *interp,		/* Tcl interpreter */
     TclDateFields *fields,	/* Time to convert, with 'seconds' filled in */
-    int rowc,			/* Number of points at which time changes */
+    Tcl_Size rowc,		/* Number of points at which time changes */
     Tcl_Obj *const rowv[],	/* Points at which time changes */
     Tcl_WideInt *rangesVal)	/* Return bounds for time period */
 {
@@ -2184,7 +2183,13 @@ TclConvertUTCToLocal(
 
 	    tzdata = ClockGetTZData(dataPtr, interp, timezoneObj);
 	    if (TclListObjGetElements(interp, tzdata, &rowc, &rowv) != TCL_OK
-		    || Tcl_ListObjIndex(interp, rowv[0], 3, &tzName) != TCL_OK) {
+		    || ((rowc > 0) && Tcl_ListObjIndex(interp, rowv[0], 3, &tzName) != TCL_OK)) {
+		return TCL_ERROR;
+	    }
+	    if (!rowc) {
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			"malformed time zone data", TCL_AUTO_LENGTH));
+		Tcl_SetErrorCode(interp, "CLOCK", "malformedTimeZoneData", (char *)NULL);
 		return TCL_ERROR;
 	    }
 	    TclSetObjRef(dataPtr->gmtTZName, tzName);
@@ -3056,7 +3061,7 @@ ClockGetenvObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
-    Tcl_Obj *const objv[])
+    Tcl_Obj *const *objv)
 {
 #ifdef _WIN32
     const WCHAR *varName;
@@ -3322,7 +3327,7 @@ ClockParseFmtScnArgs(
     TclDateFields *date,	/* Extracted date-time corresponding base
 				 * (by scan or add) resp. clockval (by format) */
     Tcl_Size objc,		/* Parameter count */
-    Tcl_Obj *const objv[],	/* Parameter vector */
+    Tcl_Obj *const *objv,	/* Parameter vector */
     ClockOperation operation,	/* What operation are we doing: format, scan, add */
     const char *syntax)		/* Syntax of the current command */
 {
@@ -3567,7 +3572,7 @@ ClockFormatObjCmd(
     void *clientData,		/* Client data containing literal pool */
     Tcl_Interp *interp,		/* Tcl interpreter */
     int objc,			/* Parameter count */
-    Tcl_Obj *const objv[])	/* Parameter values */
+    Tcl_Obj *const *objv)	/* Parameter values */
 {
     ClockClientData *dataPtr = (ClockClientData *)clientData;
     static const char *syntax = "clock format clockval|now "
@@ -3636,7 +3641,7 @@ ClockScanObjCmd(
     void *clientData,		/* Client data containing literal pool */
     Tcl_Interp *interp,		/* Tcl interpreter */
     int objc,			/* Parameter count */
-    Tcl_Obj *const objv[])	/* Parameter values */
+    Tcl_Obj *const *objv)	/* Parameter values */
 {
     ClockClientData *dataPtr = (ClockClientData *)clientData;
     static const char *syntax = "clock scan string "
@@ -4451,15 +4456,15 @@ ClockWeekdaysOffs(
  *	Refer to the user documentation to see what it exactly does.
  *
  * Syntax:
- *   clock add clockval ?count unit?... ?-option value?
+ *	clock add clockval ?count unit?... ?-option value?
  *
  * Parameters:
- *   clockval -- Starting time value
- *   count -- Amount of a unit of time to add
- *   unit -- Unit of time to add, must be one of:
- *	     years year months month weeks week
- *	     days day hours hour minutes minute
- *	     seconds second
+ *	clockval -- Starting time value
+ *	count -- Amount of a unit of time to add
+ *	unit -- Unit of time to add, must be one of:
+ *		years year months month weeks week
+ *		days day hours hour minutes minute
+ *		seconds second
  *
  * Options:
  *   -gmt BOOLEAN
@@ -4488,7 +4493,7 @@ ClockAddObjCmd(
     void *clientData,		/* Client data containing literal pool */
     Tcl_Interp *interp,		/* Tcl interpreter */
     int objc,			/* Parameter count */
-    Tcl_Obj *const objv[])	/* Parameter values */
+    Tcl_Obj *const *objv)	/* Parameter values */
 {
     static const char *syntax = "clock add clockval|now ?number units?..."
 	    "?-gmt boolean? "
@@ -4703,7 +4708,7 @@ ClockSafeCatchCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
-    Tcl_Obj *const objv[])
+    Tcl_Obj *const *objv)
 {
     typedef struct {
 	int status;		/* return code status */
