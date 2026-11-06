@@ -158,7 +158,7 @@ const EnsembleImplMap tclBinaryDecodeImplMap[] = {
  * to errors.  See TIP 568 for how this differs from Tcl 8.
  */
 
-static const Tcl_ObjType properByteArrayType = {
+const Tcl_ObjType properByteArrayType = {
     "bytearray",
     FreeProperByteArrayInternalRep,
     DupProperByteArrayInternalRep,
@@ -193,12 +193,6 @@ typedef struct {
 #define SET_BYTEARRAY(irPtr, baPtr) \
 		(irPtr)->twoPtrValue.ptr1 = (baPtr)
 
-int
-TclIsPureByteArray(
-    Tcl_Obj * objPtr)
-{
-    return TclHasInternalRep(objPtr, &properByteArrayType);
-}
 
 /*
  *----------------------------------------------------------------------

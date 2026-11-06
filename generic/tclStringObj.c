@@ -493,6 +493,11 @@ TclCheckEmptyString(
 	return TCL_EMPTYSTRING_YES;
     }
 
+    /* A valid, non-empty string representation settles it. */
+    if (objPtr->bytes != NULL && objPtr->length != 0) {
+	return TCL_EMPTYSTRING_NO;
+    }
+
     if (TclIsPureByteArray(objPtr)
 	    && Tcl_GetCharLength(objPtr) == 0) {
 	return TCL_EMPTYSTRING_YES;
@@ -1392,11 +1397,17 @@ Tcl_AppendObjToObj(
     Tcl_Size appendNumChars = TCL_INDEX_NONE;
     const char *bytes;
 
-    if (TclCheckEmptyString(appendObjPtr) == TCL_EMPTYSTRING_YES) {
+    /*
+     * Objects with a valid, non-empty string representation (the usual case)
+     * are settled without calling TclCheckEmptyString.
+     */
+    if ((appendObjPtr->bytes == NULL || appendObjPtr->length == 0)
+	    && TclCheckEmptyString(appendObjPtr) == TCL_EMPTYSTRING_YES) {
 	return;
     }
 
-    if (TclCheckEmptyString(objPtr) == TCL_EMPTYSTRING_YES) {
+    if ((objPtr->bytes == NULL || objPtr->length == 0)
+	    && TclCheckEmptyString(objPtr) == TCL_EMPTYSTRING_YES) {
 	TclSetDuplicateObj(objPtr, appendObjPtr);
 	return;
     }
@@ -3511,8 +3522,16 @@ TclStringCat(
 
 	    TclFreeInternalRep(objResultPtr);
 	} else {
+	    /*
+	     * Allocate just the string representation (length > 0 here).
+	     * Going through Tcl_AttemptSetObjLength would first allocate a
+	     * String internal rep, doubling the allocator work for a value
+	     * that is usually used once and discarded.
+	     */
 	    TclNewObj(objResultPtr);	/* PANIC? */
-	    if (0 == Tcl_AttemptSetObjLength(objResultPtr, length)) {
+	    objResultPtr->bytes = (char *)Tcl_AttemptAlloc((size_t)length + 1U);
+	    if (objResultPtr->bytes == NULL) {
+		objResultPtr->bytes = &tclEmptyString;
 		Tcl_DecrRefCount(objResultPtr);
 		if (interp) {
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -3523,7 +3542,8 @@ TclStringCat(
 		}
 		return NULL;
 	    }
-	    dst = TclGetString(objResultPtr);
+	    objResultPtr->length = length;
+	    dst = objResultPtr->bytes;
 	}
 	while (objc--) {
 	    Tcl_Obj *objPtr = *objv++;

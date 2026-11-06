@@ -4790,7 +4790,9 @@ TclGrowParseTokenArray(
  *----------------------------------------------------------------
  */
 
-MODULE_SCOPE int	TclIsPureByteArray(Tcl_Obj *objPtr);
+MODULE_SCOPE const Tcl_ObjType properByteArrayType;
+#define TclIsPureByteArray(objPtr) \
+    ((objPtr)->typePtr == &properByteArrayType)
 #define TclIsPureDict(objPtr) \
     (((objPtr)->bytes == NULL) && TclHasInternalRep((objPtr), &tclDictType))
 #define TclHasInternalRep(objPtr, type) \
