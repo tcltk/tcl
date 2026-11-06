@@ -74,6 +74,7 @@ to the userbase.
  - [lpop/lset/join crashes with abstract lists](https://core.tcl-lang.org/tcl/tktview/409a4e)
  - [Heap out-of-bounds read and NULL dereference in 'clock'](https://core.tcl-lang.org/tcl/tktview/813699)
  - [Stack and heap buffer overflow in 'clock format %z'](https://core.tcl-lang.org/tcl/tktview/e713c3)
+ - [Fix crash from race condition in Unix locale initialization](https://core.tcl-lang.org/tcl/tktview/c35e347c)
 
 # Updated bundled packages, libraries, standards, data
  - http 2.10.3
