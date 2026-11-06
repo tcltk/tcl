@@ -1906,7 +1906,13 @@ TclListObjAppendElements(
 	LIST_ASSERT(ListRepLength(&listRep) == finalLen);
 	LISTREP_CHECK(&listRep);
 
-	ListObjReplaceRepAndInvalidate(toObj, &listRep);
+	/*
+	 * The object already owns this store and span (any reallocation was
+	 * stomped into place above), so bumping the reference counts only to
+	 * free the old representation again nets out to nothing: just drop
+	 * the string representation.
+	 */
+	TclInvalidateStringRep(toObj);
 	return TCL_OK;
     }
 
@@ -1975,9 +1981,23 @@ Tcl_ListObjAppendElement(
     Tcl_Obj *elemObj)		/* Object to append to toObj's list. */
 {
     /*
-     * TODO - compare perf with 8.6 to see if worth optimizing single
-     * element case
+     * Common case: an unshared list whose store is unshared, has no span and
+     * still has room at the tail.  Store the element directly.
      */
+    if (!Tcl_IsShared(toObj) && TclHasInternalRep(toObj, &tclListType)
+	    && ListObjSpanPtr(toObj) == NULL) {
+	ListStore *storePtr = ListObjStorePtr(toObj);
+
+	if (storePtr->refCount == 1
+		&& storePtr->firstUsed + storePtr->numUsed
+			< storePtr->numAllocated) {
+	    Tcl_IncrRefCount(elemObj);
+	    storePtr->slots[storePtr->firstUsed + storePtr->numUsed] = elemObj;
+	    storePtr->numUsed++;
+	    TclInvalidateStringRep(toObj);
+	    return TCL_OK;
+	}
+    }
     return TclListObjAppendElements(interp, toObj, 1, &elemObj);
 }
 
@@ -3367,6 +3387,7 @@ TclListObjSetElement(
     ListRep listRep;
     Tcl_Obj **elemPtrs;		/* Pointers to elements of the list. */
     Tcl_Size elemCount;		/* Number of elements in the list. */
+    int cloned = 0;		/* Whether the rep was replaced by a copy. */
 
     /* Ensure that the listObj parameter designates an unshared list. */
 
@@ -3408,6 +3429,7 @@ TclListObjSetElement(
 	/* TODO - leave extra space? */
 	ListRepClone(&listRep, &newInternalRep, LISTREP_PANIC_ON_FAIL);
 	listRep = newInternalRep;
+	cloned = 1;
     } /* else T:listrep-1.{12.1,15.1,19.1} */
 
     /* Retrieve element array AFTER potential cloning above */
@@ -3421,8 +3443,13 @@ TclListObjSetElement(
     Tcl_DecrRefCount(elemPtrs[index]);
     elemPtrs[index] = valueObj;
 
-    /* Internal rep may be cloned so replace */
-    ListObjReplaceRepAndInvalidate(listObj, &listRep);
+    /* Internal rep may be cloned so replace; otherwise only the string rep
+     * needs invalidating (the object already owns this store and span). */
+    if (cloned) {
+	ListObjReplaceRepAndInvalidate(listObj, &listRep);
+    } else {
+	TclInvalidateStringRep(listObj);
+    }
 
     return TCL_OK;
 }
