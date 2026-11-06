@@ -22,6 +22,7 @@ déplacement, boîte englobante). Le code est dans `exemples/tutoriel` :
 | `etape1_tcl.tcl`, `etape2_type.tcl`, `etape3_c.tcl` | les trois étapes |
 | `essais.tcl 1\|2\|3` | les mêmes appels pour chaque étape (`essais_1.out`, `essais_2.out`) |
 | `vitesse.tcl ?tcc?` | les trois étapes mesurées côte à côte |
+| `chemins.tcl` | le coût d'un accès : `lindex`, `lassign`, `$p(x)`, `$s(a.x)`… |
 
 ## Étape 1 — le prototype
 
@@ -140,15 +141,18 @@ une `boite` la liste de ses quatre champs.
 
 ### Ce que ça coûte
 
-Dans le prototype, la vérification et l'accès par chemin ne sont pas gratuits.
-Ici, l'étape 2 est **1,3 à 1,9 fois plus lente** que l'étape 1 (tableau
-ci-dessous) :
+Dans le prototype, la vérification n'est pas gratuite. Ici, l'étape 2 est
+**1,2 à 1,6 fois plus lente** que l'étape 1 (tableau ci-dessous) :
 
 - **La liaison.** Une procédure typée coûte environ 0,4 µs de plus par appel.
 - **La vérification.** Un polygone de 1 000 points donné en liste ordinaire
-  est vérifié point par point à chaque appel (environ 75 µs). Une variable
+  est vérifié point par point à chaque appel (environ 80 µs). Une variable
   typée (`set {poly::polygone}G …`) ne l'est qu'une fois, quand on la remplit.
-- **Les chemins.** Dans la boucle, `$p(x)` coûte plus que `lassign`.
+- **Les valeurs typées dans la boucle.** Chaque point lu porte son type, ce
+  qui coûte un peu à chaque tour. La lecture elle-même est rapide : `$p(x)`
+  coûte 65 ns contre 45 pour `lindex` ou `lassign` sur une liste ordinaire, et
+  un chemin plus long comme `$s(a.x)` 110 ns, car il est analysé une fois puis
+  gardé (`chemins.tcl`).
 
 C'est le prix de la sûreté en Tcl. Il pèse peu sur la plupart des procédures,
 et l'étape 3 le reprend là où il pèse.
@@ -218,19 +222,19 @@ x86-64) :
 
 | | étape 1 : Tcl | étape 2 : Tcl typé | étape 3 : gcc | étape 3 : tcc |
 |---|---:|---:|---:|---:|
-| `point 1.0 2.0` | 0,18 | 0,55 | 0,55 | 0,50 |
-| `aire`, liste ordinaire | 183 | 344 | 13 | 28 |
-| `aire`, variable typée | 196 | 288 | **1,36** | 4,3 |
-| `perimetre` | 264 | 360 | **5,6** | 8,4 |
-| `contient` | 149 | 239 | **1,31** | 7,6 |
-| `boite` | 376 | 659 | **10,2** | 10,6 |
-| `deplace` | 223 | 299 | 182 | 200 |
+| `point 1.0 2.0` | 0,26 | 0,68 | 0,70 | 0,70 |
+| `aire`, liste ordinaire | 244 | 397 | 14 | 33 |
+| `aire`, variable typée | 245 | 316 | **1,63** | 4,9 |
+| `perimetre` | 329 | 405 | **6,7** | 10,1 |
+| `contient` | 187 | 263 | **1,80** | 9,7 |
+| `boite` | 451 | 530 | **11,7** | 11,9 |
+| `deplace` | 281 | 365 | 217 | 234 |
 
-- **Les calculs** (`aire`, `perimetre`, `contient`, `boite`) vont **35 à 140 fois
+- **Les calculs** (`aire`, `perimetre`, `contient`, `boite`) vont **40 à 150 fois
   plus vite qu'à l'étape 1**, quand le polygone est déjà typé. tcc est un peu
   plus lent que gcc, mais il compile en quelques dizaines de millisecondes.
 - **Une liste ordinaire** passée à l'étape 3 est lue par le C, point par point
-  (13 µs pour 1 000 points). Une variable typée l'est en confiance, et en place
+  (14 µs pour 1 000 points). Une variable typée l'est en confiance, et en place
   quand elle est en cases : c'est la récompense de l'étape 2.
 - **`deplace`** ne gagne presque rien : le temps passe à fabriquer 1 000 points
   Tcl pour le résultat (120 µs), puis à les vérifier au retour (50 µs). Rendre

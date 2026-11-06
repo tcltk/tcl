@@ -21,7 +21,7 @@
  * VAR_* de tclInt.h). La valeur ci-dessous est un PLACEHOLDER. */
 /* Version du prototype TIP 764 (typeparse/VERSION, maj.sh, et
  * tcl::unsupported::typesversion). */
-#define TCL_TYPES_VERSION "v16u"
+#define TCL_TYPES_VERSION "v16v"
 
 #ifndef VAR_TYPED
 #define VAR_TYPED	0x400000
@@ -351,6 +351,7 @@ int	TclTypesGeneration(Tcl_Interp *interp, size_t *uidPtr, size_t *genPtr);
 /* Représentation compacte (tclAnnotObj.c) */
 typedef struct TclCompactLayout TclCompactLayout;
 int TclAnnotIsSettled(Tcl_Obj *objPtr);
+int TclAnnotFastIndex(Tcl_Obj *aPtr, int encodedIndex, Tcl_Obj **elemPtr);
 Tcl_Obj *TclAnnotNumericContent(Tcl_Obj *objPtr);
 Tcl_Obj *TclAnnotIterList(Tcl_Obj *aPtr);
 Tcl_Obj *TclCompactFrom(TclType *listTp, Tcl_Obj *content);

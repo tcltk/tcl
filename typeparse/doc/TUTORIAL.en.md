@@ -28,6 +28,7 @@ the language of the project:
 | `etape1_tcl.tcl`, `etape2_type.tcl`, `etape3_c.tcl` | the three steps |
 | `essais.tcl 1\|2\|3` | the same calls for each step (`essais_1.out`, `essais_2.out`) |
 | `vitesse.tcl ?tcc?` | the three steps measured side by side |
+| `chemins.tcl` | the cost of one access: `lindex`, `lassign`, `$p(x)`, `$s(a.x)`… |
 
 ## Step 1 — the prototype
 
@@ -144,14 +145,18 @@ list (`lassign [poly::point 1.0 2.0] x y`), a polygon a list of lists, and a
 
 ### What it costs
 
-In the prototype, checking and path access are not free. Here, step 2 is **1.3
-to 1.9 times slower** than step 1 (table below):
+In the prototype, checking is not free. Here, step 2 is **1.2 to 1.6 times
+slower** than step 1 (table below):
 
 - **Binding.** A typed procedure costs about 0.4 µs more per call.
 - **Checking.** A 1,000-point polygon given as a plain list is checked point by
-  point at every call (about 75 µs). A typed variable
+  point at every call (about 80 µs). A typed variable
   (`set {poly::polygone}G …`) is checked only once, when it is filled.
-- **Paths.** Inside the loop, `$p(x)` costs more than `lassign`.
+- **Typed values in the loop.** Each point read carries its type, which costs
+  a little on every iteration. The read itself is fast: `$p(x)` costs 65 ns,
+  against 45 for `lindex` or `lassign` on a plain list, and a longer path such
+  as `$s(a.x)` 110 ns, because it is parsed once and then kept
+  (`chemins.tcl`).
 
 This is the price of safety in Tcl. It weighs little on most procedures, and
 step 3 wins it back where it does weigh.
@@ -216,18 +221,18 @@ an error), it hands the call to the typed procedure with the same signature.
 
 | | step 1: Tcl | step 2: typed Tcl | step 3: gcc | step 3: tcc |
 |---|---:|---:|---:|---:|
-| `point 1.0 2.0` | 0.18 | 0.55 | 0.55 | 0.50 |
-| `aire`, plain list | 183 | 344 | 13 | 28 |
-| `aire`, typed variable | 196 | 288 | **1.36** | 4.3 |
-| `perimetre` | 264 | 360 | **5.6** | 8.4 |
-| `contient` | 149 | 239 | **1.31** | 7.6 |
-| `boite` | 376 | 659 | **10.2** | 10.6 |
-| `deplace` | 223 | 299 | 182 | 200 |
+| `point 1.0 2.0` | 0.26 | 0.68 | 0.70 | 0.70 |
+| `aire`, plain list | 244 | 397 | 14 | 33 |
+| `aire`, typed variable | 245 | 316 | **1.63** | 4.9 |
+| `perimetre` | 329 | 405 | **6.7** | 10.1 |
+| `contient` | 187 | 263 | **1.80** | 9.7 |
+| `boite` | 451 | 530 | **11.7** | 11.9 |
+| `deplace` | 281 | 365 | 217 | 234 |
 
-- **The computations** (`aire`, `perimetre`, `contient`, `boite`) run **35 to 140
+- **The computations** (`aire`, `perimetre`, `contient`, `boite`) run **40 to 150
   times faster than in step 1** when the polygon is already typed. tcc is
   somewhat slower than gcc, but it compiles in a few tens of milliseconds.
-- **A plain list** passed to step 3 is read by the C code, point by point (13 µs
+- **A plain list** passed to step 3 is read by the C code, point by point (14 µs
   for 1,000 points). A typed variable is read on trust, and in place when it is
   in cells: that is the reward of step 2.
 - **`deplace`** gains almost nothing. The time goes into building 1,000 Tcl

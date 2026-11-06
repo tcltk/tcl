@@ -42,3 +42,5 @@ piste-b-expiration.patch
 annot-fallthrough.patch
 procs-typees.patch
 procs-typees-locales.patch
+expr-fonctions-champs.patch
+execute-lecture-typee.patch

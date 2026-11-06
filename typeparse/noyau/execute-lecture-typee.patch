@@ -1,0 +1,30 @@
+--- a/generic/tclExecute.c
++++ b/generic/tclExecute.c
+@@ -3275,6 +3275,14 @@
+ 	    varPtr = varPtr->value.linkPtr;
+ 	}
+ 	if (!TclIsVarDirectWritable(varPtr) || TclIsAnnotated(valuePtr)) {
++	    /* v16v : une valeur typée réglée (référence de type, sans note)
++	     * dans une variable sans contrat : rien à résoudre, la variable
++	     * porte la valeur typée (comme TclPtrSetVarIdx, et comme foreach) */
++	    if (!TclIsVarTricky(varPtr, VAR_TRACED_WRITE|VAR_DEAD_HASH
++		    |VAR_CONSTANT|VAR_CONTRACT) && TclAnnotIsSettled(valuePtr)) {
++		varPtr->flags |= VAR_TYPED;
++		goto doStoreVarDirect;
++	    }
+ 	    storeFlags = TCL_LEAVE_ERR_MSG;
+ 	    part1Ptr = NULL;
+ 	    goto doStoreScalar;
+@@ -5114,6 +5122,12 @@
+ 	 * in the process.
+ 	 */
+ 
++	/* v16v : produit ou liste typée, élément lu dans le contenu */
++	if (TCL_ANNOT_P(valuePtr)
++		&& TclAnnotFastIndex(valuePtr, opnd, &objResultPtr)) {
++	    pcAdjustment = 5;
++	    goto lindexFastPath2;
++	}
+ 	/* special case for AbstractList */
+ 	if (TclObjTypeHasProc(valuePtr, indexProc)) {
+ 	    length = TclObjTypeLength(valuePtr);

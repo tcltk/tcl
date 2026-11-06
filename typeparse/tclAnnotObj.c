@@ -268,6 +268,43 @@ static const Tcl_ObjType annotatedObjType = {
 
 const Tcl_ObjType *const TclAnnotatedObjTypePtr = &annotatedObjType;
 
+/* v16v : les tests de forme, en ligne dans ce fichier (les fonctions
+ * exportées d'une bibliothèque partagée ne s'y insèrent pas). */
+/* les listes en cases (plus bas, « Forme compacte ») */
+static Tcl_FreeInternalRepProc	FreeCompact;
+static Tcl_DupInternalRepProc	DupCompact;
+static Tcl_UpdateStringProc	UpdateStringOfCompact;
+static Tcl_ObjTypeLengthProc	CompactLength;
+static Tcl_ObjTypeIndexProc	CompactIndex;
+static Tcl_ObjTypeReplaceProc	CompactReplace;
+static Tcl_ObjTypeGetElements	CompactGetElements;
+
+static const Tcl_ObjType compactListType = {
+    "compactlist", FreeCompact, DupCompact, UpdateStringOfCompact, NULL,
+    TCL_OBJTYPE_V2(CompactLength, CompactIndex, NULL, NULL,
+	    CompactGetElements, NULL, CompactReplace, NULL)
+};
+
+static Tcl_FreeInternalRepProc	FreeCompactElem;
+static Tcl_DupInternalRepProc	DupCompactElem;
+static Tcl_UpdateStringProc	UpdateStringOfCompactElem;
+static Tcl_ObjTypeLengthProc	CompactElemLength;
+static Tcl_ObjTypeIndexProc	CompactElemIndex;
+static Tcl_ObjTypeGetElements	CompactElemGetElements;
+static Tcl_ObjTypeReplaceProc	CompactElemReplace;
+
+static const Tcl_ObjType compactElemType = {
+    "compactelem", FreeCompactElem, DupCompactElem, UpdateStringOfCompactElem,
+    NULL, TCL_OBJTYPE_V2(CompactElemLength, CompactElemIndex, NULL, NULL,
+	    CompactElemGetElements, NULL, CompactElemReplace, NULL)
+};
+#define TclIsCompact(v) ((v) != NULL && (v)->typePtr == &compactListType)
+#define TclIsCompactElem(v) ((v) != NULL && (v)->typePtr == &compactElemType)
+#define TclIsAnnotated(o) ((o)->typePtr == &annotatedObjType)
+#define TclAnnotIsSettled(o) ((o)->typePtr == &annotatedObjType \
+	&& ((Tcl_Obj *) (o)->internalRep.twoPtrValue.ptr2)->typePtr \
+	== &typeRefObjType)
+
 /* --------------------------------------------------------------------
  * État {T, N} : le T résolu et les NOTES (nominaux en attente)
  * --------------------------------------------------------------------
@@ -851,7 +888,7 @@ NewTypeRefNoCache(TclType *tp, int variant)
 
 /* v16s : un type d'élément scalaire simple (int, double, string, non
  * nominal, sans représentation binaire) : ses éléments restent nus. */
-static int
+static inline int
 PlainScalarElem(const TclType *et)
 {
     /* v16t : pas string : une chaîne nue serait relue comme une liste
@@ -994,6 +1031,29 @@ FastListType(Tcl_Obj *aPtr, Tcl_Obj **vPtr)
 }
 
 /*
+ * Même chose pour un produit (lassign $p x y, lindex $p 0) : A typé par un
+ * produit (référence de type sans note, donc validé), contenu V ordinaire
+ * (ni en cases, ni vue sur une case). Rend le produit et V, ou NULL.
+ */
+static inline TclType *
+FastProductType(Tcl_Obj *aPtr, Tcl_Obj **vPtr)
+{
+    Tcl_Obj *t = (Tcl_Obj *) aPtr->internalRep.twoPtrValue.ptr2;
+    Tcl_Obj *v = (Tcl_Obj *) aPtr->internalRep.twoPtrValue.ptr1;
+    TclType *pt;
+
+    if (t->typePtr != &typeRefObjType) {
+	return NULL;
+    }
+    pt = (TclType *) t->internalRep.twoPtrValue.ptr1;
+    if (pt->kind != TCLT_PRODUCT || TclIsCompact(v) || TclIsCompactElem(v)) {
+	return NULL;
+    }
+    *vPtr = v;
+    return pt;
+}
+
+/*
  * foreach, lmap : la liste à parcourir pour une liste typée A. Si TOUS les
  * éléments de V sont des valeurs typées (les éléments sont typés dans V,
  * une fois pour toutes, s'il n'est pas partagé), la boucle parcourt V comme
@@ -1058,7 +1118,7 @@ AnnotListLength(Tcl_Obj *aPtr)
     Tcl_Obj *v;
     Tcl_Size n;
 
-    if (FastListType(aPtr, &v) != NULL) {
+    if (FastListType(aPtr, &v) != NULL || FastProductType(aPtr, &v) != NULL) {
 	return (Tcl_ListObjLength(NULL, v, &n) == TCL_OK) ? n : 1;
     }
 
@@ -1098,6 +1158,29 @@ AnnotListIndex(Tcl_Interp *interp, Tcl_Obj *aPtr, Tcl_Size index,
 	    && *elemPtr != NULL && TCL_ANNOT_P(*elemPtr)) {
 	return TCL_OK;			/* élément déjà typé dans V */
     }
+    if (lt == NULL && (lt = FastProductType(aPtr, &v)) != NULL
+	    && index >= 0 && index < lt->nfields) {
+	/* le champ INDEX d'un produit : déjà typé dans V, ou un nombre
+	 * simple laissé nu dans V, typé ici (objet neuf, comme ci-dessous) */
+	TclType *ft = lt->fields[index].type;
+	Tcl_Obj *e = NULL;
+
+	if (Tcl_ListObjIndex(NULL, v, index, &e) == TCL_OK && e != NULL) {
+	    if (TCL_ANNOT_P(e)) {
+		*elemPtr = e;
+		return TCL_OK;
+	    }
+	    if (PlainScalarElem(ft)) {
+		/* typé une fois pour toutes dans un V privé, comme le fait la
+		 * lecture $p(x) : le lassign suivant n'alloue plus rien */
+		*elemPtr = MakeAnnotated(e, NewTypeRefNoCache(ft, -1));
+		if (!Tcl_IsShared(v) && TclHasInternalRep(v, &tclListType)) {
+		    Tcl_ListObjReplace(NULL, v, index, 1, 1, elemPtr);
+		}
+		return TCL_OK;
+	    }
+	}
+    }
     if (AnnotListView(interp, aPtr, &v)) {
 	if (TclIsCompact(v)) {
 	    /* une case : un élément neuf, typé (refcount 0, comme lseq) */
@@ -1134,6 +1217,78 @@ AnnotListIndex(Tcl_Interp *interp, Tcl_Obj *aPtr, Tcl_Size index,
     return TCL_OK;
 }
 
+/*
+ * v16v : lindex et lassign compilés (listIndexImm) sur une valeur typée par
+ * un produit ou une liste typée, contenu ordinaire : l'élément est lu dans V
+ * sans passer par les procédures de liste abstraite (longueur puis index).
+ * Rend 1 et l'élément (emprunté à V, ou objet neuf vide hors bornes) ; 0 :
+ * cas général. Les éléments déjà typés dans V, ceux d'une {list} nue, et
+ * les nombres simples d'un produit quand V est privé (typés sur place) ;
+ * les autres passent par AnnotListIndex.
+ */
+int
+TclAnnotFastIndex(
+    Tcl_Obj *aPtr,
+    int encodedIndex,		/* index codé (TclIndexEncode) */
+    Tcl_Obj **elemPtr)
+{
+    Tcl_Obj *t, *v, **ev;
+    TclType *tp, *et;
+    Tcl_Size n, index;
+
+    if (aPtr->typePtr != &annotatedObjType) {
+	return 0;
+    }
+    t = (Tcl_Obj *) aPtr->internalRep.twoPtrValue.ptr2;
+    v = (Tcl_Obj *) aPtr->internalRep.twoPtrValue.ptr1;
+    if (t->typePtr != &typeRefObjType || v->typePtr != &tclListType) {
+	return 0;
+    }
+    tp = (TclType *) t->internalRep.twoPtrValue.ptr1;
+    if (tp->kind != TCLT_PRODUCT && (tp->kind != TCLT_LIST
+	    || tp->elem == NULL)) {
+	return 0;
+    }
+    if (TclListObjGetElements(NULL, v, &n, &ev) != TCL_OK) {
+	return 0;
+    }
+    index = TclIndexDecode(encodedIndex, n - 1);
+    if (index < 0 || index >= n) {
+	TclNewObj(*elemPtr);
+	return 1;
+    }
+    if (ev[index]->typePtr == &annotatedObjType) {
+	*elemPtr = ev[index];
+	return 1;
+    }
+    if (tp->kind == TCLT_PRODUCT) {
+	if (n != tp->nfields) {
+	    return 0;
+	}
+	et = tp->fields[index].type;
+    } else {
+	et = tp->elem;
+	if (TclTypeIsPlainString(et) && strcmp(tp->name, "list") == 0) {
+	    *elemPtr = ev[index];		/* {list} nue : texte ordinaire */
+	    return 1;
+	}
+    }
+    if (tp->kind != TCLT_PRODUCT || !PlainScalarElem(et)
+	    || Tcl_IsShared(v)) {
+	return 0;			/* à envelopper : AnnotListIndex */
+    }
+    /* un nombre simple d'un produit : typé une fois pour toutes dans le V
+     * privé (comme AnnotListIndex), emprunté ensuite */
+    {
+	Tcl_Obj *w = MakeAnnotated(ev[index], NewTypeRefNoCache(et, -1));
+
+	Tcl_ListObjReplace(NULL, v, index, 1, 1, &w);
+	TclListObjGetElements(NULL, v, &n, &ev);
+	*elemPtr = ev[index];
+    }
+    return 1;
+}
+
 static int
 AnnotListGetElements(Tcl_Interp *interp, Tcl_Obj *aPtr, Tcl_Size *objcPtr,
 	Tcl_Obj ***objvPtr)
@@ -1163,6 +1318,13 @@ AnnotListSlice(Tcl_Interp *interp, Tcl_Obj *aPtr, Tcl_Size from, Tcl_Size to,
     Tcl_Obj **elv, *v;
     Tcl_Size n, i;
 
+    /* une tranche vide (le reste de lassign $p x y) : rien à typer */
+    if ((FastListType(aPtr, &v) != NULL || FastProductType(aPtr, &v) != NULL)
+	    && Tcl_ListObjLength(NULL, v, &n) == TCL_OK
+	    && (from > to || from >= n || to < 0)) {
+	*newPtr = Tcl_NewObj();
+	return TCL_OK;
+    }
     /* v16s : lrange $L end-1 end ne type que la tranche (pas toute la
      * liste) quand le contenu est privé */
     if (FastListType(aPtr, &v) != NULL && !TclIsCompact(v)
@@ -1672,7 +1834,7 @@ TclNewRawAnnotation(Tcl_Obj *typeText, Tcl_Obj *content)
 }
 
 int
-TclIsAnnotated(Tcl_Obj *objPtr)
+(TclIsAnnotated)(Tcl_Obj *objPtr)
 {
     return Tcl_FetchInternalRep(objPtr, &annotatedObjType) != NULL;
 }
@@ -1680,7 +1842,7 @@ TclIsAnnotated(Tcl_Obj *objPtr)
 /* Valeur typée par une référence de type, sans note : TclAnnotSettle n'a
  * rien à faire. */
 int
-TclAnnotIsSettled(Tcl_Obj *objPtr)
+(TclAnnotIsSettled)(Tcl_Obj *objPtr)
 {
     return objPtr->typePtr == &annotatedObjType && ((Tcl_Obj *)
 	    objPtr->internalRep.twoPtrValue.ptr2)->typePtr == &typeRefObjType;
@@ -3850,19 +4012,7 @@ typedef struct TclCompactBuf {
 
 static int compactOn = 0;
 
-static Tcl_FreeInternalRepProc	FreeCompact;
-static Tcl_DupInternalRepProc	DupCompact;
-static Tcl_UpdateStringProc	UpdateStringOfCompact;
-static Tcl_ObjTypeLengthProc	CompactLength;
-static Tcl_ObjTypeIndexProc	CompactIndex;
-static Tcl_ObjTypeReplaceProc	CompactReplace;
-static Tcl_ObjTypeGetElements	CompactGetElements;
-
-static const Tcl_ObjType compactListType = {
-    "compactlist", FreeCompact, DupCompact, UpdateStringOfCompact, NULL,
-    TCL_OBJTYPE_V2(CompactLength, CompactIndex, NULL, NULL,
-	    CompactGetElements, NULL, CompactReplace, NULL)
-};
+/* compactListType : en tête du fichier (v16v) */
 
 /* ptr2 : ce qu'on fabrique à la demande et garde tant que V ne change
  * pas, pour que V reste compact : la liste ordinaire des éléments (à la
@@ -3921,19 +4071,7 @@ typedef struct CompactElem {
     Tcl_Obj *cache;		/* liste ordinaire, à la demande */
 } CompactElem;
 
-static Tcl_FreeInternalRepProc	FreeCompactElem;
-static Tcl_DupInternalRepProc	DupCompactElem;
-static Tcl_UpdateStringProc	UpdateStringOfCompactElem;
-static Tcl_ObjTypeLengthProc	CompactElemLength;
-static Tcl_ObjTypeIndexProc	CompactElemIndex;
-static Tcl_ObjTypeGetElements	CompactElemGetElements;
-static Tcl_ObjTypeReplaceProc	CompactElemReplace;
-
-static const Tcl_ObjType compactElemType = {
-    "compactelem", FreeCompactElem, DupCompactElem, UpdateStringOfCompactElem,
-    NULL, TCL_OBJTYPE_V2(CompactElemLength, CompactElemIndex, NULL, NULL,
-	    CompactElemGetElements, NULL, CompactElemReplace, NULL)
-};
+/* compactElemType : en tête du fichier (v16v) */
 
 #define COMPACT_ELEM(o) ((CompactElem *) (o)->internalRep.twoPtrValue.ptr1)
 static Tcl_Obj *NewCompactElemObj(TclCompactBuf *b, size_t cell, int node);
@@ -4824,13 +4962,13 @@ CompactElemReplace(Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_Size first,
 /* --- interface --- */
 
 int
-TclIsCompact(Tcl_Obj *v)
+(TclIsCompact)(Tcl_Obj *v)
 {
     return v != NULL && v->typePtr == &compactListType;
 }
 
 int
-TclIsCompactElem(Tcl_Obj *v)
+(TclIsCompactElem)(Tcl_Obj *v)
 {
     return v != NULL && v->typePtr == &compactElemType;
 }

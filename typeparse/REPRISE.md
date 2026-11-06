@@ -1,10 +1,11 @@
 # REPRISE — état du prototype TIP 764 (valeurs annotées, variables typées)
 
-*Fiche de reprise, 5 novembre 2026, version **v16u**. À joindre (avec `typeparse.zip`) au
+*Fiche de reprise, 6 novembre 2026, version **v16v**. À joindre (avec `typeparse.zip`) au
 premier message d'une conversation qui reprend le travail.*
 
 ## 1. Où en est-on
 
+* **v16v** (6 novembre) : chemins compilés gardés (dans l'objet index, ou une table par thread), cache (type, indice) pour `$p(x)`, pas d'enveloppe aux étapes intermédiaires ; `lindex`/`lassign` lus directement dans le contenu d'une valeur typée (`TclAnnotFastIndex`), rangement direct d'une valeur typée réglée dans une variable sans contrat ; fonctions mathématiques sur `$p(x)` en `loadFieldNum`. `$s(a.x)` 869 → 111 ns, `lassign $p x y` 389 → 66 ns ; étape 2 du tutoriel 1,2–1,6 fois l'étape 1. Patchs `expr-fonctions-champs.patch`, `execute-lecture-typee.patch` ; test t101 ; `exemples/tutoriel/chemins.tcl`. Sans changement de sens.
 * **cproc en trois étapes** (6 novembre) : `exemples/cproc/cproc1_tcl.tcl` (Tcl), `cproc2_type.tcl` (générateur typé : sommes `kind`, `defval`, produits `field`, `cblock`, `cdef`, `cconfig` sous contrat ; même C produit), `cproc.tcl` (liaison des appels en C : positionnels, défauts constants, valeurs nues ou du bon type, résultat typé par (V, T) ; repli sur la procédure typée cachée `_cprocN_nom` avec les mêmes mots, donc les mêmes messages). `distance` 0,98 → 0,28 µs. Trois points du modèle relevés : une somme ne se caste pas en `string` (`{}$v`) ; `return {v:}[list …]` perd une somme stricte imbriquée ; `switch -regexp -matchvar` fait expirer l'étiquette de `return {v:}…`.
 * **Tutoriel** (6 novembre) : `doc/TUTORIEL.fr.md` et `exemples/tutoriel` — des polygones en trois étapes (Tcl, Tcl typé, Tcl + C par `cproc`), mêmes appels et mêmes résultats (`essais.tcl 1|2|3`), mesures (`vitesse.tcl`). `cproc` corrigé : nom relatif (`cproc poly::aire` depuis l'espace global), fonction C du nom d'une struct (renommée `cproc_boite`), plus de boucle infinie après un échec de compilation.
 * **Exemple `zip`** (6 novembre, sur v16u) : `exemples/zip/zipmem.tcl` — le format zip en types binaires (`::zipmem::eocd`, `entry`, `local`, zip64), `zipmem::open/names/read/text`, `zipmem::source`, `zipmem::install` (puis `source app.zip` exécute `main.tcl`, les `source` relatifs lisent l'archive en mémoire) ; tcllib en zip (5 455 membres) : ouverture 14 ms, membre 0,16 ms (zipfs : 26 ms, 0,21 ms). Correction de `filebinary.tcl` : `at(N).list(...)` en tête.
@@ -79,6 +80,7 @@ premier message d'une conversation qui reprend le travail.*
 | v16s | optimisations : liaison des arguments, listes de scalaires nues dans les parcours, `lrange` en tranche, écritures sous contrat (patch `procs-typees-locales.patch`) |
 | v16t | produits ouverts dans la vue liste, chaînes atomiques (fin de la règle B) ; cartographie EIAS |
 | v16u | espaces de noms des types ; descripteurs comptés (une valeur survit à son interpréteur) |
+| v16v | chemins compilés gardés, lecture typée rapide (`lindex`, `lassign`, rangement) ; patchs `expr-fonctions-champs.patch`, `execute-lecture-typee.patch` |
 
 ## 2. Installation et tests (chez l'utilisateur, MinGW64)
 

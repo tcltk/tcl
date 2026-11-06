@@ -2309,6 +2309,53 @@ Sources de types : `tclTypes.c`, `tclTypes.h`, `tclTypesInt.h`, `tclAnnotObj.c`,
   propre (sauf `executable_pe`, comme avant), y compris des valeurs (simples, en cases, sommes,
   défauts typés) qui survivent à `interp delete`.
 
+### v16v — chemins compilés, lecture typée rapide (6 novembre 2026)
+
+Aucun changement de sens : mêmes résultats, mêmes types, mêmes messages. Deux patchs noyau
+(après `procs-typees-locales.patch`) : `expr-fonctions-champs.patch` (`tclCompExpr.c`) et
+`execute-lecture-typee.patch` (`tclExecute.c`). Sources de types : `tclTypePath.c`,
+`tclAnnotObj.c`, `tclTypes.h`.
+
+- **Le chemin compilé est gardé.** Un index composé (`a.x`, `a,b`, `0:1`, `b.(x,y)`)
+  passait à chaque lecture par l'analyseur à opérateurs (`ParseIndex`, de la famille de celui
+  d'`expr`), puis le résultat était jeté. Il est maintenant gardé dans l'objet index : un
+  littéral du bytecode prend le type `typepath` ; un index aux portées substituées le garde à
+  côté de ses portées ; un index fabriqué à chaque fois (`$s($k.x)`) le retrouve dans une
+  table par thread, par son texte. Un compteur de références protège le chemin pendant la
+  lecture.
+- **Le champ est retrouvé sans comparer de noms.** Pour `$p(x)`, l'objet index garde la
+  dernière paire (type, indice du champ), revérifiée par le pointeur du type et le nom.
+- **Pas d'enveloppe aux étapes intermédiaires.** `$s(a.x)` descend dans les contenus à travers
+  les produits et les listes simples ; seul le résultat reçoit son type.
+- **`lindex`, `lassign` sur une valeur typée.** `listIndexImm` lit l'élément directement dans
+  le contenu d'un produit ou d'une liste typée (`TclAnnotFastIndex`), sans passer par la
+  longueur puis l'index de la liste abstraite. Un nombre simple d'un produit est typé une fois
+  dans le contenu privé.
+- **Ranger une valeur typée dans une variable sans contrat** se fait directement
+  (`storeScalar`), comme le faisait déjà `foreach` : rien à résoudre pour une valeur réglée
+  (référence de type, sans note).
+- **Les fonctions mathématiques** (`max($p(x), $p(y))`, `hypot(...)`) lisent `$p(x)` comme
+  nombre (`loadFieldNum`), comme les opérateurs.
+
+Mesures (`exemples/tutoriel/chemins.tcl`, ns par accès, avant → après) :
+
+| accès | v16u | v16v |
+|---|---:|---:|
+| `lindex $l 0 0`, liste ordinaire (référence) | 42 | 43 |
+| `$p(x)` | 78 | 65 |
+| `lassign $p x y`, point typé | 389 | 66 |
+| `$s(a.x)` | 869 | 111 |
+| `$g(0.x)` | 1010 | 107 |
+| `$s(a,b)` | 1185 | 503 |
+| `$s(b.(x,y))` | 1716 | 580 |
+| `$g(0:1)` | 1234 | 747 |
+
+Les chemins qui fabriquent une valeur (`a,b`, une tranche) restent plus chers : ils
+construisent une liste neuve et la typent. Dans le tutoriel, l'étape 2 passe de 1,3–1,9 à
+1,2–1,6 fois le temps de l'étape 1 (`boite` : 1,74 → 1,18). Nouveau test
+`tests_tclsh/t101_chemins_caches.tcl` : le même index lu sur des types différents, après une
+erreur, substitué, écrit, réutilisé ailleurs.
+
 ### Exemple `zip` (6 novembre 2026, sur v16u)
 
 `exemples/zip/zipmem.tcl` : une archive zip décrite par des types binaires, lue en mémoire,
