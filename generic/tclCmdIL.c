@@ -93,8 +93,40 @@ enum SortModes {
     SORTMODE_REAL = 2,
     SORTMODE_COMMAND = 3,
     SORTMODE_DICTIONARY = 4,
-    SORTMODE_ASCII_NC = 8
+    SORTMODE_ASCII_NC = 8,
+    SORTMODE_ASCII_BYTES = 16	/* Like SORTMODE_ASCII, but every element seen
+				 * so far is pure ASCII, so strcmp() orders
+				 * them correctly. Internal use only. */
 };
+
+/*
+ * Return nonzero if any of the len bytes at s has its high bit set, i.e. is
+ * not ASCII.
+ */
+
+static inline int
+HasHighByte(
+    const char *s,
+    Tcl_Size len)
+{
+    const char *end = s + len;
+
+    while (end - s >= 8) {
+	uint64_t w;
+
+	memcpy(&w, s, sizeof(w));
+	if (w & 0x8080808080808080ULL) {
+	    return 1;
+	}
+	s += 8;
+    }
+    while (s < end) {
+	if (*s++ & 0x80) {
+	    return 1;
+	}
+    }
+    return 0;
+}
 
 /*
  * Definitions for [lseq] command
@@ -4360,6 +4392,7 @@ Tcl_LsortObjCmd(
 {
     int indices, nocase = 0;
     int sortMode = SORTMODE_ASCII;
+    int useBytes = 0;
     int group, allocatedIndexVector = 0;
     Tcl_Size j, idx, groupOffset, length, indexc;
     Tcl_WideInt wide, groupSize;
@@ -4710,6 +4743,19 @@ Tcl_LsortObjCmd(
 	goto done;
     }
 
+    /*
+     * For a plain string sort start out comparing bytes with strcmp(), as
+     * long as every element seen so far is pure ASCII (for which byte order
+     * is character order).  The first element with a non-ASCII byte switches
+     * to TclUtfCmp before it is merged, and that stays for the rest of the
+     * sort.
+     */
+
+    useBytes = (sortInfo.sortMode == SORTMODE_ASCII && !indexc);
+    if (useBytes) {
+	sortInfo.sortMode = SORTMODE_ASCII_BYTES;
+    }
+
     for (i=0; i < length; i++) {
 	idx = groupSize * i + groupOffset;
 	if (indexc) {
@@ -4730,6 +4776,10 @@ Tcl_LsortObjCmd(
 
 	if (sortMode == SORTMODE_ASCII) {
 	    elementArray[i].collationKey.strValuePtr = TclGetString(indexPtr);
+	    if (useBytes && HasHighByte(indexPtr->bytes, indexPtr->length)) {
+		useBytes = 0;
+		sortInfo.sortMode = SORTMODE_ASCII;
+	    }
 	} else if (sortMode == SORTMODE_INTEGER) {
 	    Tcl_WideInt a;
 
@@ -5091,7 +5141,10 @@ SortCompare(
 {
     int order = 0;
 
-    if (infoPtr->sortMode == SORTMODE_ASCII) {
+    if (infoPtr->sortMode == SORTMODE_ASCII_BYTES) {
+	order = strcmp(elemPtr1->collationKey.strValuePtr,
+		elemPtr2->collationKey.strValuePtr);
+    } else if (infoPtr->sortMode == SORTMODE_ASCII) {
 	order = TclUtfCmp(elemPtr1->collationKey.strValuePtr,
 		elemPtr2->collationKey.strValuePtr);
     } else if (infoPtr->sortMode == SORTMODE_ASCII_NC) {
