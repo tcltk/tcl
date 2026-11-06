@@ -2037,8 +2037,15 @@ ConvertLocalToUTCUsingTable(
 	if ((row == NULL)
 		|| TclListObjGetElements(interp, row, &cellc,
 		    &cellv) != TCL_OK
-		|| TclGetIntFromObj(interp, cellv[1],
-		    &fields->tzOffset) != TCL_OK) {
+		|| ((cellc > 1) && (TclGetIntFromObj(interp, cellv[1],
+		    &fields->tzOffset) != TCL_OK))) {
+	    return TCL_ERROR;
+	}
+	if (cellc < 4) {
+	malformed:
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "malformed time zone data", TCL_AUTO_LENGTH));
+	    Tcl_SetErrorCode(interp, "CLOCK", "malformedTimeZoneData", (char *)NULL);
 	    return TCL_ERROR;
 	}
 	for (i = 0; i < nHave; ++i) {
@@ -2047,7 +2054,7 @@ ConvertLocalToUTCUsingTable(
 	    }
 	}
 	if (nHave == 8) {
-	    Tcl_Panic("loop in ConvertLocalToUTCUsingTable");
+	    goto malformed;
 	}
 	have[nHave].tzName = cellv[3];
 	have[nHave++].tzOffset = fields->tzOffset;
@@ -2305,7 +2312,13 @@ ConvertUTCToLocalUsingTable(
     row = TclClockLookupLastTransition(interp, fields->seconds, rowc, rowv, rangesVal);
     if (row == NULL
 	    || TclListObjGetElements(interp, row, &cellc, &cellv) != TCL_OK
-	    || TclGetIntFromObj(interp, cellv[1], &fields->tzOffset) != TCL_OK) {
+	    || ((cellc > 1) && (TclGetIntFromObj(interp, cellv[1], &fields->tzOffset) != TCL_OK))) {
+	return TCL_ERROR;
+    }
+    if (cellc < 4) {
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"malformed time zone data", TCL_AUTO_LENGTH));
+	Tcl_SetErrorCode(interp, "CLOCK", "malformedTimeZoneData", (char *)NULL);
 	return TCL_ERROR;
     }
 
@@ -2441,7 +2454,14 @@ TclClockLookupLastTransition(
      */
 
     if (Tcl_ListObjIndex(interp, rowv[0], 0, &compObj) != TCL_OK
-	    || TclGetWideIntFromObj(interp, compObj, &compVal) != TCL_OK) {
+	    || (compObj && (TclGetWideIntFromObj(interp, compObj, &compVal) != TCL_OK))) {
+	return NULL;
+    }
+    if (!compObj) {
+    malformed:
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"malformed time zone data", TCL_AUTO_LENGTH));
+	Tcl_SetErrorCode(interp, "CLOCK", "malformedTimeZoneData", (char *)NULL);
 	return NULL;
     }
 
@@ -2468,8 +2488,11 @@ TclClockLookupLastTransition(
 	Tcl_Size m = (l + u + 1) / 2;
 
 	if (Tcl_ListObjIndex(interp, rowv[m], 0, &compObj) != TCL_OK ||
-		TclGetWideIntFromObj(interp, compObj, &compVal) != TCL_OK) {
+		(compObj && (TclGetWideIntFromObj(interp, compObj, &compVal) != TCL_OK))) {
 	    return NULL;
+	}
+	if (!compObj) {
+	    goto malformed;
 	}
 	if (tick >= compVal) {
 	    l = m;

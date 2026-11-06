@@ -72,7 +72,8 @@ to the userbase.
  - [Memory corruption false positive with TCL_MEM_DEBUG](https://core.tcl-lang.org/tcl/tktview/7e3f26)
  - [Windows: [file delete -force] failed on a directory containing a symbolic link](https://core.tcl-lang.org/tcl/tktview/08203e)
  - [lpop/lset/join crashes with abstract lists](https://core.tcl-lang.org/tcl/tktview/409a4e)
-
+ - [Heap out-of-bounds read and NULL dereference in 'clock'](https://core.tcl-lang.org/tcl/tktview/813699)
+ - [Stack and heap buffer overflow in 'clock format %z'](https://core.tcl-lang.org/tcl/tktview/e713c3)
 
 # Updated bundled packages, libraries, standards, data
  - http 2.10.3
