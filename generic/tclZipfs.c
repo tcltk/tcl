@@ -6590,29 +6590,18 @@ TclZipfsInitEncodingDirs(void)
     if (zipfs_literal_tcl_library == NULL) {
 	return TCL_ERROR;
     }
-    Tcl_Obj *subDirObj, *searchPathObj;
     Tcl_Obj *libDirObj = Tcl_NewStringObj(zipfs_literal_tcl_library, -1);
     Tcl_IncrRefCount(libDirObj);
-    TclNewLiteralStringObj(subDirObj, "encoding");
-    Tcl_IncrRefCount(subDirObj);
-    searchPathObj = Tcl_GetEncodingSearchPath();
-    if (searchPathObj == NULL) {
-	TclNewObj(searchPathObj);
-    } else {
-	searchPathObj = Tcl_DuplicateObj(searchPathObj);
-    }
-    Tcl_Obj *fullPathObj = Tcl_FSJoinToPath(libDirObj, 1, &subDirObj);
-    Tcl_IncrRefCount(fullPathObj);
-    Tcl_IncrRefCount(searchPathObj);
-    TclListObjInsertIfAbsent(NULL, searchPathObj, fullPathObj, 0);
-    Tcl_DecrRefCount(fullPathObj);
-    Tcl_DecrRefCount(subDirObj);
+    int result;
+    result = TclAddEncodingSubdir(libDirObj);
     Tcl_DecrRefCount(libDirObj);
-    Tcl_SetEncodingSearchPath(searchPathObj);
-    Tcl_DecrRefCount(searchPathObj);
+
     /* Reinit system encoding after setting search path */
-    TclpSetInitialEncodings();
-    return TCL_OK;
+    if (result == TCL_OK) {
+        TclpSetInitialEncodings();
+    }
+
+    return result;
 }
 
 /*
