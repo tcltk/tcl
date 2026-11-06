@@ -1,0 +1,18 @@
+point                    1.5 2.0
+aire carré               16.0
+aire triangle            9.0
+périmètre                16.0
+périmètre -ouvert        12.0
+contient (2,2)           1
+contient (5,1)           0
+déplace                  {1.0 0.5} {7.0 0.5} {1.0 3.5}
+déplace, dy défaut       {1.0 0.0} {7.0 0.0} {1.0 3.0}
+boîte                    0.0 0.0 6.0 3.0
+aire après déplace       16.0
+aire, 1000 sommets       3.141572
+périm., 1000 sommets     6.283175
+--- erreurs (différentes selon l'étape)
+point non numérique      ERREUR: cannot use non-numeric string "x" as right operand of "*"
+point à 3 valeurs        0.5
+option inconnue          ERREUR: bad option "-ferme": must be -ouvert or --
+argument manquant        ERREUR: wrong # args: should be "poly::deplace pg dx ?dy?"

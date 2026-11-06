@@ -153,12 +153,19 @@ proc ::cproc::Define {ns frame args} {
     foreach p $params {
 	append wbody " \$[dict get $p local]"
     }
-    uplevel #0 [list namespace eval $pns [list proc [lindex $args 0] $sig $wbody]]
+    # créée depuis l'espace de l'appelant, comme proc : le nom s'y résout ;
+    # les types de la signature, dans l'espace de la procédure
+    uplevel #0 [list namespace eval $ns [list proc [lindex $args 0] $sig $wbody]]
     # en attendant la compilation : la commande C compile ce qui attend
+    # (si la compilation n'a pas remplacé cette procédure par la commande C,
+    # une erreur, et non un nouvel appel d'elle-même)
     proc $cmd {args} [format {
 	::cproc::build
+	if {[info procs %s] ne ""} {
+	    return -code error "cproc: %s was not compiled"
+	}
 	tailcall %s {*}$args
-    } $cmd]
+    } $cmd $name $cmd]
     # où est le corps (pour #line : les erreurs du compilateur y renvoient)
     set file ""; set line 0
     if {[dict exists $frame file] && [dict exists $frame line]} {
@@ -361,6 +368,15 @@ proc ::cproc::Gen {procs} {
 	    }
 	}
     }
+    # une fonction ne peut pas porter le nom d'une struct (proc
+    # {boite}poly::boite) : elle devient cproc_boite
+    set snames [lmap b [dict values $blocks] {dict get $b name}]
+    set procs [lmap p $procs {
+	if {[dict get $p cname] in $snames} {
+	    dict set p cname cproc_[dict get $p cname]
+	}
+	set p
+    }]
     set c {}
     append c "/* Produit par cproc : ne pas modifier. */\n"
     append c "#include <tcl.h>\n#include <stdint.h>\n#include <stddef.h>\n"
@@ -666,7 +682,6 @@ proc ::cproc::build {} {
     variable lastSource
     if {[llength $pending] == 0} return
     set procs $pending
-    set pending {}
     set c [Gen $procs]
     # l'initialisation : les commandes ::cproc::c::f<id>
     set cc [dict get $cfg -cc]
@@ -705,11 +720,14 @@ proc ::cproc::build {} {
 	if {[dict get $cfg -verbose]} {puts stderr "cproc: $cmd"}
 	if {[catch {exec {*}$cmd 2>@1} out]} {
 	    file delete -force $lib
+	    # les procédures restent en attente : l'appel suivant redonne
+	    # l'erreur du compilateur
 	    return -code error "cproc: the C compiler failed:\n$out"
 	}
 	if {[dict get $cfg -verbose] && $out ne ""} {puts stderr $out}
     }
     load $lib $prefix
+    set pending [lrange $pending [llength $procs] end]
     return
 }
 
