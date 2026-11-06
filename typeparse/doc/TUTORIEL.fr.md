@@ -141,7 +141,7 @@ une `boite` la liste de ses quatre champs.
 ### Ce que ça coûte
 
 Dans le prototype, la vérification et l'accès par chemin ne sont pas gratuits.
-Ici, l'étape 2 est **1,4 à 1,8 fois plus lente** que l'étape 1 (tableau
+Ici, l'étape 2 est **1,3 à 1,9 fois plus lente** que l'étape 1 (tableau
 ci-dessous) :
 
 - **La liaison.** Une procédure typée coûte environ 0,4 µs de plus par appel.
@@ -205,8 +205,10 @@ bibliothèque produite est gardée en cache et ne se recompile que si le C
 change. Une erreur du compilateur renvoie au fichier `.tcl` et à la ligne du
 corps.
 
-Les **messages d'erreur sont ceux de l'étape 2**, puisque la liaison reste en
-Tcl : `essais.tcl 3` donne exactement la sortie de `essais.tcl 2`, avec gcc
+Les **messages d'erreur sont ceux de l'étape 2**. La commande C lie seule les
+appels simples ; pour tout le reste (une étiquette, une option, une valeur d'un
+autre type, une erreur), elle passe la main à la procédure typée de même
+signature. `essais.tcl 3` donne exactement la sortie de `essais.tcl 2`, avec gcc
 comme avec tcc.
 
 ## Les trois étapes côte à côte
@@ -216,21 +218,20 @@ x86-64) :
 
 | | étape 1 : Tcl | étape 2 : Tcl typé | étape 3 : gcc | étape 3 : tcc |
 |---|---:|---:|---:|---:|
-| `point 1.0 2.0` | 0,21 | 0,60 | 0,59 | 0,59 |
-| `aire`, liste ordinaire | 197 | 356 | 50 | 54 |
-| `aire`, variable typée | 198 | 281 | **1,85** | 4,7 |
-| `perimetre` | 265 | 363 | **6,2** | 9,1 |
-| `contient` | 149 | 241 | **2,2** | 8,9 |
-| `boite` | 377 | 679 | **10,3** | 11,0 |
-| `deplace` | 221 | 295 | 203 | 216 |
+| `point 1.0 2.0` | 0,18 | 0,55 | 0,55 | 0,50 |
+| `aire`, liste ordinaire | 183 | 344 | 13 | 28 |
+| `aire`, variable typée | 196 | 288 | **1,36** | 4,3 |
+| `perimetre` | 264 | 360 | **5,6** | 8,4 |
+| `contient` | 149 | 239 | **1,31** | 7,6 |
+| `boite` | 376 | 659 | **10,2** | 10,6 |
+| `deplace` | 223 | 299 | 182 | 200 |
 
-- **Les calculs** (`aire`, `perimetre`, `contient`, `boite`) vont **35 à 100 fois
-  plus vite qu'à l'étape 1**, à condition que le polygone soit déjà typé. tcc
-  est un peu plus lent que gcc, mais il compile en quelques dizaines de
-  millisecondes.
-- **Une liste ordinaire** passée à l'étape 3 est d'abord vérifiée, puis mise en
-  cases (50 µs). Le gain apparaît quand le programme garde ses polygones dans
-  des variables typées : c'est la récompense de l'étape 2.
+- **Les calculs** (`aire`, `perimetre`, `contient`, `boite`) vont **35 à 140 fois
+  plus vite qu'à l'étape 1**, quand le polygone est déjà typé. tcc est un peu
+  plus lent que gcc, mais il compile en quelques dizaines de millisecondes.
+- **Une liste ordinaire** passée à l'étape 3 est lue par le C, point par point
+  (13 µs pour 1 000 points). Une variable typée l'est en confiance, et en place
+  quand elle est en cases : c'est la récompense de l'étape 2.
 - **`deplace`** ne gagne presque rien : le temps passe à fabriquer 1 000 points
   Tcl pour le résultat (120 µs), puis à les vérifier au retour (50 µs). Rendre
   directement des cases depuis le C est la prochaine amélioration de `cproc`.

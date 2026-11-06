@@ -126,8 +126,9 @@ signature typée, et seul leur corps passe en C, soit 104 lignes de C au lieu de
 919 de `geom.c`. La colle (conversion des arguments, structs, initialisation) est
 générée et compilée par gcc ou tcc. Les 210 tests de tcllib passent avec les deux
 compilateurs (`tclsh run_tests.tcl -cproc TCLLIB`, `CPROC_CC=tcc`). Les vitesses
-(`bench_cproc.tcl`) sont dans `../cproc/LISEZMOI.md` : au niveau de `geom.c` pour
-les fonctions lourdes, avec 0,6 µs de plus par appel pour la liaison typée.
+(`bench_cproc.tcl`) sont dans `../cproc/LISEZMOI.md` : au niveau de `geom.c`, les
+types vérifiés en plus (`distance` 0,28 µs, contre 0,33 pour `geom.c`), grâce à la
+liaison directe en C de `cproc`.
 
 ## Vitesse
 

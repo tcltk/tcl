@@ -144,8 +144,8 @@ list (`lassign [poly::point 1.0 2.0] x y`), a polygon a list of lists, and a
 
 ### What it costs
 
-In the prototype, checking and path access are not free. Here, step 2 is **1.4
-to 1.8 times slower** than step 1 (table below):
+In the prototype, checking and path access are not free. Here, step 2 is **1.3
+to 1.9 times slower** than step 1 (table below):
 
 - **Binding.** A typed procedure costs about 0.4 µs more per call.
 - **Checking.** A 1,000-point polygon given as a plain list is checked point by
@@ -205,7 +205,9 @@ difference between the types of steps 2 and 3.
 produced is cached and recompiled only when the C changes. A compiler error
 points to the `.tcl` file and to the line in the body.
 
-The **error messages are those of step 2**, since binding stays in Tcl:
+The **error messages are those of step 2**. The C command binds simple calls
+by itself; for everything else (a label, an option, a value of another type,
+an error), it hands the call to the typed procedure with the same signature.
 `essais.tcl 3` gives exactly the output of `essais.tcl 2`, with gcc as with tcc.
 
 ## The three steps side by side
@@ -214,20 +216,20 @@ The **error messages are those of step 2**, since binding stays in Tcl:
 
 | | step 1: Tcl | step 2: typed Tcl | step 3: gcc | step 3: tcc |
 |---|---:|---:|---:|---:|
-| `point 1.0 2.0` | 0.21 | 0.60 | 0.59 | 0.59 |
-| `aire`, plain list | 197 | 356 | 50 | 54 |
-| `aire`, typed variable | 198 | 281 | **1.85** | 4.7 |
-| `perimetre` | 265 | 363 | **6.2** | 9.1 |
-| `contient` | 149 | 241 | **2.2** | 8.9 |
-| `boite` | 377 | 679 | **10.3** | 11.0 |
-| `deplace` | 221 | 295 | 203 | 216 |
+| `point 1.0 2.0` | 0.18 | 0.55 | 0.55 | 0.50 |
+| `aire`, plain list | 183 | 344 | 13 | 28 |
+| `aire`, typed variable | 196 | 288 | **1.36** | 4.3 |
+| `perimetre` | 264 | 360 | **5.6** | 8.4 |
+| `contient` | 149 | 239 | **1.31** | 7.6 |
+| `boite` | 376 | 659 | **10.2** | 10.6 |
+| `deplace` | 223 | 299 | 182 | 200 |
 
-- **The computations** (`aire`, `perimetre`, `contient`, `boite`) run **35 to 100
-  times faster than in step 1**, provided the polygon is already typed. tcc is
+- **The computations** (`aire`, `perimetre`, `contient`, `boite`) run **35 to 140
+  times faster than in step 1** when the polygon is already typed. tcc is
   somewhat slower than gcc, but it compiles in a few tens of milliseconds.
-- **A plain list** passed to step 3 is first checked, then put in cells (50 µs).
-  The gain appears when the program keeps its polygons in typed variables: that
-  is the reward of step 2.
+- **A plain list** passed to step 3 is read by the C code, point by point (13 µs
+  for 1,000 points). A typed variable is read on trust, and in place when it is
+  in cells: that is the reward of step 2.
 - **`deplace`** gains almost nothing. The time goes into building 1,000 Tcl
   points for the result (120 µs), then checking them on return (50 µs).
   Returning cells directly from C is the next improvement for `cproc`.

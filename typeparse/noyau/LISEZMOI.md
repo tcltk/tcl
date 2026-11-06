@@ -2319,3 +2319,24 @@ decode`, à reprendre : la voie C ne prend qu'un produit en tête (une liste seu
 couche Tcl, 75 fois plus lente) ; décoder à `-offset` dans une grande chaîne coûte sa copie
 (11 ms sur 16 Mo, 5 µs dans une tranche) ; un lien non suivi (`-linkdepth 0`) passe par la
 couche Tcl ; dans cette couche, un produit anonyme (`prod<...>`) ne se range pas.
+
+### cproc en trois étapes (6 novembre 2026, sur v16u)
+
+`exemples/cproc` : `cproc1_tcl.tcl`, `cproc2_type.tcl`, `cproc.tcl` (voir son `LISEZMOI.md`).
+Trois points du modèle relevés en typant `cproc`, à reprendre dans le noyau :
+
+- **Somme vers `string`.** Une valeur d'une somme (même une variante littérale) ne se caste
+  pas en `string` (`unknown way to cast the value from ::cproc::kind to string`) ; `{}$v` donne
+  son texte. À décider : `string` accepte-t-il toute valeur (son texte) ?
+- **`return {v:}[list …]`.** Quand la charge de la variante contient une somme stricte
+  (`return {span:}[list $el $en]`, `el` de type `celem.num`), la variante de `$el` est perdue :
+  le cast de la charge depuis une liste relit l'élément par son texte. `set {cspan}s $el $en`
+  la garde.
+- **`switch -regexp -matchvar`.** Son corps n'est pas compilé ; l'étiquette d'un `return
+  {v:}…` y expire avant le contrôle du retour (`value "double double" names no variant of the
+  strict sum`). Sans `-matchvar` (corps compilé), correct.
+
+La liaison directe de `cproc` lit la représentation d'une valeur annotée (`ptr1` = V, `ptr2` =
+T, la chaîne de T est le nom du type) et en fabrique (`Tcl_StoreInternalRep` avec le type
+"annotated") : c'est le travail des futures fonctions de stub `Tcl_AnnotatedGetType` /
+`Tcl_AnnotatedCreate`, qui devraient le faire sans passer par l'interpréteur.

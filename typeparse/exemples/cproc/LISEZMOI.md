@@ -26,6 +26,13 @@ est fait par Tcl, comme pour `proc`.
   résultat ;
 - l'initialisation de la bibliothèque, sans bibliothèque de stubs à lier.
 
+**L'appel** est lié en C quand il est simple : arguments positionnels, défauts
+constants, valeurs nues valides ou déjà du bon type. Le résultat est rendu
+typé. Pour tout le reste, la commande C passe la main à la procédure typée de
+même signature, avec les mêmes mots, qui lie, vérifie et donne les messages
+exactement comme `proc`. Cela couvre les étiquettes, les options données, une
+valeur d'un autre type et toute erreur (voir « cproc en trois étapes »).
+
 Le C est compilé par **gcc** (MinGW-w64 sous Windows, clang convient aussi) ou
 par **tcc** (`cproc::config -cc tcc`). Il est compilé au premier appel d'une des
 procédures définies depuis la dernière compilation, ou par `cproc::build`. Le
@@ -81,6 +88,7 @@ cproc::config -cflags {-O2 -ffp-contract=off}   ;# le défaut pour gcc
 cproc::config -includes {...}    ;# si tcl.h n'est pas trouvé
 cproc::config -cachedir DIR      ;# défaut : CPROC_CACHE, %LOCALAPPDATA%\cproc ou ~/.cache/cproc
 cproc::config -verbose 1         ;# affiche la commande de compilation
+cproc::config                    ;# la configuration (un dict)
 cproc::source                    ;# le C de la dernière compilation
 ```
 
@@ -115,28 +123,33 @@ dont les commandes remplacent les procédures et ne vérifient donc pas les type
 
 | | Tcl typé | C à la main | cproc gcc | cproc tcc |
 |---|---:|---:|---:|---:|
-| `distance` | 0,83 | 0,36 | 0,98 | 1,00 |
-| `findLineIntersection` | 2,60 | 0,55 | 1,59 | 1,59 |
-| `lineSegmentsIntersect` | 18,3 | 0,46 | 1,09 | 1,24 |
-| `areaPolygon` 1 000 sommets, liste | 175 | 6,2 | 19,4 | 24,2 |
-| `areaPolygon` 1 000 sommets, typé | 163 | 6,3 | 6,6 | 11,2 |
-| `areaPolygon` 1 000 sommets, en cases | 165 | 0,83 | 1,35 | 3,2 |
-| `lengthOfPolyline` (cases) | 235 | 5,3 | 5,8 | 8,1 |
-| `pointInsidePolygonAlt` (cases) | 441 | 1,6 | 2,2 | 5,0 |
-| `calculateDistanceToPolyline` (cases) | 2 878 | 13,5 | 14,3 | 39,3 |
-| `rotate 30` (1 000 sommets) | 524 | 70 | 86 | 87 |
+| `distance` | 0,82 | 0,33 | **0,28** | 0,31 |
+| `findLineIntersection` | 2,46 | 0,53 | 1,09 | 1,11 |
+| `lineSegmentsIntersect` | 18,1 | 0,47 | **0,32** | 0,44 |
+| `areaPolygon` 1 000 sommets, liste | 166 | 6,0 | 8,2 | 18,3 |
+| `areaPolygon` 1 000 sommets, typé | 159 | 6,5 | 8,5 | 18,1 |
+| `areaPolygon` 1 000 sommets, en cases | 161 | 1,65 | 1,66 | 4,4 |
+| `lengthOfPolyline` (cases) | 230 | 5,3 | 5,3 | 6,7 |
+| `pointInsidePolygonAlt` (cases) | 434 | 1,6 | 1,6 | 4,1 |
+| `calculateDistanceToPolyline` (cases) | 2 861 | 13,5 | 13,1 | 38,4 |
+| `rotate 30` (1 000 sommets) | 516 | 72 | 88 | 90 |
 
 - **Fonctions lourdes.** Le gain est de 50 à 200 fois sur le Tcl typé. cproc
   compilé par gcc est au niveau du C écrit à la main. tcc est 1,5 à 3 fois plus
   lent que gcc dans les boucles, et il compile en quelques dizaines de ms au
   lieu de 200.
-- **Fonctions minuscules** (`distance`). L'appel coûte plus que le calcul : la
-  procédure typée lie et vérifie ses arguments (environ 0,6 µs), puis appelle la
-  commande C. cproc n'y gagne rien sur le Tcl typé. Une liaison faite
-  directement en C, pour les signatures simples, est la prochaine étape.
-- **Liste ordinaire contre liste typée.** Une liste ordinaire est vérifiée à la
-  liaison (2 000 nombres), puis copiée pour le C. Une liste déjà typée n'est que
-  copiée. Une liste en cases n'est ni vérifiée ni copiée.
+- **Fonctions minuscules** (`distance`, `lineSegmentsIntersect`). Avec la
+  liaison directe, cproc va aussi vite que `geom.c`, voire un peu plus vite, et
+  il vérifie les types (une valeur d'un autre type passe par la procédure
+  typée, qui la refuse avec son message). Avant la liaison directe, la
+  procédure typée coûtait 0,6 µs par appel : `distance` prenait 0,98 µs.
+- **Résultat liste ou somme** (`findLineIntersection`, `rotate`). Le résultat
+  est construit en objets Tcl, puis contrôlé par une procédure qui n'a que le
+  type de retour. C'est le prochain chemin à raccourcir : rendre des cases
+  depuis le C.
+- **Liste ordinaire contre liste typée.** Une liste ordinaire est lue
+  strictement par le C, élément par élément. Une liste du bon type est lue en
+  confiance. Une liste en cases est lue en place.
 
 **Doubles.** Le C calcule en `double` : `5.0`, là où `expr`, sur des valeurs
 écrites `0` et `10`, calcule en entiers et donne `5`. Un champ `{double}` garde
@@ -144,10 +157,91 @@ le texte qu'on lui donne. `geom.c` reproduisait cette règle d'`expr` (une
 `struct Num`) ; un corps `cproc` est du C ordinaire. Les deux formes sont des
 doubles égaux (les tests de tcllib passent), mais leurs chaînes diffèrent.
 
+## cproc en trois étapes
+
+`cproc` est lui-même passé par les trois étapes du tutoriel
+(`doc/TUTORIEL.fr.md`). Les trois versions sont dans ce répertoire :
+
+| fichier | étape |
+|---|---|
+| `cproc1_tcl.tcl` | 1. Tcl : des dicts (`dict get $k how`), des arguments sans type |
+| `cproc2_type.tcl` | 2. Tcl typé : le même générateur, le même C produit |
+| `cproc.tcl` | 3. la liaison des appels en C, avec repli sur la procédure typée |
+| `liaison.tcl ?CC?` | les étapes 2 et 3 comparées, appel par appel (`liaison.out`) |
+
+**Étape 2.** Les données du générateur reçoivent un type :
+
+- **un champ de signature** : `field {ttext; name; def}`, où `def` est une
+  somme : `none`, une constante ou un script ;
+- **ce que voit le C** : `kind`, une somme `{cstruct}struct`, `{cspan}span`,
+  `{cnum}num`, `"str"` ou `"obj"`, lue par sa variante
+  (`switch [Variant $k]`, puis `$k(struct.name)`, `$k(span.elem.struct.qual)`) ;
+- **un bloc de `type {c!}export`** : `cblock`. **Une procédure à compiler** :
+  `cdef`. **La configuration** : `cconfig`, dans une variable sous contrat.
+
+Chaque procédure interne a une signature typée.
+`proc {kind}Classify {{flag}-ret; {string}ns; {string}t}` remplace l'ancien
+argument positionnel `isRet`. `cproc::config` prend ses options par sa signature
+et vérifie ses valeurs : `-verbose x` donne `option "-verbose": expected integer
+but got "x"`, et `-foo` donne `bad option "-foo": must be -cachedir, -cc,
+-cflags, -includes, -verbose or --`. Le C produit est le même qu'à l'étape 1, aux
+détails près.
+
+L'étape 2 a payé à l'étape 3. Pendant l'écriture de la liaison directe, une
+variable déclarée `{kind}k` a été réutilisée comme compteur : le contrat l'a
+signalé à la première exécution (`value "0" names no variant of the strict sum
+::cproc::kind`), au lieu d'un C faux plus loin.
+
+Typer `cproc` a aussi fait apparaître **trois points du modèle**, notés pour
+le noyau :
+
+- **Une somme ne se convertit pas en `string`.** Une variante littérale qu'on
+  veut rendre comme simple texte s'écrit `{}$v`.
+- **`return {v:}[list …]` perd une somme stricte imbriquée.** Si la charge de
+  la variante contient une somme stricte (`return {span:}[list $el $en]`), la
+  variante de `$el` ne passe pas. `set {cspan}s $el $en; return {span:}$s` la
+  garde.
+- **`switch -regexp -matchvar` fait expirer l'étiquette.** Son corps n'est pas
+  compilé, et l'étiquette d'un `return {v:}…` expire avant le contrôle du
+  retour. Sans `-matchvar`, tout va bien.
+
+**Étape 3.** La partie de `cproc` qui tourne souvent n'est pas le générateur
+(11 ms pour dix procédures, quand la compilation en prend 50 à 200), mais
+l'appel. Celui-ci passait par la procédure typée, environ 0,6 µs, avant la
+commande C. Désormais, la commande du nom de la procédure est en C :
+
+- **elle lit seule** les appels simples : arguments positionnels, défauts
+  constants (`?= 0.0`), valeurs nues valides ou annotées du bon type. Une valeur
+  annotée se reconnaît à sa représentation, le couple (V, T) où T a pour chaîne
+  le nom du type. Une valeur du bon type est lue en confiance ; une valeur nue
+  l'est strictement (le nombre de champs, des nombres, les bornes des entiers) ;
+- **elle rend un résultat typé** : la même représentation (V, T), avec le T
+  d'une valeur exemple du type de retour ;
+- **pour tout le reste, elle passe la main** à la procédure typée de même
+  signature (un nom caché, `::poly::_cproc3_aire`), avec les mêmes mots, et
+  donc le même nom d'appel dans les messages. Cela couvre les étiquettes, les
+  options données (`-ouvert`, `--`), une valeur d'un autre type, un argument
+  qui manque ou de trop, et toute valeur que la lecture stricte refuse.
+
+Les résultats, leur type et les erreurs sont identiques à ceux de l'étape 2,
+sur 24 appels choisis pour emprunter chaque chemin (positionnels, défauts,
+étiquettes, options et préfixes, valeurs nues, typées, d'un autre type,
+erreurs) : `tclsh liaison.tcl` les rejoue. Le tutoriel et les 210 tests de tcllib passent, avec gcc comme avec
+tcc, et valgrind est propre : les objets gardés par le C sont libérés à la
+sortie de Tcl.
+
+Les gains se voient dans les deux tableaux de mesures : celui ci-dessus, pour la
+géométrie, et `doc/TUTORIEL.fr.md`, où `aire` sur une liste ordinaire passe de
+50 à 13 µs.
+
 ## Limites (prototype)
 
 - Pas encore de somme ni de dict en argument (une somme en retour passe par un
   `Tcl_Obj *`), ni de `{var.T}`.
+- La liaison directe lit `o->internalRep` d'une valeur annotée : c'est ce que
+  fera la vraie API C des valeurs annotées (`Tcl_AnnotatedGetType`…), quand
+  elle sera dans les stubs.
+- Une option d'une `cproc` doit avoir un défaut constant (ou être un `flag`).
 - Une compilation ne voit que les `cproc` en attente. Une fonction déjà compilée
   ne peut pas être appelée depuis le C d'une compilation suivante. Il faut
   définir ensemble ce qui s'appelle.

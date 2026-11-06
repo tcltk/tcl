@@ -7,16 +7,19 @@
 #            return (point){p.x + dx, p.y};
 #        }
 #
-#      La signature est celle d'une procédure typée (v16p, options v16q) :
-#      elle est liée et vérifiée par Tcl, exactement comme pour proc (mêmes
-#      défauts, étiquettes, options, messages). cproc génère le reste : la
-#      fonction C pure (point decale(point p, double dx)), les structs (type
-#      {c!}export), la commande Tcl qui convertit les arguments, appelle la
-#      fonction et rend le résultat, et l'initialisation de la bibliothèque.
-#      Le C est compilé par gcc ou tcc (cproc::config -cc tcc) en une
-#      bibliothèque partagée, gardée en cache (une source = une bibliothèque),
-#      au premier appel d'une des procédures définies depuis la dernière
-#      compilation (ou par cproc::build).
+#      cproc génère la fonction C pure (point decale(point p, double dx)),
+#      les structs (type {c!}export), la colle Tcl <-> C et l'initialisation,
+#      et compile le tout avec gcc ou tcc (cproc::config -cc tcc) dans une
+#      bibliothèque gardée en cache, au premier appel (ou par cproc::build).
+#
+#      L'appel (étape 3 de cproc lui-même) : la commande est en C. Elle lie
+#      seule les appels simples (arguments positionnels, défauts constants,
+#      valeurs nues valides ou déjà du bon type) et rend un résultat typé ;
+#      pour tout le reste (étiquettes, options données, valeur d'un autre
+#      type, erreur), elle passe la main à la procédure typée de la même
+#      signature, qui lie, vérifie et donne les messages, exactement comme
+#      proc. Les étapes de cproc : cproc1_tcl.tcl (Tcl), cproc2_type.tcl
+#      (Tcl typé, liaison par la procédure typée), ce fichier.
 #
 #      Correspondance des types (arguments ; le retour de même) :
 #        double, double(64)         double
@@ -35,54 +38,107 @@
 #      Une erreur : cproc_error("format", ...) puis return ; le message
 #      devient l'erreur Tcl.
 #
-# EN : cproc has proc's syntax; only the body's language changes. The typed
-#      signature is bound and checked by Tcl; cproc generates the pure C
-#      function, the structs, the glue command and the init function, and
-#      compiles them with gcc or tcc into a cached shared library.
+# EN : cproc has proc's syntax; only the body's language changes. The call
+#      is bound in C for simple calls, and handed to the typed procedure of
+#      the same signature for everything else (same messages as proc).
 #
 # Configuration :
-#   cproc::config -cc gcc|tcc|chemin  -cflags {...}  -includes {dir ...}
-#                 -cachedir DIR  -verbose 0|1
+#   cproc::config ?-cc C? ?-cflags L? ?-includes L? ?-cachedir D? ?-verbose 0|1?
+#                       (sans argument : la configuration, en dict)
 #   cproc::code {C}     du C commun (fonctions, #include) avant les corps
 #   cproc::build        compile tout de suite les procédures en attente
 #   cproc::source       le C de la dernière compilation (pour le lire)
 
 namespace eval ::cproc {
     variable here [file dirname [file normalize [info script]]]
-    variable cfg [dict create -cc gcc -cflags {} -includes {} -cachedir {} \
-	    -verbose 0]
-    variable pending {}		;# les procédures en attente de compilation
-    variable codes {}		;# cproc::code
     variable seq 0
+    variable codes {}		;# cproc::code
     variable lastSource {}
     namespace eval c {}		;# les commandes C : ::cproc::c::<id>
+
+    # --- les données du générateur ----------------------------------------
+
+    # un champ de la signature : {T}nom ?= défaut
+    type def {-strict}defval {"none", {string}const, {string}computed}
+    type def field   {{string}ttext; {string}name; {defval}def}
+
+    # ce que voit le C d'un type Tcl
+    type def cstruct {{string}name; {string}qual; {string}ns; {string}tname}
+    type def cnum    {{"double", "float", "wide", "int", "fix"}how; {string}ctype}
+    type def {-strict}celem {{cstruct}struct, {cnum}num}
+    type def cspan   {{celem}elem; {string}ename}
+    type def {-strict}kind {{cstruct}struct, {cspan}span, {cnum}num, "str", "obj"}
+    type def param   {{string}local; {kind}kind; {field}field}
+
+    # un bloc de type {c!}export : une struct, une union, un scalaire
+    type def cfield  {{string}ctype; {string}name; {string}dim}
+    type def cblock  {{string}qual; {string}text;
+		      {"struct", "union", "scalar", "other"}kind; {string}name;
+		      {list.cfield}fields}
+
+    # une procédure en attente de compilation
+    type def cdef    {{int}id; {string}name; {string}cname; {string}cmd;
+		      {kind}ret; {list.param}params; {string}body;
+		      {string}file; {int}line; {string}ns;
+		      {string}rettext; {string}wrap; {string}castp;
+		      {int}fast}
+    # rettext : le type de retour écrit, {*}T compris ; wrap : la procédure
+    # typée (le repli) ; castp : le contrôle du résultat, ou "" ; fast : 1
+    # si la liaison directe est possible
+
+    type def cconfig {{string}cc = gcc; {list.string}cflags = {};
+		      {list.string}includes = {}; {string}cachedir = "";
+		      {int}verbose = 0}
+
+    # l'état, sous contrat
+    set {cconfig}cfg {cc:}gcc
+    set {list.cdef}pending {*}{}
+}
+
+# La variante d'une somme : struct, span... (une variante littérale se
+# nomme par sa valeur)
+proc {string}::cproc::Variant {v} {
+    set t [type get $v]
+    set i [string last . $t]
+    if {$i >= 0} {return [string range $t $i+1 end]}
+    # une variante littérale : sa valeur, sans le type de la somme (une
+    # somme ne se caste pas en string)
+    return {}$v
+}
+
+proc {string}::cproc::CType {{kind}k} {
+    switch -- [Variant $k] {
+	struct {return $k(struct.name)}
+	span   {return cproc_span_$k(span.ename)}
+	num    {return $k(num.ctype)}
+	str    {return "const char *"}
+	obj    {return "Tcl_Obj *"}
+    }
 }
 
 # ----------------------------------------------------------------------
 # Configuration
 # ----------------------------------------------------------------------
 
-proc ::cproc::config {args} {
+proc ::cproc::config {{string}-cc; {list.string}-cflags; {list.string}-includes;
+	{string}-cachedir; {int}-verbose} {
     variable cfg
-    if {[llength $args] == 0} {return $cfg}
-    if {[llength $args] == 1} {return [dict get $cfg [lindex $args 0]]}
-    foreach {k v} $args {
-	if {![dict exists $cfg $k]} {
-	    return -code error "cproc::config: unknown option \"$k\": must be\
-		    [join [dict keys $cfg] {, }]"
+    foreach f {cc cflags includes cachedir verbose} {
+	if {[info exists $f]} {
+	    set cfg($f) [set $f]		;# vérifié par le contrat
 	}
-	dict set cfg $k $v
     }
-    return $cfg
+    dict create -cc $cfg(cc) -cflags $cfg(cflags) -includes $cfg(includes) \
+	    -cachedir $cfg(cachedir) -verbose $cfg(verbose)
 }
 
-proc ::cproc::code {text} {
+proc ::cproc::code {{string}text} {
     variable codes
     lappend codes $text
     return
 }
 
-proc ::cproc::source {} {
+proc {string}::cproc::source {} {
     variable lastSource
     return $lastSource
 }
@@ -129,33 +185,59 @@ proc ::cproc::Define {ns frame args} {
     }
     # le type de retour : {*}T et {**}T déplient côté Tcl ; le C rend un T
     set rt [regsub {^\{\*\*?\}} $ret {}]
-    # le namespace des types de la signature : celui de la procédure
+    # les types de la signature se lisent dans l'espace de la procédure
     set pns [namespace qualifiers $name]
     if {$pns eq ""} {set pns ::}
 
-    set fields [ParseSig $sig]
-    set params {}
-    foreach f $fields {
-	lassign $f ttext fname
-	set local [string trimleft $fname -]
-	set k [Classify $pns $ttext]
-	lappend params [dict create local $local ctype [dict get $k ctype] \
-		kind $k ttext $ttext]
+    set {list.param}params {*}{}
+    foreach f [ParseSig $sig] {
+	lappend params [list [string trimleft $f(name) -] \
+		[Classify $pns $f(ttext)] $f]
     }
     # sans type de retour : le C rend un Tcl_Obj * (NULL : la chaîne vide)
-    set rk [expr {$rt eq "" ? [dict create how obj ctype {Tcl_Obj *}]
-	    : [Classify $pns $rt 1]}]
+    if {$rt eq ""} {
+	set {kind}rk obj
+    } else {
+	set {kind}rk [Classify -ret $pns $rt]
+    }
 
     set id [incr seq]
     set cmd ::cproc::c::f$id
-    # la procédure Tcl : la signature, puis l'appel de la commande C
+    # la procédure Tcl : la signature, puis l'appel de la commande C. Elle
+    # porte le nom jusqu'à la compilation ; la même, sous un nom caché dans
+    # l'espace de la procédure (ses types s'y résolvent), reste le repli de
+    # la liaison directe.
     set wbody $cmd
     foreach p $params {
-	append wbody " \$[dict get $p local]"
+	append wbody " \$$p(local)"
     }
-    # créée depuis l'espace de l'appelant, comme proc : le nom s'y résout ;
-    # les types de la signature, dans l'espace de la procédure
+    set fast 1
+    foreach p $params {
+	if {[string index $p(field.name) 0] eq "-"
+		&& [Variant $p(field.def)] ne "const"
+		&& $p(field.ttext) ne "flag"} {
+	    return -code error "cproc $tail: option $p(field.name) needs a\
+		    constant default (?= value)"
+	}
+	if {$p(local) eq "args"} {set fast 0}
+    }
+    set wrap [expr {$pns eq "::" ? "" : $pns}]::_cproc${id}_$tail
     uplevel #0 [list namespace eval $ns [list proc [lindex $args 0] $sig $wbody]]
+    # (le même type de retour : le nom porte l'annotation, écrite dans le
+    # script)
+    if {$ret eq ""} {
+	uplevel #0 [list proc $wrap $sig $wbody]
+    } else {
+	uplevel #0 "proc {$ret}[list $wrap] [list $sig] [list $wbody]"
+    }
+    # le résultat : vérifié en C (un nombre, une chaîne, une struct), ou par
+    # une procédure qui n'a que le type de retour (une liste, une somme, un
+    # dépliage {*}T)
+    set castp ""
+    if {$rt ne "" && ([Variant $rk] eq "obj" || $ret ne $rt)} {
+	set castp [expr {$pns eq "::" ? "" : $pns}]::_cproc${id}_ret
+	uplevel #0 "proc {$ret}[list $castp] {r} {set r}"
+    }
     # en attendant la compilation : la commande C compile ce qui attend
     # (si la compilation n'a pas remplacé cette procédure par la commande C,
     # une erreur, et non un nouvel appel d'elle-même)
@@ -166,27 +248,31 @@ proc ::cproc::Define {ns frame args} {
 	}
 	tailcall %s {*}$args
     } $cmd $name $cmd]
-    # où est le corps (pour #line : les erreurs du compilateur y renvoient)
-    set file ""; set line 0
-    if {[dict exists $frame file] && [dict exists $frame line]} {
-	set file [dict get $frame file]
-	set line [dict get $frame line]
-	if {[dict exists $frame cmd]} {
-	    set c [dict get $frame cmd]
-	    set i [string first $body $c]
-	    if {$i >= 0} {
-		incr line [regexp -all {\n} [string range $c 0 $i-1]]
-	    }
-	}
-    }
-    lappend pending [dict create id $id name $name cname $tail cmd $cmd \
-	    ret $rk params $params body $body file $file line $line ns $pns]
+    lassign [BodyLine $frame $body] file line
+    lappend pending [list $id $name $tail $cmd $rk $params $body $file $line \
+	    $pns $ret $wrap $castp $fast]
     return
 }
 
-# Les champs d'une signature : {T}nom ?= défaut ; ... -> {T nom}
-proc ::cproc::ParseSig {sig} {
-    set fields {}
+# Où est le corps (pour #line : les erreurs du compilateur y renvoient)
+proc {list}::cproc::BodyLine {{dict}frame; {string}body} {
+    if {![dict exists $frame file] || ![dict exists $frame line]} {
+	return {{} 0}
+    }
+    set line [dict get $frame line]
+    if {[dict exists $frame cmd]} {
+	set c [dict get $frame cmd]
+	set i [string first $body $c]
+	if {$i >= 0} {
+	    incr line [regexp -all {\n} [string range $c 0 $i-1]]
+	}
+    }
+    list [dict get $frame file] $line
+}
+
+# Les champs d'une signature : {T}nom ?= défaut ; ...
+proc {list.field}::cproc::ParseSig {{string}sig} {
+    set {list.field}fields {*}{}
     set i 0
     set n [string length $sig]
     while {$i < $n} {
@@ -215,98 +301,121 @@ proc ::cproc::ParseSig {sig} {
 	    }
 	}
 	set t [string range $f 1 $j-1]
-	if {![regexp {^-?[A-Za-z_][A-Za-z0-9_]*} [string range $f $j+1 end] nm]} {
+	set rest [string range $f $j+1 end]
+	if {![regexp {^(-?[A-Za-z_][A-Za-z0-9_]*)\s*(?:\??=\s*(.*))?$} $rest -> nm d]} {
 	    return -code error "cproc: field \"$f\": no name after the type"
 	}
-	lappend fields [list $t $nm]
+	lappend fields [list $t $nm [DefVal $d]]
     }
     return $fields
 }
 
+# Un défaut : rien, une constante (un mot, entre accolades ou guillemets
+# simples), ou un script [cmd] (ou ce qu'on ne lit pas sans Tcl)
+proc {defval}::cproc::DefVal {{string}d} {
+    set d [string trim $d]
+    if {$d eq ""} {return none}
+    if {[string index $d 0] eq "\["} {return {computed:}$d}
+    if {[string index $d 0] eq "\{" && [string index $d end] eq "\}"} {
+	return {const:}[string range $d 1 end-1]
+    }
+    if {[string index $d 0] eq "\"" && [string index $d end] eq "\""} {
+	set d [string range $d 1 end-1]
+    }
+    if {[string first "\\" $d] >= 0 || [string first "\$" $d] >= 0
+	    || [string first "\[" $d] >= 0} {
+	return {computed:}$d
+    }
+    return {const:}$d
+}
+
 # ----------------------------------------------------------------------
 # Les types : ce que voit le C
-#
-# Classify NS T -> dict : how (double float wide int fix str struct span obj)
-#   ctype (le type C), et selon how : name (C de la struct), qual (nom
-#   qualifié, pour lire les cases), elem (le dict de l'élément d'un span).
 # ----------------------------------------------------------------------
 
-proc ::cproc::Classify {ns t {isRet 0}} {
+proc {kind}::cproc::Classify {{flag}-ret; {string}ns; {string}t} {
     set t [string trim $t]
-    switch -regexp -matchvar m -- $t {
-	{^double(\(64\))?$}  {return [dict create how double ctype double]}
-	{^double\(32\)$}     {return [dict create how float ctype float]}
-	{^int$}              {return [dict create how wide ctype Tcl_WideInt]}
-	{^flag$}             {return [dict create how int ctype int]}
-	{^string$}           {return [dict create how str ctype {const char *}]}
-	{^int\(([su]),(8|16|32|64)\)$} {
-	    set c [expr {[lindex $m 1] eq "u" ? "uint" : "int"}][lindex $m 2]_t
-	    return [dict create how fix ctype $c]
+    # (des if, pas switch -regexp -matchvar : son corps, non compilé, ferait
+    # expirer l'étiquette de return {num:}... avant le contrôle du retour)
+    if {[regexp {^double(\(64\))?$} $t]} {return {num:}{double double}}
+    if {$t eq "double(32)"} {return {num:}{float float}}
+    if {$t eq "int"}        {return {num:}{wide Tcl_WideInt}}
+    if {$t eq "flag"}       {return {num:}{int int}}
+    if {$t eq "string"}     {return str}
+    if {[regexp {^int\(([su]),(8|16|32|64)\)$} $t -> su bits]} {
+	return {num:}[list fix [expr {$su eq "u" ? "uint" : "int"}]${bits}_t]
+    }
+    if {[regexp {^list(\(\d+\))?\.(.+)$} $t -> - et]} {
+	if {$ret} {
+	    # une liste rendue : construite par le C (cproc_list_T)
+	    return obj
 	}
-	{^list(\(\d+\))?\.(.+)$} {
-	    if {$isRet} {
-		# une liste rendue : construite par le C (cproc_list_T)
-		return [dict create how obj ctype {Tcl_Obj *}]
+	set {kind}e [Classify $ns $et]
+	switch -- [Variant $e] {
+	    struct {
+		set {celem}el {struct:}$e(struct)
+		set en $e(struct.name)
 	    }
-	    set e [Classify $ns [lindex $m 2]]
-	    if {[dict get $e how] ni {double float wide fix struct}} {
-		if {$isRet} {return [dict create how obj ctype {Tcl_Obj *}]}
-		return -code error "cproc: list.[lindex $m 2]: the elements of\
-			a list given to C must be numbers or products"
+	    num {
+		set {celem}el {num:}$e(num)
+		set en [string map {{ } _} $e(num.ctype)]
 	    }
-	    set en [expr {[dict get $e how] eq "struct" ? [dict get $e name]
-		    : [string map {{ } _} [dict get $e ctype]]}]
-	    return [dict create how span ctype cproc_span_$en elem $e \
-		    ename $en]
+	    default {
+		return -code error "cproc: list.$et: the elements of a list\
+			given to C must be numbers or products"
+	    }
 	}
+	# (construit d'abord : return {span:}[list $el $en] perdrait la
+	# variante de $el, une somme stricte dans la charge)
+	set {cspan}sp $el $en
+	return {span:}$sp
     }
     # un type défini : son texte (un alias ou un nominal de scalaire se
     # résout), ou une struct
     if {[catch {namespace eval $ns [list ::type def $t]} def]} {
-	if {$isRet} {return [dict create how obj ctype {Tcl_Obj *}]}
+	if {$ret} {return obj}
 	return -code error "cproc: unknown type \"$t\" (in $ns)"
     }
     if {[string index [string trim $def] 0] ne "\{"} {
-	return [Classify $ns $def $isRet]
+	if {$ret} {return [Classify -ret $ns $def]}
+	return [Classify $ns $def]
     }
     if {[catch {namespace eval $ns "::type {c!}export [list $t]"} h]} {
-	if {$isRet} {return [dict create how obj ctype {Tcl_Obj *}]}
+	if {$ret} {return obj}
 	return -code error "cproc: type \"$t\" has no C form: $h"
     }
-    set blocks [Blocks $h]
-    set last [lindex $blocks end]
-    if {[dict get $last kind] ne "struct"} {
-	if {$isRet} {return [dict create how obj ctype {Tcl_Obj *}]}
+    set {cblock}last [lindex [Blocks $h] end]
+    if {$last(kind) ne "struct"} {
+	if {$ret} {return obj}
 	return -code error "cproc: type \"$t\" is not a product (a sum or a\
 		list cannot be given to C yet)"
     }
-    return [dict create how struct ctype [dict get $last name] \
-	    name [dict get $last name] qual [dict get $last qual] \
-	    ns $ns tname $t]
+    return {struct:}[list $last(name) $last(qual) $ns $t]
 }
 
 # Le texte de type {c!}export, découpé en blocs : un par type, avec son nom
 # qualifié (le commentaire), son nom C, sa sorte et ses champs.
-proc ::cproc::Blocks {h} {
-    set out {}
-    set cur {}
+proc {list.cblock}::cproc::Blocks {{string}h} {
+    set {list.cblock}out {*}{}
+    set q ""
+    set text ""
     foreach line [split $h \n] {
-	if {[regexp {^/\* (\S+) \*/$} $line -> q]} {
-	    if {$cur ne ""} {lappend out [Block $cur]}
-	    set cur [dict create qual $q text "$line\n"]
+	if {[regexp {^/\* (\S+) \*/$} $line -> nq]} {
+	    if {$q ne ""} {lappend out [Block $q $text]}
+	    set q $nq
+	    set text "$line\n"
 	    continue
 	}
-	if {$cur ne ""} {dict append cur text "$line\n"}
+	if {$q ne ""} {append text "$line\n"}
     }
-    if {$cur ne ""} {lappend out [Block $cur]}
+    if {$q ne ""} {lappend out [Block $q $text]}
     return $out
 }
 
-proc ::cproc::Block {b} {
-    set text [dict get $b text]
+proc {cblock}::cproc::Block {{string}qual; {string}text} {
     set kind other
     set name ""
-    set fields {}
+    set {list.cfield}fields {*}{}
     if {[regexp {\} ([A-Za-z_][A-Za-z0-9_]*);\n} $text -> name]} {
 	set kind [expr {[string match *union* $text] ? "union" : "struct"}]
 	set in 0
@@ -323,58 +432,71 @@ proc ::cproc::Block {b} {
     } elseif {[regexp {typedef .*?([A-Za-z_][A-Za-z0-9_]*)\s*(/\*.*\*/)?;} $text -> name]} {
 	set kind scalar
     }
-    dict set b kind $kind
-    dict set b name $name
-    dict set b fields $fields
-    return $b
+    list $qual $text $kind $name $fields
 }
 
 # ----------------------------------------------------------------------
 # Génération
 # ----------------------------------------------------------------------
 
-proc ::cproc::Gen {procs} {
-    variable codes
-    # les structs : chaque type, exporté dans son namespace ; un bloc par
-    # nom qualifié
-    set blocks [dict create]
-    set spans [dict create]
-    set structs {}
+# Les blocs dont ont besoin les procédures : un par nom qualifié, dans
+# l'ordre de leurs dépendances (celui de l'export)
+proc {list.cblock}::cproc::NeededBlocks {{list.cdef}procs} {
+    set seen [dict create]
+    set {list.cblock}out {*}{}
     foreach p $procs {
-	set ks {}
-	foreach a [dict get $p params] {lappend ks [dict get $a kind]}
-	if {[dict get $p ret] ne ""} {lappend ks [dict get $p ret]}
-	foreach k $ks {
-	    if {[dict get $k how] eq "span"} {
-		dict set spans [dict get $k ename] [dict get $k elem]
-		set k [dict get $k elem]
+	foreach k [list $p(ret) {*}[lmap a $p(params) {set a(kind)}]] {
+	    set {kind}k $k
+	    switch -- [Variant $k] {
+		struct {set {cstruct}s $k(struct)}
+		span {
+		    if {[Variant $k(span.elem)] ne "struct"} continue
+		    set {cstruct}s $k(span.elem.struct)
+		}
+		default continue
 	    }
-	    if {[dict get $k how] eq "struct"} {
-		set h [namespace eval [dict get $k ns] \
-			"::type {c!}export [list [dict get $k tname]]"]
-		foreach b [Blocks $h] {
-		    set q [dict get $b qual]
-		    if {![dict exists $blocks $q]} {
-			foreach o [dict values $blocks] {
-			    if {[dict get $o name] eq [dict get $b name]} {
-				return -code error "cproc: types [dict get $o qual]\
-					and $q have the same C name\
-					\"[dict get $b name]\""
-			    }
-			}
-			dict set blocks $q $b
+	    set h [namespace eval $s(ns) "::type {c!}export [list $s(tname)]"]
+	    foreach b [Blocks $h] {
+		if {[dict exists $seen $b(qual)]} continue
+		foreach o $out {
+		    if {$o(name) eq $b(name)} {
+			return -code error "cproc: types $o(qual) and $b(qual)\
+				have the same C name \"$b(name)\""
 		    }
 		}
+		dict set seen $b(qual) 1
+		lappend out $b
 	    }
 	}
     }
+    return $out
+}
+
+# Les spans, un par nom C d'élément
+proc {list.cspan}::cproc::NeededSpans {{list.cdef}procs} {
+    set {list.cspan}spans {*}{}
+    set seen {}
+    foreach p $procs {
+	foreach a $p(params) {
+	    set {kind}k $a(kind)
+	    if {[Variant $k] eq "span" && $k(span.ename) ni $seen} {
+		lappend seen $k(span.ename)
+		lappend spans $k(span)
+	    }
+	}
+    }
+    return $spans
+}
+
+proc {string}::cproc::Gen {{list.cdef}procs} {
+    variable codes
+    set {list.cblock}blocks {*}[NeededBlocks $procs]
+    set {list.cspan}spans {*}[NeededSpans $procs]
     # une fonction ne peut pas porter le nom d'une struct (proc
     # {boite}poly::boite) : elle devient cproc_boite
-    set snames [lmap b [dict values $blocks] {dict get $b name}]
-    set procs [lmap p $procs {
-	if {[dict get $p cname] in $snames} {
-	    dict set p cname cproc_[dict get $p cname]
-	}
+    set snames [lmap b $blocks {set b(name)}]
+    set {list.cdef}procs {*}[lmap p $procs {
+	if {$p(cname) in $snames} {set p(cname) cproc_$p(cname)}
 	set p
     }]
     set c {}
@@ -383,25 +505,20 @@ proc ::cproc::Gen {procs} {
     append c "#include <string.h>\n#include <stdio.h>\n#include <stdarg.h>\n"
     append c "#include \"tclAnnotatedApi.h\"\n\n"
     append c [Prelude]
-    # les structs, dans l'ordre de leurs dépendances (celui de l'export)
-    dict for {q b} $blocks {
-	append c [dict get $b text]
+    foreach b $blocks {
+	append c $b(text)
     }
-    # spans
-    dict for {en e} $spans {
-	append c "typedef struct { const [dict get $e ctype] *at;\
-		Tcl_Size n; } cproc_span_$en;\n"
+    foreach s $spans {
+	append c "typedef struct { const [CType [ElemKind $s(elem)]] *at;\
+		Tcl_Size n; } cproc_span_$s(ename);\n"
     }
     append c "\n"
-    # lecture / écriture de chaque struct
-    dict for {q b} $blocks {
-	if {[dict get $b kind] ne "struct"} continue
-	append c [StructGetPut $b $blocks]
+    foreach b $blocks {
+	if {$b(kind) eq "struct"} {append c [StructGetPut $b $blocks]}
     }
-    dict for {en e} $spans {
-	append c [SpanGet $en $e]
+    foreach s $spans {
+	append c [SpanGet $s(ename) $s(elem)]
     }
-    # les prototypes, le code commun, les fonctions
     append c "\n/* les fonctions */\n"
     foreach p $procs {
 	append c "static [Proto $p];\n"
@@ -412,37 +529,336 @@ proc ::cproc::Gen {procs} {
     }
     foreach p $procs {
 	append c "\nstatic [Proto $p]\n\{\n"
-	if {[dict get $p file] ne ""} {
-	    append c "#line [dict get $p line] \"[string map {\\ / \" \\\"} \
-		    [dict get $p file]]\"\n"
+	if {$p(file) ne ""} {
+	    append c "#line $p(line) \"[string map {\\ / \" \\\"} $p(file)]\"\n"
 	}
-	append c [dict get $p body]
+	append c $p(body)
 	append c "\n\}\n"
-	if {[dict get $p file] ne ""} {
+	if {$p(file) ne ""} {
 	    # la suite renvoie au fichier C produit
 	    append c "#line [expr {[regexp -all \n $c] + 2}] \"cproc.c\"\n"
 	}
     }
-    # la colle
     append c "\n/* la colle : Tcl -> C -> Tcl */\n"
     foreach p $procs {
 	append c [Glue $p]
     }
+    append c "\n/* la liaison directe */\n"
+    foreach b $blocks {
+	if {$b(kind) eq "struct"} {append c [StrictGet $b $blocks]}
+    }
+    foreach s $spans {
+	append c [FastSpan $s(ename) $s(elem) $blocks]
+    }
+    foreach p $procs {
+	append c [FastGlue $p $blocks]
+    }
     return $c
 }
 
-proc ::cproc::Proto {p} {
-    set rk [dict get $p ret]
-    set r [expr {$rk eq "" ? "void" : [dict get $rk ctype]}]
-    set args {}
-    foreach a [dict get $p params] {
-	lappend args "[dict get $a ctype] [dict get $a local]"
-    }
-    if {$args eq ""} {set args void}
-    return "$r [dict get $p cname]([join $args {, }])"
+# ----------------------------------------------------------------------
+# La liaison directe (étape 3 de cproc)
+#
+# La commande C du nom de la procédure lie seule les appels simples ; pour
+# le reste, elle appelle la procédure typée (p(wrap)) avec les mêmes mots.
+# Ses lecteurs sont stricts : tout ce qu'ils ne savent pas juger (une
+# valeur annotée d'un autre type, une note, un nombre hors bornes) les
+# fait renoncer, et la procédure typée décide.
+# ----------------------------------------------------------------------
+
+proc {string}::cproc::CStr {{string}s} {
+    string map [list \\ \\\\ \" \\\" \n \\n] $s
 }
 
-proc ::cproc::Prelude {} {
+# les bornes d'un entier C, pour CprocWide
+proc {string}::cproc::Range {{string}ct} {
+    switch -- $ct {
+	int8_t   {return "-128, 127"}
+	uint8_t  {return "0, 255"}
+	int16_t  {return "-32768, 32767"}
+	uint16_t {return "0, 65535"}
+	int32_t  {return "-2147483647 - 1, 2147483647"}
+	uint32_t {return "0, 4294967295LL"}
+	uint64_t {return "0, 0x7fffffffffffffffLL"}
+	default  {return "-0x7fffffffffffffffLL - 1, 0x7fffffffffffffffLL"}
+    }
+}
+
+# lire l'objet E dans D, strictement (une valeur nue ; ACCEPT : un nom de
+# type accepté pour une valeur annotée, "" : aucun) ; FAIL : l'instruction
+# du renoncement
+proc {string}::cproc::StrictField {{string}ct; {string}e; {string}d;
+	{string}accept; {string}fail; {string}ind} {
+    switch -glob -- $ct {
+	double {return "${ind}if (!CprocDouble($e, \"$accept\", &$d)) $fail\n"}
+	float {
+	    return "${ind}{ double t_; if (!CprocDouble($e, \"$accept\", &t_)) $fail $d = (float) t_; }\n"
+	}
+	*int*_t - Tcl_WideInt - int {
+	    return "${ind}{ Tcl_WideInt w_; if (!CprocWide($e, \"$accept\", [Range $ct], &w_)) $fail $d = ($ct) w_; }\n"
+	}
+	Tcl_Obj* {
+	    return "${ind}if (CprocTypedAs($e, \"string\") < 0) $fail $d = $e;\n"
+	}
+	default {return "${ind}if (!cp_sget_$ct\($e, &$d)) $fail\n"}
+    }
+}
+
+# cp_sget_T : une struct, d'une valeur nue (champ par champ) ou du type T
+proc {string}::cproc::StrictGet {{cblock}b; {list.cblock}blocks} {
+    set n $b(name)
+    set nf [llength $b(fields)]
+    set g "static int\ncp_sget_$n\(Tcl_Obj *o, $n *r)\n\{\n"
+    append g "    Tcl_Size n;\n    Tcl_Obj **e;\n    int t = CprocTypedAs(o, \"[CStr $b(qual)]\");\n\n"
+    append g "    if (t < 0) return 0;\n"
+    append g "    if (t) return cp_get_$n\(NULL, CprocContent(o), r) == TCL_OK;\n"
+    append g "    if (Tcl_ListObjGetElements(NULL, o, &n, &e) != TCL_OK || n != $nf) return 0;\n"
+    set i 0
+    foreach f $b(fields) {
+	if {$f(dim) ne ""} {
+	    append g "    {\n\tTcl_Size m_, k_;\n\tTcl_Obj **d_;\n"
+	    append g "\tif (CprocTypedAs(e\[$i\], \"\") != 0 || Tcl_ListObjGetElements(NULL, e\[$i\], &m_, &d_) != TCL_OK || m_ != $f(dim)) return 0;\n"
+	    append g "\tfor (k_ = 0; k_ < $f(dim); k_++) {\n"
+	    append g [StrictField $f(ctype) d_\[k_\] r->$f(name)\[k_\] "" "return 0;" "\t    "]
+	    append g "\t}\n    }\n"
+	} else {
+	    append g [StrictField $f(ctype) e\[$i\] r->$f(name) "" "return 0;" "    "]
+	}
+	incr i
+    }
+    append g "    return 1;\n\}\n\n"
+    return $g
+}
+
+# cp_fspan_E : une liste d'éléments E : en cases (en place), du type de la
+# liste (ses éléments, de confiance), ou nue (chaque élément, strictement)
+proc {string}::cproc::FastSpan {{string}en; {celem}e; {list.cblock}blocks} {
+    set ct [CType [ElemKind $e]]
+    set s "static Tcl_Obj *cp_celltn_$en = NULL;\n\n"
+    append s "static int\ncp_fspan_$en\(Tcl_Obj *o, const char *tn, cproc_span_$en *s, void **own)\n\{\n"
+    append s "    const void *cells = NULL;\n    Tcl_Size n, i;\n    Tcl_Obj **e, *src;\n    $ct *a;\n"
+    append s "    int t = CprocTypedAs(o, tn);\n\n"
+    append s "    *own = NULL;\n    if (t < 0) return 0;\n"
+    append s "    if (cp_celltn_$en == NULL) {\n\tcp_celltn_$en = Tcl_NewStringObj(\"[CStr [CellName $e]]\", -1);\n\tTcl_IncrRefCount(cp_celltn_$en);\n    }\n"
+    append s "    (void) Tcl_AnnotatedGetCells(NULL, o, cp_celltn_$en, sizeof($ct), &cells, &n);\n"
+    append s "    if (cells != NULL) { s->at = (const $ct *) cells; s->n = n; return 1; }\n"
+    append s "    src = t ? CprocContent(o) : o;\n"
+    append s "    if (Tcl_ListObjGetElements(NULL, src, &n, &e) != TCL_OK) return 0;\n"
+    append s "    a = ($ct *) Tcl_Alloc(sizeof($ct) * (n > 0 ? n : 1));\n    *own = a;\n"
+    append s "    for (i = 0; i < n; i++) {\n"
+    if {[Variant $e] eq "struct"} {
+	append s "\tif (t ? cp_get_$ct\(NULL, e\[i\], &a\[i\]) != TCL_OK : !cp_sget_$ct\(e\[i\], &a\[i\])) return 0;\n"
+    } else {
+	# un élément d'une liste du bon type peut être annoté : son contenu
+	append s "\tTcl_Obj *x = e\[i\];\n"
+	append s "\tif (t && cp_annotType != NULL && x->typePtr == cp_annotType) x = CprocContent(x);\n"
+	append s [StrictField $ct x a\[i\] "" "return 0;" "\t"]
+    }
+    append s "    }\n    s->at = a;\n    s->n = n;\n    return 1;\n\}\n\n"
+    return $s
+}
+
+# Une valeur exemple d'un kind (pour connaître le nom de son type)
+proc {string}::cproc::Sample {{kind}k; {list.cblock}blocks} {
+    switch -- [Variant $k] {
+	num    {return 0}
+	str    {return x}
+	struct {return [StructSample $k(struct.name) $blocks]}
+	default {return {}}
+    }
+}
+
+proc {string}::cproc::StructSample {{string}name; {list.cblock}blocks} {
+    foreach b $blocks {
+	if {$b(name) ne $name} continue
+	set out {}
+	foreach f $b(fields) {
+	    switch -glob -- $f(ctype) {
+		Tcl_Obj* {set v x}
+		double - float - *int*_t - int - Tcl_WideInt {set v 0}
+		default {set v [StructSample $f(ctype) $blocks]}
+	    }
+	    if {$f(dim) ne ""} {set v [lrepeat $f(dim) $v]}
+	    lappend out $v
+	}
+	return $out
+    }
+    return {}
+}
+
+# le nom du type T (dans NS) d'une valeur, "" si l'exemple ne s'y caste pas
+proc {string}::cproc::TypeNameOf {{string}ns; {string}t; {string}sample} {
+    if {[catch {namespace eval $ns "::type get \[::type {$t}[list $sample]\]"} n]} {
+	return ""
+    }
+    return $n
+}
+
+proc {string}::cproc::FastGlue {{cdef}p; {list.cblock}blocks} {
+    set id $p(id)
+    set params $p(params)
+    set np [llength $params]
+    set c "static Tcl_Command cp_wrap_$id = NULL, cp_cast_$id = NULL;\n"
+    append c "static Tcl_Obj *cp_def_$id\[[expr {max($np, 1)}]\];\n"
+    append c "static Tcl_Obj *cp_retT_$id = NULL, *cp_castname_$id = NULL;\n\n"
+    # le résultat : nu (pas de type), typé en C (T gardé), ou contrôlé
+    set rt [regsub {^\{\*\*?\}} $p(rettext) {}]
+    if {$p(rettext) eq ""} {
+	set mode plain
+    } elseif {$p(castp) ne ""} {
+	set mode cast
+    } else {
+	set mode wrap
+	set ::cproc::retT($id) ""
+	catch {
+	    set ::cproc::retT($id) [namespace eval $p(ns) \
+		    "::type {$rt}[list [Sample $p(ret) $blocks]]"]
+	}
+    }
+    # l'initialisation
+    set init "static void\ncp_init_$id\(Tcl_Interp *ip)\n\{\n"
+    append init "    Tcl_Obj *s;\n\n    (void) s;\n"
+    append init "    cp_wrap_$id = Tcl_FindCommand(ip, \"[CStr $p(wrap)]\", NULL, TCL_GLOBAL_ONLY);\n"
+    if {$mode eq "cast"} {
+	append init "    cp_cast_$id = Tcl_FindCommand(ip, \"[CStr $p(castp)]\", NULL, TCL_GLOBAL_ONLY);\n"
+	append init "    cp_castname_$id = Tcl_NewStringObj(\"[CStr $p(castp)]\", -1);\n"
+	append init "    Tcl_IncrRefCount(cp_castname_$id);\n"
+    }
+    if {$mode eq "wrap"} {
+	append init "    s = Tcl_GetVar2Ex(ip, \"::cproc::retT\", \"$id\", TCL_GLOBAL_ONLY);\n"
+	append init "    if (s != NULL && s->typePtr == cp_annotType) {\n"
+	append init "\tTcl_Obj *t = (Tcl_Obj *) s->internalRep.twoPtrValue.ptr2;\n\n"
+	append init "\tif (t != NULL && t->typePtr != NULL && strcmp(t->typePtr->name, \"typeref\") == 0) {\n"
+	append init "\t    cp_retT_$id = t;\n\t    Tcl_IncrRefCount(t);\n\t}\n    }\n"
+    }
+    set i 0
+    set pos {}
+    set opts {}
+    set nreq 0
+    foreach a $params {
+	set d $a(field.def)
+	if {[Variant $d] eq "const"} {
+	    append init "    cp_def_$id\[$i\] = Tcl_NewStringObj(\"[CStr $d(const)]\", -1);\n"
+	    append init "    Tcl_IncrRefCount(cp_def_$id\[$i\]);\n"
+	} elseif {$a(field.ttext) eq "flag" && [string index $a(field.name) 0] eq "-"} {
+	    append init "    cp_def_$id\[$i\] = Tcl_NewStringObj(\"0\", -1);\n"
+	    append init "    Tcl_IncrRefCount(cp_def_$id\[$i\]);\n"
+	} else {
+	    append init "    cp_def_$id\[$i\] = NULL;\n"
+	}
+	if {[string index $a(field.name) 0] eq "-"} {
+	    lappend opts $i
+	} else {
+	    lappend pos $i
+	    if {[Variant $d] eq "none"} {set nreq [llength $pos]}
+	}
+	incr i
+    }
+    if {$p(fast)} {
+	append init "    Tcl_CreateObjCommand(ip, \"[CStr $p(name)]\", cp_fast_$id, NULL, NULL);\n"
+    }
+    append init "\}\n\n"
+    # la libération (à la sortie de Tcl : les objets gardés ici)
+    append init "static void\ncp_free_$id\(void)\n\{\n    int i;\n\n"
+    append init "    for (i = 0; i < [expr {max($np, 1)}]; i++) {\n\tif (cp_def_$id\[i\] != NULL) { Tcl_DecrRefCount(cp_def_$id\[i\]); cp_def_$id\[i\] = NULL; }\n    }\n"
+    append init "    if (cp_retT_$id != NULL) { Tcl_DecrRefCount(cp_retT_$id); cp_retT_$id = NULL; }\n"
+    append init "    if (cp_castname_$id != NULL) { Tcl_DecrRefCount(cp_castname_$id); cp_castname_$id = NULL; }\n"
+    append init "\}\n\n"
+    if {!$p(fast)} {
+	return "$c$init"
+    }
+    # la commande
+    set f "static int\ncp_fast_$id\(void *cd, Tcl_Interp *ip, int objc, Tcl_Obj *const objv\[\])\n\{\n"
+    append f "    Tcl_Obj *av\[[expr {max($np, 1)}]\], *res = NULL;\n"
+    append f "    Tcl_Size nargs = objc - 1;\n"
+    set decl ""
+    set get ""
+    set free ""
+    set args {}
+    set i 0
+    foreach a $params {
+	set {kind}k $a(kind)
+	set ct [CType $k]
+	set v a$i
+	set tn [CStr [TypeNameOf $p(ns) $a(field.ttext) [Sample $k $blocks]]]
+	switch -- [Variant $k] {
+	    num {
+		append decl "    $ct $v;\n"
+		append get [StrictField $ct av\[$i\] $v $tn "goto slow;" "    "]
+	    }
+	    str {
+		append decl "    const char *$v;\n"
+		append get "    { int t_ = CprocTypedAs(av\[$i\], \"$tn\"); if (t_ < 0) goto slow; $v = Tcl_GetString(t_ ? CprocContent(av\[$i\]) : av\[$i\]); }\n"
+	    }
+	    struct {
+		append decl "    $ct $v;\n"
+		append get "    if (!cp_sget_$ct\(av\[$i\], &$v)) goto slow;\n"
+	    }
+	    span {
+		append decl "    $ct $v;\n    void *own$i = NULL;\n"
+		append get "    if (!cp_fspan_$k(span.ename)\(av\[$i\], \"$tn\", &$v, &own$i)) goto slow;\n"
+		append free "    if (own$i != NULL) Tcl_Free(own$i);\n"
+	    }
+	}
+	lappend args $v
+	incr i
+    }
+    append f $decl
+    append f "    [CType $p(ret)] r;\n\n    (void) cd;\n"
+    if {[llength $opts]} {
+	# une option donnée : la procédure typée (préfixes, --, valeurs)
+	append f "    if (nargs > 0 && Tcl_GetString(objv\[1\])\[0\] == '-') goto slow;\n"
+    }
+    append f "    if (nargs < $nreq || nargs > [llength $pos]) goto slow;\n"
+    set j 0
+    foreach i $pos {
+	append f "    av\[$i\] = (nargs > $j) ? objv\[[expr {$j + 1}]\] : cp_def_$id\[$i\];\n"
+	append f "    if (av\[$i\] == NULL) goto slow;\n"
+	incr j
+    }
+    foreach i $opts {
+	append f "    av\[$i\] = cp_def_$id\[$i\];\n    if (av\[$i\] == NULL) goto slow;\n"
+    }
+    if {$mode eq "wrap"} {
+	append f "    if (cp_retT_$id == NULL) goto slow;\n"
+    }
+    append f $get
+    append f "    cproc_failed = 0;\n"
+    append f "    r = $p(cname)([join $args {, }]);\n"
+    append f "    if (cproc_failed) {\n\tTcl_SetObjResult(ip, Tcl_NewStringObj(cproc_errbuf, -1));\n$free\treturn TCL_ERROR;\n    }\n"
+    append f "    res = [Result $p(ret) r];\n"
+    append f $free
+    switch -- $mode {
+	plain {
+	    append f "    Tcl_SetObjResult(ip, res);\n    return TCL_OK;\n"
+	}
+	wrap {
+	    append f "    Tcl_SetObjResult(ip, CprocWrap(res, cp_retT_$id));\n    return TCL_OK;\n"
+	}
+	cast {
+	    append f "    {\n\tTcl_Obj *cv\[2\];\n\tint rc;\n\n"
+	    append f "\tcv\[0\] = cp_castname_$id;\n\tcv\[1\] = res;\n\tTcl_IncrRefCount(res);\n"
+	    append f "\trc = CprocCall(cp_cast_$id, ip, 2, cv);\n\tTcl_DecrRefCount(res);\n\treturn rc;\n    }\n"
+	}
+    }
+    append f "  slow:\n$free"
+    append f "    return CprocCall(cp_wrap_$id, ip, objc, objv);\n\}\n\n"
+    return "$c$f$init"
+}
+
+# un élément de span, vu comme un kind (pour son type C)
+proc {kind}::cproc::ElemKind {{celem}e} {
+    if {[Variant $e] eq "struct"} {return {struct:}$e(struct)}
+    return {num:}$e(num)
+}
+
+proc {string}::cproc::Proto {{cdef}p} {
+    set args [lmap a $p(params) {string cat [CType $a(kind)] " " $a(local)}]
+    if {$args eq ""} {set args void}
+    return "[CType $p(ret)] $p(cname)([join $args {, }])"
+}
+
+proc {string}::cproc::Prelude {} {
     return {
 /* Les stubs de Tcl, sans bibliothèque à lier (gcc comme tcc) : le pointeur
  * de la table est lu dans l'interpréteur, comme le fait Tcl_InitStubs. */
@@ -477,12 +893,90 @@ cproc_error(const char *fmt, ...)
     cproc_failed = 1;
 }
 
+/*
+ * La liaison directe. Une valeur annotée A = (V, T) ; T résolu a pour
+ * chaîne le nom du type. CprocTypedAs : 0 une valeur nue, 1 une valeur du
+ * type NAME, -1 autre chose (un autre type, une note, une étiquette).
+ */
+static const Tcl_ObjType *cp_annotType = NULL;
+
 static int
-CprocWrong(Tcl_Interp *interp, const char *what, Tcl_Size i)
+CprocTypedAs(Tcl_Obj *o, const char *name)
 {
-    Tcl_SetObjResult(interp, Tcl_ObjPrintf("cproc: argument %"
-	    TCL_SIZE_MODIFIER "d: %s", i, what));
-    return TCL_ERROR;
+    Tcl_Obj *t;
+
+    if (cp_annotType == NULL || o->typePtr != cp_annotType) {
+	return 0;
+    }
+    t = (Tcl_Obj *) o->internalRep.twoPtrValue.ptr2;
+    if (t == NULL || t->typePtr == NULL
+	    || strcmp(t->typePtr->name, "typeref") != 0) {
+	return -1;
+    }
+    return (name[0] != '\0' && strcmp(Tcl_GetString(t), name) == 0) ? 1 : -1;
+}
+
+static Tcl_Obj *
+CprocContent(Tcl_Obj *o)
+{
+    return (Tcl_Obj *) o->internalRep.twoPtrValue.ptr1;
+}
+
+/* une valeur du type de T (le T d'une valeur typée, gardé) */
+static Tcl_Obj *
+CprocWrap(Tcl_Obj *v, Tcl_Obj *t)
+{
+    Tcl_Obj *a = Tcl_NewObj();
+    Tcl_ObjInternalRep ir;
+
+    Tcl_IncrRefCount(v);
+    Tcl_IncrRefCount(t);
+    ir.twoPtrValue.ptr1 = v;
+    ir.twoPtrValue.ptr2 = t;
+    Tcl_StoreInternalRep(a, cp_annotType, &ir);
+    Tcl_InvalidateStringRep(a);
+    return a;
+}
+
+/* appeler une commande par son jeton, avec les mots donnés (le nom de
+ * l'appel reste celui de l'appelant : les messages d'usage le citent) */
+static int
+CprocCall(Tcl_Command tok, Tcl_Interp *ip, int objc, Tcl_Obj *const objv[])
+{
+    Tcl_CmdInfo info;
+
+    if (tok == NULL || !Tcl_GetCommandInfoFromToken(tok, &info)) {
+	Tcl_SetObjResult(ip, Tcl_NewStringObj("cproc: the typed procedure"
+		" of this command was deleted", -1));
+	return TCL_ERROR;
+    }
+    if (info.isNativeObjectProc == 2) {
+	return info.objProc2(info.objClientData2, ip, objc, objv);
+    }
+    return info.objProc(info.objClientData, ip, objc, objv);
+}
+
+/* un nombre nu (ou du type TN) ; 0 : à la procédure typée */
+static int
+CprocDouble(Tcl_Obj *o, const char *tn, double *r)
+{
+    int t = CprocTypedAs(o, tn);
+
+    if (t < 0) return 0;
+    return Tcl_GetDoubleFromObj(NULL, t ? CprocContent(o) : o, r) == TCL_OK;
+}
+
+static int
+CprocWide(Tcl_Obj *o, const char *tn, Tcl_WideInt lo, Tcl_WideInt hi,
+	Tcl_WideInt *r)
+{
+    int t = CprocTypedAs(o, tn);
+
+    if (t < 0) return 0;
+    if (Tcl_GetWideIntFromObj(NULL, t ? CprocContent(o) : o, r) != TCL_OK) {
+	return 0;
+    }
+    return *r >= lo && *r <= hi;
 }
 
 static Tcl_Obj *
@@ -502,28 +996,29 @@ cproc_list_double(const double *a, Tcl_Size n)
 
 # lecture (cp_get_T) et écriture (cp_put_T) d'une struct, et la liste
 # cproc_list_T pour le code de l'utilisateur
-proc ::cproc::StructGetPut {b blocks} {
-    set n [dict get $b name]
-    set fs [dict get $b fields]
-    set nf [llength $fs]
+proc {string}::cproc::StructGetPut {{cblock}b; {list.cblock}blocks} {
+    set n $b(name)
+    set nf [llength $b(fields)]
     set g "static int\ncp_get_$n\(Tcl_Interp *ip, Tcl_Obj *o, $n *r)\n\{\n"
     append g "    Tcl_Size n;\n    Tcl_Obj **e;\n\n"
     append g "    if (Tcl_ListObjGetElements(ip, o, &n, &e) != TCL_OK) return TCL_ERROR;\n"
     append g "    if (n != $nf) {\n\tTcl_SetObjResult(ip, Tcl_ObjPrintf(\"expected $nf fields for $n, got %\" TCL_SIZE_MODIFIER \"d\", n));\n\treturn TCL_ERROR;\n    }\n"
     set p "static Tcl_Obj *\ncp_put_$n\(const $n *v)\n\{\n    Tcl_Obj *e\[$nf\];\n\n"
     set i 0
-    foreach f $fs {
-	lassign $f ct fn dim
+    foreach f $b(fields) {
+	set ct $f(ctype)
+	set fn $f(name)
+	set dim $f(dim)
 	if {$dim ne ""} {
 	    append g "    {\n\tTcl_Size m, k;\n\tTcl_Obj **d;\n"
 	    append g "\tif (Tcl_ListObjGetElements(ip, e\[$i\], &m, &d) != TCL_OK) return TCL_ERROR;\n"
 	    append g "\tif (m != $dim) { Tcl_SetObjResult(ip, Tcl_NewStringObj(\"$n.$fn: expected $dim values\", -1)); return TCL_ERROR; }\n"
 	    append g "\tfor (k = 0; k < $dim; k++) {\n[GetScalar $ct d\[k\] r->$fn\[k\] $blocks \t\t]\t}\n    }\n"
-	    append p "    {\n\tTcl_Obj *d\[$dim\];\n\tint k;\n\tfor (k = 0; k < $dim; k++) d\[k\] = [PutScalar $ct v->$fn\[k\] $blocks];\n"
+	    append p "    {\n\tTcl_Obj *d\[$dim\];\n\tint k;\n\tfor (k = 0; k < $dim; k++) d\[k\] = [PutScalar $ct v->$fn\[k\]];\n"
 	    append p "\te\[$i\] = Tcl_NewListObj($dim, d);\n    }\n"
 	} else {
 	    append g [GetScalar $ct e\[$i\] r->$fn $blocks "    "]
-	    append p "    e\[$i\] = [PutScalar $ct v->$fn $blocks];\n"
+	    append p "    e\[$i\] = [PutScalar $ct v->$fn];\n"
 	}
 	incr i
     }
@@ -536,7 +1031,8 @@ proc ::cproc::StructGetPut {b blocks} {
     return "$g$p$l"
 }
 
-proc ::cproc::GetScalar {ct obj dst blocks ind} {
+proc {string}::cproc::GetScalar {{string}ct; {string}obj; {string}dst;
+	{list.cblock}blocks; {string}ind} {
     switch -glob -- $ct {
 	double {return "${ind}if (Tcl_GetDoubleFromObj(ip, $obj, &$dst) != TCL_OK) return TCL_ERROR;\n"}
 	float {return "${ind}{ double t; if (Tcl_GetDoubleFromObj(ip, $obj, &t) != TCL_OK) return TCL_ERROR; $dst = (float) t; }\n"}
@@ -545,8 +1041,8 @@ proc ::cproc::GetScalar {ct obj dst blocks ind} {
 	}
 	Tcl_Obj* {return "${ind}$dst = $obj;\n"}
 	default {
-	    foreach b [dict values $blocks] {
-		if {[dict get $b name] eq $ct && [dict get $b kind] eq "struct"} {
+	    foreach b $blocks {
+		if {$b(name) eq $ct && $b(kind) eq "struct"} {
 		    return "${ind}if (cp_get_$ct\(ip, $obj, &$dst) != TCL_OK) return TCL_ERROR;\n"
 		}
 	    }
@@ -555,7 +1051,7 @@ proc ::cproc::GetScalar {ct obj dst blocks ind} {
     }
 }
 
-proc ::cproc::PutScalar {ct src blocks} {
+proc {string}::cproc::PutScalar {{string}ct; {string}src} {
     switch -glob -- $ct {
 	double - float {return "Tcl_NewDoubleObj($src)"}
 	*int*_t - Tcl_WideInt - int {return "Tcl_NewWideIntObj((Tcl_WideInt) $src)"}
@@ -564,17 +1060,25 @@ proc ::cproc::PutScalar {ct src blocks} {
     }
 }
 
+# Le nom de type Tcl d'un élément en cases : celui de la struct, ou du nombre
+proc {string}::cproc::CellName {{celem}e} {
+    if {[Variant $e] eq "struct"} {return $e(struct.qual)}
+    switch -- $e(num.how) {
+	double {return double}
+	float  {return double(32)}
+	fix {
+	    regexp {^(u?)int(\d+)_t$} $e(num.ctype) -> u bits
+	    return [expr {$u eq "u" ? "int(u,$bits)" : "int(s,$bits)"}]
+	}
+	default {return x}
+    }
+}
+
 # un span : en place si la valeur est en cases du même type d'élément,
 # sinon une copie (libérée après l'appel)
-proc ::cproc::SpanGet {en e} {
-    set ct [dict get $e ctype]
-    set tn [expr {[dict get $e how] eq "struct" ? [dict get $e qual]
-	    : [dict get {double double float double(32) wide int fix x} \
-		[dict get $e how]]}]
-    if {[dict get $e how] eq "fix"} {
-	set tn [string map {uint int(u, int int(s, _t )} $ct]
-	regsub {\(([su]),} $tn {(\1,} tn
-    }
+proc {string}::cproc::SpanGet {{string}en; {celem}e} {
+    set ct [CType [ElemKind $e]]
+    set tn [CellName $e]
     set s "static int\ncp_span_$en\(Tcl_Interp *ip, Tcl_Obj *o, cproc_span_$en *s, void **own)\n\{\n"
     append s "    const void *cells = NULL;\n    Tcl_Size n, i;\n    Tcl_Obj **e, *t;\n    $ct *a;\n\n"
     append s "    *own = NULL;\n"
@@ -586,7 +1090,7 @@ proc ::cproc::SpanGet {en e} {
     append s "    a = ($ct *) Tcl_Alloc(sizeof($ct) * (n > 0 ? n : 1));\n"
     append s "    *own = a;\n"
     append s "    for (i = 0; i < n; i++) {\n"
-    if {[dict get $e how] eq "struct"} {
+    if {[Variant $e] eq "struct"} {
 	append s "\tif (cp_get_$ct\(ip, e\[i\], &a\[i\]) != TCL_OK) return TCL_ERROR;\n"
     } else {
 	append s [GetScalar $ct e\[i\] a\[i\] {} "\t"]
@@ -595,27 +1099,21 @@ proc ::cproc::SpanGet {en e} {
     return $s
 }
 
-proc ::cproc::Glue {p} {
-    set id [dict get $p id]
-    set params [dict get $p params]
-    set np [llength $params]
-    set g "static int\ncp_cmd_$id\(void *cd, Tcl_Interp *ip, int objc, Tcl_Obj *const objv\[\])\n\{\n"
+proc {string}::cproc::Glue {{cdef}p} {
+    set np [llength $p(params)]
+    set g "static int\ncp_cmd_$p(id)\(void *cd, Tcl_Interp *ip, int objc, Tcl_Obj *const objv\[\])\n\{\n"
     set decl ""
     set get ""
     set free ""
     set args {}
     set i 0
-    foreach a $params {
-	set k [dict get $a kind]
+    foreach a $p(params) {
+	set {kind}k $a(kind)
 	set v a$i
 	set o "objv\[[expr {$i + 1}]\]"
-	set ct [dict get $k ctype]
-	switch -- [dict get $k how] {
-	    double {
-		append decl "    double $v;\n"
-		append get "    if (Tcl_GetDoubleFromObj(ip, $o, &$v) != TCL_OK) return TCL_ERROR;\n"
-	    }
-	    float - wide - int - fix {
+	set ct [CType $k]
+	switch -- [Variant $k] {
+	    num {
 		append decl "    $ct $v;\n"
 		append get [GetScalar $ct $o $v {} "    "]
 	    }
@@ -629,46 +1127,47 @@ proc ::cproc::Glue {p} {
 	    }
 	    span {
 		append decl "    $ct $v;\n    void *own$i = NULL;\n"
-		append get "    if (cp_span_[dict get $k ename]\(ip, $o, &$v, &own$i) != TCL_OK) goto fail;\n"
+		append get "    if (cp_span_$k(span.ename)\(ip, $o, &$v, &own$i) != TCL_OK) goto fail;\n"
 		append free "    if (own$i != NULL) Tcl_Free(own$i);\n"
+	    }
+	    obj {
+		return -code error "cproc: argument $a(local): this type cannot\
+			be given to C"
 	    }
 	}
 	lappend args $v
 	incr i
     }
     append g "    (void) cd;\n"
-    append g "    if (objc != [expr {$np + 1}]) {\n\tTcl_WrongNumArgs(ip, 1, objv, \"[lmap a $params {dict get $a local}]\");\n\treturn TCL_ERROR;\n    }\n"
+    append g "    if (objc != [expr {$np + 1}]) {\n\tTcl_WrongNumArgs(ip, 1, objv, \"[lmap a $p(params) {set a(local)}]\");\n\treturn TCL_ERROR;\n    }\n"
     append g $decl
-    set rk [dict get $p ret]
-    if {$rk ne ""} {append g "    [dict get $rk ctype] r;\n"}
+    append g "    [CType $p(ret)] r;\n"
     append g "    Tcl_Obj *res = NULL;\n\n"
-    # les spans libèrent avant de sortir : les autres lectures ne
-    # réservent rien, on peut sortir directement avant le premier span
-    set getf [string map {"return TCL_ERROR;" "goto fail;"} $get]
-    append g $getf
+    # les spans libèrent avant de sortir
+    append g [string map {"return TCL_ERROR;" "goto fail;"} $get]
     append g "    cproc_failed = 0;\n"
-    set call "[dict get $p cname]([join $args {, }])"
-    if {$rk eq ""} {
-	append g "    $call;\n"
-    } else {
-	append g "    r = $call;\n"
-    }
+    append g "    r = $p(cname)([join $args {, }]);\n"
     append g "    if (cproc_failed) {\n\tTcl_SetObjResult(ip, Tcl_NewStringObj(cproc_errbuf, -1));\n\tgoto fail;\n    }\n"
-    if {$rk ne ""} {
-	switch -- [dict get $rk how] {
-	    double - float {append g "    res = Tcl_NewDoubleObj(r);\n"}
-	    wide - int - fix {append g "    res = Tcl_NewWideIntObj((Tcl_WideInt) r);\n"}
-	    str {append g "    res = Tcl_NewStringObj(r != NULL ? r : \"\", -1);\n"}
-	    struct {append g "    res = cp_put_[dict get $rk ctype]\(&r);\n"}
-	    default {append g "    res = (r != NULL) ? r : Tcl_NewObj();\n"}
-	}
-	append g "    Tcl_SetObjResult(ip, res);\n"
-    }
+    append g "    res = [Result $p(ret) r];\n"
+    append g "    Tcl_SetObjResult(ip, res);\n"
     append g $free
     append g "    return TCL_OK;\n  fail:\n"
     append g $free
     append g "    return TCL_ERROR;\n\}\n\n"
     return $g
+}
+
+# l'objet Tcl du résultat r
+proc {string}::cproc::Result {{kind}k; {string}r} {
+    switch -- [Variant $k] {
+	num {
+	    if {$k(num.how) in {double float}} {return "Tcl_NewDoubleObj($r)"}
+	    return "Tcl_NewWideIntObj((Tcl_WideInt) $r)"
+	}
+	str    {return "Tcl_NewStringObj($r != NULL ? $r : \"\", -1)"}
+	struct {return "cp_put_$k(struct.name)\(&$r)"}
+	default {return "(($r) != NULL ? ($r) : Tcl_NewObj())"}
+    }
 }
 
 # ----------------------------------------------------------------------
@@ -678,15 +1177,13 @@ proc ::cproc::Glue {p} {
 proc ::cproc::build {} {
     variable pending
     variable cfg
-    variable here
     variable lastSource
     if {[llength $pending] == 0} return
-    set procs $pending
+    set {list.cdef}procs {*}$pending
     set c [Gen $procs]
-    # l'initialisation : les commandes ::cproc::c::f<id>
-    set cc [dict get $cfg -cc]
+    set cc $cfg(cc)
     set istcc [string match *tcc* [file tail $cc]]
-    set flags [dict get $cfg -cflags]
+    set flags $cfg(cflags)
     if {$flags eq ""} {
 	# -ffp-contract=off : pas de a*b+c fusionné, les mêmes résultats que
 	# expr (tcc ne fusionne jamais)
@@ -695,45 +1192,66 @@ proc ::cproc::build {} {
     set key [format %08x%08x [zlib crc32 "$cc $flags\n$c"] \
 	    [zlib adler32 "$cc $flags\n$c"]]
     set prefix Cproc$key
-    append c "\nDLLEXPORT int\n${prefix}_Init(Tcl_Interp *ip)\n\{\n"
-    append c "    if (!CprocInitStubs(ip)) return TCL_ERROR;\n"
-    foreach p $procs {
-	append c "    Tcl_CreateObjCommand(ip, \"[dict get $p cmd]\",\
-		cp_cmd_[dict get $p id], NULL, NULL);\n"
-    }
-    append c "    return TCL_OK;\n\}\n"
+    append c [Init $prefix $procs [lmap s [NeededSpans $procs] {set s(ename)}]]
     set lastSource $c
-    set dir [CacheDir]
-    set lib [file join $dir cproc_$key[info sharedlibextension]]
+    set lib [file join [CacheDir] cproc_$key[info sharedlibextension]]
     if {![file exists $lib]} {
-	set src [file join $dir cproc_$key.c]
-	set f [open $src w]
-	fconfigure $f -encoding utf-8
-	puts -nonewline $f $c
-	close $f
-	set cmd [list $cc -shared {*}$flags]
-	if {$::tcl_platform(platform) ne "windows" && !$istcc} {
-	    lappend cmd -fPIC
-	}
-	foreach i [Includes] {lappend cmd -I$i}
-	lappend cmd -DUSE_TCL_STUBS -o $lib $src
-	if {[dict get $cfg -verbose]} {puts stderr "cproc: $cmd"}
-	if {[catch {exec {*}$cmd 2>@1} out]} {
-	    file delete -force $lib
-	    # les procédures restent en attente : l'appel suivant redonne
-	    # l'erreur du compilateur
-	    return -code error "cproc: the C compiler failed:\n$out"
-	}
-	if {[dict get $cfg -verbose] && $out ne ""} {puts stderr $out}
+	Compile $c $cc $flags $istcc $lib
     }
     load $lib $prefix
     set pending [lrange $pending [llength $procs] end]
     return
 }
 
-proc ::cproc::CacheDir {} {
+# l'initialisation : les commandes ::cproc::c::f<id>
+proc {string}::cproc::Init {{string}prefix; {list.cdef}procs;
+	{list.string}spans} {
+    set c "\nstatic void\ncp_exit(void *cd)\n\{\n    (void) cd;\n"
+    foreach p $procs {
+	append c "    cp_free_$p(id)();\n"
+    }
+    foreach en $spans {
+	append c "    if (cp_celltn_$en != NULL) { Tcl_DecrRefCount(cp_celltn_$en); cp_celltn_$en = NULL; }\n"
+    }
+    append c "\}\n"
+    append c "\nDLLEXPORT int\n${prefix}_Init(Tcl_Interp *ip)\n\{\n"
+    append c "    if (!CprocInitStubs(ip)) return TCL_ERROR;\n"
+    append c "    cp_annotType = Tcl_GetObjType(\"annotated\");\n"
+    foreach p $procs {
+	append c "    Tcl_CreateObjCommand(ip, \"$p(cmd)\", cp_cmd_$p(id), NULL, NULL);\n"
+	append c "    cp_init_$p(id)(ip);\n"
+    }
+    append c "    Tcl_CreateExitHandler(cp_exit, NULL);\n"
+    append c "    return TCL_OK;\n\}\n"
+}
+
+proc ::cproc::Compile {{string}c; {string}cc; {list.string}flags; {int}istcc;
+	{string}lib} {
     variable cfg
-    set d [dict get $cfg -cachedir]
+    set src [file rootname $lib].c
+    set f [open $src w]
+    fconfigure $f -encoding utf-8
+    puts -nonewline $f $c
+    close $f
+    set cmd [list $cc -shared {*}$flags]
+    if {$::tcl_platform(platform) ne "windows" && !$istcc} {
+	lappend cmd -fPIC
+    }
+    foreach i [Includes] {lappend cmd -I$i}
+    lappend cmd -DUSE_TCL_STUBS -o $lib $src
+    if {$cfg(verbose)} {puts stderr "cproc: $cmd"}
+    if {[catch {exec {*}$cmd 2>@1} out]} {
+	file delete -force $lib
+	# les procédures restent en attente : l'appel suivant redonne
+	# l'erreur du compilateur
+	return -code error "cproc: the C compiler failed:\n$out"
+    }
+    if {$cfg(verbose) && $out ne ""} {puts stderr $out}
+}
+
+proc {string}::cproc::CacheDir {} {
+    variable cfg
+    set d $cfg(cachedir)
     if {$d eq ""} {
 	if {[info exists ::env(CPROC_CACHE)]} {
 	    set d $::env(CPROC_CACHE)
@@ -748,10 +1266,10 @@ proc ::cproc::CacheDir {} {
 }
 
 # tcl.h (et tclDecls.h...), tclAnnotatedApi.h et tclCompact.h
-proc ::cproc::Includes {} {
+proc {list.string}::cproc::Includes {} {
     variable cfg
     variable here
-    set out [dict get $cfg -includes]
+    set out $cfg(includes)
     set cands {}
     catch {lappend cands [::tcl::pkgconfig get includedir,runtime]}
     set lib [info library]
@@ -760,7 +1278,6 @@ proc ::cproc::Includes {} {
     foreach d $cands {
 	if {[file exists [file join $d tcl.h]]} {lappend out $d; break}
     }
-    # l'API des valeurs annotées : à la racine de typeparse
     foreach d [list [file join $here .. ..] $here] {
 	if {[file exists [file join $d tclAnnotatedApi.h]]} {
 	    lappend out [file normalize $d]
@@ -770,4 +1287,4 @@ proc ::cproc::Includes {} {
     return $out
 }
 
-package provide cproc 0.1
+package provide cproc 0.3
