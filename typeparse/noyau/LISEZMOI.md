@@ -2356,6 +2356,32 @@ construisent une liste neuve et la typent. Dans le tutoriel, l'étape 2 passe de
 `tests_tclsh/t101_chemins_caches.tcl` : le même index lu sur des types différents, après une
 erreur, substitué, écrit, réutilisé ailleurs.
 
+### v16x — l'étiquette d'un retour hors compilation (6 novembre 2026)
+
+Patch noyau `retour-etiquette.patch` (après `execute-lecture-typee.patch`) : `tclBasic.c`
+(`TclEvalEx`) et `tclExecute.c` (sortie de `TEBCresume`). Sources de types : `tclAnnotObj.c`,
+`tclTypes.h`. Nouveau test `t102_retour_etiquette.tcl`.
+
+Une annotation expire à la fin de la commande qui reçoit le mot (piste B). Dans un corps
+compilé, `return {v:}$x` sort du bytecode du corps, et `TclTypedProcReturn` lit l'étiquette avant
+l'expiration. Sous `eval`, `uplevel` ou dans un `switch -matchvar`, le `return` est une commande
+d'un script non compilé (`TclEvalEx`) ou d'un bytecode imbriqué : l'étiquette expirait avant le
+contrôle du retour. `TclAnnotExpireFromRet(interp, mark, code)` remplace l'expiration à ces deux
+endroits : sorti par `TCL_RETURN` (niveau 1, code ok) dans une procédure typée
+(`iPtr->framePtr->procPtr->typedSig`, la procédure dont on sort, même sous `uplevel 1`), un
+résultat étiqueté est d'abord rendu dans le type de retour, puis l'étiquette expire. Le contrôle
+du corps voit ensuite une valeur déjà du bon type. Une erreur de type (étiquette qui n'est pas
+une variante, retour qui n'est pas une somme) sort avec le même message que dans un corps
+compilé. `catch` puis `return -options` garde la valeur typée.
+
+Aussi, pour cproc sous Windows avec tcc 0.9.27 : `type {c!}export` (et le C de cproc) définit,
+pour un compilateur qui n'est pas C11 et sans en-tête qui le fournisse, un `_Static_assert` de
+secours (un tableau de taille négative) : tcc 0.9.27 ne connaît pas le mot-clé, la glibc le
+fournissait sous Linux, pas les en-têtes Windows de tcc (`identifier expected`). Le C de cproc
+vérifie aussi que le compilateur produit du code de la taille de ce tclsh (`__SIZEOF_POINTER__`) :
+un tcc 32 bits sous un tclsh 64 bits donnait « Bad exe format » au chargement. Test t71 : la
+sortie de l'export montre le bloc de secours.
+
 ### v16w — sommes balisées, unions (6 novembre 2026)
 
 Pas de patch noyau. Sources de types : `tclTypes.c`, `tclTypes.h`, `tclTypesInt.h`,

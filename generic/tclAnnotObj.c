@@ -67,20 +67,29 @@ TclVecFree(TclObjVec *vec)
  * Type d'objet "typeref" : le T résolu
  * -------------------------------------------------------------------- */
 
+static Tcl_FreeInternalRepProc	FreeTypeRef;
 static Tcl_DupInternalRepProc	DupTypeRef;
 static Tcl_UpdateStringProc	UpdateStringOfTypeRef;
 static Tcl_SetFromAnyProc	SetTypeRefFromAny;
 
 static const Tcl_ObjType typeRefObjType = {
-    "typeref", NULL, DupTypeRef, UpdateStringOfTypeRef, SetTypeRefFromAny,
-    TCL_OBJTYPE_V0
+    "typeref", FreeTypeRef, DupTypeRef, UpdateStringOfTypeRef,
+    SetTypeRefFromAny, TCL_OBJTYPE_V0
 };
+
+/* v16u : une référence de type garde la table de son type en vie. */
+static void
+FreeTypeRef(Tcl_Obj *objPtr)
+{
+    TclTypeRelease((const TclType *) objPtr->internalRep.twoPtrValue.ptr1);
+}
 
 static void
 DupTypeRef(Tcl_Obj *srcPtr, Tcl_Obj *dupPtr)
 {
     Tcl_ObjInternalRep ir;
 
+    TclTypeHold((const TclType *) srcPtr->internalRep.twoPtrValue.ptr1);
     ir.twoPtrValue.ptr1 = srcPtr->internalRep.twoPtrValue.ptr1;
     ir.twoPtrValue.ptr2 = srcPtr->internalRep.twoPtrValue.ptr2;
     Tcl_StoreInternalRep(dupPtr, &typeRefObjType, &ir);
@@ -110,6 +119,10 @@ SetTypeRefFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr)
 
 typedef struct RefData {
     Tcl_HashTable refs;		/* "%p/%d" -> Tcl_Obj* (compté) */
+    Tcl_Obj **fresh;		/* v16m : valeurs annotées par un mot, en
+				 * attente de la fin de la commande qui les
+				 * reçoit (comptées) */
+    Tcl_Size nFresh, capFresh;
 } RefData;
 
 static void
@@ -124,9 +137,27 @@ DeleteRefData(void *clientData, Tcl_Interp *interp)
     }
     for (hPtr = Tcl_FirstHashEntry(&rd->refs, &search); hPtr != NULL;
 	    hPtr = Tcl_NextHashEntry(&search)) {
-	Tcl_DecrRefCount((Tcl_Obj *) Tcl_GetHashValue(hPtr));
+	Tcl_Obj *t = (Tcl_Obj *) Tcl_GetHashValue(hPtr);
+	TclType *tp = (TclType *) t->internalRep.twoPtrValue.ptr1;
+	int k;
+
+	/* v16u : le type peut survivre à cet interpréteur (sa table est
+	 * gardée par les valeurs) ; son cache ne doit pas garder un objet
+	 * libéré. t garde la table en vie jusqu'à sa libération. */
+	for (k = 0; k < 8; k++) {
+	    if (tp->refCache[k] == t) {
+		tp->refCache[k] = NULL;
+	    }
+	}
+	Tcl_DecrRefCount(t);
     }
     Tcl_DeleteHashTable(&rd->refs);
+    while (rd->nFresh > 0) {
+	Tcl_DecrRefCount(rd->fresh[--rd->nFresh]);
+    }
+    if (rd->fresh != NULL) {
+	Tcl_Free(rd->fresh);
+    }
     Tcl_Free(rd);
 }
 
@@ -138,6 +169,8 @@ GetRefData(Tcl_Interp *interp)
     if (rd == NULL) {
 	rd = (RefData *) Tcl_Alloc(sizeof(RefData));
 	Tcl_InitHashTable(&rd->refs, TCL_STRING_KEYS);
+	rd->fresh = NULL;
+	rd->nFresh = rd->capFresh = 0;
 	Tcl_SetAssocData(interp, "tclTypeRefs", DeleteRefData, rd);
 	((Interp *) interp)->typeRefsData = rd;
     }
@@ -168,6 +201,7 @@ TypeRefObj(Tcl_Interp *interp, TclType *tp, int variant)
 	return tPtr;
     }
     tPtr = Tcl_NewObj();
+    TclTypeHold(tp);
     ir.twoPtrValue.ptr1 = tp;
     ir.twoPtrValue.ptr2 = (void *) (intptr_t) (variant + 1);
     Tcl_StoreInternalRep(tPtr, &typeRefObjType, &ir);
@@ -234,6 +268,43 @@ static const Tcl_ObjType annotatedObjType = {
 
 const Tcl_ObjType *const TclAnnotatedObjTypePtr = &annotatedObjType;
 
+/* v16v : les tests de forme, en ligne dans ce fichier (les fonctions
+ * exportées d'une bibliothèque partagée ne s'y insèrent pas). */
+/* les listes en cases (plus bas, « Forme compacte ») */
+static Tcl_FreeInternalRepProc	FreeCompact;
+static Tcl_DupInternalRepProc	DupCompact;
+static Tcl_UpdateStringProc	UpdateStringOfCompact;
+static Tcl_ObjTypeLengthProc	CompactLength;
+static Tcl_ObjTypeIndexProc	CompactIndex;
+static Tcl_ObjTypeReplaceProc	CompactReplace;
+static Tcl_ObjTypeGetElements	CompactGetElements;
+
+static const Tcl_ObjType compactListType = {
+    "compactlist", FreeCompact, DupCompact, UpdateStringOfCompact, NULL,
+    TCL_OBJTYPE_V2(CompactLength, CompactIndex, NULL, NULL,
+	    CompactGetElements, NULL, CompactReplace, NULL)
+};
+
+static Tcl_FreeInternalRepProc	FreeCompactElem;
+static Tcl_DupInternalRepProc	DupCompactElem;
+static Tcl_UpdateStringProc	UpdateStringOfCompactElem;
+static Tcl_ObjTypeLengthProc	CompactElemLength;
+static Tcl_ObjTypeIndexProc	CompactElemIndex;
+static Tcl_ObjTypeGetElements	CompactElemGetElements;
+static Tcl_ObjTypeReplaceProc	CompactElemReplace;
+
+static const Tcl_ObjType compactElemType = {
+    "compactelem", FreeCompactElem, DupCompactElem, UpdateStringOfCompactElem,
+    NULL, TCL_OBJTYPE_V2(CompactElemLength, CompactElemIndex, NULL, NULL,
+	    CompactElemGetElements, NULL, CompactElemReplace, NULL)
+};
+#define TclIsCompact(v) ((v) != NULL && (v)->typePtr == &compactListType)
+#define TclIsCompactElem(v) ((v) != NULL && (v)->typePtr == &compactElemType)
+#define TclIsAnnotated(o) ((o)->typePtr == &annotatedObjType)
+#define TclAnnotIsSettled(o) ((o)->typePtr == &annotatedObjType \
+	&& ((Tcl_Obj *) (o)->internalRep.twoPtrValue.ptr2)->typePtr \
+	== &typeRefObjType)
+
 /* --------------------------------------------------------------------
  * État {T, N} : le T résolu et les NOTES (nominaux en attente)
  * --------------------------------------------------------------------
@@ -299,10 +370,19 @@ NotesJoined(Tcl_Obj *notes)
 
     if (notes != NULL && Tcl_ListObjGetElements(NULL, notes, &n, &elv)
 	    == TCL_OK) {
+	int first = 1;
+
 	for (i = 0; i < n; i++) {
-	    if (i > 0) {
+	    Tcl_Size el;
+
+	    (void) Tcl_GetStringFromObj(elv[i], &el);
+	    if (el == 0) {
+		continue;		/* v16m : la marque d'expiration */
+	    }
+	    if (!first) {
 		Tcl_AppendToObj(res, ".", 1);
 	    }
+	    first = 0;
 	    Tcl_AppendObjToObj(res, elv[i]);
 	}
     }
@@ -524,6 +604,29 @@ static Tcl_ThreadDataKey selfCellsKey;
 static int selfCellsEver = 0;	/* une case a-t-elle déjà été créée ? (sinon,
 				 * la libération ne cherche rien) */
 
+/* v16s : la table du thread, gardée dans une variable propre au thread
+ * (sans Tcl_GetThreadData à chaque libération d'une valeur annotée) ; NULL
+ * tant que ce thread n'a créé aucune case. */
+#if defined(_MSC_VER)
+#  define SELF_TLS __declspec(thread)
+#elif defined(__GNUC__) || defined(__clang__)
+#  define SELF_TLS __thread
+#endif
+#ifdef SELF_TLS
+static SELF_TLS SelfCells *selfCellsTls = NULL;
+static SELF_TLS int selfCellsExiting = 0;
+
+/* À la fin du thread, avant que ses données ne soient libérées : la
+ * libération revient à Tcl_GetThreadData (qui refait une table vide). */
+static void
+SelfCellsTlsForget(void *cd)
+{
+    (void) cd;
+    selfCellsTls = NULL;
+    selfCellsExiting = 1;
+}
+#endif
+
 static SelfCells *
 GetSelfCells(void)
 {
@@ -534,6 +637,12 @@ GetSelfCells(void)
 	Tcl_InitHashTable(&sc->cells, TCL_ONE_WORD_KEYS);
 	sc->init = 1;
     }
+#ifdef SELF_TLS
+    if (selfCellsTls != sc && !selfCellsExiting) {
+	selfCellsTls = sc;
+	Tcl_CreateThreadExitHandler(SelfCellsTlsForget, NULL);
+    }
+#endif
     return sc;
 }
 
@@ -563,8 +672,18 @@ FreeAnnotated(Tcl_Obj *objPtr)
 	FreeAnnotatedReps(objPtr);
 	return;
     }
+#ifdef SELF_TLS
+    sc = selfCellsTls;			/* NULL : aucune case dans ce thread
+					 * (ou fin du thread) */
+    if (sc == NULL) {
+	sc = selfCellsExiting ? (SelfCells *) Tcl_GetThreadData(&selfCellsKey,
+		sizeof(SelfCells)) : GetSelfCells();
+    }
+    if (sc->init && sc->cells.numEntries > 0) {
+#else
     sc = (SelfCells *) Tcl_GetThreadData(&selfCellsKey, sizeof(SelfCells));
     if (sc->init && sc->cells.numEntries > 0) {
+#endif
 	Tcl_HashEntry *hPtr = Tcl_FindHashEntry(&sc->cells, objPtr);
 
 	if (hPtr != NULL) {
@@ -657,9 +776,11 @@ AnnotListView(Tcl_Interp *interp, Tcl_Obj *aPtr, Tcl_Obj **contentPtr)
 	}
     }
     kind = EffectiveKind(tp, variant, content);
-    /* Règle B : seules les collections (list, dict) se déplient ; un
-     * produit est un élément, ses champs se lisent par chemin. */
-    return kind == TCLT_LIST || kind == TCLT_DICT;
+    /* v16t : les conteneurs (list, dict, produit) se déplient ; un scalaire
+     * (chaîne, nombre, littéral d'une somme) est UN élément : une chaîne
+     * n'est jamais relue comme une liste. Un produit se déplie en ses
+     * champs, chacun dans son type. */
+    return kind == TCLT_LIST || kind == TCLT_DICT || kind == TCLT_PRODUCT;
 }
 
 /*
@@ -672,7 +793,21 @@ AnnotListView(Tcl_Interp *interp, Tcl_Obj *aPtr, Tcl_Obj **contentPtr)
  */
 
 static TclType *
+AnnotListElemTypeAt(Tcl_Obj *aPtr, Tcl_Size index);
+
+static TclType *
 AnnotListElemType(Tcl_Obj *aPtr)
+{
+    return AnnotListElemTypeAt(aPtr, -1);
+}
+
+/*
+ * v16t : le type de l'élément INDEX de la vue liste de A : list.T -> T ;
+ * produit -> le type du champ INDEX (index < 0 : NULL, les champs n'ont pas
+ * un type commun). NULL : élément laissé tel quel.
+ */
+static TclType *
+AnnotListElemTypeAt(Tcl_Obj *aPtr, Tcl_Size index)
 {
     int status, variant = -1;
     TclType *tp = NULL, *lt;
@@ -692,12 +827,41 @@ AnnotListElemType(Tcl_Obj *aPtr)
 	}
     }
     lt = tp;
+    if (TclSumTagged(tp)) {
+	/* v16w : "v charge" : la variante (texte), puis la charge */
+	Tcl_Obj *pl;
+	int vv = TclSumDecode(tp, content, &pl);
+
+	if (index == 1 && vv >= 0 && tp->fields[vv].type != NULL) {
+	    return tp->fields[vv].type;
+	}
+	return NULL;
+    }
     if (tp->kind == TCLT_SUM) {
 	if (variant < 0 || variant >= (int) tp->nfields
 		|| tp->fields[variant].type == NULL) {
 	    return NULL;
 	}
 	lt = tp->fields[variant].type;
+    }
+    {
+	int d;
+
+	for (d = 0; lt->kind == TCLT_SUM && d < 16; d++) {
+	    int v2 = -1;
+
+	    if (TclTypeValidate(NULL, lt, content, -1, &v2) != TCL_OK
+		    || v2 < 0 || lt->fields[v2].type == NULL) {
+		return NULL;
+	    }
+	    lt = lt->fields[v2].type;
+	}
+    }
+    if (lt->kind == TCLT_PRODUCT) {
+	if (index < 0 || index >= lt->nfields) {
+	    return NULL;
+	}
+	return lt->fields[index].type;
     }
     if (lt->kind != TCLT_LIST || lt->elem == NULL
 	    || (TclTypeIsPlainString(lt->elem) && strcmp(lt->name, "list") == 0)) {
@@ -724,11 +888,64 @@ NewTypeRefNoCache(TclType *tp, int variant)
     }
     tPtr = Tcl_NewObj();
 
+    TclTypeHold(tp);
     ir.twoPtrValue.ptr1 = tp;
     ir.twoPtrValue.ptr2 = (void *) (intptr_t) (variant + 1);
     Tcl_StoreInternalRep(tPtr, &typeRefObjType, &ir);
     TclInvalidateStringRep(tPtr);
     return tPtr;
+}
+
+/* v16s : un type d'élément scalaire simple (int, double, string, non
+ * nominal, sans représentation binaire) : ses éléments restent nus. */
+static inline int
+PlainScalarElem(const TclType *et)
+{
+    /* v16t : pas string : une chaîne nue serait relue comme une liste
+     * (foreach x $L {foreach m $x ...}) ; elle reste typée, donc atomique */
+    return et != NULL && !et->nominal && et->binLink == NULL
+	    && et->binKind == TCLBIN_NONE && et->bitWidth == 0
+	    && !TclTypeIsAny(et) && (et->kind == TCLT_DOUBLE
+	    || et->kind == TCLT_INT);
+}
+
+/*
+ * v16t : les champs d'un produit, chacun dans son type (nombres simples
+ * laissés nus, comme les éléments d'une list.double).
+ */
+static void
+AnnotWrapFields(Tcl_Obj *aPtr, Tcl_Obj *v, Tcl_Size from, Tcl_Size to)
+{
+    Tcl_Size n, i;
+    Tcl_Obj *e, *w;
+    TclType *ft;
+    int variant;
+
+    if (Tcl_IsShared(v) || TclIsCompact(v)
+	    || Tcl_ListObjLength(NULL, v, &n) != TCL_OK) {
+	return;
+    }
+    if (from < 0) {
+	from = 0;
+    }
+    if (to >= n) {
+	to = n - 1;
+    }
+    for (i = from; i <= to; i++) {
+	ft = AnnotListElemTypeAt(aPtr, i);
+	if (ft == NULL || PlainScalarElem(ft)
+		|| Tcl_ListObjIndex(NULL, v, i, &e) != TCL_OK || e == NULL
+		|| TCL_ANNOT_P(e)) {
+	    continue;
+	}
+	variant = -1;
+	if (ft->kind == TCLT_SUM
+		&& TclTypeValidate(NULL, ft, e, -1, &variant) != TCL_OK) {
+	    continue;
+	}
+	w = MakeAnnotated(e, NewTypeRefNoCache(ft, variant));
+	Tcl_ListObjReplace(NULL, v, i, 1, 1, &w);
+    }
 }
 
 static void
@@ -739,8 +956,18 @@ AnnotWrapElems(Tcl_Obj *aPtr, Tcl_Obj *v, Tcl_Size from, Tcl_Size to)
     Tcl_Obj *e, *w;
     int variant;
 
-    if (et == NULL || Tcl_IsShared(v) || TclIsCompact(v)
+    if (et == NULL) {
+	AnnotWrapFields(aPtr, v, from, to);
+	return;
+    }
+    if (Tcl_IsShared(v) || TclIsCompact(v)
 	    || Tcl_ListObjLength(NULL, v, &n) != TCL_OK) {
+	return;
+    }
+    if (PlainScalarElem(et)) {
+	/* v16s : les éléments d'une liste de scalaires simples restent nus
+	 * dans le contenu ; lassign, lrange, foreach les rendent nus,
+	 * lindex et $L(i) en font une valeur typée à la demande */
 	return;
     }
     if (from < 0) {
@@ -748,6 +975,33 @@ AnnotWrapElems(Tcl_Obj *aPtr, Tcl_Obj *v, Tcl_Size from, Tcl_Size to)
     }
     if (to >= n) {
 	to = n - 1;
+    }
+    if (to > from) {
+	/* v16s : plusieurs éléments : un seul remplacement de la liste (au
+	 * lieu d'un Tcl_ListObjReplace par élément) */
+	Tcl_Obj **ev, **nv;
+	Tcl_Size k;
+
+	if (Tcl_ListObjGetElements(NULL, v, &n, &ev) != TCL_OK) {
+	    return;
+	}
+	nv = (Tcl_Obj **) Tcl_Alloc(sizeof(Tcl_Obj *) * (to - from + 1));
+	for (i = from, k = 0; i <= to; i++, k++) {
+	    e = ev[i];
+	    nv[k] = e;
+	    if (e == NULL || TCL_ANNOT_P(e)) {
+		continue;
+	    }
+	    variant = -1;
+	    if (et->kind == TCLT_SUM
+		    && TclTypeValidate(NULL, et, e, -1, &variant) != TCL_OK) {
+		continue;
+	    }
+	    nv[k] = MakeAnnotated(e, NewTypeRefNoCache(et, variant));
+	}
+	Tcl_ListObjReplace(NULL, v, from, to - from + 1, to - from + 1, nv);
+	Tcl_Free(nv);
+	return;
     }
     for (i = from; i <= to; i++) {
 	if (Tcl_ListObjIndex(NULL, v, i, &e) != TCL_OK || e == NULL
@@ -787,6 +1041,29 @@ FastListType(Tcl_Obj *aPtr, Tcl_Obj **vPtr)
 }
 
 /*
+ * Même chose pour un produit (lassign $p x y, lindex $p 0) : A typé par un
+ * produit (référence de type sans note, donc validé), contenu V ordinaire
+ * (ni en cases, ni vue sur une case). Rend le produit et V, ou NULL.
+ */
+static inline TclType *
+FastProductType(Tcl_Obj *aPtr, Tcl_Obj **vPtr)
+{
+    Tcl_Obj *t = (Tcl_Obj *) aPtr->internalRep.twoPtrValue.ptr2;
+    Tcl_Obj *v = (Tcl_Obj *) aPtr->internalRep.twoPtrValue.ptr1;
+    TclType *pt;
+
+    if (t->typePtr != &typeRefObjType) {
+	return NULL;
+    }
+    pt = (TclType *) t->internalRep.twoPtrValue.ptr1;
+    if (pt->kind != TCLT_PRODUCT || TclIsCompact(v) || TclIsCompactElem(v)) {
+	return NULL;
+    }
+    *vPtr = v;
+    return pt;
+}
+
+/*
  * foreach, lmap : la liste à parcourir pour une liste typée A. Si TOUS les
  * éléments de V sont des valeurs typées (les éléments sont typés dans V,
  * une fois pour toutes, s'il n'est pas partagé), la boucle parcourt V comme
@@ -814,6 +1091,20 @@ TclAnnotIterList(Tcl_Obj *aPtr)
 	    return NULL;
 	}
     }
+    {
+	/*
+	 * v16s : une liste de scalaires simples (list.int, list.double,
+	 * list.string) : la boucle parcourt le contenu, ses éléments nus. Ils
+	 * ont été vérifiés à l'entrée (le type de la liste) ; les envelopper un
+	 * à un (un objet par élément, refait pour chaque liste neuve) coûtait
+	 * 2,5 fois la boucle. Une variable typée ou une procédure typée qui
+	 * les reçoit les revérifie. Les listes de produits, de sommes, de any,
+	 * de types nominaux gardent leurs éléments typés.
+	 */
+	if (PlainScalarElem(AnnotListElemType(aPtr))) {
+	    return v;
+	}
+    }
     for (pass = 0; pass < 2; pass++) {
 	if (Tcl_ListObjGetElements(NULL, v, &n, &ev) != TCL_OK) {
 	    return NULL;
@@ -837,7 +1128,7 @@ AnnotListLength(Tcl_Obj *aPtr)
     Tcl_Obj *v;
     Tcl_Size n;
 
-    if (FastListType(aPtr, &v) != NULL) {
+    if (FastListType(aPtr, &v) != NULL || FastProductType(aPtr, &v) != NULL) {
 	return (Tcl_ListObjLength(NULL, v, &n) == TCL_OK) ? n : 1;
     }
 
@@ -863,14 +1154,47 @@ AnnotListIndex(Tcl_Interp *interp, Tcl_Obj *aPtr, Tcl_Size index,
 		-1)) : NULL;
 	return TCL_OK;
     }
+    if (lt != NULL && TclIsCompactElem(v)) {
+	/* une ligne d'une liste en cases (list(n).T) : la partie lue dans la
+	 * case est neuve (refcount 0), typée ici */
+	Tcl_Obj *c = NULL;
+
+	Tcl_ListObjIndex(NULL, v, index, &c);
+	*elemPtr = (c != NULL) ? MakeAnnotated(c, NewTypeRefNoCache(lt->elem,
+		-1)) : NULL;
+	return TCL_OK;
+    }
     if (lt != NULL && Tcl_ListObjIndex(NULL, v, index, elemPtr) == TCL_OK
 	    && *elemPtr != NULL && TCL_ANNOT_P(*elemPtr)) {
 	return TCL_OK;			/* élément déjà typé dans V */
     }
+    if (lt == NULL && (lt = FastProductType(aPtr, &v)) != NULL
+	    && index >= 0 && index < lt->nfields) {
+	/* le champ INDEX d'un produit : déjà typé dans V, ou un nombre
+	 * simple laissé nu dans V, typé ici (objet neuf, comme ci-dessous) */
+	TclType *ft = lt->fields[index].type;
+	Tcl_Obj *e = NULL;
+
+	if (Tcl_ListObjIndex(NULL, v, index, &e) == TCL_OK && e != NULL) {
+	    if (TCL_ANNOT_P(e)) {
+		*elemPtr = e;
+		return TCL_OK;
+	    }
+	    if (PlainScalarElem(ft)) {
+		/* typé une fois pour toutes dans un V privé, comme le fait la
+		 * lecture $p(x) : le lassign suivant n'alloue plus rien */
+		*elemPtr = MakeAnnotated(e, NewTypeRefNoCache(ft, -1));
+		if (!Tcl_IsShared(v) && TclHasInternalRep(v, &tclListType)) {
+		    Tcl_ListObjReplace(NULL, v, index, 1, 1, elemPtr);
+		}
+		return TCL_OK;
+	    }
+	}
+    }
     if (AnnotListView(interp, aPtr, &v)) {
 	if (TclIsCompact(v)) {
 	    /* une case : un élément neuf, typé (refcount 0, comme lseq) */
-	    TclType *et = AnnotListElemType(aPtr);
+	    TclType *et = AnnotListElemTypeAt(aPtr, index);
 	    Tcl_Obj *c = TclCompactElement(v, index);
 
 	    *elemPtr = (c != NULL && et != NULL)
@@ -888,7 +1212,7 @@ AnnotListIndex(Tcl_Interp *interp, Tcl_Obj *aPtr, Tcl_Size index,
 	     * neuf (refcount 0, comme pour lseq) : l'élément d'une list.T est
 	     * toujours un T, que V soit partagé ou non.
 	     */
-	    TclType *et = AnnotListElemType(aPtr);
+	    TclType *et = AnnotListElemTypeAt(aPtr, index);
 	    int variant = -1;
 
 	    if (et != NULL && !(et->kind == TCLT_SUM && TclTypeValidate(NULL,
@@ -901,6 +1225,78 @@ AnnotListIndex(Tcl_Interp *interp, Tcl_Obj *aPtr, Tcl_Size index,
     }
     *elemPtr = (index == 0) ? aPtr : NULL;	/* le scalaire est son élément */
     return TCL_OK;
+}
+
+/*
+ * v16v : lindex et lassign compilés (listIndexImm) sur une valeur typée par
+ * un produit ou une liste typée, contenu ordinaire : l'élément est lu dans V
+ * sans passer par les procédures de liste abstraite (longueur puis index).
+ * Rend 1 et l'élément (emprunté à V, ou objet neuf vide hors bornes) ; 0 :
+ * cas général. Les éléments déjà typés dans V, ceux d'une {list} nue, et
+ * les nombres simples d'un produit quand V est privé (typés sur place) ;
+ * les autres passent par AnnotListIndex.
+ */
+int
+TclAnnotFastIndex(
+    Tcl_Obj *aPtr,
+    int encodedIndex,		/* index codé (TclIndexEncode) */
+    Tcl_Obj **elemPtr)
+{
+    Tcl_Obj *t, *v, **ev;
+    TclType *tp, *et;
+    Tcl_Size n, index;
+
+    if (aPtr->typePtr != &annotatedObjType) {
+	return 0;
+    }
+    t = (Tcl_Obj *) aPtr->internalRep.twoPtrValue.ptr2;
+    v = (Tcl_Obj *) aPtr->internalRep.twoPtrValue.ptr1;
+    if (t->typePtr != &typeRefObjType || v->typePtr != &tclListType) {
+	return 0;
+    }
+    tp = (TclType *) t->internalRep.twoPtrValue.ptr1;
+    if (tp->kind != TCLT_PRODUCT && (tp->kind != TCLT_LIST
+	    || tp->elem == NULL)) {
+	return 0;
+    }
+    if (TclListObjGetElements(NULL, v, &n, &ev) != TCL_OK) {
+	return 0;
+    }
+    index = TclIndexDecode(encodedIndex, n - 1);
+    if (index < 0 || index >= n) {
+	TclNewObj(*elemPtr);
+	return 1;
+    }
+    if (ev[index]->typePtr == &annotatedObjType) {
+	*elemPtr = ev[index];
+	return 1;
+    }
+    if (tp->kind == TCLT_PRODUCT) {
+	if (n != tp->nfields) {
+	    return 0;
+	}
+	et = tp->fields[index].type;
+    } else {
+	et = tp->elem;
+	if (TclTypeIsPlainString(et) && strcmp(tp->name, "list") == 0) {
+	    *elemPtr = ev[index];		/* {list} nue : texte ordinaire */
+	    return 1;
+	}
+    }
+    if (tp->kind != TCLT_PRODUCT || !PlainScalarElem(et)
+	    || Tcl_IsShared(v)) {
+	return 0;			/* à envelopper : AnnotListIndex */
+    }
+    /* un nombre simple d'un produit : typé une fois pour toutes dans le V
+     * privé (comme AnnotListIndex), emprunté ensuite */
+    {
+	Tcl_Obj *w = MakeAnnotated(ev[index], NewTypeRefNoCache(et, -1));
+
+	Tcl_ListObjReplace(NULL, v, index, 1, 1, &w);
+	TclListObjGetElements(NULL, v, &n, &ev);
+	*elemPtr = ev[index];
+    }
+    return 1;
 }
 
 static int
@@ -929,9 +1325,41 @@ static int
 AnnotListSlice(Tcl_Interp *interp, Tcl_Obj *aPtr, Tcl_Size from, Tcl_Size to,
 	Tcl_Obj **newPtr)
 {
-    Tcl_Obj **elv;
-    Tcl_Size n;
+    Tcl_Obj **elv, *v;
+    Tcl_Size n, i;
 
+    /* une tranche vide (le reste de lassign $p x y) : rien à typer */
+    if ((FastListType(aPtr, &v) != NULL || FastProductType(aPtr, &v) != NULL)
+	    && Tcl_ListObjLength(NULL, v, &n) == TCL_OK
+	    && (from > to || from >= n || to < 0)) {
+	*newPtr = Tcl_NewObj();
+	return TCL_OK;
+    }
+    /* v16s : lrange $L end-1 end ne type que la tranche (pas toute la
+     * liste) quand le contenu est privé */
+    if (FastListType(aPtr, &v) != NULL && !TclIsCompact(v)
+	    && !Tcl_IsShared(v)
+	    && Tcl_ListObjLength(NULL, v, &n) == TCL_OK) {
+	if (from < 0) {
+	    from = 0;
+	}
+	if (to >= n) {
+	    to = n - 1;
+	}
+	if (from > to) {
+	    *newPtr = Tcl_NewObj();
+	    return TCL_OK;
+	}
+	AnnotWrapElems(aPtr, v, from, to);
+	if (Tcl_ListObjGetElements(NULL, v, &n, &elv) == TCL_OK) {
+	    for (i = from; i <= to && TCL_ANNOT_P(elv[i]); i++) {
+	    }
+	    if (i > to) {
+		*newPtr = Tcl_NewListObj(to - from + 1, elv + from);
+		return TCL_OK;
+	    }
+	}
+    }
     if (AnnotListGetElements(interp, aPtr, &n, &elv) != TCL_OK) {
 	return TCL_ERROR;
     }
@@ -1039,16 +1467,80 @@ AnnotListCopy(Tcl_Interp *interp, Tcl_Obj *aPtr)
     return Tcl_NewListObj(1, &v);
 }
 
+/*
+ * v16m : l'élément reçu par lset, linsert, lreplace sur une liste typée porte
+ * peut-être une annotation en attente ({double}2.5) : la commande reçoit le
+ * mot, elle la résout (la variante d'une liste de sommes compte). Rend une
+ * référence possédée, ou NULL (erreur dans interp).
+ */
+static Tcl_Obj *
+SettleElement(Tcl_Interp *interp, Tcl_Obj *aPtr, Tcl_Obj *valueObj)
+{
+    TclType *ltp = NULL;
+    const TclType *ctx = NULL;
+    Tcl_Obj *res = NULL;
+
+    Tcl_Obj *lab;
+
+    if (interp == NULL || !TclAnnotHasFresh(valueObj)) {
+	Tcl_IncrRefCount(valueObj);
+	return valueObj;
+    }
+    lab = TclAnnotLabelOf(valueObj);
+    if (lab != NULL) {
+	/* {s:}abc : l'étiquette est lue plus loin (variante de l'élément) */
+	Tcl_DecrRefCount(lab);
+	Tcl_IncrRefCount(valueObj);
+	return valueObj;
+    }
+    if (TclAnnotInfo(aPtr, NULL, &ltp, NULL, NULL) == 1 && ltp != NULL
+	    && ltp->kind == TCLT_LIST && ltp->elem != NULL
+	    && ltp->elem->kind == TCLT_SUM) {
+	ctx = ltp->elem;
+    }
+    if (TclAnnotSettle(interp, valueObj, ctx, 0, &res) != TCL_OK) {
+	return NULL;
+    }
+    Tcl_IncrRefCount(res);
+    return res;
+}
+
 static int
 AnnotListReplace(Tcl_Interp *interp, Tcl_Obj *aPtr, Tcl_Size first,
 	Tcl_Size numToDelete, Tcl_Size numToInsert, Tcl_Obj *const insertObjs[])
 {
-    Tcl_Obj *w = AnnotListCopy(interp, aPtr);
+    Tcl_Obj *w = AnnotListCopy(interp, aPtr), *ins = NULL, **iv;
+    Tcl_Size k;
     int rc;
 
     Tcl_IncrRefCount(w);
+    for (k = 0; k < numToInsert && interp != NULL; k++) {
+	if (TclAnnotHasFresh(insertObjs[k])) {
+	    break;
+	}
+    }
+    if (interp != NULL && k < numToInsert) {
+	ins = Tcl_NewListObj(0, NULL);
+	Tcl_IncrRefCount(ins);
+	for (k = 0; k < numToInsert; k++) {
+	    Tcl_Obj *e = SettleElement(interp, aPtr, insertObjs[k]);
+
+	    if (e == NULL) {
+		Tcl_DecrRefCount(ins);
+		Tcl_DecrRefCount(w);
+		return TCL_ERROR;
+	    }
+	    Tcl_ListObjAppendElement(NULL, ins, e);
+	    Tcl_DecrRefCount(e);
+	}
+	Tcl_ListObjGetElements(NULL, ins, &k, &iv);
+	insertObjs = iv;
+    }
     rc = Tcl_ListObjReplace(interp, w, first, numToDelete, numToInsert,
 	    insertObjs);
+    if (ins != NULL) {
+	Tcl_DecrRefCount(ins);
+    }
     if (rc == TCL_OK) {
 	rc = TclAnnotSetContent(interp, aPtr, w);
     }
@@ -1064,11 +1556,41 @@ static Tcl_Obj *
 AnnotListSetElement(Tcl_Interp *interp, Tcl_Obj *aPtr, Tcl_Size indexCount,
 	Tcl_Obj *const indexArray[], Tcl_Obj *valueObj)
 {
-    Tcl_Obj *w = AnnotListCopy(interp, aPtr), *r, *target, *tagged = NULL;
+    Tcl_Obj *w, *r, *target, *tagged = NULL, *settled;
     int rc;
     TclType *ltp = NULL;
 
+    settled = NULL;
+    if (valueObj != NULL) {		/* lpop : NULL, un élément retiré */
+	settled = SettleElement(interp, aPtr, valueObj);	/* v16m */
+	if (settled == NULL) {
+	    return NULL;
+	}
+	valueObj = settled;
+    }
+    w = AnnotListCopy(interp, aPtr);
     Tcl_IncrRefCount(w);
+    if (indexCount > 1 && TclIsCompact(w)) {
+	/*
+	 * lset L i j... d'une liste en cases : TclLsetFlat garde l'élément i
+	 * (pris dans la liste des éléments fabriquée à la demande) puis
+	 * remplace l'élément de la liste, ce qui la convertit et libère cette
+	 * liste avec l'élément. On part donc d'une liste ordinaire ; le
+	 * résultat est remis en cases au rangement (TclAnnotSetContent).
+	 */
+	Tcl_Obj **ev, *pl;
+	Tcl_Size ne;
+
+	if (Tcl_ListObjGetElements(interp, w, &ne, &ev) != TCL_OK) {
+	    Tcl_DecrRefCount(w);
+	    if (settled != NULL) {Tcl_DecrRefCount(settled);}
+	    return NULL;
+	}
+	pl = Tcl_NewListObj(ne, ev);
+	Tcl_IncrRefCount(pl);
+	Tcl_DecrRefCount(w);
+	w = pl;
+    }
     if (indexCount == 1 && TclAnnotInfo(aPtr, NULL, &ltp, NULL, NULL) == 1
 	    && ltp->kind == TCLT_LIST && ltp->elem != NULL
 	    && ltp->elem->kind == TCLT_SUM && !TclIsAnnotated(valueObj)) {
@@ -1101,6 +1623,7 @@ AnnotListSetElement(Tcl_Interp *interp, Tcl_Obj *aPtr, Tcl_Size indexCount,
     }
     if (r == NULL) {
 	Tcl_DecrRefCount(w);
+	if (settled != NULL) {Tcl_DecrRefCount(settled);}
 	return NULL;
     }
     /* Jamais en place : la valeur d'une variable sous contrat doit rester
@@ -1109,6 +1632,7 @@ AnnotListSetElement(Tcl_Interp *interp, Tcl_Obj *aPtr, Tcl_Size indexCount,
     rc = TclAnnotSetContent(interp, target, r);
     Tcl_DecrRefCount(r);			/* la référence de TclLsetFlat */
     Tcl_DecrRefCount(w);
+    if (settled != NULL) {Tcl_DecrRefCount(settled);}
     if (rc != TCL_OK) {
 	if (target != aPtr) {
 	    Tcl_BounceRefCount(target);
@@ -1320,7 +1844,7 @@ TclNewRawAnnotation(Tcl_Obj *typeText, Tcl_Obj *content)
 }
 
 int
-TclIsAnnotated(Tcl_Obj *objPtr)
+(TclIsAnnotated)(Tcl_Obj *objPtr)
 {
     return Tcl_FetchInternalRep(objPtr, &annotatedObjType) != NULL;
 }
@@ -1328,7 +1852,7 @@ TclIsAnnotated(Tcl_Obj *objPtr)
 /* Valeur typée par une référence de type, sans note : TclAnnotSettle n'a
  * rien à faire. */
 int
-TclAnnotIsSettled(Tcl_Obj *objPtr)
+(TclAnnotIsSettled)(Tcl_Obj *objPtr)
 {
     return objPtr->typePtr == &annotatedObjType && ((Tcl_Obj *)
 	    objPtr->internalRep.twoPtrValue.ptr2)->typePtr == &typeRefObjType;
@@ -1483,8 +2007,12 @@ TclAnnotResolve(Tcl_Interp *interp, Tcl_Obj *objPtr, const TclType *ctx,
 
 	Tcl_ListObjLength(NULL, nl, &nn);
 	if (nn > 0 && Tcl_ListObjIndex(NULL, nl, nn - 1, &last) == TCL_OK) {
-	    idx = TclTypeFieldIndex(ctx, Tcl_GetString(last));
-	    if (idx >= 0 && ctx->fields[idx].type != NULL) {
+	    idx = TclAnnotLabelIndex(ctx, Tcl_GetString(last));
+	    if (idx < 0 && TclAnnotOldLabel(interp, ctx, Tcl_GetString(last))) {
+		return TCL_ERROR;		/* {v}$x : écrire {v:} */
+	    }
+	    if (idx >= 0 && (ctx->fields[idx].type != NULL
+		    || TclSumTagged(ctx))) {	/* v16w : {none:} */
 		*statusPtr = TCLA_RAW;
 		*tpPtr = (TclType *) ctx;
 		*variantPtr = (int) idx;
@@ -1513,8 +2041,12 @@ TclAnnotResolve(Tcl_Interp *interp, Tcl_Obj *objPtr, const TclType *ctx,
 	return TCL_OK;
     }
     if (ctx != NULL && ctx->kind == TCLT_SUM) {
-	idx = TclTypeFieldIndex(ctx, text);
-	if (idx >= 0 && ctx->fields[idx].type != NULL) {
+	idx = TclAnnotLabelIndex(ctx, text);	/* {v:} (v16l) */
+	if (idx < 0 && TclAnnotOldLabel(interp, ctx, text)) {
+	    return TCL_ERROR;			/* {v} : écrire {v:} */
+	}
+	if (idx >= 0 && (ctx->fields[idx].type != NULL
+		    || TclSumTagged(ctx))) {	/* v16w : {none:} */
 	    *statusPtr = TCLA_RAW;
 	    *tpPtr = (TclType *) ctx;
 	    *variantPtr = (int) idx;
@@ -1658,6 +2190,15 @@ EffectiveKind(const TclType *tp, int variant, Tcl_Obj *content)
     for (depth = 0; tp->kind == TCLT_SUM && depth < 16; depth++) {
 	const TclTypeField *f;
 
+	if (TclSumTagged(tp)) {
+	    /* v16w : "v charge" est un conteneur de deux éléments (la
+	     * variante, la charge) ; une variante littérale, un scalaire */
+	    int vv = TclSumDecode(tp, content, NULL);
+
+	    return (vv >= 0 && tp->fields[vv].type == NULL) ? TCLT_STRING
+		    : TCLT_PRODUCT;
+	}
+
 	if (variant < 0 || variant >= tp->nfields) {
 	    return TCLT_SUM;
 	}
@@ -1744,7 +2285,7 @@ TclAnnotUnwrap(Tcl_Interp *interp, Tcl_Obj *objPtr, int want,
      * Un produit d'UN SEUL champ se lit comme ce champ pour les conversions
      * scalaires (nombre, entier, flottant, booléen) : {{int}i} qui vaut 5
      * est le nombre 5. Le contenu rendu est le champ lui-même, pour ne pas
-     * convertir la liste V. (La vue liste, elle, garde la règle B.)
+     * convertir la liste V. (Sa vue liste, elle, est la liste de ses champs.)
      */
     if (want != TCLWANT_LIST && want != TCLWANT_DICT) {
 	int depth;
@@ -1854,6 +2395,15 @@ AnnotateCore(Tcl_Interp *interp, Tcl_Obj *typeText, Tcl_Obj *value,
 	return TCL_OK;
     }
     if (ClassifyAnnot(interp, typeText, NULL, NULL, NULL) == ANN_LOCAL) {
+	const char *lt = Tcl_GetString(typeText);
+
+	if (len > 1 && lt[len - 1] == ':') {
+	    /* {nom:}$x (v16l) : une étiquette, au sommet de la pile ; la
+	     * valeur garde son type et ses notes, le constructeur lit et
+	     * retire l'étiquette. */
+	    *resultPtr = AnnotAddNote(value, typeText);
+	    return TCL_OK;
+	}
 	/* {-v} : locale, éphémère, lue par la commande appelée seule. */
 	*resultPtr = TclNewRawAnnotation(typeText, vcontent);
 	return TCL_OK;
@@ -1966,8 +2516,9 @@ ClassifyAnnot(Tcl_Interp *interp, Tcl_Obj *textObj, const TclType *ctx,
 	*variantPtr = -1;
     }
     if (ctx != NULL && ctx->kind == TCLT_SUM) {
-	idx = TclTypeFieldIndex(ctx, text);
-	if (idx >= 0 && ctx->fields[idx].type != NULL) {
+	idx = TclAnnotLabelIndex(ctx, text);	/* {v:} (v16l) */
+	if (idx >= 0 && (ctx->fields[idx].type != NULL
+		    || TclSumTagged(ctx))) {	/* v16w : {none:} */
 	    if (variantPtr != NULL) {
 		*variantPtr = (int) idx;
 	    }
@@ -2153,8 +2704,41 @@ TclAnnotIsCleared(Tcl_Obj *objPtr)
  * withCleared : garder la pile sous une marque {} (lecture d'un
  * constructeur) ; sinon une valeur marquée n'a pas de pile.
  */
+/*
+ * v16m (piste B) : une annotation expire après la commande qui reçoit le mot.
+ * Les notes expirées restent dans N, sous une marque (un élément vide) : ce
+ * sont des métadonnées, affichées, jamais résolues. Seules les notes au-dessus
+ * de la dernière marque sont en attente.
+ */
+static Tcl_Size
+FreshStart(Tcl_Obj *n)
+{
+    Tcl_Obj **elv;
+    Tcl_Size nn, i, el;
+
+    if (n == NULL || Tcl_ListObjGetElements(NULL, n, &nn, &elv) != TCL_OK) {
+	return 0;
+    }
+    for (i = nn - 1; i >= 0; i--) {
+	(void) Tcl_GetStringFromObj(elv[i], &el);
+	if (el == 0) {
+	    return i + 1;
+	}
+    }
+    return 0;
+}
+
+static Tcl_Obj *PendingOfEx(Tcl_Obj *objPtr, int withCleared, int all);
+
 static Tcl_Obj *
 PendingOf(Tcl_Obj *objPtr, int withCleared)
+{
+    return PendingOfEx(objPtr, withCleared, 0);
+}
+
+/* all : aussi les notes expirées (affichage, note get). */
+static Tcl_Obj *
+PendingOfEx(Tcl_Obj *objPtr, int withCleared, int all)
 {
     Tcl_ObjInternalRep *ir = Tcl_FetchInternalRep(objPtr, &annotatedObjType);
     Tcl_Obj *t, *n, *res, **elv;
@@ -2175,8 +2759,13 @@ PendingOf(Tcl_Obj *objPtr, int withCleared)
 	}
     }
     if (n != NULL && Tcl_ListObjGetElements(NULL, n, &nn, &elv) == TCL_OK) {
-	for (i = 0; i < nn; i++) {
-	    Tcl_ListObjAppendElement(NULL, res, Tcl_DuplicateObj(elv[i]));
+	for (i = all ? 0 : FreshStart(n); i < nn; i++) {
+	    Tcl_Size el;
+
+	    (void) Tcl_GetStringFromObj(elv[i], &el);
+	    if (el > 0) {
+		Tcl_ListObjAppendElement(NULL, res, Tcl_DuplicateObj(elv[i]));
+	    }
 	}
     }
     return res;
@@ -2195,6 +2784,29 @@ TclAnnotPending(Tcl_Obj *objPtr)
  * la valeur n'a pas d'annotation en attente. Sert aux étiquettes de champ
  * d'un constructeur de produit : set {paire}p {nom}jean {age}12.
  */
+/* v16l : la première étiquette {nom:} encore en attente sur la valeur, ou
+ * NULL (texte possédé par l'appelant, à libérer). */
+Tcl_Obj *
+TclAnnotLabelOf(Tcl_Obj *objPtr)
+{
+    Tcl_Obj *pd = PendingOf(objPtr, 0), **elv, *res = NULL;
+    Tcl_Size n, i, l;
+
+    Tcl_IncrRefCount(pd);
+    if (Tcl_ListObjGetElements(NULL, pd, &n, &elv) == TCL_OK) {
+	for (i = 0; i < n && res == NULL; i++) {
+	    const char *t = Tcl_GetStringFromObj(elv[i], &l);
+
+	    if (l > 1 && t[l - 1] == ':') {
+		res = elv[i];
+		Tcl_IncrRefCount(res);
+	    }
+	}
+    }
+    Tcl_DecrRefCount(pd);
+    return res;
+}
+
 /* Annotation qui ne nomme rien de connu (ni type, ni local) : une note. */
 int
 TclAnnotIsUnknown(Tcl_Interp *interp, Tcl_Obj *textObj)
@@ -2216,6 +2828,9 @@ TclAnnotPopTop(Tcl_Obj *src, Tcl_Obj **topPtr)
     SplitT((Tcl_Obj *) ir->twoPtrValue.ptr2, &t, &n);
     if (n != NULL) {
 	Tcl_ListObjLength(NULL, n, &nn);
+    }
+    if (nn > 0 && FreshStart(n) >= nn) {
+	return NULL;			/* v16m : rien en attente (expiré) */
     }
     if (nn > 0) {
 	Tcl_ListObjIndex(NULL, n, nn - 1, topPtr);
@@ -2239,6 +2854,44 @@ TclAnnotPopTop(Tcl_Obj *src, Tcl_Obj **topPtr)
 	}
     }
     return NULL;
+}
+
+/*
+ * v16m : res (valeur neuve d'un constructeur) + les notes EXPIRÉES de src :
+ * des métadonnées, qui suivent la valeur comme elle. Rend res lui-même s'il
+ * n'y a rien à porter, sinon une valeur neuve (sans référence).
+ */
+Tcl_Obj *
+TclAnnotKeepExpired(Tcl_Obj *res, Tcl_Obj *src)
+{
+    Tcl_ObjInternalRep *sir = Tcl_FetchInternalRep(src, &annotatedObjType);
+    Tcl_ObjInternalRep *rir;
+    Tcl_Obj *st, *sn, *rt = NULL, *rn = NULL, *content = res, *newN, **elv;
+    Tcl_Size fs, nn;
+
+    if (sir == NULL) {
+	return res;
+    }
+    SplitT((Tcl_Obj *) sir->twoPtrValue.ptr2, &st, &sn);
+    fs = FreshStart(sn);
+    if (fs <= 1) {
+	return res;			/* aucune note expirée */
+    }
+    rir = Tcl_FetchInternalRep(res, &annotatedObjType);
+    if (rir != NULL) {
+	content = (Tcl_Obj *) rir->twoPtrValue.ptr1;
+	SplitT((Tcl_Obj *) rir->twoPtrValue.ptr2, &rt, &rn);
+	if (FreshStart(rn) > 0) {
+	    return res;			/* déjà portées */
+	}
+    }
+    Tcl_ListObjGetElements(NULL, sn, &nn, &elv);
+    newN = Tcl_NewListObj(fs, elv);	/* notes expirées et la marque */
+    if (rn != NULL) {
+	Tcl_ListObjGetElements(NULL, rn, &nn, &elv);
+	Tcl_ListObjReplace(NULL, newN, fs, 0, nn, elv);
+    }
+    return MakeAnnotated(Tcl_DuplicateObj(content), StateObj(rt, newN));
 }
 
 /* res (valeur typée fraîche, sans pile) + la pile donnée. */
@@ -2300,6 +2953,34 @@ TclAnnotSettle(Tcl_Interp *interp, Tcl_Obj *objPtr, const TclType *ctx,
 	}
 	cls = ClassifyAnnot(interp, elv[i], ctx, &tp, &v);
 	if (cls == ANN_LOCAL) {
+	    if (nr > 0 && rv[nr - 1] < 0 && rt[nr - 1]->kind == TCLT_SUM
+		    && (cur == NULL || cur != rt[nr - 1])) {
+		/* (v16w : aussi sur une valeur typée d'un autre type, {s:}$d :
+		 * sa valeur est la charge) */
+		/* type cast S {v:}x (v16l) : l'étiquette sous le type d'une
+		 * somme nomme sa variante. */
+		Tcl_Size fi = TclAnnotLabelIndex(rt[nr - 1],
+			Tcl_GetString(elv[i]));
+
+		if (fi >= 0) {
+		    rv[nr - 1] = (int) fi;
+		    keep[i] = 0;	/* consommée */
+		    changed = 1;
+		    continue;
+		}
+	    }
+	    {
+		Tcl_Size ll;
+		const char *lt = Tcl_GetStringFromObj(elv[i], &ll);
+
+		if (ll > 1 && lt[ll - 1] == ':') {
+		    /* {nom:} (v16l) : une étiquette reste en attente pour le
+		     * constructeur qui la lira (champ, variante, chemin) ; un
+		     * rangement final la refuse (TclAnnotLabelOf). */
+		    stopped = 1;
+		    continue;
+		}
+	    }
 	    keep[i] = 0;		/* éphémère : jamais rangée */
 	    changed = 1;
 	    continue;
@@ -2327,8 +3008,8 @@ TclAnnotSettle(Tcl_Interp *interp, Tcl_Obj *objPtr, const TclType *ctx,
 		&& cur == NULL) {
 	    /* type cast S {v}x : la balise sous le type d'une somme nomme
 	     * sa variante (comme set {S}y {v}x). */
-	    Tcl_Size fi = TclTypeFieldIndex(rt[nr - 1],
-		    Tcl_GetString(elv[i]));
+	    Tcl_Size fi = TclAnnotLabelIndex(rt[nr - 1],
+		    Tcl_GetString(elv[i]));	/* {v:} (v16l) */
 
 	    if (fi >= 0) {
 		rv[nr - 1] = (int) fi;
@@ -2363,16 +3044,43 @@ TclAnnotSettle(Tcl_Interp *interp, Tcl_Obj *objPtr, const TclType *ctx,
     if (nr > 0 && cur != NULL && cur == rt[0] && cur->kind == TCLT_SUM
 	    && rv[0] >= 0 && curVar >= 0 && rv[0] != curVar) {
 	/* {S.b}$v, v en S.a : d'une variante à l'autre (règle, ou cast). */
-	Tcl_Obj *c;
+	Tcl_Obj *c, *pl = content;
 
-	if (TclTypeVariantConvert(interp, cur, curVar, content, rv[0], &c)
+	if (TclSumTagged(cur)) {	/* v16w : la charge de "v charge" */
+	    TclSumDecode(cur, content, &pl);
+	    if (pl == NULL) {
+		pl = content;
+	    }
+	}
+	if (TclTypeVariantConvert(interp, cur, curVar, pl, rv[0], &c)
 		!= TCL_OK) {
 	    Tcl_DecrRefCount(pend);
 	    return TCL_ERROR;
 	}
+	if (TclSumTagged(cur)) {
+	    Tcl_Obj *w = TclSumMake(cur, rv[0], c);
+
+	    TclDiscard(c);
+	    c = w;
+	}
 	val = TclNewAnnotated(interp, cur, rv[0], c);
 	TclDiscard(c);
 	Tcl_IncrRefCount(val);
+    } else if (nr > 0 && cur != NULL && cur != rt[0]
+	    && rt[0]->kind == TCLT_SUM && rv[0] >= 0) {
+	/* v16w : {const:}$d, d typée (string) : l'étiquette nomme la
+	 * variante, la valeur de d est sa charge */
+	Tcl_Obj *copy = Tcl_DuplicateObj(content);
+
+	Tcl_IncrRefCount(copy);
+	if (TclTypeComplete(interp, rt[0], copy, rv[0], &variant) != TCL_OK) {
+	    Tcl_DecrRefCount(copy);
+	    Tcl_DecrRefCount(pend);
+	    return TCL_ERROR;
+	}
+	val = TclNewAnnotated(interp, rt[0], variant, copy);
+	Tcl_IncrRefCount(val);
+	Tcl_DecrRefCount(copy);
     } else if (nr > 0 && cur != NULL) {
 	Tcl_Obj *base = MakeAnnotated(Tcl_DuplicateObj(content),
 		TypeRefObj(interp, cur, curVar));
@@ -2407,9 +3115,21 @@ TclAnnotSettle(Tcl_Interp *interp, Tcl_Obj *objPtr, const TclType *ctx,
 	Tcl_IncrRefCount(val);
     }
 
-    /* La pile restante, dans l'ordre. */
+    /* La pile restante, dans l'ordre : d'abord les notes expirées (v16m),
+     * marque comprise, telles quelles. */
     remaining = Tcl_NewListObj(0, NULL);
     Tcl_IncrRefCount(remaining);
+    if (n != NULL) {
+	Tcl_Size fs = FreshStart(n);
+
+	if (fs > 0) {
+	    Tcl_Obj **xv;
+	    Tcl_Size xn;
+
+	    Tcl_ListObjGetElements(NULL, n, &xn, &xv);
+	    Tcl_ListObjReplace(NULL, remaining, 0, 0, fs, xv);
+	}
+    }
     for (i = 0; i < np; i++) {
 	if (keep[i]) {
 	    Tcl_ListObjAppendElement(NULL, remaining, elv[i]);
@@ -2437,6 +3157,12 @@ TclAnnotSettle(Tcl_Interp *interp, Tcl_Obj *objPtr, const TclType *ctx,
     }
     Tcl_DecrRefCount(remaining);
     Tcl_DecrRefCount(pend);
+    if (interp != NULL && res != objPtr && TclAnnotHasFresh(res)) {
+	/* v16m, piste B : ce que le constructeur n'a pas résolu (une note,
+	 * une étiquette qu'il lira ensuite) expire avec la commande, même
+	 * rangé dans une variable : la valeur neuve est inscrite. */
+	TclAnnotRegisterFresh(interp, res);
+    }
     *resultPtr = res;
     return TCL_OK;
 }
@@ -2510,40 +3236,420 @@ AnnotLocalObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
     return TCL_ERROR;
 }
 
+/* --------------------------------------------------------------------
+ * v16m, piste B : une annotation expire après la commande qui reçoit le mot
+ * --------------------------------------------------------------------
+ *
+ * Chaque valeur annotée par un mot ({T}mot) est inscrite dans une liste par
+ * interpréteur. Le code compilé encadre une commande qui a un mot annoté :
+ *
+ *	::tcl::annotexpire [::tcl::annotmark] <la commande>
+ *
+ * annotmark rend la longueur de la liste ; annotexpire fait expirer tout ce
+ * qui a été inscrit depuis, et rend le résultat de la commande. Expirer, c'est
+ * changer EN PLACE l'état de l'objet créé par le mot : ce qu'il porte encore
+ * en attente (un type non résolu, une note) devient une note expirée, une
+ * métadonnée que plus aucun constructeur ne résout ; une étiquette {nom:} et
+ * une annotation locale disparaissent. Le changement en place atteint toutes
+ * les copies par référence : le résultat d'une commande qui rend son
+ * argument (concat, return), un élément rangé dans une liste ou un dict, une
+ * valeur rangée dans une variable.
+ */
+
+/* L'objet a-t-il une annotation encore en attente (texte brut, note) ? */
+static int
+HasFresh(Tcl_Obj *objPtr, Tcl_Obj **tPtr, Tcl_Obj **nPtr)
+{
+    Tcl_ObjInternalRep *ir = Tcl_FetchInternalRep(objPtr, &annotatedObjType);
+    Tcl_Obj *t, *n;
+    Tcl_Size len, nn = 0;
+
+    if (ir == NULL) {
+	return 0;
+    }
+    SplitT((Tcl_Obj *) ir->twoPtrValue.ptr2, &t, &n);
+    *tPtr = t;
+    *nPtr = n;
+    if (t != NULL && !IsTypeRef(t)) {
+	Tcl_GetStringFromObj(t, &len);
+	if (len > 0) {
+	    return 1;
+	}
+    }
+    if (n != NULL) {
+	Tcl_ListObjLength(NULL, n, &nn);
+    }
+    return FreshStart(n) < nn;
+}
+
+/* Une étiquette {nom:} ou une annotation locale : ne survit pas. */
+static int
+IsEphemeral(Tcl_Interp *interp, Tcl_Obj *text)
+{
+    Tcl_Size l;
+    const char *s = Tcl_GetStringFromObj(text, &l);
+
+    if (l > 1 && s[l - 1] == ':') {
+	return 1;
+    }
+    return interp != NULL
+	    && ClassifyAnnot(interp, text, NULL, NULL, NULL) == ANN_LOCAL;
+}
+
 /*
- * {list}$p, {dict}$p, {list.T}$p sur une valeur TYPÉE : un cast vers une
- * collection, fait tout de suite, au moment de l'annotation (la vue liste
- * n'a pas d'interpréteur pour résoudre un nom de type). Le produit rend ses
- * champs, la liste nominale ses éléments ; la chaîne ne change pas.
- * Rend TCL_OK (*resultPtr rempli), TCL_ERROR (cast refusé), ou TCL_CONTINUE
- * (pas concerné : annoter normalement).
+ * L'état (ptr2) est changé EN PLACE, pas seulement l'objet : les copies de la
+ * valeur (Tcl_DuplicateObj, que concat ou lindex peuvent faire) partagent cet
+ * état et expirent avec elle. L'état est un texte brut ({int}5) ou un objet
+ * annotstate {T, N} ; jamais une référence de type (rien en attente).
+ */
+static void
+SetStateInPlace(Tcl_Obj *st, Tcl_Obj *newT, Tcl_Obj *newN)
+{
+    Tcl_ObjInternalRep ir;
+
+    if (newT != NULL) {
+	Tcl_IncrRefCount(newT);
+    }
+    Tcl_IncrRefCount(newN);
+    if (st->typePtr == &annotStateObjType) {
+	Tcl_Obj *ot = (Tcl_Obj *) st->internalRep.twoPtrValue.ptr1;
+	Tcl_Obj *on = (Tcl_Obj *) st->internalRep.twoPtrValue.ptr2;
+
+	st->internalRep.twoPtrValue.ptr1 = newT;
+	st->internalRep.twoPtrValue.ptr2 = newN;
+	if (ot != NULL) {
+	    Tcl_DecrRefCount(ot);
+	}
+	if (on != NULL) {
+	    Tcl_DecrRefCount(on);
+	}
+    } else {
+	(void) Tcl_GetString(st);
+	TclFreeInternalRep(st);
+	ir.twoPtrValue.ptr1 = newT;
+	ir.twoPtrValue.ptr2 = newN;
+	Tcl_StoreInternalRep(st, &annotStateObjType, &ir);
+    }
+    TclInvalidateStringRep(st);
+}
+
+void
+TclAnnotExpire(Tcl_Interp *interp, Tcl_Obj *objPtr)
+{
+    Tcl_ObjInternalRep *ir;
+    Tcl_Obj *t, *n, *newN, **elv, *newT, *st;
+    Tcl_Size nn = 0, fs, i, len, kept = 0;
+    Tcl_InterpState state = NULL;
+
+    if (!HasFresh(objPtr, &t, &n)) {
+	return;
+    }
+    if (interp != NULL) {
+	state = Tcl_SaveInterpState(interp, TCL_OK);
+    }
+    ir = Tcl_FetchInternalRep(objPtr, &annotatedObjType);
+    st = (Tcl_Obj *) ir->twoPtrValue.ptr2;
+    Tcl_IncrRefCount(st);
+    newN = Tcl_NewListObj(0, NULL);
+    Tcl_IncrRefCount(newN);
+    fs = FreshStart(n);
+    if (n != NULL) {
+	Tcl_ListObjGetElements(NULL, n, &nn, &elv);
+	if (fs > 0) {
+	    Tcl_ListObjReplace(NULL, newN, 0, 0, fs - 1, elv);
+	    kept = fs - 1;
+	}
+    }
+    newT = t;
+    if (t != NULL && !IsTypeRef(t)) {
+	Tcl_GetStringFromObj(t, &len);
+	if (len > 0) {
+	    newT = NULL;		/* {int}5 brut : devient une note */
+	    if (!IsEphemeral(interp, t)) {
+		Tcl_ListObjAppendElement(NULL, newN, Tcl_DuplicateObj(t));
+		kept++;
+	    }
+	}
+    }
+    if (n != NULL) {
+	Tcl_ListObjGetElements(NULL, n, &nn, &elv);
+	for (i = fs; i < nn; i++) {
+	    if (!IsEphemeral(interp, elv[i])) {
+		Tcl_ListObjAppendElement(NULL, newN, elv[i]);
+		kept++;
+	    }
+	}
+    }
+    if (state != NULL) {
+	Tcl_RestoreInterpState(interp, state);
+    }
+    if (newT != NULL) {
+	Tcl_IncrRefCount(newT);		/* survit au changement de st */
+    }
+    Tcl_ListObjAppendElement(NULL, newN, Tcl_NewObj());	/* la marque */
+    SetStateInPlace(st, newT, newN);
+    Tcl_DecrRefCount(newN);
+    if (kept == 0) {
+	/* Plus rien d'écrit sur cet objet : il redevient une valeur
+	 * ordinaire (sa chaîne), ou garde son seul type résolu. Ses copies
+	 * gardent l'état marqué, sans note. */
+	if (newT == NULL) {
+	    (void) Tcl_GetString(objPtr);
+	    TclFreeInternalRep(objPtr);
+	} else {
+	    ir->twoPtrValue.ptr2 = newT;
+	    Tcl_IncrRefCount(newT);
+	    Tcl_DecrRefCount(st);
+	}
+    }
+    if (newT != NULL) {
+	Tcl_DecrRefCount(newT);
+    }
+    Tcl_DecrRefCount(st);
+}
+
+int
+TclAnnotHasFresh(Tcl_Obj *objPtr)
+{
+    Tcl_Obj *t, *n;
+
+    return HasFresh(objPtr, &t, &n);
+}
+
+/*
+ * v16m : un argument de VALEUR d'une commande qui le consomme (foreach,
+ * lmap, dict for, dict map, lassign) : la commande reçoit le mot, elle résout
+ * son annotation en attente ({list}$p, {dict}$p, {int}$x), comme un
+ * constructeur sans contexte. *resPtr reçoit une référence possédée.
  */
 int
-TclAnnotCollectionCast(Tcl_Interp *interp, Tcl_Obj *typeText, Tcl_Obj *value,
+TclAnnotSettleValueArg(Tcl_Interp *interp, Tcl_Obj *objPtr,
+	Tcl_Obj **resPtr)
+{
+    Tcl_Obj *t, *n, *res = NULL;
+
+    if (!HasFresh(objPtr, &t, &n)) {
+	Tcl_IncrRefCount(objPtr);
+	*resPtr = objPtr;
+	return TCL_OK;
+    }
+    if (TclAnnotSettle(interp, objPtr, NULL, 0, &res) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    Tcl_IncrRefCount(res);
+    *resPtr = res;
+    return TCL_OK;
+}
+
+/*
+ * v16m : {T}mot reçu par une boucle compilée (foreach, lmap, dict for, dict
+ * map) : la boucle le résout tout de suite, sans fabriquer la valeur annotée
+ * intermédiaire (instruction annotCast). Même résultat que
+ * TclAnnotSettleValueArg sur [::tcl::annotate T valeur]. Rend une valeur
+ * sans référence propre (la valeur elle-même si rien ne change).
+ */
+int
+TclAnnotCastText(Tcl_Interp *interp, Tcl_Obj *typeText, Tcl_Obj *value,
 	Tcl_Obj **resultPtr)
 {
-    TclType *from = NULL, *to;
-    Tcl_InterpState state;
-    Tcl_Size tlen;
-    const char *ttext = Tcl_GetStringFromObj(typeText, &tlen);
+    TclType *tp = NULL, *cur = NULL;
+    int v = -1, cls, curVar = -1, variant = -1;
+    Tcl_Obj *res = NULL, *ann = NULL;
 
-    if (TclAnnotInfo(value, NULL, &from, NULL, NULL) != 1 || from == NULL) {
-	return TCL_CONTINUE;
+    if (TclIsAnnotated(value) && !TclAnnotIsSettled(value)) {
+	goto general;			/* la valeur a déjà des notes */
     }
-    /* Un nom inconnu reste une note : l'échec de l'analyse ne doit rien
-     * laisser, ni résultat ni errorInfo (TclEvalEx s'en servirait). */
-    state = Tcl_SaveInterpState(interp, TCL_OK);
-    to = TclTypeParse(interp, ttext, tlen);
-    Tcl_RestoreInterpState(interp, state);
-    if (to == NULL || to == from
-	    || (to->kind != TCLT_LIST && to->kind != TCLT_DICT)) {
-	return TCL_CONTINUE;
+    cls = ClassifyAnnot(interp, typeText, NULL, &tp, &v);
+    if (cls == ANN_BAD) {
+	Tcl_Size bl;
+	const char *bt = Tcl_GetStringFromObj(typeText, &bl);
+
+	(void) TclTypeParse(interp, bt, bl);	/* le message */
+	return TCL_ERROR;
     }
-    return TclTypeCast(interp, value, to, resultPtr);
+    if (cls != ANN_TYPE) {
+	if (Tcl_GetString(typeText)[0] == '\0') {
+	    goto general;		/* {} : retirer le type */
+	}
+	*resultPtr = value;		/* une note, une locale : rien à faire */
+	return TCL_OK;
+    }
+    if (!TclIsAnnotated(value)) {
+	Tcl_Obj *copy = Tcl_DuplicateObj(value);
+
+	Tcl_IncrRefCount(copy);
+	if (TclTypeComplete(interp, tp, copy, v, &variant) != TCL_OK) {
+	    Tcl_DecrRefCount(copy);
+	    return TCL_ERROR;
+	}
+	res = TclNewAnnotated(interp, tp, variant, copy);
+	Tcl_DecrRefCount(copy);
+	*resultPtr = res;
+	return TCL_OK;
+    }
+    (void) TclAnnotInfo(value, NULL, &cur, &curVar, NULL);
+    if (cur == tp && (v < 0 || v == curVar)) {
+	*resultPtr = value;
+	return TCL_OK;
+    }
+    if (cur == tp) {
+	goto general;			/* d'une variante à l'autre */
+    }
+    if (TclTypeCast(interp, value, tp, &res) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    *resultPtr = res;
+    return TCL_OK;
+
+  general:
+    if (TclAnnotateValue(interp, typeText, value, &ann) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    Tcl_IncrRefCount(ann);
+    if (TclAnnotSettle(interp, ann, NULL, 0, &res) != TCL_OK) {
+	Tcl_DecrRefCount(ann);
+	return TCL_ERROR;
+    }
+    if (res == ann) {
+	ann->refCount--;		/* rendue sans référence propre */
+    } else {
+	Tcl_IncrRefCount(res);
+	Tcl_DecrRefCount(ann);
+	res->refCount--;
+    }
+    *resultPtr = res;
+    return TCL_OK;
+}
+
+/* Inscrit une valeur annotée par un mot. */
+void
+TclAnnotRegisterFresh(Tcl_Interp *interp, Tcl_Obj *objPtr)
+{
+    RefData *rd;
+    Tcl_Size i, j;
+
+    if (interp == NULL || objPtr->typePtr != &annotatedObjType) {
+	return;
+    }
+    rd = GetRefData(interp);
+    if (rd->nFresh >= rd->capFresh) {
+	/* Les inscrits que plus rien ne tient (refCount 1) s'en vont. Une
+	 * commande en erreur ne fait pas expirer les siens : l'encadrement
+	 * suivant, plus extérieur, s'en charge ; sinon ils restent ici. */
+	for (i = j = 0; i < rd->nFresh; i++) {
+	    if (rd->fresh[i]->refCount <= 1) {
+		Tcl_DecrRefCount(rd->fresh[i]);
+	    } else {
+		rd->fresh[j++] = rd->fresh[i];
+	    }
+	}
+	rd->nFresh = j;
+	if (rd->nFresh >= rd->capFresh / 2) {
+	    rd->capFresh = rd->capFresh ? 2 * rd->capFresh : 32;
+	    rd->fresh = (Tcl_Obj **) Tcl_Realloc(rd->fresh,
+		    rd->capFresh * sizeof(Tcl_Obj *));
+	}
+    }
+    Tcl_IncrRefCount(objPtr);
+    rd->fresh[rd->nFresh++] = objPtr;
+}
+
+Tcl_Size
+TclAnnotFreshMark(Tcl_Interp *interp)
+{
+    RefData *rd = (RefData *) ((Interp *) interp)->typeRefsData;
+
+    return rd == NULL ? 0 : rd->nFresh;
+}
+
+void
+TclAnnotExpireFrom(Tcl_Interp *interp, Tcl_Size mark)
+{
+    RefData *rd = (RefData *) ((Interp *) interp)->typeRefsData;
+    Tcl_Obj *o;
+
+    if (rd == NULL || mark < 0) {
+	return;
+    }
+    while (rd->nFresh > mark) {
+	o = rd->fresh[--rd->nFresh];
+	/* Rien d'autre ne le tient, ni lui ni son état (une copie le
+	 * partagerait) : il part sans expirer. */
+	if (o->refCount > 1 || o->typePtr != &annotatedObjType
+		|| ((Tcl_Obj *) o->internalRep.twoPtrValue.ptr2)->refCount > 1) {
+	    TclAnnotExpire(interp, o);
+	}
+	Tcl_DecrRefCount(o);
+    }
+}
+
+/*
+ * v16x : la même expiration, à la fin d'une commande ou d'un script non
+ * compilé (TclEvalEx) ou d'un bytecode qui n'est pas le corps de la
+ * procédure. Sorti par TCL_RETURN dans une procédure typée (return {v:}$x
+ * sous eval, uplevel, switch -matchvar), un résultat étiqueté est d'abord
+ * rendu dans le type de retour de la procédure, comme le ferait son corps
+ * compilé : l'étiquette est lue avant d'expirer. Rend le code (TCL_ERROR
+ * si le résultat n'entre pas dans le type de retour).
+ */
+int
+TclAnnotExpireFromRet(Tcl_Interp *interp, Tcl_Size mark, int code)
+{
+    Interp *iPtr = (Interp *) interp;
+    Tcl_Obj *res, *lab;
+
+    if (code == TCL_RETURN && iPtr->framePtr != NULL
+	    && iPtr->framePtr->procPtr != NULL
+	    && iPtr->framePtr->procPtr->typedSig != NULL
+	    && iPtr->returnLevel == 1 && iPtr->returnCode == TCL_OK) {
+	res = Tcl_GetObjResult(interp);
+	if (res->typePtr == &annotatedObjType
+		&& (lab = TclAnnotLabelOf(res)) != NULL) {
+	    Tcl_DecrRefCount(lab);
+	    code = TclTypedProcReturn(interp, iPtr->framePtr->procPtr->typedSig,
+		    code);
+	}
+    }
+    TclAnnotExpireFrom(interp, mark);
+    return code;
+}
+
+static int
+AnnotMarkObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
+	Tcl_Obj *const objv[])
+{
+    (void) clientData;
+    (void) objv;
+    if (objc != 1) {
+	Tcl_WrongNumArgs(interp, 1, objv, NULL);
+	return TCL_ERROR;
+    }
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(TclAnnotFreshMark(interp)));
+    return TCL_OK;
+}
+
+static int
+AnnotExpireObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
+	Tcl_Obj *const objv[])
+{
+    Tcl_WideInt mark;
+
+    (void) clientData;
+    if (objc != 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "mark value");
+	return TCL_ERROR;
+    }
+    if (Tcl_GetWideIntFromObj(interp, objv[1], &mark) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    TclAnnotExpireFrom(interp, (Tcl_Size) mark);
+    Tcl_SetObjResult(interp, objv[2]);
+    return TCL_OK;
 }
 
 /* ::tcl::annotate type value : l'équivalent exécutable de {type}valeur,
- * appelé par le code compilé et par TclSubstTokens. */
+ * appelé par le code compilé et par TclSubstTokens. Rien n'est résolu ici
+ * (v16m : plus de cast immédiat) ; la valeur est inscrite. */
 static int
 AnnotateObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
 	Tcl_Obj *const objv[])
@@ -2555,17 +3661,69 @@ AnnotateObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
 	Tcl_WrongNumArgs(interp, 1, objv, "type value");
 	return TCL_ERROR;
     }
-    switch (TclAnnotCollectionCast(interp, objv[1], objv[2], &res)) {
-    case TCL_ERROR:
-	return TCL_ERROR;
-    case TCL_OK:
-	Tcl_SetObjResult(interp, res);
-	return TCL_OK;
-    }
     if (TclAnnotateValue(interp, objv[1], objv[2], &res) != TCL_OK) {
 	return TCL_ERROR;
     }
+    TclAnnotRegisterFresh(interp, res);
     Tcl_SetObjResult(interp, res);
+    return TCL_OK;
+}
+
+/*
+ * type {T}mot (v16m) : le cast explicite. La commande reçoit le mot, elle
+ * résout son annotation comme un constructeur sans contexte : un type connu
+ * valide et caste, sinon erreur. Rend TCL_CONTINUE si objPtr n'a aucune
+ * annotation en attente.
+ */
+int
+TclAnnotCastWord(Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_Obj **resultPtr)
+{
+    Tcl_Obj *t, *n, *pend, *res = NULL;
+    Tcl_Size np = 0;
+
+    if (!HasFresh(objPtr, &t, &n)) {
+	return TCL_CONTINUE;
+    }
+    pend = PendingOf(objPtr, 0);
+    Tcl_IncrRefCount(pend);
+    Tcl_ListObjLength(NULL, pend, &np);
+    if (np > 0) {
+	Tcl_Obj *top;
+	TclType *tp = NULL;
+	int v, cls;
+
+	Tcl_ListObjIndex(NULL, pend, np - 1, &top);
+	cls = ClassifyAnnot(interp, top, NULL, &tp, &v);
+	if (cls == ANN_BAD) {
+	    Tcl_Size bl;
+	    const char *bt = Tcl_GetStringFromObj(top, &bl);
+
+	    (void) TclTypeParse(interp, bt, bl);	/* le message */
+	    Tcl_DecrRefCount(pend);
+	    return TCL_ERROR;
+	}
+	if (cls != ANN_TYPE) {
+	    if (cls != ANN_LOCAL) {
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"unknown type \"%s\"", Tcl_GetString(top)));
+		Tcl_SetErrorCode(interp, "TCL", "TYPE", "UNKNOWN",
+			(char *) NULL);
+	    } else {
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"\"%s\" is not a type: \"type\" casts to a type",
+			Tcl_GetString(top)));
+		Tcl_SetErrorCode(interp, "TCL", "TYPE", "NOTATYPE",
+			(char *) NULL);
+	    }
+	    Tcl_DecrRefCount(pend);
+	    return TCL_ERROR;
+	}
+    }
+    Tcl_DecrRefCount(pend);
+    if (TclAnnotSettle(interp, objPtr, NULL, 0, &res) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    *resultPtr = res;
     return TCL_OK;
 }
 
@@ -2576,12 +3734,16 @@ static int
 AnnotRawObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
 	Tcl_Obj *const objv[])
 {
+    Tcl_Obj *res;
+
     (void) clientData;
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "type value");
 	return TCL_ERROR;
     }
-    Tcl_SetObjResult(interp, TclNewRawAnnotation(objv[1], objv[2]));
+    res = TclNewRawAnnotation(objv[1], objv[2]);
+    TclAnnotRegisterFresh(interp, res);
+    Tcl_SetObjResult(interp, res);
     return TCL_OK;
 }
 
@@ -2641,11 +3803,27 @@ TclAnnotDisplay(Tcl_Interp *interp, Tcl_Obj *objPtr, int withNotes)
 	kind = TclAnnotInfo(norm, &content, &tp, &variant, &raw);
 	if (kind == 1) {
 	    Tcl_AppendToObj(res, tp->name, TCL_AUTO_LENGTH);
+	    if (TclSumTagged(tp)) {
+		variant = TclSumDecode(tp, content, NULL);	/* v16w */
+	    }
 	    if (tp->kind == TCLT_SUM && variant >= 0
 		    && variant < (int) tp->nfields
 		    && tp->fields[variant].name != NULL) {
 		Tcl_AppendToObj(res, ".", 1);
 		Tcl_AppendObjToObj(res, tp->fields[variant].name);
+	    } else if (TclSumTagged(tp) && variant >= 0
+		    && variant < (int) tp->nfields) {
+		/* v16w : une variante littérale d'une somme qui a aussi des
+		 * variantes typées (opt : "none") ; pas pour une énumération */
+		Tcl_Size k;
+
+		for (k = 0; k < tp->nfields; k++) {
+		    if (tp->fields[k].type != NULL) {
+			Tcl_AppendToObj(res, ".", 1);
+			Tcl_AppendObjToObj(res, tp->fields[variant].literal);
+			break;
+		    }
+		}
 	    }
 	}
 	/* Une annotation en attente (même un type connu, pas encore résolu
@@ -2653,7 +3831,7 @@ TclAnnotDisplay(Tcl_Interp *interp, Tcl_Obj *objPtr, int withNotes)
 	(void) t;
 	(void) n;
 	(void) raw;
-	notes = PendingOf(norm, 0);
+	notes = PendingOfEx(norm, 0, 1);
 	Tcl_IncrRefCount(notes);
 	if (withNotes) {
 	    Tcl_Size nn = 0;
@@ -2695,7 +3873,7 @@ NoteObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
     sub = Tcl_GetString(objv[1]);
     norm = objv[2];
     Tcl_IncrRefCount(norm);
-    notes = PendingOf(norm, 0);		/* la pile, vue d'un lecteur */
+    notes = PendingOfEx(norm, 0, 1);	/* la pile, vue d'un lecteur */
     Tcl_IncrRefCount(notes);
     if (strcmp(sub, "get") == 0 && objc == 3) {
 	Tcl_Obj *j = NotesJoined(notes);
@@ -2756,7 +3934,15 @@ NoteObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
 			StateObj(t, newN));
 	    }
 	    TclDiscard(newN);
-	    Tcl_SetObjResult(interp, res);
+	    if (Tcl_FetchInternalRep(res, &annotatedObjType)
+		    && TclAnnotNotes(res) != NULL) {
+		Tcl_IncrRefCount(res);
+		TclAnnotExpire(interp, res);	/* métadonnées (v16m) */
+		Tcl_SetObjResult(interp, res);
+		Tcl_DecrRefCount(res);
+	    } else {
+		Tcl_SetObjResult(interp, res);
+	    }
 	}
     } else {
 	Tcl_WrongNumArgs(interp, 1, objv, "get|has|delete value ?name?");
@@ -2773,6 +3959,10 @@ TclAnnotInit(Tcl_Interp *interp)
     Tcl_CreateObjCommand2(interp, "note", NoteObjCmd, NULL, NULL);
     Tcl_CreateObjCommand2(interp, "::tcl::annotate", AnnotateObjCmd, NULL,
 	    NULL);
+    Tcl_CreateObjCommand2(interp, "::tcl::annotmark", AnnotMarkObjCmd, NULL,
+	    NULL);
+    Tcl_CreateObjCommand2(interp, "::tcl::annotexpire", AnnotExpireObjCmd,
+	    NULL, NULL);
     Tcl_CreateObjCommand2(interp, "::tcl::annotraw", AnnotRawObjCmd, NULL,
 	    NULL);
     Tcl_CreateObjCommand2(interp, "::tcl::annotlocal", AnnotLocalObjCmd, NULL,
@@ -2791,6 +3981,76 @@ TclAnnotSuffixIsLiteral(Tcl_Token *tokenPtr, Tcl_Size count)
 	    return 0;
 	}
     }
+    return 1;
+}
+
+/*
+ * v16l : une étiquette {nom:} (annotation locale finie par « : ») nomme un
+ * champ d'un produit ou une variante d'une somme, lue par le constructeur.
+ * Rend l'indice du champ ou de la variante, ou -1 si le texte n'est pas une
+ * étiquette de tp.
+ */
+Tcl_Size
+TclAnnotLabelIndex(const TclType *tp, const char *text)
+{
+    size_t len = strlen(text);
+    char buf[256];
+
+    if (tp == NULL || len < 2 || text[len - 1] != ':' || len > sizeof(buf)) {
+	return -1;
+    }
+    memcpy(buf, text, len - 1);
+    buf[len - 1] = '\0';
+    {
+	Tcl_Size i = TclTypeFieldIndex(tp, buf);
+
+	if (i < 0 && tp->kind == TCLT_SUM) {
+	    /* v16w : {none:} nomme aussi une variante littérale */
+	    for (i = 0; i < tp->nfields; i++) {
+		if (tp->fields[i].type == NULL && tp->fields[i].literal
+			&& strcmp(Tcl_GetString(tp->fields[i].literal), buf)
+			== 0) {
+		    return i;
+		}
+	    }
+	    return -1;
+	}
+	return i;
+    }
+}
+
+/*
+ * v16l : l'ancienne étiquette {nom} (sans « : ») d'un champ ou d'une
+ * variante de tp, quand nom n'est pas un type : une erreur qui donne la
+ * nouvelle écriture. Rend 1 (erreur posée) ou 0.
+ */
+int
+TclAnnotOldLabel(Tcl_Interp *interp, const TclType *tp, const char *text)
+{
+    Tcl_Size idx;
+    Tcl_Obj *t;
+    int isType;
+
+    if (tp == NULL || interp == NULL
+	    || (tp->kind != TCLT_PRODUCT && tp->kind != TCLT_SUM)) {
+	return 0;
+    }
+    idx = TclTypeFieldIndex(tp, text);
+    if (idx < 0 || (tp->kind == TCLT_SUM && tp->fields[idx].type == NULL)) {
+	return 0;
+    }
+    t = Tcl_NewStringObj(text, TCL_AUTO_LENGTH);
+    Tcl_IncrRefCount(t);
+    isType = (ClassifyAnnot(interp, t, NULL, NULL, NULL) == ANN_TYPE);
+    Tcl_DecrRefCount(t);
+    if (isType) {
+	return 0;		/* un type, qui l'emporte : pas une étiquette */
+    }
+    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    "{%s} is not a type: to name the %s \"%s\" of %s, write {%s:}",
+	    text, tp->kind == TCLT_SUM ? "variant" : "field", text, tp->name,
+	    text));
+    Tcl_SetErrorCode(interp, "TCL", "TYPE", "LABEL", (char *) NULL);
     return 1;
 }
 
@@ -2829,7 +4089,16 @@ typedef struct CNode {
     int nscal;			/* scalaires du sous-arbre */
     int nsub;			/* noeuds du sous-arbre, lui compris */
     const char *name;		/* champ (pour la disposition), ou NULL */
+    int isList;			/* produit : 1 si c'est une liste de taille
+				 * fixe list(n).T (n enfants identiques,
+				 * disposés comme un tableau C T[n]) */
+    int index;			/* élément d'une telle liste : son rang, sinon
+				 * -1 */
 } CNode;
+
+/* Au-delà, une liste de taille fixe (développée noeud par noeud) n'est pas
+ * mise en cases. */
+#define COMPACT_MAX_NODES 4096
 
 struct TclCompactLayout {
     size_t refCount;
@@ -2856,19 +4125,7 @@ typedef struct TclCompactBuf {
 
 static int compactOn = 0;
 
-static Tcl_FreeInternalRepProc	FreeCompact;
-static Tcl_DupInternalRepProc	DupCompact;
-static Tcl_UpdateStringProc	UpdateStringOfCompact;
-static Tcl_ObjTypeLengthProc	CompactLength;
-static Tcl_ObjTypeIndexProc	CompactIndex;
-static Tcl_ObjTypeReplaceProc	CompactReplace;
-static Tcl_ObjTypeGetElements	CompactGetElements;
-
-static const Tcl_ObjType compactListType = {
-    "compactlist", FreeCompact, DupCompact, UpdateStringOfCompact, NULL,
-    TCL_OBJTYPE_V2(CompactLength, CompactIndex, NULL, NULL,
-	    CompactGetElements, NULL, CompactReplace, NULL)
-};
+/* compactListType : en tête du fichier (v16v) */
 
 /* ptr2 : ce qu'on fabrique à la demande et garde tant que V ne change
  * pas, pour que V reste compact : la liste ordinaire des éléments (à la
@@ -2927,19 +4184,7 @@ typedef struct CompactElem {
     Tcl_Obj *cache;		/* liste ordinaire, à la demande */
 } CompactElem;
 
-static Tcl_FreeInternalRepProc	FreeCompactElem;
-static Tcl_DupInternalRepProc	DupCompactElem;
-static Tcl_UpdateStringProc	UpdateStringOfCompactElem;
-static Tcl_ObjTypeLengthProc	CompactElemLength;
-static Tcl_ObjTypeIndexProc	CompactElemIndex;
-static Tcl_ObjTypeGetElements	CompactElemGetElements;
-static Tcl_ObjTypeReplaceProc	CompactElemReplace;
-
-static const Tcl_ObjType compactElemType = {
-    "compactelem", FreeCompactElem, DupCompactElem, UpdateStringOfCompactElem,
-    NULL, TCL_OBJTYPE_V2(CompactElemLength, CompactElemIndex, NULL, NULL,
-	    CompactElemGetElements, NULL, CompactElemReplace, NULL)
-};
+/* compactElemType : en tête du fichier (v16v) */
 
 #define COMPACT_ELEM(o) ((CompactElem *) (o)->internalRep.twoPtrValue.ptr1)
 static Tcl_Obj *NewCompactElemObj(TclCompactBuf *b, size_t cell, int node);
@@ -2996,6 +4241,16 @@ CompactCount(const TclType *t, int depth)
     if (CompactScalar(t, &k, &s)) {
 	return 1;
     }
+    if (t->kind == TCLT_LIST) {
+	/* list(n).T, n fixe, T en cases : un tableau C T[n] */
+	if (t->arity < 1 || t->elem == NULL || t->binTag != NULL
+		|| t->binAt != NULL || t->binDyn != NULL || t->binLink != NULL
+		|| (c = CompactCount(t->elem, depth + 1)) < 0
+		|| (Tcl_WideInt) c * t->arity >= COMPACT_MAX_NODES) {
+	    return -1;
+	}
+	return 1 + (int) (c * t->arity);
+    }
     if (t->kind != TCLT_PRODUCT || t->nfields < 1 || t->binTag != NULL
 	    || t->binAt != NULL || t->binDyn != NULL) {
 	return -1;
@@ -3006,6 +4261,9 @@ CompactCount(const TclType *t, int depth)
 	    return -1;
 	}
 	n += c;
+	if (n >= COMPACT_MAX_NODES) {
+	    return -1;
+	}
     }
     return n;
 }
@@ -3027,6 +4285,8 @@ CompactFill(const TclType *t, const char *name, CNode *nodes, int *idx,
 
     nd->name = name;
     nd->nsub = 1;
+    nd->isList = 0;
+    nd->index = -1;
     if (CompactScalar(t, &k, &s)) {
 	size_t a = (size_t) TclTypeAbiAlign(k == CN_FLT, s * 8);
 
@@ -3049,11 +4309,23 @@ CompactFill(const TclType *t, const char *name, CNode *nodes, int *idx,
 	int first = *idx;
 
 	nd->kind = CN_PROD;
-	nd->nchild = (int) t->nfields;
 	nd->nscal = 0;
-	for (i = 0; i < t->nfields; i++) {
-	    CompactFill(t->fields[i].type, Tcl_GetString(t->fields[i].name),
-		    nodes, idx, &inner, &ialign);
+	if (t->kind == TCLT_LIST) {
+	    nd->isList = 1;
+	    nd->nchild = (int) t->arity;
+	    for (i = 0; i < t->arity; i++) {
+		int child = *idx;
+
+		CompactFill(t->elem, NULL, nodes, idx, &inner, &ialign);
+		nodes[child].index = i;
+	    }
+	} else {
+	    nd->nchild = (int) t->nfields;
+	    for (i = 0; i < t->nfields; i++) {
+		CompactFill(t->fields[i].type,
+			Tcl_GetString(t->fields[i].name), nodes, idx, &inner,
+			&ialign);
+	    }
 	}
 	inner = AlignUp(inner, ialign);
 	base = AlignUp(*off, ialign);
@@ -3415,6 +4687,7 @@ NewCompactBuf(TclType *et, TclCompactLayout *lay, Tcl_Size cap)
     b->elemType = et->name;
     b->refCount = 1;
     b->et = et;
+    TclTypeHold(et);			/* v16u : b->et, b->elemType */
     b->lay = lay;
     b->norm = 0;
     lay->refCount++;
@@ -3427,6 +4700,7 @@ ReleaseCompactBuf(TclCompactBuf *b)
     if (--b->refCount == 0) {
 	TclCompactLayoutRelease(b->lay);
 	Tcl_Free(b->data);
+	TclTypeRelease(b->et);
 	Tcl_Free(b);
     }
 }
@@ -3801,9 +5075,15 @@ CompactElemReplace(Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_Size first,
 /* --- interface --- */
 
 int
-TclIsCompact(Tcl_Obj *v)
+(TclIsCompact)(Tcl_Obj *v)
 {
     return v != NULL && v->typePtr == &compactListType;
+}
+
+int
+(TclIsCompactElem)(Tcl_Obj *v)
+{
+    return v != NULL && v->typePtr == &compactElemType;
 }
 
 int
@@ -3860,43 +5140,148 @@ TclCompactElement(Tcl_Obj *v, Tcl_Size i)
  * son type, ou NULL si le chemin ne se suit pas ici (le chemin ordinaire
  * dira l'erreur). *usedPtr : nombre de noms consommés (tous).
  */
-Tcl_Obj *
-TclCompactReadPath(Tcl_Obj *v, Tcl_Size idx, Tcl_Size nnames,
+/* Le noeud (et son type) désigné par names dans une case du tampon b ;
+ * -1 si le chemin ne se suit pas ici. */
+static int
+CompactWalkFrom(TclCompactBuf *b, int i, TclType *t, Tcl_Size nnames,
 	const char *const names[], TclType **tpPtr)
 {
-    TclCompactBuf *b;
-    TclType *t;
-    int i = 0;
     Tcl_Size k;
 
-    if (v->typePtr != &compactListType) {
-	return NULL;
-    }
-    b = COMPACT_BUF(v);
-    if (idx < 0 || idx >= b->n) {
-	return NULL;
-    }
-    t = b->et;
     for (k = 0; k < nnames; k++) {
 	const CNode *nd = &b->lay->node[i];
 	Tcl_Size f, c;
 	int j;
 
-	if (nd->kind != CN_PROD || t->kind != TCLT_PRODUCT) {
-	    return NULL;
+	if (nd->kind != CN_PROD) {
+	    return -1;
 	}
-	f = TclTypeFieldIndex(t, names[k]);
+	if (nd->isList && t->kind == TCLT_LIST) {
+	    /* un rang écrit en chiffres ; le reste (end, i+1...) au chemin
+	     * ordinaire */
+	    const char *q = names[k];
+
+	    if (*q == '\0' || (q[0] == '0' && q[1] != '\0')) {
+		return -1;
+	    }
+	    for (f = 0; *q; q++) {
+		if (*q < '0' || *q > '9' || f > nd->nchild) {
+		    return -1;
+		}
+		f = f * 10 + (*q - '0');
+	    }
+	} else if (!nd->isList && t->kind == TCLT_PRODUCT) {
+	    f = TclTypeFieldIndex(t, names[k]);
+	} else {
+	    return -1;
+	}
 	if (f < 0 || f >= nd->nchild) {
-	    return NULL;
+	    return -1;
 	}
 	for (j = i + 1, c = 0; c < f; c++) {
 	    j += b->lay->node[j].nsub;
 	}
 	i = j;
-	t = t->fields[f].type;
+	t = (t->kind == TCLT_LIST) ? t->elem : t->fields[f].type;
     }
     *tpPtr = t;
+    return i;
+}
+
+static int
+CompactWalk(TclCompactBuf *b, Tcl_Size nnames, const char *const names[],
+	TclType **tpPtr)
+{
+    return CompactWalkFrom(b, 0, b->et, nnames, names, tpPtr);
+}
+
+/*
+ * Idem depuis une vue sur une case (une ligne d'une matrice, une matrice
+ * d'un lot), vue typée vt : la partie names lue dans la case (contenu neuf,
+ * refcount 0, et son type), ou NULL.
+ */
+Tcl_Obj *
+TclCompactViewReadPath(Tcl_Obj *view, TclType *vt, Tcl_Size nnames,
+	const char *const names[], TclType **tpPtr)
+{
+    CompactElem *ce;
+    int i;
+
+    if (view == NULL || view->typePtr != &compactElemType || nnames < 1) {
+	return NULL;
+    }
+    ce = COMPACT_ELEM(view);
+    i = CompactWalkFrom(ce->b, ce->node, vt, nnames, names, tpPtr);
+    if (i < 0) {
+	return NULL;
+    }
+    return DecodeNode(ce->b->lay->node, &i, ce->b->data + ce->cell);
+}
+
+Tcl_Obj *
+TclCompactReadPath(Tcl_Obj *v, Tcl_Size idx, Tcl_Size nnames,
+	const char *const names[], TclType **tpPtr)
+{
+    TclCompactBuf *b;
+    int i;
+
+    if (v->typePtr != &compactListType) {
+	return NULL;
+    }
+    b = COMPACT_BUF(v);
+    if (idx < 0 || idx >= b->n
+	    || (i = CompactWalk(b, nnames, names, tpPtr)) < 0) {
+	return NULL;
+    }
     return DecodeNode(b->lay->node, &i, b->data + (size_t) idx * b->stride);
+}
+
+/*
+ * L(idx.names...) = value écrit sur place dans la case, quand la partie
+ * est un scalaire et que rien d'autre ne voit ces cases : V non partagé,
+ * son tampon non plus (ni copie, ni vue vivante). value doit être un nombre
+ * nu que le type de la partie accepte, et (sauf type {-compact}) sous sa
+ * forme canonique. 1 : écrit (chaîne de V invalidée) ; 0 : rien n'a changé,
+ * le chemin ordinaire s'en charge.
+ */
+int
+TclCompactWriteScalar(Tcl_Obj *v, Tcl_Size idx, Tcl_Size nnames,
+	const char *const names[], Tcl_Obj *value)
+{
+    TclCompactBuf *b;
+    TclType *t;
+    const CNode *nd;
+    unsigned char tmp[8];
+    int i;
+
+    if (v->typePtr != &compactListType || Tcl_IsShared(v)
+	    || TclIsAnnotated(value)) {
+	return 0;
+    }
+    b = COMPACT_BUF(v);
+    if (idx < 0 || idx >= b->n
+	    || (i = CompactWalk(b, nnames, names, &t)) < 0) {
+	return 0;
+    }
+    nd = &b->lay->node[i];
+    if (nd->kind == CN_PROD
+	    || TclTypeValidate(NULL, t, value, -1, NULL) != TCL_OK) {
+	return 0;
+    }
+    if (b->refCount > 1) {
+	CompactDropCache(v);		/* ses vues tiennent le tampon */
+	if (b->refCount > 1) {
+	    return 0;
+	}
+    }
+    if (!EncodeScalar(nd, value, tmp, b->norm)) {
+	return 0;
+    }
+    memcpy(b->data + (size_t) idx * b->stride + nd->off, tmp,
+	    (size_t) nd->size);
+    CompactDropCache(v);
+    TclInvalidateStringRep(v);
+    return 1;
 }
 
 /* Contenu compact (objet neuf) d'une liste list.T, ou NULL. */
@@ -4037,7 +5422,8 @@ SameCompactLayout(const TclCompactLayout *a, const TclCompactLayout *b)
 	if (a->node[i].kind != b->node[i].kind
 		|| a->node[i].off != b->node[i].off
 		|| (a->node[i].kind == CN_PROD
-		    ? a->node[i].nchild != b->node[i].nchild
+		    ? (a->node[i].nchild != b->node[i].nchild
+			|| a->node[i].isList != b->node[i].isList)
 		    : a->node[i].size != b->node[i].size)) {
 	    return 0;
 	}
@@ -4104,11 +5490,18 @@ LayoutFields(const CNode *nodes, int *ip, Tcl_DString *path, Tcl_Obj *out)
     Tcl_Size mark = Tcl_DStringLength(path);
     int k;
 
-    if (nd->name != NULL) {
+    if (nd->name != NULL || nd->index >= 0) {
+	char num[TCL_INTEGER_SPACE];
+
 	if (mark > 0) {
 	    Tcl_DStringAppend(path, ".", 1);
 	}
-	Tcl_DStringAppend(path, nd->name, TCL_AUTO_LENGTH);
+	if (nd->name != NULL) {
+	    Tcl_DStringAppend(path, nd->name, TCL_AUTO_LENGTH);
+	} else {
+	    snprintf(num, sizeof(num), "%d", nd->index);
+	    Tcl_DStringAppend(path, num, TCL_AUTO_LENGTH);
+	}
     }
     if (nd->kind == CN_PROD) {
 	for (k = 0; k < nd->nchild; k++) {
@@ -4183,7 +5576,9 @@ CompactObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
 	if ((lay = TclCompactLayoutOf(tp)) == NULL) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf("%s has no compact layout: "
 		    "only fixed-size scalars (int(s,n), int(u,n) with n = 8, 16, "
-		    "32 or 64, double, double(32|64)) and products of them",
+		    "32 or 64, double, double(32|64)), products of them and "
+		    "fixed-size lists list(n) of them (at most 4096 parts per "
+		    "element)",
 		    tp->name));
 	    Tcl_SetErrorCode(interp, "TCL", "TYPE", "COMPACT", (char *) NULL);
 	    return TCL_ERROR;

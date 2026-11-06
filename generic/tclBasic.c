@@ -5288,6 +5288,7 @@ TclEvalEx(
     int allowExceptions = (iPtr->evalFlags & TCL_ALLOW_EXCEPTIONS);
     int gotParse = 0;
     Tcl_Size i, objectsUsed = 0;
+    Tcl_Size annotMark = 0;		/* v16m : annotations des mots */
 				/* These variables keep track of how much
 				 * state has been allocated while evaluating
 				 * the script, so that it can be freed
@@ -5443,6 +5444,7 @@ TclEvalEx(
 	    lines = lineSpace;
 
 	    iPtr->cmdFramePtr = eeFramePtr->nextPtr;
+	    annotMark = TclAnnotFreshMark(interp);	/* v16m, piste B */
 	    for (objectsUsed = 0, tokenPtr = parsePtr->tokenPtr;
 		    objectsUsed < numWords;
 		    objectsUsed++, tokenPtr += tokenPtr->numComponents + 1) {
@@ -5593,6 +5595,9 @@ TclEvalEx(
 	    code = Tcl_EvalObjv(interp, objectsUsed, objv,
 		    TCL_EVAL_NOERR | TCL_EVAL_SOURCE_IN_FRAME);
 	    TclArgumentRelease(interp, objv, objectsUsed);
+	    /* v16m, piste B ; v16x : return {v:}$x dans une procédure
+	     * typée est rendu dans son type de retour avant d'expirer */
+	    code = TclAnnotExpireFromRet(interp, annotMark, code);
 
 	    eeFramePtr->line = NULL;
 	    eeFramePtr->nline = 0;

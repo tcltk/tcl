@@ -568,7 +568,7 @@ incrv k 10                     ;# k est la variable de l'appelant
 ```
 
 - **Retour.** `proc {T}nom` : le résultat d'un retour normal (fin du corps, `return`, `return -code ok`) est casté en `T`, comme `type {T}mot` ; un échec est une erreur `return value {T}: …`. Une erreur, `break`, `return -level 2`, `tailcall` passent sans cast. Un `return {U}$x` dans le corps n'ajoute rien : `{U}` n'est qu'une note locale, qui expire avec la procédure (pas de cumul de types sur le retour).
-- **Étiquettes de retour.** Quand le type de retour est une somme, `return {v:}$x` choisit la variante `v` : `$x` est sa charge. Une étiquette qui n'est pas une variante, ou sur un type de retour qui n'est pas une somme, est une erreur. `proc {S.v}f` rend toujours la variante `v`. `return {v 4}` (la valeur écrite en clair, v16w) marche aussi, y compris sous `eval`, `uplevel` ou dans un `switch -matchvar`, où l'étiquette expire avant le contrôle du retour.
+- **Étiquettes de retour.** Quand le type de retour est une somme, `return {v:}$x` choisit la variante `v` : `$x` est sa charge. Une étiquette qui n'est pas une variante, ou sur un type de retour qui n'est pas une somme, est une erreur. `proc {S.v}f` rend toujours la variante `v`. `return {v 4}` (la valeur écrite en clair, v16w) marche aussi. L'étiquette est lue aussi dans un corps non compilé (`eval`, `uplevel`, `switch -matchvar`, v16x) : le retour y est rendu dans le type de la procédure avant que l'étiquette expire.
 
 ```tcl
 type def R {{pt}point, {int}n}
@@ -1261,7 +1261,6 @@ Le codec C, qui **vérifie** en plus chaque valeur contre son type, est 2 à 3 f
 **À corriger ou à décider**
 
 - **Tensions avec EIAS.** Type perdu par la chaîne (pas de forme texte relisible), égalité, valeurs nues d'un `dict.point`, types propres à un interpréteur (un même nom désigne deux types dans deux interpréteurs) : voir `doc/CARTOGRAPHIE-EIAS.md`. Réglés : l'atomicité des produits (v16t), la lecture après libération et les noms globaux (v16u), la variante d'une somme, désormais dans sa valeur (v16w, `doc/DIAGNOSTIC-SOMMES.md`).
-- **Étiquette sur un retour non compilé.** `return {v:}$x` sous `eval`, `uplevel` ou dans un `switch -matchvar` (corps non compilé) : l'étiquette expire avec la commande `return`, avant le contrôle du retour. `return [list v $x]` (la valeur en clair) marche partout.
 - **`namespace path` et caches.** La résolution d'un nom suit le chemin de l'espace courant ; un changement de chemin invalide les caches (`resolverEpoch`). Un espace d'objet TclOO a ses types comme un autre ; ils disparaissent avec l'objet.
 
 **Pas encore fait**

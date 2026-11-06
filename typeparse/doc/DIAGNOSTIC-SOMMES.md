@@ -149,7 +149,7 @@ nue à une somme sont maintenant refusés, comme prévu.
 | S1 | la variante ne passe pas par la chaîne | **réglé** : elle est dans la chaîne (`K.b`, `temp.fahrenheit` relus tels quels) |
 | S2 | une valeur typée invalide | **réglé** : le champ garde `b 5` |
 | S3 | une étiquette relit la valeur par sa chaîne | **réglé** : `{k:}` sur un `K.b` donne `E.k`, et `$e(k)` est `K.b` |
-| S4 | étiquette de retour et compilation | **reste**, réduit : `return [list a 1]` marche partout ; seule l'étiquette, un raccourci, dépend encore de la compilation |
+| S4 | étiquette de retour et compilation | **réglé en v16x** : sous `eval`, `uplevel` ou `switch -matchvar`, le retour étiqueté est rendu dans le type de la procédure avant que l'étiquette expire (patch `retour-etiquette.patch`, test t102) ; `return [list a 1]` marchait déjà partout |
 | S5 | commandes qui reçoivent une étiquette | `lappend` et `lset` la reçoivent ; `linsert`, `dict set`, `list` non (elles fabriquent une valeur sans contrat) : on écrit la valeur en clair, `b 3` |
 | S6 | projection | **décidé** : toute valeur se lit en `string` (son texte) ; une union se lit comme son alternative ; une somme jamais (elle se lit par `$v(i)`) |
 | S7 | type d'une variante à moitié | **réglé** : `$f(w)` lit la charge courante |

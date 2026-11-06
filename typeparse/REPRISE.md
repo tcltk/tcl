@@ -1,10 +1,11 @@
 # REPRISE — état du prototype TIP 764 (valeurs annotées, variables typées)
 
-*Fiche de reprise, 6 novembre 2026, version **v16w**. À joindre (avec `typeparse.zip`) au
+*Fiche de reprise, 6 novembre 2026, version **v16x**. À joindre (avec `typeparse.zip`) au
 premier message d'une conversation qui reprend le travail.*
 
 ## 1. Où en est-on
 
+* **v16x** (6 novembre) : `return {v:}$x` sous `eval`, `uplevel`, `switch -matchvar` : le retour étiqueté est rendu dans le type de la procédure typée avant que l'étiquette expire (`TclAnnotExpireFromRet`, patch `retour-etiquette.patch`, test t102). Aussi : cproc sous Windows avec tcc 0.9.27 (`_Static_assert` de secours dans `type {c!}export` et dans le C de cproc, contrôle 32/64 bits).
 * **v16w** (6 novembre) : sommes et unions. Une somme (`,`) écrit sa variante dans sa valeur (`i 5`, `fahrenheit 50.0`, le littéral seul) : rien n'est deviné, la variante passe par la chaîne, l'égalité la voit ; toute variante typée a un nom. Une union (`|`) est la charge seule, ses alternatives doivent être disjointes (refus à la définition). `{-strict}`, `{-deduce}` et l'avertissement disparaissent ; `type variant`, `type is {union?}` ; `opt(T)` = `some X` / `none` ; toute valeur se lit en `string` ; `$f(w)` lit la charge courante ; produit à un champ `{{double}r}cercle`. Diagnostic et décision : `doc/DIAGNOSTIC-SOMMES.md`. Unions dans la géométrie et tcllib (210/210). Reste : `return {v:}` hors compilation.
 * **v16v** (6 novembre) : chemins compilés gardés (dans l'objet index, ou une table par thread), cache (type, indice) pour `$p(x)`, pas d'enveloppe aux étapes intermédiaires ; `lindex`/`lassign` lus directement dans le contenu d'une valeur typée (`TclAnnotFastIndex`), rangement direct d'une valeur typée réglée dans une variable sans contrat ; fonctions mathématiques sur `$p(x)` en `loadFieldNum`. `$s(a.x)` 869 → 111 ns, `lassign $p x y` 389 → 66 ns ; étape 2 du tutoriel 1,2–1,6 fois l'étape 1. Patchs `expr-fonctions-champs.patch`, `execute-lecture-typee.patch` ; test t101 ; `exemples/tutoriel/chemins.tcl`. Sans changement de sens.
 * **cproc en trois étapes** (6 novembre) : `exemples/cproc/cproc1_tcl.tcl` (Tcl), `cproc2_type.tcl` (générateur typé : sommes `kind`, `defval`, produits `field`, `cblock`, `cdef`, `cconfig` sous contrat ; même C produit), `cproc.tcl` (liaison des appels en C : positionnels, défauts constants, valeurs nues ou du bon type, résultat typé par (V, T) ; repli sur la procédure typée cachée `_cprocN_nom` avec les mêmes mots, donc les mêmes messages). `distance` 0,98 → 0,28 µs. Trois points du modèle relevés : une somme ne se caste pas en `string` (`{}$v`) ; `return {v:}[list …]` perd une somme stricte imbriquée ; `switch -regexp -matchvar` fait expirer l'étiquette de `return {v:}…`.
@@ -83,6 +84,7 @@ premier message d'une conversation qui reprend le travail.*
 | v16u | espaces de noms des types ; descripteurs comptés (une valeur survit à son interpréteur) |
 | v16v | chemins compilés gardés, lecture typée rapide (`lindex`, `lassign`, rangement) ; patchs `expr-fonctions-champs.patch`, `execute-lecture-typee.patch` |
 | v16w | sommes balisées (`variante charge`), unions `\|` disjointes ; plus de `{-strict}`/`{-deduce}` ; `type variant` |
+| v16x | étiquette d'un retour lue hors compilation (patch `retour-etiquette.patch`) ; `_Static_assert` de secours (tcc 0.9.27) |
 
 ## 2. Installation et tests (chez l'utilisateur, MinGW64)
 

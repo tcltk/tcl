@@ -21,7 +21,7 @@
  * VAR_* de tclInt.h). La valeur ci-dessous est un PLACEHOLDER. */
 /* Version du prototype TIP 764 (typeparse/VERSION, maj.sh, et
  * tcl::unsupported::typesversion). */
-#define TCL_TYPES_VERSION "v16g"
+#define TCL_TYPES_VERSION "v16x"
 
 #ifndef VAR_TYPED
 #define VAR_TYPED	0x400000
@@ -162,9 +162,28 @@ struct TclType {
     int compactFields;		/* PRODUCT : un champ (ou un sous-champ) est une
 				 * liste qui peut être en cases ; 0 : pas
 				 * encore calculé, 1 : oui, -1 : non */
+    int sumMode;		/* SUM (v16w) : TCLT_SUM_TAGGED, une somme
+				 * (",") dont la valeur écrit sa variante
+				 * ("variante charge") ; TCLT_SUM_UNION, une
+				 * union ("|"), disjointe, dont la valeur est
+				 * la charge seule */
+    struct TypeData *owner;	/* v16u : la table de types qui l'a créé */
 };
+#define TCLT_SUM_TAGGED	0
+#define TCLT_SUM_UNION	1
+/* v16w : une somme dont la valeur écrit sa variante (pas une union, pas une
+ * somme S($champ) dont la variante est dans un champ voisin) */
+#define TclSumTagged(tp) ((tp)->kind == TCLT_SUM \
+	&& (tp)->sumMode == TCLT_SUM_TAGGED && (tp)->binTag == NULL)
 
-/* Les descripteurs vivent autant que l'interpréteur (pas de comptage). */
+/*
+ * v16u : les descripteurs appartiennent à la table de types d'un
+ * interpréteur ; une valeur qui en garde un (une référence de type, un
+ * tampon de cases) garde la table en vie : elle survit à l'interpréteur
+ * (interp delete) jusqu'à la libération de la dernière valeur.
+ */
+void	TclTypeHold(const TclType *tp);
+void	TclTypeRelease(const TclType *tp);
 
 /* --------------------------------------------------------------------
  * Objets annotés
@@ -250,8 +269,21 @@ int	TclAnnotIsNoteOnly(Tcl_Obj *objPtr);
 int	TclAnnotIsSourceRaw(Tcl_Obj *objPtr);
 Tcl_Obj	*TclAnnotDisplay(Tcl_Interp *interp, Tcl_Obj *objPtr, int withNotes);
 int	TclAnnotSuffixIsLiteral(struct Tcl_Token *tokenPtr, Tcl_Size count);
-int	TclAnnotCollectionCast(Tcl_Interp *interp, Tcl_Obj *typeText,
-	    Tcl_Obj *value, Tcl_Obj **resultPtr);
+void	TclAnnotRegisterFresh(Tcl_Interp *interp, Tcl_Obj *objPtr);
+Tcl_Size TclAnnotFreshMark(Tcl_Interp *interp);
+void	TclAnnotExpireFrom(Tcl_Interp *interp, Tcl_Size mark);
+void	TclAnnotExpire(Tcl_Interp *interp, Tcl_Obj *objPtr);
+int	TclAnnotHasFresh(Tcl_Obj *objPtr);
+int	TclAnnotCastText(Tcl_Interp *interp, Tcl_Obj *typeText, Tcl_Obj *value,
+	    Tcl_Obj **resultPtr);
+Tcl_Obj *TclAnnotKeepExpired(Tcl_Obj *res, Tcl_Obj *src);
+int	TclAnnotSettleValueArg(Tcl_Interp *interp, Tcl_Obj *objPtr,
+	    Tcl_Obj **resPtr);
+int	TclAnnotCastWord(Tcl_Interp *interp, Tcl_Obj *objPtr,
+	    Tcl_Obj **resultPtr);
+Tcl_Size TclAnnotLabelIndex(const TclType *tp, const char *text);
+int	TclAnnotOldLabel(Tcl_Interp *interp, const TclType *tp, const char *text);
+Tcl_Obj *TclAnnotLabelOf(Tcl_Obj *objPtr);
 int	TclAnnotateValue(Tcl_Interp *interp, Tcl_Obj *typeText, Tcl_Obj *value,
 	    Tcl_Obj **resultPtr);
 /*
@@ -325,11 +357,16 @@ int	TclTypesGeneration(Tcl_Interp *interp, size_t *uidPtr, size_t *genPtr);
 /* Représentation compacte (tclAnnotObj.c) */
 typedef struct TclCompactLayout TclCompactLayout;
 int TclAnnotIsSettled(Tcl_Obj *objPtr);
+int TclAnnotFastIndex(Tcl_Obj *aPtr, int encodedIndex, Tcl_Obj **elemPtr);
+int TclAnnotExpireFromRet(Tcl_Interp *interp, Tcl_Size mark, int code);
+int TclSumDecode(const TclType *tp, Tcl_Obj *v, Tcl_Obj **payloadPtr);
+Tcl_Obj *TclSumMake(const TclType *tp, int v, Tcl_Obj *payload);
 Tcl_Obj *TclAnnotNumericContent(Tcl_Obj *objPtr);
 Tcl_Obj *TclAnnotIterList(Tcl_Obj *aPtr);
 Tcl_Obj *TclCompactFrom(TclType *listTp, Tcl_Obj *content);
 int	TclCompactHolds(Tcl_Obj *v, const TclType *elemTp, Tcl_Size *nPtr);
 int	TclIsCompact(Tcl_Obj *v);
+int	TclIsCompactElem(Tcl_Obj *v);
 int	TclCompactFlat(TclType *et, size_t *stridePtr, int max, size_t off[],
 	    int size[], int isFloat[]);
 const unsigned char *TclCompactData(Tcl_Obj *v, const TclType *et,
@@ -341,6 +378,10 @@ Tcl_Obj *TclCompactFieldNumber(Tcl_Obj *o, Tcl_Size idx);
 Tcl_Obj *TclCompactCache(Tcl_Obj *v);
 Tcl_Obj *TclCompactReadPath(Tcl_Obj *v, Tcl_Size idx, Tcl_Size nnames,
 	    const char *const names[], TclType **tpPtr);
+Tcl_Obj *TclCompactViewReadPath(Tcl_Obj *view, TclType *vt, Tcl_Size nnames,
+	    const char *const names[], TclType **tpPtr);
+int	TclCompactWriteScalar(Tcl_Obj *v, Tcl_Size idx, Tcl_Size nnames,
+	    const char *const names[], Tcl_Obj *value);
 TclCompactLayout *TclCompactLayoutOf(TclType *elemTp);
 void	TclCompactLayoutRelease(TclCompactLayout *lay);
 void	TclCompactInit(Tcl_Interp *interp);
@@ -374,6 +415,9 @@ int	TclTypeRunDefault(Tcl_Interp *interp, const char *what,
 	    Tcl_Obj *script, Tcl_Obj **resultPtr);
 int	TclTypeIsPlainString(const TclType *tp);
 int	TclTypeIsAny(const TclType *tp);
+Tcl_Obj *TclTypeSumOverlaps(const TclType *tp);
+void	TclTypeResultRename(Tcl_Interp *interp, const char *from,
+	    const char *to);
 /* type deref : TclTypeHasLink dit si un lien var se trouve dans tp ;
  * TclTypeDerefType rend le type où chaque var.T est remplacé par T (NULL et
  * message si impossible). TclValueDeref remplace chaque lien d'une valeur
@@ -419,7 +463,7 @@ Tcl_Obj *TclPathIndexNew(Tcl_Obj *const parts[], Tcl_Size n,
 	    const char *subst);
 int	TclTypePathConstruct(Tcl_Interp *interp, TclType *tp,
 	    const char *path, Tcl_Size nvals, Tcl_Obj *const vals[],
-	    Tcl_Obj **contentPtr);
+	    Tcl_Obj **contentPtr, int *variantPtr);
 int	TclBuildProductNamed(Tcl_Interp *interp, TclType *tp, Tcl_Size n,
 	    Tcl_Obj *const a[], Tcl_Obj **contentPtr);
 int	TclTypePathWrite(Tcl_Interp *interp, Tcl_Obj *containerPtr,
@@ -457,4 +501,17 @@ MODULE_SCOPE Tcl_Obj *TclTupleAssign(Tcl_Interp *interp, Tcl_Obj *names,
 MODULE_SCOPE Tcl_Obj *TclTypedDeclareLocal(Tcl_Interp *interp, Var *varPtr,
 			    Tcl_Obj *nameObj, Tcl_Obj *typeObj, Tcl_Obj *valueObj);
 MODULE_SCOPE int TclTypedVarRedeclare(Tcl_Interp *interp, Var *varPtr, Tcl_Obj *nameObj);
+/* v16p : procédures typées (tclTypes.c) ; la signature est rangée dans
+ * Proc.typedSig. */
+MODULE_SCOPE int TclTypedProcSig(Tcl_Interp *interp, Tcl_Obj *nameObj,
+			    Tcl_Obj *argsObj, void **sigPtr, int *typedArgsPtr);
+MODULE_SCOPE int TclTypedProcBind(Tcl_Interp *interp, void *sig, Tcl_Size skip);
+MODULE_SCOPE int TclTypedProcReturn(Tcl_Interp *interp, void *sig, int result);
+MODULE_SCOPE void TclTypedSigRetain(void *sig);
+MODULE_SCOPE void TclTypedSigRelease(void *sig);
+MODULE_SCOPE Tcl_Obj *TclTypedSigArgNames(void *sig);
+MODULE_SCOPE Tcl_Size TclTypedSigLocals(void *sig, Tcl_Obj ***namesPtr);
+MODULE_SCOPE int TclTypedSigTakesWords(void *sig);
+MODULE_SCOPE int TclTypedSigDefault(void *sig, const char *name,
+			    Tcl_Obj **defPtr);
 #endif /* TCLTYPES_H */

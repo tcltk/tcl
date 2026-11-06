@@ -1,0 +1,60 @@
+--- a/generic/tclBasic.c
++++ b/generic/tclBasic.c
+@@ -5595,7 +5595,9 @@
+ 	    code = Tcl_EvalObjv(interp, objectsUsed, objv,
+ 		    TCL_EVAL_NOERR | TCL_EVAL_SOURCE_IN_FRAME);
+ 	    TclArgumentRelease(interp, objv, objectsUsed);
+-	    TclAnnotExpireFrom(interp, annotMark);	/* v16m, piste B */
++	    /* v16m, piste B ; v16x : return {v:}$x dans une procédure
++	     * typée est rendu dans son type de retour avant d'expirer */
++	    code = TclAnnotExpireFromRet(interp, annotMark, code);
+ 
+ 	    eeFramePtr->line = NULL;
+ 	    eeFramePtr->nline = 0;
+--- a/generic/tclExecute.c
++++ b/generic/tclExecute.c
+@@ -8125,21 +8125,32 @@
+     iPtr->cmdFramePtr = bcFramePtr->nextPtr;
+     /* v16p : le corps d'une procédure typée rend une valeur de son type de
+      * retour (avant l'expiration : une étiquette {v:} choisit la variante). */
+-    if (codePtr->procPtr != NULL && codePtr->procPtr->typedSig != NULL
+-	    && iPtr->varFramePtr->procPtr == codePtr->procPtr
+-	    && codePtr->procPtr->bodyPtr != NULL) {
+-	ByteCode *bodyCodePtr;
++    {
++	int isBody = 0;
+ 
+-	ByteCodeGetInternalRep(codePtr->procPtr->bodyPtr, &tclByteCodeType,
+-		bodyCodePtr);
+-	if (bodyCodePtr == codePtr) {
+-	    result = TclTypedProcReturn(interp, codePtr->procPtr->typedSig,
+-		    result);
++	if (codePtr->procPtr != NULL && codePtr->procPtr->typedSig != NULL
++		&& iPtr->varFramePtr->procPtr == codePtr->procPtr
++		&& codePtr->procPtr->bodyPtr != NULL) {
++	    ByteCode *bodyCodePtr;
++
++	    ByteCodeGetInternalRep(codePtr->procPtr->bodyPtr,
++		    &tclByteCodeType, bodyCodePtr);
++	    if (bodyCodePtr == codePtr) {
++		isBody = 1;
++		result = TclTypedProcReturn(interp, codePtr->procPtr->typedSig,
++			result);
++	    }
++	}
++	/* v16m, piste B : ce que ce bytecode a annoté expire avec lui (return
++	 * {T}$x, une commande sortie en erreur ou par break). v16x : un
++	 * bytecode imbriqué (eval, switch -matchvar) sorti par return {v:}
++	 * dans une procédure typée rend d'abord le type de retour. */
++	if (isBody) {
++	    TclAnnotExpireFrom(interp, TD->annotMark);
++	} else {
++	    result = TclAnnotExpireFromRet(interp, TD->annotMark, result);
+ 	}
+     }
+-    /* v16m, piste B : ce que ce bytecode a annoté expire avec lui (return
+-     * {T}$x, une commande sortie en erreur ou par break). */
+-    TclAnnotExpireFrom(interp, TD->annotMark);
+     TclReleaseByteCode(codePtr);
+     TclStackFree(interp, TD);	/* free my stack */
+ 

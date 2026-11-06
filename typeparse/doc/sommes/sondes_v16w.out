@@ -14,9 +14,9 @@ type cast P : correct                    K.b
 sans étiquette : déduit                  K.b
 == S4. la durée de vie d'une étiquette dépend de la compilation
 return {a:}1                             K.a
-eval {return {a:}1}                      ERREUR: return value {K}: value "1" names no variant of the sum K: a value of a sum is the name of its variant, then its value, as {a 1}, or {a:}1
-uplevel 0 {return {a:}1}                 ERREUR: return value {K}: value "1" names no variant of the sum K: a value of a sum is the name of its variant, then its value, as {a 1}, or {a:}1
-switch -matchvar                         ERREUR: return value {K}: value "5" names no variant of the sum K: a value of a sum is the name of its variant, then its value, as {a 5}, or {a:}5
+eval {return {a:}1}                      K.a
+uplevel 0 {return {a:}1}                 K.a
+switch -matchvar                         K.a
 switch sans -matchvar                    K.a
 == S5. les commandes qui reçoivent une étiquette
 set {K}k {b:}5                           K.b

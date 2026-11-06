@@ -119,6 +119,8 @@ typedef struct {
 				/* -----------------------------------------*/
     Tcl_Obj **catchTop;		/* These fields are used on return TO this */
     Tcl_Obj *auxObjList;	/* level: they record the state when a new */
+    Tcl_Size annotMark;		/* v16m : annotations inscrites avant ce
+				 * bytecode (tclAnnotObj.c) */
     CmdFrame cmdFrame;		/* codePtr was received for NR execution. */
     Tcl_Obj *stack[1];		/* Start of the actual combined catch and obj
 				 * stacks; the struct will be expanded as
@@ -1942,6 +1944,7 @@ TclNRExecuteByteCode(
     TD->codePtr     = codePtr;
     TD->catchTop    = initCatchTop;
     TD->auxObjList  = NULL;
+    TD->annotMark   = TclAnnotFreshMark(interp);
 
     /*
      * TIP #280: Initialize the frame. Do not push it yet: it will be pushed
@@ -3013,6 +3016,70 @@ TEBCresume(
 	NEXT_INST_V(1, 3, -1);
     }
 
+    case INST_ANNOT_MARK:
+	/* v16m, piste B (tclAnnotObj.c) */
+	TclNewIntObj(objResultPtr, TclAnnotFreshMark(interp));
+	TRACE_WITH_OBJ(("=> "), objResultPtr);
+	NEXT_INST_F(1, 0, 1);
+	break;
+
+    case INST_ANNOT_EXPIRE: {
+	Tcl_WideInt mark;
+
+	objPtr = OBJ_UNDER_TOS;
+	if (TclGetWideIntFromObj(NULL, objPtr, &mark) == TCL_OK
+		&& TclAnnotFreshMark(interp) > (Tcl_Size) mark) {
+	    DECACHE_STACK_INFO();
+	    TclAnnotExpireFrom(interp, (Tcl_Size) mark);
+	    CACHE_STACK_INFO();
+	}
+	OBJ_UNDER_TOS = OBJ_AT_TOS;
+	tosPtr--;
+	TclDecrRefCount(objPtr);
+	TRACE_WITH_OBJ(("=> "), OBJ_AT_TOS);
+	NEXT_INST_F(1, 0, 0);
+	break;
+    }
+
+    case INST_ANNOT_SETTLE: {
+	Tcl_Obj *settled;
+
+	if (!TclAnnotHasFresh(OBJ_AT_TOS)) {
+	    TRACE(("=> unchanged\n"));
+	    NEXT_INST_F(1, 0, 0);
+	}
+	DECACHE_STACK_INFO();
+	if (TclAnnotSettleValueArg(interp, OBJ_AT_TOS, &settled) != TCL_OK) {
+	    CACHE_STACK_INFO();
+	    TRACE_ERROR(interp);
+	    goto gotError;
+	}
+	CACHE_STACK_INFO();
+	objPtr = OBJ_AT_TOS;
+	OBJ_AT_TOS = settled;		/* référence déjà prise */
+	TclDecrRefCount(objPtr);
+	TRACE_WITH_OBJ(("=> "), settled);
+	NEXT_INST_F(1, 0, 0);
+	break;
+    }
+
+    case INST_ANNOT_CAST: {
+	Tcl_Obj *castPtr = NULL;
+
+	DECACHE_STACK_INFO();
+	if (TclAnnotCastText(interp, OBJ_UNDER_TOS, OBJ_AT_TOS, &castPtr)
+		!= TCL_OK) {
+	    CACHE_STACK_INFO();
+	    TRACE_ERROR(interp);
+	    goto gotError;
+	}
+	CACHE_STACK_INFO();
+	objResultPtr = castPtr;
+	TRACE_WITH_OBJ(("=> "), objResultPtr);
+	NEXT_INST_F(1, 2, 1);
+	break;
+    }
+
     case INST_LOAD_FIELD_NUM:
 	opnd = TclGetUInt4AtPtr(pc + 1);
 	objResultPtr = TclTypedFieldNumber(LOCAL(opnd), OBJ_AT_TOS);
@@ -3208,6 +3275,14 @@ TEBCresume(
 	    varPtr = varPtr->value.linkPtr;
 	}
 	if (!TclIsVarDirectWritable(varPtr) || TclIsAnnotated(valuePtr)) {
+	    /* v16v : une valeur typée réglée (référence de type, sans note)
+	     * dans une variable sans contrat : rien à résoudre, la variable
+	     * porte la valeur typée (comme TclPtrSetVarIdx, et comme foreach) */
+	    if (!TclIsVarTricky(varPtr, VAR_TRACED_WRITE|VAR_DEAD_HASH
+		    |VAR_CONSTANT|VAR_CONTRACT) && TclAnnotIsSettled(valuePtr)) {
+		varPtr->flags |= VAR_TYPED;
+		goto doStoreVarDirect;
+	    }
 	    storeFlags = TCL_LEAVE_ERR_MSG;
 	    part1Ptr = NULL;
 	    goto doStoreScalar;
@@ -5047,6 +5122,12 @@ TEBCresume(
 	 * in the process.
 	 */
 
+	/* v16v : produit ou liste typée, élément lu dans le contenu */
+	if (TCL_ANNOT_P(valuePtr)
+		&& TclAnnotFastIndex(valuePtr, opnd, &objResultPtr)) {
+	    pcAdjustment = 5;
+	    goto lindexFastPath2;
+	}
 	/* special case for AbstractList */
 	if (TclObjTypeHasProc(valuePtr, indexProc)) {
 	    length = TclObjTypeLength(valuePtr);
@@ -8042,6 +8123,34 @@ TEBCresume(
     }
 
     iPtr->cmdFramePtr = bcFramePtr->nextPtr;
+    /* v16p : le corps d'une procédure typée rend une valeur de son type de
+     * retour (avant l'expiration : une étiquette {v:} choisit la variante). */
+    {
+	int isBody = 0;
+
+	if (codePtr->procPtr != NULL && codePtr->procPtr->typedSig != NULL
+		&& iPtr->varFramePtr->procPtr == codePtr->procPtr
+		&& codePtr->procPtr->bodyPtr != NULL) {
+	    ByteCode *bodyCodePtr;
+
+	    ByteCodeGetInternalRep(codePtr->procPtr->bodyPtr,
+		    &tclByteCodeType, bodyCodePtr);
+	    if (bodyCodePtr == codePtr) {
+		isBody = 1;
+		result = TclTypedProcReturn(interp, codePtr->procPtr->typedSig,
+			result);
+	    }
+	}
+	/* v16m, piste B : ce que ce bytecode a annoté expire avec lui (return
+	 * {T}$x, une commande sortie en erreur ou par break). v16x : un
+	 * bytecode imbriqué (eval, switch -matchvar) sorti par return {v:}
+	 * dans une procédure typée rend d'abord le type de retour. */
+	if (isBody) {
+	    TclAnnotExpireFrom(interp, TD->annotMark);
+	} else {
+	    result = TclAnnotExpireFromRet(interp, TD->annotMark, result);
+	}
+    }
     TclReleaseByteCode(codePtr);
     TclStackFree(interp, TD);	/* free my stack */
 

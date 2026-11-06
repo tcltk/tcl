@@ -1,0 +1,15 @@
+compilé                            {a 1} K.a
+eval                               {a 1} K.a
+uplevel 0                          {a 1} K.a
+uplevel 1                          {a 1} K.a
+switch -matchvar a5                {a 5} K.a
+switch -matchvar zz                {b 0} K.b
+foreach puis eval                  {b 7} K.b
+eval imbriqué                      {a 2} K.a
+en clair, eval                     {a 1} K.a
+en clair, switch                   {a 3} K.a
+--- ce qui ne change pas
+procédure classique                1 {}
+retour qui n'est pas une somme     ERREUR: label {a:} on a return value: the return type int is not a sum
+catch, puis return -options        {a 1} K.a
+variante inconnue                  ERREUR: label {z:} on a return value: K has no variant "z"

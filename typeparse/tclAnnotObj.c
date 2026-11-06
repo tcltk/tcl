@@ -3583,6 +3583,37 @@ TclAnnotExpireFrom(Tcl_Interp *interp, Tcl_Size mark)
     }
 }
 
+/*
+ * v16x : la même expiration, à la fin d'une commande ou d'un script non
+ * compilé (TclEvalEx) ou d'un bytecode qui n'est pas le corps de la
+ * procédure. Sorti par TCL_RETURN dans une procédure typée (return {v:}$x
+ * sous eval, uplevel, switch -matchvar), un résultat étiqueté est d'abord
+ * rendu dans le type de retour de la procédure, comme le ferait son corps
+ * compilé : l'étiquette est lue avant d'expirer. Rend le code (TCL_ERROR
+ * si le résultat n'entre pas dans le type de retour).
+ */
+int
+TclAnnotExpireFromRet(Tcl_Interp *interp, Tcl_Size mark, int code)
+{
+    Interp *iPtr = (Interp *) interp;
+    Tcl_Obj *res, *lab;
+
+    if (code == TCL_RETURN && iPtr->framePtr != NULL
+	    && iPtr->framePtr->procPtr != NULL
+	    && iPtr->framePtr->procPtr->typedSig != NULL
+	    && iPtr->returnLevel == 1 && iPtr->returnCode == TCL_OK) {
+	res = Tcl_GetObjResult(interp);
+	if (res->typePtr == &annotatedObjType
+		&& (lab = TclAnnotLabelOf(res)) != NULL) {
+	    Tcl_DecrRefCount(lab);
+	    code = TclTypedProcReturn(interp, iPtr->framePtr->procPtr->typedSig,
+		    code);
+	}
+    }
+    TclAnnotExpireFrom(interp, mark);
+    return code;
+}
+
 static int
 AnnotMarkObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
 	Tcl_Obj *const objv[])
