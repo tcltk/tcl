@@ -3,6 +3,10 @@ somme = 15
 apply {double}{{{double}a; {double}b} {( $a + $b )}} 5 x -> ERREUR argument "b": expected floating-point number but got "x"
 apply {double}{{{double}a; {double}b} {( $a + $b )}} 5 -> ERREUR wrong # args: should be "apply {{double}a; {double}b} {( $a + $b )} a b"
 
+--- la lambda dans une variable, le type de retour à l'appel
+apply {double}$f 20 5                          -> 25
+apply {int}$f 20.5 5                           -> ERREUR return value {int}: expected integer but got "25.5"
+
 --- le type de retour est vérifié
 apply {int}{{x} {expr {$x / 2}}} 9             -> 4
 apply {int}{{x} {expr {$x / 2.0}}} 9           -> ERREUR return value {int}: expected integer but got "4.5"

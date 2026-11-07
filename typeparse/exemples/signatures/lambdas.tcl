@@ -20,6 +20,11 @@ puts "somme = $somme"
 montre {apply {double}{{{double}a; {double}b} {( $a + $b )}} 5 x}
 montre {apply {double}{{{double}a; {double}b} {( $a + $b )}} 5}
 
+puts "\n--- la lambda dans une variable, le type de retour à l'appel"
+set f {{{double}a; {double}b} {( $a + $b )}}
+montre {apply {double}$f 20 5}
+montre {apply {int}$f 20.5 5}
+
 puts "\n--- le type de retour est vérifié"
 montre {apply {int}{{x} {expr {$x / 2}}} 9}
 montre {apply {int}{{x} {expr {$x / 2.0}}} 9}

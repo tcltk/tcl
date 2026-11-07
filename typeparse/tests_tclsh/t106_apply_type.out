@@ -21,6 +21,10 @@ produit refusé: ERREUR return value {pt}: expected floating-point number but go
 déplié: 1 2 3
 type inconnu: ERREUR bad return type {nimp}: unknown type "nimp"
 une note n'est pas un type: 2
+--- le type de retour sur une lambda en variable : {T}$f
+double: 25
+int refusé: ERREUR return value {int}: expected integer but got "25.5"
+deux types, une lambda: 3 3
 --- espace de noms
 args dans geo: 1
 retour dans geo: 4 4

@@ -40,6 +40,13 @@ t "déplié"                  {apply {{*}list.int}{{{int}args...} {return $args}
 t "type inconnu"            {apply {nimp}{{x} {set x}} 1}
 t "une note n'est pas un type" {apply {@trace}{{x} {expr {$x + 1}}} 1}
 
+puts {--- le type de retour sur une lambda en variable : {T}$f}
+set somme {{{double}a; {double}b} {( $a + $b )}}
+t "double"                  {apply {double}$somme 20 5}
+t "int refusé"              {apply {int}$somme 20.5 5}
+proc deux {L} { list [apply {double}$L 1 2] [apply {int}$L 1 2] }
+t "deux types, une lambda"  {deux $somme}
+
 puts "--- espace de noms"
 namespace eval geo { type def vec {{double}dx; {double}dy} }
 t "args dans geo"           {apply {{{vec}v} {set v(dx)} geo} {1 2}}

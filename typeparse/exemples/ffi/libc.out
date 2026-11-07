@@ -1,0 +1,26 @@
+--- des nombres et un texte
+hypot 3 4                            -> 5.0
+strlen héllo                         -> 6
+hypot 3 x                            -> ERREUR argument "y": expected floating-point number but got "x"
+strlen                               -> ERREUR wrong # args: should be "strlen s"
+
+--- un char * en retour
+getenv FFI_ESSAI                     -> bonjour
+getenv FFI_ABSENT                    -> 
+
+--- une struct en sortie : var.T
+timespec_get t                       -> 1
+type get $t                          -> timespec
+expr {abs($t(sec) - [clock seconds]) <= 2} -> 1
+expr {$t(nsec) >= 0 && $t(nsec) < 1000000000} -> 1
+
+--- un double en sortie
+list [modf 3.25 e] $e                -> 0.25 3.0
+
+--- un rappel : qsort et une lambda typée
+qsort L {{{c_int}a; {c_int}b} {expr {$a - $b}}}; set L -> 1 3 5 7 9
+qsort L {{{c_int}a; {c_int}b} {expr {$b - $a}}}; set L -> 9 7 5 3 1
+qsort -n 3 L {{{c_int}a; {c_int}b} {expr {$a - $b}}}; set L -> 5 7 9 3 1
+qsort L {{{c_int}a; {c_int}b} {error oups}} -> ERREUR oups
+set L                                -> 5 7 9 3 1
+set M {1 x 2}; qsort M {{{c_int}a; {c_int}b} {expr {$a - $b}}} -> ERREUR argument "base": expected integer but got "x"
