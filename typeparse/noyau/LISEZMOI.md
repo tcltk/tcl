@@ -2422,7 +2422,9 @@ d'avant de gauche à droite (un défaut ne prend un mot que s'il en reste assez)
 depuis la fin, le milieu au champ variadique, groupé. À la définition : un seul variadique, pas
 de défaut après, pas de `var.T`. L'usage suit les manuels (`vars valeurs ?vars valeurs ...?`).
 `{list.T}args` en dernier est inchangé. Test `t105_variadiques.tcl`, exemple
-`exemples/signatures/variadiques.tcl`.
+`exemples/signatures/variadiques.tcl`. cproc : `ParseSig` accepte `nom...` ; le champ est une
+`list.T` (une `cproc_span_T` en C), la liaison passe par la procédure typée
+(`exemples/cproc/variadiques.tcl`).
 
 **`make test` : de 61 échecs à 8 (v16y).** Les 61 échecs ont été triés en faisant tourner la même
 suite sur un Tcl 9.0 d'origine (branche core-9-0) et sur la base sans TIP 764 (`stock`) :

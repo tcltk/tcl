@@ -1,0 +1,8 @@
+longueur 0 0 3 4 3 0         -> 9.0
+longueur 0 0 3               -> ERREUR wrong # args: should be "longueur x y ?x y ...?"
+longueur 0 0 3 x             -> ERREUR argument "args...": expected floating-point number but got "x"
+affine 2 1 2 3 100           -> 112.0
+affine 2 100                 -> ERREUR wrong # args: should be "affine k args ?args ...? fin"
+compte                       -> 0
+compte 1 2 3                 -> 3
+compte 1 a                   -> ERREUR argument "args...": expected integer but got "a"

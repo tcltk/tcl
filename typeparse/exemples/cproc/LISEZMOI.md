@@ -51,6 +51,7 @@ ne se recompile pas.
 | `string` | `const char *` |
 | un produit (`point`, `line`…) | sa struct (`type {c!}export`), par valeur |
 | `list.T`, `list(n).T`, T un nombre ou un produit | `cproc_span_T`, soit `{ const T *at; Tcl_Size n; }` |
+| `{T}args...` (variadique, v16y), T un nombre ou un produit | `cproc_span_T` : la procédure typée lie les mots (au milieu, groupés par produit), le C reçoit la liste (`variadiques.tcl`) |
 | un autre type, ou pas de type, **en retour** | `Tcl_Obj *` (NULL : la chaîne vide) |
 
 Un alias ou un nominal se résout : `{polygon}pg`, où `polygon` est un alias de

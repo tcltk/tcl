@@ -32,6 +32,8 @@
 #        list.T, list(n).T (T : un  cproc_span_T : { const T *at; Tcl_Size n; }
 #          nombre ou un produit)      en place si la liste est en cases
 #                                     ({-compact}), sinon une copie
+#        {T}args... (variadique,    cproc_span_T (la procédure typée lie les
+#          v16y)                      mots, le C reçoit la liste)
 #        autre type (retour), ou     Tcl_Obj * (à construire, par exemple avec
 #          pas de type de retour      cproc_list_point(tableau, n) ; NULL :
 #                                     la chaîne vide)
@@ -191,7 +193,7 @@ proc ::cproc::Define {ns frame args} {
 
     set {list.param}params {*}{}
     foreach f [ParseSig $sig] {
-	lappend params [list [string trimleft $f(name) -] \
+	lappend params [list [regsub {\.\.\.$} [string trimleft $f(name) -] {}] \
 		[Classify $pns $f(ttext)] $f]
     }
     # sans type de retour : le C rend un Tcl_Obj * (NULL : la chaîne vide)
@@ -219,7 +221,9 @@ proc ::cproc::Define {ns frame args} {
 	    return -code error "cproc $tail: option $p(field.name) needs a\
 		    constant default (?= value)"
 	}
-	if {$p(local) eq "args"} {set fast 0}
+	if {$p(local) eq "args" || [string match *... $p(field.name)]} {
+	    set fast 0
+	}
     }
     set wrap [expr {$pns eq "::" ? "" : $pns}]::_cproc${id}_$tail
     uplevel #0 [list namespace eval $ns [list proc [lindex $args 0] $sig $wbody]]
@@ -302,8 +306,13 @@ proc {list.field}::cproc::ParseSig {{string}sig} {
 	}
 	set t [string range $f 1 $j-1]
 	set rest [string range $f $j+1 end]
-	if {![regexp {^(-?[A-Za-z_][A-Za-z0-9_]*)\s*(?:\??=\s*(.*))?$} $rest -> nm d]} {
+	if {![regexp {^(-?[A-Za-z_][A-Za-z0-9_]*(?:\.\.\.)?)\s*(?:\??=\s*(.*))?$} $rest -> nm d]} {
 	    return -code error "cproc: field \"$f\": no name after the type"
+	}
+	# v16y : {T}args... : la procédure typée lie les mots ; le C reçoit
+	# une liste de T (cproc_span_T)
+	if {[string match *... $nm]} {
+	    set t [expr {[string match {*[ ;,|]*} $t] ? "list.{$t}" : "list.$t"}]
 	}
 	lappend fields [list $t $nm [DefVal $d]]
     }
