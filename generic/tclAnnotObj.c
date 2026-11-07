@@ -2614,6 +2614,19 @@ ClassifyAnnotRaw(Tcl_Interp *interp, Tcl_Obj *textObj, TclType **tpPtr,
     if (variantPtr != NULL) {
 	*variantPtr = -1;
     }
+    if (len > 1 && text[0] == '@') {
+	/* v16y : une note d'instrument ({@step}, {@trace}...) : jamais un
+	 * type ("@" n'entre pas dans un nom), elle suit la valeur comme une
+	 * note et sert au mode de mise au point (type debug) */
+	Tcl_Size k;
+
+	for (k = 1; k < len && (isalnum(UCHAR(text[k])) || text[k] == '_'
+		|| (text[k] & 0x80)); k++) {
+	}
+	if (k == len) {
+	    return ANN_UNKNOWN;
+	}
+    }
     /* Tout l'état (résultat, errorCode, errorInfo) : une analyse qui échoue
      * ne doit rien laisser derrière elle. */
     saved = Tcl_SaveInterpState(interp, TCL_OK);
@@ -3951,6 +3964,467 @@ NoteObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
     Tcl_DecrRefCount(notes);
     Tcl_DecrRefCount(norm);
     return rc;
+}
+
+/* --------------------------------------------------------------------
+ * v16y : type debug, les notes d'instrument
+ *
+ *	type debug on : une trace sur toutes les commandes de l'interpréteur
+ *	(Tcl_CreateObjTrace2, sans mise en ligne : chaque commande passe par
+ *	elle). Avant chaque commande, les notes "@nom" de ses arguments
+ *	appellent le crochet (::tcl::typedebug::hit par défaut) avec la note,
+ *	les mots de la commande et l'indice de l'argument. Le crochet tourne
+ *	sans trace ; s'il rend une erreur, la commande ne s'exécute pas.
+ * -------------------------------------------------------------------- */
+
+/*
+ * Les proto-types : une note dont le nom n'est pas (encore) un type. En
+ * mode de mise au point, chaque nom vu est inventorié : combien de fois,
+ * où la première fois, par quelles commandes, quelques valeurs. Quand le
+ * type est défini, ces valeurs sont vérifiées après coup.
+ */
+#define PROTO_MAX_SAMPLES 3
+#define PROTO_MAX_CMDS 4
+
+typedef struct Proto {
+    Tcl_WideInt count;
+    Tcl_Obj *where;		/* "fichier:ligne" de la première vue */
+    Tcl_Obj *cmds;		/* liste, distincts */
+    Tcl_Obj *samples;		/* liste, distincts */
+} Proto;
+
+typedef struct TypeDebug {
+    Tcl_Trace trace;		/* NULL : éteint */
+    int busy;			/* dans le crochet */
+    int stepNext;		/* arrêt à la prochaine commande (pas à pas) */
+    Tcl_Obj *hook;		/* préfixe de commande */
+    Tcl_HashTable protos;	/* nom -> Proto* */
+} TypeDebug;
+
+static void
+ProtosClear(TypeDebug *dd)
+{
+    Tcl_HashSearch search;
+    Tcl_HashEntry *hPtr;
+
+    for (hPtr = Tcl_FirstHashEntry(&dd->protos, &search); hPtr != NULL;
+	    hPtr = Tcl_NextHashEntry(&search)) {
+	Proto *pr = (Proto *) Tcl_GetHashValue(hPtr);
+
+	Tcl_DecrRefCount(pr->where);
+	Tcl_DecrRefCount(pr->cmds);
+	Tcl_DecrRefCount(pr->samples);
+	Tcl_Free(pr);
+    }
+    Tcl_DeleteHashTable(&dd->protos);
+    Tcl_InitHashTable(&dd->protos, TCL_STRING_KEYS);
+}
+
+static void
+TypeDebugDelete(void *clientData, Tcl_Interp *interp)
+{
+    TypeDebug *dd = (TypeDebug *) clientData;
+
+    if (dd->trace != NULL) {
+	/* l'interpréteur est détruit, trace posée : elle part avant dd */
+	Tcl_DeleteTrace(interp, dd->trace);
+	dd->trace = NULL;
+    }
+    if (dd->hook != NULL) {
+	Tcl_DecrRefCount(dd->hook);
+    }
+    ProtosClear(dd);
+    Tcl_DeleteHashTable(&dd->protos);
+    Tcl_Free(dd);
+}
+
+/* Ajoute obj à la liste (sans doublon, au plus max éléments). */
+static void
+ListAddDistinct(Tcl_Obj *list, Tcl_Obj *obj, Tcl_Size max)
+{
+    Tcl_Size n, k;
+    Tcl_Obj **v;
+    const char *s = Tcl_GetString(obj);
+
+    if (Tcl_ListObjGetElements(NULL, list, &n, &v) != TCL_OK || n >= max) {
+	return;
+    }
+    for (k = 0; k < n; k++) {
+	if (strcmp(Tcl_GetString(v[k]), s) == 0) {
+	    return;
+	}
+    }
+    Tcl_ListObjAppendElement(NULL, list, obj);
+}
+
+static TypeDebug *
+GetTypeDebug(Tcl_Interp *interp)
+{
+    TypeDebug *dd = (TypeDebug *) Tcl_GetAssocData(interp, "tclTypeDebug",
+	    NULL);
+
+    if (dd == NULL) {
+	dd = (TypeDebug *) Tcl_Alloc(sizeof(TypeDebug));
+	dd->trace = NULL;
+	dd->busy = 0;
+	dd->stepNext = 0;
+	dd->hook = Tcl_NewStringObj("::tcl::typedebug::hit", -1);
+	Tcl_IncrRefCount(dd->hook);
+	Tcl_InitHashTable(&dd->protos, TCL_STRING_KEYS);
+	Tcl_SetAssocData(interp, "tclTypeDebug", TypeDebugDelete, dd);
+    }
+    return dd;
+}
+
+/* "fichier:ligne" de la commande tracée, par le script (référence
+ * comptée pour l'appelant). */
+static Tcl_Obj *
+ProtoWhere(Tcl_Interp *interp, TypeDebug *dd)
+{
+    Tcl_InterpState st = Tcl_SaveInterpState(interp, TCL_OK);
+    Tcl_Obj *res;
+
+    dd->busy++;
+    if (Tcl_EvalEx(interp, "::tcl::typedebug::where 2", -1, 0) == TCL_OK) {
+	res = Tcl_GetObjResult(interp);
+    } else {
+	res = Tcl_NewStringObj("?", 1);
+    }
+    Tcl_IncrRefCount(res);
+    dd->busy--;
+    (void) Tcl_RestoreInterpState(interp, st);
+    return res;			/* une référence pour l'appelant */
+}
+
+/* Un proto-type vu en argument i de la commande objv. */
+static int
+ProtoSeen(Tcl_Interp *interp, TypeDebug *dd, const char *name, Tcl_Size objc,
+	Tcl_Obj *const objv[], Tcl_Size i)
+{
+    int isNew;
+    Tcl_HashEntry *hPtr = Tcl_CreateHashEntry(&dd->protos, name, &isNew);
+    Proto *pr;
+    Tcl_Obj *sample;
+
+    (void) objc;
+    if (isNew) {
+	pr = (Proto *) Tcl_Alloc(sizeof(Proto));
+	pr->count = 0;
+	pr->cmds = Tcl_NewListObj(0, NULL);
+	pr->samples = Tcl_NewListObj(0, NULL);
+	Tcl_IncrRefCount(pr->cmds);
+	Tcl_IncrRefCount(pr->samples);
+	pr->where = ProtoWhere(interp, dd);
+	Tcl_SetHashValue(hPtr, pr);
+    }
+    pr = (Proto *) Tcl_GetHashValue(hPtr);
+    pr->count++;
+    ListAddDistinct(pr->cmds, objv[0], PROTO_MAX_CMDS);
+    {
+	Tcl_Size sl, n, k;
+	const char *ss = Tcl_GetStringFromObj(objv[i], &sl);
+	Tcl_Obj **v, *pair[2];
+
+	Tcl_ListObjGetElements(NULL, pr->samples, &n, &v);
+	if (n >= PROTO_MAX_SAMPLES) {
+	    return TCL_OK;
+	}
+	for (k = 0; k < n; k++) {
+	    Tcl_Obj *s0;
+	    Tcl_Size l0;
+	    const char *p0;
+
+	    Tcl_ListObjIndex(NULL, v[k], 0, &s0);
+	    p0 = Tcl_GetStringFromObj(s0, &l0);
+	    if (l0 == sl && memcmp(p0, ss, sl) == 0) {
+		return TCL_OK;
+	    }
+	}
+	/* une valeur nouvelle : avec son lieu */
+	sample = Tcl_NewStringObj(ss, sl);
+	pair[0] = sample;
+	if (n == 0) {
+	    pair[1] = pr->where;
+	    Tcl_IncrRefCount(pair[1]);
+	} else {
+	    pair[1] = ProtoWhere(interp, dd);
+	}
+	Tcl_ListObjAppendElement(NULL, pr->samples, Tcl_NewListObj(2, pair));
+	Tcl_DecrRefCount(pair[1]);
+    }
+    return TCL_OK;
+}
+
+/*
+ * L'inventaire : nom -> {count N where F:L commands {...} samples {...}
+ * status S}. S : "note" (pas un type), "ok" (le type est défini et les
+ * valeurs vues y entrent), "mismatch" (suivi de errors {{valeur message}...}).
+ */
+static Tcl_Obj *
+ProtosReport(Tcl_Interp *interp, TypeDebug *dd)
+{
+    Tcl_Obj *res = Tcl_NewDictObj();
+    Tcl_HashSearch search;
+    Tcl_HashEntry *hPtr;
+
+    for (hPtr = Tcl_FirstHashEntry(&dd->protos, &search); hPtr != NULL;
+	    hPtr = Tcl_NextHashEntry(&search)) {
+	Proto *pr = (Proto *) Tcl_GetHashValue(hPtr);
+	Tcl_Obj *name = Tcl_NewStringObj(
+		(const char *) Tcl_GetHashKey(&dd->protos, hPtr), -1);
+	Tcl_Obj *e = Tcl_NewDictObj();
+	TclType *tp = NULL;
+	int v = -1;
+	const char *status = "note";
+
+	Tcl_IncrRefCount(name);
+	Tcl_DictObjPut(NULL, e, Tcl_NewStringObj("count", -1),
+		Tcl_NewWideIntObj(pr->count));
+	Tcl_DictObjPut(NULL, e, Tcl_NewStringObj("where", -1), pr->where);
+	Tcl_DictObjPut(NULL, e, Tcl_NewStringObj("commands", -1), pr->cmds);
+	Tcl_DictObjPut(NULL, e, Tcl_NewStringObj("samples", -1), pr->samples);
+	if (ClassifyAnnot(interp, name, NULL, &tp, &v) == ANN_TYPE
+		&& tp != NULL) {
+	    Tcl_Obj *errs = Tcl_NewListObj(0, NULL), **sv;
+	    Tcl_Size ns, k;
+
+	    Tcl_ListObjGetElements(NULL, pr->samples, &ns, &sv);
+	    for (k = 0; k < ns; k++) {
+		Tcl_InterpState st = Tcl_SaveInterpState(interp, TCL_OK);
+		Tcl_Obj *s0, *w0, *plain;
+		int vo = -1;
+
+		Tcl_ListObjIndex(NULL, sv[k], 0, &s0);
+		Tcl_ListObjIndex(NULL, sv[k], 1, &w0);
+		plain = Tcl_NewStringObj(Tcl_GetString(s0), -1);
+		Tcl_IncrRefCount(plain);
+		if (TclTypeValidate(interp, tp, plain, v, &vo) != TCL_OK) {
+		    Tcl_Obj *trip[3];
+
+		    trip[0] = s0;
+		    trip[1] = w0;
+		    trip[2] = Tcl_GetObjResult(interp);
+		    Tcl_ListObjAppendElement(NULL, errs, Tcl_NewListObj(3, trip));
+		}
+		Tcl_DecrRefCount(plain);
+		(void) Tcl_RestoreInterpState(interp, st);
+	    }
+	    Tcl_ListObjLength(NULL, errs, &ns);
+	    status = ns ? "mismatch" : "ok";
+	    if (ns) {
+		Tcl_DictObjPut(NULL, e, Tcl_NewStringObj("errors", -1), errs);
+	    } else {
+		Tcl_DecrRefCount(errs);
+	    }
+	}
+	Tcl_DictObjPut(NULL, e, Tcl_NewStringObj("status", -1),
+		Tcl_NewStringObj(status, -1));
+	Tcl_DictObjPut(NULL, res, name, e);
+	Tcl_DecrRefCount(name);
+    }
+    return res;
+}
+
+static int
+TypeDebugTrace(void *clientData, Tcl_Interp *interp, Tcl_Size level,
+	const char *command, Tcl_Command cmd, Tcl_Size objc,
+	Tcl_Obj *const objv[])
+{
+    TypeDebug *dd = (TypeDebug *) clientData;
+    Tcl_Size i, k, nn;
+    Tcl_Obj *notes, **nv;
+    int rc = TCL_OK;
+
+    (void) level;
+    (void) command;
+    (void) cmd;
+    if (dd->busy) {
+	return TCL_OK;
+    }
+    if (dd->stepNext) {
+	/* pas à pas : la commande suivante, quelles que soient ses notes */
+	Tcl_Obj *call;
+	Tcl_InterpState st;
+
+	dd->stepNext = 0;
+	call = Tcl_DuplicateObj(dd->hook);
+	Tcl_IncrRefCount(call);
+	Tcl_ListObjAppendElement(NULL, call, Tcl_NewStringObj("@next", -1));
+	Tcl_ListObjAppendElement(NULL, call, Tcl_NewListObj(objc, objv));
+	Tcl_ListObjAppendElement(NULL, call, Tcl_NewWideIntObj(0));
+	st = Tcl_SaveInterpState(interp, TCL_OK);
+	dd->busy = 1;
+	rc = Tcl_EvalObjEx(interp, call, TCL_EVAL_DIRECT);
+	dd->busy = 0;
+	Tcl_DecrRefCount(call);
+	if (rc == TCL_ERROR) {
+	    Tcl_DiscardInterpState(st);
+	    return rc;
+	}
+	rc = Tcl_RestoreInterpState(interp, st);
+	if (dd->stepNext) {
+	    return rc;		/* l'arrêt suivant vaut pour celle-ci aussi */
+	}
+    }
+    for (i = 1; i < objc && rc == TCL_OK; i++) {
+	if (objv[i]->typePtr != &annotatedObjType) {
+	    continue;
+	}
+	notes = PendingOfEx(objv[i], 0, 1);
+	Tcl_IncrRefCount(notes);
+	if (Tcl_ListObjGetElements(NULL, notes, &nn, &nv) == TCL_OK) {
+	    for (k = 0; k < nn && rc == TCL_OK; k++) {
+		const char *nt = Tcl_GetString(nv[k]);
+		Tcl_Obj *call, *words;
+		Tcl_InterpState st;
+
+		if (nt[0] != '@' || nt[1] == '\0') {
+		    if (ClassifyAnnot(interp, nv[k], NULL, NULL, NULL)
+			    == ANN_UNKNOWN) {
+			rc = ProtoSeen(interp, dd, nt, objc, objv, i);
+		    }
+		    continue;
+		}
+		words = Tcl_NewListObj(objc, objv);
+		call = Tcl_DuplicateObj(dd->hook);
+		Tcl_IncrRefCount(call);
+		Tcl_ListObjAppendElement(NULL, call, nv[k]);
+		Tcl_ListObjAppendElement(NULL, call, words);
+		Tcl_ListObjAppendElement(NULL, call, Tcl_NewWideIntObj(i));
+		st = Tcl_SaveInterpState(interp, TCL_OK);
+		dd->busy = 1;
+		rc = Tcl_EvalObjEx(interp, call, TCL_EVAL_DIRECT);
+		dd->busy = 0;
+		Tcl_DecrRefCount(call);
+		if (rc == TCL_ERROR) {
+		    Tcl_DiscardInterpState(st);
+		} else {
+		    rc = Tcl_RestoreInterpState(interp, st);
+		}
+	    }
+	}
+	Tcl_DecrRefCount(notes);
+    }
+    return rc;
+}
+
+static void
+TypeDebugTraceDelete(void *clientData)
+{
+    TypeDebug *dd = (TypeDebug *) clientData;
+
+    dd->trace = NULL;
+}
+
+/* Les procédures Tcl du crochet par défaut, de son invite et de la console
+ * Tk : tclTypeDebug.tcl, mis en chaîne C par gen_typedebug.tcl. */
+#include "tclTypeDebug.h"
+
+static int
+TypeDebugLoad(Tcl_Interp *interp)
+{
+    return Tcl_EvalEx(interp, typeDebugScript, -1, TCL_EVAL_GLOBAL);
+}
+
+/*
+ * type debug ?on|off? ; type debug hook ?CMD?
+ */
+int
+TclTypeDebugCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
+{
+    TypeDebug *dd = GetTypeDebug(interp);
+    const char *w;
+
+    if (objc == 2) {
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(dd->trace ? "on" : "off",
+		-1));
+	return TCL_OK;
+    }
+    w = Tcl_GetString(objv[2]);
+    if (objc == 3 && strcmp(w, "on") == 0) {
+	if (dd->trace == NULL) {
+	    if (TypeDebugLoad(interp) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    Tcl_EvalEx(interp, "::tcl::typedebug::reset", -1, TCL_EVAL_GLOBAL);
+	    dd->trace = Tcl_CreateObjTrace2(interp, 0, 0, TypeDebugTrace, dd,
+		    TypeDebugTraceDelete);
+	}
+	Tcl_ResetResult(interp);
+	return TCL_OK;
+    }
+    if (objc == 3 && strcmp(w, "off") == 0) {
+	if (dd->trace != NULL) {
+	    Tcl_DeleteTrace(interp, dd->trace);
+	    dd->trace = NULL;
+	}
+	return TCL_OK;
+    }
+    if ((objc == 3 || objc == 4) && strcmp(w, "hook") == 0) {
+	if (objc == 4) {
+	    Tcl_DecrRefCount(dd->hook);
+	    dd->hook = Tcl_DuplicateObj(objv[3]);
+	    Tcl_IncrRefCount(dd->hook);
+	}
+	Tcl_SetObjResult(interp, dd->hook);
+	return TCL_OK;
+    }
+    if (objc == 3 && strcmp(w, "notes") == 0) {
+	Tcl_SetObjResult(interp, ProtosReport(interp, dd));
+	return TCL_OK;
+    }
+    if (objc == 3 && strcmp(w, "next") == 0) {
+	/* (du crochet) arrêt à la prochaine commande */
+	dd->stepNext = (dd->trace != NULL);
+	return TCL_OK;
+    }
+    if (objc == 3 && strcmp(w, "clear") == 0) {
+	ProtosClear(dd);
+	return TCL_OK;
+    }
+    if (objc == 3 && strcmp(w, "report") == 0) {
+	Tcl_Obj *call[3];
+	int rc;
+
+	if (TypeDebugLoad(interp) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	call[0] = Tcl_NewStringObj("::tcl::typedebug::report", -1);
+	call[1] = ProtosReport(interp, dd);
+	call[2] = TclTypesNames(interp);
+	for (rc = 0; rc < 3; rc++) {
+	    Tcl_IncrRefCount(call[rc]);
+	}
+	dd->busy++;
+	rc = Tcl_EvalObjv(interp, 3, call, 0);
+	dd->busy--;
+	Tcl_DecrRefCount(call[0]);
+	Tcl_DecrRefCount(call[1]);
+	Tcl_DecrRefCount(call[2]);
+	return rc;
+    }
+    if (strcmp(w, "when") == 0 || strcmp(w, "console") == 0) {
+	/* type debug when ?NOTE ?EXPR?? ; type debug console ?on|off? : dans
+	 * le script */
+	Tcl_Obj *call;
+	int rc;
+
+	if (TypeDebugLoad(interp) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	call = Tcl_ObjPrintf("::tcl::typedebug::%s", w);
+	call = Tcl_NewListObj(1, &call);
+	Tcl_IncrRefCount(call);
+	Tcl_ListObjReplace(NULL, call, 1, 0, objc - 3, objv + 3);
+	dd->busy++;
+	rc = Tcl_EvalObjEx(interp, call, TCL_EVAL_GLOBAL);
+	dd->busy--;
+	Tcl_DecrRefCount(call);
+	return rc;
+    }
+    Tcl_WrongNumArgs(interp, 2, objv, "?on|off? | next | hook ?command? | "
+	    "when ?note ?expr?? | console ?on|off? | notes | report | clear");
+    return TCL_ERROR;
 }
 
 void

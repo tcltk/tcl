@@ -6,5 +6,9 @@
 - `proto_types.tcl` : des notes (`{pointt}`, `{vitesse}`) posées avant que les types existent ;
   `type debug report` dit où elles ont été vues, propose `point` pour `pointt`, et vérifie les
   valeurs vues quand `vitesse` est défini.
+- `console.tcl` : la même chose dans la console Tk (`type debug console`) : la pile, les
+  variables du cadre choisi avec leur type et leurs notes, le journal, une ligne de commande ;
+  et une note conditionnelle (`type debug when neg {$value < 0}`) qui ne s'arrête que sur une
+  valeur négative. `console.png` : la console arrêtée dans `norme`.
 
 Voir `doc/ANNOTATIONS.fr.md`, § 3.1.

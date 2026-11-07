@@ -2358,8 +2358,8 @@ erreur, substitué, écrit, réutilisé ailleurs.
 
 ### v16y — la mise au point par les notes : `type debug` (6 novembre 2026)
 
-Pas de patch noyau. Sources de types : `tclAnnotObj.c`, `tclTypes.c`, `tclTypes.h`. Nouveau test
-`t103_type_debug.tcl` ; t28 et t93 : la liste des sous-commandes de `type` gagne `debug`.
+Pas de patch noyau. Sources de types : `tclAnnotObj.c`, `tclTypes.c`, `tclTypes.h`, et le nouveau
+`tclTypeDebug.h` (généré depuis `tclTypeDebug.tcl`). Nouveau test `t103_type_debug.tcl` ; t28 et t93 : la liste des sous-commandes de `type` gagne `debug`.
 
 - **Notes d'instrument.** Un texte `@nom` n'est jamais un type : `TclTypeParse` le refuse avec le
   code `UNKNOWN` (« is an instrument note, not a type »), `ClassifyAnnotRaw` le classe en note.
@@ -2385,6 +2385,17 @@ Pas de patch noyau. Sources de types : `tclAnnotObj.c`, `tclTypes.c`, `tclTypes.
   validées par `TclTypeValidate` contre le type défini depuis) ; `type debug report` le met en
   texte et propose, pour un nom qui n'est pas un type, le nom de type le plus proche
   (distance d'édition, `TclTypesNames`) ; `type debug clear` le vide.
+
+- **Conditions et console.** Le crochet par défaut est écrit en Tcl dans `tclTypeDebug.tcl` et
+  mis en chaîne C dans `tclTypeDebug.h` par `gen_typedebug.tcl` (les deux sont livrés ; `maj.sh`
+  copie `tclTypeDebug.h` et touche `tclAnnotObj.c`, que le Makefile ne sait pas en dépendre).
+  `type debug when NOM EXPR` : la note `@NOM` ne se signale que si `EXPR` est vraie (`$value`,
+  `$cmd`, `$arg`, `$hits`). `type debug console` : une fenêtre Tk (pile, variables du cadre
+  choisi avec type et notes, journal, ligne de commande). Les gestionnaires d'événements Tk
+  tournent au niveau global et ne voient pas la pile arrêtée : ils ne font que poser une action,
+  et c'est `TkHit`, appelé dans la pile, qui lit les variables et évalue (`uplevel #k`).
+- `TypeDebugDelete` retire la trace si l'interpréteur est détruit trace posée (lecture après
+  libération vue par valgrind).
 
 Coût : nul tant que `type debug` est éteint (aucun test sur le chemin des commandes).
 

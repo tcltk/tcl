@@ -22,11 +22,12 @@
 # Étapes : 1. extrait l'archive dans un dossier temporaire et ne remplace dans typeparse/ que
 #             les fichiers qui DIFFÈRENT (cmp) ; liste ce qui est nouveau/modifié/absent de l'archive
 #          2. sources de types (tclTypes*.{c,h}, tclAnnotObj.c, tclTypedVar.c, tclTypePath.c,
-#             tclTypeGeneric.c, tclTypeParse.c, tclVarRef.c) : livrées ENTIÈRES dans typeparse/,
+#             tclTypeGeneric.c, tclTypeParse.c, tclVarRef.c, tclTypeDebug.h) : livrées ENTIÈRES dans typeparse/,
 #             copiées dans generic/ quand elles diffèrent ; elles ne sont jamais patchées
 #          3. patchs de typeparse/noyau/ORDRE.txt, partie NOYAU seulement (les sections qui visent
-#             les sources de types sont ignorées), sans fuzz (-F0) : déjà appliqué (patch -R
-#             --dry-run passe) -> ignoré ; applicable -> appliqué ; sinon -> arrêt avec le détail.
+#             les sources de types sont ignorées), sans fuzz (-F0) : le nombre m de patchs déjà
+#             appliqués est trouvé sur une copie des fichiers (les m premiers se défont, du
+#             dernier au premier) ; les suivants sont appliqués ; sinon -> arrêt avec le détail.
 #             Sans -F0, un patch qui n'ajoute que des lignes pouvait se réappliquer ailleurs
 #             avec du fuzz (taille-dynamique, 18 octobre : CheckDynCounts en double)
 #          4. si un fichier C vient de changer (ou --build) : make clean, make, make install-binaries
@@ -83,17 +84,22 @@ main() {
     local TOUCHED; TOUCHED="$(mktemp)"
 
     echo "== 1. Archive $ZIP"
-    local TMP; TMP="$(mktemp -d)"
-    unzip -q "$ZIP" -d "$TMP" || return 1
-    [ -d "$TMP/typeparse" ] || { echo "L'archive ne contient pas de dossier typeparse/"; return 1; }
+    # FR : pas « TMP » : sous MSYS2, TMP est exportée, et un « local TMP » l'est aussi ;
+    #      gcc aurait reçu ce dossier, supprimé à la fin de l'étape 1 (« Cannot create
+    #      temporary file », 25 octobre)
+    # EN : not "TMP": under MSYS2 TMP is exported and so is a "local TMP"; gcc would get
+    #      this folder, removed at the end of step 1
+    local XDIR; XDIR="$(mktemp -d)"
+    unzip -q "$ZIP" -d "$XDIR" || return 1
+    [ -d "$XDIR/typeparse" ] || { echo "L'archive ne contient pas de dossier typeparse/"; return 1; }
     local VARCH="?" VAVANT
-    [ -f "$TMP/typeparse/VERSION" ] && VARCH="$(tr -d '\r\n' < "$TMP/typeparse/VERSION")"
+    [ -f "$XDIR/typeparse/VERSION" ] && VARCH="$(tr -d '\r\n' < "$XDIR/typeparse/VERSION")"
     VAVANT="$(tclversion)"
     echo "   version de l'archive   : $VARCH"
     echo "   version de $TCLSH : ${VAVANT:-?}"
     local nnew=0 nmod=0 f rel
     while IFS= read -r -d '' f; do
-        rel="${f#$TMP/}"
+        rel="${f#$XDIR/}"
         case "$rel" in *.so|*.dll|*.o|*.exe) continue ;; esac
         if [ ! -e "$rel" ]; then
             echo "   nouveau   $rel"; nnew=$((nnew+1))
@@ -103,24 +109,26 @@ main() {
             continue
         fi
         if [ "$DRY" = 0 ]; then mkdir -p "$(dirname "$rel")"; cp "$f" "$rel"; echo "$rel" >> "$TOUCHED"; fi
-    done < <(find "$TMP/typeparse" -type f -print0)
+    done < <(find "$XDIR/typeparse" -type f -print0)
     # fichiers présents chez vous mais plus dans l'archive : signalés, jamais supprimés
     while IFS= read -r -d '' f; do
         rel="${f#./}"
-        [ -e "$TMP/$rel" ] || case "$rel" in *.so|*.dll|*.o|*.exe|*.orig|*.rej) ;; *) echo "   absent de l'archive (conservé) $rel" ;; esac
+        [ -e "$XDIR/$rel" ] || case "$rel" in *.so|*.dll|*.o|*.exe|*.orig|*.rej) ;; *) echo "   absent de l'archive (conservé) $rel" ;; esac
     done < <(find typeparse -type f -print0 2>/dev/null)
     echo "   $nnew nouveau(x), $nmod modifié(s)"
-    rm -rf "$TMP"
+    rm -rf "$XDIR"
 
     echo "== 2. Sources de types -> generic/"
     local applied_now=0 p line
-    local TYPEFILES="tclAnnotObj.c tclTypes.c tclTypeParse.c tclTypeGeneric.c tclTypedVar.c tclTypePath.c tclVarRef.c tclTypes.h tclTypesInt.h"
+    local TYPEFILES="tclAnnotObj.c tclTypes.c tclTypeParse.c tclTypeGeneric.c tclTypedVar.c tclTypePath.c tclVarRef.c tclTypes.h tclTypesInt.h tclTypeDebug.h"
     for f in $TYPEFILES; do
         [ -f "typeparse/$f" ] || { echo "   MANQUE   typeparse/$f"; return 1; }
         if [ ! -f "generic/$f" ] || ! same "typeparse/$f" "generic/$f"; then
             echo "   copié           generic/$f"
             if [ "$DRY" = 0 ]; then
                 cp "typeparse/$f" "generic/$f"; echo "generic/$f" >> "$TOUCHED"; applied_now=1
+                # v16y : le Makefile ne sait pas que tclAnnotObj.c inclut tclTypeDebug.h
+                [ "$f" = tclTypeDebug.h ] && touch generic/tclAnnotObj.c
             fi
         fi
     done
@@ -151,54 +159,84 @@ main() {
 
     echo "== 3. Patchs C (partie noyau, sans fuzz)"
     if [ -f typeparse/noyau/ORDRE.txt ]; then
-        local CORE; CORE="$(mktemp)"
+        # FR : parties noyau, dans l'ordre (les patchs « types seuls » sont écartés)
+        local PDIR names=() n=0 k m f missing
+        PDIR="$(mktemp -d)"
         while IFS= read -r line; do
             p="${line%%#*}"; p="${p//$'\r'/}"
             p="${p#"${p%%[![:space:]]*}"}"; p="${p%"${p##*[![:space:]]}"}"
             [ -n "$p" ] || continue
-            if [ ! -f "typeparse/noyau/$p" ]; then echo "   MANQUE   $p"; return 1; fi
-            corepart "typeparse/noyau/$p" > "$CORE"
-            if [ ! -s "$CORE" ]; then
+            if [ ! -f "typeparse/noyau/$p" ]; then echo "   MANQUE   $p"; rm -rf "$PDIR"; return 1; fi
+            corepart "typeparse/noyau/$p" > "$PDIR/core.$n"
+            if [ ! -s "$PDIR/core.$n" ]; then
                 echo "   types seuls     $p (sources copiées à l'étape 2)"
                 continue
             fi
-            # fichiers cibles : tous doivent exister (sinon patch poserait une question)
-            local missing=""
-            for f in $(grep -E '^\+\+\+ ' "$CORE" | sed -E 's/^\+\+\+ [ab]\///; s/[[:space:]].*//'); do
+            missing=""
+            for f in $(grep -E '^\+\+\+ ' "$PDIR/core.$n" | sed -E 's/^\+\+\+ [ab]\///; s/[[:space:]].*//'); do
                 [ -f "$f" ] || missing="$missing $f"
+                echo "$f" >> "$PDIR/files"
             done
             if [ -n "$missing" ]; then
                 echo "   CONFLIT         $p : fichier(s) absent(s) de l'arbre :$missing"
-                rm -f "$CORE"; return 1
+                rm -rf "$PDIR"; return 1
             fi
-            local out
-            if patch -p1 -R --dry-run -F0 -s < "$CORE" >/dev/null 2>&1; then
-                echo "   déjà appliqué   $p"
-            elif out="$(patch -p1 -N --dry-run -F0 < "$CORE" 2>&1)"; then
+            names[$n]="$p"; n=$((n+1))
+        done < typeparse/noyau/ORDRE.txt
+
+        # FR : combien de patchs sont déjà appliqués ? Sur une COPIE des fichiers
+        #      touchés, on défait les m premiers en ordre inverse (le dernier
+        #      d'abord) : chacun retrouve alors exactement son contexte, même si un
+        #      patch suivant l'avait retouché (v16c, 25 octobre : index-chemins-noyau
+        #      vu en « CONFLIT » après expr-declaration-champs). Le plus grand m qui
+        #      se défait sans fuzz est le nombre de patchs déjà appliqués.
+        # EN : how many patches are already applied? On a COPY of the touched
+        #      files, undo the first m in reverse order (last first): each then
+        #      finds its exact context again. The largest m that undoes cleanly is
+        #      the number of patches already applied.
+        local COPY applied=-1
+        COPY="$PDIR/copie"
+        for ((m = n; m >= 0; m--)); do
+            rm -rf "$COPY"; mkdir -p "$COPY"
+            if [ -f "$PDIR/files" ]; then
+                sort -u "$PDIR/files" | while IFS= read -r f; do
+                    mkdir -p "$COPY/$(dirname "$f")"; cp "$f" "$COPY/$f"
+                done
+            fi
+            local ok=1
+            for ((k = m - 1; k >= 0; k--)); do
+                if ! patch -d "$COPY" -p1 -R -F0 -s -f --no-backup-if-mismatch < "$PDIR/core.$k" >/dev/null 2>&1; then
+                    ok=0; break
+                fi
+            done
+            if [ "$ok" = 1 ]; then applied=$m; break; fi
+        done
+        if [ "$applied" -lt 0 ]; then
+            echo "   CONFLIT         ni appliqués ni applicables : l'arbre ne correspond à aucun état de ORDRE.txt"
+            rm -rf "$PDIR"; return 1
+        fi
+        for ((k = 0; k < applied; k++)); do echo "   déjà appliqué   ${names[$k]}"; done
+        local out
+        for ((k = applied; k < n; k++)); do
+            p="${names[$k]}"
+            if out="$(patch -p1 -N --dry-run -F0 < "$PDIR/core.$k" 2>&1)"; then
                 echo "   à appliquer     $p"
                 if [ "$DRY" = 0 ]; then
-                    patch -p1 -N -F0 -s < "$CORE" || { echo "ÉCHEC patch $p"; rm -f "$CORE"; return 1; }
-                    grep -E '^\+\+\+ ' "$CORE" | sed -E 's/^\+\+\+ [ab]\///; s/[[:space:]].*//' >> "$TOUCHED"
+                    patch -p1 -N -F0 -s < "$PDIR/core.$k" || { echo "ÉCHEC patch $p"; rm -rf "$PDIR"; return 1; }
+                    grep -E '^\+\+\+ ' "$PDIR/core.$k" | sed -E 's/^\+\+\+ [ab]\///; s/[[:space:]].*//' >> "$TOUCHED"
                     applied_now=1
                 fi
             else
-                # Déjà appliqué, mais un patch SUIVANT a retouché le contexte de
-                # ses lignes : -R ne passe plus à l'identique, et patch reconnaît
-                # chaque fichier comme « Reversed (or previously applied) ».
-                local nfiles nrev
-                nfiles=$(printf '%s\n' "$out" | grep -c '^checking file')
-                nrev=$(printf '%s\n' "$out" | grep -c 'Reversed (or previously applied)')
-                if [ "$nrev" -gt 0 ] && [ "$nrev" = "$nfiles" ] \
-                        && ! printf '%s\n' "$out" | grep -q 'FAILED'; then
-                    echo "   déjà appliqué   $p (contexte retouché par un patch suivant)"
-                else
-                    echo "   CONFLIT         $p (ni appliqué ni applicable sans fuzz) :"
-                    echo "$out" | sed 's/^/      /'
-                    rm -f "$CORE"; return 1
-                fi
+                echo "   CONFLIT         $p (déjà appliqués : $applied ; celui-ci ne s'applique pas sans fuzz) :"
+                echo "$out" | sed 's/^/      /'
+                rm -rf "$PDIR"; return 1
             fi
-        done < typeparse/noyau/ORDRE.txt
-        rm -f "$CORE"
+            if [ "$DRY" = 1 ] && [ $((k + 1)) -lt "$n" ]; then
+                echo "   (dry-run : les suivants dépendent de celui-ci, non vérifiés)"
+                break
+            fi
+        done
+        rm -rf "$PDIR"
     else
         echo "   (pas de typeparse/noyau/ORDRE.txt)"
     fi

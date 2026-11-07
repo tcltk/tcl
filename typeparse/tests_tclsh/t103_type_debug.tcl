@@ -61,6 +61,23 @@ set m {@trace}{3.0 4.0}
 chemin [list $m]
 type debug off
 
+puts "--- conditions : type debug when"
+type debug on
+t "when x > 5"                   {type debug when trace {$value > 5}}
+t "when @deux (hits)"            {type debug when @deux {$hits == 2}}
+t "les conditions"               {type debug when}
+t "une"                          {type debug when deux}
+t "syntaxe"                      {type debug when z {$value <}}
+foreach v {3 8 4 9} { set x {@trace}$v }
+set ::tcl::typedebug::run 1   ;# comme « r » : s'affiche sans s'arrêter
+t "@deux, 1er passage"           {set y {@deux}a}
+t "@deux, 2e passage"            {set y {@deux}b}
+t "@deux, 3e passage"            {set y {@deux}c}
+type debug when trace {}
+t "retirée"                      {type debug when}
+type debug when deux {}
+type debug off
+
 puts "--- proto-types"
 type debug clear
 type debug hook rec

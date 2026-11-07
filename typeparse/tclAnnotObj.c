@@ -4316,110 +4316,15 @@ TypeDebugTraceDelete(void *clientData)
     dd->trace = NULL;
 }
 
-/* Les procédures Tcl du crochet par défaut et de son invite. */
-static const char typeDebugScript[] =
-"if {[info commands ::tcl::typedebug::hit] eq {}} {\n"
-"namespace eval ::tcl::typedebug {\n"
-"    variable run 0\n"
-"    proc short {v} {\n"
-"        set s [string map {\\n { }} $v]\n"
-"        if {[string length $s] > 60} {set s [string range $s 0 56]...}\n"
-"        return $s\n"
-"    }\n"
-"    proc where {{up 3}} {\n"
-"        set n [info frame]\n"
-"        for {set k [expr {$n - $up}]} {$k > 0} {incr k -1} {\n"
-"            set f [info frame $k]\n"
-"            if {[dict exists $f file] && [dict exists $f line]} {\n"
-"                return \"[file tail [dict get $f file]]:[dict get $f line]\"\n"
-"            }\n"
-"        }\n"
-"        return ?\n"
-"    }\n"
-"    proc hit {note words index} {\n"
-"        variable run\n"
-"        set cmd [lindex $words 0]\n"
-"        set full [uplevel 1 [list namespace which -command $cmd]]\n"
-"        set lv [expr {[info level] - 1}]\n"
-"        set in [expr {$lv > 0 ? \"[lindex [info level $lv] 0]\" : \"(global)\"}]\n"
-"        if {$index == 0} {\n"
-"            puts stderr \"$note  [short $words]   ([where], in $in)\"\n"
-"        } else {\n"
-"            set what \"argument $index\"\n"
-"            if {$full ne \"\" && [info procs $full] ne \"\"} {\n"
-"                set a [info args $full]\n"
-"                if {$index - 1 < [llength $a]} {set what [lindex $a [expr {$index - 1}]]}\n"
-"                set cmd $full\n"
-"            }\n"
-"            puts stderr \"$note  $cmd $what = [short [lindex $words $index]]   ([where], in $in)\"\n"
-"        }\n"
-"        if {$note eq \"@trace\" || $run} return\n"
-"        while 1 {\n"
-"            puts -nonewline stderr \"step> \"; flush stderr\n"
-"            if {[gets stdin line] < 0} {set run 1; return}\n"
-"            set line [string trim $line]\n"
-"            switch -- $line {\n"
-"                {} - c {return}\n"
-"                s {type debug next; return}\n"
-"                r {set run 1; return}\n"
-"                o {set run 0; type debug off; return}\n"
-"                q {return -code error \"type debug: stopped at $cmd\"}\n"
-"                w {for {set k $lv} {$k > 0} {incr k -1} {puts stderr \"  $k: [short [info level $k]]\"}; continue}\n"
-"                v {puts stderr \"  [uplevel 1 {info locals}]\"; continue}\n"
-"                h - ? {puts stderr {  c: continue  s: step (stop at the next command)  r: run (no more pauses)  o: debug off  q: stop (error)  w: where  v: local variables  p NAME: a variable  other: a Tcl command, run here}; continue}\n"
-"            }\n"
-"            if {[lindex $line 0] eq \"p\" && [llength $line] == 2} {\n"
-"                set line [list set [lindex $line 1]]\n"
-"            }\n"
-"            if {[catch {uplevel 1 $line} r]} {puts stderr \"  error: $r\"} else {puts stderr \"  $r\"}\n"
-"        }\n"
-"    }\n"
-"    proc distance {a b} {\n"
-"        set la [string length $a]; set lb [string length $b]\n"
-"        set prev {}; for {set j 0} {$j <= $lb} {incr j} {lappend prev $j}\n"
-"        for {set i 1} {$i <= $la} {incr i} {\n"
-"            set cur [list $i]\n"
-"            for {set j 1} {$j <= $lb} {incr j} {\n"
-"                set c [expr {[string index $a $i-1] ne [string index $b $j-1]}]\n"
-"                lappend cur [expr {min([lindex $prev $j] + 1, [lindex $cur end] + 1, [lindex $prev $j-1] + $c)}]\n"
-"            }\n"
-"            set prev $cur\n"
-"        }\n"
-"        lindex $prev end\n"
-"    }\n"
-"    proc near {name names} {\n"
-"        set best {}; set bd 3\n"
-"        foreach t [lsort $names] {\n"
-"            set d [distance [string tolower $name] [string tolower $t]]\n"
-"            if {$d < $bd && $d <= max(1, [string length $name] / 3)} {set best $t; set bd $d}\n"
-"        }\n"
-"        return $best\n"
-"    }\n"
-"    proc report {inv names} {\n"
-"        if {![dict size $inv]} {return \"no notes seen\"}\n"
-"        set out {}\n"
-"        foreach name [lsort [dict keys $inv]] {\n"
-"            set e [dict get $inv $name]\n"
-"            set n [dict get $e count]\n"
-"            set l \"$name: seen $n time[expr {$n > 1 ? {s} : {}}], first at [dict get $e where], via [join [dict get $e commands] {, }]\"\n"
-"            append l \"\\n    values: [join [lmap p [dict get $e samples] {short [lindex $p 0]}] { | }]\"\n"
-"            switch [dict get $e status] {\n"
-"                ok {append l \"\\n    now a type: the values seen fit it\"}\n"
-"                mismatch {\n"
-"                    append l \"\\n    now a type, but:\"\n"
-"                    foreach p [dict get $e errors] {append l \"\\n      [short [lindex $p 0]] ([lindex $p 1]): [lindex $p 2]\"}\n"
-"                }\n"
-"                default {\n"
-"                    set t [near $name $names]\n"
-"                    if {$t ne {}} {append l \"\\n    not a type; did you mean $t?\"} else {append l \"\\n    not a type yet\"}\n"
-"                }\n"
-"            }\n"
-"            lappend out $l\n"
-"        }\n"
-"        join $out \\n\n"
-"    }\n"
-"}\n"
-"}\n";
+/* Les procédures Tcl du crochet par défaut, de son invite et de la console
+ * Tk : tclTypeDebug.tcl, mis en chaîne C par gen_typedebug.tcl. */
+#include "tclTypeDebug.h"
+
+static int
+TypeDebugLoad(Tcl_Interp *interp)
+{
+    return Tcl_EvalEx(interp, typeDebugScript, -1, TCL_EVAL_GLOBAL);
+}
 
 /*
  * type debug ?on|off? ; type debug hook ?CMD?
@@ -4438,10 +4343,10 @@ TclTypeDebugCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
     w = Tcl_GetString(objv[2]);
     if (objc == 3 && strcmp(w, "on") == 0) {
 	if (dd->trace == NULL) {
-	    if (Tcl_Eval(interp, typeDebugScript) != TCL_OK) {
+	    if (TypeDebugLoad(interp) != TCL_OK) {
 		return TCL_ERROR;
 	    }
-	    Tcl_Eval(interp, "set ::tcl::typedebug::run 0");
+	    Tcl_EvalEx(interp, "::tcl::typedebug::reset", -1, TCL_EVAL_GLOBAL);
 	    dd->trace = Tcl_CreateObjTrace2(interp, 0, 0, TypeDebugTrace, dd,
 		    TypeDebugTraceDelete);
 	}
@@ -4481,7 +4386,7 @@ TclTypeDebugCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 	Tcl_Obj *call[3];
 	int rc;
 
-	if (Tcl_Eval(interp, typeDebugScript) != TCL_OK) {
+	if (TypeDebugLoad(interp) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	call[0] = Tcl_NewStringObj("::tcl::typedebug::report", -1);
@@ -4498,8 +4403,27 @@ TclTypeDebugCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 	Tcl_DecrRefCount(call[2]);
 	return rc;
     }
-    Tcl_WrongNumArgs(interp, 2, objv,
-	    "?on|off? | next | hook ?command? | notes | report | clear");
+    if (strcmp(w, "when") == 0 || strcmp(w, "console") == 0) {
+	/* type debug when ?NOTE ?EXPR?? ; type debug console ?on|off? : dans
+	 * le script */
+	Tcl_Obj *call;
+	int rc;
+
+	if (TypeDebugLoad(interp) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	call = Tcl_ObjPrintf("::tcl::typedebug::%s", w);
+	call = Tcl_NewListObj(1, &call);
+	Tcl_IncrRefCount(call);
+	Tcl_ListObjReplace(NULL, call, 1, 0, objc - 3, objv + 3);
+	dd->busy++;
+	rc = Tcl_EvalObjEx(interp, call, TCL_EVAL_GLOBAL);
+	dd->busy--;
+	Tcl_DecrRefCount(call);
+	return rc;
+    }
+    Tcl_WrongNumArgs(interp, 2, objv, "?on|off? | next | hook ?command? | "
+	    "when ?note ?expr?? | console ?on|off? | notes | report | clear");
     return TCL_ERROR;
 }
 

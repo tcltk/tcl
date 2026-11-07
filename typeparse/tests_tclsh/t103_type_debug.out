@@ -27,33 +27,47 @@ sans note : rien: 5.0
 @trace  list argument 1 = 3.0 4.0   (t103_type_debug.tcl:61, in (global))
 @trace  ::norme p = 3.0 4.0   (t103_type_debug.tcl:13, in chemin)
 @trace  lindex argument 1 = 3.0 4.0   (t103_type_debug.tcl:9, in norme)
+--- conditions : type debug when
+when x > 5: 
+when @deux (hits): 
+les conditions: trace {$value > 5} deux {$hits == 2}
+une: $hits == 2
+syntaxe: ERREUR type debug when: missing operand at _@_
+in expression "$value <_@_"
+@trace  set argument 2 = 8   (t103_type_debug.tcl:71, in (global))
+@trace  set argument 2 = 9   (t103_type_debug.tcl:71, in (global))
+@deux, 1er passage: a
+@deux  set argument 2 = b   (t103_type_debug.tcl:74, in (global))
+@deux, 2e passage: b
+@deux, 3e passage: c
+retirée: deux {$hits == 2}
 --- proto-types
 notes: angle pointt vitesse
-vitesse: count 2 where t103_type_debug.tcl:70 commands set samples {{12.5 t103_type_debug.tcl:70} {abc t103_type_debug.tcl:71}} status note
-angle: seen 1 time, first at t103_type_debug.tcl:72, via set
+vitesse: count 2 where t103_type_debug.tcl:87 commands set samples {{12.5 t103_type_debug.tcl:87} {abc t103_type_debug.tcl:88}} status note
+angle: seen 1 time, first at t103_type_debug.tcl:89, via set
     values: 0.5
     not a type yet
-pointt: seen 3 times, first at t103_type_debug.tcl:68, via set, norme, lindex
+pointt: seen 3 times, first at t103_type_debug.tcl:85, via set, norme, lindex
     values: 3 4
     not a type yet
-vitesse: seen 2 times, first at t103_type_debug.tcl:70, via set
+vitesse: seen 2 times, first at t103_type_debug.tcl:87, via set
     values: 12.5 | abc
     not a type yet
 -- après définition
-angle: seen 1 time, first at t103_type_debug.tcl:72, via set
+angle: seen 1 time, first at t103_type_debug.tcl:89, via set
     values: 0.5
     now a type, but:
-      0.5 (t103_type_debug.tcl:72): angle needs 2 values but got 1
-pointt: seen 3 times, first at t103_type_debug.tcl:68, via set, norme, lindex
+      0.5 (t103_type_debug.tcl:89): angle needs 2 values but got 1
+pointt: seen 3 times, first at t103_type_debug.tcl:85, via set, norme, lindex
     values: 3 4
     not a type yet
-vitesse: seen 2 times, first at t103_type_debug.tcl:70, via set
+vitesse: seen 2 times, first at t103_type_debug.tcl:87, via set
     values: 12.5 | abc
     now a type, but:
-      abc (t103_type_debug.tcl:71): expected floating-point number but got "abc"
+      abc (t103_type_debug.tcl:88): expected floating-point number but got "abc"
 statut: mismatch note mismatch
 vidé: no notes seen
 --- erreurs
-sous-commande: ERREUR wrong # args: should be "type debug ?on|off? | next | hook ?command? | notes | report | clear"
+sous-commande: ERREUR wrong # args: should be "type debug ?on|off? | next | hook ?command? | when ?note ?expr?? | console ?on|off? | notes | report | clear"
 variable {@trace}x: ERREUR "@trace" is an instrument note, not a type
 type cast @trace: ERREUR "@trace" is an instrument note, not a type
