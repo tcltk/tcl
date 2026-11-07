@@ -44,6 +44,26 @@ TclTypesGeneration(Tcl_Interp *interp, size_t *uidPtr, size_t *genPtr)
     return 1;
 }
 
+/* v16y : les noms de types définis (pour les suggestions de type debug). */
+Tcl_Obj *
+TclTypesNames(Tcl_Interp *interp)
+{
+    TypeData *d = GetData(interp);
+    Tcl_Obj *res = Tcl_NewListObj(0, NULL);
+    Tcl_HashSearch search;
+    Tcl_HashEntry *hPtr;
+
+    if (d == NULL) {
+	return res;
+    }
+    for (hPtr = Tcl_FirstHashEntry(&d->names, &search); hPtr != NULL;
+	    hPtr = Tcl_NextHashEntry(&search)) {
+	Tcl_ListObjAppendElement(NULL, res, Tcl_NewStringObj(
+		(const char *) Tcl_GetHashKey(&d->names, hPtr), -1));
+    }
+    return res;
+}
+
 /* --------------------------------------------------------------------
  * v16u : espaces de noms des types
  *
@@ -3068,6 +3088,20 @@ TclTypeParse(Tcl_Interp *interp, const char *text, Tcl_Size len)
 
     memset(&env, 0, sizeof(env));
     env.d = GetData(interp);
+    if (len > 1 && text[0] == '@') {
+	/* v16y : une note d'instrument ({@trace}) n'est jamais un type, mais
+	 * c'est un nom (une note), pas un caractère interdit (local). */
+	Tcl_Size k;
+
+	for (k = 1; k < len && (isalnum(UCHAR(text[k])) || text[k] == '_'
+		|| (text[k] & 0x80)); k++) {
+	}
+	if (k == len) {
+	    ERR(interp, "UNKNOWN", "\"%.*s\" is an instrument note, not a "
+		    "type", (int) len, text);
+	    return NULL;
+	}
+    }
     if ((len > 2 && text[0] == '*' && text[1] == '(')
 	    || (len > 3 && text[0] == '&' && text[1] == '*' && text[2] == '(')) {
 	/* Le nom d'un lien déjà construit (il peut contenir un nom canonique
@@ -8995,6 +9029,9 @@ TypeObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
     if (strcmp(sub, "binary") == 0) {
 	return TypeBinaryCmd(interp, objc, objv);
     }
+    if (strcmp(sub, "debug") == 0) {
+	return TclTypeDebugCmd(interp, objc, objv);	/* v16y */
+    }
     if (strcmp(sub, "variant") == 0) {
 	/* v16w : type variant VALEUR : le nom de la variante d'une valeur
 	 * d'une somme ou d'une union (son texte pour un littéral) */
@@ -9033,8 +9070,8 @@ TypeObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
 	return TCL_OK;
     }
     ERR(interp, "SUBCMD", "bad subcommand \"%s\": must be def, alias, "
-	    "cast, convert, deref, export, forget, get, is, proc, variant or "
-	    "binary", sub);
+	    "cast, convert, debug, deref, export, forget, get, is, proc, variant "
+	    "or binary", sub);
     return TCL_ERROR;
 }
 
@@ -10472,6 +10509,15 @@ TypedProcSig(Tcl_Interp *interp, Tcl_Obj *nameObj, Tcl_Obj *argsObj,
 	    }
 	    a->tp = f->type;
 	    a->lidx = -1;
+	    if (f->type->kind == TCLT_VAR) {
+		/* {var.T}n, {var.T}-o : un lien vers la variable de l'appelant
+		 * (v16y : aussi pour une option) */
+		a->isVar = 1;
+		if (f->type->elem != NULL
+			&& !TclTypeIsPlainString(f->type->elem)) {
+		    a->varElem = TypeTextObj(f->type->elem, 2);
+		}
+	    }
 	    if (nm[0] == '-') {
 		/* v16q : une option */
 		if (Tcl_GetCharLength(uopt) > 0) {
@@ -10549,8 +10595,8 @@ TypedProcSig(Tcl_Interp *interp, Tcl_Obj *nameObj, Tcl_Obj *argsObj,
 			    0) != TCL_OK) {
 			goto sigError;
 		    }
-		    Tcl_AppendStringsToObj(uopt, "?", nm, " value?",
-			    (char *) NULL);
+		    Tcl_AppendStringsToObj(uopt, "?", nm,
+			    a->isVar ? " varName?" : " value?", (char *) NULL);
 		}
 		continue;
 	    }
@@ -10565,13 +10611,6 @@ TypedProcSig(Tcl_Interp *interp, Tcl_Obj *nameObj, Tcl_Obj *argsObj,
 			    a->allDefault = 0;
 			}
 		    }
-		}
-	    }
-	    if (f->type->kind == TCLT_VAR) {
-		a->isVar = 1;
-		if (f->type->elem != NULL
-			&& !TclTypeIsPlainString(f->type->elem)) {
-		    a->varElem = TypeTextObj(f->type->elem, 2);
 		}
 	    }
 	    u = upos;
@@ -10829,6 +10868,57 @@ OptErr(Tcl_Interp *interp, const char *code, Tcl_Obj *msg)
  * absente ; un objet « 1 » pour un drapeau ; le mot, ou la liste des mots
  * pour une variante produit).
  */
+/*
+ * {var.T}n (argument ou option) : n est liée à la variable de l'appelant
+ * nommée par v ; sa valeur courante, si elle existe, doit être un T.
+ */
+static int
+BindVarArg(Tcl_Interp *interp, TypedArg *a, Tcl_Obj *v)
+{
+    Tcl_Obj *cur, *typed = NULL;
+
+    if (Tcl_UpVar2(interp, "1", Tcl_GetString(TCL_ANNOT_CONTENT(v)),
+	    NULL, Tcl_GetString(a->local != NULL ? a->local : a->name), 0)
+	    != TCL_OK) {
+	return TypedArgError(interp, a);
+    }
+    if (a->varElem != NULL) {
+	cur = Tcl_ObjGetVar2(interp, a->local != NULL ? a->local : a->name,
+		NULL, 0);
+	if (cur != NULL) {
+	    Tcl_IncrRefCount(cur);
+	    if (DeclareTyped(interp, a->varElem, cur, 0, &typed) != TCL_OK) {
+		Tcl_DecrRefCount(cur);
+		return TypedArgError(interp, a);
+	    }
+	    TclDiscard(typed);
+	    Tcl_DecrRefCount(cur);
+	}
+    }
+    return TCL_OK;
+}
+
+/*
+ * v16y : une option absente dont le défaut est calculé ([cmd], $var) est
+ * liée après les arguments positionnels : son défaut peut les lire.
+ */
+static int
+OptDeferred(TclTypedSig *sig, Tcl_Size ai, Tcl_Obj **ov)
+{
+    TypedArg *a = &sig->a[ai];
+    Tcl_Size e;
+
+    if (a->optKind != OPT_SCALAR || a->isFlag || a->defcmd == NULL) {
+	return 0;
+    }
+    for (e = 0; e < sig->nopts; e++) {
+	if (sig->opts[e].arg == ai && ov[e] != NULL) {
+	    return 0;
+	}
+    }
+    return 1;
+}
+
 static int
 BindOption(Tcl_Interp *interp, TclTypedSig *sig, Tcl_Size ai, Tcl_Obj **ov)
 {
@@ -10846,6 +10936,25 @@ BindOption(Tcl_Interp *interp, TclTypedSig *sig, Tcl_Size ai, Tcl_Obj **ov)
 		v = ov[e];
 		Tcl_IncrRefCount(v);
 	    }
+	}
+	if (a->isVar) {
+	    /* v16y : {var.T}-o NOM : o est la variable NOM de l'appelant */
+	    int rc;
+
+	    if (v == NULL) {
+		memset(&fake, 0, sizeof(fake));
+		fake.defval = a->defval;
+		fake.defcmd = a->defcmd;
+		if (OptDefault(interp, &fake, 0, &v) != TCL_OK) {
+		    return TypedArgError(interp, a);
+		}
+		if (v == NULL) {
+		    return TCL_OK;	/* absente, sans défaut : indéfinie */
+		}
+	    }
+	    rc = BindVarArg(interp, a, v);
+	    Tcl_DecrRefCount(v);
+	    return rc;
 	}
 	if ((v == NULL && a->defcmd == NULL) || a->isFlag) {
 	    /* le défaut, ou un drapeau : une valeur typée, faite une fois */
@@ -11352,16 +11461,20 @@ TclTypedProcBind(Tcl_Interp *interp, void *sigv, Tcl_Size skip)
 	}
     }
 
-    /* les options d'abord : un défaut [cmd] d'un champ peut les lire */
+    /*
+     * Les options d'abord : un défaut [cmd] d'un argument peut les lire.
+     * v16y : une option absente à défaut calculé vient après les arguments
+     * (son défaut peut les lire, -fin ?= [llength $l]).
+     */
     for (j = 0; j < sig->n; j++) {
-	if (sig->a[j].optKind != OPT_NONE
+	if (sig->a[j].optKind != OPT_NONE && !OptDeferred(sig, j, ov)
 		&& BindOption(interp, sig, j, ov) != TCL_OK) {
 	    goto done;
 	}
     }
     for (j = 0; j < nf; j++) {
 	TypedArg *a = &sig->a[sig->pos[j]];
-	Tcl_Obj *v = vals[j], *typed = NULL;
+	Tcl_Obj *v = vals[j];
 
 	if (v == NULL) {
 	    if (a->defval != NULL) {
@@ -11399,26 +11512,8 @@ TclTypedProcBind(Tcl_Interp *interp, void *sigv, Tcl_Size skip)
 	}
 	if (a->isVar) {
 	    /* {var.T}n : n est la variable de l'appelant */
-	    Tcl_Obj *cur;
-
-	    if (Tcl_UpVar2(interp, "1", Tcl_GetString(TCL_ANNOT_CONTENT(v)),
-		    NULL, Tcl_GetString(a->name), 0) != TCL_OK) {
-		TypedArgError(interp, a);
+	    if (BindVarArg(interp, a, v) != TCL_OK) {
 		goto done;
-	    }
-	    if (a->varElem != NULL) {
-		cur = Tcl_ObjGetVar2(interp, a->name, NULL, 0);
-		if (cur != NULL) {
-		    Tcl_IncrRefCount(cur);
-		    if (DeclareTyped(interp, a->varElem, cur, 0, &typed)
-			    != TCL_OK) {
-			Tcl_DecrRefCount(cur);
-			TypedArgError(interp, a);
-			goto done;
-		    }
-		    TclDiscard(typed);
-		    Tcl_DecrRefCount(cur);
-		}
 	    }
 	    continue;
 	}
@@ -11432,6 +11527,12 @@ TclTypedProcBind(Tcl_Interp *interp, void *sigv, Tcl_Size skip)
 
 	if (DeclareField(interp, a, restList) != TCL_OK) {
 	    TypedArgError(interp, a);
+	    goto done;
+	}
+    }
+    for (j = 0; j < sig->n; j++) {
+	if (sig->a[j].optKind != OPT_NONE && OptDeferred(sig, j, ov)
+		&& BindOption(interp, sig, j, ov) != TCL_OK) {
 	    goto done;
 	}
     }

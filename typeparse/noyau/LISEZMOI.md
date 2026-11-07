@@ -2399,6 +2399,20 @@ Pas de patch noyau. Sources de types : `tclAnnotObj.c`, `tclTypes.c`, `tclTypes.
 
 Coût : nul tant que `type debug` est éteint (aucun test sur le chemin des commandes).
 
+**Signatures (v16y).** Deux défauts trouvés en écrivant `exemples/signatures` (`tclTypes.c`,
+`TclTypedProcSig`, `TclTypedProcBind`, `BindOption`) :
+
+- une option `{var.T}-o` n'était pas un lien : `isVar` n'était posé que pour les arguments
+  positionnels, et l'option recevait une référence de variable (`frame:1:2:0`) comme valeur.
+  `isVar` est maintenant posé pour tout champ `var.T` ; la liaison est factorisée dans
+  `BindVarArg`, appelée pour un argument comme pour une option ; l'usage écrit `?-o varName?`.
+- le défaut calculé d'une option était évalué avant les arguments positionnels, donc ne pouvait
+  pas les lire. Une option absente à défaut calculé (`OptDeferred`) est maintenant liée après
+  eux ; les options données ou à défaut littéral restent liées d'abord.
+
+Nouveau test `t104_signatures_liens.tcl` ; exemple `exemples/signatures` (comparaison avec les
+TIP 288, 457, 460, 479, 480).
+
 **`make test` : de 61 échecs à 8 (v16y).** Les 61 échecs ont été triés en faisant tourner la même
 suite sur un Tcl 9.0 d'origine (branche core-9-0) et sur la base sans TIP 764 (`stock`) :
 

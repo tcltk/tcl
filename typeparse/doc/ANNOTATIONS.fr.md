@@ -728,7 +728,8 @@ trier -dec -index 1 -integer $L
 ```
 
 - **Drapeau** : `{flag}-x` ; la locale vaut `1` si l'option est donnée, sinon `0` (ou son défaut). `flag` est un type prédéfini (un entier).
-- **Option à valeur** : `{T}-x ?= v` ; `-x valeur`, vérifiée comme un argument. Sans défaut et absente, la locale reste indéfinie (`info exists x`).
+- **Option à valeur** : `{T}-x ?= v` ; `-x valeur`, vérifiée comme un argument. Sans défaut et absente, la locale reste indéfinie (`info exists x`). Un défaut calculé (`?= [cmd]`, `?= $var`) n'est évalué que si l'option manque, et après les arguments positionnels : il peut les lire (`{int}-fin ?= [expr {[llength $l] - 1}]`, v16y). Un défaut calculé d'argument voit les options données et celles à défaut littéral.
+- **Option lien** : `{var.T}-o` ; `-o nom` lie la locale `o` à la variable `nom` de l'appelant, comme `{var.T}o` (v16y). `?= nom` donne la variable par défaut ; sans défaut et absente, `o` est une simple locale. L'usage l'écrit `?-o varName?`.
 - **Options exclusives** : une somme. Chaque variante est une option : un littéral (`"ascii"`) est une option sans valeur, une variante typée (`{string}command`) prend une valeur. La locale du champ (`mode`) reçoit le **nom** de la variante choisie, la locale de la variante (`command`) sa valeur ; `-mode ascii` choisit aussi une variante sans valeur. Deux variantes différentes : `options -ascii and -integer are exclusive`. Le défaut nomme une variante.
 - **Options dépendantes** : une variante dont le type est un produit. Ses champs sans `-` sont les valeurs qui suivent l'option, ses champs `-x` sont des options qui n'ont de sens qu'avec elle ; tous deviennent des locales.
 

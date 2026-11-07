@@ -1,0 +1,17 @@
+chercher $fruits p*                                  -> 1
+chercher -all $fruits p*                             -> 1 3 5
+chercher -all -nocase $fruits p*                     -> 0 1 2 3 5
+chercher -all -exact $fruits pomme                   -> 5
+chercher -all -regexp $fruits {^[Pp]o}               -> 0 1 5
+chercher -all -debut 2 $fruits p*                    -> 3 5
+chercher -all -fin 2 $fruits p*                      -> 1
+chercher -all -nocase -compte n $fruits p*           -> 0 1 2 3 5
+n = 5
+
+--- ce que la signature vérifie, sans une ligne de code
+chercher                                             -> ERREUR wrong # args: should be "chercher ?-exact|-glob|-regexp? ?-nocase? ?-all? ?-debut value? ?-fin value? ?-compte varName? ?--? liste motif"
+chercher -glob -exact $fruits p*                     -> ERREUR options -exact and -glob are exclusive
+chercher -debut deux $fruits p*                      -> ERREUR option "-debut": expected integer but got "deux"
+chercher -fruit $fruits p*                           -> ERREUR bad option "-fruit": must be -all, -compte, -debut, -exact, -fin, -glob, -mode, -nocase, -regexp or --
+set n abc; chercher -compte n $fruits p*             -> ERREUR option "-compte": expected integer but got "abc"
+chercher -all -n -e $fruits pomme                    -> 0 5

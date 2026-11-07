@@ -1,0 +1,15 @@
+--- l'exemple de TIP 460 (proc bar {*a *b} {incr a; incr b})
+v1 = 1, v2 = 2
+set s abc; bar v1 s                      -> ERREUR argument "b": expected integer but got "abc"
+set v1                                   -> 1
+
+--- échanger deux variables, de n'importe quel type
+x = bonjour, y = 1 2
+
+--- un journal : défauts calculés, et une variable par défaut
+001 info   ouverture de donnees.txt
+002 alerte ligne 3 vide
+999 erreur fin inattendue
+{003 info   au niveau global}
+journaliser -niveau debug x              -> ERREUR bad value "debug" for option "-niveau": must be info, alerte or erreur
+journaliser                              -> ERREUR wrong # args: should be "journaliser ?-info|-alerte|-erreur? ?-numero value? ?-dans varName? ?--? message"

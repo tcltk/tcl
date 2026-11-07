@@ -1,0 +1,19 @@
+--- option lien
+donnée: 2
+absente : une locale: 3
+absente : défaut nb: 3
+contrôle à l'entrée: ERREUR option "-compte": expected integer but got "abc"
+la variable n'a pas bougé: abc
+usage: ERREUR wrong # args: should be "compter ?-compte varName? ?--? l"
+préfixe: 1
+--- défaut calculé d'option
+lit l: 2
+donnée: 7
+évalué à chaque appel: {1 a} {2 b}
+pas évalué si donnée: {9 c} 2
+un défaut lit une option: 2 20 3
+... donnée: 5 50 6
+erreur du défaut: ERREUR option "-fin": can't read "nulle": no such variable
+--- lien positionnel, transmis
+TIP 460: 1 2
+échanger: z {1 2}
