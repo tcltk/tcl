@@ -1,8 +1,8 @@
 # Annotations en Tcl — documentation
 
-*19 octobre 2026 · version v13 · Florent MERLET, avec Claude (Anthropic)*
+*7 novembre 2026 · version v16z · Florent MERLET, avec Claude (Anthropic)*
 
-*Traductions : [English](ANNOTATIONS.en.md) · [Deutsch](ANNOTATIONS.de.md) · [Nederlands](ANNOTATIONS.nl.md) · [Español](ANNOTATIONS.es.md) · [Português](ANNOTATIONS.pt.md) · [Italiano](ANNOTATIONS.it.md)*
+*Traductions : [English](ANNOTATIONS.en.md) · [Deutsch](ANNOTATIONS.de.md) · [Nederlands](ANNOTATIONS.nl.md) · [Español](ANNOTATIONS.es.md) · [Português](ANNOTATIONS.pt.md) · [Italiano](ANNOTATIONS.it.md) — les traductions allemande, néerlandaise, espagnole, portugaise et italienne décrivent encore la v13*
 
 ## Avant-propos
 
@@ -330,7 +330,7 @@ type {T}MOT                    ;# le même cast, écrit comme une annotation (v1
 type convert DE VERS LAMBDA    ;# déclare une conversion explicite
 type deref VALEUR              ;# instantané : chaque lien var remplacé par sa valeur
 type binary TYPE ...           ;# représentation binaire, encodage, décodage (§ 9)
-type def {-compact}NOM DÉF     ;# une liste (ou toute liste d'un produit) toujours en cases (§ 12.1)
+type def {-compact}NOM DÉF     ;# une liste (ou toute liste d'un produit) toujours en cases (§ 14.1)
 type def {-a,-b}NOM DÉF        ;# plusieurs options, dans la syntaxe des notes
 type is {compact?}TYPE|VALEUR  ;# une question sur un type ou une valeur
 type is {disjoint?}S           ;# les paires de variantes qui peuvent accepter une même valeur
@@ -338,7 +338,7 @@ type is {union?}S              ;# 1 si S est une union (|) (v16w, § 8.4)
 type variant VALEUR            ;# la variante d'une valeur d'une somme ou d'une union (v16w)
 type proc NOM                  ;# la signature d'une procédure typée : args, return (§ 6.4, 6.5)
 type {{*}T}MOT, {{**}T}MOT     ;# le cast explicite, rendu déplié en liste ou en dict (§ 6.4)
-type {c!}export TYPE ?TYPE ...? ;# en-tête C des types nommés (§ 12.2) ; {llvm!} prévu
+type {c!}export TYPE ?TYPE ...? ;# en-tête C des types nommés (§ 14.2) ; {llvm!} prévu
 type debug ?on|off|next|when|console|hook|notes|report|clear? ;# mise au point par les notes (§ 3.1, v16y)
 ```
 
@@ -405,9 +405,50 @@ Un type s'écrit comme une expression, analysée sur le modèle d'`expr` (`tclTy
 
 `,` et `|` sont au même rang et ne se mêlent pas non plus (§ 8.4). `;` et `,` ne se mêlent pas au même niveau (`{int}a; {int}b, {string}c` est refusé) : la partie intérieure se regroupe entre accolades et se nomme (`{int}a; {{int}b, {string}c}u`), ou se définit à part avec `type def`. Dans un produit, tout champ a un nom, un groupe aussi. Dans une somme, toute variante typée a un nom, qui s'écrit dans sa valeur (v16w) ; une union peut garder ses alternatives anonymes (`{int} | {list(2).int}`). Un champ seul entre accolades et nommé est un produit à un champ : `{{double}r}cercle`.
 
-**Caractères.** Un nom de type ne contient que des lettres ASCII, des chiffres, `_` et des octets non ASCII, sans commencer par un chiffre. La grammaire emploie en plus `{ } , ; . = " # ( ) * $`. Tout autre signe ASCII (`! % & ' + - / : < > ? @ [ \ ] ^ ~`) est refusé : `invalid character "!"`, code `TCL PARSE TYPE BADCHAR`, sauf après `=` (une valeur par défaut) et dans les parenthèses d'un constructeur (`*(file://x, …)`). C'est ce refus qui rend les annotations locales (`{-v}`, `{is?}`) sûres.
+**Caractères.** Un nom de type ne contient que des lettres ASCII, des chiffres, `_` et des octets non ASCII, sans commencer par un chiffre. La grammaire emploie en plus `{ } , ; | . = " # ( ) * $`. Tout autre signe ASCII (`! % & ' + - / : < > ? @ [ \ ] ^ ~`) est refusé : `invalid character "!"`, code `TCL PARSE TYPE BADCHAR`, sauf après `=` (une valeur par défaut) et dans les parenthèses d'un constructeur (`*(file://x, …)`). C'est ce refus qui rend les annotations locales (`{-v}`, `{is?}`) sûres.
 
 Une définition est **déclarative** : aucune substitution n'y est faite à la lecture, sauf dans une valeur par défaut, évaluée à chaque construction.
+
+**Grammaire (EBNF, notation ISO).** Précédence, de la plus faible à la plus forte : `;`, puis `,` et `|`, puis `=`, puis `.`. `;`, `,` et `|` ne se mêlent pas à un même niveau.
+
+```ebnf
+type        = item , { ";" , item }            (* produit *)
+            | item , { "," , item }            (* somme balisée *)
+            | item , { "|" , item } ;          (* union disjointe *)
+item        = chain , [ default ] ;
+default     = ( "=" | "?=" ) , value ;
+chain       = primary , [ "." , chain ] ;      (* imbrication, associative à droite *)
+primary     = group
+            | typename , [ "(" , args , ")" ]  (* list(3), int(u,16), pt(double) *)
+            | "$" , name                       (* paramètre, dans le corps d'une famille *)
+            | "*(" , linkargs , ")"            (* lien binaire *(origine, repr, options) *)
+            | quoted ;                         (* littéral : "rouge", "MZ" *)
+group       = "{" , type , "}" , [ fieldname ] ;   (* {T}nom : un champ ; {T} seul : un groupement *)
+fieldname   = [ "-" ] , name , [ "..." ] ;         (* -nom : une option ; nom... : variadique *)
+typename    = [ "::" ] , name , { "::" , name } ;
+name        = namestart , { namechar } ;
+namestart   = letter | "_" | nonascii ;
+namechar    = namestart | digit ;
+value       = quoted | braced | bareword       (* un défaut littéral *)
+            | "[" , script , "]"               (* calculé à chaque construction *)
+            | "$" , name ;                     (* un paramètre, ou un argument déjà lié *)
+comment     = "#" , { any - newline } ;
+
+args        = count                                              (* list(N) *)
+            | ( "u" | "s" ) , "," , count , [ "," , endian ]     (* int *)
+            | ( "32" | "64" ) , [ "," , endian ]                 (* double *)
+            | encoding , "," , ( count | "z" | expr )            (* string(utf-8,z), string(raw,$len - 4) *)
+            | count , [ "," , ( "lsb0" | "msb0" ) ] , [ "," , endian ]   (* bitarray *)
+            | [ key , { "," , key } ]                            (* dict(x, z?=0); dict() *)
+            | expr                                               (* at($off) *)
+            | type , { "," , type } ;                            (* une instance de famille : pt(double) *)
+key         = name , [ "?" , [ "=" , value ] ] ;
+endian      = "be" | "le" ;
+family-head = name , "(" , param , { "," , param } , ")" ;      (* type def {pt({type}T)} ... *)
+param       = "{" , ( "type" | "int" | "double" | "string" ) , "}" , name ;
+```
+
+Ce que la grammaire ne dit pas : dans un produit, tout champ et tout groupe a un nom ; dans une somme, toute variante typée ; `-nom` et `nom...` n'existent que dans une signature de procédure.
 
 #### 5.3 Champs et conteneurs
 
@@ -716,6 +757,25 @@ proc {{**}rect}rd {} {( (0, 0), (10, 10) )}   ;# nw {x 0 y 0} se {x 10 y 10}
 
   Le cast explicite suit la même règle : `type {{*}point}$p` rend la liste `{x y}` vérifiée, `type {{**}point}$p` le dict. Le préfixe n'est reconnu qu'en tête d'une annotation de livraison (dans le langage des types, `{*}point` se lirait comme un champ nommé `point`). Coût : 0,3 à 0,9 µs par appel pour vérifier et déplier un point (`exemples/tcllib_geometry`).
 
+- **Lambdas : `apply` (v16z).** Une lambda est une procédure sans nom : sa liste d'arguments accepte la même signature, et l'annotation du mot lambda est son type de retour, comme celle du nom dans `proc {T}nom`. Les types sont lus dans l'espace de noms de la lambda (son troisième élément). L'annotation peut porter sur une substitution : `apply {T}$f …` donne un type de retour à une lambda gardée dans une variable. Une règle de `type convert` étant une lambda, elle peut typer son argument.
+
+```tcl
+set somme [apply {double}{
+   {
+      {double}a;
+      {double}b
+   } {(
+      $a + $b
+   )}
+} 5 10]                                          ;# 15
+apply {int}{{x} {return $x}} 2.5                 ;# return value {int}: expected integer but got "2.5"
+apply {int}$f 20.5 5                             ;# de même, sur une lambda gardée dans f
+lmap x $L { apply {int}{{{int}x} {expr {$x * $x}}} $x }
+type convert celsius kelvin {{{celsius}c} {expr {$c + 273.15}}}
+```
+
+  Le littéral `{T}{…}` est refait à chaque exécution ; l'interpréteur garde une Proc par texte `{T}lambda` (au plus 512, puis la table est vidée), pour que le corps ne soit pas recompilé à chaque appel. Coût : 0,8 µs par appel contre 0,5 µs pour la même lambda sans type de retour. Une note (`{@trace}{…}`) n'est pas un type de retour.
+
 #### 6.5 Options et drapeaux (v16q)
 
 Un champ dont le nom commence par `-` est une **option**. Les options se donnent au début de l'appel, dans n'importe quel ordre, jusqu'au premier mot qui n'en est pas une (ou `--`) ; un préfixe unique suffit (`-dec` pour `-decreasing`) ; la variable locale perd le `-`.
@@ -817,6 +877,25 @@ set p {[exec ls]} ; $L($p)     ;# rien n'est exécuté : bad index "[exec ls]"
 ```
 
 Entre accolades et dans `${…}`, `$` et `[` sont des erreurs : `a path does not substitute "$"…`. Un chemin calculé se lit en **nommant** la variable avec lui : `set ref R($chemin) ; set $ref`.
+
+**Grammaire (EBNF).** Précédence, de la plus faible à la plus forte : `,`, puis `*`, puis `.`, puis `:`, puis `( )`.
+
+```ebnf
+path        = spread , { "," , spread } ;      (* collecte : un groupe *)
+spread      = [ "*" ] , nest ;                 (* dépliage : le groupe se fond dans son parent *)
+nest        = range , [ "." , nest ] ;         (* imbrication ; distribue : A.(x,y) = A.x,A.y *)
+range       = step , [ ":" , step ] ;          (* intervalle de liste : 0:end-1 *)
+step        = word                             (* champ, clé, variante ou index : le type tranche *)
+            | "'" , key , "'"                  (* toujours une clé : 'end' *)
+            | '"' , label , '"'                (* étiquette, copiée telle quelle *)
+            | "(" , path , ")" ;
+index       = integer | "end" , [ "-" , integer ] ;
+
+read        = "$" , varname , "(" , path , ")"
+            | "${" , varname , "(" , path , ")" , "}" ;
+write       = "set " , varname , "(" , path , ")" , value , { value } ;
+construct   = "set {" , type , "}" , varname , "(" , path , ")" , value , { value } ;
+```
 
 #### 7.3 Cas par conteneur
 
@@ -1206,7 +1285,7 @@ Chemin non compilé : `TclSubstTokens` (`SubstIndexTokens`) produit le même obj
 | `tclBasic.c` | `TclTypesInit` : crée `type`, `note`, `::tcl::mathop::is`, `popcount`, `bitlen` |
 | `tclExecute.c` | `INST_STORE_SCALAR` passe par le chemin lent pour une valeur annotée ; `INST_FOREACH_STEP` oublie le type ; lecture et écriture d'éléments typés (`TclTypedVarGetElement`, `TclTypedVarSetElement`) |
 | `tclVar.c` | `TclTypedVarPrepareWrite` et `TclTypedVarAfterStore` autour de chaque écriture : le contrat |
-| `tclProc.c` | `TclTypedVarBindArg` : liaison typée des arguments |
+| `tclProc.c` | `TclTypedVarBindArg` : liaison typée des arguments ; signature typée de `proc` et d'`apply` (`TclTypedProcSig`, `TclTypedLambdaRet`) |
 | `tclCmdAH.c`, `tclDictObj.c` | variables de boucle (`TclTypedVarForgetByName`) ; `TclAnnotUnwrap` dans les lectures de dict |
 | `tclObj.c`, `tclStringObj.c`, `tclBinary.c` | conversions du noyau sur le contenu (`TclAnnotUnwrap`, macro `TCL_ANNOT_CONTENT`) : une valeur annotée n'est jamais convertie en place |
 | `tclListObj.c` | `lappend` par la `replaceProc` d'une liste abstraite ; `lindex` à plusieurs indices sans aplatir |
@@ -1216,18 +1295,32 @@ Chemin non compilé : `TclSubstTokens` (`SubstIndexTokens`) produit le même obj
 
 | fichier | lignes | contenu |
 |---|---|---|
-| `tclTypes.c` | 4 500 | typologie, `type def/alias/get/cast/convert/deref/binary`, validation, élargissement, casts, codecs C |
-| `tclTypeParse.c` | 2 700 | analyseur et compilateur des expressions de types (modèle de `tclCompExpr.c`) |
+| `tclTypes.c` | 12 100 | typologie, `type def/alias/get/cast/convert/deref/binary`, validation, élargissement, casts, codecs C, signatures de procédures et de lambdas |
+| `tclAnnotObj.c` | 6 200 | l'objet annoté, l'état `{T, N}`, la résolution, `note`, `type debug` (trace, inventaire des proto-types) |
+| `tclTypePath.c` | 4 300 | langage de chemin, lecture, écriture, construction par chemin, objet pathindex |
+| `tclTypeParse.c` | 2 800 | analyseur et compilateur des expressions de types (modèle de `tclCompExpr.c`) |
+| `tclTypedVar.c` | 2 200 | variables typées, constructeurs (`TclSetAnnotatedCmd`, `BuildProductEx`, étiquettes de champ) |
 | `tclTypeGeneric.c` | 1 400 | types paramétrés, instances, paramètres fantômes, raffinements binaires |
-| `tclAnnotObj.c` | 2 150 | l'objet annoté, l'état `{T, N}`, la résolution, `note` |
-| `tclTypedVar.c` | 1 350 | variables typées, constructeurs (`TclSetAnnotatedCmd`, `BuildProductEx`, étiquettes de champ) |
-| `tclTypePath.c` | 2 900 | langage de chemin, lecture, écriture, construction par chemin, objet pathindex |
-| `tclVarRef.c` | 360 | liens `var` (nom canonique, accès, liens périmés) |
-| `tclTypes.h`, `tclTypesInt.h` | 550 | structures (`TclType`, `TclTypeField`, `TclBinLink`…) et interfaces |
+| `tclVarRef.c` | 370 | liens `var` (nom canonique, accès, liens périmés) |
+| `tclTypes.h`, `tclTypesInt.h`, `tclAnnotatedApi.h`, `tclCompact.h` | 1 050 | structures (`TclType`, `TclTypeField`, `TclBinLink`…), interfaces, API C publique, forme compacte |
+| `tclTypeDebug.tcl` | 410 | `type debug` côté Tcl : l'invite, les conditions, la console Tk, le rapport ; inclus dans `tclTypeDebug.h` par `gen_typedebug.tcl` |
 
 Côté Tcl : `layout/filebinary.tcl` (couche binaire : `type binary decode/encode/deref/space`, `chan binary`) et `layout/binaliases.tcl` (alias).
 
-#### 12.1 La forme compacte (prototype)
+**Exemples** (`exemples/`), outre les petits scripts :
+
+| dossier | ce qu'il montre |
+|---|---|
+| `signatures` | les signatures de procédures face aux TIP 288, 457, 460, 479, 480 ; options, liens, variadiques, lambdas typées |
+| `bulletin` | une procédure boguée, mise au point, typée, puis passée en C, en quatre étapes |
+| `mise_au_point` | `type debug` pas à pas, les proto-types, la console Tk |
+| `cproc` | des procédures au corps C, compilées au premier appel (gcc ou tcc) |
+| `ffi` | appeler une fonction d'une bibliothèque partagée depuis sa signature typée, par un talon C, sans libffi |
+| `tcllib_geometry` | `math::geometry` de tcllib en Tcl, en Tcl typé et en C ; ses 210 tests passent dans les trois |
+| `cstruct`, `geometrie`, `matrices` | codecs C, forme compacte, mesures |
+| `zip`, `journal`, `texte_enrichi`, `minidll`, `arduino` | des formats binaires réels lus et écrits par leurs types |
+
+#### 14.1 La forme compacte (prototype)
 
 **Par type** : `type def {-compact}polygone list.point`. Les valeurs de ce type sont **toujours** en cases : les nombres sont normalisés à la construction (le constructeur est une conversion : `{0 0}` devient `{0.0 0.0}`, `0x10` devient `16`, un `double(32)` est arrondi au `float`), et une conversion du noyau (`string length`, `string range`, `dict`…) travaille sur une copie en chaîne gardée à côté des cases. Le type doit être une liste dont l'élément a une disposition : sinon `type def` refuse, et le nom reste libre. Pas encore pour une famille (`type def {-compact}{v({int}n)} …`) ; pas d'option pour un alias. `type is {compact?}polygone` dit si le type le demande, `type is {compact?}$P` si la valeur est en cases.
 
@@ -1294,7 +1387,7 @@ Mesures (Linux x86-64) :
 
 La lecture élément par élément depuis Tcl est plus lente (une vue et un nombre fabriqués à chaque accès, au lieu de l'élément gardé) ; le gain est en mémoire, à la frontière C et dans les modifications.
 
-#### 12.2 `type {c!}export` : l'en-tête C des types
+#### 14.2 `type {c!}export` : l'en-tête C des types
 
 `type {c!}export T ?T ...?` rend le texte d'un en-tête C (la cible est une annotation locale sur le verbe ; `{llvm!}` est réservé) : un `typedef` par type nommé, dans l'ordre des dépendances, et des `_Static_assert` sur `sizeof` et `offsetof` calculés par Tcl avec les mêmes alignements que la forme compacte. Si le compilateur de l'extension range autrement (Linux i386 : `double` aligné sur 4), la compilation échoue au lieu de lire des octets faux.
 
@@ -1334,7 +1427,7 @@ puts [type {c!}export point]
 
 **Aucun script valide ne change de sens.** Les deux syntaxes ajoutées occupent des écritures qui étaient des erreurs : `{x}mot` (« extra characters after close-brace ») et un index `$nom(...)` étendu, qui retombe exactement sur la règle de Tcl 9 dès qu'il n'est pas bien formé. Vérifications :
 
-- suite complète de Tcl (`make test`, 51 095 tests, v16y) : les seuls échecs sont ceux d'un Tcl 9.0 d'origine dans le même environnement (8 tests `httpProxy`, sans réseau). Les tests qui supposaient que `{x}mot` est une erreur ont été mis à jour (patch `tests-syntaxe.patch`) : quand ils vérifiaient le message d'erreur, ils écrivent `{x}=mot`, qui le garde ; ceux de `testparser` montrent le jeton `annot` ;
+- suite complète de Tcl (`make test`, 51 095 tests, v16z) : les seuls échecs sont ceux d'un Tcl 9.0 d'origine dans le même environnement (8 tests `httpProxy`, sans réseau). Les tests qui supposaient que `{x}mot` est une erreur ont été mis à jour (patch `tests-syntaxe.patch`) : quand ils vérifiaient le message d'erreur, ils écrivent `{x}=mot`, qui le garde ; ceux de `testparser` montrent le jeton `annot` ;
 - équivalence avec un Tcl 9 d'origine sur 18 000 cas générés (`$z(…)`, `"<$z(…)>"`, `set z(…)`, `info complete`) : aucun résultat valide changé ;
 - AddressSanitizer sans erreur ; mémoire stable sur 1 000 000 de constructions.
 
@@ -1398,6 +1491,9 @@ Le codec C, qui **vérifie** en plus chaque valeur contre son type, est 2 à 3 f
 - Forme compacte : cases à pointeurs (`string`, listes imbriquées de taille variable), `lindex` sans vue neuve, fonction de stub pour le C, `lappend` en temps constant (aujourd'hui une copie par ajout, comme pour une liste typée ordinaire).
 - `type {c!}export` : pointeurs pour les types récursifs ; cible `{llvm!}` ; sens inverse (en-tête C vers `type def`).
 - `type def {-compact}` pour une famille elle-même (une instance nommée passe : `type def {-compact}mat3 mat(3,3)`) ; `type is` : une valeur dont le texte est aussi un nom de type (`type is {compact?}$x` avec `x` = `point`) est lue comme le type.
+- Signatures typées pour les méthodes TclOO ; commandes à deux formes d'appel (`switch chaîne motif corps …` ou `switch chaîne {motif corps …}`), qui demanderaient une union de signatures.
+- `cproc` : listes de chaînes, sommes. `ffi` (prototype) : structs par valeur, fonctions variadiques, propriété de la mémoire, `errno`, pointeurs contrôlés ; l'encodage des structs passe encore par la couche Tcl.
+- Optimisations : l'écriture dans une variable typée (environ 7 fois une écriture nue) ; un défaut calculé, réévalué à chaque appel.
 - Banc de test C sur maquette (`typeparse/test/`) à remettre à jour ; exemples `arbre_var.tcl` et `defauts_calcules.tcl` à corriger.
 
 ## Annexes
