@@ -295,7 +295,7 @@ Now the 3 section:
 89. SplitList
 90. SplitPath
 91. StaticLibrary
-92. StdChannels (needs manula adjustment of the numbered list)
+92. StdChannels (needs manual adjustment of the numbered list)
 93. StrMatch
 94. StringObj
 95. SubstObj
@@ -327,7 +327,7 @@ section | number of documents | initial conversion | final conversion
 --------|---------------------|--------------------|-----------------
 1       | 1                   | 0                  | 0
 3       | 87                  | 0                  | 0
-n       | 93                  | 93                 | 8
+n       | 93                  | 93                 | 18
 
 Final conversion of these files in the n section is currently done:
 
@@ -339,6 +339,17 @@ Final conversion of these files in the n section is currently done:
 6. bitmap
 7. busy
 8. button
+9. canvas (needs manual editing of the DISPLAY divs)
+10. checkbutton
+11. chooseColor
+12. chooseDirectory
+13. clipboard
+14. colors (manual edit needed for DISPLAY section and for the lists under Portability issues)
+15. console
+16. cursors (manual change from ``` to something else needed)
+17. destroy
+18. dialog
+
 
 # Open issues
 This section lists the shortcoming which are still present in the pages that already have an initial markdown version.
