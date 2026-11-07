@@ -1161,6 +1161,8 @@ Une valeur annotée est un `Tcl_Obj` ordinaire dont le type interne est `annotat
 
 Dans Tcl 9 d'origine, un mot entre accolades suivi d'autres caractères est une erreur de syntaxe (`extra characters after close-brace`), sauf `{*}`. Le préfixe d'annotation occupe donc une écriture **qui n'avait aucun sens** : aucun script valide ne change de sens.
 
+**Pas d'annotation devant un caractère fermant ou un opérateur (v16y).** Une valeur ne commence jamais par `] } ) = < > ! & | ^ ? , ; ~ %` : après une accolade fermante, ces caractères gardent l'erreur de Tcl 9, `extra characters after close-brace`. C'est ce qui garde le diagnostic de l'accolade mal placée, l'erreur de frappe la plus courante en Tcl : `proc p {} {set w foo}]` reste une erreur, au lieu de définir sans bruit une procédure dont le corps serait `]`. Les débuts de valeur utiles restent permis : `{flag}-x`, `{int}::n`, `{path}/tmp`, `{T}$x`, `{T}[cmd]`, `{T}"texte"`.
+
 - `tclParse.c`, `ParseTokens` / `Tcl_ParseCommand` : un mot `{texte}suite` produit un jeton **`TCL_TOKEN_ANNOT`** (2048, `tcl.h`) qui porte le texte de l'annotation, suivi des jetons du reste du mot. Un mot annoté `{T}nom(...)` va jusqu'à la parenthèse équilibrée, espaces compris, sur une ligne.
 - `tclCompile.c`, `TclCompileTokens` : si le reste du mot est littéral (`TclAnnotSuffixIsLiteral`), le mot compile en `::tcl::annotraw texte mot` (une note brute, sans substitution) ; sinon en `::tcl::annotate texte valeur`.
 - `tclCompCmdsSZ.c`, `TclCompileSetCmd` : un `set` dont le nom est annoté passe par `TclSetAnnotatedCmd` ; une annotation locale écrite sur la valeur (`set x {-v}$mot`) émet un appel à `::tcl::annotlocal`, qui lève l'erreur (`TclAnnotLocalWordText`).
@@ -1322,7 +1324,7 @@ puts [type {c!}export point]
 
 **Aucun script valide ne change de sens.** Les deux syntaxes ajoutées occupent des écritures qui étaient des erreurs : `{x}mot` (« extra characters after close-brace ») et un index `$nom(...)` étendu, qui retombe exactement sur la règle de Tcl 9 dès qu'il n'est pas bien formé. Vérifications :
 
-- tests de Tcl `parse`, `parseExpr`, `parseOld`, `subst` (dont 257 tests de `testparser`), `var`, `compile`, `set`, `upvar`, `basic`, `execute`, `incr`, `append`, `lset`, `dict`, `info` : résultats identiques à la base ;
+- suite complète de Tcl (`make test`, 51 095 tests, v16y) : les seuls échecs sont ceux d'un Tcl 9.0 d'origine dans le même environnement (8 tests `httpProxy`, sans réseau). Les tests qui supposaient que `{x}mot` est une erreur ont été mis à jour (patch `tests-syntaxe.patch`) : quand ils vérifiaient le message d'erreur, ils écrivent `{x}=mot`, qui le garde ; ceux de `testparser` montrent le jeton `annot` ;
 - équivalence avec un Tcl 9 d'origine sur 18 000 cas générés (`$z(…)`, `"<$z(…)>"`, `set z(…)`, `info complete`) : aucun résultat valide changé ;
 - AddressSanitizer sans erreur ; mémoire stable sur 1 000 000 de constructions.
 

@@ -147,12 +147,13 @@ test parse-5.6 {Tcl_ParseCommand procedure, junk after close quote} testparser {
 test parse-5.7 {Tcl_ParseCommand procedure, backslash-newline after close quote} testparser {
     testparser "foo \"bar\"\\\nx" 0
 } {- foo\ \"bar\"\\\nx 3 simple foo 1 text foo 0 simple {"bar"} 1 text bar 0 simple x 1 text x 0 {}}
+# TIP 764: {bar}x is an annotated word; "=" cannot begin an annotated value
 test parse-5.8 {Tcl_ParseCommand procedure, junk after close brace} testparser {
-    list [catch {testparser {foo {bar}x} 0} msg] $msg $::errorInfo
+    list [catch {testparser {foo {bar}=x} 0} msg] $msg $::errorInfo
 } {1 {extra characters after close-brace} {extra characters after close-brace
-    (remainder of script: "x")
+    (remainder of script: "=x")
     invoked from within
-"testparser {foo {bar}x} 0"}}
+"testparser {foo {bar}=x} 0"}}
 test parse-5.9 {Tcl_ParseCommand procedure, backslash-newline after close brace} testparser {
     testparser "foo {bar}\\\nx" 0
 } {- foo\ \{bar\}\\\nx 3 simple foo 1 text foo 0 simple {{bar}} 1 text bar 0 simple x 1 text x 0 {}}
@@ -167,19 +168,21 @@ test parse-5.10 {Tcl_ParseCommand procedure, multiple deletion of non-static buf
 test parse-5.11 {Tcl_ParseCommand: {*} parsing} testparser {
     testparser {{expan}} 0
 } {- {{expan}} 1 simple {{expan}} 1 text expan 0 {}}
+# TIP 764: a brace word followed by text is an annotation (annot token)
 test parse-5.12 {Tcl_ParseCommand: {*} parsing} -constraints {
     testparser
 } -body {
     testparser {{expan}x} 0
-} -returnCodes error  -result {extra characters after close-brace}
+} -result {- {{expan}x} 1 word {{expan}x} 2 annot expan 0 text x 0 {}}
 test parse-5.13 {Tcl_ParseCommand: {*} parsing} testparser {
     testparser {{**}} 0
 } {- {{**}} 1 simple {{**}} 1 text ** 0 {}}
+# TIP 764: a brace word followed by text is an annotation (annot token)
 test parse-5.14 {Tcl_ParseCommand: {*} parsing} -constraints {
     testparser
 } -body {
     testparser {{**}x} 0
-} -returnCodes error  -result {extra characters after close-brace}
+} -result {- {{**}x} 1 word {{**}x} 2 annot ** 0 text x 0 {}}
 test parse-5.15 {Tcl_ParseCommand: {*} parsing} -constraints {
     testparser
 } -body {
@@ -189,30 +192,45 @@ test parse-5.16 {Tcl_ParseCommand: {*} parsing} testparser {
     testparser {{123456\
 			}} 0
 } {- {{123456 }} 1 simple {{123456 }} 1 text {123456 } 0 {}}
+# TIP 764: a brace word followed by text is an annotation (annot token)
 test parse-5.17 {Tcl_ParseCommand: {*} parsing} -constraints {
     testparser
 } -body {
     testparser {{123456\
 			}x} 0
-} -returnCodes error  -result {extra characters after close-brace}
+} -result {- {{123456 }x} 1 word {{123456 }x} 2 annot {123456 } 0 text x 0 {}}
 test parse-5.18 {Tcl_ParseCommand: {*} parsing} testparser {
     testparser {{*\
 			}} 0
 } {- {{* }} 1 simple {{* }} 1 text {* } 0 {}}
+# TIP 764: a brace word followed by text is an annotation (annot token)
 test parse-5.19 {Tcl_ParseCommand: {*} parsing} -constraints {
     testparser
 } -body {
     testparser {{*\
 			}x} 0
-} -returnCodes error  -result {extra characters after close-brace}
+} -result {- {{* }x} 1 word {{* }x} 2 annot {* } 0 text x 0 {}}
 test parse-5.20 {Tcl_ParseCommand: {*} parsing} testparser {
     testparser {{123456}} 0
 } {- {{123456}} 1 simple {{123456}} 1 text 123456 0 {}}
+# TIP 764: a brace word followed by text is an annotation (annot token)
 test parse-5.21 {Tcl_ParseCommand: {*} parsing} -constraints {
     testparser
 } -body {
     testparser {{123456}x} 0
-} -returnCodes error  -result {extra characters after close-brace}
+} -result {- {{123456}x} 1 word {{123456}x} 2 annot 123456 0 text x 0 {}}
+# TIP 764: no annotation before a closing character or an operator, which
+# cannot begin a value: a misplaced brace stays an error.
+test parse-5.22 {Tcl_ParseCommand: no annotation before "]"} testparser {
+    list [catch {testparser {foo {bar}]} 0} msg] $msg
+} {1 {extra characters after close-brace}}
+test parse-5.23 {Tcl_ParseCommand: misplaced close brace} -body {
+    proc parse-5.23 {} {
+	set w foo}]
+} -returnCodes error -result {extra characters after close-brace}
+test parse-5.24 {Tcl_ParseCommand: annotation before "-", ":", "/"} testparser {
+    list [testparser {{a}-b} 0] [testparser {{a}::b} 0] [testparser {{a}/b} 0]
+} {{- {{a}-b} 1 word {{a}-b} 2 annot a 0 text -b 0 {}} {- {{a}::b} 1 word {{a}::b} 2 annot a 0 text ::b 0 {}} {- {{a}/b} 1 word {{a}/b} 2 annot a 0 text /b 0 {}}}
 test parse-5.22 {Tcl_ParseCommand: {*} parsing} testparser {
     testparser {{*}} 0
 } {- {{*}} 1 simple {{*}} 1 text * 0 {}}
@@ -265,11 +283,12 @@ test parse-6.6 {ParseTokens procedure, command substitution} testparser {
     testparser {[foo \] [a b]]} 0
 } {- {[foo \] [a b]]} 1 word {[foo \] [a b]]} 1 command {[foo \] [a b]]} 0 {}}
 test parse-6.7 {ParseTokens procedure, error in command substitution} testparser {
-    list [catch {testparser {a [b {}c d] e} 0} msg] $msg $::errorInfo
+    # TIP 764: {}c would be an annotated word
+    list [catch {testparser {a [b {}=c d] e} 0} msg] $msg $::errorInfo
 } {1 {extra characters after close-brace} {extra characters after close-brace
-    (remainder of script: "c d] e")
+    (remainder of script: "=c d] e")
     invoked from within
-"testparser {a [b {}c d] e} 0"}}
+"testparser {a [b {}=c d] e} 0"}}
 test parse-6.8 {ParseTokens procedure, error in command substitution} {
     info complete {a [b {}c d]}
 } {1}
@@ -897,8 +916,9 @@ test parse-15.49 {CommandComplete procedure} {
 test parse-15.50 {CommandComplete procedure} {
     info complete "abc\\\n"
 } 0
+# TIP 764: {abc}\{ would be an annotation followed by an open brace
 test parse-15.51 {CommandComplete procedure} "
-    info complete \"\\\{abc\\\}\\\{\"
+    info complete \"\\\{abc\\\}=\\\{\"
 " 1
 test parse-15.52 {CommandComplete procedure} {
     info complete "\"abc\"("
@@ -995,15 +1015,16 @@ test parse-18.17 {Tcl_SubstObj, exception handling} {
 test parse-18.18 {Tcl_SubstObj, exception handling} {
     subst {abc,[break; set {} {}{}],def}
 } {abc,}
+# TIP 764: {}{} is an annotated word; {}={} keeps the parse error
 test parse-18.19 {Tcl_SubstObj, exception handling} {
-    list [catch {subst {abc,[continue; expr {1+2}; set {} {}{}],def}} msg] $msg
+    list [catch {subst {abc,[continue; expr {1+2}; set {} {}={}],def}} msg] $msg
 } [list 1 "extra characters after close-brace"]
 test parse-18.20 {Tcl_SubstObj, exception handling} {
-    list [catch {subst {abc,[return foo; expr {1+2}; set {} {}{}],def}} msg] $msg
+    list [catch {subst {abc,[return foo; expr {1+2}; set {} {}={}],def}} msg] $msg
 } [list 1 "extra characters after close-brace"]
 test parse-18.21 {Tcl_SubstObj, exception handling} {
     list [catch {
-	subst {abc,[return -code 10 foo; expr {1+2}; set {} {}{}],def}
+	subst {abc,[return -code 10 foo; expr {1+2}; set {} {}={}],def}
     } msg] $msg
 } [list 1 "extra characters after close-brace"]
 

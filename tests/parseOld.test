@@ -327,9 +327,10 @@ test parseOld-10.6 {syntax errors} {
 	catch {set a "bcd"xy} msg
 	set msg
 } {extra characters after close-quote}
-test parseOld-10.7 {syntax errors} {catch "set a {bcd}xy" msg} 1
+# TIP 764: {bcd}xy is an annotated word; {bcd}=xy keeps the error
+test parseOld-10.7 {syntax errors} {catch "set a {bcd}=xy" msg} 1
 test parseOld-10.8 {syntax errors} {
-	catch "set a {bcd}xy" msg
+	catch "set a {bcd}=xy" msg
 	set msg
 } {extra characters after close-brace}
 test parseOld-10.9 {syntax errors} {catch {set a [format abc} msg} 1

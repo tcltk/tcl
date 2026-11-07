@@ -1,0 +1,20 @@
+--- a/generic/tclCompExpr.c
++++ b/generic/tclCompExpr.c
+@@ -3277,11 +3277,12 @@
+ 		 * Restore any saved numWords value.
+ 		 */
+ 		numWords = nodePtr->left;
+-		if (nodePtr - 1 == rootPtr ) {
+-		    convert = 0;
+-		} else {
+-		    convert = 1;
+-		}
++		/*
++		 * v16y : as in Tcl 9.0, the result of a function is converted
++		 * (abs(0x10) is 16). INST_TRY_CVT_TO_NUMERIC leaves a value that
++		 * is not a number (a tuple, a list) as it is.
++		 */
++		convert = 1;
+ 		break;
+ 	    case LIST:
+ 		TclEmitInstInt4(INST_LIST, numWords, envPtr);

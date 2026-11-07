@@ -1,0 +1,23 @@
+--- a/generic/tclParse.c
++++ b/generic/tclParse.c
+@@ -403,12 +403,19 @@
+ 	     * the word is parsed as usual.
+ 	     */
+ 
++	    /*
++	     * v16y : no annotation before a closing character or an operator,
++	     * which cannot begin a value: {...}] stays the classic error
++	     * "extra characters after close-brace" (a misplaced brace).
++	     */
++
+ 	    if ((0 == expandWord) && (0 == annotWord)
+ 		    && (expIdx + 1 == parsePtr->numTokens)
+ 		    && (expPtr->type == TCL_TOKEN_TEXT)
+ 		    && (numBytes > 0) && (0 == ParseWhiteSpace(termPtr,
+ 			    numBytes, &parsePtr->incomplete, &type))
+-		    && (type != TYPE_COMMAND_END)) {
++		    && (type != TYPE_COMMAND_END)
++		    && (strchr("]})=<>!&|^?,;~%", *termPtr) == NULL)) {
+ 		annotWord = 1;
+ 		expPtr->type = TCL_TOKEN_ANNOT;
+ 		goto parseWord;

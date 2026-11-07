@@ -2399,6 +2399,35 @@ Pas de patch noyau. Sources de types : `tclAnnotObj.c`, `tclTypes.c`, `tclTypes.
 
 Coût : nul tant que `type debug` est éteint (aucun test sur le chemin des commandes).
 
+**`make test` : de 61 échecs à 8 (v16y).** Les 61 échecs ont été triés en faisant tourner la même
+suite sur un Tcl 9.0 d'origine (branche core-9-0) et sur la base sans TIP 764 (`stock`) :
+
+| origine | tests | traitement |
+|---|---|---|
+| environnement (le Tcl d'origine échoue aussi) | 8 `httpProxy` (+ `cmdAH-24.9`, erreur de fichier) | rien |
+| TIP 759 (la base) : conversion des résultats de fonction | 6 (`abs`, `min`, `max`, `int`) | `fonctions-conversion.patch` |
+| TIP 759 : arbre de `Tcl_ParseExpr` faux pour `( )` | 8 (`parseExpr-14/15/16`) | `parse-expr-tuples.patch` |
+| TIP 759 : tuples, `=`, mots nus, `subst -noexpr` | 11 | tests mis à jour |
+| TIP 764 : l'accolade mal placée | 2 (`parseOld-10.15/16`) | `annotation-avant-fermant.patch` |
+| TIP 764 : `{x}mot` est une annotation ; `bitlen`, `popcount` | 26 | tests mis à jour |
+
+- **`annotation-avant-fermant.patch`** (`tclParse.c`) : pas d'annotation quand le caractère qui suit
+  l'accolade est l'un de `] } ) = < > ! & | ^ ? , ; ~ %`. `proc p {} {set w foo}]` redevient une
+  erreur au lieu de définir une procédure de corps `]`.
+- **`fonctions-conversion.patch`** (`tclCompExpr.c`) : `convert = 0` pour une fonction à la racine
+  de l'expression empêchait `INST_TRY_CVT_TO_NUMERIC` : `abs(0x10)` rendait `0x10`, `int(0x10)`
+  aussi. Rétabli comme dans Tcl 9.0 ; un tuple ou une valeur typée rendus par une fonction passent
+  intacts (la conversion laisse ce qui n'est pas un nombre).
+- **`parse-expr-tuples.patch`** (`tclCompExpr.c`, `ConvertTreeToTokens`) : le nœud `NULL_FUNC` que
+  TIP 759 place devant une parenthèse ouvrante consommait le `(` et décalait tous les jetons
+  (`(1+2)` donnait l'opérateur `2` avec les opérandes `+` et `)`). Il ne produit plus de jeton ;
+  un tuple (`LIST`) produit un opérateur `(` avec un opérande par élément. Les parenthèses simples
+  redonnent l'arbre de Tcl 9.0.
+- **`tests-syntaxe.patch`** (`tests/*.test`, `tclTest.c`) : chaque test modifié porte un commentaire
+  `# TIP 759:` ou `# TIP 764:`. Un test qui vérifiait le message « extra characters after
+  close-brace » écrit `{x}=mot`, qui le garde ; `testparser` nomme le jeton `annot`. Nouveaux
+  tests `parse-5.22` à `5.24` (la règle ci-dessus) et `parseExpr-15.29.1/2` (arbre d'un tuple).
+
 ### v16x — l'étiquette d'un retour hors compilation (6 novembre 2026)
 
 Patch noyau `retour-etiquette.patch` (après `execute-lecture-typee.patch`) : `tclBasic.c`

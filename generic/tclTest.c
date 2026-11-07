@@ -4231,6 +4231,9 @@ PrintParse(
 	case TCL_TOKEN_EXPAND_WORD:
 	    typeString = "expand";
 	    break;
+	case TCL_TOKEN_ANNOT:		/* TIP 764 : {annotation}word */
+	    typeString = "annot";
+	    break;
 	case TCL_TOKEN_WORD:
 	    typeString = "word";
 	    break;

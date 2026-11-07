@@ -1,0 +1,11 @@
+Dupont Marie              14.0
+Martin Paul                9.5
+Le Gall Anne-Sophie       16.0
+Garnier Gigi Gisèle       13.0
+unmatched open brace in list
+    while executing
+"lrange $l 0 end-1"
+    (procedure "bulletin" line 6)
+    invoked from within
+"bulletin [file join [file dirname [info script]] classe.txt]"
+    (file "etape1_tcl.tcl" line 16)

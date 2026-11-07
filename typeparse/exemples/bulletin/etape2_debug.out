@@ -1,0 +1,25 @@
+Dupont Marie              14.0
+Martin Paul                9.5
+Le Gall Anne-Sophie       16.0
+@ligne  set argument 2 = Garnier "Gigi" Gisèle 13   (etape2_debug.tcl:11, in bulletin)
+step>   3
+step>   Garnier Gigi Gisèle 13
+step> @ligne  lrange argument 1 = Garnier "Gigi" Gisèle 13   (etape2_debug.tcl:12, in bulletin)
+step> @ligne  lindex argument 1 = Garnier "Gigi" Gisèle 13   (etape2_debug.tcl:13, in bulletin)
+step> Garnier Gigi Gisèle       13.0
+@ligne  set argument 2 = Bernard {Junior 8   (etape2_debug.tcl:11, in bulletin)
+step>   4
+step> type debug: stopped at set
+    while executing
+"::tcl::typedebug::hit @ligne {set l Bernard\ \{Junior\ 8} 2"
+    (enter trace on "set l {@ligne}$l                                     ")
+    ("foreach" body line 1)
+    invoked from within
+"foreach l [split $texte \n] {
+        if {$l eq ""} continue
+        set l {@ligne}$l                                     ;###
+        set nom  [lrang..."
+    (procedure "bulletin" line 4)
+    invoked from within
+"bulletin [file join [file dirname [info script]] classe.txt]"
+    (file "etape2_debug.tcl" line 19)

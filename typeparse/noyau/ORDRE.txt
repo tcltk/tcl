@@ -45,3 +45,7 @@ procs-typees-locales.patch
 expr-fonctions-champs.patch
 execute-lecture-typee.patch
 retour-etiquette.patch
+annotation-avant-fermant.patch
+fonctions-conversion.patch
+parse-expr-tuples.patch
+tests-syntaxe.patch

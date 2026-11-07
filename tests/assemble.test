@@ -160,11 +160,12 @@ test assemble-3.2 {wrong # args, compiled path} {
 
 # assemble-4 - TclAssembleCode mainline
 
+# TIP 764: {}extra is an annotated word; {}=extra keeps the syntax error.
 test assemble-4.1 {syntax error} {
     -body {
 	proc x {} {
 	    assemble {
-		{}extra
+		{}=extra
 	    }
 	}
 	list [catch x result] $result $::errorInfo
@@ -176,7 +177,7 @@ test assemble-4.1 {syntax error} {
     -match glob
     -result {1 {extra characters after close-brace} {extra characters after close-brace
     while executing
-"{}e"
+"{}="
     ("assemble" body, line 2)*}}
 }
 test assemble-4.2 {null command} {
@@ -383,7 +384,7 @@ test assemble-7.9 {evalStk} {
 test assemble-7.9a {evalStk, syntax} {
     -body {
 	assemble {
-	    push {{}bad}
+	    push {{}=bad}
 	    evalStk
 	}
     }

@@ -1,0 +1,450 @@
+--- a/generic/tclTest.c
++++ b/generic/tclTest.c
+@@ -4231,6 +4231,9 @@
+ 	case TCL_TOKEN_EXPAND_WORD:
+ 	    typeString = "expand";
+ 	    break;
++	case TCL_TOKEN_ANNOT:		/* TIP 764 : {annotation}word */
++	    typeString = "annot";
++	    break;
+ 	case TCL_TOKEN_WORD:
+ 	    typeString = "word";
+ 	    break;
+--- a/tests/assemble.test
++++ b/tests/assemble.test
+@@ -160,11 +160,12 @@
+ 
+ # assemble-4 - TclAssembleCode mainline
+ 
++# TIP 764: {}extra is an annotated word; {}=extra keeps the syntax error.
+ test assemble-4.1 {syntax error} {
+     -body {
+ 	proc x {} {
+ 	    assemble {
+-		{}extra
++		{}=extra
+ 	    }
+ 	}
+ 	list [catch x result] $result $::errorInfo
+@@ -176,7 +177,7 @@
+     -match glob
+     -result {1 {extra characters after close-brace} {extra characters after close-brace
+     while executing
+-"{}e"
++"{}="
+     ("assemble" body, line 2)*}}
+ }
+ test assemble-4.2 {null command} {
+@@ -383,7 +384,7 @@
+ test assemble-7.9a {evalStk, syntax} {
+     -body {
+ 	assemble {
+-	    push {{}bad}
++	    push {{}=bad}
+ 	    evalStk
+ 	}
+     }
+--- a/tests/compExpr-old.test
++++ b/tests/compExpr-old.test
+@@ -155,7 +155,8 @@
+     expr {{-0x1234}}
+ } -4660
+ test compExpr-old-1.9 {TclCompileExprCmd: expression word in braces} {
+-    catch {expr {-0005}foo} msg
++    # TIP 764: {-0005}foo would be an annotated word
++    catch {expr {-0005}=foo} msg
+     set msg
+ } {extra characters after close-brace}
+ test compExpr-old-1.10 {TclCompileExprCmd: other expression word in braces} {
+@@ -286,7 +287,8 @@
+ test compExpr-old-7.3 {CompileBitAndExpr: just equality expr} {expr 3.2!=2.2} 1
+ test compExpr-old-7.4 {CompileBitAndExpr: just equality expr} {expr {"abc" == "abd"}} 0
+ test compExpr-old-7.5 {CompileBitAndExpr: error in equality expr} -body {
+-    expr x==3
++    # TIP 759: a bareword is valid in an expression; @ is not
++    expr @==3
+ } -returnCodes error -match glob -result *
+ test compExpr-old-7.6 {CompileBitAndExpr: simple bitand exprs} {expr 7&0x13} 3
+ test compExpr-old-7.7 {CompileBitAndExpr: simple bitand exprs} {expr 0xf2&0x53} 82
+--- a/tests/expr.test
++++ b/tests/expr.test
+@@ -162,7 +162,8 @@
+     expr {{-0x1234}}
+ } -4660
+ test expr-1.9 {TclCompileExprCmd: expression word in braces} {
+-    catch {expr {-0005}foo} msg
++    # TIP 764: {-0005}foo would be an annotated word
++    catch {expr {-0005}=foo} msg
+     set msg
+ } {extra characters after close-brace}
+ test expr-1.10 {TclCompileExprCmd: other expression word in braces} {
+@@ -307,7 +308,8 @@
+ test expr-7.3 {CompileBitAndExpr: just equality expr} {expr 3.2!=2.2} 1
+ test expr-7.4 {CompileBitAndExpr: just equality expr} {expr {"abc" == "abd"}} 0
+ test expr-7.5 {CompileBitAndExpr: error in equality expr} -body {
+-    expr x==3
++    # TIP 759: a bareword is valid in an expression; @ is not
++    expr @==3
+ } -returnCodes error -match glob -result *
+ test expr-7.6 {CompileBitAndExpr: simple bitand exprs} {expr 7&0x13} 3
+ test expr-7.7 {CompileBitAndExpr: simple bitand exprs} {expr 0xf2&0x53} 82
+@@ -771,7 +773,8 @@
+     set l "\{"; set r "\}"; set q "\""
+     set cmd "expr $l$q|$q == $q$r$q$r"
+     list [catch $cmd a] $a
+-} {1 {extra characters after close-brace}}
++} {1 {missing "}}
++# TIP 764: {"|" == "} is now the annotation of the word "} (unclosed quote)
+ test expr-20.2 {double invocation of variable traces} -body {
+     set exprtracecounter 0
+     proc exprtraceproc {args} {
+--- a/tests/info.test
++++ b/tests/info.test
+@@ -655,7 +655,7 @@
+     namespace delete x
+ } -result {}
+ 
+-set functions {abs acos asin atan atan2 bool ceil cos cosh double entier exp floor fmod hypot int isfinite isinf isnan isnormal isqrt issubnormal isunordered log log10 max min pow rand round sin sinh sqrt srand tan tanh wide}
++set functions {abs acos asin atan atan2 bitlen bool ceil cos cosh double entier exp floor fmod hypot int isfinite isinf isnan isnormal isqrt issubnormal isunordered log log10 max min popcount pow rand round sin sinh sqrt srand tan tanh wide}  ;# TIP 764: bitlen, popcount
+ # Check whether the extra testing functions are defined...
+ if {!([catch {expr {T1()}} msg] && ($msg eq {invalid command name "tcl::mathfunc::T1"}))} {
+     set functions "T1 T2 T3 $functions"  ;# A lazy way of prepending!
+--- a/tests/parse.test
++++ b/tests/parse.test
+@@ -147,12 +147,13 @@
+ test parse-5.7 {Tcl_ParseCommand procedure, backslash-newline after close quote} testparser {
+     testparser "foo \"bar\"\\\nx" 0
+ } {- foo\ \"bar\"\\\nx 3 simple foo 1 text foo 0 simple {"bar"} 1 text bar 0 simple x 1 text x 0 {}}
++# TIP 764: {bar}x is an annotated word; "=" cannot begin an annotated value
+ test parse-5.8 {Tcl_ParseCommand procedure, junk after close brace} testparser {
+-    list [catch {testparser {foo {bar}x} 0} msg] $msg $::errorInfo
++    list [catch {testparser {foo {bar}=x} 0} msg] $msg $::errorInfo
+ } {1 {extra characters after close-brace} {extra characters after close-brace
+-    (remainder of script: "x")
++    (remainder of script: "=x")
+     invoked from within
+-"testparser {foo {bar}x} 0"}}
++"testparser {foo {bar}=x} 0"}}
+ test parse-5.9 {Tcl_ParseCommand procedure, backslash-newline after close brace} testparser {
+     testparser "foo {bar}\\\nx" 0
+ } {- foo\ \{bar\}\\\nx 3 simple foo 1 text foo 0 simple {{bar}} 1 text bar 0 simple x 1 text x 0 {}}
+@@ -167,19 +168,21 @@
+ test parse-5.11 {Tcl_ParseCommand: {*} parsing} testparser {
+     testparser {{expan}} 0
+ } {- {{expan}} 1 simple {{expan}} 1 text expan 0 {}}
++# TIP 764: a brace word followed by text is an annotation (annot token)
+ test parse-5.12 {Tcl_ParseCommand: {*} parsing} -constraints {
+     testparser
+ } -body {
+     testparser {{expan}x} 0
+-} -returnCodes error  -result {extra characters after close-brace}
++} -result {- {{expan}x} 1 word {{expan}x} 2 annot expan 0 text x 0 {}}
+ test parse-5.13 {Tcl_ParseCommand: {*} parsing} testparser {
+     testparser {{**}} 0
+ } {- {{**}} 1 simple {{**}} 1 text ** 0 {}}
++# TIP 764: a brace word followed by text is an annotation (annot token)
+ test parse-5.14 {Tcl_ParseCommand: {*} parsing} -constraints {
+     testparser
+ } -body {
+     testparser {{**}x} 0
+-} -returnCodes error  -result {extra characters after close-brace}
++} -result {- {{**}x} 1 word {{**}x} 2 annot ** 0 text x 0 {}}
+ test parse-5.15 {Tcl_ParseCommand: {*} parsing} -constraints {
+     testparser
+ } -body {
+@@ -189,30 +192,45 @@
+     testparser {{123456\
+ 			}} 0
+ } {- {{123456 }} 1 simple {{123456 }} 1 text {123456 } 0 {}}
++# TIP 764: a brace word followed by text is an annotation (annot token)
+ test parse-5.17 {Tcl_ParseCommand: {*} parsing} -constraints {
+     testparser
+ } -body {
+     testparser {{123456\
+ 			}x} 0
+-} -returnCodes error  -result {extra characters after close-brace}
++} -result {- {{123456 }x} 1 word {{123456 }x} 2 annot {123456 } 0 text x 0 {}}
+ test parse-5.18 {Tcl_ParseCommand: {*} parsing} testparser {
+     testparser {{*\
+ 			}} 0
+ } {- {{* }} 1 simple {{* }} 1 text {* } 0 {}}
++# TIP 764: a brace word followed by text is an annotation (annot token)
+ test parse-5.19 {Tcl_ParseCommand: {*} parsing} -constraints {
+     testparser
+ } -body {
+     testparser {{*\
+ 			}x} 0
+-} -returnCodes error  -result {extra characters after close-brace}
++} -result {- {{* }x} 1 word {{* }x} 2 annot {* } 0 text x 0 {}}
+ test parse-5.20 {Tcl_ParseCommand: {*} parsing} testparser {
+     testparser {{123456}} 0
+ } {- {{123456}} 1 simple {{123456}} 1 text 123456 0 {}}
++# TIP 764: a brace word followed by text is an annotation (annot token)
+ test parse-5.21 {Tcl_ParseCommand: {*} parsing} -constraints {
+     testparser
+ } -body {
+     testparser {{123456}x} 0
+-} -returnCodes error  -result {extra characters after close-brace}
++} -result {- {{123456}x} 1 word {{123456}x} 2 annot 123456 0 text x 0 {}}
++# TIP 764: no annotation before a closing character or an operator, which
++# cannot begin a value: a misplaced brace stays an error.
++test parse-5.22 {Tcl_ParseCommand: no annotation before "]"} testparser {
++    list [catch {testparser {foo {bar}]} 0} msg] $msg
++} {1 {extra characters after close-brace}}
++test parse-5.23 {Tcl_ParseCommand: misplaced close brace} -body {
++    proc parse-5.23 {} {
++	set w foo}]
++} -returnCodes error -result {extra characters after close-brace}
++test parse-5.24 {Tcl_ParseCommand: annotation before "-", ":", "/"} testparser {
++    list [testparser {{a}-b} 0] [testparser {{a}::b} 0] [testparser {{a}/b} 0]
++} {{- {{a}-b} 1 word {{a}-b} 2 annot a 0 text -b 0 {}} {- {{a}::b} 1 word {{a}::b} 2 annot a 0 text ::b 0 {}} {- {{a}/b} 1 word {{a}/b} 2 annot a 0 text /b 0 {}}}
+ test parse-5.22 {Tcl_ParseCommand: {*} parsing} testparser {
+     testparser {{*}} 0
+ } {- {{*}} 1 simple {{*}} 1 text * 0 {}}
+@@ -265,11 +283,12 @@
+     testparser {[foo \] [a b]]} 0
+ } {- {[foo \] [a b]]} 1 word {[foo \] [a b]]} 1 command {[foo \] [a b]]} 0 {}}
+ test parse-6.7 {ParseTokens procedure, error in command substitution} testparser {
+-    list [catch {testparser {a [b {}c d] e} 0} msg] $msg $::errorInfo
++    # TIP 764: {}c would be an annotated word
++    list [catch {testparser {a [b {}=c d] e} 0} msg] $msg $::errorInfo
+ } {1 {extra characters after close-brace} {extra characters after close-brace
+-    (remainder of script: "c d] e")
++    (remainder of script: "=c d] e")
+     invoked from within
+-"testparser {a [b {}c d] e} 0"}}
++"testparser {a [b {}=c d] e} 0"}}
+ test parse-6.8 {ParseTokens procedure, error in command substitution} {
+     info complete {a [b {}c d]}
+ } {1}
+@@ -897,8 +916,9 @@
+ test parse-15.50 {CommandComplete procedure} {
+     info complete "abc\\\n"
+ } 0
++# TIP 764: {abc}\{ would be an annotation followed by an open brace
+ test parse-15.51 {CommandComplete procedure} "
+-    info complete \"\\\{abc\\\}\\\{\"
++    info complete \"\\\{abc\\\}=\\\{\"
+ " 1
+ test parse-15.52 {CommandComplete procedure} {
+     info complete "\"abc\"("
+@@ -995,15 +1015,16 @@
+ test parse-18.18 {Tcl_SubstObj, exception handling} {
+     subst {abc,[break; set {} {}{}],def}
+ } {abc,}
++# TIP 764: {}{} is an annotated word; {}={} keeps the parse error
+ test parse-18.19 {Tcl_SubstObj, exception handling} {
+-    list [catch {subst {abc,[continue; expr {1+2}; set {} {}{}],def}} msg] $msg
++    list [catch {subst {abc,[continue; expr {1+2}; set {} {}={}],def}} msg] $msg
+ } [list 1 "extra characters after close-brace"]
+ test parse-18.20 {Tcl_SubstObj, exception handling} {
+-    list [catch {subst {abc,[return foo; expr {1+2}; set {} {}{}],def}} msg] $msg
++    list [catch {subst {abc,[return foo; expr {1+2}; set {} {}={}],def}} msg] $msg
+ } [list 1 "extra characters after close-brace"]
+ test parse-18.21 {Tcl_SubstObj, exception handling} {
+     list [catch {
+-	subst {abc,[return -code 10 foo; expr {1+2}; set {} {}{}],def}
++	subst {abc,[return -code 10 foo; expr {1+2}; set {} {}={}],def}
+     } msg] $msg
+ } [list 1 "extra characters after close-brace"]
+ 
+--- a/tests/parseExpr.test
++++ b/tests/parseExpr.test
+@@ -260,7 +260,8 @@
+ } {- {} 0 subexpr {1<2 == 3} 9 operator == 0 subexpr 1<2 5 operator < 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 {}}
+ test parseExpr-8.2 {ParseEqualityExpr procedure, error in LHS relational subexpr} \
+     -constraints testexprparser -body {
+-	testexprparser {1>=foo == 3} -1
++	# TIP 759: a bareword is valid; @ is not
++	testexprparser {1>=@ == 3} -1
+     } -match glob -returnCodes error -result *
+ test parseExpr-8.3 {ParseEqualityExpr procedure, next lexeme isn't "==" or "!="} testexprparser {
+     testexprparser {1<2? 1 : 0} -1
+@@ -551,6 +552,14 @@
+ test parseExpr-15.29 {ParsePrimaryExpr procedure, function call, comma after arg} testexprparser {
+     testexprparser {foo(27-2, (-2*[foo]))} -1
+ } {- {} 0 subexpr {foo(27-2, (-2*[foo]))} 15 operator foo 0 subexpr 27-2 5 operator - 0 subexpr 27 1 text 27 0 subexpr 2 1 text 2 0 subexpr {-2*[foo]} 7 operator * 0 subexpr -2 3 operator - 0 subexpr 2 1 text 2 0 subexpr {[foo]} 1 command {[foo]} 0 {}}
++# TIP 759: a tuple is an operator "(" with one operand per element; plain
++# parentheses still give no token.
++test parseExpr-15.29.1 {ParsePrimaryExpr procedure, tuple} testexprparser {
++    testexprparser {(1, 2+3)} -1
++} {- {} 0 subexpr {(1, 2+3)} 9 operator ( 0 subexpr 1 1 text 1 0 subexpr 2+3 5 operator + 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 {}}
++test parseExpr-15.29.2 {ParsePrimaryExpr procedure, nested tuple} testexprparser {
++    testexprparser {f((1,2))} -1
++} {- {} 0 subexpr f((1,2)) 7 operator f 0 subexpr (1,2) 5 operator ( 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 {}}
+ test parseExpr-15.30 {ParsePrimaryExpr procedure, bad lexeme after comma} testexprparser {
+     testexprparser {foo(123, 12345678901234567890)} -1
+ } {- {} 0 subexpr {foo(123, 12345678901234567890)} 5 operator foo 0 subexpr 123 1 text 123 0 subexpr 12345678901234567890 1 text 12345678901234567890 0 {}}
+@@ -675,9 +684,10 @@
+ test parseExpr-16.32 {GetLexeme procedure, lexeme is "=="} testexprparser {
+     testexprparser {2==3} -1
+ } {- {} 0 subexpr 2==3 5 operator == 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 {}}
+-test parseExpr-16.33 {GetLexeme procedure, bad lexeme starting with "="} -constraints testexprparser -body {
++# TIP 759: "=" is the assignment operator
++test parseExpr-16.33 {GetLexeme procedure, lexeme "="} -constraints testexprparser -body {
+     testexprparser {2=+3} -1
+-} -returnCodes error -match glob -result *
++} -result {- {} 0 subexpr 2=+3 7 operator = 0 subexpr 2 1 text 2 0 subexpr +3 3 operator + 0 subexpr 3 1 text 3 0 {}}
+ test parseExpr-16.34 {GetLexeme procedure, lexeme is "!="} testexprparser {
+     testexprparser {2!=3} -1
+ } {- {} 0 subexpr 2!=3 5 operator != 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 {}}
+@@ -741,10 +751,11 @@
+     expr @
+ } -returnCodes error -result {invalid character "@"
+ in expression "@"}
++# TIP 759: "=" is the assignment operator
+ test parseExpr-21.2 {error messages} -body {
+     expr =
+-} -returnCodes error -result {incomplete operator "="
+-in expression "="}
++} -returnCodes error -result {missing operand at _@_
++in expression "_@_="}
+ test parseExpr-21.3 {error messages} -body {
+     expr x
+ } -returnCodes error -result {invalid bareword "x"
+@@ -861,10 +872,10 @@
+     expr 0,0
+ } -returnCodes error -result {unexpected "," outside function argument list
+ in expression "0,0"}
++# TIP 759: (0,0) is a tuple
+ test parseExpr-21.32 {error messages} -body {
+     expr (0,0)
+-} -returnCodes error -result {unexpected "," outside function argument list
+-in expression "(0,0)"}
++} -result {0 0}
+ test parseExpr-21.33 {error messages} -body {
+     expr a(0:0,0)
+ } -returnCodes error -result {unexpected operator ":" without preceding "?"
+@@ -921,10 +932,11 @@
+     expr {123456789012345678901234567890*"foo$bar(abcdefghijklmnopqrstuvwxyz"}
+ } -returnCodes error -result {invalid character in array index
+ in expression "...8901234567890*"foo$bar(abcdefghijklmnopqrstu..."}
++# TIP 764: {}abc would be an annotated word
+ test parseExpr-21.45 {error message} -body {
+-    expr {123456789012345678901234567890*"foo$bar([{}abcdefghijklmnopqrstuvwxyz])"}
++    expr {123456789012345678901234567890*"foo$bar([{}=bcdefghijklmnopqrstuvwxyz])"}
+ } -returnCodes error -result {extra characters after close-brace
+-in expression "...234567890*"foo$bar([{}abcdefghijklmnopqrstuv..."}
++in expression "...234567890*"foo$bar([{}=bcdefghijklmnopqrstuv..."}
+ test parseExpr-21.46 {error message} -body {
+     expr {123456789012345678901234567890*"foo$bar([""abcdefghijklmnopqrstuvwxyz])"}
+ } -returnCodes error -result {extra characters after close-quote
+@@ -955,10 +967,11 @@
+     expr {123456789012345678901234567890*$bar(abcdefghijklmnopqrstuvwxyz}
+ } -returnCodes error -result {missing )
+ in expression "...45678901234567890*$bar(abcdefghijklmnopqrstuv..."}
++# TIP 764: {}abc would be an annotated word
+ test parseExpr-21.53 {error message} -body {
+-    expr {123456789012345678901234567890*$bar([{}abcdefghijklmnopqrstuvwxyz])"}
++    expr {123456789012345678901234567890*$bar([{}=bcdefghijklmnopqrstuvwxyz])"}
+ } -returnCodes error -result {extra characters after close-brace
+-in expression "...8901234567890*$bar([{}abcdefghijklmnopqrstuv..."}
++in expression "...8901234567890*$bar([{}=bcdefghijklmnopqrstuv..."}
+ test parseExpr-21.54 {error message} -body {
+     expr {123456789012345678901234567890*$bar([""abcdefghijklmnopqrstuvwxyz])"}
+ } -returnCodes error -result {extra characters after close-quote
+@@ -984,10 +997,11 @@
+     expr {123456789012345678901234567890*[$bar(abcdefghijklmnopqrstuvwxyz]}
+ } -returnCodes error -result {missing )
+ in expression "...5678901234567890*[$bar(abcdefghijklmnopqrstuv..."}
++# TIP 764: {}abc would be an annotated word
+ test parseExpr-21.60 {error message} -body {
+-    expr {123456789012345678901234567890*[{}abcdefghijklmnopqrstuvwxyz]"}
++    expr {123456789012345678901234567890*[{}=bcdefghijklmnopqrstuvwxyz]"}
+ } -returnCodes error -result {extra characters after close-brace
+-in expression "...345678901234567890*[{}abcdefghijklmnopqrstuv..."}
++in expression "...345678901234567890*[{}=bcdefghijklmnopqrstuv..."}
+ test parseExpr-21.61 {error message} -body {
+     expr {123456789012345678901234567890*[""abcdefghijklmnopqrstuvwxyz]"}
+ } -returnCodes error -result {extra characters after close-quote
+--- a/tests/parseOld.test
++++ b/tests/parseOld.test
+@@ -327,9 +327,10 @@
+ 	catch {set a "bcd"xy} msg
+ 	set msg
+ } {extra characters after close-quote}
+-test parseOld-10.7 {syntax errors} {catch "set a {bcd}xy" msg} 1
++# TIP 764: {bcd}xy is an annotated word; {bcd}=xy keeps the error
++test parseOld-10.7 {syntax errors} {catch "set a {bcd}=xy" msg} 1
+ test parseOld-10.8 {syntax errors} {
+-	catch "set a {bcd}xy" msg
++	catch "set a {bcd}=xy" msg
+ 	set msg
+ } {extra characters after close-brace}
+ test parseOld-10.9 {syntax errors} {catch {set a [format abc} msg} 1
+--- a/tests/subst.test
++++ b/tests/subst.test
+@@ -20,12 +20,13 @@
+ 
+ testConstraint testbytestring [llength [info commands testbytestring]]
+ 
++# TIP 759: subst -noexpr (subst-1.1, 1.2, 7.1 to 7.3)
+ test subst-1.1 {basics} -returnCodes error -body {
+     subst
+-} -result {wrong # args: should be "subst ?-nobackslashes? ?-nocommands? ?-novariables? string"}
++} -result {wrong # args: should be "subst ?-nobackslashes? ?-nocommands? ?-noexpr? ?-novariables? string"}
+ test subst-1.2 {basics} -returnCodes error -body {
+     subst a b c
+-} -result {bad option "a": must be -nobackslashes, -nocommands, or -novariables}
++} -result {bad option "a": must be -nobackslashes, -nocommands, -noexpr, or -novariables}
+ 
+ test subst-2.1 {simple strings} {
+     subst {}
+@@ -123,13 +124,13 @@
+ 
+ test subst-7.1 {switches} -returnCodes error -body {
+     subst foo bar
+-} -result {bad option "foo": must be -nobackslashes, -nocommands, or -novariables}
++} -result {bad option "foo": must be -nobackslashes, -nocommands, -noexpr, or -novariables}
+ test subst-7.2 {switches} -returnCodes error -body {
+     subst -no bar
+-} -result {ambiguous option "-no": must be -nobackslashes, -nocommands, or -novariables}
++} -result {ambiguous option "-no": must be -nobackslashes, -nocommands, -noexpr, or -novariables}
+ test subst-7.3 {switches} -returnCodes error -body {
+     subst -bogus bar
+-} -result {bad option "-bogus": must be -nobackslashes, -nocommands, or -novariables}
++} -result {bad option "-bogus": must be -nobackslashes, -nocommands, -noexpr, or -novariables}
+ test subst-7.4 {switches} {
+     set x 123
+     subst -nobackslashes {abc $x [expr {1 + 2}] \\\x41}
+@@ -165,11 +166,12 @@
+ test subst-8.6 {return in a subst} -returnCodes error -body {
+     subst "foo \[return {x}; bogus code bar"
+ } -result {missing close-bracket}
++# TIP 764: {}"" and {}{} are annotated words; {}= keeps the parse error
+ test subst-8.7 {return in a subst, parse error} -body {
+-    subst {foo [return {x} ; set a {}"" ; stuff] bar}
++    subst {foo [return {x} ; set a {}="" ; stuff] bar}
+ } -returnCodes error -result {extra characters after close-brace}
+ test subst-8.8 {return in a subst, parse error} -body {
+-    subst {foo [return {x} ; set bar baz ; set a {}"" ; stuff] bar}
++    subst {foo [return {x} ; set bar baz ; set a {}="" ; stuff] bar}
+ } -returnCodes error -result {extra characters after close-brace}
+ test subst-8.9 {return in a variable subst} {
+     subst {foo $var([return {x}]) bar}
+@@ -197,10 +199,10 @@
+     subst {foo [if 1 { break; bogus code}] bar}
+ } {foo }
+ test subst-10.4 {break in a subst, parse error} {
+-    subst {foo [break ; set a {}{} ; stuff] bar}
++    subst {foo [break ; set a {}={} ; stuff] bar}
+ } {foo }
+ test subst-10.5 {break in a subst, parse error} {
+-    subst {foo [break ;set bar baz ;set a {}{} ; stuff] bar}
++    subst {foo [break ;set bar baz ;set a {}={} ; stuff] bar}
+ } {foo }
+ test subst-10.6 {break in a variable subst} {
+     subst {foo $var([break]) bar}
+@@ -216,10 +218,10 @@
+     subst {foo [if 1 { continue; bogus code}] bar}
+ } {foo  bar}
+ test subst-11.4 {continue in a subst, parse error} -body {
+-    subst {foo [continue ; set a {}{} ; stuff] bar}
++    subst {foo [continue ; set a {}={} ; stuff] bar}
+ } -returnCodes error -result {extra characters after close-brace}
+ test subst-11.5 {continue in a subst, parse error} -body {
+-    subst {foo [continue ;set bar baz ;set a {}{} ; stuff] bar}
++    subst {foo [continue ;set bar baz ;set a {}={} ; stuff] bar}
+ } -returnCodes error -result {extra characters after close-brace}
+ test subst-11.6 {continue in a variable subst} {
+     subst {foo $var([continue]) bar}

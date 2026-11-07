@@ -2157,6 +2157,7 @@ ConvertTreeToTokens(
 	    case OPEN_PAREN:
 	    case COMMA:
 	    case COLON:
+	    case NULL_FUNC:	/* TIP 759 : the room left before "(" */
 
 		/*
 		 * Historical practice has been to have no Tcl_Tokens for
@@ -2245,6 +2246,29 @@ ConvertTreeToTokens(
 
 		break;
 
+	    case NULL_FUNC:
+
+		/*
+		 * TIP 759 : plain grouping "(...)", no token, and the "(" is
+		 * left to the OPEN_PAREN child.
+		 */
+
+		scanned = 0;
+		break;
+
+	    case LIST:
+
+		/*
+		 * TIP 759 : a tuple "(a, b)". The operator token is its "(",
+		 * which is left to the OPEN_PAREN child.
+		 */
+
+		subExprTokenPtr = parsePtr->tokenPtr + subExprTokenIdx;
+		subExprTokenPtr[1].start = start;
+		subExprTokenPtr[1].size = 1;
+		scanned = 0;
+		break;
+
 	    default:
 
 		/*
@@ -2271,6 +2295,7 @@ ConvertTreeToTokens(
 
 	    case COMMA:
 	    case COLON:
+	    case NULL_FUNC:
 
 		/* No tokens for these lexemes -> nothing to do. */
 		break;
@@ -2926,6 +2951,33 @@ NumericFieldLoad(
     TclEmitInstInt4(INST_LOAD_FIELD_NUM, lv, envPtr);
 }
 
+/*
+ * The functions of tcl::mathfunc that only read numbers: $a(x) as their
+ * argument is read as a number (loadFieldNum), like an operand of "+".
+ */
+static int
+NumericMathFunc(
+    const char *name,
+    Tcl_Size len)
+{
+    static const char *const names[] = {
+	"abs", "acos", "asin", "atan", "atan2", "ceil", "cos", "cosh",
+	"double", "entier", "exp", "floor", "fmod", "hypot", "int", "isqrt",
+	"log", "log10", "max", "min", "pow", "round", "sin", "sinh", "sqrt",
+	"tan", "tanh", "wide", "isfinite", "isinf", "isnan", "isnormal",
+	"issubnormal", "isunordered", "signbit", NULL
+    };
+    int i;
+
+    for (i = 0; names[i] != NULL; i++) {
+	if ((Tcl_Size) strlen(names[i]) == len
+		&& memcmp(names[i], name, (size_t) len) == 0) {
+	    return 1;
+	}
+    }
+    return 0;
+}
+
 static void
 CompileExprTree(
     Tcl_Interp *interp,
@@ -2955,6 +3007,9 @@ CompileExprTree(
     Tcl_Size tupleNode[DECL_MAX];
     Tcl_Obj *const *tupleLit[DECL_MAX];
     int nTupleLit = 0;
+    /* FUNCTION nodes of numeric functions (NumericMathFunc) */
+    Tcl_Size numFnNode[DECL_MAX];
+    int nNumFn = 0;
 
     while (1) {
 	int next;
@@ -2985,6 +3040,9 @@ CompileExprTree(
 		TclDStringAppendLiteral(&cmdName, "tcl::mathfunc::");
 		p = TclGetStringFromObj(*funcObjv, &length);
 		funcObjv++;
+		if (nNumFn < DECL_MAX && NumericMathFunc(p, length)) {
+		    numFnNode[nNumFn++] = nodePtr - nodes;
+		}
 		Tcl_DStringAppend(&cmdName, p, length);
 		TclEmitPush(TclRegisterLiteral(envPtr,
 			Tcl_DStringValue(&cmdName),
@@ -3187,11 +3245,12 @@ CompileExprTree(
 		 * Restore any saved numWords value.
 		 */
 		numWords = nodePtr->left;
-		if (nodePtr - 1 == rootPtr ) {
-		    convert = 0;
-		} else {
-		    convert = 1;
-		}
+		/*
+		 * v16y : as in Tcl 9.0, the result of a function is converted
+		 * (abs(0x10) is 16). INST_TRY_CVT_TO_NUMERIC leaves a value that
+		 * is not a number (a tuple, a list) as it is.
+		 */
+		convert = 1;
 		break;
 	    case LIST:
 		TclEmitInstInt4(INST_LIST, numWords, envPtr);
@@ -3362,6 +3421,27 @@ CompileExprTree(
 		case LEFT_SHIFT: case RIGHT_SHIFT:
 		    NumericFieldLoad(envPtr, start);
 		    break;
+		case FUNCTION: case COMMA: case OPEN_PAREN: {
+		    /* an argument of a numeric function: up the commas to the
+		     * function node */
+		    OpNode *fn = nodePtr;
+		    int k;
+
+		    while ((fn->lexeme == COMMA || fn->lexeme == OPEN_PAREN)
+			    && fn->p.parent >= 0) {
+			fn = nodes + fn->p.parent;
+		    }
+		    if (fn->lexeme != FUNCTION) {
+			break;
+		    }
+		    for (k = 0; k < nNumFn; k++) {
+			if (numFnNode[k] == fn - nodes) {
+			    NumericFieldLoad(envPtr, start);
+			    break;
+			}
+		    }
+		    break;
+		}
 		}
 	    }
 	    break;

@@ -1,0 +1,48 @@
+--- a/generic/tclCompExpr.c
++++ b/generic/tclCompExpr.c
+@@ -2199,6 +2199,7 @@
+ 	    case OPEN_PAREN:
+ 	    case COMMA:
+ 	    case COLON:
++	    case NULL_FUNC:	/* TIP 759 : the room left before "(" */
+ 
+ 		/*
+ 		 * Historical practice has been to have no Tcl_Tokens for
+@@ -2287,6 +2288,29 @@
+ 
+ 		break;
+ 
++	    case NULL_FUNC:
++
++		/*
++		 * TIP 759 : plain grouping "(...)", no token, and the "(" is
++		 * left to the OPEN_PAREN child.
++		 */
++
++		scanned = 0;
++		break;
++
++	    case LIST:
++
++		/*
++		 * TIP 759 : a tuple "(a, b)". The operator token is its "(",
++		 * which is left to the OPEN_PAREN child.
++		 */
++
++		subExprTokenPtr = parsePtr->tokenPtr + subExprTokenIdx;
++		subExprTokenPtr[1].start = start;
++		subExprTokenPtr[1].size = 1;
++		scanned = 0;
++		break;
++
+ 	    default:
+ 
+ 		/*
+@@ -2313,6 +2337,7 @@
+ 
+ 	    case COMMA:
+ 	    case COLON:
++	    case NULL_FUNC:
+ 
+ 		/* No tokens for these lexemes -> nothing to do. */
+ 		break;

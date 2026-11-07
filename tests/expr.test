@@ -162,7 +162,8 @@ test expr-1.8 {TclCompileExprCmd: expression word in braces} {
     expr {{-0x1234}}
 } -4660
 test expr-1.9 {TclCompileExprCmd: expression word in braces} {
-    catch {expr {-0005}foo} msg
+    # TIP 764: {-0005}foo would be an annotated word
+    catch {expr {-0005}=foo} msg
     set msg
 } {extra characters after close-brace}
 test expr-1.10 {TclCompileExprCmd: other expression word in braces} {
@@ -307,7 +308,8 @@ test expr-7.2 {CompileBitAndExpr: just equality expr} {expr 2.0==2} 1
 test expr-7.3 {CompileBitAndExpr: just equality expr} {expr 3.2!=2.2} 1
 test expr-7.4 {CompileBitAndExpr: just equality expr} {expr {"abc" == "abd"}} 0
 test expr-7.5 {CompileBitAndExpr: error in equality expr} -body {
-    expr x==3
+    # TIP 759: a bareword is valid in an expression; @ is not
+    expr @==3
 } -returnCodes error -match glob -result *
 test expr-7.6 {CompileBitAndExpr: simple bitand exprs} {expr 7&0x13} 3
 test expr-7.7 {CompileBitAndExpr: simple bitand exprs} {expr 0xf2&0x53} 82
@@ -771,7 +773,8 @@ test expr-20.1 {wrong brace matching} {
     set l "\{"; set r "\}"; set q "\""
     set cmd "expr $l$q|$q == $q$r$q$r"
     list [catch $cmd a] $a
-} {1 {extra characters after close-brace}}
+} {1 {missing "}}
+# TIP 764: {"|" == "} is now the annotation of the word "} (unclosed quote)
 test expr-20.2 {double invocation of variable traces} -body {
     set exprtracecounter 0
     proc exprtraceproc {args} {

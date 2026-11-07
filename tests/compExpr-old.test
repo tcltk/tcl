@@ -155,7 +155,8 @@ test compExpr-old-1.8 {TclCompileExprCmd: expression word in braces} {
     expr {{-0x1234}}
 } -4660
 test compExpr-old-1.9 {TclCompileExprCmd: expression word in braces} {
-    catch {expr {-0005}foo} msg
+    # TIP 764: {-0005}foo would be an annotated word
+    catch {expr {-0005}=foo} msg
     set msg
 } {extra characters after close-brace}
 test compExpr-old-1.10 {TclCompileExprCmd: other expression word in braces} {
@@ -286,7 +287,8 @@ test compExpr-old-7.2 {CompileBitAndExpr: just equality expr} {expr 2.0==2} 1
 test compExpr-old-7.3 {CompileBitAndExpr: just equality expr} {expr 3.2!=2.2} 1
 test compExpr-old-7.4 {CompileBitAndExpr: just equality expr} {expr {"abc" == "abd"}} 0
 test compExpr-old-7.5 {CompileBitAndExpr: error in equality expr} -body {
-    expr x==3
+    # TIP 759: a bareword is valid in an expression; @ is not
+    expr @==3
 } -returnCodes error -match glob -result *
 test compExpr-old-7.6 {CompileBitAndExpr: simple bitand exprs} {expr 7&0x13} 3
 test compExpr-old-7.7 {CompileBitAndExpr: simple bitand exprs} {expr 0xf2&0x53} 82
