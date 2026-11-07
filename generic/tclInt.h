@@ -3144,6 +3144,7 @@ MODULE_SCOPE int	TclEncodingProfileNameToId(Tcl_Interp *interp,
 MODULE_SCOPE const char *TclEncodingProfileIdToName(Tcl_Interp *interp,
 			    int profileId);
 MODULE_SCOPE void	TclGetEncodingProfiles(Tcl_Interp *interp);
+MODULE_SCOPE int	TclAddEncodingSubdir(Tcl_Obj *parentDirPtr);
 
 /*
  * TIP #723 (Monotonic Time)

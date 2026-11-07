@@ -5733,6 +5733,48 @@ Tcl_UtfToNormalized(
 }
 
 /*
+ *----------------------------------------------------------------------
+ *
+ * TclAddEncodingSubdir --
+ *
+ *	Appends the "encoding" subdirectory under the passed parent
+ *	to the list of directories searched for encoding tables.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+TclAddEncodingSubdir(
+    Tcl_Obj *parentObj)		/* Parent of encoding subdirectory.
+				 * Caller should hold a reference */
+{
+    Tcl_Obj *subDirObj, *searchPathObj;
+    TclNewLiteralStringObj(subDirObj, "encoding");
+    Tcl_IncrRefCount(subDirObj);
+    searchPathObj = Tcl_GetEncodingSearchPath();
+    if (searchPathObj == NULL) {
+	TclNewObj(searchPathObj);
+    } else {
+	searchPathObj = Tcl_DuplicateObj(searchPathObj);
+    }
+    Tcl_Obj *fullPathObj = Tcl_FSJoinToPath(parentObj, 1, &subDirObj);
+    Tcl_IncrRefCount(fullPathObj);
+    Tcl_IncrRefCount(searchPathObj);
+
+    Tcl_Size oldLen, newLen;
+    TclListObjLength(NULL, searchPathObj, &oldLen);
+    TclListObjInsertIfAbsent(NULL, searchPathObj, fullPathObj, 0);
+    TclListObjLength(NULL, searchPathObj, &newLen);
+    Tcl_DecrRefCount(fullPathObj);
+    Tcl_DecrRefCount(subDirObj);
+    if (newLen > oldLen) {
+        Tcl_SetEncodingSearchPath(searchPathObj);
+    }
+    Tcl_DecrRefCount(searchPathObj);
+
+    return TCL_OK;
+}
+
+/*
  * Local Variables:
  * mode: c
  * c-basic-offset: 4
