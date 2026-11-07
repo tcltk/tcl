@@ -672,6 +672,15 @@ decale {100 200} {50}          ;# argument "dp": {{double}x ?= 0; {double}y ?= 0
 
 - **Nommer les types qui circulent.** Un produit écrit dans la signature est un type à lui seul : une valeur `pt` de même forme y est refusée (`unknown way to cast the value from pt to {{double}x; {double}y}`), il faudrait `{list}$a` ou un `type convert`. Et une valeur déjà du type d'un champ nommé y entre sans être revérifiée (`{pt}p; {vec}dp` : 1,38 µs avec des valeurs typées, 1,95 µs avec des listes nues, comme la forme anonyme). Les types qui passent de procédure en procédure gagnent donc à être nommés (`type def pt …`) ; la forme anonyme convient à ce qui n'entre que sous forme de liste ou de texte.
 - **Le reste.** Un dernier champ `{list.T}args` reçoit les arguments en trop, chacun validé (`proc somme {{int}a; {list.int}args} …`).
+- **Variadiques n'importe où (v16y).** Un champ dont le nom finit par `...` (`{T}args...`) prend un nombre variable de mots, où qu'il soit : sans défaut, **au moins une fois** ; avec `?=` (souvent `?= {}`), zéro fois ou plus, et le défaut est une liste de `T`. Les champs d'avant se remplissent de gauche à droite (un champ à défaut ne prend un mot que s'il en reste assez pour la suite), ceux d'après se prennent depuis la fin, comme dans TIP 288 ; ils ne peuvent pas avoir de défaut. Si `T` est un produit, chaque répétition prend autant de mots qu'il a de champs. La locale (`args`) est une liste de `T`. Un seul champ variadique par signature, et pas un `var.T`. `{list.T}args` en dernier garde son sens (zéro ou plus, un mot par `T`).
+
+```tcl
+proc chacun {{{list}vars; {list}valeurs}args...; {string}corps} { … }   ;# foreach
+chacun {a b} {1 2 3 4} c {x y} { … }        ;# usage : chacun vars valeurs ?vars valeurs ...? corps
+proc dict_set {{var.dict}d; {string}args...; {string}valeur} { dict set d {*}$args $valeur }
+proc dict_create {{{string}cle; {string}valeur}args... ?= {}} { … }
+proc longueur {{pt}args...} { … }           ;# longueur 0 0 3 4 3 0 : les points à plat
+```
 - **Upvar automatique.** Un champ `{var.T}n` reçoit un nom de variable : `n` est liée à la variable de l'appelant, dont la valeur courante (si elle existe) doit être un `T`.
 
 ```tcl

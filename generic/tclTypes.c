@@ -9828,6 +9828,10 @@ typedef struct TypedArg {
 				 * vérifier par son nom), ou -1 */
     Tcl_Obj *lname;		/* ... et l'objet nom vu à cet indice (une
 				 * référence : l'égalité des pointeurs suffit) */
+    Tcl_Size group;		/* v16y : {T}nom... : mots par répétition (les
+				 * champs d'un produit, sinon 1) ; 0 : pas
+				 * variadique */
+    int vmin;			/* ... au moins une répétition (sans ?=) */
 } TypedArg;
 
 /* Un mot d'option reconnu à l'appel. */
@@ -9862,6 +9866,8 @@ typedef struct TclTypedSig {
     size_t retGen;		/* ... pour cette génération des types */
     Tcl_Obj *usage;		/* p ?dx? ?dy? */
     Tcl_Obj **locals;		/* v16s : les noms des locales des champs */
+    Tcl_Size vpos;		/* v16y : le champ variadique {T}nom...,
+				 * indice dans pos[], ou -1 */
 } TclTypedSig;
 
 static Tcl_Obj *
@@ -10010,6 +10016,9 @@ OptLocalName(Tcl_Obj *name)
 
     if (l > 1 && t[0] == '-') {
 	return Tcl_NewStringObj(t + 1, l - 1);
+    }
+    if (l > 3 && memcmp(t + l - 3, "...", 3) == 0) {
+	return Tcl_NewStringObj(t, l - 3);	/* v16y : args... */
     }
     return name;
 }
@@ -10469,6 +10478,7 @@ TypedProcSig(Tcl_Interp *interp, Tcl_Obj *nameObj, Tcl_Obj *argsObj,
     memset(sig, 0, sizeof(TclTypedSig));
     sig->refCount = 1;
     sig->n = -1;
+    sig->vpos = -1;
     sig->retText = ret;
     sig->unfold = (ret != NULL) ? unfold : 0;
     if (prod != NULL) {
@@ -10617,7 +10627,60 @@ TypedProcSig(Tcl_Interp *interp, Tcl_Obj *nameObj, Tcl_Obj *argsObj,
 	    if (Tcl_GetCharLength(u) > 0) {
 		Tcl_AppendToObj(u, " ", 1);
 	    }
+	    if (strlen(nm) > 3 && strcmp(nm + strlen(nm) - 3, "...") == 0) {
+		/* v16y : {T}nom... : variadique, n'importe où ; sans défaut,
+		 * au moins une fois ; un produit s'étale sur ses champs */
+		const TclType *pt = UnderKind(f->type, TCLT_PRODUCT);
+		Tcl_Obj *words, *et;
+		const char *ett;
+		Tcl_Size k;
+
+		if (sig->vpos >= 0) {
+		    Tcl_SetObjResult(interp, Tcl_NewStringObj("a typed "
+			    "argument list has at most one variadic field", -1));
+		    goto sigError;
+		}
+		if (a->isVar) {
+		    Tcl_SetObjResult(interp, Tcl_ObjPrintf("variadic field "
+			    "\"%s\" cannot be a var.T", nm));
+		    goto sigError;
+		}
+		a->group = (pt != NULL && pt->nfields > 0) ? pt->nfields : 1;
+		a->vmin = !(a->defval || a->defcmd);
+		a->allDefault = 0;
+		/* la locale est une liste de T */
+		et = a->typeText;
+		ett = Tcl_GetString(et);
+		a->typeText = (strpbrk(ett, " ;,|") != NULL)
+			? Tcl_ObjPrintf("list.{%s}", ett)
+			: Tcl_ObjPrintf("list.%s", ett);
+		Tcl_IncrRefCount(a->typeText);
+		Tcl_DecrRefCount(et);
+		words = Tcl_NewObj();
+		for (k = 0; k < a->group; k++) {
+		    Tcl_AppendStringsToObj(words, k ? " " : "",
+			    Tcl_GetString(pt != NULL && pt->nfields > 0
+				? pt->fields[k].name : a->local), (char *) NULL);
+		}
+		Tcl_IncrRefCount(words);
+		if (a->vmin) {
+		    Tcl_AppendPrintfToObj(u, "%s ?%s ...?", Tcl_GetString(words),
+			    Tcl_GetString(words));
+		} else {
+		    Tcl_AppendPrintfToObj(u, "?%s ...?", Tcl_GetString(words));
+		}
+		Tcl_DecrRefCount(words);
+		sig->vpos = sig->npos;
+		sig->pos[sig->npos++] = i;
+		continue;
+	    }
+	    if (sig->vpos >= 0 && (a->defval || a->defcmd || a->allDefault)) {
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf("argument \"%s\" after "
+			"a variadic field cannot have a default", nm));
+		goto sigError;
+	    }
 	    if (i == prod->nfields - 1 && strcmp(nm, "args") == 0
+		    && sig->vpos < 0
 		    && f->type->kind == TCLT_LIST && f->type->arity < 0
 		    && !a->defval && !a->defcmd) {
 		sig->rest = 1;
@@ -11378,6 +11441,62 @@ TclTypedProcBind(Tcl_Interp *interp, void *sigv, Tcl_Size skip)
 	    ov[e] = v;
 	    i += 1 + oe->nvals;
 	}
+    }
+
+    if (sig->vpos >= 0) {
+	/*
+	 * v16y : un champ variadique {T}nom... . Les champs d'avant se
+	 * remplissent de gauche à droite (un défaut ne prend un mot que s'il
+	 * en reste assez), ceux d'après depuis la fin (TIP 288) ; le milieu
+	 * va au champ variadique, par groupes de « group » mots.
+	 */
+	Tcl_Size n = objc - i, vp = sig->vpos, na = nf - vp - 1;
+	Tcl_Size avail = n - na, reqLeft = 0, used = 0, vw, g;
+	TypedArg *va = &sig->a[sig->pos[vp]];
+	Tcl_Obj *lst;
+
+	for (j = 0; j < vp; j++) {
+	    TypedArg *b = &sig->a[sig->pos[j]];
+
+	    if (!(b->defval || b->defcmd || b->allDefault)) {
+		reqLeft++;
+	    }
+	}
+	if (avail < reqLeft + va->vmin * va->group) {
+	    TypedArgsWrong(interp, sig, framePtr, skip);
+	    goto done;
+	}
+	for (j = 0; j < vp; j++) {
+	    TypedArg *b = &sig->a[sig->pos[j]];
+
+	    if (!(b->defval || b->defcmd || b->allDefault)) {
+		reqLeft--;
+	    } else if (avail - used - reqLeft - va->vmin * va->group < 1) {
+		continue;			/* son défaut */
+	    }
+	    vals[j] = objv[i + used++];
+	    Tcl_IncrRefCount(vals[j]);
+	}
+	vw = avail - used;
+	if (vw % va->group != 0) {
+	    TypedArgsWrong(interp, sig, framePtr, skip);
+	    goto done;
+	}
+	for (j = 0; j < na; j++) {
+	    vals[vp + 1 + j] = objv[i + avail + j];
+	    Tcl_IncrRefCount(vals[vp + 1 + j]);
+	}
+	if (vw > 0 || va->vmin) {
+	    lst = Tcl_NewListObj(0, NULL);
+	    for (g = 0; g < vw; g += va->group) {
+		Tcl_ListObjAppendElement(NULL, lst, va->group == 1
+			? objv[i + used + g]
+			: Tcl_NewListObj(va->group, objv + i + used + g));
+	    }
+	    vals[vp] = lst;
+	    Tcl_IncrRefCount(lst);
+	}				/* sinon : son défaut */
+	i = objc;
     }
 
     for (; i < objc; i++) {

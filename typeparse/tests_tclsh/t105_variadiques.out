@@ -1,0 +1,36 @@
+--- au milieu : les suivants depuis la fin
+un: A 1 Z
+trois: A {1 2 3} Z
+zéro : au moins un: ERREUR wrong # args: should be "m a args ?args ...? z"
+type vérifié: ERREUR argument "args...": expected integer but got "x"
+usage: ERREUR wrong # args: should be "m a args ?args ...? z"
+info args: a args... z
+--- avec défaut : zéro ou plus
+zéro: {} Z
+deux: {1 2} Z
+défaut liste: 7 8
+donné: 1
+défaut validé: ERREUR expected integer but got "a"
+--- défauts avant : de gauche à droite
+e c: E C M {}
+e c m: E C m1 {}
+e c m s s: E C m1 {s1 s2}
+le variadique d'abord: A 5
+puis le défaut: x 5
+--- un produit s'étale
+deux paires: {{a b} c} B
+impaire: ERREUR wrong # args: should be "f vars vals ?vars vals ...? corps"
+usage: ERREUR wrong # args: should be "f vars vals ?vars vals ...? corps"
+points: 2 4
+point incomplet: ERREUR wrong # args: should be "l x y ?x y ...?"
+aucune paire: 0
+--- avec options et liens
+dict set: a {b 1 c 2}
+--- refus à la définition
+deux variadiques: ERREUR a typed argument list has at most one variadic field
+défaut après: ERREUR argument "b" after a variadic field cannot have a default
+lien variadique: ERREUR variadic field "a..." cannot be a var.T
+--- args en dernier : inchangé
+zéro: 1 {}
+deux: 1 {2 3}
+classique: 1 {2 3}

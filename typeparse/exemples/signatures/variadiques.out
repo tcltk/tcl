@@ -1,0 +1,27 @@
+--- foreach, en Tcl : varList list ?varList list ...? body
+  a=1 b=2 c=x
+  a=3 b=4 c=y
+  n=1
+  n=3
+chacun {a b} {1 2}                           -> ERREUR wrong # args: should be "chacun vars valeurs ?vars valeurs ...? corps"
+chacun {puts}                                -> ERREUR wrong # args: should be "chacun vars valeurs ?vars valeurs ...? corps"
+
+--- dict set : dictVar key ?key ...? value
+  fruits {pomme rouge poire jaune} total 2
+dict_set D 5                                 -> ERREUR wrong # args: should be "dict_set d args ?args ...? valeur"
+set X abc; dict_set X a 1                    -> ERREUR argument "d": missing value to go with key
+
+--- dict create : ?key value ...?
+dict_create                                  -> 
+dict_create a 1 b 2                          -> a 1 b 2
+dict_create a 1 b                            -> ERREUR wrong # args: should be "dict_create ?cle valeur ...?"
+
+--- des points, à plat : x1 y1 x2 y2 ?x y ...?
+longueur 0 0 3 4 3 0                         -> 9.0
+longueur 0 0 3                               -> ERREUR wrong # args: should be "longueur x y ?x y ...?"
+longueur 0 0 3 x                             -> ERREUR argument "args...": expected floating-point number but got "x"
+
+--- regexp : ?switches? exp string ?matchVar? ?subMatchVar ...?
+chercher_re {(\d+)-(\d+)} "du 12-34" tout de a; list $tout $de $a -> 12-34 12 34
+chercher_re -nocase {ABC} "xabcx"            -> 1
+chercher_re                                  -> ERREUR wrong # args: should be "chercher_re ?-nocase? ?--? exp chaine ?m? ?args ...?"

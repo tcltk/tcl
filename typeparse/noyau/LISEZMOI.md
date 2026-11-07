@@ -2413,6 +2413,17 @@ Coût : nul tant que `type debug` est éteint (aucun test sur le chemin des comm
 Nouveau test `t104_signatures_liens.tcl` ; exemple `exemples/signatures` (comparaison avec les
 TIP 288, 457, 460, 479, 480).
 
+**Variadiques n'importe où (v16y).** `tclTypeParse.c` : un nom de champ collé à `}` peut finir par
+`...` (`{T}args...`, une écriture qui était une erreur) ; `BuildAssign` valide alors le défaut
+comme une liste de `T`. `tclTypes.c` : `TypedArg.group` (mots par répétition : les champs d'un
+produit, sinon 1), `TypedArg.vmin` (sans défaut : au moins une) ; `TclTypedSig.vpos`. La locale
+perd le `...` (`OptLocalName`) et a le type `list.T`. À l'appel, après les options : les champs
+d'avant de gauche à droite (un défaut ne prend un mot que s'il en reste assez), ceux d'après
+depuis la fin, le milieu au champ variadique, groupé. À la définition : un seul variadique, pas
+de défaut après, pas de `var.T`. L'usage suit les manuels (`vars valeurs ?vars valeurs ...?`).
+`{list.T}args` en dernier est inchangé. Test `t105_variadiques.tcl`, exemple
+`exemples/signatures/variadiques.tcl`.
+
 **`make test` : de 61 échecs à 8 (v16y).** Les 61 échecs ont été triés en faisant tourner la même
 suite sur un Tcl 9.0 d'origine (branche core-9-0) et sur la base sans TIP 764 (`stock`) :
 

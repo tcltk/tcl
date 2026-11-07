@@ -167,7 +167,8 @@ enum LexemeCodes {
     ASSIGN = BINARY | 6,	/* "=" */
     CLOSE_BRACE = BINARY | 7,	/* "}" : comme CLOSE_PAREN, sauf qu'il crée
 				 * un noeud (le groupe nommé). */
-    END = BINARY | 8		/* Fin du texte : s'apparie avec START. */
+    END = BINARY | 8,		/* Fin du texte : s'apparie avec START. */
+    UNION = BINARY | 9		/* "|" : une union (v16w), au rang de "," */
 };
 
 /*
@@ -191,6 +192,7 @@ enum Precedence {
 
 static const unsigned char prec[] = {
     [SUM] = PREC_SUM,
+    [UNION] = PREC_SUM,
     [PRODUCT] = PREC_PRODUCT,
     [NEST] = PREC_NEST,
     [ASSIGN] = PREC_ASSIGN,
@@ -209,6 +211,7 @@ enum TypeOps {
     TB_NONE = 0,		/* START, OPEN_BRACE : rien à faire */
     TB_GROUP,			/* "}" : groupement / champ nommé */
     TB_SUM,			/* "," */
+    TB_UNION,			/* "|" */
     TB_PRODUCT,			/* ";" */
     TB_NEST,			/* "." */
     TB_ASSIGN			/* "=" */
@@ -216,6 +219,7 @@ enum TypeOps {
 
 static const unsigned char builder[] = {
     [SUM] = TB_SUM,
+    [UNION] = TB_UNION,
     [PRODUCT] = TB_PRODUCT,
     [NEST] = TB_NEST,
     [ASSIGN] = TB_ASSIGN,
@@ -232,6 +236,7 @@ static const unsigned char Lexeme[] = {
     ['{'] = OPEN_BRACE,
     ['}'] = CLOSE_BRACE,
     [','] = SUM,
+    ['|'] = UNION,
     [';'] = PRODUCT,
     ['.'] = NEST,
     ['='] = ASSIGN,
@@ -240,7 +245,7 @@ static const unsigned char Lexeme[] = {
     ['+'] = INVALID, ['-'] = INVALID, ['/'] = INVALID, [':'] = INVALID,
     ['<'] = INVALID, ['>'] = INVALID, ['?'] = INVALID, ['@'] = INVALID,
     ['['] = INVALID, ['\\'] = INVALID, [']'] = INVALID, ['^'] = INVALID,
-    ['`'] = INVALID, ['|'] = INVALID, ['~'] = INVALID, [127] = INVALID
+    ['`'] = INVALID, ['~'] = INVALID, [127] = INVALID
 };
 
 /* --------------------------------------------------------------------
@@ -416,6 +421,29 @@ ParseTypeLexeme(
 	return 2;
     }
 
+    if (byte == ':' && numBytes > 2 && start[1] == ':'
+	    && TclTypeIsNameChar(start[2])) {
+	/* v16u : ::geom::point, un nom qualifié absolu */
+	end = start + 2 + TclTypeNameSpan(start + 2, start + numBytes);
+	*lexemePtr = BAREWORD;
+	if (literalPtr != NULL) {
+	    *literalPtr = Tcl_NewStringObj(start, end - start);
+	}
+	if ((end < start + numBytes) && (*end == '(')) {
+	    const char *close = TclTypeFindArgsEnd(end + 1, start + numBytes);
+
+	    if (close == NULL) {
+		*lexemePtr = UNCLOSED;
+		return end - start + 1;
+	    }
+	    if (argsPtr != NULL) {
+		*argsPtr = Tcl_NewStringObj(end + 1, close - end - 1);
+	    }
+	    return close + 1 - start;
+	}
+	return end - start;
+    }
+
     if (!IsParamRef(start, numBytes) && (byte < sizeof(Lexeme))
 	    && (Lexeme[byte] != 0)
 	    && !(byte == '*' && numBytes > 1 && start[1] == '(')) {
@@ -424,8 +452,20 @@ ParseTypeLexeme(
 	    /* Le nom, s'il y en a un, est COLLÉ à l'accolade fermante. */
 
 	    end = start + 1;
+	    if ((end + 1 < start + numBytes) && (*end == '-')
+		    && TclTypeIsNameChar(end[1]) && !isdigit(UCHAR(end[1]))) {
+		end++;			/* v16q : {int}-index, une option */
+	    }
 	    while ((end < start + numBytes) && TclTypeIsNameChar(*end)) {
 		end++;
+	    }
+	    /* v16y : un champ variadique, {T}args... ("..." après un nom de
+	     * champ était une erreur) */
+	    if ((end > start + 1) && (end + 3 <= start + numBytes)
+		    && memcmp(end, "...", 3) == 0
+		    && (end + 3 == start + numBytes || !(end[3] == '.'
+		    || TclTypeIsNameChar(end[3])))) {
+		end += 3;
 	    }
 	    if ((end > start + 1) && (literalPtr != NULL)) {
 		*literalPtr = Tcl_NewStringObj(start + 1, end - start - 1);
@@ -466,8 +506,13 @@ ParseTypeLexeme(
 
     if (TclTypeIsNameChar(byte) || IsParamRef(start, numBytes)) {
 	end = start + (byte == '$');
-	while ((end < start + numBytes) && TclTypeIsNameChar(*end)) {
-	    end++;
+	if (byte == '$') {
+	    while ((end < start + numBytes) && TclTypeIsNameChar(*end)) {
+		end++;
+	    }
+	} else {
+	    /* v16u : geom::point */
+	    end += TclTypeNameSpan(end, start + numBytes);
 	}
 	*lexemePtr = BAREWORD;
 	if (literalPtr != NULL) {
@@ -1181,6 +1226,7 @@ typedef struct TypeItem {
     Tcl_Obj *defcmd;		/* SK_FIELD : script du défaut, ou NULL */
     int vkind;			/* SK_VALUE : VK_LITERAL, VK_SCRIPT, VK_VARIABLE */
     TclTypeKind comp;		/* SK_COMP : TCLT_PRODUCT ou TCLT_SUM */
+    int isUnion;		/* SK_COMP somme : "|" (union) plutôt que "," */
     TclTypeField *fields;	/* SK_COMP : éléments accumulés */
     Tcl_Size n, cap;
     Tcl_Size arity;		/* SK_CTOR liste : nombre d'éléments */
@@ -1994,8 +2040,8 @@ FinishItem(Tcl_Interp *interp, TypeEnv *envPtr, TypeItem *it, TclType *into,
 	*tpPtr = it->type;
 	return TCL_OK;
     case SK_COMP:
-	*tpPtr = TclTypesFinish(interp, envPtr->d, envPtr->selfName,
-		it->comp, it->fields, it->n, into);
+	*tpPtr = TclTypesFinishSum(interp, envPtr->d, envPtr->selfName,
+		it->comp, it->fields, it->n, into, it->isUnion);
 	it->fields = NULL;		/* possession transmise */
 	it->n = it->cap = 0;
 	return (*tpPtr != NULL) ? TCL_OK : TCL_ERROR;
@@ -2055,8 +2101,11 @@ BuildGroup(Tcl_Interp *interp, TypeEnv *envPtr)
 	goto done;
     }
 
-    if ((x->kind != SK_TYPE) && (x->kind != SK_COMP)) {
-	ERR(interp, "SYNTAX", "\"%s\" can only name a type, not a field or a "
+    /* v16w : {{double}r}cercle, un champ seul nommé : un produit à un
+     * champ (comme type def C {{double}r}) */
+    if ((x->kind != SK_TYPE) && (x->kind != SK_COMP)
+	    && (x->kind != SK_FIELD)) {
+	ERR(interp, "SYNTAX", "\"%s\" can only name a type, not a "
 		"value", Tcl_GetString(name.obj));
 	goto done;
     }
@@ -2078,7 +2127,8 @@ BuildGroup(Tcl_Interp *interp, TypeEnv *envPtr)
 /* "," et ";" : accumulent dans un composite ; le chaînage est à gauche. */
 
 static int
-BuildSeparated(Tcl_Interp *interp, TypeEnv *envPtr, TclTypeKind kind)
+BuildSeparated(Tcl_Interp *interp, TypeEnv *envPtr, TclTypeKind kind,
+	int isUnion)
 {
     TypeItem r = PopItem(envPtr);
     TypeItem l = PopItem(envPtr);
@@ -2102,6 +2152,13 @@ BuildSeparated(Tcl_Interp *interp, TypeEnv *envPtr, TclTypeKind kind)
 		"define it with type def");
 	goto done;
     }
+    if (kind == TCLT_SUM && ((l.kind == SK_COMP && l.isUnion != isUnion)
+	    || (r.kind == SK_COMP && r.isUnion != isUnion))) {
+	ERR(interp, "SYNTAX", "mixing \",\" and \"|\" at the same level: a "
+		"sum (,) tags its variants, a union (|) does not; group the "
+		"inner part");
+	goto done;
+    }
     /* Dans un produit, tout champ a un nom, un groupe aussi : {...}nom. */
     if (kind == TCLT_PRODUCT
 	    && ((l.kind == SK_TYPE && l.type->kind == TCLT_SUM)
@@ -2118,6 +2175,7 @@ BuildSeparated(Tcl_Interp *interp, TypeEnv *envPtr, TclTypeKind kind)
 	memset(&comp, 0, sizeof(comp));
 	comp.kind = SK_COMP;
 	comp.comp = kind;
+	comp.isUnion = isUnion;
 	if (AddElement(interp, &comp, &l) != TCL_OK) {
 	    goto done;
 	}
@@ -2303,7 +2361,21 @@ BuildAssign(Tcl_Interp *interp, TypeEnv *envPtr)
 	rc = TCL_OK;
 	goto done;
     }
-    if (TclTypeValidate(interp, l->type, r.obj, -1, NULL) != TCL_OK) {
+    if (l->obj != NULL && Tcl_GetCharLength(l->obj) > 3 && memcmp(
+	    Tcl_GetString(l->obj) + l->obj->length - 3, "...", 3) == 0) {
+	/* v16y : {T}args... ?= v : v est une liste de T */
+	Tcl_Size ne, k;
+	Tcl_Obj **ev;
+
+	if (Tcl_ListObjGetElements(interp, r.obj, &ne, &ev) != TCL_OK) {
+	    goto done;
+	}
+	for (k = 0; k < ne; k++) {
+	    if (TclTypeValidate(interp, l->type, ev[k], -1, NULL) != TCL_OK) {
+		goto done;
+	    }
+	}
+    } else if (TclTypeValidate(interp, l->type, r.obj, -1, NULL) != TCL_OK) {
 	goto done;
     }
     SetRef(&l->defval, r.obj);
@@ -2321,9 +2393,11 @@ ApplyOperator(Tcl_Interp *interp, TypeEnv *envPtr, unsigned char lexeme)
     case TB_GROUP:
 	return BuildGroup(interp, envPtr);
     case TB_SUM:
-	return BuildSeparated(interp, envPtr, TCLT_SUM);
+	return BuildSeparated(interp, envPtr, TCLT_SUM, 0);
+    case TB_UNION:
+	return BuildSeparated(interp, envPtr, TCLT_SUM, 1);
     case TB_PRODUCT:
-	return BuildSeparated(interp, envPtr, TCLT_PRODUCT);
+	return BuildSeparated(interp, envPtr, TCLT_PRODUCT, 0);
     case TB_NEST:
 	return BuildNest(interp, envPtr);
     case TB_ASSIGN:
@@ -2408,7 +2482,7 @@ TclCompileTypeTree(
 	    } else if (prm != NULL) {
 		ERR(interp, "PARAM", "\"%s\" is a parameter: write $%s", w, w);
 		return TCL_ERROR;
-	    } else if ((g = TclTypesFindGeneric(envPtr->d, w, len)) != NULL) {
+	    } else if ((g = TclTypesFindGeneric(interp, envPtr->d, w, len)) != NULL) {
 		tp = TclTypesInstantiate(interp, envPtr->d, g, NULL, 0, envPtr);
 	    } else {
 		tp = TclTypesResolve(interp, envPtr->d, envPtr->selfName,
@@ -2455,7 +2529,7 @@ TclCompileTypeTree(
 		PushItem(envPtr, SK_TYPE)->type = tp;
 		break;
 	    }
-	    if ((g = TclTypesFindGeneric(envPtr->d, w, len)) != NULL) {
+	    if ((g = TclTypesFindGeneric(interp, envPtr->d, w, len)) != NULL) {
 		tp = TclTypesInstantiate(interp, envPtr->d, g, a, alen, envPtr);
 		if (tp == NULL) {
 		    return TCL_ERROR;

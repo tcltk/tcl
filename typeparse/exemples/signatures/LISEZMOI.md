@@ -10,6 +10,7 @@ qu'elle couvre l'essentiel de ce que ces TIP demandaient.
 | `chercher.tcl` | une `lsearch` simplifiée : options exclusives, drapeaux, options à valeur, un défaut calculé qui lit un autre argument, un lien `-compte` vers une variable de l'appelant ; puis les erreurs que la signature produit seule |
 | `chercher_classique.tcl` | la même procédure en Tcl classique, avec les mêmes contrôles écrits à la main |
 | `liens.tcl` | l'exemple de TIP 460 ; `echanger` ; un journal avec un défaut `[commande]` et une variable par défaut |
+| `variadiques.tcl` | `args...` n'importe où : `foreach` écrit en Tcl, `dict set`, `dict create`, des points à plat, une forme de `regexp` |
 | `bench_chercher.tcl` | le coût de l'analyse des arguments, signature contre analyse à la main |
 
 ## La signature
@@ -39,7 +40,8 @@ wrong # args: should be "chercher ?-exact|-glob|-regexp? ?-nocase? ?-all? ?-debu
 
 | besoin | TIP | ici |
 |---|---|---|
-| `args` ailleurs qu'en dernier (forme de `lsearch` : options, puis arguments) | 288 (rejetée) | les options `-x` en tête de l'appel, puis les arguments |
+| `args` ailleurs qu'en dernier | 288 (rejetée) | `{T}args...` n'importe où ; les champs d'après se prennent depuis la fin |
+| groupes répétés (`varList list ?varList list ...?`) | — | `{{list}vars; {list}valeurs}args...` : un produit s'étale sur ses champs |
 | valeurs par défaut, arguments obligatoires | 457 | `{int}n ?= 0` ; sans `?=`, obligatoire |
 | arguments nommés | 457, 479 | `-debut 2`, ou une étiquette à l'appel : `decale $p {dy:}5` |
 | drapeaux | 457 (`-switch`) | `{flag}-nocase` |
@@ -71,8 +73,25 @@ Deux pistes d'optimisation restent ouvertes : un défaut calculé est réévalu�
 typée (`set motif ...` sur un `{string}`) coûte nettement plus qu'une écriture
 nue.
 
+## Les variadiques
+
+```tcl
+proc chacun {{{list}vars; {list}valeurs}args...; {string}corps} { ... }      ;# foreach
+proc dict_set {{var.dict}d; {string}args...; {string}valeur} { ... }        ;# dict set
+proc dict_create {{{string}cle; {string}valeur}args... ?= {}} { ... }       ;# dict create
+proc {double}longueur {{pt}args...} { ... }                                ;# x1 y1 x2 y2 ...
+proc chercher_re {{flag}-nocase; {string}exp; {string}chaine;
+                  {string}m ?= {}; {string}args... ?= {}} { ... }           ;# regexp
+```
+
+Sans défaut, un champ `args...` prend au moins une répétition ; avec `?=`, zéro ou
+plus. Les champs d'après se prennent depuis la fin. Un produit s'étale sur ses
+champs : `chacun` prend ses mots deux par deux, `longueur` aussi (`{pt}`). Les
+messages d'usage suivent la notation des manuels :
+`chacun vars valeurs ?vars valeurs ...? corps`, `longueur x y ?x y ...?`.
+
 ## Pas encore
 
 - `apply` et les méthodes TclOO n'acceptent pas encore de signature typée.
-- `{list.T}args` ailleurs qu'en dernier est accepté à la définition mais
-  inutilisable à l'appel : il faudra le refuser, ou adopter la règle de TIP 288.
+- Les commandes à deux formes d'appel (`switch string pattern body ...` ou
+  `switch string {pattern body ...}`) demanderaient une union de signatures.

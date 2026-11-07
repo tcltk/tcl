@@ -459,6 +459,14 @@ ParseTypeLexeme(
 	    while ((end < start + numBytes) && TclTypeIsNameChar(*end)) {
 		end++;
 	    }
+	    /* v16y : un champ variadique, {T}args... ("..." après un nom de
+	     * champ était une erreur) */
+	    if ((end > start + 1) && (end + 3 <= start + numBytes)
+		    && memcmp(end, "...", 3) == 0
+		    && (end + 3 == start + numBytes || !(end[3] == '.'
+		    || TclTypeIsNameChar(end[3])))) {
+		end += 3;
+	    }
 	    if ((end > start + 1) && (literalPtr != NULL)) {
 		*literalPtr = Tcl_NewStringObj(start + 1, end - start - 1);
 	    }
@@ -2353,7 +2361,21 @@ BuildAssign(Tcl_Interp *interp, TypeEnv *envPtr)
 	rc = TCL_OK;
 	goto done;
     }
-    if (TclTypeValidate(interp, l->type, r.obj, -1, NULL) != TCL_OK) {
+    if (l->obj != NULL && Tcl_GetCharLength(l->obj) > 3 && memcmp(
+	    Tcl_GetString(l->obj) + l->obj->length - 3, "...", 3) == 0) {
+	/* v16y : {T}args... ?= v : v est une liste de T */
+	Tcl_Size ne, k;
+	Tcl_Obj **ev;
+
+	if (Tcl_ListObjGetElements(interp, r.obj, &ne, &ev) != TCL_OK) {
+	    goto done;
+	}
+	for (k = 0; k < ne; k++) {
+	    if (TclTypeValidate(interp, l->type, ev[k], -1, NULL) != TCL_OK) {
+		goto done;
+	    }
+	}
+    } else if (TclTypeValidate(interp, l->type, r.obj, -1, NULL) != TCL_OK) {
 	goto done;
     }
     SetRef(&l->defval, r.obj);
