@@ -1,0 +1,44 @@
+--- l'exemple
+somme: 15
+--- arguments typés
+contrôle: ERREUR argument "b": expected integer but got "x"
+usage: ERREUR wrong # args: should be "apply {{int}a; {int}b} {expr {$a * $b}} a b"
+défaut: 1 10
+option: 15
+option inconnue: ERREUR bad option "-pos": must be -pas or --
+drapeau: 1 x
+variadique: a {1 2 3}
+variadique contrôlé: ERREUR argument "args...": expected integer but got "x"
+produit: 3
+lien: 5
+classique inchangé: 1 2
+--- type de retour
+rendu: 2.5
+refusé: ERREUR return value {int}: expected integer but got "2.5"
+même lambda, int: 2
+produit rendu: 3 3
+produit refusé: ERREUR return value {pt}: expected floating-point number but got "a"
+déplié: 1 2 3
+type inconnu: ERREUR bad return type {nimp}: unknown type "nimp"
+une note n'est pas un type: 2
+--- espace de noms
+args dans geo: 1
+retour dans geo: 4 4
+hors de geo: ERREUR unknown type "vec"
+--- dans une boucle, récursion
+lmap: 1 4 9 16
+lmap refusé: ERREUR argument "x": expected integer but got "2.5"
+récursion: 3628800
+beaucoup de lambdas: 1
+--- type convert : une règle est une lambda
+règle typée: 293.15
+produit vers produit: 5.0
+--- erreurs
+signature invalide: ERREUR missing operator at _@_
+in type "{int}a _@_{int}b"
+boum
+    while executing
+"error boum"
+    (lambda term "{{double}a} {error boum}" line 1)
+    invoked from within
+"apply {double}{{{double}a} {error boum}} 1"

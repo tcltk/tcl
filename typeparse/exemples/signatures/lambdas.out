@@ -1,0 +1,28 @@
+--- la somme
+somme = 15
+apply {double}{{{double}a; {double}b} {( $a + $b )}} 5 x -> ERREUR argument "b": expected floating-point number but got "x"
+apply {double}{{{double}a; {double}b} {( $a + $b )}} 5 -> ERREUR wrong # args: should be "apply {{double}a; {double}b} {( $a + $b )} a b"
+
+--- le type de retour est vérifié
+apply {int}{{x} {expr {$x / 2}}} 9             -> 4
+apply {int}{{x} {expr {$x / 2.0}}} 9           -> ERREUR return value {int}: expected integer but got "4.5"
+
+--- lmap, lsort -command : la lambda en place
+lmap x $L { apply {int}{{{int}x} {expr {$x * $x}}} $x } -> 9 1 16 1 25
+lsort -command {apply {{{pt}p; {pt}q} {
+    expr {hypot($p(x), $p(y)) < hypot($q(x), $q(y)) ? -1 : 1}
+}}} $P -> {1 1} {0 2} {3 4}
+lsort -command {apply {{{pt}p; {pt}q} {expr {$p(x) - $q(x)}}}} {{1 2} {a b}} -> ERREUR argument "q": expected floating-point number but got "a"
+
+--- options et variadiques, comme pour proc
+apply $echelle 1 2 3                           -> 1.0 2.0 3.0
+apply $echelle -k 10 1 2 3                     -> 10 20 30
+apply $echelle -k 10                           -> ERREUR wrong # args: should be "apply {{double}-k ?= 1.0; {double}args...} {
+    lmap v $args { expr {$v * $k} }
+} ?-k value? ?--? args ?args ...?"
+
+--- type convert : une règle est une lambda
+set k {kelvin}$t                               -> 293.15
+
+--- dans un espace de noms : les types de la lambda
+apply {vec}{{{double}d} {( $d, -$d )} geo} 2   -> 2 -2

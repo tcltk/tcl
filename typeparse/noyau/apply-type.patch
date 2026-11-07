@@ -1,0 +1,89 @@
+--- a/generic/tclProc.c
++++ b/generic/tclProc.c
+@@ -2610,11 +2610,45 @@
+ 
+     name = TclGetString(objPtr);
+ 
+-    if (TclCreateProc(interp, /*ignored nsPtr*/ NULL, name, argsPtr, bodyPtr,
+-	    &procPtr) != TCL_OK) {
+-	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
+-		"\n    (parsing lambda expression \"%s\")", name));
+-	return TCL_ERROR;
++    /*
++     * v16z : une liste d'arguments typée, comme pour proc ; les types sont
++     * lus dans l'espace de noms de la lambda. Le type de retour (apply
++     * {T}{...}) est posé par TclNRApplyObjCmd.
++     */
++    {
++	void *sig = NULL;
++	int typedArgs = 0;
++	Tcl_Obj *ctxName;
++
++	if (objc == 3) {
++	    const char *nsName = TclGetString(objv[2]);
++
++	    ctxName = Tcl_ObjPrintf("%s%s::lambda",
++		    (nsName[0] == ':' && nsName[1] == ':') ? "" : "::", nsName);
++	} else {
++	    ctxName = Tcl_NewStringObj("::lambda", -1);
++	}
++	Tcl_IncrRefCount(ctxName);
++	result = TclTypedProcSig(interp, ctxName, argsPtr, &sig, &typedArgs);
++	Tcl_DecrRefCount(ctxName);
++	if (result != TCL_OK) {
++	    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
++		    "\n    (parsing lambda expression \"%s\")", name));
++	    return TCL_ERROR;
++	}
++	argsPtr = typedArgs ? Tcl_NewStringObj("args", 4) : objv[0];
++	Tcl_IncrRefCount(argsPtr);
++	if (TclCreateProc(interp, /*ignored nsPtr*/ NULL, name, argsPtr,
++		bodyPtr, &procPtr) != TCL_OK) {
++	    Tcl_DecrRefCount(argsPtr);
++	    TclTypedSigRelease(sig);
++	    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
++		    "\n    (parsing lambda expression \"%s\")", name));
++	    return TCL_ERROR;
++	}
++	Tcl_DecrRefCount(argsPtr);
++	TclTypedSigRelease(procPtr->typedSig);
++	procPtr->typedSig = sig;
+     }
+ 
+     /*
+@@ -2817,7 +2851,34 @@
+      */
+ 
+     lambdaPtr = objv[1];
+-    procPtr = TclGetLambdaFromObj(interp, lambdaPtr, &nsObjPtr);
++    if (TCL_ANNOT_P(lambdaPtr)) {
++	/*
++	 * v16z : apply {T}{args corps} -- une procédure sans nom : le type
++	 * de retour est l'annotation du mot ; la lambda est son contenu.
++	 */
++	Tcl_Obj *lam = TclTypedLambdaFor(interp, lambdaPtr), *ns0;
++	Proc *p0;
++
++	LambdaGetInternalRep(lam, p0, ns0);
++	(void) ns0;
++	procPtr = TclGetLambdaFromObj(interp, lam, &nsObjPtr);
++	if (procPtr == NULL) {
++	    return TCL_ERROR;
++	}
++	if (procPtr != p0 && (TclGetNamespaceFromObj(interp, nsObjPtr,
++		&nsPtr) != TCL_OK || TclTypedLambdaRet(interp, lambdaPtr,
++		nsPtr, &procPtr->typedSig) != TCL_OK)) {
++	    /* Proc neuve : son type de retour ; en cas d'erreur, la lambda
++	     * est oubliée pour que l'appel suivant redise l'erreur */
++	    TclFreeInternalRep(lam);
++	    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
++		    "\n    (parsing lambda expression \"%s\")",
++		    TclGetString(lambdaPtr)));
++	    return TCL_ERROR;
++	}
++    } else {
++	procPtr = TclGetLambdaFromObj(interp, lambdaPtr, &nsObjPtr);
++    }
+ 
+     if (procPtr == NULL) {
+ 	return TCL_ERROR;

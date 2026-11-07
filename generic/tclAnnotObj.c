@@ -3779,6 +3779,21 @@ TclAnnotIsSourceRaw(Tcl_Obj *objPtr)
     return t != NULL && !IsTypeRef(t);
 }
 
+/* v16z : le texte brut d'une annotation écrite ({T}M), sans note ; NULL
+ * sinon. Non possédé. */
+Tcl_Obj *
+TclAnnotRawText(Tcl_Obj *objPtr)
+{
+    Tcl_ObjInternalRep *ir = Tcl_FetchInternalRep(objPtr, &annotatedObjType);
+    Tcl_Obj *t, *n;
+
+    if (ir == NULL) {
+	return NULL;
+    }
+    SplitT((Tcl_Obj *) ir->twoPtrValue.ptr2, &t, &n);
+    return (t != NULL && n == NULL && !IsTypeRef(t)) ? t : NULL;
+}
+
 /* Vrai si la valeur n'a que des notes (aucun type résolu ni brut). */
 int
 TclAnnotIsNoteOnly(Tcl_Obj *objPtr)

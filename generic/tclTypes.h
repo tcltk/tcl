@@ -21,7 +21,7 @@
  * VAR_* de tclInt.h). La valeur ci-dessous est un PLACEHOLDER. */
 /* Version du prototype TIP 764 (typeparse/VERSION, maj.sh, et
  * tcl::unsupported::typesversion). */
-#define TCL_TYPES_VERSION "v16x"
+#define TCL_TYPES_VERSION "v16z"
 
 #ifndef VAR_TYPED
 #define VAR_TYPED	0x400000
@@ -307,6 +307,7 @@ int	TclAnnotSettle(Tcl_Interp *interp, Tcl_Obj *objPtr, const TclType *ctx,
  * plus récente), vide pour une valeur dont le type a été effacé par {}. */
 Tcl_Obj	*TclAnnotPending(Tcl_Obj *objPtr);
 Tcl_Obj	*TclAnnotPopTop(Tcl_Obj *src, Tcl_Obj **topPtr);
+Tcl_Obj	*TclAnnotRawText(Tcl_Obj *objPtr);
 int	TclAnnotIsUnknown(Tcl_Interp *interp, Tcl_Obj *textObj);
 Tcl_Obj	*TclAnnotWithPending(Tcl_Obj *res, Tcl_Obj *pending);
 /* Vrai si la valeur porte la marque {} (type vide) posée hors constructeur. */
@@ -354,11 +355,13 @@ int	TclTypeTagVariant(const TclType *prod, Tcl_Size idx, Tcl_Obj *content);
 int	TclTypeAbiAlign(int isFloat, int bits);
 TclType *TclAnnotTypeOf(Tcl_Interp *interp, Tcl_Obj *textObj);
 int	TclTypesGeneration(Tcl_Interp *interp, size_t *uidPtr, size_t *genPtr);
+Tcl_Obj *	TclTypesNames(Tcl_Interp *interp);
 /* Représentation compacte (tclAnnotObj.c) */
 typedef struct TclCompactLayout TclCompactLayout;
 int TclAnnotIsSettled(Tcl_Obj *objPtr);
 int TclAnnotFastIndex(Tcl_Obj *aPtr, int encodedIndex, Tcl_Obj **elemPtr);
 int TclAnnotExpireFromRet(Tcl_Interp *interp, Tcl_Size mark, int code);
+int TclTypeDebugCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[]);
 int TclSumDecode(const TclType *tp, Tcl_Obj *v, Tcl_Obj **payloadPtr);
 Tcl_Obj *TclSumMake(const TclType *tp, int v, Tcl_Obj *payload);
 Tcl_Obj *TclAnnotNumericContent(Tcl_Obj *objPtr);
@@ -506,6 +509,10 @@ MODULE_SCOPE int TclTypedVarRedeclare(Tcl_Interp *interp, Var *varPtr, Tcl_Obj *
 MODULE_SCOPE int TclTypedProcSig(Tcl_Interp *interp, Tcl_Obj *nameObj,
 			    Tcl_Obj *argsObj, void **sigPtr, int *typedArgsPtr);
 MODULE_SCOPE int TclTypedProcBind(Tcl_Interp *interp, void *sig, Tcl_Size skip);
+/* v16z : apply {T}{args corps} : le type de retour d'une lambda. */
+MODULE_SCOPE Tcl_Obj *TclTypedLambdaFor(Tcl_Interp *interp, Tcl_Obj *lambdaObj);
+MODULE_SCOPE int TclTypedLambdaRet(Tcl_Interp *interp, Tcl_Obj *lambdaObj,
+			    Tcl_Namespace *nsPtr, void **sigPtr);
 MODULE_SCOPE int TclTypedProcReturn(Tcl_Interp *interp, void *sig, int result);
 MODULE_SCOPE void TclTypedSigRetain(void *sig);
 MODULE_SCOPE void TclTypedSigRelease(void *sig);

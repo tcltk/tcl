@@ -35,6 +35,7 @@ static void		DupLambdaInternalRep(Tcl_Obj *objPtr,
 			    Tcl_Obj *copyPtr);
 static void		FreeLambdaInternalRep(Tcl_Obj *objPtr);
 static int		InitArgsAndLocals(Tcl_Interp *interp, int skip);
+static void		AddTypedLocals(Proc *procPtr, void *sig);
 static void		InitResolvedLocals(Tcl_Interp *interp,
 			    ByteCode *codePtr, Var *defPtr,
 			    Namespace *nsPtr);
@@ -203,12 +204,39 @@ Tcl_ProcObjCmd(
      * Create the data structure to represent the procedure.
      */
 
-    if (TclCreateProc(interp, /*ignored nsPtr*/ NULL, simpleName, objv[2],
-	    objv[3], &procPtr) != TCL_OK) {
-	Tcl_AddErrorInfo(interp, "\n    (creating proc \"");
-	Tcl_AddErrorInfo(interp, simpleName);
-	Tcl_AddErrorInfo(interp, "\")");
-	return TCL_ERROR;
+    /*
+     * v16p : une liste d'arguments typée (un produit) ou un type de retour
+     * (proc {T}nom) : la procédure reçoit ses mots dans « args », la
+     * signature lie les champs à l'appel.
+     */
+    {
+	void *sig = NULL;
+	int typedArgs = 0;
+	Tcl_Obj *argsObj = objv[2];
+
+	if (TclTypedProcSig(interp, objv[1], objv[2], &sig, &typedArgs)
+		!= TCL_OK) {
+	    Tcl_AddErrorInfo(interp, "\n    (creating proc \"");
+	    Tcl_AddErrorInfo(interp, simpleName);
+	    Tcl_AddErrorInfo(interp, "\")");
+	    return TCL_ERROR;
+	}
+	if (typedArgs) {
+	    argsObj = Tcl_NewStringObj("args", 4);
+	}
+	Tcl_IncrRefCount(argsObj);
+	if (TclCreateProc(interp, /*ignored nsPtr*/ NULL, simpleName, argsObj,
+		objv[3], &procPtr) != TCL_OK) {
+	    Tcl_DecrRefCount(argsObj);
+	    TclTypedSigRelease(sig);
+	    Tcl_AddErrorInfo(interp, "\n    (creating proc \"");
+	    Tcl_AddErrorInfo(interp, simpleName);
+	    Tcl_AddErrorInfo(interp, "\")");
+	    return TCL_ERROR;
+	}
+	Tcl_DecrRefCount(argsObj);
+	TclTypedSigRelease(procPtr->typedSig);
+	procPtr->typedSig = sig;
     }
 
     cmd = TclNRCreateCommandInNs(interp, simpleName, (Tcl_Namespace *) nsPtr,
@@ -376,6 +404,55 @@ Tcl_ProcObjCmd(
 }
 
 /*
+ * v16s : les champs d'une signature typée deviennent des variables locales
+ * compilées (après « args »), à chaque compilation du corps
+ * (TclProcCompileProc) : la liaison les trouve par leur indice, sans
+ * recherche par le nom ni table de variables du cadre.
+ */
+static void
+AddTypedLocals(
+    Proc *procPtr,
+    void *sig)
+{
+    Tcl_Obj **names;
+    Tcl_Size n = TclTypedSigLocals(sig, &names), i;
+
+    for (i = 0; i < n; i++) {
+	Tcl_Size len;
+	const char *name = TclGetStringFromObj(names[i], &len);
+	CompiledLocal *localPtr;
+
+	for (localPtr = procPtr->firstLocalPtr; localPtr != NULL;
+		localPtr = localPtr->nextPtr) {
+	    if (localPtr->nameLength == len
+		    && memcmp(localPtr->name, name, len) == 0) {
+		break;
+	    }
+	}
+	if (localPtr != NULL) {
+	    continue;			/* déjà là (args) */
+	}
+	localPtr = (CompiledLocal *)Tcl_Alloc(offsetof(CompiledLocal, name)
+		+ 1U + len);
+	localPtr->nextPtr = NULL;
+	localPtr->nameLength = len;
+	localPtr->frameIndex = procPtr->numCompiledLocals;
+	localPtr->flags = 0;
+	localPtr->defValuePtr = NULL;
+	localPtr->resolveInfo = NULL;
+	memcpy(localPtr->name, name, len);
+	localPtr->name[len] = '\0';
+	if (procPtr->firstLocalPtr == NULL) {
+	    procPtr->firstLocalPtr = procPtr->lastLocalPtr = localPtr;
+	} else {
+	    procPtr->lastLocalPtr->nextPtr = localPtr;
+	    procPtr->lastLocalPtr = localPtr;
+	}
+	procPtr->numCompiledLocals++;
+    }
+}
+
+/*
  *----------------------------------------------------------------------
  *
  * TclCreateProc --
@@ -485,6 +562,7 @@ TclCreateProc(
 	procPtr->numCompiledLocals = 0;
 	procPtr->firstLocalPtr = NULL;
 	procPtr->lastLocalPtr = NULL;
+	procPtr->typedSig = NULL;
     }
 
     /*
@@ -1424,8 +1502,9 @@ InitArgsAndLocals(
 	varPtr->flags = 0;
 	varPtr->value.objPtr = objPtr;
 	Tcl_IncrRefCount(objPtr);	/* Local var is a reference. */
-	if (TclIsAnnotated(objPtr)) {
-	    TclTypedVarAfterStore(varPtr);	/* l'argument typé reste typé */
+	if (TclIsAnnotated(objPtr)
+		&& TclTypedVarBindArg(interp, varPtr) != TCL_OK) {
+	    goto argError;		/* la liaison est un constructeur */
 	}
     }
     for (; i < numArgs-1; i++, varPtr++, defPtr ? defPtr++ : defPtr) {
@@ -1451,17 +1530,26 @@ InitArgsAndLocals(
 
     varPtr->flags = 0;
     if (defPtr && defPtr->flags & VAR_IS_ARGS) {
-	Tcl_Obj *listPtr = Tcl_NewListObj((argCt>i)? argCt-i : 0, argObjs+i);
+	if (procPtr->typedSig != NULL && numArgs == 1
+		&& TclTypedSigTakesWords(procPtr->typedSig)) {
+	    /* v16s : une signature typée lit les mots dans le cadre ;
+	     * pas de liste « args » à faire puis défaire */
+	    varPtr->value.objPtr = NULL;
+	} else {
+	    Tcl_Obj *listPtr = Tcl_NewListObj((argCt>i)? argCt-i : 0,
+		    argObjs+i);
 
-	varPtr->value.objPtr = listPtr;
-	Tcl_IncrRefCount(listPtr);	/* Local var is a reference. */
+	    varPtr->value.objPtr = listPtr;
+	    Tcl_IncrRefCount(listPtr);	/* Local var is a reference. */
+	}
     } else if (argCt == numArgs) {
 	Tcl_Obj *objPtr = argObjs[i];
 
 	varPtr->value.objPtr = objPtr;
 	Tcl_IncrRefCount(objPtr);	/* Local var is a reference. */
-	if (TclIsAnnotated(objPtr)) {
-	    TclTypedVarAfterStore(varPtr);
+	if (TclIsAnnotated(objPtr)
+		&& TclTypedVarBindArg(interp, varPtr) != TCL_OK) {
+	    goto argError;
 	}
     } else if ((argCt < numArgs) && defPtr && defPtr->value.objPtr) {
 	Tcl_Obj *objPtr = defPtr->value.objPtr;
@@ -1488,11 +1576,26 @@ InitArgsAndLocals(
 	}
     }
 
+    if (procPtr->typedSig != NULL) {
+	/* v16p : les champs de la signature typée */
+	return TclTypedProcBind(interp, procPtr->typedSig, skip);
+    }
     return TCL_OK;
 
     /*
      * Initialise all compiled locals to avoid problems at DeleteLocalVars.
      */
+
+    /*
+     * Un argument que le résolveur refuse ({mm}abc) : la variable courante
+     * est initialisée, les suivantes doivent l'être pour DeleteLocalVars.
+     */
+
+  argError:
+    varPtr++;
+    memset(varPtr, 0,
+	    ((framePtr->compiledLocals + localCt)-varPtr) * sizeof(Var));
+    return TCL_ERROR;
 
   incorrectArgs:
     if ((skip != 1) &&
@@ -2039,6 +2142,9 @@ TclProcCompileProc(
 	    }
 	    procPtr->numCompiledLocals = procPtr->numArgs;
 	}
+	if (procPtr->typedSig != NULL) {
+	    AddTypedLocals(procPtr, procPtr->typedSig);	/* v16s */
+	}
 
 	(void) TclPushStackFrame(interp, &framePtr, (Tcl_Namespace *) nsPtr,
 		/* isProcCallFrame */ 0);
@@ -2166,6 +2272,9 @@ TclProcCleanupProc(
     Tcl_HashEntry *hePtr = NULL;
     CmdFrame *cfPtr = NULL;
     Interp *iPtr = procPtr->iPtr;
+
+    TclTypedSigRelease(procPtr->typedSig);	/* v16p */
+    procPtr->typedSig = NULL;
 
     if (bodyPtr != NULL) {
 	/* procPtr is stored in body's ByteCode, so ensure to reset it. */
@@ -2501,11 +2610,45 @@ SetLambdaFromAny(
 
     name = TclGetString(objPtr);
 
-    if (TclCreateProc(interp, /*ignored nsPtr*/ NULL, name, argsPtr, bodyPtr,
-	    &procPtr) != TCL_OK) {
-	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-		"\n    (parsing lambda expression \"%s\")", name));
-	return TCL_ERROR;
+    /*
+     * v16z : une liste d'arguments typée, comme pour proc ; les types sont
+     * lus dans l'espace de noms de la lambda. Le type de retour (apply
+     * {T}{...}) est posé par TclNRApplyObjCmd.
+     */
+    {
+	void *sig = NULL;
+	int typedArgs = 0;
+	Tcl_Obj *ctxName;
+
+	if (objc == 3) {
+	    const char *nsName = TclGetString(objv[2]);
+
+	    ctxName = Tcl_ObjPrintf("%s%s::lambda",
+		    (nsName[0] == ':' && nsName[1] == ':') ? "" : "::", nsName);
+	} else {
+	    ctxName = Tcl_NewStringObj("::lambda", -1);
+	}
+	Tcl_IncrRefCount(ctxName);
+	result = TclTypedProcSig(interp, ctxName, argsPtr, &sig, &typedArgs);
+	Tcl_DecrRefCount(ctxName);
+	if (result != TCL_OK) {
+	    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
+		    "\n    (parsing lambda expression \"%s\")", name));
+	    return TCL_ERROR;
+	}
+	argsPtr = typedArgs ? Tcl_NewStringObj("args", 4) : objv[0];
+	Tcl_IncrRefCount(argsPtr);
+	if (TclCreateProc(interp, /*ignored nsPtr*/ NULL, name, argsPtr,
+		bodyPtr, &procPtr) != TCL_OK) {
+	    Tcl_DecrRefCount(argsPtr);
+	    TclTypedSigRelease(sig);
+	    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
+		    "\n    (parsing lambda expression \"%s\")", name));
+	    return TCL_ERROR;
+	}
+	Tcl_DecrRefCount(argsPtr);
+	TclTypedSigRelease(procPtr->typedSig);
+	procPtr->typedSig = sig;
     }
 
     /*
@@ -2708,7 +2851,34 @@ TclNRApplyObjCmd(
      */
 
     lambdaPtr = objv[1];
-    procPtr = TclGetLambdaFromObj(interp, lambdaPtr, &nsObjPtr);
+    if (TCL_ANNOT_P(lambdaPtr)) {
+	/*
+	 * v16z : apply {T}{args corps} -- une procédure sans nom : le type
+	 * de retour est l'annotation du mot ; la lambda est son contenu.
+	 */
+	Tcl_Obj *lam = TclTypedLambdaFor(interp, lambdaPtr), *ns0;
+	Proc *p0;
+
+	LambdaGetInternalRep(lam, p0, ns0);
+	(void) ns0;
+	procPtr = TclGetLambdaFromObj(interp, lam, &nsObjPtr);
+	if (procPtr == NULL) {
+	    return TCL_ERROR;
+	}
+	if (procPtr != p0 && (TclGetNamespaceFromObj(interp, nsObjPtr,
+		&nsPtr) != TCL_OK || TclTypedLambdaRet(interp, lambdaPtr,
+		nsPtr, &procPtr->typedSig) != TCL_OK)) {
+	    /* Proc neuve : son type de retour ; en cas d'erreur, la lambda
+	     * est oubliée pour que l'appel suivant redise l'erreur */
+	    TclFreeInternalRep(lam);
+	    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
+		    "\n    (parsing lambda expression \"%s\")",
+		    TclGetString(lambdaPtr)));
+	    return TCL_ERROR;
+	}
+    } else {
+	procPtr = TclGetLambdaFromObj(interp, lambdaPtr, &nsObjPtr);
+    }
 
     if (procPtr == NULL) {
 	return TCL_ERROR;
@@ -2927,6 +3097,8 @@ DuplicateProc(
     newProc->numCompiledLocals = origProc->numArgs;
     newProc->firstLocalPtr = NULL;
     newProc->lastLocalPtr = NULL;
+    newProc->typedSig = origProc->typedSig;	/* v16p */
+    TclTypedSigRetain(newProc->typedSig);
 
     /* Work through the original arguments, duplicating them. */
     origLocal = origProc->firstLocalPtr;

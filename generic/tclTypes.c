@@ -516,6 +516,20 @@ TclTypeRelease(const TclType *tp)
  * des familles, règles de conversion), qui sinon la garderaient en vie pour
  * toujours, et on attend la dernière référence.
  */
+/* v16z : vide le cache des lambdas annotées (apply {T}{...}). */
+static void
+LambdasFlush(TypeData *d)
+{
+    Tcl_HashSearch search;
+    Tcl_HashEntry *hPtr;
+
+    for (hPtr = Tcl_FirstHashEntry(&d->lambdas, &search); hPtr != NULL;
+	    hPtr = Tcl_NextHashEntry(&search)) {
+	Tcl_DecrRefCount((Tcl_Obj *) Tcl_GetHashValue(hPtr));
+	Tcl_DeleteHashEntry(hPtr);
+    }
+}
+
 static void
 DeleteData(void *clientData, Tcl_Interp *interp)
 {
@@ -535,6 +549,7 @@ DeleteData(void *clientData, Tcl_Interp *interp)
     }
     Tcl_DeleteHashTable(&d->converts);
     Tcl_InitHashTable(&d->converts, TCL_STRING_KEYS);
+    LambdasFlush(d);
     for (i = 0; i < d->nAll; i++) {
 	TclType *tp = d->all[i];
 
@@ -629,6 +644,8 @@ FreeTypeData(TypeData *d)
     Tcl_DeleteHashTable(&d->parsed);
     Tcl_DeleteHashTable(&d->converts);
     Tcl_DeleteHashTable(&d->derefs);
+    LambdasFlush(d);
+    Tcl_DeleteHashTable(&d->lambdas);
     Tcl_Free(d);
 }
 
@@ -9715,6 +9732,7 @@ TclTypesInit(Tcl_Interp *interp)
     d->parsedGen = 0;
     Tcl_InitHashTable(&d->converts, TCL_STRING_KEYS);
     Tcl_InitHashTable(&d->derefs, TCL_ONE_WORD_KEYS);
+    Tcl_InitHashTable(&d->lambdas, TCL_STRING_KEYS);
     d->tInt = Builtin(d, TCLT_INT, "int");
     d->tDouble = Builtin(d, TCLT_DOUBLE, "double");
     d->tString = Builtin(d, TCLT_STRING, "string");
@@ -10410,11 +10428,147 @@ TclTypedProcSig(Tcl_Interp *interp, Tcl_Obj *nameObj, Tcl_Obj *argsObj,
     return rc;
 }
 
+/* Le type de retour porté par l'annotation d'un nom (proc {T}nom) ou d'une
+ * lambda (apply {T}{args corps}) : *retPtr (compté) ou NULL. */
+static int
+RetFromName(Tcl_Interp *interp, Tcl_Obj *nameObj, Tcl_Obj **retPtr,
+	int *unfoldPtr)
+{
+    Tcl_Obj *ret, *top = NULL, *popped;
+    TclType *tp = NULL;
+
+    *retPtr = NULL;
+    *unfoldPtr = 0;
+    if (!TclIsAnnotated(nameObj)) {
+	return TCL_OK;
+    }
+    popped = TclAnnotPopTop(nameObj, &top);
+    if (popped != NULL) {
+	ret = Tcl_DuplicateObj(top);
+	TclDiscard(popped);
+    } else if (TclAnnotInfo(nameObj, NULL, &tp, NULL, NULL) == 1
+	    && tp != NULL) {
+	ret = Tcl_NewStringObj(tp->name, -1);	/* déjà résolue */
+    } else {
+	return TCL_OK;
+    }
+    Tcl_IncrRefCount(ret);
+    *unfoldPtr = UnfoldPrefix(&ret);
+    if (Tcl_GetCharLength(ret) == 0 || Tcl_GetString(ret)[0] == '@') {
+	Tcl_DecrRefCount(ret);		/* proc {}f, une note @ : rien */
+	*unfoldPtr = 0;
+	return TCL_OK;
+    }
+    if (RetTypeCheck(interp, ret) != TCL_OK) {
+	Tcl_Obj *msg = Tcl_ObjPrintf("bad return type {%s}: ",
+		Tcl_GetString(ret));
+
+	Tcl_AppendObjToObj(msg, Tcl_GetObjResult(interp));
+	Tcl_SetObjResult(interp, msg);
+	Tcl_DecrRefCount(ret);
+	return TCL_ERROR;
+    }
+    *retPtr = ret;
+    return TCL_OK;
+}
+
+/*
+ * v16z : apply {T}{args corps ?ns?} -- une lambda est une procédure sans nom,
+ * son type de retour est l'annotation du mot lambda.
+ *
+ * TclTypedLambdaFor : l'objet lambda à convertir. Le littéral {T}{...} est
+ * refait à chaque exécution (::tcl::annotraw copie le contenu) : sans cache,
+ * la Proc serait reconstruite à chaque appel. La table d'interpréteur garde
+ * une lambda par texte "{T}contenu" ; au-delà de LAMBDAS_MAX entrées, elle
+ * est vidée. Une valeur qui porte aussi des notes n'est pas mise en cache.
+ * Rend un objet non possédé.
+ *
+ * TclTypedLambdaRet : pose le type de retour sur la signature d'une Proc
+ * neuve (créée au besoin).
+ */
+#define LAMBDAS_MAX 512
+
+Tcl_Obj *
+TclTypedLambdaFor(Tcl_Interp *interp, Tcl_Obj *lambdaObj)
+{
+    TypeData *d = GetData(interp);
+    Tcl_Obj *content = TCL_ANNOT_CONTENT(lambdaObj), *raw;
+    Tcl_HashEntry *hPtr;
+    Tcl_DString key;
+    Tcl_Size len;
+    const char *t;
+    int isNew;
+
+    raw = TclAnnotRawText(lambdaObj);
+    if (d == NULL || raw == NULL) {
+	return content;
+    }
+    Tcl_DStringInit(&key);
+    Tcl_DStringAppend(&key, "{", 1);
+    t = Tcl_GetStringFromObj(raw, &len);
+    Tcl_DStringAppend(&key, t, len);
+    Tcl_DStringAppend(&key, "}", 1);
+    t = Tcl_GetStringFromObj(content, &len);
+    Tcl_DStringAppend(&key, t, len);
+    hPtr = Tcl_FindHashEntry(&d->lambdas, Tcl_DStringValue(&key));
+    if (hPtr == NULL) {
+	if (d->lambdas.numEntries >= LAMBDAS_MAX) {
+	    LambdasFlush(d);
+	}
+	hPtr = Tcl_CreateHashEntry(&d->lambdas, Tcl_DStringValue(&key),
+		&isNew);
+	Tcl_IncrRefCount(content);
+	Tcl_SetHashValue(hPtr, content);
+    }
+    Tcl_DStringFree(&key);
+    return (Tcl_Obj *) Tcl_GetHashValue(hPtr);
+}
+
+int
+TclTypedLambdaRet(Tcl_Interp *interp, Tcl_Obj *lambdaObj,
+	Tcl_Namespace *nsPtr, void **sigPtr)
+{
+    TclTypedSig *sig = (TclTypedSig *) *sigPtr;
+    TypeData *d = GetData(interp);
+    Namespace *save = NULL;
+    Tcl_Obj *ret = NULL;
+    int unfold = 0, rc;
+
+    if (d != NULL) {
+	save = d->ctxNs;	/* les types de l'espace de noms de la lambda */
+	d->ctxNs = (Namespace *) nsPtr;
+    }
+    rc = RetFromName(interp, lambdaObj, &ret, &unfold);
+    if (d != NULL) {
+	d->ctxNs = save;
+    }
+    if (rc != TCL_OK) {
+	Tcl_SetErrorCode(interp, "TCL", "TYPE", "PROCARGS", (char *) NULL);
+	return TCL_ERROR;
+    }
+    if (ret == NULL) {
+	return TCL_OK;
+    }
+    if (sig == NULL) {
+	sig = (TclTypedSig *) Tcl_Alloc(sizeof(TclTypedSig));
+	memset(sig, 0, sizeof(TclTypedSig));
+	sig->refCount = 1;
+	sig->n = -1;
+	sig->vpos = -1;
+	*sigPtr = sig;
+    }
+    DecrIf(sig->retText);
+    sig->retText = ret;
+    sig->unfold = unfold;
+    sig->retTp = NULL;
+    return TCL_OK;
+}
+
 static int
 TypedProcSig(Tcl_Interp *interp, Tcl_Obj *nameObj, Tcl_Obj *argsObj,
 	void **sigPtr, int *typedArgsPtr)
 {
-    Tcl_Obj *ret = NULL, *top = NULL, *popped, *uopt = NULL, *upos = NULL;
+    Tcl_Obj *ret = NULL, *uopt = NULL, *upos = NULL;
     Tcl_Size len, n, i, cap = 0;
     int unfold = 0;
     const char *text = Tcl_GetStringFromObj(argsObj, &len);
@@ -10423,26 +10577,8 @@ TypedProcSig(Tcl_Interp *interp, Tcl_Obj *nameObj, Tcl_Obj *argsObj,
 
     *sigPtr = NULL;
     *typedArgsPtr = 0;
-    if (TclIsAnnotated(nameObj)) {
-	popped = TclAnnotPopTop(nameObj, &top);
-	if (popped != NULL) {
-	    ret = Tcl_DuplicateObj(top);
-	    Tcl_IncrRefCount(ret);
-	    TclDiscard(popped);
-	    unfold = UnfoldPrefix(&ret);
-	    if (Tcl_GetCharLength(ret) == 0) {
-		Tcl_DecrRefCount(ret);	/* proc {}f : rien */
-		ret = NULL;
-	    } else if (RetTypeCheck(interp, ret) != TCL_OK) {
-		Tcl_Obj *msg = Tcl_ObjPrintf("bad return type {%s}: ",
-			Tcl_GetString(ret));
-
-		Tcl_AppendObjToObj(msg, Tcl_GetObjResult(interp));
-		Tcl_SetObjResult(interp, msg);
-		Tcl_DecrRefCount(ret);
-		return TCL_ERROR;
-	    }
-	}
+    if (RetFromName(interp, nameObj, &ret, &unfold) != TCL_OK) {
+	return TCL_ERROR;
     }
     if (Tcl_ListObjLength(NULL, argsObj, &n) == TCL_OK) {
 	/* une liste valide reste classique ({a b}, {a {b 2}}) ; avec des
