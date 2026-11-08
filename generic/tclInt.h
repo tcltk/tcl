@@ -2701,6 +2701,10 @@ typedef struct ListRep {
 	? ListObjSpanPtr(listObj_)->spanStart				\
 	: ListObjStorePtr(listObj_)->firstUsed)
 
+/* Returns element at specified index. No bounds checking! */
+#define ListObjIndex(listObj_, index_) \
+    (ListObjStorePtr(listObj_)->slots[ListObjStart(listObj_) + index_])
+
 /* Stores the element count and base address of this list's elements */
 #define ListObjGetElements(listObj_, objc_, objv_) \
     (((objv_) = &ListObjStorePtr(listObj_)->slots[ListObjStart(listObj_)]), \
@@ -2714,6 +2718,8 @@ typedef struct ListRep {
 #define ListObjRepIsShared(listObj_) \
     (ListObjStorePtr(listObj_)->refCount > 1)
 
+MODULE_SCOPE Tcl_Obj *ListObjRange(Tcl_Interp *interp, Tcl_Obj *listPtr,
+	Tcl_Size fromIdx, Tcl_Size toIdx);
 /*
  * Certain commands like concat are optimized if an existing string
  * representation of a list object is known to be in canonical format (i.e.
@@ -2733,6 +2739,12 @@ typedef struct ListRep {
     (((listObj_)->bytes == NULL)					\
 	|| (ListObjStorePtr(listObj_)->flags & LISTSTORE_CANONICAL)	\
 	|| ListObjSpanPtr(listObj_) != NULL)
+
+/*
+ * Returns true/false depending on whether listObj_ is a native Tcl list.
+ */
+#define TclListObjIsNative(listObj_) \
+    TclHasInternalRep((listObj_), &tclListType)
 
 /*
  * Converts the Tcl_Obj to a list if it isn't one and stores the element
@@ -3132,6 +3144,7 @@ MODULE_SCOPE int	TclEncodingProfileNameToId(Tcl_Interp *interp,
 MODULE_SCOPE const char *TclEncodingProfileIdToName(Tcl_Interp *interp,
 			    int profileId);
 MODULE_SCOPE void	TclGetEncodingProfiles(Tcl_Interp *interp);
+MODULE_SCOPE int	TclAddEncodingSubdir(Tcl_Obj *parentDirPtr);
 
 /*
  * TIP #723 (Monotonic Time)
@@ -3554,8 +3567,7 @@ MODULE_SCOPE int	TclListObjAppendElements(Tcl_Interp *interp,
 			    Tcl_Obj *const elemObjv[]);
 MODULE_SCOPE int	TclListObjInsertIfAbsent(Tcl_Interp *interp,
 			    Tcl_Obj *toObj, Tcl_Obj *elem, Tcl_Size index);
-MODULE_SCOPE Tcl_Obj *	TclListObjRange(Tcl_Interp *interp, Tcl_Obj *listPtr,
-			    Tcl_Size fromIdx, Tcl_Size toIdx);
+MODULE_SCOPE int	TclListObjToNative(Tcl_Interp *interp, Tcl_Obj *objPtr);
 MODULE_SCOPE Tcl_Obj *	TclLsetList(Tcl_Interp *interp, Tcl_Obj *listPtr,
 			    Tcl_Obj *indexPtr, Tcl_Obj *valuePtr);
 MODULE_SCOPE Tcl_Obj *	TclLsetFlat(Tcl_Interp *interp, Tcl_Obj *listPtr,
@@ -4449,6 +4461,16 @@ MODULE_SCOPE Tcl_Mutex	tclObjMutex;
 #else /* TCL_MEM_DEBUG */
 MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 			    int line);
+
+/*
+ * Tcl_DbCkfree fills freed memory with TCL_FREED_BYTE, so the reference count
+ * of a freed structure reads as TCL_FREED_REFCOUNT, that byte repeated over
+ * the width of size_t. A real reference count never gets that high. The high
+ * bit makes it negative as a signed count. [Bug 7e3f26c748]
+ */
+
+# define TCL_FREED_BYTE 0xE8
+# define TCL_FREED_REFCOUNT ((size_t)-1 / 0xFF * TCL_FREED_BYTE)
 
 # define TclDbNewObj(objPtr, file, line) \
     do { \

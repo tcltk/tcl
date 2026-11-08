@@ -36300,11 +36300,11 @@ test clock-33.8m {clock test, monotonic timing test} {
     # This test can fail on a system that is so heavily loaded that
     # the test takes >60 ms to run.
     if {[lindex [timerate {
-        set start [clock monotonic]
-        timerate {} 10; # short but precise busy wait
-        set end [clock monotonic]
+	set start [clock monotonic]
+	timerate {} 10; # short but precise busy wait
+	set end [clock monotonic]
     } 1 1] 0] > 60000} {
-        ::tcltest::Skip "timing issue"
+	::tcltest::Skip "timing issue"
     }
     expr {($end > $start) && (($end - $start) <= 60000)}
 } {1}
@@ -38902,6 +38902,53 @@ test clock-71.2 {he locale era names are not swapped} -body {
     list [clock format 0 -gmt 1 -locale he -format %EE] \
 	[clock format -62200000000 -gmt 1 -locale he -format %EE]
 } -result [list "\u05dc\u05e1\u05d4\"\u05e0" "\u05dc\u05e4\u05e1\u05d4\"\u05e0"]
+
+test clock-72.0 {Bug [813699148d], UTC to local} -body {
+    clock format 0 -gmt 1
+    set ::tcl::clock::TZData(:bad) {{0 0}}
+    clock format 10 -timezone :bad
+} -cleanup {
+    unset -nocomplain ::tcl::clock::TZData(:bad)
+} -returnCodes 1 -result {malformed time zone data}
+test clock-72.1 {Bug [813699148d], local to UTC} -body {
+    clock format 0 -gmt 1
+    set ::tcl::clock::TZData(:bad) {{-9223372036854775808 0 0 A} {100000 0}}
+    clock scan "1970-01-03 00:00:00" -format "%Y-%m-%d %T" -base 10 -timezone :bad
+} -cleanup {
+    unset -nocomplain ::tcl::clock::TZData(:bad)
+} -returnCodes 1 -result {malformed time zone data}
+test clock-72.2 {Bug [813699148d], empty row} -body {
+    clock format 0 -gmt 1
+    set ::tcl::clock::TZData(:bad) {{}}
+    clock format 10 -timezone :bad
+} -cleanup {
+    unset -nocomplain ::tcl::clock::TZData(:bad)
+} -returnCodes 1 -result {malformed time zone data}
+test clock-72.3 {%z with an offset of 100 hours or more at the end of the stack buffer} -body {
+    clock format 0 -timezone +99:99:99 -format "[string repeat a 72]%z"
+} -result "[string repeat a 72]+1004039"
+test clock-72.4 {%z with an offset of 100 hours or more at the end of a heap buffer} -body {
+    clock format 0 -timezone +99:99:99 \
+	-format "[string repeat a 100]%Y[string repeat b 148]%z"
+} -result "[string repeat a 100]1970[string repeat b 148]+1004039"
+test clock-72.5 {%z with the largest 32-bit offset} -setup {
+    clock format 0 -gmt 1
+    set ::tcl::clock::TZData(:clock-72.5) \
+	{{-9223372036854775808 2147483647 0 clock-72.5}}
+} -body {
+    clock format 0 -timezone :clock-72.5 -format "[string repeat a 72]%z"
+} -cleanup {
+    unset -nocomplain ::tcl::clock::TZData(:clock-72.5)
+} -result "[string repeat a 72]+5965231407"
+test clock-72.6 {%z with the smallest 32-bit offset} -setup {
+    clock format 0 -gmt 1
+    set ::tcl::clock::TZData(:clock-72.6) \
+	{{-9223372036854775808 -2147483648 0 clock-72.6}}
+} -body {
+    clock format 0 -timezone :clock-72.6 -format "[string repeat a 72]%z"
+} -cleanup {
+    unset -nocomplain ::tcl::clock::TZData(:clock-72.6)
+} -result "[string repeat a 72]-5965231408"
 
 # cleanup
 

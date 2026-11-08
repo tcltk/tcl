@@ -150,69 +150,69 @@ namespace eval ::tcltests {
     # The local hostname providing a dual-stack address is determined by phase 2.
     #
     proc DiscoverLocalAddresses {} {
-        # phase 1
-        if {[info exists ::env(TCLTEST_IPV4)]} {
-            set ipv4 $::env(TCLTEST_IPV4)
-        }
-        if {[info exists ::env(TCLTEST_IPV6)]} {
-            set ipv6 $::env(TCLTEST_IPV6)
-        }
+	# phase 1
+	if {[info exists ::env(TCLTEST_IPV4)]} {
+	    set ipv4 $::env(TCLTEST_IPV4)
+	}
+	if {[info exists ::env(TCLTEST_IPV6)]} {
+	    set ipv6 $::env(TCLTEST_IPV6)
+	}
 
-        # phase 2
-        foreach myaddr {localhost  localhost.  localhost.localhost
-                        localhost6 localhost6. localhost6.localhost} {
-            set found 0
-            if {[catch {socket -myaddr $myaddr -server {} 0} s]} {
-                continue
-            }
+	# phase 2
+	foreach myaddr {localhost  localhost.  localhost.localhost
+		localhost6 localhost6. localhost6.localhost} {
+	    set found 0
+	    if {[catch {socket -myaddr $myaddr -server {} 0} s]} {
+		continue
+	    }
 
-            foreach {addr host port} [chan configure $s -sockname] {
-                if {[string match "*:*" $addr]} {
-                    incr found
-                    if {![info exists ipv6]} {
-                        set ipv6 $addr
-                    }
-                } else {
-                    incr found
-                    if {![info exists ipv4]} {
-                        set ipv4 $addr
-                    }
-                }
-            }
-            chan close $s
+	    foreach {addr host port} [chan configure $s -sockname] {
+		if {[string match "*:*" $addr]} {
+		    incr found
+		    if {![info exists ipv6]} {
+			set ipv6 $addr
+		    }
+		} else {
+		    incr found
+		    if {![info exists ipv4]} {
+			set ipv4 $addr
+		    }
+		}
+	    }
+	    chan close $s
 
-            if {$found >= 2 && ![info exists dual]} {
-                set dual $myaddr
-                break
-            }
-        }
+	    if {$found >= 2 && ![info exists dual]} {
+		set dual $myaddr
+		break
+	    }
+	}
 
-        # fallback to phase 3
-        if {![info exists ipv4]} {
-            set ipv4 {127.0.0.1}
-        }
-        if {![info exists ipv6]} {
-            set ipv6 {::1}
-        }
+	# fallback to phase 3
+	if {![info exists ipv4]} {
+	    set ipv4 {127.0.0.1}
+	}
+	if {![info exists ipv6]} {
+	    set ipv6 {::1}
+	}
 
-        if {![info exists dual]} {
-            set dual {localhost}
-        }
+	if {![info exists dual]} {
+	    set dual {localhost}
+	}
 
-        # set constants to procs:
-        proc localIPv4Address {} [list return $ipv4]
-        proc localIPv6Address {} [list return $ipv6]
-        proc localDualStackAddress {} [list return $dual]
+	# set constants to procs:
+	proc localIPv4Address {} [list return $ipv4]
+	proc localIPv6Address {} [list return $ipv6]
+	proc localDualStackAddress {} [list return $dual]
     }
 
     proc localIPv4Address {} {
-        DiscoverLocalAddresses
-        localIPv4Address
+	DiscoverLocalAddresses
+	localIPv4Address
     }
 
     proc localIPv6Address {} {
-        DiscoverLocalAddresses
-        localIPv6Address
+	DiscoverLocalAddresses
+	localIPv6Address
     }
 
     proc localDualStackAddress {} {

@@ -356,10 +356,7 @@ proc msgcat::mclocale {args} {
 
 proc msgcat::mcutil::getpreferences {locale} {
     set locale [string tolower $locale]
-    # Since an unsafe interp uses the command from parent, this code
-    # is security sensitive. Make sure that the path name cannot escape
-    # the msgcat directory.
-    if { [regexp {^[/\\]|^[a-z]+:|(?:^|[/\\])\.\.} $locale] } {
+    if {[::msgcat::UnsafeLocale $locale]} {
 	return -code error \
 		-errorcode [list MSGCAT badLocale $locale] \
 		"locale \"$locale\" not valid"
@@ -573,6 +570,14 @@ proc msgcat::mcpackagelocale {subcommand args} {
 	    if {$fSet} {
 		set loclist [mcutil getpreferences [lindex $args 0]]
 	    } else {
+		foreach locale $args {
+		    if {[UnsafeLocale $locale]} {
+			set locale [string tolower $locale]
+			return -code error \
+				-errorcode [list MSGCAT badLocale $locale] \
+				"locale \"$locale\" not valid"
+		    }
+		}
 		set loclist $args
 	    }
 
@@ -937,6 +942,8 @@ proc msgcat::Load {ns locales {callbackonly 0}} {
     foreach p $locales {
 	if {$p eq {}} {
 	    set p ROOT
+	} elseif {[UnsafeLocale $p]} {
+	    continue
 	}
 	set langfile [file join $langdir $p.msg]
 	if {[file exists $langfile]} {
@@ -954,6 +961,24 @@ proc msgcat::Load {ns locales {callbackonly 0}} {
 	set FileLocale $nestedFileLocale
     }
     return $x
+}
+
+# msgcat::UnsafeLocale --
+#
+#	Check whether a locale could make a message catalog file name escape
+#	the msgcat directory. Since a safe interp uses the msgcat commands of
+#	its parent (e.g. through [clock]), this check is security sensitive.
+#	[2f8bb48009]
+#
+# Arguments:
+#	locale		The locale to check.
+#
+# Results:
+#	1 if the locale is an absolute, volume relative, home relative or
+#	parent relative path, 0 otherwise.
+
+proc msgcat::UnsafeLocale {locale} {
+    regexp {^[/\\~]|^[a-z]+:|(?:^|[/\\])\.\.} [string tolower $locale]
 }
 
 # msgcat::Invoke --

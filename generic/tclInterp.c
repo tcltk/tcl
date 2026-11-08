@@ -571,6 +571,7 @@ LocatePreInitScript(
 		Tcl_GetString(searchedDirs)));
     } else {
 	Tcl_SetVar2Ex(interp, "tcl_library", NULL, dirPtr, TCL_GLOBAL_ONLY);
+        TclAddEncodingSubdir(dirPtr); /* Bug [75ecc0e6cb] */
     }
     if (initNamePtr != NULL) {
 	Tcl_DecrRefCount(initNamePtr);
@@ -693,9 +694,6 @@ AddPathsInVarToList(
  *	- The lib subdirectory in the parent directory of the directory
  *	  containing the executable
  *	- The elements of tcl_pkgPath
- *
- *	The function also adds the encoding subdirectory of tcl_library
- *	to the encodings search path if not already present.
  *
  * Results:
  *	A standard Tcl result.

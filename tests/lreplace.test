@@ -209,6 +209,12 @@ test lreplace-5.2 {compiled lreplace: Bug 47ac84309b} {
 	lreplace $x end 0 A
     }} {a b c}
 } {a b A c}
+test lreplace-5.3 {compiled lreplace, linsert, ledit inserting several elements: no pointer overflow} {
+    apply {{x i} {
+	list [lreplace $x $i $i A B] [lreplace [lrange $x 0 end] $i $i A B C] \
+	    [linsert $x $i A B] [ledit x $i $i A B]
+    }} {a b c} 1
+} {{a A B c} {a A B C c} {a A B b c} {a A B c}}
 
 # Testing for compiled behaviour. Far too many variations to check with
 # spelt-out tests. Note that this *just* checks whether the compiled version
