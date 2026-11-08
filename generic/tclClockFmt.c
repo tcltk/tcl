@@ -3416,7 +3416,9 @@ TclClockFormat(
     /* result container object */
     dateFmt->resMem = resMem;
     dateFmt->resEnd = dateFmt->resMem + sizeof(resMem);
+    Tcl_MutexLock(&ClockFmtMutex);
     minAlloc = fss->fmtMinAlloc;	/* shared, read only once */
+    Tcl_MutexUnlock(&ClockFmtMutex);
     if (minAlloc > sizeof(resMem)) {
 	dateFmt->resMem = (char *)Tcl_AttemptAlloc(minAlloc);
 	if (dateFmt->resMem == NULL) {
@@ -3559,8 +3561,10 @@ TclClockFormat(
 	}
 	/* save last used buffer length */
 	if (dateFmt->resMem != resMem
-		&& fss->fmtMinAlloc < size + MIN_FMT_RESULT_BLOCK_DELTA) {
+		&& minAlloc < size + MIN_FMT_RESULT_BLOCK_DELTA) {
+	    Tcl_MutexLock(&ClockFmtMutex);
 	    fss->fmtMinAlloc = size + MIN_FMT_RESULT_BLOCK_DELTA;
+	    Tcl_MutexUnlock(&ClockFmtMutex);
 	}
 	result->bytes[result->length] = '\0';
 	Tcl_SetObjResult(opts->interp, result);
