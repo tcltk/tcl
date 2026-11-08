@@ -13,7 +13,6 @@ tcltest::loadTestedCommands
 
 source [file join [file dirname [info script]] tcltests.tcl]
 source [file join [file dirname [info script]] ucdUtils.tcl]
-interp alias {} grapheme {} ::tcl::unsupported::grapheme
 namespace eval grapheme::test {
     namespace path ::tcltests::ucd
     variable testCase
