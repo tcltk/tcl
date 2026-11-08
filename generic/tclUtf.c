@@ -1697,7 +1697,7 @@ Tcl_UtfNcasecmp(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_UtfCmp --
+ * TclUtfCmp --
  *
  *	Compare UTF chars of string cs to string ct case sensitively.
  *	Replacement for strcmp in Tcl core, in places where UTF-8 should
@@ -1709,11 +1709,13 @@ Tcl_UtfNcasecmp(
  * Side effects:
  *	None.
  *
- *----------------------------------------------------------------------
+ *---------------------------------------------------------------------
  */
 
 int
-TclUtfCmp(const char *cs, const char *ct)
+TclUtfCmp(
+    const char *cs,		/* UTF string to compare to ct. */
+    const char *ct)		/* UTF string cs is compared to. */
 {
     const unsigned char *s = (const unsigned char *)cs;
     const unsigned char *t = (const unsigned char *)ct;
