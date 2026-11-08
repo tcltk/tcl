@@ -3559,11 +3559,12 @@ TclClockFormat(
 	} else {
 	    result->bytes = dateFmt->resMem;
 	}
-	/* save last used buffer length */
-	if (dateFmt->resMem != resMem
-		&& minAlloc < size + MIN_FMT_RESULT_BLOCK_DELTA) {
+	/* save last used buffer length if we used a custom buffer */
+	if (dateFmt->resMem != resMem) {
 	    Tcl_MutexLock(&ClockFmtMutex);
-	    fss->fmtMinAlloc = size + MIN_FMT_RESULT_BLOCK_DELTA;
+	    if (fss->fmtMinAlloc < size + MIN_FMT_RESULT_BLOCK_DELTA) {
+		fss->fmtMinAlloc = size + MIN_FMT_RESULT_BLOCK_DELTA;
+	    }
 	    Tcl_MutexUnlock(&ClockFmtMutex);
 	}
 	result->bytes[result->length] = '\0';
