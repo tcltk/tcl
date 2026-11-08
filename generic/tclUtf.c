@@ -1713,20 +1713,35 @@ Tcl_UtfNcasecmp(
  */
 
 int
-TclUtfCmp(
-    const char *cs,		/* UTF string to compare to ct. */
-    const char *ct)		/* UTF string cs is compared to. */
+TclUtfCmp(const char *cs, const char *ct)
 {
-    Tcl_UniChar ch1 = 0, ch2 = 0;
+    const unsigned char *s = (const unsigned char *)cs;
+    const unsigned char *t = (const unsigned char *)ct;
 
-    while (*cs && *ct) {
-	cs += TclUtfToUniChar(cs, &ch1);
-	ct += TclUtfToUniChar(ct, &ch2);
-	if (ch1 != ch2) {
-	    return ch1 - ch2;
-	}
+    while (*s == *t) {
+        if (*s == '\0') return 0;
+        s++;
+        t++;
     }
-    return UCHAR(*cs) - UCHAR(*ct);
+    /*
+     * The pointers s and t now reference the first char that differs. If we
+     * were dealing with a UTF8 string we could just return *s - *t now
+     * because the UTF8 encoding preserves string order.  But since it is
+     * TUTF8 we need to find the codepoints whose encodings contain the bytes
+     * which differ and check if one of them is a 0 codepoint encoded as
+     * \xc0\x80. If one of them is 0 its string will be smaller unless the
+     * other string is shorter.  Also, if one of the codepoints is 0, but they
+     * both start with 0xC0, then returning the difference between the chars
+     * still gives the correct answer.  So the only special case is when the
+     * first byte that differs has value 0xC0 in one of the two strings.
+     */
+    if (*s == 0xC0 && s[1] == 0x80) {
+        return (*t == '\0') ? 1 : -1;
+    }
+    if (*t == 0xC0 && t[1] == 0x80) {
+        return (*s == '\0') ? -1 : 1;
+    }
+    return (int)*s - (int)*t;
 }
 
 /*
