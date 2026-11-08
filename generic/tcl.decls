@@ -2470,7 +2470,28 @@ declare 701 {
 
 # ----- BASELINE -- FOR -- 9.1.0 ----- #
 
+# TIP 756
 declare 702 {
+    Tcl_Size Tcl_GraphemeLength(const Tcl_UniChar *uniPtr, Tcl_Size uniLen)
+}
+declare 703 {
+    Tcl_UniChar *Tcl_GraphemeNext(const Tcl_UniChar *uniPtr, Tcl_Size uniLen)
+}
+declare 704 {
+    Tcl_UniChar *Tcl_GraphemePrev(const Tcl_UniChar *uniPtr, Tcl_Size uniLen)
+}
+declare 705 {
+    Tcl_UniChar *Tcl_GraphemeIndex(const Tcl_UniChar *uniPtr, Tcl_Size uniLen,
+	    Tcl_Size grIndex)
+}
+declare 706 {
+    Tcl_UniChar *Tcl_GraphemeRange(const Tcl_UniChar *uniPtr, Tcl_Size uniLen,
+	    Tcl_Size grStartIndex, Tcl_Size grEndIndex, Tcl_UniChar **endPtrPtr)
+}
+
+# ----- BASELINE -- FOR -- 9.2.0 ----- #
+
+declare 707 {
     void TclUnusedStubEntry(void)
 }
 

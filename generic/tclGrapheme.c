@@ -275,20 +275,23 @@ GraphemePrev(
 /*
  *------------------------------------------------------------------------
  *
- * GraphemeLength --
+ * Tcl_GraphemeLength --
  *
- *	Counts the number of graphemes in the passed string.
+ *	Returns the number of graphemes in a Unicode code point sequence.
  *
  * Results:
- *	Number of graphemes in the string.
+ *	Count of graphemes in the sequence.
+ *
+ * Side effects:
+ *	None.
  *
  *------------------------------------------------------------------------
  */
-static Tcl_Size
-GraphemeLength(
-    const Tcl_UniChar *uniPtr,	/* Tcl_UniChar string */
-    Tcl_Size uniLen)		/* Number of Tcl_UniChar's in string. -1 if
-				 * nul terminated */
+Tcl_Size
+Tcl_GraphemeLength(
+    const Tcl_UniChar *uniPtr,	/* Tcl_UniChar sequence */
+    Tcl_Size uniLen)		/* Number of Tcl_UniChar's in sequence.
+				 * If < 0, nul terminated sequence */
 {
     if (uniLen < 0) {
 	uniLen = Tcl_UniCharLen(uniPtr);
@@ -317,8 +320,8 @@ GraphemeLength(
  *
  *------------------------------------------------------------------------
  */
-static const Tcl_UniChar *
-GraphemeIndex(
+const Tcl_UniChar *
+Tcl_GraphemeIndex(
     const Tcl_UniChar *uniPtr,	/* Tcl_UniChar string */
     Tcl_Size uniLen,		/* Number of Tcl_UniChar's in string. -1 if
 				 * nul terminated */
@@ -519,7 +522,8 @@ GraphemeLengthCmd(
 
     Tcl_Size uniLen;
     Tcl_UniChar *uniPtr = Tcl_GetUnicodeFromObj(objv[1], &uniLen);
-    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(GraphemeLength(uniPtr, uniLen)));
+    Tcl_SetObjResult(interp,
+	    Tcl_NewWideIntObj(Tcl_GraphemeLength(uniPtr, uniLen)));
     return TCL_OK;
 }
 
@@ -553,7 +557,7 @@ GraphemeIndexCmd(
 
     Tcl_Size grIndex, grLen, uniLen;
     Tcl_UniChar *uniPtr = Tcl_GetUnicodeFromObj(objv[1], &uniLen);
-    grLen = GraphemeLength(uniPtr, uniLen); /* Need for end, end-1 etc. */
+    grLen = Tcl_GraphemeLength(uniPtr, uniLen); /* Need for end, end-1 etc. */
     if (TclGetIntForIndexM(interp, objv[2], grLen - 1, &grIndex) != TCL_OK) {
 	return TCL_ERROR;
     }
@@ -599,7 +603,7 @@ GraphemeOffsetCmd(
 
     Tcl_Size grIndex, grLen, uniLen;
     Tcl_UniChar *uniPtr = Tcl_GetUnicodeFromObj(objv[1], &uniLen);
-    grLen = GraphemeLength(uniPtr, uniLen); /* Need for end, end-1 etc. */
+    grLen = Tcl_GraphemeLength(uniPtr, uniLen); /* Need for end, end-1 etc. */
     if (TclGetIntForIndexM(interp, objv[2], grLen - 1, &grIndex) != TCL_OK) {
 	return TCL_ERROR;
     }
@@ -646,7 +650,7 @@ GraphemeRangeCmd(
 
     Tcl_Size grFirst, grLast, grLen, uniLen;
     Tcl_UniChar *uniPtr = Tcl_GetUnicodeFromObj(objv[1], &uniLen);
-    grLen = GraphemeLength(uniPtr, uniLen); /* Need for end, end-1 etc. */
+    grLen = Tcl_GraphemeLength(uniPtr, uniLen); /* Need for end, end-1 etc. */
     if (TclGetIntForIndexM(interp, objv[2], grLen-1, &grFirst) != TCL_OK ||
 	    TclGetIntForIndexM(interp, objv[3], grLen-1, &grLast) != TCL_OK) {
 	return TCL_ERROR;
@@ -905,7 +909,7 @@ GraphemeListLengthProc(
     GraphemeListRep *glrPtr = GetGraphemeListRep(objPtr);
     Tcl_Size uniLen;
     Tcl_UniChar *uniPtr = Tcl_GetUnicodeFromObj(glrPtr->objPtr, &uniLen);
-    return GraphemeLength(uniPtr, uniLen);
+    return Tcl_GraphemeLength(uniPtr, uniLen);
 }
 
 /*
@@ -1024,6 +1028,63 @@ GraphemeSplitCmd(
     return TCL_OK;
 }
 
+/*
+ *------------------------------------------------------------------------
+ *
+ * Tcl_GraphemeNext --
+ *
+ *	Locate start of next grapheme
+ *
+ * Results:
+ *	Returns a pointer to the `Tcl_UniChar` following the grapheme at
+ *	uniPtr. If `uniLen` is 0, a null pointer is returned.
+ *
+ * Side effects:
+ *	None.
+ *
+ *------------------------------------------------------------------------
+ */
+Tcl_UniChar *
+Tcl_GraphemeNext(
+    const Tcl_UniChar *uniPtr,	/* Sequence of Unicode code points */
+    Tcl_Size uniLen)		/* Length, nul-terminated if < 0 */
+{
+    if (uniLen < 0) {
+	uniLen = Tcl_UniCharLen(uniPtr);
+    }
+    if (uniLen == 0) {
+	return NULL;
+    }
+    return GraphemeNext(uniPtr, uniLen);
+}
+
+/*
+ *------------------------------------------------------------------------
+ *
+ * Tcl_GraphemePrev --
+ *
+ *	Locate start of previous grapheme
+ *
+ * Results:
+ *	Returns a pointer to the starting `Tcl_UniChar` of the grapheme
+ *	preceding uniPtr. If `uniLen` is <= 0, a null pointer is returned.
+ *
+ * Side effects:
+ *	None.
+ *
+ *------------------------------------------------------------------------
+ */
+Tcl_UniChar *
+Tcl_GraphemePrev(
+    const Tcl_UniChar *uniPtr,	/* Sequence of Unicode code points */
+    Tcl_Size uniLen)		/* Length, nul-terminated if < 0 */
+{
+    if (uniLen <= 0) {
+	return NULL;
+    }
+    return GraphemePrev(uniPtr, uniLen);
+}
+
 /*
  * Local Variables:
  * mode: c
