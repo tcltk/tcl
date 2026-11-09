@@ -2482,16 +2482,22 @@ declare 704 {
 }
 declare 705 {
     Tcl_UniChar *Tcl_GraphemeIndex(const Tcl_UniChar *uniPtr, Tcl_Size uniLen,
-	    Tcl_Size grIndex)
+	    Tcl_Size grIndex, Tcl_Size *grWidthPtr)
 }
 declare 706 {
     Tcl_UniChar *Tcl_GraphemeRange(const Tcl_UniChar *uniPtr, Tcl_Size uniLen,
 	    Tcl_Size grStartIndex, Tcl_Size grEndIndex, Tcl_UniChar **endPtrPtr)
 }
 
+declare 707 {
+    Tcl_Size Tcl_GraphemeReverse(const Tcl_UniChar *uniPtr, Tcl_Size uniLen,
+	    Tcl_UniChar *outPtr, Tcl_Size outCapacity)
+
+}
+
 # ----- BASELINE -- FOR -- 9.2.0 ----- #
 
-declare 707 {
+declare 708 {
     void TclUnusedStubEntry(void)
 }
 

@@ -1947,6 +1947,27 @@ EXTERN int		Tcl_UnregisterPostInitProc(
 /* 701 */
 EXTERN int		Tcl_ClearPostInitProcs(void);
 /* 702 */
+EXTERN Tcl_Size		Tcl_GraphemeLength(const Tcl_UniChar *uniPtr,
+				Tcl_Size uniLen);
+/* 703 */
+EXTERN Tcl_UniChar *	Tcl_GraphemeNext(const Tcl_UniChar *uniPtr,
+				Tcl_Size uniLen);
+/* 704 */
+EXTERN Tcl_UniChar *	Tcl_GraphemePrev(const Tcl_UniChar *uniPtr,
+				Tcl_Size uniLen);
+/* 705 */
+EXTERN Tcl_UniChar *	Tcl_GraphemeIndex(const Tcl_UniChar *uniPtr,
+				Tcl_Size uniLen, Tcl_Size grIndex,
+				Tcl_Size *grWidthPtr);
+/* 706 */
+EXTERN Tcl_UniChar *	Tcl_GraphemeRange(const Tcl_UniChar *uniPtr,
+				Tcl_Size uniLen, Tcl_Size grStartIndex,
+				Tcl_Size grEndIndex, Tcl_UniChar **endPtrPtr);
+/* 707 */
+EXTERN Tcl_Size		Tcl_GraphemeReverse(const Tcl_UniChar *uniPtr,
+				Tcl_Size uniLen, Tcl_UniChar *outPtr,
+				Tcl_Size outCapacity);
+/* 708 */
 EXTERN void		TclUnusedStubEntry(void);
 
 typedef struct {
@@ -2661,7 +2682,13 @@ typedef struct TclStubs {
     int (*tcl_RegisterPostInitProc) (Tcl_PostInitProc *postInitProc, void *clientData); /* 699 */
     int (*tcl_UnregisterPostInitProc) (Tcl_PostInitProc *postInitProc, void *clientData); /* 700 */
     int (*tcl_ClearPostInitProcs) (void); /* 701 */
-    void (*tclUnusedStubEntry) (void); /* 702 */
+    Tcl_Size (*tcl_GraphemeLength) (const Tcl_UniChar *uniPtr, Tcl_Size uniLen); /* 702 */
+    Tcl_UniChar * (*tcl_GraphemeNext) (const Tcl_UniChar *uniPtr, Tcl_Size uniLen); /* 703 */
+    Tcl_UniChar * (*tcl_GraphemePrev) (const Tcl_UniChar *uniPtr, Tcl_Size uniLen); /* 704 */
+    Tcl_UniChar * (*tcl_GraphemeIndex) (const Tcl_UniChar *uniPtr, Tcl_Size uniLen, Tcl_Size grIndex, Tcl_Size *grWidthPtr); /* 705 */
+    Tcl_UniChar * (*tcl_GraphemeRange) (const Tcl_UniChar *uniPtr, Tcl_Size uniLen, Tcl_Size grStartIndex, Tcl_Size grEndIndex, Tcl_UniChar **endPtrPtr); /* 706 */
+    Tcl_Size (*tcl_GraphemeReverse) (const Tcl_UniChar *uniPtr, Tcl_Size uniLen, Tcl_UniChar *outPtr, Tcl_Size outCapacity); /* 707 */
+    void (*tclUnusedStubEntry) (void); /* 708 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -4025,8 +4052,20 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_UnregisterPostInitProc) /* 700 */
 #define Tcl_ClearPostInitProcs \
 	(tclStubsPtr->tcl_ClearPostInitProcs) /* 701 */
+#define Tcl_GraphemeLength \
+	(tclStubsPtr->tcl_GraphemeLength) /* 702 */
+#define Tcl_GraphemeNext \
+	(tclStubsPtr->tcl_GraphemeNext) /* 703 */
+#define Tcl_GraphemePrev \
+	(tclStubsPtr->tcl_GraphemePrev) /* 704 */
+#define Tcl_GraphemeIndex \
+	(tclStubsPtr->tcl_GraphemeIndex) /* 705 */
+#define Tcl_GraphemeRange \
+	(tclStubsPtr->tcl_GraphemeRange) /* 706 */
+#define Tcl_GraphemeReverse \
+	(tclStubsPtr->tcl_GraphemeReverse) /* 707 */
 #define TclUnusedStubEntry \
-	(tclStubsPtr->tclUnusedStubEntry) /* 702 */
+	(tclStubsPtr->tclUnusedStubEntry) /* 708 */
 
 #endif /* defined(USE_TCL_STUBS) */
 

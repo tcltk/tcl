@@ -1513,7 +1513,13 @@ const TclStubs tclStubs = {
     Tcl_RegisterPostInitProc, /* 699 */
     Tcl_UnregisterPostInitProc, /* 700 */
     Tcl_ClearPostInitProcs, /* 701 */
-    TclUnusedStubEntry, /* 702 */
+    Tcl_GraphemeLength, /* 702 */
+    Tcl_GraphemeNext, /* 703 */
+    Tcl_GraphemePrev, /* 704 */
+    Tcl_GraphemeIndex, /* 705 */
+    Tcl_GraphemeRange, /* 706 */
+    Tcl_GraphemeReverse, /* 707 */
+    TclUnusedStubEntry, /* 708 */
 };
 
 /* !END!: Do not edit above this line. */
