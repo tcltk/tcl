@@ -1074,7 +1074,7 @@ foreach entry [dict keys $manFiles] {
 		close $fh
 		set seeAlso [list --include-after-body $seeAlsoFile]
 	}
-	exec pandoc -f markdown-tex_math_dollars-smart -t html \
+	exec pandoc -f markdown-tex_math_dollars-smart-raw_html -t html \
 		--lua-filter markdown2html.lua \
 		{*}$seeAlso \
 		-s -c [file join .. tcl-docs.css] \

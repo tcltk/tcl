@@ -586,7 +586,7 @@ namespace eval ::ndoc {
 		console		{eval}
 		clipboard	{string}
 		define          {variable destroy}
-		entry		{string}
+		entry		{string focus}
 		event		{return}
 		expr            {variable}
 		file            {socket}
@@ -3012,7 +3012,12 @@ proc ::ndoc::mdExceptions {md} {
 				{# Tcl\_trace\_destroyed flag} {# TCL\_TRACE\_DESTROYED flag}
 			} $md]
 		}
-		
+		event {
+			set md [string map {
+				{[<<=+virtual=§>>]{.lit}} {[<<]{.lit}[virtual]{.arg}[>>]{.lit}}
+				{[<<=+virtual=§>>]{.optlit}} {[[<<]{.lit}[virtual]{.arg}[>>]{.lit}]{.optarg}}
+			} $md]
+		}
 	}
 	regsub {\s+$} $md \n md
 	# tidy up a blank lines at divs:

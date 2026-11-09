@@ -327,7 +327,7 @@ section | number of documents | initial conversion | final conversion
 --------|---------------------|--------------------|-----------------
 1       | 1                   | 0                  | 0
 3       | 87                  | 0                  | 0
-n       | 93                  | 93                 | 18
+n       | 93                  | 93                 | 23
 
 Final conversion of these files in the n section is currently done:
 
@@ -349,6 +349,11 @@ Final conversion of these files in the n section is currently done:
 16. cursors (manual change from ``` to something else needed)
 17. destroy
 18. dialog
+19. entry
+20. event
+21. fileicon
+22. focus
+23. focusNext
 
 
 # Open issues
