@@ -87,6 +87,7 @@ to the userbase.
  - Thread 3.0.7
  - tzdata 2026f
  - Unicode 18.0.0
+ - zlib 1.4.0
 
 Release Tcl 9.0.4 arises from the check-in with tag `core-9-0-4`.
 
