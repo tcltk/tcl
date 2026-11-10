@@ -75,6 +75,7 @@ to the userbase.
  - [Crash from race condition in Unix locale initialization](https://core.tcl-lang.org/tcl/tktview/c35e347c)
  - [non-zipfs builds with relocated library misses encodings](https://core.tcl-lang.org/tcl/tktview/75ecc0)
  - [Undefined pointer arithmetic in `INST_LREPLACE`](https://core.tcl-lang.org/tcl/tktview/94c651)
+ - [http::geturl -keepalive intermittent socketWrState errors](https://core.tcl-lang.org/tcl/tktview/05b158)
 
 # Updated bundled packages, libraries, standards, data
  - http 2.10.3
