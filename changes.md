@@ -82,6 +82,7 @@ to the userbase.
  - tcltest 2.6.1
  - tcl::idna 1.0.2
  - tzdata 2026f
+ - zlib 1.4.0
 
 Release Tcl 9.1.0 arises from the check-in with tag `core-9-1-0`.
 
