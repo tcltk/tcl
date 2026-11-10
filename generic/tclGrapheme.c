@@ -265,9 +265,9 @@ GraphemeUniCharNext(
 /*
  *------------------------------------------------------------------------
  *
- * GraphemeUniCharPrev --
+ * GraphemePrev, GraphemeUniCharPrev --
  *
- *	Returns the start of the previous grapheme. uniLen must be positive!
+ *	Returns the start of the previous grapheme. numBytes/uniLen must be >0
  *
  * Results:
  *	Pointer to start of previous grapheme.
@@ -277,6 +277,66 @@ GraphemeUniCharNext(
  *
  *------------------------------------------------------------------------
  */
+static char *
+GraphemePrev(
+    const char *tutf8Ptr,	/* Points beyond byte sequence */
+    Tcl_Size numBytes)		/* Number of preceding valid bytes
+				 * must be > 0! */
+{
+    assert(numBytes > 0);
+
+    /*
+     * The utf8proc grapheme functions only maintain correct state when
+     * traversing in the forward direction. We have to therefore first go
+     * back to a place that is guaranteed to not be in the middle of a
+     * grapheme and work forward from there. The reason for having to work
+     * forward is that the backward scan is a conservative heuristic and
+     * may go further back than it needs to. Therefore we have to work
+     * forward again to skip over the extra scan.
+     */
+    const utf8proc_uint8_t *endPtr = (utf8proc_uint8_t *)tutf8Ptr;
+    const utf8proc_uint8_t *startPtr = endPtr - numBytes;
+    const utf8proc_uint8_t *grPtr = endPtr;
+    while (grPtr > startPtr) {
+	utf8proc_ssize_t utf8len;
+	utf8proc_int32_t uc;
+	grPtr = (utf8proc_uint8_t *) Tcl_UtfPrev(grPtr, startPtr);
+	utf8len = utf8proc_iterate(grPtr, endPtr - grPtr, &uc);
+	if (utf8len < 0) {
+	    /* Invalid or Tcl C080 nul. Either way not a continuation */
+	    break;
+	}
+	if (IsPossibleContinuation(uc)) {
+	    continue;		/* Move back over possible continuation */
+	}
+	if (grPtr > startPtr) {
+	    if (uc == '\n' && grPtr[-1] == '\r') {
+		continue;
+	    }
+	    utf8proc_uint8_t *prevPtr
+		    = (utf8proc_uint8_t *)Tcl_UtfPrev(grPtr, startPtr);
+	    utf8len = utf8proc_iterate(prevPtr, grPtr - prevPtr, &uc);
+	    if (utf8len < 0) {
+		/* Invalid or Tcl C080 nul. Either way not a prefix */
+		break;
+	    }
+	    if (IsPossiblePrefix(uc)) {
+		continue;
+	    }
+	}
+	break;
+    }
+
+    /* Now scan forward. Note uniPtr may be < uniStartPtr if uniLen was 0 */
+    const utf8proc_uint8_t *nextPtr = grPtr;
+    assert(endPtr > grPtr);
+    do {
+	grPtr = nextPtr;
+	nextPtr = GraphemeNext(nextPtr, endPtr - nextPtr);
+    } while (nextPtr < endPtr);
+    return (char *) grPtr;
+}
+
 static Tcl_UniChar *
 GraphemeUniCharPrev(
     const Tcl_UniChar *uniEndPtr,	/* Points beyond grapheme to return */
@@ -303,7 +363,7 @@ GraphemeUniCharPrev(
 	uniPtr--;
     }
 
-    /* Now scan forward. Note uniPtr may be < uniStartPtr if uniLen was 0 */
+    /* Now scan forward. */
     const Tcl_UniChar *grPtr;
     assert(uniEndPtr > uniPtr);
     do {
@@ -538,9 +598,9 @@ GraphemeNextCmd(
     }
 
     Tcl_Size grWidth = 0;
-    Tcl_Size strIndex = 0;
     Tcl_Obj *indexObj = Tcl_ObjGetVar2(interp, objv[2], NULL, 0);
     Tcl_Size uniLen = Tcl_GetCharLength(objv[1]);
+    Tcl_Size strIndex = 0;
 
     if (indexObj) {
 	if (TclGetIntForIndexM(interp, indexObj, uniLen, &strIndex) != TCL_OK) {
@@ -564,6 +624,7 @@ GraphemeNextCmd(
 	const char *tutf8Ptr = TclGetStringFromObj(objv[1], &numBytes);
 	const char *grStartPtr = Tcl_UtfAtIndex(tutf8Ptr, strIndex);
 	Tcl_Size offset = grStartPtr - tutf8Ptr;
+	assert(numBytes > offset); /* Since strIndex < uniLen above */
 	const char *grEndPtr = GraphemeNext(grStartPtr, numBytes - offset);
 	numBytes = grEndPtr - grStartPtr;
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(grStartPtr, numBytes));
@@ -605,57 +666,43 @@ GraphemePrevCmd(
 	return TCL_ERROR;
     }
 
-    Tcl_Size uniLen;
-    const Tcl_UniChar *uniStartPtr = Tcl_GetUnicodeFromObj(objv[1], &uniLen);
+    Tcl_Size grWidth = 0;
+    Tcl_Obj *indexObj = Tcl_ObjGetVar2(interp, objv[2], NULL, 0);
+    Tcl_Size uniLen = Tcl_GetCharLength(objv[1]);
     Tcl_Size strIndex = uniLen;
 
-    Tcl_Obj *indexObj = Tcl_ObjGetVar2(interp, objv[2], NULL, 0);
     if (indexObj) {
 	if (TclGetIntForIndexM(interp, indexObj, uniLen, &strIndex) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-    }
-    if (strIndex < 0) {
-	strIndex = 0;
-    } else if (strIndex > uniLen) {
-	strIndex = uniLen;
-    }
-
-    /*
-     * The utf8proc grapheme functions only maintain correct state when
-     * traversing in the forward direction. We have to therefore first go
-     * back to a place that is guaranteed to not be in the middle of a
-     * grapheme and work forward from there. The reason for having to work
-     * forward is that the backward scan is a conservative heuristic and
-     * may go further back than it needs to. Therefore we have to work
-     * forward again to skip over the extra scan.
-     */
-
-    /* Scan backward to a safe starting point for the forward scan */
-    const Tcl_UniChar *uniEndPtr = uniStartPtr + strIndex;
-    const Tcl_UniChar *uniPtr = uniEndPtr - 1;
-
-    while (uniPtr > uniStartPtr
-	    && ((*uniPtr == '\n' && uniPtr[-1] == '\r')
-		|| IsPossibleContinuation(*uniPtr)
-		|| IsPossiblePrefix(uniPtr[-1]))) {
-	uniPtr--;
+	if (strIndex < 0) {
+	    strIndex = 0;
+	} else if (strIndex > uniLen) {
+	    strIndex = uniLen;
+	}
     }
 
-    /* Now scan forward. Note uniPtr may be < uniStartPtr if uniLen was 0 */
-    Tcl_Size grLen = 0;
-    if (uniPtr >= uniStartPtr) {
-	const Tcl_UniChar *grStartPtr;
-	assert(uniEndPtr > uniPtr);
-	do {
-	    grStartPtr = uniPtr;
-	    uniPtr = GraphemeUniCharNext(uniPtr, uniEndPtr - uniPtr);
-	} while (uniPtr < uniEndPtr);
-	grLen = uniEndPtr - grStartPtr;
-	Tcl_SetObjResult(interp, Tcl_NewUnicodeObj(grStartPtr, grLen));
+    if (strIndex > 0) {
+#ifdef USE_UNICHAR_GRAPHEME_API
+	const Tcl_UniChar *startPtr;
+	startPtr = Tcl_GetUnicodeFromObj(objv[1], &uniLen);
+	Tcl_UniChar *grPtr
+		= GraphemeUniCharPrev(startPtr + strIndex, strIndex);
+	grWidth = startPtr + strIndex - grPtr;
+	Tcl_SetObjResult(interp, Tcl_NewUnicodeObj(grPtr, grWidth));
+#else
+	Tcl_Size numBytes;
+	const char *startPtr = TclGetStringFromObj(objv[1], &numBytes);
+	const char *endPtr = Tcl_UtfAtIndex(startPtr, strIndex);
+	Tcl_Size offset = endPtr - startPtr;
+	assert(offset > 0); /* Since strIndex > 0 above */
+	const char *grStartPtr = GraphemePrev(endPtr, offset);
+	numBytes = endPtr - grStartPtr;
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(grStartPtr, numBytes));
+	grWidth = Tcl_NumUtfChars(grStartPtr, numBytes);
+#endif
     }
-
-    Tcl_ObjSetVar2(interp, objv[2], NULL, Tcl_NewWideIntObj(strIndex-grLen), 0);
+    Tcl_ObjSetVar2(interp, objv[2], NULL, Tcl_NewWideIntObj(strIndex-grWidth), 0);
     return TCL_OK;
 }
 
