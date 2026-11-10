@@ -80,7 +80,7 @@ to the userbase.
  - http 2.10.3
  - msgcat 1.7.2
  - platform 1.1.2
- - sqlite3 3.53.4
+ - sqlite3 3.54.1
  - tcltest 2.6.1
  - tcl::idna 1.0.2
  - tcltest 2.6.0
