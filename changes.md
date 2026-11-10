@@ -79,6 +79,7 @@ to the userbase.
 # Updated bundled packages, libraries, standards, data
  - http 2.10.3
  - msgcat 1.7.2
+ - sqlite3 3.54.1
  - tcltest 2.6.1
  - tcl::idna 1.0.2
  - tzdata 2026f
