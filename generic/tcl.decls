@@ -2472,27 +2472,25 @@ declare 701 {
 
 # TIP 756
 declare 702 {
-    Tcl_Size Tcl_GraphemeLength(const Tcl_UniChar *uniPtr, Tcl_Size uniLen)
+    Tcl_Size Tcl_GraphemeUniCharLength(const Tcl_UniChar *uniPtr, Tcl_Size uniLen)
 }
 declare 703 {
-    Tcl_UniChar *Tcl_GraphemeNext(const Tcl_UniChar *uniPtr, Tcl_Size uniLen)
+    Tcl_UniChar *Tcl_GraphemeUniCharNext(const Tcl_UniChar *uniPtr, Tcl_Size uniLen)
 }
 declare 704 {
-    Tcl_UniChar *Tcl_GraphemePrev(const Tcl_UniChar *uniPtr, Tcl_Size uniLen)
+    Tcl_UniChar *Tcl_GraphemeUniCharPrev(const Tcl_UniChar *uniPtr, Tcl_Size uniLen)
 }
 declare 705 {
-    Tcl_UniChar *Tcl_GraphemeIndex(const Tcl_UniChar *uniPtr, Tcl_Size uniLen,
+    Tcl_UniChar *Tcl_GraphemeUniCharIndex(const Tcl_UniChar *uniPtr, Tcl_Size uniLen,
 	    Tcl_Size grIndex, Tcl_Size *grWidthPtr)
 }
 declare 706 {
-    Tcl_UniChar *Tcl_GraphemeRange(const Tcl_UniChar *uniPtr, Tcl_Size uniLen,
+    Tcl_UniChar *Tcl_GraphemeUniCharRange(const Tcl_UniChar *uniPtr, Tcl_Size uniLen,
 	    Tcl_Size grStartIndex, Tcl_Size grEndIndex, Tcl_UniChar **endPtrPtr)
 }
-
 declare 707 {
-    Tcl_Size Tcl_GraphemeReverse(const Tcl_UniChar *uniPtr, Tcl_Size uniLen,
+    Tcl_Size Tcl_GraphemeUniCharReverse(const Tcl_UniChar *uniPtr, Tcl_Size uniLen,
 	    Tcl_UniChar *outPtr, Tcl_Size outCapacity)
-
 }
 
 # ----- BASELINE -- FOR -- 9.2.0 ----- #
