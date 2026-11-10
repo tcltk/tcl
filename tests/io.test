@@ -2358,12 +2358,14 @@ test io-27.5 {FlushChannel, implicit flush when buffer fills and on close} \
 } {0 60 72}
 set path(pipe)   [makeFile {} pipe]
 set path(output) [makeFile {} output]
+set path(done)   [makeFile {} done]
 test io-27.6 {FlushChannel, async flushing, async close} \
 	{stdio asyncPipeClose notWinCI} {
     # This test may fail on old Unix systems (seen on IRIX64 6.5) with
     # obsolete gettimeofday() calls.  See Tcl Bugs 3530533, 1942197.
     file delete $path(pipe)
     file delete $path(output)
+    file delete $path(done)
     set f [open $path(pipe) w]
     puts $f "set f \[[list open $path(output) w]]"
     puts $f {
@@ -2374,6 +2376,8 @@ test io-27.6 {FlushChannel, async flushing, async close} \
 	}
 	close $f
     }
+    # Signal that the output file is closed.
+    puts $f "close \[[list open $path(done) w]]"
     close $f
     set x 01234567890123456789012345678901
     for {set i 0} {$i < 11} {incr i} {
@@ -2386,11 +2390,13 @@ test io-27.6 {FlushChannel, async flushing, async close} \
     puts -nonewline $f $x
     close $f
     set counter 0
-    while {([file size $path(output)] < 65536) && ($counter < 1000)} {
+    # Wait until the child closes the output file, otherwise deleting it in
+    # the following test fails on Windows.
+    while {![file exists $path(done)] && ($counter < 1000)} {
 	after 20 [list incr [namespace which -variable counter]]
 	vwait [namespace which -variable counter]
     }
-    if {$counter == 1000} {
+    if {[file size $path(output)] < 65536} {
 	set result "file size only [file size $path(output)]"
     } else {
 	set result ok
@@ -3043,6 +3049,7 @@ test io-29.32 {Tcl_WriteChars, background flush to slow reader} \
     # obsolete gettimeofday() calls.  See Tcl Bugs 3530533, 1942197.
     file delete $path(pipe)
     file delete $path(output)
+    file delete $path(done)
     set f [open $path(pipe) w]
     puts $f "set f \[[list open $path(output) w]]"
     puts $f {fconfigure $f -translation lf}
@@ -3054,6 +3061,8 @@ test io-29.32 {Tcl_WriteChars, background flush to slow reader} \
     puts $f {  flush $f}
     puts $f "\}"
     puts $f {close $f}
+    # Signal that the output file is closed.
+    puts $f "close \[[list open $path(done) w]]"
     close $f
     set x 01234567890123456789012345678901
     for {set i 0} {$i < 11} {incr i} {
@@ -3066,11 +3075,13 @@ test io-29.32 {Tcl_WriteChars, background flush to slow reader} \
     puts -nonewline $f $x
     close $f
     set counter 0
-    while {([file size $path(output)] < 65536) && ($counter < 1000)} {
+    # Wait until the child closes the output file, otherwise deleting it in
+    # the following test fails on Windows.
+    while {![file exists $path(done)] && ($counter < 1000)} {
 	after 20 [list incr [namespace which -variable counter]]
 	vwait [namespace which -variable counter]
     }
-    if {$counter == 1000} {
+    if {[file size $path(output)] < 65536} {
 	set result "file size only [file size $path(output)]"
     } else {
 	set result ok
@@ -10028,6 +10039,33 @@ test io-bug-73bb43fb-4 {
 } -cleanup {
     if {$f ne ""} {close $f}
 } -result "0 START-\u30B3-DONE 0 {}"
+
+test io-78.1 {writable event on pipe whose reader has exited} -setup {
+    set signal [makeFile {} io78signal]
+    file delete $signal
+    set script [makeFile {
+	# Keep the read end open until the parent has queued its output.
+	while {![file exists [lindex $argv 0]]} {after 10}
+	exit
+    } io78script]
+    set f [open "|[list [interpreter] $script $signal]" w]
+    set w {}
+} -constraints {stdio fileevent} -body {
+    fconfigure $f -blocking 0 -buffering full
+    puts -nonewline $f [string repeat x 300000]
+    catch {flush $f}
+    close [open $signal w]
+    chan event $f writable [list set [namespace which -variable w] writable]
+    set timer [after 5000 [list set [namespace which -variable w] timeout]]
+    vwait [namespace which -variable w]
+    after cancel $timer
+    list $w [catch {close $f} msg] $msg
+} -cleanup {
+    catch {close $f}
+    removeFile io78script
+    removeFile io78signal
+    unset -nocomplain w f script signal timer msg
+} -result {writable 1 {broken pipe}}
 
 rename read_blocked {}
 

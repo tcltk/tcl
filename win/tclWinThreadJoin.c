@@ -235,6 +235,13 @@ TclRememberJoinableThread(
     threadPtr->threadMutex = (Tcl_Mutex) NULL;
     threadPtr->cond = (Tcl_Condition) NULL;
 
+    /*
+     * Create the mutex now, so that the exiting thread does not allocate it.
+     */
+
+    Tcl_MutexLock(&threadPtr->threadMutex);
+    Tcl_MutexUnlock(&threadPtr->threadMutex);
+
     Tcl_MutexLock(&joinMutex);
 
     threadPtr->nextThreadPtr = firstThreadPtr;

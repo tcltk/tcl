@@ -924,9 +924,12 @@ test: test-tcl test-packages
 test-tcl: ${TCLTEST_EXE}
 	$(SHELL_ENV) ./${TCLTEST_EXE} $(TOP_DIR)/tests/all.tcl $(TESTFLAGS)
 
+# Tcl ignores SIGPIPE, but gdb would still stop on it (e.g. in io-29.27)
+GDB_SIGPIPE		= -ex "handle SIGPIPE nostop noprint"
+
 gdb-test: ${TCLTEST_EXE}
-	$(SHELL_ENV) $(GDB) --args ./${TCLTEST_EXE} $(TOP_DIR)/tests/all.tcl \
-		$(TESTFLAGS) -singleproc 1
+	$(SHELL_ENV) $(GDB) $(GDB_SIGPIPE) --args ./${TCLTEST_EXE} \
+		$(TOP_DIR)/tests/all.tcl $(TESTFLAGS) -singleproc 1
 
 lldb-test: ${TCLTEST_EXE}
 	$(SHELL_ENV) $(LLDB) -- ./${TCLTEST_EXE} $(TOP_DIR)/tests/all.tcl \
@@ -962,7 +965,7 @@ shell: ${TCL_EXE}
 
 # This target can be used to run tclsh inside either gdb or insight
 gdb: ${TCL_EXE}
-	$(SHELL_ENV) $(GDB) ./${TCL_EXE}
+	$(SHELL_ENV) $(GDB) $(GDB_SIGPIPE) ./${TCL_EXE}
 
 lldb: ${TCL_EXE}
 	$(SHELL_ENV) $(LLDB) ./${TCL_EXE}
@@ -1081,9 +1084,9 @@ install-libraries: libraries
 	    do \
 	    $(INSTALL_DATA) $$i "$(SCRIPT_INSTALL_DIR)/cookiejar0.2"; \
 	    done
-	@echo "Installing package http 2.10.2 as a Tcl Module"
+	@echo "Installing package http 2.10.3 as a Tcl Module"
 	@$(INSTALL_DATA) $(TOP_DIR)/library/http/http.tcl \
-		"$(MODULE_INSTALL_DIR)/9.0/http-2.10.2.tm"
+		"$(MODULE_INSTALL_DIR)/9.0/http-2.10.3.tm"
 	@echo "Installing package opt0.4 files to $(SCRIPT_INSTALL_DIR)/opt0.4/"
 	@for i in $(TOP_DIR)/library/opt/*.tcl; do \
 	    $(INSTALL_DATA) $$i "$(SCRIPT_INSTALL_DIR)/opt0.4"; \
@@ -1091,9 +1094,9 @@ install-libraries: libraries
 	@echo "Installing package msgcat 1.7.2 as a Tcl Module"
 	@$(INSTALL_DATA) $(TOP_DIR)/library/msgcat/msgcat.tcl \
 		"$(MODULE_INSTALL_DIR)/9.0/msgcat-1.7.2.tm"
-	@echo "Installing package tcltest 2.6.0 as a Tcl Module"
+	@echo "Installing package tcltest 2.6.1 as a Tcl Module"
 	@$(INSTALL_DATA) $(TOP_DIR)/library/tcltest/tcltest.tcl \
-		"$(MODULE_INSTALL_DIR)/9.0/tcltest-2.6.0.tm"
+		"$(MODULE_INSTALL_DIR)/9.0/tcltest-2.6.1.tm"
 	@echo "Installing package platform 1.2.0 as a Tcl Module"
 	@$(INSTALL_DATA) $(TOP_DIR)/library/platform/platform.tcl \
 		"$(MODULE_INSTALL_DIR)/9.0/platform-1.2.0.tm"
