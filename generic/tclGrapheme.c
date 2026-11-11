@@ -11,7 +11,10 @@
  */
 
 #include "tclInt.h"
-#include "../utf8proc/utf8proc.h" /* Relative path to ignore system include */
+#include "tclStringRep.h"	/* Need to check if Unicode rep exists  */
+
+/* Specify relative path to ignore system include */
+#include "../utf8proc/utf8proc.h"
 
 /*
  * Implementation note:
@@ -113,6 +116,34 @@ static const Tcl_ObjType tclGraphemeListType = {
 	NULL)			/* In */
 };
 
+/*
+ *------------------------------------------------------------------------
+ *
+ * UseUniChars --
+ *
+ *	Determines whether to use the Tcl_UniChar based grapheme
+ *	implementation or the TUTF-8 based one. Primary purpose is to avoid
+ *	shimmering and generation of multiple representations.
+ *
+ * Results:
+ *	A true if the Tcl_UniChar implementation is to be preferred, false
+ *	for TUTF8.
+ *
+ * Side effects:
+ *	None.
+ *
+ *------------------------------------------------------------------------
+ */
+static inline bool
+UseUniChars(Tcl_Obj *objPtr)
+{
+    if (TclHasInternalRep(objPtr, &tclStringType)) {
+	String *stringPtr = GET_STRING(objPtr);
+	return stringPtr->hasUnicode != 0;
+    }
+    return false;
+}
+
 /*
  *------------------------------------------------------------------------
  *
@@ -443,9 +474,9 @@ GraphemeUniCharPrev(
 /*
  *------------------------------------------------------------------------
  *
- * Tcl_GraphemeUniCharLength --
+ * Tcl_GraphemeLength, Tcl_GraphemeUniCharLength --
  *
- *	Returns the number of graphemes in a Unicode code point sequence.
+ *	Returns the number of graphemes
  *
  * Results:
  *	Count of graphemes in the sequence.
@@ -455,6 +486,24 @@ GraphemeUniCharPrev(
  *
  *------------------------------------------------------------------------
  */
+Tcl_Size
+Tcl_GraphemeLength(
+    const char *tutf8Ptr,	/* TUTF8 sequence */
+    Tcl_Size numBytes)		/* Number of bytes in sequence.
+				 * If < 0, nul terminated sequence */
+{
+    if (numBytes < 0) {
+	numBytes = strlen(tutf8Ptr);
+    }
+    const char *endPtr = tutf8Ptr + numBytes;
+    Tcl_Size count = 0;
+    while (tutf8Ptr < endPtr) {
+	tutf8Ptr = GraphemeNext(tutf8Ptr, endPtr - tutf8Ptr, NULL);
+	++count;
+    }
+    return count;
+}
+
 Tcl_Size
 Tcl_GraphemeUniCharLength(
     const Tcl_UniChar *uniPtr,	/* Tcl_UniChar sequence */
@@ -476,7 +525,7 @@ Tcl_GraphemeUniCharLength(
 /*
  *------------------------------------------------------------------------
  *
- * Tcl_GraphemeUniCharIndex --
+ * Tcl_GraphemeIndex, Tcl_GraphemeUniCharIndex --
  *
  *	Locates the grapheme at an index and returns a pointer to it.
  *	If grWidthPtr is not NULL, the number of code points in the
@@ -488,13 +537,55 @@ Tcl_GraphemeUniCharLength(
  *
  *------------------------------------------------------------------------
  */
+char *
+Tcl_GraphemeIndex(
+    const char *tutf8Ptr,	/* Tcl_UniChar string */
+    Tcl_Size numBytes,		/* Number of bytes in string. -1 if
+				 * nul terminated */
+    Tcl_Size grIndex,		/* Index of desired grapheme */
+    Tcl_Size *grWidthPtr,	/* Location for grapheme width, may be NULL */
+    Tcl_Size *grNumBytesPtr)	/* If not NULL, location to number of bytes
+	 			 * comprising the grapheme*/
+{
+    if (grIndex >= 0) {
+	if (numBytes < 0) {
+	    numBytes = strlen(tutf8Ptr);
+	}
+	const char *endPtr = tutf8Ptr + numBytes;
+	const char *grPtr;
+	Tcl_Size i, grWidth;
+	for (i = 0, grPtr = tutf8Ptr; grPtr < endPtr; ++i) {
+	    tutf8Ptr = GraphemeNext(grPtr, endPtr - grPtr, &grWidth);
+	    if (i == grIndex) {
+		if (grWidthPtr != NULL) {
+		    *grWidthPtr = grWidth;
+		}
+		if (grNumBytesPtr != NULL) {
+		    *grNumBytesPtr = tutf8Ptr - grPtr;
+		}
+		return (char *) grPtr;
+	    }
+	    grPtr = tutf8Ptr;
+	}
+    }
+    if (grWidthPtr != NULL) {
+	*grWidthPtr = 0;
+    }
+    if (grNumBytesPtr) {
+	*grNumBytesPtr = 0;
+    }
+    return NULL;
+}
+
 Tcl_UniChar *
 Tcl_GraphemeUniCharIndex(
     const Tcl_UniChar *uniPtr,	/* Tcl_UniChar string */
     Tcl_Size uniLen,		/* Number of Tcl_UniChar's in string. -1 if
 				 * nul terminated */
     Tcl_Size grIndex,		/* Index of desired grapheme */
-    Tcl_Size *grWidthPtr)	/* Location for grapheme width, may be NULL */
+    Tcl_Size *grWidthPtr,	/* Location for grapheme width, may be NULL */
+    Tcl_Size *grNumBytesPtr)	/* If not NULL, location to number of bytes
+	 			 * comprising the grapheme*/
 {
     if (grIndex >= 0) {
 	if (uniLen < 0) {
@@ -509,6 +600,9 @@ Tcl_GraphemeUniCharIndex(
 		if (grWidthPtr != NULL) {
 		    *grWidthPtr = grWidth;
 		}
+		if (grNumBytesPtr) {
+		    *grNumBytesPtr = sizeof(Tcl_UniChar) * grWidth;
+		}
 		return (Tcl_UniChar *) grPtr;
 	    }
 	    grPtr = uniPtr;
@@ -517,16 +611,18 @@ Tcl_GraphemeUniCharIndex(
     if (grWidthPtr != NULL) {
 	*grWidthPtr = 0;
     }
+    if (grNumBytesPtr) {
+	*grNumBytesPtr = 0;
+    }
     return NULL;
 }
 
 /*
  *------------------------------------------------------------------------
  *
- * Tcl_GraphemeUniCharRange --
+ * Tcl_GraphemeRange, Tcl_GraphemeUniCharRange --
  *
- *	Returns pointers delimiting a range of graphemes in a Unicode
- *	code point sequence.
+ *	Returns pointers delimiting a range of graphemes.
  *
  * Results:
  *	Pointer to the first grapheme in range. If the entire range is
@@ -539,6 +635,55 @@ Tcl_GraphemeUniCharIndex(
  *
  *------------------------------------------------------------------------
  */
+char *
+Tcl_GraphemeRange(
+    const char *tutf8Ptr,	/* TUTF8 byte sequence */
+    Tcl_Size numBytes,		/* Number of bytes in sequence. < 0 if
+				 * nul terminated */
+    Tcl_Size grFirst,		/* Starting index of grapheme range */
+    Tcl_Size grLast,		/* Ending index of grapheme range */
+    char **endPtrPtr)		/* Location to store pointer beyond range */
+{
+    if (numBytes < 0) {
+	numBytes = strlen(tutf8Ptr);
+    }
+    if (grFirst < 0) {
+	grFirst = 0;
+    }
+    /* Negative grLast -> end of string, for consistency with Tcl_GetRange */
+    if (grLast < 0) {
+	grLast = TCL_SIZE_MAX;
+    }
+
+    char *rangeFirstPtr;
+    rangeFirstPtr
+	    = Tcl_GraphemeIndex(tutf8Ptr, numBytes, grFirst, NULL, NULL);
+    if (rangeFirstPtr == NULL) {
+	/* Range lies outside passed sequence length */
+	*endPtrPtr = numBytes + (char *) tutf8Ptr;
+	return *endPtrPtr;
+    }
+    assert(rangeFirstPtr >= tutf8Ptr);
+    assert((rangeFirstPtr - tutf8Ptr) < numBytes);
+    if (grLast < grFirst) {
+	*endPtrPtr = rangeFirstPtr;
+	return rangeFirstPtr;
+    }
+
+    char *rangeLastPtr;
+    Tcl_Size lastNumBytes;
+    rangeLastPtr = Tcl_GraphemeIndex(rangeFirstPtr,
+	    numBytes - (rangeFirstPtr - tutf8Ptr), grLast - grFirst, NULL,
+	    &lastNumBytes);
+    if (rangeLastPtr == NULL) {
+	*endPtrPtr = numBytes + (char *) tutf8Ptr;
+	return rangeFirstPtr;
+    }
+
+    *endPtrPtr = rangeLastPtr + lastNumBytes;
+    return rangeFirstPtr;
+}
+
 Tcl_UniChar *
 Tcl_GraphemeUniCharRange(
     const Tcl_UniChar *uniPtr,	/* Tcl_UniChar string */
@@ -560,7 +705,8 @@ Tcl_GraphemeUniCharRange(
     }
 
     Tcl_UniChar *rangeFirstPtr;
-    rangeFirstPtr = Tcl_GraphemeUniCharIndex(uniPtr, uniLen, grFirst, NULL);
+    rangeFirstPtr
+	    = Tcl_GraphemeUniCharIndex(uniPtr, uniLen, grFirst, NULL, NULL);
     if (rangeFirstPtr == NULL) {
 	/* Range lies outside passed sequence length */
 	*endPtrPtr = uniLen + (Tcl_UniChar *) uniPtr;
@@ -576,7 +722,7 @@ Tcl_GraphemeUniCharRange(
     Tcl_UniChar *rangeLastPtr;
     Tcl_Size lastWidth;
     rangeLastPtr = Tcl_GraphemeUniCharIndex(rangeFirstPtr,
-	    uniLen - (rangeFirstPtr - uniPtr), grLast - grFirst, &lastWidth);
+	    uniLen - (rangeFirstPtr - uniPtr), grLast - grFirst, &lastWidth, NULL);
     if (rangeLastPtr == NULL) {
 	*endPtrPtr = uniLen + (Tcl_UniChar *) uniPtr;
 	return rangeFirstPtr;
@@ -589,12 +735,12 @@ Tcl_GraphemeUniCharRange(
 /*
  *------------------------------------------------------------------------
  *
- * Tcl_GraphemeUniCharReverse --
+ * Tcl_GraphemeReverse, Tcl_GraphemeUniCharReverse --
  *
  *	Stores graphemes in reverse order into the output buffer.
  *
  * Results:
- *	Number of code points stored in output buffer or -1 if the
+ *	Number of graphemes stored in output buffer or -1 if the
  *	the output buffer is not large enough.
  *
  * Side effects:
@@ -603,11 +749,44 @@ Tcl_GraphemeUniCharRange(
  *------------------------------------------------------------------------
  */
 Tcl_Size
+Tcl_GraphemeReverse(
+    const char *tutf8Ptr,	/* TUTF8 sequence */
+    Tcl_Size numBytes,		/* Number of bytes in sequence. < 0 if
+    				 * nul terminated */
+    char *outPtr,		/* Output buffer */ 
+    Tcl_Size outCapacity)	/* Size of output buffer in bytes */
+{
+    if (numBytes < 0) {
+	numBytes = strlen(tutf8Ptr);
+    }
+    if (numBytes == 0) {
+	return 0;
+    }
+    if (outCapacity < numBytes) {
+	return -1;
+    }
+    const char *endPtr = tutf8Ptr + numBytes;
+    char *toPtr = outPtr + numBytes;
+    Tcl_Size grCount;
+    for (grCount = 0; tutf8Ptr < endPtr; ++grCount) {
+	const char *grPtr = GraphemeNext(tutf8Ptr, endPtr - tutf8Ptr, NULL);
+	assert(tutf8Ptr < grPtr);
+	Tcl_Size grNumBytes = grPtr - tutf8Ptr;
+	toPtr -= grNumBytes;
+	assert(toPtr >= outPtr);
+	memcpy(toPtr, tutf8Ptr, grNumBytes);
+	tutf8Ptr = grPtr;
+    }
+    assert(toPtr == outPtr);
+    return grCount;
+}
+
+Tcl_Size
 Tcl_GraphemeUniCharReverse(
     const Tcl_UniChar *uniPtr,	/* Tcl_UniChar string */
     Tcl_Size uniLen,		/* Number of Tcl_UniChar's in string. -1 if
     				 * nul terminated */
-    Tcl_UniChar *outPtr,	/* Output buffer */ 
+    Tcl_UniChar *outPtr,	/* Output buffer */
     Tcl_Size outCapacity)	/* Size of output buffer in Tcl_UniChar's */
 {
     if (uniLen < 0) {
@@ -679,22 +858,23 @@ GraphemeNextCmd(
     }
 
     if (strIndex < uniLen) {
-#ifdef USE_UNICHAR_GRAPHEME_API
-	const Tcl_UniChar *grStartPtr = Tcl_GetUnicodeFromObj(objv[1], &uniLen);
-	grStartPtr += strIndex;
-	const Tcl_UniChar *grEndPtr
-		= GraphemeUniCharNext(grStartPtr, uniLen - strIndex, &grWidth);
-	Tcl_SetObjResult(interp, Tcl_NewUnicodeObj(grStartPtr, grWidth));
-#else
-	Tcl_Size numBytes;
-	const char *tutf8Ptr = TclGetStringFromObj(objv[1], &numBytes);
-	const char *grStartPtr = Tcl_UtfAtIndex(tutf8Ptr, strIndex);
-	Tcl_Size offset = grStartPtr - tutf8Ptr;
-	assert(numBytes > offset); /* Since strIndex < uniLen above */
-	const char *grEndPtr = GraphemeNext(grStartPtr, numBytes - offset, &grWidth);
-	numBytes = grEndPtr - grStartPtr;
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(grStartPtr, numBytes));
-#endif
+	if (UseUniChars(objv[1])) {
+	    const Tcl_UniChar *grStartPtr
+		    = Tcl_GetUnicodeFromObj(objv[1], &uniLen);
+	    grStartPtr += strIndex;
+	    (void) GraphemeUniCharNext(grStartPtr, uniLen - strIndex, &grWidth);
+	    Tcl_SetObjResult(interp, Tcl_NewUnicodeObj(grStartPtr, grWidth));
+	} else {
+	    Tcl_Size numBytes;
+	    const char *tutf8Ptr = TclGetStringFromObj(objv[1], &numBytes);
+	    const char *grStartPtr = Tcl_UtfAtIndex(tutf8Ptr, strIndex);
+	    Tcl_Size offset = grStartPtr - tutf8Ptr;
+	    assert(numBytes > offset); /* Since strIndex < uniLen above */
+	    const char *grEndPtr
+		    = GraphemeNext(grStartPtr, numBytes - offset, &grWidth);
+	    numBytes = grEndPtr - grStartPtr;
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(grStartPtr, numBytes));
+	}
     }
     Tcl_ObjSetVar2(interp, objv[2], NULL,
 	    Tcl_NewWideIntObj(strIndex + grWidth), 0);
@@ -748,22 +928,22 @@ GraphemePrevCmd(
     }
 
     if (strIndex > 0) {
-#ifdef USE_UNICHAR_GRAPHEME_API
-	const Tcl_UniChar *startPtr;
-	startPtr = Tcl_GetUnicodeFromObj(objv[1], &uniLen);
-	Tcl_UniChar *grPtr
-		= GraphemeUniCharPrev(startPtr + strIndex, strIndex, &grWidth);
-	Tcl_SetObjResult(interp, Tcl_NewUnicodeObj(grPtr, grWidth));
-#else
-	Tcl_Size numBytes;
-	const char *startPtr = TclGetStringFromObj(objv[1], &numBytes);
-	const char *endPtr = Tcl_UtfAtIndex(startPtr, strIndex);
-	Tcl_Size offset = endPtr - startPtr;
-	assert(offset > 0); /* Since strIndex > 0 above */
-	const char *grStartPtr = GraphemePrev(endPtr, offset, &grWidth);
-	numBytes = endPtr - grStartPtr;
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(grStartPtr, numBytes));
-#endif
+	if (UseUniChars(objv[1])) {
+	    const Tcl_UniChar *startPtr;
+	    startPtr = Tcl_GetUnicodeFromObj(objv[1], &uniLen);
+	    Tcl_UniChar *grPtr = GraphemeUniCharPrev(startPtr + strIndex,
+		    strIndex, &grWidth);
+	    Tcl_SetObjResult(interp, Tcl_NewUnicodeObj(grPtr, grWidth));
+	} else {
+	    Tcl_Size numBytes;
+	    const char *startPtr = TclGetStringFromObj(objv[1], &numBytes);
+	    const char *endPtr = Tcl_UtfAtIndex(startPtr, strIndex);
+	    Tcl_Size offset = endPtr - startPtr;
+	    assert(offset > 0); /* Since strIndex > 0 above */
+	    const char *grStartPtr = GraphemePrev(endPtr, offset, &grWidth);
+	    numBytes = endPtr - grStartPtr;
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(grStartPtr, numBytes));
+	}
     }
     Tcl_ObjSetVar2(interp, objv[2], NULL, Tcl_NewWideIntObj(strIndex-grWidth), 0);
     return TCL_OK;
@@ -796,11 +976,18 @@ GraphemeLengthCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "string");
 	return TCL_ERROR;
     }
+    Tcl_Size len;
+    if (UseUniChars(objv[1])) {
+	Tcl_UniChar *uniPtr = Tcl_GetUnicodeFromObj(objv[1], &len);
+	Tcl_SetObjResult(interp,
+		Tcl_NewWideIntObj(Tcl_GraphemeUniCharLength(uniPtr, len)));
+    } else {
+	const char *tutf8Ptr;
+	tutf8Ptr = TclGetStringFromObj(objv[1], &len);
+	Tcl_SetObjResult(interp,
+		Tcl_NewWideIntObj(Tcl_GraphemeLength(tutf8Ptr, len)));
+    }
 
-    Tcl_Size uniLen;
-    Tcl_UniChar *uniPtr = Tcl_GetUnicodeFromObj(objv[1], &uniLen);
-    Tcl_SetObjResult(interp,
-	    Tcl_NewWideIntObj(Tcl_GraphemeUniCharLength(uniPtr, uniLen)));
     return TCL_OK;
 }
 
@@ -832,24 +1019,46 @@ GraphemeIndexCmd(
 	return TCL_ERROR;
     }
 
-    Tcl_Size grIndex, grLen, uniLen;
-    Tcl_UniChar *uniPtr = Tcl_GetUnicodeFromObj(objv[1], &uniLen);
-    grLen = Tcl_GraphemeUniCharLength(uniPtr, uniLen); /* Need for end, end-1 etc. */
-    if (TclGetIntForIndexM(interp, objv[2], grLen - 1, &grIndex) != TCL_OK) {
-	return TCL_ERROR;
-    }
+    Tcl_Size grIndex, grLen;
+    if (UseUniChars(objv[1])) {
+	Tcl_Size grWidth;
+	Tcl_Size uniLen;
+	const Tcl_UniChar *uniPtr = Tcl_GetUnicodeFromObj(objv[1], &uniLen);
+	grLen = Tcl_GraphemeUniCharLength(uniPtr,
+		uniLen); /* Need for end, end-1 etc. */
+	if (TclGetIntForIndexM(interp, objv[2], grLen - 1, &grIndex)
+		!= TCL_OK) {
+	    return TCL_ERROR;
+	}
 
-    if (grIndex < 0 || grIndex >= grLen) {
-	return TCL_OK;
+	if (grIndex < 0 || grIndex >= grLen) {
+	    return TCL_OK;
+	}
+	const Tcl_UniChar *grPtr = Tcl_GraphemeUniCharIndex(uniPtr, uniLen,
+		grIndex, &grWidth, NULL);
+	assert(grPtr); /* Since we already checked length above */
+	Tcl_SetObjResult(interp, Tcl_NewUnicodeObj(grPtr, grWidth));
+    } else {
+	Tcl_Size numBytes;
+	const char *tutf8Ptr = TclGetStringFromObj(objv[1], &numBytes);
+	grLen = Tcl_GraphemeLength(tutf8Ptr, numBytes); /* for end-1 etc. */
+	if (TclGetIntForIndexM(interp, objv[2], grLen - 1, &grIndex)
+		!= TCL_OK) {
+	    return TCL_ERROR;
+	}
+
+	if (grIndex < 0 || grIndex >= grLen) {
+	    return TCL_OK;
+	}
+	const char *grPtr = Tcl_GraphemeIndex(tutf8Ptr, numBytes, grIndex, NULL,
+		&numBytes);
+	assert(grPtr); /* Since we already checked length above */
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(grPtr, numBytes));
     }
-    Tcl_Size grWidth;
-    const Tcl_UniChar *grPtr = Tcl_GraphemeUniCharIndex(uniPtr, uniLen, grIndex, &grWidth);
-    assert(grPtr);	/* Since we already checked length above */
-    Tcl_SetObjResult(interp, Tcl_NewUnicodeObj(grPtr, grWidth));
 
     return TCL_OK;
 }
-
+
 /*
  *------------------------------------------------------------------------
  *
@@ -889,7 +1098,7 @@ GraphemeOffsetCmd(
 	Tcl_SetObjResult(interp, Tcl_NewIntObj(-1));
     } else {
 	const Tcl_UniChar *grPtr;
-	grPtr = Tcl_GraphemeUniCharIndex(uniPtr, uniLen, grIndex, NULL);
+	grPtr = Tcl_GraphemeUniCharIndex(uniPtr, uniLen, grIndex, NULL, NULL);
 	assert(grPtr); /* Since we already checked length above */
 	Tcl_SetObjResult(interp, Tcl_NewWideIntObj(grPtr - uniPtr));
     }
@@ -925,22 +1134,45 @@ GraphemeRangeCmd(
 	return TCL_ERROR;
     }
 
-    Tcl_Size grFirst, grLast, grLen, uniLen;
-    Tcl_UniChar *uniPtr = Tcl_GetUnicodeFromObj(objv[1], &uniLen);
-    grLen = Tcl_GraphemeUniCharLength(uniPtr, uniLen); /* Need for end, end-1 etc. */
-    if (TclGetIntForIndexM(interp, objv[2], grLen-1, &grFirst) != TCL_OK ||
-	    TclGetIntForIndexM(interp, objv[3], grLen-1, &grLast) != TCL_OK) {
-	return TCL_ERROR;
-    }
+    Tcl_Size grFirst, grLast, grLen;
+    if (UseUniChars(objv[1])) {
+	Tcl_Size uniLen;
+	Tcl_UniChar *uniPtr = Tcl_GetUnicodeFromObj(objv[1], &uniLen);
+	grLen = Tcl_GraphemeUniCharLength(uniPtr, uniLen);
+	if (TclGetIntForIndexM(interp, objv[2], grLen - 1, &grFirst) != TCL_OK
+		|| TclGetIntForIndexM(interp, objv[3], grLen - 1, &grLast)
+			   != TCL_OK) {
+	    return TCL_ERROR;
+	}
 
-    if (grLast >= 0) {
-	Tcl_UniChar *rangeFirstPtr;
-	Tcl_UniChar *rangeEndPtr;
-	rangeFirstPtr = Tcl_GraphemeUniCharRange(uniPtr, uniLen, grFirst, grLast,
-		&rangeEndPtr);
-	assert(rangeEndPtr >= rangeFirstPtr);
-	Tcl_SetObjResult(interp,
-		Tcl_NewUnicodeObj(rangeFirstPtr, rangeEndPtr - rangeFirstPtr));
+	if (grLast >= 0) {
+	    Tcl_UniChar *rangeFirstPtr;
+	    Tcl_UniChar *rangeEndPtr;
+	    rangeFirstPtr = Tcl_GraphemeUniCharRange(uniPtr, uniLen, grFirst,
+		    grLast, &rangeEndPtr);
+	    assert(rangeEndPtr >= rangeFirstPtr);
+	    Tcl_SetObjResult(interp, Tcl_NewUnicodeObj(rangeFirstPtr,
+					     rangeEndPtr - rangeFirstPtr));
+	}
+    } else {
+	Tcl_Size numBytes;
+	const char *tutf8Ptr = TclGetStringFromObj(objv[1], &numBytes);
+	grLen = Tcl_GraphemeLength(tutf8Ptr, numBytes);
+	if (TclGetIntForIndexM(interp, objv[2], grLen - 1, &grFirst) != TCL_OK
+		|| TclGetIntForIndexM(interp, objv[3], grLen - 1, &grLast)
+			   != TCL_OK) {
+	    return TCL_ERROR;
+	}
+
+	if (grLast >= 0) {
+	    char *rangeFirstPtr;
+	    char *rangeEndPtr;
+	    rangeFirstPtr = Tcl_GraphemeRange(tutf8Ptr, numBytes, grFirst,
+		    grLast, &rangeEndPtr);
+	    assert(rangeEndPtr >= rangeFirstPtr);
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(rangeFirstPtr,
+					     rangeEndPtr - rangeFirstPtr));
+	}
     }
     return TCL_OK;
 }
@@ -974,7 +1206,7 @@ GraphemeReverseCmd(
     }
 
     /*
-     * Graphemes can vary in size with no theoritical limit so reversing in
+     * Graphemes can vary in size with no theoretical limit so reversing in
      * place in unshared object case is not straightforward. Just allocate a
      * new object.
      *
@@ -982,14 +1214,25 @@ GraphemeReverseCmd(
      * one at a time with a temporary buffer.
      */
 
-    Tcl_Size uniLen;
-    const Tcl_UniChar *uniPtr = Tcl_GetUnicodeFromObj(objv[1], &uniLen);
-    if (uniLen > 0) {
-	Tcl_UniChar *tempBufPtr
-		= (Tcl_UniChar *)Tcl_Alloc(uniLen * sizeof(*tempBufPtr));
-	Tcl_GraphemeUniCharReverse(uniPtr, uniLen, tempBufPtr, uniLen);
-	Tcl_SetObjResult(interp, Tcl_NewUnicodeObj(tempBufPtr, uniLen));
-	Tcl_Free(tempBufPtr);
+    if (UseUniChars(objv[1])) {
+	Tcl_Size uniLen;
+	const Tcl_UniChar *uniPtr = Tcl_GetUnicodeFromObj(objv[1], &uniLen);
+	if (uniLen > 0) {
+	    Tcl_UniChar *tempBufPtr
+		    = (Tcl_UniChar *)Tcl_Alloc(uniLen * sizeof(*tempBufPtr));
+	    Tcl_GraphemeUniCharReverse(uniPtr, uniLen, tempBufPtr, uniLen);
+	    Tcl_SetObjResult(interp, Tcl_NewUnicodeObj(tempBufPtr, uniLen));
+	    Tcl_Free(tempBufPtr);
+	}
+    } else {
+	Tcl_Size numBytes;
+	const char *tutf8Ptr = TclGetStringFromObj(objv[1], &numBytes);
+	if (numBytes > 0) {
+	    char *tempBufPtr = (char *)Tcl_Alloc(numBytes);
+	    Tcl_GraphemeReverse(tutf8Ptr, numBytes, tempBufPtr, numBytes);
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(tempBufPtr, numBytes));
+	    Tcl_Free(tempBufPtr);
+	}
     }
     return TCL_OK;
 }
@@ -1204,7 +1447,7 @@ GraphemeListIndexProc(
 	/* Move forward from the cached index */
 	grPtr = Tcl_GraphemeUniCharIndex(glrPtr->graphemeOffset + uniStartPtr,
 		uniLen - glrPtr->graphemeOffset, index - glrPtr->graphemeIndex,
-		&grWidth);
+		&grWidth, NULL);
     } else if (index > 2*(glrPtr->graphemeIndex - index)) {
 	/* index is sufficiently closer to cached index */
 	assert(glrPtr->graphemeOffset > 0);
@@ -1223,7 +1466,7 @@ GraphemeListIndexProc(
 	}
     } else {
 	/* Start from the beginning */
-	grPtr = Tcl_GraphemeUniCharIndex(uniStartPtr, uniLen, index, &grWidth);
+	grPtr = Tcl_GraphemeUniCharIndex(uniStartPtr, uniLen, index, &grWidth, NULL);
     }
     if (grPtr != NULL) {
 	/* Update the cached values */
@@ -1283,19 +1526,38 @@ GraphemeSplitCmd(
 /*
  *------------------------------------------------------------------------
  *
- * Tcl_GraphemeUniCharNext --
+ * Tcl_GraphemeNext, Tcl_GraphemeUniCharNext --
  *
  *	Locate start of next grapheme
  *
  * Results:
- *	Returns a pointer to the `Tcl_UniChar` following the grapheme at
- *	uniPtr. If `uniLen` is 0, a null pointer is returned.
+ *	Returns a pointer to the location following the grapheme at
+ *	uniPtr. If numBytes/uniLen is 0, a null pointer is returned.
  *
  * Side effects:
  *	Stores number of code points in the grapheme in *grWidthPtr.
  *
  *------------------------------------------------------------------------
  */
+char *
+Tcl_GraphemeNext(
+    const char *tutf8Ptr,	/* TUTF8 byte sequence */
+    Tcl_Size numBytes,		/* Length, nul-terminated if < 0 */
+    Tcl_Size *grWidthPtr)	/* If not NULL, location to store grapheme
+	 			 * width in code point units */
+{
+    if (numBytes < 0) {
+	numBytes = strlen(tutf8Ptr);
+    }
+    if (numBytes == 0) {
+	if (grWidthPtr) {
+	    *grWidthPtr = 0;
+	}
+	return NULL;
+    }
+    return GraphemeNext(tutf8Ptr, numBytes, grWidthPtr);
+}
+
 Tcl_UniChar *
 Tcl_GraphemeUniCharNext(
     const Tcl_UniChar *uniPtr,	/* Sequence of Unicode code points */
@@ -1318,19 +1580,35 @@ Tcl_GraphemeUniCharNext(
 /*
  *------------------------------------------------------------------------
  *
- * Tcl_GraphemeUniCharPrev --
+ * Tcl_GraphemePrev, Tcl_GraphemeUniCharPrev --
  *
  *	Locate start of previous grapheme
  *
  * Results:
- *	Returns a pointer to the starting `Tcl_UniChar` of the grapheme
- *	preceding uniPtr. If `uniLen` is <= 0, a null pointer is returned.
+ *	Returns a pointer to the start of the preceding grapheme.
+ *	If numBytes/uniLen is <= 0, a null pointer is returned.
  *
  * Side effects:
  *	Stores number of code points in the grapheme in *grWidthPtr.
  *
  *------------------------------------------------------------------------
  */
+char *
+Tcl_GraphemePrev(
+    const char *tutf8Ptr,	/* Sequence of TUTF8 bytes */
+    Tcl_Size numBytes,		/* Length, must be > 0 */
+    Tcl_Size *grWidthPtr)	/* If not NULL, location to store grapheme
+	 			 * width in code point units */
+{
+    if (numBytes <= 0) {
+	if (grWidthPtr) {
+	    *grWidthPtr = 0;
+	}
+	return NULL;
+    }
+    return GraphemePrev(tutf8Ptr, numBytes, grWidthPtr);
+}
+
 Tcl_UniChar *
 Tcl_GraphemeUniCharPrev(
     const Tcl_UniChar *uniPtr,	/* Sequence of Unicode code points */

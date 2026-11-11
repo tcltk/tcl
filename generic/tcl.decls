@@ -2472,34 +2472,59 @@ declare 701 {
 
 # TIP 756
 declare 702 {
-    Tcl_Size Tcl_GraphemeUniCharLength(const Tcl_UniChar *uniPtr,
-	    Tcl_Size uniLen)
+    char *Tcl_GraphemeNext(const char *tutf8Ptr, Tcl_Size numBytes,
+	    Tcl_Size *grWidthPtr)
 }
 declare 703 {
     Tcl_UniChar *Tcl_GraphemeUniCharNext(const Tcl_UniChar *uniPtr,
-	     Tcl_Size uniLen, Tcl_Size *grWidthPtr)
+	    Tcl_Size uniLen, Tcl_Size *grWidthPtr)
 }
 declare 704 {
-    Tcl_UniChar *Tcl_GraphemeUniCharPrev(const Tcl_UniChar *uniPtr,
-	     Tcl_Size uniLen, Tcl_Size *grWidthPtr)
+    char *Tcl_GraphemePrev(const char *tutf8Ptr, Tcl_Size numBytes,
+	    Tcl_Size *grWidthPtr)
 }
 declare 705 {
-    Tcl_UniChar *Tcl_GraphemeUniCharIndex(const Tcl_UniChar *uniPtr,
-	    Tcl_Size uniLen, Tcl_Size grIndex, Tcl_Size *grWidthPtr)
+    Tcl_UniChar *Tcl_GraphemeUniCharPrev(const Tcl_UniChar *uniPtr,
+	    Tcl_Size uniLen, Tcl_Size *grWidthPtr)
 }
 declare 706 {
+    Tcl_Size Tcl_GraphemeLength(const char *tutf8Ptr, Tcl_Size numBytes)
+}
+declare 707 {
+    Tcl_Size Tcl_GraphemeUniCharLength(const Tcl_UniChar *uniPtr,
+	    Tcl_Size uniLen)
+}
+declare 708 {
+    char *Tcl_GraphemeIndex(const char *uniPtr, Tcl_Size numBytes,
+	    Tcl_Size grIndex, Tcl_Size *grWidthPtr, Tcl_Size *grNumBytesPtr)
+}
+declare 709 {
+    Tcl_UniChar *Tcl_GraphemeUniCharIndex(const Tcl_UniChar *uniPtr,
+	    Tcl_Size uniLen, Tcl_Size grIndex, Tcl_Size *grWidthPtr,
+	    Tcl_Size *grNumBytesPtr)
+}
+declare 710 {
+    char *Tcl_GraphemeRange(const char *uniPtr,
+	    Tcl_Size numBytes, Tcl_Size grStartIndex, Tcl_Size grEndIndex,
+	    char **endPtrPtr)
+}
+declare 711 {
     Tcl_UniChar *Tcl_GraphemeUniCharRange(const Tcl_UniChar *uniPtr,
 	    Tcl_Size uniLen, Tcl_Size grStartIndex, Tcl_Size grEndIndex,
 	    Tcl_UniChar **endPtrPtr)
 }
-declare 707 {
+declare 712 {
+    Tcl_Size Tcl_GraphemeReverse(const char *tutf8Ptr, Tcl_Size numBytes,
+	    char *outPtr, Tcl_Size outCapacity)
+}
+declare 713 {
     Tcl_Size Tcl_GraphemeUniCharReverse(const Tcl_UniChar *uniPtr,
 	    Tcl_Size uniLen, Tcl_UniChar *outPtr, Tcl_Size outCapacity)
 }
 
 # ----- BASELINE -- FOR -- 9.2.0 ----- #
 
-declare 708 {
+declare 714 {
     void TclUnusedStubEntry(void)
 }
 
