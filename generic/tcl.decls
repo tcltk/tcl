@@ -2476,7 +2476,7 @@ declare 702 {
 	    Tcl_Size *grWidthPtr)
 }
 declare 703 {
-    Tcl_UniChar *Tcl_GraphemeUniCharNext(const Tcl_UniChar *uniPtr,
+    Tcl_UniChar *Tcl_GraphemeUniNext(const Tcl_UniChar *uniPtr,
 	    Tcl_Size uniLen, Tcl_Size *grWidthPtr)
 }
 declare 704 {
@@ -2484,14 +2484,14 @@ declare 704 {
 	    Tcl_Size *grWidthPtr)
 }
 declare 705 {
-    Tcl_UniChar *Tcl_GraphemeUniCharPrev(const Tcl_UniChar *uniPtr,
+    Tcl_UniChar *Tcl_GraphemeUniPrev(const Tcl_UniChar *uniPtr,
 	    Tcl_Size uniLen, Tcl_Size *grWidthPtr)
 }
 declare 706 {
     Tcl_Size Tcl_GraphemeLength(const char *tutf8Ptr, Tcl_Size numBytes)
 }
 declare 707 {
-    Tcl_Size Tcl_GraphemeUniCharLength(const Tcl_UniChar *uniPtr,
+    Tcl_Size Tcl_GraphemeUniLength(const Tcl_UniChar *uniPtr,
 	    Tcl_Size uniLen)
 }
 declare 708 {
@@ -2499,7 +2499,7 @@ declare 708 {
 	    Tcl_Size grIndex, Tcl_Size *grWidthPtr, Tcl_Size *grNumBytesPtr)
 }
 declare 709 {
-    Tcl_UniChar *Tcl_GraphemeUniCharIndex(const Tcl_UniChar *uniPtr,
+    Tcl_UniChar *Tcl_GraphemeUniIndex(const Tcl_UniChar *uniPtr,
 	    Tcl_Size uniLen, Tcl_Size grIndex, Tcl_Size *grWidthPtr,
 	    Tcl_Size *grNumBytesPtr)
 }
@@ -2509,7 +2509,7 @@ declare 710 {
 	    char **endPtrPtr)
 }
 declare 711 {
-    Tcl_UniChar *Tcl_GraphemeUniCharRange(const Tcl_UniChar *uniPtr,
+    Tcl_UniChar *Tcl_GraphemeUniRange(const Tcl_UniChar *uniPtr,
 	    Tcl_Size uniLen, Tcl_Size grStartIndex, Tcl_Size grEndIndex,
 	    Tcl_UniChar **endPtrPtr)
 }
@@ -2518,7 +2518,7 @@ declare 712 {
 	    char *outPtr, Tcl_Size outCapacity)
 }
 declare 713 {
-    Tcl_Size Tcl_GraphemeUniCharReverse(const Tcl_UniChar *uniPtr,
+    Tcl_Size Tcl_GraphemeUniReverse(const Tcl_UniChar *uniPtr,
 	    Tcl_Size uniLen, Tcl_UniChar *outPtr, Tcl_Size outCapacity)
 }
 
