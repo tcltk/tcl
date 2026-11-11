@@ -1951,10 +1951,10 @@ EXTERN Tcl_Size		Tcl_GraphemeUniCharLength(const Tcl_UniChar *uniPtr,
 				Tcl_Size uniLen);
 /* 703 */
 EXTERN Tcl_UniChar *	Tcl_GraphemeUniCharNext(const Tcl_UniChar *uniPtr,
-				Tcl_Size uniLen);
+				Tcl_Size uniLen, Tcl_Size *grWidthPtr);
 /* 704 */
 EXTERN Tcl_UniChar *	Tcl_GraphemeUniCharPrev(const Tcl_UniChar *uniPtr,
-				Tcl_Size uniLen);
+				Tcl_Size uniLen, Tcl_Size *grWidthPtr);
 /* 705 */
 EXTERN Tcl_UniChar *	Tcl_GraphemeUniCharIndex(const Tcl_UniChar *uniPtr,
 				Tcl_Size uniLen, Tcl_Size grIndex,
@@ -2683,8 +2683,8 @@ typedef struct TclStubs {
     int (*tcl_UnregisterPostInitProc) (Tcl_PostInitProc *postInitProc, void *clientData); /* 700 */
     int (*tcl_ClearPostInitProcs) (void); /* 701 */
     Tcl_Size (*tcl_GraphemeUniCharLength) (const Tcl_UniChar *uniPtr, Tcl_Size uniLen); /* 702 */
-    Tcl_UniChar * (*tcl_GraphemeUniCharNext) (const Tcl_UniChar *uniPtr, Tcl_Size uniLen); /* 703 */
-    Tcl_UniChar * (*tcl_GraphemeUniCharPrev) (const Tcl_UniChar *uniPtr, Tcl_Size uniLen); /* 704 */
+    Tcl_UniChar * (*tcl_GraphemeUniCharNext) (const Tcl_UniChar *uniPtr, Tcl_Size uniLen, Tcl_Size *grWidthPtr); /* 703 */
+    Tcl_UniChar * (*tcl_GraphemeUniCharPrev) (const Tcl_UniChar *uniPtr, Tcl_Size uniLen, Tcl_Size *grWidthPtr); /* 704 */
     Tcl_UniChar * (*tcl_GraphemeUniCharIndex) (const Tcl_UniChar *uniPtr, Tcl_Size uniLen, Tcl_Size grIndex, Tcl_Size *grWidthPtr); /* 705 */
     Tcl_UniChar * (*tcl_GraphemeUniCharRange) (const Tcl_UniChar *uniPtr, Tcl_Size uniLen, Tcl_Size grStartIndex, Tcl_Size grEndIndex, Tcl_UniChar **endPtrPtr); /* 706 */
     Tcl_Size (*tcl_GraphemeUniCharReverse) (const Tcl_UniChar *uniPtr, Tcl_Size uniLen, Tcl_UniChar *outPtr, Tcl_Size outCapacity); /* 707 */
