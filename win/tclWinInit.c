@@ -141,7 +141,6 @@ TclpInitPlatform(void)
  *
  *-------------------------------------------------------------------------
  */
-
 void
 TclpInitLibraryPath(
     char **valuePtr,
@@ -213,7 +212,6 @@ TclpInitLibraryPath(
  *
  *---------------------------------------------------------------------------
  */
-
 static void
 AppendEnvironment(
     Tcl_Obj *pathPtr,
@@ -635,6 +633,14 @@ TclpFindVariable(
     Tcl_UtfToUpper(nameUpper);
 
     Tcl_DStringInit(&envString);
+    if (_wenviron == NULL) {
+	/*
+	 * When we are started from main(), the _wenviron array could
+	 * be NULL and will be initialized by the first _wgetenv() call.
+	 */
+
+	(void) _wgetenv(L"WINDIR");
+    }
     for (i = 0, env = _wenviron[i]; env != NULL; i++, env = _wenviron[i]) {
 	/*
 	 * Chop the env string off after the equal sign, then Convert the name
@@ -647,7 +653,7 @@ TclpFindVariable(
 	if (p1 == NULL) {
 	    continue;
 	}
-	length = (int) (p1 - envUpper);
+	length = (int)(p1 - envUpper);
 	Tcl_DStringSetLength(&envString, length+1);
 	Tcl_UtfToUpper(envUpper);
 
