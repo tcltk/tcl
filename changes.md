@@ -76,6 +76,7 @@ to the userbase.
  - [Stack and heap buffer overflow in 'clock format %z'](https://core.tcl-lang.org/tcl/tktview/e713c3)
  - [Fix crash from race condition in Unix locale initialization](https://core.tcl-lang.org/tcl/tktview/c35e347c)
  - [http::geturl -keepalive intermittent socketWrState errors](https://core.tcl-lang.org/tcl/tktview/05b158)
+ - [Segault upon sequence of execution traces](https://core.tcl-lang.org/tcl/tktview/48d092ceb0)
 
 # Updated bundled packages, libraries, standards, data
  - http 2.10.3
