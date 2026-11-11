@@ -76,7 +76,8 @@ to the userbase.
  - [non-zipfs builds with relocated library misses encodings](https://core.tcl-lang.org/tcl/tktview/75ecc0)
  - [Undefined pointer arithmetic in `INST_LREPLACE`](https://core.tcl-lang.org/tcl/tktview/94c651)
  - [http::geturl -keepalive intermittent socketWrState errors](https://core.tcl-lang.org/tcl/tktview/05b158)
- - [Segault upon sequence of execution traces](https://core.tcl-lang.org/tcl/tktview/48d092ceb0)
+ - [Segault upon sequence of execution traces](https://core.tcl-lang.org/tcl/tktview/48d092)
+ - [Tcl_DeleteEventSource called from a setup or check proc](https://core.tcl-lang.org/tcl/tktview/055240)
 
 # Updated bundled packages, libraries, standards, data
  - http 2.10.3
