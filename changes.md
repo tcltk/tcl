@@ -79,6 +79,7 @@ to the userbase.
  - [Segault upon sequence of execution traces](https://core.tcl-lang.org/tcl/tktview/48d092)
  - [Tcl_DeleteEventSource called from a setup or check proc](https://core.tcl-lang.org/tcl/tktview/055240)
  - [a child process created by fork() could deadlock on its first allocation](https://core.tcl-lang.org/tcl/tktview/be3854)
+ - [use an acquire load for the unlocked check and a release store](https://core.tcl-lang.org/tcl/tktview/112af7)
 
 # Updated bundled packages, libraries, standards, data
  - http 2.10.3
