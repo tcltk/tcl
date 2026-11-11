@@ -35,7 +35,7 @@ lfilter - Select elements from a list based on an expression
 
 The **lfilter** command implements a loop where the loop variable(s) take on values from one or more lists, and the loop returns a list of values from the (first) list where the *body* script evaluates to a true value.
 
-In the simplest case there is one loop variable, *varname*, and one list, *list*, that is a list of values to assign to *varname*. The *body* argument is a Tcl script. For each element of *list* (in order from first to last), **lfilter** assigns the contents of the element to *varname* as if the [lindex] command had been used to extract the element, then calls the Tcl interpreter to execute *body*. If execution of the script completes normally and produces a true value, that element of *list* is appended to an accumulator list. [lmap] returns the accumulator list.
+In the simplest case there is one loop variable, *varname*, and one list, *list*, that is a list of values to assign to *varname*. The *body* argument is a Tcl script. For each element of *list* (in order from first to last), **lfilter** assigns the contents of the element to *varname* as if the [lindex] command had been used to extract the element, then calls the Tcl interpreter to execute *body*. If execution of the script completes normally and produces a true value, that element of *list* is appended to an accumulator list. **lfilter** returns the accumulator list.
 
 In the general case there can be more than one value list (e.g., *list1* and *list2*), and each value list can be associated with a list of loop variables (e.g., *varlist1* and *varlist2*). During each iteration of the loop the variables of each *varlist* are assigned consecutive values from the corresponding *list*. Values in each *list* are used in order from first to last, and each value is used exactly once. The total number of loop iterations is large enough to use up all the values from all the value lists. If a value list does not contain enough elements for each of its loop variables in each iteration, empty values are used for the missing elements. For each iteration, the value that is appended when *body* yields a true value (i.e., anything accepted by [Tcl\_GetBooleanFromObj][BoolObj] as a boolean) is the value that was assigned to the first variable of the first list of variables; all other values are not collected.
 
@@ -88,5 +88,4 @@ lfilter word $usernames {
 [for]: for.md
 [foreach]: foreach.md
 [lindex]: lindex.md
-[lmap]: lmap.md
 
