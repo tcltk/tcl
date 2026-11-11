@@ -91,7 +91,7 @@ static BOOL CALLBACK TclpGetWindowsVersionOnce(
      */
     HMODULE handle = GetModuleHandleW(L"NTDLL");
     getVersionProc *getVersion =
-	(getVersionProc *)(void *)GetProcAddress(handle, "RtlGetVersion");
+	    (getVersionProc *)(void *)GetProcAddress(handle, "RtlGetVersion");
 
     osInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFOW);
     if (getVersion == NULL || getVersion(&osInfo)) {
@@ -151,7 +151,7 @@ TclpGetCodePageOnce(
      */
     if (RegGetValueA(HKEY_LOCAL_MACHINE,
 	    "SYSTEM\\CurrentControlSet\\Control\\Nls\\CodePage",
-	    "ACP", RRF_RT_REG_SZ, NULL, codePage+2,
+	    "ACP", RRF_RT_REG_SZ, NULL, &codePage[2],
 	    &size) != ERROR_SUCCESS) {
 	/* On failure, fallback to GetACP() */
 	UINT acp = GetACP();
@@ -163,7 +163,7 @@ TclpGetCodePageOnce(
     *lpContext = (LPVOID)&codePage[0];
     return TRUE;
 }
-
+
 /*
  * TclpGetCodePage --
  *
@@ -188,8 +188,7 @@ TclpGetCodePage(void)
     assert(codePagePtr != NULL);
     return codePagePtr;
 }
-
-
+
 /*
  *---------------------------------------------------------------------------
  *
@@ -236,7 +235,7 @@ TclpInitPlatform(void)
     /* Initialize code page once at startup, will not be updated */
     (void)TclpGetCodePage();
 }
-
+
 /*
  *-------------------------------------------------------------------------
  *
@@ -253,7 +252,6 @@ TclpInitPlatform(void)
  *
  *-------------------------------------------------------------------------
  */
-
 void
 TclpInitLibraryPath(
     char **valuePtr,
@@ -325,7 +323,6 @@ TclpInitLibraryPath(
  *
  *---------------------------------------------------------------------------
  */
-
 static void
 AppendEnvironment(
     Tcl_Obj *pathPtr,
@@ -586,7 +583,7 @@ TclpGetUserName(
     }
     return Tcl_DStringValue(bufferPtr);
 }
-
+
 /*
  *---------------------------------------------------------------------------
  *
@@ -749,6 +746,14 @@ TclpFindVariable(
     Tcl_UtfToUpper(nameUpper);
 
     Tcl_DStringInit(&envString);
+    if (_wenviron == NULL) {
+	/*
+	 * When we are started from main(), the _wenviron array could
+	 * be NULL and will be initialized by the first _wgetenv() call.
+	 */
+
+	(void) _wgetenv(L"WINDIR");
+    }
     for (i = 0, env = _wenviron[i]; env != NULL; i++, env = _wenviron[i]) {
 	/*
 	 * Chop the env string off after the equal sign, then Convert the name
