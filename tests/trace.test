@@ -2501,6 +2501,27 @@ test trace-34.6 {Bug 1458266} -setup {
     rename isTracedInside_1 {}
     rename isTracedInside_2 {}
 } -result ok
+test trace-34.7 {enterstep trace removes itself, Bug 0e3f777ed5} -setup {
+    proc foo {} {set x {}}
+    proc bar args {
+	lappend ::steps [lindex $args 0]
+	trace remove execution foo enterstep bar
+    }
+    proc baz args {trace add execution foo enterstep bar}
+    set ::steps {}
+} -body {
+    # Will crash if still buggy
+    trace add execution foo leave baz
+    trace add execution foo leave baz
+    foo
+    foo
+    list $::steps [trace info execution foo]
+} -cleanup {
+    rename foo {}
+    rename bar {}
+    rename baz {}
+    unset ::steps
+} -result {{{set x {}} {set x {}}} {{enterstep bar} {enterstep bar} {leave baz} {leave baz}}}
 
 test trace-35.1 {527164: Keep -errorinfo of traces} -setup {
     unset -nocomplain x y

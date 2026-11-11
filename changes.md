@@ -71,18 +71,25 @@ to the userbase.
  - [Unsetting env vars in slave interps](https://core.tcl-lang.org/tcl/tktview/845241)
  - [Memory corruption false positive with TCL_MEM_DEBUG](https://core.tcl-lang.org/tcl/tktview/7e3f26)
  - [Windows: [file delete -force] failed on a directory containing a symbolic link](https://core.tcl-lang.org/tcl/tktview/08203e)
+ - [lpop/lset/join crashes with abstract lists](https://core.tcl-lang.org/tcl/tktview/409a4e)
+ - [Heap out-of-bounds read and NULL dereference in 'clock'](https://core.tcl-lang.org/tcl/tktview/813699)
+ - [Stack and heap buffer overflow in 'clock format %z'](https://core.tcl-lang.org/tcl/tktview/e713c3)
+ - [Fix crash from race condition in Unix locale initialization](https://core.tcl-lang.org/tcl/tktview/c35e347c)
+ - [http::geturl -keepalive intermittent socketWrState errors](https://core.tcl-lang.org/tcl/tktview/05b158)
+ - [Segault upon sequence of execution traces](https://core.tcl-lang.org/tcl/tktview/48d092ceb0)
 
 # Updated bundled packages, libraries, standards, data
  - http 2.10.3
  - msgcat 1.7.2
  - platform 1.1.2
- - sqlite3 3.53.4
+ - sqlite3 3.54.1
  - tcltest 2.6.1
  - tcl::idna 1.0.2
  - tcltest 2.6.0
  - Thread 3.0.7
  - tzdata 2026f
  - Unicode 18.0.0
+ - zlib 1.4.0
 
 Release Tcl 9.0.4 arises from the check-in with tag `core-9-0-4`.
 

@@ -4922,10 +4922,13 @@ TEBCresume(
 	 */
 
 	DECACHE_STACK_INFO();
-	if (TclObjTypeHasProc(valuePtr, setElementProc)) {
+	if (numIndices > 0 && TclObjTypeHasProc(valuePtr, setElementProc)) {
 	    objResultPtr = TclObjTypeSetElement(interp,
 		    valuePtr, numIndices,
 		    &OBJ_AT_DEPTH(numIndices), OBJ_AT_TOS);
+	    if (objResultPtr) {
+		Tcl_IncrRefCount(objResultPtr);
+	    }
 	} else {
 	    objResultPtr = TclLsetFlat(interp, valuePtr, numIndices,
 		    &OBJ_AT_DEPTH(numIndices), OBJ_AT_TOS);
@@ -5167,7 +5170,7 @@ TEBCresume(
 	}
 
     case INST_LREPLACE4: {
-	size_t numToDelete, numNewElems;
+	Tcl_Size numToDelete, numNewElems;
 	int end_indicator;
 	int haveSecondIndex, flags;
 	Tcl_Obj *fromIdxObj, *toIdxObj;

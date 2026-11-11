@@ -270,7 +270,7 @@ my_LStringObjIndex(
 
   (void)interp;
 
-  if (index < lstringRepPtr->strlen) {
+  if (index >= 0 && index < lstringRepPtr->strlen) {
       char cchar[2];
       cchar[0] = lstringRepPtr->string[index];
       cchar[1] = 0;

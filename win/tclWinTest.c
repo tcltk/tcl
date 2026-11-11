@@ -106,7 +106,7 @@ TesteventloopCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
+    Tcl_Obj *const *objv)	/* Argument objects. */
 {
     static int *framePtr = NULL;/* Pointer to integer on stack frame of
 				 * innermost invocation of the "wait"
@@ -182,7 +182,7 @@ TestvolumetypeCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
+    Tcl_Obj *const *objv)	/* Argument objects. */
 {
 #define VOL_BUF_SIZE 32
     int found;
@@ -248,7 +248,7 @@ TestwinclockCmd(
     TCL_UNUSED(void *),
     Tcl_Interp* interp,		/* Tcl interpreter */
     int objc,			/* Argument count */
-    Tcl_Obj *const objv[])	/* Argument vector */
+    Tcl_Obj *const *objv)	/* Argument vector */
 {
     static const FILETIME posixEpoch = { 0xD53E8000, 0x019DB1DE };
 				/* The Posix epoch, expressed as a Windows
@@ -295,9 +295,9 @@ TestwinclockCmd(
 static int
 TestwinsleepCmd(
     TCL_UNUSED(void *),
-    Tcl_Interp* interp,		/* Tcl interpreter */
+    Tcl_Interp *interp,		/* Tcl interpreter */
     int objc,			/* Parameter count */
-    Tcl_Obj *const * objv)	/* Parameter vector */
+    Tcl_Obj *const *objv)	/* Parameter vector */
 {
     int ms;
 
@@ -338,9 +338,9 @@ TestwinsleepCmd(
 static int
 TestExceptionCmd(
     TCL_UNUSED(void *),
-    Tcl_Interp* interp,		/* Tcl interpreter */
+    Tcl_Interp *interp,		/* Tcl interpreter */
     int objc,			/* Argument count */
-    Tcl_Obj *const objv[])	/* Argument vector */
+    Tcl_Obj *const *objv)	/* Argument vector */
 {
     static const char *const cmds[] = {
 	"access_violation", "datatype_misalignment", "array_bounds",
@@ -394,8 +394,15 @@ TestExceptionCmd(
 }
 
 /*
- * This "chmod" works sufficiently for test script purposes. Do not expect
- * it to be exact emulation of Unix chmod (not sure if that's even possible)
+ *----------------------------------------------------------------------
+ *
+ * TestplatformChmod --
+ *
+ *	This "chmod" works sufficiently for test script purposes. Do not expect
+ *	it to be exact emulation of Unix chmod (not sure if that's even
+ *	possible).
+ *
+ *----------------------------------------------------------------------
  */
 static int
 TestplatformChmod(
@@ -446,7 +453,7 @@ TestplatformChmod(
     res = -1; /* Assume failure */
 
     Tcl_DStringInit(&ds);
-    Tcl_UtfToChar16DString(nativePath, -1, &ds);
+    Tcl_UtfToWCharDString(nativePath, -1, &ds);
 
     attr = GetFileAttributesW((WCHAR *)Tcl_DStringValue(&ds));
     if (attr == 0xFFFFFFFF) {
@@ -479,7 +486,13 @@ TestplatformChmod(
      * Always include DACL modify rights so we don't get locked out
      */
     aceEntry[nSids].mask = READ_CONTROL | WRITE_DAC | WRITE_OWNER | SYNCHRONIZE |
-			   FILE_READ_ATTRIBUTES | FILE_WRITE_ATTRIBUTES;
+	    FILE_READ_ATTRIBUTES | FILE_WRITE_ATTRIBUTES;
+    if (!isDir) {
+	/*
+	 * As on Unix, the file mode does not prevent renaming or deleting.
+	 */
+	aceEntry[nSids].mask |= DELETE;
+    }
     if (pmode & 0700) {
 	/* Owner permissions. Assumes current process is owner */
 	if (pmode & 0400) {
@@ -512,7 +525,8 @@ TestplatformChmod(
 	}
 	aceEntry[nSids].sidLen = GetLengthSid(pTokenGroup->PrimaryGroup);
 	aceEntry[nSids].pSid = (PSID)Tcl_Alloc(aceEntry[nSids].sidLen);
-	if (!CopySid(aceEntry[nSids].sidLen, aceEntry[nSids].pSid, pTokenGroup->PrimaryGroup)) {
+	if (!CopySid(aceEntry[nSids].sidLen, aceEntry[nSids].pSid,
+		pTokenGroup->PrimaryGroup)) {
 	    Tcl_Free(pTokenGroup);
 	    Tcl_Free(aceEntry[nSids].pSid); /* Since we have not ++'ed nSids */
 	    goto done;
@@ -569,8 +583,8 @@ TestplatformChmod(
     newAclSize = sizeof(ACL);
     /* Add in size required for each ACE entry in the ACL */
     for (i = 0; i < nSids; ++i) {
-	newAclSize +=
-	    offsetof(ACCESS_ALLOWED_ACE, SidStart) + aceEntry[i].sidLen;
+	newAclSize += (DWORD)
+		offsetof(ACCESS_ALLOWED_ACE, SidStart) + aceEntry[i].sidLen;
     }
     newAcl = (PACL)Tcl_Alloc(newAclSize);
     if (!InitializeAcl(newAcl, newAclSize, ACL_REVISION)) {
@@ -642,7 +656,8 @@ TestchmodCmd(
     int objc,			/* Parameter count */
     Tcl_Obj *const * objv)	/* Parameter vector */
 {
-    int i, mode;
+    int i;
+    int mode;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "mode file ?file ...?");
@@ -695,7 +710,7 @@ TestfilesddlCmd (
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,		/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
+    Tcl_Obj *const *objv)	/* Argument objects. */
 {
     if (objc < 2 || objc > 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "PATH ?SDDL?");
@@ -724,10 +739,10 @@ TestfilesddlCmd (
 		SDDL_REVISION_1, secInfo, &sddlPtr, NULL)) {
 	err = GetLastError();
 	errorMessage = "Failed to convert security descriptor to SDDL";
-        goto vamoose;
+	goto vamoose;
     }
 
-    (void)Tcl_Char16ToUtfDString(sddlPtr, -1, &ds);
+    Tcl_WCharToUtfDString(sddlPtr, -1, &ds);
     /* The original sddl is returned in all cases */
     Tcl_DStringResult(interp, &ds);
 
@@ -737,7 +752,7 @@ TestfilesddlCmd (
 	secdPtr = NULL;
 	Tcl_Size utflen;
 	const char *utfPtr = Tcl_GetStringFromObj(objv[2], &utflen);
-	WCHAR *newSddl = (WCHAR *) Tcl_UtfToChar16DString(utfPtr, utflen, &ds);
+	WCHAR *newSddl = Tcl_UtfToWCharDString(utfPtr, utflen, &ds);
 	if (!ConvertStringSecurityDescriptorToSecurityDescriptorW(newSddl,
 		    SDDL_REVISION_1, &secdPtr, NULL)) {
 	    err = GetLastError();
