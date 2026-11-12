@@ -513,7 +513,8 @@ typedef struct stat *Tcl_OldStat_;
 #define TCL_SUBST_COMMANDS	001
 #define TCL_SUBST_VARIABLES	002
 #define TCL_SUBST_BACKSLASHES	004
-#define TCL_SUBST_ALL		007
+#define TCL_SUBST_EXPRESSIONS	010	/* $((expr)) (or $(expr)) form */
+#define TCL_SUBST_ALL		017
 
 /*
  * Forward declaration of Tcl_Obj to prevent an error when the forward
@@ -1830,6 +1831,19 @@ typedef struct Tcl_Token {
  *				literal character prefix "{*}". This word is
  *				marked to be expanded - that is, broken into
  *				words after substitution is complete.
+ * TCL_TOKEN_EXPR_SUBST -	The token describes an expression substitution
+ *				of the form $(expr) (or $((expr)), see
+ *				TCL_EXPR_SUBST_PARENS in tclParse.c). The
+ *				token spans from the dollar sign through the
+ *				closing parenthesis(es). NumComponents is
+ *				always 1; the single following token is a
+ *				TCL_TOKEN_TEXT token that covers the body of
+ *				the expression (what lies between "$((" and
+ *				"))", or "$(" and ")" in the single-paren
+ *				build). The body is evaluated
+ *				exactly as if it had been passed, braced, to
+ *				the expr command: no substitution is applied
+ *				to it by the word parser.
  */
 
 #define TCL_TOKEN_WORD		1
@@ -1841,6 +1855,7 @@ typedef struct Tcl_Token {
 #define TCL_TOKEN_SUB_EXPR	64
 #define TCL_TOKEN_OPERATOR	128
 #define TCL_TOKEN_EXPAND_WORD	256
+#define TCL_TOKEN_EXPR_SUBST	512
 
 /*
  * Parsing error types. On any parsing error, one of these values will be
