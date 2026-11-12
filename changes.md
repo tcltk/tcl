@@ -75,13 +75,21 @@ to the userbase.
  - [Crash from race condition in Unix locale initialization](https://core.tcl-lang.org/tcl/tktview/c35e347c)
  - [non-zipfs builds with relocated library misses encodings](https://core.tcl-lang.org/tcl/tktview/75ecc0)
  - [Undefined pointer arithmetic in `INST_LREPLACE`](https://core.tcl-lang.org/tcl/tktview/94c651)
+ - [http::geturl -keepalive intermittent socketWrState errors](https://core.tcl-lang.org/tcl/tktview/05b158)
+ - [Segault upon sequence of execution traces](https://core.tcl-lang.org/tcl/tktview/48d092)
+ - [Tcl_DeleteEventSource called from a setup or check proc](https://core.tcl-lang.org/tcl/tktview/055240)
+ - [a child process created by fork() could deadlock on its first allocation](https://core.tcl-lang.org/tcl/tktview/be3854)
+ - [use an acquire load for the unlocked check and a release store](https://core.tcl-lang.org/tcl/tktview/112af7)
+ - [file cmd fails to copy to VFAT](https://core.tcl-lang.org/tcl/tktview/152304)
 
 # Updated bundled packages, libraries, standards, data
  - http 2.10.3
  - msgcat 1.7.2
+ - sqlite3 3.54.1
  - tcltest 2.6.1
  - tcl::idna 1.0.2
  - tzdata 2026f
+ - zlib 1.4.0
 
 Release Tcl 9.1.0 arises from the check-in with tag `core-9-1-0`.
 

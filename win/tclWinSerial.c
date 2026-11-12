@@ -254,11 +254,11 @@ SerialInit(void)
      * This is a speed enhancement.
      */
 
-    if (!initialized) {
+    if (!TclLoadIntAcquire(&initialized)) {
 	Tcl_MutexLock(&serialMutex);
 	if (!initialized) {
-	    initialized = 1;
 	    Tcl_CreateExitHandler(ProcExitHandler, NULL);
+	    TclStoreIntRelease(&initialized, 1);
 	}
 	Tcl_MutexUnlock(&serialMutex);
     }
