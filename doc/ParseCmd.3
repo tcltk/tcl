@@ -300,6 +300,18 @@ token giving the array name and the remaining sub-tokens are
 \fBTCL_TOKEN_VARIABLE\fR tokens that must be concatenated to produce the
 array index. The \fInumComponents\fR field includes nested sub-tokens
 that are part of \fBTCL_TOKEN_VARIABLE\fR tokens in the array index.
+.IP \fBTCL_TOKEN_EXPR_SUBST\fR
+The token describes an expression substitution, written \fB$((\fIexpr\fB))\fR,
+which is equivalent to \fB[expr {\fIexpr\fB}]\fR.
+The token includes the \fB$\fR through the matching close parenthesis.
+The \fInumComponents\fR field is always 1, and the next token is a
+\fBTCL_TOKEN_TEXT\fR token that gives the body of the expression (the
+text between the \fB$((\fR and \fB))\fR, without them).
+The body is not parsed or substituted any further; it is to be passed
+to the expression parser as if it had been enclosed in braces.
+Like \fBTCL_TOKEN_VARIABLE\fR, this token may appear wherever a variable
+substitution is allowed, including inside the index of an array variable and
+as an operand in an expression.
 .IP \fBTCL_TOKEN_SUB_EXPR\fR
 The token describes one subexpression of an expression
 (or an entire expression).

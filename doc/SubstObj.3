@@ -27,9 +27,9 @@ A Tcl value containing the string to perform substitutions on.
 .AP int flags in
 OR'ed combination of flag bits that specify which substitutions to
 perform.  The flags \fBTCL_SUBST_COMMANDS\fR,
-\fBTCL_SUBST_VARIABLES\fR and \fBTCL_SUBST_BACKSLASHES\fR are
-currently supported, and \fBTCL_SUBST_ALL\fR is provided as a
-convenience for the common case where all substitutions are desired.
+\fBTCL_SUBST_VARIABLES\fR, \fBTCL_SUBST_BACKSLASHES\fR and
+\fBTCL_SUBST_EXPRESSIONS\fR are currently supported, and
+\fBTCL_SUBST_ALL\fR is provided as a convenience for the common case where all substitutions are desired.
 .BE
 .SH DESCRIPTION
 .PP
@@ -50,6 +50,11 @@ their corresponding character.
 When the \fBTCL_SUBST_VARIABLES\fR bit is set in \fIflags\fR,
 sequences that look like variable substitutions for Tcl commands are
 replaced by the contents of the named variable.
+.PP
+When the \fBTCL_SUBST_EXPRESSIONS\fR bit is set in \fIflags\fR, the
+expression substitution form (\fB$((\fIexpr\fB))\fR) is replaced by the
+value of the expression.  If the bit is clear, that text is left as it is.
+Note that \fBTCL_SUBST_ALL\fR now includes this bit.
 .PP
 When the \fBTCL_SUBST_COMMANDS\fR bit is set in \fIflags\fR, sequences
 that look like command substitutions for Tcl commands are replaced by

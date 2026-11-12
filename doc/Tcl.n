@@ -46,8 +46,9 @@ then the word is terminated by the next double-quote character.
 If semi-colons, close brackets, or white space characters
 (including newlines) appear between the quotes then they are treated
 as ordinary characters and included in the word.
-Command substitution, variable substitution, and backslash substitution
-are performed on the characters between the quotes as described below.
+Command substitution, variable substitution, expression substitution, and
+backslash substitution are performed on the characters between the quotes
+as described below.
 The double-quotes are not retained as part of the word.
 .IP "[5] \fBArgument expansion.\fR"
 If a word starts with the string
@@ -55,11 +56,11 @@ If a word starts with the string
 followed by a non-whitespace character, then the leading
 .QW {*}
 is removed and the rest of the word is parsed and substituted as any other
-word. After substitution, the word is parsed as a list (without command or
-variable substitutions; backslash substitutions are performed as is normal for
-a list and individual internal words may be surrounded by either braces or
-double-quote characters), and its words are added to the command being
-substituted. For instance,
+word. After substitution, the word is parsed as a list (without command,
+variable, or expression substitutions; backslash substitutions are performed
+as is normal for a list and individual internal words may be surrounded by
+either braces or double-quote characters), and its words are added to the
+command being substituted. For instance,
 .QW "cmd a {*}{b [c]} d {*}{$e f {g h}}"
 is equivalent to
 .QW "cmd a b {[c]} d {$e} f {g h}" .
@@ -94,14 +95,16 @@ substituted into the word in place of the brackets and all of the
 characters between them.
 There may be any number of command substitutions in a single word.
 Command substitution is not performed on words enclosed in braces.
-.IP "[8] \fBVariable substitution.\fR"
+.IP "[8] \fBVariable and expression substitution.\fR"
 If a word contains a dollar-sign
 .PQ $
 followed by one of the forms
 described below, then Tcl performs \fIvariable
-substitution\fR:  the dollar-sign and the following characters are
-replaced in the word by the value of a variable.
-Variable substitution may take any of the following forms:
+substitution\fR or \fIexpression substitution\fR:  the dollar-sign and the
+following characters are
+replaced in the word by the value of a variable or of an expression.
+Variable substitution may take any of the following three forms;
+the fourth form is expression substitution:
 .RS
 .TP 15
 \fB$\fIname\fR
@@ -136,9 +139,51 @@ or close brace characters,
 and \fIindex\fR can be any sequence of characters except for close brace
 characters.  No further
 substitutions are performed during the parsing of \fIname\fR.
+.TP 15
+\fB$((\fIexpression\fB))\fR
+.
+An expression substitution of the form
+.QW "\fB$((\fIexpression\fB))\fR"
+is a shorthand for \fBexpr\fR commands of the form
+.QW "\fB[expr {\fIexpression\fB}]\fR"
+where \fIexpression\fR is any valid Tcl expression.
+Formally, an expression substitution begins with a dollar-sign followed by
+two open parentheses,
+.QW \fB$((\fR ,
+then the expression itself, and finally two close parentheses,
+.QW \fB))\fR ,
+to mark the end.
+If the expression contains parentheses they must be
+balanced\(emunless they appear inside braces, double quotes or bracketed
+commands.
+For example,
+.QW "\fB$(( \N'34')\N'34' eq $close ))\fR"
+is valid.
+.sp
+A \fB$((\fR that is not closed by a matching \fB))\fR is an error:
+\fB$((1+2)*3)\fR is rejected, and should be written \fB$(((1+2)*3))\fR
+or, with spaces, \fB$(( (1+2)*3 ))\fR.
+Any other form that begins with \fB$(\fR, such as \fB$( (1+2))\fR, is not an
+expression substitution; as before it is an array reference with an empty name.
+.sp
+The text is passed to \fBexpr\fR as if it were enclosed in braces:
+the Tcl parser performs no substitution on it, so that variable, command and
+backslash substitutions in it are performed once, by \fBexpr\fR, and the
+result of the expression is never substituted a second time.
+.sp
+For example,
+.QW "\fBset area $(( $width * $height ))\fR"
+sets \fBarea\fR to the product of the two variables, and
+.QW "\fBputs \N'34'n=$(( 2**10 ))!\N'34'\fR"
+prints
+.QW "\fBn=1024!\fR" .
+Extra parentheses around the expression make no difference:
+\fB$(( $a+$b ))\fR and \fB$(( ($a+$b) ))\fR have the same value.
 .PP
-There may be any number of variable substitutions in a single word.
-Variable substitution is not performed on words enclosed in braces.
+There may be any number of variable and expression substitutions in a single
+word.
+Variable and expression substitution is not performed on words enclosed in
+braces.
 .PP
 Note that variables may contain character sequences other than those listed
 above, but in that case other mechanisms must be used to access them (e.g.,
