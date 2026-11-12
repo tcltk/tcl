@@ -2472,32 +2472,59 @@ declare 701 {
 
 # TIP 756
 declare 702 {
-    Tcl_Size Tcl_GraphemeLength(const Tcl_UniChar *uniPtr, Tcl_Size uniLen)
+    char *Tcl_GraphemeNext(const char *tutf8Ptr, Tcl_Size numBytes,
+	    Tcl_Size *grWidthPtr)
 }
 declare 703 {
-    Tcl_UniChar *Tcl_GraphemeNext(const Tcl_UniChar *uniPtr, Tcl_Size uniLen)
+    Tcl_UniChar *Tcl_GraphemeUniNext(const Tcl_UniChar *uniPtr,
+	    Tcl_Size uniLen, Tcl_Size *grWidthPtr)
 }
 declare 704 {
-    Tcl_UniChar *Tcl_GraphemePrev(const Tcl_UniChar *uniPtr, Tcl_Size uniLen)
+    char *Tcl_GraphemePrev(const char *tutf8Ptr, Tcl_Size numBytes,
+	    Tcl_Size *grWidthPtr)
 }
 declare 705 {
-    Tcl_UniChar *Tcl_GraphemeIndex(const Tcl_UniChar *uniPtr, Tcl_Size uniLen,
-	    Tcl_Size grIndex, Tcl_Size *grWidthPtr)
+    Tcl_UniChar *Tcl_GraphemeUniPrev(const Tcl_UniChar *uniPtr,
+	    Tcl_Size uniLen, Tcl_Size *grWidthPtr)
 }
 declare 706 {
-    Tcl_UniChar *Tcl_GraphemeRange(const Tcl_UniChar *uniPtr, Tcl_Size uniLen,
-	    Tcl_Size grStartIndex, Tcl_Size grEndIndex, Tcl_UniChar **endPtrPtr)
+    Tcl_Size Tcl_GraphemeLength(const char *tutf8Ptr, Tcl_Size numBytes)
 }
-
 declare 707 {
-    Tcl_Size Tcl_GraphemeReverse(const Tcl_UniChar *uniPtr, Tcl_Size uniLen,
-	    Tcl_UniChar *outPtr, Tcl_Size outCapacity)
-
+    Tcl_Size Tcl_GraphemeUniLength(const Tcl_UniChar *uniPtr,
+	    Tcl_Size uniLen)
+}
+declare 708 {
+    char *Tcl_GraphemeIndex(const char *uniPtr, Tcl_Size numBytes,
+	    Tcl_Size grIndex, Tcl_Size *grWidthPtr, Tcl_Size *grNumBytesPtr)
+}
+declare 709 {
+    Tcl_UniChar *Tcl_GraphemeUniIndex(const Tcl_UniChar *uniPtr,
+	    Tcl_Size uniLen, Tcl_Size grIndex, Tcl_Size *grWidthPtr,
+	    Tcl_Size *grNumBytesPtr)
+}
+declare 710 {
+    char *Tcl_GraphemeRange(const char *uniPtr,
+	    Tcl_Size numBytes, Tcl_Size grStartIndex, Tcl_Size grEndIndex,
+	    char **endPtrPtr)
+}
+declare 711 {
+    Tcl_UniChar *Tcl_GraphemeUniRange(const Tcl_UniChar *uniPtr,
+	    Tcl_Size uniLen, Tcl_Size grStartIndex, Tcl_Size grEndIndex,
+	    Tcl_UniChar **endPtrPtr)
+}
+declare 712 {
+    Tcl_Size Tcl_GraphemeReverse(const char *tutf8Ptr, Tcl_Size numBytes,
+	    char *outPtr, Tcl_Size outCapacity)
+}
+declare 713 {
+    Tcl_Size Tcl_GraphemeUniReverse(const Tcl_UniChar *uniPtr,
+	    Tcl_Size uniLen, Tcl_UniChar *outPtr, Tcl_Size outCapacity)
 }
 
 # ----- BASELINE -- FOR -- 9.2.0 ----- #
 
-declare 708 {
+declare 714 {
     void TclUnusedStubEntry(void)
 }
 

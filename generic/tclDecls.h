@@ -1947,27 +1947,50 @@ EXTERN int		Tcl_UnregisterPostInitProc(
 /* 701 */
 EXTERN int		Tcl_ClearPostInitProcs(void);
 /* 702 */
-EXTERN Tcl_Size		Tcl_GraphemeLength(const Tcl_UniChar *uniPtr,
-				Tcl_Size uniLen);
+EXTERN char *		Tcl_GraphemeNext(const char *tutf8Ptr,
+				Tcl_Size numBytes, Tcl_Size *grWidthPtr);
 /* 703 */
-EXTERN Tcl_UniChar *	Tcl_GraphemeNext(const Tcl_UniChar *uniPtr,
-				Tcl_Size uniLen);
+EXTERN Tcl_UniChar *	Tcl_GraphemeUniNext(const Tcl_UniChar *uniPtr,
+				Tcl_Size uniLen, Tcl_Size *grWidthPtr);
 /* 704 */
-EXTERN Tcl_UniChar *	Tcl_GraphemePrev(const Tcl_UniChar *uniPtr,
-				Tcl_Size uniLen);
+EXTERN char *		Tcl_GraphemePrev(const char *tutf8Ptr,
+				Tcl_Size numBytes, Tcl_Size *grWidthPtr);
 /* 705 */
-EXTERN Tcl_UniChar *	Tcl_GraphemeIndex(const Tcl_UniChar *uniPtr,
-				Tcl_Size uniLen, Tcl_Size grIndex,
-				Tcl_Size *grWidthPtr);
+EXTERN Tcl_UniChar *	Tcl_GraphemeUniPrev(const Tcl_UniChar *uniPtr,
+				Tcl_Size uniLen, Tcl_Size *grWidthPtr);
 /* 706 */
-EXTERN Tcl_UniChar *	Tcl_GraphemeRange(const Tcl_UniChar *uniPtr,
+EXTERN Tcl_Size		Tcl_GraphemeLength(const char *tutf8Ptr,
+				Tcl_Size numBytes);
+/* 707 */
+EXTERN Tcl_Size		Tcl_GraphemeUniLength(const Tcl_UniChar *uniPtr,
+				Tcl_Size uniLen);
+/* 708 */
+EXTERN char *		Tcl_GraphemeIndex(const char *uniPtr,
+				Tcl_Size numBytes, Tcl_Size grIndex,
+				Tcl_Size *grWidthPtr,
+				Tcl_Size *grNumBytesPtr);
+/* 709 */
+EXTERN Tcl_UniChar *	Tcl_GraphemeUniIndex(const Tcl_UniChar *uniPtr,
+				Tcl_Size uniLen, Tcl_Size grIndex,
+				Tcl_Size *grWidthPtr,
+				Tcl_Size *grNumBytesPtr);
+/* 710 */
+EXTERN char *		Tcl_GraphemeRange(const char *uniPtr,
+				Tcl_Size numBytes, Tcl_Size grStartIndex,
+				Tcl_Size grEndIndex, char **endPtrPtr);
+/* 711 */
+EXTERN Tcl_UniChar *	Tcl_GraphemeUniRange(const Tcl_UniChar *uniPtr,
 				Tcl_Size uniLen, Tcl_Size grStartIndex,
 				Tcl_Size grEndIndex, Tcl_UniChar **endPtrPtr);
-/* 707 */
-EXTERN Tcl_Size		Tcl_GraphemeReverse(const Tcl_UniChar *uniPtr,
+/* 712 */
+EXTERN Tcl_Size		Tcl_GraphemeReverse(const char *tutf8Ptr,
+				Tcl_Size numBytes, char *outPtr,
+				Tcl_Size outCapacity);
+/* 713 */
+EXTERN Tcl_Size		Tcl_GraphemeUniReverse(const Tcl_UniChar *uniPtr,
 				Tcl_Size uniLen, Tcl_UniChar *outPtr,
 				Tcl_Size outCapacity);
-/* 708 */
+/* 714 */
 EXTERN void		TclUnusedStubEntry(void);
 
 typedef struct {
@@ -2682,13 +2705,19 @@ typedef struct TclStubs {
     int (*tcl_RegisterPostInitProc) (Tcl_PostInitProc *postInitProc, void *clientData); /* 699 */
     int (*tcl_UnregisterPostInitProc) (Tcl_PostInitProc *postInitProc, void *clientData); /* 700 */
     int (*tcl_ClearPostInitProcs) (void); /* 701 */
-    Tcl_Size (*tcl_GraphemeLength) (const Tcl_UniChar *uniPtr, Tcl_Size uniLen); /* 702 */
-    Tcl_UniChar * (*tcl_GraphemeNext) (const Tcl_UniChar *uniPtr, Tcl_Size uniLen); /* 703 */
-    Tcl_UniChar * (*tcl_GraphemePrev) (const Tcl_UniChar *uniPtr, Tcl_Size uniLen); /* 704 */
-    Tcl_UniChar * (*tcl_GraphemeIndex) (const Tcl_UniChar *uniPtr, Tcl_Size uniLen, Tcl_Size grIndex, Tcl_Size *grWidthPtr); /* 705 */
-    Tcl_UniChar * (*tcl_GraphemeRange) (const Tcl_UniChar *uniPtr, Tcl_Size uniLen, Tcl_Size grStartIndex, Tcl_Size grEndIndex, Tcl_UniChar **endPtrPtr); /* 706 */
-    Tcl_Size (*tcl_GraphemeReverse) (const Tcl_UniChar *uniPtr, Tcl_Size uniLen, Tcl_UniChar *outPtr, Tcl_Size outCapacity); /* 707 */
-    void (*tclUnusedStubEntry) (void); /* 708 */
+    char * (*tcl_GraphemeNext) (const char *tutf8Ptr, Tcl_Size numBytes, Tcl_Size *grWidthPtr); /* 702 */
+    Tcl_UniChar * (*tcl_GraphemeUniNext) (const Tcl_UniChar *uniPtr, Tcl_Size uniLen, Tcl_Size *grWidthPtr); /* 703 */
+    char * (*tcl_GraphemePrev) (const char *tutf8Ptr, Tcl_Size numBytes, Tcl_Size *grWidthPtr); /* 704 */
+    Tcl_UniChar * (*tcl_GraphemeUniPrev) (const Tcl_UniChar *uniPtr, Tcl_Size uniLen, Tcl_Size *grWidthPtr); /* 705 */
+    Tcl_Size (*tcl_GraphemeLength) (const char *tutf8Ptr, Tcl_Size numBytes); /* 706 */
+    Tcl_Size (*tcl_GraphemeUniLength) (const Tcl_UniChar *uniPtr, Tcl_Size uniLen); /* 707 */
+    char * (*tcl_GraphemeIndex) (const char *uniPtr, Tcl_Size numBytes, Tcl_Size grIndex, Tcl_Size *grWidthPtr, Tcl_Size *grNumBytesPtr); /* 708 */
+    Tcl_UniChar * (*tcl_GraphemeUniIndex) (const Tcl_UniChar *uniPtr, Tcl_Size uniLen, Tcl_Size grIndex, Tcl_Size *grWidthPtr, Tcl_Size *grNumBytesPtr); /* 709 */
+    char * (*tcl_GraphemeRange) (const char *uniPtr, Tcl_Size numBytes, Tcl_Size grStartIndex, Tcl_Size grEndIndex, char **endPtrPtr); /* 710 */
+    Tcl_UniChar * (*tcl_GraphemeUniRange) (const Tcl_UniChar *uniPtr, Tcl_Size uniLen, Tcl_Size grStartIndex, Tcl_Size grEndIndex, Tcl_UniChar **endPtrPtr); /* 711 */
+    Tcl_Size (*tcl_GraphemeReverse) (const char *tutf8Ptr, Tcl_Size numBytes, char *outPtr, Tcl_Size outCapacity); /* 712 */
+    Tcl_Size (*tcl_GraphemeUniReverse) (const Tcl_UniChar *uniPtr, Tcl_Size uniLen, Tcl_UniChar *outPtr, Tcl_Size outCapacity); /* 713 */
+    void (*tclUnusedStubEntry) (void); /* 714 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -4052,20 +4081,32 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_UnregisterPostInitProc) /* 700 */
 #define Tcl_ClearPostInitProcs \
 	(tclStubsPtr->tcl_ClearPostInitProcs) /* 701 */
-#define Tcl_GraphemeLength \
-	(tclStubsPtr->tcl_GraphemeLength) /* 702 */
 #define Tcl_GraphemeNext \
-	(tclStubsPtr->tcl_GraphemeNext) /* 703 */
+	(tclStubsPtr->tcl_GraphemeNext) /* 702 */
+#define Tcl_GraphemeUniNext \
+	(tclStubsPtr->tcl_GraphemeUniNext) /* 703 */
 #define Tcl_GraphemePrev \
 	(tclStubsPtr->tcl_GraphemePrev) /* 704 */
+#define Tcl_GraphemeUniPrev \
+	(tclStubsPtr->tcl_GraphemeUniPrev) /* 705 */
+#define Tcl_GraphemeLength \
+	(tclStubsPtr->tcl_GraphemeLength) /* 706 */
+#define Tcl_GraphemeUniLength \
+	(tclStubsPtr->tcl_GraphemeUniLength) /* 707 */
 #define Tcl_GraphemeIndex \
-	(tclStubsPtr->tcl_GraphemeIndex) /* 705 */
+	(tclStubsPtr->tcl_GraphemeIndex) /* 708 */
+#define Tcl_GraphemeUniIndex \
+	(tclStubsPtr->tcl_GraphemeUniIndex) /* 709 */
 #define Tcl_GraphemeRange \
-	(tclStubsPtr->tcl_GraphemeRange) /* 706 */
+	(tclStubsPtr->tcl_GraphemeRange) /* 710 */
+#define Tcl_GraphemeUniRange \
+	(tclStubsPtr->tcl_GraphemeUniRange) /* 711 */
 #define Tcl_GraphemeReverse \
-	(tclStubsPtr->tcl_GraphemeReverse) /* 707 */
+	(tclStubsPtr->tcl_GraphemeReverse) /* 712 */
+#define Tcl_GraphemeUniReverse \
+	(tclStubsPtr->tcl_GraphemeUniReverse) /* 713 */
 #define TclUnusedStubEntry \
-	(tclStubsPtr->tclUnusedStubEntry) /* 708 */
+	(tclStubsPtr->tclUnusedStubEntry) /* 714 */
 
 #endif /* defined(USE_TCL_STUBS) */
 

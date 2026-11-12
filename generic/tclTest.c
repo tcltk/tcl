@@ -37,6 +37,11 @@
  */
 #include "tclIO.h"
 
+/*
+ * Required for Unicode shimmering checks.
+ */
+#include "tclStringRep.h"
+
 #include "tclUuid.h"
 
 /*
@@ -290,6 +295,7 @@ static Tcl_ObjCmdProc2	TestsetobjerrorcodeCmd;
 static Tcl_ObjCmdProc2	TestsetplatformCmd;
 static Tcl_ObjCmdProc2	TestSizeCmd;
 static Tcl_ObjCmdProc2	TeststaticlibraryCmd;
+static Tcl_ObjCmdProc2	TestintrepCmd;
 static Tcl_ObjCmdProc2	TesttranslatefilenameCmd;
 static Tcl_ObjCmdProc2	TestfstildeexpandCmd;
 static Tcl_ObjCmdProc2	TestuniClassCmd;
@@ -724,6 +730,8 @@ Tcltest_Init(
     Tcl_CreateObjCommand2(interp, "testsocket", TestSocketCmd,
 	    NULL, NULL);
     Tcl_CreateObjCommand2(interp, "teststaticlibrary", TeststaticlibraryCmd,
+	    NULL, NULL);
+    Tcl_CreateObjCommand2(interp, "testintrep", TestintrepCmd,
 	    NULL, NULL);
     Tcl_CreateObjCommand2(interp, "testtranslatefilename",
 	    TesttranslatefilenameCmd, NULL, NULL);
@@ -9923,6 +9931,113 @@ TestUtfToNormalizedDStringCmd(
 	Tcl_DStringFree(&ds);
     }
     return result;
+}
+
+/*
+ *------------------------------------------------------------------------
+ *
+ * TestintrepCmd --
+ *
+ *	Implements the teststringrep command. In all cases except "pure",
+ *	the returned Tcl_Obj only has the internal rep, not string rep.
+ *
+ *      testintrep type VALUE
+ *	    Returns the type name of internal representation of VALUE. This
+ *	    differs from the "testobj objtype" command in that it further
+ *	    distinguishes between variants of a type. In particular,
+ *	    the "string" type is separated into "string" and "unichars"
+ *	    where the former does not have internal Tcl_UniChar array and
+ &	    the latter does.
+ *	testintrep pure VALUE
+ *	    Returns a Tcl_Obj without an internal representation
+ *	testintrep unichars VALUE
+ *	    Returns a Tcl_Obj with Tcl_UniChar string internal representation.
+ *	testintrep bytes VALUE
+ *	    Returns a Tcl_Obj containing a byte array internal representation
+ *	testintrep list VALUE
+ *	    Returns a Tcl_Obj containing a native list internal representation
+ *	testintrep dict VALUE
+ *	    Returns a Tcl_Obj containing a dict internal representation
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *------------------------------------------------------------------------
+ */
+static int
+TestintrepCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,		/* Current interpreter. */
+    Tcl_Size objc,		/* Number of arguments. */
+    Tcl_Obj *const *objv)	/* Arguments. */
+{
+    if (objc != 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "bytes|dict|list|pure|unichars STRING");
+	return TCL_ERROR;
+    }
+    enum InternalRepEnum { BYTES, DICT, LIST, NONE, TYPE, UNICHARS } optIndex;
+    static const char *const internalRepType[] = {
+	   "bytes", "dict", "list", "none", "type", "unichars", NULL
+    };
+    Tcl_Size count;
+    Tcl_Obj **objs;
+
+    if (Tcl_GetIndexFromObj(interp, objv[1], internalRepType, "representation",
+		0, &optIndex)
+	    != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    if (optIndex == TYPE) {
+	const char *typeName;
+	if (objv[2]->typePtr == NULL || objv[2]->typePtr->name == NULL) {
+	    typeName = "none";
+	} else {
+	    typeName = objv[2]->typePtr->name;
+	    if (!strcmp(typeName, "string")) {
+		String *stringPtr = GET_STRING(objv[2]);
+		if (stringPtr->hasUnicode) {
+		    typeName = "unichars";
+		}
+	    }
+	}
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(typeName, -1));
+	return TCL_OK;
+    }
+    Tcl_Obj *objPtr = Tcl_DuplicateObj(objv[2]);
+    TclGetString(objPtr);
+    Tcl_FreeInternalRep(objPtr);
+    switch (optIndex) {
+    case BYTES:
+	if (Tcl_GetBytesFromObj(interp, objPtr, &count) == NULL) {
+	    return TCL_ERROR;
+	}
+	break;
+    case DICT:
+	if (Tcl_DictObjSize(interp, objPtr, &count) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	break;
+    case LIST:
+	if (Tcl_ListObjGetElements(interp, objPtr, &count, &objs) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	break;
+    case NONE:
+	break;
+    case UNICHARS:
+	Tcl_GetUnicode(objPtr);
+	break;
+    }
+
+    if (optIndex != NONE) {
+	Tcl_InvalidateStringRep(objPtr);
+    }
+    Tcl_SetObjResult(interp, objPtr);
+    return TCL_OK;
 }
 
 /***************************************************************************

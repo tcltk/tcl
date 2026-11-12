@@ -11,6 +11,8 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 }
 tcltest::loadTestedCommands
 
+tcltest::testConstraint testintrep [expr {[info commands testintrep] ne {}}]
+
 source [file join [file dirname [info script]] tcltests.tcl]
 source [file join [file dirname [info script]] ucdUtils.tcl]
 namespace eval grapheme::test {
@@ -21,6 +23,37 @@ namespace eval grapheme::test {
     variable graphemes
     variable text
     variable l
+    variable intrep
+
+    if {[tcltest::testConstraint testintrep]} {
+        variable intrepTypes [list none unichars]
+        proc shimmered {intrep text} {
+            set textIntrep [testintrep type $text]
+            if {$intrep eq $textIntrep} {
+                return 0
+            }
+            if {$intrep eq "none" && $textIntrep eq "string"} {
+                # The "string" type, but not unichars
+                return 0
+            }
+            return 1
+        }
+    } else {
+        # When running with tclsh (i.e. without testintrep) nullify
+        # mock the testintrep command, do not check different intreps
+        # and nullify the shimmering checks.
+        proc testintrep {type s} {
+            if {$type ne "none"} {
+                error ""
+            }
+            return $s
+        }
+        variable intrepTypes [list none]
+        proc shimmered {intrep text} {
+            # Make the check always succeed
+            return 0
+        }
+    }
 
     proc cleanupVars {} {
 	unset -nocomplain {*}
@@ -36,15 +69,17 @@ namespace eval grapheme::test {
 
     foreach testCase [list [list 0 "empty string" ""] {*}[getGraphemeData]] {
 	lassign $testCase testNum comment graphemes
-	test grapheme-next-ucd-$testNum.0 $comment -body {
-	    set text [join $graphemes ""]
-	    set l {}
-	    set i 0
-	    while {[set grapheme [grapheme next $text i]] ne ""} {
-		lappend l $grapheme
-	    }
-	    set l
-	} -result $graphemes
+        foreach intrep $intrepTypes {
+            test grapheme-next-ucd-$intrep-$testNum.0 $comment -body {
+                set text [testintrep $intrep [join $graphemes ""]]
+                set l {}
+                set i 0
+                while {[set grapheme [grapheme next $text i]] ne ""} {
+                    lappend l $grapheme
+                }
+                list $graphemes [shimmered $intrep $text]
+            } -result [list $graphemes 0]
+        }
     }
 
     ### grapheme prev
@@ -53,15 +88,17 @@ namespace eval grapheme::test {
 
     foreach testCase [list [list 0 "empty string" ""] {*}[getGraphemeData]] {
 	lassign $testCase testNum comment graphemes
-	test grapheme-prev-ucd-$testNum.0 $comment -body {
-	    set text [join $graphemes ""]
-	    set l {}
-	    set i end
-	    while {[set grapheme [grapheme prev $text i]] ne ""} {
-		lappend l $grapheme
-	    }
-	    lreverse $l
-	} -result $graphemes
+        foreach intrep $intrepTypes {
+            test grapheme-prev-ucd-$intrep-$testNum.0 $comment -body {
+                set text [testintrep $intrep [join $graphemes ""]]
+                set l {}
+                set i end
+                while {[set grapheme [grapheme prev $text i]] ne ""} {
+                    lappend l $grapheme
+                }
+                list [lreverse $l] [shimmered $intrep $text]
+            } -result [list $graphemes 0]
+        }
     }
 
     ### grapheme length
@@ -70,9 +107,12 @@ namespace eval grapheme::test {
 
     foreach testCase [getGraphemeData] {
 	lassign $testCase testNum comment graphemes
-	test grapheme-length-ucd-$testNum.0 $comment -body {
-	    grapheme length [join $graphemes ""]
-	} -result [llength $graphemes]
+        foreach intrep $intrepTypes {
+            test grapheme-length-ucd-$intrep-$testNum.0 $comment -body {
+                set text [testintrep $intrep [join $graphemes ""]]
+                list [grapheme length $text] [shimmered $intrep $text]
+            } -result [list [llength $graphemes] 0]
+        }
     }
     test grapheme-length-empty-1.0 $comment -body {
 	grapheme length ""
@@ -84,13 +124,15 @@ namespace eval grapheme::test {
 
     foreach testCase [list [list 0 "empty string" ""] {*}[getGraphemeData]] {
 	lassign $testCase testNum comment graphemes
-	set text [join $graphemes ""]
 	set len [llength $graphemes]
-	foreach index [list end-[expr {$len+2}] -1 {*}[lseq $len] $len end end-1 end+1] {
-	    test grapheme-index-ucd-$testNum.$index $comment -body {
-		grapheme index $text $index
-	    } -result [lindex $graphemes $index]
-	}
+        foreach intrep $intrepTypes {
+            foreach index [list end-[expr {$len+2}] -1 {*}[lseq $len] $len end end-1 end+1] {
+                test grapheme-index-ucd-$intrep-$testNum.$index $comment -body {
+                    set text [testintrep $intrep [join $graphemes ""]]
+                    list [grapheme index $text $index] [shimmered $intrep $text]
+                } -result [list [lindex $graphemes $index] 0]
+            }
+        }
     }
 
     ### grapheme offset
@@ -99,15 +141,18 @@ namespace eval grapheme::test {
 
     foreach testCase [getGraphemeData] {
 	lassign $testCase testNum comment graphemes
-	set text [join $graphemes ""]
 	set len [llength $graphemes]
-	set offset 0
-	for {set i 0} {$i < $len} {incr i} {
-	    test grapheme-offset-ucd-$testNum.$offset $comment -body {
-		grapheme offset $text $i
-	    } -result $offset
-	    incr offset [string length [lindex $graphemes $i]]
-	}
+        foreach intrep $intrepTypes {
+            set offset 0
+            for {set i 0} {$i < $len} {incr i} {
+                test grapheme-offset-ucd-$intrep-$testNum.$offset $comment -body {
+                    set text [testintrep $intrep [join $graphemes ""]]
+                    # offset command always shimmers to unichars
+                    list [grapheme offset $text $i] [testintrep type $text]
+                } -result [list $offset unichars]
+                incr offset [string length [lindex $graphemes $i]]
+            }
+        }
     }
     test grapheme-offset-oob-1.0 {Negative index} -body {
 	grapheme offset abc -42
@@ -122,16 +167,17 @@ namespace eval grapheme::test {
 
     foreach testCase [list [list 0 "empty string" ""] {*}[getGraphemeData]] {
 	lassign $testCase testNum comment graphemes
-	set text [join $graphemes ""]
 	set len [llength $graphemes]
-
-	foreach grStart [list -1 {*}[lseq $len] $len end end-1] {
-	    foreach grEnd [list -1 {*}[lseq $len] $len end end-1] {
-		test grapheme-range-ucd-$testNum.$grStart:$grEnd $comment -body {
-		    grapheme range $text $grStart $grEnd
-		} -result [join [lrange $graphemes $grStart $grEnd] ""]
-	    }
-	}
+        foreach intrep $intrepTypes {
+            foreach grStart [list -1 {*}[lseq $len] $len end end-1] {
+                foreach grEnd [list -1 {*}[lseq $len] $len end end-1] {
+                    test grapheme-range-ucd-$intrep-$testNum.$grStart:$grEnd $comment -body {
+                        set text [testintrep $intrep [join $graphemes ""]]
+                        list [grapheme range $text $grStart $grEnd] [shimmered $intrep $text]
+                    } -result [list [join [lrange $graphemes $grStart $grEnd] ""] 0]
+                }
+            }
+        }
     }
 
     ### grapheme reverse
@@ -140,11 +186,14 @@ namespace eval grapheme::test {
 
     foreach testCase [list [list 0 "empty string" ""] {*}[getGraphemeData]] {
 	lassign $testCase testNum comment graphemes
-	set text [join $graphemes ""]
 	set len [llength $graphemes]
-	test grapheme-reverse-ucd-$testNum $comment -body {
-	    grapheme reverse $text
-	} -result [join [lreverse $graphemes] ""]
+        foreach intrep $intrepTypes {
+            test grapheme-reverse-ucd-$intrep-$testNum $comment -body {
+                set text [testintrep $intrep [join $graphemes ""]]
+                list [grapheme reverse $text] [shimmered $intrep $text]
+            } -result [list [join [lreverse $graphemes] ""] 0]
+            
+        }
     }
 
     ### grapheme split
@@ -153,11 +202,13 @@ namespace eval grapheme::test {
 
     foreach testCase [list [list 0 "empty string" ""] {*}[getGraphemeData]] {
 	lassign $testCase testNum comment graphemes
-	set text [join $graphemes ""]
 	set len [llength $graphemes]
-	test grapheme-split-ucd-$testNum $comment -body {
-	    grapheme split $text
-	} -result $graphemes
+        foreach intrep $intrepTypes {
+            test grapheme-split-ucd-$testNum $comment -body {
+                set text [testintrep $intrep [join $graphemes ""]]
+                list [grapheme split $text] [shimmered $intrep $text]
+            } -result [list $graphemes 0]
+        }
     }
 }
 

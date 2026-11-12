@@ -1513,13 +1513,19 @@ const TclStubs tclStubs = {
     Tcl_RegisterPostInitProc, /* 699 */
     Tcl_UnregisterPostInitProc, /* 700 */
     Tcl_ClearPostInitProcs, /* 701 */
-    Tcl_GraphemeLength, /* 702 */
-    Tcl_GraphemeNext, /* 703 */
+    Tcl_GraphemeNext, /* 702 */
+    Tcl_GraphemeUniNext, /* 703 */
     Tcl_GraphemePrev, /* 704 */
-    Tcl_GraphemeIndex, /* 705 */
-    Tcl_GraphemeRange, /* 706 */
-    Tcl_GraphemeReverse, /* 707 */
-    TclUnusedStubEntry, /* 708 */
+    Tcl_GraphemeUniPrev, /* 705 */
+    Tcl_GraphemeLength, /* 706 */
+    Tcl_GraphemeUniLength, /* 707 */
+    Tcl_GraphemeIndex, /* 708 */
+    Tcl_GraphemeUniIndex, /* 709 */
+    Tcl_GraphemeRange, /* 710 */
+    Tcl_GraphemeUniRange, /* 711 */
+    Tcl_GraphemeReverse, /* 712 */
+    Tcl_GraphemeUniReverse, /* 713 */
+    TclUnusedStubEntry, /* 714 */
 };
 
 /* !END!: Do not edit above this line. */
