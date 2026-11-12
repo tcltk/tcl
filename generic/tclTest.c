@@ -37,6 +37,11 @@
  */
 #include "tclIO.h"
 
+/*
+ * Required for Unicode shimmering checks.
+ */
+#include "tclStringRep.h"
+
 #include "tclUuid.h"
 
 /*
@@ -9936,15 +9941,22 @@ TestUtfToNormalizedDStringCmd(
  *	Implements the teststringrep command. In all cases except "pure",
  *	the returned Tcl_Obj only has the internal rep, not string rep.
  *
- *	testintrep pure STRING
+ *      testintrep type VALUE
+ *	    Returns the type name of internal representation of VALUE. This
+ *	    differs from the "testobj objtype" command in that it further
+ *	    distinguishes between variants of a type. In particular,
+ *	    the "string" type is separated into "string" and "unichars"
+ *	    where the former does not have internal Tcl_UniChar array and
+ &	    the latter does.
+ *	testintrep pure VALUE
  *	    Returns a Tcl_Obj without an internal representation
- *	testintrep unichars STRING
+ *	testintrep unichars VALUE
  *	    Returns a Tcl_Obj with Tcl_UniChar string internal representation.
- *	testintrep bytes STRING
+ *	testintrep bytes VALUE
  *	    Returns a Tcl_Obj containing a byte array internal representation
- *	testintrep list STRING
+ *	testintrep list VALUE
  *	    Returns a Tcl_Obj containing a native list internal representation
- *	testintrep dict STRING
+ *	testintrep dict VALUE
  *	    Returns a Tcl_Obj containing a dict internal representation
  *
  * Results:
@@ -9966,9 +9978,9 @@ TestintrepCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "bytes|dict|list|pure|unichars STRING");
 	return TCL_ERROR;
     }
-    enum InternalRepEnum { BYTES, DICT, LIST, PURE, UNICHARS } optIndex;
+    enum InternalRepEnum { BYTES, DICT, LIST, NONE, TYPE, UNICHARS } optIndex;
     static const char *const internalRepType[] = {
-	   "bytes", "dict", "list", "pure", "unichars", NULL
+	   "bytes", "dict", "list", "none", "type", "unichars", NULL
     };
     Tcl_Size count;
     Tcl_Obj **objs;
@@ -9977,6 +9989,23 @@ TestintrepCmd(
 		0, &optIndex)
 	    != TCL_OK) {
 	return TCL_ERROR;
+    }
+
+    if (optIndex == TYPE) {
+	const char *typeName;
+	if (objv[2]->typePtr == NULL || objv[2]->typePtr->name == NULL) {
+	    typeName = "none";
+	} else {
+	    typeName = objv[2]->typePtr->name;
+	    if (!strcmp(typeName, "string")) {
+		String *stringPtr = GET_STRING(objv[2]);
+		if (stringPtr->hasUnicode) {
+		    typeName = "unichars";
+		}
+	    }
+	}
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(typeName, -1));
+	return TCL_OK;
     }
     Tcl_Obj *objPtr = Tcl_DuplicateObj(objv[2]);
     TclGetString(objPtr);
@@ -9997,14 +10026,14 @@ TestintrepCmd(
 	    return TCL_ERROR;
 	}
 	break;
-    case PURE:
+    case NONE:
 	break;
     case UNICHARS:
 	Tcl_GetUnicode(objPtr);
 	break;
     }
 
-    if (optIndex != PURE) {
+    if (optIndex != NONE) {
 	Tcl_InvalidateStringRep(objPtr);
     }
     Tcl_SetObjResult(interp, objPtr);
