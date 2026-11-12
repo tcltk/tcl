@@ -19,12 +19,77 @@ to the userbase.
  - [restore the blocking mode when "socket -async" connects at once](https://core.tcl-lang.org/tcl/tktview/d22dc7)
  - [compiled [clock clicks -mi] should give "ambiguous option" error](https://core.tcl-lang.org/tcl/tktview/1ae976)
  - [writing a file beyond the file size limit (ulimit -f) killed the process](https://core.tcl-lang.org/tcl/tktview/386563)
+ - [Incorrect argument handling by [regexp]](https://core.tcl-lang.org/tcl/tktview/697b1b)
+ - [compiled regexp behaves differently](https://core.tcl-lang.org/tcl/tktview/190289)
+ - [a {1,1} quantifier was always dropped as vacuous](https://core.tcl-lang.org/tcl/tktview/524b35)
+ - [regexp with backreferences could loop forever](https://core.tcl-lang.org/tcl/tktview/a6029e)
+ - [remove empty directories from the zipfs VFS with POSIX find options](https://core.tcl-lang.org/tcl/tktview/9336f1)
+ - [tailcall panicked in a command called directly by its objProc](https://core.tcl-lang.org/tcl/tktview/4955f5)
+ - [compiled [self n] should be ambiguous](https://core.tcl-lang.org/tcl/tktview/8ab06e)
+ - [difference between bcc'ed and eval'ed regexp](https://core.tcl-lang.org/tcl/tktview/306945)
+ - [regsub always asked the regexp engine for 10 submatches](https://core.tcl-lang.org/tcl/tktview/446565)
+ - [regsub -command panics with more than 9 capturing groups](https://core.tcl-lang.org/tcl/tktview/41bc9a)
+ - [Problem with ::http::OpenSocket](https://core.tcl-lang.org/tcl/tktview/0c1e91)
+ - [on Windows a joinable thread which exits before it is joined leaked](https://core.tcl-lang.org/tcl/tktview/338137)
+ - [on Unix, Tcl_JoinThread() should not call pthread_join() for detached threads](https://core.tcl-lang.org/tcl/tktview/5974ff)
+ - [zlib-8.3 and zlib-9.3 connected to localhost](https://core.tcl-lang.org/tcl/tktview/81cb2b)
+ - [zipfs channels never generated file events](https://core.tcl-lang.org/tcl/tktview/0654ce)
+ - [interp create resets the system encoding set by encoding system](https://core.tcl-lang.org/tcl/tktview/63941f)
+ - [traceback using clock format with locale of he_IL](https://core.tcl-lang.org/tcl/tktview/301613)
+ - [he locale: BCE and CE era names are swapped](https://core.tcl-lang.org/tcl/tktview/58bae8)
+ - [format %A garbles negative, padded and infinite values](https://core.tcl-lang.org/tcl/tktview/2dff98)
+ - [socket-2.12 failed on OpenBSD](https://core.tcl-lang.org/tcl/tktview/e99187)
+ - [do not throw from [socket -async] when the connect fails at once](https://core.tcl-lang.org/tcl/tktview/59e7e7)
+ - [test portability for illumos: skip socket-14.19 where SO_REUSEPORT is not supported](https://core.tcl-lang.org/tcl/tktview/dbf988)
+ - [lset with several indices on an abstract list (lseq) used a freed sublist](https://core.tcl-lang.org/tcl/tktview/526b01)
+ - [lset errors during appending operation left original list modified](https://core.tcl-lang.org/tcl/tktview/301934)
+ - [http.test: use a port just released by the OS for badurl](https://core.tcl-lang.org/tcl/tktview/5350f3)
+ - [the regexp engine could overflow the C stack on deeply nested REs](https://core.tcl-lang.org/tcl/tktview/7d47ba)
+ - [[clock scan] put the half-hour time zones 30 minutes off](https://core.tcl-lang.org/tcl/tktview/e580d8)
+ - [safe interp got the parent's -errorinfo and -errorstack through a failing alias](https://core.tcl-lang.org/tcl/tktview/a63f5a)
+ - [threaded allocator could not be disabled with -DUSE_THREAD_ALLOC=0 or nmake OPTS=tclalloc](https://core.tcl-lang.org/tcl/tktview/31294d)
+ - [win/configure: --with-system-zlib and --with-system-libtommath](https://core.tcl-lang.org/tcl/tktview/ac3ea8)
+ - [Windows: make distclean left tcl.pc behind](https://core.tcl-lang.org/tcl/tktview/59a9b9)
+ - [Windows: native MSYS2/Cygwin builds no longer need an installed tclsh](https://core.tcl-lang.org/tcl/tktview/2ef343)
+ - [build failure on Alpine Linux (musl): no sys/queue.h](https://core.tcl-lang.org/tcl/tktview/3ff2d7)
+ - [exec hangs, iff stdin & stdout both were previously closed.](https://core.tcl-lang.org/tcl/tktview/21dbc6)
+ - [viewport meta tag in the generated HTML pages for mobile browsers](https://core.tcl-lang.org/tcl/tktview/7f6005)
+ - [no longer replace "::" in manual page with "_" on installation](https://core.tcl-lang.org/tcl/tktview/0ef68e)
+ - [tcl_startOfPreviousWord ignores the last character when start is the string length](https://core.tcl-lang.org/tcl/tktview/3e7c4a)
+ - [glob matching can take exponential time](https://core.tcl-lang.org/tcl/tktview/a4a7f2)
+ - [Make packages work in an out-of-tree build with "configure --srcdir=..."](https://core.tcl-lang.org/tcl/tktview/17ffc4)
+ - [tclLoadDl.c dlerror() is not thread safe"](https://core.tcl-lang.org/tcl/tktview/196763)
+ - [msgcat did not check the locales](https://core.tcl-lang.org/tcl/tktview/2f8bb4)
+ - [-Wformat warnings with MSYS2 UCRT64](https://core.tcl-lang.org/tcl/tktview/ae62ba)
+ - [error deleting: file already exists on Vista](https://core.tcl-lang.org/tcl/tktview/3006571)
+ - [lset on empty list is allowed when index argument is large](https://core.tcl-lang.org/tcl/tktview/13d3c0d)
+ - [missing locks, when transferring a channel to another thread](https://core.tcl-lang.org/tcl/tktview/815e24)
+ - [epoll notifier spins and never reports writable after EPOLLERR](https://core.tcl-lang.org/tcl/tktview/7aa8fd)
+ - [don't wait in a blocking "gets" on a channel with a reflected transform](https://core.tcl-lang.org/tcl/tktview/d48728)
+ - [Unsetting env vars in slave interps](https://core.tcl-lang.org/tcl/tktview/845241)
+ - [Memory corruption false positive with TCL_MEM_DEBUG](https://core.tcl-lang.org/tcl/tktview/7e3f26)
+ - [Windows: [file delete -force] failed on a directory containing a symbolic link](https://core.tcl-lang.org/tcl/tktview/08203e)
+ - [lpop/lset/join crashes with abstract lists](https://core.tcl-lang.org/tcl/tktview/409a4e)
+ - [Heap out-of-bounds read and NULL dereference in 'clock'](https://core.tcl-lang.org/tcl/tktview/813699)
+ - [Stack and heap buffer overflow in 'clock format %z'](https://core.tcl-lang.org/tcl/tktview/e713c3)
+ - [Crash from race condition in Unix locale initialization](https://core.tcl-lang.org/tcl/tktview/c35e347c)
+ - [non-zipfs builds with relocated library misses encodings](https://core.tcl-lang.org/tcl/tktview/75ecc0)
+ - [Undefined pointer arithmetic in `INST_LREPLACE`](https://core.tcl-lang.org/tcl/tktview/94c651)
+ - [http::geturl -keepalive intermittent socketWrState errors](https://core.tcl-lang.org/tcl/tktview/05b158)
+ - [Segault upon sequence of execution traces](https://core.tcl-lang.org/tcl/tktview/48d092)
+ - [Tcl_DeleteEventSource called from a setup or check proc](https://core.tcl-lang.org/tcl/tktview/055240)
+ - [a child process created by fork() could deadlock on its first allocation](https://core.tcl-lang.org/tcl/tktview/be3854)
+ - [use an acquire load for the unlocked check and a release store](https://core.tcl-lang.org/tcl/tktview/112af7)
+ - [file cmd fails to copy to VFAT](https://core.tcl-lang.org/tcl/tktview/152304)
 
 # Updated bundled packages, libraries, standards, data
+ - http 2.10.3
  - msgcat 1.7.2
- - tzcode 2026e
-
-# Updated bundled packages, libraries, standards, data
+ - sqlite3 3.54.1
+ - tcltest 2.6.1
+ - tcl::idna 1.0.2
+ - tzdata 2026f
+ - zlib 1.4.0
 
 Release Tcl 9.1.0 arises from the check-in with tag `core-9-1-0`.
 
@@ -88,4 +153,4 @@ for list operations on large lists.
 
 # Updated bundled packages, libraries, standards, data
  - Unicode 18.0.0
- - platorm 1.2.0: Add support for musl C runtime
+ - platform 1.2.0: Add support for musl C runtime

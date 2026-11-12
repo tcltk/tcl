@@ -80,9 +80,9 @@ Names=`sed -n '
 		x
 	    }
 
-	    # Convert all non-space non-alphanum sequences
-	    # to single underscores.
-	    s/[^ A-Za-z0-9][^ A-Za-z0-9]*/_/g
+	    # Convert all sequences of characters other than
+	    # space, alphanum and ":" to single underscores.
+	    s/[^ A-Za-z0-9:][^ A-Za-z0-9:]*/_/g
 	    p
 	    g
 	    /^\./{
@@ -95,6 +95,14 @@ Names=`sed -n '
 if test -z "$Names" ; then
     echo "warning: no target names found in $ManPage"
 fi
+
+# Names like "ttk::treeview" were installed as "ttk_treeview" before.
+# Install them under these names too, so they can still be found.
+for n in $Names; do
+    case $n in
+	*:*) Names="$Names `echo $n | sed 's/::*/_/g'`" ;;
+    esac
+done
 
 ########################################################################
 ### Remaining Set Up

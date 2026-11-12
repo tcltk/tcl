@@ -181,7 +181,7 @@ TclSetAppContext(
 void
 InitNotifier(void)
 {
-    static const Tcl_NotifierProcs np =
+    static const Tcl_NotifierProcs np = {
 	SetTimer,
 	WaitForEvent,
 	CreateFileHandler,
@@ -490,7 +490,7 @@ DeleteFileHandler(
 static void
 FileProc(
     XtPointer clientData,
-    int *fd,
+    TCL_UNUSED(int *),
     XtInputId *id)
 {
     FileHandler *filePtr = (FileHandler *) clientData;

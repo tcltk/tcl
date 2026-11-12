@@ -535,24 +535,24 @@ void
 Tcl_MutexLock(
     Tcl_Mutex *mutexPtr)	/* Really (WMutex **) */
 {
-    WMutex *wmPtr;
+    WMutex *wmPtr = (WMutex *) TclLoadPtrAcquire(mutexPtr);
 
-    if (*mutexPtr == NULL) {
+    if (wmPtr == NULL) {
 	TclpGlobalLock();
 
 	/*
 	 * Double inside global lock check to avoid a race.
 	 */
 
-	if (*mutexPtr == NULL) {
+	wmPtr = *((WMutex **)mutexPtr);
+	if (wmPtr == NULL) {
 	    wmPtr = (WMutex *) Tcl_Alloc(sizeof(WMutex));
 	    WMutexInit(wmPtr);
-	    *mutexPtr = (Tcl_Mutex) wmPtr;
+	    TclStorePtrRelease(mutexPtr, wmPtr);
 	    TclRememberMutex(mutexPtr);
 	}
 	TclpGlobalUnlock();
     }
-    wmPtr = *((WMutex **)mutexPtr);
     WMutexLock(wmPtr);
 }
 
@@ -648,18 +648,19 @@ Tcl_ConditionWait2(
 	wtime = (DWORD)time / 1000;
     }
 
-    if (*condPtr == NULL) {
+    cvPtr = (CONDITION_VARIABLE *) TclLoadPtrAcquire(condPtr);
+    if (cvPtr == NULL) {
 	TclpGlobalLock();
-	if (*condPtr == NULL) {
+	cvPtr = *((CONDITION_VARIABLE **)condPtr);
+	if (cvPtr == NULL) {
 	    cvPtr = (CONDITION_VARIABLE *)Tcl_Alloc(sizeof(*cvPtr));
 	    InitializeConditionVariable(cvPtr);
-	    *condPtr = (Tcl_Condition) cvPtr;
+	    TclStorePtrRelease(condPtr, cvPtr);
 	    TclRememberCondition(condPtr);
 	}
 	TclpGlobalUnlock();
     }
     wmPtr = *((WMutex **)mutexPtr);
-    cvPtr = *((CONDITION_VARIABLE **)condPtr);
 
     int counter = wmPtr->counter;
     wmPtr->counter = 0;
@@ -909,3 +910,45 @@ TclpThreadGetGlobalTSD(
  * fill-column: 78
  * End:
  */
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclpGetCStackLimit --
+ *
+ *	Determine the lowest address of the C stack of the current thread,
+ *	for code that needs to protect itself against stack overflow, like
+ *	the regexp engine.  The value is cached per thread.
+ *
+ * Results:
+ *	The lowest address of the reserved stack region, or NULL if it
+ *	cannot be determined.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+typedef struct {
+    int initialized;
+    const char *limit;
+} StackLimitData;
+static Tcl_ThreadDataKey stackLimitKey;
+
+const char *
+TclpGetCStackLimit(void)
+{
+    StackLimitData *dataPtr = (StackLimitData *)
+	    Tcl_GetThreadData(&stackLimitKey, sizeof(StackLimitData));
+
+    if (!dataPtr->initialized) {
+	MEMORY_BASIC_INFORMATION mbi;
+
+	if (VirtualQuery(&mbi, &mbi, sizeof(mbi)) != 0) {
+	    dataPtr->limit = (const char *) mbi.AllocationBase;
+	}
+	dataPtr->initialized = 1;
+    }
+    return dataPtr->limit;
+}

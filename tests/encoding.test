@@ -1053,6 +1053,17 @@ test encoding-26.0 {Tcl_GetEncodingSearchPath} -setup {
     encoding dirs $origPath
 } -result slappy
 
+test encoding-26.1 {init adds tcl_library/encoding to search path} -setup {
+    set origPath [encoding dirs]
+    encoding dirs slappy
+} -body {
+    interp delete [interp create]
+    list [lindex [encoding dirs] end] \
+        [expr {[file join $::tcl_library encoding] in [encoding dirs]}]
+} -cleanup {
+    encoding dirs $origPath
+} -result {slappy 1}
+
 file delete {*}[glob -directory [temporaryDirectory] *.chars *.tcltestout]
 # ===> Cut here <===
 
@@ -1195,6 +1206,17 @@ test encoding-31.4 {Tcl_GetEncodingNameForUser} -constraints testencoding -body 
     # Primarily tests that stub is callable from outside tcl.{so,dll} via stubs
     testencoding Tcl_GetEncodingNameForUser
 } -result [encoding user]
+
+test encoding-31.5 {interp create does not reset the system encoding} -setup {
+    set system [encoding system]
+} -body {
+    encoding system iso8859-2
+    interp delete [interp create]
+    encoding system
+} -cleanup {
+    encoding system $system
+    unset system
+} -result iso8859-2
 
 test encoding-bug-6a3e2cb0f0-1 {Bug [6a3e2cb0f0] - invalid bytes in escape encodings} -body {
     encoding convertfrom -profile tcl8 iso2022-jp x\x1B\x7Aaby

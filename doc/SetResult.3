@@ -144,7 +144,9 @@ nothing is done. Otherwise, \fBTcl_TransferResult\fR moves the result
 from \fIsourceInterp\fR to \fItargetInterp\fR, and resets the result
 in \fIsourceInterp\fR. It also moves the return options dictionary as
 controlled by the return code value \fIcode\fR in the same manner
-as \fBTcl_GetReturnOptions\fR.
+as \fBTcl_GetReturnOptions\fR. If \fItargetInterp\fR is safe and
+\fIsourceInterp\fR is not, the \fB\-errorinfo\fR, \fB\-errorstack\fR and
+\fB\-errorline\fR entries are not transferred.
 .SH "DEPRECATED INTERFACES"
 .SS "OLD STRING PROCEDURES"
 .PP

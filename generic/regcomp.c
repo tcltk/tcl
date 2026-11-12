@@ -197,6 +197,8 @@ static int casecmp(const chr *, const chr *, size_t);
 /* internal variables, bundled for easy passing around */
 struct vars {
     regex_t *re;
+    const char *stackbase;	/* for STACK_TOO_DEEP() */
+    size_t stackmax;		/* for STACK_TOO_DEEP() */
     const chr *now;		/* scan pointer into string */
     const chr *stop;		/* end of string */
     const chr *savenow;		/* saved now and stop for "subroutine call" */
@@ -286,6 +288,7 @@ compile(
     int flags)
 {
     AllocVars(v);
+    char stackmarker;
     struct guts *g;
     size_t i, j;
     FILE *debug = (flags&REG_PROGRESS) ? stdout : NULL;
@@ -313,6 +316,8 @@ compile(
      */
 
     v->re = re;
+    v->stackbase = &stackmarker;
+    v->stackmax = 0;
     v->now = string;
     v->stop = v->now + len;
     v->savenow = v->savestop = NULL;
@@ -1207,9 +1212,13 @@ parseqatom(
 	atom->flags |= (char)COMBINE(qprefer, atom->flags);
 	/* rest of branch can be strung starting from atom->end */
 	s2 = atom->end;
-    } else if (m == 1 && n == 1) {
+    } else if (m == 1 && n == 1 && (qprefer == 0 ||
+	    (atom->flags & (LONGER | SHORTER | MIXED)) == 0 ||
+	    qprefer == (atom->flags & (LONGER | SHORTER | MIXED)))) {
 	/*
-	 * No/vacuous quantifier: done.
+	 * No/vacuous quantifier: done. A {1,1} quantifier that asks for a
+	 * different greediness than the atom has is not vacuous.
+	 * [Bug 524b35a8b5]
 	 */
 
 	EMPTYARC(s, atom->begin);	/* empty prefix */
@@ -1729,6 +1738,12 @@ sub_re(
     struct state *end)
 {
     struct subre *ret = v->treefree;
+
+    /* Since this is called recursively from parse(), check the stack */
+    if (STACK_TOO_DEEP(v)) {
+	ERR(REG_ETOOBIG);
+	return NULL;
+    }
 
     if (ret != NULL) {
 	v->treefree = ret->left;

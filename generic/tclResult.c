@@ -1190,8 +1190,21 @@ Tcl_TransferResult(
 	    tiPtr->returnOpts = NULL;
 	}
     } else {
-	Tcl_SetReturnOptions(targetInterp,
-		Tcl_GetReturnOptions(sourceInterp, code));
+	Tcl_Obj *options = Tcl_GetReturnOptions(sourceInterp, code);
+
+	if (Tcl_IsSafe(targetInterp) && !Tcl_IsSafe(sourceInterp)) {
+	    /*
+	     * Do not reveal the traceback of a trusted interp to a safe
+	     * one. [Bug a63f5a4fed]
+	     */
+
+	    Tcl_Obj **keys = GetKeys();
+
+	    Tcl_DictObjRemove(NULL, options, keys[KEY_ERRORINFO]);
+	    Tcl_DictObjRemove(NULL, options, keys[KEY_ERRORSTACK]);
+	    Tcl_DictObjRemove(NULL, options, keys[KEY_ERRORLINE]);
+	}
+	Tcl_SetReturnOptions(targetInterp, options);
 	/*
 	 * Add line number if needed: not in line 1 and info contains no number
 	 * yet at end of the stack (e. g. proc etc), to avoid double reporting

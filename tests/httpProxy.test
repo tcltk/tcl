@@ -87,6 +87,49 @@ testConstraint needsTls         [expr {    [testConstraint needsTclTls]
 					|| [testConstraint needsTwapiFull]
 				}]
 
+# Many tests below contact http://www.google.com/ (or the https equivalent),
+# either directly or through a proxy.  Build environments are typically isolated
+# from the internet, which makes these tests fail.  The constraint googleReachable
+# is set only when a TCP connection to www.google.com can actually be made, so
+# these tests are skipped when there is no internet access.  The value is cached
+# in a global variable because this script is sourced once per ThreadLevel.
+if {![info exists ::httpProxyGoogleReachable]} {
+    # An async socket becomes writable on both success and failure (including
+    # name-resolution errors), so the handler inspects [fconfigure -error] to
+    # tell the two apart.
+    proc GoogleProbeReady {sock} {
+	fileevent $sock writable {}
+	if {[fconfigure $sock -error] eq ""} {
+	    set ::httpProxyGoogleProbe connected
+	} else {
+	    set ::httpProxyGoogleProbe failed
+	}
+    }
+    set testGoogleSock {}
+    set testGoogleTimer {}
+    set ::httpProxyGoogleProbe waiting
+    try {
+	set testGoogleSock [socket -async www.google.com 80]
+	set testGoogleTimer [after 5000 [list set ::httpProxyGoogleProbe timeout]]
+	fileevent $testGoogleSock writable [list GoogleProbeReady $testGoogleSock]
+	vwait ::httpProxyGoogleProbe
+    } on error {} {
+	# e.g. a synchronous name-resolution failure from [socket -async].
+	set ::httpProxyGoogleProbe failed
+    } finally {
+	if {$testGoogleTimer ne ""} {
+	    after cancel $testGoogleTimer
+	}
+	if {$testGoogleSock ne ""} {
+	    catch {close $testGoogleSock}
+	}
+    }
+    set ::httpProxyGoogleReachable [expr {$::httpProxyGoogleProbe eq "connected"}]
+    rename GoogleProbeReady {}
+    unset -nocomplain testGoogleSock testGoogleTimer ::httpProxyGoogleProbe
+}
+testConstraint googleReachable $::httpProxyGoogleReachable
+
 if {[testConstraint needsTclTls]} {
     package require tls
     http::register https 443 [list ::tls::socket -ssl2 0 -ssl3 0 \
@@ -247,7 +290,7 @@ test httpProxy-1.4.$ThreadLevel {squid is running - ipv6 with-auth} -constraints
     unset -nocomplain token ri res
 }
 
-test httpProxy-2.1.$ThreadLevel {http no-proxy no-auth} -constraints {} -setup {
+test httpProxy-2.1.$ThreadLevel {http no-proxy no-auth} -constraints {googleReachable} -setup {
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 } -body {
     after $fetchPause
@@ -262,7 +305,7 @@ test httpProxy-2.1.$ThreadLevel {http no-proxy no-auth} -constraints {} -setup {
     unset -nocomplain token ri res
 }
 
-test httpProxy-2.2.$ThreadLevel {https no-proxy no-auth} -constraints {needsTls knownTwapiFullBugThreadUsed} -setup {
+test httpProxy-2.2.$ThreadLevel {https no-proxy no-auth} -constraints {googleReachable needsTls knownTwapiFullBugThreadUsed} -setup {
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 } -body {
     after $fetchPause
@@ -277,7 +320,7 @@ test httpProxy-2.2.$ThreadLevel {https no-proxy no-auth} -constraints {needsTls 
     unset -nocomplain token ri res
 }
 
-test httpProxy-2.3.$ThreadLevel {http with-proxy ipv4 no-auth} -constraints {needsSquidNoAuth} -setup {
+test httpProxy-2.3.$ThreadLevel {http with-proxy ipv4 no-auth} -constraints {googleReachable needsSquidNoAuth} -setup {
    http::config -proxyhost $n4host -proxyport $n4port -proxynot [list $n4host localhost] -proxyauth {}
 } -body {
     after $fetchPause
@@ -293,7 +336,7 @@ test httpProxy-2.3.$ThreadLevel {http with-proxy ipv4 no-auth} -constraints {nee
     http::config -proxyhost {} -proxyport {} -proxynot {}
 }
 
-test httpProxy-2.4.$ThreadLevel {https with-proxy ipv4 no-auth} -constraints {needsSquidNoAuth needsTls knownTwapiFullBugThreadlevelAny} -setup {
+test httpProxy-2.4.$ThreadLevel {https with-proxy ipv4 no-auth} -constraints {googleReachable needsSquidNoAuth needsTls knownTwapiFullBugThreadlevelAny} -setup {
    http::config -proxyhost $n4host -proxyport $n4port -proxynot [list $n4host localhost] -proxyauth {}
 } -body {
     after $fetchPause
@@ -309,7 +352,7 @@ test httpProxy-2.4.$ThreadLevel {https with-proxy ipv4 no-auth} -constraints {ne
     http::config -proxyhost {} -proxyport {} -proxynot {}
 }
 
-test httpProxy-2.5.$ThreadLevel {http with-proxy ipv6 no-auth} -constraints {needsSquidNoAuth} -setup {
+test httpProxy-2.5.$ThreadLevel {http with-proxy ipv6 no-auth} -constraints {googleReachable needsSquidNoAuth} -setup {
    http::config -proxyhost $n6host -proxyport $n6port -proxynot [list $::tcltest::ipv6 localhost] -proxyauth {}
 } -body {
     after $fetchPause
@@ -325,7 +368,7 @@ test httpProxy-2.5.$ThreadLevel {http with-proxy ipv6 no-auth} -constraints {nee
     http::config -proxyhost {} -proxyport {} -proxynot {}
 }
 
-test httpProxy-2.6.$ThreadLevel {https with-proxy ipv6 no-auth} -constraints {needsSquidNoAuth needsTls knownTwapiFullBugThreadlevelAny} -setup {
+test httpProxy-2.6.$ThreadLevel {https with-proxy ipv6 no-auth} -constraints {googleReachable needsSquidNoAuth needsTls knownTwapiFullBugThreadlevelAny} -setup {
    http::config -proxyhost $n6host -proxyport $n6port -proxynot [list $n6host localhost] -proxyauth {}
 } -body {
     after $fetchPause
@@ -341,7 +384,7 @@ test httpProxy-2.6.$ThreadLevel {https with-proxy ipv6 no-auth} -constraints {ne
     http::config -proxyhost {} -proxyport {} -proxynot {}
 }
 
-test httpProxy-3.1.$ThreadLevel {http no-proxy with-auth valid-creds-provided} -constraints {} -setup {
+test httpProxy-3.1.$ThreadLevel {http no-proxy with-auth valid-creds-provided} -constraints {googleReachable} -setup {
    http::config -proxyhost {} -proxyport $a4port -proxynot [list $n4host locahost] -proxyauth $aliceCreds
 } -body {
     after $fetchPause
@@ -359,7 +402,7 @@ test httpProxy-3.1.$ThreadLevel {http no-proxy with-auth valid-creds-provided} -
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
-test httpProxy-3.2.$ThreadLevel {https no-proxy with-auth valid-creds-provided} -constraints {needsTls knownTwapiFullBugThreadUsed} -setup {
+test httpProxy-3.2.$ThreadLevel {https no-proxy with-auth valid-creds-provided} -constraints {googleReachable needsTls knownTwapiFullBugThreadUsed} -setup {
    http::config -proxyhost {} -proxyport $a4port -proxynot [list $n4host localhost] -proxyauth $aliceCreds
 } -body {
     after $fetchPause
@@ -377,7 +420,7 @@ test httpProxy-3.2.$ThreadLevel {https no-proxy with-auth valid-creds-provided} 
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
-test httpProxy-3.3.$ThreadLevel {http with-proxy ipv4 with-auth valid-creds-provided} -constraints {needsSquidAuth} -setup {
+test httpProxy-3.3.$ThreadLevel {http with-proxy ipv4 with-auth valid-creds-provided} -constraints {googleReachable needsSquidAuth} -setup {
    http::config -proxyhost $a4host -proxyport $a4port -proxynot [list $n4host localhost] -proxyauth $aliceCreds
 } -body {
     after $fetchPause
@@ -395,7 +438,7 @@ test httpProxy-3.3.$ThreadLevel {http with-proxy ipv4 with-auth valid-creds-prov
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
-test httpProxy-3.4.$ThreadLevel {https with-proxy ipv4 with-auth valid-creds-provided} -constraints {needsSquidAuth needsTls knownTwapiFullBugThreadlevelAny} -setup {
+test httpProxy-3.4.$ThreadLevel {https with-proxy ipv4 with-auth valid-creds-provided} -constraints {googleReachable needsSquidAuth needsTls knownTwapiFullBugThreadlevelAny} -setup {
    http::config -proxyhost $a4host -proxyport $a4port -proxynot [list $n4host localhost] -proxyauth $aliceCreds
 } -body {
     after $fetchPause
@@ -413,7 +456,7 @@ test httpProxy-3.4.$ThreadLevel {https with-proxy ipv4 with-auth valid-creds-pro
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
-test httpProxy-3.5.$ThreadLevel {http with-proxy ipv6 with-auth valid-creds-provided} -constraints {needsSquidAuth} -setup {
+test httpProxy-3.5.$ThreadLevel {http with-proxy ipv6 with-auth valid-creds-provided} -constraints {googleReachable needsSquidAuth} -setup {
    http::config -proxyhost $a6host -proxyport $a6port -proxynot [list $n6host localhost] -proxyauth $aliceCreds
 } -body {
     after $fetchPause
@@ -431,7 +474,7 @@ test httpProxy-3.5.$ThreadLevel {http with-proxy ipv6 with-auth valid-creds-prov
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
-test httpProxy-3.6.$ThreadLevel {https with-proxy ipv6 with-auth valid-creds-provided} -constraints {needsSquidAuth needsTls knownTwapiFullBugThreadlevelAny} -setup {
+test httpProxy-3.6.$ThreadLevel {https with-proxy ipv6 with-auth valid-creds-provided} -constraints {googleReachable needsSquidAuth needsTls knownTwapiFullBugThreadlevelAny} -setup {
    http::config -proxyhost $a6host -proxyport $a6port -proxynot [list $n6host localhost] -proxyauth $aliceCreds
 } -body {
     after $fetchPause
@@ -449,7 +492,7 @@ test httpProxy-3.6.$ThreadLevel {https with-proxy ipv6 with-auth valid-creds-pro
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
-test httpProxy-3.7.$ThreadLevel {http with-proxy ipv4 with-auth valid-creds-provided; check that 2nd valid request with creds is possible, and keep-alive works} -constraints {needsSquidAuth} -setup {
+test httpProxy-3.7.$ThreadLevel {http with-proxy ipv4 with-auth valid-creds-provided; check that 2nd valid request with creds is possible, and keep-alive works} -constraints {googleReachable needsSquidAuth} -setup {
     array unset ::http::socketMapping
     http::config -proxyhost $a4host -proxyport $a4port -proxynot [list $n4host localhost] -proxyauth $aliceCreds
     after $fetchPause
@@ -478,7 +521,7 @@ test httpProxy-3.7.$ThreadLevel {http with-proxy ipv4 with-auth valid-creds-prov
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
-test httpProxy-3.7x.$ThreadLevel {http with-proxy ipv4 with-auth 1st request no-creds-provided; check that 2nd request with creds is possible} -constraints {needsSquidAuth} -setup {
+test httpProxy-3.7x.$ThreadLevel {http with-proxy ipv4 with-auth 1st request no-creds-provided; check that 2nd request with creds is possible} -constraints {googleReachable needsSquidAuth} -setup {
     array unset ::http::socketMapping
     http::config -proxyhost $a4host -proxyport $a4port -proxynot [list $n4host localhost] -proxyauth {}
     after $fetchPause
@@ -509,7 +552,7 @@ test httpProxy-3.7x.$ThreadLevel {http with-proxy ipv4 with-auth 1st request no-
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
-test httpProxy-3.8.$ThreadLevel {https with-proxy ipv4 with-auth valid-creds-provided; check that 2nd valid request with creds is possible, and keep-alive works} -constraints {needsSquidAuth needsTls knownTwapiFullBugThreadlevelAny} -setup {
+test httpProxy-3.8.$ThreadLevel {https with-proxy ipv4 with-auth valid-creds-provided; check that 2nd valid request with creds is possible, and keep-alive works} -constraints {googleReachable needsSquidAuth needsTls knownTwapiFullBugThreadlevelAny} -setup {
     array unset ::http::socketMapping
     http::config -proxyhost $a4host -proxyport $a4port -proxynot [list $n4host localhost] -proxyauth $aliceCreds
     after $fetchPause
@@ -540,7 +583,7 @@ test httpProxy-3.8.$ThreadLevel {https with-proxy ipv4 with-auth valid-creds-pro
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
-test httpProxy-3.8x.$ThreadLevel {https with-proxy ipv4 with-auth 1st request no-creds-provided; check that 2nd request with creds is possible} -constraints {needsSquidAuth needsTls knownTwapiFullBugThreadlevelAny} -setup {
+test httpProxy-3.8x.$ThreadLevel {https with-proxy ipv4 with-auth 1st request no-creds-provided; check that 2nd request with creds is possible} -constraints {googleReachable needsSquidAuth needsTls knownTwapiFullBugThreadlevelAny} -setup {
     array unset ::http::socketMapping
     http::config -proxyhost $a4host -proxyport $a4port -proxynot [list $n4host localhost] -proxyauth {}
     after $fetchPause
@@ -573,7 +616,7 @@ test httpProxy-3.8x.$ThreadLevel {https with-proxy ipv4 with-auth 1st request no
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
-test httpProxy-3.9.$ThreadLevel {http with-proxy ipv6 with-auth valid-creds-provided; check that 2nd valid request with creds is possible, and keep-alive works} -constraints {needsSquidAuth} -setup {
+test httpProxy-3.9.$ThreadLevel {http with-proxy ipv6 with-auth valid-creds-provided; check that 2nd valid request with creds is possible, and keep-alive works} -constraints {googleReachable needsSquidAuth} -setup {
     array unset ::http::socketMapping
     http::config -proxyhost $a6host -proxyport $a6port -proxynot [list $n6host localhost] -proxyauth $aliceCreds
     after $fetchPause
@@ -602,7 +645,7 @@ test httpProxy-3.9.$ThreadLevel {http with-proxy ipv6 with-auth valid-creds-prov
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
-test httpProxy-3.9p.$ThreadLevel {http with-proxy ipv6 with-auth valid-creds-provided; check that 2nd valid request with creds is possible, and keep-alive works, pipelining requested and possible} -constraints {needsSquidAuth} -setup {
+test httpProxy-3.9p.$ThreadLevel {http with-proxy ipv6 with-auth valid-creds-provided; check that 2nd valid request with creds is possible, and keep-alive works, pipelining requested and possible} -constraints {googleReachable needsSquidAuth} -setup {
     array unset ::http::socketMapping
     http::config -proxyhost $a6host -proxyport $a6port -proxynot [list $n6host localhost] -proxyauth $aliceCreds
 } -body {
@@ -637,7 +680,7 @@ after idle {
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
-test httpProxy-3.9x.$ThreadLevel {http with-proxy ipv6 with-auth 1st request no-creds-provided; check that 2nd request with creds is possible} -constraints {needsSquidAuth} -setup {
+test httpProxy-3.9x.$ThreadLevel {http with-proxy ipv6 with-auth 1st request no-creds-provided; check that 2nd request with creds is possible} -constraints {googleReachable needsSquidAuth} -setup {
     array unset ::http::socketMapping
     http::config -proxyhost $a6host -proxyport $a6port -proxynot [list $n6host localhost] -proxyauth {}
     after $fetchPause
@@ -668,7 +711,7 @@ test httpProxy-3.9x.$ThreadLevel {http with-proxy ipv6 with-auth 1st request no-
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
-test httpProxy-3.10.$ThreadLevel {https with-proxy ipv6 with-auth valid-creds-provided; check that 2nd valid request with creds is possible, and keep-alive works} -constraints {needsSquidAuth needsTls knownTwapiFullBugThreadlevelAny} -setup {
+test httpProxy-3.10.$ThreadLevel {https with-proxy ipv6 with-auth valid-creds-provided; check that 2nd valid request with creds is possible, and keep-alive works} -constraints {googleReachable needsSquidAuth needsTls knownTwapiFullBugThreadlevelAny} -setup {
     array unset ::http::socketMapping
     http::config -proxyhost $a6host -proxyport $a6port -proxynot [list $n6host localhost] -proxyauth $aliceCreds
     after $fetchPause
@@ -699,7 +742,7 @@ test httpProxy-3.10.$ThreadLevel {https with-proxy ipv6 with-auth valid-creds-pr
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
-test httpProxy-3.10p.$ThreadLevel {https with-proxy ipv6 with-auth valid-creds-provided; check that 2nd valid request with creds is possible, and keep-alive works, pipelining requested and possible} -constraints {needsSquidAuth needsTls knownTwapiFullBugThreadlevelAny} -setup {
+test httpProxy-3.10p.$ThreadLevel {https with-proxy ipv6 with-auth valid-creds-provided; check that 2nd valid request with creds is possible, and keep-alive works, pipelining requested and possible} -constraints {googleReachable needsSquidAuth needsTls knownTwapiFullBugThreadlevelAny} -setup {
     array unset ::http::socketMapping
     http::config -proxyhost $a6host -proxyport $a6port -proxynot [list $n6host localhost] -proxyauth $aliceCreds
 } -body {
@@ -736,7 +779,7 @@ after idle {
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
-test httpProxy-3.10x.$ThreadLevel {https with-proxy ipv6 with-auth 1st request no-creds-provided; check that 2nd request with creds is possible} -constraints {needsSquidAuth needsTls knownTwapiFullBugThreadlevelAny} -setup {
+test httpProxy-3.10x.$ThreadLevel {https with-proxy ipv6 with-auth 1st request no-creds-provided; check that 2nd request with creds is possible} -constraints {googleReachable needsSquidAuth needsTls knownTwapiFullBugThreadlevelAny} -setup {
     array unset ::http::socketMapping
     http::config -proxyhost $a6host -proxyport $a6port -proxynot [list $n6host localhost] -proxyauth {}
     after $fetchPause
@@ -770,7 +813,7 @@ test httpProxy-3.10x.$ThreadLevel {https with-proxy ipv6 with-auth 1st request n
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
-test httpProxy-4.1.$ThreadLevel {http no-proxy with-auth no-creds-provided} -constraints {} -setup {
+test httpProxy-4.1.$ThreadLevel {http no-proxy with-auth no-creds-provided} -constraints {googleReachable} -setup {
    http::config -proxyhost {} -proxyport $a4port -proxynot [list $n4host localhost] -proxyauth {}
 } -body {
     after $fetchPause
@@ -788,7 +831,7 @@ test httpProxy-4.1.$ThreadLevel {http no-proxy with-auth no-creds-provided} -con
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
-test httpProxy-4.2.$ThreadLevel {https no-proxy with-auth no-creds-provided} -constraints {needsTls knownTwapiFullBugThreadUsed} -setup {
+test httpProxy-4.2.$ThreadLevel {https no-proxy with-auth no-creds-provided} -constraints {googleReachable needsTls knownTwapiFullBugThreadUsed} -setup {
    http::config -proxyhost {} -proxyport $a4port -proxynot [list $n4host localhost] -proxyauth {}
 } -body {
     after $fetchPause
@@ -806,7 +849,7 @@ test httpProxy-4.2.$ThreadLevel {https no-proxy with-auth no-creds-provided} -co
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
-test httpProxy-4.3.$ThreadLevel {http with-proxy ipv4 with-auth no-creds-provided} -constraints {needsSquidAuth} -setup {
+test httpProxy-4.3.$ThreadLevel {http with-proxy ipv4 with-auth no-creds-provided} -constraints {googleReachable needsSquidAuth} -setup {
    http::config -proxyhost $a4host -proxyport $a4port -proxynot [list $n4host localhost] -proxyauth {}
 } -body {
     after $fetchPause
@@ -824,7 +867,7 @@ test httpProxy-4.3.$ThreadLevel {http with-proxy ipv4 with-auth no-creds-provide
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
-test httpProxy-4.4.$ThreadLevel {https with-proxy ipv4 with-auth no-creds-provided} -constraints {needsSquidAuth needsTls knownTwapiFullBugThreadlevelAny} -setup {
+test httpProxy-4.4.$ThreadLevel {https with-proxy ipv4 with-auth no-creds-provided} -constraints {googleReachable needsSquidAuth needsTls knownTwapiFullBugThreadlevelAny} -setup {
    http::config -proxyhost $a4host -proxyport $a4port -proxynot [list $n4host localhost] -proxyauth {}
 } -body {
     after $fetchPause
@@ -842,7 +885,7 @@ test httpProxy-4.4.$ThreadLevel {https with-proxy ipv4 with-auth no-creds-provid
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
-test httpProxy-4.5.$ThreadLevel {http with-proxy ipv6 with-auth no-creds-provided} -constraints {needsSquidAuth} -setup {
+test httpProxy-4.5.$ThreadLevel {http with-proxy ipv6 with-auth no-creds-provided} -constraints {googleReachable needsSquidAuth} -setup {
    http::config -proxyhost $a6host -proxyport $a6port -proxynot [list $n6host localhost] -proxyauth {}
 } -body {
     after $fetchPause
@@ -860,7 +903,7 @@ test httpProxy-4.5.$ThreadLevel {http with-proxy ipv6 with-auth no-creds-provide
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
-test httpProxy-4.6.$ThreadLevel {https with-proxy ipv6 with-auth no-creds-provided} -constraints {needsSquidAuth needsTls knownTwapiFullBugThreadlevelAny} -setup {
+test httpProxy-4.6.$ThreadLevel {https with-proxy ipv6 with-auth no-creds-provided} -constraints {googleReachable needsSquidAuth needsTls knownTwapiFullBugThreadlevelAny} -setup {
    http::config -proxyhost $a6host -proxyport $a6port -proxynot [list $n6host localhost] -proxyauth {}
 } -body {
     after $fetchPause
@@ -878,7 +921,7 @@ test httpProxy-4.6.$ThreadLevel {https with-proxy ipv6 with-auth no-creds-provid
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
-test httpProxy-4.7.$ThreadLevel {http with-proxy ipv4 with-auth no-creds-provided; check that 2nd request is possible} -constraints {needsSquidAuth} -setup {
+test httpProxy-4.7.$ThreadLevel {http with-proxy ipv4 with-auth no-creds-provided; check that 2nd request is possible} -constraints {googleReachable needsSquidAuth} -setup {
     array unset ::http::socketMapping
     http::config -proxyhost $a4host -proxyport $a4port -proxynot [list $n4host localhost] -proxyauth {}
     after $fetchPause
@@ -907,7 +950,7 @@ test httpProxy-4.7.$ThreadLevel {http with-proxy ipv4 with-auth no-creds-provide
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
-test httpProxy-4.8.$ThreadLevel {https with-proxy ipv4 with-auth no-creds-provided; check that 2nd request is possible} -constraints {needsSquidAuth needsTls knownTwapiFullBugThreadlevelAny} -setup {
+test httpProxy-4.8.$ThreadLevel {https with-proxy ipv4 with-auth no-creds-provided; check that 2nd request is possible} -constraints {googleReachable needsSquidAuth needsTls knownTwapiFullBugThreadlevelAny} -setup {
     array unset ::http::socketMapping
     http::config -proxyhost $a4host -proxyport $a4port -proxynot [list $n4host localhost] -proxyauth {}
     after $fetchPause
@@ -938,7 +981,7 @@ test httpProxy-4.8.$ThreadLevel {https with-proxy ipv4 with-auth no-creds-provid
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
-test httpProxy-4.9.$ThreadLevel {http with-proxy ipv6 with-auth no-creds-provided; check that 2nd request is possible} -constraints {needsSquidAuth} -setup {
+test httpProxy-4.9.$ThreadLevel {http with-proxy ipv6 with-auth no-creds-provided; check that 2nd request is possible} -constraints {googleReachable needsSquidAuth} -setup {
     array unset ::http::socketMapping
     http::config -proxyhost $a6host -proxyport $a6port -proxynot [list $n6host localhost] -proxyauth {}
     after $fetchPause
@@ -967,7 +1010,7 @@ test httpProxy-4.9.$ThreadLevel {http with-proxy ipv6 with-auth no-creds-provide
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
-test httpProxy-4.9p.$ThreadLevel {http with-proxy ipv6 with-auth no-creds-provided; check that 2nd request is possible, pipelining requested and possible} -constraints {needsSquidAuth} -setup {
+test httpProxy-4.9p.$ThreadLevel {http with-proxy ipv6 with-auth no-creds-provided; check that 2nd request is possible, pipelining requested and possible} -constraints {googleReachable needsSquidAuth} -setup {
     array unset ::http::socketMapping
     http::config -proxyhost $a6host -proxyport $a6port -proxynot [list $n6host localhost] -proxyauth {}
 } -body {
@@ -1002,7 +1045,7 @@ after idle {
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
-test httpProxy-4.10.$ThreadLevel {https with-proxy ipv6 with-auth no-creds-provided; check that 2nd request is possible} -constraints {needsSquidAuth needsTls knownTwapiFullBugThreadlevelAny} -setup {
+test httpProxy-4.10.$ThreadLevel {https with-proxy ipv6 with-auth no-creds-provided; check that 2nd request is possible} -constraints {googleReachable needsSquidAuth needsTls knownTwapiFullBugThreadlevelAny} -setup {
     array unset ::http::socketMapping
     http::config -proxyhost $a6host -proxyport $a6port -proxynot [list $n6host localhost] -proxyauth {}
     after $fetchPause
@@ -1033,7 +1076,7 @@ test httpProxy-4.10.$ThreadLevel {https with-proxy ipv6 with-auth no-creds-provi
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
-test httpProxy-4.10p.$ThreadLevel {https with-proxy ipv6 with-auth no-creds-provided; check that 2nd request is possible, pipelining requested but not possible} -constraints {needsSquidAuth needsTls knownTwapiFullBugThreadlevelAny} -setup {
+test httpProxy-4.10p.$ThreadLevel {https with-proxy ipv6 with-auth no-creds-provided; check that 2nd request is possible, pipelining requested but not possible} -constraints {googleReachable needsSquidAuth needsTls knownTwapiFullBugThreadlevelAny} -setup {
     array unset ::http::socketMapping
     http::config -proxyhost $a6host -proxyport $a6port -proxynot [list $n6host localhost] -proxyauth {}
 } -body {
@@ -1070,7 +1113,7 @@ after idle {
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
-test httpProxy-5.1.$ThreadLevel {http no-proxy with-auth bad-creds-provided} -constraints {} -setup {
+test httpProxy-5.1.$ThreadLevel {http no-proxy with-auth bad-creds-provided} -constraints {googleReachable} -setup {
    http::config -proxyhost {} -proxyport $a4port -proxynot [list $n4host localhost] -proxyauth $badCreds
 } -body {
     after $fetchPause
@@ -1088,7 +1131,7 @@ test httpProxy-5.1.$ThreadLevel {http no-proxy with-auth bad-creds-provided} -co
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
-test httpProxy-5.2.$ThreadLevel {https no-proxy with-auth bad-creds-provided} -constraints {needsTls knownTwapiFullBugThreadUsed} -setup {
+test httpProxy-5.2.$ThreadLevel {https no-proxy with-auth bad-creds-provided} -constraints {googleReachable needsTls knownTwapiFullBugThreadUsed} -setup {
    http::config -proxyhost {} -proxyport $a4port -proxynot [list $n4host localhost] -proxyauth $badCreds
 } -body {
     after $fetchPause
@@ -1106,7 +1149,7 @@ test httpProxy-5.2.$ThreadLevel {https no-proxy with-auth bad-creds-provided} -c
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
-test httpProxy-5.3.$ThreadLevel {http with-proxy ipv4 with-auth bad-creds-provided} -constraints {needsSquidAuth} -setup {
+test httpProxy-5.3.$ThreadLevel {http with-proxy ipv4 with-auth bad-creds-provided} -constraints {googleReachable needsSquidAuth} -setup {
    http::config -proxyhost $a4host -proxyport $a4port -proxynot [list $n4host localhost] -proxyauth $badCreds
 } -body {
     after $fetchPause
@@ -1124,7 +1167,7 @@ test httpProxy-5.3.$ThreadLevel {http with-proxy ipv4 with-auth bad-creds-provid
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
-test httpProxy-5.4.$ThreadLevel {https with-proxy ipv4 with-auth bad-creds-provided} -constraints {needsSquidAuth needsTls knownTwapiFullBugThreadlevelAny} -setup {
+test httpProxy-5.4.$ThreadLevel {https with-proxy ipv4 with-auth bad-creds-provided} -constraints {googleReachable needsSquidAuth needsTls knownTwapiFullBugThreadlevelAny} -setup {
    http::config -proxyhost $a4host -proxyport $a4port -proxynot [list $n4host localhost] -proxyauth $badCreds
 } -body {
     after $fetchPause
@@ -1142,7 +1185,7 @@ test httpProxy-5.4.$ThreadLevel {https with-proxy ipv4 with-auth bad-creds-provi
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
-test httpProxy-5.5.$ThreadLevel {http with-proxy ipv6 with-auth bad-creds-provided} -constraints {needsSquidAuth} -setup {
+test httpProxy-5.5.$ThreadLevel {http with-proxy ipv6 with-auth bad-creds-provided} -constraints {googleReachable needsSquidAuth} -setup {
    http::config -proxyhost $a6host -proxyport $a6port -proxynot [list $n6host localhost] -proxyauth $badCreds
 } -body {
     after $fetchPause
@@ -1160,7 +1203,7 @@ test httpProxy-5.5.$ThreadLevel {http with-proxy ipv6 with-auth bad-creds-provid
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
-test httpProxy-5.6.$ThreadLevel {https with-proxy ipv6 with-auth bad-creds-provided} -constraints {needsSquidAuth needsTls knownTwapiFullBugThreadlevelAny} -setup {
+test httpProxy-5.6.$ThreadLevel {https with-proxy ipv6 with-auth bad-creds-provided} -constraints {googleReachable needsSquidAuth needsTls knownTwapiFullBugThreadlevelAny} -setup {
    http::config -proxyhost $a6host -proxyport $a6port -proxynot [list $n6host localhost] -proxyauth $badCreds
 } -body {
     after $fetchPause
@@ -1178,7 +1221,7 @@ test httpProxy-5.6.$ThreadLevel {https with-proxy ipv6 with-auth bad-creds-provi
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
-test httpProxy-5.7.$ThreadLevel {http with-proxy ipv4 with-auth bad-creds-provided; check that 2nd request is possible} -constraints {needsSquidAuth} -setup {
+test httpProxy-5.7.$ThreadLevel {http with-proxy ipv4 with-auth bad-creds-provided; check that 2nd request is possible} -constraints {googleReachable needsSquidAuth} -setup {
     array unset ::http::socketMapping
     http::config -proxyhost $a4host -proxyport $a4port -proxynot [list $n4host localhost] -proxyauth $badCreds
     after $fetchPause
@@ -1207,7 +1250,7 @@ test httpProxy-5.7.$ThreadLevel {http with-proxy ipv4 with-auth bad-creds-provid
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
-test httpProxy-5.7p.$ThreadLevel {http with-proxy ipv4 with-auth bad-creds-provided; check that 2nd request is possible, pipelining requested and possible} -constraints {needsSquidAuth} -setup {
+test httpProxy-5.7p.$ThreadLevel {http with-proxy ipv4 with-auth bad-creds-provided; check that 2nd request is possible, pipelining requested and possible} -constraints {googleReachable needsSquidAuth} -setup {
     array unset ::http::socketMapping
     http::config -proxyhost $a4host -proxyport $a4port -proxynot [list $n4host localhost] -proxyauth $badCreds
 } -body {
@@ -1242,7 +1285,7 @@ after idle {
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
-test httpProxy-5.8.$ThreadLevel {https with-proxy ipv4 with-auth bad-creds-provided; check that 2nd request is possible} -constraints {needsSquidAuth needsTls knownTwapiFullBugThreadlevelAny} -setup {
+test httpProxy-5.8.$ThreadLevel {https with-proxy ipv4 with-auth bad-creds-provided; check that 2nd request is possible} -constraints {googleReachable needsSquidAuth needsTls knownTwapiFullBugThreadlevelAny} -setup {
     array unset ::http::socketMapping
     http::config -proxyhost $a4host -proxyport $a4port -proxynot [list $n4host localhost] -proxyauth $badCreds
     after $fetchPause
@@ -1273,7 +1316,7 @@ test httpProxy-5.8.$ThreadLevel {https with-proxy ipv4 with-auth bad-creds-provi
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
-test httpProxy-5.8p.$ThreadLevel {https with-proxy ipv4 with-auth bad-creds-provided; check that 2nd request is possible, pipelining requested but not possible} -constraints {needsSquidAuth needsTls knownTwapiFullBugThreadlevelAny} -setup {
+test httpProxy-5.8p.$ThreadLevel {https with-proxy ipv4 with-auth bad-creds-provided; check that 2nd request is possible, pipelining requested but not possible} -constraints {googleReachable needsSquidAuth needsTls knownTwapiFullBugThreadlevelAny} -setup {
     array unset ::http::socketMapping
     http::config -proxyhost $a4host -proxyport $a4port -proxynot [list $n4host localhost] -proxyauth $badCreds
 } -body {
@@ -1310,7 +1353,7 @@ after idle {
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
-test httpProxy-5.9.$ThreadLevel {http with-proxy ipv6 with-auth bad-creds-provided; check that 2nd request is possible} -constraints {needsSquidAuth} -setup {
+test httpProxy-5.9.$ThreadLevel {http with-proxy ipv6 with-auth bad-creds-provided; check that 2nd request is possible} -constraints {googleReachable needsSquidAuth} -setup {
     array unset ::http::socketMapping
     http::config -proxyhost $a6host -proxyport $a6port -proxynot [list $n6host localhost] -proxyauth $badCreds
     after $fetchPause
@@ -1339,7 +1382,7 @@ test httpProxy-5.9.$ThreadLevel {http with-proxy ipv6 with-auth bad-creds-provid
     http::config -proxyhost {} -proxyport {} -proxynot {} -proxyauth {}
 }
 
-test httpProxy-5.10.$ThreadLevel {https with-proxy ipv6 with-auth bad-creds-provided; check that 2nd request is possible} -constraints {needsSquidAuth needsTls knownTwapiFullBugThreadlevelAny} -setup {
+test httpProxy-5.10.$ThreadLevel {https with-proxy ipv6 with-auth bad-creds-provided; check that 2nd request is possible} -constraints {googleReachable needsSquidAuth needsTls knownTwapiFullBugThreadlevelAny} -setup {
     array unset ::http::socketMapping
     http::config -proxyhost $a6host -proxyport $a6port -proxynot [list $n6host localhost] -proxyauth $badCreds
     after $fetchPause

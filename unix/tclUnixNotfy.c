@@ -52,7 +52,7 @@ static void
 StartNotifierThread(
     const char *proc)
 {
-    if (!notifierThreadRunning) {
+    if (!TclLoadIntAcquire(&notifierThreadRunning)) {
 	pthread_mutex_lock(&notifierInitMutex);
 	if (!notifierThreadRunning) {
 	    if (TclpThreadCreate(&notifierThread, NotifierThreadProc, NULL,
@@ -71,7 +71,7 @@ StartNotifierThread(
 	    }
 	    pthread_mutex_unlock(&notifierMutex);
 
-	    notifierThreadRunning = 1;
+	    TclStoreIntRelease(&notifierThreadRunning, 1);
 	}
 	pthread_mutex_unlock(&notifierInitMutex);
     }
@@ -547,7 +547,7 @@ TclUnixWaitForFile(
 				 * at all, and a value of -1 means wait
 				 * forever. */
 {
-    long long abortTime = 0, now; /* silence gcc 4 warning */
+    long long abortTime = 0, now = 0; /* silence gcc 4 warning */
     struct timeval blockTime, *timeoutPtr;
     struct pollfd pollFds[1];
     int numFound, result = 0, pollTimeout;

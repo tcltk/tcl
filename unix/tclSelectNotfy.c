@@ -417,9 +417,7 @@ TclpFinalizeNotifier(
 	}
 	pthread_mutex_unlock(&notifierMutex);
 	if (notifierThreadRunning) {
-	    int result = pthread_join((pthread_t) notifierThread, NULL);
-
-	    if (result) {
+	    if (Tcl_JoinThread(notifierThread, NULL) != TCL_OK) {
 		Tcl_Panic("Tcl_FinalizeNotifier: %s",
 			"unable to join notifier thread");
 	    }

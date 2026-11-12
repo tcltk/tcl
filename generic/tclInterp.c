@@ -571,6 +571,7 @@ LocatePreInitScript(
 		Tcl_GetString(searchedDirs)));
     } else {
 	Tcl_SetVar2Ex(interp, "tcl_library", NULL, dirPtr, TCL_GLOBAL_ONLY);
+        TclAddEncodingSubdir(dirPtr); /* Bug [75ecc0e6cb] */
     }
     if (initNamePtr != NULL) {
 	Tcl_DecrRefCount(initNamePtr);
@@ -693,9 +694,6 @@ AddPathsInVarToList(
  *	- The lib subdirectory in the parent directory of the directory
  *	  containing the executable
  *	- The elements of tcl_pkgPath
- *
- *	The function also adds the encoding subdirectory of tcl_library
- *	to the encodings search path if not already present.
  *
  * Results:
  *	A standard Tcl result.
@@ -4054,9 +4052,10 @@ Tcl_LimitAddHandler(
 	}
 	iPtr->limit.timeHandlers = handlerPtr;
 	return;
-    }
 
-    Tcl_Panic("unknown type of resource limit");
+    default:
+	Tcl_Panic("unknown type of resource limit");
+    }
 }
 
 /*
@@ -4097,7 +4096,7 @@ Tcl_LimitRemoveHandler(
 	break;
     default:
 	Tcl_Panic("unknown type of resource limit");
-	return;
+	TCL_UNREACHABLE();
     }
 
     for (; handlerPtr!=NULL ; handlerPtr=handlerPtr->nextPtr) {
@@ -4128,6 +4127,8 @@ Tcl_LimitRemoveHandler(
 	    case TCL_LIMIT_TIME:
 		iPtr->limit.timeHandlers = handlerPtr->nextPtr;
 		break;
+	    default:
+		TCL_UNREACHABLE();
 	    }
 	} else {
 	    handlerPtr->prevPtr->nextPtr = handlerPtr->nextPtr;
@@ -4602,8 +4603,9 @@ Tcl_LimitSetGranularity(
     case TCL_LIMIT_TIME:
 	iPtr->limit.timeGranularity = granularity;
 	return;
+    default:
+	Tcl_Panic("unknown type of resource limit");
     }
-    Tcl_Panic("unknown type of resource limit");
 }
 
 /*
@@ -4634,9 +4636,10 @@ Tcl_LimitGetGranularity(
 	return iPtr->limit.cmdGranularity;
     case TCL_LIMIT_TIME:
 	return iPtr->limit.timeGranularity;
+    default:
+	Tcl_Panic("unknown type of resource limit");
+	TCL_UNREACHABLE();
     }
-    Tcl_Panic("unknown type of resource limit");
-    return -1; /* NOT REACHED */
 }
 
 /*
@@ -5392,8 +5395,7 @@ TclInitStaticPackages(
  */
 static void
 TclPostInitThreadExitProc(
-    void *clientData
-)
+    void *clientData)
 {
     ThreadSpecificData *tsdPtr = (ThreadSpecificData *)clientData;
 
