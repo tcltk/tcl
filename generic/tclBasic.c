@@ -6609,6 +6609,9 @@ Tcl_ExprLongObj(
     case TCL_NUMBER_NAN:
 	Tcl_GetDoubleFromObj(interp, resultPtr, &d);
 	result = TCL_ERROR;
+	break;
+    default:
+	TCL_UNREACHABLE();
     }
 
     Tcl_DecrRefCount(resultPtr);/* Discard the result object. */
@@ -8462,7 +8465,7 @@ DivModObjCmd(
     }
     if (typeX != TCL_NUMBER_INT && typeX != TCL_NUMBER_BIG) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf("dividend must be an integer"));
-	Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", (char *)NULL);
 	return TCL_ERROR;
     }
 
@@ -8471,7 +8474,7 @@ DivModObjCmd(
     }
     if (typeY != TCL_NUMBER_INT && typeY != TCL_NUMBER_BIG) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf("divisor must be an integer"));
-	Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", (char *)NULL);
 	return TCL_ERROR;
     }
 
@@ -8553,11 +8556,11 @@ DivModObjCmd(
 
   divZero:
     Tcl_SetObjResult(interp, Tcl_ObjPrintf("divide by zero"));
-    Tcl_SetErrorCode(interp, "ARITH", "DIVZERO", "divide by zero", NULL);
+    Tcl_SetErrorCode(interp, "ARITH", "DIVZERO", "divide by zero", (char *)NULL);
     return TCL_ERROR;
   outOfMemory:
     Tcl_SetObjResult(interp, Tcl_ObjPrintf("cannot allocate"));
-    Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
+    Tcl_SetErrorCode(interp, "TCL", "MEMORY", (char *)NULL);
     return TCL_ERROR;
 }
 
@@ -8863,6 +8866,12 @@ Tcl_NRCallObjProc2(
 {
     NRE_callback *rootPtr = TOP_CB(interp);
 
+    /*
+     * The command may be called directly, without a TclNREvalObjv below,
+     * so provide the spot for a [tailcall] in it. [4955f5d8a4]
+     */
+
+    TclPushTailcallPoint(interp);
     TclNRAddCallback(interp, Dispatch, objProc, clientData,
 	    INT2PTR(objc), objv);
     return TclNRRunCallbacks(interp, TCL_OK, rootPtr);
@@ -8902,6 +8911,7 @@ Tcl_NRCallObjProc(
     info->clientData = clientData;
     info->proc = objProc;
 
+    TclPushTailcallPoint(interp);
     TclNRAddCallback(interp, Dispatch, WrapperNRObjProc, info,
 	    INT2PTR(objc), objv);
     return TclNRRunCallbacks(interp, TCL_OK, rootPtr);

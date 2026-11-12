@@ -367,7 +367,7 @@ TclHandleFree(
 
     handlePtr = (HandleStruct *) handle;
 #ifdef TCL_MEM_DEBUG
-    if (handlePtr->refCount == 0x61616161) {
+    if (handlePtr->refCount == TCL_FREED_REFCOUNT) {
 	Tcl_Panic("using previously disposed TclHandle %p", handlePtr);
     }
     if (handlePtr->ptr2 != handlePtr->ptr) {
@@ -410,7 +410,7 @@ TclHandlePreserve(
 
     handlePtr = (HandleStruct *) handle;
 #ifdef TCL_MEM_DEBUG
-    if (handlePtr->refCount == 0x61616161) {
+    if (handlePtr->refCount == TCL_FREED_REFCOUNT) {
 	Tcl_Panic("using previously disposed TclHandle %p", handlePtr);
     }
     if ((handlePtr->ptr != NULL) && (handlePtr->ptr != handlePtr->ptr2)) {
@@ -451,7 +451,7 @@ TclHandleRelease(
 
     handlePtr = (HandleStruct *) handle;
 #ifdef TCL_MEM_DEBUG
-    if (handlePtr->refCount == 0x61616161) {
+    if (handlePtr->refCount == TCL_FREED_REFCOUNT) {
 	Tcl_Panic("using previously disposed TclHandle %p", handlePtr);
     }
     if ((handlePtr->ptr != NULL) && (handlePtr->ptr != handlePtr->ptr2)) {

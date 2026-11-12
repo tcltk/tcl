@@ -568,6 +568,8 @@ PrefixMatchObjCmd(
 	    }
 	    errorPtr = objv[i];
 	    break;
+	default:
+	    TCL_UNREACHABLE();
 	}
     }
 

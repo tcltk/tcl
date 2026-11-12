@@ -904,7 +904,7 @@ proc ::safe::AliasGlob {child args} {
 
     set firstPattern [llength $cmd]
     foreach opt [lrange $args $at end] {
-	if {![regexp $dirPartRE $opt -> thedir thefile]} {
+	if {![regexp -- $dirPartRE $opt -> thedir thefile]} {
 	    set thedir .
 	    # The *.tm search comes here.
 	}

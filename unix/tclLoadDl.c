@@ -39,6 +39,15 @@
 static void *		FindSymbol(Tcl_Interp *interp,
 			    Tcl_LoadHandle loadHandle, const char *symbol);
 static void		UnloadFile(Tcl_LoadHandle loadHandle);
+
+/*
+ * POSIX does not require dlerror() to be thread-safe, and some C libraries
+ * (e.g. NetBSD, OpenBSD) keep its state process-wide. Hold this mutex from
+ * each dlopen()/dlsym() until the matching dlerror() has been read, so that
+ * another thread cannot steal or replace the message. [Bug 1967630]
+ */
+
+TCL_DECLARE_MUTEX(dlMutex)
 
 /*
  *---------------------------------------------------------------------------
@@ -97,6 +106,7 @@ TclpDlopen(
     } else {
 	dlopenflags |= RTLD_NOW;
     }
+    Tcl_MutexLock(&dlMutex);
     handle = dlopen(native, dlopenflags);
     if (handle == NULL) {
 	/*
@@ -109,6 +119,7 @@ TclpDlopen(
 	const char *fileName = TclGetString(pathPtr);
 
 	if (Tcl_UtfToExternalDStringEx(interp, NULL, fileName, TCL_INDEX_NONE, 0, &ds, NULL) != TCL_OK) {
+	    Tcl_MutexUnlock(&dlMutex);
 	    Tcl_DStringFree(&ds);
 	    return TCL_ERROR;
 	}
@@ -129,12 +140,17 @@ TclpDlopen(
 	const char *errorStr = dlerror();
 
 	if (interp) {
+	    if (!errorStr) {
+		errorStr = "unknown";
+	    }
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "couldn't load file \"%s\": %s",
 		    TclGetString(pathPtr), errorStr));
 	}
+	Tcl_MutexUnlock(&dlMutex);
 	return TCL_ERROR;
     }
+    Tcl_MutexUnlock(&dlMutex);
     newHandle = (Tcl_LoadHandle)Tcl_Alloc(sizeof(*newHandle));
     newHandle->clientData = handle;
     newHandle->findSymbolProcPtr = &FindSymbol;
@@ -188,6 +204,7 @@ FindSymbol(
 	return NULL;
     }
     native = Tcl_DStringValue(&ds);
+    Tcl_MutexLock(&dlMutex);
     proc = dlsym(handle, native);	/* INTL: Native. */
     if (proc == NULL) {
 	Tcl_DStringInit(&newName);
@@ -235,6 +252,7 @@ FindSymbol(
 		    (char *)NULL);
 	}
     }
+    Tcl_MutexUnlock(&dlMutex);
     return proc;
 }
 

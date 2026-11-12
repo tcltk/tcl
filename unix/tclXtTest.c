@@ -13,7 +13,7 @@
 #   define USE_TCL_STUBS
 #endif
 #include <X11/Intrinsic.h>
-#include "tcl.h"
+#include "tclInt.h"
 
 static Tcl_ObjCmdProc2 TesteventloopCmd;
 

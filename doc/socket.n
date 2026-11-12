@@ -43,7 +43,7 @@ to connect to;  there must be a server accepting connections on
 this port.  \fIPort\fR is an integer port number
 (or service name, where supported and understood by the host operating
 system) and \fIhost\fR
-is either a domain-style name such as \fBwww.tcl.tk\fR or
+is either a domain-style name such as \fBwww.tcl-lang.org\fR or
 a numerical IPv4 or IPv6 address such as \fB127.0.0.1\fR or \fB2001:DB8::1\fR.
 Use \fIlocalhost\fR to refer to the host on which the command is invoked.
 .PP

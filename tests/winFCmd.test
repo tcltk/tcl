@@ -32,6 +32,20 @@ testConstraint longFileNames 0
 testConstraint notInCIenv     [expr {![info exists ::env(CI)]}]
 testConstraint knownMsvcBug [expr {[tcl::build-info msvc] eq 0}]
 
+# Creating symbolic links needs administrator rights or Developer Mode.
+proc winSymLinksWork {} {
+    set dir [makeDirectory winsymlinkprobe]
+    set target [makeFile {} target $dir]
+    set link [file join $dir link]
+    set ok [expr {![catch {file link -symbolic $link $target}]
+	    && [file type $link] eq "link"}]
+    catch {file delete $link}
+    catch {removeDirectory winsymlinkprobe}
+    return $ok
+}
+testConstraint winSymLinks [expr {[testConstraint win] && [winSymLinksWork]}]
+rename winSymLinksWork {}
+
 # If in a CI environment, file system changes are ephemeral anyways so
 # always set allowfilesecuritychanges constraint
 if {![testConstraint notInCIenv]} {
@@ -1014,6 +1028,32 @@ test winFCmd-9.4 {TraversalDelete: DOTREE_POSTD} -setup {
     file mkdir td1/td1/td3/td4/td5
     testfile rmdir -force td1
 } -result {}
+test winFCmd-9.7 {TraversalDelete: DOTREE_LINK, link to a file, bug [08203e40e3]} -setup {
+    cleanup
+} -constraints {win winSymLinks} -body {
+    file mkdir td1
+    createfile tf1
+    file link -symbolic td1/tf1 [file join [pwd] tf1]
+    list [catch {file delete -force td1} msg] $msg [file exists td1] \
+	[file exists tf1]
+} -cleanup {
+    catch {file delete td1/tf1}
+    cleanup
+} -result {0 {} 0 1}
+test winFCmd-9.8 {TraversalDelete: DOTREE_LINK, link to a directory, bug [08203e40e3]} -setup {
+    cleanup
+} -constraints {win winSymLinks} -body {
+    file mkdir td1 td2
+    createfile td2/tf1
+    # [file link] makes a junction for a directory, so use mklink.
+    exec {*}[auto_execok mklink] /D [file nativename td1/td2] \
+	[file nativename [file join [pwd] td2]]
+    list [catch {file delete -force td1} msg] $msg [file exists td1] \
+	[file exists td2/tf1]
+} -cleanup {
+    catch {exec {*}[auto_execok rmdir] [file nativename td1/td2]}
+    cleanup
+} -result {0 {} 0 1}
 
 test winFCmd-10.1 {AttributesPosixError - get} -constraints {win} -setup {
     cleanup

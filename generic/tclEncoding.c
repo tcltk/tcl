@@ -5491,23 +5491,23 @@ Utf8procErrorToTclError(
     switch (errcode) {
     case UTF8PROC_ERROR_NOMEM:
 	// Memory allocation failure can use the standard Tcl code.
-	Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "MEMORY", (char *)NULL);
 	break;
     case UTF8PROC_ERROR_OVERFLOW:
-	Tcl_SetErrorCode(interp, "TCL", "UNICODE", "OVERFLOW", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "UNICODE", "OVERFLOW", (char *)NULL);
 	break;
     case UTF8PROC_ERROR_INVALIDUTF8:
-	Tcl_SetErrorCode(interp, "TCL", "UNICODE", "INVALIDUTF8", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "UNICODE", "INVALIDUTF8", (char *)NULL);
 	break;
     case UTF8PROC_ERROR_NOTASSIGNED:
-	Tcl_SetErrorCode(interp, "TCL", "UNICODE", "NOTASSIGNED", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "UNICODE", "NOTASSIGNED", (char *)NULL);
 	break;
     case UTF8PROC_ERROR_INVALIDOPTS:
-	Tcl_SetErrorCode(interp, "TCL", "UNICODE", "INVALIDOPTS", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "UNICODE", "INVALIDOPTS", (char *)NULL);
 	break;
     default:
 	// Shouldn't happen...
-	Tcl_SetErrorCode(interp, "TCL", "UNICODE", "UNKNOWN", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "UNICODE", "UNKNOWN", (char *)NULL);
 	break;
     }
 }
@@ -5730,6 +5730,48 @@ Tcl_UtfToNormalized(
 
     utf8proc_free(normUtf8); /* NOT Tcl_Free! */
     return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclAddEncodingSubdir --
+ *
+ *	Appends the "encoding" subdirectory under the passed parent
+ *	to the list of directories searched for encoding tables.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+TclAddEncodingSubdir(
+    Tcl_Obj *parentObj)		/* Parent of encoding subdirectory.
+				 * Caller should hold a reference */
+{
+    Tcl_Obj *subDirObj, *searchPathObj;
+    TclNewLiteralStringObj(subDirObj, "encoding");
+    Tcl_IncrRefCount(subDirObj);
+    searchPathObj = Tcl_GetEncodingSearchPath();
+    if (searchPathObj == NULL) {
+	TclNewObj(searchPathObj);
+    } else {
+	searchPathObj = Tcl_DuplicateObj(searchPathObj);
+    }
+    Tcl_Obj *fullPathObj = Tcl_FSJoinToPath(parentObj, 1, &subDirObj);
+    Tcl_IncrRefCount(fullPathObj);
+    Tcl_IncrRefCount(searchPathObj);
+
+    Tcl_Size oldLen, newLen;
+    TclListObjLength(NULL, searchPathObj, &oldLen);
+    TclListObjInsertIfAbsent(NULL, searchPathObj, fullPathObj, 0);
+    TclListObjLength(NULL, searchPathObj, &newLen);
+    Tcl_DecrRefCount(fullPathObj);
+    Tcl_DecrRefCount(subDirObj);
+    if (newLen > oldLen) {
+        Tcl_SetEncodingSearchPath(searchPathObj);
+    }
+    Tcl_DecrRefCount(searchPathObj);
+
+    return TCL_OK;
 }
 
 /*
