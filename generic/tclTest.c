@@ -290,6 +290,7 @@ static Tcl_ObjCmdProc2	TestsetobjerrorcodeCmd;
 static Tcl_ObjCmdProc2	TestsetplatformCmd;
 static Tcl_ObjCmdProc2	TestSizeCmd;
 static Tcl_ObjCmdProc2	TeststaticlibraryCmd;
+static Tcl_ObjCmdProc2	TestintrepCmd;
 static Tcl_ObjCmdProc2	TesttranslatefilenameCmd;
 static Tcl_ObjCmdProc2	TestfstildeexpandCmd;
 static Tcl_ObjCmdProc2	TestuniClassCmd;
@@ -724,6 +725,8 @@ Tcltest_Init(
     Tcl_CreateObjCommand2(interp, "testsocket", TestSocketCmd,
 	    NULL, NULL);
     Tcl_CreateObjCommand2(interp, "teststaticlibrary", TeststaticlibraryCmd,
+	    NULL, NULL);
+    Tcl_CreateObjCommand2(interp, "testintrep", TestintrepCmd,
 	    NULL, NULL);
     Tcl_CreateObjCommand2(interp, "testtranslatefilename",
 	    TesttranslatefilenameCmd, NULL, NULL);
@@ -9923,6 +9926,89 @@ TestUtfToNormalizedDStringCmd(
 	Tcl_DStringFree(&ds);
     }
     return result;
+}
+
+/*
+ *------------------------------------------------------------------------
+ *
+ * TestintrepCmd --
+ *
+ *	Implements the teststringrep command. In all cases except "pure",
+ *	the returned Tcl_Obj only has the internal rep, not string rep.
+ *
+ *	testintrep pure STRING
+ *	    Returns a Tcl_Obj without an internal representation
+ *	testintrep unichars STRING
+ *	    Returns a Tcl_Obj with Tcl_UniChar string internal representation.
+ *	testintrep bytes STRING
+ *	    Returns a Tcl_Obj containing a byte array internal representation
+ *	testintrep list STRING
+ *	    Returns a Tcl_Obj containing a native list internal representation
+ *	testintrep dict STRING
+ *	    Returns a Tcl_Obj containing a dict internal representation
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *------------------------------------------------------------------------
+ */
+static int
+TestintrepCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,		/* Current interpreter. */
+    Tcl_Size objc,		/* Number of arguments. */
+    Tcl_Obj *const *objv)	/* Arguments. */
+{
+    if (objc != 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "bytes|dict|list|pure|unichars STRING");
+	return TCL_ERROR;
+    }
+    enum InternalRepEnum { BYTES, DICT, LIST, PURE, UNICHARS } optIndex;
+    static const char *const internalRepType[] = {
+	   "bytes", "dict", "list", "pure", "unichars", NULL
+    };
+    Tcl_Size count;
+    Tcl_Obj **objs;
+
+    if (Tcl_GetIndexFromObj(interp, objv[1], internalRepType, "representation",
+		0, &optIndex)
+	    != TCL_OK) {
+	return TCL_ERROR;
+    }
+    Tcl_Obj *objPtr = Tcl_DuplicateObj(objv[2]);
+    TclGetString(objPtr);
+    Tcl_FreeInternalRep(objPtr);
+    switch (optIndex) {
+    case BYTES:
+	if (Tcl_GetBytesFromObj(interp, objPtr, &count) == NULL) {
+	    return TCL_ERROR;
+	}
+	break;
+    case DICT:
+	if (Tcl_DictObjSize(interp, objPtr, &count) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	break;
+    case LIST:
+	if (Tcl_ListObjGetElements(interp, objPtr, &count, &objs) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	break;
+    case PURE:
+	break;
+    case UNICHARS:
+	Tcl_GetUnicode(objPtr);
+	break;
+    }
+
+    if (optIndex != PURE) {
+	Tcl_InvalidateStringRep(objPtr);
+    }
+    Tcl_SetObjResult(interp, objPtr);
+    return TCL_OK;
 }
 
 /***************************************************************************
