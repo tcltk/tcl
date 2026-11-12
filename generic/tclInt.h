@@ -1552,6 +1552,42 @@ MODULE_SCOPE void	TclThreadDataKeySet(Tcl_ThreadDataKey *keyPtr,
 	(ThreadSpecificData *)Tcl_GetThreadData((keyPtr), sizeof(ThreadSpecificData))
 
 /*
+ * Ordered access to a pointer or an int which is checked without a lock and
+ * initialized under a lock ("double-checked locking"). The acquire load
+ * guarantees that a thread which sees the value stored by the release store
+ * also sees everything written before that store. [112af76b09]
+ */
+
+#if defined(__GNUC__) || defined(__clang__)
+#   define TclLoadPtrAcquire(ptrPtr) \
+	__atomic_load_n((void **)(ptrPtr), __ATOMIC_ACQUIRE)
+#   define TclStorePtrRelease(ptrPtr, value) \
+	__atomic_store_n((void **)(ptrPtr), (void *)(value), __ATOMIC_RELEASE)
+#   define TclLoadIntAcquire(intPtr) \
+	__atomic_load_n((int *)(intPtr), __ATOMIC_ACQUIRE)
+#   define TclStoreIntRelease(intPtr, value) \
+	__atomic_store_n((int *)(intPtr), (int)(value), __ATOMIC_RELEASE)
+#elif defined(_MSC_VER)
+#   define TclLoadPtrAcquire(ptrPtr) \
+	ReadPointerAcquire((void *volatile *)(ptrPtr))
+#   define TclStorePtrRelease(ptrPtr, value) \
+	WritePointerRelease((void *volatile *)(ptrPtr), (void *)(value))
+#   define TclLoadIntAcquire(intPtr) \
+	((int) ReadAcquire((LONG volatile *)(intPtr)))
+#   define TclStoreIntRelease(intPtr, value) \
+	WriteRelease((LONG volatile *)(intPtr), (LONG)(value))
+#else
+#   define TclLoadPtrAcquire(ptrPtr) \
+	(*(void *volatile *)(ptrPtr))
+#   define TclStorePtrRelease(ptrPtr, value) \
+	(*(void *volatile *)(ptrPtr) = (void *)(value))
+#   define TclLoadIntAcquire(intPtr) \
+	(*(volatile int *)(intPtr))
+#   define TclStoreIntRelease(intPtr, value) \
+	(*(volatile int *)(intPtr) = (int)(value))
+#endif
+
+/*
  *----------------------------------------------------------------
  * Data structures related to bytecode compilation and execution. These are
  * used primarily in tclCompile.c, tclExecute.c, and tclBasic.c.

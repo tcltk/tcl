@@ -535,24 +535,24 @@ void
 Tcl_MutexLock(
     Tcl_Mutex *mutexPtr)	/* Really (WMutex **) */
 {
-    WMutex *wmPtr;
+    WMutex *wmPtr = (WMutex *) TclLoadPtrAcquire(mutexPtr);
 
-    if (*mutexPtr == NULL) {
+    if (wmPtr == NULL) {
 	TclpGlobalLock();
 
 	/*
 	 * Double inside global lock check to avoid a race.
 	 */
 
-	if (*mutexPtr == NULL) {
+	wmPtr = *((WMutex **)mutexPtr);
+	if (wmPtr == NULL) {
 	    wmPtr = (WMutex *) Tcl_Alloc(sizeof(WMutex));
 	    WMutexInit(wmPtr);
-	    *mutexPtr = (Tcl_Mutex) wmPtr;
+	    TclStorePtrRelease(mutexPtr, wmPtr);
 	    TclRememberMutex(mutexPtr);
 	}
 	TclpGlobalUnlock();
     }
-    wmPtr = *((WMutex **)mutexPtr);
     WMutexLock(wmPtr);
 }
 
@@ -648,18 +648,19 @@ Tcl_ConditionWait2(
 	wtime = (DWORD)time / 1000;
     }
 
-    if (*condPtr == NULL) {
+    cvPtr = (CONDITION_VARIABLE *) TclLoadPtrAcquire(condPtr);
+    if (cvPtr == NULL) {
 	TclpGlobalLock();
-	if (*condPtr == NULL) {
+	cvPtr = *((CONDITION_VARIABLE **)condPtr);
+	if (cvPtr == NULL) {
 	    cvPtr = (CONDITION_VARIABLE *)Tcl_Alloc(sizeof(*cvPtr));
 	    InitializeConditionVariable(cvPtr);
-	    *condPtr = (Tcl_Condition) cvPtr;
+	    TclStorePtrRelease(condPtr, cvPtr);
 	    TclRememberCondition(condPtr);
 	}
 	TclpGlobalUnlock();
     }
     wmPtr = *((WMutex **)mutexPtr);
-    cvPtr = *((CONDITION_VARIABLE **)condPtr);
 
     int counter = wmPtr->counter;
     wmPtr->counter = 0;

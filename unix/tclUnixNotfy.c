@@ -52,7 +52,7 @@ static void
 StartNotifierThread(
     const char *proc)
 {
-    if (!notifierThreadRunning) {
+    if (!TclLoadIntAcquire(&notifierThreadRunning)) {
 	pthread_mutex_lock(&notifierInitMutex);
 	if (!notifierThreadRunning) {
 	    if (TclpThreadCreate(&notifierThread, NotifierThreadProc, NULL,
@@ -71,7 +71,7 @@ StartNotifierThread(
 	    }
 	    pthread_mutex_unlock(&notifierMutex);
 
-	    notifierThreadRunning = 1;
+	    TclStoreIntRelease(&notifierThreadRunning, 1);
 	}
 	pthread_mutex_unlock(&notifierInitMutex);
     }
