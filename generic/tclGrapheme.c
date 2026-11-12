@@ -859,12 +859,14 @@ GraphemeNextCmd(
 
     if (strIndex < uniLen) {
 	if (UseUniChars(objv[1])) {
+	    /* T: grapheme-next-ucd-unichars-* */
 	    const Tcl_UniChar *grStartPtr
 		    = Tcl_GetUnicodeFromObj(objv[1], &uniLen);
 	    grStartPtr += strIndex;
 	    (void) GraphemeUniNext(grStartPtr, uniLen - strIndex, &grWidth);
 	    Tcl_SetObjResult(interp, Tcl_NewUnicodeObj(grStartPtr, grWidth));
 	} else {
+	    /* T: grapheme-next-ucd-none-* */
 	    Tcl_Size numBytes;
 	    const char *tutf8Ptr = TclGetStringFromObj(objv[1], &numBytes);
 	    const char *grStartPtr = Tcl_UtfAtIndex(tutf8Ptr, strIndex);
@@ -929,11 +931,14 @@ GraphemePrevCmd(
 
     if (strIndex > 0) {
 	if (UseUniChars(objv[1])) {
-	    const Tcl_UniChar *startPtr = Tcl_GetUnicodeFromObj(objv[1], &uniLen);
+	    /* T: grapheme-prev-ucd-unichars-* */
+	    const Tcl_UniChar *startPtr
+		    = Tcl_GetUnicodeFromObj(objv[1], &uniLen);
 	    Tcl_UniChar *grPtr
 		    = GraphemeUniPrev(startPtr + strIndex, strIndex, &grWidth);
 	    Tcl_SetObjResult(interp, Tcl_NewUnicodeObj(grPtr, grWidth));
 	} else {
+	    /* T: grapheme-prev-ucd-none-* */
 	    Tcl_Size numBytes;
 	    const char *startPtr = TclGetStringFromObj(objv[1], &numBytes);
 	    const char *endPtr = Tcl_UtfAtIndex(startPtr, strIndex);
@@ -977,10 +982,12 @@ GraphemeLengthCmd(
     }
     Tcl_Size len;
     if (UseUniChars(objv[1])) {
+	/* T: grapheme-length-ucd-unichars-* */
 	Tcl_UniChar *uniPtr = Tcl_GetUnicodeFromObj(objv[1], &len);
 	Tcl_SetObjResult(interp,
 		Tcl_NewWideIntObj(Tcl_GraphemeUniLength(uniPtr, len)));
     } else {
+	/* T: grapheme-length-ucd-none-* */
 	const char *tutf8Ptr;
 	tutf8Ptr = TclGetStringFromObj(objv[1], &len);
 	Tcl_SetObjResult(interp,
@@ -1020,6 +1027,7 @@ GraphemeIndexCmd(
 
     Tcl_Size grIndex, grLen;
     if (UseUniChars(objv[1])) {
+	/* T: grapheme-index-ucd-unichars-* */
 	Tcl_Size grWidth;
 	Tcl_Size uniLen;
 	const Tcl_UniChar *uniPtr = Tcl_GetUnicodeFromObj(objv[1], &uniLen);
@@ -1037,6 +1045,7 @@ GraphemeIndexCmd(
 	assert(grPtr); /* Since we already checked length above */
 	Tcl_SetObjResult(interp, Tcl_NewUnicodeObj(grPtr, grWidth));
     } else {
+	/* T: grapheme-index-ucd-none-* */
 	Tcl_Size numBytes;
 	const char *tutf8Ptr = TclGetStringFromObj(objv[1], &numBytes);
 	grLen = Tcl_GraphemeLength(tutf8Ptr, numBytes); /* for end-1 etc. */
@@ -1095,6 +1104,8 @@ GraphemeOffsetCmd(
     if (grIndex < 0 || grIndex >= grLen) {
 	Tcl_SetObjResult(interp, Tcl_NewIntObj(-1));
     } else {
+	/* T: grapheme-offset-ucd-none-* */
+	/* T: grapheme-offset-ucd-unichars-* */
 	const Tcl_UniChar *grPtr;
 	grPtr = Tcl_GraphemeUniIndex(uniPtr, uniLen, grIndex, NULL, NULL);
 	assert(grPtr); /* Since we already checked length above */
@@ -1134,6 +1145,7 @@ GraphemeRangeCmd(
 
     Tcl_Size grFirst, grLast, grLen;
     if (UseUniChars(objv[1])) {
+	/* T: grapheme-range-ucd-unichars-* */
 	Tcl_Size uniLen;
 	Tcl_UniChar *uniPtr = Tcl_GetUnicodeFromObj(objv[1], &uniLen);
 	grLen = Tcl_GraphemeUniLength(uniPtr, uniLen);
@@ -1153,6 +1165,7 @@ GraphemeRangeCmd(
 					     rangeEndPtr - rangeFirstPtr));
 	}
     } else {
+	/* T: grapheme-range-ucd-none-* */
 	Tcl_Size numBytes;
 	const char *tutf8Ptr = TclGetStringFromObj(objv[1], &numBytes);
 	grLen = Tcl_GraphemeLength(tutf8Ptr, numBytes);
@@ -1213,6 +1226,7 @@ GraphemeReverseCmd(
      */
 
     if (UseUniChars(objv[1])) {
+	/* T: grapheme-reverse-ucd-unichars-* */
 	Tcl_Size uniLen;
 	const Tcl_UniChar *uniPtr = Tcl_GetUnicodeFromObj(objv[1], &uniLen);
 	if (uniLen > 0) {
@@ -1223,6 +1237,7 @@ GraphemeReverseCmd(
 	    Tcl_Free(tempBufPtr);
 	}
     } else {
+	/* T: grapheme-reverse-ucd-none-* */
 	Tcl_Size numBytes;
 	const char *tutf8Ptr = TclGetStringFromObj(objv[1], &numBytes);
 	if (numBytes > 0) {
@@ -1512,6 +1527,8 @@ GraphemeSplitCmd(
 	return TCL_ERROR;
     }
 
+    /* T: grapheme-split-ucd-unichars-* */
+    /* T: grapheme-split-ucd-none-* */
     Tcl_Obj *objPtr;
     TclNewObj(objPtr);
     GraphemeListRep *glrPtr = GraphemeListRepNew(objv[1]);
