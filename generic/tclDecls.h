@@ -1959,10 +1959,10 @@ EXTERN char *		Tcl_GraphemePrev(const char *tutf8Ptr,
 EXTERN Tcl_UniChar *	Tcl_GraphemeUniPrev(const Tcl_UniChar *uniPtr,
 				Tcl_Size uniLen, Tcl_Size *grWidthPtr);
 /* 706 */
-EXTERN Tcl_Size		Tcl_GraphemeLength(const char *tutf8Ptr,
+EXTERN Tcl_Size		Tcl_GraphemeCount(const char *tutf8Ptr,
 				Tcl_Size numBytes);
 /* 707 */
-EXTERN Tcl_Size		Tcl_GraphemeUniLength(const Tcl_UniChar *uniPtr,
+EXTERN Tcl_Size		Tcl_GraphemeUniCount(const Tcl_UniChar *uniPtr,
 				Tcl_Size uniLen);
 /* 708 */
 EXTERN char *		Tcl_GraphemeIndex(const char *uniPtr,
@@ -2709,8 +2709,8 @@ typedef struct TclStubs {
     Tcl_UniChar * (*tcl_GraphemeUniNext) (const Tcl_UniChar *uniPtr, Tcl_Size uniLen, Tcl_Size *grWidthPtr); /* 703 */
     char * (*tcl_GraphemePrev) (const char *tutf8Ptr, Tcl_Size numBytes, Tcl_Size *grWidthPtr); /* 704 */
     Tcl_UniChar * (*tcl_GraphemeUniPrev) (const Tcl_UniChar *uniPtr, Tcl_Size uniLen, Tcl_Size *grWidthPtr); /* 705 */
-    Tcl_Size (*tcl_GraphemeLength) (const char *tutf8Ptr, Tcl_Size numBytes); /* 706 */
-    Tcl_Size (*tcl_GraphemeUniLength) (const Tcl_UniChar *uniPtr, Tcl_Size uniLen); /* 707 */
+    Tcl_Size (*tcl_GraphemeCount) (const char *tutf8Ptr, Tcl_Size numBytes); /* 706 */
+    Tcl_Size (*tcl_GraphemeUniCount) (const Tcl_UniChar *uniPtr, Tcl_Size uniLen); /* 707 */
     char * (*tcl_GraphemeIndex) (const char *uniPtr, Tcl_Size numBytes, Tcl_Size grIndex, Tcl_Size *grWidthPtr, Tcl_Size *grNumBytesPtr); /* 708 */
     Tcl_UniChar * (*tcl_GraphemeUniIndex) (const Tcl_UniChar *uniPtr, Tcl_Size uniLen, Tcl_Size grIndex, Tcl_Size *grWidthPtr, Tcl_Size *grNumBytesPtr); /* 709 */
     char * (*tcl_GraphemeRange) (const char *uniPtr, Tcl_Size numBytes, Tcl_Size grStartIndex, Tcl_Size grEndIndex, char **endPtrPtr); /* 710 */
@@ -4089,10 +4089,10 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_GraphemePrev) /* 704 */
 #define Tcl_GraphemeUniPrev \
 	(tclStubsPtr->tcl_GraphemeUniPrev) /* 705 */
-#define Tcl_GraphemeLength \
-	(tclStubsPtr->tcl_GraphemeLength) /* 706 */
-#define Tcl_GraphemeUniLength \
-	(tclStubsPtr->tcl_GraphemeUniLength) /* 707 */
+#define Tcl_GraphemeCount \
+	(tclStubsPtr->tcl_GraphemeCount) /* 706 */
+#define Tcl_GraphemeUniCount \
+	(tclStubsPtr->tcl_GraphemeUniCount) /* 707 */
 #define Tcl_GraphemeIndex \
 	(tclStubsPtr->tcl_GraphemeIndex) /* 708 */
 #define Tcl_GraphemeUniIndex \

@@ -2488,10 +2488,10 @@ declare 705 {
 	    Tcl_Size uniLen, Tcl_Size *grWidthPtr)
 }
 declare 706 {
-    Tcl_Size Tcl_GraphemeLength(const char *tutf8Ptr, Tcl_Size numBytes)
+    Tcl_Size Tcl_GraphemeCount(const char *tutf8Ptr, Tcl_Size numBytes)
 }
 declare 707 {
-    Tcl_Size Tcl_GraphemeUniLength(const Tcl_UniChar *uniPtr,
+    Tcl_Size Tcl_GraphemeUniCount(const Tcl_UniChar *uniPtr,
 	    Tcl_Size uniLen)
 }
 declare 708 {

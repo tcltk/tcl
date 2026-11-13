@@ -10145,6 +10145,9 @@ TestintrepCmd(
     case UNICHARS:
 	Tcl_GetUnicode(objPtr);
 	break;
+    default:
+	Tcl_Panic("Unexpected testintrep command enum.");
+	break;
     }
 
     if (optIndex != NONE) {

@@ -1517,8 +1517,8 @@ const TclStubs tclStubs = {
     Tcl_GraphemeUniNext, /* 703 */
     Tcl_GraphemePrev, /* 704 */
     Tcl_GraphemeUniPrev, /* 705 */
-    Tcl_GraphemeLength, /* 706 */
-    Tcl_GraphemeUniLength, /* 707 */
+    Tcl_GraphemeCount, /* 706 */
+    Tcl_GraphemeUniCount, /* 707 */
     Tcl_GraphemeIndex, /* 708 */
     Tcl_GraphemeUniIndex, /* 709 */
     Tcl_GraphemeRange, /* 710 */
