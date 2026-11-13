@@ -316,7 +316,7 @@ compile(
      */
 
     v->re = re;
-    v->stackbase = &stackmarker;
+    v->stackbase = REG_STACK_ADDR(stackmarker);
     v->stackmax = 0;
     v->now = string;
     v->stop = v->now + len;
