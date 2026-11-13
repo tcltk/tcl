@@ -365,6 +365,8 @@ TclStrIdxTreeBuildFromList(
 	if (idxTree->firstPtr != NULL) {
 	    TclStrIdxTreeFree(idxTree->firstPtr);
 	}
+	/* the caller still owns idxTree, so leave it empty, not dangling */
+	idxTree->firstPtr = idxTree->lastPtr = NULL;
     }
     return ret;
 }
