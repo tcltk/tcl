@@ -496,6 +496,9 @@ namespace eval tcltest {
     # Verification commands for those options
     variable Verify; array set Verify {}
 
+    # Variables tied to options that need their own read traces
+    variable OptionControlledVariables {}
+
     # Initialize the default values of the configurable options that are
     # historically associated with an exported variable.  If that variable
     # is already set, support compatibility by accepting its preset value.
@@ -528,11 +531,13 @@ namespace eval tcltest {
 	    }
 	    namespace eval [namespace current] \
 		    [list upvar 0 Option($option) $varName]
-	    # Workaround for Bug (now Feature Request) 572889.  Grrrr....
-	    # Track all the variables tied to options
-	    lappend OptionControlledVariables $varName
-	    # Later, set auto-configure read traces on all
-	    # of them, since a single trace on Option does not work.
+	    # Before Tcl 9.0, a read trace on Option does not fire when an
+	    # element is read through this upvar link [572889ffff], so track
+	    # the variables tied to options to set auto-configure read traces
+	    # on each of them.
+	    if {![package vsatisfies [package provide Tcl] 9.0-]} {
+		lappend OptionControlledVariables $varName
+	    }
 	    proc $varName {{value {}}} [subst -nocommands {
 		if {[llength [info level 0]] == 2} {
 		    Configure $option [set value]
