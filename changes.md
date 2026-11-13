@@ -79,6 +79,7 @@ to the userbase.
  - [Segault upon sequence of execution traces](https://core.tcl-lang.org/tcl/tktview/48d092)
  - [Tcl_DeleteEventSource called from a setup or check proc](https://core.tcl-lang.org/tcl/tktview/055240)
  - [a child process created by fork() could deadlock on its first allocation](https://core.tcl-lang.org/tcl/tktview/be3854)
+ - [file cmd fails to copy to VFAT](https://core.tcl-lang.org/tcl/tktview/152304)
 
 # Updated bundled packages, libraries, standards, data
  - http 2.10.3
