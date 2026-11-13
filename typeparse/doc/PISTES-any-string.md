@@ -191,11 +191,17 @@ set {dict.typed}D a {int}1 b {double}2.5
 leurs éléments (aujourd'hui ils les effacent, contre ANNOTATIONS §2.1 : « une
 note suit la valeur : … élément de liste »).
 
-**`{T@note}`** : `@` est le séparateur que la TIP emploie pour *afficher* le
-type et les notes. Aujourd'hui `{int@this}5` est lu comme une annotation
+**`{T@notes}`** : `@` est le séparateur que la TIP emploie pour *afficher* le
+type et les notes, et la forme `T@notes` est déjà décrite dans
+`PISTES-annotations-locales.md` (3 novembre, `exemples/texte_enrichi`) : les
+notes forment un **ensemble** (triées), `,` les sépare, `.` imbrique (un
+chemin), `=` donne sa valeur à une feuille — `{int@a.b,c,d.e.f}`,
+`aspect@pente.italic,poids.bold`. Aujourd'hui `{int@this}5` est lu comme une annotation
 locale (« cannot be stored by "set" ») ; une valeur typée et notée se fait en
 deux temps (`set a {this}5; set {int}v $a`). Proposition : l'accepter dans un
-constructeur, pour pouvoir écrire ce qu'on lit.
+constructeur, pour pouvoir écrire ce qu'on lit. Conséquence : `note get` joint aujourd'hui
+les notes par `.` (« mm.px ») ; avec `.` réservé à l'imbrication, il les
+joindrait par `,`.
 
 **Hors constructeur, `{int}` n'est qu'une note** (`list {int}5` : la note
 `int`, pas le type). C'est un choix, pas un oubli : pas de cast immédiat sur
@@ -229,6 +235,10 @@ de méta-type M et de type U doit devenir un T :
 
 ## 7. Forme canonique et normalisation
 
+Précédent : la **forme compacte** normalise déjà à la construction
+(ANNOTATIONS §14.1 : « `{0 0}` becomes `{0.0 0.0}`, `0x10` becomes `16` »).
+Il s'agit de l'étendre à toute valeur typée.
+
 **Dès la construction**, un `int` ou un `double` validé perd sa
 représentation texte, comme le fait `expr` (`INST_TRY_CVT_TO_NUMERIC`,
 tclExecute.c : « to make sure that "expr {0001}" yields "1" ») : jeter
@@ -243,15 +253,17 @@ Cas : `" 3 "`, `+3`, `0o10`, `1_000` donnent `3`, `3`, `8`, `1000` ; `1` dans
 un `double` donne `1.0` ; à vérifier : bignums, `-0.0`, `Inf`, `NaN`. Une
 `string` n'est jamais normalisée (qui veut garder `0.10` déclare une chaîne).
 
-**`type canon $v`** (nom provisoire) : oublier l'annotation en rendant la
-forme canonique — `type cast any` ne le peut pas, puisque `any` garde tout.
+**`type canonic $v`** — nom déjà retenu le 3 novembre
+(`PISTES-annotations-locales.md` : « `type canonic $v` → `{T}contenu`, et
+`type parse $texte` → la valeur typée », avec la forme sans contenu
+`T@notes`, notes triées) : rendre la forme canonique — `type cast any` ne le peut pas, puisque `any` garde tout.
 Deux lois :
 
-    type cast T [type canon $v]  ≡  $v                 (aller-retour)
-    type canon [type cast T $x]  =  forme canonique de x  (normalisation)
+    type cast T [type canonic $v]  ≡  $v                 (aller-retour)
+    type canonic [type cast T $x]  =  forme canonique de x  (normalisation)
 
 `type deref` tient déjà l'aller-retour pour toutes les valeurs essayées ; avec
-la normalisation dès la construction, `type canon` se réduit presque à `{}`.
+la normalisation dès la construction, `type canonic` se réduit presque à `{}`.
 Précisions : la forme canonique est celle du lecteur natif (jamais d'une
 règle) ; une somme porte sa variante ; doubles : l'écriture la plus courte
 exacte ; dicts : l'ordre des clés ; liens : comme `type deref`, avec
@@ -264,11 +276,15 @@ une String invalide est refusée, une valeur nue invalide passe
 (`type cast Jour 10/11`). Le lecteur natif d'un nominal devrait appliquer la
 règle de validation du type : la validation fait partie du type.
 
-## Questions ouvertes
+## Décisions et questions (13 novembre, fin d'après-midi)
 
-* Les noms : `bare`, `typed`, `noted`, `typednoted` (en anglais pour la
-  TIP). `typed` est-il assez distinct de « un type précis » ?
-* `type meta` : rendre la représentation d'une valeur typée aussi
-  (`{int}typed` ne dit que le type) ?
-* `type fix` : utile, ou `set {T}x $x` suffit ?
-* `{T@note}` : plusieurs notes (`{int@a.b}`, comme `note get` les joint) ?
+* Les noms `bare`, `typed`, `noted`, `typednoted` : retenus (pas d'autre
+  idée pour `typed`).
+* `type meta` d'une valeur typée : le type résolu suffit. (La question était
+  de rapporter aussi la représentation du *contenu* d'une valeur typée — un
+  `int` dont le contenu est encore la chaîne `0x10`, une liste en cellules
+  compactes. La normalisation à la construction rend le premier cas sans
+  objet ; le second a déjà `type is {compact?}$v`.)
+* `type fix` : plus tard.
+* `{T@notes}` : oui, collection séparée par des virgules, le point pour
+  l'imbrication — `{int@a.b,c,d.e.f}` —, comme `texte_enrichi`.
