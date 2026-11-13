@@ -3019,6 +3019,21 @@ ClockFmtToken_LocaleERA_Proc(
     return TCL_OK;
 }
 
+/*
+ * Error for a locale catalog entry that is shorter than the format needs
+ * (a LOCALE_ERAS row, LOCALE_NUMERALS, MONTHS_* or DAYS_OF_WEEK_*).
+ */
+
+static int
+ClockMalformedLocaleData(
+    Tcl_Interp *interp)
+{
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+	    "malformed locale data", TCL_AUTO_LENGTH));
+    Tcl_SetErrorCode(interp, "CLOCK", "malformedLocaleData", (char *)NULL);
+    return TCL_ERROR;
+}
+
 static int
 ClockFmtToken_LocaleERAYear_Proc(
     ClockFmtScnCmdArgs *opts,
@@ -3068,10 +3083,16 @@ ClockFmtToken_LocaleERAYear_Proc(
 		    &objPtr) != TCL_OK) {
 		return TCL_ERROR;
 	    }
+	    if (objPtr == NULL) {
+		goto malformed;
+	    }
 	} else {				/* %Ey */
 	    if (Tcl_ListObjIndex(opts->interp, dateFmt->localeEra, 2,
 		    &objPtr) != TCL_OK) {
 		return TCL_ERROR;
+	    }
+	    if (objPtr == NULL) {
+		goto malformed;
 	    }
 	    if (Tcl_GetIntFromObj(opts->interp, objPtr, val) != TCL_OK) {
 		return TCL_ERROR;
@@ -3086,6 +3107,9 @@ ClockFmtToken_LocaleERAYear_Proc(
 		}
 		if (Tcl_ListObjIndex(opts->interp, mcObj, *val, &objPtr) != TCL_OK) {
 		    return TCL_ERROR;
+		}
+		if (objPtr == NULL) {
+		    goto malformed;
 		}
 	    } else {
 		/* year as integer */
@@ -3104,6 +3128,9 @@ ClockFmtToken_LocaleERAYear_Proc(
 	dateFmt->output += len;
     }
     return TCL_OK;
+
+  malformed:
+    return ClockMalformedLocaleData(opts->interp);
 }
 
 /*
@@ -3474,7 +3501,7 @@ TclClockFormat(
 		}
 	    } else {
 		if (map->fmtproc(opts, dateFmt, tok, &val) != TCL_OK) {
-		    goto done;
+		    goto error;
 		}
 		/* if not calculate only (output inside fmtproc) */
 		if (!(map->flags & CLFMT_CALC)) {
@@ -3498,8 +3525,11 @@ TclClockFormat(
 		if (mcObj == NULL) {
 		    goto error;
 		}
-		if (Tcl_ListObjIndex(opts->interp, mcObj, val, &mcObj) != TCL_OK
-			|| mcObj == NULL) {
+		if (Tcl_ListObjIndex(opts->interp, mcObj, val, &mcObj) != TCL_OK) {
+		    goto error;
+		}
+		if (mcObj == NULL) {
+		    ClockMalformedLocaleData(opts->interp);
 		    goto error;
 		}
 		s = TclGetString(mcObj);

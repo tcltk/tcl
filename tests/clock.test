@@ -35627,6 +35627,53 @@ test clock-29.1813 {cache consistency when deriving localized formats, bug [2c0f
 	 [clock format 86400 -format %x -gmt 1 -locale en_US_roman_xx] \
 	 [clock format 86400 -format %x -gmt 1 -locale en_US_roman_xx_yy]
 } {01/02/1970 02.01.1970 1970|01|02}
+
+test clock-81.1 {%EC and %Ey with a valid LOCALE_ERAS row} -setup {
+    namespace inscope ::tcl::clock {
+	::msgcat::mcset xx_clock811 LOCALE_ERAS {{-1000000000000 E 1950}}
+    }
+} -body {
+    list [clock format 0 -format %EC -locale xx_clock811 -gmt 1] \
+	 [clock format 0 -format %Ey -locale xx_clock811 -gmt 1]
+} -result {E 20}
+test clock-81.2 {%EC with a LOCALE_ERAS row without era name} -setup {
+    namespace inscope ::tcl::clock {
+	::msgcat::mcset xx_clock812 LOCALE_ERAS {{-1000000000000}}
+    }
+} -body {
+    clock format 0 -format %EC -locale xx_clock812 -gmt 1
+} -returnCodes error -result {malformed locale data}
+test clock-81.3 {%Ey with a LOCALE_ERAS row without base year} -setup {
+    namespace inscope ::tcl::clock {
+	::msgcat::mcset xx_clock813 LOCALE_ERAS {{-1000000000000 E}}
+    }
+} -body {
+    clock format 0 -format %Ey -locale xx_clock813 -gmt 1
+} -returnCodes error -result {malformed locale data}
+test clock-81.4 {%Ey with a short LOCALE_NUMERALS list} -setup {
+    namespace inscope ::tcl::clock {
+	::msgcat::mcset xx_clock814 LOCALE_ERAS {{-1000000000000 E 1950}}
+	::msgcat::mcset xx_clock814 LOCALE_NUMERALS {0 1 2}
+    }
+} -body {
+    list [catch {clock format 0 -format %Ey -locale xx_clock814 -gmt 1} msg opts] \
+	$msg [dict get $opts -errorcode]
+} -result {1 {malformed locale data} {CLOCK malformedLocaleData}}
+test clock-81.8 {%Ey with a bad base year in LOCALE_ERAS is an error} -setup {
+    namespace inscope ::tcl::clock {
+	::msgcat::mcset xx_clock818 LOCALE_ERAS {{-1000000000000 E notanumber}}
+    }
+} -body {
+    clock format 0 -format <%Ey> -locale xx_clock818 -gmt 1
+} -returnCodes error -result {expected integer but got "notanumber"}
+test clock-81.9 {%b with a short MONTHS_ABBREV list} -setup {
+    namespace inscope ::tcl::clock {
+	::msgcat::mcset xx_clock819 MONTHS_ABBREV {a b}
+    }
+} -body {
+    list [catch {clock format 1700000000 -format %b -locale xx_clock819 -gmt 1} msg opts] \
+	$msg [dict get $opts -errorcode]
+} -result {1 {malformed locale data} {CLOCK malformedLocaleData}}
 # END testcases29
 
 
