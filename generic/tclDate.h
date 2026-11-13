@@ -183,8 +183,8 @@ typedef struct {
     int dayOfWeek;		/* Day of the week */
     int hour;			/* Hours of day (in-between time only calculation) */
     int minutes;		/* Minutes of hour (in-between time only calculation) */
-    Tcl_WideInt secondOfMin;	/* Seconds of minute (in-between time only calculation) */
-    Tcl_WideInt secondOfDay;	/* Seconds of day (in-between time only calculation) */
+    int secondOfMin;	/* Seconds of minute (in-between time only calculation) */
+    int secondOfDay;	/* Seconds of day (in-between time only calculation) */
 
     int flags;			/* 0 or some of TclDateFieldsFlags */
 
