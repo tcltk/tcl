@@ -39058,6 +39058,27 @@ test clock-82.6 {LocalizeFormat callback in scan frees the time zone object} -se
     interp delete $i
 } -result 946681200
 
+# Index tree keys whose lowercase form is longer in UTF-8 (U+023A -> U+2C65)
+test clock-82.7 {scan with month names containing U+023A and U+2C65} -setup {
+    set i [interp create]
+} -body {
+    $i eval {
+	clock format 0 -gmt 1
+	namespace eval ::tcl::clock {
+	    ::msgcat::mcset xx_clock82 MONTHS_FULL [list ⱥⱥy ȺȺz \
+		March April May June July August September October November December]
+	}
+	lmap s [list ⱥⱥq ȺȺy ⱥⱥz ȺȺz] {
+	    if {[catch {clock scan "01 $s 2000" -format "%d %B %Y" -locale xx_clock82 -gmt 1} r]} {
+		set r error
+	    }
+	    set r
+	}
+    }
+} -cleanup {
+    interp delete $i
+} -result {error 946684800 949363200 949363200}
+
 # cleanup
 
 rename test {}

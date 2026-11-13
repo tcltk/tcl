@@ -258,9 +258,27 @@ TclStrIdxTreeBuildFromList(
 	return TCL_ERROR;
     }
     for (i = 0; i < lstc; i++) {
-	lwrv[i] = Tcl_DuplicateObj(lstv[i]);
+	/*
+	 * Lower every character, even where the lowercase form needs more
+	 * bytes (U+023A, U+023E), which Tcl_UtfToLower keeps unchanged. The
+	 * search applies offsets measured in one key to its siblings, so
+	 * equal (lowercase) prefixes must have equal bytes in all keys.
+	 */
+	Tcl_Size len;
+	const char *p = TclGetStringFromObj(lstv[i], &len);
+	const char *pe = p + len;
+	Tcl_DString ds;
+	char buf[4];
+	int ch;
+
+	Tcl_DStringInit(&ds);
+	while (p < pe) {
+	    p += TclUtfToUniChar(p, &ch);
+	    Tcl_DStringAppend(&ds, buf,
+		    Tcl_UniCharToUtf(Tcl_UniCharToLower(ch), buf));
+	}
+	lwrv[i] = Tcl_DStringToObj(&ds);
 	Tcl_IncrRefCount(lwrv[i]);
-	lwrv[i]->length = Tcl_UtfToLower(TclGetString(lwrv[i]));
     }
 
     /* build index tree of the list keys */
