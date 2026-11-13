@@ -1,0 +1,71 @@
+== 1. les quatre états existent
+OK     nue                                            {} {}
+OK     typée                                          int {}
+OK     notée                                          {} mm
+OK     typée et notée                                 int mm
+
+== 2. une string annotée est un scalaire ; {} la rend nue
+OK     lindex d'une string                            a b c
+OK     {} : relecture explicite                       3
+OK     {} garde les notes                             {} mm
+ÉCART  type cast any garde tout                       obtenu : any mm
+                                                      proposé : int mm
+
+== 3. type meta (absent aujourd'hui)
+ÉCART  type meta d'une valeur nue (int)               obtenu : ERREUR: bad subcommand "meta": must be def, alias, call, cast, convert, debug, deref, export, forget, get, is, proc, variant or binary
+                                                      proposé : bare int
+ÉCART  type meta d'une valeur typée                   obtenu : ERREUR: bad subcommand "meta": must be def, alias, call, cast, convert, debug, deref, export, forget, get, is, proc, variant or binary
+                                                      proposé : typed int
+
+== 4. les conteneurs gardent les notes
+OK     list (commande) garde les notes                {{} int} {{} this}
+ÉCART  {list} garde les notes                         obtenu : {{} {}} {{} {}}
+                                                      proposé : {{} {}} {{} this}
+ÉCART  {list.any} garde les notes                     obtenu : {any {}} {{} this}
+                                                      proposé : {{} {}} {{} this}
+ÉCART  {list.double} garde les notes                  obtenu : {double {}}
+                                                      proposé : {double vitesse}
+ÉCART  {int@this} dans un constructeur                obtenu : ERREUR: local annotation {int@this} cannot be stored by "set": it only applies between a caller and the command it calls
+                                                      proposé : int this
+
+== 5. un seul ordre de résolution (set, type cast, argument)
+OK     set : string -> variante s                     s
+ÉCART  type cast : string -> variante s               obtenu : d
+                                                      proposé : s
+ÉCART  argument : string -> variante s                obtenu : d
+                                                      proposé : s
+OK     nue : forme native lue                         d
+ÉCART  nue non native : la règle (set)                obtenu : ERREUR: value "menu {d}{id}" names no variant of the sum tson: a value of a sum is the name of its variant, then its value, as {s {menu {d}{id}}}, or {s:}{menu {d}{id}}
+                                                      proposé : d
+ÉCART  nue non native : la règle (type cast)          obtenu : ERREUR: value "menu {d}{id}" names no variant of the sum tson: a value of a sum is the name of its variant, then its value, as {s {menu {d}{id}}}, or {s:}{menu {d}{id}}
+                                                      proposé : d
+ÉCART  nue non native : la règle (argument)           obtenu : ERREUR: argument "t": value "menu {d}{id}" names no variant of the sum tson: a value of a sum is the name of its variant, then its value, as {s {menu {d}{id}}}, or {s:}{menu {d}{id}}
+                                                      proposé : d
+OK     nue native : la règle ne passe pas             n
+
+== 6. normalisation dès la construction
+ÉCART  int 0x10                                       obtenu : 0x10
+                                                      proposé : 16
+ÉCART  int " 3 "                                      obtenu :  3 
+                                                      proposé : 3
+ÉCART  double 2e1                                     obtenu : 2e1
+                                                      proposé : 20.0
+ÉCART  double 1                                       obtenu : 1
+                                                      proposé : 1.0
+ÉCART  list.double                                    obtenu : 1 2e1
+                                                      proposé : 1.0 20.0
+OK     string inchangée                               0.10
+
+== 7. aller-retour (type deref aujourd'hui, type canon proposé)
+OK     deref : int                                    42 int
+OK     deref : double                                 0.1 double
+OK     deref : list.int                               {1 2 3} list<int>
+OK     deref : ::tson                                 {d {menu {d {id {s file}}}}} tson.d
+OK     deref : ::tson                                 null tson.null
+
+== 8. nominal validé : la lecture d'une valeur nue valide aussi
+OK     string invalide refusée                        refus
+ÉCART  nue invalide refusée                           obtenu : lu
+                                                      proposé : refus
+
+18 OK, 18 ÉCART
