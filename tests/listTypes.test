@@ -12,6 +12,7 @@
 # - "arithseries" - an abstract list as produced by the lseq command
 # - "repeatedList" - an abstract list holding repeated elements
 # - "reversedList" - an abstract list that is the reverse of another list
+# - "graphemeList" - tested in grapheme.test, not here
 #
 # The first three of these are already tested in cmdIL.test, listObj.test,
 # lseq.test, listrep.test etc. but are included here to improve coverage of all

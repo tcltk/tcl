@@ -311,16 +311,77 @@ namespace eval grapheme::test {
 
     tcltests::testnumargs "grapheme split" "string" ""
 
-    foreach testCase [list [list 0 "empty string" ""] {*}[getGraphemeData]] {
-	lassign $testCase testNum comment graphemes
-	set len [llength $graphemes]
-        foreach intrep $intrepTypes {
-            test grapheme-split-ucd-$testNum $comment -body {
+    foreach intrep $intrepTypes {
+        foreach testCase [list [list 0 "empty string" ""] {*}[getGraphemeData]] {
+            lassign $testCase testNum comment graphemes
+            set len [llength $graphemes]
+            test grapheme-split-ucd-$intrep-$testNum $comment -constraints testintrep -body {
                 set text [testintrep $intrep [join $graphemes ""]]
-                list [grapheme split $text] [shimmered $intrep $text]
-            } -result [list $graphemes 0]
+                set l [grapheme split $text]
+                list $l [testintrep type $l] [shimmered $intrep $text]
+            } -result [list $graphemes graphemeList 0]
         }
+
+        test grapheme-split-listop-$intrep-1.0 {
+            Verify lappend operation on grapheme lists
+        } -constraints testintrep -setup {
+            set text [testintrep $intrep A\u0308B]
+            set l [grapheme split $text]
+        } -body {
+            list [lappend l X] [testintrep type $l]
+        } -result [list [list A\u0308 B X] list]
+
+        test grapheme-split-listop-$intrep-2.0 {
+            Verify linsert operation on grapheme lists
+        } -constraints testintrep -setup {
+            set text [testintrep $intrep A\u0308B]
+            set l [grapheme split $text]
+        } -body {
+            set l2 [linsert $l 0 X]
+            list $l2 [testintrep type $l2] [testintrep type $l]
+        } -result [list [list X A\u0308 B] list graphemeList]
+
+        test grapheme-split-listop-$intrep-3.0 {
+            Verify lindex operation on grapheme lists
+        } -constraints testintrep -setup {
+            set text [testintrep $intrep XA\u0308B]
+            set l [grapheme split $text]
+        } -body {
+            list [lindex $l 1] [testintrep type $l]
+        } -result [list A\u0308 graphemeList]
+
+        test grapheme-split-listop-$intrep-4.0 {
+            Verify llength operation on grapheme lists
+        } -constraints testintrep -setup {
+            set text [testintrep $intrep A\u0308B]
+            set l [grapheme split $text]
+        } -body {
+            list [llength $l] [testintrep type $l]
+        } -result [list 2 graphemeList]
+
+        test grapheme-split-listop-$intrep-5.0 {
+            Verify lmap operation on grapheme lists
+        } -constraints testintrep -setup {
+            set text [testintrep $intrep A\u0308B]
+            set l [grapheme split $text]
+        } -body {
+            list [lmap e $l {set e}] [testintrep type $l]
+        } -result [list [list A\u308 B] graphemeList]
+
+        test grapheme-split-listop-$intrep-6.0 {
+            Verify foreach operation on grapheme lists
+        } -constraints testintrep -setup {
+            set text [testintrep $intrep A\u0308B]
+            set l [grapheme split $text]
+        } -body {
+            set l2 {}
+            foreach e $l {
+                lappend l2 $e
+            }
+            list $l2 [testintrep type $l]
+        } -result [list [list A\u308 B] graphemeList]
     }
+
 }
 
 ::tcltest::cleanupTests

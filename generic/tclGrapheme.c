@@ -93,6 +93,7 @@ typedef struct GraphemeListRep {
     Tcl_Size refCount;		/* Shared amongst Tcl_Obj's */
     Tcl_Size graphemeIndex;	/* Cached grapheme index */
     Tcl_Size graphemeOffset;	/* Corresponding Tcl_UniChar offset */
+    Tcl_Size graphemeCount;	/* Count of graphemes in string */
 } GraphemeListRep;
 
 static Tcl_DupInternalRepProc	GraphemeListDupProc;
@@ -1335,6 +1336,7 @@ GraphemeListRepNew(
     glrPtr->refCount = 0;
     glrPtr->graphemeIndex = 0;
     glrPtr->graphemeOffset = 0;
+    glrPtr->graphemeCount = -1;
     return glrPtr;
 }
 
@@ -1476,11 +1478,14 @@ GraphemeListLengthProc(
     Tcl_Obj *objPtr)
 {
     GraphemeListRep *glrPtr = GetGraphemeListRep(objPtr);
-    Tcl_Size uniLen;
-    Tcl_UniChar *uniPtr = Tcl_GetUnicodeFromObj(glrPtr->objPtr, &uniLen);
-    return Tcl_GraphemeUniLength(uniPtr, uniLen);
+    if (glrPtr->graphemeCount < 0) {
+	Tcl_Size uniLen;
+	Tcl_UniChar *uniPtr = Tcl_GetUnicodeFromObj(glrPtr->objPtr, &uniLen);
+	glrPtr->graphemeCount = Tcl_GraphemeUniLength(uniPtr, uniLen);
+    }
+    return glrPtr->graphemeCount;
 }
-
+
 /*
  *------------------------------------------------------------------------
  *
