@@ -1864,8 +1864,7 @@ Tcl_ZlibInflate(
     TclNewObj(obj);
     outData = Tcl_SetByteArrayLength(obj, bufferSize);
     memset(&stream, 0, sizeof(z_stream));
-    stream.avail_in = inLen+1;	/* +1 because zlib can "over-request"
-				 * input (but ignore it!) */
+    stream.avail_in = inLen;
     stream.next_in = inData;
     stream.avail_out = bufferSize;
     stream.next_out = outData;
