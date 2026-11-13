@@ -287,7 +287,8 @@ enum ClockFmtScnCmdArgsFlags {
     CLF_VALIDATE = (CLF_VALIDATE_S1|CLF_VALIDATE_S2),
     CLF_EXTENDED = (1 << 4),
     CLF_STRICT = (1 << 8),
-    CLF_LOCALE_USED = (1 << 15)
+    CLF_LOCALE_USED = (1 << 15),
+    CLF_TZ_HELD = (1 << 16)
 };
 
 /* Last-period cache for fast UTC to local and backwards conversion */
@@ -364,12 +365,35 @@ typedef struct ClockFmtScnCmdArgs {
     ClockClientData *dataPtr;	/* Pointer to literal pool, etc. */
     Tcl_Interp *interp;		/* Tcl interpreter */
     Tcl_Obj *formatObj;		/* Format */
-    Tcl_Obj *localeObj;		/* Name of the locale where the time will be expressed. */
-    Tcl_Obj *timezoneObj;	/* Default time zone in which the time will be expressed */
+    Tcl_Obj *localeObj;		/* Name of the locale where the time will be expressed.
+				 * Holds a reference once CLF_LOCALE_USED is set. */
+    Tcl_Obj *timezoneObj;	/* Default time zone in which the time will be expressed.
+				 * Holds a reference once CLF_TZ_HELD is set. */
     Tcl_Obj *baseObj;		/* Base (scan and add) or clockValue (format) */
     int flags;			/* Flags control scanning */
-    Tcl_Obj *mcDictObj;		/* Current dictionary of tcl::clock package for given localeObj*/
+    Tcl_Obj *mcDictObj;		/* Current dictionary of tcl::clock package for given
+				 * localeObj. Holds a reference while not NULL, so
+				 * that callbacks cannot free it. */
 } ClockFmtScnCmdArgs;
+
+/*
+ * Sets the time zone of the command to a set up (normalized) zone. That
+ * object may be owned by the clock caches only, and callbacks may clear
+ * them, so the command holds a reference until ClockFreeFmtScnArgs.
+ */
+
+static inline void
+ClockSetOptsTimezone(
+    ClockFmtScnCmdArgs *opts,
+    Tcl_Obj *timezoneObj)
+{
+    Tcl_IncrRefCount(timezoneObj);
+    if (opts->flags & CLF_TZ_HELD) {
+	Tcl_DecrRefCount(opts->timezoneObj);
+    }
+    opts->timezoneObj = timezoneObj;
+    opts->flags |= CLF_TZ_HELD;
+}
 
 #define ClockDefaultYearCentury 2000
 #define ClockDefaultCenturySwitch 38
@@ -526,6 +550,8 @@ MODULE_SCOPE int	TclClockFreeScan(Tcl_Interp *interp, DateInfo *info);
 MODULE_SCOPE Tcl_Obj *	TclClockSetupTimeZone(ClockClientData *dataPtr,
 			    Tcl_Interp *interp, Tcl_Obj *timezoneObj);
 MODULE_SCOPE Tcl_Obj *	TclClockMCDict(ClockFmtScnCmdArgs *opts);
+MODULE_SCOPE int	TclClockMCDictPut(ClockFmtScnCmdArgs *opts,
+			    Tcl_Obj *keyObj, Tcl_Obj *valObj);
 MODULE_SCOPE Tcl_Obj *	TclClockMCGet(ClockFmtScnCmdArgs *opts, int mcKey);
 MODULE_SCOPE Tcl_Obj *	TclClockMCGetIdx(ClockFmtScnCmdArgs *opts, int mcKey);
 MODULE_SCOPE int	TclClockMCSetIdx(ClockFmtScnCmdArgs *opts, int mcKey,

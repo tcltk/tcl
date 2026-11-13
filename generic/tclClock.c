@@ -714,10 +714,12 @@ TclClockMCDict(
 
     /* if dict not yet retrieved */
     if (opts->mcDictObj == NULL) {
+	Tcl_Obj *mcDictObj = NULL;
+
 	/* if locale was not yet used */
 	if (!(opts->flags & CLF_LOCALE_USED)) {
 	    opts->localeObj = NormLocaleObj(dataPtr, opts->interp,
-		    opts->localeObj, &opts->mcDictObj);
+		    opts->localeObj, &mcDictObj);
 
 	    if (opts->localeObj == NULL) {
 		Tcl_SetObjResult(opts->interp, Tcl_NewStringObj(
@@ -726,6 +728,12 @@ TclClockMCDict(
 		Tcl_SetErrorCode(opts->interp, "CLOCK", "badOption", (char *)NULL);
 		return NULL;
 	    }
+	    /*
+	     * The normalized locale may be owned by the clock caches only;
+	     * keep it until the end of the command (ClockFreeFmtScnArgs),
+	     * since callbacks may clear the caches.
+	     */
+	    Tcl_IncrRefCount(opts->localeObj);
 	    opts->flags |= CLF_LOCALE_USED;
 
 	    /* check locale literals already available (on demand creation) */
@@ -741,18 +749,16 @@ TclClockMCDict(
 	    }
 	}
 
-	/* check or obtain mcDictObj (be sure it's modifiable) */
-	if (opts->mcDictObj == NULL || opts->mcDictObj->refCount > 1) {
-	    Tcl_Size ref = 1;
-
+	/* obtain mcDictObj if not yet cached for this locale */
+	if (mcDictObj == NULL) {
 	    /* first try to find locale catalog dict */
 	    if (dataPtr->mcDicts == NULL) {
 		TclSetObjRef(dataPtr->mcDicts, Tcl_NewDictObj());
 	    }
 	    Tcl_DictObjGet(NULL, dataPtr->mcDicts,
-		    opts->localeObj, &opts->mcDictObj);
+		    opts->localeObj, &mcDictObj);
 
-	    if (opts->mcDictObj == NULL) {
+	    if (mcDictObj == NULL) {
 		/* get msgcat dictionary - ::tcl::clock::mcget locale */
 		Tcl_Obj *callargs[2];
 
@@ -763,40 +769,91 @@ TclClockMCDict(
 		    return NULL;
 		}
 
-		opts->mcDictObj = Tcl_GetObjResult(opts->interp);
+		/*
+		 * Smart reference (shared dict as object with no ref-counter),
+		 * made before the result is reset, which may free the result.
+		 */
+		mcDictObj = TclDictObjSmartRef(opts->interp,
+			Tcl_GetObjResult(opts->interp));
+		if (mcDictObj == NULL) {
+		    return NULL;
+		}
 		Tcl_ResetResult(opts->interp);
-		ref = 0; /* new object is not yet referenced */
-	    }
 
-	    /* be sure that object reference doesn't increase (dict changeable) */
-	    if (opts->mcDictObj->refCount > ref) {
-		/* smart reference (shared dict as object with no ref-counter) */
-		opts->mcDictObj = TclDictObjSmartRef(opts->interp,
-			opts->mcDictObj);
+		/* mcget may have cleared the caches (configure -clear) */
+		if (dataPtr->mcDicts == NULL) {
+		    TclSetObjRef(dataPtr->mcDicts, Tcl_NewDictObj());
+		}
 	    }
 
 	    /* create exactly one reference to catalog / make it searchable for future */
 	    Tcl_DictObjPut(NULL, dataPtr->mcDicts, opts->localeObj,
-		    opts->mcDictObj);
+		    mcDictObj);
 
 	    if (opts->localeObj == dataPtr->literals[LIT_C]
 		    || opts->localeObj == dataPtr->defaultLocale) {
-		dataPtr->defaultLocaleDict = opts->mcDictObj;
+		dataPtr->defaultLocaleDict = mcDictObj;
 	    }
 	    if (opts->localeObj == dataPtr->currentLocale) {
-		dataPtr->currentLocaleDict = opts->mcDictObj;
+		dataPtr->currentLocaleDict = mcDictObj;
 	    } else if (opts->localeObj == dataPtr->lastUsedLocale) {
-		dataPtr->lastUsedLocaleDict = opts->mcDictObj;
+		dataPtr->lastUsedLocaleDict = mcDictObj;
 	    } else {
 		SavePrevLocaleObj(dataPtr);
 		TclSetObjRef(dataPtr->lastUsedLocale, opts->localeObj);
 		TclUnsetObjRef(dataPtr->lastUsedLocaleUnnorm);
-		dataPtr->lastUsedLocaleDict = opts->mcDictObj;
+		dataPtr->lastUsedLocaleDict = mcDictObj;
 	    }
 	}
+
+	/*
+	 * Keep the catalog until the end of the command (ClockFreeFmtScnArgs):
+	 * callbacks (mcget, LocalizeFormat, TZData traces) may clear the
+	 * caches that own it. Write it with TclClockMCDictPut.
+	 */
+	Tcl_IncrRefCount(mcDictObj);
+	opts->mcDictObj = mcDictObj;
     }
 
     return opts->mcDictObj;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclClockMCDictPut --
+ *
+ *	Stores a value in the localized storage dictionary of the command.
+ *
+ *	The command holds its own reference to the dictionary, so it is
+ *	usually shared: the value is then put through a smart reference to
+ *	the same dictionary.
+ *
+ * Results:
+ *	Returns a standard Tcl result.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+TclClockMCDictPut(
+    ClockFmtScnCmdArgs *opts,
+    Tcl_Obj *keyObj,
+    Tcl_Obj *valObj)
+{
+    Tcl_Obj *smartObj;
+    int ret;
+
+    if (!Tcl_IsShared(opts->mcDictObj)) {
+	return Tcl_DictObjPut(opts->interp, opts->mcDictObj, keyObj, valObj);
+    }
+    smartObj = TclDictObjSmartRef(opts->interp, opts->mcDictObj);
+    if (smartObj == NULL) {
+	return TCL_ERROR;
+    }
+    Tcl_IncrRefCount(smartObj);
+    ret = Tcl_DictObjPut(opts->interp, smartObj, keyObj, valObj);
+    Tcl_DecrRefCount(smartObj);
+    return ret;
 }
 
 /*
@@ -913,8 +970,7 @@ TclClockMCSetIdx(
 	}
     }
 
-    return Tcl_DictObjPut(opts->interp, opts->mcDictObj,
-	    dataPtr->mcLitIdxs[mcKey], valObj);
+    return TclClockMCDictPut(opts, dataPtr->mcLitIdxs[mcKey], valObj);
 }
 
 static void
@@ -3326,6 +3382,35 @@ ClockInitFmtScnArgs(
     memset(opts, 0, sizeof(*opts));
     opts->dataPtr = dataPtr;
     opts->interp = interp;
+    /* callbacks may delete the clock commands, which release dataPtr */
+    dataPtr->refCount++;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ClockFreeFmtScnArgs --
+ *
+ *	Releases the references held in the options structure: the
+ *	normalized locale, the locale catalog and the client data.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+ClockFreeFmtScnArgs(
+    ClockFmtScnCmdArgs *opts)
+{
+    if (opts->flags & CLF_LOCALE_USED) {
+	Tcl_DecrRefCount(opts->localeObj);
+	opts->flags &= ~CLF_LOCALE_USED;
+    }
+    if (opts->flags & CLF_TZ_HELD) {
+	Tcl_DecrRefCount(opts->timezoneObj);
+	opts->flags &= ~CLF_TZ_HELD;
+    }
+    TclUnsetObjRef(opts->mcDictObj);
+    ClockDeleteCmdProc(opts->dataPtr);
 }
 
 /*
@@ -3365,6 +3450,7 @@ ClockParseFmtScnArgs(
     Tcl_Interp *interp = opts->interp;
     ClockClientData *dataPtr = opts->dataPtr;
     int gmtFlag = 0;
+    Tcl_Obj *tzObj;
     static const char *const options[] = {
 	"-base", "-format", "-gmt", "-locale", "-timezone", "-validate", NULL
     };
@@ -3482,10 +3568,11 @@ ClockParseFmtScnArgs(
 
     /* Setup timezone (normalize object if needed and load TZ on demand) */
 
-    opts->timezoneObj = TclClockSetupTimeZone(dataPtr, interp, opts->timezoneObj);
-    if (opts->timezoneObj == NULL) {
+    tzObj = TclClockSetupTimeZone(dataPtr, interp, opts->timezoneObj);
+    if (tzObj == NULL) {
 	return TCL_ERROR;
     }
+    ClockSetOptsTimezone(opts, tzObj);
 
     /* Base (by scan or add) or clock value (by format) */
 
@@ -3644,6 +3731,7 @@ ClockFormatObjCmd(
 
   done:
     TclUnsetObjRef(dateFmt.date.tzName);
+    ClockFreeFmtScnArgs(&opts);
     return ret;
 }
 
@@ -3750,6 +3838,7 @@ ClockScanObjCmd(
 
   done:
     TclUnsetObjRef(yy.date.tzName);
+    ClockFreeFmtScnArgs(&opts);
     if (ret != TCL_OK) {
 	return ret;
     }
@@ -4146,6 +4235,8 @@ ClockFreeScan(
      */
 
     if (info->flags & CLF_ZONE) {
+	Tcl_Obj *tzObj;
+
 	if (yyTimezone || !yyDSTmode) {
 	    /* Real time zone from numeric zone */
 	    Tcl_Obj *tzObjStor = NULL;
@@ -4156,17 +4247,18 @@ ClockFreeScan(
 		    60 * minEast + 3600 * dstFlag);
 	    Tcl_IncrRefCount(tzObjStor);
 
-	    opts->timezoneObj = TclClockSetupTimeZone(dataPtr, interp, tzObjStor);
+	    tzObj = TclClockSetupTimeZone(dataPtr, interp, tzObjStor);
 
 	    Tcl_DecrRefCount(tzObjStor);
 	} else {
 	    /* simplest case - GMT / UTC */
-	    opts->timezoneObj = TclClockSetupTimeZone(dataPtr, interp,
+	    tzObj = TclClockSetupTimeZone(dataPtr, interp,
 		    dataPtr->literals[LIT_GMT]);
 	}
-	if (opts->timezoneObj == NULL) {
+	if (tzObj == NULL) {
 	    return TCL_ERROR;
 	}
+	ClockSetOptsTimezone(opts, tzObj);
 
 	// TclSetObjRef(yydate.tzName, opts->timezoneObj);
 
@@ -4676,6 +4768,7 @@ ClockAddObjCmd(
 
   done:
     TclUnsetObjRef(yy.date.tzName);
+    ClockFreeFmtScnArgs(&opts);
     if (ret != TCL_OK) {
 	return ret;
     }

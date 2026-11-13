@@ -657,24 +657,49 @@ ClockFmtObj_DupInternalRep(
     }
 }
 
+/*
+ * Take and release a reference to a format/scan storage. TclClockScan and
+ * TclClockFormat hold one while they walk its tokens, since callbacks may
+ * free the format object that owns the storage (or its representation).
+ */
+
+static inline void
+ClockFmtScnStoragePreserve(
+    ClockFmtScnStorage *fss)
+{
+    Tcl_MutexLock(&ClockFmtMutex);
+    fss->objRefCount++;
+    Tcl_MutexUnlock(&ClockFmtMutex);
+}
+
+static void
+ClockFmtScnStorageRelease(
+    ClockFmtScnStorage *fss)
+{
+    if (!initialized) {
+	return;
+    }
+    Tcl_MutexLock(&ClockFmtMutex);
+    /* decrement object reference count of format/scan storage */
+    if (--fss->objRefCount <= 0) {
+#if CLOCK_FMT_SCN_STORAGE_GC_SIZE > 0
+	/* don't remove it right now (may be reusable), just add to GC */
+	ClockFmtScnStorageGC_In(fss);
+#else
+	/* remove storage (format representation) */
+	ClockFmtScnStorageDelete(fss);
+#endif
+    }
+    Tcl_MutexUnlock(&ClockFmtMutex);
+}
+
 static void
 ClockFmtObj_FreeInternalRep(
     Tcl_Obj *objPtr)
 {
     ClockFmtScnStorage *fss = ObjClockFmtScn(objPtr);
-    if (fss != NULL && initialized) {
-	Tcl_MutexLock(&ClockFmtMutex);
-	/* decrement object reference count of format/scan storage */
-	if (--fss->objRefCount <= 0) {
-#if CLOCK_FMT_SCN_STORAGE_GC_SIZE > 0
-	    /* don't remove it right now (may be reusable), just add to GC */
-	    ClockFmtScnStorageGC_In(fss);
-#else
-	    /* remove storage (format representation) */
-	    ClockFmtScnStorageDelete(fss);
-#endif
-	}
-	Tcl_MutexUnlock(&ClockFmtMutex);
+    if (fss != NULL) {
+	ClockFmtScnStorageRelease(fss);
     }
     ObjClockFmtScn(objPtr) = NULL;
     if (ObjLocFmtKey(objPtr) != objPtr) {
@@ -947,17 +972,15 @@ ClockLocalizeFormat(
 	    valObj = Tcl_GetObjResult(opts->interp);
 	}
 
-	/* ensure mcDictObj remains unshared */
-	if (opts->mcDictObj->refCount > 1) {
-	    /* smart reference (shared dict as object with no ref-counter) */
-	    opts->mcDictObj = TclDictObjSmartRef(opts->interp,
-		    opts->mcDictObj);
-	}
 	if (!valObj) {
 	    goto done;
 	}
-	/* cache it inside mc-dictionary (this incr. ref count of keyObj/valObj) */
-	if (Tcl_DictObjPut(opts->interp, opts->mcDictObj, keyObj, valObj) != TCL_OK) {
+	/*
+	 * Cache it inside mc-dictionary (this incr. ref count of keyObj/valObj).
+	 * The command holds a reference to mcDictObj, so it is still valid
+	 * even if LocalizeFormat cleared the caches.
+	 */
+	if (TclClockMCDictPut(opts, keyObj, valObj) != TCL_OK) {
 	    valObj = NULL;
 	    goto done;
 	}
@@ -1802,7 +1825,7 @@ ClockScnToken_TimeZone_Proc(
     int minLen, maxLen;
     int len = 0;
     const char *p = yyInput;
-    Tcl_Obj *tzObjStor = NULL;
+    Tcl_Obj *tzObjStor = NULL, *tzObj;
 
     DetermineGreedySearchLen(opts, info, tok, &minLen, &maxLen);
 
@@ -1873,13 +1896,13 @@ ClockScnToken_TimeZone_Proc(
     /* try to apply new time zone */
     Tcl_IncrRefCount(tzObjStor);
 
-    opts->timezoneObj = TclClockSetupTimeZone(opts->dataPtr, opts->interp,
-	    tzObjStor);
+    tzObj = TclClockSetupTimeZone(opts->dataPtr, opts->interp, tzObjStor);
 
     Tcl_DecrRefCount(tzObjStor);
-    if (opts->timezoneObj == NULL) {
+    if (tzObj == NULL) {
 	return TCL_ERROR;
     }
+    ClockSetOptsTimezone(opts, tzObj);
 
     yyInput += len;
     return TCL_OK;
@@ -2361,7 +2384,7 @@ TclClockScan(
     ClockFmtScnCmdArgs *opts)	/* Command options */
 {
     ClockClientData *dataPtr = opts->dataPtr;
-    const ClockFmtScnStorage *fss;
+    ClockFmtScnStorage *fss;
     const ClockScanToken *tok;
     const ClockScanTokenMap *map;
     const char *p, *x, *end;
@@ -2377,6 +2400,7 @@ TclClockScan(
 	    || !(tok = fss->scnTok)) {
 	return TCL_ERROR;
     }
+    ClockFmtScnStoragePreserve(fss);
 
     /* prepare parsing */
 
@@ -2680,6 +2704,7 @@ TclClockScan(
 
     ret = TCL_OK;
   done:
+    ClockFmtScnStorageRelease(fss);
     return ret;
 
     /* Error case reporting. */
@@ -3401,6 +3426,7 @@ TclClockFormat(
     ClockFormatToken *tok;
     const ClockFormatTokenMap *map;
     char resMem[MIN_FMT_RESULT_BLOCK_ALLOC];
+    int ret = TCL_ERROR;
 
     /* get localized format */
     if (ClockLocalizeFormat(opts) == NULL) {
@@ -3411,6 +3437,7 @@ TclClockFormat(
 	    || !(tok = fss->fmtTok)) {
 	return TCL_ERROR;
     }
+    ClockFmtScnStoragePreserve(fss);
 
     /* result container object */
     dateFmt->resMem = resMem;
@@ -3418,7 +3445,7 @@ TclClockFormat(
     if (fss->fmtMinAlloc > sizeof(resMem)) {
 	dateFmt->resMem = (char *)Tcl_AttemptAlloc(fss->fmtMinAlloc);
 	if (dateFmt->resMem == NULL) {
-	    return TCL_ERROR;
+	    goto release;
 	}
 	dateFmt->resEnd = dateFmt->resMem + fss->fmtMinAlloc;
     }
@@ -3544,7 +3571,7 @@ TclClockFormat(
 	if (dateFmt->resMem == resMem) {
 	    result->bytes = (char *)Tcl_AttemptAlloc(size);
 	    if (result->bytes == NULL) {
-		return TCL_ERROR;
+		goto release;
 	    }
 	    memcpy(result->bytes, dateFmt->resMem, size);
 	} else if ((dateFmt->resEnd - dateFmt->resMem) / size > MAX_FMT_RESULT_THRESHOLD) {
@@ -3562,10 +3589,12 @@ TclClockFormat(
 	}
 	result->bytes[result->length] = '\0';
 	Tcl_SetObjResult(opts->interp, result);
-	return TCL_OK;
+	ret = TCL_OK;
     }
 
-    return TCL_ERROR;
+  release:
+    ClockFmtScnStorageRelease(fss);
+    return ret;
 }
 
 /*

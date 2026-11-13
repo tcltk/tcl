@@ -38950,6 +38950,114 @@ test clock-72.6 {%z with the smallest 32-bit offset} -setup {
     unset -nocomplain ::tcl::clock::TZData(:clock-72.6)
 } -result "[string repeat a 72]-5965231408"
 
+# Callbacks run by [clock format] and [clock scan] (LocalizeFormat, mcget,
+# TZData traces) that clear the clock caches or delete the clock commands.
+# Each test runs in its own interpreter, since it changes the clock state.
+test clock-82.1 {LocalizeFormat callback clears the clock caches} -setup {
+    set i [interp create]
+} -body {
+    $i eval {
+	clock format 0 -gmt 1
+	trace add variable ::tcl::clock::LocFmtMap read {apply {args {
+	    ::tcl::unsupported::clock::configure -clear
+	}}}
+	clock format 0 -format "%x clock-82.1" -locale fr -gmt 1
+    }
+} -cleanup {
+    interp delete $i
+} -result { 1 janvier 1970 clock-82.1}
+test clock-82.2 {mcget callback clears the clock caches} -setup {
+    set i [interp create]
+} -body {
+    $i eval {
+	clock format 0 -gmt 1
+	namespace eval ::tcl::clock {
+	    ::msgcat::mcpackageconfig set loadcmd {apply {args {
+		::tcl::unsupported::clock::configure -clear
+	    }}}
+	}
+	clock format 0 -format "%x clock-82.2" -locale fr_clock82 -gmt 1
+    }
+} -cleanup {
+    interp delete $i
+} -result { 1 janvier 1970 clock-82.2}
+test clock-82.3 {TZData read trace in scan %Z frees the scan format storage} -setup {
+    set i [interp create]
+} -body {
+    $i eval {
+	clock format 0 -gmt 1
+	set done 0
+	proc hook {n1 n2 op} {
+	    if {$::done || $n2 ne "CET"} return
+	    set ::done 1
+	    # drop the catalog owning the localized format, then push its
+	    # storage off the GC stack of released formats
+	    ::tcl::clock::ClearCaches
+	    for {set n 0} {$n < 40} {incr n} {
+		clock format 0 -format "%Y [string repeat x $n]" -gmt 1
+	    }
+	    ::tcl::clock::ClearCaches
+	}
+	trace add variable ::tcl::clock::TZData read hook
+	list [clock scan "01.01.2000 CET" -format "%x %Z" -locale de] $done
+    }
+} -cleanup {
+    interp delete $i
+} -result {946681200 1}
+test clock-82.4 {TZData read trace in scan %Z deletes the clock commands} -setup {
+    set i [interp create]
+} -body {
+    $i eval {
+	clock format 0 -gmt 1
+	set done 0
+	proc hook {n1 n2 op} {
+	    if {$::done || $n2 ne "CET"} return
+	    set ::done 1
+	    foreach c [info commands ::tcl::clock::*] {rename $c {}}
+	    foreach c [info commands ::tcl::unsupported::clock::*] {rename $c {}}
+	}
+	trace add variable ::tcl::clock::TZData read hook
+	list [catch {clock scan "01.01.2000 CET" -format "%d.%m.%Y %Z"}] $done
+    }
+} -cleanup {
+    interp delete $i
+} -result {1 1}
+test clock-82.5 {LocalizeFormat callback in format frees the time zone object} -setup {
+    set i [interp create]
+} -body {
+    $i eval {
+	clock format 0 -gmt 1
+	# a zone name built at run time (not a shared literal), so that the
+	# next call with an equal name gets the normalized object owned by the
+	# caches only
+	set z :Europe/
+	clock format 0 -timezone [string cat $z Berlin]
+	trace add variable ::tcl::clock::LocFmtMap read {apply {args {
+	    ::tcl::unsupported::clock::configure -clear
+	}}}
+	clock format 0 -format "%x %Z clock-82.5" -locale fr \
+	    -timezone [string cat $z Berlin]
+    }
+} -cleanup {
+    interp delete $i
+} -result { 1 janvier 1970 CET clock-82.5}
+test clock-82.6 {LocalizeFormat callback in scan frees the time zone object} -setup {
+    set i [interp create]
+} -body {
+    $i eval {
+	clock format 0 -gmt 1
+	set z :Europe/
+	clock format 0 -timezone [string cat $z Berlin]
+	trace add variable ::tcl::clock::LocFmtMap read {apply {args {
+	    ::tcl::unsupported::clock::configure -clear
+	}}}
+	clock scan "01.01.2000 clock-82.6" -format "%x clock-82.6" -locale de \
+	    -timezone [string cat $z Berlin]
+    }
+} -cleanup {
+    interp delete $i
+} -result 946681200
+
 # cleanup
 
 rename test {}
