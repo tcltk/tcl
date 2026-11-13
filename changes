@@ -9546,3 +9546,5 @@ Many code fixes to avoid overflow or undefined behavior.  Thanks chrstphrchvz.
 2026-11-10 Update to zlib 1.4.0 (nijtmans)
 
 2026-11-11 Segault upon sequence of execution traces (storchaka)
+
+2026-11-11 file cmd fails to copy to VFAT (storchaka)
