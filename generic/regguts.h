@@ -423,7 +423,19 @@ struct guts {
  * compile() or exec(), is limited to REG_MAX_STACK_DEPTH, and to the stack
  * left in the current thread minus REG_STACK_MARGIN when that is known.
  * [Bug 7d47ba7d94]
+ *
+ * REG_STACK_ADDR(local) gives a stack address of the current function.  With
+ * GCC and Clang it is the frame address: AddressSanitizer may move local
+ * variables whose address is taken into frames on the heap (its "fake
+ * stack"), and their addresses say nothing about the stack depth.
  */
+
+#if defined(__GNUC__) || defined(__clang__)
+#define REG_STACK_ADDR(local) \
+    ((void) &(local), (const char *) __builtin_frame_address(0))
+#else
+#define REG_STACK_ADDR(local)	((const char *) &(local))
+#endif
 
 #ifndef REG_MAX_STACK_DEPTH
 #define REG_MAX_STACK_DEPTH	((size_t) 1024 * 1024)
@@ -434,7 +446,7 @@ struct guts {
 
 static TCL_NOINLINE size_t
 stackdepthlimit(
-    const char *base)		/* address of a local variable at entry */
+    const char *base)		/* stack address at entry */
 {
     const char *limit = TclpGetCStackLimit();
     size_t depth = REG_MAX_STACK_DEPTH;
@@ -452,13 +464,14 @@ stackdepthlimit(
 
 static inline int
 stacktoodeep(
-    const char *base,		/* address of a local variable at entry */
+    const char *base,		/* stack address at entry */
     size_t *maxdepthPtr)	/* limit, computed when first needed */
 {
     char here;
-    size_t depth = ((uintptr_t) base > (uintptr_t) &here)
-	    ? (size_t) ((uintptr_t) base - (uintptr_t) &here)
-	    : (size_t) ((uintptr_t) &here - (uintptr_t) base);
+    const char *addr = REG_STACK_ADDR(here);
+    size_t depth = ((uintptr_t) base > (uintptr_t) addr)
+	    ? (size_t) ((uintptr_t) base - (uintptr_t) addr)
+	    : (size_t) ((uintptr_t) addr - (uintptr_t) base);
 
     if (*maxdepthPtr == 0) {
 	*maxdepthPtr = stackdepthlimit(base) + 1;
