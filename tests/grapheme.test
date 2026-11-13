@@ -24,6 +24,7 @@ namespace eval grapheme::test {
     variable text
     variable l
     variable intrep
+    const constindex 0
 
     if {[tcltest::testConstraint testintrep]} {
         variable intrepTypes [list none unichars]
@@ -67,9 +68,9 @@ namespace eval grapheme::test {
 
     tcltests::testnumargs "grapheme next" "string indexVar" ""
 
-    foreach testCase [list [list 0 "empty string" ""] {*}[getGraphemeData]] {
-	lassign $testCase testNum comment graphemes
-        foreach intrep $intrepTypes {
+    foreach intrep $intrepTypes {
+        foreach testCase [list [list 0 "empty string" ""] {*}[getGraphemeData]] {
+            lassign $testCase testNum comment graphemes
             test grapheme-next-ucd-$intrep-$testNum.0 $comment -body {
                 set text [testintrep $intrep [join $graphemes ""]]
                 set l {}
@@ -80,15 +81,67 @@ namespace eval grapheme::test {
                 list $graphemes [shimmered $intrep $text]
             } -result [list $graphemes 0]
         }
+
+        # Index value tests. "Normal" integer indices already tested in above loop
+        test grapheme-next-indexvar-$intrep-0 {grapheme indexvar undefined} -setup {
+            unset -nocomplain indexvar
+        } -body {
+            set text [testintrep $intrep A\u0308B]
+            list [grapheme next $text indexvar] $indexvar
+        } -result [list A\u0308 2]
+        test grapheme-next-indexvar-$intrep-1 {grapheme indexvar negative} -setup {
+            set indexvar -1
+        } -body {
+            set text [testintrep $intrep A\u0308B]
+            list [grapheme next $text indexvar] $indexvar
+        } -result [list A\u0308 2]
+        test grapheme-next-indexvar-$intrep-2 {grapheme indexvar out of bounds} -setup {
+            set indexvar 100
+        } -body {
+            set text [testintrep $intrep A\u0308B]
+            list [grapheme next $text indexvar] $indexvar
+        } -result [list "" 3]
+        test grapheme-next-indexvar-$intrep-3 {grapheme indexvar end} -setup {
+            set indexvar end
+        } -body {
+            set text [testintrep $intrep A\u0308B]
+            list [grapheme next $text indexvar] $indexvar
+        } -result [list "" 3]
+        test grapheme-next-indexvar-$intrep-4 {grapheme indexvar expression} -setup {
+            set indexvar end-3
+        } -body {
+            set text [testintrep $intrep XA\u0308B]
+            list [grapheme next $text indexvar] $indexvar
+        } -result [list A\u0308 3]
+        test grapheme-next-indexvar-error-$intrep-0 {grapheme indexvar invalid} -setup {
+            set indexvar xyz
+        } -body {
+            set text [testintrep $intrep A\u0308B]
+            list [grapheme next $text indexvar] $indexvar
+        } -result {bad index "xyz": must be integer?[+-]integer? or end?[+-]integer?} -returnCodes error
+        test grapheme-next-indexvar-error-$intrep-1 {grapheme indexvar const} -body {
+            set text [testintrep $intrep A\u0308B]
+            grapheme next $text constindex
+        } -result {can't set "constindex": variable is a constant} -returnCodes error
+        test grapheme-next-indexvar-error-$intrep-2 {grapheme indexvar array} -setup {
+            unset -nocomplain indexvar
+            array set indexvar {}
+        } -cleanup {
+            unset -nocomplain indexvar
+        } -body {
+            set text [testintrep $intrep A\u0308B]
+            list [grapheme next $text indexvar] $indexvar
+        } -result {can't set "indexvar": variable is array} -returnCodes error
+
     }
 
     ### grapheme prev
 
     tcltests::testnumargs "grapheme prev" "string indexVar" ""
 
-    foreach testCase [list [list 0 "empty string" ""] {*}[getGraphemeData]] {
-	lassign $testCase testNum comment graphemes
-        foreach intrep $intrepTypes {
+    foreach intrep $intrepTypes {
+        foreach testCase [list [list 0 "empty string" ""] {*}[getGraphemeData]] {
+            lassign $testCase testNum comment graphemes
             test grapheme-prev-ucd-$intrep-$testNum.0 $comment -body {
                 set text [testintrep $intrep [join $graphemes ""]]
                 set l {}
@@ -99,6 +152,57 @@ namespace eval grapheme::test {
                 list [lreverse $l] [shimmered $intrep $text]
             } -result [list $graphemes 0]
         }
+
+        # Index value tests. "Normal" integer indices already tested in above loop
+        test grapheme-prev-indexvar-$intrep-0 {grapheme indexvar undefined} -setup {
+            unset -nocomplain indexvar
+        } -body {
+            set text [testintrep $intrep XA\u0308]
+            list [grapheme prev $text indexvar] $indexvar
+        } -result [list A\u0308 1]
+        test grapheme-prev-indexvar-$intrep-1 {grapheme indexvar negative} -setup {
+            set indexvar -1
+        } -body {
+            set text [testintrep $intrep A\u0308B]
+            list [grapheme prev $text indexvar] $indexvar
+        } -result [list {} 0]
+        test grapheme-prev-indexvar-$intrep-2 {grapheme indexvar out of bounds} -setup {
+            set indexvar 100
+        } -body {
+            set text [testintrep $intrep XA\u0308]
+            list [grapheme prev $text indexvar] $indexvar
+        } -result [list A\u0308 1]
+        test grapheme-prev-indexvar-$intrep-3 {grapheme indexvar end} -setup {
+            set indexvar end
+        } -body {
+            set text [testintrep $intrep XA\u0308]
+            list [grapheme prev $text indexvar] $indexvar
+        } -result [list A\u0308 1]
+        test grapheme-prev-indexvar-$intrep-4 {grapheme indexvar expression} -setup {
+            set indexvar end-1
+        } -body {
+            set text [testintrep $intrep XA\u0308B]
+            list [grapheme prev $text indexvar] $indexvar
+        } -result [list A\u0308 1]
+        test grapheme-prev-indexvar-error-$intrep-0 {grapheme indexvar invalid} -setup {
+            set indexvar xyz
+        } -body {
+            set text [testintrep $intrep A\u0308B]
+            list [grapheme prev $text indexvar] $indexvar
+        } -result {bad index "xyz": must be integer?[+-]integer? or end?[+-]integer?} -returnCodes error
+        test grapheme-prev-indexvar-error-$intrep-1 {grapheme indexvar const} -body {
+            set text [testintrep $intrep A\u0308B]
+            grapheme prev $text constindex
+        } -result {can't set "constindex": variable is a constant} -returnCodes error
+        test grapheme-prev-indexvar-error-$intrep-2 {grapheme indexvar array} -setup {
+            unset -nocomplain indexvar
+            array set indexvar {}
+        } -cleanup {
+            unset -nocomplain indexvar
+        } -body {
+            set text [testintrep $intrep A\u0308B]
+            list [grapheme prev $text indexvar] $indexvar
+        } -result {can't set "indexvar": variable is array} -returnCodes error
     }
 
     ### grapheme length
@@ -122,10 +226,10 @@ namespace eval grapheme::test {
 
     tcltests::testnumargs "grapheme index" "string grIndex" ""
 
-    foreach testCase [list [list 0 "empty string" ""] {*}[getGraphemeData]] {
-	lassign $testCase testNum comment graphemes
-	set len [llength $graphemes]
-        foreach intrep $intrepTypes {
+    foreach intrep $intrepTypes {
+        foreach testCase [list [list 0 "empty string" ""] {*}[getGraphemeData]] {
+            lassign $testCase testNum comment graphemes
+            set len [llength $graphemes]
             foreach index [list end-[expr {$len+2}] -1 {*}[lseq $len] $len end end-1 end+1] {
                 test grapheme-index-ucd-$intrep-$testNum.$index $comment -body {
                     set text [testintrep $intrep [join $graphemes ""]]
@@ -133,33 +237,40 @@ namespace eval grapheme::test {
                 } -result [list [lindex $graphemes $index] 0]
             }
         }
+        test grapheme-index-invalid-$intrep-1.0 {bad index} -body {
+            grapheme index abc notanint
+        } -result {bad index "notanint": must be integer?[+-]integer? or end?[+-]integer?} -returnCodes error
     }
 
     ### grapheme offset
 
     tcltests::testnumargs "grapheme offset" "string grIndex" ""
 
-    foreach testCase [getGraphemeData] {
-	lassign $testCase testNum comment graphemes
-	set len [llength $graphemes]
-        foreach intrep $intrepTypes {
+    foreach intrep $intrepTypes {
+        foreach testCase [getGraphemeData] {
+            lassign $testCase testNum comment graphemes
+            set len [llength $graphemes]
             set offset 0
             for {set i 0} {$i < $len} {incr i} {
                 test grapheme-offset-ucd-$intrep-$testNum.$offset $comment -body {
                     set text [testintrep $intrep [join $graphemes ""]]
-                    # offset command always shimmers to unichars
-                    list [grapheme offset $text $i] [testintrep type $text]
-                } -result [list $offset unichars]
+                    list [grapheme offset $text $i] [shimmered $intrep $text]
+                } -result [list $offset 0]
                 incr offset [string length [lindex $graphemes $i]]
             }
         }
+
+        # Invalid index
+        test grapheme-offset-invalid-$intrep-1.0 {bad index} -body {
+            grapheme offset abc notanint
+        } -result {bad index "notanint": must be integer?[+-]integer? or end?[+-]integer?} -returnCodes error
+        test grapheme-offset-oob-$intrep-1.0 {Negative index} -body {
+            grapheme offset abc -42
+        } -result -1
+        test grapheme-offset-oob-$intrep-1.1 {Index too large} -body {
+            grapheme offset abc 42
+        } -result -1
     }
-    test grapheme-offset-oob-1.0 {Negative index} -body {
-	grapheme offset abc -42
-    } -result -1
-    test grapheme-offset-oob-1.1 {Index too large} -body {
-	grapheme offset abc 42
-    } -result -1
 
     ### grapheme range
 
