@@ -73,8 +73,12 @@ typedef struct ThreadSpecificData {
     EventSource *firstEventSourcePtr;
 				/* Pointer to first event source in list of
 				 * event sources for this thread. */
+    int sourceLoopLevel;	/* Number of active traversals of the event
+				 * source list. While it is nonzero, deleted
+				 * event sources are only marked (both procs
+				 * set to NULL) and unlinked later. */
     Tcl_ThreadId threadId;	/* Thread that owns this notifier instance. */
-    void *clientData;	/* Opaque handle for platform specific
+    void *clientData;		/* Opaque handle for platform specific
 				 * notifier. */
     struct ThreadSpecificData *nextPtr;
 				/* Next notifier in global list of notifiers.
@@ -97,6 +101,7 @@ TCL_DECLARE_MUTEX(listLock)
  * Declarations for routines used only in this file.
  */
 
+static void		EndSourceTraversal(ThreadSpecificData *tsdPtr);
 static int		QueueEvent(ThreadSpecificData *tsdPtr,
 			    Tcl_Event *evPtr, int position);
 
@@ -308,7 +313,7 @@ Tcl_CreateEventSource(
     Tcl_EventCheckProc *checkProc,
 				/* Function to call after waiting to see what
 				 * happened. */
-    void *clientData)	/* One-word argument to pass to setupProc and
+    void *clientData)		/* One-word argument to pass to setupProc and
 				 * checkProc. */
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
@@ -347,7 +352,7 @@ Tcl_DeleteEventSource(
     Tcl_EventCheckProc *checkProc,
 				/* Function to call after waiting to see what
 				 * happened. */
-    void *clientData)	/* One-word argument to pass to setupProc and
+    void *clientData)		/* One-word argument to pass to setupProc and
 				 * checkProc. */
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
@@ -361,6 +366,16 @@ Tcl_DeleteEventSource(
 		|| (sourcePtr->clientData != clientData)) {
 	    continue;
 	}
+	if (tsdPtr->sourceLoopLevel > 0) {
+	    /*
+	     * Called from a setup or check proc: the list is being traversed,
+	     * so don't free the entry now. [Bug 055240025a]
+	     */
+
+	    sourcePtr->setupProc = NULL;
+	    sourcePtr->checkProc = NULL;
+	    return;
+	}
 	if (prevPtr == NULL) {
 	    tsdPtr->firstEventSourcePtr = sourcePtr->nextPtr;
 	} else {
@@ -368,6 +383,38 @@ Tcl_DeleteEventSource(
 	}
 	Tcl_Free(sourcePtr);
 	return;
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * EndSourceTraversal --
+ *
+ *	Ends a traversal of the event source list and, if it was the
+ *	outermost one, frees the sources deleted during the traversal.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+EndSourceTraversal(
+    ThreadSpecificData *tsdPtr)
+{
+    EventSource **linkPtr = &tsdPtr->firstEventSourcePtr;
+
+    if (--tsdPtr->sourceLoopLevel > 0) {
+	return;
+    }
+    while (*linkPtr != NULL) {
+	EventSource *sourcePtr = *linkPtr;
+
+	if (sourcePtr->setupProc == NULL && sourcePtr->checkProc == NULL) {
+	    *linkPtr = sourcePtr->nextPtr;
+	    Tcl_Free(sourcePtr);
+	} else {
+	    linkPtr = &sourcePtr->nextPtr;
+	}
     }
 }
 
@@ -390,11 +437,11 @@ Tcl_DeleteEventSource(
 void
 Tcl_QueueEvent(
     Tcl_Event *evPtr,		/* Event to add to queue. The storage space
-				 * must have been allocated the caller with
+				 * must have been allocated by the caller with
 				 * malloc (Tcl_Alloc), and it becomes the
 				 * property of the event queue. It will be
 				 * freed after the event has been handled. */
-    int position) /* One of TCL_QUEUE_TAIL, TCL_QUEUE_HEAD, TCL_QUEUE_MARK,
+    int position)		/* One of TCL_QUEUE_TAIL, TCL_QUEUE_HEAD, TCL_QUEUE_MARK,
 				 * possibly combined with TCL_QUEUE_ALERT_IF_EMPTY. */
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
@@ -426,7 +473,7 @@ Tcl_ThreadQueueEvent(
 				 * malloc (Tcl_Alloc), and it becomes the
 				 * property of the event queue. It will be
 				 * freed after the event has been handled. */
-    int position) /* One of TCL_QUEUE_TAIL, TCL_QUEUE_HEAD, TCL_QUEUE_MARK,
+    int position)		/* One of TCL_QUEUE_TAIL, TCL_QUEUE_HEAD, TCL_QUEUE_MARK,
 				 * possibly combined with TCL_QUEUE_ALERT_IF_EMPTY. */
 {
     ThreadSpecificData *tsdPtr;
@@ -486,7 +533,7 @@ QueueEvent(
 				 * malloc (Tcl_Alloc), and it becomes the
 				 * property of the event queue. It will be
 				 * freed after the event has been handled. */
-    int position) /* One of TCL_QUEUE_TAIL, TCL_QUEUE_HEAD, TCL_QUEUE_MARK,
+    int position)		/* One of TCL_QUEUE_TAIL, TCL_QUEUE_HEAD, TCL_QUEUE_MARK,
 				 * possibly combined with TCL_QUEUE_ALERT_IF_EMPTY */
 {
     int wasEmpty = 0;
@@ -562,7 +609,7 @@ QueueEvent(
 void
 Tcl_DeleteEvents(
     Tcl_EventDeleteProc *proc,	/* The function to call. */
-    void *clientData)	/* The type-specific data. */
+    void *clientData)		/* The type-specific data. */
 {
     Tcl_Event *evPtr;		/* Pointer to the event being examined */
     Tcl_Event *prevPtr;		/* Pointer to evPtr's predecessor, or NULL if
@@ -981,12 +1028,14 @@ Tcl_DoOneEvent(
 	 */
 
 	tsdPtr->inTraversal = 1;
+	tsdPtr->sourceLoopLevel++;
 	for (sourcePtr = tsdPtr->firstEventSourcePtr; sourcePtr != NULL;
 		sourcePtr = sourcePtr->nextPtr) {
 	    if (sourcePtr->setupProc) {
 		sourcePtr->setupProc(sourcePtr->clientData, flags);
 	    }
 	}
+	EndSourceTraversal(tsdPtr);
 	tsdPtr->inTraversal = 0;
 
 	if ((flags & TCL_DONT_WAIT) || tsdPtr->blockTimeSet) {
@@ -1010,12 +1059,14 @@ Tcl_DoOneEvent(
 	 * Check all the event sources for new events.
 	 */
 
+	tsdPtr->sourceLoopLevel++;
 	for (sourcePtr = tsdPtr->firstEventSourcePtr; sourcePtr != NULL;
 		sourcePtr = sourcePtr->nextPtr) {
 	    if (sourcePtr->checkProc) {
 		sourcePtr->checkProc(sourcePtr->clientData, flags);
 	    }
 	}
+	EndSourceTraversal(tsdPtr);
 
 	/*
 	 * Check for events queued by the notifier or event sources.
@@ -1120,6 +1171,7 @@ Tcl_ServiceAll(void)
     tsdPtr->inTraversal = 1;
     tsdPtr->blockTimeSet = 0;
 
+    tsdPtr->sourceLoopLevel++;
     for (sourcePtr = tsdPtr->firstEventSourcePtr; sourcePtr != NULL;
 	    sourcePtr = sourcePtr->nextPtr) {
 	if (sourcePtr->setupProc) {
@@ -1132,6 +1184,7 @@ Tcl_ServiceAll(void)
 	    sourcePtr->checkProc(sourcePtr->clientData, TCL_ALL_EVENTS);
 	}
     }
+    EndSourceTraversal(tsdPtr);
 
     while (Tcl_ServiceEvent(0)) {
 	result = 1;
@@ -1270,7 +1323,7 @@ Tcl_FinalizeNotifier(
 
 void
 Tcl_AlertNotifier(
-    void *clientData)	/* Pointer to thread data. */
+    void *clientData)		/* Pointer to thread data. */
 {
     if (tclNotifierHooks.alertNotifierProc) {
 	tclNotifierHooks.alertNotifierProc(clientData);
@@ -1327,7 +1380,7 @@ Tcl_ServiceModeHook(
 
 void
 Tcl_SetTimer(
-    const Tcl_Time *timePtr)		/* Timeout value, may be NULL. */
+    const Tcl_Time *timePtr)	/* Timeout value, may be NULL. */
 {
     if (tclNotifierHooks.setTimerProc) {
 	tclNotifierHooks.setTimerProc(timePtr);
@@ -1358,7 +1411,7 @@ Tcl_SetTimer(
 
 int
 Tcl_WaitForEvent(
-    const Tcl_Time *timePtr)		/* Maximum block time, or NULL. */
+    const Tcl_Time *timePtr)	/* Maximum block time, or NULL. */
 {
     if (tclNotifierHooks.waitForEventProc) {
 	return tclNotifierHooks.waitForEventProc(timePtr);
@@ -1397,7 +1450,7 @@ Tcl_CreateFileHandler(
 				 * called. */
     Tcl_FileProc *proc,		/* Function to call for each selected
 				 * event. */
-    void *clientData)	/* Arbitrary data to pass to proc. */
+    void *clientData)		/* Arbitrary data to pass to proc. */
 {
     if (tclNotifierHooks.createFileHandlerProc) {
 	tclNotifierHooks.createFileHandlerProc(fd, mask, proc, clientData);

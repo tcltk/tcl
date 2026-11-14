@@ -26,10 +26,13 @@ to the userbase.
  - [lsearch -regexp released the pattern when matching failed](https://core.tcl-lang.org/tcl/tktview/359576)
  - [restore the blocking mode when "socket -async" connects at once](https://core.tcl-lang.org/tcl/tktview/d22dc7)
  - [writing a file beyond the file size limit (ulimit -f) killed the process](https://core.tcl-lang.org/tcl/tktview/386563)
+ - [regexp with backreferences could loop forever](https://core.tcl-lang.org/tcl/tktview/a6029e)
  - [remove empty directories from the zipfs VFS with POSIX find options](https://core.tcl-lang.org/tcl/tktview/9336f1)
  - [tailcall panicked in a command called directly by its objProc](https://core.tcl-lang.org/tcl/tktview/4955f5)
  - [compiled [self n] should be ambiguous](https://core.tcl-lang.org/tcl/tktview/8ab06e)
  - [difference between bcc'ed and eval'ed regexp](https://core.tcl-lang.org/tcl/tktview/306945)
+ - [regsub always asked the regexp engine for 10 submatches](https://core.tcl-lang.org/tcl/tktview/446565)
+ - [regsub -command panics with more than 9 capturing groups](https://core.tcl-lang.org/tcl/tktview/41bc9a)
  - [Problem with ::http::OpenSocket](https://core.tcl-lang.org/tcl/tktview/0c1e91)
  - [on Windows a joinable thread which exits before it is joined leaked](https://core.tcl-lang.org/tcl/tktview/338137)
  - [on Unix, Tcl_JoinThread() should not call pthread_join() for detached threads](https://core.tcl-lang.org/tcl/tktview/5974ff)
@@ -76,7 +79,11 @@ to the userbase.
  - [Stack and heap buffer overflow in 'clock format %z'](https://core.tcl-lang.org/tcl/tktview/e713c3)
  - [Fix crash from race condition in Unix locale initialization](https://core.tcl-lang.org/tcl/tktview/c35e347c)
  - [http::geturl -keepalive intermittent socketWrState errors](https://core.tcl-lang.org/tcl/tktview/05b158)
- - [Segault upon sequence of execution traces](https://core.tcl-lang.org/tcl/tktview/48d092ceb0)
+ - [Segault upon sequence of execution traces](https://core.tcl-lang.org/tcl/tktview/48d092)
+ - [Tcl_DeleteEventSource called from a setup or check proc](https://core.tcl-lang.org/tcl/tktview/055240)
+ - [a child process created by fork() could deadlock on its first allocation](https://core.tcl-lang.org/tcl/tktview/be3854)
+ - [file cmd fails to copy to VFAT](https://core.tcl-lang.org/tcl/tktview/152304)
+ - [free-form clock scan silently wraps numbers that do not fit into an int](https://core.tcl-lang.org/tcl/tktview/f894a8)
 
 # Updated bundled packages, libraries, standards, data
  - http 2.10.3
