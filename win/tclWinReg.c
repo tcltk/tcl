@@ -202,6 +202,8 @@ RegistryObjCmd(
 	case 1:			/* -64bit */
 	    mode |= KEY_WOW64_64KEY;
 	    break;
+	default:
+	    TCL_UNREACHABLE();
 	}
 	if (objc < 3) {
 	    goto wrongArgs;
@@ -284,6 +286,8 @@ RegistryObjCmd(
 	}
 	errString = "keyName ?pattern?";
 	break;
+    default:
+	TCL_UNREACHABLE();
     }
     Tcl_WrongNumArgs(interp, (mode ? 3 : 2), objv, errString);
     return TCL_ERROR;

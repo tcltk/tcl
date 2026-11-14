@@ -14,11 +14,12 @@ if {"::tcltest" ni [namespace children]} {
     package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
-::tcltest::loadTestedCommands
 testConstraint reg 0
-catch {
-    if {[testConstraint win]} {
-	set ::regver [package require tcl::registry]
+if {[testConstraint win]} {
+    if {![catch {
+	    ::tcltest::loadTestedCommands
+	    set ::regver [package require registry 1.4]
+	}]} {
 	testConstraint reg 1
     }
 }
@@ -32,164 +33,164 @@ testConstraint english [expr {
 
 test registry-1.0 {check if we are testing the right dll} {win reg} {
     set ::regver
-} [info patchlevel]
-test registry-1.1 {argument parsing for tcl::registry command} -constraints {win reg} -returnCodes error -body {
+} 1.4
+test registry-1.1 {argument parsing for tcl::registry command} -constraints win -returnCodes error -body {
     tcl::registry
 } -result {wrong # args: should be "tcl::registry ?-32bit|-64bit? option ?arg ...?"}
-test registry-1.1a {argument parsing for tcl::registry command} -constraints {win reg} -returnCodes error -body {
+test registry-1.1a {argument parsing for tcl::registry command} -constraints win -returnCodes error -body {
     tcl::registry -32bit
 } -result {wrong # args: should be "tcl::registry ?-32bit|-64bit? option ?arg ...?"}
-test registry-1.1b {argument parsing for tcl::registry command} -constraints {win reg} -returnCodes error -body {
+test registry-1.1b {argument parsing for tcl::registry command} -constraints win -returnCodes error -body {
     tcl::registry -64bit
 } -result {wrong # args: should be "tcl::registry ?-32bit|-64bit? option ?arg ...?"}
-test registry-1.2 {argument parsing for tcl::registry command} -constraints {win reg} -returnCodes error -body {
+test registry-1.2 {argument parsing for tcl::registry command} -constraints win -returnCodes error -body {
     tcl::registry foo
 } -result {bad option "foo": must be broadcast, delete, get, keys, set, type, or values}
-test registry-1.2a {argument parsing for tcl::registry command} -constraints {win reg} -returnCodes error -body {
+test registry-1.2a {argument parsing for tcl::registry command} -constraints win -returnCodes error -body {
     tcl::registry -33bit foo
 } -result {bad mode "-33bit": must be -32bit or -64bit}
 
-test registry-1.3 {argument parsing for tcl::registry command} -constraints {win reg} -returnCodes error -body {
+test registry-1.3 {argument parsing for tcl::registry command} -constraints win -returnCodes error -body {
     tcl::registry d
 } -result {wrong # args: should be "tcl::registry delete keyName ?valueName?"}
-test registry-1.3a {argument parsing for tcl::registry command} -constraints {win reg} -returnCodes error -body {
+test registry-1.3a {argument parsing for tcl::registry command} -constraints win -returnCodes error -body {
     tcl::registry -32bit d
 } -result {wrong # args: should be "tcl::registry -32bit delete keyName ?valueName?"}
-test registry-1.3b {argument parsing for tcl::registry command} -constraints {win reg} -returnCodes error -body {
+test registry-1.3b {argument parsing for tcl::registry command} -constraints win -returnCodes error -body {
     tcl::registry -64bit d
 } -result {wrong # args: should be "tcl::registry -64bit delete keyName ?valueName?"}
-test registry-1.4 {argument parsing for tcl::registry command} -constraints {win reg} -returnCodes error -body {
+test registry-1.4 {argument parsing for tcl::registry command} -constraints win -returnCodes error -body {
     tcl::registry delete
 } -result {wrong # args: should be "tcl::registry delete keyName ?valueName?"}
-test registry-1.5 {argument parsing for tcl::registry command} -constraints {win reg} -returnCodes error -body {
+test registry-1.5 {argument parsing for tcl::registry command} -constraints win -returnCodes error -body {
     tcl::registry delete foo bar baz
 } -result {wrong # args: should be "tcl::registry delete keyName ?valueName?"}
 
-test registry-1.6 {argument parsing for tcl::registry command} -constraints {win reg} -returnCodes error -body {
+test registry-1.6 {argument parsing for tcl::registry command} -constraints win -returnCodes error -body {
     tcl::registry g
 } -result {wrong # args: should be "tcl::registry get keyName valueName"}
-test registry-1.6a {argument parsing for tcl::registry command} -constraints {win reg} -returnCodes error -body {
+test registry-1.6a {argument parsing for tcl::registry command} -constraints win -returnCodes error -body {
     tcl::registry -32bit g
 } -result {wrong # args: should be "tcl::registry -32bit get keyName valueName"}
-test registry-1.6b {argument parsing for tcl::registry command} -constraints {win reg} -returnCodes error -body {
+test registry-1.6b {argument parsing for tcl::registry command} -constraints win -returnCodes error -body {
     tcl::registry -64bit g
 } -result {wrong # args: should be "tcl::registry -64bit get keyName valueName"}
-test registry-1.7 {argument parsing for tcl::registry command} -constraints {win reg} -returnCodes error -body {
-    registcl::registrytry get
+test registry-1.7 {argument parsing for tcl::registry command} -constraints win -returnCodes error -body {
+    tcl::registry get
 } -result {wrong # args: should be "tcl::registry get keyName valueName"}
-test registry-1.8 {argument parsing for tcl::registry command} -constraints {win reg} -returnCodes error -body {
+test registry-1.8 {argument parsing for tcl::registry command} -constraints win -returnCodes error -body {
     tcl::registry get foo
 } -result {wrong # args: should be "tcl::registry get keyName valueName"}
-test registry-1.9 {argument parsing for tcl::registry command} -constraints {win reg} -returnCodes error -body {
+test registry-1.9 {argument parsing for tcl::registry command} -constraints win -returnCodes error -body {
     tcl::registry get foo bar baz
 } -result {wrong # args: should be "tcl::registry get keyName valueName"}
 
-test registry-1.10 {argument parsing for tcl::registry command} -constraints {win reg} -returnCodes error -body {
+test registry-1.10 {argument parsing for tcl::registry command} -constraints win -returnCodes error -body {
     tcl::registry k
 } -result {wrong # args: should be "tcl::registry keys keyName ?pattern?"}
-test registry-1.10a {argument parsing for tcl::registry command} -constraints {win reg} -returnCodes error -body {
+test registry-1.10a {argument parsing for tcl::registry command} -constraints win -returnCodes error -body {
     tcl::registry -32bit k
 } -result {wrong # args: should be "tcl::registry -32bit keys keyName ?pattern?"}
-test registry-1.10b {argument parsing for tcl::registry command} -constraints {win reg} -returnCodes error -body {
+test registry-1.10b {argument parsing for tcl::registry command} -constraints win -returnCodes error -body {
     tcl::registry -64bit k
 } -result {wrong # args: should be "tcl::registry -64bit keys keyName ?pattern?"}
-test registry-1.11 {argument parsing for tcl::registry command} -constraints {win reg} -returnCodes error -body {
+test registry-1.11 {argument parsing for tcl::registry command} -constraints win -returnCodes error -body {
     tcl::registry keys
 } -result {wrong # args: should be "tcl::registry keys keyName ?pattern?"}
-test registry-1.12 {argument parsing for tcl::registry command} -constraints {win reg} -returnCodes error -body {
+test registry-1.12 {argument parsing for tcl::registry command} -constraints win -returnCodes error -body {
     tcl::registry keys foo bar baz
 } -result {wrong # args: should be "tcl::registry keys keyName ?pattern?"}
 
-test registry-1.13 {argument parsing for tcl::registry command} -constraints {win reg} -returnCodes error -body {
+test registry-1.13 {argument parsing for tcl::registry command} -constraints win -returnCodes error -body {
     tcl::registry s
 } -result {wrong # args: should be "tcl::registry set keyName ?valueName data ?type??"}
-test registry-1.13a {argument parsing for tcl::registry command} -constraints {win reg} -returnCodes error -body {
+test registry-1.13a {argument parsing for tcl::registry command} -constraints win -returnCodes error -body {
     tcl::registry -32bit s
 } -result {wrong # args: should be "tcl::registry -32bit set keyName ?valueName data ?type??"}
-test registry-1.13b {argument parsing for tcl::registry command} -constraints {win reg} -returnCodes error -body {
+test registry-1.13b {argument parsing for tcl::registry command} -constraints win -returnCodes error -body {
     tcl::registry -64bit s
 } -result {wrong # args: should be "tcl::registry -64bit set keyName ?valueName data ?type??"}
-test registry-1.14 {argument parsing for tcl::registry command} -constraints {win reg} -returnCodes error -body {
+test registry-1.14 {argument parsing for tcl::registry command} -constraints win -returnCodes error -body {
     tcl::registry set
 } -result {wrong # args: should be "tcl::registry set keyName ?valueName data ?type??"}
-test registry-1.15 {argument parsing for tcl::registry command} -constraints {win reg} -returnCodes error -body {
+test registry-1.15 {argument parsing for tcl::registry command} -constraints win -returnCodes error -body {
     tcl::registry set foo bar
 } -result {wrong # args: should be "tcl::registry set keyName ?valueName data ?type??"}
-test registry-1.16 {argument parsing for tcl::registry command} -constraints {win reg} -returnCodes error -body {
+test registry-1.16 {argument parsing for tcl::registry command} -constraints win -returnCodes error -body {
     tcl::registry set foo bar baz blat gorp
 } -result {wrong # args: should be "tcl::registry set keyName ?valueName data ?type??"}
 
-test registry-1.17 {argument parsing for tcl::registry command} -constraints {win reg} -returnCodes error -body {
+test registry-1.17 {argument parsing for tcl::registry command} -constraints win -returnCodes error -body {
     tcl::registry t
 } -result {wrong # args: should be "tcl::registry type keyName valueName"}
-test registry-1.17a {argument parsing for tcl::registry command} -constraints {win reg} -returnCodes error -body {
+test registry-1.17a {argument parsing for tcl::registry command} -constraints win -returnCodes error -body {
     tcl::registry -32bit t
 } -result {wrong # args: should be "tcl::registry -32bit type keyName valueName"}
-test registry-1.17b {argument parsing for tcl::registry command} -constraints {win reg} -returnCodes error -body {
+test registry-1.17b {argument parsing for tcl::registry command} -constraints win -returnCodes error -body {
     tcl::registry -64bit t
 } -result {wrong # args: should be "tcl::registry -64bit type keyName valueName"}
-test registry-1.18 {argument parsing for tcl::registry command} -constraints {win reg} -returnCodes error -body {
+test registry-1.18 {argument parsing for tcl::registry command} -constraints win -returnCodes error -body {
     tcl::registry type
 } -result {wrong # args: should be "tcl::registry type keyName valueName"}
-test registry-1.19 {argument parsing for tcl::registry command} -constraints {win reg} -returnCodes error -body {
+test registry-1.19 {argument parsing for tcl::registry command} -constraints win -returnCodes error -body {
     tcl::registry type foo
 } -result {wrong # args: should be "tcl::registry type keyName valueName"}
-test registry-1.20 {argument parsing for tcl::registry command} -constraints {win reg} -returnCodes error -body {
+test registry-1.20 {argument parsing for tcl::registry command} -constraints win -returnCodes error -body {
     tcl::registry type foo bar baz
 } -result {wrong # args: should be "tcl::registry type keyName valueName"}
 
-test registry-1.21 {argument parsing for tcl::registry command} -constraints {win reg} -returnCodes error -body {
+test registry-1.21 {argument parsing for tcl::registry command} -constraints win -returnCodes error -body {
     tcl::registry v
 } -result {wrong # args: should be "tcl::registry values keyName ?pattern?"}
-test registry-1.21a {argument parsing for tcl::registry command} -constraints {win reg} -returnCodes error -body {
+test registry-1.21a {argument parsing for tcl::registry command} -constraints win -returnCodes error -body {
     tcl::registry -32bit v
 } -result {wrong # args: should be "tcl::registry -32bit values keyName ?pattern?"}
-test registry-1.21b {argument parsing for tcl::registry command} -constraints {win reg} -returnCodes error -body {
+test registry-1.21b {argument parsing for tcl::registry command} -constraints win -returnCodes error -body {
     tcl::registry -64bit v
 } -result {wrong # args: should be "tcl::registry -64bit values keyName ?pattern?"}
-test registry-1.22 {argument parsing for tcl::registry command} -constraints {win reg} -returnCodes error -body {
+test registry-1.22 {argument parsing for tcl::registry command} -constraints win -returnCodes error -body {
     tcl::registry values
 } -result {wrong # args: should be "tcl::registry values keyName ?pattern?"}
-test registry-1.23 {argument parsing for tcl::registry command} -constraints {win reg} -returnCodes error -body {
+test registry-1.23 {argument parsing for tcl::registry command} -constraints win -returnCodes error -body {
     tcl::registry values foo bar baz
 } -result {wrong # args: should be "tcl::registry values keyName ?pattern?"}
 
-test registry-2.1 {DeleteKey: bad key} -constraints {win reg} -returnCodes error -body {
+test registry-2.1 {DeleteKey: bad key} -constraints win -returnCodes error -body {
     tcl::registry delete foo
 } -result {bad root name "foo": must be HKEY_LOCAL_MACHINE, HKEY_USERS, HKEY_CLASSES_ROOT, HKEY_CURRENT_USER, HKEY_CURRENT_CONFIG, HKEY_PERFORMANCE_DATA, or HKEY_DYN_DATA}
-test registry-2.2 {DeleteKey: bad key} -constraints {win reg} -returnCodes error -body {
+test registry-2.2 {DeleteKey: bad key} -constraints win -returnCodes error -body {
     tcl::registry delete HKEY_CLASSES_ROOT
 } -result {bad key: cannot delete root keys}
-test registry-2.3 {DeleteKey: bad key} -constraints {win reg} -returnCodes error -body {
+test registry-2.3 {DeleteKey: bad key} -constraints win -returnCodes error -body {
     tcl::registry delete HKEY_CLASSES_ROOT\\
 } -result {bad key: cannot delete root keys}
-test registry-2.4 {DeleteKey: subkey at root level} {win reg} {
+test registry-2.4 {DeleteKey: subkey at root level} win {
     tcl::registry set HKEY_CURRENT_USER\\TclFoobar
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
     tcl::registry keys HKEY_CURRENT_USER TclFoobar
 } {}
-test registry-2.5 {DeleteKey: subkey below root level} -constraints {win reg} -body {
+test registry-2.5 {DeleteKey: subkey below root level} -constraints win -body {
     tcl::registry set HKEY_CURRENT_USER\\TclFoobar\\test
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar\\test
     tcl::registry keys HKEY_CURRENT_USER TclFoobar\\test
 } -cleanup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -result {}
-test registry-2.6 {DeleteKey: recursive delete} {win reg} {
+test registry-2.6 {DeleteKey: recursive delete} win {
     tcl::registry set HKEY_CURRENT_USER\\TclFoobar\\test1
     tcl::registry set HKEY_CURRENT_USER\\TclFoobar\\test2\\test3
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
     tcl::registry keys HKEY_CURRENT_USER TclFoobar
 } {}
-test registry-2.7 {DeleteKey: trailing backslashes} -constraints {win reg english} -returnCodes error -body {
+test registry-2.7 {DeleteKey: trailing backslashes} -constraints {win english} -returnCodes error -body {
     tcl::registry set HKEY_CURRENT_USER\\TclFoobar\\baz
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar\\
-} -result {unable to delete key: The configuration tcl::registry key is invalid.}
-test registry-2.8 {DeleteKey: failure} {win reg} {
+} -result {unable to delete key: The configuration registry key is invalid.}
+test registry-2.8 {DeleteKey: failure} win {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } {}
-test registry-2.9 {DeleteKey: unicode} -constraints {win reg} -setup {
+test registry-2.9 {DeleteKey: unicode} -constraints win -setup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -body {
     tcl::registry set HKEY_CURRENT_USER\\TclFoobar\\test\u00c7bar\\a
@@ -200,7 +201,7 @@ test registry-2.9 {DeleteKey: unicode} -constraints {win reg} -setup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -result {}
 
-test registry-3.1 {DeleteValue} -constraints {win reg} -setup {
+test registry-3.1 {DeleteValue} -constraints win -setup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -body {
     tcl::registry set HKEY_CURRENT_USER\\TclFoobar\\baz test1 blort
@@ -210,12 +211,12 @@ test registry-3.1 {DeleteValue} -constraints {win reg} -setup {
 } -cleanup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -result test2
-test registry-3.2 {DeleteValue: bad key} -constraints {win reg english} -returnCodes error -setup {
+test registry-3.2 {DeleteValue: bad key} -constraints {win english} -returnCodes error -setup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -body {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar test
 } -result {unable to open key: The system cannot find the file specified.}
-test registry-3.3 {DeleteValue: bad value} -constraints {win reg english} -returnCodes error -setup {
+test registry-3.3 {DeleteValue: bad value} -constraints {win english} -returnCodes error -setup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -body {
     tcl::registry set HKEY_CURRENT_USER\\TclFoobar\\baz test2 blort
@@ -223,7 +224,7 @@ test registry-3.3 {DeleteValue: bad value} -constraints {win reg english} -retur
 } -cleanup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -result {unable to delete value "test1" from key "HKEY_CURRENT_USER\TclFoobar": The system cannot find the file specified.}
-test registry-3.4 {DeleteValue: Unicode} -constraints {win reg} -setup {
+test registry-3.4 {DeleteValue: Unicode} -constraints win -setup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -body {
     tcl::registry set HKEY_CURRENT_USER\\TclFoobar\\\u00c7baz \u00c7test1 blort
@@ -234,12 +235,12 @@ test registry-3.4 {DeleteValue: Unicode} -constraints {win reg} -setup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -result test2
 
-test registry-4.1 {GetKeyNames: bad key} -constraints {win reg english} -setup {
+test registry-4.1 {GetKeyNames: bad key} -constraints {win english} -setup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -returnCodes error -body {
     tcl::registry keys HKEY_CURRENT_USER\\TclFoobar
 } -result {unable to open key: The system cannot find the file specified.}
-test registry-4.2 {GetKeyNames} -constraints {win reg} -setup {
+test registry-4.2 {GetKeyNames} -constraints win -setup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -body {
     tcl::registry set HKEY_CURRENT_USER\\TclFoobar\\baz
@@ -247,7 +248,7 @@ test registry-4.2 {GetKeyNames} -constraints {win reg} -setup {
 } -cleanup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -result {baz}
-test registry-4.3 {GetKeyNames: remote key} -constraints {win reg nonPortable english} -setup {
+test registry-4.3 {GetKeyNames: remote key} -constraints {win nonPortable english} -setup {
     set hostname [info hostname]
     tcl::registry delete \\\\$hostname\\HKEY_CURRENT_USER\\TclFoobar
 } -body {
@@ -256,7 +257,7 @@ test registry-4.3 {GetKeyNames: remote key} -constraints {win reg nonPortable en
 } -cleanup {
     tcl::registry delete \\\\$hostname\\HKEY_CURRENT_USER\\TclFoobar
 } -result {baz}
-test registry-4.4 {GetKeyNames: empty key} -constraints {win reg} -setup {
+test registry-4.4 {GetKeyNames: empty key} -constraints win -setup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -body {
     tcl::registry set HKEY_CURRENT_USER\\TclFoobar
@@ -264,7 +265,7 @@ test registry-4.4 {GetKeyNames: empty key} -constraints {win reg} -setup {
 } -cleanup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -result {}
-test registry-4.5 {GetKeyNames: patterns} -constraints {win reg} -setup {
+test registry-4.5 {GetKeyNames: patterns} -constraints win -setup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -body {
     tcl::registry set HKEY_CURRENT_USER\\TclFoobar\\baz
@@ -274,7 +275,7 @@ test registry-4.5 {GetKeyNames: patterns} -constraints {win reg} -setup {
 } -cleanup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -result {baz blat}
-test registry-4.6 {GetKeyNames: names with spaces} -constraints {win reg} -setup {
+test registry-4.6 {GetKeyNames: names with spaces} -constraints win -setup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -body {
     tcl::registry set HKEY_CURRENT_USER\\TclFoobar\\baz\ bar
@@ -284,7 +285,7 @@ test registry-4.6 {GetKeyNames: names with spaces} -constraints {win reg} -setup
 } -cleanup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -result {{baz bar} blat}
-test registry-4.7 {GetKeyNames: Unicode} -constraints {win reg english} -setup {
+test registry-4.7 {GetKeyNames: Unicode} -constraints {win english} -setup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -body {
     tcl::registry set HKEY_CURRENT_USER\\TclFoobar\\baz\u00c7bar
@@ -294,7 +295,7 @@ test registry-4.7 {GetKeyNames: Unicode} -constraints {win reg english} -setup {
 } -cleanup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -result "baz\u00c7bar blat"
-test registry-4.8 {GetKeyNames: Unicode} -constraints {win reg} -setup {
+test registry-4.8 {GetKeyNames: Unicode} -constraints win -setup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -body {
     tcl::registry set HKEY_CURRENT_USER\\TclFoobar\\baz\u30b7bar
@@ -304,7 +305,7 @@ test registry-4.8 {GetKeyNames: Unicode} -constraints {win reg} -setup {
 } -cleanup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -result "baz\u30b7bar blat"
-test registry-4.9 {GetKeyNames: very long key [Bug 1682211]} -constraints {win reg} -setup {
+test registry-4.9 {GetKeyNames: very long key [Bug 1682211]} -constraints win -setup {
     tcl::registry set HKEY_CURRENT_USER\\TclFoobar\\a
     tcl::registry set HKEY_CURRENT_USER\\TclFoobar\\b[string repeat x 254]
     tcl::registry set HKEY_CURRENT_USER\\TclFoobar\\c
@@ -314,12 +315,12 @@ test registry-4.9 {GetKeyNames: very long key [Bug 1682211]} -constraints {win r
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -result [list a b[string repeat x 254] c]
 
-test registry-5.1 {GetType} -constraints {win reg english} -setup {
+test registry-5.1 {GetType} -constraints {win english} -setup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -returnCodes error -body {
     tcl::registry type HKEY_CURRENT_USER\\TclFoobar val1
 } -result {unable to open key: The system cannot find the file specified.}
-test registry-5.2 {GetType} -constraints {win reg english} -setup {
+test registry-5.2 {GetType} -constraints {win english} -setup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -returnCodes error -body {
     tcl::registry set HKEY_CURRENT_USER\\TclFoobar
@@ -327,7 +328,7 @@ test registry-5.2 {GetType} -constraints {win reg english} -setup {
 } -cleanup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -result {unable to get type of value "val1" from key "HKEY_CURRENT_USER\TclFoobar": The system cannot find the file specified.}
-test registry-5.3 {GetType} -constraints {win reg} -setup {
+test registry-5.3 {GetType} -constraints win -setup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -body {
     tcl::registry set HKEY_CURRENT_USER\\TclFoobar val1 foobar none
@@ -335,7 +336,7 @@ test registry-5.3 {GetType} -constraints {win reg} -setup {
 } -cleanup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -result none
-test registry-5.4 {GetType} -constraints {win reg} -setup {
+test registry-5.4 {GetType} -constraints win -setup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -body {
     tcl::registry set HKEY_CURRENT_USER\\TclFoobar val1 foobar
@@ -343,7 +344,7 @@ test registry-5.4 {GetType} -constraints {win reg} -setup {
 } -cleanup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -result sz
-test registry-5.5 {GetType} -constraints {win reg} -setup {
+test registry-5.5 {GetType} -constraints win -setup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -body {
     tcl::registry set HKEY_CURRENT_USER\\TclFoobar val1 foobar sz
@@ -351,7 +352,7 @@ test registry-5.5 {GetType} -constraints {win reg} -setup {
 } -cleanup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -result sz
-test registry-5.6 {GetType} -constraints {win reg} -setup {
+test registry-5.6 {GetType} -constraints win -setup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -body {
     tcl::registry set HKEY_CURRENT_USER\\TclFoobar val1 foobar expand_sz
@@ -359,7 +360,7 @@ test registry-5.6 {GetType} -constraints {win reg} -setup {
 } -cleanup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -result expand_sz
-test registry-5.7 {GetType} -constraints {win reg} -setup {
+test registry-5.7 {GetType} -constraints win -setup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -body {
     tcl::registry set HKEY_CURRENT_USER\\TclFoobar val1 1 binary
@@ -367,7 +368,7 @@ test registry-5.7 {GetType} -constraints {win reg} -setup {
 } -cleanup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -result binary
-test registry-5.8 {GetType} -constraints {win reg} -setup {
+test registry-5.8 {GetType} -constraints win -setup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -body {
     tcl::registry set HKEY_CURRENT_USER\\TclFoobar val1 1 dword
@@ -375,7 +376,7 @@ test registry-5.8 {GetType} -constraints {win reg} -setup {
 } -cleanup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -result dword
-test registry-5.9 {GetType} -constraints {win reg} -setup {
+test registry-5.9 {GetType} -constraints win -setup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -body {
     tcl::registry set HKEY_CURRENT_USER\\TclFoobar val1 1 dword_big_endian
@@ -383,7 +384,7 @@ test registry-5.9 {GetType} -constraints {win reg} -setup {
 } -cleanup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -result dword_big_endian
-test registry-5.10 {GetType} -constraints {win reg} -setup {
+test registry-5.10 {GetType} -constraints win -setup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -body {
     tcl::registry set HKEY_CURRENT_USER\\TclFoobar val1 1 link
@@ -391,7 +392,7 @@ test registry-5.10 {GetType} -constraints {win reg} -setup {
 } -cleanup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -result link
-test registry-5.11 {GetType} -constraints {win reg} -setup {
+test registry-5.11 {GetType} -constraints win -setup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -body {
     tcl::registry set HKEY_CURRENT_USER\\TclFoobar val1 foobar multi_sz
@@ -399,7 +400,7 @@ test registry-5.11 {GetType} -constraints {win reg} -setup {
 } -cleanup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -result multi_sz
-test registry-5.12 {GetType} -constraints {win reg} -setup {
+test registry-5.12 {GetType} -constraints win -setup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -body {
     tcl::registry set HKEY_CURRENT_USER\\TclFoobar val1 1 resource_list
@@ -407,7 +408,7 @@ test registry-5.12 {GetType} -constraints {win reg} -setup {
 } -cleanup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -result resource_list
-test registry-5.13 {GetType: unknown types} -constraints {win reg} -setup {
+test registry-5.13 {GetType: unknown types} -constraints win -setup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -body {
     tcl::registry set HKEY_CURRENT_USER\\TclFoobar val1 1 24
@@ -415,7 +416,7 @@ test registry-5.13 {GetType: unknown types} -constraints {win reg} -setup {
 } -cleanup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -result 24
-test registry-5.14 {GetType: Unicode} -constraints {win reg} -setup {
+test registry-5.14 {GetType: Unicode} -constraints win -setup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -body {
     tcl::registry set HKEY_CURRENT_USER\\TclFoobar va\u00c7l1 1 24
@@ -424,12 +425,12 @@ test registry-5.14 {GetType: Unicode} -constraints {win reg} -setup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -result 24
 
-test registry-6.1 {GetValue} -constraints {win reg english} -setup {
+test registry-6.1 {GetValue} -constraints {win english} -setup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -returnCodes error -body {
     tcl::registry get HKEY_CURRENT_USER\\TclFoobar val1
 } -result {unable to open key: The system cannot find the file specified.}
-test registry-6.2 {GetValue} -constraints {win reg english} -setup {
+test registry-6.2 {GetValue} -constraints {win english} -setup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -returnCodes error -body {
     tcl::registry set HKEY_CURRENT_USER\\TclFoobar
@@ -437,7 +438,7 @@ test registry-6.2 {GetValue} -constraints {win reg english} -setup {
 } -cleanup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -result {unable to get value "val1" from key "HKEY_CURRENT_USER\TclFoobar": The system cannot find the file specified.}
-test registry-6.3 {GetValue} -constraints {win reg} -setup {
+test registry-6.3 {GetValue} -constraints win -setup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -body {
     tcl::registry set HKEY_CURRENT_USER\\TclFoobar val1 foobar none
@@ -445,7 +446,7 @@ test registry-6.3 {GetValue} -constraints {win reg} -setup {
 } -cleanup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -result foobar
-test registry-6.4 {GetValue} -constraints {win reg} -setup {
+test registry-6.4 {GetValue} -constraints win -setup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -body {
     tcl::registry set HKEY_CURRENT_USER\\TclFoobar val1 foobar
@@ -453,7 +454,7 @@ test registry-6.4 {GetValue} -constraints {win reg} -setup {
 } -cleanup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -result foobar
-test registry-6.5 {GetValue} -constraints {win reg} -setup {
+test registry-6.5 {GetValue} -constraints win -setup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -body {
     tcl::registry set HKEY_CURRENT_USER\\TclFoobar val1 foobar sz
@@ -461,7 +462,7 @@ test registry-6.5 {GetValue} -constraints {win reg} -setup {
 } -cleanup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -result foobar
-test registry-6.6 {GetValue} -constraints {win reg} -setup {
+test registry-6.6 {GetValue} -constraints win -setup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -body {
     tcl::registry set HKEY_CURRENT_USER\\TclFoobar val1 foobar expand_sz
@@ -469,7 +470,7 @@ test registry-6.6 {GetValue} -constraints {win reg} -setup {
 } -cleanup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -result foobar
-test registry-6.7 {GetValue} -constraints {win reg} -setup {
+test registry-6.7 {GetValue} -constraints win -setup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -body {
     tcl::registry set HKEY_CURRENT_USER\\TclFoobar val1 1 binary
@@ -477,7 +478,7 @@ test registry-6.7 {GetValue} -constraints {win reg} -setup {
 } -cleanup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -result 1
-test registry-6.8 {GetValue} -constraints {win reg} -setup {
+test registry-6.8 {GetValue} -constraints win -setup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -body {
     tcl::registry set HKEY_CURRENT_USER\\TclFoobar val1 0x20 dword
@@ -485,7 +486,7 @@ test registry-6.8 {GetValue} -constraints {win reg} -setup {
 } -cleanup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -result 32
-test registry-6.9 {GetValue} -constraints {win reg} -setup {
+test registry-6.9 {GetValue} -constraints win -setup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -body {
     tcl::registry set HKEY_CURRENT_USER\\TclFoobar val1 0x20 dword_big_endian
@@ -493,7 +494,7 @@ test registry-6.9 {GetValue} -constraints {win reg} -setup {
 } -cleanup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -result 32
-test registry-6.10 {GetValue} -constraints {win reg} -setup {
+test registry-6.10 {GetValue} -constraints win -setup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -body {
     tcl::registry set HKEY_CURRENT_USER\\TclFoobar val1 1 link
@@ -501,7 +502,7 @@ test registry-6.10 {GetValue} -constraints {win reg} -setup {
 } -cleanup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -result 1
-test registry-6.11 {GetValue} -constraints {win reg} -setup {
+test registry-6.11 {GetValue} -constraints win -setup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -body {
     tcl::registry set HKEY_CURRENT_USER\\TclFoobar val1 foobar multi_sz
@@ -509,7 +510,7 @@ test registry-6.11 {GetValue} -constraints {win reg} -setup {
 } -cleanup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -result foobar
-test registry-6.12 {GetValue} -constraints {win reg} -setup {
+test registry-6.12 {GetValue} -constraints win -setup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -body {
     tcl::registry set HKEY_CURRENT_USER\\TclFoobar val1 {foo\ bar baz} multi_sz
@@ -517,7 +518,7 @@ test registry-6.12 {GetValue} -constraints {win reg} -setup {
 } -cleanup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -result {{foo bar} baz}
-test registry-6.13 {GetValue} -constraints {win reg} -setup {
+test registry-6.13 {GetValue} -constraints win -setup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -body {
     tcl::registry set HKEY_CURRENT_USER\\TclFoobar val1 {} multi_sz
@@ -526,7 +527,7 @@ test registry-6.13 {GetValue} -constraints {win reg} -setup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -result {}
 test registry-6.14 {GetValue: truncation of multivalues with null elements} \
-	-constraints {win reg} -setup {
+	-constraints win -setup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -body {
     tcl::registry set HKEY_CURRENT_USER\\TclFoobar val1 {a {} b} multi_sz
@@ -534,7 +535,7 @@ test registry-6.14 {GetValue: truncation of multivalues with null elements} \
 } -cleanup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -result a
-test registry-6.15 {GetValue} -constraints {win reg} -setup {
+test registry-6.15 {GetValue} -constraints win -setup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -body {
     tcl::registry set HKEY_CURRENT_USER\\TclFoobar val1 1 resource_list
@@ -542,7 +543,7 @@ test registry-6.15 {GetValue} -constraints {win reg} -setup {
 } -cleanup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -result 1
-test registry-6.16 {GetValue: unknown types} -constraints {win reg} -setup {
+test registry-6.16 {GetValue: unknown types} -constraints win -setup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -body {
     tcl::registry set HKEY_CURRENT_USER\\TclFoobar val1 1 24
@@ -550,7 +551,7 @@ test registry-6.16 {GetValue: unknown types} -constraints {win reg} -setup {
 } -cleanup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -result 1
-test registry-6.17 {GetValue: Unicode value names} -constraints {win reg} -setup {
+test registry-6.17 {GetValue: Unicode value names} -constraints win -setup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -body {
     tcl::registry set HKEY_CURRENT_USER\\TclFoobar val\u00c71 foobar multi_sz
@@ -558,7 +559,7 @@ test registry-6.17 {GetValue: Unicode value names} -constraints {win reg} -setup
 } -cleanup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -result foobar
-test registry-6.18 {GetValue: values with Unicode strings} -constraints {win reg} -setup {
+test registry-6.18 {GetValue: values with Unicode strings} -constraints win -setup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -body {
     tcl::registry set HKEY_CURRENT_USER\\TclFoobar val1 {foo ba\u30b7r baz} multi_sz
@@ -566,7 +567,7 @@ test registry-6.18 {GetValue: values with Unicode strings} -constraints {win reg
 } -cleanup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -result "foo ba\u30b7r baz"
-test registry-6.19 {GetValue: values with Unicode strings} -constraints {win reg english} -setup {
+test registry-6.19 {GetValue: values with Unicode strings} -constraints {win english} -setup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -body {
     tcl::registry set HKEY_CURRENT_USER\\TclFoobar val1 {foo ba\u00c7r baz} multi_sz
@@ -574,7 +575,7 @@ test registry-6.19 {GetValue: values with Unicode strings} -constraints {win reg
 } -cleanup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -result "foo ba\u00c7r baz"
-test registry-6.20 {GetValue: values with Unicode strings with embedded nulls} -constraints {win reg} -setup {
+test registry-6.20 {GetValue: values with Unicode strings with embedded nulls} -constraints win -setup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -body {
     tcl::registry set HKEY_CURRENT_USER\\TclFoobar val1 {foo ba\u0000r baz} multi_sz
@@ -582,7 +583,7 @@ test registry-6.20 {GetValue: values with Unicode strings with embedded nulls} -
 } -cleanup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -result "foo ba r baz"
-test registry-6.21 {GetValue: very long value names and values} -constraints {win reg} -setup {
+test registry-6.21 {GetValue: very long value names and values} -constraints win -setup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -body {
     tcl::registry set HKEY_CURRENT_USER\\TclFoobar [string repeat k 16383] [string repeat x 16383] multi_sz
@@ -591,12 +592,12 @@ test registry-6.21 {GetValue: very long value names and values} -constraints {wi
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -result [string repeat x 16383]
 
-test registry-7.1 {GetValueNames: bad key} -constraints {win reg english} -setup {
+test registry-7.1 {GetValueNames: bad key} -constraints {win english} -setup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -body {
     tcl::registry values HKEY_CURRENT_USER\\TclFoobar
 } -returnCodes error -result {unable to open key: The system cannot find the file specified.}
-test registry-7.2 {GetValueNames} -constraints {win reg} -setup {
+test registry-7.2 {GetValueNames} -constraints win -setup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -body {
     tcl::registry set HKEY_CURRENT_USER\\TclFoobar baz foobar
@@ -604,7 +605,7 @@ test registry-7.2 {GetValueNames} -constraints {win reg} -setup {
 } -cleanup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -result baz
-test registry-7.3 {GetValueNames} -constraints {win reg} -setup {
+test registry-7.3 {GetValueNames} -constraints win -setup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -body {
     tcl::registry set HKEY_CURRENT_USER\\TclFoobar baz foobar1
@@ -614,7 +615,7 @@ test registry-7.3 {GetValueNames} -constraints {win reg} -setup {
 } -cleanup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -result {{} baz blat}
-test registry-7.4 {GetValueNames: remote key} -constraints {win reg nonPortable english} -setup {
+test registry-7.4 {GetValueNames: remote key} -constraints {win nonPortable english} -setup {
     set hostname [info hostname]
     tcl::registry delete \\\\$hostname\\HKEY_CURRENT_USER\\TclFoobar
 } -body {
@@ -623,7 +624,7 @@ test registry-7.4 {GetValueNames: remote key} -constraints {win reg nonPortable 
 } -cleanup {
     tcl::registry delete \\\\$hostname\\HKEY_CURRENT_USER\\TclFoobar
 } -result baz
-test registry-7.5 {GetValueNames: empty key} -constraints {win reg} -setup {
+test registry-7.5 {GetValueNames: empty key} -constraints win -setup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -body {
     tcl::registry set HKEY_CURRENT_USER\\TclFoobar
@@ -631,7 +632,7 @@ test registry-7.5 {GetValueNames: empty key} -constraints {win reg} -setup {
 } -cleanup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -result {}
-test registry-7.6 {GetValueNames: patterns} -constraints {win reg} -setup {
+test registry-7.6 {GetValueNames: patterns} -constraints win -setup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -body {
     tcl::registry set HKEY_CURRENT_USER\\TclFoobar baz foobar1
@@ -641,7 +642,7 @@ test registry-7.6 {GetValueNames: patterns} -constraints {win reg} -setup {
 } -cleanup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -result {baz blat}
-test registry-7.7 {GetValueNames: names with spaces} -constraints {win reg} -setup {
+test registry-7.7 {GetValueNames: names with spaces} -constraints win -setup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -body {
     tcl::registry set HKEY_CURRENT_USER\\TclFoobar baz\ bar foobar1
@@ -652,12 +653,12 @@ test registry-7.7 {GetValueNames: names with spaces} -constraints {win reg} -set
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -result {{baz bar} blat}
 
-test registry-8.1 {OpenSubKey} -constraints {win reg nonPortable english} -body {
+test registry-8.1 {OpenSubKey} -constraints {win nonPortable english} -body {
     # This test will only succeed if the current user does not have
     # tcl::registry access on the specified machine.
     tcl::registry keys {\\mom\HKEY_LOCAL_MACHINE}
 } -returnCodes error -result "unable to open key: Access is denied."
-test registry-8.2 {OpenSubKey} -constraints {win reg} -setup {
+test registry-8.2 {OpenSubKey} -constraints win -setup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -body {
     tcl::registry set HKEY_CURRENT_USER\\TclFoobar
@@ -665,44 +666,44 @@ test registry-8.2 {OpenSubKey} -constraints {win reg} -setup {
 } -cleanup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -result {TclFoobar}
-test registry-8.3 {OpenSubKey} -constraints {win reg english} -setup {
+test registry-8.3 {OpenSubKey} -constraints {win english} -setup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -body {
     tcl::registry keys HKEY_CURRENT_USER\\TclFoobar
 } -returnCodes error \
     -result "unable to open key: The system cannot find the file specified."
 
-test registry-9.1 {ParseKeyName: bad keys} -constraints {win reg} -body {
+test registry-9.1 {ParseKeyName: bad keys} -constraints win -body {
     tcl::registry values \\
 } -returnCodes error -result "bad key \"\\\": must start with a valid root"
-test registry-9.2 {ParseKeyName: bad keys} -constraints {win reg} -body {
+test registry-9.2 {ParseKeyName: bad keys} -constraints win -body {
     tcl::registry values \\foobar
 } -returnCodes error -result {bad key "\foobar": must start with a valid root}
-test registry-9.3 {ParseKeyName: bad keys} -constraints {win reg} -body {
+test registry-9.3 {ParseKeyName: bad keys} -constraints win -body {
     tcl::registry values \\\\
 } -returnCodes error -result {bad root name "": must be HKEY_LOCAL_MACHINE, HKEY_USERS, HKEY_CLASSES_ROOT, HKEY_CURRENT_USER, HKEY_CURRENT_CONFIG, HKEY_PERFORMANCE_DATA, or HKEY_DYN_DATA}
-test registry-9.4 {ParseKeyName: bad keys} -constraints {win reg} -body {
+test registry-9.4 {ParseKeyName: bad keys} -constraints win -body {
     tcl::registry values \\\\\\
 } -returnCodes error -result {bad root name "": must be HKEY_LOCAL_MACHINE, HKEY_USERS, HKEY_CLASSES_ROOT, HKEY_CURRENT_USER, HKEY_CURRENT_CONFIG, HKEY_PERFORMANCE_DATA, or HKEY_DYN_DATA}
-test registry-9.5 {ParseKeyName: bad keys} -constraints {win reg english} -body {
+test registry-9.5 {ParseKeyName: bad keys} -constraints {win english} -body {
     tcl::registry values \\\\\\HKEY_CLASSES_ROOT
 } -returnCodes error -result {unable to open key: The network address is invalid.}
-test registry-9.6 {ParseKeyName: bad keys} -constraints {win reg} -body {
+test registry-9.6 {ParseKeyName: bad keys} -constraints win -body {
     tcl::registry values \\\\gaspode
 } -returnCodes error -result {bad root name "": must be HKEY_LOCAL_MACHINE, HKEY_USERS, HKEY_CLASSES_ROOT, HKEY_CURRENT_USER, HKEY_CURRENT_CONFIG, HKEY_PERFORMANCE_DATA, or HKEY_DYN_DATA}
-test registry-9.7 {ParseKeyName: bad keys} -constraints {win reg} -body {
+test registry-9.7 {ParseKeyName: bad keys} -constraints win -body {
     tcl::registry values foobar
 } -returnCodes error -result {bad root name "foobar": must be HKEY_LOCAL_MACHINE, HKEY_USERS, HKEY_CLASSES_ROOT, HKEY_CURRENT_USER, HKEY_CURRENT_CONFIG, HKEY_PERFORMANCE_DATA, or HKEY_DYN_DATA}
-test registry-9.8 {ParseKeyName: null keys} -constraints {win reg} -body {
+test registry-9.8 {ParseKeyName: null keys} -constraints win -body {
     tcl::registry delete HKEY_CLASSES_ROOT\\
 } -returnCodes error -result {bad key: cannot delete root keys}
 test registry-9.9 {ParseKeyName: null keys} \
-    -constraints {win reg english} \
+    -constraints {win english} \
     -body {tcl::registry keys HKEY_CLASSES_ROOT\\TclFoobar\\baz} \
     -returnCodes error \
     -result {unable to open key: The system cannot find the file specified.}
 
-test registry-10.1 {RecursiveDeleteKey} -constraints {win reg} -setup {
+test registry-10.1 {RecursiveDeleteKey} -constraints win -setup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -body {
     tcl::registry set HKEY_CURRENT_USER\\TclFoobar\\test1
@@ -710,7 +711,7 @@ test registry-10.1 {RecursiveDeleteKey} -constraints {win reg} -setup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
     tcl::registry keys HKEY_CURRENT_USER TclFoobar
 } -result {}
-test registry-10.2 {RecursiveDeleteKey} -constraints {win reg} -setup {
+test registry-10.2 {RecursiveDeleteKey} -constraints win -setup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -body {
     tcl::registry set HKEY_CURRENT_USER\\TclFoobar\\test1
@@ -720,7 +721,7 @@ test registry-10.2 {RecursiveDeleteKey} -constraints {win reg} -setup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -result {}
 
-test registry-11.1 {SetValue: recursive creation} -constraints {win reg} -setup {
+test registry-11.1 {SetValue: recursive creation} -constraints win -setup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -body {
     tcl::registry set HKEY_CURRENT_USER\\TclFoobar\\baz blat foobar
@@ -728,7 +729,7 @@ test registry-11.1 {SetValue: recursive creation} -constraints {win reg} -setup 
 } -cleanup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -result {foobar}
-test registry-11.2 {SetValue: modification} -constraints {win reg} -setup {
+test registry-11.2 {SetValue: modification} -constraints win -setup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -body {
     tcl::registry set HKEY_CURRENT_USER\\TclFoobar\\baz blat foobar
@@ -737,25 +738,25 @@ test registry-11.2 {SetValue: modification} -constraints {win reg} -setup {
 } -cleanup {
     tcl::registry delete HKEY_CURRENT_USER\\TclFoobar
 } -result {frob}
-test registry-11.3 {SetValue: failure} -constraints {win reg nonPortable english} -body {
+test registry-11.3 {SetValue: failure} -constraints {win nonPortable english} -body {
     # This test will only succeed if the current user does not have
     # tcl::registry access on the specified machine.
     tcl::registry set {\\mom\HKEY_CURRENT_USER\TclFoobar} bar foobar
 } -returnCodes error -result {unable to open key: Access is denied.}
 
-test registry-12.1 {BroadcastValue} -constraints {win reg} -body {
+test registry-12.1 {BroadcastValue} -constraints win -body {
     tcl::registry broadcast
 } -returnCodes error -result "wrong # args: should be \"tcl::registry broadcast keyName ?-timeout milliseconds?\""
-test registry-12.2 {BroadcastValue} -constraints {win reg} -body {
+test registry-12.2 {BroadcastValue} -constraints win -body {
     tcl::registry broadcast "" -time
 } -returnCodes error -result "wrong # args: should be \"tcl::registry broadcast keyName ?-timeout milliseconds?\""
-test registry-12.3 {BroadcastValue} -constraints {win reg} -body {
+test registry-12.3 {BroadcastValue} -constraints win -body {
     tcl::registry broadcast "" - 500
 } -returnCodes error -result "wrong # args: should be \"tcl::registry broadcast keyName ?-timeout milliseconds?\""
-test registry-12.4 {BroadcastValue} -constraints {win reg notWine} -body {
+test registry-12.4 {BroadcastValue} -constraints {win notWine} -body {
     tcl::registry broadcast {Environment}
 } -result {1 0}
-test registry-12.5 {BroadcastValue} -constraints {win reg notWine} -body {
+test registry-12.5 {BroadcastValue} -constraints {win notWine} -body {
     tcl::registry b {}
 } -result {1 0}
 

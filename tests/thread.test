@@ -242,6 +242,21 @@ test thread-5.2 {Try to join a detached thread} {thread} {
     }
     lrange $msg 0 2
 } {cannot join thread}
+test thread-5.3 {Join a running detached thread, bug 5974ff814c} -constraints testthread -body {
+    set id [testthread create {after 200}]
+    list [catch {testthread join $id} msg] [lrange $msg 0 2]
+} -cleanup {
+    after 300
+} -result {1 {cannot join thread}}
+test thread-5.4 {Join an exited detached thread, bug 5974ff814c} -constraints testthread -body {
+    set id [testthread create {}]
+    after 200
+    list [catch {testthread join $id} msg] [lrange $msg 0 2]
+} -result {1 {cannot join thread}}
+test thread-5.5 {Join a joinable thread only once, bug 5974ff814c} -constraints testthread -body {
+    set id [testthread create -joinable {}]
+    list [catch {testthread join $id}] [catch {testthread join $id}]
+} -result {0 1}
 
 test thread-6.1 {freeing very large object trees in a thread} thread {
     # conceptual duplicate of obj-32.1
@@ -1447,6 +1462,29 @@ test thread-8.1 {threaded fork stress} -constraints {thread} -setup {
 } -cleanup {
     unset -nocomplain ::threadCount ::execCount ::threads ::thread
 } -result {}
+
+# A race: without the fix the child process panics in about a third of
+# the runs.
+test thread-9.1 {transfer of a channel from its own file event handler} -constraints {
+    thread stdio
+} -body {
+    exec [interpreter] << {
+	package require Thread
+	set handler {
+	    proc handle {chan} {
+		thread::transfer $::other $chan
+		thread::send $::other [list fileevent $chan writable [list handle $chan]]
+	    }
+	}
+	eval $handler
+	set other [thread::create]
+	thread::send $other [list set other [thread::id]]
+	thread::send $other $handler
+	handle [open [expr {$tcl_platform(platform) eq "windows" ? "NUL" : "/dev/null"}] w]
+	after 3000 {puts ok; exit}
+	vwait forever
+    }
+} -result ok
 
 # cleanup
 ::tcltest::cleanupTests

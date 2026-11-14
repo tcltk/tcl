@@ -785,6 +785,35 @@ test tailcall-bug-784befb0ba {tailcall crash with 254 args} -body {
     p
 } -result 254
 
+testConstraint testcmdinfo [llength [info commands testcmdinfo]]
+test tailcall-bug-4955f5d8a4-1 {tailcall in a proc called directly by its objProc} -constraints testcmdinfo -setup {
+    interp create child
+    child eval {
+	proc f {} {tailcall g x}
+	proc g {args} {return "g $args"}
+    }
+} -body {
+    # Panicked if still buggy
+    testcmdinfo call child f
+} -cleanup {
+    interp delete child
+} -result {g x}
+test tailcall-bug-4955f5d8a4-2 {tailcall in a proc called directly by its objProc} -constraints testcmdinfo -setup {
+    interp create child
+    child eval {proc f {} {tailcall error boom}}
+} -body {
+    testcmdinfo call child f
+} -cleanup {
+    interp delete child
+} -returnCodes error -result boom
+test tailcall-bug-4955f5d8a4-3 {tailcall in a lambda called directly by the objProc of apply} -constraints testcmdinfo -setup {
+    interp create child
+} -body {
+    testcmdinfo call child apply {{} {tailcall list x}}
+} -cleanup {
+    interp delete child
+} -result x
+
 # cleanup
 ::tcltest::cleanupTests
 

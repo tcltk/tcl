@@ -21,7 +21,7 @@ namespace eval tcltest {
     # When the version number changes, be sure to update the pkgIndex.tcl file,
     # and the install directory in the Makefiles.  When the minor version
     # changes (new feature) be sure to update the man page as well.
-    variable Version 2.6.0
+    variable Version 2.6.1
 
     # Compatibility support for dumb variables defined in tcltest 1
     # Do not use these.  Call [package require] and [info patchlevel]
@@ -401,6 +401,12 @@ namespace eval tcltest {
 		set outputChannel $filename
 	    }
 	    default {
+		if {$filename in [chan names]} {
+		    # An already open channel, e.g. a reflected channel or a
+		    # socket [Bug 1528500].
+		    set outputChannel $filename
+		    return $outputChannel
+		}
 		set outputChannel [open $filename a]
 		if {$fullutf} {
 		    fconfigure $outputChannel -profile tcl8 -encoding utf-8
@@ -449,6 +455,12 @@ namespace eval tcltest {
 		set errorChannel $filename
 	    }
 	    default {
+		if {$filename in [chan names]} {
+		    # An already open channel, e.g. a reflected channel or a
+		    # socket [Bug 1528500].
+		    set errorChannel $filename
+		    return $errorChannel
+		}
 		set errorChannel [open $filename a]
 		if {$fullutf} {
 		    fconfigure $errorChannel -profile tcl8 -encoding utf-8
@@ -624,14 +636,14 @@ namespace eval tcltest {
     proc AcceptVerbose { level } {
 	set level [AcceptList $level]
 	set levelMap {
-	    l list
-	    p pass
 	    b body
-	    s skip
-	    t start
+	    d desc
 	    e error
 	    l line
 	    m msec
+	    p pass
+	    s skip
+	    t start
 	    u usec
 	}
 	set levelRegexp "^([join [dict values $levelMap] |])\$"
@@ -657,12 +669,14 @@ namespace eval tcltest {
 
     # Default verbosity is to show bodies of failed tests
     Option -verbose {body error} {
-	Takes any combination of the values 'p', 's', 'b', 't', 'e' and 'l'.
-	Test suite will display all passed tests if 'p' is specified, all
-	skipped tests if 's' is specified, the bodies of failed tests if
-	'b' is specified, and when tests start if 't' is specified.
-	ErrorInfo is displayed if 'e' is specified. Source file line
-	information of failed tests is displayed if 'l' is specified.
+	Takes any combination of the values 'b', 'd', 'e', 'l', 'm', 'p',
+	's', 't' and 'u'. Test suite will display all passed tests if 'p'
+	is specified, all skipped tests if 's' is specified, the bodies
+	of failed tests if 'b' is specified, and when tests start if 't'
+	is specified. ErrorInfo is displayed if 'e' is specified. Source
+	file line information of failed tests is displayed if 'l' is
+	specified. Description is also displayed if 'd' is specified.
+	'm' and 'u' will add duration the testcase took (in ms/\xB5s).
     } AcceptVerbose verbose
 
     # Match and skip patterns default to the empty list, except for
@@ -1940,6 +1954,7 @@ proc tcltest::TestOnce {name description args} {
     variable testLevel
     variable coreModTime
     variable fullutf
+    variable xdesc
 
     DebugPuts 3 "test $name $args"
     DebugDo 1 {
@@ -2041,6 +2056,12 @@ proc tcltest::TestOnce {name description args} {
 	}
     }
 
+    if {[IsVerbose desc]} {
+	set xdesc " ([string trim $description])"
+    } else {
+	set xdesc ""
+    }
+
     if {[Skipped $name $constraints]} {
 	incr testLevel -1
 	return
@@ -2079,7 +2100,7 @@ proc tcltest::TestOnce {name description args} {
 
 	# Verbose notification of $body start
 	if {[IsVerbose start]} {
-	    puts [outputChannel] "---- $name start"
+	    puts [outputChannel] "---- $name start$xdesc"
 	    flush [outputChannel]
 	}
 
@@ -2219,7 +2240,7 @@ proc tcltest::TestOnce {name description args} {
 	if {$testLevel == 1} {
 	    incr numTests(Passed)
 	    if {[IsVerbose pass]} {
-		puts [outputChannel] "++++ $name PASSED"
+		puts [outputChannel] "++++ $name PASSED$xdesc"
 	    }
 	}
 	incr testLevel -1
@@ -2371,9 +2392,10 @@ proc tcltest::Skip {reason} {
 proc tcltest::_noticeSkipped {name reason} {
     variable testLevel
     variable numTests
+    variable xdesc
 
     if {[IsVerbose skip]} {
-	puts [outputChannel] "++++ $name SKIPPED: $reason"
+	puts [outputChannel] "++++ $name SKIPPED$xdesc: $reason"
     }
 
     if {$testLevel == 1} {
@@ -2394,12 +2416,15 @@ proc tcltest::Skipped {name constraints} {
     variable testLevel
     variable numTests
     variable testConstraints
+    variable Option
 
     if {$testLevel == 1} {
 	incr numTests(Total)
     }
-    # skip the test if it's name matches an element of skip
-    foreach pattern [skip] {
+    # skip the test if it's name matches an element of skip.
+    # -skip and -match select top-level tests only; tests nested in
+    # the body of a selected test always run (bug 773924).
+    foreach pattern [expr {$testLevel == 1 ? [skip] : {}}] {
 	if {[string match $pattern $name]} {
 	    if {$testLevel == 1} {
 		incr numTests(Skipped)
@@ -2409,7 +2434,7 @@ proc tcltest::Skipped {name constraints} {
 	}
     }
     # skip the test if it's name doesn't match any element of match
-    set ok 0
+    set ok [expr {$testLevel > 1}]
     foreach pattern [match] {
 	if {[string match $pattern $name]} {
 	    set ok 1
@@ -2427,10 +2452,7 @@ proc tcltest::Skipped {name constraints} {
 	# If we're limited to the listed constraints and there aren't
 	# any listed, then we shouldn't run the test.
 	if {[limitConstraints]} {
-	    AddToSkippedBecause userSpecifiedLimitConstraint
-	    if {$testLevel == 1} {
-		incr numTests(Skipped)
-	    }
+	    _noticeSkipped $name userSpecifiedLimitConstraint
 	    return 1
 	}
     } else {
@@ -2442,7 +2464,7 @@ proc tcltest::Skipped {name constraints} {
 	if {[string match {*[$\[]*} $constraints] != 0} {
 	    # full expression, e.g. {$foo > [info tclversion]}
 	    catch {set doTest [uplevel #0 [list expr $constraints]]}
-	} elseif {[regexp {[^.:_a-zA-Z0-9 \n\r\t]+} $constraints] != 0} {
+	} elseif {[regexp {[^.:_a-zA-Z0-9 \n\r\t]+} $constraints]} {
 	    # something like {a || b} should be turned into
 	    # $testConstraints(a) || $testConstraints(b).
 	    regsub -all {[.\w]+} $constraints {$testConstraints(&)} c
@@ -2458,6 +2480,18 @@ proc tcltest::Skipped {name constraints} {
 		    # store the constraint that kept the test from
 		    # running
 		    set constraints $constraint
+		    break
+		}
+	    }
+	}
+	if {$doTest && [limitConstraints]} {
+	    # A constraint expression is satisfied in limitConstraints mode
+	    # only if it refers to at least one of the selected constraints
+	    # (bug 572400).
+	    set doTest 0
+	    foreach c [regexp -all -inline {[.\w]+(?:-[.\w]+)*} $constraints] {
+		if {$c in $Option(-constraints)} {
+		    set doTest 1
 		    break
 		}
 	    }
@@ -2651,12 +2685,13 @@ proc tcltest::cleanupTests {{calledFromAllFile 0}} {
 	    set numTests($index) 0
 	}
 
-	# exit only if running Tk in non-interactive mode
-	# This should be changed to determine if an event
-	# loop is running, which is the real issue.
-	# Actually, this doesn't belong here at all.  A package
-	# really has no business [exit]-ing an application.
-	if {[info exists ::tk_version] && ![testConstraint interactive]} {
+	# Exit only if running Tk in non-interactive mode with the test
+	# file as the main script (e.g. "wish foo.test"), which would
+	# otherwise wait in the event loop. An application that merely
+	# sources a test file must not be terminated [Bug 8413e79232].
+	if {[info exists ::tk_version] && ![testConstraint interactive]
+		&& [info exists ::argv0] && [info script] ne ""
+		&& [file normalize [info script]] eq [file normalize $::argv0]} {
 	    exit
 	}
     } else {
