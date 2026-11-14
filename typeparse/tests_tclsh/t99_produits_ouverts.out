@@ -1,17 +1,17 @@
 --- produit : la vue liste de ses champs
 llength      : 2 2
-lindex       : 1 double
-lassign      : 1 2
-foreach x y  : 1 2
+lindex       : 1.0 double
+lassign      : 1.0 2.0
+foreach x y  : 1.0 2.0
 {*}          : 2
-concat       : 1 2 1 2 / 1 2 1 2
-join         : 1,2
-lmap         : 2 4
+concat       : 1.0 2.0 1.0 2.0 / 1 2 1 2
+join         : 1.0,2.0
+lmap         : 2.0 4.0
 même structure après la chaîne : 2 2 2
 --- écritures par la vue liste (sous contrat)
-lset         : 5 2 point
+lset         : 5.0 2.0 point
 lappend      : 1 point needs 2 values but got 3
-P            : 5 2
+P            : 5.0 2.0
 --- chaînes atomiques
 list.string  : <hello world> 1 string
 list.string  : <coucou> 1 string
@@ -27,7 +27,7 @@ champ        : <3> 1
 --- sommes, listes de produits
 somme        : 2 1 
 list.point   : 2 point 2
-concat {*}   : 1 2 3 4
+concat {*}   : 1.0 2.0 3.0 4.0
 produit mixte: 2 3 1
 --- retour typé vers un appelant non typé
-lassign      : 3 4
+lassign      : 3.0 4.0

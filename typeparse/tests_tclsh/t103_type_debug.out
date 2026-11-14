@@ -48,7 +48,7 @@ angle: seen 1 time, first at t103_type_debug.tcl:89, via set
     values: 0.5
     not a type yet
 pointt: seen 3 times, first at t103_type_debug.tcl:85, via set, norme, lindex
-    values: 3 4
+    values: 3 4 | 3.0 4.0
     not a type yet
 vitesse: seen 2 times, first at t103_type_debug.tcl:87, via set
     values: 12.5 | abc
@@ -59,7 +59,7 @@ angle: seen 1 time, first at t103_type_debug.tcl:89, via set
     now a type, but:
       0.5 (t103_type_debug.tcl:89): angle needs 2 values but got 1
 pointt: seen 3 times, first at t103_type_debug.tcl:85, via set, norme, lindex
-    values: 3 4
+    values: 3 4 | 3.0 4.0
     not a type yet
 vitesse: seen 2 times, first at t103_type_debug.tcl:87, via set
     values: 12.5 | abc

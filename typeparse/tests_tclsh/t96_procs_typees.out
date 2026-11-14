@@ -1,11 +1,11 @@
 --- arguments : positionnels, défauts, étiquettes
-positionnel: {2 3} pt
-défauts: 1 2
-étiquette: 1 7
-mélange: 3 7
-étiquettes seules: 1 7
+positionnel: {2.0 3.0} pt
+défauts: 1.0 2.0
+étiquette: 1.0 7.0
+mélange: 3.0 7.0
+étiquettes seules: 1.0 7.0
 deux fois: ERREUR argument "dx" given twice
-positionnel après étiquette: ERREUR positional argument "1 2" after labelled arguments
+positionnel après étiquette: ERREUR positional argument "1.0 2.0" after labelled arguments
 trop: ERREUR wrong # args: should be "decale p ?dx? ?dy?"
 manque: ERREUR wrong # args: should be "decale p ?dx? ?dy?"
 manque, avec étiquette: ERREUR missing argument "p"
@@ -16,7 +16,7 @@ défaut calculé: 42
 défaut calculé, champ avant: 4 8
 variante d'un argument: S.s
 argument somme strict, nu: ERREUR argument "v": value "abc" names no variant of the sum S: a value of a sum is the name of its variant, then its value, as {s abc}, or {s:}abc
-appel compilé: {4 4}
+appel compilé: {4.0 4.0}
 --- le reste : {list.T}args
 args: 10
 args vide: 1
@@ -41,15 +41,15 @@ récursion: 3628800 int
 eval dans le corps: ERREUR return value {int}: expected integer but got "x"
 coroutine: 1 2
 --- étiquettes : la variante d'une somme rendue
-{point:}: {point {1 2}} R.point
+{point:}: {point {1.0 2.0}} R.point
 {n:}: {n 4} R.n
 somme stricte, valeur nue: ERREUR return value {R}: value "7" names no variant of the sum R: a value of a sum is the name of its variant, then its value, as {n 7}, or {n:}7
 variante inconnue: ERREUR label {zz:} on a return value: R has no variant "zz"
 étiquette, pas une somme: ERREUR label {zz:} on a return value: the return type int is not a sum
 {S.s}nom : toujours s: S.s
 --- introspection, compatibilité
-type proc: args {{pt}p; {double}dx ?= 0; {double}dy ?= 0} return pt
-type proc, classique: args {} return {}
+type proc: args {{pt}p; {double}dx ?= 0; {double}dy ?= 0} return pt record {{pt}p; {double}dx; {double}dy}
+type proc, classique: args {} return {} record {{any}a; {any}b; {list}args}
 info args: p dx dy
 info default: 1 0 0 {} 1 {[expr {6 * 7}]}
 info default : pas un champ: ERREUR procedure "decale" doesn't have an argument "zz"
@@ -58,13 +58,13 @@ classique avec ;: 9
 type inconnu: ERREUR unknown type "zz"
 retour inconnu: ERREUR bad return type {zz}: unknown type "zz"
 pas un produit: ERREUR a typed argument list is a product: {{T}a; {T}b ?= v}, not sum<a:int;b:string;>
-rename: 2 2
+rename: 2.0 2.0
 namespace: pt
 --- types écrits dans la signature (produits anonymes)
-listes nues: {150 230} pt
-dp absent : ses défauts: 100 200
+listes nues: {150.0 230.0} pt
+dp absent : ses défauts: 100.0 200.0
 dp incomplet: ERREUR argument "dp": {{double}x ?= 0; {double}y ?= 0} needs 2 values but got 1
-étiquette de champ: 150 201
+étiquette de champ: 150.0 201.0
 mauvais champ: ERREUR argument "p": expected floating-point number but got "a"
 trop: ERREUR wrong # args: should be "decale2 p ?dp?"
 type nommé, tous défauts: V V

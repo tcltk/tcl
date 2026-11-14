@@ -1513,7 +1513,9 @@ WrapSlotHint(Tcl_Interp *interp, TclType *tp, Tcl_Obj *content, int hint)
      * $P(0.x) relisait tout le point, set P(0.x) le remplaçait).
      */
     if (TclIsAnnotated(content)) {
-	content = TCL_ANNOT_CONTENT(content);
+	/* v17a : ses notes passent sur la nouvelle valeur */
+	return TclAnnotCarryNotes(content, TclNewAnnotatedShared(interp, tp,
+		variant, TCL_ANNOT_CONTENT(content)));
     }
     return TclNewAnnotatedShared(interp, tp, variant, content);
 }

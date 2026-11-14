@@ -338,8 +338,18 @@ TclTypedVarPrepareWrite(Tcl_Interp *interp, Var *varPtr,
 	    /* une référence pendant l'ajout : une liste en cases recopie
 	     * l'élément dans ses cases sans le garder */
 	    Tcl_IncrRefCount(e);
-	    ok = TclTypeComplete(NULL, contract->elem, e, -1, NULL) == TCL_OK
-		    && Tcl_ListObjAppendElement(NULL, curContent, e) == TCL_OK;
+	    ok = TclTypeComplete(NULL, contract->elem, e, -1, NULL) == TCL_OK;
+	    if (ok) {
+		/* v17a : l'élément prend son écriture canonique */
+		Tcl_Obj *ne = TclTypeNormalizeContent(contract->elem, e);
+
+		if (ne != NULL) {
+		    Tcl_IncrRefCount(ne);
+		    Tcl_DecrRefCount(e);
+		    e = ne;
+		}
+		ok = Tcl_ListObjAppendElement(NULL, curContent, e) == TCL_OK;
+	    }
 	    Tcl_DecrRefCount(e);
 	    if (ok) {
 		TclInvalidateStringRep(cur);	/* chaîne de A = chaîne de V */
@@ -612,7 +622,7 @@ BuildList(Tcl_Interp *interp, TclType *tp, Tcl_Size n, Tcl_Obj *const a[],
 		if (e0 == NULL) {
 		    goto done;
 		}
-		TclVecAdd(&vec, e0);
+		TclVecAdd(&vec, TclAnnotCarryNotes(a[i], e0));
 	    } else {
 		TclVecAdd(&vec, Tcl_DuplicateObj(
 			status == TCLA_EMPTY ? content : a[i]));
@@ -644,7 +654,7 @@ BuildList(Tcl_Interp *interp, TclType *tp, Tcl_Size n, Tcl_Obj *const a[],
 		    TclDiscard(c);
 		    goto done;
 		}
-		TclVecAdd(&vec, c);
+		TclVecAdd(&vec, TclAnnotCarryNotes(e[j], c));
 	    }
 	} else {
 	    c = TclTypedConform(interp, tp->elem, a[i]);
@@ -659,7 +669,8 @@ BuildList(Tcl_Interp *interp, TclType *tp, Tcl_Size n, Tcl_Obj *const a[],
 		TclDiscard(c);
 		c = w;
 	    }
-	    TclVecAdd(&vec, c);
+	    /* v17a : l'élément garde ses notes */
+	    TclVecAdd(&vec, TclAnnotCarryNotes(a[i], c));
 	}
     }
     *contentPtr = Tcl_NewListObj(vec.n, vec.v);
@@ -791,7 +802,7 @@ BuildDict(Tcl_Interp *interp, TclType *tp, Tcl_Size n, Tcl_Obj *const a[],
 	    TclDiscard(k);
 	    goto fail;
 	}
-	Tcl_DictObjPut(interp, dict, k, v);
+	Tcl_DictObjPut(interp, dict, k, TclAnnotCarryNotes(a[i + 1], v));	/* v17a : notes gardées */
 	TclDiscard(k);			/* clé en double : non gardée */
 	i += 2;
     }

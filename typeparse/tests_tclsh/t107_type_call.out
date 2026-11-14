@@ -1,0 +1,25 @@
+--- l'enregistrement de la signature
+défauts: {prod<p:pt;dx:double;v:flag;mode:sum<:"ascii";:"dictionary";command:string;>;>} {{1.0 2.0} 0.0 0 ascii}
+options données: {prod<p:pt;dx:double;v:flag;n:int;mode:sum<:"ascii";:"dictionary";command:string;>;>} {{1.0 2.0} 5.0 1 3 {command foo}}
+type proc : record: {pt}p; {double}dx; {flag}v; {int}n; {"ascii", "dictionary", {string}command}mode
+chemins: 3.0 2.0 pt
+--- variadiques, liens, classique
+variadique: {prod<s:string;args:list<int>;e:string;>} {1 2 3}
+variadique produit: prod<args:list<prod<vars:list;valeurs:list;>>;corps:string;>
+lien : la valeur: {prod<k:int;d:int;>} {5 1}
+lien absent : sans k: {prod<d:int;>} 1
+procédure classique: {prod<a:any;b:any;args:list;>} {4 5}
+sans argument: 
+lambda: prod<a:int;b:int;>
+--- vers un type nommé
+Rec: Rec {{3.0 4.0} 1.0 -}
+Rec, note donnée: {1.0 2.0} 3.0 ici
+champ sans locale: ERREUR field "zz" of Rec2 has no value and no default
+pas un produit: ERREUR type call: int is not a product
+type inconnu: ERREUR unknown type "nimp"
+--- erreurs
+hors procédure: ERREUR type call: not called from a procedure
+trop d'arguments: ERREUR wrong # args: should be "type call ?type?"
+--- une convolution : le journal des appels
+journal: {{0.0 0.0} 1.0 ?} {{1.0 0.0} -1.0 retour}
+types: Rec Rec

@@ -1,6 +1,6 @@
 point : {1.0 2.0} point 1 {point needs 2 values but got 1} compilé 1
 défaut : 1 pdef needs 2 values but got 1
-double : 1.5 double 1 {expected floating-point number but got "z"} 3 double 1 {expected floating-point number but got "z"}
+double : 1.5 double 1 {expected floating-point number but got "z"} 3.0 double 1 {expected floating-point number but got "z"}
 refus : 1 expected floating-point number but got "abc"
   expected floating-point number but got "abc"
     (procedure "p4" line 1)

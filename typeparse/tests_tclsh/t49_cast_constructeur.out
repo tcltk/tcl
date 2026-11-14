@@ -70,7 +70,7 @@ TC3   ERREUR: unknown type "zz"
 TC4   ERREUR: expected integer but got "abc"
 -- paramètres fantômes : des unités (le paramètre distingue les instances)
 F1    ok: ok
-F2    ok: mmF 1500 3000
+F2    ok: mmF 1500.0 3000.0
 F3    ERREUR: type mismatch: expected m but got mmF (use an explicit cast)
 F4    ERREUR: unknown way to cast the value from mmF to kgF
 F5    ERREUR: type mismatch: expected energie but got couple (use an explicit cast)

@@ -17,7 +17,7 @@ list.p ancien: 0 list<p>
 list.p nouveau: 0 list<p>
 list.p : 2 champs: 1 p needs 3 values but got 2
 -- conversions déclarées
-cast: 0 20
+cast: 0 20.0
 règle oubliée: 1 unknown way to cast the value from cm to mm
 -- familles
 oublier q: 0 

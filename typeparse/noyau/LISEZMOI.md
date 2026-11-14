@@ -2455,6 +2455,34 @@ suite sur un Tcl 9.0 d'origine (branche core-9-0) et sur la base sans TIP 764 (`
   close-brace » écrit `{x}=mot`, qui le garde ; `testparser` nomme le jeton `annot`. Nouveaux
   tests `parse-5.22` à `5.24` (la règle ci-dessus) et `parseExpr-15.29.1/2` (arbre d'un tuple).
 
+### v16z — `apply` typé (7 novembre 2026)
+
+Patch noyau `apply-type.patch` (après `tests-syntaxe.patch`) : `tclProc.c` seulement. Sources de
+types : `tclTypes.c`, `tclTypes.h`, `tclTypesInt.h`, `tclAnnotObj.c`. Nouveau test
+`t106_apply_type.tcl`.
+
+Une lambda est une procédure sans nom : `apply {T}{{signature} corps ?ns?} mots...`.
+
+- **`SetLambdaFromAny`** passe la liste d'arguments à `TclTypedProcSig`, comme `proc` ; le nom de
+  contexte est `ns::lambda`, pour que les types soient lus dans l'espace de noms de la lambda.
+  Une signature typée donne `args` à `TclCreateProc` et sa `TclTypedSig` à `procPtr->typedSig` ;
+  la liaison passe ensuite par `InitArgsAndLocals`, comme pour une procédure.
+- **`TclNRApplyObjCmd`** : si le mot lambda est annoté, la lambda est son contenu et l'annotation
+  est le type de retour (`TclTypedLambdaRet`, qui lit le texte comme `proc {T}nom`, dans
+  l'espace de la lambda). Le contrôle du retour est celui des procédures
+  (`TclTypedProcReturn`, depuis `codePtr->procPtr`).
+- **Cache.** Le littéral `{T}{…}` est compilé en `::tcl::annotraw T contenu`, qui copie le
+  contenu : un objet neuf à chaque exécution, donc une Proc reconstruite et un corps recompilé à
+  chaque appel (1,5 µs). `TclTypedLambdaFor` garde dans la table des types (`d->lambdas`) une
+  lambda par texte `{T}contenu`, vidée au-delà de 512 entrées et à la suppression de
+  l'interpréteur. Une valeur qui porte aussi des notes n'est pas mise en cache. Coût : 0,8 µs
+  contre 0,5 µs pour la même lambda sans type de retour.
+- `type call ?TYPE?` (sources de types seulement, `tclTypes.c` : `TypeCallCmd`, `SigRecord`) :
+  l'appel courant comme valeur, lu dans `iPtr->varFramePtr` (une procédure ou une lambda) ;
+  `type proc NOM` rend aussi `record`. Test `t107_type_call.tcl`.
+- Une note d'instrument (`{@trace}{…}`) n'est pas un type de retour. Une erreur de signature ou de
+  type de retour oublie la Proc, pour que l'appel suivant redise l'erreur.
+
 ### v16x — l'étiquette d'un retour hors compilation (6 novembre 2026)
 
 Patch noyau `retour-etiquette.patch` (après `execute-lecture-typee.patch`) : `tclBasic.c`
@@ -2560,3 +2588,44 @@ La liaison directe de `cproc` lit la représentation d'une valeur annotée (`ptr
 T, la chaîne de T est le nom du type) et en fabrique (`Tcl_StoreInternalRep` avec le type
 "annotated") : c'est le travail des futures fonctions de stub `Tcl_AnnotatedGetType` /
 `Tcl_AnnotatedCreate`, qui devraient le faire sans passer par l'interpréteur.
+
+### v17a — normalisation des nombres, notes gardées par les constructeurs (14 novembre 2026)
+
+Sans patch noyau : seules les sources de types changent (`tclAnnotObj.c`,
+`tclTypedVar.c`, `tclTypePath.c`, `tclTypes.h`). Discussion :
+`doc/PISTES-any-string.md` §§ 5 et 7 ; sondes `doc/any/` (18 → 25 OK) ; test
+t108.
+
+* **Normalisation à la construction.** Un `int` ou un `double` validé prend
+  son écriture canonique, comme le fait `expr` (`INST_TRY_CVT_TO_NUMERIC`) :
+  `0x10` → `16`, `" 3 "` → `3`, `2e1` → `20.0`, `1` (double) → `1.0`. Dans
+  les listes, les valeurs des dicts, les produits, les sommes, élément par
+  élément ; à toute construction (`set {T}x`, `type cast`, arguments typés,
+  `lappend` sous contrat). Une `string` n'est jamais touchée, ni un
+  bitarray, ni les clés d'un dict. Place : `MakeAnnotated`, qui voit toute
+  valeur typée naître (`NormContent`) ; vérification sans allocation
+  (`snprintf`, `Tcl_PrintDouble`), un objet neuf seulement si le texte
+  change. La forme compacte normalisait déjà ; c'est étendu à toute valeur
+  typée.
+* **Conséquence voulue : un `double` calcule en double.** Avant, `set
+  {double}x 5; expr {$x / 2}` rendait **2** (le texte « 5 » se lisait comme
+  un entier) ; il rend 2.5. De même `incr` refuse un double, et un double
+  ne se lit plus en `int` (`type cast list(2).int` d'un point refusé : t55
+  le montre). Les sorties de 22 tests changent par le seul `.0` ; t55 et
+  t93 sont adaptés (refus documenté ; `expr` au lieu d'`incr`).
+* **tcllib_geometry** : 199 / 210. Les 11 écarts viennent de tcllib, qui
+  compare des textes (`{10 10}` contre `{10.0 10.0}`) et dont deux
+  résultats (`pointInsidePolygon`, 15.3 et 15.4) reposent sur la division
+  entière d'entrées entières ; le code typé déclare ses coordonnées
+  `double`, il calcule donc en doubles. À décider : accepter, ou des
+  coordonnées `number`.
+* **Notes gardées par les constructeurs.** Une note suit la valeur dans une
+  liste ou un dict construits (`set {list}P 5 {this}6`, `{list.double}`,
+  `{dict.int}`, `{list.any}`) ; un élément noté sans type se lit comme un
+  élément du type de la liste, avec ses notes (`lindex`, chemins) :
+  `{double vitesse}`. `TclAnnotCarryNotes` (seules les notes voyagent, pas
+  une étiquette `{v:}` ni une option `{-x}`) ; `MakeAnnotated` reprend les
+  notes d'un contenu seulement noté ; une liste dont un élément est noté
+  reste ordinaire (pas de cases : elles ne gardent pas les notes).
+* **Coût** : `lappend` d'un double à une `list.double` 0,23 → 0,31 µs ;
+  les autres constructions, dans le bruit de la mesure.

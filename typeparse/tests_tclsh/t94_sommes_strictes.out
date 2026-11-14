@@ -33,7 +33,7 @@ type {S.i}5: S.i
 type cast S.i 5: S.i
 type cast S 5: ERREUR value "5" names no variant of the sum S: a value of a sum is the name of its variant, then its value, as {i 5}, or {i:}5
 type cast S {i 5}: S.i
-point, vecteur: {v {1 2}} PV.v 1
+point, vecteur: {v {1.0 2.0}} PV.v 1.0
 littéral seul: vide Lit.vide
 littéral : n 4: {n 4} Lit.n
 variante typée nue: ERREUR value "4" names no variant of the sum Lit: a value of a sum is the name of its variant, then its value, as {n 4}, or {n:}4

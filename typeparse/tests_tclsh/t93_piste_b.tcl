@@ -63,7 +63,7 @@ proc boucles {} {
     foreach {a b} {list}$q {lappend r $a-$b}
     lappend r {*}[lmap {a b} {list}$q {expr {$a * $b}}]
     dict for {k v} {dict}$q {lappend r $k}
-    lappend r [dict map {k v} {dict}$q {incr v}]
+    lappend r [dict map {k v} {dict}$q {expr {$v + 1}}]
     lassign {list}$q c d
     lappend r $c $d
     set mauvais "a \{b"

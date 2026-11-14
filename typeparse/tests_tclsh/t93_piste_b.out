@@ -16,30 +16,30 @@ set _ {int}$s: 1 {expected integer but got "3.0"}
 set {int}i 5: int
 nom calculé : déclaration: int
 nom calculé : [set nom]: double
-étiquettes: 3 4
+étiquettes: 3.0 4.0
 contrat: 1 {expected integer but got "3.0"}
 --- type {T}mot : le cast explicite
 type {int}$s: 1 {expected integer but got "3.0"}
 type {double}$s: 3.0 double {}
-type {list}$p: {1 2} list {}
-type {dict}$p: {x 1 y 2} dict {}
+type {list}$p: {1.0 2.0} list {}
+type {dict}$p: {x 1.0 y 2.0} dict {}
 type {int}[cmd]: 5 int {}
 type {int}[(expr)]: 5 int {}
 type {int}"…": 44 int {}
 type {int}5: 5 int {}
 nom inconnu: 1 {unknown type "zz"}
 annotation locale: 1 {"-v" is not a type: "type" casts to a type}
-sans annotation: 1 {bad subcommand "5": must be def, alias, cast, convert, debug, deref, export, forget, get, is, proc, variant or binary}
+sans annotation: 1 {bad subcommand "5": must be def, alias, call, cast, convert, debug, deref, export, forget, get, is, proc, variant or binary}
 dans un catch: 1 {unmatched open brace in list}
 --- les boucles reçoivent leurs listes
-foreach {list}$p: 1/2
-lmap {list}$p: 3
-dict for {dict}$p: x=1 y=2
-dict map {dict}$p: x 10 y 20
-lassign {list}$p: 1 2
+foreach {list}$p: 1.0/2.0
+lmap {list}$p: 3.0
+dict for {dict}$p: x=1.0 y=2.0
+dict map {dict}$p: x 10.0 y 20.0
+lassign {list}$p: 1.0 2.0
 foreach : erreur attrapée: 1 {unmatched open brace in list}
 lassign : erreur attrapée: 1 {unmatched open brace in list}
-compilées dans une procédure: 3-4 12 x y {x 4 y 5} 3 4 1 {unmatched open brace in list}
+compilées dans une procédure: 3.0-4.0 12.0 x y {x 4.0 y 5.0} 3.0 4.0 1 {unmatched open brace in list}
 --- listes typées : lappend et lset reçoivent l'élément
 list.any, list.S: double string S.s S.i
 au niveau global: int string
@@ -49,4 +49,4 @@ type def ensuite: 5 {} mm2
 rangée par set: 5 {} mm3
 note delete: 5 {} b
 --- boucles compilées : {T}mot casté une fois (annotCast)
-castes: {} 1 {expected integer but got "a"} 1 {list(3)<int> needs exactly 3 elements but got 2} 1 {unmatched open brace in list} {a {} b {}} 1 2 30
+castes: {} 1 {expected integer but got "a"} 1 {list(3)<int> needs exactly 3 elements but got 2} 1 {unmatched open brace in list} {a {} b {}} 1 2 30.0

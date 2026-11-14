@@ -12,7 +12,7 @@ lappend {1 2}                      0 {{0.0 0.0} {7.0 0.0} {4.0 3.0} {1.0 2.0}} 1
 lset 0 {5 5}                       0 {{5.0 5.0} {7.0 0.0} {4.0 3.0} {1.0 2.0}} 1
 lappend invalide                   1 expected floating-point number but got "a"
 contenu puis conversion            0 1
-list.point ordinaire               0 {{0 0}} 0
+list.point ordinaire               0 {{0.0 0.0}} 0
 cast vers polygone                 0 {{1.0 1.0} {2.0 2.0}} 1
 valeur ordinaire                   0 0
 double(32) arrondi                 0 0.10000000149011612 0.5

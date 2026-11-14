@@ -1,0 +1,22 @@
+== normalisation
+int 0x10                           16
+int " 3 ", +3, 0o10                3 3 8
+double 2e1, 1                      20.0 1.0
+string inchangée                   0.10
+argument typé                      16
+list.double                        1.0 20.0
+dict.int                           a 16
+produit                            Jean 12
+somme                              d 1.0
+nominal                            20.0
+lappend sous contrat               1.0 20.0
+double : division réelle           2.5
+égalité de texte                   1
+== notes gardées
+list (commande)                    {{} int} {{} this}
+{list}                             {{} {}} {{} this}
+list.double, lindex                {double vitesse} {double {}}
+dict.int, chemin                   {int poids} {int {}}
+{dict}, dict get                   {} poids
+scalaire typé et noté              int mm
+étiquette : pas une note           S2.i S2.s

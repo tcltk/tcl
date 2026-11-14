@@ -21,7 +21,7 @@ puis le défaut: x 5
 deux paires: {{a b} c} B
 impaire: ERREUR wrong # args: should be "f vars vals ?vars vals ...? corps"
 usage: ERREUR wrong # args: should be "f vars vals ?vars vals ...? corps"
-points: 2 4
+points: 2.0 4.0
 point incomplet: ERREUR wrong # args: should be "l x y ?x y ...?"
 aucune paire: 0
 --- avec options et liens

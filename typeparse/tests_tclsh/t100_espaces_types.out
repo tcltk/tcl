@@ -1,5 +1,5 @@
 trois point                        {{double}x; {double}y} {{int}r; {int}g; {int}b} {{string}nom}
-dans geom                          ::geom::point {1 2}
+dans geom                          ::geom::point {1.0 2.0}
 global                             point
 qualifié relatif                   ::geom::point
 qualifié absolu                    ::rgb::point
@@ -14,9 +14,9 @@ namespace path                     ::geom::point
 proc dans geom                     ::geom::point
 proc args                          5.0
 famille dans geom                  ::geom::grille(2) ::geom::point
-somme                              ::geom::S.at {at {1 2}}
+somme                              ::geom::S.at {at {1.0 2.0}}
 type forget                        unknown type "::geom::S"
-après namespace delete             ::geom::point {1 2} 1 {unknown type "geom::point"}
+après namespace delete             ::geom::point {1.0 2.0} 1 {unknown type "geom::point"}
 redéfini                           ::geom::point {{int}i} ::geom::point
 convert                            ::geom2::p
 interp supprimé                    ::k::kp {1 2} 2

@@ -1,10 +1,10 @@
 --- la somme
-somme = 15
+somme = 15.0
 apply {double}{{{double}a; {double}b} {( $a + $b )}} 5 x -> ERREUR argument "b": expected floating-point number but got "x"
 apply {double}{{{double}a; {double}b} {( $a + $b )}} 5 -> ERREUR wrong # args: should be "apply {{double}a; {double}b} {( $a + $b )} a b"
 
 --- la lambda dans une variable, le type de retour à l'appel
-apply {double}$f 20 5                          -> 25
+apply {double}$f 20 5                          -> 25.0
 apply {int}$f 20.5 5                           -> ERREUR return value {int}: expected integer but got "25.5"
 
 --- le type de retour est vérifié
@@ -20,7 +20,7 @@ lsort -command {apply {{{pt}p; {pt}q} {expr {$p(x) - $q(x)}}}} {{1 2} {a b}} -> 
 
 --- options et variadiques, comme pour proc
 apply $echelle 1 2 3                           -> 1.0 2.0 3.0
-apply $echelle -k 10 1 2 3                     -> 10 20 30
+apply $echelle -k 10 1 2 3                     -> 10.0 20.0 30.0
 apply $echelle -k 10                           -> ERREUR wrong # args: should be "apply {{double}-k ?= 1.0; {double}args...} {
     lmap v $args { expr {$v * $k} }
 } ?-k value? ?--? args ?args ...?"
@@ -29,4 +29,4 @@ apply $echelle -k 10                           -> ERREUR wrong # args: should be
 set k {kelvin}$t                               -> 293.15
 
 --- dans un espace de noms : les types de la lambda
-apply {vec}{{{double}d} {( $d, -$d )} geo} 2   -> 2 -2
+apply {vec}{{{double}d} {( $d, -$d )} geo} 2   -> 2.0 -2.0

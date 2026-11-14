@@ -8,12 +8,12 @@ lindex, type                   identique  compacte  0 {2.5 3.5} point 3.5
 chemin P(1.y)                  identique  compacte  0 3.5 double 2.5
 foreach                        identique  compacte  0 0.5 point 2.5 point
 écrire P(1.y)                  identique  compacte  0 {0.5 1.5} {2.5 9.5}
-écrire 9 (non canonique)       identique  ordinaire 0 {0.5 1.5} {2.5 9}
+écrire 9 (non canonique)       identique  compacte  0 {0.5 1.5} {2.5 9.0}
 lappend                        identique  compacte  0 {0.5 1.5} {7.5 8.5}
 lappend invalide               identique  compacte  1 expected floating-point number but got "a"
 lset                           identique  compacte  0 {1.25 2.25} {2.5 3.5}
 lrange, lsort                  identique  compacte  0 {{0.5 1.5}} {{0.5 1.5} {2.5 3.5}}
-non canonique 1 2              identique  ordinaire 0 {1 2} {3 4}
+non canonique 1 2              identique  ordinaire 0 {1.0 2.0} {3.0 4.0}
 espaces gardés                 identique  compacte  0 {0.5 1.5}   {2.5 3.5}
 produit imbriqué               identique  compacte  0 {{7 {0.5 0.25} 0.5} {-3 {1.0 2.0} 0.25}} 2.0 point
 int(s,32) trop grand           identique  compacte  1 value "99999999999" does not fit in int(s,32)

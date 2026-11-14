@@ -19,12 +19,10 @@ OK     {} garde les notes                             {} mm
 
 == 4. les conteneurs gardent les notes
 OK     list (commande) garde les notes                {{} int} {{} this}
-ÉCART  {list} garde les notes                         obtenu : {{} {}} {{} {}}
-                                                      proposé : {{} {}} {{} this}
+OK     {list} garde les notes                         {{} {}} {{} this}
 ÉCART  {list.any} garde les notes                     obtenu : {any {}} {{} this}
                                                       proposé : {{} {}} {{} this}
-ÉCART  {list.double} garde les notes                  obtenu : {double {}}
-                                                      proposé : {double vitesse}
+OK     {list.double} garde les notes                  {double vitesse}
 ÉCART  {int@this} dans un constructeur                obtenu : ERREUR: local annotation {int@this} cannot be stored by "set": it only applies between a caller and the command it calls
                                                       proposé : int this
 
@@ -44,16 +42,11 @@ OK     nue : forme native lue                         d
 OK     nue native : la règle ne passe pas             n
 
 == 6. normalisation dès la construction
-ÉCART  int 0x10                                       obtenu : 0x10
-                                                      proposé : 16
-ÉCART  int " 3 "                                      obtenu :  3 
-                                                      proposé : 3
-ÉCART  double 2e1                                     obtenu : 2e1
-                                                      proposé : 20.0
-ÉCART  double 1                                       obtenu : 1
-                                                      proposé : 1.0
-ÉCART  list.double                                    obtenu : 1 2e1
-                                                      proposé : 1.0 20.0
+OK     int 0x10                                       16
+OK     int " 3 "                                      3
+OK     double 2e1                                     20.0
+OK     double 1                                       1.0
+OK     list.double                                    1.0 20.0
 OK     string inchangée                               0.10
 
 == 7. aller-retour (type deref aujourd'hui, type canon proposé)
@@ -68,4 +61,4 @@ OK     string invalide refusée                        refus
 ÉCART  nue invalide refusée                           obtenu : lu
                                                       proposé : refus
 
-18 OK, 18 ÉCART
+25 OK, 11 ÉCART

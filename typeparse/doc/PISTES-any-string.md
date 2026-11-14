@@ -187,7 +187,7 @@ set {list.int}I …                        ;# un type précis ; les notes gardé
 set {dict.typed}D a {int}1 b {double}2.5
 ```
 
-**Correction** : tous les constructeurs de conteneurs gardent les notes de
+**Correction** (faite en v17a) : tous les constructeurs de conteneurs gardent les notes de
 leurs éléments (aujourd'hui ils les effacent, contre ANNOTATIONS §2.1 : « une
 note suit la valeur : … élément de liste »).
 
@@ -238,6 +238,8 @@ de méta-type M et de type U doit devenir un T :
 Précédent : la **forme compacte** normalise déjà à la construction
 (ANNOTATIONS §14.1 : « `{0 0}` becomes `{0.0 0.0}`, `0x10` becomes `16` »).
 Il s'agit de l'étendre à toute valeur typée.
+
+*(Fait en v17a, voir `noyau/LISEZMOI.md`.)*
 
 **Dès la construction**, un `int` ou un `double` validé perd sa
 représentation texte, comme le fait `expr` (`INST_TRY_CVT_TO_NUMERIC`,

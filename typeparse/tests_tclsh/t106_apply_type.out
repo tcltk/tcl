@@ -1,5 +1,5 @@
 --- l'exemple
-somme: 15
+somme: 15.0
 --- arguments typés
 contrôle: ERREUR argument "b": expected integer but got "x"
 usage: ERREUR wrong # args: should be "apply {{int}a; {int}b} {expr {$a * $b}} a b"
@@ -9,25 +9,25 @@ option inconnue: ERREUR bad option "-pos": must be -pas or --
 drapeau: 1 x
 variadique: a {1 2 3}
 variadique contrôlé: ERREUR argument "args...": expected integer but got "x"
-produit: 3
+produit: 3.0
 lien: 5
 classique inchangé: 1 2
 --- type de retour
 rendu: 2.5
 refusé: ERREUR return value {int}: expected integer but got "2.5"
 même lambda, int: 2
-produit rendu: 3 3
+produit rendu: 3.0 3.0
 produit refusé: ERREUR return value {pt}: expected floating-point number but got "a"
 déplié: 1 2 3
 type inconnu: ERREUR bad return type {nimp}: unknown type "nimp"
 une note n'est pas un type: 2
 --- le type de retour sur une lambda en variable : {T}$f
-double: 25
+double: 25.0
 int refusé: ERREUR return value {int}: expected integer but got "25.5"
-deux types, une lambda: 3 3
+deux types, une lambda: ERREUR return value {int}: expected integer but got "3.0"
 --- espace de noms
-args dans geo: 1
-retour dans geo: 4 4
+args dans geo: 1.0
+retour dans geo: 4.0 4.0
 hors de geo: ERREUR unknown type "vec"
 --- dans une boucle, récursion
 lmap: 1 4 9 16

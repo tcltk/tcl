@@ -1,16 +1,16 @@
-{*} liste: {0 5} 2 {} {} 0 5
-{**} dict: {x 0 y 5} 5 {}
-sans dépliage: {0 5} 2 point
-rect {*}: {{0 0} {10 10}} 10 {}
-rect {**}: {nw {x 0 y 0} se {x 10 y 10}} 10
-list.point: {{1 2} {3 4}} {{x 1 y 2} {x 3 y 4}} 2
-somme {*}: {en {1 2}} aucune
-somme {**}: {en {x 1 y 2}} aucune
+{*} liste: {0 5.0} 2 {} {} 0 5.0
+{**} dict: {x 0.0 y 5.0} 5.0 {}
+sans dépliage: {0.0 5.0} 2 point
+rect {*}: {{0.0 0.0} {10.0 10.0}} 10.0 {}
+rect {**}: {nw {x 0.0 y 0.0} se {x 10.0 y 10.0}} 10.0
+list.point: {{1.0 2.0} {3.0 4.0}} {{x 1.0 y 2.0} {x 3.0 y 4.0}} 2
+somme {*}: {en {1.0 2.0}} aucune
+somme {**}: {en {x 1.0 y 2.0}} aucune
 mauvais retour: ERREUR return value {point}: expected floating-point number but got "a"
-type {{*}T}: {1 2} 2 {x 1 y 2} {}
-type {{*}T} liste: {{1 2} {3 4}} {nw {x 1 y 2} se {x 3 y 4}}
+type {{*}T}: {1.0 2.0} 2 {x 1.0 y 2.0} {}
+type {{*}T} liste: {{1.0 2.0} {3.0 4.0}} {nw {x 1.0 y 2.0} se {x 3.0 y 4.0}}
 type {{*}T} erreur: ERREUR expected floating-point number but got "a"
 type proc: {{*}point} {{**}point}
 type inconnu: ERREUR bad return type {zz}: unknown type "zz"
 compact: {1.0 2.0 3.0} {} {1.0 2.0 3.0}
-déjà typé: {3 4} 2 {}
+déjà typé: {3.0 4.0} 2 {}

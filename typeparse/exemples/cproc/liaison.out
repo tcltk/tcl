@@ -21,5 +21,5 @@ poly::deplace $G -1.0 -2.0               = 0 ::poly::polygone | {-1.0 -2.0} {3.0
 poly::deplace $G x                       = 1  | argument "dx": expected floating-point number but got "x"
 poly::deplace $G {dy:}3.0 {dx:}1.0       = 0 ::poly::polygone | {1.0 3.0} {5.0 3.0} {5.0 7.0}
 poly::boite $G                           = 0 ::poly::boite | 0.0 0.0 4.0 4.0
-poly::point 1 2                          = 0 ::poly::point | 1 2
+poly::point 1 2                          = 0 ::poly::point | 1.0 2.0
 24 appels, 0 différence(s)

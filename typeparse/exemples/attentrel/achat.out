@@ -1,0 +1,158 @@
+--- demander, approuver, commander
+type get $d                                                -> Demander
+set d(objet)                                               -> ::poubelle
+poubelle get état                                          -> demandé
+poubelle get état                                          -> commandé
+Commande1 fiche                                            -> ::poubelle {Fournitures Martin} 07/11/2026
+
+--- livrer, facturer, payer, clore
+Facture1 fiche                                             -> ::Commande1 104.5 F-2026-114
+poubelle get état                                          -> clos
+budgetHSE get reste                                        -> 900.0
+info object isa object ::Commande1                         -> 0
+
+--- ce que les types et l'automate refusent
+Achat create ::table {montant:}cent {description:}table    -> ERREUR expected floating-point number but got "cent"
+Demander ::HSE ::chaise                                    -> ERREUR wrong # args: should be "Demander ?-date value? ?-but value? ?-moyen value? ?--? demandeur objet receveur"
+Demander ::chaise ::chaise ::Achats                        -> ERREUR Demander: actant "demandeur" must be Service, got "::chaise"
+Demander ::HSE ::HSE ::Achats                              -> ERREUR Demander: actant "objet" must be Achat, got "::HSE"
+Approuver ::Achats $ok                                     -> ERREUR argument "demande": unknown way to cast the value from Approuver to Demander
+Approuver ::Achats $d                                      -> ERREUR Approuver: achat poubelle: Achat(état) eq "demandé" is false (Achat(état) = clos)
+set r [Rejeter ::Achats $d2 "budget épuisé"]; set r(motif) -> budget épuisé
+Approuver ::Achats $d2                                     -> ERREUR Approuver: achat chaise: Achat(état) eq "demandé" is false (Achat(état) = refusé)
+Approuver ::Achats $d4                                     -> ERREUR Approuver: achat serveur: Achat(montant) <= 5000 is false (Achat(montant) = 8000.0)
+chaise set état payé                                       -> ERREUR chaise: état cannot go from "refusé" to "payé" (allowed: none)
+chaise set état volé                                       -> ERREUR value "volé" matches no variant of EtatAchat
+Payer ::Comptabilité ::Facture2                            -> ERREUR Payer: achat bureau: Facture(montant) <= Achat(montant) * 1.2 is false (Achat(montant) = 300.0, Facture(montant) = 450.0)
+bureau get état                                            -> facturé
+
+--- ce que dit la définition
+Demander conduit objet (Achat) : si Achat(état) eq "créé", alors Achat(état) = "demandé" ; avec demandeur (Service), receveur (Service) ; circonstances : date, but, moyen.
+Passer_commande conduit achat (Achat) : si Achat(état) eq "validé", alors Achat(état) = "commandé", produit commande (Commande) ; avec acheteur (Service), approbation (Approuver), fournisseur (string) ; circonstances : date.
+Clore déduit commande (Commande), qui cesse d'exister, conduit budget (Budget) : si Budget(reste) >= 0, alors Budget(reste) = \avant Budget(reste) - Achat(montant), conduit achat (Achat) : si Achat(état) eq "payé", alors Achat(état) = "clos" ; avec acheteur (Service).
+possibles ::lampe                                          -> {Demander → Achat(état) = "demandé"}
+possibles ::lampe                                          -> {Approuver → Achat(état) = "validé"} {Rejeter → Achat(état) = "refusé"}
+
+--- la composition : l'effet d'un processus entier
+effet Demander                                             -> objet: Achat(état) eq "créé" \conduit Achat(état) = "demandé"
+Demander … Clore :
+Demander             objet      requis : Achat(état) eq "créé"
+Approuver            achat      requis : Achat(montant) <= 5000
+Passer_commande      achat      nécessaire
+Passer_commande      commande   nécessaire
+Réceptionner         commande   nécessaire
+Réceptionner         achat      nécessaire
+Enregistrer_facture  commande   nécessaire
+Enregistrer_facture  achat      nécessaire
+Enregistrer_facture  facture    nécessaire
+Payer                facture    nécessaire
+Payer                achat      contingent : Facture(montant) <= Achat(montant) * 1.2   (Achat(montant) ∈ ]-∞, 5000], Facture(montant) ∈ ]-∞, +∞[)
+Clore                commande   nécessaire
+Clore                budget     requis : Budget(reste) >= 0
+Clore                achat      nécessaire
+effet :
+  Achat : Achat(état) eq "créé" && Achat(montant) <= 5000 \conduit Achat(état) = "clos"   (traversante)
+  Commande : () \conduit ()   (flux)
+  Facture : () \conduit Facture(montant) <= 6000   (fait)
+  Budget : Budget(reste) >= 0 \conduit Budget(reste) >= -5000   (traversante)
+processus Demander Rejeter Passer_commande                 -> Demander             objet      requis : Achat(état) eq "créé"
+Rejeter              achat      nécessaire
+Passer_commande      achat      impossible : Achat(état) eq "validé", mais Achat(état) = refusé
+→ la chaîne s'arrête à Passer_commande
+processus Demander Approuver Approuver                     -> Demander             objet      requis : Achat(état) eq "créé"
+Approuver            achat      requis : Achat(montant) <= 5000
+Approuver            achat      impossible : Achat(état) eq "demandé", mais Achat(état) = validé
+→ la chaîne s'arrête à Approuver
+processus Réceptionner                                     -> Réceptionner         commande   nécessaire
+Réceptionner         achat      requis : Achat(état) eq "commandé"
+effet :
+  Commande : Commande \conduit Commande   (traversante)
+  Achat : Achat(état) eq "commandé" \conduit Achat(état) = "livré"   (traversante)
+processus Clore Payer                                      -> Clore                commande   nécessaire
+Clore                budget     requis : Budget(reste) >= 0
+Clore                achat      requis : Achat(état) eq "payé"
+Payer                facture    nécessaire
+Payer                achat      impossible : Achat(état) eq "facturé", mais Achat(état) = clos
+→ la chaîne s'arrête à Payer
+processus Passer_commande Réceptionner Enregistrer_facture Payer Clore Clore -> Passer_commande      achat      requis : Achat(état) eq "validé"
+Passer_commande      commande   nécessaire
+Réceptionner         commande   nécessaire
+Réceptionner         achat      nécessaire
+Enregistrer_facture  commande   nécessaire
+Enregistrer_facture  achat      nécessaire
+Enregistrer_facture  facture    nécessaire
+Payer                facture    nécessaire
+Payer                achat      contingent : Facture(montant) <= Achat(montant) * 1.2   (Achat(montant) ∈ ]-∞, +∞[, Facture(montant) ∈ ]-∞, +∞[)
+Clore                commande   nécessaire
+Clore                budget     requis : Budget(reste) >= 0
+Clore                achat      nécessaire
+Clore                commande   impossible : Commande n'existe plus
+→ la chaîne s'arrête à Clore
+
+--- une déclaration que le corps ne tient pas
+Annoter ::lampe "lampe LED"                                -> ERREUR Annoter: achat lampe is read (\lit), but its record changed
+lampe get description                                      -> lampe de bureau
+Commander_vite ::Achats                                    -> ERREUR Commander_vite: commande must be produced, a new Commande
+Trancher ::lampe                                           -> ERREUR Trancher: the body must make Achat(état) in {"validé" "refusé"} true for achat lampe (Achat(état) = demandé)
+processus Demander Trancher Passer_commande                -> Demander             objet      requis : Achat(état) eq "créé"
+Trancher             achat      nécessaire
+                                branches : Achat(état) = "validé" | Achat(état) = "refusé"
+Passer_commande      achat      nécessaire
+                                impossible dans la branche Achat(état) = "refusé" : Achat(état) eq "validé", mais Achat(état) = refusé
+Passer_commande      commande   nécessaire
+effet :
+  Achat(état) = "validé" :
+    Achat : Achat(état) eq "créé" \conduit Achat(état) = "commandé"   (traversante)
+    Commande : () \conduit Commande   (flux ouvert : Clore le clôt)
+processus Demander Trancher Réceptionner                   -> Demander             objet      requis : Achat(état) eq "créé"
+Trancher             achat      nécessaire
+                                branches : Achat(état) = "validé" | Achat(état) = "refusé"
+Réceptionner         commande   nécessaire
+Réceptionner         achat      impossible : Achat(état) eq "commandé", mais Achat(état) = validé
+→ la chaîne s'arrête à Réceptionner
+
+--- une déclaration refusée à la définition
+convolution Bof1 {{(Achat(état) eq "crée" \conduit Achat(état) = "demandé")}a} {} -> ERREUR convolution Bof1: a: Achat(état): value "crée" matches no variant of EtatAchat
+convolution Bof2 {{(Achat(etat) eq "créé" \conduit Achat(état) = "demandé")}a} {} -> ERREUR convolution Bof2: a: Achat has no attribute "etat" (has: montant, description, état)
+convolution Bof3 {{(Achat(état) == "créé" \conduit Achat(état) = "demandé")}a} {} -> ERREUR convolution Bof3: a: Achat(état) is text (EtatAchat): compare with eq, as in Tcl
+convolution Bof4 {{(Achat(état) = "créé" \conduit Achat(état) = "demandé")}a} {} -> ERREUR convolution Bof4: a: "=" assigns, after \conduit only; compare with eq or ==
+convolution Bof5 {{(Achat(état) eq créé \conduit Achat(état) = "demandé")}a} {} -> ERREUR convolution Bof5: a: "créé": write a value as "créé", an attribute as créé(attr)
+convolution Bof6 {{(\avant Achat(montant) > 0 \conduit Achat)}a} {} -> ERREUR convolution Bof6: a: \avant only after \conduit
+convolution Bof7 {{(Achat \traduit Texte)}a} {}            -> ERREUR convolution Bof7: a: \traduit is not an operator here (an effect knows \conduit, \avant, \produit, \déduit, \lit)
+
+--- les phases d'une convolution : pour, à, par, de, fors
+  Demander : pour   (en cours : Demander pour)
+  Demander : à   (en cours : Demander à)
+  Demander : par   (en cours : Demander par)
+  Demander : de   (en cours : Demander de)
+  Demander : fors   (en cours : Demander fors)
+phase                                                      -> 
+quand pendant Demander suivre                              -> ERREUR bad phase "pendant": must be pour, à, par, de or fors
+
+--- un échec défait tout, sauf ce qui est achevé (fors)
+Passer_commande ::Achats $a5 "Ventes Louches"              -> ERREUR fournisseur sur liste noire
+info class instances Commande                              -> ::Commande2
+stylo get état                                             -> validé
+set pc5 [Passer_commande ::Achats $a5 "Fournitures Martin"]; set pc5(commande) -> ::Commande4
+stylo get état                                             -> commandé
+
+--- le journal : chaque convolution est une valeur typée
+Demander demandeur=HSE objet=poubelle receveur=Achats date=07/11/2026 but=remplacer la poubelle cassée
+Approuver approbateur=Achats demande=<Demander> achat=poubelle date=07/11/2026
+Passer_commande acheteur=Achats approbation=<Approuver> fournisseur=Fournitures Martin achat=poubelle date=07/11/2026 commande=Commande1
+Réceptionner receveur=HSE commande=Commande1 achat=poubelle
+Enregistrer_facture comptable=Comptabilité commande=Commande1 numéro=F-2026-114 montant=104.5 achat=poubelle facture=Facture1
+Payer payeur=Comptabilité facture=Facture1 achat=poubelle
+Clore acheteur=Achats commande=Commande1 budget=budgetHSE achat=poubelle
+Demander demandeur=HSE objet=chaise receveur=Achats date=07/11/2026
+Rejeter approbateur=Achats demande=<Demander> motif=budget épuisé achat=chaise date=07/11/2026
+Demander demandeur=HSE objet=serveur receveur=Achats date=07/11/2026
+Demander demandeur=HSE objet=bureau receveur=Achats date=07/11/2026
+Approuver approbateur=Achats demande=<Demander> achat=bureau date=07/11/2026
+Passer_commande acheteur=Achats approbation=<Approuver> fournisseur=Mobilier Durand achat=bureau date=07/11/2026 commande=Commande2
+Réceptionner receveur=HSE commande=Commande2 achat=bureau
+Enregistrer_facture comptable=Comptabilité commande=Commande2 numéro=F-2026-131 montant=450.0 achat=bureau facture=Facture2
+Demander demandeur=HSE objet=lampe receveur=Achats date=07/11/2026
+Demander demandeur=HSE objet=stylo receveur=Achats date=07/11/2026
+Approuver approbateur=Achats demande=<Demander> achat=stylo date=07/11/2026
+Passer_commande acheteur=Achats approbation=<Approuver> fournisseur=Fournitures Martin achat=stylo date=07/11/2026 commande=Commande4

@@ -1,0 +1,14 @@
+expr * : 6.28318   double: 3.14159   string is double: 1
+enum 7 + 1 : 8  incr: 0 8
+string 12 + 1 : 13
+string abc : 1 cannot use non-numeric string "abc" as left operand of "+"
+produit 1 champ : 10  1  llength 1
+produit 1 champ string : 7
+produit imbriqué : 10
+produit 2 champs : 1 cannot use a list as left operand of "+"
+string is list $P : 1 ; string is double : 0
+string is compilé : 1 0
+compilé int : 1
+failindex : 0 1
+type gardé : pi 3.14159
+incr hors variantes : 1 value "9" matches no variant of k8

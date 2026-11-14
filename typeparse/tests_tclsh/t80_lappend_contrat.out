@@ -1,13 +1,13 @@
-boucle : 1000 {999 1} list<point> point
-copie : L={0 0} {1 1} M={0 0}
-refus : 1 expected floating-point number but got "a" ; L={0 0} {1 1}
+boucle : 1000 {999 1.0} list<point> point
+copie : L={0.0 0.0} {1.0 1.0} M={0.0 0.0}
+refus : 1 expected floating-point number but got "a" ; L={0.0 0.0} {1.0 1.0}
 refus 2 : 1 point needs 2 values but got 3
-plusieurs : {0 0} {1 1} {2 2} {3 3} 4
-défaut absent : 1 pdef needs 2 values but got 1 ; D={1 2}
+plusieurs : {0.0 0.0} {1.0 1.0} {2.0 2.0} {3.0 3.0} 4
+défaut absent : 1 pdef needs 2 values but got 1 ; D={1.0 2.0}
 compacte : {{0.5 1.5} {2.5 3.5} {4.5 5.5}} 1 1 {expected floating-point number but got "x"} {{0.5 1.5} {2.5 3.5} {4.5 5.5}}
 somme : {cote 2.0} {nom carré} forme.cote forme.nom
 list.any : int string
 list(2) : 1 list(2)<point> needs exactly 2 elements but got 3
-pendant foreach : 4 {{0 0} {1 1} {9 9} {9 9}}
-élément typé : 7 8 point
-chaîne : 29 1 1
+pendant foreach : 4 {{0.0 0.0} {1.0 1.0} {9.0 9.0} {9.0 9.0}}
+élément typé : 7.0 8.0 point
+chaîne : 49 1.0 1.0
