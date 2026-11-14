@@ -5767,7 +5767,7 @@ TclAddEncodingSubdir(
     Tcl_DecrRefCount(fullPathObj);
     Tcl_DecrRefCount(subDirObj);
     if (newLen > oldLen) {
-        Tcl_SetEncodingSearchPath(searchPathObj);
+	Tcl_SetEncodingSearchPath(searchPathObj);
     }
     Tcl_DecrRefCount(searchPathObj);
 
