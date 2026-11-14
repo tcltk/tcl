@@ -506,6 +506,7 @@ Tcl_RegsubObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int result, cflags, eflags, all, match, command;
+    Tcl_Size nmatches;
     Tcl_Size idx, wlen, wsublen = 0, offset, startOffset, numMatches, numParts;
     Tcl_Size start, end, subStart, subEnd;
     Tcl_RegExp regExpr;
@@ -748,13 +749,34 @@ Tcl_RegsubObjCmd(
      * that "^" won't match.
      */
 
+    /*
+     * Ask the regexp engine only for the submatches that subSpec refers to:
+     * finding the submatch boundaries can be much more expensive than
+     * finding the match.  [Bug 446565]
+     */
+
+    nmatches = -1;
+    if (!command) {
+	Tcl_UniChar *p;
+
+	nmatches = 1;
+	for (p = wsubspec; p < wsubspec + wsublen; p++) {
+	    if (*p == '\\' && p + 1 < wsubspec + wsublen) {
+		p++;
+		if (*p >= '0' && *p <= '9' && *p - '0' + 1 > nmatches) {
+		    nmatches = *p - '0' + 1;
+		}
+	    }
+	}
+    }
+
     numMatches = 0;
     startOffset = offset;
     eflags = (offset > 0 && offset <= wlen &&
 	    (wstring[offset-1] != (Tcl_UniChar)'\n')) ? TCL_REG_NOTBOL : 0;
     for ( ; offset <= wlen; ) {
 	match = TclRegExpExecObjEx(interp, regExpr, objPtr, startOffset,
-		offset, 10 /* matches */, eflags);
+		offset, nmatches, eflags);
 
 	if (match < 0) {
 	    result = TCL_ERROR;
@@ -800,8 +822,8 @@ Tcl_RegsubObjCmd(
 
 	    TclListObjGetElements(interp, subPtr, &numParts, &parts);
 	    numArgs = numParts + info.nsubs + 1;
-	    args = (Tcl_Obj **)Tcl_Alloc(sizeof(Tcl_Obj*) * numArgs);
-	    memcpy(args, parts, sizeof(Tcl_Obj*) * numParts);
+	    args = (Tcl_Obj **)Tcl_Alloc(sizeof(Tcl_Obj *) * numArgs);
+	    memcpy(args, parts, sizeof(Tcl_Obj *) * numParts);
 
 	    for (idx = 0 ; idx <= info.nsubs ; idx++) {
 		subStart = info.matches[idx].start;
@@ -1074,7 +1096,7 @@ Tcl_ReturnObjCmd(
      */
 
     int explicitResult = (0 == (objc % 2));
-    int numOptionWords = objc - 1 - explicitResult;
+    Tcl_Size numOptionWords = objc - 1 - explicitResult;
 
     if (TCL_ERROR == TclMergeReturnOptions(interp, numOptionWords, objv+1,
 	    &returnOpts, &code, &level)) {
@@ -1927,7 +1949,7 @@ StringIsCmd(
      * valid fail index (>= 0).
      */
 
- str_is_done:
+  str_is_done:
     if ((result == 0) && (failVarObj != NULL)) {
 	TclNewIndexObj(objPtr, failat);
 	if (Tcl_ObjSetVar2(interp, failVarObj, NULL, objPtr, TCL_LEAVE_ERR_MSG) == NULL) {
@@ -2063,8 +2085,8 @@ StringMapCmd(
 	     * The charMap must be an even number of key/value items.
 	     */
 
-	    Tcl_SetObjResult(interp,
-		    Tcl_NewStringObj("char map list unbalanced", -1));
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "char map list unbalanced", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "MAP",
 		    "UNBALANCED", (char *)NULL);
 	    return TCL_ERROR;
@@ -2275,7 +2297,7 @@ StringMatchCmd(
 	}
     }
     Tcl_SetObjResult(interp, Tcl_NewBooleanObj(
-		TclStringMatchObj(objv[objc-1], objv[objc-2], nocase)));
+	    TclStringMatchObj(objv[objc-1], objv[objc-2], nocase)));
     return TCL_OK;
 }
 
@@ -2430,7 +2452,7 @@ StringRplcCmd(
      * result is the original string.
      */
 
-    if ((last < 0) ||	/* Range ends before start of string */
+    if ((last < 0) ||		/* Range ends before start of string */
 	    (first > end) ||	/* Range begins after end of string */
 	    (last < first)) {	/* Range begins after it starts */
 	/*
@@ -3448,7 +3470,7 @@ TclNRSwitchObjCmd(
     int noCase;
     Tcl_Size patternLength, j;
     const char *pattern;
-    Tcl_Obj *stringObj, *indexVarObj, *matchVarObj;
+    Tcl_Obj *valueObj, *indexVarObj, *matchVarObj;
     Tcl_Obj *const *savedObjv = objv;
     Tcl_RegExp regExpr = NULL;
     Interp *iPtr = (Interp *) interp;
@@ -3542,7 +3564,7 @@ TclNRSwitchObjCmd(
 	    break;
 	case OPT_MATCHV:
 	    i++;
-	    if (i >= objc-2) {
+	    if (i + 2 >= objc) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"missing variable name argument to %s option",
 			"-matchvar"));
@@ -3557,7 +3579,7 @@ TclNRSwitchObjCmd(
     }
 
   finishedOptions:
-    if (objc - i < 2) {
+    if (objc < i + 2) {
 	Tcl_WrongNumArgs(interp, 1, objv,
 		"?-option ...? string ?pattern body ...? ?default body?");
 	return TCL_ERROR;
@@ -3577,7 +3599,7 @@ TclNRSwitchObjCmd(
 	return TCL_ERROR;
     }
 
-    stringObj = objv[i];
+    valueObj = objv[i];
     objc -= i + 1;
     objv += i + 1;
     bidx = i + 1;		/* First after the match string. */
@@ -3708,12 +3730,12 @@ TclNRSwitchObjCmd(
 
 	switch (mode) {
 	case OPT_EXACT:
-	    if (strCmpFn(TclGetString(stringObj), pattern) == 0) {
+	    if (strCmpFn(TclGetString(valueObj), pattern) == 0) {
 		goto matchFound;
 	    }
 	    break;
 	case OPT_GLOB:
-	    if (Tcl_StringCaseMatch(TclGetString(stringObj),pattern,noCase)) {
+	    if (Tcl_StringCaseMatch(TclGetString(valueObj),pattern,noCase)) {
 		goto matchFound;
 	    }
 	    break;
@@ -3723,7 +3745,7 @@ TclNRSwitchObjCmd(
 	    if (regExpr == NULL) {
 		return TCL_ERROR;
 	    } else {
-		int matched = Tcl_RegExpExecObj(interp, regExpr, stringObj, 0,
+		int matched = Tcl_RegExpExecObj(interp, regExpr, valueObj, 0,
 			numMatchesSaved, 0);
 
 		if (matched < 0) {
@@ -3779,20 +3801,20 @@ TclNRSwitchObjCmd(
 	    }
 
 	    if (matchVarObj != NULL) {
-		Tcl_Obj *substringObj;
+		Tcl_Obj *subvalueObj;
 
 		if (info.matches[j].end > 0) {
-		    substringObj = Tcl_GetRange(stringObj,
+		    subvalueObj = Tcl_GetRange(valueObj,
 			    info.matches[j].start, info.matches[j].end-1);
 		} else {
-		    TclNewObj(substringObj);
+		    TclNewObj(subvalueObj);
 		}
 
 		/*
 		 * Never fails; the object is always clean at this point.
 		 */
 
-		Tcl_ListObjAppendElement(NULL, matchesObj, substringObj);
+		Tcl_ListObjAppendElement(NULL, matchesObj, subvalueObj);
 	    }
 	}
 
@@ -4142,7 +4164,8 @@ Tcl_TimeRateObjCmd(
 				/* global measure-overhead */
     double overhead = -1;	/* given measure-overhead */
     Tcl_Obj *objPtr;
-    int result, i;
+    int result;
+    int i;
     Tcl_Obj *calibrate = NULL, *direct = NULL;
     Tcl_WideUInt count = 0;	/* Holds repetition count */
     Tcl_WideUInt lastCount = 0;	/* Repetition count since last calculation. */
@@ -4181,7 +4204,7 @@ Tcl_TimeRateObjCmd(
     NRE_callback *rootPtr;
     ByteCode *codePtr = NULL;
 
-    for (i = 1; i < objc - 1; i++) {
+    for (i = 1; i + 1 < objc; i++) {
 	enum timeRateOptionsEnum index;
 
 	if (Tcl_GetIndexFromObj(NULL, objv[i], options, "option", TCL_EXACT,
@@ -4197,7 +4220,7 @@ Tcl_TimeRateObjCmd(
 	    direct = objv[i];
 	    break;
 	case TMRT_OVERHEAD:
-	    if (++i >= objc - 1) {
+	    if (++i + 1 >= objc) {
 		goto usage;
 	    }
 	    if (Tcl_GetDoubleFromObj(interp, objv[i], &overhead) != TCL_OK) {
@@ -4214,7 +4237,7 @@ Tcl_TimeRateObjCmd(
 	}
     }
 
-    if (i >= objc || i < objc - 3) {
+    if (i >= objc || i + 3 < objc) {
     usage:
 	Tcl_WrongNumArgs(interp, 1, objv,
 		"?-direct? ?-calibrate? ?-overhead double? "
@@ -4222,13 +4245,13 @@ Tcl_TimeRateObjCmd(
 	return TCL_ERROR;
     }
     objPtr = objv[i++];
-    if (i < objc) {	/* max-time */
+    if (i < objc) {		/* max-time */
 	result = TclGetWideIntFromObj(interp, objv[i], &maxms);
 	i++; // Keep this separate from TclGetWideIntFromObj macro above!
 	if (result != TCL_OK) {
 	    return result;
 	}
-	if (i < objc) {	/* max-count*/
+	if (i < objc) {		/* max-count*/
 	    Tcl_WideInt v;
 
 	    result = TclGetWideIntFromObj(interp, objv[i], &v);
@@ -4533,15 +4556,15 @@ Tcl_TimeRateObjCmd(
 	     * considering last known iteration growth factor.
 	     */
 	    threshold = (Tcl_WideUInt)(stop - middle) * TR_SCALE;
-	     /*
-	      * Estimated count of iteration til the end of execution.
-	      * Thereby 2.5% longer execution time would be OK.
-	      */
+	    /*
+	     * Estimated count of iteration til the end of execution.
+	     * Thereby 2.5% longer execution time would be OK.
+	     */
 	    if (threshold / estIterTm < 0.975) {
 		/* estimated time for next iteration is too large */
 		break;
 	    }
-	    threshold /= estIterTm;
+	    threshold = (Tcl_WideUInt)((double)threshold / estIterTm);
 	    /*
 	     * Don't use threshold by few iterations, because sometimes
 	     * first iteration(s) can be too fast or slow (cached, delayed
@@ -4586,7 +4609,7 @@ Tcl_TimeRateObjCmd(
 	 * convert execution time (in wide clicks) to microsecs.
 	 */
 
-	usec *= TclpWideClickInMicrosec();
+	usec = (Tcl_WideUInt)((double)usec * TclpWideClickInMicrosec());
 #endif /* TCL_WIDE_CLICKS */
 
 	if (!count) {		/* no iterations - avoid divide by zero */
@@ -4609,7 +4632,7 @@ Tcl_TimeRateObjCmd(
 		 * Estimate the time of overhead (microsecs).
 		 */
 
-		Tcl_WideUInt curOverhead = overhead * count;
+		Tcl_WideUInt curOverhead = (Tcl_WideUInt)(overhead * (double)count);
 
 		if (usec > curOverhead) {
 		    usec -= curOverhead;
@@ -4782,14 +4805,14 @@ TclNRTryObjCmd(
 	}
 	switch (type) {
 	case TryFinally:	/* finally script */
-	    if (i < objc-2) {
+	    if (i+2 < objc) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"finally clause must be last", -1));
 		Tcl_DecrRefCount(handlersObj);
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "TRY", "FINALLY",
 			"NONTERMINAL", (char *)NULL);
 		return TCL_ERROR;
-	    } else if (i == objc-1) {
+	    } else if (i+1 == objc) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"wrong # args to finally clause: must be"
 			" \"... finally script\"", -1));
@@ -4802,7 +4825,7 @@ TclNRTryObjCmd(
 	    break;
 
 	case TryOn:		/* on code variableList script */
-	    if (i > objc-4) {
+	    if (i+4 > objc) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"wrong # args to on clause: must be \"... on code"
 			" variableList script\"", -1));
@@ -4820,7 +4843,7 @@ TclNRTryObjCmd(
 	    goto commonHandler;
 
 	case TryTrap:		/* trap pattern variableList script */
-	    if (i > objc-4) {
+	    if (i+4 > objc) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"wrong # args to trap clause: "
 			"must be \"... trap pattern variableList script\"",

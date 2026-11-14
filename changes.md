@@ -30,6 +30,8 @@ to the userbase.
  - [tailcall panicked in a command called directly by its objProc](https://core.tcl-lang.org/tcl/tktview/4955f5)
  - [compiled [self n] should be ambiguous](https://core.tcl-lang.org/tcl/tktview/8ab06e)
  - [difference between bcc'ed and eval'ed regexp](https://core.tcl-lang.org/tcl/tktview/306945)
+ - [regsub always asked the regexp engine for 10 submatches](https://core.tcl-lang.org/tcl/tktview/446565)
+ - [regsub -command panics with more than 9 capturing groups](https://core.tcl-lang.org/tcl/tktview/41bc9a)
  - [Problem with ::http::OpenSocket](https://core.tcl-lang.org/tcl/tktview/0c1e91)
  - [on Windows a joinable thread which exits before it is joined leaked](https://core.tcl-lang.org/tcl/tktview/338137)
  - [on Unix, Tcl_JoinThread() should not call pthread_join() for detached threads](https://core.tcl-lang.org/tcl/tktview/5974ff)
