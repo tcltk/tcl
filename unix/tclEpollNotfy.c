@@ -293,8 +293,8 @@ PlatformEventsControl(
  *
  * Side effects:
  *	While tsdPtr->notifierMutex is held:
- *	- The per-thread eventfd(2) is closed, if non-zero, and set to -1.
- *	- The per-thread epoll(7) fd is closed, if non-zero, and set to 0.
+ *	- The per-thread eventfd(2) is closed and set to -1.
+ *	- The per-thread epoll(7) fd is closed and set to -1.
  *	- The per-thread epoll_event structs are freed, if any, and set to 0.
  *
  *	tsdPtr->notifierMutex is destroyed.
@@ -310,25 +310,25 @@ TclpFinalizeNotifier(
 
     pthread_mutex_lock(&tsdPtr->notifierMutex);
 #ifdef HAVE_EVENTFD
-    if (tsdPtr->triggerEventFd) {
+    if (tsdPtr->triggerEventFd >= 0) {
 	close(tsdPtr->triggerEventFd);
 	tsdPtr->triggerEventFd = -1;
     }
 #else /* !HAVE_EVENTFD */
-    if (tsdPtr->triggerPipe[0]) {
+    if (tsdPtr->triggerPipe[0] >= 0) {
 	close(tsdPtr->triggerPipe[0]);
 	tsdPtr->triggerPipe[0] = -1;
     }
-    if (tsdPtr->triggerPipe[1]) {
+    if (tsdPtr->triggerPipe[1] >= 0) {
 	close(tsdPtr->triggerPipe[1]);
 	tsdPtr->triggerPipe[1] = -1;
     }
 #endif /* HAVE_EVENTFD */
     Tcl_Free(tsdPtr->triggerFilePtr->pedPtr);
     Tcl_Free(tsdPtr->triggerFilePtr);
-    if (tsdPtr->eventsFd > 0) {
+    if (tsdPtr->eventsFd >= 0) {
 	close(tsdPtr->eventsFd);
-	tsdPtr->eventsFd = 0;
+	tsdPtr->eventsFd = -1;
     }
     if (tsdPtr->readyEvents) {
 	Tcl_Free(tsdPtr->readyEvents);
@@ -379,7 +379,7 @@ PlatformEventsInit(void)
     filePtr = (FileHandler *) Tcl_Alloc(sizeof(FileHandler));
 #ifdef HAVE_EVENTFD
     tsdPtr->triggerEventFd = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK);
-    if (tsdPtr->triggerEventFd <= 0) {
+    if (tsdPtr->triggerEventFd < 0) {
 	Tcl_Panic("Tcl_InitNotifier: %s", "could not create trigger eventfd");
     }
     filePtr->fd = tsdPtr->triggerEventFd;
