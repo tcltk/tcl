@@ -79,6 +79,17 @@ enum DateInfoFlags {
 #define TCL_INV_SECONDS		(TCL_MIN_SECONDS - 1)
 
 /*
+ * Relative counts (months, days, seconds and day ordinals) are clamped to
+ * +-REL_MAX, so that adding them up and the calculations in
+ * ClockCalcRelTime() cannot overflow. Any count that large gives a date out
+ * of range anyway. [f894a85b9a]
+ */
+
+#define REL_MAX			((Tcl_WideInt)1 << 60)
+#define RelClamp(n) \
+    ((n) > REL_MAX ? REL_MAX : (n) < -REL_MAX ? -REL_MAX : (n))
+
+/*
  * Enumeration of the string literals used in [clock]
  */
 
@@ -231,7 +242,10 @@ typedef struct DateInfo {
     int dateMonthOrdinalIncr;
     int dateMonthOrdinal;
 
-    int dateDayOrdinal;
+    Tcl_WideInt dateDayOrdinal;
+
+    Tcl_WideInt dateYear;	/* Year as parsed by the free-form parser,
+				 * until it is checked to fit into date.year */
 
     Tcl_WideInt *dateRelPointer;
 
@@ -287,7 +301,8 @@ enum ClockFmtScnCmdArgsFlags {
     CLF_VALIDATE = (CLF_VALIDATE_S1|CLF_VALIDATE_S2),
     CLF_EXTENDED = (1 << 4),
     CLF_STRICT = (1 << 8),
-    CLF_LOCALE_USED = (1 << 15)
+    CLF_LOCALE_USED = (1 << 15),
+    CLF_CLOCK_ADD = (1 << 16)	/* Doing [clock add] */
 };
 
 /* Last-period cache for fast UTC to local and backwards conversion */
@@ -510,7 +525,7 @@ typedef struct ClockFmtScnStorage {
  * Prototypes of module functions.
  */
 
-MODULE_SCOPE int	TclToSeconds(int Hours, int Minutes,
+MODULE_SCOPE Tcl_WideInt TclToSeconds(int Hours, int Minutes,
 			    int Seconds, MERIDIAN Meridian);
 MODULE_SCOPE int	TclIsGregorianLeapYear(TclDateFields *);
 MODULE_SCOPE void	TclGetJulianDayFromEraYearDay(
