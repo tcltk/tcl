@@ -82,6 +82,7 @@ to the userbase.
  - [use an acquire load for the unlocked check and a release store](https://core.tcl-lang.org/tcl/tktview/112af7)
  - [file cmd fails to copy to VFAT](https://core.tcl-lang.org/tcl/tktview/152304)
  - [compiled code calling an imported command kept the old compiled form](https://core.tcl-lang.org/tcl/tktview/7b51db)
+ - [free-form clock scan silently wraps numbers that do not fit into an int](https://core.tcl-lang.org/tcl/tktview/f894a8)
 
 # Updated bundled packages, libraries, standards, data
  - http 2.10.3
