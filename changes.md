@@ -84,6 +84,7 @@ to the userbase.
  - [compiled code calling an imported command kept the old compiled form](https://core.tcl-lang.org/tcl/tktview/7b51db)
  - [free-form clock scan silently wraps numbers that do not fit into an int](https://core.tcl-lang.org/tcl/tktview/f894a8)
  - [MS-Win: fix exec+wish call of batch files with spaces in path or arguments](https://core.tcl-lang.org/tcl/tktview/f91ab723f3)
+ - [Tcl_ListObjReplace() and oo:define LIST_MAX overflow error handling](https://core.tcl-lang.org/tcl/tktview/40f628e8e3)
 
 # Updated bundled packages, libraries, standards, data
  - http 2.10.3
