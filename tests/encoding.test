@@ -1059,7 +1059,7 @@ test encoding-26.1 {init adds tcl_library/encoding to search path} -setup {
 } -body {
     interp delete [interp create]
     list [lindex [encoding dirs] end] \
-        [expr {[file join $::tcl_library encoding] in [encoding dirs]}]
+	[expr {[file join $::tcl_library encoding] in [encoding dirs]}]
 } -cleanup {
     encoding dirs $origPath
 } -result {slappy 1}

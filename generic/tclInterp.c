@@ -571,7 +571,7 @@ LocatePreInitScript(
 		Tcl_GetString(searchedDirs)));
     } else {
 	Tcl_SetVar2Ex(interp, "tcl_library", NULL, dirPtr, TCL_GLOBAL_ONLY);
-        TclAddEncodingSubdir(dirPtr); /* Bug [75ecc0e6cb] */
+	TclAddEncodingSubdir(dirPtr); /* Bug [75ecc0e6cb] */
     }
     if (initNamePtr != NULL) {
 	Tcl_DecrRefCount(initNamePtr);
