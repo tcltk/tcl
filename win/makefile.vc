@@ -649,7 +649,7 @@ $(TCLSCRIPTZIP): $(TCLLIB) $(TCLSH) dlls
 	@if exist "$(LIBTCLVFS)" $(RMDIR) "$(LIBTCLVFS)"
 	@$(MKDIR) "$(LIBTCLVFS)"
 	@$(CPYDIR) $(LIBDIR) "$(LIBTCLVFS)\tcl_library"
-	@move /y "$(LIBTCLVFS)\tcl_library\manifest.txt"  "$(LIBTCLVFS)\tcl_library\pkgIndex.tcl" > NUL
+	@move /y "$(LIBTCLVFS)\tcl_library\manifest.txt" "$(LIBTCLVFS)\tcl_library\pkgIndex.tcl" > NUL
 # Remove the dde directories as the DLLS are still external
 	@del "$(LIBTCLVFS)\tcl_library\dde\pkgIndex.tcl"
 	@rmdir "$(LIBTCLVFS)\tcl_library\dde"

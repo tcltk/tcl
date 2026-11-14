@@ -26,7 +26,21 @@ DDEVER=$TCL_DDE_MAJOR_VERSION$TCL_DDE_MINOR_VERSION
 TCL_REG_MAJOR_VERSION=1
 TCL_REG_MINOR_VERSION=4
 
-PKG_CFG_ARGS=$@
+# Tcl's own --srcdir must not be passed on: the packages find their sources
+# from the (absolute) path used to run their configure scripts.
+PKG_CFG_ARGS=
+tcl_skip_arg=no
+for tcl_arg in "$@"; do
+    if test "$tcl_skip_arg" = yes; then
+	tcl_skip_arg=no
+	continue
+    fi
+    case $tcl_arg in
+	--srcdir|-srcdir) tcl_skip_arg=yes ;;
+	--srcdir=*|-srcdir=*) ;;
+	*) PKG_CFG_ARGS="$PKG_CFG_ARGS $tcl_arg" ;;
+    esac
+done
 
 #------------------------------------------------------------------------
 # Empty slate for bundled packages, to avoid stale configuration

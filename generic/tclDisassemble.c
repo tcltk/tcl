@@ -863,7 +863,7 @@ TclGetInnerContext(
 	}
 	if ((objPtr->refCount <= 0)
 #ifdef TCL_MEM_DEBUG
-		|| (objPtr->refCount == 0x61616161)
+		|| (objPtr->refCount == (Tcl_Size)TCL_FREED_REFCOUNT)
 #endif
 	) {
 	    Tcl_Panic("InnerContext: bad tos -- appending freed object %p",

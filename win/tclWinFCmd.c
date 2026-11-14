@@ -861,6 +861,16 @@ DoRemoveJustDirectory(
 	if (TclWinSymLinkDelete(nativePath, 0) == 0) {
 	    return TCL_OK;
 	}
+
+	/*
+	 * TclWinSymLinkDelete only handles junctions. RemoveDirectoryW
+	 * removes other links to directories too, but not their targets.
+	 * [Bug 08203e40e3]
+	 */
+
+	if (RemoveDirectoryW(nativePath) != FALSE) {
+	    return TCL_OK;
+	}
     } else {
 	/*
 	 * Ordinary directory.
@@ -1257,25 +1267,60 @@ TraversalDelete(
 	    return TCL_OK;
 	}
 	break;
-    case DOTREE_LINK:
-	if (DoRemoveJustDirectory(nativeSrc, 0, NULL) == TCL_OK) {
+    case DOTREE_LINK: {
+	DWORD attr = GetFileAttributesW(nativeSrc);
+
+	if (attr != INVALID_FILE_ATTRIBUTES
+		&& !(attr & FILE_ATTRIBUTE_DIRECTORY)) {
+	    /*
+	     * A symbolic link to a file: remove the link like a file.
+	     * [Bug 08203e40e3]
+	     */
+
+	    if (TclpDeleteFile(nativeSrc) == TCL_OK) {
+		return TCL_OK;
+	    }
+	} else if (DoRemoveJustDirectory(nativeSrc, 0, NULL) == TCL_OK) {
 	    return TCL_OK;
 	}
 	break;
+    }
     case DOTREE_PRED:
 	return TCL_OK;
-    case DOTREE_POSTD:
-	if (DoRemoveJustDirectory(nativeSrc, 0, NULL) == TCL_OK) {
-	    return TCL_OK;
+    case DOTREE_POSTD: {
+	int i;
+
+	for (i = 0; ; i++) {
+	    if (DoRemoveJustDirectory(nativeSrc, 0, NULL) == TCL_OK) {
+		return TCL_OK;
+	    }
+
+	    /*
+	     * A file that another process keeps open (e.g. a virus scanner
+	     * or an indexer) is only marked for deletion, and the directory
+	     * stays non-empty until that process closes it. Wait a little
+	     * and try again. [3006571fff]
+	     */
+
+	    if (Tcl_GetErrno() != EEXIST || i >= 10) {
+		break;
+	    }
+	    Sleep(1 << i);
 	}
 	break;
+    }
     default:
 	TCL_UNREACHABLE();
     }
 
     if (errorPtr != NULL) {
 	Tcl_DStringInit(errorPtr);
-	Tcl_WCharToUtfDString(nativeSrc, TCL_INDEX_NONE, errorPtr);
+	char *p = Tcl_WCharToUtfDString(nativeSrc, TCL_INDEX_NONE, errorPtr);
+	for (; *p; ++p) {
+	    if (*p == '\\') {
+		*p = '/';
+	    }
+	}
     }
     return TCL_ERROR;
 }
@@ -1745,7 +1790,7 @@ TclpObjListVolumes(void)
 
     if (GetLogicalDriveStringsA(sizeof(buf), buf) == 0) {
 	/*
-	 * GetVolumeInformationW() will detects all drives, but causes
+	 * GetVolumeInformationW() will detect all drives, but causes
 	 * chattering on empty floppy drives. We only do this if
 	 * GetLogicalDriveStrings() didn't work. It has also been reported
 	 * that on some laptops it takes a while for GetVolumeInformationW() to

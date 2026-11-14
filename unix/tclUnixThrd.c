@@ -19,6 +19,9 @@
 #   include <pthread_np.h>
 #elif defined(__sun)
 #   include <thread.h>
+#elif defined(__linux__) && !defined(__GLIBC__)
+#   include <sys/resource.h>
+#   include <sys/syscall.h>
 #endif
 
 #if TCL_THREADS
@@ -642,23 +645,23 @@ void
 Tcl_MutexLock(
     Tcl_Mutex *mutexPtr)	/* Really (PMutex **) */
 {
-    PMutex *pmutexPtr;
+    PMutex *pmutexPtr = (PMutex *) TclLoadPtrAcquire(mutexPtr);
 
-    if (*mutexPtr == NULL) {
+    if (pmutexPtr == NULL) {
 	pthread_mutex_lock(&globalLock);
-	if (*mutexPtr == NULL) {
+	pmutexPtr = *((PMutex **) mutexPtr);
+	if (pmutexPtr == NULL) {
 	    /*
 	     * Double inside global lock check to avoid a race condition.
 	     */
 
 	    pmutexPtr = (PMutex *)Tcl_Alloc(sizeof(PMutex));
 	    PMutexInit(pmutexPtr);
-	    *mutexPtr = (Tcl_Mutex) pmutexPtr;
+	    TclStorePtrRelease(mutexPtr, pmutexPtr);
 	    TclRememberMutex(mutexPtr);
 	}
 	pthread_mutex_unlock(&globalLock);
     }
-    pmutexPtr = *((PMutex **) mutexPtr);
     PMutexLock(pmutexPtr);
 }
 
@@ -752,7 +755,8 @@ Tcl_ConditionWait2(
     PMutex *pmutexPtr;
     struct timespec ptime;
 
-    if (*condPtr == NULL) {
+    pcondPtr = (pthread_cond_t *) TclLoadPtrAcquire(condPtr);
+    if (pcondPtr == NULL) {
 	pthread_mutex_lock(&globalLock);
 
 	/*
@@ -760,16 +764,16 @@ Tcl_ConditionWait2(
 	 * variable if necessary.
 	 */
 
-	if (*condPtr == NULL) {
+	pcondPtr = *((pthread_cond_t **)condPtr);
+	if (pcondPtr == NULL) {
 	    pcondPtr = (pthread_cond_t *)Tcl_Alloc(sizeof(pthread_cond_t));
 	    pthread_cond_init(pcondPtr, NULL);
-	    *condPtr = (Tcl_Condition) pcondPtr;
+	    TclStorePtrRelease(condPtr, pcondPtr);
 	    TclRememberCondition(condPtr);
 	}
 	pthread_mutex_unlock(&globalLock);
     }
     pmutexPtr = *((PMutex **)mutexPtr);
-    pcondPtr = *((pthread_cond_t **)condPtr);
     if (time < 0) {
 	PCondWait(pcondPtr, pmutexPtr);
     } else {
@@ -1064,6 +1068,31 @@ TclpGetCStackLimit(void)
 	    limit = (const char *) addr;
 	}
 	pthread_attr_destroy(&attr);
+#elif defined(__linux__)
+	/*
+	 * Other C libraries, like musl.  Their pthread_getattr_np() may report
+	 * only the already mapped part of the main thread's stack, which grows
+	 * up to RLIMIT_STACK.
+	 */
+
+	pthread_attr_t attr;
+	void *addr;
+	size_t size;
+
+	if (pthread_getattr_np(pthread_self(), &attr) == 0) {
+	    if (pthread_attr_getstack(&attr, &addr, &size) == 0) {
+		struct rlimit rl;
+
+		if (getpid() != (pid_t) syscall(SYS_gettid)) {
+		    limit = (const char *) addr;
+		} else if (getrlimit(RLIMIT_STACK, &rl) == 0
+			&& rl.rlim_cur != RLIM_INFINITY) {
+		    limit = (const char *) addr + size
+			    - (rl.rlim_cur > size ? rl.rlim_cur : size);
+		}
+	    }
+	    pthread_attr_destroy(&attr);
+	}
 #endif
 	dataPtr->limit = limit;
 	dataPtr->initialized = 1;

@@ -205,7 +205,7 @@ exec(
      */
 
     v->re = re;
-    v->stackbase = &stackmarker;
+    v->stackbase = REG_STACK_ADDR(stackmarker);
     v->stackmax = 0;
     v->g = (struct guts *)re->re_guts;
     if ((v->g->cflags&REG_EXPECT) && details == NULL) {

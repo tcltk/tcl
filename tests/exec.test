@@ -406,7 +406,7 @@ test exec-9.8 {commands returning errors} -constraints {exec} -setup {
 } -returnCodes error -result {out
 err}
 
-test exec-9.9 "exec - empty executable path" -body {
+test exec-9.9 "exec - empty executable path" -constraints {exec notValgrind} -body {
 	exec ""
 } -result {couldn't execute "": no such file or directory} -returnCodes error
 
