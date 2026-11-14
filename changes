@@ -9548,3 +9548,5 @@ Many code fixes to avoid overflow or undefined behavior.  Thanks chrstphrchvz.
 2026-11-11 Segault upon sequence of execution traces (storchaka)
 
 2026-11-11 file cmd fails to copy to VFAT (storchaka)
+
+2026-11-14 MS-Win: fix exec+wish call of batch files with spaces in path or arguments (storchaka,oehlmann)
