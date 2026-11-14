@@ -239,7 +239,9 @@ Précédent : la **forme compacte** normalise déjà à la construction
 (ANNOTATIONS §14.1 : « `{0 0}` becomes `{0.0 0.0}`, `0x10` becomes `16` »).
 Il s'agit de l'étendre à toute valeur typée.
 
-*(Fait en v17a, voir `noyau/LISEZMOI.md`.)*
+*(Fait en v17a, voir `noyau/LISEZMOI.md`. Conséquence en v17b : l'union
+`{int}i | {double}d` devient disjointe sur les formes canoniques, et
+acceptée ; test t109.)*
 
 **Dès la construction**, un `int` ou un `double` validé perd sa
 représentation texte, comme le fait `expr` (`INST_TRY_CVT_TO_NUMERIC`,

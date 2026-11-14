@@ -13,7 +13,8 @@ variante sans nom: ERREUR variant 1 of the sum has no name: a sum writes the nam
 union disjointe: 1
 union anonyme: 1
 union recouvrante : refusée: ERREUR union: alternatives i and s can take the same value, so the value could not tell which one it is; a union must be disjoint. Write a sum with "," to tag the alternatives
-union int | double: ERREUR union: alternatives i and d can take the same value, so the value could not tell which one it is; a union must be disjoint. Write a sum with "," to tag the alternatives
+union int | double: {10 U3.i} {2.0 U3.d} {16 U3.i} {20.0 U3.d}
+union int | string: ERREUR union: alternatives i and s can take the same value, so the value could not tell which one it is; a union must be disjoint. Write a sum with "," to tag the alternatives
 point | vecteur : refusée: ERREUR union: alternatives p and v can take the same value, so the value could not tell which one it is; a union must be disjoint. Write a sum with "," to tag the alternatives
 point , vecteur : somme: 0
 mélange , et |: ERREUR mixing "," and "|" at the same level: a sum (,) tags its variants, a union (|) does not; group the inner part

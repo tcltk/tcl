@@ -516,6 +516,20 @@ TclTypeRelease(const TclType *tp)
  * des familles, règles de conversion), qui sinon la garderaient en vie pour
  * toujours, et on attend la dernière référence.
  */
+/* v16z : vide le cache des lambdas annotées (apply {T}{...}). */
+static void
+LambdasFlush(TypeData *d)
+{
+    Tcl_HashSearch search;
+    Tcl_HashEntry *hPtr;
+
+    for (hPtr = Tcl_FirstHashEntry(&d->lambdas, &search); hPtr != NULL;
+	    hPtr = Tcl_NextHashEntry(&search)) {
+	Tcl_DecrRefCount((Tcl_Obj *) Tcl_GetHashValue(hPtr));
+	Tcl_DeleteHashEntry(hPtr);
+    }
+}
+
 static void
 DeleteData(void *clientData, Tcl_Interp *interp)
 {
@@ -535,6 +549,7 @@ DeleteData(void *clientData, Tcl_Interp *interp)
     }
     Tcl_DeleteHashTable(&d->converts);
     Tcl_InitHashTable(&d->converts, TCL_STRING_KEYS);
+    LambdasFlush(d);
     for (i = 0; i < d->nAll; i++) {
 	TclType *tp = d->all[i];
 
@@ -629,6 +644,8 @@ FreeTypeData(TypeData *d)
     Tcl_DeleteHashTable(&d->parsed);
     Tcl_DeleteHashTable(&d->converts);
     Tcl_DeleteHashTable(&d->derefs);
+    LambdasFlush(d);
+    Tcl_DeleteHashTable(&d->lambdas);
     Tcl_Free(d);
 }
 
@@ -1773,6 +1790,8 @@ VariantAccepts(const TclTypeField *f, Tcl_Obj *v, const ValGuard *up)
  * qui accepte est retenue, et c'est une erreur si une variante suivante
  * qui accepte aussi n'inclut pas la première (balise nécessaire).
  */
+static int CanonDisjoint(const TclType *a, const TclType *b);	/* v17b */
+
 int
 TclTypeValidate(Tcl_Interp *interp, const TclType *tp, Tcl_Obj *value,
 	int variantHint, int *variantOut)
@@ -2205,6 +2224,41 @@ ValidateG(Tcl_Interp *interp, const TclType *tp, Tcl_Obj *value,
 		*variantOut = variantHint;
 	    }
 	    return TCL_OK;
+	}
+	if (tp->sumMode == TCLT_SUM_UNION && tp->nfields == 2
+		&& tp->fields[0].type != NULL && tp->fields[1].type != NULL
+		&& CanonDisjoint(tp->fields[0].type, tp->fields[1].type)) {
+	    /*
+	     * v17b : une union entier | double (le nombre de Tcl) : une seule
+	     * lecture du nombre dit l'alternative (entier, grand entier :
+	     * l'entier ; double : le double), au lieu d'essayer les deux.
+	     * C'est le choix de la plus stricte, sans la recherche.
+	     */
+	    int ii = tp->fields[0].type->kind == TCLT_INT ? 0 : 1;
+	    void *cd;
+	    int nt, pick = -1;
+
+	    if (Tcl_GetNumberFromObj(NULL, value, &cd, &nt) == TCL_OK) {
+		pick = (nt == TCL_NUMBER_DOUBLE) ? 1 - ii
+			: (nt == TCL_NUMBER_INT || nt == TCL_NUMBER_BIG) ? ii : -1;
+	    }
+	    if (pick >= 0) {
+		const TclType *pt = tp->fields[pick].type;
+
+		/* un int ou un double ordinaires : la lecture du nombre suffit ;
+		 * un raffinement (int(u,8), double(32)...) se vérifie */
+		if (!(pt->refine == 0 && pt->binKind == TCLBIN_NONE
+			&& pt->bitWidth == 0 && pt->under == NULL)
+			&& !VariantAccepts(&tp->fields[pick], value, &me)) {
+		    pick = -1;
+		}
+	    }
+	    if (pick >= 0) {
+		if (variantOut != NULL) {
+		    *variantOut = pick;
+		}
+		return TCL_OK;
+	    }
 	}
 	{
 	    /*
@@ -2911,10 +2965,12 @@ TclTypesFinish(Tcl_Interp *interp, TypeData *d, const char *selfName,
  * seule, et l'alternative se calcule à partir d'elle. NULL si elle l'est,
  * sinon un message (refcount 0).
  */
+static Tcl_Obj *SumOverlapsEx(const TclType *tp, int canonical);
+
 static Tcl_Obj *
 UnionOverlap(const TclType *tp)
 {
-    Tcl_Obj *ov = TclTypeSumOverlaps(tp), *p0, *va, *vb, *msg = NULL;
+    Tcl_Obj *ov = SumOverlapsEx(tp, 1), *p0, *va, *vb, *msg = NULL;
     Tcl_Size nov = 0;
 
     Tcl_IncrRefCount(ov);
@@ -3139,7 +3195,7 @@ TclTypeParse(Tcl_Interp *interp, const char *text, Tcl_Size len)
 	    /* v16u : le même texte se résout selon l'espace courant */
 	    Namespace *ns = CtxNs(interp, env.d);
 
-	    pre = snprintf(key, 48, "\2%zx.%zx\2", (size_t) ns->nsId,
+	    pre = snprintf(key, 48, "\2%" TCL_Z_MODIFIER "x.%" TCL_Z_MODIFIER "x\2", (size_t) ns->nsId,
 		    (size_t) ns->resolverEpoch);
 	}
 	memcpy(key + pre, text, (size_t) len);
@@ -8149,10 +8205,43 @@ MayOverlap(const TclType *a, const TclType *b, int depth)
     return 1;
 }
 
+/*
+ * v17b : deux types dont les FORMES CANONIQUES ne se rencontrent jamais, même
+ * si l'un accepte des écritures de l'autre : un entier canonique n'a que des
+ * chiffres (16), un double canonique a toujours « . », « e » ou est Inf (2.0,
+ * 1e+23) — Tcl_PrintDouble l'assure, et la normalisation à la construction
+ * (v17a) fait que toute valeur rangée est canonique. Une union {int}i |
+ * {double}d est donc disjointe sur ses valeurs ; une écriture non canonique
+ * (0x10, que les deux acceptent) va à la plus stricte (int), puis prend sa
+ * forme canonique (16).
+ */
+static int
+CanonDisjoint(const TclType *a, const TclType *b)
+{
+    if (a == NULL || b == NULL) {
+	return 0;
+    }
+    if ((a->kind == TCLT_INT && a->bitWidth == 0 && b->kind == TCLT_DOUBLE)
+	    || (b->kind == TCLT_INT && b->bitWidth == 0
+		    && a->kind == TCLT_DOUBLE)) {
+	return 1;
+    }
+    return 0;
+}
+
+static Tcl_Obj *SumOverlapsEx(const TclType *tp, int canonical);
+
 /* Les paires de variantes de la somme tp qui peuvent accepter une même
- * valeur : {{a b} {a c} ...}, vide si la somme est disjointe. */
+ * valeur : {{a b} {a c} ...}, vide si la somme est disjointe. Pour une union
+ * (v17b), jugé sur les formes canoniques. */
 Tcl_Obj *
 TclTypeSumOverlaps(const TclType *tp)
+{
+    return SumOverlapsEx(tp, tp->sumMode == TCLT_SUM_UNION);
+}
+
+static Tcl_Obj *
+SumOverlapsEx(const TclType *tp, int canonical)
 {
     Tcl_Obj *res = Tcl_NewListObj(0, NULL);
     Tcl_Size i, j;
@@ -8170,6 +8259,8 @@ TclTypeSumOverlaps(const TclType *tp)
 		ov = a->literal != NULL && SumLiteralFits(b->type, a->literal);
 	    } else if (b->type == NULL) {
 		ov = b->literal != NULL && SumLiteralFits(a->type, b->literal);
+	    } else if (canonical && CanonDisjoint(a->type, b->type)) {
+		ov = 0;
 	    } else {
 		ov = MayOverlap(a->type, b->type, 0);
 	    }
@@ -8194,6 +8285,10 @@ TclTypeSumOverlaps(const TclType *tp)
  * niveau ; un produit ou une somme anonymes s'écrivent en entier.
  */
 static void DefText(const TclType *tp, int top, Tcl_DString *ds);
+static int TypeCallCmd(Tcl_Interp *interp, Tcl_Size objc,
+			    Tcl_Obj *const objv[]);
+static Tcl_Obj *SigRecord(Tcl_Interp *interp, Proc *procPtr, int call,
+			    Tcl_Obj *pairs);
 static int TypeProcCmd(Tcl_Interp *interp, Tcl_Size objc,
 	Tcl_Obj *const objv[]);		/* v16p */
 static int CastWordUnfold(Tcl_Interp *interp, Tcl_Obj *word);	/* v16r */
@@ -9026,6 +9121,9 @@ TypeObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
     if (strcmp(sub, "proc") == 0) {
 	return TypeProcCmd(interp, objc, objv);	/* v16p */
     }
+    if (strcmp(sub, "call") == 0) {
+	return TypeCallCmd(interp, objc, objv);	/* v16z */
+    }
     if (strcmp(sub, "binary") == 0) {
 	return TypeBinaryCmd(interp, objc, objv);
     }
@@ -9070,7 +9168,7 @@ TypeObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
 	return TCL_OK;
     }
     ERR(interp, "SUBCMD", "bad subcommand \"%s\": must be def, alias, "
-	    "cast, convert, debug, deref, export, forget, get, is, proc, variant "
+	    "call, cast, convert, debug, deref, export, forget, get, is, proc, variant "
 	    "or binary", sub);
     return TCL_ERROR;
 }
@@ -9715,6 +9813,7 @@ TclTypesInit(Tcl_Interp *interp)
     d->parsedGen = 0;
     Tcl_InitHashTable(&d->converts, TCL_STRING_KEYS);
     Tcl_InitHashTable(&d->derefs, TCL_ONE_WORD_KEYS);
+    Tcl_InitHashTable(&d->lambdas, TCL_STRING_KEYS);
     d->tInt = Builtin(d, TCLT_INT, "int");
     d->tDouble = Builtin(d, TCLT_DOUBLE, "double");
     d->tString = Builtin(d, TCLT_STRING, "string");
@@ -10410,11 +10509,147 @@ TclTypedProcSig(Tcl_Interp *interp, Tcl_Obj *nameObj, Tcl_Obj *argsObj,
     return rc;
 }
 
+/* Le type de retour porté par l'annotation d'un nom (proc {T}nom) ou d'une
+ * lambda (apply {T}{args corps}) : *retPtr (compté) ou NULL. */
+static int
+RetFromName(Tcl_Interp *interp, Tcl_Obj *nameObj, Tcl_Obj **retPtr,
+	int *unfoldPtr)
+{
+    Tcl_Obj *ret, *top = NULL, *popped;
+    TclType *tp = NULL;
+
+    *retPtr = NULL;
+    *unfoldPtr = 0;
+    if (!TclIsAnnotated(nameObj)) {
+	return TCL_OK;
+    }
+    popped = TclAnnotPopTop(nameObj, &top);
+    if (popped != NULL) {
+	ret = Tcl_DuplicateObj(top);
+	TclDiscard(popped);
+    } else if (TclAnnotInfo(nameObj, NULL, &tp, NULL, NULL) == 1
+	    && tp != NULL) {
+	ret = Tcl_NewStringObj(tp->name, -1);	/* déjà résolue */
+    } else {
+	return TCL_OK;
+    }
+    Tcl_IncrRefCount(ret);
+    *unfoldPtr = UnfoldPrefix(&ret);
+    if (Tcl_GetCharLength(ret) == 0 || Tcl_GetString(ret)[0] == '@') {
+	Tcl_DecrRefCount(ret);		/* proc {}f, une note @ : rien */
+	*unfoldPtr = 0;
+	return TCL_OK;
+    }
+    if (RetTypeCheck(interp, ret) != TCL_OK) {
+	Tcl_Obj *msg = Tcl_ObjPrintf("bad return type {%s}: ",
+		Tcl_GetString(ret));
+
+	Tcl_AppendObjToObj(msg, Tcl_GetObjResult(interp));
+	Tcl_SetObjResult(interp, msg);
+	Tcl_DecrRefCount(ret);
+	return TCL_ERROR;
+    }
+    *retPtr = ret;
+    return TCL_OK;
+}
+
+/*
+ * v16z : apply {T}{args corps ?ns?} -- une lambda est une procédure sans nom,
+ * son type de retour est l'annotation du mot lambda.
+ *
+ * TclTypedLambdaFor : l'objet lambda à convertir. Le littéral {T}{...} est
+ * refait à chaque exécution (::tcl::annotraw copie le contenu) : sans cache,
+ * la Proc serait reconstruite à chaque appel. La table d'interpréteur garde
+ * une lambda par texte "{T}contenu" ; au-delà de LAMBDAS_MAX entrées, elle
+ * est vidée. Une valeur qui porte aussi des notes n'est pas mise en cache.
+ * Rend un objet non possédé.
+ *
+ * TclTypedLambdaRet : pose le type de retour sur la signature d'une Proc
+ * neuve (créée au besoin).
+ */
+#define LAMBDAS_MAX 512
+
+Tcl_Obj *
+TclTypedLambdaFor(Tcl_Interp *interp, Tcl_Obj *lambdaObj)
+{
+    TypeData *d = GetData(interp);
+    Tcl_Obj *content = TCL_ANNOT_CONTENT(lambdaObj), *raw;
+    Tcl_HashEntry *hPtr;
+    Tcl_DString key;
+    Tcl_Size len;
+    const char *t;
+    int isNew;
+
+    raw = TclAnnotRawText(lambdaObj);
+    if (d == NULL || raw == NULL) {
+	return content;
+    }
+    Tcl_DStringInit(&key);
+    Tcl_DStringAppend(&key, "{", 1);
+    t = Tcl_GetStringFromObj(raw, &len);
+    Tcl_DStringAppend(&key, t, len);
+    Tcl_DStringAppend(&key, "}", 1);
+    t = Tcl_GetStringFromObj(content, &len);
+    Tcl_DStringAppend(&key, t, len);
+    hPtr = Tcl_FindHashEntry(&d->lambdas, Tcl_DStringValue(&key));
+    if (hPtr == NULL) {
+	if (d->lambdas.numEntries >= LAMBDAS_MAX) {
+	    LambdasFlush(d);
+	}
+	hPtr = Tcl_CreateHashEntry(&d->lambdas, Tcl_DStringValue(&key),
+		&isNew);
+	Tcl_IncrRefCount(content);
+	Tcl_SetHashValue(hPtr, content);
+    }
+    Tcl_DStringFree(&key);
+    return (Tcl_Obj *) Tcl_GetHashValue(hPtr);
+}
+
+int
+TclTypedLambdaRet(Tcl_Interp *interp, Tcl_Obj *lambdaObj,
+	Tcl_Namespace *nsPtr, void **sigPtr)
+{
+    TclTypedSig *sig = (TclTypedSig *) *sigPtr;
+    TypeData *d = GetData(interp);
+    Namespace *save = NULL;
+    Tcl_Obj *ret = NULL;
+    int unfold = 0, rc;
+
+    if (d != NULL) {
+	save = d->ctxNs;	/* les types de l'espace de noms de la lambda */
+	d->ctxNs = (Namespace *) nsPtr;
+    }
+    rc = RetFromName(interp, lambdaObj, &ret, &unfold);
+    if (d != NULL) {
+	d->ctxNs = save;
+    }
+    if (rc != TCL_OK) {
+	Tcl_SetErrorCode(interp, "TCL", "TYPE", "PROCARGS", (char *) NULL);
+	return TCL_ERROR;
+    }
+    if (ret == NULL) {
+	return TCL_OK;
+    }
+    if (sig == NULL) {
+	sig = (TclTypedSig *) Tcl_Alloc(sizeof(TclTypedSig));
+	memset(sig, 0, sizeof(TclTypedSig));
+	sig->refCount = 1;
+	sig->n = -1;
+	sig->vpos = -1;
+	*sigPtr = sig;
+    }
+    DecrIf(sig->retText);
+    sig->retText = ret;
+    sig->unfold = unfold;
+    sig->retTp = NULL;
+    return TCL_OK;
+}
+
 static int
 TypedProcSig(Tcl_Interp *interp, Tcl_Obj *nameObj, Tcl_Obj *argsObj,
 	void **sigPtr, int *typedArgsPtr)
 {
-    Tcl_Obj *ret = NULL, *top = NULL, *popped, *uopt = NULL, *upos = NULL;
+    Tcl_Obj *ret = NULL, *uopt = NULL, *upos = NULL;
     Tcl_Size len, n, i, cap = 0;
     int unfold = 0;
     const char *text = Tcl_GetStringFromObj(argsObj, &len);
@@ -10423,26 +10658,8 @@ TypedProcSig(Tcl_Interp *interp, Tcl_Obj *nameObj, Tcl_Obj *argsObj,
 
     *sigPtr = NULL;
     *typedArgsPtr = 0;
-    if (TclIsAnnotated(nameObj)) {
-	popped = TclAnnotPopTop(nameObj, &top);
-	if (popped != NULL) {
-	    ret = Tcl_DuplicateObj(top);
-	    Tcl_IncrRefCount(ret);
-	    TclDiscard(popped);
-	    unfold = UnfoldPrefix(&ret);
-	    if (Tcl_GetCharLength(ret) == 0) {
-		Tcl_DecrRefCount(ret);	/* proc {}f : rien */
-		ret = NULL;
-	    } else if (RetTypeCheck(interp, ret) != TCL_OK) {
-		Tcl_Obj *msg = Tcl_ObjPrintf("bad return type {%s}: ",
-			Tcl_GetString(ret));
-
-		Tcl_AppendObjToObj(msg, Tcl_GetObjResult(interp));
-		Tcl_SetObjResult(interp, msg);
-		Tcl_DecrRefCount(ret);
-		return TCL_ERROR;
-	    }
-	}
+    if (RetFromName(interp, nameObj, &ret, &unfold) != TCL_OK) {
+	return TCL_ERROR;
     }
     if (Tcl_ListObjLength(NULL, argsObj, &n) == TCL_OK) {
 	/* une liste valide reste classique ({a b}, {a {b 2}}) ; avec des
@@ -10847,7 +11064,7 @@ static int
 DeclareField(Tcl_Interp *interp, TypedArg *a, Tcl_Obj *v)
 {
     Tcl_Obj *typed = NULL, *res;
-    size_t uid, gen;
+    size_t uid, gen = 0;		/* (initialisé : -Wmaybe-uninitialized sous MinGW) */
     Var *varPtr;
 
     (void) TclTypesGeneration(interp, &uid, &gen);
@@ -10992,7 +11209,7 @@ BindOption(Tcl_Interp *interp, TclTypedSig *sig, Tcl_Size ai, Tcl_Obj **ov)
 	Tcl_Obj *v = NULL;
 	TclTypeField fake;
 	int slot = 0;
-	size_t uid, gen;
+	size_t uid, gen = 0;		/* (initialisé : -Wmaybe-uninitialized sous MinGW) */
 
 	for (e = 0; e < sig->nopts; e++) {
 	    if (sig->opts[e].arg == ai && ov[e] != NULL) {
@@ -11735,7 +11952,7 @@ TclTypedProcReturn(Tcl_Interp *interp, void *sigv, int result)
     if (!TclIsAnnotated(res)) {
 	/* v16s : un produit de scalaires rendu en liste nue ( $x, $y ) :
 	 * ses champs vérifiés un à un ; {*}T le rend tel quel */
-	size_t uid, gen;
+	size_t uid, gen = 0;		/* (initialisé : -Wmaybe-uninitialized sous MinGW) */
 	TclType *rt;
 	Tcl_Obj *q;
 
@@ -11906,8 +12123,239 @@ TypeProcCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 	    (sig != NULL && sig->retText != NULL) ? Tcl_ObjPrintf("%s%s",
 	    sig->unfold == 2 ? "{**}" : sig->unfold == 1 ? "{*}" : "",
 	    Tcl_GetString(sig->retText)) : Tcl_NewObj());
+    /* v16z : le produit des valeurs d'un appel (type call) */
+    Tcl_DictObjPut(NULL, d, Tcl_NewStringObj("record", 6),
+	    SigRecord(interp, procPtr, 0, NULL));
     Tcl_SetObjResult(interp, d);
     return TCL_OK;
+}
+
+/*
+ * v16z : type call ?TYPE? -- l'appel courant, comme une valeur (l'appel
+ * réifié). Une signature est un produit : les arguments liés d'un appel en
+ * sont une valeur.
+ *
+ *  - Sans TYPE : le produit « enregistrement » de la signature. Chaque champ
+ *    y est sous le nom de sa locale (-mode : mode), avec son type ; un champ
+ *    variadique {T}nom... y est un list.T, un lien {var.T}n la valeur de la
+ *    variable (T). Un champ sans valeur à cet appel (option absente sans
+ *    défaut, lien vers une variable qui n'existe pas) n'y est pas. Pour une
+ *    procédure classique : {any}a pour chaque argument, {list}args.
+ *  - Avec TYPE (un produit) : chaque champ de TYPE prend la variable locale
+ *    de même nom ; un champ sans variable prend le défaut de TYPE.
+ *
+ * SigRecord rend le texte du produit (les champs dans l'ordre de la
+ * signature) et, si frame != NULL, les paires nom/valeur de l'appel.
+ */
+
+/* La valeur d'une option exclusive : la variante choisie (un littéral), ou
+ * « variante charge ». NULL : aucune. */
+static Tcl_Obj *
+ExclValue(Tcl_Interp *interp, TypedArg *a)
+{
+    const TclType *sum = a->sub, *vp;
+    Tcl_Obj *vn = Tcl_ObjGetVar2(interp, a->local, NULL, 0), *l, *pay;
+    Tcl_Size v, d, np = 0;
+
+    if (vn == NULL || sum == NULL) {
+	return NULL;
+    }
+    v = SumVariantByName(sum, Tcl_GetString(vn));
+    if (v < 0) {
+	return NULL;
+    }
+    if (sum->fields[v].type == NULL || IsFlagType(sum->fields[v].type)) {
+	return vn;
+    }
+    if ((vp = UnderKind(sum->fields[v].type, TCLT_PRODUCT)) != NULL) {
+	/* une variante produit : ses champs sont des locales */
+	Tcl_Obj **pairs = (Tcl_Obj **) Tcl_Alloc(
+		(2 * vp->nfields + 1) * sizeof(Tcl_Obj *));
+	Tcl_Obj *content = NULL;
+
+	for (d = 0; d < vp->nfields; d++) {
+	    Tcl_Obj *fv, *ln;
+
+	    if (vp->fields[d].name == NULL) {
+		continue;
+	    }
+	    ln = OptLocalName(vp->fields[d].name);
+	    Tcl_IncrRefCount(ln);
+	    fv = Tcl_ObjGetVar2(interp, ln, NULL, 0);
+	    Tcl_DecrRefCount(ln);
+	    if (fv != NULL) {
+		pairs[np++] = vp->fields[d].name;
+		pairs[np++] = fv;
+	    }
+	}
+	if (TclBuildProductNamed(interp, (TclType *) vp, np, pairs, &content)
+		!= TCL_OK) {
+	    Tcl_Free(pairs);
+	    Tcl_ResetResult(interp);
+	    return NULL;
+	}
+	Tcl_Free(pairs);
+	pay = content;
+    } else {
+	pay = Tcl_ObjGetVar2(interp, VariantName(&sum->fields[v]), NULL, 0);
+	if (pay == NULL) {
+	    return NULL;
+	}
+    }
+    l = Tcl_NewListObj(0, NULL);
+    Tcl_ListObjAppendElement(NULL, l, vn);
+    Tcl_ListObjAppendElement(NULL, l, pay);
+    return l;
+}
+
+static Tcl_Obj *
+SigRecord(Tcl_Interp *interp, Proc *procPtr, int call, Tcl_Obj *pairs)
+{
+    TclTypedSig *sig = (TclTypedSig *) procPtr->typedSig;
+    Tcl_Obj *rec = Tcl_NewObj();
+    Tcl_Size i;
+    int first = 1;
+
+#define REC_FIELD(T, N) do {						\
+	Tcl_AppendPrintfToObj(rec, "%s{%s}%s", first ? "" : "; ", (T),	\
+		Tcl_GetString(N));					\
+	first = 0;							\
+    } while (0)
+
+    if (sig == NULL || sig->n < 0) {
+	CompiledLocal *lp = procPtr->firstLocalPtr;
+	Tcl_Size k;
+
+	for (k = 0; lp != NULL && k < procPtr->numArgs;
+		k++, lp = lp->nextPtr) {
+	    Tcl_Obj *nm = Tcl_NewStringObj(lp->name, lp->nameLength), *v;
+	    int rest = (k == procPtr->numArgs - 1 && lp->flags & VAR_IS_ARGS);
+
+	    Tcl_IncrRefCount(nm);
+	    v = call ? Tcl_ObjGetVar2(interp, nm, NULL, 0) : NULL;
+	    if (!call || v != NULL) {
+		REC_FIELD(rest ? "list" : "any", nm);
+		if (v != NULL) {
+		    Tcl_ListObjAppendElement(NULL, pairs, nm);
+		    Tcl_ListObjAppendElement(NULL, pairs, v);
+		}
+	    }
+	    Tcl_DecrRefCount(nm);
+	}
+	return rec;
+    }
+    for (i = 0; i < sig->n; i++) {
+	TypedArg *a = &sig->a[i];
+	Tcl_Obj *v = NULL;
+	char *tt;
+
+	if (a->isVar) {
+	    tt = a->varElem != NULL ? Tcl_GetString(a->varElem) : (char *) "any";
+	} else {
+	    tt = Tcl_GetString(a->typeText);
+	}
+	if (call) {
+	    v = (a->optKind == OPT_EXCL) ? ExclValue(interp, a)
+		    : Tcl_ObjGetVar2(interp, a->local, NULL, 0);
+	    if (v == NULL) {
+		continue;		/* sans valeur à cet appel */
+	    }
+	}
+	REC_FIELD(tt, a->local);	/* {T}args... : typeText est list.T */
+	if (v != NULL) {
+	    Tcl_ListObjAppendElement(NULL, pairs, a->local);
+	    Tcl_ListObjAppendElement(NULL, pairs, v);
+	}
+    }
+#undef REC_FIELD
+    return rec;
+}
+
+static int
+TypeCallCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
+{
+    Interp *iPtr = (Interp *) interp;
+    CallFrame *framePtr = iPtr->varFramePtr;
+    Tcl_Obj *pairs, *rec = NULL, *content = NULL, *res, **pv;
+    TclType *tp;
+    Tcl_Size np, i;
+    int rc = TCL_ERROR;
+
+    if (objc > 3) {
+	Tcl_WrongNumArgs(interp, 2, objv, "?type?");
+	return TCL_ERROR;
+    }
+    if (framePtr == NULL || !(framePtr->isProcCallFrame & FRAME_IS_PROC)
+	    || framePtr->procPtr == NULL) {
+	ERR(interp, "CALL", "type call: not called from a procedure");
+	return TCL_ERROR;
+    }
+    pairs = Tcl_NewListObj(0, NULL);
+    Tcl_IncrRefCount(pairs);
+    if (objc == 3) {
+	/* les champs de TYPE, pris dans les locales de même nom */
+	Tcl_Size tl;
+	const char *tt = Tcl_GetStringFromObj(objv[2], &tl);
+
+	tp = TclTypeParse(interp, tt, tl);
+	if (tp == NULL) {
+	    goto done;
+	}
+	if (UnderKind(tp, TCLT_PRODUCT) == NULL) {
+	    ERR(interp, "CALL", "type call: %s is not a product", tp->name);
+	    goto done;
+	}
+	{
+	    const TclType *pp = UnderKind(tp, TCLT_PRODUCT);
+
+	    for (i = 0; i < pp->nfields; i++) {
+		Tcl_Obj *v;
+
+		if (pp->fields[i].name == NULL) {
+		    continue;
+		}
+		v = Tcl_ObjGetVar2(interp, pp->fields[i].name, NULL, 0);
+		if (v != NULL) {
+		    Tcl_ListObjAppendElement(NULL, pairs, pp->fields[i].name);
+		    Tcl_ListObjAppendElement(NULL, pairs, v);
+		}
+	    }
+	}
+    } else {
+	rec = SigRecord(interp, framePtr->procPtr, 1, pairs);
+	Tcl_IncrRefCount(rec);
+	if (Tcl_GetCharLength(rec) == 0) {
+	    /* aucun argument : un produit vide n'existe pas */
+	    Tcl_SetObjResult(interp, Tcl_NewObj());
+	    rc = TCL_OK;
+	    goto done;
+	}
+	{
+	    Tcl_Size rl;
+	    const char *rt = Tcl_GetStringFromObj(rec, &rl);
+
+	    tp = TclTypeParse(interp, rt, rl);
+	}
+	if (tp == NULL) {
+	    goto done;
+	}
+    }
+    Tcl_ListObjGetElements(NULL, pairs, &np, &pv);
+    if (TclBuildProductNamed(interp, tp, np, pv, &content) != TCL_OK) {
+	goto done;
+    }
+    Tcl_IncrRefCount(content);
+    res = TclNewAnnotated(interp, tp, -1, content);
+    Tcl_DecrRefCount(content);
+    Tcl_SetObjResult(interp, res);
+    rc = TCL_OK;
+
+  done:
+    Tcl_DecrRefCount(pairs);
+    if (rec != NULL) {
+	Tcl_DecrRefCount(rec);
+    }
+    return rc;
 }
 
 /* info args / info default d'une procédure typée : les champs. NULL, -1 :

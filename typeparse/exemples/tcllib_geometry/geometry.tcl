@@ -30,15 +30,25 @@ namespace eval ::math::geometry {
     # so on; inside it, and for a caller with "namespace path ::math::geometry",
     # they are simply point, line...
     #
-    # A point, a vector: two doubles. A line, a line segment, a rectangle (NW and
-    # SE corners): four doubles. A polyline, a polygon: a flat list of doubles,
-    # x1 y1 x2 y2 ... (tcllib's conventions: callers pass plain lists).
-    type def point    {{double}x; {double}y}
+    # A point, a vector: two coordinates. A line, a line segment, a rectangle
+    # (NW and SE corners): four. A polyline, a polygon: a flat list of
+    # coordinates, x1 y1 x2 y2 ... (tcllib's conventions: callers pass plain
+    # lists).
+    # A coordinate: a number as Tcl reads it (v17b), an integer staying an
+    # integer and dividing as one, as in tcllib -- {int}i | {double}d is a
+    # union, disjoint on canonical forms (16 / 2.0). The C variants
+    # (geometry_c.tcl, geometry_cproc.tcl) set coord to double before
+    # sourcing this file: their structs hold doubles.
+    variable coord
+    if {![info exists coord]} {set coord num}
+    if {$coord eq "num"} {type def num {{int}i | {double}d}}
+    type alias coord $coord
+    type def point    {{coord}x; {coord}y}
     type alias vector point
-    type def line     {{double}x1; {double}y1; {double}x2; {double}y2}
+    type def line     {{coord}x1; {coord}y1; {coord}x2; {coord}y2}
     type alias segment line
     type alias rect    line
-    type def polyline list.double
+    type def polyline list.coord
     type alias polygon polyline
     # what an intersection or a search returns: a point, or a word
     type def intersection {{point}at | "coincident" | "none"}
@@ -53,14 +63,14 @@ namespace eval ::math::geometry {
 
 # --- Points and vectors
 
-proc {point}::math::geometry::p  {{double}x; {double}y}     {( $x, $y )}
+proc {point}::math::geometry::p  {{coord}x; {coord}y}     {( $x, $y )}
 proc {point}::math::geometry::+  {{point}pa; {point}pb}     {( $pa(x) + $pb(x), $pa(y) + $pb(y) )}
 proc {point}::math::geometry::-  {{point}pa; {point}pb}     {( $pa(x) - $pb(x), $pa(y) - $pb(y) )}
-proc {point}::math::geometry::s* {{double}factor; {point}p} {( $p(x) * $factor, $p(y) * $factor )}
+proc {point}::math::geometry::s* {{coord}factor; {point}p} {( $p(x) * $factor, $p(y) * $factor )}
 proc ::math::geometry::distance {{point}pa; {point}pb} {( hypot($pb(x)-$pa(x), $pb(y)-$pa(y)) )}
 proc ::math::geometry::length   {{vector}v}         {( hypot($v(x), $v(y)) )}
-proc {point}::math::geometry::v {{double}h}                {( 0, $h )}
-proc {point}::math::geometry::h {{double}w}                {( $w, 0 )}
+proc {point}::math::geometry::v {{coord}h}                {( 0, $h )}
+proc {point}::math::geometry::h {{coord}w}                {( $w, 0 )}
 proc ::math::geometry::x {{point}p}                 {set p(x)}
 proc ::math::geometry::y {{point}p}                 {set p(y)}
 proc {point}::math::geometry::conjx {{point}p}             {( -$p(x), $p(y) )}
@@ -69,13 +79,13 @@ proc {line}::math::geometry::rect  {{point}pa; {point}pb} {( $pa(x), $pa(y), $pb
 proc {list(2).point}::math::geometry::nwse  {{rect}r}              {( ($r(x1), $r(y1)), ($r(x2), $r(y2)) )}
 
 # Unit vector in the direction given by an angle (degrees)
-proc {vector}::math::geometry::direction {{double}angle} {(
+proc {vector}::math::geometry::direction {{coord}angle} {(
     t = $angle * $::math::geometry::torad;
     cos($t), sin($t)
 )}
 
 # The point at fraction s from pa to pb (0 => pa, 1 => pb)
-proc {point}::math::geometry::between {{point}pa; {point}pb; {double}s} {(
+proc {point}::math::geometry::between {{point}pa; {point}pb; {coord}s} {(
     $pa(x) + ($pb(x) - $pa(x)) * $s, $pa(y) + ($pb(y) - $pa(y)) * $s
 )}
 
@@ -166,7 +176,7 @@ proc ::math::geometry::lengthOfPolyline {{polyline}pl} {(
 )}
 
 # Move P in a direction (degrees, counter-clockwise) over a distance
-proc {point}::math::geometry::movePointInDirection {{point}P; {double}direction; {double}dist} {(
+proc {point}::math::geometry::movePointInDirection {{point}P; {coord}direction; {coord}dist} {(
     pi = 4*atan(1);
     $P(x) + $dist*cos(($direction*$pi)/180), $P(y) + $dist*sin(($direction*$pi)/180)
 )}
@@ -271,7 +281,7 @@ proc ::math::geometry::ccw {{point}A; {point}B; {point}C} {(
 
 # --- Overlaps, bounding boxes, polygons
 
-proc ::math::geometry::intervalsOverlap {{double}y1; {double}y2; {double}y3; {double}y4; {int}strict} {(
+proc ::math::geometry::intervalsOverlap {{coord}y1; {coord}y2; {coord}y3; {coord}y4; {int}strict} {(
     (y1, y2) = $y1 > $y2 ? ($y2, $y1) : ($y1, $y2);
     (y3, y4) = $y3 > $y4 ? ($y4, $y3) : ($y3, $y4);
     $strict ? $y2 > $y3 && $y4 > $y1 : $y2 >= $y3 && $y4 >= $y1
@@ -349,13 +359,13 @@ proc ::math::geometry::areaPolygon {{polygon}pg} {(
 
 # --- Vectors of any dimension, transformations
 
-proc ::math::geometry::inproduct {{list.double}v1; {list.double}v2} {(
+proc ::math::geometry::inproduct {{list.coord}v1; {list.coord}v2} {(
     s = 0.0;
     foreach a $v1 b $v2 {( s = $s + $a * $b )};
     $s
 )}
 
-proc ::math::geometry::angleBetween {{list.double}v1; {list.double}v2} {(
+proc ::math::geometry::angleBetween {{list.coord}v1; {list.coord}v2} {(
     s = 0.0;  l1 = 0.0;  l2 = 0.0;
     foreach a $v1 b $v2 {( s = $s + $a * $b;  l1 = $l1 + $a * $a;  l2 = $l2 + $b * $b )};
     acos($s/sqrt($l1 * $l2)) * $::math::geometry::todeg
@@ -370,19 +380,19 @@ proc ::math::geometry::translate {{vector}t; {polyline}pl} {(
 )}
 
 # Rotation (counter-clockwise, degrees) around the origin
-proc ::math::geometry::rotate {{double}angle; {polyline}pl} {(
+proc ::math::geometry::rotate {{coord}angle; {polyline}pl} {(
     a = $::math::geometry::torad * $angle;  c = cos($a);  s = sin($a);
     [concat {*}[lmap {x y} $pl {( $c * $x - $s *$y, $s * $x + $c *$y )}]]
 )}
 
 # Reflection in the line through the origin at an angle (degrees)
-proc ::math::geometry::reflect {{double}angle; {polyline}pl} {(
+proc ::math::geometry::reflect {{coord}angle; {polyline}pl} {(
     a = 2.0 * $::math::geometry::torad * $angle;  c = cos($a);  s = sin($a);
     [concat {*}[lmap {x y} $pl {( $c * $x + $s *$y, $s * $x - $c *$y )}]]
 )}
 
-proc ::math::geometry::degToRad {{double}angle} {( $angle * $::math::geometry::torad )}
-proc ::math::geometry::radToDeg {{double}angle} {( $angle * $::math::geometry::todeg )}
+proc ::math::geometry::degToRad {{coord}angle} {( $angle * $::math::geometry::torad )}
+proc ::math::geometry::radToDeg {{coord}angle} {( $angle * $::math::geometry::todeg )}
 
 namespace eval ::math::geometry {
     namespace export \

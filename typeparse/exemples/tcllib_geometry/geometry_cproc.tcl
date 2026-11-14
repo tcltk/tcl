@@ -19,6 +19,7 @@
 namespace eval ::math::geometry {
     variable cproc_dir [file dirname [file normalize [info script]]]
 }
+namespace eval ::math::geometry {variable coord double}	;# C structs of doubles
 source [file join $::math::geometry::cproc_dir geometry.tcl]
 source [file join $::math::geometry::cproc_dir .. cproc cproc.tcl]
 if {[info exists ::env(CPROC_CC)]} {cproc::config -cc $::env(CPROC_CC)}

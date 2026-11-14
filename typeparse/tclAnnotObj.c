@@ -970,6 +970,43 @@ PlainScalarElem(const TclType *et)
 }
 
 /*
+ * v17b : une union entier | double (le nombre de Tcl). Ses formes
+ * canoniques sont disjointes : la valeur nue redit son alternative, rien
+ * n'est perdu à la laisser nue dans une boucle (comme list.int, list.double).
+ */
+static int
+NumUnionElem(const TclType *et)
+{
+    const TclType *a, *b;
+
+    if (et == NULL || et->kind != TCLT_SUM || et->sumMode != TCLT_SUM_UNION
+	    || et->nfields != 2 || et->binTag != NULL) {
+	return 0;
+    }
+    a = et->fields[0].type;
+    b = et->fields[1].type;
+    return a != NULL && b != NULL && PlainScalarElem(a) && PlainScalarElem(b)
+	    && a->kind != b->kind;
+}
+
+int
+TclTypeIsNumUnion(const TclType *et)
+{
+    return NumUnionElem(et)
+	    && (et->fields[0].type->kind == TCLT_INT
+		|| et->fields[0].type->kind == TCLT_DOUBLE)
+	    && (et->fields[1].type->kind == TCLT_INT
+		|| et->fields[1].type->kind == TCLT_DOUBLE);
+}
+
+/* les éléments qu'une boucle peut rendre nus */
+static int
+BareLoopElem(const TclType *et)
+{
+    return PlainScalarElem(et) || NumUnionElem(et);
+}
+
+/*
  * v16t : les champs d'un produit, chacun dans son type (nombres simples
  * laissés nus, comme les éléments d'une list.double).
  */
@@ -993,7 +1030,7 @@ AnnotWrapFields(Tcl_Obj *aPtr, Tcl_Obj *v, Tcl_Size from, Tcl_Size to)
     }
     for (i = from; i <= to; i++) {
 	ft = AnnotListElemTypeAt(aPtr, i);
-	if (ft == NULL || PlainScalarElem(ft)
+	if (ft == NULL || BareLoopElem(ft)
 		|| Tcl_ListObjIndex(NULL, v, i, &e) != TCL_OK || e == NULL
 		|| TCL_ANNOT_P(e)) {
 	    continue;
@@ -1024,7 +1061,7 @@ AnnotWrapElems(Tcl_Obj *aPtr, Tcl_Obj *v, Tcl_Size from, Tcl_Size to)
 	    || Tcl_ListObjLength(NULL, v, &n) != TCL_OK) {
 	return;
     }
-    if (PlainScalarElem(et)) {
+    if (BareLoopElem(et)) {
 	/* v16s : les éléments d'une liste de scalaires simples restent nus
 	 * dans le contenu ; lassign, lrange, foreach les rendent nus,
 	 * lindex et $L(i) en font une valeur typée à la demande */
@@ -1161,7 +1198,7 @@ TclAnnotIterList(Tcl_Obj *aPtr)
 	 * les reçoit les revérifie. Les listes de produits, de sommes, de any,
 	 * de types nominaux gardent leurs éléments typés.
 	 */
-	if (PlainScalarElem(AnnotListElemType(aPtr))) {
+	if (BareLoopElem(AnnotListElemType(aPtr))) {
 	    return v;
 	}
     }
@@ -2054,6 +2091,24 @@ NormContent(TclType *tp, int variant, Tcl_Obj *v)
 	TclType *vt;
 	Tcl_Obj *r, *pair[2];
 
+	if (variant < 0 && TclTypeIsNumUnion(tp)) {
+	    /* v17b : élément d'une liste, champ... : le nombre de Tcl dit
+	     * lui-même son alternative */
+	    void *cd;
+	    int nt;
+
+	    if (v->bytes == NULL
+		    || Tcl_GetNumberFromObj(NULL, v, &cd, &nt) != TCL_OK) {
+		return NULL;
+	    }
+	    if (nt == TCL_NUMBER_DOUBLE) {
+		variant = (tp->fields[0].type->kind == TCLT_DOUBLE) ? 0 : 1;
+	    } else if (nt == TCL_NUMBER_INT) {
+		variant = (tp->fields[0].type->kind == TCLT_INT) ? 0 : 1;
+	    } else {
+		return NULL;		/* grand entier, NaN */
+	    }
+	}
 	if (variant < 0 || variant >= tp->nfields
 		|| (vt = tp->fields[variant].type) == NULL
 		|| !NormNeeded(vt, 0)) {

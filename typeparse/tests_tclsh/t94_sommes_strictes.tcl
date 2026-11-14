@@ -36,7 +36,9 @@ t "variante sans nom"            {type def W1 {{int}, {string}}}
 t "union disjointe"              {type def U {{int}n | {list(2).int}paire}; type is {union?}U}
 t "union anonyme"                {type def U1 {{int} | {list(2).int}}; type is {union?}U1}
 t "union recouvrante : refusée"  {type def U2 {{int}i | {string}s}}
-t "union int | double"           {type def U3 {{int}i | {double}d}}
+# v17b : int et double sont disjoints sur leurs formes canoniques (16 / 2.0)
+t "union int | double"           {type def U3 {{int}i | {double}d}; lmap v {10 2.0 0x10 2e1} {set {U3}u $v; list $u [type get $u]}}
+t "union int | string"           {type def U4 {{int}i | {string}s}}
 t "point | vecteur : refusée"    {type def U4 {{pt}p | {vec}v}}
 t "point , vecteur : somme"      {type def PV {{pt}p, {vec}v}; type is {union?}PV}
 t "mélange , et |"               {type def U5 {{int}a, {int}b | {string}c}}

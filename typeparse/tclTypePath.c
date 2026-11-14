@@ -3967,6 +3967,33 @@ CompactPathWrite(Tcl_Obj *a, Tcl_Obj *part2Ptr, Tcl_Obj *value)
     return 1;
 }
 
+/*
+ * v17b : le champ nommé x d'un produit, de type {int}i | {double}d (le
+ * nombre de Tcl : son texte canonique dit la variante, l'opérateur ne lit
+ * que le contenu). Pas de cache : SimpleFieldIndex ne doit pas l'accepter.
+ */
+static Tcl_Size
+NumUnionFieldIndex(TclType *tp, Tcl_Obj *part2Ptr)
+{
+    Tcl_Size idx, len;
+    const char *name = Tcl_GetStringFromObj(part2Ptr, &len), *c;
+
+    if (len == 0) {
+	return -1;
+    }
+    for (c = name; *c != '\0'; c++) {
+	if (!(isalnum(UCHAR(*c)) || *c == '_')) {
+	    return -1;
+	}
+    }
+    idx = TclTypeFieldIndex(tp, name);
+    if (idx < 0 || idx >= tp->nfields
+	    || !TclTypeIsNumUnion(tp->fields[idx].type)) {
+	return -1;
+    }
+    return idx;
+}
+
 Tcl_Obj *
 TclTypedFieldNumber(Var *varPtr, Tcl_Obj *part2Ptr)
 {
@@ -4000,10 +4027,14 @@ TclTypedFieldNumber(Var *varPtr, Tcl_Obj *part2Ptr)
     }
     idx = SimpleFieldIndex(tp, part2Ptr);
     if (idx < 0) {
-	return NULL;
+	idx = NumUnionFieldIndex(tp, part2Ptr);
+	if (idx < 0) {
+	    return NULL;
+	}
     }
     ft = tp->fields[idx].type;
-    if (ft->kind != TCLT_INT && ft->kind != TCLT_DOUBLE) {
+    if (ft->kind != TCLT_INT && ft->kind != TCLT_DOUBLE
+	    && !TclTypeIsNumUnion(ft)) {	/* v17b : le nombre de Tcl */
 	return NULL;
     }
     e = TclCompactFieldNumber(v, idx);

@@ -260,6 +260,7 @@ static Tcl_ObjTypeInOperatorProc AnnotListIn;
 static TclTypeKind EffectiveKind(const TclType *tp, int variant,
 	Tcl_Obj *content);
 static Tcl_Obj *MakeAnnotated(Tcl_Obj *vPtr, Tcl_Obj *tPtr);
+static Tcl_Obj *NormContent(TclType *tp, int variant, Tcl_Obj *v);
 
 static const Tcl_ObjType annotatedObjType = {
     "annotated", FreeAnnotated, DupAnnotated, UpdateStringOfAnnotated,
@@ -474,6 +475,65 @@ TclAnnotNotes(Tcl_Obj *objPtr)
     }
     SplitT((Tcl_Obj *) ir->twoPtrValue.ptr2, &t, &n);
     return n;
+}
+
+/*
+ * v17a : les notes de FROM passent sur TO (un élément qu'un constructeur de
+ * liste ou de dict vient de produire depuis FROM). TO, s'il est neuf (compte
+ * 0), est consommé. Rend TO tel quel si FROM n'a pas de notes, ou si TO en a
+ * déjà.
+ */
+Tcl_Obj *
+TclAnnotCarryNotes(Tcl_Obj *from, Tcl_Obj *to)
+{
+    Tcl_Obj *n = TclAnnotNotes(from), *t = NULL, *old = NULL, *content = to;
+    Tcl_Obj *res;
+    Tcl_ObjInternalRep *ir;
+
+    if (n == NULL || to == NULL || to == from) {
+	return to;
+    }
+    /* seules les notes voyagent : pas une étiquette {v:} ni une option
+     * {-x}, annotations locales qui expirent avec la commande */
+    {
+	Tcl_Size nn, k;
+	Tcl_Obj **nv, *keep;
+
+	if (TclListObjGetElements(NULL, n, &nn, &nv) != TCL_OK) {
+	    return to;
+	}
+	keep = Tcl_NewListObj(0, NULL);
+	for (k = 0; k < nn; k++) {
+	    Tcl_Size len;
+	    const char *txt = Tcl_GetStringFromObj(nv[k], &len);
+
+	    if (len == 0 || txt[0] == '-' || txt[len - 1] == ':') {
+		continue;
+	    }
+	    Tcl_ListObjAppendElement(NULL, keep, nv[k]);
+	}
+	Tcl_ListObjLength(NULL, keep, &nn);
+	if (nn == 0) {
+	    TclDiscard(keep);
+	    return to;
+	}
+	n = keep;
+    }
+    ir = Tcl_FetchInternalRep(to, &annotatedObjType);
+    if (ir != NULL) {
+	content = (Tcl_Obj *) ir->twoPtrValue.ptr1;
+	SplitT((Tcl_Obj *) ir->twoPtrValue.ptr2, &t, &old);
+	if (old != NULL || (t != NULL && !IsTypeRef(t))) {
+	    TclDiscard(n);
+	    return to;
+	}
+    }
+    res = MakeAnnotated(ir != NULL ? Tcl_DuplicateObj(content) : to,
+	    StateObj(t, n));
+    if (ir != NULL && to->refCount == 0) {
+	TclDiscard(to);
+    }
+    return res;
 }
 
 /* Valeur A' = A avec le nom ajouté comme note la plus récente. Le type
@@ -910,6 +970,43 @@ PlainScalarElem(const TclType *et)
 }
 
 /*
+ * v17b : une union entier | double (le nombre de Tcl). Ses formes
+ * canoniques sont disjointes : la valeur nue redit son alternative, rien
+ * n'est perdu à la laisser nue dans une boucle (comme list.int, list.double).
+ */
+static int
+NumUnionElem(const TclType *et)
+{
+    const TclType *a, *b;
+
+    if (et == NULL || et->kind != TCLT_SUM || et->sumMode != TCLT_SUM_UNION
+	    || et->nfields != 2 || et->binTag != NULL) {
+	return 0;
+    }
+    a = et->fields[0].type;
+    b = et->fields[1].type;
+    return a != NULL && b != NULL && PlainScalarElem(a) && PlainScalarElem(b)
+	    && a->kind != b->kind;
+}
+
+int
+TclTypeIsNumUnion(const TclType *et)
+{
+    return NumUnionElem(et)
+	    && (et->fields[0].type->kind == TCLT_INT
+		|| et->fields[0].type->kind == TCLT_DOUBLE)
+	    && (et->fields[1].type->kind == TCLT_INT
+		|| et->fields[1].type->kind == TCLT_DOUBLE);
+}
+
+/* les éléments qu'une boucle peut rendre nus */
+static int
+BareLoopElem(const TclType *et)
+{
+    return PlainScalarElem(et) || NumUnionElem(et);
+}
+
+/*
  * v16t : les champs d'un produit, chacun dans son type (nombres simples
  * laissés nus, comme les éléments d'une list.double).
  */
@@ -933,7 +1030,7 @@ AnnotWrapFields(Tcl_Obj *aPtr, Tcl_Obj *v, Tcl_Size from, Tcl_Size to)
     }
     for (i = from; i <= to; i++) {
 	ft = AnnotListElemTypeAt(aPtr, i);
-	if (ft == NULL || PlainScalarElem(ft)
+	if (ft == NULL || BareLoopElem(ft)
 		|| Tcl_ListObjIndex(NULL, v, i, &e) != TCL_OK || e == NULL
 		|| TCL_ANNOT_P(e)) {
 	    continue;
@@ -964,7 +1061,7 @@ AnnotWrapElems(Tcl_Obj *aPtr, Tcl_Obj *v, Tcl_Size from, Tcl_Size to)
 	    || Tcl_ListObjLength(NULL, v, &n) != TCL_OK) {
 	return;
     }
-    if (PlainScalarElem(et)) {
+    if (BareLoopElem(et)) {
 	/* v16s : les éléments d'une liste de scalaires simples restent nus
 	 * dans le contenu ; lassign, lrange, foreach les rendent nus,
 	 * lindex et $L(i) en font une valeur typée à la demande */
@@ -1101,7 +1198,7 @@ TclAnnotIterList(Tcl_Obj *aPtr)
 	 * les reçoit les revérifie. Les listes de produits, de sommes, de any,
 	 * de types nominaux gardent leurs éléments typés.
 	 */
-	if (PlainScalarElem(AnnotListElemType(aPtr))) {
+	if (BareLoopElem(AnnotListElemType(aPtr))) {
 	    return v;
 	}
     }
@@ -1138,6 +1235,24 @@ AnnotListLength(Tcl_Obj *aPtr)
     return (Tcl_ListObjLength(NULL, v, &n) == TCL_OK) ? n : 1;
 }
 
+/* v17a : un élément noté sans type (ses notes gardées par le constructeur)
+ * se lit comme un élément du type de la liste, avec ses notes. */
+static Tcl_Obj *
+TypeNotesOnly(Tcl_Obj *e, TclType *et)
+{
+    Tcl_Obj *t0, *n0;
+
+    if (e == NULL || et == NULL || e->typePtr != &annotatedObjType
+	    || TclTypeIsPlainString(et)) {
+	return e;			/* {list}, list.string : texte ordinaire */
+    }
+    SplitT((Tcl_Obj *) e->internalRep.twoPtrValue.ptr2, &t0, &n0);
+    if (t0 != NULL || n0 == NULL) {
+	return e;
+    }
+    return MakeAnnotated(e, NewTypeRefNoCache(et, -1));
+}
+
 static int
 AnnotListIndex(Tcl_Interp *interp, Tcl_Obj *aPtr, Tcl_Size index,
 	Tcl_Obj **elemPtr)
@@ -1166,6 +1281,7 @@ AnnotListIndex(Tcl_Interp *interp, Tcl_Obj *aPtr, Tcl_Size index,
     }
     if (lt != NULL && Tcl_ListObjIndex(NULL, v, index, elemPtr) == TCL_OK
 	    && *elemPtr != NULL && TCL_ANNOT_P(*elemPtr)) {
+	*elemPtr = TypeNotesOnly(*elemPtr, lt->elem);
 	return TCL_OK;			/* élément déjà typé dans V */
     }
     if (lt == NULL && (lt = FastProductType(aPtr, &v)) != NULL
@@ -1177,7 +1293,7 @@ AnnotListIndex(Tcl_Interp *interp, Tcl_Obj *aPtr, Tcl_Size index,
 
 	if (Tcl_ListObjIndex(NULL, v, index, &e) == TCL_OK && e != NULL) {
 	    if (TCL_ANNOT_P(e)) {
-		*elemPtr = e;
+		*elemPtr = TypeNotesOnly(e, ft);
 		return TCL_OK;
 	    }
 	    if (PlainScalarElem(ft)) {
@@ -1205,6 +1321,7 @@ AnnotListIndex(Tcl_Interp *interp, Tcl_Obj *aPtr, Tcl_Size index,
 	if (Tcl_ListObjIndex(interp, v, index, elemPtr) != TCL_OK) {
 	    return TCL_ERROR;
 	}
+	*elemPtr = TypeNotesOnly(*elemPtr, AnnotListElemTypeAt(aPtr, index));
 	if (*elemPtr != NULL && !TCL_ANNOT_P(*elemPtr)) {
 	    /*
 	     * V partagé (une partie lue par chemin, une valeur copiée) :
@@ -1268,6 +1385,13 @@ TclAnnotFastIndex(
 	return 1;
     }
     if (ev[index]->typePtr == &annotatedObjType) {
+	Tcl_Obj *t0, *n0;
+
+	SplitT((Tcl_Obj *) ev[index]->internalRep.twoPtrValue.ptr2, &t0, &n0);
+	if (t0 == NULL && n0 != NULL) {
+	    return 0;			/* v17a : élément noté, sans type : à
+					 * envelopper (il gardera ses notes) */
+	}
 	*elemPtr = ev[index];
 	return 1;
     }
@@ -1669,6 +1793,49 @@ MakeAnnotated(Tcl_Obj *vPtr, Tcl_Obj *tPtr)
     Tcl_Obj *aPtr = Tcl_NewObj();
     Tcl_ObjInternalRep ir;
 
+    Tcl_Obj *keepNotes = NULL;
+
+    /* v17a : un contenu qui ne porte que des notes (une valeur notée, sans
+     * type) devient une valeur typée ET notée : on prend son contenu, et ses
+     * notes passent dans l'état de la nouvelle valeur. */
+    if (IsTypeRef(tPtr) && vPtr->typePtr == &annotatedObjType) {
+	Tcl_Obj *t0, *n0;
+
+	SplitT((Tcl_Obj *) vPtr->internalRep.twoPtrValue.ptr2, &t0, &n0);
+	if (t0 == NULL && n0 != NULL) {
+	    Tcl_Obj *inner = (Tcl_Obj *) vPtr->internalRep.twoPtrValue.ptr1;
+
+	    keepNotes = n0;
+	    Tcl_IncrRefCount(keepNotes);
+	    Tcl_IncrRefCount(inner);
+	    if (vPtr->refCount == 0) {
+		TclDiscard(vPtr);
+	    }
+	    vPtr = Tcl_DuplicateObj(inner);
+	    Tcl_DecrRefCount(inner);
+	}
+    }
+
+    /* v17a : les nombres prennent leur écriture canonique. Un contenu sans
+     * propriétaire (compte 0 : copie ou neuf) est remplacé ; un contenu
+     * partagé reste intact, la valeur typée en reçoit un autre. */
+    if (IsTypeRef(tPtr) && vPtr->typePtr != &compactListType) {
+	Tcl_Obj *nc = NormContent(
+		(TclType *) tPtr->internalRep.twoPtrValue.ptr1,
+		(int) (intptr_t) tPtr->internalRep.twoPtrValue.ptr2 - 1, vPtr);
+
+	if (nc != NULL) {
+	    if (vPtr->refCount == 0) {
+		TclDiscard(vPtr);
+	    }
+	    vPtr = nc;
+	}
+    }
+    if (keepNotes != NULL) {
+	tPtr = StateObj(tPtr, Tcl_DuplicateObj(keepNotes));
+	Tcl_DecrRefCount(keepNotes);
+    }
+
     Tcl_IncrRefCount(vPtr);
     Tcl_IncrRefCount(tPtr);
     ir.twoPtrValue.ptr1 = vPtr;
@@ -1778,6 +1945,198 @@ CompactContent(TclType *tp, Tcl_Obj *content)
 	return CompactFields(tp, content, 0);
     }
     return NULL;
+}
+
+/*
+ * Normalisation à la construction (v17a) : un int ou un double validé prend
+ * son écriture canonique, comme le fait expr (INST_TRY_CVT_TO_NUMERIC :
+ * « expr {0001} » rend « 1 ») : 0x10 -> 16, " 3 " -> 3, 2e1 -> 20.0,
+ * 1 (double) -> 1.0. Dans une liste, un dict (les valeurs), un produit,
+ * une somme, élément par élément. Rend un objet neuf (compte 0), ou NULL si
+ * rien ne change. Une string n'est jamais touchée ; un bitarray non plus
+ * (son écriture lui est propre) ; les clés d'un dict non plus (normaliser
+ * une clé changerait son identité).
+ */
+static int
+NormNeeded(TclType *tp, int depth)
+{
+    Tcl_Size i;
+
+    if (tp == NULL || depth > 8) {
+	return tp != NULL;		/* type récursif : on regarde la valeur */
+    }
+    switch (tp->kind) {
+    case TCLT_INT:
+	return tp->bitWidth == 0;
+    case TCLT_DOUBLE:
+	return 1;
+    case TCLT_LIST:
+    case TCLT_DICT:
+	return NormNeeded(tp->elem, depth + 1);
+    case TCLT_PRODUCT:
+    case TCLT_SUM:
+	for (i = 0; i < tp->nfields; i++) {
+	    if (NormNeeded(tp->fields[i].type, depth + 1)) {
+		return 1;
+	    }
+	}
+	return 0;
+    default:
+	return 0;
+    }
+}
+
+static Tcl_Obj *NormContent(TclType *tp, int variant, Tcl_Obj *v);
+
+/* Une suite d'éléments, chacun du type de son rang (types[i]) ou de elem. */
+static Tcl_Obj *
+NormElems(Tcl_Size n, Tcl_Obj *const *ev, TclType *elem, TclTypeField *fields,
+	Tcl_Size stride)
+{
+    Tcl_Obj **nev = NULL;
+    Tcl_Size i;
+
+    for (i = 0; i < n; i++) {
+	TclType *t = (fields != NULL) ? fields[i].type
+		: ((stride == 2 && (i % 2) == 0) ? NULL : elem);
+	Tcl_Obj *r = (t != NULL) ? NormContent(t, -1, ev[i]) : NULL;
+
+	if (r != NULL) {
+	    if (nev == NULL) {
+		Tcl_Size j;
+
+		nev = (Tcl_Obj **) Tcl_Alloc(n * sizeof(Tcl_Obj *));
+		for (j = 0; j < n; j++) {
+		    nev[j] = ev[j];
+		}
+	    }
+	    nev[i] = r;
+	}
+    }
+    if (nev == NULL) {
+	return NULL;
+    }
+    {
+	Tcl_Obj *out = Tcl_NewListObj(n, nev);
+
+	Tcl_Free(nev);
+	return out;
+    }
+}
+
+static Tcl_Obj *
+NormContent(TclType *tp, int variant, Tcl_Obj *v)
+{
+    Tcl_Size n;
+    Tcl_Obj **ev;
+
+    if (tp == NULL || v == NULL || v->typePtr == &annotatedObjType) {
+	return NULL;
+    }
+    switch (tp->kind) {
+    case TCLT_INT: {
+	Tcl_WideInt w;
+	Tcl_Obj *r;
+
+	char buf[32];
+
+	if (tp->bitWidth != 0 || v->bytes == NULL
+		|| Tcl_GetWideIntFromObj(NULL, v, &w) != TCL_OK) {
+	    return NULL;		/* déjà sans texte, ou grand entier */
+	}
+	snprintf(buf, sizeof(buf), "%" TCL_LL_MODIFIER "d", (long long) w);
+	if (strcmp(buf, v->bytes) == 0) {
+	    return NULL;		/* déjà canonique : rien à allouer */
+	}
+	r = Tcl_NewWideIntObj(w);
+	return r;
+    }
+    case TCLT_DOUBLE: {
+	double d;
+	Tcl_Obj *r;
+
+	char buf[TCL_DOUBLE_SPACE];
+
+	if (v->bytes == NULL || Tcl_GetDoubleFromObj(NULL, v, &d) != TCL_OK) {
+	    return NULL;
+	}
+	Tcl_PrintDouble(NULL, d, buf);
+	if (strcmp(buf, v->bytes) == 0) {
+	    return NULL;
+	}
+	r = Tcl_NewDoubleObj(d);
+	return r;
+    }
+    case TCLT_LIST:
+	if (!NormNeeded(tp->elem, 0)
+		|| TclListObjGetElements(NULL, v, &n, &ev) != TCL_OK) {
+	    return NULL;
+	}
+	return NormElems(n, ev, tp->elem, NULL, 1);
+    case TCLT_DICT:
+	if (!NormNeeded(tp->elem, 0)
+		|| TclListObjGetElements(NULL, v, &n, &ev) != TCL_OK
+		|| (n % 2) != 0) {
+	    return NULL;
+	}
+	return NormElems(n, ev, tp->elem, NULL, 2);
+    case TCLT_PRODUCT:
+	if (!NormNeeded(tp, 0)
+		|| TclListObjGetElements(NULL, v, &n, &ev) != TCL_OK
+		|| n != tp->nfields) {
+	    return NULL;
+	}
+	return NormElems(n, ev, NULL, tp->fields, 1);
+    case TCLT_SUM: {
+	TclType *vt;
+	Tcl_Obj *r, *pair[2];
+
+	if (variant < 0 && TclTypeIsNumUnion(tp)) {
+	    /* v17b : élément d'une liste, champ... : le nombre de Tcl dit
+	     * lui-même son alternative */
+	    void *cd;
+	    int nt;
+
+	    if (v->bytes == NULL
+		    || Tcl_GetNumberFromObj(NULL, v, &cd, &nt) != TCL_OK) {
+		return NULL;
+	    }
+	    if (nt == TCL_NUMBER_DOUBLE) {
+		variant = (tp->fields[0].type->kind == TCLT_DOUBLE) ? 0 : 1;
+	    } else if (nt == TCL_NUMBER_INT) {
+		variant = (tp->fields[0].type->kind == TCLT_INT) ? 0 : 1;
+	    } else {
+		return NULL;		/* grand entier, NaN */
+	    }
+	}
+	if (variant < 0 || variant >= tp->nfields
+		|| (vt = tp->fields[variant].type) == NULL
+		|| !NormNeeded(vt, 0)) {
+	    return NULL;
+	}
+	if (tp->sumMode == TCLT_SUM_UNION) {
+	    return NormContent(vt, -1, v);
+	}
+	if (tp->binTag != NULL
+		|| TclListObjGetElements(NULL, v, &n, &ev) != TCL_OK || n != 2
+		|| (r = NormContent(vt, -1, ev[1])) == NULL) {
+	    return NULL;
+	}
+	pair[0] = ev[0];
+	pair[1] = r;
+	return Tcl_NewListObj(2, pair);
+    }
+    default:
+	return NULL;
+    }
+}
+
+/* v17a : la normalisation, pour qui ajoute en place (lappend sous
+ * contrat) : un objet neuf (compte 0) ou NULL si rien ne change. */
+Tcl_Obj *
+TclTypeNormalizeContent(TclType *tp, Tcl_Obj *v)
+{
+    return NormContent(tp, -1, v);
 }
 
 /*
@@ -5794,6 +6153,11 @@ TclCompactFrom(TclType *ltp, Tcl_Obj *content)
 	    || (lay = TclCompactLayoutOf(ltp->elem)) == NULL
 	    || Tcl_ListObjGetElements(NULL, content, &n, &ev) != TCL_OK) {
 	return NULL;
+    }
+    for (k = 0; k < n; k++) {
+	if (ev[k]->typePtr == &annotatedObjType && TclAnnotNotes(ev[k]) != NULL) {
+	    return NULL;		/* v17a : un élément noté garde ses notes */
+	}
     }
     b = NewCompactBuf(ltp->elem, lay, n);
     b->norm = wanted;

@@ -21,7 +21,7 @@
  * VAR_* de tclInt.h). La valeur ci-dessous est un PLACEHOLDER. */
 /* Version du prototype TIP 764 (typeparse/VERSION, maj.sh, et
  * tcl::unsupported::typesversion). */
-#define TCL_TYPES_VERSION "v16z"
+#define TCL_TYPES_VERSION "v17b"
 
 #ifndef VAR_TYPED
 #define VAR_TYPED	0x400000
@@ -321,6 +321,9 @@ Tcl_Obj *TclAnnotLocalWordText(Tcl_Interp *interp, struct Tcl_Token *wordTokenPt
 void	TclVecAdd(TclObjVec *vec, Tcl_Obj *objPtr);
 void	TclVecFree(TclObjVec *vec);
 void	TclDiscard(Tcl_Obj *objPtr);
+Tcl_Obj *	TclAnnotCarryNotes(Tcl_Obj *from, Tcl_Obj *to);
+Tcl_Obj *	TclTypeNormalizeContent(TclType *tp, Tcl_Obj *v);
+int		TclTypeIsNumUnion(const TclType *et);	/* v17b : {int}i | {double}d */
 
 /*
  * tclVarRef.c (noyau) : résolution des liens var. Un lien est le NOM

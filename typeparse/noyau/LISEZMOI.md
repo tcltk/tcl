@@ -2629,3 +2629,38 @@ t108.
   reste ordinaire (pas de cases : elles ne gardent pas les notes).
 * **Coût** : `lappend` d'un double à une `list.double` 0,23 → 0,31 µs ;
   les autres constructions, dans le bruit de la mesure.
+
+### v17b — l'union `{int}i | {double}d` : le nombre de Tcl (14 novembre 2026)
+
+Sans patch noyau (`tclTypes.c`, `tclAnnotObj.c`, `tclTypePath.c`,
+`tclTypes.h`). Discussion : `doc/PISTES-any-string.md` § 7 ; test t109.
+
+* **Disjointe sur les formes canoniques.** Depuis v17a, un `int` s'écrit
+  `16` et un `double` `16.0` ou `1e+300` : un texte canonique dit lequel il
+  est. L'union `{int}i | {double}d` est donc acceptée (`CanonDisjoint`,
+  `SumOverlapsEx(tp, 1)` pour les unions) ; `{int}i | {string}s` et
+  `{double}d | {string}s` restent refusées, une chaîne pouvant prendre
+  l'une ou l'autre écriture.
+* **Règle de lecture** : l'alternative la plus stricte, ou celle dans
+  laquelle le texte est déjà canonique — ce qui revient à la lecture de
+  `expr` : `10`, `-3`, `0x10` → `i` (16) ; `2.0`, `2e1` (20.0), `.5`,
+  `Inf` → `d`. Chemin rapide dans la validation (`Tcl_GetNumberFromObj`,
+  sans essayer chaque alternative). Un grand entier ou `NaN` passe par le
+  chemin général.
+* **Normalisation** sans variante connue (élément de `list.num`, champ d'un
+  produit, `lappend`) : la variante est tirée du nombre lui-même
+  (`NormContent`), donc `{list.num} {1 2.0 0x10 3e0}` → `1 2.0 16 3.0`.
+* **Lecture rapide.** Une boucle rend les éléments nus (`BareLoopElem` :
+  scalaire simple, ou union int|double) ; `$P(x)` dans `expr` lit le nombre
+  d'un champ union sans enveloppe (`TclTypedFieldNumber`, par
+  `NumUnionFieldIndex`, sans cache : `SimpleFieldIndex` garde son sens pour
+  les autres lectures). `lindex` rend l'élément typé (`num.i`, `num.d`).
+* **tcllib_geometry en `num`** : `type def num {{int}i | {double}d}`, `type
+  alias coord num`, `point {{coord}x; {coord}y}`, `polyline list.coord`.
+  **210 / 210** (contre 199 en `double` : tcllib compte sur la division
+  entière d'entrées entières et compare des textes). Les variantes C (`-c`,
+  `-cproc`) gardent `coord` = `double`, leurs structures étant des doubles.
+* **Coût** (µs par appel, `double` → `num`) : `distance` 1,6 → 1,8 ;
+  `areaPolygon` (100 nombres) 13 → 14-15 ; `pointInsidePolygon` 15 → 22
+  (54 avant la lecture rapide des champs ; le reste : le cast des arguments
+  nus vers l'union).

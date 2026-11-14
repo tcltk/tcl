@@ -23,6 +23,7 @@ namespace eval ::math::geometry::c {
         polylinesBoundingIntersect
     }
 }
+namespace eval ::math::geometry {variable coord double}	;# C structs of doubles
 source [file join $::math::geometry::c::dir geometry.tcl]
 load [expr {$argc > 0 && [string match *geom* [lindex $argv 0]]
             ? [lindex $argv 0]

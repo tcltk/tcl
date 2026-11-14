@@ -108,10 +108,20 @@ static const Tcl_ObjType pathIndexType = {
     "pathindex", FreePathIndex, DupPathIndex, NULL, NULL, TCL_OBJTYPE_V0
 };
 
+struct CompiledPath;
+static const Tcl_ObjType pathFieldType = {
+    "pathfield", NULL, NULL, NULL, NULL, TCL_OBJTYPE_V0
+};
+static void CompiledPathRelease(struct CompiledPath *cp);
+
 static void
 FreePathIndex(Tcl_Obj *objPtr)
 {
     Tcl_Free(objPtr->internalRep.twoPtrValue.ptr1);
+    if (objPtr->internalRep.twoPtrValue.ptr2 != NULL) {
+	CompiledPathRelease((struct CompiledPath *)
+		objPtr->internalRep.twoPtrValue.ptr2);
+    }
     objPtr->typePtr = NULL;
 }
 
@@ -1277,6 +1287,177 @@ CompileIndex(
  * Un pas dans une valeur typée
  * -------------------------------------------------------------------- */
 
+/* --------------------------------------------------------------------
+ * Le chemin compilé, gardé
+ *
+ *	CompileIndex ne dépend que du texte de l'index et de ses portées
+ *	substituées : son résultat, un PathSet que la lecture et l'écriture ne
+ *	modifient pas, est gardé
+ *	  - dans l'objet index lui-même : un littéral du bytecode ("a.x" dans
+ *	    $s(a.x)) prend le type "typepath" ; un index aux portées
+ *	    substituées (pathindex) le garde à côté de ses portées ;
+ *	  - et, pour un index sans portée, dans une table par thread, par son
+ *	    texte (index fabriqué à chaque fois : $s($k.x), set s(a.x)).
+ *	Un compteur de références protège le PathSet pendant qu'on s'en sert
+ *	(une trace lue en chemin peut faire changer l'index de type).
+ * -------------------------------------------------------------------- */
+
+typedef struct CompiledPath {
+    size_t refs;
+    int chain;			/* un seul chemin de noms (FastChain) */
+    PathSet set;
+} CompiledPath;
+
+static void
+CompiledPathRelease(CompiledPath *cp)
+{
+    if (cp->refs-- <= 1) {
+	SetFree(&cp->set);
+	Tcl_Free(cp);
+    }
+}
+
+static void
+FreeTypePath(Tcl_Obj *objPtr)
+{
+    CompiledPathRelease((CompiledPath *) objPtr->internalRep.twoPtrValue.ptr1);
+    objPtr->typePtr = NULL;
+}
+
+static void
+DupTypePath(Tcl_Obj *srcPtr, Tcl_Obj *dupPtr)
+{
+    CompiledPath *cp = (CompiledPath *) srcPtr->internalRep.twoPtrValue.ptr1;
+
+    cp->refs++;
+    dupPtr->internalRep.twoPtrValue.ptr1 = cp;
+    dupPtr->internalRep.twoPtrValue.ptr2 = NULL;
+    dupPtr->typePtr = srcPtr->typePtr;
+}
+
+static const Tcl_ObjType typePathType = {
+    "typepath", FreeTypePath, DupTypePath, NULL, NULL, TCL_OBJTYPE_V0
+};
+
+#define PATH_CACHE_MAX 2048
+
+typedef struct PathCacheTSD {
+    int init;
+    Tcl_HashTable table;	/* texte -> CompiledPath * */
+} PathCacheTSD;
+static Tcl_ThreadDataKey pathCacheKey;
+
+static void
+PathCacheClear(PathCacheTSD *tsd)
+{
+    Tcl_HashSearch hs;
+    Tcl_HashEntry *he;
+
+    for (he = Tcl_FirstHashEntry(&tsd->table, &hs); he != NULL;
+	    he = Tcl_NextHashEntry(&hs)) {
+	CompiledPathRelease((CompiledPath *) Tcl_GetHashValue(he));
+    }
+    Tcl_DeleteHashTable(&tsd->table);
+}
+
+static void
+PathCacheExit(void *clientData)
+{
+    PathCacheTSD *tsd = (PathCacheTSD *) clientData;
+
+    if (tsd->init) {
+	PathCacheClear(tsd);
+	tsd->init = 0;
+    }
+}
+
+/*
+ * Le chemin compilé de l'index (texte text, objet pathObj ou NULL), avec une
+ * référence pour l'appelant, qui la rend par CompiledPathRelease. Sur une
+ * erreur de syntaxe, NULL et le message dans interp (rien n'est gardé).
+ */
+static CompiledPath *
+GetCompiledPath(Tcl_Interp *interp, const char *text, Tcl_Obj *pathObj)
+{
+    CompiledPath *cp;
+    PathCacheTSD *tsd = NULL;
+    Tcl_HashEntry *he = NULL;
+    const Tcl_Size *pos;
+    int isNew, spans = PathIndexSpans(pathObj, &pos) != 0;
+
+    if (pathObj != NULL) {
+	if (pathObj->typePtr == &typePathType) {
+	    cp = (CompiledPath *) pathObj->internalRep.twoPtrValue.ptr1;
+	    cp->refs++;
+	    return cp;
+	}
+	if (pathObj->typePtr == &pathIndexType
+		&& pathObj->internalRep.twoPtrValue.ptr2 != NULL) {
+	    cp = (CompiledPath *) pathObj->internalRep.twoPtrValue.ptr2;
+	    cp->refs++;
+	    return cp;
+	}
+    }
+    if (!spans) {
+	tsd = (PathCacheTSD *) Tcl_GetThreadData(&pathCacheKey,
+		sizeof(PathCacheTSD));
+	if (!tsd->init) {
+	    Tcl_InitHashTable(&tsd->table, TCL_STRING_KEYS);
+	    Tcl_CreateThreadExitHandler(PathCacheExit, tsd);
+	    tsd->init = 1;
+	}
+	he = Tcl_FindHashEntry(&tsd->table, text);
+    }
+    if (he != NULL) {
+	cp = (CompiledPath *) Tcl_GetHashValue(he);
+    } else {
+	cp = (CompiledPath *) Tcl_Alloc(sizeof(CompiledPath));
+	cp->refs = 0;
+	if (CompileIndex(interp, text, pathObj, &cp->set) != TCL_OK) {
+	    Tcl_Free(cp);
+	    return NULL;
+	}
+	cp->chain = (cp->set.n == 1 && cp->set.shape.leaf == 0);
+	if (cp->chain) {
+	    Tcl_Size j;
+
+	    for (j = 0; j < cp->set.path[0].n; j++) {
+		if (cp->set.path[0].step[j].kind != IS_NAME
+			|| cp->set.path[0].step[j].atom) {
+		    cp->chain = 0;
+		}
+	    }
+	}
+	if (tsd != NULL) {
+	    if (tsd->table.numEntries >= PATH_CACHE_MAX) {
+		PathCacheClear(tsd);
+		Tcl_InitHashTable(&tsd->table, TCL_STRING_KEYS);
+	    }
+	    he = Tcl_CreateHashEntry(&tsd->table, text, &isNew);
+	    cp->refs++;
+	    Tcl_SetHashValue(he, cp);
+	}
+    }
+    /* gardé dans l'objet index : un texte seul, ou un pathindex */
+    if (pathObj != NULL && !TclIsAnnotated(pathObj)) {
+	if (pathObj->typePtr == &pathIndexType) {
+	    cp->refs++;
+	    pathObj->internalRep.twoPtrValue.ptr2 = cp;
+	} else if (!spans && pathObj->bytes != NULL
+		&& (pathObj->typePtr == NULL
+		|| pathObj->typePtr == &pathFieldType)) {
+	    Tcl_ObjInternalRep ir;
+
+	    cp->refs++;
+	    ir.twoPtrValue.ptr1 = cp;
+	    ir.twoPtrValue.ptr2 = NULL;
+	    Tcl_StoreInternalRep(pathObj, &typePathType, &ir);
+	}
+    }
+    cp->refs++;				/* celle de l'appelant */
+    return cp;
+}
+
 static void
 PathErr(Tcl_Interp *interp, const char *fmt, const char *a, const char *b)
 {
@@ -1332,7 +1513,9 @@ WrapSlotHint(Tcl_Interp *interp, TclType *tp, Tcl_Obj *content, int hint)
      * $P(0.x) relisait tout le point, set P(0.x) le remplaçait).
      */
     if (TclIsAnnotated(content)) {
-	content = TCL_ANNOT_CONTENT(content);
+	/* v17a : ses notes passent sur la nouvelle valeur */
+	return TclAnnotCarryNotes(content, TclNewAnnotatedShared(interp, tp,
+		variant, TCL_ANNOT_CONTENT(content)));
     }
     return TclNewAnnotatedShared(interp, tp, variant, content);
 }
@@ -1514,6 +1697,14 @@ DerefWalk(Tcl_Interp *interp, Tcl_Obj *a, Tcl_DString *path)
 	TclType *ft;
 	Tcl_Size j = -1;
 
+	if (TclSumTagged(tp)) {		/* v16w : "v charge" */
+	    Tcl_Obj *pl = NULL;
+
+	    variant = TclSumDecode(tp, v, &pl);
+	    if (pl != NULL) {
+		v = pl;
+	    }
+	}
 	if (variant < 0 || variant >= tp->nfields) {
 	    PathErr(interp, "type deref: the value of %s has no variant%s",
 		    tp->name, "");
@@ -1541,7 +1732,8 @@ DerefWalk(Tcl_Interp *interp, Tcl_Obj *a, Tcl_DString *path)
 	    return NULL;
 	}
 	if (ft == NULL) {			/* variante littérale */
-	    return TclNewAnnotated(interp, rt, (int) j, v);
+	    return TclNewAnnotated(interp, rt, (int) j, TclSumTagged(rt)
+		    ? rt->fields[j].literal : v);
 	}
 	DerefWhere(path, keep, ".", tp->fields[variant].name != NULL
 		? Tcl_GetString(tp->fields[variant].name) : "?");
@@ -1556,7 +1748,14 @@ DerefWalk(Tcl_Interp *interp, Tcl_Obj *a, Tcl_DString *path)
 	    return NULL;
 	}
 	TclAnnotInfo(r, &c, NULL, NULL, NULL);
-	res = TclNewAnnotated(interp, rt, (int) j, c);
+	if (TclSumTagged(rt)) {
+	    Tcl_Obj *w = TclSumMake(rt, (int) j, c);
+
+	    res = TclNewAnnotated(interp, rt, (int) j, w);
+	    TclDiscard(w);
+	} else {
+	    res = TclNewAnnotated(interp, rt, (int) j, c);
+	}
 	TclDiscard(r);
 	return res;
     }
@@ -1777,14 +1976,41 @@ Step(Tcl_Interp *interp, Tcl_Obj *a, const char *name, int quoted)
 	TclType *ft;
 	Tcl_Obj *res;
 
+	if (TclSumTagged(tp)) {
+	    /* v16w : la valeur dit sa variante ; la charge est son second
+	     * élément */
+	    Tcl_Obj *pl = NULL;
+
+	    variant = TclSumDecode(tp, v, &pl);
+	    if (variant >= 0 && pl != NULL) {
+		v = pl;
+	    }
+	}
 	idx = TclTypeFieldIndex(tp, name);
+	if ((idx < 0 || tp->fields[idx].type == NULL) && variant >= 0
+		&& variant < tp->nfields && tp->fields[variant].type != NULL
+		&& (tp->fields[variant].type->kind == TCLT_PRODUCT
+		    || tp->fields[variant].type->kind == TCLT_LIST
+		    || tp->fields[variant].type->kind == TCLT_DICT)
+		&& !(quoted && tp->fields[variant].type->kind != TCLT_DICT)) {
+	    /* v16w : un nom qui n'est pas une variante : un pas dans la
+	     * charge de la variante courante ($f(w) d'un forme.rect) */
+	    Tcl_Obj *pa = TclNewAnnotated(interp, tp->fields[variant].type,
+		    -1, v);
+
+	    Tcl_IncrRefCount(pa);
+	    res = Step(interp, pa, name, quoted);
+	    Tcl_DecrRefCount(pa);
+	    return res;
+	}
 	if (idx < 0 || tp->fields[idx].type == NULL) {
 	    PathErr(interp, "%s has no variant \"%s\"", tp->name, name);
 	    return NULL;
 	}
 	ft = tp->fields[idx].type;
 	if (idx == variant) {
-	    return TclNewAnnotated(interp, ft, -1, v);
+	    return WrapSlot(interp, ft, v);	/* une somme imbriquée : sa
+						 * variante */
 	}
 	/*
 	 * Autre variante : le nom demandé vaut cast explicite (§10), de la
@@ -2055,6 +2281,92 @@ ReadSteps(Tcl_Interp *interp, Tcl_Obj *a, const IndexPath *p, Tcl_Size i,
 }
 
 /*
+ * Un chemin de noms (a.b.c, L(3.x)) au travers de produits et de listes
+ * dont les parts sont « simples » : on descend dans les contenus sans
+ * envelopper les étapes intermédiaires, et seul le résultat reçoit son
+ * type. NULL (sans message) dès que le chemin sort de ce cas : le chemin
+ * général (ReadSteps) fait alors la lecture, ou donne l'erreur.
+ */
+static int SimpleFieldType(const TclType *ft);
+static Tcl_Obj *FieldAt(Tcl_Interp *interp, Tcl_Obj *v, TclType *ft,
+	Tcl_Size idx);
+
+static Tcl_Obj *
+FastChain(Tcl_Interp *interp, Tcl_Obj *a, const IndexPath *p)
+{
+    Tcl_Obj *v, *e = NULL;
+    TclType *tp;
+    Tcl_Size i, idx = -1, n;
+    int variant;
+
+    if (p->n < 1 || !TclAnnotIsSettled(a)
+	    || TclAnnotInfo(a, &v, &tp, &variant, NULL) != 1) {
+	return NULL;
+    }
+    for (i = 0; i < p->n; i++) {
+	const IndexStep *st = &p->step[i];
+
+	if (st->kind != IS_NAME || st->atom || TclIsCompact(v)) {
+	    return NULL;
+	}
+	if (i > 0 && !SimpleFieldType(tp)) {
+	    return NULL;
+	}
+	switch (tp->kind) {
+	case TCLT_PRODUCT: {
+	    const char *name = Tcl_GetString(st->a);
+
+	    idx = TclTypeFieldIndex(tp, name);
+	    if (idx < 0 && IsIntegerName(name)) {
+		idx = atol(name);
+	    }
+	    if (idx < 0 || idx >= tp->nfields) {
+		return NULL;
+	    }
+	    if (Tcl_ListObjIndex(NULL, v, idx, &e) != TCL_OK || e == NULL) {
+		return NULL;
+	    }
+	    tp = tp->fields[idx].type;
+	    break;
+	}
+	case TCLT_LIST:
+	    if (Tcl_ListObjLength(NULL, v, &n) != TCL_OK
+		    || TclGetIntForIndexM(NULL, st->a, n - 1, &idx) != TCL_OK
+		    || idx < 0 || idx >= n
+		    || Tcl_ListObjIndex(NULL, v, idx, &e) != TCL_OK
+		    || e == NULL) {
+		return NULL;
+	    }
+	    tp = tp->elem;
+	    break;
+	default:
+	    return NULL;
+	}
+	if (i == p->n - 1) {
+	    /* le dernier pas : typé une fois pour toutes dans le contenu */
+	    if (!SimpleFieldType(tp) || tp->kind == TCLT_VAR) {
+		return NULL;
+	    }
+	    return FieldAt(interp, v, tp, idx);
+	}
+	if (TclIsAnnotated(e)) {
+	    if (!SimpleFieldType(tp)) {
+		return NULL;	/* garde sa propre annotation : chemin général */
+	    }
+	    e = TCL_ANNOT_CONTENT(e);
+	}
+	v = e;
+    }
+    if (tp->kind == TCLT_VAR) {
+	return NULL;
+    }
+    if (SimpleFieldType(tp)) {
+	return TclNewAnnotatedShared(interp, tp, -1, v);
+    }
+    return NULL;
+}
+
+/*
  * Lecture : *resultPtr reçoit une valeur typée, avec une référence de
  * plus que l'appelant doit rendre (Tcl_DecrRefCount). Un résultat unique
  * garde le type du champ ; une collecte donne une liste {list}T, T étant
@@ -2173,7 +2485,8 @@ static int
 PathRead(Tcl_Interp *interp, Tcl_Obj *containerPtr, const char *path,
 	Tcl_Obj *pathObj, Tcl_Obj **resultPtr)
 {
-    PathSet set;
+    CompiledPath *cp;
+    const PathSet *set;
     Items *per;
     Tcl_Size k, m;
     Tcl_Obj *res;
@@ -2214,15 +2527,33 @@ PathRead(Tcl_Interp *interp, Tcl_Obj *containerPtr, const char *path,
 	    return TCL_OK;
 	}
     }
-    if (CompileIndex(interp, path, pathObj, &set) != TCL_OK) {
+    cp = GetCompiledPath(interp, path, pathObj);
+    if (cp == NULL) {
 	return TCL_ERROR;
     }
-    per = (Items *) Tcl_Alloc((set.n ? set.n : 1) * sizeof(Items));
-    for (k = 0; k < set.n; k++) {
+    set = &cp->set;
+    if (cp->chain) {
+	/* un seul chemin de noms : ni Items ni forme */
+	res = FastChain(interp, containerPtr, &set->path[0]);
+	if (res != NULL) {
+	    Tcl_IncrRefCount(res);
+	    *resultPtr = res;
+	    CompiledPathRelease(cp);
+	    return TCL_OK;
+	}
+    }
+    per = (Items *) Tcl_Alloc((set->n ? set->n : 1) * sizeof(Items));
+    for (k = 0; k < set->n; k++) {
 	ItemsInit(&per[k]);
     }
-    for (k = 0; k < set.n; k++) {
-	if (ReadSteps(interp, containerPtr, &set.path[k], 0, &per[k])
+    for (k = 0; k < set->n; k++) {
+	Tcl_Obj *quick = FastChain(interp, containerPtr, &set->path[k]);
+
+	if (quick != NULL) {
+	    TclVecAdd(&per[k].vec, quick);
+	    continue;
+	}
+	if (ReadSteps(interp, containerPtr, &set->path[k], 0, &per[k])
 		!= TCL_OK) {
 	    goto done;
 	}
@@ -2243,7 +2574,7 @@ PathRead(Tcl_Interp *interp, Tcl_Obj *containerPtr, const char *path,
 	    }
 	}
     }
-    res = ShapeRead(interp, &set.shape, per, &set);
+    res = ShapeRead(interp, &set->shape, per, set);
     if (res == NULL) {
 	goto done;
     }
@@ -2252,11 +2583,11 @@ PathRead(Tcl_Interp *interp, Tcl_Obj *containerPtr, const char *path,
     rc = TCL_OK;
 
   done:
-    for (k = 0; k < set.n; k++) {
+    for (k = 0; k < set->n; k++) {
 	TclVecFree(&per[k].vec);
     }
     Tcl_Free(per);
-    SetFree(&set);
+    CompiledPathRelease(cp);
     return rc;
 }
 
@@ -2371,6 +2702,40 @@ SetIn(Tcl_Interp *interp, Tcl_Obj *a, const IndexPath *chain, Tcl_Size i,
 	PathErr(interp, "can't assign into an untyped value with \"%s\"%s",
 		name, "");
 	return NULL;
+    }
+    if (TclSumTagged(tp)) {
+	/* v16w : la valeur dit sa variante ; on travaille sur la charge, la
+	 * valeur est refaite à la fin ("v charge") */
+	Tcl_Obj *pl = NULL;
+
+	variant = TclSumDecode(tp, v, &pl);
+	if (variant >= 0 && pl != NULL) {
+	    v = pl;
+	}
+    }
+    if (tp->kind == TCLT_SUM && step->kind != IS_RANGE
+	    && (TclTypeFieldIndex(tp, name) < 0
+		|| tp->fields[TclTypeFieldIndex(tp, name)].type == NULL)
+	    && variant >= 0 && variant < tp->nfields
+	    && tp->fields[variant].type != NULL) {
+	/* v16w : un nom qui n'est pas une variante : le même pas dans la
+	 * charge de la variante courante (set f(w) 5 d'un forme.rect) */
+	Tcl_Obj *pa = TclNewAnnotated(interp, tp->fields[variant].type, -1, v);
+	Tcl_Obj *nc, *ncc, *w;
+
+	Tcl_IncrRefCount(pa);
+	nc = SetIn(interp, pa, chain, i, val, pw);
+	Tcl_DecrRefCount(pa);
+	if (nc == NULL) {
+	    return NULL;
+	}
+	TclAnnotInfo(nc, &ncc, NULL, NULL, NULL);
+	w = TclSumTagged(tp) ? TclSumMake(tp, variant, ncc)
+		: Tcl_DuplicateObj(ncc);
+	res = TclNewAnnotated(interp, tp, variant, w);
+	TclDiscard(w);
+	TclDiscard(nc);
+	return res;
     }
 
     /* Un lien est transparent : le pas s'applique à la variable visée, que
@@ -2614,7 +2979,14 @@ SetIn(Tcl_Interp *interp, Tcl_Obj *a, const IndexPath *chain, Tcl_Size i,
     /* 3. Reconstruire le conteneur. */
     switch (tp->kind) {
     case TCLT_SUM:
-	res = TclNewAnnotated(interp, tp, (int) idx, childContent);
+	if (TclSumTagged(tp)) {		/* v16w : "v charge" */
+	    Tcl_Obj *w = TclSumMake(tp, (int) idx, childContent);
+
+	    res = TclNewAnnotated(interp, tp, (int) idx, w);
+	    TclDiscard(w);
+	} else {
+	    res = TclNewAnnotated(interp, tp, (int) idx, childContent);
+	}
 	break;
     case TCLT_DICT: {
 	Tcl_Obj *key = Tcl_NewStringObj(name, TCL_AUTO_LENGTH);
@@ -2696,29 +3068,32 @@ PathWrite(Tcl_Interp *interp, Tcl_Obj *containerPtr, const char *path,
 	Tcl_Obj *pathObj, Tcl_Size nvals, Tcl_Obj *const vals[],
 	Tcl_Obj **newPtr)
 {
-    PathSet set;
+    CompiledPath *cp;
+    const PathSet *set;
     Tcl_Size i, j;
     Tcl_Obj *cur, *next;
     PendingWrites pw;
     Tcl_Obj **flat = NULL;
     int rc = TCL_ERROR;
 
-    if (CompileIndex(interp, path, pathObj, &set) != TCL_OK) {
+    cp = GetCompiledPath(interp, path, pathObj);
+    if (cp == NULL) {
 	return TCL_ERROR;
     }
+    set = &cp->set;
     memset(&pw, 0, sizeof(pw));
-    if (FlattenValues(interp, &set, nvals, vals, &flat) != TCL_OK) {
+    if (FlattenValues(interp, set, nvals, vals, &flat) != TCL_OK) {
 	goto done;
     }
-    for (i = 0; i < set.n; i++) {
-	for (j = 0; j < set.path[i].n; j++) {
+    for (i = 0; i < set->n; i++) {
+	for (j = 0; j < set->path[i].n; j++) {
 	    /* une tranche a:b est admise en dernier pas : elle vise un
 	     * bitarray (SetIn refuse les autres conteneurs) */
-	    if (set.path[i].step[j].kind == IS_RANGE
-		    && j == set.path[i].n - 1) {
+	    if (set->path[i].step[j].kind == IS_RANGE
+		    && j == set->path[i].n - 1) {
 		continue;
 	    }
-	    if (set.path[i].step[j].kind > IS_KEY) {
+	    if (set->path[i].step[j].kind > IS_KEY) {
 		PathErr(interp, "only simple names can be assigned, not "
 			"ranges or tags%s%s", "", "");
 		goto done;
@@ -2727,8 +3102,8 @@ PathWrite(Tcl_Interp *interp, Tcl_Obj *containerPtr, const char *path,
     }
     cur = containerPtr;
     Tcl_IncrRefCount(cur);
-    for (i = 0; i < set.n; i++) {
-	next = SetIn(interp, cur, &set.path[i], 0, flat[i], &pw);
+    for (i = 0; i < set->n; i++) {
+	next = SetIn(interp, cur, &set->path[i], 0, flat[i], &pw);
 	Tcl_DecrRefCount(cur);
 	if (next == NULL) {
 	    goto done;
@@ -2754,7 +3129,7 @@ PathWrite(Tcl_Interp *interp, Tcl_Obj *containerPtr, const char *path,
     }
     TclVecFree(&pw.names);
     TclVecFree(&pw.values);
-    SetFree(&set);
+    CompiledPathRelease(cp);
     return rc;
 }
 
@@ -2775,7 +3150,7 @@ PathWrite(Tcl_Interp *interp, Tcl_Obj *containerPtr, const char *path,
  */
 static int ConstructLevel(Tcl_Interp *interp, TclType *tp,
 	const PathSet *set, Tcl_Obj **flat, const Tcl_Size *idx, Tcl_Size cnt,
-	Tcl_Size d, Tcl_Obj **contentPtr);
+	Tcl_Size d, Tcl_Obj **contentPtr, int *variantPtr);
 
 static int
 ConstructCollection(Tcl_Interp *interp, TclType *tp, const PathSet *set,
@@ -2847,16 +3222,18 @@ ConstructCollection(Tcl_Interp *interp, TclType *tp, const PathSet *set,
 	    value = flat[whole];
 	    Tcl_IncrRefCount(value);
 	} else {
+	    int sv = -1;
+
 	    c = NULL;
 	    if (et == NULL || ConstructLevel(interp, et, set, flat, sub, ns,
-		    d + 1, &c) != TCL_OK) {
+		    d + 1, &c, &sv) != TCL_OK) {
 		if (et == NULL) {
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf("elements of %s have "
 			    "no type to construct", tp->name));
 		}
 		goto done;
 	    }
-	    value = TclNewAnnotated(interp, et, -1, c);
+	    value = TclNewAnnotated(interp, et, sv, c);
 	    TclDiscard(c);
 	    Tcl_IncrRefCount(value);
 	}
@@ -2920,13 +3297,81 @@ ConstructCollection(Tcl_Interp *interp, TclType *tp, const PathSet *set,
 static int
 ConstructLevel(Tcl_Interp *interp, TclType *tp, const PathSet *set,
 	Tcl_Obj **flat, const Tcl_Size *idx, Tcl_Size cnt, Tcl_Size d,
-	Tcl_Obj **contentPtr)
+	Tcl_Obj **contentPtr, int *variantPtr)
 {
     TclObjVec args = {NULL, 0, 0};
     char *used;
     Tcl_Size i, j, *sub;
     int rc = TCL_ERROR;
 
+    if (variantPtr != NULL) {
+	*variantPtr = -1;
+    }
+    if (tp->kind == TCLT_SUM && cnt > 0) {
+	/*
+	 * v16o : set {segment}s(lien.(cible,contenu)) ... : le premier pas
+	 * choisit la variante (une seule pour tous les chemins), la suite
+	 * construit la valeur de son type.
+	 */
+	const char *vn = Tcl_GetString(set->path[idx[0]].step[d].a);
+	Tcl_Size fi = TclTypeFieldIndex(tp, vn), whole = -1;
+	TclType *vt;
+	Tcl_Obj *c = NULL;
+
+	for (i = 0; i < cnt; i++) {
+	    const IndexPath *q = &set->path[idx[i]];
+
+	    if (strcmp(Tcl_GetString(q->step[d].a), vn) != 0) {
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf("a value of %s has one "
+			"variant: \"%s\" and \"%s\" can't be built together",
+			tp->name, vn, Tcl_GetString(q->step[d].a)));
+		Tcl_SetErrorCode(interp, "TCL", "TYPE", "PATH", (char *) NULL);
+		return TCL_ERROR;
+	    }
+	    if (q->n == d + 1) {
+		whole = idx[i];
+	    }
+	}
+	if (fi < 0 || (vt = tp->fields[fi].type) == NULL) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf("%s has no variant \"%s\"",
+		    tp->name, vn));
+	    Tcl_SetErrorCode(interp, "TCL", "TYPE", "VARIANT", (char *) NULL);
+	    return TCL_ERROR;
+	}
+	if (whole >= 0) {
+	    if (cnt > 1) {
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf("variant \"%s\" of %s is "
+			"assigned more than once", vn, tp->name));
+		Tcl_SetErrorCode(interp, "TCL", "TYPE", "PATH", (char *) NULL);
+		return TCL_ERROR;
+	    }
+	    c = TclTypedConform(interp, vt, flat[whole]);
+	    if (c == NULL) {
+		return TCL_ERROR;
+	    }
+	} else if (ConstructLevel(interp, vt, set, flat, idx, cnt, d + 1, &c,
+		NULL) != TCL_OK) {
+	    if (!vt->nominal) {
+		Tcl_Obj *nm = Tcl_ObjPrintf("%s.%s", tp->name, vn);
+
+		Tcl_IncrRefCount(nm);
+		TclTypeResultRename(interp, vt->name, Tcl_GetString(nm));
+		Tcl_DecrRefCount(nm);
+	    }
+	    return TCL_ERROR;
+	}
+	if (TclSumTagged(tp)) {		/* v16w : "v charge" */
+	    Tcl_Obj *w = TclSumMake(tp, (int) fi, c);
+
+	    TclDiscard(c);
+	    c = w;
+	}
+	*contentPtr = c;
+	if (variantPtr != NULL) {
+	    *variantPtr = (int) fi;
+	}
+	return TCL_OK;
+    }
     if (tp->kind == TCLT_LIST || tp->kind == TCLT_DICT) {
 	return ConstructCollection(interp, tp, set, flat, idx, cnt, d,
 		contentPtr);
@@ -2981,16 +3426,17 @@ ConstructLevel(Tcl_Interp *interp, TclType *tp, const PathSet *set,
 	} else {
 	    TclType *ft = tp->fields[fi].type;
 	    Tcl_Obj *c = NULL;
+	    int sv = -1;
 
 	    if (ft == NULL || ConstructLevel(interp, ft, set, flat, sub, ns,
-		    d + 1, &c) != TCL_OK) {
+		    d + 1, &c, &sv) != TCL_OK) {
 		if (ft == NULL) {
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf("field \"%s\" of %s "
 			    "has no type to construct", name, tp->name));
 		}
 		goto done;
 	    }
-	    value = TclNewAnnotated(interp, ft, -1, c);
+	    value = TclNewAnnotated(interp, ft, sv, c);
 	    TclDiscard(c);
 	    if (value == NULL) {
 		goto done;
@@ -3013,33 +3459,38 @@ ConstructLevel(Tcl_Interp *interp, TclType *tp, const PathSet *set,
 /* *contentPtr : contenu du produit tp (refcount 0, privé). */
 int
 TclTypePathConstruct(Tcl_Interp *interp, TclType *tp, const char *path,
-	Tcl_Size nvals, Tcl_Obj *const vals[], Tcl_Obj **contentPtr)
+	Tcl_Size nvals, Tcl_Obj *const vals[], Tcl_Obj **contentPtr,
+	int *variantPtr)
 {
-    PathSet set;
+    CompiledPath *cp;
+    const PathSet *set;
     Tcl_Obj **flat = NULL;
     Tcl_Size i, j, *idx = NULL;
     int rc = TCL_ERROR;
 
-    if (CompileIndex(interp, path, NULL, &set) != TCL_OK) {
+    cp = GetCompiledPath(interp, path, NULL);
+    if (cp == NULL) {
 	return TCL_ERROR;
     }
-    for (i = 0; i < set.n; i++) {
-	for (j = 0; j < set.path[i].n; j++) {
-	    if (set.path[i].step[j].kind > IS_KEY) {
+    set = &cp->set;
+    for (i = 0; i < set->n; i++) {
+	for (j = 0; j < set->path[i].n; j++) {
+	    if (set->path[i].step[j].kind > IS_KEY) {
 		PathErr(interp, "a constructor path names fields: no ranges or "
 			"tags%s%s", "", "");
 		goto done;
 	    }
 	}
     }
-    if (FlattenValues(interp, &set, nvals, vals, &flat) != TCL_OK) {
+    if (FlattenValues(interp, set, nvals, vals, &flat) != TCL_OK) {
 	goto done;
     }
-    idx = (Tcl_Size *) Tcl_Alloc((set.n ? set.n : 1) * sizeof(Tcl_Size));
-    for (i = 0; i < set.n; i++) {
+    idx = (Tcl_Size *) Tcl_Alloc((set->n ? set->n : 1) * sizeof(Tcl_Size));
+    for (i = 0; i < set->n; i++) {
 	idx[i] = i;
     }
-    rc = ConstructLevel(interp, tp, &set, flat, idx, set.n, 0, contentPtr);
+    rc = ConstructLevel(interp, tp, set, flat, idx, set->n, 0, contentPtr,
+	    variantPtr);
 
   done:
     if (flat != NULL) {
@@ -3048,7 +3499,7 @@ TclTypePathConstruct(Tcl_Interp *interp, TclType *tp, const char *path,
     if (idx != NULL) {
 	Tcl_Free(idx);
     }
-    SetFree(&set);
+    CompiledPathRelease(cp);
     return rc;
 }
 
@@ -3233,9 +3684,6 @@ TclTypedVarGetElementByName(Tcl_Interp *interp, Tcl_Obj *nameObj,
  * jamais : même type, même indice. Le nom du champ est revérifié (strcmp
  * court) par prudence.
  */
-static const Tcl_ObjType pathFieldType = {
-    "pathfield", NULL, NULL, NULL, NULL, TCL_OBJTYPE_V0
-};
 
 /* Champ « simple » : lu sans règle particulière (somme et sélecteur S($f),
  * lien var, list.any, lien de frontière passent par le chemin général). */
@@ -3355,6 +3803,197 @@ FieldAt(Tcl_Interp *interp, Tcl_Obj *v, TclType *ft, Tcl_Size idx)
  * l'objet (sans référence propre) ou NULL : l'instruction fait alors ce que
  * fait loadArray (même résultat, mêmes erreurs, traces).
  */
+/*
+ * Index a.b.c fait de noms simples (lettres, chiffres, _), sans portée
+ * substituée qui contienne un point (elle serait un seul nom) : les noms,
+ * terminés par '\0' dans buf. Rend leur nombre, 0 sinon.
+ */
+static int
+DottedNames(Tcl_Obj *part2Ptr, int max, const char *names[], char *buf,
+	size_t bufLen)
+{
+    Tcl_Size len, ns, k;
+    const Tcl_Size *pos;
+    const char *t = Tcl_GetStringFromObj(part2Ptr, &len);
+    int n = 0;
+    char *q;
+
+    if (len == 0 || (size_t) len >= bufLen) {
+	return 0;
+    }
+    ns = PathIndexSpans(part2Ptr, &pos);
+    for (k = 0; k < ns; k++) {
+	if (pos[2 * k + 1] == 0
+		|| memchr(t + pos[2 * k], '.', (size_t) pos[2 * k + 1])) {
+	    return 0;
+	}
+    }
+    memcpy(buf, t, (size_t) len + 1);
+    names[n++] = buf;
+    for (q = buf; *q != '\0'; q++) {
+	if (*q == '.') {
+	    if (q == names[n - 1] || n == max) {
+		return 0;
+	    }
+	    *q = '\0';
+	    names[n++] = q + 1;
+	} else if (!(isalnum(UCHAR(*q)) || *q == '_')) {
+	    return 0;
+	}
+    }
+    if (*names[n - 1] == '\0') {
+	return 0;
+    }
+    return n;
+}
+
+/* L'élément idx d'une liste de n éléments, désigné par un nom simple. */
+static int
+SimpleListIndex(const char *name, Tcl_Size n, Tcl_Size *idxPtr)
+{
+    const char *q = name;
+    Tcl_Size i = 0;
+
+    if (isdigit(UCHAR(*q)) && (q[0] != '0' || q[1] == '\0')) {
+	for (; isdigit(UCHAR(*q)); q++) {
+	    if (i > n) {
+		return 0;
+	    }
+	    i = i * 10 + (*q - '0');
+	}
+	if (*q != '\0') {
+	    return 0;
+	}
+    } else if (ListIndex(NULL, name, n, &i) != TCL_OK) {
+	return 0;
+    }
+    if (i < 0 || i >= n) {
+	return 0;
+    }
+    *idxPtr = i;
+    return 1;
+}
+
+/*
+ * L(i.j...) d'une liste typée ordinaire dont chaque niveau est une liste
+ * (list.list(3).double...) et la partie un nombre : le contenu de la partie
+ * (partagé, refcount quelconque : l'appelant l'enveloppe ou le pousse), ou
+ * NULL dès qu'un niveau sort de ce cas simple (élément annoté, produit,
+ * somme...) : le chemin général s'en charge.
+ */
+static Tcl_Obj *
+PlainPathPart(Tcl_Obj *v, TclType *tp, int k, const char *const names[],
+	TclType **tpPtr)
+{
+    int d;
+
+    for (d = 0; d < k; d++) {
+	Tcl_Size n, idx;
+	Tcl_Obj **ev;
+
+	/* les éléments appartiennent à la liste (pas d'objet neuf) */
+	if (tp->kind != TCLT_LIST || tp->elem == NULL || TclIsCompact(v)
+		|| TclIsCompactElem(v)
+		|| Tcl_ListObjGetElements(NULL, v, &n, &ev) != TCL_OK
+		|| !SimpleListIndex(names[d], n, &idx) || TclIsAnnotated(ev[idx])) {
+	    return NULL;
+	}
+	v = ev[idx];
+	tp = tp->elem;
+    }
+    if (tp->kind != TCLT_INT && tp->kind != TCLT_DOUBLE) {
+	return NULL;
+    }
+    *tpPtr = tp;
+    return v;
+}
+
+/*
+ * L(i.j...) d'une liste typée en cases : la partie lue dans la case (contenu
+ * neuf, refcount 0, et son type), sans compiler l'index ni fabriquer
+ * l'élément. NULL : le chemin général (qui fait la même lecture, ou dit
+ * l'erreur).
+ */
+static Tcl_Obj *
+CompactPathPart(Tcl_Obj *a, Tcl_Obj *part2Ptr, TclType **tpPtr)
+{
+    Tcl_Obj *v;
+    TclType *tp;
+    Tcl_Size n, idx;
+    const char *names[16];
+    char buf[256];
+    int k;
+
+    if (!TclAnnotIsSettled(a) || TclAnnotInfo(a, &v, &tp, NULL, NULL) != 1
+	    || tp->kind != TCLT_LIST
+	    || (k = DottedNames(part2Ptr, 16, names, buf, sizeof(buf))) < 2) {
+	return NULL;
+    }
+    if (TclIsCompactElem(v)) {
+	/* une vue sur une case : une matrice d'un lot (foreach, lindex) */
+	return TclCompactViewReadPath(v, tp, k, names, tpPtr);
+    }
+    if (!TclIsCompact(v)) {
+	return PlainPathPart(v, tp, k, names, tpPtr);
+    }
+    if (Tcl_ListObjLength(NULL, v, &n) != TCL_OK
+	    || !SimpleListIndex(names[0], n, &idx)) {
+	return NULL;
+    }
+    return TclCompactReadPath(v, idx, k - 1, names + 1, tpPtr);
+}
+
+/* L(i.j...) = value sur place (TclCompactWriteScalar) ; 1 si écrit. */
+static int
+CompactPathWrite(Tcl_Obj *a, Tcl_Obj *part2Ptr, Tcl_Obj *value)
+{
+    Tcl_Obj *v;
+    TclType *tp;
+    Tcl_Size n, idx;
+    const char *names[16];
+    char buf[256];
+    int k;
+
+    if (Tcl_IsShared(a) || !TclAnnotIsSettled(a)
+	    || TclAnnotInfo(a, &v, &tp, NULL, NULL) != 1
+	    || tp->kind != TCLT_LIST || !TclIsCompact(v)
+	    || (k = DottedNames(part2Ptr, 16, names, buf, sizeof(buf))) < 2
+	    || Tcl_ListObjLength(NULL, v, &n) != TCL_OK
+	    || !SimpleListIndex(names[0], n, &idx)
+	    || !TclCompactWriteScalar(v, idx, k - 1, names + 1, value)) {
+	return 0;
+    }
+    Tcl_InvalidateStringRep(a);
+    return 1;
+}
+
+/*
+ * v17b : le champ nommé x d'un produit, de type {int}i | {double}d (le
+ * nombre de Tcl : son texte canonique dit la variante, l'opérateur ne lit
+ * que le contenu). Pas de cache : SimpleFieldIndex ne doit pas l'accepter.
+ */
+static Tcl_Size
+NumUnionFieldIndex(TclType *tp, Tcl_Obj *part2Ptr)
+{
+    Tcl_Size idx, len;
+    const char *name = Tcl_GetStringFromObj(part2Ptr, &len), *c;
+
+    if (len == 0) {
+	return -1;
+    }
+    for (c = name; *c != '\0'; c++) {
+	if (!(isalnum(UCHAR(*c)) || *c == '_')) {
+	    return -1;
+	}
+    }
+    idx = TclTypeFieldIndex(tp, name);
+    if (idx < 0 || idx >= tp->nfields
+	    || !TclTypeIsNumUnion(tp->fields[idx].type)) {
+	return -1;
+    }
+    return idx;
+}
+
 Tcl_Obj *
 TclTypedFieldNumber(Var *varPtr, Tcl_Obj *part2Ptr)
 {
@@ -3371,16 +4010,31 @@ TclTypedFieldNumber(Var *varPtr, Tcl_Obj *part2Ptr)
     }
     a = varPtr->value.objPtr;
     if (!TclAnnotIsSettled(a)
-	    || TclAnnotInfo(a, &v, &tp, NULL, NULL) != 1
-	    || tp->kind != TCLT_PRODUCT) {
+	    || TclAnnotInfo(a, &v, &tp, NULL, NULL) != 1) {
+	return NULL;
+    }
+    if (tp->kind == TCLT_LIST) {
+	/* M(i.j) d'une matrice en cases : le nombre lu dans la case */
+	e = CompactPathPart(a, part2Ptr, &ft);
+	if (e != NULL && ft->kind != TCLT_INT && ft->kind != TCLT_DOUBLE) {
+	    TclDiscard(e);
+	    e = NULL;
+	}
+	return e;
+    }
+    if (tp->kind != TCLT_PRODUCT) {
 	return NULL;
     }
     idx = SimpleFieldIndex(tp, part2Ptr);
     if (idx < 0) {
-	return NULL;
+	idx = NumUnionFieldIndex(tp, part2Ptr);
+	if (idx < 0) {
+	    return NULL;
+	}
     }
     ft = tp->fields[idx].type;
-    if (ft->kind != TCLT_INT && ft->kind != TCLT_DOUBLE) {
+    if (ft->kind != TCLT_INT && ft->kind != TCLT_DOUBLE
+	    && !TclTypeIsNumUnion(ft)) {	/* v17b : le nombre de Tcl */
 	return NULL;
     }
     e = TclCompactFieldNumber(v, idx);
@@ -3485,9 +4139,25 @@ TclTypedVarGetElementVar(Tcl_Interp *interp, Var *varPtr, Tcl_Obj *part2Ptr,
 	    || !(varPtr->flags & VAR_TYPED) || varPtr->value.objPtr == NULL) {
 	return TCL_CONTINUE;
     }
-    res = FastFieldRead(interp, varPtr->value.objPtr, part2Ptr);
+    if (part2Ptr->typePtr == &typePathType
+	    && ((CompiledPath *) part2Ptr->internalRep.twoPtrValue.ptr1)->chain) {
+	/* a.b.c déjà compilé : la descente directe */
+	res = FastChain(interp, varPtr->value.objPtr, &((CompiledPath *)
+		part2Ptr->internalRep.twoPtrValue.ptr1)->set.path[0]);
+    } else {
+	res = FastFieldRead(interp, varPtr->value.objPtr, part2Ptr);
+	if (res == NULL) {
+	    res = FastAllParts(interp, varPtr->value.objPtr, part2Ptr);
+	}
+    }
     if (res == NULL) {
-	res = FastAllParts(interp, varPtr->value.objPtr, part2Ptr);
+	TclType *pt;
+	Tcl_Obj *r = CompactPathPart(varPtr->value.objPtr, part2Ptr, &pt);
+
+	if (r != NULL) {
+	    res = TclNewAnnotated(interp, pt, -1, r);
+	    TclDiscard(r);
+	}
     }
     if (res != NULL) {
 	Tcl_IncrRefCount(res);
@@ -3523,8 +4193,12 @@ TclTypedVarSetElementVar(Tcl_Interp *interp, Var *varPtr, Tcl_Obj *part1Ptr,
 	    || !(varPtr->flags & VAR_TYPED) || varPtr->value.objPtr == NULL) {
 	return TCL_CONTINUE;
     }
-    if (PathWriteObj(interp, varPtr->value.objPtr, part2Ptr, 1, &valuePtr,
-	    &newA) != TCL_OK) {
+    if (CompactPathWrite(varPtr->value.objPtr, part2Ptr, valuePtr)) {
+	/* écrit dans la case : la variable garde sa valeur (traces) */
+	newA = varPtr->value.objPtr;
+	Tcl_IncrRefCount(newA);
+    } else if (PathWriteObj(interp, varPtr->value.objPtr, part2Ptr, 1,
+	    &valuePtr, &newA) != TCL_OK) {
 	return TCL_ERROR;
     }
     stored = TclPtrSetVarIdx(interp, varPtr, NULL, part1Ptr, NULL, newA,

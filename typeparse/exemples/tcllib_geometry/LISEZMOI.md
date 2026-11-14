@@ -13,15 +13,19 @@ l'exemple `matrices` : les structures C viennent des types Tcl (`type {c!}export
 - `run_tests.tcl ?-c? TCLLIB` : la suite de tests de tcllib (`geometry.test`, 210 tests) sur la
   reformulation, ou avec `-c` sur la variante C (copie temporaire, rien n'est modifié dans
   tcllib). **210/210** dans les deux cas, résultats identiques au caractère près.
+- **v17b** : les coordonnées sont `coord`, alias de `num` = `{int}i | {double}d` (le nombre de
+  Tcl : `5 / 2` reste 2 sur des entiers, comme dans tcllib) ; 210/210. Les variantes C posent
+  `variable coord double` avant de lire `geometry.tcl` (leurs structures sont des doubles).
 - `bench.tcl ?TCLLIB/modules/math? ?geom.so?` : les trois versions dans le même tclsh, mêmes
   appels, résultats comparés, temps par appel.
 
 ## L'écriture
 
 ```tcl
-type def point    {{double}x; {double}y}
-type def line     {{double}x1; {double}y1; {double}x2; {double}y2}
-type def polyline list.double
+type def num      {{int}i | {double}d};  type alias coord num   ;# double pour les variantes C
+type def point    {{coord}x; {coord}y}
+type def line     {{coord}x1; {coord}y1; {coord}x2; {coord}y2}
+type def polyline list.coord
 type alias vector point;  type alias segment line;  type alias polygon polyline
 
 proc ::math::geometry::distance {{point}pa; {point}pb} {( hypot($pb(x)-$pa(x), $pb(y)-$pa(y)) )}
