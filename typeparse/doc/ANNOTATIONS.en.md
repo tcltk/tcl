@@ -329,6 +329,8 @@ type cast TYPE VALUE           ;# a constructor's resolver, without a variable
 type {T}WORD                   ;# the same cast, written as an annotation (v16m)
 type convert FROM TO LAMBDA    ;# declares an explicit conversion
 type deref VALUE               ;# snapshot: each var link replaced by its value
+type canonic ?-notes? VALUE    ;# the canonical text: {T}content, {T@notes}content (v17c)
+type parse TEXT                ;# reads a canonical text back into a typed value (v17c)
 type binary TYPE ...           ;# binary representation, encoding, decoding (§ 9)
 type def {-compact}NAME DEF    ;# a list (or any list of a product) always in cells (§ 14.1)
 type def {-a,-b}NAME DEF       ;# several options, in the syntax of notes
@@ -336,7 +338,8 @@ type is {compact?}TYPE|VALUE   ;# a question about a type or a value
 type is {disjoint?}S           ;# the pairs of variants that can accept the same value
 type is {union?}S              ;# 1 if S is a union (|) (v16w, § 8.4)
 type variant VALUE             ;# the variant of a value of a sum or a union (v16w)
-type proc NAME                 ;# the signature of a typed procedure: args, return (§ 6.4, 6.5)
+type proc NAME                 ;# the signature of a typed procedure: args, return, record (§ 6.4, 6.5)
+type call ?TYPE?               ;# the current call as a value: the reified call (§ 6.4, v16z)
 type {{*}T}WORD, {{**}T}WORD   ;# the explicit cast, returned unfolded as a list or a dict (§ 6.4)
 type {c!}export TYPE ?TYPE ...? ;# C header of named types (§ 14.2); {llvm!} planned
 type debug ?on|off|next|when|console|hook|notes|report|clear? ;# debugging through notes (§ 3.1, v16y)
@@ -687,6 +690,21 @@ The `catch … m` trap of earlier versions is therefore gone.
 
 `type deref V` returns `V` where each `var` link is replaced by the value the variable has at that moment. The result has the "link-free" type (`list.var.int` → `list.int`), named `deref(<type>)` for a product or a sum. Only one level is followed per call; a missing variable is an error that names the slot (`type deref: at 2: can't read "::C": no such variable`), with no partial result. Works in lists, dicts, products, sums and recursive types; a cycle never loops.
 
+#### 6.3b `type canonic` and `type parse`: the text form of a typed value (v17c)
+
+The type is never in a value's string (EIAS). Where only text is kept (a file, a Tk tag, a key), `type canonic V` gives a text that keeps it: `{T}content`, with `T` the type's text (its name when it is named, qualified for a namespace's type; without the variant: a tagged sum carries it in its content, a union reads it from its own) and the content in its canonical form (numbers normalised, lists, dicts, products and sums rebuilt by the type), quoted as one list element. Notes are a set: `{double@alpha,zeta}5.0`, sorted, without duplicates, comma-separated; in a note any ASCII character other than letters, digits, `_` and `.` is written `%XX`. A value with notes only gives `{@vitesse}5`; a bare value is refused. `-notes` gives `T@notes` without the content.
+
+`type parse TEXT` reads `{T}content`, `{T@notes}content` or `{@notes}content`: the type must exist (checked against the current definition), the content must fit it, then the notes are added. Two laws: `type parse [type canonic $v]` is `$v`, and `type canonic [type parse $t]` is `$t` when `$t` is canonical.
+
+```tcl
+type canonic [type cast int 0x10]                 ;# {int}16
+type canonic [type cast list.int "1   2"]         ;# {list.int}{1 2}
+type canonic {vitesse}[type cast double 5]        ;# {double@vitesse}5.0
+type get [type parse {{pt}{1 2.5}}]               ;# pt
+```
+
+Not kept: the notes of elements inside a container, the types of the elements of a `list.any`, the `{-compact}` option (a representation).
+
 #### 6.4 Typed procedures (v16p)
 
 The argument list of a procedure may be a **product type**, written in the type syntax; the annotation on the name gives the **return type**.
@@ -764,6 +782,20 @@ proc {{**}rect}rd {} {( (0, 0), (10, 10) )}   ;# nw {x 0 y 0} se {x 10 y 10}
 ```
 
   An explicit cast follows the same rule: `type {{*}point}$p` returns the checked list `{x y}`, `type {{**}point}$p` the dict. The prefix is only recognised at the head of a delivery annotation (in the type language, `{*}point` would read as a field named `point`). Cost: 0.3 to 0.9 µs per call to check and unfold a point (`exemples/tcllib_geometry`).
+
+- **The reified call: `type call` (v16z).** A signature is a product: the bound arguments of a call are a value of it. `type call`, in a procedure, returns the current call as a value of the **record** of its signature: each field under the name of its local (`-mode`: `mode`), with its type; a variadic field is a list there (`{int}args...`: `list.int`), a link `{var.T}n` the value of the variable. A field without a value at this call (an absent option without a default, a link to a variable that does not exist) is left out. `type call TYPE` builds instead a value of `TYPE`, a named product, each field taking the local of the same name, or its default. `type proc NAME` gives the text of the record (`record`), which can be named: `type def Request [dict get [type proc request] record]`. A classic procedure has the record `{any}a; …; {list}args`.
+
+```tcl
+proc {Rec}move {{pt}p; {double}dx; {string}-note ?= "?"} {
+    set evt [type call Rec]          ;# Rec: {{pt}p; {double}dx; {string}note}
+    lappend ::log $evt
+    return $evt
+}
+move -note back {1 0} -1             ;# {1 0} -1 back, of type Rec
+dict get [type proc move] record     ;# {pt}p; {double}dx; {string}note
+```
+
+  This is the event as data: a call that is stored, logged, or received as an argument by another call (`exemples/attentrel`, where one convolution targets another).
 
 - **Lambdas: `apply` (v16z).** A lambda is a procedure without a name: its argument list accepts the same signature, and the annotation on the lambda word is its return type, like the one on the name in `proc {T}name`. Types are resolved in the lambda's namespace (its third element). The annotation may be written on a substitution: `apply {T}$f …` gives a return type to a lambda kept in a variable. A `type convert` rule, being a lambda, can type its argument.
 

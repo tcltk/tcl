@@ -257,6 +257,9 @@ Cas : `" 3 "`, `+3`, `0o10`, `1_000` donnent `3`, `3`, `8`, `1000` ; `1` dans
 un `double` donne `1.0` ; à vérifier : bignums, `-0.0`, `Inf`, `NaN`. Une
 `string` n'est jamais normalisée (qui veut garder `0.10` déclare une chaîne).
 
+*(`type canonic` et `type parse` : faits en v17c, voir `noyau/LISEZMOI.md`
+et ANNOTATIONS § 6.3b.)*
+
 **`type canonic $v`** — nom déjà retenu le 3 novembre
 (`PISTES-annotations-locales.md` : « `type canonic $v` → `{T}contenu`, et
 `type parse $texte` → la valeur typée », avec la forme sans contenu

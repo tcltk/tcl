@@ -12,9 +12,9 @@ OK     {} garde les notes                             {} mm
                                                       proposé : int mm
 
 == 3. type meta (absent aujourd'hui)
-ÉCART  type meta d'une valeur nue (int)               obtenu : ERREUR: bad subcommand "meta": must be def, alias, call, cast, convert, debug, deref, export, forget, get, is, proc, variant or binary
+ÉCART  type meta d'une valeur nue (int)               obtenu : ERREUR: bad subcommand "meta": must be def, alias, call, canonic, cast, convert, debug, deref, export, forget, get, is, parse, proc, variant or binary
                                                       proposé : bare int
-ÉCART  type meta d'une valeur typée                   obtenu : ERREUR: bad subcommand "meta": must be def, alias, call, cast, convert, debug, deref, export, forget, get, is, proc, variant or binary
+ÉCART  type meta d'une valeur typée                   obtenu : ERREUR: bad subcommand "meta": must be def, alias, call, canonic, cast, convert, debug, deref, export, forget, get, is, parse, proc, variant or binary
                                                       proposé : typed int
 
 == 4. les conteneurs gardent les notes
@@ -49,16 +49,23 @@ OK     double 1                                       1.0
 OK     list.double                                    1.0 20.0
 OK     string inchangée                               0.10
 
-== 7. aller-retour (type deref aujourd'hui, type canon proposé)
+== 7. aller-retour (type deref, et type canonic / type parse depuis v17c)
 OK     deref : int                                    42 int
 OK     deref : double                                 0.1 double
 OK     deref : list.int                               {1 2 3} list<int>
 OK     deref : ::tson                                 {d {menu {d {id {s file}}}}} tson.d
 OK     deref : ::tson                                 null tson.null
+OK     canonic : int 0x10                             {{int}16} 1
+OK     canonic : double 2e1                           {{double}20.0} 1
+OK     canonic : list.int 1   2                       {{list.int}{1 2}} 1
+OK     canonic : ::tson d {menu {d {id {s file}}}}    {{tson}{d {menu {d {id {s file}}}}}} 1
+OK     canonic : notes (un ensemble)                  {double@a,b}5.0
+OK     canonic : seulement notée                      {@vitesse}5
+OK     parse : type inconnu refusé                    refus
 
 == 8. nominal validé : la lecture d'une valeur nue valide aussi
 OK     string invalide refusée                        refus
 ÉCART  nue invalide refusée                           obtenu : lu
                                                       proposé : refus
 
-25 OK, 11 ÉCART
+32 OK, 11 ÉCART

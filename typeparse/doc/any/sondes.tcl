@@ -75,7 +75,7 @@ sonde "double 1"        1.0    {set {double}x 1; set x}
 sonde "list.double"     {1.0 20.0} {set {list.double}L {*}{1 2e1}; set L}
 sonde "string inchangée" 0.10  {set {string}s 0.10; set s}
 
-puts "\n== 7. aller-retour (type deref aujourd'hui, type canon proposé)"
+puts "\n== 7. aller-retour (type deref, et type canonic / type parse depuis v17c)"
 foreach {T v} {
     int 42
     double 0.1
@@ -87,6 +87,21 @@ foreach {T v} {
 	set x [type cast @T @v]; set y [type cast @T [type deref $x]]; list $y [type get $y]
     }]
 }
+
+foreach {T v attendu} {
+    int 0x10 {{int}16}
+    double 2e1 {{double}20.0}
+    list.int {1   2} {{list.int}{1 2}}
+    ::tson {d {menu {d {id {s file}}}}} {{tson}{d {menu {d {id {s file}}}}}}
+} {
+    sonde "canonic : $T $v" [list $attendu 1] [string map [list @T [list $T] @v [list $v]] {
+	set c [type canonic [type cast @T @v]]
+	list $c [expr {[type canonic [type parse $c]] eq $c}]
+    }]
+}
+sonde "canonic : notes (un ensemble)" {{double@a,b}5.0} {type canonic {b}[set x {a}[type cast double 5]]}
+sonde "canonic : seulement notée"     {{@vitesse}5}     {type canonic {vitesse}5}
+sonde "parse : type inconnu refusé"   refus             {expr {[catch {type parse {{intt}5}}] ? "refus" : "lu"}}
 
 puts "\n== 8. nominal validé : la lecture d'une valeur nue valide aussi"
 type convert string ::Jour {{s} {

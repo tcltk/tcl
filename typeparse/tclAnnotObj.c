@@ -477,6 +477,34 @@ TclAnnotNotes(Tcl_Obj *objPtr)
     return n;
 }
 
+static Tcl_Obj *PendingOfEx(Tcl_Obj *objPtr, int withCleared, int all);
+
+/*
+ * v17c : les notes d'une valeur, telles qu'un lecteur les voit (note get),
+ * en liste (compte 0), sans les marques d'expiration.
+ */
+Tcl_Obj *
+TclAnnotNoteList(Tcl_Interp *interp, Tcl_Obj *objPtr)
+{
+    Tcl_Obj *norm = TclAnnotNormalize(interp, objPtr), *notes, *res, **elv;
+    Tcl_Size n = 0, i;
+
+    Tcl_IncrRefCount(norm);
+    notes = PendingOfEx(norm, 0, 1);
+    Tcl_IncrRefCount(notes);
+    res = Tcl_NewListObj(0, NULL);
+    if (Tcl_ListObjGetElements(NULL, notes, &n, &elv) == TCL_OK) {
+	for (i = 0; i < n; i++) {
+	    if (Tcl_GetCharLength(elv[i]) > 0) {
+		Tcl_ListObjAppendElement(NULL, res, elv[i]);
+	    }
+	}
+    }
+    Tcl_DecrRefCount(notes);
+    Tcl_DecrRefCount(norm);
+    return res;
+}
+
 /*
  * v17a : les notes de FROM passent sur TO (un élément qu'un constructeur de
  * liste ou de dict vient de produire depuis FROM). TO, s'il est neuf (compte

@@ -1,0 +1,40 @@
+== scalaires
+int 0x10                       {{int}16} ≡
+double 2e1                     {{double}20.0} ≡
+grand entier                   {{int}123456789012345678901234567890} ≡
+string avec espaces            {{string}{a b}} ≡
+string vide                    {{string}{}} ≡
+nominal                        {{Jour110}lundi} ≡
+alias : le type visé           {double}3.0
+== conteneurs : le texte reconstruit
+list.int espacée               {list.int}{1 2}
+list de listes                 {{list.list.int}{{1 2} 3}} ≡
+dict.int                       {{dict.int}{a 1 b 2}} ≡
+produit nommé                  {{pt110}{1 2.5}} ≡
+produit anonyme                {{{{int}a; {double}b}}{1 2.0}} ≡
+type d'un espace               {{::g110::P}{1.0 2.0}} ≡
+list d'un type d'espace        {{list.::g110::P}{{1.0 2.0}}} ≡
+cases (-compact)               {list.double}{1.0 2.0}
+== sommes et unions
+somme : la variante            {{S110}{d 2.0}} ≡
+littéral                       {{opt110}none} ≡
+union : lue du contenu         {{num110}31} ≡
+list.num110                    {{list.num110}{1 2.0 16}} ≡
+== notes
+une note                       {{double@vitesse}5.0} ≡
+un ensemble trié               {double@alpha,zeta}5.0
+seulement notée                {{@vitesse}5} ≡
+-notes                         double@vitesse
+-notes sans note               pt110
+note encodée                   {{@a%2Cb}x} a,b
+élément noté normalisé         {list.double}{5.0 6.0}
+== refus
+valeur nue                     ERREUR type canonic: the value "5" has no type and no note
+pas d'accolade                 ERREUR type parse: "5" is not {TYPE}content, {TYPE@notes}content or {@notes}content
+sans contenu                   ERREUR type parse: "{int}" is not {TYPE}content, {TYPE@notes}content or {@notes}content
+deux mots                      ERREUR type parse: "{int}x y" is not {TYPE}content, {TYPE@notes}content or {@notes}content
+type inconnu                   ERREUR unknown type "intt"
+contenu refusé                 ERREUR expected integer but got "abc"
+note vide                      ERREUR type parse: "{int@a,,b}5" is not {TYPE}content, {TYPE@notes}content or {@notes}content
+encodage incomplet             ERREUR type parse: "{int@%4}5" is not {TYPE}content, {TYPE@notes}content or {@notes}content
+arguments                      ERREUR wrong # args: should be "type canonic ?-notes? value"

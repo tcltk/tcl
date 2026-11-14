@@ -2664,3 +2664,42 @@ Sans patch noyau (`tclTypes.c`, `tclAnnotObj.c`, `tclTypePath.c`,
   `areaPolygon` (100 nombres) 13 → 14-15 ; `pointInsidePolygon` 15 → 22
   (54 avant la lecture rapide des champs ; le reste : le cast des arguments
   nus vers l'union).
+
+### v17c — `type canonic` et `type parse` (14 novembre 2026)
+
+Sans patch noyau (`tclTypes.c`, `tclAnnotObj.c`, `tclTypes.h`). Décidé le
+3 novembre (`doc/PISTES-annotations-locales.md`) et le 13
+(`doc/PISTES-any-string.md` § 7) ; référence : ANNOTATIONS § 6.3b ; test
+t110 ; sondes `doc/any/` 32 OK sur 43.
+
+* **`type canonic ?-notes? V`** : `{T}contenu`. `T` est le texte du type
+  (`TypeTextObj`, celui de `type def` : le nom d'un type nommé, qualifié
+  pour un type d'espace, `list.num`, un produit anonyme en entier), sans la
+  variante. Le contenu est reconstruit selon le type (`CanonContent` :
+  listes, dicts — clés telles quelles, dans leur ordre —, produits, sommes
+  étiquetées, unions par la variante lue ; scalaires normalisés, même un
+  élément seulement noté), puis mis en forme d'un élément de liste
+  (`{string}{}`, `{string}{a b}`). Les cases (`{-compact}`) s'écrivent déjà
+  canoniques : lues sans conversion.
+* **Notes** : un ensemble (piste B) — triées, sans doublon, séparées par des
+  virgules : `{double@alpha,zeta}5.0`. Dans une note, tout caractère ASCII
+  hors lettres, chiffres, `_`, `.` s'écrit `%XX` (le point reste : il dit
+  l'imbrication). Une valeur seulement notée : `{@vitesse}5` ; une valeur
+  nue : refus (elle n'a rien à garder ; les méta-types, étape 5, diront sa
+  forme). `-notes` : `T@notes` sans contenu. `TclAnnotNoteList` donne les
+  notes vues d'un lecteur (comme `note get`).
+* **`type parse TEXTE`** : `{T}contenu`, `{T@notes}contenu`,
+  `{@notes}contenu`. Le type est lu par `TclTypeParse` (inconnu : refus),
+  le contenu posé par le chemin de `type cast` (refus s'il n'y entre pas),
+  puis les notes, décodées, empilées et réglées. Le texte doit être une
+  annotation suivie d'un seul élément de liste.
+* **Lois vérifiées** : `type parse [type canonic $v]` ≡ `$v` (type, notes,
+  texte) pour les scalaires, grands entiers, chaînes vides, nominaux,
+  listes imbriquées, dicts, produits nommés et anonymes, types d'espace,
+  sommes, littéraux, unions, liens `var.T`, bitarrays ; `type canonic`
+  d'un texte canonique relu le rend tel quel.
+* **Pas gardé** : les notes des éléments d'un conteneur (la forme
+  `{T@notes}` imbriquée est l'étape 6), les types des éléments d'une
+  `list.any` (son sens change avec les méta-types, étape 5), l'option
+  `{-compact}` (une représentation, pas une valeur). Une note dont le texte
+  est devenu un nom de type serait relue comme un type.

@@ -8285,6 +8285,11 @@ SumOverlapsEx(const TclType *tp, int canonical)
  * niveau ; un produit ou une somme anonymes s'écrivent en entier.
  */
 static void DefText(const TclType *tp, int top, Tcl_DString *ds);
+static Tcl_Obj *TypeTextObj(const TclType *tp, int top);
+static int TypeCanonicCmd(Tcl_Interp *interp, Tcl_Size objc,
+			    Tcl_Obj *const objv[]);	/* v17c */
+static int TypeParseCmd(Tcl_Interp *interp, Tcl_Size objc,
+			    Tcl_Obj *const objv[]);	/* v17c */
 static int TypeCallCmd(Tcl_Interp *interp, Tcl_Size objc,
 			    Tcl_Obj *const objv[]);
 static Tcl_Obj *SigRecord(Tcl_Interp *interp, Proc *procPtr, int call,
@@ -9118,6 +9123,12 @@ TypeObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
     if (strcmp(sub, "deref") == 0) {
 	return TypeDerefCmd(interp, objc, objv);
     }
+    if (strcmp(sub, "canonic") == 0) {
+	return TypeCanonicCmd(interp, objc, objv);	/* v17c */
+    }
+    if (strcmp(sub, "parse") == 0) {
+	return TypeParseCmd(interp, objc, objv);	/* v17c */
+    }
     if (strcmp(sub, "proc") == 0) {
 	return TypeProcCmd(interp, objc, objv);	/* v16p */
     }
@@ -9168,7 +9179,7 @@ TypeObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
 	return TCL_OK;
     }
     ERR(interp, "SUBCMD", "bad subcommand \"%s\": must be def, alias, "
-	    "call, cast, convert, debug, deref, export, forget, get, is, proc, variant "
+	    "call, canonic, cast, convert, debug, deref, export, forget, get, is, parse, proc, variant "
 	    "or binary", sub);
     return TCL_ERROR;
 }
@@ -9981,6 +9992,337 @@ TypeTextObj(const TclType *tp, int top)
     Tcl_DStringFree(&ds);
     Tcl_IncrRefCount(o);
     return o;
+}
+
+
+/*
+ * v17c : type canonic ?-notes? VALEUR, type parse TEXTE.
+ *
+ * La forme canonique d'une valeur typée : {T}contenu, ou {T@n1,n2}contenu
+ * avec ses notes (un ensemble : triées, sans doublon, séparées par des
+ * virgules ; dans une note, tout caractère ASCII hors lettres, chiffres, _
+ * et . s'écrit %XX). T est le texte du type (son nom s'il est nommé, sans
+ * la variante : une somme étiquetée la porte dans son contenu, une union la
+ * lit dans le sien). Le contenu est le texte canonique, reconstruit selon
+ * le type (listes, dicts, produits, sommes) et mis en forme d'un élément de
+ * liste. Une valeur seulement notée s'écrit {@notes}contenu. Avec -notes :
+ * T@notes, sans le contenu. type parse relit {…}contenu.
+ */
+
+/* Le texte canonique du contenu v selon tp (compte 0, ou v lui-même). */
+static Tcl_Obj *
+CanonContent(const TclType *tp, int variant, Tcl_Obj *v, int depth)
+{
+    Tcl_Size n, i;
+    Tcl_Obj **ev, *res, *e;
+
+    if (TclIsAnnotated(v)) {
+	v = TCL_ANNOT_CONTENT(v);
+    }
+    if (tp == NULL || depth > 64 || TclTypeIsAny(tp)) {
+	return v;
+    }
+    switch (tp->kind) {
+    case TCLT_LIST:
+    case TCLT_DICT:
+	if (tp->binDyn != NULL || TclIsCompact(v)
+		|| Tcl_ListObjGetElements(NULL, v, &n, &ev) != TCL_OK) {
+	    return v;			/* les cases s'écrivent déjà canoniques */
+	}
+	res = Tcl_NewListObj(n, NULL);
+	for (i = 0; i < n; i++) {
+	    if (tp->kind == TCLT_DICT && (i % 2) == 0) {
+		e = ev[i];
+		if (TclIsAnnotated(e)) {
+		    e = TCL_ANNOT_CONTENT(e);
+		}
+	    } else {
+		e = CanonContent(tp->elem, -1, ev[i], depth + 1);
+	    }
+	    Tcl_ListObjAppendElement(NULL, res, e);
+	}
+	return res;
+    case TCLT_PRODUCT:
+	if (TclIsCompact(v)
+		|| Tcl_ListObjGetElements(NULL, v, &n, &ev) != TCL_OK
+		|| n != tp->nfields) {
+	    return v;
+	}
+	res = Tcl_NewListObj(n, NULL);
+	for (i = 0; i < n; i++) {
+	    e = CanonContent(tp->fields[i].type, -1, ev[i], depth + 1);
+	    Tcl_ListObjAppendElement(NULL, res, e);
+	}
+	return res;
+    case TCLT_SUM:
+	if (tp->binTag != NULL) {
+	    return v;
+	}
+	if (TclSumTagged(tp)) {
+	    Tcl_Obj *payload = NULL, *pair[2];
+
+	    variant = TclSumDecode(tp, v, &payload);
+	    if (variant < 0 || variant >= (int) tp->nfields
+		    || tp->fields[variant].type == NULL || payload == NULL
+		    || Tcl_ListObjGetElements(NULL, v, &n, &ev) != TCL_OK
+		    || n != 2) {
+		return v;		/* un littéral : lui-même */
+	    }
+	    e = CanonContent(tp->fields[variant].type, -1, payload, depth + 1);
+	    pair[0] = ev[0];
+	    pair[1] = e;
+	    return Tcl_NewListObj(2, pair);
+	}
+	if (variant < 0) {
+	    TclTypeValidate(NULL, tp, v, -1, &variant);
+	}
+	if (variant < 0 || variant >= (int) tp->nfields
+		|| tp->fields[variant].type == NULL) {
+	    return v;
+	}
+	return CanonContent(tp->fields[variant].type, -1, v, depth + 1);
+    case TCLT_INT:
+    case TCLT_DOUBLE:
+	e = TclTypeNormalizeContent((TclType *) tp, v);
+	return (e != NULL) ? e : v;	/* un élément seulement noté */
+    default:
+	return v;
+    }
+}
+
+static void
+CanonNote(const char *s, Tcl_DString *ds)
+{
+    const unsigned char *p;
+    char buf[4];
+
+    for (p = (const unsigned char *) s; *p; p++) {
+	if (isalnum(*p) || *p == '_' || *p == '.' || *p >= 0x80) {
+	    Tcl_DStringAppend(ds, (const char *) p, 1);
+	} else {
+	    snprintf(buf, sizeof(buf), "%%%02X", *p);
+	    Tcl_DStringAppend(ds, buf, 3);
+	}
+    }
+}
+
+static int
+CanonNoteCmp(const void *a, const void *b)
+{
+    return strcmp(Tcl_GetString(*(Tcl_Obj *const *) a),
+	    Tcl_GetString(*(Tcl_Obj *const *) b));
+}
+
+static int
+TypeCanonicCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
+{
+    int onlyNotes = 0, variant = -1, kind;
+    Tcl_Obj *val, *content = NULL, *notes, **nv, **sorted, *tt, *c, *res;
+    TclType *tp = NULL;
+    Tcl_Size nn = 0, i;
+    Tcl_DString ds;
+
+    if (objc == 4 && strcmp(Tcl_GetString(objv[2]), "-notes") == 0) {
+	onlyNotes = 1;
+    } else if (objc != 3) {
+	Tcl_WrongNumArgs(interp, 2, objv, "?-notes? value");
+	return TCL_ERROR;
+    }
+    val = objv[objc - 1];
+    kind = TclAnnotInfo(val, &content, &tp, &variant, NULL);
+    notes = TclAnnotNoteList(interp, val);
+    Tcl_IncrRefCount(notes);
+    Tcl_ListObjGetElements(NULL, notes, &nn, &nv);
+    if ((kind != 1 || tp == NULL) && nn == 0) {
+	Tcl_DecrRefCount(notes);
+	ERR(interp, "CANONIC", "type canonic: the value \"%s\" has no type "
+		"and no note", Tcl_GetString(val));
+	return TCL_ERROR;
+    }
+    if (kind != 1 || tp == NULL) {
+	tp = NULL;
+	content = TclIsAnnotated(val) ? TCL_ANNOT_CONTENT(val) : val;
+    }
+    Tcl_DStringInit(&ds);
+    if (!onlyNotes) {
+	Tcl_DStringAppend(&ds, "{", 1);
+    }
+    if (tp != NULL) {
+	tt = TypeTextObj(tp, 0);
+	Tcl_DStringAppend(&ds, Tcl_GetString(tt), TCL_AUTO_LENGTH);
+	Tcl_DecrRefCount(tt);
+    }
+    if (nn > 0) {
+	sorted = (Tcl_Obj **) Tcl_Alloc(nn * sizeof(Tcl_Obj *));
+	memcpy(sorted, nv, nn * sizeof(Tcl_Obj *));
+	qsort(sorted, nn, sizeof(Tcl_Obj *), CanonNoteCmp);
+	Tcl_DStringAppend(&ds, "@", 1);
+	for (i = 0; i < nn; i++) {
+	    if (i > 0 && strcmp(Tcl_GetString(sorted[i]),
+		    Tcl_GetString(sorted[i - 1])) == 0) {
+		continue;		/* un ensemble */
+	    }
+	    if (i > 0) {
+		Tcl_DStringAppend(&ds, ",", 1);
+	    }
+	    CanonNote(Tcl_GetString(sorted[i]), &ds);
+	}
+	Tcl_Free(sorted);
+    }
+    Tcl_DecrRefCount(notes);
+    if (!onlyNotes) {
+	Tcl_DStringAppend(&ds, "}", 1);
+	c = CanonContent(tp, variant, content, 0);
+	Tcl_IncrRefCount(c);
+	{
+	    Tcl_Obj *one = Tcl_NewStringObj(Tcl_GetString(c), TCL_AUTO_LENGTH);
+	    Tcl_Obj *l = Tcl_NewListObj(1, &one);
+
+	    Tcl_IncrRefCount(l);
+	    Tcl_DStringAppend(&ds, Tcl_GetString(l), TCL_AUTO_LENGTH);
+	    Tcl_DecrRefCount(l);
+	}
+	Tcl_DecrRefCount(c);
+    }
+    res = Tcl_NewStringObj(Tcl_DStringValue(&ds), Tcl_DStringLength(&ds));
+    Tcl_DStringFree(&ds);
+    Tcl_SetObjResult(interp, res);
+    return TCL_OK;
+}
+
+static int
+HexVal(int c)
+{
+    return (c >= '0' && c <= '9') ? c - '0' : (c >= 'A' && c <= 'F')
+	    ? c - 'A' + 10 : (c >= 'a' && c <= 'f') ? c - 'a' + 10 : -1;
+}
+
+static int
+TypeParseCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
+{
+    Tcl_Size len, i, close = -1, at = -1, nc;
+    const char *text;
+    int depth = 0, rc;
+    Tcl_Obj *rest, **cv, *val, *pushed, *res = NULL, *hold = NULL;
+
+    if (objc != 3) {
+	Tcl_WrongNumArgs(interp, 2, objv, "text");
+	return TCL_ERROR;
+    }
+    text = Tcl_GetStringFromObj(objv[2], &len);
+    if (len < 2 || text[0] != '{') {
+	goto bad;
+    }
+    for (i = 0; i < len; i++) {
+	if (text[i] == '\\' && i + 1 < len) {
+	    i++;
+	} else if (text[i] == '{') {
+	    depth++;
+	} else if (text[i] == '}' && --depth == 0) {
+	    close = i;
+	    break;
+	} else if (text[i] == '@' && depth == 1) {
+	    at = i;			/* le dernier @ du premier niveau */
+	}
+    }
+    if (close < 0) {
+	goto bad;
+    }
+    rest = Tcl_NewStringObj(text + close + 1, len - close - 1);
+    Tcl_IncrRefCount(rest);
+    if (Tcl_ListObjGetElements(NULL, rest, &nc, &cv) != TCL_OK || nc != 1) {
+	Tcl_DecrRefCount(rest);
+	goto bad;
+    }
+    val = Tcl_DuplicateObj(cv[0]);	/* le contenu, sans le type */
+    Tcl_DecrRefCount(rest);
+    pushed = val;
+    if ((at < 0 ? close : at) > 1) {
+	/* le type d'abord : il doit exister, et le contenu y entrer */
+	Tcl_Size tl = (at < 0 ? close : at) - 1;
+	Tcl_Obj *typed = NULL;
+
+	if (TclTypeParse(interp, text + 1, tl) == NULL) {
+	    Tcl_BounceRefCount(val);
+	    return TCL_ERROR;
+	}
+	Tcl_IncrRefCount(val);
+	pushed = TclAnnotPush(val, Tcl_NewStringObj(text + 1, tl));
+	Tcl_IncrRefCount(pushed);
+	rc = TclAnnotSettle(interp, pushed, NULL, 0, &typed);
+	if (rc == TCL_OK) {
+	    Tcl_IncrRefCount(typed);
+	}
+	Tcl_DecrRefCount(pushed);
+	Tcl_DecrRefCount(val);
+	if (rc != TCL_OK) {
+	    return rc;
+	}
+	pushed = typed;
+	if (at < 0) {
+	    Tcl_SetObjResult(interp, typed);
+	    Tcl_DecrRefCount(typed);
+	    return TCL_OK;
+	}
+	hold = typed;			/* les notes s'empilent dessus */
+    }
+    if (at >= 0) {
+	/* les notes, décodées, empilées dans l'ordre */
+	Tcl_DString nd;
+	const char *p = text + at + 1, *end = text + close;
+
+	Tcl_DStringInit(&nd);
+	while (p <= end) {
+	    if (p == end || *p == ',') {
+		if (Tcl_DStringLength(&nd) == 0) {
+		    Tcl_DStringFree(&nd);
+		    Tcl_BounceRefCount(pushed);
+		    if (hold != NULL) {
+			Tcl_DecrRefCount(hold);
+		    }
+		    goto bad;
+		}
+		pushed = TclAnnotPush(pushed, Tcl_NewStringObj(
+			Tcl_DStringValue(&nd), Tcl_DStringLength(&nd)));
+		Tcl_DStringSetLength(&nd, 0);
+	    } else if (*p == '%') {
+		int h1 = (p + 2 < end) ? HexVal(p[1]) : -1;
+		int h2 = (h1 >= 0) ? HexVal(p[2]) : -1;
+		char ch;
+
+		if (h2 < 0) {
+		    Tcl_DStringFree(&nd);
+		    Tcl_BounceRefCount(pushed);
+		    if (hold != NULL) {
+			Tcl_DecrRefCount(hold);
+		    }
+		    goto bad;
+		}
+		ch = (char) (h1 * 16 + h2);
+		Tcl_DStringAppend(&nd, &ch, 1);
+		p += 2;
+	    } else {
+		Tcl_DStringAppend(&nd, p, 1);
+	    }
+	    p++;
+	}
+	Tcl_DStringFree(&nd);
+    }
+    Tcl_IncrRefCount(pushed);
+    rc = TclAnnotSettle(interp, pushed, NULL, 0, &res);
+    if (rc == TCL_OK) {
+	Tcl_SetObjResult(interp, res);
+    }
+    Tcl_DecrRefCount(pushed);
+    if (hold != NULL) {
+	Tcl_DecrRefCount(hold);
+    }
+    return rc;
+
+  bad:
+    ERR(interp, "PARSE", "type parse: \"%s\" is not {TYPE}content, "
+	    "{TYPE@notes}content or {@notes}content", text);
+    return TCL_ERROR;
 }
 
 void

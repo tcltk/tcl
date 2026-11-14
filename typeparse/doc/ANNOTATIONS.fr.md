@@ -329,6 +329,8 @@ type cast TYPE VALEUR          ;# le résolveur d'un constructeur, sans variable
 type {T}MOT                    ;# le même cast, écrit comme une annotation (v16m)
 type convert DE VERS LAMBDA    ;# déclare une conversion explicite
 type deref VALEUR              ;# instantané : chaque lien var remplacé par sa valeur
+type canonic ?-notes? VALEUR   ;# le texte canonique : {T}contenu, {T@notes}contenu (v17c)
+type parse TEXTE               ;# relit un texte canonique en valeur typée (v17c)
 type binary TYPE ...           ;# représentation binaire, encodage, décodage (§ 9)
 type def {-compact}NOM DÉF     ;# une liste (ou toute liste d'un produit) toujours en cases (§ 14.1)
 type def {-a,-b}NOM DÉF        ;# plusieurs options, dans la syntaxe des notes
@@ -336,7 +338,8 @@ type is {compact?}TYPE|VALEUR  ;# une question sur un type ou une valeur
 type is {disjoint?}S           ;# les paires de variantes qui peuvent accepter une même valeur
 type is {union?}S              ;# 1 si S est une union (|) (v16w, § 8.4)
 type variant VALEUR            ;# la variante d'une valeur d'une somme ou d'une union (v16w)
-type proc NOM                  ;# la signature d'une procédure typée : args, return (§ 6.4, 6.5)
+type proc NOM                  ;# la signature d'une procédure typée : args, return, record (§ 6.4, 6.5)
+type call ?TYPE?               ;# l'appel courant comme valeur : l'appel réifié (§ 6.4, v16z)
 type {{*}T}MOT, {{**}T}MOT     ;# le cast explicite, rendu déplié en liste ou en dict (§ 6.4)
 type {c!}export TYPE ?TYPE ...? ;# en-tête C des types nommés (§ 14.2) ; {llvm!} prévu
 type debug ?on|off|next|when|console|hook|notes|report|clear? ;# mise au point par les notes (§ 3.1, v16y)
@@ -680,6 +683,21 @@ Le piège de `catch … m` des versions antérieures n'existe donc plus.
 
 `type deref V` rend `V` où chaque lien `var` est remplacé par la valeur qu'a la variable à cet instant. Le résultat a le type « sans les liens » (`list.var.int` → `list.int`), nommé `deref(<type>)` pour un produit ou une somme. Un seul niveau est suivi par appel ; une variable manquante est une erreur qui nomme la case (`type deref: at 2: can't read "::C": no such variable`), sans résultat partiel. Fonctionne dans les listes, dicts, produits, sommes et types récursifs ; un cycle ne boucle jamais.
 
+#### 6.3b `type canonic` et `type parse` : la forme texte d'une valeur typée (v17c)
+
+Le type n'est jamais dans la chaîne d'une valeur (EIAS). Là où seul un texte est gardé (un fichier, un tag Tk, une clé), `type canonic V` donne un texte qui le garde : `{T}contenu`, `T` étant le texte du type (son nom s'il est nommé, qualifié pour un type d'espace ; sans la variante : une somme étiquetée la porte dans son contenu, une union la lit dans le sien) et le contenu sa forme canonique (nombres normalisés ; listes, dicts, produits, sommes reconstruits selon le type), mis en forme d'un élément de liste. Les notes sont un ensemble : `{double@alpha,zeta}5.0`, triées, sans doublon, séparées par des virgules ; dans une note, tout caractère ASCII hors lettres, chiffres, `_` et `.` s'écrit `%XX`. Une valeur seulement notée donne `{@vitesse}5` ; une valeur nue est refusée. `-notes` donne `T@notes`, sans le contenu.
+
+`type parse TEXTE` relit `{T}contenu`, `{T@notes}contenu` ou `{@notes}contenu` : le type doit exister (vérifié contre sa définition actuelle), le contenu doit y entrer, puis les notes sont posées. Deux lois : `type parse [type canonic $v]` est `$v`, et `type canonic [type parse $t]` est `$t` quand `$t` est canonique.
+
+```tcl
+type canonic [type cast int 0x10]                 ;# {int}16
+type canonic [type cast list.int "1   2"]         ;# {list.int}{1 2}
+type canonic {vitesse}[type cast double 5]        ;# {double@vitesse}5.0
+type get [type parse {{pt}{1 2.5}}]               ;# pt
+```
+
+Pas gardés : les notes des éléments d'un conteneur, les types des éléments d'une `list.any`, l'option `{-compact}` (une représentation).
+
 #### 6.4 Procédures typées (v16p)
 
 La liste d'arguments d'une procédure peut être un **type produit**, écrit dans la syntaxe des types ; l'annotation du nom donne le **type de retour**.
@@ -756,6 +774,20 @@ proc {{**}rect}rd {} {( (0, 0), (10, 10) )}   ;# nw {x 0 y 0} se {x 10 y 10}
 ```
 
   Le cast explicite suit la même règle : `type {{*}point}$p` rend la liste `{x y}` vérifiée, `type {{**}point}$p` le dict. Le préfixe n'est reconnu qu'en tête d'une annotation de livraison (dans le langage des types, `{*}point` se lirait comme un champ nommé `point`). Coût : 0,3 à 0,9 µs par appel pour vérifier et déplier un point (`exemples/tcllib_geometry`).
+
+- **L'appel réifié : `type call` (v16z).** Une signature est un produit : les arguments liés d'un appel en sont une valeur. `type call`, dans une procédure, rend l'appel courant comme valeur de l'**enregistrement** de sa signature : chaque champ sous le nom de sa locale (`-mode` : `mode`), avec son type ; un champ variadique y est une liste (`{int}args...` : `list.int`), un lien `{var.T}n` la valeur de la variable. Un champ sans valeur à cet appel (option absente sans défaut, lien vers une variable qui n'existe pas) n'y est pas. `type call TYPE` construit plutôt une valeur de `TYPE`, un produit nommé, dont chaque champ prend la locale de même nom, ou son défaut. `type proc NOM` donne le texte de l'enregistrement (`record`), qu'on peut nommer : `type def Demande [dict get [type proc demander] record]`. Une procédure classique a l'enregistrement `{any}a; …; {list}args`.
+
+```tcl
+proc {Rec}deplacer {{pt}p; {double}dx; {string}-note ?= "?"} {
+    set evt [type call Rec]          ;# Rec : {{pt}p; {double}dx; {string}note}
+    lappend ::journal $evt
+    return $evt
+}
+deplacer -note retour {1 0} -1      ;# {1 0} -1 retour, de type Rec
+dict get [type proc deplacer] record ;# {pt}p; {double}dx; {string}note
+```
+
+  C'est l'événement comme donnée : un appel qu'on range, qu'on journalise, ou qu'un autre appel reçoit en argument (`exemples/attentrel`, où une convolution en vise une autre).
 
 - **Lambdas : `apply` (v16z).** Une lambda est une procédure sans nom : sa liste d'arguments accepte la même signature, et l'annotation du mot lambda est son type de retour, comme celle du nom dans `proc {T}nom`. Les types sont lus dans l'espace de noms de la lambda (son troisième élément). L'annotation peut porter sur une substitution : `apply {T}$f …` donne un type de retour à une lambda gardée dans une variable. Une règle de `type convert` étant une lambda, elle peut typer son argument.
 
