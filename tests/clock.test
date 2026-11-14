@@ -37297,6 +37297,30 @@ if {!$valid_mode} {
     list [catch {clock scan 24:00:01 -base 0 -gmt 1} msg] $msg \
 	 [catch {clock scan 48:00:00 -base 0 -gmt 1} msg] $msg
   } {1 {unable to convert input string: invalid time} 1 {unable to convert input string: invalid time (hour)}}
+  test clock-46.9 {freescan: a number that does not fit into int is invalid, see bug [f894a85b9a]} {
+    lmap s {
+	4294967308:00:00 12:4294967301:00 12:00:4294967301
+	4294967297/02/2026 02/4294967297/2026 2026-4294967297-03
+	{Jan 4294967297 2026}
+	02/03/4294969322 4294969322-02-03 3-Feb-4294969322
+	{Feb 3, 4294969322} {3 Feb 4294969322} {Feb 3 12:00 4294969322}
+    } {
+	list [catch {clock scan $s -base 0 -gmt 1} msg] $msg
+    }
+  } [list \
+    {1 {unable to convert input string: invalid time (hour)}} \
+    {1 {unable to convert input string: invalid time (minutes)}} \
+    {1 {unable to convert input string: invalid time}} \
+    {1 {unable to convert input string: invalid month}} \
+    {1 {unable to convert input string: invalid day}} \
+    {1 {unable to convert input string: invalid month}} \
+    {1 {unable to convert input string: invalid day}} \
+    {1 {unable to convert input string: invalid year}} \
+    {1 {unable to convert input string: invalid year}} \
+    {1 {unable to convert input string: invalid year}} \
+    {1 {unable to convert input string: invalid year}} \
+    {1 {unable to convert input string: invalid year}} \
+    {1 {unable to convert input string: invalid year}}]
 }
 
 proc _invalid_test {testtz scnargs args} {
@@ -37546,6 +37570,137 @@ test clock-46.31 {scan: validation rules: invalid iso year} -setup {
 	unset -nocomplain orgcfg
     }
 rename _invalid_test {}
+
+test clock-46.32 {freescan: large relative counts, see bug [f894a85b9a]} {
+    lmap s {
+	{4294967297 months} {-4294967297 months} {4294967297 days}
+	{4294967297 fortnights} {178956970 years} {178956970 years ago}
+	{next 178956970 Feb}
+    } {
+	clock format [clock scan $s -base 0 -gmt 1] -gmt 1 -format {%Y-%m-%d %EE}
+    }
+} [list {357915911-06-01 C.E.} {357911973-08-01 B.C.E.} {11761191-01-22 C.E.} \
+	{164631064-10-20 C.E.} {178958940-01-01 C.E.} {178955001-01-01 B.C.E.} \
+	{178958939-02-01 C.E.}]
+test clock-46.33 {freescan: relative months with month out of range, see bug [f894a85b9a]} {
+    lmap s {{14/02/2026 11 months} {4294967297/02/2026 11 months}} {
+	clock format [clock scan $s -base 0 -gmt 1 -valid 0] -gmt 1 -format %Y-%m-%d
+    }
+} {2028-01-02 178958997-06-02}
+test clock-46.34 {freescan: relative counts out of range, see bug [f894a85b9a]} {
+    lmap s {
+	{4294967297 years} {-4294967297 years} {4294967297 years ago}
+	{2147483647 years} {9223372036854775807 years}
+	{-9223372036854775807 months} {next 4294967297 Feb}
+	{-2147485617 years}
+	{1000000000000 days} {-1000000000000 days}
+	{9223372036854775807 days} {9223372036854775807 hours}
+	{9223372036854775807 seconds ago}
+	{9223372036854775807 Monday} {-9223372036854775807 Monday}
+    } {
+	list [catch {clock scan $s -base 0 -gmt 1} msg] $msg
+    }
+} [list \
+    {1 {unable to convert input string: invalid year}} \
+    {1 {unable to convert input string: invalid year}} \
+    {1 {unable to convert input string: invalid year}} \
+    {1 {unable to convert input string: invalid year}} \
+    {1 {unable to convert input string: invalid year}} \
+    {1 {unable to convert input string: invalid year}} \
+    {1 {unable to convert input string: invalid year}} \
+    {1 {unable to convert input string: invalid year}} \
+    {1 {unable to convert input string: invalid year}} \
+    {1 {unable to convert input string: invalid year}} \
+    {1 {unable to convert input string: invalid year}} \
+    {1 {unable to convert input string: invalid year}} \
+    {1 {unable to convert input string: invalid year}} \
+    {1 {unable to convert input string: invalid year}} \
+    {1 {unable to convert input string: invalid year}}]
+
+test clock-46.35 {relative months and years before the common era} {
+    set f {%Y-%m-%d %EE}
+    set res {}
+    foreach {b s} {
+	{0101-03-15 B.C.E.} {1 year}	{0101-03-15 B.C.E.} {13 months}
+	{0101-03-15 B.C.E.} {1 year ago}	{0101-03-15 B.C.E.} {next Feb}
+	{0101-03-15 B.C.E.} {100 years}	{0101-03-15 B.C.E.} {101 years}
+	{0001-03-15 C.E.} {-1 year}	{0005-02-29 B.C.E.} {1 year}
+	{0001-12-15 B.C.E.} {1 month}	{0001-01-15 C.E.} {-1 month}
+    } {
+	set base [clock scan $b -format $f -gmt 1]
+	lappend res [clock format [clock scan $s -base $base -gmt 1] \
+		-gmt 1 -format $f]
+    }
+    set base [clock scan {0101-03-15 B.C.E.} -format $f -gmt 1]
+    lappend res [clock format [clock add $base 1 year -gmt 1] -gmt 1 -format $f]
+} [list {0100-03-15 B.C.E.} {0100-04-15 B.C.E.} {0102-03-15 B.C.E.} \
+	{0100-02-15 B.C.E.} {0001-03-15 B.C.E.} {0001-03-15 C.E.} \
+	{0001-03-15 B.C.E.} {0004-02-28 B.C.E.} {0001-01-15 C.E.} \
+	{0001-12-15 B.C.E.} {0100-03-15 B.C.E.}]
+test clock-46.36 {clock add: date out of range, see bug [f894a85b9a]} {
+    lmap a [list {2147483647 years} {-2147483647 years -2147483647 years} \
+	    [lrepeat 400 2147483647 days]] {
+	list [catch {clock add 0 {*}$a -gmt 1} msg] $msg
+    }
+} [list {1 {integer value too large to represent}} \
+	{1 {integer value too large to represent}} \
+	{1 {integer value too large to represent}}]
+test clock-46.37 {freescan: values out of range without validation, see bug [f894a85b9a]} {
+    set s0 [clock scan {07/02/2147483000} -gmt 1 -valid 0]
+    set s1 [clock scan {02/01/2026} -gmt 1]
+    list [expr {[clock scan {2147481607/02/2147483000} -gmt 1 -valid 0] - $s0}] \
+	[clock format [clock scan {4294967297/02/2000} -gmt 1 -valid 0] \
+	    -gmt 1 -format %Y-%m-%d] \
+	[expr {[clock scan {02/2147483647/2026} -gmt 1 -valid 0] - $s1}] \
+	[clock scan {4294967308:00:00} -base 0 -gmt 1 -valid 0] \
+	[clock scan {4294967308:00 pm} -base 0 -gmt 1 -valid 0]
+} [list [expr {447392 * 146097 * 86400}] 178958970-07-02 \
+	[expr {2147483646 * 86400}] [expr {2147483647 * 3600}] \
+	[expr {2147483659 * 3600}]]
+test clock-46.38 {freescan: day of week in the year 2147483647, see bug [f894a85b9a]} {
+    lmap d {Mon Tue Wed} {
+	catch {clock scan "$d 2147483647-12-31" -gmt 1 -valid 1}
+    }
+} {1 0 1}
+test clock-46.39 {freescan: large day ordinal, see bug [f894a85b9a]} {
+    lmap s {
+	{300000000 Monday} {4294967297 Monday} {+4294967297 Monday}
+	{-4294967297 Monday} {- 4294967297 Monday}
+    } {
+	clock format [clock scan $s -base 0 -gmt 1] -gmt 1 \
+		-format {%Y-%m-%d %a %EE}
+    }
+} [list {5751574-09-16 Mon C.E.} {82316517-05-24 Mon C.E.} \
+	{82316517-05-24 Mon C.E.} {82310889-10-24 Mon B.C.E.} \
+	{82310889-10-24 Mon B.C.E.}]
+test clock-46.40 {clock add: large offsets, see bug [f894a85b9a]} {
+    set max 67553994410557440
+    lmap a [list "2147483647 weekdays" "-2147483647 weekdays" \
+	    "[expr {$max / 3600}] hours" "[expr {$max / 60}] minutes" \
+	    "[expr {$max / 3600 + 1}] hours" "$max hours" \
+	    "[expr {$max / 60 + 1}] minutes" "$max minutes" \
+	    [lrepeat 3 [expr {$max / 60}] minutes] "$max seconds 1 second" \
+	    [lrepeat 200 $max seconds] [lrepeat 200 -$max seconds]] {
+	list [catch {clock add 0 {*}$a -gmt 1} msg] $msg
+    }
+} [list {0 259759622044800} {0 -259759621872000} {0 67553994410557200} \
+	{0 67553994410557440} \
+	{*}[lrepeat 8 {1 {integer value too large to represent}}]]
+test clock-46.41 {julian day helpers at the int limits, see bug [f894a85b9a]} {
+    set w {era CE iso8601Year 2026}
+    set m {era CE year 2147483647 dayOfMonth 1}
+    list [lmap {week day} {1 1 2147483647 7 -2147483648 1} {
+	dict get [::tcl::clock::GetJulianDayFromEraYearWeekDay \
+		[dict merge $w [list iso8601Week $week dayOfWeek $day]] \
+		2299161] julianDay
+    }] [expr {
+	[dict get [::tcl::clock::GetJulianDayFromEraYearMonthDay \
+		[dict merge $m {month 13}] 2299161] julianDay] -
+	[dict get [::tcl::clock::GetJulianDayFromEraYearMonthDay \
+		[dict merge $m {month 12}] 2299161] julianDay]
+    }]
+} [list [list 2461039 [expr {2461039 + 7 * 2147483646 + 6}] \
+	[expr {2461039 - 7 * 2147483649}]] 31]
 
 test clock-47.1 {regression test - four-digit time} {
     clock scan 0012

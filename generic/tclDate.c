@@ -113,8 +113,48 @@
 
 #include "tclDate.h"
 
+/*
+ * The parser stores the year as a Tcl_WideInt. ClockFreeScan() checks that
+ * it fits into the int date.year. [f894a85b9a]
+ */
+
+#undef yyYear
+#define yyYear		(info->dateYear)
+
 #define YYMALLOC	Tcl_Alloc
 #define YYFREE(x)	(Tcl_Free((void*) (x)))
+
+/*
+ * Parsed numbers are Tcl_WideInt, but the date and time fields are int. A
+ * number that does not fit into an int is out of range for every field but
+ * the year (see yyYear above), so clamp it to a value that the range checks
+ * reject, instead of truncating it to a value that may be valid.
+ * [f894a85b9a]
+ */
+
+#define IntField(n) \
+    ((n) > INT_MAX ? INT_MAX : (n) < -INT_MAX ? -INT_MAX : (int)(n))
+
+/*
+ * Relative counts are clamped with RelClamp() (see tclDate.h).
+ */
+
+static inline void
+RelAdd(
+    Tcl_WideInt *relPtr,	/* Relative count to add to */
+    Tcl_WideInt n,		/* Number of units */
+    Tcl_WideInt unit)		/* Unit, positive */
+{
+    if (n > REL_MAX / unit) {
+	n = REL_MAX;
+    } else if (n < -REL_MAX / unit) {
+	n = -REL_MAX;
+    } else {
+	n *= unit;
+    }
+    n += *relPtr;
+    *relPtr = RelClamp(n);
+}
 
 #define EPOCH		1970
 #define START_OF_TIME	1902
@@ -728,14 +768,14 @@ static const yytype_int8 yytranslate[] =
 /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_int16 yyrline[] =
 {
-       0,   180,   180,   181,   185,   188,   191,   194,   198,   202,
-     205,   208,   211,   215,   218,   223,   229,   235,   240,   244,
-     248,   252,   256,   261,   261,   271,   272,   275,   279,   283,
-     287,   291,   295,   301,   307,   311,   316,   317,   322,   326,
-     331,   335,   340,   347,   351,   357,   357,   359,   364,   369,
-     371,   376,   378,   379,   387,   398,   413,   418,   421,   424,
-     427,   430,   433,   436,   441,   444,   449,   454,   459,   466,
-     471,   478,   481,   484,   489,   507,   510
+       0,   220,   220,   221,   225,   228,   231,   234,   238,   242,
+     245,   248,   251,   255,   258,   263,   269,   275,   280,   284,
+     288,   292,   296,   301,   301,   311,   312,   315,   319,   323,
+     327,   331,   335,   341,   347,   351,   356,   357,   362,   366,
+     371,   375,   380,   387,   391,   397,   397,   399,   404,   409,
+     411,   416,   418,   419,   427,   438,   453,   458,   461,   464,
+     467,   470,   473,   476,   481,   484,   489,   494,   499,   506,
+     511,   518,   521,   524,   529,   547,   550
 };
 #endif
 
@@ -1548,23 +1588,23 @@ yyreduce:
 
   case 14: /* iextime: tUNUMBER ':' tUNUMBER ':' tUNUMBER  */
                                              {
-	    yyHour = (yyvsp[-4].Number);
-	    yyMinutes = (yyvsp[-2].Number);
-	    yySeconds = (yyvsp[0].Number);
+	    yyHour = IntField((yyvsp[-4].Number));
+	    yyMinutes = IntField((yyvsp[-2].Number));
+	    yySeconds = IntField((yyvsp[0].Number));
 	}
     break;
 
   case 15: /* iextime: tUNUMBER ':' tUNUMBER  */
                                 {
-	    yyHour = (yyvsp[-2].Number);
-	    yyMinutes = (yyvsp[0].Number);
+	    yyHour = IntField((yyvsp[-2].Number));
+	    yyMinutes = IntField((yyvsp[0].Number));
 	    yySeconds = 0;
 	}
     break;
 
   case 16: /* time: tUNUMBER tMERIDIAN  */
                              {
-	    yyHour = (yyvsp[-1].Number);
+	    yyHour = IntField((yyvsp[-1].Number));
 	    yyMinutes = 0;
 	    yySeconds = 0;
 	    yyMeridian = (yyvsp[0].Meridian);
@@ -1644,21 +1684,21 @@ yyreduce:
 
   case 29: /* day: tUNUMBER tDAY  */
                         {
-	    yyDayOrdinal = (yyvsp[-1].Number);
+	    yyDayOrdinal = RelClamp((yyvsp[-1].Number));
 	    yyDayOfWeek = (yyvsp[0].Number);
 	}
     break;
 
   case 30: /* day: sign SP tUNUMBER tDAY  */
                                 {
-	    yyDayOrdinal = (yyvsp[-3].Number) * (yyvsp[-1].Number);
+	    yyDayOrdinal = RelClamp((yyvsp[-3].Number) * (yyvsp[-1].Number));
 	    yyDayOfWeek = (yyvsp[0].Number);
 	}
     break;
 
   case 31: /* day: sign tUNUMBER tDAY  */
                              {
-	    yyDayOrdinal = (yyvsp[-2].Number) * (yyvsp[-1].Number);
+	    yyDayOrdinal = RelClamp((yyvsp[-2].Number) * (yyvsp[-1].Number));
 	    yyDayOfWeek = (yyvsp[0].Number);
 	}
     break;
@@ -1672,30 +1712,30 @@ yyreduce:
 
   case 33: /* iexdate: tUNUMBER '-' tUNUMBER '-' tUNUMBER  */
                                              {
-	    yyMonth = (yyvsp[-2].Number);
-	    yyDay = (yyvsp[0].Number);
+	    yyMonth = IntField((yyvsp[-2].Number));
+	    yyDay = IntField((yyvsp[0].Number));
 	    yyYear = (yyvsp[-4].Number);
 	}
     break;
 
   case 34: /* date: tUNUMBER '/' tUNUMBER  */
                                 {
-	    yyMonth = (yyvsp[-2].Number);
-	    yyDay = (yyvsp[0].Number);
+	    yyMonth = IntField((yyvsp[-2].Number));
+	    yyDay = IntField((yyvsp[0].Number));
 	}
     break;
 
   case 35: /* date: tUNUMBER '/' tUNUMBER '/' tUNUMBER  */
                                              {
-	    yyMonth = (yyvsp[-4].Number);
-	    yyDay = (yyvsp[-2].Number);
+	    yyMonth = IntField((yyvsp[-4].Number));
+	    yyDay = IntField((yyvsp[-2].Number));
 	    yyYear = (yyvsp[0].Number);
 	}
     break;
 
   case 37: /* date: tUNUMBER '-' tMONTH '-' tUNUMBER  */
                                            {
-	    yyDay = (yyvsp[-4].Number);
+	    yyDay = IntField((yyvsp[-4].Number));
 	    yyMonth = (yyvsp[-2].Number);
 	    yyYear = (yyvsp[0].Number);
 	}
@@ -1704,14 +1744,14 @@ yyreduce:
   case 38: /* date: tMONTH tUNUMBER  */
                           {
 	    yyMonth = (yyvsp[-1].Number);
-	    yyDay = (yyvsp[0].Number);
+	    yyDay = IntField((yyvsp[0].Number));
 	}
     break;
 
   case 39: /* date: tMONTH tUNUMBER comma tUNUMBER  */
                                          {
 	    yyMonth = (yyvsp[-3].Number);
-	    yyDay = (yyvsp[-2].Number);
+	    yyDay = IntField((yyvsp[-2].Number));
 	    yyYear = (yyvsp[0].Number);
 	}
     break;
@@ -1719,7 +1759,7 @@ yyreduce:
   case 40: /* date: tUNUMBER tMONTH  */
                           {
 	    yyMonth = (yyvsp[0].Number);
-	    yyDay = (yyvsp[-1].Number);
+	    yyDay = IntField((yyvsp[-1].Number));
 	}
     break;
 
@@ -1734,7 +1774,7 @@ yyreduce:
   case 42: /* date: tUNUMBER tMONTH tUNUMBER  */
                                    {
 	    yyMonth = (yyvsp[-1].Number);
-	    yyDay = (yyvsp[-2].Number);
+	    yyDay = IntField((yyvsp[-2].Number));
 	    yyYear = (yyvsp[0].Number);
 	}
     break;
@@ -1748,7 +1788,7 @@ yyreduce:
 
   case 44: /* ordMonth: tNEXT tUNUMBER tMONTH  */
                                 {
-	    yyMonthOrdinalIncr = (yyvsp[-1].Number);
+	    yyMonthOrdinalIncr = IntField((yyvsp[-1].Number));
 	    yyMonthOrdinal = (yyvsp[0].Number);
 	}
     break;
@@ -1811,7 +1851,7 @@ yyreduce:
 	    yyDay  = 1;
 	    yyMonth = 1;
 	    yyRelDay += (((yyvsp[-2].Number)%1000)*(365 + IsLeapYear(yyYear)))/1000;
-	    yyRelSeconds += (yyvsp[0].Number) * (144LL * 60LL);
+	    RelAdd(&yyRelSeconds, (yyvsp[0].Number), 144 * 60);
 	    info->flags |= CLF_RELCONV;
 	}
     break;
@@ -1826,19 +1866,19 @@ yyreduce:
 
   case 58: /* relunits: sign SP INTNUM runit  */
                                 {
-	    *yyRelPointer += (yyvsp[-3].Number) * (yyvsp[-1].Number) * (yyvsp[0].Number);
+	    RelAdd(yyRelPointer, (yyvsp[-3].Number) * (yyvsp[-1].Number), (yyvsp[0].Number));
 	}
     break;
 
   case 59: /* relunits: sign INTNUM runit  */
                             {
-	    *yyRelPointer += (yyvsp[-2].Number) * (yyvsp[-1].Number) * (yyvsp[0].Number);
+	    RelAdd(yyRelPointer, (yyvsp[-2].Number) * (yyvsp[-1].Number), (yyvsp[0].Number));
 	}
     break;
 
   case 60: /* relunits: INTNUM runit  */
                        {
-	    *yyRelPointer += (yyvsp[-1].Number) * (yyvsp[0].Number);
+	    RelAdd(yyRelPointer, (yyvsp[-1].Number), (yyvsp[0].Number));
 	}
     break;
 
@@ -1850,7 +1890,7 @@ yyreduce:
 
   case 62: /* relunits: tNEXT INTNUM runit  */
                              {
-	    *yyRelPointer += (yyvsp[-1].Number) * (yyvsp[0].Number);
+	    RelAdd(yyRelPointer, (yyvsp[-1].Number), (yyvsp[0].Number));
 	}
     break;
 
@@ -1937,10 +1977,10 @@ yyreduce:
 	    } else {
 		yyIncrFlags(CLF_TIME);
 		if (yyDigitCount <= 2) {
-		    yyHour = (yyvsp[0].Number);
+		    yyHour = IntField((yyvsp[0].Number));
 		    yyMinutes = 0;
 		} else {
-		    yyHour = (yyvsp[0].Number) / 100;
+		    yyHour = IntField((yyvsp[0].Number) / 100);
 		    yyMinutes = (yyvsp[0].Number) % 100;
 		}
 		yySeconds = 0;
@@ -2389,22 +2429,33 @@ TclDateerror(
     infoPtr->separatrix = "\n";
 }
 
-int
+/*
+ * Without validation the hours and minutes can be out of range, so calculate
+ * in Tcl_WideInt. [f894a85b9a]
+ */
+
+Tcl_WideInt
 TclToSeconds(
     int Hours,
     int Minutes,
     int Seconds,
     MERIDIAN Meridian)
 {
+    Tcl_WideInt h = Hours;
+
     switch (Meridian) {
     case MER24:
-	return (Hours * 60 + Minutes) * 60 + Seconds;
+	break;
     case MERam:
-	return (((Hours / 24) * 24 + (Hours % 12)) * 60 + Minutes) * 60 + Seconds;
+	h = (h / 24) * 24 + (h % 12);
+	break;
     case MERpm:
-	return (((Hours / 24) * 24 + (Hours % 12) + 12) * 60 + Minutes) * 60 + Seconds;
+	h = (h / 24) * 24 + (h % 12) + 12;
+	break;
+    default:
+	return -1;		/* Should never be reached */
     }
-    return -1;			/* Should never be reached */
+    return (h * 60 + Minutes) * 60 + Seconds;
 }
 
 static int

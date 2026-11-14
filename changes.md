@@ -80,6 +80,7 @@ to the userbase.
  - [Tcl_DeleteEventSource called from a setup or check proc](https://core.tcl-lang.org/tcl/tktview/055240)
  - [a child process created by fork() could deadlock on its first allocation](https://core.tcl-lang.org/tcl/tktview/be3854)
  - [file cmd fails to copy to VFAT](https://core.tcl-lang.org/tcl/tktview/152304)
+ - [free-form clock scan silently wraps numbers that do not fit into an int](https://core.tcl-lang.org/tcl/tktview/f894a8)
 
 # Updated bundled packages, libraries, standards, data
  - http 2.10.3
