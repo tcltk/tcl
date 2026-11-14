@@ -10059,6 +10059,9 @@ test io-78.1 {writable event on pipe whose reader has exited} -setup {
     set timer [after 5000 [list set [namespace which -variable w] timeout]]
     vwait [namespace which -variable w]
     after cancel $timer
+    # A non-blocking close with a background flush still scheduled is
+    # completed in the background and does not report the error.
+    fconfigure $f -blocking 1
     list $w [catch {close $f} msg] $msg
 } -cleanup {
     catch {close $f}
