@@ -4414,15 +4414,26 @@ proc ::tcl::clock::AddMonths { months clockval timezone changeover } {
     }]
     dict set date tzName $timezone
 
-    # Add the requisite number of months
+    # Add the requisite number of months to the astronomical year
+    # (1 B.C.E. is 0, 2 B.C.E. is -1, etc.)
 
+    set y [dict get $date year]
+    if { [dict get $date era] eq "BCE" } {
+	set y [expr { 1 - $y }]
+    }
     set m [dict get $date month]
     incr m $months
     incr m -1
-    set delta [expr { $m / 12 }]
+    incr y [expr { $m / 12 }]
     set mm [expr { $m % 12 }]
     dict set date month [expr { $mm + 1 }]
-    dict incr date year $delta
+    if { $y < 1 } {
+	dict set date era BCE
+	dict set date year [expr { 1 - $y }]
+    } else {
+	dict set date era CE
+	dict set date year $y
+    }
 
     # If the date doesn't exist in the current month, repair it
 
