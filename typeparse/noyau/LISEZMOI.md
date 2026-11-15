@@ -2750,3 +2750,42 @@ ANNOTATIONS § 5.6 ; test t111 ; sondes 38 OK sur 43.
   `cproc/liaison` (`list.point` vers `{polygone}` : refusé, les deux
   liaisons d'accord), `attentrel/achat` (message), t59 (le refus d'un
   nominal vers un autre arrive plus tôt, avec « type mismatch »).
+
+### v17e — les méta-types (15 novembre 2026)
+
+Sans patch noyau (`tclTypes.c`, `tclAnnotObj.c`, `tclTypedVar.c`,
+`tclTypes.h`). `doc/PISTES-any-string.md` §§ 2–5 ; référence : ANNOTATIONS
+§ 2.6 ; test t112 ; sondes 42 OK sur 43 (le reste : `{T@notes}`, étape 6).
+
+* **`TclMeta`** (`tclTypes.h`) : `TCL_META_BARE`, `_TYPED`, `_NOTED`,
+  `_TYPED_NOTED`, des bits (`TCL_META_ANY` = 15). `TclAnnotMeta(v)` : un
+  texte brut non résolu (`list {int}5`, `{this}6`) est une note ; une
+  étiquette `{v:}` ou une option `{-x}` ne compte pas.
+* **Types** `bare`, `typed`, `noted`, `typednoted` intégrés (noms réservés),
+  `any` = 15 (`TclType.metaMask`). `TclTypeMetaMask` : le masque d'un
+  méta-type, ou d'une union de méta-types (`type def annotee {noted |
+  typednoted}` ; disjoints par leurs masques, `CanonDisjoint`).
+  `TclTypeIsAny` = « un masque » : tous les chemins qui gardaient une
+  valeur telle quelle sous `any` le font sous un méta-type.
+* **Une exigence, pas une conversion** : `TclTypeMetaCheck` (« expected a
+  typed value but got a bare value "5" »). Aux entrées : le réglage d'une
+  pile (`{typed}$x`, `type cast`, `proc f {{bare}x}` : les méta-types
+  sortent de la pile des types, l'état du résultat est vérifié à la fin),
+  `TypeCastEx` (l'identité), `DeclareTypedTp` (procédures typées),
+  `TclTypedConformHint` (champs, valeurs de dict), `BuildList`
+  (`list.typed`), `set {typed}v $x` (la valeur telle quelle, **sans
+  contrat** : vérifiée à cet endroit seulement).
+* **`any` devient l'identité** : `type cast any $g` garde `int` et la note
+  (c'était `any mm`) ; `{any}a` en argument aussi ; un élément nu d'une
+  `list.any` reste nu à la lecture (il devenait `any`) ; `dict.any` garde
+  le type de ses valeurs (il le perdait). À la lecture, un élément sous
+  `any` ou un méta-type n'est plus enveloppé (`WrapElem`, `TypeNotesOnly`).
+* **`type meta V`** : la variante d'une énumération `"bare", "typed",
+  "noted", "typednoted"` (`type variant` la lit), notée du type résolu
+  (`TypeTextObj`) ou, pour une valeur nue, du nom de son `Tcl_ObjType`
+  (`int`, `list`, `dict`, `cmdName`… ; rien pour une chaîne pure). La note
+  est posée **expirée** (`TclAnnotAddNote`, sous une marque, v16m) : une
+  métadonnée, jamais résolue — sans quoi `set m [type meta $i]` lirait la
+  note `int` comme un cast.
+* **`type canonic`** d'une valeur nue : `{bare}texte` (`-notes` : `bare`) ;
+  `type parse {bare}5` la relit nue (décidé le 14 : attendre l'étape 5).

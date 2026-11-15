@@ -1,0 +1,63 @@
+== type meta
+type meta $i                   bare int
+type meta $ty                  typed int
+type meta $no                  noted {}
+type meta $tno                 typednoted int
+type meta $s                   bare {}
+représentation : list          bare list
+représentation : dict          bare dict
+le résultat est une somme      typed
+== exigences d'un argument
+fb $i                          {} {}
+fb $ty                         ERREUR argument "x": expected a bare value but got a typed value (int)
+fb $no                         ERREUR argument "x": expected a bare value but got a noted value "3"
+fb $tno                        ERREUR argument "x": expected a bare value but got a typednoted value (int)
+ft $i                          ERREUR argument "x": expected a typed value but got a bare value "2"
+ft $ty                         int {}
+ft $no                         ERREUR argument "x": expected a typed value but got a noted value "3"
+ft $tno                        ERREUR argument "x": expected a typed value but got a typednoted value (int)
+fn $i                          ERREUR argument "x": expected a noted value but got a bare value "2"
+fn $ty                         ERREUR argument "x": expected a noted value but got a typed value (int)
+fn $no                         {} mm
+fn $tno                        ERREUR argument "x": expected a noted value but got a typednoted value (int)
+ftn $i                         ERREUR argument "x": expected a typednoted value but got a bare value "2"
+ftn $ty                        ERREUR argument "x": expected a typednoted value but got a typed value (int)
+ftn $no                        ERREUR argument "x": expected a typednoted value but got a noted value "3"
+ftn $tno                       int mm
+fany $i                        {} {}
+fany $ty                       int {}
+fany $no                       {} mm
+fany $tno                      int mm
+fa $i                          ERREUR argument "x": expected annotee but got a bare value "2"
+fa $ty                         ERREUR argument "x": expected annotee but got a typed value (int)
+fa $no                         {} mm
+fa $tno                        int mm
+le cast de l'appel d'abord     ERREUR argument "x": expected a bare value but got a typed value (int)
+== any : l'identité
+type cast any (typée, notée)   int mm
+type cast any (nue)            {} {}
+{any}$x                        int mm
+set {any}v                     int mm
+list.any                       {{} {}} {{} this} {int mm}
+dict.any                       a {{} {}} b {int mm}
+== set et conteneurs
+set {typed}x                   int {}
+set {typed}x 5                 ERREUR expected a typed value but got a bare value "5"
+pas de contrat                 {} {}
+list.typed                     {int {}} {double {}}
+list.typed refuse une nue      ERREUR expected a typed value but got a bare value "5"
+list.bare                      {{} {}} {{} {}}
+list.bare refuse une typée     ERREUR expected a bare value but got a typed value (int)
+dict.typed                     a {int {}} b {double {}}
+type cast typed                int {}
+type cast typed 5              ERREUR expected a typed value but got a bare value "5"
+== unions
+noted | typednoted             ok
+bare | any : refusée           ERREUR union: alternatives a and b can take the same value, so the value could not tell which one it is; a union must be disjoint. Write a sum with "," to tag the alternatives
+int | bare : refusée           ERREUR union: alternatives i and b can take the same value, so the value could not tell which one it is; a union must be disjoint. Write a sum with "," to tag the alternatives
+noms réservés                  ERREUR type "typed" is already defined
+== forme canonique d'une valeur nue
+canonic 5                      {{bare}5} bare 1
+canonic {a b}                  {{bare}{a b}} bare 1
+canonic {}                     {{bare}{}} bare 1
+type parse {typed}5            ERREUR expected a typed value but got a bare value "5"

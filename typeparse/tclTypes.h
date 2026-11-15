@@ -21,7 +21,7 @@
  * VAR_* de tclInt.h). La valeur ci-dessous est un PLACEHOLDER. */
 /* Version du prototype TIP 764 (typeparse/VERSION, maj.sh, et
  * tcl::unsupported::typesversion). */
-#define TCL_TYPES_VERSION "v17d"
+#define TCL_TYPES_VERSION "v17e"
 
 #ifndef VAR_TYPED
 #define VAR_TYPED	0x400000
@@ -104,6 +104,8 @@ struct TclType {
     char *name;			/* "int", "pixel", ou nom canonique anonyme */
     int nominal;		/* défini par "type def" */
     int reserved;		/* intégré : ne peut être ni masqué ni redéfini */
+    int metaMask;		/* v17e : bare, typed, noted, typednoted, any
+				 * (TCL_META_*, leur union) ; 0 sinon */
     TclType *under;		/* type nominal scalaire : type sous-jacent */
     TclType *key;		/* DICT : type des clés */
     TclType *elem;		/* LIST : éléments ; DICT : valeurs */
@@ -325,6 +327,24 @@ void	TclDiscard(Tcl_Obj *objPtr);
 Tcl_Obj *	TclAnnotCarryNotes(Tcl_Obj *from, Tcl_Obj *to);
 Tcl_Obj *	TclTypeNormalizeContent(TclType *tp, Tcl_Obj *v);
 int		TclTypeIsNumUnion(const TclType *et);
+
+/*
+ * v17e : les méta-types. L'état d'une valeur sur deux axes (un type
+ * résolu ? des notes ?) ; any est leur union. Bits, pour les unions.
+ */
+typedef enum {
+    TCL_META_BARE = 1,		/* nue : aucun type, aucune note */
+    TCL_META_TYPED = 2,		/* typée : un type résolu */
+    TCL_META_NOTED = 4,		/* notée : des notes, pas de type */
+    TCL_META_TYPED_NOTED = 8	/* typée et notée */
+} TclMeta;
+#define TCL_META_ANY 15
+TclMeta		TclAnnotMeta(Tcl_Obj *objPtr);
+int		TclTypeMetaMask(const TclType *tp);
+int		TclTypeMetaCheck(Tcl_Interp *interp, const TclType *tp,
+			    Tcl_Obj *objPtr);
+const char *	TclMetaName(TclMeta m);
+Tcl_Obj *	TclAnnotAddNote(Tcl_Obj *objPtr, Tcl_Obj *note);
 int		TclTypeCompleteBare(Tcl_Interp *interp, const TclType *tp,
 			    Tcl_Obj *content, int variantHint, int *variantOut);	/* v17d */	/* v17b : {int}i | {double}d */
 
