@@ -205,21 +205,21 @@ namespace eval grapheme::test {
         } -result {can't set "indexvar": variable is array} -returnCodes error
     }
 
-    ### grapheme length
+    ### grapheme count
 
-    tcltests::testnumargs "grapheme length" "string" ""
+    tcltests::testnumargs "grapheme count" "string" ""
 
     foreach testCase [getGraphemeData] {
 	lassign $testCase testNum comment graphemes
         foreach intrep $intrepTypes {
-            test grapheme-length-ucd-$intrep-$testNum.0 $comment -body {
+            test grapheme-count-ucd-$intrep-$testNum.0 $comment -body {
                 set text [testintrep $intrep [join $graphemes ""]]
-                list [grapheme length $text] [shimmered $intrep $text]
+                list [grapheme count $text] [shimmered $intrep $text]
             } -result [list [llength $graphemes] 0]
         }
     }
-    test grapheme-length-empty-1.0 $comment -body {
-	grapheme length ""
+    test grapheme-count-empty-1.0 $comment -body {
+	grapheme count ""
     } -result 0
 
     ### grapheme index

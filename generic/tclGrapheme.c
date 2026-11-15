@@ -55,7 +55,7 @@ static Tcl_ObjCmdProc2		GraphemeSplitCmd;
 
 const EnsembleImplMap tclGraphemeImplMap[] = {
     {"index",	GraphemeIndexCmd,	NULL, NULL, NULL, 0},
-    {"length",	GraphemeCountCmd,	NULL, NULL, NULL, 0},
+    {"count",	GraphemeCountCmd,	NULL, NULL, NULL, 0},
     {"next",	GraphemeNextCmd,	NULL, NULL, NULL, 0},
     {"offset",	GraphemeOffsetCmd,	NULL, NULL, NULL, 0},
     {"prev",	GraphemePrevCmd,	NULL, NULL, NULL, 0},
