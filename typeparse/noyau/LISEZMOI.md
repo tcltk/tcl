@@ -2841,3 +2841,19 @@ une fois la réforme des notes achevée.
 * `note has` et `note delete` ne changent pas.
 * Sorties mises à jour : t48, t49, t113. ANNOTATIONS (les sept langues) :
   exemples et légende de l'affichage.
+
+### v17i — `T(chemin)`, le type d'une partie (15 novembre 2026)
+
+Sans patch noyau (`tclTypeParse.c`). Test t115 ; ANNOTATIONS § 7.4.
+Proposé le 15 novembre (VolɷDuctus : une instance est une valeur dont le
+type est le produit de ses blocs ; l'analogie list ↔ tableau, dict ↔
+struct, celle de l'arbre de ParseExpr écrit en Tcl).
+
+* `TypePathOf` : un NOM(…) dont le type est un produit, ou une liste, un
+  dict nommés (pas `list`, `dict` eux-mêmes : `list(4)` garde son sens),
+  se lit comme un chemin. Chaque pas : un champ (produit), un indice,
+  `end` ou `*` (liste : le type des éléments), une clé (dict ; un dict à
+  clés fixées vérifie la clé), une variante (somme, dans le chemin).
+  Les types nominaux scalaires sont traversés jusqu'à leur structure.
+* Une somme en tête garde `S(v)` (la variante choisie) et `S($champ)`.
+  Pas de conflit avec les familles : elles sont cherchées avant.

@@ -1554,6 +1554,112 @@ ParseListRange(Tcl_Interp *interp, const char *text, Tcl_Size len,
     return TCL_OK;
 }
 
+/*
+ * v17i : le type de la partie CHEMIN de tp (« a.b.c », chaque pas un champ,
+ * un indice, une clé ou une variante). NULL et un message sinon.
+ */
+static TclType *
+TypePathOf(Tcl_Interp *interp, TclType *tp, const char *a, Tcl_Size alen,
+	const char *w, Tcl_Size wlen)
+{
+    const char *p = a, *end = a + alen, *q;
+    Tcl_Size i;
+
+    while (p < end && isspace(UCHAR(*p))) {
+	p++;
+    }
+    while (end > p && isspace(UCHAR(end[-1]))) {
+	end--;
+    }
+    if (p == end) {
+	ERR(interp, "PATH", "%.*s(): a type path names a part, as in "
+		"%.*s(field)", (int) wlen, w, (int) wlen, w);
+	return NULL;
+    }
+    while (p < end) {
+	Tcl_Size sl;
+
+	for (q = p; q < end && *q != '.'; q++) {
+	}
+	sl = q - p;
+	if (sl == 0) {
+	    ERR(interp, "PATH", "bad type path \"%.*s\"", (int) alen, a);
+	    return NULL;
+	}
+	while (tp->under != NULL && tp->kind != TCLT_PRODUCT
+		&& tp->kind != TCLT_LIST && tp->kind != TCLT_DICT
+		&& tp->kind != TCLT_SUM) {
+	    tp = tp->under;
+	}
+	switch (tp->kind) {
+	case TCLT_PRODUCT:
+	case TCLT_SUM:
+	    for (i = 0; i < tp->nfields; i++) {
+		const char *fn = (tp->fields[i].name != NULL)
+			? Tcl_GetString(tp->fields[i].name) : "";
+
+		if ((Tcl_Size) strlen(fn) == sl && memcmp(fn, p, sl) == 0) {
+		    break;
+		}
+	    }
+	    if (i == tp->nfields || tp->fields[i].type == NULL) {
+		ERR(interp, "PATH", "%s has no %s \"%.*s\"", tp->name,
+			tp->kind == TCLT_SUM ? "variant with a value" : "field",
+			(int) sl, p);
+		return NULL;
+	    }
+	    tp = tp->fields[i].type;
+	    break;
+	case TCLT_LIST:
+	    {
+		Tcl_Size n;
+
+		if (!(sl == 1 && *p == '*') && !(sl == 3
+			&& memcmp(p, "end", 3) == 0)
+			&& ParseNatural(p, sl, &n) != TCL_OK) {
+		    ERR(interp, "PATH", "%s is a list: a type path names an "
+			    "element by an index, end or *, not \"%.*s\"",
+			    tp->name, (int) sl, p);
+		    return NULL;
+		}
+		if (tp->elem == NULL) {
+		    ERR(interp, "PATH", "%s has untyped elements", tp->name);
+		    return NULL;
+		}
+		tp = tp->elem;
+	    }
+	    break;
+	case TCLT_DICT:
+	    if (tp->keyed) {
+		for (i = 0; i < tp->nkeys; i++) {
+		    const char *kn = Tcl_GetString(tp->keys[i].name);
+
+		    if ((Tcl_Size) strlen(kn) == sl && memcmp(kn, p, sl) == 0) {
+			break;
+		    }
+		}
+		if (i == tp->nkeys) {
+		    ERR(interp, "PATH", "%s has no key \"%.*s\"", tp->name,
+			    (int) sl, p);
+		    return NULL;
+		}
+	    }
+	    if (tp->elem == NULL) {
+		ERR(interp, "PATH", "%s has untyped values", tp->name);
+		return NULL;
+	    }
+	    tp = tp->elem;
+	    break;
+	default:
+	    ERR(interp, "PATH", "%s has no parts: \"%.*s\" goes too far",
+		    tp->name, (int) (end - p), p);
+	    return NULL;
+	}
+	p = (q < end) ? q + 1 : q;
+    }
+    return tp;
+}
+
 /* var(typed) : la variable visée doit être typée. */
 
 static int
@@ -2647,6 +2753,24 @@ TclCompileTypeTree(
 		    envPtr->self, w, len);
 	    if (tp == NULL) {
 		return TCL_ERROR;
+	    }
+	    if (tp->kind == TCLT_PRODUCT || ((tp->kind == TCLT_LIST
+		    || tp->kind == TCLT_DICT) && tp != envPtr->d->tList
+		    && tp != envPtr->d->tDict)) {
+		/*
+		 * v17i : T(chemin), le type d'une partie, comme $v(chemin) en
+		 * est la valeur : le champ d'un produit (un struct), l'élément
+		 * d'une liste (un tableau : un indice, end, *), la valeur d'un
+		 * dict ; T(a.b) descend. Dans le chemin, S.v est le type de la
+		 * variante v d'une somme. (S(v) seul garde son sens : la
+		 * variante choisie.)
+		 */
+		tp = TypePathOf(interp, tp, a, alen, w, len);
+		if (tp == NULL) {
+		    return TCL_ERROR;
+		}
+		PushItem(envPtr, SK_TYPE)->type = tp;
+		break;
 	    }
 	    if (tp->kind == TCLT_SUM) {
 		/* S($champ) : la variante est choisie par ce champ */

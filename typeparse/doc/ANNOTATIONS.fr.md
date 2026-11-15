@@ -983,6 +983,21 @@ construct   = "set {" , type , "}" , varname , "(" , path , ")" , value , { valu
 
 Une lecture puis une réécriture du même chemin marche toujours : `set R(c) [set R(c)]`.
 
+#### 7.4 Le chemin d'un type : `T(chemin)` (v17i)
+
+Un chemin sur un type désigne le **type** d'une partie, comme `$v(chemin)` en désigne la valeur : la liste est un tableau (un indice, `end`, `*` : le type des éléments), le produit et le dict sont des structs (un champ, une clé : son type), et `T(a.b)` descend. Dans un chemin, `S.v` est le type de la variante `v` d'une somme ; `S(v)` seul garde son sens (une valeur de `S` dont la variante est `v`).
+
+```tcl
+type def Emplacement {{Emplacement_ref}référence; {Emplacement_propriétés}propriétés}
+set {Emplacement(propriétés)}p E1 3 10       ;# Emplacement_propriétés
+proc stocker {{Emplacement(référence)}e} …   ;# Emplacement_ref
+type get [type cast Emplacement(propriétés.stock) 3]   ;# int
+type def Liste list.Emplacement
+type cast Liste(*.propriétés.max) 4          ;# int
+```
+
+Le type obtenu est le type de la partie lui-même (`type get` et `type canonic` le nomment : `Emplacement_propriétés`). Un champ inconnu, un pas de trop (`Emplacement(propriétés.stock.x)`) ou un indice qui n'en est pas sont refusés.
+
 ### 8. Construire une valeur
 
 #### 8.1 Les formes d'un constructeur de produit

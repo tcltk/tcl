@@ -989,6 +989,21 @@ construct   = "set {" , type , "}" , varname , "(" , path , ")" , value , { valu
 
 Reading then rewriting the same path always works: `set R(c) [set R(c)]`.
 
+#### 7.4 A type's path: `T(path)` (v17i)
+
+A path on a type names the **type** of a part, as `$v(path)` names its value: a list is an array (an index, `end`, `*`: the element type), a product and a dict are structs (a field, a key: its type), and `T(a.b)` goes down. In a path, `S.v` is the type of variant `v` of a sum; `S(v)` alone keeps its meaning (a value of `S` whose variant is `v`).
+
+```tcl
+type def Emplacement {{Emplacement_ref}référence; {Emplacement_propriétés}propriétés}
+set {Emplacement(propriétés)}p E1 3 10       ;# Emplacement_propriétés
+proc stocker {{Emplacement(référence)}e} …   ;# Emplacement_ref
+type get [type cast Emplacement(propriétés.stock) 3]   ;# int
+type def Liste list.Emplacement
+type cast Liste(*.propriétés.max) 4          ;# int
+```
+
+The type obtained is the part's own type (`type get` and `type canonic` name it: `Emplacement_propriétés`). An unknown field, one step too far (`Emplacement(propriétés.stock.x)`) or an index that is not one are refused.
+
 ### 8. Building a value
 
 #### 8.1 The forms of a product constructor
