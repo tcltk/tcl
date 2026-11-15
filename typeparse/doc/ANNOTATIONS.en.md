@@ -179,6 +179,31 @@ set {}n abc          ;# the contract is lifted: n is abc
 
 The original value is never modified: `{}` produces a new view, which makes sharing objects safe.
 
+#### 2.6 Meta-types: `bare`, `typed`, `noted`, `typednoted`, `any` (v17e)
+
+A value is in one of four states, its **meta-types**: `bare` (no type, no note; it shimmers), `typed` (a resolved type), `noted` (notes, no type), `typednoted` (both). `any` is their union: no requirement. As a type, a meta-type is a **requirement**: the value enters as it is, type and notes kept, if its state fits; nothing is converted.
+
+```tcl
+proc f {{typed}x} {...}          ;# a typed value, of any type
+f 5                              ;# expected a typed value but got a bare value "5"
+proc g {{bare}x} {...}           ;# only a bare value; g {int}$i: refused
+type def annotated {noted | typednoted}   ;# unions (meta-types are disjoint)
+set {list.typed}L {int}5 [type cast double 2.5]   ;# each element keeps its type
+type cast any $v                 ;# identity; so are {any}$v and set {any}v $v
+set {list.any}P 5 {this}6 $v     ;# bare, noted, typed: each as it is
+```
+
+A meta-type in `set {typed}v $x` checks the value there, without setting a contract. Making a value bare is still `{}` (§ 2.5).
+
+`type meta $v` returns the variant of the meta-type (an enumeration: `type variant` reads it), noted with what is known of the type: the resolved type of a typed value; for a bare value, its **representation**, the name of its current `Tcl_ObjType` (`int`, `list`, `dict`, `bytearray`, `cmdName`…), none for a pure string. It is the built-in counterpart of `tcl::unsupported::representation`: these names are internal to Tcl and change between versions.
+
+```tcl
+set i 1; incr i
+set m [type meta $i]
+list [type variant $m] [note get $m]     ;# bare int
+type meta [list a b]                     ;# bare, note list
+```
+
 ## Part II — Reference
 
 ### 3. The `note` command
@@ -331,6 +356,7 @@ type convert FROM TO LAMBDA    ;# declares an explicit conversion
 type deref VALUE               ;# snapshot: each var link replaced by its value
 type canonic ?-notes? VALUE    ;# the canonical text: {T}content, {T@notes}content (v17c)
 type parse TEXT                ;# reads a canonical text back into a typed value (v17c)
+type meta VALUE                ;# bare, typed, noted, typednoted; note: type or representation (v17e)
 type binary TYPE ...           ;# binary representation, encoding, decoding (§ 9)
 type def {-compact}NAME DEF    ;# a list (or any list of a product) always in cells (§ 14.1)
 type def {-a,-b}NAME DEF       ;# several options, in the syntax of notes
@@ -376,7 +402,8 @@ expr {new is cmd}              ;# 1 if new is a command; new(…) becomes an exp
 | `list` | ordinary Tcl list (untyped elements) |
 | `dict` | ordinary Tcl dictionary |
 | `var` | link to a variable, by name (§ 5.3) |
-| `any` | element of a heterogeneous list (`list.any`): each element keeps its type |
+| `any` | any value, as it is (the union of the meta-types, § 2.6); `list.any`: each element keeps what it carries |
+| `bare`, `typed`, `noted`, `typednoted` | meta-types: a requirement on the state of the value (§ 2.6) |
 
 **Refinements** restrict a base type and carry a binary representation: `int(u|s, n ?, be|le?)`, `double(32|64 ?, be|le?)`, `string(ENC, N|z)`, `bitarray(n ?, lsb0|msb0?)` (§ 9).
 
@@ -703,7 +730,7 @@ The `catch … m` trap of earlier versions is therefore gone.
 
 #### 6.3b `type canonic` and `type parse`: the text form of a typed value (v17c)
 
-The type is never in a value's string (EIAS). Where only text is kept (a file, a Tk tag, a key), `type canonic V` gives a text that keeps it: `{T}content`, with `T` the type's text (its name when it is named, qualified for a namespace's type; without the variant: a tagged sum carries it in its content, a union reads it from its own) and the content in its canonical form (numbers normalised, lists, dicts, products and sums rebuilt by the type), quoted as one list element. Notes are a set: `{double@alpha,zeta}5.0`, sorted, without duplicates, comma-separated; in a note any ASCII character other than letters, digits, `_` and `.` is written `%XX`. A value with notes only gives `{@vitesse}5`; a bare value is refused. `-notes` gives `T@notes` without the content.
+The type is never in a value's string (EIAS). Where only text is kept (a file, a Tk tag, a key), `type canonic V` gives a text that keeps it: `{T}content`, with `T` the type's text (its name when it is named, qualified for a namespace's type; without the variant: a tagged sum carries it in its content, a union reads it from its own) and the content in its canonical form (numbers normalised, lists, dicts, products and sums rebuilt by the type), quoted as one list element. Notes are a set: `{double@alpha,zeta}5.0`, sorted, without duplicates, comma-separated; in a note any ASCII character other than letters, digits, `_` and `.` is written `%XX`. A value with notes only gives `{@vitesse}5`; a bare value `{bare}5`. `-notes` gives `T@notes` without the content.
 
 `type parse TEXT` reads `{T}content`, `{T@notes}content` or `{@notes}content`: the type must exist (checked against the current definition), the content must fit it, then the notes are added. Two laws: `type parse [type canonic $v]` is `$v`, and `type canonic [type parse $t]` is `$t` when `$t` is canonical.
 
@@ -714,7 +741,7 @@ type canonic {vitesse}[type cast double 5]        ;# {double@vitesse}5.0
 type get [type parse {{pt}{1 2.5}}]               ;# pt
 ```
 
-Not kept: the notes of elements inside a container, the types of the elements of a `list.any`, the `{-compact}` option (a representation).
+Not kept: the notes of elements inside a container, the types of the elements of a `list.any`, the `{-compact}` option (a representation). A bare value is written `{bare}text` (v17e).
 
 #### 6.4 Typed procedures (v16p)
 

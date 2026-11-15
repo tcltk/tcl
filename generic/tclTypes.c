@@ -217,7 +217,7 @@ RegisterNs(TypeData *d, Namespace *ns)
 
 static const char *const reservedNames[] = {
     "int", "double", "string", "list", "dict", "array", "var", "any", "flag",
-    "type", "at", NULL
+    "type", "at", "bare", "typed", "noted", "typednoted", NULL
 };
 
 /*
@@ -695,13 +695,94 @@ TclTypeFieldIndex(const TclType *tp, const char *name)
     return -1;
 }
 
-/* "any" : type prédéfini des éléments d'une liste hétérogène (list.any).
- * Chaque élément y conserve sa propre annotation. */
+/*
+ * "any" et les méta-types (v17e) : bare, typed, noted, typednoted, et
+ * leurs unions (type def annotee {noted | typednoted}). Une valeur y entre
+ * telle quelle, son type et ses notes gardés, si son méta-type y est
+ * (TclTypeMetaCheck) : une exigence, pas une conversion. any est l'union
+ * des quatre, l'absence d'exigence.
+ */
+int
+TclTypeMetaMask(const TclType *tp)
+{
+    Tcl_Size i;
+    int m = 0;
+
+    if (tp == NULL) {
+	return 0;
+    }
+    if (tp->metaMask != 0) {
+	return tp->metaMask;
+    }
+    if (tp->kind == TCLT_SUM && tp->sumMode == TCLT_SUM_UNION
+	    && tp->nfields > 0) {
+	for (i = 0; i < tp->nfields; i++) {
+	    const TclType *ft = tp->fields[i].type;
+
+	    if (ft == NULL || ft->metaMask == 0) {
+		return 0;
+	    }
+	    m |= ft->metaMask;
+	}
+    }
+    return m;
+}
+
 int
 TclTypeIsAny(const TclType *tp)
 {
-    return tp->kind == TCLT_STRING && tp->reserved
-	    && strcmp(tp->name, "any") == 0;
+    return TclTypeMetaMask(tp) != 0;
+}
+
+const char *
+TclMetaName(TclMeta m)
+{
+    switch (m) {
+    case TCL_META_BARE: return "bare";
+    case TCL_META_TYPED: return "typed";
+    case TCL_META_NOTED: return "noted";
+    case TCL_META_TYPED_NOTED: return "typednoted";
+    }
+    return "?";
+}
+
+/*
+ * La valeur v entre-t-elle dans tp ? TCL_OK si tp n'est pas un méta-type,
+ * ou si l'état de v y est. Sinon le message (« expected a typed value but
+ * got a bare value »).
+ */
+int
+TclTypeMetaCheck(Tcl_Interp *interp, const TclType *tp, Tcl_Obj *objPtr)
+{
+    int mask = TclTypeMetaMask(tp);
+    TclMeta m;
+
+    if (mask == 0 || mask == TCL_META_ANY) {
+	return TCL_OK;
+    }
+    m = TclAnnotMeta(objPtr);
+    if (mask & m) {
+	return TCL_OK;
+    }
+    if (interp != NULL) {
+	TclType *vt = NULL;
+	Tcl_Obj *msg;
+
+	(void) TclAnnotInfo(objPtr, NULL, &vt, NULL, NULL);
+	msg = (tp->metaMask != 0)
+		? Tcl_ObjPrintf("expected a %s value but got a %s value",
+			tp->name, TclMetaName(m))
+		: Tcl_ObjPrintf("expected %s but got a %s value", tp->name,
+			TclMetaName(m));
+	if (vt != NULL) {
+	    Tcl_AppendPrintfToObj(msg, " (%s)", vt->name);
+	} else {
+	    Tcl_AppendPrintfToObj(msg, " \"%s\"", Tcl_GetString(objPtr));
+	}
+	Tcl_SetObjResult(interp, msg);
+	Tcl_SetErrorCode(interp, "TCL", "TYPE", "META", (char *) NULL);
+    }
+    return TCL_ERROR;
 }
 
 int
@@ -3576,6 +3657,15 @@ TypeCastEx(Tcl_Interp *interp, Tcl_Obj *src, TclType *target, int implicit,
     char key[256];
     Tcl_Size i;
 
+    if (TclTypeIsAny(target)) {
+	/* v17e : any, un méta-type : la valeur telle quelle, si son état y
+	 * est (l'identité) */
+	if (TclTypeMetaCheck(interp, target, src) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	*resultPtr = src;
+	return TCL_OK;
+    }
     kind = TclAnnotInfo(src, &content, &from, &variant, NULL);
     if (kind == 2) {
 	ERR(interp, "CAST", "cannot cast an unresolved annotation");
@@ -8377,6 +8467,9 @@ CanonDisjoint(const TclType *a, const TclType *b)
     if (a == NULL || b == NULL) {
 	return 0;
     }
+    if (a->metaMask != 0 && b->metaMask != 0) {
+	return (a->metaMask & b->metaMask) == 0;	/* v17e : méta-types */
+    }
     if ((a->kind == TCLT_INT && a->bitWidth == 0 && b->kind == TCLT_DOUBLE)
 	    || (b->kind == TCLT_INT && b->bitWidth == 0
 		    && a->kind == TCLT_DOUBLE)) {
@@ -8444,6 +8537,8 @@ static void DefText(const TclType *tp, int top, Tcl_DString *ds);
 static Tcl_Obj *TypeTextObj(const TclType *tp, int top);
 static int TypeCanonicCmd(Tcl_Interp *interp, Tcl_Size objc,
 			    Tcl_Obj *const objv[]);	/* v17c */
+static int TypeMetaCmd(Tcl_Interp *interp, Tcl_Size objc,
+			    Tcl_Obj *const objv[]);	/* v17e */
 static int TypeParseCmd(Tcl_Interp *interp, Tcl_Size objc,
 			    Tcl_Obj *const objv[]);	/* v17c */
 static int TypeCallCmd(Tcl_Interp *interp, Tcl_Size objc,
@@ -8523,8 +8618,8 @@ DefText(const TclType *tp, int top, Tcl_DString *ds)
 	Tcl_DStringAppend(ds, "string", 6);
 	return;
     }
-    if (TclTypeIsAny(tp)) {
-	Tcl_DStringAppend(ds, "any", 3);
+    if (tp->metaMask != 0) {		/* any, bare, typed... (v17e) */
+	Tcl_DStringAppend(ds, tp->name, TCL_AUTO_LENGTH);
 	return;
     }
     if (top != 1 && (tp->nominal || tp->reserved)) {
@@ -9279,6 +9374,9 @@ TypeObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
     if (strcmp(sub, "deref") == 0) {
 	return TypeDerefCmd(interp, objc, objv);
     }
+    if (strcmp(sub, "meta") == 0) {
+	return TypeMetaCmd(interp, objc, objv);	/* v17e */
+    }
     if (strcmp(sub, "canonic") == 0) {
 	return TypeCanonicCmd(interp, objc, objv);	/* v17c */
     }
@@ -9335,7 +9433,7 @@ TypeObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
 	return TCL_OK;
     }
     ERR(interp, "SUBCMD", "bad subcommand \"%s\": must be def, alias, "
-	    "call, canonic, cast, convert, debug, deref, export, forget, get, is, parse, proc, variant "
+	    "call, canonic, cast, convert, debug, deref, export, forget, get, is, meta, parse, proc, variant "
 	    "or binary", sub);
     return TCL_ERROR;
 }
@@ -9575,6 +9673,24 @@ DeclareTypedTp(Tcl_Interp *interp, TclType *tp, Tcl_Obj *typeObj,
     TclType *vt = NULL;
     Tcl_Size np = 1;
 
+    if (tp != NULL && TclTypeIsAny(tp)) {
+	/* v17e : any, un méta-type : l'argument tel quel, son état vérifié
+	 * (après l'annotation de l'appel) */
+	Tcl_Obj *sv = valueObj;
+
+	if (TclIsAnnotated(valueObj)
+		&& TclAnnotSettle(interp, valueObj, NULL, 0, &sv) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	if (TclTypeMetaCheck(interp, tp, sv) != TCL_OK) {
+	    if (sv != valueObj) {
+		TclDiscard(sv);
+	    }
+	    return TCL_ERROR;
+	}
+	*typedPtr = sv;
+	return TCL_OK;
+    }
     if (tp != NULL && TclAnnotInfo(valueObj, NULL, &vt, NULL, NULL) != 1) {
 	vt = NULL;			/* v17d : seulement un type résolu */
     }
@@ -10046,7 +10162,11 @@ TclTypesInit(Tcl_Interp *interp)
     d->tInt = Builtin(d, TCLT_INT, "int");
     d->tDouble = Builtin(d, TCLT_DOUBLE, "double");
     d->tString = Builtin(d, TCLT_STRING, "string");
-    Builtin(d, TCLT_STRING, "any");		/* éléments de list.any */
+    Builtin(d, TCLT_STRING, "any")->metaMask = TCL_META_ANY;
+    Builtin(d, TCLT_STRING, "bare")->metaMask = TCL_META_BARE;	/* v17e */
+    Builtin(d, TCLT_STRING, "typed")->metaMask = TCL_META_TYPED;
+    Builtin(d, TCLT_STRING, "noted")->metaMask = TCL_META_NOTED;
+    Builtin(d, TCLT_STRING, "typednoted")->metaMask = TCL_META_TYPED_NOTED;
     Builtin(d, TCLT_INT, "flag");		/* v16q : option sans valeur, 0/1 */
     d->tList = Builtin(d, TCLT_LIST, "list");
     d->tList->arity = -1;			/* liste extensible */
@@ -10227,6 +10347,59 @@ TypeTextObj(const TclType *tp, int top)
  * T@notes, sans le contenu. type parse relit {…}contenu.
  */
 
+
+/*
+ * v17e : type meta VALEUR. La variante du méta-type (une énumération
+ * "bare", "typed", "noted", "typednoted" : type variant la lit), notée de
+ * ce qu'on sait du type : le type résolu d'une valeur typée ; pour une
+ * valeur nue, sa représentation (le nom de son Tcl_ObjType, tel qu'il est :
+ * int, list, dict, bytearray, cmdName...), aucune pour une chaîne pure.
+ * La représentation est celle du moment, dans ce Tcl.
+ */
+static int
+TypeMetaCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
+{
+    static const char metaDef[] =
+	    "\"bare\", \"typed\", \"noted\", \"typednoted\"";
+    TclType *mt, *vt = NULL;
+    TclMeta m;
+    Tcl_Obj *v, *res, *note = NULL;
+    int variant;
+
+    if (objc != 3) {
+	Tcl_WrongNumArgs(interp, 2, objv, "value");
+	return TCL_ERROR;
+    }
+    v = objv[2];
+    m = TclAnnotMeta(v);
+    mt = TclTypeParse(interp, metaDef, (Tcl_Size) strlen(metaDef));
+    if (mt == NULL) {
+	return TCL_ERROR;
+    }
+    variant = (m == TCL_META_BARE) ? 0 : (m == TCL_META_TYPED) ? 1
+	    : (m == TCL_META_NOTED) ? 2 : 3;
+    res = TclNewAnnotated(interp, mt, variant,
+	    Tcl_NewStringObj(TclMetaName(m), TCL_AUTO_LENGTH));
+    if (res == NULL) {
+	return TCL_ERROR;
+    }
+    if (TclAnnotInfo(v, NULL, &vt, NULL, NULL) == 1 && vt != NULL) {
+	note = TypeTextObj(vt, 0);	/* compte 1 */
+    } else if (m == TCL_META_BARE && v->typePtr != NULL) {
+	note = Tcl_NewStringObj(v->typePtr->name, TCL_AUTO_LENGTH);
+	Tcl_IncrRefCount(note);
+    }
+    if (note != NULL) {
+	Tcl_Obj *w = TclAnnotAddNote(res, note);
+
+	Tcl_DecrRefCount(note);
+	TclDiscard(res);
+	res = w;
+    }
+    Tcl_SetObjResult(interp, res);
+    return TCL_OK;
+}
+
 /* Le texte canonique du contenu v selon tp (compte 0, ou v lui-même). */
 static Tcl_Obj *
 CanonContent(const TclType *tp, int variant, Tcl_Obj *v, int depth)
@@ -10352,10 +10525,21 @@ TypeCanonicCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
     Tcl_IncrRefCount(notes);
     Tcl_ListObjGetElements(NULL, notes, &nn, &nv);
     if ((kind != 1 || tp == NULL) && nn == 0) {
+	/* v17e : une valeur nue, {bare}texte (type parse la relit nue) */
+	Tcl_Obj *one = Tcl_NewStringObj(Tcl_GetString(
+		TclIsAnnotated(val) ? TCL_ANNOT_CONTENT(val) : val),
+		TCL_AUTO_LENGTH), *l;
+
 	Tcl_DecrRefCount(notes);
-	ERR(interp, "CANONIC", "type canonic: the value \"%s\" has no type "
-		"and no note", Tcl_GetString(val));
-	return TCL_ERROR;
+	if (onlyNotes) {
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj("bare", 4));
+	    return TCL_OK;
+	}
+	l = Tcl_NewListObj(1, &one);
+	Tcl_IncrRefCount(l);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf("{bare}%s", Tcl_GetString(l)));
+	Tcl_DecrRefCount(l);
+	return TCL_OK;
     }
     if (kind != 1 || tp == NULL) {
 	tp = NULL;

@@ -179,6 +179,31 @@ set {}n abc          ;# le contrat est levé : n vaut abc
 
 La valeur d'origine n'est jamais modifiée : `{}` produit une nouvelle vue, ce qui rend le partage des objets sans danger.
 
+#### 2.6 Les méta-types : `bare`, `typed`, `noted`, `typednoted`, `any` (v17e)
+
+Une valeur est dans l'un de quatre états, ses **méta-types** : `bare` (nue : ni type ni note ; elle scintille), `typed` (un type résolu), `noted` (des notes, pas de type), `typednoted` (les deux). `any` est leur union : l'absence d'exigence. Comme type, un méta-type est une **exigence** : la valeur y entre telle quelle, type et notes gardés, si son état y est ; il ne convertit rien.
+
+```tcl
+proc f {{typed}x} {...}          ;# une valeur typée, de n'importe quel type
+f 5                              ;# expected a typed value but got a bare value "5"
+proc g {{bare}x} {...}           ;# n'accepte qu'une valeur nue ; g {int}$i : refusé
+type def annotee {noted | typednoted}   ;# des unions (les méta-types sont disjoints)
+set {list.typed}L {int}5 [type cast double 2.5]   ;# chaque élément garde son type
+type cast any $v                 ;# l'identité ; {any}$v, set {any}v $v aussi
+set {list.any}P 5 {this}6 $v     ;# nu, noté, typé : chacun tel qu'il est
+```
+
+Un méta-type dans `set {typed}v $x` vérifie la valeur à cet endroit, sans poser de contrat. Rendre nu reste l'affaire de `{}` (§ 2.5).
+
+`type meta $v` rend la variante du méta-type (une énumération : `type variant` la lit), avec en note ce qu'on sait du type : le type résolu d'une valeur typée ; pour une valeur nue, sa **représentation**, le nom de son `Tcl_ObjType` du moment (`int`, `list`, `dict`, `bytearray`, `cmdName`…), aucune pour une chaîne pure. C'est la version intégrée de `tcl::unsupported::representation` : ces noms sont internes à Tcl et changent d'une version à l'autre.
+
+```tcl
+set i 1; incr i
+set m [type meta $i]
+list [type variant $m] [note get $m]     ;# bare int
+type meta [list a b]                     ;# bare, note list
+```
+
 ## Partie II — Référence
 
 ### 3. La commande `note`
@@ -331,6 +356,7 @@ type convert DE VERS LAMBDA    ;# déclare une conversion explicite
 type deref VALEUR              ;# instantané : chaque lien var remplacé par sa valeur
 type canonic ?-notes? VALEUR   ;# le texte canonique : {T}contenu, {T@notes}contenu (v17c)
 type parse TEXTE               ;# relit un texte canonique en valeur typée (v17c)
+type meta VALEUR               ;# bare, typed, noted, typednoted ; note : type ou représentation (v17e)
 type binary TYPE ...           ;# représentation binaire, encodage, décodage (§ 9)
 type def {-compact}NOM DÉF     ;# une liste (ou toute liste d'un produit) toujours en cases (§ 14.1)
 type def {-a,-b}NOM DÉF        ;# plusieurs options, dans la syntaxe des notes
@@ -376,7 +402,8 @@ expr {new is cmd}              ;# 1 si new est une commande ; new(…) devient u
 | `list` | liste Tcl ordinaire (éléments non typés) |
 | `dict` | dictionnaire Tcl ordinaire |
 | `var` | lien vers une variable, par son nom (§ 5.3) |
-| `any` | élément d'une liste hétérogène (`list.any`) : chaque élément garde son type |
+| `any` | toute valeur, telle quelle (l'union des méta-types, § 2.6) ; `list.any` : chaque élément garde ce qu'il porte |
+| `bare`, `typed`, `noted`, `typednoted` | méta-types : une exigence sur l'état de la valeur (§ 2.6) |
 
 Les **raffinements** restreignent un type de base et portent une représentation binaire : `int(u|s, n ?, be|le?)`, `double(32|64 ?, be|le?)`, `string(ENC, N|z)`, `bitarray(n ?, lsb0|msb0?)` (§ 9).
 
@@ -696,7 +723,7 @@ Le piège de `catch … m` des versions antérieures n'existe donc plus.
 
 #### 6.3b `type canonic` et `type parse` : la forme texte d'une valeur typée (v17c)
 
-Le type n'est jamais dans la chaîne d'une valeur (EIAS). Là où seul un texte est gardé (un fichier, un tag Tk, une clé), `type canonic V` donne un texte qui le garde : `{T}contenu`, `T` étant le texte du type (son nom s'il est nommé, qualifié pour un type d'espace ; sans la variante : une somme étiquetée la porte dans son contenu, une union la lit dans le sien) et le contenu sa forme canonique (nombres normalisés ; listes, dicts, produits, sommes reconstruits selon le type), mis en forme d'un élément de liste. Les notes sont un ensemble : `{double@alpha,zeta}5.0`, triées, sans doublon, séparées par des virgules ; dans une note, tout caractère ASCII hors lettres, chiffres, `_` et `.` s'écrit `%XX`. Une valeur seulement notée donne `{@vitesse}5` ; une valeur nue est refusée. `-notes` donne `T@notes`, sans le contenu.
+Le type n'est jamais dans la chaîne d'une valeur (EIAS). Là où seul un texte est gardé (un fichier, un tag Tk, une clé), `type canonic V` donne un texte qui le garde : `{T}contenu`, `T` étant le texte du type (son nom s'il est nommé, qualifié pour un type d'espace ; sans la variante : une somme étiquetée la porte dans son contenu, une union la lit dans le sien) et le contenu sa forme canonique (nombres normalisés ; listes, dicts, produits, sommes reconstruits selon le type), mis en forme d'un élément de liste. Les notes sont un ensemble : `{double@alpha,zeta}5.0`, triées, sans doublon, séparées par des virgules ; dans une note, tout caractère ASCII hors lettres, chiffres, `_` et `.` s'écrit `%XX`. Une valeur seulement notée donne `{@vitesse}5` ; une valeur nue `{bare}5`. `-notes` donne `T@notes`, sans le contenu.
 
 `type parse TEXTE` relit `{T}contenu`, `{T@notes}contenu` ou `{@notes}contenu` : le type doit exister (vérifié contre sa définition actuelle), le contenu doit y entrer, puis les notes sont posées. Deux lois : `type parse [type canonic $v]` est `$v`, et `type canonic [type parse $t]` est `$t` quand `$t` est canonique.
 
@@ -707,7 +734,7 @@ type canonic {vitesse}[type cast double 5]        ;# {double@vitesse}5.0
 type get [type parse {{pt}{1 2.5}}]               ;# pt
 ```
 
-Pas gardés : les notes des éléments d'un conteneur, les types des éléments d'une `list.any`, l'option `{-compact}` (une représentation).
+Pas gardés : les notes des éléments d'un conteneur, les types des éléments d'une `list.any`, l'option `{-compact}` (une représentation). Une valeur nue s'écrit `{bare}texte` (v17e).
 
 #### 6.4 Procédures typées (v16p)
 

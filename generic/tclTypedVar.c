@@ -587,10 +587,24 @@ TclTypedConformHint(Tcl_Interp *interp, TclType *tp, Tcl_Obj *arg, int hint)
 	/* L'adresse d'un lien de frontière garde son annotation. */
 	return Tcl_DuplicateObj(arg);
     }
-    copy = Tcl_DuplicateObj(content);
     if (TclTypeIsAny(tp)) {
+	/* v17e : any, un méta-type : la valeur telle quelle (type et notes
+	 * gardés), si son état y est */
+	Tcl_Obj *sv = NULL;
+
+	if (TclAnnotSettle(interp, arg, NULL, 0, &sv) != TCL_OK) {
+	    return NULL;
+	}
+	Tcl_IncrRefCount(sv);
+	if (TclTypeMetaCheck(interp, tp, sv) != TCL_OK) {
+	    Tcl_DecrRefCount(sv);
+	    return NULL;
+	}
+	copy = Tcl_DuplicateObj(sv);
+	Tcl_DecrRefCount(sv);
 	return copy;
     }
+    copy = Tcl_DuplicateObj(content);
     /* Balise explicite d'une somme ({tEXt}...) : elle fixe la variante. */
     {
 	int chosen = -1;
@@ -650,6 +664,17 @@ BuildList(Tcl_Interp *interp, TclType *tp, Tcl_Size n, Tcl_Obj *const a[],
 	}
 	if (TclTypeIsAny(tp->elem)) {
 	    /* list.any : l'élément garde son annotation, sans dépliage. */
+	    if (TclTypeMetaMask(tp->elem) != TCL_META_ANY) {
+		/* v17e : list.typed, list.bare... : l'élément tel quel, son
+		 * état vérifié */
+		Tcl_Obj *one = TclTypedConform(interp, tp->elem, a[i]);
+
+		if (one == NULL) {
+		    goto done;
+		}
+		TclVecAdd(&vec, one);
+		continue;
+	    }
 	    if (status == TCLA_TYPED || status == TCLA_RAW) {
 		if (status == TCLA_RAW
 			&& TclTypeValidate(interp, at, content, variant, NULL)
@@ -1640,6 +1665,27 @@ TclSetAnnotatedCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
     }
     Tcl_IncrRefCount(baseObj);
 
+    if (status != TCLA_EMPTY && TclTypeIsAny(tp) && ctorPath == NULL
+	    && sumTp == NULL && forced < 0) {
+	/*
+	 * v17e : set {any}v x, set {typed}v x : la valeur telle quelle, son
+	 * état vérifié ; pas de contrat (any n'exige rien, un méta-type
+	 * n'est vérifié qu'ici).
+	 */
+	if (nargs != 1) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "wrong # args: should be \"set {%s}varName value\"",
+		    tp->name));
+	    Tcl_SetErrorCode(interp, "TCL", "WRONGARGS", (char *) NULL);
+	    goto done;
+	}
+	valueA = TclTypedConform(interp, tp, objv[2]);
+	if (valueA == NULL) {
+	    goto done;
+	}
+	goto store;
+    }
+
     /*
      * Voie rapide : set {T}x a b... d'un produit de scalaires, autant de
      * valeurs nues (sans annotation ni note) que de champs. Chaque valeur
@@ -2009,7 +2055,8 @@ TclSetAnnotatedCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 	}
 	goto done;
     }
-    if (status != TCLA_EMPTY && (varPtr->flags & VAR_TYPED)) {
+    if (status != TCLA_EMPTY && (varPtr->flags & VAR_TYPED)
+	    && !TclTypeIsAny(tp)) {	/* v17e : any, méta-type : aucun */
 	varPtr->flags |= VAR_CONTRACT;	/* seul le nom donne un contrat */
     }
     Tcl_SetObjResult(interp, res);

@@ -8,20 +8,16 @@ OK     typée et notée                                 int mm
 OK     lindex d'une string                            a b c
 OK     {} : relecture explicite                       3
 OK     {} garde les notes                             {} mm
-ÉCART  type cast any garde tout                       obtenu : any mm
-                                                      proposé : int mm
+OK     type cast any garde tout                       int mm
 
 == 3. type meta (absent aujourd'hui)
-ÉCART  type meta d'une valeur nue (int)               obtenu : ERREUR: bad subcommand "meta": must be def, alias, call, canonic, cast, convert, debug, deref, export, forget, get, is, parse, proc, variant or binary
-                                                      proposé : bare int
-ÉCART  type meta d'une valeur typée                   obtenu : ERREUR: bad subcommand "meta": must be def, alias, call, canonic, cast, convert, debug, deref, export, forget, get, is, parse, proc, variant or binary
-                                                      proposé : typed int
+OK     type meta d'une valeur nue (int)               bare int
+OK     type meta d'une valeur typée                   typed int
 
 == 4. les conteneurs gardent les notes
 OK     list (commande) garde les notes                {{} int} {{} this}
 OK     {list} garde les notes                         {{} {}} {{} this}
-ÉCART  {list.any} garde les notes                     obtenu : {any {}} {{} this}
-                                                      proposé : {{} {}} {{} this}
+OK     {list.any} garde les notes                     {{} {}} {{} this}
 OK     {list.double} garde les notes                  {double vitesse}
 ÉCART  {int@this} dans un constructeur                obtenu : ERREUR: local annotation {int@this} cannot be stored by "set": it only applies between a caller and the command it calls
                                                       proposé : int this
@@ -62,4 +58,4 @@ OK     parse : type inconnu refusé                    refus
 OK     string invalide refusée                        refus
 OK     nue invalide refusée                           refus
 
-38 OK, 5 ÉCART
+42 OK, 1 ÉCART

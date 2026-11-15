@@ -55,6 +55,12 @@ positions :
 
 ## 3. Les méta-types
 
+*(Faits en v17e, §§ 3–5 sauf `{T@notes}` (étape 6) et `type fix` (plus
+tard). Une précision : un méta-type est une exigence partout, constructeurs
+compris — `set {list.bare}L` refuse un élément typé au lieu de le rendre nu ;
+rendre nu reste `{}`. `set {typed}v` ne pose pas de contrat. Voir
+`noyau/LISEZMOI.md` et ANNOTATIONS § 2.6.)*
+
 Quatre méta-types, disjoints par construction :
 
 | méta-type | type résolu | notes |

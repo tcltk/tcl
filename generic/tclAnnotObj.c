@@ -480,6 +480,70 @@ TclAnnotNotes(Tcl_Obj *objPtr)
 static Tcl_Obj *PendingOfEx(Tcl_Obj *objPtr, int withCleared, int all);
 
 /*
+ * v17e : le méta-type d'une valeur. Les annotations locales ({v:}, {-x})
+ * ne comptent pas ; un texte brut non résolu ({this}6, list {int}5) est une
+ * note.
+ */
+static int
+IsNoteText(Tcl_Obj *o)
+{
+    Tcl_Size len;
+    const char *txt = Tcl_GetStringFromObj(o, &len);
+
+    return len > 0 && txt[0] != '-' && txt[len - 1] != ':';
+}
+
+TclMeta
+TclAnnotMeta(Tcl_Obj *objPtr)
+{
+    Tcl_ObjInternalRep *ir = Tcl_FetchInternalRep(objPtr, &annotatedObjType);
+    Tcl_Obj *t, *n, **nv;
+    Tcl_Size nn = 0, k;
+    int typed = 0, noted = 0;
+
+    if (ir == NULL) {
+	return TCL_META_BARE;
+    }
+    SplitT((Tcl_Obj *) ir->twoPtrValue.ptr2, &t, &n);
+    if (t != NULL) {
+	if (IsTypeRef(t)) {
+	    typed = 1;
+	} else if (IsNoteText(t)) {
+	    noted = 1;			/* texte brut : une note */
+	}
+    }
+    if (!noted && n != NULL
+	    && TclListObjGetElements(NULL, n, &nn, &nv) == TCL_OK) {
+	for (k = 0; k < nn; k++) {
+	    if (IsNoteText(nv[k])) {
+		noted = 1;
+		break;
+	    }
+	}
+    }
+    return typed ? (noted ? TCL_META_TYPED_NOTED : TCL_META_TYPED)
+	    : (noted ? TCL_META_NOTED : TCL_META_BARE);
+}
+
+/* v17e : objPtr, une note de plus (compte 0), posée expirée (sous une
+ * marque, v16m) : une métadonnée, affichée, jamais résolue. */
+Tcl_Obj *
+TclAnnotAddNote(Tcl_Obj *objPtr, Tcl_Obj *note)
+{
+    Tcl_ObjInternalRep *ir = Tcl_FetchInternalRep(objPtr, &annotatedObjType);
+    Tcl_Obj *t = NULL, *n = NULL, *nl, *content = objPtr;
+
+    if (ir != NULL) {
+	content = Tcl_DuplicateObj((Tcl_Obj *) ir->twoPtrValue.ptr1);
+	SplitT((Tcl_Obj *) ir->twoPtrValue.ptr2, &t, &n);
+    }
+    nl = (n != NULL) ? Tcl_DuplicateObj(n) : Tcl_NewListObj(0, NULL);
+    Tcl_ListObjAppendElement(NULL, nl, note);
+    Tcl_ListObjAppendElement(NULL, nl, Tcl_NewObj());	/* la marque */
+    return MakeAnnotated(content, StateObj(t, nl));
+}
+
+/*
  * v17c : les notes d'une valeur, telles qu'un lecteur les voit (note get),
  * en liste (compte 0), sans les marques d'expiration.
  */
@@ -883,6 +947,21 @@ AnnotListView(Tcl_Interp *interp, Tcl_Obj *aPtr, Tcl_Obj **contentPtr)
 static TclType *
 AnnotListElemTypeAt(Tcl_Obj *aPtr, Tcl_Size index);
 
+/*
+ * v17e : un élément lu dans un conteneur prend le type de ses éléments ;
+ * pas sous any ni un méta-type : il reste tel quel (nu, typé, noté).
+ */
+static Tcl_Obj *NewTypeRefNoCache(TclType *tp, int variant);
+
+static Tcl_Obj *
+WrapElem(Tcl_Obj *e, TclType *et, int variant)
+{
+    if (et == NULL || TclTypeIsAny(et)) {
+	return e;
+    }
+    return MakeAnnotated(e, NewTypeRefNoCache(et, variant));
+}
+
 static TclType *
 AnnotListElemType(Tcl_Obj *aPtr)
 {
@@ -1068,7 +1147,7 @@ AnnotWrapFields(Tcl_Obj *aPtr, Tcl_Obj *v, Tcl_Size from, Tcl_Size to)
 		&& TclTypeValidate(NULL, ft, e, -1, &variant) != TCL_OK) {
 	    continue;
 	}
-	w = MakeAnnotated(e, NewTypeRefNoCache(ft, variant));
+	w = WrapElem(e, ft, variant);
 	Tcl_ListObjReplace(NULL, v, i, 1, 1, &w);
     }
 }
@@ -1122,7 +1201,7 @@ AnnotWrapElems(Tcl_Obj *aPtr, Tcl_Obj *v, Tcl_Size from, Tcl_Size to)
 		    && TclTypeValidate(NULL, et, e, -1, &variant) != TCL_OK) {
 		continue;
 	    }
-	    nv[k] = MakeAnnotated(e, NewTypeRefNoCache(et, variant));
+	    nv[k] = WrapElem(e, et, variant);
 	}
 	Tcl_ListObjReplace(NULL, v, from, to - from + 1, to - from + 1, nv);
 	Tcl_Free(nv);
@@ -1138,7 +1217,7 @@ AnnotWrapElems(Tcl_Obj *aPtr, Tcl_Obj *v, Tcl_Size from, Tcl_Size to)
 		&& TclTypeValidate(NULL, et, e, -1, &variant) != TCL_OK) {
 	    continue;
 	}
-	w = MakeAnnotated(e, NewTypeRefNoCache(et, variant));	/* partagé */
+	w = WrapElem(e, et, variant);	/* partagé */
 	Tcl_ListObjReplace(NULL, v, i, 1, 1, &w);
     }
 }
@@ -1270,6 +1349,9 @@ TypeNotesOnly(Tcl_Obj *e, TclType *et)
 {
     Tcl_Obj *t0, *n0;
 
+    if (et == NULL || TclTypeIsAny(et)) {
+	return e;			/* v17e : any, méta-type */
+    }
     if (e == NULL || et == NULL || e->typePtr != &annotatedObjType
 	    || TclTypeIsPlainString(et)) {
 	return e;			/* {list}, list.string : texte ordinaire */
@@ -1278,7 +1360,7 @@ TypeNotesOnly(Tcl_Obj *e, TclType *et)
     if (t0 != NULL || n0 == NULL) {
 	return e;
     }
-    return MakeAnnotated(e, NewTypeRefNoCache(et, -1));
+    return WrapElem(e, et, -1);
 }
 
 static int
@@ -1293,8 +1375,7 @@ AnnotListIndex(Tcl_Interp *interp, Tcl_Obj *aPtr, Tcl_Size index,
 	 * sans repasser par la résolution du type */
 	Tcl_Obj *c = TclCompactElement(v, index);
 
-	*elemPtr = (c != NULL) ? MakeAnnotated(c, NewTypeRefNoCache(lt->elem,
-		-1)) : NULL;
+	*elemPtr = (c != NULL) ? WrapElem(c, lt->elem, -1) : NULL;
 	return TCL_OK;
     }
     if (lt != NULL && TclIsCompactElem(v)) {
@@ -1303,8 +1384,7 @@ AnnotListIndex(Tcl_Interp *interp, Tcl_Obj *aPtr, Tcl_Size index,
 	Tcl_Obj *c = NULL;
 
 	Tcl_ListObjIndex(NULL, v, index, &c);
-	*elemPtr = (c != NULL) ? MakeAnnotated(c, NewTypeRefNoCache(lt->elem,
-		-1)) : NULL;
+	*elemPtr = (c != NULL) ? WrapElem(c, lt->elem, -1) : NULL;
 	return TCL_OK;
     }
     if (lt != NULL && Tcl_ListObjIndex(NULL, v, index, elemPtr) == TCL_OK
@@ -1327,7 +1407,7 @@ AnnotListIndex(Tcl_Interp *interp, Tcl_Obj *aPtr, Tcl_Size index,
 	    if (PlainScalarElem(ft)) {
 		/* typé une fois pour toutes dans un V privé, comme le fait la
 		 * lecture $p(x) : le lassign suivant n'alloue plus rien */
-		*elemPtr = MakeAnnotated(e, NewTypeRefNoCache(ft, -1));
+		*elemPtr = WrapElem(e, ft, -1);
 		if (!Tcl_IsShared(v) && TclHasInternalRep(v, &tclListType)) {
 		    Tcl_ListObjReplace(NULL, v, index, 1, 1, elemPtr);
 		}
@@ -1342,7 +1422,7 @@ AnnotListIndex(Tcl_Interp *interp, Tcl_Obj *aPtr, Tcl_Size index,
 	    Tcl_Obj *c = TclCompactElement(v, index);
 
 	    *elemPtr = (c != NULL && et != NULL)
-		    ? MakeAnnotated(c, NewTypeRefNoCache(et, -1)) : c;
+		    ? WrapElem(c, et, -1) : c;
 	    return TCL_OK;
 	}
 	AnnotWrapElems(aPtr, v, index, index);
@@ -1362,8 +1442,7 @@ AnnotListIndex(Tcl_Interp *interp, Tcl_Obj *aPtr, Tcl_Size index,
 
 	    if (et != NULL && !(et->kind == TCLT_SUM && TclTypeValidate(NULL,
 		    et, *elemPtr, -1, &variant) != TCL_OK)) {
-		*elemPtr = MakeAnnotated(*elemPtr, NewTypeRefNoCache(et,
-			variant));
+		*elemPtr = WrapElem(*elemPtr, et, variant);
 	    }
 	}
 	return TCL_OK;
@@ -1442,7 +1521,7 @@ TclAnnotFastIndex(
     /* un nombre simple d'un produit : typé une fois pour toutes dans le V
      * privé (comme AnnotListIndex), emprunté ensuite */
     {
-	Tcl_Obj *w = MakeAnnotated(ev[index], NewTypeRefNoCache(et, -1));
+	Tcl_Obj *w = WrapElem(ev[index], et, -1);
 
 	Tcl_ListObjReplace(NULL, v, index, 1, 1, &w);
 	TclListObjGetElements(NULL, v, &n, &ev);
@@ -3311,7 +3390,8 @@ TclAnnotSettle(Tcl_Interp *interp, Tcl_Obj *objPtr, const TclType *ctx,
     Tcl_Obj *content, *t, *n, *pend, **elv, *remaining, *val = NULL, *res;
     TclType *cur = NULL, *rt[SETTLE_MAX], *tp;
     int curVar = -1, rv[SETTLE_MAX], nr = 0, changed = 0, stopped = 0;
-    int cls, v, variant = -1;
+    int cls, v, variant = -1, nany = 0;
+    const TclType *anyT[SETTLE_MAX];
     char keep[SETTLE_MAX * 4];
     Tcl_Size np, i, j;
 
@@ -3424,6 +3504,24 @@ TclAnnotSettle(Tcl_Interp *interp, Tcl_Obj *objPtr, const TclType *ctx,
 	Tcl_DecrRefCount(pend);
 	return TCL_OK;			/* rien à faire : la valeur telle quelle */
     }
+
+    /*
+     * v17e : any et les méta-types ne convertissent rien : ils sortent de
+     * la pile des types, et l'état de la valeur obtenue est vérifié à la
+     * fin ({typed}$x, proc f {{bare}a}).
+     */
+    for (i = 0, j = 0; i < nr; i++) {
+	if (TclTypeIsAny(rt[i])) {
+	    if (nany < SETTLE_MAX) {
+		anyT[nany++] = rt[i];
+	    }
+	} else {
+	    rt[j] = rt[i];
+	    rv[j] = rv[i];
+	    j++;
+	}
+    }
+    nr = (int) j;
 
     /* Cohérence : la plus récente doit entrer dans chacune des autres. */
     for (j = 1; j < nr; j++) {
@@ -3562,6 +3660,12 @@ TclAnnotSettle(Tcl_Interp *interp, Tcl_Obj *objPtr, const TclType *ctx,
 	 * une étiquette qu'il lira ensuite) expire avec la commande, même
 	 * rangé dans une variable : la valeur neuve est inscrite. */
 	TclAnnotRegisterFresh(interp, res);
+    }
+    for (i = 0; i < nany; i++) {
+	if (TclTypeMetaCheck(interp, anyT[i], res) != TCL_OK) {
+	    TclDiscard(res);
+	    return TCL_ERROR;
+	}
     }
     *resultPtr = res;
     return TCL_OK;
