@@ -82,7 +82,7 @@ type get $x          ;# (vuoto: nessun tipo risolto)
 
 ```tcl
 set y {px}$x
-note get $y          ;# mm.px      (px è la più recente)
+note get $y          ;# mm,px
 ```
 
 La scrittura `{a}{b}$x` (due annotazioni incollate) non esiste: sarebbe ambigua con `{int}{300}`, un'annotazione su un letterale tra graffe. Si impila annotando un valore che già lo è.
@@ -111,9 +111,9 @@ Fuori da un costruttore, `{T}$x` non verifica né converte nulla, anche se `T` �
 Un valore annotato porta **due liste**: il **tipo risolto** (al più uno) e la **pila delle note** in attesa. La visualizzazione le separa con `@`:
 
 ```
- list<int>@mm.hello
+ list<int>@hello,mm
  └───────┘ └──────┘
- tipo risolto   note, dalla più vecchia (mm) alla più recente (hello)
+ tipo risolto   note: un insieme, ordinato, separato da «,»
 ```
 
 Un costruttore **spila** dalla cima:
@@ -126,7 +126,7 @@ Un costruttore **spila** dalla cima:
 
 ```tcl
 type def px int
-set z {px}$y         ;# y = @mm.px: px si risolve, mm no
+set z {px}$y         ;# y = @mm,px: px si risolve, mm no
 type get $z          ;# px      ; note get $z: mm
 ```
 
@@ -169,7 +169,7 @@ Il valore originale non viene mai modificato: `{}` produce una nuova vista, il c
 ### 3. Il comando `note`
 
 ```
-note get VALORE              ;# le note, dalla più vecchia alla più recente, unite da «.»
+note get VALORE              ;# le note: un insieme, ordinato, unito da «,» (v17h)
 note has VALORE NOME         ;# 1 se NOME è una delle note, altrimenti 0
 note delete VALORE ?NOME?    ;# il valore senza la nota NOME, o senza alcuna nota
 ```
@@ -179,7 +179,7 @@ I valori Tcl sono immutabili: `note delete` **restituisce** un nuovo valore, non
 ```tcl
 set y {px}{mm}5              ;# extra characters after close-brace: niente impilamento incollato
 set x {mm}5 ; set y {px}$x
-note get $y                  ;# mm.px
+note get $y                  ;# mm,px
 note has $y mm               ;# 1
 note get [note delete $y px] ;# mm
 ```
@@ -785,7 +785,7 @@ Un valore annotato è un `Tcl_Obj` ordinario il cui tipo interno è `annotated` 
 
 #### Funzioni principali (`tclAnnotObj.c`)
 
-`TclAnnotateValue` (porre un'annotazione: cast o nota), `TclAnnotSettle` (lo spilamento di un costruttore, § 2.3), `TclAnnotResolve`, `ClassifyAnnot` (tipo, variante, sconosciuto, locale, non valido; il contesto prima dei tipi globali), `TclAnnotInfo`, `TclAnnotPending`, `TclAnnotPopTop`, `TclAnnotUnwrap` (il contenuto nudo, per le conversioni del nucleo), `TclAnnotDisplay` (`list<int>@mm.hello`), e i comandi `::tcl::annotate`, `::tcl::annotraw`, `::tcl::annotlocal`, `note`.
+`TclAnnotateValue` (porre un'annotazione: cast o nota), `TclAnnotSettle` (lo spilamento di un costruttore, § 2.3), `TclAnnotResolve`, `ClassifyAnnot` (tipo, variante, sconosciuto, locale, non valido; il contesto prima dei tipi globali), `TclAnnotInfo`, `TclAnnotPending`, `TclAnnotPopTop`, `TclAnnotUnwrap` (il contenuto nudo, per le conversioni del nucleo), `TclAnnotDisplay` (`list<int>@hello,mm`), e i comandi `::tcl::annotate`, `::tcl::annotraw`, `::tcl::annotlocal`, `note`.
 
 ### 13. Nell'analizzatore e nel compilatore
 

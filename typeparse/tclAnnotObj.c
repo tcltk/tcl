@@ -361,32 +361,51 @@ DupAnnotState(Tcl_Obj *srcPtr, Tcl_Obj *dupPtr)
     Tcl_StoreInternalRep(dupPtr, &annotStateObjType, &ir);
 }
 
-/* Notes jointes par « . », de la plus ancienne à la plus récente. */
+/*
+ * Les notes, pour la lecture (note get, type get @) : v17h, un ensemble —
+ * triées, sans doublon, jointes par « , » (le point dit l'imbrication dans
+ * une note, {int@a.b,c}). Les notes telles quelles, sans l'encodage %XX de
+ * type canonic.
+ */
+static int
+NoteCmp(const void *a, const void *b)
+{
+    return strcmp(Tcl_GetString(*(Tcl_Obj *const *) a),
+	    Tcl_GetString(*(Tcl_Obj *const *) b));
+}
+
 static Tcl_Obj *
 NotesJoined(Tcl_Obj *notes)
 {
-    Tcl_Obj **elv;
-    Tcl_Size n, i;
+    Tcl_Obj **elv, **v;
+    Tcl_Size n, i, k = 0;
     Tcl_Obj *res = Tcl_NewObj();
 
-    if (notes != NULL && Tcl_ListObjGetElements(NULL, notes, &n, &elv)
-	    == TCL_OK) {
-	int first = 1;
+    if (notes == NULL || Tcl_ListObjGetElements(NULL, notes, &n, &elv)
+	    != TCL_OK || n == 0) {
+	return res;
+    }
+    v = (Tcl_Obj **) Tcl_Alloc(n * sizeof(Tcl_Obj *));
+    for (i = 0; i < n; i++) {
+	Tcl_Size el;
 
-	for (i = 0; i < n; i++) {
-	    Tcl_Size el;
-
-	    (void) Tcl_GetStringFromObj(elv[i], &el);
-	    if (el == 0) {
-		continue;		/* v16m : la marque d'expiration */
-	    }
-	    if (!first) {
-		Tcl_AppendToObj(res, ".", 1);
-	    }
-	    first = 0;
-	    Tcl_AppendObjToObj(res, elv[i]);
+	(void) Tcl_GetStringFromObj(elv[i], &el);
+	if (el > 0) {
+	    v[k++] = elv[i];		/* (v16m : pas la marque d'expiration) */
 	}
     }
+    qsort(v, k, sizeof(Tcl_Obj *), NoteCmp);
+    for (i = 0; i < k; i++) {
+	if (i > 0 && strcmp(Tcl_GetString(v[i]), Tcl_GetString(v[i - 1]))
+		== 0) {
+	    continue;
+	}
+	if (Tcl_GetCharLength(res) > 0) {
+	    Tcl_AppendToObj(res, ",", 1);
+	}
+	Tcl_AppendObjToObj(res, v[i]);
+    }
+    Tcl_Free(v);
     return res;
 }
 

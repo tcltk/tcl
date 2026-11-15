@@ -82,7 +82,7 @@ type get $x          ;# (vacío: ningún tipo resuelto)
 
 ```tcl
 set y {px}$x
-note get $y          ;# mm.px      (px es la más reciente)
+note get $y          ;# mm,px
 ```
 
 La escritura `{a}{b}$x` (dos anotaciones pegadas) no existe: sería ambigua con `{int}{300}`, una anotación sobre un literal entre llaves. Se apila anotando un valor que ya lo está.
@@ -111,9 +111,9 @@ Fuera de un constructor, `{T}$x` no verifica nada ni convierte nada, aunque `T` 
 Un valor anotado lleva **dos listas**: el **tipo resuelto** (como mucho uno) y la **pila de notas** pendientes. La visualización las separa con `@`:
 
 ```
- list<int>@mm.hello
+ list<int>@hello,mm
  └───────┘ └──────┘
- tipo resuelto   notas, de la más antigua (mm) a la más reciente (hello)
+ tipo resuelto   notas: un conjunto, ordenado, separado por «,»
 ```
 
 Un constructor **desapila** desde la cima:
@@ -126,7 +126,7 @@ Un constructor **desapila** desde la cima:
 
 ```tcl
 type def px int
-set z {px}$y         ;# y = @mm.px: px se resuelve, mm no
+set z {px}$y         ;# y = @mm,px: px se resuelve, mm no
 type get $z          ;# px      ; note get $z: mm
 ```
 
@@ -169,7 +169,7 @@ El valor original nunca se modifica: `{}` produce una nueva vista, lo que hace i
 ### 3. El comando `note`
 
 ```
-note get VALOR               ;# las notas, de la más antigua a la más reciente, unidas por «.»
+note get VALOR               ;# las notas: un conjunto, ordenado, unido por «,» (v17h)
 note has VALOR NOMBRE        ;# 1 si NOMBRE es una de las notas, si no 0
 note delete VALOR ?NOMBRE?   ;# el valor sin la nota NOMBRE, o sin ninguna nota
 ```
@@ -179,7 +179,7 @@ Los valores Tcl son inmutables: `note delete` **devuelve** un nuevo valor, no mo
 ```tcl
 set y {px}{mm}5              ;# extra characters after close-brace: no hay apilamiento pegado
 set x {mm}5 ; set y {px}$x
-note get $y                  ;# mm.px
+note get $y                  ;# mm,px
 note has $y mm               ;# 1
 note get [note delete $y px] ;# mm
 ```
@@ -785,7 +785,7 @@ Un valor anotado es un `Tcl_Obj` ordinario cuyo tipo interno es `annotated` (`an
 
 #### Funciones principales (`tclAnnotObj.c`)
 
-`TclAnnotateValue` (poner una anotación: cast o nota), `TclAnnotSettle` (el desapilado de un constructor, § 2.3), `TclAnnotResolve`, `ClassifyAnnot` (tipo, variante, desconocido, local, no válido; el contexto antes que los tipos globales), `TclAnnotInfo`, `TclAnnotPending`, `TclAnnotPopTop`, `TclAnnotUnwrap` (el contenido desnudo, para las conversiones del núcleo), `TclAnnotDisplay` (`list<int>@mm.hello`), y los comandos `::tcl::annotate`, `::tcl::annotraw`, `::tcl::annotlocal`, `note`.
+`TclAnnotateValue` (poner una anotación: cast o nota), `TclAnnotSettle` (el desapilado de un constructor, § 2.3), `TclAnnotResolve`, `ClassifyAnnot` (tipo, variante, desconocido, local, no válido; el contexto antes que los tipos globales), `TclAnnotInfo`, `TclAnnotPending`, `TclAnnotPopTop`, `TclAnnotUnwrap` (el contenido desnudo, para las conversiones del núcleo), `TclAnnotDisplay` (`list<int>@hello,mm`), y los comandos `::tcl::annotate`, `::tcl::annotraw`, `::tcl::annotlocal`, `note`.
 
 ### 13. En el analizador y el compilador
 

@@ -1,11 +1,12 @@
 # REPRISE — état du prototype TIP 764 (valeurs annotées, variables typées)
 
-*Fiche de reprise, 14 novembre 2026, version **v17g**. À joindre (avec `typeparse.zip`) au
+*Fiche de reprise, 14 novembre 2026, version **v17h**. À joindre (avec `typeparse.zip`) au
 premier message d'une conversation qui reprend le travail.*
 
 ## 1. Où en est-on
 
-* **v17g** (15 novembre) : `list(LO:HI).T`, `list(1:Inf).T` (le « : » des chemins ; `Inf` sans borne ; `list(N:N)` = `list(N)`) — la cardinalité `1..n` de VolɷDuctus. Vérifiée à la construction et à chaque écriture. Test t114. **Le plan de la TIP (étapes 1–6) est fait** ; suite : VolɷDuctus selon CONCEPTION (journal des convolutions du suivi, référence typée unique, carnet typé…), et `note get` à rénover (virgules).
+* **v17h** (15 novembre) : `note get` rend les notes en ensemble, triées, jointes par « , » (`mm,px`, `list<int>@hello,mm`), comme `type canonic` et `{T@notes}`. Suite : VolɷDuctus selon CONCEPTION.
+* **v17g** (15 novembre) : `list(LO:HI).T`, `list(1:Inf).T` (le « : » des chemins ; `Inf` sans borne ; `list(N:N)` = `list(N)`) — la cardinalité `1..n` de VolɷDuctus. Vérifiée à la construction et à chaque écriture. Test t114. **Le plan de la TIP (étapes 1–6) est fait** ; suite : VolɷDuctus selon CONCEPTION (journal des convolutions du suivi, référence typée unique, carnet typé…).
 * **v17f** (15 novembre) : `{T@notes}valeur` dans un constructeur (`set v {int@this}5`, `{double@a,b}5`, `%XX`, le point dans la note) ; `type canonic` règle le mot reçu. Test t113 ; sondes 43/43. 
 * **v17e** (15 novembre) : les méta-types `bare`, `typed`, `noted`, `typednoted` (et leurs unions) ; `any` leur union, devenu l'identité (`type cast any`, `{any}a`, `list.any`, `dict.any` gardent type et notes, un élément nu reste nu). Une exigence vérifie l'état sans convertir ni poser de contrat. `type meta $v` : `{int}typed`, `{list}bare`… (représentation = nom du `Tcl_ObjType`). `type canonic` d'une valeur nue : `{bare}texte`. Test t112 ; sondes 42/43. Suite : `{T@notes}` dans les constructeurs, `{-min n}` (étape 6).
 * **v17d** (15 novembre) : un seul ordre de résolution pour `set`, `type cast` et les arguments. Typée : même type, élargissement, variante (avant les règles) ; règles et conversions intégrées seulement par un cast écrit (`type cast`, `{T}$x`, à l'appel compris) — un argument typé n'est plus un cast (`VeutEntier $d`, d double 2.5 : refusé, au lieu de tronquer). Nue : lecteur natif, validation d'un nominal par sa règle depuis le sous-jacent, puis règle `any T` / `string T` (`set {tson}T $texte` marche). `set {Pt}p $x` : un argument = la valeur entière. Test t111 ; sondes 38 OK sur 43 (le reste : étapes 5 et 6). Suite : méta-types (étape 5).

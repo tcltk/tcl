@@ -2827,3 +2827,17 @@ t114. Le besoin : la cardinalité `1..n` de VolɷDuctus (CONCEPTION § 2).
   refusé ; le `lappend` sur place sous contrat n'est pris que sans borne
   haute. `ArityWithin` (inclusion), `TclTypeSame`, `DefText` (`type
   canonic` écrit `list(2:5).int`), `DerefTypeG` en tiennent compte.
+
+### v17h — `note get` : un ensemble, joint par des virgules (15 novembre 2026)
+
+Sans patch noyau (`tclAnnotObj.c`). Décidé le 14 : rénover `note get`
+une fois la réforme des notes achevée.
+
+* `NotesJoined` (`note get`, l'affichage `type@notes` de `type get`) : les
+  notes triées, sans doublon, jointes par « , » — comme `type canonic` et
+  `{T@notes}`, le point restant dans une note (l'imbrication). Les notes
+  telles quelles, sans l'encodage `%XX`. `{mm}{px}5` : `mm,px` (c'était
+  `mm.px`, de la plus ancienne à la plus récente) ; `list<int>@hello,mm`.
+* `note has` et `note delete` ne changent pas.
+* Sorties mises à jour : t48, t49, t113. ANNOTATIONS (les sept langues) :
+  exemples et légende de l'affichage.

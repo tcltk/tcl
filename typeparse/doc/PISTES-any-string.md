@@ -205,7 +205,7 @@ chemin), `=` donne sa valeur à une feuille — `{int@a.b,c,d.e.f}`,
 `aspect@pente.italic,poids.bold`. Aujourd'hui `{int@this}5` est lu comme une annotation
 locale (« cannot be stored by "set" ») ; une valeur typée et notée se fait en
 deux temps (`set a {this}5; set {int}v $a`). Proposition : l'accepter dans un
-constructeur, pour pouvoir écrire ce qu'on lit. Conséquence : `note get` joint aujourd'hui
+constructeur, pour pouvoir écrire ce qu'on lit. Conséquence (faite en v17h) : `note get` joignait
 les notes par `.` (« mm.px ») ; avec `.` réservé à l'imbrication, il les
 joindrait par `,`.
 

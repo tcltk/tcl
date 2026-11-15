@@ -17,11 +17,11 @@ V5    ok: {} 5
 V6    ok: {} abc
 V7    ok: mm@hello
 V8    ok: @circle
-V9    ok: @mm9 @mm9.stop px@mm9.stop
+V9    ok: @mm9 @mm9,stop px@mm9,stop
 V10   ok: @mm10
-V11   ok: @mm11.dist11
-V11b  ok: @mm.px.stop
-V12   ok: @qq.px
+V11   ok: @dist11,mm11
+V11b  ok: @mm,px,stop
+V12   ok: @px,qq
 V12b  ok: 100
 V13   ERREUR: unknown way to cast the value from mm to px
 -- côté valeur, variable typée : le contrat

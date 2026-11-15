@@ -82,7 +82,7 @@ type get $x          ;# (leer: kein aufgelöster Typ)
 
 ```tcl
 set y {px}$x
-note get $y          ;# mm.px      (px ist die jüngste)
+note get $y          ;# mm,px
 ```
 
 Die Schreibweise `{a}{b}$x` (zwei aneinandergeklebte Annotationen) gibt es nicht: Sie wäre mehrdeutig mit `{int}{300}`, einer Annotation auf einem Literal in geschweiften Klammern. Man stapelt, indem man einen schon annotierten Wert annotiert.
@@ -111,9 +111,9 @@ Außerhalb eines Konstruktors prüft `{T}$x` nichts und wandelt nichts um, selbs
 Ein annotierter Wert trägt **zwei Listen**: den **aufgelösten Typ** (höchstens einen) und den **Stapel der offenen Notizen**. Die Anzeige trennt sie mit `@`:
 
 ```
- list<int>@mm.hello
+ list<int>@hello,mm
  └───────┘ └──────┘
- aufgelöster Typ   Notizen, von der ältesten (mm) zur jüngsten (hello)
+ aufgelöster Typ   Notizen: eine Menge, sortiert, durch „,“ getrennt
 ```
 
 Ein Konstruktor **stapelt ab**, von oben:
@@ -126,7 +126,7 @@ Ein Konstruktor **stapelt ab**, von oben:
 
 ```tcl
 type def px int
-set z {px}$y         ;# y = @mm.px: px löst sich auf, mm nicht
+set z {px}$y         ;# y = @mm,px: px löst sich auf, mm nicht
 type get $z          ;# px      ; note get $z: mm
 ```
 
@@ -169,7 +169,7 @@ Der ursprüngliche Wert wird nie verändert: `{}` erzeugt eine neue Sicht, was d
 ### 3. Der Befehl `note`
 
 ```
-note get WERT                ;# die Notizen, von der ältesten zur jüngsten, durch „.“ verbunden
+note get WERT                ;# die Notizen: eine Menge, sortiert, durch „,“ verbunden (v17h)
 note has WERT NAME           ;# 1, wenn NAME eine der Notizen ist, sonst 0
 note delete WERT ?NAME?      ;# der Wert ohne die Notiz NAME, oder ohne jede Notiz
 ```
@@ -179,7 +179,7 @@ Tcl-Werte sind unveränderlich: `note delete` **liefert** einen neuen Wert, es �
 ```tcl
 set y {px}{mm}5              ;# extra characters after close-brace: kein angeklebtes Stapeln
 set x {mm}5 ; set y {px}$x
-note get $y                  ;# mm.px
+note get $y                  ;# mm,px
 note has $y mm               ;# 1
 note get [note delete $y px] ;# mm
 ```
@@ -785,7 +785,7 @@ Ein annotierter Wert ist ein gewöhnliches `Tcl_Obj`, dessen interner Typ `annot
 
 #### Wichtigste Funktionen (`tclAnnotObj.c`)
 
-`TclAnnotateValue` (eine Annotation setzen: Cast oder Notiz), `TclAnnotSettle` (das Abstapeln eines Konstruktors, § 2.3), `TclAnnotResolve`, `ClassifyAnnot` (Typ, Variante, unbekannt, lokal, ungültig; der Kontext vor den globalen Typen), `TclAnnotInfo`, `TclAnnotPending`, `TclAnnotPopTop`, `TclAnnotUnwrap` (der nackte Inhalt, für Umwandlungen des Kerns), `TclAnnotDisplay` (`list<int>@mm.hello`) sowie die Befehle `::tcl::annotate`, `::tcl::annotraw`, `::tcl::annotlocal`, `note`.
+`TclAnnotateValue` (eine Annotation setzen: Cast oder Notiz), `TclAnnotSettle` (das Abstapeln eines Konstruktors, § 2.3), `TclAnnotResolve`, `ClassifyAnnot` (Typ, Variante, unbekannt, lokal, ungültig; der Kontext vor den globalen Typen), `TclAnnotInfo`, `TclAnnotPending`, `TclAnnotPopTop`, `TclAnnotUnwrap` (der nackte Inhalt, für Umwandlungen des Kerns), `TclAnnotDisplay` (`list<int>@hello,mm`) sowie die Befehle `::tcl::annotate`, `::tcl::annotraw`, `::tcl::annotlocal`, `note`.
 
 ### 13. Im Parser und im Compiler
 

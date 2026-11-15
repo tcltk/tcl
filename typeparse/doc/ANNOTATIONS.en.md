@@ -82,7 +82,7 @@ type get $x          ;# (empty: no resolved type)
 
 ```tcl
 set y {px}$x
-note get $y          ;# mm.px      (px is the most recent)
+note get $y          ;# mm,px
 ```
 
 **Two uses of notes (v16y).** A note is a *proto-type*: a name put on values before the type exists (`{speed}12.5`), between plain Tcl and typed Tcl. A note that starts with `@` (`{@trace}`, `{@step}`) is an **instrument note**: never a type, it is used for debugging. Both are read by `type debug` (§ 3.1).
@@ -126,9 +126,9 @@ The error of a cast therefore always arises in the command that contains the wor
 An annotated value carries **two lists**: the **resolved type** (at most one) and the **stack of pending notes**. The display separates them with `@`:
 
 ```
- list<int>@mm.hello
+ list<int>@hello,mm
  └───────┘ └──────┘
- resolved type   notes, from the oldest (mm) to the most recent (hello)
+ resolved type   notes: a set, sorted, separated by ","
 ```
 
 A constructor **unstacks** from the top:
@@ -141,7 +141,7 @@ A constructor **unstacks** from the top:
 
 ```tcl
 type def px int
-set z {px}$y         ;# y = @mm.px: px resolves, mm does not
+set z {px}$y         ;# y = @mm,px: px resolves, mm does not
 type get $z          ;# px      ; note get $z: mm
 ```
 
@@ -209,7 +209,7 @@ type meta [list a b]                     ;# bare, note list
 ### 3. The `note` command
 
 ```
-note get VALUE               ;# the notes, from the oldest to the most recent, joined by "."
+note get VALUE               ;# the notes: a set, sorted, joined by "," (v17h)
 note has VALUE NAME          ;# 1 if NAME is one of the notes, else 0
 note delete VALUE ?NAME?     ;# the value without the note NAME, or without any note
 ```
@@ -219,7 +219,7 @@ Tcl values are immutable: `note delete` **returns** a new value, it does not mod
 ```tcl
 set y {px}{mm}5              ;# extra characters after close-brace: no glued stacking
 set x {mm}5 ; set y {px}$x
-note get $y                  ;# mm.px
+note get $y                  ;# mm,px
 note has $y mm               ;# 1
 note get [note delete $y px] ;# mm
 ```
@@ -1319,7 +1319,7 @@ An annotated value is an ordinary `Tcl_Obj` whose internal type is `annotated` (
 
 #### Main functions (`tclAnnotObj.c`)
 
-`TclAnnotateValue` (set an annotation: cast or note), `TclAnnotSettle` (a constructor's unstacking, § 2.3), `TclAnnotResolve`, `ClassifyAnnot` (type, variant, unknown, local, invalid; context before global types), `TclAnnotInfo`, `TclAnnotPending`, `TclAnnotPopTop`, `TclAnnotUnwrap` (the bare content, for core conversions), `TclAnnotDisplay` (`list<int>@mm.hello`), and the commands `::tcl::annotate`, `::tcl::annotraw`, `::tcl::annotlocal`, `note`.
+`TclAnnotateValue` (set an annotation: cast or note), `TclAnnotSettle` (a constructor's unstacking, § 2.3), `TclAnnotResolve`, `ClassifyAnnot` (type, variant, unknown, local, invalid; context before global types), `TclAnnotInfo`, `TclAnnotPending`, `TclAnnotPopTop`, `TclAnnotUnwrap` (the bare content, for core conversions), `TclAnnotDisplay` (`list<int>@hello,mm`), and the commands `::tcl::annotate`, `::tcl::annotraw`, `::tcl::annotlocal`, `note`.
 
 ### 13. In the parser and the compiler
 

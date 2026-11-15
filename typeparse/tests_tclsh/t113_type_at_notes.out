@@ -1,5 +1,5 @@
 set v {int@this}5                int this 5
-deux notes                       {double zeta.alpha 5.0} {{double@alpha,zeta}5.0}
+deux notes                       {double alpha,zeta 5.0} {{double@alpha,zeta}5.0}
 note encodée                     a,b
 note imbriquée (point)           aspect.pente
 aucune note : {int@}             int {} 5

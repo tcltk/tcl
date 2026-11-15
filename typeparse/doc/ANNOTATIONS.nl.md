@@ -82,7 +82,7 @@ type get $x          ;# (leeg: geen opgelost type)
 
 ```tcl
 set y {px}$x
-note get $y          ;# mm.px      (px is de recentste)
+note get $y          ;# mm,px
 ```
 
 De schrijfwijze `{a}{b}$x` (twee aan elkaar geplakte annotaties) bestaat niet: ze zou dubbelzinnig zijn met `{int}{300}`, een annotatie op een letterlijke waarde tussen accolades. Je stapelt door een waarde te annoteren die het al is.
@@ -111,9 +111,9 @@ Buiten een constructor controleert `{T}$x` niets en zet niets om, zelfs als `T` 
 Een geannoteerde waarde draagt **twee lijsten**: het **opgeloste type** (hoogstens één) en de **stapel van openstaande notities**. De weergave scheidt ze met `@`:
 
 ```
- list<int>@mm.hello
+ list<int>@hello,mm
  └───────┘ └──────┘
- opgelost type   notities, van de oudste (mm) naar de recentste (hello)
+ opgelost type   notities: een verzameling, gesorteerd, gescheiden door „,”
 ```
 
 Een constructor **stapelt af** vanaf de top:
@@ -126,7 +126,7 @@ Een constructor **stapelt af** vanaf de top:
 
 ```tcl
 type def px int
-set z {px}$y         ;# y = @mm.px: px lost op, mm niet
+set z {px}$y         ;# y = @mm,px: px lost op, mm niet
 type get $z          ;# px      ; note get $z: mm
 ```
 
@@ -169,7 +169,7 @@ De oorspronkelijke waarde wordt nooit gewijzigd: `{}` maakt een nieuwe weergave,
 ### 3. Het commando `note`
 
 ```
-note get WAARDE              ;# de notities, van de oudste naar de recentste, verbonden door „.”
+note get WAARDE              ;# de notities: een verzameling, gesorteerd, verbonden door „,” (v17h)
 note has WAARDE NAAM         ;# 1 als NAAM een van de notities is, anders 0
 note delete WAARDE ?NAAM?    ;# de waarde zonder de notitie NAAM, of zonder enige notitie
 ```
@@ -179,7 +179,7 @@ Tcl-waarden zijn onveranderlijk: `note delete` **geeft** een nieuwe waarde terug
 ```tcl
 set y {px}{mm}5              ;# extra characters after close-brace: geen aaneengeplakt stapelen
 set x {mm}5 ; set y {px}$x
-note get $y                  ;# mm.px
+note get $y                  ;# mm,px
 note has $y mm               ;# 1
 note get [note delete $y px] ;# mm
 ```
@@ -785,7 +785,7 @@ Een geannoteerde waarde is een gewoon `Tcl_Obj` waarvan het interne type `annota
 
 #### Belangrijkste functies (`tclAnnotObj.c`)
 
-`TclAnnotateValue` (een annotatie zetten: cast of notitie), `TclAnnotSettle` (het afstapelen van een constructor, § 2.3), `TclAnnotResolve`, `ClassifyAnnot` (type, variant, onbekend, lokaal, ongeldig; de context vóór de globale typen), `TclAnnotInfo`, `TclAnnotPending`, `TclAnnotPopTop`, `TclAnnotUnwrap` (de kale inhoud, voor omzettingen van de kern), `TclAnnotDisplay` (`list<int>@mm.hello`), en de commando's `::tcl::annotate`, `::tcl::annotraw`, `::tcl::annotlocal`, `note`.
+`TclAnnotateValue` (een annotatie zetten: cast of notitie), `TclAnnotSettle` (het afstapelen van een constructor, § 2.3), `TclAnnotResolve`, `ClassifyAnnot` (type, variant, onbekend, lokaal, ongeldig; de context vóór de globale typen), `TclAnnotInfo`, `TclAnnotPending`, `TclAnnotPopTop`, `TclAnnotUnwrap` (de kale inhoud, voor omzettingen van de kern), `TclAnnotDisplay` (`list<int>@hello,mm`), en de commando's `::tcl::annotate`, `::tcl::annotraw`, `::tcl::annotlocal`, `note`.
 
 ### 13. In de parser en de compiler
 

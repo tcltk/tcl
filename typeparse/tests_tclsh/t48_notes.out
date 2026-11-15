@@ -3,12 +3,12 @@ mm list<int>@mm
 px list<int>@px
 sans note
 A: list<int>@mm
-essai: list<int>@mm.hello / mm.hello
+essai: list<int>@hello,mm / hello,mm
 L reste: list<int>
 -- note has / delete
 has_mm: 0 1
 has_px: 0 0
-B: 0 list<int>@mm.hello
+B: 0 list<int>@hello,mm
 del_un: 0 list<int>@hello
 del_tout: 0 list<int>
 del_rien: 0 list<int>
