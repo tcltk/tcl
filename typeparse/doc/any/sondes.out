@@ -28,17 +28,12 @@ OK     {list.double} garde les notes                  {double vitesse}
 
 == 5. un seul ordre de résolution (set, type cast, argument)
 OK     set : string -> variante s                     s
-ÉCART  type cast : string -> variante s               obtenu : d
-                                                      proposé : s
-ÉCART  argument : string -> variante s                obtenu : d
-                                                      proposé : s
+OK     type cast : string -> variante s               s
+OK     argument : string -> variante s                s
 OK     nue : forme native lue                         d
-ÉCART  nue non native : la règle (set)                obtenu : ERREUR: value "menu {d}{id}" names no variant of the sum tson: a value of a sum is the name of its variant, then its value, as {s {menu {d}{id}}}, or {s:}{menu {d}{id}}
-                                                      proposé : d
-ÉCART  nue non native : la règle (type cast)          obtenu : ERREUR: value "menu {d}{id}" names no variant of the sum tson: a value of a sum is the name of its variant, then its value, as {s {menu {d}{id}}}, or {s:}{menu {d}{id}}
-                                                      proposé : d
-ÉCART  nue non native : la règle (argument)           obtenu : ERREUR: argument "t": value "menu {d}{id}" names no variant of the sum tson: a value of a sum is the name of its variant, then its value, as {s {menu {d}{id}}}, or {s:}{menu {d}{id}}
-                                                      proposé : d
+OK     nue non native : la règle (set)                d
+OK     nue non native : la règle (type cast)          d
+OK     nue non native : la règle (argument)           d
 OK     nue native : la règle ne passe pas             n
 
 == 6. normalisation dès la construction
@@ -65,7 +60,6 @@ OK     parse : type inconnu refusé                    refus
 
 == 8. nominal validé : la lecture d'une valeur nue valide aussi
 OK     string invalide refusée                        refus
-ÉCART  nue invalide refusée                           obtenu : lu
-                                                      proposé : refus
+OK     nue invalide refusée                           refus
 
-32 OK, 11 ÉCART
+38 OK, 5 ÉCART

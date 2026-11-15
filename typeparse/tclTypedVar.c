@@ -31,6 +31,32 @@ Mismatch(Tcl_Interp *interp, const TclType *expected, const TclType *got)
     }
 }
 
+
+/*
+ * v17d : une valeur typée d'un autre type que tp, qui n'y entre pas
+ * d'elle-même : la variante qui a son type, ou une règle déclarée
+ * (TclTypeCastImplicit). Rend la valeur de type tp (compte 0), ou NULL :
+ * l'erreur de la règle, ou le désaccord des types.
+ */
+static Tcl_Obj *
+ImplicitTo(Tcl_Interp *interp, TclType *tp, TclType *at, Tcl_Obj *arg)
+{
+    Tcl_Obj *r = NULL;
+    int rc;
+
+    rc = TclTypeCastImplicit(interp, arg, tp, &r);
+    if (rc == TCL_OK) {
+	if (r == arg) {
+	    r = Tcl_DuplicateObj(arg);
+	}
+	return r;
+    }
+    if (rc == TCL_CONTINUE) {
+	Mismatch(interp, tp, at);
+    }
+    return NULL;
+}
+
 /*
  * set {}y $x range la valeur sans rien résoudre : pendant cette écriture,
  * le chemin d'écriture ne doit pas appeler le résolveur. Compteur propre
@@ -116,8 +142,7 @@ MakeTyped(Tcl_Interp *interp, TclType *tp, Tcl_Obj *arg, int prefer)
 	/* Élargissement (int(u,8) -> int), ou nominal qui s'efface devant le
 	 * générique (px -> int, dist -> mm) : même contenu, type du contrat. */
 	if (!TclTypeEnters(tp, at)) {
-	    Mismatch(interp, tp, at);
-	    return NULL;
+	    return ImplicitTo(interp, tp, at, arg);	/* v17d */
 	}
     }
     if (status == TCLA_RAW) {
@@ -148,7 +173,10 @@ MakeTyped(Tcl_Interp *interp, TclType *tp, Tcl_Obj *arg, int prefer)
     }
     /* Valide (arité, clés) et ajoute les valeurs par défaut des clés
      * manquantes : dict(x?=0). */
-    if (TclTypeComplete(interp, tp, copy, outVariant, &variant) != TCL_OK) {
+    if ((status == TCLA_TYPED
+	    ? TclTypeComplete(interp, tp, copy, outVariant, &variant)
+	    : TclTypeCompleteBare(interp, tp, copy, outVariant, &variant))
+	    != TCL_OK) {
 	TclDiscard(copy);
 	return NULL;
     }
@@ -540,6 +568,17 @@ TclTypedConformHint(Tcl_Interp *interp, TclType *tp, Tcl_Obj *arg, int hint)
     if ((status == TCLA_TYPED || status == TCLA_RAW)
 	    && !TclTypeEnters(tp, at)
 	    && !TclTypeIsPlainString(tp) && !TclTypeIsAny(tp)) {
+	if (status == TCLA_TYPED) {	/* v17d : variante, règle */
+	    Tcl_Obj *r = ImplicitTo(interp, tp, at, arg), *c;
+
+	    if (r == NULL) {
+		return NULL;
+	    }
+	    Tcl_IncrRefCount(r);
+	    c = TclTypedConformHint(interp, tp, r, hint);
+	    Tcl_DecrRefCount(r);
+	    return c;
+	}
 	Mismatch(interp, tp, at);
 	return NULL;
     }
@@ -556,7 +595,8 @@ TclTypedConformHint(Tcl_Interp *interp, TclType *tp, Tcl_Obj *arg, int hint)
     {
 	int chosen = -1;
 
-	if (TclTypeComplete(interp, tp, copy,
+	if ((status == TCLA_TYPED ? TclTypeComplete : TclTypeCompleteBare)
+		(interp, tp, copy,
 		((status == TCLA_RAW || (status == TCLA_TYPED
 			&& !TclSumTagged(tp))) && at == tp
 			&& tp->kind == TCLT_SUM && variant >= 0) ? variant : hint,
@@ -1079,6 +1119,16 @@ BuildProductEx(Tcl_Interp *interp, TclType *tp, Tcl_Size n,
 	    forceNameValue = 1;
 	}
     }
+    if (n == 1 && nf > 1 && !forceNameValue && tp->kind == TCLT_PRODUCT) {
+	/*
+	 * v17d : un seul argument pour un produit de plusieurs champs : la
+	 * valeur entière (lecture native, règle depuis une valeur nue, règle
+	 * depuis un autre type), comme type cast et un argument typé.
+	 */
+	*contentPtr = TclTypedConform(interp, tp, a[0]);
+	rc = (*contentPtr != NULL) ? TCL_OK : TCL_ERROR;
+	goto done;
+    }
     if (n == nf && !forceNameValue) {
 	for (i = 0; i < nf; i++) {
 	    if (TclTypeTagCheck(interp, tp, i, a[i], a, n) != TCL_OK) {
@@ -1365,10 +1415,26 @@ BuildSum(Tcl_Interp *interp, TclType *tp, int forced, Tcl_Size n,
 	    }
 	}
 	TclDiscard(c);
+	if (status == TCLA_TYPED) {	/* v17d : une règle déclarée */
+	    Tcl_Obj *r = ImplicitTo(interp, tp, at, a[0]);
+	    TclType *rt = NULL;
+
+	    if (r == NULL) {
+		return TCL_ERROR;
+	    }
+	    Tcl_IncrRefCount(r);
+	    (void) TclAnnotInfo(r, &c, &rt, variantPtr, NULL);
+	    c = Tcl_DuplicateObj(c);
+	    Tcl_DecrRefCount(r);
+	    *contentPtr = c;
+	    return TCL_OK;
+	}
 	Mismatch(interp, tp, at);
 	return TCL_ERROR;
     }
-    if (TclTypeValidate(interp, tp, c, -1, variantPtr) != TCL_OK) {
+    if ((status == TCLA_PLAIN
+	    ? TclTypeCompleteBare(interp, tp, c, -1, variantPtr)
+	    : TclTypeValidate(interp, tp, c, -1, variantPtr)) != TCL_OK) {
 	TclDiscard(c);
 	return TCL_ERROR;
     }

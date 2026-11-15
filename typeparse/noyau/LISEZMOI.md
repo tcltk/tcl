@@ -2703,3 +2703,44 @@ t110 ; sondes `doc/any/` 32 OK sur 43.
   `list.any` (son sens change avec les méta-types, étape 5), l'option
   `{-compact}` (une représentation, pas une valeur). Une note dont le texte
   est devenu un nom de type serait relue comme un type.
+
+### v17d — un seul ordre de résolution (15 novembre 2026)
+
+Sans patch noyau (`tclTypes.c`, `tclTypedVar.c`, `tclAnnotObj.c`,
+`tclTypes.h`). `doc/PISTES-any-string.md` § 6, corrigé le 15 novembre :
+**les conversions restent explicites, procédures comprises**. Référence :
+ANNOTATIONS § 5.6 ; test t111 ; sondes 38 OK sur 43.
+
+* **Valeur typée** (set, contrat, argument) : le même type,
+  l'élargissement (`TclTypeEnters` : `int` → `double`, nominal → base), la
+  variante d'une somme qui a exactement son type. Rien d'autre :
+  `TclTypeCastImplicit` (le cast, `implicit` = 1) rend `TCL_CONTINUE`
+  avant les règles et les conversions intégrées, et l'appelant dit
+  « type mismatch ... (use an explicit cast) ».
+* **Arguments** : un argument typé n'est plus un cast. `proc VeutEntier
+  {{int}i}` refuse un double (il tronquait), une `{string}`, un `double`
+  pour `{Celsius}`, un `mm` pour `{m}`. Le cast s'écrit à l'appel :
+  `VeutEntier {int}$d` (l'annotation de l'appel est réglée d'abord,
+  `DeclareTypedTp`). Une somme garde son message (« lire sa valeur par son
+  chemin »). `string` et `any` lisent toujours tout.
+* **type cast** : la variante d'une somme passe avant les règles
+  (`S2 = {Celsius}c, {string}s` et une règle `Celsius → S2` : `{Celsius}10`
+  donne `c 10.0`, comme set).
+* **Valeur nue** (ou seulement notée) : `TclTypeCompleteBare`, partout
+  (`set`, `type cast`, `{T}$x`, arguments, contrats, sommes de `set`) :
+  - un nominal avec une règle depuis son sous-jacent (`type convert string
+    Jour`, `type convert double Pos`) : lecture du sous-jacent, la règle,
+    lecture de T — la validation du nominal (`Jour` nu `10/11` refusé ; le
+    chemin rapide des nombres d'une procédure typée la consulte aussi) ;
+  - sinon la lecture native ; si elle échoue, une règle `any T`, puis
+    `string T` (toute valeur se lit en chaîne) : `set {tson}T $texte`,
+    `set {Pt}p (1,2)`.
+  La règle reçoit une copie ; une règle qui relit une valeur nue du même
+  type n'est pas rappelée (pile `bareRuleStack`, 16 niveaux).
+* **`set {T}v $x`**, un seul argument pour un produit de plusieurs champs :
+  la valeur entière (lecture native, règle), comme `type cast` (c'était
+  « wrong # args »).
+* Sorties mises à jour : t89 (message), t94 (une énumération vers
+  `{string}` passe toujours ; une somme vers `{int}` garde son message),
+  `cproc/liaison` (`list.point` vers `{polygone}` : refusé, les deux
+  liaisons d'accord), `attentrel/achat` (message).

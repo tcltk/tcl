@@ -16,7 +16,7 @@ Achat create ::table {montant:}cent {description:}table    -> ERREUR expected fl
 Demander ::HSE ::chaise                                    -> ERREUR wrong # args: should be "Demander ?-date value? ?-but value? ?-moyen value? ?--? demandeur objet receveur"
 Demander ::chaise ::chaise ::Achats                        -> ERREUR Demander: actant "demandeur" must be Service, got "::chaise"
 Demander ::HSE ::HSE ::Achats                              -> ERREUR Demander: actant "objet" must be Achat, got "::HSE"
-Approuver ::Achats $ok                                     -> ERREUR argument "demande": unknown way to cast the value from Approuver to Demander
+Approuver ::Achats $ok                                     -> ERREUR argument "demande": type mismatch: expected Demander but got Approuver (use an explicit cast)
 Approuver ::Achats $d                                      -> ERREUR Approuver: achat poubelle: Achat(état) eq "demandé" is false (Achat(état) = clos)
 set r [Rejeter ::Achats $d2 "budget épuisé"]; set r(motif) -> budget épuisé
 Approuver ::Achats $d2                                     -> ERREUR Approuver: achat chaise: Achat(état) eq "demandé" is false (Achat(état) = refusé)

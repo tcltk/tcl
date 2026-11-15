@@ -3501,7 +3501,7 @@ TclAnnotSettle(Tcl_Interp *interp, Tcl_Obj *objPtr, const TclType *ctx,
 	Tcl_Obj *copy = Tcl_DuplicateObj(content);
 
 	Tcl_IncrRefCount(copy);
-	if (TclTypeComplete(interp, rt[0], copy, rv[0], &variant) != TCL_OK) {
+	if (TclTypeCompleteBare(interp, rt[0], copy, rv[0], &variant) != TCL_OK) {
 	    Tcl_DecrRefCount(copy);
 	    Tcl_DecrRefCount(pend);
 	    return TCL_ERROR;
@@ -3878,7 +3878,7 @@ TclAnnotCastText(Tcl_Interp *interp, Tcl_Obj *typeText, Tcl_Obj *value,
 	Tcl_Obj *copy = Tcl_DuplicateObj(value);
 
 	Tcl_IncrRefCount(copy);
-	if (TclTypeComplete(interp, tp, copy, v, &variant) != TCL_OK) {
+	if (TclTypeCompleteBare(interp, tp, copy, v, &variant) != TCL_OK) {
 	    Tcl_DecrRefCount(copy);
 	    return TCL_ERROR;
 	}

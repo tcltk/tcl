@@ -1,6 +1,6 @@
 poly::aire {{0.0 0.0} {4.0 0.0} {4.0 4.0}} = 0 double | 8.0
 poly::aire $G                            = 0 double | 8.0
-poly::aire $L                            = 0 double | 8.0
+poly::aire $L                            = 1  | argument "pg": type mismatch: expected ::poly::polygone but got list<::poly::point> (use an explicit cast)
 poly::aire {{0 0} {4 0} {4 4}}           = 0 double | 8.0
 poly::aire {{0.0 0.0} {x 0.0}}           = 1  | argument "pg": expected floating-point number but got "x"
 poly::aire {{0.0 0.0 0.0}}               = 1  | argument "pg": ::poly::point needs 2 values but got 3
@@ -8,7 +8,7 @@ poly::aire                               = 1  | wrong # args: should be "poly::a
 poly::aire a b                           = 1  | wrong # args: should be "poly::aire pg"
 poly::aire {pg:}$G                       = 0 double | 8.0
 poly::contient $G $P                     = 0 int | 1
-poly::contient $G $A                     = 1  | argument "P": unknown way to cast the value from ::poly::autre to ::poly::point
+poly::contient $G $A                     = 1  | argument "P": type mismatch: expected ::poly::point but got ::poly::autre (use an explicit cast)
 poly::contient $G {2.0 1.0}              = 0 int | 1
 poly::contient $G {2.0}                  = 1  | argument "P": ::poly::point needs 2 values but got 1
 poly::perimetre $G                       = 0 double | 13.65685424949238

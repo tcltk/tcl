@@ -584,6 +584,17 @@ set d {kg}$a                   ;# unknown way to cast the value from mm to kg
 
 Une règle `type convert` peut viser un type ou une **famille** (le nom d'un `type def` paramétré) ; la lambda reçoit alors les paramètres des instances (`$de(f)`). `return -code continue` dit « non applicable ». Les conversions restent explicites.
 
+**Un seul ordre de résolution (v17d)**, le même pour `set`, `type cast` et les arguments d'une procédure. Une valeur *typée* entre dans un type T telle quelle si elle est de type T, si elle s'y élargit (`int` → `double`, `Celsius` → `double`), ou si T est une somme dont une variante a exactement son type (`{S}` avec `{int}i` prend `{int}5` en `i 5`, avant toute règle). Une règle (`type convert`) ou une conversion intégrée (troncature, `double` → `Celsius`, `string` → `int`) est un cast, et un cast s'écrit : `type cast`, ou `{T}$x`, à l'appel compris (`VeutEntier {int}$d`) ; un argument typé n'est pas un cast. Une valeur *nue* (ou seulement notée) est lue par le lecteur de T ; un type nominal qui a une règle depuis son type sous-jacent (`type convert string Jour`, `type convert double Pos`) a là sa validation, appliquée à toute valeur nue ; quand la lecture native échoue, une règle `type convert any T` (ou `string T`) lit le texte. `set {Pt}p $x`, un seul argument pour un produit de plusieurs champs, prend `$x` comme la valeur entière.
+
+```tcl
+proc VeutEntier {{int}i} {...}
+VeutEntier 2.5                 ;# erreur : expected integer but got "2.5"
+VeutEntier $d                  ;# ($d un double) type mismatch ... (use an explicit cast)
+VeutEntier {int}$d             ;# 2
+type convert string Jour {{s} {if {![regexp {^\d{4}-\d\d-\d\d$} $s]} {error "pas une date"}; set s}}
+set {Jour}j 10/11              ;# pas une date
+```
+
 #### 5.7 Alias fournis
 
 `layout/binaliases.tcl` définit, pour les formats binaires (conventions de Rust et de Zig) :

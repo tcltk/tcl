@@ -1,0 +1,89 @@
+même type
+    set:  {i 5} S.i
+    cast: {i 5} S.i
+    arg:  {i 5} S.i
+variante (int→S)
+    set:  {i 5} S.i
+    cast: {i 5} S.i
+    arg:  {i 5} S.i
+élargissement int→double
+    set:  2.0 double
+    cast: 2.0 double
+    arg:  2.0 double
+nominal→base
+    set:  3.0 double
+    cast: 3.0 double
+    arg:  3.0 double
+variante avant règle
+    set:  {c 10.0} S2.c
+    cast: {c 10.0} S2.c
+    arg:  {c 10.0} S2.c
+règle : explicite
+    set:  ERREUR type mismatch: expected Fahrenheit but got Celsius (use an explicit cast)
+    cast: 50.0 Fahrenheit
+    arg:  ERREUR argument "a": type mismatch: expected Fahrenheit but got Celsius (use an explicit cast)
+troncature : explicite
+    set:  ERREUR type mismatch: expected int but got double (use an explicit cast)
+    cast: 2 int
+    arg:  ERREUR argument "a": type mismatch: expected int but got double (use an explicit cast)
+base→nominal : explicite
+    set:  ERREUR type mismatch: expected Celsius but got double (use an explicit cast)
+    cast: 3.0 Celsius
+    arg:  ERREUR argument "a": type mismatch: expected Celsius but got double (use an explicit cast)
+string→int : explicite
+    set:  ERREUR type mismatch: expected int but got string (use an explicit cast)
+    cast: 2 int
+    arg:  ERREUR argument "a": type mismatch: expected int but got string (use an explicit cast)
+vers string : lu
+    set:  2 string
+    cast: 2 string
+    arg:  2 string
+sans chemin
+    set:  ERREUR type mismatch: expected Fahrenheit but got Pt (use an explicit cast)
+    cast: ERREUR unknown way to cast the value from Pt to Fahrenheit
+    arg:  ERREUR argument "a": type mismatch: expected Fahrenheit but got Pt (use an explicit cast)
+nu : lecteur natif
+    set:  {1.0 2.0} Pt
+    cast: {1.0 2.0} Pt
+    arg:  {1.0 2.0} Pt
+nu : règle any
+    set:  {1.0 2.0} Pt
+    cast: {1.0 2.0} Pt
+    arg:  {1.0 2.0} Pt
+nu : ni l'un ni l'autre
+    set:  ERREUR pas un point
+    cast: ERREUR pas un point
+    arg:  ERREUR argument "a": pas un point
+nu : nominal validé
+    set:  2026-11-14 Jour
+    cast: 2026-11-14 Jour
+    arg:  2026-11-14 Jour
+nu : nominal refusé
+    set:  ERREUR « 10/11 » n'est pas une date
+    cast: ERREUR « 10/11 » n'est pas une date
+    arg:  ERREUR argument "a": « 10/11 » n'est pas une date
+nu : nominal numérique
+    set:  ERREUR -3 < 0
+    cast: ERREUR -3 < 0
+    arg:  ERREUR argument "a": -3 < 0
+nu : 2.5 vers int
+    set:  ERREUR expected integer but got "2.5"
+    cast: ERREUR expected integer but got "2.5"
+    arg:  ERREUR argument "a": expected integer but got "2.5"
+noté (note inconnue)
+    set:  {1.0 2.0} Pt
+    cast: {1.0 2.0} Pt
+    arg:  {1.0 2.0} Pt
+== le cast s'écrit à l'appel
+VeutEntier 2.5                   ERREUR argument "i": expected integer but got "2.5"
+VeutEntier $d                    ERREUR argument "i": type mismatch: expected int but got double (use an explicit cast)
+VeutEntier {int}$d               2 int
+VeutEntier [type cast int $d]    2 int
+VeutF $c                         ERREUR argument "f": type mismatch: expected Fahrenheit but got Celsius (use an explicit cast)
+VeutF {Fahrenheit}$c             50.0 Fahrenheit
+set {Fahrenheit}f $c             ERREUR type mismatch: expected Fahrenheit but got Celsius (use an explicit cast)
+set f {Fahrenheit}$c             50.0
+== set : un seul argument pour un produit
+{1.0 2.0} Pt
+{3.0 4.0} Pt
+ERREUR pas un point

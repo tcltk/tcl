@@ -591,6 +591,17 @@ set d {kg}$a                   ;# unknown way to cast the value from mm to kg
 
 A `type convert` rule can target a type or a **family** (the name of a parameterized `type def`); the lambda then receives the instances' parameters (`$de(f)`). `return -code continue` means "not applicable". Conversions stay explicit.
 
+**One resolution order (v17d)**, the same for `set`, `type cast` and the arguments of a procedure. A *typed* value enters a type T as it is if it has type T, if it widens into T (`int` → `double`, `Celsius` → `double`), or if T is a sum with a variant of exactly its type (`{S}` with `{int}i` takes `{int}5` as `i 5`, before any rule). A rule (`type convert`) or a built-in conversion (truncation, `double` → `Celsius`, `string` → `int`) is a cast, and a cast is written: `type cast`, or `{T}$x`, including at a call (`VeutEntier {int}$d`); a typed argument is not a cast. A *bare* value (or one with notes only) is read by T's own reader; a nominal type with a rule from its underlying type (`type convert string Jour`, `type convert double Pos`) has that rule as its validation, applied to every bare value; when the native reading fails, a rule `type convert any T` (or `string T`) reads the text. `set {Pt}p $x` with a single argument for a product of several fields takes `$x` as the whole value.
+
+```tcl
+proc VeutEntier {{int}i} {...}
+VeutEntier 2.5                 ;# error: expected integer but got "2.5"
+VeutEntier $d                  ;# ($d a double) type mismatch ... (use an explicit cast)
+VeutEntier {int}$d             ;# 2
+type convert string Jour {{s} {if {![regexp {^\d{4}-\d\d-\d\d$} $s]} {error "not a date"}; set s}}
+set {Jour}j 10/11              ;# not a date
+```
+
 #### 5.7 Provided aliases
 
 `layout/binaliases.tcl` defines, for binary formats (Rust and Zig conventions):

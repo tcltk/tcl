@@ -217,6 +217,13 @@ explicite (`llength {}$s` vaut 3 pour « a b c »), à préférer au détour
 
 ## 6. Un seul ordre de résolution
 
+*(Fait en v17d, avec une correction décidée le 15 novembre : l'étape
+« règle » ne vaut que pour un cast écrit — `type cast`, `{T}$x`, à l'appel
+compris. `set`, les contrats et les arguments d'une procédure s'en tiennent
+au même type, à l'élargissement et à la variante (ANNOTATIONS § 5.6 :
+« les conversions restent explicites »). Les règles depuis une valeur nue
+et la validation d'un nominal valent partout. Test t111.)*
+
 Le commentaire de `TclTypeCast` donne l'ordre actuel : « même type ;
 conversion déclarée ; nominal <-> sous-jacent ; conversions intégrées ;
 variante d'une somme ». `set`, lui, prend la variante exacte avant la règle.

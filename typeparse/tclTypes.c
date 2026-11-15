@@ -3415,14 +3415,157 @@ ApplyFamily(Tcl_Interp *interp, Tcl_Obj *lambda, Tcl_Obj *content,
     return TCL_ERROR;
 }
 
+
+/*
+ * v17d : le lecteur d'une valeur NUE (ou seulement notée) pour tp, le même
+ * pour set, type cast et les arguments (étape 4 de PISTES-any-string § 6) :
+ *
+ *   - tp nominal, avec une règle depuis son type sous-jacent (type convert
+ *     string Jour) : c'est sa validation ; lecture native comme le
+ *     sous-jacent, puis la règle, puis la lecture native de tp ;
+ *   - sinon la lecture native de tp ; si elle échoue et qu'une règle depuis
+ *     la valeur nue existe (type convert any T, ou string T : toute valeur
+ *     se lit en chaîne), la règle, puis la lecture native.
+ *
+ * content est privé (modifiable). Une règle qui relit une valeur nue du
+ * même type n'est pas rappelée (pas de récursion).
+ */
+#define BARE_RULE_DEPTH 16
+static const TclType *bareRuleStack[BARE_RULE_DEPTH];
+static int bareRuleTop = 0;		/* (un interpréteur, un thread) */
+
+static Tcl_Obj *
+FindRule(TypeData *d, const char *from, const char *to)
+{
+    char key[512];
+    Tcl_HashEntry *hPtr;
+
+    snprintf(key, sizeof(key), "%s\1%s", from, to);
+    hPtr = Tcl_FindHashEntry(&d->converts, key);
+    return hPtr != NULL ? (Tcl_Obj *) Tcl_GetHashValue(hPtr) : NULL;
+}
+
+static int
+ApplyBareRule(Tcl_Interp *interp, const TclType *tp, Tcl_Obj *rule,
+	Tcl_Obj *content)
+{
+    Tcl_Obj *res;
+    Tcl_Size len;
+    const char *s;
+
+    if (bareRuleTop >= BARE_RULE_DEPTH) {
+	ERR(interp, "CAST", "type convert rules nested too deeply for %s",
+		tp->name);
+	return TCL_ERROR;
+    }
+    {
+	/* la règle reçoit une copie : content reste à nous seuls */
+	Tcl_Obj *arg = Tcl_DuplicateObj(content);
+
+	Tcl_IncrRefCount(arg);
+	bareRuleStack[bareRuleTop++] = tp;
+	res = ApplyConvert(interp, rule, arg);
+	bareRuleTop--;
+	Tcl_DecrRefCount(arg);
+    }
+    if (res == NULL) {
+	return TCL_ERROR;
+    }
+    if (TclIsAnnotated(res)) {
+	Tcl_Obj *c = TCL_ANNOT_CONTENT(res);
+
+	s = Tcl_GetStringFromObj(c, &len);
+    } else {
+	s = Tcl_GetStringFromObj(res, &len);
+    }
+    Tcl_SetStringObj(content, s, len);
+    TclDiscard(res);
+    return TCL_OK;
+}
+
+int
+TclTypeCompleteBare(Tcl_Interp *interp, const TclType *tp, Tcl_Obj *content,
+	int variantHint, int *variantOut)
+{
+    TypeData *d;
+    Tcl_Obj *rule;
+    int i, rc;
+    Tcl_InterpState st;
+
+    if (interp == NULL || tp == NULL || TclTypeIsAny(tp)) {
+	return TclTypeComplete(interp, tp, content, variantHint, variantOut);
+    }
+    for (i = 0; i < bareRuleTop; i++) {
+	if (bareRuleStack[i] == tp) {
+	    return TclTypeComplete(interp, tp, content, variantHint,
+		    variantOut);	/* déjà dans sa règle */
+	}
+    }
+    d = GetData(interp);
+    if (tp->nominal && tp->under != NULL
+	    && (rule = FindRule(d, tp->under->name, tp->name)) != NULL) {
+	/* la validation du nominal */
+	if (TclTypeComplete(interp, tp->under, content, -1, NULL) != TCL_OK
+		|| ApplyBareRule(interp, tp, rule, content) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	return TclTypeComplete(interp, tp, content, variantHint, variantOut);
+    }
+    rule = FindRule(d, "any", tp->name);
+    if (rule == NULL) {
+	rule = FindRule(d, "string", tp->name);
+    }
+    if (rule == NULL) {
+	return TclTypeComplete(interp, tp, content, variantHint, variantOut);
+    }
+    st = Tcl_SaveInterpState(interp, TCL_OK);
+    rc = TclTypeComplete(interp, tp, content, variantHint, variantOut);
+    if (rc == TCL_OK) {
+	Tcl_DiscardInterpState(st);
+	return TCL_OK;
+    }
+    Tcl_RestoreInterpState(interp, st);
+    if (ApplyBareRule(interp, tp, rule, content) != TCL_OK) {
+	return TCL_ERROR;		/* le message de la règle */
+    }
+    return TclTypeComplete(interp, tp, content, variantHint, variantOut);
+}
+
 /*
  * Cast de "src" (valeur typée, ou chaîne ordinaire) vers "target".
  * Ordre : même type ; conversion déclarée ; nominal <-> sous-jacent ;
  * conversions intégrées entre int, double et string ; variante d'une
  * somme ; sinon erreur. Ne modifie jamais src.
  */
+static int TypeCastEx(Tcl_Interp *interp, Tcl_Obj *src, TclType *target,
+	int implicit, Tcl_Obj **resultPtr);
+
 int
 TclTypeCast(Tcl_Interp *interp, Tcl_Obj *src, TclType *target,
+	Tcl_Obj **resultPtr)
+{
+    return TypeCastEx(interp, src, target, 0, resultPtr);
+}
+
+/*
+ * v17d : la résolution implicite d'une valeur TYPÉE (set, contrat,
+ * argument d'une procédure) : le même type, l'élargissement
+ * (TclTypeEnters : int -> double, Celsius -> double), la lecture d'une
+ * union, la variante d'une somme qui a exactement son type. Les règles
+ * (type convert) et les conversions intégrées (troncature, nominal <-
+ * base, lecture d'un produit en liste) restent explicites : type cast,
+ * {T}$x (ANNOTATIONS § 5.6). TCL_CONTINUE, sans message, quand rien ne
+ * s'applique.
+ */
+int
+TclTypeCastImplicit(Tcl_Interp *interp, Tcl_Obj *src, TclType *target,
+	Tcl_Obj **resultPtr)
+{
+    return TypeCastEx(interp, src, target, 1, resultPtr);
+}
+
+static int
+TypeCastEx(Tcl_Interp *interp, Tcl_Obj *src, TclType *target, int implicit,
 	Tcl_Obj **resultPtr)
 {
     TypeData *d = GetData(interp);
@@ -3445,76 +3588,14 @@ TclTypeCast(Tcl_Interp *interp, Tcl_Obj *src, TclType *target,
 	*resultPtr = src;
 	return TCL_OK;
     }
-    /* Conversion déclarée par "type convert". */
-    if (from != NULL) {
-	snprintf(key, sizeof(key), "%s\1%s", from->name, target->name);
-	hPtr = Tcl_FindHashEntry(&d->converts, key);
-	if (hPtr != NULL) {
-	    res = ApplyConvert(interp, (Tcl_Obj *) Tcl_GetHashValue(hPtr),
-		    content);
-	    goto validate;
-	}
-    }
-    /* Nominal <-> une de ses bases (toute la chaîne) : même représentation. */
-    if (from != NULL) {
-	const TclType *b;
-	int depth;
-
-	for (b = from, depth = 0; b != NULL && depth < 64; b = b->under,
-		depth++) {
-	    if (b == target) {
-		break;
-	    }
-	}
-	if (b == NULL) {
-	    for (b = target, depth = 0; b != NULL && depth < 64;
-		    b = b->under, depth++) {
-		if (b == from) {
-		    break;
-		}
-	    }
-	}
-	if (b != NULL) {
-	    res = Tcl_DuplicateObj(content);
-	    goto validate;
-	}
+    if (implicit && from != NULL && TclTypeEnters(target, from)) {
+	implicit = 0;			/* élargissement : sans perte */
     }
     /*
-     * v16w : toute valeur se lit comme une chaîne ordinaire : son texte
-     * (un littéral d'énumération, "v 5" d'une somme, un point...).
+     * Variante d'une somme dont le type est exactement celui de la source :
+     * une valeur qui convient déjà n'est jamais convertie (v17d : avant
+     * les règles).
      */
-    if (from != NULL && TclTypeIsPlainString(target)) {
-	res = Tcl_NewStringObj(Tcl_GetString(content), TCL_AUTO_LENGTH);
-	goto validate;
-    }
-    /*
-     * v16w : une union se lit comme le type de son alternative : sa valeur
-     * est la charge. (Une somme balisée, jamais : sa variante se lit par
-     * son chemin, $t(celsius), pour ne pas perdre ce qu'elle dit.)
-     */
-    if (from != NULL && from->kind == TCLT_SUM && target->kind != TCLT_SUM
-	    && from->sumMode == TCLT_SUM_UNION && from->binTag == NULL) {
-	int av = variant;
-
-	if (av < 0) {
-	    (void) TclTypeValidate(NULL, from, content, -1, &av);
-	}
-	if (av >= 0 && av < from->nfields && from->fields[av].type != NULL) {
-	    Tcl_Obj *cur = TclNewAnnotated(interp, from->fields[av].type, -1,
-		    content);
-	    int crc;
-
-	    Tcl_IncrRefCount(cur);
-	    crc = TclTypeCast(interp, cur, target, resultPtr);
-	    if (crc == TCL_OK && *resultPtr == cur) {
-		*resultPtr = TclNewAnnotated(interp, from->fields[av].type,
-			-1, content);
-	    }
-	    Tcl_DecrRefCount(cur);
-	    return crc;
-	}
-    }
-    /* Variante d'une somme dont le type est exactement celui de la source. */
     if (target->kind == TCLT_SUM && from != NULL) {
 	int found = -1, again = -1;
 
@@ -3541,6 +3622,78 @@ TclTypeCast(Tcl_Interp *interp, Tcl_Obj *src, TclType *target,
 	    goto validate;
 	}
     }
+    if (implicit) {
+	return TCL_CONTINUE;		/* v17d : les règles restent explicites */
+    }
+    /* Conversion déclarée par "type convert". */
+    if (from != NULL) {
+	snprintf(key, sizeof(key), "%s\1%s", from->name, target->name);
+	hPtr = Tcl_FindHashEntry(&d->converts, key);
+	if (hPtr != NULL) {
+	    res = ApplyConvert(interp, (Tcl_Obj *) Tcl_GetHashValue(hPtr),
+		    content);
+	    goto validate;
+	}
+    }
+    /* Nominal <-> une de ses bases (toute la chaîne) : même représentation. */
+    if (from != NULL && !implicit) {
+	const TclType *b;
+	int depth;
+
+	for (b = from, depth = 0; b != NULL && depth < 64; b = b->under,
+		depth++) {
+	    if (b == target) {
+		break;
+	    }
+	}
+	if (b == NULL) {
+	    for (b = target, depth = 0; b != NULL && depth < 64;
+		    b = b->under, depth++) {
+		if (b == from) {
+		    break;
+		}
+	    }
+	}
+	if (b != NULL) {
+	    res = Tcl_DuplicateObj(content);
+	    goto validate;
+	}
+    }
+    /*
+     * v16w : toute valeur se lit comme une chaîne ordinaire : son texte
+     * (un littéral d'énumération, "v 5" d'une somme, un point...).
+     */
+    if (from != NULL && !implicit && TclTypeIsPlainString(target)) {
+	res = Tcl_NewStringObj(Tcl_GetString(content), TCL_AUTO_LENGTH);
+	goto validate;
+    }
+    /*
+     * v16w : une union se lit comme le type de son alternative : sa valeur
+     * est la charge. (Une somme balisée, jamais : sa variante se lit par
+     * son chemin, $t(celsius), pour ne pas perdre ce qu'elle dit.)
+     */
+    if (from != NULL && from->kind == TCLT_SUM && target->kind != TCLT_SUM
+	    && from->sumMode == TCLT_SUM_UNION && from->binTag == NULL) {
+	int av = variant;
+
+	if (av < 0) {
+	    (void) TclTypeValidate(NULL, from, content, -1, &av);
+	}
+	if (av >= 0 && av < from->nfields && from->fields[av].type != NULL) {
+	    Tcl_Obj *cur = TclNewAnnotated(interp, from->fields[av].type, -1,
+		    content);
+	    int crc;
+
+	    Tcl_IncrRefCount(cur);
+	    crc = TypeCastEx(interp, cur, target, implicit, resultPtr);
+	    if (crc == TCL_OK && *resultPtr == cur) {
+		*resultPtr = TclNewAnnotated(interp, from->fields[av].type,
+			-1, content);
+	    }
+	    Tcl_DecrRefCount(cur);
+	    return crc;
+	}
+    }
     /*
      * Produit -> liste ou dict (cast de base de tout produit) : la liste de
      * ses champs, ou le dict nom -> champ. {list} et {dict} rendent les
@@ -3548,7 +3701,7 @@ TclTypeCast(Tcl_Interp *interp, Tcl_Obj *src, TclType *target,
      * annotés de leur type ; {list.T}, {list(N).T}, {dict.T} les valident
      * comme T. Pour une somme, on part de la variante active.
      */
-    if (from != NULL && (target->kind == TCLT_LIST
+    if (from != NULL && !implicit && (target->kind == TCLT_LIST
 	    || target->kind == TCLT_DICT)) {
 	const TclType *pt = from;
 	Tcl_Obj *pc = content, **fv;
@@ -3609,7 +3762,7 @@ TclTypeCast(Tcl_Interp *interp, Tcl_Obj *src, TclType *target,
      * refusés plus bas. {list} rend les éléments nus ; {list.any} les rend
      * annotés du type d'élément de la source.
      */
-    if (from != NULL && from->kind == target->kind
+    if (from != NULL && !implicit && from->kind == target->kind
 	    && (target->kind == TCLT_LIST || target->kind == TCLT_DICT)
 	    && !(from->nominal && target->nominal)) {
 	Tcl_Obj **ev;
@@ -3716,6 +3869,9 @@ TclTypeCast(Tcl_Interp *interp, Tcl_Obj *src, TclType *target,
 		goto validate;
 	    }
 	}
+    }
+    if (implicit) {
+	return TCL_CONTINUE;		/* rien d'implicite : à l'appelant */
     }
     /*
      * Deux nominaux d'auteur sans lien (mm et kg, mm et px) : seule une
@@ -9419,8 +9575,10 @@ DeclareTypedTp(Tcl_Interp *interp, TclType *tp, Tcl_Obj *typeObj,
     TclType *vt = NULL;
     Tcl_Size np = 1;
 
-    if (tp != NULL && TclAnnotInfo(valueObj, NULL, &vt, NULL, NULL) == 1
-	    && vt == tp) {
+    if (tp != NULL && TclAnnotInfo(valueObj, NULL, &vt, NULL, NULL) != 1) {
+	vt = NULL;			/* v17d : seulement un type résolu */
+    }
+    if (tp != NULL && vt == tp) {
 	if (TclAnnotIsSettled(valueObj)) {
 	    np = 0;
 	} else {
@@ -9434,7 +9592,9 @@ DeclareTypedTp(Tcl_Interp *interp, TclType *tp, Tcl_Obj *typeObj,
     if (np == 0) {
 	*typedPtr = valueObj;
     } else if (tp != NULL && (tp->kind == TCLT_INT || tp->kind == TCLT_DOUBLE)
-	    && !TclIsAnnotated(valueObj)) {
+	    && !TclIsAnnotated(valueObj)
+	    && !(tp->nominal && tp->under != NULL	/* v17d : sa validation */
+		&& FindRule(GetData(interp), tp->under->name, tp->name))) {
 	/* X is double = $x : un nombre n'a rien à compléter ; le contenu est
 	 * partagé (une valeur est immuable), comme pour la lecture d'un champ.
 	 * v16s : double et int simples vérifiés directement (ValidateG fait
@@ -9480,7 +9640,7 @@ DeclareTypedTp(Tcl_Interp *interp, TclType *tp, Tcl_Obj *typeObj,
 		? valueObj : Tcl_DuplicateObj(valueObj);
 
 	Tcl_IncrRefCount(copy);
-	if (TclTypeComplete(interp, tp, copy, -1, &variant) != TCL_OK) {
+	if (TclTypeCompleteBare(interp, tp, copy, -1, &variant) != TCL_OK) {
 	    Tcl_DecrRefCount(copy);
 	    return TCL_ERROR;
 	}
@@ -9488,6 +9648,64 @@ DeclareTypedTp(Tcl_Interp *interp, TclType *tp, Tcl_Obj *typeObj,
 	 * seconde copie */
 	*typedPtr = TclNewAnnotatedOwn(copy, TclTypeRefFor(interp, tp, variant));
 	Tcl_DecrRefCount(copy);
+    } else if (tp != NULL && vt != NULL && vt != tp
+	    && !TclTypeIsPlainString(tp) && !TclTypeIsAny(tp)) {
+	/*
+	 * v17d : une valeur typée d'un autre type, sans annotation en
+	 * attente : un argument n'est pas un cast (ANNOTATIONS § 5.6).
+	 * L'élargissement et la variante passent ; une règle ou une
+	 * conversion intégrée s'écrit à l'appel : f {int}$x.
+	 */
+	Tcl_Obj *r = NULL, *sv = valueObj;
+	TclType *st = vt;
+	int rc;
+
+	if (!TclAnnotIsSettled(valueObj)) {
+	    /* f {int}$x : l'annotation de l'appel (un cast écrit) d'abord */
+	    if (TclAnnotSettle(interp, valueObj, NULL, 0, &sv) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    if (TclAnnotInfo(sv, NULL, &st, NULL, NULL) != 1) {
+		st = NULL;
+	    }
+	    if (st == NULL || st == tp) {
+		/* plus rien de typé à refuser : le chemin ordinaire */
+		Tcl_IncrRefCount(sv);
+		rc = TclAnnotateValue(interp, typeObj, sv, typedPtr);
+		Tcl_DecrRefCount(sv);
+		return rc;
+	    }
+	}
+	Tcl_IncrRefCount(sv);
+	rc = TclTypeCastImplicit(interp, sv, tp, &r);
+	if (rc == TCL_OK && r == sv) {
+	    r = Tcl_DuplicateObj(sv);
+	}
+	Tcl_DecrRefCount(sv);
+	vt = st;
+
+	if (rc == TCL_CONTINUE && vt != NULL && vt->kind == TCLT_SUM) {
+	    /* le message du cast, plus parlant (« lire sa valeur par son
+	     * chemin ») ; un cast qui réussirait reste refusé */
+	    Tcl_Obj *tmp = NULL;
+
+	    if (TclTypeCast(interp, valueObj, tp, &tmp) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    if (tmp != NULL && tmp != valueObj) {
+		TclDiscard(tmp);
+	    }
+	}
+	if (rc == TCL_CONTINUE) {
+	    ERR(interp, "MISMATCH", "type mismatch: expected %s but got %s "
+		    "(use an explicit cast)", tp->name, vt->name);
+	    Tcl_SetErrorCode(interp, "TCL", "TYPE", "MISMATCH", (char *) NULL);
+	    return TCL_ERROR;
+	}
+	if (rc != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	*typedPtr = r;
     } else if (TclAnnotateValue(interp, typeObj, valueObj, typedPtr) != TCL_OK) {
 	return TCL_ERROR;
     }
