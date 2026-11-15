@@ -837,13 +837,23 @@ static int
 GetGraphemeIndexFromObj(
     Tcl_Interp *interp,		/* Interpreter, may be NULL */
     Tcl_Obj *objPtr,		/* The string the index applies to */
-    Tcl_Obj *indexObjPtr,	/* The index argument */
-    Tcl_Size *grCountPtr,	/* Location to hold grapheme count or NULL */
-    Tcl_Size *grIndexPtr)	/* Location to hold numeric index. NOT NULL */
+    Tcl_Obj *firstIndexObjPtr,	/* The first index argument */
+    Tcl_Obj *secondIndexObjPtr,	/* The second index argument - may be NULL */
+    Tcl_Size *grCountPtr,	/* Output for grapheme count or NULL */
+    Tcl_Size *grFirstIndexPtr,	/* Output for first index. NOT NULL */
+    Tcl_Size *grSecondIndexPtr)	/* Output for second index - may be NULL only
+				 * if secondIndexObjPtr is NULL */
 {
-    if (grCountPtr == NULL
-	    && Tcl_GetSizeIntFromObj(NULL, indexObjPtr, grIndexPtr) == TCL_OK) {
-	return TCL_OK;
+    if (grCountPtr == NULL) {
+	/* Don't need count so try for pure numeric indices. */
+	if (Tcl_GetSizeIntFromObj(NULL, firstIndexObjPtr, grFirstIndexPtr)
+			== TCL_OK
+		&& (secondIndexObjPtr == NULL
+			|| Tcl_GetSizeIntFromObj(NULL, secondIndexObjPtr,
+				   grSecondIndexPtr)
+				   == TCL_OK)) {
+	    return TCL_OK;
+	}
     }
     Tcl_Size len, grCount;
     if (UseUniChars(objPtr)) {
@@ -854,10 +864,17 @@ GetGraphemeIndexFromObj(
 	grCount = Tcl_GraphemeCount(tutf8Ptr, len);
     }
     int result;
-    result = TclGetIntForIndexM(interp, indexObjPtr, grCount - 1, grIndexPtr);
+    result = TclGetIntForIndexM(interp, firstIndexObjPtr, grCount - 1,
+	    grFirstIndexPtr);
     if (result == TCL_OK) {
-	if (grCountPtr != NULL) {
-	    *grCountPtr = grCount;
+	if (secondIndexObjPtr) {
+	    result = TclGetIntForIndexM(interp, secondIndexObjPtr, grCount - 1,
+		    grSecondIndexPtr);
+	}
+	if (result == TCL_OK) {
+	    if (grCountPtr != NULL) {
+		*grCountPtr = grCount;
+	    }
 	}
     }
     return result;
@@ -1105,7 +1122,7 @@ GraphemeIndexCmd(
     }
 
     Tcl_Size grIndex;
-    if (GetGraphemeIndexFromObj(interp, objv[1], objv[2], NULL, &grIndex)
+    if (GetGraphemeIndexFromObj(interp, objv[1], objv[2], NULL, NULL, &grIndex, NULL)
 	    != TCL_OK) {
 	/* T: grapheme-index-invalid-*-1.0 */
 	return TCL_ERROR;
@@ -1174,7 +1191,7 @@ GraphemeOffsetCmd(
     }
 
     Tcl_Size grIndex;
-    if (GetGraphemeIndexFromObj(interp, objv[1], objv[2], NULL, &grIndex)
+    if (GetGraphemeIndexFromObj(interp, objv[1], objv[2], NULL, NULL, &grIndex, NULL)
 	    != TCL_OK) {
 	return TCL_ERROR;
     }
@@ -1241,17 +1258,17 @@ GraphemeRangeCmd(
 	return TCL_ERROR;
     }
 
-    Tcl_Size grFirst, grLast, grLen;
+    Tcl_Size grFirst, grLast;
+    if (GetGraphemeIndexFromObj(interp, objv[1], objv[2], objv[3], NULL,
+		&grFirst, &grLast)
+	    != TCL_OK) {
+	return TCL_ERROR;
+    }
+
     if (UseUniChars(objv[1])) {
 	/* T: grapheme-range-ucd-unichars-* */
 	Tcl_Size uniLen;
 	Tcl_UniChar *uniPtr = Tcl_GetUnicodeFromObj(objv[1], &uniLen);
-	grLen = Tcl_GraphemeUniCount(uniPtr, uniLen);
-	if (TclGetIntForIndexM(interp, objv[2], grLen - 1, &grFirst) != TCL_OK
-		|| TclGetIntForIndexM(interp, objv[3], grLen - 1, &grLast)
-			   != TCL_OK) {
-	    return TCL_ERROR;
-	}
 
 	if (grLast >= 0) {
 	    Tcl_UniChar *rangeFirstPtr;
@@ -1266,13 +1283,6 @@ GraphemeRangeCmd(
 	/* T: grapheme-range-ucd-none-* */
 	Tcl_Size numBytes;
 	const char *tutf8Ptr = TclGetStringFromObj(objv[1], &numBytes);
-	grLen = Tcl_GraphemeCount(tutf8Ptr, numBytes);
-	if (TclGetIntForIndexM(interp, objv[2], grLen - 1, &grFirst) != TCL_OK
-		|| TclGetIntForIndexM(interp, objv[3], grLen - 1, &grLast)
-			   != TCL_OK) {
-	    return TCL_ERROR;
-	}
-
 	if (grLast >= 0) {
 	    char *rangeFirstPtr;
 	    char *rangeEndPtr;
