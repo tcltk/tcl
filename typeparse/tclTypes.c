@@ -868,6 +868,7 @@ TclTypeSame(const TclType *a, const TclType *b)
 {
     return a == b || (a->kind == TCLT_LIST && b->kind == TCLT_LIST
 	    && a->arity < 0 && b->arity < 0 && !a->nominal && !b->nominal
+	    && !a->lenRange && !b->lenRange
 	    && a->elem == b->elem && a->elem->kind == TCLT_STRING
 	    && !a->elem->nominal);
 }
@@ -1057,6 +1058,78 @@ TclTypesMakeListN(TypeData *d, TclType *elem, Tcl_Size arity)
     }
     Tcl_DStringFree(&ds);
     return tp;
+}
+
+/*
+ * v17g : list(LO:HI).elem, une liste extensible de LO à HI éléments (HI
+ * < 0 : Inf). list(N:N) est list(N), list(0:Inf) est list.elem.
+ */
+TclType *
+TclTypesMakeListRange(TypeData *d, TclType *elem, Tcl_Size lo, Tcl_Size hi)
+{
+    Tcl_DString ds;
+    TclType *tp;
+    int isNew;
+
+    if (hi >= 0 && lo == hi) {
+	return TclTypesMakeListN(d, elem, lo);
+    }
+    if (lo == 0 && hi < 0) {
+	return TclTypesMakeListN(d, elem, -1);
+    }
+    Tcl_DStringInit(&ds);
+    Tcl_DStringAppend(&ds, "list(", 5);
+    AppendSize(&ds, lo);
+    Tcl_DStringAppend(&ds, ":", 1);
+    if (hi < 0) {
+	Tcl_DStringAppend(&ds, "Inf", 3);
+    } else {
+	AppendSize(&ds, hi);
+    }
+    Tcl_DStringAppend(&ds, ")<", 2);
+    Tcl_DStringAppend(&ds, elem->name, TCL_AUTO_LENGTH);
+    Tcl_DStringAppend(&ds, ">", 1);
+    tp = Intern(d, &ds, TCLT_LIST, elem, &isNew);
+    if (isNew) {
+	tp->arity = -1;
+	tp->lenRange = 1;
+	tp->lenMin = lo;
+	tp->lenMax = hi;
+    }
+    Tcl_DStringFree(&ds);
+    return tp;
+}
+
+/*
+ * v17g : le nombre d'éléments n convient-il à la liste tp ? list(N) :
+ * exactement N ; list(LO:HI) : entre les deux. Sinon le message.
+ */
+int
+TclTypeListLenCheck(Tcl_Interp *interp, const TclType *tp, Tcl_Size n)
+{
+    if (tp == NULL || tp->kind != TCLT_LIST) {
+	return TCL_OK;
+    }
+    if (tp->arity >= 0 && n != tp->arity) {
+	ERR(interp, "LIST", "%s needs exactly %" TCL_SIZE_MODIFIER
+		"d elements but got %" TCL_SIZE_MODIFIER "d", tp->name,
+		tp->arity, n);
+	return TCL_ERROR;
+    }
+    if (tp->lenRange && (n < tp->lenMin
+	    || (tp->lenMax >= 0 && n > tp->lenMax))) {
+	if (tp->lenMax < 0) {
+	    ERR(interp, "LIST", "%s needs at least %" TCL_SIZE_MODIFIER
+		    "d element%s but got %" TCL_SIZE_MODIFIER "d", tp->name,
+		    tp->lenMin, tp->lenMin == 1 ? "" : "s", n);
+	} else {
+	    ERR(interp, "LIST", "%s needs %" TCL_SIZE_MODIFIER "d to %"
+		    TCL_SIZE_MODIFIER "d elements but got %" TCL_SIZE_MODIFIER
+		    "d", tp->name, tp->lenMin, tp->lenMax, n);
+	}
+	return TCL_ERROR;
+    }
+    return TCL_OK;
 }
 
 /* list(PRÉFIXE).T, list($expr).T : une liste ordinaire dont le nombre
@@ -1376,8 +1449,12 @@ LiteralFits(Tcl_Obj *literal, const TclType *tp)
 static int
 ArityWithin(Tcl_Size lo, Tcl_Size hi, const TclType *b)
 {
-    if (b->arity < 0) {
+    if (b->arity < 0 && !b->lenRange) {
 	return 1;
+    }
+    if (b->lenRange) {		/* v17g : list(LO:HI) */
+	return lo >= b->lenMin && (b->lenMax < 0
+		|| (hi >= 0 && hi <= b->lenMax));
     }
     return lo == b->arity && hi == b->arity;
 }
@@ -1466,7 +1543,8 @@ IncludesD(const TclType *a, const TclType *b, int depth)
 	switch (a->kind) {
 	case TCLT_LIST:
 	    return IncludesD(a->elem, b->elem, depth + 1)
-		    && ArityWithin(a->arity < 0 ? 0 : a->arity, a->arity, b);
+		    && ArityWithin(a->lenRange ? a->lenMin : a->arity < 0 ? 0
+			    : a->arity, a->lenRange ? a->lenMax : a->arity, b);
 	case TCLT_INT:
 	case TCLT_DOUBLE:
 	    /* un scalaire est une liste d'un élément */
@@ -2139,21 +2217,12 @@ ValidateG(Tcl_Interp *interp, const TclType *tp, Tcl_Obj *value,
     case TCLT_LIST:
 	if (TclCompactHolds(value, tp->elem, &n)) {
 	    /* forme compacte : ses cases sont valides par construction */
-	    if (tp->arity >= 0 && n != tp->arity) {
-		ERR(interp, "LIST", "%s needs exactly %" TCL_SIZE_MODIFIER
-			"d elements but got %" TCL_SIZE_MODIFIER "d", tp->name,
-			tp->arity, n);
-		return TCL_ERROR;
-	    }
-	    return TCL_OK;
+	    return TclTypeListLenCheck(interp, tp, n);
 	}
 	if (Tcl_ListObjGetElements(interp, value, &n, &elems) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	if (tp->arity >= 0 && n != tp->arity) {
-	    ERR(interp, "LIST", "%s needs exactly %" TCL_SIZE_MODIFIER
-		    "d elements but got %" TCL_SIZE_MODIFIER "d", tp->name,
-		    tp->arity, n);
+	if (TclTypeListLenCheck(interp, tp, n) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	if (tp->elem->kind != TCLT_STRING || tp->elem->nominal) {
@@ -4943,7 +5012,8 @@ DerefTypeG(Tcl_Interp *interp, TypeData *d, TclType *tp, const TclType **stack,
 	    return NULL;
 	}
 	return (tp->arity >= 0) ? TclTypesMakeListN(d, e, tp->arity)
-		: TclTypesMakeList(d, e);
+		: tp->lenRange ? TclTypesMakeListRange(d, e, tp->lenMin,
+		    tp->lenMax) : TclTypesMakeList(d, e);
     case TCLT_DICT: {
 	TclDictKey *keys = NULL;
 
@@ -8654,6 +8724,17 @@ DefText(const TclType *tp, int top, Tcl_DString *ds)
 
 	    snprintf(buf, sizeof(buf), "(%" TCL_SIZE_MODIFIER "d)",
 		    tp->arity);
+	    Tcl_DStringAppend(ds, buf, -1);
+	} else if (tp->lenRange) {	/* v17g */
+	    char buf[64];
+
+	    if (tp->lenMax < 0) {
+		snprintf(buf, sizeof(buf), "(%" TCL_SIZE_MODIFIER "d:Inf)",
+			tp->lenMin);
+	    } else {
+		snprintf(buf, sizeof(buf), "(%" TCL_SIZE_MODIFIER "d:%"
+			TCL_SIZE_MODIFIER "d)", tp->lenMin, tp->lenMax);
+	    }
 	    Tcl_DStringAppend(ds, buf, -1);
 	}
 	if (tp->elem != NULL) {

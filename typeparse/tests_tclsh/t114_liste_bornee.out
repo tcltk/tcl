@@ -1,0 +1,32 @@
+== construction
+au moins un                    {1 2 3} list(1:Inf)<int>
+vide : refusée                 ERREUR list(1:Inf)<int> needs at least 1 element but got 0
+type cast vide                 ERREUR list(1:Inf)<int> needs at least 1 element but got 0
+de 2 à 3                       1 2
+de 2 à 3 : 4                   ERREUR list(2:3)<int> needs 2 to 3 elements but got 4
+au plus 2                      
+list(3:3) = list(3)            list(3)<int>
+list(0:Inf) = list.int         list<int>
+imbriquée                      list(1:Inf)<list(2)<int>>
+== écritures
+lappend jusqu'à la borne       1 2 3
+lappend au-delà                ERREUR list(2:3)<int> needs 2 to 3 elements but got 4
+chemin : ajouter               1 2 9
+chemin : au-delà               ERREUR list(2:3)<int> cannot grow beyond 3 elements
+lpop du dernier                ERREUR list(1:Inf)<int> needs at least 1 element but got 0
+lset vide                      ERREUR list(1:Inf)<int> needs at least 1 element but got 0
+affectation vide               ERREUR list(1:Inf)<int> needs at least 1 element but got 0
+lreplace                       ERREUR list(1:Inf)<int> needs at least 1 element but got 0
+== types
+argument                       ERREUR argument "l": list(1:Inf)<int> needs at least 1 element but got 0
+champ d'un produit             ERREUR list(1:Inf)<string> needs at least 1 element but got 0
+type def                       a
+vers list.int                  list<int>
+depuis list.int                list(1:Inf)<int>
+type canonic                   {list(2:5).int}{1 2}
+type parse                     list(1:Inf)<int>
+== refus de la syntaxe
+end                            ERREUR bad list size "1:end": the upper bound of a range is a number of elements or Inf, as in list(1:Inf) (end names the last element of a list that exists)
+bornes inversées               ERREUR bad list size "3:1": the upper bound is below the lower one
+borne basse                    ERREUR bad list size "a:2": the lower bound of a range is a number of elements, as in list(1:Inf)
+un nom qualifié reste un préfixe 1

@@ -465,6 +465,7 @@ value       = quoted | braced | bareword       (* un défaut littéral *)
 comment     = "#" , { any - newline } ;
 
 args        = count                                              (* list(N) *)
+            | count , ":" , ( count | "Inf" )                    (* list(LO:HI), v17g *)
             | ( "u" | "s" ) , "," , count , [ "," , endian ]     (* int *)
             | ( "32" | "64" ) , [ "," , endian ]                 (* double *)
             | encoding , "," , ( count | "z" | expr )            (* string(utf-8,z), string(raw,$len - 4) *)
@@ -517,7 +518,7 @@ set {pt}b {age:}12 {nom:}Jean  ;# étiquettes de champ (§ 8)
 $a(nom)                        ;# Jean
 ```
 
-**Liste** — `list` (extensible), `list.T` (éléments de type T), `list(N).T` (exactement N).
+**Liste** — `list` (extensible), `list.T` (éléments de type T), `list(N).T` (exactement N), `list(LO:HI).T` (de LO à HI, `HI` = `Inf` sans borne : `list(1:Inf).T`, une liste non vide ; v17g). Le « : » est celui des intervalles de chemin (`$L(1:3)`) ; `list(N:N)` est `list(N)`, `list(0:Inf)` est `list.T`. La borne est vérifiée à chaque construction et à chaque écriture (`lappend`, `lpop`, `lset`, `set L(i)`, affectation).
 
 ```tcl
 set {list.int}L 10 20 30

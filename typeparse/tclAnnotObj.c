@@ -6773,11 +6773,7 @@ CompactObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
 	    return TCL_ERROR;
 	}
 	n = (Tcl_Size) ((size_t) len / lay->size);
-	if (tp->arity >= 0 && n != tp->arity) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf("%s needs exactly %"
-		    TCL_SIZE_MODIFIER "d elements but got %" TCL_SIZE_MODIFIER
-		    "d", tp->name, tp->arity, n));
-	    Tcl_SetErrorCode(interp, "TCL", "TYPE", "LIST", (char *) NULL);
+	if (TclTypeListLenCheck(interp, tp, n) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	b = NewCompactBuf(tp->elem, lay, n);

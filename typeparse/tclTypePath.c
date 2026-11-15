@@ -2835,6 +2835,14 @@ SetIn(Tcl_Interp *interp, Tcl_Obj *a, const IndexPath *chain, Tcl_Size i,
 	    PathErr(interp, "%s cannot grow beyond %s elements", tp->name, num);
 	    return NULL;
 	}
+	if (idx == n && tp->lenRange && tp->lenMax >= 0
+		&& n + 1 > tp->lenMax) {	/* v17g : list(2:5) */
+	    char num[32];
+
+	    snprintf(num, sizeof(num), "%lld", (long long) tp->lenMax);
+	    PathErr(interp, "%s cannot grow beyond %s elements", tp->name, num);
+	    return NULL;
+	}
 	slotType = tp->elem;
 	break;
     case TCLT_DICT:

@@ -2806,3 +2806,24 @@ Sans patch noyau (`tclAnnotObj.c`, `tclTypes.c`). Test t113 ; sondes
   un nom prend un type) ; `type cast` prend toujours un type seul.
 * `type canonic` règle le mot reçu (`type canonic {double@v}5` →
   `{double@v}5.0`) ; `type meta` le voit tel qu'il arrive.
+
+### v17g — `list(LO:HI).T` (15 novembre 2026)
+
+Sans patch noyau (`tclTypeParse.c`, `tclTypes.c`, `tclTypesInt.h`,
+`tclTypes.h`, `tclAnnotObj.c`, `tclTypePath.c`, `tclTypedVar.c`). Test
+t114. Le besoin : la cardinalité `1..n` de VolɷDuctus (CONCEPTION § 2).
+
+* Syntaxe décidée le 15 novembre : le « : » des intervalles de chemin
+  (`$L(1:3)`), `Inf` pour « sans borne » ; `end` refusé avec un message (il
+  nomme le dernier élément d'une liste qui existe). `ParseListRange` ne
+  coupe que sur un « : » seul (`list(::ns::u16).T` reste un préfixe
+  binaire).
+* `TclType` : `lenRange`, `lenMin`, `lenMax` (-1 : Inf) ; une telle liste
+  reste extensible (`arity` = -1 : disposition, `lappend`, conversions).
+  `TclTypesMakeListRange` (interné `list(1:Inf)<int>`) ; `list(N:N)` →
+  `list(N)`, `list(0:Inf)` → `list.T`.
+* `TclTypeListLenCheck` remplace les contrôles d'arité de la validation
+  (forme ordinaire et cases) ; un chemin qui ajoute au-delà de `HI` est
+  refusé ; le `lappend` sur place sous contrat n'est pris que sans borne
+  haute. `ArityWithin` (inclusion), `TclTypeSame`, `DefText` (`type
+  canonic` écrit `list(2:5).int`), `DerefTypeG` en tiennent compte.

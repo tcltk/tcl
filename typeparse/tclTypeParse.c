@@ -22,6 +22,7 @@
  *	        {num}real = 0
  *	  ;   produit (binaire)          {double}x; {double}y
  *	  ,   somme (binaire)            {int}i, {double}d
+ *	  |   union (binaire, v16w)      {int}n | {list(2).int}paire
  *	  {   }nom   groupement, avec un nom optionnel COLLÉ à l'accolade
  *	        fermante. {double}x : champ x de type double. {list.int} :
  *	        simple groupement.
@@ -57,9 +58,11 @@
  *	Écarts volontaires avec tclCompExpr.c :
  *	  - "}" crée un noeud (le groupe nommé), alors que ")" n'en crée pas :
  *	    le nom est son opérande droit.
- *	  - ";" et "," ont la MÊME précédence et ne peuvent pas se mélanger
+ *	  - "," et "|" (v16w) lient un peu plus fort que ";" (table prec[]),
+ *	    mais ";", "," et "|" ne peuvent pas se mélanger à un même niveau
  *	    sans accolades (règle de la spécification, §4) ; l'analyseur le
- *	    vérifie quand il relie un opérande gauche.
+ *	    vérifie quand il relie un opérande gauche. La grammaire complète,
+ *	    en EBNF : ANNOTATIONS, § 5.2.
  *	  - le champ OpNode.constant n'existe pas : il n'y a pas d'évaluation
  *	    de sous-arbres constants à la compilation d'un type.
  *	  - les tables sont écrites avec des initialiseurs désignés (C99).
@@ -1230,6 +1233,8 @@ typedef struct TypeItem {
     TclTypeField *fields;	/* SK_COMP : éléments accumulés */
     Tcl_Size n, cap;
     Tcl_Size arity;		/* SK_CTOR liste : nombre d'éléments */
+    int lenRange;		/* v17g : list(LO:HI) */
+    Tcl_Size lenMin, lenMax;
     TclDictKey *dkeys;		/* SK_CTOR dict : clés admises */
     Tcl_Size nd;
     TclBinDyn *dyn;		/* SK_CTOR list : nombre lu dans le fichier */
@@ -1482,6 +1487,68 @@ ParseListArity(Tcl_Interp *interp, const TypeEnv *envPtr, const char *text,
 
 	    return TclTypesParseSize(interp, envPtr->d, "list", p, end - p, 0,
 		    NULL, &n, &z, dynPtr);
+	}
+    }
+    return TCL_OK;
+}
+
+/*
+ * v17g : list(LO:HI), le nombre d'éléments dans un intervalle, noté comme
+ * les intervalles des chemins ($L(1:3)) : LO un naturel, HI un naturel ou
+ * Inf. Un « : » seul (« :: » appartient à un nom d'espace :
+ * list(::ns::u16).T). TCL_CONTINUE : pas un intervalle.
+ */
+static int
+ParseListRange(Tcl_Interp *interp, const char *text, Tcl_Size len,
+	Tcl_Size *loPtr, Tcl_Size *hiPtr)
+{
+    const char *p = SkipSpace(text, text + len), *end = text + len, *colon;
+    const char *q;
+
+    while (end > p && isspace(UCHAR(end[-1]))) {
+	end--;
+    }
+    for (colon = NULL, q = p; q < end; q++) {
+	if (*q == ':') {
+	    if (q + 1 < end && q[1] == ':') {
+		return TCL_CONTINUE;	/* un nom qualifié */
+	    }
+	    if (colon != NULL) {
+		return TCL_CONTINUE;
+	    }
+	    colon = q;
+	}
+    }
+    if (colon == NULL) {
+	return TCL_CONTINUE;
+    }
+    {
+	const char *lo = p, *loEnd = colon, *hi = colon + 1, *hiEnd = end;
+
+	while (loEnd > lo && isspace(UCHAR(loEnd[-1]))) {
+	    loEnd--;
+	}
+	hi = SkipSpace(hi, hiEnd);
+	if (lo == loEnd || ParseNatural(lo, loEnd - lo, loPtr) != TCL_OK) {
+	    ERR(interp, "ARITY", "bad list size \"%.*s\": the lower bound of "
+		    "a range is a number of elements, as in list(1:Inf)",
+		    (int) (end - p), p);
+	    return TCL_ERROR;
+	}
+	if (hiEnd - hi == 3 && strncmp(hi, "Inf", 3) == 0) {
+	    *hiPtr = -1;
+	} else if (hi == hiEnd || ParseNatural(hi, hiEnd - hi, hiPtr)
+		!= TCL_OK) {
+	    ERR(interp, "ARITY", "bad list size \"%.*s\": the upper bound of "
+		    "a range is a number of elements or Inf, as in list(1:Inf)%s",
+		    (int) (end - p), p, (hiEnd - hi >= 3
+			&& strncmp(hi, "end", 3) == 0)
+		    ? " (end names the last element of a list that exists)" : "");
+	    return TCL_ERROR;
+	} else if (*hiPtr < *loPtr) {
+	    ERR(interp, "ARITY", "bad list size \"%.*s\": the upper bound is "
+		    "below the lower one", (int) (end - p), p);
+	    return TCL_ERROR;
 	}
     }
     return TCL_OK;
@@ -1963,7 +2030,9 @@ MakeCtorType(Tcl_Interp *interp, TypeEnv *envPtr, TypeItem *ctor,
 	if (ctor->dyn != NULL) {
 	    *tpPtr = TclTypesMakeListDyn(d, elem, ctor->dyn);
 	} else {
-	    *tpPtr = TclTypesMakeListN(d, elem, ctor->arity);
+	    *tpPtr = ctor->lenRange ? TclTypesMakeListRange(d, elem,
+		    ctor->lenMin, ctor->lenMax)
+		    : TclTypesMakeListN(d, elem, ctor->arity);
 	}
 	return TCL_OK;
     }
@@ -2663,7 +2732,15 @@ TclCompileTypeTree(
 		    return TCL_ERROR;
 		}
 	    } else if (tp == envPtr->d->tList) {
-		if (ParseListArity(interp, envPtr, a, alen, &it->arity,
+		int rr = ParseListRange(interp, a, alen, &it->lenMin,
+			&it->lenMax);
+
+		if (rr == TCL_ERROR) {
+		    return TCL_ERROR;
+		}
+		if (rr == TCL_OK) {
+		    it->lenRange = 1;	/* v17g : list(LO:HI) */
+		} else if (ParseListArity(interp, envPtr, a, alen, &it->arity,
 			&it->dyn) != TCL_OK) {
 		    return TCL_ERROR;
 		}

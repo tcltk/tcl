@@ -21,7 +21,7 @@
  * VAR_* de tclInt.h). La valeur ci-dessous est un PLACEHOLDER. */
 /* Version du prototype TIP 764 (typeparse/VERSION, maj.sh, et
  * tcl::unsupported::typesversion). */
-#define TCL_TYPES_VERSION "v17f"
+#define TCL_TYPES_VERSION "v17g"
 
 #ifndef VAR_TYPED
 #define VAR_TYPED	0x400000
@@ -111,6 +111,10 @@ struct TclType {
     TclType *elem;		/* LIST : éléments ; DICT : valeurs */
     Tcl_Size arity;		/* LIST : nombre d'éléments, list(2) ; -1 : liste
 				 * extensible (list sans parenthèses) */
+    int lenRange;		/* v17g : LIST extensible bornée, list(1:Inf),
+				 * list(2:5) : lenMin et lenMax valent */
+    Tcl_Size lenMin;		/* au moins lenMin éléments */
+    Tcl_Size lenMax;		/* au plus lenMax ; -1 : sans borne (Inf) */
     int keyed;			/* DICT : clés contraintes, dict(x, y) */
     Tcl_Size nkeys;
     TclDictKey *keys;		/* DICT : clés admises, dans l'ordre écrit */
@@ -327,6 +331,8 @@ void	TclDiscard(Tcl_Obj *objPtr);
 Tcl_Obj *	TclAnnotCarryNotes(Tcl_Obj *from, Tcl_Obj *to);
 Tcl_Obj *	TclTypeNormalizeContent(TclType *tp, Tcl_Obj *v);
 int		TclTypeIsNumUnion(const TclType *et);
+int		TclTypeListLenCheck(Tcl_Interp *interp, const TclType *tp,
+			    Tcl_Size n);			/* v17g */
 
 /*
  * v17e : les méta-types. L'état d'une valeur sur deux axes (un type

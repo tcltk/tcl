@@ -205,6 +205,8 @@ TclType *TclTypesMakeList(TypeData *d, TclType *elem);
 TclType *TclTypesMakeListExplicit(TypeData *d, TclType *elem);
 /* list(N).T : exactement N éléments (arity >= 0) ; arity < 0 : extensible. */
 TclType *TclTypesMakeListN(TypeData *d, TclType *elem, Tcl_Size arity);
+TclType *TclTypesMakeListRange(TypeData *d, TclType *elem, Tcl_Size lo,
+	    Tcl_Size hi);				/* v17g */
 /* var.T : nom d'une variable dont la valeur est un T ; typed != 0 exige
  * que la variable soit typée. */
 TclType *TclTypesMakeVar(TypeData *d, TclType *elem, int typed);

@@ -355,6 +355,7 @@ TclTypedVarPrepareWrite(Tcl_Interp *interp, Var *varPtr,
 	 */
 	if ((*flagsPtr & TCL_LIST_ELEMENT) && add == content
 		&& contract->kind == TCLT_LIST && contract->arity < 0
+		&& !(contract->lenRange && contract->lenMax >= 0)
 		&& contract->binDyn == NULL && contract->elem != NULL
 		&& PlainElemType(contract->elem, 0)
 		&& (cur = varPtr->value.objPtr) != NULL && !Tcl_IsShared(cur)

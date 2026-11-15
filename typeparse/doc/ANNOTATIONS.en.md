@@ -464,6 +464,7 @@ value       = quoted | braced | bareword       (* a literal default *)
 comment     = "#" , { any - newline } ;
 
 args        = count                                              (* list(N) *)
+            | count , ":" , ( count | "Inf" )                    (* list(LO:HI), v17g *)
             | ( "u" | "s" ) , "," , count , [ "," , endian ]     (* int *)
             | ( "32" | "64" ) , [ "," , endian ]                 (* double *)
             | encoding , "," , ( count | "z" | expr )            (* string(utf-8,z), string(raw,$len - 4) *)
@@ -524,7 +525,7 @@ set {pt}b {age:}12 {nom:}Jean  ;# field labels (§ 8)
 $a(nom)                        ;# Jean
 ```
 
-**List** — `list` (extensible), `list.T` (elements of type T), `list(N).T` (exactly N).
+**List** — `list` (extensible), `list.T` (elements of type T), `list(N).T` (exactly N), `list(LO:HI).T` (LO to HI, `HI` = `Inf` for no bound: `list(1:Inf).T`, a non-empty list; v17g). The `:` is the one of path ranges (`$L(1:3)`); `list(N:N)` is `list(N)`, `list(0:Inf)` is `list.T`. The bound is checked at every construction and every write (`lappend`, `lpop`, `lset`, `set L(i)`, assignment).
 
 ```tcl
 set {list.int}L 10 20 30
