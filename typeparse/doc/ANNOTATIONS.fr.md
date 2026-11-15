@@ -736,6 +736,8 @@ type get [type parse {{pt}{1 2.5}}]               ;# pt
 
 Pas gardés : les notes des éléments d'un conteneur, les types des éléments d'une `list.any`, l'option `{-compact}` (une représentation). Une valeur nue s'écrit `{bare}texte` (v17e).
 
+**`{T@notes}` dans un constructeur (v17f).** La forme qu'écrit `type canonic` se lit aussi dans un constructeur : `set v {int@this}5` est un `int` noté `this` ; `{double@zeta,alpha}5` porte deux notes ; `%XX` y est décodé, le point reste dans la note (`{int@aspect.pente}1`). `{int@}5` vaut `{int}5`. Pas sur un nom de variable (`set {int@a}v` : un nom prend un type), et `{@step}` reste une note d'instrument (§ 10).
+
 #### 6.4 Procédures typées (v16p)
 
 La liste d'arguments d'une procédure peut être un **type produit**, écrit dans la syntaxe des types ; l'annotation du nom donne le **type de retour**.

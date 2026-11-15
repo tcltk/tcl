@@ -19,8 +19,7 @@ OK     list (commande) garde les notes                {{} int} {{} this}
 OK     {list} garde les notes                         {{} {}} {{} this}
 OK     {list.any} garde les notes                     {{} {}} {{} this}
 OK     {list.double} garde les notes                  {double vitesse}
-ÉCART  {int@this} dans un constructeur                obtenu : ERREUR: local annotation {int@this} cannot be stored by "set": it only applies between a caller and the command it calls
-                                                      proposé : int this
+OK     {int@this} dans un constructeur                int this
 
 == 5. un seul ordre de résolution (set, type cast, argument)
 OK     set : string -> variante s                     s
@@ -58,4 +57,4 @@ OK     parse : type inconnu refusé                    refus
 OK     string invalide refusée                        refus
 OK     nue invalide refusée                           refus
 
-42 OK, 1 ÉCART
+43 OK, 0 ÉCART

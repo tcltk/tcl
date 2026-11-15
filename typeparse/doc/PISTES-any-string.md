@@ -197,7 +197,7 @@ set {dict.typed}D a {int}1 b {double}2.5
 leurs éléments (aujourd'hui ils les effacent, contre ANNOTATIONS §2.1 : « une
 note suit la valeur : … élément de liste »).
 
-**`{T@notes}`** : `@` est le séparateur que la TIP emploie pour *afficher* le
+**`{T@notes}`** *(fait en v17f)* : `@` est le séparateur que la TIP emploie pour *afficher* le
 type et les notes, et la forme `T@notes` est déjà décrite dans
 `PISTES-annotations-locales.md` (3 novembre, `exemples/texte_enrichi`) : les
 notes forment un **ensemble** (triées), `,` les sépare, `.` imbrique (un

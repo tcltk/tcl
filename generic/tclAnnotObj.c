@@ -3062,6 +3062,77 @@ TclAnnotTypeOf(Tcl_Interp *interp, Tcl_Obj *textObj)
     return tp;
 }
 
+
+/*
+ * v17f : {T@n1,n2}valeur, la forme de type canonic, lue par un
+ * constructeur : T le type, puis des notes (séparées par des virgules,
+ * %XX décodé ; le point reste dans la note, il dit l'imbrication). Rend la
+ * position du @ du premier niveau (> 0), ou -1 ({@step}, une note
+ * d'instrument, garde son sens).
+ */
+static Tcl_Size
+AtSplit(const char *text, Tcl_Size len)
+{
+    Tcl_Size i, at = -1;
+    int depth = 0;
+
+    for (i = 0; i < len; i++) {
+	if (text[i] == '{' || text[i] == '(') {
+	    depth++;
+	} else if (text[i] == '}' || text[i] == ')') {
+	    depth--;
+	} else if (text[i] == '"') {
+	    return -1;			/* un littéral : pas de forme T@notes */
+	} else if (text[i] == '@' && depth == 0) {
+	    at = i;
+	}
+    }
+    return (at > 0) ? at : -1;		/* {int@} : aucune note */
+}
+
+static int
+HexDigit(int c)
+{
+    return (c >= '0' && c <= '9') ? c - '0' : (c >= 'A' && c <= 'F')
+	    ? c - 'A' + 10 : (c >= 'a' && c <= 'f') ? c - 'a' + 10 : -1;
+}
+
+/* Les notes de {T@notes} (liste, compte 0), ou NULL. */
+static Tcl_Obj *
+AtNotes(Tcl_Obj *textObj)
+{
+    Tcl_Size len, at;
+    const char *text = Tcl_GetStringFromObj(textObj, &len), *p, *end;
+    Tcl_Obj *res;
+    Tcl_DString nd;
+
+    if (memchr(text, '@', len) == NULL
+	    || (at = AtSplit(text, len)) < 0) {
+	return NULL;
+    }
+    res = Tcl_NewListObj(0, NULL);
+    Tcl_DStringInit(&nd);
+    for (p = text + at + 1, end = text + len; p <= end; p++) {
+	if (p == end || *p == ',') {
+	    if (Tcl_DStringLength(&nd) > 0) {
+		Tcl_ListObjAppendElement(NULL, res, Tcl_NewStringObj(
+			Tcl_DStringValue(&nd), Tcl_DStringLength(&nd)));
+	    }
+	    Tcl_DStringSetLength(&nd, 0);
+	} else if (*p == '%' && p + 2 < end && HexDigit(p[1]) >= 0
+		&& HexDigit(p[2]) >= 0) {
+	    char ch = (char) (HexDigit(p[1]) * 16 + HexDigit(p[2]));
+
+	    Tcl_DStringAppend(&nd, &ch, 1);
+	    p += 2;
+	} else {
+	    Tcl_DStringAppend(&nd, p, 1);
+	}
+    }
+    Tcl_DStringFree(&nd);
+    return res;
+}
+
 /* Le classement sans cache (ni contexte) : type, variante S.v, local,
  * inconnu ou invalide. */
 static int
@@ -3079,6 +3150,20 @@ ClassifyAnnotRaw(Tcl_Interp *interp, Tcl_Obj *textObj, TclType **tpPtr,
     }
     if (variantPtr != NULL) {
 	*variantPtr = -1;
+    }
+    if (memchr(text, '@', len) != NULL) {
+	Tcl_Size at = AtSplit(text, len);
+
+	if (at > 0) {
+	    /* v17f : {T@notes} se classe comme T ; les notes sont lues par
+	     * le réglage (AtNotes) */
+	    Tcl_Obj *tObj = Tcl_NewStringObj(text, at);
+
+	    Tcl_IncrRefCount(tObj);
+	    res = ClassifyAnnotRaw(interp, tObj, tpPtr, variantPtr);
+	    Tcl_DecrRefCount(tObj);
+	    return (res == ANN_TYPE) ? ANN_TYPE : ANN_BAD;
+	}
     }
     if (len > 1 && text[0] == '@') {
 	/* v16y : une note d'instrument ({@step}, {@trace}...) : jamais un
@@ -3392,6 +3477,7 @@ TclAnnotSettle(Tcl_Interp *interp, Tcl_Obj *objPtr, const TclType *ctx,
     int curVar = -1, rv[SETTLE_MAX], nr = 0, changed = 0, stopped = 0;
     int cls, v, variant = -1, nany = 0;
     const TclType *anyT[SETTLE_MAX];
+    Tcl_Obj *atNotes = NULL;		/* v17f : les notes de {T@notes} */
     char keep[SETTLE_MAX * 4];
     Tcl_Size np, i, j;
 
@@ -3469,6 +3555,21 @@ TclAnnotSettle(Tcl_Interp *interp, Tcl_Obj *objPtr, const TclType *ctx,
 	    continue;			/* rien n'est résolu */
 	}
 	if (cls == ANN_TYPE && nr < SETTLE_MAX) {
+	    Tcl_Obj *an = AtNotes(elv[i]);	/* v17f : {T@notes} */
+
+	    if (an != NULL) {
+		if (atNotes == NULL) {
+		    atNotes = an;
+		    Tcl_IncrRefCount(atNotes);
+		} else {
+		    Tcl_Obj **av;
+		    Tcl_Size ac;
+
+		    Tcl_ListObjGetElements(NULL, an, &ac, &av);
+		    Tcl_ListObjReplace(NULL, atNotes, 0, 0, ac, av);
+		    TclDiscard(an);
+		}
+	    }
 	    rt[nr] = tp;
 	    rv[nr] = v;
 	    nr++;
@@ -3480,7 +3581,14 @@ TclAnnotSettle(Tcl_Interp *interp, Tcl_Obj *objPtr, const TclType *ctx,
 	    Tcl_Size bl;
 	    const char *bt = Tcl_GetStringFromObj(elv[i], &bl);
 
-	    (void) TclTypeParse(interp, bt, bl);	/* le message d'erreur */
+	    {
+		Tcl_Size at = AtSplit(bt, bl);	/* v17f : {T@notes}, T */
+
+		(void) TclTypeParse(interp, bt, at > 0 ? at : bl);
+	    }					/* le message d'erreur */
+	    if (atNotes != NULL) {
+	        Tcl_DecrRefCount(atNotes);
+	    }
 	    Tcl_DecrRefCount(pend);
 	    return TCL_ERROR;
 	}
@@ -3533,6 +3641,9 @@ TclAnnotSettle(Tcl_Interp *interp, Tcl_Obj *objPtr, const TclType *ctx,
 		Tcl_SetErrorCode(interp, "TCL", "TYPE", "CONTRADICT",
 			(char *) NULL);
 	    }
+	    if (atNotes != NULL) {
+	        Tcl_DecrRefCount(atNotes);
+	    }
 	    Tcl_DecrRefCount(pend);
 	    return TCL_ERROR;
 	}
@@ -3552,6 +3663,9 @@ TclAnnotSettle(Tcl_Interp *interp, Tcl_Obj *objPtr, const TclType *ctx,
 	}
 	if (TclTypeVariantConvert(interp, cur, curVar, pl, rv[0], &c)
 		!= TCL_OK) {
+	    if (atNotes != NULL) {
+	        Tcl_DecrRefCount(atNotes);
+	    }
 	    Tcl_DecrRefCount(pend);
 	    return TCL_ERROR;
 	}
@@ -3573,6 +3687,9 @@ TclAnnotSettle(Tcl_Interp *interp, Tcl_Obj *objPtr, const TclType *ctx,
 	Tcl_IncrRefCount(copy);
 	if (TclTypeComplete(interp, rt[0], copy, rv[0], &variant) != TCL_OK) {
 	    Tcl_DecrRefCount(copy);
+	    if (atNotes != NULL) {
+	        Tcl_DecrRefCount(atNotes);
+	    }
 	    Tcl_DecrRefCount(pend);
 	    return TCL_ERROR;
 	}
@@ -3586,6 +3703,9 @@ TclAnnotSettle(Tcl_Interp *interp, Tcl_Obj *objPtr, const TclType *ctx,
 	Tcl_IncrRefCount(base);
 	if (TclTypeCast(interp, base, rt[0], &val) != TCL_OK) {
 	    Tcl_DecrRefCount(base);
+	    if (atNotes != NULL) {
+	        Tcl_DecrRefCount(atNotes);
+	    }
 	    Tcl_DecrRefCount(pend);
 	    return TCL_ERROR;
 	}
@@ -3601,6 +3721,9 @@ TclAnnotSettle(Tcl_Interp *interp, Tcl_Obj *objPtr, const TclType *ctx,
 	Tcl_IncrRefCount(copy);
 	if (TclTypeCompleteBare(interp, rt[0], copy, rv[0], &variant) != TCL_OK) {
 	    Tcl_DecrRefCount(copy);
+	    if (atNotes != NULL) {
+	        Tcl_DecrRefCount(atNotes);
+	    }
 	    Tcl_DecrRefCount(pend);
 	    return TCL_ERROR;
 	}
@@ -3627,6 +3750,19 @@ TclAnnotSettle(Tcl_Interp *interp, Tcl_Obj *objPtr, const TclType *ctx,
 	    Tcl_ListObjGetElements(NULL, n, &xn, &xv);
 	    Tcl_ListObjReplace(NULL, remaining, 0, 0, fs, xv);
 	}
+    }
+    if (atNotes != NULL) {
+	/* v17f : les notes écrites avec le type, posées sous la pile restante
+	 * (au fond : elles sont plus anciennes que ce qui reste au-dessus) */
+	Tcl_Obj **av;
+	Tcl_Size ac;
+
+	Tcl_ListObjGetElements(NULL, atNotes, &ac, &av);
+	for (i = 0; i < ac; i++) {
+	    Tcl_ListObjAppendElement(NULL, remaining, av[i]);
+	}
+	Tcl_DecrRefCount(atNotes);
+	atNotes = NULL;
     }
     for (i = 0; i < np; i++) {
 	if (keep[i]) {
@@ -3710,8 +3846,10 @@ TclAnnotLocalWordText(Tcl_Interp *interp, Tcl_Token *wordTokenPtr)
     Tcl_IncrRefCount(saved);
     text = Tcl_NewStringObj(wordTokenPtr[1].start, wordTokenPtr[1].size);
     Tcl_IncrRefCount(text);
-    local = (TclTypeParse(interp, wordTokenPtr[1].start,
-	    wordTokenPtr[1].size) == NULL) && RawIsLocal(interp);
+    local = AtSplit(wordTokenPtr[1].start, wordTokenPtr[1].size) < 0
+	    && (TclTypeParse(interp, wordTokenPtr[1].start,
+		    wordTokenPtr[1].size) == NULL) && RawIsLocal(interp);
+					/* v17f : {T@notes} n'est pas local */
     Tcl_SetObjResult(interp, saved);
     Tcl_DecrRefCount(saved);
     if (!local) {

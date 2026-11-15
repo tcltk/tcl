@@ -1,0 +1,16 @@
+set v {int@this}5                int this 5
+deux notes                       {double zeta.alpha 5.0} {{double@alpha,zeta}5.0}
+note encodée                     a,b
+note imbriquée (point)           aspect.pente
+aucune note : {int@}             int {} 5
+list.typednoted                  {int this 5} {double that 2.5}
+list.int : la note suit          a {}
+argument {typednoted}            int this 5
+le cast se fait                  int n 16
+type canonic reçoit le mot       {double@vitesse}5.0
+aller-retour (produit)           {{pt113@a}{1 2}} {pt113 a {1 2}}
+canonique relu                   {{double@a,b}5.0} {{double@a,b}5.0}
+note d'instrument {@step}        @step
+type inconnu                     ERREUR unknown type "intt"
+contenu refusé                   ERREUR expected integer but got "abc"
+pas sur un nom de variable       ERREUR local annotation {int@a} cannot declare a variable: a variable name takes a type

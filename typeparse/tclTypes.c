@@ -10520,6 +10520,16 @@ TypeCanonicCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 	return TCL_ERROR;
     }
     val = objv[objc - 1];
+    if (TclIsAnnotated(val)) {
+	/* le mot reçu est réglé d'abord : type canonic {int@a}$x (v17f) */
+	Tcl_Obj *sv = NULL;
+
+	if (TclAnnotSettle(interp, val, NULL, 0, &sv) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	val = sv;
+    }
+    Tcl_IncrRefCount(val);
     kind = TclAnnotInfo(val, &content, &tp, &variant, NULL);
     notes = TclAnnotNoteList(interp, val);
     Tcl_IncrRefCount(notes);
@@ -10532,6 +10542,7 @@ TypeCanonicCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 
 	Tcl_DecrRefCount(notes);
 	if (onlyNotes) {
+	    Tcl_DecrRefCount(val);
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj("bare", 4));
 	    return TCL_OK;
 	}
@@ -10539,6 +10550,7 @@ TypeCanonicCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 	Tcl_IncrRefCount(l);
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf("{bare}%s", Tcl_GetString(l)));
 	Tcl_DecrRefCount(l);
+	Tcl_DecrRefCount(val);
 	return TCL_OK;
     }
     if (kind != 1 || tp == NULL) {
@@ -10588,6 +10600,7 @@ TypeCanonicCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
     }
     res = Tcl_NewStringObj(Tcl_DStringValue(&ds), Tcl_DStringLength(&ds));
     Tcl_DStringFree(&ds);
+    Tcl_DecrRefCount(val);
     Tcl_SetObjResult(interp, res);
     return TCL_OK;
 }

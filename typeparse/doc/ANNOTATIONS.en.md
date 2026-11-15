@@ -743,6 +743,8 @@ type get [type parse {{pt}{1 2.5}}]               ;# pt
 
 Not kept: the notes of elements inside a container, the types of the elements of a `list.any`, the `{-compact}` option (a representation). A bare value is written `{bare}text` (v17e).
 
+**`{T@notes}` in a constructor (v17f).** The form written by `type canonic` is also read by a constructor: `set v {int@this}5` is an `int` noted `this`; `{double@zeta,alpha}5` carries two notes; `%XX` is decoded, the dot stays in the note (`{int@aspect.pente}1`). `{int@}5` is `{int}5`. Not on a variable name (`set {int@a}v`: a name takes a type), and `{@step}` stays an instrument note.
+
 #### 6.4 Typed procedures (v16p)
 
 The argument list of a procedure may be a **product type**, written in the type syntax; the annotation on the name gives the **return type**.

@@ -1,10 +1,11 @@
 # REPRISE — état du prototype TIP 764 (valeurs annotées, variables typées)
 
-*Fiche de reprise, 14 novembre 2026, version **v17e**. À joindre (avec `typeparse.zip`) au
+*Fiche de reprise, 14 novembre 2026, version **v17f**. À joindre (avec `typeparse.zip`) au
 premier message d'une conversation qui reprend le travail.*
 
 ## 1. Où en est-on
 
+* **v17f** (15 novembre) : `{T@notes}valeur` dans un constructeur (`set v {int@this}5`, `{double@a,b}5`, `%XX`, le point dans la note) ; `type canonic` règle le mot reçu. Test t113 ; sondes 43/43. Reste de l'étape 6 : une liste de longueur minimale (syntaxe à décider).
 * **v17e** (15 novembre) : les méta-types `bare`, `typed`, `noted`, `typednoted` (et leurs unions) ; `any` leur union, devenu l'identité (`type cast any`, `{any}a`, `list.any`, `dict.any` gardent type et notes, un élément nu reste nu). Une exigence vérifie l'état sans convertir ni poser de contrat. `type meta $v` : `{int}typed`, `{list}bare`… (représentation = nom du `Tcl_ObjType`). `type canonic` d'une valeur nue : `{bare}texte`. Test t112 ; sondes 42/43. Suite : `{T@notes}` dans les constructeurs, `{-min n}` (étape 6).
 * **v17d** (15 novembre) : un seul ordre de résolution pour `set`, `type cast` et les arguments. Typée : même type, élargissement, variante (avant les règles) ; règles et conversions intégrées seulement par un cast écrit (`type cast`, `{T}$x`, à l'appel compris) — un argument typé n'est plus un cast (`VeutEntier $d`, d double 2.5 : refusé, au lieu de tronquer). Nue : lecteur natif, validation d'un nominal par sa règle depuis le sous-jacent, puis règle `any T` / `string T` (`set {tson}T $texte` marche). `set {Pt}p $x` : un argument = la valeur entière. Test t111 ; sondes 38 OK sur 43 (le reste : étapes 5 et 6). Suite : méta-types (étape 5).
 * **v17c** (14 novembre) : `type canonic ?-notes? V` → `{T}contenu`, `{T@n1,n2}contenu` (notes en ensemble trié, `%XX` hors lettres, chiffres, `_`, `.`), `{@notes}contenu` pour une valeur seulement notée ; contenu reconstruit selon le type ; `type parse` relit (type existant, contenu valide, notes posées). Aller-retour vérifié sur scalaires, conteneurs, produits nommés et anonymes, types d'espace, sommes, unions, nominaux, liens. Pas gardés : notes des éléments, types des éléments de `list.any`, `{-compact}`. Test t110 ; sondes 32 OK sur 43. Suite : ordre de résolution unique (étape 4).

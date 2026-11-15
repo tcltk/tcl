@@ -2789,3 +2789,20 @@ Sans patch noyau (`tclTypes.c`, `tclAnnotObj.c`, `tclTypedVar.c`,
   note `int` comme un cast.
 * **`type canonic`** d'une valeur nue : `{bare}texte` (`-notes` : `bare`) ;
   `type parse {bare}5` la relit nue (décidé le 14 : attendre l'étape 5).
+
+### v17f — `{T@notes}` dans un constructeur (15 novembre 2026)
+
+Sans patch noyau (`tclAnnotObj.c`, `tclTypes.c`). Test t113 ; sondes
+43 OK sur 43.
+
+* `AtSplit` : le `@` du premier niveau d'une annotation (hors littéral
+  `"…"` ; à la position 0, `{@step}` reste une note d'instrument, v16y).
+  `ClassifyAnnotRaw` classe `{T@notes}` comme T (T inconnu : `ANN_BAD`,
+  « unknown type "intt" »). Le réglage (`TclAnnotSettle`) lit les notes
+  (`AtNotes` : virgules, `%XX`, le point gardé) et les pose au fond de la
+  pile restante ; le contrôle de la compilation de `set x {…}mot` ne la
+  prend plus pour une annotation locale.
+* `{int@}5` vaut `{int}5`. Pas sur un nom de variable (`set {int@a}v` :
+  un nom prend un type) ; `type cast` prend toujours un type seul.
+* `type canonic` règle le mot reçu (`type canonic {double@v}5` →
+  `{double@v}5.0`) ; `type meta` le voit tel qu'il arrive.
