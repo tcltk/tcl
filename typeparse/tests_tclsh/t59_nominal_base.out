@@ -10,7 +10,7 @@ polygone -> list nue (affect.)                 0 4
 champ avec cast immédiat                       0 polyC
 champ boite cast immédiat                      0 boite
 champ list($n) avec mauvais compte             1 field "pts" of polyC holds 4 elements, but its size says 3 ($n)
-nominal -> autre nominal (refus)               1 triangle needs exactly 3 elements but got 4
+nominal -> autre nominal (refus)               1 type mismatch: expected triangle but got polygone (use an explicit cast)
 polygone dans champ nuage (refus)              1 type mismatch: expected nuage but got polygone (use an explicit cast)
 list(3).point <- polygone(4)                   1 list(3)<point> needs exactly 3 elements but got 4
 champ list(4) <- poly3 (refus)                 1 type mismatch: expected list(4)<point> but got poly3 (use an explicit cast)

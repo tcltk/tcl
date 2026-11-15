@@ -2740,7 +2740,13 @@ ANNOTATIONS § 5.6 ; test t111 ; sondes 38 OK sur 43.
 * **`set {T}v $x`**, un seul argument pour un produit de plusieurs champs :
   la valeur entière (lecture native, règle), comme `type cast` (c'était
   « wrong # args »).
+* **Nominal de collection** (`type def polygone list.point`) : `set
+  {polygone}P $L`, `L` une `list.point` typée, ne déplie plus `L` en
+  éléments (`BuildList`, `BuildDict` pour un nominal de dict) : base →
+  nominal, refusé comme en argument ; `{polygone}$L` l'écrit. Un nominal
+  vers sa base, ou deux valeurs du même nominal, se déplient toujours.
 * Sorties mises à jour : t89 (message), t94 (une énumération vers
   `{string}` passe toujours ; une somme vers `{int}` garde son message),
   `cproc/liaison` (`list.point` vers `{polygone}` : refusé, les deux
-  liaisons d'accord), `attentrel/achat` (message).
+  liaisons d'accord), `attentrel/achat` (message), t59 (le refus d'un
+  nominal vers un autre arrive plus tôt, avec « type mismatch »).

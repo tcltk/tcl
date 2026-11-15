@@ -671,6 +671,13 @@ BuildList(Tcl_Interp *interp, TclType *tp, Tcl_Size n, Tcl_Obj *const a[],
 	}
 	if ((status == TCLA_TYPED || status == TCLA_RAW)
 		&& at->kind == TCLT_LIST && at != tp->elem) {
+	    if (tp->nominal && at != tp && !TclTypeEnters(tp, at)) {
+		/* v17d : list.point n'entre pas dans polygone (type def
+		 * polygone list.point) : base -> nominal, un cast écrit,
+		 * comme double -> Celsius ({polygone}$L) */
+		Mismatch(interp, tp, at);
+		goto done;
+	    }
 	    if (status == TCLA_RAW
 		    && TclTypeValidate(interp, at, content, -1, NULL)
 			    != TCL_OK) {
@@ -794,6 +801,12 @@ BuildDict(Tcl_Interp *interp, TclType *tp, Tcl_Size n, Tcl_Obj *const a[],
     while (i < n) {
 	if (TclAnnotResolve(interp, a[i], NULL, &status, &at, &variant,
 		&content) != TCL_OK) {
+	    goto fail;
+	}
+	if ((status == TCLA_TYPED || status == TCLA_RAW)
+		&& at->kind == TCLT_DICT && tp->nominal && at != tp
+		&& !TclTypeEnters(tp, at)) {
+	    Mismatch(interp, tp, at);	/* v17d : base -> nominal */
 	    goto fail;
 	}
 	if ((status == TCLA_TYPED || status == TCLA_RAW)

@@ -75,3 +75,17 @@ puts "== set : un seul argument pour un produit"
 puts [r {set {Pt}p {1 2}}]
 puts [r {set {Pt}p (3,4)}]
 puts [r {set {Pt}p 1}]
+puts "== nominal de collection : base -> nominal s'écrit"
+type def point111 {{double}x; {double}y}
+type def polygone111 list.point111
+type def carnet111 dict.int
+proc aire111 {{polygone111}pg} {llength $pg}
+set {list.point111}L {0 0} {4 0}
+set {dict.int}D a 1
+foreach s {
+    {set {polygone111}P $L} {aire111 $L} {aire111 {polygone111}$L}
+    {set {polygone111}P {polygone111}$L} {set {carnet111}C $D}
+    {set {list.point111}L2 [type cast polygone111 $L]}
+} {
+    puts [format "%-36s %s" $s [expr {[catch $s v] ? "ERREUR $v" : $v}]]
+}

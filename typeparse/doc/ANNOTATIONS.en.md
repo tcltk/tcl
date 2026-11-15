@@ -658,7 +658,7 @@ set {int}w $o                  ;# accepted: type get $w -> int
 set {int(u,8)}o2 300           ;# value "300" does not fit in int(u,8)
 ```
 
-**Nominal types.** A nominal type gives way to its base (`px` goes into `int` and becomes `int`, without a trace). For a collection, the base is its structure: `type def polygon list.point` goes into `list.point`, `list(4).point` or a field `{list($n).point}` (the number of elements is checked). Two nominal types with no base link are never equivalent (`mm` and `kg`): that is precisely their role.
+**Nominal types.** A nominal type gives way to its base (`px` goes into `int` and becomes `int`, without a trace). For a collection, the base is its structure: `type def polygon list.point` goes into `list.point`, `list(4).point` or a field `{list($n).point}` (the number of elements is checked). The reverse is a written cast, like `double` → `Celsius`: a `list.point` enters a `polygon` (by `set` or as an argument) only through `{polygon}$L` or `type cast` (v17d). Two nominal types with no base link are never equivalent (`mm` and `kg`): that is precisely their role.
 
 **Explicit casts.** `set v {T}$x` or `type cast T $x` convert according to, in order: a specific `type convert` rule; the chain of bases; a sum's variant; a family rule; the built-in conversions between scalars. Otherwise: `unknown way to cast the value from A to B`.
 

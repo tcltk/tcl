@@ -87,3 +87,10 @@ set f {Fahrenheit}$c             50.0
 {1.0 2.0} Pt
 {3.0 4.0} Pt
 ERREUR pas un point
+== nominal de collection : base -> nominal s'écrit
+set {polygone111}P $L                ERREUR type mismatch: expected polygone111 but got list<point111> (use an explicit cast)
+aire111 $L                           ERREUR argument "pg": type mismatch: expected polygone111 but got list<point111> (use an explicit cast)
+aire111 {polygone111}$L              2
+set {polygone111}P {polygone111}$L   {0.0 0.0} {4.0 0.0}
+set {carnet111}C $D                  ERREUR type mismatch: expected carnet111 but got dict<int> (use an explicit cast)
+set {list.point111}L2 [type cast polygone111 $L] {0.0 0.0} {4.0 0.0}
