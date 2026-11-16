@@ -86,6 +86,7 @@ to the userbase.
  - [MS-Win: fix exec+wish call of batch files with spaces in path or arguments](https://core.tcl-lang.org/tcl/tktview/f91ab723f3)
  - [Tcl_ListObjReplace() and oo:define LIST_MAX overflow error handling](https://core.tcl-lang.org/tcl/tktview/40f628e8e3)
  - [Document that chan push returns a channel ID](https://core.tcl-lang.org/tcl/tctview/7b0e690b70)
+ - [infinite recursion during 'file exists' if working directory has been removed](https://core.tcl-lang.org/tcl/tctview/4d3f2130292dbfe3)
 # Updated bundled packages, libraries, standards, data
  - http 2.10.3
  - msgcat 1.7.2
