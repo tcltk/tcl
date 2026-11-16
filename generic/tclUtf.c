@@ -1697,7 +1697,7 @@ Tcl_UtfNcasecmp(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_UtfCmp --
+ * TclUtfCmp --
  *
  *	Compare UTF chars of string cs to string ct case sensitively.
  *	Replacement for strcmp in Tcl core, in places where UTF-8 should
@@ -1709,7 +1709,7 @@ Tcl_UtfNcasecmp(
  * Side effects:
  *	None.
  *
- *----------------------------------------------------------------------
+ *---------------------------------------------------------------------
  */
 
 int
@@ -1717,16 +1717,47 @@ TclUtfCmp(
     const char *cs,		/* UTF string to compare to ct. */
     const char *ct)		/* UTF string cs is compared to. */
 {
-    Tcl_UniChar ch1 = 0, ch2 = 0;
+    const unsigned char *s = (const unsigned char *)cs;
+    const unsigned char *t = (const unsigned char *)ct;
 
-    while (*cs && *ct) {
-	cs += TclUtfToUniChar(cs, &ch1);
-	ct += TclUtfToUniChar(ct, &ch2);
-	if (ch1 != ch2) {
-	    return ch1 - ch2;
-	}
+    /* Step through the largest common initial prefix of the two strings. */
+    while (*s == *t) {
+        if (*s == '\0') return 0;
+        s++;
+        t++;
     }
-    return UCHAR(*cs) - UCHAR(*ct);
+
+    /*
+     * The chars *s and *t are different and all previous characters match. If
+     * we were dealing with a UTF8 string we could just return *s - *t now
+     * because the UTF8 encoding preserves string order.  But since it is
+     * TUTF8 we need to check whether one of s or t references a byte
+     * contained in the encoding of a null codepoint as \xc0\x80.  If not, then
+     * we can return *s - *t.
+     *
+     * If either of s or t references the byte \x80 of an \xc0\x80 pair then
+     * we can still return *s - *t, since the other pointer must reference the
+     * second byte of a 2-byte encoding of a non-null codepoint, and \x80 is
+     * the smallest possible continuation byte.
+     *
+     * So the only case where returning *s - *t may not work is when s or t
+     * references the byte \xc0 of a pair \xc0\x80.  In that case we know that
+     * the other pointer references either a sentinal null byte or the first
+     * byte of the encoding of some non-null codepoint.  Thus exactly one of
+     * the two pointers can reference the \xc0 byte of a \xc0\x80 pair, and if
+     * one does then the string containing that pair is the smaller one unless
+     * the other pointer references a sentinel null byte, in which case the
+     * string containing the sentinel null byte is a prefix of the other
+     * string and hence is smaller.
+     */
+
+    if (*s == 0xC0 && s[1] == 0x80) {
+        return (*t == '\0') ? 1 : -1;
+    }
+    if (*t == 0xC0 && t[1] == 0x80) {
+        return (*s == '\0') ? -1 : 1;
+    }
+    return (int)*s - (int)*t;
 }
 
 /*
