@@ -9552,3 +9552,5 @@ Many code fixes to avoid overflow or undefined behavior.  Thanks chrstphrchvz.
 2026-11-14 MS-Win: fix exec+wish call of batch files with spaces in path or arguments (storchaka,oehlmann)
 
 2026-11-16 infinite recursion during 'file exists' if working directory has been removed (storchaka)
+
+- Released 8.6.19, Dec ??, 2026 - details at https://core.tcl-lang.org/tcl/ -

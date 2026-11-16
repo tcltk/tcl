@@ -1,16 +1,11 @@
 # README:  Tcl
 
-This is the **Tcl 8.6.18** source distribution.
+This is the **Tcl 8.6.19** source distribution.
 
 You can get any source release of Tcl from [our distribution
 site](https://sourceforge.net/projects/tcl/files/Tcl/).
 
-9.0 (production release, daily build)
-[![Build Status](https://github.com/tcltk/tcl/actions/workflows/linux-build.yml/badge.svg?branch=main)](https://github.com/tcltk/tcl/actions/workflows/linux-build.yml?query=branch%3Amain)
-[![Build Status](https://github.com/tcltk/tcl/actions/workflows/win-build.yml/badge.svg?branch=main)](https://github.com/tcltk/tcl/actions/workflows/win-build.yml?query=branch%3Amain)
-[![Build Status](https://github.com/tcltk/tcl/actions/workflows/mac-build.yml/badge.svg?branch=main)](https://github.com/tcltk/tcl/actions/workflows/mac-build.yml?query=branch%3Amain)
-<br>
-8.6 (this release, daily build)
+8.6 (this legacy release, daily build)
 [![Build Status](https://github.com/tcltk/tcl/actions/workflows/linux-build.yml/badge.svg?branch=core-8-6-branch)](https://github.com/tcltk/tcl/actions/workflows/linux-build.yml?query=branch%3Acore-8-6-branch)
 [![Build Status](https://github.com/tcltk/tcl/actions/workflows/win-build.yml/badge.svg?branch=core-8-6-branch)](https://github.com/tcltk/tcl/actions/workflows/win-build.yml?query=branch%3Acore-8-6-branch)
 [![Build Status](https://github.com/tcltk/tcl/actions/workflows/mac-build.yml/badge.svg?branch=core-8-6-branch)](https://github.com/tcltk/tcl/actions/workflows/mac-build.yml?query=branch%3Acore-8-6-branch)
