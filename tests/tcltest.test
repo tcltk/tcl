@@ -1967,6 +1967,80 @@ test tcltest-29.1 {cleanupTests exits with Tk only for the main script, bug 8413
 	[string match "*after cleanupTests*app continues*" \
 	    [exec [interpreter] $app]]
 } -result {0 1}
+
+test tcltest-29.2 {runAllTests exits with Tk with its result as the status, bug 7abc1460c0} -constraints {
+    exec
+} -setup {
+    set dir [makeDirectory allExitTk]
+    makeFile {
+	package require tcltest
+	tcltest::test pass-1 {} {} {}
+	tcltest::cleanupTests
+    } pass.test $dir
+    makeFile {
+	package require tcltest
+	tcltest::test fail-1 {} {expr 1} 2
+	tcltest::cleanupTests
+    } fail.test $dir
+    makeFile {
+	error "broken test file"
+    } broken.test $dir
+    set all [makeFile {
+	package require tcltest
+	set ::tk_version 0.0
+	tcltest::configure -testdir [file dirname [file normalize [info script]]] \
+	    -verbose {} {*}$argv
+	tcltest::runAllTests
+	puts "after runAllTests"
+    } all.tcl $dir]
+} -cleanup {
+    removeDirectory allExitTk
+    unset -nocomplain dir all res file singleproc out opts status
+} -body {
+    set res {}
+    foreach file {pass.test fail.test broken.test} {
+	foreach singleproc {1 0} {
+	    set status 0
+	    if {[catch {
+		exec [interpreter] $all -file $file -singleproc $singleproc 2>@1
+	    } out opts]} {
+		set status [lindex [dict get $opts -errorcode] 2]
+	    }
+	    lappend res [list $file $singleproc $status \
+		[string match "*after runAllTests*" $out] \
+		[string match "*exiting with errors*broken.test*" $out]]
+	}
+    }
+    join $res \n
+} -result [join {
+    {pass.test 1 0 0 0} {pass.test 0 0 0 0}
+    {fail.test 1 1 0 0} {fail.test 0 1 0 0}
+    {broken.test 1 1 0 1} {broken.test 0 1 0 1}
+} \n]
+
+test tcltest-29.3 {runAllTests returns its result with Tk if the all file is not the main script, bug 7abc1460c0} -constraints {
+    exec
+} -setup {
+    set dir [makeDirectory allSourcedTk]
+    makeFile {
+	package require tcltest
+	tcltest::test fail-1 {} {expr 1} 2
+	tcltest::cleanupTests
+    } fail.test $dir
+    set all [makeFile {
+	package require tcltest
+	set ::tk_version 0.0
+	tcltest::configure -testdir [file dirname [file normalize [info script]]] \
+	    -verbose {}
+	set result [tcltest::runAllTests]
+    } all.tcl $dir]
+    set app [makeFile "source [list $all]\nputs \"result \$result\"" app.tcl $dir]
+} -cleanup {
+    removeDirectory allSourcedTk
+    unset -nocomplain dir all app
+} -body {
+    string match "*result 1" [string trim [exec [interpreter] $app]]
+} -result 1
 
 cleanupTests
 }

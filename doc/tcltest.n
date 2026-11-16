@@ -211,7 +211,9 @@ array. Returns an empty string.
 When Tk is loaded, the shell is not interactive and the test file is the
 main script of the application (as in \fBwish foo.test\fR),
 \fBcleanupTests\fR exits the application instead of returning, so that
-the test file does not wait in the event loop.
+the test file does not wait in the event loop.  For the summary of
+\fBrunAllTests\fR, \fBrunAllTests\fR exits instead, see
+\fBRUNNING ALL TESTS\fR.
 .RE
 .\" COMMAND: runAllTests
 .TP
@@ -841,6 +843,14 @@ against the \fBconfigure \-relateddir\fR and
 many directories in a directory tree can have all their
 test files evaluated by a single \fBrunAllTests\fR
 command.
+.PP
+\fBrunAllTests\fR returns 1 if any test failed or any test file
+exited with an error, and 0 otherwise.  When Tk is loaded, the shell is
+not interactive and the file that calls \fBrunAllTests\fR is the main
+script of the application (as in \fBwish all.tcl\fR), \fBrunAllTests\fR
+instead exits the application with that value as the exit status, after
+printing the summary and before acting on subdirectories, so that it
+does not wait in the event loop.
 .SH "CONFIGURABLE OPTIONS"
 The \fBconfigure\fR command is used to set and query the configurable
 options of \fBtcltest\fR.  The valid options are:
