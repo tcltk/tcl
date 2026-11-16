@@ -120,34 +120,6 @@ static const Tcl_ObjType tclGraphemeListType = {
 /*
  *------------------------------------------------------------------------
  *
- * UseUniChars --
- *
- *	Determines whether to use the Tcl_UniChar based grapheme
- *	implementation or the TUTF-8 based one. Primary purpose is to avoid
- *	shimmering and generation of multiple representations.
- *
- * Results:
- *	A true if the Tcl_UniChar implementation is to be preferred, false
- *	for TUTF8.
- *
- * Side effects:
- *	None.
- *
- *------------------------------------------------------------------------
- */
-static inline bool
-UseUniChars(Tcl_Obj *objPtr)
-{
-    if (TclHasInternalRep(objPtr, &tclStringType)) {
-	String *stringPtr = GET_STRING(objPtr);
-	return stringPtr->hasUnicode != 0;
-    }
-    return false;
-}
-
-/*
- *------------------------------------------------------------------------
- *
  * PrevCodePoint --
  *
  * Results:
@@ -856,15 +828,9 @@ GetGraphemeIndexFromObj(
 	}
     }
     Tcl_Size len, grCount;
-    if (UseUniChars(objPtr)) {
-	Tcl_UniChar *uniPtr = Tcl_GetUnicodeFromObj(objPtr, &len);
-	grCount = Tcl_GraphemeUniCount(uniPtr, len);
-    } else {
-	const char *tutf8Ptr = TclGetStringFromObj(objPtr, &len);
-	grCount = Tcl_GraphemeCount(tutf8Ptr, len);
-    }
-    int result;
-    result = TclGetIntForIndexM(interp, firstIndexObjPtr, grCount - 1,
+    Tcl_UniChar *uniPtr = Tcl_GetUnicodeFromObj(objPtr, &len);
+    grCount = Tcl_GraphemeUniCount(uniPtr, len);
+    int result = TclGetIntForIndexM(interp, firstIndexObjPtr, grCount - 1,
 	    grFirstIndexPtr);
     if (result == TCL_OK) {
 	if (secondIndexObjPtr) {
@@ -899,11 +865,10 @@ GetGraphemeIndexFromObj(
  *------------------------------------------------------------------------
  */
 static int
-GraphemeNextCmd(
-    TCL_UNUSED(void *),
-    Tcl_Interp *interp,		/* Current interpreter. */
-    Tcl_Size objc,		/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
+GraphemeNextCmd(TCL_UNUSED(void *),
+	Tcl_Interp *interp,    /* Current interpreter. */
+	Tcl_Size objc,         /* Number of arguments. */
+	Tcl_Obj *const objv[]) /* Argument objects. */
 {
     if (objc != 3) {
 	/* T: grapheme-next-{min,max}args-* */
@@ -931,25 +896,11 @@ GraphemeNextCmd(
     }
 
     if (strIndex < uniLen) {
-	if (UseUniChars(objv[1])) {
-	    /* T: grapheme-next-ucd-unichars-* */
-	    const Tcl_UniChar *grStartPtr
-		    = Tcl_GetUnicodeFromObj(objv[1], &uniLen);
-	    grStartPtr += strIndex;
-	    (void) GraphemeUniNext(grStartPtr, uniLen - strIndex, &grWidth);
-	    Tcl_SetObjResult(interp, Tcl_NewUnicodeObj(grStartPtr, grWidth));
-	} else {
-	    /* T: grapheme-next-ucd-none-* */
-	    Tcl_Size numBytes;
-	    const char *tutf8Ptr = TclGetStringFromObj(objv[1], &numBytes);
-	    const char *grStartPtr = Tcl_UtfAtIndex(tutf8Ptr, strIndex);
-	    Tcl_Size offset = grStartPtr - tutf8Ptr;
-	    assert(numBytes > offset); /* Since strIndex < uniLen above */
-	    const char *grEndPtr
-		    = GraphemeNext(grStartPtr, numBytes - offset, &grWidth);
-	    numBytes = grEndPtr - grStartPtr;
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(grStartPtr, numBytes));
-	}
+	/* T: grapheme-next-ucd-*-* */
+	const Tcl_UniChar *grStartPtr = Tcl_GetUnicodeFromObj(objv[1], &uniLen);
+	grStartPtr += strIndex;
+	(void)GraphemeUniNext(grStartPtr, uniLen - strIndex, &grWidth);
+	Tcl_SetObjResult(interp, Tcl_NewUnicodeObj(grStartPtr, grWidth));
     } else {
 	/* T: grapheme-next-indexvar-2 */
 	strIndex = uniLen;
@@ -962,7 +913,7 @@ GraphemeNextCmd(
     }
     return TCL_OK;
 }
-
+
 /*
  *------------------------------------------------------------------------
  *
@@ -1018,24 +969,11 @@ GraphemePrevCmd(
     }
 
     if (strIndex > 0) {
-	if (UseUniChars(objv[1])) {
-	    /* T: grapheme-prev-ucd-unichars-* */
-	    const Tcl_UniChar *startPtr
-		    = Tcl_GetUnicodeFromObj(objv[1], &uniLen);
-	    Tcl_UniChar *grPtr
-		    = GraphemeUniPrev(startPtr + strIndex, strIndex, &grWidth);
-	    Tcl_SetObjResult(interp, Tcl_NewUnicodeObj(grPtr, grWidth));
-	} else {
-	    /* T: grapheme-prev-ucd-none-* */
-	    Tcl_Size numBytes;
-	    const char *startPtr = TclGetStringFromObj(objv[1], &numBytes);
-	    const char *endPtr = Tcl_UtfAtIndex(startPtr, strIndex);
-	    Tcl_Size offset = endPtr - startPtr;
-	    assert(offset > 0); /* Since strIndex > 0 above */
-	    const char *grStartPtr = GraphemePrev(endPtr, offset, &grWidth);
-	    numBytes = endPtr - grStartPtr;
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(grStartPtr, numBytes));
-	}
+	/* T: grapheme-prev-ucd-*-* */
+	const Tcl_UniChar *startPtr = Tcl_GetUnicodeFromObj(objv[1], &uniLen);
+	Tcl_UniChar *grPtr
+		= GraphemeUniPrev(startPtr + strIndex, strIndex, &grWidth);
+	Tcl_SetObjResult(interp, Tcl_NewUnicodeObj(grPtr, grWidth));
     }
 
     if (Tcl_ObjSetVar2(interp, objv[2], NULL,
@@ -1075,19 +1013,11 @@ GraphemeCountCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "string");
 	return TCL_ERROR;
     }
+    /* T: grapheme-length-ucd-*-* */
     Tcl_Size len;
-    if (UseUniChars(objv[1])) {
-	/* T: grapheme-length-ucd-unichars-* */
-	Tcl_UniChar *uniPtr = Tcl_GetUnicodeFromObj(objv[1], &len);
-	Tcl_SetObjResult(interp,
-		Tcl_NewWideIntObj(Tcl_GraphemeUniCount(uniPtr, len)));
-    } else {
-	/* T: grapheme-length-ucd-none-* */
-	const char *tutf8Ptr;
-	tutf8Ptr = TclGetStringFromObj(objv[1], &len);
-	Tcl_SetObjResult(interp,
-		Tcl_NewWideIntObj(Tcl_GraphemeCount(tutf8Ptr, len)));
-    }
+    Tcl_UniChar *uniPtr = Tcl_GetUnicodeFromObj(objv[1], &len);
+    Tcl_SetObjResult(interp,
+	    Tcl_NewWideIntObj(Tcl_GraphemeUniCount(uniPtr, len)));
 
     return TCL_OK;
 }
@@ -1127,37 +1057,21 @@ GraphemeIndexCmd(
 	/* T: grapheme-index-invalid-*-1.0 */
 	return TCL_ERROR;
     }
-    if (UseUniChars(objv[1])) {
-	/* T: grapheme-index-ucd-unichars-* */
-	Tcl_Size grWidth;
-	Tcl_Size uniLen;
-	const Tcl_UniChar *uniPtr = Tcl_GetUnicodeFromObj(objv[1], &uniLen);
 
-	if (grIndex < 0) {
-	    /* T: grapheme-index-ucd-unichars-*--1 */
-	    return TCL_OK;
-	}
-	const Tcl_UniChar *grPtr
-		= Tcl_GraphemeUniIndex(uniPtr, uniLen, grIndex, &grWidth, NULL);
-	if (grPtr) {
-	    Tcl_SetObjResult(interp, Tcl_NewUnicodeObj(grPtr, grWidth));
-	} /* else T: grapheme-index-ucd-unichars-*-$len */
-    } else {
-	/* T: grapheme-index-ucd-none-* */
-	Tcl_Size numBytes;
-	const char *tutf8Ptr = TclGetStringFromObj(objv[1], &numBytes);
+    Tcl_Size grWidth;
+    Tcl_Size uniLen;
+    const Tcl_UniChar *uniPtr = Tcl_GetUnicodeFromObj(objv[1], &uniLen);
 
-	if (grIndex < 0) {
-	    /* T: grapheme-index-ucd-none-*--1 */
-	    return TCL_OK;
-	}
-	const char *grPtr = Tcl_GraphemeIndex(tutf8Ptr, numBytes, grIndex, NULL,
-		&numBytes);
-	if (grPtr) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(grPtr, numBytes));
-	} /* else T: grapheme-index-ucd-unichars-*-$len */
+    if (grIndex < 0) {
+	/* T: grapheme-index-ucd-unichars-*--1 */
+	return TCL_OK;
     }
-
+    const Tcl_UniChar *grPtr
+	    = Tcl_GraphemeUniIndex(uniPtr, uniLen, grIndex, &grWidth, NULL);
+    if (grPtr) {
+	/* T: grapheme-index-ucd-*-* */
+	Tcl_SetObjResult(interp, Tcl_NewUnicodeObj(grPtr, grWidth));
+    } /* else T: grapheme-index-ucd-unichars-*-$len */
     return TCL_OK;
 }
 
@@ -1199,31 +1113,17 @@ GraphemeOffsetCmd(
 	/* T: grapheme-offset-oob-*-1.0 */
 	Tcl_SetObjResult(interp, Tcl_NewIntObj(-1));
     }
-    if (UseUniChars(objv[1])) {
-	Tcl_Size uniLen;
-	Tcl_UniChar *uniPtr = Tcl_GetUnicodeFromObj(objv[1], &uniLen);
-	const Tcl_UniChar *grPtr;
-	grPtr = Tcl_GraphemeUniIndex(uniPtr, uniLen, grIndex, NULL, NULL);
-	if (grPtr == NULL) {
-	    /* T: grapheme-offset-oob-unichars-1.1 */
-	    Tcl_SetObjResult(interp, Tcl_NewIntObj(-1));
-	} else {
-	    /* T: grapheme-offset-ucd-unichars-* */
-	    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(grPtr - uniPtr));
-	}
+
+    Tcl_Size uniLen;
+    Tcl_UniChar *uniPtr = Tcl_GetUnicodeFromObj(objv[1], &uniLen);
+    const Tcl_UniChar *grPtr;
+    grPtr = Tcl_GraphemeUniIndex(uniPtr, uniLen, grIndex, NULL, NULL);
+    if (grPtr == NULL) {
+	/* T: grapheme-offset-oob-*-1.1 */
+	Tcl_SetObjResult(interp, Tcl_NewIntObj(-1));
     } else {
-	Tcl_Size numBytes;
-	const char *tutf8Ptr = TclGetStringFromObj(objv[1], &numBytes);
-	/* T: grapheme-offset-ucd-none-* */
-	const char *grPtr;
-	grPtr = Tcl_GraphemeIndex(tutf8Ptr, numBytes, grIndex, NULL, NULL);
-	if (grPtr == NULL) {
-	    /* T: grapheme-offset-oob-unichars-1.1 */
-	    Tcl_SetObjResult(interp, Tcl_NewIntObj(-1));
-	} else {
-	    Tcl_Size offset = Tcl_NumUtfChars(tutf8Ptr, grPtr - tutf8Ptr);
-	    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(offset));
-	}
+	/* T: grapheme-offset-ucd-*-* */
+	Tcl_SetObjResult(interp, Tcl_NewWideIntObj(grPtr - uniPtr));
     }
 
     return TCL_OK;
@@ -1265,33 +1165,18 @@ GraphemeRangeCmd(
 	return TCL_ERROR;
     }
 
-    if (UseUniChars(objv[1])) {
-	/* T: grapheme-range-ucd-unichars-* */
-	Tcl_Size uniLen;
-	Tcl_UniChar *uniPtr = Tcl_GetUnicodeFromObj(objv[1], &uniLen);
+    /* T: grapheme-range-ucd-*-* */
+    Tcl_Size uniLen;
+    Tcl_UniChar *uniPtr = Tcl_GetUnicodeFromObj(objv[1], &uniLen);
 
-	if (grLast >= 0) {
-	    Tcl_UniChar *rangeFirstPtr;
-	    Tcl_UniChar *rangeEndPtr;
-	    rangeFirstPtr = Tcl_GraphemeUniRange(uniPtr, uniLen, grFirst,
-		    grLast, &rangeEndPtr);
-	    assert(rangeEndPtr >= rangeFirstPtr);
-	    Tcl_SetObjResult(interp, Tcl_NewUnicodeObj(rangeFirstPtr,
-					     rangeEndPtr - rangeFirstPtr));
-	}
-    } else {
-	/* T: grapheme-range-ucd-none-* */
-	Tcl_Size numBytes;
-	const char *tutf8Ptr = TclGetStringFromObj(objv[1], &numBytes);
-	if (grLast >= 0) {
-	    char *rangeFirstPtr;
-	    char *rangeEndPtr;
-	    rangeFirstPtr = Tcl_GraphemeRange(tutf8Ptr, numBytes, grFirst,
-		    grLast, &rangeEndPtr);
-	    assert(rangeEndPtr >= rangeFirstPtr);
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(rangeFirstPtr,
-					     rangeEndPtr - rangeFirstPtr));
-	}
+    if (grLast >= 0) {
+	Tcl_UniChar *rangeFirstPtr;
+	Tcl_UniChar *rangeEndPtr;
+	rangeFirstPtr = Tcl_GraphemeUniRange(uniPtr, uniLen, grFirst, grLast,
+		&rangeEndPtr);
+	assert(rangeEndPtr >= rangeFirstPtr);
+	Tcl_SetObjResult(interp,
+		Tcl_NewUnicodeObj(rangeFirstPtr, rangeEndPtr - rangeFirstPtr));
     }
     return TCL_OK;
 }
@@ -1334,27 +1219,15 @@ GraphemeReverseCmd(
      * one at a time with a temporary buffer.
      */
 
-    if (UseUniChars(objv[1])) {
-	/* T: grapheme-reverse-ucd-unichars-* */
-	Tcl_Size uniLen;
-	const Tcl_UniChar *uniPtr = Tcl_GetUnicodeFromObj(objv[1], &uniLen);
-	if (uniLen > 0) {
-	    Tcl_UniChar *tempBufPtr
-		    = (Tcl_UniChar *)Tcl_Alloc(uniLen * sizeof(*tempBufPtr));
-	    Tcl_GraphemeUniReverse(uniPtr, uniLen, tempBufPtr, uniLen);
-	    Tcl_SetObjResult(interp, Tcl_NewUnicodeObj(tempBufPtr, uniLen));
-	    Tcl_Free(tempBufPtr);
-	}
-    } else {
-	/* T: grapheme-reverse-ucd-none-* */
-	Tcl_Size numBytes;
-	const char *tutf8Ptr = TclGetStringFromObj(objv[1], &numBytes);
-	if (numBytes > 0) {
-	    char *tempBufPtr = (char *)Tcl_Alloc(numBytes);
-	    Tcl_GraphemeReverse(tutf8Ptr, numBytes, tempBufPtr, numBytes);
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(tempBufPtr, numBytes));
-	    Tcl_Free(tempBufPtr);
-	}
+    /* T: grapheme-reverse-ucd-*-* */
+    Tcl_Size uniLen;
+    const Tcl_UniChar *uniPtr = Tcl_GetUnicodeFromObj(objv[1], &uniLen);
+    if (uniLen > 0) {
+	Tcl_UniChar *tempBufPtr
+		= (Tcl_UniChar *)Tcl_Alloc(uniLen * sizeof(*tempBufPtr));
+	Tcl_GraphemeUniReverse(uniPtr, uniLen, tempBufPtr, uniLen);
+	Tcl_SetObjResult(interp, Tcl_NewUnicodeObj(tempBufPtr, uniLen));
+	Tcl_Free(tempBufPtr);
     }
     return TCL_OK;
 }
