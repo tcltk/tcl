@@ -26,6 +26,7 @@ to the userbase.
  - [lsearch -regexp released the pattern when matching failed](https://core.tcl-lang.org/tcl/tktview/359576)
  - [restore the blocking mode when "socket -async" connects at once](https://core.tcl-lang.org/tcl/tktview/d22dc7)
  - [writing a file beyond the file size limit (ulimit -f) killed the process](https://core.tcl-lang.org/tcl/tktview/386563)
+ - [a {1,1} quantifier was always dropped as vacuous](https://core.tcl-lang.org/tcl/tktview/524b35)
  - [regexp with backreferences could loop forever](https://core.tcl-lang.org/tcl/tktview/a6029e)
  - [remove empty directories from the zipfs VFS with POSIX find options](https://core.tcl-lang.org/tcl/tktview/9336f1)
  - [tailcall panicked in a command called directly by its objProc](https://core.tcl-lang.org/tcl/tktview/4955f5)
