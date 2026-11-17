@@ -88,6 +88,7 @@ to the userbase.
  - [Document that chan push returns a channel ID](https://core.tcl-lang.org/tcl/tctview/7b0e69)
  - [infinite recursion during 'file exists' if working directory has been removed](https://core.tcl-lang.org/tcl/tctview/4d3f21)
  - [under Tk, runAllTests exited with status 0 before reporting errors](https://core.tcl-lang.org/tcl/tctview/7abc14)
+ - [New thread panics when stdin is closed](https://core.tcl-lang.org/tcl/tctview/f1a25e)
 
 # Updated bundled packages, libraries, standards, data
  - http 2.10.3
