@@ -5337,11 +5337,13 @@ TclEvalEx(
 
 	    if (norm == NULL) {
 		/*
-		 * Error message in the interp result.
+		 * The path cannot be normalized, e.g. because the current
+		 * directory was deleted. It is only used for the location
+		 * information, so use it as is. [4d3f213029]
 		 */
 
-		code = TCL_ERROR;
-		goto error;
+		Tcl_ResetResult(interp);
+		norm = iPtr->scriptFile;
 	    }
 	    eeFramePtr->data.eval.path = norm;
 	} else {
@@ -6607,6 +6609,9 @@ Tcl_ExprLongObj(
     case TCL_NUMBER_NAN:
 	Tcl_GetDoubleFromObj(interp, resultPtr, &d);
 	result = TCL_ERROR;
+	break;
+    default:
+	TCL_UNREACHABLE();
     }
 
     Tcl_DecrRefCount(resultPtr);/* Discard the result object. */
@@ -8460,7 +8465,7 @@ DivModObjCmd(
     }
     if (typeX != TCL_NUMBER_INT && typeX != TCL_NUMBER_BIG) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf("dividend must be an integer"));
-	Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", (char *)NULL);
 	return TCL_ERROR;
     }
 
@@ -8469,7 +8474,7 @@ DivModObjCmd(
     }
     if (typeY != TCL_NUMBER_INT && typeY != TCL_NUMBER_BIG) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf("divisor must be an integer"));
-	Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", (char *)NULL);
 	return TCL_ERROR;
     }
 
@@ -8551,11 +8556,11 @@ DivModObjCmd(
 
   divZero:
     Tcl_SetObjResult(interp, Tcl_ObjPrintf("divide by zero"));
-    Tcl_SetErrorCode(interp, "ARITH", "DIVZERO", "divide by zero", NULL);
+    Tcl_SetErrorCode(interp, "ARITH", "DIVZERO", "divide by zero", (char *)NULL);
     return TCL_ERROR;
   outOfMemory:
     Tcl_SetObjResult(interp, Tcl_ObjPrintf("cannot allocate"));
-    Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
+    Tcl_SetErrorCode(interp, "TCL", "MEMORY", (char *)NULL);
     return TCL_ERROR;
 }
 

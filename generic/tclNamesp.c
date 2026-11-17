@@ -4768,6 +4768,8 @@ NamespaceWhichCmd(
 	}
 	break;
     }
+    default:
+	TCL_UNREACHABLE();
     }
     Tcl_SetObjResult(interp, resultPtr);
     return TCL_OK;
