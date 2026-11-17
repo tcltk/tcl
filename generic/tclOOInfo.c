@@ -744,6 +744,8 @@ InfoObjectMethodsCmd(
 	case SCOPE_UNEXPORTED:
 	    flag = 0;
 	    break;
+	default:
+	    TCL_UNREACHABLE();
 	}
     }
 

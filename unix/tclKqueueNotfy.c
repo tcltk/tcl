@@ -196,6 +196,8 @@ PlatformEventsControl(
 	case EV_DELETE:
 	    LIST_REMOVE(filePtr, readyNode);
 	    break;
+	default:
+	    TCL_UNREACHABLE();
 	}
 	return;
     }
@@ -244,6 +246,8 @@ PlatformEventsControl(
 	    Tcl_Panic("kevent: %s", strerror(errno));
 	}
 	break;
+    default:
+	TCL_UNREACHABLE();
     }
 }
 

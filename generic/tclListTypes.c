@@ -1029,23 +1029,27 @@ LrangeSlice(
     /*
      * We will only use the lrangeType abstract list if the following
      * conditions are met:
-     *  1. The source list is not a non-abstract list since that has its
+     *  1. The source list is not a native list since that has its
      *     own range operation with better performance and additional features.
      *  2. The length criteria for using rangeType are met.
      */
-    if (sourcePtr->typePtr == &tclListType ||
-	    !LrangeMeetsLengthCriteria(rangeLen, sourceLen)) {
+    if (TclListObjIsNative(sourcePtr)
+	    || !LrangeMeetsLengthCriteria(rangeLen, sourceLen)) {
 	/*
-	 * Conditions not met, create non-abstract list.
-	 * Note TclListObjRange will modify the sourcePtr in place if it is
+	 * Conditions 1, 2 not met, create native list.
+	 * Note ListObjRange will modify the sourcePtr in place if it is
 	 * not shared (refCount <=1). We do not want that since our repPtr
 	 * is holding a reference to it and it might be the only reference.
-	 * Thus we must increment the refCount before calling TclListObjRange.
+	 * Thus we must increment the refCount before calling ListObjRange.
 	 */
+	if (!TclListObjIsNative(sourcePtr)) {
+	    /* Cannot fail as sourcePtr known to be valid list */
+	    (void) TclListObjToNative(NULL, sourcePtr);
+	}
 
 	Tcl_IncrRefCount(sourcePtr);
-	*resultPtrPtr = TclListObjRange(interp, sourcePtr,
-		newSrcIndex, newSrcIndex + rangeLen - 1);
+	*resultPtrPtr = ListObjRange(interp, sourcePtr, newSrcIndex,
+		newSrcIndex + rangeLen - 1);
 	assert(sourcePtr->refCount > 1);
 	Tcl_DecrRefCount(sourcePtr);
 	return *resultPtrPtr ? TCL_OK : TCL_ERROR;
@@ -1114,17 +1118,16 @@ Tcl_ListObjRange(
 
     /*
      * If the list is an AbstractList with a specialized slice, use it.
-     * Note this includes rangeType itself. Non-abstract lists already
+     * Note this includes rangeType itself. Native lists already
      * implement their own efficient range operation.
      */
-    if (TclObjTypeHasProc(objPtr, sliceProc)) {
-	result = TclObjTypeSlice(interp, objPtr, start, end, &resultPtr);
-    } else if (objPtr->typePtr == &tclListType) {
-	/* Do not use TclListObjRange for abstract lists as it will shimmer */
-	resultPtr = TclListObjRange(interp, objPtr, start, end);
+    if (TclListObjIsNative(objPtr)) {
+	resultPtr = ListObjRange(interp, objPtr, start, end);
 	result = resultPtr ? TCL_OK : TCL_ERROR;
+    } else if (TclObjTypeHasProc(objPtr, sliceProc)) {
+	result = TclObjTypeSlice(interp, objPtr, start, end, &resultPtr);
     } else if (!LrangeMeetsLengthCriteria(rangeLen, srcLen)) {
-	/* Range is too small, create a non-abstract list */
+	/* Abstract list, range small, no sliceProc. create native list */
 	resultPtr = Tcl_NewListObj(rangeLen, NULL);
 	for (Tcl_Size i = 0; i < rangeLen; i++) {
 	    Tcl_Obj *elemPtr;
