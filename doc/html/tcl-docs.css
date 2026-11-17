@@ -35,6 +35,8 @@
     --text:       #1f2328;
     --muted:      #656d76;
 
+    --accent:     #BADA55;   /* page title band, current index entry */
+
     --link:       #0969da;
     --link-hover: #0550ae;
 
@@ -53,6 +55,9 @@
 
     --radius:     6px;
     --max-width:  65ch;
+    --toc-width:  11rem;     /* minimum width of the TOC column */
+    --toc-max:    18rem;     /* the column grows with its entries up to this width */
+    --toc-gap:    1.5rem;
 }
 
 /* ── Reset ────────────────────────────────────────────────────── */
@@ -71,14 +76,61 @@ body {
     background: var(--bg);
     color: var(--text);
     line-height: 1.7;
-    max-width: var(--max-width);
-    margin: 0 auto;
-    padding: 2.2rem 2rem 5rem;
+    /* TOC column on the left, text column (--max-width) on the right.
+       The TOC column fits its content: it grows with the entries up to
+       --toc-max (longer ones wrap) and, if need be, beyond that up to the
+       longest unbreakable word, so words are never broken. */
+    display: grid;
+    grid-template-columns: fit-content(var(--toc-max)) minmax(0, var(--max-width));
+    justify-content: start;
+    column-gap: var(--toc-gap);
+    /* left-aligned (not centred) so that the TOC stays close to the left edge
+       (e.g. next to the index) and spare width ends up on the right: */
+    margin: 0;
+    padding: 2.2rem 2rem 5rem 1rem;
+}
+
+/* everything Pandoc emits goes into the text column ... */
+body > * { grid-column: 2; }
+
+/* ── Table of contents (Pandoc --toc) ─────────────────────────── */
+
+/* ... except the TOC, which spans all rows of the left column and stays
+   in view while scrolling */
+body > nav#TOC {
+    grid-column: 1;
+    grid-row: 1 / span 999;
+    align-self: start;
+    position: sticky;
+    top: 1rem;
+    max-height: calc(100vh - 2rem);
+    overflow-y: auto;
+    font-size: 0.85rem;
+    line-height: 1.4;
+    /* a scrollable box would otherwise count as 0 wide when the column is
+       sized, so state explicitly that the longest word must fit: */
+    min-width: min-content;
+}
+nav#TOC > ul { min-width: var(--toc-width); }
+nav#TOC ul { list-style: none; margin: 0; padding: 0; }
+nav#TOC ul ul { padding-left: 1rem; }
+nav#TOC li { margin: 0.35rem 0; }
+nav#TOC a { color: var(--text); text-decoration: none; }
+nav#TOC a:hover { color: var(--link-hover); text-decoration: underline; }
+/* top-level entries (the h1 sections) stand out, subsections (h2) are lighter: */
+nav#TOC > ul > li > a { font-weight: 600; }
+nav#TOC ul ul a { color: var(--muted); }
+
+/* narrow windows (e.g. the page inside the narrow frame next to the index):
+   no left column, the TOC just comes right after the title */
+@media (max-width: 58rem) {
+    body { display: block; max-width: var(--max-width); margin: 0 auto; padding-left: 2rem; }
+    body > nav#TOC { position: static; max-height: none; margin-bottom: 1.5rem; }
 }
 
 /* ── Top bar ──────────────────────────────────────────────────── */
 
-body > nav, .topbar {
+body > nav:not(#TOC), .topbar {
     background: var(--syn-bg);
     color: #8b949e;
     font-size: 0.82rem;
@@ -89,11 +141,11 @@ body > nav, .topbar {
     letter-spacing: 0.03em;
 }
 
-body > nav a, .topbar a {
+body > nav:not(#TOC) a, .topbar a {
     color: #79c0ff;
     text-decoration: none;
 }
-body > nav a:hover, .topbar a:hover { text-decoration: underline; }
+body > nav:not(#TOC) a:hover, .topbar a:hover { text-decoration: underline; }
 
 /* ── Page content wrapper ─────────────────────────────────────── */
 
@@ -119,6 +171,7 @@ h1 {
 }
 
 h2 {
+    font-style: italic;
     font-size: 1.3rem;
     border-bottom: 1px solid var(--border);
     padding-bottom: 0.2rem;
@@ -127,6 +180,25 @@ h2 {
 
 h3 { font-size: 1.1rem; }
 h4 { font-size: 0.97rem; color: var(--muted); }
+
+/* ── Manual page title ────────────────────────────────────────── */
+
+/* Bar as wide as the text column, in the same green as the current entry in
+   the index (index.css: nav a.current). */
+header#title-block-header {
+    background: var(--accent);
+    color: #222;
+    border-radius: var(--radius);
+    margin: 0 0 1.5rem;
+    padding: 0.5rem 1rem;
+}
+
+header#title-block-header h1.title {
+    font-size: 2.4rem;
+    border-bottom: 0;
+    padding-bottom: 0;
+    margin: 0;
+}
 
 /* ── Paragraphs ───────────────────────────────────────────────── */
 
@@ -428,6 +500,8 @@ footer {
     body { padding: 1rem 1rem 3rem; }
     main, article, .content { padding: 1rem 1rem 3rem; }
     h1 { font-size: 1.45rem; }
+    header#title-block-header { padding: 0.4rem 0.8rem; }
+    header#title-block-header h1.title { font-size: 1.75rem; }
     h2 { font-size: 1.15rem; }
     div.synopsis { font-size: 0.78rem; padding: 0.8rem 1rem; }
 }
@@ -435,7 +509,7 @@ footer {
 /* ── Print ────────────────────────────────────────────────────── */
 
 @media print {
-    body { font-size: 11pt; }
+    body { font-size: 11pt; display: block; max-width: var(--max-width); margin: 0 auto; padding-left: 2rem; }
     div.synopsis { background: #111; color: #eee; -webkit-print-color-adjust: exact; }
     a { color: inherit; text-decoration: underline; }
     pre, blockquote, dt { break-inside: avoid; }

@@ -1,0 +1,855 @@
+Tcl              {Language syntax}                  Tcl {Syntax}
+tclsh            tclsh                              Tcl {Applications}
+after            after                              Tcl {Commands}
+append           append                             Tcl {Commands}
+apply            apply                              Tcl {Commands}
+array            array                              Tcl {Commands}
+bgerror          bgerror                            Tcl {Commands}
+binary           binary                             Tcl {Commands}
+break            break                              Tcl {Commands}
+buildinfo        buildinfo                          Tcl {Commands}
+callback         callback                           Tcl {TclOO commands}
+catch            catch                              Tcl {Commands}
+cd               cd                                 Tcl {Commands}
+chan             chan                               Tcl {Commands}
+classvariable    classvariable                      Tcl {TclOO commands}
+clock            clock                              Tcl {Commands}
+close            close                              Tcl {Commands}
+concat           concat                             Tcl {Commands}
+configurable     configure                          Tcl {TclOO commands}
+const            const                              Tcl {Commands}
+continue         continue                           Tcl {Commands}
+cookiejar        cookiejar                          Tcl {Commands}
+coroutine        coroinject                         Tcl {Commands}
+coroutine        coroprobe                          Tcl {Commands}
+coroutine        coroutine                          Tcl {Commands}
+dde              dde                                Tcl {Commands}
+dict             dict                               Tcl {Commands}
+divmod           divmod                             Tcl {Commands}
+encoding         encoding                           Tcl {Commands}
+eof              eof                                Tcl {Commands}
+error            error                              Tcl {Commands}
+eval             eval                               Tcl {Commands}
+exec             exec                               Tcl {Commands}
+exit             exit                               Tcl {Commands}
+expr             expr                               Tcl {Commands}
+fblocked         fblocked                           Tcl {Commands}
+fconfigure       fconfigure                         Tcl {Commands}
+fcopy            fcopy                              Tcl {Commands}
+file             file                               Tcl {Commands}
+fileevent        fileevent                          Tcl {Commands}
+flush            flush                              Tcl {Commands}
+for              for                                Tcl {Commands}
+foreach          foreach                            Tcl {Commands}
+format           format                             Tcl {Commands}
+fpclassify       fpclassify                         Tcl {Commands}
+frexp            frexp                              Tcl {Commands}
+gets             gets                               Tcl {Commands}
+glob             glob                               Tcl {Commands}
+global           global                             Tcl {Commands}
+history          history                            Tcl {Commands}
+http             http                               Tcl {Commands}
+if               if                                 Tcl {Commands}
+incr             incr                               Tcl {Commands}
+info             info                               Tcl {Commands}
+interp           interp                             Tcl {Commands}
+join             join                               Tcl {Commands}
+lappend          lappend                            Tcl {Commands}
+lassign          lassign                            Tcl {Commands}
+ledit            ledit                              Tcl {Commands}
+lfilter          lfilter                            Tcl {Commands}
+lindex           lindex                             Tcl {Commands}
+link             link                               Tcl {TclOO commands}
+linsert          linsert                            Tcl {Commands}
+list             list                               Tcl {Commands}
+llength          llength                            Tcl {Commands}
+lmap             lmap                               Tcl {Commands}
+load             load                               Tcl {Commands}
+lpop             lpop                               Tcl {Commands}
+lrange           lrange                             Tcl {Commands}
+lremove          lremove                            Tcl {Commands}
+lrepeat          lrepeat                            Tcl {Commands}
+lreplace         lreplace                           Tcl {Commands}
+lreverse         lreverse                           Tcl {Commands}
+lsearch          lsearch                            Tcl {Commands}
+lseq             lseq                               Tcl {Commands}
+lset             lset                               Tcl {Commands}
+lsort            lsort                              Tcl {Commands}
+memory           memory                             Tcl {Commands}
+modf             modf                               Tcl {Commands}
+msgcat           msgcat                             Tcl {Commands}
+my               my                                 Tcl {TclOO commands}
+my               myclass                            Tcl {TclOO commands}
+callback         mymethod                           Tcl {TclOO commands}
+namespace        namespace                          Tcl {Commands}
+next             next                               Tcl {TclOO commands}
+next             nextto                             Tcl {TclOO commands}
+abstract         oo::abstract                       Tcl {TclOO commands}
+class            oo::class                          Tcl {TclOO commands}
+configurable     oo::configurable                   Tcl {TclOO commands}
+copy             oo::copy                           Tcl {TclOO commands}
+define           oo::define                         Tcl {TclOO commands}
+define           oo::objdefine                      Tcl {TclOO commands}
+object           oo::object                         Tcl {TclOO commands}
+singleton        oo::singleton                      Tcl {TclOO commands}
+define           oo::Slot                           Tcl {TclOO commands}
+open             open                               Tcl {Commands}
+package          package                            Tcl {Commands}
+pid              pid                                Tcl {Commands}
+packagens        pkg::create                        Tcl {Commands}
+pkgMkIndex       pkg_mkIndex                        Tcl {Commands}
+platform         platform                           Tcl {Commands}
+platform_shell   platform::shell                    Tcl {Commands}
+proc             proc                               Tcl {Commands}
+configurable     property                           Tcl {TclOO commands}
+puts             puts                               Tcl {Commands}
+pwd              pwd                                Tcl {Commands}
+read             read                               Tcl {Commands}
+refchan          refchan                            Tcl {Commands}
+regexp           regexp                             Tcl {Commands}
+registry         registry                           Tcl {Commands}
+regsub           regsub                             Tcl {Commands}
+remquo           remquo                             Tcl {Commands}
+rename           rename                             Tcl {Commands}
+return           return                             Tcl {Commands}
+safe             safe                               Tcl {Commands}
+scan             scan                               Tcl {Commands}
+seek             seek                               Tcl {Commands}
+self             self                               Tcl {TclOO commands}
+set              set                                Tcl {Commands}
+socket           socket                             Tcl {Commands}
+source           source                             Tcl {Commands}
+split            split                              Tcl {Commands}
+string           string                             Tcl {Commands}
+subst            subst                              Tcl {Commands}
+switch           switch                             Tcl {Commands}
+tailcall         tailcall                           Tcl {Commands}
+idna             tcl::idna                          Tcl {Commands}
+prefix           tcl::prefix                        Tcl {Commands}
+process          tcl::process                       Tcl {Commands}
+tcltest          tcltest                            Tcl {Commands}
+tell             tell                               Tcl {Commands}
+throw            throw                              Tcl {Commands}
+time             time                               Tcl {Commands}
+timer            timer                              Tcl {Commands}
+timerate         timerate                           Tcl {Commands}
+tm               tm                                 Tcl {Commands}
+trace            trace                              Tcl {Commands}
+transchan        transchan                          Tcl {Commands}
+try              try                                Tcl {Commands}
+unicode          unicode                            Tcl {Commands}
+unknown          unknown                            Tcl {Commands}
+unload           unload                             Tcl {Commands}
+unset            unset                              Tcl {Commands}
+update           update                             Tcl {Commands}
+uplevel          uplevel                            Tcl {Commands}
+upvar            upvar                              Tcl {Commands}
+variable         variable                           Tcl {Commands}
+vwait            vwait                              Tcl {Commands}
+while            while                              Tcl {Commands}
+coroutine        yield                              Tcl {Commands}
+coroutine        yieldto                            Tcl {Commands}
+zipfs            zipfs                              Tcl {Commands}
+zlib             zlib                               Tcl {Commands}
+tclvars          argc                               Tcl {Variables}
+tclvars          argv                               Tcl {Variables}
+tclvars          argv0                              Tcl {Variables}
+tclvars          auto_path                          Tcl {Variables}
+tclvars          env                                Tcl {Variables}
+tclvars          errorCode                          Tcl {Variables}
+tclvars          errorInfo                          Tcl {Variables}
+tclvars          tcl_interactive                    Tcl {Variables}
+tclvars          tcl_library                        Tcl {Variables}
+tclvars          tcl_patchLevel                     Tcl {Variables}
+tclvars          tcl_pkgPath                        Tcl {Variables}
+tclvars          tcl_platform                       Tcl {Variables}
+tclvars          tcl_rcFileName                     Tcl {Variables}
+tclvars          tcl_traceCompile                   Tcl {Variables}
+tclvars          tcl_traceExec                      Tcl {Variables}
+tclvars          tcl_version                        Tcl {Variables}
+mathfunc         {Math functions}                   Tcl {Math functions}
+mathop           {Math operators}                   Tcl {Math operators}
+filename         {Filename conventions}             Tcl {Filename conventions}
+re_syntax        {Regular expression syntax}        Tcl {Regular expression syntax}
+library          {Library procedures}               Tcl {Library procedures}
+Access           Tcl_Access                         Tcl {C API}
+AddErrInfo       Tcl_AddErrorInfo                   Tcl {C API}
+AddErrInfo       Tcl_AddObjErrorInfo                Tcl {C API}
+Notifier         Tcl_AlertNotifier                  Tcl {C API}
+Alloc            Tcl_Alloc                          Tcl {C API}
+FileSystem       Tcl_AllocStatBuf                   Tcl {C API}
+AllowExc         Tcl_AllowExceptions                Tcl {C API}
+ObjectType       Tcl_AppendAllObjTypes              Tcl {C API}
+SetResult        Tcl_AppendElement                  Tcl {C API}
+Namespace        Tcl_AppendExportList               Tcl {C API}
+StringObj        Tcl_AppendFormatToObj              Tcl {C API}
+StringObj        Tcl_AppendLimitedToObj             Tcl {C API}
+AddErrInfo       Tcl_AppendObjToErrorInfo           Tcl {C API}
+StringObj        Tcl_AppendObjToObj                 Tcl {C API}
+StringObj        Tcl_AppendPrintfToObj              Tcl {C API}
+SetResult        Tcl_AppendResult                   Tcl {C API}
+StringObj        Tcl_AppendStringsToObj             Tcl {C API}
+StringObj        Tcl_AppendToObj                    Tcl {C API}
+StringObj        Tcl_AppendUnicodeToObj             Tcl {C API}
+AppInit          Tcl_AppInit                        Tcl {C API}
+Async            Tcl_AsyncCreate                    Tcl {C API}
+Async            Tcl_AsyncDelete                    Tcl {C API}
+Async            Tcl_AsyncInvoke                    Tcl {C API}
+Async            Tcl_AsyncMark                      Tcl {C API}
+Async            Tcl_AsyncMarkFromSignal            Tcl {C API}
+Async            Tcl_AsyncReady                     Tcl {C API}
+Alloc            Tcl_AttemptAlloc                   Tcl {C API}
+Hash             Tcl_AttemptCreateHashEntry         Tcl {C API}
+Alloc            Tcl_AttemptRealloc                 Tcl {C API}
+StringObj        Tcl_AttemptSetObjLength            Tcl {C API}
+BackgdErr        Tcl_BackgroundError                Tcl {C API}
+BackgdErr        Tcl_BackgroundException            Tcl {C API}
+CrtChannel       Tcl_BadChannelOption               Tcl {C API}
+Object           Tcl_BounceRefCount                 Tcl {C API}
+CallDel          Tcl_CallWhenDeleted                Tcl {C API}
+Cancel           Tcl_Canceled                       Tcl {C API}
+Cancel           Tcl_CancelEval                     Tcl {C API}
+DoWhenIdle       Tcl_CancelIdleCall                 Tcl {C API}
+CrtChannel       Tcl_ChannelBlockModeProc           Tcl {C API}
+CrtChannel       Tcl_ChannelBuffered                Tcl {C API}
+CrtChannel       Tcl_ChannelClose2Proc              Tcl {C API}
+CrtChannel       Tcl_ChannelFlushProc               Tcl {C API}
+CrtChannel       Tcl_ChannelGetHandleProc           Tcl {C API}
+CrtChannel       Tcl_ChannelGetOptionProc           Tcl {C API}
+CrtChannel       Tcl_ChannelHandlerProc             Tcl {C API}
+CrtChannel       Tcl_ChannelInputProc               Tcl {C API}
+CrtChannel       Tcl_ChannelName                    Tcl {C API}
+CrtChannel       Tcl_ChannelOutputProc              Tcl {C API}
+CrtChannel       Tcl_ChannelSetOptionProc           Tcl {C API}
+CrtChannel       Tcl_ChannelThreadActionProc        Tcl {C API}
+CrtChannel       Tcl_ChannelTruncateProc            Tcl {C API}
+CrtChannel       Tcl_ChannelVersion                 Tcl {C API}
+CrtChannel       Tcl_ChannelWatchProc               Tcl {C API}
+CrtChannel       Tcl_ChannelWideSeekProc            Tcl {C API}
+Utf              Tcl_Char16Len                      Tcl {C API}
+Utf              Tcl_Char16ToUtfDString             Tcl {C API}
+GetCwd           Tcl_Chdir                          Tcl {C API}
+Class            Tcl_ClassGetMetadata               Tcl {TclOO C API}           
+Method           Tcl_ClassSetConstructor            Tcl {TclOO C API}           
+Method           Tcl_ClassSetDestructor             Tcl {TclOO C API}           
+Class            Tcl_ClassSetMetadata               Tcl {TclOO C API}           
+CrtChannel       Tcl_ClearChannelHandlers           Tcl {C API}
+OpenFileChnl     Tcl_Close                          Tcl {C API}
+OpenFileChnl     Tcl_CloseEx                        Tcl {C API}
+CmdCmplt         Tcl_CommandComplete                Tcl {C API}
+TraceCmd         Tcl_CommandTraceInfo               Tcl {C API}
+Concat           Tcl_Concat                         Tcl {C API}
+StringObj        Tcl_ConcatObj                      Tcl {C API}
+Thread           Tcl_ConditionFinalize              Tcl {C API}
+Thread           Tcl_ConditionNotify                Tcl {C API}
+Thread           Tcl_ConditionWait                  Tcl {C API}
+Panic            Tcl_ConsolePanic                   Tcl {C API}
+SplitList        Tcl_ConvertCountedElement          Tcl {C API}
+SplitList        Tcl_ConvertElement                 Tcl {C API}
+ObjectType       Tcl_ConvertToType                  Tcl {C API}
+Class            Tcl_CopyObjectInstance             Tcl {TclOO C API}
+CrtAlias         Tcl_CreateAlias                    Tcl {C API}
+CrtAlias         Tcl_CreateAliasObj                 Tcl {C API}
+CrtChannel       Tcl_CreateChannel                  Tcl {C API}
+CrtChnlHdlr      Tcl_CreateChannelHandler           Tcl {C API}
+CrtAlias         Tcl_CreateChild                    Tcl {C API}
+CrtCloseHdlr     Tcl_CreateCloseHandler             Tcl {C API}
+CrtCommand       Tcl_CreateCommand                  Tcl {C API}
+Encoding         Tcl_CreateEncoding                 Tcl {C API}
+Ensemble         Tcl_CreateEnsemble                 Tcl {C API}
+Notifier         Tcl_CreateEventSource              Tcl {C API}
+Exit             Tcl_CreateExitHandler              Tcl {C API}
+CrtFileHdlr      Tcl_CreateFileHandler              Tcl {C API}
+Hash             Tcl_CreateHashEntry                Tcl {C API}
+CrtInterp        Tcl_CreateInterp                   Tcl {C API}
+Namespace        Tcl_CreateNamespace                Tcl {C API}
+CrtObjCmd        Tcl_CreateObjCommand               Tcl {C API}
+CrtObjCmd        Tcl_CreateObjCommand2              Tcl {C API}
+CrtTrace         Tcl_CreateObjTrace                 Tcl {C API}
+CrtTrace         Tcl_CreateObjTrace2                Tcl {C API}
+Thread           Tcl_CreateThread                   Tcl {C API}
+Exit             Tcl_CreateThreadExitHandler        Tcl {C API}
+CrtTimerHdlr     Tcl_CreateTimerHandler             Tcl {C API}
+CrtTrace         Tcl_CreateTrace                    Tcl {C API}
+CrtChannel       Tcl_CutChannel                     Tcl {C API}
+Object           Tcl_DecrRefCount                   Tcl {C API}
+AssocData        Tcl_DeleteAssocData                Tcl {C API}
+CrtChnlHdlr      Tcl_DeleteChannelHandler           Tcl {C API}
+CrtCloseHdlr     Tcl_DeleteCloseHandler             Tcl {C API}
+CrtObjCmd        Tcl_DeleteCommand                  Tcl {C API}
+CrtObjCmd        Tcl_DeleteCommandFromToken         Tcl {C API}
+Notifier         Tcl_DeleteEvents                   Tcl {C API}
+Notifier         Tcl_DeleteEventSource              Tcl {C API}
+Exit             Tcl_DeleteExitHandler              Tcl {C API}
+CrtFileHdlr      Tcl_DeleteFileHandler              Tcl {C API}
+Hash             Tcl_DeleteHashEntry                Tcl {C API}
+Hash             Tcl_DeleteHashTable                Tcl {C API}
+CrtInterp        Tcl_DeleteInterp                   Tcl {C API}
+Namespace        Tcl_DeleteNamespace                Tcl {C API}
+Exit             Tcl_DeleteThreadExitHandler        Tcl {C API}
+CrtTimerHdlr     Tcl_DeleteTimerHandler             Tcl {C API}
+CrtTrace         Tcl_DeleteTrace                    Tcl {C API}
+OpenFileChnl     Tcl_DetachChannel                  Tcl {C API}
+DetachPids       Tcl_DetachPids                     Tcl {C API}
+DictObj          Tcl_DictObjDone                    Tcl {C API}
+DictObj          Tcl_DictObjFirst                   Tcl {C API}
+DictObj          Tcl_DictObjGet                     Tcl {C API}
+DictObj          Tcl_DictObjNext                    Tcl {C API}
+DictObj          Tcl_DictObjPut                     Tcl {C API}
+DictObj          Tcl_DictObjPutKeyList              Tcl {C API}
+DictObj          Tcl_DictObjRemove                  Tcl {C API}
+DictObj          Tcl_DictObjRemoveKeyList           Tcl {C API}
+DictObj          Tcl_DictObjSize                    Tcl {C API}
+SaveInterpState  Tcl_DiscardInterpState             Tcl {C API}
+CallDel          Tcl_DontCallWhenDeleted            Tcl {C API}
+DoOneEvent       Tcl_DoOneEvent                     Tcl {C API}
+DoWhenIdle       Tcl_DoWhenIdle                     Tcl {C API}
+DString          Tcl_DStringAppend                  Tcl {C API}
+DString          Tcl_DStringAppendElement           Tcl {C API}
+DString          Tcl_DStringEndSublist              Tcl {C API}
+DString          Tcl_DStringFree                    Tcl {C API}
+DString          Tcl_DStringGetResult               Tcl {C API}
+DString          Tcl_DStringInit                    Tcl {C API}
+DString          Tcl_DStringLength                  Tcl {C API}
+DString          Tcl_DStringResult                  Tcl {C API}
+DString          Tcl_DStringSetLength               Tcl {C API}
+DString          Tcl_DStringStartSublist            Tcl {C API}
+DString          Tcl_DStringToObj                   Tcl {C API}
+DString          Tcl_DStringValue                   Tcl {C API}
+DumpActiveMemory Tcl_DumpActiveMemory               Tcl {C API}
+Object           Tcl_DuplicateObj                   Tcl {C API}
+OpenFileChnl     Tcl_Eof                            Tcl {C API}
+SetErrno         Tcl_ErrnoId                        Tcl {C API}
+SetErrno         Tcl_ErrnoMsg                       Tcl {C API}
+Eval             Tcl_Eval                           Tcl {C API}
+Eval             Tcl_EvalEx                         Tcl {C API}
+Eval             Tcl_EvalFile                       Tcl {C API}
+Eval             Tcl_EvalObjEx                      Tcl {C API}
+Eval             Tcl_EvalObjv                       Tcl {C API}
+ParseCmd         Tcl_EvalTokensStandard             Tcl {C API}
+Preserve         Tcl_EventuallyFree                 Tcl {C API}
+Exit             Tcl_Exit                           Tcl {C API}
+Exit             Tcl_ExitThread                     Tcl {C API}
+Namespace        Tcl_Export                         Tcl {C API}
+CrtAlias         Tcl_ExposeCommand                  Tcl {C API}
+ExprLong         Tcl_ExprBoolean                    Tcl {C API}
+ExprLongObj      Tcl_ExprBooleanObj                 Tcl {C API}
+ExprLong         Tcl_ExprDouble                     Tcl {C API}
+ExprLongObj      Tcl_ExprDoubleObj                  Tcl {C API}
+ExprLong         Tcl_ExprLong                       Tcl {C API}
+ExprLongObj      Tcl_ExprLongObj                    Tcl {C API}
+ExprLongObj      Tcl_ExprObj                        Tcl {C API}
+ExprLong         Tcl_ExprString                     Tcl {C API}
+Encoding         Tcl_ExternalToUtf                  Tcl {C API}
+Encoding         Tcl_ExternalToUtfDString           Tcl {C API}
+Encoding         Tcl_ExternalToUtfDStringEx         Tcl {C API}
+Encoding         Tcl_ExternalToUtfEx                Tcl {C API}
+ObjectType       Tcl_FetchInternalRep               Tcl {C API}
+Exit             Tcl_Finalize                       Tcl {C API}
+Notifier         Tcl_FinalizeNotifier               Tcl {C API}
+Exit             Tcl_FinalizeThread                 Tcl {C API}
+Namespace        Tcl_FindCommand                    Tcl {C API}
+Ensemble         Tcl_FindEnsemble                   Tcl {C API}
+FindExec         Tcl_FindExecutable                 Tcl {C API}
+Hash             Tcl_FindHashEntry                  Tcl {C API}
+Namespace        Tcl_FindNamespace                  Tcl {C API}
+Load             Tcl_FindSymbol                     Tcl {C API}
+Hash             Tcl_FirstHashEntry                 Tcl {C API}
+OpenFileChnl     Tcl_Flush                          Tcl {C API}
+Namespace        Tcl_ForgetImport                   Tcl {C API}
+StringObj        Tcl_Format                         Tcl {C API}
+Alloc            Tcl_Free                           Tcl {C API}
+Encoding         Tcl_FreeEncoding                   Tcl {C API}
+ObjectType       Tcl_FreeInternalRep                Tcl {C API}
+ParseCmd         Tcl_FreeParse                      Tcl {C API}
+FileSystem       Tcl_FSAccess                       Tcl {C API}
+FileSystem       Tcl_FSChdir                        Tcl {C API}
+FileSystem       Tcl_FSConvertToPathType            Tcl {C API}
+FileSystem       Tcl_FSCopyDirectory                Tcl {C API}
+FileSystem       Tcl_FSCopyFile                     Tcl {C API}
+FileSystem       Tcl_FSCreateDirectory              Tcl {C API}
+FileSystem       Tcl_FSData                         Tcl {C API}
+FileSystem       Tcl_FSDeleteFile                   Tcl {C API}
+FileSystem       Tcl_FSEqualPaths                   Tcl {C API}
+FileSystem       Tcl_FSEvalFile                     Tcl {C API}
+FileSystem       Tcl_FSEvalFileEx                   Tcl {C API}
+FileSystem       Tcl_FSFileAttrsGet                 Tcl {C API}
+FileSystem       Tcl_FSFileAttrsSet                 Tcl {C API}
+FileSystem       Tcl_FSFileAttrStrings              Tcl {C API}
+FileSystem       Tcl_FSFileSystemInfo               Tcl {C API}
+FileSystem       Tcl_FSGetCwd                       Tcl {C API}
+FileSystem       Tcl_FSGetFileSystemForPath         Tcl {C API}
+FileSystem       Tcl_FSGetInternalRep               Tcl {C API}
+FileSystem       Tcl_FSGetNativePath                Tcl {C API}
+FileSystem       Tcl_FSGetNormalizedPath            Tcl {C API}
+FileSystem       Tcl_FSGetPathType                  Tcl {C API}
+FileSystem       Tcl_FSGetTranslatedPath            Tcl {C API}
+FileSystem       Tcl_FSGetTranslatedStringPath      Tcl {C API}
+FileSystem       Tcl_FSJoinPath                     Tcl {C API}
+FileSystem       Tcl_FSJoinToPath                   Tcl {C API}
+FileSystem       Tcl_FSLink                         Tcl {C API}
+FileSystem       Tcl_FSListVolumes                  Tcl {C API}
+FileSystem       Tcl_FSLoadFile                     Tcl {C API}
+FileSystem       Tcl_FSLstat                        Tcl {C API}
+FileSystem       Tcl_FSMatchInDirectory             Tcl {C API}
+FileSystem       Tcl_FSMountsChanged                Tcl {C API}
+FileSystem       Tcl_FSNewNativePath                Tcl {C API}
+FileSystem       Tcl_FSOpenFileChannel              Tcl {C API}
+FileSystem       Tcl_FSPathSeparator                Tcl {C API}
+FileSystem       Tcl_FSRegister                     Tcl {C API}
+FileSystem       Tcl_FSRemoveDirectory              Tcl {C API}
+FileSystem       Tcl_FSRenameFile                   Tcl {C API}
+FileSystem       Tcl_FSSplitPath                    Tcl {C API}
+FileSystem       Tcl_FSStat                         Tcl {C API}
+FileSystem       Tcl_FSTildeExpand                  Tcl {C API}
+FileSystem       Tcl_FSUnloadFile                   Tcl {C API}
+FileSystem       Tcl_FSUnregister                   Tcl {C API}
+FileSystem       Tcl_FSUtime                        Tcl {C API}
+FileSystem       Tcl_GetAccessTimeFromStat          Tcl {C API}
+CrtAlias         Tcl_GetAliasObj                    Tcl {C API}
+AssocData        Tcl_GetAssocData                   Tcl {C API}
+IntObj           Tcl_GetBignumFromObj               Tcl {C API}
+FileSystem       Tcl_GetBlocksFromStat              Tcl {C API}
+FileSystem       Tcl_GetBlockSizeFromStat           Tcl {C API}
+GetInt           Tcl_GetBoolean                     Tcl {C API}
+BoolObj          Tcl_GetBooleanFromObj              Tcl {C API}
+BoolObj          Tcl_GetBoolFromObj                 Tcl {C API}
+ByteArrObj       Tcl_GetByteArrayFromObj            Tcl {C API}
+ByteArrObj       Tcl_GetBytesFromObj                Tcl {C API}
+FileSystem       Tcl_GetChangeTimeFromStat          Tcl {C API}
+OpenFileChnl     Tcl_GetChannel                     Tcl {C API}
+CrtChannel       Tcl_GetChannelBufferSize           Tcl {C API}
+SetChanErr       Tcl_GetChannelError                Tcl {C API}
+SetChanErr       Tcl_GetChannelErrorInterp          Tcl {C API}
+CrtChannel       Tcl_GetChannelHandle               Tcl {C API}
+CrtChannel       Tcl_GetChannelInstanceData         Tcl {C API}
+CrtChannel       Tcl_GetChannelMode                 Tcl {C API}
+CrtChannel       Tcl_GetChannelName                 Tcl {C API}
+OpenFileChnl     Tcl_GetChannelNames                Tcl {C API}
+OpenFileChnl     Tcl_GetChannelNamesEx              Tcl {C API}
+OpenFileChnl     Tcl_GetChannelOption               Tcl {C API}
+CrtChannel       Tcl_GetChannelThread               Tcl {C API}
+CrtChannel       Tcl_GetChannelType                 Tcl {C API}
+StringObj        Tcl_GetCharLength                  Tcl {C API}
+CrtAlias         Tcl_GetChild                       Tcl {C API}
+Class            Tcl_GetClassAsObject               Tcl {TclOO C API}
+CrtObjCmd        Tcl_GetCommandFromObj              Tcl {C API}
+CrtObjCmd        Tcl_GetCommandFullName             Tcl {C API}
+CrtObjCmd        Tcl_GetCommandInfo                 Tcl {C API}
+CrtObjCmd        Tcl_GetCommandInfoFromToken        Tcl {C API}
+CrtObjCmd        Tcl_GetCommandName                 Tcl {C API}
+Namespace        Tcl_GetCurrentNamespace            Tcl {C API}
+Notifier         Tcl_GetCurrentThread               Tcl {C API}
+GetCwd           Tcl_GetCwd                         Tcl {C API}
+FileSystem       Tcl_GetDeviceTypeFromStat          Tcl {C API}
+GetInt           Tcl_GetDouble                      Tcl {C API}
+DoubleObj        Tcl_GetDoubleFromObj               Tcl {C API}
+Encoding         Tcl_GetEncoding                    Tcl {C API}
+Encoding         Tcl_GetEncodingFromObj             Tcl {C API}
+Encoding         Tcl_GetEncodingName                Tcl {C API}
+Encoding         Tcl_GetEncodingNameForUser         Tcl {C API}
+Encoding         Tcl_GetEncodingNameFromEnvironment Tcl {C API}
+Encoding         Tcl_GetEncodingNames               Tcl {C API}
+Encoding         Tcl_GetEncodingSearchPath          Tcl {C API}
+Ensemble         Tcl_GetEnsembleFlags               Tcl {C API}
+Ensemble         Tcl_GetEnsembleMappingDict         Tcl {C API}
+Ensemble         Tcl_GetEnsembleNamespace           Tcl {C API}
+Ensemble         Tcl_GetEnsembleParameterList       Tcl {C API}
+Ensemble         Tcl_GetEnsembleSubcommandList      Tcl {C API}
+Ensemble         Tcl_GetEnsembleUnknownHandler      Tcl {C API}
+SetErrno         Tcl_GetErrno                       Tcl {C API}
+AddErrInfo       Tcl_GetErrorLine                   Tcl {C API}
+FileSystem       Tcl_GetFSDeviceFromStat            Tcl {C API}
+FileSystem       Tcl_GetFSInodeFromStat             Tcl {C API}
+Namespace        Tcl_GetGlobalNamespace             Tcl {C API}
+FileSystem       Tcl_GetGroupIdFromStat             Tcl {C API}
+Hash             Tcl_GetHashKey                     Tcl {C API}
+Hash             Tcl_GetHashValue                   Tcl {C API}
+GetHostName      Tcl_GetHostName                    Tcl {C API}
+GetIndex         Tcl_GetIndexFromObj                Tcl {C API}
+GetIndex         Tcl_GetIndexFromObjStruct          Tcl {C API}
+GetInt           Tcl_GetInt                         Tcl {C API}
+CrtAlias         Tcl_GetInterpPath                  Tcl {C API}
+IntObj           Tcl_GetIntForIndex                 Tcl {C API}
+IntObj           Tcl_GetIntFromObj                  Tcl {C API}
+FileSystem       Tcl_GetLinkCountFromStat           Tcl {C API}
+IntObj           Tcl_GetLongFromObj                 Tcl {C API}
+Alloc            Tcl_GetMemoryInfo                  Tcl {C API}
+FileSystem       Tcl_GetModeFromStat                Tcl {C API}
+FileSystem       Tcl_GetModificationTimeFromStat    Tcl {C API}
+GetTime          Tcl_GetMonotonicTime               Tcl {C API}
+FindExec         Tcl_GetNameOfExecutable            Tcl {C API}
+Namespace        Tcl_GetNamespaceUnknownHandler     Tcl {C API}
+Number           Tcl_GetNumber                      Tcl {C API}
+Number           Tcl_GetNumberFromObj               Tcl {C API}
+Class            Tcl_GetObjectAsClass               Tcl {TclOO C API}         
+Class            Tcl_GetObjectCommand               Tcl {TclOO C API}         
+Class            Tcl_GetObjectFromObj               Tcl {TclOO C API}         
+Class            Tcl_GetObjectName                  Tcl {TclOO C API}         
+Class            Tcl_GetObjectNamespace             Tcl {TclOO C API}         
+SetResult        Tcl_GetObjResult                   Tcl {C API}
+ObjectType       Tcl_GetObjType                     Tcl {C API}
+GetOpnFl         Tcl_GetOpenFile                    Tcl {C API}
+CrtAlias         Tcl_GetParent                      Tcl {C API}
+SplitPath        Tcl_GetPathType                    Tcl {C API}
+StringObj        Tcl_GetRange                       Tcl {C API}
+RegExp           Tcl_GetRegExpFromObj               Tcl {C API}
+AddErrInfo       Tcl_GetReturnOptions               Tcl {C API}
+OpenFileChnl     Tcl_Gets                           Tcl {C API}
+Notifier         Tcl_GetServiceMode                 Tcl {C API}
+FileSystem       Tcl_GetSizeFromStat                Tcl {C API}
+IntObj           Tcl_GetSizeIntFromObj              Tcl {C API}
+OpenFileChnl     Tcl_GetsObj                        Tcl {C API}
+ChnlStack        Tcl_GetStackedChannel              Tcl {C API}
+Tcl_Main         Tcl_GetStartupScript               Tcl {C API}
+GetStdChan       Tcl_GetStdChannel                  Tcl {C API}
+StringObj        Tcl_GetString                      Tcl {C API}
+StringObj        Tcl_GetStringFromObj               Tcl {C API}
+SetResult        Tcl_GetStringResult                Tcl {C API}
+Thread           Tcl_GetThreadData                  Tcl {C API}
+GetTime          Tcl_GetTime                        Tcl {C API}
+ChnlStack        Tcl_GetTopChannel                  Tcl {C API}
+StringObj        Tcl_GetUniChar                     Tcl {C API}
+StringObj        Tcl_GetUnicode                     Tcl {C API}
+StringObj        Tcl_GetUnicodeFromObj              Tcl {C API}
+FileSystem       Tcl_GetUserIdFromStat              Tcl {C API}
+SetVar           Tcl_GetVar                         Tcl {C API}
+SetVar           Tcl_GetVar2                        Tcl {C API}
+SetVar           Tcl_GetVar2Ex                      Tcl {C API}
+GetVersion       Tcl_GetVersion                     Tcl {C API}
+IntObj           Tcl_GetWideIntFromObj              Tcl {C API}
+IntObj           Tcl_GetWideUIntFromObj             Tcl {C API}
+Eval             Tcl_GlobalEval                     Tcl {C API}
+Eval             Tcl_GlobalEvalObj                  Tcl {C API}
+Hash             Tcl_HashStats                      Tcl {C API}
+ObjectType       Tcl_HasStringRep                   Tcl {C API}
+CrtAlias         Tcl_HideCommand                    Tcl {C API}
+Namespace        Tcl_Import                         Tcl {C API}
+Object           Tcl_IncrRefCount                   Tcl {C API}
+Init             Tcl_Init                           Tcl {C API}
+Hash             Tcl_InitCustomHashTable            Tcl {C API}
+Hash             Tcl_InitHashTable                  Tcl {C API}
+DumpActiveMemory Tcl_InitMemory                     Tcl {C API}
+Notifier         Tcl_InitNotifier                   Tcl {C API}
+Hash             Tcl_InitObjHashTable               Tcl {C API}
+ObjectType       Tcl_InitStringRep                  Tcl {C API}
+InitStubs        Tcl_InitStubs                      Tcl {C API}
+InitSubSyst      Tcl_InitSubsystems                 Tcl {C API}
+OpenFileChnl     Tcl_InputBlocked                   Tcl {C API}
+OpenFileChnl     Tcl_InputBuffered                  Tcl {C API}
+CrtInterp        Tcl_InterpActive                   Tcl {C API}
+CrtInterp        Tcl_InterpDeleted                  Tcl {C API}
+Object           Tcl_InvalidateStringRep            Tcl {C API}
+CrtChannel       Tcl_IsChannelExisting              Tcl {C API}
+CrtChannel       Tcl_IsChannelRegistered            Tcl {C API}
+CrtChannel       Tcl_IsChannelShared                Tcl {C API}
+StringObj        Tcl_IsEmpty                        Tcl {C API}
+Ensemble         Tcl_IsEnsemble                     Tcl {C API}
+CrtAlias         Tcl_IsSafe                         Tcl {C API}
+Object           Tcl_IsShared                       Tcl {C API}
+OpenFileChnl     Tcl_IsStandardChannel              Tcl {C API}
+SplitPath        Tcl_JoinPath                       Tcl {C API}
+Thread           Tcl_JoinThread                     Tcl {C API}
+Limit            Tcl_LimitAddHandler                Tcl {C API}
+Limit            Tcl_LimitCheck                     Tcl {C API}
+Limit            Tcl_LimitExceeded                  Tcl {C API}
+Limit            Tcl_LimitGetCommands               Tcl {C API}
+Limit            Tcl_LimitGetGranularity            Tcl {C API}
+Limit            Tcl_LimitGetTime                   Tcl {C API}
+Limit            Tcl_LimitReady                     Tcl {C API}
+Limit            Tcl_LimitRemoveHandler             Tcl {C API}
+Limit            Tcl_LimitSetCommands               Tcl {C API}
+Limit            Tcl_LimitSetGranularity            Tcl {C API}
+Limit            Tcl_LimitSetTime                   Tcl {C API}
+Limit            Tcl_LimitTypeEnabled               Tcl {C API}
+Limit            Tcl_LimitTypeExceeded              Tcl {C API}
+Limit            Tcl_LimitTypeReset                 Tcl {C API}
+Limit            Tcl_LimitTypeSet                   Tcl {C API}
+LinkVar          Tcl_LinkArray                      Tcl {C API}
+LinkVar          Tcl_LinkVar                        Tcl {C API}
+ListObj          Tcl_ListObjAppendElement           Tcl {C API}
+ListObj          Tcl_ListObjAppendList              Tcl {C API}
+ListObj          Tcl_ListObjGetElements             Tcl {C API}
+ListObj          Tcl_ListObjIndex                   Tcl {C API}
+ListObj          Tcl_ListObjLength                  Tcl {C API}
+ListObj          Tcl_ListObjRange                   Tcl {C API}
+ListObj          Tcl_ListObjRepeat                  Tcl {C API}
+ListObj          Tcl_ListObjReplace                 Tcl {C API}
+ListObj          Tcl_ListObjReverse                 Tcl {C API}
+Load             Tcl_LoadFile                       Tcl {C API}
+AddErrInfo       Tcl_LogCommandInfo                 Tcl {C API}
+Tcl_Main         Tcl_Main                           Tcl {C API}
+Tcl_Main         Tcl_MainEx                         Tcl {C API}
+Tcl_Main         Tcl_MainExW                        Tcl {C API}
+OpenFileChnl     Tcl_MakeFileChannel                Tcl {C API}
+OpenTcp          Tcl_MakeTcpClientChannel           Tcl {C API}
+TCL_MEM_DEBUG    TCL_MEM_DEBUG                      Tcl {C API}
+SplitList        Tcl_Merge                          Tcl {C API}
+Method           Tcl_MethodDeclarerClass            Tcl {TclOO C API}         
+Method           Tcl_MethodDeclarerObject           Tcl {TclOO C API}         
+Method           Tcl_MethodIsPrivate                Tcl {TclOO C API}         
+Method           Tcl_MethodIsPublic                 Tcl {TclOO C API}         
+Method           Tcl_MethodIsType                   Tcl {TclOO C API}         
+Method           Tcl_MethodIsType2                  Tcl {TclOO C API}         
+Method           Tcl_MethodName                     Tcl {TclOO C API}         
+Thread           Tcl_MutexFinalize                  Tcl {C API}
+Thread           Tcl_MutexLock                      Tcl {C API}
+Thread           Tcl_MutexUnlock                    Tcl {C API}
+IntObj           Tcl_NewBignumObj                   Tcl {C API}
+BoolObj          Tcl_NewBooleanObj                  Tcl {C API}
+ByteArrObj       Tcl_NewByteArrayObj                Tcl {C API}
+DictObj          Tcl_NewDictObj                     Tcl {C API}
+DoubleObj        Tcl_NewDoubleObj                   Tcl {C API}
+Method           Tcl_NewInstanceMethod              Tcl {TclOO C API}
+Method           Tcl_NewInstanceMethod2             Tcl {TclOO C API}
+IntObj           Tcl_NewIntObj                      Tcl {C API}
+ListObj          Tcl_NewListObj                     Tcl {C API}
+IntObj           Tcl_NewLongObj                     Tcl {C API}
+Method           Tcl_NewMethod                      Tcl {TclOO C API}
+Method           Tcl_NewMethod2                     Tcl {TclOO C API}
+Object           Tcl_NewObj                         Tcl {C API}
+Class            Tcl_NewObjectInstance              Tcl {TclOO C API}
+StringObj        Tcl_NewStringObj                   Tcl {C API}
+StringObj        Tcl_NewUnicodeObj                  Tcl {C API}
+IntObj           Tcl_NewWideIntObj                  Tcl {C API}
+IntObj           Tcl_NewWideUIntObj                 Tcl {C API}
+Hash             Tcl_NextHashEntry                  Tcl {C API}
+CrtChannel       Tcl_NotifyChannel                  Tcl {C API}
+NRE              Tcl_NRAddCallback                  Tcl {C API}
+NRE              Tcl_NRCallObjProc                  Tcl {C API}
+NRE              Tcl_NRCallObjProc2                 Tcl {C API}
+NRE              Tcl_NRCmdSwap                      Tcl {C API}
+NRE              Tcl_NRCreateCommand                Tcl {C API}
+NRE              Tcl_NRCreateCommand2               Tcl {C API}
+NRE              Tcl_NREvalObj                      Tcl {C API}
+NRE              Tcl_NREvalObjv                     Tcl {C API}
+NRE              Tcl_NRExprObj                      Tcl {C API}
+Utf              Tcl_NumUtfChars                    Tcl {C API}
+Method           Tcl_ObjectContextInvokeNext        Tcl {TclOO C API}
+Method           Tcl_ObjectContextIsFiltering       Tcl {TclOO C API}
+Method           Tcl_ObjectContextMethod            Tcl {TclOO C API}
+Method           Tcl_ObjectContextObject            Tcl {TclOO C API}
+Method           Tcl_ObjectContextSkippedArgs       Tcl {TclOO C API}
+Class            Tcl_ObjectDeleted                  Tcl {TclOO C API}
+Class            Tcl_ObjectGetMetadata              Tcl {TclOO C API}
+Class            Tcl_ObjectGetMethodNameMapper      Tcl {TclOO C API}
+Class            Tcl_ObjectSetMetadata              Tcl {TclOO C API}
+Class            Tcl_ObjectSetMethodNameMapper      Tcl {TclOO C API}
+SetVar           Tcl_ObjGetVar2                     Tcl {C API}
+StringObj        Tcl_ObjPrintf                      Tcl {C API}
+SetVar           Tcl_ObjSetVar2                     Tcl {C API}
+OOInitStubs      Tcl_OOInitStubs                    Tcl {TclOO C API}
+OpenFileChnl     Tcl_OpenCommandChannel             Tcl {C API}
+OpenFileChnl     Tcl_OpenFileChannel                Tcl {C API}
+OpenTcp          Tcl_OpenTcpClient                  Tcl {C API}
+OpenTcp          Tcl_OpenTcpServer                  Tcl {C API}
+OpenTcp          Tcl_OpenTcpServerEx                Tcl {C API}
+OpenFileChnl     Tcl_OutputBuffered                 Tcl {C API}
+Panic            Tcl_Panic                          Tcl {C API}
+ParseArgs        Tcl_ParseArgsObjv                  Tcl {C API}
+ParseCmd         Tcl_ParseBraces                    Tcl {C API}
+ParseCmd         Tcl_ParseCommand                   Tcl {C API}
+ParseCmd         Tcl_ParseExpr                      Tcl {C API}
+ParseCmd         Tcl_ParseQuotedString              Tcl {C API}
+ParseCmd         Tcl_ParseVar                       Tcl {C API}
+ParseCmd         Tcl_ParseVarName                   Tcl {C API}
+PkgRequire       Tcl_PkgPresent                     Tcl {C API}
+PkgRequire       Tcl_PkgPresentEx                   Tcl {C API}
+PkgRequire       Tcl_PkgProvide                     Tcl {C API}
+PkgRequire       Tcl_PkgProvideEx                   Tcl {C API}
+PkgRequire       Tcl_PkgRequire                     Tcl {C API}
+PkgRequire       Tcl_PkgRequireEx                   Tcl {C API}
+PkgRequire       Tcl_PkgRequireProc                 Tcl {C API}
+AddErrInfo       Tcl_PosixError                     Tcl {C API}
+Preserve         Tcl_Preserve                       Tcl {C API}
+PrintDbl         Tcl_PrintDouble                    Tcl {C API}
+Environment      Tcl_PutEnv                         Tcl {C API}
+GetTime          Tcl_QueryTimeProc                  Tcl {C API}
+Notifier         Tcl_QueueEvent                     Tcl {C API}
+OpenFileChnl     Tcl_Read                           Tcl {C API}
+OpenFileChnl     Tcl_ReadChars                      Tcl {C API}
+OpenFileChnl     Tcl_ReadRaw                        Tcl {C API}
+Alloc            Tcl_Realloc                        Tcl {C API}
+DetachPids       Tcl_ReapDetachedProcs              Tcl {C API}
+RecordEval       Tcl_RecordAndEval                  Tcl {C API}
+RecEvalObj       Tcl_RecordAndEvalObj               Tcl {C API}
+RegExp           Tcl_RegExpCompile                  Tcl {C API}
+RegExp           Tcl_RegExpExec                     Tcl {C API}
+RegExp           Tcl_RegExpExecObj                  Tcl {C API}
+RegExp           Tcl_RegExpGetInfo                  Tcl {C API}
+RegExp           Tcl_RegExpMatch                    Tcl {C API}
+RegExp           Tcl_RegExpMatchObj                 Tcl {C API}
+RegExp           Tcl_RegExpRange                    Tcl {C API}
+OpenFileChnl     Tcl_RegisterChannel                Tcl {C API}
+RegConfig        Tcl_RegisterConfig                 Tcl {C API}
+ObjectType       Tcl_RegisterObjType                Tcl {C API}
+Preserve         Tcl_Release                        Tcl {C API}
+SetResult        Tcl_ResetResult                    Tcl {C API}
+SaveInterpState  Tcl_RestoreInterpState             Tcl {C API}
+SaveInterpState  Tcl_SaveInterpState                Tcl {C API}
+SplitList        Tcl_ScanCountedElement             Tcl {C API}
+SplitList        Tcl_ScanElement                    Tcl {C API}
+OpenFileChnl     Tcl_Seek                           Tcl {C API}
+Notifier         Tcl_ServiceAll                     Tcl {C API}
+Notifier         Tcl_ServiceEvent                   Tcl {C API}
+Notifier         Tcl_ServiceModeHook                Tcl {C API}
+AssocData        Tcl_SetAssocData                   Tcl {C API}
+IntObj           Tcl_SetBignumObj                   Tcl {C API}
+BoolObj          Tcl_SetBooleanObj                  Tcl {C API}
+ByteArrObj       Tcl_SetByteArrayLength             Tcl {C API}
+ByteArrObj       Tcl_SetByteArrayObj                Tcl {C API}
+CrtChannel       Tcl_SetChannelBufferSize           Tcl {C API}
+SetChanErr       Tcl_SetChannelError                Tcl {C API}
+SetChanErr       Tcl_SetChannelErrorInterp          Tcl {C API}
+OpenFileChnl     Tcl_SetChannelOption               Tcl {C API}
+CrtObjCmd        Tcl_SetCommandInfo                 Tcl {C API}
+CrtObjCmd        Tcl_SetCommandInfoFromToken        Tcl {C API}
+DoubleObj        Tcl_SetDoubleObj                   Tcl {C API}
+Encoding         Tcl_SetEncodingSearchPath          Tcl {C API}
+Ensemble         Tcl_SetEnsembleFlags               Tcl {C API}
+Ensemble         Tcl_SetEnsembleMappingDict         Tcl {C API}
+Ensemble         Tcl_SetEnsembleParameterList       Tcl {C API}
+Ensemble         Tcl_SetEnsembleSubcommandList      Tcl {C API}
+Ensemble         Tcl_SetEnsembleUnknownHandler      Tcl {C API}
+SetErrno         Tcl_SetErrno                       Tcl {C API}
+AddErrInfo       Tcl_SetErrorCode                   Tcl {C API}
+AddErrInfo       Tcl_SetErrorLine                   Tcl {C API}
+Exit             Tcl_SetExitProc                    Tcl {C API}
+Hash             Tcl_SetHashValue                   Tcl {C API}
+IntObj           Tcl_SetIntObj                      Tcl {C API}
+ListObj          Tcl_SetListObj                     Tcl {C API}
+IntObj           Tcl_SetLongObj                     Tcl {C API}
+Tcl_Main         Tcl_SetMainLoop                    Tcl {C API}
+Notifier         Tcl_SetMaxBlockTime                Tcl {C API}
+Namespace        Tcl_SetNamespaceUnknownHandler     Tcl {C API}
+Notifier         Tcl_SetNotifier                    Tcl {C API}
+AddErrInfo       Tcl_SetObjErrorCode                Tcl {C API}
+StringObj        Tcl_SetObjLength                   Tcl {C API}
+SetResult        Tcl_SetObjResult                   Tcl {C API}
+Panic            Tcl_SetPanicProc                   Tcl {C API}
+SetRecLmt        Tcl_SetRecursionLimit              Tcl {C API}
+SetResult        Tcl_SetResult                      Tcl {C API}
+AddErrInfo       Tcl_SetReturnOptions               Tcl {C API}
+Notifier         Tcl_SetServiceMode                 Tcl {C API}
+Tcl_Main         Tcl_SetStartupScript               Tcl {C API}
+GetStdChan       Tcl_SetStdChannel                  Tcl {C API}
+StringObj        Tcl_SetStringObj                   Tcl {C API}
+Encoding         Tcl_SetSystemEncoding              Tcl {C API}
+GetTime          Tcl_SetTimeProc                    Tcl {C API}
+Notifier         Tcl_SetTimer                       Tcl {C API}
+StringObj        Tcl_SetUnicodeObj                  Tcl {C API}
+SetVar           Tcl_SetVar                         Tcl {C API}
+SetVar           Tcl_SetVar2                        Tcl {C API}
+SetVar           Tcl_SetVar2Ex                      Tcl {C API}
+IntObj           Tcl_SetWideIntObj                  Tcl {C API}
+IntObj           Tcl_SetWideUIntObj                 Tcl {C API}
+Signal           Tcl_SignalId                       Tcl {C API}
+Signal           Tcl_SignalMsg                      Tcl {C API}
+Sleep            Tcl_Sleep                          Tcl {C API}
+SourceRCFile     Tcl_SourceRCFile                   Tcl {C API}
+CrtChannel       Tcl_SpliceChannel                  Tcl {C API}
+SplitList        Tcl_SplitList                      Tcl {C API}
+SplitPath        Tcl_SplitPath                      Tcl {C API}
+ChnlStack        Tcl_StackChannel                   Tcl {C API}
+StdChannels      Tcl_StandardChannels               Tcl {C API}
+Access           Tcl_Stat                           Tcl {C API}
+StaticLibrary    Tcl_StaticLibrary                  Tcl {C API}
+StaticLibrary    Tcl_StaticPackage                  Tcl {C API}
+ObjectType       Tcl_StoreInternalRep               Tcl {C API}
+StrMatch         Tcl_StringCaseMatch                Tcl {C API}
+StrMatch         Tcl_StringMatch                    Tcl {C API}
+SubstObj         Tcl_SubstObj                       Tcl {C API}
+IntObj           Tcl_TakeBignumFromObj              Tcl {C API}
+OpenFileChnl     Tcl_Tell                           Tcl {C API}
+Notifier         Tcl_ThreadAlert                    Tcl {C API}
+Notifier         Tcl_ThreadQueueEvent               Tcl {C API}
+TraceCmd         Tcl_TraceCommand                   Tcl {C API}
+TraceVar         Tcl_TraceVar                       Tcl {C API}
+TraceVar         Tcl_TraceVar2                      Tcl {C API}
+SetResult        Tcl_TransferResult                 Tcl {C API}
+Translate        Tcl_TranslateFileName              Tcl {C API}
+OpenFileChnl     Tcl_TruncateChannel                Tcl {C API}
+OpenFileChnl     Tcl_Ungets                         Tcl {C API}
+Utf              Tcl_UniChar                        Tcl {C API}
+Utf              Tcl_UniCharAtIndex                 Tcl {C API}
+UniCharIsAlpha   Tcl_UniCharIsAlnum                 Tcl {C API}
+UniCharIsAlpha   Tcl_UniCharIsAlpha                 Tcl {C API}
+UniCharIsAlpha   Tcl_UniCharIsControl               Tcl {C API}
+UniCharIsAlpha   Tcl_UniCharIsDigit                 Tcl {C API}
+UniCharIsAlpha   Tcl_UniCharIsGraph                 Tcl {C API}
+UniCharIsAlpha   Tcl_UniCharIsLower                 Tcl {C API}
+UniCharIsAlpha   Tcl_UniCharIsPrint                 Tcl {C API}
+UniCharIsAlpha   Tcl_UniCharIsPunct                 Tcl {C API}
+UniCharIsAlpha   Tcl_UniCharIsSpace                 Tcl {C API}
+UniCharIsAlpha   Tcl_UniCharIsUpper                 Tcl {C API}
+UniCharIsAlpha   Tcl_UniCharIsWordChar              Tcl {C API}
+Utf              Tcl_UniCharLen                     Tcl {C API}
+ToUpper          Tcl_UniCharToLower                 Tcl {C API}
+ToUpper          Tcl_UniCharToTitle                 Tcl {C API}
+ToUpper          Tcl_UniCharToUpper                 Tcl {C API}
+Utf              Tcl_UniCharToUtf                   Tcl {C API}
+Utf              Tcl_UniCharToUtfDString            Tcl {C API}
+LinkVar          Tcl_UnlinkVar                      Tcl {C API}
+OpenFileChnl     Tcl_UnregisterChannel              Tcl {C API}
+SetVar           Tcl_UnsetVar                       Tcl {C API}
+SetVar           Tcl_UnsetVar2                      Tcl {C API}
+ChnlStack        Tcl_UnstackChannel                 Tcl {C API}
+TraceCmd         Tcl_UntraceCommand                 Tcl {C API}
+TraceVar         Tcl_UntraceVar                     Tcl {C API}
+TraceVar         Tcl_UntraceVar2                    Tcl {C API}
+LinkVar          Tcl_UpdateLinkedVar                Tcl {C API}
+UpVar            Tcl_UpVar                          Tcl {C API}
+UpVar            Tcl_UpVar2                         Tcl {C API}
+Utf              Tcl_UtfAtIndex                     Tcl {C API}
+Utf              Tcl_UtfBackslash                   Tcl {C API}
+Utf              Tcl_UtfCharComplete                Tcl {C API}
+Utf              Tcl_UtfFindFirst                   Tcl {C API}
+Utf              Tcl_UtfFindLast                    Tcl {C API}
+Utf              Tcl_UtfNcasecmp                    Tcl {C API}
+Utf              Tcl_UtfNcmp                        Tcl {C API}
+Utf              Tcl_UtfNext                        Tcl {C API}
+Utf              Tcl_UtfPrev                        Tcl {C API}
+Utf              Tcl_UtfToChar16                    Tcl {C API}
+Utf              Tcl_UtfToChar16DString             Tcl {C API}
+Encoding         Tcl_UtfToExternal                  Tcl {C API}
+Encoding         Tcl_UtfToExternalDString           Tcl {C API}
+Encoding         Tcl_UtfToExternalDStringEx         Tcl {C API}
+Encoding         Tcl_UtfToExternalEx                Tcl {C API}
+ToUpper          Tcl_UtfToLower                     Tcl {C API}
+UnicodeNormalize Tcl_UtfToNormalized                Tcl {C API}
+UnicodeNormalize Tcl_UtfToNormalizedDString         Tcl {C API}
+ToUpper          Tcl_UtfToTitle                     Tcl {C API}
+Utf              Tcl_UtfToUniChar                   Tcl {C API}
+Utf              Tcl_UtfToUniCharDString            Tcl {C API}
+ToUpper          Tcl_UtfToUpper                     Tcl {C API}
+Utf              Tcl_UtfToWChar                     Tcl {C API}
+Utf              Tcl_UtfToWCharDString              Tcl {C API}
+DumpActiveMemory Tcl_ValidateAllMemory              Tcl {C API}
+Eval             Tcl_VarEval                        Tcl {C API}
+TraceVar         Tcl_VarTraceInfo                   Tcl {C API}
+TraceVar         Tcl_VarTraceInfo2                  Tcl {C API}
+Notifier         Tcl_WaitForEvent                   Tcl {C API}
+DetachPids       Tcl_WaitPid                        Tcl {C API}
+Utf              Tcl_WCharLen                       Tcl {C API}
+Utf              Tcl_WCharToUtfDString              Tcl {C API}
+SetErrno         Tcl_WinConvertError                Tcl {C API}
+OpenFileChnl     Tcl_Write                          Tcl {C API}
+OpenFileChnl     Tcl_WriteChars                     Tcl {C API}
+OpenFileChnl     Tcl_WriteObj                       Tcl {C API}
+OpenFileChnl     Tcl_WriteRaw                       Tcl {C API}
+WrongNumArgs     Tcl_WrongNumArgs                   Tcl {C API}
+TclZlib          Tcl_ZlibAdler32                    Tcl {C API}
+TclZlib          Tcl_ZlibCRC32                      Tcl {C API}
+TclZlib          Tcl_ZlibDeflate                    Tcl {C API}
+TclZlib          Tcl_ZlibInflate                    Tcl {C API}
+TclZlib          Tcl_ZlibStreamChecksum             Tcl {C API}
+TclZlib          Tcl_ZlibStreamClose                Tcl {C API}
+TclZlib          Tcl_ZlibStreamEof                  Tcl {C API}
+TclZlib          Tcl_ZlibStreamGet                  Tcl {C API}
+TclZlib          Tcl_ZlibStreamGetCommandName       Tcl {C API}
+TclZlib          Tcl_ZlibStreamInit                 Tcl {C API}
+TclZlib          Tcl_ZlibStreamPut                  Tcl {C API}
+Zipfs            TclZipfs_AppHook                   Tcl {C API}
+Zipfs            TclZipfs_Mount                     Tcl {C API}
+Zipfs            TclZipfs_MountBuffer               Tcl {C API}
+Zipfs            TclZipfs_Unmount                   Tcl {C API}
